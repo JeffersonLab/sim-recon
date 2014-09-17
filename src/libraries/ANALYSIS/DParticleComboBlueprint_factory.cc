@@ -67,6 +67,13 @@ jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, i
 	Get_Reactions(locEventLoop, locReactions);
 	MAX_DParticleComboBlueprintStepPoolSize = 3000*locReactions.size();
 
+	DApplication *locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+	DGeometry *locGeometry = locApplication ? locApplication->GetDGeometry(runnumber):NULL;
+	double locTargetCenterZ = 65.0;
+	if(locGeometry)
+		locGeometry->GetTargetZ(locTargetCenterZ);
+	dTargetCenter.SetXYZ(0.0, 0.0, locTargetCenterZ);
+
 	return NOERROR;
 }
 
@@ -426,10 +433,29 @@ bool DParticleComboBlueprint_factory::Handle_EndOfReactionStep(const DReaction* 
 	{
 		if(dDebugLevel > 10)
 			cout << "duplicate step combo" << endl;
-		locParticleComboBlueprintStep = NULL;
 		if(!Handle_Decursion(locParticleComboBlueprint, locResumeAtIndexDeque, locNumPossibilitiesDeque, locParticleIndex, locStepIndex, locParticleComboBlueprintStep))
 			return false;
 		return true;
+	}
+
+	// cut on invariant mass if desired
+	Particle_t locStepInitialPID = locParticleComboBlueprintStep->Get_InitialParticleID();
+	double locMinInvariantMass = 1.0, locMaxInvariantMass = -1.0;
+	if(locReaction->Get_InvariantMassCut(locStepInitialPID, locMinInvariantMass, locMaxInvariantMass))
+	{
+		DLorentzVector locP4;
+		if(Calc_FinalStateP4(locReaction->Get_NumReactionSteps(), locParticleComboBlueprint, locParticleComboBlueprintStep, -1, locP4))
+		{
+			double locInvariantMass = locP4.M();
+			if((locInvariantMass < locMinInvariantMass) || (locInvariantMass > locMaxInvariantMass))
+			{
+				if(dDebugLevel > 10)
+					cout << "bad invariant mass" << endl;
+				if(!Handle_Decursion(locParticleComboBlueprint, locResumeAtIndexDeque, locNumPossibilitiesDeque, locParticleIndex, locStepIndex, locParticleComboBlueprintStep))
+					return false;
+				return true;
+			}
+		}
 	}
 
 	//step is good: advance to next step
@@ -457,6 +483,31 @@ bool DParticleComboBlueprint_factory::Handle_EndOfReactionStep(const DReaction* 
 		locParticleComboBlueprintStep->Set_InitialParticleDecayFromStepIndex(locInitialParticleStepFromIndexMap[locStepIndex]);
 		return true;
 	}
+
+/*
+	// cut on missing mass squared if desired
+	deque<DReaction::DReactionMissingMassSquaredCut> locMissingMassSquaredCuts;
+	locReaction->Get_MissingMassSquaredCuts(locMissingMassSquaredCuts);
+	for(size_t loc_i = 0; loc_i < locMissingMassSquaredCuts.size(); ++loc_i)
+	{
+		DLorentzVector locMissingP4;
+		int locMissingMassOffOfStepIndex = locMissingMassSquaredCuts[loc_i].dMissingMassOffOfStepIndex;
+		if(locMissingMassOffOfStepIndex == -1)
+			locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleComboBlueprint);
+		else
+			locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleComboBlueprint, 0, locMissingMassOffOfStepIndex, locMissingMassSquaredCuts[loc_i].dMissingMassOffOfPIDs);
+
+		double locMissingMassSq = locMissingP4.M2();
+		if((locMissingMassSq < locMissingMassSquaredCuts[loc_i].dMinimumMissingMassSq) || (locMissingMassSq > locMissingMassSquaredCuts[loc_i].dMaximumMissingMassSq))
+		{
+			if(dDebugLevel > 10)
+				cout << "bad missing mass squared" << endl;
+			if(!Handle_Decursion(locParticleComboBlueprint, locResumeAtIndexDeque, locNumPossibilitiesDeque, locParticleIndex, locStepIndex, locParticleComboBlueprintStep))
+				return false;
+			return true;
+		}
+	}
+*/
 
 	if(dDebugLevel > 10)
 		cout << "save combo" << endl;
@@ -495,6 +546,16 @@ bool DParticleComboBlueprint_factory::Handle_Decursion(DParticleComboBlueprint* 
 			locParticleComboBlueprintStep = Get_ParticleComboBlueprintStepResource();
 			*locParticleComboBlueprintStep = *(locParticleComboBlueprint->Pop_ParticleComboBlueprintStep());
 			locParticleIndex = locResumeAtIndexDeque[locStepIndex].size() - 1;
+			dCurrentComboSourceObjects.erase(locParticleComboBlueprintStep->Pop_FinalParticle_SourceObject());
+			if(dDebugLevel > 50)
+				cout << "step index, particle index, resume at, #possible = " << locStepIndex << ", " << locParticleIndex << ", " << locResumeAtIndexDeque[locStepIndex][locParticleIndex] << ", " << locNumPossibilitiesDeque[locStepIndex][locParticleIndex] << endl;
+			continue;
+		}
+		else if(locParticleIndex == int(locNumPossibilitiesDeque[locStepIndex].size())) //end of a step: step was found to be a duplicate OR failed a mass cut
+		{
+			if(dDebugLevel > 50)
+				cout << "failed at end of a step" << endl;
+			--locParticleIndex;
 			dCurrentComboSourceObjects.erase(locParticleComboBlueprintStep->Pop_FinalParticle_SourceObject());
 			if(dDebugLevel > 50)
 				cout << "step index, particle index, resume at, #possible = " << locStepIndex << ", " << locParticleIndex << ", " << locResumeAtIndexDeque[locStepIndex][locParticleIndex] << ", " << locNumPossibilitiesDeque[locStepIndex][locParticleIndex] << endl;
@@ -787,67 +848,19 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 		//if charged, check to make sure the tracking FOM is OK (cut garbage tracks and wildly bad combos)
 		if(locChargedTrack != NULL)
 		{
-			const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locAnalysisPID);
-			if(locChargedTrackHypothesis != NULL)
+			const DChargedTrackHypothesis* locChargedTrackHypothesis = Get_ChargedHypothesisToUse(locChargedTrack, locAnalysisPID);
+
+			if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
 			{
-				if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
-				{
-					if(dDebugLevel > 20)
-						cout << "Bad Tracking FOM" << endl;
-					continue;
-				}
-				else if(!Cut_HasDetectorMatch(locReaction, locChargedTrackHypothesis))
-				{
-					if(dDebugLevel > 20)
-						cout << "No Detector Match" << endl;
-					continue;
-				}
+				if(dDebugLevel > 20)
+					cout << "Bad Tracking FOM" << endl;
+				continue;
 			}
-			else //pid not found for this track: loop over other possible pids
+			else if(!Cut_HasDetectorMatch(locReaction, locChargedTrackHypothesis))
 			{
-				bool locTrackOKFlag = true;
-				deque<pair<Particle_t, bool> > locPIDsToTry = dTrackTimeBasedFactory_Combo->Get_ParticleIDsToTry(locAnalysisPID);
-				bool locFoundFlag = false;
-				for(size_t loc_i = 0; loc_i < locPIDsToTry.size(); ++loc_i)
-				{
-					locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPIDsToTry[loc_i].first);
-					if(locChargedTrackHypothesis == NULL)
-						continue;
-					locFoundFlag = true;
-					if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
-					{
-						if(dDebugLevel > 20)
-							cout << "Bad Tracking FOM" << endl;
-						locTrackOKFlag = false;
-						break;
-					}
-					else if(!Cut_HasDetectorMatch(locReaction, locChargedTrackHypothesis))
-					{
-						if(dDebugLevel > 20)
-							cout << "No Detector Match" << endl;
-						locTrackOKFlag = false;
-						break;
-					}
-					break;
-				}
-				if(!locFoundFlag) //still none found, take the one with the best FOM
-				{
-					locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
-					if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
-					{
-						if(dDebugLevel > 20)
-							cout << "Bad Tracking FOM" << endl;
-						locTrackOKFlag = false;
-					}
-					else if(!Cut_HasDetectorMatch(locReaction, locChargedTrackHypothesis))
-					{
-						if(dDebugLevel > 20)
-							cout << "No Detector Match" << endl;
-						locTrackOKFlag = false;
-					}
-				}
-				if(!locTrackOKFlag)
-					continue; //skip this track
+				if(dDebugLevel > 20)
+					cout << "No Detector Match" << endl;
+				continue;
 			}
 		}
 
@@ -894,6 +907,25 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 	}
 	while(locResumeAtIndex < int(locSourceObjects.size()));
 	return NULL;
+}
+
+const DChargedTrackHypothesis* DParticleComboBlueprint_factory::Get_ChargedHypothesisToUse(const DChargedTrack* locChargedTrack, Particle_t locAnalysisPID) const
+{
+	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locAnalysisPID);
+	if(locChargedTrackHypothesis != NULL)
+		return locChargedTrackHypothesis;
+
+	//pid not found for this track: loop over other possible pids
+	deque<pair<Particle_t, bool> > locPIDsToTry = dTrackTimeBasedFactory_Combo->Get_ParticleIDsToTry(locAnalysisPID);
+	for(size_t loc_i = 0; loc_i < locPIDsToTry.size(); ++loc_i)
+	{
+		locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPIDsToTry[loc_i].first);
+		if(locChargedTrackHypothesis != NULL)
+			return locChargedTrackHypothesis;
+	}
+
+	//still none found, take the one with the best FOM
+	return locChargedTrack->Get_BestFOM();
 }
 
 bool DParticleComboBlueprint_factory::Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const
@@ -947,6 +979,53 @@ void DParticleComboBlueprint_factory::Reset_Pools(void)
 		dParticleComboBlueprintStepPool_All.resize(MAX_DParticleComboBlueprintStepPoolSize);
 	}
 	dParticleComboBlueprintStepPool_Available = dParticleComboBlueprintStepPool_All;
+}
+
+bool DParticleComboBlueprint_factory::Calc_FinalStateP4(size_t locTotalNumSteps, const DParticleComboBlueprint* locParticleComboBlueprint, const DParticleComboBlueprintStep* locNewParticleComboBlueprintStep, int locStepIndexToGrab, DLorentzVector& locFinalStateP4) const
+{
+	const DParticleComboBlueprintStep* locCurrentStep = locNewParticleComboBlueprintStep;
+	if(locStepIndexToGrab != -1)
+	{
+		int locStepFromBackIndex = locTotalNumSteps - locStepIndexToGrab;
+		int locActualStepIndex = locParticleComboBlueprint->Get_NumParticleComboBlueprintSteps() - locStepFromBackIndex;
+		locCurrentStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(locActualStepIndex);
+		if(locCurrentStep == NULL)
+			return false;
+	}
+
+	locFinalStateP4.SetPxPyPzE(0.0, 0.0, 0.0, 0.0);
+	for(size_t loc_i = 0; loc_i < locCurrentStep->Get_NumFinalParticleSourceObjects(); ++loc_i)
+	{
+		if(locCurrentStep->Is_FinalParticleMissing(loc_i))
+			return false;
+		if(locCurrentStep->Is_FinalParticleDecaying(loc_i))
+		{
+			DLorentzVector locDecayP4;
+			if(!Calc_FinalStateP4(locTotalNumSteps, locParticleComboBlueprint, locNewParticleComboBlueprintStep, locCurrentStep->Get_DecayStepIndex(loc_i), locDecayP4))
+				return false;
+			locFinalStateP4 += locDecayP4;
+		}
+		else if(locCurrentStep->Is_FinalParticleCharged(loc_i))
+		{
+			const DChargedTrack* locChargedTrack = dynamic_cast<const DChargedTrack*>(locCurrentStep->Get_FinalParticle_SourceObject(loc_i));
+			Particle_t locPID = locCurrentStep->Get_FinalParticleID(loc_i);
+			const DChargedTrackHypothesis* locChargedTrackHypothesis = Get_ChargedHypothesisToUse(locChargedTrack, locPID);
+			DVector3 locMomentum(locChargedTrackHypothesis->momentum());
+			locFinalStateP4 += DLorentzVector(locMomentum, sqrt(locMomentum.Mag2() + ParticleMass(locPID)*ParticleMass(locPID)));
+		}
+		else //neutral
+		{
+			if(locCurrentStep->Get_FinalParticleID(loc_i) != Gamma)
+				return false; //DON'T CUT: massive neutral momentum based on timing, and RF bunch not yet selected!!!!
+
+			const DNeutralShower* locNeutralShower = dynamic_cast<const DNeutralShower*>(locCurrentStep->Get_FinalParticle_SourceObject(loc_i));
+			DVector3 locHitPoint = locNeutralShower->dSpacetimeVertex.Vect();
+			DVector3 locMomentum(locHitPoint - dTargetCenter);
+			locMomentum.SetMag(locNeutralShower->dEnergy);
+			locFinalStateP4 += DLorentzVector(locMomentum, locNeutralShower->dEnergy);
+		}
+	}
+	return true;
 }
 
 //------------------

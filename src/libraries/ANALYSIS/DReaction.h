@@ -20,6 +20,40 @@ class DReaction : public JObject
 	public:
 		JOBJECT_PUBLIC(DReaction);
 
+		class DReactionMissingMassSquaredCut
+		{
+			public:
+				DReactionMissingMassSquaredCut(double locMinimumMissingMassSq, double locMaximumMissingMassSq) : 
+				dMinimumMissingMassSq(locMinimumMissingMassSq), dMaximumMissingMassSq(locMaximumMissingMassSq), dMissingMassOffOfStepIndex(-1) {}
+
+				//E.g. If:
+				//g, p -> K+, K+, Xi-
+				//                Xi- -> pi-, Lambda
+				//                            Lambda -> (p), pi-
+				//And:
+				//locMissingMassOffOfStepIndex = 0, locMissingMassOffOfPIDs = K+, K+
+				//Then: Will cut missing-mass: g, p -> K+, K+, (X)
+				//Also:
+				//locMissingMassOffOfStepIndex = 1, locMissingMassOffOfPID = pi-
+				//Then: Will cut missing-mass: g, p -> K+, K+, pi-
+				//But:
+				//locMissingMassOffOfStepIndex = 0, locMissingMassOffOfPIDs = K+
+				//Then: Will cut only missing-mass: g, p -> K+_1, (X)    and NOT K+_2!!!
+
+				DReactionMissingMassSquaredCut(int locMissingMassOffOfStepIndex, Particle_t locMissingMassOffOfPID, double locMinimumMissingMassSq, double locMaximumMissingMassSq) : 
+				dMinimumMissingMassSq(locMinimumMissingMassSq), dMaximumMissingMassSq(locMaximumMissingMassSq), 
+				dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), dMissingMassOffOfPIDs(deque<Particle_t>(1, locMissingMassOffOfPID)) {}
+
+				DReactionMissingMassSquaredCut(int locMissingMassOffOfStepIndex, deque<Particle_t> locMissingMassOffOfPIDs, double locMinimumMissingMassSq, double locMaximumMissingMassSq) : 
+				dMinimumMissingMassSq(locMinimumMissingMassSq), dMaximumMissingMassSq(locMaximumMissingMassSq), 
+				dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), dMissingMassOffOfPIDs(locMissingMassOffOfPIDs) {}
+
+				double dMinimumMissingMassSq;
+				double dMaximumMissingMassSq;
+				int dMissingMassOffOfStepIndex;
+				deque<Particle_t> dMissingMassOffOfPIDs;
+		};
+
 		// CONSTRUCTOR:
 		DReaction(string locReactionName); //User must specify a unique reaction name upon construction
 
@@ -41,6 +75,12 @@ class DReaction : public JObject
 		inline void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT){dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);}
 		inline void Set_MinProtonMomentum(double locMinProtonMomentum){dMinProtonMomentum = pair<bool, double>(true, locMinProtonMomentum);}
 		inline void Set_HasDetectorMatchFlag(bool locHasDetectorMatchFlag){dHasDetectorMatchFlag = pair<bool, bool>(true, locHasDetectorMatchFlag);}
+
+		// SET PRE-COMBO-BLUEPRINT MASS CUTS
+		inline void Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass);
+		inline void Set_MissingMassSquaredCut(double locMinimumMissingMassSq, double locMaximumMissingMassSq);
+		inline void Set_MissingMassSquaredCut(int locMissingMassOffOfStepIndex, Particle_t locMissingMassOffOfPID, double locMinimumMissingMassSq, double locMaximumMissingMassSq);
+		inline void Set_MissingMassSquaredCut(int locMissingMassOffOfStepIndex, deque<Particle_t> locMissingMassOffOfPIDs, double locMinimumMissingMassSq, double locMaximumMissingMassSq);
 
 		// GET CONTROL MEMBERS:
 		inline string Get_ReactionName(void) const{return dReactionName;}
@@ -85,6 +125,10 @@ class DReaction : public JObject
 		inline pair<bool, double> Get_MinProtonMomentum(void) const{return dMinProtonMomentum;}
 		inline pair<bool, bool> Get_HasDetectorMatchFlag(void) const{return dHasDetectorMatchFlag;}
 
+		// GET PRE-COMBO-BLUEPRINT MASS CUTS
+		bool Get_InvariantMassCut(Particle_t locStepInitialPID, double& locMinInvariantMass, double& locMaxInvariantMass) const;
+		void Get_MissingMassSquaredCuts(deque<DReactionMissingMassSquaredCut>& locMissingMassSquaredCuts) const{locMissingMassSquaredCuts = dMissingMassSquaredCuts;}
+
 		// ROOT OUTPUT:
 		void Enable_TTreeOutput(string locTTreeOutputFileName);
 		inline string Get_TTreeOutputFileName(void) const{return dTTreeOutputFileName;}
@@ -118,7 +162,7 @@ class DReaction : public JObject
 		string dChargedTrackFactoryTag; //default is ""
 		string dNeutralShowerFactoryTag; //default is ""
 
-		// PRE-DPARTICLECOMBO CUT VALUES
+		// PRE-DPARTICLECOMBO CONTROL-CUT VALUES
 			//bool = true/false for cut enabled/disabled, double = cut value
 			//Command-line values (variable names are below in all-caps) will override these values
 			//all cuts are disabled by default except dMinProtonMomentum: 300 MeV/c (value used during track reconstruction)
@@ -131,7 +175,31 @@ class DReaction : public JObject
 		pair<bool, double> dMaxPhotonRFDeltaT; //COMBO:MAX_PHOTON_RF_DELTAT - the maximum photon-rf time difference: used for photon selection
 		pair<bool, double> dMinProtonMomentum; //COMBO:MIN_PROTON_MOMENTUM - when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have
 		pair<bool, bool> dHasDetectorMatchFlag; //COMBO:HAS_DETECTOR_MATCH_FLAG - if both are true, require tracks to have a detector match
+
+		// PRE-COMBO-BLUEPRINT MASS CUTS
+		map<Particle_t, pair<double, double> > dInvariantMassCuts;
+		deque<DReactionMissingMassSquaredCut> dMissingMassSquaredCuts;
 };
+
+inline void DReaction::Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass)
+{
+	dInvariantMassCuts[locStepInitialPID] = pair<double, double>(locMinInvariantMass, locMaxInvariantMass);
+}
+
+inline void DReaction::Set_MissingMassSquaredCut(double locMinimumMissingMassSq, double locMaximumMissingMassSq)
+{
+	dMissingMassSquaredCuts.push_back(DReactionMissingMassSquaredCut(locMinimumMissingMassSq, locMaximumMissingMassSq));
+}
+
+inline void DReaction::Set_MissingMassSquaredCut(int locMissingMassOffOfStepIndex, Particle_t locMissingMassOffOfPID, double locMinimumMissingMassSq, double locMaximumMissingMassSq)
+{
+	dMissingMassSquaredCuts.push_back(DReactionMissingMassSquaredCut(locMissingMassOffOfStepIndex, locMissingMassOffOfPID, locMinimumMissingMassSq, locMaximumMissingMassSq));
+}
+
+inline void DReaction::Set_MissingMassSquaredCut(int locMissingMassOffOfStepIndex, deque<Particle_t> locMissingMassOffOfPIDs, double locMinimumMissingMassSq, double locMaximumMissingMassSq)
+{
+	dMissingMassSquaredCuts.push_back(DReactionMissingMassSquaredCut(locMissingMassOffOfStepIndex, locMissingMassOffOfPIDs, locMinimumMissingMassSq, locMaximumMissingMassSq));
+}
 
 inline const DReactionStep* DReaction::Get_ReactionStep(size_t locStepIndex) const
 {
@@ -228,6 +296,16 @@ inline void DReaction::Enable_TTreeOutput(string locTTreeOutputFileName)
 {
 	dEnableTTreeOutputFlag = true;
 	dTTreeOutputFileName = locTTreeOutputFileName;
+}
+
+inline bool DReaction::Get_InvariantMassCut(Particle_t locStepInitialPID, double& locMinInvariantMass, double& locMaxInvariantMass) const
+{
+	map<Particle_t, pair<double, double> >::const_iterator locIterator = dInvariantMassCuts.find(locStepInitialPID);
+	if(locIterator == dInvariantMassCuts.end())
+		return false;
+	locMinInvariantMass = locIterator->second.first;
+	locMaxInvariantMass = locIterator->second.second;
+	return true;
 }
 
 #endif // _DReaction_

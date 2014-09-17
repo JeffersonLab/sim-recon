@@ -62,7 +62,12 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	// Enable ROOT TTree Output
 	locReaction->Enable_TTreeOutput("tree_b1pi.root"); //string is file name (must end in ".root"!!)
 
+	// Loose Pi0 Cut, Applied during Blueprint Construction
+	locReaction->Set_InvariantMassCut(Pi0, 0.08, 0.19);
+
 /**************************************************** b1pi Actions ****************************************************/
+
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 500, 0.0, 0.5, "Pi0_Begin")); //false: measured data
 
 	//Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboGenReconComparison(locReaction, false));
