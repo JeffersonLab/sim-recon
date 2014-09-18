@@ -2,8 +2,6 @@
 #include "DCustomAction_HistMass_b1_1235.h"
 #include "DCustomAction_HistMass_X_2000.h"
 
-#include <limits>
-
 //------------------
 // init
 //------------------
@@ -68,6 +66,9 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	locReaction->Set_InvariantMassCut(Pi0, 0.08, 0.19);
 
 /*********************************************** b1pi Combo Pre-Selection Actions ***********************************************/
+
+	// Loose missing mass squared cut, applied just after creating the combination (before saving it)
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 2.56));
 
 /**************************************************** b1pi Actions ****************************************************/
 
