@@ -130,6 +130,8 @@ jerror_t DEventProcessor_dc_alignment::init(void)
   gPARMS->SetDefaultParameter("DCALIGN:COSMICS", COSMICS);
   USE_DRIFT_TIMES=false;
   gPARMS->SetDefaultParameter("DCALIGN:USE_DRIFT_TIMES",USE_DRIFT_TIMES);
+  READ_CDC_FILE=false;
+  gPARMS->SetDefaultParameter("DCALIGN:READ_CDC_FILE",READ_CDC_FILE);
   READ_ANODE_FILE=false;
   gPARMS->SetDefaultParameter("DCALIGN:READ_ANODE_FILE",READ_ANODE_FILE);
   READ_CATHODE_FILE=false;
@@ -167,7 +169,6 @@ jerror_t DEventProcessor_dc_alignment::init(void)
     fdc_cathode_alignments[i].A=DMatrix4x1();
   }
   
-
   if (READ_ANODE_FILE){
     ifstream fdcfile("fdc_alignment.dat");
     // Skip first line, used to identify columns in file
@@ -233,6 +234,29 @@ jerror_t DEventProcessor_dc_alignment::init(void)
     }
     cdc_alignments.push_back(tempvec);
   }
+
+   if (READ_CDC_FILE){
+    ifstream cdcfile("cdc_alignment.dat");  
+    for (unsigned int ring=0;ring<cdc_alignments.size();ring++){
+      for (unsigned int straw=0;straw<cdc_alignments[ring].size();
+	   straw++){
+	double dxu,dyu,dxd,dyd;
+
+	cdcfile >> dxu;
+	cdcfile >> dyu;
+	cdcfile >> dxd;
+	cdcfile >> dyd;
+
+	cdc_alignments[ring][straw].A(k_dXu)=dxu;
+	cdc_alignments[ring][straw].A(k_dYu)=dyu;
+	cdc_alignments[ring][straw].A(k_dXd)=dxd;
+	cdc_alignments[ring][straw].A(k_dYd)=dyd;
+      }
+    }
+    cdcfile.close();
+  }
+
+
 
   if (FILL_TREE){
     // Create Tree
@@ -473,15 +497,15 @@ jerror_t DEventProcessor_dc_alignment::fini(void)
 
   if (RUN_BENCHMARK==false){
     ofstream cdcfile("cdc_alignment.dat");
-    cdcfile << "Ring straw dXu dYu dXd dYd" << endl;
+    //cdcfile << "Ring straw dXu dYu dXd dYd" << endl;
     for (unsigned int ring=0;ring<cdc_alignments.size();ring++){
       for (unsigned int straw=0;straw<cdc_alignments[ring].size();
 	   straw++){
-	cdcfile << ring+1 << " " << straw+1 << " " 
-		<< cdc_alignments[ring][straw].A(k_dXu) << " " 
+	//	cdcfile << ring+1 << " " << straw+1 << " " 
+	cdcfile << cdc_alignments[ring][straw].A(k_dXu) << " " 
 		<< cdc_alignments[ring][straw].A(k_dYu) << " "
 		<< cdc_alignments[ring][straw].A(k_dXd) << " "
-	      << cdc_alignments[ring][straw].A(k_dYd) << endl;
+		<< cdc_alignments[ring][straw].A(k_dYd) << endl;
       }
     }
     cdcfile.close();
@@ -1955,8 +1979,7 @@ jerror_t DEventProcessor_dc_alignment
   }while (S(state_y)>min_y && numsteps<MAX_STEPS);
 
   if (trajectory.size()<2) return UNRECOVERABLE_ERROR;
-  if (true)
-    //if (false)
+  if (false)
     {
     printf("Trajectory:\n");
     for (unsigned int i=0;i<trajectory.size();i++){
@@ -2034,7 +2057,8 @@ jerror_t DEventProcessor_dc_alignment
   S(state_y)+=S(state_ty)*dz;
   trajectory.push_front(trajectory_t(z+dz,t,S,J,Zero4x1,Zero4x4));
 
-  if (false){
+  if (false)
+    {
     printf("Trajectory:\n");
     for (unsigned int i=0;i<trajectory.size();i++){
     printf(" x %f y %f z %f first hit %d num in layer %d\n",trajectory[i].S(state_x),
@@ -2142,9 +2166,13 @@ DEventProcessor_dc_alignment::FindOffsets(vector<const DCDCTrackHit*>&hits,
 	//cdc_alignments[ring][straw].A.Print();
 	//dA.Print();
 	//Etemp.Print();
-	
-	cdc_alignments[ring][straw].E=Etemp;
-	cdc_alignments[ring][straw].A+=dA;	  
+	DMatrix4x1 A=cdc_alignments[ring][straw].A+dA;
+	// Restrict offsets to less than 2 mm 
+	if (fabs(A(k_dXu))<0.2 && fabs(A(k_dXd))<0.2 && fabs(A(k_dYu))<0.2 
+	    && fabs(A(k_dYd))<0.2){
+	  cdc_alignments[ring][straw].E=Etemp;
+	  cdc_alignments[ring][straw].A=A;	  
+	}
       }
     }
   }
