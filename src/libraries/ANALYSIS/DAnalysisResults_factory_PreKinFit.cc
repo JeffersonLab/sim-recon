@@ -322,12 +322,15 @@ jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop
 			if(locIsThrownMatchFlag)
 				dHistMap_NumEventsSurvivedAction_True[locReaction]->Fill(1); //input event (+1 because binning begins at 1)
 
-			dHistMap_NumParticleCombos[locReaction]->Fill(locNumParticleCombosSurvivedActions[0]);
+			if(locNumParticleCombosSurvivedActions[0] > 0)
+				dHistMap_NumParticleCombos[locReaction]->Fill(locNumParticleCombosSurvivedActions[0]);
 			for(size_t loc_j = 0; loc_j < locNumParticleCombosSurvivedActions.size(); ++loc_j)
 			{
 				if(locNumParticleCombosSurvivedActions[loc_j] > 0)
+				{
 					dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(loc_j + 1); //+1 because 0 is initial (no cuts at all)
-				dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j, locNumParticleCombosSurvivedActions[loc_j]);
+					dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j, locNumParticleCombosSurvivedActions[loc_j]);
+				}
 				for(size_t loc_k = 0; loc_k < locNumParticleCombosSurvivedActions[loc_j]; ++loc_k)
 					dHistMap_NumCombosSurvivedAction1D[locReaction]->Fill(loc_j);
 			}

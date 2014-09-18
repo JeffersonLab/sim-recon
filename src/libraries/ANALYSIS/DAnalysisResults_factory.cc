@@ -288,8 +288,10 @@ jerror_t DAnalysisResults_factory::evnt(jana::JEventLoop* locEventLoop, int even
 			for(size_t loc_j = 0; loc_j < locNumParticleCombosSurvivedActions.size(); ++loc_j)
 			{
 				if(locNumParticleCombosSurvivedActions[loc_j] > 0)
+				{
 					dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(loc_j + locNumPreKinFitActions + 2); //+2 because 0 is initial (no cuts at all), and 1 is min #tracks
-				dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j + locNumPreKinFitActions + 1, locNumParticleCombosSurvivedActions[loc_j]); //+1 because 0 is min #tracks
+					dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j + locNumPreKinFitActions + 1, locNumParticleCombosSurvivedActions[loc_j]); //+1 because 0 is min #tracks
+				}
 				for(size_t loc_k = 0; loc_k < locNumParticleCombosSurvivedActions[loc_j]; ++loc_k)
 					dHistMap_NumCombosSurvivedAction1D[locReaction]->Fill(loc_j + locNumPreKinFitActions + 1); //+1 because 0 is min #tracks
 			}

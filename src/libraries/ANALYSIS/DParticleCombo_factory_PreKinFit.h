@@ -58,6 +58,7 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		bool Cut_PIDFOM(const DReaction* locReaction, const DNeutralParticleHypothesis* locNeutralParticleHypothesis) const;
 		bool Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
+		void Build_BeamPhotonCombos(DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint, const DEventRFBunch* locEventRFBunch, set<const DBeamPhoton*>& locCandidatePhotons, vector<DParticleCombo*>& locBuiltParticleCombos);
 		void Calc_CommonSpacetimeVertices(DParticleCombo* locParticleCombo) const;
 		void Setup_VertexConstraint(DParticleCombo* locParticleCombo, size_t locStepIndex, deque<const DKinematicData*>& locDetectedVertexParticles, deque<const DKinematicData*>& locDetectedTimeParticles, deque<size_t>& locIncludedStepIndices) const;
 
@@ -67,9 +68,8 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		DKinematicData* Get_KinematicDataResource(void);
 		DBeamPhoton* Get_BeamPhotonResource(void);
 
+		void Recycle_Data(const DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint, bool locAllButFirstStepFlag);
 		void Recycle_Data_BeamStep(const DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint, const DEventRFBunch* locEventRFBunch);
-		void Recycle_Data_AllButFirstStep(const DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint);
-		void Recycle_Data_AllSteps(const DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint);
 
 		deque<DParticleComboStep*> dParticleComboStepPool_All;
 		deque<DParticleComboStep*> dParticleComboStepPool_Available;
@@ -102,11 +102,12 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		map<const DReaction*, bool> dMCReactionExactMatchFlags;
 		map<const DReaction*, DCutAction_TrueCombo*> dTrueComboCuts;
 		map<const DReaction*, size_t> dNumGoodPreComboSelectionActions;
+		set<pair<const DEventRFBunch*, const DBeamPhoton*> > dPreviousPhotonRFDeltaTPairs;
 
 		set<const DChargedTrackHypothesis*> dPreviousPIDTracks;
 		set<const DNeutralParticleHypothesis*> dPreviousPIDNeutrals;
-		map<const DReaction*, map<Particle_t, TH1D*> > dHistMap_PIDFOM_All;
-		map<const DReaction*, map<Particle_t, TH1D*> > dHistMap_PIDFOM_True;
+		map<const DReaction*, map<Particle_t, TH1I*> > dHistMap_PIDFOM_All;
+		map<const DReaction*, map<Particle_t, TH1I*> > dHistMap_PIDFOM_True;
 
 		map<const DReaction*, TH1D*> dHistMap_CombinedPIDFOM_All;
 		map<const DReaction*, TH1D*> dHistMap_CombinedPIDFOM_True;
@@ -114,9 +115,8 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		map<const DReaction*, TH1D*> dHistMap_CombinedTrackingFOM_All;
 		map<const DReaction*, TH1D*> dHistMap_CombinedTrackingFOM_True;
 
-		set<pair<const DEventRFBunch*, const DBeamPhoton*> > dPreviousPhotonRFDeltaTPairs;
-		map<const DReaction*, TH1D*> dHistMap_PhotonRFDeltaT_All;
-		map<const DReaction*, TH1D*> dHistMap_PhotonRFDeltaT_True;
+		map<const DReaction*, TH1I*> dHistMap_PhotonRFDeltaT_All;
+		map<const DReaction*, TH1I*> dHistMap_PhotonRFDeltaT_True;
 
 		map<const DReaction*, TH1D*> dHistMap_NumSurvivingBeamParticles;
 

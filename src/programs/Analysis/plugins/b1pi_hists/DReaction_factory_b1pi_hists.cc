@@ -2,6 +2,8 @@
 #include "DCustomAction_HistMass_b1_1235.h"
 #include "DCustomAction_HistMass_X_2000.h"
 
+#include <limits>
+
 //------------------
 // init
 //------------------

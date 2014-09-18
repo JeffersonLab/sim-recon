@@ -11,8 +11,8 @@
 
 #include "TROOT.h"
 #include "TDirectoryFile.h"
-#include "TH1D.h"
-#include "TH2D.h"
+#include "TH1I.h"
+#include "TH2I.h"
 #include "TTree.h"
 
 #include "JANA/JEventLoop.h"
@@ -60,7 +60,6 @@ using namespace jana;
 
 /*
 REACTION-BASED ACTIONS:
-	DHistogramAction_NumParticleCombos
 	DHistogramAction_ParticleComboKinematics
 	DHistogramAction_ParticleComboGenReconComparison
 	DHistogramAction_PID
@@ -81,24 +80,6 @@ REACTION-INDEPENDENT ACTIONS:
 	DHistogramAction_DetectorStudies
 	DHistogramAction_NumReconstructedObjects
 */
-
-class DHistogramAction_NumParticleCombos : public DAnalysisAction
-{
-	public:
-
-		DHistogramAction_NumParticleCombos(const DReaction* locReaction, string locActionUniqueString = "") : 
-		DAnalysisAction(locReaction, "Hist_NumParticleCombos", false, locActionUniqueString), 
-		dNumComboBins(1000) {}
-
-		void Initialize(JEventLoop* locEventLoop);
-
-		unsigned int dNumComboBins;
-
-	private:
-		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-
-		TH1D* dHist_NumParticleCombos;
-};
 
 class DHistogramAction_PID : public DAnalysisAction
 {
@@ -132,37 +113,37 @@ class DHistogramAction_PID : public DAnalysisAction
 		const DParticleID* dParticleID;
 		const DAnalysisUtilities* dAnalysisUtilities;
 
-		map<Particle_t, TH1D*> dHistMap_PIDFOM;
-		map<Particle_t, TH1D*> dHistMap_TOFFOM_BCAL;
-		map<Particle_t, TH1D*> dHistMap_TOFFOM_FCAL;
-		map<Particle_t, TH1D*> dHistMap_TOFFOM_TOF;
-		map<Particle_t, TH1D*> dHistMap_TOFFOM_CDC;
-		map<Particle_t, TH1D*> dHistMap_DCdEdxFOM;
-		map<Particle_t, TH2D*> dHistMap_BetaVsP;
-		map<Particle_t, TH2D*> dHistMap_DeltaBetaVsP;
-		map<Particle_t, TH2D*> dHistMap_TOFFOMVsDeltaBeta;
+		map<Particle_t, TH1I*> dHistMap_PIDFOM;
+		map<Particle_t, TH1I*> dHistMap_TOFFOM_BCAL;
+		map<Particle_t, TH1I*> dHistMap_TOFFOM_FCAL;
+		map<Particle_t, TH1I*> dHistMap_TOFFOM_TOF;
+		map<Particle_t, TH1I*> dHistMap_TOFFOM_CDC;
+		map<Particle_t, TH1I*> dHistMap_DCdEdxFOM;
+		map<Particle_t, TH2I*> dHistMap_BetaVsP;
+		map<Particle_t, TH2I*> dHistMap_DeltaBetaVsP;
+		map<Particle_t, TH2I*> dHistMap_TOFFOMVsDeltaBeta;
 
-		map<Particle_t, TH1D*> dHistMap_TimePull_CDC;
-		map<Particle_t, TH1D*> dHistMap_TimePull_BCAL;
-		map<Particle_t, TH1D*> dHistMap_TimePull_TOF;
-		map<Particle_t, TH1D*> dHistMap_TimePull_FCAL;
+		map<Particle_t, TH1I*> dHistMap_TimePull_CDC;
+		map<Particle_t, TH1I*> dHistMap_TimePull_BCAL;
+		map<Particle_t, TH1I*> dHistMap_TimePull_TOF;
+		map<Particle_t, TH1I*> dHistMap_TimePull_FCAL;
 
-		map<Particle_t, TH2D*> dHistMap_TimePullVsTheta_CDC;
-		map<Particle_t, TH2D*> dHistMap_TimePullVsP_CDC;
-		map<Particle_t, TH2D*> dHistMap_TimePullVsTheta_BCAL;
-		map<Particle_t, TH2D*> dHistMap_TimePullVsP_BCAL;
-		map<Particle_t, TH2D*> dHistMap_TimePullVsP_TOF;
-		map<Particle_t, TH2D*> dHistMap_TimePullVsP_FCAL;
+		map<Particle_t, TH2I*> dHistMap_TimePullVsTheta_CDC;
+		map<Particle_t, TH2I*> dHistMap_TimePullVsP_CDC;
+		map<Particle_t, TH2I*> dHistMap_TimePullVsTheta_BCAL;
+		map<Particle_t, TH2I*> dHistMap_TimePullVsP_BCAL;
+		map<Particle_t, TH2I*> dHistMap_TimePullVsP_TOF;
+		map<Particle_t, TH2I*> dHistMap_TimePullVsP_FCAL;
 
-		map<Particle_t, TH2D*> dHistMap_PVsTheta_LowPIDFOM;
-		map<Particle_t, TH2D*> dHistMap_PVsTheta_NaNPIDFOM;
-		map<Particle_t, TH2D*> dHistMap_PVsTheta_LowTOFFOM;
-		map<Particle_t, TH2D*> dHistMap_PVsTheta_NaNTOFFOM;
-		map<Particle_t, TH2D*> dHistMap_PVsTheta_NegativeBeta;
-		map<Particle_t, TH2D*> dHistMap_PVsTheta_LowDCdEdxFOM;
-		map<Particle_t, TH2D*> dHistMap_PVsTheta_NaNDCdEdxFOM;
+		map<Particle_t, TH2I*> dHistMap_PVsTheta_LowPIDFOM;
+		map<Particle_t, TH2I*> dHistMap_PVsTheta_NaNPIDFOM;
+		map<Particle_t, TH2I*> dHistMap_PVsTheta_LowTOFFOM;
+		map<Particle_t, TH2I*> dHistMap_PVsTheta_NaNTOFFOM;
+		map<Particle_t, TH2I*> dHistMap_PVsTheta_NegativeBeta;
+		map<Particle_t, TH2I*> dHistMap_PVsTheta_LowDCdEdxFOM;
+		map<Particle_t, TH2I*> dHistMap_PVsTheta_NaNDCdEdxFOM;
 
-		map<pair<Particle_t, Particle_t>, TH1D*> dHistMap_PIDFOMForTruePID;
+		map<pair<Particle_t, Particle_t>, TH1I*> dHistMap_PIDFOMForTruePID;
 
 		set<pair<const DEventRFBunch*, pair<Particle_t, const JObject*> > > dPreviouslyHistogrammedParticles; //to prevent double-counting (JObject is source object)
 };
@@ -186,17 +167,17 @@ class DHistogramAction_TrackVertexComparison : public DAnalysisAction
 		const DAnalysisUtilities* dAnalysisUtilities;
 
 		//should be improved...: the particles at a given vertex may span several steps
-		deque<map<Particle_t, TH1D*> > dHistDeque_TrackZToCommon; //dim is step
-		deque<map<Particle_t, TH1D*> > dHistDeque_TrackTToCommon; //dim is step
-		deque<map<Particle_t, TH1D*> > dHistDeque_TrackDOCAToCommon; //dim is step
+		deque<map<Particle_t, TH1I*> > dHistDeque_TrackZToCommon; //dim is step
+		deque<map<Particle_t, TH1I*> > dHistDeque_TrackTToCommon; //dim is step
+		deque<map<Particle_t, TH1I*> > dHistDeque_TrackDOCAToCommon; //dim is step
 
-		deque<TH1D*> dHistDeque_MaxTrackDeltaZ;
-		deque<TH1D*> dHistDeque_MaxTrackDeltaT;
-		deque<TH1D*> dHistDeque_MaxTrackDOCA;
+		deque<TH1I*> dHistDeque_MaxTrackDeltaZ;
+		deque<TH1I*> dHistDeque_MaxTrackDeltaT;
+		deque<TH1I*> dHistDeque_MaxTrackDOCA;
 
-		deque<map<pair<Particle_t, Particle_t>, TH2D*> > dHistDeque_TrackDeltaTVsP; //one hist per track pair, more massive particle is listed first, p is that of the more massive particle (generally slower: worse projected resolution)
+		deque<map<pair<Particle_t, Particle_t>, TH2I*> > dHistDeque_TrackDeltaTVsP; //one hist per track pair, more massive particle is listed first, p is that of the more massive particle (generally slower: worse projected resolution)
 
-		map<Particle_t, TH2D*> dHistMap_BeamTrackDeltaTVsP;
+		map<Particle_t, TH2I*> dHistMap_BeamTrackDeltaTVsP;
 };
 
 class DHistogramAction_DetectorStudies : public DAnalysisAction
@@ -273,88 +254,88 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		//Store any histograms as member variables here
 
 		//Reconstruction
-		TH1D* dHist_TAGHHitTime;
-		TH2D* dHist_TAGHHitTimeVsCounter;
-		TH1D* dHist_TAGMHitTime;
-		TH2D* dHist_TAGMHitTimeVsCounter;
+		TH1I* dHist_TAGHHitTime;
+		TH2I* dHist_TAGHHitTimeVsCounter;
+		TH1I* dHist_TAGMHitTime;
+		TH2I* dHist_TAGMHitTimeVsCounter;
 
-		TH2D* dHist_FCALShowerYVsX;
-		TH1D* dHist_FCALShowerTime;
-		TH1D* dHist_FCALShowerEnergy;
-		TH2D* dHist_FCALShowerEnergyVsTime;
+		TH2I* dHist_FCALShowerYVsX;
+		TH1I* dHist_FCALShowerTime;
+		TH1I* dHist_FCALShowerEnergy;
+		TH2I* dHist_FCALShowerEnergyVsTime;
 
-		TH1D* dHist_BCALShowerPhi;
-		TH2D* dHist_BCALShowerPhiVsZ;
-		TH1D* dHist_BCALShowerEnergy;
-		TH1D* dHist_BCALShowerTime;
-		TH2D* dHist_BCALShowerEnergyVsTime;
+		TH1I* dHist_BCALShowerPhi;
+		TH2I* dHist_BCALShowerPhiVsZ;
+		TH1I* dHist_BCALShowerEnergy;
+		TH1I* dHist_BCALShowerTime;
+		TH2I* dHist_BCALShowerEnergyVsTime;
 
-		TH1D* dHist_SCHitSector;
-		TH1D* dHist_SCHitTime;
-		TH2D* dHist_SCHitTimeVsSector;
-		TH1D* dHist_SCHitEnergy;
-		TH2D* dHist_SCHitEnergyVsSector;
+		TH1I* dHist_SCHitSector;
+		TH1I* dHist_SCHitTime;
+		TH2I* dHist_SCHitTimeVsSector;
+		TH1I* dHist_SCHitEnergy;
+		TH2I* dHist_SCHitEnergyVsSector;
 
-		TH1D* dHist_TOFPointTime;
-		TH1D* dHist_TOFPointEnergy;
-		TH2D* dHist_TOFPointYVsX;
+		TH1I* dHist_TOFPointTime;
+		TH1I* dHist_TOFPointEnergy;
+		TH2I* dHist_TOFPointYVsX;
 
-		TH1D* dHist_NumDCHitsPerTrack;
-		TH2D* dHist_NumDCHitsPerTrackVsTheta;
+		TH1I* dHist_NumDCHitsPerTrack;
+		TH2I* dHist_NumDCHitsPerTrackVsTheta;
 
 		//Not Matched To Track (neutrals or hadronics)
-		TH1D* dHist_BCALTrackDOCA;
-		TH1D* dHist_BCALNeutralShowerTime;
-		TH1D* dHist_BCALNeutralShowerEnergy;
-		TH1D* dHist_BCALNeutralShowerDeltaT;
-		TH2D* dHist_BCALNeutralShowerDeltaTVsE;
-		TH2D* dHist_BCALNeutralShowerDeltaTVsZ;
+		TH1I* dHist_BCALTrackDOCA;
+		TH1I* dHist_BCALNeutralShowerTime;
+		TH1I* dHist_BCALNeutralShowerEnergy;
+		TH1I* dHist_BCALNeutralShowerDeltaT;
+		TH2I* dHist_BCALNeutralShowerDeltaTVsE;
+		TH2I* dHist_BCALNeutralShowerDeltaTVsZ;
 
-		TH1D* dHist_FCALTrackDOCA;
-		TH1D* dHist_FCALNeutralShowerTime;
-		TH1D* dHist_FCALNeutralShowerEnergy;
-		TH1D* dHist_FCALNeutralShowerDeltaT;
-		TH2D* dHist_FCALNeutralShowerDeltaTVsE;
+		TH1I* dHist_FCALTrackDOCA;
+		TH1I* dHist_FCALNeutralShowerTime;
+		TH1I* dHist_FCALNeutralShowerEnergy;
+		TH1I* dHist_FCALNeutralShowerDeltaT;
+		TH2I* dHist_FCALNeutralShowerDeltaTVsE;
 
 		//Not Matched to Hit
-		TH2D* dHist_TrackPVsTheta_NoHitMatch;
+		TH2I* dHist_TrackPVsTheta_NoHitMatch;
 
 		//Matched: By PID
 			//Delta-T: shower/hit_t - tflight - RF_t (if present)
 			//Note, SC time & energy here are different than above: w/ matching can correct for propagation along paddle
 			//bool in pair: true/false for true/best-reconstructed PID
-		map<pair<Particle_t, bool>, TH1D*> dHistMap_BCALTrackDOCA;
-		map<pair<Particle_t, bool>, TH1D*> dHistMap_BCALShowerEnergy;
-		map<pair<Particle_t, bool>, TH1D*> dHistMap_BCALShowerTrackDepth;
-		map<pair<Particle_t, bool>, TH2D*> dHistMap_BCALShowerTrackDepthVsP;
-		map<pair<Particle_t, bool>, TH1D*> dHistMap_BCALShowerDeltaT;
-		map<pair<Particle_t, bool>, TH2D*> dHistMap_BCALShowerDeltaTVsZ;
-		map<pair<Particle_t, bool>, TH2D*> dHistMap_BCALShowerDeltaTVsP;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_BCALTrackDOCA;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_BCALShowerEnergy;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_BCALShowerTrackDepth;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_BCALShowerTrackDepthVsP;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_BCALShowerDeltaT;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_BCALShowerDeltaTVsZ;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_BCALShowerDeltaTVsP;
 
-		map<pair<Particle_t, bool>, TH1D*> dHistMap_FCALTrackDOCA;
-		map<pair<Particle_t, bool>, TH1D*> dHistMap_FCALShowerEnergy;
-		map<pair<Particle_t, bool>, TH1D*> dHistMap_FCALShowerTrackDepth;
-		map<pair<Particle_t, bool>, TH2D*> dHistMap_FCALShowerTrackDepthVsP;
-		map<pair<Particle_t, bool>, TH1D*> dHistMap_FCALShowerDeltaT;
-		map<pair<Particle_t, bool>, TH2D*> dHistMap_FCALShowerDeltaTVsP;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_FCALTrackDOCA;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_FCALShowerEnergy;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_FCALShowerTrackDepth;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_FCALShowerTrackDepthVsP;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_FCALShowerDeltaT;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_FCALShowerDeltaTVsP;
 
-		map<pair<Particle_t, bool>, TH1D*> dHistMap_TOFdEdX;
-		map<pair<Particle_t, bool>, TH2D*> dHistMap_TOFdEdXVsP;
-		map<pair<Particle_t, bool>, TH1D*> dHistMap_TOFTrackDOCA;
-		map<pair<Particle_t, bool>, TH1D*> dHistMap_TOFDeltaT;
-		map<pair<Particle_t, bool>, TH2D*> dHistMap_TOFDeltaTVsP;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_TOFdEdX;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_TOFdEdXVsP;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_TOFTrackDOCA;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_TOFDeltaT;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_TOFDeltaTVsP;
 
-		map<pair<Particle_t, bool>, TH1D*> dHistMap_SCdEdX;
-		map<pair<Particle_t, bool>, TH2D*> dHistMap_SCdEdXVsP;
-		map<pair<Particle_t, bool>, TH1D*> dHistMap_SCTrackDeltaPhi;
-		map<pair<Particle_t, bool>, TH1D*> dHistMap_SCTime;
-		map<pair<Particle_t, bool>, TH2D*> dHistMap_SCTimeVsTheta;
-		map<pair<Particle_t, bool>, TH2D*> dHistMap_SCEnergyVsTheta;
-		map<pair<Particle_t, bool>, TH2D*> dHistMap_SCPhiVsTheta;
-		map<pair<Particle_t, bool>, TH1D*> dHistMap_SCDeltaT;
-		map<pair<Particle_t, bool>, TH2D*> dHistMap_SCDeltaTVsP;
-		map<pair<Particle_t, bool>, TH2D*> dHistMap_SCDeltaTVsPhi;
-		map<pair<Particle_t, bool>, TH2D*> dHistMap_SCDeltaTVsTheta;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_SCdEdX;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_SCdEdXVsP;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_SCTrackDeltaPhi;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_SCTime;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_SCTimeVsTheta;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_SCEnergyVsTheta;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_SCPhiVsTheta;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_SCDeltaT;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_SCDeltaTVsP;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_SCDeltaTVsPhi;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_SCDeltaTVsTheta;
 };
 
 class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
@@ -386,39 +367,39 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		double dTargetZCenter;
 		const DAnalysisUtilities* dAnalysisUtilities;
 
-		TH2D* dBeamParticleHist_PVsTheta;
-		TH2D* dBeamParticleHist_PhiVsTheta;
-		TH1D* dBeamParticleHist_P;
-		TH1D* dBeamParticleHist_Theta;
-		TH1D* dBeamParticleHist_Phi;
-		TH1D* dBeamParticleHist_VertexZ;
-		TH1D* dBeamParticleHist_VertexT;
-		TH2D* dBeamParticleHist_VertexYVsX;
-		TH1D* dBeamParticleHist_DeltaTRF;
-		TH2D* dBeamParticleHist_DeltaTRFVsBeamE;
+		TH2I* dBeamParticleHist_PVsTheta;
+		TH2I* dBeamParticleHist_PhiVsTheta;
+		TH1I* dBeamParticleHist_P;
+		TH1I* dBeamParticleHist_Theta;
+		TH1I* dBeamParticleHist_Phi;
+		TH1I* dBeamParticleHist_VertexZ;
+		TH1I* dBeamParticleHist_VertexT;
+		TH2I* dBeamParticleHist_VertexYVsX;
+		TH1I* dBeamParticleHist_DeltaTRF;
+		TH2I* dBeamParticleHist_DeltaTRFVsBeamE;
 
-		deque<map<Particle_t, TH2D*> > dHistDeque_PVsTheta;
-		deque<map<Particle_t, TH2D*> > dHistDeque_BetaVsP;
-		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaBetaVsP;
-		deque<map<Particle_t, TH2D*> > dHistDeque_PhiVsTheta;
-		deque<map<Particle_t, TH1D*> > dHistDeque_P;
-		deque<map<Particle_t, TH1D*> > dHistDeque_Theta;
-		deque<map<Particle_t, TH1D*> > dHistDeque_Phi;
-		deque<map<Particle_t, TH1D*> > dHistDeque_VertexZ;
-		deque<map<Particle_t, TH1D*> > dHistDeque_VertexT;
-		deque<map<Particle_t, TH2D*> > dHistDeque_VertexYVsX;
+		deque<map<Particle_t, TH2I*> > dHistDeque_PVsTheta;
+		deque<map<Particle_t, TH2I*> > dHistDeque_BetaVsP;
+		deque<map<Particle_t, TH2I*> > dHistDeque_DeltaBetaVsP;
+		deque<map<Particle_t, TH2I*> > dHistDeque_PhiVsTheta;
+		deque<map<Particle_t, TH1I*> > dHistDeque_P;
+		deque<map<Particle_t, TH1I*> > dHistDeque_Theta;
+		deque<map<Particle_t, TH1I*> > dHistDeque_Phi;
+		deque<map<Particle_t, TH1I*> > dHistDeque_VertexZ;
+		deque<map<Particle_t, TH1I*> > dHistDeque_VertexT;
+		deque<map<Particle_t, TH2I*> > dHistDeque_VertexYVsX;
 
-		deque<map<Particle_t, TH1D*> > dHistDeque_CDCdEdx;
-		deque<map<Particle_t, TH2D*> > dHistDeque_CDCdEdxVsP;
-		deque<map<Particle_t, TH1D*> > dHistDeque_FDCdEdx;
-		deque<map<Particle_t, TH2D*> > dHistDeque_FDCdEdxVsP;
-		deque<map<Particle_t, TH1D*> > dHistDeque_TrackingChiSqPerDF;
-		deque<map<Particle_t, TH2D*> > dHistDeque_TrackingChiSqPerDFVsTheta;
-		deque<map<Particle_t, TH2D*> > dHistDeque_TrackingChiSqPerDFVsP;
+		deque<map<Particle_t, TH1I*> > dHistDeque_CDCdEdx;
+		deque<map<Particle_t, TH2I*> > dHistDeque_CDCdEdxVsP;
+		deque<map<Particle_t, TH1I*> > dHistDeque_FDCdEdx;
+		deque<map<Particle_t, TH2I*> > dHistDeque_FDCdEdxVsP;
+		deque<map<Particle_t, TH1I*> > dHistDeque_TrackingChiSqPerDF;
+		deque<map<Particle_t, TH2I*> > dHistDeque_TrackingChiSqPerDFVsTheta;
+		deque<map<Particle_t, TH2I*> > dHistDeque_TrackingChiSqPerDFVsP;
 
-		deque<TH1D*> dHistDeque_MaxTrackDeltaZ;
-		deque<TH1D*> dHistDeque_MaxTrackDeltaT;
-		deque<TH1D*> dHistDeque_MaxTrackDOCA;
+		deque<TH1I*> dHistDeque_MaxTrackDeltaZ;
+		deque<TH1I*> dHistDeque_MaxTrackDeltaT;
+		deque<TH1I*> dHistDeque_MaxTrackDOCA;
 
 		set<const JObject*> dPreviouslyHistogrammedBeamParticles;
 		set<pair<size_t, pair<Particle_t, const JObject*> > > dPreviouslyHistogrammedParticles;
@@ -454,49 +435,49 @@ class DHistogramAction_ParticleComboGenReconComparison : public DAnalysisAction
 		deque<DKinFitPullType> dPullTypes;
 		double dTargetZCenter;
 
-		TH1D* dRFBeamBunchDeltaT_Hist;
+		TH1I* dRFBeamBunchDeltaT_Hist;
 
-		TH1D* dBeamParticleHist_DeltaPOverP;
-		TH2D* dBeamParticleHist_DeltaPOverPVsP;
-		TH1D* dBeamParticleHist_DeltaT;
+		TH1I* dBeamParticleHist_DeltaPOverP;
+		TH2I* dBeamParticleHist_DeltaPOverPVsP;
+		TH1I* dBeamParticleHist_DeltaT;
 
-		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaPOverP;
-		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaTheta;
-		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaPhi;
-		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaT;
-		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaT_TOF;
-		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaT_BCAL;
-		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaT_FCAL;
-		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaVertexZ;
-		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaPOverPVsP;
-		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaPOverPVsTheta;
-		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaThetaVsP;
-		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaThetaVsTheta;
-		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaPhiVsP;
-		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaPhiVsTheta;
-		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaTVsTheta;
-		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaTVsP;
-		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaVertexZVsTheta;
+		deque<map<Particle_t, TH1I*> > dHistDeque_DeltaPOverP;
+		deque<map<Particle_t, TH1I*> > dHistDeque_DeltaTheta;
+		deque<map<Particle_t, TH1I*> > dHistDeque_DeltaPhi;
+		deque<map<Particle_t, TH1I*> > dHistDeque_DeltaT;
+		deque<map<Particle_t, TH1I*> > dHistDeque_DeltaT_TOF;
+		deque<map<Particle_t, TH1I*> > dHistDeque_DeltaT_BCAL;
+		deque<map<Particle_t, TH1I*> > dHistDeque_DeltaT_FCAL;
+		deque<map<Particle_t, TH1I*> > dHistDeque_DeltaVertexZ;
+		deque<map<Particle_t, TH2I*> > dHistDeque_DeltaPOverPVsP;
+		deque<map<Particle_t, TH2I*> > dHistDeque_DeltaPOverPVsTheta;
+		deque<map<Particle_t, TH2I*> > dHistDeque_DeltaThetaVsP;
+		deque<map<Particle_t, TH2I*> > dHistDeque_DeltaThetaVsTheta;
+		deque<map<Particle_t, TH2I*> > dHistDeque_DeltaPhiVsP;
+		deque<map<Particle_t, TH2I*> > dHistDeque_DeltaPhiVsTheta;
+		deque<map<Particle_t, TH2I*> > dHistDeque_DeltaTVsTheta;
+		deque<map<Particle_t, TH2I*> > dHistDeque_DeltaTVsP;
+		deque<map<Particle_t, TH2I*> > dHistDeque_DeltaVertexZVsTheta;
 
-		deque<map<Particle_t, map<DKinFitPullType, TH1D*> > > dHistDeque_Pulls;
-		deque<map<Particle_t, map<DKinFitPullType, TH2D*> > > dHistDeque_PullsVsP;
-		deque<map<Particle_t, map<DKinFitPullType, TH2D*> > > dHistDeque_PullsVsTheta;
+		deque<map<Particle_t, map<DKinFitPullType, TH1I*> > > dHistDeque_Pulls;
+		deque<map<Particle_t, map<DKinFitPullType, TH2I*> > > dHistDeque_PullsVsP;
+		deque<map<Particle_t, map<DKinFitPullType, TH2I*> > > dHistDeque_PullsVsTheta;
 
-		deque<map<Particle_t, TH1D*> > dHistDeque_TimePull_CDC;
-		deque<map<Particle_t, TH1D*> > dHistDeque_TimePull_ST;
-		deque<map<Particle_t, TH1D*> > dHistDeque_TimePull_BCAL;
-		deque<map<Particle_t, TH1D*> > dHistDeque_TimePull_TOF;
-		deque<map<Particle_t, TH1D*> > dHistDeque_TimePull_FCAL;
+		deque<map<Particle_t, TH1I*> > dHistDeque_TimePull_CDC;
+		deque<map<Particle_t, TH1I*> > dHistDeque_TimePull_ST;
+		deque<map<Particle_t, TH1I*> > dHistDeque_TimePull_BCAL;
+		deque<map<Particle_t, TH1I*> > dHistDeque_TimePull_TOF;
+		deque<map<Particle_t, TH1I*> > dHistDeque_TimePull_FCAL;
 
-		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsTheta_CDC;
-		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsTheta_BCAL;
-		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsTheta_ST;
+		deque<map<Particle_t, TH2I*> > dHistDeque_TimePullVsTheta_CDC;
+		deque<map<Particle_t, TH2I*> > dHistDeque_TimePullVsTheta_BCAL;
+		deque<map<Particle_t, TH2I*> > dHistDeque_TimePullVsTheta_ST;
 
-		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsP_CDC;
-		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsP_BCAL;
-		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsP_ST;
-		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsP_TOF;
-		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsP_FCAL;
+		deque<map<Particle_t, TH2I*> > dHistDeque_TimePullVsP_CDC;
+		deque<map<Particle_t, TH2I*> > dHistDeque_TimePullVsP_BCAL;
+		deque<map<Particle_t, TH2I*> > dHistDeque_TimePullVsP_ST;
+		deque<map<Particle_t, TH2I*> > dHistDeque_TimePullVsP_TOF;
+		deque<map<Particle_t, TH2I*> > dHistDeque_TimePullVsP_FCAL;
 
 		set<const JObject*> dPreviouslyHistogrammedBeamParticles;
 		set<pair<size_t, pair<Particle_t, const JObject*> > > dPreviouslyHistogrammedParticles;
@@ -551,19 +532,19 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 
-		TH1D* 	dMCGENBeamParticle_P;
-		TH1D* 	dMCGENBeamParticle_Time;
-		TH1D* 	dAllBeamParticle_P;
-		TH1D* 	dAllBeamParticle_Time;
+		TH1I* 	dMCGENBeamParticle_P;
+		TH1I* 	dMCGENBeamParticle_Time;
+		TH1I* 	dAllBeamParticle_P;
+		TH1I* 	dAllBeamParticle_Time;
 
-		map<Particle_t, TH2D*> dHistMap_PVsTheta;
-		map<Particle_t, TH2D*> dHistMap_PhiVsTheta;
-		map<Particle_t, TH1D*> dHistMap_P;
-		map<Particle_t, TH1D*> dHistMap_Theta;
-		map<Particle_t, TH1D*> dHistMap_Phi;
-		map<Particle_t, TH1D*> dHistMap_VertexZ;
-		map<Particle_t, TH2D*> dHistMap_VertexYVsX;
-		map<Particle_t, TH1D*> dHistMap_VertexT;
+		map<Particle_t, TH2I*> dHistMap_PVsTheta;
+		map<Particle_t, TH2I*> dHistMap_PhiVsTheta;
+		map<Particle_t, TH1I*> dHistMap_P;
+		map<Particle_t, TH1I*> dHistMap_Theta;
+		map<Particle_t, TH1I*> dHistMap_Phi;
+		map<Particle_t, TH1I*> dHistMap_VertexZ;
+		map<Particle_t, TH2I*> dHistMap_VertexYVsX;
+		map<Particle_t, TH1I*> dHistMap_VertexT;
 };
 
 class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
@@ -625,24 +606,24 @@ class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 
-		TH1D* 	dBeamParticle_P;
+		TH1I* 	dBeamParticle_P;
 
-		map<Particle_t, TH2D*> dHistMap_PVsTheta;
-		map<Particle_t, TH2D*> dHistMap_PhiVsTheta;
-		map<Particle_t, TH1D*> dHistMap_P;
-		map<Particle_t, TH1D*> dHistMap_Theta;
-		map<Particle_t, TH1D*> dHistMap_Phi;
-		map<Particle_t, TH1D*> dHistMap_VertexZ;
-		map<Particle_t, TH2D*> dHistMap_VertexYVsX;
-		map<Particle_t, TH1D*> dHistMap_VertexT;
+		map<Particle_t, TH2I*> dHistMap_PVsTheta;
+		map<Particle_t, TH2I*> dHistMap_PhiVsTheta;
+		map<Particle_t, TH1I*> dHistMap_P;
+		map<Particle_t, TH1I*> dHistMap_Theta;
+		map<Particle_t, TH1I*> dHistMap_Phi;
+		map<Particle_t, TH1I*> dHistMap_VertexZ;
+		map<Particle_t, TH2I*> dHistMap_VertexYVsX;
+		map<Particle_t, TH1I*> dHistMap_VertexT;
 
-		map<Particle_t, TH1D*> dHistMap_CDCdEdx;
-		map<Particle_t, TH2D*> dHistMap_CDCdEdxVsP;
-		map<Particle_t, TH1D*> dHistMap_FDCdEdx;
-		map<Particle_t, TH2D*> dHistMap_FDCdEdxVsP;
-		map<Particle_t, TH1D*> dHistMap_TrackingChiSqPerDF;
-		map<Particle_t, TH2D*> dHistMap_TrackingChiSqPerDFVsTheta;
-		map<Particle_t, TH2D*> dHistMap_TrackingChiSqPerDFVsP;
+		map<Particle_t, TH1I*> dHistMap_CDCdEdx;
+		map<Particle_t, TH2I*> dHistMap_CDCdEdxVsP;
+		map<Particle_t, TH1I*> dHistMap_FDCdEdx;
+		map<Particle_t, TH2I*> dHistMap_FDCdEdxVsP;
+		map<Particle_t, TH1I*> dHistMap_TrackingChiSqPerDF;
+		map<Particle_t, TH2I*> dHistMap_TrackingChiSqPerDFVsTheta;
+		map<Particle_t, TH2I*> dHistMap_TrackingChiSqPerDFVsP;
 };
 
 class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
@@ -709,26 +690,26 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 		const DParticleID* dParticleID;
 		const DAnalysisUtilities* dAnalysisUtilities;
 
-		TH1D* 	dBeamParticle_P;
+		TH1I* 	dBeamParticle_P;
 
-		map<Particle_t, TH2D*> dHistMap_PVsTheta;
-		map<Particle_t, TH2D*> dHistMap_PhiVsTheta;
-		map<Particle_t, TH2D*> dHistMap_BetaVsP;
-		map<Particle_t, TH2D*> dHistMap_DeltaBetaVsP;
-		map<Particle_t, TH1D*> dHistMap_P;
-		map<Particle_t, TH1D*> dHistMap_Theta;
-		map<Particle_t, TH1D*> dHistMap_Phi;
-		map<Particle_t, TH1D*> dHistMap_VertexZ;
-		map<Particle_t, TH2D*> dHistMap_VertexYVsX;
-		map<Particle_t, TH1D*> dHistMap_VertexT;
+		map<Particle_t, TH2I*> dHistMap_PVsTheta;
+		map<Particle_t, TH2I*> dHistMap_PhiVsTheta;
+		map<Particle_t, TH2I*> dHistMap_BetaVsP;
+		map<Particle_t, TH2I*> dHistMap_DeltaBetaVsP;
+		map<Particle_t, TH1I*> dHistMap_P;
+		map<Particle_t, TH1I*> dHistMap_Theta;
+		map<Particle_t, TH1I*> dHistMap_Phi;
+		map<Particle_t, TH1I*> dHistMap_VertexZ;
+		map<Particle_t, TH2I*> dHistMap_VertexYVsX;
+		map<Particle_t, TH1I*> dHistMap_VertexT;
 
-		map<Particle_t, TH1D*> dHistMap_CDCdEdx;
-		map<Particle_t, TH2D*> dHistMap_CDCdEdxVsP;
-		map<Particle_t, TH1D*> dHistMap_FDCdEdx;
-		map<Particle_t, TH2D*> dHistMap_FDCdEdxVsP;
-		map<Particle_t, TH1D*> dHistMap_TrackingChiSqPerDF;
-		map<Particle_t, TH2D*> dHistMap_TrackingChiSqPerDFVsTheta;
-		map<Particle_t, TH2D*> dHistMap_TrackingChiSqPerDFVsP;
+		map<Particle_t, TH1I*> dHistMap_CDCdEdx;
+		map<Particle_t, TH2I*> dHistMap_CDCdEdxVsP;
+		map<Particle_t, TH1I*> dHistMap_FDCdEdx;
+		map<Particle_t, TH2I*> dHistMap_FDCdEdxVsP;
+		map<Particle_t, TH1I*> dHistMap_TrackingChiSqPerDF;
+		map<Particle_t, TH2I*> dHistMap_TrackingChiSqPerDFVsTheta;
+		map<Particle_t, TH2I*> dHistMap_TrackingChiSqPerDFVsP;
 };
 
 class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
@@ -792,46 +773,46 @@ class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 
 		deque<DKinFitPullType> dPullTypes;
 		double dTargetZCenter;
-		TH1D* dRFBeamBunchDeltaT_Hist;
+		TH1I* dRFBeamBunchDeltaT_Hist;
 
-		map<Particle_t, TH1D*> dHistMap_DeltaPOverP;
-		map<Particle_t, TH1D*> dHistMap_DeltaTheta;
-		map<Particle_t, TH1D*> dHistMap_DeltaPhi;
-		map<Particle_t, TH1D*> dHistMap_DeltaT;
-		map<Particle_t, TH1D*> dHistMap_DeltaT_TOF;
-		map<Particle_t, TH1D*> dHistMap_DeltaT_BCAL;
-		map<Particle_t, TH1D*> dHistMap_DeltaT_FCAL;
-		map<Particle_t, TH1D*> dHistMap_DeltaVertexZ;
-		map<Particle_t, TH2D*> dHistMap_DeltaPOverPVsP;
-		map<Particle_t, TH2D*> dHistMap_DeltaPOverPVsTheta;
-		map<Particle_t, TH2D*> dHistMap_DeltaThetaVsP;
-		map<Particle_t, TH2D*> dHistMap_DeltaThetaVsTheta;
-		map<Particle_t, TH2D*> dHistMap_DeltaPhiVsP;
-		map<Particle_t, TH2D*> dHistMap_DeltaPhiVsTheta;
-		map<Particle_t, TH2D*> dHistMap_DeltaTVsTheta;
-		map<Particle_t, TH2D*> dHistMap_DeltaTVsP;
-		map<Particle_t, TH2D*> dHistMap_DeltaVertexZVsTheta;
-		map<Particle_t, TH2D*> dHistMap_PVsTheta_LargeDeltaT;
+		map<Particle_t, TH1I*> dHistMap_DeltaPOverP;
+		map<Particle_t, TH1I*> dHistMap_DeltaTheta;
+		map<Particle_t, TH1I*> dHistMap_DeltaPhi;
+		map<Particle_t, TH1I*> dHistMap_DeltaT;
+		map<Particle_t, TH1I*> dHistMap_DeltaT_TOF;
+		map<Particle_t, TH1I*> dHistMap_DeltaT_BCAL;
+		map<Particle_t, TH1I*> dHistMap_DeltaT_FCAL;
+		map<Particle_t, TH1I*> dHistMap_DeltaVertexZ;
+		map<Particle_t, TH2I*> dHistMap_DeltaPOverPVsP;
+		map<Particle_t, TH2I*> dHistMap_DeltaPOverPVsTheta;
+		map<Particle_t, TH2I*> dHistMap_DeltaThetaVsP;
+		map<Particle_t, TH2I*> dHistMap_DeltaThetaVsTheta;
+		map<Particle_t, TH2I*> dHistMap_DeltaPhiVsP;
+		map<Particle_t, TH2I*> dHistMap_DeltaPhiVsTheta;
+		map<Particle_t, TH2I*> dHistMap_DeltaTVsTheta;
+		map<Particle_t, TH2I*> dHistMap_DeltaTVsP;
+		map<Particle_t, TH2I*> dHistMap_DeltaVertexZVsTheta;
+		map<Particle_t, TH2I*> dHistMap_PVsTheta_LargeDeltaT;
 
-		map<Particle_t, map<DKinFitPullType, TH1D*> > dHistMap_Pulls;
-		map<Particle_t, map<DKinFitPullType, TH2D*> > dHistMap_PullsVsP;
-		map<Particle_t, map<DKinFitPullType, TH2D*> > dHistMap_PullsVsTheta;
+		map<Particle_t, map<DKinFitPullType, TH1I*> > dHistMap_Pulls;
+		map<Particle_t, map<DKinFitPullType, TH2I*> > dHistMap_PullsVsP;
+		map<Particle_t, map<DKinFitPullType, TH2I*> > dHistMap_PullsVsTheta;
 
-		map<Particle_t, TH1D*> dHistMap_TimePull_CDC;
-		map<Particle_t, TH1D*> dHistMap_TimePull_ST;
-		map<Particle_t, TH1D*> dHistMap_TimePull_BCAL;
-		map<Particle_t, TH1D*> dHistMap_TimePull_TOF;
-		map<Particle_t, TH1D*> dHistMap_TimePull_FCAL;
+		map<Particle_t, TH1I*> dHistMap_TimePull_CDC;
+		map<Particle_t, TH1I*> dHistMap_TimePull_ST;
+		map<Particle_t, TH1I*> dHistMap_TimePull_BCAL;
+		map<Particle_t, TH1I*> dHistMap_TimePull_TOF;
+		map<Particle_t, TH1I*> dHistMap_TimePull_FCAL;
 
-		map<Particle_t, TH2D*> dHistMap_TimePullVsTheta_CDC;
-		map<Particle_t, TH2D*> dHistMap_TimePullVsTheta_BCAL;
-		map<Particle_t, TH2D*> dHistMap_TimePullVsTheta_ST;
+		map<Particle_t, TH2I*> dHistMap_TimePullVsTheta_CDC;
+		map<Particle_t, TH2I*> dHistMap_TimePullVsTheta_BCAL;
+		map<Particle_t, TH2I*> dHistMap_TimePullVsTheta_ST;
 
-		map<Particle_t, TH2D*> dHistMap_TimePullVsP_CDC;
-		map<Particle_t, TH2D*> dHistMap_TimePullVsP_BCAL;
-		map<Particle_t, TH2D*> dHistMap_TimePullVsP_ST;
-		map<Particle_t, TH2D*> dHistMap_TimePullVsP_TOF;
-		map<Particle_t, TH2D*> dHistMap_TimePullVsP_FCAL;
+		map<Particle_t, TH2I*> dHistMap_TimePullVsP_CDC;
+		map<Particle_t, TH2I*> dHistMap_TimePullVsP_BCAL;
+		map<Particle_t, TH2I*> dHistMap_TimePullVsP_ST;
+		map<Particle_t, TH2I*> dHistMap_TimePullVsP_TOF;
+		map<Particle_t, TH2I*> dHistMap_TimePullVsP_FCAL;
 };
 
 class DHistogramAction_TOFHitStudy : public DAnalysisAction
@@ -877,15 +858,15 @@ class DHistogramAction_TOFHitStudy : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 
-		map<Particle_t, TH1D*> dHistMap_DeltaT;
-		map<Particle_t, TH1D*> dHistMap_DeltaX;
-		map<Particle_t, TH1D*> dHistMap_DeltaY;
-		map<Particle_t, TH1D*> dHistMap_dE;
+		map<Particle_t, TH1I*> dHistMap_DeltaT;
+		map<Particle_t, TH1I*> dHistMap_DeltaX;
+		map<Particle_t, TH1I*> dHistMap_DeltaY;
+		map<Particle_t, TH1I*> dHistMap_dE;
 
-		map<Particle_t, TH2D*> dHistMap_DeltaTVsP;
-		map<Particle_t, TH2D*> dHistMap_DeltaXVsP;
-		map<Particle_t, TH2D*> dHistMap_DeltaYVsP;
-		map<Particle_t, TH2D*> dHistMap_dEVsP;
+		map<Particle_t, TH2I*> dHistMap_DeltaTVsP;
+		map<Particle_t, TH2I*> dHistMap_DeltaXVsP;
+		map<Particle_t, TH2I*> dHistMap_DeltaYVsP;
+		map<Particle_t, TH2I*> dHistMap_dEVsP;
 };
 
 class DHistogramAction_NumReconstructedObjects : public DAnalysisAction
@@ -913,36 +894,36 @@ class DHistogramAction_NumReconstructedObjects : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 
-		TH1D* dHist_NumPosTimeBasedTracks;
-		TH1D* dHist_NumNegTimeBasedTracks;
-		TH1D* dHist_NumPosWireBasedTracks;
-		TH1D* dHist_NumNegWireBasedTracks;
-		TH1D* dHist_NumPosTrackCandidates;
-		TH1D* dHist_NumNegTrackCandidates;
-		TH1D* dHist_NumPosTrackCandidates_CDC;
-		TH1D* dHist_NumNegTrackCandidates_CDC;
-		TH1D* dHist_NumPosTrackCandidates_FDC;
-		TH1D* dHist_NumNegTrackCandidates_FDC;
+		TH1I* dHist_NumPosTimeBasedTracks;
+		TH1I* dHist_NumNegTimeBasedTracks;
+		TH1I* dHist_NumPosWireBasedTracks;
+		TH1I* dHist_NumNegWireBasedTracks;
+		TH1I* dHist_NumPosTrackCandidates;
+		TH1I* dHist_NumNegTrackCandidates;
+		TH1I* dHist_NumPosTrackCandidates_CDC;
+		TH1I* dHist_NumNegTrackCandidates_CDC;
+		TH1I* dHist_NumPosTrackCandidates_FDC;
+		TH1I* dHist_NumNegTrackCandidates_FDC;
 
-		TH1D* dHist_NumBeamPhotons;
-		TH1D* dHist_NumFCALShowers;
-		TH1D* dHist_NumBCALShowers;
-		TH1D* dHist_NumNeutralShowers;
-		TH1D* dHist_NumTOFPoints;
-		TH1D* dHist_NumSCHits;
-		TH1D* dHist_NumTAGMHits;
-		TH1D* dHist_NumTAGHHits;
+		TH1I* dHist_NumBeamPhotons;
+		TH1I* dHist_NumFCALShowers;
+		TH1I* dHist_NumBCALShowers;
+		TH1I* dHist_NumNeutralShowers;
+		TH1I* dHist_NumTOFPoints;
+		TH1I* dHist_NumSCHits;
+		TH1I* dHist_NumTAGMHits;
+		TH1I* dHist_NumTAGHHits;
 
-		TH1D* dHist_NumTrackBCALMatches;
-		TH1D* dHist_NumTrackFCALMatches;
-		TH1D* dHist_NumTrackTOFMatches;
-		TH1D* dHist_NumTrackSCMatches;
+		TH1I* dHist_NumTrackBCALMatches;
+		TH1I* dHist_NumTrackFCALMatches;
+		TH1I* dHist_NumTrackTOFMatches;
+		TH1I* dHist_NumTrackSCMatches;
 
-		TH1D* dHist_NumCDCHits;
-		TH1D* dHist_NumFDCHits;
-		TH1D* dHist_NumTOFHits;
-		TH1D* dHist_NumBCALHits;
-		TH1D* dHist_NumFCALHits;
+		TH1I* dHist_NumCDCHits;
+		TH1I* dHist_NumFDCHits;
+		TH1I* dHist_NumTOFHits;
+		TH1I* dHist_NumBCALHits;
+		TH1I* dHist_NumFCALHits;
 };
 
 class DHistogramAction_TrackMultiplicity : public DAnalysisAction
@@ -1015,12 +996,12 @@ class DHistogramAction_TruePID : public DAnalysisAction
 	private:
 		const DAnalysisUtilities* dAnalysisUtilities;
 
-		TH1D* dHist_TruePIDStatus;
-		TH1D* dHist_TruePIDStatus_SignalRegion;
-		deque<map<Particle_t, TH1D*> > dHistDeque_P_CorrectID;
-		deque<map<Particle_t, TH1D*> > dHistDeque_P_IncorrectID;
-		deque<map<Particle_t, TH2D*> > dHistDeque_PVsTheta_CorrectID;
-		deque<map<Particle_t, TH2D*> > dHistDeque_PVsTheta_IncorrectID;
+		TH1I* dHist_TruePIDStatus;
+		TH1I* dHist_TruePIDStatus_SignalRegion;
+		deque<map<Particle_t, TH1I*> > dHistDeque_P_CorrectID;
+		deque<map<Particle_t, TH1I*> > dHistDeque_P_IncorrectID;
+		deque<map<Particle_t, TH2I*> > dHistDeque_PVsTheta_CorrectID;
+		deque<map<Particle_t, TH2I*> > dHistDeque_PVsTheta_IncorrectID;
 
 		set<pair<size_t, pair<Particle_t, const JObject*> > > dPreviouslyHistogrammedParticles;
 };
@@ -1043,7 +1024,7 @@ class DHistogramAction_InvariantMass : public DAnalysisAction
 		unsigned int dNumMassBins;
 		double dMinMass, dMaxMass;
 		const DAnalysisUtilities* dAnalysisUtilities;
-		TH1D* dHist_InvaraintMass;
+		TH1I* dHist_InvaraintMass;
 
 		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
 };
@@ -1089,7 +1070,7 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 		double dMinMass, dMaxMass;
 		int dMissingMassOffOfStepIndex;
 		deque<Particle_t> dMissingMassOffOfPIDs;
-		TH1D* dHist_MissingMass;
+		TH1I* dHist_MissingMass;
 		const DAnalysisUtilities* dAnalysisUtilities;
 
 		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
@@ -1136,7 +1117,7 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 		double dMinMassSq, dMaxMassSq;
 		int dMissingMassOffOfStepIndex;
 		deque<Particle_t> dMissingMassOffOfPIDs;
-		TH1D* dHist_MissingMassSquared;
+		TH1I* dHist_MissingMassSquared;
 		const DAnalysisUtilities* dAnalysisUtilities;
 
 		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
@@ -1157,15 +1138,15 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
-		void Create_ParticlePulls(bool locIsBeamFlag, string locStepROOTName, Particle_t locPID, map<DKinFitPullType, TH1D*>& locParticlePulls, const string& locKinFitTypeString);
+		void Create_ParticlePulls(bool locIsBeamFlag, string locStepROOTName, Particle_t locPID, map<DKinFitPullType, TH1I*>& locParticlePulls, const string& locKinFitTypeString);
 
 		double dPullHistConfidenceLevelCut;
 		const DAnalysisUtilities* dAnalysisUtilities;
 
-		TH1D* dHist_ConfidenceLevel;
-		map<pair<size_t, Particle_t>, map<DKinFitPullType, TH1D*> > dHistMap_Pulls; //size_t is step index, 2nd is particle
-		TH1D* dHist_RFTimePull;
-		map<DKinFitPullType, TH1D*> dHistMap_BeamPulls;
+		TH1I* dHist_ConfidenceLevel;
+		map<pair<size_t, Particle_t>, map<DKinFitPullType, TH1I*> > dHistMap_Pulls; //size_t is step index, 2nd is particle
+		TH1I* dHist_RFTimePull;
+		map<DKinFitPullType, TH1I*> dHistMap_BeamPulls;
 };
 
 #endif // _DHistogramActions_

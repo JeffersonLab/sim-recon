@@ -120,6 +120,7 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 
 	string locHistName, locHistTitle;
 	TH1D* loc1DHist;
+	TH1I* loc1IHist;
 	TH2D* loc2DHist;
 
 	//Create Diagnostic Histograms
@@ -242,21 +243,21 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 
 			//Beam, RF Delta-t
 			locHistName = "BeamPhotonRFDeltaT";
-			loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-			if(loc1DHist == NULL)
+			loc1IHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+			if(loc1IHist == NULL)
 			{
 				locHistTitle = locReactionName + string(";#Deltat_{Beam #gamma - RF} (ns)");
-				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 220, -11.0, 11.0);
+				loc1IHist = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 220, -11.0, 11.0);
 			}
-			dHistMap_PhotonRFDeltaT_All[locReaction] = loc1DHist;
+			dHistMap_PhotonRFDeltaT_All[locReaction] = loc1IHist;
 
 			if(!locMCThrowns.empty())
 			{
 				locHistName = "TrueBeamPhotonRFDeltaT";
-				loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-				if(loc1DHist == NULL)
-					loc1DHist = (TH1D*)dHistMap_PhotonRFDeltaT_All[locReaction]->Clone(locHistName.c_str());
-				dHistMap_PhotonRFDeltaT_True[locReaction] = loc1DHist;
+				loc1IHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+				if(loc1IHist == NULL)
+					loc1IHist = (TH1I*)dHistMap_PhotonRFDeltaT_All[locReaction]->Clone(locHistName.c_str());
+				dHistMap_PhotonRFDeltaT_True[locReaction] = loc1IHist;
 			}
 
 			//Num Beam Photons Per Blueprint
@@ -281,17 +282,17 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 				locHistName = string("PIDConfidenceLevel_") + locParticleName;
 				locHistTitle = locParticleROOTName + string(";PID Confidence Level");
 				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-					dHistMap_PIDFOM_All[locReaction][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+					dHistMap_PIDFOM_All[locReaction][locPID] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 				else
-					dHistMap_PIDFOM_All[locReaction][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 200, 0.0, 1.0);
+					dHistMap_PIDFOM_All[locReaction][locPID] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 200, 0.0, 1.0);
 
 				if(!locMCThrowns.empty())
 				{
 					locHistName = string("PIDConfidenceLevel_True") + locParticleName;
 					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-						dHistMap_PIDFOM_True[locReaction][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+						dHistMap_PIDFOM_True[locReaction][locPID] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 					else
-						dHistMap_PIDFOM_True[locReaction][locPID] = (TH1D*)dHistMap_PIDFOM_All[locReaction][locPID]->Clone(locHistName.c_str());
+						dHistMap_PIDFOM_True[locReaction][locPID] = (TH1I*)dHistMap_PIDFOM_All[locReaction][locPID]->Clone(locHistName.c_str());
 				}
 			}
 		}
@@ -345,9 +346,6 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 
 	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches, "Combo");
-
-	vector<const DEventRFBunch*> locThrownEventRFBunches;
-	locEventLoop->Get(locThrownEventRFBunches, "Thrown");
 
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);
@@ -403,6 +401,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			++locNumBlueprintsSurvivedCuts[locReaction][1]; //don't need to cut
 
 		set<const DBeamPhoton*> locCandidatePhotons;
+		double locRFTruePhotonDeltaT = 9.9E9;
 		for(size_t loc_j = 0; loc_j < locParticleComboBlueprint->Get_NumParticleComboBlueprintSteps(); ++loc_j)
 		{
 			const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
@@ -441,10 +440,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 							if(locMCThrownMatching != NULL)
 							{
 								if(locBeamPhotons[loc_k] == locMCThrownMatching->Get_ReconMCGENBeamPhoton())
-								{
-									if(fabs(locThrownEventRFBunches[0]->dTime - locEventRFBunch->dTime) < 1.002)
-										dHistMap_PhotonRFDeltaT_True[locReaction]->Fill(locDeltaT);
-								}
+									locRFTruePhotonDeltaT = locDeltaT;
 							}
 							dPreviousPhotonRFDeltaTPairs.insert(locPhotonRFDeltaTPair);
 						}
@@ -508,7 +504,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 
 		if(locBadComboFlag) //e.g. bad PID FOM: recycle steps
 		{
-			Recycle_Data_AllSteps(locParticleCombo, locParticleComboBlueprint);
+			Recycle_Data(locParticleCombo, locParticleComboBlueprint, false);
 			delete locParticleCombo;
 			continue;
 		}
@@ -516,80 +512,34 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 
 		Calc_CommonSpacetimeVertices(locParticleCombo);
 
-		//clone combos for additional beam photons (if needed)
+		//if needed: clone combos for additional beam photons, hist # photons & true beam-rf delta-t (if MC and if true combo)
 		vector<DParticleCombo*> locBuiltParticleCombos;
 		if(locBeamInComboFlag)
 		{
-			//be very careful with memory consumption: re-use objects if already created & saved in previous-good combos
-			const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(0);
-			pair<const DParticleComboBlueprintStep*, const DEventRFBunch*> locBeamPair(locParticleComboBlueprintStep, locEventRFBunch);
-			map<pair<const DParticleComboBlueprintStep*, const DEventRFBunch*>, set<const DParticleComboStep*> >::iterator locIterator;
-			locIterator = dComboBlueprintBeamStepMap.find(locBeamPair);
+			Build_BeamPhotonCombos(locParticleCombo, locParticleComboBlueprint, locEventRFBunch, locCandidatePhotons, locBuiltParticleCombos);
 
-			bool locUsedPriorStepForFirstPhotonFlag = false;
-			if(locIterator != dComboBlueprintBeamStepMap.end())
+			//hist # photons
+			japp->RootWriteLock();
+			dHistMap_NumSurvivingBeamParticles[locReaction]->Fill(locBuiltParticleCombos.size());
+			japp->RootUnLock();
+
+			//Fill PhotonRFDeltaT_True histogram, if it's MC and if it's the true combo
+			if((dTrueComboCuts.find(locReaction) != dTrueComboCuts.end()) && (locTrueComboSurvivedReactions.find(locReaction) == locTrueComboSurvivedReactions.end()))
 			{
-				//Some steps have been created & saved for this blueprint/RF combo before. Use them.
-					//However, maybe not all of them still exist (e.g. some were in combos that failed a pre-selection cut).
-					//So, we will need to make the ones that aren't available. 
-						//To keep track of which ones to remake, erase the photons we've used from locCandidatePhotons. 
-				set<const DParticleComboStep*>& locPreExistingSteps = locIterator->second;
-				set<const DParticleComboStep*>::iterator locStepIterator = locPreExistingSteps.begin();
-				for(; locStepIterator != locPreExistingSteps.end(); ++locStepIterator)
+				//Is MC data, and haven't found the true combo yet
+				for(size_t loc_j = 0; loc_j < locBuiltParticleCombos.size(); ++loc_j)
 				{
-					const DBeamPhoton* locBeamPhoton = dynamic_cast<const DBeamPhoton*>((*locStepIterator)->Get_InitialParticle());
-					set<const DBeamPhoton*>::iterator locPhotonIterator = locCandidatePhotons.find(locBeamPhoton);
-					if(locPhotonIterator == locCandidatePhotons.end())
+					if(!((*dTrueComboCuts[locReaction])(locEventLoop, locBuiltParticleCombos[loc_j])))
 						continue;
-
-					if((locPhotonIterator == locCandidatePhotons.begin()) && (!locUsedPriorStepForFirstPhotonFlag))
-					{
-						//Will use the original locParticleCombo object, but will overwrite the initial step, which was created new: recycle it!
-						dParticleComboStepPool_Available.push_back(const_cast<DParticleComboStep*>(locParticleCombo->Get_ParticleComboStep(0)));
-						locParticleCombo->Set_ParticleComboStep(*locStepIterator, 0);
-						locBuiltParticleCombos.push_back(locParticleCombo);
-						locUsedPriorStepForFirstPhotonFlag = true;
-					}
-					else
-					{
-						//create new combo, utilzing the previously-craeted step
-						DParticleCombo* locNewParticleCombo = new DParticleCombo(*locParticleCombo);
-						locNewParticleCombo->Set_ParticleComboStep(*locStepIterator, 0);
-						locBuiltParticleCombos.push_back(locNewParticleCombo);
-					}
-					locCandidatePhotons.erase(locPhotonIterator); //register that we've used it
+					japp->RootWriteLock();
+					dHistMap_PhotonRFDeltaT_True[locReaction]->Fill(locRFTruePhotonDeltaT);
+					japp->RootUnLock();
+					break;
 				}
-			}
-
-			if(!locUsedPriorStepForFirstPhotonFlag)
-			{
-				locBuiltParticleCombos.push_back(locParticleCombo); //didn't use it, it was good, save it!
-				locCandidatePhotons.erase(locCandidatePhotons.begin()); //register that we've used it
-			}
-
-			//create new combos & steps for the remaining, new photons
-			set<const DBeamPhoton*>::iterator locPhotonIterator = locCandidatePhotons.begin();
-			for(; locPhotonIterator != locCandidatePhotons.end(); ++locPhotonIterator)
-			{
-				locParticleComboStep = Clone_ParticleComboStep(locParticleCombo->Get_ParticleComboStep(0));
-				locParticleComboStep->Set_InitialParticle(*locPhotonIterator);
-				locParticleComboStep->Set_InitialParticle_Measured(*locPhotonIterator);
-
-				DParticleCombo* locNewParticleCombo = new DParticleCombo(*locParticleCombo);
-				locNewParticleCombo->Set_ParticleComboStep(locParticleComboStep, 0);
-				locBuiltParticleCombos.push_back(locNewParticleCombo);
 			}
 		}
 		else
 			locBuiltParticleCombos.push_back(locParticleCombo); //just 1
-
-		//hist # photons
-		if(locBeamInComboFlag)
-		{
-			japp->RootWriteLock();
-			dHistMap_NumSurvivingBeamParticles[locReaction]->Fill(locBuiltParticleCombos.size());
-			japp->RootUnLock();
-		}
 
 		//combos are now finally constructed.  Now, apply pre-selection cuts
 		int locLastActionSurvivedIndex = -1;
@@ -625,9 +575,9 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 		if(locSurvivingParticleCombos.empty())
 		{
 			if(locBeamInComboFlag)
-				Recycle_Data_AllButFirstStep(locCutParticleCombos[0], locParticleComboBlueprint);
+				Recycle_Data(locCutParticleCombos[0], locParticleComboBlueprint, true);
 			else
-				Recycle_Data_AllSteps(locCutParticleCombos[0], locParticleComboBlueprint);
+				Recycle_Data(locCutParticleCombos[0], locParticleComboBlueprint, false);
 		}
 
 		//recycle the beam steps of the failed combos
@@ -695,8 +645,8 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 					dHistMap_NumEventsSurvivedCut_All[locReaction]->Fill(loc_j + 2); //+2 because binning begins at 1, and 0 is input event
 					if(locIsThrownMatchFlag)
 						dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(loc_j + 2); //+2 because binning begins at 1, and 0 is input event
+					dHistMap_NumBlueprintsSurvivedCut[locReaction]->Fill(loc_j + 1, locNumBlueprintsSurvivedCuts[locReaction][loc_j]); //+1 because 0 is has blueprint
 				}
-				dHistMap_NumBlueprintsSurvivedCut[locReaction]->Fill(loc_j + 1, locNumBlueprintsSurvivedCuts[locReaction][loc_j]); //+1 because 0 is has blueprint
 				for(size_t loc_k = 0; loc_k < locNumBlueprintsSurvivedCuts[locReaction][loc_j]; ++loc_k)
 					dHistMap_NumBlueprintsSurvivedCut1D[locReaction]->Fill(loc_j + 1); //+1 because 0 is has blueprint
 			}
@@ -705,6 +655,72 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	japp->RootUnLock();
 
 	return NOERROR;
+}
+
+void DParticleCombo_factory_PreKinFit::Build_BeamPhotonCombos(DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint, const DEventRFBunch* locEventRFBunch, set<const DBeamPhoton*>& locCandidatePhotons, vector<DParticleCombo*>& locBuiltParticleCombos)
+{
+	//clone combos for additional beam photons
+	locBuiltParticleCombos.clear();
+
+	//be very careful with memory consumption: re-use objects if already created & saved in previous-good combos
+	const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(0);
+	pair<const DParticleComboBlueprintStep*, const DEventRFBunch*> locBeamPair(locParticleComboBlueprintStep, locEventRFBunch);
+	map<pair<const DParticleComboBlueprintStep*, const DEventRFBunch*>, set<const DParticleComboStep*> >::iterator locIterator;
+	locIterator = dComboBlueprintBeamStepMap.find(locBeamPair);
+
+	bool locUsedPriorStepForFirstPhotonFlag = false;
+	if(locIterator != dComboBlueprintBeamStepMap.end())
+	{
+		//Some steps have been created & saved for this blueprint/RF combo before. Use them.
+			//However, maybe not all of them still exist (e.g. some were in combos that failed a pre-selection cut).
+			//So, we will need to make the ones that aren't available. 
+				//To keep track of which ones to remake, erase the photons we've used from locCandidatePhotons. 
+		set<const DParticleComboStep*>& locPreExistingSteps = locIterator->second;
+		set<const DParticleComboStep*>::iterator locStepIterator = locPreExistingSteps.begin();
+		for(; locStepIterator != locPreExistingSteps.end(); ++locStepIterator)
+		{
+			const DBeamPhoton* locBeamPhoton = dynamic_cast<const DBeamPhoton*>((*locStepIterator)->Get_InitialParticle());
+			set<const DBeamPhoton*>::iterator locPhotonIterator = locCandidatePhotons.find(locBeamPhoton);
+			if(locPhotonIterator == locCandidatePhotons.end())
+				continue;
+
+			if((locPhotonIterator == locCandidatePhotons.begin()) && (!locUsedPriorStepForFirstPhotonFlag))
+			{
+				//Will use the original locParticleCombo object, but will overwrite the initial step, which was created new: recycle it!
+				dParticleComboStepPool_Available.push_back(const_cast<DParticleComboStep*>(locParticleCombo->Get_ParticleComboStep(0)));
+				locParticleCombo->Set_ParticleComboStep(*locStepIterator, 0);
+				locBuiltParticleCombos.push_back(locParticleCombo);
+				locUsedPriorStepForFirstPhotonFlag = true;
+			}
+			else
+			{
+				//create new combo, utilzing the previously-craeted step
+				DParticleCombo* locNewParticleCombo = new DParticleCombo(*locParticleCombo);
+				locNewParticleCombo->Set_ParticleComboStep(*locStepIterator, 0);
+				locBuiltParticleCombos.push_back(locNewParticleCombo);
+			}
+			locCandidatePhotons.erase(locPhotonIterator); //register that we've used it
+		}
+	}
+
+	if(!locUsedPriorStepForFirstPhotonFlag)
+	{
+		locBuiltParticleCombos.push_back(locParticleCombo); //didn't use it, it was good, save it!
+		locCandidatePhotons.erase(locCandidatePhotons.begin()); //register that we've used it
+	}
+
+	//create new combos & steps for the remaining, new photons
+	set<const DBeamPhoton*>::iterator locPhotonIterator = locCandidatePhotons.begin();
+	for(; locPhotonIterator != locCandidatePhotons.end(); ++locPhotonIterator)
+	{
+		DParticleComboStep* locParticleComboStep = Clone_ParticleComboStep(locParticleCombo->Get_ParticleComboStep(0));
+		locParticleComboStep->Set_InitialParticle(*locPhotonIterator);
+		locParticleComboStep->Set_InitialParticle_Measured(*locPhotonIterator);
+
+		DParticleCombo* locNewParticleCombo = new DParticleCombo(*locParticleCombo);
+		locNewParticleCombo->Set_ParticleComboStep(locParticleComboStep, 0);
+		locBuiltParticleCombos.push_back(locNewParticleCombo);
+	}
 }
 
 void DParticleCombo_factory_PreKinFit::Recycle_Data_BeamStep(const DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint, const DEventRFBunch* locEventRFBunch)
@@ -729,21 +745,10 @@ void DParticleCombo_factory_PreKinFit::Recycle_Data_BeamStep(const DParticleComb
 		dParticleComboStepPool_Available.push_back(const_cast<DParticleComboStep*>(locParticleComboStep));
 }
 
-void DParticleCombo_factory_PreKinFit::Recycle_Data_AllButFirstStep(const DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint)
+void DParticleCombo_factory_PreKinFit::Recycle_Data(const DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint, bool locAllButFirstStepFlag)
 {
-	for(size_t loc_j = 1; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
-	{
-		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_j);
-		const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
-		map<const DParticleComboBlueprintStep*, const DParticleComboStep*>::iterator locIterator = dComboBlueprintStepMap.find(locParticleComboBlueprintStep);
-		if(locIterator == dComboBlueprintStepMap.end()) //don't recycle if step was grabbed from map!!
-			dParticleComboStepPool_Available.push_back(const_cast<DParticleComboStep*>(locParticleComboStep));
-	}
-}
-
-void DParticleCombo_factory_PreKinFit::Recycle_Data_AllSteps(const DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint)
-{
-	for(size_t loc_j = 0; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
+	size_t locStartIndex = locAllButFirstStepFlag ? 1 : 0;
+	for(size_t loc_j = locStartIndex; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
 	{
 		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_j);
 		const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
