@@ -23,6 +23,10 @@
  Trees will be named after the low level data type used to fill them.
  Currently the data types that are supported are: \n
    Df125WindowRawData \n
+   Df125PulseRawData \n
+   Df125PulseIntegral \n
+   Df125PulseTime \n
+   Df125TriggerTime \n
    DF1TDCHit \n
    DF1TDCTriggerTime \n
    Df250WindowRawData \n
@@ -57,6 +61,11 @@ class JEventProcessor_DAQTree:public jana::JEventProcessor{
 		const char* className(void){return "JEventProcessor_DAQTree";}
 
 		TTree *Df125WindowRawData_tree;  ///< f125 readout 
+		TTree *Df125PulseRawData_tree;   ///< f125 readout mode 2
+		TTree *Df125PulseIntegral_tree;  ///< f125 readout modes 3 and 7
+		TTree *Df125PulseTime_tree;      ///< f125 readout modes 3,4,7 and 8
+		TTree *Df125PulsePedestal_tree;  ///< f125 readout modes 4,7 and 8
+		TTree *Df125TriggerTime_tree;    ///< all f125 readout modes 
 		TTree *DF1TDCHit_tree;
 		TTree *DF1TDCTriggerTime_tree;
 		TTree *Df250WindowRawData_tree;  ///< f250 readout modes 1 and 8
@@ -99,6 +108,11 @@ class JEventProcessor_DAQTree:public jana::JEventProcessor{
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 		bool f125WRDtree_exists;
+		bool f125PRDtree_exists;
+		bool f125PItree_exists;
+		bool f125PTtree_exists;
+		bool f125PPtree_exists;
+		bool f125TTtree_exists;
 		bool F1TDCHtree_exists;
 		bool F1TDCTTtree_exists;
 		bool f250WRDtree_exists;
