@@ -26,7 +26,7 @@ class DFDCHit_factory:public jana::JFactory<DFDCHit>{
 		// overall scale factors
 		double a_scale;
 		double t_scale;
-		double t_min;
+		double t_base;
 		double tdc_scale;
 
 		// calibration constant tables

@@ -25,7 +25,7 @@ jerror_t DFDCHit_factory::init(void)
    /// set the base conversion scales
    a_scale      = 2.4E4/1.3E5;  // cathodes
    t_scale      = 8.0/10.0;     // 8 ns/count and integer time is in 1/10th of sample
-   t_min        = -100.;        // ns
+   t_base       = -100.;        // ns
    tdc_scale    = 0.115;        // 115 ps/count
 
    return NOERROR;
@@ -63,6 +63,15 @@ jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    } else {
        jerr << "Unable to get FDC_TDC_SCALE from /FDC/digi_scales !" << endl;
    }
+
+   // load base time offset
+   map<string,double> base_time_offset;
+   if (eventLoop->GetCalib("/FDC/base_time_offset",base_time_offset))
+       jout << "Error loading /FDC/base_time_offset !" << endl;
+   if (base_time_offset.find("FDC_BASE_TIME_OFFSET") != base_time_offset.end())
+       t_base = base_time_offset["FDC_BASE_TIME_OFFSET"];
+   else
+       jerr << "Unable to get FDC_BASE_TIME_OFFSET from /FDC/base_time_offset !" << endl;
 
    // each FDC package has the same set of constants
    LoadPackageCalibTables(eventLoop,"/FDC/package1");
@@ -163,7 +172,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
       hit->q = a_scale * a_gains[hit->gPlane-1][hit->element-1] 
           * (A - a_pedestals[hit->gPlane-1][hit->element-1] );
-      hit->t = t_scale * (T - timing_offsets[hit->gPlane-1][hit->element-1]) + t_min;
+      hit->t = t_scale * (T - timing_offsets[hit->gPlane-1][hit->element-1]) + t_base;
       
       //cerr << "FDC hitL  plane = " << hit->gPlane << "  element = " << hit->element << endl;
       
@@ -221,7 +230,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
       // Apply calibration constants here
       double T = (double)digihit->time;
-      T = tdc_scale * (T - timing_offsets[hit->gPlane-1][hit->element-1]) + t_min;
+      T = tdc_scale * (T - timing_offsets[hit->gPlane-1][hit->element-1]) + t_base;
       hit->q = 0.0; // no charge measured for wires in FDC
       hit->t = T;
       

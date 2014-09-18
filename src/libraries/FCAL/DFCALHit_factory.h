@@ -35,7 +35,7 @@ class DFCALHit_factory:public jana::JFactory<DFCALHit>{
 		// overall scale factors
 		double a_scale;
 		double t_scale;
-                double t_min;
+                double t_base;
 
 		// calibration constants stored in row, column format
 		fcal_digi_constants_t gains;

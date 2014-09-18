@@ -42,7 +42,7 @@ jerror_t DFCALHit_factory::init(void)
    /// set the base conversion scales
    a_scale = 4.0E1/2.5E5; 
    t_scale = 0.0625;   // 62.5 ps/count
-   t_min   = -100.;    // ns
+   t_base  = 0.;       // ns
     
    return NOERROR;
 }
@@ -79,7 +79,17 @@ jerror_t DFCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
        t_scale = scale_factors["FCAL_ADC_TSCALE"];
    else
        jerr << "Unable to get FCAL_ADC_TSCALE from /FCAL/digi_scales !" << endl;
-   
+
+   // load base time offset
+   map<string,double> base_time_offset;
+   if (eventLoop->GetCalib("/FCAL/base_time_offset",base_time_offset))
+       jout << "Error loading /FCAL/base_time_offset !" << endl;
+   if (base_time_offset.find("FCAL_BASE_TIME_OFFSET") != base_time_offset.end())
+       t_base = base_time_offset["FCAL_BASE_TIME_OFFSET"];
+   else
+       jerr << "Unable to get FCAL_BASE_TIME_OFFSET from /FCAL/base_time_offset !" << endl;
+
+   // load constant tables
    if (eventLoop->GetCalib("/FCAL/gains", raw_gains))
        jout << "Error loading /FCAL/gains !" << endl;
    if (eventLoop->GetCalib("/FCAL/pedestals", raw_pedestals))
@@ -155,7 +165,7 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
       double A = (double)digihit->pulse_integral;
       double T = (double)digihit->pulse_time;
       hit->E = a_scale * gains[hit->row][hit->column] * (A - pedestal);
-      hit->t = t_scale * (T - time_offsets[hit->row][hit->column]) + t_min;
+      hit->t = t_scale * (T - time_offsets[hit->row][hit->column]) + t_base;
 
       // Get position of blocks on front face. (This should really come from
       // hdgeant directly so the poisitions can be shifted in mcsmear.)
