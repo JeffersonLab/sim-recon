@@ -20,40 +20,6 @@ class DReaction : public JObject
 	public:
 		JOBJECT_PUBLIC(DReaction);
 
-		class DReactionMissingMassSquaredCut
-		{
-			public:
-				DReactionMissingMassSquaredCut(double locMinimumMissingMassSq, double locMaximumMissingMassSq) : 
-				dMinimumMissingMassSq(locMinimumMissingMassSq), dMaximumMissingMassSq(locMaximumMissingMassSq), dMissingMassOffOfStepIndex(-1) {}
-
-				//E.g. If:
-				//g, p -> K+, K+, Xi-
-				//                Xi- -> pi-, Lambda
-				//                            Lambda -> (p), pi-
-				//And:
-				//locMissingMassOffOfStepIndex = 0, locMissingMassOffOfPIDs = K+, K+
-				//Then: Will cut missing-mass: g, p -> K+, K+, (X)
-				//Also:
-				//locMissingMassOffOfStepIndex = 1, locMissingMassOffOfPID = pi-
-				//Then: Will cut missing-mass: g, p -> K+, K+, pi-
-				//But:
-				//locMissingMassOffOfStepIndex = 0, locMissingMassOffOfPIDs = K+
-				//Then: Will cut only missing-mass: g, p -> K+_1, (X)    and NOT K+_2!!!
-
-				DReactionMissingMassSquaredCut(int locMissingMassOffOfStepIndex, Particle_t locMissingMassOffOfPID, double locMinimumMissingMassSq, double locMaximumMissingMassSq) : 
-				dMinimumMissingMassSq(locMinimumMissingMassSq), dMaximumMissingMassSq(locMaximumMissingMassSq), 
-				dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), dMissingMassOffOfPIDs(deque<Particle_t>(1, locMissingMassOffOfPID)) {}
-
-				DReactionMissingMassSquaredCut(int locMissingMassOffOfStepIndex, deque<Particle_t> locMissingMassOffOfPIDs, double locMinimumMissingMassSq, double locMaximumMissingMassSq) : 
-				dMinimumMissingMassSq(locMinimumMissingMassSq), dMaximumMissingMassSq(locMaximumMissingMassSq), 
-				dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), dMissingMassOffOfPIDs(locMissingMassOffOfPIDs) {}
-
-				double dMinimumMissingMassSq;
-				double dMaximumMissingMassSq;
-				int dMissingMassOffOfStepIndex;
-				deque<Particle_t> dMissingMassOffOfPIDs;
-		};
-
 		// CONSTRUCTOR:
 		DReaction(string locReactionName); //User must specify a unique reaction name upon construction
 
@@ -69,18 +35,16 @@ class DReaction : public JObject
 		// SET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
 		inline void Set_MinChargedPIDFOM(double locMinChargedPIDFOM){dMinChargedPIDFOM = pair<bool, double>(true, locMinChargedPIDFOM);}
 		inline void Set_MinPhotonPIDFOM(double locMinPhotonPIDFOM){dMinPhotonPIDFOM = pair<bool, double>(true, locMinPhotonPIDFOM);}
-		inline void Set_MinCombinedPIDFOM(double locMinCombinedPIDFOM){dMinCombinedPIDFOM = pair<bool, double>(true, locMinCombinedPIDFOM);}
 		inline void Set_MinTrackingFOM(double locMinTrackingFOM){dMinTrackingFOM = pair<bool, double>(true, locMinTrackingFOM);}
-		inline void Set_MinCombinedTrackingFOM(double locMinCombinedTrackingFOM){dMinCombinedTrackingFOM = pair<bool, double>(true, locMinCombinedTrackingFOM);}
 		inline void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT){dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);}
 		inline void Set_MinProtonMomentum(double locMinProtonMomentum){dMinProtonMomentum = pair<bool, double>(true, locMinProtonMomentum);}
 		inline void Set_HasDetectorMatchFlag(bool locHasDetectorMatchFlag){dHasDetectorMatchFlag = pair<bool, bool>(true, locHasDetectorMatchFlag);}
 
-		// SET PRE-COMBO-BLUEPRINT MASS CUTS
+		// SET PRE-COMBO-BLUEPRINT INVARIANT MASS CUTS
 		inline void Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass);
-		inline void Set_MissingMassSquaredCut(double locMinimumMissingMassSq, double locMaximumMissingMassSq);
-		inline void Set_MissingMassSquaredCut(int locMissingMassOffOfStepIndex, Particle_t locMissingMassOffOfPID, double locMinimumMissingMassSq, double locMaximumMissingMassSq);
-		inline void Set_MissingMassSquaredCut(int locMissingMassOffOfStepIndex, deque<Particle_t> locMissingMassOffOfPIDs, double locMinimumMissingMassSq, double locMaximumMissingMassSq);
+
+		// ADD COMBO PRE-SELECTION ACTION
+		inline void Add_ComboPreSelectionAction(DAnalysisAction* locAction){dComboPreSelectionActions.push_back(locAction);}
 
 		// GET CONTROL MEMBERS:
 		inline string Get_ReactionName(void) const{return dReactionName;}
@@ -95,6 +59,10 @@ class DReaction : public JObject
 		inline size_t Get_NumAnalysisActions(void) const{return dAnalysisActions.size();}
 		DAnalysisAction* Get_AnalysisAction(size_t locActionIndex) const;
 		DAnalysisAction* Get_LastAnalysisAction(void) const;
+
+		// GET COMBO PRE-SELECTION CUTS:
+		inline size_t Get_NumComboPreSelectionActions(void) const{return dComboPreSelectionActions.size();}
+		DAnalysisAction* Get_ComboPreSelectionAction(size_t locActionIndex) const;
 
 		// GET PIDs:
 		void Get_DetectedFinalPIDs(deque<Particle_t>& locDetectedPIDs, bool locIncludeDuplicatesFlag = false) const;
@@ -118,16 +86,13 @@ class DReaction : public JObject
 		// GET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
 		inline pair<bool, double> Get_MinChargedPIDFOM(void) const{return dMinChargedPIDFOM;}
 		inline pair<bool, double> Get_MinPhotonPIDFOM(void) const{return dMinPhotonPIDFOM;}
-		inline pair<bool, double> Get_MinCombinedPIDFOM(void) const{return dMinCombinedPIDFOM;}
 		inline pair<bool, double> Get_MinTrackingFOM(void) const{return dMinTrackingFOM;}
-		inline pair<bool, double> Get_MinCombinedTrackingFOM(void) const{return dMinCombinedTrackingFOM;}
 		inline pair<bool, double> Get_MaxPhotonRFDeltaT(void) const{return dMaxPhotonRFDeltaT;}
 		inline pair<bool, double> Get_MinProtonMomentum(void) const{return dMinProtonMomentum;}
 		inline pair<bool, bool> Get_HasDetectorMatchFlag(void) const{return dHasDetectorMatchFlag;}
 
 		// GET PRE-COMBO-BLUEPRINT MASS CUTS
 		bool Get_InvariantMassCut(Particle_t locStepInitialPID, double& locMinInvariantMass, double& locMaxInvariantMass) const;
-		void Get_MissingMassSquaredCuts(deque<DReactionMissingMassSquaredCut>& locMissingMassSquaredCuts) const{locMissingMassSquaredCuts = dMissingMassSquaredCuts;}
 
 		// ROOT OUTPUT:
 		void Enable_TTreeOutput(string locTTreeOutputFileName);
@@ -169,36 +134,21 @@ class DReaction : public JObject
 			//note: tracks with no PID information are not cut-by/included-in the PID cuts
 		pair<bool, double> dMinChargedPIDFOM; //COMBO:MIN_CHARGED_PID_FOM - the minimum PID FOM for a particle used for this DReaction
 		pair<bool, double> dMinPhotonPIDFOM; //COMBO:MIN_PHOTON_PID_FOM - the minimum PID FOM for a neutral particle used for this DReaction
-		pair<bool, double> dMinCombinedPIDFOM; //COMBO:MIN_COMBINED_PID_FOM - the minimum combined PID FOM for all particles used for this DReaction
 		pair<bool, double> dMinTrackingFOM; //COMBO:MIN_TRACKING_FOM - the minimum Tracking FOM for a charged track used for this DReaction
-		pair<bool, double> dMinCombinedTrackingFOM; //COMBO:MIN_COMBINED_TRACKING_FOM - the minimum combined Tracking FOM for all charged tracks used for this DReaction
 		pair<bool, double> dMaxPhotonRFDeltaT; //COMBO:MAX_PHOTON_RF_DELTAT - the maximum photon-rf time difference: used for photon selection
 		pair<bool, double> dMinProtonMomentum; //COMBO:MIN_PROTON_MOMENTUM - when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have
 		pair<bool, bool> dHasDetectorMatchFlag; //COMBO:HAS_DETECTOR_MATCH_FLAG - if both are true, require tracks to have a detector match
 
 		// PRE-COMBO-BLUEPRINT MASS CUTS
 		map<Particle_t, pair<double, double> > dInvariantMassCuts;
-		deque<DReactionMissingMassSquaredCut> dMissingMassSquaredCuts;
+
+		// COMBO PRE-SELECTION CUTS
+		deque<DAnalysisAction*> dComboPreSelectionActions;
 };
 
 inline void DReaction::Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass)
 {
 	dInvariantMassCuts[locStepInitialPID] = pair<double, double>(locMinInvariantMass, locMaxInvariantMass);
-}
-
-inline void DReaction::Set_MissingMassSquaredCut(double locMinimumMissingMassSq, double locMaximumMissingMassSq)
-{
-	dMissingMassSquaredCuts.push_back(DReactionMissingMassSquaredCut(locMinimumMissingMassSq, locMaximumMissingMassSq));
-}
-
-inline void DReaction::Set_MissingMassSquaredCut(int locMissingMassOffOfStepIndex, Particle_t locMissingMassOffOfPID, double locMinimumMissingMassSq, double locMaximumMissingMassSq)
-{
-	dMissingMassSquaredCuts.push_back(DReactionMissingMassSquaredCut(locMissingMassOffOfStepIndex, locMissingMassOffOfPID, locMinimumMissingMassSq, locMaximumMissingMassSq));
-}
-
-inline void DReaction::Set_MissingMassSquaredCut(int locMissingMassOffOfStepIndex, deque<Particle_t> locMissingMassOffOfPIDs, double locMinimumMissingMassSq, double locMaximumMissingMassSq)
-{
-	dMissingMassSquaredCuts.push_back(DReactionMissingMassSquaredCut(locMissingMassOffOfStepIndex, locMissingMassOffOfPIDs, locMinimumMissingMassSq, locMaximumMissingMassSq));
 }
 
 inline const DReactionStep* DReaction::Get_ReactionStep(size_t locStepIndex) const
@@ -268,6 +218,13 @@ inline DAnalysisAction* DReaction::Get_LastAnalysisAction(void) const
 	if(dAnalysisActions.empty())
 		return NULL;
 	return dAnalysisActions.back();
+}
+
+inline DAnalysisAction* DReaction::Get_ComboPreSelectionAction(size_t locActionIndex) const
+{
+	if(locActionIndex >= dComboPreSelectionActions.size())
+		return NULL;
+	return dComboPreSelectionActions[locActionIndex];
 }
 
 inline bool DReaction::Get_MissingPID(Particle_t& locPID) const

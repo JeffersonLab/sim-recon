@@ -484,31 +484,6 @@ bool DParticleComboBlueprint_factory::Handle_EndOfReactionStep(const DReaction* 
 		return true;
 	}
 
-/*
-	// cut on missing mass squared if desired
-	deque<DReaction::DReactionMissingMassSquaredCut> locMissingMassSquaredCuts;
-	locReaction->Get_MissingMassSquaredCuts(locMissingMassSquaredCuts);
-	for(size_t loc_i = 0; loc_i < locMissingMassSquaredCuts.size(); ++loc_i)
-	{
-		DLorentzVector locMissingP4;
-		int locMissingMassOffOfStepIndex = locMissingMassSquaredCuts[loc_i].dMissingMassOffOfStepIndex;
-		if(locMissingMassOffOfStepIndex == -1)
-			locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleComboBlueprint);
-		else
-			locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleComboBlueprint, 0, locMissingMassOffOfStepIndex, locMissingMassSquaredCuts[loc_i].dMissingMassOffOfPIDs);
-
-		double locMissingMassSq = locMissingP4.M2();
-		if((locMissingMassSq < locMissingMassSquaredCuts[loc_i].dMinimumMissingMassSq) || (locMissingMassSq > locMissingMassSquaredCuts[loc_i].dMaximumMissingMassSq))
-		{
-			if(dDebugLevel > 10)
-				cout << "bad missing mass squared" << endl;
-			if(!Handle_Decursion(locParticleComboBlueprint, locResumeAtIndexDeque, locNumPossibilitiesDeque, locParticleIndex, locStepIndex, locParticleComboBlueprintStep))
-				return false;
-			return true;
-		}
-	}
-*/
-
 	if(dDebugLevel > 10)
 		cout << "save combo" << endl;
 	_data.push_back(locParticleComboBlueprint);
@@ -983,6 +958,10 @@ void DParticleComboBlueprint_factory::Reset_Pools(void)
 
 bool DParticleComboBlueprint_factory::Calc_FinalStateP4(size_t locTotalNumSteps, const DParticleComboBlueprint* locParticleComboBlueprint, const DParticleComboBlueprintStep* locNewParticleComboBlueprintStep, int locStepIndexToGrab, DLorentzVector& locFinalStateP4) const
 {
+	//The input locParticleComboBlueprint is under construction: it does not have all of the steps yet
+	//locNewParticleComboBlueprintStep is the step that will be added next, IF it passes this invariant mass cut
+	//This is a recursive function, so locStepIndexToGrab is the index for the step that should be used for the p4 calculation at this stage
+	//However, because the locParticleComboBlueprint is under construction, locStepIndexToGrab must be converted into the index that the step is actually located at
 	const DParticleComboBlueprintStep* locCurrentStep = locNewParticleComboBlueprintStep;
 	if(locStepIndexToGrab != -1)
 	{

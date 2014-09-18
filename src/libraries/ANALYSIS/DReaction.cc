@@ -6,12 +6,6 @@ DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 	dChargedTrackFactoryTag = "";
 	dNeutralShowerFactoryTag = "";
 
-	dMinCombinedPIDFOM.first = false;
-	dMinCombinedPIDFOM.second = 0.0;
-
-	dMinCombinedTrackingFOM.first = false;
-	dMinCombinedTrackingFOM.second = 0.0;
-
 	dMinChargedPIDFOM.first = false;
 	dMinChargedPIDFOM.second = 0.0;
 

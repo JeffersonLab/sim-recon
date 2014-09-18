@@ -67,6 +67,10 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		DKinematicData* Get_KinematicDataResource(void);
 		DBeamPhoton* Get_BeamPhotonResource(void);
 
+		void Recycle_Data_BeamStep(const DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint, const DEventRFBunch* locEventRFBunch);
+		void Recycle_Data_AllButFirstStep(const DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint);
+		void Recycle_Data_AllSteps(const DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint);
+
 		deque<DParticleComboStep*> dParticleComboStepPool_All;
 		deque<DParticleComboStep*> dParticleComboStepPool_Available;
 
@@ -74,6 +78,7 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		deque<DKinematicData*> dKinematicDataPool_Available;
 
 		map<const DParticleComboBlueprintStep*, const DParticleComboStep*> dComboBlueprintStepMap;
+		map<pair<const DParticleComboBlueprintStep*, const DEventRFBunch*>, set<const DParticleComboStep*> > dComboBlueprintBeamStepMap;
 
 		size_t MAX_DParticleComboStepPoolSize;
 		size_t MAX_DKinematicDataPoolSize;
@@ -89,12 +94,14 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		pair<bool, double> dMaxPhotonRFDeltaT; //the maximum photon-rf time difference: used for photon selection
 		pair<bool, bool> dHasDetectorMatchFlag; //if both are true, require tracks to have a detector match
 
+		int dDebugLevel;
 		double dTargetCenterZ;
 		double dMinThrownMatchFOM;
 		const DAnalysisUtilities* dAnalysisUtilities;
 		vector<const DReaction*> dReactions;
 		map<const DReaction*, bool> dMCReactionExactMatchFlags;
 		map<const DReaction*, DCutAction_TrueCombo*> dTrueComboCuts;
+		map<const DReaction*, size_t> dNumGoodPreComboSelectionActions;
 
 		set<const DChargedTrackHypothesis*> dPreviousPIDTracks;
 		set<const DNeutralParticleHypothesis*> dPreviousPIDNeutrals;

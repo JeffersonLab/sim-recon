@@ -21,11 +21,10 @@ jerror_t DParticleCombo_factory_PreKinFit::init(void)
 	dMaxPhotonRFDeltaT = pair<bool, double>(false, -1.0);
 	dMinChargedPIDFOM = pair<bool, double>(false, -1.0);
 	dMinPhotonPIDFOM = pair<bool, double>(false, -1.0);
-	dMinCombinedPIDFOM = pair<bool, double>(false, -1.0);
-	dMinCombinedTrackingFOM = pair<bool, double>(false, -1.0);
 	dHasDetectorMatchFlag = pair<bool, bool>(false, false);
 
 	dMinThrownMatchFOM = 5.73303E-7;
+	dDebugLevel = 0;
 
 	return NOERROR;
 }
@@ -49,12 +48,6 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 		gPARMS->GetParameter("COMBO:MAX_PHOTON_RF_DELTAT", dMaxPhotonRFDeltaT.second);
 	}
 
-	if(gPARMS->Exists("COMBO:MIN_COMBINED_TRACKING_FOM"))
-	{
-		dMinCombinedTrackingFOM.first = true;
-		gPARMS->GetParameter("COMBO:MIN_COMBINED_TRACKING_FOM", dMinCombinedTrackingFOM.second);
-	}
-
 	if(gPARMS->Exists("COMBO:MIN_CHARGED_PID_FOM"))
 	{
 		dMinChargedPIDFOM.first = true;
@@ -65,12 +58,6 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 	{
 		dMinPhotonPIDFOM.first = true;
 		gPARMS->GetParameter("COMBO:MIN_PHOTON_PID_FOM", dMinPhotonPIDFOM.second);
-	}
-
-	if(gPARMS->Exists("COMBO:MIN_COMBINED_PID_FOM"))
-	{
-		dMinCombinedPIDFOM.first = true;
-		gPARMS->GetParameter("COMBO:MIN_COMBINED_PID_FOM", dMinCombinedPIDFOM.second);
 	}
 
 	if(gPARMS->Exists("COMBO:HAS_DETECTOR_MATCH_FLAG"))
@@ -155,6 +142,17 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 			string locDirName = locReactionName;
 			string locDirTitle = locReactionName;
 
+			//get action names
+			vector<string> locActionNames;
+			for(size_t loc_j = 0; loc_j < locReaction->Get_NumComboPreSelectionActions(); ++loc_j)
+			{
+				DAnalysisAction* locAction = locReaction->Get_ComboPreSelectionAction(loc_j);
+				if(locAction->Get_UseKinFitResultsFlag())
+					continue;
+				locActionNames.push_back(locAction->Get_ActionName());
+			}
+			dNumGoodPreComboSelectionActions[locReaction] = locActionNames.size();
+
 			//action directory
 			locFile->cd();
 			TDirectoryFile* locDirectoryFile = static_cast<TDirectoryFile*>(locFile->GetDirectory(locDirName.c_str()));
@@ -175,12 +173,13 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 			if(loc1DHist == NULL)
 			{
 				locHistTitle = locReactionName + string(";;# Events Survived Cut");
-				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 5, 0.5, 5.5);
+				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 4 + locActionNames.size(), 0.5, 4.5 + float(locActionNames.size()));
 				loc1DHist->GetXaxis()->SetBinLabel(1, "Input"); // a new event
 				loc1DHist->GetXaxis()->SetBinLabel(2, "Has Particle Combo Blueprints");
 				loc1DHist->GetXaxis()->SetBinLabel(3, "Cut Beam, RF #Deltat");
 				loc1DHist->GetXaxis()->SetBinLabel(4, "Cut Particles (PID, Detector Match)");
-				loc1DHist->GetXaxis()->SetBinLabel(5, "Cut Combined PID, Tracking FOMs");
+				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
+					loc1DHist->GetXaxis()->SetBinLabel(5 + loc_j, locActionNames[loc_j].c_str());
 			}
 			dHistMap_NumEventsSurvivedCut_All[locReaction] = loc1DHist;
 
@@ -191,13 +190,14 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 				if(loc1DHist == NULL)
 				{
 					locHistTitle = locReactionName + string(";;# Events Survived Cut");
-					loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 6, 0.5, 6.5);
+					loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 5 + locActionNames.size(), 0.5, 5.5 + float(locActionNames.size()));
 					loc1DHist->GetXaxis()->SetBinLabel(1, "Input"); // a new event
 					loc1DHist->GetXaxis()->SetBinLabel(2, "Has Particle Combo Blueprints");
 					loc1DHist->GetXaxis()->SetBinLabel(3, "Cut Beam, RF #Deltat");
 					loc1DHist->GetXaxis()->SetBinLabel(4, "Cut Particles (PID, Detector Match)");
-					loc1DHist->GetXaxis()->SetBinLabel(5, "Cut Combined PID, Tracking FOMs");
-					loc1DHist->GetXaxis()->SetBinLabel(6, "Has True Combo (Not a Cut)");
+					for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
+						loc1DHist->GetXaxis()->SetBinLabel(5 + loc_j, locActionNames[loc_j].c_str());
+					loc1DHist->GetXaxis()->SetBinLabel(5 + locActionNames.size(), "Has True Combo (Not a Cut)");
 				}
 				dHistMap_NumEventsSurvivedCut_True[locReaction] = loc1DHist;
 			}
@@ -208,11 +208,21 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 			if(loc2DHist == NULL)
 			{
 				locHistTitle = locReactionName + string(";;# Combo Blueprints Survived Cut");
-				loc2DHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), 4, 0.5, 4.5, 100, -0.5, 99.5);
+
+				double* locBinArray = new double[55];
+				for(unsigned int loc_j = 0; loc_j < 6; ++loc_j)
+				{
+					for(unsigned int loc_k = 1; loc_k <= 9; ++loc_k)
+						locBinArray[loc_j*9 + loc_k] = double(loc_k)*pow(10.0, double(loc_j));
+				}
+				locBinArray[54] = 1.0E6;
+
+				loc2DHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), 3 + locActionNames.size(), 0.5, 3.5 + float(locActionNames.size()), 54, locBinArray);
 				loc2DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combo Blueprints");
 				loc2DHist->GetXaxis()->SetBinLabel(2, "Cut Beam, RF #Deltat");
 				loc2DHist->GetXaxis()->SetBinLabel(3, "Cut Particles (PID, Detector Match)");
-				loc2DHist->GetXaxis()->SetBinLabel(4, "Cut Combined PID, Tracking FOMs");
+				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
+					loc2DHist->GetXaxis()->SetBinLabel(4 + loc_j, locActionNames[loc_j].c_str());
 			}
 			dHistMap_NumBlueprintsSurvivedCut[locReaction] = loc2DHist;
 
@@ -221,11 +231,12 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 			if(loc1DHist == NULL)
 			{
 				locHistTitle = locReactionName + string(";;# Combo Blueprints Survived Cut");
-				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 4, 0.5, 4.5);
+				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 3 + locActionNames.size(), 0.5, 3.5 + float(locActionNames.size()));
 				loc1DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combo Blueprints");
 				loc1DHist->GetXaxis()->SetBinLabel(2, "Cut Beam, RF #Deltat");
 				loc1DHist->GetXaxis()->SetBinLabel(3, "Cut Particles (PID, Detector Match)");
-				loc1DHist->GetXaxis()->SetBinLabel(4, "Cut Combined PID, Tracking FOMs");
+				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
+					loc1DHist->GetXaxis()->SetBinLabel(4 + loc_j, locActionNames[loc_j].c_str());
 			}
 			dHistMap_NumBlueprintsSurvivedCut1D[locReaction] = loc1DHist;
 
@@ -254,7 +265,7 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 			if(loc1DHist == NULL)
 			{
 				locHistTitle = locReactionName + string(";# Surviving Beam Particles");
-				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 11, -0.5, 10.5);
+				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 10, 0.5, 10.5);
 			}
 			dHistMap_NumSurvivingBeamParticles[locReaction] = loc1DHist;
 
@@ -283,47 +294,29 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 						dHistMap_PIDFOM_True[locReaction][locPID] = (TH1D*)dHistMap_PIDFOM_All[locReaction][locPID]->Clone(locHistName.c_str());
 				}
 			}
-
-			//Combined PID FOM
-			locHistName = "CombinedPIDFOM";
-			loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-			if(loc1DHist == NULL)
-			{
-				locHistTitle = locReactionName + string(";#Combined PID Confidence Level");
-				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 200, 0.0, 1.0);
-			}
-			dHistMap_CombinedPIDFOM_All[locReaction] = loc1DHist;
-
-			if(!locMCThrowns.empty())
-			{
-				locHistName = "TrueCombinedPIDFOM";
-				loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-				if(loc1DHist == NULL)
-					loc1DHist = (TH1D*)dHistMap_CombinedPIDFOM_All[locReaction]->Clone(locHistName.c_str());
-				dHistMap_CombinedPIDFOM_True[locReaction] = loc1DHist;
-			}
-
-			//Combined Tracking FOM
-			locHistName = "CombinedTrackingFOM";
-			loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-			if(loc1DHist == NULL)
-			{
-				locHistTitle = locReactionName + string(";#Combined Tracking Confidence Level");
-				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 200, 0.0, 1.0);
-			}
-			dHistMap_CombinedTrackingFOM_All[locReaction] = loc1DHist;
-
-			if(!locMCThrowns.empty())
-			{
-				locHistName = "TrueCombinedTrackingFOM";
-				loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-				if(loc1DHist == NULL)
-					loc1DHist = (TH1D*)dHistMap_CombinedTrackingFOM_All[locReaction]->Clone(locHistName.c_str());
-				dHistMap_CombinedTrackingFOM_True[locReaction] = loc1DHist;
-			}
 		}
 	}
 	japp->RootUnLock(); //unlock
+
+	//Initialize pre-selection actions:
+	for(size_t loc_i = 0; loc_i < dReactions.size(); ++loc_i)
+	{
+		const DReaction* locReaction = dReactions[loc_i];
+		size_t locNumActions = locReaction->Get_NumComboPreSelectionActions();
+
+		for(size_t loc_j = 0; loc_j < locNumActions; ++loc_j)
+		{
+			DAnalysisAction* locAnalysisAction = locReaction->Get_ComboPreSelectionAction(loc_j);
+			if(locAnalysisAction->Get_UseKinFitResultsFlag())
+			{
+				cout << "WARNING: CANNOT PERFORM ACTIONS THAT REQUIRES KINEMATIC FIT RESULTS DURING COMBO PRE-SELECTION." << endl;
+				continue; //DO NOT CALL
+			}
+			if(dDebugLevel > 0)
+				cout << "Initialize Combo Pre-Selection Action # " << loc_j + 1 << ": " << locAnalysisAction->Get_ActionName() << " of reaction: " << locReaction->Get_ReactionName() << endl;
+			locAnalysisAction->Initialize(locEventLoop);
+		}
+	}
 
 	return NOERROR;
 }
@@ -334,6 +327,7 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
 	dComboBlueprintStepMap.clear();
+	dComboBlueprintBeamStepMap.clear();
 	dPreviousPhotonRFDeltaTPairs.clear();
 	dPreviousPIDTracks.clear();
 	dPreviousPIDNeutrals.clear();
@@ -352,6 +346,9 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches, "Combo");
 
+	vector<const DEventRFBunch*> locThrownEventRFBunches;
+	locEventLoop->Get(locThrownEventRFBunches, "Thrown");
+
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);
 
@@ -369,8 +366,6 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	Particle_t locPID;
 
 	map<const DReaction*, deque<size_t> > locNumBlueprintsSurvivedCuts;
-
-	map<const DParticleComboStep*, deque<const DParticleComboStep*> > locStepCloneForBeamMap;
 	map<const DParticleComboStep*, deque<const DParticleComboStep*> >::iterator locIterator;
 	for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
 	{
@@ -383,7 +378,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 		bool locBadComboFlag = false;
 
 		if(locNumBlueprintsSurvivedCuts[locReaction].empty())
-			locNumBlueprintsSurvivedCuts[locReaction].resize(4);
+			locNumBlueprintsSurvivedCuts[locReaction].resize(3 + dNumGoodPreComboSelectionActions[locReaction]);
 		++locNumBlueprintsSurvivedCuts[locReaction][0];
 
 		//select the corresponding rf bunch
@@ -403,30 +398,32 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 
 		locParticleCombo->Set_EventRFBunch(locEventRFBunch);
 
-		if(locParticleComboBlueprint->Get_ParticleComboBlueprintStep(0)->Get_InitialParticleID() != Gamma)
+		bool locBeamInComboFlag = (locParticleComboBlueprint->Get_ParticleComboBlueprintStep(0)->Get_InitialParticleID() == Gamma);
+		if(!locBeamInComboFlag)
 			++locNumBlueprintsSurvivedCuts[locReaction][1]; //don't need to cut
 
-		vector<const DBeamPhoton*> locCandidatePhotons;
+		set<const DBeamPhoton*> locCandidatePhotons;
 		for(size_t loc_j = 0; loc_j < locParticleComboBlueprint->Get_NumParticleComboBlueprintSteps(); ++loc_j)
 		{
 			const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
-			locPID = locParticleComboBlueprintStep->Get_InitialParticleID();
+			Particle_t locInitialPID = locParticleComboBlueprintStep->Get_InitialParticleID();
 
-			//search to see if blueprint step is a duplicate of a previous one. if so, combo step will be too!
-			map<const DParticleComboBlueprintStep*, const DParticleComboStep*>::iterator locIterator = dComboBlueprintStepMap.find(locParticleComboBlueprintStep);
-			if(locIterator != dComboBlueprintStepMap.end()) //identical! save it and continue
+			//search to see if blueprint step is a duplicate of a previous one. if so, combo step will be too, UNLESS on beam step (RF bunch might be different)
+			if(locInitialPID != Gamma)
 			{
-				locParticleCombo->Add_ParticleComboStep(locIterator->second);
-				if(locPID == Gamma)
-					++locNumBlueprintsSurvivedCuts[locReaction][1]; //wouldn't have been saved to map unless it was good
-				continue;
+				map<const DParticleComboBlueprintStep*, const DParticleComboStep*>::iterator locIterator = dComboBlueprintStepMap.find(locParticleComboBlueprintStep);
+				if(locIterator != dComboBlueprintStepMap.end()) //identical! save it and continue
+				{
+					locParticleCombo->Add_ParticleComboStep(locIterator->second);
+					continue;
+				}
 			}
 
 			locParticleComboStep = Get_ParticleComboStepResource();
 			locParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
 
 			//initial particle
-			if(locPID == Gamma) //else decaying particle: nothing to set
+			if(locInitialPID == Gamma) //else decaying particle: nothing to set
 			{
 				//beam photon: will later create additional combo for each one that's within the time window, just set the first one for now
 				//compare photon time to RF time (at center of target) //if RF time not matched to tracks: don't cut on photon time
@@ -444,13 +441,16 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 							if(locMCThrownMatching != NULL)
 							{
 								if(locBeamPhotons[loc_k] == locMCThrownMatching->Get_ReconMCGENBeamPhoton())
-									dHistMap_PhotonRFDeltaT_True[locReaction]->Fill(locDeltaT);
+								{
+									if(fabs(locThrownEventRFBunches[0]->dTime - locEventRFBunch->dTime) < 1.002)
+										dHistMap_PhotonRFDeltaT_True[locReaction]->Fill(locDeltaT);
+								}
 							}
 							dPreviousPhotonRFDeltaTPairs.insert(locPhotonRFDeltaTPair);
 						}
 
 						if((fabs(locDeltaT) < locMaxPhotonRFDeltaT.second) || (!locEventRFBunch->dMatchedToTracksFlag) || (!locMaxPhotonRFDeltaT.first))
-							locCandidatePhotons.push_back(locBeamPhotons[loc_k]);
+							locCandidatePhotons.insert(locBeamPhotons[loc_k]);
 					}
 				}
 				japp->RootUnLock();
@@ -463,8 +463,8 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 
 				++locNumBlueprintsSurvivedCuts[locReaction][1];
 
-				locParticleComboStep->Set_InitialParticle(locCandidatePhotons[0]);
-				locParticleComboStep->Set_InitialParticle_Measured(locCandidatePhotons[0]);
+				locParticleComboStep->Set_InitialParticle(*(locCandidatePhotons.begin()));
+				locParticleComboStep->Set_InitialParticle_Measured(*(locCandidatePhotons.begin()));
 			}
 
 			//setup target
@@ -506,74 +506,165 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			locParticleCombo->Add_ParticleComboStep(locParticleComboStep);
 		}
 
-		bool locIsTrueComboFlag = false;
-		if(!locBadComboFlag)
-		{
-			++locNumBlueprintsSurvivedCuts[locReaction][2];
-			if(dTrueComboCuts.find(locReaction) != dTrueComboCuts.end())
-				locIsTrueComboFlag = (*dTrueComboCuts[locReaction])(locEventLoop, locParticleCombo);
-			if((!Cut_CombinedTrackingFOM(locParticleCombo, locIsTrueComboFlag)) || (!Cut_CombinedPIDFOM(locParticleCombo, locIsTrueComboFlag)))
-				locBadComboFlag = true;
-		}
-
 		if(locBadComboFlag) //e.g. bad PID FOM: recycle steps
 		{
-			for(size_t loc_j = 0; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
-			{
-				const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_j);
-				const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
-				map<const DParticleComboBlueprintStep*, const DParticleComboStep*>::iterator locIterator = dComboBlueprintStepMap.find(locParticleComboBlueprintStep);
-				if(locIterator == dComboBlueprintStepMap.end()) //don't recycle if step was grabbed from map!!
-					dParticleComboStepPool_Available.push_back(const_cast<DParticleComboStep*>(locParticleComboStep));
-			}
+			Recycle_Data_AllSteps(locParticleCombo, locParticleComboBlueprint);
 			delete locParticleCombo;
 			continue;
 		}
-		++locNumBlueprintsSurvivedCuts[locReaction][3];
-
-		if(locIsTrueComboFlag)
-			locTrueComboSurvivedReactions.insert(locReaction);
-
-		for(size_t loc_j = 0; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
-		{
-			const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
-			dComboBlueprintStepMap[locParticleComboBlueprintStep] = locParticleCombo->Get_ParticleComboStep(loc_j);
-		}
+		++locNumBlueprintsSurvivedCuts[locReaction][2];
 
 		Calc_CommonSpacetimeVertices(locParticleCombo);
-		_data.push_back(locParticleCombo);
 
-		if(locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticleID() == Gamma)
+		//clone combos for additional beam photons (if needed)
+		vector<DParticleCombo*> locBuiltParticleCombos;
+		if(locBeamInComboFlag)
+		{
+			//be very careful with memory consumption: re-use objects if already created & saved in previous-good combos
+			const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(0);
+			pair<const DParticleComboBlueprintStep*, const DEventRFBunch*> locBeamPair(locParticleComboBlueprintStep, locEventRFBunch);
+			map<pair<const DParticleComboBlueprintStep*, const DEventRFBunch*>, set<const DParticleComboStep*> >::iterator locIterator;
+			locIterator = dComboBlueprintBeamStepMap.find(locBeamPair);
+
+			bool locUsedPriorStepForFirstPhotonFlag = false;
+			if(locIterator != dComboBlueprintBeamStepMap.end())
+			{
+				//Some steps have been created & saved for this blueprint/RF combo before. Use them.
+					//However, maybe not all of them still exist (e.g. some were in combos that failed a pre-selection cut).
+					//So, we will need to make the ones that aren't available. 
+						//To keep track of which ones to remake, erase the photons we've used from locCandidatePhotons. 
+				set<const DParticleComboStep*>& locPreExistingSteps = locIterator->second;
+				set<const DParticleComboStep*>::iterator locStepIterator = locPreExistingSteps.begin();
+				for(; locStepIterator != locPreExistingSteps.end(); ++locStepIterator)
+				{
+					const DBeamPhoton* locBeamPhoton = dynamic_cast<const DBeamPhoton*>((*locStepIterator)->Get_InitialParticle());
+					set<const DBeamPhoton*>::iterator locPhotonIterator = locCandidatePhotons.find(locBeamPhoton);
+					if(locPhotonIterator == locCandidatePhotons.end())
+						continue;
+
+					if((locPhotonIterator == locCandidatePhotons.begin()) && (!locUsedPriorStepForFirstPhotonFlag))
+					{
+						//Will use the original locParticleCombo object, but will overwrite the initial step, which was created new: recycle it!
+						dParticleComboStepPool_Available.push_back(const_cast<DParticleComboStep*>(locParticleCombo->Get_ParticleComboStep(0)));
+						locParticleCombo->Set_ParticleComboStep(*locStepIterator, 0);
+						locBuiltParticleCombos.push_back(locParticleCombo);
+						locUsedPriorStepForFirstPhotonFlag = true;
+					}
+					else
+					{
+						//create new combo, utilzing the previously-craeted step
+						DParticleCombo* locNewParticleCombo = new DParticleCombo(*locParticleCombo);
+						locNewParticleCombo->Set_ParticleComboStep(*locStepIterator, 0);
+						locBuiltParticleCombos.push_back(locNewParticleCombo);
+					}
+					locCandidatePhotons.erase(locPhotonIterator); //register that we've used it
+				}
+			}
+
+			if(!locUsedPriorStepForFirstPhotonFlag)
+			{
+				locBuiltParticleCombos.push_back(locParticleCombo); //didn't use it, it was good, save it!
+				locCandidatePhotons.erase(locCandidatePhotons.begin()); //register that we've used it
+			}
+
+			//create new combos & steps for the remaining, new photons
+			set<const DBeamPhoton*>::iterator locPhotonIterator = locCandidatePhotons.begin();
+			for(; locPhotonIterator != locCandidatePhotons.end(); ++locPhotonIterator)
+			{
+				locParticleComboStep = Clone_ParticleComboStep(locParticleCombo->Get_ParticleComboStep(0));
+				locParticleComboStep->Set_InitialParticle(*locPhotonIterator);
+				locParticleComboStep->Set_InitialParticle_Measured(*locPhotonIterator);
+
+				DParticleCombo* locNewParticleCombo = new DParticleCombo(*locParticleCombo);
+				locNewParticleCombo->Set_ParticleComboStep(locParticleComboStep, 0);
+				locBuiltParticleCombos.push_back(locNewParticleCombo);
+			}
+		}
+		else
+			locBuiltParticleCombos.push_back(locParticleCombo); //just 1
+
+		//hist # photons
+		if(locBeamInComboFlag)
 		{
 			japp->RootWriteLock();
-			dHistMap_NumSurvivingBeamParticles[locReaction]->Fill(locCandidatePhotons.size());
+			dHistMap_NumSurvivingBeamParticles[locReaction]->Fill(locBuiltParticleCombos.size());
 			japp->RootUnLock();
 		}
 
-		//clone combos for additional beam photons (if needed)
-		if((locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticleID() == Gamma) && (locCandidatePhotons.size() > 1))
+		//combos are now finally constructed.  Now, apply pre-selection cuts
+		int locLastActionSurvivedIndex = -1;
+		vector<DParticleCombo*> locSurvivingParticleCombos, locCutParticleCombos;
+		for(size_t loc_j = 0; loc_j < locBuiltParticleCombos.size(); ++loc_j)
 		{
-			deque<const DParticleComboStep*> locNewComboSteps;
-			locIterator = locStepCloneForBeamMap.find(locParticleCombo->Get_ParticleComboStep(0));
-			if(locIterator != locStepCloneForBeamMap.end())
-				locNewComboSteps = locIterator->second; //step cloned previously for beam photons: just use the old objects
-			else
+			bool locPassedCutsFlag = true;
+			int locActionFillIndex = -1;
+			for(size_t loc_k = 0; loc_k < locReaction->Get_NumComboPreSelectionActions(); ++loc_k)
 			{
-				for(size_t loc_j = 1; loc_j < locCandidatePhotons.size(); ++loc_j)
+				DAnalysisAction* locAnalysisAction = locReaction->Get_ComboPreSelectionAction(loc_k);
+				if(locAnalysisAction->Get_UseKinFitResultsFlag())
+					continue;
+				++locActionFillIndex;
+				if(!(*locAnalysisAction)(locEventLoop, locBuiltParticleCombos[loc_j]))
 				{
-					locParticleComboStep = Clone_ParticleComboStep(locParticleCombo->Get_ParticleComboStep(0));
-					locParticleComboStep->Set_InitialParticle(locCandidatePhotons[loc_j]);
-					locParticleComboStep->Set_InitialParticle_Measured(locCandidatePhotons[loc_j]);
-					locNewComboSteps.push_back(locParticleComboStep);
+					locPassedCutsFlag = false;
+					break;
 				}
-				locStepCloneForBeamMap[locParticleCombo->Get_ParticleComboStep(0)] = locNewComboSteps;
+				if(locActionFillIndex > locLastActionSurvivedIndex)
+					locLastActionSurvivedIndex = locActionFillIndex;
 			}
-			for(size_t loc_j = 0; loc_j < locNewComboSteps.size(); ++loc_j)
+			if(locPassedCutsFlag)
+				locSurvivingParticleCombos.push_back(locBuiltParticleCombos[loc_j]);
+			else
+				locCutParticleCombos.push_back(locBuiltParticleCombos[loc_j]);
+		}
+		for(int loc_j = 0; loc_j <= locLastActionSurvivedIndex; ++loc_j)
+			++locNumBlueprintsSurvivedCuts[locReaction][3 + loc_j];
+
+		//all but the beam particle step is shared amongst all particles
+			//if all combos failed: recycle them.  else don't.
+		if(locSurvivingParticleCombos.empty())
+		{
+			if(locBeamInComboFlag)
+				Recycle_Data_AllButFirstStep(locCutParticleCombos[0], locParticleComboBlueprint);
+			else
+				Recycle_Data_AllSteps(locCutParticleCombos[0], locParticleComboBlueprint);
+		}
+
+		//recycle the beam steps of the failed combos
+		if(locBeamInComboFlag)
+		{
+			for(size_t loc_j = 0; loc_j < locCutParticleCombos.size(); ++loc_j)
+				Recycle_Data_BeamStep(locCutParticleCombos[loc_j], locParticleComboBlueprint, locEventRFBunch);
+		}
+
+		for(size_t loc_j = 0; loc_j < locCutParticleCombos.size(); ++loc_j)
+			delete locCutParticleCombos[loc_j];
+
+		//register the surviving steps, see if one of these is the true combo, and save the result
+		for(size_t loc_j = 0; loc_j < locSurvivingParticleCombos.size(); ++loc_j)
+		{
+			for(size_t loc_k = 0; loc_k < locSurvivingParticleCombos[loc_j]->Get_NumParticleComboSteps(); ++loc_k)
 			{
-				DParticleCombo* locNewParticleCombo = new DParticleCombo(*locParticleCombo);
-				locNewParticleCombo->Set_ParticleComboStep(locNewComboSteps[loc_j], 0);
-				_data.push_back(locNewParticleCombo);
+				const DParticleComboStep* locParticleComboStep = locSurvivingParticleCombos[loc_j]->Get_ParticleComboStep(loc_k);
+				const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_k);
+
+				if(locBeamInComboFlag && (loc_k == 0))
+				{
+					pair<const DParticleComboBlueprintStep*, const DEventRFBunch*> locBeamPair(locParticleComboBlueprintStep, locEventRFBunch);
+					dComboBlueprintBeamStepMap[locBeamPair].insert(locParticleComboStep); //save it so that it can be re-used later
+				}
+				else
+					dComboBlueprintStepMap[locParticleComboBlueprintStep] = locParticleComboStep;
 			}
+
+			if((dTrueComboCuts.find(locReaction) != dTrueComboCuts.end()) && (locTrueComboSurvivedReactions.find(locReaction) == locTrueComboSurvivedReactions.end()))
+			{
+				//Is MC data, and haven't found the true combo yet
+				if((*dTrueComboCuts[locReaction])(locEventLoop, locSurvivingParticleCombos[loc_j]))
+					locTrueComboSurvivedReactions.insert(locReaction);
+			}
+
+			_data.push_back(locSurvivingParticleCombos[loc_j]);
 		}
 	}
 
@@ -614,6 +705,52 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	japp->RootUnLock();
 
 	return NOERROR;
+}
+
+void DParticleCombo_factory_PreKinFit::Recycle_Data_BeamStep(const DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint, const DEventRFBunch* locEventRFBunch)
+{
+	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
+
+	const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(0);
+	pair<const DParticleComboBlueprintStep*, const DEventRFBunch*> locBeamPair(locParticleComboBlueprintStep, locEventRFBunch);
+	map<pair<const DParticleComboBlueprintStep*, const DEventRFBunch*>, set<const DParticleComboStep*> >::iterator locIterator;
+	locIterator = dComboBlueprintBeamStepMap.find(locBeamPair);
+
+	//if no steps saved for this beam pair, recycle it
+	if(locIterator == dComboBlueprintBeamStepMap.end())
+	{
+		dParticleComboStepPool_Available.push_back(const_cast<DParticleComboStep*>(locParticleComboStep));
+		return;
+	}
+
+	//see if the current step was previously saved. if not, recycle it. if so, don't recycle, because in use by a previous, good combo
+	set<const DParticleComboStep*>& locSavedSteps = locIterator->second;
+	if(locSavedSteps.find(locParticleComboStep) == locSavedSteps.end())
+		dParticleComboStepPool_Available.push_back(const_cast<DParticleComboStep*>(locParticleComboStep));
+}
+
+void DParticleCombo_factory_PreKinFit::Recycle_Data_AllButFirstStep(const DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint)
+{
+	for(size_t loc_j = 1; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
+	{
+		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_j);
+		const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
+		map<const DParticleComboBlueprintStep*, const DParticleComboStep*>::iterator locIterator = dComboBlueprintStepMap.find(locParticleComboBlueprintStep);
+		if(locIterator == dComboBlueprintStepMap.end()) //don't recycle if step was grabbed from map!!
+			dParticleComboStepPool_Available.push_back(const_cast<DParticleComboStep*>(locParticleComboStep));
+	}
+}
+
+void DParticleCombo_factory_PreKinFit::Recycle_Data_AllSteps(const DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint)
+{
+	for(size_t loc_j = 0; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
+	{
+		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_j);
+		const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
+		map<const DParticleComboBlueprintStep*, const DParticleComboStep*>::iterator locIterator = dComboBlueprintStepMap.find(locParticleComboBlueprintStep);
+		if(locIterator == dComboBlueprintStepMap.end()) //don't recycle if step was grabbed from map!!
+			dParticleComboStepPool_Available.push_back(const_cast<DParticleComboStep*>(locParticleComboStep));
+	}
 }
 
 DParticleComboStep* DParticleCombo_factory_PreKinFit::Clone_ParticleComboStep(const DParticleComboStep* locParticleComboStep)
@@ -830,72 +967,6 @@ bool DParticleCombo_factory_PreKinFit::Cut_PIDFOM(const DReaction* locReaction, 
 	if(!locMinPhotonPIDFOM.first)
 		return true;
 	return ((locNeutralParticleHypothesis->dNDF == 0) ? true : (locNeutralParticleHypothesis->dFOM >= locMinPhotonPIDFOM.second));
-}
-
-bool DParticleCombo_factory_PreKinFit::Cut_CombinedPIDFOM(const DParticleCombo* locParticleCombo, bool locIsTrueComboFlag)
-{
-	const DReaction* locReaction = locParticleCombo->Get_Reaction();
-	pair<bool, double> locMinCombinedPIDFOM = dMinCombinedPIDFOM.first ? dMinCombinedPIDFOM : locReaction->Get_MinCombinedPIDFOM();
-
-	unsigned int locTotalPIDNDF = 0;
-	double locTotalPIDChiSq = 0.0;
-
-	deque<const DKinematicData*> locDetectedParticles;
-	locParticleCombo->Get_DetectedFinalParticles_Measured(locDetectedParticles);
-	for(size_t loc_i = 0; loc_i < locDetectedParticles.size(); ++loc_i)
-	{
-		if(ParticleCharge(locDetectedParticles[loc_i]->PID()) == 0)
-		{
-			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = dynamic_cast<const DNeutralParticleHypothesis*>(locDetectedParticles[loc_i]);
-			locTotalPIDNDF += locNeutralParticleHypothesis->dNDF;
-			locTotalPIDChiSq += locNeutralParticleHypothesis->dChiSq;
-		}
-		else
-		{
-			const DChargedTrackHypothesis* locChargedTrackHypothesis = dynamic_cast<const DChargedTrackHypothesis*>(locDetectedParticles[loc_i]);
-			locTotalPIDNDF += locChargedTrackHypothesis->dNDF;
-			locTotalPIDChiSq += locChargedTrackHypothesis->dChiSq;
-		}
-	}
-	double locFOM = TMath::Prob(locTotalPIDChiSq, locTotalPIDNDF);
-
-	dHistMap_CombinedTrackingFOM_All[locReaction]->Fill(locFOM);
-	if(locIsTrueComboFlag)
-		dHistMap_CombinedTrackingFOM_True[locReaction]->Fill(locFOM);
-
-	if(!locMinCombinedPIDFOM.first)
-		return true;
-	return (locFOM >= locMinCombinedPIDFOM.second);
-}
-
-bool DParticleCombo_factory_PreKinFit::Cut_CombinedTrackingFOM(const DParticleCombo* locParticleCombo, bool locIsTrueComboFlag)
-{
-	const DReaction* locReaction = locParticleCombo->Get_Reaction();
-	pair<bool, double> locMinCombinedTrackingFOM = dMinCombinedTrackingFOM.first ? dMinCombinedTrackingFOM : locReaction->Get_MinCombinedTrackingFOM();
-
-	unsigned int locTotalTrackingNDF = 0;
-	double locTotalTrackingChiSq = 0.0;
-
-	deque<const DKinematicData*> locDetectedChargedParticles;
-	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locDetectedChargedParticles);
-	for(size_t loc_i = 0; loc_i < locDetectedChargedParticles.size(); ++loc_i)
-	{
-		const DChargedTrackHypothesis* locChargedTrackHypothesis = dynamic_cast<const DChargedTrackHypothesis*>(locDetectedChargedParticles[loc_i]);
-		locTotalTrackingNDF += locChargedTrackHypothesis->dNDF_Track;
-		locTotalTrackingChiSq += locChargedTrackHypothesis->dChiSq_Track;
-	}
-
-	if(locTotalTrackingNDF == 0)
-		return true;
-	double locFOM = TMath::Prob(locTotalTrackingChiSq, locTotalTrackingNDF);
-
-	dHistMap_CombinedPIDFOM_All[locReaction]->Fill(locFOM);
-	if(locIsTrueComboFlag)
-		dHistMap_CombinedPIDFOM_True[locReaction]->Fill(locFOM);
-
-	if(!locMinCombinedTrackingFOM.first)
-		return true;
-	return (locFOM >= locMinCombinedTrackingFOM.second);
 }
 
 bool DParticleCombo_factory_PreKinFit::Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const

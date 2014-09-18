@@ -32,6 +32,7 @@ DCutAction_ThrownTopology
 
 DCutAction_PIDFOM
 DCutAction_CombinedPIDFOM
+DCutAction_CombinedTrackingFOM
 DCutAction_TrueBeamParticle
 DCutAction_TrueCombo
 DCutAction_TruePID
@@ -172,7 +173,6 @@ class DCutAction_TrueCombo : public DAnalysisAction
 		bool dExactMatchFlag;
 
 		DCutAction_ThrownTopology* dCutAction_ThrownTopology;
-
 		DCutAction_TrueBeamParticle* dCutAction_TrueBeamParticle;
 };
 
@@ -273,7 +273,7 @@ class DCutAction_MissingMass : public DAnalysisAction
 		//Then: Will cut missing-mass: g, p -> K+, K+, (X)
 		//Also:
 		//locMissingMassOffOfStepIndex = 1, locMissingMassOffOfPID = pi-
-		//Then: Will cut missing-mass: g, p -> K+, K+, pi-
+		//Then: Will cut missing-mass: g, p -> K+, K+, pi- (from Xi- decay)
 		//But:
 		//locMissingMassOffOfStepIndex = 0, locMissingMassOffOfPIDs = K+
 		//Then: Will cut only missing-mass: g, p -> K+_1, (X)    and NOT K+_2!!!

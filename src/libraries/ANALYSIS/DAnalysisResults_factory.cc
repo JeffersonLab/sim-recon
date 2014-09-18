@@ -98,8 +98,16 @@ jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int runn
 			loc2DHist = static_cast<TH2D*>(locDirectoryFile->Get(locHistName.c_str()));
 			if(loc2DHist == NULL)
 			{
+				double* locBinArray = new double[55];
+				for(unsigned int loc_j = 0; loc_j < 6; ++loc_j)
+				{
+					for(unsigned int loc_k = 1; loc_k <= 9; ++loc_k)
+						locBinArray[loc_j*9 + loc_k] = double(loc_k)*pow(10.0, double(loc_j));
+				}
+				locBinArray[54] = 1.0E6;
+
 				locHistTitle = locReactionName + string(";;# Particle Combos Survived Action");
-				loc2DHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), locNumActions + 1, -0.5, locNumActions + 1 - 0.5, 100, -0.5, 99.5); //+1 for # tracks
+				loc2DHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), locNumActions + 1, -0.5, locNumActions + 1 - 0.5, 54, locBinArray); //+1 for # tracks
 				loc2DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combos"); // at least one DParticleCombo object before any actions
 				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
 					loc2DHist->GetXaxis()->SetBinLabel(2 + loc_j, locActionNames[loc_j].c_str());
