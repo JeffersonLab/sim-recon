@@ -17,7 +17,6 @@ using namespace std;
 #define MATCH_RADIUS 2.0
 #define ADJACENT_MATCH_DISTANCE 0.3
 //#define SIGN_CHANGE_CHISQ_CUT 10.0
-#define BEAM_VARIANCE 1.0 // cm^2
 //#define USED_IN_SEGMENT 0x8
 //#define CORRECTED 0x10
 //#define MAX_ITER 10
@@ -58,8 +57,10 @@ DFDCSegment_factory::~DFDCSegment_factory() {
 jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int runnumber) { 
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   const DMagneticFieldMap *bfield = dapp->GetBfield();
-  RotationSenseToCharge=(bfield->GetBz(0.,0.,65.)>0.)?-1.:1.;
- 
+  double Bz=bfield->GetBz(0.,0.,65.);
+  RotationSenseToCharge=(Bz>0.)?-1.:1.;
+  BEAM_VARIANCE=(fabs(Bz)<1.e-3)?100000.:1.; // cm^2
+
   // get the geometry
   const DGeometry *geom = dapp->GetDGeometry(runnumber);
 
@@ -72,6 +73,7 @@ jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int runnumber) {
   */
   DEBUG_LEVEL=0;
   gPARMS->SetDefaultParameter("FDC:DEBUG_LEVEL", DEBUG_LEVEL);
+  
 
   return NOERROR;
 }
