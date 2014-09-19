@@ -7,7 +7,6 @@
 //******************************************************************************
 
 #include "DFDCCathodeCluster_factory.h"
-#define TIME_SLICE 10. // ns
 
 bool DFDCHit_cmp(const DFDCHit* a, const DFDCHit* b) {
   if (a->gLayer==b->gLayer){
@@ -73,6 +72,15 @@ DFDCCathodeCluster_factory::DFDCCathodeCluster_factory() {
 ///
 DFDCCathodeCluster_factory::~DFDCCathodeCluster_factory() {
 	delete _log;
+}
+
+///
+/// Initialization
+///
+jerror_t DFDCCathodeCluster_factory::init(void){
+  TIME_SLICE=10.0; //ns
+  gPARMS->SetDefaultParameter("FDC:CLUSTER_TIME_SLICE",TIME_SLICE);
+
 }
 
 ///
@@ -216,17 +224,18 @@ void DFDCCathodeCluster_factory::pique(vector<const DFDCHit*>& H) {
     // into a new DFDCCathodeCluster object and reset for the next 
     // cluster.
     else {
-      DFDCCathodeCluster* newCluster = new DFDCCathodeCluster();
-      newCluster->q_tot 		= q_tot;
-      newCluster->gLayer		= (*i)->gLayer;
-      newCluster->gPlane = (*i)->gPlane;
-      newCluster->plane		= (*i)->plane;
-      for (vector<const DFDCHit*>::iterator j = i-width+1; 
-	   j <=i ; ++j){
-	newCluster->members.push_back(*j);
+      if (width>1){
+	DFDCCathodeCluster* newCluster = new DFDCCathodeCluster();
+	newCluster->q_tot 		= q_tot;
+	newCluster->gLayer		= (*i)->gLayer;
+	newCluster->gPlane = (*i)->gPlane;
+	newCluster->plane		= (*i)->plane;
+	for (vector<const DFDCHit*>::iterator j = i-width+1; 
+	     j <=i ; ++j){
+	  newCluster->members.push_back(*j);
+	}
+	_data.push_back(newCluster);
       }
-      _data.push_back(newCluster);
-
       width 		= 1;
       q_tot 		= 0.0;
     }

@@ -54,9 +54,10 @@ class DFDCCathodeCluster_factory : public JFactory<DFDCCathodeCluster> {
 		/// should eventually be modified to do more sophisticated peak finding. 
 		///
 		jerror_t evnt(JEventLoop *eventLoop, int eventNo);	
-		
+		jerror_t init(void);
 	private:
 		JStreamLog* _log;
+		double TIME_SLICE;
 };
 
 #endif // DFACTORY_DFDCCATHODECLUSTER_H
