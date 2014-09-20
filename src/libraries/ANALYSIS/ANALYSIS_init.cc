@@ -96,6 +96,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DCutAction_TransverseMomentum(NULL, 0.0);
 	DCutAction_TrueBeamParticle(NULL);
 	DCutAction_TrueCombo(NULL, 0.0, false);
+	DCutAction_BDTSignalCombo(NULL, 0.0, false, false);
 
 	return NOERROR;
 }

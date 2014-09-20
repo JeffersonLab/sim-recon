@@ -15,6 +15,8 @@
 #include "TRACKING/DMCThrown.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
 
+class DAnalysisUtilities;
+
 using namespace jana;
 using namespace std;
 
@@ -24,6 +26,8 @@ class DParticleCombo_factory_Thrown : public jana::JFactory<DParticleCombo>
 		DParticleCombo_factory_Thrown(){use_factory = 1;}; //prevents JANA from searching the input file for these objects
 		~DParticleCombo_factory_Thrown(){};
 		const char* Tag(void){return "Thrown";}
+
+		DParticleCombo* Build_ThrownCombo(JEventLoop* locEventLoop, const DReaction* locThrownReaction, deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps);
 
 	private:
 		jerror_t init(void);						///< Called once at program start.

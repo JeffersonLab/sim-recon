@@ -21,7 +21,17 @@ jerror_t DParticleCombo_factory::init(void)
 jerror_t DParticleCombo_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
 {
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	dKinFitter.Set_BField(locApplication->GetBfield());
+	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield();
+
+	double locTargetZCenter = 65.0;
+	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
+	locGeometry->GetTargetZ(locTargetZCenter);
+
+	double locBx, locBy, locBz;
+	locMagneticFieldMap->GetField(0.0, 0.0, locTargetZCenter, locBx, locBy, locBz);
+	TVector3 locBField(locBx, locBy, locBz);
+	if(locBField.Mag() > 0.0)
+		dKinFitter.Set_BField(locMagneticFieldMap);
 
 	// Get # of DReactions:
 	// Get list of factories and find all the ones producing

@@ -27,14 +27,6 @@ jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield();
-	dKinFitter.Set_BField(locMagneticFieldMap);
-
-	gPARMS->SetDefaultParameter("KINFIT:KINFITDEBUGLEVEL", dKinFitDebugLevel);
-	gPARMS->SetDefaultParameter("KINFIT:DEBUGLEVEL", dDebugLevel);
-	gPARMS->SetDefaultParameter("KINFIT:LINKVERTICES", dLinkVerticesFlag);
-
-	dKinFitter.Set_DebugLevel(dKinFitDebugLevel);
-	dKinFitter.Set_LinkVerticesFlag(dLinkVerticesFlag);
 
 	dTargetZCenter = 65.0;
 	// Get Target parameters from XML
@@ -42,12 +34,18 @@ jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 	if(locGeometry != NULL)
 		locGeometry->GetTargetZ(dTargetZCenter);
 
-	//test
 	double locBx, locBy, locBz;
 	locMagneticFieldMap->GetField(0.0, 0.0, dTargetZCenter, locBx, locBy, locBz);
 	TVector3 locBField(locBx, locBy, locBz);
-	if(!(locBField.Mag() > 0.0))
-		cout << "WARNING: MAGNETIC FIELD IS ZERO AT THE TARGET CENTER. YOU SURE THIS IS OK???" << endl;
+	if(locBField.Mag() > 0.0)
+		dKinFitter.Set_BField(locMagneticFieldMap);
+
+	gPARMS->SetDefaultParameter("KINFIT:KINFITDEBUGLEVEL", dKinFitDebugLevel);
+	gPARMS->SetDefaultParameter("KINFIT:DEBUGLEVEL", dDebugLevel);
+	gPARMS->SetDefaultParameter("KINFIT:LINKVERTICES", dLinkVerticesFlag);
+
+	dKinFitter.Set_DebugLevel(dKinFitDebugLevel);
+	dKinFitter.Set_LinkVerticesFlag(dLinkVerticesFlag);
 
 	// Get # of DReactions:
 	// Get list of factories and find all the ones producing

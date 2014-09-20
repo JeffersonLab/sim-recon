@@ -26,6 +26,7 @@ class DReaction : public JObject
 		// SET OBJECT DATA:
 		inline void Set_KinFitType(DKinFitType locKinFitType){dKinFitType = locKinFitType;}
 		inline void Add_ReactionStep(const DReactionStep* locReactionStep){dReactionSteps.push_back(locReactionStep);}
+		inline void Clear_ReactionSteps(void){dReactionSteps.clear();}
 		inline void Add_AnalysisAction(DAnalysisAction* locAnalysisAction){dAnalysisActions.push_back(locAnalysisAction);}
 
 		// SET TRACK SELECTION FACTORIES //Command-line values will override these values

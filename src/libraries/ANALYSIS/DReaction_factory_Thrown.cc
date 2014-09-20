@@ -41,11 +41,19 @@ jerror_t DReaction_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int even
 	}
 	dReactionStepPool_Available = dReactionStepPool_All;
 
- 	vector<const DMCReaction*> locMCReactions;
-	locEventLoop->Get(locMCReactions);
-
 	deque<pair<const DMCThrown*, deque<const DMCThrown*> > > locThrownSteps;
 	dAnalysisUtilities->Get_ThrownParticleSteps(locEventLoop, locThrownSteps);
+
+	DReaction* locReaction = Build_ThrownReaction(locEventLoop, locThrownSteps);
+	_data.push_back(locReaction);
+
+	return NOERROR;
+}
+
+DReaction* DReaction_factory_Thrown::Build_ThrownReaction(JEventLoop* locEventLoop, deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps)
+{
+ 	vector<const DMCReaction*> locMCReactions;
+	locEventLoop->Get(locMCReactions);
 
 	DReaction* locReaction = new DReaction("Thrown");
 	DReactionStep* locReactionStep = Get_ReactionStepResource();
@@ -74,9 +82,7 @@ jerror_t DReaction_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int even
 		locReaction->Add_ReactionStep(locReactionStep);
 	}
 
-	_data.push_back(locReaction);
-
-	return NOERROR;
+	return locReaction;
 }
 
 DReactionStep* DReaction_factory_Thrown::Get_ReactionStepResource(void)

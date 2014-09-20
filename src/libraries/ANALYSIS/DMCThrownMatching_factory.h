@@ -10,6 +10,8 @@
 
 #include <map>
 
+#include "TDecompLU.h"
+
 #include <JANA/JFactory.h>
 #include "TRACKING/DMCThrown.h"
 #include "PID/DChargedTrackHypothesis.h"
@@ -35,7 +37,8 @@ using namespace std;
 class DMCThrownMatching_factory : public jana::JFactory<DMCThrownMatching>
 {
 	public:
-		double Calc_MatchFOM(const DVector3& locMomentum_Thrown, const DVector3& locMomentum_Detected, const DMatrixDSym& locInputCovarianceMatrix) const;
+		bool Calc_InverseMatrix(const DMatrixDSym& locInputCovarianceMatrix, DMatrixDSym& locInverse3x3Matrix) const;
+		double Calc_MatchFOM(const DVector3& locMomentum_Thrown, const DVector3& locMomentum_Detected, DMatrixDSym locInverse3x3Matrix) const;
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -46,10 +49,10 @@ class DMCThrownMatching_factory : public jana::JFactory<DMCThrownMatching>
 
 		void Find_GenReconMatches_BeamPhotons(JEventLoop* locEventLoop, DMCThrownMatching* locMCThrownMatching) const;
 
-		void Find_GenReconMatches_ChargedTrack(const vector<const DMCThrown*>& locInputMCThrownVector, const vector<const DChargedTrack*>& locChargedTracks, DMCThrownMatching* locMCThrownMatching) const;
+		void Find_GenReconMatches_ChargedTrack(const vector<const DChargedTrack*>& locChargedTracks, DMCThrownMatching* locMCThrownMatching) const;
 		void Find_GenReconMatches_ChargedHypo(const vector<const DMCThrown*>& locInputMCThrownVector, const vector<const DChargedTrackHypothesis*>& locInputChargedTrackHypothesisVector, DMCThrownMatching* locMCThrownMatching) const;
 
-		void Find_GenReconMatches_NeutralParticle(const vector<const DMCThrown*>& locInputMCThrownVector, const vector<const DNeutralParticle*>& locNeutralParticles, DMCThrownMatching* locMCThrownMatching) const;
+		void Find_GenReconMatches_NeutralParticle(const vector<const DNeutralParticle*>& locNeutralParticles, DMCThrownMatching* locMCThrownMatching) const;
 		void Find_GenReconMatches_NeutralHypo(const vector<const DMCThrown*>& locInputMCThrownVector, const vector<const DNeutralParticleHypothesis*>& locInputNeutralParticleHypothesisVector, DMCThrownMatching* locMCThrownMatching) const;
 
 		void Find_GenReconMatches_TOFPoints(JEventLoop* locEventLoop, DMCThrownMatching* locMCThrownMatching) const;

@@ -34,9 +34,14 @@
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DKinFitParticle.h"
 #include "ANALYSIS/DMCThrownMatching_factory.h"
+#include "ANALYSIS/DParticleCombo_factory_Thrown.h"
+#include "ANALYSIS/DReaction_factory_Thrown.h"
 
 using namespace std;
 using namespace jana;
+
+class DParticleCombo_factory_Thrown;
+class DReaction_factory_Thrown;
 
 class DAnalysisUtilities : public JObject
 {
@@ -46,10 +51,13 @@ class DAnalysisUtilities : public JObject
 		// Constructor and destructor
 		DAnalysisUtilities(JEventLoop *loop); // require JEventLoop in constructor
 
+		bool Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExclusiveMatchFlag, bool locIncludeDecayingToReactionFlag) const;
+		void Replace_DecayingParticleWithProducts(deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps, size_t locStepIndex) const;
+		bool Check_ThrownsMatchReaction(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExclusiveMatchFlag) const;
+		bool Check_ThrownsMatchReaction(const DParticleCombo* locThrownCombo, const DReaction* locReaction, bool locExclusiveMatchFlag) const;
+
 		double Calc_Beta_Timing(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const;
 		double Calc_Beta_Timing(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DEventRFBunch* locEventRFBunch) const;
-
-		bool Check_ThrownsMatchReaction(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExactMatchFlag) const;
 
 		void Get_UnusedChargedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DChargedTrack*>& locUnusedChargedTracks) const;
 		void Get_UnusedNeutralShowers(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DNeutralShower*>& locUnusedNeutralShowers) const;

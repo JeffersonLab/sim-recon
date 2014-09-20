@@ -56,16 +56,19 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
 	locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
 
+	// Highly Recommended: When generating particle combinations, reject all charged track candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
+	locReaction->Set_MinChargedPIDFOM(5.73303E-7);
+
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*2.004); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
 
 	// Enable ROOT TTree Output
 	locReaction->Enable_TTreeOutput("tree_b1pi.root"); //string is file name (must end in ".root"!!)
 
+/*********************************************** b1pi Combo Pre-Combo Custom Cuts ***********************************************/
+
 	// Loose Pi0 Cut, Applied during Blueprint Construction
 	locReaction->Set_InvariantMassCut(Pi0, 0.08, 0.19);
-
-/*********************************************** b1pi Combo Pre-Selection Actions ***********************************************/
 
 	// Loose missing mass squared cut, applied just after creating the combination (before saving it)
 	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 2.56));

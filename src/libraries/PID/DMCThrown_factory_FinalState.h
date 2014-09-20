@@ -15,6 +15,8 @@
 
 #include <TRACKING/DMCThrown.h>
 
+#include "ANALYSIS/DAnalysisUtilities.h"
+
 using namespace std;
 using namespace jana;
 
@@ -32,6 +34,8 @@ class DMCThrown_factory_FinalState : public jana::JFactory<DMCThrown>
 		jerror_t evnt(jana::JEventLoop *locEventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+		const DAnalysisUtilities* dAnalysisUtilities;
 };
 
 #endif // _DMCThrown_factory_FinalState_

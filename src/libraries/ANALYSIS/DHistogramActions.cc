@@ -3460,6 +3460,14 @@ void DHistogramAction_GenReconTrackComparison::Initialize(JEventLoop* locEventLo
 			locParticleROOTName = ParticleName_ROOT(locPID);
 			CreateAndChangeTo_Directory(locParticleName, locParticleName);
 
+			// MatchChiSqPerDF
+			locHistName = string("MatchChiSqPerDF");
+			locHistTitle = locParticleROOTName + string(";Thrown/Reconstructed Matching #chi^{2}/NDF");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_MatchChiSqPerDF[locPID] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_MatchChiSqPerDF[locPID] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumMCMatchingFOMBins, 0.0, 1.0);
+
 			// DeltaP/P
 			locHistName = string("DeltaPOverP");
 			locHistTitle = locParticleROOTName + string(";#Deltap/p (Reconstructed - Thrown)");
@@ -3794,16 +3802,18 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 	//charged particles
 	map<const DMCThrown*, pair<const DChargedTrack*, double> > locThrownToChargedMap;
 	locMCThrownMatching->Get_ThrownToChargedMap(locThrownToChargedMap);
-	for(map<const DMCThrown*, pair<const DChargedTrack*, double> >::iterator locIterator = locThrownToChargedMap.begin(); locIterator != locThrownToChargedMap.end(); ++locIterator)
+	map<const DMCThrown*, pair<const DChargedTrack*, double> >::iterator locChargedIterator = locThrownToChargedMap.begin();
+	for(; locChargedIterator != locThrownToChargedMap.end(); ++locChargedIterator)
 	{
-		const DMCThrown* locMCThrown = locIterator->first;
+		const DMCThrown* locMCThrown = locChargedIterator->first;
 		locPID = (Particle_t)locMCThrown->type;
 		if(dHistMap_DeltaPOverP.find(locPID) == dHistMap_DeltaPOverP.end())
 			continue; //e.g. not interested in histogramming
 
-		const DChargedTrackHypothesis* locChargedTrackHypothesis = locIterator->second.first->Get_Hypothesis(locPID);
+		double locMatchFOM = locChargedIterator->second.second;
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedIterator->second.first->Get_Hypothesis(locPID);
 		if(locChargedTrackHypothesis == NULL)
-			locChargedTrackHypothesis = locIterator->second.first->Get_BestFOM();
+			locChargedTrackHypothesis = locChargedIterator->second.first->Get_BestFOM();
 
 		locThrownP = locMCThrown->momentum().Mag();
 		locThrownTheta = locMCThrown->momentum().Theta()*180.0/TMath::Pi();
@@ -3823,6 +3833,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		double locT0Pull = (locStartTime - locChargedTrackHypothesis->t0())/locChargedTrackHypothesis->t0_err();
 		japp->RootWriteLock();
 		{
+			dHistMap_MatchChiSqPerDF[locPID]->Fill(locMatchFOM);
 			dHistMap_DeltaPOverP[locPID]->Fill(locDeltaPOverP);
 			dHistMap_DeltaTheta[locPID]->Fill(locDeltaTheta);
 			dHistMap_DeltaPhi[locPID]->Fill(locDeltaPhi);
@@ -3904,16 +3915,18 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 	//neutral particles
 	map<const DMCThrown*, pair<const DNeutralParticle*, double> > locThrownToNeutralMap;
 	locMCThrownMatching->Get_ThrownToNeutralMap(locThrownToNeutralMap);
-	for(map<const DMCThrown*, pair<const DNeutralParticle*, double> >::iterator locIterator = locThrownToNeutralMap.begin(); locIterator != locThrownToNeutralMap.end(); ++locIterator)
+	map<const DMCThrown*, pair<const DNeutralParticle*, double> >::iterator locNeutralIterator = locThrownToNeutralMap.begin();
+	for(; locNeutralIterator != locThrownToNeutralMap.end(); ++locNeutralIterator)
 	{
-		const DMCThrown* locMCThrown = locIterator->first;
+		const DMCThrown* locMCThrown = locNeutralIterator->first;
 		locPID = (Particle_t)locMCThrown->type;
 		if(dHistMap_DeltaPOverP.find(locPID) == dHistMap_DeltaPOverP.end())
 			continue; //e.g. not interested in histogramming
 
-		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locIterator->second.first->Get_Hypothesis(locPID);
+		double locMatchFOM = locNeutralIterator->second.second;
+		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralIterator->second.first->Get_Hypothesis(locPID);
 		if(locNeutralParticleHypothesis == NULL)
-			locNeutralParticleHypothesis = locIterator->second.first->Get_BestFOM();
+			locNeutralParticleHypothesis = locNeutralIterator->second.first->Get_BestFOM();
 
 		const DNeutralShower* locNeutralShower = NULL;
 		locNeutralParticleHypothesis->GetSingle(locNeutralShower);
@@ -3934,6 +3947,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 
 		japp->RootWriteLock();
 		{
+			dHistMap_MatchChiSqPerDF[locPID]->Fill(locMatchFOM);
 			dHistMap_DeltaPOverP[locPID]->Fill(locDeltaPOverP);
 			dHistMap_DeltaTheta[locPID]->Fill(locDeltaTheta);
 			dHistMap_DeltaPhi[locPID]->Fill(locDeltaPhi);
