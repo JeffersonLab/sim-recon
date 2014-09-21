@@ -88,14 +88,15 @@
                                    rot="0 -13.4 0" unit_angle="deg" /> 
 
 
-      <posXYZ volume="DET7Comp" X_Y_Z="-129.05453  0.0  836.89"
+      <posXYZ volume="taggerFocalPlane" X_Y_Z="-69.4  0.0  415.09"
+                                   rot="0 -8.05 0" unit_angle="deg" /> 
+
+      <posXYZ volume="electronDump"  X_Y_Z="-0.75  0.0  633.1" 
+                                   rot="0  -13.4  0" unit_angle="deg"/> 
+
+      <posXYZ volume="DET7" X_Y_Z="-129.05453  0.0  836.89"
                                    rot="0 -8.05 0" unit_angle="deg" />  
-
-<!-- Focal plane moved by 6 cm closer to the Vacuum Chamber -->
-<!--      <posXYZ volume="DET7Comp" X_Y_Z="-122.9944  0.0  836.89"
-                                   rot="0 -8.05 0" unit_angle="deg" />  -->
-
-      <posXYZ volume="electronDump"  X_Y_Z="-0.75  0.0  633.1" rot="0  -13.4  0" unit_angle="deg"/> 
+      <posXYZ volume="DET8" X_Y_Z="0.0  -150.0  600.0" />
 
   </composition> 
 
@@ -246,7 +247,7 @@
    <posXYZ volume="taggerVacExt" X_Y_Z="-4.45 0.0 0.0" />
   </composition>
 
- <composition name="taggerVacExt" envelope="BPAO">
+  <composition name="taggerVacExt" envelope="BPAO">
     <posXYZ volume="BPAI"/>
   </composition>
 
@@ -257,7 +258,7 @@
         comment="tagger vacuum extension pipe wall"/>
 
 
- <composition name="eBeamPipeFlange" envelope="BPFL">
+  <composition name="eBeamPipeFlange" envelope="BPFL">
     <posXYZ volume="BPFH" X_Y_Z="4.45 0.0 0.0" />
   </composition>
 
@@ -267,6 +268,10 @@
   <tubs name="BPFH" Rio_Z="0.0  1.90  2.3" material="TaggerVacuum"
         comment="tagger vacuum extension pipe flange hole"/>
 
+<!--  ====== control volumes for monitoring room background ====== -->
+
+  <box name="DET7" X_Y_Z="0.2  360.0  852.0" material="Air" sensitive="true"/> 
+  <box name="DET8" X_Y_Z="550.0  0.1  550.0" material="Air" sensitive="true"/> 
 
 </section>
 </HDDS>
