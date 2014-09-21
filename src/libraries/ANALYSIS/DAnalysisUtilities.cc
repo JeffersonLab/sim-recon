@@ -971,6 +971,36 @@ double DAnalysisUtilities::Calc_CrudeTime(const deque<const DKinFitParticle*>& l
 	return locAverageTime/(double(locParticles.size()));
 }
 
+DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DTrackTimeBased*>& locParticles) const
+{
+	//assumes tracks are straight lines
+	//uses the midpoint of the smallest DOCA line
+	DVector3 locVertex(0.0, 0.0, dTargetZCenter);
+
+	if(locParticles.size() == 0)
+		return locVertex;
+	if(locParticles.size() == 1)
+		return locParticles[0]->position();
+
+	double locDOCA, locSmallestDOCA;
+	DVector3 locTempVertex;
+
+	locSmallestDOCA = 9.9E9;
+	for(int loc_j = 0; loc_j < (int(locParticles.size()) - 1); ++loc_j)
+	{
+		for(size_t loc_k = loc_j + 1; loc_k < locParticles.size(); ++loc_k)
+		{
+			locDOCA = Calc_DOCAVertex(locParticles[loc_j], locParticles[loc_k], locTempVertex);
+			if(locDOCA < locSmallestDOCA)
+			{
+				locSmallestDOCA = locDOCA;
+				locVertex = locTempVertex;
+			}
+		}
+	}
+	return locVertex;
+}
+
 DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles) const
 {
 	//assumes tracks are straight lines

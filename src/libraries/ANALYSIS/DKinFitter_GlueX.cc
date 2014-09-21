@@ -55,28 +55,13 @@ const DKinFitParticle* DKinFitter_GlueX::Make_BeamParticle(const DBeamPhoton* lo
 	return locKinFitParticle;
 }
 
-const DKinFitParticle* DKinFitter_GlueX::Make_DetectedParticle(const DChargedTrackHypothesis* locChargedTrackHypothesis)
+const DKinFitParticle* DKinFitter_GlueX::Make_DetectedParticle(const DKinematicData* locKinematicData)
 {
-	const DKinematicData* locKinematicData = static_cast<const DKinematicData*>(locChargedTrackHypothesis);
 	TLorentzVector locSpacetimeVertex(locKinematicData->position().X(),locKinematicData->position().Y(),locKinematicData->position().Z(), locKinematicData->time());
 	TVector3 locMomentum(locKinematicData->momentum().X(),locKinematicData->momentum().Y(),locKinematicData->momentum().Z());
 	Particle_t locPID = locKinematicData->PID();
 
 	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_DetectedParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
-	dParticleMapping_InputToSource[locKinFitParticle] = locKinematicData;
-	return locKinFitParticle;
-}
-
-const DKinFitParticle* DKinFitter_GlueX::Make_DetectedParticle(const DNeutralParticleHypothesis* locNeutralParticleHypothesis)
-{
-	const DKinematicData* locKinematicData = static_cast<const DKinematicData*>(locNeutralParticleHypothesis);
-	Particle_t locPID = locKinematicData->PID();
-
-	//use DNeutralParticleHypothesis object (assumes vertex is at target center! NOT IDEAL, AVOID IF POSSIBLE!!)
-	TLorentzVector locSpacetimeVertex(locKinematicData->position().X(),locKinematicData->position().Y(),locKinematicData->position().Z(), locKinematicData->time());
-	TVector3 locMomentum(locKinematicData->momentum().X(),locKinematicData->momentum().Y(),locKinematicData->momentum().Z());
-	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_DetectedParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
-
 	dParticleMapping_InputToSource[locKinFitParticle] = locKinematicData;
 	return locKinFitParticle;
 }

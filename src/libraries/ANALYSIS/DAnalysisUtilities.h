@@ -20,6 +20,7 @@
 #include "DLorentzVector.h"
 
 #include "TRACKING/DMCThrown.h"
+#include "TRACKING/DTrackTimeBased.h"
 
 #include "PID/DChargedTrack.h"
 #include "PID/DNeutralShower.h"
@@ -95,6 +96,7 @@ class DAnalysisUtilities : public JObject
 		DVector3 Calc_CrudeVertex(const deque<const DKinematicData*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<const DKinFitParticle*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles) const;
+		DVector3 Calc_CrudeVertex(const deque<const DTrackTimeBased*>& locParticles) const;
 
 	private:
 
