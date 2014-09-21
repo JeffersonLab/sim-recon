@@ -63,6 +63,9 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 	locEventLoop->Get(locEventRFBunches);
 	const DEventRFBunch* locEventRFBunch = locEventRFBunches.empty() ? NULL : locEventRFBunches[0];
 
+	const DVertex* locVertex = NULL;
+	locEventLoop->GetSingle(locVertex);
+
 	// Loop over DNeutralShowers
 	for (unsigned int loc_i = 0; loc_i < locNeutralShowers.size(); loc_i++)
 	{
@@ -70,7 +73,7 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 		// Loop over vertices and PID hypotheses & create DNeutralParticleHypotheses for each combination
 		for (unsigned int loc_k = 0; loc_k < locPIDHypotheses.size(); loc_k++)
 		{
-			DNeutralParticleHypothesis* locNeutralParticleHypothesis = Create_DNeutralParticleHypothesis(locNeutralShower, locPIDHypotheses[loc_k], locEventRFBunch);
+			DNeutralParticleHypothesis* locNeutralParticleHypothesis = Create_DNeutralParticleHypothesis(locNeutralShower, locPIDHypotheses[loc_k], locEventRFBunch, locVertex);
 			if(locNeutralParticleHypothesis != NULL)
 				_data.push_back(locNeutralParticleHypothesis);	
 		}
@@ -79,11 +82,12 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 	return NOERROR;
 }
 
-DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch) const
+DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DVertex* locVertex) const
 {
 	double locStartTime = (locEventRFBunch != NULL) ? locEventRFBunch->dTime : 0.0;
 	double locStartTimeVariance = (locEventRFBunch != NULL) ? locEventRFBunch->dTimeVariance : 0.0;
-	DLorentzVector locSpacetimeVertex(dTargetCenter, locStartTime);
+
+	DVector3 locVertexGuess = locVertex->dSpacetimeVertex.Vect();
 
 	double locHitTime = locNeutralShower->dSpacetimeVertex.T();
 	DVector3 locHitPoint = locNeutralShower->dSpacetimeVertex.Vect();
@@ -91,7 +95,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 	// Calculate DNeutralParticleHypothesis Quantities (projected time at vertex for given id, etc.)
 	double locMass = ParticleMass(locPID);
 
-	DVector3 locPath = locHitPoint - locSpacetimeVertex.Vect();
+	DVector3 locPath = locHitPoint - locVertexGuess;
 	double locPathLength = locPath.Mag();
 	if(!(locPathLength > 0.0))
 		return NULL; //invalid, will divide by zero when creating error matrix, so skip!
@@ -111,7 +115,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 		double locGamma = 1.0/sqrt(1.0 - locBeta*locBeta);
 		locPMag = locGamma*locBeta*locMass;
 		locMomentum.SetMag(locPMag);
-		locProjectedTime = locStartTime + (locSpacetimeVertex.Z() - dTargetCenter.Z())/29.9792458;
+		locProjectedTime = locStartTime + (locVertexGuess.Z() - dTargetCenter.Z())/29.9792458;
 		Calc_ParticleCovariance_Massive(locNeutralShower, locMass, locDeltaT, locStartTimeVariance, locMomentum, locPath, locParticleCovariance);
 	}
 	else
@@ -131,8 +135,8 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 	locNeutralParticleHypothesis->setMass(locMass);
 	locNeutralParticleHypothesis->setCharge(0.0);
 	locNeutralParticleHypothesis->setMomentum(locMomentum);
-	locNeutralParticleHypothesis->setPosition(locSpacetimeVertex.Vect());
-	locNeutralParticleHypothesis->setT0(locSpacetimeVertex.T(), sqrt(locStartTimeVariance), SYS_NULL);
+	locNeutralParticleHypothesis->setPosition(locVertexGuess);
+	locNeutralParticleHypothesis->setT0(locStartTime, sqrt(locStartTimeVariance), SYS_NULL);
 	locNeutralParticleHypothesis->setTime(locProjectedTime);
 	locNeutralParticleHypothesis->setT1(locNeutralShower->dSpacetimeVertex.T(), sqrt(locNeutralShower->dCovarianceMatrix(4, 4)), locNeutralShower->dDetectorSystem);
 	locNeutralParticleHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)

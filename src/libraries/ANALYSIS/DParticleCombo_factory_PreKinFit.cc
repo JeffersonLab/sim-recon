@@ -350,6 +350,9 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);
 
+	const DVertex* locVertex = NULL;
+	locEventLoop->GetSingle(locVertex);
+
 	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
 	locEventLoop->Get(locMCThrownMatchingVector);
 	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector.empty() ? NULL : locMCThrownMatchingVector[0];
@@ -497,7 +500,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				break;
 
 			//initial guess for spacetime vertex
-			locParticleComboStep->Set_SpacetimeVertex(DLorentzVector(0.0, 0.0, dTargetCenterZ, 0.0));
+			locParticleComboStep->Set_SpacetimeVertex(locVertex->dSpacetimeVertex);
 
 			locParticleCombo->Add_ParticleComboStep(locParticleComboStep);
 		}
@@ -509,8 +512,6 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			continue;
 		}
 		++locNumBlueprintsSurvivedCuts[locReaction][2];
-
-		Calc_CommonSpacetimeVertices(locParticleCombo);
 
 		//if needed: clone combos for additional beam photons, hist # photons & true beam-rf delta-t (if MC and if true combo)
 		vector<DParticleCombo*> locBuiltParticleCombos;
@@ -988,70 +989,6 @@ bool DParticleCombo_factory_PreKinFit::Cut_HasDetectorMatch(const DReaction* loc
 	if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
 		return true;
 	return false;
-}
-
-void DParticleCombo_factory_PreKinFit::Calc_CommonSpacetimeVertices(DParticleCombo* locParticleCombo) const
-{
-	set<size_t> locStepIndicesToHandle;
-	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
-		locStepIndicesToHandle.insert(loc_i);
-	while(!locStepIndicesToHandle.empty())
-	{
-		deque<const DKinematicData*> locDetectedVertexParticles, locDetectedTimeParticles;
-		deque<size_t> locIncludedStepIndices;
-
-		Setup_VertexConstraint(locParticleCombo, *(locStepIndicesToHandle.begin()), locDetectedVertexParticles, locDetectedTimeParticles, locIncludedStepIndices);
-
-		//calc common spacetime vertex
-		DVector3 locVertex = dAnalysisUtilities->Calc_CrudeVertex(locDetectedVertexParticles);
-		double locVertexTime = dAnalysisUtilities->Calc_CrudeTime(locDetectedTimeParticles, locVertex);
-
-		//remove steps included in the vertex constraint from the to-handle deque
-		for(size_t loc_i = 0; loc_i < locIncludedStepIndices.size(); ++loc_i)
-		{
-			DParticleComboStep* locParticleComboStep = const_cast<DParticleComboStep*>(locParticleCombo->Get_ParticleComboStep(locIncludedStepIndices[loc_i]));
-			locParticleComboStep->Set_Position(locVertex);
-			locParticleComboStep->Set_Time(locVertexTime);
-			locStepIndicesToHandle.erase(locIncludedStepIndices[loc_i]);
-		}
-	}
-}
-
-void DParticleCombo_factory_PreKinFit::Setup_VertexConstraint(DParticleCombo* locParticleCombo, size_t locStepIndex, deque<const DKinematicData*>& locDetectedVertexParticles, deque<const DKinematicData*>& locDetectedTimeParticles, deque<size_t>& locIncludedStepIndices) const
-{
-	locIncludedStepIndices.push_back(locStepIndex);
-	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
-	Particle_t locPID;
-
-	//initial particle
-	locPID = locParticleComboStep->Get_InitialParticleID();
-	if(locPID == Gamma)
-	{
-		locDetectedVertexParticles.push_back(locParticleComboStep->Get_InitialParticle());
-		locDetectedTimeParticles.push_back(locParticleComboStep->Get_InitialParticle());
-	}
-
-	//final state particles
-	for(size_t loc_j = 0; loc_j < locParticleComboStep->Get_NumFinalParticles(); ++loc_j)
-	{
-		int locDecayStepIndex = locParticleComboStep->Get_DecayStepIndex(loc_j);
-		locPID = locParticleComboStep->Get_FinalParticleID(loc_j);
-		if(locDecayStepIndex == -1) //missing particle
-			continue;
-		else if(locDecayStepIndex >= 0) //decaying particle
-		{
-			if(IsDetachedVertex(locPID))
-				continue;
-			else //go to the next step!!
-				Setup_VertexConstraint(locParticleCombo, locDecayStepIndex, locDetectedVertexParticles, locDetectedTimeParticles, locIncludedStepIndices);
-		}
-		else //detected particle or shower
-		{
-			if(locParticleComboStep->Is_FinalParticleCharged(loc_j))
-				locDetectedVertexParticles.push_back(locParticleComboStep->Get_FinalParticle(loc_j));
-			locDetectedTimeParticles.push_back(locParticleComboStep->Get_FinalParticle(loc_j));
-		}
-	}
 }
 
 //------------------

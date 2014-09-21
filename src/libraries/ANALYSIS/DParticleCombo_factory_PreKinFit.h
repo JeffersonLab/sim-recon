@@ -23,6 +23,7 @@
 #include "PID/DBeamPhoton.h"
 #include "PID/DNeutralShower.h"
 #include "PID/DEventRFBunch.h"
+#include "PID/DVertex.h"
 #include <HDGEOMETRY/DGeometry.h>
 #include <DANA/DApplication.h>
 
@@ -59,8 +60,6 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		bool Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
 		void Build_BeamPhotonCombos(DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint, const DEventRFBunch* locEventRFBunch, set<const DBeamPhoton*>& locCandidatePhotons, vector<DParticleCombo*>& locBuiltParticleCombos);
-		void Calc_CommonSpacetimeVertices(DParticleCombo* locParticleCombo) const;
-		void Setup_VertexConstraint(DParticleCombo* locParticleCombo, size_t locStepIndex, deque<const DKinematicData*>& locDetectedVertexParticles, deque<const DKinematicData*>& locDetectedTimeParticles, deque<size_t>& locIncludedStepIndices) const;
 
 		DParticleComboStep* Clone_ParticleComboStep(const DParticleComboStep* locParticleComboStep);
 		void Reset_KinematicData(DKinematicData* locKinematicData);

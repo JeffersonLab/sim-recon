@@ -24,6 +24,7 @@
 #include "PID/DChargedTrackHypothesis.h"
 #include "PID/DNeutralParticle.h"
 #include "PID/DNeutralShower.h"
+#include "PID/DVertex.h"
 #include "PID/DDetectorMatches.h"
 #include "PID/DNeutralParticleHypothesis.h"
 #include "PID/DEventRFBunch.h"
@@ -689,6 +690,9 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 		const DAnalysisUtilities* dAnalysisUtilities;
 
 		TH1I* 	dBeamParticle_P;
+		TH1I* 	dEventVertexZ;
+		TH2I* 	dEventVertexYVsX;
+		TH1I* 	dEventVertexT;
 
 		map<Particle_t, TH2I*> dHistMap_PVsTheta;
 		map<Particle_t, TH2I*> dHistMap_PhiVsTheta;
@@ -894,6 +898,10 @@ class DHistogramAction_NumReconstructedObjects : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 
+		TH1I* dHist_NumChargedTracks;
+		TH1I* dHist_NumPosChargedTracks;
+		TH1I* dHist_NumNegChargedTracks;
+
 		TH1I* dHist_NumPosTimeBasedTracks;
 		TH1I* dHist_NumNegTimeBasedTracks;
 		TH1I* dHist_NumPosWireBasedTracks;
@@ -974,13 +982,7 @@ class DHistogramAction_TruePID : public DAnalysisAction
 	public:
 		DHistogramAction_TruePID(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_TruePID", false, locActionUniqueString),
-		dNumPBins(300), dNum2DPBins(150), dNumThetaBins(140), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), 
-		dInitialPID(Unknown), dMinMassSq(1.0), dMaxMassSq(0.0), dMinThrownMatchFOM(-1.0){}
-
-		DHistogramAction_TruePID(const DReaction* locReaction, Particle_t locInitialPID, double locMinMassSq, double locMaxMassSq, string locActionUniqueString = "") : 
-		DAnalysisAction(locReaction, "Hist_TruePID", false, locActionUniqueString),
-		dNumPBins(300), dNum2DPBins(150), dNumThetaBins(140), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), 
-		dInitialPID(locInitialPID), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq), dMinThrownMatchFOM(-1.0){}
+		dNumPBins(300), dNum2DPBins(150), dNumThetaBins(140), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinThrownMatchFOM(5.73303E-7) {}
 
 		unsigned int dNumPBins, dNum2DPBins, dNumThetaBins;
 		double dMinP, dMaxP, dMinTheta, dMaxTheta;
@@ -989,15 +991,10 @@ class DHistogramAction_TruePID : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 		void Initialize(JEventLoop* locEventLoop);
 
-		Particle_t dInitialPID;
-		double dMinMassSq, dMaxMassSq;
-	public:
 		double dMinThrownMatchFOM;
-	private:
 		const DAnalysisUtilities* dAnalysisUtilities;
 
 		TH1I* dHist_TruePIDStatus;
-		TH1I* dHist_TruePIDStatus_SignalRegion;
 		deque<map<Particle_t, TH1I*> > dHistDeque_P_CorrectID;
 		deque<map<Particle_t, TH1I*> > dHistDeque_P_IncorrectID;
 		deque<map<Particle_t, TH2I*> > dHistDeque_PVsTheta_CorrectID;

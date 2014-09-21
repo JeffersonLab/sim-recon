@@ -94,7 +94,13 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 	}
 
 	if(locKinFitResultsVector.empty())
+	{
+		//all failed! save 'em and bail
+		set<const DParticleCombo*>::iterator locIterator = locParticleCombos_FailedKinFit.begin();
+		for(; locIterator != locParticleCombos_FailedKinFit.end(); ++locIterator)
+			_data.push_back(const_cast<DParticleCombo*>(*locIterator));
 		return NOERROR; //kinfit not requested (or all kinfits failed): done
+	}
 
 	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
 	locEventLoop->Get(locChargedTrackHypotheses, "KinFit");

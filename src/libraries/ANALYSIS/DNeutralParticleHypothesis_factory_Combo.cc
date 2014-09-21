@@ -43,6 +43,9 @@ jerror_t DNeutralParticleHypothesis_factory_Combo::evnt(jana::JEventLoop *locEve
 	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches, "Combo");
 
+	const DVertex* locVertex = NULL;
+	locEventLoop->GetSingle(locVertex);
+
 	map<const DEventRFBunch*, deque<pair<const DNeutralShower*, Particle_t> > > locCreatedParticleMap; //don't create if already done!
 
 	for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
@@ -96,7 +99,7 @@ jerror_t DNeutralParticleHypothesis_factory_Combo::evnt(jana::JEventLoop *locEve
 					continue;
 
 				//create the objects
-				DNeutralParticleHypothesis* locNeutralParticleHypothesis = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locNeutralShower, locPID, locEventRFBunch);
+				DNeutralParticleHypothesis* locNeutralParticleHypothesis = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locNeutralShower, locPID, locEventRFBunch, locVertex);
 				if(locNeutralParticleHypothesis == NULL)
 					continue;
 				locNeutralParticleHypothesis->AddAssociatedObject(locEventRFBunch);
