@@ -67,13 +67,6 @@ jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, i
 	Get_Reactions(locEventLoop, locReactions);
 	MAX_DParticleComboBlueprintStepPoolSize = 3000*locReactions.size();
 
-	DApplication *locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	DGeometry *locGeometry = locApplication ? locApplication->GetDGeometry(runnumber):NULL;
-	double locTargetCenterZ = 65.0;
-	if(locGeometry)
-		locGeometry->GetTargetZ(locTargetCenterZ);
-	dTargetCenter.SetXYZ(0.0, 0.0, locTargetCenterZ);
-
 	return NOERROR;
 }
 
@@ -113,6 +106,8 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, int eve
 
 	vector<const DReaction*> locReactions;
 	Get_Reactions(locEventLoop, locReactions);
+
+	locEventLoop->GetSingle(dVertex);
 
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 		Build_ParticleComboBlueprints(locEventLoop, locReactions[loc_i]);
@@ -994,14 +989,29 @@ bool DParticleComboBlueprint_factory::Calc_FinalStateP4(size_t locTotalNumSteps,
 		}
 		else //neutral
 		{
-			if(locCurrentStep->Get_FinalParticleID(loc_i) != Gamma)
-				return false; //DON'T CUT: massive neutral momentum based on timing, and RF bunch not yet selected!!!!
-
 			const DNeutralShower* locNeutralShower = dynamic_cast<const DNeutralShower*>(locCurrentStep->Get_FinalParticle_SourceObject(loc_i));
 			DVector3 locHitPoint = locNeutralShower->dSpacetimeVertex.Vect();
-			DVector3 locMomentum(locHitPoint - dTargetCenter);
-			locMomentum.SetMag(locNeutralShower->dEnergy);
-			locFinalStateP4 += DLorentzVector(locMomentum, locNeutralShower->dEnergy);
+			DVector3 locMomentum(locHitPoint - dVertex->dSpacetimeVertex.Vect());
+			Particle_t locPID = locCurrentStep->Get_FinalParticleID(loc_i);
+			if(locPID != Gamma)
+			{
+				double locDeltaT = locNeutralShower->dSpacetimeVertex.T() - dVertex->dSpacetimeVertex.T();
+				double locBeta = locMomentum.Mag()/(locDeltaT*29.9792458); //path length is locMomentum.Mag() (for now)
+				if(locBeta >= 1.0)
+					locBeta = 0.9999;
+				if(locBeta < 0.0)
+					locBeta = 0.0;
+				double locGamma = 1.0/sqrt(1.0 - locBeta*locBeta);
+				double locMass = ParticleMass(locPID);
+				double locPMag = locGamma*locBeta*locMass;
+				locMomentum.SetMag(locPMag);
+				locFinalStateP4 += DLorentzVector(locMomentum, sqrt(locMass*locMass + locPMag*locPMag));
+			}
+			else
+			{
+				locMomentum.SetMag(locNeutralShower->dEnergy);
+				locFinalStateP4 += DLorentzVector(locMomentum, locNeutralShower->dEnergy);
+			}
 		}
 	}
 	return true;

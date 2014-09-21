@@ -11,8 +11,7 @@
 #include <particleType.h>
 #include <PID/DChargedTrack.h>
 #include <PID/DNeutralShower.h>
-#include <HDGEOMETRY/DGeometry.h>
-#include <DANA/DApplication.h>
+#include <PID/DVertex.h>
 
 #include <deque>
 #include <map>
@@ -68,7 +67,7 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 
 		unsigned int dDebugLevel;
 		size_t MAX_DParticleComboBlueprintStepPoolSize;
-		DVector3 dTargetCenter;
+		const DVertex* dVertex;
 
 		// PRE-DPARTICLECOMBO TRACK SELECTION FACTORY TAGS
 			//bool = true to get tracks from specified factory, false otherwise
