@@ -69,7 +69,7 @@ mkdirs:
 
 install: all
 	mkdir -p $(INSTALL_DIR)/bin/$(BMS_OSNAME)
-	install -p $(EXE_PATHNAMES) $(INSTALL_DIR)$(BMS_OSNAME)/bin
+	install -p $(EXE_PATHNAMES) $(INSTALL_DIR)/$(BMS_OSNAME)/bin
 
 relink: exec_clean install
 
