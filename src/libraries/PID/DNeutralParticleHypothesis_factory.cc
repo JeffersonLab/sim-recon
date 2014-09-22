@@ -107,7 +107,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 	if(locPID != Gamma)
 	{
 		double locDeltaT = locHitTime - locStartTime;
-		double locBeta = locPathLength/(locDeltaT*SPEED_OF_LIGHT);
+		double locBeta = locPathLength/(locDeltaT*29.9792458);
 		if(locBeta >= 1.0)
 			locBeta = 0.9999;
 		if(locBeta < 0.0)
@@ -121,7 +121,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 	else
 	{
 		locPMag = locNeutralShower->dEnergy;
-		double locFlightTime = locPathLength/SPEED_OF_LIGHT;
+		double locFlightTime = locPathLength/29.9792458;
 		locProjectedTime = locHitTime - locFlightTime;
 		locMomentum.SetMag(locPMag);
 		Calc_ParticleCovariance_Photon(locNeutralShower, locMomentum, locPath, locParticleCovariance);
@@ -131,6 +131,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 	DNeutralParticleHypothesis* locNeutralParticleHypothesis = new DNeutralParticleHypothesis;
 	locNeutralParticleHypothesis->AddAssociatedObject(locNeutralShower);
 
+	locNeutralParticleHypothesis->dNeutralShowerID = locNeutralShower->id;
 	locNeutralParticleHypothesis->setPID(locPID);
 	locNeutralParticleHypothesis->setMass(locMass);
 	locNeutralParticleHypothesis->setCharge(0.0);
@@ -195,7 +196,7 @@ void DNeutralParticleHypothesis_factory::Calc_ParticleCovariance_Photon(const DN
 	DVector3 locDeltaX = -1.0*locPathVector; //defined oppositely in document! //delta_x defined here as common_vertex - hit_point
 	DVector3 locDeltaXOverDeltaXSq = (1.0/locDeltaX.Mag2())*locDeltaX;
 	DVector3 locUnitP = (1.0/locNeutralShower->dEnergy)*locMomentum;
-	DVector3 locUnitDeltaXOverC = (1.0/(SPEED_OF_LIGHT*locDeltaX.Mag()))*locDeltaX;
+	DVector3 locUnitDeltaXOverC = (1.0/(29.9792458*locDeltaX.Mag()))*locDeltaX;
 
 	//build transform matrix
 	DMatrix locTransformMatrix(7, 8);
@@ -258,12 +259,12 @@ void DNeutralParticleHypothesis_factory::Calc_ParticleCovariance_Massive(const D
 
 	DVector3 locDeltaX = -1.0*locPathVector; //defined oppositely in document! //delta_x defined here as common_vertex - hit_point
 	locDeltaT *= -1.0; //defined oppositely in document! //delta_t defined here as common_t - hit_t
-	double locCSq = SPEED_OF_LIGHT*SPEED_OF_LIGHT;
+	double locCSq = 29.9792458*29.9792458;
 	double locCDeltaTSq = locCSq*locDeltaT*locDeltaT;
 	double locDeltaX4Sq = locCDeltaTSq - locDeltaX.Mag2();
 	DVector3 locDeltaXOverDeltaX4Sq = (1.0/locDeltaX4Sq)*locDeltaX;
 	DVector3 locEPVecOverPSq = (locNeutralShower->dEnergy/locMomentum.Mag2())*locMomentum;
-	DVector3 locEPVecOverCPMagDeltaXMag = (locNeutralShower->dEnergy/(SPEED_OF_LIGHT*locDeltaX.Mag()*locMomentum.Mag()))*locDeltaX;
+	DVector3 locEPVecOverCPMagDeltaXMag = (locNeutralShower->dEnergy/(29.9792458*locDeltaX.Mag()*locMomentum.Mag()))*locDeltaX;
 
 	//build transform matrix
 	DMatrix locTransformMatrix(7, 9);
