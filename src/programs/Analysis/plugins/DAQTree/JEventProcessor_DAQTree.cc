@@ -817,6 +817,8 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 		Df250PulseIntegral_tree->Branch("quality_factor",&quality_factor,"quality_factor/i");
 		Df250PulseIntegral_tree->Branch("integral",&integral,"integral/i");
 		Df250PulseIntegral_tree->Branch("pedestal",&pedestal,"pedestal/i");
+		Df250PulseIntegral_tree->Branch("nsamples_integral",&nsamples_integral,"nsamples_integral/i");
+		Df250PulseIntegral_tree->Branch("nsamples_pedestal",&nsamples_pedestal,"nsamples_pedestal/i");
 		f250PItree_exists = 1;
 	}
 	eventnum = eventnumber;
@@ -832,6 +834,8 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 		quality_factor= f250PulseIntegral->quality_factor;
 		integral = f250PulseIntegral->integral;
 		pedestal = f250PulseIntegral->pedestal;
+		nsamples_integral = f250PulseIntegral->nsamples_integral;
+		nsamples_pedestal = f250PulseIntegral->nsamples_pedestal;
 		Df250PulseIntegral_tree->Fill();
 	}
 

@@ -93,6 +93,8 @@ class JEventProcessor_DAQTree:public jana::JEventProcessor{
 		uint32_t quality_factor;       /// \n for f250PI, f250PT
 		int32_t integral;              /// \n for f250PI 
 		int32_t pedestal;              /// \n for f250PI and f250PP
+		uint32_t nsamples_integral;              /// \n for f250PI 
+		uint32_t nsamples_pedestal;              /// \n for f250PI and f250PP
 		uint32_t pulse_peak;           /// \n for f250PP
 		uint32_t time;                 /// \n for f250PT, f250TT, F1TDCH
 		uint32_t first_sample_number;  /// \n for f250PRD
