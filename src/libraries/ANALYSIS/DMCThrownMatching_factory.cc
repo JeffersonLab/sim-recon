@@ -565,6 +565,9 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<co
 		}
 	}
 
+	if(locParticleMatches.empty())
+		return; //nothing to set
+
 	//loop over sets, save the best matches //sorted from least to greatest
 	set<pair<double, pair<const DMCThrown*, const DChargedTrackHypothesis*> > >::iterator locIterator = locParticleMatches.end();
 	set<const DMCThrown*> locMatchedThrowns;
@@ -687,6 +690,9 @@ void DMCThrownMatching_factory::Find_GenReconMatches_NeutralHypo(const vector<co
 			locParticleMatches.insert(locMatchPair);
 		}
 	}
+
+	if(locParticleMatches.empty())
+		return; //nothing to set
 
 	//loop over sets, save the best matches //sorted from least to greatest
 	set<pair<double, pair<const DMCThrown*, const DNeutralParticleHypothesis*> > >::iterator locIterator = locParticleMatches.end();
