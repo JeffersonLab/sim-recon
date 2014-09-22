@@ -59,7 +59,6 @@ jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int runnumber) {
   const DMagneticFieldMap *bfield = dapp->GetBfield();
   double Bz=bfield->GetBz(0.,0.,65.);
   RotationSenseToCharge=(Bz>0.)?-1.:1.;
-  BEAM_VARIANCE=(fabs(Bz)<1.e-3)?100000.:1.; // cm^2
 
   // get the geometry
   const DGeometry *geom = dapp->GetDGeometry(runnumber);
@@ -73,6 +72,9 @@ jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int runnumber) {
   */
   DEBUG_LEVEL=0;
   gPARMS->SetDefaultParameter("FDC:DEBUG_LEVEL", DEBUG_LEVEL);
+  
+  BEAM_VARIANCE=1.0;
+  gPARMS->SetDefaultParameter("FDC:BEAM_VARIANCE",BEAM_VARIANCE);
   
 
   return NOERROR;
