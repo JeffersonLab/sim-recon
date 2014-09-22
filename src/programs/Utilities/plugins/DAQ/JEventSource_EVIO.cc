@@ -91,6 +91,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	BUFFER_SIZE = 2000000; // in bytes
 	ET_STATION_NEVENTS = 10;
 	ET_STATION_CREATE_BLOCKING = false;
+	LOOP_FOREVER = false;
 	VERBOSE = 0;
 	TIMEOUT = 2.0;
 	EMULATE_PULSE_INTEGRAL_MODE = true;
@@ -114,6 +115,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:BUFFER_SIZE", BUFFER_SIZE, "Size in bytes to allocate for holding a single EVIO event.");
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_NEVENTS", ET_STATION_NEVENTS, "Number of events to use if we have to create the ET station. Ignored if station already exists.");
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_CREATE_BLOCKING", ET_STATION_CREATE_BLOCKING, "Set this to 0 to create station in non-blocking mode (default is to create it in blocking mode). Ignored if station already exists.");
+		gPARMS->SetDefaultParameter("EVIO:LOOP_FOREVER", LOOP_FOREVER, "If reading from EVIO file, keep re-opening file and re-reading events forever (only useful for debugging) If reading from ET, this is ignored.");
 		gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
 		gPARMS->SetDefaultParameter("EVIO:EMULATE_PULSE_INTEGRAL_MODE", EMULATE_PULSE_INTEGRAL_MODE, "If non-zero, and Df250WindowRawData objects exist in the event AND no Df250PulseIntegral objects exist, then use the waveform data to generate Df250PulseIntegral objects. Default is for this feature to be on. Set this to zero to disable it.");
 		gPARMS->SetDefaultParameter("EVIO:EMULATE_SPARSIFICATION_THRESHOLD", EMULATE_SPARSIFICATION_THRESHOLD, "If EVIO:EMULATE_PULSE_INTEGRAL_MODE is on, then this is used to apply a cut on the non-pedestal-subtracted integral to determine if a Df250PulseIntegral is produced or not.");
@@ -699,7 +701,31 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 	try{
 		if(source_type==kFileSource){
 			if(VERBOSE>3) evioout << "  attempting read from EVIO file source ..." << endl;
-			if(!chan->read(buff, BUFFER_SIZE)) return NO_MORE_EVENTS_IN_SOURCE;
+			if(!chan->read(buff, BUFFER_SIZE)){
+				if(LOOP_FOREVER){
+					if(Nevents_read<1){
+						// User asked us to loop forever, but we couldn't find even 1 event!
+						jerr << "No events in file!!" << endl;
+						return NO_MORE_EVENTS_IN_SOURCE;
+					}else{
+					
+						// close file
+						if(VERBOSE>0) evioout << "Closing \""<<this->source_name<<"\"" <<endl;
+						chan->close();
+						delete chan;
+						
+						// re-open file
+						evioout << "Re-opening EVIO file \""<<this->source_name<<"\"" <<endl;
+						chan = new evioFileChannel(this->source_name, "r", BUFFER_SIZE);
+						
+						// open the file and read first event (assume it will be successful again)
+						chan->open();
+						chan->read(buff, BUFFER_SIZE);
+					}
+				}else{
+					return NO_MORE_EVENTS_IN_SOURCE;
+				}
+			}
 
 		}else if(source_type==kETSource){
 
