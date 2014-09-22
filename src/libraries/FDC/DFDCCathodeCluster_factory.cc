@@ -80,7 +80,7 @@ DFDCCathodeCluster_factory::~DFDCCathodeCluster_factory() {
 jerror_t DFDCCathodeCluster_factory::init(void){
   TIME_SLICE=10.0; //ns
   gPARMS->SetDefaultParameter("FDC:CLUSTER_TIME_SLICE",TIME_SLICE);
-
+  return NOERROR;	
 }
 
 ///
