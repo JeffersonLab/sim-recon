@@ -171,13 +171,14 @@ void DMCThrownMatching_factory::Find_GenReconMatches_BeamPhotons(JEventLoop* loc
 	//first match MCGEN
 	double locBestDeltaE = 9.9E9;
 	const DBeamPhoton* locBestBeamPhoton = NULL;
+	double locMaxDeltaEFraction = 0.002;
 	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 	{
 		double locDeltaT = fabs(locBeamPhotons[loc_i]->time() - locBeamPhotons_MCGEN[0]->time());
-		if(locDeltaT > 2.004)
-			continue;
+		if(locDeltaT > 1.2)
+			continue; // a little wider than 1.002 ns because of tagger timing resolution. most wrong ones should be picked off by delta-E cut
 		double locDeltaE = fabs(locBeamPhotons[loc_i]->energy() - locBeamPhotons_MCGEN[0]->energy());
-		if(locDeltaE > locBestDeltaE)
+		if((locDeltaE > locBestDeltaE) || (locDeltaE/locBeamPhotons_MCGEN[0]->energy() > locMaxDeltaEFraction))
 			continue;
 		locBestDeltaE = locDeltaE;
 		locBestBeamPhoton = locBeamPhotons[loc_i];
