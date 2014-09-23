@@ -171,7 +171,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_BeamPhotons(JEventLoop* loc
 	//first match MCGEN
 	double locBestDeltaE = 9.9E9;
 	const DBeamPhoton* locBestBeamPhoton = NULL;
-	double locMaxDeltaEFraction = 0.002;
+	double locMaxDeltaEFraction = 0.01;
 	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 	{
 		double locDeltaT = fabs(locBeamPhotons[loc_i]->time() - locBeamPhotons_MCGEN[0]->time());
