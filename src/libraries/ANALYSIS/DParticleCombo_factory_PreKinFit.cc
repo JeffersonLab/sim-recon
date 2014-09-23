@@ -359,10 +359,6 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 
 	set<const DReaction*> locTrueComboSurvivedReactions;
 
-	DParticleCombo* locParticleCombo;
-	DParticleComboStep* locParticleComboStep;
-	DKinematicData* locTarget;
-
 	map<Particle_t, DKinematicData*> locTargetParticleMap;
 	Particle_t locPID;
 
@@ -371,7 +367,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
 	{
 		const DParticleComboBlueprint* locParticleComboBlueprint = locParticleComboBlueprints[loc_i];
-		locParticleCombo = new DParticleCombo();
+		DParticleCombo* locParticleCombo = new DParticleCombo();
 		const DReaction* locReaction = locParticleComboBlueprint->Get_Reaction();
 		locParticleCombo->Set_Reaction(locReaction);
 		locParticleCombo->AddAssociatedObject(locParticleComboBlueprint);
@@ -421,7 +417,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				}
 			}
 
-			locParticleComboStep = Get_ParticleComboStepResource();
+			DParticleComboStep* locParticleComboStep = Get_ParticleComboStepResource();
 			locParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
 
 			//initial particle
@@ -457,6 +453,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				if(locCandidatePhotons.empty())
 				{
 					locBadComboFlag = true; //no photons match the RF time
+					locParticleCombo->Add_ParticleComboStep(locParticleComboStep); //add step so easier to check for recycling
 					break;
 				}
 
@@ -473,7 +470,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 					locParticleComboStep->Set_TargetParticle(locTargetParticleMap[locPID]);
 				else
 				{
-					locTarget = Create_Target(locPID);
+					DKinematicData* locTarget = Create_Target(locPID);
 					locParticleComboStep->Set_TargetParticle(locTarget);
 					locTargetParticleMap[locPID] = locTarget;
 				}
@@ -489,6 +486,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 					if(locParticleData == NULL) //e.g. bad vertex-z
 					{
 						locBadComboFlag = true;
+						locParticleCombo->Add_ParticleComboStep(locParticleComboStep); //add step so easier to check for recycling
 						break;
 					}
 				}
@@ -881,14 +879,16 @@ const DKinematicData* DParticleCombo_factory_PreKinFit::Get_DetectedParticle(con
 void DParticleCombo_factory_PreKinFit::Reset_Pools(void)
 {
 	// delete pool sizes if too large, preventing memory-leakage-like behavor.
-	if(dParticleComboStepPool_All.size() > MAX_DParticleComboStepPoolSize){
+	if(dParticleComboStepPool_All.size() > MAX_DParticleComboStepPoolSize)
+	{
 		for(size_t loc_i = MAX_DParticleComboStepPoolSize; loc_i < dParticleComboStepPool_All.size(); ++loc_i)
 			delete dParticleComboStepPool_All[loc_i];
 		dParticleComboStepPool_All.resize(MAX_DParticleComboStepPoolSize);
 	}
 	dParticleComboStepPool_Available = dParticleComboStepPool_All;
 
-	if(dKinematicDataPool_All.size() > MAX_DKinematicDataPoolSize){
+	if(dKinematicDataPool_All.size() > MAX_DKinematicDataPoolSize)
+	{
 		for(size_t loc_i = MAX_DKinematicDataPoolSize; loc_i < dKinematicDataPool_All.size(); ++loc_i)
 			delete dKinematicDataPool_All[loc_i];
 		dKinematicDataPool_All.resize(MAX_DKinematicDataPoolSize);

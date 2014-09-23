@@ -142,6 +142,7 @@ inline const DKinematicData* DParticleComboStep::Get_InitialParticle_Measured(vo
 
 inline void DParticleComboStep::Reset(void)
 {
+	dMeasuredStep = NULL;
 	dParticleComboBlueprintStep = NULL;
 	dInitialParticle = NULL;
 	dTargetParticle = NULL;
