@@ -183,6 +183,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 			{
 				const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_j);
 				DParticleComboStep* locNewParticleComboStep = Get_ParticleComboStepResource();
+				locNewParticleComboStep->Set_MeasuredParticleComboStep(locParticleComboStep);
 				locNewParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboStep->Get_ParticleComboBlueprintStep());
 				locNewParticleComboStep->Set_SpacetimeVertex(locParticleComboStep->Get_SpacetimeVertex()); //overridden if kinematic fit
 				bool locWasVertexKinFitFlag = ((locKinFitType != d_NoFit) && (locKinFitType != d_P4Fit));
@@ -190,7 +191,6 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 
 				//INITIAL PARTICLE & SPACETIME VERTEX
 				locPID = locParticleComboStep->Get_InitialParticleID();
-				locNewParticleComboStep->Set_InitialParticle_Measured(locParticleComboStep->Get_InitialParticle_Measured());
 				if(locParticleComboStep->Is_InitialParticleDetected()) //set beam photon
 				{
 					for(size_t loc_k = 0; loc_k < locBeamPhotons.size(); ++loc_k)
@@ -252,7 +252,6 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 				for(size_t loc_k = 0; loc_k < locParticleComboStep->Get_NumFinalParticles(); ++loc_k)
 				{
 					locConstKinematicData = locParticleComboStep->Get_FinalParticle_Measured(loc_k);
-					locNewParticleComboStep->Add_FinalParticle_Measured(locConstKinematicData);
 					locPID = locParticleComboStep->Get_FinalParticleID(loc_k);
 					if(locParticleComboStep->Is_FinalParticleMissing(loc_k)) //missing!
 					{

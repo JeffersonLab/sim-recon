@@ -463,7 +463,6 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				++locNumBlueprintsSurvivedCuts[locReaction][1];
 
 				locParticleComboStep->Set_InitialParticle(*(locCandidatePhotons.begin()));
-				locParticleComboStep->Set_InitialParticle_Measured(*(locCandidatePhotons.begin()));
 			}
 
 			//setup target
@@ -494,7 +493,6 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 					}
 				}
 				locParticleComboStep->Add_FinalParticle(locParticleData);
-				locParticleComboStep->Add_FinalParticle_Measured(locParticleData);
 			}
 			if(locBadComboFlag) //e.g. bad PID FOM
 				break;
@@ -716,7 +714,6 @@ void DParticleCombo_factory_PreKinFit::Build_BeamPhotonCombos(DParticleCombo* lo
 	{
 		DParticleComboStep* locParticleComboStep = Clone_ParticleComboStep(locParticleCombo->Get_ParticleComboStep(0));
 		locParticleComboStep->Set_InitialParticle(*locPhotonIterator);
-		locParticleComboStep->Set_InitialParticle_Measured(*locPhotonIterator);
 
 		DParticleCombo* locNewParticleCombo = new DParticleCombo(*locParticleCombo);
 		locNewParticleCombo->Set_ParticleComboStep(locParticleComboStep, 0);

@@ -5,9 +5,19 @@ bool DParticleComboStep::operator==(const DParticleComboStep& locParticleComboSt
 	if(dParticleComboBlueprintStep != locParticleComboStep.dParticleComboBlueprintStep)
 		return false;
 
-	if(dInitialParticle != locParticleComboStep.dInitialParticle)
+	const DParticleComboStep* locMeasuredStepThis = dMeasuredStep;
+	const DParticleComboStep* locMeasuredStepInput = locParticleComboStep.dMeasuredStep;
+	if((locMeasuredStepThis == NULL) && (locMeasuredStepInput != NULL))
 		return false;
-	if(dInitialParticle_Measured != locParticleComboStep.dInitialParticle_Measured)
+	if((locMeasuredStepThis != NULL) && (locMeasuredStepInput == NULL))
+		return false;
+	if((locMeasuredStepThis != NULL) && (locMeasuredStepInput != NULL))
+	{
+		if((*locMeasuredStepThis) != (*locMeasuredStepInput))
+			return false;
+	}
+
+	if(dInitialParticle != locParticleComboStep.dInitialParticle)
 		return false;
 	if(dTargetParticle != locParticleComboStep.dTargetParticle)
 		return false;
@@ -18,11 +28,6 @@ bool DParticleComboStep::operator==(const DParticleComboStep& locParticleComboSt
 			return false;
 	}
 
-	for(size_t loc_i = 0; loc_i < dFinalParticles_Measured.size(); ++loc_i)
-	{
-		if(dFinalParticles_Measured[loc_i] != locParticleComboStep.dFinalParticles_Measured[loc_i])
-			return false;
-	}
 	return true;
 }
 

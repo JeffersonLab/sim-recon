@@ -33,8 +33,8 @@ class DParticleComboBlueprintStep
 		inline Particle_t Get_InitialParticleID(void) const{return ((dReactionStep != NULL) ? dReactionStep->Get_InitialParticleID() : Unknown);}
 		inline Particle_t Get_TargetParticleID(void) const{return ((dReactionStep != NULL) ? dReactionStep->Get_TargetParticleID() : Unknown);}
 
-		inline int Get_InitialParticleDecayFromStepIndex(void) const{return dInitialParticleDecayFromStepIndex;}
-		inline void Set_InitialParticleDecayFromStepIndex(int locInitialParticleDecayFromStepIndex){dInitialParticleDecayFromStepIndex = locInitialParticleDecayFromStepIndex;}
+		inline int Get_InitialParticleDecayFromStepIndex(void) const{return int(dInitialParticleDecayFromStepIndex);}
+		inline void Set_InitialParticleDecayFromStepIndex(int locInitialParticleDecayFromStepIndex){dInitialParticleDecayFromStepIndex = (signed char)locInitialParticleDecayFromStepIndex;}
 
 		inline Particle_t Get_FinalParticleID(size_t locFinalParticleIndex) const{return ((dReactionStep != NULL) ? dReactionStep->Get_FinalParticleID(locFinalParticleIndex) : Unknown);}
 		void Get_FinalParticleIDs(deque<Particle_t>& locFinalParticleIDs) const;
@@ -69,8 +69,8 @@ class DParticleComboBlueprintStep
 		const DReactionStep* dReactionStep;
 
 		deque<const JObject*> dFinalParticleSourceObjects; //NULL if decaying or missing
-		int dInitialParticleDecayFromStepIndex; //-1 if photon, else index points to step index it is produced at
-		deque<int> dDecayStepIndices; //one for each final particle: -2 if detected, -1 if missing, >= 0 if decaying, where the # is the step representing the particle decay
+		signed char dInitialParticleDecayFromStepIndex; //-1 if photon, else index points to step index it is produced at
+		deque<signed char> dDecayStepIndices; //one for each final particle: -2 if detected, -1 if missing, >= 0 if decaying, where the # is the step representing the particle decay
 };
 
 inline void DParticleComboBlueprintStep::Reset(void)
@@ -90,7 +90,7 @@ inline void DParticleComboBlueprintStep::Get_FinalParticleIDs(deque<Particle_t>&
 inline void DParticleComboBlueprintStep::Add_FinalParticle_SourceObject(const JObject* locObject, int locDecayStepIndex)
 {
 	dFinalParticleSourceObjects.push_back(locObject);
-	dDecayStepIndices.push_back(locDecayStepIndex);
+	dDecayStepIndices.push_back((signed char)locDecayStepIndex);
 }
 
 inline const JObject* DParticleComboBlueprintStep::Pop_FinalParticle_SourceObject(void)
@@ -114,14 +114,14 @@ inline int DParticleComboBlueprintStep::Get_DecayStepIndex(size_t locFinalPartic
 {
 	if(locFinalParticleIndex >= dDecayStepIndices.size())
 		return -1;
-	return dDecayStepIndices[locFinalParticleIndex];
+	return int(dDecayStepIndices[locFinalParticleIndex]);
 }
 
 inline int DParticleComboBlueprintStep::Get_MissingParticleIndex(void) const //-1 for no missing particles, else final state particle at this index is missing
 {
 	for(size_t loc_i = 0; loc_i < dDecayStepIndices.size(); ++loc_i)
 	{
-		if(dDecayStepIndices[loc_i] == -1)
+		if(dDecayStepIndices[loc_i] == ((signed char)-1))
 			return loc_i;
 	}
 	return -1;

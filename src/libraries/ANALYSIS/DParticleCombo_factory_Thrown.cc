@@ -84,7 +84,6 @@ DParticleCombo* DParticleCombo_factory_Thrown::Build_ThrownCombo(JEventLoop* loc
 	locParticleComboBlueprintStep->Set_InitialParticleDecayFromStepIndex(-1);
 	locParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
 	locParticleComboStep->Set_InitialParticle(&locMCReactions[0]->beam);
-	locParticleComboStep->Set_InitialParticle_Measured(&locMCReactions[0]->beam);
 	locParticleComboStep->Set_TargetParticle(&locMCReactions[0]->target);
 	locParticleComboStep->Set_Position(locMCReactions[0]->beam.position());
 	locParticleComboStep->Set_Time(locMCReactions[0]->beam.time());
@@ -115,7 +114,6 @@ DParticleCombo* DParticleCombo_factory_Thrown::Build_ThrownCombo(JEventLoop* loc
 			locParticleComboBlueprintStep->Set_ReactionStep(locThrownReaction->Get_ReactionStep(loc_i));
 			locParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
 			locParticleComboStep->Set_InitialParticle(locMCThrown);
-			locParticleComboStep->Set_InitialParticle_Measured(locMCThrown);
 			locParticleComboStep->Set_Position(locMCThrown->position());
 			locParticleComboStep->Set_Time(locMCThrown->time());
 		}
@@ -133,7 +131,6 @@ DParticleCombo* DParticleCombo_factory_Thrown::Build_ThrownCombo(JEventLoop* loc
 			}
 			locParticleComboBlueprintStep->Add_FinalParticle_SourceObject(locMCThrown, locDecayStepIndex);
 			locParticleComboStep->Add_FinalParticle(locMCThrown);
-			locParticleComboStep->Add_FinalParticle_Measured(locMCThrown);
 		}
 		locParticleCombo->Add_ParticleComboStep(locParticleComboStep);
 	}
