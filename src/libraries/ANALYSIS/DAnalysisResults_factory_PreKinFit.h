@@ -58,7 +58,7 @@ class DAnalysisResults_factory_PreKinFit : public jana::JFactory<DAnalysisResult
 
 		map<const DReaction*, TH1D*> dHistMap_NumParticleCombos;
 		map<const DReaction*, TH1D*> dHistMap_NumEventsSurvivedAction_All;
-		map<const DReaction*, TH1D*> dHistMap_NumEventsSurvivedAction_True;
+		map<const DReaction*, TH1D*> dHistMap_NumEventsWhereTrueComboSurvivedAction;
 		map<const DReaction*, TH2D*> dHistMap_NumCombosSurvivedAction;
 		map<const DReaction*, TH1D*> dHistMap_NumCombosSurvivedAction1D;
 };

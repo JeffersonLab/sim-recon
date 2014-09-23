@@ -53,8 +53,6 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		const DKinematicData* Get_DetectedParticle(const DReaction* locReaction, const DEventRFBunch* locEventRFBunch, const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex, vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses, vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses, const DMCThrownMatching* locMCThrownMatching);
 		DKinematicData* Create_Target(Particle_t locPID);
 
-		bool Cut_CombinedPIDFOM(const DParticleCombo* locParticleCombo, bool locIsTrueComboFlag);
-		bool Cut_CombinedTrackingFOM(const DParticleCombo* locParticleCombo, bool locIsTrueComboFlag);
 		bool Cut_PIDFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 		bool Cut_PIDFOM(const DReaction* locReaction, const DNeutralParticleHypothesis* locNeutralParticleHypothesis) const;
 		bool Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
@@ -88,8 +86,6 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 			//Command-line values will override these values
 		pair<bool, double> dMinChargedPIDFOM; //the minimum PID FOM for a particle used for this DReaction
 		pair<bool, double> dMinPhotonPIDFOM; //the minimum PID FOM for a neutral particle used for this DReaction
-		pair<bool, double> dMinCombinedPIDFOM; //the minimum combined PID FOM for all charged tracks used for this DReaction
-		pair<bool, double> dMinCombinedTrackingFOM; //the minimum combined Tracking FOM for all charged tracks used for this DReaction
 		pair<bool, double> dMaxPhotonRFDeltaT; //the maximum photon-rf time difference: used for photon selection
 		pair<bool, bool> dHasDetectorMatchFlag; //if both are true, require tracks to have a detector match
 
@@ -107,12 +103,6 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		set<const DNeutralParticleHypothesis*> dPreviousPIDNeutrals;
 		map<const DReaction*, map<Particle_t, TH1I*> > dHistMap_PIDFOM_All;
 		map<const DReaction*, map<Particle_t, TH1I*> > dHistMap_PIDFOM_True;
-
-		map<const DReaction*, TH1D*> dHistMap_CombinedPIDFOM_All;
-		map<const DReaction*, TH1D*> dHistMap_CombinedPIDFOM_True;
-
-		map<const DReaction*, TH1D*> dHistMap_CombinedTrackingFOM_All;
-		map<const DReaction*, TH1D*> dHistMap_CombinedTrackingFOM_True;
 
 		map<const DReaction*, TH1I*> dHistMap_PhotonRFDeltaT_All;
 		map<const DReaction*, TH1I*> dHistMap_PhotonRFDeltaT_True;

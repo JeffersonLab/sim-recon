@@ -102,14 +102,17 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 
 			if(!locMCThrowns.empty())
 			{
-				locHistName = "NumTrueEventsSurvivedAction";
+				locHistName = "NumEventsWhereTrueComboSurvivedAction";
 				loc1DHist = static_cast<TH1D*>(locDirectoryFile->Get(locHistName.c_str()));
 				if(loc1DHist == NULL)
 				{
-					loc1DHist = (TH1D*)dHistMap_NumEventsSurvivedAction_All[locReaction]->Clone(locHistName.c_str());
-					loc1DHist->SetTitle(";;# Events Where True Combo Survived Action");
+					locHistTitle = locReactionName + string(";;# Events Where True Combo Survived Action");
+					loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), locNumActions + 1, -0.5, locNumActions + 1.0 - 0.5); //+1 for # tracks
+					loc1DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combos"); // at least one DParticleCombo object before any actions
+					for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
+						loc1DHist->GetXaxis()->SetBinLabel(2 + loc_j, locActionNames[loc_j].c_str());
 				}
-				dHistMap_NumEventsSurvivedAction_True[locReaction] = loc1DHist;
+				dHistMap_NumEventsWhereTrueComboSurvivedAction[locReaction] = loc1DHist;
 			}
 
 			locHistName = "NumCombosSurvivedAction";
@@ -319,9 +322,6 @@ jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop
 		dApplication->RootWriteLock();
 		{
 			dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(0); //initial: a new event
-			if(locIsThrownMatchFlag)
-				dHistMap_NumEventsSurvivedAction_True[locReaction]->Fill(1); //input event (+1 because binning begins at 1)
-
 			if(locNumParticleCombosSurvivedActions[0] > 0)
 				dHistMap_NumParticleCombos[locReaction]->Fill(locNumParticleCombosSurvivedActions[0]);
 			for(size_t loc_j = 0; loc_j < locNumParticleCombosSurvivedActions.size(); ++loc_j)
@@ -336,8 +336,8 @@ jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop
 			}
 			for(size_t loc_j = locNumParticleCombosSurvivedActions.size(); loc_j < (locNumAnalysisActions + 1); ++loc_j)
 				dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j, 0);
-			for(int loc_j = -1; loc_j <= locLastActionTrueComboSurvives; ++loc_j)
-				dHistMap_NumEventsSurvivedAction_True[locReaction]->Fill(loc_j + 1);
+			for(int loc_j = -1; loc_j <= locLastActionTrueComboSurvives; ++loc_j) //-1/-2: combo does/does-not exist
+				dHistMap_NumEventsWhereTrueComboSurvivedAction[locReaction]->Fill(loc_j + 1);
 		}
 		dApplication->RootUnLock();
 

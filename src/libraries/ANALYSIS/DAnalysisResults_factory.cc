@@ -84,14 +84,17 @@ jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int runn
 
 			if(!locMCThrowns.empty())
 			{
-				locHistName = "NumTrueEventsSurvivedAction";
+				locHistName = "NumEventsWhereTrueComboSurvivedAction";
 				loc1DHist = static_cast<TH1D*>(locDirectoryFile->Get(locHistName.c_str()));
 				if(loc1DHist == NULL)
 				{
-					loc1DHist = (TH1D*)dHistMap_NumEventsSurvivedAction_All[locReaction]->Clone(locHistName.c_str());
-					loc1DHist->SetTitle(";;# Events Where True Combo Survived Action");
+					locHistTitle = locReactionName + string(";;# Events Where True Combo Survived Action");
+					loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), locNumActions + 1, -0.5, locNumActions + 1.0 - 0.5); //+1 for # tracks
+					loc1DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combos"); // at least one DParticleCombo object before any actions
+					for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
+						loc1DHist->GetXaxis()->SetBinLabel(2 + loc_j, locActionNames[loc_j].c_str());
 				}
-				dHistMap_NumEventsSurvivedAction_True[locReaction] = loc1DHist;
+				dHistMap_NumEventsWhereTrueComboSurvivedAction[locReaction] = loc1DHist;
 			}
 
 			locHistName = "NumCombosSurvivedAction";
@@ -296,7 +299,7 @@ jerror_t DAnalysisResults_factory::evnt(jana::JEventLoop* locEventLoop, int even
 					dHistMap_NumCombosSurvivedAction1D[locReaction]->Fill(loc_j + locNumPreKinFitActions + 1); //+1 because 0 is min #tracks
 			}
 			for(int loc_j = 0; loc_j <= locLastActionTrueComboSurvives; ++loc_j)
-				dHistMap_NumEventsSurvivedAction_True[locReaction]->Fill(loc_j + locNumPreKinFitActions + 2); //+2 because 0 is initial (no cuts at all), and 1 is min #tracks
+				dHistMap_NumEventsWhereTrueComboSurvivedAction[locReaction]->Fill(loc_j + locNumPreKinFitActions + 1); //+1 because 0 is min #tracks
 		}
 		dApplication->RootUnLock();
 
