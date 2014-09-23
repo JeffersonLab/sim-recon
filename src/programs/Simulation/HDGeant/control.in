@@ -33,10 +33,10 @@ c the following five parameters.
 c      Emax   - end-point energy of the electron beam (GeV)
 c      Epeak  - energy of the primary coherent peak edge (GeV)
 c      Emin   - minimum energy of the coherent bremsstrahlung beam (GeV)
-c      collz  - z position of collimator in cm
+c      collz  - z position of collimator in m
 c      colld  - diameter of collimator in m 
 c Omitting the final parameter Emin results in the default value being used.
-cBEAM 10. 9.999 0.0012 7600. 0.005
+cBEAM 10. 9.999 0.0012 76.00 0.005
 
 c Commenting out the following line will disable simulated hits output.
 OUTFILE 'hdgeant.hddm'
