@@ -1,3 +1,7 @@
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DAnalysisUtilities.h"
 
 DAnalysisUtilities::DAnalysisUtilities(JEventLoop* locEventLoop)
@@ -19,6 +23,10 @@ DAnalysisUtilities::DAnalysisUtilities(JEventLoop* locEventLoop)
 
 bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExclusiveMatchFlag, bool locIncludeDecayingToReactionFlag) const
 {
+#ifdef VTRACE
+	VT_TRACER("DAnalysisUtilities::Check_IsBDTSignalEvent()");
+#endif
+
 	//IF DREACTION HAS A MISSING UNKNOWN PARTICLE, MUST USE locExclusiveMatchFlag = false
 
 	//if locIncludeDecayingToReactionFlag = true, will test whether the thrown reaction could decay to the DReaction
@@ -340,6 +348,10 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(JEventLoop* locEventLoop, co
 
 bool DAnalysisUtilities::Check_ThrownsMatchReaction(const DParticleCombo* locThrownCombo, const DReaction* locReaction, bool locExclusiveMatchFlag) const
 {
+#ifdef VTRACE
+	VT_TRACER("DAnalysisUtilities::Check_ThrownsMatchReaction()");
+#endif
+
 	//IF DREACTION HAS A MISSING UNKNOWN PARTICLE, MUST USE locExclusiveMatchFlag = false
 
 	//note, if you decay a final state particle (e.g. k+, pi+) in your input DReaction*, a match will NOT be found: the thrown reaction/combo is truncated

@@ -1,7 +1,15 @@
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "ANALYSIS/DParticleComboBlueprintStep.h"
 
 bool DParticleComboBlueprintStep::operator<(const DParticleComboBlueprintStep& locParticleComboBlueprintStep) const
 {
+#ifdef VTRACE
+	VT_TRACER("DParticleComboBlueprintStep::operator<()");
+#endif
+
 	if(dReactionStep < locParticleComboBlueprintStep.dReactionStep)
 		return true;
 	else if(dReactionStep > locParticleComboBlueprintStep.dReactionStep)
@@ -43,6 +51,10 @@ bool DParticleComboBlueprintStep::operator<(const DParticleComboBlueprintStep& l
 
 bool DParticleComboBlueprintStep::operator==(const DParticleComboBlueprintStep& locParticleComboBlueprintStep) const
 {
+#ifdef VTRACE
+	VT_TRACER("DParticleComboBlueprintStep::operator==()");
+#endif
+
 	if(dReactionStep != locParticleComboBlueprintStep.dReactionStep)
 		return false;
 

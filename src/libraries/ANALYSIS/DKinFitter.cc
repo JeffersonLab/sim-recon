@@ -1,3 +1,7 @@
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DKinFitter.h"
 
 //CONSTRAINTS:
@@ -963,6 +967,9 @@ bool DKinFitter::Prepare_Constraint(DKinFitConstraint_Spacetime* locConstraint) 
 
 bool DKinFitter::Sort_Constraints(const deque<DKinFitConstraint*>& locOriginalConstraints, deque<pair<DKinFitConstraint_VertexBase*, set<DKinFitConstraint_P4*> > >& locSortedConstraints)
 {
+#ifdef VTRACE
+	VT_TRACER("DKinFitter::Sort_Constraints()");
+#endif
 	if(dDebugLevel > 10)
 		cout << "DKinFitter: Sort constraints: Clone constraints." << endl;
 
@@ -1042,6 +1049,9 @@ bool DKinFitter::Resolve_Constraints(void)
 
 bool DKinFitter::Resolve_Constraints(const deque<DKinFitConstraint*>& locConstraints, deque<DKinFitConstraint_VertexBase*>& locSortedVertexConstraints, bool locSortOnlyFlag) const
 {
+#ifdef VTRACE
+	VT_TRACER("DKinFitter::Resolve_Constraints()");
+#endif
 	if(dDebugLevel > 10)
 		cout << "DKinFitter: Resolve constraints: Prepare " << locConstraints.size() << " constraints." << endl;
 
@@ -1676,6 +1686,9 @@ bool DKinFitter::Group_Constraints(const deque<DKinFitConstraint_VertexBase*>& l
 
 bool DKinFitter::Fit_Reaction(void)
 {
+#ifdef VTRACE
+	VT_TRACER("DKinFitter::Fit_Reaction()");
+#endif
 	if(!Resolve_Constraints())
 	{
 		dKinFitStatus = d_KinFitFailedSetup;

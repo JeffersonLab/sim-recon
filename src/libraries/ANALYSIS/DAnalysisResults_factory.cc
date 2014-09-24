@@ -5,6 +5,10 @@
 // Creator: pmatt (on Linux ifarml6 2.6.18-128.el5 x86_64)
 //
 
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DAnalysisResults_factory.h"
 
 //------------------
@@ -193,6 +197,10 @@ void DAnalysisResults_factory::Get_Reactions(jana::JEventLoop* locEventLoop, vec
 //------------------
 jerror_t DAnalysisResults_factory::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DAnalysisResults_factory::evnt()");
+#endif
+
 	if(dDebugLevel > 0)
 		cout << "Begin event " << eventnumber << " analysis." << endl;
 

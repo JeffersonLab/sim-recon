@@ -5,6 +5,10 @@
 // Creator: pmatt (on Linux ifarml6 2.6.18-128.el5 x86_64)
 //
 
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DAnalysisResults_factory_PreKinFit.h"
 
 //------------------
@@ -224,6 +228,11 @@ void DAnalysisResults_factory_PreKinFit::Get_Reactions(jana::JEventLoop* locEven
 //------------------
 jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
 {
+
+#ifdef VTRACE
+	VT_TRACER("DAnalysisResults_factory_PreKinFit::evnt()");
+#endif
+
 	vector<const DReaction*> locReactions;
 	Get_Reactions(locEventLoop, locReactions);
 

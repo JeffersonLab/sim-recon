@@ -5,6 +5,10 @@
 // Creator: pmatt (on Linux ifarml6 2.6.18-128.el5 x86_64)
 //
 
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DBeamPhoton_factory_KinFit.h"
 
 //------------------
@@ -28,6 +32,10 @@ jerror_t DBeamPhoton_factory_KinFit::brun(jana::JEventLoop *locEventLoop, int ru
 //------------------
 jerror_t DBeamPhoton_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DBeamPhoton_factory_KinFit::evnt()");
+#endif
+
  	vector<const DKinFitResults*> locKinFitResultsVector;
 	locEventLoop->Get(locKinFitResultsVector);
 

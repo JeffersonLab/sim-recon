@@ -5,6 +5,10 @@
 // Creator: pmatt (on Linux ifarml6 2.6.18-128.el5 x86_64)
 //
 
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DMCThrownMatching_factory.h"
 #include "TMath.h"
 
@@ -48,6 +52,10 @@ jerror_t DMCThrownMatching_factory::brun(jana::JEventLoop* locEventLoop, int run
 //------------------
 jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DMCThrownMatching_factory::evnt()");
+#endif
+
  	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns, "FinalState");
  	vector<const DMCThrown*> locMCThrowns_Charged;

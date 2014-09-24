@@ -1,3 +1,7 @@
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DParticleCombo_factory.h"
 
 //------------------
@@ -67,6 +71,10 @@ jerror_t DParticleCombo_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 //------------------
 jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DParticleCombo_factory::evnt()");
+#endif
+
 	Reset_Data();
 	Reset_Pools();
 

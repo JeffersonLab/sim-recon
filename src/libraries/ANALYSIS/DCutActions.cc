@@ -1,3 +1,7 @@
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "ANALYSIS/DCutActions.h"
 
 string DCutAction_ThrownTopology::Get_ActionName(void) const
@@ -292,6 +296,11 @@ void DCutAction_BDTSignalCombo::Initialize(JEventLoop* locEventLoop)
 
 bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
+
+#ifdef VTRACE
+	VT_TRACER("DCutAction_BDTSignalCombo::Perform_Action()");
+#endif
+
 	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
 	locEventLoop->Get(locMCThrownMatchingVector);
 	if(locMCThrownMatchingVector.empty())
@@ -419,6 +428,11 @@ void DCutAction_TrueCombo::Initialize(JEventLoop* locEventLoop)
 
 bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
+
+#ifdef VTRACE
+	VT_TRACER("DCutAction_TrueCombo::Perform_Action()");
+#endif
+
 	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
 	locEventLoop->Get(locMCThrownMatchingVector);
 	if(locMCThrownMatchingVector.empty())

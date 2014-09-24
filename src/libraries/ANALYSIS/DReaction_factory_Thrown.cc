@@ -5,6 +5,10 @@
 // Creator: pmatt
 //
 
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DReaction_factory_Thrown.h"
 
 //------------------
@@ -52,6 +56,10 @@ jerror_t DReaction_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int even
 
 DReaction* DReaction_factory_Thrown::Build_ThrownReaction(JEventLoop* locEventLoop, deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps)
 {
+#ifdef VTRACE
+	VT_TRACER("DReaction_factory_Thrown::Build_ThrownReaction()");
+#endif
+
  	vector<const DMCReaction*> locMCReactions;
 	locEventLoop->Get(locMCReactions);
 

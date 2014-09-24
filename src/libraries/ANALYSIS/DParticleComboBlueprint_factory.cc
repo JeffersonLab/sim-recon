@@ -1,3 +1,7 @@
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DParticleComboBlueprint_factory.h"
 
 //------------------
@@ -100,6 +104,10 @@ void DParticleComboBlueprint_factory::Get_Reactions(JEventLoop *locEventLoop, ve
 //------------------
 jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DParticleComboBlueprint_factory::evnt()");
+#endif
+
 	Reset_Pools();
 	dBlueprintStepMap.clear();
 	dSavedBlueprintSteps.clear();
@@ -324,6 +332,9 @@ bool DParticleComboBlueprint_factory::Setup_ComboLoop(const DReaction* locReacti
 
 void DParticleComboBlueprint_factory::Find_Combos(const DReaction* locReaction, deque<const JObject*>& locNeutralShowerDeque, deque<const JObject*>& locChargedTrackDeque_Positive, deque<const JObject*>& locChargedTrackDeque_Negative, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque, map<int, int>& locInitialParticleStepFromIndexMap, map<pair<int, int>, int>& locFinalStateDecayStepIndexMap)
 {
+#ifdef VTRACE
+	VT_TRACER("DParticleComboBlueprint_factory::Find_Combos()");
+#endif
 	DParticleComboBlueprint* locParticleComboBlueprint = new DParticleComboBlueprint();
 	locParticleComboBlueprint->Set_Reaction(locReaction);
 
@@ -333,7 +344,8 @@ void DParticleComboBlueprint_factory::Find_Combos(const DReaction* locReaction, 
 	locParticleComboBlueprintStep->Set_ReactionStep(locReaction->Get_ReactionStep(locStepIndex));
 	locParticleComboBlueprintStep->Set_InitialParticleDecayFromStepIndex(locInitialParticleStepFromIndexMap[locStepIndex]);
 
-	do{
+	do
+	{
 		if(dDebugLevel > 10)
 			cout << "do loop: step & particle indices = " << locStepIndex << ", " << locParticleIndex << endl;
 		if(locParticleIndex == int(locNumPossibilitiesDeque[locStepIndex].size()))
@@ -567,6 +579,9 @@ bool DParticleComboBlueprint_factory::Handle_Decursion(DParticleComboBlueprint* 
 
 bool DParticleComboBlueprint_factory::Check_IfDuplicateStepCombo(const DParticleComboBlueprint* locParticleComboBlueprint, const DParticleComboBlueprintStep* locCurrentStep, int locStepIndex, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque) const
 {
+#ifdef VTRACE
+	VT_TRACER("DParticleComboBlueprint_factory::Check_IfDuplicateStepCombo()");
+#endif
 	//note that final particle ids could be rearranged in a different order
 	map<Particle_t, unsigned int> locParticleTypeCount_CurrentStep;
 	bool locIsAParticleDetected = false;

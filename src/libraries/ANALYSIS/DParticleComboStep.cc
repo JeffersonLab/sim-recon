@@ -1,7 +1,15 @@
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DParticleComboStep.h"
 
 bool DParticleComboStep::operator==(const DParticleComboStep& locParticleComboStep) const
 {
+#ifdef VTRACE
+	VT_TRACER("DParticleComboStep::operator==");
+#endif
+
 	if(dParticleComboBlueprintStep != locParticleComboStep.dParticleComboBlueprintStep)
 		return false;
 

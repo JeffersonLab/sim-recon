@@ -5,6 +5,10 @@
 // Creator: pmatt
 //
 
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DEventRFBunch_factory_Combo.h"
 
 //------------------
@@ -43,25 +47,18 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int r
 //------------------
 jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DEventRFBunch_factory_Combo::evnt()");
+#endif
+
+	//use all particles in the combo to find the vertex
+		//ignore detached vertices
+
  	vector<const DParticleComboBlueprint*> locParticleComboBlueprints;
 	locEventLoop->Get(locParticleComboBlueprints);
 
 	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches);
-
-/*
-//the below disables this routine until everything is working
-if (locEventRFBunches.size() > 0) {
-   DEventRFBunch* locEventRFBunch = new DEventRFBunch(*locEventRFBunches[0]);
-   for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
-	locEventRFBunch->AddAssociatedObject(locParticleComboBlueprints[loc_i]);
-   _data.push_back(locEventRFBunch);
-}
-return NOERROR;
-*/
-
-	//use all particles in the combo to find the vertex
-		//ignore detached vertices
 
  	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locEventLoop->Get(locTrackTimeBasedVector, "Combo");

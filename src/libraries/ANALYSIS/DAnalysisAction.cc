@@ -1,3 +1,7 @@
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DAnalysisAction.h"
 
 DAnalysisAction::DAnalysisAction(void)
@@ -51,6 +55,9 @@ bool DAnalysisAction::operator()(JEventLoop* locEventLoop, const DParticleCombo*
 
 void DAnalysisAction::operator()(JEventLoop* locEventLoop, set<const DParticleCombo*>& locSurvivingParticleCombos)
 {
+#ifdef VTRACE
+	VT_TRACER("DAnalysisAction::operator()");
+#endif
 	//THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
 	dNumParticleCombos = locSurvivingParticleCombos.size();
 	dNumPreviousParticleCombos = 0;

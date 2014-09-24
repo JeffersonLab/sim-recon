@@ -1,3 +1,7 @@
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "ANALYSIS/DKinFitter_GlueX.h"
 
 DKinFitter_GlueX::DKinFitter_GlueX(void)
@@ -119,6 +123,10 @@ const DKinematicData* DKinFitter_GlueX::Get_Source_FromOutput(const DKinFitParti
 
 bool DKinFitter_GlueX::Fit_Reaction(void)
 {
+#ifdef VTRACE
+	VT_TRACER("DKinFitter_GlueX::Fit_Reaction()");
+#endif
+
 	bool locFitStatus = DKinFitter::Fit_Reaction();
 	if(!locFitStatus)
 		return locFitStatus;
@@ -160,6 +168,9 @@ bool DKinFitter_GlueX::Fit_Reaction(void)
 
 bool DKinFitter_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKinematicData, const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi)
 {
+#ifdef VTRACE
+	VT_TRACER("DKinFitter_GlueX::Propagate_TrackInfoToCommonVertex()");
+#endif
 	//locKinematicData must be generated from locKinFitParticle
 		//this function should only be used on decaying particles involved in two vertex fits:
 			//propagates the track information from the vertex at which it is DEFINED to the OTHER vertex (e.g. production -> decay)
@@ -176,6 +187,4 @@ bool DKinFitter_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKine
 	locKinematicData->setPathLength(locPathLengthPair.first, locPathLengthPair.second);
 	return true;
 }
-
-
 

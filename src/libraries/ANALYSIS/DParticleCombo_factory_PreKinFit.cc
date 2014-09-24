@@ -5,6 +5,10 @@
 // Creator: pmatt
 //
 
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DParticleCombo_factory_PreKinFit.h"
 
 using namespace std;
@@ -327,6 +331,10 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 //------------------
 jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DParticleCombo_factory_PreKinFit::evnt()");
+#endif
+
 	dComboBlueprintStepMap.clear();
 	dComboBlueprintBeamStepMap.clear();
 	dPreviousPhotonRFDeltaTPairs.clear();

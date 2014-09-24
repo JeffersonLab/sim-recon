@@ -1,3 +1,7 @@
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DKinFitResults_factory.h"
 
 //------------------
@@ -91,6 +95,10 @@ void DKinFitResults_factory::Reset_NewEvent(void)
 //------------------
 jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DKinFitResults_factory::evnt()");
+#endif
+
 	dPreviouslyFailedFits.clear();
 
 	//perform all of the analysis steps that don't need the kinematic fit results (saves time by reducing #kinfits)
@@ -160,6 +168,9 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 
 bool DKinFitResults_factory::Handle_IfKinFitResultsWillBeIdentical(const DParticleCombo* locParticleCombo, deque<DKinFitConstraint*> locConstraints_ToCheck, const DEventRFBunch* locRFBunch_ToCheck, map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > > locDecayingKinFitParticles_ToCheck)
 {
+#ifdef VTRACE
+	VT_TRACER("DKinFitResults_factory::Handle_IfKinFitResultsWillBeIdentical()");
+#endif
 	//first check previously-passed results
 	for(size_t loc_j = 0; loc_j < _data.size(); ++loc_j)
 	{
@@ -403,6 +414,9 @@ bool DKinFitResults_factory::Check_IfKinFitResultsWillBeIdentical(deque<const DK
 
 bool DKinFitResults_factory::Create_KinFitConstraints(const DParticleCombo* locParticleCombo, map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > >& locDecayingKinFitParticles, deque<DKinFitConstraint*>& locOriginalConstraints, deque<pair<DKinFitConstraint_VertexBase*, set<DKinFitConstraint_P4*> > >& locSortedConstraints)
 {
+#ifdef VTRACE
+	VT_TRACER("DKinFitResults_factory::Create_KinFitConstraints()");
+#endif
 	if(dDebugLevel > 0)
 		cout << "DKinFitResults_factory: Create Particles" << endl;
 
@@ -696,6 +710,9 @@ bool DKinFitResults_factory::Create_KinFitConstraints(const DParticleCombo* locP
 
 bool DKinFitResults_factory::Setup_KinFit(DKinFitType locKinFitType, const deque<DKinFitConstraint*>& locOriginalConstraints, const DEventRFBunch* locEventRFBunch, deque<pair<DKinFitConstraint_VertexBase*, set<DKinFitConstraint_P4*> > >& locSortedConstraints)
 {
+#ifdef VTRACE
+	VT_TRACER("DKinFitResults_factory::Setup_KinFit()");
+#endif
 	//group p4 constraints together
 	deque<DKinFitConstraint_P4*> locP4Constraints;
 	for(size_t loc_i = 0; loc_i < locOriginalConstraints.size(); ++loc_i)

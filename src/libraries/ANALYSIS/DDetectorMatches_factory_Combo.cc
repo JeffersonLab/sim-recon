@@ -5,6 +5,10 @@
 // Creator: pmatt (on Linux ifarml6 2.6.18-128.el5 x86_64)
 //
 
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DDetectorMatches_factory_Combo.h"
 
 //------------------
@@ -29,6 +33,10 @@ jerror_t DDetectorMatches_factory_Combo::brun(jana::JEventLoop *locEventLoop, in
 //------------------
 jerror_t DDetectorMatches_factory_Combo::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DDetectorMatches_factory_Combo::evnt()");
+#endif
+
 	//get new DTrackTimeBased objects, and split into reswam/no-reswim
 	vector<const DTrackTimeBased*> locTrackTimeBasedVector_NoReSwim, locTrackTimeBasedVector_ReSwam;
 	locEventLoop->Get(locTrackTimeBasedVector_NoReSwim, "Combo");

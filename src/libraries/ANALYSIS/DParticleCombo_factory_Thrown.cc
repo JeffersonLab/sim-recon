@@ -5,6 +5,10 @@
 // Creator: pmatt
 //
 
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DParticleCombo_factory_Thrown.h"
 
 //------------------
@@ -33,6 +37,10 @@ jerror_t DParticleCombo_factory_Thrown::brun(jana::JEventLoop *locEventLoop, int
 //------------------
 jerror_t DParticleCombo_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DParticleCombo_factory_Thrown::evnt()");
+#endif
+
 	// delete pool sizes if too large, preventing memory-leakage-like behavor.
 	if(dParticleComboStepPool_All.size() > MAX_dParticleComboStepPoolSize)
 	{
@@ -67,6 +75,10 @@ jerror_t DParticleCombo_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int
 
 DParticleCombo* DParticleCombo_factory_Thrown::Build_ThrownCombo(JEventLoop* locEventLoop, const DReaction* locThrownReaction, deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps)
 {
+#ifdef VTRACE
+	VT_TRACER("DParticleCombo_factory_Thrown::Build_ThrownCombo()");
+#endif
+
  	vector<const DMCReaction*> locMCReactions;
 	locEventLoop->Get(locMCReactions);
 

@@ -6,6 +6,10 @@
 //
 
 
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include <iostream>
 #include <iomanip>
 using namespace std;
@@ -37,6 +41,10 @@ jerror_t DNeutralParticleHypothesis_factory_Combo::brun(jana::JEventLoop *locEve
 //------------------
 jerror_t DNeutralParticleHypothesis_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DNeutralParticleHypothesis_factory_Combo::evnt()");
+#endif
+
 	vector<const DParticleComboBlueprint*> locParticleComboBlueprints;
 	locEventLoop->Get(locParticleComboBlueprints);
 
