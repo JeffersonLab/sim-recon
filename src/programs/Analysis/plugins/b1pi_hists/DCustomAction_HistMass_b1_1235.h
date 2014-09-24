@@ -11,6 +11,8 @@
 #include <string>
 #include <iostream>
 
+#include "TH1I.h"
+
 #include "JANA/JEventLoop.h"
 #include "JANA/JApplication.h"
 
@@ -39,7 +41,7 @@ class DCustomAction_HistMass_b1_1235 : public DAnalysisAction
 		const DAnalysisUtilities* dAnalysisUtilities;
 
 		//Store any histograms as member variables here
-		TH1D* dMassHist;
+		TH1I* dMassHist;
 
 		//Used for determining when the group of particles used for the invariant mass is identical to a previous combo (to prevent double counting)
 		deque<set<const DKinematicData*> > dPastParticles;

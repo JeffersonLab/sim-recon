@@ -56,10 +56,28 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
 	locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
 
+	// Highly Recommended: When generating particle combinations, reject all charged track candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
+	locReaction->Set_MinChargedPIDFOM(5.73303E-7);
+
+	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*2.004); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
+
 	// Enable ROOT TTree Output
 	locReaction->Enable_TTreeOutput("tree_b1pi.root"); //string is file name (must end in ".root"!!)
 
+/*********************************************** b1pi Combo Pre-Combo Custom Cuts ***********************************************/
+
+	// Loose Pi0 Cut, Applied during Blueprint Construction
+	locReaction->Set_InvariantMassCut(Pi0, 0.08, 0.19);
+
+	// Loose missing mass squared cut, applied just after creating the combination (before saving it)
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 2.56));
+
 /**************************************************** b1pi Actions ****************************************************/
+
+	//Kinematics
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboGenReconComparison(locReaction, false));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false));
 
 	//PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
@@ -68,6 +86,10 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	//Kinematic Fit Results and Confidence Level Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.01)); //1%
+
+	//Post-Fit Kinematics
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboGenReconComparison(locReaction, true, "PostKinFit"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, "PostKinFit"));
 
 	//Constrained Mass Distributions
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 650, 0.3, 1.6, "PostKinFit")); //false: measured data

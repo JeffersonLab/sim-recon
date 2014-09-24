@@ -31,9 +31,9 @@ void DCustomAction_HistMass_b1_1235::Initialize(JEventLoop* locEventLoop)
 		//	(Optional) Example: Create a histogram.
 		string locHistTitle = string(";") + ParticleName_ROOT(PiPlus) + ParticleName_ROOT(omega) + string(" Invariant Mass (GeV/c^{2});# Combos / 2 MeV/c^{2}");
 		if(gDirectory->Get("InvariantMass") == NULL) //check to see if already created by another thread
-			dMassHist = new TH1D("InvariantMass", locHistTitle.c_str(), 600, 0.6, 1.8);
+			dMassHist = new TH1I("InvariantMass", locHistTitle.c_str(), 600, 0.6, 1.8);
 		else //already created by another thread
-			dMassHist = static_cast<TH1D*>(gDirectory->Get("InvariantMass"));
+			dMassHist = static_cast<TH1I*>(gDirectory->Get("InvariantMass"));
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }

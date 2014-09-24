@@ -35,11 +35,6 @@ class DEventProcessor_b1pi_hists : public JEventProcessor
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
-
-		DHistogramAction_TrackMultiplicity dHistogramAction_TrackMultiplicity;
-		DHistogramAction_ThrownParticleKinematics dHistogramAction_ThrownParticleKinematics;
-		DHistogramAction_DetectedParticleKinematics dHistogramAction_DetectedParticleKinematics;
-		DHistogramAction_GenReconTrackComparison dHistogramAction_GenReconTrackComparison;
 };
 
 
