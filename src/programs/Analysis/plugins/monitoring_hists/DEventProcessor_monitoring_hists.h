@@ -14,9 +14,7 @@
 #include "JANA/JEventProcessor.h"
 
 #include "DANA/DApplication.h"
-#include "ANALYSIS/DAnalysisResults.h"
-
-#include "DFactoryGenerator_monitoring_hists.h"
+#include "ANALYSIS/DHistogramActions.h"
 
 using namespace jana;
 
@@ -40,6 +38,7 @@ class DEventProcessor_monitoring_hists : public JEventProcessor
 		DHistogramAction_GenReconTrackComparison dHistogramAction_GenReconTrackComparison;
 		DHistogramAction_NumReconstructedObjects dHistogramAction_NumReconstructedObjects;
 		DHistogramAction_ReconnedThrownKinematics dHistogramAction_ReconnedThrownKinematics;
+		DHistogramAction_DetectorStudies dHistogramAction_DetectorStudies;
 };
 
 #endif // _DEventProcessor_monitoring_hists_
