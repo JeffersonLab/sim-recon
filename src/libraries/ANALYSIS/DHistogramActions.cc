@@ -4707,18 +4707,18 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 	japp->RootWriteLock();
 	{
 		dHist_NumReconstructedParticles->Fill(0.0, (Double_t)(locChargedTracks.size() + locNeutralParticles.size()));
-		dHist_NumReconstructedParticles->Fill(4.0, (Double_t)locChargedTracks.size());
-		dHist_NumReconstructedParticles->Fill(3.0, (Double_t)locNeutralParticles.size());
-		dHist_NumReconstructedParticles->Fill(1.0, (Double_t)locNumPositiveTracks);
-		dHist_NumReconstructedParticles->Fill(2.0, (Double_t)locNumNegativeTracks);
+		dHist_NumReconstructedParticles->Fill(1.0, (Double_t)locChargedTracks.size());
+		dHist_NumReconstructedParticles->Fill(2.0, (Double_t)locNeutralParticles.size());
+		dHist_NumReconstructedParticles->Fill(3.0, (Double_t)locNumPositiveTracks);
+		dHist_NumReconstructedParticles->Fill(4.0, (Double_t)locNumNegativeTracks);
 		for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
 			dHist_NumReconstructedParticles->Fill(5.0 + (Double_t)loc_i, (Double_t)locNumTracksByPID[dFinalStatePIDs[loc_i]]);
 
 		dHist_NumGoodReconstructedParticles->Fill(0.0, (Double_t)(locNumGoodTracks + locNumGoodNeutrals));
-		dHist_NumGoodReconstructedParticles->Fill(4.0, (Double_t)locNumGoodTracks);
-		dHist_NumGoodReconstructedParticles->Fill(3.0, (Double_t)locNumGoodNeutrals);
-		dHist_NumGoodReconstructedParticles->Fill(1.0, (Double_t)locNumGoodPositiveTracks);
-		dHist_NumGoodReconstructedParticles->Fill(2.0, (Double_t)locNumGoodNegativeTracks);
+		dHist_NumGoodReconstructedParticles->Fill(1.0, (Double_t)locNumGoodTracks);
+		dHist_NumGoodReconstructedParticles->Fill(2.0, (Double_t)locNumGoodNeutrals);
+		dHist_NumGoodReconstructedParticles->Fill(3.0, (Double_t)locNumGoodPositiveTracks);
+		dHist_NumGoodReconstructedParticles->Fill(4.0, (Double_t)locNumGoodNegativeTracks);
 		for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
 			dHist_NumGoodReconstructedParticles->Fill(5.0 + (Double_t)loc_i, (Double_t)locNumGoodTracksByPID[dFinalStatePIDs[loc_i]]);
 	}
