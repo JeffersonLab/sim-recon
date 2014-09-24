@@ -1,3 +1,7 @@
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DAnalysisUtilities.h"
 
 DAnalysisUtilities::DAnalysisUtilities(JEventLoop* locEventLoop)
@@ -17,22 +21,349 @@ DAnalysisUtilities::DAnalysisUtilities(JEventLoop* locEventLoop)
 		locGeometry->GetTargetZ(dTargetZCenter);
 }
 
-bool DAnalysisUtilities::Check_ThrownsMatchReaction(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExactMatchFlag) const
+bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExclusiveMatchFlag, bool locIncludeDecayingToReactionFlag) const
 {
-	//DOES NOT SUPPORT DREACTIONS WITH MISSING UNKNOWN PARTICLES
+#ifdef VTRACE
+	VT_TRACER("DAnalysisUtilities::Check_IsBDTSignalEvent()");
+#endif
+
+	//IF DREACTION HAS A MISSING UNKNOWN PARTICLE, MUST USE locExclusiveMatchFlag = false
+
+	//if locIncludeDecayingToReactionFlag = true, will test whether the thrown reaction could decay to the DReaction
+		//Note that resonances, phi's, and omega's are automatically decayed
+			//e.g. if DReaction or thrown is g, p -> pi+, pi-, omega, p; will instead treat it as g, p -> 2pi+, 2pi-, pi0, p (or whatever the omega decay products are)
+	//e.g. g, p -> pi+, pi0, K0, Lambda can decay to g, p -> 2pi+, 2pi-, pi0, p
+		//if locIncludeDecayingToReactionFlag = true, then it would be included as "Signal," if false, then background
+		//locIncludeDecayingToReactionFlag should be true UNLESS you are explicitly checking all possible reactions that could decay to your channel in your BDT
+			//e.g. could kinfit to g, p -> pi+, pi0, K0, Lambda and include it as a BDT variable
+
+	DParticleCombo_factory_Thrown* dThrownComboFactory = static_cast<DParticleCombo_factory_Thrown*>(locEventLoop->GetFactory("DParticleCombo", "Thrown"));
+	DReaction_factory_Thrown* dThrownReactionFactory = static_cast<DReaction_factory_Thrown*>(locEventLoop->GetFactory("DReaction", "Thrown"));
+
+	//Replace omega & phi in DReaction with their decay products
+	size_t locStepIndex = 0;
+	vector<DReactionStep> locNewReactionSteps;
+	const DReaction* locCurrentReaction = locReaction;
+	DReaction locNewReaction("Interim"); //if needed
+
+	do
+	{
+		const DReactionStep* locReactionStep = locCurrentReaction->Get_ReactionStep(locStepIndex);
+		Particle_t locInitialPID = locReactionStep->Get_InitialParticleID();
+		if((locInitialPID != omega) && (locInitialPID != phiMeson))
+		{
+			++locStepIndex;
+			continue;
+		}
+
+		//is decaying phi or omega, replace it with its decay products
+		deque<Particle_t> locDecayProducts;
+		locReactionStep->Get_FinalParticleIDs(locDecayProducts);
+
+		//find the production step
+		for(size_t loc_i = 0; loc_i < locStepIndex; ++loc_i)
+		{
+			const DReactionStep* locProductionStep = locCurrentReaction->Get_ReactionStep(loc_i);
+			deque<Particle_t> locPIDs;
+			locProductionStep->Get_FinalParticleIDs(locPIDs);
+
+			//search for the decaying particle. when found, replace it with its decay products
+			bool locFoundFlag = false;
+			for(size_t loc_j = 0; loc_j < locPIDs.size(); ++loc_j)
+			{
+				Particle_t locFinalStatePID = locPIDs[loc_j];
+				if(locFinalStatePID != locInitialPID)
+					continue;
+				locPIDs.erase(locPIDs.begin() + loc_j);
+				locPIDs.insert(locPIDs.begin(), locDecayProducts.begin(), locDecayProducts.end());
+				locFoundFlag = true;
+				break;
+			}
+			if(!locFoundFlag)
+				continue;
+
+			//make a new reaction step
+			DReactionStep locNewReactionStep;
+			locNewReactionStep.Set_InitialParticleID(locProductionStep->Get_InitialParticleID());
+			locNewReactionStep.Set_TargetParticleID(locProductionStep->Get_TargetParticleID());
+			int locMissingParticleIndex = locProductionStep->Get_MissingParticleIndex();
+			for(int loc_j = 0; loc_j < int(locPIDs.size()); ++loc_j)
+				locNewReactionStep.Add_FinalParticleID(locPIDs[loc_j], (loc_j == locMissingParticleIndex));
+			locNewReactionSteps.push_back(locNewReactionStep);
+
+			//make a new reaction
+			DReaction locReactionBuild("Build");
+			locReactionBuild.Clear_ReactionSteps();
+			for(size_t loc_j = 0; loc_j < locCurrentReaction->Get_NumReactionSteps(); ++loc_j)
+			{
+				if(loc_j == loc_i)
+					locReactionBuild.Add_ReactionStep(&locNewReactionSteps.back());
+				else if(loc_j == locStepIndex)
+					continue;
+				else
+					locReactionBuild.Add_ReactionStep(locCurrentReaction->Get_ReactionStep(loc_j));
+			}
+			locNewReaction = locReactionBuild;
+			locCurrentReaction = &locNewReaction;
+			break;
+		}
+	}
+	while(locStepIndex < locCurrentReaction->Get_NumReactionSteps());
+
+	//Get thrown steps
+	deque<pair<const DMCThrown*, deque<const DMCThrown*> > > locThrownSteps;
+	Get_ThrownParticleSteps(locEventLoop, locThrownSteps);
+
+	if(locThrownSteps.size() == 1) //nothing to replace: it either works or it doesn't
+		return Check_ThrownsMatchReaction(locEventLoop, locCurrentReaction, locExclusiveMatchFlag);
+
+	//build maps of counts of the thrown & DReaction decaying particles
+	map<Particle_t, size_t> locNumDecayingParticles_Thrown;
+	for(size_t loc_i = 0; loc_i < locThrownSteps.size(); ++loc_i)
+	{
+		if(locThrownSteps[loc_i].first == NULL)
+			continue; //beam particle
+		Particle_t locPID = locThrownSteps[loc_i].first->PID();
+		if(locNumDecayingParticles_Thrown.find(locPID) == locNumDecayingParticles_Thrown.end())
+			locNumDecayingParticles_Thrown[locPID] = 1;
+		else
+			++locNumDecayingParticles_Thrown[locPID];
+	}
+
+	map<Particle_t, size_t> locNumDecayingParticles_Reaction;
+	for(size_t loc_i = 0; loc_i < locCurrentReaction->Get_NumReactionSteps(); ++loc_i)
+	{
+		Particle_t locPID = locCurrentReaction->Get_ReactionStep(loc_i)->Get_InitialParticleID();
+		if(locPID == Gamma)
+			continue; //beam particle
+		if(locNumDecayingParticles_Reaction.find(locPID) == locNumDecayingParticles_Reaction.end())
+			locNumDecayingParticles_Reaction[locPID] = 1;
+		else
+			++locNumDecayingParticles_Reaction[locPID];
+	}
+
+	//if there is a particle type in the DReaction that is not present in the thrown, it's gonna fail no matter what: check now
+	map<Particle_t, size_t>::iterator locIterator = locNumDecayingParticles_Reaction.begin();
+	for(; locIterator != locNumDecayingParticles_Reaction.end(); ++locIterator)
+	{
+		Particle_t locPID = locIterator->first;
+		if(locNumDecayingParticles_Thrown.find(locPID) == locNumDecayingParticles_Thrown.end())
+			return false;
+	}
+
+	//loop through thrown steps: replace phi's, omega's with their decay products
+		//also replace particles not in the DReaction with their decay products IF locIncludeDecayingToReactionFlag = true
+	locStepIndex = 1;
+	do
+	{
+		pair<const DMCThrown*, deque<const DMCThrown*> > locStepPair = locThrownSteps[locStepIndex];
+
+		//check to see if the thrown decaying particle is present in the dreaction
+		const DMCThrown* locThrownParent = locStepPair.first;
+		Particle_t locInitialPID = locThrownParent->PID();
+		bool locInitialPIDFoundFlag = (locNumDecayingParticles_Reaction.find(locInitialPID) != locNumDecayingParticles_Reaction.end());
+
+		//if it was not found, the only way it can be a match is if the decay products ARE in the reaction step: decay it in place
+			//also: omega and phi have non-negligible width: cannot constrain their peaks in kinfit or BDT: replace with their decay products
+		if(((!locInitialPIDFoundFlag) && locIncludeDecayingToReactionFlag) || (locInitialPID == omega) || (locInitialPID == phiMeson))
+		{
+			Replace_DecayingParticleWithProducts(locThrownSteps, locStepIndex);
+			if(locNumDecayingParticles_Thrown[locInitialPID] == 1)
+				locNumDecayingParticles_Thrown.erase(locInitialPID);
+			else
+				--locNumDecayingParticles_Thrown[locInitialPID];
+		}
+		else
+			++locStepIndex;
+	}
+	while(locStepIndex < locThrownSteps.size());
+
+	if(!locIncludeDecayingToReactionFlag)
+	{
+		//don't try decaying thrown particles: compare as-is
+		const DReaction* locThrownReaction = dThrownReactionFactory->Build_ThrownReaction(locEventLoop, locThrownSteps);
+		const DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locThrownSteps);
+		bool locCheckResult = Check_ThrownsMatchReaction(locThrownCombo, locCurrentReaction, locExclusiveMatchFlag);
+
+		delete locThrownCombo;
+		delete locThrownReaction;
+		return locCheckResult;
+	}
+
+	//ok, if there are still an unequal # of parents for a given PID between thrown & DReaction (i.e. both #'s are non-zero):
+		//it's too confusing to figure out which should be replaced by their decay products and which shouldn't
+		//so, try all possibilities, and see if any of them match. 
+
+	//build PIDs-to-replace vectors //easiest to manipulate a 1D vector
+	vector<Particle_t> locPIDVector;
+	vector<int> locResumeAtIndex;
+	for(locIterator = locNumDecayingParticles_Reaction.begin(); locIterator != locNumDecayingParticles_Reaction.end(); ++locIterator)
+	{
+		Particle_t locPID = locIterator->first;
+		size_t locNumThrown = locNumDecayingParticles_Thrown[locPID];
+		if(locNumThrown < locIterator->second)
+			return false; //thrown doesn't match
+		if(locNumThrown == locIterator->second)
+			continue; //all is well
+		for(size_t loc_i = 0; loc_i < locNumThrown - locIterator->second; ++loc_i)
+		{
+			locPIDVector.push_back(locPID);
+			locResumeAtIndex.push_back(0);
+		}
+	}
+
+	//if no additional replacements to make: check it
+	if(locPIDVector.empty())
+	{
+		const DReaction* locThrownReaction = dThrownReactionFactory->Build_ThrownReaction(locEventLoop, locThrownSteps);
+		const DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locThrownSteps);
+		bool locCheckResult = Check_ThrownsMatchReaction(locThrownCombo, locCurrentReaction, locExclusiveMatchFlag);
+
+		delete locThrownCombo;
+		delete locThrownReaction;
+		return locCheckResult;
+	}
+
+	//loop through, making all combos of particles, (almost) just like in DParticleComboBlueprint_factory
+		//unlike that factory, the below may try a given combo twice: too hard to code against it though 
+			//for a given PID, hard to compare current locResumeAtIndex to previous ones, since the thrown steps are continually replaced
+	deque<int> locDecayReplacementIndices;
+	int locParticleIndex = 0;
+	//below: contains "locThrownSteps" after each replacement
+		//1st deque index is replacement index, 
+	deque<deque<pair<const DMCThrown*, deque<const DMCThrown*> > > > locReplacementThrownSteps(1, locThrownSteps);
+	do
+	{
+		if(locParticleIndex == -1)
+			break; //no success
+
+		deque<pair<const DMCThrown*, deque<const DMCThrown*> > > locCurrentThrownSteps = locReplacementThrownSteps.back();
+		if(locParticleIndex == int(locPIDVector.size()))
+		{
+			//combo defined: try it
+			const DReaction* locThrownReaction = dThrownReactionFactory->Build_ThrownReaction(locEventLoop, locCurrentThrownSteps);
+			const DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locCurrentThrownSteps);
+			bool locCheckResult = Check_ThrownsMatchReaction(locThrownCombo, locCurrentReaction, locExclusiveMatchFlag);
+
+			delete locThrownCombo;
+			delete locThrownReaction;
+
+			if(locCheckResult)
+				return true; //it worked!
+			locResumeAtIndex[locParticleIndex] = 0;
+			locReplacementThrownSteps.pop_back();
+			--locParticleIndex;
+			continue;
+		}
+
+		Particle_t locPID = locPIDVector[locParticleIndex];
+		//find the next instance of this step & replace it
+		bool locFoundFlag = false;
+		for(size_t loc_i = locResumeAtIndex[locParticleIndex]; loc_i < locCurrentThrownSteps.size(); ++loc_i)
+		{
+			if(locCurrentThrownSteps[loc_i].first == NULL)
+				continue;
+			Particle_t locInitialPID = locCurrentThrownSteps[loc_i].first->PID();
+			if(locInitialPID != locPID)
+				continue;
+			locFoundFlag = true;
+
+			Replace_DecayingParticleWithProducts(locCurrentThrownSteps, loc_i);
+			locReplacementThrownSteps.push_back(locCurrentThrownSteps);
+			locResumeAtIndex[locParticleIndex] = loc_i + 1;
+
+			break;
+		}
+
+		if(locFoundFlag)
+			++locParticleIndex;
+		else
+		{
+			locResumeAtIndex[locParticleIndex] = 0;
+			locReplacementThrownSteps.pop_back();
+			--locParticleIndex;
+		}
+	}
+	while(true);
+
+	return false;
+}
+
+void DAnalysisUtilities::Replace_DecayingParticleWithProducts(deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps, size_t locStepIndex) const
+{
+	if(locStepIndex >= locThrownSteps.size())
+		return;
+
+	//find the step where this particle is produced at
+	int locInitialParticleDecayFromStepIndex = -1;
+	const DMCThrown* locThrownParent = locThrownSteps[locStepIndex].first;
+	if(locThrownParent == NULL)
+		return;
+
+	for(size_t loc_j = 0; loc_j < locStepIndex; ++loc_j)
+	{
+		for(size_t loc_k = 0; loc_k < locThrownSteps[loc_j].second.size(); ++loc_k)
+		{
+			if(locThrownParent != locThrownSteps[loc_j].second[loc_k])
+				continue;
+			locInitialParticleDecayFromStepIndex = loc_j;
+			break;
+		}
+		if(locInitialParticleDecayFromStepIndex != -1)
+			break;
+	}
+
+	if(locInitialParticleDecayFromStepIndex == -1)
+	{
+		cout << "ERROR: SOMETHING IS WRONG WITH DAnalysisUtilities::Replace_DecayingParticleWithProducts(). ABORTING." << endl;
+		abort();
+	}
+
+	//insert the decay products where the production occured
+	deque<const DMCThrown*>& locProductionStepFinalParticles = locThrownSteps[locInitialParticleDecayFromStepIndex].second;
+	deque<const DMCThrown*>& locDecayStepFinalParticles = locThrownSteps[locStepIndex].second;
+	for(size_t loc_j = 0; loc_j < locProductionStepFinalParticles.size(); ++loc_j)
+	{
+		if(locProductionStepFinalParticles[loc_j] != locThrownParent)
+			continue;
+		locProductionStepFinalParticles.erase(locProductionStepFinalParticles.begin() + loc_j);
+		locProductionStepFinalParticles.insert(locProductionStepFinalParticles.end(), locDecayStepFinalParticles.begin(), locDecayStepFinalParticles.end());
+		break;
+	}
+
+	locThrownSteps.erase(locThrownSteps.begin() + locStepIndex);
+}
+
+bool DAnalysisUtilities::Check_ThrownsMatchReaction(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExclusiveMatchFlag) const
+{
+	//IF DREACTION HAS A MISSING UNKNOWN PARTICLE, MUST USE locExclusiveMatchFlag = false
 
 	//note, if you decay a final state particle (e.g. k+, pi+) in your input DReaction*, a match will NOT be found: the thrown reaction/combo is truncated
-	//if locExactMatchFlag = false, then allow the input DReaction to be a subset of the thrown
+	//if locExclusiveMatchFlag = false, then allow the input DReaction to be a subset of the thrown
 	const DParticleCombo* locThrownCombo = NULL;
 	locEventLoop->GetSingle(locThrownCombo, "Thrown");
+
+	return Check_ThrownsMatchReaction(locThrownCombo, locReaction, locExclusiveMatchFlag);
+}
+
+bool DAnalysisUtilities::Check_ThrownsMatchReaction(const DParticleCombo* locThrownCombo, const DReaction* locReaction, bool locExclusiveMatchFlag) const
+{
+#ifdef VTRACE
+	VT_TRACER("DAnalysisUtilities::Check_ThrownsMatchReaction()");
+#endif
+
+	//IF DREACTION HAS A MISSING UNKNOWN PARTICLE, MUST USE locExclusiveMatchFlag = false
+
+	//note, if you decay a final state particle (e.g. k+, pi+) in your input DReaction*, a match will NOT be found: the thrown reaction/combo is truncated
+	//if locExclusiveMatchFlag = false, then allow the input DReaction to be a subset of the thrown
 
 	if(locThrownCombo == NULL)
 		return false;
 	const DReaction* locThrownReaction = locThrownCombo->Get_Reaction();
 
-	if(locExactMatchFlag)
+	if(locExclusiveMatchFlag)
 	{
-		if(locReaction->Get_NumReactionSteps() != locThrownReaction->Get_NumReactionSteps())
+		if(locReaction->Get_NumReactionSteps() != locThrownCombo->Get_NumParticleComboSteps())
 			return false;
 	}
 
@@ -85,7 +416,8 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(JEventLoop* locEventLoop, co
 			const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_j);
 			if(locMatchedInputStepIndices.find(loc_j) != locMatchedInputStepIndices.end())
 				continue; //this step was already accounted for
-			if(!locReactionStep->Are_ParticlesIdentical(locThrownReaction->Get_ReactionStep(loc_i)))
+			//when not exact match: allow user step to have a missing unknown particle
+			if(!locThrownReaction->Get_ReactionStep(loc_i)->Are_ParticlesIdentical(locReactionStep, !locExclusiveMatchFlag))
 				continue; //particles aren't the same
 
 			//ok, now check to make sure that the parent particle in this step was produced the same way in both thrown & locReaction
@@ -124,10 +456,10 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(JEventLoop* locEventLoop, co
 			locReverseStepMatching[loc_i] = locPossibleMatchIndex;
 			locMatchFoundFlag = true;
 		}
-		if(locExactMatchFlag && (!locMatchFoundFlag))
+		if(locExclusiveMatchFlag && (!locMatchFoundFlag))
 			return false; //needed an exact match and it wasn't found: bail
 	}
-	if(locExactMatchFlag)
+	if(locExclusiveMatchFlag)
 		return true;
 
 	//locReaction could be a subset of thrown: check if all locReaction steps found
@@ -136,6 +468,7 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(JEventLoop* locEventLoop, co
 		if(locMatchedInputStepIndices.find(loc_i) == locMatchedInputStepIndices.end())
 			return false; //one of the input steps wasn't matched: abort!
 	}
+
 	return true;
 }
 
@@ -231,27 +564,34 @@ void DAnalysisUtilities::Get_ThrownParticleSteps(JEventLoop* locEventLoop, deque
 		if(locMCThrowns[loc_i]->PID() == Unknown)
 			continue; //could be some weird pythia "resonance" like a diquark: just ignore them all
 
+		//initial checks of parent id
 		int locParentID = locMCThrowns[loc_i]->parentid;
 		if(locParentID == 0) //photoproduced
 		{
 			locThrownSteps[0].second.push_back(locMCThrowns[loc_i]);
 			continue;
 		}
-
 		if(locIDMap.find(locParentID) == locIDMap.end()) //produced from a particle that was not saved: spurious, don't save (e.g. product of BCAL shower)
 			continue;
 
+		//initial checks of parent pid
 		Particle_t locParentPID = locIDMap[locParentID]->PID();
-		if(locParentPID == Unknown) //parent is an unknown intermediate state: treat as photoproduced
+		bool locDoneFlag = false;
+		while(((locParentPID == Unknown) || IsResonance(locParentPID)) && (!locDoneFlag))
 		{
-			locThrownSteps[0].second.push_back(locMCThrowns[loc_i]);
-			continue;
+			//intermediate particle, continue towards the source
+			locParentID = locIDMap[locParentID]->parentid; //parent's parent
+			if(locParentID == 0) //photoproduced
+			{
+				locThrownSteps[0].second.push_back(locMCThrowns[loc_i]);
+				locDoneFlag = true;
+			}
+			else if(locIDMap.find(locParentID) == locIDMap.end()) //produced from a particle that was not saved: spurious, don't save (e.g. product of BCAL shower)
+				locDoneFlag = true;
+			else
+				locParentPID = locIDMap[locParentID]->PID();
 		}
-		if(IsResonance(locParentPID)) //parent is a decaying resonance: treat as photoproduced
-		{
-			locThrownSteps[0].second.push_back(locMCThrowns[loc_i]);
-			continue;
-		}
+
 		if(Is_FinalStateParticle(locParentPID) == 1)
 			continue; //e.g. parent is a final state particle (e.g. this is a neutrino from a pion decay)
 
@@ -268,14 +608,34 @@ void DAnalysisUtilities::Get_ThrownParticleSteps(JEventLoop* locEventLoop, deque
 		if(locListedAsDecayingFlag)
 			continue;
 
+		//would add a new decay step, but first make sure that its parent is a decay product of a previous step
+			//if the parent was not saved as a product, it may have been a decay product of a final state particle: don't save
+		const DMCThrown* locThrownParent = locIDMap[locMCThrowns[loc_i]->parentid];
+		bool locFoundFlag = false;
+		for(size_t loc_j = 0; loc_j < locThrownSteps.size(); ++loc_j)
+		{
+			for(size_t loc_k = 0; loc_k < locThrownSteps[loc_j].second.size(); ++loc_k)
+			{
+				if(locThrownSteps[loc_j].second[loc_k] != locThrownParent)
+					continue;
+				locFoundFlag = true;
+				break;
+			}
+			if(locFoundFlag)
+				break;
+		}
+		if(!locFoundFlag)
+			continue;
+
 		//else add a new decay step and add this particle to it
-		locThrownSteps.push_back(pair<const DMCThrown*, deque<const DMCThrown*> >(locIDMap[locMCThrowns[loc_i]->parentid], deque<const DMCThrown*>(1, locMCThrowns[loc_i]) ));
+		locThrownSteps.push_back(pair<const DMCThrown*, deque<const DMCThrown*> >(locThrownParent, deque<const DMCThrown*>(1, locMCThrowns[loc_i]) ));
 	}
+
 /*
 cout << "THROWN STEPS: " << endl;
 for(size_t loc_i = 0; loc_i < locThrownSteps.size(); ++loc_i)
 {
-	cout << ((loc_i == 0) ? -1 : locThrownSteps[loc_i].first->myid) << ": ";
+	cout << ((loc_i == 0) ? 0 : locThrownSteps[loc_i].first->myid) << ": ";
 	for(size_t loc_j = 0; loc_j < locThrownSteps[loc_i].second.size(); ++loc_j)
 		cout << locThrownSteps[loc_i].second[loc_j]->myid << ", ";
 	cout << endl;
@@ -496,7 +856,7 @@ double DAnalysisUtilities::Calc_DOCAVertex(const DKinFitParticle* locKinFitParti
 	DVector3 locUnitDir2(locKinFitParticle2->Get_Momentum().Unit().X(),locKinFitParticle2->Get_Momentum().Unit().Y(),locKinFitParticle2->Get_Momentum().Unit().Z());
 	DVector3 locVertex1(locKinFitParticle1->Get_Position().X(),locKinFitParticle1->Get_Position().Y(),locKinFitParticle1->Get_Position().Z());
 	DVector3 locVertex2(locKinFitParticle2->Get_Position().X(),locKinFitParticle2->Get_Position().Y(),locKinFitParticle2->Get_Position().Z());
-       	return Calc_DOCAVertex(locUnitDir1, locUnitDir2, locVertex1, locVertex2, locDOCAVertex);
+	return Calc_DOCAVertex(locUnitDir1, locUnitDir2, locVertex1, locVertex2, locDOCAVertex);
 }
 
 double DAnalysisUtilities::Calc_DOCAVertex(const DKinematicData* locKinematicData1, const DKinematicData* locKinematicData2, DVector3& locDOCAVertex) const
@@ -621,6 +981,36 @@ double DAnalysisUtilities::Calc_CrudeTime(const deque<const DKinFitParticle*>& l
 		locAverageTime += locTime;
 	}
 	return locAverageTime/(double(locParticles.size()));
+}
+
+DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DTrackTimeBased*>& locParticles) const
+{
+	//assumes tracks are straight lines
+	//uses the midpoint of the smallest DOCA line
+	DVector3 locVertex(0.0, 0.0, dTargetZCenter);
+
+	if(locParticles.size() == 0)
+		return locVertex;
+	if(locParticles.size() == 1)
+		return locParticles[0]->position();
+
+	double locDOCA, locSmallestDOCA;
+	DVector3 locTempVertex;
+
+	locSmallestDOCA = 9.9E9;
+	for(int loc_j = 0; loc_j < (int(locParticles.size()) - 1); ++loc_j)
+	{
+		for(size_t loc_k = loc_j + 1; loc_k < locParticles.size(); ++loc_k)
+		{
+			locDOCA = Calc_DOCAVertex(locParticles[loc_j], locParticles[loc_k], locTempVertex);
+			if(locDOCA < locSmallestDOCA)
+			{
+				locSmallestDOCA = locDOCA;
+				locVertex = locTempVertex;
+			}
+		}
+	}
+	return locVertex;
 }
 
 DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles) const

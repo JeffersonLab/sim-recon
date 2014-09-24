@@ -45,13 +45,15 @@ class DParticleCombo_factory : public jana::JFactory<DParticleCombo>
 
 		DKinFitter_GlueX dKinFitter;
 
-		DParticleCombo* Clone_ParticleCombo(const DParticleCombo* locParticleCombo);
 		DKinematicData* Build_KinematicData(Particle_t locPID, const DKinFitParticle* locKinFitParticle);
 
 		DKinematicData* Get_KinematicDataResource(void);
 		DParticleComboStep* Get_ParticleComboStepResource(void);
 
+		void Reset_Data(void);
 		void Reset_KinematicData(DKinematicData* locKinematicData);
+
+		vector<DParticleCombo*> dCreatedParticleCombos;
 
 		deque<DParticleComboStep*> dParticleComboStepPool_All;
 		deque<DParticleComboStep*> dParticleComboStepPool_Available;

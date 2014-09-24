@@ -5,6 +5,10 @@
 // Creator: pmatt
 //
 
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DTrackTimeBased_factory_Combo.h"
 
 //------------------
@@ -12,7 +16,7 @@
 //------------------
 jerror_t DTrackTimeBased_factory_Combo::init(void)
 {
-	MAX_dReferenceTrajectoryPoolSize = 5;
+	MAX_dReferenceTrajectoryPoolSize = 10;
 
 	//remember, charge sign could have flipped during track reconstruction
 	deque<pair<Particle_t, bool> > locPIDDeque; //bool is true/false if should/shouldn't reswim
@@ -103,6 +107,10 @@ jerror_t DTrackTimeBased_factory_Combo::brun(jana::JEventLoop *locEventLoop, int
 //------------------
 jerror_t DTrackTimeBased_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DTrackTimeBased_factory_Combo::evnt()");
+#endif
+
 	// delete pool sizes if too large, preventing memory-leakage-like behavor.
 	if(dReferenceTrajectoryPool_All.size() > MAX_dReferenceTrajectoryPoolSize){
 		for(size_t loc_i = MAX_dReferenceTrajectoryPoolSize; loc_i < dReferenceTrajectoryPool_All.size(); ++loc_i)
@@ -187,6 +195,10 @@ DReferenceTrajectory* DTrackTimeBased_factory_Combo::Get_ReferenceTrajectoryReso
 
 DTrackTimeBased* DTrackTimeBased_factory_Combo::Convert_ChargedTrack(const DChargedTrackHypothesis* locChargedTrackHypothesis, Particle_t locNewPID, bool locSwimFlag)
 {
+#ifdef VTRACE
+	VT_TRACER("DTrackTimeBased_factory_Combo::Convert_ChargedTrack()");
+#endif
+
 	DTrackTimeBased* locTrackTimeBased = new DTrackTimeBased();
 
  	const DTrackTimeBased* locOriginalTrackTimeBased = NULL;

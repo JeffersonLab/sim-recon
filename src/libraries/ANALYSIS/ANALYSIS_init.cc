@@ -67,6 +67,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DHistogramAction_TrackMultiplicity();
 	DHistogramAction_TOFHitStudy();
 	DHistogramAction_NumReconstructedObjects();
+	DHistogramAction_DetectorStudies();
 
 	DHistogramAction_PID(NULL);
 	DHistogramAction_TrackVertexComparison(NULL);
@@ -76,7 +77,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DHistogramAction_MissingMass(NULL, false, 0, 0.0, 0.0);
 	DHistogramAction_MissingMassSquared(NULL, false, 0, 0.0, 0.0);
 	DHistogramAction_KinFitResults(NULL, 0.0);
-	DHistogramAction_NumParticleCombos(NULL);
+	DHistogramAction_ParticleComboGenReconComparison(NULL, false);
 
 	DCutAction_ThrownTopology(NULL, true);
 	DCutAction_PIDFOM(NULL, Unknown, Unknown, 0.0);
@@ -93,6 +94,9 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DCutAction_AllTruePID(NULL, 0.0);
 	DCutAction_GoodEventRFBunch(NULL, false);
 	DCutAction_TransverseMomentum(NULL, 0.0);
+	DCutAction_TrueBeamParticle(NULL);
+	DCutAction_TrueCombo(NULL, 0.0, false);
+	DCutAction_BDTSignalCombo(NULL, 0.0, false, false);
 
 	return NOERROR;
 }

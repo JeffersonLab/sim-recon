@@ -4,25 +4,27 @@
 #include <deque>
 
 #include "JANA/JObject.h"
-#include "particleType.h"
-#include "PID/DKinematicData.h"
-#include "PID/DChargedTrack.h"
-#include "PID/DNeutralShower.h"
 #include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DParticleComboBlueprintStep.h"
 
 using namespace std;
 using namespace jana;
 
+class DParticleComboBlueprint_factory;
+
 class DParticleComboBlueprint : public JObject
 {
+	friend class DParticleComboBlueprint_factory;
+
 	public:
 
 		JOBJECT_PUBLIC(DParticleComboBlueprint);
 
+		DParticleComboBlueprint(void) : dReaction(NULL) {}
+
 		const DParticleComboBlueprintStep* Get_ParticleComboBlueprintStep(size_t locStepIndex) const;
 		const DParticleComboBlueprintStep* Pop_ParticleComboBlueprintStep(void);
-		inline void Add_ParticleComboBlueprintStep(const DParticleComboBlueprintStep* locParticleComboBlueprintStep){dParticleComboBlueprintSteps.push_back(locParticleComboBlueprintStep);}
+		inline void Prepend_ParticleComboBlueprintStep(const DParticleComboBlueprintStep* locParticleComboBlueprintStep){dParticleComboBlueprintSteps.push_front(locParticleComboBlueprintStep);}
 		inline size_t Get_NumParticleComboBlueprintSteps(void) const{return dParticleComboBlueprintSteps.size();}
 		void Set_ParticleComboBlueprintStep(const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locStepIndex);
 
@@ -33,6 +35,28 @@ class DParticleComboBlueprint : public JObject
 		const DReaction* dReaction;
 		deque<const DParticleComboBlueprintStep*> dParticleComboBlueprintSteps; //must be in order you want to evaluate them
 };
+
+inline const DParticleComboBlueprintStep* DParticleComboBlueprint::Get_ParticleComboBlueprintStep(size_t locStepIndex) const
+{
+	if(locStepIndex >= dParticleComboBlueprintSteps.size())
+		return NULL;
+	return dParticleComboBlueprintSteps[locStepIndex];
+}
+
+inline void DParticleComboBlueprint::Set_ParticleComboBlueprintStep(const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locStepIndex)
+{
+	if(locStepIndex < dParticleComboBlueprintSteps.size())
+		dParticleComboBlueprintSteps[locStepIndex] = locParticleComboBlueprintStep;
+}
+
+inline const DParticleComboBlueprintStep* DParticleComboBlueprint::Pop_ParticleComboBlueprintStep(void)
+{
+	if(dParticleComboBlueprintSteps.empty())
+		return NULL;
+	const DParticleComboBlueprintStep* locParticleComboBlueprintStep = dParticleComboBlueprintSteps.front();
+	dParticleComboBlueprintSteps.pop_front();
+	return locParticleComboBlueprintStep;
+}
 
 #endif // _DParticleComboBlueprint_
 

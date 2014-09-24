@@ -959,9 +959,16 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	double locMinThrownMatchFOM = locReaction->Get_MinThrownMatchFOMForROOT();
 	string locOutputFileName = locReaction->Get_TTreeOutputFileName();
 	string locTreeName = locReaction->Get_ReactionName() + string("_Tree");
+
 	japp->RootWriteLock();
 	{
 		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
+		if(locFile == NULL)
+		{
+			cout << "ERROR: OUTPUT ROOT TREE FILE NOT CREATED (in DEventWriterROOT::Fill_DataTree()). SKIP FILLING. " << endl;
+			japp->RootUnLock();
+			return;
+		}
 
 		//get the tree info
 		locFile->cd("/");

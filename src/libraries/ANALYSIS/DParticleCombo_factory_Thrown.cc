@@ -5,6 +5,10 @@
 // Creator: pmatt
 //
 
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DParticleCombo_factory_Thrown.h"
 
 //------------------
@@ -33,6 +37,10 @@ jerror_t DParticleCombo_factory_Thrown::brun(jana::JEventLoop *locEventLoop, int
 //------------------
 jerror_t DParticleCombo_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DParticleCombo_factory_Thrown::evnt()");
+#endif
+
 	// delete pool sizes if too large, preventing memory-leakage-like behavor.
 	if(dParticleComboStepPool_All.size() > MAX_dParticleComboStepPoolSize)
 	{
@@ -56,11 +64,23 @@ jerror_t DParticleCombo_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int
 	if(locThrownSteps.empty())
 		return NOERROR;
 
- 	vector<const DMCReaction*> locMCReactions;
-	locEventLoop->Get(locMCReactions);
-
  	vector<const DReaction*> locReactions;
 	locEventLoop->Get(locReactions, "Thrown");
+
+	DParticleCombo* locParticleCombo = Build_ThrownCombo(locEventLoop, locReactions[0], locThrownSteps);
+	_data.push_back(locParticleCombo);
+
+	return NOERROR;
+}
+
+DParticleCombo* DParticleCombo_factory_Thrown::Build_ThrownCombo(JEventLoop* locEventLoop, const DReaction* locThrownReaction, deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps)
+{
+#ifdef VTRACE
+	VT_TRACER("DParticleCombo_factory_Thrown::Build_ThrownCombo()");
+#endif
+
+ 	vector<const DMCReaction*> locMCReactions;
+	locEventLoop->Get(locMCReactions);
 
  	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches, "Thrown");
@@ -69,14 +89,13 @@ jerror_t DParticleCombo_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int
 	DParticleCombo* locParticleCombo = new DParticleCombo();
 	DParticleComboStep* locParticleComboStep = Get_ParticleComboStepResource();
 	DParticleComboBlueprintStep* locParticleComboBlueprintStep = Get_ParticleComboBlueprintStepResource();
-	locParticleCombo->Set_Reaction(locReactions[0]);
+	locParticleCombo->Set_Reaction(locThrownReaction);
 	locParticleCombo->Set_EventRFBunch(locEventRFBunches[0]);
 
-	locParticleComboBlueprintStep->Set_ReactionStep(locReactions[0]->Get_ReactionStep(0));
+	locParticleComboBlueprintStep->Set_ReactionStep(locThrownReaction->Get_ReactionStep(0));
 	locParticleComboBlueprintStep->Set_InitialParticleDecayFromStepIndex(-1);
 	locParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
 	locParticleComboStep->Set_InitialParticle(&locMCReactions[0]->beam);
-	locParticleComboStep->Set_InitialParticle_Measured(&locMCReactions[0]->beam);
 	locParticleComboStep->Set_TargetParticle(&locMCReactions[0]->target);
 	locParticleComboStep->Set_Position(locMCReactions[0]->beam.position());
 	locParticleComboStep->Set_Time(locMCReactions[0]->beam.time());
@@ -104,10 +123,9 @@ jerror_t DParticleCombo_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int
 			}
 			locParticleComboBlueprintStep->Set_InitialParticleDecayFromStepIndex(locInitialParticleDecayFromStepIndex);
 
-			locParticleComboBlueprintStep->Set_ReactionStep(locReactions[0]->Get_ReactionStep(loc_i));
+			locParticleComboBlueprintStep->Set_ReactionStep(locThrownReaction->Get_ReactionStep(loc_i));
 			locParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
 			locParticleComboStep->Set_InitialParticle(locMCThrown);
-			locParticleComboStep->Set_InitialParticle_Measured(locMCThrown);
 			locParticleComboStep->Set_Position(locMCThrown->position());
 			locParticleComboStep->Set_Time(locMCThrown->time());
 		}
@@ -125,14 +143,11 @@ jerror_t DParticleCombo_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int
 			}
 			locParticleComboBlueprintStep->Add_FinalParticle_SourceObject(locMCThrown, locDecayStepIndex);
 			locParticleComboStep->Add_FinalParticle(locMCThrown);
-			locParticleComboStep->Add_FinalParticle_Measured(locMCThrown);
 		}
 		locParticleCombo->Add_ParticleComboStep(locParticleComboStep);
 	}
 
-	_data.push_back(locParticleCombo);
-
-	return NOERROR;
+	return locParticleCombo;
 }
 
 DParticleComboStep* DParticleCombo_factory_Thrown::Get_ParticleComboStepResource(void)

@@ -6,6 +6,10 @@
 //
 
 
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include <iostream>
 #include <iomanip>
 using namespace std;
@@ -37,11 +41,18 @@ jerror_t DNeutralParticleHypothesis_factory_Combo::brun(jana::JEventLoop *locEve
 //------------------
 jerror_t DNeutralParticleHypothesis_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DNeutralParticleHypothesis_factory_Combo::evnt()");
+#endif
+
 	vector<const DParticleComboBlueprint*> locParticleComboBlueprints;
 	locEventLoop->Get(locParticleComboBlueprints);
 
 	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches, "Combo");
+
+	const DVertex* locVertex = NULL;
+	locEventLoop->GetSingle(locVertex);
 
 	map<const DEventRFBunch*, deque<pair<const DNeutralShower*, Particle_t> > > locCreatedParticleMap; //don't create if already done!
 
@@ -50,26 +61,20 @@ jerror_t DNeutralParticleHypothesis_factory_Combo::evnt(jana::JEventLoop *locEve
 		const DParticleComboBlueprint* locParticleComboBlueprint = locParticleComboBlueprints[loc_i];
 
 		//select the corresponding rf bunch
-		const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
-/*
 		const DEventRFBunch* locEventRFBunch = NULL;
 		for(size_t loc_j = 0; loc_j < locEventRFBunches.size(); ++loc_j)
 		{
-			vector<const DParticleComboBlueprint*> locParticleComboBlueprints_Bunch;
-			locEventRFBunches[loc_j]->Get(locParticleComboBlueprints_Bunch);
-			bool locMatchFoundFlag = false;
-			for(size_t loc_k = 0; loc_k < locParticleComboBlueprints_Bunch.size(); ++loc_k)
-			{
-				if(locParticleComboBlueprints_Bunch[loc_k] != locParticleComboBlueprint)
-					continue;
-				locEventRFBunch = locEventRFBunches[loc_j];
-				locMatchFoundFlag = true;
-				break;
-			}
-			if(locMatchFoundFlag)
-				break;
+			if(!locEventRFBunches[loc_j]->IsAssociated(locParticleComboBlueprint))
+				continue;
+			locEventRFBunch = locEventRFBunches[loc_j];
+			break;
 		}
-*/
+		if(locEventRFBunch == NULL)
+		{
+			cout << "SOMETHING IS VERY WRONG IN DParticleCombo_factory_PreKinFit.cc" << endl;
+			abort();
+		}
+
 		if(locCreatedParticleMap.find(locEventRFBunch) == locCreatedParticleMap.end())
 			locCreatedParticleMap[locEventRFBunch] = deque<pair<const DNeutralShower*, Particle_t> >();
 
@@ -102,7 +107,7 @@ jerror_t DNeutralParticleHypothesis_factory_Combo::evnt(jana::JEventLoop *locEve
 					continue;
 
 				//create the objects
-				DNeutralParticleHypothesis* locNeutralParticleHypothesis = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locNeutralShower, locPID, locEventRFBunch);
+				DNeutralParticleHypothesis* locNeutralParticleHypothesis = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locNeutralShower, locPID, locEventRFBunch, locVertex);
 				if(locNeutralParticleHypothesis == NULL)
 					continue;
 				locNeutralParticleHypothesis->AddAssociatedObject(locEventRFBunch);

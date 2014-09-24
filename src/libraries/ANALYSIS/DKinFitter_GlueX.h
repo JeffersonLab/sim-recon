@@ -10,7 +10,6 @@
 #include "PID/DBeamPhoton.h"
 #include "PID/DNeutralShower.h"
 #include "PID/DKinematicData.h"
-#include "PID/DChargedTrackHypothesis.h"
 #include "PID/DNeutralParticleHypothesis.h"
 
 #include "ANALYSIS/DKinFitter.h"
@@ -29,9 +28,8 @@ class DKinFitter_GlueX : public DKinFitter
 		void Reset_NewEvent(void);
 
 		const DKinFitParticle* Make_BeamParticle(const DBeamPhoton* locBeamPhoton);
-		const DKinFitParticle* Make_DetectedParticle(const DChargedTrackHypothesis* locChargedTrackHypothesis);
+		const DKinFitParticle* Make_DetectedParticle(const DKinematicData* locKinematicData);
 		const DKinFitParticle* Make_DetectedShower(const DNeutralParticleHypothesis* locNeutralParticleHypothesis); //DO NOT call this unless the neutral is also in a vertex fit!
-		const DKinFitParticle* Make_DetectedParticle(const DNeutralParticleHypothesis* locNeutralParticleHypothesis);
 		const DKinFitParticle* Make_DecayingParticle(Particle_t locPID);
 		const DKinFitParticle* Make_MissingParticle(Particle_t locPID);
 		const DKinFitParticle* Make_TargetParticle(Particle_t locPID);

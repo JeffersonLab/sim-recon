@@ -5,6 +5,10 @@
 // Creator: pmatt (on Linux ifarml6 2.6.18-128.el5 x86_64)
 //
 
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DChargedTrackHypothesis_factory_Combo.h"
 using namespace std;
 using namespace jana;
@@ -33,6 +37,10 @@ jerror_t DChargedTrackHypothesis_factory_Combo::brun(jana::JEventLoop *locEventL
 //------------------
 jerror_t DChargedTrackHypothesis_factory_Combo::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DChargedTrackHypothesis_factory_Combo::evnt()");
+#endif
+
  	vector<const DParticleComboBlueprint*> locParticleComboBlueprints;
 	locEventLoop->Get(locParticleComboBlueprints);
 
@@ -53,26 +61,20 @@ jerror_t DChargedTrackHypothesis_factory_Combo::evnt(jana::JEventLoop* locEventL
 		const DParticleComboBlueprint* locParticleComboBlueprint = locParticleComboBlueprints[loc_i];
 
 		//select the corresponding rf bunch
-		const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
-/*
 		const DEventRFBunch* locEventRFBunch = NULL;
 		for(size_t loc_j = 0; loc_j < locEventRFBunches.size(); ++loc_j)
 		{
-			vector<const DParticleComboBlueprint*> locParticleComboBlueprints_Bunch;
-			locEventRFBunches[loc_j]->Get(locParticleComboBlueprints_Bunch);
-			bool locMatchFoundFlag = false;
-			for(size_t loc_k = 0; loc_k < locParticleComboBlueprints_Bunch.size(); ++loc_k)
-			{
-				if(locParticleComboBlueprints_Bunch[loc_k] != locParticleComboBlueprint)
-					continue;
-				locEventRFBunch = locEventRFBunches[loc_j];
-				locMatchFoundFlag = true;
-				break;
-			}
-			if(locMatchFoundFlag)
-				break;
+			if(!locEventRFBunches[loc_j]->IsAssociated(locParticleComboBlueprint))
+				continue;
+			locEventRFBunch = locEventRFBunches[loc_j];
+			break;
 		}
-*/
+		if(locEventRFBunch == NULL)
+		{
+			cout << "SOMETHING IS VERY WRONG IN DParticleCombo_factory_PreKinFit.cc" << endl;
+			abort();
+		}
+
 		if(locCreatedParticleMap.find(locEventRFBunch) == locCreatedParticleMap.end())
 			locCreatedParticleMap[locEventRFBunch] = deque<pair<const DChargedTrack*, Particle_t> >();
 
@@ -109,7 +111,7 @@ jerror_t DChargedTrackHypothesis_factory_Combo::evnt(jana::JEventLoop* locEventL
 					//yes it was: create new object with same PID (so that is registered with the combo factory, and because rf bunch could be different)
 					const DTrackTimeBased* locTrackTimeBased = NULL;
 					locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
-					locNewChargedTrackHypothesis = dChargedTrackHypothesisFactory->Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBased, locDetectorMatches, locEventRFBunch, true);
+					locNewChargedTrackHypothesis = dChargedTrackHypothesisFactory->Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBased, locDetectorMatches, locEventRFBunch);
 					locNewChargedTrackHypothesis->AddAssociatedObject(locEventRFBunch);
 					locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrack);
 					_data.push_back(locNewChargedTrackHypothesis);
@@ -128,7 +130,7 @@ jerror_t DChargedTrackHypothesis_factory_Combo::evnt(jana::JEventLoop* locEventL
 					if(locTimeBasedSourceChargedTrack != locChargedTrack)
 						continue;
 					//correct DTrackTimeBased grabbed for this source object: create new DChargedTrackHypothesis object
-					locNewChargedTrackHypothesis = dChargedTrackHypothesisFactory->Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBased, locDetectorMatches, locEventRFBunch, true);
+					locNewChargedTrackHypothesis = dChargedTrackHypothesisFactory->Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBased, locDetectorMatches, locEventRFBunch);
 					locNewChargedTrackHypothesis->AddAssociatedObject(locEventRFBunch);
 					locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrack);
 					_data.push_back(locNewChargedTrackHypothesis);

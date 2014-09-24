@@ -22,6 +22,7 @@
 #include "TRACKING/DMCThrown.h"
 
 #include "ANALYSIS/DReaction.h"
+#include "ANALYSIS/DCutActions.h"
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DAnalysisAction.h"
 #include "ANALYSIS/DAnalysisResults.h"
@@ -45,11 +46,15 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 
 		void Get_Reactions(jana::JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;
 
-		bool dROOTObjectsCreatedFlag;
 		unsigned int dDebugLevel;
 		DApplication* dApplication;
+		double dMinThrownMatchFOM;
 
-		map<const DReaction*, TH1D*> dHistMap_NumEventsSurvivedAction;
+		map<const DReaction*, bool> dMCReactionExactMatchFlags;
+		map<const DReaction*, DCutAction_TrueCombo*> dTrueComboCuts;
+
+		map<const DReaction*, TH1D*> dHistMap_NumEventsSurvivedAction_All;
+		map<const DReaction*, TH1D*> dHistMap_NumEventsWhereTrueComboSurvivedAction;
 		map<const DReaction*, TH2D*> dHistMap_NumCombosSurvivedAction;
 		map<const DReaction*, TH1D*> dHistMap_NumCombosSurvivedAction1D;
 };

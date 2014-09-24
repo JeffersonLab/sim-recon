@@ -1,3 +1,7 @@
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DKinFitResults_factory.h"
 
 //------------------
@@ -26,7 +30,19 @@ jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 	dAnalysisUtilities = locAnalysisUtilitiesVector[0];
 
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	dKinFitter.Set_BField(locApplication->GetBfield());
+	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield();
+
+	dTargetZCenter = 65.0;
+	// Get Target parameters from XML
+	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
+	if(locGeometry != NULL)
+		locGeometry->GetTargetZ(dTargetZCenter);
+
+	double locBx, locBy, locBz;
+	locMagneticFieldMap->GetField(0.0, 0.0, dTargetZCenter, locBx, locBy, locBz);
+	TVector3 locBField(locBx, locBy, locBz);
+	if(locBField.Mag() > 0.0)
+		dKinFitter.Set_BField(locMagneticFieldMap);
 
 	gPARMS->SetDefaultParameter("KINFIT:KINFITDEBUGLEVEL", dKinFitDebugLevel);
 	gPARMS->SetDefaultParameter("KINFIT:DEBUGLEVEL", dDebugLevel);
@@ -35,11 +51,36 @@ jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 	dKinFitter.Set_DebugLevel(dKinFitDebugLevel);
 	dKinFitter.Set_LinkVerticesFlag(dLinkVerticesFlag);
 
-	dTargetZCenter = 65.0;
-	// Get Target parameters from XML
-	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
-	if(locGeometry != NULL)
-		locGeometry->GetTargetZ(dTargetZCenter);
+	// Get # of DReactions:
+	// Get list of factories and find all the ones producing
+	// DReaction objects. (A simpler way to do this would be to
+	// just use locEventLoop->Get(...), but then only one plugin could
+	// be used at a time.)
+	size_t locNumReactions = 0;
+	vector<JFactory_base*> locFactories = locEventLoop->GetFactories();
+	for(size_t loc_i = 0; loc_i < locFactories.size(); ++loc_i)
+	{
+		JFactory<DReaction>* locFactory = dynamic_cast<JFactory<DReaction>* >(locFactories[loc_i]);
+		if(locFactory == NULL)
+			continue;
+		if(string(locFactory->Tag()) == "Thrown")
+			continue;
+		// Found a factory producing DReactions. The reaction objects are
+		// produced at the init stage and are persistent through all event
+		// processing so we can grab the list here and append it to our
+		// overall list.
+		vector<const DReaction*> locReactionsSubset;
+		locFactory->Get(locReactionsSubset);
+		locNumReactions += locReactionsSubset.size();
+	}
+
+	//set pool sizes
+	unsigned int locExpectedNumCombos = 1000;
+	dKinFitter.Set_MaxKinFitParticlePoolSize(locNumReactions*locExpectedNumCombos*6);
+	dKinFitter.Set_MaxKinFitConstraintVertexPoolSize(locNumReactions*locExpectedNumCombos*3);
+	dKinFitter.Set_MaxKinFitConstraintSpacetimePoolSize(locNumReactions*locExpectedNumCombos*3);
+	dKinFitter.Set_MaxKinFitConstraintP4PoolSize(locNumReactions*locExpectedNumCombos*3);
+	dKinFitter.Set_MaxMatrixDSymPoolSize(locNumReactions*locExpectedNumCombos*6);
 
 	return NOERROR;
 }
@@ -54,6 +95,10 @@ void DKinFitResults_factory::Reset_NewEvent(void)
 //------------------
 jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DKinFitResults_factory::evnt()");
+#endif
+
 	dPreviouslyFailedFits.clear();
 
 	//perform all of the analysis steps that don't need the kinematic fit results (saves time by reducing #kinfits)
@@ -123,6 +168,9 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 
 bool DKinFitResults_factory::Handle_IfKinFitResultsWillBeIdentical(const DParticleCombo* locParticleCombo, deque<DKinFitConstraint*> locConstraints_ToCheck, const DEventRFBunch* locRFBunch_ToCheck, map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > > locDecayingKinFitParticles_ToCheck)
 {
+#ifdef VTRACE
+	VT_TRACER("DKinFitResults_factory::Handle_IfKinFitResultsWillBeIdentical()");
+#endif
 	//first check previously-passed results
 	for(size_t loc_j = 0; loc_j < _data.size(); ++loc_j)
 	{
@@ -366,6 +414,9 @@ bool DKinFitResults_factory::Check_IfKinFitResultsWillBeIdentical(deque<const DK
 
 bool DKinFitResults_factory::Create_KinFitConstraints(const DParticleCombo* locParticleCombo, map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > >& locDecayingKinFitParticles, deque<DKinFitConstraint*>& locOriginalConstraints, deque<pair<DKinFitConstraint_VertexBase*, set<DKinFitConstraint_P4*> > >& locSortedConstraints)
 {
+#ifdef VTRACE
+	VT_TRACER("DKinFitResults_factory::Create_KinFitConstraints()");
+#endif
 	if(dDebugLevel > 0)
 		cout << "DKinFitResults_factory: Create Particles" << endl;
 
@@ -659,6 +710,9 @@ bool DKinFitResults_factory::Create_KinFitConstraints(const DParticleCombo* locP
 
 bool DKinFitResults_factory::Setup_KinFit(DKinFitType locKinFitType, const deque<DKinFitConstraint*>& locOriginalConstraints, const DEventRFBunch* locEventRFBunch, deque<pair<DKinFitConstraint_VertexBase*, set<DKinFitConstraint_P4*> > >& locSortedConstraints)
 {
+#ifdef VTRACE
+	VT_TRACER("DKinFitResults_factory::Setup_KinFit()");
+#endif
 	//group p4 constraints together
 	deque<DKinFitConstraint_P4*> locP4Constraints;
 	for(size_t loc_i = 0; loc_i < locOriginalConstraints.size(); ++loc_i)

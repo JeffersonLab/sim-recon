@@ -53,8 +53,8 @@ class DEventRFBunch_factory_Combo:public jana::JFactory<DEventRFBunch>
 		double dTargetLength;
 
 		void Get_StartTime(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, double& locStartTime, double& locStartTimeVariance);
-		void Calc_StartTime(const DNeutralShower* locNeutralShower, Particle_t locPID, DVector3 locVertex, double& locStartTime, double& locStartTimeVariance);
-		double Calc_StartTimeVariance(const DNeutralShower* locNeutralShower, double locMass, const DVector3& locMomentum, const DVector3& locPathVector);
+		void Calc_StartTime(const DNeutralShower* locNeutralShower, DVector3 locVertex, double& locStartTime, double& locStartTimeVariance);
+		double Calc_StartTimeVariance(const DNeutralShower* locNeutralShower, const DVector3& locPathVector);
 };
 
 #endif // _DEventRFBunch_factory_Combo_

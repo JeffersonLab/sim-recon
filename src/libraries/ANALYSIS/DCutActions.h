@@ -32,6 +32,9 @@ DCutAction_ThrownTopology
 
 DCutAction_PIDFOM
 DCutAction_CombinedPIDFOM
+DCutAction_CombinedTrackingFOM
+DCutAction_TrueBeamParticle
+DCutAction_TrueCombo
 DCutAction_TruePID
 DCutAction_AllTruePID
 
@@ -49,10 +52,11 @@ DCutAction_TransverseMomentum
 class DCutAction_ThrownTopology : public DAnalysisAction
 {
 	//cut on whether the thrown topology matches the DReaction
+		//if locExclusiveMatchFlag = false: inclusive match: require the DReaction be a subset (or the total) of the thrown
 	public:
-		DCutAction_ThrownTopology(const DReaction* locReaction, bool locExactMatchFlag, string locActionUniqueString = "") : 
+		DCutAction_ThrownTopology(const DReaction* locReaction, bool locExclusiveMatchFlag, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Cut_ThrownTopology", false, locActionUniqueString), 
-		dExactMatchFlag(locExactMatchFlag){}
+		dExclusiveMatchFlag(locExclusiveMatchFlag){}
 
 		string Get_ActionName(void) const;
 		void Initialize(JEventLoop* locEventLoop);
@@ -60,7 +64,7 @@ class DCutAction_ThrownTopology : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
-		bool dExactMatchFlag; //if false, require the DReaction be a subset (or the total) of the thrown topology
+		bool dExclusiveMatchFlag; //if false: inclusive match
 		const DAnalysisUtilities* dAnalysisUtilities;
 };
 
@@ -138,6 +142,68 @@ class DCutAction_CombinedTrackingFOM : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
 		double dMinimumConfidenceLevel;
+};
+
+class DCutAction_TrueBeamParticle : public DAnalysisAction
+{
+	public:
+		DCutAction_TrueBeamParticle(const DReaction* locReaction, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_TrueBeamParticle", false, locActionUniqueString){}
+
+		inline void Initialize(JEventLoop* locEventLoop){}
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+};
+
+class DCutAction_TrueCombo : public DAnalysisAction
+{
+	public:
+		//if locExclusiveMatchFlag = false: inclusive match: require the DReaction be a subset (or the total) of the thrown
+		DCutAction_TrueCombo(const DReaction* locReaction, double locMinThrownMatchFOM, bool locExclusiveMatchFlag, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_TrueCombo", false, locActionUniqueString), 
+		dMinThrownMatchFOM(locMinThrownMatchFOM), dExclusiveMatchFlag(locExclusiveMatchFlag){}
+
+		void Initialize(JEventLoop* locEventLoop);
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		double dMinThrownMatchFOM;
+		bool dExclusiveMatchFlag;
+
+		DCutAction_ThrownTopology* dCutAction_ThrownTopology;
+		DCutAction_TrueBeamParticle* dCutAction_TrueBeamParticle;
+};
+
+class DCutAction_BDTSignalCombo : public DAnalysisAction
+{
+	public:
+		//if locExclusiveMatchFlag = false: inclusive match: require the DReaction be a subset (or the total) of the thrown
+
+		//if locIncludeDecayingToReactionFlag = true, will test whether the thrown reaction could decay to the DReaction
+			//Note that resonances, phi's, and omega's are automatically decayed
+				//e.g. if DReaction or thrown is g, p -> pi+, pi-, omega, p; will instead treat it as g, p -> 2pi+, 2pi-, pi0, p (or whatever the omega decay products are)
+		//e.g. g, p -> pi+, pi0, K0, Lambda can decay to g, p -> 2pi+, 2pi-, pi0, p
+			//if locIncludeDecayingToReactionFlag = true, then it would be included as "Signal," if false, then background
+			//locIncludeDecayingToReactionFlag should be true UNLESS you are explicitly checking all possible reactions that could decay to your channel in your BDT
+				//e.g. could kinfit to g, p -> pi+, pi0, K0, Lambda and include it as a BDT variable
+
+		DCutAction_BDTSignalCombo(const DReaction* locReaction, double locMinThrownMatchFOM, bool locExclusiveMatchFlag, bool locIncludeDecayingToReactionFlag, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_BDTSignalCombo", false, locActionUniqueString), 
+		dMinThrownMatchFOM(locMinThrownMatchFOM), dExclusiveMatchFlag(locExclusiveMatchFlag), dIncludeDecayingToReactionFlag(locIncludeDecayingToReactionFlag){}
+
+		void Initialize(JEventLoop* locEventLoop);
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		double dMinThrownMatchFOM;
+		bool dExclusiveMatchFlag;
+		bool dIncludeDecayingToReactionFlag;
+		const DAnalysisUtilities* dAnalysisUtilities;
+
+		DCutAction_TrueBeamParticle* dCutAction_TrueBeamParticle;
 };
 
 class DCutAction_TruePID : public DAnalysisAction
@@ -237,7 +303,7 @@ class DCutAction_MissingMass : public DAnalysisAction
 		//Then: Will cut missing-mass: g, p -> K+, K+, (X)
 		//Also:
 		//locMissingMassOffOfStepIndex = 1, locMissingMassOffOfPID = pi-
-		//Then: Will cut missing-mass: g, p -> K+, K+, pi-
+		//Then: Will cut missing-mass: g, p -> K+, K+, pi- (from Xi- decay)
 		//But:
 		//locMissingMassOffOfStepIndex = 0, locMissingMassOffOfPIDs = K+
 		//Then: Will cut only missing-mass: g, p -> K+_1, (X)    and NOT K+_2!!!

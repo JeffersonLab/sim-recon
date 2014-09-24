@@ -1,5 +1,27 @@
 #include "DMCThrownMatching.h"
 
+const DBeamPhoton* DMCThrownMatching::Get_MatchingReconPhoton(const DBeamPhoton* locTruthBeamPhoton) const
+{
+	map<const DBeamPhoton*, const DBeamPhoton*>::const_iterator locIterator = dBeamTruthToPhotonMap.find(locTruthBeamPhoton);
+	if(locIterator == dBeamTruthToPhotonMap.end())
+		return NULL;
+	return locIterator->second;
+}
+
+const DBeamPhoton* DMCThrownMatching::Get_MatchingTruthPhoton(const DBeamPhoton* locReconBeamPhoton) const
+{
+	map<const DBeamPhoton*, const DBeamPhoton*>::const_iterator locIterator = dBeamPhotonToTruthMap.find(locReconBeamPhoton);
+	if(locIterator != dBeamPhotonToTruthMap.end())
+		return locIterator->second;
+
+	//perhaps this is an object produced from the factories with the "KinFit" or "Combo" flags: try the source object
+	const DBeamPhoton* locAssociatedBeamPhoton = NULL;
+	locReconBeamPhoton->GetSingleT(locAssociatedBeamPhoton);
+	if(locAssociatedBeamPhoton == NULL)
+		return NULL;
+	return Get_MatchingTruthPhoton(locAssociatedBeamPhoton);
+}
+
 bool DMCThrownMatching::Get_MatchingChargedHypotheses(const DMCThrown* locInputMCThrown, deque<const DChargedTrackHypothesis*>& locMatchingChargedHypotheses, double& locMatchFOM) const
 {
 	locMatchingChargedHypotheses.clear();
@@ -31,7 +53,6 @@ const DChargedTrackHypothesis* DMCThrownMatching::Get_MatchingChargedHypothesis(
 	locMatchFOM = locIterator->second.second;
 
 	const DChargedTrackHypothesis* locBestHypothesis = NULL;
-	//double locBestFOM = -10.0;
 	for(size_t loc_i = 0; loc_i < locHypotheses.size(); ++loc_i)
 	{
 		if(locHypotheses[loc_i]->PID() == locInputMCThrown->PID())
@@ -53,7 +74,6 @@ const DNeutralParticleHypothesis* DMCThrownMatching::Get_MatchingNeutralHypothes
 	locMatchFOM = locIterator->second.second;
 
 	const DNeutralParticleHypothesis* locBestHypothesis = NULL;
-	//double locBestFOM = -10.0;
 	for(size_t loc_i = 0; loc_i < locHypotheses.size(); ++loc_i)
 	{
 		if(locHypotheses[loc_i]->PID() == locInputMCThrown->PID())

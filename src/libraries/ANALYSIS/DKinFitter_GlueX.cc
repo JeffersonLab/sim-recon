@@ -1,3 +1,7 @@
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "ANALYSIS/DKinFitter_GlueX.h"
 
 DKinFitter_GlueX::DKinFitter_GlueX(void)
@@ -20,10 +24,13 @@ void DKinFitter_GlueX::Set_BField(const DMagneticFieldMap* locMagneticFieldMap)
 TVector3 DKinFitter_GlueX::Get_BField(const TVector3& locPosition) const
 {
 	if(dMagneticFieldMap == NULL)
-		return (TVector3());
+	{
+		cout << "ERROR: MAGNETIC FIELD MAP IS NULL. Aborting" << endl;
+		abort();
+	}
 
 	double locBx, locBy, locBz;
-	dMagneticFieldMap->GetField(locPosition.X(), locPosition.Y(),locPosition.Z(), locBx, locBy, locBz);
+	dMagneticFieldMap->GetField(locPosition.X(), locPosition.Y(), locPosition.Z(), locBx, locBy, locBz);
 	return (TVector3(locBx, locBy, locBz));
 }
 
@@ -52,28 +59,13 @@ const DKinFitParticle* DKinFitter_GlueX::Make_BeamParticle(const DBeamPhoton* lo
 	return locKinFitParticle;
 }
 
-const DKinFitParticle* DKinFitter_GlueX::Make_DetectedParticle(const DChargedTrackHypothesis* locChargedTrackHypothesis)
+const DKinFitParticle* DKinFitter_GlueX::Make_DetectedParticle(const DKinematicData* locKinematicData)
 {
-	const DKinematicData* locKinematicData = static_cast<const DKinematicData*>(locChargedTrackHypothesis);
 	TLorentzVector locSpacetimeVertex(locKinematicData->position().X(),locKinematicData->position().Y(),locKinematicData->position().Z(), locKinematicData->time());
 	TVector3 locMomentum(locKinematicData->momentum().X(),locKinematicData->momentum().Y(),locKinematicData->momentum().Z());
 	Particle_t locPID = locKinematicData->PID();
 
 	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_DetectedParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
-	dParticleMapping_InputToSource[locKinFitParticle] = locKinematicData;
-	return locKinFitParticle;
-}
-
-const DKinFitParticle* DKinFitter_GlueX::Make_DetectedParticle(const DNeutralParticleHypothesis* locNeutralParticleHypothesis)
-{
-	const DKinematicData* locKinematicData = static_cast<const DKinematicData*>(locNeutralParticleHypothesis);
-	Particle_t locPID = locKinematicData->PID();
-
-	//use DNeutralParticleHypothesis object (assumes vertex is at target center! NOT IDEAL, AVOID IF POSSIBLE!!)
-	TLorentzVector locSpacetimeVertex(locKinematicData->position().X(),locKinematicData->position().Y(),locKinematicData->position().Z(), locKinematicData->time());
-	TVector3 locMomentum(locKinematicData->momentum().X(),locKinematicData->momentum().Y(),locKinematicData->momentum().Z());
-	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_DetectedParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
-
 	dParticleMapping_InputToSource[locKinFitParticle] = locKinematicData;
 	return locKinFitParticle;
 }
@@ -131,6 +123,10 @@ const DKinematicData* DKinFitter_GlueX::Get_Source_FromOutput(const DKinFitParti
 
 bool DKinFitter_GlueX::Fit_Reaction(void)
 {
+#ifdef VTRACE
+	VT_TRACER("DKinFitter_GlueX::Fit_Reaction()");
+#endif
+
 	bool locFitStatus = DKinFitter::Fit_Reaction();
 	if(!locFitStatus)
 		return locFitStatus;
@@ -172,6 +168,9 @@ bool DKinFitter_GlueX::Fit_Reaction(void)
 
 bool DKinFitter_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKinematicData, const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi)
 {
+#ifdef VTRACE
+	VT_TRACER("DKinFitter_GlueX::Propagate_TrackInfoToCommonVertex()");
+#endif
 	//locKinematicData must be generated from locKinFitParticle
 		//this function should only be used on decaying particles involved in two vertex fits:
 			//propagates the track information from the vertex at which it is DEFINED to the OTHER vertex (e.g. production -> decay)
@@ -188,6 +187,4 @@ bool DKinFitter_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKine
 	locKinematicData->setPathLength(locPathLengthPair.first, locPathLengthPair.second);
 	return true;
 }
-
-
 

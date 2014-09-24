@@ -56,6 +56,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 
 		//CREATE CONSTRAINTS
 			//data is not registered with the fitter (memory is though)
+		DKinFitConstraint_Vertex* Make_VertexConstraint(const deque<const DKinFitParticle*>& locFinalParticles, TVector3 locVertexGuess);
 		DKinFitConstraint_Vertex* Make_VertexConstraint(const deque<const DKinFitParticle*>& locInitialParticles, const deque<const DKinFitParticle*>& locFinalParticles, TVector3 locVertexGuess);
 		DKinFitConstraint_Spacetime* Make_SpacetimeConstraint(const deque<const DKinFitParticle*>& locInitialParticles, const deque<const DKinFitParticle*>& locFinalParticles, bool locUseRFTimeFlag, TVector3 locVertexGuess, double locCommonTimeGuess);
 		//note, below locConstrainInitialParticleMassFlag is ignored if the parent particle is beam/detected/open-ended-decaying (enforce p4 constraint instead)
@@ -308,6 +309,12 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		double dConvergenceChiSqDiff;
 		double dConvergenceChiSqDiff_LastResort; //if max # iterations hit, use this for final check (sometimes chisq walks (very slightly) forever without any meaningful change in the variables)
 };
+
+inline DKinFitConstraint_Vertex* DKinFitter::Make_VertexConstraint(const deque<const DKinFitParticle*>& locFinalParticles, TVector3 locVertexGuess)
+{
+	deque<const DKinFitParticle*> locInitialParticles;
+	return Make_VertexConstraint(locInitialParticles, locFinalParticles, locVertexGuess);
+}
 
 #endif // _DKinFitter_
 

@@ -1,15 +1,15 @@
-#include "ANALYSIS/DParticleComboBlueprintStep.h"
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
 
-void DParticleComboBlueprintStep::Reset(void)
-{
-	dReactionStep = NULL;
-	dInitialParticleDecayFromStepIndex = -1;
-	dFinalParticleSourceObjects.clear();
-	dDecayStepIndices.clear();
-}
+#include "ANALYSIS/DParticleComboBlueprintStep.h"
 
 bool DParticleComboBlueprintStep::operator<(const DParticleComboBlueprintStep& locParticleComboBlueprintStep) const
 {
+#ifdef VTRACE
+	VT_TRACER("DParticleComboBlueprintStep::operator<()");
+#endif
+
 	if(dReactionStep < locParticleComboBlueprintStep.dReactionStep)
 		return true;
 	else if(dReactionStep > locParticleComboBlueprintStep.dReactionStep)
@@ -20,14 +20,22 @@ bool DParticleComboBlueprintStep::operator<(const DParticleComboBlueprintStep& l
 	else if(dInitialParticleDecayFromStepIndex > locParticleComboBlueprintStep.dInitialParticleDecayFromStepIndex)
 		return false;
 
-	if(dDecayStepIndices.size() < locParticleComboBlueprintStep.dDecayStepIndices.size())
-		return true;
-	if(dDecayStepIndices.size() > locParticleComboBlueprintStep.dDecayStepIndices.size())
-		return false;
-
 	if(dFinalParticleSourceObjects.size() < locParticleComboBlueprintStep.dFinalParticleSourceObjects.size())
 		return true;
 	if(dFinalParticleSourceObjects.size() > locParticleComboBlueprintStep.dFinalParticleSourceObjects.size())
+		return false;
+
+	for(size_t loc_i = 0; loc_i < dFinalParticleSourceObjects.size(); ++loc_i)
+	{
+		if(dFinalParticleSourceObjects[loc_i] < locParticleComboBlueprintStep.dFinalParticleSourceObjects[loc_i])
+			return true;
+		if(dFinalParticleSourceObjects[loc_i] > locParticleComboBlueprintStep.dFinalParticleSourceObjects[loc_i])
+			return false;
+	}
+
+	if(dDecayStepIndices.size() < locParticleComboBlueprintStep.dDecayStepIndices.size())
+		return true;
+	if(dDecayStepIndices.size() > locParticleComboBlueprintStep.dDecayStepIndices.size())
 		return false;
 
 	for(size_t loc_i = 0; loc_i < dDecayStepIndices.size(); ++loc_i)
@@ -37,29 +45,32 @@ bool DParticleComboBlueprintStep::operator<(const DParticleComboBlueprintStep& l
 		else if(dDecayStepIndices[loc_i] > locParticleComboBlueprintStep.dDecayStepIndices[loc_i])
 			return false;
 	}
-	for(size_t loc_i = 0; loc_i < dFinalParticleSourceObjects.size(); ++loc_i)
-	{
-		if(dFinalParticleSourceObjects[loc_i] < locParticleComboBlueprintStep.dFinalParticleSourceObjects[loc_i])
-			return true;
-		if(dFinalParticleSourceObjects[loc_i] > locParticleComboBlueprintStep.dFinalParticleSourceObjects[loc_i])
-			return false;
-	}
 
 	return false; //equivalent!
 }
 
 bool DParticleComboBlueprintStep::operator==(const DParticleComboBlueprintStep& locParticleComboBlueprintStep) const
 {
+#ifdef VTRACE
+	VT_TRACER("DParticleComboBlueprintStep::operator==()");
+#endif
+
 	if(dReactionStep != locParticleComboBlueprintStep.dReactionStep)
 		return false;
 
 	if(dInitialParticleDecayFromStepIndex != locParticleComboBlueprintStep.dInitialParticleDecayFromStepIndex)
 		return false;
 
-	if(dDecayStepIndices.size() != locParticleComboBlueprintStep.dDecayStepIndices.size())
+	if(dFinalParticleSourceObjects.size() != locParticleComboBlueprintStep.dFinalParticleSourceObjects.size())
 		return false;
 
-	if(dFinalParticleSourceObjects.size() != locParticleComboBlueprintStep.dFinalParticleSourceObjects.size())
+	for(size_t loc_i = 0; loc_i < dFinalParticleSourceObjects.size(); ++loc_i)
+	{
+		if(dFinalParticleSourceObjects[loc_i] != locParticleComboBlueprintStep.dFinalParticleSourceObjects[loc_i])
+			return false;
+	}
+
+	if(dDecayStepIndices.size() != locParticleComboBlueprintStep.dDecayStepIndices.size())
 		return false;
 
 	for(size_t loc_i = 0; loc_i < dDecayStepIndices.size(); ++loc_i)
@@ -68,72 +79,6 @@ bool DParticleComboBlueprintStep::operator==(const DParticleComboBlueprintStep& 
 			return false;
 	}
 
-	for(size_t loc_i = 0; loc_i < dFinalParticleSourceObjects.size(); ++loc_i)
-	{
-		if(dFinalParticleSourceObjects[loc_i] != locParticleComboBlueprintStep.dFinalParticleSourceObjects[loc_i])
-			return false;
-	}
-
 	return true;
-}
-
-void DParticleComboBlueprintStep::Get_FinalParticleIDs(deque<Particle_t>& locFinalParticleIDs) const
-{
-	if(dReactionStep != NULL)
-		dReactionStep->Get_FinalParticleIDs(locFinalParticleIDs);
-}
-
-void DParticleComboBlueprintStep::Add_FinalParticle_SourceObject(const JObject* locObject, int locDecayStepIndex)
-{
-	dFinalParticleSourceObjects.push_back(locObject);
-	dDecayStepIndices.push_back(locDecayStepIndex);
-}
-
-const JObject* DParticleComboBlueprintStep::Pop_FinalParticle_SourceObject(void)
-{
-	if(dFinalParticleSourceObjects.empty())
-		return NULL;
-	const JObject* locObject = dFinalParticleSourceObjects.back();
-	dFinalParticleSourceObjects.pop_back();
-	dDecayStepIndices.pop_back();
-	return locObject;
-}
-
-const JObject* DParticleComboBlueprintStep::Get_FinalParticle_SourceObject(size_t locFinalParticleIndex) const
-{
-	if(locFinalParticleIndex >= dFinalParticleSourceObjects.size())
-		return NULL;
-	return dFinalParticleSourceObjects[locFinalParticleIndex];
-}
-
-int DParticleComboBlueprintStep::Get_DecayStepIndex(size_t locFinalParticleIndex) const
-{
-	if(locFinalParticleIndex >= dDecayStepIndices.size())
-		return -1;
-	return dDecayStepIndices[locFinalParticleIndex];
-}
-
-int DParticleComboBlueprintStep::Get_MissingParticleIndex(void) const //-1 for no missing particles, else final state particle at this index is missing
-{
-	for(size_t loc_i = 0; loc_i < dDecayStepIndices.size(); ++loc_i)
-	{
-		if(dDecayStepIndices[loc_i] == -1)
-			return loc_i;
-	}
-	return -1;
-}
-
-bool DParticleComboBlueprintStep::Is_FinalParticleCharged(size_t locFinalParticleIndex) const
-{
-	if(locFinalParticleIndex >= Get_NumFinalParticleSourceObjects())
-		return false;
-	return (ParticleCharge(Get_FinalParticleID(locFinalParticleIndex)) != 0);
-}
-
-bool DParticleComboBlueprintStep::Is_FinalParticleNeutral(size_t locFinalParticleIndex) const
-{
-	if(locFinalParticleIndex >= Get_NumFinalParticleSourceObjects())
-		return false;
-	return (ParticleCharge(Get_FinalParticleID(locFinalParticleIndex)) == 0);
 }
 

@@ -1,3 +1,7 @@
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DParticleCombo_factory.h"
 
 //------------------
@@ -7,6 +11,11 @@ jerror_t DParticleCombo_factory::init(void)
 {
 	MAX_DParticleComboStepPoolSize = 40;
 	MAX_DKinematicDataPoolSize = 40;
+
+	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory. 
+	//All combos that fail the kinematic fit, or aren't fit at all, are identical to the pre-combo versions.  
+		//For these combos, just save the pointers to the previous objects in _data.  
+	SetFactoryFlag(NOT_OBJECT_OWNER);
 	return NOERROR;
 }
 
@@ -16,7 +25,44 @@ jerror_t DParticleCombo_factory::init(void)
 jerror_t DParticleCombo_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
 {
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	dKinFitter.Set_BField(locApplication->GetBfield());
+	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield();
+
+	double locTargetZCenter = 65.0;
+	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
+	locGeometry->GetTargetZ(locTargetZCenter);
+
+	double locBx, locBy, locBz;
+	locMagneticFieldMap->GetField(0.0, 0.0, locTargetZCenter, locBx, locBy, locBz);
+	TVector3 locBField(locBx, locBy, locBz);
+	if(locBField.Mag() > 0.0)
+		dKinFitter.Set_BField(locMagneticFieldMap);
+
+	// Get # of DReactions:
+	// Get list of factories and find all the ones producing
+	// DReaction objects. (A simpler way to do this would be to
+	// just use locEventLoop->Get(...), but then only one plugin could
+	// be used at a time.)
+	size_t locNumReactions = 0;
+	vector<JFactory_base*> locFactories = locEventLoop->GetFactories();
+	for(size_t loc_i = 0; loc_i < locFactories.size(); ++loc_i)
+	{
+		JFactory<DReaction>* locFactory = dynamic_cast<JFactory<DReaction>* >(locFactories[loc_i]);
+		if(locFactory == NULL)
+			continue;
+		if(string(locFactory->Tag()) == "Thrown")
+			continue;
+		// Found a factory producing DReactions. The reaction objects are
+		// produced at the init stage and are persistent through all event
+		// processing so we can grab the list here and append it to our
+		// overall list.
+		vector<const DReaction*> locReactionsSubset;
+		locFactory->Get(locReactionsSubset);
+		locNumReactions += locReactionsSubset.size();
+	}
+
+	MAX_DParticleComboStepPoolSize = 2000*locNumReactions;
+	MAX_DKinematicDataPoolSize = 1000*locNumReactions;
+
 	return NOERROR;
 }
 
@@ -25,6 +71,11 @@ jerror_t DParticleCombo_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 //------------------
 jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 {
+#ifdef VTRACE
+	VT_TRACER("DParticleCombo_factory::evnt()");
+#endif
+
+	Reset_Data();
 	Reset_Pools();
 
 	vector<const DKinFitResults*> locKinFitResultsVector;
@@ -33,19 +84,30 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
  	vector<const DAnalysisResults*> locAnalysisResultsVector;
 	locEventLoop->Get(locAnalysisResultsVector, "PreKinFit");
 
-	deque<const DParticleCombo*> locParticleCombos_PreKinFit, locSurvivedParticleCombos;
+	set<const DParticleCombo*> locParticleCombos_FailedKinFit; //fill with all eligible, will erase as they are validated
 	for(size_t loc_i = 0; loc_i < locAnalysisResultsVector.size(); ++loc_i)
 	{
+		deque<const DParticleCombo*> locSurvivedParticleCombos;
 		locAnalysisResultsVector[loc_i]->Get_PassedParticleCombos(locSurvivedParticleCombos);
-		locParticleCombos_PreKinFit.insert(locParticleCombos_PreKinFit.end(), locSurvivedParticleCombos.begin(), locSurvivedParticleCombos.end());
+
+		const DReaction* locReaction = locAnalysisResultsVector[loc_i]->Get_Reaction();
+		if(locReaction->Get_KinFitType() == d_NoFit) //kinfit not requested, just clone the original objects
+		{
+			for(size_t loc_j = 0; loc_j < locSurvivedParticleCombos.size(); ++loc_j)
+				_data.push_back(const_cast<DParticleCombo*>(locSurvivedParticleCombos[loc_j]));
+			continue;
+		}
+		for(size_t loc_j = 0; loc_j < locSurvivedParticleCombos.size(); ++loc_j)
+			locParticleCombos_FailedKinFit.insert(locSurvivedParticleCombos[loc_j]);
 	}
 
 	if(locKinFitResultsVector.empty())
 	{
-		//kinfit not requested (or all kinfits failed), just clone the original objects
-		for(size_t loc_i = 0; loc_i < locParticleCombos_PreKinFit.size(); ++loc_i)
-			_data.push_back(Clone_ParticleCombo(locParticleCombos_PreKinFit[loc_i]));
-		return NOERROR;
+		//all failed! save 'em and bail
+		set<const DParticleCombo*>::iterator locIterator = locParticleCombos_FailedKinFit.begin();
+		for(; locIterator != locParticleCombos_FailedKinFit.end(); ++locIterator)
+			_data.push_back(const_cast<DParticleCombo*>(*locIterator));
+		return NOERROR; //kinfit not requested (or all kinfits failed): done
 	}
 
 	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
@@ -81,7 +143,10 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 			const DParticleCombo* locParticleCombo = *locComboIterator;
 			const DReaction* locReaction = locParticleCombo->Get_Reaction();
 
+			locParticleCombos_FailedKinFit.erase(locParticleCombo); //kinfit successful, don't copy pointer later
+
 			DParticleCombo* locNewParticleCombo = new DParticleCombo();
+			dCreatedParticleCombos.push_back(locNewParticleCombo);
 			locNewParticleCombo->Set_Reaction(locParticleCombo->Get_Reaction());
 			locNewParticleCombo->Set_KinFitResults(locKinFitResultsVector[loc_i]);
 			locNewParticleCombo->Set_EventRFBunch(locParticleCombo->Get_EventRFBunch());
@@ -126,6 +191,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 			{
 				const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_j);
 				DParticleComboStep* locNewParticleComboStep = Get_ParticleComboStepResource();
+				locNewParticleComboStep->Set_MeasuredParticleComboStep(locParticleComboStep);
 				locNewParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboStep->Get_ParticleComboBlueprintStep());
 				locNewParticleComboStep->Set_SpacetimeVertex(locParticleComboStep->Get_SpacetimeVertex()); //overridden if kinematic fit
 				bool locWasVertexKinFitFlag = ((locKinFitType != d_NoFit) && (locKinFitType != d_P4Fit));
@@ -133,7 +199,6 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 
 				//INITIAL PARTICLE & SPACETIME VERTEX
 				locPID = locParticleComboStep->Get_InitialParticleID();
-				locNewParticleComboStep->Set_InitialParticle_Measured(locParticleComboStep->Get_InitialParticle_Measured());
 				if(locParticleComboStep->Is_InitialParticleDetected()) //set beam photon
 				{
 					for(size_t loc_k = 0; loc_k < locBeamPhotons.size(); ++loc_k)
@@ -195,7 +260,6 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 				for(size_t loc_k = 0; loc_k < locParticleComboStep->Get_NumFinalParticles(); ++loc_k)
 				{
 					locConstKinematicData = locParticleComboStep->Get_FinalParticle_Measured(loc_k);
-					locNewParticleComboStep->Add_FinalParticle_Measured(locConstKinematicData);
 					locPID = locParticleComboStep->Get_FinalParticleID(loc_k);
 					if(locParticleComboStep->Is_FinalParticleMissing(loc_k)) //missing!
 					{
@@ -273,35 +337,22 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 		}
 	}
 
-	//clone all combos for which the kinfits failed or didn't occur
-	for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i) //first remove successfully kinfit combos from the locParticleCombos_PreKinFit list
-	{
-		_data[loc_i]->GetT(locParticleCombos_Associated);
-		for(deque<const DParticleCombo*>::iterator locIterator = locParticleCombos_PreKinFit.begin(); locIterator != locParticleCombos_PreKinFit.end(); ++locIterator)
-		{
-			if((*locIterator) == locParticleCombos_Associated[0])
-			{
-				locParticleCombos_PreKinFit.erase(locIterator); //kinfit did not fail
-				break;
-			}
-		}
-	}
-	for(size_t loc_i = 0; loc_i < locParticleCombos_PreKinFit.size(); ++loc_i) //kinfit failed for these, clone and save new ones
-	{
-		DParticleCombo* locNewParticleCombo = Clone_ParticleCombo(locParticleCombos_PreKinFit[loc_i]);
-		_data.push_back(locNewParticleCombo);
-	}
+	//directly save all combos for which the kinfits failed
+	set<const DParticleCombo*>::iterator locIterator = locParticleCombos_FailedKinFit.begin();
+	for(; locIterator != locParticleCombos_FailedKinFit.end(); ++locIterator)
+		_data.push_back(const_cast<DParticleCombo*>(*locIterator));
 
 	return NOERROR;
 }
 
-DParticleCombo* DParticleCombo_factory::Clone_ParticleCombo(const DParticleCombo* locParticleCombo)
+void DParticleCombo_factory::Reset_Data(void)
 {
-	DParticleCombo* locNewParticleCombo = new DParticleCombo(*locParticleCombo);
-	vector<const DParticleComboBlueprint*> locParticleComboBlueprints;
-	locParticleCombo->GetT(locParticleComboBlueprints);
-	locNewParticleCombo->AddAssociatedObject(locParticleComboBlueprints[0]);
-	return locNewParticleCombo;
+	//delete objects that this factory created (since the NOT_OBJECT_OWNER flag is set)
+		//if there are no kinfit results then they were simply copied from the other factory
+	for(size_t loc_i = 0; loc_i < dCreatedParticleCombos.size(); ++loc_i)
+		delete dCreatedParticleCombos[loc_i];
+	_data.clear();
+	dCreatedParticleCombos.clear();
 }
 
 DKinematicData* DParticleCombo_factory::Build_KinematicData(Particle_t locPID, const DKinFitParticle* locKinFitParticle)

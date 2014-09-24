@@ -1,3 +1,7 @@
+#ifdef VTRACE
+#include "vt_user.h"
+#endif
+
 #include "DAnalysisAction.h"
 
 DAnalysisAction::DAnalysisAction(void)
@@ -5,7 +9,7 @@ DAnalysisAction::DAnalysisAction(void)
 }
 
 DAnalysisAction::DAnalysisAction(const DReaction* locReaction, string locActionBaseName, bool locUseKinFitResultsFlag, string locActionUniqueString) : 
-dReaction(locReaction), dActionName(locActionBaseName), dUseKinFitResultsFlag(locUseKinFitResultsFlag), dActionUniqueString(locActionUniqueString)
+dPerformAntiCut(false), dReaction(locReaction), dActionName(locActionBaseName), dUseKinFitResultsFlag(locUseKinFitResultsFlag), dActionUniqueString(locActionUniqueString)
 {
 	//locActionBaseName should be defined within the derived class (internally to it)
 	//locActionUniqueString:
@@ -35,17 +39,25 @@ dReaction(locReaction), dActionName(locActionBaseName), dUseKinFitResultsFlag(lo
 
 bool DAnalysisAction::operator()(JEventLoop* locEventLoop)
 {
-	if(Get_Reaction() != NULL)
-	{
-		jout << "WARNING: Called incorrect function call operator in DAnalysisAction::operator()(JEventLoop*). Aborting action." << endl;
-		return false;
-	}
-
-	return Perform_Action(locEventLoop, NULL);
+	bool locResult = Perform_Action(locEventLoop, NULL);
+	return (dPerformAntiCut ? !locResult : locResult);
 }
 
-void DAnalysisAction::operator()(JEventLoop* locEventLoop, deque<pair<const DParticleCombo*, bool> >& locSurvivingParticleCombos)
+bool DAnalysisAction::operator()(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
+	//THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
+	dNumParticleCombos = 1;
+	dNumPreviousParticleCombos = 0;
+
+	bool locResult = Perform_Action(locEventLoop, locParticleCombo);
+	return (dPerformAntiCut ? !locResult : locResult);
+}
+
+void DAnalysisAction::operator()(JEventLoop* locEventLoop, set<const DParticleCombo*>& locSurvivingParticleCombos)
+{
+#ifdef VTRACE
+	VT_TRACER("DAnalysisAction::operator()");
+#endif
 	//THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
 	dNumParticleCombos = locSurvivingParticleCombos.size();
 	dNumPreviousParticleCombos = 0;
@@ -56,9 +68,15 @@ void DAnalysisAction::operator()(JEventLoop* locEventLoop, deque<pair<const DPar
 		return;
 	}
 
-	for(size_t loc_i = 0; loc_i < locSurvivingParticleCombos.size(); ++loc_i)
+	set<const DParticleCombo*>::iterator locIterator = locSurvivingParticleCombos.begin();
+	while(locIterator != locSurvivingParticleCombos.end())
 	{
-		locSurvivingParticleCombos[loc_i].second = Perform_Action(locEventLoop, locSurvivingParticleCombos[loc_i].first);
+		bool locResult = Perform_Action(locEventLoop, *locIterator);
+		bool locSaveComboFlag = dPerformAntiCut ? !locResult : locResult;
+		if(locSaveComboFlag)
+			++locIterator;
+		else
+			locSurvivingParticleCombos.erase(locIterator++);
 		++dNumPreviousParticleCombos;
 	}
 }

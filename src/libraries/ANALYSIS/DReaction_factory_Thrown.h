@@ -15,12 +15,16 @@
 using namespace jana;
 using namespace std;
 
+class DAnalysisUtilities;
+
 class DReaction_factory_Thrown:public jana::JFactory<DReaction>
 {
 	public:
 		DReaction_factory_Thrown(){use_factory = 1;}; //prevents JANA from searching the input file for these objects
 		~DReaction_factory_Thrown(){};
 		const char* Tag(void){return "Thrown";}
+
+		DReaction* Build_ThrownReaction(JEventLoop* locEventLoop, deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps);
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
