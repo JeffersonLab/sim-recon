@@ -14,6 +14,7 @@ using namespace jana;
 //------------------
 jerror_t DMCThrown_factory_FinalState::init(void)
 {
+	SetFactoryFlag(NOT_OBJECT_OWNER);
 	return NOERROR;
 }
 
@@ -22,6 +23,7 @@ jerror_t DMCThrown_factory_FinalState::init(void)
 //------------------
 jerror_t DMCThrown_factory_FinalState::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
+	locEventLoop->GetSingle(dAnalysisUtilities);
 	return NOERROR;
 }
 
@@ -30,35 +32,22 @@ jerror_t DMCThrown_factory_FinalState::brun(jana::JEventLoop *locEventLoop, int 
 //------------------
 jerror_t DMCThrown_factory_FinalState::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
-	vector<const DMCThrown*> locMCThrowns;
-	locEventLoop->Get(locMCThrowns);
+	_data.clear();
 
-	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
+	deque<pair<const DMCThrown*, deque<const DMCThrown*> > > locThrownSteps;
+	dAnalysisUtilities->Get_ThrownParticleSteps(locEventLoop, locThrownSteps);
+
+	if(locThrownSteps.empty())
+		return NOERROR;
+
+	for(size_t loc_i = 0; loc_i < locThrownSteps.size(); ++loc_i)
 	{
-		int locIsFinalStateParticleInt = Is_FinalStateParticle(locMCThrowns[loc_i]->PID());
-		if(locIsFinalStateParticleInt != 1)
-			continue;
-
-		//find parent id, make sure not also a final state particle
-		int locParentID = locMCThrowns[loc_i]->parentid;
-		int locIsParentFinalStateInt = 0;
-		bool locIsParentFoundFlag = false;
-		if(locParentID != 0) //parent = 0 means initial production particle
+		deque<const DMCThrown*>& locParticles = locThrownSteps[loc_i].second;
+		for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 		{
-			for(size_t loc_j = 0; loc_j < locMCThrowns.size(); ++loc_j)
-			{
-				if(locMCThrowns[loc_j]->myid != locParentID)
-					continue;
-				locIsParentFinalStateInt = Is_FinalStateParticle(locMCThrowns[loc_j]->PID());
-				locIsParentFoundFlag = true;
-				break;
-			}
+			if(Is_FinalStateParticle(locParticles[loc_j]->PID()))
+				_data.push_back(const_cast<DMCThrown*>(locParticles[loc_j]));
 		}
-		if((locIsParentFinalStateInt == 1) || ((!locIsParentFoundFlag) && (locParentID != 0)))
-			continue; //don't save: a decay product of a final state particle (e.g. mu+ from pi+ decay) //OR the parent is lost
-
-		DMCThrown* locMCThrown = new DMCThrown(*locMCThrowns[loc_i]);
-		_data.push_back(locMCThrown);
 	}
 
 	return NOERROR;

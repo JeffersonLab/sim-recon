@@ -17,6 +17,7 @@
 #include <PID/DNeutralShower.h>
 #include <PID/DEventRFBunch.h>
 #include <PID/DParticleID.h>
+#include <PID/DVertex.h>
 #include <DVector3.h>
 #include <DMatrixDSym.h>
 #include <DMatrix.h>
@@ -28,7 +29,7 @@ class DNeutralParticleHypothesis_factory:public jana::JFactory<DNeutralParticleH
 		DNeutralParticleHypothesis_factory(){};
 		~DNeutralParticleHypothesis_factory(){};
 
-		DNeutralParticleHypothesis* Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch) const;
+		DNeutralParticleHypothesis* Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DVertex* locVertex) const;
 
 		void Calc_ParticleCovariance_Photon(const DNeutralShower* locNeutralShower, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance) const;
 		void Calc_ParticleCovariance_Massive(const DNeutralShower* locNeutralShower, double locMass, double locDeltaT, double locStartTimeVariance, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance) const;

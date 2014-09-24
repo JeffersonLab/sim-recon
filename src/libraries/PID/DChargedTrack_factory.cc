@@ -13,12 +13,6 @@ using namespace std;
 #include "DChargedTrack_factory.h"
 using namespace jana;
 
-bool Compare_ChargedTrackHypotheses_FOM(const DChargedTrackHypothesis *locTrack1, const DChargedTrackHypothesis *locTrack2){
-  if (isnan(locTrack2->dFOM) && isnan(locTrack1->dFOM)) return (locTrack1->mass()<locTrack2->mass());
-  if (isnan(locTrack2->dFOM)) return true; 
-	return (locTrack1->dFOM > locTrack2->dFOM);
-};
-
 //------------------
 // init
 //------------------
@@ -40,35 +34,21 @@ jerror_t DChargedTrack_factory::brun(jana::JEventLoop *locEventLoop, int runnumb
 //------------------
 jerror_t DChargedTrack_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
-	unsigned int loc_i, loc_j;
-	const DChargedTrackHypothesis* locChargedTrackHypothesis;
-	DChargedTrack *locChargedTrack;
-	bool locIDMatchFlag;
-
 	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
 	locEventLoop->Get(locChargedTrackHypotheses);
 
-	for(loc_i = 0; loc_i < locChargedTrackHypotheses.size(); loc_i++){
-		locChargedTrackHypothesis = locChargedTrackHypotheses[loc_i];
-		locIDMatchFlag = false;
-		for (loc_j = 0; loc_j < _data.size(); loc_j++){
-			if(locChargedTrackHypothesis->candidateid == _data[loc_j]->dChargedTrackHypotheses[0]->candidateid){
-				_data[loc_j]->dChargedTrackHypotheses.push_back(locChargedTrackHypothesis);
-				locIDMatchFlag = true;
-				break;
-			}
+	map<JObject::oid_t, vector<const DChargedTrackHypothesis*> > locHypothesesByTrackID;
+	for(size_t loc_i = 0; loc_i < locChargedTrackHypotheses.size(); loc_i++)
+		locHypothesesByTrackID[locChargedTrackHypotheses[loc_i]->candidateid].push_back(locChargedTrackHypotheses[loc_i]);
 
-		}
-		if(locIDMatchFlag == true)
-			continue;
-		locChargedTrack = new DChargedTrack();
-		locChargedTrack->dChargedTrackHypotheses.push_back(locChargedTrackHypothesis);
+	map<JObject::oid_t, vector<const DChargedTrackHypothesis*> >::iterator locIterator = locHypothesesByTrackID.begin();
+	for(; locIterator != locHypothesesByTrackID.end(); ++locIterator)
+	{
+		DChargedTrack* locChargedTrack = new DChargedTrack();
+		locChargedTrack->dChargedTrackHypotheses = locIterator->second;
 		_data.push_back(locChargedTrack);
 	}
 
-	for(loc_i = 0; loc_i < _data.size(); loc_i++)
-      sort(_data[loc_i]->dChargedTrackHypotheses.begin(), _data[loc_i]->dChargedTrackHypotheses.end(), Compare_ChargedTrackHypotheses_FOM);
-	  
 	return NOERROR;
 }
 

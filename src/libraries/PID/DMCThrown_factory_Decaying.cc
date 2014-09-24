@@ -14,6 +14,7 @@ using namespace jana;
 //------------------
 jerror_t DMCThrown_factory_Decaying::init(void)
 {
+	SetFactoryFlag(NOT_OBJECT_OWNER);
 	return NOERROR;
 }
 
@@ -22,6 +23,7 @@ jerror_t DMCThrown_factory_Decaying::init(void)
 //------------------
 jerror_t DMCThrown_factory_Decaying::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
+	locEventLoop->GetSingle(dAnalysisUtilities);
 	return NOERROR;
 }
 
@@ -30,18 +32,16 @@ jerror_t DMCThrown_factory_Decaying::brun(jana::JEventLoop *locEventLoop, int ru
 //------------------
 jerror_t DMCThrown_factory_Decaying::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
-	vector<const DMCThrown*> locMCThrowns;
-	locEventLoop->Get(locMCThrowns);
+	_data.clear();
 
-	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
-	{
-		if(locMCThrowns[loc_i]->PID() == Unknown)
-			continue;
-		if(Is_FinalStateParticle(locMCThrowns[loc_i]->PID()) == 1)
-			continue;
-		DMCThrown* locMCThrown = new DMCThrown(*locMCThrowns[loc_i]);
-		_data.push_back(locMCThrown);
-	}
+	deque<pair<const DMCThrown*, deque<const DMCThrown*> > > locThrownSteps;
+	dAnalysisUtilities->Get_ThrownParticleSteps(locEventLoop, locThrownSteps);
+
+	if(locThrownSteps.empty())
+		return NOERROR;
+
+	for(size_t loc_i = 1; loc_i < locThrownSteps.size(); ++loc_i)
+		_data.push_back(const_cast<DMCThrown*>(locThrownSteps[loc_i].first));
 
 	return NOERROR;
 }

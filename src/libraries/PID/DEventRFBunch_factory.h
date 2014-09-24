@@ -25,6 +25,7 @@
 #include <PID/DDetectorMatches.h>
 #include <PID/DParticleID.h>
 #include <PID/DEventRFBunch.h>
+#include <PID/DNeutralShower.h>
 #include <PID/DRFTime.h>
 #include <TRACKING/DTrackTimeBased.h>
 #include <START_COUNTER/DSCHit.h>
@@ -44,9 +45,9 @@ class DEventRFBunch_factory : public jana::JFactory<DEventRFBunch>
 		DEventRFBunch_factory(){};
 		~DEventRFBunch_factory(){};
 
-		bool Find_TimeFOMPairs_Hits(const DDetectorMatches* locDetectorMatches, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, double> >& locTimeFOMPairs);
-		bool Find_TimeFOMPairs_T0(const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, double> >& locTimeFOMPairs);
-		int Find_BestRFBunchShift(double locRFHitTime, const vector<pair<double, double> >& locTimeFOMPairs);
+		bool Find_TrackTimes(const DDetectorMatches* locDetectorMatches, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<double>& locTimes);
+		bool Find_NeutralTimes(JEventLoop* locEventLoop, vector<double>& locTimes);
+		int Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes);
 
 	private:
 		const DParticleID* dParticleID;
@@ -55,8 +56,6 @@ class DEventRFBunch_factory : public jana::JFactory<DEventRFBunch>
 		DVector3 dTargetCenter;
 
 		double dMinTrackingFOM;
-		double dMinVertexZ;
-		double dMaxVertexZ;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int runnumber);	///< Called everytime a new run number is detected.

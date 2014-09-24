@@ -59,7 +59,7 @@ class DSCHitMatchParams
 		const DTrackTimeBased* dTrackTimeBased;
 		const DSCHit* dSCHit;
 
-		double dEdx; //dE/dx; dE: the energy lost by the track, dx: the distance the track traveled through the detector system
+		double dEdx; //dE/dx; dE: the energy lost by the track, dx: the distance the track traveled through the detector system (dHitEnergy/dx)
 		double dHitTime; //not the same as DSCHit time: corrected for propagation along scintillator
 		double dHitTimeVariance;
 		double dHitEnergy; //not the same as DSCHit energy: corrected for attenuation
@@ -119,6 +119,22 @@ class DDetectorMatches : public JObject
 		inline bool Get_IsMatchedToTrack(const DFCALShower* locFCALShower) const
 		{
 			return (dFCALTrackMatchParams.find(locFCALShower) != dFCALTrackMatchParams.end());
+		}
+		inline bool Get_IsMatchedToHit(const DTrackTimeBased* locTrackTimeBased) const
+		{
+			map<const DTrackTimeBased*, vector<DShowerMatchParams> >::const_iterator locBCALIterator = dTrackBCALMatchParams.find(locTrackTimeBased);
+			if(locBCALIterator != dTrackBCALMatchParams.end())
+				return true;
+			map<const DTrackTimeBased*, vector<DShowerMatchParams> >::const_iterator locFCALIterator = dTrackFCALMatchParams.find(locTrackTimeBased);
+			if(locFCALIterator != dTrackFCALMatchParams.end())
+				return true;
+			map<const DTrackTimeBased*, vector<DTOFHitMatchParams> >::const_iterator locTOFIterator = dTrackTOFMatchParams.find(locTrackTimeBased);
+			if(locTOFIterator != dTrackTOFMatchParams.end())
+				return true;
+			map<const DTrackTimeBased*, vector<DSCHitMatchParams> >::const_iterator locSCIterator = dTrackSCMatchParams.find(locTrackTimeBased);
+			if(locSCIterator != dTrackSCMatchParams.end())
+				return true;
+			return false;
 		}
 
 		inline bool Get_TrackMatchParams(const DBCALShower* locBCALShower, vector<DShowerMatchParams>& locMatchParams) const
