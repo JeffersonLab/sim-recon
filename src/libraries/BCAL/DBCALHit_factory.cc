@@ -29,7 +29,7 @@ jerror_t DBCALHit_factory::init(void)
    //    which corresponds to approximately 22 MeV.  Thus, the factor is 0.1 to get MeV
    //a_pedestal = 10000;  // default pedestal of 100 ADC units over 100 samples 
    t_scale    = 0.0625;   // There are 62.5 ps/count from the fADC
-   t_min      = -100.;
+   t_base      = 0.;
 
    return NOERROR;
 }
@@ -59,6 +59,16 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    else
        jerr << "Unable to get BCAL_ADC_TSCALE from /BCAL/digi_scales !" << endl;
 
+  // load base time offset
+   map<string,double> base_time_offset;
+   if (eventLoop->GetCalib("/BCAL/base_time_offset",base_time_offset))
+       jout << "Error loading /BCAL/base_time_offset !" << endl;
+   if (base_time_offset.find("BCAL_BASE_TIME_OFFSET") != base_time_offset.end())
+       t_base = base_time_offset["BCAL_BASE_TIME_OFFSET"];
+   else
+       jerr << "Unable to get BCAL_BASE_TIME_OFFSET from /BCAL/base_time_offset !" << endl;  
+
+   // load constant tables
    if (eventLoop->GetCalib("/BCAL/ADC_gains", raw_gains))
        jout << "Error loading /BCAL/ADC_gains !" << endl;
    if (eventLoop->GetCalib("/BCAL/ADC_pedestals", raw_pedestals))
@@ -117,7 +127,7 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
       }
 
       hit->E = E;  
-      hit->t = t_scale * (T - GetConstant(time_offsets,digihit)) + t_min;
+      hit->t = t_scale * (T - GetConstant(time_offsets,digihit)) + t_base;
       
       hit->AddAssociatedObject(digihit);
       

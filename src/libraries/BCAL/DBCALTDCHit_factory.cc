@@ -23,7 +23,7 @@ jerror_t DBCALTDCHit_factory::init(void)
 {
    /// set the base conversion scale
    t_scale    = 0.060;    // 60 ps/count
-   t_min      = -100.;    // ns
+   t_base      = 0.;    // ns
    //t_offset   = 0;
 
    return NOERROR;
@@ -48,6 +48,15 @@ jerror_t DBCALTDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    } else {
        jerr << "Unable to get BCAL_TDC_SCALE from /BCAL/digi_scales !" << endl;
    }
+
+   // load base time offset
+   map<string,double> base_time_offset;
+   if (eventLoop->GetCalib("/BCAL/base_time_offset",base_time_offset))
+       jout << "Error loading /BCAL/base_time_offset !" << endl;
+   if (base_time_offset.find("BCAL_BASE_TIME_OFFSET") != base_time_offset.end())
+       t_base = base_time_offset["BCAL_BASE_TIME_OFFSET"];
+   else
+       jerr << "Unable to get BCAL_BASE_TIME_OFFSET from /BCAL/base_time_offset !" << endl;  
 
    if(eventLoop->GetCalib("/BCAL/TDC_offsets", raw_time_offsets))
        jout << "Error loading /BCAL/TDC_offsets !" << endl;
@@ -84,7 +93,7 @@ jerror_t DBCALTDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
       // Apply calibration constants here
       double T = (double)digihit->time;
-      hit->t = t_scale * (T - GetConstant(time_offsets,digihit)) + t_min;
+      hit->t = t_scale * (T - GetConstant(time_offsets,digihit)) + t_base;
 /*
       cout << "BCAL TDC Hit: ( " << digihit->module << ", " << digihit->layer << ", "
            << digihit->sector << ", " << digihit->end << " )  ->  "

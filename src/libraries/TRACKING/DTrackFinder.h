@@ -119,7 +119,9 @@ class DTrackFinder:public jana::JObject{
   
   double FindDoca(double z,const DMatrix4x1 &S,const DVector3 &wdir,
 		  const DVector3 &origin,DVector3 *poca=NULL) const;
-
+  double FindDoca(const DVector3 &pos1,const DVector3 &mom1,
+		  const DVector3 &pos2,const DVector3 &mom2,
+		  DVector3 *poca) const;
  private:
   // Prohibit default constructor
   DTrackFinder();

@@ -306,6 +306,33 @@ jerror_t DTrackFinder::cdc_track_t::FindStateVector(void){
 
 }
 
+// Given two straight tracks, find the doca between them
+double DTrackFinder::FindDoca(const DVector3 &pos1,const DVector3 &mom1,
+			      const DVector3 &pos2,const DVector3 &mom2,
+			      DVector3 *poca) const{
+  DVector3 diff=pos1-pos2;
+  DVector3 uhat=mom1;
+  uhat.SetMag(1.);
+  DVector3 vhat=mom2;
+  vhat.SetMag(1.);
+
+  double vhat_dot_diff=diff.Dot(vhat);
+  double uhat_dot_diff=diff.Dot(uhat);
+  double uhat_dot_vhat=uhat.Dot(vhat);
+  double D=1.-uhat_dot_vhat*uhat_dot_vhat;
+  double N=uhat_dot_vhat*vhat_dot_diff-uhat_dot_diff;
+  double N1=vhat_dot_diff-uhat_dot_vhat*uhat_dot_diff;
+  double scale=1./D;
+  double s=scale*N;
+  double t=scale*N1;
+  
+  if (poca!=NULL) *poca=pos1+s*uhat;
+
+  diff+=s*uhat-t*vhat;
+  return diff.Mag();
+}
+
+
 // Given state vector S, find doca to wire given by origin and wdir
 double DTrackFinder::FindDoca(double z,const DMatrix4x1 &S,const DVector3 &wdir,
 			      const DVector3 &origin,DVector3 *poca) const{

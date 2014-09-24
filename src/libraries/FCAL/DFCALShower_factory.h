@@ -12,9 +12,7 @@
 #include <JANA/JEventLoop.h>
 #include <FCAL/DFCALShower.h>
 #include <FCAL/DFCALCluster.h>
-#include <PID/DVertex.h>
-
-
+#include <DANA/DApplication.h>
 
 class DFCALShower_factory:public JFactory<DFCALShower>{
 	public:

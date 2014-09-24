@@ -31,7 +31,7 @@ jerror_t DCDCHit_factory::init(void)
    Nrings = 0;
    a_scale = 0.;
    t_scale = 0.;
-   t_min = 0.;
+   t_base = 0.;
 
    // Set default number of number of detector channels
    maxChannels = 3522;
@@ -39,7 +39,7 @@ jerror_t DCDCHit_factory::init(void)
    /// set the base conversion scales
    a_scale = 4.0E3/1.0E2; 
    t_scale = 8.0/10.0;    // 8 ns/count and integer time is in 1/10th of sample
-   t_min   = -100.;       // ns
+   t_base  = 0.;       // ns
 
    return NOERROR;
 }
@@ -74,6 +74,16 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    else
       jerr << "Unable to get CDC_ADC_TSCALE from /CDC/digi_scales !" << endl;
 
+   // load base time offset
+   map<string,double> base_time_offset;
+   if (eventLoop->GetCalib("/CDC/base_time_offset",base_time_offset))
+       jout << "Error loading /CDC/base_time_offset !" << endl;
+   if (base_time_offset.find("CDC_BASE_TIME_OFFSET") != base_time_offset.end())
+       t_base = base_time_offset["CDC_BASE_TIME_OFFSET"];
+   else
+       jerr << "Unable to get CDC_BASE_TIME_OFFSET from /CDC/base_time_offset !" << endl;
+
+   // load constant tables
    if (eventLoop->GetCalib("/CDC/wire_gains", raw_gains))
       jout << "Error loading /CDC/wire_gains !" << endl;
    if (eventLoop->GetCalib("/CDC/pedestals", raw_pedestals))
@@ -181,7 +191,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
       double T = (double)digihit->pulse_time;
       
       double q = a_scale * gains[ring-1][straw-1] * (A - pedestal);
-      double t = t_scale * (T - time_offsets[ring-1][straw-1]) + t_min;
+      double t = t_scale * (T - time_offsets[ring-1][straw-1]) + t_base;
 
       if (q < DIGI_THRESHOLD) 
          continue;
