@@ -28,14 +28,7 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int r
 	// Get Target parameters from XML
 	DApplication *locApplication = dynamic_cast<DApplication*> (locEventLoop->GetJApplication());
 	DGeometry *locGeometry = locApplication ? locApplication->GetDGeometry(runnumber):NULL;
-	dTargetCenterZ = 65.0;
-	dTargetLength = 30.0;
-	dTargetRadius = 1.5; //FIX: grab from database!!!
-	if(locGeometry)
-	{
-		locGeometry->GetTargetZ(dTargetCenterZ);
-		locGeometry->GetTargetLength(dTargetLength);
-	}
+	locGeometry->GetTargetZ(dTargetCenterZ);
 
 	locEventLoop->GetSingle(dParticleID);
 
@@ -53,158 +46,146 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 
 	//use all particles in the combo to find the vertex
 		//ignore detached vertices
+		//selection is done by propagating all times to the target center, and then voting
+	//for neutrals, use DVertex to calculate times
+		//if its the good combo: has good tracks, will be good vertex
+		//vertex should be bad only if on the wrong combo anyway, or if all tracks are junk
 
  	vector<const DParticleComboBlueprint*> locParticleComboBlueprints;
 	locEventLoop->Get(locParticleComboBlueprints);
 
-	vector<const DEventRFBunch*> locEventRFBunches;
-	locEventLoop->Get(locEventRFBunches);
+	const DEventRFBunch* locEventRFBunch = NULL;
+	locEventLoop->GetSingle(locEventRFBunch);
 
  	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locEventLoop->Get(locTrackTimeBasedVector, "Combo");
 
+ 	vector<const DNeutralShower*> locNeutralShowers;
+	locEventLoop->Get(locNeutralShowers);
+
+ 	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
+	locEventLoop->Get(locChargedTrackHypotheses);
+
+	const DVertex* locVertex = NULL;
+	locEventLoop->GetSingle(locVertex);
+
 	map<int, DEventRFBunch*> locComboRFBunchMap;
+
+	//pre-sort time-based tracks
+	map<pair<const DChargedTrack*, Particle_t>, const DTrackTimeBased*> locTimeBasedSourceMap;
+	for(size_t loc_l = 0; loc_l < locTrackTimeBasedVector.size(); ++loc_l)
+	{
+		const DTrackTimeBased* locTrackTimeBased = locTrackTimeBasedVector[loc_l];
+		const DChargedTrack* locChargedTrack = NULL;
+		locTrackTimeBased->GetSingleT(locChargedTrack);
+		locTimeBasedSourceMap[pair<const DChargedTrack*, Particle_t>(locChargedTrack, locTrackTimeBased->PID())] = locTrackTimeBased;
+	}
+
+	//pre-calculate propagated times: charged
+	map<const DChargedTrackHypothesis*, double> dPropagatedStartTimes_Charged;
+	for(size_t loc_i = 0; loc_i < locChargedTrackHypotheses.size(); ++loc_i)
+	{
+		double locPropagatedTime = locChargedTrackHypotheses[loc_i]->time() + (dTargetCenterZ - locChargedTrackHypotheses[loc_i]->z())/29.9792458;
+		dPropagatedStartTimes_Charged[locChargedTrackHypotheses[loc_i]] = locPropagatedTime;
+	}
+
+	//pre-calculate propagated times: time-based
+	map<const DTrackTimeBased*, double> dPropagatedStartTimes_TimeBased;
+	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
+	{
+		double locStartTime = 0.0;
+		if(!Get_StartTime(locEventLoop, locTrackTimeBasedVector[loc_i], locStartTime))
+			continue;
+		double locPropagatedTime = locStartTime + (dTargetCenterZ - locTrackTimeBasedVector[loc_i]->z())/29.9792458;
+		dPropagatedStartTimes_TimeBased[locTrackTimeBasedVector[loc_i]] = locPropagatedTime;
+	}
+
+	//pre-calculate propagated times: neutrals (ignore non-photons)
+	map<const DNeutralShower*, double> dPropagatedStartTimes_Neutral;
+	for(size_t loc_i = 0; loc_i < locNeutralShowers.size(); ++loc_i)
+	{
+		double locStartTime = Calc_StartTime(locNeutralShowers[loc_i], locVertex);
+		double locPropagatedTime = locStartTime + (dTargetCenterZ - locVertex->dSpacetimeVertex.Z())/29.9792458;
+		dPropagatedStartTimes_Neutral[locNeutralShowers[loc_i]] = locPropagatedTime;
+	}
 
 	for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
 	{
 		const DParticleComboBlueprint* locParticleComboBlueprint = locParticleComboBlueprints[loc_i];
-		double locWeightedAverageStartTime_Numerator = 0.0, locWeightedAverageStartTime_Denominator = 0.0;
-		double locWeightedAverageVertexZ_Numerator = 0.0, locWeightedAverageVertexZ_Denominator = 0.0;
-		for(size_t loc_j = 0; loc_j < locParticleComboBlueprint->Get_NumParticleComboBlueprintSteps(); ++loc_j)
+
+		vector<double> locPropagatedTimes;
+
+		//Charged Tracks
+		deque<pair<const DChargedTrack*, Particle_t> > locChargedTracks;
+		locParticleComboBlueprint->Get_DetectedChargedTrackSourceObjects(locChargedTracks);
+		for(size_t loc_j = 0; loc_j < locChargedTracks.size(); ++loc_j)
 		{
-			const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
-			for(size_t loc_k = 0; loc_k < locParticleComboBlueprintStep->Get_NumFinalParticleSourceObjects(); ++loc_k)
+			const DChargedTrack* locChargedTrack = locChargedTracks[loc_j].first;
+			Particle_t locPID = locChargedTracks[loc_j].second;
+			const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPID);
+
+			if(locChargedTrackHypothesis != NULL)
 			{
-				const JObject* locSourceObject = locParticleComboBlueprintStep->Get_FinalParticle_SourceObject(loc_k);
-				if(locSourceObject == NULL)
-					continue; //missing or decaying
-
-				//charged tracks
-				const DChargedTrack* locChargedTrack = dynamic_cast<const DChargedTrack*>(locSourceObject);
-				if(locChargedTrack == NULL)
-					continue; //will do neutrals later
-
-				Particle_t locPID = locParticleComboBlueprintStep->Get_FinalParticleID(loc_k);
-				const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPID);
-				if(locChargedTrackHypothesis != NULL)
-				{
-					double locStartTime = locChargedTrackHypothesis->time();
-					double locStartTimeVariance = (locChargedTrackHypothesis->errorMatrix())(6, 6);
-					if(locStartTimeVariance > 0.0)
-					{
-						locWeightedAverageStartTime_Numerator += locStartTime/locStartTimeVariance;
-						locWeightedAverageStartTime_Denominator += 1.0/locStartTimeVariance;
-					}
-					double locVertexZ = locChargedTrackHypothesis->position().Z();
-					double locVertexZVariance = (locChargedTrackHypothesis->errorMatrix())(5, 5);
-					locWeightedAverageVertexZ_Numerator += locVertexZ/locVertexZVariance;
-					locWeightedAverageVertexZ_Denominator += 1.0/locVertexZVariance;
-					continue;
-				}
-
-				//get from locTrackTimeBasedVector
-				for(size_t loc_l = 0; loc_l < locTrackTimeBasedVector.size(); ++loc_l)
-				{
-					const DTrackTimeBased* locTrackTimeBased = locTrackTimeBasedVector[loc_l];
-					if(locTrackTimeBased->PID() != locPID)
-						continue;
-					const DChargedTrack* locTimeBasedSourceChargedTrack = NULL;
-					locTrackTimeBased->GetSingleT(locTimeBasedSourceChargedTrack);
-					if(locTimeBasedSourceChargedTrack != locChargedTrack)
-						continue;
-
-					double locStartTime, locStartTimeVariance;
-					Get_StartTime(locEventLoop, locTrackTimeBased, locStartTime, locStartTimeVariance);
-					if(locStartTimeVariance > 0.0)
-					{
-						locWeightedAverageStartTime_Numerator += locStartTime/locStartTimeVariance;
-						locWeightedAverageStartTime_Denominator += 1.0/locStartTimeVariance;
-					}
-					double locVertexZ = locTrackTimeBased->position().Z();
-					double locVertexZVariance = (locTrackTimeBased->errorMatrix())(5, 5);
-					locWeightedAverageVertexZ_Numerator += locVertexZ/locVertexZVariance;
-					locWeightedAverageVertexZ_Denominator += 1.0/locVertexZVariance;
-					break;
-				}
+				locPropagatedTimes.push_back(dPropagatedStartTimes_Charged[locChargedTrackHypothesis]);
 				continue;
 			}
+
+			//get from time-based
+			pair<const DChargedTrack*, Particle_t> locTrackPair(locChargedTrack, locPID);
+			map<pair<const DChargedTrack*, Particle_t>, const DTrackTimeBased*>::iterator locIterator = locTimeBasedSourceMap.find(locTrackPair);
+			if(locIterator == locTimeBasedSourceMap.end())
+				continue; //bad track
+
+			const DTrackTimeBased* locTrackTimeBased = locIterator->second;
+			locPropagatedTimes.push_back(dPropagatedStartTimes_TimeBased[locTrackTimeBased]);
 		}
 
-		double locVertexZ = (locWeightedAverageVertexZ_Denominator > 0.0) ? locWeightedAverageVertexZ_Numerator/locWeightedAverageVertexZ_Denominator : dTargetCenterZ;
-		DVector3 locVertex(0.0, 0.0, locVertexZ);
-
-		//neutrals
-		for(size_t loc_j = 0; loc_j < locParticleComboBlueprint->Get_NumParticleComboBlueprintSteps(); ++loc_j)
+		//Neutrals
+		deque<pair<const DNeutralShower*, Particle_t> > locNeutralShowers;
+		locParticleComboBlueprint->Get_DetectedNeutralShowerSourceObjects(locNeutralShowers);
+		for(size_t loc_j = 0; loc_j < locNeutralShowers.size(); ++loc_j)
 		{
-			const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
-			for(size_t loc_k = 0; loc_k < locParticleComboBlueprintStep->Get_NumFinalParticleSourceObjects(); ++loc_k)
-			{
-				const JObject* locSourceObject = locParticleComboBlueprintStep->Get_FinalParticle_SourceObject(loc_k);
-				if(locSourceObject == NULL)
-					continue; //missing or decaying
+			Particle_t locPID = locNeutralShowers[loc_j].second;
+			if(locPID != Gamma)
+				continue; //other neutrals (e.g. neutron) can't be used to pick the time: their momentum is defined by the time
 
-				const DNeutralShower* locNeutralShower = dynamic_cast<const DNeutralShower*>(locSourceObject);
-				if(locNeutralShower == NULL)
-					continue; //charged, already done
-				Particle_t locPID = locParticleComboBlueprintStep->Get_FinalParticleID(loc_k);
-				if(locPID != Gamma)
-					continue; //other neutrals (e.g. neutron) can't be used to pick the time: their momentum is defined by the time
-
-				double locStartTime, locStartTimeVariance;
-				Calc_StartTime(locNeutralShower, locVertex, locStartTime, locStartTimeVariance);
-				if(locStartTimeVariance > 0.0)
-				{
-					locWeightedAverageStartTime_Numerator += locStartTime/locStartTimeVariance;
-					locWeightedAverageStartTime_Denominator += 1.0/locStartTimeVariance;
-				}
-			}
+			const DNeutralShower* locNeutralShower = locNeutralShowers[loc_j].first;
+			locPropagatedTimes.push_back(dPropagatedStartTimes_Neutral[locNeutralShower]);
 		}
 
-		if(!(locWeightedAverageStartTime_Denominator > 0.0))
+		if(locPropagatedTimes.empty())
 		{
 			//no timing information somehow: use the pre-existing value
-			DEventRFBunch* locEventRFBunch = new DEventRFBunch(*locEventRFBunches[0]);
-			locEventRFBunch->dMatchedToTracksFlag = false;
-			locEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
-			_data.push_back(locEventRFBunch);
+			DEventRFBunch* locNewEventRFBunch = new DEventRFBunch(*locEventRFBunch);
+			locNewEventRFBunch->dMatchedToTracksFlag = false;
+			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
+			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
+			_data.push_back(locNewEventRFBunch);
 			continue;
 		}
 
 		// Find # RF Bunch Shifts
-		double locStartTime = locWeightedAverageStartTime_Numerator/locWeightedAverageStartTime_Denominator;
-		double locPropagatedRFTime = locEventRFBunches[0]->dTime + (locVertexZ - dTargetCenterZ)/SPEED_OF_LIGHT;
-
-		int locNumBunchShifts = 0;
-		while((locPropagatedRFTime - locStartTime) > (0.5*dRFBunchFrequency))
-		{
-			--locNumBunchShifts;
-			locPropagatedRFTime -= dRFBunchFrequency;
-		}
-		while((locPropagatedRFTime - locStartTime) < (-0.5*dRFBunchFrequency))
-		{
-			++locNumBunchShifts;
-			locPropagatedRFTime += dRFBunchFrequency;
-		}
-
+		int locNumBunchShifts = Find_BestRFBunchShift(locEventRFBunch->dTime, locPropagatedTimes);
 		// Create new RF Bunch if doesn't already exist
 		if(locComboRFBunchMap.find(locNumBunchShifts) != locComboRFBunchMap.end()) //already created, don't recreate identical object!
 			locComboRFBunchMap[locNumBunchShifts]->AddAssociatedObject(locParticleComboBlueprint);
 		else
 		{
-			DEventRFBunch* locEventRFBunch = new DEventRFBunch();
-			locEventRFBunch->dMatchedToTracksFlag = true;
-			locEventRFBunch->dTime = locEventRFBunches[0]->dTime + (double)(locNumBunchShifts)*dRFBunchFrequency;
-			locEventRFBunch->dTimeVariance = locEventRFBunches[0]->dTimeVariance;
-			locEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
-			_data.push_back(locEventRFBunch);
-			locComboRFBunchMap[locNumBunchShifts] = locEventRFBunch;
+			DEventRFBunch* locNewEventRFBunch = new DEventRFBunch();
+			locNewEventRFBunch->dMatchedToTracksFlag = true;
+			locNewEventRFBunch->dTime = locEventRFBunch->dTime + (double)(locNumBunchShifts)*dRFBunchFrequency;
+			locNewEventRFBunch->dTimeVariance = locEventRFBunch->dTimeVariance;
+			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
+			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
+			_data.push_back(locNewEventRFBunch);
+			locComboRFBunchMap[locNumBunchShifts] = locNewEventRFBunch;
 		}
 	}
 
 	return NOERROR;
 }
 
-void DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, double& locStartTime, double& locStartTimeVariance)
+bool DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, double& locStartTime)
 {
 	vector<const DTOFPoint*> locTOFPoints;
 	locEventLoop->Get(locTOFPoints);
@@ -223,7 +204,6 @@ void DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const 
 
 	// Use time-based tracking time as initial guess
 	locStartTime = 0.0;
-	locStartTimeVariance = 0.0;
 
 	//BCAL
 	DShowerMatchParams locBCALShowerMatchParams;
@@ -231,10 +211,7 @@ void DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const 
 	{
 		const DBCALShower* locBCALShower = dynamic_cast<const DBCALShower*>(locBCALShowerMatchParams.dShowerObject);
 		locStartTime = locBCALShower->t - locBCALShowerMatchParams.dFlightTime;
-//		locStartTimeVariance = sqrt(locShowerMatchParams.dFlightTimeVariance) - locBCALShower->dCovarianceMatrix(4, 4); //uncomment when ready!!
-//		locStartTimeVariance *= locStartTimeVariance; //uncomment when ready!!
-		locStartTimeVariance = 0.5*0.5;
-		return;
+		return true;
 	}
 
 	//TOF
@@ -243,10 +220,15 @@ void DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const 
 	{
 		const DTOFPoint* locTOFPoint = locTOFHitMatchParams.dTOFPoint;
 		locStartTime = locTOFPoint->t - locTOFHitMatchParams.dFlightTime;
-//		locStartTimeVariance = sqrt(locTOFHitMatchParams.dFlightTimeVariance) - locTOFPoints[loc_i]->tErr; //uncomment when ready!
-//		locStartTimeVariance *= locStartTimeVariance; //uncomment when ready!
-		locStartTimeVariance = 0.1*0.1;
-		return;
+		return true;
+	}
+
+	//SC
+	DSCHitMatchParams locSCHitMatchParams;
+	if(dParticleID->Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams))
+	{
+		locStartTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime;
+		return true;
 	}
 
 	//FCAL
@@ -255,66 +237,62 @@ void DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const 
 	{
 		const DFCALShower* locFCALShower = dynamic_cast<const DFCALShower*>(locFCALShowerMatchParams.dShowerObject);
 		locStartTime = locFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime;
-//		locStartTimeVariance = sqrt(locShowerMatchParams.dFlightTimeVariance) - sqrt(locFCALShowers[loc_i]->dCovarianceMatrix(4, 4)); //uncomment when ready!
-//		locStartTimeVariance *= locStartTimeVariance; //uncomment when ready!
-		locStartTimeVariance = 0.5*0.5;
-		return;
+		return true;
 	}
+
+	return false;
 }
 
-void DEventRFBunch_factory_Combo::Calc_StartTime(const DNeutralShower* locNeutralShower, DVector3 locVertex, double& locStartTime, double& locStartTimeVariance)
+double DEventRFBunch_factory_Combo::Calc_StartTime(const DNeutralShower* locNeutralShower, const DVertex* locVertex)
 {
-	locStartTime = 0.0;
-	locStartTimeVariance = 0.0;
-
 	//doesn't work for neutrons!!
-	double locHitTime = locNeutralShower->dSpacetimeVertex.T();
-	DVector3 locHitPoint = locNeutralShower->dSpacetimeVertex.Vect();
 
-	// Calculate DNeutralParticleHypothesis Quantities (projected time at vertex for given id, etc.)
-	DVector3 locPath = locHitPoint - locVertex;
+	DVector3 locHitPoint = locNeutralShower->dSpacetimeVertex.Vect();
+	DVector3 locPath = locHitPoint - locVertex->dSpacetimeVertex.Vect();
 	double locPathLength = locPath.Mag();
-	if(!(locPathLength > 0.0))
-		return;
 
 	double locFlightTime = locPathLength/29.9792458;
-	locStartTime = locHitTime - locFlightTime;
-
-	locStartTimeVariance = Calc_StartTimeVariance(locNeutralShower, locPath);
+	double locHitTime = locNeutralShower->dSpacetimeVertex.T();
+	return locHitTime - locFlightTime;
 }
 
-double DEventRFBunch_factory_Combo::Calc_StartTimeVariance(const DNeutralShower* locNeutralShower, const DVector3& locPathVector)
+
+int DEventRFBunch_factory_Combo::Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes)
 {
-	//build 8x8 matrix: 5x5 shower, 3x3 vertex position
-	DMatrixDSym locShowerPlusVertCovariance(8);
-	for(unsigned int loc_l = 0; loc_l < 5; ++loc_l) //shower: e, x, y, z, t
+	//then find the #beam buckets the RF time needs to shift to match it
+	map<int, unsigned int> locNumRFBucketsShiftedMap; //key is # RF buckets the RF time is shifted to match the track, value is the # tracks at that shift
+	int locBestRFBunchShift = 0;
+	for(unsigned int loc_i = 0; loc_i < locTimes.size(); ++loc_i)
 	{
-		for(unsigned int loc_m = 0; loc_m < 5; ++loc_m)
-			locShowerPlusVertCovariance(loc_l, loc_m) = locNeutralShower->dCovarianceMatrix(loc_l, loc_m);
+		double locPropagatedTrackTime = locTimes[loc_i];
+		//do manually: tricky to convert int to float...
+		int locNumRFBucketsShifted = 0;
+		double locTempRFHitTime = locRFHitTime;
+		while((locTempRFHitTime - locPropagatedTrackTime) > (0.5*dRFBunchFrequency))
+		{
+			locTempRFHitTime -= dRFBunchFrequency;
+			--locNumRFBucketsShifted;
+		}
+		while((locTempRFHitTime - locPropagatedTrackTime) < (-0.5*dRFBunchFrequency))
+		{
+			locTempRFHitTime += dRFBunchFrequency;
+			++locNumRFBucketsShifted;
+		}
+
+		if(locNumRFBucketsShiftedMap.find(locNumRFBucketsShifted) == locNumRFBucketsShiftedMap.end())
+			locNumRFBucketsShiftedMap[locNumRFBucketsShifted] = 1;
+		else
+			++(locNumRFBucketsShiftedMap[locNumRFBucketsShifted]);
+
+		if(locNumRFBucketsShifted == locBestRFBunchShift)
+			continue;
+
+		unsigned int locBestNumTracks = locNumRFBucketsShiftedMap[locBestRFBunchShift];
+		unsigned int locNumTracks = locNumRFBucketsShiftedMap[locNumRFBucketsShifted];
+		if(locNumTracks > locBestNumTracks)
+			locBestRFBunchShift = locNumRFBucketsShifted;
 	}
-	locShowerPlusVertCovariance(5, 5) = 0.25*dTargetRadius*dTargetRadius/12.0; //vertex position x
-	locShowerPlusVertCovariance(6, 6) = 0.25*dTargetRadius*dTargetRadius/12.0; //vertex position y
-	locShowerPlusVertCovariance(7, 7) = dTargetLength*dTargetLength/12.0; //vertex position z
-
-	DVector3 locDeltaX = -1.0*locPathVector; //defined oppositely in document! //delta_x defined here as common_vertex - hit_point
-	DVector3 locUnitDeltaXOverC = (1.0/(SPEED_OF_LIGHT*locDeltaX.Mag()))*locDeltaX;
-
-	//build transform matrix
-	DMatrix locTransformMatrix(1, 8);
-
-	locTransformMatrix(0, 0) = 0.0; //partial deriv of t wrst shower-e //beta defined = 1
-	locTransformMatrix(0, 1) = locUnitDeltaXOverC.X(); //partial deriv of t wrst shower-x
-	locTransformMatrix(0, 2) = locUnitDeltaXOverC.Y(); //partial deriv of t wrst shower-y
-	locTransformMatrix(0, 3) = locUnitDeltaXOverC.Z(); //partial deriv of t wrst shower-z
-	locTransformMatrix(0, 4) = 1.0; //partial deriv of t wrst shower-t
-	locTransformMatrix(0, 5) = -1.0*locTransformMatrix(0, 1); //partial deriv of t wrst vert-x
-	locTransformMatrix(0, 6) = -1.0*locTransformMatrix(0, 2); //partial deriv of t wrst vert-y
-	locTransformMatrix(0, 7) = -1.0*locTransformMatrix(0, 3); //partial deriv of t wrst vert-z
-
-	//convert
-	DMatrixDSym locParticleCovariance(1);
-	locParticleCovariance = locShowerPlusVertCovariance.Similarity(locTransformMatrix);
-	return locParticleCovariance(0, 0);
+	return locBestRFBunchShift;
 }
 
 //------------------

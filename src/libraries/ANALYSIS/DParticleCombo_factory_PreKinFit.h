@@ -50,14 +50,13 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		const DKinematicData* Get_DetectedParticle(const DReaction* locReaction, const DEventRFBunch* locEventRFBunch, const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex, vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses, vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses, const DMCThrownMatching* locMCThrownMatching);
+		const DKinematicData* Get_DetectedParticle(const DReaction* locReaction, const DEventRFBunch* locEventRFBunch, const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex);
 		DKinematicData* Create_Target(Particle_t locPID);
 
 		bool Cut_PIDFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 		bool Cut_PIDFOM(const DReaction* locReaction, const DNeutralParticleHypothesis* locNeutralParticleHypothesis) const;
-		bool Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
-		void Build_BeamPhotonCombos(DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint, const DEventRFBunch* locEventRFBunch, set<const DBeamPhoton*>& locCandidatePhotons, vector<DParticleCombo*>& locBuiltParticleCombos);
+		void Build_BeamPhotonCombos(DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint, const DEventRFBunch* locEventRFBunch, const set<const DBeamPhoton*>& locInputCandidatePhotons, vector<DParticleCombo*>& locBuiltParticleCombos);
 
 		DParticleComboStep* Clone_ParticleComboStep(const DParticleComboStep* locParticleComboStep);
 		void Reset_KinematicData(DKinematicData* locKinematicData);
@@ -87,20 +86,22 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		pair<bool, double> dMinChargedPIDFOM; //the minimum PID FOM for a particle used for this DReaction
 		pair<bool, double> dMinPhotonPIDFOM; //the minimum PID FOM for a neutral particle used for this DReaction
 		pair<bool, double> dMaxPhotonRFDeltaT; //the maximum photon-rf time difference: used for photon selection
-		pair<bool, bool> dHasDetectorMatchFlag; //if both are true, require tracks to have a detector match
 
 		int dDebugLevel;
 		double dTargetCenterZ;
 		double dMinThrownMatchFOM;
 		const DAnalysisUtilities* dAnalysisUtilities;
+
 		vector<const DReaction*> dReactions;
 		map<const DReaction*, bool> dMCReactionExactMatchFlags;
 		map<const DReaction*, DCutAction_TrueCombo*> dTrueComboCuts;
 		map<const DReaction*, size_t> dNumGoodPreComboSelectionActions;
+
+		map<const DReaction*, map<const DEventRFBunch*, map<Particle_t, map<const DChargedTrack*, const DChargedTrackHypothesis*> > > > dValidChargedHypotheses;
+		map<const DReaction*, map<const DEventRFBunch*, map<Particle_t, map<const DNeutralShower*, const DNeutralParticleHypothesis*> > > > dValidNeutralHypotheses;
+
 		set<pair<const DEventRFBunch*, const DBeamPhoton*> > dPreviousPhotonRFDeltaTPairs;
 
-		set<const DChargedTrackHypothesis*> dPreviousPIDTracks;
-		set<const DNeutralParticleHypothesis*> dPreviousPIDNeutrals;
 		map<const DReaction*, map<Particle_t, TH1I*> > dHistMap_PIDFOM_All;
 		map<const DReaction*, map<Particle_t, TH1I*> > dHistMap_PIDFOM_True;
 

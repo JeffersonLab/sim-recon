@@ -829,67 +829,43 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 			continue;
 		}
 
-		const DChargedTrack* locChargedTrack = dynamic_cast<const DChargedTrack*>(locObject); //NULL if not charged
+		//if charged, will make further cuts
+		const DChargedTrack* locChargedTrack = dynamic_cast<const DChargedTrack*>(locObject);
+		if(locChargedTrack == NULL)
+			return locObject; //not charged
 
 		//if charged, check to make sure the tracking FOM is OK (cut garbage tracks and wildly bad combos)
-		if(locChargedTrack != NULL)
+
+		bool locWillReSwimFlag = false;
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = Get_ChargedHypothesisToUse(locChargedTrack, locAnalysisPID, locWillReSwimFlag);
+		if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
 		{
-			bool locWillReSwimFlag = false;
-			const DChargedTrackHypothesis* locChargedTrackHypothesis = Get_ChargedHypothesisToUse(locChargedTrack, locAnalysisPID, locWillReSwimFlag);
-			if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
+			if(dDebugLevel > 20)
+				cout << "Bad Tracking FOM" << endl;
+			continue;
+		}
+		else if(locWillReSwimFlag)
+		{
+			if(!Cut_HasDetectorMatch(locReaction, locChargedTrackHypothesis))
 			{
 				if(dDebugLevel > 20)
-					cout << "Bad Tracking FOM" << endl;
+					cout << "No Detector Match" << endl;
 				continue;
-			}
-			else if(locWillReSwimFlag)
-			{
-				if(!Cut_HasDetectorMatch(locReaction, locChargedTrackHypothesis))
-				{
-					if(dDebugLevel > 20)
-						cout << "No Detector Match" << endl;
-					continue;
-				}
 			}
 		}
 
 		//check to make sure the track momentum isn't too low (e.g. testing a 100 MeV pion to be a proton)
-		bool locTrackMomentumTooLowFlag = false;
 		pair<bool, double> locMinProtonMomentum = dMinProtonMomentum.first ? dMinProtonMomentum : locReaction->Get_MinProtonMomentum();
-		if((locChargedTrack != NULL) && locMinProtonMomentum.first && (ParticleMass(locAnalysisPID) >= (ParticleMass(Proton) - 0.001)))
-		{
-			if(locChargedTrack->Get_Hypothesis(Proton) == NULL)
-			{
-				deque<pair<Particle_t, bool> > locPIDsToTry = dTrackTimeBasedFactory_Combo->Get_ParticleIDsToTry(locAnalysisPID);
-				bool locFoundFlag = false;
-				for(size_t loc_i = 0; loc_i < locPIDsToTry.size(); ++loc_i)
-				{
-					const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPIDsToTry[loc_i].first);
-					if(locChargedTrackHypothesis == NULL)
-						continue;
-					locFoundFlag = true;
-
-					if(dDebugLevel > 20)
-						cout << "Proton candidate, momentum = " << locChargedTrackHypothesis->momentum().Mag() << endl;
-					if(locChargedTrackHypothesis->momentum().Mag() < locMinProtonMomentum.second)
-						locTrackMomentumTooLowFlag = true;
-					break;
-				}
-				if(!locFoundFlag)
-				{
-					const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
-					if(dDebugLevel > 20)
-						cout << "Proton candidate, momentum = " << locChargedTrackHypothesis->momentum().Mag() << endl;
-					if(locChargedTrackHypothesis->momentum().Mag() < locMinProtonMomentum.second)
-						locTrackMomentumTooLowFlag = true;
-				}
-			}
-		}
-		if(locTrackMomentumTooLowFlag)
+		if(locMinProtonMomentum.first && (ParticleMass(locChargedTrackHypothesis->PID()) < ParticleMass(Proton)) && (ParticleMass(locAnalysisPID) >= (ParticleMass(Proton) - 0.001)))
 		{
 			if(dDebugLevel > 20)
-				cout << "Track momentum too low to be " << ParticleType(locAnalysisPID) << endl;
-			continue; //probably reconstructed a low-momentum pion: can't possibly be a proton (would stop too soon)
+				cout << "Proton candidate, momentum = " << locChargedTrackHypothesis->momentum().Mag() << endl;
+			if(locChargedTrackHypothesis->momentum().Mag() < locMinProtonMomentum.second)
+			{
+				if(dDebugLevel > 20)
+					cout << "Track momentum too low to be " << ParticleType(locAnalysisPID) << endl;
+				continue;
+			}
 		}
 
 		return locObject;

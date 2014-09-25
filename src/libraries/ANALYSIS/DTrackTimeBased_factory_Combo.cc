@@ -219,6 +219,8 @@ jerror_t DTrackTimeBased_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int
 
 void DTrackTimeBased_factory_Combo::Create_PIDsAsNeeded(const DReaction* locReaction, const DChargedTrack* locChargedTrack, set<Particle_t>& locPIDs)
 {
+	pair<bool, double> locMinProtonMomentum = dMinProtonMomentum.first ? dMinProtonMomentum : locReaction->Get_MinProtonMomentum();
+
 	set<Particle_t>::iterator locIterator = locPIDs.begin();
 	for(; locIterator != locPIDs.end(); ++locIterator)
 	{
@@ -234,6 +236,13 @@ void DTrackTimeBased_factory_Combo::Create_PIDsAsNeeded(const DReaction* locReac
 			continue;
 		if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
 			continue;
+
+		//check to make sure the track momentum isn't too low (e.g. testing a 100 MeV pion to be a proton)
+		if(locMinProtonMomentum.first && (ParticleMass(locChargedTrackHypothesis->PID()) < ParticleMass(Proton)) && (ParticleMass(locPID) >= (ParticleMass(Proton) - 0.001)))
+		{
+			if(locChargedTrackHypothesis->momentum().Mag() < locMinProtonMomentum.second)
+				continue; //momentum too low
+		}
 
 		DTrackTimeBased* locTrackTimeBased = Convert_ChargedTrack(locChargedTrackHypothesis, locPID, locReSwimFlag);
 		if(locTrackTimeBased == NULL)

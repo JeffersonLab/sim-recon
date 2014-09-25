@@ -28,6 +28,9 @@ class DParticleComboBlueprint : public JObject
 		inline size_t Get_NumParticleComboBlueprintSteps(void) const{return dParticleComboBlueprintSteps.size();}
 		void Set_ParticleComboBlueprintStep(const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locStepIndex);
 
+		void Get_DetectedNeutralShowerSourceObjects(deque<pair<const DNeutralShower*, Particle_t> >& locNeutralShowers) const;
+		void Get_DetectedChargedTrackSourceObjects(deque<pair<const DChargedTrack*, Particle_t> >& locChargedTracks) const;
+
 		inline const DReaction* Get_Reaction(void) const{return dReaction;}
 		inline void Set_Reaction(const DReaction* locReaction){dReaction = locReaction;}
 
@@ -56,6 +59,28 @@ inline const DParticleComboBlueprintStep* DParticleComboBlueprint::Pop_ParticleC
 	const DParticleComboBlueprintStep* locParticleComboBlueprintStep = dParticleComboBlueprintSteps.front();
 	dParticleComboBlueprintSteps.pop_front();
 	return locParticleComboBlueprintStep;
+}
+
+inline void DParticleComboBlueprint::Get_DetectedNeutralShowerSourceObjects(deque<pair<const DNeutralShower*, Particle_t> >& locNeutralShowers) const
+{
+	locNeutralShowers.clear();
+	for(size_t loc_i = 0; loc_i < dParticleComboBlueprintSteps.size(); ++loc_i)
+	{
+		deque<pair<const DNeutralShower*, Particle_t> > locStepNeutralShowers;
+		dParticleComboBlueprintSteps[loc_i]->Get_DetectedNeutralShowerSourceObjects(locStepNeutralShowers);
+		locNeutralShowers.insert(locNeutralShowers.end(), locStepNeutralShowers.begin(), locStepNeutralShowers.end());
+	}
+}
+
+inline void DParticleComboBlueprint::Get_DetectedChargedTrackSourceObjects(deque<pair<const DChargedTrack*, Particle_t> >& locChargedTracks) const
+{
+	locChargedTracks.clear();
+	for(size_t loc_i = 0; loc_i < dParticleComboBlueprintSteps.size(); ++loc_i)
+	{
+		deque<pair<const DChargedTrack*, Particle_t> > locStepChargedTracks;
+		dParticleComboBlueprintSteps[loc_i]->Get_DetectedChargedTrackSourceObjects(locStepChargedTracks);
+		locChargedTracks.insert(locChargedTracks.end(), locStepChargedTracks.begin(), locStepChargedTracks.end());
+	}
 }
 
 #endif // _DParticleComboBlueprint_

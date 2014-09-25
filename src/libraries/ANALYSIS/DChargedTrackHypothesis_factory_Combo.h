@@ -12,9 +12,11 @@
 #include "TRACKING/DTrackTimeBased.h"
 #include "PID/DChargedTrack.h"
 #include "PID/DDetectorMatches.h"
+#include "PID/DEventRFBunch.h"
 #include "PID/DChargedTrackHypothesis.h"
 #include "PID/DChargedTrackHypothesis_factory.h"
 #include "ANALYSIS/DParticleComboBlueprint.h"
+#include "ANALYSIS/DReaction.h"
 
 using namespace jana;
 using namespace std;
@@ -33,7 +35,27 @@ class DChargedTrackHypothesis_factory_Combo : public jana::JFactory<DChargedTrac
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		void Create_PIDsAsNeeded(JEventLoop* locEventLoop, const DReaction* locReaction, const DEventRFBunch* locEventRFBunch, const DChargedTrack* locChargedTrack, set<Particle_t>& locPIDs);
+
+		bool Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
+		bool Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
+		bool Cut_TrackingFOM(const DReaction* locReaction, const DTrackTimeBased* locTrackTimeBased) const;
+
 		DChargedTrackHypothesis_factory* dChargedTrackHypothesisFactory;
+
+		const DDetectorMatches* dDetectorMatches;
+		vector<const DReaction*> dReactions;
+		map<const DReaction*, set<Particle_t> > dPositivelyChargedPIDs;
+		map<const DReaction*, set<Particle_t> > dNegativelyChargedPIDs;
+
+		map<const DEventRFBunch*, map<const DChargedTrack*, set<Particle_t> > > dCreatedParticleMap;
+		map<pair<const DChargedTrack*, Particle_t>, const DTrackTimeBased*> dTimeBasedSourceMap;
+
+		// PRE-DPARTICLECOMBO CUT VALUES
+			//(first) bool = true/false for cut enabled/disabled, double = cut value
+			//Command-line values will override those set in the DReaction
+		pair<bool, double> dMinTrackingFOM; //the minimum Tracking FOM for a charged track used for this DReaction
+		pair<bool, bool> dHasDetectorMatchFlag; //if both are true, require tracks to have a detector match
 };
 
 #endif // _DChargedTrackHypothesis_factory_Combo_
