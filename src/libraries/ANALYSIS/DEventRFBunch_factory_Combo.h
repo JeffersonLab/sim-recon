@@ -20,6 +20,7 @@
 
 #include "PID/DEventRFBunch.h"
 #include "PID/DParticleID.h"
+#include "PID/DVertex.h"
 #include "PID/DDetectorMatches.h"
 #include "PID/DChargedTrackHypothesis.h"
 #include "PID/DChargedTrack.h"
@@ -49,12 +50,10 @@ class DEventRFBunch_factory_Combo:public jana::JFactory<DEventRFBunch>
 
 		double dRFBunchFrequency;
 		double dTargetCenterZ;
-		double dTargetRadius;
-		double dTargetLength;
 
-		void Get_StartTime(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, double& locStartTime, double& locStartTimeVariance);
-		void Calc_StartTime(const DNeutralShower* locNeutralShower, DVector3 locVertex, double& locStartTime, double& locStartTimeVariance);
-		double Calc_StartTimeVariance(const DNeutralShower* locNeutralShower, const DVector3& locPathVector);
+		bool Get_StartTime(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, double& locStartTime);
+		double Calc_StartTime(const DNeutralShower* locNeutralShower, const DVertex* locVertex);
+		int Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes);
 };
 
 #endif // _DEventRFBunch_factory_Combo_

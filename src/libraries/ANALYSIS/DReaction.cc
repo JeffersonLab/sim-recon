@@ -101,17 +101,24 @@ string DReaction::Get_DecayChainFinalParticlesROOTNames(size_t locStepIndex, int
 	return locName;
 }
 
-void DReaction::Get_DetectedFinalPIDs(deque<Particle_t>& locDetectedPIDs, bool locIncludeDuplicatesFlag) const //independent of step
+void DReaction::Get_DetectedFinalPIDs(deque<Particle_t>& locDetectedPIDs, int locChargeFlag, bool locIncludeDuplicatesFlag) const //independent of step
 {
-	Particle_t locPID;
+	//locChargeFlag: 0/1/2/3/4 for all, charged, neutral, q+, q- particles
+
 	locDetectedPIDs.clear();
 	for(size_t loc_i = 0; loc_i < dReactionSteps.size(); ++loc_i)
 	{
 		for(size_t loc_j = 0; loc_j < dReactionSteps[loc_i]->Get_NumFinalParticleIDs(); ++loc_j)
 		{
-			locPID = dReactionSteps[loc_i]->Get_FinalParticleID(loc_j);
+			Particle_t locPID = dReactionSteps[loc_i]->Get_FinalParticleID(loc_j);
 			if(dReactionSteps[loc_i]->Get_MissingParticleIndex() == int(loc_j))
 				continue; //missing particle
+
+			int locCharge = ParticleCharge(locPID);
+			if(((locChargeFlag == 1) && (locCharge == 0)) || ((locChargeFlag == 2) && (locCharge != 0)))
+				continue; //wrong charge
+			if(((locChargeFlag == 3) && (locCharge <= 0)) || ((locChargeFlag == 4) && (locCharge >= 0)))
+				continue; //wrong charge
 
 			//see if this pid is a parent in a future step
 			if(Check_IsDecayingParticle(locPID, loc_i + 1))
@@ -138,19 +145,25 @@ void DReaction::Get_DetectedFinalPIDs(deque<Particle_t>& locDetectedPIDs, bool l
 	}
 }
 
-void DReaction::Get_DetectedFinalChargedPIDs(deque<Particle_t>& locDetectedChargedPIDs, bool locIncludeDuplicatesFlag) const //independent of step
+void DReaction::Get_DetectedFinalPIDs(deque<deque<Particle_t> >& locDetectedPIDs, int locChargeFlag, bool locIncludeDuplicatesFlag) const
 {
-	Particle_t locPID;
-	locDetectedChargedPIDs.clear();
+	//locChargeFlag: 0/1/2/3/4 for all, charged, neutral, q+, q- particles
+
+	locDetectedPIDs.clear();
+	locDetectedPIDs.resize(dReactionSteps.size());
 	for(size_t loc_i = 0; loc_i < dReactionSteps.size(); ++loc_i)
 	{
 		for(size_t loc_j = 0; loc_j < dReactionSteps[loc_i]->Get_NumFinalParticleIDs(); ++loc_j)
 		{
-			locPID = dReactionSteps[loc_i]->Get_FinalParticleID(loc_j);
-			if(ParticleCharge(locPID) == 0)
-				continue; //neutral
+			Particle_t locPID = dReactionSteps[loc_i]->Get_FinalParticleID(loc_j);
 			if(dReactionSteps[loc_i]->Get_MissingParticleIndex() == int(loc_j))
 				continue; //missing particle
+
+			int locCharge = ParticleCharge(locPID);
+			if(((locChargeFlag == 1) && (locCharge == 0)) || ((locChargeFlag == 2) && (locCharge != 0)))
+				continue; //wrong charge
+			if(((locChargeFlag == 3) && (locCharge <= 0)) || ((locChargeFlag == 4) && (locCharge >= 0)))
+				continue; //wrong charge
 
 			//see if this pid is a parent in a future step
 			if(Check_IsDecayingParticle(locPID, loc_i + 1))
@@ -160,9 +173,9 @@ void DReaction::Get_DetectedFinalChargedPIDs(deque<Particle_t>& locDetectedCharg
 			{
 				//see if this PID is already stored
 				bool locAlreadyHavePIDFlag = false;
-				for(size_t loc_k = 0; loc_k < locDetectedChargedPIDs.size(); ++loc_k)
+				for(size_t loc_k = 0; loc_k < locDetectedPIDs[loc_i].size(); ++loc_k)
 				{
-					if(locDetectedChargedPIDs[loc_k] == locPID)
+					if(locDetectedPIDs[loc_i][loc_k] == locPID)
 					{
 						locAlreadyHavePIDFlag = true;
 						break;
@@ -172,7 +185,7 @@ void DReaction::Get_DetectedFinalChargedPIDs(deque<Particle_t>& locDetectedCharg
 					continue;
 			}
 
-			locDetectedChargedPIDs.push_back(locPID);
+			locDetectedPIDs[loc_i].push_back(locPID);
 		}
 	}
 }
@@ -208,84 +221,6 @@ void DReaction::Get_FinalStatePIDs(deque<Particle_t>& locFinalStatePIDs, bool lo
 			}
 
 			locFinalStatePIDs.push_back(locPID);
-		}
-	}
-}
-
-void DReaction::Get_DetectedFinalPIDs(deque<deque<Particle_t> >& locDetectedPIDs, bool locIncludeDuplicatesFlag) const
-{
-	Particle_t locPID;
-	locDetectedPIDs.clear();
-	locDetectedPIDs.resize(dReactionSteps.size());
-	for(size_t loc_i = 0; loc_i < dReactionSteps.size(); ++loc_i)
-	{
-		for(size_t loc_j = 0; loc_j < dReactionSteps[loc_i]->Get_NumFinalParticleIDs(); ++loc_j)
-		{
-			locPID = dReactionSteps[loc_i]->Get_FinalParticleID(loc_j);
-			if(dReactionSteps[loc_i]->Get_MissingParticleIndex() == int(loc_j))
-				continue; //missing particle
-
-			//see if this pid is a parent in a future step
-			if(Check_IsDecayingParticle(locPID, loc_i + 1))
-				continue;
-
-			if(!locIncludeDuplicatesFlag)
-			{
-				//see if this PID is already stored
-				bool locAlreadyHavePIDFlag = false;
-				for(size_t loc_k = 0; loc_k < locDetectedPIDs[loc_i].size(); ++loc_k)
-				{
-					if(locDetectedPIDs[loc_i][loc_k] == locPID)
-					{
-						locAlreadyHavePIDFlag = true;
-						break;
-					}
-				}
-				if(locAlreadyHavePIDFlag)
-					continue;
-			}
-
-			locDetectedPIDs[loc_i].push_back(locPID);
-		}
-	}
-}
-
-void DReaction::Get_DetectedFinalChargedPIDs(deque<deque<Particle_t> >& locDetectedChargedPIDs, bool locIncludeDuplicatesFlag) const
-{
-	Particle_t locPID;
-	locDetectedChargedPIDs.clear();
-	locDetectedChargedPIDs.resize(dReactionSteps.size());
-	for(size_t loc_i = 0; loc_i < dReactionSteps.size(); ++loc_i)
-	{
-		for(size_t loc_j = 0; loc_j < dReactionSteps[loc_i]->Get_NumFinalParticleIDs(); ++loc_j)
-		{
-			locPID = dReactionSteps[loc_i]->Get_FinalParticleID(loc_j);
-			if(ParticleCharge(locPID) == 0)
-				continue; //neutral
-			if(dReactionSteps[loc_i]->Get_MissingParticleIndex() == int(loc_j))
-				continue; //missing particle
-
-			//see if this pid is a parent in a future step
-			if(Check_IsDecayingParticle(locPID, loc_i + 1))
-				continue;
-
-			if(!locIncludeDuplicatesFlag)
-			{
-				//see if this PID is already stored
-				bool locAlreadyHavePIDFlag = false;
-				for(size_t loc_k = 0; loc_k < locDetectedChargedPIDs[loc_i].size(); ++loc_k)
-				{
-					if(locDetectedChargedPIDs[loc_i][loc_k] == locPID)
-					{
-						locAlreadyHavePIDFlag = true;
-						break;
-					}
-				}
-				if(locAlreadyHavePIDFlag)
-					continue;
-			}
-
-			locDetectedChargedPIDs[loc_i].push_back(locPID);
 		}
 	}
 }

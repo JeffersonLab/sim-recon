@@ -33,6 +33,8 @@ class DNeutralParticleHypothesis_factory_Combo:public jana::JFactory<DNeutralPar
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		DNeutralParticleHypothesis_factory* dNeutralParticleHypothesisFactory;
+
+		set<Particle_t> dNeutralPIDs;
 };
 
 #endif // _DNeutralParticleHypothesis_factory_Combo_

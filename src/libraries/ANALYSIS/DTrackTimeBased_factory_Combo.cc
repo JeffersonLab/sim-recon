@@ -18,6 +18,10 @@ jerror_t DTrackTimeBased_factory_Combo::init(void)
 {
 	MAX_dReferenceTrajectoryPoolSize = 10;
 
+	dMinTrackingFOM = pair<bool, double>(false, -1.0);
+	dHasDetectorMatchFlag = pair<bool, bool>(false, false);
+	dMinProtonMomentum = pair<bool, double>(false, -1.0);
+
 	//remember, charge sign could have flipped during track reconstruction
 	deque<pair<Particle_t, bool> > locPIDDeque; //bool is true/false if should/shouldn't reswim
 
@@ -99,6 +103,62 @@ jerror_t DTrackTimeBased_factory_Combo::brun(jana::JEventLoop *locEventLoop, int
 	DApplication *locApplication = dynamic_cast<DApplication*> (locEventLoop->GetJApplication());
 	dGeometry = locApplication ? locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber()) : NULL;
 	dMagneticFieldMap = locApplication ? locApplication->GetBfield() : NULL;
+
+	if(gPARMS->Exists("COMBO:MIN_PROTON_MOMENTUM"))
+	{
+		dMinProtonMomentum.first = true;
+		gPARMS->GetParameter("COMBO:MIN_PROTON_MOMENTUM", dMinProtonMomentum.second);
+	}
+
+	if(gPARMS->Exists("COMBO:MIN_TRACKING_FOM"))
+	{
+		dMinTrackingFOM.first = true;
+		gPARMS->GetParameter("COMBO:MIN_TRACKING_FOM", dMinTrackingFOM.second);
+	}
+
+	if(gPARMS->Exists("COMBO:HAS_DETECTOR_MATCH_FLAG"))
+	{
+		dHasDetectorMatchFlag.first = true;
+		gPARMS->GetParameter("COMBO:HAS_DETECTOR_MATCH_FLAG", dHasDetectorMatchFlag.second);
+	}
+
+	// Get DReactions:
+	// Get list of factories and find all the ones producing
+	// DReaction objects. (A simpler way to do this would be to
+	// just use locEventLoop->Get(...), but then only one plugin could
+	// be used at a time.)
+	vector<JFactory_base*> locFactories = locEventLoop->GetFactories();
+	dReactions.clear();
+	for(size_t loc_i = 0; loc_i < locFactories.size(); ++loc_i)
+	{
+		JFactory<DReaction>* locFactory = dynamic_cast<JFactory<DReaction>* >(locFactories[loc_i]);
+		if(locFactory == NULL)
+			continue;
+		if(string(locFactory->Tag()) == "Thrown")
+			continue;
+		// Found a factory producing DReactions. The reaction objects are
+		// produced at the init stage and are persistent through all event
+		// processing so we can grab the list here and append it to our
+		// overall list.
+		vector<const DReaction*> locReactionsSubset;
+		locFactory->Get(locReactionsSubset);
+		dReactions.insert(dReactions.end(), locReactionsSubset.begin(), locReactionsSubset.end());
+	}
+
+	for(size_t loc_i = 0; loc_i < dReactions.size(); ++loc_i)
+	{
+		//locChargeFlag: 0/1/2/3/4 for all, charged, neutral, q+, q- particles
+		deque<Particle_t> locDetectedPIDs;
+		dReactions[loc_i]->Get_DetectedFinalPIDs(locDetectedPIDs, 3, false); //q+
+		for(size_t loc_j = 0; loc_j < locDetectedPIDs.size(); ++loc_j)
+			dPositivelyChargedPIDs[dReactions[loc_i]].insert(locDetectedPIDs[loc_j]);
+
+		locDetectedPIDs.clear();
+		dReactions[loc_i]->Get_DetectedFinalPIDs(locDetectedPIDs, 4, false); //q+
+		for(size_t loc_j = 0; loc_j < locDetectedPIDs.size(); ++loc_j)
+			dNegativelyChargedPIDs[dReactions[loc_i]].insert(locDetectedPIDs[loc_j]);
+	}
+
 	return NOERROR;
 }
 
@@ -112,49 +172,44 @@ jerror_t DTrackTimeBased_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int
 #endif
 
 	// delete pool sizes if too large, preventing memory-leakage-like behavor.
-	if(dReferenceTrajectoryPool_All.size() > MAX_dReferenceTrajectoryPoolSize){
+	if(dReferenceTrajectoryPool_All.size() > MAX_dReferenceTrajectoryPoolSize)
+	{
 		for(size_t loc_i = MAX_dReferenceTrajectoryPoolSize; loc_i < dReferenceTrajectoryPool_All.size(); ++loc_i)
 			delete dReferenceTrajectoryPool_All[loc_i];
 		dReferenceTrajectoryPool_All.resize(MAX_dReferenceTrajectoryPoolSize);
 	}
 	dReferenceTrajectoryPool_Available = dReferenceTrajectoryPool_All;
 
- 	vector<const DParticleComboBlueprint*> locParticleComboBlueprints;
-	locEventLoop->Get(locParticleComboBlueprints);
+	locEventLoop->GetSingle(dDetectorMatches);
 
-	//Create New DTrackTimeBased Objects (as needed) //for PIDs not available in the original objects
-		//if DTrackTimeBased doesn't exist, get it for the closest pid
-	map<pair<const DChargedTrack*, Particle_t>, const DTrackTimeBased*> locCreatedTrackMap; //if a DChargedTrack was used a given PID, just copy the result
-	for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
+ 	vector<const DChargedTrack*> locChargedTracks;
+	locEventLoop->Get(locChargedTracks);
+
+	//assume that: for each PID, a hypothesis must exist for each track that contains that charge
+		//definition of "good" is different from DReaction to reaction
+
+	//is true unless: for a given PID, a track always fails an invariant mass cut
+		//certainly possible, maybe even likely (e.g. testing a fast pion as a proton)
+		//however, it doesn't take much memory if an extra object is created, unless you have to swim
+			//and even if you swim, it's probably only a few cases (since swimming should have been performed earlier)
+		//and it's WAY faster than looping over EVERY blueprint and checking what the exceptions are
+			//scales much better this way
+
+	for(size_t loc_i = 0; loc_i < dReactions.size(); ++loc_i)
 	{
-		const DParticleComboBlueprint* locParticleComboBlueprint = locParticleComboBlueprints[loc_i];
-		for(size_t loc_j = 0; loc_j < locParticleComboBlueprint->Get_NumParticleComboBlueprintSteps(); ++loc_j)
+		for(size_t loc_j = 0; loc_j < locChargedTracks.size(); ++loc_j)
 		{
-			const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
-			for(size_t loc_k = 0; loc_k < locParticleComboBlueprintStep->Get_NumFinalParticleSourceObjects(); ++loc_k)
+			//q+
+			if(locChargedTracks[loc_j]->Contains_Charge(1))
 			{
-				if((!locParticleComboBlueprintStep->Is_FinalParticleDetected(loc_k)) || (!locParticleComboBlueprintStep->Is_FinalParticleCharged(loc_k)))
-					continue;
-
-				const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboBlueprintStep->Get_FinalParticle_SourceObject(loc_k));
-
-				//check if pid already exists for this track
-				Particle_t locPID = locParticleComboBlueprintStep->Get_FinalParticleID(loc_k);
-				if(locChargedTrack->Get_Hypothesis(locPID) != NULL)
-					continue; //already exists, don't need to create a new one
-
-				//check to see if new pid already created for this track
-				pair<const DChargedTrack*, Particle_t> locTrackPIDPair(locChargedTrack, locPID);
-				if(locCreatedTrackMap.find(locTrackPIDPair) != locCreatedTrackMap.end())
-					continue; //new one already created for this pair
-
-				//create the DTrackTimeBased for the given PID
-				DTrackTimeBased* locTrackTimeBased = Create_TrackTimeBased(locChargedTrack, locPID);
-				if(locTrackTimeBased == NULL)
-					continue;
-				locTrackTimeBased->AddAssociatedObject(locChargedTrack);
-				_data.push_back(locTrackTimeBased);
-				locCreatedTrackMap[locTrackPIDPair] = locTrackTimeBased;
+				set<Particle_t>& locPIDs = dPositivelyChargedPIDs[dReactions[loc_i]];
+				Create_PIDsAsNeeded(dReactions[loc_i], locChargedTracks[loc_j], locPIDs);
+			}
+			//q-
+			if(locChargedTracks[loc_j]->Contains_Charge(-1))
+			{
+				set<Particle_t>& locPIDs = dNegativelyChargedPIDs[dReactions[loc_i]];
+				Create_PIDsAsNeeded(dReactions[loc_i], locChargedTracks[loc_j], locPIDs);
 			}
 		}
 	}
@@ -162,18 +217,76 @@ jerror_t DTrackTimeBased_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int
 	return NOERROR;
 }
 
-DTrackTimeBased* DTrackTimeBased_factory_Combo::Create_TrackTimeBased(const DChargedTrack* locChargedTrack, Particle_t locDesiredPID)
+void DTrackTimeBased_factory_Combo::Create_PIDsAsNeeded(const DReaction* locReaction, const DChargedTrack* locChargedTrack, set<Particle_t>& locPIDs)
 {
-	if(dParticleIDsToTry.find(locDesiredPID) == dParticleIDsToTry.end())
-		return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), locDesiredPID, true);
+	pair<bool, double> locMinProtonMomentum = dMinProtonMomentum.first ? dMinProtonMomentum : locReaction->Get_MinProtonMomentum();
 
+	set<Particle_t>::iterator locIterator = locPIDs.begin();
+	for(; locIterator != locPIDs.end(); ++locIterator)
+	{
+		Particle_t locPID = *locIterator;
+		if(locChargedTrack->Get_Hypothesis(locPID) != NULL)
+			continue; //already exists
+
+		bool locReSwimFlag = false;
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = Get_ChargedHypothesisToUse(locChargedTrack, locPID, locReSwimFlag);
+
+		//create it if it's a good track
+		if((!locReSwimFlag) && (!Cut_HasDetectorMatch(locReaction, locChargedTrackHypothesis)))
+			continue;
+		if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
+			continue;
+
+		//check to make sure the track momentum isn't too low (e.g. testing a 100 MeV pion to be a proton)
+		if(locMinProtonMomentum.first && (ParticleMass(locChargedTrackHypothesis->PID()) < ParticleMass(Proton)) && (ParticleMass(locPID) >= (ParticleMass(Proton) - 0.001)))
+		{
+			if(locChargedTrackHypothesis->momentum().Mag() < locMinProtonMomentum.second)
+				continue; //momentum too low
+		}
+
+		DTrackTimeBased* locTrackTimeBased = Convert_ChargedTrack(locChargedTrackHypothesis, locPID, locReSwimFlag);
+		if(locTrackTimeBased == NULL)
+			continue;
+		locTrackTimeBased->AddAssociatedObject(locChargedTrack);
+		_data.push_back(locTrackTimeBased);
+	}
+}
+
+const DChargedTrackHypothesis* DTrackTimeBased_factory_Combo::Get_ChargedHypothesisToUse(const DChargedTrack* locChargedTrack, Particle_t locDesiredPID, bool& locReSwimFlag)
+{
+	//pid not found for this track: loop over other possible pids
 	for(size_t loc_i = 0; loc_i < dParticleIDsToTry[locDesiredPID].size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(dParticleIDsToTry[locDesiredPID][loc_i].first);
-		if(locChargedTrackHypothesis != NULL)
-			return Convert_ChargedTrack(locChargedTrackHypothesis, locDesiredPID, dParticleIDsToTry[locDesiredPID][loc_i].second);
+		if(locChargedTrackHypothesis == NULL)
+			continue;
+		locReSwimFlag = dParticleIDsToTry[locDesiredPID][loc_i].second;
+		return locChargedTrackHypothesis;
 	}
-	return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), locDesiredPID, true);
+
+	//still none found, take the one with the best FOM
+	locReSwimFlag = true;
+	return locChargedTrack->Get_BestFOM();
+}
+
+bool DTrackTimeBased_factory_Combo::Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const
+{
+	pair<bool, double> locHasDetectorMatchFlag = dHasDetectorMatchFlag.first ? dHasDetectorMatchFlag : locReaction->Get_HasDetectorMatchFlag();
+	if((!locHasDetectorMatchFlag.first) || (!locHasDetectorMatchFlag.second))
+		return true;
+
+	const DTrackTimeBased* locTrackTimeBased = NULL;
+	locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+	return dDetectorMatches->Get_IsMatchedToHit(locTrackTimeBased);
+}
+
+bool DTrackTimeBased_factory_Combo::Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const
+{
+	pair<bool, double> locMinTrackingFOM = dMinTrackingFOM.first ? dMinTrackingFOM : locReaction->Get_MinTrackingFOM();
+	if(!locMinTrackingFOM.first)
+		return true;
+	double locFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq_Track, locChargedTrackHypothesis->dNDF_Track);
+	return ((locChargedTrackHypothesis->dNDF_Track == 0) ? true : (locFOM >= locMinTrackingFOM.second));
 }
 
 DReferenceTrajectory* DTrackTimeBased_factory_Combo::Get_ReferenceTrajectoryResource(void)

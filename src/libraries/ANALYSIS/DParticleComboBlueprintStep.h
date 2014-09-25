@@ -30,6 +30,9 @@ class DParticleComboBlueprintStep
 		inline size_t Get_NumFinalParticleSourceObjects(void) const{return dFinalParticleSourceObjects.size();}
 		const JObject* Get_FinalParticle_SourceObject(size_t locFinalParticleIndex) const;
 
+		void Get_DetectedNeutralShowerSourceObjects(deque<pair<const DNeutralShower*, Particle_t> >& locNeutralShowers) const;
+		void Get_DetectedChargedTrackSourceObjects(deque<pair<const DChargedTrack*, Particle_t> >& locChargedTracks) const;
+
 		inline Particle_t Get_InitialParticleID(void) const{return ((dReactionStep != NULL) ? dReactionStep->Get_InitialParticleID() : Unknown);}
 		inline Particle_t Get_TargetParticleID(void) const{return ((dReactionStep != NULL) ? dReactionStep->Get_TargetParticleID() : Unknown);}
 
@@ -139,6 +142,36 @@ inline bool DParticleComboBlueprintStep::Is_FinalParticleNeutral(size_t locFinal
 	if(locFinalParticleIndex >= Get_NumFinalParticleSourceObjects())
 		return false;
 	return (ParticleCharge(Get_FinalParticleID(locFinalParticleIndex)) == 0);
+}
+
+inline void DParticleComboBlueprintStep::Get_DetectedNeutralShowerSourceObjects(deque<pair<const DNeutralShower*, Particle_t> >& locNeutralShowers) const
+{
+	locNeutralShowers.clear();
+	for(size_t loc_i = 0; loc_i < dFinalParticleSourceObjects.size(); ++loc_i)
+	{
+		if(dFinalParticleSourceObjects[loc_i] == NULL)
+			continue;
+		Particle_t locPID = Get_FinalParticleID(loc_i);
+		if(ParticleCharge(locPID) != 0)
+			continue;
+		pair<const DNeutralShower*, Particle_t> locPIDPair(dynamic_cast<const DNeutralShower*>(dFinalParticleSourceObjects[loc_i]), locPID);
+		locNeutralShowers.push_back(locPIDPair);
+	}
+}
+
+inline void DParticleComboBlueprintStep::Get_DetectedChargedTrackSourceObjects(deque<pair<const DChargedTrack*, Particle_t> >& locChargedTracks) const
+{
+	locChargedTracks.clear();
+	for(size_t loc_i = 0; loc_i < dFinalParticleSourceObjects.size(); ++loc_i)
+	{
+		if(dFinalParticleSourceObjects[loc_i] == NULL)
+			continue;
+		Particle_t locPID = Get_FinalParticleID(loc_i);
+		if(ParticleCharge(locPID) == 0)
+			continue;
+		pair<const DChargedTrack*, Particle_t> locPIDPair(dynamic_cast<const DChargedTrack*>(dFinalParticleSourceObjects[loc_i]), locPID);
+		locChargedTracks.push_back(locPIDPair);
+	}
 }
 
 #endif // _DParticleComboBlueprintStep_

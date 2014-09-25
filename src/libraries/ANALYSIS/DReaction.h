@@ -66,10 +66,9 @@ class DReaction : public JObject
 		DAnalysisAction* Get_ComboPreSelectionAction(size_t locActionIndex) const;
 
 		// GET PIDs:
-		void Get_DetectedFinalPIDs(deque<Particle_t>& locDetectedPIDs, bool locIncludeDuplicatesFlag = false) const;
-		void Get_DetectedFinalPIDs(deque<deque<Particle_t> >& locDetectedPIDs, bool locIncludeDuplicatesFlag = false) const;
-		void Get_DetectedFinalChargedPIDs(deque<Particle_t>& locDetectedChargedPIDs, bool locIncludeDuplicatesFlag = false) const;
-		void Get_DetectedFinalChargedPIDs(deque<deque<Particle_t> >& locDetectedChargedPIDs, bool locIncludeDuplicatesFlag = false) const;
+		//locChargeFlag: 0/1/2/3/4 for all, charged, neutral, q+, q- particles
+		void Get_DetectedFinalPIDs(deque<Particle_t>& locDetectedPIDs, int locChargeFlag = 0, bool locIncludeDuplicatesFlag = false) const;
+		void Get_DetectedFinalPIDs(deque<deque<Particle_t> >& locDetectedPIDs, int locChargeFlag = 0, bool locIncludeDuplicatesFlag = false) const;
 		void Get_FinalStatePIDs(deque<Particle_t>& locFinalStatePIDs, bool locIncludeDuplicatesFlag = false) const;
 		bool Get_MissingPID(Particle_t& locPID) const; //false if none missing
 
