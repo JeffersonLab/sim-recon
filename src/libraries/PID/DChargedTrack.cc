@@ -7,6 +7,16 @@
 
 #include "PID/DChargedTrack.h"
 
+bool DChargedTrack::Contains_Charge(int locCharge) const
+{
+	for(unsigned int loc_i = 0; loc_i < dChargedTrackHypotheses.size(); ++loc_i)
+	{
+		if(ParticleCharge(dChargedTrackHypotheses[loc_i]->PID()) == locCharge)
+			return true;
+	}
+	return false;
+}
+
 int DChargedTrack::Get_Charge(void) const
 {
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = Get_BestFOM();

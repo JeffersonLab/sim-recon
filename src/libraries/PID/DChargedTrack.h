@@ -22,6 +22,7 @@ class DChargedTrack:public jana::JObject{
 		vector<const DChargedTrackHypothesis*> dChargedTrackHypotheses;
 
 		int Get_Charge(void) const;
+		bool Contains_Charge(int locCharge) const;
 		const DChargedTrackHypothesis* Get_Hypothesis(Particle_t locPID) const;
 		const DChargedTrackHypothesis* Get_BestFOM(void) const;
 
