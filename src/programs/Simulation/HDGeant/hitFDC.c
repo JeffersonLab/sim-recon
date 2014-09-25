@@ -233,7 +233,7 @@ void AddFDCCathodeHits(int PackNo,float xwire,float avalanche_y,float tdrift,
   /* Mock-up of cathode strip charge distribution */ 
   int plane, node;
   for (plane=1; plane<4; plane+=2){
-    float theta = (plane == 1)? -CATHODE_ROT_ANGLE : +CATHODE_ROT_ANGLE;
+    float theta = (plane == 1)? CATHODE_ROT_ANGLE: -CATHODE_ROT_ANGLE-M_PI;
     float cathode_u = xwire*cos(theta)+avalanche_y*sin(theta);
     int strip1 = ceil((cathode_u-U_OF_STRIP_ZERO)/STRIP_SPACING +0.5);
     float cathode_u1 = (strip1-1)*STRIP_SPACING + U_OF_STRIP_ZERO;
@@ -369,8 +369,9 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
   float wire_dir[2];
   float wire_theta=1.0472*(float)((layer%3)-1);
   float phi=0.;;
-  float Br=sqrt(B[0]*B[0]+B[1]*B[1]);
-  
+  float Br=sqrt(B[0]*B[0]+B[1]*B[1]); 
+  float Bmag=sqrt(B[2]*B[2]+Br*Br);
+
   wire_dir[0]=sin(wire_theta);
   wire_dir[1]=cos(wire_theta);
   if (Br>0.) phi= acos((B[0]*wire_dir[0]+B[1]*wire_dir[1])/Br);
@@ -398,18 +399,14 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
 
   // Model the drift time and longitudinal diffusion as a function of 
   // position of the cluster within the cell 	 	  
-  float tdrift_unsmeared=( 1086.0-106.7*B[2] )*dx2+( 1068.0 )*dz2
+  float tdrift_unsmeared=1086.0*(1.+0.039*Bmag)*dx2+( 1068.0 )*dz2
     +dx4*(( -2.675 )/(dz2+0.001)+( 2.4e4 )*dz2);	
   float dt=(( 39.44   )*dx4/(0.5-dz2)+( 56.0  )*dz4/(0.5-dx2)
       +( 0.01566 )*dx4/(dz4+0.002)/(0.251-dx2))*rndno[1];
-  // Only allow deviations to longer times if near the cell border
-  double dradius=sqrt(dx2+dz2);
-  if (dradius-0.5>=0. && dt<0){ 
-    dt=0.;
-  }
 
   // Minimum drift time for docas near wire (very crude approximation)
   double v_max=0.08; // guess for now based on Garfield, near wire 
+  double dradius=sqrt(dx2+dz2);
   double tmin=dradius/v_max;
   double tdrift_smeared=tdrift_unsmeared+dt;
   if (tdrift_smeared<tmin){
