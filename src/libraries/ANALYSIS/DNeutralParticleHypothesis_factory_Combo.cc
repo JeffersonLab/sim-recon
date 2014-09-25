@@ -109,7 +109,6 @@ jerror_t DNeutralParticleHypothesis_factory_Combo::evnt(jana::JEventLoop *locEve
 		}
 	}
 
-cout << "Event, # neuts = " << locEventLoop->GetJEvent().GetEventNumber() << ", " << _data.size() << endl;
 	return NOERROR;
 }
 

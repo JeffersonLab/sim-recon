@@ -121,7 +121,6 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, int eve
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 		Build_ParticleComboBlueprints(locEventLoop, locReactions[loc_i]);
 
-cout << "Event, # blues = " << locEventLoop->GetJEvent().GetEventNumber() << ", " << _data.size() << endl;
 	return NOERROR;
 }
 
