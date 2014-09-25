@@ -931,7 +931,8 @@ bool DGeometry::GetFDCCathodes(vector<vector<DFDCCathode *> >&fdccathodes) const
   }
   // Generate the vector of cathode plane parameters
   for (int i=0;i<2*FDC_NUM_LAYERS; i++){
-    double angle=(i%2)?CATHODE_ROT_ANGLE:-CATHODE_ROT_ANGLE; // +/- 75 degrees
+    double angle=(i%2)?(M_PI+CATHODE_ROT_ANGLE):(-CATHODE_ROT_ANGLE);
+
     angle+=fdc_cathode_offsets[i].dphi;
     vector<DFDCCathode *>temp;
     for (int j=0; j<STRIPS_PER_PLANE; j++){
@@ -984,6 +985,10 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
   // Generate the vector of wire plane parameters
   for(int i=0; i<FDC_NUM_LAYERS; i++){
     double angle=-stereo_angles[i]*M_PI/180.+fdc_wire_offsets[i].dphi;
+
+    //if (i%6==2) angle+=M_PI;
+    //if ((i+1)%6==5) angle+=M_PI;
+
     vector<DFDCWire *>temp;
     for(int j=0; j<WIRES_PER_PLANE; j++){
       
