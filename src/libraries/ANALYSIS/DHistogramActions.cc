@@ -1222,10 +1222,10 @@ void DHistogramAction_DetectorStudies::Fill_MatchedHists(JEventLoop* locEventLoo
 void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop)
 {
 	deque<deque<Particle_t> > locDetectedChargedPIDs;
-	Get_Reaction()->Get_DetectedFinalChargedPIDs(locDetectedChargedPIDs);
+	Get_Reaction()->Get_DetectedFinalPIDs(locDetectedChargedPIDs, 1);
 
 	deque<deque<Particle_t> > locDetectedChargedPIDs_HasDupes;
-	Get_Reaction()->Get_DetectedFinalChargedPIDs(locDetectedChargedPIDs_HasDupes, true);
+	Get_Reaction()->Get_DetectedFinalPIDs(locDetectedChargedPIDs_HasDupes, 1, true);
 
 	string locHistName, locHistTitle, locStepName, locStepROOTName, locParticleName, locParticleROOTName;
 	Particle_t locPID, locHigherMassPID, locLowerMassPID;

@@ -201,6 +201,8 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 		}
 	}
 
+cout << "Event, # rfs = " << locEventLoop->GetJEvent().GetEventNumber() << ", " << _data.size() << endl;
+
 	return NOERROR;
 }
 

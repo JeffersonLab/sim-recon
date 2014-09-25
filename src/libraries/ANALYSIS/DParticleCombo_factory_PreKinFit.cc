@@ -276,7 +276,7 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 
 			//PID FOM
 			deque<Particle_t> locDetectedPIDs;
-			dReactions[loc_i]->Get_DetectedFinalPIDs(locDetectedPIDs, false);
+			dReactions[loc_i]->Get_DetectedFinalPIDs(locDetectedPIDs);
 			for(size_t loc_j = 0; loc_j < locDetectedPIDs.size(); ++loc_j)
 			{
 				Particle_t locPID = locDetectedPIDs[loc_j];

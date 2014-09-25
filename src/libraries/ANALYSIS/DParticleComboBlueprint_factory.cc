@@ -116,10 +116,12 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, int eve
 	Get_Reactions(locEventLoop, locReactions);
 
 	locEventLoop->GetSingle(dVertex);
+	locEventLoop->GetSingle(dDetectorMatches);
 
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 		Build_ParticleComboBlueprints(locEventLoop, locReactions[loc_i]);
 
+cout << "Event, # blues = " << locEventLoop->GetJEvent().GetEventNumber() << ", " << _data.size() << endl;
 	return NOERROR;
 }
 
@@ -833,19 +835,22 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 		//if charged, check to make sure the tracking FOM is OK (cut garbage tracks and wildly bad combos)
 		if(locChargedTrack != NULL)
 		{
-			const DChargedTrackHypothesis* locChargedTrackHypothesis = Get_ChargedHypothesisToUse(locChargedTrack, locAnalysisPID);
-
+			bool locWillReSwimFlag = false;
+			const DChargedTrackHypothesis* locChargedTrackHypothesis = Get_ChargedHypothesisToUse(locChargedTrack, locAnalysisPID, locWillReSwimFlag);
 			if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
 			{
 				if(dDebugLevel > 20)
 					cout << "Bad Tracking FOM" << endl;
 				continue;
 			}
-			else if(!Cut_HasDetectorMatch(locReaction, locChargedTrackHypothesis))
+			else if(locWillReSwimFlag)
 			{
-				if(dDebugLevel > 20)
-					cout << "No Detector Match" << endl;
-				continue;
+				if(!Cut_HasDetectorMatch(locReaction, locChargedTrackHypothesis))
+				{
+					if(dDebugLevel > 20)
+						cout << "No Detector Match" << endl;
+					continue;
+				}
 			}
 		}
 
@@ -894,7 +899,7 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 	return NULL;
 }
 
-const DChargedTrackHypothesis* DParticleComboBlueprint_factory::Get_ChargedHypothesisToUse(const DChargedTrack* locChargedTrack, Particle_t locAnalysisPID) const
+const DChargedTrackHypothesis* DParticleComboBlueprint_factory::Get_ChargedHypothesisToUse(const DChargedTrack* locChargedTrack, Particle_t locAnalysisPID, bool& locWillReSwimFlag) const
 {
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locAnalysisPID);
 	if(locChargedTrackHypothesis != NULL)
@@ -905,11 +910,14 @@ const DChargedTrackHypothesis* DParticleComboBlueprint_factory::Get_ChargedHypot
 	for(size_t loc_i = 0; loc_i < locPIDsToTry.size(); ++loc_i)
 	{
 		locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPIDsToTry[loc_i].first);
-		if(locChargedTrackHypothesis != NULL)
-			return locChargedTrackHypothesis;
+		if(locChargedTrackHypothesis == NULL)
+			continue;
+		locWillReSwimFlag = locPIDsToTry[loc_i].second;
+		return locChargedTrackHypothesis;
 	}
 
 	//still none found, take the one with the best FOM
+	locWillReSwimFlag = true;
 	return locChargedTrack->Get_BestFOM();
 }
 
@@ -918,15 +926,10 @@ bool DParticleComboBlueprint_factory::Cut_HasDetectorMatch(const DReaction* locR
 	pair<bool, double> locHasDetectorMatchFlag = dHasDetectorMatchFlag.first ? dHasDetectorMatchFlag : locReaction->Get_HasDetectorMatchFlag();
 	if((!locHasDetectorMatchFlag.first) || (!locHasDetectorMatchFlag.second))
 		return true;
-	if(locChargedTrackHypothesis->dSCHitMatchParams.dTrackTimeBased != NULL)
-		return true;
-	if(locChargedTrackHypothesis->dTOFHitMatchParams.dTrackTimeBased != NULL)
-		return true;
-	if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
-		return true;
-	if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
-		return true;
-	return false;
+
+	const DTrackTimeBased* locTrackTimeBased = NULL;
+	locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+	return dDetectorMatches->Get_IsMatchedToHit(locTrackTimeBased);
 }
 
 bool DParticleComboBlueprint_factory::Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const
@@ -998,7 +1001,8 @@ bool DParticleComboBlueprint_factory::Calc_FinalStateP4(size_t locTotalNumSteps,
 		{
 			const DChargedTrack* locChargedTrack = dynamic_cast<const DChargedTrack*>(locCurrentStep->Get_FinalParticle_SourceObject(loc_i));
 			Particle_t locPID = locCurrentStep->Get_FinalParticleID(loc_i);
-			const DChargedTrackHypothesis* locChargedTrackHypothesis = Get_ChargedHypothesisToUse(locChargedTrack, locPID);
+			bool locWillReSwimFlag = false;
+			const DChargedTrackHypothesis* locChargedTrackHypothesis = Get_ChargedHypothesisToUse(locChargedTrack, locPID, locWillReSwimFlag);
 			DVector3 locMomentum(locChargedTrackHypothesis->momentum());
 			locFinalStateP4 += DLorentzVector(locMomentum, sqrt(locMomentum.Mag2() + ParticleMass(locPID)*ParticleMass(locPID)));
 		}

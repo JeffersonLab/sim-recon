@@ -141,6 +141,7 @@ jerror_t DChargedTrackHypothesis_factory_Combo::evnt(jana::JEventLoop* locEventL
 		}
 	}
 
+cout << "Event, # charged = " << locEventLoop->GetJEvent().GetEventNumber() << ", " << _data.size() << endl;
 	return NOERROR;
 }
 

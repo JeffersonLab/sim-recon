@@ -33,6 +33,38 @@ jerror_t DNeutralParticleHypothesis_factory_Combo::brun(jana::JEventLoop *locEve
 	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
 	locEventLoop->Get(locNeutralParticleHypotheses); //make sure that brun() is called for the default factory!!!
 	dNeutralParticleHypothesisFactory = static_cast<DNeutralParticleHypothesis_factory*>(locEventLoop->GetFactory("DNeutralParticleHypothesis"));
+
+	// Get list of factories and find all the ones producing
+	// DReaction objects. (A simpler way to do this would be to
+	// just use locEventLoop->Get(...), but then only one plugin could
+	// be used at a time.)
+	vector<const DReaction*> locReactions;
+	vector<JFactory_base*> locFactories = locEventLoop->GetFactories();
+	for(size_t loc_i = 0; loc_i < locFactories.size(); ++loc_i)
+	{
+		JFactory<DReaction>* locFactory = dynamic_cast<JFactory<DReaction>* >(locFactories[loc_i]);
+		if(locFactory == NULL)
+			continue;
+		if(string(locFactory->Tag()) == "Thrown")
+			continue;
+		// Found a factory producing DReactions. The reaction objects are
+		// produced at the init stage and are persistent through all event
+		// processing so we can grab the list here and append it to our
+		// overall list.
+		vector<const DReaction*> locReactionsSubset;
+		locFactory->Get(locReactionsSubset);
+		locReactions.insert(locReactions.end(), locReactionsSubset.begin(), locReactionsSubset.end());
+	}
+
+	//build list of all needed neutral PIDs
+	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
+	{
+		deque<Particle_t> locDetectedNeutralPIDs;
+		locReactions[loc_i]->Get_DetectedFinalPIDs(locDetectedNeutralPIDs, 2, false);
+		for(size_t loc_j = 0; loc_j < locDetectedNeutralPIDs.size(); ++loc_j)
+			dNeutralPIDs.insert(locDetectedNeutralPIDs[loc_j]);
+	}
+
 	return NOERROR;
 }
 
@@ -45,78 +77,39 @@ jerror_t DNeutralParticleHypothesis_factory_Combo::evnt(jana::JEventLoop *locEve
 	VT_TRACER("DNeutralParticleHypothesis_factory_Combo::evnt()");
 #endif
 
-	vector<const DParticleComboBlueprint*> locParticleComboBlueprints;
-	locEventLoop->Get(locParticleComboBlueprints);
-
 	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches, "Combo");
+
+	vector<const DNeutralShower*> locNeutralShowers;
+	locEventLoop->Get(locNeutralShowers);
 
 	const DVertex* locVertex = NULL;
 	locEventLoop->GetSingle(locVertex);
 
-	map<const DEventRFBunch*, deque<pair<const DNeutralShower*, Particle_t> > > locCreatedParticleMap; //don't create if already done!
+	//assume that: for each RF bunch, must calculate each PID FOM for each shower
+		//is true unless: somehow for a given combination of the above, it always fails an invariant mass cut
+		//however, it doesn't take much memory if an extra object is created
+		//and it's WAY faster than looping over EVERY blueprint and checking what the exceptions are
+			//scales much better this way
 
-	for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
+	set<Particle_t>::iterator locIterator = dNeutralPIDs.begin();
+	for(; locIterator != dNeutralPIDs.end(); ++locIterator)
 	{
-		const DParticleComboBlueprint* locParticleComboBlueprint = locParticleComboBlueprints[loc_i];
-
-		//select the corresponding rf bunch
-		const DEventRFBunch* locEventRFBunch = NULL;
-		for(size_t loc_j = 0; loc_j < locEventRFBunches.size(); ++loc_j)
+		for(size_t loc_i = 0; loc_i < locEventRFBunches.size(); ++loc_i)
 		{
-			if(!locEventRFBunches[loc_j]->IsAssociated(locParticleComboBlueprint))
-				continue;
-			locEventRFBunch = locEventRFBunches[loc_j];
-			break;
-		}
-		if(locEventRFBunch == NULL)
-		{
-			cout << "SOMETHING IS VERY WRONG IN DParticleCombo_factory_PreKinFit.cc" << endl;
-			abort();
-		}
-
-		if(locCreatedParticleMap.find(locEventRFBunch) == locCreatedParticleMap.end())
-			locCreatedParticleMap[locEventRFBunch] = deque<pair<const DNeutralShower*, Particle_t> >();
-
-		//find the combo showers
-		for(size_t loc_j = 0; loc_j < locParticleComboBlueprint->Get_NumParticleComboBlueprintSteps(); ++loc_j)
-		{
-			const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
-
-			for(size_t loc_k = 0; loc_k < locParticleComboBlueprintStep->Get_NumFinalParticleSourceObjects(); ++loc_k)
+			for(size_t loc_j = 0; loc_j < locNeutralShowers.size(); ++loc_j)
 			{
-				const JObject* locSourceObject = locParticleComboBlueprintStep->Get_FinalParticle_SourceObject(loc_k);
-				if(locSourceObject == NULL)
-					continue; //missing or decaying
-				const DNeutralShower* locNeutralShower = dynamic_cast<const DNeutralShower*>(locSourceObject);
-				if(locNeutralShower == NULL)
-					continue; //charged
-				Particle_t locPID = locParticleComboBlueprintStep->Get_FinalParticleID(loc_k);
-
-				//see if already created for this pid/track/rf bunch pair
-				deque<pair<const DNeutralShower*, Particle_t> > locParticlePairs = locCreatedParticleMap[locEventRFBunch];
-				bool locAlreadyCreatedFlag = false;
-				for(size_t loc_l = 0; loc_l < locParticlePairs.size(); ++loc_l)
-				{
-					if((locParticlePairs[loc_l].first != locNeutralShower) || (locParticlePairs[loc_l].second != locPID))
-						continue;
-					locAlreadyCreatedFlag = true; //e.g., several combos have the same rf bunch
-					break;
-				}
-				if(locAlreadyCreatedFlag)
-					continue;
-
 				//create the objects
-				DNeutralParticleHypothesis* locNeutralParticleHypothesis = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locNeutralShower, locPID, locEventRFBunch, locVertex);
+				DNeutralParticleHypothesis* locNeutralParticleHypothesis = dNeutralParticleHypothesisFactory->Create_DNeutralParticleHypothesis(locNeutralShowers[loc_j], *locIterator, locEventRFBunches[loc_i], locVertex);
 				if(locNeutralParticleHypothesis == NULL)
 					continue;
-				locNeutralParticleHypothesis->AddAssociatedObject(locEventRFBunch);
+				locNeutralParticleHypothesis->AddAssociatedObject(locEventRFBunches[loc_i]);
 				_data.push_back(locNeutralParticleHypothesis);
-				locCreatedParticleMap[locEventRFBunch].push_back(pair<const DNeutralShower*, Particle_t>(locNeutralShower, locPID));
 			}
 		}
 	}
 
+cout << "Event, # neuts = " << locEventLoop->GetJEvent().GetEventNumber() << ", " << _data.size() << endl;
 	return NOERROR;
 }
 
