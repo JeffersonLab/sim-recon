@@ -119,67 +119,79 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
    /// the precalibrated values directly into the _data vector.
    char str[256];
 
-   // Make hits out of all DFDCCathodeDigiHit hits
-   vector<const DFDCCathodeDigiHit*> cathodedigihits;
-   loop->Get(cathodedigihits);
-   for(unsigned int i=0; i<cathodedigihits.size(); i++){
-      const DFDCCathodeDigiHit *digihit = cathodedigihits[i];
-      
-      // The translation table has:
-      // ---------------------------------------------------
-      // package : 1-4
-      // chamber : 1-6
-      // view    : 1(="U") or 3(="D")
-      // strip   : 1-192
-      //
-      //
-      // The FDCHit class has 6 indexes which are derived
-      // from these and contain some redundancy. They are:
-      // ---------------------------------------------------
-      // plane   : 1(V), 2(X), or 3(U)
-      // layer   : 1 (phi=0), 2 (phi=+60), 3 (phi=-60)
-      // module  : 1 through 8, 1 module = 3 detection layers
-      // element : wire or strip number
-      // gPlane  : 1 through 72
-      // gLayer  : 1 through 24
-      
-      DFDCHit *hit = new DFDCHit;
-      hit->gLayer  = digihit->chamber + 6*(digihit->package - 1);
-      hit->module  = 1 + (hit->gLayer-1)/3;
-      hit->layer   = hit->gLayer - (hit->module-1)*3;
-      hit->plane   = digihit->view;
-      hit->gPlane  = hit->plane + 3*(hit->gLayer - 1);
-      hit->element = digihit->strip;
-      hit->r       = DFDCGeometry::getStripR(hit);
-      hit->d       = 0.0; // MC data only
-      hit->type    = digihit->strip_type; // n.b. DEventSourceHDDM hardwires this as "1" for cathodes!
-      hit->itrack  = -1; // MC data only
-      hit->ptype   = 0;// MC data only
+	// Make hits out of all DFDCCathodeDigiHit hits
+	vector<const DFDCCathodeDigiHit*> cathodedigihits;
+	loop->Get(cathodedigihits);
+	for(unsigned int i=0; i<cathodedigihits.size(); i++){
+		const DFDCCathodeDigiHit *digihit = cathodedigihits[i];
+		
+		// The translation table has:
+		// ---------------------------------------------------
+		// package : 1-4
+		// chamber : 1-6
+		// view    : 1(="U") or 3(="D")
+		// strip   : 1-192
+		//
+		//
+		// The FDCHit class has 6 indexes which are derived
+		// from these and contain some redundancy. They are:
+		// ---------------------------------------------------
+		// layer   : 1(V), 2(X), or 3(U)
+		// module  : 1 through 8, 1 module = 3 detection layers
+		// element : wire or strip number
+		// plane   : for cathodes only: u(3) or v(1) plane, u@+45,v@-45 
+		// gPlane  : 1 through 72
+		// gLayer  : 1 through 24
+		
+		int layer=digihit->view;
+		int gLayer=digihit->chamber + 6*(digihit->package - 1);
+		int gPlane=layer + 3*(gLayer - 1);
+		// Make sure gPlane and stripare in valid range
+		if((gPlane < 1) || (gPlane > FDC_NUM_PLANES)) {
+			sprintf(str, "DFDCDigiHit plane out of range! gPlane=%d (should be 1-%d)", gPlane, FDC_NUM_PLANES);
+			throw JException(str);
+		}
+		if( (digihit->strip < 1) || (digihit->strip > STRIPS_PER_PLANE)) {
+		  sprintf(str, "DFDCDigiHit straw out of range! strip=%d for plane=%d (should be 1-%d)", digihit->strip, gPlane, STRIPS_PER_PLANE);
+		  throw JException(str);
+		}
 
-      // Make sure gPlane and stripare in valid range
-      if( (hit->gPlane < 1) || (hit->gPlane > FDC_NUM_PLANES)) {
-         sprintf(str, "DFDCDigiHit plane out of range! gPlane=%d (should be 1-%d)", hit->gPlane, FDC_NUM_PLANES);
-         throw JException(str);
-      }
-      if( (digihit->strip < 1) || (digihit->strip > STRIPS_PER_PLANE)) {
-         sprintf(str, "DFDCDigiHit straw out of range! strip=%d for plane=%d (should be 1-%d)", digihit->strip, hit->gPlane, STRIPS_PER_PLANE);
-         throw JException(str);
-      }
+		int plane_index=gPlane-1;
+		int strip_index=digihit->strip-1;
 
-      // Apply calibration constants here
-      double A = (double)digihit->pulse_integral;
-      double T = (double)digihit->pulse_time;
+		// Apply calibration constants here
+		double T = (double)digihit->pulse_time;
+		if (T<=0.) continue;
 
-      hit->q = a_scale * a_gains[hit->gPlane-1][hit->element-1] 
-          * (A - a_pedestals[hit->gPlane-1][hit->element-1] );
-      hit->t = t_scale * (T - timing_offsets[hit->gPlane-1][hit->element-1]) + t_base;
-      
-      //cerr << "FDC hitL  plane = " << hit->gPlane << "  element = " << hit->element << endl;
-      
-      hit->AddAssociatedObject(digihit);
-      
-      _data.push_back(hit);
-   }
+		double A = (double)digihit->pulse_integral;
+      		double ped=(double)digihit->pedestal;	
+		double q = a_scale * a_gains[plane_index][strip_index] 
+		  //* (A - a_pedestals[hit->gPlane-1][hit->element-1] );
+		  *(A-ped);
+	        double t = t_scale * (T - timing_offsets[plane_index][strip_index]);
+		
+		DFDCHit *hit = new DFDCHit;
+		hit->layer   = digihit->view;
+		hit->gLayer  = gLayer;
+		hit->gPlane  = gPlane;
+		hit->module  = 1 + (gLayer-1)/3;
+		hit->element = digihit->strip;
+		hit->plane   = digihit->view; // "plane" is apparently the same as "layer"
+		hit->r       = DFDCGeometry::getWireR(hit);
+		hit->d       = 0.0; // MC data only
+		hit->type    = digihit->strip_type; // n.b. DEventSourceHDDM hardwires this as "1" for cathodes!
+		hit->itrack  = -1; // MC data only
+		hit->ptype   = 0;// MC data only
+		hit->q = q;
+		hit->t = t;
+
+
+		//cerr << "FDC hitL  plane = " << hit->gPlane << "  element = " << hit->element << endl;
+		
+		hit->AddAssociatedObject(digihit);
+		
+		_data.push_back(hit);
+	}
 
    // Make hits out of all DFDCWireDigiHit hits
    vector<const DFDCWireDigiHit*> wiredigihits;
