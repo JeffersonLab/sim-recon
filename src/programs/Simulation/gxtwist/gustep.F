@@ -136,7 +136,8 @@ c     endif
 
 * If not a sensitive volume then exit here
 
-      if (NTMULT.eq.1.and.NSTEP.eq.0) then
+c     if (NTMULT.eq.1.and.NSTEP.eq.0) then
+      if (NSTEP.eq.0) then
         x0(1) = VECT(1)
         x0(2) = VECT(2)
         x0(3) = VECT(3)
