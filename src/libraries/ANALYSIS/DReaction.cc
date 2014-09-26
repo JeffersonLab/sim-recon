@@ -3,26 +3,12 @@
 DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 {
 	dKinFitType = d_NoFit;
-	dChargedTrackFactoryTag = "";
-	dNeutralShowerFactoryTag = "";
 
-	dMinChargedPIDFOM.first = false;
-	dMinChargedPIDFOM.second = 0.0;
-
-	dMinPhotonPIDFOM.first = false;
-	dMinPhotonPIDFOM.second = 5.73303E-7;
-
-	dMinTrackingFOM.first = false;
-	dMinTrackingFOM.second = 0.0027;
-
-	dMaxPhotonRFDeltaT.first = false;
-	dMaxPhotonRFDeltaT.second = 10.0*2.004; //10 RF buckets
-
-	dMinProtonMomentum.first = true;
-	dMinProtonMomentum.second = 0.25;
-
-	dHasDetectorMatchFlag.first = false;
-	dHasDetectorMatchFlag.second = false;
+	dMinProtonMomentum = pair<bool, double>(true, 0.25);
+	dMinChargedPIDFOM = pair<bool, double>(false, 5.73303E-7);
+	dMinPhotonPIDFOM = pair<bool, double>(false, 5.73303E-7);
+	dMaxPhotonRFDeltaT = pair<bool, double>(false, 0.5*2.004);
+	dMaxExtraGoodTracks = pair<bool, size_t>(false, 4);
 
 	dTTreeOutputFileName = "";
 	dEnableTTreeOutputFlag = false;

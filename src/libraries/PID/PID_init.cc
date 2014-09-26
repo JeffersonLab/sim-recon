@@ -8,10 +8,12 @@ using namespace jana;
 #include "DParticleID_factory.h"
 #include "DParticleID_factory_PID1.h"
 #include "DChargedTrack_factory.h"
+#include "DChargedTrack_factory_PreSelect.h"
 #include "DChargedTrackHypothesis_factory.h"
 #include "DNeutralParticle_factory.h"
 #include "DNeutralParticleHypothesis_factory.h"
 #include "DNeutralShower_factory.h"
+#include "DNeutralShower_factory_PreSelect.h"
 #include "DVertex_factory.h"
 #include "DVertex_factory_THROWN.h"
 #include "DEventRFBunch_factory.h"
@@ -39,10 +41,12 @@ jerror_t PID_init(JEventLoop *loop)
 	loop->AddFactory(new DParticleID_factory);
 	loop->AddFactory(new DParticleID_factory_PID1);
 	loop->AddFactory(new DChargedTrack_factory);
+	loop->AddFactory(new DChargedTrack_factory_PreSelect);
 	loop->AddFactory(new DChargedTrackHypothesis_factory);
 	loop->AddFactory(new DNeutralParticle_factory);
 	loop->AddFactory(new DNeutralParticleHypothesis_factory);
 	loop->AddFactory(new DNeutralShower_factory);
+	loop->AddFactory(new DNeutralShower_factory_PreSelect);
 	loop->AddFactory(new DVertex_factory);
 	loop->AddFactory(new DVertex_factory_THROWN);
 	loop->AddFactory(new DEventRFBunch_factory);

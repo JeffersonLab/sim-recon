@@ -898,6 +898,8 @@ class DHistogramAction_NumReconstructedObjects : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 
+		TH2I* dHist_NumHighLevelObjects;
+
 		TH1I* dHist_NumChargedTracks;
 		TH1I* dHist_NumPosChargedTracks;
 		TH1I* dHist_NumNegChargedTracks;

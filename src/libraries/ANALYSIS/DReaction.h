@@ -29,17 +29,12 @@ class DReaction : public JObject
 		inline void Clear_ReactionSteps(void){dReactionSteps.clear();}
 		inline void Add_AnalysisAction(DAnalysisAction* locAnalysisAction){dAnalysisActions.push_back(locAnalysisAction);}
 
-		// SET TRACK SELECTION FACTORIES //Command-line values will override these values
-		inline void Set_ChargedTrackFactoryTag(string locChargedTrackFactoryTag){dChargedTrackFactoryTag = locChargedTrackFactoryTag;}
-		inline void Set_NeutralShowerFactoryTag(string locNeutralShowerFactoryTag){dNeutralShowerFactoryTag = locNeutralShowerFactoryTag;}
-
 		// SET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
 		inline void Set_MinChargedPIDFOM(double locMinChargedPIDFOM){dMinChargedPIDFOM = pair<bool, double>(true, locMinChargedPIDFOM);}
 		inline void Set_MinPhotonPIDFOM(double locMinPhotonPIDFOM){dMinPhotonPIDFOM = pair<bool, double>(true, locMinPhotonPIDFOM);}
-		inline void Set_MinTrackingFOM(double locMinTrackingFOM){dMinTrackingFOM = pair<bool, double>(true, locMinTrackingFOM);}
 		inline void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT){dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);}
 		inline void Set_MinProtonMomentum(double locMinProtonMomentum){dMinProtonMomentum = pair<bool, double>(true, locMinProtonMomentum);}
-		inline void Set_HasDetectorMatchFlag(bool locHasDetectorMatchFlag){dHasDetectorMatchFlag = pair<bool, bool>(true, locHasDetectorMatchFlag);}
+		inline void Set_MaxExtraGoodTracks(size_t locMaxExtraGoodTracks){dMaxExtraGoodTracks = pair<bool, size_t>(true, locMaxExtraGoodTracks);}
 
 		// SET PRE-COMBO-BLUEPRINT INVARIANT MASS CUTS
 		inline void Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass);
@@ -79,17 +74,12 @@ class DReaction : public JObject
 		string Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, bool locKinFitResultsFlag) const;
 		string Get_DecayChainFinalParticlesROOTNames(size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, bool locKinFitResultsFlag, bool locExpandDecayingParticlesFlag) const;
 
-		// GET TRACK SELECTION FACTORIES //Command-line values will override these values
-		inline string Get_ChargedTrackFactoryTag(void) const{return dChargedTrackFactoryTag;}
-		inline string Get_NeutralShowerFactoryTag(void) const{return dNeutralShowerFactoryTag;}
-
 		// GET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
 		inline pair<bool, double> Get_MinChargedPIDFOM(void) const{return dMinChargedPIDFOM;}
 		inline pair<bool, double> Get_MinPhotonPIDFOM(void) const{return dMinPhotonPIDFOM;}
-		inline pair<bool, double> Get_MinTrackingFOM(void) const{return dMinTrackingFOM;}
 		inline pair<bool, double> Get_MaxPhotonRFDeltaT(void) const{return dMaxPhotonRFDeltaT;}
 		inline pair<bool, double> Get_MinProtonMomentum(void) const{return dMinProtonMomentum;}
-		inline pair<bool, bool> Get_HasDetectorMatchFlag(void) const{return dHasDetectorMatchFlag;}
+		inline pair<bool, size_t> Get_MaxExtraGoodTracks(void) const{return dMaxExtraGoodTracks;}
 
 		// GET PRE-COMBO-BLUEPRINT MASS CUTS
 		bool Get_InvariantMassCut(Particle_t locStepInitialPID, double& locMinInvariantMass, double& locMaxInvariantMass) const;
@@ -122,11 +112,6 @@ class DReaction : public JObject
 		deque<const DReactionStep*> dReactionSteps;
 		deque<DAnalysisAction*> dAnalysisActions;
 
-		// TRACK SELECTION FACTORIES:
-			//Command-line values will override these values
-		string dChargedTrackFactoryTag; //default is ""
-		string dNeutralShowerFactoryTag; //default is ""
-
 		// PRE-DPARTICLECOMBO CONTROL-CUT VALUES
 			//bool = true/false for cut enabled/disabled, double = cut value
 			//Command-line values (variable names are below in all-caps) will override these values
@@ -134,10 +119,9 @@ class DReaction : public JObject
 			//note: tracks with no PID information are not cut-by/included-in the PID cuts
 		pair<bool, double> dMinChargedPIDFOM; //COMBO:MIN_CHARGED_PID_FOM - the minimum PID FOM for a particle used for this DReaction
 		pair<bool, double> dMinPhotonPIDFOM; //COMBO:MIN_PHOTON_PID_FOM - the minimum PID FOM for a neutral particle used for this DReaction
-		pair<bool, double> dMinTrackingFOM; //COMBO:MIN_TRACKING_FOM - the minimum Tracking FOM for a charged track used for this DReaction
 		pair<bool, double> dMaxPhotonRFDeltaT; //COMBO:MAX_PHOTON_RF_DELTAT - the maximum photon-rf time difference: used for photon selection
 		pair<bool, double> dMinProtonMomentum; //COMBO:MIN_PROTON_MOMENTUM - when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have
-		pair<bool, bool> dHasDetectorMatchFlag; //COMBO:HAS_DETECTOR_MATCH_FLAG - if both are true, require tracks to have a detector match
+		pair<bool, size_t> dMaxExtraGoodTracks; //COMBO:MAX_EXTRA_GOOD_TRACKS - "good" defined by PreSelect factory
 
 		// PRE-COMBO-BLUEPRINT MASS CUTS
 		map<Particle_t, pair<double, double> > dInvariantMassCuts;

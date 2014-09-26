@@ -38,9 +38,9 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 
 		void Get_Reactions(JEventLoop *locEventLoop, vector<const DReaction*>& locReactions) const;
 
-		jerror_t Build_ParticleComboBlueprints(JEventLoop* locEventLoop, const DReaction* locReaction);
-		bool Setup_ComboLoop(const DReaction* locReaction, int locNumDetectedNeutralParticles, int locNumDetectedChargedParticles, int locNumDetectedPositiveParticles, int locNumDetectedNegativeParticles, deque<deque<int> >& locResumeAtIndexDeque, deque<deque<int> >& locNumPossibilitiesDeque, map<int, int>& locInitialParticleStepFromIndexMap, map<pair<int, int>, int>& locFinalStateDecayStepIndexMap);
-		void Find_Combos(const DReaction* locReaction, deque<const JObject*>& locNeutralShowerDeque, deque<const JObject*>& locChargedTrackDeque_Positive, deque<const JObject*>& locChargedTrackDeque_Negative, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque, map<int, int>& locInitialParticleStepFromIndexMap, map<pair<int, int>, int>& locFinalStateDecayStepIndexMap);
+		void Build_ParticleComboBlueprints(const DReaction* locReaction);
+		bool Setup_ComboLoop(const DReaction* locReaction, deque<deque<int> >& locResumeAtIndexDeque, deque<deque<int> >& locNumPossibilitiesDeque, map<int, int>& locInitialParticleStepFromIndexMap, map<pair<int, int>, int>& locFinalStateDecayStepIndexMap);
+		void Find_Combos(const DReaction* locReaction, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque, map<int, int>& locInitialParticleStepFromIndexMap, map<pair<int, int>, int>& locFinalStateDecayStepIndexMap);
 
 		bool Handle_EndOfReactionStep(const DReaction* locReaction, DParticleComboBlueprint*& locParticleComboBlueprint, DParticleComboBlueprintStep*& locParticleComboBlueprintStep, int& locStepIndex, int& locParticleIndex, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque, map<int, int>& locInitialParticleStepFromIndexMap);
 		bool Handle_Decursion(DParticleComboBlueprint* locParticleComboBlueprint, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque, int& locParticleIndex, int& locStepIndex, DParticleComboBlueprintStep*& locParticleComboBlueprintStep);
@@ -48,14 +48,14 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		bool Check_IfDuplicateStepCombo(const DParticleComboBlueprint* locParticleComboBlueprint, const DParticleComboBlueprintStep* locCurrentStep, int locStepIndex, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque) const;
 		bool Check_IfStepsAreIdentical(const DParticleComboBlueprint* locParticleComboBlueprint, const DParticleComboBlueprintStep* locCurrentStep, const DParticleComboBlueprintStep* locPreviousStep) const;
 		int Grab_DecayingParticle(Particle_t locAnalysisPID, int& locResumeAtIndex, const DReaction* locReaction, int locStepIndex, int locParticleIndex);
-		const JObject* Grab_DetectedTrack(const DReaction* locReaction, Particle_t locAnalysisPID, int& locResumeAtIndex, deque<const JObject*>& locNeutralShowerDeque, deque<const JObject*>& locChargedTrackDeque_Positive, deque<const JObject*>& locChargedTrackDeque_Negative);
-		const JObject* Choose_SourceObject(const DReaction* locReaction, Particle_t locAnalysisPID, deque<const JObject*>& locSourceObjects, int& locResumeAtIndex) const;
-		const DChargedTrackHypothesis* Get_ChargedHypothesisToUse(const DChargedTrack* locChargedTrack, Particle_t locAnalysisPID, bool& locWillReSwimFlag) const;
+
+		const JObject* Grab_DetectedParticle(const DReaction* locReaction, Particle_t locAnalysisPID, int& locResumeAtIndex);
+		const JObject* Grab_NeutralShower(vector<const DNeutralShower*>& locNeutralShowers, int& locResumeAtIndex);
+		const JObject* Grab_DetectedTrack(const DReaction* locReaction, Particle_t locAnalysisPID, vector<const DChargedTrack*>& locTracks, int& locResumeAtIndex) const;
+
+		const DChargedTrackHypothesis* Get_ChargedHypothesisToUse(const DChargedTrack* locChargedTrack, Particle_t locAnalysisPID) const;
 
 		bool Calc_FinalStateP4(size_t locTotalNumSteps, const DParticleComboBlueprint* locParticleComboBlueprint, const DParticleComboBlueprintStep* locNewParticleComboBlueprintStep, int locStepIndexToGrab, DLorentzVector& locFinalStateP4) const;
-
-		bool Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
-		bool Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
 		DParticleComboBlueprintStep* Get_ParticleComboBlueprintStepResource(void);
 		inline void Recycle_ParticleComboBlueprintStep(DParticleComboBlueprintStep* locParticleComboBlueprintStep){dParticleComboBlueprintStepPool_Available.push_back(locParticleComboBlueprintStep);}
@@ -66,23 +66,29 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		set<const JObject*> dCurrentComboSourceObjects;
 		set<const DParticleComboBlueprintStep*> dSavedBlueprintSteps;
 
+		//Objects for this event
+		vector<const DChargedTrack*> dChargedTracks;
+		vector<const DChargedTrack*> dPositiveChargedTracks;
+		vector<const DChargedTrack*> dNegativeChargedTracks;
+		vector<const DNeutralShower*> dNeutralShowers;
+
 		unsigned int dDebugLevel;
 		size_t MAX_DParticleComboBlueprintStepPoolSize;
 		const DVertex* dVertex;
 		const DDetectorMatches* dDetectorMatches;
 
 		// PRE-DPARTICLECOMBO TRACK SELECTION FACTORY TAGS
-			//bool = true to get tracks from specified factory, false otherwise
-			//Command-line values will override those set in the DReaction
-		pair<bool, string> dReactionTrackSelectionTag;
-		pair<bool, string> dReactionShowerSelectionTag;
+		string dTrackSelectionTag;
+		string dShowerSelectionTag;
 
 		// PRE-DPARTICLECOMBO CUT VALUES
 			//(first) bool = true/false for cut enabled/disabled, double = cut value
 			//Command-line values will override those set in the DReaction
-		pair<bool, double> dMinTrackingFOM; //the minimum Tracking FOM for a charged track used for this DReaction
 		pair<bool, double> dMinProtonMomentum; //when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have
-		pair<bool, bool> dHasDetectorMatchFlag; //if both are true, require tracks to have a detector match
+		pair<bool, size_t> dMaxExtraGoodTracks; //"good" defined as: at least one PID hypothesis passes other implemented "good" cuts
+
+		//PIDs that should have been created during track reconstruction
+		set<Particle_t> dAvailablePIDs;
 
 		//used to see if can resuse memory with an identical, previously-created step
 			//a map is used instead of a loop over previous combos because map access is significantly faster if #combos is very large

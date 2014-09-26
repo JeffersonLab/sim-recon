@@ -22,6 +22,8 @@ using namespace jana;
 //------------------
 jerror_t DNeutralParticleHypothesis_factory_Combo::init(void)
 {
+	dShowerSelectionTag = "PreSelect";
+
 	return NOERROR;
 }
 
@@ -30,6 +32,8 @@ jerror_t DNeutralParticleHypothesis_factory_Combo::init(void)
 //------------------
 jerror_t DNeutralParticleHypothesis_factory_Combo::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
+	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
+
 	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
 	locEventLoop->Get(locNeutralParticleHypotheses); //make sure that brun() is called for the default factory!!!
 	dNeutralParticleHypothesisFactory = static_cast<DNeutralParticleHypothesis_factory*>(locEventLoop->GetFactory("DNeutralParticleHypothesis"));
@@ -81,7 +85,7 @@ jerror_t DNeutralParticleHypothesis_factory_Combo::evnt(jana::JEventLoop *locEve
 	locEventLoop->Get(locEventRFBunches, "Combo");
 
 	vector<const DNeutralShower*> locNeutralShowers;
-	locEventLoop->Get(locNeutralShowers);
+	locEventLoop->Get(locNeutralShowers, dShowerSelectionTag.c_str());
 
 	const DVertex* locVertex = NULL;
 	locEventLoop->GetSingle(locVertex);

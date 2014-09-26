@@ -18,8 +18,7 @@ using namespace jana;
 //------------------
 jerror_t DChargedTrackHypothesis_factory_Combo::init(void)
 {
-	dMinTrackingFOM = pair<bool, double>(false, -1.0);
-	dHasDetectorMatchFlag = pair<bool, bool>(false, false);
+	dTrackSelectionTag = "PreSelect";
 	return NOERROR;
 }
 
@@ -32,17 +31,7 @@ jerror_t DChargedTrackHypothesis_factory_Combo::brun(jana::JEventLoop *locEventL
 	locEventLoop->Get(locChargedTrackHypotheses); //make sure that brun() is called for the default factory!!!
 	dChargedTrackHypothesisFactory = static_cast<DChargedTrackHypothesis_factory*>(locEventLoop->GetFactory("DChargedTrackHypothesis"));
 
-	if(gPARMS->Exists("COMBO:MIN_TRACKING_FOM"))
-	{
-		dMinTrackingFOM.first = true;
-		gPARMS->GetParameter("COMBO:MIN_TRACKING_FOM", dMinTrackingFOM.second);
-	}
-
-	if(gPARMS->Exists("COMBO:HAS_DETECTOR_MATCH_FLAG"))
-	{
-		dHasDetectorMatchFlag.first = true;
-		gPARMS->GetParameter("COMBO:HAS_DETECTOR_MATCH_FLAG", dHasDetectorMatchFlag.second);
-	}
+	gPARMS->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", dTrackSelectionTag);
 
 	// Get DReactions:
 	// Get list of factories and find all the ones producing
@@ -111,7 +100,7 @@ jerror_t DChargedTrackHypothesis_factory_Combo::evnt(jana::JEventLoop* locEventL
 	locEventLoop->Get(locTrackTimeBasedVector, "Combo");
 
  	vector<const DChargedTrack*> locChargedTracks;
-	locEventLoop->Get(locChargedTracks);
+	locEventLoop->Get(locChargedTracks, dTrackSelectionTag.c_str());
 
 	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches, "Combo");
@@ -169,12 +158,6 @@ void DChargedTrackHypothesis_factory_Combo::Create_PIDsAsNeeded(JEventLoop* locE
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPID);
 		if(locChargedTrackHypothesis != NULL)
 		{
-			//it was. create new object it if it's a good track
-			if(!Cut_HasDetectorMatch(locReaction, locChargedTrackHypothesis))
-				continue;
-			if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
-				continue;
-
 			//it is. create new object with same PID (so that is registered with the combo factory, and because rf bunch could be different)
 			const DTrackTimeBased* locTrackTimeBased = NULL;
 			locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
@@ -192,18 +175,9 @@ void DChargedTrackHypothesis_factory_Combo::Create_PIDsAsNeeded(JEventLoop* locE
 		if(locIterator == dTimeBasedSourceMap.end())
 			continue; //bad track
 		const DTrackTimeBased* locTrackTimeBased = locIterator->second;
-		if(!Cut_TrackingFOM(locReaction, locTrackTimeBased))
-			continue; //bad track
 
 		//correct DTrackTimeBased grabbed for this source object: create new DChargedTrackHypothesis object
 		DChargedTrackHypothesis* locNewChargedTrackHypothesis = dChargedTrackHypothesisFactory->Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBased, dDetectorMatches, locEventRFBunch);
-
-		//create it if it's a good track
-		if(!Cut_HasDetectorMatch(locReaction, locNewChargedTrackHypothesis))
-		{
-			delete locNewChargedTrackHypothesis;
-			continue; //bad track
-		}
 
 		locNewChargedTrackHypothesis->AddAssociatedObject(locEventRFBunch);
 		locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrack);
@@ -211,35 +185,6 @@ void DChargedTrackHypothesis_factory_Combo::Create_PIDsAsNeeded(JEventLoop* locE
 		locCreatedPIDs.insert(locPID);
 	}
 }
-
-bool DChargedTrackHypothesis_factory_Combo::Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const
-{
-	pair<bool, double> locHasDetectorMatchFlag = dHasDetectorMatchFlag.first ? dHasDetectorMatchFlag : locReaction->Get_HasDetectorMatchFlag();
-	if((!locHasDetectorMatchFlag.first) || (!locHasDetectorMatchFlag.second))
-		return true;
-
-	const DTrackTimeBased* locTrackTimeBased = NULL;
-	locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-	return dDetectorMatches->Get_IsMatchedToHit(locTrackTimeBased);
-}
-
-bool DChargedTrackHypothesis_factory_Combo::Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const
-{
-	pair<bool, double> locMinTrackingFOM = dMinTrackingFOM.first ? dMinTrackingFOM : locReaction->Get_MinTrackingFOM();
-	if(!locMinTrackingFOM.first)
-		return true;
-	double locFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq_Track, locChargedTrackHypothesis->dNDF_Track);
-	return ((locChargedTrackHypothesis->dNDF_Track == 0) ? true : (locFOM >= locMinTrackingFOM.second));
-}
-
-bool DChargedTrackHypothesis_factory_Combo::Cut_TrackingFOM(const DReaction* locReaction, const DTrackTimeBased* locTrackTimeBased) const
-{
-	pair<bool, double> locMinTrackingFOM = dMinTrackingFOM.first ? dMinTrackingFOM : locReaction->Get_MinTrackingFOM();
-	if(!locMinTrackingFOM.first)
-		return true;
-	return ((locTrackTimeBased->Ndof == 0) ? true : (locTrackTimeBased->FOM >= locMinTrackingFOM.second));
-}
-
 
 //------------------
 // erun

@@ -4206,6 +4206,29 @@ void DHistogramAction_NumReconstructedObjects::Initialize(JEventLoop* locEventLo
 	{
 		CreateAndChangeTo_ActionDirectory();
 
+		//2D Summary
+		locHistName = "NumHighLevelObjects";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumHighLevelObjects = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+		else
+		{
+			dHist_NumHighLevelObjects = new TH2I(locHistName.c_str(), ";;# Objects / Event", 14, 0.5, 14.5, dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+			dHist_NumHighLevelObjects->GetXaxis()->SetBinLabel(1, "DTAGMHit");
+			dHist_NumHighLevelObjects->GetXaxis()->SetBinLabel(2, "DTAGHHit");
+			dHist_NumHighLevelObjects->GetXaxis()->SetBinLabel(3, "DSCHit");
+			dHist_NumHighLevelObjects->GetXaxis()->SetBinLabel(4, "DTOFPoint");
+			dHist_NumHighLevelObjects->GetXaxis()->SetBinLabel(5, "DBCALShower");
+			dHist_NumHighLevelObjects->GetXaxis()->SetBinLabel(6, "DFCALShower");
+			dHist_NumHighLevelObjects->GetXaxis()->SetBinLabel(7, "DTimeBasedTrack");
+			dHist_NumHighLevelObjects->GetXaxis()->SetBinLabel(8, "TrackSCMatches");
+			dHist_NumHighLevelObjects->GetXaxis()->SetBinLabel(9, "TrackTOFMatches");
+			dHist_NumHighLevelObjects->GetXaxis()->SetBinLabel(10, "TrackBCALMatches");
+			dHist_NumHighLevelObjects->GetXaxis()->SetBinLabel(11, "TrackFCALMatches");
+			dHist_NumHighLevelObjects->GetXaxis()->SetBinLabel(12, "DBeamPhoton");
+			dHist_NumHighLevelObjects->GetXaxis()->SetBinLabel(13, "DChargedTrack");
+			dHist_NumHighLevelObjects->GetXaxis()->SetBinLabel(14, "DNeutralShower");
+		}
+
 		//Charged
 		locHistName = "NumChargedTracks";
 		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
@@ -4471,6 +4494,22 @@ bool DHistogramAction_NumReconstructedObjects::Perform_Action(JEventLoop* locEve
 
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
+		//# High-Level Objects
+		dHist_NumHighLevelObjects->Fill(1, (Double_t)locTAGMHits.size());
+		dHist_NumHighLevelObjects->Fill(2, (Double_t)locTAGHHits.size());
+		dHist_NumHighLevelObjects->Fill(3, (Double_t)locSCHits.size());
+		dHist_NumHighLevelObjects->Fill(4, (Double_t)locTOFPoints.size());
+		dHist_NumHighLevelObjects->Fill(5, (Double_t)locBCALShowers.size());
+		dHist_NumHighLevelObjects->Fill(6, (Double_t)locFCALShowers.size());
+		dHist_NumHighLevelObjects->Fill(7, (Double_t)locTrackTimeBasedVector.size());
+		dHist_NumHighLevelObjects->Fill(8, (Double_t)locDetectorMatches->Get_NumTrackSCMatches());
+		dHist_NumHighLevelObjects->Fill(9, (Double_t)locDetectorMatches->Get_NumTrackTOFMatches());
+		dHist_NumHighLevelObjects->Fill(10, (Double_t)locDetectorMatches->Get_NumTrackBCALMatches());
+		dHist_NumHighLevelObjects->Fill(11, (Double_t)locDetectorMatches->Get_NumTrackFCALMatches());
+		dHist_NumHighLevelObjects->Fill(12, (Double_t)locBeamPhotons.size());
+		dHist_NumHighLevelObjects->Fill(13, (Double_t)locChargedTracks.size());
+		dHist_NumHighLevelObjects->Fill(14, (Double_t)locNeutralShowers.size());
+
 		//Charged
 		unsigned int locNumPos = 0, locNumNeg = 0;
 		for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)

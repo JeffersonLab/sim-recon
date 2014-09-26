@@ -14,10 +14,6 @@
 #include "JANA/JFactory.h"
 #include "particleType.h"
 
-#include "HDGEOMETRY/DGeometry.h"
-#include "HDGEOMETRY/DMagneticFieldMap.h"
-
-#include "TRACKING/DReferenceTrajectory.h"
 #include "TRACKING/DTrackTimeBased.h"
 
 #include "PID/DChargedTrackHypothesis.h"
@@ -36,11 +32,11 @@ class DTrackTimeBased_factory_Combo:public jana::JFactory<DTrackTimeBased>
 		~DTrackTimeBased_factory_Combo(){};
 		const char* Tag(void){return "Combo";}
 
-		deque<pair<Particle_t, bool> > Get_ParticleIDsToTry(Particle_t locPID) const
+		deque<Particle_t> Get_ParticleIDsToTry(Particle_t locPID) const
 		{
-			map<Particle_t, deque<pair<Particle_t, bool> > >::const_iterator locIterator = dParticleIDsToTry.find(locPID);
+			map<Particle_t, deque<Particle_t> >::const_iterator locIterator = dParticleIDsToTry.find(locPID);
 			if(locIterator == dParticleIDsToTry.end())
-				return deque<pair<Particle_t, bool> >();
+				return deque<Particle_t>();
 			return locIterator->second;
 		}
 
@@ -52,34 +48,23 @@ class DTrackTimeBased_factory_Combo:public jana::JFactory<DTrackTimeBased>
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		void Create_PIDsAsNeeded(const DReaction* locReaction, const DChargedTrack* locChargedTrack, set<Particle_t>& locPIDs);
+		const DChargedTrackHypothesis* Get_ChargedHypothesisToUse(const DChargedTrack* locChargedTrack, Particle_t locDesiredPID);
+		DTrackTimeBased* Convert_ChargedTrack(const DChargedTrackHypothesis* locChargedTrackHypothesis, Particle_t locNewPID);
 
-		bool Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
-		bool Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
-
-		const DChargedTrackHypothesis* Get_ChargedHypothesisToUse(const DChargedTrack* locChargedTrack, Particle_t locDesiredPID, bool& locReSwimFlag);
-		DTrackTimeBased* Convert_ChargedTrack(const DChargedTrackHypothesis* locChargedTrackHypothesis, Particle_t locNewPID, bool locSwimFlag);
-
-		DReferenceTrajectory* Get_ReferenceTrajectoryResource(void);
-
-		deque<DReferenceTrajectory*> dReferenceTrajectoryPool_All;
-		deque<DReferenceTrajectory*> dReferenceTrajectoryPool_Available;
-
-		const DGeometry* dGeometry;
-		const DMagneticFieldMap* dMagneticFieldMap;
-		size_t MAX_dReferenceTrajectoryPoolSize;
-		map<Particle_t, deque<pair<Particle_t, bool> > > dParticleIDsToTry; //bool is reswim flag
+		map<Particle_t, deque<Particle_t> > dParticleIDsToTry;
 
 		const DDetectorMatches* dDetectorMatches;
 		vector<const DReaction*> dReactions;
 		map<const DReaction*, set<Particle_t> > dPositivelyChargedPIDs;
 		map<const DReaction*, set<Particle_t> > dNegativelyChargedPIDs;
 
+		string dTrackSelectionTag;
+		set<Particle_t> dAvailablePIDs;
+
 		// PRE-DPARTICLECOMBO CUT VALUES
 			//(first) bool = true/false for cut enabled/disabled, double = cut value
 			//Command-line values will override those set in the DReaction
-		pair<bool, double> dMinTrackingFOM; //the minimum Tracking FOM for a charged track used for this DReaction
 		pair<bool, double> dMinProtonMomentum; //when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have
-		pair<bool, bool> dHasDetectorMatchFlag; //if both are true, require tracks to have a detector match
 };
 
 #endif // _DTrackTimeBased_factory_Combo_

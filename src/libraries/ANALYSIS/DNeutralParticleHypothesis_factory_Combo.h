@@ -35,6 +35,7 @@ class DNeutralParticleHypothesis_factory_Combo:public jana::JFactory<DNeutralPar
 		DNeutralParticleHypothesis_factory* dNeutralParticleHypothesisFactory;
 
 		set<Particle_t> dNeutralPIDs;
+		string dShowerSelectionTag;
 };
 
 #endif // _DNeutralParticleHypothesis_factory_Combo_
