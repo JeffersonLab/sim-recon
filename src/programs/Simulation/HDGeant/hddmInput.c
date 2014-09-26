@@ -179,12 +179,13 @@ int loadInput ()
 	    while (!done){
 	      int len=2;
 	      float myrand[2];
-	      float maxweight=1.0;
+	      float maxweight=1.2;
 	      float myweight=0.001205;
 	      grndm_(myrand,&len);
 	      
 	      v[2]=-336.7+953.1*myrand[0];
-	      if (v[2]<-336.5  || (v[2]>64.9 && v[2]<65.1)) myweight=1.0;
+	      if (v[2]<-336.3825) myweight=1.2;
+	      if (v[2]>64.9 && v[2]<65.1) myweight=1.0;
 	      if ((v[2]>174.4&&v[2]<188.4) || (v[2]>232.6 && v[2]<246.6)
 		  || (v[2]>291.2&&v[2]<305.2) || (v[2]>329.5 && v[2]<343.5))
 		myweight=0.001753;
