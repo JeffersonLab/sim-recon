@@ -1,0 +1,2594 @@
+Release Notes for sim-recon-2014-09-23
+--------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2014-09-23
+   Date: September 26, 2014
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 15307 of trunk/sim-recon.
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Red Hat Enterprise Linux 6.5 (i686)
+-----------
+  Xerces 3.1.1
+  JANA 0.7.2
+  ROOT 5.34.02
+  cernlib 2005
+  gcc/g++/gfortran : 4.4.7 20120313 (Red Hat 4.4.7-4)
+  HDDS 3.0
+  CCDB 1.03
+
+Red Hat Enterprise Linux 6.5 (x86_64)
+-----------
+  Xerces 3.1.1
+  JANA 0.7.2
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran : 4.4.7 20120313 (Red Hat 4.4.7-4)
+  HDDS 3.0
+  CCDB 1.03
+
+CentOS release 6.2 (Final)
+-----------
+  Xerces 3.1.1
+  JANA 0.7.1p3
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran : 4.4.6 20110731 (Red Hat 4.4.6-3)
+  HDDS 3.0
+  CCDB 1.03
+
+Relevant repository log of changes:
+
+------------------------------------------------------------------------
+r14005 | staylor | 2014-06-30 17:07:18 -0400 (Mon, 30 Jun 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/bcal_calib/DEventProcessor_bcal_calib.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/bcal_calib/DEventProcessor_bcal_calib.h
+
+Add routine to match individual cdc hits to a track. Keep track of unused axial hits and try to match them to a track.  Relax matching conditions.
+------------------------------------------------------------------------
+r14006 | staylor | 2014-06-30 17:55:46 -0400 (Mon, 30 Jun 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Add cdc hit matching routine; try to grab unmatched axial hits.
+------------------------------------------------------------------------
+r14007 | davidl | 2014-07-01 06:56:36 -0400 (Tue, 01 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDCCOSMIC.cc
+
+Adjust error on stereo wire distance to be 1/cos() rather than 1/sin() based on discussion with Simon.
+------------------------------------------------------------------------
+r14011 | davidl | 2014-07-02 08:22:36 -0400 (Wed, 02 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDCCOSMIC.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDCCOSMIC.h
+
+Added some diagnostic histograms.
+------------------------------------------------------------------------
+r14012 | staylor | 2014-07-02 09:22:02 -0400 (Wed, 02 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+made improvements to pattern recognition in the FDC for alignment of wire planes.
+------------------------------------------------------------------------
+r14014 | davidl | 2014-07-02 10:51:39 -0400 (Wed, 02 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/SConscript
+   A /trunk/sim-recon/src/programs/Utilities/evio_cull_events
+   A /trunk/sim-recon/src/programs/Utilities/evio_cull_events/SConscript
+   A /trunk/sim-recon/src/programs/Utilities/evio_cull_events/evio_cull_events.cc
+
+Utility for pulling individual events from an EVIO file and writing them to a different EVIO file.
+------------------------------------------------------------------------
+r14021 | staylor | 2014-07-03 10:03:03 -0400 (Thu, 03 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CDC/DCDCTrackHit_factory.cc
+
+For the purpose of matching truth points to the simulated cdc hits, make a crude calculation for the drift distance to pass to the matching code.
+------------------------------------------------------------------------
+r14022 | jonesrt | 2014-07-03 10:12:28 -0400 (Thu, 03 Jul 2014) | 13 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitTag.c
+
+* calibDB.cc [rtj]
+  - fixed formatting and comment spelling, no functional change
+* hitTag.cc [rtj]
+  - added fixed array hits in addition to microscope, requires a coordinated
+    update to the hddm data model in libraries/HDDM
+  - fetch counter energy bins from ccdb instead of the crude equal-size bins
+    that existed prior to this update
+  - limit the tagger hits to a +/- 20ns window around the trigger t=0 time,
+    otherwise when BGGATE is enabled you will get hundreds of tagger hits
+    which will never be used because they are too far out of time from the
+    event trigger. This window is set by TAG_T_MIN_NS and TAG_T_MAX_NS in 
+    the source code, and should be adjusted by changing these constants.
+
+------------------------------------------------------------------------
+r14023 | jonesrt | 2014-07-03 10:15:08 -0400 (Thu, 03 Jul 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+
+* event.xml [rtj]
+  - added a hit element for tagger fixed array counters.
+
+------------------------------------------------------------------------
+r14025 | davidl | 2014-07-03 16:38:20 -0400 (Thu, 03 Jul 2014) | 17 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CDC/DCDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/CDC/DCDCTrackHit_factory.cc
+   M /trunk/sim-recon/src/libraries/CDC/DCDCTrackHit_factory.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+Added emulation of Df125PulseTime objects from the Df125WindowRawData
+objects. For the moment, this uses a much simpler algorithm than what
+will be put into the FPGA. It sets up the framework though and allows
+the drift times to be seen in hdview2.
+
+The conversion from drift time to distance is done in the DCDCTrackHit_factory.
+Previously, this always set the "dist" value to be -1. It was to be
+filled in later by the track fitter since only then would a time of flight
+be known. The calculation copies the code from the DTrackFitterKalmanSIMD
+class and assumes tof to wire is zero and B-field is 2T. These values
+are currently hardwired and the second shoul be changed to at least use
+an average field based on ring.
+
+A shift of 170ns in the time is also hardwired for the moment in the
+emulation routine for the Df125PulseTime. This is empirical from the
+first 147 events of the original BCAL/CDC cosmic run data.
+
+------------------------------------------------------------------------
+r14026 | staylor | 2014-07-03 18:37:07 -0400 (Thu, 03 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Change output format for wire offset table.  Improve algorithm for linking together segments formed from pseudopoints.
+------------------------------------------------------------------------
+r14054 | davidl | 2014-07-07 11:33:05 -0400 (Mon, 07 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+Implement upsampling algorithm based on code sent to me by Mike Staib. (Which I beleive originally came from Naomi.
+------------------------------------------------------------------------
+r14055 | davidl | 2014-07-07 11:40:47 -0400 (Mon, 07 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+Adjusted sign-ness of a couple of variables to avoid compiler warnings.
+------------------------------------------------------------------------
+r14063 | staylor | 2014-07-08 09:49:08 -0400 (Tue, 08 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Add flag to benchmark tracking quality (chi2, residuals) before applying alignment procudure.  Add flag to turn off getting FCAL hits.  Change output format to be consistent to means of inputing to the ccdb.  Improved reference trajectory code for FDC hits.
+------------------------------------------------------------------------
+r14064 | staylor | 2014-07-08 09:51:35 -0400 (Tue, 08 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/plot_fdc_offsets.C
+
+update to be consistent with plugin code.
+------------------------------------------------------------------------
+r14065 | staylor | 2014-07-08 10:59:27 -0400 (Tue, 08 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Enable reading cathode offsets from file. Make sure anneal factor is set to 1 for benchmarking.
+------------------------------------------------------------------------
+r14076 | davidl | 2014-07-09 08:13:58 -0400 (Wed, 09 Jul 2014) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/DCAEN1290TDCHit.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JFactoryGenerator_DAQ.h
+
+Added DCAEN1290TDCHit class and filled in parser code for generating them from the EVIO data.
+------------------------------------------------------------------------
+r14077 | staylor | 2014-07-09 08:23:06 -0400 (Wed, 09 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Add histograms for cdc residuals as a function of straw number, one histogram per ring.
+------------------------------------------------------------------------
+r14078 | davidl | 2014-07-09 09:11:06 -0400 (Wed, 09 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.h
+
+Finish connecting DCAEN1290TDCHit to DTOFTDCDigiHit.
+------------------------------------------------------------------------
+r14079 | davidl | 2014-07-09 09:16:00 -0400 (Wed, 09 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+Ignore the mysterious 0xd00dd00d word in TOF TDC data.
+------------------------------------------------------------------------
+r14080 | staylor | 2014-07-09 09:39:14 -0400 (Wed, 09 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Add histograms of drift time as a function of straw number, one for each ring
+------------------------------------------------------------------------
+r14081 | davidl | 2014-07-09 09:40:23 -0400 (Wed, 09 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+Added emulation of PulseTime for fADC250.
+------------------------------------------------------------------------
+r14082 | pmatt | 2014-07-09 16:58:29 -0400 (Wed, 09 Jul 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.h
+
+Allow single-argument function-call-operator to be called on DReaction-dependent-objects. 
+This is useful for actions that do not depend on particle combinations: for example, cutting on whether the thrown topology is the one in the DReaction. 
+
+
+------------------------------------------------------------------------
+r14093 | staylor | 2014-07-10 17:34:08 -0400 (Thu, 10 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+
+Small change to reported start position of track candidate
+------------------------------------------------------------------------
+r14094 | staylor | 2014-07-10 17:42:20 -0400 (Thu, 10 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.h
+
+Improved algorithm for matching track candidates in the FDC for the case where at least one track candidate has hits in adjacent packages.  For example,  suppose one track candidate has hits in packages 1 and 2, a second has hits in packages in 3 and 4; in many cases these are not two separate tracks and should be linked together.  Added new routine for getting the position and momentum, needed for this improved matching method.
+------------------------------------------------------------------------
+r14095 | staylor | 2014-07-10 17:53:18 -0400 (Thu, 10 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+In the forward trajectory code, make sure the num_hits variable is initialized to avoid valgrind error.  Also explicitly handle the transition through the cdc endplate.  In the routine that returnes the drift distance in the cdc, return a safe value if the time exceeds the maximum drift time in the time-to-distance table.
+------------------------------------------------------------------------
+r14097 | staylor | 2014-07-11 08:05:53 -0400 (Fri, 11 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Check for cdc times exceeding the maximum drift time in the time-to-distance table.
+------------------------------------------------------------------------
+r14098 | davidl | 2014-07-11 10:23:29 -0400 (Fri, 11 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+Added EVIO:ENABLE_DISENTANGLING config. parameter to allow one to turn off event disentangling if needed.
+------------------------------------------------------------------------
+r14114 | davidl | 2014-07-14 06:59:18 -0400 (Mon, 14 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+Plugged small memory leak.
+------------------------------------------------------------------------
+r14118 | pmatt | 2014-07-14 17:27:34 -0400 (Mon, 14 Jul 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+
+Print error message when output ROOT TTree file not found. 
+
+
+------------------------------------------------------------------------
+r14120 | davidl | 2014-07-15 06:49:47 -0400 (Tue, 15 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CDC/DCDCTrackHit_factory.cc
+   M /trunk/sim-recon/src/libraries/CDC/DCDCTrackHit_factory.h
+
+Fixed bug that could lead to indexing vector outside of bounds causing seg. fault.
+------------------------------------------------------------------------
+r14153 | staylor | 2014-07-17 11:44:36 -0400 (Thu, 17 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.h
+
+In the line fitting code, the code no longer copies the hit covariance in r into a local DMatrix object; instead this is added to the DHFProjection structure.  Also removed a dubious arc length error estimate.
+------------------------------------------------------------------------
+r14154 | staylor | 2014-07-17 11:48:19 -0400 (Thu, 17 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
+
+Only try to match segments in adjacent packages to cut down on the confusion that multi-track events sometimes cause in the FDC.  Added an alternate method for matching segments that uses the proximity of the centers of the circles.
+------------------------------------------------------------------------
+r14157 | davidl | 2014-07-17 17:11:45 -0400 (Thu, 17 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+
+Only print DParticleID: loading values from PID data base message once instead of once per thread.
+------------------------------------------------------------------------
+r14158 | davidl | 2014-07-17 17:13:35 -0400 (Thu, 17 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Try and include EVIO support by default. It should quietly not use it if EVIOROOT is not set. Also, add expat library when including EVIO support since it seems libevioxx.so needs this.
+------------------------------------------------------------------------
+r14159 | davidl | 2014-07-17 17:14:27 -0400 (Thu, 17 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.cc
+
+Replace preprocessor directive USE_EVIO with HAVE_EVIO
+------------------------------------------------------------------------
+r14165 | pmatt | 2014-07-18 00:17:52 -0400 (Fri, 18 Jul 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter_GlueX.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter_GlueX.h
+
+Abort if magnetic field pointer is null or if field is zero at the target center. 
+
+
+------------------------------------------------------------------------
+r14170 | staylor | 2014-07-18 10:35:13 -0400 (Fri, 18 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.cc
+
+Remove reference to unused variable.
+------------------------------------------------------------------------
+r14172 | davidl | 2014-07-18 11:27:28 -0400 (Fri, 18 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+Added config. parameters for setting PulseTime smaple thresholds for the F125 and F250 when emulating from raw window data. Also made default for F250 to be 80 counts.
+------------------------------------------------------------------------
+r14174 | dalton | 2014-07-18 12:19:43 -0400 (Fri, 18 Jul 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/DAQTree/JEventProcessor_DAQTree.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/DAQTree/JEventProcessor_DAQTree.h
+
+
+Minor corrections to Doxygen documentation
+
+
+------------------------------------------------------------------------
+r14175 | dalton | 2014-07-18 12:26:23 -0400 (Fri, 18 Jul 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALHit_factory.cc
+
+
+FADC times are in units of 62.5 ps.
+
+
+------------------------------------------------------------------------
+r14176 | dalton | 2014-07-18 12:37:18 -0400 (Fri, 18 Jul 2014) | 9 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.h
+
+
+Added functionality to the BCAL Geometry.  The cell ID can be obtained from r,phi coordinates.
+
+A global sector is introduced which goes from 1 (Mod 1, Sector1) through 192 (Mod 48, Sector 4).
+Functions to convert to and from global sector are provided.
+
+The additional functionalities are necessary for the calibration using track projections.
+
+
+------------------------------------------------------------------------
+r14177 | dalton | 2014-07-18 12:39:04 -0400 (Fri, 18 Jul 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALGeometry.cc
+
+
+More gracefully deal with blocks that don't exist.
+
+
+------------------------------------------------------------------------
+r14180 | staylor | 2014-07-18 14:48:32 -0400 (Fri, 18 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Add flags to set minimimum number of intersections and pseudopoints for FDC fitting. Set minimum and maximum number of tracks in the FDC to consider for alignment.  Modified estimate for t0 for for use when USE_DRIFT_TIMES is true.
+------------------------------------------------------------------------
+r14205 | staylor | 2014-07-21 08:04:58 -0400 (Mon, 21 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.h
+
+Improved method linking tracks with two segments each in the FDC together.  Improve method for linking stray FDC segments with already existing track candidates.  Add new method for linking forward-going CDC candidates with FDC candidates that attempts to use the outermost stereo straw to improve the circle fit for the CDC candidate by assuming that the actual hit occurs near the end of the straw, which would make sense if the track does indeed pass through the cdc endplate and produce hits in the first FDC package.
+------------------------------------------------------------------------
+r14211 | pmatt | 2014-07-21 17:25:45 -0400 (Mon, 21 Jul 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter_GlueX.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter_GlueX.h
+
+Move B-field = 0 check to kinfit results factory. 
+
+
+------------------------------------------------------------------------
+r14213 | dalton | 2014-07-22 09:30:25 -0400 (Tue, 22 Jul 2014) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/SConscript
+   A /trunk/sim-recon/src/programs/Analysis/plugins/bcal_calib_cosmic_cdc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/bcal_calib_cosmic_cdc/JEventProcessor_bcal_calib_cosmic_cdc.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/bcal_calib_cosmic_cdc/JEventProcessor_bcal_calib_cosmic_cdc.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/bcal_calib_cosmic_cdc/SConscript
+
+
+This plugin uses cosmic ray data for the BCAL and CDC together in 
+order to calibrate the BCAL cells.  Projecting the DTrackCandidate
+CDCCOSMIC line fitted to the CDC data allows a calibration of the 
+BCAL cells based on the distance of travel of the cosmic through 
+the cell.
+
+
+------------------------------------------------------------------------
+r14223 | davidl | 2014-07-23 07:49:48 -0400 (Wed, 23 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/mc2coda_modules.h
+
+Modified F1TDC output to conform to F1TDC_V2_V3_4_29_14.pdf document. This *should* be what's in the firmware of our modules.
+------------------------------------------------------------------------
+r14224 | davidl | 2014-07-23 09:43:39 -0400 (Wed, 23 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/DF1TDCHit.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+Updated F1TDC parsing based on the latest document: F1TDC_V2_V3_4_29_14.pdf.
+------------------------------------------------------------------------
+r14225 | davidl | 2014-07-23 09:44:38 -0400 (Wed, 23 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/mc2coda_modules.h
+
+Add slot number to F1TDC filler words as per documentation.
+------------------------------------------------------------------------
+r14226 | davidl | 2014-07-23 09:47:22 -0400 (Wed, 23 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/mc2coda_modules.h
+
+Initialize wcnt to avoid compiler warnings.
+------------------------------------------------------------------------
+r14268 | davidl | 2014-07-24 09:41:33 -0400 (Thu, 24 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+Fixed ET event unstacking and F1TDC parsing/debugging. Seems to read events from ET that's being fed by CODA.
+------------------------------------------------------------------------
+r14269 | davidl | 2014-07-24 09:43:03 -0400 (Thu, 24 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/mc2coda_modules.h
+
+Write out F1 header for only one channel and make it channel 7 to be consistent with what was observed in real data.
+------------------------------------------------------------------------
+r14276 | pmatt | 2014-07-24 16:58:13 -0400 (Thu, 24 Jul 2014) | 7 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.h
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+
+Changed symbols for deuteron and triton (now lowercase). 
+
+Can now perform an anti(opposite)-cut: if enabled, cut will return the opposite of what Perform_Action returns. 
+
+Added new single-combo functor: can now more-easily call actions from within another action.  
+
+
+------------------------------------------------------------------------
+r14281 | marki | 2014-07-24 17:33:16 -0400 (Thu, 24 Jul 2014) | 7 lines
+Changed paths:
+   M /trunk/sim-recon
+   D /trunk/sim-recon/src/BMS
+   D /trunk/sim-recon/src/Makefile
+   D /trunk/sim-recon/src/doc/Makefile
+   D /trunk/sim-recon/src/external/Makefile
+   D /trunk/sim-recon/src/external/xstream/Makefile
+   D /trunk/sim-recon/src/external/xstream/doc/Makefile
+   D /trunk/sim-recon/src/external/xstream/src/Makefile
+   D /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/Makefile
+   D /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/Makefile
+   D /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/Makefile
+   M /trunk/sim-recon/src/libraries/ANALYSIS
+   D /trunk/sim-recon/src/libraries/ANALYSIS/Makefile
+   D /trunk/sim-recon/src/libraries/BCAL/Makefile
+   D /trunk/sim-recon/src/libraries/CCAL/Makefile
+   D /trunk/sim-recon/src/libraries/CDC/Makefile
+   D /trunk/sim-recon/src/libraries/CERE/Makefile
+   M /trunk/sim-recon/src/libraries/DANA
+   D /trunk/sim-recon/src/libraries/DANA/Makefile
+   D /trunk/sim-recon/src/libraries/FCAL/Makefile
+   D /trunk/sim-recon/src/libraries/FDC/Makefile
+   M /trunk/sim-recon/src/libraries/HDDM
+   D /trunk/sim-recon/src/libraries/HDDM/Makefile
+   D /trunk/sim-recon/src/libraries/HDDM/Makefile.static
+   D /trunk/sim-recon/src/libraries/HDDM/shlib/Makefile
+   D /trunk/sim-recon/src/libraries/HDGEOMETRY/Makefile
+   D /trunk/sim-recon/src/libraries/Makefile
+   D /trunk/sim-recon/src/libraries/PID/Makefile
+   D /trunk/sim-recon/src/libraries/RICH/Makefile
+   D /trunk/sim-recon/src/libraries/START_COUNTER/Makefile
+   D /trunk/sim-recon/src/libraries/TAGGER/Makefile
+   D /trunk/sim-recon/src/libraries/TOF/Makefile
+   D /trunk/sim-recon/src/libraries/TRACKING/Makefile
+   D /trunk/sim-recon/src/libraries/TRIGGER/Makefile
+   D /trunk/sim-recon/src/libraries/include/Makefile
+   D /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/Makefile
+   D /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_all/Makefile
+   D /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/Makefile
+   D /trunk/sim-recon/src/programs/AmplitudeAnalysis/Makefile
+   D /trunk/sim-recon/src/programs/AmplitudeAnalysis/fit/Makefile
+   D /trunk/sim-recon/src/programs/AmplitudeAnalysis/split_mass/Makefile
+   D /trunk/sim-recon/src/programs/AmplitudeAnalysis/toy_detector/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/hd_fitOmega/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testChargedKinFit/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testKpiSeparation/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testPi0GammaGamma/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testPid/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testSmearing/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/test_pKsKs/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/test_pKsKs_misspi/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/test_ppipppimpi0/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/bkgStudy/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/hd_ana/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/hd_dump/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/hd_eventfilter/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/hd_example/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/hd_root/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/hdview2/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/mctrk_ana/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/DAQTree/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/DCdEdxStudy_tree/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/acceptance_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/bcal_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/bcalfcaltof_res_tree/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/candidate_tree/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/cdc_covariance_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/cdc_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/eloss_tree/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/eta_ntuple/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/event_size/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/fcal_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/fdc_covariance_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/fdc_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/invariant_mass_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/mcthrown_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/photoneff_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/pidstudies_tree/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/pulls_tree/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/radlen_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/rho_p_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/track_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists2/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/trackeffv2/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/trk_profile/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/trkfitterLSLM/Makefile
+   D /trunk/sim-recon/src/programs/Analysis/plugins/trkres_tree/Makefile
+   D /trunk/sim-recon/src/programs/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.bms
+   D /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.orig
+   D /trunk/sim-recon/src/programs/Simulation/HDGeant/gelhad/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/HDGeant/gelhad/Makefile.orig
+   D /trunk/sim-recon/src/programs/Simulation/HDGeant/hitutil/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/HDGeant/hitutil/Makefile.orig
+   D /trunk/sim-recon/src/programs/Simulation/Makefile
+   M /trunk/sim-recon/src/programs/Simulation/bggen
+   D /trunk/sim-recon/src/programs/Simulation/bggen/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/bggen/code/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/bggen/paw/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/cobrems_root/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/filtereta/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/filtergen/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/gamp2hddm/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/gen_3pi/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/gen_5pi/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/geneta/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/genp_pi0/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/genphoton/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/genpi/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/genr8/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/genr8/Makefile.orig
+   M /trunk/sim-recon/src/programs/Simulation/genr8_2_hddm
+   D /trunk/sim-recon/src/programs/Simulation/genr8_2_hddm/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/gxtwist/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/gxtwist/Makefile.bms
+   D /trunk/sim-recon/src/programs/Simulation/gxtwist/Makefile.orig
+   D /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/lowengen/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/lowengen/code/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/lowengen/paw/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/mcsmear/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/pi02hddm/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/plugins/extract_ptype_hddm/Makefile
+   M /trunk/sim-recon/src/programs/Simulation/plugins/hdparsim
+   D /trunk/sim-recon/src/programs/Simulation/plugins/hdparsim/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/pythiagen/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/root2hddm/Makefile
+   D /trunk/sim-recon/src/programs/Simulation/stdhep_translators/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/bfield2root/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/bfield_finemesh/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/file2et/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/hd_geom_query/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/hddm/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/hddm/Makefile.OSX
+   D /trunk/sim-recon/src/programs/Utilities/hddm2cMsg/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/hddm2root/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/hddm_cull_events/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/hddm_merge_events/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/hddm_merge_files/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/hddm_select_events/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/kinfit/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/kinfit/example/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/mkMaterialMap/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/patfind/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/plugins/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/plugins/TTab/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/plugins/danahddm/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/plugins/danarest/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/plugins/eviodana/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/plugins/janaded/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/src/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/root2email/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/root2hbook/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/root_merge/Makefile
+   D /trunk/sim-recon/src/programs/Utilities/tree_to_amptools/Makefile
+
+Deleting Makefiles from the trunk.
+Merge done on r14280.
+Command:
+
+  svn merge https://halldsvn.jlab.org/repos/branches/sim-recon_no_make
+
+
+------------------------------------------------------------------------
+r14286 | staylor | 2014-07-25 09:16:00 -0400 (Fri, 25 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+Use new method 8 to match cdc track candidates that don't seem to point toward the fdc due to limited stereo information with fdc candidates instead of method 5, which almost never worked.
+------------------------------------------------------------------------
+r14292 | davidl | 2014-07-25 16:11:22 -0400 (Fri, 25 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+Added code to find run number quickly from Built Trigger bank. This is a quick search since it must be done by the event reader thread, but seems to work on a CODA produced file.
+------------------------------------------------------------------------
+r14293 | davidl | 2014-07-25 16:42:46 -0400 (Fri, 25 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/mc2coda_modules.h
+
+Fixed bug in F1TDC 48-ch output where header was only being output for first channel on module, not first channel on chip. Also fixed so header always specifies chan on chip to be 7 so that it matches data.
+------------------------------------------------------------------------
+r14294 | davidl | 2014-07-25 17:15:15 -0400 (Fri, 25 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/mc2coda.c
+
+Replace detid=2 with detid=20 for CAEN TDC modules. The various detector DAQs have broken the original scheme of using detid=1 for digitizing JLab modules and 2 for CAEN TDCs. detid=20 seems to be wht's in use by the TOF guys at the moment for CAEN1290s so we'll go with that.
+------------------------------------------------------------------------
+r14355 | wilevine | 2014-07-27 13:46:30 -0400 (Sun, 27 Jul 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Change mcsmear so that BCAL hit energy is written out in units of GeV
+rather than in fADC units.
+
+------------------------------------------------------------------------
+r14356 | wilevine | 2014-07-27 13:52:16 -0400 (Sun, 27 Jul 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALHit.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALUnifiedHit_factory.cc
+
+Adjust BCAL reconstruction to deal with the fact that DBCALHit energies are now
+in GeV rather than fADC units.
+
+------------------------------------------------------------------------
+r14362 | sdobbs | 2014-07-27 21:03:03 -0400 (Sun, 27 Jul 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/mc2coda_modules.h
+
+The F1TDC running in high resolution mode uses two chip channels per detector channel (4 detector channels per chip), so to 
+get the correct mapping, we multiply the calculated chip channel by two. 
+
+------------------------------------------------------------------------
+r14374 | davidl | 2014-07-28 12:04:02 -0400 (Mon, 28 Jul 2014) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df125PulsePedestal.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df250PulsePedestal.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JFactoryGenerator_DAQ.h
+
+Add support for Df250PulsePedestal and Df125PulsePedestal objects. This includes emulation mode.
+------------------------------------------------------------------------
+r14379 | sdobbs | 2014-07-28 14:47:21 -0400 (Mon, 28 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+
+Updated time and energy scales to match those in current firmware.
+------------------------------------------------------------------------
+r14390 | davidl | 2014-07-28 16:43:52 -0400 (Mon, 28 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df250PulseIntegral.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+Copy pedestal from PulsePedestal objects into PulseIntegral objects for both f250 and f125. The emulation and module-produced pedestals are not currently consistent. The emulated pedestal is scaled up by the ratio of Nped samples to Nwindow samples. The module produced pedestal is an average of Nped samples. Also, added a few more object associations that were missing for f125 and f250.
+------------------------------------------------------------------------
+r14396 | sdobbs | 2014-07-28 18:10:18 -0400 (Mon, 28 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.h
+
+Handle TDC hits separately from ADC hits for the BCAL.
+------------------------------------------------------------------------
+r14406 | sdobbs | 2014-07-28 22:00:12 -0400 (Mon, 28 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+
+Fixed verbose output
+------------------------------------------------------------------------
+r14407 | davidl | 2014-07-28 22:32:48 -0400 (Mon, 28 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+Initialize pedestal field in emulated PulseIntegral objects to zero and only overwrite if a PulsePedestal object exists.
+------------------------------------------------------------------------
+r14419 | sdobbs | 2014-07-29 13:53:43 -0400 (Tue, 29 Jul 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALHit_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALTDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/CDC/DCDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALHit_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/START_COUNTER/DSCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/START_COUNTER/DSCHit_factory.h
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+
+Updated gain and scale factors to be consistent
+across detectors, and started some code cleanup.
+
+
+------------------------------------------------------------------------
+r14422 | sdobbs | 2014-07-29 14:41:09 -0400 (Tue, 29 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CDC/DCDCHit_factory.cc
+
+Clean up compiler warnings.
+------------------------------------------------------------------------
+r14428 | marki | 2014-07-29 16:02:06 -0400 (Tue, 29 Jul 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon
+   A /trunk/sim-recon/src/BMS (from /trunk/sim-recon/src/BMS:14276)
+   R /trunk/sim-recon/src/BMS/IDE (from /trunk/sim-recon/src/BMS/IDE:14276)
+   R /trunk/sim-recon/src/BMS/IDE/HallD.xcodeproj (from /trunk/sim-recon/src/BMS/IDE/HallD.xcodeproj:14276)
+   R /trunk/sim-recon/src/BMS/IDE/HallD.xcodeproj/davidl.mode1 (from /trunk/sim-recon/src/BMS/IDE/HallD.xcodeproj/davidl.mode1:14276)
+   R /trunk/sim-recon/src/BMS/IDE/HallD.xcodeproj/davidl.pbxuser (from /trunk/sim-recon/src/BMS/IDE/HallD.xcodeproj/davidl.pbxuser:14276)
+   R /trunk/sim-recon/src/BMS/IDE/HallD.xcodeproj/project.pbxproj (from /trunk/sim-recon/src/BMS/IDE/HallD.xcodeproj/project.pbxproj:14276)
+   R /trunk/sim-recon/src/BMS/IDE/README.xcode (from /trunk/sim-recon/src/BMS/IDE/README.xcode:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.AmpPlotter (from /trunk/sim-recon/src/BMS/Makefile.AmpPlotter:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.AmpTools (from /trunk/sim-recon/src/BMS/Makefile.AmpTools:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.CCDB (from /trunk/sim-recon/src/BMS/Makefile.CCDB:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.CERNLIB (from /trunk/sim-recon/src/BMS/Makefile.CERNLIB:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.CLHEP (from /trunk/sim-recon/src/BMS/Makefile.CLHEP:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.CUDA (from /trunk/sim-recon/src/BMS/Makefile.CUDA:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.CURL (from /trunk/sim-recon/src/BMS/Makefile.CURL:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.CYGWIN_NT-5.1 (from /trunk/sim-recon/src/BMS/Makefile.CYGWIN_NT-5.1:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.DANA (from /trunk/sim-recon/src/BMS/Makefile.DANA:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.Darwin (from /trunk/sim-recon/src/BMS/Makefile.Darwin:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.Darwin-powerpc (from /trunk/sim-recon/src/BMS/Makefile.Darwin-powerpc:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.ET (from /trunk/sim-recon/src/BMS/Makefile.ET:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.EVIO (from /trunk/sim-recon/src/BMS/Makefile.EVIO:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.JANA (from /trunk/sim-recon/src/BMS/Makefile.JANA:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.Linux (from /trunk/sim-recon/src/BMS/Makefile.Linux:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.MCFAST (from /trunk/sim-recon/src/BMS/Makefile.MCFAST:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.MYSQL (from /trunk/sim-recon/src/BMS/Makefile.MYSQL:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.ROOT (from /trunk/sim-recon/src/BMS/Makefile.ROOT:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.SIMD (from /trunk/sim-recon/src/BMS/Makefile.SIMD:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.SunOS (from /trunk/sim-recon/src/BMS/Makefile.SunOS:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.XERCES (from /trunk/sim-recon/src/BMS/Makefile.XERCES:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.bin (from /trunk/sim-recon/src/BMS/Makefile.bin:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.cMsg (from /trunk/sim-recon/src/BMS/Makefile.cMsg:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.common (from /trunk/sim-recon/src/BMS/Makefile.common:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.dirs (from /trunk/sim-recon/src/BMS/Makefile.dirs:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.lib (from /trunk/sim-recon/src/BMS/Makefile.lib:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.shlib (from /trunk/sim-recon/src/BMS/Makefile.shlib:14276)
+   R /trunk/sim-recon/src/BMS/Makefile.x86_64 (from /trunk/sim-recon/src/BMS/Makefile.x86_64:14276)
+   R /trunk/sim-recon/src/BMS/TextFile2String.py (from /trunk/sim-recon/src/BMS/TextFile2String.py:14276)
+   R /trunk/sim-recon/src/BMS/gcc_version.csh (from /trunk/sim-recon/src/BMS/gcc_version.csh:14276)
+   R /trunk/sim-recon/src/BMS/get_macos_arch (from /trunk/sim-recon/src/BMS/get_macos_arch:14276)
+   R /trunk/sim-recon/src/BMS/get_root_version (from /trunk/sim-recon/src/BMS/get_root_version:14276)
+   R /trunk/sim-recon/src/BMS/main_files.sh (from /trunk/sim-recon/src/BMS/main_files.sh:14276)
+   R /trunk/sim-recon/src/BMS/make_xcode (from /trunk/sim-recon/src/BMS/make_xcode:14276)
+   R /trunk/sim-recon/src/BMS/osrelease.pl (from /trunk/sim-recon/src/BMS/osrelease.pl:14276)
+   A /trunk/sim-recon/src/Makefile (from /trunk/sim-recon/src/Makefile:14276)
+   A /trunk/sim-recon/src/doc/Makefile (from /trunk/sim-recon/src/doc/Makefile:14276)
+   A /trunk/sim-recon/src/external/Makefile (from /trunk/sim-recon/src/external/Makefile:14276)
+   A /trunk/sim-recon/src/external/xstream/Makefile (from /trunk/sim-recon/src/external/xstream/Makefile:14276)
+   A /trunk/sim-recon/src/external/xstream/doc/Makefile (from /trunk/sim-recon/src/external/xstream/doc/Makefile:14276)
+   A /trunk/sim-recon/src/external/xstream/src/Makefile (from /trunk/sim-recon/src/external/xstream/src/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/Makefile (from /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/Makefile (from /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/Makefile (from /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/Makefile:14276)
+   M /trunk/sim-recon/src/libraries/ANALYSIS
+   A /trunk/sim-recon/src/libraries/ANALYSIS/Makefile (from /trunk/sim-recon/src/libraries/ANALYSIS/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/BCAL/Makefile (from /trunk/sim-recon/src/libraries/BCAL/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/CCAL/Makefile (from /trunk/sim-recon/src/libraries/CCAL/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/CDC/Makefile (from /trunk/sim-recon/src/libraries/CDC/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/CERE/Makefile (from /trunk/sim-recon/src/libraries/CERE/Makefile:14276)
+   M /trunk/sim-recon/src/libraries/DANA
+   A /trunk/sim-recon/src/libraries/DANA/Makefile (from /trunk/sim-recon/src/libraries/DANA/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/FCAL/Makefile (from /trunk/sim-recon/src/libraries/FCAL/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/FDC/Makefile (from /trunk/sim-recon/src/libraries/FDC/Makefile:14276)
+   M /trunk/sim-recon/src/libraries/HDDM
+   A /trunk/sim-recon/src/libraries/HDDM/Makefile (from /trunk/sim-recon/src/libraries/HDDM/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/HDDM/Makefile.static (from /trunk/sim-recon/src/libraries/HDDM/Makefile.static:14276)
+   A /trunk/sim-recon/src/libraries/HDDM/shlib/Makefile (from /trunk/sim-recon/src/libraries/HDDM/shlib/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/HDGEOMETRY/Makefile (from /trunk/sim-recon/src/libraries/HDGEOMETRY/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/Makefile (from /trunk/sim-recon/src/libraries/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/PID/Makefile (from /trunk/sim-recon/src/libraries/PID/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/RICH/Makefile (from /trunk/sim-recon/src/libraries/RICH/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/START_COUNTER/Makefile (from /trunk/sim-recon/src/libraries/START_COUNTER/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/TAGGER/Makefile (from /trunk/sim-recon/src/libraries/TAGGER/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/TOF/Makefile (from /trunk/sim-recon/src/libraries/TOF/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/TRACKING/Makefile (from /trunk/sim-recon/src/libraries/TRACKING/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/TRIGGER/Makefile (from /trunk/sim-recon/src/libraries/TRIGGER/Makefile:14276)
+   A /trunk/sim-recon/src/libraries/include/Makefile (from /trunk/sim-recon/src/libraries/include/Makefile:14276)
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/Makefile (from /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/Makefile:14276)
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_all/Makefile (from /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_all/Makefile:14276)
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/Makefile (from /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/Makefile:14276)
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Makefile (from /trunk/sim-recon/src/programs/AmplitudeAnalysis/Makefile:14276)
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/fit/Makefile (from /trunk/sim-recon/src/programs/AmplitudeAnalysis/fit/Makefile:14276)
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/split_mass/Makefile (from /trunk/sim-recon/src/programs/AmplitudeAnalysis/split_mass/Makefile:14276)
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/toy_detector/Makefile (from /trunk/sim-recon/src/programs/AmplitudeAnalysis/toy_detector/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/hd_fitOmega/Makefile (from /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/hd_fitOmega/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testChargedKinFit/Makefile (from /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testChargedKinFit/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testKpiSeparation/Makefile (from /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testKpiSeparation/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testPi0GammaGamma/Makefile (from /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testPi0GammaGamma/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testPid/Makefile (from /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testPid/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testSmearing/Makefile (from /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testSmearing/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/test_pKsKs/Makefile (from /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/test_pKsKs/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/test_pKsKs_misspi/Makefile (from /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/test_pKsKs_misspi/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/test_ppipppimpi0/Makefile (from /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/test_ppipppimpi0/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/Makefile (from /trunk/sim-recon/src/programs/Analysis/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/bkgStudy/Makefile (from /trunk/sim-recon/src/programs/Analysis/bkgStudy/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/hd_ana/Makefile (from /trunk/sim-recon/src/programs/Analysis/hd_ana/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/hd_dump/Makefile (from /trunk/sim-recon/src/programs/Analysis/hd_dump/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/hd_eventfilter/Makefile (from /trunk/sim-recon/src/programs/Analysis/hd_eventfilter/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/hd_example/Makefile (from /trunk/sim-recon/src/programs/Analysis/hd_example/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/hd_root/Makefile (from /trunk/sim-recon/src/programs/Analysis/hd_root/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/hdview2/Makefile (from /trunk/sim-recon/src/programs/Analysis/hdview2/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/mctrk_ana/Makefile (from /trunk/sim-recon/src/programs/Analysis/mctrk_ana/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/DAQTree/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/DAQTree/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/DCdEdxStudy_tree/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/DCdEdxStudy_tree/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/acceptance_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/acceptance_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/bcal_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/bcal_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/bcalfcaltof_res_tree/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/bcalfcaltof_res_tree/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/candidate_tree/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/candidate_tree/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/cdc_covariance_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/cdc_covariance_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/cdc_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/cdc_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/eloss_tree/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/eloss_tree/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/eta_ntuple/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/eta_ntuple/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/event_size/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/event_size/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/fcal_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/fcal_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/fdc_covariance_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/fdc_covariance_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/fdc_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/fdc_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/invariant_mass_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/invariant_mass_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/mcthrown_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/mcthrown_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/photoneff_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/photoneff_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/pidstudies_tree/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/pidstudies_tree/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/pulls_tree/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/pulls_tree/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/radlen_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/radlen_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/rho_p_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/rho_p_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/track_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/track_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists2/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists2/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trackeffv2/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/trackeffv2/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trk_profile/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/trk_profile/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trkfitterLSLM/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/trkfitterLSLM/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trkres_tree/Makefile (from /trunk/sim-recon/src/programs/Analysis/plugins/trkres_tree/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Makefile (from /trunk/sim-recon/src/programs/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile (from /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.bms (from /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.bms:14276)
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.orig (from /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.orig:14276)
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/gelhad/Makefile (from /trunk/sim-recon/src/programs/Simulation/HDGeant/gelhad/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/gelhad/Makefile.orig (from /trunk/sim-recon/src/programs/Simulation/HDGeant/gelhad/Makefile.orig:14276)
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/hitutil/Makefile (from /trunk/sim-recon/src/programs/Simulation/HDGeant/hitutil/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/hitutil/Makefile.orig (from /trunk/sim-recon/src/programs/Simulation/HDGeant/hitutil/Makefile.orig:14276)
+   A /trunk/sim-recon/src/programs/Simulation/Makefile (from /trunk/sim-recon/src/programs/Simulation/Makefile:14276)
+   M /trunk/sim-recon/src/programs/Simulation/bggen
+   A /trunk/sim-recon/src/programs/Simulation/bggen/Makefile (from /trunk/sim-recon/src/programs/Simulation/bggen/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/bggen/code/Makefile (from /trunk/sim-recon/src/programs/Simulation/bggen/code/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/bggen/paw/Makefile (from /trunk/sim-recon/src/programs/Simulation/bggen/paw/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/cobrems_root/Makefile (from /trunk/sim-recon/src/programs/Simulation/cobrems_root/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/filtereta/Makefile (from /trunk/sim-recon/src/programs/Simulation/filtereta/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/filtergen/Makefile (from /trunk/sim-recon/src/programs/Simulation/filtergen/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/gamp2hddm/Makefile (from /trunk/sim-recon/src/programs/Simulation/gamp2hddm/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/gen_3pi/Makefile (from /trunk/sim-recon/src/programs/Simulation/gen_3pi/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/gen_5pi/Makefile (from /trunk/sim-recon/src/programs/Simulation/gen_5pi/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/geneta/Makefile (from /trunk/sim-recon/src/programs/Simulation/geneta/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/genp_pi0/Makefile (from /trunk/sim-recon/src/programs/Simulation/genp_pi0/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/genphoton/Makefile (from /trunk/sim-recon/src/programs/Simulation/genphoton/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/genpi/Makefile (from /trunk/sim-recon/src/programs/Simulation/genpi/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/genr8/Makefile (from /trunk/sim-recon/src/programs/Simulation/genr8/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/genr8/Makefile.orig (from /trunk/sim-recon/src/programs/Simulation/genr8/Makefile.orig:14276)
+   M /trunk/sim-recon/src/programs/Simulation/genr8_2_hddm
+   A /trunk/sim-recon/src/programs/Simulation/genr8_2_hddm/Makefile (from /trunk/sim-recon/src/programs/Simulation/genr8_2_hddm/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/gxtwist/Makefile (from /trunk/sim-recon/src/programs/Simulation/gxtwist/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/gxtwist/Makefile.bms (from /trunk/sim-recon/src/programs/Simulation/gxtwist/Makefile.bms:14276)
+   A /trunk/sim-recon/src/programs/Simulation/gxtwist/Makefile.orig (from /trunk/sim-recon/src/programs/Simulation/gxtwist/Makefile.orig:14276)
+   A /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/Makefile (from /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/lowengen/Makefile (from /trunk/sim-recon/src/programs/Simulation/lowengen/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/lowengen/code/Makefile (from /trunk/sim-recon/src/programs/Simulation/lowengen/code/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/lowengen/paw/Makefile (from /trunk/sim-recon/src/programs/Simulation/lowengen/paw/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/mcsmear/Makefile (from /trunk/sim-recon/src/programs/Simulation/mcsmear/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/pi02hddm/Makefile (from /trunk/sim-recon/src/programs/Simulation/pi02hddm/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/plugins/extract_ptype_hddm/Makefile (from /trunk/sim-recon/src/programs/Simulation/plugins/extract_ptype_hddm/Makefile:14276)
+   M /trunk/sim-recon/src/programs/Simulation/plugins/hdparsim
+   A /trunk/sim-recon/src/programs/Simulation/plugins/hdparsim/Makefile (from /trunk/sim-recon/src/programs/Simulation/plugins/hdparsim/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/pythiagen/Makefile (from /trunk/sim-recon/src/programs/Simulation/pythiagen/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/root2hddm/Makefile (from /trunk/sim-recon/src/programs/Simulation/root2hddm/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Simulation/stdhep_translators/Makefile (from /trunk/sim-recon/src/programs/Simulation/stdhep_translators/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/Makefile (from /trunk/sim-recon/src/programs/Utilities/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/bfield2root/Makefile (from /trunk/sim-recon/src/programs/Utilities/bfield2root/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/bfield_finemesh/Makefile (from /trunk/sim-recon/src/programs/Utilities/bfield_finemesh/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/file2et/Makefile (from /trunk/sim-recon/src/programs/Utilities/file2et/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/hd_geom_query/Makefile (from /trunk/sim-recon/src/programs/Utilities/hd_geom_query/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/hddm/Makefile (from /trunk/sim-recon/src/programs/Utilities/hddm/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/hddm/Makefile.OSX (from /trunk/sim-recon/src/programs/Utilities/hddm/Makefile.OSX:14276)
+   A /trunk/sim-recon/src/programs/Utilities/hddm2cMsg/Makefile (from /trunk/sim-recon/src/programs/Utilities/hddm2cMsg/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/hddm2root/Makefile (from /trunk/sim-recon/src/programs/Utilities/hddm2root/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/hddm_cull_events/Makefile (from /trunk/sim-recon/src/programs/Utilities/hddm_cull_events/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/hddm_merge_events/Makefile (from /trunk/sim-recon/src/programs/Utilities/hddm_merge_events/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/hddm_merge_files/Makefile (from /trunk/sim-recon/src/programs/Utilities/hddm_merge_files/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/hddm_select_events/Makefile (from /trunk/sim-recon/src/programs/Utilities/hddm_select_events/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/kinfit/Makefile (from /trunk/sim-recon/src/programs/Utilities/kinfit/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/kinfit/example/Makefile (from /trunk/sim-recon/src/programs/Utilities/kinfit/example/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/mkMaterialMap/Makefile (from /trunk/sim-recon/src/programs/Utilities/mkMaterialMap/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/patfind/Makefile (from /trunk/sim-recon/src/programs/Utilities/patfind/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Makefile (from /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/plugins/Makefile (from /trunk/sim-recon/src/programs/Utilities/plugins/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/plugins/TTab/Makefile (from /trunk/sim-recon/src/programs/Utilities/plugins/TTab/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/Makefile (from /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/plugins/danahddm/Makefile (from /trunk/sim-recon/src/programs/Utilities/plugins/danahddm/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/plugins/danarest/Makefile (from /trunk/sim-recon/src/programs/Utilities/plugins/danarest/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/plugins/eviodana/Makefile (from /trunk/sim-recon/src/programs/Utilities/plugins/eviodana/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/plugins/janaded/Makefile (from /trunk/sim-recon/src/programs/Utilities/plugins/janaded/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/Makefile (from /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/Makefile (from /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/src/Makefile (from /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/src/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/root2email/Makefile (from /trunk/sim-recon/src/programs/Utilities/root2email/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/root2hbook/Makefile (from /trunk/sim-recon/src/programs/Utilities/root2hbook/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/root_merge/Makefile (from /trunk/sim-recon/src/programs/Utilities/root_merge/Makefile:14276)
+   A /trunk/sim-recon/src/programs/Utilities/tree_to_amptools/Makefile (from /trunk/sim-recon/src/programs/Utilities/tree_to_amptools/Makefile:14276)
+
+Put BMS and all makefiles back on the trunk. Done with reverse merge:
+
+  svn merge -r14280:14276 ^/branches/sim-recon_no_make
+
+------------------------------------------------------------------------
+r14460 | pmatt | 2014-07-31 12:45:57 -0400 (Thu, 31 Jul 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo.h
+   D /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprintStep.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprintStep.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboStep.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboStep.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReactionStep.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReactionStep.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DTrackTimeBased_factory_Combo.cc
+
+Inline functions, increase resource pool sizes. 
+
+
+------------------------------------------------------------------------
+r14463 | davidl | 2014-07-31 14:53:11 -0400 (Thu, 31 Jul 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+The F1TDC data from the BCAL shows that the chip header is only emitted if the trig_time is different from the last header. This means we can't check the chip number in the data word against the header. Disabled the check.
+------------------------------------------------------------------------
+r14471 | dalton | 2014-08-01 11:56:45 -0400 (Fri, 01 Aug 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/DAQTreeBCAL/JEventProcessor_DAQTreeBCAL.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/DAQTreeBCAL/JEventProcessor_DAQTreeBCAL.h
+
+
+Added the a tree for TDC information from the BCAL.
+
+
+------------------------------------------------------------------------
+r14483 | staylor | 2014-08-01 17:32:16 -0400 (Fri, 01 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.h
+
+Add two new methods to match stray FDC segments left over after all other methods have failed to connect them to other tracks.
+------------------------------------------------------------------------
+r14487 | jonesrt | 2014-08-01 21:59:56 -0400 (Fri, 01 Aug 2014) | 4 lines
+Changed paths:
+   D /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.orig
+
+* [Makefile.orig deleted] -rtj
+   - Two build systems, BMS and SBMS are enough already, without adding
+     a third localized Makefile. Simplify.
+
+------------------------------------------------------------------------
+r14508 | dalton | 2014-08-04 11:04:37 -0400 (Mon, 04 Aug 2014) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALDigiHit.h
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALDigiHit.h
+   M /trunk/sim-recon/src/libraries/START_COUNTER/DSCDigiHit.h
+   M /trunk/sim-recon/src/libraries/TOF/DTOFDigiHit.h
+
+
+Added in data members for objects that inherit from F250 Pulse Integrals, to contain the number of
+samples in the pedestal and the integral.
+
+
+------------------------------------------------------------------------
+r14509 | dalton | 2014-08-04 11:11:48 -0400 (Mon, 04 Aug 2014) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df250PulseIntegral.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.h
+
+
+Added in data members for Df250PulseIntegral objects, to contain the number of
+samples in the pedestal and the integral.
+
+Added in code in DTranslationTable to copy number of samples in the pedestal and 
+the integral from Df250PulseIntegral to DigiHit objects.
+
+
+------------------------------------------------------------------------
+r14510 | dalton | 2014-08-04 11:30:12 -0400 (Mon, 04 Aug 2014) | 18 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+
+Extensive changes to better emulate how the f250 firmware converts waveforms 
+into integrals.  Changes to handle different number of samples in the integration.
+
+1) Introduce parameters that firmware uses for threshold and number of samples.  When analyzing data
+   these parameters should be set to the same values as used inthe the firmware to correctly do
+   pedestal subtraction.
+        F250_THRESHOLD 
+        F250_NSA 
+        F250_NSB 
+        F250_NSPED
+2) Changed logic to use same criteria for sparsification as firmware.
+3) Same definition of integration window as firmware.
+4) Implemented the same constant fraction time algorithm.
+5) Provide number of samples to derived F250 PI objects, both emulated and directly from firmware.
+
+
+
+------------------------------------------------------------------------
+r14511 | dalton | 2014-08-04 11:47:18 -0400 (Mon, 04 Aug 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/DAQTree/JEventProcessor_DAQTree.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/DAQTree/JEventProcessor_DAQTree.h
+
+
+Add an output tree for Df250PulsePedestal objects.
+
+
+------------------------------------------------------------------------
+r14549 | sdobbs | 2014-08-05 12:33:56 -0400 (Tue, 05 Aug 2014) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.h
+
+Added public interface for querying translation table.
+
+------------------------------------------------------------------------
+r14550 | sdobbs | 2014-08-05 13:42:06 -0400 (Tue, 05 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CDC/DCDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/CDC/DCDCHit_factory.h
+
+Added public functions for accessing calibration constants.
+------------------------------------------------------------------------
+r14551 | sdobbs | 2014-08-05 13:44:55 -0400 (Tue, 05 Aug 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALHit_factory.cc
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALHit_factory.h
+
+- Added public functions for accessing calibration constants.
+- More checks and misc cleanup
+
+------------------------------------------------------------------------
+r14552 | sdobbs | 2014-08-05 13:45:49 -0400 (Tue, 05 Aug 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/START_COUNTER/DSCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/START_COUNTER/DSCHit_factory.h
+
+- Added public functions for accessing calibration constants.
+- More checks and misc cleanup
+
+------------------------------------------------------------------------
+r14553 | sdobbs | 2014-08-05 13:47:22 -0400 (Tue, 05 Aug 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCHit_factory.h
+
+- Added public functions for accessing calibration constants.
+- More checks and misc cleanup
+
+------------------------------------------------------------------------
+r14554 | sdobbs | 2014-08-05 13:48:13 -0400 (Tue, 05 Aug 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALHit_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALHit_factory.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALTDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALTDCHit_factory.h
+
+- Added public functions for accessing calibration constants.
+- More checks and misc cleanup
+
+------------------------------------------------------------------------
+r14555 | sdobbs | 2014-08-05 14:19:34 -0400 (Tue, 05 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCHit_factory.cc
+
+Fixed error reporting.
+------------------------------------------------------------------------
+r14556 | dalton | 2014-08-05 15:27:11 -0400 (Tue, 05 Aug 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALHit_factory.cc
+
+
+Pedestal subtraction now done using the number of samples in the pedestal and integral.
+
+
+------------------------------------------------------------------------
+r14557 | davidl | 2014-08-05 16:03:46 -0400 (Tue, 05 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CDC/DCDCHit_factory.cc
+
+Clear the Nstraws vector before filling it. Otherwise, it will just extend it if brun gets called more than once (which it will if more than one run number is encountered in the file).
+------------------------------------------------------------------------
+r14558 | davidl | 2014-08-05 16:04:49 -0400 (Tue, 05 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+Bomb-proof against c_samp-1 being <0 when using it to index array.
+------------------------------------------------------------------------
+r14574 | sdobbs | 2014-08-06 17:15:28 -0400 (Wed, 06 Aug 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.h
+
+- Added public functions for accessing calibration constants.
+- More checks and misc cleanup
+
+
+------------------------------------------------------------------------
+r14582 | marki | 2014-08-07 16:03:57 -0400 (Thu, 07 Aug 2014) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitTag.c
+
+Defeat early exit when fetch of calibration constants fails.
+
+This is a hack until a proper fix can be made to bring this routine
+into alignment with the relevant CCDB table.
+
+------------------------------------------------------------------------
+r14584 | davidl | 2014-08-08 10:45:51 -0400 (Fri, 08 Aug 2014) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+Comment out check on lower 6 bits of trigger number from F1
+header word and the 6 bit trigger number in chip header. It
+is not clear if these should always be in sync or not (I
+will consult expert later to find out.) They seemed to be
+sunced in other runs, but a recent BCAL run had them out of
+sync so I'mm disabling the check for now in order to continue
+processing the data.
+
+------------------------------------------------------------------------
+r14586 | davidl | 2014-08-08 11:48:20 -0400 (Fri, 08 Aug 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-xml.cpp
+
+Copy data into streambuf used by xdr::istream using a string object rather than
+simply pointing to an allocated memory block. This fixes hddm-xml on Mac OS X
+10.9.3 where is stopped working. See comments in code for more details.
+
+------------------------------------------------------------------------
+r14588 | davidl | 2014-08-08 11:55:30 -0400 (Fri, 08 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-xml.cpp
+
+This should have been included in last commit. My current test file doesn't excercise this part of the code, but presumably this fix will be needed here as well.
+------------------------------------------------------------------------
+r14594 | davidl | 2014-08-08 14:25:54 -0400 (Fri, 08 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.cc
+
+Catch any exception thrown when readin in a REST event. At this point, we don't treat this as an error condition since the current issue being debugged actually reads in the event before throwing the exception. Therefore, the event is kept. This will need to be changed in the future.
+------------------------------------------------------------------------
+r14616 | davidl | 2014-08-11 09:18:37 -0400 (Mon, 11 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+Intergral -> Integral
+------------------------------------------------------------------------
+r14619 | staylor | 2014-08-11 10:57:37 -0400 (Mon, 11 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased.h
+
+Add words for cdc and fdc hit usage.
+------------------------------------------------------------------------
+r14620 | staylor | 2014-08-11 11:09:22 -0400 (Mon, 11 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.h
+
+If the fit for a given mass hypothesis and given track candidate fails and the fit succeeds for at least one mass hypothesis, create tracks for the hypotheses that are missing from one of the existing tracks.  If the charge is not consistent between hypotheses for a given candidate, output tracks for all mass and charge combinations (currently pi+/-, K+/-, proton).
+------------------------------------------------------------------------
+r14621 | staylor | 2014-08-11 11:14:32 -0400 (Mon, 11 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter.h
+
+Count potential hits on track
+------------------------------------------------------------------------
+r14631 | staylor | 2014-08-12 11:07:10 -0400 (Tue, 12 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.h
+
+Add method to get column of calibration constants from ccdb by key.  This is not bomb-proof yet: it does not check if the key is valid for the particular table in the ccdb.
+------------------------------------------------------------------------
+r14632 | staylor | 2014-08-12 11:53:25 -0400 (Tue, 12 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitTag.c
+
+Modify to use new GetColumn method to get tagger counter energy ranges from the database.
+------------------------------------------------------------------------
+r14666 | davidl | 2014-08-15 09:20:25 -0400 (Fri, 15 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.h
+
+Remove 'struct' keyword for what are now classes of indexes in order to void compiler warnings.
+------------------------------------------------------------------------
+r14672 | sdobbs | 2014-08-15 15:36:15 -0400 (Fri, 15 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df125PulseIntegral.h
+
+Initialize default pedestal to zero in Df125PulseIntegral
+------------------------------------------------------------------------
+r14673 | sdobbs | 2014-08-15 15:37:52 -0400 (Fri, 15 Aug 2014) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+
+Changed TOF hit output from F1TDC format to CAEN TDC format.
+
+------------------------------------------------------------------------
+r14676 | davidl | 2014-08-17 12:43:59 -0400 (Sun, 17 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.cc
+
+Added a more detailed comment to DEventSourceREST to remind us why the returning is disabled when an exception is caught. This should be a temporary work-around and the comment explains that.
+------------------------------------------------------------------------
+r14677 | davidl | 2014-08-17 12:49:56 -0400 (Sun, 17 Aug 2014) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.h
+
+- Changed check on f250 first sample above threshold being in NSB region.
+  (was checking for an unsigned int<0 which can't happen)
+- Added to code to help janadot properly display the object relationships
+  coming from the DAQ and TTab plugins.
+
+------------------------------------------------------------------------
+r14683 | sdobbs | 2014-08-17 22:47:47 -0400 (Sun, 17 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+
+changed TDC hit scale from t_scale to tdc_scale
+------------------------------------------------------------------------
+r14684 | sdobbs | 2014-08-17 23:55:00 -0400 (Sun, 17 Aug 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+
+- Changed TDC time calculation - for now just use one common time scale.
+- First shot at handling multiple TDC hits
+
+------------------------------------------------------------------------
+r14694 | davidl | 2014-08-18 14:09:29 -0400 (Mon, 18 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+Add strategic calls to JEventLoop::AddToCallStack so that janadot will draw the correct callgraph for objects produced by the DAQ plugin.
+------------------------------------------------------------------------
+r14696 | davidl | 2014-08-18 14:23:55 -0400 (Mon, 18 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.cc
+
+Disable use of new JANA features for modifying the call stack since they don't currently exist in any tagged version of JANA. The relevant lines have just been commented out using '//*'. These lines should be uncommented to get the proper behavior once JAN 0.7.2 is tagged and in use.
+------------------------------------------------------------------------
+r14718 | jonesrt | 2014-08-19 12:25:57 -0400 (Tue, 19 Aug 2014) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/Makefile.bms
+   D /trunk/sim-recon/src/programs/Simulation/gxtwist/Makefile.orig
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/README.txt
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/beamgen.F
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/cobrems.F
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/getwebfile.c
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/gukine.F
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/gustep.F
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/guxcs.F
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/gxtwist++.cc
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/gxtwist.cc
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/gxtwist_f.F
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hddmInput.c
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hddmOutput.c
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/ElectronDump.xml
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/Makefile
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/Materials.xml
+   D /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/PhotonPipe.xml
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/Regions.xml
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/Spectrometer.xml
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/TaggerArea.xml
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdtrackparams.inc
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/trapfpe.c
+   D /trunk/sim-recon/src/programs/Simulation/gxtwist/ymax.f
+
+* Merge in changes from development branch sim-recon-rj-pm. [rtj]
+
+------------------------------------------------------------------------
+r14719 | jonesrt | 2014-08-19 13:39:24 -0400 (Tue, 19 Aug 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/Makefile.bms
+
+* Makefile.bms [rtj]
+  - Added define of CERNLIB_MOTIF so that an attempt is made to build gxtwist++
+    with the full motif interface.
+
+------------------------------------------------------------------------
+r14720 | davidl | 2014-08-19 17:32:06 -0400 (Tue, 19 Aug 2014) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/bfield2root/Btot_vs_r_vs_z.C
+   A /trunk/sim-recon/src/programs/Utilities/bfield2root/GlueX_boundaries.C
+   D /trunk/sim-recon/src/programs/Utilities/bfield2root/cdc_fdc_bfield.C
+   A /trunk/sim-recon/src/programs/Utilities/bfield2root/dBtot_vs_r_vs_z.C
+
+Some macros to make pretty plots of bfield using bfield.root file generated via bfield2root utility
+------------------------------------------------------------------------
+r14728 | staylor | 2014-08-20 04:04:14 -0400 (Wed, 20 Aug 2014) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackFinder.cc
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackFinder.h
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackFinder_factory.h
+
+Helper class for track finding.  Currently only works for straight tracks.
+------------------------------------------------------------------------
+r14776 | jonesrt | 2014-08-22 09:05:03 -0400 (Fri, 22 Aug 2014) | 23 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-cpp.cpp
+
+* hddm-cpp.cpp [rtj]
+   - Added support for data integrity checks. When enabled on output,
+     a 4-byte CRC is computed for the byte string of each event record
+     and written to the file at the end of the record. When this file is
+     read back, the CRC is computed for the event record read from the
+     file and compared with the recorded CRC, throwing an exception if
+     the two do not agree.
+   - Fixed a problem reported by Matt Shepherd with reading hddm files on
+     an updated version of MAC-OSX. David tracked this down to the behavior
+     of stringstream::pubsetbuf whose intended use was to allow me to set
+     the address of the internal buffer used by the stringstream to my own
+     char array for access to the serialized stream. It works as intended
+     on the libstdc++ distributed with Centos 6, but apparently it is a no-op
+     in the stl library on the latest MAC-OSX. According to the standard
+     template library documentation, the behavior of pubsetbuf is
+     "implementation dependent", so stl developers are free to change it.
+     Given that, I replaced the stringstream objects that I was using to
+     work with the xstream library's XDR standard encoding classes and
+     wrote my own streambuf classes based only on standard std::streambuf
+     behaviors. There are no more pubsetbuf's in hddm code, so this
+     should not happen again.
+     
+
+------------------------------------------------------------------------
+r14785 | jonesrt | 2014-08-22 12:31:16 -0400 (Fri, 22 Aug 2014) | 10 lines
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+* sbms.py [rtj]
+   - Modified the source path and library path for the hdds package
+     to use the new-style $BMS_OSNAME/src and $BMS_OSNAME/lib paths
+     instead of the older src and lib/$BMS_OSNAME paths.
+   - Move the Add_xstream out of the AddJana method and into AddHDDM
+     where it belongs; xstream is not directly used by jana classes
+     but only through the HDDM classes they invoke, and other programs
+     like genr8_2_hddm need xstream support for the c++ API to HDDM,
+     but are not jana applications.
+
+------------------------------------------------------------------------
+r14791 | davidl | 2014-08-22 15:13:04 -0400 (Fri, 22 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Add AddCODAObjects to align with online and in case we ever need it. Also, modifed AddCODAChannels to remove adding explict EVIO and ET dependence
+------------------------------------------------------------------------
+r14814 | jonesrt | 2014-08-23 18:42:13 -0400 (Sat, 23 Aug 2014) | 11 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDMGenerator.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceRESTGenerator.cc
+
+* DEventSourceHDDMGenerator.cc, DEventSourceRESTGenerator.cc [rtj]
+   -Removed the code in CheckOpenable() that reads the header from the input
+    file to check what kind of hddm stream it is, whether a pure mcgen file,
+    a simulated hits file, a rest file, or whatever. That code worked for
+    regular files, but if the input stream is a pipe then the CheckOpenable()
+    method would eat the file header, and leave the stream without a header
+    when a DEventSource constructor comes along later to open it for reading.
+    If we want to accomodate reading from pipes, the best we can do is to
+    guess which variety of input hddm stream it is based on the filename.
+    That is what the revised versions of these CheckOpenable() methods do.
+
+------------------------------------------------------------------------
+r14815 | jonesrt | 2014-08-23 18:48:36 -0400 (Sat, 23 Aug 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/Makefile
+
+* Makefile [rtj]
+   - Modified to work with the new build directory hierarchy, ordered like
+     $BMS_OSNAME/lib instead of lib/$BMS_OSNAME, etc.
+
+------------------------------------------------------------------------
+r14816 | jonesrt | 2014-08-23 18:51:13 -0400 (Sat, 23 Aug 2014) | 10 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-xml.cpp
+
+* hddm-xml.cpp [rtj]
+   - Switch from using stringstreams to buffer hddm records because of
+     non-standard behavior of pubsetbuf method. Replace with my own
+     subclasses of std::streambuf and rely only on standard methods.
+   - Modified to support hddm streams with a CRC32 integrity check appended
+     to each event record, computed and written upon output and recomputed
+     and automatically verified against the saved value upon input. This
+     feature is off by default, but can be enabled by the setIntegrityChecks()
+     method of hddm_X::ostream any time the ostream object is open.
+
+------------------------------------------------------------------------
+r14817 | jonesrt | 2014-08-23 18:53:58 -0400 (Sat, 23 Aug 2014) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-c.cpp
+
+* hddm-c.cpp [rtj]
+   -Replace direct access to stdio streams (with xdrstdio_create) with
+    in-memory formatting (with xdrmem_create) of serialized event records
+    coupled with fread/fwrite access to the stdio streams. This duplicates
+    in the c API the way that records are handled in the c++ API, and it
+    allows hddm i/o to work directly over network sockets, without using
+    intermediate files.
+
+------------------------------------------------------------------------
+r14831 | sdobbs | 2014-08-25 00:01:55 -0400 (Mon, 25 Aug 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+
+Fix call to ADC/TDC matching function where we somehow were calling the function with some of the arguments being pulled from the result.
+(I'm surprised it didn't trip any compiler warnings - at least I don't want to think about the pointer math that goes into this one...)
+
+------------------------------------------------------------------------
+r14844 | davidl | 2014-08-25 11:22:11 -0400 (Mon, 25 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALUnifiedHit_factory.cc
+
+Limit number of warnings coming from DBCALUnified hit so programs can still be used without being crippled by a huge number of messages.
+------------------------------------------------------------------------
+r14850 | sdobbs | 2014-08-25 15:03:39 -0400 (Mon, 25 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALTDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALTDCHit_factory.h
+
+Only load TDC constants for the first 3 layers
+------------------------------------------------------------------------
+r14859 | marki | 2014-08-26 13:03:43 -0400 (Tue, 26 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+reverse directory structure of made files, go back to the make order
+------------------------------------------------------------------------
+r14876 | dalton | 2014-08-27 10:25:12 -0400 (Wed, 27 Aug 2014) | 7 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/DAQTree/JEventProcessor_DAQTree.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/DAQTree/JEventProcessor_DAQTree.h
+
+
+Added access to the F1TDC data word.
+
+Corrected some data types in the output root trees to be unsigned
+integers instead of signed.
+
+
+------------------------------------------------------------------------
+r14883 | dalton | 2014-08-27 13:37:56 -0400 (Wed, 27 Aug 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+
+Improvements to the f250 emulation of pulse integrals using window raw data.
+
+
+------------------------------------------------------------------------
+r14892 | staylor | 2014-08-28 09:14:59 -0400 (Thu, 28 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFinder.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFinder.h
+
+Add segment finding and segment linking routines for fdc hits.  Add method to find doca between line from track fit and another line.
+------------------------------------------------------------------------
+r14893 | staylor | 2014-08-28 09:17:05 -0400 (Thu, 28 Aug 2014) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_StraightLine.cc
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_StraightLine.h
+
+New candidate factory to do pattern recognition and fitting for straight lines (B=0 running).
+------------------------------------------------------------------------
+r14894 | staylor | 2014-08-28 09:17:39 -0400 (Thu, 28 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/TRACKING_init.cc
+
+Add StraightLine candidate factory
+------------------------------------------------------------------------
+r14897 | staylor | 2014-08-28 10:23:25 -0400 (Thu, 28 Aug 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFinder.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFinder.h
+
+Add check for minimum number of axial segments to do linking
+------------------------------------------------------------------------
+r14919 | marki | 2014-08-29 21:30:41 -0400 (Fri, 29 Aug 2014) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Go back to assuming that hdds is built with scons.
+
+------------------------------------------------------------------------
+r14961 | sdobbs | 2014-09-01 17:17:36 -0400 (Mon, 01 Sep 2014) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALHit_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALTDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/CDC/DCDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALHit_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/START_COUNTER/DSCHit_factory.cc
+
+Load ADC/TDC scale factors from CCDB.
+
+------------------------------------------------------------------------
+r14962 | sdobbs | 2014-09-01 17:19:38 -0400 (Mon, 01 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+
+Take ADC/TDC scale factors from CCDB, if available
+------------------------------------------------------------------------
+r14963 | staylor | 2014-09-01 17:23:32 -0400 (Mon, 01 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_StraightLine.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_StraightLine.h
+
+Add COSMICS flag.  When COSMICS==false, assume that the particle we are trying to fit came from the target near the beam line and sort by radius instead of y-position.  Also find the POCA to the beam line and report the momentum there.
+------------------------------------------------------------------------
+r14964 | staylor | 2014-09-01 17:49:26 -0400 (Mon, 01 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_StraightLine.cc
+
+Fix sign error in direction of propagation in z for COSMICS==true
+------------------------------------------------------------------------
+r14984 | jonesrt | 2014-09-02 10:33:22 -0400 (Tue, 02 Sep 2014) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src
+   M /trunk/sim-recon/src/BMS
+   M /trunk/sim-recon/src/BMS/Makefile.bin
+   M /trunk/sim-recon/src/BMS/Makefile.common
+   M /trunk/sim-recon/src/BMS/Makefile.shlib
+   M /trunk/sim-recon/src/external/xstream/include/xstream/config.h
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/HDDMDataWriter.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/HDDMDataWriter.h
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataReader.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS
+   M /trunk/sim-recon/src/libraries/ANALYSIS/ANALYSIS_init.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALHit_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALHit_factory.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALTDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALTDCHit_factory.h
+   M /trunk/sim-recon/src/libraries/CCAL/CCAL_init.cc
+   M /trunk/sim-recon/src/libraries/CDC/CDC_init.cc
+   M /trunk/sim-recon/src/libraries/CDC/DCDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/CDC/DCDCHit_factory.h
+   M /trunk/sim-recon/src/libraries/CERE/CERE_init.cc
+   M /trunk/sim-recon/src/libraries/DANA
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALHit_factory.cc
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALHit_factory.h
+   M /trunk/sim-recon/src/libraries/FCAL/FCAL_init.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCHit_factory.h
+   M /trunk/sim-recon/src/libraries/FDC/FDC_init.cc
+   M /trunk/sim-recon/src/libraries/HDDM
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.h
+   M /trunk/sim-recon/src/libraries/HDDM/DEventWriterREST.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventWriterREST.h
+   M /trunk/sim-recon/src/libraries/HDDM/SConscript
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+   M /trunk/sim-recon/src/libraries/HDDM/rest.xml
+   A /trunk/sim-recon/src/libraries/PID/DBeamPhoton_factory.cc (from /branches/sim-recon-rj-pm/src/libraries/PID/DBeamPhoton_factory.cc:14980)
+   A /trunk/sim-recon/src/libraries/PID/DBeamPhoton_factory.h (from /branches/sim-recon-rj-pm/src/libraries/PID/DBeamPhoton_factory.h:14980)
+   A /trunk/sim-recon/src/libraries/PID/DBeamPhoton_factory_TRUTH.cc (from /branches/sim-recon-rj-pm/src/libraries/PID/DBeamPhoton_factory_TRUTH.cc:14980)
+   A /trunk/sim-recon/src/libraries/PID/DBeamPhoton_factory_TRUTH.h (from /branches/sim-recon-rj-pm/src/libraries/PID/DBeamPhoton_factory_TRUTH.h:14980)
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory.h
+   A /trunk/sim-recon/src/libraries/PID/DRFTime.h (from /branches/sim-recon-rj-pm/src/libraries/PID/DRFTime.h:14980)
+   M /trunk/sim-recon/src/libraries/PID/PID_init.cc
+   M /trunk/sim-recon/src/libraries/RICH/RICH_init.cc
+   M /trunk/sim-recon/src/libraries/START_COUNTER/DSCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/START_COUNTER/DSCHit_factory.h
+   M /trunk/sim-recon/src/libraries/START_COUNTER/START_COUNTER_init.cc
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGHDigiHit.h (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGHDigiHit.h:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGHGeometry.cc (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGHGeometry.cc:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGHGeometry.h (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGHGeometry.h:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGHGeometry_factory.cc (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGHGeometry_factory.cc:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGHGeometry_factory.h (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGHGeometry_factory.h:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGHHit.h (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGHHit.h:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGHHit_factory.cc (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGHHit_factory.cc:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGHHit_factory.h (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGHHit_factory.h:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGHTDCDigiHit.h (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGHTDCDigiHit.h:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGMDigiHit.h (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGMDigiHit.h:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGMGeometry.cc (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGMGeometry.cc:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGMGeometry.h (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGMGeometry.h:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGMGeometry_factory.cc (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGMGeometry_factory.cc:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGMGeometry_factory.h (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGMGeometry_factory.h:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGMHit.h (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGMHit.h:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGMHit_factory.cc (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGMHit_factory.cc:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGMHit_factory.h (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGMHit_factory.h:14980)
+   A /trunk/sim-recon/src/libraries/TAGGER/DTAGMTDCDigiHit.h (from /branches/sim-recon-rj-pm/src/libraries/TAGGER/DTAGMTDCDigiHit.h:14980)
+   D /trunk/sim-recon/src/libraries/TAGGER/DTagger.h
+   M /trunk/sim-recon/src/libraries/TAGGER/TAGGER_init.cc
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHitMC.h
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.h
+   M /trunk/sim-recon/src/libraries/TOF/TOF_init.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/TRACKING_init.cc
+   M /trunk/sim-recon/src/libraries/include/GlueX.h
+   M /trunk/sim-recon/src/programs/Analysis
+   M /trunk/sim-recon/src/programs/Analysis/hd_eventfilter/MyProcessor.cc
+   M /trunk/sim-recon/src/programs/Analysis/hd_eventfilter/MyProcessor.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory_b1pi_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/event_size/JEventProcessor_event_size.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/bcal2nt.cpp
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/bcal2nt_c.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/beamgen.F
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/control.in
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/controlparams.inc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/gukine.F
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmInput.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmcp_c.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCDC.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFCal.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFTOF.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitStart.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitTag.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitUPV.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/savenewvertex.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/settofg.F
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/uginit.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/bg_hddm.c
+   M /trunk/sim-recon/src/programs/Simulation/filtereta/filter.cc
+   M /trunk/sim-recon/src/programs/Simulation/filtereta/filtereta.cc
+   M /trunk/sim-recon/src/programs/Simulation/filtergen/filter.cc
+   M /trunk/sim-recon/src/programs/Simulation/filtergen/filtergen.cc
+   M /trunk/sim-recon/src/programs/Simulation/gamp2hddm/gamp2hddm.cc
+   M /trunk/sim-recon/src/programs/Simulation/geneta/bg_hddm.cc
+   M /trunk/sim-recon/src/programs/Simulation/geneta/bg_hddm.h
+   M /trunk/sim-recon/src/programs/Simulation/genp_pi0/bg_hddm.cc
+   M /trunk/sim-recon/src/programs/Simulation/genp_pi0/bg_hddm.h
+   M /trunk/sim-recon/src/programs/Simulation/genp_pi0/genp_pi0.cc
+   M /trunk/sim-recon/src/programs/Simulation/genp_pi0/kinematics.c
+   M /trunk/sim-recon/src/programs/Simulation/genr8/genr8.c
+   M /trunk/sim-recon/src/programs/Simulation/genr8_2_hddm
+   M /trunk/sim-recon/src/programs/Simulation/genr8_2_hddm/genr8_2_hddm.cc
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist
+   M /trunk/sim-recon/src/programs/Simulation/lowengen/code/bg_hddm.c
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/MyProcessor.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/MyProcessor.h
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+   M /trunk/sim-recon/src/programs/Simulation/pi02hddm/pi02hddm.cc
+   M /trunk/sim-recon/src/programs/Simulation/plugins/extract_ptype_hddm/JEventProcessor_extract_ptype_hddm.cc
+   M /trunk/sim-recon/src/programs/Simulation/plugins/extract_ptype_hddm/JEventProcessor_extract_ptype_hddm.h
+   M /trunk/sim-recon/src/programs/Simulation/plugins/hdparsim
+   M /trunk/sim-recon/src/programs/Simulation/pythiagen/pyth_hddm.c
+   M /trunk/sim-recon/src/programs/Simulation/root2hddm/root2hddm.cc
+   M /trunk/sim-recon/src/programs/Simulation/stdhep_translators/stdhep2hddm.c
+   M /trunk/sim-recon/src/programs/Utilities/hddm2cMsg/Makefile
+   M /trunk/sim-recon/src/programs/Utilities/hddm2cMsg/hddm2cMsg.cc
+   M /trunk/sim-recon/src/programs/Utilities/hddm_cull_events/Process_r.cc
+   M /trunk/sim-recon/src/programs/Utilities/hddm_cull_events/Process_s.cc
+   M /trunk/sim-recon/src/programs/Utilities/hddm_cull_events/hddm_cull_events.cc
+   M /trunk/sim-recon/src/programs/Utilities/hddm_cull_events/hddm_cull_events.h
+   M /trunk/sim-recon/src/programs/Utilities/hddm_merge_events/hddm_merge_events.cc
+   M /trunk/sim-recon/src/programs/Utilities/hddm_merge_files/Process_r.cc
+   M /trunk/sim-recon/src/programs/Utilities/hddm_merge_files/Process_s.cc
+   M /trunk/sim-recon/src/programs/Utilities/hddm_merge_files/hddm_merge_files.cc
+   M /trunk/sim-recon/src/programs/Utilities/hddm_merge_files/hddm_merge_files.h
+   M /trunk/sim-recon/src/programs/Utilities/hddm_select_events/hddm_select_events.cc
+   M /trunk/sim-recon/src/programs/Utilities/hddm_select_events/hddm_select_events.h
+   M /trunk/sim-recon/src/programs/Utilities/hddm_select_events/selectEvents_r.cc
+   M /trunk/sim-recon/src/programs/Utilities/hddm_select_events/selectEvents_s.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danahddm/JEventProcessor_danahddm.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danahddm/JEventProcessor_danahddm.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/mc2coda_modules.h
+
+* Merging changes from development branch sim-recon-rj-pm back into the trunk [rtj]
+
+------------------------------------------------------------------------
+r14991 | davidl | 2014-09-02 16:21:31 -0400 (Tue, 02 Sep 2014) | 11 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+
+Make entries into the ParticleType_t enum to allow
+types 80,81,82 (sort of). These particle ids are used
+by bggen (see pythia-geant.map). However, the values
+80, 81 corresponding to the Rh0 and Omega respectively
+are conflicting with existing enum entries for those
+particles. The value 82 corresponds to the Delta++ for
+which there was no entry. This commit adds an entry for
+the Delta++ and introduces a RemapParticleID function
+to quietly remap the other two to the existing numbers
+in the subroutines that use them.
+
+------------------------------------------------------------------------
+r14992 | sdobbs | 2014-09-02 18:20:31 -0400 (Tue, 02 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+
+The BCAL ADC scale factor in the CCDB converts energies to GeV
+------------------------------------------------------------------------
+r14993 | sdobbs | 2014-09-02 18:21:37 -0400 (Tue, 02 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALHit_factory.cc
+
+svn ci -m "The BCAL ADC scale factor in the CCDB converts energies to GeV"
+
+
+------------------------------------------------------------------------
+r15024 | staylor | 2014-09-03 17:40:15 -0400 (Wed, 03 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/cobrems.F
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/uginit.F
+
+Make collimator diameter a configurable parameter (by FFREAD card).  Set default to nominal 3.4 mm.
+------------------------------------------------------------------------
+r15025 | staylor | 2014-09-03 17:43:09 -0400 (Wed, 03 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/bg_ctrl.inc
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/bg_ini.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/cobrems.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/cohbeam_ini.F
+
+Make collimator diameter a configurable parameter
+------------------------------------------------------------------------
+r15028 | pmatt | 2014-09-03 18:44:09 -0400 (Wed, 03 Sep 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventWriterREST.cc
+
+In writer: Separate DMCThrown objects save to DMCReaction by vertex.
+In sources: Grab DRFTime from DBeamPhoton:MCGEN, fix time calculation for DMCReaction (e.g. was 0.0 in REST)
+
+
+------------------------------------------------------------------------
+r15029 | pmatt | 2014-09-03 22:23:57 -0400 (Wed, 03 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.cc
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory.h
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory_Thrown.cc
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory_Thrown.h
+   M /trunk/sim-recon/src/libraries/PID/PID_init.cc
+
+Added DRFTime:TRUTH, fixed the way RF times are handled (I hope). 
+
+
+------------------------------------------------------------------------
+r15044 | davidl | 2014-09-04 13:32:06 -0400 (Thu, 04 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/mc2coda.c
+
+Add run number to all events. Previously, it was only being added to the first event because the reset routine was being used that generated non-run-number-containing headers.
+------------------------------------------------------------------------
+r15045 | davidl | 2014-09-04 13:33:41 -0400 (Thu, 04 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/mc2coda_modules.h
+
+If too many hits in a single F1TDC channel, drop the extra hits but still write the event trailer. Previously, the code just returned leaving the output file in a corrupted state due to the lack of trailer.
+------------------------------------------------------------------------
+r15046 | davidl | 2014-09-04 13:37:17 -0400 (Thu, 04 Sep 2014) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+- If creating an empty event (i.e. one without hits) as is
+  needed for prestart and go events, don't overwrite the
+  run number already in the objs_ptr with the default run
+  number of 0.
+- Add ability to specify a marker in the call to DumpBinary
+  so that a "*" can be written beside the offending word
+  when using this for debugging.
+
+------------------------------------------------------------------------
+r15051 | pmatt | 2014-09-04 15:56:00 -0400 (Thu, 04 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+
+Removed double neutral PID cut, recycle unused steps for re-use. 
+
+
+------------------------------------------------------------------------
+r15052 | pmatt | 2014-09-04 18:10:02 -0400 (Thu, 04 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+
+Prevent segfaults.
+
+
+------------------------------------------------------------------------
+r15061 | davidl | 2014-09-05 09:54:55 -0400 (Fri, 05 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+Try catching any exception thrown while creating an evioDOMTree.
+------------------------------------------------------------------------
+r15067 | pmatt | 2014-09-05 13:39:51 -0400 (Fri, 05 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+
+Fix the bug fixes. 
+
+
+------------------------------------------------------------------------
+r15072 | jonesrt | 2014-09-05 17:32:14 -0400 (Fri, 05 Sep 2014) | 10 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/ElectronDump.xml
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/TaggerArea.xml
+
+* ElectronDump.xml, TaggerArea.xml [rtj]
+   - Apply updates to the model of the shielding around the beam pipe
+     and labyrinth walls surrounding the electron dump, as discussed
+     at the last beam commissioning meeting.
+   - Remove the diamond crystal from the goniometer, leaving only the
+     amorphous carbon target of thickness 10 microns.
+   - Remove the shielding wall upstream of the reduction flange in
+     front of the first labyrinth wall. We may want to put this back
+     later, but for the initial studies we will leave it out.
+
+------------------------------------------------------------------------
+r15075 | staylor | 2014-09-05 18:14:59 -0400 (Fri, 05 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Use the finder helper class for the pattern recognition.  Get rid of code that uses DFDCIntersection -- use DFDCPseudo for everything.
+------------------------------------------------------------------------
+r15080 | davidl | 2014-09-06 09:44:21 -0400 (Sat, 06 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+Add short sleep when no event read from ET. Fix warning for testing unsigned in < 0 in start_sample (I could have sworn I already fixed this??)
+------------------------------------------------------------------------
+r15081 | jonesrt | 2014-09-06 17:46:51 -0400 (Sat, 06 Sep 2014) | 15 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventRFBunch_factory_Combo.cc
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.cc
+
+* PID/DEventRFBunch_factory.cc [rtj]
+   - The DEventRFBunch_factory::evnt() method was assuming that there would
+     always be a DBeamPhoton object with tag MCGEN for every event. This is 
+     generally true for simulated events, but evio files contain no such
+     object and this would produce a segfault. This fix exits gracefully
+     without making any DEventRFBunch objects if the DBeamPhoton object 
+     with tag MCGEN is not found.
+* ANALYSIS/DEventRFBunch_factory_Combo.cc, 
+  PID/DChargedTrackHypothesis_factory.cc,
+  PID/DNeutralParticleHypothesis_factory.cc [rtj]
+   - These factories would also segfault if no DEeventRFBunch objects is
+     found in an event, cascading from the issue identified above. This
+     fix exits gracefully from methods that look for DEventRFBunch
+     objects if none exist for this event.
+
+------------------------------------------------------------------------
+r15082 | jonesrt | 2014-09-06 17:58:07 -0400 (Sat, 06 Sep 2014) | 19 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALCluster.cc
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALCluster.h
+
+* FCAL/DFCALCluster.h, DFCALCluster.cc [rtj]
+   - The DFCALCluster::saveHits routine was falsely generating warnings
+     about corrupted clusters whenever the input source was an evio file
+     or (presumably) the ET. This was because it was going through the
+     list of hits in a cluster and checking their ID values are valid.
+     However the way this check was being performed was buggy because it
+     was based on the assumption that the hit ID values were of type
+     signed int, and should be non-negative. However the actual ID values
+     being stored in the hit struct are of type JObject::oid_t which is
+     unsigned int. Browsing elsewhere in the JANA library code I see that
+     oid_t values may cover the full unsigned int range, except that NULL
+     (0) is considered invalid (not an identifier of any object). Hence
+     I made the following changes to DFCALCluster:
+         1) make the return type from getHitID() be JObject::oid_t 
+            instead of int;
+         2) make the check for corruption in saveHits() look for 0
+            unsigned int values rather than negative int.
+            
+
+------------------------------------------------------------------------
+r15083 | jonesrt | 2014-09-06 19:18:10 -0400 (Sat, 06 Sep 2014) | 9 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALCluster_factory.cc
+
+* DFCALCluster_factory.cc [rtj]
+   - Whadayaknow, it seems that jana DOES assign the NULL value as a valid
+     oid_t value for JObjects. So what are we supposed to return for oid_t
+     value to indicate "no such JObject"? Not -1, because oid_t is unsigned.
+     Maybe a special code with a name like JObject::NoSuchObject? Unable to
+     figure this out, I punt by adding 1 to the JObject::id value before I
+     use it, and then I can use != 0 as my test for validity. This will 
+     fail if jana generates an object with id == 0xffffffff.
+
+------------------------------------------------------------------------
+r15084 | pmatt | 2014-09-07 17:43:24 -0400 (Sun, 07 Sep 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DEventProcessor_b1pi_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DEventProcessor_b1pi_hists.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory_b1pi_hists.cc
+
+Histogram Actions: Add hists for # TAGM & # TAGH hits, tracking chisq/ndf, tracking dE/dx.
+b1pi: Delete reaction-independent actions (should be done by monitoring_hists now), add hist kinematics actions. 
+
+
+------------------------------------------------------------------------
+r15085 | pmatt | 2014-09-07 17:46:52 -0400 (Sun, 07 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.cc
+
+Undo accidental RF t_var change. 
+
+
+------------------------------------------------------------------------
+r15088 | davidl | 2014-09-08 08:02:52 -0400 (Mon, 08 Sep 2014) | 5 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/DCAEN1290TDCConfig.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/DDAQConfig.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/DF1TDCConfig.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df125Config.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df250Config.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JFactoryGenerator_DAQ.h
+
+Initial draft of implementing DAQ configuration parameter parsing.
+This is currently incomplete. It should not interfere with using
+the DAQ plugin though at this point since the ROLs do not yet write
+this information out.
+
+------------------------------------------------------------------------
+r15094 | pmatt | 2014-09-08 20:25:00 -0400 (Mon, 08 Sep 2014) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/ANALYSIS_init.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   M /trunk/sim-recon/src/libraries/PID/DDetectorMatches.h
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.h
+
+Created new action, DHistogramAction_DetectorStudies. Histograms just about all quantities from REST files except tracking kinematics/errors.
+
+Fixed bug in SC/track matching code: There were cases where a hit/track with phi ~0 degrees wouldn't match a track/hit with phi ~359 degrees. 
+
+
+------------------------------------------------------------------------
+r15103 | davidl | 2014-09-09 16:03:09 -0400 (Tue, 09 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.h
+
+Copy value for pedestal from Df125PulseIntegral into detector specific objects. Also, when emulating f125 pulse integral using window raw data, copy the avg. pedestal per sample into the Df125PulseIntegral object instead of just 0.
+------------------------------------------------------------------------
+r15104 | davidl | 2014-09-09 16:11:52 -0400 (Tue, 09 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+Add EVIO:F125_NSPED config. parameter so the number of samples used in calculating the F125 pedestal can be changed via command line.
+------------------------------------------------------------------------
+r15108 | davidl | 2014-09-10 10:03:20 -0400 (Wed, 10 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+
+Do not overwrite the JObject::id attribute for DFCALHit objects created from HDDM data.
+------------------------------------------------------------------------
+r15109 | davidl | 2014-09-10 10:16:57 -0400 (Wed, 10 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALCluster_factory.cc
+
+Back out the id+1 fix applied earlier. It should no longer be needed after the previous commit.
+------------------------------------------------------------------------
+r15110 | davidl | 2014-09-10 16:22:49 -0400 (Wed, 10 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Print useful error message if one has swig installed, but does not specify to use it on the command line.
+------------------------------------------------------------------------
+r15114 | jonesrt | 2014-09-10 18:35:07 -0400 (Wed, 10 Sep 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/ElectronDump.xml
+
+* ElectronDump.xml [rtj]
+   - Changed the shielding block stack closest to the poly entrance door
+     to the beam dump labyrinth from iron SEG-type to solid concrete.
+
+------------------------------------------------------------------------
+r15156 | wilevine | 2014-09-12 12:19:14 -0400 (Fri, 12 Sep 2014) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_IU.cc
+
+Fix time calculation in DBCALShower_factory
+
+------------------------------------------------------------------------
+r15158 | wilevine | 2014-09-12 13:37:03 -0400 (Fri, 12 Sep 2014) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/genphoton/genphoton.cc
+
+Add zmin, zmax options to genphoton
+
+------------------------------------------------------------------------
+r15160 | wilevine | 2014-09-12 13:59:18 -0400 (Fri, 12 Sep 2014) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Remove -F and -I options from mcsmear, these no longer have any effect.
+
+------------------------------------------------------------------------
+r15165 | pmatt | 2014-09-12 17:48:01 -0400 (Fri, 12 Sep 2014) | 13 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory.h
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.cc
+
+Neutral Hypothesis factory: If no RF bunch, don't bail, just use 0.0 or NaN for RF time. 
+
+RF Bunch factory: Enable selection of RF bunches:
+
+	//preferentially:
+	//use SC hits on tracks with good tracking FOM
+		//if no SC hits, use other timing systems
+	//if no good tracks (or none with matched hits), use SC hits on all tracks
+		//if no SC hits, use other timing systems
+	//if no tracks (or none with matched hits), use neutral showers assuming PIDs = photon
+	//if no showers ... set time to the original RF time and set the good-flag to false
+
+
+------------------------------------------------------------------------
+r15171 | pmatt | 2014-09-13 16:59:59 -0400 (Sat, 13 Sep 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/ANALYSIS_init.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DChargedTrackHypothesis_factory_Combo.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventRFBunch_factory_Combo.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventRFBunch_factory_Combo.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DNeutralParticleHypothesis_factory_Combo.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/PID/DBeamPhoton_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DBeamPhoton_factory_TRUTH.cc
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.h
+
+Remove RF-bunch & beam photon cheating: library now tries to select the best RF-bunch & beam photon possible for each combo. 
+Rearrange DetectorStudies histogram action.
+
+
+------------------------------------------------------------------------
+r15173 | pmatt | 2014-09-13 18:09:13 -0400 (Sat, 13 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.h
+
+Added matching for DBeamPhoton
+
+
+------------------------------------------------------------------------
+r15174 | pmatt | 2014-09-13 23:26:15 -0400 (Sat, 13 Sep 2014) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/ANALYSIS_init.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReactionStep.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReactionStep.h
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.h
+   D /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DFactoryGenerator_monitoring_hists.h
+   D /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DReaction_factory_monitoring_hists.cc
+   D /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DReaction_factory_monitoring_hists.h
+
+Monitoring_hists: Removed DReactions
+Added cut actions: TrueCombo and TrueBeamParticle
+RF Bunch: Fixed infinite dependency recursion.
+Analysis Utilities & Reaction Step: Comparing reaction to thrown topology should now work if missing unknown particle. 
+
+
+------------------------------------------------------------------------
+r15181 | sdobbs | 2014-09-15 17:18:47 -0400 (Mon, 15 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Fix python SWIG library name
+------------------------------------------------------------------------
+r15182 | sdobbs | 2014-09-15 17:20:08 -0400 (Mon, 15 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/pyhddm_r.i
+
+Added interface to event data
+------------------------------------------------------------------------
+r15185 | pmatt | 2014-09-15 21:51:19 -0400 (Mon, 15 Sep 2014) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DChargedTrackHypothesis_factory_Combo.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.h
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.h
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+
+Particle combo factory: Add pre-combo cut histograms.
+Particle ID & charged track factories: Remove RF selection shortcut. 
+Analysis Action: Functor now deletes failed combos.
+Analysis Results Factory: Add # true events with true combo passed cut histogram. 
+Analysis Results Class: Remove failed combos. 
+
+
+
+------------------------------------------------------------------------
+r15195 | pmatt | 2014-09-16 17:04:45 -0400 (Tue, 16 Sep 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.h
+
+Now build combos starting from the end of the DReaction and working backwards to the beginning.  This allows cuts on invariant mass to (eventually) be placed sooner. 
+Analysis results: Fixed bug in # input events histogram. 
+
+
+------------------------------------------------------------------------
+r15199 | pmatt | 2014-09-16 18:30:59 -0400 (Tue, 16 Sep 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory.h
+
+Instead of cloning pre-kinfit combos (done when no kinfit performed, or if the kinfit fails), copy the prekinfit pointers directly into _data. 
+Set factory flag NOT_OBJECT_OWNER so that the factory manages the memory (and so JANA doesn't double-delete them). 
+
+
+------------------------------------------------------------------------
+r15200 | pmatt | 2014-09-16 19:04:54 -0400 (Tue, 16 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.cc
+
+Changed binning on NumParticleCombos histogram: it should now be viewed as log-X.
+
+
+------------------------------------------------------------------------
+r15203 | pmatt | 2014-09-17 00:03:48 -0400 (Wed, 17 Sep 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory_b1pi_hists.cc
+
+It is now possible to place invariant mass cuts during blueprint construction. 
+This should significantly speed things up and reduce memory consumption. 
+
+
+------------------------------------------------------------------------
+r15205 | mstaib | 2014-09-17 09:41:47 -0400 (Wed, 17 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms_setenv.py
+
+Added EVIO and ET environment used for the build to the automatically generated setenv.sh and setenv.csh files
+------------------------------------------------------------------------
+r15223 | sdobbs | 2014-09-17 22:18:03 -0400 (Wed, 17 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALHit_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALHit_factory.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALTDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALTDCHit_factory.h
+   M /trunk/sim-recon/src/libraries/CDC/DCDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/CDC/DCDCHit_factory.h
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALHit_factory.cc
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALHit_factory.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCHit_factory.h
+   M /trunk/sim-recon/src/libraries/START_COUNTER/DSCHit_factory.cc
+   M /trunk/sim-recon/src/libraries/START_COUNTER/DSCHit_factory.h
+   M /trunk/sim-recon/src/libraries/TAGGER/DTAGHHit_factory.cc
+   M /trunk/sim-recon/src/libraries/TAGGER/DTAGHHit_factory.h
+   M /trunk/sim-recon/src/libraries/TAGGER/DTAGMHit_factory.cc
+   M /trunk/sim-recon/src/libraries/TAGGER/DTAGMHit_factory.h
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.h
+
+- Changed "t_min" to "t_base"
+- Set default value of base time shift to 0, load from CCDB if available
+
+------------------------------------------------------------------------
+r15224 | jonesrt | 2014-09-18 00:39:45 -0400 (Thu, 18 Sep 2014) | 3 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/HDDS-1_1.xsd
+
+* HDDS-1_1.xsd [rtj]
+   - Schema file for hdds version 1.1
+
+------------------------------------------------------------------------
+r15225 | pmatt | 2014-09-18 00:43:19 -0400 (Thu, 18 Sep 2014) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory_b1pi_hists.cc
+
+DParticleComboBlueprint: Remove missing mass cut code. 
+DParticleCombo_factory_PreKinFit & DReaction: Can now execute cut actions during combo creation. Removed combined PID & Tracking FOM cuts.
+Tweaked binning on a few things. 
+
+
+------------------------------------------------------------------------
+r15237 | pmatt | 2014-09-18 12:30:52 -0400 (Thu, 18 Sep 2014) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/ANALYSIS_init.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory_b1pi_hists.cc
+
+ParticleCombo factory: Tidied things up, fixed true beam/rf delta-t hist.
+Deleted DHistogramAction_NumParticleCombos.
+Switched (almost) all histograms from TH1D/TH2D to TH1I/TH2I. 
+
+
+------------------------------------------------------------------------
+r15238 | pmatt | 2014-09-18 12:38:08 -0400 (Thu, 18 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory_b1pi_hists.cc
+
+b1pi: Add pre-combo missing mass squared cut
+
+
+------------------------------------------------------------------------
+r15240 | pmatt | 2014-09-18 13:56:17 -0400 (Thu, 18 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DCustomAction_HistMass_X_2000.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DCustomAction_HistMass_X_2000.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DCustomAction_HistMass_b1_1235.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DCustomAction_HistMass_b1_1235.h
+
+Convert TH1D -> TH1I
+
+
+------------------------------------------------------------------------
+r15244 | staylor | 2014-09-18 14:44:13 -0400 (Thu, 18 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Change format of cdc alignment values to conform with structure of table in ccdb.  Limit the offsets in the cdc to 2 mm.  Add capability to read cdc offsets from local file.
+------------------------------------------------------------------------
+r15249 | mstaib | 2014-09-18 16:57:41 -0400 (Thu, 18 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/DAQTree/JEventProcessor_DAQTree.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/DAQTree/JEventProcessor_DAQTree.h
+
+Added support for fADC125 data types from ported fADC250 firmware.
+------------------------------------------------------------------------
+r15253 | staylor | 2014-09-19 09:50:01 -0400 (Fri, 19 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.h
+
+Make BEAM_VARIANCE a member of the class instead of #define.  Set default value to 1; set to a large value if the code determines that Bz=0 at the center of the magnet, thus effectively removing the fake point at the target for B=0 runs.
+------------------------------------------------------------------------
+r15262 | staylor | 2014-09-19 18:30:07 -0400 (Fri, 19 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCCathodeCluster_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCCathodeCluster_factory.h
+
+Make TIME_SLICE, the time difference window for associating hits together in a cluster, a configurable parameter.  Only write out a cluster if there are at least 2 adjacent strips in the cluster.
+------------------------------------------------------------------------
+r15266 | pmatt | 2014-09-20 19:05:17 -0400 (Sat, 20 Sep 2014) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/ANALYSIS_init.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_Thrown.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_Thrown.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction_factory_Thrown.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction_factory_Thrown.h
+   M /trunk/sim-recon/src/libraries/PID/DMCThrown_factory_Decaying.cc
+   M /trunk/sim-recon/src/libraries/PID/DMCThrown_factory_Decaying.h
+   M /trunk/sim-recon/src/libraries/PID/DMCThrown_factory_FinalState.cc
+   M /trunk/sim-recon/src/libraries/PID/DMCThrown_factory_FinalState.h
+   M /trunk/sim-recon/src/libraries/PID/DMCThrown_factory_Primary.cc
+   M /trunk/sim-recon/src/libraries/PID/DMCThrown_factory_Primary.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory_b1pi_hists.cc
+
+New cut action: DCutAction_BDTSignal. 
+Fixed MC matching FOM cut. Add histograms for it. 
+Now detect and handle appropriately when b-field is zero.
+Fixed determination of primary/finalstate/decaying throwns. 
+
+
+------------------------------------------------------------------------
+r15267 | pmatt | 2014-09-20 20:39:18 -0400 (Sat, 20 Sep 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter_GlueX.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter_GlueX.h
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALShower_factory.h
+   M /trunk/sim-recon/src/libraries/PID/DVertex.h
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.h
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory_THROWN.cc
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory_THROWN.h
+
+Revive DVertex factory: use kinematic fitter.
+Kinematic fitter: Allow use of time-based tracks. 
+
+
+------------------------------------------------------------------------
+r15268 | pmatt | 2014-09-20 22:21:28 -0400 (Sat, 20 Sep 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DNeutralParticleHypothesis_factory_Combo.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.h
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.h
+
+Added histograms for # DChargedTrack objects. 
+DVertex now fully integrated into the ANALYSIS library (neutrals use it for their vertex until kinfit). 
+
+
+------------------------------------------------------------------------
+r15269 | pmatt | 2014-09-20 22:52:16 -0400 (Sat, 20 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.h
+
+Integrate DVertex into blueprint factory for neutral p4 cuts. 
+
+
+------------------------------------------------------------------------
+r15271 | jonesrt | 2014-09-21 07:47:00 -0400 (Sun, 21 Sep 2014) | 17 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/control.in
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/gustep.F
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/FocalPlane.xml
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/Spectrometer.xml
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/TaggerArea.xml
+
+* control.in [rtj]
+   - Modify default control.in deck to generate beam electrons incident
+     on an amorphous radiator rather than the coherent bremsstrahlung
+     generator.
+* TaggerArea.xml, FocalPlane.xml, Spectrometer.xml [rtj]
+   - Activate DET7 and DET8 control volumes for sensing particle
+     fluxes at the focal plane and under the magnet where the
+     electronics racks are located.
+   - Improve the description of the shielded microscope readout box.
+   - Move the definition of DET7 and DET8 from Spectrometer.xml into
+     TaggerArea.xml, and of the microscope readout box from
+     Spectrometer.xml into FocalPlane.xml so they are defined in
+     the same file where they are placed.
+* gustep.F [rtj]
+   - Add new ntuples to record the hits in the microscope readout box
+     and DET7, DET8 control volumes.
+
+------------------------------------------------------------------------
+r15281 | davidl | 2014-09-22 04:45:29 -0400 (Mon, 22 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+Added EVIO:LOOP_FOREVER config. param. to allow user to have EVIO file repeatedly re-opened and re-read in order to more easily develop online monitoring code.
+------------------------------------------------------------------------
+r15282 | jonesrt | 2014-09-22 06:58:54 -0400 (Mon, 22 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCCathodeCluster_factory.cc
+
+* DFDCCathodeCluster_factory.cc [rtj]
+   - Return NOERROR to suppress compiler warning about no return value.
+
+------------------------------------------------------------------------
+r15294 | staylor | 2014-09-22 10:47:53 -0400 (Mon, 22 Sep 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.cc
+
+Make BEAM_VARIANCE a command-line parameter; default is 1.0
+------------------------------------------------------------------------
+r15295 | pmatt | 2014-09-22 11:58:27 -0400 (Mon, 22 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.cc
+
+Fixed crash where there are no particles. 
+
+
+------------------------------------------------------------------------
+r15296 | jonesrt | 2014-09-22 12:51:51 -0400 (Mon, 22 Sep 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.bin
+
+* Makefile.bin [rtj]
+   - Add a slash between $INSTALL_DIR and $BMS_OSNAME in case the INSTALL_DIR
+     does not have a trailing slash appended to it, no problem if it does.
+
+------------------------------------------------------------------------
+r15298 | dalton | 2014-09-22 15:17:10 -0400 (Mon, 22 Sep 2014) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/DAQTree/JEventProcessor_DAQTree.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/DAQTree/JEventProcessor_DAQTree.h
+
+
+Include the number of samples for pedestal and integral in the PulseIntegral tree.
+
+
+------------------------------------------------------------------------
+r15299 | pmatt | 2014-09-22 15:47:20 -0400 (Mon, 22 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrack_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis.h
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticle_factory.cc
+
+Add oid_t of DNeutralShower to DNeutralParticleHypothesis. Simplify factories. 
+
+
+------------------------------------------------------------------------
+r15300 | pmatt | 2014-09-22 20:37:57 -0400 (Mon, 22 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.h
+
+Fixed a few small bugs with histogram filling. 
+
+
+------------------------------------------------------------------------
+r15304 | pmatt | 2014-09-23 13:11:38 -0400 (Tue, 23 Sep 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprintStep.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboStep.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboStep.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_Thrown.cc
+
+Memory reduction: Use signed char instead of int, store "Measured" step rather than re-store measured objects separately. 
+
+
+------------------------------------------------------------------------
