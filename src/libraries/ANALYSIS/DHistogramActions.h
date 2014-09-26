@@ -96,7 +96,6 @@ class DHistogramAction_PID : public DAnalysisAction
 			dThrownPIDs.push_back(Gamma);  dThrownPIDs.push_back(Neutron);
 			dThrownPIDs.push_back(PiPlus);  dThrownPIDs.push_back(KPlus);  dThrownPIDs.push_back(Proton);
 			dThrownPIDs.push_back(PiMinus);  dThrownPIDs.push_back(KMinus);
-			dThrownPIDs.push_back(Electron);  dThrownPIDs.push_back(MuonMinus);
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
@@ -191,11 +190,11 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		DAnalysisAction(locReaction, "Hist_DetectorStudies", false, locActionUniqueString), 
 		dNumTimeBins(1600), dNumShowerEnergyBins(1600), dNumFCALTOFXYBins(240), dNumPhiBins(720), dNumHitEnergyBins(500), dNum2DBCALZBins(450), dNumTrackDOCABins(1600), 
 		dNumDeltaTBins(800), dNumShowerDepthBins(800), dNum2DTimeBins(400), dNum2DShowerEnergyBins(400), dNum2DPhiBins(360), dNum2DHitEnergyBins(250), dNum2DThetaBins(280), 
-		dNum2DPBins(600), dNum2DDeltaTBins(400), dNumdEdxBins(800), dNum2DdEdxBins(400), dNumDeltaPhiBins(800), 
+		dNum2DPBins(600), dNum2DDeltaTBins(400), dNumdEdxBins(800), dNum2DdEdxBins(400), dNumDeltaPhiBins(800), dNumTrackingChiSqPerDFBins(500), dNum2DTrackingChiSqPerDFBins(500), 
 		dMinTime(-800.0), dMaxTime(800.0), dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinTheta(0.0), dMaxTheta(140.0), dMinHitEnergy(0.0), 
 		dMaxHitEnergy(50.0), dMinTrackDOCA(0.0), dMaxTrackDOCA(400.0), dMaxTrackMatchDOCA(20.0), dMinDeltaT(-10.0), dMaxDeltaT(10.0), dMinP(0.0), dMaxP(12.0), dMaxBCALP(1.5), 
-		dMinShowerDepth(0.0), dMaxShowerDepth(20.0), dMindEdX(0.0), dMaxdEdX(50.0), dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), 
-		dMinThrownMatchFOM(5.73303E-7), dMinTrackingFOM(0.0027)
+		dMinShowerDepth(0.0), dMaxShowerDepth(20.0), dMindEdX(0.0), dMaxdEdX(25.0), dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), 
+		dMinTrackingChiSqPerDF(0.0), dMaxTrackingChiSqPerDF(10.0), dMinThrownMatchFOM(5.73303E-7)
 		{
 			dTrackingPIDs.push_back(PiPlus);  dTrackingPIDs.push_back(KPlus);  dTrackingPIDs.push_back(Proton);
 			dTrackingPIDs.push_back(PiMinus);  dTrackingPIDs.push_back(KMinus);
@@ -205,11 +204,11 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		DAnalysisAction(NULL, "Hist_DetectorStudies", false, locActionUniqueString), 
 		dNumTimeBins(1600), dNumShowerEnergyBins(1600), dNumFCALTOFXYBins(240), dNumPhiBins(720), dNumHitEnergyBins(500), dNum2DBCALZBins(450), dNumTrackDOCABins(1600), 
 		dNumDeltaTBins(800), dNumShowerDepthBins(800), dNum2DTimeBins(400), dNum2DShowerEnergyBins(400), dNum2DPhiBins(360), dNum2DHitEnergyBins(250), dNum2DThetaBins(280), 
-		dNum2DPBins(600), dNum2DDeltaTBins(400), dNumdEdxBins(800), dNum2DdEdxBins(400), dNumDeltaPhiBins(800), 
+		dNum2DPBins(600), dNum2DDeltaTBins(400), dNumdEdxBins(800), dNum2DdEdxBins(400), dNumDeltaPhiBins(800), dNumTrackingChiSqPerDFBins(500), dNum2DTrackingChiSqPerDFBins(500), 
 		dMinTime(-800.0), dMaxTime(800.0), dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinTheta(0.0), dMaxTheta(140.0), dMinHitEnergy(0.0), 
 		dMaxHitEnergy(50.0), dMinTrackDOCA(0.0), dMaxTrackDOCA(400.0), dMaxTrackMatchDOCA(20.0), dMinDeltaT(-10.0), dMaxDeltaT(10.0), dMinP(0.0), dMaxP(12.0), dMaxBCALP(1.5), 
-		dMinShowerDepth(0.0), dMaxShowerDepth(20.0), dMindEdX(0.0), dMaxdEdX(50.0), dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), 
-		dMinThrownMatchFOM(5.73303E-7), dMinTrackingFOM(0.0027)
+		dMinShowerDepth(0.0), dMaxShowerDepth(20.0), dMindEdX(0.0), dMaxdEdX(25.0), dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), 
+		dMinTrackingChiSqPerDF(0.0), dMaxTrackingChiSqPerDF(10.0), dMinThrownMatchFOM(5.73303E-7)
 		{
 			dTrackingPIDs.push_back(PiPlus);  dTrackingPIDs.push_back(KPlus);  dTrackingPIDs.push_back(Proton);
 			dTrackingPIDs.push_back(PiMinus);  dTrackingPIDs.push_back(KMinus);
@@ -219,11 +218,11 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		DAnalysisAction(NULL, "Hist_DetectorStudies", false, ""), 
 		dNumTimeBins(1600), dNumShowerEnergyBins(1600), dNumFCALTOFXYBins(240), dNumPhiBins(720), dNumHitEnergyBins(500), dNum2DBCALZBins(450), dNumTrackDOCABins(1600), 
 		dNumDeltaTBins(800), dNumShowerDepthBins(800), dNum2DTimeBins(400), dNum2DShowerEnergyBins(400), dNum2DPhiBins(360), dNum2DHitEnergyBins(250), dNum2DThetaBins(280), 
-		dNum2DPBins(600), dNum2DDeltaTBins(400), dNumdEdxBins(800), dNum2DdEdxBins(400), dNumDeltaPhiBins(800), 
+		dNum2DPBins(600), dNum2DDeltaTBins(400), dNumdEdxBins(800), dNum2DdEdxBins(400), dNumDeltaPhiBins(800), dNumTrackingChiSqPerDFBins(500), dNum2DTrackingChiSqPerDFBins(500), 
 		dMinTime(-800.0), dMaxTime(800.0), dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinTheta(0.0), dMaxTheta(140.0), dMinHitEnergy(0.0), 
 		dMaxHitEnergy(50.0), dMinTrackDOCA(0.0), dMaxTrackDOCA(400.0), dMaxTrackMatchDOCA(20.0), dMinDeltaT(-10.0), dMaxDeltaT(10.0), dMinP(0.0), dMaxP(12.0), dMaxBCALP(1.5), 
-		dMinShowerDepth(0.0), dMaxShowerDepth(20.0), dMindEdX(0.0), dMaxdEdX(50.0), dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), 
-		dMinThrownMatchFOM(5.73303E-7), dMinTrackingFOM(0.0027)
+		dMinShowerDepth(0.0), dMaxShowerDepth(20.0), dMindEdX(0.0), dMaxdEdX(25.0), dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), 
+		dMinTrackingChiSqPerDF(0.0), dMaxTrackingChiSqPerDF(10.0), dMinThrownMatchFOM(5.73303E-7)
 		{
 			dTrackingPIDs.push_back(PiPlus);  dTrackingPIDs.push_back(KPlus);  dTrackingPIDs.push_back(Proton);
 			dTrackingPIDs.push_back(PiMinus);  dTrackingPIDs.push_back(KMinus);
@@ -233,22 +232,23 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 
 		unsigned int dNumTimeBins, dNumShowerEnergyBins, dNumFCALTOFXYBins, dNumPhiBins, dNumHitEnergyBins, dNum2DBCALZBins, dNumTrackDOCABins;
 		unsigned int dNumDeltaTBins, dNumShowerDepthBins, dNum2DTimeBins, dNum2DShowerEnergyBins, dNum2DPhiBins, dNum2DHitEnergyBins, dNum2DThetaBins;
-		unsigned int dNum2DPBins, dNum2DDeltaTBins, dNumdEdxBins, dNum2DdEdxBins, dNumDeltaPhiBins;
+		unsigned int dNum2DPBins, dNum2DDeltaTBins, dNumdEdxBins, dNum2DdEdxBins, dNumDeltaPhiBins, dNumTrackingChiSqPerDFBins, dNum2DTrackingChiSqPerDFBins;
 		double dMinTime, dMaxTime, dMinShowerEnergy, dMaxShowerEnergy, dMinPhi, dMaxPhi, dMinTheta, dMaxTheta, dMinHitEnergy;
 		double dMaxHitEnergy, dMinTrackDOCA, dMaxTrackDOCA, dMaxTrackMatchDOCA, dMinDeltaT, dMaxDeltaT, dMinP, dMaxP, dMaxBCALP;
-		double dMinShowerDepth, dMaxShowerDepth, dMindEdX, dMaxdEdX, dMinDeltaPhi, dMaxDeltaPhi;
+		double dMinShowerDepth, dMaxShowerDepth, dMindEdX, dMaxdEdX, dMinDeltaPhi, dMaxDeltaPhi, dMinTrackingChiSqPerDF, dMaxTrackingChiSqPerDF;
 
 	private:
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
-		void Fill_ReconstructionHists(JEventLoop* locEventLoop);
+		void Fill_ReconstructionHists(JEventLoop* locEventLoop, bool locUseTruePIDFlag);
 		void Fill_NotMatchedHists(JEventLoop* locEventLoop);
 		void Fill_MatchedHists(JEventLoop* locEventLoop, bool locUseTruePIDFlag);
+		void Fill_PIDHists(JEventLoop* locEventLoop);
 
 		double dMinThrownMatchFOM;
-		double dMinTrackingFOM;
 		vector<Particle_t> dTrackingPIDs;
 		DVector3 dTargetCenter;
+		const DParticleID* dParticleID;
 
 		// Optional: Useful utility functions.
 		// const DAnalysisUtilities* dAnalysisUtilities;
@@ -285,6 +285,15 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		TH1I* dHist_NumDCHitsPerTrack;
 		TH2I* dHist_NumDCHitsPerTrackVsTheta;
 
+		//bool in pair: true/false for true/best-reconstructed PID
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_CDCdEdx;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_CDCdEdxVsP;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_FDCdEdx;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_FDCdEdxVsP;
+		map<pair<Particle_t, bool>, TH1I*> dHistMap_TrackingChiSqPerDF;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_TrackingChiSqPerDFVsTheta;
+		map<pair<Particle_t, bool>, TH2I*> dHistMap_TrackingChiSqPerDFVsP;
+
 		//Not Matched To Track (neutrals or hadronics)
 		TH1I* dHist_BCALTrackDOCA;
 		TH1I* dHist_BCALNeutralShowerTime;
@@ -302,10 +311,17 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		//Not Matched to Hit
 		TH2I* dHist_TrackPVsTheta_NoHitMatch;
 
+		//PID
+		map<int, TH2I*> dHistMap_QSCdEdXVsP; //int is charge: -1, 1
+		map<int, TH2I*> dHistMap_QTOFdEdXVsP; //int is charge: -1, 1
+		map<int, TH2I*> dHistMap_QCDCdEdXVsP; //int is charge: -1, 1
+		map<int, TH2I*> dHistMap_QFDCdEdXVsP; //int is charge: -1, 1
+
 		//Matched: By PID
 			//Delta-T: shower/hit_t - tflight - RF_t (if present)
 			//Note, SC time & energy here are different than above: w/ matching can correct for propagation along paddle
 			//bool in pair: true/false for true/best-reconstructed PID
+
 		map<pair<Particle_t, bool>, TH1I*> dHistMap_BCALTrackDOCA;
 		map<pair<Particle_t, bool>, TH1I*> dHistMap_BCALShowerEnergy;
 		map<pair<Particle_t, bool>, TH1I*> dHistMap_BCALShowerTrackDepth;
@@ -346,16 +362,14 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		DHistogramAction_ParticleComboKinematics(const DReaction* locReaction, bool locUseKinFitResultsFlag, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_ParticleComboKinematics", locUseKinFitResultsFlag, locActionUniqueString), 
 		dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(200), dNumVertexXYBins(200), dNumBetaBins(400), dNumDeltaBetaBins(400), 
-		dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumDeltaTRFBins(500), dNumdEdxBins(500), dNum2DdEdxBins(200), dNumTrackingChiSqPerDFBins(500), 
-		dNum2DTrackingChiSqPerDFBins(500), 
+		dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumDeltaTRFBins(500),
 		dMinT(-5.0), dMaxT(5.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), 
-		dMinVertexXY(-5.0), dMaxVertexXY(5.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinDeltaTRF(-10.0), dMaxDeltaTRF(10.0),
-		dMindEdx(0.0), dMaxdEdx(20.0), dMinTrackingChiSqPerDF(0.0), dMaxTrackingChiSqPerDF(10.0){}
+		dMinVertexXY(-5.0), dMaxVertexXY(5.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinDeltaTRF(-10.0), dMaxDeltaTRF(10.0) {}
 
 		unsigned int dNumPBins, dNumThetaBins, dNumPhiBins, dNumVertexZBins, dNumTBins, dNumVertexXYBins, dNumBetaBins, dNumDeltaBetaBins;
-		unsigned int dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins, dNumDeltaTRFBins, dNumdEdxBins, dNum2DdEdxBins, dNumTrackingChiSqPerDFBins, dNum2DTrackingChiSqPerDFBins;
+		unsigned int dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins, dNumDeltaTRFBins;
 		double dMinT, dMaxT, dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dMinVertexZ, dMaxVertexZ, dMinVertexXY, dMaxVertexXY;
-		double dMinBeta, dMaxBeta, dMinDeltaBeta, dMaxDeltaBeta, dMinDeltaTRF, dMaxDeltaTRF, dMindEdx, dMaxdEdx, dMinTrackingChiSqPerDF, dMaxTrackingChiSqPerDF;
+		double dMinBeta, dMaxBeta, dMinDeltaBeta, dMaxDeltaBeta, dMinDeltaTRF, dMaxDeltaTRF;
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -390,14 +404,6 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		deque<map<Particle_t, TH1I*> > dHistDeque_VertexZ;
 		deque<map<Particle_t, TH1I*> > dHistDeque_VertexT;
 		deque<map<Particle_t, TH2I*> > dHistDeque_VertexYVsX;
-
-		deque<map<Particle_t, TH1I*> > dHistDeque_CDCdEdx;
-		deque<map<Particle_t, TH2I*> > dHistDeque_CDCdEdxVsP;
-		deque<map<Particle_t, TH1I*> > dHistDeque_FDCdEdx;
-		deque<map<Particle_t, TH2I*> > dHistDeque_FDCdEdxVsP;
-		deque<map<Particle_t, TH1I*> > dHistDeque_TrackingChiSqPerDF;
-		deque<map<Particle_t, TH2I*> > dHistDeque_TrackingChiSqPerDFVsTheta;
-		deque<map<Particle_t, TH2I*> > dHistDeque_TrackingChiSqPerDFVsP;
 
 		deque<TH1I*> dHistDeque_MaxTrackDeltaZ;
 		deque<TH1I*> dHistDeque_MaxTrackDeltaT;
@@ -497,7 +503,6 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
-			dFinalStatePIDs.push_back(Electron);  dFinalStatePIDs.push_back(MuonMinus);
 		}
 
 		DHistogramAction_ThrownParticleKinematics(string locActionUniqueString) : 
@@ -509,7 +514,6 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
-			dFinalStatePIDs.push_back(Electron);  dFinalStatePIDs.push_back(MuonMinus);
 		}
 
 		DHistogramAction_ThrownParticleKinematics(void) : 
@@ -521,7 +525,6 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
-			dFinalStatePIDs.push_back(Electron);  dFinalStatePIDs.push_back(MuonMinus);
 		}
 
 		unsigned int dNumPBins, dNumThetaBins, dNumPhiBins, dNumVertexZBins, dNumTBins, dNumVertexXYBins, dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins;
@@ -555,51 +558,46 @@ class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
 		DHistogramAction_ReconnedThrownKinematics(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_ReconnedThrownKinematics", false, locActionUniqueString), 
 		dMinThrownMatchFOM(5.73303E-7), dNumPBins(1200), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), dNumVertexXYBins(400), 
-		dNum2DPBins(1200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumdEdxBins(500), dNum2DdEdxBins(200), dNumTrackingChiSqPerDFBins(500), dNum2DTrackingChiSqPerDFBins(500), 
+		dNum2DPBins(1200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumBetaBins(400), 
 		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), 
-		dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMindEdx(0.0), dMaxdEdx(20.0), dMinTrackingChiSqPerDF(0.0), dMaxTrackingChiSqPerDF(10.0)
+		dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2)
 		{
 			dFinalStatePIDs.clear();
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
-			dFinalStatePIDs.push_back(Electron);  dFinalStatePIDs.push_back(MuonMinus);
 		}
 
 		DHistogramAction_ReconnedThrownKinematics(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_ReconnedThrownKinematics", false, locActionUniqueString), 
 		dMinThrownMatchFOM(5.73303E-7), dNumPBins(1200), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), dNumVertexXYBins(400), 
-		dNum2DPBins(1200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumdEdxBins(500), dNum2DdEdxBins(200), dNumTrackingChiSqPerDFBins(500), dNum2DTrackingChiSqPerDFBins(500), 
+		dNum2DPBins(1200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumBetaBins(400), 
 		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), 
-		dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMindEdx(0.0), dMaxdEdx(20.0), dMinTrackingChiSqPerDF(0.0), dMaxTrackingChiSqPerDF(10.0)
+		dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2)
 		{
 			dFinalStatePIDs.clear();
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
-			dFinalStatePIDs.push_back(Electron);  dFinalStatePIDs.push_back(MuonMinus);
 		}
 
 		DHistogramAction_ReconnedThrownKinematics(void) : 
 		DAnalysisAction(NULL, "Hist_ReconnedThrownKinematics", false, ""), 
 		dMinThrownMatchFOM(5.73303E-7), dNumPBins(1200), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), dNumVertexXYBins(400), 
-		dNum2DPBins(1200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumdEdxBins(500), dNum2DdEdxBins(200), dNumTrackingChiSqPerDFBins(500), dNum2DTrackingChiSqPerDFBins(500), 
+		dNum2DPBins(1200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumBetaBins(400), 
 		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), 
-		dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMindEdx(0.0), dMaxdEdx(20.0), dMinTrackingChiSqPerDF(0.0), dMaxTrackingChiSqPerDF(10.0)
+		dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2)
 		{
 			dFinalStatePIDs.clear();
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
-			dFinalStatePIDs.push_back(Electron);  dFinalStatePIDs.push_back(MuonMinus);
 		}
 
 		double dMinThrownMatchFOM;
 
-		unsigned int dNumPBins, dNumThetaBins, dNumPhiBins, dNumVertexZBins, dNumTBins, dNumVertexXYBins, dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins;
-		unsigned int dNumdEdxBins, dNum2DdEdxBins, dNumTrackingChiSqPerDFBins, dNum2DTrackingChiSqPerDFBins;
-		double dMinT, dMaxT, dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dMinVertexZ, dMaxVertexZ, dMinVertexXY, dMaxVertexXY;
-		double dMindEdx, dMaxdEdx, dMinTrackingChiSqPerDF, dMaxTrackingChiSqPerDF;
+		unsigned int dNumPBins, dNumThetaBins, dNumPhiBins, dNumVertexZBins, dNumTBins, dNumVertexXYBins, dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins, dNumBetaBins;
+		double dMinT, dMaxT, dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dMinVertexZ, dMaxVertexZ, dMinVertexXY, dMaxVertexXY, dMinBeta, dMaxBeta;
 
 		deque<Particle_t> dFinalStatePIDs;
 
@@ -608,7 +606,12 @@ class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 
+		const DAnalysisUtilities* dAnalysisUtilities;
+
 		TH1I* 	dBeamParticle_P;
+
+		//PID
+		map<int, TH2I*> dHistMap_QBetaVsP; //int is charge: -1, 1
 
 		map<Particle_t, TH2I*> dHistMap_PVsTheta;
 		map<Particle_t, TH2I*> dHistMap_PhiVsTheta;
@@ -618,14 +621,6 @@ class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
 		map<Particle_t, TH1I*> dHistMap_VertexZ;
 		map<Particle_t, TH2I*> dHistMap_VertexYVsX;
 		map<Particle_t, TH1I*> dHistMap_VertexT;
-
-		map<Particle_t, TH1I*> dHistMap_CDCdEdx;
-		map<Particle_t, TH2I*> dHistMap_CDCdEdxVsP;
-		map<Particle_t, TH1I*> dHistMap_FDCdEdx;
-		map<Particle_t, TH2I*> dHistMap_FDCdEdxVsP;
-		map<Particle_t, TH1I*> dHistMap_TrackingChiSqPerDF;
-		map<Particle_t, TH2I*> dHistMap_TrackingChiSqPerDFVsTheta;
-		map<Particle_t, TH2I*> dHistMap_TrackingChiSqPerDFVsP;
 };
 
 class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
@@ -633,12 +628,10 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 	public:
 		DHistogramAction_DetectedParticleKinematics(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_DetectedParticleKinematics", false, locActionUniqueString), 
-		dMinPIDFOM(5.73303E-7), dMinTrackingFOM(0.0027), dNumPBins(1200), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), 
+		dMinPIDFOM(5.73303E-7), dNumPBins(1200), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), 
 		dNumVertexXYBins(400), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(1200), dNum2DThetaBins(140), dNum2DPhiBins(180), 
-		dNumdEdxBins(500), dNum2DdEdxBins(200), dNumTrackingChiSqPerDFBins(500), dNum2DTrackingChiSqPerDFBins(500), 
 		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), 
-		dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), 
-		dMindEdx(0.0), dMaxdEdx(20.0), dMinTrackingChiSqPerDF(0.0), dMaxTrackingChiSqPerDF(10.0)
+		dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0)
 		{
 			dFinalStatePIDs.push_back(Gamma);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -647,12 +640,10 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 
 		DHistogramAction_DetectedParticleKinematics(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_DetectedParticleKinematics", false, locActionUniqueString), 
-		dMinPIDFOM(5.73303E-7), dMinTrackingFOM(0.0027), dNumPBins(1200), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), 
+		dMinPIDFOM(5.73303E-7), dNumPBins(1200), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), 
 		dNumVertexXYBins(400), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(1200), dNum2DThetaBins(140), dNum2DPhiBins(180), 
-		dNumdEdxBins(500), dNum2DdEdxBins(200), dNumTrackingChiSqPerDFBins(500), dNum2DTrackingChiSqPerDFBins(500), 
 		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), 
-		dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), 
-		dMindEdx(0.0), dMaxdEdx(20.0), dMinTrackingChiSqPerDF(0.0), dMaxTrackingChiSqPerDF(10.0)
+		dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0)
 		{
 			dFinalStatePIDs.push_back(Gamma);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -661,23 +652,21 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 
 		DHistogramAction_DetectedParticleKinematics(void) : 
 		DAnalysisAction(NULL, "Hist_DetectedParticleKinematics", false, ""), 
-		dMinPIDFOM(5.73303E-7), dMinTrackingFOM(0.0027), dNumPBins(1200), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), 
+		dMinPIDFOM(5.73303E-7), dNumPBins(1200), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), 
 		dNumVertexXYBins(400), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(1200), dNum2DThetaBins(140), dNum2DPhiBins(180), 
-		dNumdEdxBins(500), dNum2DdEdxBins(200), dNumTrackingChiSqPerDFBins(500), dNum2DTrackingChiSqPerDFBins(500), 
 		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), 
-		dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), 
-		dMindEdx(0.0), dMaxdEdx(20.0), dMinTrackingChiSqPerDF(0.0), dMaxTrackingChiSqPerDF(10.0)
+		dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0)
 		{
 			dFinalStatePIDs.push_back(Gamma);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
 		}
 
-		double dMinPIDFOM, dMinTrackingFOM;
+		double dMinPIDFOM;
 		unsigned int dNumPBins, dNumThetaBins, dNumPhiBins, dNumVertexZBins, dNumTBins, dNumVertexXYBins, dNumBetaBins, dNumDeltaBetaBins, dNum2DPBins;
-		unsigned int dNum2DThetaBins, dNum2DPhiBins, dNumdEdxBins, dNum2DdEdxBins, dNumTrackingChiSqPerDFBins, dNum2DTrackingChiSqPerDFBins;
+		unsigned int dNum2DThetaBins, dNum2DPhiBins;
 		double dMinT, dMaxT, dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dMinVertexZ, dMaxVertexZ, dMinVertexXY, dMaxVertexXY, dMinBeta;
-		double dMaxBeta, dMinDeltaBeta, dMaxDeltaBeta, dMindEdx, dMaxdEdx, dMinTrackingChiSqPerDF, dMaxTrackingChiSqPerDF;
+		double dMaxBeta, dMinDeltaBeta, dMaxDeltaBeta;
 
 		deque<Particle_t> dFinalStatePIDs;
 
@@ -694,6 +683,9 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 		TH2I* 	dEventVertexYVsX;
 		TH1I* 	dEventVertexT;
 
+		//PID
+		map<int, TH2I*> dHistMap_QBetaVsP; //int is charge: -1, 1
+
 		map<Particle_t, TH2I*> dHistMap_PVsTheta;
 		map<Particle_t, TH2I*> dHistMap_PhiVsTheta;
 		map<Particle_t, TH2I*> dHistMap_BetaVsP;
@@ -704,14 +696,6 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 		map<Particle_t, TH1I*> dHistMap_VertexZ;
 		map<Particle_t, TH2I*> dHistMap_VertexYVsX;
 		map<Particle_t, TH1I*> dHistMap_VertexT;
-
-		map<Particle_t, TH1I*> dHistMap_CDCdEdx;
-		map<Particle_t, TH2I*> dHistMap_CDCdEdxVsP;
-		map<Particle_t, TH1I*> dHistMap_FDCdEdx;
-		map<Particle_t, TH2I*> dHistMap_FDCdEdxVsP;
-		map<Particle_t, TH1I*> dHistMap_TrackingChiSqPerDF;
-		map<Particle_t, TH2I*> dHistMap_TrackingChiSqPerDFVsTheta;
-		map<Particle_t, TH2I*> dHistMap_TrackingChiSqPerDFVsP;
 };
 
 class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
@@ -898,36 +882,36 @@ class DHistogramAction_NumReconstructedObjects : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 
-		TH2I* dHist_NumHighLevelObjects;
+		TH2D* dHist_NumHighLevelObjects;
 
-		TH1I* dHist_NumChargedTracks;
-		TH1I* dHist_NumPosChargedTracks;
-		TH1I* dHist_NumNegChargedTracks;
+		TH1D* dHist_NumChargedTracks;
+		TH1D* dHist_NumPosChargedTracks;
+		TH1D* dHist_NumNegChargedTracks;
 
-		TH1I* dHist_NumPosTimeBasedTracks;
-		TH1I* dHist_NumNegTimeBasedTracks;
-		TH1I* dHist_NumPosWireBasedTracks;
-		TH1I* dHist_NumNegWireBasedTracks;
-		TH1I* dHist_NumPosTrackCandidates;
-		TH1I* dHist_NumNegTrackCandidates;
-		TH1I* dHist_NumPosTrackCandidates_CDC;
-		TH1I* dHist_NumNegTrackCandidates_CDC;
-		TH1I* dHist_NumPosTrackCandidates_FDC;
-		TH1I* dHist_NumNegTrackCandidates_FDC;
+		TH1D* dHist_NumPosTimeBasedTracks;
+		TH1D* dHist_NumNegTimeBasedTracks;
+		TH1D* dHist_NumPosWireBasedTracks;
+		TH1D* dHist_NumNegWireBasedTracks;
+		TH1D* dHist_NumPosTrackCandidates;
+		TH1D* dHist_NumNegTrackCandidates;
+		TH1D* dHist_NumPosTrackCandidates_CDC;
+		TH1D* dHist_NumNegTrackCandidates_CDC;
+		TH1D* dHist_NumPosTrackCandidates_FDC;
+		TH1D* dHist_NumNegTrackCandidates_FDC;
 
-		TH1I* dHist_NumBeamPhotons;
-		TH1I* dHist_NumFCALShowers;
-		TH1I* dHist_NumBCALShowers;
-		TH1I* dHist_NumNeutralShowers;
-		TH1I* dHist_NumTOFPoints;
-		TH1I* dHist_NumSCHits;
-		TH1I* dHist_NumTAGMHits;
-		TH1I* dHist_NumTAGHHits;
+		TH1D* dHist_NumBeamPhotons;
+		TH1D* dHist_NumFCALShowers;
+		TH1D* dHist_NumBCALShowers;
+		TH1D* dHist_NumNeutralShowers;
+		TH1D* dHist_NumTOFPoints;
+		TH1D* dHist_NumSCHits;
+		TH1D* dHist_NumTAGMHits;
+		TH1D* dHist_NumTAGHHits;
 
-		TH1I* dHist_NumTrackBCALMatches;
-		TH1I* dHist_NumTrackFCALMatches;
-		TH1I* dHist_NumTrackTOFMatches;
-		TH1I* dHist_NumTrackSCMatches;
+		TH1D* dHist_NumTrackBCALMatches;
+		TH1D* dHist_NumTrackFCALMatches;
+		TH1D* dHist_NumTrackTOFMatches;
+		TH1D* dHist_NumTrackSCMatches;
 
 		TH1I* dHist_NumCDCHits;
 		TH1I* dHist_NumFDCHits;
