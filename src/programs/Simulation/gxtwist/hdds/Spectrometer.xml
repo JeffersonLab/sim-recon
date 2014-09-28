@@ -233,33 +233,6 @@
   <trd name="CHE0" Xmp_Ymp_Z="43.7963  38.377  5.77  5.77  2.54"
       material="Iron" inclination="-20.3847 0" unit_angle="deg"/>
 
-<!--  ====== Control Volume positioned at the detector plane ====== -->
-
-  <composition name="DET7Comp">
-    <posXYZ volume="DET7" X_Y_Z="-0.1  0.0  0.0"/>
-<!-- Shielded Focal Plane 
-    <posXYZ volume="NSCF" X_Y_Z="5.5     74.0  -53.0"/>
-    <posXYZ volume="NSCF" X_Y_Z="5.5    -74.0  -53.0"/>
-    <posXYZ volume="NSCB" X_Y_Z="-15.0  -74.0  -53.0"/>
-    <posXYZ volume="NSCB" X_Y_Z="-15.0   74.0  -53.0"/>
-    <posXYZ volume="NSCS" X_Y_Z="-6.0   -74.0   17.0"/>
-    <posXYZ volume="NSCS" X_Y_Z="-6.0    74.0   17.0"/>
--->
-  </composition>
-
-  <!--box name="DET7" X_Y_Z="0.2 20.0  1200.0" material="TaggerVacuum" /-->
-  <box name="DET7" X_Y_Z="0.2  200.0  852.0" material="TaggerVacuum" /> 
-
-<!-- Just longer focal plane -->
-  <!--box name="DET7" X_Y_Z="0.2  200.0  952.0" material="TaggerVacuum" /-->
-
-<!-- Shielding of the microscope detectors -->
-  <!--box name="NSCF" X_Y_Z="10.0  140.0  110.0" material="Polyethylene"/--> 
-  <!--box name="NSCB" X_Y_Z="10.0  140.0  150.0" material="Polyethylene"/--> 
-  <!--box name="NSCS" X_Y_Z="8.0   140.0  10.0" material="Polyethylene"/--> 
-
-  <box name="DET8" X_Y_Z="550.0   550.0   0.01" material="Vacuum" /> 
-
 </section>
 
 <!-- </HDDS> -->

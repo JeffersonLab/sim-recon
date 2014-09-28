@@ -1516,7 +1516,6 @@ jerror_t DEventSourceHDDM::Extract_DFCALHit(hddm_s::HDDM *record,
    const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
 
    vector<DFCALHit*> data;
-   int hitId = 0;
 
    if (tag == "") {
       const hddm_s::FcalHitList &hits = record->getFcalHits();
@@ -1540,7 +1539,6 @@ jerror_t DEventSourceHDDM::Extract_DFCALHit(hddm_s::HDDM *record,
          mchit->y      = pos.Y();
          mchit->E      = iter->getE();
          mchit->t      = iter->getT();
-         mchit->id     = hitId++;
          data.push_back(mchit);
        }
     }
@@ -1566,7 +1564,6 @@ jerror_t DEventSourceHDDM::Extract_DFCALHit(hddm_s::HDDM *record,
          mchit->y      = pos.Y();
          mchit->E      = iter->getE();
          mchit->t      = iter->getT();
-         mchit->id     = hitId++;
          data.push_back(mchit);
       }
    }

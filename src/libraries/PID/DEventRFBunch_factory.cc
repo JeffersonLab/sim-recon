@@ -45,7 +45,14 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	vector<const DRFTime*> locRFTimes;
 	locEventLoop->Get(locRFTimes);
 	if(locRFTimes.empty())
-		return RESOURCE_UNAVAILABLE;
+	{
+		DEventRFBunch *locEventRFBunch = new DEventRFBunch;
+		locEventRFBunch->dTime = 0.0;
+		locEventRFBunch->dTimeVariance = 0.0;
+		locEventRFBunch->dMatchedToTracksFlag = false;
+		_data.push_back(locEventRFBunch);
+		return NOERROR;
+	}
 
 	double locRFHitTime = locRFTimes[0]->dTime;
 	double locTimeVariance = locRFTimes[0]->dTimeVariance;
@@ -144,7 +151,7 @@ bool DEventRFBunch_factory::Find_TrackTimes(const DDetectorMatches* locDetectorM
 		if(!dParticleID->Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams))
 			continue;
 
-		double locPropagatedTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/SPEED_OF_LIGHT;
+		double locPropagatedTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 		locTimes.push_back(locPropagatedTime);
 	}
 
@@ -161,7 +168,7 @@ bool DEventRFBunch_factory::Find_TrackTimes(const DDetectorMatches* locDetectorM
 		if(dParticleID->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams))
 		{
 			const DBCALShower* locBCALShower = dynamic_cast<const DBCALShower*>(locBCALShowerMatchParams.dShowerObject);
-			double locPropagatedTime = locBCALShower->t - locBCALShowerMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/SPEED_OF_LIGHT;
+			double locPropagatedTime = locBCALShower->t - locBCALShowerMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 			locTimes.push_back(locPropagatedTime);
 			continue;
 		}
@@ -170,7 +177,7 @@ bool DEventRFBunch_factory::Find_TrackTimes(const DDetectorMatches* locDetectorM
 		if(dParticleID->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
 		{
 			const DTOFPoint* locTOFPoint = locTOFHitMatchParams.dTOFPoint;
-			double locPropagatedTime = locTOFPoint->t - locTOFHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/SPEED_OF_LIGHT;
+			double locPropagatedTime = locTOFPoint->t - locTOFHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 			locTimes.push_back(locPropagatedTime);
 			continue;
 		}
@@ -179,7 +186,7 @@ bool DEventRFBunch_factory::Find_TrackTimes(const DDetectorMatches* locDetectorM
 		if(dParticleID->Get_BestFCALMatchParams(locTrackTimeBased, locDetectorMatches, locFCALShowerMatchParams))
 		{
 			const DFCALShower* locFCALShower = dynamic_cast<const DFCALShower*>(locFCALShowerMatchParams.dShowerObject);
-			double locPropagatedTime = locFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/SPEED_OF_LIGHT;
+			double locPropagatedTime = locFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 			locTimes.push_back(locPropagatedTime);
 			continue;
 		}

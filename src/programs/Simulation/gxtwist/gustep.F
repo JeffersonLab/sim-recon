@@ -49,19 +49,23 @@
       parameter (ntform='kind:i,xin(4):r,xout(4):r,'
      +                //'pin(5):r,pout(5):r,dEsum:r,'
      +                //'x0(4):r,p0(5):r,p1(5):r,ppol:r')
-      integer ntid1,ntid2,ntid3
-      parameter(ntid1=1,ntid2=2,ntid3=3)
 
       logical hexist
       external hexist   
 
-      if (.not.hexist(ntid1)) then
-          call hbnt(ntid1,'microscope hits',' ')
-          call hbname(ntid1,'hits',ptype,ntform)
-          call hbnt(ntid2,'fixed array hits',' ')
-          call hbname(ntid2,'hits',ptype,ntform)
-          call hbnt(ntid3,'endpoint array hits',' ')
-          call hbname(ntid3,'hits',ptype,ntform)
+      if (.not.hexist(1)) then
+          call hbnt(1,'microscope hits',' ')
+          call hbname(1,'hits',ptype,ntform)
+          call hbnt(2,'fixed array hits',' ')
+          call hbname(2,'hits',ptype,ntform)
+          call hbnt(3,'endpoint array hits',' ')
+          call hbname(3,'hits',ptype,ntform)
+          call hbnt(4,'microscope readout hits',' ')
+          call hbname(4,'hits',ptype,ntform)
+          call hbnt(5,'DET7 pseudovolume hits',' ')
+          call hbname(5,'hits',ptype,ntform)
+          call hbnt(6,'DET8 pseudovolume hits',' ')
+          call hbname(6,'hits',ptype,ntform)
       endif
  
       CALL GDEBUG
@@ -132,7 +136,8 @@ c     endif
 
 * If not a sensitive volume then exit here
 
-      if (NTMULT.eq.1.and.NSTEP.eq.0) then
+c     if (NTMULT.eq.1.and.NSTEP.eq.0) then
+      if (NSTEP.eq.0) then
         x0(1) = VECT(1)
         x0(2) = VECT(2)
         x0(3) = VECT(3)
@@ -190,11 +195,17 @@ c     endif
       pout(4) = GETOT
       pout(5) = VECT(7)
       if (CNAMES(NLEVEL).eq.'MSFI') then
-        call hfnt(ntid1)
+        call hfnt(1)
       elseif (CNAMES(NLEVEL)(1:2).eq.'FX') then
-        call hfnt(ntid2)
+        call hfnt(2)
       elseif (CNAMES(NLEVEL)(1:4).eq.'ENDP') then
-        call hfnt(ntid3)
+        call hfnt(3)
+      elseif (CNAMES(NLEVEL)(1:4).eq.'MSRO') then
+        call hfnt(4)
+      elseif (CNAMES(NLEVEL)(1:4).eq.'DET7') then
+        call hfnt(5)
+      elseif (CNAMES(NLEVEL)(1:4).eq.'DET8') then
+        call hfnt(6)
       elseif (CNAMES(NLEVEL).eq.'XTAL') then
         x0(1) = VECT(1)
         x0(2) = VECT(2)

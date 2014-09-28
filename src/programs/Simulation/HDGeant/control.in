@@ -18,7 +18,7 @@ c instructs HDGeant to open ./phi-1680.hddm, skip the first 25 events and then
 c process the following 100 input events and stop.  If the end of the file is
 c reached before the event count specified in card TRIG is exhausted then the
 c processing will stop at the end of file.
-cINFILE 'etap_gen.hddm'
+INFILE 'bggen.hddm'
 TRIG 1000
 
 c The BEAM card configures the built-in coherent bremsstralung photon
@@ -39,7 +39,7 @@ c Omitting the final parameter Emin results in the default value being used.
 cBEAM 10. 9.999 0.0012 76.00 0.005
 
 c Commenting out the following line will disable simulated hits output.
-OUTFILE 'hdgeant.hddm'
+OUTFILE 'bgtest.hddm'
 
 c The following are used to automatically invoke the mcsmear program
 c to do the final stage digitization of hits after the simulation
@@ -297,7 +297,7 @@ c The difference being that underscores are not allowed here. To
 c specify the values to the reconstruction code used here, use the
 c -PBFIELD_TYPE=CalibDB and -PBFIELD_MAP=Magents/Solenoid/solenoid_1500
 BFIELDMAP 'Magnets/Solenoid/solenoid_1200A_poisson_20140520'
-c BFIELDTYPE 'Const'
+cBFIELDTYPE 'NoField'
 
 c Use this card to enable/disable ( SAVEHITS  1/0 ) writing events with no 
 c hits in the detector to the hddm output file. Default value is 0.

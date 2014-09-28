@@ -47,12 +47,6 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	// Type of kinematic fit to perform:
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //defined in DKinFitResults.h
 
-	// Highly Recommended: When generating particle combinations, reject all tracks with a tracking confidence level < 0.27% (+/- 3-sigma)
-	locReaction->Set_MinTrackingFOM(0.0027);
-
-	// Highly Recommended: When generating particle combinations, reject all tracks without a matching hit in a detector system (ST/TOF/BCAL/FCAL)
-	locReaction->Set_HasDetectorMatchFlag(true);
-
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
 	locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
 
@@ -64,6 +58,11 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 
 	// Enable ROOT TTree Output
 	locReaction->Enable_TTreeOutput("tree_b1pi.root"); //string is file name (must end in ".root"!!)
+
+	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" factory.
+		// Current Default: "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma)
+		// Important: Keep cut large: Can lose events if many ghost and accidental tracks
+	locReaction->Set_MaxExtraGoodTracks(4);
 
 /*********************************************** b1pi Combo Pre-Combo Custom Cuts ***********************************************/
 

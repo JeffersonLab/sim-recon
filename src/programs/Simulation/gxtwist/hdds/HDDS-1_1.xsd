@@ -1,0 +1,2673 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://www.gluex.org/hdds" 
+           xmlns="http://www.gluex.org/hdds"
+           elementFormDefault="qualified">
+
+<!-- HDDS: HALL D Geometric Detector Specification
+     =============================================
+
+     Version:   1.1
+     Date   :   September 6, 2013
+     
+     This xml schema defines the structure and syntax for
+     Hall D Geometric Detector Specification xml files. 
+     Documentation of the elements is given below.
+
+     The basic structure of this document was borrowed
+     from the AGGD project of the Atlas collaboration.
+
+     version 1.0 - original release
+     version 1.1 - added the geometry_layer[=0] attribute to the volume
+                   positioning tags to support placement of volumes in
+                   secondary layers of the geometry.  Objects in the default
+                   layer 0 of the geometry are on top, with subsequent layers
+                   placed sequentially underneath, such that any object in a
+                   lower layer supersedes an object in a higher-numbered layer
+                   that overlaps with it.  See section 1.5.2 for details.
+
+
+1) General structure of a detector description
+   ===========================================
+
+  o The HDDS element is the main container where all detector description
+    information is maintained and managed. 
+
+  o Currently one may find within the HDDS element :
+      o materials   : definition of a set of materials
+      o section     : definition of a section (main division of the detector)
+      o region      : definition of tracking properties (eg. magnetic fields)
+
+  o The schema provides a main version id. This corresponds to a constraint
+    (named version).  All "materials", "sections", "regions" and the
+    overall "HDDS" element must individually specify in their attributes
+    a matching version value. (eg. version="v4")
+
+  o General rule for angle definition for all XML statements:
+
+     a) Right handed coordinate system is used.
+          Explicitly this means that:  
+            Z-axis angle rotation should be positive when rotation is
+              made in the direction from X to Y in the short way 
+            Y-axis angle rotation should be positive when rotation is
+              made in the direction from Z to X in the short way
+            X-axis angle rotation should be positive when rotation is
+              made in the direction from Y to Z in the short way
+     b) All angles corresponds to "active" rotation, i.e. the object is rotated
+        in the fixed coordinate system
+        (NOT "passive" rotation when the axis are rotated and the object
+         is fixed) 
+
+1.1) Materials
+===============
+
+  The materials element collects together all of the materials information
+  in the document under a single container.  Attributes of materials are :
+
+            version     : version of the materials description
+            date        : last modification date
+            author      : last modification author
+            specification : version of the materials tag schema
+
+  o Materials can be elements or composites.
+  o Elements are identified using a long name. Attributes are
+
+            symbol      : the conventional symbol name
+            z           : mean number of protons
+            a           : atomic weight
+  o Composites are identified using a long name and provide a density (g/ml).
+    They are made of a set of addmaterial elements, each with attributes
+
+            material     : an IDREF to an already defined material or element
+            fractionmass : a percentage of this material in the composite 
+                           (use for both materials and elements).
+            natoms       : the number of atoms of this element in the composite
+                           (elements only).  Use either natoms or fractionmass.
+  o Contents of elements and composites are a sequence of parameters with
+    names taken from the following list.  Any element that is valid within
+    a parameter block (see section 1.3) is allowed.
+
+            density     : density 		     (g/cm^3)
+            radlen      : radiation length           (g/cm^2)
+            collen      : nuclear collision length   (g/cm^2)
+            abslen      : nuclear interaction length (g/cm^2)
+            dedx        : minimum-ionization dE/dx   (MeV/g/cm^2)
+  o Elements and composites may have optical properties associated with
+    them which indicate how optical photons (ie. visible light) interacts
+    with the  material.  Optical properties are enclosed within the
+    optical_properties container element.  They are specified as a list of
+    specify elements.  If optical_properties is present, it must enclose at
+    least two specify elements.  The arguments to specify are as follows.
+
+           E        : photon energy (eV, required)
+           refindex : refractive index (required for dielectrics, default 0)
+           abslen   : absorption length (cm, dielectrics only, default 0)
+           effic    : detection efficiency (meaning is user defined, default 0)
+           reflect  : reflection coefficient (metals only, default 0)
+           smooth   : smoothness parameter (1=perfect, 0=rough, default 1)
+
+1.2) Sections
+==============
+
+  A section forms the basic sub-division of the entire detector. It
+  holds the implementation of the geometry for this particular piece
+  of detector. A section is primarily made of "volume" elements but
+  also may receive a set of named and typed parameter blocks (used to specify
+  constants).
+
+  Attributes of section are :
+
+            name        : (short) unique name to identify the section
+            version     : internal version of the section
+            date        : last modification date
+            author      : last modification author
+            top_volume  : envelope volume corresponding to the section
+            specification : version of the section tag schema
+
+1.3) Parameters
+===============
+
+  Parameters are named and typed values. Possible types are :
+
+        int		 : an int value
+        real             : a float value
+        string           : a text string
+        reference        : an IDREF to a parameter block.
+
+        int_array        : an array of values
+        real_array       : an array of values
+        string_vector    : a vector of text strings
+        reference_vector : a vector of IDREFs to parameter blocks.
+
+  Parameters must be defined within named "parameter blocks" which in
+  turn can be referenced by any volume. Parameter blocks are defined
+  within sections.
+
+  All scalar parameter get their value in the attribute named "value";
+  array parameters get their array of values within the single
+  attribute named "values"; vector parameters get their values as a
+  set of member elements.
+
+  It is required to specify a semantics for the values using a "unit"
+  attribute (available for both scalar and arrays). Current possible
+  units are:
+
+     m cm mm              for lengths
+     deg rad mrad 	  for angles
+     percent              for fractions
+
+   or simply
+
+     none
+
+
+  some examples are:
+
+          <real name="chamber_width" value="12.56" unit="mm" />
+          <string name="chamber_type"  value="RPC" />
+
+          <real_array name="ratios" unit="percent" values="10 15 27 33" />
+
+          <string_vector name="authors">
+            <string_data value="Christian Arnault"/>
+            <string_data value="Stan Bentvelsen"/>
+            <string_data value="Jean-Francois Laporte"/>
+            <string_data value="Steven Goldfarb"/>
+            <string_data value="Marc Virchaux"/>
+            <string_data value="Christopher Lester"/>
+          </string_vector>
+
+
+1.4) Volumes
+============
+
+  The 'volume' is a generic name for a geometric object. Effective
+  volume are organized as a hierarchy of types.
+
+        1) solid volume (have a "material" and may be "sensitive"))
+           |-> box      3-rectangle
+           |-> tubs	tube section
+	   |-> eltu     elliptical tube
+           |-> trd	trapezoid
+           |-> pcon	poly-cone (sequence of joined cons)
+           |-> pgon	polyhedron (sequence of joined polygons)
+           |-> cons 	cone section
+           +-> sphere	sphere (or a section thereof)
+
+        2) composition (build a logical composition)
+
+        3) boolean volume
+           |-> union
+           |-> intersection
+           +-> subtraction
+
+        4) stack (pile up other volumes)
+           |-> stackX
+           |-> stackY
+           +-> stackZ
+
+  All kinds of volumes have at least the following attribute:
+
+         name       : their identifier
+         parameters : an IDREF to a parameter block.
+
+  Parameter blocks are meant to describe non-geometrical information
+  or geometrical details that cannot or should not be described using
+  the generic model.
+
+  For example, the inner-structure of the SCT crystals contain
+  information about the strip-pitch, etc. The use and content of these
+  parameters is left free.
+
+  A volume in itself is not positioned. Rather, compositions, boolean
+  volumes or stacks combine "position" elements whose role is to
+  position a volume (see paragraph on positions)
+         
+
+1.4.1) Solid volume:
+====================
+
+  A basic geometry unit; Specialized types provide for specific shapes
+  (boxes, tube sections, trapezoids and cone sections). A solid
+  references a material, and may be declared as "sensitive" (which
+  opens the not-yet-implemented capability of producing hits).
+
+
+1.4.1.1) Box (element tag "box") :
+
+  A Box is a cuboid of given total lengths X,Y and Z. The Box is
+  centered on the origin with sides parallel to the x/y/z axes.
+
+  NB: Note the factor two difference in the dimensions wrt the 'Geant4 - Box'
+
+  Its dimensions are given by :
+
+                      X_Y_Z="X Y Z"
+
+1.4.1.2) Trapezoid (element tag "trd") :
+
+  A Trd is a trapezoid with the x and y dimensions varying along z. Its
+  dimensions are given by
+
+                      Xmp_Ymp_Z="Xm Xp Ym Yp Z" 
+                      inclination="alph_xz alph_yz"
+
+  with:
+                      Xm    Length along x at the surface positioned at -Z/2
+                      Xp    Length along x at the surface positioned at +Z/2
+                      Ym    Length along y at the surface positioned at -Z/2
+                      Yp    Length along y at the surface positioned at +Z/2
+                      Z     Length along z axis
+
+                      alph_xz  Inclination angle in the x-z plane
+                      alph_yz  Inclination angle in the y-z plane
+
+  NB: Note the factor two difference in the dimensions wrt the 'Geant4 - trd'
+
+1.4.1.3) Tube segment (element tag "tubs")
+
+  A tube or tube segment with curved sides parallel to the z-axis.
+  The tube has a specified total-length along the z axis, about which
+  it is centered, and a given minimum and maximum radius. A minimum
+  radius of 0 signifies a filled tube / cylinder. The tube segment is
+  specified by starting and delta angles for phi, with 0 being the +x
+  axis, PI/2 the +y axis. A delta angle of 2PI signifies a complete,
+  unsegmented tube/cylinder.  The origin is centered in the middle of
+  the tube.
+
+  Its dimensions are given by
+
+                     Rio_Z="Ri Ro Z"
+                     profile="PhiS dPhi"   (defaulted to "0 360") 
+
+  with
+
+                     Ri    Inner radius
+                     Ro    Outer radius
+                     Z     Total length in Z
+                     PhiS  Starting angle phi
+                     dPhi  Delta angle phi
+
+  NB: Note the factor two difference in the length wrt the 'Geant4 - tubs'
+
+
+1.4.1.4) Elliptical cross-section tube (element tag "eltu")
+
+  It has three parameters:
+
+                     Rxy_Z="Ri Ro Z"
+
+  with
+
+                     Rx    Semi-axis of the ellipse along x
+                     Ry    Semi-axis of the ellipse along y
+                     Z     Half-length in z
+
+
+1.4.1.5) Cone segment (element tag "cons")
+
+  A cons is, in the general case, a Phi segment of a cone, with length
+  Z, inner and outer radii specified at -Z/2 and +Z/2. The Phi segment
+  is described by a starting Phi angle, and the +dPhi delta angle for
+  the shape.
+
+  Its dimensions are given by
+
+                     Rio1_Rio2_Z="Ri1 Ro1 Ri2 Ro2 Z"
+                     profile="PhiS dPhi"               (defaulted to "0 360") 
+
+  with :
+
+                     Ri1     inside radius at  -Z/2
+                     Ri2     inside radius at  +Z/2
+                     Ro1     outside radius at -Z/2
+                     Ro2     outside radius at +Z/2
+                     Z       half length in z
+                     PhiS    Starting angle phi
+                     dPhi    Delta angle phi
+
+
+1.4.1.6) Polycone segment (element tag "pcon" )
+
+  A pcon is, in the general case, a Phi segment of a polycone. The
+  polycone is build from a series of consecutive cones.
+
+  The phi-segment is given by the attribute
+      
+                     profile="PhiS dPhi"               (defaulted to "0 360") 
+
+  with :
+
+                     PhiS    Starting angle phi
+                     dPhi    Delta angle phi
+
+  The edges of the polycone are given by a series of XML element 'polyplane',
+  which are children of 'pcon'. The 'polyplane' dimensions are given
+  by the attribute:
+
+                     Rio_Z="Ri Ro Z"
+
+  with :
+
+                     Ri     inside radius at  point Z
+                     Ro     outside radius at  point Z
+                     Z      position z
+
+
+1.4.1.7) Polyhedron solid (element tag "pgon" )
+
+  A pgon is similar to the polycone (element tag "pcon") except that
+  its boundaries are planar segments instead of conical ones.
+
+  The phi-segmentation is given by the attribute
+      
+                     profile="PhiS dPhi"               (defaulted to "0 360") 
+
+  with :
+
+                     PhiS    Starting angle phi
+                     dPhi    Delta angle phi
+
+  and by the number of phi-segments specified using the attribute
+
+                     segments="NNN"                   (no default)
+
+  with :
+
+                     NNN    number of (equal) phi segments
+
+  The edges of the polyhedron are given by a series of XML element 'polyplane',
+  which are children of 'pgon'. The 'polyplane' dimensions are given
+  by the attribute:
+
+                     Rio_Z="Ri Ro Z"
+
+  with :
+
+                     Ri     inside radius at  point Z
+                     Ro     outside radius at  point Z
+                     Z      position z
+
+  where "radius" of a planar boundary is defined to be the perpendicular
+  distance from the boundary to the z-axis.
+
+1.4.1.8) Sphere segment (element tag "sphere" )
+
+  A sphere segment is a section of a sphere that is delimited by boundaries
+  of fixed radius, polar angle and azimuthal angle.
+
+  The bounds of the sphere segment are given in three compound attributes:
+      
+                     Rio="Ri Ro"
+                     polar_bounds="Theta0 Theta1"      (defaulted to "0 180")
+                     profile="PhiS dPhi"               (defaulted to "0 360") 
+
+  with :
+
+                     Ri      radius of inner surface
+                     Ro      radius of outer surface
+                     Theta0  lower bound in theta
+                     Theta1  upper bound in theta
+                     PhiS    Starting angle phi
+                     dPhi    Delta angle phi
+
+
+
+1.4.2) Composition
+==================
+
+  Construct a new volume which consists of positioning several volumes
+  (defined elsewhere in HDDS) placed at various places w.r.t. the
+  reference frame of this new entity.
+
+    The positioning of volumes proceeds via position elements:
+
+        posXYZ
+        posRPhiZ
+        mposR
+        mposPhi
+        mposX
+        mposY
+        mposZ
+  
+  Volume are positioned according to the coordinates specified in the
+  above positioning elements w.r.t. the implicit coordinate system of
+  the composition (which defines the reference)..
+
+  In general, there is a priori no defined volume corresponding to
+  this entity i.e. it is a juxtaposition of volumes. Its envelope has
+  to be computed from the juxtaposed volumes. However one can force
+  this envelope to be one specific (elsewhere defined) volume.  Then
+  all positioned volume will be placed into this "envelope" volume.
+
+1.4.3) Stacks
+=============
+
+  Constructs a new volume which consists of several other volumes
+  piled up along one given axis.
+
+   Stacks may be defined along
+     the X axis (element tag "stackX")
+     the Y axis (element tag "stackY")
+     the Z axis (element tag "stackZ")
+
+  The positioning of volumes proceeds via elements:
+
+         axisPos    : a single volume is added to the pile. A
+                      rotation (one angle) along the same axis as well as
+                      a transverse displacement may also be specified.
+
+         axisMPos   : a multiple position of a given volume. A
+                      rotation (one angle) along the same axis as well as
+                      a transverse displacement (both applicable to all copies) 
+                      may also be specified.
+
+         Offsets along the stack axis can be specified either using 
+
+         a shift : distance between the coordinate origin of the stack and the
+                   coordinate origin of the first stacked volume, or between
+                   the coordinate origin of the previously stacked volume and
+		   the coordinate origin of the first stacked volume.
+
+         a gap   : distance between the coordinate origin of the stack and the
+                   lowest dimension of the first stacked volume, or between the
+                   highest dimension of the previously stacked volume and the
+                   lowest dimension of the first stacked volume.
+
+
+     Coordinate system: The coordinate system of the stack can be
+                        defined in two ways, that are selected by 
+                        the attribute 'origin'.
+ 
+        origin="atStart" (default)
+                        The coordinate-system of the stack is defined before
+                        any volumes are positioned in the stack, and
+                        it is fixed (i.e. independent of the contents
+                        of the stack).
+                        For example, in the absence of the gap0 or
+                        shift0 attributes, the origin of the
+                        coordinate system coincides with the edge of
+                        the stack.
+
+        origin="atCenter"   After the stack is built an additional shift
+                        along the direction axis is applied to the
+                        coordinate system of the stack, such that it
+                        lies in the center of the stack (including
+                        gaps). The 'center' is defined as the
+                        geometric middle between two planes
+                        perpendicular to the direction axis, with the
+                        planes just touching the extreme edges of the
+                        stack (which include gaps).  Note that the
+                        coordinate system always lies on the direction
+                        axis, and does not change in the perpendicular
+                        direction.  
+                        To avoid ambiguities when gap0 is smaller than zero:
+                        Define point A at the "stack start" (from which gap0 is 
+                        measured), and define the last physical part of the
+			stack as B. The center of the stack is then defined at 
+                        position (A+B)/2.  In the simple case of zero gap0
+                        and shift0, the coordinate system is shifted to
+                        the center of the stack of volumes.
+ 
+
+1.4.4) Boolean volumes (union, intersection and subtraction)
+============================================================
+   NOTE: Boolean volumes are not currently supported by HDFast or HDGeant.
+
+     union        : Union of several volumes
+
+     intersection : Intersection of several volumes
+
+     subtraction  : Subtraction of several volumes. All the volumes 
+                    (but the first) are subtracted from the first
+
+   The positioning of volumes within boolean operation can only be
+   done via single positioners, say:
+
+       posXYZ
+       posRPhiZ
+
+   Note that it is required that the materials of the boolean volumes
+   are identical. This is however not checked (or forced) within the
+   XML syntax, and is left to the responsibility of the user (and the
+   application).
+
+
+1.5) Positioning of volumes
+===========================
+
+   Each volume (Solid volumes, compositions, unions, etc) are
+   positioned relatively to other volumes using the "position"
+   elements. A given volume may referenced (through its name) in
+   several position operations.
+
+   Position operators are organized as a hierarchy of types as follows
+
+         Single positions
+           | posXYZ
+           | posRPhiZ
+         Multiple positions
+           | mposR
+           | mposPhi
+           | mposX
+           | mposY
+           | mposZ
+         Axis positions
+           | axisPos
+           | axisMPos
+
+    o Single positions can be used in compositions or boolean volumes
+
+    o Multiple positions can only be used in compositions
+
+    o Axis positions can only be used in stacks
+
+
+1.5.1) Common properties
+
+   All positioning operators share some properties :
+
+     attributes :
+
+        volume         : the volume they are positioning.
+        unit_length    : the units used to specify the coordinates.
+        unit_angle     : the units used to specify rotation angles.
+        geometry_layer : the geometry layer (see section 1.5.2 below)
+                         in which to place the volume.
+
+     member elements :
+
+        identifiers : a set of identifier specifications (see paragraph on 
+                      identifiers for details)
+
+
+   Single positions and Multiple positions may provide a local rotation 
+   (specified as three angles around X, Y and Z)
+
+   The rotation around X,Y,Z axis is defined by rot="a b c"
+          the X rotation of a angle is done first 
+          the Y rotation of b angle is done second 
+          the Z rotation of c angle is done last.
+
+
+1.5.1.1) posXYZ
+
+     posXYZ: single positioning of a 'generic' volume, in cartesian
+             coordinates.  The coordinate system is implicitly defined by
+             the posXYZ (take a coordinate system, and place the volume in
+             it with a given set of coordinates and rotations)
+
+      specific attributes:
+
+      X_Y_Z : X, Y and Z coordinates of the volume inside the
+              coordinate system   
+          The volume is rotated before it is placed.
+
+
+1.5.1.2) posRPhiZ
+
+      posRPhiZ: single positioning of a 'generic' volume, in cylindrical
+                coordinates.
+
+      specific attributes:
+
+      R_Phi_Z : Radius, Phi (wrt the X-axis) and Z of the volume
+                (default is 0 0 0).
+      S       : Move along the "ortho-radial" coordinate S 
+                before placing the object (default is 0).
+      impliedRot : (true | false) rotation of volumes to point to center
+                coordinate system (true) or not (false).
+       
+      The volume is rotated before it is placed.
+        
+
+1.5.1.3) mposPhi
+
+      mposPhi: multiple positioning of a 'generic' volume, around the
+               Z-axis at a given radius R, with incremental values of phi.
+
+      specific attributes:
+
+      ncopy : Number of volumes to be placed
+      Phi0  : Start value of phi (wrt the x-axis).
+      dPhi  : If given:      incremental value of phi
+              If absent:     incremental value of phi is set
+                             to 2*PI/ncopy 
+      R_Z   : Radius R and Z-coordinate
+      S     : Move along the "ortho-radial" coordinate S 
+              before placing the objects (default is 0).
+      impliedRot : (true | false) rotation of volumes to point to center
+              coordinate system (true) or not (false).
+
+1.5.1.4) mposR/X/Y/Z
+
+     mposR, mposX, mposY, mposZ: multiple positioning of volumes along
+                                 the R, X, Y, Z directions respectively.
+
+     mposR:  positioning along the radius R with fixed (Z,phi). 
+     mposX:  positioning along the X-axis with fixed (Y,Z). 
+     mposY:  positioning along the Y-axis with fixed (X,Z). 
+     mposZ:  positioning along the Z-axis with fixed (R,phi) or (X,Y). 
+
+     ncopy      : Number of volumes to be placed
+     R0,X0,Y0,Z0: Starting values in R,X,Y,Z
+     dR,dX,dY,dZ: Increment values in R,X,Y,Z
+     Z_Phi      : transverse displacement for mposR
+     R_Phi      : transverse displacement for mposZ
+     X_Y        : transverse displacement for mposZ (alternate for R_Phi)
+     Y_Z        : transverse displacement for mposX
+     Z_X        : transverse displacement for mposY
+     S          : Move along the "ortho-radial" coordinate S 
+                  before placing the objects.
+
+     Note that the origin of the coordinate system is implicitly
+     defined in the 'transverse' direction by the Z_Phi, R_phi, X_Y, Y_Z or Z_X
+     attributes. In the positioning-direction it is defined by the
+     attributes R0, X0, Y0 or Z0. 
+
+1.5.2) Geometry layers [new in release 1.1]
+
+   Some geometries, which are readily described in terms of elementary solids,
+   become very complicated to implement in hdds when overlaps between any two
+   members of the same containing object are forbidden.  This was the case for
+   hdds geometries in release 1.0, but in 1.1 a new feature was introduced that
+   can accommodate certain kinds of overlaps within the geometry hierarchy.
+   Daughter solids which extend outside the bounds of their container are
+   still strictly forbidden, but it is now possible to place daughters within
+   a mother volume such that they overlap with each other, provided that they
+   are placed in different "layers".  This feature was inspired by the
+   "layered mass geometry" that was introduced in geant4.9.5, and follows
+   those semantics closely, except that the layer priorities are reversed.
+   The default layer 0 has top priority in hdds, layer 1 second, and so on.
+   Geometries conforming to hdds version 1.0 are still valid in version 1.1,
+   all objects simply being placed in geometry layer 0.
+
+   In a layered geometry, the interior of certain volumes are treated as if
+   they were transparent layers in a CAD system, such that objects defined
+   in underlying layers "show through".  The layer on which an object appears
+   is determined at placement time. Any given object can appear on different
+   layers in different parts of the geometry if it is placed multiple times.
+   The layer on which an object is placed is defined to be 0 by default, but
+   can be set to any higher integer (1,2,...) by the explicit use of the
+   geometry_layer="int" attribute in the placement tag.  Objects placed on
+   higher-indexed layers are superseded by objects in lower-indexed layers
+   anywhere that they overlap.  Objects placed within any given layer must
+   not overlap.  Placement of any object on a non-default layer automatically
+   triggers the creation of an image of its mother on the same layer, and so
+   on all the way up the hierarchy to the root.  This way, coordinates for
+   placement are the same no matter which layer is specified.
+
+   Once an object is placed on a non-default layer, any objects placed inside
+   it also inherit that base layer and will automatically be placed on that
+   layer or higher in the global geometry.  For example, if volume X is on
+   layer 5, and then volume U and V are placed inside it with hdds attributes
+   geometry_layer="2" and geometry_layer="1", then this causes new copies of
+   U and V to be constructed on layers 7 and 6, respectively.  Placing a third
+   daughter volume W inside X in hdds without any geometry_layer attribute is
+   the same as specifying geometry_layer="0", and results in a new copy of W
+   being constructed inside W on layer 5 in the global geometry.  This scheme
+   guards against accidental collisions when complex objects (volumes with
+   many layers of nested volumes) are placed on non-default layers.
+
+
+1.6) Regions
+==============
+
+  A region is a set of properties relevant to particle tracking that are
+  shared by a number of detector elements.  The most common use of regions
+  is to specify the magnetic field.  The detector elements that belong to
+  a region are usually associated by spatial proximity but may be widely
+  separated in the geometry tree.  Regions have been introduced because of
+  this, to allow an arbitrary subset of the volumes in a geometry heirarchy
+  to share a common set of tracking properties without requiring that they
+  have a common ancestor that also belongs to the region.  Once a volume
+  is assigned to a region, all of its descendents in the geometry tree
+  inherit those properties as their default values, with nearer ancestors
+  taking precedence over more remote ones.  These inherited defaults can
+  be overridden in a child by joining a region of its own where they are
+  explicitly assigned.  The top node in the geometry tree belongs to the
+  implicit default region, which has no magnetic field and global default
+  values for all tracking properties.  Any given volume may itself belong
+  to at most one region.
+
+  The association of a volume to a region occurs in the place where the
+  volume is declared, i.e. "box", "tube", etc.  This is done using the
+  <apply> tag that defines how the region coordinate system is related
+  to the local coordinate system of the new volume.  This is the reverse
+  of what one might expect on the basis that regions contain volumes and
+  not vice versa, but doing it this way has advantages for being able to
+  use region specifications more than once, eg. in the case of having
+  multiple identical magnets in a beam line.  For details on the syntax
+  for assigning a volume to a region, see section 1.6.4 below.
+
+  A region may be assigned a uniform magnetic field, or a an arbitrary field
+  may be specified in terms of a field map.  A field map is a list of magnetic
+  field values (three components) sampled on a regular three-dimensional grid.
+  The map data are stored in an external file and loaded into the simulation
+  at run time; only the field map metadata are stored in the hdds document.
+  At run time the simulation program reads the map data from the file and
+  uses the hdds metadata information to determine how to interpolate the
+  table to compute values of the field at real space points.
+
+  The top level of the regions description is the "regions" tag.  Its
+  attributes are similar to those of the "materials" and "section" tags:
+
+            version     : version of the region description
+            date        : last modification date
+            author      : last modification author
+            specification : version of the region tag schema
+
+1.6.1) Region elements
+=======================
+
+  The contents of the regions tag are individual region elements, each of
+  which describes a single contiguous region of space containing a magnetic
+  field and/or some other set of tracking properties.  The region tag has
+  the following attributes:
+
+	    name      : a short descriptive ID of this field region
+            modifies  : name of another region to provide default values
+	    comment   : a more verbose description
+
+  The region name must be a NMTOKEN type (begin with a letter, contain
+  alphanumeric characters and underscores, and contain no spaces) like
+  material names and identifier names so that it can be referenced by
+  volumes through the region="XXX" attribute.  The properties of a region
+  are specified using the content elements described in the next section.
+  Any properties that are not specified obtain the default values, either
+  those of the modifies="REGION", if given, or the default region if not.
+  This attribute was introduced to make it simple to create copies of a
+  region which share a common set of properties, but must have private
+  values for a subset of their properties.  Creating an empty region
+  element with only a modifies="REGION" argument effectively creates an
+  alias for "REGION".
+
+1.6.2) Region contents: Bfield descriptions
+============================================
+
+  It is foreseen that the region element may be expanded in the future to
+  contain a more general description of tracking properties.  At present,
+  only magnetic field specifiers are defined.  Only properties that are
+  explicitly declared within the region definition are modified from their
+  defaults.  Magnetic fields are described using either a uniformBfield,
+  a computedBfield, or a mappedBfield element.  A region that has no
+  magnetic field is defined using the noBfield tag.  Assigning a region
+  with noBfield to a volume results in the same tracking behavior as if
+  the volume had no region assignment, i.e. belongs to the default region.
+  The noBfield specifier has been introduced to enable volumes that inherit
+  a region with a magnetic field from an ancestor to override that behavior
+  by specifying their own region with noBfield.  The noBfield tag has no
+  attributes.
+
+  The uniformBfield tag supports the following attributes.
+
+	    Bx_By_Bz  : space-separated list of the three Cartesian
+			components of the uniform magnetic field.
+	    unit      : units for specifying magnetic field, eg. kG, T
+			(default is kG).
+
+  The computedBfield tag supports the following attributes.
+
+	    function  : name of the global function that computes the
+			magnetic field at a point r.  The syntax of this
+			string is user-defined, and may be a global function
+			call in some language, a lookup key for a database,
+			or some keyword-based selector.  In any case, the
+			language-specific interpreter needs to translate
+			this string into the function or method invocation
+			that is appropriate in that context.
+            maxBfield : maximum magnitude of the magnetic field within the
+                        range specified by the map
+	    unit      : units for the magnetic field values returned by the
+			funtion, eg. kG, T (default is kG).
+
+  The mappedBfield element has the following attributes:
+
+	    map       : URL pointing to where the field map values are found.
+	    encoding  : indicates how the values are stored, eg. utf-8 for
+			a plain-text file, base-64, and so on.
+            maxBfield : maximum magnitude of the magnetic field within the
+                        range specified by the map
+	    unit      : units for specifying magnetic field, eg. kG, T
+			(default is kG).
+
+  The mappedBfield requires additional information that explain how to
+  interpret the list of field values stored in the map file in terms of
+  real space points.  The map file itself contains only a list of floating-
+  point triplets (Bx By Bz).  The information regarding their ordering and
+  coordinate assignments is provided by the "grid" element.  Each 
+  mappedBfield element must contain at least one grid element.  If more
+  than one grid element appears within a map element, the same map data are
+  reused by associating the map data with a second set of coordinates. 
+  This is useful for describing field regions with inherent symmetries.
+  For example, a dipole spectrometer map with a mirror symmetry about the
+  midplane can be specified by storing only the upper half of the map in
+  in a file and then including two grid elements in the mappedBfield tag.
+
+1.6.2.1) grid
+
+  There are two types of grids, cartesian and cylindrical.  Both kinds
+  describe regions of space with simple boundaries: cartesian grids are
+  defined within a box and cylindrical grids within a tube section (see
+  solids element "tubs" below for the definition of a tube section). The
+  boundaries of the grid together with the number of samples along each of
+  the grid axes are defined by content elements within the grid tag.  The
+  grid tag itself only has a single attribute.
+
+	    type      : "cartesian" or "cylindrical"
+
+1.6.2.1.1) Cartesian grid
+
+  The organization of the field data in the map file is defined using a
+  sequence of three nested "samples" tags within the containing grid tag.
+  The samples tags define the bounds of the grid in terms of lower and
+  upper coordinates and the number of samples contained within those bounds.
+  The attributes of the samples tags are as follows.
+
+            axis      	: one of "x", "y" or "z".
+	    n         	: number of samples along the given axis.
+            bounds    	: space-separated list of the lower and upper bounds
+			  of the sampled grid along the given axis.
+            sense       : whether the sign of the field component corresponding
+                          to this axis in the map is "forward" or "reverse",
+                          introduced to fold maps with mirror symmetry. 
+            unit_length : length unit for bounds attribute [default: cm]
+                          for grid points within the cartesian grid box.
+
+  There must be three nested samples tags within each grid tag, with no axis
+  values repeated.  The nesting indicates the sequencing of the field data
+  contained in the map file.  It is not necessary that the lower bound be
+  numerically less than the upper bound; the coordinate order must correspond
+  to the order the data are stored in the map file.
+
+1.6.2.1.2) Cylindrical grid
+
+  The organization of the field data in the map file is defined using a
+  sequence of three nested "samples" tags within the containing grid tag.
+  The samples tags define the bounds of the grid in terms of lower and
+  upper coordinates and the number of samples contained within those bounds.
+  The attributes of the samples tags are as follows.
+
+            axis      	: one of "r", "phi" or "z".
+	    n         	: number of samples along the given axis.
+            bounds    	: space-separated list of the lower and upper bounds
+                          of the sampled grid along the given axis.
+            unit_length : length unit for bounds attribute [default: cm]
+                          of r,z grid points within the grid tube section.
+            unit_angle  : angle unit for bounds attribute [default: deg]
+                          of phi grid points within the grid tube section.
+
+  There must be three nested samples tags within each grid tag, with no axis
+  values repeated.  The nesting indicates the sequencing of the field data
+  contained in the map file.  It is not necessary that the lower bound be
+  numerically less than the upper bound; the coordinate order must correspond
+  to the order the data are stored in the map file.
+
+1.6.2.2) Field data
+
+  The field map metadata are stored in hdds, but the data themselves are
+  not.  Instead they are saved either in a database or a flat file external
+  to hdds.  The field data are represented in the encoding specified in the
+  mappedBfield element (see section 1.6.2 above) with one grid point per
+  line.  Each line contains three space-separated numbers in free floating
+  point format, eg. "6 -2.176 3.4e-5".  The meaning of these three components
+  depends upon the grid type.  For a Cartesian grid, they are interpreted as
+  B_x B_y B_z.  For a cylindrical grid, they are B_rho, B_phi, B_z.  Note
+  that the order of the components is the same regardless of the nesting
+  order of the grid points.
+
+1.6.3) Region contents: tracking advisories
+============================================
+
+  The region element is supposed to contain any bits and pieces of advice
+  that the might be useful to the translator in deciding how to encode the
+  geometry for a particular simulation.  Besides electromagnetic fields,
+  the rest of this information is advisory only and does not need to be
+  heeded by a translator unless it is deemed useful for setting up the
+  simulation.  The following advisory tags are supported.
+
+1.6.3.1) Swim
+
+  The "swim" element only makes sense in the case of a region containing
+  a mappedBfield.  Its purpose is to advise the tracking code on how to
+  integrate the path of a charged particle in the magnetic field.  The
+  following attributes are provided.
+
+	    method    : can take on one of the following values
+            *) method="helix" [default] is appropriate if the field is close
+			enough to uniform that a charged particle path is 
+			approximated well by helical track segments.
+	    *) method="RungeKutta" is appropriate if the field is sufficiently
+			nonuniform that charged particle tracks should be
+			found by numerical integration of the Lorentz equation.
+            maxArcStep: maximum step size before needing to sample the field
+                        again, specified in terms of the angle subtended by
+                        the arc segment, default is 1.
+            unit_angle: units for maxArcStep [degrees].
+
+1.6.4) Region examples
+=======================
+
+  <region name="beamlineDipoles" comment="photon beam dipole field">
+    <uniformBfield Bx_By_Bz="0 0 2" unit="kG"/>
+  </region>
+ 
+  <region name="pairSpectrometer" comment="photon beam pair spetrometer">
+    <computedBfield function="gufld_DB(r,B)" maxBfield="2.5" unit="kG"/>
+  </region>
+ 
+  <region name="taggerDipoles" comment="tagging spectrometer field map">
+    <mappedBfield map="file://taggermap.dat" maxBfield="80"
+                                             encoding="utf-8" unit="kG">
+      <grid type="cartesian">
+        <samples axis="x" n="351" bounds="-340 10" unit_length="cm">
+          <samples axis="z" n="1611" bounds="-10 1600" unit_length="cm">
+            <samples axis="y" n="16" bounds="0 -1.5" unit_length="cm"/>
+          </samples>
+        </samples>
+      </grid>
+      <grid type="cartesian">
+        <samples axis="x" n="351" bounds="-340 10" 
+                                  sense="reverse" unit_length="cm">
+          <samples axis="z" n="1611" bounds="-10 1600"
+                                     sense="reverse" unit_length="cm">
+            <samples axis="y" n="16" bounds="0 -1.5" unit_length="cm"/>
+          </samples>
+        </samples>
+      </grid>
+      <grid type="cartesian">
+        <samples axis="x" n="351" bounds="-340 10" unit_length="cm">
+          <samples axis="z" n="1611" bounds="-10 1600" unit_length="cm">
+            <samples axis="y" n="16" bounds="0 1.5" unit_length="cm"/>
+          </samples>
+        </samples>
+      </grid>
+    </mappedBfield>
+  </region>
+
+  <region name="solenoidBfield" comment="LASS spectrometer field map">
+    <mappedBfield map="file://taggermap.dat" maxBfield="2.5"
+                                             encoding="utf-8" unit="Tesla">
+      <grid type="cylindrical">
+        <samples axis="phi" n="1" bounds="0 360" unit_angle="deg"/>
+          <samples axis="r" n="41" bounds="0 40" unit_length="in"/>
+            <samples axis="z" n="251" bounds="30 280" unit_length="in"/>
+          </samples>
+        </samples>
+      </grid>
+    </mappedBfield>
+    <swim method="RungeKutta"/>
+  </region>
+
+  <region name="quadrupoleCenter" comment="rapidly varying magnetic region"
+          modifies="solenoidBfield">
+    <swim method="RungeKutta" maxArcStep="0.1"/>
+  </region>
+
+1.6.5) Apply: associate a volume with a region
+================================================
+
+  Volumes are associated with regions at the time that the geometrical
+  shape is defined.  This is useful in the case of a mappedBfield region
+  because the origin and orientation of the field map must be specified in
+  the coordinates of the newly defined volume.  The association is done
+  using the the "apply" tag.  The attributes of the apply tag are:
+
+	    region    : name of the region being applied
+	    origin    : space-separated list of 3 coordinates "x y z"
+			of the region origin in the local coordinates of
+			the newly defined volume.
+	    rot	      : space-separated list of 3 angles "a b c", with
+			the X rotation of a angle done first,
+			the Y rotation of b angle done second, and
+			the Z rotation of c angle done last.
+          unit_length : the units used to specify the coordinates [cm].
+          unit_angle  : the units used to specify rotation angles [deg].
+
+
+1.7) Identifiers
+================
+
+    Identifiers provide for a generalized identification scheme of
+    positioned volumes in the detector. Identifier are specified as
+    member elements attached to any position operator.
+
+    Generally, an identifier is composed of a set of numbers such as
+
+      /1/3/4/5/1/34
+
+    The meaning of each field is conventional and reflects the local
+    hierarchy of volumes.
+
+    The identifier elements permit to freely specify which field(s)
+    will be affected by the positioning operation. When single
+    positioning is used, a single value of one or several fields will
+    be affected by the operation. When a multiple positioning
+    operation is considered, one or several fields will be iteratively
+    affected. In this case, it is possible to follow the iteration by
+    specifying a first value and a step used to compute iterated field
+    values.
+
+    Attributes :
+
+    field      : a symbolic name characterizing the affected field. Legal names
+                 should be conventionally specified. Currently six symbols
+		 have been introduced :
+
+		 row    (typically Y in rectangular arrays)
+		 column (typically X in rectangular arrays)
+                 layer  (typically R in barrels and Z in end-caps)
+                 ring   (typically Z in barrels and R in end-caps)
+                 sector (typically Phi in barrels)
+                 plane  (typically Z in stacks)
+		 module (generic)
+		 cell   (generic)
+
+    value        the exact value to be entered in single positioning or
+                 the first value in multiple positioning.
+
+    step         only used in multi-positioning.
+
+
+1.8) Special models
+====================
+
+   Special elements may be defined to enable the maintenance of geometry
+   information that is specific to a certain application.  This information
+   should be kept together in the document with the generic geometric model
+   specification in terms of solids, stacks and compositions.  This will
+   facilitate the maintenance of a coordinated geometry model for all 
+   applications. 
+
+
+1.8.1) mcfast
+=============
+
+   The mcfast element specifies a mcfast model for a detector section.
+   These entries are used to construct a valid mcfast geometry database
+   from the geometry specification.  The content of an mcfast element is
+   the same as a parameters element.  An mcfast element can also contain
+   other mcfast elements.  The parameters defined at an outer level in the
+   hierarchy become default values for elements contained within that level.
+   An external parameters block can also be specified as an attribute to the
+   mcfast element, whose contents serve as default values for the mcfast
+   block.  The evaluation of parameters proceeds from outside in, and any
+   parameter appearing more than once takes its value from the last occurrence.
+
+   All values needed to fill out the mcfast template (see HDFast documentation)
+   must be specified at least once.  This is up to the user to ensure, since
+   the mcfast database specification is not xml-compliant and cannot be
+   checked in validating this document.
+
+   mcfast attributes:
+
+   model	: a symbolic name from a list of valid mcfast detector types.
+   template:	: the string "db/aaaa.db" where aaaa is the mcfast template
+		  file corresponding to the model.  These two are required.
+   parameters	: the name of a parameters element containing a subset of the
+		  definitions required by the model template.  The rest of the
+		  necessary parameters must appear as content (see below).
+
+   mcfast content:
+
+   | int
+   | real
+   | string
+   | reference
+   | int_array
+   | real_array
+   | string_vector
+   | reference_vector
+   mcfast	: one or more other mcfast blocks
+
+
+2) Some examples showing typical usage of different elements
+============================================================
+
+   (note that these examples are generally extracted from more
+   complete definitions. Therefore they are not expected to be
+   complete and compilable, since some references may not be shown)
+
+
+2.1) Using compositions and identifiers
+
+<composition  name="MU_Stat_BML1">
+   <posXYZ  volume="MU_BML1_RPC1"  X_Y_Z="  0        0  0">  <layer value=" 1" />  </posXYZ>
+   <posXYZ  volume="MU_BML1_MDT1"  X_Y_Z="130.       0  0">  <layer value=" 2" />  </posXYZ>
+   <posXYZ  volume="MU_BML1_SPA1"  X_Y_Z="336.98 -1700. 0">  <layer value=" 3" />  </posXYZ>
+   <posXYZ  volume="MU_BML1_SPA1"  X_Y_Z="336.98     0  0">  <layer value="13" />  </posXYZ>
+   <posXYZ  volume="MU_BML1_SPA1"  X_Y_Z="336.98  1700. 0">  <layer value="23" />  </posXYZ>
+   <posXYZ  volume="MU_BML1_MDT2"  X_Y_Z="543.96     0  0">  <layer value=" 4" />  </posXYZ>
+   <posXYZ  volume="MU_BML1_RPC1"  X_Y_Z="673.96     0  0">  <layer value=" 5" />  </posXYZ>
+</composition>
+
+<composition  name="MU_Barrel">
+   <mposPhi volume="MU_Stat_BML1"  ncopy="8"  R_Z="6730.54  150.">  
+      <ring   value="1" step="1" />
+      <sector value="1" />
+   </mposPhi>
+   <mposPhi volume="MU_Stat_BML1"  ncopy="8"  R_Z="6730.54 1610.">
+      <ring   value="1" step="1" />
+      <sector value="2" />
+   </mposPhi>
+   <mposPhi volume="MU_Stat_BML1"  ncopy="8"  R_Z="6730.54 3070.">
+      <ring   value="1" step="1" />
+      <sector value="3" />
+   </mposPhi>
+   <mposPhi volume="MU_Stat_BML1"  ncopy="5"  R_Z="6730.54 4530." dPhi="45.">
+      <ring   value="1" step="1" />
+      <sector value="4" />
+   </mposPhi>
+   <posRPhiZ volume="MU_Stat_BML1" R_Phi_Z="6730.54 270. 4530.">
+      <ring   value="1" step="1" />
+      <sector value="7" />
+   </posRPhiZ>
+</composition>
+
+
+2.2) Using parameters
+    
+<box  name="MU_BML1_MDT1" X_Y_Z="96.96 3580. 1440." material="Air"> 
+  <real name="layers"              value="3"    unit="none"   comment="number of layers" />
+  <real name="radiative_thickness" value="0.80" unit="cm"     comment="total radiative thickness" />
+  <real_array name="dimensions"    values="30. 55.98 81.96" unit="cm" />
+  <real_array name="z_positions"   values="30. 14.60 96.96" unit="cm" comment="z positions of layers" />
+  <real_array name="x_positions"   values="15. 30. 15."     unit="cm" comment="x positions of first tube of each layer" />
+</box>
+
+<box  name="MU_BML1_RPC1" X_Y_Z="100.  3440. 1440." material="Honeycomb"> 
+   <reference value="inner_RPC_1" /> 
+</box>
+
+
+2.3) Parameter complete syntax
+
+<real   name="..." comment="..." value="..." unit="..."/>
+<string name="..." comment="..." value="..." />
+
+<reference name="..."  comment="..."  value="..." /> 
+                                  (refers to a named parameter block)
+
+<real_array    name="..." comment="..." values="... ... ..." unit="..."/>
+
+<string_vector name="..." comment="...">
+   <string_data value="..." />
+   <string_data value="..." />
+   <string_data value="..." />
+</string_vector>
+
+<reference_vector name="..." comment="...">
+   <reference_data value="..." />
+   <reference_data value="..." />
+   <reference_data value="..." />
+</reference_vector>
+
+<parameters name="..." type="...">
+   <real ..../>
+   etc...
+</parameters>
+
+
+2.4) Using Axis compositions
+
+<stackX name="MU_RPC1_LongStrips">
+  <axisMPos volume="MU_RPC1_LongStrip" ncopy="96" gap0="2.6" shift="30.8"/>
+</stackX>
+
+<stackZ name="MU_RPC1_TranStrips">
+  <axisMPos volume="MU_RPC1_TranStrip" ncopy="32" gap0="1.0" shift="30.0"/>
+</stackZ>
+
+<composition name="MU_RPC1_LongStripPanel">
+  <posXYZ volume="MU_RPC1_StripPanel" />
+  <posXYZ volume="MU_RPC1_LongStrips"  X_Y_Z="0 -1.48 0" />
+</composition>
+
+<composition name="MU_RPC1_TranStripPanel">
+  <posXYZ volume="MU_RPC1_StripPanel" />
+  <posXYZ volume="MU_RPC1_TranStrips"  X_Y_Z="0  1.48 0" />
+</composition>
+
+<stackY name="MU_RPC1_LowerActive">
+  <axisPos volume="MU_RPC1_TranStripPanel" />
+  <axisPos volume="MU_RPC1_Bakelite"       />
+  <axisPos volume="MU_RPC1_GasGap"         />
+  <axisPos volume="MU_RPC1_Bakelite"       />
+  <axisPos volume="MU_RPC1_LongStripPanel" />
+</stackY>
+
+<stackY name="MU_RPC1_UpperActive">
+  <axisPos volume="MU_RPC1_TranStripPanel" />
+  <axisPos volume="MU_RPC1_Bakelite"       />
+  <axisPos volume="MU_RPC1_GasGap"         />
+  <axisPos volume="MU_RPC1_Bakelite"       />
+  <axisPos volume="MU_RPC1_LongStripPanel" />
+</stackY>
+
+
+2.5) Using the polycone:
+
+<pcon name="TEST_polycone" material="Air">
+    <polyplane Rio_Z="0 10 0"  />
+    <polyplane Rio_Z="2 20 10" />
+    <polyplane Rio_Z="0 10 50" /> 
+</pcon>
+
+
+2.6) Using the polyhedron:
+
+<pgon name="TEST_polyhedron" segments="8" material="Air">
+    <polyplane Rio_Z="2 30 0"  />
+    <polyplane Rio_Z="2 30 10" />
+</pgon>
+
+(end of the documentation) -->
+
+
+<xs:simpleType name="angleUnit">
+  <xs:restriction base="xs:token">
+    <xs:enumeration value="deg"/>
+    <xs:enumeration value="mrad"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="lengthUnit">
+  <xs:restriction base="xs:token">
+    <xs:enumeration value="cm"/>
+    <xs:enumeration value="mm"/>
+    <xs:enumeration value="m"/>
+    <xs:enumeration value="km"/>
+    <xs:enumeration value="um"/>
+    <xs:enumeration value="nm"/>
+    <xs:enumeration value="in"/>
+    <xs:enumeration value="ft"/>
+    <xs:enumeration value="mil"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="BfieldUnit">
+  <xs:restriction base="xs:token">
+    <xs:enumeration value="G"/>
+    <xs:enumeration value="kG"/>
+    <xs:enumeration value="Gs"/>
+    <xs:enumeration value="kGs"/>
+    <xs:enumeration value="T"/>
+    <xs:enumeration value="Telsa"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="anyUnit">
+  <xs:restriction base="xs:token">
+    <xs:enumeration value="m"/>
+    <xs:enumeration value="cm"/>
+    <xs:enumeration value="mm"/>
+    <xs:enumeration value="deg"/>
+    <xs:enumeration value="rad"/>
+    <xs:enumeration value="mrad"/>
+    <xs:enumeration value="MeV"/>
+    <xs:enumeration value="GeV"/>
+    <xs:enumeration value="g/cm^3"/>
+    <xs:enumeration value="g/cm^2"/>
+    <xs:enumeration value="MeV/g/cm^2"/>
+    <xs:enumeration value="Tesla"/>
+    <xs:enumeration value="kG"/>
+    <xs:enumeration value="G"/>
+    <xs:enumeration value="percent"/>
+    <xs:enumeration value="none"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="mapAxis">
+  <xs:restriction base="xs:token">
+    <xs:enumeration value="x"/>
+    <xs:enumeration value="y"/>
+    <xs:enumeration value="z"/>
+    <xs:enumeration value="r"/>
+    <xs:enumeration value="phi"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="mapType">
+  <xs:restriction base="xs:token">
+    <xs:enumeration value="cartesian"/>
+    <xs:enumeration value="cylindrical"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="mapEncoding">
+  <xs:restriction base="xs:token">
+    <xs:enumeration value="utf-8"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="originWhere">
+  <xs:restriction base="xs:token">
+    <xs:enumeration value="atStart"/>
+    <xs:enumeration value="atCenter"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="trueFalse">
+  <xs:restriction base="xs:token">
+    <xs:enumeration value="true"/>
+    <xs:enumeration value="false"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="forwardReverse">
+  <xs:restriction base="xs:token">
+    <xs:enumeration value="forward"/>
+    <xs:enumeration value="reverse"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="indexType">
+  <xs:restriction base="xs:token">
+    <xs:enumeration value="layer"/>
+    <xs:enumeration value="ring"/>
+    <xs:enumeration value="sector"/>
+    <xs:enumeration value="row"/>
+    <xs:enumeration value="column"/>
+    <xs:enumeration value="module"/>
+    <xs:enumeration value="cell"/>
+    <xs:enumeration value="plane"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="integerList">
+  <xs:list itemType="xs:integer"/>
+</xs:simpleType>
+
+<xs:simpleType name="floatList">
+  <xs:list itemType="xs:float"/>
+</xs:simpleType>
+
+<xs:simpleType name="positiveFloat">
+  <xs:restriction base="xs:float">
+    <xs:minExclusive value="0"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:element name="HDDS">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="materials"/>
+      <xs:choice minOccurs="1" maxOccurs="unbounded">
+        <xs:element ref="section"/>
+        <xs:element ref="regions"/>
+      </xs:choice>
+    </xs:sequence>
+
+    <xs:attribute name="specification" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="v1.1"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="addmaterial">
+  <xs:complexType>
+    <xs:choice>
+      <xs:element ref="fractionmass"/>
+      <xs:element ref="natoms"/>
+    </xs:choice>
+
+    <xs:attribute name="material" use="required" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="axisMPos">
+  <xs:complexType>
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element ref="layer"/>
+      <xs:element ref="ring"/>
+      <xs:element ref="sector"/>
+      <xs:element ref="row"/>
+      <xs:element ref="column"/>
+      <xs:element ref="module"/>
+      <xs:element ref="cell"/>
+      <xs:element ref="plane"/>
+      <xs:element ref="identifier"/>
+    </xs:choice>
+
+    <xs:attribute name="dX" default="0" type="xs:float"/>
+    <xs:attribute name="dY" default="0" type="xs:float"/>
+    <xs:attribute name="dZ" default="0" type="xs:float"/>
+    <xs:attribute name="gap" default="0" type="xs:float"/>
+    <xs:attribute name="gap0" default="0" type="xs:float"/>
+    <xs:attribute name="ncopy" use="required" type="xs:positiveInteger"/>
+    <xs:attribute name="rotation" default="0" type="xs:float"/>
+    <xs:attribute name="shift" default="0" type="xs:float"/>
+    <xs:attribute name="shift0" default="0" type="xs:float"/>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+    <xs:attribute name="geometry_layer" default="0" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="volume" use="required" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="axisPos">
+  <xs:complexType>
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element ref="layer"/>
+      <xs:element ref="ring"/>
+      <xs:element ref="sector"/>
+      <xs:element ref="row"/>
+      <xs:element ref="column"/>
+      <xs:element ref="module"/>
+      <xs:element ref="cell"/>
+      <xs:element ref="plane"/>
+      <xs:element ref="identifier"/>
+    </xs:choice>
+
+    <xs:attribute name="dX" default="0" type="xs:float"/>
+    <xs:attribute name="dY" default="0" type="xs:float"/>
+    <xs:attribute name="dZ" default="0" type="xs:float"/>
+    <xs:attribute name="gap" default="0" type="xs:float"/>
+    <xs:attribute name="rotation" default="0" type="xs:float"/>
+    <xs:attribute name="shift" default="0" type="xs:float"/>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+    <xs:attribute name="geometry_layer" default="0" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="volume" use="required" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="box">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="X_Y_Z" use="required">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="material" use="required" type="xs:IDREF"/>
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+    <xs:attribute name="sensitive" default="false" type="trueFalse"/>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="cell">
+  <xs:complexType>
+    <xs:attribute name="field" default="cell">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="cell"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="step" default="0" type="xs:integer"/>
+    <xs:attribute name="value" default="0" type="xs:integer"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="column">
+  <xs:complexType>
+    <xs:attribute name="field" default="column">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="column"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="step" default="0" type="xs:integer"/>
+    <xs:attribute name="value" default="0" type="xs:integer"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="composite">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="addmaterial" minOccurs="1" maxOccurs="unbounded"/>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element ref="optical_properties" minOccurs="0"/>
+    </xs:sequence>
+
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="composition">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:choice minOccurs="1" maxOccurs="unbounded">
+        <xs:element ref="posXYZ"/>
+        <xs:element ref="posRPhiZ"/>
+        <xs:element ref="mposR"/>
+        <xs:element ref="mposPhi"/>
+        <xs:element ref="mposX"/>
+        <xs:element ref="mposY"/>
+        <xs:element ref="mposZ"/>
+      </xs:choice>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="envelope" type="xs:IDREF"/>
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="cons">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="Rio1_Rio2_Z" use="required">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="5"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="material" use="required" type="xs:IDREF"/>
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+    <xs:attribute name="profile" default="0 360">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="sensitive" default="false" type="trueFalse"/>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="element">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element ref="optical_properties" minOccurs="0"/>
+    </xs:sequence>
+
+    <xs:attribute name="a" use="required" type="xs:float"/>
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="symbol" type="xs:token"/>
+    <xs:attribute name="z" use="required" type="xs:float"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="fractionmass">
+  <xs:complexType>
+    <xs:attribute name="fraction" use="required" type="xs:float"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="identifier">
+  <xs:complexType>
+    <xs:attribute name="field" use="required" type="xs:token"/>
+    <xs:attribute name="step" default="0" type="xs:integer"/>
+    <xs:attribute name="value" default="0" type="xs:integer"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="int">
+  <xs:complexType>
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="name" type="xs:token"/>
+    <xs:attribute name="value" use="required" type="xs:integer"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="int_array">
+  <xs:complexType>
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="name" type="xs:token"/>
+    <xs:attribute name="values" use="required" type="integerList"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="intersection">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:choice minOccurs="1" maxOccurs="unbounded">
+        <xs:element ref="posXYZ"/>
+        <xs:element ref="posRPhiZ"/>
+      </xs:choice>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="layer">
+  <xs:complexType>
+    <xs:attribute name="field" default="layer">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="layer"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="step" default="0" type="xs:integer"/>
+    <xs:attribute name="value" default="0" type="xs:integer"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="materials">
+  <xs:complexType>
+    <xs:choice minOccurs="1" maxOccurs="unbounded">
+      <xs:element ref="element"/>
+      <xs:element ref="composite"/>
+    </xs:choice>
+
+    <xs:attribute name="specification" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="v1.0"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="author" use="required" type="xs:string"/>
+    <xs:attribute name="date" use="required" type="xs:date"/>
+    <xs:attribute name="version" use="required" type="xs:string"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="samples">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="samples" minOccurs="0"/>
+    </xs:sequence>
+
+    <xs:attribute name="axis" use="required" type="mapAxis"/>
+    <xs:attribute name="n" use="required" type="xs:int"/>
+    <xs:attribute name="bounds" use="required">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="sense" default="forward" type="forwardReverse"/>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="grid">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="samples"/>
+    </xs:sequence>
+
+    <xs:attribute name="type" use="required" type="mapType"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="mappedBfield">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="grid" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="map" use="required" type="xs:anyURI"/>
+    <xs:attribute name="encoding" use="required" type="mapEncoding"/>
+    <xs:attribute name="maxBfield" use="required" type="xs:double"/>
+    <xs:attribute name="unit" use="required" type="BfieldUnit"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="uniformBfield">
+  <xs:complexType>
+    <xs:attribute name="Bx_By_Bz">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="unit" use="required" type="BfieldUnit"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="computedBfield">
+  <xs:complexType>
+    <xs:attribute name="function" use="required" type="xs:string"/>
+    <xs:attribute name="maxBfield" use="required" type="xs:double"/>
+    <xs:attribute name="unit" use="required" type="BfieldUnit"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="noBfield">
+</xs:element>
+
+<xs:element name="swim">
+  <xs:complexType>
+    <xs:attribute name="method" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="RungeKutta"/>
+          <xs:enumeration value="helix"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="maxArcStep" default="1" type="xs:double"/>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="region">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:choice minOccurs="0">
+        <xs:element ref="noBfield"/>
+        <xs:element ref="uniformBfield"/>
+        <xs:element ref="mappedBfield"/>
+        <xs:element ref="computedBfield"/>
+      </xs:choice>
+      <xs:element ref="swim" minOccurs="0"/>
+    </xs:sequence>
+
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="modifies" use="optional" type="xs:IDREF"/>
+    <xs:attribute name="comment" use="optional" type="xs:string"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="regions">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="region" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="specification" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="v1.0"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="author" use="required" type="xs:string"/>
+    <xs:attribute name="date" use="required" type="xs:date"/>
+    <xs:attribute name="version" use="required" type="xs:string"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="apply">
+  <xs:complexType>
+    <xs:attribute name="region" use="required" type="xs:IDREF"/>
+    <xs:attribute name="origin" default="0 0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="rot" default="0 0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="mcfast">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element ref="mcfast" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="model" use="required" type="xs:token"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+    <xs:attribute name="template" use="required" type="xs:anyURI"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="module">
+  <xs:complexType>
+    <xs:attribute name="field" default="module">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="module"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="step" default="0" type="xs:integer"/>
+    <xs:attribute name="value" default="0" type="xs:integer"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="mposPhi">
+  <xs:complexType>
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element ref="layer"/>
+      <xs:element ref="ring"/>
+      <xs:element ref="sector"/>
+      <xs:element ref="row"/>
+      <xs:element ref="column"/>
+      <xs:element ref="module"/>
+      <xs:element ref="cell"/>
+      <xs:element ref="plane"/>
+      <xs:element ref="identifier"/>
+    </xs:choice>
+
+    <xs:attribute name="Phi0" default="0" type="xs:float"/>
+    <xs:attribute name="R_Z" default="0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="S" default="0" type="xs:float"/>
+    <xs:attribute name="dPhi" type="positiveFloat"/>
+    <xs:attribute name="impliedRot" default="true" type="trueFalse"/>
+    <xs:attribute name="ncopy" use="required" type="xs:positiveInteger"/>
+    <xs:attribute name="rot" default="0 0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+    <xs:attribute name="geometry_layer" default="0" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="volume" use="required" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="mposR">
+  <xs:complexType>
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element ref="layer"/>
+      <xs:element ref="ring"/>
+      <xs:element ref="sector"/>
+      <xs:element ref="row"/>
+      <xs:element ref="column"/>
+      <xs:element ref="module"/>
+      <xs:element ref="cell"/>
+      <xs:element ref="plane"/>
+      <xs:element ref="identifier"/>
+    </xs:choice>
+
+    <xs:attribute name="R0" default="0" type="xs:float"/>
+    <xs:attribute name="S" default="0" type="xs:float"/>
+    <xs:attribute name="Z_Phi" default="0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="dR" use="required" type="positiveFloat"/>
+    <xs:attribute name="ncopy" use="required" type="xs:positiveInteger"/>
+    <xs:attribute name="rot" default="0 0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+    <xs:attribute name="geometry_layer" default="0" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="volume" use="required" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="mposX">
+  <xs:complexType>
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element ref="layer"/>
+      <xs:element ref="ring"/>
+      <xs:element ref="sector"/>
+      <xs:element ref="row"/>
+      <xs:element ref="column"/>
+      <xs:element ref="module"/>
+      <xs:element ref="cell"/>
+      <xs:element ref="plane"/>
+      <xs:element ref="identifier"/>
+    </xs:choice>
+
+    <xs:attribute name="S" default="0" type="xs:float"/>
+    <xs:attribute name="X0" default="0" type="xs:float"/>
+    <xs:attribute name="Y_Z" default="0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="dX" use="required" type="positiveFloat"/>
+    <xs:attribute name="ncopy" use="required" type="xs:positiveInteger"/>
+    <xs:attribute name="rot" default="0 0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+    <xs:attribute name="geometry_layer" default="0" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="volume" use="required" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="mposY">
+  <xs:complexType>
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element ref="layer"/>
+      <xs:element ref="ring"/>
+      <xs:element ref="sector"/>
+      <xs:element ref="row"/>
+      <xs:element ref="column"/>
+      <xs:element ref="module"/>
+      <xs:element ref="cell"/>
+      <xs:element ref="plane"/>
+      <xs:element ref="identifier"/>
+    </xs:choice>
+
+    <xs:attribute name="S" default="0" type="xs:float"/>
+    <xs:attribute name="Y0" default="0" type="xs:float"/>
+    <xs:attribute name="Z_X" default="0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="dY" use="required" type="positiveFloat"/>
+    <xs:attribute name="ncopy" use="required" type="xs:positiveInteger"/>
+    <xs:attribute name="rot" default="0 0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+    <xs:attribute name="geometry_layer" default="0" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="volume" use="required" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="mposZ">
+  <xs:complexType>
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element ref="layer"/>
+      <xs:element ref="ring"/>
+      <xs:element ref="sector"/>
+      <xs:element ref="row"/>
+      <xs:element ref="column"/>
+      <xs:element ref="module"/>
+      <xs:element ref="cell"/>
+      <xs:element ref="plane"/>
+      <xs:element ref="identifier"/>
+    </xs:choice>
+
+    <xs:attribute name="R_Phi" default="0 0" type="xs:string"/>
+    <xs:attribute name="S" default="0" type="xs:float"/>
+    <xs:attribute name="X_Y" default="0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="Z0" default="0" type="xs:float"/>
+    <xs:attribute name="dZ" use="required" type="positiveFloat"/>
+    <xs:attribute name="ncopy" use="required" type="xs:positiveInteger"/>
+    <xs:attribute name="rot" default="0 0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+    <xs:attribute name="geometry_layer" default="0" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="volume" use="required" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="natoms">
+  <xs:complexType>
+    <xs:attribute name="n" use="required" type="xs:integer"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="parameters">
+  <xs:complexType>
+    <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="type" use="required" type="xs:token"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="pcon">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="polyplane" minOccurs="2" maxOccurs="unbounded"/>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="material" use="required" type="xs:IDREF"/>
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+    <xs:attribute name="profile" default="0 360">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="sensitive" default="false">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="pgon">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="polyplane" minOccurs="2" maxOccurs="unbounded"/>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="material" use="required" type="xs:IDREF"/>
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+    <xs:attribute name="profile" default="0 360">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="segments" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:int">
+          <xs:minInclusive value="1"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="sensitive" default="false">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="sphere">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="material" use="required" type="xs:IDREF"/>
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+    <xs:attribute name="Rio" use="required">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="profile" default="0 360">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="polar_bounds" default="0 180">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="sensitive" default="false">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="plane">
+  <xs:complexType>
+    <xs:attribute name="field" default="plane">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="plane"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="step" default="0" type="xs:integer"/>
+    <xs:attribute name="value" default="0" type="xs:integer"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="polyplane">
+  <xs:complexType>
+    <xs:attribute name="Rio_Z" use="required">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="posRPhiZ">
+  <xs:complexType>
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element ref="layer"/>
+      <xs:element ref="ring"/>
+      <xs:element ref="sector"/>
+      <xs:element ref="row"/>
+      <xs:element ref="column"/>
+      <xs:element ref="module"/>
+      <xs:element ref="cell"/>
+      <xs:element ref="plane"/>
+      <xs:element ref="identifier"/>
+    </xs:choice>
+
+    <xs:attribute name="R_Phi_Z" default="0 0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="S" default="0" type="xs:float"/>
+    <xs:attribute name="impliedRot" default="true" type="trueFalse"/>
+    <xs:attribute name="rot" default="0 0 0" type="xs:string"/>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+    <xs:attribute name="geometry_layer" default="0" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="volume" use="required" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="posXYZ">
+  <xs:complexType>
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element ref="layer"/>
+      <xs:element ref="ring"/>
+      <xs:element ref="sector"/>
+      <xs:element ref="row"/>
+      <xs:element ref="column"/>
+      <xs:element ref="module"/>
+      <xs:element ref="cell"/>
+      <xs:element ref="plane"/>
+      <xs:element ref="identifier"/>
+    </xs:choice>
+
+    <xs:attribute name="S" default="0" type="xs:float"/>
+    <xs:attribute name="X_Y_Z" default="0 0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="rot" default="0 0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+    <xs:attribute name="geometry_layer" default="0" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="volume" use="required" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="real">
+  <xs:complexType>
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="name" type="xs:token"/>
+    <xs:attribute name="unit" use="required" type="anyUnit"/>
+    <xs:attribute name="value" use="required" type="xs:float"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="real_array">
+  <xs:complexType>
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="name" type="xs:token"/>
+    <xs:attribute name="unit" use="required" type="anyUnit"/>
+    <xs:attribute name="values" use="required" type="floatList"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:group name="parameter_group">
+  <xs:choice>
+    <xs:element ref="int"/>
+    <xs:element ref="int_array"/>
+    <xs:element ref="real"/>
+    <xs:element ref="real_array"/>
+    <xs:element ref="string"/>
+    <xs:element ref="string_vector"/>
+    <xs:element ref="reference"/>
+    <xs:element ref="reference_vector"/>
+  </xs:choice>
+</xs:group>
+
+<xs:element name="specify">
+  <xs:complexType>
+    <xs:attribute name="E" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:float">
+          <xs:minInclusive value="0"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="refindex" default="0">
+      <xs:simpleType>
+        <xs:restriction base="xs:float">
+          <xs:minInclusive value="0"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="abslen" default="0">
+      <xs:simpleType>
+        <xs:restriction base="xs:float">
+          <xs:minInclusive value="0"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="effic" default="0">
+      <xs:simpleType>
+        <xs:restriction base="xs:float">
+          <xs:minInclusive value="0"/>
+          <xs:maxInclusive value="1"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="reflect" default="0">
+      <xs:simpleType>
+        <xs:restriction base="xs:float">
+          <xs:minInclusive value="0"/>
+          <xs:maxInclusive value="1"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="smooth" default="0">
+      <xs:simpleType>
+        <xs:restriction base="xs:float">
+          <xs:minInclusive value="0"/>
+          <xs:maxInclusive value="1"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="optical_properties">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="specify" minOccurs="2" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="comment" type="xs:string"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="reference">
+  <xs:complexType>
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="name" type="xs:token"/>
+    <xs:attribute name="value" use="required" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="reference_data">
+  <xs:complexType>
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="value" use="required" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="reference_vector">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="reference_data" minOccurs="1" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="name" type="xs:token"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="ring">
+  <xs:complexType>
+    <xs:attribute name="field" default="ring">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="ring"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="step" default="0" type="xs:integer"/>
+    <xs:attribute name="value" default="0" type="xs:integer"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="row">
+  <xs:complexType>
+    <xs:attribute name="field" default="row">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="row"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="step" default="0" type="xs:integer"/>
+    <xs:attribute name="value" default="0" type="xs:integer"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="section">
+  <xs:complexType>
+    <xs:choice minOccurs="1" maxOccurs="unbounded">
+      <xs:element ref="box"/>
+      <xs:element ref="trd"/>
+      <xs:element ref="tubs"/>
+      <xs:element ref="eltu"/>
+      <xs:element ref="cons"/>
+      <xs:element ref="pcon"/>
+      <xs:element ref="pgon"/>
+      <xs:element ref="sphere"/>
+      <xs:element ref="union"/>
+      <xs:element ref="intersection"/>
+      <xs:element ref="subtraction"/>
+      <xs:element ref="composition"/>
+      <xs:element ref="stackX"/>
+      <xs:element ref="stackY"/>
+      <xs:element ref="stackZ"/>
+      <xs:element ref="parameters"/>
+      <xs:element ref="mcfast"/>
+    </xs:choice>
+
+    <xs:attribute name="specification" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="v1.1"/>
+          <xs:enumeration value="v1.0"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="author" use="required" type="xs:string"/>
+    <xs:attribute name="date" use="required" type="xs:date"/>
+    <xs:attribute name="name" use="required" type="xs:token"/>
+    <xs:attribute name="top_volume" use="required" type="xs:IDREF"/>
+    <xs:attribute name="version" use="required" type="xs:string"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="sector">
+  <xs:complexType>
+    <xs:attribute name="field" default="sector">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="sector"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="step" default="0" type="xs:integer"/>
+    <xs:attribute name="value" default="0" type="xs:integer"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="stackX">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:choice minOccurs="1" maxOccurs="unbounded">
+        <xs:element ref="axisPos"/>
+        <xs:element ref="axisMPos"/>
+      </xs:choice>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="origin" default="atStart" type="originWhere"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="stackY">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:choice minOccurs="1" maxOccurs="unbounded">
+        <xs:element ref="axisPos"/>
+        <xs:element ref="axisMPos"/>
+      </xs:choice>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="origin" default="atStart" type="originWhere"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="stackZ">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:choice minOccurs="1" maxOccurs="unbounded">
+        <xs:element ref="axisPos"/>
+        <xs:element ref="axisMPos"/>
+      </xs:choice>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="origin" default="atStart" type="originWhere"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="string">
+  <xs:complexType>
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="name" type="xs:token"/>
+    <xs:attribute name="value" use="required" type="xs:string"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="string_data">
+  <xs:complexType>
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="value" use="required" type="xs:string"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="string_vector">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="string_data" minOccurs="1" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="name" type="xs:token"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="subtraction">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:choice minOccurs="1" maxOccurs="unbounded">
+        <xs:element ref="posXYZ"/>
+        <xs:element ref="posRPhiZ"/>
+      </xs:choice>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="trd">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="Xmp_Ymp_Z" use="required">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="5"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="inclination" default="0 0">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="material" use="required" type="xs:IDREF"/>
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+    <xs:attribute name="sensitive" default="false" type="trueFalse"/>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="tubs">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="Rio_Z" use="required">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="material" use="required" type="xs:IDREF"/>
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+    <xs:attribute name="profile" default="0 360">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="sensitive" default="false" type="trueFalse"/>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="eltu">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="Rxy_Z" use="required">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="material" use="required" type="xs:IDREF"/>
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+    <xs:attribute name="sensitive" default="false" type="trueFalse"/>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+  </xs:complexType>
+</xs:element>
+
+
+<xs:element name="union">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:choice minOccurs="1" maxOccurs="unbounded">
+        <xs:element ref="posXYZ"/>
+        <xs:element ref="posRPhiZ"/>
+      </xs:choice>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+  </xs:complexType>
+</xs:element>
+
+</xs:schema>

@@ -12,11 +12,19 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 	MAX_DParticleComboBlueprintStepPoolSize = 3000;
 
 	dDebugLevel = 0;
+
+	dShowerSelectionTag = "PreSelect";
+	dTrackSelectionTag = "PreSelect";
+
 	dMinProtonMomentum = pair<bool, double>(false, -1.0);
-	dMinTrackingFOM = pair<bool, double>(false, -1.0);
-	dReactionShowerSelectionTag = pair<bool, string>(false, "");
-	dReactionTrackSelectionTag = pair<bool, string>(false, "");
-	dHasDetectorMatchFlag = pair<bool, bool>(false, false);
+
+	dMaxExtraGoodTracks = pair<bool, size_t>(false, 4);
+
+	dAvailablePIDs.insert(Proton);
+	dAvailablePIDs.insert(KPlus);
+	dAvailablePIDs.insert(PiPlus);
+	dAvailablePIDs.insert(KMinus);
+	dAvailablePIDs.insert(PiMinus);
 
 	return NOERROR;
 }
@@ -31,11 +39,8 @@ jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, i
 
 	gPARMS->SetDefaultParameter("COMBOBLUEPRINTS:DEBUG_LEVEL", dDebugLevel);
 
-	// In the following try-catch blocks, gPARMS->GetParameter will throw an
-	// exception if the parameter doesn't exist leaving both the X.second and
-	// X.first elements of the relevant variable untouched. If the parameter
-	// does exist, the value is copied into X.second and the X.first value
-	// gets set to true on the subsequent line.
+	gPARMS->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", dTrackSelectionTag);
+	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
 
 	if(gPARMS->Exists("COMBO:MIN_PROTON_MOMENTUM"))
 	{
@@ -43,28 +48,10 @@ jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, i
 		gPARMS->GetParameter("COMBO:MIN_PROTON_MOMENTUM", dMinProtonMomentum.second);
 	}
 
-	if(gPARMS->Exists("COMBO:MIN_TRACKING_FOM"))
+	if(gPARMS->Exists("COMBO:MAX_EXTRA_GOOD_TRACKS"))
 	{
-		dMinTrackingFOM.first = true;
-		gPARMS->GetParameter("COMBO:MIN_TRACKING_FOM", dMinTrackingFOM.second);
-	}
-
-	if(gPARMS->Exists("COMBO:REACTION_TRACK_SELECT_TAG"))
-	{
-		dReactionTrackSelectionTag.first = true;
-		gPARMS->GetParameter("COMBO:REACTION_TRACK_SELECT_TAG", dReactionTrackSelectionTag.second);
-	}
-
-	if(gPARMS->Exists("COMBO:REACTION_SHOWER_SELECT_TAG"))
-	{
-		dReactionShowerSelectionTag.first = true;
-		gPARMS->GetParameter("COMBO:REACTION_SHOWER_SELECT_TAG", dReactionShowerSelectionTag.second);
-	}
-
-	if(gPARMS->Exists("COMBO:HAS_DETECTOR_MATCH_FLAG"))
-	{
-		dHasDetectorMatchFlag.first = true;
-		gPARMS->GetParameter("COMBO:HAS_DETECTOR_MATCH_FLAG", dHasDetectorMatchFlag.second);
+		dMaxExtraGoodTracks.first = true;
+		gPARMS->GetParameter("COMBO:MAX_EXTRA_GOOD_TRACKS", dMaxExtraGoodTracks.second);
 	}
 
 	vector<const DReaction*> locReactions;
@@ -109,8 +96,11 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, int eve
 #endif
 
 	Reset_Pools();
+
 	dBlueprintStepMap.clear();
 	dSavedBlueprintSteps.clear();
+	dChargedTracks.clear();
+	dNeutralShowers.clear();
 
 	vector<const DReaction*> locReactions;
 	Get_Reactions(locEventLoop, locReactions);
@@ -118,30 +108,36 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, int eve
 	locEventLoop->GetSingle(dVertex);
 	locEventLoop->GetSingle(dDetectorMatches);
 
+	locEventLoop->Get(dChargedTracks, dTrackSelectionTag.c_str());
+	locEventLoop->Get(dNeutralShowers, dShowerSelectionTag.c_str());
+
+	//sort charged particles into +/-
+	//Note that a DChargedTrack object can sometimes contain both positively and negatively charged hypotheses simultaneously: sometimes the tracking flips the sign of the track
+	dPositiveChargedTracks.clear();
+	dNegativeChargedTracks.clear();
+	for(size_t loc_i = 0; loc_i < dChargedTracks.size(); ++loc_i)
+	{
+		const DChargedTrack* locChargedTrack = dChargedTracks[loc_i];
+		if(locChargedTrack->Contains_Charge(1))
+			dPositiveChargedTracks.push_back(locChargedTrack);
+		if(locChargedTrack->Contains_Charge(-1))
+			dNegativeChargedTracks.push_back(locChargedTrack);
+	}
+	if(dDebugLevel > 0)
+		cout << "#+, #-, #0 particles = " << dPositiveChargedTracks.size() << ", " << dNegativeChargedTracks.size() << ", " << dNeutralShowers.size() << endl;
+
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
-		Build_ParticleComboBlueprints(locEventLoop, locReactions[loc_i]);
+		Build_ParticleComboBlueprints(locReactions[loc_i]);
 
 	return NOERROR;
 }
 
-jerror_t DParticleComboBlueprint_factory::Build_ParticleComboBlueprints(JEventLoop* locEventLoop, const DReaction* locReaction)
+void DParticleComboBlueprint_factory::Build_ParticleComboBlueprints(const DReaction* locReaction)
 {
-	string locReactionTrackSelectionTag = dReactionTrackSelectionTag.first ? dReactionTrackSelectionTag.second : locReaction->Get_ChargedTrackFactoryTag();
-	string locReactionShowerSelectionTag = dReactionShowerSelectionTag.first ? dReactionShowerSelectionTag.second : locReaction->Get_NeutralShowerFactoryTag();
-
-	vector<const DChargedTrack*> locChargedTrackVector;
-	locEventLoop->Get(locChargedTrackVector, locReactionTrackSelectionTag.c_str());
-	vector<const DNeutralShower*> locNeutralShowerVector;
-	locEventLoop->Get(locNeutralShowerVector, locReactionShowerSelectionTag.c_str());
-
-	deque<const JObject*> locNeutralShowerDeque;
-	for(size_t loc_i = 0; loc_i < locNeutralShowerVector.size(); ++loc_i)
-		locNeutralShowerDeque.push_back(static_cast<const JObject*>(locNeutralShowerVector[loc_i]));
-
 	if(dDebugLevel > 0)
 		cout << "Reaction Name, # Reaction steps = " << locReaction->Get_ReactionName() << ", " << locReaction->Get_NumReactionSteps() << endl;
 	if(locReaction->Get_NumReactionSteps() == 0)
-		return RESOURCE_UNAVAILABLE;
+		return;
 
 	//make sure not more than one missing particle
 	size_t locNumMissingParticles = 0;
@@ -153,45 +149,19 @@ jerror_t DParticleComboBlueprint_factory::Build_ParticleComboBlueprints(JEventLo
 	if(locNumMissingParticles > 1)
 	{
 		cout << "ERROR: Too many missing particles in DReaction.  No DParticleComboBlueprints generated." << endl;
-		return RESOURCE_UNAVAILABLE;
+		return;
 	}
-
-	//sort charged particles into +/-
-	deque<const JObject*> locChargedTrackDeque_Positive;
-	deque<const JObject*> locChargedTrackDeque_Negative;
-	const DChargedTrack* locChargedTrack;
-	//Note that a DChargedTrack object can sometimes contain both positively and negatively charged hypotheses simultaneously: sometimes the tracking flips the sign of the track
-	for(size_t loc_i = 0; loc_i < locChargedTrackVector.size(); ++loc_i)
-	{
-		locChargedTrack = locChargedTrackVector[loc_i];
-		bool locCouldBePositiveFlag = false;
-		bool locCouldBeNegativeFlag = false;
-		for(size_t loc_j = 0; loc_j < locChargedTrack->dChargedTrackHypotheses.size(); ++loc_j)
-		{
-			if(locChargedTrack->dChargedTrackHypotheses[loc_j]->charge() > 0.0)
-				locCouldBePositiveFlag = true;
-			else
-				locCouldBeNegativeFlag = true;
-		}
-		if(locCouldBePositiveFlag)
-			locChargedTrackDeque_Positive.push_back(static_cast<const JObject*>(locChargedTrack));
-		if(locCouldBeNegativeFlag)
-			locChargedTrackDeque_Negative.push_back(static_cast<const JObject*>(locChargedTrack));
-	}
-
-	if(dDebugLevel > 0)
-		cout << "#+, #-, #0 particles = " << locChargedTrackDeque_Positive.size() << ", " << locChargedTrackDeque_Negative.size() << ", " << locNeutralShowerDeque.size() << endl;
 
 	//set up combo loop
 	deque<deque<int> > locResumeAtIndexDeque; //1st index is step, 2nd is particle (the initial particle, then the final particles)
 	deque<deque<int> > locNumPossibilitiesDeque; //1st index is step, 2nd is particle (the initial particle, then the final particles)
 	map<int, int> locInitialParticleStepFromIndexMap; //ints are: step index, production-step index
 	map<pair<int, int>, int> locFinalStateDecayStepIndexMap; //ints are: step index, particle index, decay step index
-	if(!Setup_ComboLoop(locReaction, locNeutralShowerDeque.size(), locChargedTrackVector.size(), locChargedTrackDeque_Positive.size(), locChargedTrackDeque_Negative.size(), locResumeAtIndexDeque, locNumPossibilitiesDeque, locInitialParticleStepFromIndexMap, locFinalStateDecayStepIndexMap))
+	if(!Setup_ComboLoop(locReaction, locResumeAtIndexDeque, locNumPossibilitiesDeque, locInitialParticleStepFromIndexMap, locFinalStateDecayStepIndexMap))
 	{
 		if(dDebugLevel > 0)
 			cout << "not enough detected particles with the correct charges for the event: no combos found." << endl;
-		return NOERROR;
+		return;
 	}
 
 	if(dDebugLevel > 10)
@@ -227,7 +197,7 @@ jerror_t DParticleComboBlueprint_factory::Build_ParticleComboBlueprints(JEventLo
 
 	//find the combos!!
 	dCurrentComboSourceObjects.clear();
-	Find_Combos(locReaction, locNeutralShowerDeque, locChargedTrackDeque_Positive, locChargedTrackDeque_Negative, locResumeAtIndexDeque, locNumPossibilitiesDeque, locInitialParticleStepFromIndexMap, locFinalStateDecayStepIndexMap);
+	Find_Combos(locReaction, locResumeAtIndexDeque, locNumPossibilitiesDeque, locInitialParticleStepFromIndexMap, locFinalStateDecayStepIndexMap);
 
 	if(dDebugLevel > 10)
 	{
@@ -245,10 +215,10 @@ jerror_t DParticleComboBlueprint_factory::Build_ParticleComboBlueprints(JEventLo
 		}
 	}
 
-	return NOERROR;
+	return;
 }
 
-bool DParticleComboBlueprint_factory::Setup_ComboLoop(const DReaction* locReaction, int locNumDetectedNeutralParticles, int locNumDetectedChargedParticles, int locNumDetectedPositiveParticles, int locNumDetectedNegativeParticles, deque<deque<int> >& locResumeAtIndexDeque, deque<deque<int> >& locNumPossibilitiesDeque, map<int, int>& locInitialParticleStepFromIndexMap, map<pair<int, int>, int>& locFinalStateDecayStepIndexMap)
+bool DParticleComboBlueprint_factory::Setup_ComboLoop(const DReaction* locReaction, deque<deque<int> >& locResumeAtIndexDeque, deque<deque<int> >& locNumPossibilitiesDeque, map<int, int>& locInitialParticleStepFromIndexMap, map<pair<int, int>, int>& locFinalStateDecayStepIndexMap)
 {
 	//setup locResumeAtIndexDeque, & locNumPossibilitiesDeque
 	Particle_t locAnalysisPID;
@@ -299,27 +269,37 @@ bool DParticleComboBlueprint_factory::Setup_ComboLoop(const DReaction* locReacti
 			{
 				++locNumNeededPositiveParticles;
 				++locNumNeededChargedParticles;
-				locTempDeque[loc_j] = locNumDetectedPositiveParticles;
+				locTempDeque[loc_j] = dPositiveChargedTracks.size();
 			}
 			else if(locCharge < 0)
 			{
 				++locNumNeededNegativeParticles;
 				++locNumNeededChargedParticles;
-				locTempDeque[loc_j] = locNumDetectedNegativeParticles;
+				locTempDeque[loc_j] = dNegativeChargedTracks.size();
 			}
 			else
 			{
 				++locNumNeededNeutralParticles;
-				locTempDeque[loc_j] = locNumDetectedNeutralParticles;
+				locTempDeque[loc_j] = dNeutralShowers.size();
 			}
 		}
 		locNumPossibilitiesDeque.push_back(locTempDeque);
 	}
 
-	if((locNumNeededPositiveParticles > locNumDetectedPositiveParticles) || (locNumNeededNegativeParticles > locNumDetectedNegativeParticles))
+	//cut if too-few particles
+	if((locNumNeededPositiveParticles > int(dPositiveChargedTracks.size())) || (locNumNeededNegativeParticles > int(dNegativeChargedTracks.size())))
 		return false; //not enough particles of a given charge for the event
-	if((locNumNeededChargedParticles > locNumDetectedChargedParticles) || (locNumNeededNeutralParticles > locNumDetectedNeutralParticles))
+	if((locNumNeededChargedParticles > int(dChargedTracks.size())) || (locNumNeededNeutralParticles > int(dNeutralShowers.size())))
 		return false; //not enough particles of a given charge for the event //#charged can fail here if a charged track has hypotheses with different charges
+
+	//cut if too-many particles
+	pair<bool, double> locMaxExtraGoodTracks = dMaxExtraGoodTracks.first ? dMaxExtraGoodTracks : locReaction->Get_MaxExtraGoodTracks();
+	if(locMaxExtraGoodTracks.first)
+	{
+		size_t locMaxNumTracks = locNumNeededPositiveParticles + locNumNeededNegativeParticles + locMaxExtraGoodTracks.second;
+		if(dChargedTracks.size() > locMaxNumTracks)
+			return false;
+	}
 
 	//make sure decaying particles are valid: one entry per step except the first one
 	for(size_t loc_i = 0; loc_i < locNumSteps; ++loc_i)
@@ -331,7 +311,7 @@ bool DParticleComboBlueprint_factory::Setup_ComboLoop(const DReaction* locReacti
 	return true;
 }
 
-void DParticleComboBlueprint_factory::Find_Combos(const DReaction* locReaction, deque<const JObject*>& locNeutralShowerDeque, deque<const JObject*>& locChargedTrackDeque_Positive, deque<const JObject*>& locChargedTrackDeque_Negative, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque, map<int, int>& locInitialParticleStepFromIndexMap, map<pair<int, int>, int>& locFinalStateDecayStepIndexMap)
+void DParticleComboBlueprint_factory::Find_Combos(const DReaction* locReaction, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque, map<int, int>& locInitialParticleStepFromIndexMap, map<pair<int, int>, int>& locFinalStateDecayStepIndexMap)
 {
 #ifdef VTRACE
 	VT_TRACER("DParticleComboBlueprint_factory::Find_Combos()");
@@ -410,7 +390,7 @@ void DParticleComboBlueprint_factory::Find_Combos(const DReaction* locReaction, 
 		}
 
 		// else grab a detected track
-		const JObject* locSourceObject = Grab_DetectedTrack(locReaction, locAnalysisPID, locResumeAtIndex, locNeutralShowerDeque, locChargedTrackDeque_Positive, locChargedTrackDeque_Negative);
+		const JObject* locSourceObject = Grab_DetectedParticle(locReaction, locAnalysisPID, locResumeAtIndex);
 		if(locSourceObject == NULL)
 		{
 			if(dDebugLevel > 10)
@@ -795,30 +775,54 @@ int DParticleComboBlueprint_factory::Grab_DecayingParticle(Particle_t locAnalysi
 	return -2;
 }
 
-const JObject* DParticleComboBlueprint_factory::Grab_DetectedTrack(const DReaction* locReaction, Particle_t locAnalysisPID, int& locResumeAtIndex, deque<const JObject*>& locNeutralShowerDeque, deque<const JObject*>& locChargedTrackDeque_Positive, deque<const JObject*>& locChargedTrackDeque_Negative)
+const JObject* DParticleComboBlueprint_factory::Grab_DetectedParticle(const DReaction* locReaction, Particle_t locAnalysisPID, int& locResumeAtIndex)
 {
 	int locAnalysisCharge = ParticleCharge(locAnalysisPID);
 	if(dDebugLevel > 10)
 		cout << "Grab_DetectedTrack: PID, Charge = " << ParticleType(locAnalysisPID) << ", " << locAnalysisCharge << endl;
 	if(locAnalysisCharge == 0)
-		return Choose_SourceObject(locReaction, locAnalysisPID, locNeutralShowerDeque, locResumeAtIndex);
+		return Grab_NeutralShower(dNeutralShowers, locResumeAtIndex);
 	else if(locAnalysisCharge > 0)
-		return Choose_SourceObject(locReaction, locAnalysisPID, locChargedTrackDeque_Positive, locResumeAtIndex);
+		return Grab_DetectedTrack(locReaction, locAnalysisPID, dPositiveChargedTracks, locResumeAtIndex);
 	else
-		return Choose_SourceObject(locReaction, locAnalysisPID, locChargedTrackDeque_Negative, locResumeAtIndex);
+		return Grab_DetectedTrack(locReaction, locAnalysisPID, dNegativeChargedTracks, locResumeAtIndex);
 }
 
-const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReaction* locReaction, Particle_t locAnalysisPID, deque<const JObject*>& locSourceObjects, int& locResumeAtIndex) const
+const JObject* DParticleComboBlueprint_factory::Grab_NeutralShower(vector<const DNeutralShower*>& locNeutralShowers, int& locResumeAtIndex)
 {
 	if(dDebugLevel > 10)
-		cout << "Choose_SourceObject: resume at, #possible = " << locResumeAtIndex << ", " << locSourceObjects.size() << endl;
-	if(locResumeAtIndex >= int(locSourceObjects.size()))
+		cout << "Grab_NeutralShower: resume at, #possible = " << locResumeAtIndex << ", " << locNeutralShowers.size() << endl;
+	if(locResumeAtIndex >= int(locNeutralShowers.size()))
 		return NULL;
-	const JObject* locObject = NULL;
+	do
+	{
+		const JObject* locObject = static_cast<const JObject*>(locNeutralShowers[locResumeAtIndex]);
+		++locResumeAtIndex;
+
+		//make sure not used currently
+		if(dCurrentComboSourceObjects.find(locObject) != dCurrentComboSourceObjects.end())
+		{
+			if(dDebugLevel > 20)
+				cout << "Source object already in use for locResumeAtIndex = " << locResumeAtIndex - 1 << endl;
+			continue;
+		}
+		return locObject; //not charged
+	}
+	while(locResumeAtIndex < int(locNeutralShowers.size()));
+	return NULL;
+}
+
+const JObject* DParticleComboBlueprint_factory::Grab_DetectedTrack(const DReaction* locReaction, Particle_t locAnalysisPID, vector<const DChargedTrack*>& locTracks, int& locResumeAtIndex) const
+{
+	if(dDebugLevel > 10)
+		cout << "Grab_DetectedTrack: resume at, #possible = " << locResumeAtIndex << ", " << locTracks.size() << endl;
+	if(locResumeAtIndex >= int(locTracks.size()))
+		return NULL;
 
 	do
 	{
-		locObject = locSourceObjects[locResumeAtIndex];
+		const DChargedTrack* locChargedTrack = locTracks[locResumeAtIndex];
+		const JObject* locObject = static_cast<const JObject*>(locChargedTrack);
 		++locResumeAtIndex;
 
 		//make sure not used currently
@@ -830,29 +834,10 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 		}
 
 		//if charged, will make further cuts
-		const DChargedTrack* locChargedTrack = dynamic_cast<const DChargedTrack*>(locObject);
-		if(locChargedTrack == NULL)
-			return locObject; //not charged
 
-		//if charged, check to make sure the tracking FOM is OK (cut garbage tracks and wildly bad combos)
-
-		bool locWillReSwimFlag = false;
-		const DChargedTrackHypothesis* locChargedTrackHypothesis = Get_ChargedHypothesisToUse(locChargedTrack, locAnalysisPID, locWillReSwimFlag);
-		if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
-		{
-			if(dDebugLevel > 20)
-				cout << "Bad Tracking FOM" << endl;
-			continue;
-		}
-		else if(locWillReSwimFlag)
-		{
-			if(!Cut_HasDetectorMatch(locReaction, locChargedTrackHypothesis))
-			{
-				if(dDebugLevel > 20)
-					cout << "No Detector Match" << endl;
-				continue;
-			}
-		}
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = Get_ChargedHypothesisToUse(locChargedTrack, locAnalysisPID);
+		if(locChargedTrackHypothesis == NULL)
+			continue; //PID hypothesis failed a cut
 
 		//check to make sure the track momentum isn't too low (e.g. testing a 100 MeV pion to be a proton)
 		pair<bool, double> locMinProtonMomentum = dMinProtonMomentum.first ? dMinProtonMomentum : locReaction->Get_MinProtonMomentum();
@@ -870,50 +855,30 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 
 		return locObject;
 	}
-	while(locResumeAtIndex < int(locSourceObjects.size()));
+	while(locResumeAtIndex < int(locTracks.size()));
 	return NULL;
 }
 
-const DChargedTrackHypothesis* DParticleComboBlueprint_factory::Get_ChargedHypothesisToUse(const DChargedTrack* locChargedTrack, Particle_t locAnalysisPID, bool& locWillReSwimFlag) const
+const DChargedTrackHypothesis* DParticleComboBlueprint_factory::Get_ChargedHypothesisToUse(const DChargedTrack* locChargedTrack, Particle_t locAnalysisPID) const
 {
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locAnalysisPID);
 	if(locChargedTrackHypothesis != NULL)
 		return locChargedTrackHypothesis;
 
+	if(dAvailablePIDs.find(locAnalysisPID) != dAvailablePIDs.end())
+		return NULL; //This PID was available: it must have been cut
+
 	//pid not found for this track: loop over other possible pids
-	deque<pair<Particle_t, bool> > locPIDsToTry = dTrackTimeBasedFactory_Combo->Get_ParticleIDsToTry(locAnalysisPID);
+	deque<Particle_t> locPIDsToTry = dTrackTimeBasedFactory_Combo->Get_ParticleIDsToTry(locAnalysisPID);
 	for(size_t loc_i = 0; loc_i < locPIDsToTry.size(); ++loc_i)
 	{
-		locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPIDsToTry[loc_i].first);
-		if(locChargedTrackHypothesis == NULL)
-			continue;
-		locWillReSwimFlag = locPIDsToTry[loc_i].second;
-		return locChargedTrackHypothesis;
+		locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPIDsToTry[loc_i]);
+		if(locChargedTrackHypothesis != NULL)
+			return locChargedTrackHypothesis;
 	}
 
-	//still none found, take the one with the best FOM
-	locWillReSwimFlag = true;
+	//still none found, will have to take a new one: for now, take the one with the best FOM
 	return locChargedTrack->Get_BestFOM();
-}
-
-bool DParticleComboBlueprint_factory::Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const
-{
-	pair<bool, double> locHasDetectorMatchFlag = dHasDetectorMatchFlag.first ? dHasDetectorMatchFlag : locReaction->Get_HasDetectorMatchFlag();
-	if((!locHasDetectorMatchFlag.first) || (!locHasDetectorMatchFlag.second))
-		return true;
-
-	const DTrackTimeBased* locTrackTimeBased = NULL;
-	locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-	return dDetectorMatches->Get_IsMatchedToHit(locTrackTimeBased);
-}
-
-bool DParticleComboBlueprint_factory::Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const
-{
-	pair<bool, double> locMinTrackingFOM = dMinTrackingFOM.first ? dMinTrackingFOM : locReaction->Get_MinTrackingFOM();
-	if(!locMinTrackingFOM.first)
-		return true;
-	double locFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq_Track, locChargedTrackHypothesis->dNDF_Track);
-	return ((locChargedTrackHypothesis->dNDF_Track == 0) ? true : (locFOM >= locMinTrackingFOM.second));
 }
 
 DParticleComboBlueprintStep* DParticleComboBlueprint_factory::Get_ParticleComboBlueprintStepResource(void)
@@ -976,8 +941,7 @@ bool DParticleComboBlueprint_factory::Calc_FinalStateP4(size_t locTotalNumSteps,
 		{
 			const DChargedTrack* locChargedTrack = dynamic_cast<const DChargedTrack*>(locCurrentStep->Get_FinalParticle_SourceObject(loc_i));
 			Particle_t locPID = locCurrentStep->Get_FinalParticleID(loc_i);
-			bool locWillReSwimFlag = false;
-			const DChargedTrackHypothesis* locChargedTrackHypothesis = Get_ChargedHypothesisToUse(locChargedTrack, locPID, locWillReSwimFlag);
+			const DChargedTrackHypothesis* locChargedTrackHypothesis = Get_ChargedHypothesisToUse(locChargedTrack, locPID);
 			DVector3 locMomentum(locChargedTrackHypothesis->momentum());
 			locFinalStateP4 += DLorentzVector(locMomentum, sqrt(locMomentum.Mag2() + ParticleMass(locPID)*ParticleMass(locPID)));
 		}

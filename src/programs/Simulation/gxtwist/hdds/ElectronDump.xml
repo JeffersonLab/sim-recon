@@ -29,7 +29,7 @@
         <posXYZ volume="Labyrinth2" X_Y_Z=" 66.0  45.0  1963.0" />
         <posXYZ volume="Labyrinth3" X_Y_Z="-99.0  45.0  2180.0" /> 
 
-        <posXYZ volume="DumpDoor" X_Y_Z=" 66.0  45.0  1836.5 " />
+        <posXYZ volume="DumpDoor" X_Y_Z=" 66.0  30.0  1836.5 " />
 
         <posXYZ volume="PipeF0" X_Y_Z="0.0  0.0  1545.87" />
         <posXYZ volume="Pipe01" X_Y_Z="0.0  0.0  1666.0" />
@@ -37,20 +37,24 @@
         <posXYZ volume="Pipe23" X_Y_Z="0.0  0.0  2088.0" />
         <posXYZ volume="Pipe3D" X_Y_Z="0.0  0.0  2237.0" />
 
-        <mposZ volume="SEG1" X_Y="-247.5  0.0" Z0="1173.0" dZ="66" ncopy="17" /> 
-        <mposZ volume="SEG2" X_Y=" 231.0  0.0" Z0="1965.0" dZ="66" ncopy="5" /> 
-        <posXYZ volume="SEG1" X_Y_Z="231.0  0.0 1915.0" rot="0 90 0" /> 
+        <mposZ volume="SEG1" X_Y="-247.5  18.0" Z0="1173.0" dZ="66" ncopy="17" /> 
+        <mposZ volume="SEG2" X_Y=" 231.0  18.0" Z0="1965.0" dZ="66" ncopy="5" /> 
+        <posXYZ volume="SEG1" X_Y_Z="231.0  18.0 1915.0" rot="0 90 0" /> 
+        <mposZ volume="COBL" X_Y="-247.5  239.0" Z0="1700.0" dZ="66" ncopy="2" /> 
+        <mposZ volume="COBL" X_Y=" 231.0  239.0" Z0="1915.0" dZ="33" ncopy="4" rot="0 90 0" /> 
 
-        <posXYZ volume="IronDump" X_Y_Z="0.0 45.0 2562.0" /> 
+        <posXYZ volume="IronDump" X_Y_Z="0.0 18.0 2562.0" /> 
   </composition>
 
 
 <!-- ====== Labyrinth 1 ====== -->
   <composition name="Labyrinth1" envelope="LBO1">
-        <posXYZ volume="SEG1" X_Y_Z="132.0 0.0 0.0" /> 
-        <mposZ volume="SEG_with_pipe" X_Y="82.5 0.0" Z0="-16.5" dZ="33.0" ncopy="2" /> 
-        <mposX volume="SEG1" Y_Z="0.0 -16.5" X0="-115.5" dX="66.0" ncopy="3" rot="0 90 0" /> 
-        <mposX volume="SEG1" Y_Z="0.0 +16.5" X0="-115.5" dX="66.0" ncopy="3" rot="0 90 0" /> 
+        <posXYZ volume="COB1" X_Y_Z="132.0 -27.0 0.0" /> 
+        <posXYZ volume="SEG_with_pipe" X_Y_Z="82.5 -27.0 -16.5" /> 
+        <posXYZ volume="SEG_with_pipe_packed" X_Y_Z="82.5 -27.0  16.5" /> 
+        <mposX volume="SEG1" Y_Z="-27.0 -16.5" X0="-115.5" dX="66.0" ncopy="3" rot="0 90 0" /> 
+        <mposX volume="SEG1" Y_Z="-27.0 +16.5" X0="-115.5" dX="66.0" ncopy="3" rot="0 90 0" /> 
+        <mposX volume="COBL" Y_Z="194.0   0.0" X0="-132.0" dX="33.0" ncopy="9" /> 
   </composition>
 
   <box name="LBO1" X_Y_Z="297.0  450.0  66.0" material="Air"  
@@ -59,11 +63,13 @@
 
 <!-- ====== Labyrinth 2 ====== -->
   <composition name="Labyrinth2" envelope="LBO2">
-        <mposZ volume="SEG1" X_Y="115.5 0.0" Z0="-33.0" dZ="66.0" ncopy="2" /> 
-        <mposZ volume="SEG1" X_Y=" 66.0 0.0" Z0="-49.5" dZ="33.0" ncopy="4" rot="0 90 0" /> 
-        <mposZ volume="SEG1" X_Y="  0.0 0.0" Z0="-49.5" dZ="33.0" ncopy="4" rot="0 90 0" /> 
-        <mposZ volume="SEG_with_pipe" X_Y="-66.0 0.0" Z0="-49.5" dZ="33.0" ncopy="4" /> 
-        <posXYZ volume="SEG1" X_Y_Z="-115.5 0.0 33.0" /> 
+        <mposZ volume="SEG1" X_Y="115.5 -27.0" Z0="-33.0" dZ="66.0" ncopy="2" /> 
+        <mposZ volume="SEG1" X_Y=" 66.0 -27.0" Z0="-49.5" dZ="33.0" ncopy="4" rot="0 90 0" /> 
+        <mposZ volume="SEG1" X_Y="  0.0 -27.0" Z0="-49.5" dZ="33.0" ncopy="4" rot="0 90 0" /> 
+        <mposZ volume="SEG_with_pipe" X_Y="-66.0 -27.0" Z0="-49.5" dZ="33.0" ncopy="3" /> 
+        <posXYZ volume="SEG_with_pipe_packed" X_Y_Z="-66.0 -27.0  49.5" /> 
+        <mposX volume="COBL" Y_Z="194.0  -33.0" X0="-115.5" dX="33.0" ncopy="8" /> 
+        <posXYZ volume="SEG1" X_Y_Z="-115.5 -27.0 33.0" /> 
   </composition>
 
   <box name="LBO2" X_Y_Z="264.0  450.0  132.0" material="Air"  
@@ -72,12 +78,13 @@
 
 <!-- ====== Labyrinth 3 ====== -->
   <composition name="Labyrinth3" envelope="LBO3">
-        <mposZ volume="SEG_with_pipe" X_Y="99.0 0.0" Z0="-16.5" dZ="33.0" ncopy="2" /> 
-        <mposX volume="SEG1" Y_Z="0.0 -16.5" X0="-99.0" dX="66.0" ncopy="3" rot="0 90 0" /> 
-        <mposX volume="SEG1" Y_Z="0.0 +16.5" X0="-99.0" dX="66.0" ncopy="3" rot="0 90 0" /> 
+        <posXYZ volume="SEG_with_pipe" X_Y_Z="99.0 -27.0 -16.5" /> 
+        <posXYZ volume="SEG_with_pipe_packed" X_Y_Z="99.0 -27.0  16.5" /> 
+        <mposX volume="SEG1" Y_Z="-27.0 -16.5" X0="-99.0" dX="66.0" ncopy="3" rot="0 90 0" /> 
+        <mposX volume="SEG1" Y_Z="-27.0 +16.5" X0="-99.0" dX="66.0" ncopy="3" rot="0 90 0" /> 
   </composition>
 
-  <box name="LBO3" X_Y_Z="264.0  450.0  66.0" material="Iron"  
+  <box name="LBO3" X_Y_Z="264.0  450.0  66.0" material="Air"  
        comment="3rd  Labyrinth wall" />
 
 
@@ -87,20 +94,26 @@
   </composition>
 
 
-  <box name="DOOR" X_Y_Z="6.0 450.  122.0" material="Polyethylene"  
+  <box name="DOOR" X_Y_Z="6.0 420.  122.0" material="Polyethylene"  
        comment="Labyrinth Door (poly)" />
 
-  <box name="OUTD" X_Y_Z="1.0 450.  122.0  " material="Boron"  
+  <box name="OUTD" X_Y_Z="1.0 420.  122.0  " material="Boron"  
        comment="Labyrinth Door (boron as a coating)" />
 
 
 <!-- ====== Flange shield wall ====== -->
   <composition name="FlangeWall" envelope="FLSW">
-        <mposZ volume="short_SEG_with_pipe" X_Y="33.0 0.0" Z0="-16.5" dZ="33.0" ncopy="2" /> 
-        <mposZ volume="SEGR" X_Y="-33.0 0.0" Z0="-16.5" dZ="33.0" ncopy="2" /> 
+        <!-- For the time being, remove the flange shield wall and just put
+             a piece of small-diameter vacuum pipe penetrating through the first
+             shielding wall leading into the labyrinth. This may change. -rtj- -->
+        <mposZ volume="SEG_hole_pipe" X_Y="33.0 47.0" Z0="-16.5" dZ="33.0" ncopy="2" />
+        <!--mposZ volume="short_SEG_with_pipe" X_Y="33.0 0.0" Z0="-16.5" dZ="33.0" ncopy="2" /--> 
+        <!--mposZ volume="SEGR" X_Y="-33.0 0.0" Z0="-16.5" dZ="33.0" ncopy="2" /--> 
   </composition>
 
-  <box name="FLSW" X_Y_Z="132.0  266.0  66.0" material="Iron"  
+  <!--box name="FLSW" X_Y_Z="132.0  266.0  66.0" material="Iron"  
+       comment="flange shield wall" /-->
+  <box name="FLSW" X_Y_Z="132.0  266.0  66.0" material="Air"  
        comment="flange shield wall" />
 
   <composition name="short_SEG_with_pipe" envelope="SEGP">
@@ -163,7 +176,7 @@
 
 
 <!-- ======  Pipe between labyrinth wall 3 to dump ======   -->
- <composition name="Pipe3D" envelope="LPO3">
+  <composition name="Pipe3D" envelope="LPO3">
         <posXYZ volume="LPI3" /> 
   </composition>
 
@@ -174,39 +187,65 @@
        comment="wall of beam pipe from labyrinth wall 3 to dump" />
 
 
-<!-- ====== Iron slabs forming the walls inside the beam dump ====== -->
-  <box name="SEG1" X_Y_Z="33.0  450. 66.0 " material="Iron"  
-       comment="SEG block slab in the beam dump" />
+<!-- ====== Stacked blocks forming the walls inside the beam dump ====== -->
+  <box name="SEG1" X_Y_Z="33.0  396. 66.0" material="Iron"  
+       comment="SEG block slab in the beam dump shielding wall" />
 
-  <box name="SEG2" X_Y_Z="66.0  450. 66.0 " material="Iron"  
+  <box name="COB1" X_Y_Z="33.0  396. 66.0" material="Concrete"  
+       comment="Concrete block slab in the beam dump shielding wall" />
+
+  <box name="SEG2" X_Y_Z="66.0  396. 66.0" material="Iron"  
        comment="double-thick SEG block slab in the beam dump" />
 
 <!-- ====== Iron slabs in the labyrinth with beam pipe sticking through -->
-  <box name="SEG0" X_Y_Z="66.0  450. 33.0 " material="Iron"  
+  <box name="SEG0" X_Y_Z="66.0  396. 33.0" material="Iron"  
        comment="SEG block slab with beam pipe punching through" />
 
-  <box name="SEH0" X_Y_Z="20.0  20.0 33.0 " material="Air"  
+  <box name="SEGA" X_Y_Z="66.0  396. 33.0" material="Iron"  
+       comment="SEG block slab with beam pipe punching through,
+                with iron rods packed around the beam pipe" />
+
+  <box name="SEH0" X_Y_Z="20.0  20.0 33.0" material="Air"  
        comment="SEG block hole with beam pipe punching through" />
+
+  <box name="SEHA" X_Y_Z="20.0  20.0 33.0" material="Air"  
+       comment="SEG block hole with beam pipe punching through
+                with iron rods packed around the beam pipe" />
 
   <tubs name="SEH1" Rio_Z="0.0 1.90 33.0" material="TaggerVacuum" 
         comment="beam pipe insert in SEG block" />
 
   <tubs name="SEH2" Rio_Z="1.75 1.90 33.0" material="Iron"
-        comment="wall of beam pipe insert in SEG block" />
+        comment="beam pipe insert in SEG block" />
 
   <pgon name="SEH3" segments="4" profile="-45 360" unit_angle="deg" material="Iron"
-        comment="packed iron around beam pipe insert in SEG block">
-        <polyplane Rio_Z="2.00 10.0 -14.0"/>
-        <polyplane Rio_Z="2.00 10.0 +14.0"/>
+        comment="stacked iron around beam pipe insert in SEG block">
+        <polyplane Rio_Z="2.00 10.0 -10.0"/>
+        <polyplane Rio_Z="2.00 10.0 +10.0"/>
   </pgon>
 
+  <tubs name="SEH4" Rio_Z="2.00 3.00 25.0" material="Iron"
+        comment="packed steel rods around beam pipe insert in SEG block" />
+
+  <box name="COBL" X_Y_Z="33.0 46.0 66.0" material="Concrete"
+       comment="concrete blocks between top of labyrinth iron and ceiling" />
+
   <composition name="SEG_with_pipe" envelope="SEG0">
-        <posXYZ volume="SEG_hole_with_pipe" X_Y_Z="0.0 -45.0 0.0"/>
+        <posXYZ volume="SEG_hole_with_pipe" X_Y_Z="0.0 -18.0 0.0"/>
+  </composition>
+
+  <composition name="SEG_with_pipe_packed" envelope="SEGA">
+        <posXYZ volume="SEG_hole_with_pipe_packed" X_Y_Z="0.0 -18.0 0.0"/>
   </composition>
 
   <composition name="SEG_hole_with_pipe" envelope="SEH0">
         <posXYZ volume="SEG_hole_pipe" />
-        <posXYZ volume="SEH3" />
+  </composition>
+
+  <composition name="SEG_hole_with_pipe_packed" envelope="SEHA">
+        <posXYZ volume="SEG_hole_pipe" />
+        <posXYZ volume="SEH3" X_Y_Z="0.0 0.0 4.0"/>
+        <posXYZ volume="SEH4" X_Y_Z="0.0 0.0 4.0"/>
   </composition>
 
   <composition name="SEG_hole_pipe" envelope="SEH1">
@@ -217,11 +256,11 @@
 <!-- ====== Iron Dump ====== -->
 
   <composition name="IronDump" envelope="DIRN">
-            <posXYZ volume="BDhole" X_Y_Z=" 0.0  -45.0  -201.0 " />
+            <posXYZ volume="BDhole" X_Y_Z=" 0.0  -18.0  -201.0 " />
   </composition>
 
 
-  <box name="DIRN" X_Y_Z="528.0  450.0  600.0" material="Iron"
+  <box name="DIRN" X_Y_Z="528.0  396.0  600.0" material="Iron"
        comment="Dump Iron House" />
 
 

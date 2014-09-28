@@ -5,6 +5,7 @@
 //
 
 #include "DANA/DApplication.h"
+#include "MyProcessor.h"
 using namespace std;
 
 void Usage(JApplication &app);
@@ -20,8 +21,12 @@ int main(int narg, char *argv[])
 
 	if(narg<=1)Usage(app);
 
+	// Instantiate our event processor
+        MyProcessor myproc;
+
 	// Run though all events, calling our event processor's methods
-	app.Run(NULL, 1);
+	app.monitor_heartbeat = 0;
+	app.Run(&myproc);
 	
 	return 0;
 }

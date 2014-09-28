@@ -7,6 +7,8 @@
 
 // See comments in JEventSource_EVIO.h for overview description
 
+#include <unistd.h>
+
 #include <string>
 #include <cmath>
 #include <iomanip>
@@ -89,6 +91,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	BUFFER_SIZE = 2000000; // in bytes
 	ET_STATION_NEVENTS = 10;
 	ET_STATION_CREATE_BLOCKING = false;
+	LOOP_FOREVER = false;
 	VERBOSE = 0;
 	TIMEOUT = 2.0;
 	EMULATE_PULSE_INTEGRAL_MODE = true;
@@ -102,6 +105,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	F250_NSB = 5;
 	F250_NSPED = 4;
 	F250_EMULATION_THRESHOLD = 20;
+	F125_NSPED = 20;
 	
 	if(gPARMS){
 		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
@@ -111,6 +115,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:BUFFER_SIZE", BUFFER_SIZE, "Size in bytes to allocate for holding a single EVIO event.");
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_NEVENTS", ET_STATION_NEVENTS, "Number of events to use if we have to create the ET station. Ignored if station already exists.");
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_CREATE_BLOCKING", ET_STATION_CREATE_BLOCKING, "Set this to 0 to create station in non-blocking mode (default is to create it in blocking mode). Ignored if station already exists.");
+		gPARMS->SetDefaultParameter("EVIO:LOOP_FOREVER", LOOP_FOREVER, "If reading from EVIO file, keep re-opening file and re-reading events forever (only useful for debugging) If reading from ET, this is ignored.");
 		gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
 		gPARMS->SetDefaultParameter("EVIO:EMULATE_PULSE_INTEGRAL_MODE", EMULATE_PULSE_INTEGRAL_MODE, "If non-zero, and Df250WindowRawData objects exist in the event AND no Df250PulseIntegral objects exist, then use the waveform data to generate Df250PulseIntegral objects. Default is for this feature to be on. Set this to zero to disable it.");
 		gPARMS->SetDefaultParameter("EVIO:EMULATE_SPARSIFICATION_THRESHOLD", EMULATE_SPARSIFICATION_THRESHOLD, "If EVIO:EMULATE_PULSE_INTEGRAL_MODE is on, then this is used to apply a cut on the non-pedestal-subtracted integral to determine if a Df250PulseIntegral is produced or not.");
@@ -124,6 +129,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:F250_NSA", F250_NSA, "For f250PulseIntegral object.  NSA value for emulation from window raw data and for pulse integral pedestal normalization.");
 		gPARMS->SetDefaultParameter("EVIO:F250_NSB", F250_NSB, "For f250PulseIntegral object.  NSB value for emulation from window raw data and for pulse integral pedestal normalization.");
 		gPARMS->SetDefaultParameter("EVIO:F250_NSPED", F250_NSPED, "For f250PulseIntegral object.  Number of pedestal samples value for emulation from window raw data and for pulse integral normalization.");
+
+		gPARMS->SetDefaultParameter("EVIO:F125_NSPED", F125_NSPED, "For f125PulseIntegral object.  Number of pedestal samples value for emulation from window raw data and for pulse integral normalization.");
 	}
 	
 	// Try to open the file.
@@ -573,7 +580,15 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 	
 		// Make a evioDOMTree for this DAQ event		
 		evioDOMTree *evt = NULL;
-		if(MAKE_DOM_TREE) evt = new evioDOMTree(iptr);
+		if(MAKE_DOM_TREE){
+			try{
+				evt = new evioDOMTree(iptr);
+			}catch(...){
+				_DBG_ << "Problem creating EVIO DOM Tree!!" << endl;
+				_DBG_ << "Binary dump of first 160 words follows:" << endl;
+				DumpBinary(iptr, iend, 160);
+			}
+		}
 
 		if(evt){
 			// Parse event, making other ObjList objects
@@ -687,9 +702,31 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 		if(source_type==kFileSource){
 			if(VERBOSE>3) evioout << "  attempting read from EVIO file source ..." << endl;
 			if(!chan->read(buff, BUFFER_SIZE)){
-_DBG__;
-				return NO_MORE_EVENTS_IN_SOURCE;
+				if(LOOP_FOREVER){
+					if(Nevents_read<1){
+						// User asked us to loop forever, but we couldn't find even 1 event!
+						jerr << "No events in file!!" << endl;
+						return NO_MORE_EVENTS_IN_SOURCE;
+					}else{
+					
+						// close file
+						if(VERBOSE>0) evioout << "Closing \""<<this->source_name<<"\"" <<endl;
+						chan->close();
+						delete chan;
+						
+						// re-open file
+						evioout << "Re-opening EVIO file \""<<this->source_name<<"\"" <<endl;
+						chan = new evioFileChannel(this->source_name, "r", BUFFER_SIZE);
+						
+						// open the file and read first event (assume it will be successful again)
+						chan->open();
+						chan->read(buff, BUFFER_SIZE);
+					}
+				}else{
+					return NO_MORE_EVENTS_IN_SOURCE;
+				}
 			}
+
 		}else if(source_type==kETSource){
 
 #ifdef HAVE_ET
@@ -715,6 +752,8 @@ _DBG__;
 				if( err==ET_ERROR_TIMEOUT ){
 					if(quit_on_next_ET_timeout)return NO_MORE_EVENTS_IN_SOURCE;
 				}
+				
+				usleep(10);
 			}
 			
 			if(japp->GetQuittingStatus() && pe==NULL) return NO_MORE_EVENTS_IN_SOURCE;
@@ -1192,7 +1231,7 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		// calculate integral from relevant samples
 		uint32_t start_sample = first_sample_over_threshold - F250_NSB;
 		uint32_t end_sample = first_sample_over_threshold + F250_NSA - 1;
-		if (start_sample < 0) start_sample=0;
+		if (F250_NSB < first_sample_over_threshold) start_sample=0;
 		if (end_sample > nsamples) end_sample=nsamples;
 		for (uint32_t c_samp=start_sample; c_samp<end_sample; c_samp++) {
 		  signalsum += samplesvector[c_samp];
@@ -1222,7 +1261,7 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 //----------------
 void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs)
 {
-	uint16_t ped_samples=20;
+	uint16_t ped_samples = F125_NSPED;
 	uint32_t pulse_number = 0;
 	uint32_t quality_factor = 0;
 	// Loop over all window raw data objects
@@ -1255,7 +1294,7 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 		myDf125PulseIntegral->pulse_number = pulse_number;
 		myDf125PulseIntegral->quality_factor = quality_factor;
 		myDf125PulseIntegral->integral = signalsum;
-		myDf125PulseIntegral->pedestal = 0;  // This will be replaced by the one from Df125PulsePedestal in GetObjects
+		myDf125PulseIntegral->pedestal = pedestalsum/ped_samples;  // This will be replaced by the one from Df125PulsePedestal in GetObjects
 		
 		// Add the Df125WindowRawData object as an associated object
 		myDf125PulseIntegral->AddAssociatedObject(f125WindowRawData);
@@ -1903,6 +1942,10 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 				ParseCAEN1190(rocid, iptr, iend, tmp_events);
 				break;
 
+			case 0x55:
+				ParseModuleConfiguration(rocid, iptr, iend, tmp_events);
+				break;
+
 			case 5:
 				// Beni's original CDC ROL used for the stand-alone CDC DAQ
 				// had the following for the TS readout list (used in the TI):
@@ -1946,6 +1989,103 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 	}
 
 	if(VERBOSE>5) evioout << "    Leaving ParseEVIOEvent()" << endl;
+}
+
+//----------------
+// ParseModuleConfiguration
+//----------------
+void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
+{
+	if(VERBOSE>5) evioout << "     Entering ParseModuleConfiguration()" << endl;
+	
+	/// Parse a back of module configuration data. These are configuration values
+	/// programmed into the module at the beginning of the run that may be needed
+	/// in the offline. For example, the number of samples to sum in a FADC pulse
+	/// integral.
+	///
+	/// The bank has one or more sections, each describing parameters applicable 
+	/// to a number of modules as indicated by a 24bit slot mask.
+	///
+	/// This bank should appear only once per DAQ event which, if in multi-event
+	/// block mode, may have multiple L1 events. The parameters here will apply
+	/// to all L1 events in the block. This method will put the config objects
+	/// in the first event of "events", creating it if needed. The config objects
+	/// are duplicated for all other events in the block later, after all event
+	/// parsing is finished and the total number of events is known.
+		
+	while(iptr < iend){
+		uint32_t slot_mask = (*iptr) & 0xFFFFFF;
+		uint32_t Nvals = ((*iptr) >> 24) & 0xFF;
+		iptr++;
+		
+		Df250Config *f250config = NULL;
+		Df125Config *f125config = NULL;
+		DF1TDCConfig *f1tdcconfig = NULL;
+		DCAEN1290TDCConfig *caen1290tdcconfig = NULL;
+		
+		// Loop over all parameters in this section
+		for(uint32_t i=0; i< Nvals; i++){
+			if( iptr >= iend){
+				_DBG_ << "DAQ Configuration bank corrupt! slot_mask=0x" << hex << slot_mask << dec << " Nvals="<< Nvals << endl;
+				exit(-1);
+			}
+			
+			daq_param_type ptype = (daq_param_type)((*iptr)>>16);
+			uint16_t val = (*iptr) & 0xFFFF;
+			
+			// Create config object of correct type if needed. (Only one type
+			// should be created per section!)
+			switch(ptype>>16){
+				case 0x05: if(!f250config       ) f250config        = new Df250Config(rocid, slot_mask);        break;
+				case 0x0F: if(!f125config       ) f125config        = new Df125Config(rocid, slot_mask);        break;
+				case 0x06: if(!f1tdcconfig      ) f1tdcconfig       = new DF1TDCConfig(rocid, slot_mask);       break;
+				case 0x10: if(!caen1290tdcconfig) caen1290tdcconfig = new DCAEN1290TDCConfig(rocid, slot_mask); break;
+				default:
+					_DBG_ << "Unknown module type: 0x" << hex << (ptype>>16) << endl;
+					exit(-1);
+			}
+
+			// Copy parameter into config. object
+			switch(ptype){
+				case kPARAM250_NSA            : f250config->NSA              = val; break;
+				case kPARAM250_NSB            : f250config->NSB              = val; break;
+				case kPARAM250_NSA_NSB        : f250config->NSA_NSB          = val; break;
+				case kPARAM250_NPED           : f250config->NPED             = val; break;
+
+				case kPARAM125_NSA            : f125config->NSA              = val; break;
+				case kPARAM125_NSB            : f125config->NSB              = val; break;
+				case kPARAM125_NSA_NSB        : f125config->NSA_NSB          = val; break;
+				case kPARAM125_NPED           : f125config->NPED             = val; break;
+				case kPARAM125_WINWIDTH       : f125config->WINWIDTH         = val; break;
+
+				case kPARAMF1_REFCNT          : f1tdcconfig->REFCNT          = val; break;
+				case kPARAMF1_TRIGWIN         : f1tdcconfig->TRIGWIN         = val; break;
+				case kPARAMF1_TRIGLAT         : f1tdcconfig->TRIGLAT         = val; break;
+				case kPARAMF1_HSDIV           : f1tdcconfig->HSDIV           = val; break;
+
+				case kPARAMCAEN1290_WINWIDTH  : caen1290tdcconfig->WINWIDTH  = val; break;
+				case kPARAMCAEN1290_WINOFFSET : caen1290tdcconfig->WINOFFSET = val; break;
+				
+				default:
+					_DBG_ << "UNKNOWN DAQ Config Parameter type: 0x" << hex << ptype << dec << endl;
+			}
+			
+			iptr++;
+		}
+		
+		// If we get here it means we didn't exit in the switch(ptype>>16) statement above
+		// so there is at least one DDAQConfig object we need to store. Get pointer to
+		// first event's ObjList, creating it if needed.
+		if(events.empty()) events.push_back(new ObjList());
+		ObjList *objs = *(events.begin());
+		
+		if(f250config       ) objs->config_objs.push_back(f250config       );
+		if(f125config       ) objs->config_objs.push_back(f125config       );
+		if(f1tdcconfig      ) objs->config_objs.push_back(f1tdcconfig      );
+		if(caen1290tdcconfig) objs->config_objs.push_back(caen1290tdcconfig);
+	}
+
+	if(VERBOSE>5) evioout << "     Leaving ParseModuleConfiguration()" << endl;	
 }
 
 //----------------

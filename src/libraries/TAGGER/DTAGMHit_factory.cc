@@ -32,7 +32,7 @@ jerror_t DTAGMHit_factory::init(void)
    fadc_a_scale = 0;
    fadc_t_scale = 0;
    tdc_t_scale = 0;
-   t_min = 0;
+   t_base = 0;
 
    // calibration constants stored in row, column format
    for (int row = 0; row <= TAGM_MAX_ROW; ++row) {
@@ -57,9 +57,18 @@ jerror_t DTAGMHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    fadc_a_scale    = 1.1;        // pixels per count
    fadc_t_scale    = 0.0625;     // ns per count
    tdc_t_scale     = 0.0600;     // ns per count
-   t_min           = -100.;      // ns
+   t_base           = -100.;      // ns
 
    jout << "In DTAGMHit_factory, loading constants..." << std::endl;
+
+   // load base time offset
+   map<string,double> base_time_offset;
+   if (eventLoop->GetCalib("/PHOTON_BEAM/microscope/base_time_offset",base_time_offset))
+       jout << "Error loading /PHOTON_BEAM/microscope/base_time_offset !" << endl;
+   if (base_time_offset.find("TAGM_BASE_TIME_OFFSET") != base_time_offset.end())
+       t_base = base_time_offset["TAGM_BASE_TIME_OFFSET"];
+   else
+       jerr << "Unable to get TAGM_BASE_TIME_OFFSET from /PHOTON_BEAM/microscope/base_time_offset !" << endl;
 
    if (load_ccdb_constants("fadc_gains", "gain", fadc_gains) &&
        load_ccdb_constants("fadc_pedestals", "pedestal", fadc_pedestals) &&
@@ -129,7 +138,7 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, int eventnumber)
       double T = digihit->pulse_time;
       A -= pedestal * digihit->nsamples_integral;
       hit->npix_fadc = A * fadc_a_scale * fadc_gains[row][column];
-      hit->time_fadc = T * fadc_t_scale - tdc_time_offsets[row][column] + t_min;
+      hit->time_fadc = T * fadc_t_scale - tdc_time_offsets[row][column] + t_base;
 
       hit->AddAssociatedObject(digihit);
       _data.push_back(hit);
@@ -147,7 +156,7 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, int eventnumber)
       int row = digihit->row;
       int column = digihit->column;
       double T = (double)digihit->time;
-      T = T * tdc_t_scale - tdc_time_offsets[row][column] + t_min;
+      T = T * tdc_t_scale - tdc_time_offsets[row][column] + t_base;
 
       // Look for existing hits to see if there is a match
       // or create new one if there is no match

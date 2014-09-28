@@ -32,7 +32,7 @@ class DTAGMHit_factory: public jana::JFactory<DTAGMHit> {
       double fadc_a_scale;  // pixels per fADC pulse integral count
       double fadc_t_scale;  // ns per fADC time count
       double tdc_t_scale;   // ns per F1TDC count
-      double t_min;
+      double t_base;
 
       // calibration constants stored in row, column format
       double fadc_gains[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];

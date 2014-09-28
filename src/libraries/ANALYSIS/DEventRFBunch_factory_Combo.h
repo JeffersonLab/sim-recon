@@ -48,6 +48,9 @@ class DEventRFBunch_factory_Combo:public jana::JFactory<DEventRFBunch>
 
 		const DParticleID* dParticleID;
 
+		string dShowerSelectionTag;
+		string dTrackSelectionTag;
+
 		double dRFBunchFrequency;
 		double dTargetCenterZ;
 

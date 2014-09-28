@@ -13,6 +13,11 @@ using namespace jana;
 
 #include <stdint.h>
 #include <DAQ/Df125WindowRawData.h>
+#include <DAQ/Df125PulseRawData.h>
+#include <DAQ/Df125PulseIntegral.h>
+#include <DAQ/Df125PulseTime.h>
+#include <DAQ/Df125PulsePedestal.h>
+#include <DAQ/Df125TriggerTime.h>
 #include <DAQ/DF1TDCHit.h>
 #include <DAQ/DF1TDCTriggerTime.h>
 #include <DAQ/Df250WindowRawData.h>
@@ -28,6 +33,40 @@ bool Df125WindowRawData_cmp(const Df125WindowRawData *a,const Df125WindowRawData
 	if (a->rocid   != b->rocid)   return a->rocid < b->rocid;
 	if (a->slot    != b->slot )   return a->slot < b->slot;
 	if (a->channel != b->channel) return a->channel < b->channel;
+	return a->itrigger < b->itrigger;
+}
+bool Df125PulseRawData_cmp(const Df125PulseRawData *a,const Df125PulseRawData *b){
+	// sort by crate, then by slot, then by channel, then by trigger number
+	if (a->rocid   != b->rocid)   return a->rocid < b->rocid;
+	if (a->slot    != b->slot )   return a->slot < b->slot;
+	if (a->channel != b->channel) return a->channel < b->channel;
+	return a->itrigger < b->itrigger;
+}
+bool Df125PulseIntegral_cmp(const Df125PulseIntegral *a,const Df125PulseIntegral *b){
+	// sort by crate, then by slot, then by channel, then by trigger number
+	if (a->rocid   != b->rocid)   return a->rocid < b->rocid;
+	if (a->slot    != b->slot )   return a->slot < b->slot;
+	if (a->channel != b->channel) return a->channel < b->channel;
+	return a->itrigger < b->itrigger;
+}
+bool Df125PulseTime_cmp(const Df125PulseTime *a,const Df125PulseTime *b){
+	// sort by crate, then by slot, then by channel, then by trigger number
+	if (a->rocid   != b->rocid)   return a->rocid < b->rocid;
+	if (a->slot    != b->slot )   return a->slot < b->slot;
+	if (a->channel != b->channel) return a->channel < b->channel;
+	return a->itrigger < b->itrigger;
+}
+bool Df125PulsePedestal_cmp(const Df125PulsePedestal *a,const Df125PulsePedestal *b){
+	// sort by crate, then by slot, then by channel, then by trigger number
+	if (a->rocid   != b->rocid)   return a->rocid < b->rocid;
+	if (a->slot    != b->slot )   return a->slot < b->slot;
+	if (a->channel != b->channel) return a->channel < b->channel;
+	return a->itrigger < b->itrigger;
+}
+bool Df125TriggerTime_cmp(const Df125TriggerTime *a,const Df125TriggerTime *b){
+	// sort by crate, then by slot, then by channel, then by trigger number
+	if (a->rocid   != b->rocid)   return a->rocid < b->rocid;
+	if (a->slot    != b->slot )   return a->slot < b->slot;
 	return a->itrigger < b->itrigger;
 }
 bool DF1TDCHit_cmp(const DF1TDCHit *a,const DF1TDCHit *b){
@@ -130,6 +169,11 @@ jerror_t JEventProcessor_DAQTree::init(void)
 
 	/// Initialize the flags
 	f125WRDtree_exists = 0;
+	f125PRDtree_exists = 0;
+	f125PItree_exists = 0;
+	f125PTtree_exists = 0;
+	f125PPtree_exists = 0;
+	f125TTtree_exists = 0;
 	F1TDCHtree_exists = 0;
 	F1TDCTTtree_exists = 0;
 	f250WRDtree_exists = 0;
@@ -255,6 +299,249 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 			w_time = lastbelowsamp + (threshold-lastbelowheight)/(firstaboveheight-lastbelowheight);
 		}
 		Df125WindowRawData_tree->Fill();
+	}
+
+
+	/// Df125PulseRawData
+	const uint32_t numDf125PRDpedsamps= 4;
+	const Int_t Df125PRDminpeakheight = 11;
+	/// Get a vector of Df125PulseRawData objects for this event (1 object for each crate/slot/channel above threshold)
+	vector<const Df125PulseRawData*> f125PulseRawData_vec;
+	loop->Get(f125PulseRawData_vec);
+	sort(f125PulseRawData_vec.begin(), f125PulseRawData_vec.end(), Df125PulseRawData_cmp);
+	unsigned int num_f125PRD = f125PulseRawData_vec.size();
+	/// Create tree if doesn't exist and objects found.
+	if (!f125PRDtree_exists && num_f125PRD>0) {
+		printf("DAQTree >>eventnum %i, found %4i Df125PulseRawData objects\n",eventnumber,num_f125PRD);
+		printf("DAQTree >>Creating tree Df125PulseRawData_tree\n");
+		Df125PulseRawData_tree = new TTree("Df125PulseRawData",
+										   "tree of flash 125 pulse raw data for each channel and event");
+		Df125PulseRawData_tree->Branch("channelnum",&channelnum,"channelnum/i");
+		Df125PulseRawData_tree->Branch("eventnum",&eventnum,"eventnum/i");
+		Df125PulseRawData_tree->Branch("rocid",&rocid,"rocid/i");
+		Df125PulseRawData_tree->Branch("slot",&slot,"slot/i");
+		Df125PulseRawData_tree->Branch("channel",&channel,"channel/i");
+		Df125PulseRawData_tree->Branch("itrigger",&itrigger,"itrigger/i");
+		Df125PulseRawData_tree->Branch("pulse_number",&pulse_number,"pulse_number/i");
+		Df125PulseRawData_tree->Branch("first_sample_number",&first_sample_number,"first_sample_number/i");
+		Df125PulseRawData_tree->Branch("waveform",&waveform);
+		Df125PulseRawData_tree->Branch("nsamples",&nsamples,"nsamples/i");
+		Df125PulseRawData_tree->Branch("w_integral",&w_integral,"w_integral/i");
+		Df125PulseRawData_tree->Branch("w_min",&w_min,"w_min/i");
+		Df125PulseRawData_tree->Branch("w_max",&w_max,"w_max/i");
+		Df125PulseRawData_tree->Branch("w_samp1",&w_samp1,"w_samp1/i");
+		Df125PulseRawData_tree->Branch("w_ped",&w_ped,"w_ped/i");
+		Df125PulseRawData_tree->Branch("w_time",&w_time,"w_time/f");
+		Df125PulseRawData_tree->Branch("invalid_samples",&invalid_samples,"invalid_samples/b");
+		Df125PulseRawData_tree->Branch("overflow",&overflow,"overflow/b");
+		f125PRDtree_exists = 1;
+	}
+	eventnum = eventnumber;
+	// Loop over all  objects in this event
+	for(unsigned int c_chan=0; c_chan<num_f125PRD; c_chan++){
+		waveform.clear();
+		channelnum = c_chan;
+		const Df125PulseRawData *f125PulseRawData = f125PulseRawData_vec[c_chan];
+		rocid = f125PulseRawData->rocid;
+		slot = f125PulseRawData->slot;
+		channel = f125PulseRawData->channel;
+		itrigger = f125PulseRawData->itrigger;
+		pulse_number  = f125PulseRawData->pulse_number;
+		first_sample_number = f125PulseRawData->first_sample_number;
+		invalid_samples = f125PulseRawData->invalid_samples;
+		overflow = f125PulseRawData->overflow;
+		// Get a vector of the samples for this channel
+		const vector<uint16_t> &samplesvector = f125PulseRawData->samples;
+		nsamples=samplesvector.size();
+		/// loop over the samples to calculate integral, min, max
+		for (uint16_t c_samp=0; c_samp<nsamples; c_samp++) {
+			/// Deal with overflow by setting sample to max val
+			if (samplesvector[c_samp]<4096) {
+				waveform.push_back(samplesvector[c_samp]); // push the sample into the waveform vector
+			} else {
+				waveform.push_back(4096); // push the sample into the waveform vector
+			}
+			if (c_samp==0) {  // use first sample for initialization
+				w_integral = samplesvector[0]; 
+				w_min = samplesvector[0];
+				w_max = samplesvector[0];
+				w_samp1 = samplesvector[0]; 
+				w_ped = samplesvector[0]; 
+			} else {
+				if (c_samp<numDf125PRDpedsamps) {
+					w_ped += samplesvector[c_samp];
+				}
+				w_integral += samplesvector[c_samp];
+				if (w_min > samplesvector[c_samp]) w_min = samplesvector[c_samp];
+				if (w_max < samplesvector[c_samp]) w_max = samplesvector[c_samp];
+			}		
+		}
+		/// find the time to cross half peak height
+		Int_t lastbelowsamp=0, peakheight = w_max-w_min;
+		Float_t threshold = w_min + peakheight/2.0;
+		Float_t  firstaboveheight=0, lastbelowheight=0;
+		w_time=0;
+		if (peakheight > Df125PRDminpeakheight) { 
+			for (uint16_t c_samp=0; c_samp<nsamples; c_samp++) {
+				if (samplesvector[c_samp]>threshold) { 
+					firstaboveheight = samplesvector[c_samp];
+					lastbelowsamp = c_samp-1;
+					lastbelowheight = samplesvector[c_samp-1];
+					break;
+				}
+			}
+			w_time = lastbelowsamp + (threshold-lastbelowheight)/(firstaboveheight-lastbelowheight);
+		}
+		Df125PulseRawData_tree->Fill();
+	}
+
+	/// Df125PulseIntegral
+	/// Get a vector of Df125PulseIntegral objects for this event (1 object for each crate/slot/channel above threshold)
+	vector<const Df125PulseIntegral*> f125PulseIntegral_vec;
+	loop->Get(f125PulseIntegral_vec);
+	sort(f125PulseIntegral_vec.begin(), f125PulseIntegral_vec.end(), Df125PulseIntegral_cmp);
+	unsigned int num_f125PI = f125PulseIntegral_vec.size();
+	/// Create tree if doesn't exist and objects found.
+	if (!f125PItree_exists && num_f125PI>0) {
+		printf("DAQTree >>eventnum %i, found %4i Df125PulseIntegral objects\n",eventnumber,num_f125PI);
+		printf("DAQTree >>Creating tree Df125PulseIntegral_tree\n");
+		Df125PulseIntegral_tree = new TTree("Df125PulseIntegral",
+											"tree of flash 125 pulse integral for each channel and event");
+		Df125PulseIntegral_tree->Branch("channelnum",&channelnum,"channelnum/i");
+		Df125PulseIntegral_tree->Branch("eventnum",&eventnum,"eventnum/i");
+		Df125PulseIntegral_tree->Branch("rocid",&rocid,"rocid/i");
+		Df125PulseIntegral_tree->Branch("slot",&slot,"slot/i");
+		Df125PulseIntegral_tree->Branch("channel",&channel,"channel/i");
+		Df125PulseIntegral_tree->Branch("itrigger",&itrigger,"itrigger/i");
+		Df125PulseIntegral_tree->Branch("pulse_number",&pulse_number,"pulse_number/i");
+		Df125PulseIntegral_tree->Branch("quality_factor",&quality_factor,"quality_factor/i");
+		Df125PulseIntegral_tree->Branch("integral",&integral,"integral/i");
+		Df125PulseIntegral_tree->Branch("pedestal",&pedestal,"pedestal/i");
+		f125PItree_exists = 1;
+	}
+	eventnum = eventnumber;
+	/// Loop over all Df125PulseIntegral objects in this event
+	for(unsigned int c_chan=0; c_chan<num_f125PI; c_chan++){
+		channelnum = c_chan;
+		const Df125PulseIntegral *f125PulseIntegral = f125PulseIntegral_vec[c_chan];
+		rocid = f125PulseIntegral->rocid;
+		slot = f125PulseIntegral->slot;
+		channel = f125PulseIntegral->channel;
+		itrigger = f125PulseIntegral->itrigger;
+		pulse_number = f125PulseIntegral->pulse_number;
+		quality_factor= f125PulseIntegral->quality_factor;
+		integral = f125PulseIntegral->integral;
+		pedestal = f125PulseIntegral->pedestal;
+		Df125PulseIntegral_tree->Fill();
+	}
+
+
+	/// Df125PulseTime
+	/// Get a vector of Df125PulseTime objects for this event (1 object for each crate/slot/channel above threshold)
+	vector<const Df125PulseTime*> f125PulseTime_vec;
+	loop->Get(f125PulseTime_vec);
+	sort(f125PulseTime_vec.begin(), f125PulseTime_vec.end(), Df125PulseTime_cmp);
+	unsigned int num_f125PT = f125PulseTime_vec.size();
+	/// Create tree if doesn't exist and objects found.
+	if (!f125PTtree_exists && num_f125PT>0) {
+		printf("DAQTree >>eventnum %i, found %4i Df125PulseTime objects\n",eventnumber,num_f125PT);
+		printf("DAQTree >>Creating tree f125PulseTime_tree\n");
+		Df125PulseTime_tree = new TTree("Df125PulseTime",
+										"tree of flash 125 pulse times for each channel and event");
+		Df125PulseTime_tree->Branch("channelnum",&channelnum,"channelnum/i");
+		Df125PulseTime_tree->Branch("eventnum",&eventnum,"eventnum/i");
+		Df125PulseTime_tree->Branch("rocid",&rocid,"rocid/i");
+		Df125PulseTime_tree->Branch("slot",&slot,"slot/i");
+		Df125PulseTime_tree->Branch("channel",&channel,"channel/i");
+		Df125PulseTime_tree->Branch("itrigger",&itrigger,"itrigger/i");
+		Df125PulseTime_tree->Branch("pulse_number",&pulse_number,"pulse_number/i");
+		Df125PulseTime_tree->Branch("quality_factor",&quality_factor,"quality_factor/i");
+		Df125PulseTime_tree->Branch("time",&time,"time/i");
+		f125PTtree_exists = 1;
+	}
+	eventnum = eventnumber;
+	/// Loop over all Df125PulseTime objects in this event
+	for(unsigned int c_chan=0; c_chan<num_f125PT; c_chan++){
+		channelnum = c_chan;
+		const Df125PulseTime *f125PulseTime = f125PulseTime_vec[c_chan];
+		rocid = f125PulseTime->rocid;
+		slot = f125PulseTime->slot;
+		channel = f125PulseTime->channel;
+		itrigger = f125PulseTime->itrigger;
+		pulse_number = f125PulseTime->pulse_number;
+		quality_factor= f125PulseTime->quality_factor;
+		time = f125PulseTime->time;
+		Df125PulseTime_tree->Fill();
+	}
+
+	/// Df125PulsePedestal
+	/// Get a vector of Df125PulsePedestal objects for this event (1 object for each crate/slot/channel above threshold)
+	vector<const Df125PulsePedestal*> f125PulsePedestal_vec;
+	loop->Get(f125PulsePedestal_vec);
+	sort(f125PulsePedestal_vec.begin(), f125PulsePedestal_vec.end(), Df125PulsePedestal_cmp);
+	unsigned int num_f125PP = f125PulsePedestal_vec.size();
+	/// Create tree if doesn't exist and objects found.
+	if (!f125PPtree_exists && num_f125PP>0) {
+		printf("DAQTree >>eventnum %i, found %4i Df125PulsePedestal objects\n",eventnumber,num_f125PP);
+		printf("DAQTree >>Creating tree f125PulsePedestal_tree\n");
+		Df125PulsePedestal_tree = new TTree("Df125PulsePedestal",
+										"tree of flash 125 pulse times for each channel and event");
+		Df125PulsePedestal_tree->Branch("channelnum",&channelnum,"channelnum/i");
+		Df125PulsePedestal_tree->Branch("eventnum",&eventnum,"eventnum/i");
+		Df125PulsePedestal_tree->Branch("rocid",&rocid,"rocid/i");
+		Df125PulsePedestal_tree->Branch("slot",&slot,"slot/i");
+		Df125PulsePedestal_tree->Branch("channel",&channel,"channel/i");
+		Df125PulsePedestal_tree->Branch("itrigger",&itrigger,"itrigger/i");
+		Df125PulsePedestal_tree->Branch("pulse_number",&pulse_number,"pulse_number/i");
+		Df125PulsePedestal_tree->Branch("pedestal",&pedestal,"pedestal/i");
+		Df125PulsePedestal_tree->Branch("pulse_peak",&pulse_peak,"pulse_peak/i");
+		f125PPtree_exists = 1;
+	}
+	eventnum = eventnumber;
+	/// Loop over all Df125PulsePedestal objects in this event
+	for(unsigned int c_chan=0; c_chan<num_f125PP; c_chan++){
+		channelnum = c_chan;
+		const Df125PulsePedestal *f125PulsePedestal = f125PulsePedestal_vec[c_chan];
+		rocid = f125PulsePedestal->rocid;
+		slot = f125PulsePedestal->slot;
+		channel = f125PulsePedestal->channel;
+		itrigger = f125PulsePedestal->itrigger;
+		pulse_number = f125PulsePedestal->pulse_number;
+		pedestal= f125PulsePedestal->pedestal;
+		pulse_peak = f125PulsePedestal->pulse_peak;
+		Df125PulsePedestal_tree->Fill();
+	}
+
+
+	/// Df125TriggerTime
+	/// Get a vector of Df125TriggerTime objects for this event (1 object for each crate/slot)
+	vector<const Df125TriggerTime*> f125TriggerTime_vec;
+	loop->Get(f125TriggerTime_vec);
+	sort(f125TriggerTime_vec.begin(), f125TriggerTime_vec.end(), Df125TriggerTime_cmp);
+	unsigned int num_f125TT = f125TriggerTime_vec.size();
+	/// Create tree if doesn't exist and objects found.
+	if (!f125TTtree_exists && num_f125TT>0) {
+		printf("DAQTree >>eventnum %i, found %4i Df125TriggerTime objects\n",eventnumber,num_f125TT);
+		printf("DAQTree >>Creating tree Df125TriggerTime_tree\n");
+		Df125TriggerTime_tree = new TTree("Df125TriggerTime",
+										  "tree of flash 125 trigger times for each slot and event");
+		Df125TriggerTime_tree->Branch("eventnum",&eventnum,"eventnum/i");
+		Df125TriggerTime_tree->Branch("rocid",&rocid,"rocid/i");
+		Df125TriggerTime_tree->Branch("slot",&slot,"slot/i");
+		Df125TriggerTime_tree->Branch("itrigger",&itrigger,"itrigger/i");
+		Df125TriggerTime_tree->Branch("time",&time,"time/l");
+		f125TTtree_exists = 1;
+	}
+	eventnum = eventnumber;
+	/// Loop over all Df125TriggerTime objects in this event
+	for(unsigned int c_chan=0; c_chan<num_f125TT; c_chan++){
+		channelnum = c_chan;
+		const Df125TriggerTime *f125TriggerTime = f125TriggerTime_vec[c_chan];
+		rocid = f125TriggerTime->rocid;
+		slot = f125TriggerTime->slot;
+		itrigger = f125TriggerTime->itrigger;
+		time = f125TriggerTime->time;
+		Df125TriggerTime_tree->Fill();
 	}
 
 
@@ -530,6 +817,8 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 		Df250PulseIntegral_tree->Branch("quality_factor",&quality_factor,"quality_factor/i");
 		Df250PulseIntegral_tree->Branch("integral",&integral,"integral/i");
 		Df250PulseIntegral_tree->Branch("pedestal",&pedestal,"pedestal/i");
+		Df250PulseIntegral_tree->Branch("nsamples_integral",&nsamples_integral,"nsamples_integral/i");
+		Df250PulseIntegral_tree->Branch("nsamples_pedestal",&nsamples_pedestal,"nsamples_pedestal/i");
 		f250PItree_exists = 1;
 	}
 	eventnum = eventnumber;
@@ -545,6 +834,8 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 		quality_factor= f250PulseIntegral->quality_factor;
 		integral = f250PulseIntegral->integral;
 		pedestal = f250PulseIntegral->pedestal;
+		nsamples_integral = f250PulseIntegral->nsamples_integral;
+		nsamples_pedestal = f250PulseIntegral->nsamples_pedestal;
 		Df250PulseIntegral_tree->Fill();
 	}
 

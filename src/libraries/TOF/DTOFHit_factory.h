@@ -42,7 +42,7 @@ class DTOFHit_factory:public jana::JFactory<DTOFHit>{
 		double a_scale;
 		double t_scale;
 		double tdc_scale;
-                double t_min;
+                double t_base;
 
 		double DELTA_T_ADC_TDC_MAX;
 

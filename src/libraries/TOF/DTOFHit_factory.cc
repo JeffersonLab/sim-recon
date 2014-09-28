@@ -30,7 +30,7 @@ jerror_t DTOFHit_factory::init(void)
 	a_scale    = 0.2/5.2E5;
 	t_scale    = 0.0625;   // 62.5 ps/count
 	tdc_scale  = 0.025;    // 25 ps/count
-        t_min      = -100.;    // ns
+        t_base     = 0.;       // ns
 
 	TOF_NUM_PLANES = 2;
 	TOF_NUM_BARS = 44;
@@ -79,6 +79,16 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	    jerr << "Unable to get TOF_TDC_SCALE from /TOF/digi_scales !" << endl;
 	}
 
+	// load base time offset
+	map<string,double> base_time_offset;
+	if (eventLoop->GetCalib("/TOF/base_time_offset",base_time_offset))
+		jout << "Error loading /TOF/base_time_offset !" << endl;
+	if (base_time_offset.find("TOF_BASE_TIME_OFFSET") != base_time_offset.end())
+		t_base = base_time_offset["TOF_BASE_TIME_OFFSET"];
+	else
+		jerr << "Unable to get TOF_BASE_TIME_OFFSET from /TOF/base_time_offset !" << endl;	
+	
+	// load constant tables
         if(eventLoop->GetCalib("TOF/pedestals", raw_adc_pedestals))
 	    jout << "Error loading /TOF/pedestals !" << endl;
         if(eventLoop->GetCalib("TOF/gains", raw_adc_gains))
@@ -146,7 +156,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 
 		hit->dE = a_scale * (A - pedestal);
-		hit->t = t_scale * (T - GetConstant(adc_time_offsets, digihit)) + t_min;
+		hit->t = t_scale * (T - GetConstant(adc_time_offsets, digihit)) + t_base;
 		hit->sigma_t = 4.0;    // ns (what is the fADC time resolution?)
 		hit->has_fADC = true;
 		hit->has_TDC  = false; // will get set to true below if appropriate
@@ -175,7 +185,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Apply calibration constants here
 		double T = (double)digihit->time;
 
-		T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_min;
+		T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_base;
 		// future: allow for seperate TDC scales for each channel
 		//T = GetConstant(tdc_scales, digihit)
 		//  * (T - GetConstant(tdc_time_offsets, digihit));

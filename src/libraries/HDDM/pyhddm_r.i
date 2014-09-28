@@ -15,7 +15,7 @@
 // SWIG does not like this variable for some reason
 %ignore HDDM_r_DocumentString;
 
-%include "hddm_r.h"
+//%include "hddm_r.h"
 %include "hddm_r.hpp"
 %include "std_string.i"
 
@@ -122,6 +122,10 @@
     // fix this to 1 right now
     long getUid() {
       return 1L;
+    }
+
+    hddm_r::ReconstructedPhysicsEvent &getEvent() {
+      return record.getReconstructedPhysicsEvent();
     }
 
     std::string getFilename() {

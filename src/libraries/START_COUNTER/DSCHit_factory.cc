@@ -29,7 +29,7 @@ jerror_t DSCHit_factory::init(void)
    /// set the base conversion scales
    a_scale    = 2.0E-2/5.2E-5; 
    t_scale    = 0.0625;   // 62.5 ps/count
-        t_min      = -100.;    // ns
+   t_base     = 0.;    // ns
    tdc_scale  = 0.060;    // 60 ps/count
 
    return NOERROR;
@@ -62,7 +62,17 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    else
       jerr << "Unable to get SC_TDC_SCALE from /START_COUNTER/digi_scales !" 
            << endl;
+
+   // load base time offset
+   map<string,double> base_time_offset;
+   if (eventLoop->GetCalib("/START_COUNTER/base_time_offset",base_time_offset))
+       jout << "Error loading /START_COUNTER/base_time_offset !" << endl;
+   if (base_time_offset.find("SC_BASE_TIME_OFFSET") != base_time_offset.end())
+       t_base = base_time_offset["SC_BASE_TIME_OFFSET"];
+   else
+       jerr << "Unable to get SC_BASE_TIME_OFFSET from /START_COUNTER/base_time_offset !" << endl;
    
+   // load constant tables
    if (eventLoop->GetCalib("/START_COUNTER/gains", a_gains))
       jout << "Error loading /START_COUNTER/gains !" << endl;
    if (eventLoop->GetCalib("/START_COUNTER/pedestals", a_pedestals))
@@ -135,7 +145,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
       double T = (double)digihit->pulse_time;
       // Sectors are numbered from 1-30
       hit->dE = a_scale * a_gains[hit->sector-1] * (A - a_pedestals[hit->sector-1]);
-      hit->t = t_scale * (T - adc_time_offsets[hit->sector-1]) + t_min;
+      hit->t = t_scale * (T - adc_time_offsets[hit->sector-1]) + t_base;
       hit->sigma_t = 4.0;    // ns (what is the fADC time resolution?)
       hit->has_fADC = true;
       hit->has_TDC  = false; // will get set to true below if appropriate
@@ -165,7 +175,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
       // Apply calibration constants here
       double T = (double)digihit->time;
-      T = tdc_scale * (T - tdc_time_offsets[digihit->sector-1]) + t_min;
+      T = tdc_scale * (T - tdc_time_offsets[digihit->sector-1]) + t_base;
 
       // Look for existing hits to see if there is a match
       // or create new one if there is no match

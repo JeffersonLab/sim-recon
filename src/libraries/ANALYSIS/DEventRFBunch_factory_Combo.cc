@@ -17,6 +17,8 @@
 jerror_t DEventRFBunch_factory_Combo::init(void)
 {
 	dRFBunchFrequency = 2.004;
+	dShowerSelectionTag = "PreSelect";
+	dTrackSelectionTag = "PreSelect";
 	return NOERROR;
 }
 
@@ -25,7 +27,9 @@ jerror_t DEventRFBunch_factory_Combo::init(void)
 //------------------
 jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
-	// Get Target parameters from XML
+	gPARMS->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", dTrackSelectionTag);
+	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
+
 	DApplication *locApplication = dynamic_cast<DApplication*> (locEventLoop->GetJApplication());
 	DGeometry *locGeometry = locApplication ? locApplication->GetDGeometry(runnumber):NULL;
 	locGeometry->GetTargetZ(dTargetCenterZ);
@@ -61,10 +65,10 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 	locEventLoop->Get(locTrackTimeBasedVector, "Combo");
 
  	vector<const DNeutralShower*> locNeutralShowers;
-	locEventLoop->Get(locNeutralShowers);
+	locEventLoop->Get(locNeutralShowers, dShowerSelectionTag.c_str());
 
- 	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
-	locEventLoop->Get(locChargedTrackHypotheses);
+ 	vector<const DChargedTrack*> locChargedTracks;
+	locEventLoop->Get(locChargedTracks, dTrackSelectionTag.c_str());
 
 	const DVertex* locVertex = NULL;
 	locEventLoop->GetSingle(locVertex);
@@ -83,10 +87,14 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 
 	//pre-calculate propagated times: charged
 	map<const DChargedTrackHypothesis*, double> dPropagatedStartTimes_Charged;
-	for(size_t loc_i = 0; loc_i < locChargedTrackHypotheses.size(); ++loc_i)
+	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
 	{
-		double locPropagatedTime = locChargedTrackHypotheses[loc_i]->time() + (dTargetCenterZ - locChargedTrackHypotheses[loc_i]->z())/29.9792458;
-		dPropagatedStartTimes_Charged[locChargedTrackHypotheses[loc_i]] = locPropagatedTime;
+		const vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses = locChargedTracks[loc_i]->dChargedTrackHypotheses;
+		for(size_t loc_j = 0; loc_j < locChargedTrackHypotheses.size(); ++loc_j)
+		{
+			double locPropagatedTime = locChargedTrackHypotheses[loc_j]->time() + (dTargetCenterZ - locChargedTrackHypotheses[loc_j]->z())/29.9792458;
+			dPropagatedStartTimes_Charged[locChargedTrackHypotheses[loc_j]] = locPropagatedTime;
+		}
 	}
 
 	//pre-calculate propagated times: time-based
@@ -112,7 +120,6 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 	for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
 	{
 		const DParticleComboBlueprint* locParticleComboBlueprint = locParticleComboBlueprints[loc_i];
-
 		vector<double> locPropagatedTimes;
 
 		//Charged Tracks

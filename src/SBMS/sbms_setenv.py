@@ -147,6 +147,20 @@ def mk_setenv_csh(env):
 	str += 'setenv PATH ${XERCESCROOT}/bin:${PATH}\n'
 	str += 'setenv %s ${XERCESCROOT}/lib:${%s}\n' % (LDLPV, LDLPV)
 	str += '\n'
+	
+	# EVIO
+	evioroot = os.getenv('EVIOROOT')
+        if evioroot != None:
+		str += '# EVIO\n'
+		str += 'setenv EVIOROOT %s\n' % evioroot
+		str += 'setenv %s ${EVIOROOT}/lib:${%s}\n' % (LDLPV, LDLPV)
+	
+	# ET
+	etroot = os.getenv('ETROOT')
+        if etroot != None:
+		str += '# ET\n'
+                str += 'setenv ETROOT %s\n' % etroot
+                str += 'setenv %s ${ETROOT}/lib:${%s}\n' % (LDLPV, LDLPV)
 
 	# Make sure output directory exists
 	try:
@@ -288,6 +302,20 @@ def mk_setenv_bash(env):
 	str += 'export PATH=${XERCESCROOT}/bin:${PATH}\n'
 	str += 'export %s=${XERCESCROOT}/lib:${%s}\n' % (LDLPV, LDLPV)
 	str += '\n'
+
+	# EVIO
+        evioroot = os.getenv('EVIOROOT')
+        if evioroot != None:
+		str += '# EVIO\n'
+        	str += 'export EVIOROOT=%s\n' % evioroot
+        	str += 'export %s=${EVIOROOT}/lib:${%s}\n' % (LDLPV, LDLPV)
+
+        # ET
+        etroot = os.getenv('ETROOT')
+        if etroot != None:
+		str += '# ET\n'
+        	str += 'export ETROOT=%s\n' % etroot
+        	str += 'export %s=${ETROOT}/lib:${%s}\n' % (LDLPV, LDLPV)
 
 	# Make sure output directory exists
 	try:
