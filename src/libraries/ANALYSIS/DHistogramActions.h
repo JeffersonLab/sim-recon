@@ -888,10 +888,13 @@ class DHistogramAction_NumReconstructedObjects : public DAnalysisAction
 		TH1D* dHist_NumPosChargedTracks;
 		TH1D* dHist_NumNegChargedTracks;
 
+		TH1D* dHist_NumTimeBasedTracks;
 		TH1D* dHist_NumPosTimeBasedTracks;
 		TH1D* dHist_NumNegTimeBasedTracks;
+		TH1D* dHist_NumWireBasedTracks;
 		TH1D* dHist_NumPosWireBasedTracks;
 		TH1D* dHist_NumNegWireBasedTracks;
+		TH1D* dHist_NumTrackCandidates;
 		TH1D* dHist_NumPosTrackCandidates;
 		TH1D* dHist_NumNegTrackCandidates;
 		TH1D* dHist_NumPosTrackCandidates_CDC;
