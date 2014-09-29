@@ -14,8 +14,8 @@
 
 class DTAGHGeometry_factory : public JFactory<DTAGHGeometry> {
  public:
-   DTAGHGeometry_factory(std::string tag="") :
-      JFactory<DTAGHGeometry>(tag.c_str()), factory_tag(tag) {}
+   DTAGHGeometry_factory(const char *tag="") :
+      JFactory<DTAGHGeometry>(tag), factory_tag(tag) {}
    ~DTAGHGeometry_factory(){}
 
  private:

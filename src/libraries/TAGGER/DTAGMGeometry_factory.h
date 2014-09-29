@@ -14,8 +14,8 @@
 
 class DTAGMGeometry_factory : public JFactory<DTAGMGeometry> {
  public:
-   DTAGMGeometry_factory(std::string tag="") :
-      JFactory<DTAGMGeometry>(tag.c_str()), factory_tag(tag) {}
+   DTAGMGeometry_factory(const char *tag="") :
+      JFactory<DTAGMGeometry>(tag), factory_tag(tag) {}
    ~DTAGMGeometry_factory(){}
 
  private:
