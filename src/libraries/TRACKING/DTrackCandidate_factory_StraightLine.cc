@@ -123,6 +123,8 @@ jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, int eventn
       
       // Initial guess for state vector
       DMatrix4x1 S(tracks[i].S);
+
+      //     S.Print();
       
       // list of axial and stereo hits for this track
       vector<const DCDCTrackHit *>hits=tracks[i].axial_hits;
