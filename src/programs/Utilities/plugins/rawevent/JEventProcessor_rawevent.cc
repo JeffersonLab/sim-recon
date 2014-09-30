@@ -717,6 +717,9 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       //uint32_t q     = dcdchits[i]->q * (1./5.18) * (1.3E5/1.0E6); // q is in femtoCoulombs (max is ~1E6) 
       uint32_t q     = dcdchits[i]->q * CDC_ADCscale; // q is in femtoCoulombs (max is ~1E6) 
       uint32_t t     = dcdchits[i]->t*1000.0 -tMin;    // t is in nanoseconds (max is ~900ns)
+
+      //jout << " q = " << dcdchits[i]->q << ", digitized = " << q << endl;
+      //jout << " t = " << dcdchits[i]->t << ", shifted = " << t << endl;
       
       if (noroot == 0)
          cdcCharges->Fill(dcdchits[i]->q);

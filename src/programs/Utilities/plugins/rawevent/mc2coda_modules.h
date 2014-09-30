@@ -36,7 +36,7 @@ void GetPedestals(uint32_t *peds, uint32_t Npeds);
 
 #define FADC250_PI_SUM(chan,pn,sum)   {*dabufp++ = 0xB8000000 | (chan << 23) | (pn << 21) | (sum&0x7ffff) ; }
 #define FADC250_PI_TIME(chan,pn,time) {*dabufp++ = 0xC0000000 | (chan << 23) | (pn << 21) | (time&0x7ffff); }
-#define FADC250_PI_PED(chan,pn,ped,peak) {*dabufp++ = 0xD0000000 | (chan << 23) | (pn << 21) | ((ped&0x1ff)<<12) | peak&0xfff; }
+#define FADC250_PI_PED(chan,pn,ped,peak) {*dabufp++ = 0xD0000000 | (chan << 23) | (pn << 21) | ((ped&0x1ff)<<12) | (peak&0xfff); }
 
 #define FADC250_FILLER {*dabufp++ = 0xF8000000; }
 
@@ -109,7 +109,7 @@ fadc250_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 		 uint32_t sum = chit[ii]->hdata[0] + ped*FADC250_WINDOW_WIDTH;
          FADC250_PI_SUM(chan,ii,sum);
          FADC250_PI_TIME(chan,ii,chit[ii]->hdata[1]);
-		 FADC250_PI_PED(chan,ii,ped + peds[chan],peak); // measured pedestal has additional stochastic element
+	 FADC250_PI_PED(chan,ii,(ped + peds[chan]),peak); // measured pedestal has additional stochastic element
       }
    }
    
@@ -160,7 +160,7 @@ fadc250_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 
 #define FADC125_PI_SUM(chan,sum)   {*dabufp++ = 0xB8000000 | (chan << 20) | (sum&0xfffff) ; }
 #define FADC125_PI_TIME(chan,qf,time) {*dabufp++ = 0xC0000000 | (chan << 20) | (qf << 18) | (time&0xffff); }
-#define FADC125_PI_PED(chan,pn,ped,peak) {*dabufp++ = 0xD0000000 | ((chan << 23)&0x0f) | (pn << 21) | ((ped&0x1ff)<<12) | peak&0xfff; }
+#define FADC125_PI_PED(chan,pn,ped,peak) {*dabufp++ = 0xD0000000 | ((chan << 23)&0x0f) | (pn << 21) | ((ped&0x1ff)<<12) | (peak&0xfff) ; }
 
 #define FADC125_FILLER {*dabufp++ = 0xF8000000; }
 
@@ -237,13 +237,13 @@ fadc125_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
       /* printf("write hit data %d\n",jj); */
       uint32_t ped = peds[FADC125_MAX_CHAN]; // common pedestal for all channels
       for (ii=0; ii < jj; ii++) {
-		 uint32_t peak = ped + chit[ii]->hdata[0]/10; // Assume pulse is 20samples(=160ns) so area is ~0.5*b*h=pi -> h=pi/(b/2) where b=20samples
-		 uint32_t sum = chit[ii]->hdata[0] + ped*FADC125_WINDOW_WIDTH;
-         FADC125_PI_SUM(chan, sum);
-         FADC125_PI_TIME(chan,0,chit[ii]->hdata[1]); // always make quality factor 0
-		 FADC125_PI_PED(chan,ii,ped + peds[chan],peak); // measured pedestal has additional stochastic element
-		 // f125 generally doesn't support multiple pulses so only record first one
-		 break;
+	      uint32_t peak = ped + chit[ii]->hdata[0]/10; // Assume pulse is 20samples(=160ns) so area is ~0.5*b*h=pi -> h=pi/(b/2) where b=20samples
+	      uint32_t sum = chit[ii]->hdata[0] + ped*FADC125_WINDOW_WIDTH;
+	      FADC125_PI_SUM(chan, sum);
+	      FADC125_PI_TIME(chan,0,chit[ii]->hdata[1]); // always make quality factor 0
+	      FADC125_PI_PED(chan,ii,(ped + peds[chan]),peak); // measured pedestal has additional stochastic element
+	      // f125 generally doesn't support multiple pulses so only record first one
+	      break;
       }
    }
    
@@ -652,10 +652,11 @@ caen1290_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 
 void WriteDAQconfigBank(CODA_CRATE_MAP *crate, int roc)
 {
-
+	
 	// Get type of digitization modules in this crate. Assume all are the same
 	enum type_id_t modtype = UNKNOWN;
-	for(int i=0; i<crate->nModules; i++){
+	int i;
+	for(i=0; i<crate->nModules; i++){
 		if(crate->module_map[i]>TID && crate->module_map[i]<TD){
 			modtype = crate->module_map[i];
 			break;
@@ -695,8 +696,9 @@ void WriteDAQconfigBank(CODA_CRATE_MAP *crate, int roc)
 	*dabufp++ = (Npar<<24) | slot_mask;
 	
 	// Write all parameters
-	for(uint32_t i=0; i<Npar; i++){
-		*dabufp++ = (partype[i]<<16) | (parvalue[i]);
+	uint32_t ii;
+	for(ii=0; ii<Npar; ii++){
+		*dabufp++ = (partype[ii]<<16) | (parvalue[ii]);
 	}
 	
 	// Close data bank (see note above regarding DATA_BANK_CLOSE)
