@@ -38,6 +38,7 @@ using namespace evio;
 #include <et.h>
 #endif // HAVE_ET
 
+#include "daq_param_type.h"
 #include "DModuleType.h"
 #include "Df250Config.h"
 #include "Df250PulseIntegral.h"
@@ -140,29 +141,6 @@ class JEventSource_EVIO: public jana::JEventSource{
 			kETSource
 		};
 
-		enum daq_param_type{
-
-			kPARAM250_NSA             = 0x0501,
-			kPARAM250_NSB             = 0x0502,
-			kPARAM250_NSA_NSB         = 0x0503,  // NSA+NSB
-			kPARAM250_NPED            = 0x0504,
-
-			kPARAM125_NSA             = 0x0F01,
-			kPARAM125_NSB             = 0x0F02,
-			kPARAM125_NSA_NSB         = 0x0F03,  // NSA+NSB
-			kPARAM125_NPED            = 0x0F04,
-			kPARAM125_WINWIDTH        = 0x0F05,
-
-			kPARAMF1_REFCNT           = 0x0601,
-			kPARAMF1_TRIGWIN          = 0x0602,
-			kPARAMF1_TRIGLAT          = 0x0603,
-			kPARAMF1_HSDIV            = 0x0604,
-			
-			kPARAMCAEN1290_WINWIDTH   = 0x1001,
-			kPARAMCAEN1290_WINOFFSET  = 0x1002,
-
-			kPARAM_NONE               = 0x0000
-		};
 
 		                    JEventSource_EVIO(const char* source_name);
 		           virtual ~JEventSource_EVIO();
@@ -199,6 +177,10 @@ class JEventSource_EVIO: public jana::JEventSource{
 		bool  AUTODETECT_MODULE_TYPES;
 		bool  DUMP_MODULE_MAP;
 		bool  PARSE_EVIO_EVENTS;
+		bool  PARSE_F250;
+		bool  PARSE_F125;
+		bool  PARSE_F1TDC;
+		bool  PARSE_CAEN1290TDC;
 		bool  MAKE_DOM_TREE;
 		int   ET_STATION_NEVENTS;
 		bool  ET_STATION_CREATE_BLOCKING;
