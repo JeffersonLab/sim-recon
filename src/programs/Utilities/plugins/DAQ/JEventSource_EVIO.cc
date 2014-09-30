@@ -92,7 +92,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	PARSE_F125 = true;
 	PARSE_F1TDC = true;
 	PARSE_CAEN1290TDC = true;
-	BUFFER_SIZE = 2000000; // in bytes
+	BUFFER_SIZE = 20000000; // in bytes
 	ET_STATION_NEVENTS = 10;
 	ET_STATION_CREATE_BLOCKING = false;
 	LOOP_FOREVER = false;
