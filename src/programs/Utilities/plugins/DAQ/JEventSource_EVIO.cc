@@ -953,15 +953,19 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	}
 
 	// Optionally generate Df250PulseIntegral and Df250PulseTime objects from Df250WindowRawData objects. 
-	if(EMULATE_PULSE_INTEGRAL_MODE && (hit_objs_by_type["Df250PulseIntegral"].size()==0)){
+	if(EMULATE_PULSE_INTEGRAL_MODE && !hit_objs_by_type["Df250WindowRawData"].empty()){
 		vector<JObject*> pt_objs;
 		vector<JObject*> pp_objs;
-		EmulateDf250PulseTime(hit_objs_by_type["Df250WindowRawData"], pt_objs, pp_objs);
+		if(hit_objs_by_type["Df250PulseTime"].empty()){
+			EmulateDf250PulseTime(hit_objs_by_type["Df250WindowRawData"], pt_objs, pp_objs);
+		}
 		if(pt_objs.size() != 0) hit_objs_by_type["Df250PulseTime"] = pt_objs;
 		if(pp_objs.size() != 0) hit_objs_by_type["Df250PulsePedestal"] = pp_objs;
 
 		vector<JObject*> pi_objs;
-		EmulateDf250PulseIntegral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
+		if(hit_objs_by_type["Df250PulseIntegral"].empty()){
+			EmulateDf250PulseIntegral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
+		}
 		if(pi_objs.size() != 0) hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
 		
 		// Add entries to JANA's callstack to indicate correct relationship of emulated objects
@@ -984,15 +988,19 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	}
 
 	// Optionally generate Df125PulseIntegral and Df125PulseTime objects from Df125WindowRawData objects. 
-	if(EMULATE_PULSE_INTEGRAL_MODE && (hit_objs_by_type["Df125PulseIntegral"].size()==0)){
+	if(EMULATE_PULSE_INTEGRAL_MODE && !hit_objs_by_type["Df125WindowRawData"].empty()){
 		vector<JObject*> pt_objs;
 		vector<JObject*> pp_objs;
-		EmulateDf125PulseTime(hit_objs_by_type["Df125WindowRawData"], pt_objs, pp_objs);
+		if(hit_objs_by_type["Df125PulseTime"].empty()){
+			EmulateDf125PulseTime(hit_objs_by_type["Df125WindowRawData"], pt_objs, pp_objs);
+		}
 		if(pt_objs.size() != 0) hit_objs_by_type["Df125PulseTime"] = pt_objs;
 		if(pp_objs.size() != 0) hit_objs_by_type["Df125PulsePedestal"] = pp_objs;
 
 		vector<JObject*> pi_objs;
-		EmulateDf125PulseIntegral(hit_objs_by_type["Df125WindowRawData"], pi_objs);
+		if(hit_objs_by_type["Df125PulseIntegral"].empty()){
+			EmulateDf125PulseIntegral(hit_objs_by_type["Df125WindowRawData"], pi_objs);
+		}
 		if(pi_objs.size() != 0) hit_objs_by_type["Df125PulseIntegral"] = pi_objs;	
 		
 		// Add entries to JANA's callstack to indicate correct relationship of emulated objects
