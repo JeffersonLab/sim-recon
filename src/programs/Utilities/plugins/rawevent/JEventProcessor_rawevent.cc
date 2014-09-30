@@ -196,6 +196,13 @@ static int dumpmap   = 0;
 bool NO_CCDB = false;  // try and read from CCDB by default
 string XML_FILENAME = "tt.xml"; // default filename for XML file if CCDB fails or is not used
 
+// Pedestals (defined in mc2coda_random.cc)
+extern bool  NO_PEDESTAL;
+extern bool  NO_RANDOM_PEDESTAL;
+extern float MEAN_PEDESTAL;
+extern float SIGMA_COMMON_PEDESTAL;
+extern float SIGMA_INDIVIDUAL_PEDESTAL;
+
 
 //----------------------------------------------------------------------------
 
@@ -272,6 +279,13 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
   gPARMS->SetDefaultParameter("RAWEVENT:RUNNUMBER",user_runNumber,
           "Override run number from input file with this one"
           " which will be written to every event in output file");
+
+  // options for pedestals
+  gPARMS->SetDefaultParameter("RAWEVENT:NO_PEDESTAL",NO_PEDESTAL, "Set to non-zero value to enable pedestals (default is to always use \"0\" for all pedestals)");
+  gPARMS->SetDefaultParameter("RAWEVENT:NO_RANDOM_PEDESTAL",NO_RANDOM_PEDESTAL, "Set this to zero to disable any randomness in pedestals (def. is to randomize)");
+  gPARMS->SetDefaultParameter("RAWEVENT:MEAN_PEDESTAL",MEAN_PEDESTAL, "Mean value of single sample pedestal.");
+  gPARMS->SetDefaultParameter("RAWEVENT:SIGMA_COMMON_PEDESTAL",SIGMA_COMMON_PEDESTAL, "Stochastic width of common pedestal distribution. Common pedestal is used for all channels in a module but will be different module to module.");
+  gPARMS->SetDefaultParameter("RAWEVENT:SIGMA_INDIVIDUAL_PEDESTAL",SIGMA_INDIVIDUAL_PEDESTAL, "Stochastic width of MEASURED pedestal");
 
 }
 
