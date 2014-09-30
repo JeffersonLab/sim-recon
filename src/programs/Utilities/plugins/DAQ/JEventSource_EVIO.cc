@@ -2227,7 +2227,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 {
 	/// Parse data from a single FADC250 module.
 
-	if(!PARSE_F250){ iend = iptr; return; }
+	if(!PARSE_F250){ iptr = iend; return; }
 
 	// This will get updated to point to a newly allocated object when an
 	// event header is encountered. The existing value (if non-NULL) is
@@ -2551,7 +2551,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 	/// data formats follow what is in the file:
 	/// https://halldweb1.jlab.org/wiki/index.php/File:FADC125_dataformat_250_modes.docx
 
-	if(!PARSE_F125){ iend = iptr; return; }
+	if(!PARSE_F125){ iptr = iend; return; }
 
 	// This will get updated to point to a newly allocated object when an
 	// event header is encountered. The existing value (if non-NULL) is
@@ -2834,7 +2834,7 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 	/// This code is based on the document F1TDC_V2_V3_4_29_14.pdf obtained from:
 	/// https://coda.jlab.org/wiki/index.php/JLab_Module_Manuals
 
-	if(!PARSE_F1TDC){ iend = iptr; return; }
+	if(!PARSE_F1TDC){ iptr = iend; return; }
 
 	if(VERBOSE>0) evioout << "  Entering ParseF1TDCBank (rocid=" << rocid << ")" << endl;
 
@@ -3063,7 +3063,7 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 	/// Parse data from a CAEN 1190 or 1290 module
 	/// (See ppg. 72-74 of V1290_REV15.pdf manual)
 
-	if(!PARSE_CAEN1290TDC){ iend = iptr; return; }
+	if(!PARSE_CAEN1290TDC){ iptr = iend; return; }
 	
 	uint32_t slot = 0;
 	uint32_t event_count = 0;
