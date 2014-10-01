@@ -476,7 +476,7 @@ void LinkAssociations(vector<T*> &a, vector<U*> &b)
 	/// for that.)
 	for(unsigned int j=0; j<a.size(); j++){
 		for(unsigned int k=0; k<b.size(); k++){
-			if(*a[j] == *b[k]){ // compare only the DDAQAddress parts
+			if( *((DDAQAddress*)a[j]) == *((DDAQAddress*)b[k]) ){ // compare only the DDAQAddress parts
 				a[j]->AddAssociatedObject(b[k]);
 				b[k]->AddAssociatedObject(a[j]);
 			}

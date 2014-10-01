@@ -959,72 +959,76 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 
 	// Optionally generate Df250PulseIntegral and Df250PulseTime objects from Df250WindowRawData objects. 
 	if(EMULATE_PULSE_INTEGRAL_MODE && !hit_objs_by_type["Df250WindowRawData"].empty()){
+	
+		// Emulate PulseTime and PulsePedestal if no PulseTime objects exist
 		vector<JObject*> pt_objs;
 		vector<JObject*> pp_objs;
 		if(hit_objs_by_type["Df250PulseTime"].empty()){
 			EmulateDf250PulseTime(hit_objs_by_type["Df250WindowRawData"], pt_objs, pp_objs);
+			if(pt_objs.size() != 0) hit_objs_by_type["Df250PulseTime"] = pt_objs;
+			if(pp_objs.size() != 0) hit_objs_by_type["Df250PulsePedestal"] = pp_objs;
+			
+			// Add entries to JANA's callstack to indicate correct relationship of emulated objects
+			if(pt_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df250PulseTime", "Df250WindowRawData");
+			if(pp_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df250PulsePedestal", "Df250WindowRawData");
+		}else{
+			// copy these so we can make object associations later
+			pt_objs = hit_objs_by_type["Df250PulseTime"];
+			pp_objs = hit_objs_by_type["Df250PulsePedestal"];
 		}
-		if(pt_objs.size() != 0) hit_objs_by_type["Df250PulseTime"] = pt_objs;
-		if(pp_objs.size() != 0) hit_objs_by_type["Df250PulsePedestal"] = pp_objs;
 
+		// Emulate PulseIntegral if no Pulse integral objects exist
 		vector<JObject*> pi_objs;
 		if(hit_objs_by_type["Df250PulseIntegral"].empty()){
 			EmulateDf250PulseIntegral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
-		}
-		if(pi_objs.size() != 0) hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
-		
-		// Add entries to JANA's callstack to indicate correct relationship of emulated objects
-		if(pt_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df250PulseTime", "Df250WindowRawData");
-		if(pp_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df250PulsePedestal", "Df250WindowRawData");
-		if(pi_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df250PulseIntegral", "Df250WindowRawData");
+			if(pi_objs.size() != 0){
+				// Pulse integral objects were emulated
+				AddEmulatedObjectsToCallStack(loop, "Df250PulseIntegral", "Df250WindowRawData");
+				hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
 
-		// Make PulseTime, PulseIntegral, and PulsePedestal objects associated objects of one another
-		// We need to cast the pointers as DDAQAddress types for the LinkAssociationsWithPulseNumber
-		// templated method to work.
-		vector<DDAQAddress*> da_pt_objs;
-		vector<DDAQAddress*> da_pi_objs;
-		vector<DDAQAddress*> da_pp_objs;
-		for(unsigned int i=0; i<pt_objs.size(); i++) da_pt_objs.push_back((DDAQAddress*)pt_objs[i]);
-		for(unsigned int i=0; i<pi_objs.size(); i++) da_pi_objs.push_back((DDAQAddress*)pi_objs[i]);
-		for(unsigned int i=0; i<pp_objs.size(); i++) da_pp_objs.push_back((DDAQAddress*)pp_objs[i]);
-		LinkAssociations(da_pt_objs, da_pi_objs);
-		LinkAssociations(da_pt_objs, da_pp_objs);
-		LinkAssociations(da_pi_objs, da_pp_objs);
+				// Make PulseTime, PulsePedstal, and PulseIntegral objects associated objects of one another
+				LinkAssociations(pt_objs, pi_objs);
+				LinkAssociations(pt_objs, pp_objs);
+				LinkAssociations(pi_objs, pp_objs);
+			}	
+		}
 	}
 	
 	// Optionally generate Df125PulseIntegral and Df125PulseTime objects from Df125WindowRawData objects. 
 	if(EMULATE_PULSE_INTEGRAL_MODE && !hit_objs_by_type["Df125WindowRawData"].empty()){
+	
+		// Emulate PulseTime and PulsePedestal if no PulseTime objects exist
 		vector<JObject*> pt_objs;
 		vector<JObject*> pp_objs;
 		if(hit_objs_by_type["Df125PulseTime"].empty()){
 			EmulateDf125PulseTime(hit_objs_by_type["Df125WindowRawData"], pt_objs, pp_objs);
+			if(pt_objs.size() != 0) hit_objs_by_type["Df125PulseTime"] = pt_objs;
+			if(pp_objs.size() != 0) hit_objs_by_type["Df125PulsePedestal"] = pp_objs;
+			
+			// Add entries to JANA's callstack to indicate correct relationship of emulated objects
+			if(pt_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df125PulseTime", "Df125WindowRawData");
+			if(pp_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df125PulsePedestal", "Df125WindowRawData");
+		}else{
+			// copy these so we can make object associations later
+			pt_objs = hit_objs_by_type["Df125PulseTime"];
+			pp_objs = hit_objs_by_type["Df125PulsePedestal"];
 		}
-		if(pt_objs.size() != 0) hit_objs_by_type["Df125PulseTime"] = pt_objs;
-		if(pp_objs.size() != 0) hit_objs_by_type["Df125PulsePedestal"] = pp_objs;
 
+		// Emulate PulseIntegral if no Pulse integral objects exist
 		vector<JObject*> pi_objs;
 		if(hit_objs_by_type["Df125PulseIntegral"].empty()){
 			EmulateDf125PulseIntegral(hit_objs_by_type["Df125WindowRawData"], pi_objs);
-		}
-		if(pi_objs.size() != 0) hit_objs_by_type["Df125PulseIntegral"] = pi_objs;	
-		
-		// Add entries to JANA's callstack to indicate correct relationship of emulated objects
-		if(pt_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df125PulseTime", "Df125WindowRawData");
-		if(pp_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df125PulsePedestal", "Df125WindowRawData");
-		if(pi_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df125PulseIntegral", "Df125WindowRawData");
+			if(pi_objs.size() != 0){
+				// Pulse integral objects were emulated
+				AddEmulatedObjectsToCallStack(loop, "Df125PulseIntegral", "Df125WindowRawData");
+				hit_objs_by_type["Df125PulseIntegral"] = pi_objs;
 
-		// Make PulseTime and PulseIntegral objects associated objects of one another
-		// We need to cast the pointers as DDAQAddress types for the LinkAssociationsWithPulseNumber
-		// tmeplated method to work.
-		vector<DDAQAddress*> da_pt_objs;
-		vector<DDAQAddress*> da_pi_objs;
-		vector<DDAQAddress*> da_pp_objs;
-		for(unsigned int i=0; i<pt_objs.size(); i++) da_pt_objs.push_back((DDAQAddress*)pt_objs[i]);
-		for(unsigned int i=0; i<pi_objs.size(); i++) da_pi_objs.push_back((DDAQAddress*)pi_objs[i]);
-		for(unsigned int i=0; i<pp_objs.size(); i++) da_pi_objs.push_back((DDAQAddress*)pp_objs[i]);
-		LinkAssociations(da_pt_objs, da_pi_objs);
-		LinkAssociations(da_pt_objs, da_pp_objs);
-		LinkAssociations(da_pi_objs, da_pp_objs);
+				// Make PulseTime, PulsePedstal, and PulseIntegral objects associated objects of one another
+				LinkAssociations(pt_objs, pi_objs);
+				LinkAssociations(pt_objs, pp_objs);
+				LinkAssociations(pi_objs, pp_objs);
+			}	
+		}
 	}
 	
 	// Now, add data objects to call stack for the classes we can provide, but for which
