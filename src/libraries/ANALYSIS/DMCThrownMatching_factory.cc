@@ -57,7 +57,14 @@ jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eve
 #endif
 
  	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+
+	if(locMCThrowns.empty())
+		return NOERROR;
+
+	locMCThrowns.clear();
 	locEventLoop->Get(locMCThrowns, "FinalState");
+
  	vector<const DMCThrown*> locMCThrowns_Charged;
  	vector<const DMCThrown*> locMCThrowns_Neutral;
 
@@ -70,9 +77,6 @@ jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eve
 	}
 	if(dDebugLevel > 0)
 		cout << "input #thrown, ok charged # thrown, ok neutral # thrown = " << locMCThrowns.size() << ", " << locMCThrowns_Charged.size() << ", " << locMCThrowns_Neutral.size() << endl;
-
-	if(locMCThrowns.empty())
-		return NOERROR;
 
  	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks);
