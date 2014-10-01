@@ -2566,6 +2566,8 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 
 	if(!PARSE_F125){ iptr = iend; return; }
 
+	if(VERBOSE>6) evioout << "    Entering Parsef125Bank..."<<endl;
+
 	// This will get updated to point to a newly allocated object when an
 	// event header is encountered. The existing value (if non-NULL) is
 	// added to the events queue first though so all events are kept.
@@ -2610,6 +2612,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		uint32_t data_type = (*iptr>>27) & 0x0F;
 		switch(data_type){
 			case 0: // Block Header
+				if(VERBOSE>7) evioout << "      FADC125 Event Header"<<endl;
 				slot = (*iptr>>22) & 0x1F;
 				//iblock= (*iptr>>8) & 0x03FF;
 				//Nblock_events= (*iptr>>0) & 0xFF;
@@ -2649,11 +2652,13 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				MakeDf125WindowRawData(objs, rocid, slot, itrigger, iptr);
 				break;
 			case 7: // Pulse Integral
+				if(VERBOSE>7) evioout << "      FADC125 Pulse Integral"<<endl;
 				channel = (*iptr>>20) & 0x7F;
 				sum = (*iptr>>0) & 0xFFFFF;
  				if(objs) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum));
 				break;
 			case 8: // Pulse Time
+				if(VERBOSE>7) evioout << "      FADC125 Pulse Time"<<endl;
 				channel = (*iptr>>20) & 0x7F;
 				quality_factor = (*iptr>>18) & 0x03;
 				pulse_time = (*iptr>>0) & 0xFFFF;
@@ -2661,6 +2666,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				last_pulse_time_channel = channel;
 				break;
 			case 10: // Pulse Pedestal
+				if(VERBOSE>7) evioout << "      FADC125 Pulse Pedestal"<<endl;
 				//channel = (*iptr>>20) & 0x7F;
 				channel = last_pulse_time_channel; // not enough bits to hold channel number so rely on proximity to Pulse Time in data stream (see "FADC125 dataformat 250 modes.docx")
 				pulse_number = (*iptr>>21) & 0x03;
@@ -2674,6 +2680,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 			case 13: // Event Trailer
 			case 14: // Data not valid (empty module)
 			case 15: // Filler (non-data) word
+				if(VERBOSE>7) evioout << "      FADC125 ignored data type: " << data_type <<endl;
 				break;
 		}
 
@@ -2732,6 +2739,8 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		LinkAssociationsModuleOnly(vtrigt, vpt);
 		LinkAssociationsModuleOnly(vtrigt, vpp);
 	}
+
+	if(VERBOSE>6) evioout << "    Leaving Parsef125Bank"<<endl;
 }
 
 //----------------
@@ -2771,6 +2780,8 @@ void JEventSource_EVIO::MakeDf125WindowRawData(ObjList *objs, uint32_t rocid, ui
 		wrd->invalid_samples |= invalid_2;
 		wrd->overflow |= (sample_2>>12) & 0x1;
 	}
+
+	if(VERBOSE>7) evioout << "      FADC125   - " << wrd->samples.size() << " samples" << endl;
 	
 	// Due to how the calling function works, the value of "objs" passed to us may be NULL.
 	// This will happen if a Window Raw Data block is encountered before an event header.
