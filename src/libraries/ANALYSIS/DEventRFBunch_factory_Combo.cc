@@ -164,7 +164,6 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 		{
 			//no timing information somehow: use the pre-existing value
 			DEventRFBunch* locNewEventRFBunch = new DEventRFBunch(*locEventRFBunch);
-			locNewEventRFBunch->dMatchedToTracksFlag = false;
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
 			_data.push_back(locNewEventRFBunch);
@@ -179,7 +178,6 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 		else
 		{
 			DEventRFBunch* locNewEventRFBunch = new DEventRFBunch();
-			locNewEventRFBunch->dMatchedToTracksFlag = true;
 			locNewEventRFBunch->dTime = locEventRFBunch->dTime + (double)(locNumBunchShifts)*dRFBunchFrequency;
 			locNewEventRFBunch->dTimeVariance = locEventRFBunch->dTimeVariance;
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);

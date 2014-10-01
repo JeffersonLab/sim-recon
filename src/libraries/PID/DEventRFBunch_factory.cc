@@ -44,18 +44,39 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 {
 	vector<const DRFTime*> locRFTimes;
 	locEventLoop->Get(locRFTimes);
+	double locRFHitTime, locTimeVariance;
 	if(locRFTimes.empty())
 	{
-		DEventRFBunch *locEventRFBunch = new DEventRFBunch;
-		locEventRFBunch->dTime = 0.0;
-		locEventRFBunch->dTimeVariance = 0.0;
-		locEventRFBunch->dMatchedToTracksFlag = false;
-		_data.push_back(locEventRFBunch);
-		return NOERROR;
-	}
+		vector<const DTAGMHit*> locTAGMHits;
+		locEventLoop->Get(locTAGMHits);
 
-	double locRFHitTime = locRFTimes[0]->dTime;
-	double locTimeVariance = locRFTimes[0]->dTimeVariance;
+		vector<const DTAGMHit*> locTAGHHits;
+		locEventLoop->Get(locTAGHHits);
+
+		if(!locTAGMHits.empty())
+		{
+			locRFHitTime = locTAGMHits[0]->t;
+			locTimeVariance = 0.2*0.2;
+		}
+		else if(!locTAGHHits.empty())
+		{
+			locRFHitTime = locTAGHHits[0]->t;
+			locTimeVariance = 0.2*0.2;
+		}
+		else
+		{
+			DEventRFBunch *locEventRFBunch = new DEventRFBunch;
+			locEventRFBunch->dTime = numeric_limits<double>::quiet_NaN();
+			locEventRFBunch->dTimeVariance = numeric_limits<double>::quiet_NaN();
+			_data.push_back(locEventRFBunch);
+			return NOERROR;
+		}
+	}
+	else
+	{
+		locRFHitTime = locRFTimes[0]->dTime;
+		locTimeVariance = locRFTimes[0]->dTimeVariance;
+	}
 
 	//preferentially:
 	//use SC hits on tracks with good tracking FOM
@@ -96,7 +117,6 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	//then figure out which RF bunch matches the most # tracks
 		//need to try different sources of times: start with best quality
 	int locBestRFBunchShift = 0;
-	bool locMatchedToTracksFlag = true; //set to false if not
 	vector<double> locTimes;
 	if(Find_TrackTimes(locDetectorMatches, locTrackTimeBasedVector_OnePerTrack_GoodFOM, locTimes)) //good tracks, use TOF/BCAL/ST info
 		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimes);
@@ -105,12 +125,11 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	else if(Find_NeutralTimes(locEventLoop, locTimes))//use neutral showers
 		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimes);
 	else
-		locMatchedToTracksFlag = false; //no confidence in selecting the RF bunch for the event
-	
+		return NOERROR; //no confidence in selecting the RF bunch for the event
+
 	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
 	locEventRFBunch->dTime = locRFHitTime + dRFBunchFrequency*double(locBestRFBunchShift);
 	locEventRFBunch->dTimeVariance = locTimeVariance;
-	locEventRFBunch->dMatchedToTracksFlag = locMatchedToTracksFlag;
 	_data.push_back(locEventRFBunch);
 
 	return NOERROR;

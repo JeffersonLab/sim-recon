@@ -67,10 +67,10 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 /*********************************************** b1pi Combo Pre-Combo Custom Cuts ***********************************************/
 
 	// Loose Pi0 Cut, Applied during Blueprint Construction
-	locReaction->Set_InvariantMassCut(Pi0, 0.08, 0.19);
+	locReaction->Set_InvariantMassCut(Pi0, 0.07, 0.20);
 
 	// Loose missing mass squared cut, applied just after creating the combination (before saving it)
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 2.56));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.5, 3.69));
 
 /**************************************************** b1pi Actions ****************************************************/
 

@@ -384,6 +384,9 @@ mc2codaCloseEvent(CODA_EVENT_INFO *event)
 
 		/* Open a ROC data Bank */
 		ROC_BANK_OPEN(0,roc,1);
+		
+		// Write the data configuration bank
+		WriteDAQconfigBank(crate, roc);
 				
 		/* Open a Data Bank */
 		// Note that we can't use the DATA_BANK_OPEN and DATA_BANK_CLOSE macros

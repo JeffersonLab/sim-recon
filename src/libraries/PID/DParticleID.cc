@@ -881,14 +881,12 @@ double DParticleID::Calc_SCFlightTimePCorrelation(const DTrackTimeBased* locTrac
 	return locFlightTimePCorrelation;
 }
 
-bool DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locPropagatedRFTime, bool locRFTimeFixedFlag) const
+void DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locPropagatedRFTime, bool locRFTimeFixedFlag) const
 {
 	locPropagatedRFTime = locEventRFBunch->dTime + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
 
-	if(locRFTimeFixedFlag)
-		return locEventRFBunch->dMatchedToTracksFlag;
-	if((locChargedTrackHypothesis->t1_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_CDC) || (locChargedTrackHypothesis->t1_detector() == SYS_FDC))
-		return locEventRFBunch->dMatchedToTracksFlag; // this track can't distinguish which RF bunch: use the propagated RF time from locEventRFBunch
+	if(locRFTimeFixedFlag || (locChargedTrackHypothesis->t1_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_CDC) || (locChargedTrackHypothesis->t1_detector() == SYS_FDC))
+		return;
 
 	//Propagates RF time to the track vertex-z, and then selects the closest RF bunch
 	double locProjectedHitTime = locChargedTrackHypothesis->time();
@@ -896,37 +894,31 @@ bool DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locCharge
 		locPropagatedRFTime -= dRFBunchFrequency;
 	while((locPropagatedRFTime - locProjectedHitTime) < (-0.5*dRFBunchFrequency))
 		locPropagatedRFTime += dRFBunchFrequency;
-	return true;
 }
 
-bool DParticleID::Calc_TrackStartTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locStartTime, double& locStartTimeVariance, bool& locUsedRFTimeFlag, bool locRFTimeFixedFlag) const
+bool DParticleID::Calc_TrackStartTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locStartTime, double& locStartTimeVariance, bool locRFTimeFixedFlag) const
 {
 	//use RF bunch if available
 	double locPropagatedRFTime = 0.0;
-	locUsedRFTimeFlag = Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch, locPropagatedRFTime, locRFTimeFixedFlag);
-	if(locUsedRFTimeFlag)
+	Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch, locPropagatedRFTime, locRFTimeFixedFlag);
+	if(locPropagatedRFTime == locPropagatedRFTime)
 	{
 		locStartTime = locPropagatedRFTime;
 		locStartTimeVariance = locEventRFBunch->dTimeVariance;
+		return true;
 	}
-	else //no confidence in selecting the RF bunch: use t0 detector if available (e.g. start counter, CDC)
+	else //NaN: no confidence in selecting the RF bunch: use t0 detector if available (e.g. start counter, CDC)
 	{
 		locStartTime = locChargedTrackHypothesis->t0();
 		locStartTimeVariance = locChargedTrackHypothesis->t0_err()*locChargedTrackHypothesis->t0_err();
+		return false;
 	}
-	return true;
 }
 
 double DParticleID::Calc_TimingChiSq(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag, unsigned int &locNDF, double& locPull) const
 {
 	double locStartTime = 0.0, locStartTimeVariance = 0.0;
-	bool locUsedRFTimeFlag = false;
-	if(!Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag, locRFTimeFixedFlag))
-	{
-		locNDF = 0;
-		locPull = 0.0;
-		return 0.0;
-	}
+	bool locUsedRFTimeFlag = Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locRFTimeFixedFlag);
 
 	if((!locUsedRFTimeFlag) && (locChargedTrackHypothesis->t0_detector() == locChargedTrackHypothesis->t1_detector())) //e.g. both CDC (not matched to any hits)
 	{
@@ -946,7 +938,7 @@ double DParticleID::Calc_TimingChiSq(const DChargedTrackHypothesis* locChargedTr
 double DParticleID::Calc_TimingChiSq(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DEventRFBunch* locEventRFBunch, unsigned int &locNDF, double& locPull) const
 {
 	double locStartTimeVariance = locEventRFBunch->dTimeVariance;
-	double locStartTime = locEventRFBunch->dMatchedToTracksFlag ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
+	double locStartTime = locEventRFBunch->dTime;
 
 	double locTimeDifferenceVariance = (locNeutralParticleHypothesis->errorMatrix())(6, 6) + locStartTimeVariance;
 	locPull = (locStartTime - locNeutralParticleHypothesis->time())/sqrt(locTimeDifferenceVariance);

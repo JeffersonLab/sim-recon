@@ -1,5 +1,9 @@
 /* mc2coda Library
  Includes module data generating functions */
+ 
+ #include <DAQ/daq_param_type.h>
+ 
+void GetPedestals(uint32_t *peds, uint32_t Npeds);
 
 #define SUPPRESS_DRIFT_CHAMBER_HITS_OVERFLOW_WARNINGS 1
 
@@ -11,6 +15,7 @@
 #define FADC250_MAX_LATENCY   2048
 #define FADC250_MAX_NSB       512
 #define FADC250_MAX_NSA       512
+#define FADC250_WINDOW_WIDTH  50
 
 /* FADC 250 Macros */
 #define FADC250_BL_HEADER(slot,blnum,cnt) {*dabufp++ =  0x80000000 | (slot << 22) | (FADC250 << 18) | ((blnum&0x3ff) << 8) | cnt; }
@@ -31,6 +36,7 @@
 
 #define FADC250_PI_SUM(chan,pn,sum)   {*dabufp++ = 0xB8000000 | (chan << 23) | (pn << 21) | (sum&0x7ffff) ; }
 #define FADC250_PI_TIME(chan,pn,time) {*dabufp++ = 0xC0000000 | (chan << 23) | (pn << 21) | (time&0x7ffff); }
+#define FADC250_PI_PED(chan,pn,ped,peak) {*dabufp++ = 0xD0000000 | (chan << 23) | (pn << 21) | ((ped&0x1ff)<<12) | (peak&0xfff); }
 
 #define FADC250_FILLER {*dabufp++ = 0xF8000000; }
 
@@ -57,6 +63,10 @@ fadc250_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
    /*printf("fadc250:_write_data: DEBUG: %d hits available"
     *       " for  slot %d roc %d.\n",hcnt, slot, roc);
     */
+	
+	// Get pedestal values (possibly randmized)
+	uint32_t peds[FADC250_MAX_CHAN+1];
+	GetPedestals(peds, FADC250_MAX_CHAN+1);
    
    /*Loop over all channels */
    for (chan=0; chan<FADC250_MAX_CHAN; chan++) {
@@ -93,9 +103,13 @@ fadc250_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
          }
       }
       /* printf("write hit data %d\n",jj); */
+      uint32_t ped = peds[FADC250_MAX_CHAN]; // common pedestal for all channels
       for (ii=0; ii < jj; ii++) {
-         FADC250_PI_SUM(chan,ii,chit[ii]->hdata[0]);
+		 uint32_t peak = ped + chit[ii]->hdata[0]/10; // Assume pulse is 20samples(=80ns) so area is ~0.5*b*h=pi -> h=pi/(b/2) where b=20samples
+		 uint32_t sum = chit[ii]->hdata[0] + ped*FADC250_WINDOW_WIDTH;
+         FADC250_PI_SUM(chan,ii,sum);
          FADC250_PI_TIME(chan,ii,chit[ii]->hdata[1]);
+	 FADC250_PI_PED(chan,ii,(ped + peds[chan]),peak); // measured pedestal has additional stochastic element
       }
    }
    
@@ -126,6 +140,7 @@ fadc250_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 #define FADC125_MAX_LATENCY   2048
 #define FADC125_MAX_NSB       512
 #define FADC125_MAX_NSA       512
+#define FADC125_WINDOW_WIDTH  50
 
 /* FADC 125 Macros */
 #define FADC125_BL_HEADER(slot,blnum,cnt) {*dabufp++ =  0x80000000 | (slot << 22) | (FADC125 << 18) | ((blnum&0x3ff) << 8) | cnt; }
@@ -143,8 +158,9 @@ fadc250_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 #define FADC125_RP_HEADER(chan,pn,fs) {*dabufp++ = 0xB0000000 | (chan << 20) | (pn << 18) | (fs&0x3ffff) ; }
 #define FADC125_RP_DATA(s1,s2) {*dabufp++ = (s1 << 16) | s2 ; }
 
-#define FADC125_PI_SUM(chan,pn,sum)   {*dabufp++ = 0xB8000000 | (chan << 20) | (pn << 18) | (sum&0x3ffff) ; }
-#define FADC125_PI_TIME(chan,pn,time) {*dabufp++ = 0xC0000000 | (chan << 20) | (pn << 18) | (time&0x3ffff); }
+#define FADC125_PI_SUM(chan,sum)   {*dabufp++ = 0xB8000000 | (chan << 20) | (sum&0xfffff) ; }
+#define FADC125_PI_TIME(chan,qf,time) {*dabufp++ = 0xC0000000 | (chan << 20) | (qf << 18) | (time&0xffff); }
+#define FADC125_PI_PED(chan,pn,ped,peak) {*dabufp++ = 0xD0000000 | ((chan << 23)&0x0f) | (pn << 21) | ((ped&0x1ff)<<12) | (peak&0xfff) ; }
 
 #define FADC125_FILLER {*dabufp++ = 0xF8000000; }
 
@@ -168,6 +184,10 @@ fadc125_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
     * is half that so change timestamp to 8ns ticks (divide by two).
     */
    timestamp = timestamp >> 1;
+
+	// Get pedestal values (possibly randmized)
+	uint32_t peds[FADC125_MAX_CHAN+1];
+	GetPedestals(peds, FADC125_MAX_CHAN+1);
 
    FADC125_BL_HEADER(slot,eventNum,1);
    FADC125_EV_HEADER(slot,eventNum);
@@ -215,9 +235,15 @@ fadc125_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
          }
       }
       /* printf("write hit data %d\n",jj); */
+      uint32_t ped = peds[FADC125_MAX_CHAN]; // common pedestal for all channels
       for (ii=0; ii < jj; ii++) {
-         FADC125_PI_SUM(chan,ii,chit[ii]->hdata[0]);
-         FADC125_PI_TIME(chan,ii,chit[ii]->hdata[1]);
+	      uint32_t peak = ped + chit[ii]->hdata[0]/10; // Assume pulse is 20samples(=160ns) so area is ~0.5*b*h=pi -> h=pi/(b/2) where b=20samples
+	      uint32_t sum = chit[ii]->hdata[0] + ped*FADC125_WINDOW_WIDTH;
+	      FADC125_PI_SUM(chan, sum);
+	      FADC125_PI_TIME(chan,0,chit[ii]->hdata[1]); // always make quality factor 0
+	      FADC125_PI_PED(chan,ii,(ped + peds[chan]),peak); // measured pedestal has additional stochastic element
+	      // f125 generally doesn't support multiple pulses so only record first one
+	      break;
       }
    }
    
@@ -620,3 +646,64 @@ caen1290_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
    
    return nwords;
 }
+
+
+#define MAX_CONFIG_PARS 20
+
+void WriteDAQconfigBank(CODA_CRATE_MAP *crate, int roc)
+{
+	
+	// Get type of digitization modules in this crate. Assume all are the same
+	enum type_id_t modtype = UNKNOWN;
+	int i;
+	for(i=0; i<crate->nModules; i++){
+		if(crate->module_map[i]>TID && crate->module_map[i]<TD){
+			modtype = crate->module_map[i];
+			break;
+		}
+	}
+	
+	// Write parameters based on module type
+	uint32_t Npar = 0;
+	uint32_t partype[MAX_CONFIG_PARS];
+	uint32_t parvalue[MAX_CONFIG_PARS];
+	switch(modtype){
+		case FADC250:
+			partype[Npar] = kPARAM250_NSA_NSB;   parvalue[Npar++] = FADC250_WINDOW_WIDTH;
+			partype[Npar] = kPARAM250_NPED;      parvalue[Npar++] = 4; // hardwired in 1st gen. firmware
+			break;
+		case FADC125:
+			partype[Npar] = kPARAM125_WINWIDTH;  parvalue[Npar++] = FADC125_WINDOW_WIDTH;
+			partype[Npar] = kPARAM125_NPED;      parvalue[Npar++] = 4; // hardwired in 1st gen. firmware
+			break;
+		case F1TDC32:
+		case F1TDC48:
+			partype[Npar] = kPARAMF1_REFCNT;     parvalue[Npar++] = 0; // Need to get a real number here
+			partype[Npar] = kPARAMF1_HSDIV;      parvalue[Npar++] = 0; // Need to get a real number here
+			break;
+		default:
+			break;
+	}
+
+	// If no parameters to write, then don't write bank at all
+	if(Npar == 0) return;
+
+	// Open data bank of type DAQConfig=0x55
+	DATA_BANK_OPEN(0,0x55,1);
+
+	// write header word
+	uint32_t slot_mask = crate->moduleMask;
+	*dabufp++ = (Npar<<24) | slot_mask;
+	
+	// Write all parameters
+	uint32_t ii;
+	for(ii=0; ii<Npar; ii++){
+		*dabufp++ = (partype[ii]<<16) | (parvalue[ii]);
+	}
+	
+	// Close data bank (see note above regarding DATA_BANK_CLOSE)
+	DATA_BANK_CLOSE;
+}
+
+
+

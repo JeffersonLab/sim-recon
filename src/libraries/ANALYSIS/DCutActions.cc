@@ -631,7 +631,7 @@ string DCutAction_GoodEventRFBunch::Get_ActionName(void) const
 bool DCutAction_GoodEventRFBunch::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
-	return (dCutIfBadRFBunchFlag == locEventRFBunch->dMatchedToTracksFlag);
+	return (locEventRFBunch->dTime == locEventRFBunch->dTime);
 }
 
 string DCutAction_TransverseMomentum::Get_ActionName(void) const

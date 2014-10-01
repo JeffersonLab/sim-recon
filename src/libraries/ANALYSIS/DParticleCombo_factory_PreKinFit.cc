@@ -388,7 +388,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 					locPreviousPhotonRFDeltaTPairs.insert(locPhotonRFDeltaTPair);
 				}
 
-				if((fabs(locDeltaT) < locMaxPhotonRFDeltaT.second) || (!locEventRFBunches[loc_j]->dMatchedToTracksFlag) || (!locMaxPhotonRFDeltaT.first))
+				if((fabs(locDeltaT) < locMaxPhotonRFDeltaT.second) || (!(locEventRFBunches[loc_j]->dTime == locEventRFBunches[loc_j]->dTime)) || (!locMaxPhotonRFDeltaT.first))
 					locCandidatePhotons[locReactionRFPair].insert(locBeamPhotons[loc_k]);
 			}
 		}

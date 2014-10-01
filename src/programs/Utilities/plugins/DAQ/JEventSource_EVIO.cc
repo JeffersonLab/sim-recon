@@ -88,7 +88,11 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	DUMP_MODULE_MAP = false;
 	MAKE_DOM_TREE = true;
 	PARSE_EVIO_EVENTS = true;
-	BUFFER_SIZE = 2000000; // in bytes
+	PARSE_F250 = true;
+	PARSE_F125 = true;
+	PARSE_F1TDC = true;
+	PARSE_CAEN1290TDC = true;
+	BUFFER_SIZE = 20000000; // in bytes
 	ET_STATION_NEVENTS = 10;
 	ET_STATION_CREATE_BLOCKING = false;
 	LOOP_FOREVER = false;
@@ -112,6 +116,11 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:DUMP_MODULE_MAP", DUMP_MODULE_MAP, "Write module map used to file when source is destroyed. n.b. If more than one input file is used, the map file will be overwritten!");
 		gPARMS->SetDefaultParameter("EVIO:MAKE_DOM_TREE", MAKE_DOM_TREE, "Set this to 0 to disable generation of EVIO DOM Tree and parsing of event. (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:PARSE_EVIO_EVENTS", PARSE_EVIO_EVENTS, "Set this to 0 to disable parsing of event but still make the DOM tree, so long as MAKE_DOM_TREE isn't set to 0. (for benchmarking/debugging)");
+		gPARMS->SetDefaultParameter("EVIO:PARSE_F250", PARSE_F250, "Set this to 0 to disable parsing of data from F250 ADC modules (for benchmarking/debugging)");
+		gPARMS->SetDefaultParameter("EVIO:PARSE_F125", PARSE_F125, "Set this to 0 to disable parsing of data from F125 ADC modules (for benchmarking/debugging)");
+		gPARMS->SetDefaultParameter("EVIO:PARSE_F1TDC", PARSE_F1TDC, "Set this to 0 to disable parsing of data from F1TDC modules (for benchmarking/debugging)");
+		gPARMS->SetDefaultParameter("EVIO:PARSE_CAEN1290TDC", PARSE_CAEN1290TDC, "Set this to 0 to disable parsing of data from CAEN 1290 TDC modules (for benchmarking/debugging)");
+
 		gPARMS->SetDefaultParameter("EVIO:BUFFER_SIZE", BUFFER_SIZE, "Size in bytes to allocate for holding a single EVIO event.");
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_NEVENTS", ET_STATION_NEVENTS, "Number of events to use if we have to create the ET station. Ignored if station already exists.");
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_CREATE_BLOCKING", ET_STATION_CREATE_BLOCKING, "Set this to 0 to create station in non-blocking mode (default is to create it in blocking mode). Ignored if station already exists.");
@@ -175,6 +184,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	// n.b. there is an ugly hack down in GetObjects that will
 	// probably also need a line added for each data type added
 	// here.
+	event_source_data_types.insert("Df250Config");
 	event_source_data_types.insert("Df250PulseIntegral");
 	event_source_data_types.insert("Df250StreamingRawData");
 	event_source_data_types.insert("Df250WindowSum");
@@ -183,13 +193,16 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	event_source_data_types.insert("Df250PulseTime");
 	event_source_data_types.insert("Df250PulsePedestal");
 	event_source_data_types.insert("Df250WindowRawData");
+	event_source_data_types.insert("Df125Config");
 	event_source_data_types.insert("Df125PulseIntegral");
 	event_source_data_types.insert("Df125TriggerTime");
 	event_source_data_types.insert("Df125PulseTime");
 	event_source_data_types.insert("Df125PulsePedestal");
 	event_source_data_types.insert("Df125WindowRawData");
+	event_source_data_types.insert("DF1TDCConfig");
 	event_source_data_types.insert("DF1TDCHit");
 	event_source_data_types.insert("DF1TDCTriggerTime");
+	event_source_data_types.insert("DCAEN1290TDCConfig");
 	event_source_data_types.insert("DCAEN1290TDCHit");
 
 	// Read in optional module type translation map if it exists	
@@ -646,6 +659,7 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 	objs_ptr->run_number      = empty_event ? objs_ptr->run_number:objs->run_number;
 	objs_ptr->own_objects     = objs->own_objects;
 	objs_ptr->hit_objs        = objs->hit_objs;
+	objs_ptr->config_objs     = objs->config_objs;
 	objs_ptr->eviobuff_parsed = objs->eviobuff_parsed;
 	//objs_ptr->eviobuff        = objs->eviobuff;        // Don't copy this! (it causes memory leak)
 	//objs_ptr->eviobuff_size   = objs->eviobuff_size;
@@ -918,6 +932,14 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		JObject *hit_obj = hit_objs[i];
 		hit_objs_by_type[hit_obj->className()].push_back(hit_obj);
 	}
+
+	// Make list of config objects of each type
+	map<string, vector<JObject*> > config_objs_by_type;
+	vector<DDAQConfig*> &config_objs = objs_ptr->config_objs;
+	for(unsigned int i=0; i<config_objs.size(); i++){
+		JObject *config_obj = config_objs[i];
+		config_objs_by_type[config_obj->className()].push_back(config_obj);
+	}
 	
 	// In order for the janadot plugin to properly display the callgraph, we need to
 	// make entries for each of the object types that we generated from data in the file.
@@ -931,15 +953,19 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	}
 
 	// Optionally generate Df250PulseIntegral and Df250PulseTime objects from Df250WindowRawData objects. 
-	if(EMULATE_PULSE_INTEGRAL_MODE && (hit_objs_by_type["Df250PulseIntegral"].size()==0)){
+	if(EMULATE_PULSE_INTEGRAL_MODE && !hit_objs_by_type["Df250WindowRawData"].empty()){
 		vector<JObject*> pt_objs;
 		vector<JObject*> pp_objs;
-		EmulateDf250PulseTime(hit_objs_by_type["Df250WindowRawData"], pt_objs, pp_objs);
+		if(hit_objs_by_type["Df250PulseTime"].empty()){
+			EmulateDf250PulseTime(hit_objs_by_type["Df250WindowRawData"], pt_objs, pp_objs);
+		}
 		if(pt_objs.size() != 0) hit_objs_by_type["Df250PulseTime"] = pt_objs;
 		if(pp_objs.size() != 0) hit_objs_by_type["Df250PulsePedestal"] = pp_objs;
 
 		vector<JObject*> pi_objs;
-		EmulateDf250PulseIntegral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
+		if(hit_objs_by_type["Df250PulseIntegral"].empty()){
+			EmulateDf250PulseIntegral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
+		}
 		if(pi_objs.size() != 0) hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
 		
 		// Add entries to JANA's callstack to indicate correct relationship of emulated objects
@@ -962,15 +988,19 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	}
 
 	// Optionally generate Df125PulseIntegral and Df125PulseTime objects from Df125WindowRawData objects. 
-	if(EMULATE_PULSE_INTEGRAL_MODE && (hit_objs_by_type["Df125PulseIntegral"].size()==0)){
+	if(EMULATE_PULSE_INTEGRAL_MODE && !hit_objs_by_type["Df125WindowRawData"].empty()){
 		vector<JObject*> pt_objs;
 		vector<JObject*> pp_objs;
-		EmulateDf125PulseTime(hit_objs_by_type["Df125WindowRawData"], pt_objs, pp_objs);
+		if(hit_objs_by_type["Df125PulseTime"].empty()){
+			EmulateDf125PulseTime(hit_objs_by_type["Df125WindowRawData"], pt_objs, pp_objs);
+		}
 		if(pt_objs.size() != 0) hit_objs_by_type["Df125PulseTime"] = pt_objs;
 		if(pp_objs.size() != 0) hit_objs_by_type["Df125PulsePedestal"] = pp_objs;
 
 		vector<JObject*> pi_objs;
-		EmulateDf125PulseIntegral(hit_objs_by_type["Df125WindowRawData"], pi_objs);
+		if(hit_objs_by_type["Df125PulseIntegral"].empty()){
+			EmulateDf125PulseIntegral(hit_objs_by_type["Df125WindowRawData"], pi_objs);
+		}
 		if(pi_objs.size() != 0) hit_objs_by_type["Df125PulseIntegral"] = pi_objs;	
 		
 		// Add entries to JANA's callstack to indicate correct relationship of emulated objects
@@ -1028,6 +1058,25 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			pi->pedestal = vpp[0]->pedestal;
 		}
 	}
+	
+	// Associate any DDAQConfig objects with hit objects to which they should apply.
+	for(unsigned int j=0; j<config_objs.size(); j++){
+		DDAQConfig *config = config_objs[j];
+		for(unsigned int i=0; i<hit_objs.size(); i++){
+			DDAQAddress *hit = hit_objs[i];
+			if(hit->rocid != config->rocid) continue;
+			if( (1<<hit->slot) & config->slot_mask){
+				hit->AddAssociatedObject(config);
+			}
+		}
+	}
+
+	// Loop over types of config objects, copying to appropriate factory
+	map<string, vector<JObject*> >::iterator config_iter = config_objs_by_type.begin();
+	for(; config_iter!=config_objs_by_type.end(); config_iter++){
+		JFactory_base *fac = loop->GetFactory(config_iter->first);
+		if(fac) fac->CopyTo(config_iter->second);
+	}
 
 	// Loop over types of data objects, copying to appropriate factory
 	map<string, vector<JObject*> >::iterator iter = hit_objs_by_type.begin();
@@ -1068,7 +1117,8 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			// type of the factory and make the appropriate cast
 			string dataClassName = fac->GetDataClassName();
 			int checkSourceFirst = 1;
-			if(     dataClassName == "Df250PulseIntegral")    checkSourceFirst = ((JFactory<Df250PulseIntegral   >*)fac)->GetCheckSourceFirst();
+			if(     dataClassName == "Df250Config")           checkSourceFirst = ((JFactory<Df250Config          >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df250PulseIntegral")    checkSourceFirst = ((JFactory<Df250PulseIntegral   >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df250StreamingRawData") checkSourceFirst = ((JFactory<Df250StreamingRawData>*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df250WindowSum")        checkSourceFirst = ((JFactory<Df250WindowSum       >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df250PulseRawData")     checkSourceFirst = ((JFactory<Df250PulseRawData    >*)fac)->GetCheckSourceFirst();
@@ -1076,13 +1126,16 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			else if(dataClassName == "Df250PulseTime")        checkSourceFirst = ((JFactory<Df250PulseTime       >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df250PulsePedestal")    checkSourceFirst = ((JFactory<Df250PulsePedestal   >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df250WindowRawData")    checkSourceFirst = ((JFactory<Df250WindowRawData   >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df125Config")           checkSourceFirst = ((JFactory<Df125Config          >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df125PulseIntegral")    checkSourceFirst = ((JFactory<Df125PulseIntegral   >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df125TriggerTime")      checkSourceFirst = ((JFactory<Df125TriggerTime     >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df125PulseTime")        checkSourceFirst = ((JFactory<Df125PulseTime       >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df125PulsePedestal")    checkSourceFirst = ((JFactory<Df125PulsePedestal   >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df125WindowRawData")    checkSourceFirst = ((JFactory<Df125WindowRawData   >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "DF1TDCConfig")          checkSourceFirst = ((JFactory<DF1TDCConfig         >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "DF1TDCHit")             checkSourceFirst = ((JFactory<DF1TDCHit            >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "DF1TDCTriggerTime")     checkSourceFirst = ((JFactory<DF1TDCTriggerTime    >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "DCAEN1290TDCConfig")    checkSourceFirst = ((JFactory<DCAEN1290TDCConfig   >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "DCAEN1290TDCHit")       checkSourceFirst = ((JFactory<DCAEN1290TDCHit      >*)fac)->GetCheckSourceFirst();
 
 			if(checkSourceFirst) {
@@ -1799,6 +1852,7 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
 		events2.pop_front();
 		
 		objs1->hit_objs.insert(objs1->hit_objs.end(), objs2->hit_objs.begin(), objs2->hit_objs.end());
+		objs1->config_objs.insert(objs1->config_objs.end(), objs2->config_objs.begin(), objs2->config_objs.end());
 		
 		// Delete the objs2 container
 		delete objs2;
@@ -1998,7 +2052,7 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
 {
 	if(VERBOSE>5) evioout << "     Entering ParseModuleConfiguration()" << endl;
 	
-	/// Parse a back of module configuration data. These are configuration values
+	/// Parse a bank of module configuration data. These are configuration values
 	/// programmed into the module at the beginning of the run that may be needed
 	/// in the offline. For example, the number of samples to sum in a FADC pulse
 	/// integral.
@@ -2033,9 +2087,11 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
 			daq_param_type ptype = (daq_param_type)((*iptr)>>16);
 			uint16_t val = (*iptr) & 0xFFFF;
 			
+			if(VERBOSE>6) evioout << "       DAQ parameter of type: 0x" << hex << ptype << dec << "  found with value: " << val << endl;
+			
 			// Create config object of correct type if needed. (Only one type
 			// should be created per section!)
-			switch(ptype>>16){
+			switch(ptype>>8){
 				case 0x05: if(!f250config       ) f250config        = new Df250Config(rocid, slot_mask);        break;
 				case 0x0F: if(!f125config       ) f125config        = new Df125Config(rocid, slot_mask);        break;
 				case 0x06: if(!f1tdcconfig      ) f1tdcconfig       = new DF1TDCConfig(rocid, slot_mask);       break;
@@ -2178,6 +2234,8 @@ void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr
 void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
 {
 	/// Parse data from a single FADC250 module.
+
+	if(!PARSE_F250){ iptr = iend; return; }
 
 	// This will get updated to point to a newly allocated object when an
 	// event header is encountered. The existing value (if non-NULL) is
@@ -2497,6 +2555,11 @@ void JEventSource_EVIO::MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uin
 void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
 	/// Parse data from a single FADC125 module.
+	/// This is currently written assuming that the Pulse Integral, Pulse Time, and Pulse Pedestal 
+	/// data formats follow what is in the file:
+	/// https://halldweb1.jlab.org/wiki/index.php/File:FADC125_dataformat_250_modes.docx
+
+	if(!PARSE_F125){ iptr = iend; return; }
 
 	// This will get updated to point to a newly allocated object when an
 	// event header is encountered. The existing value (if non-NULL) is
@@ -2516,6 +2579,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 	//uint32_t slot_event_header;
 	uint32_t itrigger = -1;
 	uint32_t last_itrigger = -2;
+	uint32_t last_pulse_time_channel=0;
 	
 	// Loop over data words
 	for(; iptr<iend; iptr++){
@@ -2580,27 +2644,25 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				MakeDf125WindowRawData(objs, rocid, slot, itrigger, iptr);
 				break;
 			case 7: // Pulse Integral
-				channel = (*iptr>>20) & 0x7F;  // is this right??
-				pulse_number = (*iptr>>18) & 0x03;
-				sum = (*iptr>>0) & 0x3FFFF;
-                                quality_factor = 0;
-				if(objs) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum));
+				channel = (*iptr>>20) & 0x7F;
+				sum = (*iptr>>0) & 0xFFFFF;
+ 				if(objs) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum));
 				break;
 			case 8: // Pulse Time
-				channel = (*iptr>>20) & 0x7F; // is this right??
-				pulse_number = (*iptr>>18) & 0x03;
-				pulse_time = (*iptr>>0) & 0x3FFFF;
-                                quality_factor = 0;
-				if(objs) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
+				channel = (*iptr>>20) & 0x7F;
+				quality_factor = (*iptr>>18) & 0x03;
+				pulse_time = (*iptr>>0) & 0xFFFF;
+ 				if(objs) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
+				last_pulse_time_channel = channel;
 				break;
 			case 10: // Pulse Pedestal
-				channel = (*iptr>>23) & 0x0F;
+				//channel = (*iptr>>20) & 0x7F;
+				channel = last_pulse_time_channel; // not enough bits to hold channel number so rely on proximity to Pulse Time in data stream (see "FADC125 dataformat 250 modes.docx")
 				pulse_number = (*iptr>>21) & 0x03;
 				pedestal = (*iptr>>12) & 0x1FF;
 				pulse_peak = (*iptr>>0) & 0xFFF;
 				if(objs) objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
 				break;
-			//case 4: // Window Raw Data
 			case 5: // Window Sum
 			case 6: // Pulse Raw Data
 			case 9: // Streaming Raw Data
@@ -2779,6 +2841,8 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 	/// Parse data from a single F1TDCv2 (32 ch) or F1TDCv3 (48 ch) module.
 	/// This code is based on the document F1TDC_V2_V3_4_29_14.pdf obtained from:
 	/// https://coda.jlab.org/wiki/index.php/JLab_Module_Manuals
+
+	if(!PARSE_F1TDC){ iptr = iend; return; }
 
 	if(VERBOSE>0) evioout << "  Entering ParseF1TDCBank (rocid=" << rocid << ")" << endl;
 
@@ -3006,6 +3070,8 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 {
 	/// Parse data from a CAEN 1190 or 1290 module
 	/// (See ppg. 72-74 of V1290_REV15.pdf manual)
+
+	if(!PARSE_CAEN1290TDC){ iptr = iend; return; }
 	
 	uint32_t slot = 0;
 	uint32_t event_count = 0;

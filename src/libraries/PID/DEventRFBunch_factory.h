@@ -32,6 +32,8 @@
 #include <BCAL/DBCALShower.h>
 #include <TOF/DTOFPoint.h>
 #include <PID/DBeamPhoton.h>
+#include <TAGGER/DTAGMHit.h>
+#include <TAGGER/DTAGHHit.h>
 
 #include <HDGEOMETRY/DGeometry.h>
 #include <DANA/DApplication.h>

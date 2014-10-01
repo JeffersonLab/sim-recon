@@ -730,19 +730,19 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 
 			locHistName = "BCALNeutralShowerDeltaT";
 			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-				dHist_BCALNeutralShowerDeltaT = new TH1I(locHistName.c_str(), ";BCAL Neutral Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)", dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				dHist_BCALNeutralShowerDeltaT = new TH1I(locHistName.c_str(), ";BCAL Neutral Shower #Deltat (Propagated - RF) (ns)", dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
 			else //already created by another thread
 				dHist_BCALNeutralShowerDeltaT = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 
 			locHistName = "BCALNeutralShowerDeltaTVsE";
 			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-				dHist_BCALNeutralShowerDeltaTVsE = new TH2I(locHistName.c_str(), ";BCAL Neutral Shower Energy (GeV);BCAL Neutral Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)", dNum2DShowerEnergyBins, dMinShowerEnergy, dMaxBCALP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				dHist_BCALNeutralShowerDeltaTVsE = new TH2I(locHistName.c_str(), ";BCAL Neutral Shower Energy (GeV);BCAL Neutral Shower #Deltat (ns)", dNum2DShowerEnergyBins, dMinShowerEnergy, dMaxBCALP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
 			else //already created by another thread
 				dHist_BCALNeutralShowerDeltaTVsE = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
 			locHistName = "BCALNeutralShowerDeltaTVsZ";
 			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-				dHist_BCALNeutralShowerDeltaTVsZ = new TH2I(locHistName.c_str(), ";BCAL Neutral Shower Z (cm);BCAL Neutral Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)", dNum2DBCALZBins, 0.0, 450.0, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				dHist_BCALNeutralShowerDeltaTVsZ = new TH2I(locHistName.c_str(), ";BCAL Neutral Shower Z (cm);BCAL Neutral Shower #Deltat (ns)", dNum2DBCALZBins, 0.0, 450.0, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
 			else //already created by another thread
 				dHist_BCALNeutralShowerDeltaTVsZ = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
@@ -767,13 +767,13 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 
 			locHistName = "FCALNeutralShowerDeltaT";
 			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-				dHist_FCALNeutralShowerDeltaT = new TH1I(locHistName.c_str(), ";FCAL Neutral Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)", dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				dHist_FCALNeutralShowerDeltaT = new TH1I(locHistName.c_str(), ";FCAL Neutral Shower #Deltat (Propagated - RF) (ns)", dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
 			else //already created by another thread
 				dHist_FCALNeutralShowerDeltaT = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 
 			locHistName = "FCALNeutralShowerDeltaTVsE";
 			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-				dHist_FCALNeutralShowerDeltaTVsE = new TH2I(locHistName.c_str(), ";FCAL Neutral Shower Energy (GeV);FCAL Neutral Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)", dNum2DShowerEnergyBins, dMinShowerEnergy, dMaxShowerEnergy, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				dHist_FCALNeutralShowerDeltaTVsE = new TH2I(locHistName.c_str(), ";FCAL Neutral Shower Energy (GeV);FCAL Neutral Shower #Deltat (ns)", dNum2DShowerEnergyBins, dMinShowerEnergy, dMaxShowerEnergy, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
 			else //already created by another thread
 				dHist_FCALNeutralShowerDeltaTVsE = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
@@ -879,21 +879,21 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 					dHistMap_BCALShowerTrackDepthVsP[locPIDPair] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
 				locHistName = "BCALShowerDeltaT";
-				locHistTitle = locParticleROOTName + ";BCAL Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)";
+				locHistTitle = locParticleROOTName + ";BCAL Shower #Deltat (Propagated - RF) (ns)";
 				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
 					dHistMap_BCALShowerDeltaT[locPIDPair] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
 				else //already created by another thread
 					dHistMap_BCALShowerDeltaT[locPIDPair] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 
 				locHistName = "BCALShowerDeltaTVsZ";
-				locHistTitle = locParticleROOTName + ";BCAL Shower Z (cm);BCAL Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)";
+				locHistTitle = locParticleROOTName + ";BCAL Shower Z (cm);BCAL Shower #Deltat (ns)";
 				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
 					dHistMap_BCALShowerDeltaTVsZ[locPIDPair] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DBCALZBins, 0.0, 450.0, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
 				else //already created by another thread
 					dHistMap_BCALShowerDeltaTVsZ[locPIDPair] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
 				locHistName = "BCALShowerDeltaTVsP";
-				locHistTitle = locParticleROOTName + ";p (GeV/c);BCAL Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)";
+				locHistTitle = locParticleROOTName + ";p (GeV/c);BCAL Shower #Deltat (ns)";
 				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
 					dHistMap_BCALShowerDeltaTVsP[locPIDPair] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxBCALP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
 				else //already created by another thread
@@ -930,14 +930,14 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 					dHistMap_FCALShowerTrackDepthVsP[locPIDPair] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
 				locHistName = "FCALShowerDeltaT";
-				locHistTitle = locParticleROOTName + ";FCAL Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)";
+				locHistTitle = locParticleROOTName + ";FCAL Shower #Deltat (Propagated - RF) (ns)";
 				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
 					dHistMap_FCALShowerDeltaT[locPIDPair] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
 				else //already created by another thread
 					dHistMap_FCALShowerDeltaT[locPIDPair] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 
 				locHistName = "FCALShowerDeltaTVsP";
-				locHistTitle = locParticleROOTName + ";p (GeV/c);FCAL Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)";
+				locHistTitle = locParticleROOTName + ";p (GeV/c);FCAL Shower #Deltat (ns)";
 				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
 					dHistMap_FCALShowerDeltaTVsP[locPIDPair] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
 				else //already created by another thread
@@ -967,14 +967,14 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 					dHistMap_TOFTrackDOCA[locPIDPair] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 
 				locHistName = "TOFDeltaT";
-				locHistTitle = locParticleROOTName + ";TOF Point #Deltat (t_{Hit} - t_{Flight} - t_{RF}) (ns)";
+				locHistTitle = locParticleROOTName + ";TOF Point #Deltat (Propagated - RF) (ns)";
 				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
 					dHistMap_TOFDeltaT[locPIDPair] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
 				else //already created by another thread
 					dHistMap_TOFDeltaT[locPIDPair] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 
 				locHistName = "TOFDeltaTVsP";
-				locHistTitle = locParticleROOTName + ";p (GeV/c);TOF Point #Deltat (t_{Hit} - t_{Flight} - t_{RF}) (ns)";
+				locHistTitle = locParticleROOTName + ";p (GeV/c);TOF Point #Deltat (ns)";
 				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
 					dHistMap_TOFDeltaTVsP[locPIDPair] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
 				else //already created by another thread
@@ -1031,28 +1031,28 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 					dHistMap_SCPhiVsTheta[locPIDPair] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
 				locHistName = "SCDeltaT";
-				locHistTitle = locParticleROOTName + ";SC Point #Deltat (t_{Hit} - t_{Flight} - t_{RF}) (ns)";
+				locHistTitle = locParticleROOTName + ";SC Point #Deltat (Propagated - RF) (ns)";
 				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
 					dHistMap_SCDeltaT[locPIDPair] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
 				else //already created by another thread
 					dHistMap_SCDeltaT[locPIDPair] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 
 				locHistName = "SCDeltaTVsP";
-				locHistTitle = locParticleROOTName + ";p (GeV/c);SC Point #Deltat (t_{Hit} - t_{Flight} - t_{RF}) (ns)";
+				locHistTitle = locParticleROOTName + ";p (GeV/c);SC Point #Deltat (Propagated - RF) (ns)";
 				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
 					dHistMap_SCDeltaTVsP[locPIDPair] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
 				else //already created by another thread
 					dHistMap_SCDeltaTVsP[locPIDPair] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
 				locHistName = "SCDeltaTVsPhi";
-				locHistTitle = locParticleROOTName + ";#phi#circ;SC Point #Deltat (t_{Hit} - t_{Flight} - t_{RF}) (ns)";
+				locHistTitle = locParticleROOTName + ";#phi#circ;SC Point #Deltat (ns)";
 				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
 					dHistMap_SCDeltaTVsPhi[locPIDPair] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
 				else //already created by another thread
 					dHistMap_SCDeltaTVsPhi[locPIDPair] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
 				locHistName = "SCDeltaTVsTheta";
-				locHistTitle = locParticleROOTName + ";#theta#circ;SC Point #Deltat (t_{Hit} - t_{Flight} - t_{RF}) (ns)";
+				locHistTitle = locParticleROOTName + ";#theta#circ;SC Point #Deltat (ns)";
 				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
 					dHistMap_SCDeltaTVsTheta[locPIDPair] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
 				else //already created by another thread
@@ -2581,7 +2581,7 @@ bool DHistogramAction_ParticleComboGenReconComparison::Perform_Action(JEventLoop
 	locEventLoop->GetSingle(locThrownEventRFBunch, "Thrown");
 
 	//RF time difference
-	double locRFTime = locEventRFBunch->dMatchedToTracksFlag ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
+	double locRFTime = locEventRFBunch->dTime;
 	double locRFDeltaT = locRFTime - locThrownEventRFBunch->dTime;
 	japp->RootWriteLock();
 	{
@@ -3898,7 +3898,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches);
 	const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
-	double locRFTime = locEventRFBunch->dMatchedToTracksFlag ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
+	double locRFTime = locEventRFBunch->dTime;
 	double locRFDeltaT = locRFTime - locThrownEventRFBunch->dTime;
 	japp->RootWriteLock();
 	{
@@ -4493,7 +4493,7 @@ void DHistogramAction_NumReconstructedObjects::Initialize(JEventLoop* locEventLo
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
 				dHist_NumFDCHits = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_NumFDCHits = new TH1I(locHistName.c_str(), ";# DFDCHit", dMaxNumFDCHits + 1, -0.5, (float)dMaxNumFDCHits + 0.5);
+				dHist_NumFDCHits = new TH1I(locHistName.c_str(), ";# DFDCHit", dMaxNumFDCHits/2 + 1, -0.5, (float)dMaxNumFDCHits - 0.5 + 2.0);
 
 			locHistName = "NumTOFHits";
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
