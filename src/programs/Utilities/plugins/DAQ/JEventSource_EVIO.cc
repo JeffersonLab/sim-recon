@@ -104,6 +104,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	EMULATE_FADC125_TIME_THRESHOLD = 80;
 	MODTYPE_MAP_FILENAME = "modtype.map";
 	ENABLE_DISENTANGLING = true;
+	F250_IGNORE_PULSETIME = false;
+	F125_IGNORE_PULSETIME = false;
 	F250_THRESHOLD = 120;
 	F250_NSA = 50;
 	F250_NSB = 5;
@@ -133,6 +135,9 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("ET:TIMEOUT", TIMEOUT, "Set the timeout in seconds for each attempt at reading from ET system (repeated attempts will still be made indefinitely until program quits or the quit_on_et_timeout flag is set.");
 		gPARMS->SetDefaultParameter("EVIO:MODTYPE_MAP_FILENAME", MODTYPE_MAP_FILENAME, "Optional module type conversion map for use with files generated with the non-standard module types");
 		gPARMS->SetDefaultParameter("EVIO:ENABLE_DISENTANGLING", ENABLE_DISENTANGLING, "Enable/disable disentangling of multi-block events. Enabled by default. Set to 0 to disable.");
+
+		gPARMS->SetDefaultParameter("EVIO:F250_IGNORE_PULSETIME", F250_IGNORE_PULSETIME, "Set this to non-zero to inhibit creation of Df250PulseTime and Df250PulsePedestal objects directly from data stream. If Window Raw Data exists, these objects may still be created from it.");
+		gPARMS->SetDefaultParameter("EVIO:F125_IGNORE_PULSETIME", F125_IGNORE_PULSETIME, "Set this to non-zero to inhibit creation of Df125PulseTime and Df125PulsePedestal objects directly from data stream. If Window Raw Data exists, these objects may still be created from it.");
 
 		gPARMS->SetDefaultParameter("EVIO:F250_THRESHOLD", F250_THRESHOLD, "For F250 window raw data. Threshold to emulate a PulseIntegral and PulseTime objects.");
 		gPARMS->SetDefaultParameter("EVIO:F250_NSA", F250_NSA, "For f250PulseIntegral object.  NSA value for emulation from window raw data and for pulse integral pedestal normalization.");
@@ -986,7 +991,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		LinkAssociations(da_pt_objs, da_pp_objs);
 		LinkAssociations(da_pi_objs, da_pp_objs);
 	}
-
+	
 	// Optionally generate Df125PulseIntegral and Df125PulseTime objects from Df125WindowRawData objects. 
 	if(EMULATE_PULSE_INTEGRAL_MODE && !hit_objs_by_type["Df125WindowRawData"].empty()){
 		vector<JObject*> pt_objs;
@@ -2345,7 +2350,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				pulse_number = (*iptr>>21) & 0x03;
 				quality_factor = (*iptr>>19) & 0x03;
 				pulse_time = (*iptr>>0) & 0x7FFFF;
-				if(objs) objs->hit_objs.push_back(new Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
+				if(objs && !F250_IGNORE_PULSETIME) objs->hit_objs.push_back(new Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 				break;
 			case 9: // Streaming Raw Data
 				// This is marked "reserved for future implementation" in the current manual (v2).
@@ -2356,7 +2361,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				pulse_number = (*iptr>>21) & 0x03;
 				pedestal = (*iptr>>12) & 0x1FF;
 				pulse_peak = (*iptr>>0) & 0xFFF;
-				if(objs) objs->hit_objs.push_back(new Df250PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
+				if(objs && !F250_IGNORE_PULSETIME) objs->hit_objs.push_back(new Df250PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
 				break;
 			case 13: // Event Trailer
 				// This is marked "suppressed for normal readout – debug mode only" in the
@@ -2652,7 +2657,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				channel = (*iptr>>20) & 0x7F;
 				quality_factor = (*iptr>>18) & 0x03;
 				pulse_time = (*iptr>>0) & 0xFFFF;
- 				if(objs) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
+ 				if(objs && !F125_IGNORE_PULSETIME) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 				last_pulse_time_channel = channel;
 				break;
 			case 10: // Pulse Pedestal
@@ -2661,7 +2666,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				pulse_number = (*iptr>>21) & 0x03;
 				pedestal = (*iptr>>12) & 0x1FF;
 				pulse_peak = (*iptr>>0) & 0xFFF;
-				if(objs) objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
+				if(objs && !F125_IGNORE_PULSETIME) objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
 				break;
 			case 5: // Window Sum
 			case 6: // Pulse Raw Data
