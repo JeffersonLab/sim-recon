@@ -476,7 +476,7 @@ double DAnalysisUtilities::Calc_Beta_Timing(const DChargedTrackHypothesis* locCh
 {
 	double locStartTime = 0.0, locStartTimeVariance = 0.0;
 	bool locUsedRFTimeFlag;
-	if(!dPIDAlgorithm->Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag, locRFTimeFixedFlag))
+	if(!dPIDAlgorithm->Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locRFTimeFixedFlag))
 		return numeric_limits<double>::quiet_NaN();
 	if((!locUsedRFTimeFlag) && (locChargedTrackHypothesis->t0_detector() == locChargedTrackHypothesis->t1_detector()))
 		return numeric_limits<double>::quiet_NaN(); //didn't use RF time, and t0/t1 detectors are the same: don't compute difference

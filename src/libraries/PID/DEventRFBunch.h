@@ -23,7 +23,6 @@ class DEventRFBunch : public jana::JObject
 
 		double dTime; //The RF time propagated to the center of the target.  This time is defined at the center of the target. 
 		double dTimeVariance;
-		bool dMatchedToTracksFlag; //true if confident in value from matching to tracks, otherwise false (just keeps raw value)
 
 		void toStrings(vector<pair<string,string> > &items) const
 		{

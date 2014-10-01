@@ -116,7 +116,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory_KinFit::Build_Neu
 
 	// Calculate DNeutralParticleHypothesis FOM
 	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
-	double locRFTime = locEventRFBunch->dMatchedToTracksFlag ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
+	double locRFTime = locEventRFBunch->dTime;
 	double locPropagatedRFTime = locRFTime + (locNewNeutralParticleHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
 	double locStartTimeVariance = locEventRFBunch->dTimeVariance;
 
