@@ -2664,17 +2664,17 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 			case 8: // Pulse Time
 				if(VERBOSE>7) evioout << "      FADC125 Pulse Time"<<endl;
 				channel = (*iptr>>20) & 0x7F;
-				quality_factor = (*iptr>>18) & 0x03;
+				pulse_number = (*iptr>>18) & 0x03;
 				pulse_time = (*iptr>>0) & 0xFFFF;
  				if(objs && !F125_IGNORE_PULSETIME) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 				last_pulse_time_channel = channel;
 				break;
-			case 10: // Pulse Pedestal
+			case 10: // Pulse Pedestal (consistent with Beni's hand-edited version of Cody's document)
 				if(VERBOSE>7) evioout << "      FADC125 Pulse Pedestal"<<endl;
-				//channel = (*iptr>>20) & 0x7F;
-				channel = last_pulse_time_channel; // not enough bits to hold channel number so rely on proximity to Pulse Time in data stream (see "FADC125 dataformat 250 modes.docx")
-				pulse_number = (*iptr>>21) & 0x03;
-				pedestal = (*iptr>>12) & 0x1FF;
+				channel = (*iptr>>20) & 0x7F;
+				//channel = last_pulse_time_channel; // not enough bits to hold channel number so rely on proximity to Pulse Time in data stream (see "FADC125 dataformat 250 modes.docx")
+				pulse_number = (*iptr>>18) & 0x03;
+				pedestal = (*iptr>>12) & 0xFF;
 				pulse_peak = (*iptr>>0) & 0xFFF;
 				if(objs && !F125_IGNORE_PULSETIME) objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
 				break;
