@@ -53,17 +53,13 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 		vector<const DTAGMHit*> locTAGHHits;
 		locEventLoop->Get(locTAGHHits);
 
-		if(!locTAGMHits.empty())
-		{
-			locRFHitTime = locTAGMHits[0]->t;
-			locTimeVariance = 0.2*0.2;
-		}
-		else if(!locTAGHHits.empty())
-		{
-			locRFHitTime = locTAGHHits[0]->t;
-			locTimeVariance = 0.2*0.2;
-		}
-		else
+		vector<double> locTimes;
+		for(size_t loc_i = 0; loc_i < locTAGHHits.size(); ++loc_i)
+			locTimes.push_back(locTAGHHits[0]->t);
+		for(size_t loc_i = 0; loc_i < locTAGMHits.size(); ++loc_i)
+			locTimes.push_back(locTAGMHits[0]->t);
+
+		if(locTimes.empty())
 		{
 			DEventRFBunch *locEventRFBunch = new DEventRFBunch;
 			locEventRFBunch->dTime = numeric_limits<double>::quiet_NaN();
@@ -71,6 +67,17 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 			_data.push_back(locEventRFBunch);
 			return NOERROR;
 		}
+
+		//times are modulo-2.004. shift all times to near the first time
+		double locAverageTime = locTimes[0];
+		for(size_t loc_i = 1; loc_i < locTimes.size(); ++loc_i)
+		{
+			double locNumBunches = floor((locTimes[loc_i] - locTimes[0])/2.004 + 0.5);
+			locAverageTime += locTimes[loc_i] - locNumBunches*2.004;
+		}
+		locAverageTime /= double(locTimes.size());
+		locRFHitTime = locAverageTime;
+		locTimeVariance = 0.2*0.2/double(locTimes.size());
 	}
 	else
 	{

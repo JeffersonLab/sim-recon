@@ -4489,11 +4489,17 @@ void DHistogramAction_NumReconstructedObjects::Initialize(JEventLoop* locEventLo
 			else
 				dHist_NumCDCHits = new TH1I(locHistName.c_str(), ";# DCDCHit", dMaxNumCDCHits + 1, -0.5, (float)dMaxNumCDCHits + 0.5);
 
-			locHistName = "NumFDCHits";
+			locHistName = "NumFDCWireHits";
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_NumFDCHits = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+				dHist_NumFDCWireHits = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_NumFDCHits = new TH1I(locHistName.c_str(), ";# DFDCHit", dMaxNumFDCHits/2 + 1, -0.5, (float)dMaxNumFDCHits - 0.5 + 2.0);
+				dHist_NumFDCWireHits = new TH1I(locHistName.c_str(), ";# Wire DFDCHit", dMaxNumFDCHits/2 + 1, -0.5, (float)dMaxNumFDCHits - 0.5 + 2.0);
+
+			locHistName = "NumFDCCathodeHits";
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHist_NumFDCCathodeHits = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHist_NumFDCCathodeHits = new TH1I(locHistName.c_str(), ";# Cathode DFDCHit", dMaxNumFDCHits/2 + 1, -0.5, (float)dMaxNumFDCHits - 0.5 + 2.0);
 
 			locHistName = "NumTOFHits";
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
@@ -4568,6 +4574,7 @@ bool DHistogramAction_NumReconstructedObjects::Perform_Action(JEventLoop* locEve
 	vector<const DBCALHit*> locBCALHits;
 	vector<const DFCALHit*> locFCALHits;
 
+	size_t locNumFDCWireHits = 0, locNumFDCCathodeHits = 0;
 	if(!locIsRESTEvent)
 	{
 		locEventLoop->Get(locTrackWireBasedVector);
@@ -4579,6 +4586,14 @@ bool DHistogramAction_NumReconstructedObjects::Perform_Action(JEventLoop* locEve
 		locEventLoop->Get(locTOFHits);
 		locEventLoop->Get(locBCALHits);
 		locEventLoop->Get(locFCALHits);
+
+		for(size_t loc_i = 0; loc_i < locFDCHits.size(); ++loc_i)
+		{
+			if(locFDCHits[loc_i]->type == DFDCHit::AnodeWire)
+				++locNumFDCWireHits;
+			else
+				++locNumFDCCathodeHits;
+		}
 	}
 
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
@@ -4704,7 +4719,8 @@ bool DHistogramAction_NumReconstructedObjects::Perform_Action(JEventLoop* locEve
 		if(!locIsRESTEvent)
 		{
 			dHist_NumCDCHits->Fill((Double_t)locCDCHits.size());
-			dHist_NumFDCHits->Fill((Double_t)locFDCHits.size());
+			dHist_NumFDCWireHits->Fill((Double_t)locNumFDCWireHits);
+			dHist_NumFDCCathodeHits->Fill((Double_t)locNumFDCCathodeHits);
 			dHist_NumTOFHits->Fill((Double_t)locTOFHits.size());
 			dHist_NumBCALHits->Fill((Double_t)locBCALHits.size());
 			dHist_NumFCALHits->Fill((Double_t)locFCALHits.size());

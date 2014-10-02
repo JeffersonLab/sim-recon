@@ -104,6 +104,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	EMULATE_FADC125_TIME_THRESHOLD = 80;
 	MODTYPE_MAP_FILENAME = "modtype.map";
 	ENABLE_DISENTANGLING = true;
+	F250_IGNORE_PULSETIME = false;
+	F125_IGNORE_PULSETIME = false;
 	F250_THRESHOLD = 120;
 	F250_NSA = 50;
 	F250_NSB = 5;
@@ -133,6 +135,9 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("ET:TIMEOUT", TIMEOUT, "Set the timeout in seconds for each attempt at reading from ET system (repeated attempts will still be made indefinitely until program quits or the quit_on_et_timeout flag is set.");
 		gPARMS->SetDefaultParameter("EVIO:MODTYPE_MAP_FILENAME", MODTYPE_MAP_FILENAME, "Optional module type conversion map for use with files generated with the non-standard module types");
 		gPARMS->SetDefaultParameter("EVIO:ENABLE_DISENTANGLING", ENABLE_DISENTANGLING, "Enable/disable disentangling of multi-block events. Enabled by default. Set to 0 to disable.");
+
+		gPARMS->SetDefaultParameter("EVIO:F250_IGNORE_PULSETIME", F250_IGNORE_PULSETIME, "Set this to non-zero to inhibit creation of Df250PulseTime and Df250PulsePedestal objects directly from data stream. If Window Raw Data exists, these objects may still be created from it.");
+		gPARMS->SetDefaultParameter("EVIO:F125_IGNORE_PULSETIME", F125_IGNORE_PULSETIME, "Set this to non-zero to inhibit creation of Df125PulseTime and Df125PulsePedestal objects directly from data stream. If Window Raw Data exists, these objects may still be created from it.");
 
 		gPARMS->SetDefaultParameter("EVIO:F250_THRESHOLD", F250_THRESHOLD, "For F250 window raw data. Threshold to emulate a PulseIntegral and PulseTime objects.");
 		gPARMS->SetDefaultParameter("EVIO:F250_NSA", F250_NSA, "For f250PulseIntegral object.  NSA value for emulation from window raw data and for pulse integral pedestal normalization.");
@@ -954,72 +959,76 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 
 	// Optionally generate Df250PulseIntegral and Df250PulseTime objects from Df250WindowRawData objects. 
 	if(EMULATE_PULSE_INTEGRAL_MODE && !hit_objs_by_type["Df250WindowRawData"].empty()){
+	
+		// Emulate PulseTime and PulsePedestal if no PulseTime objects exist
 		vector<JObject*> pt_objs;
 		vector<JObject*> pp_objs;
 		if(hit_objs_by_type["Df250PulseTime"].empty()){
 			EmulateDf250PulseTime(hit_objs_by_type["Df250WindowRawData"], pt_objs, pp_objs);
+			if(pt_objs.size() != 0) hit_objs_by_type["Df250PulseTime"] = pt_objs;
+			if(pp_objs.size() != 0) hit_objs_by_type["Df250PulsePedestal"] = pp_objs;
+			
+			// Add entries to JANA's callstack to indicate correct relationship of emulated objects
+			if(pt_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df250PulseTime", "Df250WindowRawData");
+			if(pp_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df250PulsePedestal", "Df250WindowRawData");
+		}else{
+			// copy these so we can make object associations later
+			pt_objs = hit_objs_by_type["Df250PulseTime"];
+			pp_objs = hit_objs_by_type["Df250PulsePedestal"];
 		}
-		if(pt_objs.size() != 0) hit_objs_by_type["Df250PulseTime"] = pt_objs;
-		if(pp_objs.size() != 0) hit_objs_by_type["Df250PulsePedestal"] = pp_objs;
 
+		// Emulate PulseIntegral if no Pulse integral objects exist
 		vector<JObject*> pi_objs;
 		if(hit_objs_by_type["Df250PulseIntegral"].empty()){
 			EmulateDf250PulseIntegral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
+			if(pi_objs.size() != 0){
+				// Pulse integral objects were emulated
+				AddEmulatedObjectsToCallStack(loop, "Df250PulseIntegral", "Df250WindowRawData");
+				hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
+
+				// Make PulseTime, PulsePedstal, and PulseIntegral objects associated objects of one another
+				LinkAssociations(pt_objs, pi_objs);
+				LinkAssociations(pt_objs, pp_objs);
+				LinkAssociations(pi_objs, pp_objs);
+			}	
 		}
-		if(pi_objs.size() != 0) hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
-		
-		// Add entries to JANA's callstack to indicate correct relationship of emulated objects
-		if(pt_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df250PulseTime", "Df250WindowRawData");
-		if(pp_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df250PulsePedestal", "Df250WindowRawData");
-		if(pi_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df250PulseIntegral", "Df250WindowRawData");
-
-		// Make PulseTime, PulseIntegral, and PulsePedestal objects associated objects of one another
-		// We need to cast the pointers as DDAQAddress types for the LinkAssociationsWithPulseNumber
-		// templated method to work.
-		vector<DDAQAddress*> da_pt_objs;
-		vector<DDAQAddress*> da_pi_objs;
-		vector<DDAQAddress*> da_pp_objs;
-		for(unsigned int i=0; i<pt_objs.size(); i++) da_pt_objs.push_back((DDAQAddress*)pt_objs[i]);
-		for(unsigned int i=0; i<pi_objs.size(); i++) da_pi_objs.push_back((DDAQAddress*)pi_objs[i]);
-		for(unsigned int i=0; i<pp_objs.size(); i++) da_pp_objs.push_back((DDAQAddress*)pp_objs[i]);
-		LinkAssociations(da_pt_objs, da_pi_objs);
-		LinkAssociations(da_pt_objs, da_pp_objs);
-		LinkAssociations(da_pi_objs, da_pp_objs);
 	}
-
+	
 	// Optionally generate Df125PulseIntegral and Df125PulseTime objects from Df125WindowRawData objects. 
 	if(EMULATE_PULSE_INTEGRAL_MODE && !hit_objs_by_type["Df125WindowRawData"].empty()){
+	
+		// Emulate PulseTime and PulsePedestal if no PulseTime objects exist
 		vector<JObject*> pt_objs;
 		vector<JObject*> pp_objs;
 		if(hit_objs_by_type["Df125PulseTime"].empty()){
 			EmulateDf125PulseTime(hit_objs_by_type["Df125WindowRawData"], pt_objs, pp_objs);
+			if(pt_objs.size() != 0) hit_objs_by_type["Df125PulseTime"] = pt_objs;
+			if(pp_objs.size() != 0) hit_objs_by_type["Df125PulsePedestal"] = pp_objs;
+			
+			// Add entries to JANA's callstack to indicate correct relationship of emulated objects
+			if(pt_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df125PulseTime", "Df125WindowRawData");
+			if(pp_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df125PulsePedestal", "Df125WindowRawData");
+		}else{
+			// copy these so we can make object associations later
+			pt_objs = hit_objs_by_type["Df125PulseTime"];
+			pp_objs = hit_objs_by_type["Df125PulsePedestal"];
 		}
-		if(pt_objs.size() != 0) hit_objs_by_type["Df125PulseTime"] = pt_objs;
-		if(pp_objs.size() != 0) hit_objs_by_type["Df125PulsePedestal"] = pp_objs;
 
+		// Emulate PulseIntegral if no Pulse integral objects exist
 		vector<JObject*> pi_objs;
 		if(hit_objs_by_type["Df125PulseIntegral"].empty()){
 			EmulateDf125PulseIntegral(hit_objs_by_type["Df125WindowRawData"], pi_objs);
-		}
-		if(pi_objs.size() != 0) hit_objs_by_type["Df125PulseIntegral"] = pi_objs;	
-		
-		// Add entries to JANA's callstack to indicate correct relationship of emulated objects
-		if(pt_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df125PulseTime", "Df125WindowRawData");
-		if(pp_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df125PulsePedestal", "Df125WindowRawData");
-		if(pi_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df125PulseIntegral", "Df125WindowRawData");
+			if(pi_objs.size() != 0){
+				// Pulse integral objects were emulated
+				AddEmulatedObjectsToCallStack(loop, "Df125PulseIntegral", "Df125WindowRawData");
+				hit_objs_by_type["Df125PulseIntegral"] = pi_objs;
 
-		// Make PulseTime and PulseIntegral objects associated objects of one another
-		// We need to cast the pointers as DDAQAddress types for the LinkAssociationsWithPulseNumber
-		// tmeplated method to work.
-		vector<DDAQAddress*> da_pt_objs;
-		vector<DDAQAddress*> da_pi_objs;
-		vector<DDAQAddress*> da_pp_objs;
-		for(unsigned int i=0; i<pt_objs.size(); i++) da_pt_objs.push_back((DDAQAddress*)pt_objs[i]);
-		for(unsigned int i=0; i<pi_objs.size(); i++) da_pi_objs.push_back((DDAQAddress*)pi_objs[i]);
-		for(unsigned int i=0; i<pp_objs.size(); i++) da_pi_objs.push_back((DDAQAddress*)pp_objs[i]);
-		LinkAssociations(da_pt_objs, da_pi_objs);
-		LinkAssociations(da_pt_objs, da_pp_objs);
-		LinkAssociations(da_pi_objs, da_pp_objs);
+				// Make PulseTime, PulsePedstal, and PulseIntegral objects associated objects of one another
+				LinkAssociations(pt_objs, pi_objs);
+				LinkAssociations(pt_objs, pp_objs);
+				LinkAssociations(pi_objs, pp_objs);
+			}	
+		}
 	}
 	
 	// Now, add data objects to call stack for the classes we can provide, but for which
@@ -2345,7 +2354,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				pulse_number = (*iptr>>21) & 0x03;
 				quality_factor = (*iptr>>19) & 0x03;
 				pulse_time = (*iptr>>0) & 0x7FFFF;
-				if(objs) objs->hit_objs.push_back(new Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
+				if(objs && !F250_IGNORE_PULSETIME) objs->hit_objs.push_back(new Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 				break;
 			case 9: // Streaming Raw Data
 				// This is marked "reserved for future implementation" in the current manual (v2).
@@ -2356,7 +2365,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				pulse_number = (*iptr>>21) & 0x03;
 				pedestal = (*iptr>>12) & 0x1FF;
 				pulse_peak = (*iptr>>0) & 0xFFF;
-				if(objs) objs->hit_objs.push_back(new Df250PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
+				if(objs && !F250_IGNORE_PULSETIME) objs->hit_objs.push_back(new Df250PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
 				break;
 			case 13: // Event Trailer
 				// This is marked "suppressed for normal readout – debug mode only" in the
@@ -2561,6 +2570,8 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 
 	if(!PARSE_F125){ iptr = iend; return; }
 
+	if(VERBOSE>6) evioout << "    Entering Parsef125Bank..."<<endl;
+
 	// This will get updated to point to a newly allocated object when an
 	// event header is encountered. The existing value (if non-NULL) is
 	// added to the events queue first though so all events are kept.
@@ -2605,6 +2616,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		uint32_t data_type = (*iptr>>27) & 0x0F;
 		switch(data_type){
 			case 0: // Block Header
+				if(VERBOSE>7) evioout << "      FADC125 Event Header"<<endl;
 				slot = (*iptr>>22) & 0x1F;
 				//iblock= (*iptr>>8) & 0x03FF;
 				//Nblock_events= (*iptr>>0) & 0xFF;
@@ -2644,24 +2656,27 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				MakeDf125WindowRawData(objs, rocid, slot, itrigger, iptr);
 				break;
 			case 7: // Pulse Integral
+				if(VERBOSE>7) evioout << "      FADC125 Pulse Integral"<<endl;
 				channel = (*iptr>>20) & 0x7F;
 				sum = (*iptr>>0) & 0xFFFFF;
  				if(objs) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum));
 				break;
 			case 8: // Pulse Time
+				if(VERBOSE>7) evioout << "      FADC125 Pulse Time"<<endl;
 				channel = (*iptr>>20) & 0x7F;
-				quality_factor = (*iptr>>18) & 0x03;
+				pulse_number = (*iptr>>18) & 0x03;
 				pulse_time = (*iptr>>0) & 0xFFFF;
- 				if(objs) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
+ 				if(objs && !F125_IGNORE_PULSETIME) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 				last_pulse_time_channel = channel;
 				break;
-			case 10: // Pulse Pedestal
-				//channel = (*iptr>>20) & 0x7F;
-				channel = last_pulse_time_channel; // not enough bits to hold channel number so rely on proximity to Pulse Time in data stream (see "FADC125 dataformat 250 modes.docx")
-				pulse_number = (*iptr>>21) & 0x03;
-				pedestal = (*iptr>>12) & 0x1FF;
+			case 10: // Pulse Pedestal (consistent with Beni's hand-edited version of Cody's document)
+				if(VERBOSE>7) evioout << "      FADC125 Pulse Pedestal"<<endl;
+				channel = (*iptr>>20) & 0x7F;
+				//channel = last_pulse_time_channel; // not enough bits to hold channel number so rely on proximity to Pulse Time in data stream (see "FADC125 dataformat 250 modes.docx")
+				pulse_number = (*iptr>>18) & 0x03;
+				pedestal = (*iptr>>12) & 0xFF;
 				pulse_peak = (*iptr>>0) & 0xFFF;
-				if(objs) objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
+				if(objs && !F125_IGNORE_PULSETIME) objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
 				break;
 			case 5: // Window Sum
 			case 6: // Pulse Raw Data
@@ -2669,6 +2684,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 			case 13: // Event Trailer
 			case 14: // Data not valid (empty module)
 			case 15: // Filler (non-data) word
+				if(VERBOSE>7) evioout << "      FADC125 ignored data type: " << data_type <<endl;
 				break;
 		}
 
@@ -2727,6 +2743,8 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		LinkAssociationsModuleOnly(vtrigt, vpt);
 		LinkAssociationsModuleOnly(vtrigt, vpp);
 	}
+
+	if(VERBOSE>6) evioout << "    Leaving Parsef125Bank"<<endl;
 }
 
 //----------------
@@ -2766,6 +2784,8 @@ void JEventSource_EVIO::MakeDf125WindowRawData(ObjList *objs, uint32_t rocid, ui
 		wrd->invalid_samples |= invalid_2;
 		wrd->overflow |= (sample_2>>12) & 0x1;
 	}
+
+	if(VERBOSE>7) evioout << "      FADC125   - " << wrd->samples.size() << " samples" << endl;
 	
 	// Due to how the calling function works, the value of "objs" passed to us may be NULL.
 	// This will happen if a Window Raw Data block is encountered before an event header.
