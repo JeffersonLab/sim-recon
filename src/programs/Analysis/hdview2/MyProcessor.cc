@@ -346,7 +346,7 @@ void MyProcessor::FillGraphics(void)
 	    if(!poly)continue;
 	   
 	    // The aim is to have a log scale in energy
-	    double E = hit->E;      // Energy in MeV
+	    double E = 1000.0*hit->E;      // Energy in MeV
 	    double logE = log10(E);      
 	    // 3 = 1 GeV, 0 = 1 MeV, use range 0 through 4
 	    // 0-1 White-Yellow
