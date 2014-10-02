@@ -862,15 +862,15 @@ class DHistogramAction_NumReconstructedObjects : public DAnalysisAction
 	public:
 		DHistogramAction_NumReconstructedObjects(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_NumReconstructedObjects", false, locActionUniqueString),
-		dMaxNumObjects(40), dMaxNumCDCHits(400), dMaxNumFDCHits(2000), dMaxNumTOFCalorimeterHits(400){}
+		dMaxNumObjects(40), dMaxNumCDCHits(400), dMaxNumFDCHits(1000), dMaxNumTOFCalorimeterHits(400){}
 
 		DHistogramAction_NumReconstructedObjects(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_NumReconstructedObjects", false, ""),
-		dMaxNumObjects(40), dMaxNumCDCHits(400), dMaxNumFDCHits(2000), dMaxNumTOFCalorimeterHits(400){}
+		dMaxNumObjects(40), dMaxNumCDCHits(400), dMaxNumFDCHits(1000), dMaxNumTOFCalorimeterHits(400){}
 
 		DHistogramAction_NumReconstructedObjects(void) : 
 		DAnalysisAction(NULL, "Hist_NumReconstructedObjects", false, ""),
-		dMaxNumObjects(40), dMaxNumCDCHits(400), dMaxNumFDCHits(2000), dMaxNumTOFCalorimeterHits(400){}
+		dMaxNumObjects(40), dMaxNumCDCHits(400), dMaxNumFDCHits(1000), dMaxNumTOFCalorimeterHits(400){}
 
 		unsigned int dMaxNumObjects;
 		unsigned int dMaxNumCDCHits;
@@ -917,7 +917,8 @@ class DHistogramAction_NumReconstructedObjects : public DAnalysisAction
 		TH1D* dHist_NumTrackSCMatches;
 
 		TH1I* dHist_NumCDCHits;
-		TH1I* dHist_NumFDCHits;
+		TH1I* dHist_NumFDCWireHits;
+		TH1I* dHist_NumFDCCathodeHits;
 		TH1I* dHist_NumTOFHits;
 		TH1I* dHist_NumBCALHits;
 		TH1I* dHist_NumFCALHits;
