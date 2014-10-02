@@ -475,10 +475,9 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(const DParticleCombo* locThr
 double DAnalysisUtilities::Calc_Beta_Timing(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const
 {
 	double locStartTime = 0.0, locStartTimeVariance = 0.0;
-	bool locUsedRFTimeFlag;
 	if(!dPIDAlgorithm->Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locRFTimeFixedFlag))
 		return numeric_limits<double>::quiet_NaN();
-	if((!locUsedRFTimeFlag) && (locChargedTrackHypothesis->t0_detector() == locChargedTrackHypothesis->t1_detector()))
+	if((!(locEventRFBunch->dTime == locEventRFBunch->dTime)) && (locChargedTrackHypothesis->t0_detector() == locChargedTrackHypothesis->t1_detector()))
 		return numeric_limits<double>::quiet_NaN(); //didn't use RF time, and t0/t1 detectors are the same: don't compute difference
 	return locChargedTrackHypothesis->pathLength()/(29.9792458*(locChargedTrackHypothesis->t1() - locStartTime));
 }
