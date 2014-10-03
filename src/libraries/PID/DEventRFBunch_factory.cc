@@ -42,47 +42,14 @@ jerror_t DEventRFBunch_factory::brun(jana::JEventLoop *locEventLoop, int runnumb
 //------------------
 jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
-	vector<const DRFTime*> locRFTimes;
-	locEventLoop->Get(locRFTimes);
 	double locRFHitTime, locTimeVariance;
-	if(locRFTimes.empty())
+	if(!Get_RFTime(locEventLoop, locRFHitTime, locTimeVariance))
 	{
-		vector<const DTAGMHit*> locTAGMHits;
-		locEventLoop->Get(locTAGMHits);
-
-		vector<const DTAGMHit*> locTAGHHits;
-		locEventLoop->Get(locTAGHHits);
-
-		vector<double> locTimes;
-		for(size_t loc_i = 0; loc_i < locTAGHHits.size(); ++loc_i)
-			locTimes.push_back(locTAGHHits[0]->t);
-		for(size_t loc_i = 0; loc_i < locTAGMHits.size(); ++loc_i)
-			locTimes.push_back(locTAGMHits[0]->t);
-
-		if(locTimes.empty())
-		{
-			DEventRFBunch *locEventRFBunch = new DEventRFBunch;
-			locEventRFBunch->dTime = numeric_limits<double>::quiet_NaN();
-			locEventRFBunch->dTimeVariance = numeric_limits<double>::quiet_NaN();
-			_data.push_back(locEventRFBunch);
-			return NOERROR;
-		}
-
-		//times are modulo-2.004. shift all times to near the first time
-		double locAverageTime = locTimes[0];
-		for(size_t loc_i = 1; loc_i < locTimes.size(); ++loc_i)
-		{
-			double locNumBunches = floor((locTimes[loc_i] - locTimes[0])/2.004 + 0.5);
-			locAverageTime += locTimes[loc_i] - locNumBunches*2.004;
-		}
-		locAverageTime /= double(locTimes.size());
-		locRFHitTime = locAverageTime;
-		locTimeVariance = 0.2*0.2/double(locTimes.size());
-	}
-	else
-	{
-		locRFHitTime = locRFTimes[0]->dTime;
-		locTimeVariance = locRFTimes[0]->dTimeVariance;
+		DEventRFBunch *locEventRFBunch = new DEventRFBunch;
+		locEventRFBunch->dTime = numeric_limits<double>::quiet_NaN();
+		locEventRFBunch->dTimeVariance = numeric_limits<double>::quiet_NaN();
+		_data.push_back(locEventRFBunch);
+		return NOERROR;
 	}
 
 	//preferentially:
@@ -131,8 +98,14 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimes);
 	else if(Find_NeutralTimes(locEventLoop, locTimes))//use neutral showers
 		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimes);
-	else
-		return NOERROR; //no confidence in selecting the RF bunch for the event
+	else //no confidence in selecting the RF bunch for the event //keep the original RF time signal
+	{
+		DEventRFBunch *locEventRFBunch = new DEventRFBunch;
+		locEventRFBunch->dTime = locRFHitTime;
+		locEventRFBunch->dTimeVariance = locTimeVariance;
+		_data.push_back(locEventRFBunch);
+		return NOERROR;
+	}
 
 	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
 	locEventRFBunch->dTime = locRFHitTime + dRFBunchFrequency*double(locBestRFBunchShift);
@@ -140,6 +113,46 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	_data.push_back(locEventRFBunch);
 
 	return NOERROR;
+}
+
+bool DEventRFBunch_factory::Get_RFTime(JEventLoop *locEventLoop, double& locRFHitTime, double& locTimeVariance)
+{
+	vector<const DRFTime*> locRFTimes;
+	locEventLoop->Get(locRFTimes);
+	if(!locRFTimes.empty())
+	{
+		locRFHitTime = locRFTimes[0]->dTime;
+		locTimeVariance = locRFTimes[0]->dTimeVariance;
+		return true;
+	}
+
+	vector<const DTAGMHit*> locTAGMHits;
+	locEventLoop->Get(locTAGMHits);
+
+	vector<const DTAGMHit*> locTAGHHits;
+	locEventLoop->Get(locTAGHHits);
+
+	vector<double> locTimes;
+	for(size_t loc_i = 0; loc_i < locTAGHHits.size(); ++loc_i)
+		locTimes.push_back(locTAGHHits[loc_i]->t);
+	for(size_t loc_i = 0; loc_i < locTAGMHits.size(); ++loc_i)
+		locTimes.push_back(locTAGMHits[loc_i]->t);
+
+	if(locTimes.empty())
+		return false;
+
+	//times are modulo-2.004. shift all times to near the first time
+	double locAverageTime = locTimes[0];
+	for(size_t loc_i = 1; loc_i < locTimes.size(); ++loc_i)
+	{
+		double locNumBunches = floor((locTimes[loc_i] - locTimes[0])/2.004 + 0.5);
+		locAverageTime += locTimes[loc_i] - locNumBunches*2.004;
+	}
+	locAverageTime /= double(locTimes.size());
+	locRFHitTime = locAverageTime;
+	locTimeVariance = 0.2*0.2/double(locTimes.size());
+
+	return true;
 }
 
 bool DEventRFBunch_factory::Find_NeutralTimes(JEventLoop* locEventLoop, vector<double>& locTimes)

@@ -36,6 +36,8 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int r
 
 	locEventLoop->GetSingle(dParticleID);
 
+	dEventRFBunchFactory = static_cast<DEventRFBunch_factory*>(locEventLoop->GetFactory("DEventRFBunch"));
+
 	return NOERROR;
 }
 
@@ -60,6 +62,25 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 
 	const DEventRFBunch* locEventRFBunch = NULL;
 	locEventLoop->GetSingle(locEventRFBunch);
+
+	double locRFTime, locRFVariance;
+	if(locEventRFBunch->dTime == locEventRFBunch->dTime)
+	{
+		locRFTime = locEventRFBunch->dTime;
+		locRFVariance = locEventRFBunch->dTimeVariance;
+	}
+	else if(!dEventRFBunchFactory->Get_RFTime(locEventLoop, locRFTime, locRFVariance))
+	{
+		//no good RF time, set to NaN for all combos
+		DEventRFBunch* locNewEventRFBunch = new DEventRFBunch(*locEventRFBunch);
+		for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
+		{
+			const DParticleComboBlueprint* locParticleComboBlueprint = locParticleComboBlueprints[loc_i];
+			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
+			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
+		}
+		_data.push_back(locNewEventRFBunch);
+	}
 
  	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locEventLoop->Get(locTrackTimeBasedVector, "Combo");
@@ -171,15 +192,15 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 		}
 
 		// Find # RF Bunch Shifts
-		int locNumBunchShifts = Find_BestRFBunchShift(locEventRFBunch->dTime, locPropagatedTimes);
+		int locNumBunchShifts = Find_BestRFBunchShift(locRFTime, locPropagatedTimes);
 		// Create new RF Bunch if doesn't already exist
 		if(locComboRFBunchMap.find(locNumBunchShifts) != locComboRFBunchMap.end()) //already created, don't recreate identical object!
 			locComboRFBunchMap[locNumBunchShifts]->AddAssociatedObject(locParticleComboBlueprint);
 		else
 		{
 			DEventRFBunch* locNewEventRFBunch = new DEventRFBunch();
-			locNewEventRFBunch->dTime = locEventRFBunch->dTime + (double)(locNumBunchShifts)*dRFBunchFrequency;
-			locNewEventRFBunch->dTimeVariance = locEventRFBunch->dTimeVariance;
+			locNewEventRFBunch->dTime = locRFTime + (double)(locNumBunchShifts)*dRFBunchFrequency;
+			locNewEventRFBunch->dTimeVariance = locRFVariance;
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
 			_data.push_back(locNewEventRFBunch);

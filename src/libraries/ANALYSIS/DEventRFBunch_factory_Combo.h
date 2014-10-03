@@ -26,6 +26,7 @@
 #include "PID/DChargedTrack.h"
 #include "PID/DNeutralShower.h"
 #include "PID/DDetectorMatches.h"
+#include "PID/DEventRFBunch_factory.h"
 
 #include "ANALYSIS/DParticleComboBlueprint.h"
 
@@ -45,6 +46,8 @@ class DEventRFBunch_factory_Combo:public jana::JFactory<DEventRFBunch>
 		jerror_t evnt(jana::JEventLoop *locEventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+		DEventRFBunch_factory* dEventRFBunchFactory;
 
 		const DParticleID* dParticleID;
 
