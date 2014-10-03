@@ -192,18 +192,6 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 
 bool DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, double& locStartTime)
 {
-	vector<const DTOFPoint*> locTOFPoints;
-	locEventLoop->Get(locTOFPoints);
-
-	vector<const DBCALShower*> locBCALShowers;
-	locEventLoop->Get(locBCALShowers);
-
-	vector<const DFCALShower*> locFCALShowers;
-	locEventLoop->Get(locFCALShowers);
-
-	vector<const DSCHit*> locSCHits;
-	locEventLoop->Get(locSCHits);
-
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
 
