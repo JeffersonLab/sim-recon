@@ -18,7 +18,7 @@ c instructs HDGeant to open ./phi-1680.hddm, skip the first 25 events and then
 c process the following 100 input events and stop.  If the end of the file is
 c reached before the event count specified in card TRIG is exhausted then the
 c processing will stop at the end of file.
-INFILE 'bggen.hddm'
+cINFILE 'bggen.hddm'
 TRIG 10000
 
 c The BEAM card configures the built-in coherent bremsstralung photon

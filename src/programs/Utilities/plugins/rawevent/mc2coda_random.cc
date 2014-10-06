@@ -4,7 +4,7 @@ using namespace std;
 
 #include <TRandom2.h>
 
-static TRandom2 rand;
+static TRandom2 randgen;
 bool NO_PEDESTAL = true;              // flag to completely disable pedestal generation
 bool NO_RANDOM_PEDESTAL = false;       // turn off random components of pedestals
 float MEAN_PEDESTAL = 100.0;           // mean pedestal in single sample fADC counts
@@ -48,8 +48,8 @@ void GetPedestals(uint32_t *peds, uint32_t Npeds)
 		for(uint32_t i=0; i<Npeds-1; i++) peds[i] = 0;	
 		peds[Npeds - 1] = (uint32_t)MEAN_PEDESTAL;
 	}else{
-		for(uint32_t i=0; i<Npeds-1; i++) peds[i] = round(rand.Gaus(0.0, SIGMA_INDIVIDUAL_PEDESTAL));
-		peds[Npeds - 1] = round(rand.Gaus(MEAN_PEDESTAL, SIGMA_COMMON_PEDESTAL));
+		for(uint32_t i=0; i<Npeds-1; i++) peds[i] = round(randgen.Gaus(0.0, SIGMA_INDIVIDUAL_PEDESTAL));
+		peds[Npeds - 1] = round(randgen.Gaus(MEAN_PEDESTAL, SIGMA_COMMON_PEDESTAL));
 	}
 
 }

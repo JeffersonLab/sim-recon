@@ -27,7 +27,7 @@ jerror_t DSCHit_factory::init(void)
            " F1TDC time for them to be matched in a single hit");
 
    /// set the base conversion scales
-   a_scale    = 2.0E-2/5.2E-5; 
+   a_scale    = 0.0001; 
    t_scale    = 0.0625;   // 62.5 ps/count
    t_base     = 0.;    // ns
    tdc_scale  = 0.060;    // 60 ps/count

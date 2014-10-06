@@ -756,7 +756,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			if(locIsThrownMatchFlag)
 				dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(1); //input event (+1 because binning begins at 1)
 			if(locTrueComboSurvivedReactions.find(locReaction) != locTrueComboSurvivedReactions.end())
-				dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(5); //true combo
+				dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(5 + dNumGoodPreComboSelectionActions[locReaction]); //true combo
 
 			for(size_t loc_j = 0; loc_j < locNumBlueprintsSurvivedCuts[locReaction].size(); ++loc_j)
 			{

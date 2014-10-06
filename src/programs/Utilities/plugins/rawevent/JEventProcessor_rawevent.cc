@@ -171,9 +171,10 @@ static double FDC_ADCscale  = 1.3E5/2.4E4;
 static double FCAL_ADCscale = 2.5E5/4.0E1;
 static double BCAL_ADCscale = 10000.;
 static double TOF_ADCscale  = 5.2E5/0.2;
-static double SC_ADCscale   = 5.2E-5/2.0E-2 ;
+static double SC_ADCscale   = 10000.;
 
-static double CDC_ADCtick = FADC125tick;
+//static double CDC_ADCtick = FADC125tick;
+static float CDC_ADCtick = FADC125tick;
 static double FDC_ADCtick = FADC125tick;
 static double FCAL_ADCtick = FADC250tick;
 static double BCAL_ADCtick = FADC250tick;
@@ -716,7 +717,11 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     {
       //uint32_t q     = dcdchits[i]->q * (1./5.18) * (1.3E5/1.0E6); // q is in femtoCoulombs (max is ~1E6) 
       uint32_t q     = dcdchits[i]->q * CDC_ADCscale; // q is in femtoCoulombs (max is ~1E6) 
-      uint32_t t     = dcdchits[i]->t*1000.0 -tMin;    // t is in nanoseconds (max is ~900ns)
+      //uint32_t t     = dcdchits[i]->t*1000.0 -tMin;    // t is in nanoseconds (max is ~900ns)
+      //uint32_t t     = static_cast<double>(dcdchits[i]->t)*1000.0 - static_cast<double>(tMin);    // t is in nanoseconds (max is ~900ns)
+      //double t     = static_cast<double>(dcdchits[i]->t)*1000.0 - static_cast<double>(tMin);    // t is in nanoseconds (max is ~900ns)
+      //float t     = dcdchits[i]->t*1000.0 - tMin;    // t is in nanoseconds (max is ~900ns)
+      float t     = dcdchits[i]->t - (tMin/1000.);    // t is in nanoseconds (max is ~900ns)
 
       //jout << " q = " << dcdchits[i]->q << ", digitized = " << q << endl;
       //jout << " t = " << dcdchits[i]->t << ", shifted = " << t << endl;
@@ -732,7 +737,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hc++;
       hitCount++;
       nhits=1;
-      hit[0].hit_id      = hitCount;
+       hit[0].hit_id      = hitCount;
       hit[0].det_id      = detID;
       hit[0].crate_id    = cscADC.crate;
       hit[0].slot_id     = cscADC.slot;
@@ -742,7 +747,8 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].nwords      = 2;
       hit[0].hdata       = mcData;
       hit[0].hdata[0]    = q;  // in fADC counts
-      hit[0].hdata[1]    = static_cast<double>(t)/CDC_ADCtick;
+      //hit[0].hdata[1]    = static_cast<double>(t)/CDC_ADCtick;
+      hit[0].hdata[1]    =   t/(CDC_ADCtick/1000.);
       //if (q > 0x7ffff) std::cerr << "q too large for CDC: " << q << std::endl;
       
       if (dumphits > 1) {
