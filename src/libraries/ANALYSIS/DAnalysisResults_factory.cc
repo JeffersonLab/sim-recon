@@ -160,6 +160,9 @@ jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int runn
 		}
 	}
 
+ 	vector<const DEventRFBunch*> locEventRFBunches;
+	locEventLoop->Get(locEventRFBunches, "Combo"); //for ordering histograms in the output file
+
  	vector<const DParticleCombo*> locParticleCombos;
 	locEventLoop->Get(locParticleCombos, "PreKinFit"); //for ordering histograms in the output file
 

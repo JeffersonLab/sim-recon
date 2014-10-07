@@ -287,7 +287,7 @@ bool DHistogramAction_PID::Perform_Action(JEventLoop* locEventLoop, const DParti
 		dPreviouslyHistogrammedParticles.clear();
 
 	const DMCThrownMatching* locMCThrownMatching = NULL;
-	locEventLoop->GetSingle(locMCThrownMatching);
+	locEventLoop->GetSingle(locMCThrownMatching, "", false);
 	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
 
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
