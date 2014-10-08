@@ -43,6 +43,9 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 
 		void Reset_Pools(void);
 
+		size_t Get_ParticleComboStepPoolSize(void) const{return dParticleComboStepPool_All.size();};
+		size_t Get_KinematicDataPoolSize(void) const{return dKinematicDataPool_All.size();};
+
 	private:
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int runnumber);	///< Called everytime a new run number is detected.
@@ -61,6 +64,7 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		DParticleComboStep* Clone_ParticleComboStep(const DParticleComboStep* locParticleComboStep);
 		void Reset_KinematicData(DKinematicData* locKinematicData);
 		DParticleComboStep* Get_ParticleComboStepResource(void);
+		DParticleCombo* Get_ParticleComboResource(void);
 		DKinematicData* Get_KinematicDataResource(void);
 		DBeamPhoton* Get_BeamPhotonResource(void);
 
@@ -78,7 +82,6 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 
 		size_t MAX_DParticleComboStepPoolSize;
 		size_t MAX_DKinematicDataPoolSize;
-		size_t MAX_DBeamPhotonPoolSize;
 
 		// PRE-DPARTICLECOMBO CUT VALUES
 			//bool = true/false for cut enabled/disabled, double = cut value
@@ -100,13 +103,11 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		map<const DReaction*, map<const DEventRFBunch*, map<Particle_t, map<const DChargedTrack*, const DChargedTrackHypothesis*> > > > dValidChargedHypotheses;
 		map<const DReaction*, map<const DEventRFBunch*, map<Particle_t, map<const DNeutralShower*, const DNeutralParticleHypothesis*> > > > dValidNeutralHypotheses;
 
-		set<pair<const DEventRFBunch*, const DBeamPhoton*> > dPreviousPhotonRFDeltaTPairs;
-
 		map<const DReaction*, map<Particle_t, TH1I*> > dHistMap_PIDFOM_All;
 		map<const DReaction*, map<Particle_t, TH1I*> > dHistMap_PIDFOM_True;
 
 		map<const DReaction*, TH1I*> dHistMap_PhotonRFDeltaT_All;
-		map<const DReaction*, TH1I*> dHistMap_PhotonRFDeltaT_True;
+		map<const DReaction*, TH1I*> dHistMap_PhotonRFDeltaT_True; //for the true combo (MC event) (includes true beam photon): delta-t between selected photon & RF time
 
 		map<const DReaction*, TH1D*> dHistMap_NumSurvivingBeamParticles;
 

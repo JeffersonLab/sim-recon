@@ -36,6 +36,9 @@ class DParticleCombo_factory : public jana::JFactory<DParticleCombo>
 
 		void Reset_Pools(void);
 
+		size_t Get_ParticleComboStepPoolSize(void) const{return dParticleComboStepPool_All.size();};
+		size_t Get_KinematicDataPoolSize(void) const{return dKinematicDataPool_All.size();};
+
 	private:
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop* locEventLoop, int runnumber);	///< Called everytime a new run number is detected.

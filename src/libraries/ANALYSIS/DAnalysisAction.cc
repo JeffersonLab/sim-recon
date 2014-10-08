@@ -39,6 +39,7 @@ dPerformAntiCut(false), dReaction(locReaction), dActionName(locActionBaseName), 
 
 bool DAnalysisAction::operator()(JEventLoop* locEventLoop)
 {
+	dNumPreviousParticleCombos = 0;
 	bool locResult = Perform_Action(locEventLoop, NULL);
 	return (dPerformAntiCut ? !locResult : locResult);
 }

@@ -53,6 +53,7 @@ DKinFitter::DKinFitter(void)
 	dMaxKinFitConstraintSpacetimePoolSize = 25;
 	dMaxKinFitConstraintP4PoolSize = 25;
 	dMaxMatrixDSymPoolSize = 100;
+	dMaxLargeMatrixDSymPoolSize = 100;
 
 	dMaxNumIterations = 20;
 
@@ -75,6 +76,28 @@ DKinFitter::~DKinFitter(void)
 
 	for(size_t loc_i = 0; loc_i < dMatrixDSymPool_All.size(); ++loc_i)
 		delete dMatrixDSymPool_All[loc_i];
+
+	for(size_t loc_i = 0; loc_i < dLargeMatrixDSymPool_All.size(); ++loc_i)
+		delete dLargeMatrixDSymPool_All[loc_i];
+}
+
+void DKinFitter::Preallocate_MatrixMemory(void)
+{
+	//pre-allocate matrix memory
+	for(size_t loc_i = 0; loc_i < dMaxMatrixDSymPoolSize; ++loc_i)
+	{
+		TMatrixDSym* locMatrix = Get_MatrixDSymResource();	
+		locMatrix->ResizeTo(7, 7);
+	}
+
+	//pre-allocate large matrix memory
+	for(size_t loc_i = 0; loc_i < dMaxLargeMatrixDSymPoolSize; ++loc_i)
+	{
+		TMatrixDSym* locMatrix = Get_LargeMatrixDSymResource();	
+		locMatrix->ResizeTo(100, 100);
+	}
+
+	Reset_NewEvent();
 }
 
 void DKinFitter::Reset_NewEvent(void)
@@ -121,6 +144,14 @@ void DKinFitter::Reset_NewEvent(void)
 		dMatrixDSymPool_All.resize(dMaxMatrixDSymPoolSize);
 	}
 	dMatrixDSymPool_Available = dMatrixDSymPool_All;
+
+	if(dLargeMatrixDSymPool_All.size() > dMaxLargeMatrixDSymPoolSize)
+	{
+		for(size_t loc_i = dMaxLargeMatrixDSymPoolSize; loc_i < dLargeMatrixDSymPool_All.size(); ++loc_i)
+			delete dLargeMatrixDSymPool_All[loc_i];
+		dLargeMatrixDSymPool_All.resize(dMaxLargeMatrixDSymPoolSize);
+	}
+	dLargeMatrixDSymPool_Available = dLargeMatrixDSymPool_All;
 }
 
 void DKinFitter::Reset_NewFit(void)
@@ -145,9 +176,9 @@ void DKinFitter::Reset_NewFit(void)
 	dConfidenceLevel = 0.0;
 	dPulls.clear();
 
-	dV = Get_MatrixDSymResource();
-	dVXi = Get_MatrixDSymResource();
-	dVEta = Get_MatrixDSymResource();
+	dV = Get_LargeMatrixDSymResource();
+	dVXi = Get_LargeMatrixDSymResource();
+	dVEta = Get_LargeMatrixDSymResource();
 }
 
 DKinFitParticle* DKinFitter::Get_KinFitParticleResource(void)
@@ -230,6 +261,22 @@ TMatrixDSym* DKinFitter::Get_MatrixDSymResource(void)
 	{
 		locMatrixDSym = dMatrixDSymPool_Available.back();
 		dMatrixDSymPool_Available.pop_back();
+	}
+	return locMatrixDSym;
+}
+
+TMatrixDSym* DKinFitter::Get_LargeMatrixDSymResource(void)
+{
+	TMatrixDSym* locMatrixDSym;
+	if(dLargeMatrixDSymPool_Available.empty())
+	{
+		locMatrixDSym = new TMatrixDSym();
+		dLargeMatrixDSymPool_All.push_back(locMatrixDSym);
+	}
+	else
+	{
+		locMatrixDSym = dLargeMatrixDSymPool_Available.back();
+		dLargeMatrixDSymPool_Available.pop_back();
 	}
 	return locMatrixDSym;
 }

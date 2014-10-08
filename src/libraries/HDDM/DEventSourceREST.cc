@@ -499,7 +499,7 @@ jerror_t DEventSourceREST::Extract_DTAGMHit(hddm_r::HDDM *record,
    eventLoop->Get(tagmGeomVect, "mc");
    if (tagmGeomVect.size() < 1)
       return OBJECT_NOT_AVAILABLE;
-   const DTAGMGeometry& tagmGeom = *(tagmGeomVect[0]);
+   const DTAGMGeometry* tagmGeom = tagmGeomVect[0];
 
    vector<DTAGMHit*> data;
 
@@ -514,8 +514,10 @@ jerror_t DEventSourceREST::Extract_DTAGMHit(hddm_r::HDDM *record,
       taghit->E = iter->getE();
       taghit->t = iter->getT();
       taghit->row = 0;
-      if (tagmGeom.E_to_column(taghit->E, (unsigned int&)taghit->column))
+      if (tagmGeom->E_to_column(taghit->E, (unsigned int&)taghit->column))
          data.push_back(taghit);
+      else
+         delete taghit;
    }
 
    // Copy into factory
@@ -545,14 +547,14 @@ jerror_t DEventSourceREST::Extract_DTAGHHit(hddm_r::HDDM *record,
    eventLoop->Get(taghGeomVect, "mc");
    if (taghGeomVect.size() < 1)
       return OBJECT_NOT_AVAILABLE;
-   const DTAGHGeometry& taghGeom = *(taghGeomVect[0]);
+   const DTAGHGeometry* taghGeom = taghGeomVect[0];
  
    // extract the TAGM geometry
    vector<const DTAGMGeometry*> tagmGeomVect;
    eventLoop->Get(tagmGeomVect, "mc");
    if (tagmGeomVect.size() < 1)
       return OBJECT_NOT_AVAILABLE;
-   const DTAGMGeometry& tagmGeom = *(tagmGeomVect[0]);
+   const DTAGMGeometry* tagmGeom = tagmGeomVect[0];
 
    vector<DTAGHHit*> data;
 
@@ -567,11 +569,10 @@ jerror_t DEventSourceREST::Extract_DTAGHHit(hddm_r::HDDM *record,
       taghit->E = iter->getE();
       taghit->t = iter->getT();
       unsigned int column;
-      if ((! tagmGeom.E_to_column(taghit->E, column)) &&
-          taghGeom.E_to_counter(taghit->E, (unsigned int&)taghit->counter_id))
-      {
+      if ((! tagmGeom->E_to_column(taghit->E, column)) && taghGeom->E_to_counter(taghit->E, (unsigned int&)taghit->counter_id))
          data.push_back(taghit);
-      }
+      else
+         delete taghit;
    }
 
    // Copy into factory

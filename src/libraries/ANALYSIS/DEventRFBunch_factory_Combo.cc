@@ -180,6 +180,7 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
 		}
 		_data.push_back(locNewEventRFBunch);
+		return NOERROR;
 	}
 
  	vector<const DTrackTimeBased*> locTrackTimeBasedVector;

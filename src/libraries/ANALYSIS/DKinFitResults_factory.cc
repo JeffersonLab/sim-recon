@@ -75,12 +75,15 @@ jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 	}
 
 	//set pool sizes
-	unsigned int locExpectedNumCombos = 1000;
+	unsigned int locExpectedNumCombos = 50;
 	dKinFitter.Set_MaxKinFitParticlePoolSize(locNumReactions*locExpectedNumCombos*6);
 	dKinFitter.Set_MaxKinFitConstraintVertexPoolSize(locNumReactions*locExpectedNumCombos*3);
 	dKinFitter.Set_MaxKinFitConstraintSpacetimePoolSize(locNumReactions*locExpectedNumCombos*3);
 	dKinFitter.Set_MaxKinFitConstraintP4PoolSize(locNumReactions*locExpectedNumCombos*3);
 	dKinFitter.Set_MaxMatrixDSymPoolSize(locNumReactions*locExpectedNumCombos*6);
+	dKinFitter.Set_MaxLargeMatrixDSymPoolSize(locNumReactions*locExpectedNumCombos);
+
+	dKinFitter.Preallocate_MatrixMemory();
 
 	return NOERROR;
 }
@@ -148,6 +151,7 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 			dPreviouslyFailedFits.push_back(DPreviousFitInfo(locEventRFBunch, locConstOriginalConstraints, locDecayingKinFitParticles));
 			continue;
 		}
+
 		if(dDebugLevel > 0)
 			cout << "Perform Primary Kinematic Fit" << endl;
 		if(dKinFitter.Fit_Reaction()) //if fit fails: no kinfit results, BUT will still generate new DParticleCombo (using old info though!)

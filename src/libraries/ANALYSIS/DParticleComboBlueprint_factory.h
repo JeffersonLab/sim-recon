@@ -28,6 +28,7 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		~DParticleComboBlueprint_factory(){};
 
 		void Reset_Pools(void);
+		size_t Get_ParticleComboBlueprintStepPoolSize(void) const{return dParticleComboBlueprintStepPool_All.size();};
 
 	private:
 		jerror_t init(void);						///< Called once at program start.

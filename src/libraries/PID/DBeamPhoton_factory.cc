@@ -42,6 +42,7 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumb
 
 	vector<const DTAGMHit*> tagm_hits;
 	locEventLoop->Get(tagm_hits);
+
 	for (unsigned int ih=0; ih < tagm_hits.size(); ++ih)
 	{
 		DVector3 mom(0.0, 0.0, tagm_hits[ih]->E);
@@ -59,6 +60,7 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumb
 
 	vector<const DTAGHHit*> tagh_hits;
 	locEventLoop->Get(tagh_hits);
+
 	for (unsigned int ih=0; ih < tagh_hits.size(); ++ih)
 	{
 		DVector3 mom(0.0, 0.0, tagh_hits[ih]->E);

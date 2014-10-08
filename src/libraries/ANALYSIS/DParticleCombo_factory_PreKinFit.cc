@@ -19,8 +19,8 @@ using namespace jana;
 //------------------
 jerror_t DParticleCombo_factory_PreKinFit::init(void)
 {
-	MAX_DParticleComboStepPoolSize = 3000;
-	MAX_DKinematicDataPoolSize = 1;
+	MAX_DParticleComboStepPoolSize = 100;
+	MAX_DKinematicDataPoolSize = 10;
 
 	dMaxPhotonRFDeltaT = pair<bool, double>(false, -1.0);
 	dMinChargedPIDFOM = pair<bool, double>(false, -1.0);
@@ -86,7 +86,7 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 		dReactions.insert(dReactions.end(), locReactionsSubset.begin(), locReactionsSubset.end());
 	}
 
-	MAX_DParticleComboStepPoolSize = 3000*dReactions.size();
+	MAX_DParticleComboStepPoolSize = 100*dReactions.size();
 
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
@@ -250,10 +250,14 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 
 			if(!locMCThrowns.empty())
 			{
-				locHistName = "TrueBeamPhotonRFDeltaT";
+				locHistName = "BeamPhotonRFDeltaT_TrueCombo";
 				loc1IHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 				if(loc1IHist == NULL)
+				{
 					loc1IHist = (TH1I*)dHistMap_PhotonRFDeltaT_All[locReaction]->Clone(locHistName.c_str());
+					locHistTitle = locReactionName + string(", True Combo");
+					loc1IHist->SetTitle(locHistTitle.c_str());
+				}
 				dHistMap_PhotonRFDeltaT_True[locReaction] = loc1IHist;
 			}
 
@@ -269,7 +273,7 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 
 			//PID FOM
 			deque<Particle_t> locDetectedPIDs;
-			dReactions[loc_i]->Get_DetectedFinalPIDs(locDetectedPIDs);
+			locReaction->Get_DetectedFinalPIDs(locDetectedPIDs);
 			for(size_t loc_j = 0; loc_j < locDetectedPIDs.size(); ++loc_j)
 			{
 				Particle_t locPID = locDetectedPIDs[loc_j];
@@ -707,6 +711,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				Recycle_Data_BeamStep(locCutParticleCombos[loc_j], locParticleComboBlueprint, locEventRFBunch);
 		}
 
+		//delete failed combos
 		for(size_t loc_j = 0; loc_j < locCutParticleCombos.size(); ++loc_j)
 			delete locCutParticleCombos[loc_j];
 
@@ -816,7 +821,8 @@ void DParticleCombo_factory_PreKinFit::Build_BeamPhotonCombos(DParticleCombo* lo
 			else
 			{
 				//create new combo, utilzing the previously-craeted step
-				DParticleCombo* locNewParticleCombo = new DParticleCombo(*locParticleCombo);
+				DParticleCombo* locNewParticleCombo = new DParticleCombo();
+				*locNewParticleCombo = *locParticleCombo;
 				locNewParticleCombo->Set_ParticleComboStep(*locStepIterator, 0);
 				locBuiltParticleCombos.push_back(locNewParticleCombo);
 			}
@@ -837,7 +843,8 @@ void DParticleCombo_factory_PreKinFit::Build_BeamPhotonCombos(DParticleCombo* lo
 		DParticleComboStep* locParticleComboStep = Clone_ParticleComboStep(locParticleCombo->Get_ParticleComboStep(0));
 		locParticleComboStep->Set_InitialParticle(*locPhotonIterator);
 
-		DParticleCombo* locNewParticleCombo = new DParticleCombo(*locParticleCombo);
+		DParticleCombo* locNewParticleCombo = new DParticleCombo();
+		*locNewParticleCombo = *locParticleCombo;
 		locNewParticleCombo->Set_ParticleComboStep(locParticleComboStep, 0);
 		locBuiltParticleCombos.push_back(locNewParticleCombo);
 	}

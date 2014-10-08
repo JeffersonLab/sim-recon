@@ -9,7 +9,7 @@
 //------------------
 jerror_t DParticleCombo_factory::init(void)
 {
-	MAX_DParticleComboStepPoolSize = 40;
+	MAX_DParticleComboStepPoolSize = 200;
 	MAX_DKinematicDataPoolSize = 40;
 
 	//Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory. 
@@ -60,8 +60,8 @@ jerror_t DParticleCombo_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 		locNumReactions += locReactionsSubset.size();
 	}
 
-	MAX_DParticleComboStepPoolSize = 2000*locNumReactions;
-	MAX_DKinematicDataPoolSize = 1000*locNumReactions;
+	MAX_DParticleComboStepPoolSize = 100*locNumReactions;
+	MAX_DKinematicDataPoolSize = 100*locNumReactions;
 
 	return NOERROR;
 }

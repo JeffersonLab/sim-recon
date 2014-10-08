@@ -198,7 +198,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_BeamPhotons(JEventLoop* loc
 	locMCThrownMatching->Set_ReconMCGENBeamPhoton(locBestBeamPhoton);
 
 	//recon photon, truth photon, delta-t
-	map<const DBeamPhoton*, vector<pair<const DBeamPhoton*, double> > > locPossibleMatches;
+	map<const DBeamPhoton*, deque<pair<const DBeamPhoton*, double> > > locPossibleMatches;
 	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 	{
 		for(size_t loc_j = 0; loc_j < locBeamPhotons_TRUTH.size(); ++loc_j)
@@ -237,10 +237,10 @@ void DMCThrownMatching_factory::Find_GenReconMatches_BeamPhotons(JEventLoop* loc
 	map<const DBeamPhoton*, const DBeamPhoton*> locBeamPhotonToTruthMap;
 	map<const DBeamPhoton*, const DBeamPhoton*> locBeamTruthToPhotonMap;
 
-	map<const DBeamPhoton*, vector<pair<const DBeamPhoton*, double> > >::iterator locIterator = locPossibleMatches.begin();
+	map<const DBeamPhoton*, deque<pair<const DBeamPhoton*, double> > >::iterator locIterator = locPossibleMatches.begin();
 	for(; locIterator != locPossibleMatches.end(); ++locIterator)
 	{
-		vector<pair<const DBeamPhoton*, double> > locPairs = locIterator->second;
+		deque<pair<const DBeamPhoton*, double> > locPairs = locIterator->second;
 		double locBestDeltaT = 9.9E9;
 		const DBeamPhoton* locBestBeamPhoton = NULL;
 		for(size_t loc_i = 0; loc_i < locPairs.size(); ++loc_i)

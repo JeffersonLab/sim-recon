@@ -36,6 +36,14 @@ class DKinFitResults_factory : public jana::JFactory<DKinFitResults>
 
 		void Reset_NewEvent(void);
 
+		//GET CURRENT POOL SIZES
+		size_t Get_KinFitParticlePoolSize(void) const{return dKinFitter.Get_KinFitParticlePoolSize();};
+		size_t Get_KinFitConstraintVertexPoolSize(void) const{return dKinFitter.Get_KinFitConstraintVertexPoolSize();};
+		size_t Get_KinFitConstraintSpacetimePoolSize(void) const{return dKinFitter.Get_KinFitConstraintSpacetimePoolSize();};
+		size_t Get_KinFitConstraintP4PoolSize(void) const{return dKinFitter.Get_KinFitConstraintP4PoolSize();};
+		size_t Get_MatrixDSymPoolSize(void) const{return dKinFitter.Get_MatrixDSymPoolSize();};
+		size_t Get_LargeMatrixDSymPoolSize(void) const{return dKinFitter.Get_LargeMatrixDSymPoolSize();};
+
 	private:
 
 		jerror_t init(void);						///< Called once at program start.
