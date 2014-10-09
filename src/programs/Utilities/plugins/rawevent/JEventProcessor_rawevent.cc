@@ -130,7 +130,7 @@ static cscRef CSCREF_NULL = CDCBAL_NULL;
 
 // detector map (inverse of csc map) is 3-dimensional array of strings with indices (crate,slot,channel)
 //  content is detector-dependent encoded string
-#define MAXDCRATE   78+1
+#define MAXDCRATE   99+1
 #define MAXDSLOT    21+1
 #define MAXDCHANNEL 72+1
 static string detectorMap[MAXDCRATE][MAXDSLOT][MAXDCHANNEL];
