@@ -102,7 +102,7 @@ def mk_setenv_csh(env):
 	str += 'setenv PATH ${HALLD_HOME}/${BMS_OSNAME}/bin:${PATH}\n'
 	str += 'setenv JANA_PLUGIN_PATH ${HALLD_HOME}/${BMS_OSNAME}/plugins:${JANA_PLUGIN_PATH}\n'
 	# python support
-	str += 'setenv %s ${HALLD_HOME}/${BMS_OSNAME}/lib/python:${%s}\n' %(LDLPV, LDLPV)
+	str += 'setenv %s ${HALLD_HOME}/${BMS_OSNAME}/lib:${%s}\n' %(LDLPV, LDLPV)
 	str += 'setenv PYTHONPATH ${HALLD_HOME}/${BMS_OSNAME}/lib/python:${PYTHONPATH}\n'
 	str += '\n'
 
@@ -257,7 +257,7 @@ def mk_setenv_bash(env):
 	str += 'export PATH=${HALLD_HOME}/${BMS_OSNAME}/bin:${PATH}\n'
 	str += 'export JANA_PLUGIN_PATH=${HALLD_HOME}/${BMS_OSNAME}/plugins:${JANA_PLUGIN_PATH}\n'
 	# python support
-	str += 'export %s=${HALLD_HOME}/${BMS_OSNAME}/lib/python:${%s}\n' %(LDLPV, LDLPV)
+	str += 'export %s=${HALLD_HOME}/${BMS_OSNAME}/lib:${%s}\n' %(LDLPV, LDLPV)
 	str += 'export PYTHONPATH=${HALLD_HOME}/${BMS_OSNAME}/lib/python:${PYTHONPATH}\n'
 	str += '\n'
 
@@ -266,8 +266,8 @@ def mk_setenv_bash(env):
 	if ccdb_home != None:
 		str += '# CCDB\n'
 		str += 'export CCDB_HOME=%s\n' % os.getenv('CCDB_HOME', '$HOME/ccdb')
-		str += 'if [ -e $CCDB_HOME/environment.sh ]; then\n'
-		str += '  . $CCDB_HOME/environment.sh\n'
+		str += 'if [ -e $CCDB_HOME/environment.bash ]; then\n'
+		str += '  . $CCDB_HOME/environment.bash\n'
 		str += 'fi\n'
 		str += 'export CCDB_CONNECTION=${JANA_CALIB_URL}\n'
 		str += '\n'
