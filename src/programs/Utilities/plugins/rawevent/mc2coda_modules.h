@@ -652,12 +652,27 @@ caen1290_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 
 void WriteDAQconfigBank(CODA_CRATE_MAP *crate, int roc)
 {
-	
+
 	// Get type of digitization modules in this crate. Assume all are the same
 	enum type_id_t modtype = UNKNOWN;
 	int i;
-	for(i=0; i<crate->nModules; i++){
-		if(crate->module_map[i]>TID && crate->module_map[i]<TD){
+	for(i=0; i<MAX_SLOTS; i++){
+		int mymodtype = crate->module_map[i];
+		switch(mymodtype){
+			case FADC250:
+			case FADC125:
+			case F1TDC32:
+			case F1TDC48:
+			case CAEN1190:
+			case CAEN1290:
+				modtype = mymodtype;
+				break;
+			default:
+				break;
+		}
+		if(modtype != UNKNOWN) break;
+		
+		if(mymodtype>TID && mymodtype<TD){
 			modtype = crate->module_map[i];
 			break;
 		}
@@ -681,6 +696,8 @@ void WriteDAQconfigBank(CODA_CRATE_MAP *crate, int roc)
 			partype[Npar] = kPARAMF1_REFCNT;     parvalue[Npar++] = 0; // Need to get a real number here
 			partype[Npar] = kPARAMF1_HSDIV;      parvalue[Npar++] = 0; // Need to get a real number here
 			break;
+		case CAEN1290:
+			partype[Npar] = kPARAMCAEN1290_WINOFFSET; parvalue[Npar++] = 0; // This is just a placeholder
 		default:
 			break;
 	}
