@@ -21,11 +21,11 @@ class Df125PulseRawData:public DDAQAddress{
 		
 		Df125PulseRawData(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0, uint32_t first_sample_number=0):DDAQAddress(rocid, slot, channel, itrigger),pulse_number(pulse_number),first_sample_number(first_sample_number),invalid_samples(false),overflow(false){}
 		
-		uint32_t pulse_number;         // from Pulse Raw Data Data 1st word
-		uint32_t first_sample_number;  // from Pulse Raw Data Data 1st word
-		vector<uint16_t> samples;      // from Pulse Raw Data Data words 2-N (each word contains 2 samples)
-		bool invalid_samples;          // true if any sample's "not valid" bit set
-		bool overflow;                 // true if any sample's "overflow" bit set
+		uint32_t pulse_number;         ///< from Pulse Raw Data Data 1st word
+		uint32_t first_sample_number;  ///< from Pulse Raw Data Data 1st word
+		vector<uint16_t> samples;      ///< from Pulse Raw Data Data words 2-N (each word contains 2 samples)
+		bool invalid_samples;          ///< true if any sample's "not valid" bit set
+		bool overflow;                 ///< true if any sample's "overflow" bit set
 		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format

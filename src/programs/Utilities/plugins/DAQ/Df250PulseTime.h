@@ -19,11 +19,12 @@ class Df250PulseTime:public DDAQAddress{
 	public:
 		JOBJECT_PUBLIC(Df250PulseTime);
 		
-		Df250PulseTime(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0, uint32_t quality_factor=0, uint32_t time=0):DDAQAddress(rocid, slot, channel, itrigger),pulse_number(pulse_number),quality_factor(quality_factor),time(time){}
+		Df250PulseTime(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0, uint32_t quality_factor=0, uint32_t time=0, bool emulated=false):DDAQAddress(rocid, slot, channel, itrigger),pulse_number(pulse_number),quality_factor(quality_factor),time(time),emulated(emulated){}
 		
-		uint32_t pulse_number;         // from Pulse Time Data word
-		uint32_t quality_factor;       // from Pulse Time Data word
-		uint32_t time;                 // from Pulse Time Data word
+		uint32_t pulse_number;         ///< from Pulse Time Data word
+		uint32_t quality_factor;       ///< from Pulse Time Data word
+		uint32_t time;                 ///< from Pulse Time Data word
+		bool     emulated;             ///< true if made from Window Raw Data
 		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
@@ -32,6 +33,7 @@ class Df250PulseTime:public DDAQAddress{
 			AddString(items, "pulse_number", "%d", pulse_number);
 			AddString(items, "quality_factor", "%d", quality_factor);
 			AddString(items, "time", "%d", time);
+			AddString(items, "emulated", "%d", emulated);
 		}
 };
 
