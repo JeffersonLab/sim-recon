@@ -987,9 +987,14 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 				hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
 
 				// Make PulseTime, PulsePedstal, and PulseIntegral objects associated objects of one another
-				LinkAssociations(pt_objs, pi_objs);
-				LinkAssociations(pt_objs, pp_objs);
-				LinkAssociations(pi_objs, pp_objs);
+				vector<Df250PulseIntegral*> ppi_objs;
+				vector<Df250PulseTime*>     ppt_objs;
+				vector<Df250PulsePedestal*> ppp_objs;
+				CopyContainerElementsWithCast(pi_objs, ppi_objs);
+				CopyContainerElementsWithCast(pt_objs, ppt_objs);
+				CopyContainerElementsWithCast(pp_objs, ppp_objs);
+				LinkAssociationsWithPulseNumber(ppt_objs, ppi_objs);
+				LinkAssociationsWithPulseNumber(ppp_objs, ppi_objs);
 			}	
 		}
 	}
@@ -1024,9 +1029,14 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 				hit_objs_by_type["Df125PulseIntegral"] = pi_objs;
 
 				// Make PulseTime, PulsePedstal, and PulseIntegral objects associated objects of one another
-				LinkAssociations(pt_objs, pi_objs);
-				LinkAssociations(pt_objs, pp_objs);
-				LinkAssociations(pi_objs, pp_objs);
+				vector<Df125PulseIntegral*> ppi_objs;
+				vector<Df125PulseTime*>     ppt_objs;
+				vector<Df125PulsePedestal*> ppp_objs;
+				CopyContainerElementsWithCast(pi_objs, ppi_objs);
+				CopyContainerElementsWithCast(pt_objs, ppt_objs);
+				CopyContainerElementsWithCast(pp_objs, ppp_objs);
+				LinkAssociationsWithPulseNumber(ppt_objs, ppi_objs);
+				LinkAssociationsWithPulseNumber(ppp_objs, ppi_objs);
 			}	
 		}
 	}
@@ -1311,6 +1321,7 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		myDf250PulseIntegral->pedestal = 0;
 		myDf250PulseIntegral->nsamples_integral = end_sample - start_sample + 1;
 		myDf250PulseIntegral->nsamples_pedestal = F250_NSPED;
+		myDf250PulseIntegral->emulated = true;
 
 		// Add the Df250WindowRawData object as an associated object
 		myDf250PulseIntegral->AddAssociatedObject(f250WindowRawData);
@@ -1357,7 +1368,8 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 		myDf125PulseIntegral->quality_factor = quality_factor;
 		myDf125PulseIntegral->integral = signalsum;
 		myDf125PulseIntegral->pedestal = pedestalsum/ped_samples;  // This will be replaced by the one from Df125PulsePedestal in GetObjects
-		
+		myDf125PulseIntegral->emulated = true;
+
 		// Add the Df125WindowRawData object as an associated object
 		myDf125PulseIntegral->AddAssociatedObject(f125WindowRawData);
 		
@@ -1494,6 +1506,7 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		myDf250PulseTime->pulse_number = 0;
 		myDf250PulseTime->quality_factor = 0;
 		myDf250PulseTime->time = time;
+		myDf250PulseTime->emulated = true;
 
 		// create new Df250PulsePedestal object
 		Df250PulsePedestal *myDf250PulsePedestal = new Df250PulsePedestal;
@@ -1504,16 +1517,23 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		myDf250PulsePedestal->pulse_number = 0;
 		myDf250PulsePedestal->pedestal = pedestalsum; // Don't return the divided pedestal.  Return the sum and the number of pedestal samples
 		myDf250PulsePedestal->pulse_peak = VPEAK;
+		myDf250PulsePedestal->emulated = true;
 
 		// Add the Df250WindowRawData object as an associated object
 		myDf250PulseTime->AddAssociatedObject(f250WindowRawData);
 		myDf250PulsePedestal->AddAssociatedObject(f250WindowRawData);
-		myDf250PulseTime->AddAssociatedObject(myDf250PulsePedestal);
 		
 		// Add to list of Df250PulseTime and Df250PulsePedestal objects
 		pt_objs.push_back(myDf250PulseTime);
 		pp_objs.push_back(myDf250PulsePedestal);	
 	}
+	
+	// Add PulseTime and PulsePedestal objects as associate objects of one another
+	vector<Df250PulseTime*>     ppt_objs;
+	vector<Df250PulsePedestal*> ppp_objs;
+	CopyContainerElementsWithCast(pt_objs, ppt_objs);
+	CopyContainerElementsWithCast(pp_objs, ppp_objs);
+	LinkAssociationsWithPulseNumber(ppt_objs, ppp_objs);
 }
 
 //----------------
@@ -1579,6 +1599,7 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		myDf125PulseTime->pulse_number = 0;
 		myDf125PulseTime->quality_factor = 1;
 		myDf125PulseTime->time = ihitsample*10 - 20; // Rough time 20 is "ROUGH_DT" in Naomi's original code
+		myDf125PulseTime->emulated = true;
 
 		// create new Df125PulsePedestal object
 		Df125PulsePedestal *myDf125PulsePedestal = new Df125PulsePedestal;
@@ -1589,11 +1610,11 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		myDf125PulsePedestal->pulse_number = 0;
 		myDf125PulsePedestal->pedestal = pedestalsum;
 		myDf125PulsePedestal->pulse_peak = pulse_peak;
+		myDf125PulsePedestal->emulated = true;
 		
 		// Add the Df125WindowRawData object as an associated object
 		myDf125PulseTime->AddAssociatedObject(f125WindowRawData);
 		myDf125PulsePedestal->AddAssociatedObject(f125WindowRawData);
-		myDf125PulseTime->AddAssociatedObject(myDf125PulsePedestal);
 		
 		// Add to list of Df125PulseTime objects
 		pt_objs.push_back(myDf125PulseTime);
@@ -1702,9 +1723,14 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 			myDf125PulseTime->time = 0;
 			myDf125PulseTime->quality_factor = 2;
 		}
-		
-		
 	}
+	
+	// Add PulseTime and PulsePedestal objects as associate objects of one another
+	vector<Df125PulseTime*>     ppt_objs;
+	vector<Df125PulsePedestal*> ppp_objs;
+	CopyContainerElementsWithCast(pt_objs, ppt_objs);
+	CopyContainerElementsWithCast(pp_objs, ppp_objs);
+	LinkAssociationsWithPulseNumber(ppt_objs, ppp_objs);
 }
 
 //----------------
@@ -2671,8 +2697,8 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				break;
 			case 10: // Pulse Pedestal (consistent with Beni's hand-edited version of Cody's document)
 				if(VERBOSE>7) evioout << "      FADC125 Pulse Pedestal"<<endl;
-				channel = (*iptr>>20) & 0x7F;
-				//channel = last_pulse_time_channel; // not enough bits to hold channel number so rely on proximity to Pulse Time in data stream (see "FADC125 dataformat 250 modes.docx")
+				//channel = (*iptr>>20) & 0x7F;
+				channel = last_pulse_time_channel; // not enough bits to hold channel number so rely on proximity to Pulse Time in data stream (see "FADC125 dataformat 250 modes.docx")
 				pulse_number = (*iptr>>18) & 0x03;
 				pedestal = (*iptr>>12) & 0xFF;
 				pulse_peak = (*iptr>>0) & 0xFFF;

@@ -19,11 +19,12 @@ class Df125PulsePedestal:public DDAQAddress{
 	public:
 		JOBJECT_PUBLIC(Df125PulsePedestal);
 		
-		Df125PulsePedestal(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0, uint32_t pedestal=0, uint32_t pulse_peak=0):DDAQAddress(rocid, slot, channel, itrigger),pulse_number(pulse_number),pedestal(pedestal),pulse_peak(pulse_peak){}
+		Df125PulsePedestal(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0, uint32_t pedestal=0, uint32_t pulse_peak=0,bool emulated=false):DDAQAddress(rocid, slot, channel, itrigger),pulse_number(pulse_number),pedestal(pedestal),pulse_peak(pulse_peak),emulated(emulated){}
 		
-		uint32_t pulse_number;   // from Pulse Pedestal Data word
-		uint32_t pedestal;       // from Pulse Pedestal Data word
-		uint32_t pulse_peak;     // from Pulse Pedestal Data word
+		uint32_t pulse_number;   ///< from Pulse Pedestal Data word
+		uint32_t pedestal;       ///< from Pulse Pedestal Data word
+		uint32_t pulse_peak;     ///< from Pulse Pedestal Data word
+		bool     emulated;       ///< true if made from Window Raw Data
 		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
@@ -32,6 +33,7 @@ class Df125PulsePedestal:public DDAQAddress{
 			AddString(items, "pulse_number", "%d", pulse_number);
 			AddString(items, "pedestal", "%d", pedestal);
 			AddString(items, "pulse_peak", "%d", pulse_peak);
+			AddString(items, "emulated", "%d", emulated);
 		}
 };
 

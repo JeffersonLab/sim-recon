@@ -533,6 +533,28 @@ void LinkAssociationsROCIDOnly(vector<T*> &a, vector<U*> &b)
 	}
 }
 
+//----------------------------
+// CopyContainerElementsWithCast
+//----------------------------
+template<class T, class U>
+void CopyContainerElementsWithCast(vector<T*> &a, vector<U*> &b)
+{
+	/// This is used to copy pointers from a vector of one type of
+	/// pointer to a vector of another type, doing a static cast
+	/// in the process. For example, to fill a vector<JObject*> a
+	/// from a vector<Df250PulseIntegral*> b, call:
+	///
+	///  CopyContainerElementsWithCast(b, a);
+	///
+	/// Note that this does not do any dynamic_cast-ing to ensure
+	/// that the objects really are of compatible types. So be
+	/// cautious.
+
+	for(uint32_t i=0; i<a.size(); i++){
+		b.push_back((U*)a[i]);
+	}
+}
+
 #endif // HAVE_EVIO		
 
 
