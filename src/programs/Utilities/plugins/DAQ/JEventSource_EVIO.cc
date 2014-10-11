@@ -2642,8 +2642,8 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		uint32_t data_type = (*iptr>>27) & 0x0F;
 		switch(data_type){
 			case 0: // Block Header
-				if(VERBOSE>7) evioout << "      FADC125 Event Header"<<endl;
 				slot = (*iptr>>22) & 0x1F;
+				if(VERBOSE>7) evioout << "      FADC125 Block Header: slot="<<slot<<endl;
 				//iblock= (*iptr>>8) & 0x03FF;
 				//Nblock_events= (*iptr>>0) & 0xFF;
 				break;
@@ -2699,8 +2699,8 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				if(VERBOSE>7) evioout << "      FADC125 Pulse Pedestal"<<endl;
 				//channel = (*iptr>>20) & 0x7F;
 				channel = last_pulse_time_channel; // not enough bits to hold channel number so rely on proximity to Pulse Time in data stream (see "FADC125 dataformat 250 modes.docx")
-				pulse_number = (*iptr>>18) & 0x03;
-				pedestal = (*iptr>>12) & 0xFF;
+				pulse_number = (*iptr>>21) & 0x03;
+				pedestal = (*iptr>>12) & 0x1FF;
 				pulse_peak = (*iptr>>0) & 0xFFF;
 				if(objs && !F125_IGNORE_PULSETIME) objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
 				break;
