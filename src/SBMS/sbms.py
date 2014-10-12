@@ -692,6 +692,75 @@ def AddROOT(env):
 	os.chdir(curpath)
 
 ##################################
+# ROOTSPY Macro build function
+##################################
+def RootSpyMacroCodeGen(target, source, env):
+	# Used by AddROOTSpyMacros below. See comments there for details
+	t = '%s' % target[0]
+	s = '%s' % source[0]
+
+	base = os.path.basename(s[:-2])
+	class_name = '%s_rootspy_class' % base
+	fin  = open(s)
+	fout = open(t, 'w')
+
+	fout.write('#include <dlfcn.h>\n')
+	fout.write('#include <iostream>\n')
+	fout.write('#include <string>\n')
+	fout.write('using namespace std;\n')
+	fout.write('static string macro_data=""\n')
+	for line in fin:
+		line = line.replace('"', '\\\"')
+		fout.write('"%s\\n"\n' % line[:-1])
+	fout.write(';\n')
+	fout.write('class %s{\n' % class_name)
+	fout.write('   public:\n')
+	fout.write('   typedef void rmfcn(string, string, string);\n')
+	fout.write('   %s(){\n' % class_name)
+	fout.write('      rmfcn* fcn = (rmfcn*)dlsym(RTLD_DEFAULT, "REGISTER_ROOTSPY_MACRO");\n')
+	fout.write('      if(fcn) (*fcn)("%s","/", macro_data);\n' % base)
+	fout.write('   }\n')
+	fout.write('};\n')
+	fout.write('static %s tmp;' % class_name)
+
+	fin.close()
+	fout.close()
+
+##################################
+# ROOTSPY Macros
+##################################
+def AddROOTSpyMacros(env):
+	#
+	# This is used to generate a C++ file for each ROOT macro file
+	# where the complete macro file is embedded as a string. A small
+	# piece of code is also inserted that allows the string to be
+	# automatically registered with the RootSpy system, if present.
+	# (Basically, if the rootspy plugin is attached.) ROOT macros
+	# are identified by a file ending with a ".C" suffix. The macro
+	# name will be the basename of the file.
+	#
+
+	# Create Builder that can convert .C file into _rootspy_macro.cc file
+	if env['SHOWBUILD']==0:
+		rootmacroaction = SCons.Script.Action(RootSpyMacroCodeGen, 'ROOTSPY    [$SOURCE]')
+	else:
+		rootmacroaction = SCons.Script.Action(RootSpyMacroCodeGen)
+	bld = SCons.Script.Builder(action = rootmacroaction, suffix='_rootspy_macro.cc', src_suffix='.C')
+	env.Append(BUILDERS = {'ROOTSpyMacro' : bld})
+
+	# Find all macro files and schedule them to be converted using the above builder
+	curpath = os.getcwd()
+	srcpath = env.Dir('.').srcnode().abspath
+	if(int(env['SHOWBUILD'])>1):
+		print "---- Looking for ROOT macro files (*.C) in: %s" % srcpath
+	os.chdir(srcpath)
+	for f in glob.glob('*.C'):
+		env.AppendUnique(ALL_SOURCES = env.ROOTSpyMacro(f))
+		if(int(env['SHOWBUILD'])>1) : print "       ROOTSpy Macro for %s" % f
+
+	os.chdir(curpath)
+
+##################################
 # SWIG
 ##################################
 def AddSWIG(env):
