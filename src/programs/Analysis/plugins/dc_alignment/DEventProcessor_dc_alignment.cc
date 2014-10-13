@@ -293,7 +293,7 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   JCalibration *jcalib = dapp->GetJCalibration((loop->GetJEvent()).GetRunNumber());
   vector< map<string, double> > tvals;
   cdc_drift_table.clear();
-  if (jcalib->Get("CDC/cdc_drift_table", tvals)==false){    
+  if (jcalib->Get("CDC/cdc_drift_table::NoBField", tvals)==false){    
     for(unsigned int i=0; i<tvals.size(); i++){
       map<string, double> &row = tvals[i];
       cdc_drift_table.push_back(1000.*row["t"]);
