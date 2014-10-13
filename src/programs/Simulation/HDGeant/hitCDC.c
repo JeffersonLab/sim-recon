@@ -48,10 +48,15 @@ static int strawCount = 0;
 static int pointCount = 0;
 static int stripCount = 0;
 static int initialized = 0;
+static float cdc_drift_time[78];
+static float cdc_drift_distance[78];
+static float BSCALE_PAR1=0.;
+static float BSCALE_PAR2=0.;
 
 /* void GetDOCA(int ipart, float x[3], float p[5], float doca[3]);  disabled 6/24/2009 */
 
 typedef int (*compfn)(const void*, const void*);
+extern void polint(float *xa, float *ya,int n,float x, float *y,float *dy);
 
 // Sort function for sorting clusters
 int cdc_cluster_sort(const void *a,const void *b) {
@@ -112,8 +117,25 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits, int ipart, int track, int n_p,
   gufld_db_(x,B);
   Bmag=sqrt(B[0]*B[0]+B[1]*B[1]+B[2]*B[2]);
   float d2=dradius*dradius;
-  float d3=d2*dradius;
-  float tdrift=t+(-49.41+4.74*Bmag)*dradius+(1129.0+78.66*Bmag)*d2;
+  float d3=dradius*d2;  
+  int i=(int)(dradius/0.01); 
+  float my_t,my_t_err;
+  // Check for closeness to boundaries of the drift table
+  if (i>=75){
+    // Do a crude linear extrapolation
+    my_t=cdc_drift_time[75]+((cdc_drift_time[77]-cdc_drift_time[75])/0.02)
+      *(dradius-cdc_drift_distance[75]);
+  }
+  else{
+    int index;
+    if (i<1) index=0;
+    else index=i-1;
+    // Interpolate over the drift table to find an approximation for the drift 
+    // time
+    polint(&cdc_drift_distance[index],&cdc_drift_time[index],4,dradius,&my_t,
+	   &my_t_err);
+  }
+  float tdrift=my_t/(1.-BSCALE_PAR1-BSCALE_PAR2*Bmag);
 
   //Longitudinal diffusion 
   int two=2;
@@ -131,9 +153,10 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits, int ipart, int track, int n_p,
   if (tdrift < tmin) {
     tdrift=tmin;
   }
+  float total_time=t+tdrift;
 
   // Skip cluster if the time would go beyond readout window
-  if (tdrift > CDC_TIME_WINDOW)
+  if (total_time > CDC_TIME_WINDOW)
     return;
   
   // Average number of secondary ion pairs for 50/50 Ar/CO2 mixture
@@ -164,15 +187,15 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits, int ipart, int track, int n_p,
   // Add the hit info
   int nhit;
   for (nhit = 0; nhit < hits->mult; nhit++) {
-    if (fabs(hits->in[nhit].t - tdrift) < TWO_HIT_RESOL) {
+    if (fabs(hits->in[nhit].t - total_time) < TWO_HIT_RESOL) {
       break;
     }
   }
   if (nhit < hits->mult) {             /* merge with former hit */
     /* Use the time from the earlier hit but add the charge*/
     hits->in[nhit].q += q;
-    if (hits->in[nhit].t > tdrift) {
-      hits->in[nhit].t = tdrift;
+    if (hits->in[nhit].t > total_time) {
+      hits->in[nhit].t = total_time;
       hits->in[nhit].d = dradius;
       hits->in[nhit].itrack = gidGetId(track);
       hits->in[nhit].ptype = ipart;
@@ -184,7 +207,7 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits, int ipart, int track, int n_p,
     */
   }
   else if (nhit < MAX_HITS) {            /* create new hit */
-    hits->in[nhit].t = tdrift;
+    hits->in[nhit].t = total_time;
     hits->in[nhit].q = q;
     hits->in[nhit].d = dradius;
     hits->in[nhit].itrack = gidGetId(track);
@@ -250,6 +273,43 @@ void hitCentralDC (float xin[4], float xout[4],
 	printf("CDC: SOME parameters found more than once in Data Base\n");
       } 	
     }
+    //
+    // Get drift table and scale factors from the database
+    //
+    // First check for non-zero field in the magnet bore
+    float x[3]={0.,0.,65};
+    float B[3];
+    gufld_db_(x,B);
+    if (fabs(B[2])>1e-3){
+      nvalues=78;
+      status=GetColumn("CDC/cdc_drift_table::BField1200A",&nvalues,cdc_drift_time,"t");
+      int k;
+      for (k=0;k<nvalues;k++){
+	cdc_drift_time[k]*=1000.; // Scale fron micro-secons to ns
+	cdc_drift_distance[k]=0.01*(float)k; // 100 micron increments;
+      }
+    
+      nvalues=2;
+      status = GetConstants("CDC/cdc_drift_parms::BField1200A", &nvalues, values, strings);
+      for ( k=0;k<(int)nvalues;k++) {
+	if (!strcmp(strings[k].str,"bscale_par1")) {
+	  BSCALE_PAR1 = values[k];
+	}
+	if (!strcmp(strings[k].str,"bscale_par2")) {
+	  BSCALE_PAR2 = values[k];
+	}
+      }
+    }
+    else{
+      nvalues=78;
+      status=GetColumn("CDC/cdc_drift_table::NoBField",&nvalues,cdc_drift_time,"t");
+      int k;
+      for (k=0;k<nvalues;k++){
+	cdc_drift_time[k]*=1000.; // Scale fron micro-secons to ns
+	cdc_drift_distance[k]=0.01*(float)k; // 100 micron increments;
+      }
+    }
+
     initialized = 1;
   }
     
