@@ -271,29 +271,29 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       
       // Check for a pulse time (this should have been added in JEventSource_EVIO.cc)
       const Df250PulseTime *pt = NULL;
-      try{
-         pi->GetSingle(pt);
-      }catch(...) {}
+      const Df250PulsePedestal *pp = NULL;
+	  pi->GetSingle(pt);
+	  pi->GetSingle(pp);
       
       // Create the appropriate hit type based on detector type
       switch (chaninfo.det_sys) {
          case BCAL:
-            vbcal.push_back( MakeBCALDigiHit(chaninfo.bcal, pi, pt) );
+            vbcal.push_back( MakeBCALDigiHit(chaninfo.bcal, pi, pt, pp) );
             break;
          case FCAL:
-            vfcal.push_back( MakeFCALDigiHit(chaninfo.fcal, pi, pt) );
+            vfcal.push_back( MakeFCALDigiHit(chaninfo.fcal, pi, pt, pp) );
             break;
          case SC:
-            vsc.push_back  ( MakeSCDigiHit(  chaninfo.sc,   pi, pt) );
+            vsc.push_back  ( MakeSCDigiHit(  chaninfo.sc,   pi, pt, pp) );
             break;
          case TOF:
-            vtof.push_back ( MakeTOFDigiHit( chaninfo.tof,  pi, pt) ); 
+            vtof.push_back ( MakeTOFDigiHit( chaninfo.tof,  pi, pt, pp) ); 
             break;
          case TAGM:
-            vtagm.push_back( MakeTAGMDigiHit(chaninfo.tagm, pi, pt) ); 
+            vtagm.push_back( MakeTAGMDigiHit(chaninfo.tagm, pi, pt, pp) ); 
             break;
          case TAGH:
-            vtagh.push_back( MakeTAGHDigiHit(chaninfo.tagh, pi, pt) ); 
+            vtagh.push_back( MakeTAGHDigiHit(chaninfo.tagh, pi, pt, pp) ); 
             break;
          default:
             if (VERBOSE > 4)
@@ -337,17 +337,17 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
       // Check for a pulse time (this should have been added in JEventSource_EVIO.cc
       const Df125PulseTime *pt = NULL;
-      try{
-         pi->GetSingle(pt);
-      }catch(...) {}
+      const Df125PulsePedestal *pp = NULL;
+	  pi->GetSingle(pt);
+	  pi->GetSingle(pp);
 
       // Create the appropriate hit type based on detector type
       switch (chaninfo.det_sys) {
          case CDC:
-            vcdc.push_back( MakeCDCDigiHit(chaninfo.cdc, pi, pt) );
+            vcdc.push_back( MakeCDCDigiHit(chaninfo.cdc, pi, pt, pp) );
             break;
          case FDC_CATHODES:
-            vfdccathode.push_back( MakeFDCCathodeDigiHit(chaninfo.fdc_cathodes, pi, pt) );
+            vfdccathode.push_back( MakeFDCCathodeDigiHit(chaninfo.fdc_cathodes, pi, pt, pp) );
             break;
          default: 
              if (VERBOSE > 4)
@@ -521,7 +521,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 //---------------------------------
 DBCALDigiHit* DTranslationTable::MakeBCALDigiHit(const BCALIndex_t &idx,
                                                  const Df250PulseIntegral *pi,
-                                                 const Df250PulseTime *pt) const
+                                                 const Df250PulseTime *pt,
+                                                 const Df250PulsePedestal *pp) const
 {
    if (VERBOSE > 4)
       ttout << "       - Making DBCALDigiHit for (mod,lay,sec,end)=("
@@ -529,7 +530,7 @@ DBCALDigiHit* DTranslationTable::MakeBCALDigiHit(const BCALIndex_t &idx,
             << "," << (DBCALGeometry::End)idx.end << std::endl;
 
    DBCALDigiHit *h = new DBCALDigiHit();
-   CopyDf250Info(h, pi, pt);
+   CopyDf250Info(h, pi, pt, pp);
 
    h->module = idx.module;
    h->layer  = idx.layer;
@@ -544,10 +545,11 @@ DBCALDigiHit* DTranslationTable::MakeBCALDigiHit(const BCALIndex_t &idx,
 //---------------------------------
 DFCALDigiHit* DTranslationTable::MakeFCALDigiHit(const FCALIndex_t &idx,
                                                  const Df250PulseIntegral *pi,
-                                                 const Df250PulseTime *pt) const
+                                                 const Df250PulseTime *pt,
+                                                 const Df250PulsePedestal *pp) const
 {
    DFCALDigiHit *h = new DFCALDigiHit();
-   CopyDf250Info(h, pi, pt);
+   CopyDf250Info(h, pi, pt, pp);
 
    h->row    = idx.row;
    h->column = idx.col;
@@ -560,10 +562,11 @@ DFCALDigiHit* DTranslationTable::MakeFCALDigiHit(const FCALIndex_t &idx,
 //---------------------------------
 DTOFDigiHit* DTranslationTable::MakeTOFDigiHit(const TOFIndex_t &idx,
                                                const Df250PulseIntegral *pi,
-                                               const Df250PulseTime *pt) const
+                                               const Df250PulseTime *pt,
+                                               const Df250PulsePedestal *pp) const
 {
    DTOFDigiHit *h = new DTOFDigiHit();
-   CopyDf250Info(h, pi, pt);
+   CopyDf250Info(h, pi, pt, pp);
 
    h->plane = idx.plane;
    h->bar   = idx.bar;
@@ -577,10 +580,11 @@ DTOFDigiHit* DTranslationTable::MakeTOFDigiHit(const TOFIndex_t &idx,
 //---------------------------------
 DSCDigiHit* DTranslationTable::MakeSCDigiHit(const SCIndex_t &idx, 
                                              const Df250PulseIntegral *pi,
-                                             const Df250PulseTime *pt) const
+                                             const Df250PulseTime *pt,
+                                             const Df250PulsePedestal *pp) const
 {
    DSCDigiHit *h = new DSCDigiHit();
-   CopyDf250Info(h, pi, pt);
+   CopyDf250Info(h, pi, pt, pp);
 
    h->sector = idx.sector;
 
@@ -592,10 +596,11 @@ DSCDigiHit* DTranslationTable::MakeSCDigiHit(const SCIndex_t &idx,
 //---------------------------------
 DTAGMDigiHit* DTranslationTable::MakeTAGMDigiHit(const TAGMIndex_t &idx,
                                                  const Df250PulseIntegral *pi,
-                                                 const Df250PulseTime *pt) const
+                                                 const Df250PulseTime *pt,
+                                                 const Df250PulsePedestal *pp) const
 {
    DTAGMDigiHit *h = new DTAGMDigiHit();
-   CopyDf250Info(h, pi, pt);
+   CopyDf250Info(h, pi, pt, pp);
 
    h->row = idx.row;
    h->column = idx.col;
@@ -608,10 +613,11 @@ DTAGMDigiHit* DTranslationTable::MakeTAGMDigiHit(const TAGMIndex_t &idx,
 //---------------------------------
 DTAGHDigiHit* DTranslationTable::MakeTAGHDigiHit(const TAGHIndex_t &idx,
                                                  const Df250PulseIntegral *pi,
-                                                 const Df250PulseTime *pt) const
+                                                 const Df250PulseTime *pt,
+                                                 const Df250PulsePedestal *pp) const
 {
    DTAGHDigiHit *h = new DTAGHDigiHit();
-   CopyDf250Info(h, pi, pt);
+   CopyDf250Info(h, pi, pt, pp);
 
    h->counter_id = idx.id;
 
@@ -623,10 +629,11 @@ DTAGHDigiHit* DTranslationTable::MakeTAGHDigiHit(const TAGHIndex_t &idx,
 //---------------------------------
 DCDCDigiHit* DTranslationTable::MakeCDCDigiHit(const CDCIndex_t &idx,
                                                const Df125PulseIntegral *pi,
-                                               const Df125PulseTime *pt) const
+                                               const Df125PulseTime *pt,
+                                               const Df125PulsePedestal *pp) const
 {
    DCDCDigiHit *h = new DCDCDigiHit();
-   CopyDf125Info(h, pi, pt);
+   CopyDf125Info(h, pi, pt, pp);
 
    h->ring = idx.ring;
    h->straw = idx.straw;
@@ -640,10 +647,11 @@ DCDCDigiHit* DTranslationTable::MakeCDCDigiHit(const CDCIndex_t &idx,
 DFDCCathodeDigiHit* DTranslationTable::MakeFDCCathodeDigiHit(
                                        const FDC_CathodesIndex_t &idx,
                                        const Df125PulseIntegral *pi,
-                                       const Df125PulseTime *pt) const
+                                       const Df125PulseTime *pt,
+                                       const Df125PulsePedestal *pp) const
 {
    DFDCCathodeDigiHit *h = new DFDCCathodeDigiHit();
-   CopyDf125Info(h, pi, pt);
+   CopyDf125Info(h, pi, pt, pp);
 
    h->package    = idx.package;
    h->chamber    = idx.chamber;

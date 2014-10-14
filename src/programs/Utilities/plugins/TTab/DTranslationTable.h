@@ -27,9 +27,11 @@ using namespace jana;
 #include <DAQ/Df250PulseRawData.h>
 #include <DAQ/Df250TriggerTime.h>
 #include <DAQ/Df250PulseTime.h>
+#include <DAQ/Df250PulsePedestal.h>
 #include <DAQ/Df250WindowRawData.h>
 #include <DAQ/Df125PulseIntegral.h>
 #include <DAQ/Df125PulseTime.h>
+#include <DAQ/Df125PulsePedestal.h>
 #include <DAQ/Df125TriggerTime.h>
 #include <DAQ/DF1TDCHit.h>
 #include <DAQ/DF1TDCTriggerTime.h>
@@ -253,16 +255,16 @@ class DTranslationTable:public jana::JObject{
 		void ApplyTranslationTable(jana::JEventLoop *loop) const;
 		
 		// fADC250
-		DBCALDigiHit* MakeBCALDigiHit(const BCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
-		DFCALDigiHit* MakeFCALDigiHit(const FCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
-		DSCDigiHit*   MakeSCDigiHit(  const SCIndex_t &idx,   const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
-		DTOFDigiHit*  MakeTOFDigiHit( const TOFIndex_t &idx,  const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
-		DTAGMDigiHit* MakeTAGMDigiHit(const TAGMIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
-		DTAGHDigiHit* MakeTAGHDigiHit(const TAGHIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
+		DBCALDigiHit* MakeBCALDigiHit(const BCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DFCALDigiHit* MakeFCALDigiHit(const FCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DSCDigiHit*   MakeSCDigiHit(  const SCIndex_t &idx,   const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DTOFDigiHit*  MakeTOFDigiHit( const TOFIndex_t &idx,  const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DTAGMDigiHit* MakeTAGMDigiHit(const TAGMIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DTAGHDigiHit* MakeTAGHDigiHit(const TAGHIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
 
 		// fADC125
-		DCDCDigiHit* MakeCDCDigiHit(const CDCIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt) const;
-		DFDCCathodeDigiHit* MakeFDCCathodeDigiHit(const FDC_CathodesIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt) const;
+		DCDCDigiHit* MakeCDCDigiHit(const CDCIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt, const Df125PulsePedestal *pp) const;
+		DFDCCathodeDigiHit* MakeFDCCathodeDigiHit(const FDC_CathodesIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt, const Df125PulsePedestal *pp) const;
 
 		// F1TDC
 		DBCALTDCDigiHit* MakeBCALTDCDigiHit(const BCALIndex_t &idx,      const DF1TDCHit *hit) const;
@@ -280,8 +282,8 @@ class DTranslationTable:public jana::JObject{
 		void ReadTranslationTable(JCalibration *jcalib=NULL);
 		
 		template<class T> void CopyToFactory(JEventLoop *loop, vector<T*> &v) const;
-		template<class T> void CopyDf250Info(T *h, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
-		template<class T> void CopyDf125Info(T *h, const Df125PulseIntegral *pi, const Df125PulseTime *pt) const;
+		template<class T> void CopyDf250Info(T *h, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		template<class T> void CopyDf125Info(T *h, const Df125PulseIntegral *pi, const Df125PulseTime *pt, const Df125PulsePedestal *pp) const;
 		template<class T> void CopyDF1TDCInfo(T *h, const DF1TDCHit *hit) const;
 		template<class T> void CopyDCAEN1290TDCInfo(T *h, const DCAEN1290TDCHit *hit) const;
 
@@ -325,7 +327,7 @@ void DTranslationTable::CopyToFactory(JEventLoop *loop, vector<T*> &v) const
 // CopyDf250Info
 //---------------------------------
 template<class T>
-void DTranslationTable::CopyDf250Info(T *h, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const
+void DTranslationTable::CopyDf250Info(T *h, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const
 {
 	/// Copy info from the fADC250 into a hit object.
 	h->pulse_integral    = pi->integral;
@@ -337,13 +339,14 @@ void DTranslationTable::CopyDf250Info(T *h, const Df250PulseIntegral *pi, const 
 	
 	h->AddAssociatedObject(pi);
 	if(pt) h->AddAssociatedObject(pt);
+	if(pp) h->AddAssociatedObject(pp);
 }
 
 //---------------------------------
 // CopyDf125Info
 //---------------------------------
 template<class T>
-void DTranslationTable::CopyDf125Info(T *h, const Df125PulseIntegral *pi, const Df125PulseTime *pt) const
+void DTranslationTable::CopyDf125Info(T *h, const Df125PulseIntegral *pi, const Df125PulseTime *pt, const Df125PulsePedestal *pp) const
 {
 	/// Copy info from the fADC125 into a hit object.
 	h->pulse_integral = pi->integral;
@@ -353,6 +356,7 @@ void DTranslationTable::CopyDf125Info(T *h, const Df125PulseIntegral *pi, const 
 	
 	h->AddAssociatedObject(pi);
 	if(pt) h->AddAssociatedObject(pt);
+	if(pp) h->AddAssociatedObject(pp);
 }
 
 //---------------------------------
