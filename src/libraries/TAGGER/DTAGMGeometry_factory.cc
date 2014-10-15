@@ -7,12 +7,19 @@
 #include "DTAGMGeometry_factory.h"
 #include "DTAGMGeometry.h"
 
+using namespace std;
+
 //------------------
 // brun
 //------------------
 jerror_t DTAGMGeometry_factory::brun(JEventLoop *loop, int runnumber)
 {
-   assert( _data.size() == 0 );
+	if(!_data.empty())
+	{
+		//for change in run #
+		delete _data[0];
+		_data.clear();
+	}
 
    flags = PERSISTANT;
    _data.push_back( new DTAGMGeometry(loop, factory_tag, runnumber) );

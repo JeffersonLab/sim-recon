@@ -11,6 +11,12 @@
 #include <iostream>
 #include <deque>
 
+#include "TFile.h"
+#include "TH1I.h"
+#include "TH2I.h"
+#include "TDirectoryFile.h"
+#include "TROOT.h"
+
 #include "JANA/JFactory.h"
 #include "particleType.h"
 
@@ -28,6 +34,7 @@
 #include "PID/DDetectorMatches.h"
 #include "PID/DEventRFBunch_factory.h"
 
+#include "ANALYSIS/DMCThrownMatching.h"
 #include "ANALYSIS/DParticleComboBlueprint.h"
 
 using namespace jana;
@@ -56,10 +63,18 @@ class DEventRFBunch_factory_Combo:public jana::JFactory<DEventRFBunch>
 
 		double dRFBunchFrequency;
 		double dTargetCenterZ;
+		double dMinThrownMatchFOM;
 
 		bool Get_StartTime(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, double& locStartTime);
 		double Calc_StartTime(const DNeutralShower* locNeutralShower, const DVertex* locVertex);
 		int Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes);
+
+		bool Is_AllTruePID(const DMCThrownMatching* locMCThrownMatching, const DParticleComboBlueprint* locParticleComboBlueprint);
+
+		map<const DReaction*, TH1I*> dHistMap_RFTime;
+
+		map<const DReaction*, TH1I*> dHistMap_DeltaRFTime_TruePID; //given that the PIDs are all correct, diff between selected & true RF times
+		map<const DReaction*, TH1I*> dHistMap_DeltaRFTime; //diff between selected & true RF times (all combos)
 };
 
 #endif // _DEventRFBunch_factory_Combo_

@@ -902,11 +902,11 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	vector<const DEventRFBunch*> locThrownEventRFBunches;
 	locEventLoop->Get(locThrownEventRFBunches, "Thrown");
 
-	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
-	locEventLoop->Get(locChargedTrackHypotheses);
+	vector<const DChargedTrack*> locChargedTracks;
+	locEventLoop->Get(locChargedTracks, "PreSelect");
 
-	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
-	locEventLoop->Get(locNeutralParticleHypotheses);
+	vector<const DNeutralParticle*> locNeutralParticles;
+	locEventLoop->Get(locNeutralParticles, "PreSelect");
 
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
@@ -925,8 +925,6 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	bool locKinFitFlag = (locKinFitType != d_NoFit);
 
 	//find max charged identifier #:
-	vector<const DChargedTrack*> locChargedTracks;
-	locEventLoop->Get(locChargedTracks);
 	unsigned long locMaxChargedID = 0;
 	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
 	{
@@ -934,6 +932,15 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 		if(locCandidateID > locMaxChargedID)
 			locMaxChargedID = locCandidateID;
 	}
+
+	//build hypothesis vectors from pre-select objects for "unused" info
+	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
+	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
+		locChargedTrackHypotheses.insert(locChargedTrackHypotheses.end(), locChargedTracks[loc_i]->dChargedTrackHypotheses.begin(), locChargedTracks[loc_i]->dChargedTrackHypotheses.end());
+
+	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
+	for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)
+		locNeutralParticleHypotheses.insert(locNeutralParticleHypotheses.end(), locNeutralParticles[loc_i]->dNeutralParticleHypotheses.begin(), locNeutralParticles[loc_i]->dNeutralParticleHypotheses.end());
 
 	//create map of neutral shower to new id #
 	vector<const DNeutralShower*> locNeutralShowers;

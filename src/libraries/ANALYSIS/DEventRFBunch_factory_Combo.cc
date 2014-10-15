@@ -19,6 +19,7 @@ jerror_t DEventRFBunch_factory_Combo::init(void)
 	dRFBunchFrequency = 2.004;
 	dShowerSelectionTag = "PreSelect";
 	dTrackSelectionTag = "PreSelect";
+	dMinThrownMatchFOM = 5.73303E-7;
 	return NOERROR;
 }
 
@@ -37,6 +38,105 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int r
 	locEventLoop->GetSingle(dParticleID);
 
 	dEventRFBunchFactory = static_cast<DEventRFBunch_factory*>(locEventLoop->GetFactory("DEventRFBunch"));
+
+	// Get DReactions:
+	// Get list of factories and find all the ones producing
+	// DReaction objects. (A simpler way to do this would be to
+	// just use locEventLoop->Get(...), but then only one plugin could
+	// be used at a time.)
+	vector<JFactory_base*> locFactories = locEventLoop->GetFactories();
+	vector<const DReaction*> locReactions;
+	for(size_t loc_i = 0; loc_i < locFactories.size(); ++loc_i)
+	{
+		JFactory<DReaction>* locFactory = dynamic_cast<JFactory<DReaction>* >(locFactories[loc_i]);
+		if(locFactory == NULL)
+			continue;
+		if(string(locFactory->Tag()) == "Thrown")
+			continue;
+		// Found a factory producing DReactions. The reaction objects are
+		// produced at the init stage and are persistent through all event
+		// processing so we can grab the list here and append it to our
+		// overall list.
+		vector<const DReaction*> locReactionsSubset;
+		locFactory->Get(locReactionsSubset);
+		locReactions.insert(locReactions.end(), locReactionsSubset.begin(), locReactionsSubset.end());
+	}
+
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+
+	string locHistName, locHistTitle;
+	TH1I* loc1DHist;
+
+	//Create Diagnostic Histograms
+	japp->RootWriteLock();
+	{
+		string locOutputFileName = "hd_root.root";
+		if(gPARMS->Exists("OUTPUT_FILENAME"))
+			gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
+		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
+		if(locFile == NULL)
+			return NOERROR;
+		locFile->cd("");
+
+		for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
+		{
+			const DReaction* locReaction = locReactions[loc_i];
+
+			//get to the correct directory
+			string locReactionName = locReaction->Get_ReactionName();
+			string locDirName = locReactionName;
+			string locDirTitle = locReactionName;
+
+			//action directory
+			locFile->cd();
+			TDirectoryFile* locDirectoryFile = static_cast<TDirectoryFile*>(locFile->GetDirectory(locDirName.c_str()));
+			if(locDirectoryFile == NULL)
+				locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirTitle.c_str());
+			locDirectoryFile->cd();
+
+			//pre-combo directory
+			locDirName = "Hist_RFSelection";
+			locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
+			if(locDirectoryFile == NULL)
+				locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirTitle.c_str());
+			locDirectoryFile->cd();
+
+			// RFTime
+			locHistName = "RFTime";
+			loc1DHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+			if(loc1DHist == NULL)
+			{
+				locHistTitle = locReactionName + string(";Combo-Selected RF Time (ns)");
+				loc1DHist = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 420, -21.0, 21.0);
+			}
+			dHistMap_RFTime[locReaction] = loc1DHist;
+
+			if(!locMCThrowns.empty())
+			{
+				// DeltaRFTime
+				locHistName = "DeltaRFTime";
+				loc1DHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+				if(loc1DHist == NULL)
+				{
+					locHistTitle = locReactionName + string(";RF #Deltat_{Selected - True} (ns)");
+					loc1DHist = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 220, -11.0, 11.0);
+				}
+				dHistMap_DeltaRFTime[locReaction] = loc1DHist;
+
+				// DeltaRFTime_TruePID
+				locHistName = "DeltaRFTime_TruePID";
+				loc1DHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+				if(loc1DHist == NULL)
+				{
+					locHistTitle = locReactionName + string(", True PID;RF #Deltat_{Selected - True} (ns)");
+					loc1DHist = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 220, -11.0, 11.0);
+				}
+				dHistMap_DeltaRFTime_TruePID[locReaction] = loc1DHist;
+			}
+		}
+	}
+	japp->RootUnLock(); //unlock
 
 	return NOERROR;
 }
@@ -80,6 +180,7 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
 		}
 		_data.push_back(locNewEventRFBunch);
+		return NOERROR;
 	}
 
  	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
@@ -87,6 +188,12 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 
  	vector<const DNeutralShower*> locNeutralShowers;
 	locEventLoop->Get(locNeutralShowers, dShowerSelectionTag.c_str());
+
+	const DEventRFBunch* locThrownEventRFBunch = NULL;
+	locEventLoop->GetSingle(locThrownEventRFBunch, "Thrown", false);
+
+	const DMCThrownMatching* locMCThrownMatching = NULL;
+	locEventLoop->GetSingle(locMCThrownMatching, "", false);
 
  	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks, dTrackSelectionTag.c_str());
@@ -151,7 +258,6 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 			const DChargedTrack* locChargedTrack = locChargedTracks[loc_j].first;
 			Particle_t locPID = locChargedTracks[loc_j].second;
 			const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPID);
-
 			if(locChargedTrackHypothesis != NULL)
 			{
 				locPropagatedTimes.push_back(dPropagatedStartTimes_Charged[locChargedTrackHypothesis]);
@@ -193,13 +299,36 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 
 		// Find # RF Bunch Shifts
 		int locNumBunchShifts = Find_BestRFBunchShift(locRFTime, locPropagatedTimes);
+		double locNewRFTime = locRFTime + (double)(locNumBunchShifts)*dRFBunchFrequency;
+
+		//Hist
+		bool locIsAllTruePID = false;
+		if(locThrownEventRFBunch != NULL)
+			locIsAllTruePID = Is_AllTruePID(locMCThrownMatching, locParticleComboBlueprint);
+		const DReaction* locReaction = locParticleComboBlueprint->Get_Reaction();
+		japp->RootWriteLock();
+		{
+			dHistMap_RFTime[locReaction]->Fill(locNewRFTime);
+			if(locThrownEventRFBunch != NULL)
+			{
+				double locDeltaT = locNewRFTime - locThrownEventRFBunch->dTime;
+				dHistMap_DeltaRFTime[locReaction]->Fill(locDeltaT); //diff between selected & true RF times (all combos)
+				if(locIsAllTruePID)
+					dHistMap_DeltaRFTime_TruePID[locReaction]->Fill(locDeltaT); //diff between selected & true RF times (all combos)
+			}
+		}
+		japp->RootUnLock(); //unlock
+
 		// Create new RF Bunch if doesn't already exist
 		if(locComboRFBunchMap.find(locNumBunchShifts) != locComboRFBunchMap.end()) //already created, don't recreate identical object!
+		{
 			locComboRFBunchMap[locNumBunchShifts]->AddAssociatedObject(locParticleComboBlueprint);
+			locComboRFBunchMap[locNumBunchShifts]->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
+		}
 		else
 		{
 			DEventRFBunch* locNewEventRFBunch = new DEventRFBunch();
-			locNewEventRFBunch->dTime = locRFTime + (double)(locNumBunchShifts)*dRFBunchFrequency;
+			locNewEventRFBunch->dTime = locNewRFTime;
 			locNewEventRFBunch->dTimeVariance = locRFVariance;
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
@@ -307,6 +436,46 @@ int DEventRFBunch_factory_Combo::Find_BestRFBunchShift(double locRFHitTime, cons
 			locBestRFBunchShift = locNumRFBucketsShifted;
 	}
 	return locBestRFBunchShift;
+}
+
+bool DEventRFBunch_factory_Combo::Is_AllTruePID(const DMCThrownMatching* locMCThrownMatching, const DParticleComboBlueprint* locParticleComboBlueprint)
+{
+	//Charged
+	deque<pair<const DChargedTrack*, Particle_t> > locChargedTracks;
+	locParticleComboBlueprint->Get_DetectedChargedTrackSourceObjects(locChargedTracks);
+	for(size_t loc_j = 0; loc_j < locChargedTracks.size(); ++loc_j)
+	{
+		const DChargedTrack* locChargedTrack = locChargedTracks[loc_j].first;
+		Particle_t locPID = locChargedTracks[loc_j].second;
+
+		double locMatchFOM = 0.0;
+		const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTrack, locMatchFOM);
+		if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
+			return false;
+		if(((Particle_t)locMCThrown->type) != locPID)
+			return false;
+	}
+
+	//Neutrals
+	deque<pair<const DNeutralShower*, Particle_t> > locNeutralShowers;
+	locParticleComboBlueprint->Get_DetectedNeutralShowerSourceObjects(locNeutralShowers);
+	for(size_t loc_j = 0; loc_j < locNeutralShowers.size(); ++loc_j)
+	{
+		Particle_t locPID = locNeutralShowers[loc_j].second;
+		if(locPID != Gamma)
+			continue; //other neutrals (e.g. neutron) can't be used to pick the time: their momentum is defined by the time
+
+		const DNeutralShower* locNeutralShower = locNeutralShowers[loc_j].first;
+
+		double locMatchFOM = 0.0;
+		const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locNeutralShower, locMatchFOM);
+		if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
+			return false;
+		if(((Particle_t)locMCThrown->type) != locPID)
+			return false;
+	}
+
+	return true;
 }
 
 //------------------

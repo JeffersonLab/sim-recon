@@ -38,6 +38,11 @@
 #include "ANALYSIS/DAnalysisUtilities.h"
 #include "ANALYSIS/DAnalysisAction.h"
 #include "ANALYSIS/DCutActions.h"
+#include "ANALYSIS/DAnalysisResults.h"
+
+#include "ANALYSIS/DParticleCombo_factory_PreKinFit.h"
+#include "ANALYSIS/DKinFitResults_factory.h"
+#include "ANALYSIS/DParticleCombo_factory.h"
 
 #include "START_COUNTER/DSCHit.h"
 #include "TAGGER/DTAGHHit.h"
@@ -61,6 +66,9 @@
 using namespace std;
 using namespace jana;
 
+class DParticleCombo_factory_PreKinFit;
+class DAnalysisResults;
+
 /*
 REACTION-BASED ACTIONS:
 	DHistogramAction_ParticleComboKinematics
@@ -82,6 +90,42 @@ REACTION-INDEPENDENT ACTIONS:
 	DHistogramAction_DetectorStudies
 	DHistogramAction_NumReconstructedObjects
 */
+
+class DHistogramAction_ObjectMemory : public DAnalysisAction
+{
+	// This action SHOULD NOT be added to a DReaction. If it is ... it's not the end of the world, but it won't work. 
+
+	public:
+		DHistogramAction_ObjectMemory(string locActionUniqueString) : 
+		DAnalysisAction(NULL, "Hist_ObjectMemory", false, locActionUniqueString), 
+		dMaxNumEvents(50000), dEventCounter(0) {}
+
+		DHistogramAction_ObjectMemory(void) : 
+		DAnalysisAction(NULL, "Hist_ObjectMemory", false, ""), 
+		dMaxNumEvents(50000), dEventCounter(0) {}
+
+		void Initialize(JEventLoop* locEventLoop);
+
+		unsigned int dMaxNumEvents;
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
+
+		unsigned int dEventCounter; //not the same as event #: running with multiple threads over many files, possibly starting at event # != 1
+
+		deque<pair<string, string> > dFactoryPairsToTrack; //class name, tag
+
+		map<pair<string, string>, int> dFactoryPairBinMap;
+		map<string, int> dFactoryPoolBinMap;
+
+		map<int, TH1I*> dHistMap_NumObjects; //int is 2d bin
+		map<int, TH1I*> dHistMap_Memory; //int is 2d bin
+
+		TH2I* dHist_NumObjects;
+		TH2I* dHist_Memory;
+
+		TH1I* dHist_TotalMemory;
+};
 
 class DHistogramAction_PID : public DAnalysisAction
 {

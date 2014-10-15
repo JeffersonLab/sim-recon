@@ -12,7 +12,12 @@
 //------------------
 jerror_t DTAGHGeometry_factory::brun(JEventLoop *loop, int runnumber)
 {
-   assert( _data.size() == 0 );
+	if(!_data.empty())
+	{
+		//for change in run #
+		delete _data[0];
+		_data.clear();
+	}
 
    flags = PERSISTANT;
    _data.push_back( new DTAGHGeometry(loop, factory_tag, runnumber) );

@@ -41,6 +41,8 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		virtual void Reset_NewEvent(void); //IF YOU OVERRIDE THIS METHOD IN THE DERIVED CLASS, MAKE SURE YOU CALL THIS BASE CLASS METHOD!!
 		virtual void Reset_NewFit(void); //IF YOU OVERRIDE THIS METHOD IN THE DERIVED CLASS, MAKE SURE YOU CALL THIS BASE CLASS METHOD!!
 
+		void Preallocate_MatrixMemory(void);
+
 		//CREATE PARTICLES
 			//If multiple constraints, it is EXTREMELY CRITICAL that only one DKinFitParticle be created per particle, so that the particles are correctly linked across constraints!!
 			//data is not registered with the fitter (memory is though)
@@ -113,9 +115,10 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		inline size_t Get_MaxKinFitConstraintSpacetimePoolSize(void) const{return dMaxKinFitConstraintSpacetimePoolSize;}
 		inline void Set_MaxKinFitConstraintP4PoolSize(size_t locMaxKinFitConstraintP4PoolSize){dMaxKinFitConstraintP4PoolSize = locMaxKinFitConstraintP4PoolSize;}
 		inline size_t Get_MaxKinFitConstraintP4PoolSize(void) const{return dMaxKinFitConstraintP4PoolSize;}
-
 		inline void Set_MaxMatrixDSymPoolSize(size_t locMaxMatrixDSymPoolSize){dMaxMatrixDSymPoolSize = locMaxMatrixDSymPoolSize;}
 		inline size_t Get_MaxMatrixDSymPoolSize(void) const{return dMaxMatrixDSymPoolSize;}
+		inline void Set_MaxLargeMatrixDSymPoolSize(size_t locMaxLargeMatrixDSymPoolSize){dMaxLargeMatrixDSymPoolSize = locMaxLargeMatrixDSymPoolSize;}
+		inline size_t Get_MaxLargeMatrixDSymPoolSize(void) const{return dMaxLargeMatrixDSymPoolSize;}
 
 		//GET FIT INFORMATION
 		inline unsigned int Get_NumUnknowns(void) const{return dNumXi;}
@@ -163,14 +166,22 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		inline const TMatrixDSym* Get_VXi(void) {return dVXi;}
 		inline const TMatrixDSym* Get_V(void) {return dV;}
 
+		//GET CURRENT POOL SIZES
+		size_t Get_KinFitParticlePoolSize(void) const{return dKinFitParticlePool_All.size();};
+		size_t Get_KinFitConstraintVertexPoolSize(void) const{return dKinFitConstraintVertexPool_All.size();};
+		size_t Get_KinFitConstraintSpacetimePoolSize(void) const{return dKinFitConstraintSpacetimePool_All.size();};
+		size_t Get_KinFitConstraintP4PoolSize(void) const{return dKinFitConstraintP4Pool_All.size();};
+		size_t Get_MatrixDSymPoolSize(void) const{return dMatrixDSymPool_All.size();};
+		size_t Get_LargeMatrixDSymPoolSize(void) const{return dLargeMatrixDSymPool_All.size();};
+
 		virtual bool Get_IsBFieldNearBeamline(void) const = 0;
 
 		bool Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, TMatrixDSym& locCovarianceMatrix) const;
 		bool Calc_PathLength(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixDSym& locCovarianceMatrix, pair<double, double>& locPathLengthPair) const;
-		TMatrixDSym* Get_MatrixDSymResource(void);
 
 	protected:
 		virtual TVector3 Get_BField(const TVector3& locPosition) const = 0; //must return in units of Tesla!!
+		TMatrixDSym* Get_MatrixDSymResource(void);
 
 	private:
 
@@ -187,6 +198,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		DKinFitConstraint_Vertex* Get_KinFitConstraintVertexResource(void);
 		DKinFitConstraint_Spacetime* Get_KinFitConstraintSpacetimeResource(void);
 		DKinFitConstraint_P4* Get_KinFitConstraintP4Resource(void);
+		TMatrixDSym* Get_LargeMatrixDSymResource(void);
 
 		bool Calc_dS(void);
 		bool Calc_dU(void);
@@ -297,11 +309,15 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		deque<TMatrixDSym*> dMatrixDSymPool_All;
 		deque<TMatrixDSym*> dMatrixDSymPool_Available;
 
+		deque<TMatrixDSym*> dLargeMatrixDSymPool_All;
+		deque<TMatrixDSym*> dLargeMatrixDSymPool_Available;
+
 		size_t dMaxKinFitParticlePoolSize;
 		size_t dMaxKinFitConstraintVertexPoolSize;
 		size_t dMaxKinFitConstraintSpacetimePoolSize;
 		size_t dMaxKinFitConstraintP4PoolSize;
 		size_t dMaxMatrixDSymPoolSize;
+		size_t dMaxLargeMatrixDSymPoolSize;
 
 		unsigned int dMaxNumIterations;
 		bool dLinkVerticesFlag;

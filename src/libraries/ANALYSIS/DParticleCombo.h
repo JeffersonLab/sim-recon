@@ -20,6 +20,8 @@ class DParticleCombo : public JObject
 	public:
 		JOBJECT_PUBLIC(DParticleCombo);
 
+		void Reset(void);
+
 		// SET STEPS
 		inline void Add_ParticleComboStep(const DParticleComboStep* locParticleComboStep){dParticleComboSteps.push_back(locParticleComboStep);}
 		void Set_ParticleComboStep(const DParticleComboStep* locParticleComboStep, size_t locStepIndex);
@@ -76,6 +78,14 @@ class DParticleCombo : public JObject
 		const DEventRFBunch* dEventRFBunch;
 		deque<const DParticleComboStep*> dParticleComboSteps;
 };
+
+inline void DParticleCombo::Reset(void)
+{
+	dReaction = NULL;
+	dKinFitResults = NULL;
+	dEventRFBunch = NULL;
+	dParticleComboSteps.clear();
+}
 
 inline const DParticleComboStep* DParticleCombo::Get_ParticleComboStep(size_t locStepIndex) const
 {

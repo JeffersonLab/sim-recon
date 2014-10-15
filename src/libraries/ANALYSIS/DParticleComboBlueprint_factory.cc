@@ -9,7 +9,7 @@
 //------------------
 jerror_t DParticleComboBlueprint_factory::init(void)
 {
-	MAX_DParticleComboBlueprintStepPoolSize = 3000;
+	MAX_DParticleComboBlueprintStepPoolSize = 100;
 
 	dDebugLevel = 0;
 
@@ -56,7 +56,7 @@ jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, i
 
 	vector<const DReaction*> locReactions;
 	Get_Reactions(locEventLoop, locReactions);
-	MAX_DParticleComboBlueprintStepPoolSize = 3000*locReactions.size();
+	MAX_DParticleComboBlueprintStepPoolSize = 100*locReactions.size();
 
 	return NOERROR;
 }

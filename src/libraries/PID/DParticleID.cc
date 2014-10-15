@@ -417,6 +417,9 @@ bool DParticleID::MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DR
 	if((fabs(dz) >= BCAL_Z_CUT) || (fabs(dphi) >= phi_cut))
 		return false; //not close enough
 
+
+	if (locPathLength<0.) _DBG_ << " s " << locPathLength << " t " << locFlightTime <<endl;
+
 	//successful match
 	locShowerMatchParams.dTrackTimeBased = locTrackTimeBased;
 	locShowerMatchParams.dShowerObject = locBCALShower;

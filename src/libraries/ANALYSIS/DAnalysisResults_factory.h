@@ -21,6 +21,7 @@
 
 #include "TRACKING/DMCThrown.h"
 
+#include "PID/DEventRFBunch.h"
 #include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DCutActions.h"
 #include "ANALYSIS/DParticleCombo.h"

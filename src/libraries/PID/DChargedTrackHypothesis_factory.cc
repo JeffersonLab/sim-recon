@@ -9,8 +9,16 @@
 
 inline bool DChargedTrackHypothesis_SortByEnergy(const DChargedTrackHypothesis* locChargedTrackHypothesis1, const DChargedTrackHypothesis* locChargedTrackHypothesis2)
 {
-	// sort by increasing energy in the 1's and 0.1s digits (MeV): pseudo-random
-	return int(locChargedTrackHypothesis1->energy()*10000.0)%100 < int(locChargedTrackHypothesis2->energy()*10000.0)%100;
+  int id1=locChargedTrackHypothesis1->candidateid;
+  int id2=locChargedTrackHypothesis2->candidateid;
+  
+  if (id1==id2){    
+    // sort by increasing energy in the 1's and 0.1s digits (MeV): pseudo-random
+    int E1=int(locChargedTrackHypothesis1->energy()*10000.0)%100;
+    int E2=int(locChargedTrackHypothesis2->energy()*10000.0)%100;
+    if (E1!=E2) return (E1<E2);
+  }
+  return (id1<id2);
 }
 
 //------------------
