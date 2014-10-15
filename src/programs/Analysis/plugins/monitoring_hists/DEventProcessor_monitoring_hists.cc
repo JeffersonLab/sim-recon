@@ -26,6 +26,10 @@ extern "C"
 //------------------
 jerror_t DEventProcessor_monitoring_hists::init(void)
 {
+	dHist_IsEvent = new TH1D("IsEvent", "The Event is an Event", 2, -0.5, 1.5);
+	dHist_IsEvent->GetXaxis()->SetBinLabel(1, "False");
+	dHist_IsEvent->GetXaxis()->SetBinLabel(2, "True");
+
 	return NOERROR;
 }
 
@@ -43,6 +47,9 @@ jerror_t DEventProcessor_monitoring_hists::brun(JEventLoop *locEventLoop, int ru
 	dHistogramAction_NumReconstructedObjects.Initialize(locEventLoop);
 	dHistogramAction_DetectorStudies.Initialize(locEventLoop);
 
+//	dHistogramAction_ObjectMemory.dMaxNumEvents = 200000;
+//	dHistogramAction_ObjectMemory.Initialize(locEventLoop);
+
 	if(!locMCThrowns.empty())
 	{
 		dHistogramAction_ThrownParticleKinematics.Initialize(locEventLoop);
@@ -58,6 +65,8 @@ jerror_t DEventProcessor_monitoring_hists::brun(JEventLoop *locEventLoop, int ru
 //------------------
 jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, int eventnumber)
 {
+	dHist_IsEvent->Fill(1);
+
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
 
@@ -66,6 +75,7 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, int ev
 	dHistogramAction_DetectedParticleKinematics(locEventLoop);
 	dHistogramAction_NumReconstructedObjects(locEventLoop);
 	dHistogramAction_DetectorStudies(locEventLoop);
+//	dHistogramAction_ObjectMemory(locEventLoop);
 
 	if(!locMCThrowns.empty())
 	{
