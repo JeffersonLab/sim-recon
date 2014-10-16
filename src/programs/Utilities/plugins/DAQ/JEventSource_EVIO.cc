@@ -2248,8 +2248,8 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 		codaeventinfo->run_number = run_number;
 		codaeventinfo->run_type = run_type;
 		codaeventinfo->event_number = first_event_num + i;
-		codaeventinfo->event_type = event_types[i];
-		codaeventinfo->avg_timestamp = avg_timestamps[i];
+		codaeventinfo->event_type = event_types.empty() ? 0:event_types[i];
+		codaeventinfo->avg_timestamp = avg_timestamps.empty() ? 0:avg_timestamps[i];
 		objs->misc_objs.push_back(codaeventinfo);
 		
 		if(rocinfos.size()<=i) continue;
