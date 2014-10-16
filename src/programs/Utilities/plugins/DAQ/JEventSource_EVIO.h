@@ -61,6 +61,8 @@ using namespace evio;
 #include "DF1TDCTriggerTime.h"
 #include "DCAEN1290TDCConfig.h"
 #include "DCAEN1290TDCHit.h"
+#include "DCODAEventInfo.h"
+#include "DCODAROCInfo.h"
 
 //-----------------------------------------------------------------------
 /// The JEventSource_EVIO class implements a JEventSource capable of reading in
@@ -228,8 +230,9 @@ class JEventSource_EVIO: public jana::JEventSource{
 			int32_t run_number;
 			bool own_objects; // keeps track of whether these objects were copied to factories or not
 			
-			vector<DDAQAddress*> hit_objs;
-			vector<DDAQConfig*>  config_objs;
+			vector<DDAQAddress*>    hit_objs;
+			vector<DDAQConfig*>     config_objs;
+			vector<JObject*>        misc_objs;
 
 			bool eviobuff_parsed;     // flag used to keep track of whether this buffer has been parsed
 			uint32_t *eviobuff;       // Only holds original EVIO event buffer
@@ -275,6 +278,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void MergeObjLists(list<ObjList*> &events1, list<ObjList*> &events2);
 
 		void ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_events);
+		void ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjList*> &tmp_events);
 		void ParseModuleConfiguration(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);

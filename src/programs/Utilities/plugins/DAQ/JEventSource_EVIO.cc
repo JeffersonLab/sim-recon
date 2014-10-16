@@ -209,6 +209,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	event_source_data_types.insert("DF1TDCTriggerTime");
 	event_source_data_types.insert("DCAEN1290TDCConfig");
 	event_source_data_types.insert("DCAEN1290TDCHit");
+	event_source_data_types.insert("DCODAEventInfo");
+	event_source_data_types.insert("DCODAROCInfo");
 
 	// Read in optional module type translation map if it exists	
 	ReadOptionalModuleTypeTranslation();
@@ -661,14 +663,15 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 	// Copy the first event's objects obtained from parsing into this event's ObjList
 	ObjList *objs = full_events.front();
 	full_events.pop_front();
-	objs_ptr->run_number      = empty_event ? objs_ptr->run_number:objs->run_number;
-	objs_ptr->own_objects     = objs->own_objects;
-	objs_ptr->hit_objs        = objs->hit_objs;
-	objs_ptr->config_objs     = objs->config_objs;
-	objs_ptr->eviobuff_parsed = objs->eviobuff_parsed;
-	//objs_ptr->eviobuff        = objs->eviobuff;        // Don't copy this! (it causes memory leak)
-	//objs_ptr->eviobuff_size   = objs->eviobuff_size;
-	objs_ptr->DOMTree         = objs->DOMTree;
+	objs_ptr->run_number       = empty_event ? objs_ptr->run_number:objs->run_number;
+	objs_ptr->own_objects      = objs->own_objects;
+	objs_ptr->hit_objs         = objs->hit_objs;
+	objs_ptr->config_objs      = objs->config_objs;
+	objs_ptr->misc_objs        = objs->misc_objs;
+	objs_ptr->eviobuff_parsed  = objs->eviobuff_parsed;
+	//objs_ptr->eviobuff       = objs->eviobuff;        // Don't copy this! (it causes memory leak)
+	//objs_ptr->eviobuff_size  = objs->eviobuff_size;
+	objs_ptr->DOMTree          = objs->DOMTree;
 	delete objs;
 
 	// Copy remaining events into the stored_events container
@@ -929,7 +932,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	JEventLoop *loop = event.GetJEventLoop();
 	string dataClassName = (factory==NULL ? "N/A":factory->GetDataClassName());
 	
-	// Make list of data types we have. Keep list of
+	// Make list of data(hit) types we have. Keep list of
 	// pointers to hit objects of each type
 	map<string, vector<JObject*> > hit_objs_by_type;
 	vector<DDAQAddress*> &hit_objs = objs_ptr->hit_objs;
@@ -944,6 +947,14 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	for(unsigned int i=0; i<config_objs.size(); i++){
 		JObject *config_obj = config_objs[i];
 		config_objs_by_type[config_obj->className()].push_back(config_obj);
+	}
+
+	// Make list of misc objects of each type
+	map<string, vector<JObject*> > misc_objs_by_type;
+	vector<JObject*> &misc_objs = objs_ptr->misc_objs;
+	for(unsigned int i=0; i<misc_objs.size(); i++){
+		JObject *jobj = misc_objs[i];
+		misc_objs_by_type[jobj->className()].push_back(jobj);
 	}
 	
 	// In order for the janadot plugin to properly display the callgraph, we need to
@@ -1097,11 +1108,18 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		if(fac) fac->CopyTo(config_iter->second);
 	}
 
-	// Loop over types of data objects, copying to appropriate factory
+	// Loop over types of hit objects, copying to appropriate factory
 	map<string, vector<JObject*> >::iterator iter = hit_objs_by_type.begin();
 	for(; iter!=hit_objs_by_type.end(); iter++){
 		JFactory_base *fac = loop->GetFactory(iter->first);
 		fac->CopyTo(iter->second);
+	}
+
+	// Loop over types of misc objects, copying to appropriate factory
+	map<string, vector<JObject*> >::iterator misc_iter = misc_objs_by_type.begin();
+	for(; misc_iter!=misc_objs_by_type.end(); misc_iter++){
+		JFactory_base *fac = loop->GetFactory(misc_iter->first);
+		fac->CopyTo(misc_iter->second);
 	}
 	objs_ptr->own_objects = false;
 	
@@ -1156,6 +1174,8 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			else if(dataClassName == "DF1TDCTriggerTime")     checkSourceFirst = ((JFactory<DF1TDCTriggerTime    >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "DCAEN1290TDCConfig")    checkSourceFirst = ((JFactory<DCAEN1290TDCConfig   >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "DCAEN1290TDCHit")       checkSourceFirst = ((JFactory<DCAEN1290TDCHit      >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "DCODAEventInfo")        checkSourceFirst = ((JFactory<DCAEN1290TDCHit      >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "DCODAROCInfo")          checkSourceFirst = ((JFactory<DCAEN1290TDCHit      >*)fac)->GetCheckSourceFirst();
 
 			if(checkSourceFirst) {
 				fac->Set_evnt_called();
@@ -1888,6 +1908,7 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
 		
 		objs1->hit_objs.insert(objs1->hit_objs.end(), objs2->hit_objs.begin(), objs2->hit_objs.end());
 		objs1->config_objs.insert(objs1->config_objs.end(), objs2->config_objs.begin(), objs2->config_objs.end());
+		objs1->misc_objs.insert(objs1->misc_objs.end(), objs2->misc_objs.begin(), objs2->misc_objs.end());
 		
 		// Delete the objs2 container
 		delete objs2;
@@ -1940,8 +1961,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 	
 	// Loop over list of all EVIO banks at all levels of the tree and parse
 	// them, creating data objects and adding them to the overall list.
-	ObjList objs;
-	evioDOMNodeListP bankList = evt->getNodeList(typeIs<uint32_t>());
+	evioDOMNodeListP bankList = evt->getNodeList();
 	evioDOMNodeList::iterator iter = bankList->begin();
 	if(VERBOSE>7) evioout << "     Looping over " << bankList->size() << " banks in EVIO event" << endl;
 	for(int ibank=1; iter!=bankList->end(); iter++, ibank++){ // ibank only used for debugging messages
@@ -1959,8 +1979,16 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		}
 		evioDOMNodeP physics_event_bank = data_bank->getParent();
 		if( physics_event_bank==NULL ){
-			if(VERBOSE>9) evioout << "     bank has no grandparent. skipping ... " << endl;
-			continue;
+			if(VERBOSE>6) evioout << "     bank has no grandparent. Checking if this is a trigger bank ... " << endl;
+
+			// Check if this is a CODA Reserved Bank Tag. If it is, then
+			// this probably is part of the built trigger bank and not
+			// the ROC data we're looking to parse here.
+			if((bankPtr->tag & 0xFF00) == 0xFF00){
+				if(VERBOSE>6) evioout << "      Bank tag="<<hex<<data_bank->tag<<dec<<" is in reserved CODA range and has correct lineage. Assuming it's a built trigger bank."<< endl;
+				ParseBuiltTriggerBank(bankPtr, tmp_events);
+			}
+			continue;  // if this wasn't a trigger bank, then it has the wrong lineage to be a data bank
 		}
 		if( physics_event_bank->getParent() != NULL ){
 			if(VERBOSE>9) evioout << "     bank DOES have great-grandparent. skipping ... " << endl;
@@ -1971,18 +1999,20 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 			evioout << "      Data Bank:          tag=" << hex << data_bank->tag << " num=" << (int)data_bank->num << dec << endl;
 		}
 
-		// Check if this is a CODA Reserved Bank Tag. If it is, then
-		// this probably is part of the built trigger bank and not
-		// the ROC data we're looking to parse here.
+		if(VERBOSE>9) evioout << "      bank lineage check OK. Continuing with parsing ... " << endl;
+		
+		// Check if this is a CODA Reserved Bank Tag. 
 		if((data_bank->tag & 0xFF00) == 0xFF00){
-			if(VERBOSE>9) evioout << "      Data Bank tag is in reserved CODA range. This bank is not ROC data. Skipping ..." << endl;
+			if(VERBOSE>6) evioout << "      Data Bank tag="<<hex<<data_bank->tag<<dec<<" is in reserved CODA range. This is probably not ROC data"<< endl;
 			continue;
 		}
 
-		if(VERBOSE>9) evioout << "      bank lineage check OK. Continuing with parsing ... " << endl;
-
 		// Get data from bank in the form of a vector of uint32_t
 		const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+		if(!vec){
+			if(VERBOSE>6) evioout << "      bank is not uint32_t. Skipping..." << endl;
+			continue;
+		}
 		const uint32_t *iptr = &(*vec)[0];
 		const uint32_t *iend = &(*vec)[vec->size()];
 		if(VERBOSE>6) evioout << "      uint32_t bank has " << vec->size() << " words" << endl;
@@ -2078,6 +2108,157 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 	}
 
 	if(VERBOSE>5) evioout << "    Leaving ParseEVIOEvent()" << endl;
+}
+
+//----------------
+// ParseBuiltTriggerBank
+//----------------
+void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjList*> &events)
+{
+	if(VERBOSE>5) evioout << "    Entering ParseBuiltTriggerBank()" << endl;
+
+	uint32_t Mevents = 1; // number of events in block (will be overwritten below)
+	uint32_t Nrocs = (uint32_t)trigbank->num; // number of rocs providing data in this bank
+	evioDOMNodeP physics_event_bank = trigbank->getParent();
+	if(physics_event_bank) Mevents = (uint32_t)physics_event_bank->num;
+	
+	if(VERBOSE>6) evioout << "      Mevents=" << Mevents << " Nrocs=" << Nrocs << endl;
+	
+	// Some values to fill in while parsing the banks that will be used later to create objects
+	vector<uint64_t> avg_timestamps;
+	uint32_t run_number = 0;
+	uint32_t run_type = 0;
+	uint64_t first_event_num = 1;
+	vector<uint16_t> event_types;
+	vector<map<uint32_t, DCODAROCInfo*> > rocinfos; // key=rocid
+	
+	// Loop over children of built trigger bank
+	evioDOMNodeListP bankList = trigbank->getChildren();
+	evioDOMNodeList::iterator iter = bankList->begin();
+	for(int ibank=1; iter!=bankList->end(); iter++, ibank++){
+
+		evioDOMNodeP bankPtr = *iter;
+		
+		// The "Physics Event's Built Trigger Bank" is a bank of segments that
+		// may contain banks of 3 data types: uint64_t, uint32_t, and uint16_t
+		// The uint64_t contains the first event number, average timestamps, and
+		// run number & types. The uint16_t contains the event type(s). The
+		// uint32_t contains the optional ROC specific meta data starting with
+		// the specific timestamp for each event. All of these have some options
+		// on exactly what info is contained in the bank. The first check here is
+		// on the data type the bank contains. At most, one of the following pointers
+		// should be non-zero.
+		vector<uint64_t> *vec64 = bankPtr->getVector<uint64_t>();
+		vector<uint32_t> *vec32 = bankPtr->getVector<uint32_t>();
+		vector<uint16_t> *vec16 = bankPtr->getVector<uint16_t>();
+
+		// unit64_t = common data (1st part)
+		if(vec64){
+
+			// In addition to the first event number (1st word) there are three
+			// additional pieces of information that may be present:
+			// t = average timestamp
+			// r = run number and type
+			// d = run specific data
+			//
+			// The last one ("d") comes in the form of multiple uint32_t banks
+			// so is not included in vec64. The other two have their presence 
+			// signaled by bit 0(=t) and bit 1(=r) in the trigbank tag. (We can
+			// also deduce this from the bank length.)
+
+			if(vec64->size() == 0) continue; // need debug message here!
+			
+			first_event_num = (*vec64)[0];
+
+			uint32_t Ntimestamps = vec64->size()-1;
+			if(Ntimestamps==0) continue; // no more words of interest
+			if(trigbank->tag & 0x2) Ntimestamps--; // subtract 1 for run number/type word if present
+			for(uint32_t i=0; i<Ntimestamps; i++) avg_timestamps.push_back((*vec64)[i+1]);
+
+			// run number and run type
+			if(trigbank->tag & 0x02){
+				run_number = (*vec64)[vec64->size()-1] >> 32;
+				run_type   = (*vec64)[vec64->size()-1] & 0xFFFFFFFF;
+			}
+		}
+		
+		// uint16_t = common data (2nd part)
+		if(vec16){
+			for(uint32_t i=0; i<Mevents; i++){
+				if(i>=vec16->size()) break;
+				event_types.push_back((*vec16)[i]);
+			}
+		}
+		
+		// uint32_t = inidivdual ROC timestamps and misc. roc-specfic data
+		if(vec32){
+			// Get pointer to DCODAROCInfo object for this rocid/event, instantiating it if necessary
+			uint32_t rocid = (uint32_t)bankPtr->tag;
+			uint32_t ievent=0;
+			uint32_t idx = 0;
+			while(idx+1 < vec32->size()){
+				uint64_t ts_low  = (*vec32)[idx++];
+				uint64_t ts_high = (*vec32)[idx++];
+			
+				// Get pointer to DCODAROCInfo object for this rocid/event
+				// instantiating it if necessary. This is a little compliecated
+				// since we have to keep track of Mevents*Nrocs DCODAROCInfo objects
+				while(rocinfos.size() <= ievent){
+					map<uint32_t, DCODAROCInfo*> tmp;
+					rocinfos.push_back(tmp);
+				}
+				DCODAROCInfo *codarocinfo = rocinfos[ievent][rocid];
+				if(codarocinfo == NULL) codarocinfo = rocinfos[ievent][rocid] = new DCODAROCInfo;
+				ievent++;
+
+				codarocinfo->rocid = rocid;
+				codarocinfo->timestamp = (ts_high<<32) + ts_low;
+
+				// ROC-specific data is present if bit 3 is NOT set
+				if( ((trigbank->tag>>3) & 0x1) == 0x0 ){
+					for(uint32_t i=0; i<Mevents; i++){
+						if(idx >= vec32->size()) break;
+						codarocinfo->misc.push_back((*vec32)[idx++]);
+					}
+				}
+			}
+		}
+	}
+	
+	// Check that we have agreement on the number of events this data represents
+	bool Nevent_mismatch = false;
+	if(!avg_timestamps.empty()) Nevent_mismatch |= (avg_timestamps.size() != Mevents);
+	if(!event_types.empty()   ) Nevent_mismatch |= (event_types.size()    != Mevents);
+	if(!rocinfos.empty()      ) Nevent_mismatch |= (rocinfos.size()       != Mevents);
+	if(Nevent_mismatch){
+		_DBG_<<"Mismatch in number of events in Trigger Bank!"<<endl;
+		_DBG_<<"  Mevents="<<Mevents<<endl;
+		_DBG_<<"  avg_timestamps.size()="<<avg_timestamps.size()<<endl;
+		_DBG_<<"  event_types.size()="<<event_types.size()<<endl;
+		_DBG_<<"  rocinfos.size()="<<rocinfos.size()<<endl;
+		exit(-1);
+	}
+	
+	// Copy all objects into events
+	for(uint32_t i=0; i<Mevents; i++){
+		while(events.size()<=i) events.push_back(new ObjList);
+		ObjList *objs = *(events.begin());
+		
+		DCODAEventInfo *codaeventinfo = new DCODAEventInfo;
+		codaeventinfo->run_number = run_number;
+		codaeventinfo->run_type = run_type;
+		codaeventinfo->event_number = first_event_num + i;
+		codaeventinfo->event_type = event_types[i];
+		codaeventinfo->avg_timestamp = avg_timestamps[i];
+		objs->misc_objs.push_back(codaeventinfo);
+		
+		if(rocinfos.size()<=i) continue;
+
+		map<uint32_t, DCODAROCInfo*>::iterator it=rocinfos[i].begin();
+		for(; it!=rocinfos[i].end(); it++) objs->misc_objs.push_back(it->second);
+	}
+	
+	if(VERBOSE>5) evioout << "    Leaving ParseBuiltTriggerBank()" << endl;
 }
 
 //----------------

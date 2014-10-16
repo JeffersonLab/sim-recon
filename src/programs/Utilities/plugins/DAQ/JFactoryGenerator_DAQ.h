@@ -35,6 +35,8 @@ using namespace jana;
 #include "DF1TDCTriggerTime.h"
 #include "DCAEN1290TDCConfig.h"
 #include "DCAEN1290TDCHit.h"
+#include "DCODAEventInfo.h"
+#include "DCODAROCInfo.h"
 
 
 class JFactoryGenerator_DAQ: public jana::JFactoryGenerator{
@@ -66,6 +68,8 @@ class JFactoryGenerator_DAQ: public jana::JFactoryGenerator{
 			loop->AddFactory(new JFactory<DF1TDCTriggerTime>());
 			loop->AddFactory(new JFactory<DCAEN1290TDCConfig>());
 			loop->AddFactory(new JFactory<DCAEN1290TDCHit>());
+			loop->AddFactory(new JFactory<DCODAEventInfo>());
+			loop->AddFactory(new JFactory<DCODAROCInfo>());
 			return NOERROR;
 		}
 
