@@ -21,9 +21,10 @@
 #include <JANA/JEventProcessor.h>
 #include <JANA/JEventLoop.h>
 
-
+#ifdef HAVE_EVIO
 #include <evioFileChannel.hxx>
 #include <evioUtil.hxx>
+#endif //HAVE_EVIO
 
 #include <BCAL/DBCALHit.h>
 #include <BCAL/DBCALTDCHit.h>
@@ -38,6 +39,7 @@
 
 using namespace std;
 using namespace jana;
+#ifdef HAVE_EVIO
 using namespace evio;
 
 
@@ -49,6 +51,7 @@ typedef struct {
 } cscVal;
 typedef const cscVal &cscRef;
 
+#endif //HAVE_EVIO
 
 
 //----------------------------------------------------------------------------
@@ -69,6 +72,7 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
 		jerror_t erun(void);
 		jerror_t fini(void);
 
+#ifdef HAVE_EVIO
 
                 // these routines read and fill the translation tables
                 static void readTranslationTable(void);
@@ -99,6 +103,7 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
 
                 cscRef DTAGHHitTranslationADC(const DTAGHHit* hit) const;
                 cscRef DTAGHHitTranslationTDC(const DTAGHHit* hit) const;
+#endif //HAVE_EVIO
 };
 
 #endif // _JEventProcessor_rawevent_

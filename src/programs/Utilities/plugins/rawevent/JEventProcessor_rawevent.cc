@@ -55,6 +55,13 @@
 
 #include "rawevent/JEventProcessor_rawevent.h"
 
+#include<sstream>
+#include<iomanip>
+#include<algorithm>
+#include<fstream>
+#include <expat.h>
+
+#ifdef HAVE_EVIO
 
 // root histograms...probably not thread-safe
 static TH1F *tofEnergies;
@@ -82,12 +89,6 @@ extern "C" {
 #include "mc2coda.h"
 }
 
-
-#include<sstream>
-#include<iomanip>
-#include<algorithm>
-#include<fstream>
-#include <expat.h>
 
 
 // Replace use of BOOST lexical_cast with a simple templated function
@@ -204,6 +205,7 @@ extern float MEAN_PEDESTAL;
 extern float SIGMA_COMMON_PEDESTAL;
 extern float SIGMA_INDIVIDUAL_PEDESTAL;
 
+#endif //HAVE_EVIO
 
 //----------------------------------------------------------------------------
 
@@ -218,6 +220,7 @@ void InitPlugin(JApplication *app) {
 
 
 //----------------------------------------------------------------------------
+#ifdef HAVE_EVIO
 
 // Comparison operator for testing if two cscRefs are equal
 bool operator == (cscRef a, cscRef b) {
@@ -228,9 +231,11 @@ bool operator == (cscRef a, cscRef b) {
    return a.crate == b.crate;
 }
 
+#endif //HAVE_EVIO
 
 // JEventProcessor_rawevent (Constructor) invoked once only
 JEventProcessor_rawevent::JEventProcessor_rawevent() {
+#ifdef HAVE_EVIO
 
    // Default is to just read translation table from CCDB. If this fails,
    // then an attempt will be made to read from a file on the local disk.
@@ -287,6 +292,7 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
   gPARMS->SetDefaultParameter("RAWEVENT:MEAN_PEDESTAL",MEAN_PEDESTAL, "Mean value of single sample pedestal.");
   gPARMS->SetDefaultParameter("RAWEVENT:SIGMA_COMMON_PEDESTAL",SIGMA_COMMON_PEDESTAL, "Stochastic width of common pedestal distribution. Common pedestal is used for all channels in a module but will be different module to module.");
   gPARMS->SetDefaultParameter("RAWEVENT:SIGMA_INDIVIDUAL_PEDESTAL",SIGMA_INDIVIDUAL_PEDESTAL, "Stochastic width of MEASURED pedestal");
+#endif //HAVE_EVIO
 
 }
 
@@ -296,9 +302,11 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
 
 // ~JEventProcessor_rawevent (Destructor) once only
 JEventProcessor_rawevent::~JEventProcessor_rawevent() {
+#ifdef HAVE_EVIO
   if (nomc2coda == 0) {
     mc2codaFree(expID);
   }
+#endif //HAVE_EVIO
 }
 
 
@@ -307,7 +315,7 @@ JEventProcessor_rawevent::~JEventProcessor_rawevent() {
 
 // init called once-only at beginning, independent of the number of processing threads
 jerror_t JEventProcessor_rawevent::init(void) {
-
+#ifdef HAVE_EVIO
 
   // read translation table, fill crate id arrays
   readTranslationTable();
@@ -378,6 +386,8 @@ jerror_t JEventProcessor_rawevent::init(void) {
     taghTimes    = new TH1F("tahft", "Tagger hodoscope times in nsec",1000,0.,250.-tMin/1000);
   }
 
+#endif //HAVE_EVIO
+
   return NOERROR;
 }
 
@@ -386,6 +396,7 @@ jerror_t JEventProcessor_rawevent::init(void) {
 
 // brun called once-only at beginning of run, independent of the number of processing threads
 jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
+#ifdef HAVE_EVIO
 
   runNumber=runnumber;
   jout << std::endl << "   brun called for run " << runNumber << std::endl;
@@ -530,13 +541,15 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 //   if (key.find("toftdc") == 0) _DBG_ << key << std::endl;
 //  }
   
-  
+#endif //HAVE_EVIO
+
   return NOERROR;
 }
 
 
 //----------------------------------------------------------------------------
 
+#ifdef HAVE_EVIO
 
   static bool compareDTOFHits(const DTOFHit* h1, const DTOFHit* h2) {
     if (h1->plane != h2->plane) {
@@ -643,6 +656,7 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
     }
   }
 
+#endif //HAVE_EVIO
 
 //----------------------------------------------------------------------------
 
@@ -659,6 +673,7 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 //        The buffer is written to disk using a mutex-locked EVIO write.
 
 jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) {
+#ifdef HAVE_EVIO
 
   unsigned int i;
   CODA_HIT_INFO hit[10];
@@ -1521,6 +1536,9 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   chan->write(eventID->evbuf);
   pthread_mutex_unlock(&rawMutex);
 
+#else
+cout << "Built without EVIO" << endl;
+#endif
   return NOERROR;
 }
 
@@ -1530,6 +1548,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
 // erun called once-only at end of run, independent of the number of processing threads
 jerror_t JEventProcessor_rawevent::erun(void) {
+#ifdef HAVE_EVIO
 
   jout << std::endl << "   erun called for run " << runNumber << std::endl << std::endl;
 
@@ -1545,6 +1564,7 @@ jerror_t JEventProcessor_rawevent::erun(void) {
     chan=NULL;
     jout << std::endl << "  output file " << outputFileName << " closed" << std::endl << std::endl;
   }
+#endif
 
   return NOERROR;
 }
@@ -1572,6 +1592,7 @@ jerror_t JEventProcessor_rawevent::fini(void) {
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+#ifdef HAVE_EVIO
 
 void JEventProcessor_rawevent::readTranslationTable(void) {
 
@@ -2225,6 +2246,7 @@ cscRef JEventProcessor_rawevent::DTAGHHitTranslationADC(const DTAGHHit* hit) con
   return cscMap[s];
 }
 
+#endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

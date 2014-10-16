@@ -12,7 +12,6 @@
 
 #include "mc2coda.h"
 
-
 /* Global mc2coda Library Variables */
 int mc2coda_inited = MC2CINIT_NULL;
 CODA_EXP_INFO mc2coda_expid;
@@ -702,3 +701,4 @@ mc2codaStats(CODA_EVENT_INFO *eventID, int sflag)
 	
 	return;
 }
+

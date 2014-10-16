@@ -1,6 +1,6 @@
 /* mc2coda Library
  Includes module data generating functions */
- 
+
  #include <DAQ/daq_param_type.h>
  
 void GetPedestals(uint32_t *peds, uint32_t Npeds);
@@ -721,6 +721,5 @@ void WriteDAQconfigBank(CODA_CRATE_MAP *crate, int roc)
 	// Close data bank (see note above regarding DATA_BANK_CLOSE)
 	DATA_BANK_CLOSE;
 }
-
 
 
