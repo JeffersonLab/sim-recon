@@ -8,6 +8,7 @@
 #include <string.h>
 #include <strings.h>
 #include <stdint.h>
+#include <sys/time.h>
 
 #include "mc2coda.h"
 
@@ -23,6 +24,7 @@ static int mc2coda_ncrates_defined = 0;
 static unsigned int *dabufp, *StartOfRocBank;
 static unsigned int RUN_NUMBER = 1;
 
+static double start_time = 0.0; // (us) initialized in mc2codaInitExp to represent program start time
 
 /* Include module specific definitions */
 #include "mc2coda_modules.h"
@@ -77,6 +79,10 @@ mc2codaInitExp(int nCrates, const char *name)
 	mc2coda_ncrates_defined = 0;
 	printf("Initialized: Experiment %s (id = 0x%lx) consisting of %d crates/ROCs\n",
 		   mc2coda_expid.expname, (unsigned long)&mc2coda_expid,mc2coda_expid.ncrates);
+
+	struct timeval tp;
+	gettimeofday(&tp, NULL);
+	start_time = ((double)tp.tv_sec)*10000.0 + (double)tp.tv_usec;
 	
 	return(&mc2coda_expid);
 	
@@ -164,11 +170,18 @@ mc2codaOpenEvent(CODA_EXP_INFO *expID, uint64_t eventNum, uint64_t trigTime, uns
 			has_tt=1;
 	}
 	
+	/* Get current time relative to program start to record in trigger time */
+	struct timeval tp;
+	gettimeofday(&tp, NULL);
+	double now = ((double)tp.tv_sec)*10000.0 + (double)tp.tv_usec;
+	double trel = now - start_time;
+	uint64_t trel_ns = (uint64_t)(trel*1000.0);
+	
 	/* Allocate an Event Info structure */
 	evinfo = (CODA_EVENT_INFO *) malloc(sizeof(CODA_EVENT_INFO));
 	evinfo->nhits   = 0;
 	evinfo->eventid = eventNum;
-	evinfo->trigtime = trigTime;
+	evinfo->trigtime = trigTime + trel_ns;
 	evinfo->evtype = eventType&0x0000ffff;
 	evinfo->expid   = expID;
 	
@@ -209,7 +222,7 @@ mc2codaOpenEvent(CODA_EXP_INFO *expID, uint64_t eventNum, uint64_t trigTime, uns
 		evbuf[0]  =         12;
 		evbuf[1]  = 0xff511001;
 		evbuf[2]  =         10;
-		evbuf[3]  = 0xff232000 | ((expID->ncrates)&0xff); /* changed from ff21 to include run number 8/21/2013 DL */
+		evbuf[3]  = 0xff272000 | ((expID->ncrates)&0xff); /* changed from ff21 to include run number 8/21/2013 DL */
 		evbuf[4]  = 0x010a0006;  /* segment of 64 bit uints */
 		memcpy((char *)&evbuf[5],(char *)&eventNum,8);
 		memcpy((char *)&evbuf[7],(char *)&trigTime,8);
@@ -222,7 +235,7 @@ mc2codaOpenEvent(CODA_EXP_INFO *expID, uint64_t eventNum, uint64_t trigTime, uns
 		evbuf[0]  =         10;
 		evbuf[1]  = 0xff501001;
 		evbuf[2]  =          8;
-		evbuf[3]  = 0xff222000 | ((expID->ncrates)&0xff); /* changed from ff20 to include run number 8/21/2013 DL */
+		evbuf[3]  = 0xff262000 | ((expID->ncrates)&0xff); /* changed from ff20 to include run number 8/21/2013 DL */
 		evbuf[4]  = 0x010a0004; /* segment of 64 bit uints */
 		memcpy((char *)&evbuf[5],(char *)&eventNum,8);
 		evbuf[7]  = 0x01;       /* run type */
@@ -503,10 +516,17 @@ mc2codaResetEvent(CODA_EVENT_INFO *eventID, uint64_t eventNum, uint64_t trigTime
 		}
 	}
 	
+	/* Get current time relative to program start to record in trigger time */
+	struct timeval tp;
+	gettimeofday(&tp, NULL);
+	double now = ((double)tp.tv_sec)*10000.0 + (double)tp.tv_usec;
+	double trel = now - start_time;
+	uint64_t trel_ns = (uint64_t)(trel*1000.0);
+
 	/* Now clear the existing event structure and buffer and reset with the new info */
 	eventID->nhits   = 0;
 	eventID->eventid = eventNum;
-	eventID->trigtime = trigTime;
+	eventID->trigtime = trigTime + trel_ns;
 	eventID->evtype = eventType&0x0000ffff;
 	
 	if(eventID->maxBytes > 0) {
@@ -522,7 +542,7 @@ mc2codaResetEvent(CODA_EVENT_INFO *eventID, uint64_t eventNum, uint64_t trigTime
 		eventID->evbuf[0]  =         12;
 		eventID->evbuf[1]  = 0xff511001;
 		eventID->evbuf[2]  =         10;
-		eventID->evbuf[3]  = 0xff232000 | ((exp->ncrates)&0xff);  /* changed from ff21 to include run number 9/04/2013 DL */
+		eventID->evbuf[3]  = 0xff272000 | ((exp->ncrates)&0xff);  /* changed from ff21 to include run number 9/04/2013 DL */
 		eventID->evbuf[4]  = 0x010a0006;
 		memcpy((char *)&eventID->evbuf[5],(char *)&eventNum,8);
 		memcpy((char *)&eventID->evbuf[7],(char *)&trigTime,8);
@@ -534,7 +554,7 @@ mc2codaResetEvent(CODA_EVENT_INFO *eventID, uint64_t eventNum, uint64_t trigTime
 		eventID->evbuf[0]  =         10;
 		eventID->evbuf[1]  = 0xff501001;
 		eventID->evbuf[2]  =          8;
-		eventID->evbuf[3]  = 0xff222000 | ((exp->ncrates)&0xff);  /* changed from ff20 to include run number 9/04/2013 DL */
+		eventID->evbuf[3]  = 0xff262000 | ((exp->ncrates)&0xff);  /* changed from ff20 to include run number 9/04/2013 DL */
 		eventID->evbuf[4]  = 0x010a0004;
 		memcpy((char *)&eventID->evbuf[5],(char *)&eventNum,8);
 		eventID->evbuf[7]  = 0x01;       /* run type */
