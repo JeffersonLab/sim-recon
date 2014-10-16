@@ -82,7 +82,8 @@ mc2codaInitExp(int nCrates, const char *name)
 
 	struct timeval tp;
 	gettimeofday(&tp, NULL);
-	start_time = ((double)tp.tv_sec)*10000.0 + (double)tp.tv_usec;
+	start_time = ((double)tp.tv_sec)*1000000.0 + (double)tp.tv_usec;
+printf("%s:%d	start_time=%f\n", __FILE__,__LINE__, start_time);
 	
 	return(&mc2coda_expid);
 	
@@ -173,10 +174,10 @@ mc2codaOpenEvent(CODA_EXP_INFO *expID, uint64_t eventNum, uint64_t trigTime, uns
 	/* Get current time relative to program start to record in trigger time */
 	struct timeval tp;
 	gettimeofday(&tp, NULL);
-	double now = ((double)tp.tv_sec)*10000.0 + (double)tp.tv_usec;
+	double now = ((double)tp.tv_sec)*1000000.0 + (double)tp.tv_usec;
 	double trel = now - start_time;
 	uint64_t trel_ns = (uint64_t)(trel*1000.0);
-	
+
 	/* Allocate an Event Info structure */
 	evinfo = (CODA_EVENT_INFO *) malloc(sizeof(CODA_EVENT_INFO));
 	evinfo->nhits   = 0;
@@ -225,7 +226,7 @@ mc2codaOpenEvent(CODA_EXP_INFO *expID, uint64_t eventNum, uint64_t trigTime, uns
 		evbuf[3]  = 0xff272000 | ((expID->ncrates)&0xff); /* changed from ff21 to include run number 8/21/2013 DL */
 		evbuf[4]  = 0x010a0006;  /* segment of 64 bit uints */
 		memcpy((char *)&evbuf[5],(char *)&eventNum,8);
-		memcpy((char *)&evbuf[7],(char *)&trigTime,8);
+		memcpy((char *)&evbuf[7],(char *)&evinfo->trigtime,8);
 		evbuf[ 9] = 0x01;       /* run type */
 		evbuf[10] = RUN_NUMBER; /* This goes into high 32 bits which seems backwards ?? */
 		evbuf[11] = 0x01050001; /* segment of shorts header with 1 value */
@@ -519,7 +520,7 @@ mc2codaResetEvent(CODA_EVENT_INFO *eventID, uint64_t eventNum, uint64_t trigTime
 	/* Get current time relative to program start to record in trigger time */
 	struct timeval tp;
 	gettimeofday(&tp, NULL);
-	double now = ((double)tp.tv_sec)*10000.0 + (double)tp.tv_usec;
+	double now = ((double)tp.tv_sec)*1000000.0 + (double)tp.tv_usec;
 	double trel = now - start_time;
 	uint64_t trel_ns = (uint64_t)(trel*1000.0);
 
@@ -545,7 +546,7 @@ mc2codaResetEvent(CODA_EVENT_INFO *eventID, uint64_t eventNum, uint64_t trigTime
 		eventID->evbuf[3]  = 0xff272000 | ((exp->ncrates)&0xff);  /* changed from ff21 to include run number 9/04/2013 DL */
 		eventID->evbuf[4]  = 0x010a0006;
 		memcpy((char *)&eventID->evbuf[5],(char *)&eventNum,8);
-		memcpy((char *)&eventID->evbuf[7],(char *)&trigTime,8);
+		memcpy((char *)&eventID->evbuf[7],(char *)&eventID->trigtime,8);
 		eventID->evbuf[ 9] = 0x01;        /* run type */
 		eventID->evbuf[10] = RUN_NUMBER;  /* This goes into high 32 bits which seems backwards ?? */
 		eventID->evbuf[11]  = 0x01050001; /* segment of shorts header with 1 value */
