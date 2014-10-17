@@ -17,14 +17,8 @@ using namespace std;
 using namespace jana;
 
 #define FCAL_USER_HITS_MAX 2800
-
-
-/* Define FCAL mid plane for the cluster angle determination 
-   (it should be the front face of the FCAL for real clusters).
-   Make sure the same vertex from the Geant control.in file is used here
-   and elsewhere in analysis - MK.
-*/
-//static float FCAL_Zmid = FCAL_Zmin - Shower_Vertex_Z +FCAL_Zlen/2.0;
+#define MOLIERE_RADIUS 3.696
+#define MAX_SHOWER_RADIUS 25
 
 class DFCALCluster : public JObject {
    public:
@@ -33,9 +27,7 @@ class DFCALCluster : public JObject {
       DFCALCluster( const int nhits );
       ~DFCALCluster();
 
-// hits structures taken from radphi
-
-typedef struct {
+   typedef struct {
       oid_t id;
       float x;
       float y;
@@ -43,12 +35,11 @@ typedef struct {
       float t;
    } userhit_t;
 
-typedef struct {
+   typedef struct {
       int nhits;
       userhit_t hit[1];
    } userhits_t;
 
-// to replace c-like array pointers with C++ vectors 
    typedef struct {
       oid_t id;
       float x;
@@ -64,16 +55,21 @@ typedef struct {
    double getEnergy() const;
    double getEmax() const;
    double getTime() const;
+   // the centroid returned by this function is in 
+   // a frame where z=0 is at the center of the target
    DVector3 getCentroid() const;
+
    double getRMS() const;
    double getRMS_x() const;
    double getRMS_y() const;
    double getRMS_u() const;
    double getRMS_v() const;
+
    int getHits() const; // get number of hits owned by a cluster
    int addHit(const int ihit, const double frac);
    void resetClusterHits();
-   bool update( const userhits_t* const hitList );
+   bool update( const userhits_t* const hitList, double fcalFaceZ );
+
 // get hits that form a cluster after clustering is finished
    inline const vector<DFCALClusterHit_t> GetHits() const { return my_hits; }
 
@@ -86,11 +82,12 @@ typedef struct {
 
    private:
 
-   //const double VERTEX_Z = 65.;
    void shower_profile( const userhits_t* const hitList, 
                         const int ihit,
-                        double& Eallowed, double& Eexpected) const ;
-// internal parsers of properties for a hit belonging to a cluster 
+                        double& Eallowed, double& Eexpected, 
+			double fcalMidplaneZ ) const ;
+
+   // internal parsers of properties for a hit belonging to a cluster 
    oid_t getHitID( const userhits_t* const hitList, const int ihit) const;
    double getHitX( const userhits_t* const hitList, const int ihit) const;
    double getHitY( const userhits_t* const hitList, const int ihit) const;
@@ -101,7 +98,7 @@ typedef struct {
    double fEnergy;              // total cluster energy (GeV) or 0 if stale
    double fTime;                // cluster time(ns) set by first (max E) block, for now
    double fEmax;                // energy in the first block of the cluster
-   DVector3 fCentroid;          // cluster centroid position (cm)
+   DVector3 fCentroid;          // cluster centroid position (cm) [z=0 at target center]
    double fRMS;                 // cluster r.m.s. size (cm)
    double fRMS_x;               // cluster r.m.s. size along X-axis (cm)
    double fRMS_y;               // cluster r.m.s. size along Y-axis (cm)

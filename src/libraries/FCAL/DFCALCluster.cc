@@ -22,7 +22,7 @@ DFCALCluster::DFCALCluster( const int nhits )
    fRMS_v = 0;
    fNhits = 0;
    m_nFcalHits = nhits;
-//std::cout << " Creating Cluster with " << nhits << " hits " << std::endl;
+
    if ( nhits > 0) {
       fHit = new int[ nhits ];
       fHitf = new double[ nhits ];
@@ -99,9 +99,10 @@ void DFCALCluster::resetClusterHits()
    }
 }
 
-bool DFCALCluster::update( const userhits_t* const hitList)
+bool DFCALCluster::update( const userhits_t* const hitList,
+			   double fcalFaceZ )
 {
-//   std::cout << " Updating cluster with " << fNhits << " hits " << std::endl;
+
    double energy = 0;
    for ( int h = 0; h < fNhits; h++ ) {
       int ih = fHit[h];
@@ -115,7 +116,7 @@ bool DFCALCluster::update( const userhits_t* const hitList)
    }
 
    DVector3 centroid;
-   centroid.SetXYZ(0., 0., 0.);
+   centroid.SetXYZ(0., 0., fcalFaceZ );
    double xc=0;
    double yc=0;
 #ifdef LOG2_WEIGHTING
@@ -189,14 +190,12 @@ bool DFCALCluster::update( const userhits_t* const hitList)
       double frac = fHitf[h];
       double x = hitList->hit[ih].x;
       double y = hitList->hit[ih].y;
-/*      RMS += fHitlist->hit[ih].E*frac
-             *(SQR(x-centroid.x) + SQR(y-centroid.y)); */
+
       MOM1x += hitList->hit[ih].E*frac*x;
       MOM1y += hitList->hit[ih].E*frac*y;
       MOM2x += hitList->hit[ih].E*frac*SQR(x);
       MOM2y += hitList->hit[ih].E*frac*SQR(y);
-//      double u0 = sqrt(SQR(centroid.x) + SQR(centroid.y));
-//      double v0 = 0;
+
       double phi = atan2( centroid.y() , centroid.x() );
       double u = x*cos(phi) + y*sin(phi);
       double v =-x*sin(phi) + y*cos(phi);
@@ -205,14 +204,13 @@ bool DFCALCluster::update( const userhits_t* const hitList)
       MOM2u += hitList->hit[ih].E*frac*SQR(u);
       MOM2v += hitList->hit[ih].E*frac*SQR(v);
    }
-//   fRMS = sqrt(RMS)/energy;
+
    fRMS = sqrt(energy*(MOM2x+MOM2y)-SQR(MOM1x)-SQR(MOM1y))/(energy);
    fRMS_x = sqrt(energy*MOM2x - SQR(MOM1x))/(energy);
    fRMS_y = sqrt(energy*MOM2y - SQR(MOM1y))/(energy);
    fRMS_u = sqrt(energy*MOM2u - SQR(MOM1u))/(energy);
    fRMS_v = sqrt(energy*MOM2v - SQR(MOM1v))/(energy);
 
-   //std::cout << " Energy " << energy << " fEnergy " << fEnergy << std::endl;
    bool something_changed = false;
    if (fabs(energy-fEnergy) > 0.001) {
       fEnergy = energy;
@@ -230,18 +228,16 @@ bool DFCALCluster::update( const userhits_t* const hitList)
    }
    if (something_changed) {
       for (int ih = 0; ih < hitList->nhits; ih++) {
-         shower_profile(hitList, ih,fEallowed[ih],fEexpected[ih]);
+	shower_profile(hitList, ih,fEallowed[ih],fEexpected[ih],fcalFaceZ+0.5*DFCALGeometry::blockLength());
       }
    }
    return something_changed;
 }
 
-#define MOLIER_RADIUS 3.696
-#define MAX_SHOWER_RADIUS 25
-
 void DFCALCluster::shower_profile( const userhits_t* const hitList, 
                                    const int ihit,
-                                   double& Eallowed, double& Eexpected) const
+                                   double& Eallowed, double& Eexpected,
+				   double fcalMidplaneZ) const
 {
 
    //std::cout << " Run profile for hit " << ihit; 
@@ -253,13 +249,13 @@ void DFCALCluster::shower_profile( const userhits_t* const hitList,
    double dist = sqrt(SQR(x - fCentroid.x()) + SQR(y - fCentroid.y()));
    if (dist > MAX_SHOWER_RADIUS)
       return;
-   double theta = atan2((double)sqrt(SQR(fCentroid.x()) + SQR(fCentroid.y())), ((DFCALGeometry*)NULL)->fcalMidplane() - 65.0);
+   double theta = atan2((double)sqrt(SQR(fCentroid.x()) + SQR(fCentroid.y())), fcalMidplaneZ);
    double phi = atan2( fCentroid.y(), fCentroid.x() );
    double u0 = sqrt(SQR(fCentroid.x())+SQR(fCentroid.y()));
    double v0 = 0;
    double u = x*cos(phi) + y*sin(phi);
    double v =-x*sin(phi) + y*cos(phi);
-   double vVar = SQR(MOLIER_RADIUS);
+   double vVar = SQR(MOLIERE_RADIUS);
    double uVar = vVar+SQR(SQR(8*theta));
    double vTail = 4.5+0.9*log(fEnergy+0.05);
    double uTail = vTail+SQR(10*theta);
@@ -268,7 +264,6 @@ void DFCALCluster::shower_profile( const userhits_t* const hitList,
    Eexpected = fEnergy*core;
    Eallowed = 2*fEmax*core + (0.2+0.5*log(fEmax+1.))*tail;
 
-   //std::cout << " with expected " << Eexpected << " and allowed " << Eallowed << std::endl;
    if ((dist <= 4.) && (Eallowed < fEmax) ) {
       std::cerr << "Warning: FCAL cluster Eallowed value out of range!\n";
       Eallowed = fEmax;
