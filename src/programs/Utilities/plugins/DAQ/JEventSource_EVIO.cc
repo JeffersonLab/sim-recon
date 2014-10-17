@@ -1886,6 +1886,7 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
 	if(Nevents1>0 && Nevents2>0){
 		if(Nevents1 != Nevents2){
 			evioout << "Mismatch of number of events passed to MergeObjLists. Throwing exception." << endl;
+			evioout << "Nevents1="<<Nevents1<<"  Nevents2="<<Nevents2<<endl;
 			throw JException("Number of events in JEventSource_EVIO::MergeObjLists do not match!");
 		}
 	}
@@ -1937,7 +1938,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 	// fragments found in the other banks.
 	//list<ObjList*> full_events;
 	list<ObjList*> tmp_events;
-	
+
 	// The Physics Event bank is the outermost bank of the event and
 	// it is a bank of banks. One of those banks is the  
 	// "Built Trigger Bank" which is a bank of segments. The others
@@ -2242,7 +2243,7 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 	// Copy all objects into events
 	for(uint32_t i=0; i<Mevents; i++){
 		while(events.size()<=i) events.push_back(new ObjList);
-		ObjList *objs = *(events.begin());
+		ObjList *objs = events.back();
 		
 		DCODAEventInfo *codaeventinfo = new DCODAEventInfo;
 		codaeventinfo->run_number = run_number;
@@ -2257,7 +2258,7 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 		map<uint32_t, DCODAROCInfo*>::iterator it=rocinfos[i].begin();
 		for(; it!=rocinfos[i].end(); it++) objs->misc_objs.push_back(it->second);
 	}
-	
+
 	if(VERBOSE>5) evioout << "    Leaving ParseBuiltTriggerBank()" << endl;
 }
 
@@ -3408,16 +3409,20 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 	
 		iptr++;
 	}
-	
-	// Copy all ObjLists into events, preserving order
+
+	// Copy all ObjLists into temporary "myevents", preserving order
+	list<ObjList*> myevents;
 	for(unsigned int i=0; i<event_id_order.size(); i++){
 		map<uint32_t, ObjList*>::iterator iter = objmap.find(event_id_order[i]);
 		if(iter != objmap.end()){
-			events.push_back(iter->second);
+			myevents.push_back(iter->second);
 		}else{
 			_DBG_<<"CAEN1290: Unable to find map entry for event id:"<<event_id_order[i]<<"!!!"<<endl;
 		}
 	}
+	
+	// Merge the "myevents" list into the list of existing events provided to us
+	MergeObjLists(events, myevents);
 }
 
 //----------------
