@@ -195,6 +195,13 @@
 
 #define TOP_CERENKOV_EFFICIENCY 1.0
 
+      real xin(4), xout(4)
+      real pin(5), pout(5)
+      real dEsum
+      data xin,xout/8*0/
+      data pin,pout/10*0/
+      data dEsum/0/
+
       character*4 cnames(15)
       equivalence (NAMES(1),cnames(1))
       real rnd(100)
@@ -440,41 +447,6 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
         LMEC(NMEC) = 30
       endif
 
-
-
-* Place any secondaries generated during this step onto the stack
-
-      if (nosecondaries.eq.0) then
-        do i=1,NGKINE
-c          make primary except if in calorimeter volume and not hadronic
-c          interaction, or except if produced in cave upstream of Hall D
-           iflgk(i) = 1
-           cint = KCASE
-           rx = sqrt(VERT(1)**2+VERT(2)**2)
-           if ((((rx>65.).and.((VERT(3)>-17.).and.(VERT(3)<390.))) !BCAL
-     >         .or.(VERT(3)>625.)                                  !FCAL
-     >         .or.(VERT(3)<-500.))                                !CAVE
-     >         .and.(cchar.ne.'HADR')) then
-              iflgk(i) = 0
-           endif
-           call GSKING(i)
-        enddo
-      endif
-
-* check if particle did decay in which case save vertex and particles
-
-      if (ISTOP .eq. 1) then
-         mechanism = KCASE
-         if ((NGKINE>0) .and. (chcase.eq.'DCAY')) then
-            if ((cnames(NLEVEL).ne.'BCAL').and.
-     +          (cnames(NLEVEL).ne.'FCAL').and.
-     +          (sqrt(VERT(1)**2+VERT(2)**2)<65.).and.
-     +          (VERT(3)<500.).and.(VERT(3)>-500.)) then
-               call savenewvertex(KCASE,NGKINE,GKIN,VECT,
-     +              TOFG,iflgk,IPART,ITRA,ISTAK)
-            endif
-         endif
-      endif
 
 *  Record particles entering BCAL so the sampling fluctuations
 *  can be applied based on the incident particle's parameters
@@ -878,6 +850,68 @@ c     #ifndef TRACK_SHOWERS_IN_COLLIMATOR
 
       if (ISVOL.ne.0.or.ISTOP.ne.0.or.INWVOL.ge.2) then
         call savehits
+      endif
+
+* Stamp truth shower info at the entrance to the calorimeters.
+* This is already done within the active volume of the calorimeters
+* in savehits below, but the case of the BCAL is special because it
+* has a big block of aluminum in front of the active volume in which
+* more than half of the incident gammas convert and start to shower,
+* fragmenting the bcalTruthShower information into a gazillion bits.
+* Catching the gamma when it enters the outer BCAL aluminum shell
+* makes the bcalTruthShower information much more useful for
+* developers of shower reconstruction algorithms.
+
+      if (INWVOL.eq.1.and.ISTORY.eq.0) then
+        if (cnames(nlevel).eq.'BCAL'.or.cnames(nlevel).eq.'BCAM') then
+          xin(1) = VECT(1)
+          xin(2) = VECT(2)
+          xin(3) = VECT(3)
+          xin(4) = TOFG
+          pin(1) = VECT(4)
+          pin(2) = VECT(5)
+          pin(3) = VECT(6)
+          pin(4) = GETOT
+          pin(5) = VECT(7)
+          dEsum = 0
+          call hitBarrelEMcal(xin,xout,pin,pout,dEsum,
+     >                        ITRA,ISTAK,ISTORY,IPART)
+          ISTORY = 1  ! this particle has entered the BCal (inherited trait)
+        endif
+      endif
+
+* Place any secondaries generated during this step onto the stack
+
+      if (nosecondaries.eq.0) then
+        do i=1,NGKINE
+c          make primary except if in calorimeter volume and not hadronic
+c          interaction, or except if produced in cave upstream of Hall D
+           iflgk(i) = 1
+           cint = KCASE
+           rx = sqrt(VERT(1)**2+VERT(2)**2)
+           if ((((rx>65.).and.((VERT(3)>-17.).and.(VERT(3)<390.))) !BCAL
+     >         .or.(VERT(3)>625.)                                  !FCAL
+     >         .or.(VERT(3)<-500.))                                !CAVE
+     >         .and.(cchar.ne.'HADR')) then
+              iflgk(i) = 0
+           endif
+           call GSKING(i)
+        enddo
+      endif
+
+* check if particle did decay in which case save vertex and particles
+
+      if (ISTOP .eq. 1) then
+         mechanism = KCASE
+         if ((NGKINE>0) .and. (chcase.eq.'DCAY')) then
+            if ((cnames(NLEVEL).ne.'BCAL').and.
+     +          (cnames(NLEVEL).ne.'FCAL').and.
+     +          (sqrt(VERT(1)**2+VERT(2)**2)<65.).and.
+     +          (VERT(3)<500.).and.(VERT(3)>-500.)) then
+               call savenewvertex(KCASE,NGKINE,GKIN,VECT,
+     +              TOFG,iflgk,IPART,ITRA,ISTAK)
+            endif
+         endif
       endif
 
       CALL GDEBUG
