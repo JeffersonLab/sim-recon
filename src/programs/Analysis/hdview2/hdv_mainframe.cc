@@ -1515,7 +1515,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		fcalblocks.clear();
 
 		if(GetCheckButton("fcal")){
-			for(int chan=0; chan<kMaxChannels; chan++){
+		  for(int chan=0; chan<DFCALGeometry::kMaxChannels; chan++){
 				int row = fcalgeom->row(chan);
 				int col = fcalgeom->column(chan);
 				if(!fcalgeom->isBlockActive(row, col))continue;
@@ -1693,7 +1693,7 @@ void hdv_mainframe::DrawDetectorsRPhi(void)
 		shift[2].Set(+blocksize/2, +blocksize/2);  // ensures the r/phi cooridinates also
 		shift[3].Set(+blocksize/2, -blocksize/2);  // define a single enclosed space
 		fcalblocks.clear();
-		for(int chan=0; chan<kMaxChannels; chan++){
+		for(int chan=0; chan<DFCALGeometry::kMaxChannels; chan++){
 			int row = fcalgeom->row(chan);
 			int col = fcalgeom->column(chan);
 			if(!fcalgeom->isBlockActive(row, col))continue;
