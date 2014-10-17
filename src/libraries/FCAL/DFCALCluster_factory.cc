@@ -14,16 +14,16 @@ using namespace std;
 #include <JANA/JEvent.h>
 using namespace jana;
 
-#include "DFCALCluster_factory.h"
-#include "DFCALHit.h"
+#include "FCAL/DFCALCluster.h"
+#include "FCAL/DFCALCluster_factory.h"
+#include "FCAL/DFCALHit.h"
+#include "HDGEOMETRY/DGeometry.h"
+
 
 // Used to sort hits by Energy
 bool FCALHitsSort_C(const DFCALHit* const &thit1, const DFCALHit* const &thit2) {
 	return thit1->E > thit2->E;
 }
-
-
-int ambiguous_events = 0;
 
 //----------------
 // Constructor
@@ -44,14 +44,25 @@ DFCALCluster_factory::DFCALCluster_factory()
 //------------------
 jerror_t DFCALCluster_factory::brun(JEventLoop *eventLoop, int runnumber)
 {
+	double targetZ;
+	double fcalFrontFaceZ;
 	
-	vector<const DFCALGeometry*> fcalGeoms;
-	eventLoop->Get(fcalGeoms);
-	if(fcalGeoms.size()<1){
-		_DBG_<<"fcalGeoms.size()<1 !!!"<<endl;
-		throw JException("fcalGeoms.size()<1 !!!");
+	DGeometry *dgeom = NULL;
+	DApplication *dapp = dynamic_cast< DApplication* >( eventLoop->GetJApplication() );
+	if( dapp ) dgeom = dapp->GetDGeometry( runnumber );
+   
+	if( dgeom ){
+
+	  dgeom->GetTargetZ( targetZ );
+	  dgeom->GetFCALZ( fcalFrontFaceZ );
 	}
-	fcalGeom = fcalGeoms[0];
+	else{
+
+	  cerr << "No geometry accessbile." << endl;
+	  return RESOURCE_UNAVAILABLE;
+	}
+
+	fcalFaceZ_TargetIsZeq0 = fcalFrontFaceZ - targetZ;
 
 	return NOERROR;
 }
@@ -93,8 +104,6 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
         }
         hits->nhits = nhits;
 
-//        vector<int>  hitUsed(nhits, 0); // number of clusters that use a hit
-                                          // or -1 for seed
         int hitUsed[nhits]; 
         for ( int i = 0; i < nhits; i++ ) { hitUsed[i] = 0; }
  
@@ -110,7 +119,7 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	   bool something_changed = false;
 	   for ( unsigned int c = 0; c < clusterCount; c++ ) {
               //cout << " --------- Update iteration " << iter << endl;
-      	      something_changed |= clusterList[c]->update( hits );
+	     something_changed |= clusterList[c]->update( hits, fcalFaceZ_TargetIsZeq0 );
            }
       	   if (something_changed) {
               for ( unsigned int c = 0; c < clusterCount; c++ ) {
@@ -141,7 +150,7 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 		 clusterList[clusterCount] = new DFCALCluster( hits->nhits );
                  hitUsed[ih] = -1;
 		 clusterList[clusterCount]->addHit(ih,1.);
-		 clusterList[clusterCount]->update( hits );
+		 clusterList[clusterCount]->update( hits, fcalFaceZ_TargetIsZeq0 );
 		 ++clusterCount;
 	      }
 	      else if (iter > 0) {
@@ -192,12 +201,7 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 		 }
 	      }
 	   }
-
         }
-
-	if (iter == 99) {
-	   ++ambiguous_events;
-	}
 
         for ( unsigned int c = 0; c < clusterCount; c++) {
            unsigned int blockCount = clusterList[c]->getHits();
