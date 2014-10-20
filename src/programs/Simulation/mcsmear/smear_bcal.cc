@@ -254,6 +254,7 @@ extern bool SMEAR_BCAL;
 // one of these to true will turn OFF the feature.
 extern bool NO_T_SMEAR;
 extern bool NO_DARK_PULSES;
+extern bool FULL_DARK_HITS;
 extern bool NO_SAMPLING_FLUCTUATIONS;
 extern bool NO_SAMPLING_FLOOR_TERM;
 extern bool NO_POISSON_STATISTICS;
@@ -1102,6 +1103,7 @@ void AddDarkHitsForNonHitSiPMs(map<int, SumSpectra> &bcalfADC)
    // histograms for multiple summed cells.
 
    if(NO_DARK_PULSES)return;
+   if(!FULL_DARK_HITS)return;
 
    DHistogram *hup_tmp = GetHistoFromPool();
    DHistogram *hdn_tmp = GetHistoFromPool();
