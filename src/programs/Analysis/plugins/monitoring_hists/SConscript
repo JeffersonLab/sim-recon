@@ -8,7 +8,6 @@ env = env.Clone()
 
 sbms.AddDANA(env)
 sbms.AddROOT(env)
-sbms.AddROOTSpyMacros(env)
 sbms.plugin(env)
 
 
