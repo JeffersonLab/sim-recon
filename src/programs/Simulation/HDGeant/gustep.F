@@ -202,6 +202,7 @@
       data pin,pout/10*0/
       data dEsum/0/
 
+      integer area
       character*4 cnames(15)
       equivalence (NAMES(1),cnames(1))
       real rnd(100)
@@ -880,6 +881,20 @@ c     #ifndef TRACK_SHOWERS_IN_COLLIMATOR
         endif
       endif
 
+* Set flag to indicate we are in a special area (eg. CAVE, BCAL, FCAL)
+* where explicit identification of secondaries needs to be limited.
+
+      area = 0
+      do i=1,NLEVEL
+        if (cnames(i).eq.'BCAL'.or.cnames(i).eq.'GCAL') then
+          area = 1
+        else if (cnames(i).eq.'FCAL'.or.cnames(i).eq.'CCAL') then
+          area = 2
+        else if (cnames(i).eq.'CAVE'.or.cnames(i).eq.'UPV ') then
+          area = 3
+        endif
+      enddo
+
 * Place any secondaries generated during this step onto the stack
 
       if (nosecondaries.eq.0) then
@@ -888,11 +903,7 @@ c          make primary except if in calorimeter volume and not hadronic
 c          interaction, or except if produced in cave upstream of Hall D
            iflgk(i) = 1
            cint = KCASE
-           rx = sqrt(VERT(1)**2+VERT(2)**2)
-           if ((((rx>65.).and.((VERT(3)>-17.).and.(VERT(3)<390.))) !BCAL
-     >         .or.(VERT(3)>625.)                                  !FCAL
-     >         .or.(VERT(3)<-500.))                                !CAVE
-     >         .and.(cchar.ne.'HADR')) then
+           if (area.ne.0.and.cchar.ne.'HADR') then
               iflgk(i) = 0
            endif
            call GSKING(i)
@@ -904,12 +915,9 @@ c          interaction, or except if produced in cave upstream of Hall D
       if (ISTOP .eq. 1) then
          mechanism = KCASE
          if ((NGKINE>0) .and. (chcase.eq.'DCAY')) then
-            if ((cnames(NLEVEL).ne.'BCAL').and.
-     +          (cnames(NLEVEL).ne.'FCAL').and.
-     +          (sqrt(VERT(1)**2+VERT(2)**2)<65.).and.
-     +          (VERT(3)<500.).and.(VERT(3)>-500.)) then
+            if (area.eq.0) then
                call savenewvertex(KCASE,NGKINE,GKIN,VECT,
-     +              TOFG,iflgk,IPART,ITRA,ISTAK)
+     +                            TOFG,iflgk,IPART,ITRA,ISTAK)
             endif
          endif
       endif
