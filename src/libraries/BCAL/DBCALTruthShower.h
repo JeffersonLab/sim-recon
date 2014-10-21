@@ -11,6 +11,7 @@ class DBCALTruthShower:public JObject{
 		JOBJECT_PUBLIC(DBCALTruthShower);
 
 		int track; ///< This is the unique number that GEANT has assigned the particle
+		int itrack; ///< This is the index within the MCThrown structure of this track
 		int ptype; ///< This is the particle ID number
 		int primary;
 		float phi;
@@ -25,6 +26,7 @@ class DBCALTruthShower:public JObject{
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "ptype", "%d", ptype);
 			AddString(items, "track", "%d", track);
+			AddString(items, "itrack", "%d", itrack);
 			AddString(items, "primary", "%d", primary);
 			AddString(items, "phi", "%1.3f", phi);
 			AddString(items, "r", "%4.3f", r);

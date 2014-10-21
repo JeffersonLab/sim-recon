@@ -21,7 +21,8 @@ public:
 	float px, py, pz; // true 3 momentum of particle
 	float t;	// time
 	float E;	// energy
-	int track;		///< Track number
+	int track;	///< Track number
+	int itrack;	///< MCThrown track index
 	int primary;	///< primary track=1    not primary track=0
 	int ptype;    /// particle type
 
@@ -35,6 +36,7 @@ public:
 		AddString(items, "t", "%1.3f", t);
 		AddString(items, "E", "%1.3f", E);
 		AddString(items, "track", "%d", track);
+		AddString(items, "itrack", "%d", itrack);
 		AddString(items, "primary", "%d", primary);
 		AddString(items, "ptype", "%d", ptype);
 	}

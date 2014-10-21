@@ -28,7 +28,9 @@
           <cdcStrawHit q="float" maxOccurs="unbounded" t="float"/>
           <cdcStrawTruthHit q="float" maxOccurs="unbounded" t="float" d="float" itrack="int" ptype="int"/>
         </cdcStraw>
-        <cdcTruthPoint dEdx="float" dradius="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" t="float" track="int" z="float"/>
+        <cdcTruthPoint dEdx="float" dradius="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" t="float" track="int" z="float">
+          <trackID minOccurs="0" itrack="int"/>
+        </cdcTruthPoint>
       </centralDC>
       <forwardDC minOccurs="0">
         <fdcChamber layer="int" maxOccurs="unbounded" module="int">
@@ -40,7 +42,9 @@
             <fdcCathodeHit maxOccurs="unbounded" q="float" t="float"/>
             <fdcCathodeTruthHit maxOccurs="unbounded" q="float" t="float" itrack="int" ptype="int"/>
           </fdcCathodeStrip>
-          <fdcTruthPoint E="float" dEdx="float" dradius="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
+          <fdcTruthPoint E="float" dEdx="float" dradius="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float">
+            <trackID minOccurs="0" itrack="int"/>
+          </fdcTruthPoint>
         </fdcChamber>
       </forwardDC>
       <startCntr minOccurs="0">
@@ -48,7 +52,9 @@
           <stcHit dE="float" maxOccurs="unbounded" t="float"/>
           <stcTruthHit dE="float" maxOccurs="unbounded" t="float" itrack="int" ptype="int"/>
         </stcPaddle>
-        <stcTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" sector="int" t="float" track="int" z="float"/>
+        <stcTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" sector="int" t="float" track="int" z="float">
+          <trackID minOccurs="0" itrack="int"/>
+        </stcTruthPoint>
       </startCntr>
       <barrelEMcal minOccurs="0">
         <bcalCell layer="int" maxOccurs="unbounded" minOccurs="0" module="int" sector="int">
@@ -63,25 +69,33 @@
           <bcalTruthHit E="float" maxOccurs="unbounded" minOccurs="0" t="float" zLocal="float"/>
         </bcalCell>
         <bcalTruthIncidentParticle maxOccurs="unbounded" minOccurs="0" ptype="int" x="float" y="float" z="float" px="float" py="float" pz="float" id="int"/>
-        <bcalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" t="float" track="int" z="float"/>
+        <bcalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" t="float" track="int" z="float">
+          <trackID minOccurs="0" itrack="int"/>
+        </bcalTruthShower>
       </barrelEMcal>
       <gapEMcal minOccurs="0">
         <gcalCell maxOccurs="48" minOccurs="0" module="int">
           <gcalHit E="float" maxOccurs="unbounded" minOccurs="0" t="float" zLocal="float"/>
           <gcalTruthHit E="float" maxOccurs="unbounded" minOccurs="0" t="float" zLocal="float"/>
         </gcalCell>
-        <gcalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" t="float" track="int" z="float"/>
+        <gcalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" t="float" track="int" z="float">
+          <trackID minOccurs="0" itrack="int"/>
+        </gcalTruthShower>
       </gapEMcal>
       <Cerenkov minOccurs="0">
         <cereSection maxOccurs="unbounded" minOccurs="0" sector="int">
           <cereHit maxOccurs="unbounded" pe="float" t="float"/>
           <cereTruthHit maxOccurs="unbounded" pe="float" t="float"/>
         </cereSection>
-        <cereTruthPoint E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
+        <cereTruthPoint E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float">
+          <trackID minOccurs="0" itrack="int"/>
+        </cereTruthPoint>
       </Cerenkov>
       <RICH minOccurs="0">
         <richHit maxOccurs="unbounded" minOccurs="0" t="float" x="float" y="float" z="float"/>
-        <richTruthPoint E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
+        <richTruthPoint E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float">
+          <trackID minOccurs="0" itrack="int"/>
+        </richTruthPoint>
       </RICH>
       <forwardTOF minOccurs="0">
         <ftofCounter bar="int" maxOccurs="unbounded" minOccurs="0" plane="int">
@@ -91,21 +105,27 @@
              <ftofTruthExtra maxOccurs="unbounded" minOccurs="0" ptype="int" itrack="int" px="float" py="float" pz="float" x="float" y="float" z="float" E="float" dist="float"/>
           </ftofTruthHit>
         </ftofCounter>
-        <ftofTruthPoint E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
+        <ftofTruthPoint E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float">
+          <trackID minOccurs="0" itrack="int"/>
+        </ftofTruthPoint>
       </forwardTOF>
       <forwardEMcal minOccurs="0">
         <fcalBlock column="int" maxOccurs="unbounded" minOccurs="0" row="int">
           <fcalHit E="float" maxOccurs="unbounded" t="float"/>
           <fcalTruthHit E="float" maxOccurs="unbounded" t="float"/>
         </fcalBlock>
-        <fcalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
+        <fcalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float">
+          <trackID minOccurs="0" itrack="int"/>
+        </fcalTruthShower>
       </forwardEMcal>
       <ComptonEMcal minOccurs="0">
         <ccalBlock column="int" maxOccurs="unbounded" minOccurs="0" row="int">
           <ccalHit E="float" maxOccurs="unbounded" t="float"/>
           <ccalTruthHit E="float" maxOccurs="unbounded" t="float"/>
         </ccalBlock>
-        <ccalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
+        <ccalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float">
+          <trackID minOccurs="0" itrack="int"/>
+        </ccalTruthShower>
       </ComptonEMcal>
       <upstreamEMveto minOccurs="0">
         <upvPaddle layer="int" maxOccurs="unbounded" minOccurs="0" row="int">
@@ -113,7 +133,9 @@
           <upvHit end="int" E="float" maxOccurs="unbounded" minOccurs="0" t="float"/>
           <upvTruthHit end="int" E="float" maxOccurs="unbounded" minOccurs="0" t="float" xlocal="float"/>
         </upvPaddle>
-        <upvTruthShower E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
+        <upvTruthShower E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float">
+          <trackID minOccurs="0" itrack="int"/>
+        </upvTruthShower>
       </upstreamEMveto>
       <tagger minOccurs="0">
         <microChannel E="float" column="int" maxOccurs="unbounded" minOccurs="0" row="int">
@@ -127,17 +149,21 @@
       </tagger>
       <pairSpectrometerFine minOccurs="0">
         <psTile maxOccurs="unbounded" minOccurs="0" column="int">
-          <psHit dE="float" t="float" macOccurs="unbounded"/>
+          <psHit npe="int" t="float" macOccurs="unbounded"/>
           <psTruthHit dE="float" t="float" maxOccurs="unbounded" itrack="int" ptype="int"/>
         </psTile>
-	<psTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" column="int" t="float" track="int" z="float"/>
+	<psTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" column="int" t="float" track="int" z="float">
+	  <trackID minOccurs="0" itrack="int"/>
+	</psTruthPoint>
       </pairSpectrometerFine>
       <pairSpectrometerCoarse minOccurs="0">
         <pscPaddle maxOccurs="unbounded" minOccurs="0" module="int">
           <pscHit dE="float" t="float" macOccurs="unbounded"/>
           <pscTruthHit dE="float" t="float" maxOccurs="unbounded" itrack="int" ptype="int"/>
         </pscPaddle>
-	<pscTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" module="int" t="float" track="int" z="float"/>
+	<pscTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" module="int" t="float" track="int" z="float">
+	  <trackID minOccurs="0" itrack="int"/>
+	</pscTruthPoint>
       </pairSpectrometerCoarse>
       <mcTrajectory minOccurs="0">
         <mcTrajectoryPoint E="float" dE="float" maxOccurs="unbounded" mech="int" minOccurs="0" part="int" primary_track="int" px="float" py="float" pz="float" radlen="float" step="float" t="float" track="int" x="float" y="float" z="float"/>
