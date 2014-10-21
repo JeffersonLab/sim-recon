@@ -1689,6 +1689,21 @@ void CodeBuilder::writeMatcher()
          << "   *(index(c,0)) = '\\n';"				<< std::endl
          << "}"							<< std::endl
 								<< std::endl
+         << "static int tag_strncmp(char* a, char* b, int len)" << std::endl
+         << "{"							<< std::endl
+         << "   if (strncmp(a,b,len) == 0) {"			<< std::endl
+         << "      return 0;"					<< std::endl
+         << "   }"						<< std::endl
+         << "   else {"						<< std::endl
+         << "      for (; *a == *b; ++a, ++b, --len) {}"	<< std::endl
+         << "      for (; *a == ' '; ++a, --len) {}"		<< std::endl
+         << "      for (; *a == '/'; ++a, --len) {}"		<< std::endl
+         << "      for (; *b == ' '; ++b) {}"			<< std::endl
+         << "      for (; *b == '/'; ++b) {}"			<< std::endl
+         << "      return strncmp(a,b,len);"			<< std::endl
+         << "   }"						<< std::endl
+         << "}"							<< std::endl
+								<< std::endl
 	 << "static popNode* matches(char* b, char* c)"		<< std::endl
 	 << "{"							<< std::endl
 	 << "   char btag[500];"				<< std::endl
@@ -1704,7 +1719,7 @@ void CodeBuilder::writeMatcher()
          << "         popNode* this1 = "
          << "(popNode*)malloc(sizeof(popNode));"		<< std::endl
 	 << "         int len = index(c+1,'\\n') - c;"		<< std::endl
-	 << "         if (strncmp(c,b,len) != 0)"		<< std::endl
+	 << "         if (tag_strncmp(c,b,len) != 0)"		<< std::endl
 	 << "         {"					<< std::endl
          << "            collide(b,c);"				<< std::endl
          << "            return 0;"				<< std::endl
