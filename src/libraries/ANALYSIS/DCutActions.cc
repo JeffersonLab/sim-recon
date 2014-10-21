@@ -522,6 +522,13 @@ bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParti
 				//HOWEVER, we need to determine whether the PARENT decayed from the correct particle (and on(back)wards until the production step)
 				locParentID = locMCThrownParent->parentid;
 				int locNewSearchStepIndex = locParentSearchParticleComboStep->Get_InitialParticleDecayFromStepIndex();
+				if(locNewSearchStepIndex < 0)
+				{
+					//DReaction is not the full reaction (i.e. doesn't contain beam (e.g. only pi0 decay))
+					if(dExclusiveMatchFlag)
+						return false;
+					break; //good
+				}
 				locParentSearchParticleComboStep = locParticleCombo->Get_ParticleComboStep(locNewSearchStepIndex);
 			}
 			while(true);
