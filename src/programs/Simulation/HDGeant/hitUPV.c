@@ -33,6 +33,8 @@
 #include <HDDM/hddm_s.h>
 #include <geant3.h>
 #include <bintree.h>
+#include <gid_map.h>
+
 extern s_HDDM_t* thisInputEvent;
 
 #define ATTEN_LENGTH        150.
@@ -110,6 +112,8 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
       showers->in[0].pz = pin[2]*pin[4];
       showers->in[0].E = pin[3];
       showers->in[0].ptype = ipart;
+      showers->in[0].trackID = make_s_TrackID();
+      showers->in[0].trackID->itrack = gidGetId(track);
       showers->mult = 1;
       upv->upvTruthShowers = showers;
       showerCount++;

@@ -186,6 +186,8 @@ void hitStartCntr (float xin[4], float xout[4],
          points->in[0].dEdx = dEcorr;
          points->in[0].ptype = ipart;
          points->in[0].sector = getsector_wrapper_();
+         points->in[0].trackID = make_s_TrackID();
+         points->in[0].trackID->itrack = gidGetId(track);
          points->mult = 1;
          pointCount++;
 

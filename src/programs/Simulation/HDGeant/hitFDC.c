@@ -705,6 +705,8 @@ void hitForwardDC (float xin[4], float xout[4],
       points->in[0].dradius = dradius;
       points->in[0].dEdx = dEdx;
       points->in[0].ptype = ipart;
+      points->in[0].trackID = make_s_TrackID();
+      points->in[0].trackID->itrack = gidGetId(track);
       chambers->mult = 1;
       chambers->in[0].module = module;
       chambers->in[0].layer = layer;

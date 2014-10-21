@@ -222,6 +222,8 @@ void hitForwardTOF (float xin[4], float xout[4],
       points->in[0].pz = pin[2]*pin[4];
       points->in[0].E = pin[3];
       points->in[0].ptype = ipart;
+      points->in[0].trackID = make_s_TrackID();
+      points->in[0].trackID->itrack = gidGetId(track);
       points->mult = 1;
       pointCount++;
     }
