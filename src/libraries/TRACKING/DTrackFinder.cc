@@ -676,3 +676,33 @@ DTrackFinder::fdc_segment_t::FindStateVector(void) const {
 
   return DMatrix4x1(x_intercept,y_intercept,x_slope,y_slope);
 }
+
+// Find the intersections between a straight line and a cylinder of radius R
+bool DTrackFinder::FindIntersectionsWithCylinder(double R,
+						 const DVector3 &dir,
+						 const DVector3 &pos,
+						 DVector3 &out1,
+						 DVector3 &out2) const{
+  double denom=dir.Mag();
+  double ux=dir.x()/denom;
+  double uy=dir.y()/denom;
+  double uz=dir.z()/denom;
+  double ux2=ux*ux;
+  double uy2=uy*uy;
+  double ux2_plus_uy2=ux2+uy2;
+  double x0=pos.x();
+  double y0=pos.y();
+  double z0=pos.z();
+  double A=ux2_plus_uy2*R*R-uy2*x0*x0-ux2*y0*y0+2.*ux*uy*x0*y0;
+  if (A<0) return false;
+
+  double t0=-(x0*ux+y0*uy)/ux2_plus_uy2;
+  double dt=sqrt(A)/ux2_plus_uy2;
+  double tplus=t0+dt;
+  out1.SetXYZ(x0+ux*tplus,y0+uy*tplus,z0+uz*tplus);
+  double tminus=t0-dt;
+  out2.SetXYZ(x0+ux*tminus,y0+uy*tminus,z0+uz*tminus);
+
+  return true;
+}
+						
