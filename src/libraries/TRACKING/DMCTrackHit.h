@@ -19,8 +19,9 @@ class DMCTrackHit:public JObject{
   
   float r,phi,z;	///< coordinates of hit in cm and rad
   int track;		///< Track number
-  int primary;	///< primary track=1    not primary track=0
-  int ptype;    /// particle type  
+  int itrack;		///< MC track index
+  int primary;	        ///< primary track=1    not primary track=0
+  int ptype;            /// particle type  
   DetectorSystem_t system;///< 1=CDC 2=FDC 4=BCAL 8=TOF 16=Cherenkov 32=FCAL 64=UPV
 
 		void toStrings(vector<pair<string,string> > &items)const{
@@ -28,6 +29,7 @@ class DMCTrackHit:public JObject{
 			AddString(items, "phi(rad)", "%1.3f", phi);
 			AddString(items, "z(cm)", "%3.1f", z);
 			AddString(items, "track", "%d", track);
+			AddString(items, "itrack", "%d", itrack);
 			AddString(items, "primary", "%d", primary);
 			AddString(items, "ptype", "%d", ptype);
 			AddString(items, "system", "%s", SystemName(system));

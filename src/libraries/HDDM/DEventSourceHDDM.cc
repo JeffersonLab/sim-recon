@@ -518,6 +518,8 @@ jerror_t DEventSourceHDDM::GetCDCTruthHits(hddm_s::HDDM *record,
       mctrackhit->primary = iter->getPrimary();
       mctrackhit->ptype   = iter->getPtype();
       mctrackhit->system  = SYS_CDC;
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      mctrackhit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
       data.push_back(mctrackhit);
    }
       
@@ -543,6 +545,8 @@ jerror_t DEventSourceHDDM::GetFDCTruthHits(hddm_s::HDDM *record,
       mctrackhit->primary = iter->getPrimary();
       mctrackhit->ptype   = iter->getPtype();
       mctrackhit->system  = SYS_FDC;
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      mctrackhit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
       data.push_back(mctrackhit);
    }
 
@@ -566,6 +570,8 @@ jerror_t DEventSourceHDDM::GetBCALTruthHits(hddm_s::HDDM *record,
       mctrackhit->primary = iter->getPrimary();
       mctrackhit->ptype   = iter->getPtype();
       mctrackhit->system  = SYS_BCAL;
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      mctrackhit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
       data.push_back(mctrackhit);
    }
 
@@ -591,6 +597,8 @@ jerror_t DEventSourceHDDM::GetTOFTruthHits(hddm_s::HDDM *record,
       mctrackhit->primary = iter->getPrimary();
       mctrackhit->ptype   = iter->getPtype(); // save GEANT particle type 
       mctrackhit->system  = SYS_TOF;
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      mctrackhit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
       data.push_back(mctrackhit);
    }
       
@@ -617,6 +625,8 @@ jerror_t DEventSourceHDDM::GetCherenkovTruthHits(hddm_s::HDDM *record,
       mctrackhit->primary = iter->getPrimary();
       mctrackhit->ptype   = iter->getPtype();    // save GEANT particle typ()e
       mctrackhit->system  = SYS_CHERENKOV;
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      mctrackhit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
       data.push_back(mctrackhit);
    }
 
@@ -643,6 +653,8 @@ jerror_t DEventSourceHDDM::GetRichTruthHits(hddm_s::HDDM *record,
       mctrackhit->primary = iter->getPrimary();
       mctrackhit->ptype   = iter->getPtype();    // save GEANT particle typ()e
       mctrackhit->system  = SYS_RICH;
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      mctrackhit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
       data.push_back(mctrackhit);
    }
 
@@ -668,6 +680,8 @@ jerror_t DEventSourceHDDM::GetFCALTruthHits(hddm_s::HDDM *record,
       mctrackhit->primary = iter->getPrimary();
       mctrackhit->ptype   = iter->getPtype();
       mctrackhit->system  = SYS_FCAL;
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      mctrackhit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
       data.push_back(mctrackhit);
    }
 
@@ -693,6 +707,8 @@ jerror_t DEventSourceHDDM::GetCCALTruthHits(hddm_s::HDDM *record,
       mctrackhit->primary = iter->getPrimary();
       mctrackhit->ptype   = iter->getPtype();
       mctrackhit->system  = SYS_CCAL;
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      mctrackhit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
       data.push_back(mctrackhit);
    }
 
@@ -717,6 +733,8 @@ jerror_t DEventSourceHDDM::GetSCTruthHits(hddm_s::HDDM *record,
       mctrackhit->primary = iter->getPrimary();
       mctrackhit->ptype   = iter->getPtype();    // save GEANT particle type
       mctrackhit->system  = SYS_START;
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      mctrackhit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
       data.push_back(mctrackhit);
    }
       
@@ -1401,6 +1419,8 @@ jerror_t DEventSourceHDDM::Extract_DBCALTruthShower(hddm_s::HDDM *record,
       bcaltruth->px      = iter->getPx();
       bcaltruth->py      = iter->getPy();
       bcaltruth->pz      = iter->getPz();
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      bcaltruth->itrack = (ids.size())? ids.begin()->getItrack() : 0;
       data.push_back(bcaltruth);
    }
 
@@ -1469,6 +1489,8 @@ jerror_t DEventSourceHDDM::Extract_DFCALTruthShower(hddm_s::HDDM *record,
    const hddm_s::FcalTruthShowerList &shows = record->getFcalTruthShowers();
    hddm_s::FcalTruthShowerList::iterator iter;
    for (iter = shows.begin(); iter != shows.end(); ++iter) {
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      int itrack = (ids.size())? ids.begin()->getItrack() : 0;
       DFCALTruthShower *dfcaltruthshower = new DFCALTruthShower(
             id++,
             iter->getX(),
@@ -1481,7 +1503,8 @@ jerror_t DEventSourceHDDM::Extract_DFCALTruthShower(hddm_s::HDDM *record,
             iter->getT(),
             iter->getPrimary(),
             iter->getTrack(),
-            iter->getPtype()
+            iter->getPtype(),
+            itrack
             );
       data.push_back(dfcaltruthshower);
    }
@@ -1596,6 +1619,8 @@ jerror_t DEventSourceHDDM::Extract_DCCALTruthShower(hddm_s::HDDM *record,
    const hddm_s::CcalTruthShowerList &shows = record->getCcalTruthShowers();
    hddm_s::CcalTruthShowerList::iterator iter;
    for (iter = shows.begin(); iter != shows.end(); ++iter) {
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      int itrack = (ids.size())? ids.begin()->getItrack() : 0;
       DCCALTruthShower *dccaltruthshower = new DCCALTruthShower(
             id++,
             iter->getX(),
@@ -1608,7 +1633,8 @@ jerror_t DEventSourceHDDM::Extract_DCCALTruthShower(hddm_s::HDDM *record,
             iter->getT(),
             iter->getPrimary(),
             iter->getTrack(),
-            iter->getPtype()
+            iter->getPtype(),
+            itrack
             );
       data.push_back(dccaltruthshower);
    }
@@ -1783,6 +1809,8 @@ jerror_t DEventSourceHDDM::Extract_DTOFTruth(hddm_s::HDDM *record,
       toftruth->pz      = iter->getPz();
       toftruth->E       = iter->getE();
       toftruth->ptype   = iter->getPtype();
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      toftruth->itrack = (ids.size())? ids.begin()->getItrack() : 0;
       data.push_back(toftruth);
    }
 
@@ -1991,6 +2019,8 @@ jerror_t DEventSourceHDDM::Extract_DSCTruthHit(hddm_s::HDDM *record,
       hit->z       = iter->getZ();
       hit->track   = iter->getTrack();
       hit->sector  = iter->getSector();
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      hit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
       data.push_back(hit);
    }
 
@@ -2400,6 +2430,8 @@ jerror_t DEventSourceHDDM::Extract_DRichTruthHit(hddm_s::HDDM *record,
       hit->track   = iter->getTrack();
       hit->primary = iter->getPrimary();
       hit->ptype   = iter->getPtype();
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      hit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
       data.push_back(hit);
    }
 

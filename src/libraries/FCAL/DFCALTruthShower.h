@@ -20,7 +20,8 @@ class DFCALTruthShower:public JObject{
 				  float x, float y, float z,
 				  float px, float py, float pz,
 				  float E, float t,
-				  bool primary, int track, int type) :
+				  bool primary, int track, int type,
+				  int itrack=0) :
 		  JObject( id ),
 		  m_x( x ),
 		  m_y( y ),
@@ -32,7 +33,8 @@ class DFCALTruthShower:public JObject{
 		  m_t( t ),
 		  m_primary(primary),
 		  m_track(track),
-		  m_type(type){}
+		  m_type(type),
+		  m_itrack(itrack){}
 	
 		float x() const { return m_x; }
 		float y() const { return m_y; }
@@ -45,6 +47,7 @@ class DFCALTruthShower:public JObject{
 		bool primary() const { return m_primary; }
 		int track() const { return m_track; }
 		int type() const { return m_type; }
+		int itrack() const { return m_itrack; }
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "x(cm)", "%3.1f", x());
@@ -57,6 +60,7 @@ class DFCALTruthShower:public JObject{
 			AddString(items, "t(ns)", "%3.1f", t());
 			AddString(items, "primary", "%d", primary());
 			AddString(items, "track", "%d", track());
+			AddString(items, "itrack", "%d", itrack());
 			AddString(items, "type", "%d", type());
 		}
 
@@ -73,6 +77,7 @@ class DFCALTruthShower:public JObject{
 		bool m_primary;
 		int m_track;
 		int m_type;
+		int m_itrack;
 };
 
 #endif // _DFCALTruthShower_
