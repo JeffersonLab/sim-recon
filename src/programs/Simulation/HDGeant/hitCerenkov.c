@@ -19,6 +19,7 @@
 #include <HDDM/hddm_s.h>
 #include <geant3.h>
 #include <bintree.h>
+#include <gid_map.h>
 
 extern s_HDDM_t* thisInputEvent;
 
@@ -68,6 +69,8 @@ void hitCerenkov (float xin[4], float xout[4],
          points->in[0].pz = pin[4]*pin[2];
          points->in[0].E = pin[3];
          points->in[0].ptype = ipart;
+         points->in[0].trackID = make_s_TrackID();
+         points->in[0].trackID->itrack = gidGetId(track);
          points->mult = 1;
          pointCount++;
       }
