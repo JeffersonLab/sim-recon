@@ -13,6 +13,8 @@ using namespace std;
 
 #include <START_COUNTER/DSCDigiHit.h>
 #include <START_COUNTER/DSCTDCDigiHit.h>
+#include <DAQ/Df250PulsePedestal.h>
+#include <DAQ/Df250Config.h>
 #include "DSCHit_factory.h"
 using namespace jana;
 
@@ -139,12 +141,33 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
             hit->sector, MAX_SECTORS);
          throw JException(str);
       }
+		
+		// Initialize pedestal to one found in CCDB, but override it
+		// with one found in event if is available
+		double pedestal = a_pedestals[hit->sector-1];
+		try{
+			// This should probably be done upstream of here so that 
+			const Df250PulseTime *pulsetime=NULL;
+			const Df250PulsePedestal *pulsepedestal=NULL;
+			const Df250Config *daqconfig=NULL;
+			digihit->GetSingle(pulsetime);
+			if(pulsetime) pulsetime->GetSingle(pulsepedestal);
+			if(pulsepedestal) pulsepedestal->GetSingle(daqconfig);
+//_DBG_<<"pulsetime=0x"<<hex<<pulsetime<<" pulsepedestal=0x"<<pulsepedestal<<" daqconfig=0x"<<daqconfig<<dec<<endl;
+			
+			// Measured pedestal uses different number of samples than
+			// pulse integral. Scale pedestal up to match integral.
+			if(daqconfig) pedestal = (double)pulsepedestal->pedestal * (double)daqconfig->NSA_NSB/(double)daqconfig->NPED;
+//_DBG_<<"ST pedestal="<<pedestal<<endl;
+		}catch(...){
+//_DBG__;
+		}
 
       // Apply calibration constants here
       double A = (double)digihit->pulse_integral;
       double T = (double)digihit->pulse_time;
       // Sectors are numbered from 1-30
-      hit->dE = a_scale * a_gains[hit->sector-1] * (A - a_pedestals[hit->sector-1]);
+      hit->dE = a_scale * a_gains[hit->sector-1] * (A - pedestal);
       hit->t = t_scale * (T - adc_time_offsets[hit->sector-1]) + t_base;
       hit->sigma_t = 4.0;    // ns (what is the fADC time resolution?)
       hit->has_fADC = true;
