@@ -37,6 +37,12 @@ using namespace std;
 #include "JANA/JGeometry.h"
 #include "TRACKING/DMCTrajectoryPoint.h"
 #include "FCAL/DFCALHit.h"
+#include "TOF/DTOFGeometry.h"
+#include "TOF/DTOFHit.h"
+#include "TOF/DTOFTDCDigiHit.h" 
+#include "TOF/DTOFDigiHit.h"
+#include "TOF/DTOFPaddleHit.h"
+#include "TOF/DTOFPoint.h"
 #include "FDC/DFDCGeometry.h"
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
@@ -210,7 +216,8 @@ void MyProcessor::FillGraphics(void)
 	graphics_xyB.clear(); // The objects placed in these will be deleted by hdv_mainframe
 	graphics_xz.clear();  // The objects placed in these will be deleted by hdv_mainframe
 	graphics_yz.clear();  // The objects placed in these will be deleted by hdv_mainframe
-	
+	graphics_tof_hits.clear();  // The objects placed in these will be deleted by hdv_mainframe
+
 	if(!loop)return;
 
 	vector<const DTrackCandidate*> trCand;
@@ -431,7 +438,174 @@ void MyProcessor::FillGraphics(void)
 	    poly->SetFillColor(TColor::GetColor(r,g,b));
 	  }
 	}
-	
+	// TOF hits
+	if(hdvmf->GetCheckButton("tof")){
+
+	  double hit_north[45];
+	  double hit_south[45];
+	  double hit_up[45];
+	  double hit_down[45];
+
+	  memset(hit_north,0,sizeof(hit_north));
+	  memset(hit_south,0,sizeof(hit_south));
+	  memset(hit_up,0,sizeof(hit_up));
+	  memset(hit_down,0,sizeof(hit_down));
+
+          vector<const DTOFHit*> tofhits;
+          loop->Get(tofhits);
+
+          for(unsigned int i=0; i<tofhits.size(); i++){
+            const DTOFHit *tof_hit = tofhits[i];
+
+	    int plane = tof_hit->plane;
+            int bar = tof_hit->bar;
+            int end = tof_hit->end;
+            float t = tof_hit->t;
+	    
+	    int translate_side;
+	    TPolyLine *pmtPline;
+
+
+	    // Flash the PMTs that do have fADC hits
+
+	    /*
+	    double dE_padd = 0.2/5.2E5 * 40000;
+	    double thold = 0.2/5.2E5 * 115;
+	    if (tof_hit->has_fADC && (tof_hit->dE - dE_padd > thold)){
+	    */
+
+	    if (tof_hit->has_fADC){
+	      switch(plane)
+		{
+		case 0:
+		  if(end == 1){
+		    //cout << "Down : " << bar << endl;
+		    translate_side = 0;
+		    pmtPline = hdvmf->GetTOFPolyLine(translate_side, bar);
+		    pmtPline->SetFillColor(2);
+		  }
+		  else if(end == 0){
+		    //cout << "Up : " << bar << endl;
+		    translate_side = 2;
+		    pmtPline = hdvmf->GetTOFPolyLine(translate_side, bar);
+		    pmtPline->SetFillColor(2);
+		}
+		  else{
+		  cerr << "Out of range TOF end" << endl;
+		  }
+		  break;
+		case 1:
+		  if(end == 0){
+		    //cout << "North : " << bar << endl;
+		    translate_side = 3;
+		    pmtPline = hdvmf->GetTOFPolyLine(translate_side, bar);
+		    pmtPline->SetFillColor(2);
+		  }
+		  else if(end == 1){
+		    //cout << "South : " << bar << endl;
+		    translate_side = 1;
+		    pmtPline = hdvmf->GetTOFPolyLine(translate_side, bar);
+		    pmtPline->SetFillColor(2);
+		  }
+		  else{
+		    cerr << "Out of range TOF end" << endl;
+		  }
+		  break;
+		default:
+		  cerr << "Out of range TOF plane" << endl;
+		  exit(0);
+		} // close the switch plane loop
+	    } // if for the fADC
+
+	    // Draw the position from the events that do have tdc hits 
+	    // with the current status of the TOFHit object those hits appear with no match from the fADC
+	    //Float_t hit_dist;
+
+	    if (tof_hit->has_TDC){
+	      switch(plane)
+		{
+		case 0:
+		  if(end == 1){
+		    if (hit_down[bar]<=0 || (t < hit_down[bar]) ){
+		      hit_down[bar] = t;
+		    }
+		  }
+		  else if(end == 0){
+		    if (hit_up[bar]<=0 || (t < hit_up[bar]) ){
+		      hit_up[bar] = t;
+		    }
+		  }
+		  else{
+		  cerr << "Out of range TOF end" << endl;
+		  }
+		  break;
+		case 1:
+		  if(end == 0){
+		    if (hit_north[bar]<=0 || (t < hit_north[bar]) ){
+		      hit_north[bar] = t;
+		    }
+		  }
+		  else if(end == 1){
+		    if (hit_south[bar]<=0 || (t < hit_south[bar]) ){
+		      hit_south[bar] = t;
+		    }
+		  }
+		  else{
+		    cerr << "Out of range TOF end" << endl;
+		  }
+		  break;
+		default:
+		  cerr << "Out of range TOF plane" << endl;
+		  exit(0);
+		}
+	      
+	    } // close the switch if there is a TDC Hit
+	    
+	  } // close the for TOFHit object
+
+	  // Draw the TDC Points here
+
+	  Float_t hit_dist;
+	  Float_t distY_Horz = -126; // Horizontal plane start counting from the Bottom to Top
+	  Float_t distX_Vert =  126; // Vertical plane start counting from the South to North
+	  int tdc_hits = 0;
+	  
+	  for(Int_t i_tdc = 1; i_tdc <= 44; i_tdc++){
+	    if ( i_tdc == 20 || i_tdc == 21 || i_tdc == 24 || i_tdc == 25 ){
+	      distY_Horz = distY_Horz + 1.5;
+	      distX_Vert = distX_Vert - 1.5;
+	    }
+	    else{
+	      distY_Horz = distY_Horz + 3.0;
+	      distX_Vert = distX_Vert - 3.0;
+	    }
+	    if(hit_north[i_tdc] > 0 && hit_south[i_tdc] > 0){
+	      hit_dist =  (15.2*(Float_t(hit_north[i_tdc] - hit_south[i_tdc])/2) );
+	      TArc *tdc_cir = new TArc(hit_dist,distY_Horz,2);
+	      tdc_cir->SetFillColor(kGreen);
+
+	      graphics_tof_hits.push_back(tdc_cir);
+	      tdc_hits++;
+	    }
+	    if(hit_up[i_tdc] > 0 && hit_down[i_tdc] > 0){
+	      hit_dist =  (15.2*(Float_t(hit_down[i_tdc] - hit_up[i_tdc])/2) );
+	      TArc *tdc_cir = new TArc(distX_Vert,hit_dist,2);
+	      tdc_cir->SetFillColor(kBlue);
+
+	      graphics_tof_hits.push_back(tdc_cir);
+	      tdc_hits++;
+	    }
+	    if ( i_tdc == 20 || i_tdc == 21 || i_tdc == 24 || i_tdc == 25 ){
+	      distY_Horz = distY_Horz + 1.5;
+	      distX_Vert = distX_Vert - 1.5;
+	    }
+	    else{
+	      distY_Horz = distY_Horz + 3.0;
+	      distX_Vert = distX_Vert - 3.0;
+	    }
+	  }
+
+        } // close the if check button for the TOF
 
 	// CDC hits
 	if(hdvmf->GetCheckButton("cdc")){

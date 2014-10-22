@@ -137,6 +137,7 @@ class hdv_mainframe:public TGMainFrame {
 		TPolyLine* GetFCALPolyLine(int channel);
 		TPolyLine* GetFCALPolyLine(float x, float y);
 		TPolyLine* GetBCALPolyLine(int mod, int layer, int sector);
+		TPolyLine* GetTOFPolyLine(int translate_side, int tof_ch);
 		
 		void AddGraphicsSideA(vector<TObject*> &v);
 		void AddGraphicsSideB(vector<TObject*> &v);
@@ -197,7 +198,8 @@ class hdv_mainframe:public TGMainFrame {
 		map<string, TGCheckButton*> checkbuttons;
 		map<int, TPolyLine*> fcalblocks;
 		map<int, TPolyLine*> bcalblocks;
-		
+		map<int, map<int, TPolyLine*> > tofblocks;
+
 		TTimer *timer;
 		long sleep_time; // in milliseconds
 		
