@@ -3321,8 +3321,7 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 	// encounter them in so it is maintained in the
 	// "events" container. The event_id order is kept
 	// in the "event_id_order" vector.
-	ObjList *objs = NULL;
-	map<uint32_t, ObjList*> objmap;
+	map<uint32_t, vector<DCAEN1290TDCHit*> > hits_by_event_id; 
 	vector<uint32_t> event_id_order; 
 
 	while(iptr<iend){
@@ -3343,23 +3342,6 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 				slot = (*iptr) & 0x1f;
 				event_count = ((*iptr)>>5) & 0xffffff;
 				if(VERBOSE>7) evioout << "         CAEN TDC Global Header (slot=" << slot << " , event count=" << event_count << ")" << endl;
-
-				// If event_id has changed. Find or create ObjList (event)
-				// to write this hit into.
-				if(last_event_id != event_id){
-					
-					iter = objmap.find(event_id);
-					if(iter != objmap.end()){
-						objs = iter->second;
-					}else{
-						if(objs==NULL || ENABLE_DISENTANGLING){
-							objs = new ObjList();
-							objmap[event_id] = objs;
-							event_id_order.push_back(event_id);
-						}
-					}
-					last_event_id = event_id;
-				}
 				break;
 			case 0b10000:  // Global Trailer
 				slot = (*iptr) & 0x1f;
@@ -3375,6 +3357,8 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 				tdc_num = ((*iptr)>>24) & 0x03;
 				event_id = ((*iptr)>>12) & 0x0fff;
 				bunch_id = (*iptr) & 0x0fff;
+				if(event_id != last_event_id) event_id_order.push_back(event_id);
+				last_event_id = event_id;
 				if(VERBOSE>7) evioout << "         CAEN TDC TDC Header (tdc=" << tdc_num <<" , event id=" << event_id <<" , bunch id=" << bunch_id << ")" << endl;
 				break;
 			case 0b00000:  // TDC Measurement
@@ -3384,10 +3368,8 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 				if(VERBOSE>7) evioout << "         CAEN TDC TDC Measurement (" << (edge ? "trailing":"leading") << " , channel=" << channel << " , tdc=" << tdc << ")" << endl;
 
 				// Create DCAEN1290TDCHit object
-				if(objs){
-					caen1290tdchit = new DCAEN1290TDCHit(rocid, slot, channel, 0, edge, tdc_num, event_id, bunch_id, tdc);
-					objs->hit_objs.push_back(caen1290tdchit);
-				}
+				caen1290tdchit = new DCAEN1290TDCHit(rocid, slot, channel, 0, edge, tdc_num, event_id, bunch_id, tdc);
+				hits_by_event_id[event_id].push_back(caen1290tdchit);
 				break;
 			case 0b00100:  // TDC Error
 				error_flags = (*iptr) & 0x7fff;
@@ -3409,20 +3391,33 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 	
 		iptr++;
 	}
-
-	// Copy all ObjLists into temporary "myevents", preserving order
-	list<ObjList*> myevents;
-	for(unsigned int i=0; i<event_id_order.size(); i++){
-		map<uint32_t, ObjList*>::iterator iter = objmap.find(event_id_order[i]);
-		if(iter != objmap.end()){
-			myevents.push_back(iter->second);
-		}else{
-			_DBG_<<"CAEN1290: Unable to find map entry for event id:"<<event_id_order[i]<<"!!!"<<endl;
+	
+	// If disentagling is disabled, then lump all hits into single event
+	if( (!ENABLE_DISENTANGLING) && (event_id_order.size()>1) ){
+		if(VERBOSE>2) evioout << "           Disentangling disabled. Merging all hits into single event" << endl;
+		vector<DCAEN1290TDCHit*> &hits1 = hits_by_event_id[event_id_order[0]];
+		for(uint32_t i=1; i<event_id_order.size(); i++){
+			vector<DCAEN1290TDCHit*> &hits2 = hits_by_event_id[event_id_order[i]];
+			hits1.insert(hits1.end(), hits2.begin(), hits2.end()); // copy hits into first event
+			hits_by_event_id.erase(event_id_order[i]);              // remove hits list for this event_id
 		}
 	}
 	
-	// Merge the "myevents" list into the list of existing events provided to us
-	MergeObjLists(events, myevents);
+	// Add hits for each event to the events container, creating ObjList's as needed
+	for(uint32_t i=0; i<event_id_order.size(); i++){
+	
+		// Make sure there are enough event containers to hold this event
+		while(events.size() <= i) events.push_back(new ObjList);
+		list<ObjList*>::iterator it = events.begin();
+		advance(it, i);
+		ObjList *objs = *it;
+	
+		vector<DCAEN1290TDCHit*> &hits = hits_by_event_id[event_id_order[i]];
+		objs->hit_objs.insert(objs->hit_objs.end(), hits.begin(), hits.end());
+		
+		if(VERBOSE>7) evioout << "        Added " << hits.size() << " hits with event_id=" << event_id_order[i] << " to event " << i << endl;
+	}
+
 }
 
 //----------------
