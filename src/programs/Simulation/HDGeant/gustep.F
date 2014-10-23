@@ -903,7 +903,7 @@ c          make primary except if in calorimeter volume and not hadronic
 c          interaction, or except if produced in cave upstream of Hall D
            iflgk(i) = 1
            cint = KCASE
-           if (area.ne.0.and.cchar.ne.'HADR') then
+           if (area.ne.0.and.ISTORY.eq.0.and.cchar.ne.'HADR') then
               iflgk(i) = 0
            endif
            call GSKING(i)
@@ -915,7 +915,7 @@ c          interaction, or except if produced in cave upstream of Hall D
       if (ISTOP .eq. 1) then
          mechanism = KCASE
          if ((NGKINE>0) .and. (chcase.eq.'DCAY')) then
-            if (area.eq.0) then
+            if (area.eq.0.and.ISTORY.eq.0) then
                call savenewvertex(KCASE,NGKINE,GKIN,VECT,
      +                            TOFG,iflgk,IPART,ITRA,ISTAK)
             endif
