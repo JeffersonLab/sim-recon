@@ -87,6 +87,8 @@ bool BCAL_DEBUG_HISTS = false;
 
 double FTOF_BAR_THRESHOLD    = 0.0;
 double STC_PADDLE_THRESHOLD  = 0.0;
+double PSC_THRESHOLD         = 0.0;
+double PS_THRESHOLD          = 0.0;
 
 double TAGM_TSIGMA = 0.200;        // ns
 double TAGH_TSIGMA = 0.350;        // ns
@@ -94,6 +96,12 @@ double TAGM_FADC_TSIGMA = 0.350;   // ns
 double TAGH_FADC_TSIGMA = 0.450;   // ns
 double TAGM_NPIX_PER_GEV = 1.e5;
 double TAGH_NPE_PER_GEV = 5.e5;
+
+// The following are place holders to be filled in with realistic numbers later
+double PS_SIGMA = 0.200; // ns
+double PSC_SIGMA = 0.200; //ns
+double PS_NPIX_PER_GEV = 1.e5;
+double PSC_PHOTONS_PERMEV = 5.e5;
 
 double FCAL_PHOT_STAT_COEF   = 0.0; //0.035;
 double FCAL_BLOCK_THRESHOLD  = 0.0; //20.0*k_MeV;
