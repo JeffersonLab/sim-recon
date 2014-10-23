@@ -138,6 +138,12 @@ int loadOutput ()
    if ((hitView->tagger = pickTagger()) != HDDM_NULL) {
       ++packages_hit;
    }
+   if ((hitView->pairSpectrometerFine = pickPs()) != HDDM_NULL) {
+     ++packages_hit;
+   }
+   if ((hitView->pairSpectrometerCoarse = pickPsc()) != HDDM_NULL) {
+     ++packages_hit;
+   }
    if ((hitView->mcTrajectory = pickMCTrajectory()) != HDDM_NULL) {
       ++packages_hit;
    }
