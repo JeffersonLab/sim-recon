@@ -149,7 +149,7 @@
       </tagger>
       <pairSpectrometerFine minOccurs="0">
         <psTile maxOccurs="unbounded" minOccurs="0" column="int">
-          <psHit npe="int" t="float" macOccurs="unbounded"/>
+          <psHit dE="float" t="float" macOccurs="unbounded"/>
           <psTruthHit dE="float" t="float" maxOccurs="unbounded" itrack="int" ptype="int"/>
         </psTile>
 	<psTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" column="int" t="float" track="int" z="float">

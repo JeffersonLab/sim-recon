@@ -907,7 +907,7 @@ void SmearPS(hddm_s::HDDM *record)
          double npe = SamplePoisson(titer->getDE() * PS_NPIX_PER_GEV);
 	 hddm_s::PsHitList hits = iter->addPsHits();
 	 hits().setT(t);
-	 hits().setNpe(npe);
+	 hits().setDE(npe/PS_NPIX_PER_GEV);
       }
 
       if (DROP_TRUTH_HITS)
