@@ -55,6 +55,7 @@
 
 #include "rawevent/JEventProcessor_rawevent.h"
 
+#include<cmath>
 #include<sstream>
 #include<iomanip>
 #include<algorithm>
@@ -187,6 +188,17 @@ static double BCAL_TDCtick = F1TDC32tick;
 static double TOF_TDCtick = CAENTDCtick;
 static double SC_TDCtick = F1TDC32tick;
 
+// optional parameters for specifying windows (in ns) in which to keep hits
+// these are useful in cases when one is generating events overlaid
+// with EM background, and the EM background window is large,
+// causing an unrealistic number of events to register in the
+// channels of certain detectors
+static double CDC_time_window = -1.;
+static double FDC_time_window = -1.;
+static double FCAL_time_window = -1.;
+static double BCAL_time_window = -1.;
+static double TOF_time_window = -1.;
+static double SC_time_window = -1.;
 
 // debug
 static int dumphits  = 0;
@@ -292,7 +304,17 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
   gPARMS->SetDefaultParameter("RAWEVENT:MEAN_PEDESTAL",MEAN_PEDESTAL, "Mean value of single sample pedestal.");
   gPARMS->SetDefaultParameter("RAWEVENT:SIGMA_COMMON_PEDESTAL",SIGMA_COMMON_PEDESTAL, "Stochastic width of common pedestal distribution. Common pedestal is used for all channels in a module but will be different module to module.");
   gPARMS->SetDefaultParameter("RAWEVENT:SIGMA_INDIVIDUAL_PEDESTAL",SIGMA_INDIVIDUAL_PEDESTAL, "Stochastic width of MEASURED pedestal");
+
+  // options for time windows
+  gPARMS->SetDefaultParameter("RAWEVENT:CDC_TIME_WINDOW",CDC_time_window, "Optional window size in which to save CDC hits (in ns)");
+  gPARMS->SetDefaultParameter("RAWEVENT:FDC_TIME_WINDOW",FDC_time_window, "Optional window size in which to save FDC hits (in ns)");
+  gPARMS->SetDefaultParameter("RAWEVENT:FCAL_TIME_WINDOW",FCAL_time_window, "Optional window size in which to save FCAL hits (in ns)");
+  gPARMS->SetDefaultParameter("RAWEVENT:BCAL_TIME_WINDOW",BCAL_time_window, "Optional window size in which to save BCAL hits (in ns)");
+  gPARMS->SetDefaultParameter("RAWEVENT:TOF_TIME_WINDOW",TOF_time_window, "Optional window size in which to save TOF hits (in ns)");
+  gPARMS->SetDefaultParameter("RAWEVENT:SC_TIME_WINDOW",SC_time_window, "Optional window size in which to save Start Counter hits (in ns)");
+
 #endif //HAVE_EVIO
+
 
 }
 
@@ -730,6 +752,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if ((dcdchits[i]->q > 0) && ((dcdchits[i]->t*1000.) > tMin) &&
         (dcdchits[i]->t*1000. < trigTime))
     {
+      if(CDC_time_window > 0.)
+	if(fabs(dcdchits[i]->t) > CDC_time_window)
+	  continue;
+
       //uint32_t q     = dcdchits[i]->q * (1./5.18) * (1.3E5/1.0E6); // q is in femtoCoulombs (max is ~1E6) 
       uint32_t q     = dcdchits[i]->q * CDC_ADCscale; // q is in femtoCoulombs (max is ~1E6) 
       //uint32_t t     = dcdchits[i]->t*1000.0 -tMin;    // t is in nanoseconds (max is ~900ns)
@@ -803,6 +829,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if ((dtofrawhits[i]->dE > 0) && ((dtofrawhits[i]->t*1000.) > tMin) &&
         (dtofrawhits[i]->t*1000. < trigTime))
     {
+      if(TOF_time_window > 0.)
+	if(fabs(dtofrawhits[i]->t) > TOF_time_window)
+	  continue;
+
 	//uint32_t E  = dtofrawhits[i]->dE*(5.2E5/0.2);   // E is GeV (max ~0.1)
       uint32_t E  = dtofrawhits[i]->dE*TOF_ADCscale;   // E is GeV (max ~0.1)
       uint32_t t  = dtofrawhits[i]->t*1000.-tMin;  // in picoseconds
@@ -896,6 +926,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if ((dbcalhits[i]->E > 0) && ((dbcalhits[i]->t*1000.) > tMin) &&
         (dbcalhits[i]->t*1000. < trigTime))
     {
+      if(BCAL_time_window > 0.)
+	if(fabs(dbcalhits[i]->t) > BCAL_time_window)
+	  continue;
+
       uint32_t E = dbcalhits[i]->E*BCAL_ADCscale;  // (each fADC count ~ 100keV) (max ~2.5E4)
       uint32_t t = dbcalhits[i]->t*1000.-tMin;     // in picoseconds
 
@@ -997,6 +1031,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if (((dbcaltdchits[i]->t*1000.) > tMin) && 
          (dbcaltdchits[i]->t*1000. < trigTime))
     {
+      if(BCAL_time_window > 0.)
+	if(fabs(dbcaltdchits[i]->t) > BCAL_time_window)
+	  continue;
+
       int32_t E     = 0;
       int32_t t     = dbcaltdchits[i]->t*1000.-tMin;  // in picoseconds
 
@@ -1059,6 +1097,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if ((dfcalhits[i]->E > 0) && ((dfcalhits[i]->t*1000.) > tMin) &&
         (dfcalhits[i]->t*1000. < trigTime))
     {
+      if(FCAL_time_window > 0.)
+	if(fabs(dfcalhits[i]->t) > FCAL_time_window)
+	  continue;
+
       uint32_t E     = dfcalhits[i]->E*FCAL_ADCscale;  // E in GeV (max ~4)
       uint32_t t     = dfcalhits[i]->t*1000.-tMin;  // in picoseconds
       
@@ -1122,6 +1164,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if ((dfdchits[i]->q > 0) && ((dfdchits[i]->t*1000.) > tMin) &&
         (dfdchits[i]->t*1000. < trigTime))
     {
+      if(FDC_time_window > 0.)
+	if(fabs(dfdchits[i]->t) > FDC_time_window)
+	  continue;
+
       uint32_t q = dfdchits[i]->q*FDC_ADCscale; // for cathodes
       if (dfdchits[i]->type == 0)
          q = 0.0; // No amplitude read for wires 
@@ -1229,6 +1275,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if ((dsthits[i]->dE > 0) && ((dsthits[i]->t*1000.) > tMin) &&
         (dsthits[i]->t*1000. < trigTime))
     {
+      if(SC_time_window > 0.)
+	if(fabs(dsthits[i]->t) > SC_time_window)
+	  continue;
+
       uint32_t E     = dsthits[i]->dE*SC_ADCscale;   // dE in GeV (max ~2E-2)
       uint32_t t     = dsthits[i]->t*1000.-tMin;  // in picoseconds
 
