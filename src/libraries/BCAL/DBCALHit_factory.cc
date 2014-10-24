@@ -14,6 +14,7 @@ using namespace std;
 #include "DBCALGeometry.h"
 #include "DBCALHit_factory.h"
 #include <DAQ/Df250PulseIntegral.h>
+#include <DAQ/Df250Config.h>
 using namespace jana;
 
 
@@ -102,14 +103,33 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
    for(unsigned int i=0; i<digihits.size(); i++){
       const DBCALDigiHit *digihit = digihits[i];
       
+      //cerr << "DBCALDigiHit #" << (i+1) << endl;
+      
       // Get pedestal.  Prefer associated event pedestal if it exists.
       // Otherwise, use the average pedestal from CCDB
-      double pedestalpersample = GetConstant(pedestals,digihit);
-      if (digihit->nsamples_pedestal > 0)
-         pedestalpersample = digihit->pedestal / digihit->nsamples_pedestal;
-      else
-         pedestalpersample = digihit->pedestal;
-
+      double pedestal = GetConstant(pedestals,digihit);
+      ///////////////////
+      // old calculation
+      //double pedestalpersample = GetConstant(pedestals,digihit);
+      //if (digihit->nsamples_pedestal > 0)
+      //   pedestalpersample = digihit->pedestal / digihit->nsamples_pedestal;
+      //else
+      //   pedestalpersample = digihit->pedestal;
+      ///////////////////
+      
+      const Df250PulseIntegral* PIobj = NULL;
+      const Df250Config *configObj = NULL;
+      digihit->GetSingle(PIobj);
+      PIobj->GetSingle(configObj);
+      //if(PIobj == NULL) cerr << "no associated Df250PulseIntegral!" << endl;
+      //if(configObj == NULL) cerr << "no associated Df250Config!" << endl;
+      if ((PIobj != NULL) && (configObj != NULL)) {
+              // the measured pedestal must be scaled by the ratio of the number
+              // of samples used to calculate the pedestal and the actual pulse
+              double pedestal_scale_factor = configObj->NSA_NSB / configObj->NPED;
+              pedestal = pedestal_scale_factor * PIobj->pedestal;                    ;
+      }
+      
       DBCALHit *hit = new DBCALHit;
       hit->module = digihit->module;
       hit->layer  = digihit->layer;
@@ -123,7 +143,8 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
       double gain = GetConstant(gains,digihit);
       double E = 0;
       if (A > 0) {
-         E = a_scale * gain * (A - (pedestalpersample * digihit->nsamples_integral));
+	      //E = a_scale * gain * (A - (pedestalpersample * digihit->nsamples_integral));
+	      E = a_scale * gain * (A - pedestal);
       }
 
       hit->E = E;  

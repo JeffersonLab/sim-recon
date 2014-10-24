@@ -14,6 +14,8 @@ using namespace std;
 #include <FDC/DFDCCathodeDigiHit.h>
 #include <FDC/DFDCWireDigiHit.h>
 #include "DFDCHit_factory.h"
+#include <DAQ/Df125PulseIntegral.h>
+#include <DAQ/Df125Config.h>
 using namespace jana;
 
 
@@ -25,7 +27,7 @@ jerror_t DFDCHit_factory::init(void)
    /// set the base conversion scales
    a_scale      = 2.4E4/1.3E5;  // cathodes
    t_scale      = 8.0/10.0;     // 8 ns/count and integer time is in 1/10th of sample
-   t_base       = -100.;        // ns
+   t_base       = 0.;           // ns
    tdc_scale    = 0.115;        // 115 ps/count
 
    return NOERROR;
@@ -163,11 +165,22 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		double T = (double)digihit->pulse_time;
 		if (T<=0.) continue;
 
+		double pedestal = a_pedestals[plane_index][strip_index];
+		const Df125PulseIntegral* PIobj = NULL;
+		const Df125Config *configObj = NULL;
+		digihit->GetSingle(PIobj);
+		PIobj->GetSingle(configObj);
+		if ((PIobj != NULL) && (configObj != NULL)) {
+			// the measured pedestal must be scaled by the ratio of the number
+			// of samples used to calculate the pedestal and the actual pulse
+			double pedestal_scale_factor = configObj->NSA_NSB / configObj->WINWIDTH;
+			pedestal = pedestal_scale_factor * PIobj->pedestal;                    ;
+		}
+
 		double A = (double)digihit->pulse_integral;
-      		double ped=(double)digihit->pedestal;	
-		double q = a_scale * a_gains[plane_index][strip_index] 
-		  //* (A - a_pedestals[hit->gPlane-1][hit->element-1] );
-		  *(A-ped);
+      		//double ped=(double)digihit->pedestal;	
+		double q = a_scale * a_gains[plane_index][strip_index] * (A-pedestal);
+		//* (A - a_pedestals[hit->gPlane-1][hit->element-1] );
 	        double t = t_scale * (T - timing_offsets[plane_index][strip_index]);
 		
 		DFDCHit *hit = new DFDCHit;

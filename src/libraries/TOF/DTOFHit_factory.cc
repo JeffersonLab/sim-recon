@@ -15,6 +15,8 @@ using namespace std;
 #include <TOF/DTOFDigiHit.h>
 #include <TOF/DTOFTDCDigiHit.h>
 #include "DTOFHit_factory.h"
+#include <DAQ/Df250PulseIntegral.h>
+#include <DAQ/Df250Config.h>
 using namespace jana;
 
 
@@ -138,11 +140,15 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Get pedestal.  Prefer associated event pedestal if it exists.
 		// Otherwise, use the average pedestal from CCDB
 		double pedestal = GetConstant(adc_pedestals,digihit);
-		vector<const Df250PulseIntegral*> PIvect;
-		digihit->Get(PIvect);
-		if(!PIvect.empty()){
-		    const Df250PulseIntegral *PIobj = PIvect[0];
-		    pedestal = PIobj->pedestal;
+		const Df250PulseIntegral* PIobj = NULL;
+		const Df250Config *configObj = NULL;
+		digihit->GetSingle(PIobj);
+		PIobj->GetSingle(configObj);
+		if ((PIobj != NULL) && (configObj != NULL)) {
+			// the measured pedestal must be scaled by the ratio of the number
+			// of samples used to calculate the pedestal and the actual pulse
+			double pedestal_scale_factor = configObj->NSA_NSB / configObj->NPED;
+			pedestal = pedestal_scale_factor * PIobj->pedestal;                    ;
 		}
 
 		DTOFHit *hit = new DTOFHit;

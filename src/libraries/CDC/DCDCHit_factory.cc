@@ -14,6 +14,7 @@ using namespace std;
 #include "DCDCHit_factory.h"
 #include "DCDCWire.h"
 #include <DAQ/Df125PulseIntegral.h>
+#include <DAQ/Df125Config.h>
 using namespace jana;
 
 static double DIGI_THRESHOLD = -1000000.0;
@@ -181,10 +182,17 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
       // Get pedestal. Preference is given to pedestal measured
       // for event. Otherwise, use statistical one from CCDB
       double pedestal = pedestals[ring-1][straw-1];
-      vector<const Df125PulseIntegral*> PIvect;
-      digihit->Get(PIvect);
-      if (!PIvect.empty())
-         pedestal = (double)PIvect[0]->pedestal;
+      const Df125PulseIntegral* PIobj = NULL;
+      const Df125Config *configObj = NULL;
+      digihit->GetSingle(PIobj);
+      PIobj->GetSingle(configObj);
+      if ((PIobj != NULL) && (configObj != NULL)) {
+	  // the measured pedestal must be scaled by the ratio of the number
+	  // of samples used to calculate the pedestal and the actual pulse
+	  double pedestal_scale_factor = configObj->NSA_NSB / configObj->WINWIDTH;
+	  pedestal = pedestal_scale_factor * PIobj->pedestal;                    ;
+      }
+
        
       // Apply calibration constants here
       double A = (double)digihit->pulse_integral;

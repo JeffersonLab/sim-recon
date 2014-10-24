@@ -15,6 +15,7 @@ using namespace std;
 #include "DTAGHGeometry.h"
 #include "DTAGHHit_factory.h"
 #include <DAQ/Df250PulseIntegral.h>
+#include <DAQ/Df250Config.h>
 using namespace jana;
 
 const int DTAGHHit_factory::k_counter_dead;
@@ -110,11 +111,15 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
       // Get pedestal, prefer associated event pedestal if it exists,
       // otherwise, use the average pedestal from CCDB
       double pedestal = fadc_pedestals[digihit->counter_id];
-      vector<const Df250PulseIntegral*> PIvect;
-      digihit->Get(PIvect);
-      if (!PIvect.empty()) {
-          const Df250PulseIntegral *PIobj = PIvect[0];
-          pedestal = PIobj->pedestal;
+      const Df250PulseIntegral* PIobj = NULL;
+      const Df250Config *configObj = NULL;
+      digihit->GetSingle(PIobj);
+      PIobj->GetSingle(configObj);
+      if ((PIobj != NULL) && (configObj != NULL)) {
+	  // the measured pedestal must be scaled by the ratio of the number
+	  // of samples used to calculate the pedestal and the actual pulse
+	  double pedestal_scale_factor = configObj->NSA_NSB / configObj->NPED;
+	  pedestal = pedestal_scale_factor * PIobj->pedestal;                    ;
       }
 
       DTAGHHit *hit = new DTAGHHit;
