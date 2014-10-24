@@ -24,6 +24,7 @@ extern jerror_t HDEVIO_init(JEventLoop *loop);
 extern jerror_t CERE_init(JEventLoop *loop);
 extern jerror_t RICH_init(JEventLoop *loop);
 extern jerror_t TRIGGER_init(JEventLoop *loop);
+extern jerror_t PAIR_SPECTROMETER_init(JEventLoop *loop);
 
 //---------------------------------
 // DFactoryGenerator    (Constructor)
@@ -62,6 +63,7 @@ jerror_t DFactoryGenerator::GenerateFactories(JEventLoop *loop)
 	CERE_init(loop);
 	RICH_init(loop);
 	TRIGGER_init(loop);
+	PAIR_SPECTROMETER_init(loop);
 	
 	return NOERROR;
 }
