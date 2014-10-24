@@ -132,6 +132,20 @@ DParticleID::DParticleID(JEventLoop *loop)
 
 	dTargetZCenter = 0.0;
 	locGeometry->GetTargetZ(dTargetZCenter);
+
+	
+  // Track finder helper class
+  vector<const DTrackFinder *> finders;
+  loop->Get(finders);
+
+  if(finders.size()<1){
+    _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
+    return;
+  }
+
+  finder = finders[0];
+
+
 }
 
 // Group fitted tracks according to candidate id
@@ -160,6 +174,7 @@ jerror_t DParticleID::GroupTracks(vector<const DTrackTimeBased *> &tracks,
   // Final set
   sort(hypotheses.begin(),hypotheses.end(),DParticleID_hypothesis_cmp);
   grouped_tracks.push_back(hypotheses);
+
 
   return NOERROR;
 }
@@ -724,6 +739,102 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 	return true;
 }
 
+// Match to Start Counter using straight-line projection to start counter planes
+bool 
+DParticleID::MatchToSC(const DKinematicData *kd,
+		       const vector<const DSCHit*>& locSCHits,
+		       vector<DSCHitMatchParams>& locSCHitMatchParams) const{
+  
+  if(sc_pos.empty() || sc_norm.empty())
+    return false;
+ 
+  // Ends in z of the straight portion	
+  double sc_pos0 = sc_pos[0].z();
+  double sc_pos1 = sc_pos[1].z();
+
+  DVector3 mom=kd->momentum();
+  DVector3 pos=kd->position();
+  DVector3 cylpos[2];
+
+  if (finder->FindIntersectionsWithCylinder(sc_pos[1].x(),mom,pos,cylpos[0],
+					    cylpos[1])){
+    for (unsigned int j=0;j<2;j++){
+      double cyl_phi=cylpos[j].Phi();
+      for (size_t i=0;i<locSCHits.size();i++){
+	const DSCHit *locSCHit=locSCHits[i];
+	// Look for a match in phi
+	double phi = dSCphi0 + dSCdphi*(locSCHit->sector - 1);
+	
+	// First intersection point of line with cylinder
+	double dphi = cyl_phi - phi; //phi could be 0 degrees & cyl_phi could be 359 degrees
+	while(dphi > TMath::Pi())
+	  dphi -= M_TWO_PI;
+	while(dphi < -1.0*TMath::Pi())
+	  dphi += M_TWO_PI;
+	if(fabs(dphi) < 0.21){
+	  double myz=cylpos[j].z();
+	  double sc_time=locSCHit->t - sc_leg_tcor;
+	  if (myz>=sc_pos0){
+	    DSCHitMatchParams scmatch;
+	    scmatch.dSCHit=locSCHit;
+	    scmatch.dDeltaPhiToHit=dphi; 
+	    if (myz<sc_pos1){ // intersection in leg 
+	      // Refine the intersection point by using the plane information
+	      // for the leg region
+	      double xhat = sc_norm[0].x();
+	      double cosphi=cos(phi);
+	      double sinphi=sin(phi);
+	      DVector3 norm(cosphi*xhat, sinphi*xhat,0);
+	      double r = sc_pos[0].X();
+	      DVector3 origin(r*cosphi, r*sinphi, sc_pos0);
+	      if (finder->FindIntersectionWithPlane(origin,norm,pos,mom,
+						    cylpos[j])){
+		myz=cylpos[j].z();
+	      }
+	      scmatch.dHitTime=sc_time-myz/C_EFFECTIVE;
+	      scmatch.dIntersectionPoint=cylpos[j];
+	    }
+	    else{ // intersection in nose
+	      unsigned int num = sc_norm.size() - 1;
+	      for (unsigned int k = 1; k < num; ++k){
+		double xhat = sc_norm[k].x();
+		double cosphi=cos(phi);
+		double sinphi=sin(phi);
+		DVector3 norm(cosphi*xhat, sinphi*xhat, sc_norm[k].z());
+		double r = sc_pos[k].X();
+		DVector3 origin(r*cosphi, r*sinphi, sc_pos[k].z());
+		if (finder->FindIntersectionWithPlane(origin,norm,pos,mom,
+						      cylpos[j])){
+		  myz = cylpos[j].z();
+		  if(myz < sc_pos[k + 1].z()){
+		    break;
+		  }
+		}
+	      }
+	      if (myz>sc_pos[num].z()) continue;
+	      scmatch.dIntersectionPoint=cylpos[j];
+
+	      // Note: in the following code, L does not include a correction
+	      // for where the start counter starts in z...	
+	      // This is absorbed into sc_time, above.
+	      if(myz < sc_pos1){
+		scmatch.dHitTime=sc_time-sc_pos1/C_EFFECTIVE;
+	      }
+	      else{
+		double L = (myz - sc_pos1)*sc_angle_cor + sc_pos1;
+		scmatch.dHitTime=sc_time-L/C_EFFECTIVE;
+	      }
+	    }
+	    locSCHitMatchParams.push_back(scmatch);
+	  } // back position check	
+	} // dphi check
+      } // loop over start counter hits
+    } // two intersection points    
+  } // intersection with cylinder
+
+  return true;
+}
+  
 //------------------
 // MatchToTrack
 //------------------

@@ -23,6 +23,7 @@
 #include <TOF/DTOFPoint.h>
 #include <START_COUNTER/DSCHit.h>
 #include <TRACKING/DTrackFitter.h>
+#include <TRACKING/DTrackFinder.h>
 #include <TRACKING/DReferenceTrajectory.h>
 #include <particleType.h>
 #include <PID/DChargedTrackHypothesis.h>
@@ -76,6 +77,11 @@ class DParticleID:public jana::JObject{
 	bool MatchToTOF(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DTOFPoint* locTOFPoint, double locInputStartTime, DTOFHitMatchParams& locTOFHitMatchParams) const;
 	bool MatchToFCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, DShowerMatchParams& locShowerMatchParams) const;
 	bool MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams) const;
+
+	// Alternate SC matching algorithm for straight line tracks
+	bool MatchToSC(const DKinematicData *kd,
+		       const vector<const DSCHit*>& locSCHits,
+		       vector<DSCHitMatchParams>& locSCHitMatchParams) const;
 
 	//select "best" matches //called by several factories
 	bool Get_BestSCMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DSCHitMatchParams& locBestMatchParams) const;
@@ -134,6 +140,8 @@ class DParticleID:public jana::JObject{
 
   double dTargetZCenter;
   double dRFBunchFrequency;
+
+  const DTrackFinder *finder;
 };
 
 #endif // _DParticleID_

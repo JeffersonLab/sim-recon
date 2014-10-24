@@ -53,11 +53,13 @@ class DTOFHitMatchParams
 class DSCHitMatchParams
 {
 	public:
-		DSCHitMatchParams(void) : dTrackTimeBased(NULL), dSCHit(NULL), dEdx(0.0), dHitTime(0.0), dHitTimeVariance(0.0), 
+		DSCHitMatchParams(void) : dTrackTimeBased(NULL), dSCHit(NULL), 
+    dIntersectionPoint(0.0,0.0,0.0),dEdx(0.0), dHitTime(0.0), dHitTimeVariance(0.0), 
 		dHitEnergy(0.0), dFlightTime(0.0), dFlightTimeVariance(0.0), dPathLength(0.0), dDeltaPhiToHit(0.0){}
 
 		const DTrackTimeBased* dTrackTimeBased;
 		const DSCHit* dSCHit;
+		DVector3 dIntersectionPoint;
 
 		double dEdx; //dE/dx; dE: the energy lost by the track, dx: the distance the track traveled through the detector system (dHitEnergy/dx)
 		double dHitTime; //not the same as DSCHit time: corrected for propagation along scintillator
