@@ -86,7 +86,8 @@ void hitPS(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
          points->in[0].track = track;
          points->in[0].t = t;
          points->in[0].z = x[2];
-         points->in[0].r = sqrt(x[0]*x[0]+x[1]*x[1]);
+         points->in[0].x = x[0];
+	 points->in[0].y = x[1];
          points->in[0].phi = atan2(x[1],x[0]);
          points->in[0].px = pin[0]*pin[4];
          points->in[0].py = pin[1]*pin[4];
@@ -95,6 +96,8 @@ void hitPS(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
          points->in[0].dEdx = dEdx;
          points->in[0].ptype = ipart;
          points->in[0].column = getcolumn_wrapper_();
+	 points->in[0].trackID = make_s_TrackID();
+	 points->in[0].trackID->itrack = gidGetId(track);
 	 points->mult = 1;
          pointCount++;
 
