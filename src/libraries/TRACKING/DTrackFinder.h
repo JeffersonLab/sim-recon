@@ -125,6 +125,9 @@ class DTrackFinder:public jana::JObject{
   bool FindIntersectionsWithCylinder(double R,const DVector3 &dir,
 				     const DVector3 &pos,DVector3 &out1,
 				     DVector3 &out2) const;
+  bool FindIntersectionWithPlane(const DVector3 &origin,const DVector3 &norm,
+				 const DVector3 &pos,const DVector3 &dir,
+				 DVector3 &outpos) const;
 
  private:
   // Prohibit default constructor

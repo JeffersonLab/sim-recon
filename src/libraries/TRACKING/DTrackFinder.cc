@@ -677,6 +677,23 @@ DTrackFinder::fdc_segment_t::FindStateVector(void) const {
   return DMatrix4x1(x_intercept,y_intercept,x_slope,y_slope);
 }
 
+// Find intersection between a straight line and a plane
+bool DTrackFinder::FindIntersectionWithPlane(const DVector3 &origin,
+					     const DVector3 &norm,
+					     const DVector3 &pos,
+					     const DVector3 &dir,
+					     DVector3 &outpos) const{
+  DVector3 mydir(dir);
+  mydir.SetMag(1.);
+  double dot=mydir.Dot(norm);
+  if (fabs(dot)<1e-16) return false; // parallel lines
+  double s=(origin-pos).Dot(norm)/dot;
+  outpos=pos+s*mydir;
+
+  return true;
+}
+
+
 // Find the intersections between a straight line and a cylinder of radius R
 bool DTrackFinder::FindIntersectionsWithCylinder(double R,
 						 const DVector3 &dir,
