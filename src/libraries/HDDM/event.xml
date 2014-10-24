@@ -152,7 +152,7 @@
           <psHit dE="float" t="float" macOccurs="unbounded"/>
           <psTruthHit dE="float" t="float" maxOccurs="unbounded" itrack="int" ptype="int"/>
         </psTile>
-	<psTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" column="int" t="float" track="int" z="float">
+	<psTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" column="int" t="float" track="int" x="float" y="float" z="float">
 	  <trackID minOccurs="0" itrack="int"/>
 	</psTruthPoint>
       </pairSpectrometerFine>
@@ -161,7 +161,7 @@
           <pscHit dE="float" t="float" macOccurs="unbounded"/>
           <pscTruthHit dE="float" t="float" maxOccurs="unbounded" itrack="int" ptype="int"/>
         </pscPaddle>
-	<pscTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" module="int" t="float" track="int" z="float">
+	<pscTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" module="int" t="float" track="int" x="float" y="float" z="float">
 	  <trackID minOccurs="0" itrack="int"/>
 	</pscTruthPoint>
       </pairSpectrometerCoarse>
