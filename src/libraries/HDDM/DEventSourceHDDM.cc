@@ -236,6 +236,22 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    // Get name of data class we're trying to extract
    string dataClassName = factory->GetDataClassName();
 
+   if (dataClassName == "DPSHit")
+      return Extract_DPSHit(record, 
+                     dynamic_cast<JFactory<DPSHit>*>(factory), tag);
+
+   if (dataClassName == "DPSTruthHit")
+      return Extract_DPSTruthHit(record, 
+                     dynamic_cast<JFactory<DPSTruthHit>*>(factory), tag);
+
+   if (dataClassName == "DPSCHit")
+      return Extract_DPSCHit(record, 
+                     dynamic_cast<JFactory<DPSCHit>*>(factory), tag);
+
+   if (dataClassName == "DPSCTruthHit")
+      return Extract_DPSCTruthHit(record, 
+                     dynamic_cast<JFactory<DPSCTruthHit>*>(factory), tag);
+
    if (dataClassName == "DRFTime")
       return Extract_DRFTime(record, 
                      dynamic_cast<JFactory<DRFTime>*>(factory), loop);
@@ -2294,6 +2310,181 @@ jerror_t DEventSourceHDDM::Extract_DTAGHHit( hddm_s::HDDM *record,
 
    return NOERROR;
 }
+
+//------------------
+// Extract_DPSHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DPSHit(hddm_s::HDDM *record,
+                                   JFactory<DPSHit>* factory, string tag)
+{
+   /// Copies the data from the given hddm_s structure. This is called
+   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+   /// returns OBJECT_NOT_AVAILABLE immediately.
+   
+   if (factory == NULL)
+      return OBJECT_NOT_AVAILABLE;
+   if (tag != "" && tag != "TRUTH")
+      return OBJECT_NOT_AVAILABLE;
+
+   vector<DPSHit*> data;
+  
+   if (tag == "") {
+      const hddm_s::PsHitList &hits = record->getPsHits();
+      hddm_s::PsHitList::iterator iter;
+      for (iter = hits.begin(); iter != hits.end(); ++iter) {
+         DPSHit *hit = new DPSHit;
+         hit->column = iter->getColumn();
+         hit->dE = iter->getDE();
+         hit->t = iter->getT();
+         data.push_back(hit);
+      }
+   }
+   else if (tag == "TRUTH") {
+      const hddm_s::PsTruthHitList &hits = record->getPsTruthHits();
+      hddm_s::PsTruthHitList::iterator iter;
+      for (iter = hits.begin(); iter != hits.end(); ++iter) {
+         DPSHit *hit = new DPSHit;
+         hit->column = iter->getColumn();
+         hit->dE = iter->getDE();
+         hit->t = iter->getT();
+         data.push_back(hit);
+      }
+   }
+
+  // Copy into factory
+  factory->CopyTo(data);
+
+  return NOERROR;
+}
+
+//------------------
+// Extract_DPSTruthHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DPSTruthHit(hddm_s::HDDM *record,
+                                   JFactory<DPSTruthHit>* factory, string tag)
+{
+   /// Copies the data from the given hddm_s structure. This is called
+   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+   /// returns OBJECT_NOT_AVAILABLE immediately.
+
+   if (factory == NULL)
+      return OBJECT_NOT_AVAILABLE;
+   if (tag != "")
+      return OBJECT_NOT_AVAILABLE;
+
+   vector<DPSTruthHit*> data;
+
+   const hddm_s::PsTruthPointList &points = record->getPsTruthPoints();
+   hddm_s::PsTruthPointList::iterator iter;
+   for (iter = points.begin(); iter != points.end(); ++iter) {
+      DPSTruthHit *hit = new DPSTruthHit;
+      hit->dEdx    = iter->getDEdx();
+      hit->primary = iter->getPrimary();
+      hit->ptype   = iter->getPtype();
+      hit->t       = iter->getT();
+      hit->x       = iter->getX();
+      hit->y       = iter->getY();
+      hit->z       = iter->getZ();
+      hit->track   = iter->getTrack();
+      hit->column  = iter->getColumn();
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      hit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
+      data.push_back(hit);
+   }
+
+   // Copy into factory
+   factory->CopyTo(data);
+
+   return NOERROR;
+}
+
+//------------------
+// Extract_DPSCHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DPSCHit(hddm_s::HDDM *record,
+                                   JFactory<DPSCHit>* factory, string tag)
+{
+   /// Copies the data from the given hddm_s structure. This is called
+   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+   /// returns OBJECT_NOT_AVAILABLE immediately.
+   
+   if (factory == NULL)
+      return OBJECT_NOT_AVAILABLE;
+   if (tag != "" && tag != "TRUTH")
+      return OBJECT_NOT_AVAILABLE;
+
+   vector<DPSCHit*> data;
+  
+   if (tag == "") {
+      const hddm_s::PscHitList &hits = record->getPscHits();
+      hddm_s::PscHitList::iterator iter;
+      for (iter = hits.begin(); iter != hits.end(); ++iter) {
+         DPSCHit *hit = new DPSCHit;
+         hit->module = iter->getModule();
+         hit->dE = iter->getDE();
+         hit->t = iter->getT();
+         data.push_back(hit);
+      }
+   }
+   else if (tag == "TRUTH") {
+      const hddm_s::PscTruthHitList &hits = record->getPscTruthHits();
+      hddm_s::PscTruthHitList::iterator iter;
+      for (iter = hits.begin(); iter != hits.end(); ++iter) {
+         DPSCHit *hit = new DPSCHit;
+         hit->module = iter->getModule();
+         hit->dE = iter->getDE();
+         hit->t = iter->getT();
+         data.push_back(hit);
+      }
+   }
+
+  // Copy into factory
+  factory->CopyTo(data);
+
+  return NOERROR;
+}
+
+//------------------
+// Extract_DPSCTruthHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DPSCTruthHit(hddm_s::HDDM *record,
+                                   JFactory<DPSCTruthHit>* factory, string tag)
+{
+   /// Copies the data from the given hddm_s structure. This is called
+   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+   /// returns OBJECT_NOT_AVAILABLE immediately.
+
+   if (factory == NULL)
+      return OBJECT_NOT_AVAILABLE;
+   if (tag != "")
+      return OBJECT_NOT_AVAILABLE;
+
+   vector<DPSCTruthHit*> data;
+
+   const hddm_s::PscTruthPointList &points = record->getPscTruthPoints();
+   hddm_s::PscTruthPointList::iterator iter;
+   for (iter = points.begin(); iter != points.end(); ++iter) {
+      DPSCTruthHit *hit = new DPSCTruthHit;
+      hit->dEdx    = iter->getDEdx();
+      hit->primary = iter->getPrimary();
+      hit->ptype   = iter->getPtype();
+      hit->t       = iter->getT();
+      hit->x       = iter->getX();
+      hit->y       = iter->getY();
+      hit->z       = iter->getZ();
+      hit->track   = iter->getTrack();
+      hit->column  = iter->getModule();
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      hit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
+      data.push_back(hit);
+   }
+
+   // Copy into factory
+   factory->CopyTo(data);
+
+   return NOERROR;
+}
+
 
 Particle_t DEventSourceHDDM::IDTrack(float locCharge, float locMass) const
 {
