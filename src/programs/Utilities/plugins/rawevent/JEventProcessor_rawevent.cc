@@ -197,7 +197,7 @@ static double CDC_time_window = -1.;
 static double FDC_time_window = -1.;
 static double FCAL_time_window = -1.;
 static double BCAL_time_window = -1.;
-static double TOF_time_window = -1.;
+static double TOF_time_window = 100.;
 static double SC_time_window = -1.;
 
 // debug
