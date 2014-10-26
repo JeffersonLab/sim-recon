@@ -903,7 +903,7 @@ c          make primary except if in calorimeter volume and not hadronic
 c          interaction, or except if produced in cave upstream of Hall D
            iflgk(i) = 1
            cint = KCASE
-           if (area.ne.0.and.ISTORY.eq.0.and.cchar.ne.'HADR') then
+           if ((area.ne.0.or.ISTORY.ne.0).and.cchar.ne.'HADR') then
               iflgk(i) = 0
            endif
            call GSKING(i)
