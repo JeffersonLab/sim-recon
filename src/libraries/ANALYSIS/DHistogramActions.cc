@@ -1399,7 +1399,6 @@ void DHistogramAction_DetectorStudies::Fill_ReconstructionHists(JEventLoop* locE
 				const DMCThrown* locMCThrown = locMCThrownMatchingVector[0]->Get_MatchingMCThrown(locChargedTracks[loc_i], locMatchFOM);
 				if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
 					continue;
-
 				//OK, have the thrown. Now, grab the best charged track hypothesis to get the best matching
 				const DChargedTrackHypothesis* locChargedTrackHypothesis = locMCThrownMatchingVector[0]->Get_MatchingChargedHypothesis(locMCThrown, locMatchFOM);
 				if(locChargedTrackHypothesis->PID() != locMCThrown->PID())
@@ -1418,6 +1417,7 @@ void DHistogramAction_DetectorStudies::Fill_ReconstructionHists(JEventLoop* locE
 				dHistMap_TrackingChiSqPerDF[locPIDPair]->Fill(locChiSqPerDF);
 				dHistMap_TrackingChiSqPerDFVsTheta[locPIDPair]->Fill(locTheta, locChiSqPerDF);
 				dHistMap_TrackingChiSqPerDFVsP[locPIDPair]->Fill(locP, locChiSqPerDF);
+
 				if(locTrackTimeBased->dNumHitsUsedFordEdx_CDC > 0)
 				{
 					dHistMap_CDCdEdx[locPIDPair]->Fill(locTrackTimeBased->ddEdx_CDC*1.0E6);

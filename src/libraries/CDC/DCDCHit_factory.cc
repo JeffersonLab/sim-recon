@@ -189,7 +189,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
       if ((PIobj != NULL) && (configObj != NULL)) {
 	  // the measured pedestal must be scaled by the ratio of the number
 	  // of samples used to calculate the pedestal and the actual pulse
-	  double pedestal_scale_factor = configObj->NSA_NSB / configObj->WINWIDTH;
+	  double pedestal_scale_factor = static_cast<double>(configObj->NSA_NSB) / static_cast<double>(configObj->WINWIDTH);
 	  pedestal = pedestal_scale_factor * PIobj->pedestal;                    ;
       }
 

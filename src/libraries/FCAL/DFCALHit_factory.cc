@@ -121,6 +121,8 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
    /// the precalibrated values directly into the _data vector.
    char str[256];
 
+   cerr << " Event # " << eventnumber << endl;
+
    // extract the FCAL Geometry (for positionOnFace())
    vector<const DFCALGeometry*> fcalGeomVect;
    eventLoop->Get( fcalGeomVect );
@@ -151,8 +153,14 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
       if ((PIobj != NULL) && (configObj != NULL)) {
               // the measured pedestal must be scaled by the ratio of the number
               // of samples used to calculate the pedestal and the actual pulse
-              double pedestal_scale_factor = configObj->NSA_NSB / configObj->NPED;
+              double pedestal_scale_factor = static_cast<double>(configObj->NSA_NSB) / static_cast<double>(configObj->NPED);
               pedestal = pedestal_scale_factor * PIobj->pedestal;                    ;
+
+	      cerr << " raw pedestal = " << PIobj->pedestal
+		   << "  NSA_NSB = " << configObj->NSA_NSB
+		   << "  NPED = " << configObj->NPED
+		   << "  scale fac = " << pedestal_scale_factor
+		   << "  final ped = " << pedestal << endl;
       }
 
       
@@ -170,6 +178,9 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
       double T = (double)digihit->pulse_time;
       hit->E = a_scale * gains[hit->row][hit->column] * (A - pedestal);
       hit->t = t_scale * (T - time_offsets[hit->row][hit->column]) + t_base;
+
+      cerr << " FCAL hit #" << i << " E = " << (1000.*hit->E) << "  A = " << A 
+	   << "  pedestal = " << pedestal << endl;
 
       // Get position of blocks on front face. (This should really come from
       // hdgeant directly so the poisitions can be shifted in mcsmear.)
