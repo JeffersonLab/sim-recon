@@ -793,6 +793,8 @@ DParticleID::MatchToSC(const DKinematicData *kd,
 	      }
 	      scmatch.dHitTime=sc_time-myz/C_EFFECTIVE;
 	      scmatch.dIntersectionPoint=cylpos[j];
+	      scmatch.dIntersectionTrackDir=mom;
+	      scmatch.dIntersectionTrackDir.SetMag(1.);
 	    }
 	    else{ // intersection in nose
 	      unsigned int num = sc_norm.size() - 1;
@@ -813,6 +815,8 @@ DParticleID::MatchToSC(const DKinematicData *kd,
 	      }
 	      if (myz>sc_pos[num].z()) continue;
 	      scmatch.dIntersectionPoint=cylpos[j];
+	      scmatch.dIntersectionTrackDir=mom;
+	      scmatch.dIntersectionTrackDir.SetMag(1.);
 
 	      // Note: in the following code, L does not include a correction
 	      // for where the start counter starts in z...	
