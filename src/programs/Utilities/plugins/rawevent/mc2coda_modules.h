@@ -16,8 +16,6 @@ void GetPedestals(uint32_t *peds, uint32_t Npeds);
 #define FADC250_MAX_NSB       512
 #define FADC250_MAX_NSA       512
 #define FADC250_WINDOW_WIDTH  50
-/* the parameter below corresponds to NPED */
-#define FADC250_PEDESTAL_WINDOW_WIDTH 4 
 
 /* FADC 250 Macros */
 #define FADC250_BL_HEADER(slot,blnum,cnt) {*dabufp++ =  0x80000000 | (slot << 22) | (FADC250 << 18) | ((blnum&0x3ff) << 8) | cnt; }
@@ -111,7 +109,7 @@ fadc250_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 		 uint32_t sum = chit[ii]->hdata[0] + ped*FADC250_WINDOW_WIDTH;
          FADC250_PI_SUM(chan,ii,sum);
          FADC250_PI_TIME(chan,ii,chit[ii]->hdata[1]);
-	 FADC250_PI_PED(chan,ii,FADC250_PEDESTAL_WINDOW_WIDTH*(ped + peds[chan]),peak); // measured pedestal has additional stochastic element
+	 FADC250_PI_PED(chan,ii,(ped + peds[chan]),peak); // measured pedestal has additional stochastic element
       }
    }
    
@@ -143,8 +141,6 @@ fadc250_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 #define FADC125_MAX_NSB       512
 #define FADC125_MAX_NSA       512
 #define FADC125_WINDOW_WIDTH  50
-/* the parameter below corresponds to NPED */
-#define FADC125_PEDESTAL_WINDOW_WIDTH 4 
 
 /* FADC 125 Macros */
 #define FADC125_BL_HEADER(slot,blnum,cnt) {*dabufp++ =  0x80000000 | (slot << 22) | (FADC125 << 18) | ((blnum&0x3ff) << 8) | cnt; }
@@ -245,7 +241,7 @@ fadc125_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 	      uint32_t sum = chit[ii]->hdata[0] + ped*FADC125_WINDOW_WIDTH;
 	      FADC125_PI_SUM(chan, sum);
 	      FADC125_PI_TIME(chan,0,chit[ii]->hdata[1]); // always make quality factor 0
-	      FADC125_PI_PED(chan,ii,FADC125_PEDESTAL_WINDOW_WIDTH*(ped + peds[chan]),peak); // measured pedestal has additional stochastic element
+	      FADC125_PI_PED(chan,ii,(ped + peds[chan]),peak); // measured pedestal has additional stochastic element
 	      // f125 generally doesn't support multiple pulses so only record first one
 	      break;
       }
