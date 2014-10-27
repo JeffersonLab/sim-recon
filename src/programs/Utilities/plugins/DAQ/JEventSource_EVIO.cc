@@ -2335,6 +2335,7 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
 				case kPARAMF1_TRIGWIN         : f1tdcconfig->TRIGWIN         = val; break;
 				case kPARAMF1_TRIGLAT         : f1tdcconfig->TRIGLAT         = val; break;
 				case kPARAMF1_HSDIV           : f1tdcconfig->HSDIV           = val; break;
+				case kPARAMF1_BINSIZE         : f1tdcconfig->BINSIZE         = val; break;
 
 				case kPARAMCAEN1290_WINWIDTH  : caen1290tdcconfig->WINWIDTH  = val; break;
 				case kPARAMCAEN1290_WINOFFSET : caen1290tdcconfig->WINOFFSET = val; break;

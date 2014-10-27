@@ -14,21 +14,23 @@ class DF1TDCConfig:public DDAQConfig{
 	public:
 		JOBJECT_PUBLIC(DF1TDCConfig);
 		
-		DF1TDCConfig(uint32_t rocid, uint32_t slot_mask):DDAQConfig(rocid,slot_mask),REFCNT(0xFFFF),TRIGWIN(0xFFFF),TRIGLAT(0xFFFF),HSDIV(0xFFFF){}
+		DF1TDCConfig(uint32_t rocid, uint32_t slot_mask):DDAQConfig(rocid,slot_mask),REFCNT(0xFFFF),TRIGWIN(0xFFFF),TRIGLAT(0xFFFF),HSDIV(0xFFFF),BINSIZE(0xFFFF){}
 
 		uint16_t REFCNT;
 		uint16_t TRIGWIN;
 		uint16_t TRIGLAT;
 		uint16_t HSDIV;
+		uint16_t BINSIZE;
 		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
 		void toStrings(vector<pair<string,string> > &items)const{
 			DDAQConfig::toStrings(items);
-			AddString(items, "REFCNT"   , "%d", REFCNT);
-			AddString(items, "TRIGWIN"  , "%d", TRIGWIN);
-			AddString(items, "TRIGLAT"  , "%d", TRIGLAT);
-			AddString(items, "HSDIV"    , "%d", HSDIV);
+			AddString(items, "REFCNT"      , "%d", REFCNT);
+			AddString(items, "TRIGWIN"     , "%d", TRIGWIN);
+			AddString(items, "TRIGLAT"     , "%d", TRIGLAT);
+			AddString(items, "HSDIV"       , "%d", HSDIV);
+			AddString(items, "BINSIZE(ps)" , "%d", BINSIZE);
 		}
 		
 };
