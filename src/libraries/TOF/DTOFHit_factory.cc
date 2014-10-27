@@ -25,7 +25,8 @@ using namespace jana;
 //------------------
 jerror_t DTOFHit_factory::init(void)
 {
-	DELTA_T_ADC_TDC_MAX = 4.0; // ns
+  //DELTA_T_ADC_TDC_MAX = 4.0; // ns
+	DELTA_T_ADC_TDC_MAX = 30.0; // ns, value based on the studies from cosmic events
 	gPARMS->SetDefaultParameter("TOF:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX, "Maximum difference in ns between a (calibrated) fADC time and F1TDC time for them to be matched in a single hit");
 
 	/// Set basic conversion constants
@@ -159,8 +160,8 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
 
-
-		hit->dE = a_scale * (A - pedestal);
+		//hit->dE = a_scale * (A - pedestal);
+		hit->dE = a_scale * (A - 55*pedestal); // value of 55 is taken from (NSB,NSA)=(10,45) in the confg file
 		hit->t = t_scale * (T - GetConstant(adc_time_offsets, digihit)) + t_base;
 		hit->sigma_t = 4.0;    // ns (what is the fADC time resolution?)
 		hit->has_fADC = true;
@@ -190,8 +191,10 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Apply calibration constants here
 		double T = (double)digihit->time;
 
-		T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_base;
-		// future: allow for seperate TDC scales for each channel
+		//T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_base;
+		// Hardcoding of 110 taken from cosmics events
+		T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_base +110;		
+ 		// future: allow for seperate TDC scales for each channel
 		//T = GetConstant(tdc_scales, digihit)
 		//  * (T - GetConstant(tdc_time_offsets, digihit));
 
@@ -206,7 +209,8 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		
 		// Look for existing hits to see if there is a match
 		// or create new one if there is no match
-		DTOFHit *hit = FindMatch(digihit->plane, digihit->bar, digihit->end, T);  
+		DTOFHit *hit = FindMatch(digihit->plane, digihit->bar, digihit->end, T);
+		//DTOFHit *hit = FindMatch(digihit->plane, hit->bar, hit->end, T);
 		if(!hit){
 			hit = new DTOFHit;
 			hit->plane = digihit->plane;
@@ -233,7 +237,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 DTOFHit* DTOFHit_factory::FindMatch(int plane, int bar, int end, double T)
 {
-	DTOFHit* best_match = NULL;
+  DTOFHit* best_match = NULL;
 
 	// Loop over existing hits (from fADC) and look for a match
 	// in both the sector and the time.
@@ -245,8 +249,11 @@ DTOFHit* DTOFHit_factory::FindMatch(int plane, int bar, int end, double T)
 		if(hit->bar != bar) continue;
 		if(hit->end != end) continue;
 		
-		double delta_T = fabs(hit->t - T);
+		//double delta_T = fabs(hit->t - T);
+		double delta_T = fabs(T - hit->t);
 		if(delta_T > DELTA_T_ADC_TDC_MAX) continue;
+
+		return hit;
 		
 		// if there are multiple hits, pick the one that is closest in time
 		if(best_match != NULL) {
@@ -255,6 +262,7 @@ DTOFHit* DTOFHit_factory::FindMatch(int plane, int bar, int end, double T)
 		} else {
 			best_match = hit;
 		}
+
 	}
 	
 	return best_match;
