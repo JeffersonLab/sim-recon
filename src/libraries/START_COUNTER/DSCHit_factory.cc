@@ -147,17 +147,25 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		double pedestal = a_pedestals[hit->sector-1];
 		try{
 			// This should probably be done upstream of here so that 
-			const Df250PulseTime *pulsetime=NULL;
+			//const Df250PulseTime *pulsetime=NULL;
+			const Df250PulseIntegral *pulseintegral=NULL;
 			const Df250PulsePedestal *pulsepedestal=NULL;
 			const Df250Config *daqconfig=NULL;
-			digihit->GetSingle(pulsetime);
-			if(pulsetime) pulsetime->GetSingle(pulsepedestal);
+			//digihit->GetSingle(pulsetime);
+			//if(pulsetime) pulsetime->GetSingle(pulsepedestal);
+			digihit->GetSingle(pulseintegral);
+			if(pulseintegral) pulseintegral->GetSingle(pulsepedestal);
 			if(pulsepedestal) pulsepedestal->GetSingle(daqconfig);
 //_DBG_<<"pulsetime=0x"<<hex<<pulsetime<<" pulsepedestal=0x"<<pulsepedestal<<" daqconfig=0x"<<daqconfig<<dec<<endl;
 			
 			// Measured pedestal uses different number of samples than
 			// pulse integral. Scale pedestal up to match integral.
-			if(daqconfig) pedestal = (double)pulsepedestal->pedestal * (double)daqconfig->NSA_NSB/(double)daqconfig->NPED;
+			//if(daqconfig) pedestal = (double)pulsepedestal->pedestal * (double)daqconfig->NSA_NSB/(double)daqconfig->NPED;
+			if ((pulseintegral != NULL) && (daqconfig != NULL)) {
+				// the measured pedestal must be scaled by the ratio of the number
+				// of samples used to calculate the pedestal and the actual pulse
+				pedestal = static_cast<double>(daqconfig->NSA_NSB) * pulseintegral->pedestal;
+			}
 //_DBG_<<"ST pedestal="<<pedestal<<endl;
 		}catch(...){
 //_DBG__;
