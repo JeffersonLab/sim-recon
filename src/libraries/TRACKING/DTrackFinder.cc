@@ -8,6 +8,7 @@
 #include "DTrackFinder.h"
 
 #define CDC_MATCH_RADIUS 5.0
+#define CDC_STEREO_MATCH_CUT 10.0
 
 bool DTrackFinder_cdc_hit_cmp(const DCDCTrackHit *a,const DCDCTrackHit *b){
   return(a->wire->origin.Y()>b->wire->origin.Y());
@@ -236,7 +237,7 @@ bool DTrackFinder::MatchCDCHit(const DVector3 &vhat,const DVector3 &pos0,
   double t=scale*(diff.Dot(vhat)-vhat_dot_uhat*diff.Dot(uhat));
   double d=(diff+s*uhat-t*vhat).Mag();
 
-  if (d<CDC_MATCH_RADIUS) return true;
+  if (d<CDC_STEREO_MATCH_CUT) return true;
 
   return false;
 }
@@ -265,7 +266,8 @@ jerror_t DTrackFinder::cdc_track_t::FindStateVector(void){
     DVector3 pos1=origin_s+s*dir_s;
     double x=pos1.x(),y=pos1.y(),z=pos1.z();
     
-    if (z>17.0 && z<167.0){ // Check for CDC dimensions
+    if (z>17.0 && z<167.0)
+      { // Check for CDC dimensions
       sumv+=1.;
       sumx+=x;
       sumxx+=x*x;
@@ -276,7 +278,7 @@ jerror_t DTrackFinder::cdc_track_t::FindStateVector(void){
       sumyz+=y*z;
     }
   }
-  const double EPS=1e-3;
+  const double EPS=1e-4;
   double xdenom=sumv*sumxz-sumx*sumz;
   if (fabs(xdenom)<EPS) return VALUE_OUT_OF_RANGE;
  
@@ -342,7 +344,7 @@ double DTrackFinder::FindDoca(double z,const DMatrix4x1 &S,const DVector3 &wdir,
   DVector3 uhat(S(state_tx),S(state_ty),1.);
   uhat.SetMag(1.); 
   DVector3 vhat=wdir;
-  //  vhat.SetMag(1.);
+  vhat.SetMag(1.);
 
   double vhat_dot_diff=diff.Dot(vhat);
   double uhat_dot_diff=diff.Dot(uhat);
