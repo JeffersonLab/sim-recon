@@ -19,6 +19,7 @@ using namespace std;
 #include <DAQ/Df250Config.h>
 using namespace jana;
 
+static bool COSMIC_DATA = false;
 
 //------------------
 // init
@@ -28,6 +29,13 @@ jerror_t DTOFHit_factory::init(void)
   //DELTA_T_ADC_TDC_MAX = 4.0; // ns
 	DELTA_T_ADC_TDC_MAX = 30.0; // ns, value based on the studies from cosmic events
 	gPARMS->SetDefaultParameter("TOF:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX, "Maximum difference in ns between a (calibrated) fADC time and F1TDC time for them to be matched in a single hit");
+	
+	int analyze_cosmic_data = 0;
+	gPARMS->SetDefaultParameter("TOF:COSMIC_DATA", analyze_cosmic_data,
+				    "Special settings for analysing cosmic data");
+	if(analyze_cosmic_data > 0)
+		COSMIC_DATA = true;
+
 
 	/// Set basic conversion constants
 	a_scale    = 0.2/5.2E5;
@@ -160,8 +168,10 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
 
-		//hit->dE = a_scale * (A - pedestal);
-		hit->dE = a_scale * (A - 55*pedestal); // value of 55 is taken from (NSB,NSA)=(10,45) in the confg file
+		if(COSMIC_DATA)
+			hit->dE = a_scale * (A - 55*pedestal); // value of 55 is taken from (NSB,NSA)=(10,45) in the confg file
+		else 
+			hit->dE = a_scale * (A - pedestal);
 		hit->t = t_scale * (T - GetConstant(adc_time_offsets, digihit)) + t_base;
 		hit->sigma_t = 4.0;    // ns (what is the fADC time resolution?)
 		hit->has_fADC = true;
@@ -191,9 +201,12 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Apply calibration constants here
 		double T = (double)digihit->time;
 
-		//T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_base;
-		// Hardcoding of 110 taken from cosmics events
-		T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_base +110;		
+		if(COSMIC_DATA) 
+			// Hardcoding of 110 taken from cosmics events
+			T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_base + 110.; 
+		else 
+			T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_base;
+
  		// future: allow for seperate TDC scales for each channel
 		//T = GetConstant(tdc_scales, digihit)
 		//  * (T - GetConstant(tdc_time_offsets, digihit));
