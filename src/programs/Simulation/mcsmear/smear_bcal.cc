@@ -1409,8 +1409,8 @@ void FindHitsOneHisto(double thresh_mV, DHistogram *h, vector<fADCHit> &hits)
     }
 
     // Calculate integration limits for signal amplitude
-    int istart = TC - Nbins_before - 1;
-    int iend = TC + Nbins_after +1;
+    int istart = TC - Nbins_before - 1; // Nbins_before = 199, so to keep on track with 40 bin samples, subtract one extra bin.
+    int iend = TC + Nbins_after + 1 - bins_per_sample; // Nbins_after = 1799, so to keep on track with 40 bin samples, add one extra bin.
     if(istart<1)istart=1;
     if(iend>Nbins)iend = Nbins;
 
