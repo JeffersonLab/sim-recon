@@ -598,7 +598,7 @@ void DAnalysisUtilities::Get_ThrownParticleSteps(JEventLoop* locEventLoop, deque
 		bool locListedAsDecayingFlag = false;
 		for(size_t loc_j = 1; loc_j < locThrownSteps.size(); ++loc_j)
 		{
-			if(locThrownSteps[loc_j].first->myid != locMCThrowns[loc_i]->parentid)
+			if(locThrownSteps[loc_j].first->myid != locParentID)
 				continue;
 			locThrownSteps[loc_j].second.push_back(locMCThrowns[loc_i]);
 			locListedAsDecayingFlag = true;
@@ -609,7 +609,7 @@ void DAnalysisUtilities::Get_ThrownParticleSteps(JEventLoop* locEventLoop, deque
 
 		//would add a new decay step, but first make sure that its parent is a decay product of a previous step
 			//if the parent was not saved as a product, it may have been a decay product of a final state particle: don't save
-		const DMCThrown* locThrownParent = locIDMap[locMCThrowns[loc_i]->parentid];
+		const DMCThrown* locThrownParent = locIDMap[locParentID];
 		bool locFoundFlag = false;
 		for(size_t loc_j = 0; loc_j < locThrownSteps.size(); ++loc_j)
 		{
