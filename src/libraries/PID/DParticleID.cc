@@ -664,14 +664,15 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 	// Now check to see if the intersection is in the nose region and find the
 	// start time
 	double locCorrectedHitTime = locSCHit->t - sc_leg_tcor;
-	double sc_pos0 = sc_pos[0].z();
+	double sc_pos0 = sc_pos[0].z();	
+	double sc_pos1 = sc_pos[1].z();
 	if(myz < sc_pos0)
 		myz = sc_pos0;
-
-	if(myz <= sc_pos[1].z())
+	if(myz <= sc_pos1)
 	{
-		L=myz;
-		locCorrectedHitTime -= L/C_EFFECTIVE;
+
+	  L=myz;
+	  locCorrectedHitTime -= L/C_EFFECTIVE;
 	}
 	else
 	{
@@ -689,14 +690,13 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 			myz = proj_pos.z();
 			if(myz < sc_pos[loc_i + 1].z())
 				break;
-		}
-		double sc_pos1 = sc_pos[1].z();
-
+		}	
+	
 		// Note: in the following code, L does not include a correction for where the start counter starts
 		// in z...	This is absorbed into locCorrectedHitTime, above.
 		if(myz < sc_pos1)
 		{
-			L = sc_pos1;
+		        L = sc_pos1;
 			locCorrectedHitTime -= L/C_EFFECTIVE;
 		}
 		else if (myz > sc_pos[num].z())
@@ -710,7 +710,7 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 			double one_over_beta = sqrt(1. + mass*mass/p2);
 			L = (sc_pos[num].z() - sc_pos1)*sc_angle_cor + sc_pos1;
 
-			locCorrectedHitTime -= s*one_over_beta/SPEED_OF_LIGHT + L/C_EFFECTIVE;
+			locCorrectedHitTime -= L/C_EFFECTIVE;
 			locFlightTime = s*one_over_beta/SPEED_OF_LIGHT;
 			locPathLength = s;
 		}
@@ -735,6 +735,9 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 	locSCHitMatchParams.dFlightTimeVariance = 0.0; //SET ME!!!
 	locSCHitMatchParams.dPathLength = locPathLength;
 	locSCHitMatchParams.dDeltaPhiToHit = dphi;
+	locSCHitMatchParams.dIntersectionPoint=proj_pos;
+	locSCHitMatchParams.dIntersectionTrackDir=proj_mom;
+	locSCHitMatchParams.dIntersectionTrackDir.SetMag(1.);
 
 	return true;
 }
@@ -779,18 +782,6 @@ DParticleID::MatchToSC(const DKinematicData *kd,
 	    scmatch.dSCHit=locSCHit;
 	    scmatch.dDeltaPhiToHit=dphi; 
 	    if (myz<sc_pos1){ // intersection in leg 
-	      // Refine the intersection point by using the plane information
-	      // for the leg region
-	      double xhat = sc_norm[0].x();
-	      double cosphi=cos(phi);
-	      double sinphi=sin(phi);
-	      DVector3 norm(cosphi*xhat, sinphi*xhat,0);
-	      double r = sc_pos[0].X();
-	      DVector3 origin(r*cosphi, r*sinphi, sc_pos0);
-	      if (finder->FindIntersectionWithPlane(origin,norm,pos,mom,
-						    cylpos[j])){
-		myz=cylpos[j].z();
-	      }
 	      scmatch.dHitTime=sc_time-myz/C_EFFECTIVE;
 	      scmatch.dIntersectionPoint=cylpos[j];
 	      scmatch.dIntersectionTrackDir=mom;
@@ -813,6 +804,7 @@ DParticleID::MatchToSC(const DKinematicData *kd,
 		  }
 		}
 	      }
+	      if (myz<sc_pos0) continue;
 	      if (myz>sc_pos[num].z()) continue;
 	      scmatch.dIntersectionPoint=cylpos[j];
 	      scmatch.dIntersectionTrackDir=mom;
