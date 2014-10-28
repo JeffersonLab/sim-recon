@@ -43,6 +43,7 @@ class DTOFHit_factory:public jana::JFactory<DTOFHit>{
 		double t_scale;
 		double tdc_scale;
                 double t_base;
+		double tdc_adc_time_offset;
 
 		double DELTA_T_ADC_TDC_MAX;
 

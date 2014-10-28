@@ -43,6 +43,12 @@ jerror_t DTOFHit_factory::init(void)
 	tdc_scale  = 0.025;    // 25 ps/count
         t_base     = 0.;       // ns
 
+	if(COSMIC_DATA)
+		// Hardcoding of 110 taken from cosmics events
+		tdc_adc_time_offset = 110.;
+	else 
+		tdc_adc_time_offset = 0.;
+
 	TOF_NUM_PLANES = 2;
 	TOF_NUM_BARS = 44;
 
@@ -201,11 +207,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Apply calibration constants here
 		double T = (double)digihit->time;
 
-		if(COSMIC_DATA) 
-			// Hardcoding of 110 taken from cosmics events
-			T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_base + 110.; 
-		else 
-			T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_base;
+		T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_base + tdc_adc_time_offset; 
 
  		// future: allow for seperate TDC scales for each channel
 		//T = GetConstant(tdc_scales, digihit)
