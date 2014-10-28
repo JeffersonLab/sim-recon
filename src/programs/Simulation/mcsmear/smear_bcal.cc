@@ -252,12 +252,14 @@ extern bool SMEAR_BCAL;
 // The following are all false by default, but can be
 // set to true via command line parameters. Setting
 // one of these to true will turn OFF the feature.
+extern bool NO_E_SMEAR;
 extern bool NO_T_SMEAR;
 extern bool NO_DARK_PULSES;
 extern bool NO_SAMPLING_FLUCTUATIONS;
 extern bool NO_SAMPLING_FLOOR_TERM;
 extern bool NO_POISSON_STATISTICS;
 extern bool NO_TIME_JITTER;
+extern bool NO_THRESHOLD_CUT;
 extern bool BCAL_DEBUG_HISTS;
 
 extern double BCAL_TDC_THRESHOLD; // mV
@@ -1313,86 +1315,141 @@ void FindHits(double thresh_mV, map<int, SumSpectra> &bcalfADC, map<int, fADCHit
 //-----------
 void FindHitsOneHisto(double thresh_mV, DHistogram *h, vector<fADCHit> &hits)
 {
-   /// Look through the given histogram and find places where the signal
-   /// size crosses the given threshold. The signal is integrated before
-   /// and after the crossing time by 20ns and 180ns respectively. The 
-   /// times are approximate as they are measured in number of bins by
-   /// dividing by the bin width of the histo.
-   ///
-   /// The amplitude of the signal is scaled down to account for the pre_amp
-   /// gain difference between TDC and fADC signal splits. It is also converted
-   /// into GeV-equivalent units.
-   ///
-   /// n.b. no quantization of the ADC counts is done at this stage since
-   /// it is unclear if the conversions are correct. This can be done
-   /// easily enough at a later stage after any additional scaling factors
-   /// are applied.
-   ///
-   /// The time is taken from the center of the bin with the largest amplitude
+  /// Look through the given histogram and find the pulse time using the
+  /// fADC algorithm described in 'Summary of FADC250 Operating Modes,'
+  /// found here: https://wiki.jlab.org/ciswiki/images/8/8e/FADC250_modes_2.pdf
+  ///
+  /// The algorithm finds a point in the histogram above threshold, then
+  /// finds the first peak by looking for where the histogram begins to
+  /// decline.  The midpoint between the voltage of the peak and the
+  /// minimum (pedestal) voltage is found.  Then, the algortithm looks
+  /// before the peak position for the sample which first is larger than
+  /// the midpoint voltage.  It finally interpolates between the sample
+  /// before and after crossing the midpoint voltage to find the time
+  /// to be output as the fADC pulse time.
+  /// The signal is then integrated before and after the crossing time
+  /// by 20ns and 180ns respectively.
+  ///
+  /// The amplitude of the signal is scaled down to account for the pre_amp
+  /// gain difference between TDC and fADC signal splits. It is also converted
+  /// into GeV-equivalent units.
+  ///
+  /// n.b. no quantization of the ADC counts is done at this stage since
+  /// it is unclear if the conversions are correct. This can be done
+  /// easily enough at a later stage after any additional scaling factors
+  /// are applied.
+  ///
+  /// The time is taken from the center of the bin with the largest amplitude
    
-   double bin_width = h->GetBinWidth();
-   int Nbins_before = (int)(BCAL_FADC_INTEGRATION_WINDOW_PRE/bin_width);
-   int Nbins_after = (int)(BCAL_FADC_INTEGRATION_WINDOW_POST/bin_width);
+  double bin_width = h->GetBinWidth();
+  int Nbins_before = (int)(BCAL_FADC_INTEGRATION_WINDOW_PRE/bin_width);
+  int Nbins_after = (int)(BCAL_FADC_INTEGRATION_WINDOW_POST/bin_width);
 
-   // Loop 
-   int start_bin = 1;
-   int Nbins = h->GetNbins();
-   while(start_bin<=Nbins){
-      int ibin = h->FindFirstBinAbove(thresh_mV, start_bin);
-      if(ibin<1 || ibin>Nbins)break;
-      
-      // Signal time. Start with the center of the bin as the time then
-      // linearly interpolate (below) to the threshold crossing point.
-      // Notice that we will have 2 times from the BCAL, one from the
-      // fADC and one from the TDC. Here, we only specify one and make it
-      // more closely match the TDC resolution.
-      double t = h->GetBinCenter(ibin);
-      
-      // Linearly interpolate between this and previous bin
-      if(ibin>1){
-         double a1 = h->GetBinContent(ibin-1);
-         double a2 = h->GetBinContent(ibin);
-         double delta_t = bin_width*(a2-thresh_mV)/(a2-a1);
-         t -= delta_t;
+  // Loop 
+  int start_bin = 1;
+  int bins_per_sample = 40; // 1 bin = 0.1 ns, but 1 sample = 4 ns, so 1 sample = 40 bins
+  int Nbins = h->GetNbins();
+  double t = -1000.0; // Will return nonsense value if t is not set using the algorithm
+  double VMin = 0.0; // fADC will find this by measuring the first 4 samples.  We will use VMin = 0.0 for the simulation
+  int TC = -1000; // TC will denote the first sample that crosses threshold.  Initialize to nonsense value
+
+  while(start_bin<=Nbins){
+    int TC0 = h->FindFirstBinAbove(thresh_mV, start_bin); // Test if waveform crosses threshold at any point (on a bin rather than sample basis)
+    if(TC0<1 || TC0>Nbins) break; // Ignore event if threshold is never crossed (TC0 = -1.0) or if the crossing is out of range
+
+    double VPeakTemp = 0.0; // Initialize some values for use in the timing algorithm
+    double VPeak = -1.0;
+    double VMid = 0.0;
+    int ibin = -1; // ibin will store the sample bin which is just below the voltage midpoint, equivalent to 'N1' in the fADC document mentioned above
+    int Peakbin = -1;
+    bool ThresholdCrossed = kFALSE;
+    bool VPeakProblem = kFALSE; // Variable for checking if there is a peak-related problem
+    bool ibinFound = kFALSE; // Variable for checking if a suitable point is found with the CFD algorithm
+
+    for (int i = start_bin; i<=Nbins; i += bins_per_sample) { // Reading every 40 bins (every one actual sample from fADC)
+      if (h->GetBinContent(i) > thresh_mV && !ThresholdCrossed) {
+        ThresholdCrossed = kTRUE; // if we cross the threshold and VPeakTemp has not been set, set VPeakTemp to something other than the starting value so that we can enter the peak identification portion of the code
+        TC = i; // Set 'TC' as it would be set in the fADC as the first sample that crosses threshold
       }
-      
-      // Calculate integration limits for signal amplitude
-      int istart = ibin - Nbins_before;
-      int iend = ibin + Nbins_after;
-      if(istart<1)istart=1;
-      if(iend>Nbins)iend = Nbins;
-
-      // Integrate signal
-      // n.b. we use the start_bin variable so it is left
-      // pointing to the end of the integration window which
-      // is where we start looking for the next hit on the next iteration 
-      double integral = 0.0;
-      for(start_bin=istart; start_bin<=iend; start_bin++){
-         integral += h->GetBinContent(start_bin);
+      if (ThresholdCrossed) { // Once we've crossed the threshold once, begin looking for the peak
+        if (h->GetBinContent(i) > VPeakTemp) VPeakTemp = h->GetBinContent(i);
+        else { // Find the point where the bin content begins to drop.  Then, take the last sample as the peak position
+          VPeak = VPeakTemp; // Set VPeak as the bin content of the peak bin
+          Peakbin = i-bins_per_sample; // Point to the peak sample bin
+          break;
+        }
       }
-      
-      //Previously we converted this integral into fADC units. This
-      //conversion factor was simply bin_width/(4 ns)*4096/(2000 mV).
-      //Now, however, for consistency with the rest of the software, we
-      //output hit energy in GeV. Naively we would expect the conversion
-      //factor between integrated mV and integrated MeV to be the same as the
-      //mV_per_MeV factor calculated in bcal_init() above (numerically this
-      //factor is about 0.88), but this is not
-      //the case for some reason, probably because the integral of the
-      //response function (spline) is not equal to one.
-      //When performing the ApplyElectronicPulseShape() step,
-      //one notices that the integral of
-      //the histogram increases by a factor of about 303 (this can be
-      //verified using the debug_hists option). This is effectively
-      //the conversion factor between integrated mV and integrated MeV.
-      //-WL 2014-07-25
-      double adhoc_mV_per_MeV = 303.0;
-      double E_GeV = integral/adhoc_mV_per_MeV;
-      E_GeV /= 1000.0; //convert MeV to GeV
+    }
 
-      // Store hit in container
-      hits.push_back(fADCHit(E_GeV,t));
-   }
+    if (VPeak == -1.0) VPeakProblem = kTRUE; // If we do not detect a peak, report a peak problem
+
+    if (VPeakProblem) break; // If we did not find a peak, ignore this event
+
+    VMid = (VPeak+VMin)/2; // Find mid-point between the peak and minimum (VMin = 0.0, currently)
+
+    for (int i = start_bin; i<=Peakbin; i += bins_per_sample) { // Loop over samples between the start bin and the peak bin
+      if (VMid < h->GetBinContent(i+bins_per_sample) && VMid > h->GetBinContent(i)) { // Find which samples VMid lies between
+        ibin = i; // Record this sample, if found
+        ibinFound = kTRUE; // If we find samples such that V(i) < VMid < V(i+1), report ibin as found
+        break; // No need to continue the loop if we've found ibin
+      }
+    }
+    if (ibinFound) { // When we've found ibin, calculate the fADC time by interpolating between the two surrounding samples
+      t = h->GetBinCenter(ibin); // Start with the bin center of the lower sample bin
+      int delta_t = 64*(VMid - h->GetBinContent(ibin))/(h->GetBinContent(ibin+bins_per_sample) - h->GetBinContent(ibin)); // fADC uses 64 sub-samples between the two surrounding samples to find a 'fine' time, delta_t, in terms of a number of sub-samples
+      t += delta_t*bin_width*bins_per_sample/64.0; // Add delta_t to the course time by multiplying the number of sub-samples by the time width of one sub-sample
+      t -= 21.38; // Subtract time to align fADC times with TDC times like the old timewalk correction used to do.  Found by comparing raw fADC output to TW-corrected TDC output.
+    }
+
+    if(!ibinFound) { // If two suitable surrounding samples were not found above, discard this hit and start looking for a new peak
+      for(start_bin=Peakbin; start_bin<=Nbins; start_bin += bins_per_sample){ // Advance one sample at a time to find where we drop back below the threshold
+        if(h->GetBinContent(start_bin) < thresh_mV) break; // Once we are below threshold, stop this loop
+      }
+      continue; // Start the algorithm again by looking for a new peak
+    }
+
+    // Calculate integration limits for signal amplitude
+    int istart = TC - Nbins_before - 1;
+    int iend = TC + Nbins_after +1;
+    if(istart<1)istart=1;
+    if(iend>Nbins)iend = Nbins;
+
+    // Integrate signal
+    // n.b. we use the start_bin variable so it is left
+    // pointing to the end of the integration window which
+    // is where we start looking for the next hit on the next iteration
+
+    // We're summing every 40th bin (every one sample), so increment
+    // the start_bin variable by bins_per_sample for each iteration
+    double integral = 0.0;
+    for(start_bin=istart; start_bin<=iend; start_bin+=bins_per_sample){
+      integral += h->GetBinContent(start_bin);
+    }
+
+    //Previously we converted this integral into fADC units. This
+    //conversion factor was simply bin_width/(4 ns)*4096/(2000 mV).
+    //Now, however, for consistency with the rest of the software, we
+    //output hit energy in GeV. Naively we would expect the conversion
+    //factor between integrated mV and integrated MeV to be the same as the
+    //mV_per_MeV factor calculated in bcal_init() above (numerically this
+    //factor is about 0.88), but this is not
+    //the case for some reason, probably because the integral of the
+    //response function (spline) is not equal to one.
+    //When performing the ApplyElectronicPulseShape() step,
+    //one notices that the integral of
+    //the histogram increases by a factor of about 303 (this can be
+    //verified using the debug_hists option). This is effectively
+    //the conversion factor between integrated mV and integrated MeV.
+    //-WL 2014-07-25
+    double adhoc_mV_per_MeV = 303.0;
+    double E_GeV = integral/adhoc_mV_per_MeV;
+
+    E_GeV *= bins_per_sample; // Scale up Energy, since now we are summing only every 40th bin (every sample)
+    E_GeV /= 1000.0; //convert MeV to GeV
+
+    // Store hit in container
+    hits.push_back(fADCHit(E_GeV,t));
+  }
 
 }
 
