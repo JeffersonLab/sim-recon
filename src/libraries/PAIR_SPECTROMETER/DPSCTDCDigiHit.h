@@ -17,13 +17,11 @@ class DPSCTDCDigiHit:public jana::JObject{
   JOBJECT_PUBLIC(DPSCTDCDigiHit);
 		
   // Add data members here. For example:
-  DPSGeometry::Arm arm;   // North: 0, South: 1
-  int column;
+  int id;
   uint32_t time; ///< TDC time measurement
   
   void toStrings(vector<pair<string,string> > &items)const{
-    AddString(items, "arm", "%d", arm==0 ? "north" : "south");
-    AddString(items, "column", "%d", column);
+    AddString(items, "id", "%d", id);
     AddString(items, "time", "%d", time);
   }
 		

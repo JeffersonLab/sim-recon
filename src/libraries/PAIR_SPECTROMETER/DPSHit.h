@@ -18,6 +18,7 @@ class DPSHit:public jana::JObject{
 
   DPSGeometry::Arm arm;   // North: 0, South: 1
   int column;
+  double E;       // The photon energy corresponding to this channel
   double dE;
   double t;
   float sigma_t;  // uncertainty on t in ns
@@ -27,6 +28,7 @@ class DPSHit:public jana::JObject{
   void toStrings(vector<pair<string,string> > &items)const{
     AddString(items, "arm", "%d", arm);
     AddString(items, "column", "%d", column);
+    AddString(items, "E(GeV)", "%f",E);
     AddString(items, "dE(GeV)", "%f",dE);
     AddString(items, "t(ns)", "%f", t);
     AddString(items, "sigma_t", "%d", sigma_t);
