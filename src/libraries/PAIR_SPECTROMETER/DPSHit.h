@@ -14,15 +14,23 @@
 class DPSHit:public jana::JObject{
  public:
   JOBJECT_PUBLIC(DPSHit);
-		
+
+  DPSGeometry::Arm arm;   // North: 0, South: 1
   int column;
   double dE;
   double t;
+  float sigma_t;  // uncertainty on t in ns
+  bool has_fADC;  // true if this has an fADC hit
+  bool has_TDC;   // true if this has an TDC hit
 
   void toStrings(vector<pair<string,string> > &items)const{
+    AddString(items, "arm", "%d", arm);
     AddString(items, "column", "%d", column);
     AddString(items, "dE(GeV)", "%f",dE);
     AddString(items, "t(ns)", "%f", t);
+    AddString(items, "sigma_t", "%d", sigma_t);
+    AddString(items, "has_fADC", "%d", has_fADC);
+    AddString(items, "has_TDC", "%d", has_TDC);
   }
 };
 

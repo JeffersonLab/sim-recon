@@ -11,10 +11,12 @@ using namespace jana;
 #include "DPSCTDCDigiHit.h"
 #include "DPSCTruthHit.h"
 #include "DPSTruthHit.h"
+#include "DPSGeometry_factory.h"
 
 jerror_t PAIR_SPECTROMETER_init(JEventLoop *loop)
 {
   /// Create and register Pair Spectrometer data factories
+  loop->AddFactory(new DPSGeometry_factory());
   loop->AddFactory(new JFactory<DPSDigiHit>());
   loop->AddFactory(new DPSHit_factory());
   loop->AddFactory(new JFactory<DPSCDigiHit>());
