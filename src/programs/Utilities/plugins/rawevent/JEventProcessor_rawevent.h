@@ -35,7 +35,8 @@
 #include <TOF/DTOFHit.h>
 #include <TAGGER/DTAGMHit.h>
 #include <TAGGER/DTAGHHit.h>
-
+#include <PAIR_SPECTROMETER/DPSHit.h>
+#include <PAIR_SPECTROMETER/DPSCHit.h>
 
 using namespace std;
 using namespace jana;
@@ -103,6 +104,11 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
 
                 cscRef DTAGHHitTranslationADC(const DTAGHHit* hit) const;
                 cscRef DTAGHHitTranslationTDC(const DTAGHHit* hit) const;
+
+                cscRef DPSHitTranslationADC(const DPSHit* hit) const;
+
+                cscRef DPSCHitTranslationADC(const DPSCHit* hit) const;
+                cscRef DPSCHitTranslationTDC(const DPSCHit* hit) const;
 #endif //HAVE_EVIO
 };
 
