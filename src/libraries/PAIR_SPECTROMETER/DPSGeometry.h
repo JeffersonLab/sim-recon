@@ -13,7 +13,7 @@ public:
   
 	JOBJECT_PUBLIC( DPSGeometry );
 	
-	DPSGeometry();
+	DPSGeometry() {};
 	
 	enum Arm { kNorth, kSouth };
 	
