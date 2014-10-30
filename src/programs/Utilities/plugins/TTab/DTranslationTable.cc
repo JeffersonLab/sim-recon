@@ -11,6 +11,7 @@
 #include <sstream>
 
 #include <DAQ/DModuleType.h>
+#include <PAIR_SPECTROMETER/DPSGeometry.h>
 
 using namespace jana;
 using namespace std;
@@ -117,6 +118,9 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
    supplied_data_types.insert("DTAGMTDCDigiHit");
    supplied_data_types.insert("DTAGHDigiHit");
    supplied_data_types.insert("DTAGHTDCDigiHit");
+   supplied_data_types.insert("DPSDigiHit");
+   supplied_data_types.insert("DPSCDigiHit");
+   supplied_data_types.insert("DPSCTDCDigiHit");
 }
 
 //---------------------------------
@@ -236,6 +240,9 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    vector<DTAGMTDCDigiHit*> vtagmtdc;
    vector<DTAGHDigiHit*> vtagh;
    vector<DTAGHTDCDigiHit*> vtaghtdc;
+   vector<DPSDigiHit*> vps;
+   vector<DPSCDigiHit*> vpsc;
+   vector<DPSCTDCDigiHit*> vpsctdc;
    
    // Df250PulseIntegral (will apply Df250PulseTime via associated objects)
    vector<const Df250PulseIntegral*> pulseintegrals250;
@@ -294,6 +301,12 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
             break;
          case TAGH:
             vtagh.push_back( MakeTAGHDigiHit(chaninfo.tagh, pi, pt, pp) ); 
+            break;
+         case PS:
+            vps.push_back  ( MakePSDigiHit(chaninfo.ps,     pi, pt, pp) ); 
+            break;
+         case PSC:
+            vpsc.push_back ( MakePSCDigiHit(chaninfo.psc,   pi, pt, pp) ); 
             break;
          default:
             if (VERBOSE > 4)
@@ -405,6 +418,9 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
          case TAGH:
             vtaghtdc.push_back( MakeTAGHTDCDigiHit(chaninfo.tagh, hit) );
             break;
+         case PSC:
+            vpsctdc.push_back( MakePSCTDCDigiHit(chaninfo.psc, hit) );
+            break;
          default:     
              if (VERBOSE > 4)
                 ttout << "       - Don't know how to make DigiHit objects"
@@ -476,6 +492,9 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       ttout << "     vtagmtdc.size() = " << vtagmtdc.size() << std::endl;
       ttout << "        vtagh.size() = " << vtagh.size() << std::endl;
       ttout << "     vtaghtdc.size() = " << vtaghtdc.size() << std::endl;
+      ttout << "          vps.size() = " << vps.size() << std::endl;
+      ttout << "         vpsc.size() = " << vpsc.size() << std::endl;
+      ttout << "      vpsctdc.size() = " << vpsctdc.size() << std::endl;
    }
    
    // Find factory for each container and copy the object pointers into it
@@ -494,6 +513,9 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    CopyToFactory(loop, vtagmtdc);
    CopyToFactory(loop, vtagh);
    CopyToFactory(loop, vtaghtdc);
+   CopyToFactory(loop, vps);
+   CopyToFactory(loop, vpsc);
+   CopyToFactory(loop, vpsctdc);
 
    // Add to JANA's call stack some entries to make janadot draw something reasonable
    // Unfortunately, this is just us telling JANA the relationship as defined here.
@@ -625,6 +647,39 @@ DTAGHDigiHit* DTranslationTable::MakeTAGHDigiHit(const TAGHIndex_t &idx,
 }
 
 //---------------------------------
+// MakePSCDigiHit
+//---------------------------------
+DPSCDigiHit* DTranslationTable::MakePSCDigiHit(const PSCIndex_t &idx,
+					       const Df250PulseIntegral *pi,
+					       const Df250PulseTime *pt,
+					       const Df250PulsePedestal *pp) const
+{
+   DPSCDigiHit *h = new DPSCDigiHit();
+   CopyDf250Info(h, pi, pt, pp);
+
+   h->id = idx.id;
+
+   return h;
+}
+
+//---------------------------------
+// MakePSDigiHit
+//---------------------------------
+DPSDigiHit* DTranslationTable::MakePSDigiHit(const PSIndex_t &idx,
+					     const Df250PulseIntegral *pi,
+					     const Df250PulseTime *pt,
+					     const Df250PulsePedestal *pp) const
+{
+   DPSDigiHit *h = new DPSDigiHit();
+   CopyDf250Info(h, pi, pt, pp);
+
+   h->arm = (DPSGeometry::Arm)idx.side;
+   h->column = idx.id;
+
+   return h;
+}
+
+//---------------------------------
 // MakeCDCDigiHit
 //---------------------------------
 DCDCDigiHit* DTranslationTable::MakeCDCDigiHit(const CDCIndex_t &idx,
@@ -739,6 +794,21 @@ DTAGHTDCDigiHit*  DTranslationTable::MakeTAGHTDCDigiHit(
    CopyDF1TDCInfo(h, hit);
 
    h->counter_id = idx.id;
+
+   return h;
+}
+
+//---------------------------------
+// MakePSCTDCDigiHit
+//---------------------------------
+DPSCTDCDigiHit*  DTranslationTable::MakePSCTDCDigiHit(
+                                     const PSCIndex_t &idx,
+                                     const DF1TDCHit *hit) const
+{
+   DPSCTDCDigiHit *h = new DPSCTDCDigiHit();
+   CopyDF1TDCInfo(h, hit);
+
+   h->id = idx.id;
 
    return h;
 }
@@ -1111,6 +1181,7 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
    int ring=0,straw=0,plane=0,bar=0,gPlane=0,element=0;
    int package=0,chamber=0,view=0,strip=0,wire=0;
    int id=0, strip_type=0;
+   int side=0;
 
    // This complicated line just recasts the userData pointer into
    // a reference to the "TT" member of the DTranslationTable object
@@ -1201,6 +1272,14 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
             strip = ival;
          else if (tag == "wire")
             wire = ival;
+         else if (tag == "side") { 
+            if (sval == "A") {
+               side = DPSGeometry::kNorth;
+            }
+            else if (sval == "B") {
+               side = DPSGeometry::kSouth;
+            }
+	 }
          else if (tag == "id")
             id = ival;
          else if (tag == "end") {
@@ -1319,7 +1398,12 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
             ci.tof.end = end;
             break;
          case DTranslationTable::PS:
+	    ci.ps.side = side;
+	    ci.ps.id = id;
+	    break;
          case DTranslationTable::PSC:
+	    ci.psc.id = id;
+	    break;
          case DTranslationTable::UNKNOWN_DETECTOR:
             break;
       }

@@ -51,6 +51,9 @@ using namespace jana;
 #include <TAGGER/DTAGMTDCDigiHit.h>
 #include <TAGGER/DTAGHDigiHit.h>
 #include <TAGGER/DTAGHTDCDigiHit.h>
+#include <PAIR_SPECTROMETER/DPSDigiHit.h>
+#include <PAIR_SPECTROMETER/DPSCDigiHit.h>
+#include <PAIR_SPECTROMETER/DPSCTDCDigiHit.h>
 
 
 class DTranslationTable:public jana::JObject{
@@ -261,6 +264,8 @@ class DTranslationTable:public jana::JObject{
 		DTOFDigiHit*  MakeTOFDigiHit( const TOFIndex_t &idx,  const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
 		DTAGMDigiHit* MakeTAGMDigiHit(const TAGMIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
 		DTAGHDigiHit* MakeTAGHDigiHit(const TAGHIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DPSDigiHit*   MakePSDigiHit(  const PSIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DPSCDigiHit*  MakePSCDigiHit( const PSCIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
 
 		// fADC125
 		DCDCDigiHit* MakeCDCDigiHit(const CDCIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt, const Df125PulsePedestal *pp) const;
@@ -272,6 +277,7 @@ class DTranslationTable:public jana::JObject{
 		DSCTDCDigiHit*   MakeSCTDCDigiHit(  const SCIndex_t &idx,        const DF1TDCHit *hit) const;
 		DTAGMTDCDigiHit* MakeTAGMTDCDigiHit(const TAGMIndex_t &idx,      const DF1TDCHit *hit) const;
 		DTAGHTDCDigiHit* MakeTAGHTDCDigiHit(const TAGHIndex_t &idx,      const DF1TDCHit *hit) const;
+		DPSCTDCDigiHit*  MakePSCTDCDigiHit( const PSCIndex_t &idx,       const DF1TDCHit *hit) const;
 		
 		// CAEN1290TDC
 		DTOFTDCDigiHit*  MakeTOFTDCDigiHit(const TOFIndex_t &idx,        const DCAEN1290TDCHit *hit) const;
