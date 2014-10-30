@@ -10,6 +10,7 @@
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
+#include "DPSGeometry.h"
 
 class DPSCDigiHit:public jana::JObject{
 	public:
