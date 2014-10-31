@@ -20,8 +20,8 @@ public:
 	static const int NUM_ARMS = 2;
 	
 	// number of channels in coarse and fine detectors in each arm
-	static const int NUM_COARSE_COL = 8;
-	static const int NUM_FINE_COL = 145;
+	static const int NUM_COARSE_COLUMNS = 8;
+	static const int NUM_FINE_COLUMNS = 145;
 
 };
 

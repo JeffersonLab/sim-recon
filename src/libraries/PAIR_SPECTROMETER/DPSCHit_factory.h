@@ -10,11 +10,46 @@
 
 #include <JANA/JFactory.h>
 #include "DPSCHit.h"
+#include "DPSCDigiHit.h"
+#include "DPSCTDCDigiHit.h"
+#include "DPSGeometry.h"
+
+#include <vector>
+#include <utility>
+
+typedef vector< pair<double,double> > psc_digi_constants_t;
 
 class DPSCHit_factory:public jana::JFactory<DPSCHit>{
 	public:
 		DPSCHit_factory(){};
 		~DPSCHit_factory(){};
+
+
+                // overall scale factors
+                double a_scale;
+                double t_scale;
+                double t_base;
+                double tdc_scale;
+
+                // calibration constants stored by channel
+                psc_digi_constants_t  adc_gains;
+                psc_digi_constants_t  adc_pedestals;
+                psc_digi_constants_t  adc_time_offsets;
+                psc_digi_constants_t  tdc_time_offsets;
+
+                double DELTA_T_ADC_TDC_MAX;
+
+                DPSCHit* FindMatch(DPSGeometry::Arm arm, int module, double T);
+
+                const double GetConstant( const psc_digi_constants_t &the_table,
+                                          const DPSGeometry::Arm in_arm, const int in_module,
+					  const DPSGeometry &psGeom ) const; 
+                const double GetConstant( const psc_digi_constants_t &the_table,
+                                          const DPSCDigiHit *the_digihit, const DPSGeometry &psGeom ) const;
+                const double GetConstant( const psc_digi_constants_t &the_table,
+                                          const DPSCTDCDigiHit *the_hit, const DPSGeometry &psGeom ) const;
+                const double GetConstant( const psc_digi_constants_t &the_table,
+                                          const DPSCHit *the_hit, const DPSGeometry &psGeom ) const;
 
 
 	private:
@@ -23,6 +58,10 @@ class DPSCHit_factory:public jana::JFactory<DPSCHit>{
 		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+                void FillCalibTable(psc_digi_constants_t &table, vector<double> &raw_table,
+                                    const DPSGeometry &tofGeom);
+
 };
 
 #endif // _DPSCHit_factory_
