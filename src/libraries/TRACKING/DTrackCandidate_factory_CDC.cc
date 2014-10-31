@@ -7,6 +7,7 @@
 
 #include "DTrackCandidate_factory_CDC.h"
 #include <cmath>
+#include <JANA/JCalibration.h>
 
 #define BeamRMS 0.5
 #define EPS 1e-3
@@ -182,7 +183,14 @@ jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int runnumb
 	dFactorForSenseOfRotation=(dMagneticField->GetBz(0.,0.,65.)>0.)?-1.:1.;
 
 	const DGeometry *locGeometry = locApplication->GetDGeometry(runnumber);
-	locGeometry->GetTargetZ(TARGET_Z);
+	JCalibration *jcalib = locApplication->GetJCalibration(runnumber);
+	map<string, double> targetparms;
+	if (jcalib->Get("TARGET/target_parms",targetparms)==false){
+	  TARGET_Z = targetparms["TARGET_Z_POSITION"];
+	}
+	else{
+	  locGeometry->GetTargetZ(TARGET_Z);
+	}
 
 	// Get the CDC wire table from the XML
 	vector<vector<DCDCWire*> > locCDCWires;

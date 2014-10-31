@@ -35,6 +35,7 @@ using namespace std;
 #include "DTrackCandidate_factory.h"
 #include "DTrackCandidate_factory_CDC.h"
 #include "DANA/DApplication.h"
+#include <JANA/JCalibration.h>
 
 #include <TROOT.h>
 #include <TH2F.h>
@@ -130,7 +131,15 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
   cdc_endplate.SetZ(endplate_z+endplate_dz);
 
-  dgeom->GetTargetZ(TARGET_Z);
+
+  JCalibration *jcalib = dapp->GetJCalibration(runnumber);
+  map<string, double> targetparms;
+  if (jcalib->Get("TARGET/target_parms",targetparms)==false){
+    TARGET_Z = targetparms["TARGET_Z_POSITION"];
+   }
+  else{
+    dgeom->GetTargetZ(TARGET_Z);
+  }
 
    // Initialize the stepper
   stepper=new DMagneticFieldStepper(bfield);
