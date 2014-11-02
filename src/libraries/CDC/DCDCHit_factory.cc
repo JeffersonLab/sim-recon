@@ -18,6 +18,7 @@ using namespace std;
 using namespace jana;
 
 static double DIGI_THRESHOLD = -1000000.0;
+//#define ENABLE_UPSAMPLING
 
 //------------------
 // init
@@ -59,7 +60,7 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    vector<double> raw_pedestals;
    vector<double> raw_time_offsets;
 
-   jout << "In DFCALHit_factory, loading constants..." << std::endl;
+   jout << "In DCDCHit_factory, loading constants..." << std::endl;
 
    // load scale factors
    map<string,double> scale_factors;
@@ -70,10 +71,14 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    else
       jerr << "Unable to get CDC_ADC_ASCALE from /CDC/digi_scales !" << endl;
 
+#ifdef ENABLE_UPSAMPLING
+   //t_scale=1.;
+#else
    if (scale_factors.find("CDC_ADC_TSCALE") != scale_factors.end())
       t_scale = scale_factors["CDC_ADC_TSCALE"];
    else
       jerr << "Unable to get CDC_ADC_TSCALE from /CDC/digi_scales !" << endl;
+#endif
 
    // load base time offset
    map<string,double> base_time_offset;
@@ -163,6 +168,9 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
    char str[256];
    for (unsigned int i=0; i < digihits.size(); i++) {
       const DCDCDigiHit *digihit = digihits[i];
+      
+      if (digihit->pulse_time==0.) continue;
+
       const int &ring  = digihit->ring;
       const int &straw = digihit->straw;
       
@@ -196,7 +204,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
       // Apply calibration constants here
       double A = (double)digihit->pulse_integral;
       double T = (double)digihit->pulse_time;
-      
+  
       double q = a_scale * gains[ring-1][straw-1] * (A - pedestal);
       double t = t_scale * (T - time_offsets[ring-1][straw-1]) + t_base;
 
