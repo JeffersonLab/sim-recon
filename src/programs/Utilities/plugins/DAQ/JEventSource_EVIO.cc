@@ -15,6 +15,7 @@
 using namespace std;
 
 //#define HAVE_ET 0 // temporary
+//#define ENABLE_UPSAMPLING
 
 #ifdef HAVE_EVIO		
 #include <evioFileChannel.hxx>
@@ -107,10 +108,12 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	F250_IGNORE_PULSETIME = false;
 	F125_IGNORE_PULSETIME = false;
 	F250_THRESHOLD = 120;
+	F125_THRESHOLD = 80;
 	F250_NSA = 50;
 	F250_NSB = 5;
 	F250_NSPED = 4;
 	F250_EMULATION_THRESHOLD = 20;
+	F125_EMULATION_THRESHOLD = 20;
 	F125_NSPED = 20;
 	
 	if(gPARMS){
@@ -1583,8 +1586,9 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		for (uint32_t c_samp=0; c_samp<Nped_samples; c_samp++) {
 			pedestalsum += samplesvector[c_samp];
 		}
-		pedestalsum /= (double)Nped_samples;
+		pedestalsum /= Nped_samples;
 
+#ifdef ENABLE_UPSAMPLING
 		// Calculate single sample threshold based on pdestal
 		double effective_threshold = EMULATE_FADC125_TIME_THRESHOLD + pedestalsum;
 
@@ -1604,6 +1608,108 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		for(uint32_t isample=ihitsample; isample<Nsamples_all; isample++){
 			if(samplesvector[isample] > pulse_peak) pulse_peak = samplesvector[isample];
 		}
+		uint32_t time = ihitsample*10 - 20;// Rough time 20 is "ROUGH_DT" in Naomi's original code
+
+#else
+		//----------F250 algorithm ----------
+		// variables to store the sample numbers
+		uint32_t sn_min = 0, sn_max = 0;
+		uint32_t min = samplesvector[sn_min];
+		uint32_t max = samplesvector[sn_max]; 
+
+		// get max and min information to decide on which algorithm to use
+		for (uint32_t c_samp=1; c_samp<Nsamples_all; c_samp++) {
+			if (samplesvector[c_samp] > max) {
+				max = samplesvector[c_samp];
+				sn_max = c_samp;
+			}
+			if (samplesvector[c_samp] < min) {
+				min = samplesvector[c_samp];
+				sn_min = c_samp;
+			}
+		}
+		// if no signal, don't process further
+		if (max-min < F125_EMULATION_THRESHOLD) {
+			if(VERBOSE>4) evioout << " EmulateDf125PulseTime: object " << i << " max - min < " 
+					      << F125_EMULATION_THRESHOLD <<endl;
+			continue;
+		}
+		// if the min and max are reasonable compared to the threshold then use the requested threshold
+		// otherwise adjust it to work better
+		uint32_t threshold = 0;
+		if (min < F125_THRESHOLD-5 && max > F125_THRESHOLD+5) {
+			threshold = F125_THRESHOLD;
+		} else {
+			threshold = (min + max)/2;
+		}
+		// find the threshold crossing
+		int32_t first_sample_over_threshold = -1000;
+		for (uint32_t c_samp=0; c_samp<Nsamples_all; c_samp++) {
+			if (samplesvector[c_samp] > threshold) {
+				first_sample_over_threshold = c_samp;
+				if(VERBOSE>4) evioout << " EmulateDf125PulseTime: object " << i << " found value over " << threshold << " at samp " 
+						      << c_samp << " with value " << samplesvector[c_samp] <<endl;
+				break;
+			}
+		}
+		// Define the variables for the time extraction (named as in the f250 documentation)	
+		uint32_t pulse_peak=0;
+		uint32_t VPEAK = 0, VMIN = pedestalsum, VMID = 0;
+		uint32_t VN1=0, VN2=0;
+		double time_fraction = -1000;
+		
+
+		uint32_t time = 0;
+		uint32_t mid_sample = 0;
+		uint32_t max_sample = 0;
+		if (VMIN > threshold) { // firmware requires VMIN < F125_THRESHOLD
+			time_fraction = 0;
+		} 
+		if (first_sample_over_threshold == 0) { 
+			time_fraction = 1;
+		} 
+		if (time_fraction < 0) {
+			// Find maximum by looking for signal downturn
+			for (uint32_t c_samp=first_sample_over_threshold; c_samp<Nsamples_all; c_samp++) {
+				if (samplesvector[c_samp] > VPEAK) {
+					pulse_peak = VPEAK = samplesvector[c_samp];
+					max_sample = c_samp;
+				} else {
+				  // we found the downturn
+				  break;
+				}
+			}
+			VMID = (VPEAK + VMIN)/2;
+
+			// find the adjacent samples that straddle the VMID crossing
+			for (uint32_t c_samp=0; c_samp<Nsamples_all; c_samp++) {
+				if (samplesvector[c_samp] > VMID) {
+					if (c_samp==0) {
+						// evioout << " EmulateDf125PulseTime: object " << i << " c_samp=" << c_samp 
+						// 	<< " samplesvector[c_samp]=" << samplesvector[c_samp] << " VMID=" << VMID << endl;
+						// evioout << " EmulateDf125PulseTime: object " << i << " VMIN=" << VMIN << " VPEAK=" << VPEAK << " VMID=" << VMID 
+						// 	<< " mid_sample=" << mid_sample << " max_sample=" << max_sample 
+						// 	<< " VN1=" << VN1 << " VN2=" << VN2 << " time_fraction=" << time_fraction 
+						// 	<< " time=" << time << " sample_over=" << first_sample_over_threshold <<endl;
+					} else {
+						VN2 = samplesvector[c_samp];
+						VN1 = samplesvector[c_samp-1];
+						mid_sample = c_samp-1;
+						break;
+					}
+				}
+			}
+		}
+		time_fraction = mid_sample + ((double)(VMID-VN1))/((double)(VN2-VN1));
+		time = time_fraction*64;
+		if(VERBOSE>4) 
+		  evioout << " EmulateDf125PulseTime: object " << i << " VMIN=" << VMIN << " VPEAK=" << VPEAK << " VMID=" << VMID 
+				      << " mid_sample=" << mid_sample << " VN1=" << VN1 << " VN2=" << VN2 << " time_fraction=" << time_fraction 
+				      << " time=" << time  << " sample_over=" << first_sample_over_threshold << endl;
+
+
+
+#endif
 
 		// At this point we know we have a hit and will be able to extract a time.
 		// Go ahead and make the PulseTime object, filling in the "rough" time.
@@ -1618,7 +1724,7 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		myDf125PulseTime->itrigger = f125WindowRawData->itrigger;
 		myDf125PulseTime->pulse_number = 0;
 		myDf125PulseTime->quality_factor = 1;
-		myDf125PulseTime->time = ihitsample*10 - 20; // Rough time 20 is "ROUGH_DT" in Naomi's original code
+		myDf125PulseTime->time = time; 
 		myDf125PulseTime->emulated = true;
 
 		// create new Df125PulsePedestal object
@@ -1640,6 +1746,7 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		pt_objs.push_back(myDf125PulseTime);
 		pp_objs.push_back(myDf125PulsePedestal);
 
+#ifdef ENABLE_UPSAMPLING
 		//----- UP-SAMPLING--------		
 		uint32_t THRESH_HI = 64;  // single sample threshold above pedestal for timing hit (THRESH_HI)
 		uint32_t THRESH_LO = 16;  // single sample threshold above pedestal for calculating pulse time (THRESH_LO)
@@ -1689,7 +1796,8 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 
 			z[dk] = (int)(5*z[dk])/Kscale;
 		}
-		for(int i=0; i<9; i++) iubuf[i] = z[i];
+	
+		for(int m=0; m<9; m++) iubuf[m] = z[m];
 		
 		// Find first mini-sample below lo threshold starting from top
 		below_threshold = false;
@@ -1721,6 +1829,7 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		myDf125PulseTime->time = itime1 + itime2 + itime3;
 		myDf125PulseTime->quality_factor = 0;
 		//----- UP-SAMPLING--------		
+#endif
 
 //		//----- SIMPLE--------
 //		// The following is a simple algorithm that does a linear interpolation
@@ -1737,7 +1846,7 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 //		//----- SIMPLE--------
 		
 		// The following is empirical from the first BCAL/CDC cosmic data
-		myDf125PulseTime->time -= 170.0;
+		//myDf125PulseTime->time -= 170.0;
 		if(myDf125PulseTime->time > 10000){
 			// If calculated time is <170.0, then the unsigned int is problematic. Flag this if it happens
 			myDf125PulseTime->time = 0;

@@ -198,10 +198,12 @@ class JEventSource_EVIO: public jana::JEventSource{
 		bool F250_IGNORE_PULSETIME;
 		bool F125_IGNORE_PULSETIME;
 		uint32_t F250_THRESHOLD;             ///< Threshold to use for firmware emulation
+		uint32_t F125_THRESHOLD;
 		uint32_t F250_NSA;                   ///< Number of samples to integrate after thershold crossing
 		uint32_t F250_NSB;                   ///< Number of samples to integrate before thershold crossing
 		uint32_t F250_NSPED;                 ///< Number of samples to integrate for pedestal
 		uint32_t F250_EMULATION_THRESHOLD;   ///< Minimum difference between max and min samples to do emulation
+		uint32_t F125_EMULATION_THRESHOLD; 
 		uint32_t F125_NSPED;                 ///< Number of samples to integrate for pedestal
 
 		// Utility class with multiple roles:
