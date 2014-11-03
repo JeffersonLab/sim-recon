@@ -147,7 +147,7 @@ jerror_t DPSHit_factory::evnt(JEventLoop *loop, int eventnumber)
                 double A = (double)digihit->pulse_integral;
                 double T = (double)digihit->pulse_time;
 
-		hit->dE = a_scale * GetConstant(adc_gain_factors, digihit, psGeom) * (A - pedestal);
+		hit->dE = a_scale * GetConstant(adc_gains, digihit, psGeom) * (A - pedestal);
                 hit->t = t_scale * (T - GetConstant(adc_time_offsets, digihit, psGeom)) + t_base;
                 hit->sigma_t = 4.0;    // ns (what is the fADC time resolution?)
                 hit->has_fADC = true;
