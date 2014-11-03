@@ -475,10 +475,6 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
       // Track projection
       double one_over_d=1./d;
       double diffx=diff.x(),diffy=diff.y(),diffz=diff.z();
- 
-      H(state_x)=H_T(state_x)=diffx*one_over_d;
-      H(state_y)=H_T(state_y)=diffy*one_over_d;
-
       double wx=wdir.x(),wy=wdir.y();
 
       double dN1dtx=2.*tx*wdir_dot_diff-wx*tdir_dot_diff-tdir_dot_wdir*dx0;
@@ -501,6 +497,19 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
       H(state_ty)=H_T(state_ty)
 	=one_over_d*(diffx*(tx*dsdty-wx*dtdty)+diffy*(s+ty*dsdty-wy*dtdty)
 		     +diffz*(dsdty-dtdty));
+
+      double dsdx=scale*(tdir_dot_wdir*wx-wdir2*tx);
+      double dtdx=scale*(tdir2*wx-tdir_dot_wdir*tx);
+      double dsdy=scale*(tdir_dot_wdir*wy-wdir2*ty);
+      double dtdy=scale*(tdir2*wy-tdir_dot_wdir*ty);
+      
+      H(state_x)=H_T(state_x)
+	=one_over_d*(diffx*(1.+dsdx*tx-dtdx*wx)+diffy*(dsdx*ty-dtdx*wy)
+		     +diffz*(dsdx-dtdx));
+      H(state_y)=H_T(state_y)
+	=one_over_d*(diffx*(dsdy*tx-dtdy*wx)+diffy*(1.+dsdy*ty-dtdy*wy)
+		     +diffz*(dsdy-dtdy));
+
 
       double InvV=1./(V+H*C*H_T);
 
