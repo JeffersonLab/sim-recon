@@ -1342,6 +1342,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
   ndof=0;
 
   double doca2=0.;
+  const double d_EPS=1e-8;
  
   // CDC index and wire position variables
   unsigned int cdc_index=hits.size()-1;
@@ -1415,7 +1416,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       double s=scale*N;
       double t=scale*N1;
       diff+=s*tdir-t*wdir;
-      double d=diff.Mag();
+      double d=diff.Mag()+d_EPS; // prevent division by zero
 
       // The next measurement and its variance
       double tdrift=hits[cdc_index]->tdrift-trajectory[k].t;
@@ -1434,10 +1435,6 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       // Track projection
       double one_over_d=1./d;
       double diffx=diff.x(),diffy=diff.y(),diffz=diff.z();
- 
-      H(state_x)=H_T(state_x)=diffx*one_over_d;
-      H(state_y)=H_T(state_y)=diffy*one_over_d;
-
       double wx=wdir.x(),wy=wdir.y();
 
       double dN1dtx=2.*tx*wdir_dot_diff-wx*tdir_dot_diff-tdir_dot_wdir*dx0;
@@ -1460,6 +1457,18 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       H(state_ty)=H_T(state_ty)
 	=one_over_d*(diffx*(tx*dsdty-wx*dtdty)+diffy*(s+ty*dsdty-wy*dtdty)
 		     +diffz*(dsdty-dtdty));
+
+      double dsdx=scale*(tdir_dot_wdir*wx-wdir2*tx);
+      double dtdx=scale*(tdir2*wx-tdir_dot_wdir*tx);
+      double dsdy=scale*(tdir_dot_wdir*wy-wdir2*ty);
+      double dtdy=scale*(tdir2*wy-tdir_dot_wdir*ty);
+      
+      H(state_x)=H_T(state_x)
+	=one_over_d*(diffx*(1.+dsdx*tx-dtdx*wx)+diffy*(dsdx*ty-dtdx*wy)
+		     +diffz*(dsdx-dtdx));
+      H(state_y)=H_T(state_y)
+	=one_over_d*(diffx*(dsdy*tx-dtdy*wx)+diffy*(1.+dsdy*ty-dtdy*wy)
+		     +diffz*(dsdy-dtdy));
 
       // Matrices to rotate alignment error matrix into measurement space
       DMatrix1x4 G;
@@ -1564,7 +1573,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
   DMatrix2x4 H;  // Track projection matrix
   DMatrix4x2 H_T; // Transpose of track projection matrix 
   DMatrix4x2 K;  // Kalman gain matrix
-  DMatrix2x2 V(0.0075*anneal_factor,0.,0.,0.0075*anneal_factor);  // Measurement variance 
+  DMatrix2x2 V(0.0008*anneal_factor,0.,0.,0.0008*anneal_factor);  // Measurement variance 
   DMatrix2x2 Vtemp,InvV;
   DMatrix2x1 Mdiff;
   DMatrix4x4 I; // identity matrix
@@ -1660,8 +1669,8 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	double sinphi_u=sin(phi_u);
 	double cosphi_v=cos(phi_v);
 	double sinphi_v=sin(phi_v);
-	double vv=-vpred*sinphi_v+uwire*cosphi_v+A(kV);
-	double vu=-vpred*sinphi_u+uwire*cosphi_u+A(kU);
+	double vv=-vpred*sinphi_v-uwire*cosphi_v+A(kV);
+	double vu=-vpred*sinphi_u-uwire*cosphi_u+A(kU);
 
 	// Difference between measurements and predictions
 	Mdiff(0)=hits[my_id]->u-vu;
