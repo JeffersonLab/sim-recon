@@ -188,9 +188,6 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   endplate_r2min=endplate_rmin*endplate_rmin;
   endplate_r2max=endplate_rmax*endplate_rmax;
 
-  // center of the target
-  geom->GetTargetZ(TARGET_Z);
-
   // Beginning of the cdc
   vector<double>cdc_center;
   vector<double>cdc_upstream_endplate_pos; 
@@ -438,6 +435,15 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 	  }
 	  jout << ss.str();
   } // config_printed
+
+   // center of the target
+  map<string, double> targetparms;
+  if (jcalib->Get("TARGET/target_parms",targetparms)==false){
+    TARGET_Z = targetparms["TARGET_Z_POSITION"];
+  }
+  else{
+    geom->GetTargetZ(TARGET_Z);
+  }
 }
 
 //-----------------
