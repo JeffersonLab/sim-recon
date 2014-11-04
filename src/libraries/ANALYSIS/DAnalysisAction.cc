@@ -92,9 +92,10 @@ TDirectoryFile* DAnalysisAction::CreateAndChangeTo_ActionDirectory(void) //get t
 
 	//Goto the correct file (in case in a different file!)
 	TFile* locFile = (TFile*)gROOT->FindObject(dOutputFileName.c_str());
-	if(locFile == NULL)
-		return NULL;
-	locFile->cd("");
+	if(locFile != NULL)
+		locFile->cd("");
+	else
+		gDirectory->Cd("/");
 
 	//Create/goto reaction directory
 	locDirName = locReactionName;
