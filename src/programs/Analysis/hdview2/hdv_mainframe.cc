@@ -1295,6 +1295,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		target->SetFillColor(13);
 		graphics_sideA.push_back(target);
 
+
 		// ----- BCAL ------
 		TBox *bcal1 = new TBox(BCAL_Zmin, BCAL_Rmin, BCAL_Zmin+BCAL_Zlen, BCAL_Rmax);
 		TBox *bcal2 = new TBox(BCAL_Zmin, -BCAL_Rmin, BCAL_Zmin+BCAL_Zlen, -BCAL_Rmax);
@@ -1492,6 +1493,20 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		fdc2->SetLineColor(10);
 		graphics_endA.push_back(fdc1);
 		graphics_endA.push_back(fdc2);
+
+
+			
+		// ------ Start counter ------
+		double r_start=7.7;
+		for (unsigned int i=0;i<30;i++){
+		  double phi_0=0.209*i;
+		  double phi_1=0.209*(i+1);
+		  TLine *l = new TLine(r_start*cos(phi_0), r_start*sin(phi_0), 
+				       r_start*cos(phi_1), r_start*sin(phi_1));
+		  l->SetLineColor(10);
+		  l->SetLineWidth(2.);
+		  graphics_endA.push_back(l);
+		}
 
 		// ----- TARGET ------
 		TEllipse *target = new TEllipse(0.0, 0.0, 0.5, 0.5);

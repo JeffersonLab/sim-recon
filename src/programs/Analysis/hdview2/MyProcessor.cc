@@ -55,6 +55,7 @@ using namespace std;
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALIncidentParticle.h"
 #include "TOF/DTOFPoint.h"
+#include "START_COUNTER/DSCHit.h"
 #include "DVector2.h"
 
 extern hdv_mainframe *hdvmf;
@@ -220,6 +221,8 @@ void MyProcessor::FillGraphics(void)
 
 	if(!loop)return;
 
+	vector<const DSCHit *>schits;
+	loop->Get(schits);
 	vector<const DTrackCandidate*> trCand;
 	loop->Get(trCand);
 	vector<const DTrackTimeBased*> trTB;
@@ -607,6 +610,26 @@ void MyProcessor::FillGraphics(void)
 
         } // close the if check button for the TOF
 
+	// Start counter hits 
+	for (unsigned int i=0;i<schits.size();i++){
+	  DGraphicSet gset(6,kLine,2.0);
+	  double r_start=7.7;
+	  double phi0=0.209*(schits[i]->sector-1);
+	  double phi1=0.209*(schits[i]->sector);
+	  TVector3 point1(r_start*cos(phi0),r_start*sin(phi0),38.75);
+	  gset.points.push_back(point1);
+	  TVector3 point2(r_start*cos(phi1),r_start*sin(phi1),38.75);
+	  gset.points.push_back(point2);
+	  TVector3 point3(r_start*cos(phi1),r_start*sin(phi1),78.2);
+	  gset.points.push_back(point3);
+	  TVector3 point4(r_start*cos(phi0),r_start*sin(phi0),78.2);
+	  gset.points.push_back(point4); 
+	  TVector3 point5(r_start*cos(phi0),r_start*sin(phi0),38.75);
+	  gset.points.push_back(point5);
+	  graphics.push_back(gset);
+	  
+	}
+	  
 	// CDC hits
 	if(hdvmf->GetCheckButton("cdc")){
 		vector<const DCDCTrackHit*> cdctrackhits;
