@@ -105,18 +105,27 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
       
       //cerr << "DBCALDigiHit #" << (i+1) << endl;
       
+
+
+      // Please call Mark Dalton before changing anything about the pedestals subtraction.
+      // The event by event pedestals are better than almost anything else that's not 
+      // very, very sophisticated.  Seriously, the pedestals do not need to be in a database,
+      // that is a luxury.  757-849-2929
+
+
+
       // Get pedestal.  Prefer associated event pedestal if it exists.
       // Otherwise, use the average pedestal from CCDB
       double pedestal = GetConstant(pedestals,digihit);
       ///////////////////
       // old calculation
-      //double pedestalpersample = GetConstant(pedestals,digihit);
+      double pedestalpersample = GetConstant(pedestals,digihit);
       //if (digihit->nsamples_pedestal > 0)
       //   pedestalpersample = digihit->pedestal / digihit->nsamples_pedestal;
       //else
-      //   pedestalpersample = digihit->pedestal;
-      ///////////////////
-      
+      pedestalpersample = digihit->pedestal;
+      /////////////////// 
+
       const Df250PulseIntegral* PIobj = NULL;
       const Df250Config *configObj = NULL;
       digihit->GetSingle(PIobj);
@@ -142,8 +151,11 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
       double gain = GetConstant(gains,digihit);
       double E = 0;
       if (A > 0) {
-	      //E = a_scale * gain * (A - (pedestalpersample * digihit->nsamples_integral));
-	      E = a_scale * gain * (A - pedestal);
+	      E = a_scale * gain * (A - (pedestalpersample * digihit->nsamples_integral));
+	      // printf("%f  %f  %u  %f  %f\n",A,pedestalpersample,
+	      // 	     digihit->nsamples_integral,(pedestalpersample * (double)digihit->nsamples_integral),
+	      // 	     (A - (pedestalpersample * digihit->nsamples_integral)));
+	      //E = a_scale * gain * (A - pedestal);
       }
 
       hit->E = E;  
