@@ -121,7 +121,7 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
    /// the precalibrated values directly into the _data vector.
    char str[256];
 
-   cerr << " Event # " << eventnumber << endl;
+   //cerr << " Event # " << eventnumber << endl;
 
    // extract the FCAL Geometry (for positionOnFace())
    vector<const DFCALGeometry*> fcalGeomVect;
