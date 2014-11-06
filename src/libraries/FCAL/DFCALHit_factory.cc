@@ -121,7 +121,7 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
    /// the precalibrated values directly into the _data vector.
    char str[256];
 
-   //cerr << " Event # " << eventnumber << endl;
+   //   cerr << " Event # " << eventnumber << endl;
 
    // extract the FCAL Geometry (for positionOnFace())
    vector<const DFCALGeometry*> fcalGeomVect;
@@ -171,15 +171,31 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
       if ( (quality==BAD) || (quality==NOISY) ) 
           return NOERROR;
 
+
+      if( PIobj != NULL ){
+
+	// event by event pedestal - this needs additional
+	// testing as it assumes that the pedestal reported
+	// is one channel.  In some cases it seems to be
+	// the sum of all channels in the window.  There
+	// may be variation with FADC mode
+
+	pedestal = PIobj->pedestal * PIobj->nsamples_integral;
+      }
+      else{
+
+	cerr << "ERROR! no integral object for pedestal subraction." << endl;
+      }
+
       // Apply calibration constants
       double A = (double)digihit->pulse_integral;
       double T = (double)digihit->pulse_time;
       hit->E = a_scale * gains[hit->row][hit->column] * (A - pedestal);
       hit->t = t_scale * (T - time_offsets[hit->row][hit->column]) + t_base;
 
-//      cerr << " FCAL hit #" << i << " E = " << (1000.*hit->E) << "  A = " << A 
-//	   << "  pedestal = " << pedestal << endl;
-
+      /*      cerr << " FCAL hit #" << i << " E = " << (1000.*hit->E) << "  A = " << A 
+	   << "  pedestal = " << pedestal << endl;
+      */
       // Get position of blocks on front face. (This should really come from
       // hdgeant directly so the poisitions can be shifted in mcsmear.)
       DVector2 pos = fcalGeom.positionOnFace(hit->row, hit->column);
