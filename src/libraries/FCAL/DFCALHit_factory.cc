@@ -177,8 +177,8 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
       hit->E = a_scale * gains[hit->row][hit->column] * (A - pedestal);
       hit->t = t_scale * (T - time_offsets[hit->row][hit->column]) + t_base;
 
-      cerr << " FCAL hit #" << i << " E = " << (1000.*hit->E) << "  A = " << A 
-	   << "  pedestal = " << pedestal << endl;
+//      cerr << " FCAL hit #" << i << " E = " << (1000.*hit->E) << "  A = " << A 
+//	   << "  pedestal = " << pedestal << endl;
 
       // Get position of blocks on front face. (This should really come from
       // hdgeant directly so the poisitions can be shifted in mcsmear.)
