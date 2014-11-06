@@ -13,7 +13,7 @@
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
 	if(TVirtualPad::Pad() == NULL)
-		locCanvas = new TCanvas("NumHighLevelObjects"); //for testing
+		locCanvas = new TCanvas("NumHighLevelObjects", "NumHighLevelObjects", 1200, 800); //for testing
 	else
 		locCanvas = gPad->GetCanvas();
 
