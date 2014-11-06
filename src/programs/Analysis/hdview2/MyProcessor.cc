@@ -613,21 +613,48 @@ void MyProcessor::FillGraphics(void)
 	// Start counter hits 
 	for (unsigned int i=0;i<schits.size();i++){
 	  DGraphicSet gset(6,kLine,2.0);
-	  double r_start=7.7;
-	  double phi0=0.209*(schits[i]->sector-1);
-	  double phi1=0.209*(schits[i]->sector);
-	  TVector3 point1(r_start*cos(phi0),r_start*sin(phi0),38.75);
-	  gset.points.push_back(point1);
+	  double r_start=7.7493;
+	  double phi0=0.2094395*(schits[i]->sector-1);  // span 12 deg in phi
+	  double phi1=0.2094395*(schits[i]->sector);
+	  TVector3 point1(r_start*cos(phi0),r_start*sin(phi0),38.75); 
+	  gset.points.push_back(point1); // upstream end of sctraight section of scint
 	  TVector3 point2(r_start*cos(phi1),r_start*sin(phi1),38.75);
-	  gset.points.push_back(point2);
-	  TVector3 point3(r_start*cos(phi1),r_start*sin(phi1),78.2);
-	  gset.points.push_back(point3);
-	  TVector3 point4(r_start*cos(phi0),r_start*sin(phi0),78.2);
+	  gset.points.push_back(point2); 
+	  TVector3 point3(r_start*cos(phi1),r_start*sin(phi1),78.215);
+	  gset.points.push_back(point3); // downstream end of sctraight section of scint
+	  TVector3 point4(r_start*cos(phi0),r_start*sin(phi0),78.215);
 	  gset.points.push_back(point4); 
 	  TVector3 point5(r_start*cos(phi0),r_start*sin(phi0),38.75);
 	  gset.points.push_back(point5);
+	
+	  /*
+	  // ST dimensions
+	  Double_t dtr = 1.74532925e-02;		// Conversion factor from degrees to radians
+	  Double_t st_straight = 39.465;		// Distance of the straight section along scintillator path
+	  Double_t st_arc_angle = 18.5;		// Angle of the bend arc
+	  Double_t st_arc_radius = 12.0;		// Radius of the bend arc
+	  Double_t st_to_beam = 7.74926;		// Distance from beam to bottom side of scintillator paddle
+	  Double_t st_len_cone = 16.056;		// Length of the cone section along scintillator path
+	  Double_t st_thickness = 0.3;		// Thickness of the scintillator paddles
+	  Double_t st_beam_to_arc_radius = 4.25;	// Distance from the beam line to the arc radius
+
+	  // Nose Arrays
+	  Double_t tp_nose_z[5];
+	  Double_t tp_nose_y[5];
+	  Double_t bm_nose_z[5];
+	  Double_t bm_nose_y[5];
+	
+	  // Offsets for Hall coordinates
+	  Double_t z_center = 65.0;	// Target Center (0,0,65)
+	  Double_t us_end_pt = -26.25;    // Distance of upstream end relative to target
+	  Double_t ds_end_pt = 97.4;	// Distance of downstream end relative
+
+	  // Top start counter paddle straight section
+	  TPolyLine *top_paddle_straight;
+	  Double_t tp_straight_z[5] = {us_end_pt + z_center, us_end_pt + z_center, us_end_pt + st_straight + z_center, us_end_pt + st_straight + z_center, us_end_pt + z_center};
+	  Double_t tp_straight_y[5] = {st_to_beam, st_to_beam + st_thickness, st_to_beam + st_thickness, st_to_beam, st_to_beam};
+	  */
 	  graphics.push_back(gset);
-	  
 	}
 	  
 	// CDC hits
