@@ -1326,7 +1326,7 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		// calculate integral from relevant samples
 		uint32_t start_sample = first_sample_over_threshold - F250_NSB;
 		uint32_t end_sample = first_sample_over_threshold + F250_NSA - 1;
-		if (F250_NSB < first_sample_over_threshold) start_sample=0;
+		if (start_sample < 0) start_sample=0;
 		if (end_sample > nsamples) end_sample=nsamples;
 		for (uint32_t c_samp=start_sample; c_samp<end_sample; c_samp++) {
 		  signalsum += samplesvector[c_samp];
