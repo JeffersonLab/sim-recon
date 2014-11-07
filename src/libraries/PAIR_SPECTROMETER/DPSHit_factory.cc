@@ -50,27 +50,27 @@ jerror_t DPSHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 
 	// load scale factors
 	map<string,double> scale_factors;
-	if (eventLoop->GetCalib("/PHOTON_BEAM/pair_spectrometer/fine/digi_scales", scale_factors))
-		jout << "Error loading /PHOTON_BEAM/pair_spectrometer/fine/digi_scales !" << endl;
+	if (eventLoop->GetCalib("/PHOTON_BEAM/pair_spectrometer/digi_scales", scale_factors))
+		jout << "Error loading /PHOTON_BEAM/pair_spectrometer/digi_scales !" << endl;
 	if (scale_factors.find("PS_ADC_ASCALE") != scale_factors.end())
 		a_scale = scale_factors["PS_ADC_ASCALE"];
 	else
-		jerr << "Unable to get PS_ADC_ASCALE from /PHOTON_BEAM/pair_spectrometer/fine/digi_scales !" 
+		jerr << "Unable to get PS_ADC_ASCALE from /PHOTON_BEAM/pair_spectrometer/digi_scales !" 
 		     << endl;
 	if (scale_factors.find("PS_ADC_TSCALE") != scale_factors.end())
 		t_scale = scale_factors["PS_ADC_TSCALE"];
 	else
-		jerr << "Unable to get PS_ADC_TSCALE from /PHOTON_BEAM/pair_spectrometer/fine/digi_scales !" 
+		jerr << "Unable to get PS_ADC_TSCALE from /PHOTON_BEAM/pair_spectrometer/digi_scales !" 
 		     << endl;
 
 	// load base time offset
 	map<string,double> base_time_offset;
-	if (eventLoop->GetCalib("/PHOTON_BEAM/pair_spectrometer/fine/base_time_offset",base_time_offset))
-		jout << "Error loading /PHOTON_BEAM/pair_spectrometer/fine/base_time_offset !" << endl;
-	if (base_time_offset.find("PS_BASE_TIME_OFFSET") != base_time_offset.end())
-		t_base = base_time_offset["PS_BASE_TIME_OFFSET"];
+	if (eventLoop->GetCalib("/PHOTON_BEAM/pair_spectrometer/base_time_offset",base_time_offset))
+		jout << "Error loading /PHOTON_BEAM/pair_spectrometer/base_time_offset !" << endl;
+	if (base_time_offset.find("PS_FINE_BASE_TIME_OFFSET") != base_time_offset.end())
+		t_base = base_time_offset["PS_FINE_BASE_TIME_OFFSET"];
 	else
-		jerr << "Unable to get PS_BASE_TIME_OFFSET from /PHOTON_BEAM/pair_spectrometer/fine/base_time_offset !" << endl;
+		jerr << "Unable to get PS_FINE_BASE_TIME_OFFSET from /PHOTON_BEAM/pair_spectrometer/base_time_offset !" << endl;
 
 
         FillCalibTable(adc_pedestals, "/PHOTON_BEAM/pair_spectrometer/fine/adc_pedestals", psGeom);
@@ -123,7 +123,6 @@ jerror_t DPSHit_factory::evnt(JEventLoop *loop, int eventnumber)
 			throw JException(str);
 		}
 		
-		// The translation table has PS channels labaled as paddles 1-16
 		// The PSHit class labels hits as
 		//   arm:     North/South (0/1)
 		//   column:  1-185
@@ -232,8 +231,8 @@ const double DPSHit_factory::GetConstant( const ps_digi_constants_t &the_table,
                 cerr << str << endl;
                 throw JException(str);
         }
-        if( (in_column <= 0) || (in_column > psGeom.NUM_COARSE_COLUMNS)) {
-                sprintf(str, "Bad column # requested in DPSHit_factory::GetConstant()! requested=%d , should be 1-%d", in_column, psGeom.NUM_COARSE_COLUMNS);
+        if( (in_column <= 0) || (in_column > psGeom.NUM_FINE_COLUMNS)) {
+                sprintf(str, "Bad column # requested in DPSHit_factory::GetConstant()! requested=%d , should be 1-%d", in_column, psGeom.NUM_FINE_COLUMNS);
                 cerr << str << endl;
                 throw JException(str);
         }
@@ -258,8 +257,8 @@ const double DPSHit_factory::GetConstant( const ps_digi_constants_t &the_table,
                 cerr << str << endl;
                 throw JException(str);
         }
-        if( (in_hit->column <= 0) || (in_hit->column > psGeom.NUM_COARSE_COLUMNS)) {
-                sprintf(str, "Bad column # requested in DPSHit_factory::GetConstant()! requested=%d , should be 1-%d", in_hit->column, psGeom.NUM_COARSE_COLUMNS);
+        if( (in_hit->column <= 0) || (in_hit->column > psGeom.NUM_FINE_COLUMNS)) {
+                sprintf(str, "Bad column # requested in DPSHit_factory::GetConstant()! requested=%d , should be 1-%d", in_hit->column, psGeom.NUM_FINE_COLUMNS);
                 cerr << str << endl;
                 throw JException(str);
         }
@@ -284,8 +283,8 @@ const double DPSHit_factory::GetConstant( const ps_digi_constants_t &the_table,
                 cerr << str << endl;
                 throw JException(str);
         }
-        if( (in_digihit->column <= 0) || (in_digihit->column > psGeom.NUM_COARSE_COLUMNS)) {
-                sprintf(str, "Bad column # requested in DPSHit_factory::GetConstant()! requested=%d , should be 1-%d", in_digihit->column, psGeom.NUM_COARSE_COLUMNS);
+        if( (in_digihit->column <= 0) || (in_digihit->column > psGeom.NUM_FINE_COLUMNS)) {
+                sprintf(str, "Bad column # requested in DPSHit_factory::GetConstant()! requested=%d , should be 1-%d", in_digihit->column, psGeom.NUM_FINE_COLUMNS);
                 cerr << str << endl;
                 throw JException(str);
         }

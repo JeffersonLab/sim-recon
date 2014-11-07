@@ -31,7 +31,7 @@ class DPSHit:public jana::JObject{
     AddString(items, "E(GeV)", "%f",E);
     AddString(items, "dE(GeV)", "%f",dE);
     AddString(items, "t(ns)", "%f", t);
-    AddString(items, "sigma_t", "%d", sigma_t);
+    AddString(items, "sigma_t", "%f", sigma_t);
     AddString(items, "has_fADC", "%d", has_fADC);
     AddString(items, "has_TDC", "%d", has_TDC);
   }

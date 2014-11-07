@@ -55,32 +55,32 @@ jerror_t DPSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 
 	// load scale factors
 	map<string,double> scale_factors;
-	if (eventLoop->GetCalib("/PHOTON_BEAM/pair_spectrometer/coarse/digi_scales", scale_factors))
-		jout << "Error loading /PHOTON_BEAM/pair_spectrometer/coarse/digi_scales !" << endl;
+	if (eventLoop->GetCalib("/PHOTON_BEAM/pair_spectrometer/digi_scales", scale_factors))
+		jout << "Error loading /PHOTON_BEAM/pair_spectrometer/digi_scales !" << endl;
 	if (scale_factors.find("PSC_ADC_ASCALE") != scale_factors.end())
 		a_scale = scale_factors["PSC_ADC_ASCALE"];
 	else
-		jerr << "Unable to get PSC_ADC_ASCALE from /PHOTON_BEAM/pair_spectrometer/coarse/digi_scales !" 
+		jerr << "Unable to get PSC_ADC_ASCALE from /PHOTON_BEAM/pair_spectrometer/digi_scales !" 
 		     << endl;
 	if (scale_factors.find("PSC_ADC_TSCALE") != scale_factors.end())
 		t_scale = scale_factors["PSC_ADC_TSCALE"];
 	else
-		jerr << "Unable to get PSC_ADC_TSCALE from /PHOTON_BEAM/pair_spectrometer/coarse/digi_scales !" 
+		jerr << "Unable to get PSC_ADC_TSCALE from /PHOTON_BEAM/pair_spectrometer/digi_scales !" 
 		     << endl;
 	if (scale_factors.find("PSC_TDC_SCALE") != scale_factors.end())
 		tdc_scale = scale_factors["PSC_TDC_SCALE"];
 	else
-		jerr << "Unable to get PSC_TDC_SCALE from /PHOTON_BEAM/pair_spectrometer/coarse/digi_scales !" 
+		jerr << "Unable to get PSC_TDC_SCALE from /PHOTON_BEAM/pair_spectrometer/digi_scales !" 
 		     << endl;
 
 	// load base time offset
 	map<string,double> base_time_offset;
-	if (eventLoop->GetCalib("/PHOTON_BEAM/pair_spectrometer/coarse/base_time_offset",base_time_offset))
-		jout << "Error loading /PHOTON_BEAM/pair_spectrometer/coarse/base_time_offset !" << endl;
-	if (base_time_offset.find("PSC_BASE_TIME_OFFSET") != base_time_offset.end())
-		t_base = base_time_offset["PSC_BASE_TIME_OFFSET"];
+	if (eventLoop->GetCalib("/PHOTON_BEAM/pair_spectrometer/base_time_offset",base_time_offset))
+		jout << "Error loading /PHOTON_BEAM/pair_spectrometer/base_time_offset !" << endl;
+	if (base_time_offset.find("PS_COARSE_BASE_TIME_OFFSET") != base_time_offset.end())
+		t_base = base_time_offset["PS_COARSE_BASE_TIME_OFFSET"];
 	else
-		jerr << "Unable to get PSC_BASE_TIME_OFFSET from /PHOTON_BEAM/pair_spectrometer/coarse/base_time_offset !" << endl;
+		jerr << "Unable to get PS_COARSE_BASE_TIME_OFFSET from /PHOTON_BEAM/pair_spectrometer/base_time_offset !" << endl;
 
 	/// Read in calibration constants
         vector<double> raw_adc_pedestals;
