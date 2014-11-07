@@ -855,7 +855,8 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 
    // Sparsely copy timing spectra from local variables into HDDM structure
    map<bcal_index, DHistogram*>::iterator iter;
-   for (iter = SiPMspectra.begin(); iter != SiPMspectra.end(); iter++) {
+   int nhits = 0;
+   for (iter = SiPMspectra.begin(); iter != SiPMspectra.end(); iter++,nhits++) {
       const bcal_index &idx = iter->first;
       int module = idx.module;
       int layer = idx.layer;
@@ -921,6 +922,11 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 
          if (E_atten_sum >= THRESH_ATTENUATED_GEV) {
             specs->in[ispec].vals = strdup(vals.c_str());
+            if( specs->in[ispec].vals == NULL) {
+                    cerr << "ERROR!!  strdup() ran out of memory:" << endl;
+                    cerr << "hit #" << (nhits+1) << ":  " << vals << endl;
+            }
+
             box->bcalCells->in[icell].bcalSiPMSpectrums->mult = ispec+1;
          }
       }

@@ -175,6 +175,7 @@ int loadInput ()
 	       // v[2] -= 0.5;
             }
 	    // kludge to include air and FDC gas in addition to plastic target
+	    /*
 	    int done=0;
 	    while (!done){
 	      int len=2;
@@ -192,7 +193,7 @@ int loadInput ()
 		  
 	      if (myweight/maxweight>myrand[1]) done=1;
 	    }
-	    
+	    */
             v[0] *= BEAM_DIAMETER;
             v[1] *= BEAM_DIAMETER;
             //v[2] *= TARGET_LENGTH;

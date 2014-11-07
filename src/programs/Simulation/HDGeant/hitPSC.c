@@ -24,6 +24,9 @@ extern s_HDDM_t* thisInputEvent;
 static float TWO_HIT_RESOL   = 25.;
 static float THRESH_MEV      = 0.010;
 
+// the coarse PS has two arms (north/south) of 8 modules each
+#define NUM_MODULES_PER_ARM 8 
+
 // Comment by RTJ:
 // When I introduced the convenience constant MAX_HITS,
 // I never intended it to be a tunable simulation parameter.
@@ -95,7 +98,8 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
          points->in[0].E = pin[3];
          points->in[0].dEdx = dEdx;
          points->in[0].ptype = ipart;
-         points->in[0].module = getmodule_wrapper_();
+         points->in[0].arm = getmodule_wrapper_() / NUM_MODULES_PER_ARM;
+         points->in[0].module = getmodule_wrapper_() % NUM_MODULES_PER_ARM;
 	 points->in[0].trackID = make_s_TrackID();
 	 points->in[0].trackID->itrack = gidGetId(track);
 	 points->mult = 1;
@@ -118,7 +122,8 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
          s_PairSpectrometerCoarse_t* psc = *twig = make_s_PairSpectrometerCoarse();
          s_PscPaddles_t* paddles = make_s_PscPaddles(1);
          paddles->mult = 1;
-         paddles->in[0].module = module;
+         paddles->in[0].arm = module / NUM_MODULES_PER_ARM;
+         paddles->in[0].module = module % NUM_MODULES_PER_ARM;
          paddles->in[0].pscTruthHits = hits = make_s_PscTruthHits(MAX_HITS);
          psc->pscPaddles = paddles;
          paddleCount++;

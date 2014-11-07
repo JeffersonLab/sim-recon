@@ -24,6 +24,9 @@ extern s_HDDM_t* thisInputEvent;
 static float TWO_HIT_RESOL   = 25.;
 static float THRESH_MEV      = 0.010;
 
+// the fine PS has two arms (north/south) of 145 columns each
+#define NUM_COLUMN_PER_ARM 145 
+
 // Comment by RTJ:
 // When I introduced the convenience constant MAX_HITS,
 // I never intended it to be a tunable simulation parameter.
@@ -81,7 +84,7 @@ void hitPS(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
          s_PairSpectrometerFine_t* ps = *twig = make_s_PairSpectrometerFine();
          s_PsTruthPoints_t* points = make_s_PsTruthPoints(1);
          ps->psTruthPoints = points;
-        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+         int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
          points->in[0].primary = (stack <= a);
          points->in[0].track = track;
          points->in[0].t = t;
@@ -95,7 +98,9 @@ void hitPS(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
          points->in[0].E = pin[3];
          points->in[0].dEdx = dEdx;
          points->in[0].ptype = ipart;
-         points->in[0].column = getcolumn_wrapper_();
+	 // the fine PS has two arms: North/South (0/1)
+         points->in[0].arm = getcolumn_wrapper_() / NUM_COLUMN_PER_ARM;
+         points->in[0].column = getcolumn_wrapper_() % NUM_COLUMN_PER_ARM;
 	 points->in[0].trackID = make_s_TrackID();
 	 points->in[0].trackID->itrack = gidGetId(track);
 	 points->mult = 1;
@@ -118,7 +123,9 @@ void hitPS(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum,
          s_PairSpectrometerFine_t* ps = *twig = make_s_PairSpectrometerFine();
          s_PsTiles_t* tiles = make_s_PsTiles(1);
          tiles->mult = 1;
-         tiles->in[0].column = column;
+	 // the fine PS has two arms: North/South (0/1)
+         tiles->in[0].arm = column / NUM_COLUMN_PER_ARM;
+         tiles->in[0].column = column % NUM_COLUMN_PER_ARM;
          tiles->in[0].psTruthHits = hits = make_s_PsTruthHits(MAX_HITS);
          ps->psTiles = tiles;
          tileCount++;
