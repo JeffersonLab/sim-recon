@@ -38,6 +38,8 @@ jerror_t DPSHit_factory::init(void)
 //------------------
 jerror_t DPSHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
+	char str[256];
+	
 	/// Read in calibration constants
 	jout << "In DPSHit_factory, loading constants..." << endl;
 
@@ -76,6 +78,19 @@ jerror_t DPSHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
         FillCalibTable(adc_pedestals, "/PHOTON_BEAM/pair_spectrometer/fine/adc_pedestals", psGeom);
         FillCalibTable(adc_gains, "/PHOTON_BEAM/pair_spectrometer/fine/adc_gain_factors", psGeom);
         FillCalibTable(adc_time_offsets, "/PHOTON_BEAM/pair_spectrometer/fine/adc_timing_offsets", psGeom);
+
+	// load energy bins information
+	if (eventLoop->GetCalib("/PHOTON_BEAM/pair_spectrometer/fine/energy_range",energy_range))
+		jout << "Error loading /PHOTON_BEAM/pair_spectrometer/fine/energy_range !" << endl;
+	else {
+		// check range information
+		if( (int)energy_range.size()!=psGeom.NUM_FINE_COLUMNS ) {
+			sprintf(str, "PS energy range table loaded with wrong size! number of columns=%d (should be %d)", 
+				(int)energy_range.size(), psGeom.NUM_FINE_COLUMNS );
+			cerr << str << endl;
+			throw JException(str);
+		}
+	}
 
 	return NOERROR;
 }
@@ -146,6 +161,7 @@ jerror_t DPSHit_factory::evnt(JEventLoop *loop, int eventnumber)
                 double A = (double)digihit->pulse_integral;
                 double T = (double)digihit->pulse_time;
 
+		hit->E = GetHitEnergy(digihit, psGeom);
 		hit->dE = a_scale * GetConstant(adc_gains, digihit, psGeom) * (A - pedestal);
                 hit->t = t_scale * (T - GetConstant(adc_time_offsets, digihit, psGeom)) + t_base;
                 hit->sigma_t = 4.0;    // ns (what is the fADC time resolution?)
@@ -208,6 +224,36 @@ void DPSHit_factory::FillCalibTable(ps_digi_constants_t &table, string table_nam
 			throw JException(str);
 		}
 	}
+}
+
+//------------------------------------ 
+// GetHitEnergy
+//------------------------------------ 
+const double  DPSHit_factory::GetHitEnergy(const DPSHit  *in_hit, const DPSGeometry &psGeom) const
+{
+	if( (in_hit->arm != DPSGeometry::kNorth) && (in_hit->arm != DPSGeometry::kSouth))
+		return 0.;
+	if( (in_hit->column<=0) || (in_hit->column>psGeom.NUM_ARMS) )
+		return 0.;
+	if( in_hit->arm == DPSGeometry::kNorth )
+		return ( energy_range[in_hit->column-1][0] + energy_range[in_hit->column-1][1] ) / 2.;
+	else     // DPSGeometry::kSouth
+		return ( energy_range[in_hit->column-1][2] + energy_range[in_hit->column-1][3] ) / 2.;
+}
+
+//------------------------------------ 
+// GetHitEnergy
+//------------------------------------ 
+const double  DPSHit_factory::GetHitEnergy(const DPSDigiHit  *in_hit, const DPSGeometry &psGeom) const
+{
+	if( (in_hit->arm != DPSGeometry::kNorth) && (in_hit->arm != DPSGeometry::kSouth))
+		return 0.;
+	if( (in_hit->column<=0) || (in_hit->column>psGeom.NUM_ARMS) )
+		return 0.;
+	if( in_hit->arm == DPSGeometry::kNorth )
+		return ( energy_range[in_hit->column-1][0] + energy_range[in_hit->column-1][1] ) / 2.;
+	else     // DPSGeometry::kSouth
+		return ( energy_range[in_hit->column-1][2] + energy_range[in_hit->column-1][3] ) / 2.;
 }
 
 //------------------------------------
