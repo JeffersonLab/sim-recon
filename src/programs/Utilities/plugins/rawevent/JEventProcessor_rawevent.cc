@@ -2542,8 +2542,9 @@ cscRef JEventProcessor_rawevent::DTAGHHitTranslationADC(const DTAGHHit* hit) con
 
 
 cscRef JEventProcessor_rawevent::DPSCHitTranslationTDC(const DPSCHit* hit) const {
-  int module_id = 8*hit->arm + hit->id;
+  int module_id = 8*hit->arm + hit->module;
   string s = "pscadc::" + lexical_cast(module_id);
+  cerr << "checking = " << s << endl;
   if (cscMap.count(s) <= 0)
     jerr << "?unknown map entry " << s << std::endl;
   return cscMap[s];
@@ -2554,8 +2555,9 @@ cscRef JEventProcessor_rawevent::DPSCHitTranslationTDC(const DPSCHit* hit) const
 
 
 cscRef JEventProcessor_rawevent::DPSCHitTranslationADC(const DPSCHit* hit) const {
-  int module_id = 8*hit->arm + hit->id;
+  int module_id = 8*hit->arm + hit->module;
   string s = "pscadc::" + lexical_cast(module_id);
+  cerr << "checking = " << s << endl;
   if (cscMap.count(s) <= 0)
     jerr << "?unknown map entry " << s << std::endl;
   return cscMap[s];
@@ -2566,7 +2568,8 @@ cscRef JEventProcessor_rawevent::DPSCHitTranslationADC(const DPSCHit* hit) const
 
 cscRef JEventProcessor_rawevent::DPSHitTranslationADC(const DPSHit* hit) const {
   string arm = hit->arm==0 ? "A" : "B";
-  string s = "psadc::" + lexical_cast(hit->arm) + ":" + lexical_cast(hit->id);
+  string s = "psadc::" + arm + ":" + lexical_cast(hit->column);
+  cerr << "checking = " << s << endl;
   if (cscMap.count(s) <= 0)
     jerr << "?unknown map entry " << s << std::endl;
   return cscMap[s];
