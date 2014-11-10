@@ -131,6 +131,9 @@ void DHistogramAction_ObjectMemory::Initialize(JEventLoop* locEventLoop)
 			else
 				dHistMap_Memory[loc_i + 1] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dMaxNumEvents, 0.5, float(dMaxNumEvents) + 0.5);
 		}
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -566,6 +569,9 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 
 			gDirectory->cd("..");
 		} //end of PID loop
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -1352,6 +1358,9 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 			gDirectory->cd("..");
 		}
 		gDirectory->cd("..");
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -1399,6 +1408,7 @@ void DHistogramAction_DetectorStudies::Fill_ReconstructionHists(JEventLoop* locE
 				const DMCThrown* locMCThrown = locMCThrownMatchingVector[0]->Get_MatchingMCThrown(locChargedTracks[loc_i], locMatchFOM);
 				if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
 					continue;
+
 				//OK, have the thrown. Now, grab the best charged track hypothesis to get the best matching
 				const DChargedTrackHypothesis* locChargedTrackHypothesis = locMCThrownMatchingVector[0]->Get_MatchingChargedHypothesis(locMCThrown, locMatchFOM);
 				if(locChargedTrackHypothesis->PID() != locMCThrown->PID())
@@ -1417,7 +1427,6 @@ void DHistogramAction_DetectorStudies::Fill_ReconstructionHists(JEventLoop* locE
 				dHistMap_TrackingChiSqPerDF[locPIDPair]->Fill(locChiSqPerDF);
 				dHistMap_TrackingChiSqPerDFVsTheta[locPIDPair]->Fill(locTheta, locChiSqPerDF);
 				dHistMap_TrackingChiSqPerDFVsP[locPIDPair]->Fill(locP, locChiSqPerDF);
-
 				if(locTrackTimeBased->dNumHitsUsedFordEdx_CDC > 0)
 				{
 					dHistMap_CDCdEdx[locPIDPair]->Fill(locTrackTimeBased->ddEdx_CDC*1.0E6);
@@ -1891,8 +1900,10 @@ void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop
 			}
 		}
 		gDirectory->cd("..");
-	}
 
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
+	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
@@ -2258,6 +2269,9 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 			} //end of particle loop
 			gDirectory->cd("..");
 		} //end of step loop
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -2832,6 +2846,9 @@ void DHistogramAction_ParticleComboGenReconComparison::Initialize(JEventLoop* lo
 			} //end of particle loop
 			gDirectory->cd("..");
 		} //end of step loop
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -3264,6 +3281,9 @@ void DHistogramAction_ThrownParticleKinematics::Initialize(JEventLoop* locEventL
 
 			gDirectory->cd("..");
 		}
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -3448,6 +3468,9 @@ void DHistogramAction_ReconnedThrownKinematics::Initialize(JEventLoop* locEventL
 
 			gDirectory->cd("..");
 		}
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -3698,6 +3721,9 @@ void DHistogramAction_DetectedParticleKinematics::Initialize(JEventLoop* locEven
 
 			gDirectory->cd("..");
 		}
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -4156,6 +4182,9 @@ void DHistogramAction_GenReconTrackComparison::Initialize(JEventLoop* locEventLo
 
 			gDirectory->cd("..");
 		}
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -4481,6 +4510,9 @@ void DHistogramAction_TOFHitStudy::Initialize(JEventLoop* locEventLoop)
 			dHistMap_dEVsP[locPID] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumdEBins, dMindE, dMaxdE);
 
 		gDirectory->cd("..");
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -4808,6 +4840,9 @@ void DHistogramAction_NumReconstructedObjects::Initialize(JEventLoop* locEventLo
 			else
 				dHist_NumFCALHits = new TH1I(locHistName.c_str(), ";# DFCALHit", dMaxNumTOFCalorimeterHits + 1, -0.5, (float)dMaxNumTOFCalorimeterHits + 0.5);
 		}
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -5062,6 +5097,9 @@ void DHistogramAction_TrackMultiplicity::Initialize(JEventLoop* locEventLoop)
 				dHist_NumGoodReconstructedParticles->GetXaxis()->SetBinLabel(6 + loc_i, locLabelName.c_str());
 			}
 		}
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -5274,6 +5312,9 @@ void DHistogramAction_TruePID::Initialize(JEventLoop* locEventLoop)
 			dHist_TruePIDStatus = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 		else
 			dHist_TruePIDStatus = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 2, -0.5, 1.5);
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -5375,6 +5416,9 @@ void DHistogramAction_InvariantMass::Initialize(JEventLoop* locEventLoop)
 			dHist_InvaraintMass = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 		else
 			dHist_InvaraintMass = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumMassBins, dMinMass, dMaxMass);
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -5434,6 +5478,9 @@ void DHistogramAction_MissingMass::Initialize(JEventLoop* locEventLoop)
 			dHist_MissingMass = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 		else
 			dHist_MissingMass = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumMassBins, dMinMass, dMaxMass);
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -5490,6 +5537,9 @@ void DHistogramAction_MissingMassSquared::Initialize(JEventLoop* locEventLoop)
 			dHist_MissingMassSquared = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 		else
 			dHist_MissingMassSquared = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumMassBins, dMinMassSq, dMaxMassSq);
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -5541,83 +5591,87 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 
 	//CREATE THE HISTOGRAMS
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-	dAnalysisUtilities = locAnalysisUtilitiesVector[0];
-	CreateAndChangeTo_ActionDirectory();
-
-	string locKinFitTypeString;
-	if(locKinFitType == d_P4Fit)
-		locKinFitTypeString = "P4";
-	else if(locKinFitType == d_VertexFit)
-		locKinFitTypeString = "Vertex";
-	else if(locKinFitType == d_SpacetimeFit)
-		locKinFitTypeString = "Spacetime";
-	else if(locKinFitType == d_P4AndVertexFit)
-		locKinFitTypeString = "P4 & Vertex";
-	else if(locKinFitType == d_P4AndSpacetimeFit)
-		locKinFitTypeString = "P4 & Spacetime";
-
-	// Confidence Level
-	locHistName = "ConfidenceLevel";
-	locHistTitle = locKinFitTypeString + string(" Kinematic Fit;Confidence Level;# Combos");
-	if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-		dHist_ConfidenceLevel = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-	else
-		dHist_ConfidenceLevel = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumConfidenceLevelBins, 0.0, 1.0);
-
-	// Pulls
-	map<DKinFitPullType, TH1I*> locParticlePulls;
-
-	//beam pulls
-	bool locBeamFlag = (Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID() == Gamma);
-	if(locBeamFlag)
 	{
-		CreateAndChangeTo_Directory("Beam", "Beam");
-		Create_ParticlePulls(true, "Beam", Gamma, dHistMap_BeamPulls, locKinFitTypeString);
-		gDirectory->cd("..");
-	}
+		dAnalysisUtilities = locAnalysisUtilitiesVector[0];
+		CreateAndChangeTo_ActionDirectory();
 
-	//final particle pulls
-	for(size_t loc_i = 0; loc_i < Get_Reaction()->Get_NumReactionSteps(); ++loc_i)
-	{
-		const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
-		locStepName = locReactionStep->Get_StepName();
-		locStepROOTName = locReactionStep->Get_StepROOTName();
+		string locKinFitTypeString;
+		if(locKinFitType == d_P4Fit)
+			locKinFitTypeString = "P4";
+		else if(locKinFitType == d_VertexFit)
+			locKinFitTypeString = "Vertex";
+		else if(locKinFitType == d_SpacetimeFit)
+			locKinFitTypeString = "Spacetime";
+		else if(locKinFitType == d_P4AndVertexFit)
+			locKinFitTypeString = "P4 & Vertex";
+		else if(locKinFitType == d_P4AndSpacetimeFit)
+			locKinFitTypeString = "P4 & Spacetime";
 
-		if(locDetectedPIDs[loc_i].empty())
-			continue;
+		// Confidence Level
+		locHistName = "ConfidenceLevel";
+		locHistTitle = locKinFitTypeString + string(" Kinematic Fit;Confidence Level;# Combos");
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_ConfidenceLevel = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_ConfidenceLevel = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumConfidenceLevelBins, 0.0, 1.0);
 
-		CreateAndChangeTo_Directory(locStepName, locStepName);
+		// Pulls
+		map<DKinFitPullType, TH1I*> locParticlePulls;
 
-		for(size_t loc_j = 0; loc_j < locDetectedPIDs[loc_i].size(); ++loc_j)
+		//beam pulls
+		bool locBeamFlag = (Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID() == Gamma);
+		if(locBeamFlag)
 		{
-			locPID = locDetectedPIDs[loc_i][loc_j];
-			locParticleName = ParticleType(locPID);
-			CreateAndChangeTo_Directory(locParticleName, locParticleName);
+			CreateAndChangeTo_Directory("Beam", "Beam");
+			Create_ParticlePulls(true, "Beam", Gamma, dHistMap_BeamPulls, locKinFitTypeString);
+			gDirectory->cd("..");
+		}
 
-			Create_ParticlePulls(false, locStepROOTName, locPID, locParticlePulls, locKinFitTypeString);
-			dHistMap_Pulls[pair<size_t, Particle_t>(loc_i, locPID)] = locParticlePulls;
+		//final particle pulls
+		for(size_t loc_i = 0; loc_i < Get_Reaction()->Get_NumReactionSteps(); ++loc_i)
+		{
+			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
+			locStepName = locReactionStep->Get_StepName();
+			locStepROOTName = locReactionStep->Get_StepROOTName();
+
+			if(locDetectedPIDs[loc_i].empty())
+				continue;
+
+			CreateAndChangeTo_Directory(locStepName, locStepName);
+
+			for(size_t loc_j = 0; loc_j < locDetectedPIDs[loc_i].size(); ++loc_j)
+			{
+				locPID = locDetectedPIDs[loc_i][loc_j];
+				locParticleName = ParticleType(locPID);
+				CreateAndChangeTo_Directory(locParticleName, locParticleName);
+
+				Create_ParticlePulls(false, locStepROOTName, locPID, locParticlePulls, locKinFitTypeString);
+				dHistMap_Pulls[pair<size_t, Particle_t>(loc_i, locPID)] = locParticlePulls;
+
+				gDirectory->cd("..");
+			} //end of particle loop
+			gDirectory->cd("..");
+		} //end of step loop
+
+		//RF Time Pull
+		if(locBeamFlag && ((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit)))
+		{
+			CreateAndChangeTo_Directory("RF", "RF");
+
+			//T Pull
+			locHistName = "Pull_RF_T";
+			locHistTitle = string("RF Bunch, ") + locKinFitTypeString + string(" Fit;t Pull;# Combos");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHist_RFTimePull = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHist_RFTimePull = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, dMinPull, dMaxPull);
 
 			gDirectory->cd("..");
-		} //end of particle loop
-		gDirectory->cd("..");
-	} //end of step loop
+		}
 
-	//RF Time Pull
-	if(locBeamFlag && ((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit)))
-	{
-		CreateAndChangeTo_Directory("RF", "RF");
-
-		//T Pull
-		locHistName = "Pull_RF_T";
-		locHistTitle = string("RF Bunch, ") + locKinFitTypeString + string(" Fit;t Pull;# Combos");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHist_RFTimePull = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHist_RFTimePull = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, dMinPull, dMaxPull);
-
-		gDirectory->cd("..");
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
 	}
-
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 

@@ -82,8 +82,9 @@ void DAnalysisAction::operator()(JEventLoop* locEventLoop, set<const DParticleCo
 	}
 }
 
-TDirectoryFile* DAnalysisAction::CreateAndChangeTo_ActionDirectory(void) //get the directory this action should write ROOT objects to. //MUST LOCK PRIOR TO ENTRY! (not performed in here!)
+TDirectoryFile* DAnalysisAction::CreateAndChangeTo_ActionDirectory(void)
 {
+	//get the directory this action should write ROOT objects to. //MUST LOCK PRIOR TO ENTRY! (not performed in here!)
 	TDirectoryFile* locDirectory;
 	string locReactionName, locActionName, locDirName, locDirTitle;
 
@@ -91,11 +92,7 @@ TDirectoryFile* DAnalysisAction::CreateAndChangeTo_ActionDirectory(void) //get t
 	locActionName = Get_ActionName();
 
 	//Goto the correct file (in case in a different file!)
-	TFile* locFile = (TFile*)gROOT->FindObject(dOutputFileName.c_str());
-	if(locFile != NULL)
-		locFile->cd("");
-	else
-		gDirectory->Cd("/");
+	ChangeTo_BaseDirectory();
 
 	//Create/goto reaction directory
 	locDirName = locReactionName;
@@ -108,8 +105,20 @@ TDirectoryFile* DAnalysisAction::CreateAndChangeTo_ActionDirectory(void) //get t
 	return CreateAndChangeTo_Directory(locDirectory, locDirName, locDirTitle);
 }
 
-TDirectoryFile* DAnalysisAction::CreateAndChangeTo_Directory(TDirectoryFile* locBaseDirectory, string locDirName, string locDirTitle) //MUST LOCK PRIOR TO ENTRY! (not performed in here!)
+TDirectoryFile* DAnalysisAction::ChangeTo_BaseDirectory(void)
 {
+	//get and change to the base (file/global) directory //MUST(!) LOCK PRIOR TO ENTRY! (not performed in here!)
+	TFile* locFile = (TFile*)gROOT->FindObject(dOutputFileName.c_str());
+	if(locFile != NULL)
+		locFile->cd("");
+	else
+		gDirectory->Cd("/");
+	return (TDirectoryFile*)gDirectory;
+}
+
+TDirectoryFile* DAnalysisAction::CreateAndChangeTo_Directory(TDirectoryFile* locBaseDirectory, string locDirName, string locDirTitle)
+{
+	//MUST LOCK PRIOR TO ENTRY! (not performed in here!)
 	locBaseDirectory->cd();
 	TDirectoryFile* locSubDirectory = static_cast<TDirectoryFile*>(locBaseDirectory->Get(locDirName.c_str()));
 	if(locSubDirectory == NULL) //else folder already created by a different thread
@@ -118,13 +127,15 @@ TDirectoryFile* DAnalysisAction::CreateAndChangeTo_Directory(TDirectoryFile* loc
 	return locSubDirectory;
 }
 
-TDirectoryFile* DAnalysisAction::CreateAndChangeTo_Directory(string locDirName, string locDirTitle) //MUST LOCK PRIOR TO ENTRY! (not performed in here!)
+TDirectoryFile* DAnalysisAction::CreateAndChangeTo_Directory(string locDirName, string locDirTitle)
 {
+	//MUST LOCK PRIOR TO ENTRY! (not performed in here!)
 	return CreateAndChangeTo_Directory((TDirectoryFile*)gDirectory, locDirName, locDirTitle);
 }
 
-TDirectoryFile* DAnalysisAction::CreateAndChangeTo_Directory(string locBaseDirectoryPath, string locDirName, string locDirTitle) //MUST LOCK PRIOR TO ENTRY! (not performed in here!)
+TDirectoryFile* DAnalysisAction::CreateAndChangeTo_Directory(string locBaseDirectoryPath, string locDirName, string locDirTitle)
 {
+	//MUST LOCK PRIOR TO ENTRY! (not performed in here!)
 	TDirectoryFile* locBaseDirectory = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locBaseDirectoryPath.c_str()));
 	return CreateAndChangeTo_Directory(locBaseDirectory, locDirName, locDirTitle);
 }
