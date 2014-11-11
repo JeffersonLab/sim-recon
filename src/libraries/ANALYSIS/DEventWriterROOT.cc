@@ -784,7 +784,7 @@ void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
 		size_t locNumThrown = locMCThrowns_FinalState.size() + locMCThrowns_Decaying.size();
 		if(locNumThrown > 0)
 		{
-			Double_t locMCWeight = (locMCReaction == NULL) ? 0.0 : locMCReaction->weight;
+			Double_t locMCWeight = (locMCReaction == NULL) ? 1.0 : locMCReaction->weight;
 			Fill_FundamentalData<Double_t>(locTree, "MCWeight", locMCWeight);
 
 			//THROWN BEAM
@@ -1008,7 +1008,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 			size_t locNumThrown = locMCThrowns_FinalState.size() + locMCThrowns_Decaying.size();
 			if(locNumThrown > 0)
 			{
-				Double_t locMCWeight = (locMCReaction == NULL) ? 0.0 : locMCReaction->weight;
+				Double_t locMCWeight = (locMCReaction == NULL) ? 1.0 : locMCReaction->weight;
 				Fill_FundamentalData<Double_t>(locTree, "MCWeight", locMCWeight);
 
 				//THROWN BEAM
