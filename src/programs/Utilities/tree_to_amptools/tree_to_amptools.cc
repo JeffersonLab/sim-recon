@@ -2,13 +2,20 @@
 #include <string>
 #include <sstream>
 
+#include <map>
+#include <vector>
+#include <deque>
+
 #include "TFile.h"
 #include "TTree.h"
 #include "TMap.h"
 #include "TList.h"
 #include "TObjString.h"
 #include "TObjArray.h"
+#include "TClonesArray.h"
 #include "TLorentzVector.h"
+
+#include "particleType.h"
 
 using namespace std;
 
@@ -19,9 +26,14 @@ bool Check_IfDecayProduct(TMap* locDecayProductMap, string locParticleName);
 bool Get_ParticleBranchNames(TTree* locTree, TList*& locTreeParticleNames, TList*& locParticleNamesWithBranches, TList*& locParticleBranchNames, string& locBeamBranchName, string& locMissingParticleName);
 void Convert_ToAmpToolsFormat(string locOutputFileName, TTree* locInputTree);
 
+void Convert_ToAmpToolsFormat_MCGen(string locOutputFileName, TTree* locInputTree);
+
+double gTargetMass = 0.0; //not yet working!!! (for MCGen only)
+vector<Particle_t> gDesiredPIDOrder; //for MC Gen tree only!!
+
 int main(int argc, char* argv[])
 {
-	if(argc != 3)
+	if(argc <= 2)
 	{
 		Print_Usage();
 		return 0;
@@ -29,11 +41,18 @@ int main(int argc, char* argv[])
 
 	string locInputFileName = argv[1];
 	string locInputTreeName = argv[2];
+	for(int loc_i = 3; loc_i < argc; ++loc_i)
+		gDesiredPIDOrder.push_back((Particle_t)atoi(argv[loc_i]));
 
 	TFile* locInputFile = new TFile(locInputFileName.c_str(), "READ");
 	TTree* locInputTree = (TTree*)locInputFile->Get(locInputTreeName.c_str());
 
-	Convert_ToAmpToolsFormat("AmpToolsInputTree.root", locInputTree);
+	//see what type it is
+	TList* locUserInfo = locInputTree->GetUserInfo();
+	if(locUserInfo->GetSize() == 0)
+		Convert_ToAmpToolsFormat_MCGen("AmpToolsInputTree.root", locInputTree);
+	else
+		Convert_ToAmpToolsFormat("AmpToolsInputTree.root", locInputTree);
 
 	return 0;
 }
@@ -42,8 +61,9 @@ void Print_Usage(void)
 {
 	cout << endl;
 	cout << "Converts from ANALYSIS library ROOT TTree to AmpTools input ROOT TTree." << endl;
-	cout << "The first argument must be the input ROOT file name." << endl;
-	cout << "The second argument must be the name of the TTree in the input ROOT file that you want to convert." << endl;
+	cout << "1st argument: The input ROOT file name." << endl;
+	cout << "2nd argument: The name of the TTree in the input ROOT file that you want to convert." << endl;
+	cout << "3rd - Nth arguments (For generated MC tree only): The final state Particle_t (int) PIDs listed in the desired order." << endl;
 	cout << endl;
 	cout << "The final state particles in the tree are in the same order as they were specified in the DReaction." << endl;
 	cout << endl;
@@ -111,14 +131,12 @@ bool Get_ParticleBranchNames(TTree* locTree, TList*& locTreeParticleNames, TList
 	TList* locUserInfo = locTree->GetUserInfo();
 	TList* locParticleNameList = (TList*)locUserInfo->FindObject("ParticleNameList");
 	TMap* locDecayProductMap = (TMap*)locUserInfo->FindObject("DecayProductMap"); //parent name string -> tobjarray of decay product name strings		
-
 /*
 cout << "particle names = " << endl;
 for(int loc_i = 0; loc_i < locParticleNameList->GetEntries(); ++loc_i)
 cout << locParticleNameList->At(loc_i)->GetName() << endl;
 cout << endl;
 */
-
 	locParticleNamesWithBranches = new TList(); //of all particles whose p4 can be grabbed directly (excluding the beam), whether they're desired or not
 	locParticleBranchNames = new TList(); //matches locParticleNamesWithBranches
 	for(Int_t loc_i = 0; loc_i < locParticleNameList->GetEntries(); ++loc_i)	
@@ -213,7 +231,6 @@ TTree* Create_AmpToolsTree(string locOutputFileName, TFile*& locOutputFile, unsi
 
 void Convert_ToAmpToolsFormat(string locOutputFileName, TTree* locInputTree)
 {
-
 	TList* locTreeParticleNames; // all particles whose p4 we want to include in the tree (regardless of how we grab it) (except the beam photon)
 	TList* locParticleNamesWithBranches; //of all particles whose p4 can be grabbed directly (excluding the beam), whether they're desired or not
 	TList* locParticleBranchNames; //matches locParticleNamesWithBranches
@@ -231,8 +248,9 @@ void Convert_ToAmpToolsFormat(string locOutputFileName, TTree* locInputTree)
 
 	//set branch addresses for input tree
 	//mc weight
-	Double_t locMCWeight;
-   locInputTree->SetBranchAddress("MCWeight", &locMCWeight);
+	Double_t locMCWeight = 1.0;
+	if(locInputTree->FindBranch("MCWeight") != NULL)
+	   locInputTree->SetBranchAddress("MCWeight", &locMCWeight);
 
 	//beam
 	TLorentzVector* locBeamP4 = new TLorentzVector;
@@ -408,4 +426,130 @@ cout << endl;
 	locOutputFile->Close();
 }
 
+void Convert_ToAmpToolsFormat_MCGen(string locOutputFileName, TTree* locInputTree)
+{
+	//set branch addresses for input tree
+
+	//mc weight
+	Double_t locMCWeight = 1.0;
+   locInputTree->SetBranchAddress("MCWeight", &locMCWeight);
+
+	//beam p4
+	TLorentzVector* locBeamP4 = new TLorentzVector;
+   locInputTree->SetBranchAddress("ThrownBeam__P4_Thrown", &locBeamP4);
+
+	//target
+	Double_t locTargetMass = gTargetMass;
+
+	//final state p4's
+	TClonesArray* locP4ClonesArray = NULL;
+   locInputTree->SetBranchAddress("Thrown__P4_Thrown", &locP4ClonesArray);
+
+	//# thrown (& get it)
+	UInt_t locNumThrown = 0;
+   TBranch* locNumThrownBranch = NULL;
+   locInputTree->SetBranchAddress("NumThrown", &locNumThrown, &locNumThrownBranch);
+	locNumThrownBranch->GetEntry(0);
+
+	// Parent ID
+		//the thrown particle array index of the particle this particle decayed from (-1 if none (e.g. photoproduced))
+	Int_t* locThrownParentID = new Int_t[locNumThrown];
+   TBranch* locThrownParentIDBranch = NULL;
+   locInputTree->SetBranchAddress("Thrown__ParentID", locThrownParentID, &locThrownParentIDBranch);
+	locThrownParentIDBranch->GetEntry(0);
+
+	// PID
+	Int_t* locThrownPID = new Int_t[locNumThrown];
+   TBranch* locThrownPIDBranch = NULL;
+   locInputTree->SetBranchAddress("Thrown__PID", locThrownPID, &locThrownPIDBranch);
+	locThrownPIDBranch->GetEntry(0);
+
+	// Pick out final state thrown particles
+	map<Particle_t, deque<UInt_t> > locFinalStateIndices;
+	for(UInt_t loc_i = 0; loc_i < locNumThrown; ++loc_i)
+	{
+		if(locThrownParentID[loc_i] != -1)
+			continue;
+		Particle_t locPID = PDGtoPType(locThrownPID[loc_i]);
+		locFinalStateIndices[locPID].push_back(loc_i);
+	}
+
+	//sort by desired pid order
+cout << endl;
+cout << "Names & array indices of the particles whose four-momenta are included in the tree (in order):" << endl;
+	vector<UInt_t> locSortedFinalStateIndices;
+	map<Particle_t, size_t> locCurrentIndices;
+	for(size_t loc_i = 0; loc_i < gDesiredPIDOrder.size(); ++loc_i)
+	{
+		Particle_t locPID = gDesiredPIDOrder[loc_i];
+		if(locCurrentIndices.find(locPID) == locCurrentIndices.end())
+			locCurrentIndices[locPID] = 0;
+		size_t locCurrentIndex = locCurrentIndices[locPID];
+
+		UInt_t locArrayIndex = locFinalStateIndices[locPID][locCurrentIndex];
+		locSortedFinalStateIndices.push_back(locArrayIndex);
+cout << ParticleType(locPID) << ", " << locArrayIndex << endl;
+		++locCurrentIndices[locPID];
+	}
+cout << endl;
+
+	//create output tree & file
+	TFile* locOutputFile = NULL;
+	TTree* locOutputTree = Create_AmpToolsTree(locOutputFileName, locOutputFile, locFinalStateIndices.size());
+
+	//grab output tree branch pointers
+	float* locBranchPointer_Weight = (float*)locOutputTree->GetBranch("Weight")->GetAddress();
+	float* locBranchPointer_BeamE = (float*)locOutputTree->GetBranch("E_Beam")->GetAddress();
+	float* locBranchPointer_BeamPx = (float*)locOutputTree->GetBranch("Px_Beam")->GetAddress();
+	float* locBranchPointer_BeamPy = (float*)locOutputTree->GetBranch("Py_Beam")->GetAddress();
+	float* locBranchPointer_BeamPz = (float*)locOutputTree->GetBranch("Pz_Beam")->GetAddress();
+	float* locBranchPointer_TargetMass = (float*)locOutputTree->GetBranch("Target_Mass")->GetAddress();
+
+	int* locBranchPointer_NumFinalState = (int*)locOutputTree->GetBranch("NumFinalState")->GetAddress();
+	int* locBranchPointer_PIDFinalState = (int*)locOutputTree->GetBranch("PID_FinalState")->GetAddress();
+	float* locBranchPointer_FinalStateE = (float*)locOutputTree->GetBranch("E_FinalState")->GetAddress();
+	float* locBranchPointer_FinalStatePx = (float*)locOutputTree->GetBranch("Px_FinalState")->GetAddress();
+	float* locBranchPointer_FinalStatePy = (float*)locOutputTree->GetBranch("Py_FinalState")->GetAddress();
+	float* locBranchPointer_FinalStatePz = (float*)locOutputTree->GetBranch("Pz_FinalState")->GetAddress();
+
+	//loop over the tree & fill it
+	Long64_t locNumEntries = locInputTree->GetEntries();
+	for(Long64_t locEntry = 0; locEntry < locNumEntries; ++locEntry)
+	{
+		locInputTree->GetEntry(locEntry);
+
+		//weight
+		*locBranchPointer_Weight = locMCWeight;
+
+		//beam
+		*locBranchPointer_BeamE = locBeamP4->E();
+		*locBranchPointer_BeamPx = locBeamP4->Px();
+		*locBranchPointer_BeamPy = locBeamP4->Py();
+		*locBranchPointer_BeamPz = locBeamP4->Pz();
+
+		//target
+		*locBranchPointer_TargetMass = locTargetMass;
+
+		//num final state
+		*locBranchPointer_NumFinalState = locNumThrown;
+
+		//pid, final state p4
+		for(size_t loc_j = 0; loc_j < locSortedFinalStateIndices.size(); ++loc_j)
+		{
+			UInt_t locArrayIndex = locSortedFinalStateIndices[loc_j];
+			locBranchPointer_PIDFinalState[loc_j] = locThrownPID[locArrayIndex];
+			TLorentzVector locP4 = *((TLorentzVector*)locP4ClonesArray->At(locArrayIndex));
+			locBranchPointer_FinalStateE[loc_j] = locP4.E();
+			locBranchPointer_FinalStatePx[loc_j] = locP4.Px();
+			locBranchPointer_FinalStatePy[loc_j] = locP4.Py();
+			locBranchPointer_FinalStatePz[loc_j] = locP4.Pz();
+		}
+
+		//fill
+		locOutputTree->Fill();
+	}
+
+	locOutputTree->Write();
+	locOutputFile->Close();
+}
 
