@@ -216,6 +216,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	event_source_data_types.insert("DCAEN1290TDCHit");
 	event_source_data_types.insert("DCODAEventInfo");
 	event_source_data_types.insert("DCODAROCInfo");
+	event_source_data_types.insert("DEPICSvalue");
 
 	// Read in optional module type translation map if it exists	
 	ReadOptionalModuleTypeTranslation();
@@ -2089,7 +2090,15 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		evioDOMNodeP bankPtr = *iter;
 		evioDOMNodeP data_bank = bankPtr->getParent();
 		if( data_bank==NULL ) {
-			if(VERBOSE>9) evioout << "     bank has no parent. skipping ... " << endl;
+			if(VERBOSE>9) evioout << "     bank has no parent. Checking if it's an EPICS event ... " << endl;
+			
+			if(bankPtr->tag==96 && bankPtr->num==1){
+				// This looks like and EPICS event. Hand it over to EPICS parser
+				ParseEPICSevent(bankPtr, full_events);
+			}else{
+				if(VERBOSE>9) evioout << "     Not an EPICS event bank. skipping ... " << endl;
+			}
+			
 			continue;
 		}
 		evioDOMNodeP physics_event_bank = data_bank->getParent();
@@ -3533,6 +3542,45 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 		if(VERBOSE>7) evioout << "        Added " << hits.size() << " hits with event_id=" << event_id_order[i] << " to event " << i << endl;
 	}
 
+}
+
+//----------------
+// ParseEPICSevent
+//----------------
+void JEventSource_EVIO::ParseEPICSevent(evioDOMNodeP bankPtr, list<ObjList*> &events)
+{
+	time_t timestamp=0;
+	
+	ObjList *objs = NULL;
+
+	evioDOMNodeListP bankList = bankPtr->getChildren();
+	evioDOMNodeList::iterator iter = bankList->begin();
+	if(VERBOSE>7) evioout << "     Looping over " << bankList->size() << " banks in EPICS event" << endl;
+	for(int ibank=1; iter!=bankList->end(); iter++, ibank++){ // ibank only used for debugging messages
+		evioDOMNodeP childBank = *iter;
+
+		if(childBank->tag == 97){
+			// timestamp bank
+			const vector<uint32_t> *vec = childBank->getVector<uint32_t>();
+			if(vec) {
+				timestamp = (time_t)(*vec)[0];
+				if(VERBOSE>7) evioout << "      timestamp: " << ctime(&timestamp);
+			}
+		}else if(childBank->tag==98){
+			const vector<uint8_t> *vec = childBank->getVector<uint8_t>();
+			if(vec){
+				string nameval = (const char*)&((*vec)[0]);
+				DEPICSvalue *epicsval = new DEPICSvalue(timestamp, nameval);
+				if(VERBOSE>7) evioout << "      " << nameval << endl;
+				
+				if(!objs){
+					if(events.empty()) events.push_back(new ObjList);
+					objs = *(events.begin());
+				}
+				objs->misc_objs.push_back(epicsval);				
+			}
+		}
+	}
 }
 
 //----------------

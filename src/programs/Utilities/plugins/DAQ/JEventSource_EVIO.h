@@ -63,6 +63,7 @@ using namespace evio;
 #include "DCAEN1290TDCHit.h"
 #include "DCODAEventInfo.h"
 #include "DCODAROCInfo.h"
+#include "DEPICSvalue.h"
 
 //-----------------------------------------------------------------------
 /// The JEventSource_EVIO class implements a JEventSource capable of reading in
@@ -291,6 +292,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void ParseTSBank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseTIBank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
+		void ParseEPICSevent(evioDOMNodeP bankPtr, list<ObjList*> &events);
+
 
 		// f250 methods
 		void MakeDf250WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);

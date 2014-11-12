@@ -37,6 +37,7 @@ using namespace jana;
 #include "DCAEN1290TDCHit.h"
 #include "DCODAEventInfo.h"
 #include "DCODAROCInfo.h"
+#include "DEPICSvalue.h"
 
 
 class JFactoryGenerator_DAQ: public jana::JFactoryGenerator{
@@ -70,6 +71,7 @@ class JFactoryGenerator_DAQ: public jana::JFactoryGenerator{
 			loop->AddFactory(new JFactory<DCAEN1290TDCHit>());
 			loop->AddFactory(new JFactory<DCODAEventInfo>());
 			loop->AddFactory(new JFactory<DCODAROCInfo>());
+			loop->AddFactory(new JFactory<DEPICSvalue>());
 			return NOERROR;
 		}
 
