@@ -96,6 +96,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	BUFFER_SIZE = 20000000; // in bytes
 	ET_STATION_NEVENTS = 10;
 	ET_STATION_CREATE_BLOCKING = false;
+	ET_DEBUG_WORDS_TO_DUMP = 0;
 	LOOP_FOREVER = false;
 	VERBOSE = 0;
 	TIMEOUT = 2.0;
@@ -129,6 +130,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:BUFFER_SIZE", BUFFER_SIZE, "Size in bytes to allocate for holding a single EVIO event.");
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_NEVENTS", ET_STATION_NEVENTS, "Number of events to use if we have to create the ET station. Ignored if station already exists.");
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_CREATE_BLOCKING", ET_STATION_CREATE_BLOCKING, "Set this to 0 to create station in non-blocking mode (default is to create it in blocking mode). Ignored if station already exists.");
+		gPARMS->SetDefaultParameter("EVIO:ET_DEBUG_WORDS_TO_DUMP", ET_DEBUG_WORDS_TO_DUMP, "Number of words to dump to screen from ET buffer (useful for debugging only).");
 		gPARMS->SetDefaultParameter("EVIO:LOOP_FOREVER", LOOP_FOREVER, "If reading from EVIO file, keep re-opening file and re-reading events forever (only useful for debugging) If reading from ET, this is ignored.");
 		gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
 		gPARMS->SetDefaultParameter("EVIO:EMULATE_PULSE_INTEGRAL_MODE", EMULATE_PULSE_INTEGRAL_MODE, "If non-zero, and Df250WindowRawData objects exist in the event AND no Df250PulseIntegral objects exist, then use the waveform data to generate Df250PulseIntegral objects. Default is for this feature to be on. Set this to zero to disable it.");
@@ -790,6 +792,9 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 				jerr << " Got event from ET, but pointer to data is NULL!" << endl;
 				return NO_MORE_EVENTS_IN_SOURCE;
 			}
+			
+			// If user specified to dump words from ET event, do it right away
+			if(ET_DEBUG_WORDS_TO_DUMP) DumpBinary(et_buff, &et_buff[ET_DEBUG_WORDS_TO_DUMP], ET_DEBUG_WORDS_TO_DUMP, NULL);
 			
 			// Check byte order of event by looking at magic #
 			bool swap_needed = false;
