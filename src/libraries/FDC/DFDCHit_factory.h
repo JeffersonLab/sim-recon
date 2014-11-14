@@ -27,6 +27,7 @@ class DFDCHit_factory:public jana::JFactory<DFDCHit>{
 		double a_scale;
 		double t_scale;
 		double t_base;
+		double fadc_t_base;
 		double tdc_scale;
 
 		// calibration constant tables

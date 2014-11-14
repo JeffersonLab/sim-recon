@@ -15,6 +15,7 @@ using namespace std;
 #include <FDC/DFDCWireDigiHit.h>
 #include "DFDCHit_factory.h"
 #include <DAQ/Df125PulseIntegral.h>
+#include <DAQ/Df125PulsePedestal.h>
 #include <DAQ/Df125Config.h>
 using namespace jana;
 
@@ -28,6 +29,7 @@ jerror_t DFDCHit_factory::init(void)
    a_scale      = 2.4E4/1.3E5;  // cathodes
    t_scale      = 8.0/10.0;     // 8 ns/count and integer time is in 1/10th of sample
    t_base       = 0.;           // ns
+   fadc_t_base  = 0.;           // ns
    tdc_scale    = 0.115;        // 115 ps/count
 
    return NOERROR;
@@ -71,9 +73,14 @@ jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    if (eventLoop->GetCalib("/FDC/base_time_offset",base_time_offset))
        jout << "Error loading /FDC/base_time_offset !" << endl;
    if (base_time_offset.find("FDC_BASE_TIME_OFFSET") != base_time_offset.end())
-       t_base = base_time_offset["FDC_BASE_TIME_OFFSET"];
+       fadc_t_base = base_time_offset["FDC_BASE_TIME_OFFSET"];
    else
        jerr << "Unable to get FDC_BASE_TIME_OFFSET from /FDC/base_time_offset !" << endl;
+   if (base_time_offset.find("FDC_TDC_BASE_TIME_OFFSET") != base_time_offset.end())
+     t_base = base_time_offset["FDC_TDC_BASE_TIME_OFFSET"];
+   else
+       jerr << "Unable to get FDC_TDC_BASE_TIME_OFFSET from /FDC/base_time_offset !" << endl;
+
 
    // each FDC package has the same set of constants
    LoadPackageCalibTables(eventLoop,"/FDC/package1");
@@ -175,12 +182,23 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 			// of samples used to calculate the pedestal and the actual pulse
 			pedestal = static_cast<double>(configObj->WINWIDTH) * PIobj->pedestal;                    ;
 		}
+		const Df125PulsePedestal *PP=NULL;
+		digihit->GetSingle(PP);
 
-		double A = (double)digihit->pulse_integral;
+		double A=0.;
+		if (PP!=NULL){
+		  A=PP->pulse_peak;
+		  pedestal=PP->pedestal;
+
+		  //_DBG_ << A << " " << pedestal << endl;
+		}
+		if (A-pedestal<0.) continue;
+
+		//double A = (double)digihit->pulse_integral;
       		//double ped=(double)digihit->pedestal;	
 		double q = a_scale * a_gains[plane_index][strip_index] * (A-pedestal);
 		//* (A - a_pedestals[hit->gPlane-1][hit->element-1] );
-	        double t = t_scale * (T - timing_offsets[plane_index][strip_index]);
+	        double t = t_scale * (T - timing_offsets[plane_index][strip_index])+fadc_t_base;
 		
 		DFDCHit *hit = new DFDCHit;
 		hit->layer   = digihit->view;
