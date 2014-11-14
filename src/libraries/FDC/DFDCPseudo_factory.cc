@@ -137,12 +137,11 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
     // Histograms may already exist. (Another thread may have created them)
     // Try and get pointers to the existing ones.
 
-    qa_vs_qc= (TH2F*) gROOT->FindObject("qa_vs_qc");
-    if (!qa_vs_qc) qa_vs_qc=new TH2F("qa_vs_qc","Anode charge from wire versus charge derived from cathodes",100,0,5,100,0,5);
+    qv_vs_qu= (TH2F*) gROOT->FindObject("qv_vs_qu");
+    if (!qv_vs_qu) qv_vs_qu=new TH2F("qv_vs_qu","Anode charge from each cathode",100,0,20000,100,0,20000);
 
-    qa_qc_diff=(TH2F*)gROOT->FindObject("qa_qc_diff");
-    if (!qa_qc_diff) qa_qc_diff=new TH2F("qa_qc_diff","(qa-qcv) vs (qa-qcu)",
-					 200,-25,25,200,-25,25);
+    tv_vs_tu= (TH2F*) gROOT->FindObject("tv_vs_tu");
+    if (!tv_vs_tu) tv_vs_tu=new TH2F("tv_vs_tu","t(v) vs t(u)",100,-50,250,100,-50,250);
 
      dtv_vs_dtu= (TH2F*) gROOT->FindObject("dtv_vs_dtu");
     if (!dtv_vs_dtu) dtv_vs_dtu=new TH2F("dtv_vs_dtu","t(wire)-t(v) vs t(wire)-t(u)",100,-50,50,100,-50,50);
@@ -153,12 +152,12 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
     v_wire_dt_vs_wire=(TH2F *) gROOT->FindObject("v_wire_dt_vs_wire");
     if (!v_wire_dt_vs_wire) v_wire_dt_vs_wire=new TH2F("v_wire_dt_vs_wire","wire/v cathode time difference vs wire number",
 						       96,0.5,96.5,100,-50,50);
- uv_dt_vs_u=(TH2F *) gROOT->FindObject("uv_dt_vs_u");
+    uv_dt_vs_u=(TH2F *) gROOT->FindObject("uv_dt_vs_u");
     if (!uv_dt_vs_u) uv_dt_vs_u=new TH2F("uv_dt_vs_u","uv time difference vs u",
-			   192,0.5,192.5,100,-50,50); 
+					 100,-50,50,100,-50,50); 
     uv_dt_vs_v=(TH2F *) gROOT->FindObject("uv_dt_vs_v");
     if (!uv_dt_vs_v) uv_dt_vs_v=new TH2F("uv_dt_vs_v","uv time difference vs v",
-			   192,0.5,192.5,100,-50,50);
+					 100,-50,50,100,-50,50);
     Hxy=(TH2F *) gROOT->FindObject("Hxy");
     if (!Hxy){
       Hxy=new TH2F("Hxy","xy on FDC plane 1",4000,-50,50,200,-50,50);
@@ -334,6 +333,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	    const DFDCWire *wire=fdcwires[layer-1][(*xIt)->element-1];
 	    double x_from_wire=wire->u;
 
+	    //printf("xs %f xw %f\n",x_from_strips,x_from_wire);
+
 	    // Test radial value for checking whether or not the hit is within
 	    // the fiducial region of the detector
 	    double r2test=x_from_wire*x_from_wire+y_from_strips*y_from_strips;
@@ -344,17 +345,24 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      double dt1 = (*xIt)->t - upeaks[i].t;
 	      double dt2 = (*xIt)->t - vpeaks[j].t;
 
+	      //      printf("dt1 %f dt2 %f\n",dt1,dt2);
+
 	      if (DEBUG_HISTS){
+
 		if (layer==1){
 		  dtv_vs_dtu->Fill(dt1,dt2);
+		  tv_vs_tu->Fill(upeaks[i].t, vpeaks[j].t);
 		  u_wire_dt_vs_wire->Fill((*xIt)->element,(*xIt)->t-upeaks[i].t);
 		  v_wire_dt_vs_wire->Fill((*xIt)->element,(*xIt)->t-vpeaks[j].t);
 		  uv_dt_vs_u->Fill(upeaks[i].pos,upeaks[i].t-vpeaks[j].t);
 		  uv_dt_vs_v->Fill(vpeaks[j].pos,upeaks[i].t-vpeaks[j].t);
-		  Hxy->Fill(x_from_strips,y_from_strips);
+		  //  Hxy->Fill(x_from_strips,y_from_strips);
 		}
 	      }
-	      if (sqrt(dt1*dt1+dt2*dt2)>STRIP_ANODE_TIME_CUT) continue;
+	      //	      if (sqrt(dt1*dt1+dt2*dt2)>STRIP_ANODE_TIME_CUT) continue;
+
+	      // Temporary cut until TDC timing is worked out
+	      if (fabs(vpeaks[j].t-upeaks[i].t)>STRIP_ANODE_TIME_CUT) continue;
 
 	      // Charge and energy loss
 	      double q_cathodes=0.5*(upeaks[i].q+vpeaks[j].q);
@@ -362,10 +370,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      double dE=charge_to_energy*q_cathodes;
       
 	      if (DEBUG_HISTS){
-		qa_vs_qc->Fill(1e6*dE,1e6*((*xIt)->q));
-		
-		qa_qc_diff->Fill(1e6*(((*xIt)->q-charge_to_energy*upeaks[i].q)),
-				 1e6*(((*xIt)->q-charge_to_energy*vpeaks[i].q)));
+		qv_vs_qu->Fill(upeaks[i].q,vpeaks[j].q);
 	      }
 	      
 	      int status=upeaks[i].numstrips+vpeaks[j].numstrips;
@@ -382,7 +387,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->s      = y_from_strips;
 	      newPseu->ds     = 0.; // place holder
 	      newPseu->wire   = wire;
-	      newPseu->time   = (*xIt)->t;
+	      //newPseu->time   = (*xIt)->t;
+	      newPseu->time=0.5*(upeaks[i].t+vpeaks[j].t);
 	      newPseu->status = status;
 	      newPseu->itrack = (*xIt)->itrack;
 	      
@@ -390,7 +396,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->AddAssociatedObject(u[upeaks[i].cluster]);
 	      
 	      newPseu->dE = dE;
-	      
+	      newPseu->q = q_cathodes;
 	    
 	      // It can occur (although rarely) that newPseu->wire is NULL
 	      // which causes us to crash below. In these cases, we can't really
@@ -407,6 +413,11 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->xy.Set((newPseu->w)*cosangle+(newPseu->s)*sinangle,
 			       -(newPseu->w)*sinangle+(newPseu->s)*cosangle);
 	      
+	      if (DEBUG_HISTS && layer<7){
+		Hxy->Fill(newPseu->xy.X(),newPseu->xy.Y());
+
+	      }
+
 	      double sigx2=HALF_CELL*HALF_CELL/3.;
 	      double sigy2=MAX_DEFLECTION*MAX_DEFLECTION/3.;
 	      newPseu->covxx=sigx2*cosangle*cosangle+sigy2*sinangle*sinangle;
