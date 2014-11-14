@@ -115,7 +115,7 @@ class DFDCGeometry : public JObject {
     float cosPhiV=cos(phi_v);
     float sinPhiU=sin(phi_u);
     float sinPhiV=sin(phi_v);
-    return (u*cosPhiV-v*cosPhiU)/(cosPhiU*sinPhiV-cosPhiV*sinPhiU);
+    return (-u*cosPhiV+v*cosPhiU)/(cosPhiU*sinPhiV-cosPhiV*sinPhiU);
   }
  
 
