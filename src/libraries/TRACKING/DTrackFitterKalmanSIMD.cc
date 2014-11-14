@@ -271,33 +271,33 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     Hstepsize=(TH2F*)gROOT->FindObject("Hstepsize");
     if (!Hstepsize){
       Hstepsize=new TH2F("Hstepsize","step size numerator",
-			 362,0,362,130,0,65);
+			 900,-100,350,130,0,65);
       Hstepsize->SetXTitle("z (cm)");
       Hstepsize->SetYTitle("r (cm)");
     } 
     HstepsizeDenom=(TH2F*)gROOT->FindObject("HstepsizeDenom");
     if (!HstepsizeDenom){
       HstepsizeDenom=new TH2F("HstepsizeDenom","step size denominator",
-			 362,0,362,130,0,65);
+			 900,-100,350,130,0,65);
       HstepsizeDenom->SetXTitle("z (cm)");
       HstepsizeDenom->SetYTitle("r (cm)");
     }
        
     fdc_t0=(TH2F*)gROOT->FindObject("fdc_t0");
     if (!fdc_t0){
-      fdc_t0=new TH2F("fdc_t0","t0 estimate from tracks vs momentum",100,0,7,200,-50,50);
+      fdc_t0=new TH2F("fdc_t0","t0 estimate from tracks vs momentum",100,0,7,200,-50,350);
     } 
     fdc_t0_timebased=(TH2F*)gROOT->FindObject("fdc_t0_timebased");
     if (!fdc_t0_timebased){
-      fdc_t0_timebased=new TH2F("fdc_t0_timebased","time-based t0 estimate from tracks vs momentum",100,0,7,200,-50,50);
+      fdc_t0_timebased=new TH2F("fdc_t0_timebased","time-based t0 estimate from tracks vs momentum",100,0,7,200,-50,350);
     }
     fdc_t0_vs_theta=(TH2F*)gROOT->FindObject("fdc_t0_vs_theta");
     if (!fdc_t0_vs_theta){
-      fdc_t0_vs_theta=new TH2F("fdc_t0_vs_theta","t0 estimate from tracks vs. #theta",140,0,140,200,-50,50);
+      fdc_t0_vs_theta=new TH2F("fdc_t0_vs_theta","t0 estimate from tracks vs. #theta",140,0,140,200,-50,350);
     }  
     fdc_t0_timebased_vs_theta=(TH2F*)gROOT->FindObject("fdc_t0_timebased_vs_theta");
     if (!fdc_t0_timebased_vs_theta){
-      fdc_t0_timebased_vs_theta=new TH2F("fdc_t0_timebased_vs_theta","t0_timebased estimate from tracks vs. #theta",140,0,140,200,-50,50);
+      fdc_t0_timebased_vs_theta=new TH2F("fdc_t0_timebased_vs_theta","t0_timebased estimate from tracks vs. #theta",140,0,140,200,-50,350);
     }
     cdc_drift=(TH2F*)gROOT->FindObject("cdc_drift");
     if (!cdc_drift){
@@ -358,13 +358,19 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     fdc_time_vs_d=(TH2F*)gROOT->FindObject("fdc_time_vs_d");
     if (!fdc_time_vs_d){
       fdc_time_vs_d=new TH2F("fdc_time_vs_d","fdc drift time vs distance",100,0,0.5,
-			     200,-20,380.);
+			     200,-20,3800.);
     } 
     fdc_dy_vs_d=(TH2F*)gROOT->FindObject("fdc_dy_vs_d");
     if (!fdc_dy_vs_d){
       fdc_dy_vs_d=new TH2F("fdc_dy_vs_d","fdc dy vs distance",100,-0.5,0.5,
-			     200,-20,380.);
+			     200,-1,1.);
     }
+    fdc_dy_vs_dE=(TH2F*)gROOT->FindObject("fdc_dy_vs_dE");
+    if (!fdc_dy_vs_dE){
+      fdc_dy_vs_dE=new TH2F("fdc_dy_vs_dE","fdc dy vs dE",100,0,1000.0,
+			     200,-1,1.);
+    }
+
 
     fdc_drift_vs_B=(TH2F*)gROOT->FindObject("fdc_drift_vs_B");
     if (!fdc_drift_vs_B){
@@ -400,6 +406,14 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   jcalib->Get("CDC/cdc_resolution_parms", cdc_res_parms);
   CDC_RES_PAR1 = cdc_res_parms["res_par1"];
   CDC_RES_PAR2 = cdc_res_parms["res_par2"];
+
+  // Parameters for correcting for deflection due to Lorentz force
+  map<string,double>lorentz_parms;
+  jcalib->Get("FDC/lorentz_deflection_parms",lorentz_parms);
+  LORENTZ_NR_PAR1=lorentz_parms["nr_par1"];
+  LORENTZ_NR_PAR2=lorentz_parms["nr_par2"];
+  LORENTZ_NZ_PAR1=lorentz_parms["nz_par1"];
+  LORENTZ_NZ_PAR2=lorentz_parms["nz_par2"];
  
   /*
   if (jcalib->Get("FDC/fdc_drift2", tvals)==false){
@@ -422,6 +436,16 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 
   for (unsigned int i=0;i<5;i++)I5x5(i,i)=1.;
   
+  
+   // center of the target
+  map<string, double> targetparms;
+  if (jcalib->Get("TARGET/target_parms",targetparms)==false){
+    TARGET_Z = targetparms["TARGET_Z_POSITION"];
+  }
+  else{
+    geom->GetTargetZ(TARGET_Z);
+  }
+
   // Inform user of some configuration settings
   static bool config_printed = false;
   if(!config_printed){
@@ -436,14 +460,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 	  jout << ss.str();
   } // config_printed
 
-   // center of the target
-  map<string, double> targetparms;
-  if (jcalib->Get("TARGET/target_parms",targetparms)==false){
-    TARGET_Z = targetparms["TARGET_Z_POSITION"];
-  }
-  else{
-    geom->GetTargetZ(TARGET_Z);
-  }
+
 }
 
 //-----------------
@@ -1766,10 +1783,11 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
 	my_fdchits[hit_id]->nr=tanr;
 	my_fdchits[hit_id]->nz=tanz;
 	*/
-
-	my_fdchits[hit_id]->nr=1.05*0.1458*Bz*(1.-0.048*Br);
-	my_fdchits[hit_id]->nz=1.05*(0.1717+0.01227*Bz)*(Br*cos(my_phi));
 	
+	my_fdchits[hit_id]->nr=LORENTZ_NR_PAR1*Bz*(1.+LORENTZ_NR_PAR2*Br);
+	my_fdchits[hit_id]->nz=(LORENTZ_NZ_PAR1+LORENTZ_NZ_PAR2*Bz)*(Br*cos(my_phi));
+	
+
 	my_id--;
 	
 	unsigned int num=1;
@@ -6653,7 +6671,8 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
     ftime=0.;
     
     // Scale cut for pruning hits according to the iteration number
-    if (fit_type==kTimeBased){
+    if (fit_type==kTimeBased)
+      {
       fdc_anneal=FORWARD_ANNEAL_SCALE/pow(my_fdc_anneal_const,iter)+1.;
       cdc_anneal=ANNEAL_SCALE/pow(my_cdc_anneal_const,iter)+1.;
     }

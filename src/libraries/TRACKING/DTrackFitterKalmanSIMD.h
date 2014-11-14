@@ -436,6 +436,10 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double mMinDriftTime;
   unsigned int mMinDriftID;
   
+  // Lorentz deflection parameters
+  double LORENTZ_NR_PAR1,LORENTZ_NR_PAR2,LORENTZ_NZ_PAR1,LORENTZ_NZ_PAR2;
+  
+
   // tables of time-to-drift values
   vector<double>cdc_drift_table;
   vector<double>fdc_drift_table;
@@ -495,6 +499,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   DMatrix5x1 Zero5x1;
 
   TH2F *fdc_dy_vs_d;
+  TH2F *fdc_time_vs_d;
+  TH2F *fdc_dy_vs_dE;
 
  private:
   unsigned int last_material_map;
@@ -504,7 +510,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   TH2F *cdc_drift,*fdc_drift,*fdc_yres_vs_dE;
   TH2F *cdc_res,*cdc_drift_vs_B,*fdc_drift_vs_B;
   TH2F *cdc_drift_forward,*cdc_res_forward,*cdc_res_vs_tanl,*cdc_res_vs_B,*cdc_res_vs_dE;
-  TH2F *fdc_time_vs_d,*cdc_time_vs_d;
+  TH2F *cdc_time_vs_d;
   TH2F *res_vs_s,*norm_res_vs_s;
 };
 
@@ -515,11 +521,15 @@ inline double DTrackFitterKalmanSIMD::cdc_variance(double B,double t){
   
   //double sigma=0.13/(t+3.6)+10e-3;
   double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
+
+  sigma*=10.0;
+
   return sigma*sigma;
 }
 // Variance for position along wire
 inline double DTrackFitterKalmanSIMD::fdc_y_variance(double dE){
-  double sigma=2.6795e-4*FDC_CATHODE_SIGMA/dE+0.005;
+  double sigma=2.6795e-4*FDC_CATHODE_SIGMA/dE;//+0.005;
+  sigma=0.05;
 
   return sigma*sigma;
 }
