@@ -63,6 +63,11 @@ jerror_t MyProcessor::init(void)
 {
 	// open ROOT file
 	ROOTfile = new TFile(OUTPUT_FILENAME.c_str(),"RECREATE","Produced by hd_root");
+	if(!ROOTfile->IsOpen()){
+		cout << "Cannot open ROOT file. Quitting now." << endl;
+		exit(0);
+	}
+	
 	cout<<"Opened ROOT file \""<<OUTPUT_FILENAME<<"\" ..."<<endl;
 
 	return NOERROR;
