@@ -26,6 +26,32 @@ extern "C"
 //------------------
 jerror_t DEventProcessor_monitoring_hists::init(void)
 {
+	string locOutputFileName = "hd_root.root";
+	if(gPARMS->Exists("OUTPUT_FILENAME"))
+		gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
+
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		//go to file
+		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
+		if(locFile != NULL)
+			locFile->cd("");
+		else
+			gDirectory->Cd("/");
+
+		//go to directory
+		TDirectoryFile* locSubDirectory = static_cast<TDirectoryFile*>(gDirectory->Get("Independent"));
+		if(locSubDirectory == NULL) //else folder already created
+			locSubDirectory = new TDirectoryFile("Independent", "Independent");
+		locSubDirectory->cd();
+
+		dHist_IsEvent = new TH1D("IsEvent", "Is the event an event?", 2, -0.5, 1.5);
+		dHist_IsEvent->GetXaxis()->SetBinLabel(1, "False");
+		dHist_IsEvent->GetXaxis()->SetBinLabel(2, "True");
+		gDirectory->cd("..");
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+
 	return NOERROR;
 }
 
@@ -61,6 +87,12 @@ jerror_t DEventProcessor_monitoring_hists::brun(JEventLoop *locEventLoop, int ru
 //------------------
 jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, int eventnumber)
 {
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		dHist_IsEvent->Fill(1);
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
 
