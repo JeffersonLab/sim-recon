@@ -779,6 +779,12 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 
 				if( err==ET_ERROR_TIMEOUT ){
 					if(quit_on_next_ET_timeout)return NO_MORE_EVENTS_IN_SOURCE;
+				}else if( err!=ET_OK){
+					evioout << " Error reading from ET. This probably means the ET" << endl;
+					evioout << "system has gone away (possibly due to run ending or" << endl;
+					evioout << "DAQ crashing). At any rate, we are quitting now as this" << endl;
+					evioout << "error is currently unrecoverable." << endl;
+					return NO_MORE_EVENTS_IN_SOURCE;
 				}
 				
 				usleep(10);
