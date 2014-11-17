@@ -2138,7 +2138,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		}
 
 		// Check if this is a TS Bank. 
-		if((data_bank->tag & 0xFF00) == 0xEE00){
+		if((bankPtr->tag & 0xFF00) == 0xEE00){
 			if(VERBOSE>6) evioout << "      TS bank tag="<<hex<<data_bank->tag<<dec<<" (not currently handled so skip to next bank)"<< endl;
 			continue;
 		}
