@@ -931,7 +931,7 @@ bool DGeometry::GetFDCCathodes(vector<vector<DFDCCathode *> >&fdccathodes) const
   }
   // Generate the vector of cathode plane parameters
   for (int i=0;i<2*FDC_NUM_LAYERS; i++){
-    double angle=(i%2)?(M_PI+CATHODE_ROT_ANGLE):(-CATHODE_ROT_ANGLE);
+    double angle=(i%2)?(M_PI-CATHODE_ROT_ANGLE):(CATHODE_ROT_ANGLE);
 
     angle+=fdc_cathode_offsets[i].dphi;
     vector<DFDCCathode *>temp;
