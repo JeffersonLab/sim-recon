@@ -2449,7 +2449,7 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
 				case 0x06: if(!f1tdcconfig      ) f1tdcconfig       = new DF1TDCConfig(rocid, slot_mask);       break;
 				case 0x10: if(!caen1290tdcconfig) caen1290tdcconfig = new DCAEN1290TDCConfig(rocid, slot_mask); break;
 				default:
-					_DBG_ << "Unknown module type: 0x" << hex << (ptype>>16) << endl;
+					_DBG_ << "Unknown module type: 0x" << hex << (ptype>>8) << endl;
 					exit(-1);
 			}
 
@@ -2512,6 +2512,13 @@ void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr
 	while(iptr < iend){
 	
 		if(VERBOSE>9) evioout << "Parsing word: " << hex << *iptr << dec << endl;
+
+		// This was observed in some CDC data. Not sure where it came from ...
+		if(*iptr == 0xF800FAFA){
+			if(VERBOSE>9) evioout << "  0xf800fafa is a known extra word. Skipping it ..." << endl;
+			iptr++;
+			continue;
+		}
 
 		// Get module type from next word (bits 18-21)
 		uint32_t mod_id = ((*iptr) >> 18) & 0x000F;
@@ -2914,7 +2921,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 
 	if(!PARSE_F125){ iptr = iend; return; }
 
-	if(VERBOSE>6) evioout << "    Entering Parsef125Bank..."<<endl;
+	if(VERBOSE>6) evioout << "    Entering Parsef125Bank for rocid=" << rocid << "..."<<endl;
 
 	// This will get updated to point to a newly allocated object when an
 	// event header is encountered. The existing value (if non-NULL) is
