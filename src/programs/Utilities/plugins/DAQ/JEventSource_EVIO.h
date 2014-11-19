@@ -169,6 +169,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void ConnectToET(const char* source_name);
 		
 		int32_t last_run_number;
+		int32_t filename_run_number;
 		
 		evioChannel *chan;
 		EVIOSourceType source_type;

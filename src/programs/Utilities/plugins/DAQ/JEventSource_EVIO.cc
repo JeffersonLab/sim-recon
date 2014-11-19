@@ -222,6 +222,20 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	ReadOptionalModuleTypeTranslation();
 	
 	last_run_number = 0;
+	filename_run_number = 0;
+	
+	// Try extracting the run number from the filename. (This is
+	// only used if the run number is not found in the EVIO data.)
+	size_t pos2 = this->source_name.find_last_of('_');
+	if(pos2 != string::npos){
+		size_t pos1 = this->source_name.find_last_of('_', pos2-1);
+		if(pos1 != string::npos){
+			pos1++;
+			string runstr = this->source_name.substr(pos1, pos2-pos1);
+			if(runstr.length()>0) filename_run_number = atoi(runstr.c_str());
+		}
+	}
+	
 	pthread_mutex_init(&evio_buffer_pool_mutex, NULL);
 	pthread_mutex_init(&stored_events_mutex, NULL);
 }
@@ -1338,7 +1352,7 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		// calculate integral from relevant samples
 		uint32_t start_sample = first_sample_over_threshold - F250_NSB;
 		uint32_t end_sample = first_sample_over_threshold + F250_NSA - 1;
-		if (start_sample < 0) start_sample=0;
+		if (F250_NSB > first_sample_over_threshold) start_sample=0;
 		if (end_sample > nsamples) end_sample=nsamples;
 		for (uint32_t c_samp=start_sample; c_samp<end_sample; c_samp++) {
 		  signalsum += samplesvector[c_samp];
@@ -1879,6 +1893,8 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 //----------------
 int32_t JEventSource_EVIO::GetRunNumber(evioDOMTree *evt)
 {
+	// This is called during event parsing to get the
+	// run number for the event.
 	// Look through event to try and extract the run number.
 	// We do this by looking for all uint64_t nodes. Then
 	// check for a parent with one of the magic values for
@@ -1918,6 +1934,13 @@ int32_t JEventSource_EVIO::GetRunNumber(evioDOMTree *evt)
 //----------------
 int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 {
+	/// This is called from GetEvent() to quickly look for the run number
+	/// at the time the event is read in so it can be passed into
+	/// JEvent. It is what will be used for accessing the CCDB.
+	/// from this event. If a bank containing the run number of found,
+	/// use it to provide the run number. Otherwise, return whatever run
+	/// number we were able to extract from the file name. 
+
 	if(VERBOSE>1) evioout << " .. Searching for run number ..." <<endl;
 
 	// Assume first word is number of words in bank
@@ -1970,7 +1993,8 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 		return run;
 	}
 	
-	return 0;
+	last_run_number = filename_run_number;
+	return filename_run_number;
 }
 
 //----------------
