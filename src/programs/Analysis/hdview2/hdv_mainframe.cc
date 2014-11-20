@@ -20,6 +20,7 @@ using namespace std;
 #include "DVector2.h"
 #include "HDGEOMETRY/DGeometry.h"
 #include <PID/DNeutralParticle.h>
+#include <DAQ/DEPICSvalue.h>
 
 #include <TPolyMarker.h>
 #include <TLine.h>
@@ -44,6 +45,7 @@ extern JApplication *japp;
 //TGeoCombiTrans *MotherRotTrans = NULL;
 
 extern int GO;
+extern bool SKIP_EPICS_EVENTS;
 
 // These values are just used to draw the detectors for visualization.
 // These should be replaced by a database lookup or something similar
@@ -805,7 +807,19 @@ void hdv_mainframe::DoQuit(void)
 //-------------------
 void hdv_mainframe::DoNext(void)
 {
-	if(eventloop)eventloop->OneEvent();
+	if(eventloop){
+		if(SKIP_EPICS_EVENTS){
+			while(true){
+				eventloop->OneEvent();
+				vector<const DEPICSvalue*> epicsvalues;
+				eventloop->Get(epicsvalues);
+				if(epicsvalues.empty()) break;
+				cout << "Skipping EPICS event " << eventloop->GetJEvent().GetEventNumber() << endl;
+			}
+		}else{
+			eventloop->OneEvent();
+		}
+	}
 }
 
 //-------------------

@@ -9,6 +9,7 @@
 
 int GO = 0; // 1=continuously display events 0=wait for user
 bool PRINT_FACTORY_LIST = false;
+bool SKIP_EPICS_EVENTS = true;
 
 TCanvas *maincanvas=NULL;
 extern JApplication *japp;
