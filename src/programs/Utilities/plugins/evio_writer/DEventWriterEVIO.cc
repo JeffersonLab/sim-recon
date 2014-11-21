@@ -92,13 +92,17 @@ bool DEventWriterEVIO::Open_OutputFile(JEventLoop* locEventLoop, string locOutpu
 		locStatus = evOpen((char*)locFileCharName, (char*)"w", &locEVIOHandle);
 		if(locStatus != S_SUCCESS)
 			jerr << "Unable to open EVIO file." << endl;
-		else //store the handle
-			(*gEVIOOutputFilePointers)[locOutputFileName] = locEVIOHandle;
+		else
+		{
+			jout << "Output EVIO file " << locOutputFileName << " created." << endl;
+			(*gEVIOOutputFilePointers)[locOutputFileName] = locEVIOHandle; //store the handle
+		}
 	}
 	japp->Unlock("EVIOWriter");
 
 	return (locStatus == S_SUCCESS);
 #else
+	jout << "Compiled without EVIO! Cannot open file." << endl;
 	return false;
 #endif // HAVE_EVIO
 }
