@@ -10,8 +10,13 @@
 #define CDC_MATCH_RADIUS 5.0
 #define CDC_STEREO_MATCH_CUT 10.0
 
-bool DTrackFinder_cdc_hit_cmp(const DCDCTrackHit *a,const DCDCTrackHit *b){
+
+bool DTrackFinder_cdc_hit_cosmics_cmp(const DCDCTrackHit *a,const DCDCTrackHit *b){
   return(a->wire->origin.Y()>b->wire->origin.Y());
+}
+
+bool DTrackFinder_cdc_hit_cmp(const DCDCTrackHit *a,const DCDCTrackHit *b){
+  return (a->wire->ring<b->wire->ring);
 }
 
 bool DTrackFinder_fdc_hit_cmp(const DTrackFinder::fdc_hit_t &a,
@@ -25,7 +30,8 @@ bool DTrackFinder_fdc_hit_cmp(const DTrackFinder::fdc_hit_t &a,
 //---------------------------------
 DTrackFinder::DTrackFinder(JEventLoop *loop)
 {
- 
+  COSMICS=false;
+  gPARMS->SetDefaultParameter("TRKFIND:COSMICS",COSMICS);
 }
 
 //---------------------------------
@@ -125,9 +131,13 @@ bool DTrackFinder::FindAxialSegments(void){
 	}
 	old=j;
       }
- 
-      sort(neighbors.begin(),neighbors.end(),DTrackFinder_cdc_hit_cmp);
-
+      if (COSMICS){
+	sort(neighbors.begin(),neighbors.end(),DTrackFinder_cdc_hit_cosmics_cmp);
+      }
+      else{
+	sort(neighbors.begin(),neighbors.end(),DTrackFinder_cdc_hit_cmp);
+      }
+	
       DVector3 dir=neighbors[neighbors.size()-1]->wire->origin
 	-neighbors[0]->wire->origin;
       dir.SetMag(1.);
@@ -147,7 +157,7 @@ bool DTrackFinder::FindAxialSegments(void){
 bool DTrackFinder::LinkCDCSegments(void){
   unsigned int num_axial=axial_segments.size();
   if (num_axial<1) return false;
-  for (unsigned int i=0;i<num_axial-1;i++){
+  for (unsigned int i=0;i<num_axial;i++){
     if (axial_segments[i].matched==false){
       DTrackFinder::cdc_track_t mytrack(axial_segments[i].hits);
 
@@ -167,8 +177,14 @@ bool DTrackFinder::LinkCDCSegments(void){
 	    mytrack.axial_hits.insert(mytrack.axial_hits.end(),
 				  axial_segments[j].hits.begin(),
 				  axial_segments[j].hits.end());
-	    sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
-		 DTrackFinder_cdc_hit_cmp);
+	    if (COSMICS){
+	      sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
+		   DTrackFinder_cdc_hit_cosmics_cmp);
+	    }
+	    else{
+	      sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
+		   DTrackFinder_cdc_hit_cmp);
+	    }
 	    
 	    vhat=mytrack.axial_hits[mytrack.axial_hits.size()-1]->wire->origin
 	      -mytrack.axial_hits[0]->wire->origin;
@@ -192,8 +208,14 @@ bool DTrackFinder::LinkCDCSegments(void){
       }
       // Resort if we added axial hits and recompute direction vector
       if (got_match){
-	sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
-	     DTrackFinder_cdc_hit_cmp);
+	if (COSMICS){
+	  sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
+	       DTrackFinder_cdc_hit_cosmics_cmp);
+	}
+	else{
+	  sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
+	       DTrackFinder_cdc_hit_cmp);
+	}
 	
 	vhat=mytrack.axial_hits[mytrack.axial_hits.size()-1]->wire->origin
 	  -mytrack.axial_hits[0]->wire->origin;

@@ -80,8 +80,11 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
   CDC_RES_PAR1 = cdc_res_parms["res_par1"];
   CDC_RES_PAR2 = cdc_res_parms["res_par2"];
   
-  COSMICS=true;
+  COSMICS=false;
   gPARMS->SetDefaultParameter("TRKFIND:COSMICS",COSMICS);
+  
+  DEBUG_HISTS=false;
+  gPARMS->SetDefaultParameter("TRKFIND:DEBUG_HISTS",DEBUG_HISTS);
 
   // Get pointer to TrackFinder object 
   vector<const DTrackFinder *> finders;
@@ -94,6 +97,11 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
 
   // Drop the const qualifier from the DTrackFinder pointer
   finder = const_cast<DTrackFinder*>(finders[0]);
+
+  dapp->Lock();
+
+  Hvres=(TH2F *)gROOT->FindObject("Hvres");
+  if (!Hvres) Hvres=new TH2F("Hvres","Residual along wire",100,-0.25,0.25,24,0.5,24.5);
 
   return NOERROR;
 }
@@ -123,8 +131,6 @@ jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, int eventn
       
       // Initial guess for state vector
       DMatrix4x1 S(tracks[i].S);
-
-      //     S.Print();
       
       // list of axial and stereo hits for this track
       vector<const DCDCTrackHit *>hits=tracks[i].axial_hits;
@@ -196,7 +202,7 @@ jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, int eventn
       }
       
       //Run the Kalman Filter algorithm
-      DoFilter(t0,my_z,S,hits);	    
+      DoFilter(t0,my_z,S,hits);	   
     }
   }
 
@@ -621,7 +627,7 @@ inline double DTrackCandidate_factory_StraightLine::CDCDriftVariance(double t){
   sigma+=0.005;
   
   //sigma=0.08/(t+1.)+0.03;
-  //sigma=0.15;
+  sigma=0.15;
   
   return sigma*sigma;
 }
@@ -681,6 +687,24 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
     double z=trajectory[last_index].z;
     finder->FindDoca(z,Sbest,dir,origin,&pos);
     cand->setPosition(pos);
+
+    if (DEBUG_HISTS){
+      for (unsigned int id=0;id<hits.size();id++){	  
+	double cospsi=hits[id]->wire->udir.y();
+	double sinpsi=hits[id]->wire->udir.x();
+	
+	DVector3 norm(0,0,1);
+	DVector3 intersection;
+	finder->FindIntersectionWithPlane(hits[id]->wire->origin,norm,
+					  pos,cand->momentum(),intersection);
+	// To transform from (x,y) to (u,v), need to do a rotation:
+	double v = intersection.y()*cospsi+intersection.x()*sinpsi;
+
+	Hvres->Fill(v-hits[id]->s,hits[id]->wire->layer);
+
+      }
+    }
+
 
     cand->Ndof=ndof_old;
     cand->chisq=chi2_old;
@@ -762,8 +786,8 @@ DTrackCandidate_factory_StraightLine::SetReferenceTrajectory(double t0,double z,
   S(state_y)+=S(state_ty)*dz;
   trajectory.push_front(trajectory_t(z+dz,t,S,J));
   
-  //if (true){
-  if (false){
+  if (false)
+    {
     printf("Trajectory:\n");
     for (unsigned int i=0;i<trajectory.size();i++){
     printf(" x %f y %f z %f first hit %d num in layer %d\n",trajectory[i].S(state_x),
@@ -784,7 +808,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
   DMatrix2x4 H;  // Track projection matrix
   DMatrix4x2 H_T; // Transpose of track projection matrix 
   DMatrix4x2 K;  // Kalman gain matrix
-  DMatrix2x2 V(0.0008,0.,0.,0.0008);  // Measurement variance 
+  DMatrix2x2 V(0.0009,0.,0.,0.0009);  // Measurement variance 
   DMatrix2x2 Vtemp,InvV;
   DMatrix2x1 Mdiff;
   DMatrix4x4 I; // identity matrix
@@ -855,10 +879,12 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 	// predicted positions in two cathode planes' coordinate systems
 	double phi_u=hits[my_id]->phi_u;
 	double phi_v=hits[my_id]->phi_v;
+
 	double cosphi_u=cos(phi_u);
 	double sinphi_u=sin(phi_u);
 	double cosphi_v=cos(phi_v);
 	double sinphi_v=sin(phi_v);
+
 	double vv=-vpred*sinphi_v-uwire*cosphi_v;
 	double vu=-vpred*sinphi_u-uwire*cosphi_u;
 

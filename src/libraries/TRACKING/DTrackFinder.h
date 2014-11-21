@@ -128,6 +128,7 @@ class DTrackFinder:public jana::JObject{
   bool FindIntersectionWithPlane(const DVector3 &origin,const DVector3 &norm,
 				 const DVector3 &pos,const DVector3 &dir,
 				 DVector3 &outpos) const;
+ 
 
  private:
   // Prohibit default constructor
@@ -141,6 +142,8 @@ class DTrackFinder:public jana::JObject{
   vector<fdc_hit_t>fdc_hits;
   vector<fdc_segment_t>fdc_segments[4];
   vector<fdc_segment_t>fdc_tracks;
+ 
+  bool COSMICS;
 };
 
 #endif // _DTrackFinder_
