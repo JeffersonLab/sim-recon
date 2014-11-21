@@ -429,6 +429,7 @@ void MyProcessor::FillGraphics(void)
 	    float b = f*(1.0-grey) + grey;
 #endif
 	    double s = log10(hit->E/0.005)/log10(1.0/0.005); // s=1 for 1GeV energy deposit
+	    if(hit->E<0.0 || !finite(s)) continue;
 	    float r = 1.;
 	    float g = 1.-s;
 	    float b = 0.2;
@@ -437,7 +438,6 @@ void MyProcessor::FillGraphics(void)
 	      g = 1.;
 	      b = 0.9;
 	    }
-	    
 	    poly->SetFillColor(TColor::GetColor(r,g,b));
 	  }
 	}
