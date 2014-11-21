@@ -1960,7 +1960,7 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 			case 0xFF30:
 				// These Trigger Bank Tag values have no run number info in them
 				if(VERBOSE>2) evioout << " ... Trigger bank tag (0x" << hex << ((*iptr)>>16) << dec << ") does not contain run number" <<endl;
-				return 0;
+				return filename_run_number;
 			case 0xFF23:
 			case 0xFF27:
 				has_timestamps = true;
@@ -1993,7 +1993,6 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 		return run;
 	}
 	
-	last_run_number = filename_run_number;
 	return filename_run_number;
 }
 
