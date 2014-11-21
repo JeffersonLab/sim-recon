@@ -15,6 +15,8 @@
 #include "FDC/DFDCPseudo.h"
 #include "DMatrixSIMD.h"
 #include <deque>
+#include <TROOT.h>
+#include <TH2F.h>
 
 class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate>{
  public:
@@ -74,7 +76,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
   double CDCDriftVariance(double t);
   unsigned int Locate(vector<double>&xx,double x);
 
-  bool COSMICS;
+  bool COSMICS,DEBUG_HISTS;
   DTrackFinder *finder;
 
  // drift time tables
@@ -84,6 +86,8 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
   // Resolution parameters
   double CDC_RES_PAR1,CDC_RES_PAR2;
 
+  // Diagnostic histograms
+  TH2F *Hvres;
   
 };
 
