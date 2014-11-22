@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#include "TMath.h"
+
 #include <JANA/JEventProcessor.h>
 #include <JANA/JEventLoop.h>
 #include <JANA/JApplication.h>
@@ -19,6 +21,7 @@
 #include "evio_writer/DEventWriterEVIO.h"
 
 #include "TRACKING/DTrackCandidate.h"
+#include "TRACKING/DTrackWireBased.h"
 #include "DAQ/DEPICSvalue.h"
 
 using namespace std;
