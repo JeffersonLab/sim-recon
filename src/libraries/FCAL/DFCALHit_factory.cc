@@ -134,6 +134,7 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
    loop->Get(digihits);
    for (unsigned int i=0; i < digihits.size(); i++) {
       const DFCALDigiHit *digihit = digihits[i];
+      if (digihit->pulse_time==0) continue;
 
       // Check to see if the hit corresponds to a valid channel
       if (fcalGeom.isBlockActive(digihit->row,digihit->column) == false) {
@@ -160,17 +161,13 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		   << "  NPED = " << configObj->NPED
 		   << "  final ped = " << pedestal << endl;
       }
-
-      
-      DFCALHit *hit = new DFCALHit;
-      hit->row    = digihit->row;
-      hit->column = digihit->column;
-
+     
       // throw away hits from bad or noisy channels
-      fcal_quality_state quality = static_cast<fcal_quality_state>(block_qualities[hit->row][hit->column]);
-      if ( (quality==BAD) || (quality==NOISY) ) 
-          return NOERROR;
-
+      fcal_quality_state quality = static_cast<fcal_quality_state>(block_qualities[digihit->row][digihit->column]);
+      if ( (quality==BAD) || (quality==NOISY) ){
+	_DBG_ << endl;
+	return NOERROR;
+      }
 
       if( PIobj != NULL ){
 
@@ -179,13 +176,19 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	// is one channel.  In some cases it seems to be
 	// the sum of all channels in the window.  There
 	// may be variation with FADC mode
-
+	
+	if (PIobj->pedestal==0) continue;
 	pedestal = PIobj->pedestal * PIobj->nsamples_integral;
+	
       }
       else{
 
 	cerr << "ERROR! no integral object for pedestal subraction." << endl;
       }
+
+      DFCALHit *hit = new DFCALHit;
+      hit->row    = digihit->row;
+      hit->column = digihit->column;
 
       // Apply calibration constants
       double A = (double)digihit->pulse_integral;
