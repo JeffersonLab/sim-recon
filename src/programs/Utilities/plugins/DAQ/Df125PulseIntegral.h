@@ -20,12 +20,14 @@ class Df125PulseIntegral:public DDAQAddress{
 	public:
 		JOBJECT_PUBLIC(Df125PulseIntegral);
 
-		Df125PulseIntegral(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0, uint32_t quality_factor=0, uint32_t integral=0, uint32_t pedestal=0,bool emulated=false):DDAQAddress(rocid, slot, channel, itrigger),pulse_number(pulse_number),quality_factor(quality_factor),integral(integral),pedestal(pedestal),emulated(emulated){}
+		Df125PulseIntegral(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0, uint32_t quality_factor=0, uint32_t integral=0, uint32_t pedestal=0, uint32_t nsamples_integral=0, uint32_t nsamples_pedestal=0, bool emulated=false):DDAQAddress(rocid, slot, channel, itrigger),pulse_number(pulse_number),quality_factor(quality_factor),integral(integral),pedestal(pedestal),nsamples_integral(nsamples_integral), nsamples_pedestal(nsamples_pedestal), emulated(emulated){}
 
 		uint32_t pulse_number;         ///< from Pulse Integral Data word
 		uint32_t quality_factor;       ///< from Pulse Integral Data word
 		int32_t integral;              ///< from Pulse Integral Data word
 		int32_t pedestal;              ///< from Pulse Integral Data word (future)
+		uint32_t nsamples_integral;    ///< number of samples used in integral 
+		uint32_t nsamples_pedestal;    ///< number of samples used in pedestal
 		bool     emulated;             ///< true if made from Window Raw Data
 		
 		// This method is used primarily for pretty printing
@@ -36,6 +38,8 @@ class Df125PulseIntegral:public DDAQAddress{
 			AddString(items, "quality_factor", "%d", quality_factor);
 			AddString(items, "integral", "%d", integral);
 			AddString(items, "pedestal", "%d", pedestal);
+			AddString(items, "nsamples_integral", "%d", nsamples_integral);
+			AddString(items, "nsamples_pedestal", "%d", nsamples_pedestal);
 			AddString(items, "emulated", "%d", emulated);
 		}
 };

@@ -1141,6 +1141,17 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		const Df125PulsePedestal*pp = NULL;
 		if(pp) pi->pedestal = pp->pedestal;
 
+		// If this pulse integral is *not* emulated AND there is
+		// a configuration object from the data stream associated,
+		// then copy the number of samples from it.
+		if(!pi->emulated){
+			const Df125Config*conf = NULL;
+			pi->GetSingle(conf);
+			if(conf){
+				pi->nsamples_integral = conf->NSA_NSB;
+				pi->nsamples_pedestal = conf->NPED;
+			}
+		}
 	}
 	
 
@@ -1366,10 +1377,12 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		// calculate integral from relevant samples
 		uint32_t start_sample = first_sample_over_threshold - F250_NSB;
 		uint32_t end_sample = first_sample_over_threshold + F250_NSA - 1;
+		uint32_t nsamples_used = 0;
 		if (F250_NSB > first_sample_over_threshold) start_sample=0;
 		if (end_sample > nsamples) end_sample=nsamples;
-		for (uint32_t c_samp=start_sample; c_samp<end_sample; c_samp++) {
+		for (uint32_t c_samp=start_sample; c_samp<=end_sample; c_samp++) {
 		  signalsum += samplesvector[c_samp];
+		  nsamples_used++;
 		}
 
 		// create new Df250PulseIntegral object
@@ -1382,7 +1395,7 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		myDf250PulseIntegral->quality_factor = quality_factor;
 		myDf250PulseIntegral->integral = signalsum;
 		myDf250PulseIntegral->pedestal = 0;
-		myDf250PulseIntegral->nsamples_integral = end_sample - start_sample + 1;
+		myDf250PulseIntegral->nsamples_integral = nsamples_used;
 		myDf250PulseIntegral->nsamples_pedestal = F250_NSPED;
 		myDf250PulseIntegral->emulated = true;
 
@@ -1423,14 +1436,18 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 		}
 		
 		// loop over all samples to calculate integral
+		uint32_t nsamples_used = 0;
 		for (uint32_t c_samp=0; c_samp<nsamples; c_samp++) {
 			signalsum += samplesvector[c_samp];
+			nsamples_used++;
 		}
 		
 		myDf125PulseIntegral->pulse_number = pulse_number;
 		myDf125PulseIntegral->quality_factor = quality_factor;
 		myDf125PulseIntegral->integral = signalsum;
 		myDf125PulseIntegral->pedestal = pedestalsum/ped_samples;  // This will be replaced by the one from Df125PulsePedestal in GetObjects
+		myDf125PulseIntegral->nsamples_integral = nsamples_used;
+		myDf125PulseIntegral->nsamples_pedestal = ped_samples;
 		myDf125PulseIntegral->emulated = true;
 
 		// Add the Df125WindowRawData object as an associated object
