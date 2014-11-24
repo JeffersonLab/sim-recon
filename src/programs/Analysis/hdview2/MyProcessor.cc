@@ -428,15 +428,45 @@ void MyProcessor::FillGraphics(void)
 	    float g = s*grey;
 	    float b = f*(1.0-grey) + grey;
 #endif
-	    double s = log10(hit->E/0.005)/log10(1.0/0.005); // s=1 for 1GeV energy deposit
-	    if(hit->E<0.0 || !finite(s)) continue;
-	    float r = 1.;
-	    float g = 1.-s;
-	    float b = 0.2;
-	    if(s<0.0){
+
+	    // The aim is to have a log scale in energy (see BCAL)
+	    double E = 1000*hit->E;      // Change Energy to MeV
+	    if(E<0.0) continue;
+	    double logE = log10(E);      
+
+	    float r,g,b;
+	    if (logE<0){
 	      r = 1.;
 	      g = 1.;
-	      b = 0.9;
+	      b = 1.;
+	    } else {
+	      if (logE<1){
+		r = 1.;
+		g = 1.;
+		b = 1.-logE;
+	      } else {
+		if (logE<2){
+		  r = 1.;
+		  g = 1.-(logE-1);
+		  b = 0.;
+		} else {
+		  if (logE<3){
+		    r = 1.;
+		    g = 0.;
+		    b = 1.-(logE-2);
+		  } else {
+		    if (logE<4){
+		      r = 1.-(logE-3);
+		      g = 0.;
+		      b = 1.;
+		    } else {
+		      r = 0;
+		      g = 0;
+		      b = 0;
+		    }
+		  }
+		}
+	      }
 	    }
 	    poly->SetFillColor(TColor::GetColor(r,g,b));
 	  }

@@ -398,7 +398,11 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   for (int i=0;i<9;i++) {
     double e = pow(10,((8-(double)i)/2.0));
     char str1[128];
-    sprintf(str1,"%7.1f MeV",e);
+    if (e >= 1000) {
+      sprintf(str1,"%7.2f GeV",e/1000.);
+    } else {
+      sprintf(str1,"%7.1f MeV",e);
+    }
     BCCLables[i] =  new TGLabel(bcalColorCodes, (const char*)str1);
     //BCCLables[i]->SetTextColor(1);
     BCCLables[i]->SetBackgroundColor(BCccodes[i]);
@@ -406,11 +410,15 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   }
   // color lables FCAL
   TGLabel* FCCLables[9]; 
-  unsigned int FCccodes[9] = {0xFF0033,0xFF2233,0xFF4433,0xFF6633,0xFF8833,0xFFaa33,0xFFcc33,0xFFee33,0xFFFFaa};
+  unsigned int FCccodes[9] = {0x0000FF,0x7700FF,0xFF00FF,0xFF0077,0xFF0000,0xFF7700,0xFFFF00,0xFFFF77,0xFFFFFF};
   for (int i=0;i<9;i++) {
-    double E = pow(10.,((1. - (double)i*0.11)*log10(1./0.005)));
+    double e = pow(10,((8-(double)i)/2.0));
     char str1[128];
-    sprintf(str1,"%5.1f MeV",E);
+    if (e >= 1000) {
+      sprintf(str1,"%7.2f GeV",e/1000.);
+    } else {
+      sprintf(str1,"%7.1f MeV",e);
+    }
     FCCLables[i] =  new TGLabel(fcalColorCodes, (const char*)str1);
     FCCLables[i]->SetBackgroundColor(FCccodes[i]);
     fcalColorCodes->AddFrame(FCCLables[i],lhints);

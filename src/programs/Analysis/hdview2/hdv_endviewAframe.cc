@@ -134,7 +134,11 @@ hdv_endviewAframe::hdv_endviewAframe(hdv_mainframe *hdvmf, const TGWindow *p, UI
 	for (int i=0;i<9;i++) {
 	  double e = pow(10,((8-(double)i)/2.0));
 	  char str1[128];
-	  sprintf(str1,"%7.1f MeV",e);
+	  if (e >= 1000) {
+	    sprintf(str1,"%7.2f GeV",e/1000.);
+	  } else {
+	    sprintf(str1,"%7.1f MeV",e);
+	  }
 	  BCCLables[i] =  new TGLabel(bcalColorCodes, (const char*)str1);
 	  //BCCLables[i]->SetTextColor(1);
 	  BCCLables[i]->SetBackgroundColor(BCccodes[i]);
