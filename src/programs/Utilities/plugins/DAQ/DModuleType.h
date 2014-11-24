@@ -1,4 +1,5 @@
 // $Id$
+// $HeadURL$
 //
 //    File: DModuleType.h
 // Created: Thu Aug  9 08:56:08 EDT 2012

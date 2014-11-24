@@ -1,4 +1,5 @@
 // $Id$
+// $HeadURL$
 //
 //    File: DDAQConfig.h
 // Created: Mon Sep  8 03:26:42 EDT 2014

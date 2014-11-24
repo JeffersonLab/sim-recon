@@ -1,4 +1,5 @@
 // $Id$
+// $HeadURL$
 //
 //    File: JFactoryGenerator_DAQ.h
 // Created: Thu Aug  9 12:40:08 EDT 2012
