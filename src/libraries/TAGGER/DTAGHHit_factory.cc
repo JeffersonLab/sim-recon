@@ -15,7 +15,6 @@ using namespace std;
 #include "DTAGHGeometry.h"
 #include "DTAGHHit_factory.h"
 #include <DAQ/Df250PulseIntegral.h>
-#include <DAQ/Df250Config.h>
 using namespace jana;
 
 const int DTAGHHit_factory::k_counter_dead;
@@ -107,39 +106,38 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
    loop->Get(digihits);
    for (unsigned int i=0; i < digihits.size(); i++) {
       const DTAGHDigiHit *digihit = digihits[i];
-
-      // Get pedestal, prefer associated event pedestal if it exists,
-      // otherwise, use the average pedestal from CCDB
-      double pedestal = fadc_pedestals[digihit->counter_id];
-      const Df250PulseIntegral* PIobj = NULL;
-      const Df250Config *configObj = NULL;
-      digihit->GetSingle(PIobj);
-      PIobj->GetSingle(configObj);
-      if ((PIobj != NULL) && (configObj != NULL)) {
-	  // the measured pedestal must be scaled by the ratio of the number
-	  // of samples used to calculate the pedestal and the actual pulse
-	  pedestal = static_cast<double>(configObj->NSA_NSB) * PIobj->pedestal;
-      }
-
-      DTAGHHit *hit = new DTAGHHit;
       int counter = digihit->counter_id;
-      hit->counter_id = counter;
-      double Elow = taghGeom.getElow(counter);
-      double Ehigh = taghGeom.getEhigh(counter);
-      hit->E = (Elow + Ehigh)/2;
-      hit->t = 0;
 
       // throw away hits from bad or noisy counters
       int quality = counter_quality[counter];
       if (quality == k_counter_bad || quality == k_counter_noisy) 
           continue;
 
+      // Get pedestal, prefer associated event pedestal if it exists,
+      // otherwise, use the average pedestal from CCDB
+      double pedestal = fadc_pedestals[counter];
+      const Df250PulseIntegral* PIobj = NULL;
+      digihit->GetSingle(PIobj);
+      if (PIobj != NULL) {
+	  // the measured pedestal is scaled by the number
+	  // of samples used to calculate the actual pulse
+	  // when it is subtracted below
+	  pedestal = PIobj->pedestal/PIobj->nsamples_pedestal;
+      }
+
+      DTAGHHit *hit = new DTAGHHit;
+      hit->counter_id = counter;
+      double Elow = taghGeom.getElow(counter);
+      double Ehigh = taghGeom.getEhigh(counter);
+      hit->E = (Elow + Ehigh)/2;
+      hit->t = 0;
+
       // Apply calibration constants
       double A = digihit->pulse_integral;
       double T = digihit->pulse_time;
       A -= pedestal * digihit->nsamples_integral;
       hit->npe_fadc = A * fadc_a_scale * fadc_gains[counter];
-      hit->time_fadc = T * fadc_t_scale - tdc_time_offsets[counter] + t_base;
+      hit->time_fadc = T * fadc_t_scale - fadc_time_offsets[counter] + t_base;
 
       hit->AddAssociatedObject(digihit);
       _data.push_back(hit);
@@ -220,7 +218,7 @@ bool DTAGHHit_factory::load_ccdb_constants(
        return false;
    }
    for (unsigned int i=0; i < table.size(); ++i) {
-      int counter = (table[i])["counter"];
+      int counter = (table[i])["id"];
       result[counter] = (table[i])[column_name];
    }
    return true;
