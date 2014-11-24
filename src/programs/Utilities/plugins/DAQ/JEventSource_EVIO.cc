@@ -1093,33 +1093,6 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		}
 	}
 		
-	// Initially, the F250, F125 firmware does not include the
-	// pedestal measurement in the pulse integral data
-	// (it is an add-on Pulse Pedestal word) We want the
-	// pedestal field of the Df250PulseIntegral objects
-	// to contain the measured pedestals in both cases. 
-	// Check all Df250PulseIntegral objects for an associated
-	// Df250PulsePedestal object. If it has one, copy the
-	// pedestal from it into the Df250PulseIntegral.
-	vector<JObject*> &vpi250 = hit_objs_by_type["Df250PulseIntegral"];
-	for(unsigned int i=0; i<vpi250.size(); i++){
-		Df250PulseIntegral *pi = (Df250PulseIntegral*)vpi250[i];
-		vector<const Df250PulsePedestal*> vpp;
-		pi->Get(vpp);
-		if(!vpp.empty()){
-			pi->pedestal = vpp[0]->pedestal;
-		}
-	}
-	vector<JObject*> &vpi125 = hit_objs_by_type["Df125PulseIntegral"];
-	for(unsigned int i=0; i<vpi125.size(); i++){
-		Df125PulseIntegral *pi = (Df125PulseIntegral*)vpi125[i];
-		vector<const Df125PulsePedestal*> vpp;
-		pi->Get(vpp);
-		if(!vpp.empty()){
-			pi->pedestal = vpp[0]->pedestal;
-		}
-	}
-	
 	// Associate any DDAQConfig objects with hit objects to which they should apply.
 	for(unsigned int j=0; j<config_objs.size(); j++){
 		DDAQConfig *config = config_objs[j];
@@ -1131,6 +1104,44 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			}
 		}
 	}
+
+	// Initially, the F250, F125 firmware does not include the
+	// pedestal measurement in the pulse integral data
+	// (it is an add-on Pulse Pedestal word) We want the
+	// pedestal field of the Df250PulseIntegral objects
+	// to contain the measured pedestals in both cases. 
+	// Check all Df250PulseIntegral objects for an associated
+	// Df250PulsePedestal object. If it has one, copy the
+	// pedestal from it into the Df250PulseIntegral.
+	vector<JObject*> &vpi250 = hit_objs_by_type["Df250PulseIntegral"];
+	for(unsigned int i=0; i<vpi250.size(); i++){
+
+		Df250PulseIntegral *pi = (Df250PulseIntegral*)vpi250[i];
+		const Df250PulsePedestal*pp = NULL;
+		pi->GetSingle(pp);
+		if(pp) pi->pedestal = pp->pedestal;
+
+		// If this pulse integral is *not* emulated AND there is
+		// a configuration object from the data stream associated,
+		// then copy the number of samples from it.
+		if(!pi->emulated){
+			const Df250Config*conf = NULL;
+			pi->GetSingle(conf);
+			if(conf){
+				pi->nsamples_integral = conf->NSA_NSB;
+				pi->nsamples_pedestal = conf->NPED;
+			}
+		}
+	}
+	vector<JObject*> &vpi125 = hit_objs_by_type["Df125PulseIntegral"];
+	for(unsigned int i=0; i<vpi125.size(); i++){
+
+		Df125PulseIntegral *pi = (Df125PulseIntegral*)vpi125[i];
+		const Df125PulsePedestal*pp = NULL;
+		if(pp) pi->pedestal = pp->pedestal;
+
+	}
+	
 
 	// Loop over types of config objects, copying to appropriate factory
 	map<string, vector<JObject*> >::iterator config_iter = config_objs_by_type.begin();
