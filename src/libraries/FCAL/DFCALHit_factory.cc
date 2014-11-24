@@ -156,10 +156,10 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
               // of samples used to calculate the pedestal and the actual pulse
               pedestal = static_cast<double>(configObj->NSA_NSB) * PIobj->pedestal;
 
-	      cerr << " raw pedestal = " << PIobj->pedestal
-		   << "  NSA_NSB = " << configObj->NSA_NSB
-		   << "  NPED = " << configObj->NPED
-		   << "  final ped = " << pedestal << endl;
+	      //cerr << " raw pedestal = " << PIobj->pedestal
+		  // << "  NSA_NSB = " << configObj->NSA_NSB
+		  // << "  NPED = " << configObj->NPED
+		   //<< "  final ped = " << pedestal << endl;
       }
      
       // throw away hits from bad or noisy channels
