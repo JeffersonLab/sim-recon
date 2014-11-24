@@ -40,6 +40,8 @@ class Df250PulseIntegral:public DDAQAddress{
 			AddString(items, "quality_factor", "%d", quality_factor);
 			AddString(items, "integral", "%d", integral);
 			AddString(items, "pedestal", "%d", pedestal);
+			AddString(items, "nsamples_integral", "%d", nsamples_integral);
+			AddString(items, "nsamples_pedestal", "%d", nsamples_pedestal);
 			AddString(items, "emulated", "%d", emulated);
 		}
 };
