@@ -116,6 +116,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	F250_EMULATION_THRESHOLD = 20;
 	F125_EMULATION_THRESHOLD = 20;
 	F125_NSPED = 20;
+	USER_RUN_NUMBER = 0;
 	
 	if(gPARMS){
 		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
@@ -150,6 +151,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:F250_NSPED", F250_NSPED, "For f250PulseIntegral object.  Number of pedestal samples value for emulation from window raw data and for pulse integral normalization.");
 
 		gPARMS->SetDefaultParameter("EVIO:F125_NSPED", F125_NSPED, "For f125PulseIntegral object.  Number of pedestal samples value for emulation from window raw data and for pulse integral normalization.");
+		gPARMS->SetDefaultParameter("EVIO:RUN_NUMBER", USER_RUN_NUMBER, "User-supplied run number. Override run number from other sources with this.(will be ignored if set to zero)");
 	}
 	
 	// Try to open the file.
@@ -1899,6 +1901,7 @@ int32_t JEventSource_EVIO::GetRunNumber(evioDOMTree *evt)
 	// We do this by looking for all uint64_t nodes. Then
 	// check for a parent with one of the magic values for
 	// the tag indicating it has run number information.
+	if(USER_RUN_NUMBER>0) return USER_RUN_NUMBER;
 	if(!evt) return last_run_number;
 
 	evioDOMNodeListP bankList = evt->getNodeList(typeIs<uint64_t>());
@@ -1942,6 +1945,10 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 	/// number we were able to extract from the file name. 
 
 	if(VERBOSE>1) evioout << " .. Searching for run number ..." <<endl;
+	if(USER_RUN_NUMBER>0){
+		if(VERBOSE>1) evioout << "  returning user-spplied run number: " << USER_RUN_NUMBER << endl;
+		return USER_RUN_NUMBER;
+	}
 
 	// Assume first word is number of words in bank
 	uint32_t *iend = &iptr[*iptr - 1];
