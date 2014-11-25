@@ -530,13 +530,13 @@ void MyProcessor::FillGraphics(void)
 		case 1:
 		  if(end == 0){
 		    //cout << "North : " << bar << endl;
-		    translate_side = 3;
+		    translate_side = 1;
 		    pmtPline = hdvmf->GetTOFPolyLine(translate_side, bar);
 		    pmtPline->SetFillColor(2);
 		  }
 		  else if(end == 1){
 		    //cout << "South : " << bar << endl;
-		    translate_side = 1;
+		    translate_side = 3;
 		    pmtPline = hdvmf->GetTOFPolyLine(translate_side, bar);
 		    pmtPline->SetFillColor(2);
 		  }
@@ -600,20 +600,20 @@ void MyProcessor::FillGraphics(void)
 
 	  Float_t hit_dist;
 	  Float_t distY_Horz = -126; // Horizontal plane start counting from the Bottom to Top
-	  Float_t distX_Vert =  126; // Vertical plane start counting from the South to North
+	  Float_t distX_Vert =  -126; // Vertical plane start counting from the South to North
 	  int tdc_hits = 0;
 	  
 	  for(Int_t i_tdc = 1; i_tdc <= 44; i_tdc++){
 	    if ( i_tdc == 20 || i_tdc == 21 || i_tdc == 24 || i_tdc == 25 ){
 	      distY_Horz = distY_Horz + 1.5;
-	      distX_Vert = distX_Vert - 1.5;
+	      distX_Vert = distX_Vert + 1.5;
 	    }
 	    else{
 	      distY_Horz = distY_Horz + 3.0;
-	      distX_Vert = distX_Vert - 3.0;
+	      distX_Vert = distX_Vert + 3.0;
 	    }
 	    if(hit_north[i_tdc] > 0 && hit_south[i_tdc] > 0){
-	      hit_dist =  (15.2*(Float_t(hit_north[i_tdc] - hit_south[i_tdc])/2) );
+	      hit_dist =  (15.2*(Float_t(hit_south[i_tdc] - hit_north[i_tdc])/2));
 	      TArc *tdc_cir = new TArc(hit_dist,distY_Horz,2);
 	      tdc_cir->SetFillColor(kGreen);
 
@@ -621,7 +621,7 @@ void MyProcessor::FillGraphics(void)
 	      tdc_hits++;
 	    }
 	    if(hit_up[i_tdc] > 0 && hit_down[i_tdc] > 0){
-	      hit_dist =  (15.2*(Float_t(hit_down[i_tdc] - hit_up[i_tdc])/2) );
+	      hit_dist =  (15.2*(Float_t(hit_up[i_tdc] - hit_down[i_tdc])/2) );
 	      TArc *tdc_cir = new TArc(distX_Vert,hit_dist,2);
 	      tdc_cir->SetFillColor(kBlue);
 
@@ -630,11 +630,11 @@ void MyProcessor::FillGraphics(void)
 	    }
 	    if ( i_tdc == 20 || i_tdc == 21 || i_tdc == 24 || i_tdc == 25 ){
 	      distY_Horz = distY_Horz + 1.5;
-	      distX_Vert = distX_Vert - 1.5;
+	      distX_Vert = distX_Vert + 1.5;
 	    }
 	    else{
 	      distY_Horz = distY_Horz + 3.0;
-	      distX_Vert = distX_Vert - 3.0;
+	      distX_Vert = distX_Vert + 3.0;
 	    }
 	  }
 

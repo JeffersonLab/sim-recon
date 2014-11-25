@@ -1646,21 +1646,22 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		  
 		  Double_t x[5];
 		  Double_t y[5];
-		  
-		  // origin: 0:DW; 1:S; 2:UP; 3:N
-		  Double_t position_x[4] = {126,126,126,-126};
+
+		  // origin: 0:DOWN; 1:NORTH; 2:UP; 3:SOUTH
+		  Double_t position_x[4] = {-126,-126,-126,126};
 		  Double_t position_y[4] = {-126,-126,126,-126};
-		  
+
 		  // PMTs from regular and half lenght modules with 6 cm x 14 cm
-		  Double_t step_x[4][5] = {{0,0,-6,-6,0},{0,14,14,0,0},{0,0,-6,-6,0},{0,-14,-14,0,0}};
+		  Double_t step_x[4][5] = {{0,0,6,6,0},{0,-14,-14,0,0},{0,0,6,6,0},{0,14,14,0,0}};
 		  Double_t step_y[4][5] = {{0,-14,-14,0,0},{0,0,6,6,0},{0,14,14,0,0},{0,0,6,6,0}};
-		  Double_t step_xl[4][5] = {{0,0,-3,-3,0},{0,20,20,0,0},{0,0,-3,-3,0},{0,-20,-20,0,0}};
+		  Double_t step_xl[4][5] = {{0,0,3,3,0},{0,-20,-20,0,0},{0,0,3,3,0},{0,20,20,0,0}};
 		  Double_t step_yl[4][5] = {{0,-20,-20,0,0},{0,0,3,3,0},{0,20,20,0,0},{0,0,3,3,0}};
-		  Double_t step_X[4] = {-6,0,-6,0};
+		  Double_t step_X[4] = {6,0,6,0};
 		  Double_t step_Y[4] = {0,6,0,6};
-		  Double_t step_XL[4] = {-3,0,-3,0};
+		  Double_t step_XL[4] = {3,0,3,0};
 		  Double_t step_YL[4] = {0,3,0,3};
-		  
+
+
 		  for (int sd=0; sd<4; sd++)
 		    {
 		      for (int i=0; i<44; i++)
