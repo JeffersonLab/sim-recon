@@ -49,16 +49,9 @@ jerror_t JEventProcessor_2trackskim::evnt(JEventLoop *locEventLoop, int eventnum
 		return NOERROR;
 	}
 
-	vector<const DTrackWireBased*> locTrackWireBasedVector;
-	locEventLoop->Get(locTrackWireBasedVector);
-	size_t locNumGoodTracks = 0;
-	for(size_t loc_i = 0; loc_i < locTrackWireBasedVector.size(); ++loc_i)
-	{
-		double locTrackingConfidenceLevel = TMath::Prob(locTrackWireBasedVector[loc_i]->chisq, locTrackWireBasedVector[loc_i]->Ndof);
-		if(locTrackingConfidenceLevel > 0.0027) // +/- 3 sigma
-			++locNumGoodTracks;
-	}
-	if(locNumGoodTracks >= 2)
+	vector<const DChargedTrack*> locChargedTracks;
+	locEventLoop->Get(locChargedTracks, "PreSelect");
+	if(locChargedTracks.size() >= 2)
 	{
 		dEventWriterEVIO->Write_EVIOEvent(locEventLoop, "2tracks");
 		return NOERROR;
