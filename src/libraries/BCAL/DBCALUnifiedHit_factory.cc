@@ -303,6 +303,10 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
       } else {
         t = t_ADC;
       }
+      // MMD: hard wired to use only the ADC time.  Must be removed when the TDCs are 
+      // properly integrated into the analysis
+      t = t_ADC;    
+      
 
       if (enable_debug_output) {
         t_adc_corrected_tree = t_ADC;
