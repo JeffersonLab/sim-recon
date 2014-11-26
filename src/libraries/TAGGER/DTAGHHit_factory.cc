@@ -122,7 +122,8 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	  // the measured pedestal is scaled by the number
 	  // of samples used to calculate the actual pulse
 	  // when it is subtracted below
-	  pedestal = PIobj->pedestal/PIobj->nsamples_pedestal;
+	  //pedestal = PIobj->pedestal/PIobj->nsamples_pedestal;
+	  pedestal = PIobj->pedestal;
       }
 
       DTAGHHit *hit = new DTAGHHit;
