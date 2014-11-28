@@ -324,7 +324,7 @@ void DTranslationTable::CopyToFactory(JEventLoop *loop, vector<T*> &v) const
 	// It would be a little safer to use a dynamic_cast here, but
 	// all documentation seems to discourage using that as it is
 	// inefficient.
-	JFactory<T> *fac = (JFactory<T> *)loop->GetFactory(T::static_className());
+	JFactory<T> *fac = (JFactory<T> *)loop->GetFactory(T::static_className(), "", false); // false=don't allow deftags
 	if(VERBOSE>8) ttout << " Copying " << T::static_className() << " objects to factory: " << hex << fac << dec << endl;
 	if(fac) fac->CopyTo(v);
 }

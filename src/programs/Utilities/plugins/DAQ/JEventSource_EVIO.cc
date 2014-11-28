@@ -1158,21 +1158,21 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	// Loop over types of config objects, copying to appropriate factory
 	map<string, vector<JObject*> >::iterator config_iter = config_objs_by_type.begin();
 	for(; config_iter!=config_objs_by_type.end(); config_iter++){
-		JFactory_base *fac = loop->GetFactory(config_iter->first);
+		JFactory_base *fac = loop->GetFactory(config_iter->first, "", false); // false= don't allow default tag replacement
 		if(fac) fac->CopyTo(config_iter->second);
 	}
 
 	// Loop over types of hit objects, copying to appropriate factory
 	map<string, vector<JObject*> >::iterator iter = hit_objs_by_type.begin();
 	for(; iter!=hit_objs_by_type.end(); iter++){
-		JFactory_base *fac = loop->GetFactory(iter->first);
+		JFactory_base *fac = loop->GetFactory(iter->first, "", false); // false= don't allow default tag replacement
 		fac->CopyTo(iter->second);
 	}
 
 	// Loop over types of misc objects, copying to appropriate factory
 	map<string, vector<JObject*> >::iterator misc_iter = misc_objs_by_type.begin();
 	for(; misc_iter!=misc_objs_by_type.end(); misc_iter++){
-		JFactory_base *fac = loop->GetFactory(misc_iter->first);
+		JFactory_base *fac = loop->GetFactory(misc_iter->first, "", false); // false= don't allow default tag replacement
 		fac->CopyTo(misc_iter->second);
 	}
 	objs_ptr->own_objects = false;
@@ -1183,8 +1183,10 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	// tells JANA that we can provide this type of object and any that
 	// are present have already been copied into the appropriate factory.
 	jerror_t err = OBJECT_NOT_AVAILABLE;
-	if(event_source_data_types.find(dataClassName) != event_source_data_types.end()) err = NOERROR;
-	
+	if(strlen(factory->Tag()) == 0){ // We do not supply any tagged factory data here
+		if(event_source_data_types.find(dataClassName) != event_source_data_types.end()) err = NOERROR;
+	}
+
 	// If it turns out there are no objects of one of the types we supply
 	// then the CopyTo method for that factory never gets called and subsequent
 	// requests for that object type will end up calling this method again.
@@ -1253,12 +1255,13 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	// is an unresolved symbol error if the TTab plugin is not also
 	// present. (Make sense?)
 	DTranslationTable_factory *ttfac = static_cast<DTranslationTable_factory*>(loop->GetFactory("DTranslationTable"));
-	if(ttfac){
+	if(ttfac){  
 		vector<const DTranslationTable*> translationTables;
 		ttfac->Get(translationTables);
 		for(unsigned int i=0; i<translationTables.size(); i++){
 			translationTables[i]->ApplyTranslationTable(loop);
-			if(translationTables[i]->IsSuppliedType(dataClassName)) err = NOERROR;
+			if(translationTables[i]->IsSuppliedType(dataClassName))
+				if(strlen(factory->Tag()) == 0)err = NOERROR; // Don't allow tagged factories from Translation table
 		}
 	}
 
