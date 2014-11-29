@@ -621,7 +621,7 @@ void MyProcessor::FillGraphics(void)
 	      tdc_hits++;
 	    }
 	    if(hit_up[i_tdc] > 0 && hit_down[i_tdc] > 0){
-	      hit_dist =  (15.2*(Float_t(hit_up[i_tdc] - hit_down[i_tdc])/2) );
+	      hit_dist =  (15.2*(Float_t(hit_down[i_tdc] - hit_up[i_tdc])/2) );
 	      TArc *tdc_cir = new TArc(distX_Vert,hit_dist,2);
 	      tdc_cir->SetFillColor(kBlue);
 
