@@ -530,13 +530,13 @@ void MyProcessor::FillGraphics(void)
 		case 1:
 		  if(end == 0){
 		    //cout << "North : " << bar << endl;
-		    translate_side = 1;
+		    translate_side = 3;
 		    pmtPline = hdvmf->GetTOFPolyLine(translate_side, bar);
 		    pmtPline->SetFillColor(2);
 		  }
 		  else if(end == 1){
 		    //cout << "South : " << bar << endl;
-		    translate_side = 3;
+		    translate_side = 1;
 		    pmtPline = hdvmf->GetTOFPolyLine(translate_side, bar);
 		    pmtPline->SetFillColor(2);
 		  }
