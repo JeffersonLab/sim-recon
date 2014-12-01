@@ -18,6 +18,25 @@
 	TH2I* locHist_PVsTheta_Photon = (TH2I*)gDirectory->Get("PVsTheta");
 	TH2I* locHist_PhiVsTheta_Photon = (TH2I*)gDirectory->Get("PhiVsTheta");
 
+	//Beta-vs-p functions
+	TF1* locBetaVsPFunc_Proton = new TF1("BetaVsPFunc_Proton", "x/sqrt(x*x + [0]*[0])", 0.0, 12.0);
+	locBetaVsPFunc_Proton->SetParameter(0, 0.938272046);
+	locBetaVsPFunc_Proton->SetLineWidth(2);
+	locBetaVsPFunc_Proton->SetLineColor(kBlack);
+	locBetaVsPFunc_Proton->SetNpx(1000);
+
+	TF1* locBetaVsPFunc_Kaon = new TF1("BetaVsPFunc_Kaon", "x/sqrt(x*x + [0]*[0])", 0.0, 12.0);
+	locBetaVsPFunc_Kaon->SetParameter(0, 0.493677);
+	locBetaVsPFunc_Kaon->SetLineWidth(2);
+	locBetaVsPFunc_Kaon->SetLineColor(kBlack);
+	locBetaVsPFunc_Kaon->SetNpx(1000);
+
+	TF1* locBetaVsPFunc_Pion = new TF1("BetaVsPFunc_Pion", "x/sqrt(x*x + [0]*[0])", 0.0, 12.0);
+	locBetaVsPFunc_Pion->SetParameter(0, 0.13957018);
+	locBetaVsPFunc_Pion->SetLineWidth(2);
+	locBetaVsPFunc_Pion->SetLineColor(kBlack);
+	locBetaVsPFunc_Pion->SetNpx(1000);
+
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
 	if(TVirtualPad::Pad() == NULL)
@@ -36,6 +55,9 @@
 		locHist_BetaVsPQPlus->GetYaxis()->SetTitleSize(0.05);
 		locHist_BetaVsPQPlus->GetXaxis()->SetLabelSize(0.05);
 		locHist_BetaVsPQPlus->GetYaxis()->SetLabelSize(0.05);
+		locHist_BetaVsPQPlus->GetListOfFunctions()->Add(locBetaVsPFunc_Proton);
+		locHist_BetaVsPQPlus->GetListOfFunctions()->Add(locBetaVsPFunc_Kaon);
+		locHist_BetaVsPQPlus->GetListOfFunctions()->Add(locBetaVsPFunc_Pion);
 		locHist_BetaVsPQPlus->Draw("COLZ");
 	}
 
@@ -48,6 +70,8 @@
 		locHist_BetaVsPQMinus->GetYaxis()->SetTitleSize(0.05);
 		locHist_BetaVsPQMinus->GetXaxis()->SetLabelSize(0.05);
 		locHist_BetaVsPQMinus->GetYaxis()->SetLabelSize(0.05);
+		locHist_BetaVsPQMinus->GetListOfFunctions()->Add(locBetaVsPFunc_Pion);
+		locHist_BetaVsPQMinus->GetListOfFunctions()->Add(locBetaVsPFunc_Kaon);
 		locHist_BetaVsPQMinus->Draw("COLZ");
 	}
 
