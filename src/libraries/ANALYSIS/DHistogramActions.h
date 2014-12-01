@@ -716,10 +716,12 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
+		TH1I* 	dEventRFBunchTime_AllEvents;
 		TH1I* 	dEventVertexZ_AllEvents;
 		TH2I* 	dEventVertexYVsX_AllEvents;
 		TH1I* 	dEventVertexT_AllEvents;
 
+		TH1I* 	dEventRFBunchTime_2OrMoreGoodTracks;
 		TH1I* 	dEventVertexZ_2OrMoreGoodTracks;
 		TH2I* 	dEventVertexYVsX_2OrMoreGoodTracks;
 		TH1I* 	dEventVertexT_2OrMoreGoodTracks;
