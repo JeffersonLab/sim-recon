@@ -76,6 +76,7 @@ class DFCALCluster : public JObject {
    void toStrings(vector<pair<string,string> > &items) const {
       AddString(items, "x(cm)", "%3.1f", getCentroid().x());
       AddString(items, "y(cm)", "%3.1f", getCentroid().y());
+      AddString(items, "z(cm)", "%3.1f", getCentroid().z());
       AddString(items, "E(GeV)", "%2.3f", getEnergy());
       AddString(items, "t(ns)", "%2.3f", getTime());
    }
