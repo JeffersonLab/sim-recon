@@ -1,9 +1,7 @@
 // hnamepath: /Independent/Hist_DetectedParticleKinematics/Beam_Photon/Momentum
 // hnamepath: /Independent/Hist_EventVertexZ/2+GoodTracks/EventVertexZ
-// hnamepath: /Independent/Hist_EventVertexZ/2+GoodTracks/EventVertexT
 // hnamepath: /Independent/Hist_EventVertexZ/2+GoodTracks/EventVertexYVsX
 // hnamepath: /Independent/Hist_EventVertexZ/2+GoodTracks/ConfidenceLevel
-// hnamepath: /Independent/Hist_EventVertexZ/2+GoodTracks/EventRFBunchT
 
 {
 	TDirectory *locTopDirectory = gDirectory;
@@ -27,10 +25,8 @@
 	//Get Beam Histograms
 	gDirectory->cd("2+GoodTracks");
 	TH1I* locHist_EventVertexZ = (TH1I*)gDirectory->Get("EventVertexZ");
-	TH1I* locHist_EventVertexT = (TH1I*)gDirectory->Get("EventVertexT");
 	TH2I* locHist_EventVertexYVsX = (TH2I*)gDirectory->Get("EventVertexYVsX");
 	TH1I* locHist_ConfidenceLevel = (TH1I*)gDirectory->Get("ConfidenceLevel");
-	TH1I* locHist_EventRFBunchT = (TH1I*)gDirectory->Get("EventRFBunchT");
 
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
@@ -38,7 +34,7 @@
 		locCanvas = new TCanvas("EventInfo", "EventInfo", 1200, 800); //for testing
 	else
 		locCanvas = gPad->GetCanvas();
-	locCanvas->Divide(3, 2);
+	locCanvas->Divide(2, 2);
 
 	//Draw
 	locCanvas->cd(1);
@@ -56,18 +52,6 @@
 	locCanvas->cd(2);
 	gPad->SetTicks();
 	gPad->SetGrid();
-	if(locHist_EventRFBunchT != NULL)
-	{
-		locHist_EventRFBunchT->GetXaxis()->SetTitleSize(0.05);
-		locHist_EventRFBunchT->GetYaxis()->SetTitleSize(0.05);
-		locHist_EventRFBunchT->GetXaxis()->SetLabelSize(0.05);
-		locHist_EventRFBunchT->GetYaxis()->SetLabelSize(0.05);
-		locHist_EventRFBunchT->Draw();
-	}
-
-	locCanvas->cd(3);
-	gPad->SetTicks();
-	gPad->SetGrid();
 	if(locHist_ConfidenceLevel != NULL)
 	{
 		locHist_ConfidenceLevel->GetXaxis()->SetTitleSize(0.05);
@@ -78,7 +62,7 @@
 		gPad->SetLogy();
 	}
 
-	locCanvas->cd(4);
+	locCanvas->cd(3);
 	gPad->SetTicks();
 	gPad->SetGrid();
 	if(locHist_EventVertexZ != NULL)
@@ -90,7 +74,7 @@
 		locHist_EventVertexZ->Draw();
 	}
 
-	locCanvas->cd(5);
+	locCanvas->cd(4);
 	gPad->SetTicks();
 	gPad->SetGrid();
 	if(locHist_EventVertexYVsX != NULL)
@@ -100,18 +84,6 @@
 		locHist_EventVertexYVsX->GetXaxis()->SetLabelSize(0.05);
 		locHist_EventVertexYVsX->GetYaxis()->SetLabelSize(0.05);
 		locHist_EventVertexYVsX->Draw("COLZ");
-	}
-
-	locCanvas->cd(6);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(locHist_EventVertexT != NULL)
-	{
-		locHist_EventVertexT->GetXaxis()->SetTitleSize(0.05);
-		locHist_EventVertexT->GetYaxis()->SetTitleSize(0.05);
-		locHist_EventVertexT->GetXaxis()->SetLabelSize(0.05);
-		locHist_EventVertexT->GetYaxis()->SetLabelSize(0.05);
-		locHist_EventVertexT->Draw();
 	}
 }
 

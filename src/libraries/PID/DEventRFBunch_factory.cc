@@ -129,7 +129,7 @@ bool DEventRFBunch_factory::Get_RFTime(JEventLoop *locEventLoop, double& locRFHi
 	vector<const DTAGMHit*> locTAGMHits;
 	locEventLoop->Get(locTAGMHits);
 
-	vector<const DTAGMHit*> locTAGHHits;
+	vector<const DTAGHHit*> locTAGHHits;
 	locEventLoop->Get(locTAGHHits);
 
 	vector<double> locTimes;
