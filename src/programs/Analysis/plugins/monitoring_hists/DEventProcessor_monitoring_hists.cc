@@ -68,6 +68,7 @@ jerror_t DEventProcessor_monitoring_hists::brun(JEventLoop *locEventLoop, int ru
 	dHistogramAction_DetectedParticleKinematics.Initialize(locEventLoop);
 	dHistogramAction_NumReconstructedObjects.Initialize(locEventLoop);
 	dHistogramAction_DetectorStudies.Initialize(locEventLoop);
+	dHistogramAction_EventVertex.Initialize(locEventLoop);
 
 //	dHistogramAction_ObjectMemory.dMaxNumEvents = 200000;
 //	dHistogramAction_ObjectMemory.Initialize(locEventLoop);
@@ -101,6 +102,7 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, int ev
 	dHistogramAction_DetectedParticleKinematics(locEventLoop);
 	dHistogramAction_NumReconstructedObjects(locEventLoop);
 	dHistogramAction_DetectorStudies(locEventLoop);
+	dHistogramAction_EventVertex(locEventLoop);
 //	dHistogramAction_ObjectMemory(locEventLoop);
 
 	if(!locMCThrowns.empty())

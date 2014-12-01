@@ -29,8 +29,7 @@ jerror_t DVertex_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
 	// Get Target parameters from XML
 	dTargetZCenter = 65.0;
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
-	if(locGeometry != NULL)
-		locGeometry->GetTargetZ(dTargetZCenter);
+	locGeometry->GetTargetZ(dTargetZCenter);
 
 	double locBx, locBy, locBz;
 	locMagneticFieldMap->GetField(0.0, 0.0, dTargetZCenter, locBx, locBy, locBz);
@@ -54,9 +53,9 @@ jerror_t DVertex_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
 jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 {
 	//preferentially (kinematic fit):
-	//use tracks with a matched hit & good tracking FOM
-	//if no good tracks (or none with matched hits), use all tracks
-	//if no tracks, use target center
+		//use tracks with a matched hit & good tracking FOM
+		//if no good tracks (or none with matched hits), use all tracks
+		//if no tracks, use target center
 
 	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locEventLoop->Get(locTrackTimeBasedVector);
@@ -125,17 +124,24 @@ jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 	//save kinfit results
 	TVector3 locFitVertex = locVertexConstraint->Get_CommonVertex();
 	DVector3 locTFitVertex(locFitVertex.X(), locFitVertex.Y(), locFitVertex.Z());
-	return Create_Vertex(locTFitVertex, locEventRFBunch->dTime);
+	unsigned int locKinFitNDF = dKinFitter.Get_NDF();
+	double locKinFitChiSq = dKinFitter.Get_ChiSq();
+	Create_Vertex(locTFitVertex, locEventRFBunch->dTime, locKinFitNDF, locKinFitChiSq);
+	dKinFitter.Get_Pulls(_data.back()->dKinFitPulls);
+
+	return NOERROR;
 }
 
-jerror_t DVertex_factory::Create_Vertex(DVector3 locPosition, double locRFTime)
+jerror_t DVertex_factory::Create_Vertex(DVector3 locPosition, double locRFTime, unsigned int locKinFitNDF, double locKinFitChiSq)
 {
 	double locTime = locRFTime + (locPosition.Z() - dTargetZCenter)/29.9792458;
 
 	DVertex* locVertex = new DVertex();
 	locVertex->dSpacetimeVertex = DLorentzVector(locPosition, locTime);
-	_data.push_back(locVertex);
+	locVertex->dKinFitNDF = locKinFitNDF;
+	locVertex->dKinFitChiSq = locKinFitChiSq;
 
+	_data.push_back(locVertex);
 	return NOERROR;
 }
 

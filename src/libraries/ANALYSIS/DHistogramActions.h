@@ -82,6 +82,7 @@ REACTION-BASED ACTIONS:
 	DHistogramAction_MissingMassSquared
 REACTION-INDEPENDENT ACTIONS:
 	DHistogramAction_TrackMultiplicity
+	DHistogramAction_EventVertex
 	DHistogramAction_ThrownParticleKinematics
 	DHistogramAction_ReconnedThrownKinematics
 	DHistogramAction_DetectedParticleKinematics
@@ -673,6 +674,60 @@ class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
 		map<Particle_t, TH1I*> dHistMap_VertexT;
 };
 
+class DHistogramAction_EventVertex : public DAnalysisAction
+{
+	public:
+		DHistogramAction_EventVertex(const DReaction* locReaction, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Hist_EventVertex", false, locActionUniqueString), 
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumVertexXYBins(400), 
+		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
+		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05)
+		{
+			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(Proton);  dFinalStatePIDs.push_back(PiMinus);
+		}
+
+		DHistogramAction_EventVertex(string locActionUniqueString) : 
+		DAnalysisAction(NULL, "Hist_EventVertex", false, locActionUniqueString), 
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumVertexXYBins(400), 
+		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
+		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05)
+		{
+			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(Proton);  dFinalStatePIDs.push_back(PiMinus);
+		}
+
+		DHistogramAction_EventVertex(void) : 
+		DAnalysisAction(NULL, "Hist_EventVertex", false, ""), 
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumVertexXYBins(400), 
+		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
+		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05)
+		{
+			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(Proton);  dFinalStatePIDs.push_back(PiMinus);
+		}
+
+		unsigned int dNumConfidenceLevelBins, dNumPullBins, dNumVertexZBins, dNumTBins, dNumVertexXYBins;
+		double dMinVertexZ, dMaxVertexZ, dMinT, dMaxT, dMinVertexXY, dMaxVertexXY, dMinPull, dMaxPull;
+
+		double dPullHistConfidenceLevelCut;
+
+		deque<Particle_t> dFinalStatePIDs;
+
+		void Initialize(JEventLoop* locEventLoop);
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		TH1I* 	dEventVertexZ_AllEvents;
+		TH2I* 	dEventVertexYVsX_AllEvents;
+		TH1I* 	dEventVertexT_AllEvents;
+
+		TH1I* 	dEventVertexZ_2OrMoreGoodTracks;
+		TH2I* 	dEventVertexYVsX_2OrMoreGoodTracks;
+		TH1I* 	dEventVertexT_2OrMoreGoodTracks;
+
+		TH1I* dHist_KinFitConfidenceLevel;
+		map<Particle_t, map<DKinFitPullType, TH1I*> > dHistMap_KinFitPulls;
+};
+
 class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 {
 	public:
@@ -729,9 +784,6 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 		const DAnalysisUtilities* dAnalysisUtilities;
 
 		TH1I* 	dBeamParticle_P;
-		TH1I* 	dEventVertexZ;
-		TH2I* 	dEventVertexYVsX;
-		TH1I* 	dEventVertexT;
 
 		//PID
 		map<int, TH2I*> dHistMap_QBetaVsP; //int is charge: -1, 1

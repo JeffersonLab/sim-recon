@@ -3685,6 +3685,224 @@ bool DHistogramAction_ReconnedThrownKinematics::Perform_Action(JEventLoop* locEv
 	return true;
 }
 
+void DHistogramAction_EventVertex::Initialize(JEventLoop* locEventLoop)
+{
+	string locHistName, locHistTitle;
+
+	//CREATE THE HISTOGRAMS
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		CreateAndChangeTo_ActionDirectory();
+
+		// ALL EVENTS
+		CreateAndChangeTo_Directory("AllEvents", "AllEvents");
+
+		// Event Vertex-Z
+		locHistName = "EventVertexZ";
+		locHistTitle = ";Event Vertex-Z (cm)";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dEventVertexZ_AllEvents = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dEventVertexZ_AllEvents = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumVertexZBins, dMinVertexZ, dMaxVertexZ);
+
+		// Event Vertex-Y Vs Vertex-X
+		locHistName = "EventVertexYVsX";
+		locHistTitle = ";Event Vertex-X (cm);Event Vertex-Y (cm)";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dEventVertexYVsX_AllEvents = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dEventVertexYVsX_AllEvents = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNumVertexXYBins, dMinVertexXY, dMaxVertexXY, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY);
+
+		// Event Vertex-T
+		locHistName = "EventVertexT";
+		locHistTitle = ";Event Vertex Time (ns)";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dEventVertexT_AllEvents = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dEventVertexT_AllEvents = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumTBins, dMinT, dMaxT);
+
+		gDirectory->cd("..");
+
+
+		// 2+ Good Tracks
+		CreateAndChangeTo_Directory("2+GoodTracks", "2+GoodTracks");
+
+		// Event Vertex-Z
+		locHistName = "EventVertexZ";
+		locHistTitle = ";Event Vertex-Z (cm)";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dEventVertexZ_2OrMoreGoodTracks = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dEventVertexZ_2OrMoreGoodTracks = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumVertexZBins, dMinVertexZ, dMaxVertexZ);
+
+		// Event Vertex-Y Vs Vertex-X
+		locHistName = "EventVertexYVsX";
+		locHistTitle = ";Event Vertex-X (cm);Event Vertex-Y (cm)";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dEventVertexYVsX_2OrMoreGoodTracks = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dEventVertexYVsX_2OrMoreGoodTracks = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNumVertexXYBins, dMinVertexXY, dMaxVertexXY, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY);
+
+		// Event Vertex-T
+		locHistName = "EventVertexT";
+		locHistTitle = ";Event Vertex Time (ns)";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dEventVertexT_2OrMoreGoodTracks = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dEventVertexT_2OrMoreGoodTracks = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumTBins, dMinT, dMaxT);
+
+		// Confidence Level
+		locHistName = "ConfidenceLevel";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_KinFitConfidenceLevel = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_KinFitConfidenceLevel = new TH1I(locHistName.c_str(), "Event Vertex Kinematic Fit;Confidence Level;# Events", dNumConfidenceLevelBins, 0.0, 1.0);
+
+		//final particle pulls
+		for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
+		{
+			Particle_t locPID = dFinalStatePIDs[loc_i];
+			string locParticleDirName = string("Pulls_") + string(ParticleType(locPID));
+			string locParticleROOTName = ParticleName_ROOT(locPID);
+			CreateAndChangeTo_Directory(locParticleDirName, locParticleDirName);
+
+			//Px Pull
+			locHistName = "Pull_Px";
+			locHistTitle = locParticleROOTName + string(", Vertex Fit;p_{x} Pull;# Events");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_KinFitPulls[locPID][d_PxPull] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_KinFitPulls[locPID][d_PxPull] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, dMinPull, dMaxPull);
+
+			//Py Pull
+			locHistName = "Pull_Py";
+			locHistTitle = locParticleROOTName + string(", Vertex Fit;p_{y} Pull;# Events");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_KinFitPulls[locPID][d_PyPull] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_KinFitPulls[locPID][d_PyPull] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, dMinPull, dMaxPull);
+
+			//Pz Pull
+			locHistName = "Pull_Pz";
+			locHistTitle = locParticleROOTName + string(", Vertex Fit;p_{z} Pull;# Events");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_KinFitPulls[locPID][d_PzPull] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_KinFitPulls[locPID][d_PzPull] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, dMinPull, dMaxPull);
+
+			//Xx Pull
+			locHistName = "Pull_Xx";
+			locHistTitle = locParticleROOTName + string(", Vertex Fit;x_{x} Pull;# Events");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_KinFitPulls[locPID][d_XxPull] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_KinFitPulls[locPID][d_XxPull] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, dMinPull, dMaxPull);
+
+			//Xy Pull
+			locHistName = "Pull_Xy";
+			locHistTitle = locParticleROOTName + string(", Vertex Fit;x_{y} Pull;# Events");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_KinFitPulls[locPID][d_XyPull] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_KinFitPulls[locPID][d_XyPull] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, dMinPull, dMaxPull);
+
+			//Xz Pull
+			locHistName = "Pull_Xz";
+			locHistTitle = locParticleROOTName + string(", Vertex Fit;x_{z} Pull;# Events");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_KinFitPulls[locPID][d_XzPull] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_KinFitPulls[locPID][d_XzPull] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, dMinPull, dMaxPull);
+
+			gDirectory->cd("..");
+		}
+
+		gDirectory->cd("..");
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+bool DHistogramAction_EventVertex::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	if(Get_NumPreviousParticleCombos() != 0)
+		return true; //else double-counting!
+
+	const DVertex* locVertex = NULL;
+	locEventLoop->GetSingle(locVertex);
+
+	vector<const DChargedTrack*> locChargedTracks;
+	locEventLoop->Get(locChargedTracks, "PreSelect");
+
+	const DDetectorMatches* locDetectorMatches = NULL;
+	locEventLoop->GetSingle(locDetectorMatches);
+
+	//Get time-based tracks: use best PID FOM
+		//Note that these may not be the PIDs that were used in the fit!!!
+		//e.g. for a DTrackTimeBased the proton hypothesis has the highest tracking FOM, so it is used in the fit, but the pi+ PID has the highest PID FOM
+	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
+	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
+	{
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
+		const DTrackTimeBased* locTrackTimeBased = NULL;
+		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+		if(locTrackTimeBased != NULL)
+			locTrackTimeBasedVector.push_back(locTrackTimeBased);
+	}
+
+	//Event Vertex
+	japp->RootWriteLock();
+	{
+		dEventVertexZ_AllEvents->Fill(locVertex->dSpacetimeVertex.Z());
+		dEventVertexYVsX_AllEvents->Fill(locVertex->dSpacetimeVertex.X(), locVertex->dSpacetimeVertex.Y());
+		dEventVertexT_AllEvents->Fill(locVertex->dSpacetimeVertex.T());
+
+		if(locChargedTracks.size() >= 2)
+		{
+			dEventVertexZ_2OrMoreGoodTracks->Fill(locVertex->dSpacetimeVertex.Z());
+			dEventVertexYVsX_2OrMoreGoodTracks->Fill(locVertex->dSpacetimeVertex.X(), locVertex->dSpacetimeVertex.Y());
+			dEventVertexT_2OrMoreGoodTracks->Fill(locVertex->dSpacetimeVertex.T());
+		}
+	}
+	japp->RootUnLock();
+
+	if(locVertex->dKinFitNDF == 0)
+		return true; //kin fit not performed or didn't converge: no results to histogram
+
+	double locConfidenceLevel = TMath::Prob(locVertex->dKinFitChiSq, locVertex->dKinFitNDF);
+
+	japp->RootWriteLock();
+	{
+		dHist_KinFitConfidenceLevel->Fill(locConfidenceLevel);
+
+		//pulls
+		if(locConfidenceLevel > dPullHistConfidenceLevelCut)
+		{
+			for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
+			{
+				const DKinematicData* locKinematicData = static_cast<const DKinematicData*>(locTrackTimeBasedVector[loc_i]);
+				Particle_t locPID = locKinematicData->PID();
+				if(dHistMap_KinFitPulls.find(locPID) == dHistMap_KinFitPulls.end())
+					continue; //PID not histogrammed
+
+				map<const DKinematicData*, map<DKinFitPullType, double> >::const_iterator locParticleIterator = locVertex->dKinFitPulls.find(locKinematicData);
+				if(locParticleIterator == locVertex->dKinFitPulls.end())
+					continue;
+
+				const map<DKinFitPullType, double>& locPullMap = locParticleIterator->second;
+				map<DKinFitPullType, double>::const_iterator locPullIterator = locPullMap.begin();
+				for(; locPullIterator != locPullMap.end(); ++locPullIterator)
+					dHistMap_KinFitPulls[locPID][locPullIterator->first]->Fill(locPullIterator->second);
+			}
+		}
+	}
+	japp->RootUnLock();
+
+	return true;
+}
+
 void DHistogramAction_DetectedParticleKinematics::Initialize(JEventLoop* locEventLoop)
 {
 	string locHistName, locHistTitle, locParticleName, locParticleROOTName;
@@ -3703,30 +3921,6 @@ void DHistogramAction_DetectedParticleKinematics::Initialize(JEventLoop* locEven
 
 		dParticleID = locParticleIDs[0];
 		dAnalysisUtilities = locAnalysisUtilities;
-
-		// Event Vertex-Z
-		locHistName = "EventVertexZ";
-		locHistTitle = ";Event Vertex-Z (cm)";
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dEventVertexZ = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dEventVertexZ = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumVertexZBins, dMinVertexZ, dMaxVertexZ);
-
-		// Event Vertex-Y Vs Vertex-X
-		locHistName = "EventVertexYVsX";
-		locHistTitle = ";Event Vertex-X (cm);Event Vertex-Y (cm)";
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dEventVertexYVsX = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dEventVertexYVsX = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNumVertexXYBins, dMinVertexXY, dMaxVertexXY, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY);
-
-		// Event Vertex-T
-		locHistName = "EventVertexT";
-		locHistTitle = ";Event Vertex Time (ns)";
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dEventVertexT = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dEventVertexT = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumTBins, dMinT, dMaxT);
 
 		// Beam Particle
 		locPID = Gamma;
@@ -3867,19 +4061,10 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 	if(locParticleCombo != NULL)
 		locEventRFBunch = locParticleCombo->Get_EventRFBunch();
 
-	const DVertex* locVertex = NULL;
-	locEventLoop->GetSingle(locVertex);
-	DLorentzVector locEventVertex = locVertex->dSpacetimeVertex;
-	if(locParticleCombo != NULL)
-		locEventVertex = locParticleCombo->Get_ParticleComboStep(0)->Get_SpacetimeVertex();
-
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);
 	japp->RootWriteLock();
 	{
-		dEventVertexZ->Fill(locEventVertex.Z());
-		dEventVertexYVsX->Fill(locEventVertex.X(), locEventVertex.Y());
-		dEventVertexT->Fill(locEventVertex.T());
 		for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 			dBeamParticle_P->Fill(locBeamPhotons[loc_i]->energy());
 	}

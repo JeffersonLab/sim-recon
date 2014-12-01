@@ -8,9 +8,14 @@
 #ifndef _DVertex_
 #define _DVertex_
 
+#include <map>
+
 #include <JANA/JObject.h>
 
 #include <DLorentzVector.h>
+
+#include "PID/DKinematicData.h"
+#include "ANALYSIS/DKinFitParticle.h"
 
 using namespace std;
 using namespace jana;
@@ -21,6 +26,10 @@ class DVertex: public jana::JObject
 		JOBJECT_PUBLIC(DVertex);
 
 		DLorentzVector dSpacetimeVertex; // vertex position in cm + vertex time in ns
+
+		unsigned int dKinFitNDF;
+		double dKinFitChiSq;
+		map<const DKinematicData*, map<DKinFitPullType, double> > dKinFitPulls;
 
 		// Objects used to calculate this added as Associated Objects
 		void toStrings(vector<pair<string,string> > &items) const

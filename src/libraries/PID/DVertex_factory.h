@@ -39,7 +39,7 @@ class DVertex_factory : public jana::JFactory<DVertex>
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		jerror_t Create_Vertex(DVector3 locPosition, double locRFTime);
+		jerror_t Create_Vertex(DVector3 locPosition, double locRFTime, unsigned int locKinFitNDF = 0, double locKinFitChiSq = 0.0);
 
 		const DAnalysisUtilities* dAnalysisUtilities;
 		DKinFitter_GlueX dKinFitter;
