@@ -1600,7 +1600,7 @@ void DHistogramAction_DetectorStudies::Fill_ReconstructionHists(JEventLoop* locE
 void DHistogramAction_DetectorStudies::Fill_PIDHists(JEventLoop* locEventLoop)
 {
 	vector<const DChargedTrack*> locChargedTracks;
-	locEventLoop->Get(locChargedTracks);
+	locEventLoop->Get(locChargedTracks, "PreSelect");
 
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
@@ -1635,25 +1635,25 @@ void DHistogramAction_DetectorStudies::Fill_PIDHists(JEventLoop* locEventLoop)
 			if(locSCHitMatchParams.dTrackTimeBased != NULL)
 			{
 				dHistMap_QSCdEdXVsP[locCharge]->Fill(locP, locSCHitMatchParams.dEdx*1.0E3);
-				double locBeta_Timing = locChargedTrackHypothesis->pathLength()/(29.9792458*(locSCHitMatchParams.dHitTime - locStartTime));
+				double locBeta_Timing = locSCHitMatchParams.dPathLength/(29.9792458*(locSCHitMatchParams.dHitTime - locStartTime));
 				dHistMap_SCBetaVsP[locCharge]->Fill(locP, locBeta_Timing);
 			}
 			if(locTOFHitMatchParams.dTrackTimeBased != NULL)
 			{
 				dHistMap_QTOFdEdXVsP[locCharge]->Fill(locP, locTOFHitMatchParams.dEdx*1.0E3);
-				double locBeta_Timing = locChargedTrackHypothesis->pathLength()/(29.9792458*(locTOFHitMatchParams.dTOFPoint->t - locStartTime));
+				double locBeta_Timing = locTOFHitMatchParams.dPathLength/(29.9792458*(locTOFHitMatchParams.dTOFPoint->t - locStartTime));
 				dHistMap_TOFBetaVsP[locCharge]->Fill(locP, locBeta_Timing);
 			}
 			if(locBCALShowerMatchParams.dTrackTimeBased != NULL)
 			{
 				const DBCALShower* locBCALShower = dynamic_cast<const DBCALShower*>(locBCALShowerMatchParams.dShowerObject);
-				double locBeta_Timing = locChargedTrackHypothesis->pathLength()/(29.9792458*(locBCALShower->t - locStartTime));
+				double locBeta_Timing = locBCALShowerMatchParams.dPathLength/(29.9792458*(locBCALShower->t - locStartTime));
 				dHistMap_BCALBetaVsP[locCharge]->Fill(locP, locBeta_Timing);
 			}
 			if(locFCALShowerMatchParams.dTrackTimeBased != NULL)
 			{
 				const DFCALShower* locFCALShower = dynamic_cast<const DFCALShower*>(locFCALShowerMatchParams.dShowerObject);
-				double locBeta_Timing = locChargedTrackHypothesis->pathLength()/(29.9792458*(locFCALShower->getTime() - locStartTime));
+				double locBeta_Timing = locFCALShowerMatchParams.dPathLength/(29.9792458*(locFCALShower->getTime() - locStartTime));
 				dHistMap_FCALBetaVsP[locCharge]->Fill(locP, locBeta_Timing);
 			}
 
