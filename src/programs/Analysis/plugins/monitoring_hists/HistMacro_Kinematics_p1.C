@@ -51,6 +51,7 @@
 	gPad->SetGrid();
 	if(locHist_BetaVsPQPlus != NULL)
 	{
+		locHist_BetaVsPQPlus->GetXaxis()->SetRangeUser(0.0, 6.0);
 		locHist_BetaVsPQPlus->GetXaxis()->SetTitleSize(0.05);
 		locHist_BetaVsPQPlus->GetYaxis()->SetTitleSize(0.05);
 		locHist_BetaVsPQPlus->GetXaxis()->SetLabelSize(0.05);
@@ -66,6 +67,7 @@
 	gPad->SetGrid();
 	if(locHist_BetaVsPQMinus != NULL)
 	{
+		locHist_BetaVsPQMinus->GetXaxis()->SetRangeUser(0.0, 6.0);
 		locHist_BetaVsPQMinus->GetXaxis()->SetTitleSize(0.05);
 		locHist_BetaVsPQMinus->GetYaxis()->SetTitleSize(0.05);
 		locHist_BetaVsPQMinus->GetXaxis()->SetLabelSize(0.05);
