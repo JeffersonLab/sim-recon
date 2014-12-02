@@ -70,9 +70,7 @@ jerror_t JEventProcessor_pi0fcalskim::init(void)
 //------------------
 jerror_t JEventProcessor_pi0fcalskim::brun(JEventLoop *eventLoop, int runnumber)
 {
-
   eventLoop->GetSingle(dEventWriterEVIO);
-  dEventWriterEVIO->Open_OutputFile(eventLoop, "pi0fcalskim"); //if already open, doesn't do anything
 
   return NOERROR;
 }
