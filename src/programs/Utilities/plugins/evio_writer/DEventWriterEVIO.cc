@@ -71,36 +71,26 @@ string DEventWriterEVIO::Get_OutputFileName(JEventLoop* locEventLoop, string loc
 	return (locSourceFileName_Pathless + string(".") + locOutputFileNameSubString + string(".evio"));
 }
 
-bool DEventWriterEVIO::Open_OutputFile(JEventLoop* locEventLoop, string locOutputFileNameSubString) const
+bool DEventWriterEVIO::Open_OutputFile(JEventLoop* locEventLoop, string locOutputFileName) const
 {
+	//ASSUMES A LOCK HAS ALREADY BEEN ACQUIRED (by Write_EVIOEvent)
 #if HAVE_EVIO
-	string locOutputFileName = Get_OutputFileName(locEventLoop, locOutputFileNameSubString);
+	//open it
+	int locEVIOHandle = 0;
+	const char *locFileCharName = locOutputFileName.c_str();
+	int locStatus = evOpen((char*)locFileCharName, (char*)"w", &locEVIOHandle);
 
-	int locStatus = 0;
-	japp->WriteLock("EVIOWriter");
+	//evaluate status
+	if(locStatus != S_SUCCESS)
+		jerr << "Unable to open EVIO file." << endl;
+	else
 	{
-		if(gEVIOOutputFilePointers->find(locOutputFileName) != gEVIOOutputFilePointers->end())
-		{
-			//already open, don't re-open
-			japp->Unlock("EVIOWriter");
-			return true;
-		}
-
-		//not open: open it
-		int locEVIOHandle = 0;
-		const char *locFileCharName = locOutputFileName.c_str();
-		locStatus = evOpen((char*)locFileCharName, (char*)"w", &locEVIOHandle);
-		if(locStatus != S_SUCCESS)
-			jerr << "Unable to open EVIO file." << endl;
-		else
-		{
-			jout << "Output EVIO file " << locOutputFileName << " created." << endl;
-			(*gEVIOOutputFilePointers)[locOutputFileName] = locEVIOHandle; //store the handle
-		}
+		jout << "Output EVIO file " << locOutputFileName << " created." << endl;
+		(*gEVIOOutputFilePointers)[locOutputFileName] = locEVIOHandle; //store the handle
 	}
-	japp->Unlock("EVIOWriter");
 
 	return (locStatus == S_SUCCESS);
+
 #else
 	jout << "Compiled without EVIO! Cannot open file." << endl;
 	return false;
@@ -117,7 +107,7 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 		if(gEVIOOutputFilePointers->find(locOutputFileName) == gEVIOOutputFilePointers->end())
 		{
 			//not open, open it
-			if(!Open_OutputFile(locEventLoop, locOutputFileNameSubString))
+			if(!Open_OutputFile(locEventLoop, locOutputFileName))
 				return false; //failed to open
 		}
 

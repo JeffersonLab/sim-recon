@@ -31,7 +31,6 @@ jerror_t JEventProcessor_2trackskim::init(void)
 jerror_t JEventProcessor_2trackskim::brun(JEventLoop *locEventLoop, int runnumber)
 {
 	locEventLoop->GetSingle(dEventWriterEVIO);
-	dEventWriterEVIO->Open_OutputFile(locEventLoop, "2tracks"); //if already open, doesn't do anything
    return NOERROR;
 }
 

@@ -25,18 +25,13 @@ class DEventWriterEVIO : public JObject
 		DEventWriterEVIO(JEventLoop* locEventLoop);
 		~DEventWriterEVIO(void);
 
-		//It's not strictly necessary to call this prior to "Write_EVIOEvent," but it's preferred:
-			//If no events are written to the output file, it will still exist
-		//If the file is already open, this doesn't do anything
-		bool Open_OutputFile(JEventLoop* locEventLoop, string locOutputFileNameSubString) const;
-
-		//This method will also open the output file if it hasn't been opened yet. 
 		bool Write_EVIOEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString) const;
 
 		string Get_OutputFileName(JEventLoop* locEventLoop, string locOutputFileNameSubString) const;
 
 	private:
 		bool Write_EVIOEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString, uint32_t* locEVIOBuffer) const;
+		bool Open_OutputFile(JEventLoop* locEventLoop, string locOutputFileName) const;
 };
 
 #endif //_DEventWriterEVIO_
