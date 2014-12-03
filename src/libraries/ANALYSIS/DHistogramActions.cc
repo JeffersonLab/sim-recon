@@ -1632,8 +1632,9 @@ void DHistogramAction_DetectorStudies::Fill_PIDHists(JEventLoop* locEventLoop)
 			const DSCHitMatchParams& locSCHitMatchParams = locChargedTrackHypothesis->dSCHitMatchParams;
 			const DShowerMatchParams& locBCALShowerMatchParams = locChargedTrackHypothesis->dBCALShowerMatchParams;
 
-			if(locSCHitMatchParams.dTrackTimeBased != NULL)
+			if((locSCHitMatchParams.dTrackTimeBased != NULL) && (locEventRFBunch->dTime == locEventRFBunch->dTime))
 			{
+				//If RF time != RF time: Is NaN, and SC time was used as the start time: is cheating
 				dHistMap_QSCdEdXVsP[locCharge]->Fill(locP, locSCHitMatchParams.dEdx*1.0E3);
 				double locBeta_Timing = locSCHitMatchParams.dPathLength/(29.9792458*(locSCHitMatchParams.dHitTime - locStartTime));
 				dHistMap_SCBetaVsP[locCharge]->Fill(locP, locBeta_Timing);

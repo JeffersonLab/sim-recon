@@ -79,6 +79,8 @@
 	gPad->SetGrid();
 	if(locHist_EventVertexYVsX != NULL)
 	{
+		locHist_EventVertexYVsX->GetXaxis()->SetRangeUser(-4.0, 4.0);
+		locHist_EventVertexYVsX->GetYaxis()->SetRangeUser(-4.0, 4.0);
 		locHist_EventVertexYVsX->GetXaxis()->SetTitleSize(0.05);
 		locHist_EventVertexYVsX->GetYaxis()->SetTitleSize(0.05);
 		locHist_EventVertexYVsX->GetXaxis()->SetLabelSize(0.05);
