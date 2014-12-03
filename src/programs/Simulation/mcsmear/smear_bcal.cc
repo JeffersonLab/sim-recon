@@ -614,8 +614,12 @@ void GetSiPMSpectra(hddm_s::HDDM *record,
    // dark hit only events. In this case, we must create the BCAL 
    // tree here.
    hddm_s::BarrelEMcalList bcals = record->getBarrelEMcals();
-   if (bcals.size() == 0)
-      bcals = record->getHitViews().begin()->addBarrelEMcals();
+   if (bcals.size() == 0){
+      if(record->getHitViews().empty()){
+		record->getPhysicsEvent().addHitViews();
+	  }
+     bcals = record->getHitViews().begin()->addBarrelEMcals();
+   }
 
    // Loop over GEANT hits in BCAL
    hddm_s::BcalSiPMSpectrumList specs = record->getBcalSiPMSpectrums();
@@ -1517,8 +1521,12 @@ void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
    /// into only a single physicsEvent.
 
    hddm_s::BarrelEMcalList bcals = record->getBarrelEMcals();
-   if (bcals.size() == 0)
+   if (bcals.size() == 0){
+      if(record->getHitViews().empty()){
+		record->getPhysicsEvent().addHitViews();
+	  }
       bcals = record->getHitViews().begin()->addBarrelEMcals();
+   }
    hddm_s::BcalCellList cells = bcals().getBcalCells();
    hddm_s::BcalCellList::iterator iter;
    for (iter = cells.begin(); iter != cells.end(); ++iter) {
