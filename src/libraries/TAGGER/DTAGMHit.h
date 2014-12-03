@@ -27,8 +27,8 @@ class DTAGMHit:public jana::JObject{
         AddString(items, "column", "%d", column);
         AddString(items, "E(GeV)", "%f", E);
         AddString(items, "t(ns)", "%f", t);
-        AddString(items, "time_fadc(ns)", "%f", E);
-        AddString(items, "npix_fadc", "%f", t);
+        AddString(items, "time_fadc(ns)", "%f", time_fadc);
+        AddString(items, "npix_fadc", "%f", npix_fadc);
       }
 };
 

@@ -25,8 +25,8 @@ class DTAGHHit:public jana::JObject{
         AddString(items, "counter_id", "%d", counter_id);
         AddString(items, "E(GeV)", "%f", E);
         AddString(items, "t(ns)", "%f", t);
-        AddString(items, "time_fadc(ns)", "%f", E);
-        AddString(items, "npe_fadc", "%f", t);
+        AddString(items, "time_fadc(ns)", "%f", time_fadc);
+        AddString(items, "npe_fadc", "%f", npe_fadc);
       }
 };
 
