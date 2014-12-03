@@ -93,7 +93,6 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 	if(dPIDAlgorithm->Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams))
 	{
 		locChargedTrackHypothesis->dSCHitMatchParams = locSCHitMatchParams;
-		locChargedTrackHypothesis->setT0(locSCHitMatchParams.dHitTime, sqrt(locSCHitMatchParams.dHitTimeVariance), SYS_START);
 
 		double locPropagatedTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime;
 		locChargedTrackHypothesis->setTime(locPropagatedTime);
@@ -103,6 +102,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 //		double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_START); //uncomment when ready!!
 //		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locSCHitMatchParams.dFlightTimeVariance, locSCHitMatchParams.dHitTimeVariance, locFlightTimePCorrelation); //uncomment when ready!!
 		locCovarianceMatrix(6, 6) = locPropagatedTimeUncertainty*locPropagatedTimeUncertainty; //delete when ready!!
+		locChargedTrackHypothesis->setT0(locPropagatedTime, locPropagatedTimeUncertainty, SYS_START); //update when ready
 
 		//add associated objects
 		vector<DSCHitMatchParams> locSCHitMatchParams;
