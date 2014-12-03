@@ -330,6 +330,7 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 			DEventRFBunch* locNewEventRFBunch = new DEventRFBunch();
 			locNewEventRFBunch->dTime = locNewRFTime;
 			locNewEventRFBunch->dTimeVariance = locRFVariance;
+			locNewEventRFBunch->dNumParticlesVotedForThisTime = locPropagatedTimes.size();
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
 			_data.push_back(locNewEventRFBunch);

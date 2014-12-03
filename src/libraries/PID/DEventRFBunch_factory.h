@@ -51,7 +51,7 @@ class DEventRFBunch_factory : public jana::JFactory<DEventRFBunch>
 
 		bool Find_TrackTimes(const DDetectorMatches* locDetectorMatches, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<double>& locTimes);
 		bool Find_NeutralTimes(JEventLoop* locEventLoop, vector<double>& locTimes);
-		int Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes);
+		int Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes, unsigned int& locNumParticlesVotedForThisTime);
 
 	private:
 		const DParticleID* dParticleID;

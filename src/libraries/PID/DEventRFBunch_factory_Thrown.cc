@@ -44,6 +44,7 @@ jerror_t DEventRFBunch_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int 
 	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
 	locEventRFBunch->dTime = locRFTimes[0]->dTime;
 	locEventRFBunch->dTimeVariance = 0.0;
+	locEventRFBunch->dNumParticlesVotedForThisTime = 0;
 	_data.push_back(locEventRFBunch);
 
 	return NOERROR;

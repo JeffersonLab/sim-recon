@@ -48,6 +48,7 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 		DEventRFBunch *locEventRFBunch = new DEventRFBunch;
 		locEventRFBunch->dTime = numeric_limits<double>::quiet_NaN();
 		locEventRFBunch->dTimeVariance = numeric_limits<double>::quiet_NaN();
+		locEventRFBunch->dNumParticlesVotedForThisTime = 0;
 		_data.push_back(locEventRFBunch);
 		return NOERROR;
 	}
@@ -91,17 +92,19 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	//then figure out which RF bunch matches the most # tracks
 		//need to try different sources of times: start with best quality
 	int locBestRFBunchShift = 0;
+	unsigned int locNumParticlesVotedForThisTime = 0;
 	vector<double> locTimes;
 	if(Find_TrackTimes(locDetectorMatches, locTrackTimeBasedVector_OnePerTrack_GoodFOM, locTimes)) //good tracks, use TOF/BCAL/ST info
-		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimes);
+		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimes, locNumParticlesVotedForThisTime);
 	else if(Find_TrackTimes(locDetectorMatches, locTrackTimeBasedVector_OnePerTrack, locTimes)) //potentially bad tracks, use TOF/BCAL/ST info
-		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimes);
+		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimes, locNumParticlesVotedForThisTime);
 	else if(Find_NeutralTimes(locEventLoop, locTimes))//use neutral showers
-		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimes);
+		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimes, locNumParticlesVotedForThisTime);
 	else //no confidence in selecting the RF bunch for the event //keep the original RF time signal
 	{
 		DEventRFBunch *locEventRFBunch = new DEventRFBunch;
 		locEventRFBunch->dTime = locRFHitTime;
+		locEventRFBunch->dNumParticlesVotedForThisTime = 0;
 		locEventRFBunch->dTimeVariance = locTimeVariance;
 		_data.push_back(locEventRFBunch);
 		return NOERROR;
@@ -109,6 +112,7 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 
 	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
 	locEventRFBunch->dTime = locRFHitTime + dRFBunchFrequency*double(locBestRFBunchShift);
+	locEventRFBunch->dNumParticlesVotedForThisTime = locNumParticlesVotedForThisTime;
 	locEventRFBunch->dTimeVariance = locTimeVariance;
 	_data.push_back(locEventRFBunch);
 
@@ -182,26 +186,18 @@ bool DEventRFBunch_factory::Find_TrackTimes(const DDetectorMatches* locDetectorM
 {
 	locTimes.clear();
 
-	//SC
+	//Order of preference: SC, BCAL, TOF, FCAL
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
 		const DTrackTimeBased* locTrackTimeBased = locTrackTimeBasedVector[loc_i];
+
 		DSCHitMatchParams locSCHitMatchParams;
-		if(!dParticleID->Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams))
+		if(dParticleID->Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams))
+		{
+			double locPropagatedTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
+			locTimes.push_back(locPropagatedTime);
 			continue;
-
-		double locPropagatedTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
-		locTimes.push_back(locPropagatedTime);
-	}
-
-	if(!locTimes.empty())
-		return true;
-
-	//None of the input tracks have SC hits: try other timing systems
-		//Order of preference: BCAL, TOF, FCAL
-	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
-	{
-		const DTrackTimeBased* locTrackTimeBased = locTrackTimeBasedVector[loc_i];
+		}
 
 		DShowerMatchParams locBCALShowerMatchParams;
 		if(dParticleID->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams))
@@ -234,7 +230,7 @@ bool DEventRFBunch_factory::Find_TrackTimes(const DDetectorMatches* locDetectorM
 	return (!locTimes.empty());
 }
 
-int DEventRFBunch_factory::Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes)
+int DEventRFBunch_factory::Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes, unsigned int& locNumParticlesVotedForThisTime)
 {
 	//then find the #beam buckets the RF time needs to shift to match it
 	map<int, unsigned int> locNumRFBucketsShiftedMap; //key is # RF buckets the RF time is shifted to match the track, value is the # tracks at that shift
@@ -269,6 +265,8 @@ int DEventRFBunch_factory::Find_BestRFBunchShift(double locRFHitTime, const vect
 		if(locNumTracks > locBestNumTracks)
 			locBestRFBunchShift = locNumRFBucketsShifted;
 	}
+
+	locNumParticlesVotedForThisTime = locNumRFBucketsShiftedMap[locBestRFBunchShift];
 	return locBestRFBunchShift;
 }
 
