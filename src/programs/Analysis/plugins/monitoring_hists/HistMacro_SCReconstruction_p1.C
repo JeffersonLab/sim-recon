@@ -79,6 +79,7 @@
 	gPad->SetGrid();
 	if(locHist_SCdEdXVsP_QPlus != NULL)
 	{
+		locHist_SCdEdXVsP_QPlus->GetXaxis()->SetRangeUser(0.0, 6.0);
 		locHist_SCdEdXVsP_QPlus->GetXaxis()->SetTitleSize(0.05);
 		locHist_SCdEdXVsP_QPlus->GetYaxis()->SetTitleSize(0.05);
 		locHist_SCdEdXVsP_QPlus->GetXaxis()->SetLabelSize(0.05);
@@ -91,6 +92,7 @@
 	gPad->SetGrid();
 	if(locHist_SCdEdXVsP_QMinus != NULL)
 	{
+		locHist_SCdEdXVsP_QMinus->GetXaxis()->SetRangeUser(0.0, 6.0);
 		locHist_SCdEdXVsP_QMinus->GetXaxis()->SetTitleSize(0.05);
 		locHist_SCdEdXVsP_QMinus->GetYaxis()->SetTitleSize(0.05);
 		locHist_SCdEdXVsP_QMinus->GetXaxis()->SetLabelSize(0.05);
