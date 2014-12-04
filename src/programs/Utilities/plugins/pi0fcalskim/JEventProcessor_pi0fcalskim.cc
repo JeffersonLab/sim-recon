@@ -30,12 +30,12 @@ extern "C"{
 JEventProcessor_pi0fcalskim::JEventProcessor_pi0fcalskim()
 {
 
-  MIN_MASS   = 0.05; // GeV
-  MAX_MASS   = 0.22; // GeV
+  MIN_MASS   = 0.03; // GeV
+  MAX_MASS   = 0.30; // GeV
   MIN_E      =  1.0; // GeV (photon energy cut)
   MIN_R      =   20; // cm  (cluster distance to beam line)
-  MAX_DT     =    5; // ns  (cluster time diff. cut)
-  MAX_ETOT   =    6; // GeV (max total FCAL energy)
+  MAX_DT     =   10; // ns  (cluster time diff. cut)
+  MAX_ETOT   =   12; // GeV (max total FCAL energy)
   MIN_BLOCKS =    2; // minumum blocks per cluster
 
   gPARMS->SetDefaultParameter( "PI0FCALSKIM:MIN_MASS", MIN_MASS );
@@ -70,6 +70,7 @@ jerror_t JEventProcessor_pi0fcalskim::init(void)
 //------------------
 jerror_t JEventProcessor_pi0fcalskim::brun(JEventLoop *eventLoop, int runnumber)
 {
+
   eventLoop->GetSingle(dEventWriterEVIO);
 
   return NOERROR;
@@ -80,16 +81,17 @@ jerror_t JEventProcessor_pi0fcalskim::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, int eventnumber)
 {
-
   vector< const DFCALCluster* > clusterVec;
   loop->Get( clusterVec );
 
+  if( clusterVec.size() < 2 ) return NOERROR;
+
   bool hasCandidate = false;
   double eTot = 0;
-			  
+
   for( vector< const DFCALCluster*>::const_iterator clus1Itr = clusterVec.begin();
        clus1Itr != clusterVec.end(); ++clus1Itr ){
-    
+
     eTot += (**clus1Itr).getEnergy();
 
     for( vector< const DFCALCluster*>::const_iterator clus2Itr = clus1Itr + 1;
