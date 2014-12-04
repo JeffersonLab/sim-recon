@@ -67,13 +67,13 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 	locEventLoop->GetSingle(locVertex);
 
 	// Loop over DNeutralShowers
-	for (unsigned int loc_i = 0; loc_i < locNeutralShowers.size(); loc_i++)
+	for(size_t loc_i = 0; loc_i < locNeutralShowers.size(); ++loc_i)
 	{
 		const DNeutralShower *locNeutralShower = locNeutralShowers[loc_i];
 		// Loop over vertices and PID hypotheses & create DNeutralParticleHypotheses for each combination
-		for (unsigned int loc_k = 0; loc_k < locPIDHypotheses.size(); loc_k++)
+		for(size_t loc_j = 0; loc_j < locPIDHypotheses.size(); ++loc_j)
 		{
-			DNeutralParticleHypothesis* locNeutralParticleHypothesis = Create_DNeutralParticleHypothesis(locNeutralShower, locPIDHypotheses[loc_k], locEventRFBunch, locVertex);
+			DNeutralParticleHypothesis* locNeutralParticleHypothesis = Create_DNeutralParticleHypothesis(locNeutralShower, locPIDHypotheses[loc_j], locEventRFBunch, locVertex);
 			if(locNeutralParticleHypothesis != NULL)
 				_data.push_back(locNeutralParticleHypothesis);	
 		}

@@ -39,7 +39,14 @@ jerror_t DEventRFBunch_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int 
 	vector<const DRFTime*> locRFTimes;
 	locEventLoop->Get(locRFTimes, "TRUTH");
 	if(locRFTimes.empty())
+	{
+		DEventRFBunch *locEventRFBunch = new DEventRFBunch;
+		locEventRFBunch->dTime = numeric_limits<double>::quiet_NaN();
+		locEventRFBunch->dTimeVariance = numeric_limits<double>::quiet_NaN();
+		locEventRFBunch->dNumParticlesVotedForThisTime = 0;
+		_data.push_back(locEventRFBunch);
 		return NOERROR;
+	}
 
 	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
 	locEventRFBunch->dTime = locRFTimes[0]->dTime;

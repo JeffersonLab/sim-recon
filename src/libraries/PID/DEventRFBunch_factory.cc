@@ -42,6 +42,8 @@ jerror_t DEventRFBunch_factory::brun(jana::JEventLoop *locEventLoop, int runnumb
 //------------------
 jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
+	//There should ALWAYS be one and only one DEventRFBunch created.
+
 	double locRFHitTime, locTimeVariance;
 	if(!Get_RFTime(locEventLoop, locRFHitTime, locTimeVariance))
 	{
