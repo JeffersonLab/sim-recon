@@ -27,8 +27,8 @@ class Df250PulseIntegral:public DDAQAddress{
 		
 		uint32_t pulse_number;         ///< from Pulse Integral Data word
 		uint32_t quality_factor;       ///< from Pulse Integral Data word
-		uint32_t integral;              ///< from Pulse Integral Data word
-		uint32_t pedestal;              ///< from Pulse Integral Data word (future)
+		uint32_t integral;             ///< from Pulse Integral Data word
+		uint32_t pedestal;             ///< from Pulse Integral Data word (future)
 		uint32_t nsamples_integral;    ///< number of samples used in integral 
 		uint32_t nsamples_pedestal;    ///< number of samples used in pedestal
 		bool     emulated;             ///< true if made from Window Raw Data
