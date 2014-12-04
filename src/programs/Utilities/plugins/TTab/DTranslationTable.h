@@ -355,10 +355,12 @@ template<class T>
 void DTranslationTable::CopyDf125Info(T *h, const Df125PulseIntegral *pi, const Df125PulseTime *pt, const Df125PulsePedestal *pp) const
 {
 	/// Copy info from the fADC125 into a hit object.
-	h->pulse_integral = pi->integral;
-	h->pulse_time     = pt==NULL ? 0:pt->time;
-	h->pedestal       = pi->pedestal; // for future development
-	h->QF             = pi->quality_factor;
+	h->pulse_integral    = pi->integral;
+	h->pulse_time        = pt==NULL ? 0:pt->time;
+	h->pedestal          = pi->pedestal;
+	h->QF                = pi->quality_factor;
+	h->nsamples_integral = pi->nsamples_integral;
+	h->nsamples_pedestal = pi->nsamples_pedestal;
 	
 	h->AddAssociatedObject(pi);
 	if(pt) h->AddAssociatedObject(pt);

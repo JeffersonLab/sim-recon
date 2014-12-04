@@ -1118,19 +1118,34 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	for(unsigned int i=0; i<vpi250.size(); i++){
 
 		Df250PulseIntegral *pi = (Df250PulseIntegral*)vpi250[i];
+		const Df250Config*conf = NULL;
 		const Df250PulsePedestal*pp = NULL;
+		pi->GetSingle(conf);
 		pi->GetSingle(pp);
-		if(pp) pi->pedestal = pp->pedestal;
+
+		// If a Df250PulsePedestal object is associated with this
+		// then copy its pedestal into the pedestal member of this
+		// pulse integral object. Furthermore, if the pedestal is
+		// *not* emulated and we have a configuration parameter from
+		// the datastream for the number of samples the pedestal
+		// represents, then copy this into the nsamples_pedestal.
+		if(pp){
+			pi->pedestal = pp->pedestal;
+			if(!pp->emulated){
+				if(conf!=NULL){
+					if(conf->NPED != 0xFFFF){
+						pi->nsamples_pedestal = conf->NPED;
+					}
+				}
+			}
+		}
 
 		// If this pulse integral is *not* emulated AND there is
 		// a configuration object from the data stream associated,
-		// then copy the number of samples from it.
+		// then copy the number of samples for the integral from it.
 		if(!pi->emulated){
-			const Df250Config*conf = NULL;
-			pi->GetSingle(conf);
 			if(conf){
 				pi->nsamples_integral = conf->NSA_NSB;
-				pi->nsamples_pedestal = conf->NPED;
 			}
 		}
 	}
@@ -1138,18 +1153,34 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	for(unsigned int i=0; i<vpi125.size(); i++){
 
 		Df125PulseIntegral *pi = (Df125PulseIntegral*)vpi125[i];
+		const Df125Config*conf = NULL;
 		const Df125PulsePedestal*pp = NULL;
-		if(pp) pi->pedestal = pp->pedestal;
+		pi->GetSingle(conf);
+		pi->GetSingle(pp);
+
+		// If a Df125PulsePedestal object is associated with this
+		// then copy its pedestal into the pedestal member of this
+		// pulse integral object. Furthermore, if the pedestal is
+		// *not* emulated and we have a configuration parameter from
+		// the datastream for the number of samples the pedestal
+		// represents, then copy this into the nsamples_pedestal.
+		if(pp){
+			pi->pedestal = pp->pedestal;
+			if(!pp->emulated){
+				if(conf!=NULL){
+					if(conf->NPED != 0xFFFF){
+						pi->nsamples_pedestal = conf->NPED;
+					}
+				}
+			}
+		}
 
 		// If this pulse integral is *not* emulated AND there is
 		// a configuration object from the data stream associated,
-		// then copy the number of samples from it.
+		// then copy the number of samples for the integral from it.
 		if(!pi->emulated){
-			const Df125Config*conf = NULL;
-			pi->GetSingle(conf);
 			if(conf){
 				pi->nsamples_integral = conf->NSA_NSB;
-				pi->nsamples_pedestal = conf->NPED;
 			}
 		}
 	}
@@ -1399,7 +1430,7 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		myDf250PulseIntegral->integral = signalsum;
 		myDf250PulseIntegral->pedestal = 0;
 		myDf250PulseIntegral->nsamples_integral = nsamples_used;
-		myDf250PulseIntegral->nsamples_pedestal = F250_NSPED;
+		myDf250PulseIntegral->nsamples_pedestal = 1;
 		myDf250PulseIntegral->emulated = true;
 
 		// Add the Df250WindowRawData object as an associated object
@@ -1445,7 +1476,7 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 		myDf125PulseIntegral->integral = signalsum;
 		myDf125PulseIntegral->pedestal = 0;  // This will be replaced by the one from Df125PulsePedestal in GetObjects
 		myDf125PulseIntegral->nsamples_integral = nsamples_used;
-		myDf125PulseIntegral->nsamples_pedestal = 0;
+		myDf125PulseIntegral->nsamples_pedestal = 1;
 		myDf125PulseIntegral->emulated = true;
 
 		// Add the Df125WindowRawData object as an associated object
@@ -1527,7 +1558,7 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		for (uint32_t c_samp=0; c_samp<F250_NSPED; c_samp++) {
 			pedestalsum += samplesvector[c_samp];
 		}
-		VMIN = pedestalsum / (double)F250_NSPED;
+		VMIN = pedestalsum /  F250_NSPED;
 
 		uint32_t time = 0;
 		uint32_t mid_sample = 0;
@@ -2752,7 +2783,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				pulse_number = (*iptr>>21) & 0x03;
 				quality_factor = (*iptr>>19) & 0x03;
 				sum = (*iptr>>0) & 0x7FFFF;
-				nsamples_integral = (F250_NSA + F250_NSB);
+				nsamples_integral = 0;  // must be overwritten later in GetObjects with value from Df125Config value
 				nsamples_pedestal = 1;  // The firmware returns an already divided pedestal
 				pedestal = 0;  // This will be replaced by the one from Df250PulsePedestal in GetObjects
 				if(objs) objs->hit_objs.push_back(new Df250PulseIntegral(rocid, slot, channel, itrigger, pulse_number, 
@@ -3019,7 +3050,8 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		uint32_t quality_factor = 0;
 		uint32_t pedestal = 0;
 		uint32_t pulse_peak = 0;
-		//bool overflow = false;
+		uint32_t nsamples_integral = 0;
+		uint32_t nsamples_pedestal = 0;
 
 		bool found_block_trailer = false;
 		uint32_t data_type = (*iptr>>27) & 0x0F;
@@ -3068,7 +3100,11 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				if(VERBOSE>7) evioout << "      FADC125 Pulse Integral"<<endl;
 				channel = (*iptr>>20) & 0x7F;
 				sum = (*iptr>>0) & 0xFFFFF;
- 				if(objs) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum));
+				nsamples_integral = 0;  // must be overwritten later in GetObjects with value from Df125Config value
+				nsamples_pedestal = 1;  // The firmware returns an already divided pedestal
+				pedestal = 0;  // This will be replaced by the one from Df250PulsePedestal in GetObjects
+				if(objs) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, 
+											 quality_factor, sum, pedestal, nsamples_integral, nsamples_pedestal));
 				break;
 			case 8: // Pulse Time
 				if(VERBOSE>7) evioout << "      FADC125 Pulse Time"<<endl;
