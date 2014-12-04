@@ -6200,3 +6200,57 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 	return true;
 }
 
+void DHistogramAction_MissingTransverseMomentum::Initialize(JEventLoop* locEventLoop)
+{
+        string locHistName, locHistTitle;
+        double locPtPerBin = 1000.0*(dMaxPt - dMinPt)/((double)dNumPtBins);
+
+        vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
+        locEventLoop->Get(locAnalysisUtilitiesVector);
+
+	//CREATE THE HISTOGRAMS
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		dAnalysisUtilities = locAnalysisUtilitiesVector[0];
+		CreateAndChangeTo_ActionDirectory();
+
+		locHistName = "MissingTransverseMomentum";
+		ostringstream locStream;
+		locStream << locPtPerBin;
+		locHistTitle = string(";") + string(" Missing Transverse Momentum (GeV/c);# Combos / ") + locStream.str() + string(" MeV/c");
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_MissingTransverseMomentum = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_MissingTransverseMomentum = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumPtBins, dMinPt, dMaxPt);
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+bool DHistogramAction_MissingTransverseMomentum::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	if(Get_NumPreviousParticleCombos() == 0)
+		dPreviousSourceObjects.clear();
+
+	set<pair<const JObject*, Particle_t> > locSourceObjects;
+	DLorentzVector locFinalStateP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, 0, locSourceObjects, Get_UseKinFitResultsFlag()); // Use step '0'
+
+	if(!dEnableDoubleCounting)
+	{
+		if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())
+			return true; //dupe: already histed!
+		dPreviousSourceObjects.insert(locSourceObjects);
+	}
+
+	double locMissingTransverseMomentum = locFinalStateP4.Pt();
+
+	japp->RootWriteLock();
+	{
+		dHist_MissingTransverseMomentum->Fill(locMissingTransverseMomentum);
+	}
+	japp->RootUnLock();
+
+	return true;
+}

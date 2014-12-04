@@ -1244,5 +1244,28 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 		map<DKinFitPullType, TH1I*> dHistMap_BeamPulls;
 };
 
+class DHistogramAction_MissingTransverseMomentum : public DAnalysisAction
+{
+        public:
+                DHistogramAction_MissingTransverseMomentum(const DReaction* locReaction, bool locUseKinFitResultsFlag, unsigned int locNumPtBins = 0, double locMinPt = 0, double locMaxPt = 1.0, string locActionUniqueString = "") :
+                DAnalysisAction(locReaction, "Hist_MissingTransverseMomentum", locUseKinFitResultsFlag, locActionUniqueString),
+                dEnableDoubleCounting(false), dNumPtBins(locNumPtBins), dMinPt(locMinPt), dMaxPt(locMaxPt){}
+
+                bool dEnableDoubleCounting;
+
+                void Initialize(JEventLoop* locEventLoop);
+
+        private:
+                bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+                Particle_t dInitialPID;
+                unsigned int dNumPtBins;
+                double dMinPt, dMaxPt;
+                const DAnalysisUtilities* dAnalysisUtilities;
+                TH1I* dHist_MissingTransverseMomentum;
+
+                set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
+};
+
 #endif // _DHistogramActions_
 
