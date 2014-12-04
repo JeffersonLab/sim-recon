@@ -14,7 +14,8 @@ using namespace std;
 #include "FCAL/DFCALGeometry.h"
 #include "FCAL/DFCALHit_factory.h"
 #include "DAQ/Df250PulseIntegral.h"
-#include <DAQ/Df250Config.h>
+#include "DAQ/Df250PulsePedestal.h"
+#include "DAQ/Df250Config.h"
 using namespace jana;
 
 
@@ -38,8 +39,11 @@ jerror_t DFCALHit_factory::init(void)
    time_offsets = new_t0s;
    block_qualities = new_qualities;
 
-   /// set the base conversion scales
-   a_scale = 4.0E1/2.5E5; 
+   // set the base conversion scales --
+   // a_scale should definitely come from
+   // the DB so set it to a value that will
+   // be noticeably wrong
+   a_scale = 0.0;      // GeV/FADC integral unit
    t_scale = 0.0625;   // 62.5 ps/count
    t_base  = 0.;       // ns
     
@@ -121,8 +125,6 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
    /// the precalibrated values directly into the _data vector.
    char str[256];
 
-   //   cerr << " Event # " << eventnumber << endl;
-
    // extract the FCAL Geometry (for positionOnFace())
    vector<const DFCALGeometry*> fcalGeomVect;
    eventLoop->Get( fcalGeomVect );
@@ -144,31 +146,19 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
           throw JException(str);
       }
 
+      // throw away hits from bad or noisy channels
+      fcal_quality_state quality = static_cast<fcal_quality_state>(block_qualities[digihit->row][digihit->column]);
+      if ( (quality==BAD) || (quality==NOISY) ) continue;
+
       // Get pedestal.  Prefer associated event pedestal if it exist.
       // Otherwise, use the average pedestal from CCDB
       double pedestal = pedestals[digihit->row][digihit->column];
       const Df250PulseIntegral* PIobj = NULL;
-      const Df250Config *configObj = NULL;
+      const Df250PulsePedestal* PPobj = NULL;
+
       digihit->GetSingle(PIobj);
-      PIobj->GetSingle(configObj);
-      if ((PIobj != NULL) && (configObj != NULL)) {
-              // the measured pedestal must be scaled by the ratio of the number
-              // of samples used to calculate the pedestal and the actual pulse
-              pedestal = static_cast<double>(configObj->NSA_NSB) * PIobj->pedestal;
-
-	      //cerr << " raw pedestal = " << PIobj->pedestal
-		  // << "  NSA_NSB = " << configObj->NSA_NSB
-		  // << "  NPED = " << configObj->NPED
-		   //<< "  final ped = " << pedestal << endl;
-      }
+      digihit->GetSingle(PPobj);
      
-      // throw away hits from bad or noisy channels
-      fcal_quality_state quality = static_cast<fcal_quality_state>(block_qualities[digihit->row][digihit->column]);
-      if ( (quality==BAD) || (quality==NOISY) ){
-	_DBG_ << endl;
-	return NOERROR;
-      }
-
       if( PIobj != NULL ){
 
 	// event by event pedestal - this needs additional
@@ -177,13 +167,24 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	// the sum of all channels in the window.  There
 	// may be variation with FADC mode
 	
-	if (PIobj->pedestal==0) continue;
+	if( PIobj->pedestal == 0 ) continue;
 	pedestal = PIobj->pedestal * PIobj->nsamples_integral;
 	
       }
       else{
 
-	cerr << "ERROR! no integral object for pedestal subraction." << endl;
+	cerr << "ERROR! no associated FCAL integral object." << endl;
+      }
+
+      double pulse_amplitude = 0;
+
+      if( PPobj != NULL ){
+
+	pulse_amplitude = (double)PPobj->pulse_peak - pedestal;
+      }
+      else{
+
+	cerr << "ERROR! no associated FCAL pedestal object." << endl;
       }
 
       DFCALHit *hit = new DFCALHit;
@@ -196,9 +197,6 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
       hit->E = a_scale * gains[hit->row][hit->column] * (A - pedestal);
       hit->t = t_scale * (T - time_offsets[hit->row][hit->column]) + t_base;
 
-      /*      cerr << " FCAL hit #" << i << " E = " << (1000.*hit->E) << "  A = " << A 
-	   << "  pedestal = " << pedestal << endl;
-      */
       // Get position of blocks on front face. (This should really come from
       // hdgeant directly so the poisitions can be shifted in mcsmear.)
       DVector2 pos = fcalGeom.positionOnFace(hit->row, hit->column);
@@ -206,9 +204,23 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
       hit->x = pos.X();
       hit->y = pos.Y();
       
-      hit->AddAssociatedObject(digihit);
-      
-      _data.push_back(hit);
+      // do some basic quality checks before creating the objects
+      if( ( hit->E > 0 ) &&
+	  ( digihit->pulse_time > 0 ) 
+	  // this quantity is likely a useful shape discriminator
+	  // but needs further study before a cut is implemented
+	  // there may be problems with small pulses or unstable
+	  // pedestals
+	  // ( digihit->pulse_integral / pulse_amplitude < xxx ) 
+	  ){
+
+	hit->AddAssociatedObject(digihit);
+	_data.push_back(hit);
+      }
+      else{
+
+	delete hit;
+      }
    }
    
    return NOERROR;
