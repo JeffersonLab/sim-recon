@@ -102,7 +102,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	VERBOSE = 0;
 	TIMEOUT = 2.0;
 	EMULATE_PULSE_INTEGRAL_MODE = true;
-	EMULATE_SPARSIFICATION_THRESHOLD = -100000; // =-100000 is equivalent to no threshold
+	EMULATE_SPARSIFICATION_THRESHOLD = 0; // =0 is equivalent to no threshold
 	EMULATE_FADC250_TIME_THRESHOLD = 10;
 	EMULATE_FADC125_TIME_THRESHOLD = 80;
 	MODTYPE_MAP_FILENAME = "modtype.map";
@@ -1330,7 +1330,7 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		// Get a vector of the samples for this channel
 		const vector<uint16_t> &samplesvector = f250WindowRawData->samples;
 		uint32_t nsamples=samplesvector.size();
-		int32_t signalsum = 0;
+		uint32_t signalsum = 0;
 		
 		// variables to store the sample numbers
 		uint32_t sn_min = 0, sn_max = 0;
@@ -1413,7 +1413,8 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 //----------------
 void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs)
 {
-	uint16_t ped_samples = F125_NSPED;
+	if(VERBOSE>3) evioout << " Entering  EmulateDf125PulseIntegral ..." <<endl;
+
 	uint32_t pulse_number = 0;
 	uint32_t quality_factor = 0;
 	// Loop over all window raw data objects
@@ -1430,14 +1431,8 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 		// Get a vector of the samples for this channel
 		const vector<uint16_t> &samplesvector = f125WindowRawData->samples;
 		uint32_t nsamples=samplesvector.size();
-		int32_t pedestalsum = 0;
-		int32_t signalsum = 0;
+		uint32_t signalsum = 0;
 
-		// loop over the first X samples to calculate pedestal
-		for (uint32_t c_samp=0; c_samp<ped_samples; c_samp++) {
-			pedestalsum += samplesvector[c_samp];
-		}
-		
 		// loop over all samples to calculate integral
 		uint32_t nsamples_used = 0;
 		for (uint32_t c_samp=0; c_samp<nsamples; c_samp++) {
@@ -1448,9 +1443,9 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 		myDf125PulseIntegral->pulse_number = pulse_number;
 		myDf125PulseIntegral->quality_factor = quality_factor;
 		myDf125PulseIntegral->integral = signalsum;
-		myDf125PulseIntegral->pedestal = pedestalsum/ped_samples;  // This will be replaced by the one from Df125PulsePedestal in GetObjects
+		myDf125PulseIntegral->pedestal = 0;  // This will be replaced by the one from Df125PulsePedestal in GetObjects
 		myDf125PulseIntegral->nsamples_integral = nsamples_used;
-		myDf125PulseIntegral->nsamples_pedestal = ped_samples;
+		myDf125PulseIntegral->nsamples_pedestal = 0;
 		myDf125PulseIntegral->emulated = true;
 
 		// Add the Df125WindowRawData object as an associated object
@@ -1465,6 +1460,7 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 			delete myDf125PulseIntegral;
 		}
 	}
+	if(VERBOSE>3) evioout << " Leaving  EmulateDf125PulseIntegral" <<endl;
 }
 
 //----------------
@@ -1527,7 +1523,7 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		double time_fraction = -1000;
 
 		// loop over the first F250_NSPED samples to calculate pedestal
-		int32_t pedestalsum = 0;
+		uint32_t pedestalsum = 0;
 		for (uint32_t c_samp=0; c_samp<F250_NSPED; c_samp++) {
 			pedestalsum += samplesvector[c_samp];
 		}
