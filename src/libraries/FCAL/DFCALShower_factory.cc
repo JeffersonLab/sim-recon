@@ -31,6 +31,11 @@ DFCALShower_factory::DFCALShower_factory()
   // remove default value which might be close to the right solution,
   // but not quite correct -- allow command line tuning
 
+  NON_LIN_COEF_A = 0; 
+  NON_LIN_COEF_B = 0;
+  NON_LIN_COEF_C = 0;
+  NON_LIN_COEF_alfa = 0;
+
   gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_A", NON_LIN_COEF_A);
   gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_B", NON_LIN_COEF_B);
   gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_C", NON_LIN_COEF_C);
