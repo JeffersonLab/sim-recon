@@ -189,11 +189,13 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
  	vector<const DNeutralShower*> locNeutralShowers;
 	locEventLoop->Get(locNeutralShowers, dShowerSelectionTag.c_str());
 
-	const DEventRFBunch* locThrownEventRFBunch = NULL;
-	locEventLoop->GetSingle(locThrownEventRFBunch, "Thrown", false);
+	vector<const DEventRFBunch*> locThrownEventRFBunches;
+	locEventLoop->Get(locThrownEventRFBunches, "Thrown");
+	const DEventRFBunch* locThrownEventRFBunch = locThrownEventRFBunches.empty() ? NULL : locThrownEventRFBunches[0];
 
-	const DMCThrownMatching* locMCThrownMatching = NULL;
-	locEventLoop->GetSingle(locMCThrownMatching, "", false);
+	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
+	locEventLoop->Get(locMCThrownMatchingVector);
+	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector.empty() ? NULL : locMCThrownMatchingVector[0];
 
  	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks, dTrackSelectionTag.c_str());

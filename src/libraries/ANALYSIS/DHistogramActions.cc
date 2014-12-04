@@ -581,8 +581,10 @@ bool DHistogramAction_PID::Perform_Action(JEventLoop* locEventLoop, const DParti
 	if(Get_NumPreviousParticleCombos() == 0)
 		dPreviouslyHistogrammedParticles.clear();
 
-	const DMCThrownMatching* locMCThrownMatching = NULL;
-	locEventLoop->GetSingle(locMCThrownMatching, "", false);
+	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
+	locEventLoop->Get(locMCThrownMatchingVector);
+	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector.empty() ? NULL : locMCThrownMatchingVector[0];
+
 	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
 
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
@@ -1607,9 +1609,6 @@ void DHistogramAction_DetectorStudies::Fill_PIDHists(JEventLoop* locEventLoop)
 
 	const DEventRFBunch* locEventRFBunch = NULL;
 	locEventLoop->GetSingle(locEventRFBunch);
-
-if(locEventRFBunch->dTime != locEventRFBunch->dTime)
-	return;
 
 	//Fill Histograms
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!

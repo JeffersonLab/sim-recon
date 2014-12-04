@@ -109,7 +109,7 @@ jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int runn
 				for(unsigned int loc_j = 0; loc_j < 6; ++loc_j)
 				{
 					for(unsigned int loc_k = 1; loc_k <= 9; ++loc_k)
-						locBinArray[loc_j*9 + loc_k] = double(loc_k)*pow(10.0, double(loc_j));
+						locBinArray[loc_j*9 + loc_k - 1] = double(loc_k)*pow(10.0, double(loc_j));
 				}
 				locBinArray[54] = 1.0E6;
 

@@ -918,8 +918,9 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	const DAnalysisUtilities* locAnalysisUtilities = NULL;
 	locEventLoop->GetSingle(locAnalysisUtilities);
 
-	const DMCReaction* locMCReaction = NULL;
-	locEventLoop->GetSingle(locMCReaction);
+	vector<const DMCReaction*> locMCReactions;
+	locEventLoop->Get(locMCReactions);
+	const DMCReaction* locMCReaction = locMCReactions.empty() ? NULL : locMCReactions[0];
 
 	DKinFitType locKinFitType = locReaction->Get_KinFitType();
 	bool locKinFitFlag = (locKinFitType != d_NoFit);
