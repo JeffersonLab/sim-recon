@@ -1,10 +1,8 @@
 // hnamepath: /Independent/Hist_DetectorStudies/Reconstruction/NumDCHitsPerTrackVsTheta
-// hnamepath: /Independent/Hist_DetectorStudies/ReconstructedPID/Proton/Tracking_ChiSqPerDF
-// hnamepath: /Independent/Hist_DetectorStudies/ReconstructedPID/Pi-/Tracking_ChiSqPerDF
-// hnamepath: /Independent/Hist_DetectorStudies/ReconstructedPID/Pi+/Tracking_ChiSqPerDF
-
+// hnamepath: /Independent/Hist_DetectorStudies/Reconstruction/TrackingFOM
 // hnamepath: /Independent/Hist_NumReconstructedObjects/NumTrackCandidates
 // hnamepath: /Independent/Hist_NumReconstructedObjects/NumWireBasedTracks
+// hnamepath: /Independent/Hist_NumReconstructedObjects/NumTimeBasedTracks
 
 {
 	//Goto Path
@@ -17,12 +15,7 @@
 	//Get Histograms
 	gDirectory->cd("Reconstruction");
 	TH2I* locHist_NumDCHitsPerTrackVsTheta = (TH2I*)gDirectory->Get("NumDCHitsPerTrackVsTheta");
-	gDirectory->cd("ReconstructedPID/Proton");
-	TH1I* locHist_TrackingChiSqPerDF_Proton = (TH1I*)gDirectory->Get("Tracking_ChiSqPerDF");
-	gDirectory->cd("../Pi+");
-	TH1I* locHist_TrackingChiSqPerDF_PiPlus = (TH1I*)gDirectory->Get("Tracking_ChiSqPerDF");
-	gDirectory->cd("../Pi-");
-	TH1I* locHist_TrackingChiSqPerDF_PiMinus = (TH1I*)gDirectory->Get("Tracking_ChiSqPerDF");
+	TH1I* locHist_TrackingFOM = (TH1I*)gDirectory->Get("TrackingFOM");
 
 	locDirectory = (TDirectory*)locInitDirectory->FindObjectAny("Hist_NumReconstructedObjects");
 	if(!locDirectory)
@@ -30,6 +23,7 @@
 	locDirectory->cd();
 	TH1I* locHist_NumTrackCandidates = (TH1I*)gDirectory->Get("NumTrackCandidates");
 	TH1I* locHist_NumWireBasedTracks = (TH1I*)gDirectory->Get("NumWireBasedTracks");
+	TH1I* locHist_NumTimeBasedTracks = (TH1I*)gDirectory->Get("NumTimeBasedTracks");
 
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
@@ -67,6 +61,31 @@
 	locCanvas->cd(3);
 	gPad->SetTicks();
 	gPad->SetGrid();
+	if(locHist_NumTimeBasedTracks != NULL)
+	{
+		locHist_NumTimeBasedTracks->GetXaxis()->SetTitleSize(0.05);
+		locHist_NumTimeBasedTracks->GetYaxis()->SetTitleSize(0.05);
+		locHist_NumTimeBasedTracks->GetXaxis()->SetLabelSize(0.05);
+		locHist_NumTimeBasedTracks->GetYaxis()->SetLabelSize(0.05);
+		locHist_NumTimeBasedTracks->Draw();
+	}
+
+	locCanvas->cd(4);
+	gPad->SetTicks();
+	gPad->SetGrid();
+	if(locHist_TrackingFOM != NULL)
+	{
+		locHist_TrackingFOM->GetXaxis()->SetTitleSize(0.05);
+		locHist_TrackingFOM->GetYaxis()->SetTitleSize(0.05);
+		locHist_TrackingFOM->GetXaxis()->SetLabelSize(0.05);
+		locHist_TrackingFOM->GetYaxis()->SetLabelSize(0.05);
+		locHist_TrackingFOM->Draw();
+		gPad->SetLogy();
+	}
+
+	locCanvas->cd(5);
+	gPad->SetTicks();
+	gPad->SetGrid();
 	if(locHist_NumDCHitsPerTrackVsTheta != NULL)
 	{
 		locHist_NumDCHitsPerTrackVsTheta->GetXaxis()->SetTitleSize(0.05);
@@ -74,42 +93,6 @@
 		locHist_NumDCHitsPerTrackVsTheta->GetXaxis()->SetLabelSize(0.05);
 		locHist_NumDCHitsPerTrackVsTheta->GetYaxis()->SetLabelSize(0.05);
 		locHist_NumDCHitsPerTrackVsTheta->Draw("COLZ");
-	}
-
-	locCanvas->cd(4);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(locHist_TrackingChiSqPerDF_PiPlus != NULL)
-	{
-		locHist_TrackingChiSqPerDF_PiPlus->GetXaxis()->SetTitleSize(0.05);
-		locHist_TrackingChiSqPerDF_PiPlus->GetYaxis()->SetTitleSize(0.05);
-		locHist_TrackingChiSqPerDF_PiPlus->GetXaxis()->SetLabelSize(0.05);
-		locHist_TrackingChiSqPerDF_PiPlus->GetYaxis()->SetLabelSize(0.05);
-		locHist_TrackingChiSqPerDF_PiPlus->Draw();
-	}
-
-	locCanvas->cd(5);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(locHist_TrackingChiSqPerDF_PiMinus != NULL)
-	{
-		locHist_TrackingChiSqPerDF_PiMinus->GetXaxis()->SetTitleSize(0.05);
-		locHist_TrackingChiSqPerDF_PiMinus->GetYaxis()->SetTitleSize(0.05);
-		locHist_TrackingChiSqPerDF_PiMinus->GetXaxis()->SetLabelSize(0.05);
-		locHist_TrackingChiSqPerDF_PiMinus->GetYaxis()->SetLabelSize(0.05);
-		locHist_TrackingChiSqPerDF_PiMinus->Draw();
-	}
-
-	locCanvas->cd(6);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(locHist_TrackingChiSqPerDF_Proton != NULL)
-	{
-		locHist_TrackingChiSqPerDF_Proton->GetXaxis()->SetTitleSize(0.05);
-		locHist_TrackingChiSqPerDF_Proton->GetYaxis()->SetTitleSize(0.05);
-		locHist_TrackingChiSqPerDF_Proton->GetXaxis()->SetLabelSize(0.05);
-		locHist_TrackingChiSqPerDF_Proton->GetYaxis()->SetLabelSize(0.05);
-		locHist_TrackingChiSqPerDF_Proton->Draw();
 	}
 }
 
