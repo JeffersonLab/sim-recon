@@ -197,10 +197,10 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
       if (PIobj != NULL) {
 	  // the measured pedestal must be scaled by the ratio of the number
 	  // of samples used to calculate the pedestal and the actual pulse
-	  double single_sample_ped = (double)PIobj->pedestal;
+	  double Nsample_ped = (double)PIobj->pedestal;
 	  double nsamples_integral = (double)PIobj->nsamples_integral;
 	  double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
-	  pedestal          = single_sample_ped * nsamples_integral/nsamples_pedestal;
+	  pedestal = Nsample_ped * nsamples_integral/nsamples_pedestal;
       } 
 
        
