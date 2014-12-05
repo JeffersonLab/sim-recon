@@ -11,8 +11,16 @@
 #include <JANA/JEventProcessor.h>
 #include "evio_writer/DEventWriterEVIO.h"
 
+class TTree;
+class DFCALCluster;
+
+#include <vector>
+
 class JEventProcessor_pi0fcalskim:public jana::JEventProcessor{
  public:
+
+  enum { kMaxHits = 500, kMaxClus = 20 };
+
   JEventProcessor_pi0fcalskim();
   ~JEventProcessor_pi0fcalskim();
   const char* className(void){return "JEventProcessor_pi0fcalskim";}
@@ -24,6 +32,8 @@ class JEventProcessor_pi0fcalskim:public jana::JEventProcessor{
   jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
   jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+  void writeClustersToRoot( const vector< const DFCALCluster* > clusVec );
+
   const DEventWriterEVIO* dEventWriterEVIO;		
 
   double MIN_MASS;
@@ -34,6 +44,19 @@ class JEventProcessor_pi0fcalskim:public jana::JEventProcessor{
   double MAX_ETOT;
   int    MIN_BLOCKS;
 
+  int WRITE_ROOT;
+  int WRITE_EVIO;
+
+  TTree* m_tree;
+  int m_nClus;
+  int m_hit0[kMaxClus];
+  float m_px[kMaxClus];
+  float m_py[kMaxClus];
+  float m_pz[kMaxClus];
+
+  int m_nHit;
+  int m_chan[kMaxHits];
+  float m_e[kMaxHits];
 };
 
 #endif // _JEventProcessor_pi0fcalskim_

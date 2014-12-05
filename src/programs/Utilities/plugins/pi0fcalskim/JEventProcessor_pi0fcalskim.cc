@@ -15,6 +15,8 @@ using namespace jana;
 #include "JANA/JFactory.h"
 #include "FCAL/DFCALCluster.h"
 #include "DLorentzVector.h"
+#include "TTree.h"
+#include "units.h"
 
 extern "C"{
   void InitPlugin(JApplication *app){
@@ -38,6 +40,9 @@ JEventProcessor_pi0fcalskim::JEventProcessor_pi0fcalskim()
   MAX_ETOT   =   12; // GeV (max total FCAL energy)
   MIN_BLOCKS =    2; // minumum blocks per cluster
 
+  WRITE_ROOT = 0;
+  WRITE_EVIO = 1;
+
   gPARMS->SetDefaultParameter( "PI0FCALSKIM:MIN_MASS", MIN_MASS );
   gPARMS->SetDefaultParameter( "PI0FCALSKIM:MAX_MASS", MAX_MASS );
   gPARMS->SetDefaultParameter( "PI0FCALSKIM:MIN_E", MIN_E );
@@ -45,6 +50,8 @@ JEventProcessor_pi0fcalskim::JEventProcessor_pi0fcalskim()
   gPARMS->SetDefaultParameter( "PI0FCALSKIM:MAX_DT", MAX_DT );
   gPARMS->SetDefaultParameter( "PI0FCALSKIM:MAX_ETOT", MAX_ETOT );
   gPARMS->SetDefaultParameter( "PI0FCALSKIM:MIN_BLOCKS", MIN_BLOCKS );
+  gPARMS->SetDefaultParameter( "PI0FCALSKIM:WRITE_ROOT", WRITE_ROOT );
+  gPARMS->SetDefaultParameter( "PI0FCALSKIM:WRITE_EVIO", WRITE_EVIO );
 }
 
 //------------------
@@ -62,6 +69,30 @@ jerror_t JEventProcessor_pi0fcalskim::init(void)
 {
   dEventWriterEVIO = NULL;
 
+  if( ! ( WRITE_ROOT || WRITE_EVIO ) ){
+
+    cerr << "No output mechanism has been specified." << endl;
+    return UNRECOVERABLE_ERROR;
+  }
+
+  if( WRITE_ROOT ){
+
+    japp->RootWriteLock();
+
+    m_tree = new TTree( "cluster", "Cluster Tree for Pi0 Calibration" );
+    m_tree->Branch( "nClus", &m_nClus, "nClus/I" );
+    m_tree->Branch( "hit0", m_hit0, "hit0[nClus]/I" );
+    m_tree->Branch( "px", m_px, "px[nClus]/F" );
+    m_tree->Branch( "py", m_py, "py[nClus]/F" );
+    m_tree->Branch( "pz", m_pz, "pz[nClus]/F" );
+
+    m_tree->Branch( "nHit", &m_nHit, "nHit/I" );
+    m_tree->Branch( "chan", m_chan, "chan[nHit]/I" );
+    m_tree->Branch( "e", m_e, "e[nHit]/F" );
+
+    japp->RootUnLock();
+  }
+
   return NOERROR;
 }
 
@@ -70,7 +101,6 @@ jerror_t JEventProcessor_pi0fcalskim::init(void)
 //------------------
 jerror_t JEventProcessor_pi0fcalskim::brun(JEventLoop *eventLoop, int runnumber)
 {
-
   eventLoop->GetSingle(dEventWriterEVIO);
 
   return NOERROR;
@@ -143,7 +173,17 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, int eventnumber)
 
   if( hasCandidate && ( eTot < MAX_ETOT ) ){
 
-    dEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcalskim" );
+    if( WRITE_EVIO ){
+
+      dEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcalskim" );
+    }
+
+    if( WRITE_ROOT ){
+
+      japp->RootWriteLock();
+      writeClustersToRoot( clusterVec );
+      japp->RootUnLock();
+    }
   }
 
   return NOERROR;
@@ -161,7 +201,7 @@ jerror_t JEventProcessor_pi0fcalskim::erun(void)
 }
 
 //------------------
-// fini
+// Fin
 //------------------
 jerror_t JEventProcessor_pi0fcalskim::fini(void)
 {
@@ -169,3 +209,52 @@ jerror_t JEventProcessor_pi0fcalskim::fini(void)
   return NOERROR;
 }
 
+void 
+JEventProcessor_pi0fcalskim::writeClustersToRoot( const vector< const DFCALCluster* > clusVec ){
+
+  // this code must run serially -- obtain a lock before
+  // entering this function
+ 
+  m_nHit = 0;
+  m_nClus = 0;
+
+  // hit and cluster indices
+  int& iH = m_nHit;
+  int& iC = m_nClus;
+  
+  for( vector< const DFCALCluster* >::const_iterator clusItr = clusVec.begin();
+       clusItr != clusVec.end(); ++clusItr ){
+
+    // if we exceed max clusters abort writing for this event
+    if( iC == kMaxClus ) return;
+
+    const DFCALCluster& clus = (**clusItr);
+
+    if( ( clus.getCentroid().Perp() < 20*k_cm ) ||
+	( clus.getEnergy() < 1*k_GeV ) ||
+	( clus.GetHits().size() < 2 ) ) continue;
+
+    DVector3 gamMom = clus.getCentroid(); 
+    gamMom.SetMag( clus.getEnergy() );
+
+    m_hit0[iC] = iH;
+    m_px[iC] = gamMom.X();
+    m_py[iC] = gamMom.Y();
+    m_pz[iC] = gamMom.Z();
+    
+    const vector<DFCALCluster::DFCALClusterHit_t>& hits = clus.GetHits();
+
+    for( unsigned int i = 0; i < hits.size(); ++i ){
+
+      // if we exceed max hits abort this event and return
+      if( iH == kMaxHits ) return;
+
+      m_chan[iH] = hits[i].ch;
+      m_e[iH] = hits[i].E;
+      ++iH;
+    }
+    ++iC;
+  }
+
+  m_tree->Fill();
+}
