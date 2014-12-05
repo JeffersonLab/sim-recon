@@ -924,96 +924,98 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 			else //already created by another thread
 				dHist_NumDCHitsPerTrackVsTheta = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
-			//Track Matched to Hit
-			for(int locTruePIDFlag = 0; locTruePIDFlag < 2; ++locTruePIDFlag)
+			locHistName = "TrackingFOM";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_TrackingFOM = new TH1I(locHistName.c_str(), ";Confidence Level", dNumFOMBins, 0.0, 1.0);
+			else //already created by another thread
+				dHist_TrackingFOM = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "TrackingFOMVsP";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_TrackingFOMVsP = new TH2I(locHistName.c_str(), ";#theta#circ;Confidence Level", dNum2DPBins, dMinP, dMaxP, dNum2DFOMBins, 0.0, 1.0);
+			else //already created by another thread
+				dHist_TrackingFOMVsP = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "TrackingFOMVsTheta";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_TrackingFOMVsTheta = new TH2I(locHistName.c_str(), ";p (GeV/c);Confidence Level", dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DFOMBins, 0.0, 1.0);
+			else //already created by another thread
+				dHist_TrackingFOMVsTheta = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+
+			for(int locCharge = -1; locCharge <= 1; locCharge += 2)
 			{
-				if(locMCThrowns.empty() && (locTruePIDFlag == 1))
-					continue; //not a simulated event: don't histogram thrown info!
+				string locParticleROOTName = (locCharge == -1) ? "#it{q}^{-}" : "#it{q}^{+}";
+				string locParticleName = (locCharge == -1) ? "q-" : "q+";
+				CreateAndChangeTo_Directory(locParticleName.c_str(), locParticleName.c_str());
 
-				string locDirName = (locTruePIDFlag == 1) ? "TruePID" : "ReconstructedPID";
-				CreateAndChangeTo_Directory(locDirName.c_str(), locDirName.c_str());
-				for(int loc_i = -2; loc_i < int(dTrackingPIDs.size()); ++loc_i) //-2 = q-, -1 = q+
-				{
-					string locParticleName, locParticleROOTName;
-					int locPID = loc_i;
-					if(loc_i == -2)
-					{
-						locParticleName = "q-";
-						locParticleROOTName = "#it{q}^{-}";
-					}
-					else if(loc_i == -1)
-					{
-						locParticleName = "q+";
-						locParticleROOTName = "#it{q}^{+}";
-					}
-					else
-					{
-						locParticleName = ParticleType(dTrackingPIDs[loc_i]);
-						locParticleROOTName = ParticleName_ROOT(dTrackingPIDs[loc_i]);
-						locPID = int(dTrackingPIDs[loc_i]);
-					}
-					CreateAndChangeTo_Directory(locParticleName, locParticleName);
-					pair<int, bool> locPIDPair(locPID, bool(locTruePIDFlag));
+				// PVsTheta Track Candidates
+				locHistName = string("PVsTheta_Candidates_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(" Track Candidates;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_Candidates[locCharge] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_Candidates[locCharge] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
 
-					// CDC dE/dx
-					locHistName = "dEdx_CDC";
-					locHistTitle = locParticleROOTName + string(";CDC dE/dx (keV/cm)");
-					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-						dHistMap_CDCdEdx[locPIDPair] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-					else
-						dHistMap_CDCdEdx[locPIDPair] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumdEdxBins, dMindEdX, dMaxdEdX);
+				// PVsTheta Wire-Based Tracks
+				locHistName = string("PVsTheta_WireBased_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(" Wire-Based Tracks;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_WireBased[locCharge] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_WireBased[locCharge] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
 
-					// CDC dE/dx Vs P 
-					locHistName = "dEdxVsP_CDC";
-					locHistTitle = locParticleROOTName + string(";p (GeV/c);CDC dE/dx (keV/cm)");
-					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-						dHistMap_CDCdEdxVsP[locPIDPair] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
-					else
-						dHistMap_CDCdEdxVsP[locPIDPair] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DdEdxBins, dMindEdX, dMaxdEdX);
+				// PVsTheta Time-Based Tracks
+				locHistName = string("PVsTheta_TimeBased_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(" Time-Based Tracks;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_TimeBased[locCharge] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_TimeBased[locCharge] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
 
-					// FDC dE/dx
-					locHistName = "dEdx_FDC";
-					locHistTitle = locParticleROOTName + string(";FDC dE/dx (keV/cm)");
-					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-						dHistMap_FDCdEdx[locPIDPair] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-					else
-						dHistMap_FDCdEdx[locPIDPair] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumdEdxBins, dMindEdX, dMaxdEdX);
+				// PVsTheta Time-Based Tracks Good Track FOM
+				locHistName = string("PVsTheta_TimeBased_GoodTrackFOM_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(" Time-Based Tracks, Good Tracking FOM;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_TimeBased_GoodTrackFOM[locCharge] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_TimeBased_GoodTrackFOM[locCharge] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
 
-					// FDC dE/dx Vs P 
-					locHistName = "dEdxVsP_FDC";
-					locHistTitle = locParticleROOTName + string(";p (GeV/c);FDC dE/dx (keV/cm)");
-					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-						dHistMap_FDCdEdxVsP[locPIDPair] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
-					else
-						dHistMap_FDCdEdxVsP[locPIDPair] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DdEdxBins, dMindEdX, dMaxdEdX);
+				// PVsTheta Time-Based Tracks Low Track FOM
+				locHistName = string("PVsTheta_TimeBased_LowTrackFOM_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(" Time-Based Tracks, Low Tracking FOM;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_TimeBased_LowTrackFOM[locCharge] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_TimeBased_LowTrackFOM[locCharge] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
 
-					// Tracking Chisq/NDF
-					locHistName = "Tracking_ChiSqPerDF";
-					locHistTitle = locParticleROOTName + string(";Tracking #chi^{2}/NDF");
-					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-						dHistMap_TrackingChiSqPerDF[locPIDPair] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-					else
-						dHistMap_TrackingChiSqPerDF[locPIDPair] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumTrackingChiSqPerDFBins, dMinTrackingChiSqPerDF, dMaxTrackingChiSqPerDF);
-
-					// Tracking Chisq/NDF Vs Theta
-					locHistName = "Tracking_ChiSqPerDFVsTheta";
-					locHistTitle = locParticleROOTName + string(";#theta#circ;Tracking #chi^{2}/NDF");
-					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-						dHistMap_TrackingChiSqPerDFVsTheta[locPIDPair] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
-					else
-						dHistMap_TrackingChiSqPerDFVsTheta[locPIDPair] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNumTrackingChiSqPerDFBins, dMinTrackingChiSqPerDF, dMaxTrackingChiSqPerDF);
-
-					// Tracking Chisq/NDF Vs P
-					locHistName = "Tracking_ChiSqPerDFVsP";
-					locHistTitle = locParticleROOTName + string(";p (GeV/c);Tracking #chi^{2}/NDF");
-					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-						dHistMap_TrackingChiSqPerDFVsP[locPIDPair] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
-					else
-						dHistMap_TrackingChiSqPerDFVsP[locPIDPair] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumTrackingChiSqPerDFBins, dMinTrackingChiSqPerDF, dMaxTrackingChiSqPerDF);
-
-					gDirectory->cd("..");
-				}
 				gDirectory->cd("..");
+			}
+		}
+		gDirectory->cd("..");
+
+		//Matching
+		CreateAndChangeTo_Directory("Matching", "Matching");
+		{
+			vector<DetectorSystem_t> locDetectorSystems;
+			locDetectorSystems.push_back(SYS_START);  locDetectorSystems.push_back(SYS_BCAL);
+			locDetectorSystems.push_back(SYS_TOF);  locDetectorSystems.push_back(SYS_FCAL);
+			for(size_t loc_i = 0; loc_i < locDetectorSystems.size(); ++loc_i)
+			{
+				// PVsTheta Time-Based Tracks Good Track FOM Has Hit
+				locHistName = string("PVsTheta_TimeBased_GoodTrackFOM_HasHit_") + SystemName(locDetectorSystems[loc_i]);
+				locHistTitle = string("Time-Based Tracks, Good Tracking FOM, ") + SystemName(locDetectorSystems[loc_i]) + string(" Has Hit;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[locDetectorSystems[loc_i]] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[locDetectorSystems[loc_i]] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+
+				// PVsTheta Time-Based Tracks Good Track FOM Has Hit
+				locHistName = string("PVsTheta_TimeBased_GoodTrackFOM_NoHit_") + SystemName(locDetectorSystems[loc_i]);
+				locHistTitle = string("Time-Based Tracks, Good Tracking FOM, ") + SystemName(locDetectorSystems[loc_i]) + string(" No Hit;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[locDetectorSystems[loc_i]] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[locDetectorSystems[loc_i]] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
 			}
 		}
 		gDirectory->cd("..");
@@ -1437,96 +1439,20 @@ bool DHistogramAction_DetectorStudies::Perform_Action(JEventLoop* locEventLoop, 
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
 
-	Fill_ReconstructionHists(locEventLoop, false);
+	Fill_ReconstructionHists(locEventLoop);
+	Fill_MatchingHists(locEventLoop);
 	Fill_NotMatchedHists(locEventLoop);
 	Fill_MatchedHists(locEventLoop, false);
 	Fill_PIDHists(locEventLoop);
 
 	if(!locMCThrowns.empty())
-	{
-		Fill_ReconstructionHists(locEventLoop, true);
 		Fill_MatchedHists(locEventLoop, true);
-	}
 
 	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }
 
-void DHistogramAction_DetectorStudies::Fill_ReconstructionHists(JEventLoop* locEventLoop, bool locUseTruePIDFlag)
+void DHistogramAction_DetectorStudies::Fill_ReconstructionHists(JEventLoop* locEventLoop)
 {
-	vector<const DChargedTrack*> locChargedTracks;
-	locEventLoop->Get(locChargedTracks);
-
-	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
-	locEventLoop->Get(locMCThrownMatchingVector);
-
-	//Tracking
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-	{
-		for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
-		{
-			const DChargedTrackHypothesis* locChargedTrackHypothesis = NULL;
-			if(locUseTruePIDFlag && (!locMCThrownMatchingVector.empty()))
-			{
-				double locMatchFOM = 0.0;
-				const DMCThrown* locMCThrown = locMCThrownMatchingVector[0]->Get_MatchingMCThrown(locChargedTracks[loc_i], locMatchFOM);
-				if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
-					continue;
-
-				//OK, have the thrown. Now, grab the best charged track hypothesis to get the best matching
-				locChargedTrackHypothesis = locMCThrownMatchingVector[0]->Get_MatchingChargedHypothesis(locMCThrown, locMatchFOM);
-				if(locChargedTrackHypothesis->PID() != locMCThrown->PID())
-					continue;
-			}
-			else
-				locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
-
-			pair<int, bool> locPIDPair(int(locChargedTrackHypothesis->PID()), locUseTruePIDFlag);
-			bool locDisregardPIDFlag = (dHistMap_TrackingChiSqPerDF.find(locPIDPair) == dHistMap_TrackingChiSqPerDF.end());
-			int locQIndex = (locChargedTrackHypothesis->charge() > 0.0) ? -1 : -2;
-			pair<int, bool> locChargePair(locQIndex, locUseTruePIDFlag);
-
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-			double locP = locTrackTimeBased->momentum().Mag();
-			double locTheta = locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi();
-
-			double locChiSqPerDF = (locTrackTimeBased->Ndof > 0) ? locTrackTimeBased->chisq/locTrackTimeBased->Ndof : numeric_limits<double>::quiet_NaN();
-			dHistMap_TrackingChiSqPerDF[locChargePair]->Fill(locChiSqPerDF);
-			dHistMap_TrackingChiSqPerDFVsTheta[locChargePair]->Fill(locTheta, locChiSqPerDF);
-			dHistMap_TrackingChiSqPerDFVsP[locChargePair]->Fill(locP, locChiSqPerDF);
-			if(!locDisregardPIDFlag)
-			{
-				dHistMap_TrackingChiSqPerDF[locPIDPair]->Fill(locChiSqPerDF);
-				dHistMap_TrackingChiSqPerDFVsTheta[locPIDPair]->Fill(locTheta, locChiSqPerDF);
-				dHistMap_TrackingChiSqPerDFVsP[locPIDPair]->Fill(locP, locChiSqPerDF);
-			}
-
-			if(locTrackTimeBased->dNumHitsUsedFordEdx_CDC > 0)
-			{
-				dHistMap_CDCdEdx[locChargePair]->Fill(locTrackTimeBased->ddEdx_CDC*1.0E6);
-				dHistMap_CDCdEdxVsP[locChargePair]->Fill(locP, locTrackTimeBased->ddEdx_CDC*1.0E6);
-				if(!locDisregardPIDFlag)
-				{
-					dHistMap_CDCdEdx[locPIDPair]->Fill(locTrackTimeBased->ddEdx_CDC*1.0E6);
-					dHistMap_CDCdEdxVsP[locPIDPair]->Fill(locP, locTrackTimeBased->ddEdx_CDC*1.0E6);
-				}
-			}
-			if(locTrackTimeBased->dNumHitsUsedFordEdx_FDC > 0)
-			{
-				dHistMap_FDCdEdx[locChargePair]->Fill(locTrackTimeBased->ddEdx_FDC*1.0E6);
-				dHistMap_FDCdEdxVsP[locChargePair]->Fill(locP, locTrackTimeBased->ddEdx_FDC*1.0E6);
-				if(!locDisregardPIDFlag)
-				{
-					dHistMap_FDCdEdx[locPIDPair]->Fill(locTrackTimeBased->ddEdx_FDC*1.0E6);
-					dHistMap_FDCdEdxVsP[locPIDPair]->Fill(locP, locTrackTimeBased->ddEdx_FDC*1.0E6);
-				}
-			}
-		}
-	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
-	if(locUseTruePIDFlag)
-		return; //only do tracking for true
-
 	vector<const DTAGHHit*> locTAGHHits;
 	locEventLoop->Get(locTAGHHits);
 
@@ -1544,6 +1470,43 @@ void DHistogramAction_DetectorStudies::Fill_ReconstructionHists(JEventLoop* locE
 
 	vector<const DSCHit*> locSCHits;
 	locEventLoop->Get(locSCHits);
+
+	const DDetectorMatches* locDetectorMatches = NULL;
+	locEventLoop->GetSingle(locDetectorMatches);
+
+	vector<const DTrackCandidate*> locTrackCandidates;
+	locEventLoop->Get(locTrackCandidates);
+
+	vector<const DTrackWireBased*> locTrackWireBasedVector;
+	locEventLoop->Get(locTrackWireBasedVector);
+
+	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
+	locEventLoop->Get(locTrackTimeBasedVector);
+
+	//select the best DTrackWireBased for each track: use best tracking FOM
+	map<JObject::oid_t, pair<const DTrackWireBased*, double> > locBestTrackWireBasedMap; //lowest tracking FOM for each candidate id
+	for(size_t loc_i = 0; loc_i < locTrackWireBasedVector.size(); ++loc_i)
+	{
+		double locTrackingFOM = TMath::Prob(locTrackWireBasedVector[loc_i]->chisq, locTrackWireBasedVector[loc_i]->Ndof);
+		pair<const DTrackWireBased*, double> locTrackPair(locTrackWireBasedVector[loc_i], locTrackingFOM);
+		JObject::oid_t locCandidateID = locTrackWireBasedVector[loc_i]->candidateid;
+
+		if(locBestTrackWireBasedMap.find(locCandidateID) == locBestTrackWireBasedMap.end())
+			locBestTrackWireBasedMap[locCandidateID] = locTrackPair;
+		else if(locTrackingFOM > locBestTrackWireBasedMap[locCandidateID].second)
+			locBestTrackWireBasedMap[locCandidateID] = locTrackPair;
+	}
+
+	//select the best DTrackTimeBased for each track: use best tracking FOM
+	map<JObject::oid_t, const DTrackTimeBased*> locBestTrackTimeBasedMap; //lowest tracking FOM for each candidate id
+	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
+	{
+		JObject::oid_t locCandidateID = locTrackTimeBasedVector[loc_i]->candidateid;
+		if(locBestTrackTimeBasedMap.find(locCandidateID) == locBestTrackTimeBasedMap.end())
+			locBestTrackTimeBasedMap[locCandidateID] = locTrackTimeBasedVector[loc_i];
+		else if(locTrackTimeBasedVector[loc_i]->FOM > locBestTrackTimeBasedMap[locCandidateID]->FOM)
+			locBestTrackTimeBasedMap[locCandidateID] = locTrackTimeBasedVector[loc_i];
+	}
 
 	//Fill Histograms
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
@@ -1594,6 +1557,101 @@ void DHistogramAction_DetectorStudies::Fill_ReconstructionHists(JEventLoop* locE
 			dHist_SCHitTimeVsSector->Fill(locSCHits[loc_i]->sector, locSCHits[loc_i]->t);
 			dHist_SCHitEnergy->Fill(locSCHits[loc_i]->dE*1.0E3);
 			dHist_SCHitEnergyVsSector->Fill(locSCHits[loc_i]->sector, locSCHits[loc_i]->dE*1.0E3);
+		}
+
+		for(size_t loc_i = 0; loc_i < locTrackCandidates.size(); ++loc_i)
+		{
+			int locCharge = (locTrackCandidates[loc_i]->charge() > 0.0) ? 1 : -1;
+			dHistMap_PVsTheta_Candidates[locCharge]->Fill(locTrackCandidates[loc_i]->momentum().Theta()*180.0/TMath::Pi(), locTrackCandidates[loc_i]->momentum().Mag());
+		}
+
+		map<JObject::oid_t, pair<const DTrackWireBased*, double> >::iterator locWireBasedIterator = locBestTrackWireBasedMap.begin();
+		for(; locWireBasedIterator != locBestTrackWireBasedMap.end(); ++locWireBasedIterator)
+		{
+			const DTrackWireBased* locTrackWireBased = locWireBasedIterator->second.first;
+			int locCharge = (locTrackWireBased->charge() > 0.0) ? 1 : -1;
+			dHistMap_PVsTheta_WireBased[locCharge]->Fill(locTrackWireBased->momentum().Theta()*180.0/TMath::Pi(), locTrackWireBased->momentum().Mag());
+		}
+
+		map<JObject::oid_t, const DTrackTimeBased*>::iterator locTimeBasedIterator = locBestTrackTimeBasedMap.begin();
+		for(; locTimeBasedIterator != locBestTrackTimeBasedMap.end(); ++locTimeBasedIterator)
+		{
+			const DTrackTimeBased* locTrackTimeBased = locTimeBasedIterator->second;
+			int locCharge = (locTrackTimeBased->charge() > 0.0) ? 1 : -1;
+			double locTheta = locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi();
+			double locP = locTrackTimeBased->momentum().Mag();
+
+			dHistMap_PVsTheta_TimeBased[locCharge]->Fill(locTheta, locP);
+			dHist_NumDCHitsPerTrack->Fill(locTrackTimeBased->Ndof + 5);
+			dHist_NumDCHitsPerTrackVsTheta->Fill(locTheta, locTrackTimeBased->Ndof + 5);
+
+			dHist_TrackingFOM->Fill(locTrackTimeBased->FOM);
+			dHist_TrackingFOMVsTheta->Fill(locTheta, locTrackTimeBased->FOM);
+			dHist_TrackingFOMVsP->Fill(locP, locTrackTimeBased->FOM);
+
+			if(locTrackTimeBased->FOM > dGoodTrackFOM)
+				dHistMap_PVsTheta_TimeBased_GoodTrackFOM[locCharge]->Fill(locTheta, locP);
+			else
+				dHistMap_PVsTheta_TimeBased_LowTrackFOM[locCharge]->Fill(locTheta, locP);
+		}
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLoop)
+{
+	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
+	locEventLoop->Get(locTrackTimeBasedVector);
+
+	const DDetectorMatches* locDetectorMatches = NULL;
+	locEventLoop->GetSingle(locDetectorMatches);
+
+	//select the best DTrackTimeBased for each track: use best tracking FOM
+	map<JObject::oid_t, const DTrackTimeBased*> locBestTrackTimeBasedMap; //lowest tracking FOM for each candidate id
+	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
+	{
+		JObject::oid_t locCandidateID = locTrackTimeBasedVector[loc_i]->candidateid;
+		if(locBestTrackTimeBasedMap.find(locCandidateID) == locBestTrackTimeBasedMap.end())
+			locBestTrackTimeBasedMap[locCandidateID] = locTrackTimeBasedVector[loc_i];
+		else if(locTrackTimeBasedVector[loc_i]->FOM > locBestTrackTimeBasedMap[locCandidateID]->FOM)
+			locBestTrackTimeBasedMap[locCandidateID] = locTrackTimeBasedVector[loc_i];
+	}
+
+	//Fill Histograms
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		map<JObject::oid_t, const DTrackTimeBased*>::iterator locTimeBasedIterator = locBestTrackTimeBasedMap.begin();
+		for(; locTimeBasedIterator != locBestTrackTimeBasedMap.end(); ++locTimeBasedIterator)
+		{
+			const DTrackTimeBased* locTrackTimeBased = locTimeBasedIterator->second;
+			if(locTrackTimeBased->FOM < dGoodTrackFOM)
+				continue;
+
+			double locTheta = locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi();
+			double locP = locTrackTimeBased->momentum().Mag();
+
+			vector<DShowerMatchParams> locShowerMatchParams;
+			if(locDetectorMatches->Get_BCALMatchParams(locTrackTimeBased, locShowerMatchParams))
+				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[SYS_BCAL]->Fill(locTheta, locP);
+			else
+				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[SYS_BCAL]->Fill(locTheta, locP);
+
+			if(locDetectorMatches->Get_FCALMatchParams(locTrackTimeBased, locShowerMatchParams))
+				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[SYS_FCAL]->Fill(locTheta, locP);
+			else
+				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[SYS_FCAL]->Fill(locTheta, locP);
+
+			vector<DTOFHitMatchParams> locTOFMatchParams;
+			if(locDetectorMatches->Get_TOFMatchParams(locTrackTimeBased, locTOFMatchParams))
+				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[SYS_TOF]->Fill(locTheta, locP);
+			else
+				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[SYS_TOF]->Fill(locTheta, locP);
+
+			vector<DSCHitMatchParams> locSCMatchParams;
+			if(locDetectorMatches->Get_SCMatchParams(locTrackTimeBased, locSCMatchParams))
+				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[SYS_START]->Fill(locTheta, locP);
+			else
+				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[SYS_START]->Fill(locTheta, locP);
 		}
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
