@@ -22,7 +22,7 @@
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
 	if(TVirtualPad::Pad() == NULL)
-		locCanvas = new TCanvas("Tracking_p2", "Tracking_p2", 1200, 800); //for testing
+		locCanvas = new TCanvas("Tracking_p3", "Tracking_p3", 1200, 800); //for testing
 	else
 		locCanvas = gPad->GetCanvas();
 	locCanvas->Divide(2, 2);
