@@ -34,50 +34,8 @@ jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int runnumbe
   /*
   JCalibration *jcalib = eventLoop->GetJCalibration();
   //these tables hold: module layer sector end c0 c1 c2 c3
-  vector<vector<float> > adc_timewalk_table;
   vector<vector<float> > tdc_timewalk_table;
-  jcalib->Get("BCAL/timewalk_adc",adc_timewalk_table);
   jcalib->Get("BCAL/timewalk_tdc",tdc_timewalk_table);
-
-  for (vector<vector<float> >::const_iterator iter = adc_timewalk_table.begin();
-       iter != adc_timewalk_table.end();
-       ++iter) {
-    if (iter->size() != 8) {
-      cout << "DBCALUnifiedHit_factory: Wrong number of values in timewalk_adc table (should be 8)" << endl;
-      continue;
-    }
-    //be really careful about float->int converstions
-    int module = (int)((*iter)[0]+0.5);
-    int layer = (int)((*iter)[1]+0.5);
-    int sector = (int)((*iter)[2]+0.5);
-    int endi = (int)((*iter)[3]+0.5);
-    DBCALGeometry::End end = (endi==0) ? DBCALGeometry::kUpstream : DBCALGeometry::kDownstream;
-    float c0 = (*iter)[4];
-    float c1 = (*iter)[5];
-    float c2 = (*iter)[6];
-    float c3 = (*iter)[7];
-    int cellId = DBCALGeometry::cellId(module, layer, sector);
-    readout_channel channel(cellId,end);
-    adc_timewalk_map[channel] = timewalk_coefficients(c0,c1,c2,c3);
-  }
-
-  //check that we have entries in the map for all the expected channels
-  for (int module=1; module<=DBCALGeometry::NBCALMODS; module++) {
-    //shouldn't be hardcoded
-    for (int sector=1; sector<=4; sector++) {
-      for (int layer=1; layer<=(DBCALGeometry::NBCALLAYSIN + DBCALGeometry::NBCALLAYSOUT); layer++) {
-        int id = DBCALGeometry::cellId(module, layer, sector);
-        if (adc_timewalk_map.count(readout_channel(id,DBCALGeometry::kUpstream)) != 1) {
-          cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_adc_table: "
-               << endl << " module " << module << " layer " << layer << " sector " << sector << " upstream" << endl;
-        }
-        if (adc_timewalk_map.count(readout_channel(id,DBCALGeometry::kDownstream)) != 1) {
-          cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_adc_table: "
-               << endl << " module " << module << " layer " << layer << " sector " << sector << " downstream" << endl;
-        }
-      }
-    }
-  }
 
   for (vector<vector<float> >::const_iterator iter = tdc_timewalk_table.begin();
        iter != tdc_timewalk_table.end();
@@ -132,13 +90,9 @@ jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int runnumbe
                                            {15.2826, 0.835660, 0.374335, 0.0111243},
                                            {15.6251, 0.530827, 0.475919, 0.0102508} };
 
-  //In reality, we shouldn't have to do a timewalk correction to the ADC times.
-  //But currently the ADC time simulated by mcsmear is a threshold crossing
-  //time, so this is necessary.
-  const double adc_timewalk_array[4][4] = { {17.6245, 0.0585642, 0.877655, 0.00210614},
-                                            {17.4629, 0.0717924, 0.89339, 0.000796056},
-                                            {17.5743, 0.0397904, 1.08083, -0.00144397},
-                                            {17.6123, 0.0321396, 1.15505, -0.00261166} };
+  //Oct. 16, 2014 - Altered ADC time code.  No longer uses threshold crossing.
+  //Now uses actual fADC 250 timing algorithm for simulation (CFD-like algorithm).
+  //Current understanding: no need for time-walk correction for ADC times.
 
   for (int module=1; module<=48; module++) {
     for (int layer=1; layer<=3; layer++) {
@@ -154,24 +108,6 @@ jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int runnumbe
 
         tdc_timewalk_map[chan_up] = coeffs;
         tdc_timewalk_map[chan_dn] = coeffs;
-      }
-    }
-  }
-
-  for (int module=1; module<=48; module++) {
-    for (int layer=1; layer<=4; layer++) {
-      for (int sector=1; sector<=4; sector++) {
-        int id = DBCALGeometry::cellId(module, layer, sector);
-        readout_channel chan_up(id,DBCALGeometry::kUpstream);
-        readout_channel chan_dn(id,DBCALGeometry::kDownstream);
-
-        timewalk_coefficients coeffs(adc_timewalk_array[layer-1][0],
-                                     adc_timewalk_array[layer-1][1],
-                                     adc_timewalk_array[layer-1][2],
-                                     adc_timewalk_array[layer-1][3]);
-
-        adc_timewalk_map[chan_up] = coeffs;
-        adc_timewalk_map[chan_dn] = coeffs;
       }
     }
   }
@@ -258,6 +194,12 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
 
     //ignore TDC hits unless we have exactly one
     bool hasOneTDCHit = (tdc_hits.size()==1);
+
+    //---------------------------------------------------------
+    // sjt --- temporarily ignore tdc hits
+    hasOneTDCHit=false;
+    //---------------------------------------------------------
+
     const DBCALTDCHit* tdc_hit=NULL;
     if (hasOneTDCHit) tdc_hit = tdc_hits[0];
 
@@ -278,16 +220,12 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
       float E, t, t_ADC; //these are values that will be assigned to the DBCALUnifiedHit
 
       E = hit->E;
-      timewalk_coefficients coeff = adc_timewalk_map[chan];
       t_ADC = hit->t;
 
-      //In reality, we shouldn't have to do a timewalk correction to the ADC times.
-      //But currently the ADC time simulated by mcsmear is a threshold crossing
-      //time, so this is necessary.
-      //if E < coeff.c3, the correction will be bogus, just skip it (this shouldn't happen)
-      if (E > coeff.c3) {
-        t_ADC -= coeff.c0 + coeff.c1/pow(E-coeff.c3,coeff.c2);
-      }
+  //We used to do a timewalk correction here for ADC times.  We've now updated the
+  //algorithm to emulate the actual fADC 250 algorithm (CFD-like), so the correction
+  //is no longer necessary.
+
       if (useTDChit) {
         timewalk_coefficients tdc_coeff = tdc_timewalk_map[chan];
         t = tdc_hit->t;
@@ -303,10 +241,6 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
       } else {
         t = t_ADC;
       }
-      // MMD: hard wired to use only the ADC time.  Must be removed when the TDCs are 
-      // properly integrated into the analysis
-      t = t_ADC;    
-      
 
       if (enable_debug_output) {
         t_adc_corrected_tree = t_ADC;
