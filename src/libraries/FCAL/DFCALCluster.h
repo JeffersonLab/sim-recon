@@ -29,6 +29,7 @@ class DFCALCluster : public JObject {
 
    typedef struct {
       oid_t id;
+      int ch;
       float x;
       float y;
       float E;
@@ -42,6 +43,7 @@ class DFCALCluster : public JObject {
 
    typedef struct {
       oid_t id;
+      int ch;
       float x;
       float y;
       float E;
@@ -89,7 +91,8 @@ class DFCALCluster : public JObject {
 			double fcalMidplaneZ ) const ;
 
    // internal parsers of properties for a hit belonging to a cluster 
-   oid_t getHitID( const userhits_t* const hitList, const int ihit) const;
+   oid_t  getHitID( const userhits_t* const hitList, const int ihit) const;
+   int    getHitCh( const userhits_t* const hitList, const int ihit) const;
    double getHitX( const userhits_t* const hitList, const int ihit) const;
    double getHitY( const userhits_t* const hitList, const int ihit) const;
    double getHitT( const userhits_t* const hitList, const int ihit) const;
@@ -187,6 +190,16 @@ inline JObject::oid_t DFCALCluster::getHitID(const userhits_t* const hitList, co
 {
    if ( ihit >= 0  && ihit < fNhits && hitList && ihit < hitList->nhits ) {
      return hitList->hit[ fHit[ ihit ] ].id;
+   }
+   else {
+     return 0;
+   }
+}
+
+inline int DFCALCluster::getHitCh(const userhits_t* const hitList, const int ihit ) const
+{
+   if ( ihit >= 0  && ihit < fNhits && hitList && ihit < hitList->nhits ) {
+     return hitList->hit[ fHit[ ihit ] ].ch;
    }
    else {
      return 0;

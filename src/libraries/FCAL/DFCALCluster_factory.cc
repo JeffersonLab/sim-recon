@@ -17,6 +17,7 @@ using namespace jana;
 #include "FCAL/DFCALCluster.h"
 #include "FCAL/DFCALCluster_factory.h"
 #include "FCAL/DFCALHit.h"
+#include "FCAL/DFCALGeometry.h"
 #include "HDGEOMETRY/DGeometry.h"
 
 
@@ -77,7 +78,10 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	vector<const DFCALHit*> fcalhits;
 	eventLoop->Get(fcalhits);
 	
-	
+	vector<const DFCALGeometry*> geomVec;
+	eventLoop->Get(geomVec);
+	const DFCALGeometry& fcalGeom = *(geomVec[0]);
+
 	// Sort hits by energy
 	sort(fcalhits.begin(), fcalhits.end(), FCALHitsSort_C);
 
@@ -90,6 +94,7 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
                                                      hit != fcalhits.end(); hit++ ) {
            if ( (**hit).E <  1e-6 ) continue;
            hits->hit[nhits].id = (**hit).id;
+	   hits->hit[nhits].ch = fcalGeom.channel( (**hit).row, (**hit).column );
            hits->hit[nhits].x = (**hit).x;
            hits->hit[nhits].y = (**hit).y;
            hits->hit[nhits].E = (**hit).E; // adjust a hit energy either in the hit or photon factory
