@@ -233,8 +233,8 @@ void AddFDCCathodeHits(int PackNo,float xwire,float avalanche_y,float tdrift,
   /* Mock-up of cathode strip charge distribution */ 
   int plane, node;
   for (plane=1; plane<4; plane+=2){
-    float theta = (plane == 1)? CATHODE_ROT_ANGLE: -CATHODE_ROT_ANGLE-M_PI;
-    float cathode_u = xwire*cos(theta)+avalanche_y*sin(theta);
+    float theta = (plane == 1)? M_PI-CATHODE_ROT_ANGLE: CATHODE_ROT_ANGLE;
+    float cathode_u =-xwire*cos(theta)-avalanche_y*sin(theta);
     int strip1 = ceil((cathode_u-U_OF_STRIP_ZERO)/STRIP_SPACING +0.5);
     float cathode_u1 = (strip1-1)*STRIP_SPACING + U_OF_STRIP_ZERO;
     float delta = cathode_u-cathode_u1;
