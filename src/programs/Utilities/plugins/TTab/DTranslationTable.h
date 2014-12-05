@@ -18,6 +18,7 @@ using namespace std;
 #include <JANA/JEventLoop.h>
 #include <JANA/JCalibration.h>
 #include <JANA/JException.h>
+#include <JANA/JEventSource.h>
 using namespace jana;
 
 #include <DAQ/DModuleType.h>
@@ -90,7 +91,8 @@ class DTranslationTable:public jana::JObject{
 			SC,
 			TAGH,
 			TAGM,
-			TOF
+			TOF,
+			NUM_DETECTOR_TYPES
 		};
 		
 		string DetectorName(Detector_t type) const {
@@ -285,6 +287,8 @@ class DTranslationTable:public jana::JObject{
 		void AddToCallStack(JEventLoop *loop, string caller, string callee) const;
 
 		void ReadOptionalROCidTranslation(void);
+		void SetSystemsToParse(string systems, JEventSource *eventsource);
+		void SetSystemsToParse(JEventSource *eventsource){SetSystemsToParse(SYSTEMS_TO_PARSE, eventsource);}
 		void ReadTranslationTable(JCalibration *jcalib=NULL);
 		
 		template<class T> void CopyToFactory(JEventLoop *loop, vector<T*> &v) const;
@@ -304,6 +308,7 @@ class DTranslationTable:public jana::JObject{
 		bool NO_CCDB;
 		set<string> supplied_data_types;
 		int VERBOSE;
+		string SYSTEMS_TO_PARSE;
 		
 		mutable JStreamLog ttout;
 

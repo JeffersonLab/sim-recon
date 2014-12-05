@@ -11,6 +11,7 @@
 #include <sstream>
 
 #include <DAQ/DModuleType.h>
+#include <DAQ/JEventSource_EVIO.h>
 #include <PAIR_SPECTROMETER/DPSGeometry.h>
 
 using namespace jana;
@@ -23,7 +24,7 @@ static map<DTranslationTable::csc_t, DTranslationTable::DChannelInfo> TT;
 string ROCID_MAP_FILENAME;
 static map<uint32_t, uint32_t> rocid_map;     // (see ReadOptionalROCidTranslation() for details)
 static map<uint32_t, uint32_t> rocid_inv_map; // (see ReadOptionalROCidTranslation() for details)
-
+static map<DTranslationTable::Detector_t, set<uint32_t> > rocid_by_system;
 
 //...................................
 // Less than operator for csc_t data types. This is used by
@@ -66,6 +67,7 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
    NO_CCDB = false;
    XML_FILENAME = "tt.xml";
    VERBOSE = 0;
+   SYSTEMS_TO_PARSE = "";
    gPARMS->SetDefaultParameter("TT:NO_CCDB", NO_CCDB, 
            "Don't try getting translation table from CCDB and just look"
            " for file. Only useful if you want to force reading tt.xml."
@@ -85,6 +87,11 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
            "Optional rocid to rocid conversion map for use with files"
            " generated with the non-standard rocid's");
 
+	gPARMS->SetDefaultParameter("TT:SYSTEMS_TO_PARSE", SYSTEMS_TO_PARSE,
+			"Comma separated list of systems to parse EVIO data for. "
+			"Default is empty string which means to parse all. System "
+			"names should be what is returned by DTranslationTable::DetectorName() .");
+
    // Initialize dedicated JStreamLog used for debugging messages
    ttout.SetTag("--- TT ---: ");
    ttout.SetTimestampFlag();
@@ -96,7 +103,7 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
    // Read in Translation table. This will create DChannelInfo objects
    // and store them in the "TT" map, indexed by csc_t objects
    ReadTranslationTable(loop->GetJCalibration());
-
+   
    // These are used to help the event source report which
    // types of data it is capable of providing. For practical
    // purposes, these types are "provided" by the source
@@ -201,6 +208,65 @@ void DTranslationTable::ReadOptionalROCidTranslation(void)
                 << std::endl;
       exit(-1);
    }
+}
+
+//---------------------------------
+// SetSystemsToParse
+//---------------------------------
+void DTranslationTable::SetSystemsToParse(string systems, JEventSource *eventsource)
+{
+	/// This takes a string of comma separated system names and
+	/// identifies a list of Detector_t values from this (using
+	/// strings returned by DetectorName() ). It then tries to 
+	/// copy the value into the DAQ plugin so they can be used
+	/// to restrict which banks to parse.
+	
+	if(systems == "") return; // nothing to do for empty strings
+
+	// Make sure this is a JEventSource_EVIO object pointer
+	JEventSource_EVIO *eviosource = dynamic_cast<JEventSource_EVIO*>(eventsource);
+	if(!eviosource) {
+		jerr << "eventsource not a JEventSource_EVIO object! Cannot restrict parsing list!" << endl;
+		return;
+	}
+	
+	// Make map of system type id by name
+	map<string, Detector_t> name_to_id;
+	for(uint32_t dettype=UNKNOWN_DETECTOR; dettype<NUM_DETECTOR_TYPES; dettype++){
+		name_to_id[DetectorName((Detector_t)dettype)] = (Detector_t)dettype;
+	}
+	
+	// Parse string of system names
+	std::istringstream ss(systems);
+	std::string token;
+	while(std::getline(ss, token, ',')) {
+		
+		// Get initial list of rocids based on token
+		set<uint32_t> rocids = rocid_by_system[name_to_id[token]];
+		
+		// Let "FDC" be an alias for both cathode strips and wires
+		if(token == "FDC"){
+			set<uint32_t> rocids1 = rocid_by_system[name_to_id["FDC_CATHODES"]];
+			set<uint32_t> rocids2 = rocid_by_system[name_to_id["FDC_WIRES"]];
+			rocids.insert(rocids1.begin(), rocids1.end());
+			rocids.insert(rocids2.begin(), rocids2.end());
+		}
+
+		// More likely than not, someone specifying "PS" will also want "PSC" 
+		if(token == "PS"){
+			set<uint32_t> rocids1 = rocid_by_system[name_to_id["PSC"]];
+			rocids.insert(rocids1.begin(), rocids1.end());
+		}
+
+		set<uint32_t>::iterator it;
+		for(it=rocids.begin(); it!=rocids.end(); it++){
+
+			// Add this rocid to the DAQ parsing list
+			uint32_t rocid = *it;
+			eviosource->AddROCIDtoParseList(rocid);	
+			if(VERBOSE>0) ttout << "Added rocid " << rocid << " for system " << token << " to parse list" << endl;
+		}
+	}
 }
 
 //---------------------------------
@@ -1353,6 +1419,7 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
       ci.CSC = csc;
       ci.module_type = (DModuleType::type_id_t)mc2codaType;
       ci.det_sys = DetectorStr2DetID(detector);
+	  rocid_by_system[ci.det_sys].insert(crate);
 
       // detector-specific indexes
       switch (ci.det_sys) {
@@ -1405,6 +1472,7 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
 	    ci.psc.id = id;
 	    break;
          case DTranslationTable::UNKNOWN_DETECTOR:
+		 default:
             break;
       }
 

@@ -43,6 +43,9 @@ jerror_t DTranslationTable_factory::brun(jana::JEventLoop *loop, int runnumber)
 	// susequent events
 	_data.push_back(tt);
 	SetFactoryFlag(PERSISTANT);
+	
+	// If restricting parsing, make sure it is set for this source
+	tt->SetSystemsToParse(loop->GetJEvent().GetJEventSource());
 
 	return NOERROR;
 }

@@ -952,6 +952,27 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	ObjList *objs_ptr = (ObjList*)event.GetRef();
 	if(!objs_ptr)return RESOURCE_UNAVAILABLE;
 	if(!objs_ptr->own_objects) return OBJECT_NOT_AVAILABLE; // if objects were already copied ...
+	
+	// If any translation tables exist, we will use them at the end of this
+	// method. However, the TTab plugin has an option to specify parsing of
+	// only certain detector systems. It does this by copying values into
+	// this JEventSource_EVIO object via the AddROCIDtoParseList method
+	// while in the brun method. The brun method won't get called until
+	// we ask for the DTranslationTable objects, thus, we must ask for them
+	// here, prior to calling ParseEvents.
+	// Note that we have to use the GetFromFactory() method here since
+	// if we just use Get() or GetSingle(), it will call us (the event
+	// source) again in an infinite loop!
+	// Also note that we use static_cast here instead of dynamic_cast
+	// since the latter requires that the type_info structure for
+	// the DTranslationTable_factory be present. It is not in this
+	// plugin (it is in the TTab plugin). Thus, with dynamic_cast there
+	// is an unresolved symbol error if the TTab plugin is not also
+	// present. (Make sense?)
+	vector<const DTranslationTable*> translationTables;
+	JEventLoop *loop = event.GetJEventLoop();
+	DTranslationTable_factory *ttfac = static_cast<DTranslationTable_factory*>(loop->GetFactory("DTranslationTable"));
+	if(ttfac) ttfac->Get(translationTables);
 
 	// We use a deferred parsing scheme for efficiency. If the event
 	// is not flagged as having already been parsed, then parse it
@@ -961,7 +982,6 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	if(!objs_ptr->eviobuff_parsed) ParseEvents(objs_ptr);
 	
 	// Get name of class which is actually being requested by caller
-	JEventLoop *loop = event.GetJEventLoop();
 	string dataClassName = (factory==NULL ? "N/A":factory->GetDataClassName());
 	
 	// Make list of data(hit) types we have. Keep list of
@@ -1276,24 +1296,10 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	
 	// If a translation table object is available, use it to create
 	// detector hits from the low-level DAQ objects we just created.
-	// Note that we have to use the GetFromFactory() method here since
-	// if we just use Get() or GetSingle(), it will call us (the event
-	// source) again in an infinite loop!
-	// Also note that we use static_cast here instead of dynamic_cast
-	// since the latter requires that the type_info structure for
-	// the DTranslationTable_factory be present. It is not in this
-	// plugin (it is in the TTab plugin). Thus, with dynamic_cast there
-	// is an unresolved symbol error if the TTab plugin is not also
-	// present. (Make sense?)
-	DTranslationTable_factory *ttfac = static_cast<DTranslationTable_factory*>(loop->GetFactory("DTranslationTable"));
-	if(ttfac){  
-		vector<const DTranslationTable*> translationTables;
-		ttfac->Get(translationTables);
-		for(unsigned int i=0; i<translationTables.size(); i++){
-			translationTables[i]->ApplyTranslationTable(loop);
-			if(translationTables[i]->IsSuppliedType(dataClassName))
-				if(strlen(factory->Tag()) == 0)err = NOERROR; // Don't allow tagged factories from Translation table
-		}
+	for(unsigned int i=0; i<translationTables.size(); i++){
+		translationTables[i]->ApplyTranslationTable(loop);
+		if(translationTables[i]->IsSuppliedType(dataClassName))
+			if(strlen(factory->Tag()) == 0)err = NOERROR; // Don't allow tagged factories from Translation table
 	}
 
 	if(VERBOSE>2) evioout << "  Leaving GetObjects()" << endl;
@@ -2244,6 +2250,13 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 
 		// Extract ROC id (crate number) from bank's parent
 		uint32_t rocid = data_bank->tag  & 0x0FFF;
+		
+		// If there are rocid's specified that we wish to parse, make sure this one
+		// is in the list. Otherwise, skip it.
+		if(!rocids_to_parse.empty()){
+			if(VERBOSE>4) evioout << "     Skipping parsing of rocid="<<rocid<<" due to it being in rocids_to_parse set." << endl;
+			if(rocids_to_parse.find(rocid) == rocids_to_parse.end()) continue;
+		}
 		
 		// The number of events in block is stored in lower 8 bits
 		// of header word (aka the "num") of Data Bank. This should
