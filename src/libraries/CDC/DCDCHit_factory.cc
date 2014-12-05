@@ -193,11 +193,14 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
       const Df125PulseIntegral* PIobj = NULL;
       const Df125Config *configObj = NULL;
       digihit->GetSingle(PIobj);
-      PIobj->GetSingle(configObj);
-      if ((PIobj != NULL) && (configObj != NULL)) {
+      //PIobj->GetSingle(configObj);
+      if (PIobj != NULL) {
 	  // the measured pedestal must be scaled by the ratio of the number
 	  // of samples used to calculate the pedestal and the actual pulse
-	  pedestal = static_cast<double>(configObj->NSA_NSB) * PIobj->pedestal;                    ;
+	  double single_sample_ped = (double)PIobj->pedestal;
+	  double nsamples_integral = (double)PIobj->nsamples_integral;
+	  double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
+	  pedestal          = single_sample_ped * nsamples_integral/nsamples_pedestal;
       } 
 
        
