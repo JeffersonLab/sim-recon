@@ -154,7 +154,8 @@ void DDetectorMatches_factory::MatchToTrack(const DParticleID* locParticleID, co
 	{
 		double locInputStartTime = locTrackTimeBasedVector[loc_i]->t0();
 		const DReferenceTrajectory* rt = locTrackTimeBasedVector[loc_i]->rt;
-		if(!locParticleID->MatchToTrack(locBCALShower, rt, locInputStartTime, locDistance))
+		double locDeltaPhi = 0.0, locDeltaZ = 0.0;
+		if(!locParticleID->Distance_ToTrack(locBCALShower, rt, locInputStartTime, locDistance, locDeltaPhi, locDeltaZ))
 			continue;
 		if(locDistance < locMinDistance)
 			locMinDistance = locDistance;
@@ -169,7 +170,7 @@ void DDetectorMatches_factory::MatchToTrack(const DParticleID* locParticleID, co
 	{
 		double locInputStartTime = locTrackTimeBasedVector[loc_i]->t0();
 		const DReferenceTrajectory* rt = locTrackTimeBasedVector[loc_i]->rt;
-		if(!locParticleID->MatchToTrack(locFCALShower, rt, locInputStartTime, locDistance))
+		if(!locParticleID->Distance_ToTrack(locFCALShower, rt, locInputStartTime, locDistance))
 			continue;
 		if(locDistance < locMinDistance)
 			locMinDistance = locDistance;

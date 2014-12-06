@@ -232,10 +232,12 @@ jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>
   return NOERROR;
 }
 
-jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const{
+jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const
+{
 	vector<dedx_t> locdEdxHits_CDC, locdEdxHits_FDC;
 	jerror_t locReturnStatus = GetDCdEdxHits(locTrackTimeBased, locdEdxHits_CDC, locdEdxHits_FDC);
-	if(locReturnStatus != NOERROR){
+	if(locReturnStatus != NOERROR)
+	{
 		locdEdx_FDC = numeric_limits<double>::quiet_NaN();
 		locdx_FDC = numeric_limits<double>::quiet_NaN();
 		locNumHitsUsedFordEdx_FDC = 0;
@@ -247,12 +249,15 @@ jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, doubl
 	return CalcDCdEdx(locTrackTimeBased, locdEdxHits_CDC, locdEdxHits_FDC, locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC, locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC);
 }
 
-jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const{
+jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const
+	{
 	locdx_CDC = 0.0;
 	locdEdx_CDC = 0.0;
 	locNumHitsUsedFordEdx_CDC = locdEdxHits_CDC.size()/2;
-	if(locNumHitsUsedFordEdx_CDC > 0){
-		for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_CDC; ++loc_i){
+	if(locNumHitsUsedFordEdx_CDC > 0)
+	{
+		for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_CDC; ++loc_i)
+		{
 			locdEdx_CDC += locdEdxHits_CDC[loc_i].dE; //weight is ~ #e- (scattering sites): dx!
 			locdx_CDC += locdEdxHits_CDC[loc_i].dx;
 		}
@@ -262,8 +267,10 @@ jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const
 	locdx_FDC = 0.0;
 	locdEdx_FDC = 0.0;
 	locNumHitsUsedFordEdx_FDC = locdEdxHits_FDC.size()/2;
-	if(locNumHitsUsedFordEdx_FDC > 0){
-		for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_FDC; ++loc_i){
+	if(locNumHitsUsedFordEdx_FDC > 0)
+	{
+		for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_FDC; ++loc_i)
+		{
 			locdEdx_FDC += locdEdxHits_FDC[loc_i].dE; //weight is ~ #e- (scattering sites): dx!
 			locdx_FDC += locdEdxHits_FDC[loc_i].dx;
 		}
@@ -406,8 +413,7 @@ bool DParticleID::MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DR
 	DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z); 
 
 	double locFlightTime = 9.9E9, locPathLength = 9.9E9;
-	double d = rt->DistToRTwithTime(bcal_pos, &locPathLength, 
-					&locFlightTime,SYS_BCAL);
+	double d = rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime, SYS_BCAL);
 
 	if(!isfinite(d))
 		return false;
@@ -417,8 +423,9 @@ bool DParticleID::MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DR
 		return false;
 
 	DVector3 proj_pos = rt->GetLastDOCAPoint();
-	if (proj_pos.Perp()<65.) return false;  // not inside BCAL!
-	
+	if(proj_pos.Perp() < 65.0)
+		return false;  // not inside BCAL!
+
 	double dz = proj_pos.z() - bcal_pos.z();
 	double dphi = proj_pos.Phi() - bcal_pos.Phi();
 	double p = rt->swim_steps[0].mom.Mag();
@@ -832,29 +839,44 @@ DParticleID::MatchToSC(const DKinematicData *kd,
 }
   
 //------------------
-// MatchToTrack
+// Distance_ToTrack
 //------------------
-// Loop over time-based tracks, looking for the closest one to the given shower
-//
 // NOTE: an initial guess for start time is expected as input so that out-of-time 
 // tracks can be skipped
-bool DParticleID::MatchToTrack(const DBCALShower* locBCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const
+bool DParticleID::Distance_ToTrack(const DBCALShower* locBCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance, double& locDeltaPhi, double& locDeltaZ) const
 {
 	// Get the BCAL cluster position and normal
 	DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z); 
 
 	double locFlightTime = 9.9E9, locPathLength = 9.9E9;
-	locDistance = rt->DistToRTwithTime(bcal_pos, &locPathLength, 
-					   &locFlightTime,SYS_BCAL);
+	locDistance = rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime,SYS_BCAL);
 	if(!isfinite(locDistance))
 		return false;
+
 	// Check that the hit is not out of time with respect to the track
 	if(fabs(locBCALShower->t - locFlightTime - locInputStartTime) > OUT_OF_TIME_CUT)
 		return false;
+
+	DVector3 proj_pos = rt->GetLastDOCAPoint();
+	if(proj_pos.Perp() < 65.0)
+		return false;  // not inside BCAL!
+
+	locDeltaZ = proj_pos.z() - bcal_pos.z();
+	locDeltaPhi = proj_pos.Phi() - bcal_pos.Phi();
+	while(locDeltaPhi >	M_PI)
+		locDeltaPhi -= M_TWO_PI;
+	while(locDeltaPhi < -M_PI)
+		locDeltaPhi += M_TWO_PI;
+
 	return true;
 }
 
-bool DParticleID::MatchToTrack(const DFCALShower* locFCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const
+//------------------
+// Distance_ToTrack
+//------------------
+// NOTE: an initial guess for start time is expected as input so that out-of-time 
+// tracks can be skipped
+bool DParticleID::Distance_ToTrack(const DFCALShower* locFCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const
 {
 	DVector3 fcal_pos = locFCALShower->getPosition();
 	DVector3 norm(0.0, 0.0, 1.0); //normal vector for the FCAL plane
@@ -868,6 +890,62 @@ bool DParticleID::MatchToTrack(const DFCALShower* locFCALShower, const DReferenc
 		return false;
 
 	locDistance = (fcal_pos - proj_pos).Mag();
+	return true;
+}
+
+//------------------
+// Distance_ToTrack
+//------------------
+// NOTE: an initial guess for start time is expected as input so that out-of-time 
+// tracks can be skipped
+bool DParticleID::Distance_ToTrack(const DTOFPoint* locTOFPoint, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const
+{
+	DVector3 tof_pos = locTOFPoint->pos;
+	DVector3 norm(0.0, 0.0, 1.0); //normal vector to TOF plane
+	DVector3 proj_pos, proj_mom;
+	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
+	if(rt->GetIntersectionWithPlane(tof_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime, SYS_TOF) != NOERROR)
+		return false;
+
+	// Check that the hit is not out of time with respect to the track
+	if(fabs(locTOFPoint->t - locFlightTime - locInputStartTime) > OUT_OF_TIME_CUT)
+		return false;
+
+	locDistance = (tof_pos - proj_pos).Mag();
+	return true;
+}
+
+//------------------
+// Distance_ToTrack
+//------------------
+// NOTE: an initial guess for start time is expected as input so that out-of-time 
+// tracks can be skipped
+bool DParticleID::Distance_ToTrack(const DSCHit* locSCHit, const DReferenceTrajectory* rt, double locInputStartTime, double& locDeltaPhi) const
+{
+	if(sc_pos.empty() || sc_norm.empty())
+		return false;
+
+	// Check that the hit is not out of time with respect to the track
+	if(fabs(locInputStartTime - locSCHit->t) > OUT_OF_TIME_CUT)
+		return false;
+
+	// Find intersection with a "barrel" approximation for the start counter
+	DVector3 proj_pos(NaN,NaN,NaN), proj_mom(NaN,NaN,NaN);
+	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
+	if(rt->GetIntersectionWithRadius(sc_pos[1].x(), proj_pos, &locPathLength, &locFlightTime, &proj_mom) != NOERROR)
+		return false;
+
+	double proj_phi = proj_pos.Phi();
+	if(proj_phi < 0.0)
+		proj_phi += M_TWO_PI;
+
+	double phi = dSCphi0 + dSCdphi*(locSCHit->sector - 1);
+	locDeltaPhi = phi - proj_phi; //phi could be 0 degrees & proj_phi could be 359 degrees
+	while(locDeltaPhi > TMath::Pi())
+		locDeltaPhi -= M_TWO_PI;
+	while(locDeltaPhi < -1.0*TMath::Pi())
+		locDeltaPhi += M_TWO_PI;
+
 	return true;
 }
 

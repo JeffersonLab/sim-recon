@@ -32,8 +32,6 @@ class JEventProcessor_2trackskim : public jana::JEventProcessor
 		jerror_t evnt(JEventLoop *loop, int eventnumber); ///< Called every event.
 		jerror_t erun(void); ///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);	///< Called after last event of last event source has been processed.
-
-		const DEventWriterEVIO* dEventWriterEVIO;
 };
 
 #endif // _JEventProcessor_2trackskim_

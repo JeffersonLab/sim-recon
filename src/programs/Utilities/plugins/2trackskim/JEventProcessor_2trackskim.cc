@@ -21,7 +21,6 @@ extern "C" {
 //-------------------------------
 jerror_t JEventProcessor_2trackskim::init(void)
 {
-	dEventWriterEVIO = NULL;
    return NOERROR;
 }
 
@@ -30,7 +29,6 @@ jerror_t JEventProcessor_2trackskim::init(void)
 //-------------------------------
 jerror_t JEventProcessor_2trackskim::brun(JEventLoop *locEventLoop, int runnumber)
 {
-	locEventLoop->GetSingle(dEventWriterEVIO);
    return NOERROR;
 }
 
@@ -39,12 +37,16 @@ jerror_t JEventProcessor_2trackskim::brun(JEventLoop *locEventLoop, int runnumbe
 //-------------------------------
 jerror_t JEventProcessor_2trackskim::evnt(JEventLoop *locEventLoop, int eventnumber)
 {
+
+	const DEventWriterEVIO* locEventWriterEVIO = NULL;
+	locEventLoop->GetSingle(locEventWriterEVIO);
+
 	//Save EPICS events
 	vector<const DEPICSvalue*> locEPICSValues;
 	locEventLoop->Get(locEPICSValues);
 	if(!locEPICSValues.empty())
 	{
-		dEventWriterEVIO->Write_EVIOEvent(locEventLoop, "2tracks");
+		locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "2tracks");
 		return NOERROR;
 	}
 
@@ -52,7 +54,7 @@ jerror_t JEventProcessor_2trackskim::evnt(JEventLoop *locEventLoop, int eventnum
 	locEventLoop->Get(locChargedTracks, "PreSelect");
 	if(locChargedTracks.size() >= 2)
 	{
-		dEventWriterEVIO->Write_EVIOEvent(locEventLoop, "2tracks");
+		locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "2tracks");
 		return NOERROR;
 	}
 

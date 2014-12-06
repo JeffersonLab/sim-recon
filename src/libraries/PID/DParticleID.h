@@ -90,8 +90,10 @@ class DParticleID:public jana::JObject{
 	bool Get_BestFCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DShowerMatchParams& locBestMatchParams) const;
 
 	//matching showers to tracks routines (called by DDetectorMatches factory)
-	bool MatchToTrack(const DBCALShower* locBCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const;
-	bool MatchToTrack(const DFCALShower* locFCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const;
+	bool Distance_ToTrack(const DBCALShower* locBCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance, double& locDeltaPhi, double& locDeltaZ) const;
+	bool Distance_ToTrack(const DFCALShower* locFCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const;
+	bool Distance_ToTrack(const DTOFPoint* locTOFPoint, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const;
+	bool Distance_ToTrack(const DSCHit* locSCHit, const DReferenceTrajectory* rt, double locInputStartTime, double& locDeltaPhi) const;
 
 	double Calc_BCALFlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, DDetectorMatches* locDetectorMatches) const;
 	double Calc_FCALFlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, DDetectorMatches* locDetectorMatches) const;
