@@ -66,6 +66,9 @@ using namespace evio;
 #include "DCODAROCInfo.h"
 #include "DEPICSvalue.h"
 
+extern set<uint32_t> ROCIDS_TO_PARSE;
+
+
 //-----------------------------------------------------------------------
 /// The JEventSource_EVIO class implements a JEventSource capable of reading in
 /// EVIO data from raw data files produced in Hall-D. It can read in entangled
@@ -164,8 +167,8 @@ class JEventSource_EVIO: public jana::JEventSource{
              inline void GetEVIOBuffer(jana::JEvent &jevent, uint32_t* &buff, uint32_t &size) const;
      inline evioDOMTree* GetEVIODOMTree(jana::JEvent &jevent) const;
           EVIOSourceType GetEVIOSourceType(void){ return source_type; }
-		            void AddROCIDtoParseList(uint32_t rocid){ rocids_to_parse.insert(rocid); }
-		   set<uint32_t> GetROCIDParseList(uint32_t rocid){ return rocids_to_parse; }
+		            void AddROCIDtoParseList(uint32_t rocid){ ROCIDS_TO_PARSE.insert(rocid); }
+		   set<uint32_t> GetROCIDParseList(uint32_t rocid){ return ROCIDS_TO_PARSE; }
 
 	protected:
 	
@@ -178,7 +181,6 @@ class JEventSource_EVIO: public jana::JEventSource{
 		EVIOSourceType source_type;
 		map<tagNum, MODULE_TYPE> module_type;
 		map<MODULE_TYPE, MODULE_TYPE> modtype_translate;
-		set<uint32_t> rocids_to_parse;
 
 		JStreamLog evioout;
 

@@ -50,6 +50,8 @@ extern "C"{
 } // "C"
 
 
+set<uint32_t> ROCIDS_TO_PARSE;
+
 //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 // If EVIO support is not available, define dummy methods
 #ifndef HAVE_EVIO
@@ -2253,9 +2255,9 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		
 		// If there are rocid's specified that we wish to parse, make sure this one
 		// is in the list. Otherwise, skip it.
-		if(!rocids_to_parse.empty()){
-			if(VERBOSE>4) evioout << "     Skipping parsing of rocid="<<rocid<<" due to it being in rocids_to_parse set." << endl;
-			if(rocids_to_parse.find(rocid) == rocids_to_parse.end()) continue;
+		if(!ROCIDS_TO_PARSE.empty()){
+			if(VERBOSE>4) evioout << "     Skipping parsing of rocid="<<rocid<<" due to it being in ROCIDS_TO_PARSE set." << endl;
+			if(ROCIDS_TO_PARSE.find(rocid) == ROCIDS_TO_PARSE.end()) continue;
 		}
 		
 		// The number of events in block is stored in lower 8 bits
