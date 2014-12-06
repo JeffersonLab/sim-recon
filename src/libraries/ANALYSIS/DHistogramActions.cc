@@ -1002,13 +1002,16 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 			locDetectorSystems.push_back(SYS_TOF);  locDetectorSystems.push_back(SYS_FCAL);
 			for(size_t loc_i = 0; loc_i < locDetectorSystems.size(); ++loc_i)
 			{
+				double locMaxTheta = ((locDetectorSystems[loc_i] == SYS_FCAL) || (locDetectorSystems[loc_i] == SYS_TOF)) ? 20.0 : dMaxTheta;
+				double locMaxP = (locDetectorSystems[loc_i] == SYS_BCAL) ? 4.0 : dMaxP;
+
 				// PVsTheta Time-Based Tracks Good Track FOM Has Hit
 				locHistName = string("PVsTheta_TimeBased_GoodTrackFOM_HasHit_") + SystemName(locDetectorSystems[loc_i]);
 				locHistTitle = string("Time-Based Tracks, Good Tracking FOM, ") + SystemName(locDetectorSystems[loc_i]) + string(" Has Hit;#theta#circ;p (GeV/c)");
 				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
 					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[locDetectorSystems[loc_i]] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 				else
-					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[locDetectorSystems[loc_i]] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[locDetectorSystems[loc_i]] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPBins, dMinP, locMaxP);
 
 				// PVsTheta Time-Based Tracks Good Track FOM Has Hit
 				locHistName = string("PVsTheta_TimeBased_GoodTrackFOM_NoHit_") + SystemName(locDetectorSystems[loc_i]);
@@ -1016,7 +1019,7 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
 					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[locDetectorSystems[loc_i]] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 				else
-					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[locDetectorSystems[loc_i]] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[locDetectorSystems[loc_i]] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPBins, dMinP, locMaxP);
 			}
 
 			//SC
