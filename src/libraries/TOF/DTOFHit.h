@@ -22,8 +22,10 @@ class DTOFHit:public jana::JObject{
 		int bar;        // bar number
 		int end;        // left/right 0/1 or North/South 0/1
 		float dE;       // attenuated energy deposition
-		float t;        // ns time of light at end of bar
-		float sigma_t;  // uncertainty on t in ns
+		float integral; // pulse integral
+		float t_fADC;        // time from adc
+		float t_TDC;  // time from tdc
+		float t; // walk corrected time
 		bool has_fADC;  // true if this has an fADC hit
 		bool has_TDC;   // true if this has an TDC hit
 
@@ -31,8 +33,9 @@ class DTOFHit:public jana::JObject{
 			AddString(items, "bar", "%d", bar);
 			AddString(items, "plane", "%d", plane);
 			AddString(items, "end", "%d", end);
-			AddString(items, "dE", "%12.4e", dE);
-			AddString(items, "t", "%12.4e", t);
+			AddString(items, "dE", "%12.4f", dE);
+			AddString(items, "t", "%12.4f", t);
+			AddString(items, "t_tdc","%12.4f",t_TDC);
 		}
 };
 

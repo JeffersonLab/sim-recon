@@ -10,6 +10,8 @@
 #include <iomanip>
 #include <cmath>
 #include <vector>
+#include <limits>
+
 using namespace std;
 
 #include <TOF/DTOFDigiHit.h>
@@ -17,6 +19,7 @@ using namespace std;
 #include "DTOFHit_factory.h"
 #include <DAQ/Df250PulseIntegral.h>
 #include <DAQ/Df250Config.h>
+#include <DAQ/DCODAROCInfo.h>
 using namespace jana;
 
 static bool COSMIC_DATA = false;
@@ -42,6 +45,7 @@ jerror_t DTOFHit_factory::init(void)
 	t_scale    = 0.0625;   // 62.5 ps/count
 	tdc_scale  = 0.025;    // 25 ps/count
         t_base     = 0.;       // ns
+	t_base_tdc = 0.; // ns
 
 	if(COSMIC_DATA)
 		// Hardcoding of 110 taken from cosmics events
@@ -104,6 +108,11 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 		t_base = base_time_offset["TOF_BASE_TIME_OFFSET"];
 	else
 		jerr << "Unable to get TOF_BASE_TIME_OFFSET from /TOF/base_time_offset !" << endl;	
+
+	if (base_time_offset.find("TOF_TDC_BASE_TIME_OFFSET") != base_time_offset.end())
+		t_base_tdc = base_time_offset["TOF_TDC_BASE_TIME_OFFSET"];
+	else
+		jerr << "Unable to get TOF_TDC_BASE_TIME_OFFSET from /TOF/base_time_offset !" << endl;
 	
 	// load constant tables
         if(eventLoop->GetCalib("TOF/pedestals", raw_adc_pedestals))
@@ -116,6 +125,8 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	    jout << "Error loading /TOF/adc_timing_offsets !" << endl;
 	if(eventLoop->GetCalib("TOF/timing_offsets", raw_tdc_offsets))
 	    jout << "Error loading /TOF/timing_offsets !" << endl;
+	if(eventLoop->GetCalib("TOF/timewalk_parms", timewalk_parameters))
+	    jout << "Error loading /TOF/timewalk_parms !" << endl;
 
         FillCalibTable(adc_pedestals, raw_adc_pedestals, tofGeom);
         FillCalibTable(adc_gains, raw_adc_gains, tofGeom);
@@ -165,23 +176,31 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 			pedestal = static_cast<double>(configObj->NSA_NSB) * PIobj->pedestal;
 		}
 
-		DTOFHit *hit = new DTOFHit;
-		hit->plane = digihit->plane;
-		hit->bar   = digihit->bar;
-		hit->end   = digihit->end;
 		
 		// Apply calibration constants here
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
+		pedestal=double(digihit->pedestal*digihit->nsamples_integral
+				/digihit->nsamples_pedestal);
+		double dA=A-pedestal;
+
+		if (digihit->pulse_time==0) continue;
+		if (dA<0) continue;
+
+		DTOFHit *hit = new DTOFHit;
+		hit->plane = digihit->plane;
+		hit->bar   = digihit->bar;
+		hit->end   = digihit->end;
+		hit->integral=dA;
 
 		if(COSMIC_DATA)
 			hit->dE = a_scale * (A - 55*pedestal); // value of 55 is taken from (NSB,NSA)=(10,45) in the confg file
 		else 
 			hit->dE = a_scale * (A - pedestal);
-		hit->t = t_scale * (T - GetConstant(adc_time_offsets, digihit)) + t_base;
-		hit->sigma_t = 4.0;    // ns (what is the fADC time resolution?)
+		hit->t_fADC = t_scale * (T - GetConstant(adc_time_offsets, digihit)) + t_base;
 		hit->has_fADC = true;
 		hit->has_TDC  = false; // will get set to true below if appropriate
+		hit->t_TDC=numeric_limits<double>::quiet_NaN();
 
 /*
 		cout << "TOF ADC hit =  (" << hit->plane << "," << hit->bar << "," << hit->end << ")  " 
@@ -195,7 +214,25 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		_data.push_back(hit);
 	}
 
-	// Second, loop over TDC hits, matching them to the
+	//Find the Trigger Time from the TI:
+	// and determine which 4ns pulse the trigger is
+	// within 24 ns.
+	vector<const DCODAROCInfo*> TIInfo;
+	loop->Get(TIInfo);
+	
+	unsigned long TriggerTime = 0;
+	for (unsigned int k=0; k<TIInfo.size(); k++){
+	  if (TIInfo[k]->rocid == 78){
+	    TriggerTime = TIInfo[k]->timestamp;
+	    break;
+	  }
+	}
+
+	// TriggerBIT is not really a bit...
+	int TriggerBIT = TriggerTime%6;  
+
+
+	// Next, loop over TDC hits, matching them to the
 	// existing fADC hits where possible and updating
 	// their time information. If no match is found, then
 	// create a new hit with just the TDC info.
@@ -207,7 +244,8 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Apply calibration constants here
 		double T = (double)digihit->time;
 
-		T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_base + tdc_adc_time_offset; 
+		T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) 
+		  + t_base_tdc + tdc_adc_time_offset-4.0*TriggerBIT; 
 
  		// future: allow for seperate TDC scales for each channel
 		//T = GetConstant(tdc_scales, digihit)
@@ -219,8 +257,6 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		     << GetConstant(tdc_time_offsets, digihit) << " " 
 		     << tdc_scale*GetConstant(tdc_time_offsets, digihit) << " " << T << endl;
 */
-
-		// add in timewalk corrections here
 		
 		// Look for existing hits to see if there is a match
 		// or create new one if there is no match
@@ -233,14 +269,24 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 			hit->end   = digihit->end;
 			hit->dE = 0.0;
 			hit->has_fADC = false;
+			hit->t_fADC=numeric_limits<double>::quiet_NaN();
 
 			_data.push_back(hit);
 		}
 		
-		hit->t = T;
-		hit->sigma_t = 0.160;    // ns (what is the TOF TDC time resolution?)
+		hit->t_TDC = T;
 		hit->has_TDC = true;
 		
+		// time walk correction
+		if (hit->has_fADC && hit->integral>0.){
+		  int id=88*hit->plane+44*hit->end+hit->bar-1;
+		  T-=timewalk_parameters[id][0]
+		    +timewalk_parameters[id][1]*pow(hit->integral
+						    -timewalk_parameters[id][3],timewalk_parameters[id][2]);
+
+		}
+		hit->t=T;
+
 		hit->AddAssociatedObject(digihit);
 	}
 
