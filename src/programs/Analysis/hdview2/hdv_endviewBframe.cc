@@ -148,6 +148,8 @@ hdv_endviewBframe::hdv_endviewBframe(hdv_mainframe *hdvmf, const TGWindow *p, UI
 
 	//&&&&&&&&&&&&&&&& Connections
 	dismiss->Connect("Clicked()","hdv_endviewBframe", this, "DoDismiss()");
+	this->Connect("CloseWindow()", "hdv_endviewBframe", this, "DoDismiss()");
+        this->DontCallClose();
 
 	// Finish up and map the window
 	SetWindowName("Hall-D Event Viewer FCAL and TOF View");

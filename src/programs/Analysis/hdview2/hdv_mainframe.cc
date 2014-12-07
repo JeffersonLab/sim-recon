@@ -526,6 +526,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   coordinates->Connect("Clicked(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
   
   quit->Connect("Clicked()","hdv_mainframe", this, "DoQuit()");
+  this->Connect("CloseWindow()", "hdv_mainframe", this, "DoQuit()");
+  this->DontCallClose();
   next->Connect("Clicked()","hdv_mainframe", this, "DoNext()");
   prev->Connect("Clicked()","hdv_mainframe", this, "DoPrev()");
   checkbuttons["continuous"]->Connect("Clicked()","hdv_mainframe", this, "DoCont()");

@@ -166,7 +166,8 @@ hdv_endviewAframe::hdv_endviewAframe(hdv_mainframe *hdvmf, const TGWindow *p, UI
 
 	//&&&&&&&&&&&&&&&& Connections
 	dismiss->Connect("Clicked()","hdv_endviewAframe", this, "DoDismiss()");
-
+	this->Connect("CloseWindow()", "hdv_endviewAframe", this, "DoDismiss()");
+	this->DontCallClose();
 	// Finish up and map the window
 	SetWindowName("Hall-D Event Viewer BCAL View");
 	SetIconName("HDView");
