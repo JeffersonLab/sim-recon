@@ -1695,6 +1695,8 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 		const DTrackTimeBased* locTrackTimeBased = locTimeBasedIterator->second;
 		double locInputStartTime = locTrackTimeBased->t0();
 		const DReferenceTrajectory* locReferenceTrajectory = locTrackTimeBased->rt;
+		if(locReferenceTrajectory == NULL)
+			continue;
 		double locMinDistance = 999.0, locBestMatchDeltaPhi = 0.0, locBestMatchDeltaZ = 0.0;
 		for(size_t loc_i = 0; loc_i < locBCALShowers.size(); ++loc_i)
 		{
@@ -1719,6 +1721,8 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 		const DTrackTimeBased* locTrackTimeBased = locTimeBasedIterator->second;
 		double locInputStartTime = locTrackTimeBased->t0();
 		const DReferenceTrajectory* locReferenceTrajectory = locTrackTimeBased->rt;
+		if(locReferenceTrajectory == NULL)
+			continue;
 		double locMinDistance = 999.0;
 		for(size_t loc_i = 0; loc_i < locFCALShowers.size(); ++loc_i)
 		{
@@ -1740,6 +1744,8 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 		const DTrackTimeBased* locTrackTimeBased = locTimeBasedIterator->second;
 		double locInputStartTime = locTrackTimeBased->t0();
 		const DReferenceTrajectory* locReferenceTrajectory = locTrackTimeBased->rt;
+		if(locReferenceTrajectory == NULL)
+			continue;
 		double locMinDistance = 999.0;
 		for(size_t loc_i = 0; loc_i < locTOFPoints.size(); ++loc_i)
 		{
@@ -1761,6 +1767,8 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 		const DTrackTimeBased* locTrackTimeBased = locTimeBasedIterator->second;
 		double locInputStartTime = locTrackTimeBased->t0();
 		const DReferenceTrajectory* locReferenceTrajectory = locTrackTimeBased->rt;
+		if(locReferenceTrajectory == NULL)
+			continue;
 		double locMinDeltaPhi = TMath::Pi();
 		for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
 		{
@@ -2168,122 +2176,123 @@ void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop
 
 	//CREATE THE HISTOGRAMS
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-	dAnalysisUtilities = locAnalysisUtilitiesVector[0];
-	CreateAndChangeTo_ActionDirectory();
-	for(size_t loc_i = 0; loc_i < locNumSteps; ++loc_i)
 	{
-		if(locDetectedChargedPIDs[loc_i].empty())
-			continue;
-
-		const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
-		locStepName = locReactionStep->Get_StepName();
-		locStepROOTName = locReactionStep->Get_StepROOTName();
-		CreateAndChangeTo_Directory(locStepName, locStepName);
-
-		// Max Track DeltaZ
-		locHistName = "MaxTrackDeltaZ";
-		locHistTitle = locStepROOTName + string(";Largest Track #DeltaVertex-Z (cm)");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistDeque_MaxTrackDeltaZ[loc_i] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistDeque_MaxTrackDeltaZ[loc_i] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaVertexZBins, 0.0, dMaxDeltaVertexZ);
-
-		// Max Track DeltaT
-		locHistName = "MaxTrackDeltaT";
-		locHistTitle = locStepROOTName + string(";Largest Track #DeltaVertex-T (ns)");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistDeque_MaxTrackDeltaT[loc_i] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistDeque_MaxTrackDeltaT[loc_i] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaVertexTBins, 0.0, dMaxDeltaVertexT);
-
-		// Max Track DOCA
-		locHistName = "MaxTrackDOCA";
-		locHistTitle = locStepROOTName + string(";Largest Track DOCA (cm)");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistDeque_MaxTrackDOCA[loc_i] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistDeque_MaxTrackDOCA[loc_i] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDOCABins, 0.0, dMaxDOCA);
-
-		for(size_t loc_j = 0; loc_j < locDetectedChargedPIDs[loc_i].size(); ++loc_j)
+		dAnalysisUtilities = locAnalysisUtilitiesVector[0];
+		CreateAndChangeTo_ActionDirectory();
+		for(size_t loc_i = 0; loc_i < locNumSteps; ++loc_i)
 		{
-			locPID = locDetectedChargedPIDs[loc_i][loc_j];
-			if(dHistDeque_TrackZToCommon[loc_i].find(locPID) != dHistDeque_TrackZToCommon[loc_i].end())
-				continue; //already created for this pid
-			locParticleName = ParticleType(locPID);
-			locParticleROOTName = ParticleName_ROOT(locPID);
+			if(locDetectedChargedPIDs[loc_i].empty())
+				continue;
 
-			// TrackZ To Common
-			locHistName = string("TrackZToCommon_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(";#DeltaVertex-Z (Track, Common) (cm)");
+			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
+			locStepName = locReactionStep->Get_StepName();
+			locStepROOTName = locReactionStep->Get_StepROOTName();
+			CreateAndChangeTo_Directory(locStepName, locStepName);
+
+			// Max Track DeltaZ
+			locHistName = "MaxTrackDeltaZ";
+			locHistTitle = locStepROOTName + string(";Largest Track #DeltaVertex-Z (cm)");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistDeque_TrackZToCommon[loc_i][locPID] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+				dHistDeque_MaxTrackDeltaZ[loc_i] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHistDeque_TrackZToCommon[loc_i][locPID] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaVertexZBins, dMinDeltaVertexZ, dMaxDeltaVertexZ);
+				dHistDeque_MaxTrackDeltaZ[loc_i] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaVertexZBins, 0.0, dMaxDeltaVertexZ);
 
-			// TrackT To Common
-			locHistName = string("TrackTToCommon_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(";#DeltaVertex-T (Track, Common) (ns)");
+			// Max Track DeltaT
+			locHistName = "MaxTrackDeltaT";
+			locHistTitle = locStepROOTName + string(";Largest Track #DeltaVertex-T (ns)");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistDeque_TrackTToCommon[loc_i][locPID] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+				dHistDeque_MaxTrackDeltaT[loc_i] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHistDeque_TrackTToCommon[loc_i][locPID] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaVertexTBins, dMinDeltaVertexT, dMaxDeltaVertexT);
+				dHistDeque_MaxTrackDeltaT[loc_i] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaVertexTBins, 0.0, dMaxDeltaVertexT);
 
-			// TrackDOCA To Common
-			locHistName = string("TrackDOCAToCommon_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(";DOCA (Track, Common) (cm)");
+			// Max Track DOCA
+			locHistName = "MaxTrackDOCA";
+			locHistTitle = locStepROOTName + string(";Largest Track DOCA (cm)");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistDeque_TrackDOCAToCommon[loc_i][locPID] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+				dHistDeque_MaxTrackDOCA[loc_i] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHistDeque_TrackDOCAToCommon[loc_i][locPID] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDOCABins, dMinDOCA, dMaxDOCA);
+				dHistDeque_MaxTrackDOCA[loc_i] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDOCABins, 0.0, dMaxDOCA);
 
-			// DeltaT Vs P against beam photon
-			if((locReactionStep->Get_InitialParticleID() == Gamma) && (dHistMap_BeamTrackDeltaTVsP.find(locPID) == dHistMap_BeamTrackDeltaTVsP.end()))
+			for(size_t loc_j = 0; loc_j < locDetectedChargedPIDs[loc_i].size(); ++loc_j)
 			{
-				locHistName = string("TrackDeltaTVsP_") + ParticleType(locPID) + string("_Beam") + ParticleType(Gamma);
-				locHistTitle = locStepROOTName + string(";") + ParticleName_ROOT(locPID) + string(" Momentum (GeV/c);t_{") + ParticleName_ROOT(locPID) + string("} - t_{Beam ") + ParticleName_ROOT(Gamma) + string("} (ns)");
-				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-					dHistMap_BeamTrackDeltaTVsP[locPID] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
-				else
-					dHistMap_BeamTrackDeltaTVsP[locPID] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaVertexTBins, dMinDeltaVertexT, dMaxDeltaVertexT);
-			}
-		}
+				locPID = locDetectedChargedPIDs[loc_i][loc_j];
+				if(dHistDeque_TrackZToCommon[loc_i].find(locPID) != dHistDeque_TrackZToCommon[loc_i].end())
+					continue; //already created for this pid
+				locParticleName = ParticleType(locPID);
+				locParticleROOTName = ParticleName_ROOT(locPID);
 
-		//delta-t vs p
-		for(int loc_j = 0; loc_j < int(locDetectedChargedPIDs_HasDupes[loc_i].size()) - 1; ++loc_j)
-		{
-			locPID = locDetectedChargedPIDs_HasDupes[loc_i][loc_j];
-			for(size_t loc_k = loc_j + 1; loc_k < locDetectedChargedPIDs_HasDupes[loc_i].size(); ++loc_k)
+				// TrackZ To Common
+				locHistName = string("TrackZToCommon_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(";#DeltaVertex-Z (Track, Common) (cm)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_TrackZToCommon[loc_i][locPID] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_TrackZToCommon[loc_i][locPID] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaVertexZBins, dMinDeltaVertexZ, dMaxDeltaVertexZ);
+
+				// TrackT To Common
+				locHistName = string("TrackTToCommon_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(";#DeltaVertex-T (Track, Common) (ns)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_TrackTToCommon[loc_i][locPID] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_TrackTToCommon[loc_i][locPID] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaVertexTBins, dMinDeltaVertexT, dMaxDeltaVertexT);
+
+				// TrackDOCA To Common
+				locHistName = string("TrackDOCAToCommon_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(";DOCA (Track, Common) (cm)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_TrackDOCAToCommon[loc_i][locPID] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_TrackDOCAToCommon[loc_i][locPID] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumDOCABins, dMinDOCA, dMaxDOCA);
+
+				// DeltaT Vs P against beam photon
+				if((locReactionStep->Get_InitialParticleID() == Gamma) && (dHistMap_BeamTrackDeltaTVsP.find(locPID) == dHistMap_BeamTrackDeltaTVsP.end()))
+				{
+					locHistName = string("TrackDeltaTVsP_") + ParticleType(locPID) + string("_Beam") + ParticleType(Gamma);
+					locHistTitle = locStepROOTName + string(";") + ParticleName_ROOT(locPID) + string(" Momentum (GeV/c);t_{") + ParticleName_ROOT(locPID) + string("} - t_{Beam ") + ParticleName_ROOT(Gamma) + string("} (ns)");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						dHistMap_BeamTrackDeltaTVsP[locPID] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+					else
+						dHistMap_BeamTrackDeltaTVsP[locPID] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaVertexTBins, dMinDeltaVertexT, dMaxDeltaVertexT);
+				}
+			}
+
+			//delta-t vs p
+			for(int loc_j = 0; loc_j < int(locDetectedChargedPIDs_HasDupes[loc_i].size()) - 1; ++loc_j)
 			{
-				if(ParticleMass(locDetectedChargedPIDs_HasDupes[loc_i][loc_k]) > ParticleMass(locPID))
+				locPID = locDetectedChargedPIDs_HasDupes[loc_i][loc_j];
+				for(size_t loc_k = loc_j + 1; loc_k < locDetectedChargedPIDs_HasDupes[loc_i].size(); ++loc_k)
 				{
-					locHigherMassPID = locDetectedChargedPIDs_HasDupes[loc_i][loc_k];
-					locLowerMassPID = locPID;
-				}
-				else
-				{
-					locHigherMassPID = locPID;
-					locLowerMassPID = locDetectedChargedPIDs_HasDupes[loc_i][loc_k];
-				}
-				pair<Particle_t, Particle_t> locParticlePair(locHigherMassPID, locLowerMassPID);
-				if(dHistDeque_TrackDeltaTVsP[loc_i].find(locParticlePair) != dHistDeque_TrackDeltaTVsP[loc_i].end())
-					continue; //already created for this pair
+					if(ParticleMass(locDetectedChargedPIDs_HasDupes[loc_i][loc_k]) > ParticleMass(locPID))
+					{
+						locHigherMassPID = locDetectedChargedPIDs_HasDupes[loc_i][loc_k];
+						locLowerMassPID = locPID;
+					}
+					else
+					{
+						locHigherMassPID = locPID;
+						locLowerMassPID = locDetectedChargedPIDs_HasDupes[loc_i][loc_k];
+					}
+					pair<Particle_t, Particle_t> locParticlePair(locHigherMassPID, locLowerMassPID);
+					if(dHistDeque_TrackDeltaTVsP[loc_i].find(locParticlePair) != dHistDeque_TrackDeltaTVsP[loc_i].end())
+						continue; //already created for this pair
 
-				locHigherMassParticleName = ParticleType(locHigherMassPID);
-				locHigherMassParticleROOTName = ParticleName_ROOT(locHigherMassPID);
-				locLowerMassParticleName = ParticleType(locLowerMassPID);
-				locLowerMassParticleROOTName = ParticleName_ROOT(locLowerMassPID);
+					locHigherMassParticleName = ParticleType(locHigherMassPID);
+					locHigherMassParticleROOTName = ParticleName_ROOT(locHigherMassPID);
+					locLowerMassParticleName = ParticleType(locLowerMassPID);
+					locLowerMassParticleROOTName = ParticleName_ROOT(locLowerMassPID);
 
-				// DeltaT Vs P
-				locHistName = string("TrackDeltaTVsP_") + locHigherMassParticleName + string("_") + locLowerMassParticleName;
-				locHistTitle = locStepROOTName + string(";") + locHigherMassParticleROOTName + string(" Momentum (GeV/c);t_{") + locHigherMassParticleROOTName + string("} - t_{") + locLowerMassParticleROOTName + string("} (ns)");
-				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-					dHistDeque_TrackDeltaTVsP[loc_i][locParticlePair] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
-				else
-					dHistDeque_TrackDeltaTVsP[loc_i][locParticlePair] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaVertexTBins, dMinDeltaVertexT, dMaxDeltaVertexT);
+					// DeltaT Vs P
+					locHistName = string("TrackDeltaTVsP_") + locHigherMassParticleName + string("_") + locLowerMassParticleName;
+					locHistTitle = locStepROOTName + string(";") + locHigherMassParticleROOTName + string(" Momentum (GeV/c);t_{") + locHigherMassParticleROOTName + string("} - t_{") + locLowerMassParticleROOTName + string("} (ns)");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						dHistDeque_TrackDeltaTVsP[loc_i][locParticlePair] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+					else
+						dHistDeque_TrackDeltaTVsP[loc_i][locParticlePair] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaVertexTBins, dMinDeltaVertexT, dMaxDeltaVertexT);
+				}
 			}
+			gDirectory->cd("..");
 		}
-		gDirectory->cd("..");
-
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
