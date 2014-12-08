@@ -133,6 +133,22 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
         FillCalibTable(adc_time_offsets, raw_adc_offsets, tofGeom);
         FillCalibTable(tdc_time_offsets, raw_tdc_offsets, tofGeom);
         FillCalibTable(tdc_scales, raw_tdc_scales, tofGeom);
+
+
+
+	// load shift factors (only for fall 2014 runs)
+	map<string,double> tof_tdc_shift;
+	tdc_shift = -1;
+	if(eventLoop->GetCalib("/TOF/tdc_shift", tof_tdc_shift))
+	    jout << "Error loading /TOF/tdc_shift !" << endl;
+	if( tof_tdc_shift.find("TOF_TDC_SHIFT") != tof_tdc_shift.end() ) {
+	  tdc_shift = tof_tdc_shift["TOF_TDC_SHIFT"];
+	  cout << "getting tdc_shift" << endl << endl;
+	  cout << "tdc_shift = " << tdc_shift << endl << endl;
+	} else {
+	    jerr << "Unable to get TOF_TDC_SHIFT from /TOF/tdc_shift !" << endl;
+	}
+
 /*
 	CheckCalibTable(adc_pedestals,"/TOF/pedestals");
 	CheckCalibTable(adc_gains,"/TOF/gains");
@@ -202,8 +218,6 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		hit->has_TDC  = false; // will get set to true below if appropriate
 		hit->t_TDC=numeric_limits<double>::quiet_NaN();
 
-		hit->t = hit->t_fADC; // set time from fADC in case no TDC hit
-
 /*
 		cout << "TOF ADC hit =  (" << hit->plane << "," << hit->bar << "," << hit->end << ")  " 
 		     << t_scale << " " << T << "  "
@@ -233,7 +247,6 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	// TriggerBIT is not really a bit...
 	int TriggerBIT = TriggerTime%6;  
 
-
 	// Next, loop over TDC hits, matching them to the
 	// existing fADC hits where possible and updating
 	// their time information. If no match is found, then
@@ -246,8 +259,25 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Apply calibration constants here
 		double T = (double)digihit->time;
 
-		T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) 
-		  + t_base_tdc + tdc_adc_time_offset-4.0*TriggerBIT; 
+		// Get overall shift value for this run, shift for each value
+		// of  TriggerBIT is given by tdc_shift - TriggerBIT
+		// Shift will be positive for TDC times.
+
+		// initalize to 0 in case there is no constant available
+		int nshifts = 0;
+
+		if(tdc_shift != -1){
+		  int shift = tdc_shift - TriggerBIT;
+		  if(shift < 0) shift += 6;
+		  // TDC bins are 25 ps wide, so each block of 4 ns is 160 bins
+		  nshifts = 160 * shift;
+		}
+		// cout << endl << "TriggerBIT = " << TriggerBIT << " nshifts = " << nshifts << endl << endl;
+		// cout << "uncorrected: " << tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_base_tdc + tdc_adc_time_offset << endl
+		//      << "corrected  : " << tdc_scale * (T - GetConstant(tdc_time_offsets, digihit) + nshifts) + t_base_tdc + tdc_adc_time_offset << endl;
+		  
+		T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + tdc_scale * nshifts
+		  + t_base_tdc + tdc_adc_time_offset; 
 
  		// future: allow for seperate TDC scales for each channel
 		//T = GetConstant(tdc_scales, digihit)
