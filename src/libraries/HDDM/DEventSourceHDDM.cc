@@ -1982,7 +1982,6 @@ jerror_t DEventSourceHDDM::Extract_DSCHit(hddm_s::HDDM *record,
          hit->sector = iter->getSector();
          hit->dE = iter->getDE();
          hit->t = iter->getT();
-         hit->sigma_t = 0.350;
          data.push_back(hit);
       }
    }
@@ -1994,7 +1993,6 @@ jerror_t DEventSourceHDDM::Extract_DSCHit(hddm_s::HDDM *record,
          hit->sector = iter->getSector();
          hit->dE = iter->getDE();
          hit->t = iter->getT();
-         hit->sigma_t = 1e-6;
          data.push_back(hit);
       }
    }
