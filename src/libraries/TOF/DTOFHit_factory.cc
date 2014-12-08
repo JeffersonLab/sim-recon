@@ -202,6 +202,8 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		hit->has_TDC  = false; // will get set to true below if appropriate
 		hit->t_TDC=numeric_limits<double>::quiet_NaN();
 
+		hit->t = hit->t_fADC; // set time from fADC in case no TDC hit
+
 /*
 		cout << "TOF ADC hit =  (" << hit->plane << "," << hit->bar << "," << hit->end << ")  " 
 		     << t_scale << " " << T << "  "

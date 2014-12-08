@@ -222,6 +222,8 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
       hit->t_TDC= numeric_limits<double>::quiet_NaN();
       hit->has_TDC  = false; // will get set to true below if appropriate
 
+      hit->t = hit->t_fADC; // set time from fADC in case no TDC hit
+
       // add in higher order corrections?
       
       hit->AddAssociatedObject(digihit);
