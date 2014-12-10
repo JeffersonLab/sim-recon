@@ -213,7 +213,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 			hit->dE = a_scale * (A - 55*pedestal); // value of 55 is taken from (NSB,NSA)=(10,45) in the confg file
 		else 
 			hit->dE = a_scale * (A - pedestal);
-		hit->t_fADC = t_scale * (T - GetConstant(adc_time_offsets, digihit)) + t_base;
+		hit->t_fADC = t_scale * T - GetConstant(adc_time_offsets, digihit) + t_base;
 		hit->has_fADC = true;
 		hit->has_TDC  = false; // will get set to true below if appropriate
 		hit->t_TDC=numeric_limits<double>::quiet_NaN();
@@ -276,7 +276,8 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// cout << "uncorrected: " << tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_base_tdc + tdc_adc_time_offset << endl
 		//      << "corrected  : " << tdc_scale * (T - GetConstant(tdc_time_offsets, digihit) + nshifts) + t_base_tdc + tdc_adc_time_offset << endl;
 		  
-		T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + tdc_scale * nshifts
+		T = tdc_scale *T - GetConstant(tdc_time_offsets, digihit) 
+		  + tdc_scale * nshifts
 		  + t_base_tdc + tdc_adc_time_offset; 
 
  		// future: allow for seperate TDC scales for each channel
@@ -310,12 +311,14 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		hit->has_TDC = true;
 		
 		// time walk correction
+		// The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
 		if (hit->has_fADC && hit->integral>0.){
 		  int id=88*hit->plane+44*hit->end+hit->bar-1;
-		  T-=timewalk_parameters[id][0]
-		    +timewalk_parameters[id][1]*pow(hit->integral
-						    -timewalk_parameters[id][3],timewalk_parameters[id][2]);
-
+		  double A=hit->integral;
+		  double C1=timewalk_parameters[id][1];
+		  double C2=timewalk_parameters[id][2];
+		  double A0=timewalk_parameters[id][3];
+		  T-=C1*(pow(A,C2)-pow(A0,C2));
 		}
 		hit->t=T;
 
@@ -391,19 +394,14 @@ void DTOFHit_factory::FillCalibTable(tof_digi_constants_t &table, vector<double>
     table.clear();
 
     for(int plane=0; plane<tofGeom.NLAYERS; plane++) {
-	table.push_back( vector< pair<double,double> >(TOF_NUM_BARS) );
-	for(int bar=0; bar<tofGeom.NLONGBARS; bar++) {
-	    if( (channel > TOF_MAX_CHANNELS) || (channel+1 > TOF_MAX_CHANNELS) ) {  // sanity check
-		sprintf(str, "Too many channels for TOF table! channel=%d (should be %d)", 
-			channel, TOF_MAX_CHANNELS);
-		cerr << str << endl;
-		throw JException(str);
-	    }
-	    
-	    table[plane][bar] = pair<double,double>(raw_table[channel],raw_table[channel+1]);
-	    
-	    channel += 2;
-	}
+      int plane_index=2*TOF_NUM_BARS*plane;
+      table.push_back( vector< pair<double,double> >(TOF_NUM_BARS) );
+      for(int bar=0; bar<TOF_NUM_BARS; bar++) {
+	table[plane][bar] 
+	  = pair<double,double>(raw_table[plane_index+bar],
+				raw_table[plane_index+TOF_NUM_BARS+bar]);
+	channel+=2;	      
+      }
     }
 
     // check to make sure that we loaded enough channels
@@ -481,9 +479,9 @@ const double DTOFHit_factory::GetConstant( const tof_digi_constants_t &the_table
 	// we have two ends, indexed as 0/1 
 	// could be north/south or up/down depending on the bar orientation
 	if(in_hit->end == 0) {
-	    return the_table[in_hit->plane][in_hit->bar].first;
+	    return the_table[in_hit->plane][in_hit->bar-1].first;
 	} else {
-	    return the_table[in_hit->plane][in_hit->bar].second;
+	    return the_table[in_hit->plane][in_hit->bar-1].second;
 	}
 }
 
@@ -511,9 +509,9 @@ const double DTOFHit_factory::GetConstant( const tof_digi_constants_t &the_table
 	// we have two ends, indexed as 0/1 
 	// could be north/south or up/down depending on the bar orientation
 	if(in_digihit->end == 0) {
-	    return the_table[in_digihit->plane][in_digihit->bar].first;
+	    return the_table[in_digihit->plane][in_digihit->bar-1].first;
 	} else {
-	    return the_table[in_digihit->plane][in_digihit->bar].second;
+	    return the_table[in_digihit->plane][in_digihit->bar-1].second;
 	}
 }
 
@@ -541,9 +539,9 @@ const double DTOFHit_factory::GetConstant( const tof_digi_constants_t &the_table
 	// we have two ends, indexed as 0/1 
 	// could be north/south or up/down depending on the bar orientation
 	if(in_digihit->end == 0) {
-	    return the_table[in_digihit->plane][in_digihit->bar].first;
+	    return the_table[in_digihit->plane][in_digihit->bar-1].first;
 	} else {
-	    return the_table[in_digihit->plane][in_digihit->bar].second;
+	    return the_table[in_digihit->plane][in_digihit->bar-1].second;
 	}
 }
 
