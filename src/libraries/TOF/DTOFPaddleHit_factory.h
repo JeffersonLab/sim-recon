@@ -43,6 +43,7 @@ class DTOFPaddleHit_factory:public JFactory<DTOFPaddleHit>{
   double ATTEN_LENGTH;
   double ENERGY_ATTEN_FACTOR;
   double TIME_COINCIDENCE_CUT;
+  vector<double>propagation_speed;
 
   vector <const DTOFGeometry*> TOFGeom;
 

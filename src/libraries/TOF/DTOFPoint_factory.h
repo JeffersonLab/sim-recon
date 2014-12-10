@@ -40,6 +40,7 @@ class DTOFPoint_factory:public JFactory<DTOFPoint>{
   double BARWIDTH;
   double E_THRESHOLD;
   double ATTEN_LENGTH;
+  vector<double>propagation_speed;
   
   vector <const DTOFGeometry*> TOFGeom;
   

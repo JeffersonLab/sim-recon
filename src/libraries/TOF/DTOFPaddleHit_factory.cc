@@ -54,6 +54,11 @@ jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int runnumber)
   ENERGY_ATTEN_FACTOR=exp(HALFPADDLE/ATTEN_LENGTH);
   TIME_COINCIDENCE_CUT=2.*HALFPADDLE/C_EFFECTIVE;
 
+  if(eventLoop->GetCalib("TOF/propagation_speed", propagation_speed))
+    jout << "Error loading /TOF/propagation_speed !" << endl;
+
+
+
   loop->Get(TOFGeom);
 
   return NOERROR;
@@ -281,9 +286,11 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
     }
     
     if (check > 0 ){
-      hit->meantime = (hit->t_north+hit->t_south)/2. - HALFPADDLE/C_EFFECTIVE;
+      int id=44*hit->orientation+hit->bar-1;
+      double v=propagation_speed[id];
+      hit->meantime = (hit->t_north+hit->t_south)/2. - HALFPADDLE/v;
       hit->timediff = (hit->t_south - hit->t_north)/2.;
-      float pos = hit->timediff * C_EFFECTIVE;  
+      float pos = hit->timediff * v;  
       hit->pos = pos;
       hit->dpos      = 2.;  // manually/artificially set to 2cm. 
       
