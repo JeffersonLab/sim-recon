@@ -17,7 +17,7 @@ jerror_t DTOFGeometry_factory::init(void)
   myDTOFGeometry->NLAYERS        = 2;
   myDTOFGeometry->NENDS          = 2;
 
-  myDTOFGeometry->NLONGBARS        = 44;
+  myDTOFGeometry->NLONGBARS        = 42;
   myDTOFGeometry->NWIDEBARS        = 38;
   myDTOFGeometry->NSHORTBARS       = 4;
   myDTOFGeometry->LONGBARLENGTH    = 252.0;
