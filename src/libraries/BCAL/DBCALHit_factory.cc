@@ -23,14 +23,8 @@ using namespace jana;
 //------------------
 jerror_t DBCALHit_factory::init(void)
 {
-   /// set the base conversion scales
-   a_scale    = 0.0001;   // to get units of GeV
-   //  Crude calibration 
-   //    A minimally ionising particle deposits and integral of 230 ADC counts per cell, 
-   //    which corresponds to approximately 22 MeV.  Thus, the factor is 0.1 to get MeV
-   //a_pedestal = 10000;  // default pedestal of 100 ADC units over 100 samples 
    t_scale    = 0.0625;   // There are 62.5 ps/count from the fADC
-   t_base      = 0.;
+   t_base     = 0.;
 
    return NOERROR;
 }
@@ -55,8 +49,12 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
        a_scale = scale_factors["BCAL_ADC_ASCALE"];
    else
        jerr << "Unable to get BCAL_ADC_ASCALE from /BCAL/digi_scales !" << endl;
-   if (scale_factors.find("BCAL_ADC_TSCALE") != scale_factors.end())
-       t_scale = scale_factors["BCAL_ADC_TSCALE"];
+   if (scale_factors.find("BCAL_ADC_TSCALE") != scale_factors.end()) {
+     t_scale = scale_factors["BCAL_ADC_TSCALE"];
+     if (PRINTCALIBRATION) {
+       jout << "DBCALHit_factory >>BCAL_ADC_TSCALE = " << t_base << endl;
+     }
+   }
    else
        jerr << "Unable to get BCAL_ADC_TSCALE from /BCAL/digi_scales !" << endl;
 
@@ -64,8 +62,12 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    map<string,double> base_time_offset;
    if (eventLoop->GetCalib("/BCAL/base_time_offset",base_time_offset))
        jout << "Error loading /BCAL/base_time_offset !" << endl;
-   if (base_time_offset.find("BCAL_BASE_TIME_OFFSET") != base_time_offset.end())
-       t_base = base_time_offset["BCAL_BASE_TIME_OFFSET"];
+   if (base_time_offset.find("BCAL_BASE_TIME_OFFSET") != base_time_offset.end()) {
+     t_base = base_time_offset["BCAL_BASE_TIME_OFFSET"];
+     if (PRINTCALIBRATION) {
+       jout << "DBCALHit_factory >>BCAL_BASE_TIME_OFFSET = " << t_base << endl;
+     }
+   }
    else
        jerr << "Unable to get BCAL_BASE_TIME_OFFSET from /BCAL/base_time_offset !" << endl;  
 
@@ -103,63 +105,35 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
    for(unsigned int i=0; i<digihits.size(); i++){
       const DBCALDigiHit *digihit = digihits[i];
       
-      //cerr << "DBCALDigiHit #" << (i+1) << endl;
-      
-
-
-      // Please call Mark Dalton before changing anything about the pedestals subtraction.
-      // The event by event pedestals are better than almost anything else that's not 
-      // very, very sophisticated.  Seriously, the pedestals do not need to be in a database,
-      // that is a luxury.  757-849-2929
-
-
-
-      // Get pedestal.  Prefer associated event pedestal if it exists.
-      // Otherwise, use the average pedestal from CCDB
-      double pedestal = GetConstant(pedestals,digihit);
-      ///////////////////
-      // old calculation
-      double pedestalpersample = GetConstant(pedestals,digihit);
-      //if (digihit->nsamples_pedestal > 0)
-      //   pedestalpersample = digihit->pedestal / digihit->nsamples_pedestal;
-      //else
-      pedestalpersample = digihit->pedestal;
-      /////////////////// 
-
+      // Get Df250PulseIntegral object from DBCALDigiHit object
       const Df250PulseIntegral* PIobj = NULL;
-      const Df250Config *configObj = NULL;
       digihit->GetSingle(PIobj);
-      PIobj->GetSingle(configObj);
-      //if(PIobj == NULL) cerr << "no associated Df250PulseIntegral!" << endl;
-      //if(configObj == NULL) cerr << "no associated Df250Config!" << endl;
-      if ((PIobj != NULL) && (configObj != NULL)) {
-              // the measured pedestal must be scaled by the ratio of the number
-              // of samples used to calculate the pedestal and the actual pulse
-	      pedestal = static_cast<double>(configObj->NSA_NSB) * PIobj->pedestal;
-      }
-      
+
+      // Calculate attenuated energy for channel
+      double integral          = (double)PIobj->integral;
+      double single_sample_ped = (double)PIobj->pedestal;
+      // If there is not pedestal information then skip the hit.
+      if (single_sample_ped <= 0) return NOERROR;
+
+      double nsamples_integral = (double)PIobj->nsamples_integral;
+      double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
+      double totalpedestal     = single_sample_ped * nsamples_integral/nsamples_pedestal;
+      double gain              = GetConstant(gains,digihit);
+      double hit_E = 0;
+      if (integral > 0) hit_E  = gain * (integral - totalpedestal);
+
+      // Calculate time for channel
+      double pulse_time        = (double)digihit->pulse_time;
+      double hit_t             = t_scale * (pulse_time - GetConstant(time_offsets,digihit)) + t_base;
+
       DBCALHit *hit = new DBCALHit;
       hit->module = digihit->module;
       hit->layer  = digihit->layer;
       hit->sector = digihit->sector;
       hit->end    = digihit->end;
-      
-      // Apply calibration constants here
-      double A = (double)digihit->pulse_integral;
-      double T = (double)digihit->pulse_time;
 
-      double gain = GetConstant(gains,digihit);
-      double E = 0;
-      if (A > 0) {
-	      E = a_scale * gain * (A - (pedestalpersample * digihit->nsamples_integral));
-	      // printf("%f  %f  %u  %f  %f\n",A,pedestalpersample,
-	      // 	     digihit->nsamples_integral,(pedestalpersample * (double)digihit->nsamples_integral),
-	      // 	     (A - (pedestalpersample * digihit->nsamples_integral)));
-	      //E = a_scale * gain * (A - pedestal);
-      }
-
-      hit->E = E;  
-      hit->t = t_scale * (T - GetConstant(time_offsets,digihit)) + t_base;
+      hit->E = hit_E;  
+      hit->t = hit_t;
       
       hit->AddAssociatedObject(digihit);
       
@@ -213,6 +187,10 @@ void DBCALHit_factory::FillCalibTable( map<int,cell_calib_t> &table,
 
              table[cell_id] = cell_calib_t(raw_table[channel],raw_table[channel+1]);
 
+	     if (PRINTCALIBRATION) {
+	       printf("%2i  %2i  %2i   %.10f   %.10f\n",module,layer,sector,raw_table[channel],raw_table[channel+1]);
+	     }
+	     
              channel += 2;
           }
        }

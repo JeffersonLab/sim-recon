@@ -24,8 +24,15 @@ typedef  map<int,cell_calib_t>  bcal_digi_constants_t;    // switch to a hashed 
 
 class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 	public:
-		DBCALHit_factory(){};
+		DBCALHit_factory(){
+		  PRINTCALIBRATION = false;
+		  if(gPARMS){
+		    gPARMS->SetDefaultParameter("BCALHIT:PRINTCALIBRATION", PRINTCALIBRATION, "Print the calibration parameters.");
+		  }
+		};
 		~DBCALHit_factory(){};
+
+		bool PRINTCALIBRATION;
 
 		// shortcut geometry factors
 		// these should really be taken from
