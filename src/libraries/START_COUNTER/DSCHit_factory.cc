@@ -274,7 +274,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
        //printf("T %d %f\n",digihit->time,0.0559*T);
        //tdc_scale=0.0559;
        unsigned int id=digihit->sector-1;
-       T = tdc_scale * tdiff  + t_tdc_base;
+       T = tdc_scale * tdiff - tdc_time_offsets[id] + t_tdc_base;
 
        // Look for existing hits to see if there is a match
        // or create new one if there is no match
@@ -292,11 +292,13 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
        hit->t_TDC=T;
 
        // Correct for time walk
+       // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
        if (hit->has_fADC && hit->integral>0.0){
-	 T-=timewalk_parameters[id][0]
-	   +timewalk_parameters[id][1]
-	   *pow(hit->integral-timewalk_parameters[id][3],
-		timewalk_parameters[id][2]);
+	 double A=hit->integral;
+	 double C1=timewalk_parameters[id][1];
+	 double C2=timewalk_parameters[id][2];
+	 double A0=timewalk_parameters[id][3];
+	 T-=C1*(pow(A,C2)-pow(A0,C2));
        }
 
        
