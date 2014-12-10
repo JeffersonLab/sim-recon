@@ -212,6 +212,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		uint32_t F250_NSB;                   ///< Number of samples to integrate before thershold crossing
 		uint32_t F250_NSPED;                 ///< Number of samples to integrate for pedestal
 		uint32_t F250_EMULATION_THRESHOLD;   ///< Minimum difference between max and min samples to do emulation
+		uint32_t F125_NSA;                   ///< Number of samples to integrate after thershold crossing
+		uint32_t F125_NSB;                   ///< Number of samples to integrate before thershold crossing
 		uint32_t F125_EMULATION_THRESHOLD; 
 		uint32_t F125_NSPED;                 ///< Number of samples to integrate for pedestal
 		uint32_t USER_RUN_NUMBER;            ///< Run number supplied by user
@@ -274,7 +276,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void AddSourceObjectsToCallStack(JEventLoop *loop, string className);
 		void AddEmulatedObjectsToCallStack(JEventLoop *loop, string caller, string callee);
 		void EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
-		void EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
+		void EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs, 
+					       vector<JObject*> &time_objs);
 		void EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);
 		void EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);
 		jerror_t ParseEvents(ObjList *objs_ptr);

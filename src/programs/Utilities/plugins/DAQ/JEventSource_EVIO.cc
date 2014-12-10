@@ -117,8 +117,10 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	F250_NSB = 5;
 	F250_NSPED = 4;
 	F250_EMULATION_THRESHOLD = 20;
+	F125_NSA = 40;
+	F125_NSB = 5;
+	F125_NSPED = 16;
 	F125_EMULATION_THRESHOLD = 20;
-	F125_NSPED = 20;
 	USER_RUN_NUMBER = 0;
 	
 	if(gPARMS){
@@ -1087,7 +1089,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		// Emulate PulseIntegral if no Pulse integral objects exist
 		vector<JObject*> pi_objs;
 		if(hit_objs_by_type["Df125PulseIntegral"].empty()){
-			EmulateDf125PulseIntegral(hit_objs_by_type["Df125WindowRawData"], pi_objs);
+		  EmulateDf125PulseIntegral(hit_objs_by_type["Df125WindowRawData"], pi_objs, pt_objs);
 			if(pi_objs.size() != 0){
 				// Pulse integral objects were emulated
 				AddEmulatedObjectsToCallStack(loop, "Df125PulseIntegral", "Df125WindowRawData");
@@ -1450,7 +1452,8 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 //----------------
 // EmulateDf125PulseIntegral
 //----------------
-void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs)
+void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs,
+						  vector<JObject*> &time_objs)
 {
 	if(VERBOSE>3) evioout << " Entering  EmulateDf125PulseIntegral ..." <<endl;
 
@@ -1466,7 +1469,17 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 		myDf125PulseIntegral->slot = f125WindowRawData->slot;
 		myDf125PulseIntegral->channel = f125WindowRawData->channel;
 		myDf125PulseIntegral->itrigger = f125WindowRawData->itrigger;
-
+		
+		const Df125PulseTime *T = NULL;
+		for (unsigned int k=0; k<time_objs.size(); k++){
+		    T = (Df125PulseTime*)time_objs[k];
+		    if ( (T->rocid == myDf125PulseIntegral->rocid ) &&
+			 (T->slot == myDf125PulseIntegral->slot ) &&
+			 (T->channel == myDf125PulseIntegral->channel ) ){
+		      break;
+		  }
+		}
+				  
 		// Get a vector of the samples for this channel
 		const vector<uint16_t> &samplesvector = f125WindowRawData->samples;
 		uint32_t nsamples=samplesvector.size();
@@ -1474,7 +1487,17 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 
 		// loop over all samples to calculate integral
 		uint32_t nsamples_used = 0;
-		for (uint32_t c_samp=0; c_samp<nsamples; c_samp++) {
+
+		uint32_t BinTC = T->time>>6;
+		uint32_t StartSample = BinTC - F125_NSB;
+		if (StartSample<0) {
+		  StartSample = 0;
+		} 
+		uint32_t EndSample = BinTC + F125_NSA;
+		if (EndSample>nsamples-1){
+		  EndSample = nsamples;
+		}
+		for (uint32_t c_samp=StartSample; c_samp<EndSample; c_samp++) {
 			signalsum += samplesvector[c_samp];
 			nsamples_used++;
 		}
