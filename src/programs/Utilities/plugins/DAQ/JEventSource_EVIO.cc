@@ -15,7 +15,11 @@
 #include <iomanip>
 using namespace std;
 
-//#define HAVE_ET 0 // temporary
+
+// This flag allows us to switch back and forth from using HDEVIO and
+// the CODA-supplied EVIO
+#define USE_HDEVIO 0
+
 //#define ENABLE_UPSAMPLING
 
 #ifdef HAVE_EVIO		
@@ -79,6 +83,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 {
 	// Initialize EVIO channel pointer to NULL (subclass will instantiate and open)
 	chan = NULL;
+	hdevio = NULL;
 	source_type = kNoSource;
 	quit_on_next_ET_timeout = false;
 
@@ -161,16 +166,24 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	
 	// Try to open the file.
 	try {
-		
-		// create evio file channel object using first arg as file name
+
 		if(VERBOSE>0) evioout << "Attempting to open \""<<this->source_name<<"\" as EVIO file..." <<endl;
+
+#if USE_HDEVIO
+		//---------- HDEVIO ------------
+		hdevio = new HDEVIO(this->source_name);
+		if( ! hdevio->is_open ) throw std::exception(); // throw exception if unable to open
+_DBG_<<"HDEVIO: file opened!" << endl;
+#else	// USE_HDEVIO
+		//-------- CODA EVIO -----------
 		chan = new evioFileChannel(this->source_name, "r", BUFFER_SIZE);
-		
-		// open the file. Throws exception if not successful
-		chan->open();
+		chan->open(); // open the file. Throws exception if not successful
+
+#endif // USE_HDEVIO
+
 		source_type = kFileSource;
 
-	} catch (evioException &e) {
+	} catch (std::exception &e) {
 
 #ifdef HAVE_ET
 		// Could not open file. Check if name starts with "ET:"
@@ -257,6 +270,11 @@ JEventSource_EVIO::~JEventSource_EVIO()
 		if(VERBOSE>0) evioout << "Closing event source \"" << this->source_name << "\"" <<endl;
 		chan->close();
 		delete chan;
+	}
+
+	if(hdevio){
+		if(VERBOSE>0) evioout << "Closing hdevio event source \"" << this->source_name << "\"" <<endl;
+		delete hdevio;
 	}
 
 	// Release memory used for the event buffer pool
@@ -463,7 +481,12 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	if(VERBOSE>0) evioout << "GetEvent called for &event = " << hex << &event << dec << endl;
 
 	// If we couldn't even open the source, then there's nothing to do
-	if(chan==NULL)throw JException(string("Unable to open EVIO channel for \"") + source_name + "\"");
+	bool no_source = (chan==NULL);
+#if USE_HDEVIO
+	if(source_type==kFileSource && hdevio->is_open) no_source = false;
+#endif
+	if(no_source)throw JException(string("Unable to open EVIO channel for \"") + source_name + "\"");
+
 	
 	// This may not be a long term solution, but here goes:
 	// We need to write single events out in EVIO format, possibly
@@ -630,10 +653,12 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 		if(MAKE_DOM_TREE){
 			try{
 				evt = new evioDOMTree(iptr);
-			}catch(...){
+			}catch(evioException &e){
 				_DBG_ << "Problem creating EVIO DOM Tree!!" << endl;
+				_DBG_ << e.what() << endl;
 				_DBG_ << "Binary dump of first 160 words follows:" << endl;
 				DumpBinary(iptr, iend, 160);
+				exit(-1);
 			}
 		}
 
@@ -750,6 +775,46 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 	try{
 		if(source_type==kFileSource){
 			if(VERBOSE>3) evioout << "  attempting read from EVIO file source ..." << endl;
+
+#if USE_HDEVIO
+
+			bool done = false;
+			while(!done){
+_DBG_<<"HDEVIO: Reading event" << endl;
+				if(hdevio->read(buff, BUFFER_SIZE)){
+					done = true;
+				}else{
+
+					string mess = hdevio->err_mess.str();
+					uint32_t buff_size;
+					switch(hdevio->err_code){
+						case HDEVIO::HDEVIO_OK:
+							done = true;
+							break;
+						case HDEVIO::HDEVIO_USER_BUFFER_TOO_SMALL:
+							if(buff) delete[] buff;
+							buff_size = hdevio->last_event_len;
+							buff = new uint32_t[buff_size];
+							continue;
+							break;
+						case HDEVIO::HDEVIO_EVENT_BIGGER_THAN_BLOCK:
+						case HDEVIO::HDEVIO_BANK_TRUNCATED:
+							cout << endl << mess << endl;
+							continue;
+							break;
+						case HDEVIO::HDEVIO_EOF:
+							return NO_MORE_EVENTS_IN_SOURCE;
+							break;
+						default:
+							cout << endl << "err_code=" << hdevio->err_code << endl;
+							cout << endl << mess << endl;
+							return NO_MORE_EVENTS_IN_SOURCE;
+							break;
+					}
+				}
+			} // while(!done)
+
+#else
 			if(!chan->read(buff, BUFFER_SIZE)){
 				if(LOOP_FOREVER){
 					if(Nevents_read<1){
@@ -775,6 +840,7 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 					return NO_MORE_EVENTS_IN_SOURCE;
 				}
 			}
+#endif // USE_HDEVIO
 
 		}else if(source_type==kETSource){
 

@@ -28,6 +28,8 @@ using std::set;
 #include <JANA/JStreamLog.h>
 using namespace jana;
 
+#include "HDEVIO.h"
+
 #ifdef HAVE_EVIO
 #include <evioChannel.hxx>
 #include <evioUtil.hxx>
@@ -178,6 +180,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		int32_t filename_run_number;
 		
 		evioChannel *chan;
+		HDEVIO *hdevio;
 		EVIOSourceType source_type;
 		map<tagNum, MODULE_TYPE> module_type;
 		map<MODULE_TYPE, MODULE_TYPE> modtype_translate;
