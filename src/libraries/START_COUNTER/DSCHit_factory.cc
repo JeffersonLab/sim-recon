@@ -44,7 +44,8 @@ jerror_t DSCHit_factory::init(void)
 			      "Maximum difference in ns between a (calibrated) fADC time and"
 			      " F1TDC time for them to be matched in a single hit");
 
-  ADC_THRESHOLD=200.; // adc counts
+  //ADC_THRESHOLD = 200.; // adc counts
+  ADC_THRESHOLD = 120.; // adc counts
   gPARMS->SetDefaultParameter("SC:ADC_THRESHOLD",ADC_THRESHOLD,
 			      "Software pulse integral threshold");
 
@@ -215,6 +216,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
       // Apply calibration constants here
       double A = (double)digihit->pulse_integral;
       double T = (double)digihit->pulse_time;
+      //pedestal = double(digihit->pedestal * digihit->nsamples_integral / digihit->nsamples_pedestal);
       pedestal = double(digihit->pedestal * digihit->nsamples_integral / digihit->nsamples_pedestal);
       double dA = A - pedestal;
 
