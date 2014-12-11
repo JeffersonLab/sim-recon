@@ -800,7 +800,7 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 						case HDEVIO::HDEVIO_EVENT_BIGGER_THAN_BLOCK:
 						case HDEVIO::HDEVIO_BANK_TRUNCATED:
 						case HDEVIO::HDEVIO_UNKNOWN_BANK_TYPE:
-							cout << endl << mess << endl;
+							if(VERBOSE>0) cout << endl << mess << endl;
 							continue;
 							break;
 						case HDEVIO::HDEVIO_EOF:

@@ -24,6 +24,7 @@ HDEVIO::HDEVIO(string filename):filename(filename)
 	
 	buff_limit = 5000000; // Don't allow us to allocate more than 5M words for read buffer
 	buff_size = 1024;     // initialize with 4kB buffer
+	buff_len = 0;
 	buff = new uint32_t[buff_size];
 	next = buff; // needed so initial calculation of left is 0
 	last_event_len = 0;
