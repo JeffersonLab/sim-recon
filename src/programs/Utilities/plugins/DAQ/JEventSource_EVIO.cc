@@ -478,7 +478,7 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 //----------------
 jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 {
-	if(VERBOSE>0) evioout << "GetEvent called for &event = " << hex << &event << dec << endl;
+	if(VERBOSE>1) evioout << "GetEvent called for &event = " << hex << &event << dec << endl;
 
 	// If we couldn't even open the source, then there's nothing to do
 	bool no_source = (chan==NULL);
@@ -544,7 +544,7 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 //----------------
 void JEventSource_EVIO::FreeEvent(JEvent &event)
 {
-	if(VERBOSE>0) evioout << "FreeEvent called for event: " << event.GetEventNumber() << endl;
+	if(VERBOSE>1) evioout << "FreeEvent called for event: " << event.GetEventNumber() << endl;
 
 	ObjList *objs_ptr = (ObjList*)event.GetRef();
 	if(objs_ptr){
@@ -779,18 +779,19 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 #if USE_HDEVIO
 
 			bool done = false;
+			uint32_t buff_size = BUFFER_SIZE;
 			while(!done){
-				if(hdevio->read(buff, BUFFER_SIZE)){
+				if(hdevio->read(buff, buff_size)){
 					done = true;
 				}else{
-
 					string mess = hdevio->err_mess.str();
-					uint32_t buff_size;
+					
 					switch(hdevio->err_code){
 						case HDEVIO::HDEVIO_OK:
 							done = true;
 							break;
 						case HDEVIO::HDEVIO_USER_BUFFER_TOO_SMALL:
+							if(VERBOSE>0) evioout << "EVIO buffer too small (" << buff_size << " bytes) . Reallocating to " << hdevio->last_event_len<< endl;
 							if(buff) delete[] buff;
 							buff_size = hdevio->last_event_len;
 							buff = new uint32_t[buff_size];
@@ -3412,7 +3413,7 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 
 	if(!PARSE_F1TDC){ iptr = iend; return; }
 
-	if(VERBOSE>0) evioout << "  Entering ParseF1TDCBank (rocid=" << rocid << ")" << endl;
+	if(VERBOSE>6) evioout << "  Entering ParseF1TDCBank (rocid=" << rocid << ")" << endl;
 
 	const uint32_t *istart = iptr;
 	
@@ -3585,6 +3586,8 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 		DumpBinary(istart, iend, 0);
 		throw JException(ss.str());
 	}
+
+	if(VERBOSE>6) evioout << "  Leaving ParseF1TDCBank (rocid=" << rocid << ")" << endl;
 
 }
 
