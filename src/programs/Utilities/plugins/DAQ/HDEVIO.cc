@@ -59,7 +59,7 @@ bool HDEVIO::ReadBlock(void)
 	}
 
 	// Check endianess
-	if(buff[7]!=0xc0da100 && buff[7]!=0x0001dac0){
+	if(buff[7]!=0xc0da0100 && buff[7]!=0x0001dac0){
 		ClearErrorMessage();
 		err_mess << "Magic word not valid!: " << HexStr(buff[7]) << endl;
 		err_code = HDEVIO_BAD_BLOCK_HEADER;
@@ -268,7 +268,7 @@ uint32_t HDEVIO::swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 			Nswapped += Nwords;
 			break;
 		case 0x0c:
-			while(Nswapped < len){
+			while(Nswapped < Nwords){
 				uint32_t N = swap_tagsegment(&outbuff[Nswapped], &inbuff[Nswapped], len-Nswapped);
 				if(N == 0) return Nswapped;
 				Nswapped += N;
@@ -276,7 +276,7 @@ uint32_t HDEVIO::swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 			break;
 		case 0x0d:
 		case 0x20:
-			while(Nswapped < len){
+			while(Nswapped < Nwords){
 				uint32_t N = swap_segment(&outbuff[Nswapped], &inbuff[Nswapped], len-Nswapped);
 				if(N == 0) return Nswapped;
 				Nswapped += N;
@@ -284,7 +284,7 @@ uint32_t HDEVIO::swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 			break;
 		case 0x0e:
 		case 0x10:
-			while(Nswapped < len){
+			while(Nswapped < Nwords){
 				uint32_t N = swap_bank(&outbuff[Nswapped], &inbuff[Nswapped], len-Nswapped);
 				if(N == 0) return Nswapped;
 				Nswapped += N;

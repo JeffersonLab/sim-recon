@@ -780,7 +780,6 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 
 			bool done = false;
 			while(!done){
-_DBG_<<"HDEVIO: Reading event" << endl;
 				if(hdevio->read(buff, BUFFER_SIZE)){
 					done = true;
 				}else{
