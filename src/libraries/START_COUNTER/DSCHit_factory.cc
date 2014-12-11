@@ -290,7 +290,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
        double T = (double)digihit->time;
        
        //printf("T %d %f\n",digihit->time,0.0559*T);
-       tdc_scale=0.0559; // hard code correctd tdc conversion scale (need to put in CCDB)
+       //tdc_scale=0.0559; // hard code correctd tdc conversion scale (need to put in CCDB)
        unsigned int id = digihit->sector-1;
        T = tdc_scale * tdiff - tdc_time_offsets[id] + t_tdc_base;
 
