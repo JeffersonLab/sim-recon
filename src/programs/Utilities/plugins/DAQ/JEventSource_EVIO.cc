@@ -173,7 +173,6 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		//---------- HDEVIO ------------
 		hdevio = new HDEVIO(this->source_name);
 		if( ! hdevio->is_open ) throw std::exception(); // throw exception if unable to open
-_DBG_<<"HDEVIO: file opened!" << endl;
 #else	// USE_HDEVIO
 		//-------- CODA EVIO -----------
 		chan = new evioFileChannel(this->source_name, "r", BUFFER_SIZE);
