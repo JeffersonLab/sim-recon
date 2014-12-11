@@ -1556,7 +1556,7 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 
 		uint32_t BinTC = T->time>>6;
 		uint32_t StartSample = BinTC - F125_NSB;
-		if (StartSample<0) {
+		if( F125_NSB > BinTC) {
 		  StartSample = 0;
 		} 
 		uint32_t EndSample = BinTC + F125_NSA;
