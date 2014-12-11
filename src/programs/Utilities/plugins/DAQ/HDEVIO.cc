@@ -268,24 +268,24 @@ uint32_t HDEVIO::swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 			Nswapped += Nwords;
 			break;
 		case 0x0c:
-			while(Nswapped < Nwords){
-				uint32_t N = swap_tagsegment(&outbuff[Nswapped], &inbuff[Nswapped], len-Nswapped);
+			while(Nswapped < (Nwords+2)){
+				uint32_t N = swap_tagsegment(&outbuff[Nswapped], &inbuff[Nswapped], (Nwords+2)-Nswapped);
 				if(N == 0) return Nswapped;
 				Nswapped += N;
 			}
 			break;
 		case 0x0d:
 		case 0x20:
-			while(Nswapped < Nwords){
-				uint32_t N = swap_segment(&outbuff[Nswapped], &inbuff[Nswapped], len-Nswapped);
+			while(Nswapped < (Nwords+2)){
+				uint32_t N = swap_segment(&outbuff[Nswapped], &inbuff[Nswapped], (Nwords+2)-Nswapped);
 				if(N == 0) return Nswapped;
 				Nswapped += N;
 			}
 			break;
 		case 0x0e:
 		case 0x10:
-			while(Nswapped < Nwords){
-				uint32_t N = swap_bank(&outbuff[Nswapped], &inbuff[Nswapped], len-Nswapped);
+			while(Nswapped < (Nwords+2)){
+				uint32_t N = swap_bank(&outbuff[Nswapped], &inbuff[Nswapped], (Nwords+2)-Nswapped);
 				if(N == 0) return Nswapped;
 				Nswapped += N;
 			}
