@@ -48,7 +48,8 @@ class HDEVIO{
 			HDEVIO_MEMORY_ALLOCATION_ERROR,
 			HDEVIO_NO_EVENTS_IN_BUFFER,
 			HDEVIO_USER_BUFFER_TOO_SMALL,
-			HDEVIO_BANK_TRUNCATED
+			HDEVIO_BANK_TRUNCATED,
+			HDEVIO_UNKNOWN_BANK_TYPE
 		}ERRORCODE_t;
 		
 		string filename;
@@ -82,6 +83,7 @@ class HDEVIO{
 		uint32_t swap_tagsegment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len);
 		uint32_t swap_segment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len);
 		void PrintEVIOBlockHeader(void);
+		void PrintStats(void);
 
 	protected:
 

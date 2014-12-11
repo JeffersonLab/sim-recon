@@ -183,7 +183,6 @@ bool HDEVIO::read(uint32_t *user_buff, uint32_t user_buff_len)
 	bool isgood = true;
 	if(swap_needed){
 		uint32_t Nswapped = swap_bank(user_buff, next, event_len);
-		swap_bank(user_buff, next, event_len);
 		isgood = (Nswapped == event_len);
 	}else{
 		memcpy(user_buff, next, event_len*sizeof(uint32_t));
@@ -242,7 +241,6 @@ uint32_t HDEVIO::swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 	uint32_t type = (outbuff[1]>>8) & 0xFF;
 	uint32_t Nwords = bank_len - 1;
 	uint32_t Nswapped = 2;
-//_DBG_<<"---- len=" << len << "  type=" << type << " level=" << level << endl;
 	switch(type){
 		case 0x0a:  // 64 bit unsigned int
 		case 0x08:  // 64 bit double
@@ -289,6 +287,14 @@ uint32_t HDEVIO::swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 				if(N == 0) return Nswapped;
 				Nswapped += N;
 			}
+			break;
+		default:
+			ClearErrorMessage();
+			err_mess << "WARNING: unknown bank type (0x" << hex << type << dec << ")";
+			err_code = HDEVIO_UNKNOWN_BANK_TYPE;
+			Nerrors++;
+			Nbad_events++;
+			return 0;
 			break;
 	}
 
@@ -433,3 +439,21 @@ void HDEVIO::PrintEVIOBlockHeader(void)
 	cout << "   Magic word: " << HexStr(buff[7]) << (swap_needed ? " (after swapping)":"") << endl;
 	cout << "Byte swapping is" << (swap_needed ? " ":" not ") << "needed" << endl;
 }
+
+//------------------------
+// PrintStats
+//------------------------
+void HDEVIO::PrintStats(void)
+{
+	cout << endl;
+	cout << "EVIO Statistics for " << filename << " :" << endl;
+	cout << "------------------------" << endl;
+	cout << "    Nblocks: " << Nblocks << endl;
+	cout << "    Nevents: " << Nevents << endl;
+	cout << "    Nerrors: " << Nerrors << endl;
+	cout << "Nbad_blocks: " << Nbad_blocks << endl;
+	cout << "Nbad_events: " << Nbad_events << endl;
+	cout << endl;
+}
+
+

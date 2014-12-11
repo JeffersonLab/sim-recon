@@ -273,6 +273,7 @@ JEventSource_EVIO::~JEventSource_EVIO()
 
 	if(hdevio){
 		if(VERBOSE>0) evioout << "Closing hdevio event source \"" << this->source_name << "\"" <<endl;
+		hdevio->PrintStats();
 		delete hdevio;
 	}
 
@@ -798,6 +799,7 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 							break;
 						case HDEVIO::HDEVIO_EVENT_BIGGER_THAN_BLOCK:
 						case HDEVIO::HDEVIO_BANK_TRUNCATED:
+						case HDEVIO::HDEVIO_UNKNOWN_BANK_TYPE:
 							cout << endl << mess << endl;
 							continue;
 							break;
