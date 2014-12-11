@@ -21,16 +21,15 @@ using namespace std;
 
 using namespace jana;
 
-
-bool DSCHit_fadc_cmp(const DSCDigiHit *a,const DSCDigiHit *b){
+bool DSCHit_fadc_cmp(const DSCDigiHit *a,const DSCDigiHit *b)
+{
   if (a->sector==b->sector) return (a->pulse_time<b->pulse_time);
-
   return (a->sector<b->sector);
 }
 
-bool DSCHit_tdc_cmp(const DSCTDCDigiHit *a,const DSCTDCDigiHit *b){
+bool DSCHit_tdc_cmp(const DSCTDCDigiHit *a,const DSCTDCDigiHit *b)
+{
   if (a->sector==b->sector) return (a->time<b->time);
-
   return (a->sector<b->sector);
 }
 
@@ -39,23 +38,24 @@ bool DSCHit_tdc_cmp(const DSCTDCDigiHit *a,const DSCTDCDigiHit *b){
 //------------------
 jerror_t DSCHit_factory::init(void)
 {
-   DELTA_T_ADC_TDC_MAX = 20.0; // ns
-   gPARMS->SetDefaultParameter("SC:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX,
-           "Maximum difference in ns between a (calibrated) fADC time and"
-           " F1TDC time for them to be matched in a single hit");
+  DELTA_T_ADC_TDC_MAX = 20.0; // ns
+  //DELTA_T_ADC_TDC_MAX = 3600.0; // ns
+  gPARMS->SetDefaultParameter("SC:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX,
+			      "Maximum difference in ns between a (calibrated) fADC time and"
+			      " F1TDC time for them to be matched in a single hit");
 
-   ADC_THRESHOLD=200.; // adc counts
-   gPARMS->SetDefaultParameter("SC:ADC_THRESHOLD",ADC_THRESHOLD,
-			       "Software pulse integral threshold");
+  ADC_THRESHOLD=200.; // adc counts
+  gPARMS->SetDefaultParameter("SC:ADC_THRESHOLD",ADC_THRESHOLD,
+			      "Software pulse integral threshold");
 
-   /// set the base conversion scales
-   a_scale    = 0.0001; 
-   t_scale    = 0.0625;   // 62.5 ps/count
-   t_base     = 0.;    // ns
-   t_tdc_base = 0.;
-   tdc_scale  = 0.060;    // 60 ps/count
+  /// set the base conversion scales
+  a_scale    = 0.0001; 
+  t_scale    = 0.0625;   // 62.5 ps/count
+  t_base     = 0.;    // ns
+  t_tdc_base = 0.;
+  tdc_scale  = 0.060;    // 60 ps/count
 
-   return NOERROR;
+  return NOERROR;
 }
 
 //------------------
@@ -68,6 +68,7 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 
    // load scale factors
    map<string,double> scale_factors;
+   // a_scale (SC_ADC_SCALE)
    if (eventLoop->GetCalib("/START_COUNTER/digi_scales", scale_factors))
        jout << "Error loading /START_COUNTER/digi_scales !" << endl;
    if (scale_factors.find("SC_ADC_ASCALE") != scale_factors.end())
@@ -75,11 +76,13 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    else
       jerr << "Unable to get SC_ADC_ASCALE from /START_COUNTER/digi_scales !" 
            << endl;
+   // t_scale (SC_ADC_SCALE)
    if (scale_factors.find("SC_ADC_TSCALE") != scale_factors.end())
       t_scale = scale_factors["SC_ADC_TSCALE"];
    else
       jerr << "Unable to get SC_ADC_TSCALE from /START_COUNTER/digi_scales !" 
            << endl;
+   // tdc_scale (SC_TDC_SCALE)
    if (scale_factors.find("SC_TDC_SCALE") != scale_factors.end())
       tdc_scale = scale_factors["SC_TDC_SCALE"];
    else
@@ -88,27 +91,33 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 
    // load base time offset
    map<string,double> base_time_offset;
+   // t_base (SC_BASE_TIME_OFFSET)
    if (eventLoop->GetCalib("/START_COUNTER/base_time_offset",base_time_offset))
        jout << "Error loading /START_COUNTER/base_time_offset !" << endl;
    if (base_time_offset.find("SC_BASE_TIME_OFFSET") != base_time_offset.end())
        t_base = base_time_offset["SC_BASE_TIME_OFFSET"];
    else
        jerr << "Unable to get SC_BASE_TIME_OFFSET from /START_COUNTER/base_time_offset !" << endl;
+   // t_tdc_base (SC_TDC_BASE_TIME_OFFSET)
    if (base_time_offset.find("SC_TDC_BASE_TIME_OFFSET") != base_time_offset.end())
        t_tdc_base = base_time_offset["SC_TDC_BASE_TIME_OFFSET"];
    else
        jerr << "Unable to get SC_BASE_TIME_OFFSET from /START_COUNTER/base_time_offset !" << endl;
    
    // load constant tables
+   // a_gains (gains)
    if (eventLoop->GetCalib("/START_COUNTER/gains", a_gains))
       jout << "Error loading /START_COUNTER/gains !" << endl;
+   // a_pedestals (pedestals)
    if (eventLoop->GetCalib("/START_COUNTER/pedestals", a_pedestals))
       jout << "Error loading /START_COUNTER/pedestals !" << endl;
+   // adc_time_offsets (adc_timing_offsets)
    if (eventLoop->GetCalib("/START_COUNTER/adc_timing_offsets", adc_time_offsets))
       jout << "Error loading /START_COUNTER/adc_timing_offsets !" << endl;
+   // tdc_time_offsets (tdc_timing_offsets)
    if (eventLoop->GetCalib("/START_COUNTER/tdc_timing_offsets", tdc_time_offsets))
       jout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;
-
+   // timewalk_parameters (timewalk_parms)
    if(eventLoop->GetCalib("START_COUNTER/timewalk_parms", timewalk_parameters))
 	    jout << "Error loading /START_COUNTER/timewalk_parms !" << endl;
 
@@ -159,67 +168,69 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
    char str[256];
 
-   for (unsigned int i=0; i < digihits.size(); i++){
-      const DSCDigiHit *digihit = digihits[i];
+   for (unsigned int i = 0; i < digihits.size(); i++)
+     {
+       const DSCDigiHit *digihit = digihits[i];
       
-      // Make sure sector is in valid range
-      if( (digihit->sector <= 0) && (digihit->sector > MAX_SECTORS)) {
-         sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)", 
-            digihit->sector, MAX_SECTORS);
-         throw JException(str);
-      }
+       // Make sure sector is in valid range
+       if( (digihit->sector <= 0) && (digihit->sector > MAX_SECTORS)) 
+	 {
+	   sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)", 
+		   digihit->sector, MAX_SECTORS);
+	   throw JException(str);
+	 }
 		
-		// Initialize pedestal to one found in CCDB, but override it
-		// with one found in event if is available
-		double pedestal = a_pedestals[digihit->sector-1];
-		try{
-			// This should probably be done upstream of here so that 
-			//const Df250PulseTime *pulsetime=NULL;
-			const Df250PulseIntegral *pulseintegral=NULL;
-			const Df250PulsePedestal *pulsepedestal=NULL;
-			const Df250Config *daqconfig=NULL;
-			//digihit->GetSingle(pulsetime);
-			//if(pulsetime) pulsetime->GetSingle(pulsepedestal);
-			digihit->GetSingle(pulseintegral);
-			if(pulseintegral) pulseintegral->GetSingle(pulsepedestal);
-			if(pulsepedestal) pulsepedestal->GetSingle(daqconfig);
-//_DBG_<<"pulsetime=0x"<<hex<<pulsetime<<" pulsepedestal=0x"<<pulsepedestal<<" daqconfig=0x"<<daqconfig<<dec<<endl;
+       // Initialize pedestal to one found in CCDB, but override it
+       // with one found in event if is available
+       double pedestal = a_pedestals[digihit->sector-1];
+       try
+	 {
+	   // This should probably be done upstream of here so that 
+	   //const Df250PulseTime *pulsetime=NULL;
+	   const Df250PulseIntegral *pulseintegral=NULL;
+	   const Df250PulsePedestal *pulsepedestal=NULL;
+	   const Df250Config *daqconfig=NULL;
+	   //digihit->GetSingle(pulsetime);
+	   //if(pulsetime) pulsetime->GetSingle(pulsepedestal);
+	   digihit->GetSingle(pulseintegral);
+	   if(pulseintegral) pulseintegral->GetSingle(pulsepedestal);
+	   if(pulsepedestal) pulsepedestal->GetSingle(daqconfig);
+	   //_DBG_<<"pulsetime=0x"<<hex<<pulsetime<<" pulsepedestal=0x"<<pulsepedestal<<" daqconfig=0x"<<daqconfig<<dec<<endl;
 			
-			// Measured pedestal uses different number of samples than
-			// pulse integral. Scale pedestal up to match integral.
-			//if(daqconfig) pedestal = (double)pulsepedestal->pedestal * (double)daqconfig->NSA_NSB/(double)daqconfig->NPED;
-			if ((pulseintegral != NULL) && (daqconfig != NULL)) {
-				// the measured pedestal must be scaled by the ratio of the number
-				// of samples used to calculate the pedestal and the actual pulse
-				pedestal = static_cast<double>(daqconfig->NSA_NSB) * pulseintegral->pedestal;
-
-			}
-		       
-		
-		}catch(...){
-//_DBG__;
-		}
+	   // Measured pedestal uses different number of samples than
+	   // pulse integral. Scale pedestal up to match integral.
+	   //if(daqconfig) pedestal = (double)pulsepedestal->pedestal * (double)daqconfig->NSA_NSB/(double)daqconfig->NPED;
+	   if ((pulseintegral != NULL) && (daqconfig != NULL)) 
+	     {
+	       // the measured pedestal must be scaled by the ratio of the number
+	       // of samples used to calculate the pedestal and the actual pulse
+	       pedestal = static_cast<double>(daqconfig->NSA_NSB) * pulseintegral->pedestal;
+	     }      	
+	 }
+       catch(...)
+	 {
+	   //_DBG__;
+	 }
 
       // Apply calibration constants here
       double A = (double)digihit->pulse_integral;
       double T = (double)digihit->pulse_time;
-      pedestal=double(digihit->pedestal*digihit->nsamples_integral
-		      /digihit->nsamples_pedestal);
-      double dA=A-pedestal;
+      pedestal = double(digihit->pedestal * digihit->nsamples_integral / digihit->nsamples_pedestal);
+      double dA = A - pedestal;
 
-      if (digihit->pulse_time==0) continue;
-      if (dA<ADC_THRESHOLD) continue;
+      if (digihit->pulse_time == 0) continue;
+      if (dA < ADC_THRESHOLD) continue;
       
       DSCHit *hit = new DSCHit;
       hit->sector = digihit->sector;
 
       // Sectors are numbered from 1-30
       hit->dE = a_scale * a_gains[hit->sector-1] * dA;
-      hit->integral=dA;
+      hit->integral = dA;
       hit->t_fADC = t_scale * (T - adc_time_offsets[hit->sector-1]) + t_base;
       hit->has_fADC = true;
 
-      hit->t_TDC= numeric_limits<double>::quiet_NaN();
+      hit->t_TDC = numeric_limits<double>::quiet_NaN();
       hit->has_TDC  = false; // will get set to true below if appropriate
 
       hit->t = hit->t_fADC; // set time from fADC in case no TDC hit
@@ -233,74 +244,80 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 
    // Get the trigger time from the f1 TDC
-   vector<const DF1TDCHit *>tdchit;
+   vector<const DF1TDCHit*> tdchit;
    eventLoop->Get(tdchit);
    
    int tref=0;
-   for(unsigned int i=0;i<tdchit.size();i++){
-     if(tdchit[i]->rocid==51&&tdchit[i]->slot==17&&tdchit[i]->channel==8){
-       tref=tdchit[i]->time; // in clicks
-       break;
-       //       printf("tref %d %f\n",tdchit[i]->time,tref);
+   for(unsigned int i=0;i<tdchit.size();i++)
+     {
+       if(tdchit[i]->rocid==51&&tdchit[i]->slot==17&&tdchit[i]->channel==8)
+	 {
+	   tref=tdchit[i]->time; // in clicks
+	   break;
+	   //       printf("tref %d %f\n",tdchit[i]->time,tref);
+	 }
      }
-   }
-   if (tref>0){ // got reference signal
-     // Next, loop over TDC hits, matching them to the
-     // existing fADC hits where possible and updating
-     // their time information. If no match is found, then
-     // create a new hit with just the TDC info.
-     vector<const DSCTDCDigiHit*> tdcdigihits;
-     loop->Get(tdcdigihits);
-     sort(tdcdigihits.begin(),tdcdigihits.end(),DSCHit_tdc_cmp);
+   if (tref>0)
+     { // got reference signal
+       // Next, loop over TDC hits, matching them to the
+       // existing fADC hits where possible and updating
+       // their time information. If no match is found, then
+       // create a new hit with just the TDC info.
+       vector<const DSCTDCDigiHit*> tdcdigihits;
+       loop->Get(tdcdigihits);
+       sort(tdcdigihits.begin(),tdcdigihits.end(),DSCHit_tdc_cmp);
 
-     for (unsigned int i=0; i < tdcdigihits.size(); i++){
-       const DSCTDCDigiHit *digihit = tdcdigihits[i];
+       for (unsigned int i = 0; i < tdcdigihits.size(); i++)
+	 {
+	   const DSCTDCDigiHit *digihit = tdcdigihits[i];
        
-       // Make sure sector is in valid range
-       if( (digihit->sector <= 0) && (digihit->sector > MAX_SECTORS)) {
-         sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)", 
-		 digihit->sector, MAX_SECTORS);
-         throw JException(str);
-       }
+	   // Make sure sector is in valid range
+	   if((digihit->sector <= 0) && (digihit->sector > MAX_SECTORS)) 
+	     {
+	       sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)", 
+		       digihit->sector, MAX_SECTORS);
+	       throw JException(str);
+	     }
 
        // Take care of rollover
-       int tdiff=int(digihit->time)-int(tref);
-       if (tdiff<0) tdiff+=65250;
-       else if (tdiff>65250) tdiff-=65250;
+       int tdiff = int(digihit->time) - int(tref);
+       if (tdiff < 0) tdiff += 65250;
+       else if (tdiff > 65250) tdiff -= 65250;
 
        // Apply calibration constants here
        double T = (double)digihit->time;
        
        //printf("T %d %f\n",digihit->time,0.0559*T);
-       //tdc_scale=0.0559;
-       unsigned int id=digihit->sector-1;
+       tdc_scale=0.0559; // hard code correctd tdc conversion scale (need to put in CCDB)
+       unsigned int id = digihit->sector-1;
        T = tdc_scale * tdiff - tdc_time_offsets[id] + t_tdc_base;
 
        // Look for existing hits to see if there is a match
        // or create new one if there is no match
        DSCHit *hit = FindMatch(digihit->sector, T);
-       if (! hit) {
-         hit = new DSCHit;
-         hit->sector = digihit->sector;
-         hit->dE = 0.0;
-	 hit->integral=0.0;
-	 hit->t_fADC= numeric_limits<double>::quiet_NaN();
-         hit->has_fADC = false;
+       if (! hit) 
+	 {
+	   hit = new DSCHit;
+	   hit->sector = digihit->sector;
+	   hit->dE = 0.0;
+	   hit->integral=0.0;
+	   hit->t_fADC= numeric_limits<double>::quiet_NaN();
+	   hit->has_fADC = false;
 	 
-         _data.push_back(hit);
-       }      
+	   _data.push_back(hit);
+	 }      
        hit->t_TDC=T;
 
        // Correct for time walk
        // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
-       if (hit->has_fADC && hit->integral>0.0){
-	 double A=hit->integral;
-	 double C1=timewalk_parameters[id][1];
-	 double C2=timewalk_parameters[id][2];
-	 double A0=timewalk_parameters[id][3];
-	 T-=C1*(pow(A,C2)-pow(A0,C2));
-       }
-
+       if (hit->has_fADC && hit->integral>0.0)
+	 {
+	   double A=hit->integral;
+	   double C1=timewalk_parameters[id][1];
+	   double C2=timewalk_parameters[id][2];
+	   double A0=timewalk_parameters[id][3];
+	   T-=C1*(pow(A,C2)-pow(A0,C2));
+	 }
        
        hit->t = T;
        hit->has_TDC = true;
@@ -308,9 +325,8 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
        // add in higher order corrections?
        
        hit->AddAssociatedObject(digihit);
+	 }
      }
-   }
-
      
    return NOERROR;
 }
@@ -322,30 +338,29 @@ DSCHit* DSCHit_factory::FindMatch(int sector, double T)
 {
   DSCHit *best_match=NULL;
 
-   // Loop over existing hits (from fADC) and look for a match
-   // in both the sector and the time.
-   for(unsigned int i=0; i<_data.size(); i++){
+  // Loop over existing hits (from fADC) and look for a match
+  // in both the sector and the time.
+  for(unsigned int i = 0; i < _data.size(); i++)
+    {
       DSCHit *hit = _data[i];
       
       if (! hit->has_fADC)
-         continue; // only match to fADC hits, not bachelor TDC hits
+	continue; // only match to fADC hits, not bachelor TDC hits
       if (hit->sector != sector)
-         continue;
+	continue;
       
       double delta_T = fabs(hit->t - T);
       if (delta_T > DELTA_T_ADC_TDC_MAX)
-         continue;
+	continue;
       
-      if (best_match != NULL){
-	if (delta_T < fabs(best_match->t - T))
-	  best_match = hit;
-      } else {
-	best_match = hit;
-      }
-
-   }
+      if (best_match != NULL)
+	{
+	  if (delta_T < fabs(best_match->t - T))
+	    best_match = hit;
+	} else best_match = hit;
+    }
    
-   return best_match;
+  return best_match;
 }
 
 //------------------
@@ -372,48 +387,52 @@ jerror_t DSCHit_factory::fini(void)
 const double DSCHit_factory::GetConstant(const vector<double> &the_table,
                                          const int in_sector) const
 {
-   char str[256];
+  char str[256];
    
-   if ( (in_sector < 0) || (in_sector >= MAX_SECTORS)) {
+  if ( (in_sector < 0) || (in_sector >= MAX_SECTORS)) 
+    {
       sprintf(str, "Bad sector # requested in DSCHit_factory::GetConstant()!"
-                   " requested=%d , should be %ud", in_sector, MAX_SECTORS);
+	      " requested=%d , should be %ud", in_sector, MAX_SECTORS);
       cerr << str << endl;
       throw JException(str);
-   }
+    }
 
-   return the_table[in_sector];
+  return the_table[in_sector];
 }
 
 const double DSCHit_factory::GetConstant(const vector<double> &the_table,
                                          const DSCDigiHit *in_digihit) const 
 {
-   char str[256];
+  char str[256];
    
-   if ( (in_digihit->sector < 0) || (in_digihit->sector >= MAX_SECTORS)) {
+  if ( (in_digihit->sector < 0) || (in_digihit->sector >= MAX_SECTORS)) 
+    {
       sprintf(str, "Bad sector # requested in DSCHit_factory::GetConstant()!"
-                   " requested=%d , should be %ud", 
+	      " requested=%d , should be %ud", 
               in_digihit->sector, MAX_SECTORS);
       cerr << str << endl;
       throw JException(str);
-   }
+    }
    
-   return the_table[in_digihit->sector];
+  return the_table[in_digihit->sector];
 }
 
 const double DSCHit_factory::GetConstant(const vector<double> &the_table,
-                                         const DSCHit *in_hit) const {
+                                         const DSCHit *in_hit) const 
+{
 
-   char str[256];
+  char str[256];
    
-   if ( (in_hit->sector < 0) || (in_hit->sector >= MAX_SECTORS)) {
+  if ( (in_hit->sector < 0) || (in_hit->sector >= MAX_SECTORS)) 
+    {
       sprintf(str, "Bad sector # requested in DSCHit_factory::GetConstant()!"
-                   " requested=%d , should be %ud",
+	      " requested=%d , should be %ud",
               in_hit->sector, MAX_SECTORS);
       cerr << str << endl;
       throw JException(str);
-   }
+    }
    
-   return the_table[in_hit->sector];
+  return the_table[in_hit->sector];
 }
 /*
 const double DSCHit_factory::GetConstant(const vector<double> &the_table,
