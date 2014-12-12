@@ -20,6 +20,7 @@
 #include "JANA/JEventLoop.h"
 #include "particleType.h"
 
+#include "PID/DRFTime.h"
 #include "PID/DChargedTrack.h"
 #include "PID/DChargedTrackHypothesis.h"
 #include "PID/DNeutralParticle.h"
@@ -62,6 +63,7 @@
 #include "TRACKING/DTrackTimeBased.h"
 #include "TRACKING/DTrackWireBased.h"
 #include "TRACKING/DTrackCandidate.h"
+
 
 using namespace std;
 using namespace jana;
@@ -142,6 +144,9 @@ class DHistogramAction_PID : public DAnalysisAction
 			dThrownPIDs.push_back(Gamma);  dThrownPIDs.push_back(Neutron);
 			dThrownPIDs.push_back(PiPlus);  dThrownPIDs.push_back(KPlus);  dThrownPIDs.push_back(Proton);
 			dThrownPIDs.push_back(PiMinus);  dThrownPIDs.push_back(KMinus);
+
+			dParticleID = NULL;
+			dAnalysisUtilities = NULL;
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
@@ -201,7 +206,10 @@ class DHistogramAction_TrackVertexComparison : public DAnalysisAction
 		DHistogramAction_TrackVertexComparison(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_TrackVertexComparison", false, locActionUniqueString), 
 		dNumDeltaVertexZBins(200), dNumDeltaVertexTBins(100), dNumDOCABins(100), dNum2DPBins(300), dNumThetaBins(300), dMinDeltaVertexZ(-10.0), dMaxDeltaVertexZ(10.0), 
-		dMinDeltaVertexT(-5.0), dMaxDeltaVertexT(5.0), dMinDOCA(0.0), dMaxDOCA(10.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(150.0){}
+		dMinDeltaVertexT(-5.0), dMaxDeltaVertexT(5.0), dMinDOCA(0.0), dMaxDOCA(10.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(150.0)
+		{
+			dAnalysisUtilities = NULL;
+		}
 
 		unsigned int dNumDeltaVertexZBins, dNumDeltaVertexTBins, dNumDOCABins, dNum2DPBins, dNumThetaBins;
 		double dMinDeltaVertexZ, dMaxDeltaVertexZ, dMinDeltaVertexT, dMaxDeltaVertexT, dMinDOCA, dMaxDOCA, dMinP, dMaxP, dMinTheta, dMaxTheta;
@@ -244,6 +252,8 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		{
 			dTrackingPIDs.push_back(PiPlus);  dTrackingPIDs.push_back(KPlus);  dTrackingPIDs.push_back(Proton);
 			dTrackingPIDs.push_back(PiMinus);  dTrackingPIDs.push_back(KMinus);
+
+			dParticleID = NULL;
 		}
 
 		DHistogramAction_DetectorStudies(string locActionUniqueString) : 
@@ -258,6 +268,8 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		{
 			dTrackingPIDs.push_back(PiPlus);  dTrackingPIDs.push_back(KPlus);  dTrackingPIDs.push_back(Proton);
 			dTrackingPIDs.push_back(PiMinus);  dTrackingPIDs.push_back(KMinus);
+
+			dParticleID = NULL;
 		}
 
 		DHistogramAction_DetectorStudies(void) : 
@@ -272,6 +284,8 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		{
 			dTrackingPIDs.push_back(PiPlus);  dTrackingPIDs.push_back(KPlus);  dTrackingPIDs.push_back(Proton);
 			dTrackingPIDs.push_back(PiMinus);  dTrackingPIDs.push_back(KMinus);
+
+			dParticleID = NULL;
 		}
 
 		void Initialize(JEventLoop* locEventLoop);
@@ -298,9 +312,6 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		vector<Particle_t> dTrackingPIDs;
 		DVector3 dTargetCenter;
 		const DParticleID* dParticleID;
-
-		// Optional: Useful utility functions.
-		// const DAnalysisUtilities* dAnalysisUtilities;
 
 		//Store any histograms as member variables here
 
@@ -428,7 +439,11 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(200), dNumVertexXYBins(200), dNumBetaBins(400), dNumDeltaBetaBins(400), 
 		dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumDeltaTRFBins(500),
 		dMinT(-5.0), dMaxT(5.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), 
-		dMinVertexXY(-5.0), dMaxVertexXY(5.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinDeltaTRF(-10.0), dMaxDeltaTRF(10.0) {}
+		dMinVertexXY(-5.0), dMaxVertexXY(5.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinDeltaTRF(-10.0), dMaxDeltaTRF(10.0)
+		{
+			dParticleID = NULL;
+			dAnalysisUtilities = NULL;
+		}
 
 		unsigned int dNumPBins, dNumThetaBins, dNumPhiBins, dNumVertexZBins, dNumTBins, dNumVertexXYBins, dNumBetaBins, dNumDeltaBetaBins;
 		unsigned int dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins, dNumDeltaTRFBins;
@@ -630,6 +645,8 @@ class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+
+			dAnalysisUtilities = NULL;
 		}
 
 		DHistogramAction_ReconnedThrownKinematics(string locActionUniqueString) : 
@@ -643,6 +660,8 @@ class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+
+			dAnalysisUtilities = NULL;
 		}
 
 		DHistogramAction_ReconnedThrownKinematics(void) : 
@@ -656,6 +675,8 @@ class DHistogramAction_ReconnedThrownKinematics : public DAnalysisAction
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+
+			dAnalysisUtilities = NULL;
 		}
 
 		double dMinThrownMatchFOM;
@@ -756,6 +777,9 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 			dFinalStatePIDs.push_back(Gamma);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+
+			dParticleID = NULL;
+			dAnalysisUtilities = NULL;
 		}
 
 		DHistogramAction_DetectedParticleKinematics(string locActionUniqueString) : 
@@ -768,6 +792,9 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 			dFinalStatePIDs.push_back(Gamma);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+
+			dParticleID = NULL;
+			dAnalysisUtilities = NULL;
 		}
 
 		DHistogramAction_DetectedParticleKinematics(void) : 
@@ -780,6 +807,9 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 			dFinalStatePIDs.push_back(Gamma);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+
+			dParticleID = NULL;
+			dAnalysisUtilities = NULL;
 		}
 
 		double dMinPIDFOM;
@@ -1093,7 +1123,10 @@ class DHistogramAction_TruePID : public DAnalysisAction
 	public:
 		DHistogramAction_TruePID(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_TruePID", false, locActionUniqueString),
-		dNumPBins(300), dNum2DPBins(150), dNumThetaBins(140), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinThrownMatchFOM(5.73303E-7) {}
+		dNumPBins(300), dNum2DPBins(150), dNumThetaBins(140), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinThrownMatchFOM(5.73303E-7)
+		{
+			dAnalysisUtilities = NULL;
+		}
 
 		unsigned int dNumPBins, dNum2DPBins, dNumThetaBins;
 		double dMinP, dMaxP, dMinTheta, dMaxTheta;
@@ -1119,7 +1152,10 @@ class DHistogramAction_InvariantMass : public DAnalysisAction
 	public:
 		DHistogramAction_InvariantMass(const DReaction* locReaction, Particle_t locInitialPID, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_InvariantMass", locUseKinFitResultsFlag, locActionUniqueString),
-		dEnableDoubleCounting(false), dInitialPID(locInitialPID), dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass){}
+		dEnableDoubleCounting(false), dInitialPID(locInitialPID), dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass)
+		{
+			dAnalysisUtilities = NULL;
+		}
 
 		bool dEnableDoubleCounting;
 
@@ -1142,7 +1178,10 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 	public:
 		DHistogramAction_MissingMass(const DReaction* locReaction, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
-		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dMissingMassOffOfStepIndex(-1){}
+		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dMissingMassOffOfStepIndex(-1)
+		{
+			dAnalysisUtilities = NULL;
+		}
 
 		//E.g. If:
 		//g, p -> K+, K+, Xi-
@@ -1160,12 +1199,18 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 		DHistogramAction_MissingMass(const DReaction* locReaction, int locMissingMassOffOfStepIndex, deque<Particle_t> locMissingMassOffOfPIDs, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
 		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
-		dMissingMassOffOfPIDs(locMissingMassOffOfPIDs) {}
+		dMissingMassOffOfPIDs(locMissingMassOffOfPIDs)
+		{
+			dAnalysisUtilities = NULL;
+		}
 
 		DHistogramAction_MissingMass(const DReaction* locReaction, int locMissingMassOffOfStepIndex, Particle_t locMissingMassOffOfPID, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
 		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
-		dMissingMassOffOfPIDs(deque<Particle_t>(1, locMissingMassOffOfPID)) {}
+		dMissingMassOffOfPIDs(deque<Particle_t>(1, locMissingMassOffOfPID))
+		{
+			dAnalysisUtilities = NULL;
+		}
 
 		bool dEnableDoubleCounting;
 
@@ -1189,7 +1234,10 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 	public:
 		DHistogramAction_MissingMassSquared(const DReaction* locReaction, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMassSq, double locMaxMassSq, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMassSquared", locUseKinFitResultsFlag, locActionUniqueString),
-		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq), dMissingMassOffOfStepIndex(-1){}
+		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq), dMissingMassOffOfStepIndex(-1)
+		{
+			dAnalysisUtilities = NULL;
+		}
 
 		//E.g. If:
 		//g, p -> K+, K+, Xi-
@@ -1207,12 +1255,18 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 		DHistogramAction_MissingMassSquared(const DReaction* locReaction, int locMissingMassOffOfStepIndex, deque<Particle_t> locMissingMassOffOfPIDs, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMassSq, double locMaxMassSq, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
 		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
-		dMissingMassOffOfPIDs(locMissingMassOffOfPIDs) {}
+		dMissingMassOffOfPIDs(locMissingMassOffOfPIDs)
+		{
+			dAnalysisUtilities = NULL;
+		}
 
 		DHistogramAction_MissingMassSquared(const DReaction* locReaction, int locMissingMassOffOfStepIndex, Particle_t locMissingMassOffOfPID, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMassSq, double locMaxMassSq, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
 		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
-		dMissingMassOffOfPIDs(deque<Particle_t>(1, locMissingMassOffOfPID)) {}
+		dMissingMassOffOfPIDs(deque<Particle_t>(1, locMissingMassOffOfPID))
+		{
+			dAnalysisUtilities = NULL;
+		}
 
 		bool dEnableDoubleCounting;
 
@@ -1236,7 +1290,10 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 	public:
 		DHistogramAction_KinFitResults(const DReaction* locReaction, double locPullHistConfidenceLevelCut, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_KinFitResults", true, locActionUniqueString), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut){}
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut)
+		{
+			dAnalysisUtilities = NULL;
+		}
 
 		unsigned int dNumConfidenceLevelBins, dNumPullBins;
 		double dMinPull, dMaxPull;
@@ -1262,7 +1319,10 @@ class DHistogramAction_MissingTransverseMomentum : public DAnalysisAction
 	public:
 		DHistogramAction_MissingTransverseMomentum(const DReaction* locReaction, bool locUseKinFitResultsFlag, unsigned int locNumPtBins = 0, double locMinPt = 0, double locMaxPt = 1.0, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingTransverseMomentum", locUseKinFitResultsFlag, locActionUniqueString),
-		dEnableDoubleCounting(false), dNumPtBins(locNumPtBins), dMinPt(locMinPt), dMaxPt(locMaxPt){}
+		dEnableDoubleCounting(false), dNumPtBins(locNumPtBins), dMinPt(locMinPt), dMaxPt(locMaxPt)
+		{
+			dAnalysisUtilities = NULL;
+		}
 
 		bool dEnableDoubleCounting;
 

@@ -169,7 +169,7 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 		locRFTime = locEventRFBunch->dTime;
 		locRFVariance = locEventRFBunch->dTimeVariance;
 	}
-	else if(!dEventRFBunchFactory->Get_RFTime(locEventLoop, locRFTime, locRFVariance))
+	else if(!dEventRFBunchFactory->Get_RFTimeGuess(locEventLoop, locRFTime, locRFVariance))
 	{
 		//no good RF time, set to NaN for all combos
 		DEventRFBunch* locNewEventRFBunch = new DEventRFBunch(*locEventRFBunch);

@@ -763,12 +763,12 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
 
+	const DParticleID* locParticleID = NULL;
+	locEventLoop->GetSingle(locParticleID);
+
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
-		// Optional: Useful utility functions.
-		// locEventLoop->GetSingle(dAnalysisUtilities);
-
-		locEventLoop->GetSingle(dParticleID);
+		dParticleID = locParticleID;
 
 		double locTargetZCenter = 0.0;
 		locGeometry->GetTargetZ(locTargetZCenter);
@@ -1869,6 +1869,9 @@ void DHistogramAction_DetectorStudies::Fill_PIDHists(JEventLoop* locEventLoop)
 	const DEventRFBunch* locEventRFBunch = NULL;
 	locEventLoop->GetSingle(locEventRFBunch);
 
+	vector<const DRFTime*> locRFTimes;
+	locEventLoop->Get(locRFTimes);
+
 	//Fill Histograms
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
@@ -1896,9 +1899,13 @@ void DHistogramAction_DetectorStudies::Fill_PIDHists(JEventLoop* locEventLoop)
 			if((locSCHitMatchParams.dTrackTimeBased != NULL) && (locEventRFBunch->dTime == locEventRFBunch->dTime))
 			{
 				//If RF time != RF time: Is NaN, and SC time was used as the start time: is cheating
-				dHistMap_QSCdEdXVsP[locCharge]->Fill(locP, locSCHitMatchParams.dEdx*1.0E3);
-				double locBeta_Timing = locSCHitMatchParams.dPathLength/(29.9792458*(locSCHitMatchParams.dHitTime - locStartTime));
-				dHistMap_SCBetaVsP[locCharge]->Fill(locP, locBeta_Timing);
+				if((locEventRFBunch->dNumParticlesVotedForThisTime > 1) || (!locRFTimes.empty()))
+				{
+					//If no RF signal SC was used to pick event start time. If only 1 particle voted, is exact match, so ignore!
+					dHistMap_QSCdEdXVsP[locCharge]->Fill(locP, locSCHitMatchParams.dEdx*1.0E3);
+					double locBeta_Timing = locSCHitMatchParams.dPathLength/(29.9792458*(locSCHitMatchParams.dHitTime - locStartTime));
+					dHistMap_SCBetaVsP[locCharge]->Fill(locP, locBeta_Timing);
+				}
 			}
 			if(locTOFHitMatchParams.dTrackTimeBased != NULL)
 			{
@@ -3747,10 +3754,13 @@ void DHistogramAction_ReconnedThrownKinematics::Initialize(JEventLoop* locEventL
 	string locHistName, locHistTitle, locParticleName, locParticleROOTName;
 	Particle_t locPID;
 
+	const DAnalysisUtilities* locAnalysisUtilities = NULL;
+	locEventLoop->GetSingle(locAnalysisUtilities);
+
 	//CREATE THE HISTOGRAMS
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
-		locEventLoop->GetSingle(dAnalysisUtilities);
+		dAnalysisUtilities = locAnalysisUtilities;
 
 		CreateAndChangeTo_ActionDirectory();
 
@@ -6462,11 +6472,11 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 
 void DHistogramAction_MissingTransverseMomentum::Initialize(JEventLoop* locEventLoop)
 {
-        string locHistName, locHistTitle;
-        double locPtPerBin = 1000.0*(dMaxPt - dMinPt)/((double)dNumPtBins);
+	string locHistName, locHistTitle;
+	double locPtPerBin = 1000.0*(dMaxPt - dMinPt)/((double)dNumPtBins);
 
-        vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
-        locEventLoop->Get(locAnalysisUtilitiesVector);
+	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
+	locEventLoop->Get(locAnalysisUtilitiesVector);
 
 	//CREATE THE HISTOGRAMS
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
