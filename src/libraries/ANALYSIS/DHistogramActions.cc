@@ -1028,18 +1028,18 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
 				dHist_SCTrackDeltaPhiVsP = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_SCTrackDeltaPhiVsP = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DDeltaPhiBins, dMinDeltaPhi, dMaxDeltaPhi);
+				dHist_SCTrackDeltaPhiVsP = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DDeltaPhiBins, dSCMatchMinDeltaPhi, dSCMatchMaxDeltaPhi);
 
 			//FCAL
 			locHistName = "FCAL_TrackDistanceVsP";
-			locHistTitle = ";p (GeV/c);FCAL / Track Distance";
+			locHistTitle = ";p (GeV/c);FCAL / Track Distance (cm)";
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
 				dHist_FCALTrackDistanceVsP = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
 				dHist_FCALTrackDistanceVsP = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
 
 			locHistName = "FCAL_TrackDistanceVsTheta";
-			locHistTitle = ";#theta#circ;FCAL / Track Distance";
+			locHistTitle = ";#theta#circ;FCAL / Track Distance (cm)";
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
 				dHist_FCALTrackDistanceVsTheta = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
@@ -1047,14 +1047,14 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 
 			//TOF
 			locHistName = "TOF_TrackDistanceVsP";
-			locHistTitle = ";p (GeV/c);TOF / Track Distance";
+			locHistTitle = ";p (GeV/c);TOF / Track Distance (cm)";
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
 				dHist_TOFTrackDistanceVsP = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
 				dHist_TOFTrackDistanceVsP = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
 
 			locHistName = "TOF_TrackDistanceVsTheta";
-			locHistTitle = ";#theta#circ;TOF / Track Distance";
+			locHistTitle = ";#theta#circ;TOF / Track Distance (cm)";
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
 				dHist_TOFTrackDistanceVsTheta = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
@@ -1069,7 +1069,7 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 				dHist_BCALDeltaPhiVsP = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, 4.0, dNum2DDeltaPhiBins, dMinDeltaPhi, dMaxDeltaPhi);
 
 			locHistName = "BCAL_DeltaZVsTheta";
-			locHistTitle = ";#theta#circ;BCAL / Track #Deltaz";
+			locHistTitle = ";#theta#circ;BCAL / Track #Deltaz (cm)";
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
 				dHist_BCALDeltaZVsTheta = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
@@ -1849,10 +1849,13 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 
 		//SC
 		map<const DTrackTimeBased*, double>::iterator locSCIterator = locSCTrackDistanceMap.begin();
-		for(; locSCIterator != locSCTrackDistanceMap.end(); ++locSCIterator)
+		if(locSCHits.size() <= 4) //don't fill if every paddle fired!
 		{
-			const DTrackTimeBased* locTrackTimeBased = locSCIterator->first;
-			dHist_SCTrackDeltaPhiVsP->Fill(locTrackTimeBased->momentum().Mag(), locSCIterator->second*180.0/TMath::Pi());
+			for(; locSCIterator != locSCTrackDistanceMap.end(); ++locSCIterator)
+			{
+				const DTrackTimeBased* locTrackTimeBased = locSCIterator->first;
+				dHist_SCTrackDeltaPhiVsP->Fill(locTrackTimeBased->momentum().Mag(), locSCIterator->second*180.0/TMath::Pi());
+			}
 		}
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
