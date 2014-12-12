@@ -13,6 +13,8 @@ using namespace std;
 #include <JANA/JEventLoop.h>
 #include <BCAL/DBCALTDCDigiHit.h>
 #include <BCAL/DBCALTDCHit_factory.h>
+#include <DAQ/DF1TDCHit.h>
+
 using namespace jana;
 
 
@@ -22,8 +24,9 @@ using namespace jana;
 jerror_t DBCALTDCHit_factory::init(void)
 {
    /// set the base conversion scale
-   t_scale    = 0.060;    // 60 ps/count
-   t_base      = 0.;    // ns
+   t_scale    = 0.058;    // 60 ps/count
+   t_base     = 0.;    // ns
+   t_rollover = 65250;
    //t_offset   = 0;
 
    return NOERROR;
@@ -80,6 +83,20 @@ jerror_t DBCALTDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
    /// data in HDDM format. The HDDM event source will copy
    /// the precalibrated values directly into the _data vector.
 
+   // Get the trigger time from the f1 TDC
+   // This will need to be replaced once the trigger time is encoded in a particular object
+   vector<const DF1TDCHit *>tdchit;
+   eventLoop->Get(tdchit);
+   int tref=0;
+   for(unsigned int i=0;i<tdchit.size();i++){
+     if(tdchit[i]->rocid==51&&tdchit[i]->slot==17&&tdchit[i]->channel==8){
+       tref=tdchit[i]->time; // in clicks
+       //printf("tref %d %f\n",tdchit[i]->time,tref);
+       break;
+     }
+   }
+
+
    vector<const DBCALTDCDigiHit*> digihits;
    loop->Get(digihits);
    for(unsigned int i=0; i<digihits.size(); i++){
@@ -93,7 +110,30 @@ jerror_t DBCALTDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
       // Apply calibration constants here
       double T = (double)digihit->time;
-      hit->t = t_scale * (T - GetConstant(time_offsets,digihit)) + t_base;
+      double rel_time = 0;
+      //hit->t = t_scale * (T - GetConstant(time_offsets,digihit)) + t_base;
+
+      t_rollover = 65250;
+      // if (runnumber>1776){
+      // 	t_rollover = 64678;
+      // }
+      // if (runnumber>2010){
+      // 	t_rollover = 64466;
+      // }
+
+      if (tref>0){ // got reference signal
+	// Take care of rollover
+	int tdiff=int(digihit->time)-int(tref);
+	if (tdiff<0) tdiff+=t_rollover;
+	else if (tdiff>t_rollover) tdiff-=t_rollover;
+	t_base = -900;
+	rel_time = t_scale * (tdiff - GetConstant(time_offsets,digihit)) + t_base;
+	//printf("event %5i    %3i  %3i  %3i   %f\n",eventnumber,tref,digihit->time,tdiff,rel_time);
+      } else {
+	rel_time = t_scale * (T - GetConstant(time_offsets,digihit)) + t_base;
+      }
+      hit->t = rel_time;
+
 /*
       cout << "BCAL TDC Hit: ( " << digihit->module << ", " << digihit->layer << ", "
            << digihit->sector << ", " << digihit->end << " )  ->  "
