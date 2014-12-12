@@ -39,20 +39,21 @@ bool DSCHit_tdc_cmp(const DSCTDCDigiHit *a,const DSCTDCDigiHit *b)
 jerror_t DSCHit_factory::init(void)
 {
   DELTA_T_ADC_TDC_MAX = 20.0; // ns
+  //DELTA_T_ADC_TDC_MAX = 50.0; // ns
   //DELTA_T_ADC_TDC_MAX = 3600.0; // ns
   gPARMS->SetDefaultParameter("SC:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX,
 			      "Maximum difference in ns between a (calibrated) fADC time and"
 			      " F1TDC time for them to be matched in a single hit");
 
-  //ADC_THRESHOLD = 200.; // adc counts
-  ADC_THRESHOLD = 120.; // adc counts
+  //ADC_THRESHOLD = 200.; // adc counts (= 50 mV threshold)
+  ADC_THRESHOLD = 120.; // adc counts (= 10 Mv threshold)
   gPARMS->SetDefaultParameter("SC:ADC_THRESHOLD",ADC_THRESHOLD,
 			      "Software pulse integral threshold");
 
   /// set the base conversion scales
   a_scale    = 0.0001; 
   t_scale    = 0.0625;   // 62.5 ps/count
-  t_base     = 0.;    // ns
+  t_base     = 0.;       // ns
   t_tdc_base = 0.;
   tdc_scale  = 0.060;    // 60 ps/count
 
@@ -249,17 +250,17 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
    vector<const DF1TDCHit*> tdchit;
    eventLoop->Get(tdchit);
    
-   int tref=0;
+   int tref = 0;
    for(unsigned int i=0;i<tdchit.size();i++)
      {
-       if(tdchit[i]->rocid==51&&tdchit[i]->slot==17&&tdchit[i]->channel==8)
+       if(tdchit[i]->rocid==51 && tdchit[i]->slot==17 && tdchit[i]->channel==8)
 	 {
 	   tref=tdchit[i]->time; // in clicks
 	   break;
 	   //       printf("tref %d %f\n",tdchit[i]->time,tref);
 	 }
      }
-   if (tref>0)
+   if (tref > 0)
      { // got reference signal
        // Next, loop over TDC hits, matching them to the
        // existing fADC hits where possible and updating
@@ -291,8 +292,12 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
        
        //printf("T %d %f\n",digihit->time,0.0559*T);
        //tdc_scale=0.0559; // hard code correctd tdc conversion scale (need to put in CCDB)
-       unsigned int id = digihit->sector-1;
+       unsigned int id = digihit->sector - 1;
        T = tdc_scale * tdiff - tdc_time_offsets[id] + t_tdc_base;
+
+       // cout << "T = " << T << endl;
+       // jout << "T = " << T << endl;
+       // printf("T = %f\n", T);
 
        // Look for existing hits to see if there is a match
        // or create new one if there is no match
@@ -308,17 +313,22 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	 
 	   _data.push_back(hit);
 	 }      
-       hit->t_TDC=T;
+       hit->t_TDC = T;
 
        // Correct for time walk
        // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
-       if (hit->has_fADC && hit->integral>0.0)
+       if (hit->has_fADC && hit->integral > 0.0)
 	 {
-	   double A=hit->integral;
-	   double C1=timewalk_parameters[id][1];
-	   double C2=timewalk_parameters[id][2];
-	   double A0=timewalk_parameters[id][3];
-	   T-=C1*(pow(A,C2)-pow(A0,C2));
+	   double A  = hit->integral;
+	   //jout << "A = " << A << endl;
+	   double C1 = timewalk_parameters[id][1];
+	   //jout << "C1 = " << C1 << endl;
+	   double C2 = timewalk_parameters[id][2];
+	   //jout << "C2 = " << C2 << endl;
+	   //printf("C2 = %f\n", C2);
+	   double A0 = timewalk_parameters[id][3];
+	   //jout << "A0 = " << A0 << endl;
+	   T -= C1*(pow(A,C2)-pow(A0,C2));
 	 }
        
        hit->t = T;
