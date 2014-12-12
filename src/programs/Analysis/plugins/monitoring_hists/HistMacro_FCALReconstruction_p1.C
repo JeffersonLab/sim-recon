@@ -40,6 +40,7 @@
 		locHist_FCALShowerYVsX->GetXaxis()->SetLabelSize(0.04);
 		locHist_FCALShowerYVsX->GetYaxis()->SetLabelSize(0.04);
 		locHist_FCALShowerYVsX->Draw("COLZ");
+		gPad->SetLogz();
 	}
 
 	locCanvas->cd(2);

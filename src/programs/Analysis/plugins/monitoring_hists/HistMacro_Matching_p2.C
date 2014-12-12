@@ -59,6 +59,7 @@
 		locHist_BCAL_DeltaZVsTheta->GetXaxis()->SetLabelSize(0.05);
 		locHist_BCAL_DeltaZVsTheta->GetYaxis()->SetLabelSize(0.05);
 		locHist_BCAL_DeltaZVsTheta->Draw("COLZ");
+		gPad->SetLogz();
 	}
 
 	locCanvas->cd(3);

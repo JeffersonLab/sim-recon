@@ -62,6 +62,7 @@
 		locHist_TOFPointYVsX->GetXaxis()->SetLabelSize(0.05);
 		locHist_TOFPointYVsX->GetYaxis()->SetLabelSize(0.05);
 		locHist_TOFPointYVsX->Draw("COLZ");
+		gPad->SetLogz();
 	}
 
 	locCanvas->cd(4);

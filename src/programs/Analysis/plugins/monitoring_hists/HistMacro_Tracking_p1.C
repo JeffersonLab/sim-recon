@@ -88,11 +88,13 @@
 	gPad->SetGrid();
 	if(locHist_NumDCHitsPerTrackVsTheta != NULL)
 	{
+		locHist_NumDCHitsPerTrackVsTheta->GetYaxis()->SetRangeUser(5.0, 30.0);
 		locHist_NumDCHitsPerTrackVsTheta->GetXaxis()->SetTitleSize(0.05);
 		locHist_NumDCHitsPerTrackVsTheta->GetYaxis()->SetTitleSize(0.05);
 		locHist_NumDCHitsPerTrackVsTheta->GetXaxis()->SetLabelSize(0.05);
 		locHist_NumDCHitsPerTrackVsTheta->GetYaxis()->SetLabelSize(0.05);
 		locHist_NumDCHitsPerTrackVsTheta->Draw("COLZ");
+		gPad->SetLogz();
 	}
 }
 
