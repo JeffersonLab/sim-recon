@@ -43,6 +43,7 @@
 		locHist_PVsTheta_Candidates_QPlus->GetXaxis()->SetLabelSize(0.05);
 		locHist_PVsTheta_Candidates_QPlus->GetYaxis()->SetLabelSize(0.05);
 		locHist_PVsTheta_Candidates_QPlus->Draw("COLZ");
+		gPad->SetLogz();
 	}
 
 	locCanvas->cd(2);
@@ -55,6 +56,7 @@
 		locHist_PVsTheta_WireBased_QPlus->GetXaxis()->SetLabelSize(0.05);
 		locHist_PVsTheta_WireBased_QPlus->GetYaxis()->SetLabelSize(0.05);
 		locHist_PVsTheta_WireBased_QPlus->Draw("COLZ");
+		gPad->SetLogz();
 	}
 
 	locCanvas->cd(3);
@@ -67,6 +69,7 @@
 		locHist_PVsTheta_TimeBased_QPlus->GetXaxis()->SetLabelSize(0.05);
 		locHist_PVsTheta_TimeBased_QPlus->GetYaxis()->SetLabelSize(0.05);
 		locHist_PVsTheta_TimeBased_QPlus->Draw("COLZ");
+		gPad->SetLogz();
 	}
 
 	locCanvas->cd(4);
@@ -79,6 +82,7 @@
 		locHist_PVsTheta_Candidates_QMinus->GetXaxis()->SetLabelSize(0.05);
 		locHist_PVsTheta_Candidates_QMinus->GetYaxis()->SetLabelSize(0.05);
 		locHist_PVsTheta_Candidates_QMinus->Draw("COLZ");
+		gPad->SetLogz();
 	}
 
 	locCanvas->cd(5);
@@ -91,6 +95,7 @@
 		locHist_PVsTheta_WireBased_QMinus->GetXaxis()->SetLabelSize(0.05);
 		locHist_PVsTheta_WireBased_QMinus->GetYaxis()->SetLabelSize(0.05);
 		locHist_PVsTheta_WireBased_QMinus->Draw("COLZ");
+		gPad->SetLogz();
 	}
 
 	locCanvas->cd(6);
@@ -103,6 +108,7 @@
 		locHist_PVsTheta_TimeBased_QMinus->GetXaxis()->SetLabelSize(0.05);
 		locHist_PVsTheta_TimeBased_QMinus->GetYaxis()->SetLabelSize(0.05);
 		locHist_PVsTheta_TimeBased_QMinus->Draw("COLZ");
+		gPad->SetLogz();
 	}
 }
 
