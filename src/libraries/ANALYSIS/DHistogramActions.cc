@@ -1880,7 +1880,7 @@ void DHistogramAction_DetectorStudies::Fill_PIDHists(JEventLoop* locEventLoop)
 	{
 		for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
 		{
-			const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
+			const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestTrackingFOM();
 			int locCharge = ParticleCharge(locChargedTrackHypothesis->PID());
 			if(dHistMap_QCDCdEdXVsP.find(locCharge) == dHistMap_QCDCdEdXVsP.end())
 				continue;
