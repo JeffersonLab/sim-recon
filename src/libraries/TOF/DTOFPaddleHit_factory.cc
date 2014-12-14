@@ -93,21 +93,23 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
   for (unsigned int i = 0; i < hits.size(); i++){
     const DTOFHit *hit = hits[i];
-    if (hit->plane){
-      if (hit->end){
-	P2hitsR.push_back(hit);
-	//P2R[c2r++] = i;
+    if (hit->has_fADC && hit->has_TDC){ // good hits have both ADC and TDC info
+      if (hit->plane){
+	if (hit->end){
+	  P2hitsR.push_back(hit);
+	  //P2R[c2r++] = i;
+	} else {
+	  P2hitsL.push_back(hit);	
+	  //P2L[c2l++] = i;
+	}
       } else {
-	P2hitsL.push_back(hit);	
-	//P2L[c2l++] = i;
-      }
-    } else {
-      if (hit->end){
-	P1hitsR.push_back(hit);
-	//P1R[c1r++] = i;
-      } else {
-	P1hitsL.push_back(hit);
-	//P1L[c1l++] = i;
+	if (hit->end){
+	  P1hitsR.push_back(hit);
+	  //P1R[c1r++] = i;
+	} else {
+	  P1hitsL.push_back(hit);
+	  //P1L[c1l++] = i;
+	}
       }
     }
   }
