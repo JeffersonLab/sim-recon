@@ -34,8 +34,10 @@ class DTOFHit:public jana::JObject{
 			AddString(items, "plane", "%d", plane);
 			AddString(items, "end", "%d", end);
 			AddString(items, "dE", "%12.4f", dE);
+			AddString(items, "integral", "%12.4f",integral);
 			AddString(items, "t", "%12.4f", t);
-			AddString(items, "t_tdc","%12.4f",t_TDC);
+			AddString(items, "t_TDC","%12.4f",t_TDC);
+			AddString(items, "t_fADC","%12.4f",t_fADC);
 		}
 };
 
