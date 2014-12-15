@@ -37,6 +37,7 @@ class DSCHit_factory:public jana::JFactory<DSCHit>{
 		
 		double DELTA_T_ADC_TDC_MAX;
 		double ADC_THRESHOLD;
+		int rollover_count;
 
 		// geometry information
 		static const int MAX_SECTORS = 30.;

@@ -68,7 +68,22 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    /// Read in calibration constants
    jout << "In DSCHit_factory, loading constants..." << endl;
 
-   // load scale factors
+   // F1TDC tframe(ns) and rollover count
+   map<string,int> tdc_parms;
+   double tframe=-1.;
+   rollover_count=0;
+   if (eventLoop->GetCalib("/F1TDC/rollover",tdc_parms))
+     jout << "Error loading /F1TDC/rollover !" <<endl;
+   if (tdc_parms.find("tframe")!=tdc_parms.end())
+     tframe=double(tdc_parms["tframe"]);
+   else 
+     jerr << "Unable to get tframe from /F1TDC/rollover !" <<endl;
+   if (tdc_parms.find("count")!=tdc_parms.end())
+     rollover_count=tdc_parms["count"];
+   else 
+     jerr << "Unable to get rollover count from /F1TDC/rollover !" <<endl;
+		   
+    // load scale factors
    map<string,double> scale_factors;
    // a_scale (SC_ADC_SCALE)
    if (eventLoop->GetCalib("/START_COUNTER/digi_scales", scale_factors))
@@ -84,13 +99,23 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    else
       jerr << "Unable to get SC_ADC_TSCALE from /START_COUNTER/digi_scales !" 
            << endl;
-   // tdc_scale (SC_TDC_SCALE)
-   if (scale_factors.find("SC_TDC_SCALE") != scale_factors.end())
-      tdc_scale = scale_factors["SC_TDC_SCALE"];
-   else
-      jerr << "Unable to get SC_TDC_SCALE from /START_COUNTER/digi_scales !" 
-           << endl;
 
+   // tdc_scale (SC_TDC_SCALE)   
+   // By default we will use the F1TDC entries in the ccdb to find tdc_scale
+   if (tframe>0. && rollover_count>0){ 
+     tdc_scale=tframe/double(rollover_count);
+     //_DBG_ << tdc_scale << endl;
+   }
+   // otherwise fall back on old scheme for getting tdc_scale
+   else if (scale_factors.find("SC_TDC_SCALE") != scale_factors.end())
+     tdc_scale = scale_factors["SC_TDC_SCALE"];
+   else
+     jerr << "Unable to get SC_TDC_SCALE from /START_COUNTER/digi_scales !" 
+	  << endl;
+
+   jout << "TDC scale = " << tdc_scale << " ns/count" << endl;
+
+   
    // load base time offset
    map<string,double> base_time_offset;
    // t_base (SC_BASE_TIME_OFFSET)
@@ -122,6 +147,7 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    // timewalk_parameters (timewalk_parms)
    if(eventLoop->GetCalib("START_COUNTER/timewalk_parms", timewalk_parameters))
 	    jout << "Error loading /START_COUNTER/timewalk_parms !" << endl;
+
 
    /* 
       // load higher order corrections
@@ -284,8 +310,8 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
        // Take care of rollover
        int tdiff = int(digihit->time) - int(tref);
-       if (tdiff < 0) tdiff += 65250;
-       else if (tdiff > 65250) tdiff -= 65250;
+       if (tdiff < 0) tdiff += rollover_count;
+       else if (tdiff > rollover_count) tdiff -= rollover_count;
 
        // Apply calibration constants here
        double T = (double)digihit->time;
@@ -297,7 +323,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
        // cout << "T = " << T << endl;
        // jout << "T = " << T << endl;
-       // printf("T = %f\n", T);
+       //printf("T = %f scale %f\n", T, tdc_scale);
 
        // Look for existing hits to see if there is a match
        // or create new one if there is no match
