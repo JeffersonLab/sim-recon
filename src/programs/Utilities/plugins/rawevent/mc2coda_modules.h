@@ -688,6 +688,7 @@ void WriteDAQconfigBank(CODA_CRATE_MAP *crate, int roc)
 			partype[Npar] = kPARAM250_NPED;      parvalue[Npar++] = 4; // hardwired in 1st gen. firmware
 			break;
 		case FADC125:
+			partype[Npar] = kPARAM125_NSA_NSB;   parvalue[Npar++] = FADC125_WINDOW_WIDTH;
 			partype[Npar] = kPARAM125_WINWIDTH;  parvalue[Npar++] = FADC125_WINDOW_WIDTH;
 			partype[Npar] = kPARAM125_NPED;      parvalue[Npar++] = 4; // hardwired in 1st gen. firmware
 			break;
