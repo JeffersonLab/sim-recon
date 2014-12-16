@@ -46,7 +46,7 @@ class DEventRFBunch_factory : public jana::JFactory<DEventRFBunch>
 		DEventRFBunch_factory(){};
 		~DEventRFBunch_factory(){};
 
-		bool Get_RFTimeGuess(JEventLoop* locEventLoop, double& locRFTimeGuess, double& locRFVariance) const;
+		bool Get_RFTimeGuess(JEventLoop* locEventLoop, double& locRFTimeGuess, double& locRFVariance, DetectorSystem_t& locTimeSource) const;
 
 	private:
 

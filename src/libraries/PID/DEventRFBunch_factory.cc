@@ -133,7 +133,8 @@ jerror_t DEventRFBunch_factory::Select_RFBunch(JEventLoop* locEventLoop, vector<
 	DEventRFBunch* locEventRFBunch = new DEventRFBunch;
 	locEventRFBunch->dTime = locRFTime->dTime + dRFBunchFrequency*double(locBestRFBunchShift);
 	locEventRFBunch->dTimeVariance = locRFTime->dTimeVariance;
-	locEventRFBunch->dNumParticlesVotedForThisTime = locHighestNumVotes;
+	locEventRFBunch->dNumParticleVotes = locHighestNumVotes;
+	locEventRFBunch->dTimeSource = SYS_RF;
 	_data.push_back(locEventRFBunch);
 
 	return NOERROR;
@@ -392,6 +393,7 @@ jerror_t DEventRFBunch_factory::Select_RFBunch_NoRFTime(JEventLoop* locEventLoop
 	vector<pair<double, const JObject*> > locTimes;
 	if(!Find_TrackTimes_SC(locDetectorMatches, locTrackTimeBasedVector, locTimes))
 		return Create_NaNRFBunch();
+	DetectorSystem_t locTimeSource = SYS_START;
 
 	double locRFTimeGuess, locTimeVariance;
 	Get_RFTimeGuess(locTimes, locRFTimeGuess, locTimeVariance);
@@ -403,13 +405,14 @@ jerror_t DEventRFBunch_factory::Select_RFBunch_NoRFTime(JEventLoop* locEventLoop
 	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
 	locEventRFBunch->dTime = locRFTimeGuess + dRFBunchFrequency*double(locBestRFBunchShift);
 	locEventRFBunch->dTimeVariance = locTimeVariance;
-	locEventRFBunch->dNumParticlesVotedForThisTime = locHighestNumVotes;
+	locEventRFBunch->dNumParticleVotes = locHighestNumVotes;
+	locEventRFBunch->dTimeSource = locTimeSource;
 	_data.push_back(locEventRFBunch);
 
 	return NOERROR;
 }
 
-bool DEventRFBunch_factory::Get_RFTimeGuess(JEventLoop* locEventLoop, double& locRFTimeGuess, double& locRFVariance) const
+bool DEventRFBunch_factory::Get_RFTimeGuess(JEventLoop* locEventLoop, double& locRFTimeGuess, double& locRFVariance, DetectorSystem_t& locTimeSource) const
 {
 	//Meant to be called externally
 
@@ -423,9 +426,11 @@ bool DEventRFBunch_factory::Get_RFTimeGuess(JEventLoop* locEventLoop, double& lo
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
 
+	locTimeSource = SYS_NULL;
 	vector<pair<double, const JObject*> > locTimes;
 	if(!Find_TrackTimes_SC(locDetectorMatches, locTrackTimeBasedVector, locTimes))
 		return false;
+	locTimeSource = SYS_START;
 
 	Get_RFTimeGuess(locTimes, locRFTimeGuess, locRFVariance);
 	return true;
@@ -441,7 +446,7 @@ void DEventRFBunch_factory::Get_RFTimeGuess(vector<pair<double, const JObject*> 
 	for(size_t loc_i = 1; loc_i < locTimes.size(); ++loc_i)
 	{
 		double locDeltaT = locTimes[loc_i].first - locTimes[0].first;
-		double locNumRFBucketsShifted = (locDeltaT > 0.0) ? int(locDeltaT/dRFBunchFrequency + 0.5) : int(locDeltaT/dRFBunchFrequency - 0.5);
+		double locNumRFBucketsShifted = (locDeltaT > 0.0) ? floor(locDeltaT/dRFBunchFrequency + 0.5) : floor(locDeltaT/dRFBunchFrequency - 0.5);
 		locRFTimeGuess += locTimes[loc_i].first - locNumRFBucketsShifted*dRFBunchFrequency;
 	}
 	locRFTimeGuess /= double(locTimes.size());
@@ -454,7 +459,8 @@ jerror_t DEventRFBunch_factory::Create_NaNRFBunch(void)
 	DEventRFBunch* locEventRFBunch = new DEventRFBunch;
 	locEventRFBunch->dTime = numeric_limits<double>::quiet_NaN();
 	locEventRFBunch->dTimeVariance = numeric_limits<double>::quiet_NaN();
-	locEventRFBunch->dNumParticlesVotedForThisTime = 0;
+	locEventRFBunch->dNumParticleVotes = 0;
+	locEventRFBunch->dTimeSource = SYS_NULL;
 	_data.push_back(locEventRFBunch);
 
 	return NOERROR;

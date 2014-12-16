@@ -294,7 +294,6 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 
 void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 {
-	//Optional: Create histograms and/or modify member variables.
 	//Create any histograms/trees/etc. within a ROOT lock. 
 		//This is so that when running multithreaded, only one thread is writing to the ROOT file at a time. 
 
@@ -568,6 +567,13 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[locDetectorSystems[loc_i]] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPBins, dMinP, locMaxP);
 			}
 
+			//TRACKING
+			locHistName = "TrackPVsTheta_NoHitMatch";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_TrackPVsTheta_NoHitMatch = new TH2I(locHistName.c_str(), ";#theta#circ;p (GeV/c)", dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+			else //already created by another thread
+				dHist_TrackPVsTheta_NoHitMatch = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+
 			//SC
 			locHistName = "SC_TrackDeltaPhiVsP";
 			locHistTitle = ";p (GeV/c);SC / Track #Delta#phi#circ";
@@ -624,7 +630,7 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 		gDirectory->cd("..");
 
 		//Showers not matched to tracks, Tracks not matched to hits
-		CreateAndChangeTo_Directory("Not-Matched", "Not-Matched");
+		CreateAndChangeTo_Directory("Neutrals", "Neutrals");
 		{
 			//BCAL
 			locHistName = "BCALTrackDOCA";
@@ -693,13 +699,6 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 				dHist_FCALNeutralShowerDeltaTVsE = new TH2I(locHistName.c_str(), ";FCAL Neutral Shower Energy (GeV);FCAL Neutral Shower #Deltat (ns)", dNum2DShowerEnergyBins, dMinShowerEnergy, dMaxShowerEnergy, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
 			else //already created by another thread
 				dHist_FCALNeutralShowerDeltaTVsE = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
-
-			//TRACKING
-			locHistName = "TrackPVsTheta_NoHitMatch";
-			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-				dHist_TrackPVsTheta_NoHitMatch = new TH2I(locHistName.c_str(), ";#theta#circ;p (GeV/c)", dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
-			else //already created by another thread
-				dHist_TrackPVsTheta_NoHitMatch = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 		}
 		gDirectory->cd("..");
 
@@ -1044,7 +1043,7 @@ bool DHistogramAction_DetectorStudies::Perform_Action(JEventLoop* locEventLoop, 
 
 	Fill_ReconstructionHists(locEventLoop);
 	Fill_MatchingHists(locEventLoop);
-	Fill_NotMatchedHists(locEventLoop);
+	Fill_NeutralHists(locEventLoop);
 	Fill_MatchedHists(locEventLoop, false);
 	Fill_PIDHists(locEventLoop);
 
@@ -1364,6 +1363,9 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[SYS_START]->Fill(locTheta, locP);
 			else
 				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[SYS_START]->Fill(locTheta, locP);
+
+			if(!locDetectorMatches->Get_IsMatchedToHit(locTrackTimeBased))
+				dHist_TrackPVsTheta_NoHitMatch->Fill(locTheta, locP);
 		}
 
 		//BCAL
@@ -1448,7 +1450,7 @@ void DHistogramAction_DetectorStudies::Fill_PIDHists(JEventLoop* locEventLoop)
 			if((locSCHitMatchParams.dTrackTimeBased != NULL) && (locEventRFBunch->dTime == locEventRFBunch->dTime))
 			{
 				//If RF time != RF time: Is NaN, and SC time was used as the start time: is cheating
-				if((locEventRFBunch->dNumParticlesVotedForThisTime > 1) || (!locRFTimes.empty()))
+				if((locEventRFBunch->dNumParticleVotes > 1) || (!locRFTimes.empty()))
 				{
 					//If no RF signal SC was used to pick event start time. If only 1 particle voted, is exact match, so ignore!
 					dHistMap_QSCdEdXVsP[locCharge]->Fill(locP, locSCHitMatchParams.dEdx*1.0E3);
@@ -1484,7 +1486,7 @@ void DHistogramAction_DetectorStudies::Fill_PIDHists(JEventLoop* locEventLoop)
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
-void DHistogramAction_DetectorStudies::Fill_NotMatchedHists(JEventLoop* locEventLoop)
+void DHistogramAction_DetectorStudies::Fill_NeutralHists(JEventLoop* locEventLoop)
 {
 	vector<const DNeutralShower*> locNeutralShowers;
 	locEventLoop->Get(locNeutralShowers);
@@ -1538,12 +1540,6 @@ void DHistogramAction_DetectorStudies::Fill_NotMatchedHists(JEventLoop* locEvent
 				dHist_BCALNeutralShowerDeltaTVsE->Fill(locNeutralShowers[loc_i]->dEnergy, locDeltaT);
 				dHist_BCALNeutralShowerDeltaTVsZ->Fill(locNeutralShowers[loc_i]->dSpacetimeVertex.Z(), locDeltaT);
 			}
-		}
-
-		for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
-		{
-			if(!locDetectorMatches->Get_IsMatchedToHit(locTrackTimeBasedVector[loc_i]))
-				dHist_TrackPVsTheta_NoHitMatch->Fill(locTrackTimeBasedVector[loc_i]->momentum().Theta()*180.0/TMath::Pi(), locTrackTimeBasedVector[loc_i]->momentum().Mag());
 		}
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!

@@ -183,7 +183,7 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 		void Fill_ReconstructionHists(JEventLoop* locEventLoop);
-		void Fill_NotMatchedHists(JEventLoop* locEventLoop);
+		void Fill_NeutralHists(JEventLoop* locEventLoop);
 		void Fill_MatchingHists(JEventLoop* locEventLoop);
 		void Fill_MatchedHists(JEventLoop* locEventLoop, bool locUseTruePIDFlag);
 		void Fill_PIDHists(JEventLoop* locEventLoop);
@@ -235,6 +235,7 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		//Matching
 		map<DetectorSystem_t, TH2I*> dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit;
 		map<DetectorSystem_t, TH2I*> dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit;
+		TH2I* dHist_TrackPVsTheta_NoHitMatch;
 		TH2I* dHist_SCTrackDeltaPhiVsP;
 		TH2I* dHist_FCALTrackDistanceVsP;
 		TH2I* dHist_FCALTrackDistanceVsTheta;
@@ -243,7 +244,7 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		TH2I* dHist_BCALDeltaPhiVsP;
 		TH2I* dHist_BCALDeltaZVsTheta;
 
-		//Not Matched To Track (neutrals or hadronics)
+		//Neutrals
 		TH1I* dHist_BCALTrackDOCA;
 		TH1I* dHist_BCALNeutralShowerTime;
 		TH1I* dHist_BCALNeutralShowerEnergy;
@@ -256,9 +257,6 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		TH1I* dHist_FCALNeutralShowerEnergy;
 		TH1I* dHist_FCALNeutralShowerDeltaT;
 		TH2I* dHist_FCALNeutralShowerDeltaTVsE;
-
-		//Not Matched to Hit
-		TH2I* dHist_TrackPVsTheta_NoHitMatch;
 
 		//PID
 		map<int, TH2I*> dHistMap_QSCdEdXVsP; //int is charge: -1, 1

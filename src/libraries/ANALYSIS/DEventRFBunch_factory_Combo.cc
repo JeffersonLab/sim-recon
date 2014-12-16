@@ -164,12 +164,14 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 	locEventLoop->GetSingle(locEventRFBunch);
 
 	double locRFTime, locRFVariance;
+	DetectorSystem_t locTimeSource;
 	if(locEventRFBunch->dTime == locEventRFBunch->dTime)
 	{
 		locRFTime = locEventRFBunch->dTime;
 		locRFVariance = locEventRFBunch->dTimeVariance;
+		locTimeSource = locEventRFBunch->dTimeSource;
 	}
-	else if(!dEventRFBunchFactory->Get_RFTimeGuess(locEventLoop, locRFTime, locRFVariance))
+	else if(!dEventRFBunchFactory->Get_RFTimeGuess(locEventLoop, locRFTime, locRFVariance, locTimeSource))
 	{
 		//no good RF time, set to NaN for all combos
 		DEventRFBunch* locNewEventRFBunch = new DEventRFBunch(*locEventRFBunch);
@@ -332,7 +334,8 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 			DEventRFBunch* locNewEventRFBunch = new DEventRFBunch();
 			locNewEventRFBunch->dTime = locNewRFTime;
 			locNewEventRFBunch->dTimeVariance = locRFVariance;
-			locNewEventRFBunch->dNumParticlesVotedForThisTime = locPropagatedTimes.size();
+			locNewEventRFBunch->dNumParticleVotes = locPropagatedTimes.size();
+			locNewEventRFBunch->dTimeSource = locTimeSource;
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
 			_data.push_back(locNewEventRFBunch);
