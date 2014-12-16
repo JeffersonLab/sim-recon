@@ -106,7 +106,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory_KinFit::Build_ChargedTr
 	double locPathLengthUncertainty = sqrt(locPathLengthUncertainty_Orig*locPathLengthUncertainty_Orig + locPathLengthUncertainty_KinFit*locPathLengthUncertainty_KinFit);
 	locNewChargedTrackHypothesis->setPathLength(locPathLength, locPathLengthUncertainty);
 
-	dPIDAlgorithm->Calc_ChargedPIDFOM(locNewChargedTrackHypothesis, locParticleCombo->Get_EventRFBunch(), true);
+	dPIDAlgorithm->Calc_ChargedPIDFOM(locNewChargedTrackHypothesis, locParticleCombo->Get_EventRFBunch());
 
 	return locNewChargedTrackHypothesis;
 }

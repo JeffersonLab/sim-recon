@@ -57,9 +57,6 @@ class DAnalysisUtilities : public JObject
 		bool Check_ThrownsMatchReaction(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExclusiveMatchFlag) const;
 		bool Check_ThrownsMatchReaction(const DParticleCombo* locThrownCombo, const DReaction* locReaction, bool locExclusiveMatchFlag) const;
 
-		double Calc_Beta_Timing(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const;
-		double Calc_Beta_Timing(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DEventRFBunch* locEventRFBunch) const;
-
 		void Get_UnusedChargedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DChargedTrack*>& locUnusedChargedTracks) const;
 		void Get_UnusedNeutralShowers(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DNeutralShower*>& locUnusedNeutralShowers) const;
 

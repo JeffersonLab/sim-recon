@@ -472,22 +472,6 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(const DParticleCombo* locThr
 	return true;
 }
 
-double DAnalysisUtilities::Calc_Beta_Timing(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const
-{
-	double locStartTime = 0.0, locStartTimeVariance = 0.0;
-	if(!dPIDAlgorithm->Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locRFTimeFixedFlag))
-		return numeric_limits<double>::quiet_NaN();
-	if((!(locEventRFBunch->dTime == locEventRFBunch->dTime)) && (locChargedTrackHypothesis->t0_detector() == locChargedTrackHypothesis->t1_detector()))
-		return numeric_limits<double>::quiet_NaN(); //didn't use RF time, and t0/t1 detectors are the same: don't compute difference
-	return locChargedTrackHypothesis->pathLength()/(29.9792458*(locChargedTrackHypothesis->t1() - locStartTime));
-}
-
-double DAnalysisUtilities::Calc_Beta_Timing(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DEventRFBunch* locEventRFBunch) const
-{
-	double locStartTime = locEventRFBunch->dTime + (locNeutralParticleHypothesis->z() - dTargetZCenter)/29.9792458;
-	return locNeutralParticleHypothesis->pathLength()/(29.9792458*(locNeutralParticleHypothesis->t1() - locStartTime));
-}
-
 void DAnalysisUtilities::Get_UnusedChargedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DChargedTrack*>& locUnusedChargedTracks) const
 {
 	locUnusedChargedTracks.clear();

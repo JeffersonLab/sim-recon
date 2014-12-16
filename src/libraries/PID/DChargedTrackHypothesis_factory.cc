@@ -81,12 +81,19 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 
 	DMatrixDSym locCovarianceMatrix = locChargedTrackHypothesis->errorMatrix();
 
-	// CDC/FDC
+	// CDC/FDC: Default if no other timing info
 	locChargedTrackHypothesis->setTime(locTrackTimeBased->t0());
 	locChargedTrackHypothesis->setT0(locTrackTimeBased->t0(), locTrackTimeBased->t0_err(), SYS_CDC);
 	locChargedTrackHypothesis->setT1(locTrackTimeBased->t0(), locTrackTimeBased->t0_err(), SYS_CDC);
 	locChargedTrackHypothesis->setPathLength(numeric_limits<double>::quiet_NaN(), 0.0);
 	locCovarianceMatrix(6, 6) = locTrackTimeBased->t0_err()*locTrackTimeBased->t0_err();
+
+	// RF Time
+	if(locEventRFBunch->dTimeSource != SYS_NULL)
+	{
+		double locPropagatedRFTime = dPIDAlgorithm->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
+		locChargedTrackHypothesis->setT0(locPropagatedRFTime, locEventRFBunch->dTimeVariance, locEventRFBunch->dTimeSource);
+	}
 
 	// Start Counter
 	DSCHitMatchParams locSCHitMatchParams;
@@ -102,7 +109,9 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 //		double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_START); //uncomment when ready!!
 //		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locSCHitMatchParams.dFlightTimeVariance, locSCHitMatchParams.dHitTimeVariance, locFlightTimePCorrelation); //uncomment when ready!!
 		locCovarianceMatrix(6, 6) = locPropagatedTimeUncertainty*locPropagatedTimeUncertainty; //delete when ready!!
-		locChargedTrackHypothesis->setT0(locPropagatedTime, locPropagatedTimeUncertainty, SYS_START); //update when ready
+
+		if(locEventRFBunch->dTimeSource == SYS_NULL)
+			locChargedTrackHypothesis->setT0(locPropagatedTime, locPropagatedTimeUncertainty, SYS_START); //update when ready
 
 		//add associated objects
 		vector<DSCHitMatchParams> locSCHitMatchParams;
@@ -182,7 +191,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 	locChargedTrackHypothesis->setErrorMatrix(locCovarianceMatrix);
 
 	//Calculate PID ChiSq, NDF, FOM
-	dPIDAlgorithm->Calc_ChargedPIDFOM(locChargedTrackHypothesis, locEventRFBunch, true);
+	dPIDAlgorithm->Calc_ChargedPIDFOM(locChargedTrackHypothesis, locEventRFBunch);
 
 	return locChargedTrackHypothesis;
 }

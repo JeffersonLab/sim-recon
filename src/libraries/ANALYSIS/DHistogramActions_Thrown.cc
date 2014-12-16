@@ -1111,14 +1111,14 @@ bool DHistogramAction_ReconnedThrownKinematics::Perform_Action(JEventLoop* locEv
 			const DChargedTrackHypothesis* locChargedTrackHypothesis = locMCThrownMatching->Get_MatchingChargedHypothesis(locMCThrown, locMatchFOM);
 			if(locChargedTrackHypothesis == NULL)
 				continue; //not reconstructed
-			locBeta_Timing = dAnalysisUtilities->Calc_Beta_Timing(locChargedTrackHypothesis, locEventRFBunch, true);
+			locBeta_Timing = locChargedTrackHypothesis->measuredBeta();
 		}
 		else
 		{
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locMCThrownMatching->Get_MatchingNeutralHypothesis(locMCThrown, locMatchFOM);
 			if(locNeutralParticleHypothesis == NULL)
 				continue; //not reconstructed
-			locBeta_Timing = dAnalysisUtilities->Calc_Beta_Timing(locNeutralParticleHypothesis, locEventRFBunch);
+			locBeta_Timing = locNeutralParticleHypothesis->measuredBeta();
 		}
 
 		if(locMatchFOM < dMinThrownMatchFOM)

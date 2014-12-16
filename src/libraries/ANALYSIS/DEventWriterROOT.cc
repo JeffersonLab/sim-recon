@@ -1366,7 +1366,7 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 			Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "ChiSq_Timing_KinFit", locChargedTrackHypothesis->dChiSq_Timing);
 		Fill_FundamentalData<UInt_t>(locTree, locParticleBranchName, "NDF_DCdEdx", locChargedTrackHypothesis->dNDF_DCdEdx);
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "ChiSq_DCdEdx", locChargedTrackHypothesis->dChiSq_DCdEdx);
-		double locBeta_Timing = dAnalysisUtilities->Calc_Beta_Timing(locChargedTrackHypothesis, locEventRFBunch, true);
+		double locBeta_Timing = locChargedTrackHypothesis->measuredBeta();
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "AvgBeta_Timing", locBeta_Timing);
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "HitTime", locChargedTrackHypothesis->t1());
 
@@ -1424,7 +1424,7 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "ChiSq_Timing_Measured", locNeutralParticleHypothesis_Measured->dChiSq);
 		if(locKinFitFlag)
 			Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "ChiSq_Timing_KinFit", locNeutralParticleHypothesis->dChiSq);
-		double locBeta_Timing = dAnalysisUtilities->Calc_Beta_Timing(locNeutralParticleHypothesis, locEventRFBunch);
+		double locBeta_Timing = locNeutralParticleHypothesis->measuredBeta();
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "AvgBeta_Timing", locBeta_Timing);
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "HitTime", locNeutralParticleHypothesis->t1());
 
@@ -1501,7 +1501,7 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "ChiSq_Timing", locChargedTrackHypothesis->dChiSq_Timing, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		Fill_FundamentalData<UInt_t>(locTree, "Unused", "NDF_DCdEdx", locChargedTrackHypothesis->dNDF_DCdEdx, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "ChiSq_DCdEdx", locChargedTrackHypothesis->dChiSq_DCdEdx, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
-		double locBeta_Timing = dAnalysisUtilities->Calc_Beta_Timing(locChargedTrackHypothesis, locEventRFBunch, true);
+		double locBeta_Timing = locChargedTrackHypothesis->measuredBeta();
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "AvgBeta_Timing", locBeta_Timing, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "HitTime", locChargedTrackHypothesis->t1(), locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 
@@ -1561,7 +1561,7 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "ChiSq_Timing", locNeutralParticleHypothesis->dChiSq, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		Fill_FundamentalData<UInt_t>(locTree, "Unused", "NDF_DCdEdx", 0, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "ChiSq_DCdEdx", 0.0, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
-		double locBeta_Timing = dAnalysisUtilities->Calc_Beta_Timing(locNeutralParticleHypothesis, locEventRFBunch);
+		double locBeta_Timing = locNeutralParticleHypothesis->measuredBeta();
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "AvgBeta_Timing", locBeta_Timing, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "HitTime", locNeutralParticleHypothesis->t1(), locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 

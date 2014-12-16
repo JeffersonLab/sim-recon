@@ -326,8 +326,8 @@ bool DHistogramAction_PID::Perform_Action(JEventLoop* locEventLoop, const DParti
 void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DMCThrownMatching* locMCThrownMatching, const DEventRFBunch* locEventRFBunch)
 {
 	Particle_t locPID = locChargedTrackHypothesis->PID();
-	double locBeta_Timing = dAnalysisUtilities->Calc_Beta_Timing(locChargedTrackHypothesis, locEventRFBunch, true);
-	double locDeltaBeta = locChargedTrackHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
+	double locBeta_Timing = locChargedTrackHypothesis->measuredBeta();
+	double locDeltaBeta = locChargedTrackHypothesis->deltaBeta();
 
 	double locFOM_Timing = (locChargedTrackHypothesis->dNDF_Timing > 0) ? TMath::Prob(locChargedTrackHypothesis->dChiSq_Timing, locChargedTrackHypothesis->dNDF_Timing) : numeric_limits<double>::quiet_NaN();
 	double locFOM_DCdEdx = (locChargedTrackHypothesis->dNDF_DCdEdx > 0) ? TMath::Prob(locChargedTrackHypothesis->dChiSq_DCdEdx, locChargedTrackHypothesis->dNDF_DCdEdx) : numeric_limits<double>::quiet_NaN();
@@ -339,7 +339,7 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 
 	double locTimePull = 0.0;
 	unsigned int locTimeNDF = 0;
-	dParticleID->Calc_TimingChiSq(locChargedTrackHypothesis, locEventRFBunch, true, locTimeNDF, locTimePull);
+	dParticleID->Calc_TimingChiSq(locChargedTrackHypothesis, locTimeNDF, locTimePull);
 
 	japp->RootWriteLock();
 	{
@@ -407,8 +407,8 @@ void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* l
 {
 	Particle_t locPID = locNeutralParticleHypothesis->PID();
 
-	double locBeta_Timing = dAnalysisUtilities->Calc_Beta_Timing(locNeutralParticleHypothesis, locEventRFBunch);
-	double locDeltaBeta = locNeutralParticleHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
+	double locBeta_Timing = locNeutralParticleHypothesis->measuredBeta();
+	double locDeltaBeta = locNeutralParticleHypothesis->deltaBeta();
 
 	double locP = locNeutralParticleHypothesis->momentum().Mag();
 	double locTheta = locNeutralParticleHypothesis->momentum().Theta()*180.0/TMath::Pi();
@@ -417,7 +417,7 @@ void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* l
 
 	double locTimePull = 0.0;
 	unsigned int locTimeNDF = 0;
-	dParticleID->Calc_TimingChiSq(locNeutralParticleHypothesis, locEventRFBunch, locTimeNDF, locTimePull);
+	dParticleID->Calc_TimingChiSq(locNeutralParticleHypothesis, locTimeNDF, locTimePull);
 
 	japp->RootWriteLock();
 	{
@@ -1046,23 +1046,13 @@ void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLo
 	Particle_t locPID = locKinematicData->PID();
 	DVector3 locMomentum = locKinematicData->momentum();
 	DVector3 locPosition = locKinematicData->position();
+
 	double locPhi = locMomentum.Phi()*180.0/TMath::Pi();
 	double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
 	double locP = locMomentum.Mag();
 
-	double locBeta_Timing, locDeltaBeta;
-	if(ParticleCharge(locPID) == 0)
-	{
-		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locKinematicData);
-		locBeta_Timing = dAnalysisUtilities->Calc_Beta_Timing(locNeutralParticleHypothesis, locEventRFBunch);
-		locDeltaBeta = locNeutralParticleHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
-	}
-	else
-	{
-		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locKinematicData);
-		locBeta_Timing = dAnalysisUtilities->Calc_Beta_Timing(locChargedTrackHypothesis, locEventRFBunch, true);
-		locDeltaBeta = locChargedTrackHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
-	}
+	double locBeta_Timing = locKinematicData->measuredBeta();
+	double locDeltaBeta = locKinematicData->deltaBeta();
 
 	japp->RootWriteLock();
 	{

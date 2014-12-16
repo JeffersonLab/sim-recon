@@ -89,7 +89,7 @@ class DParticleID:public jana::JObject{
 	bool Get_BestTOFMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DTOFHitMatchParams& locBestMatchParams) const;
 	bool Get_BestFCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DShowerMatchParams& locBestMatchParams) const;
 
-	//matching showers to tracks routines (called by DDetectorMatches factory)
+	//matching showers to tracks routines (mostly called by DDetectorMatches factory)
 	bool Distance_ToTrack(const DBCALShower* locBCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance, double& locDeltaPhi, double& locDeltaZ) const;
 	bool Distance_ToTrack(const DFCALShower* locFCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const;
 	bool Distance_ToTrack(const DTOFPoint* locTOFPoint, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const;
@@ -102,11 +102,9 @@ class DParticleID:public jana::JObject{
 
   virtual Particle_t IDTrack(float locCharge, float locMass) const;
 
-  void Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locPropagatedRFTime, bool locRFTimeFixedFlag) const;
-  bool Calc_TrackStartTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locStartTime, double& locStartTimeVariance, bool locRFTimeFixedFlag) const;
-  double Calc_TimingChiSq(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag, unsigned int &locNDF, double& locTimingPull) const;
-  double Calc_TimingChiSq(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DEventRFBunch* locEventRFBunch, unsigned int &locNDF, double& locPull) const;
-  void Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const;
+  double Calc_PropagatedRFTime(const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch) const;
+  double Calc_TimingChiSq(const DKinematicData* locKinematicData, unsigned int &locNDF, double& locTimingPull) const;
+  void Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const;
 
   protected:
 		// gas material properties
