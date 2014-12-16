@@ -18,7 +18,7 @@ using namespace std;
 
 // This flag allows us to switch back and forth from using HDEVIO and
 // the CODA-supplied EVIO
-#define USE_HDEVIO 0
+#define USE_HDEVIO 1
 
 //#define ENABLE_UPSAMPLING
 
