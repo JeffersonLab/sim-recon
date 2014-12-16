@@ -226,6 +226,7 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		TH1I* dHist_TrackingFOM;
 		TH2I* dHist_TrackingFOMVsTheta;
 		TH2I* dHist_TrackingFOMVsP;
+		TH2I* dHist_TrackingFOMVsNumHits;
 		map<int, TH2I*> dHistMap_PVsTheta_Candidates; //int is charge
 		map<int, TH2I*> dHistMap_PVsTheta_WireBased; //int is charge
 		map<int, TH2I*> dHistMap_PVsTheta_TimeBased; //int is charge

@@ -465,7 +465,7 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 
 			locHistName = "NumDCHitsPerTrackVsTheta";
 			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-				dHist_NumDCHitsPerTrackVsTheta = new TH2I(locHistName.c_str(), ";#theta#circ;# Track Hits", dNum2DThetaBins, dMinTheta, dMaxTheta, 50, 0.5, 50.5);
+				dHist_NumDCHitsPerTrackVsTheta = new TH2I(locHistName.c_str(), ";#theta#circ;# Track Hits", dNum2DThetaBins, dMinTheta, dMaxTheta, 46, 4.5, 50.5);
 			else //already created by another thread
 				dHist_NumDCHitsPerTrackVsTheta = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
@@ -486,6 +486,12 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 				dHist_TrackingFOMVsTheta = new TH2I(locHistName.c_str(), ";#theta#circ;Confidence Level", dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DFOMBins, 0.0, 1.0);
 			else //already created by another thread
 				dHist_TrackingFOMVsTheta = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "TrackingFOMVsNumHits";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_TrackingFOMVsNumHits = new TH2I(locHistName.c_str(), ";# Track Hits;Confidence Level", 46, 4.5, 50.5, dNum2DFOMBins, 0.0, 1.0);
+			else //already created by another thread
+				dHist_TrackingFOMVsNumHits = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
 			for(int locCharge = -1; locCharge <= 1; locCharge += 2)
 			{
@@ -1190,6 +1196,7 @@ void DHistogramAction_DetectorStudies::Fill_ReconstructionHists(JEventLoop* locE
 			dHist_TrackingFOM->Fill(locTrackTimeBased->FOM);
 			dHist_TrackingFOMVsTheta->Fill(locTheta, locTrackTimeBased->FOM);
 			dHist_TrackingFOMVsP->Fill(locP, locTrackTimeBased->FOM);
+			dHist_TrackingFOMVsNumHits->Fill(locTrackTimeBased->Ndof + 5, locTrackTimeBased->FOM);
 
 			if(locTrackTimeBased->FOM > dGoodTrackFOM)
 				dHistMap_PVsTheta_TimeBased_GoodTrackFOM[locCharge]->Fill(locTheta, locP);
