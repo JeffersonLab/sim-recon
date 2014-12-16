@@ -1420,9 +1420,6 @@ void DHistogramAction_DetectorStudies::Fill_PIDHists(JEventLoop* locEventLoop)
 	const DEventRFBunch* locEventRFBunch = NULL;
 	locEventLoop->GetSingle(locEventRFBunch);
 
-	vector<const DRFTime*> locRFTimes;
-	locEventLoop->Get(locRFTimes);
-
 	//Fill Histograms
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
@@ -1444,10 +1441,10 @@ void DHistogramAction_DetectorStudies::Fill_PIDHists(JEventLoop* locEventLoop)
 			const DSCHitMatchParams& locSCHitMatchParams = locChargedTrackHypothesis->dSCHitMatchParams;
 			const DShowerMatchParams& locBCALShowerMatchParams = locChargedTrackHypothesis->dBCALShowerMatchParams;
 
-			if((locSCHitMatchParams.dTrackTimeBased != NULL) && (locEventRFBunch->dTime == locEventRFBunch->dTime))
+			if(locSCHitMatchParams.dTrackTimeBased != NULL)
 			{
-				//If RF time != RF time: Is NaN, and SC time was used as the start time: is cheating
-				if((locEventRFBunch->dNumParticleVotes > 1) || (!locRFTimes.empty()))
+				//If SC was used for RF time, and only 1 particle voted: is cheating, don't fill
+				if((locEventRFBunch->dTimeSource != SYS_START) || (locEventRFBunch->dNumParticleVotes > 1))
 				{
 					//If no RF signal SC was used to pick event start time. If only 1 particle voted, is exact match, so ignore!
 					dHistMap_QSCdEdXVsP[locCharge]->Fill(locP, locSCHitMatchParams.dEdx*1.0E3);
