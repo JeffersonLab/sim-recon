@@ -37,6 +37,7 @@ enum daq_param_type{
 	kPARAMF1_TRIGLAT          = 0x0603,
 	kPARAMF1_HSDIV            = 0x0604,
 	kPARAMF1_BINSIZE          = 0x0605,  // in picoseconds
+	kPARAMF1_REFCLKDIV        = 0x0606,
 	
 	kPARAMCAEN1290_WINWIDTH   = 0x1001,
 	kPARAMCAEN1290_WINOFFSET  = 0x1002,
