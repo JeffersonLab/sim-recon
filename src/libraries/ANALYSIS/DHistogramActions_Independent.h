@@ -52,6 +52,7 @@
 #include "FDC/DFDCHit.h"
 #include "TOF/DTOFPoint.h"
 #include "TOF/DTOFHit.h"
+#include "TOF/DTOFPaddleHit.h"
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALHit.h"
 #include "FCAL/DFCALShower.h"
@@ -121,7 +122,7 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		//user can call any of these three constructors
 		DHistogramAction_DetectorStudies(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_DetectorStudies", false, locActionUniqueString), 
-		dNumTimeBins(800), dNumShowerEnergyBins(800), dNumFCALTOFXYBins(240), dNumPhiBins(720), dNumHitEnergyBins(500), dNum2DBCALZBins(450), dNumTrackDOCABins(800), dNumBetaBins(400), 
+		dNumTimeBins(800), dNumShowerEnergyBins(800), dNumFCALTOFXYBins(240), dNumPhiBins(720), dNumHitEnergyBins(500), dNum2DBCALZBins(450), dNumTrackDOCABins(400), dNumBetaBins(400), 
 		dNumDeltaTBins(400), dNumShowerDepthBins(400), dNum2DTimeBins(400), dNum2DShowerEnergyBins(400), dNum2DPhiBins(360), dNum2DHitEnergyBins(250), dNum2DThetaBins(280), 
 		dNum2DPBins(400), dNum2DDeltaTBins(400), dNumdEdxBins(800), dNum2DdEdxBins(400), dNumDeltaPhiBins(600), dNumFOMBins(500), dNum2DFOMBins(200), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(300), dNum2DTrackDOCABins(200), 
 		dMinTime(-200.0), dMaxTime(200.0), dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinTheta(0.0), dMaxTheta(140.0), dMinHitEnergy(0.0), 
@@ -137,7 +138,7 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 
 		DHistogramAction_DetectorStudies(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_DetectorStudies", false, locActionUniqueString), 
-		dNumTimeBins(800), dNumShowerEnergyBins(800), dNumFCALTOFXYBins(240), dNumPhiBins(720), dNumHitEnergyBins(500), dNum2DBCALZBins(450), dNumTrackDOCABins(800), dNumBetaBins(400), 
+		dNumTimeBins(800), dNumShowerEnergyBins(800), dNumFCALTOFXYBins(240), dNumPhiBins(720), dNumHitEnergyBins(500), dNum2DBCALZBins(450), dNumTrackDOCABins(400), dNumBetaBins(400), 
 		dNumDeltaTBins(400), dNumShowerDepthBins(400), dNum2DTimeBins(400), dNum2DShowerEnergyBins(400), dNum2DPhiBins(360), dNum2DHitEnergyBins(250), dNum2DThetaBins(280), 
 		dNum2DPBins(400), dNum2DDeltaTBins(400), dNumdEdxBins(800), dNum2DdEdxBins(400), dNumDeltaPhiBins(600), dNumFOMBins(500), dNum2DFOMBins(200), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(300), dNum2DTrackDOCABins(200), 
 		dMinTime(-200.0), dMaxTime(200.0), dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinTheta(0.0), dMaxTheta(140.0), dMinHitEnergy(0.0), 
@@ -153,7 +154,7 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 
 		DHistogramAction_DetectorStudies(void) : 
 		DAnalysisAction(NULL, "Hist_DetectorStudies", false, ""), 
-		dNumTimeBins(800), dNumShowerEnergyBins(800), dNumFCALTOFXYBins(240), dNumPhiBins(720), dNumHitEnergyBins(500), dNum2DBCALZBins(450), dNumTrackDOCABins(800), dNumBetaBins(400), 
+		dNumTimeBins(800), dNumShowerEnergyBins(800), dNumFCALTOFXYBins(240), dNumPhiBins(720), dNumHitEnergyBins(500), dNum2DBCALZBins(450), dNumTrackDOCABins(400), dNumBetaBins(400), 
 		dNumDeltaTBins(400), dNumShowerDepthBins(400), dNum2DTimeBins(400), dNum2DShowerEnergyBins(400), dNum2DPhiBins(360), dNum2DHitEnergyBins(250), dNum2DThetaBins(280), 
 		dNum2DPBins(400), dNum2DDeltaTBins(400), dNumdEdxBins(800), dNum2DdEdxBins(400), dNumDeltaPhiBins(600), dNumFOMBins(500), dNum2DFOMBins(200), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(300), dNum2DTrackDOCABins(200), 
 		dMinTime(-200.0), dMaxTime(200.0), dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinTheta(0.0), dMaxTheta(140.0), dMinHitEnergy(0.0), 
@@ -240,10 +241,14 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		TH2I* dHist_SCTrackDeltaPhiVsP;
 		TH2I* dHist_FCALTrackDistanceVsP;
 		TH2I* dHist_FCALTrackDistanceVsTheta;
-		TH2I* dHist_TOFTrackDistanceVsP;
-		TH2I* dHist_TOFTrackDistanceVsTheta;
 		TH2I* dHist_BCALDeltaPhiVsP;
 		TH2I* dHist_BCALDeltaZVsTheta;
+		TH2I* dHist_TOFTrackDistanceVsP;
+		TH2I* dHist_TOFTrackDistanceVsTheta;
+		TH2I* dHist_TOFTrackDistanceVsHorizontalPaddle;
+		TH2I* dHist_TOFTrackDistanceVsVerticalPaddle;
+		TH1I* dHist_TOFTrackDistance_BothPlanes;
+		TH1I* dHist_TOFTrackDistance_OnePlane;
 
 		//Neutrals
 		TH1I* dHist_BCALTrackDOCA;

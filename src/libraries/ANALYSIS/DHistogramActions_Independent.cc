@@ -603,6 +603,21 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 			else
 				dHist_FCALTrackDistanceVsTheta = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, 20.0, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
 
+			//BCAL
+			locHistName = "BCAL_DeltaPhiVsP";
+			locHistTitle = ";p (GeV/c);BCAL / Track #Delta#phi#circ";
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHist_BCALDeltaPhiVsP = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHist_BCALDeltaPhiVsP = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, 4.0, dNum2DDeltaPhiBins, dMinDeltaPhi, dMaxDeltaPhi);
+
+			locHistName = "BCAL_DeltaZVsTheta";
+			locHistTitle = ";#theta#circ;BCAL / Track #Deltaz (cm)";
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHist_BCALDeltaZVsTheta = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHist_BCALDeltaZVsTheta = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DDeltaZBins, dMinDeltaZ, dMaxDeltaZ);
+
 			//TOF
 			locHistName = "TOF_TrackDistanceVsP";
 			locHistTitle = ";p (GeV/c);TOF / Track Distance (cm)";
@@ -618,20 +633,33 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 			else
 				dHist_TOFTrackDistanceVsTheta = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, 20.0, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
 
-			//BCAL
-			locHistName = "BCAL_DeltaPhiVsP";
-			locHistTitle = ";p (GeV/c);BCAL / Track #Delta#phi#circ";
+			locHistName = "TOF_TrackDistanceVsHorizontalPaddle";
+			locHistTitle = ";TOF Horizontal Paddle;TOF / Track Distance (cm)";
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_BCALDeltaPhiVsP = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHist_TOFTrackDistanceVsHorizontalPaddle = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_BCALDeltaPhiVsP = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, 4.0, dNum2DDeltaPhiBins, dMinDeltaPhi, dMaxDeltaPhi);
+				dHist_TOFTrackDistanceVsHorizontalPaddle = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
 
-			locHistName = "BCAL_DeltaZVsTheta";
-			locHistTitle = ";#theta#circ;BCAL / Track #Deltaz (cm)";
+			locHistName = "TOF_TrackDistanceVsVerticalPaddle";
+			locHistTitle = ";TOF Vertical Paddle;TOF / Track Distance (cm)";
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_BCALDeltaZVsTheta = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHist_TOFTrackDistanceVsVerticalPaddle = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_BCALDeltaZVsTheta = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DDeltaZBins, dMinDeltaZ, dMaxDeltaZ);
+				dHist_TOFTrackDistanceVsVerticalPaddle = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+
+			locHistName = "TOF_TrackDistance_BothPlanes";
+			locHistTitle = "TOF Hit in Both Planes;TOF / Track Distance (cm)";
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHist_TOFTrackDistance_BothPlanes = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHist_TOFTrackDistance_BothPlanes = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+
+			locHistName = "TOF_TrackDistance_OnePlane";
+			locHistTitle = "TOF Hit in One Plane;TOF / Track Distance (cm)";
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHist_TOFTrackDistance_OnePlane = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHist_TOFTrackDistance_OnePlane = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
 		}
 		gDirectory->cd("..");
 
@@ -1290,7 +1318,7 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 	}
 
 	//TRACK / TOF MATCHES
-	map<const DTrackTimeBased*, double> locTOFTrackDistanceMap;
+	map<const DTrackTimeBased*, pair<const DTOFPoint*, double> > locTOFTrackDistanceMap;
 	for(locTimeBasedIterator = locBestTrackTimeBasedMap.begin(); locTimeBasedIterator != locBestTrackTimeBasedMap.end(); ++locTimeBasedIterator)
 	{
 		const DTrackTimeBased* locTrackTimeBased = locTimeBasedIterator->second;
@@ -1299,17 +1327,20 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 		if(locReferenceTrajectory == NULL)
 			continue;
 		double locMinDistance = 999.0;
+		const DTOFPoint* locClosestTOFPoint = NULL;
 		for(size_t loc_i = 0; loc_i < locTOFPoints.size(); ++loc_i)
 		{
 			double locDistance = 0.0;
 			if(!dParticleID->Distance_ToTrack(locTOFPoints[loc_i], locReferenceTrajectory, locInputStartTime, locDistance))
 				continue;
-			if(locDistance < locMinDistance)
-				locMinDistance = locDistance;
+			if(locDistance > locMinDistance)
+				continue;
+			locMinDistance = locDistance;
+			locClosestTOFPoint = locTOFPoints[loc_i];
 		}
 		if(locMinDistance > 998.0)
 			continue;
-		locTOFTrackDistanceMap[locTrackTimeBased] = locMinDistance;
+		locTOFTrackDistanceMap[locTrackTimeBased] = pair<const DTOFPoint*, double>(locClosestTOFPoint, locMinDistance);
 	}
 
 	//TRACK / SC MATCHES
@@ -1394,12 +1425,32 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 		}
 
 		//TOF
-		map<const DTrackTimeBased*, double>::iterator locTOFIterator = locTOFTrackDistanceMap.begin();
+		map<const DTrackTimeBased*, pair<const DTOFPoint*, double> >::iterator locTOFIterator = locTOFTrackDistanceMap.begin();
 		for(; locTOFIterator != locTOFTrackDistanceMap.end(); ++locTOFIterator)
 		{
 			const DTrackTimeBased* locTrackTimeBased = locTOFIterator->first;
-			dHist_TOFTrackDistanceVsP->Fill(locTrackTimeBased->momentum().Mag(), locTOFIterator->second);
-			dHist_TOFTrackDistanceVsTheta->Fill(locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi(), locTOFIterator->second);
+			const DTOFPoint* locTOFPoint = locTOFIterator->second.first;
+			double locDistance = locTOFIterator->second.second;
+
+			dHist_TOFTrackDistanceVsP->Fill(locTrackTimeBased->momentum().Mag(), locDistance);
+			dHist_TOFTrackDistanceVsTheta->Fill(locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi(), locDistance);
+
+			vector<const DTOFPaddleHit*> locPaddleHits;
+			locTOFPoint->Get(locPaddleHits);
+
+			if(locPaddleHits.size() == 2)
+				dHist_TOFTrackDistance_BothPlanes->Fill(locDistance);
+			else
+				dHist_TOFTrackDistance_OnePlane->Fill(locDistance);
+
+			for(size_t loc_i = 0; loc_i < locPaddleHits.size(); ++loc_i)
+			{
+				int locTOFPaddle = locPaddleHits[loc_i]->bar;
+				if(locPaddleHits[loc_i]->orientation) //horizontal
+					dHist_TOFTrackDistanceVsHorizontalPaddle->Fill(locTOFPaddle, locDistance);
+				else //vertical
+					dHist_TOFTrackDistanceVsVerticalPaddle->Fill(locTOFPaddle, locDistance);
+			}
 		}
 
 		//SC
