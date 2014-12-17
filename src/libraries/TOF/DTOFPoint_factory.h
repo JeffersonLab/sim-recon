@@ -47,7 +47,9 @@ class DTOFPoint_factory : public JFactory<DTOFPoint>
 				double t;
 				double pos_cut; //x_cut for horizontal bars, y_cut for vertical bars
 				double t_cut;
-				const DTOFPaddleHit *TOFHit;
+				const DTOFPaddleHit* TOFHit;
+				bool dIsDoubleEndedBar;
+				bool dPositionWellDefinedFlag;
 		};
 		
 		class tof_spacetimehitmatch_t
@@ -55,19 +57,25 @@ class DTOFPoint_factory : public JFactory<DTOFPoint>
 			public:
 				double delta_r;
 				double delta_t;
-				const tof_spacetimehit_t* dTOFSpacetimeHit_Horizontal;
-				const tof_spacetimehit_t* dTOFSpacetimeHit_Vertical;
+				tof_spacetimehit_t* dTOFSpacetimeHit_Horizontal;
+				tof_spacetimehit_t* dTOFSpacetimeHit_Vertical;
+				bool dPositionWellDefinedFlag; //hopefully 2, is 1 if one is single-ended, or E < threshold
 		};
 
 	private:
 		jerror_t brun(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
-		
-		tof_spacetimehit_t Build_TOFSpacetimeHit_Horizontal(const DTOFPaddleHit* locTOFHit);
-		tof_spacetimehit_t Build_TOFSpacetimeHit_Vertical(const DTOFPaddleHit* locTOFHit);
-		bool Create_TOFPoint(const tof_spacetimehit_t* locTOFSpacetimeHit_Horizontal, const tof_spacetimehit_t* locTOFSpacetimeHit_Vertical);
+
+		tof_spacetimehit_t* Get_TOFSpacetimeHitResource(void);
+		tof_spacetimehit_t* Build_TOFSpacetimeHit_Horizontal(const DTOFPaddleHit* locTOFHit);
+		tof_spacetimehit_t* Build_TOFSpacetimeHit_Vertical(const DTOFPaddleHit* locTOFHit);
+		void Create_TOFPoint(const tof_spacetimehit_t* locTOFSpacetimeHit_Horizontal, const tof_spacetimehit_t* locTOFSpacetimeHit_Vertical);
 
 		float dPositionMatchCut_DoubleEnded;
+
+		size_t MAX_TOFSpacetimeHitPoolSize;
+		deque<tof_spacetimehit_t*> dTOFSpacetimeHitPool_All;
+		deque<tof_spacetimehit_t*> dTOFSpacetimeHitPool_Available;
 };
 
 #endif // _DTOFPoint_factory_
