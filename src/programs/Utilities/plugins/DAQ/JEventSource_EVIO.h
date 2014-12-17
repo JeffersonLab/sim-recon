@@ -171,6 +171,8 @@ class JEventSource_EVIO: public jana::JEventSource{
           EVIOSourceType GetEVIOSourceType(void){ return source_type; }
 		            void AddROCIDtoParseList(uint32_t rocid){ ROCIDS_TO_PARSE.insert(rocid); }
 		   set<uint32_t> GetROCIDParseList(uint32_t rocid){ return ROCIDS_TO_PARSE; }
+        static uint32_t* GetEVIOBufferFromRef(void *ref){ return ((ObjList*)ref)->eviobuff; }
+         static uint32_t GetEVIOBufferSizeFromRef(void *ref){ return ((ObjList*)ref)->eviobuff_size; }
 
 	protected:
 	
