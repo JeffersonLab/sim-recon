@@ -15,6 +15,8 @@ using namespace std;
 #include "DTAGHGeometry.h"
 #include "DTAGHHit_factory.h"
 #include <DAQ/Df250PulseIntegral.h>
+#include "DAQ/DF1TDCHit.h"
+
 using namespace jana;
 
 const int DTAGHHit_factory::k_counter_dead;
@@ -34,6 +36,7 @@ jerror_t DTAGHHit_factory::init(void)
    fadc_t_scale = 0;
    tdc_t_scale = 0;
    t_base = 0;
+   t_tdc_base=0;
 
    // calibration constants stored by counter index
    for (int counter = 0; counter <= TAGH_MAX_COUNTER; ++counter) {
@@ -60,6 +63,22 @@ jerror_t DTAGHHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 
    jout << "In DTAGHHit_factory, loading constants..." << std::endl;
 
+   // F1TDC tframe(ns) and rollover count
+   map<string,int> tdc_parms;
+   double tframe=-1.;
+   rollover_count=0;
+   if (eventLoop->GetCalib("/F1TDC/rollover",tdc_parms))
+     jout << "Error loading /F1TDC/rollover !" <<endl;
+   if (tdc_parms.find("tframe")!=tdc_parms.end())
+     tframe=double(tdc_parms["tframe"]);
+   else 
+     jerr << "Unable to get tframe from /F1TDC/rollover !" <<endl;
+   if (tdc_parms.find("count")!=tdc_parms.end())
+     rollover_count=tdc_parms["count"];
+   else 
+     jerr << "Unable to get rollover count from /F1TDC/rollover !" <<endl;
+
+
    // load base time offset
    map<string,double> base_time_offset;
    if (eventLoop->GetCalib("/PHOTON_BEAM/hodoscope/base_time_offset",base_time_offset))
@@ -68,6 +87,23 @@ jerror_t DTAGHHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
        t_base = base_time_offset["TAGH_BASE_TIME_OFFSET"];
    else
        jerr << "Unable to get TAGH_BASE_TIME_OFFSET from /PHOTON_BEAM/hodoscope/base_time_offset !" << endl;
+
+    if (base_time_offset.find("TAGH_TDC_BASE_TIME_OFFSET") != base_time_offset.end())
+       t_tdc_base = base_time_offset["TAGH_TDC_BASE_TIME_OFFSET"];
+   else
+       jerr << "Unable to get TAGH_TDC_BASE_TIME_OFFSET from /PHOTON_BEAM/hodoscope/base_time_offset !" << endl;
+
+   // tdc_t_scale
+   // By default we will use the F1TDC entries in the ccdb to find tdc_scale
+   if (tframe>0. && rollover_count>0){ 
+     tdc_t_scale=tframe/double(rollover_count);
+     //_DBG_ << tdc_scale << endl;
+   }
+   else {
+     jerr << "Unable to get TDC_SCALE from database !" 
+	  << endl;
+   }
+   jout << "TDC scale = " << tdc_t_scale << " ns/count" << endl;
 
    if (load_ccdb_constants("fadc_gains", "gain", fadc_gains) &&
        load_ccdb_constants("fadc_pedestals", "pedestal", fadc_pedestals) &&
@@ -137,37 +173,61 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
       double A = digihit->pulse_integral;
       double T = digihit->pulse_time;
       A -= pedestal * digihit->nsamples_integral;
+      hit->integral=A;
       hit->npe_fadc = A * fadc_a_scale * fadc_gains[counter];
       hit->time_fadc = T * fadc_t_scale - fadc_time_offsets[counter] + t_base;
+      hit->time_tdc=0.;
+      hit->t=hit->time_fadc;
+      hit->has_fADC=true;
+      hit->has_TDC=false;
 
       hit->AddAssociatedObject(digihit);
       _data.push_back(hit);
    }
-      
-   // Second, loop over TDC hits, matching them to the existing fADC hits
-   // where possible and updating their time information. If no match is
-   // found, then create a new hit with just the TDC info.
-   vector<const DTAGHTDCDigiHit*> tdcdigihits;
-   loop->Get(tdcdigihits);
-   for (unsigned int i=0; i < tdcdigihits.size(); i++) {
-      const DTAGHTDCDigiHit *digihit = tdcdigihits[i];
+   
+   // Get the trigger time from the f1 TDC
+   vector<const DF1TDCHit*> tdchit;
+   eventLoop->Get(tdchit);
+   
+   int tref = 0;
+   for(unsigned int i=0;i<tdchit.size();i++)
+     {
+       if(tdchit[i]->rocid==51 && tdchit[i]->slot==17 && tdchit[i]->channel==8)
+	 {
+	   tref=tdchit[i]->time; // in clicks
+	   break;
+	   //       printf("tref %d %f\n",tdchit[i]->time,tref);
+	 }
+     }
+   if (tref > 0){
+     // Next, loop over TDC hits, matching them to the existing fADC hits
+     // where possible and updating their time information. If no match is
+     // found, then create a new hit with just the TDC info.
+     vector<const DTAGHTDCDigiHit*> tdcdigihits;
+     loop->Get(tdcdigihits);
+     for (unsigned int i=0; i < tdcdigihits.size(); i++) {
+       const DTAGHTDCDigiHit *digihit = tdcdigihits[i];
+       
+       // Take care of rollover
+       int tdiff = int(digihit->time) - int(tref);
+       if (tdiff < 0) tdiff += rollover_count;
+       else if (tdiff > rollover_count) tdiff -= rollover_count;
 
-      // Apply calibration constants here
-      int counter = digihit->counter_id;
-      double T = (double)digihit->time;
-      T = T * tdc_t_scale - tdc_time_offsets[counter] + t_base;
-
-      // Look for existing hits to see if there is a match
-      // or create new one if there is no match
-      DTAGHHit *hit = 0;
-      for (unsigned int j=0; j < _data.size(); ++j) {
+       // Apply calibration constants here
+       int counter = digihit->counter_id;
+       double T = tdiff* tdc_t_scale - tdc_time_offsets[counter] + t_tdc_base;
+       
+       // Look for existing hits to see if there is a match
+       // or create new one if there is no match
+       DTAGHHit *hit = 0;
+       for (unsigned int j=0; j < _data.size(); ++j) {
          if (_data[j]->counter_id == counter &&
              fabs(T - _data[j]->time_fadc) < DELTA_T_ADC_TDC_MATCH_NS)
-         {
-            hit = _data[j];
-         }
-      }
-      if (hit == 0) {
+	   {
+	     hit = _data[j];
+	   }
+       }
+       if (hit == 0) {
          hit = new DTAGHHit;
          hit->counter_id = counter;
          double Elow = taghGeom.getElow(counter);
@@ -175,15 +235,20 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
          hit->E = (Elow + Ehigh)/2;
          hit->time_fadc = 0;
          hit->npe_fadc = 0;
+	 hit->has_fADC=false;
          _data.push_back(hit);
-      }      
-      hit->t = T;
+       }      
+       hit->time_tdc=T;
+       hit->has_TDC=true;
 
-      // apply time-walk corrections?
-      
-      hit->AddAssociatedObject(digihit);
+       hit->t = T;
+       
+       // apply time-walk corrections?
+       
+       hit->AddAssociatedObject(digihit);
+     }
    }
-   
+
    return NOERROR;
 }
 

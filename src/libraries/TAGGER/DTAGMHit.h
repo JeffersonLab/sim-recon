@@ -19,14 +19,18 @@ class DTAGMHit:public jana::JObject{
       double t;
       int row;
       int column;
+      double integral;
+      double time_tdc;
       double time_fadc;
       double npix_fadc;
+      bool has_fADC,has_TDC;
 
       void toStrings(vector<pair<string,string> > &items) const {
         AddString(items, "row", "%d", row);
         AddString(items, "column", "%d", column);
         AddString(items, "E(GeV)", "%f", E);
         AddString(items, "t(ns)", "%f", t);
+	AddString(items, "time_tdc(ns)","%f",time_tdc);
         AddString(items, "time_fadc(ns)", "%f", time_fadc);
         AddString(items, "npix_fadc", "%f", npix_fadc);
       }

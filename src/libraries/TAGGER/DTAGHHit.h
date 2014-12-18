@@ -18,13 +18,17 @@ class DTAGHHit:public jana::JObject{
       double E;
       double t;
       int counter_id;
+      double integral;
+      double time_tdc;
       double time_fadc;
       double npe_fadc;
+      bool has_fADC,has_TDC;
 
       void toStrings(vector<pair<string,string> > &items)const{
         AddString(items, "counter_id", "%d", counter_id);
         AddString(items, "E(GeV)", "%f", E);
         AddString(items, "t(ns)", "%f", t);
+	AddString(items, "time_tdc (ns)", "%f", time_tdc);
         AddString(items, "time_fadc(ns)", "%f", time_fadc);
         AddString(items, "npe_fadc", "%f", npe_fadc);
       }
