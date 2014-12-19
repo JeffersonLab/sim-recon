@@ -32,7 +32,7 @@ bool FCALHitsSort_C(const DFCALHit* const &thit1, const DFCALHit* const &thit2) 
 DFCALCluster_factory::DFCALCluster_factory()
 {
 	// Set defaults
-        MIN_CLUSTER_BLOCK_COUNT = 1;
+        MIN_CLUSTER_BLOCK_COUNT = 2;
         MIN_CLUSTER_SEED_ENERGY = 0.035; // GeV
 
 	gPARMS->SetDefaultParameter("FCAL:MIN_CLUSTER_BLOCK_COUNT", MIN_CLUSTER_BLOCK_COUNT);
