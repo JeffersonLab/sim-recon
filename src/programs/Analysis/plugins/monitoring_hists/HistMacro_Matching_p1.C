@@ -2,8 +2,8 @@
 // hnamepath: /Independent/Hist_DetectorStudies/Matching/FCAL_TrackDistanceVsTheta
 // hnamepath: /Independent/Hist_DetectorStudies/Matching/PVsTheta_TimeBased_GoodTrackFOM_HasHit_FCAL
 // hnamepath: /Independent/Hist_DetectorStudies/Matching/PVsTheta_TimeBased_GoodTrackFOM_NoHit_FCAL
-// hnamepath: /Independent/Hist_DetectorStudies/Matching/TOF_TrackDistanceVsHorizontalPaddle
-// hnamepath: /Independent/Hist_DetectorStudies/Matching/TOF_TrackDistanceVsVerticalPaddle
+// hnamepath: /Independent/Hist_DetectorStudies/Matching/TOF_TrackDeltaXVsVerticalPaddle
+// hnamepath: /Independent/Hist_DetectorStudies/Matching/TOF_TrackDeltaYVsHorizontalPaddle
 // hnamepath: /Independent/Hist_DetectorStudies/Matching/PVsTheta_TimeBased_GoodTrackFOM_HasHit_TOF
 // hnamepath: /Independent/Hist_DetectorStudies/Matching/PVsTheta_TimeBased_GoodTrackFOM_NoHit_TOF
 
@@ -23,8 +23,8 @@
 	TH2I* locHist_PVsTheta_HasHit_FCAL = (TH2I*)gDirectory->Get("PVsTheta_TimeBased_GoodTrackFOM_HasHit_FCAL");
 	TH2I* locHist_PVsTheta_NoHit_FCAL = (TH2I*)gDirectory->Get("PVsTheta_TimeBased_GoodTrackFOM_NoHit_FCAL");
 
-	TH2I* locHist_TOF_TrackDistanceVsHorizontalPaddle = (TH2I*)gDirectory->Get("TOF_TrackDistanceVsHorizontalPaddle");
-	TH2I* locHist_TOF_TrackDistanceVsVerticalPaddle = (TH2I*)gDirectory->Get("TOF_TrackDistanceVsVerticalPaddle");
+	TH2I* locHist_TOF_TrackDeltaXVsVerticalPaddle = (TH2I*)gDirectory->Get("TOF_TrackDeltaXVsVerticalPaddle");
+	TH2I* locHist_TOF_TrackDeltaYVsHorizontalPaddle = (TH2I*)gDirectory->Get("TOF_TrackDeltaYVsHorizontalPaddle");
 	TH2I* locHist_PVsTheta_HasHit_TOF = (TH2I*)gDirectory->Get("PVsTheta_TimeBased_GoodTrackFOM_HasHit_TOF");
 	TH2I* locHist_PVsTheta_NoHit_TOF = (TH2I*)gDirectory->Get("PVsTheta_TimeBased_GoodTrackFOM_NoHit_TOF");
 
@@ -111,25 +111,25 @@
 	locCanvas->cd(4);
 	gPad->SetTicks();
 	gPad->SetGrid();
-	if(locHist_TOF_TrackDistanceVsHorizontalPaddle != NULL)
+	if(locHist_TOF_TrackDeltaXVsVerticalPaddle != NULL)
 	{
-		locHist_TOF_TrackDistanceVsHorizontalPaddle->GetXaxis()->SetTitleSize(0.05);
-		locHist_TOF_TrackDistanceVsHorizontalPaddle->GetYaxis()->SetTitleSize(0.05);
-		locHist_TOF_TrackDistanceVsHorizontalPaddle->GetXaxis()->SetLabelSize(0.05);
-		locHist_TOF_TrackDistanceVsHorizontalPaddle->GetYaxis()->SetLabelSize(0.05);
-		locHist_TOF_TrackDistanceVsHorizontalPaddle->Draw("COLZ");
+		locHist_TOF_TrackDeltaXVsVerticalPaddle->GetXaxis()->SetTitleSize(0.05);
+		locHist_TOF_TrackDeltaXVsVerticalPaddle->GetYaxis()->SetTitleSize(0.05);
+		locHist_TOF_TrackDeltaXVsVerticalPaddle->GetXaxis()->SetLabelSize(0.05);
+		locHist_TOF_TrackDeltaXVsVerticalPaddle->GetYaxis()->SetLabelSize(0.05);
+		locHist_TOF_TrackDeltaXVsVerticalPaddle->Draw("COLZ");
 	}
 
 	locCanvas->cd(5);
 	gPad->SetTicks();
 	gPad->SetGrid();
-	if(locHist_TOF_TrackDistanceVsVerticalPaddle != NULL)
+	if(locHist_TOF_TrackDeltaYVsHorizontalPaddle != NULL)
 	{
-		locHist_TOF_TrackDistanceVsVerticalPaddle->GetXaxis()->SetTitleSize(0.05);
-		locHist_TOF_TrackDistanceVsVerticalPaddle->GetYaxis()->SetTitleSize(0.05);
-		locHist_TOF_TrackDistanceVsVerticalPaddle->GetXaxis()->SetLabelSize(0.05);
-		locHist_TOF_TrackDistanceVsVerticalPaddle->GetYaxis()->SetLabelSize(0.05);
-		locHist_TOF_TrackDistanceVsVerticalPaddle->Draw("COLZ");
+		locHist_TOF_TrackDeltaYVsHorizontalPaddle->GetXaxis()->SetTitleSize(0.05);
+		locHist_TOF_TrackDeltaYVsHorizontalPaddle->GetYaxis()->SetTitleSize(0.05);
+		locHist_TOF_TrackDeltaYVsHorizontalPaddle->GetXaxis()->SetLabelSize(0.05);
+		locHist_TOF_TrackDeltaYVsHorizontalPaddle->GetYaxis()->SetLabelSize(0.05);
+		locHist_TOF_TrackDeltaYVsHorizontalPaddle->Draw("COLZ");
 	}
 
 	locCanvas->cd(6);
