@@ -207,17 +207,17 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		hit->plane = digihit->plane;
 		hit->bar   = digihit->bar;
 		hit->end   = digihit->end;
-		hit->integral=dA;
+		hit->dE=dA;  // this will be scaled to energy units later
 
 		if(COSMIC_DATA)
-			hit->dE = a_scale * (A - 55*pedestal); // value of 55 is taken from (NSB,NSA)=(10,45) in the confg file
-		else 
-			hit->dE = a_scale * (A - pedestal);
-		hit->t_fADC = t_scale * T - GetConstant(adc_time_offsets, digihit) + t_base;
-		hit->has_fADC = true;
-		hit->has_TDC  = false; // will get set to true below if appropriate
+		  hit->dE = (A - 55*pedestal); // value of 55 is taken from (NSB,NSA)=(10,45) in the confg file
+
 		hit->t_TDC=numeric_limits<double>::quiet_NaN();
+		hit->t_fADC=T;
 		hit->t = hit->t_fADC;  // set initial time to the ADC time, in case there's no matching TDC hit
+
+		hit->has_fADC=true;
+		hit->has_TDC=false;
 
 /*
 		cout << "TOF ADC hit =  (" << hit->plane << "," << hit->bar << "," << hit->end << ")  " 
@@ -280,7 +280,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		T = tdc_scale *T - GetConstant(tdc_time_offsets, digihit) 
 		  + tdc_scale * nshifts
 		  + t_base_tdc + tdc_adc_time_offset; 
-
+		
  		// future: allow for seperate TDC scales for each channel
 		//T = GetConstant(tdc_scales, digihit)
 		//  * (T - GetConstant(tdc_time_offsets, digihit));
@@ -302,20 +302,19 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 			hit->bar   = digihit->bar;
 			hit->end   = digihit->end;
 			hit->dE = 0.0;
-			hit->has_fADC = false;
 			hit->t_fADC=numeric_limits<double>::quiet_NaN();
+			hit->has_fADC=false;
 
 			_data.push_back(hit);
 		}
-		
-		hit->t_TDC = T;
-		hit->has_TDC = true;
-		
-		// time walk correction
-		// The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
-		if (hit->has_fADC && hit->integral>0.){
+		hit->has_TDC=true;
+		hit->t_TDC=T;
+
+		if (hit->dE>0.){
+		  // time walk correction
+		  // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
 		  int id=88*hit->plane+44*hit->end+hit->bar-1;
-		  double A=hit->integral;
+		  double A=hit->dE;
 		  double C1=timewalk_parameters[id][1];
 		  double C2=timewalk_parameters[id][2];
 		  double A0=timewalk_parameters[id][3];
@@ -324,6 +323,12 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		hit->t=T;
 
 		hit->AddAssociatedObject(digihit);
+	}
+
+	// Apply calibration constants to convert pulse integrals to energy 
+	// units
+	for (unsigned int i=0;i<_data.size();i++){
+	  _data[i]->dE*=a_scale;
 	}
 
 	return NOERROR;
@@ -341,7 +346,7 @@ DTOFHit* DTOFHit_factory::FindMatch(int plane, int bar, int end, double T)
 	for(unsigned int i=0; i<_data.size(); i++){
 		DTOFHit *hit = _data[i];
 		
-		if(!hit->has_fADC) continue; // only match to fADC hits, not bachelor TDC hits
+		if(!isfinite(hit->t_fADC)) continue; // only match to fADC hits, not bachelor TDC hits
 		if(hit->plane != plane) continue;
 		if(hit->bar != bar) continue;
 		if(hit->end != end) continue;
