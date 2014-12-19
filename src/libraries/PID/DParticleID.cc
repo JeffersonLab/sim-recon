@@ -831,9 +831,6 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 	locSCHitMatchParams.dFlightTimeVariance = 0.0; //SET ME!!!
 	locSCHitMatchParams.dPathLength = locPathLength;
 	locSCHitMatchParams.dDeltaPhiToHit = dphi;
-	locSCHitMatchParams.dIntersectionPoint=proj_pos;
-	locSCHitMatchParams.dIntersectionTrackDir=proj_mom;
-	locSCHitMatchParams.dIntersectionTrackDir.SetMag(1.);
 
 	return true;
 }
@@ -879,9 +876,6 @@ DParticleID::MatchToSC(const DKinematicData *kd,
 	    scmatch.dDeltaPhiToHit=dphi; 
 	    if (myz<sc_pos1){ // intersection in leg 
 	      scmatch.dHitTime=sc_time-myz/C_EFFECTIVE;
-	      scmatch.dIntersectionPoint=cylpos[j];
-	      scmatch.dIntersectionTrackDir=mom;
-	      scmatch.dIntersectionTrackDir.SetMag(1.);
 	    }
 	    else{ // intersection in nose
 	      unsigned int num = sc_norm.size() - 1;
@@ -902,9 +896,6 @@ DParticleID::MatchToSC(const DKinematicData *kd,
 	      }
 	      if (myz<sc_pos0) continue;
 	      if (myz>sc_pos[num].z()) continue;
-	      scmatch.dIntersectionPoint=cylpos[j];
-	      scmatch.dIntersectionTrackDir=mom;
-	      scmatch.dIntersectionTrackDir.SetMag(1.);
 
 	      // Note: in the following code, L does not include a correction
 	      // for where the start counter starts in z...	
