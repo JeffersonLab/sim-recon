@@ -1873,6 +1873,10 @@ jerror_t DEventSourceHDDM::Extract_DTOFHit( hddm_s::HDDM *record,
             tofhit->end   = hiter->getEnd();
             tofhit->dE    = hiter->getDE();
             tofhit->t     = hiter->getT();
+	    tofhit->t_TDC = tofhit->t;
+	    tofhit->t_fADC= tofhit->t;
+	    tofhit->has_TDC=true;
+	    tofhit->has_fADC=true;
             data.push_back(tofhit);
             if (tofhit->end == 0)
                north_hits.push_back(tofhit);
@@ -1928,6 +1932,10 @@ jerror_t DEventSourceHDDM::Extract_DTOFHit( hddm_s::HDDM *record,
            tofhit->end   = titer->getEnd();
            tofhit->dE    = titer->getDE();
            tofhit->t     = titer->getT();
+	   tofhit->t_fADC= tofhit->t;
+	   tofhit->t_TDC = tofhit->t;
+	   tofhit->has_TDC=true;
+	   tofhit->has_fADC=true;
            data.push_back(tofhit);
 
            DTOFHitMC *tofmchit = new DTOFHitMC;
@@ -1982,6 +1990,8 @@ jerror_t DEventSourceHDDM::Extract_DSCHit(hddm_s::HDDM *record,
          hit->sector = iter->getSector();
          hit->dE = iter->getDE();
          hit->t = iter->getT();
+	 hit->t_TDC=hit->t;
+	 hit->t_fADC=hit->t;
          data.push_back(hit);
       }
    }
@@ -1993,6 +2003,10 @@ jerror_t DEventSourceHDDM::Extract_DSCHit(hddm_s::HDDM *record,
          hit->sector = iter->getSector();
          hit->dE = iter->getDE();
          hit->t = iter->getT();
+	 hit->t_TDC=hit->t;
+	 hit->t_fADC=hit->t;
+	 hit->has_TDC=true;
+	 hit->has_fADC=true;
          data.push_back(hit);
       }
    }
