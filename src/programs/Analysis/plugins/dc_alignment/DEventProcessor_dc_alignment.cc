@@ -234,7 +234,7 @@ jerror_t DEventProcessor_dc_alignment::init(void)
     }
     cdc_alignments.push_back(tempvec);
   }
-
+  
    if (READ_CDC_FILE){
     ifstream cdcfile("cdc_alignment.dat");  
     for (unsigned int ring=0;ring<cdc_alignments.size();ring++){
@@ -251,6 +251,9 @@ jerror_t DEventProcessor_dc_alignment::init(void)
 	cdc_alignments[ring][straw].A(k_dYu)=dyu;
 	cdc_alignments[ring][straw].A(k_dXd)=dxd;
 	cdc_alignments[ring][straw].A(k_dYd)=dyd;
+
+	double var=0.0001;
+	cdc_alignments[ring][straw].E=DMatrix4x4(var,0.,0.,0., 0.,var,0.,0., 0.,0.,var,0., 0.,0.,0.,var);
       }
     }
     cdcfile.close();
@@ -321,11 +324,56 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
     exit(0);
   }
 
-  dapp->Lock();
-
+   // Get offsets tweaking nominal geometry from calibration database
+   vector<map<string,double> >vals;
+  vector<cdc_offset_t>tempvec;
+ 
   unsigned int numstraws[28]={42,42,54,54,66,66,80,80,93,93,106,106,123,123,
 			      135,135,146,146,158,158,170,170,182,182,197,197,
 			      209,209};
+  if (jcalib->Get("CDC/wire_alignment",vals)==false){
+    unsigned int straw_count=0,ring_count=0;
+    for(unsigned int i=0; i<vals.size(); i++){
+      map<string,double> &row = vals[i];
+
+      // put the vector of offsets for the current ring into the offsets vector
+      if (straw_count==numstraws[ring_count]){
+	straw_count=0;
+	ring_count++;
+	
+	cdc_offsets.push_back(tempvec);
+
+	tempvec.clear();
+      }
+      
+      // Get the offsets from the calibration database 
+      cdc_offset_t temp;
+      temp.dx_u=row["dxu"];
+      //temp.dx_u=0.;
+
+      temp.dy_u=row["dyu"];
+      //temp.dy_u=0.;
+      
+      temp.dx_d=row["dxd"];
+      //temp.dx_d=0.;
+
+      temp.dy_d=row["dyd"];
+      //temp.dy_d=0.;
+
+      tempvec.push_back(temp);
+     
+      straw_count++;
+    }
+    cdc_offsets.push_back(tempvec);
+  }
+  else{
+    jerr<< "CDC wire alignment table not available... bailing... " <<endl;
+    exit(0);
+  }
+
+
+  dapp->Lock();
+
   for (int i=0;i<28;i++){
     char title[40];
     sprintf(title,"cdc_residual_ring%d",i+1);
@@ -427,8 +475,13 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   }  
   Hcdcres_vs_drift_time=(TH2F*)gROOT->FindObject("Hcdcres_vs_drift_time");
   if (!Hcdcres_vs_drift_time){
-    Hcdcres_vs_drift_time=new TH2F("Hcdcres_vs_drift_time","cdc Residual vs drift time",400,-20,780,100,-1.,1.);
+    Hcdcres_vs_drift_time=new TH2F("Hcdcres_vs_drift_time","cdc Residual vs drift time",400,-20,780,500,-1.,1.);
   } 
+  Hcdcres_vs_d=(TH2F*)gROOT->FindObject("Hcdcres_vs_d");
+  if (!Hcdcres_vs_d){
+    Hcdcres_vs_d=new TH2F("Hcdcres_vs_d","cdc Residual vs distance to wire",400,0,0.8,500,-1.,1.);
+  } 
+
   Hdrift_time=(TH2F*)gROOT->FindObject("Hdrift_time");
   if (!Hdrift_time){
     Hdrift_time=new TH2F("Hdrift_time",
@@ -496,6 +549,16 @@ jerror_t DEventProcessor_dc_alignment::fini(void)
   printf("Events processed = %d\n",myevt);
 
   if (RUN_BENCHMARK==false){
+    
+  for (unsigned int ring=0;ring<cdc_alignments.size();ring++){
+      for (unsigned int straw=0;straw<cdc_alignments[ring].size();
+	   straw++){
+	if (fabs(cdc_alignments[ring][straw].A(k_dXu))>0.19)
+	cout << cdc_alignments[ring][straw].A(k_dXu) << " " 
+	     << sqrt(cdc_alignments[ring][straw].E(k_dXu,k_dXu)) << endl;
+      }
+  }
+
     ofstream cdcfile("cdc_alignment.dat");
     //cdcfile << "Ring straw dXu dYu dXd dYd" << endl;
     for (unsigned int ring=0;ring<cdc_alignments.size();ring++){
@@ -509,6 +572,23 @@ jerror_t DEventProcessor_dc_alignment::fini(void)
       }
     }
     cdcfile.close();
+
+    ofstream cdcfile2("cdc_alignment_update.dat");
+    //cdcfile << "Ring straw dXu dYu dXd dYd" << endl;
+    for (unsigned int ring=0;ring<cdc_alignments.size();ring++){
+      for (unsigned int straw=0;straw<cdc_alignments[ring].size();
+	   straw++){
+	//	cdcfile << ring+1 << " " << straw+1 << " " 
+	cdcfile2 << (cdc_alignments[ring][straw].A(k_dXu)+cdc_offsets[ring][straw].dx_u) << " " 
+		 << (cdc_alignments[ring][straw].A(k_dYu)+cdc_offsets[ring][straw].dy_u) << " "
+		 << (cdc_alignments[ring][straw].A(k_dXd)+cdc_offsets[ring][straw].dx_d) << " "
+		 << (cdc_alignments[ring][straw].A(k_dYd)+cdc_offsets[ring][straw].dy_d) << endl;
+      }
+    }
+    cdcfile2.close();
+
+    
+
     
     if (ALIGN_WIRE_PLANES){
       ofstream fdcfile("fdc_alignment.dat");
@@ -554,7 +634,8 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
   vector<const DFDCPseudo*>pseudos;
   loop->Get(pseudos);
   vector<const DCDCTrackHit*>cdcs;
-  if (COSMICS) loop->Get(cdcs);
+  //if (COSMICS) 
+  loop->Get(cdcs);
 
   if (cdcs.size()>20 /* && cdcs.size()<60*/){
     // Add the hits to the finder helper class, link axial hits into segments
@@ -646,7 +727,7 @@ DEventProcessor_dc_alignment::DoFilter(double t0,double OuterZ,DMatrix4x1 &S,
   unsigned int numhits=hits.size();
   unsigned int maxindex=numhits-1;
 
-  int NEVENTS=300000;
+  int NEVENTS=100000;
   double anneal_factor=pow(1e4,(double(NEVENTS-myevt))/(NEVENTS-1.));
   if (myevt>NEVENTS) anneal_factor=1.;  
   anneal_factor=1.;
@@ -702,7 +783,7 @@ DEventProcessor_dc_alignment::DoFilter(double t0,double OuterZ,DMatrix4x1 &S,
     double prelimprob=TMath::Prob(chi2_old,ndof_old);
     Hcdc_prelimprob->Fill(prelimprob);
     
-    if (prelimprob>0.001){
+    if (prelimprob>0.0001){
       
       // Perform a time-based pass
       S=Sbest;
@@ -737,7 +818,7 @@ DEventProcessor_dc_alignment::DoFilter(double t0,double OuterZ,DMatrix4x1 &S,
 	
 	PlotLines(trajectory);
 	
-	if (prob>1e-6)
+	if (prob>1e-3)
 	  {
 	    // run the smoother (opposite direction to filter)
 	    vector<cdc_update_t>smoothed_updates(updates.size());
@@ -754,6 +835,7 @@ DEventProcessor_dc_alignment::DoFilter(double t0,double OuterZ,DMatrix4x1 &S,
 		int ring_id=smoothed_updates[k].ring_id;
 		int straw_id=smoothed_updates[k].straw_id;
 		Hcdcres_vs_drift_time->Fill(tdrift,res);
+		Hcdcres_vs_d->Fill(d,res);
 		Hcdcdrift_time->Fill(tdrift,d);
 		Hcdc_time_vs_d->Fill(d,tdrift);
 	        Hcdc_ring_res[ring_id]->Fill(straw_id+1,res); 
