@@ -195,10 +195,10 @@ bool DEventRFBunch_factory::Find_TrackTimes_NonSC(const DDetectorMatches* locDet
 	{
 		const DTrackTimeBased* locTrackTimeBased = locTrackTimeBasedVector[loc_i];
 
-		DShowerMatchParams locBCALShowerMatchParams;
+		DBCALShowerMatchParams locBCALShowerMatchParams;
 		if(dParticleID->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams))
 		{
-			const DBCALShower* locBCALShower = dynamic_cast<const DBCALShower*>(locBCALShowerMatchParams.dShowerObject);
+			const DBCALShower* locBCALShower = locBCALShowerMatchParams.dBCALShower;
 			double locPropagatedTime = locBCALShower->t - locBCALShowerMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 			locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
 			continue;
@@ -207,16 +207,15 @@ bool DEventRFBunch_factory::Find_TrackTimes_NonSC(const DDetectorMatches* locDet
 		DTOFHitMatchParams locTOFHitMatchParams;
 		if(dParticleID->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
 		{
-			const DTOFPoint* locTOFPoint = locTOFHitMatchParams.dTOFPoint;
-			double locPropagatedTime = locTOFPoint->t - locTOFHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
+			double locPropagatedTime = locTOFHitMatchParams.dHitTime - locTOFHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 			locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
 			continue;
 		}
 
-		DShowerMatchParams locFCALShowerMatchParams;
+		DFCALShowerMatchParams locFCALShowerMatchParams;
 		if(dParticleID->Get_BestFCALMatchParams(locTrackTimeBased, locDetectorMatches, locFCALShowerMatchParams))
 		{
-			const DFCALShower* locFCALShower = dynamic_cast<const DFCALShower*>(locFCALShowerMatchParams.dShowerObject);
+			const DFCALShower* locFCALShower = locFCALShowerMatchParams.dFCALShower;
 			double locPropagatedTime = locFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 			locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
 			continue;

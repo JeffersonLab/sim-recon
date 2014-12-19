@@ -371,7 +371,7 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 
 			locHistName = "FCALShowerYVsX";
 			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-				dHist_FCALShowerYVsX = new TH2I(locHistName.c_str(), ";FCAL Shower X (cm);FCAL Shower Y (cm)", dNumFCALTOFXYBins, -120.0, 120.0, dNumFCALTOFXYBins, -120.0, 120.0);
+				dHist_FCALShowerYVsX = new TH2I(locHistName.c_str(), ";FCAL Shower X (cm);FCAL Shower Y (cm)", dNumFCALTOFXYBins, -130.0, 130.0, dNumFCALTOFXYBins, -130.0, 130.0);
 			else //already created by another thread
 				dHist_FCALShowerYVsX = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
@@ -421,7 +421,7 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 
 			locHistName = "TOFPointYVsX";
 			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-				dHist_TOFPointYVsX = new TH2I(locHistName.c_str(), ";TOF Point X (cm);TOF Point Y (cm)", dNumFCALTOFXYBins, -120.0, 120.0, dNumFCALTOFXYBins, -120.0, 120.0);
+				dHist_TOFPointYVsX = new TH2I(locHistName.c_str(), ";TOF Point X (cm);TOF Point Y (cm)", dNumFCALTOFXYBins, -130.0, 130.0, dNumFCALTOFXYBins, -130.0, 130.0);
 			else //already created by another thread
 				dHist_TOFPointYVsX = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
@@ -553,24 +553,26 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 			locDetectorSystems.push_back(SYS_TOF);  locDetectorSystems.push_back(SYS_FCAL);
 			for(size_t loc_i = 0; loc_i < locDetectorSystems.size(); ++loc_i)
 			{
-				double locMaxTheta = ((locDetectorSystems[loc_i] == SYS_FCAL) || (locDetectorSystems[loc_i] == SYS_TOF)) ? 20.0 : dMaxTheta;
-				double locMaxP = (locDetectorSystems[loc_i] == SYS_BCAL) ? 4.0 : dMaxP;
+				DetectorSystem_t locSystem = locDetectorSystems[loc_i];
+
+				double locMaxTheta = ((locSystem == SYS_FCAL) || (locSystem == SYS_TOF)) ? 20.0 : dMaxTheta;
+				double locMaxP = (locSystem == SYS_BCAL) ? 4.0 : dMaxP;
 
 				// PVsTheta Time-Based Tracks Good Track FOM Has Hit
-				locHistName = string("PVsTheta_TimeBased_GoodTrackFOM_HasHit_") + SystemName(locDetectorSystems[loc_i]);
-				locHistTitle = string("Time-Based Tracks, Good Tracking FOM, ") + SystemName(locDetectorSystems[loc_i]) + string(" Has Hit;#theta#circ;p (GeV/c)");
+				locHistName = string("PVsTheta_TimeBased_GoodTrackFOM_HasHit_") + SystemName(locSystem);
+				locHistTitle = string("Time-Based Tracks, Good Tracking FOM, ") + SystemName(locSystem) + string(" Has Hit;#theta#circ;p (GeV/c)");
 				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[locDetectorSystems[loc_i]] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[locSystem] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 				else
-					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[locDetectorSystems[loc_i]] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPBins, dMinP, locMaxP);
+					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[locSystem] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPBins, dMinP, locMaxP);
 
 				// PVsTheta Time-Based Tracks Good Track FOM Has Hit
-				locHistName = string("PVsTheta_TimeBased_GoodTrackFOM_NoHit_") + SystemName(locDetectorSystems[loc_i]);
-				locHistTitle = string("Time-Based Tracks, Good Tracking FOM, ") + SystemName(locDetectorSystems[loc_i]) + string(" No Hit;#theta#circ;p (GeV/c)");
+				locHistName = string("PVsTheta_TimeBased_GoodTrackFOM_NoHit_") + SystemName(locSystem);
+				locHistTitle = string("Time-Based Tracks, Good Tracking FOM, ") + SystemName(locSystem) + string(" No Hit;#theta#circ;p (GeV/c)");
 				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[locDetectorSystems[loc_i]] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[locSystem] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 				else
-					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[locDetectorSystems[loc_i]] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPBins, dMinP, locMaxP);
+					dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[locSystem] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPBins, dMinP, locMaxP);
 			}
 
 			//TRACKING
@@ -633,19 +635,33 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 			else
 				dHist_TOFTrackDistanceVsTheta = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, 20.0, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
 
-			locHistName = "TOF_TrackDistanceVsHorizontalPaddle";
-			locHistTitle = ";TOF Horizontal Paddle;TOF / Track Distance (cm)";
+			locHistName = "TOF_TrackDeltaXVsHorizontalPaddle";
+			locHistTitle = ";TOF Horizontal Paddle;TOF / Track #DeltaX (cm)";
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_TOFTrackDistanceVsHorizontalPaddle = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHist_TOFTrackDeltaXVsHorizontalPaddle = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_TOFTrackDistanceVsHorizontalPaddle = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+				dHist_TOFTrackDeltaXVsHorizontalPaddle = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, -1.0*dMaxTrackMatchDOCA, dMaxTrackMatchDOCA);
 
-			locHistName = "TOF_TrackDistanceVsVerticalPaddle";
-			locHistTitle = ";TOF Vertical Paddle;TOF / Track Distance (cm)";
+			locHistName = "TOF_TrackDeltaXVsVerticalPaddle";
+			locHistTitle = ";TOF Vertical Paddle;TOF / Track #DeltaX (cm)";
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_TOFTrackDistanceVsVerticalPaddle = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHist_TOFTrackDeltaXVsVerticalPaddle = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_TOFTrackDistanceVsVerticalPaddle = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+				dHist_TOFTrackDeltaXVsVerticalPaddle = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, -1.0*dMaxTrackMatchDOCA, dMaxTrackMatchDOCA);
+
+			locHistName = "TOF_TrackDeltaYVsHorizontalPaddle";
+			locHistTitle = ";TOF Horizontal Paddle;TOF / Track #DeltaY (cm)";
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHist_TOFTrackDeltaYVsHorizontalPaddle = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHist_TOFTrackDeltaYVsHorizontalPaddle = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, -1.0*dMaxTrackMatchDOCA, dMaxTrackMatchDOCA);
+
+			locHistName = "TOF_TrackDeltaYVsVerticalPaddle";
+			locHistTitle = ";TOF Vertical Paddle;TOF / Track #DeltaY (cm)";
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHist_TOFTrackDeltaYVsVerticalPaddle = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHist_TOFTrackDeltaYVsVerticalPaddle = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, -1.0*dMaxTrackMatchDOCA, dMaxTrackMatchDOCA);
 
 			locHistName = "TOF_TrackDistance_BothPlanes";
 			locHistTitle = "TOF Hit in Both Planes;TOF / Track Distance (cm)";
@@ -672,6 +688,18 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 				dHist_BCALTrackDOCA = new TH1I(locHistName.c_str(), ";BCAL Shower Distance to Nearest Track (cm)", dNumTrackDOCABins, dMinTrackDOCA, dMaxTrackDOCA);
 			else //already created by another thread
 				dHist_BCALTrackDOCA = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "BCALTrackDeltaPhi";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_BCALTrackDeltaPhi = new TH1I(locHistName.c_str(), ";BCAL Shower #Delta#phi#circ to Nearest Track", dNumDeltaPhiBins, dMinDeltaPhi, dMaxDeltaPhi);
+			else //already created by another thread
+				dHist_BCALTrackDeltaPhi = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "BCALTrackDeltaZ";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_BCALTrackDeltaZ = new TH1I(locHistName.c_str(), ";BCAL Shower #DeltaZ to Nearest Track (cm)", dNumTrackDOCABins, dMinTrackDOCA, dMaxTrackDOCA);
+			else //already created by another thread
+				dHist_BCALTrackDeltaZ = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 
 			locHistName = "BCALNeutralShowerTime";
 			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
@@ -1318,7 +1346,7 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 	}
 
 	//TRACK / TOF MATCHES
-	map<const DTrackTimeBased*, pair<const DTOFPoint*, double> > locTOFTrackDistanceMap;
+	map<const DTrackTimeBased*, pair<const DTOFPoint*, pair<double, double> > > locTOFTrackDistanceMap; //doubles: delta-x, delta-y
 	for(locTimeBasedIterator = locBestTrackTimeBasedMap.begin(); locTimeBasedIterator != locBestTrackTimeBasedMap.end(); ++locTimeBasedIterator)
 	{
 		const DTrackTimeBased* locTrackTimeBased = locTimeBasedIterator->second;
@@ -1326,21 +1354,26 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 		const DReferenceTrajectory* locReferenceTrajectory = locTrackTimeBased->rt;
 		if(locReferenceTrajectory == NULL)
 			continue;
-		double locMinDistance = 999.0;
+		double locMinDistance = 9.9E9;
+		double locFinalDeltaX = 0.0, locFinalDeltaY = 0.0;
 		const DTOFPoint* locClosestTOFPoint = NULL;
 		for(size_t loc_i = 0; loc_i < locTOFPoints.size(); ++loc_i)
 		{
-			double locDistance = 0.0;
-			if(!dParticleID->Distance_ToTrack(locTOFPoints[loc_i], locReferenceTrajectory, locInputStartTime, locDistance))
+			double locDistance = 0.0, locDeltaX = 0.0, locDeltaY = 0.0;
+			if(!dParticleID->Distance_ToTrack(locTOFPoints[loc_i], locReferenceTrajectory, locInputStartTime, locDeltaX, locDeltaY))
 				continue;
+			locDistance = sqrt(locDeltaX*locDeltaX + locDeltaY*locDeltaY);
 			if(locDistance > locMinDistance)
 				continue;
 			locMinDistance = locDistance;
+			locFinalDeltaX = locDeltaX;
+			locFinalDeltaY = locDeltaY;
 			locClosestTOFPoint = locTOFPoints[loc_i];
 		}
-		if(locMinDistance > 998.0)
+		if(locMinDistance > 9.8E9)
 			continue;
-		locTOFTrackDistanceMap[locTrackTimeBased] = pair<const DTOFPoint*, double>(locClosestTOFPoint, locMinDistance);
+		pair<double, double> locDeltas(locFinalDeltaX, locFinalDeltaY);
+		locTOFTrackDistanceMap[locTrackTimeBased] = pair<const DTOFPoint*, pair<double, double> >(locClosestTOFPoint, locDeltas);
 	}
 
 	//TRACK / SC MATCHES
@@ -1377,15 +1410,23 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 				continue;
 
 			double locTheta = locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi();
+			double locPhi = locTrackTimeBased->momentum().Phi()*180.0/TMath::Pi();
 			double locP = locTrackTimeBased->momentum().Mag();
 
-			vector<DShowerMatchParams> locShowerMatchParams;
-			if(locDetectorMatches->Get_BCALMatchParams(locTrackTimeBased, locShowerMatchParams))
+			vector<DBCALShowerMatchParams> locBCALShowerMatchParams;
+			if(locDetectorMatches->Get_BCALMatchParams(locTrackTimeBased, locBCALShowerMatchParams))
 				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[SYS_BCAL]->Fill(locTheta, locP);
 			else
 				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[SYS_BCAL]->Fill(locTheta, locP);
 
-			if(locDetectorMatches->Get_FCALMatchParams(locTrackTimeBased, locShowerMatchParams))
+			vector<DSCHitMatchParams> locSCMatchParams;
+			if(locDetectorMatches->Get_SCMatchParams(locTrackTimeBased, locSCMatchParams))
+				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[SYS_START]->Fill(locTheta, locP);
+			else
+				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[SYS_START]->Fill(locTheta, locP);
+
+			vector<DFCALShowerMatchParams> locFCALShowerMatchParams;
+			if(locDetectorMatches->Get_FCALMatchParams(locTrackTimeBased, locFCALShowerMatchParams))
 				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[SYS_FCAL]->Fill(locTheta, locP);
 			else
 				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[SYS_FCAL]->Fill(locTheta, locP);
@@ -1395,12 +1436,6 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[SYS_TOF]->Fill(locTheta, locP);
 			else
 				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[SYS_TOF]->Fill(locTheta, locP);
-
-			vector<DSCHitMatchParams> locSCMatchParams;
-			if(locDetectorMatches->Get_SCMatchParams(locTrackTimeBased, locSCMatchParams))
-				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit[SYS_START]->Fill(locTheta, locP);
-			else
-				dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit[SYS_START]->Fill(locTheta, locP);
 
 			if(!locDetectorMatches->Get_IsMatchedToHit(locTrackTimeBased))
 				dHist_TrackPVsTheta_NoHitMatch->Fill(locTheta, locP);
@@ -1425,32 +1460,30 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 		}
 
 		//TOF
-		map<const DTrackTimeBased*, pair<const DTOFPoint*, double> >::iterator locTOFIterator = locTOFTrackDistanceMap.begin();
+		map<const DTrackTimeBased*, pair<const DTOFPoint*, pair<double, double> > >::iterator locTOFIterator = locTOFTrackDistanceMap.begin();
 		for(; locTOFIterator != locTOFTrackDistanceMap.end(); ++locTOFIterator)
 		{
 			const DTrackTimeBased* locTrackTimeBased = locTOFIterator->first;
 			const DTOFPoint* locTOFPoint = locTOFIterator->second.first;
-			double locDistance = locTOFIterator->second.second;
+			double locDeltaX = locTOFIterator->second.second.first;
+			double locDeltaY = locTOFIterator->second.second.second;
 
-			dHist_TOFTrackDistanceVsP->Fill(locTrackTimeBased->momentum().Mag(), locDistance);
-			dHist_TOFTrackDistanceVsTheta->Fill(locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi(), locDistance);
-
-			vector<const DTOFPaddleHit*> locPaddleHits;
-			locTOFPoint->Get(locPaddleHits);
-
-			if(locPaddleHits.size() == 2)
-				dHist_TOFTrackDistance_BothPlanes->Fill(locDistance);
-			else
-				dHist_TOFTrackDistance_OnePlane->Fill(locDistance);
-
-			for(size_t loc_i = 0; loc_i < locPaddleHits.size(); ++loc_i)
+			double locDistance = sqrt(locDeltaX*locDeltaX + locDeltaY*locDeltaY);
+			if((locDeltaX < 500.0) && (locDeltaY < 500.0)) //else position not well-defined
 			{
-				int locTOFPaddle = locPaddleHits[loc_i]->bar;
-				if(locPaddleHits[loc_i]->orientation) //horizontal
-					dHist_TOFTrackDistanceVsHorizontalPaddle->Fill(locTOFPaddle, locDistance);
-				else //vertical
-					dHist_TOFTrackDistanceVsVerticalPaddle->Fill(locTOFPaddle, locDistance);
+				dHist_TOFTrackDistanceVsP->Fill(locTrackTimeBased->momentum().Mag(), locDistance);
+				dHist_TOFTrackDistanceVsTheta->Fill(locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi(), locDistance);
+				if((locTOFPoint->dHorizontalBar != 0) && (locTOFPoint->dVerticalBar != 0))
+					dHist_TOFTrackDistance_BothPlanes->Fill(locDistance);
+				else
+					dHist_TOFTrackDistance_OnePlane->Fill(locDistance);
 			}
+
+			dHist_TOFTrackDeltaXVsHorizontalPaddle->Fill(locTOFPoint->dHorizontalBar, locDeltaX);
+			dHist_TOFTrackDeltaXVsVerticalPaddle->Fill(locTOFPoint->dVerticalBar, locDeltaX);
+
+			dHist_TOFTrackDeltaYVsHorizontalPaddle->Fill(locTOFPoint->dHorizontalBar, locDeltaY);
+			dHist_TOFTrackDeltaYVsVerticalPaddle->Fill(locTOFPoint->dVerticalBar, locDeltaY);
 		}
 
 		//SC
@@ -1494,10 +1527,10 @@ void DHistogramAction_DetectorStudies::Fill_PIDHists(JEventLoop* locEventLoop)
 			double locP = locTrackTimeBased->momentum().Mag();
 
 			//if RF time is indeterminate, start time will be NaN
-			const DShowerMatchParams& locFCALShowerMatchParams = locChargedTrackHypothesis->dFCALShowerMatchParams;
+			const DBCALShowerMatchParams& locBCALShowerMatchParams = locChargedTrackHypothesis->dBCALShowerMatchParams;
+			const DFCALShowerMatchParams& locFCALShowerMatchParams = locChargedTrackHypothesis->dFCALShowerMatchParams;
 			const DTOFHitMatchParams& locTOFHitMatchParams = locChargedTrackHypothesis->dTOFHitMatchParams;
 			const DSCHitMatchParams& locSCHitMatchParams = locChargedTrackHypothesis->dSCHitMatchParams;
-			const DShowerMatchParams& locBCALShowerMatchParams = locChargedTrackHypothesis->dBCALShowerMatchParams;
 
 			if(locSCHitMatchParams.dTrackTimeBased != NULL)
 			{
@@ -1513,18 +1546,18 @@ void DHistogramAction_DetectorStudies::Fill_PIDHists(JEventLoop* locEventLoop)
 			if(locTOFHitMatchParams.dTrackTimeBased != NULL)
 			{
 				dHistMap_QTOFdEdXVsP[locCharge]->Fill(locP, locTOFHitMatchParams.dEdx*1.0E3);
-				double locBeta_Timing = locTOFHitMatchParams.dPathLength/(29.9792458*(locTOFHitMatchParams.dTOFPoint->t - locChargedTrackHypothesis->t0()));
+				double locBeta_Timing = locTOFHitMatchParams.dPathLength/(29.9792458*(locTOFHitMatchParams.dHitTime - locChargedTrackHypothesis->t0()));
 				dHistMap_TOFBetaVsP[locCharge]->Fill(locP, locBeta_Timing);
 			}
 			if(locBCALShowerMatchParams.dTrackTimeBased != NULL)
 			{
-				const DBCALShower* locBCALShower = dynamic_cast<const DBCALShower*>(locBCALShowerMatchParams.dShowerObject);
+				const DBCALShower* locBCALShower = locBCALShowerMatchParams.dBCALShower;
 				double locBeta_Timing = locBCALShowerMatchParams.dPathLength/(29.9792458*(locBCALShower->t - locChargedTrackHypothesis->t0()));
 				dHistMap_BCALBetaVsP[locCharge]->Fill(locP, locBeta_Timing);
 			}
 			if(locFCALShowerMatchParams.dTrackTimeBased != NULL)
 			{
-				const DFCALShower* locFCALShower = dynamic_cast<const DFCALShower*>(locFCALShowerMatchParams.dShowerObject);
+				const DFCALShower* locFCALShower = locFCALShowerMatchParams.dFCALShower;
 				double locBeta_Timing = locFCALShowerMatchParams.dPathLength/(29.9792458*(locFCALShower->getTime() - locChargedTrackHypothesis->t0()));
 				dHistMap_FCALBetaVsP[locCharge]->Fill(locP, locBeta_Timing);
 			}
@@ -1562,12 +1595,12 @@ void DHistogramAction_DetectorStudies::Fill_NeutralHists(JEventLoop* locEventLoo
 			double locPathLength = (locNeutralShowers[loc_i]->dSpacetimeVertex.Vect() - dTargetCenter).Mag();
 			double locDeltaT = locNeutralShowers[loc_i]->dSpacetimeVertex.T() - locPathLength/29.9792458 - locStartTime;
 
-			double locDistance = 9.9E9;
 			if(locNeutralShowers[loc_i]->dDetectorSystem == SYS_FCAL)
 			{
 				const DFCALShower* locFCALShower = NULL;
 				locNeutralShowers[loc_i]->GetSingle(locFCALShower);
 
+				double locDistance = 9.9E9;
 				if(locDetectorMatches->Get_DistanceToNearestTrack(locFCALShower, locDistance))
 					dHist_FCALTrackDOCA->Fill(locDistance);
 
@@ -1582,8 +1615,14 @@ void DHistogramAction_DetectorStudies::Fill_NeutralHists(JEventLoop* locEventLoo
 				const DBCALShower* locBCALShower = NULL;
 				locNeutralShowers[loc_i]->GetSingle(locBCALShower);
 
+				double locDistance = 9.9E9, locDeltaPhi = 9.9E9, locDeltaZ = 9.9E9;
 				if(locDetectorMatches->Get_DistanceToNearestTrack(locBCALShower, locDistance))
 					dHist_BCALTrackDOCA->Fill(locDistance);
+				if(locDetectorMatches->Get_DistanceToNearestTrack(locBCALShower, locDeltaPhi, locDeltaZ))
+				{
+					dHist_BCALTrackDeltaPhi->Fill(locDeltaPhi);
+					dHist_BCALTrackDeltaZ->Fill(locDeltaZ);
+				}
 
 				dHist_BCALNeutralShowerTime->Fill(locNeutralShowers[loc_i]->dSpacetimeVertex.T());
 				dHist_BCALNeutralShowerEnergy->Fill(locNeutralShowers[loc_i]->dEnergy);
@@ -1632,16 +1671,17 @@ void DHistogramAction_DetectorStudies::Fill_MatchedHists(JEventLoop* locEventLoo
 			pair<int, bool> locChargePair(locQIndex, locUseTruePIDFlag);
 
 			DVector3 locMomentum = locChargedTrackHypothesis->momentum();
-			const DShowerMatchParams& locFCALShowerMatchParams = locChargedTrackHypothesis->dFCALShowerMatchParams;
+			const DFCALShowerMatchParams& locFCALShowerMatchParams = locChargedTrackHypothesis->dFCALShowerMatchParams;
 			const DTOFHitMatchParams& locTOFHitMatchParams = locChargedTrackHypothesis->dTOFHitMatchParams;
 			const DSCHitMatchParams& locSCHitMatchParams = locChargedTrackHypothesis->dSCHitMatchParams;
-			const DShowerMatchParams& locBCALShowerMatchParams = locChargedTrackHypothesis->dBCALShowerMatchParams;
+			const DBCALShowerMatchParams& locBCALShowerMatchParams = locChargedTrackHypothesis->dBCALShowerMatchParams;
 
 			//BCAL
 			if(locBCALShowerMatchParams.dTrackTimeBased != NULL)
 			{
-				const DBCALShower* locBCALShower = dynamic_cast<const DBCALShower*>(locBCALShowerMatchParams.dShowerObject);
-				dHistMap_BCALTrackDOCA[locChargePair]->Fill(locBCALShowerMatchParams.dDOCAToShower);
+				const DBCALShower* locBCALShower = locBCALShowerMatchParams.dBCALShower;
+				double locTrackDOCA = locBCALShowerMatchParams.Get_DistanceToTrack();
+				dHistMap_BCALTrackDOCA[locChargePair]->Fill(locTrackDOCA);
 				dHistMap_BCALShowerEnergy[locChargePair]->Fill(locBCALShower->E);
 				dHistMap_BCALShowerTrackDepth[locChargePair]->Fill(locBCALShowerMatchParams.dx);
 				dHistMap_BCALShowerTrackDepthVsP[locChargePair]->Fill(locMomentum.Mag(), locBCALShowerMatchParams.dx);
@@ -1653,7 +1693,7 @@ void DHistogramAction_DetectorStudies::Fill_MatchedHists(JEventLoop* locEventLoo
 
 				if(!locDisregardPIDFlag)
 				{
-					dHistMap_BCALTrackDOCA[locPIDPair]->Fill(locBCALShowerMatchParams.dDOCAToShower);
+					dHistMap_BCALTrackDOCA[locPIDPair]->Fill(locTrackDOCA);
 					dHistMap_BCALShowerEnergy[locPIDPair]->Fill(locBCALShower->E);
 					dHistMap_BCALShowerTrackDepth[locPIDPair]->Fill(locBCALShowerMatchParams.dx);
 					dHistMap_BCALShowerTrackDepthVsP[locPIDPair]->Fill(locMomentum.Mag(), locBCALShowerMatchParams.dx);
@@ -1667,7 +1707,7 @@ void DHistogramAction_DetectorStudies::Fill_MatchedHists(JEventLoop* locEventLoo
 			//FCAL
 			if(locFCALShowerMatchParams.dTrackTimeBased != NULL)
 			{
-				const DFCALShower* locFCALShower = dynamic_cast<const DFCALShower*>(locFCALShowerMatchParams.dShowerObject);
+				const DFCALShower* locFCALShower = locFCALShowerMatchParams.dFCALShower;
 				dHistMap_FCALTrackDOCA[locChargePair]->Fill(locFCALShowerMatchParams.dDOCAToShower);
 				dHistMap_FCALShowerEnergy[locChargePair]->Fill(locFCALShower->getEnergy());
 				dHistMap_FCALShowerTrackDepth[locChargePair]->Fill(locFCALShowerMatchParams.dx);
@@ -1694,9 +1734,9 @@ void DHistogramAction_DetectorStudies::Fill_MatchedHists(JEventLoop* locEventLoo
 			{
 				dHistMap_TOFdEdX[locChargePair]->Fill(locTOFHitMatchParams.dEdx*1.0E3);
 				dHistMap_TOFdEdXVsP[locChargePair]->Fill(locMomentum.Mag(), locTOFHitMatchParams.dEdx*1.0E3);
-				dHistMap_TOFTrackDOCA[locChargePair]->Fill(locTOFHitMatchParams.dDOCAToHit);
+				dHistMap_TOFTrackDOCA[locChargePair]->Fill(locTOFHitMatchParams.Get_DistanceToTrack());
 
-				double locDeltaT = locTOFHitMatchParams.dTOFPoint->t - locTOFHitMatchParams.dFlightTime - locStartTime;
+				double locDeltaT = locTOFHitMatchParams.dHitTime - locTOFHitMatchParams.dFlightTime - locStartTime;
 				dHistMap_TOFDeltaT[locChargePair]->Fill(locDeltaT);
 				dHistMap_TOFDeltaTVsP[locChargePair]->Fill(locMomentum.Mag(), locDeltaT);
 
@@ -1704,7 +1744,7 @@ void DHistogramAction_DetectorStudies::Fill_MatchedHists(JEventLoop* locEventLoo
 				{
 					dHistMap_TOFdEdX[locPIDPair]->Fill(locTOFHitMatchParams.dEdx*1.0E3);
 					dHistMap_TOFdEdXVsP[locPIDPair]->Fill(locMomentum.Mag(), locTOFHitMatchParams.dEdx*1.0E3);
-					dHistMap_TOFTrackDOCA[locPIDPair]->Fill(locTOFHitMatchParams.dDOCAToHit);
+					dHistMap_TOFTrackDOCA[locPIDPair]->Fill(locTOFHitMatchParams.Get_DistanceToTrack());
 
 					dHistMap_TOFDeltaT[locPIDPair]->Fill(locDeltaT);
 					dHistMap_TOFDeltaTVsP[locPIDPair]->Fill(locMomentum.Mag(), locDeltaT);

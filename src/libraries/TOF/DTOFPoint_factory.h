@@ -30,14 +30,14 @@ class DTOFPoint_factory : public JFactory<DTOFPoint>
 {
 	public:
 
-		double VELOCITY;
 		double HALFPADDLE;
-		double BARWIDTH;
+		double HALFPADDLE_ONESIDED;
 		double E_THRESHOLD;
 		double ATTEN_LENGTH;
+		double ONESIDED_PADDLE_MIDPOINT_MAG; //+/- this number for North/South
 		vector<double> propagation_speed;
 		
-		vector <const DTOFGeometry*> TOFGeom;
+		const DTOFGeometry* dTOFGeometry;
 		
 		class tof_spacetimehit_t
 		{
@@ -50,6 +50,7 @@ class DTOFPoint_factory : public JFactory<DTOFPoint>
 				const DTOFPaddleHit* TOFHit;
 				bool dIsDoubleEndedBar;
 				bool dPositionWellDefinedFlag;
+				bool dIsSingleEndedNorthPaddle; //if !this and !dIsDoubleEndedBar, is single-ended south paddle
 		};
 		
 		class tof_spacetimehitmatch_t
@@ -59,7 +60,7 @@ class DTOFPoint_factory : public JFactory<DTOFPoint>
 				double delta_t;
 				tof_spacetimehit_t* dTOFSpacetimeHit_Horizontal;
 				tof_spacetimehit_t* dTOFSpacetimeHit_Vertical;
-				bool dPositionWellDefinedFlag; //hopefully 2, is 1 if one is single-ended, or E < threshold
+				bool dBothPositionsWellDefinedFlag;
 		};
 
 	private:
@@ -67,11 +68,18 @@ class DTOFPoint_factory : public JFactory<DTOFPoint>
 		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
 		tof_spacetimehit_t* Get_TOFSpacetimeHitResource(void);
+
 		tof_spacetimehit_t* Build_TOFSpacetimeHit_Horizontal(const DTOFPaddleHit* locTOFHit);
 		tof_spacetimehit_t* Build_TOFSpacetimeHit_Vertical(const DTOFPaddleHit* locTOFHit);
-		void Create_TOFPoint(const tof_spacetimehit_t* locTOFSpacetimeHit_Horizontal, const tof_spacetimehit_t* locTOFSpacetimeHit_Vertical);
+
+		bool Match_Hits(tof_spacetimehit_t* locTOFSpacetimeHit_Horizontal, tof_spacetimehit_t* locTOFSpacetimeHit_Vertical, tof_spacetimehitmatch_t& locTOFSpacetimeHitMatch);
+
+		void Create_MatchedTOFPoint(const tof_spacetimehit_t* locTOFSpacetimeHit_Horizontal, const tof_spacetimehit_t* locTOFSpacetimeHit_Vertical);
+		void Create_UnMatchedTOFPoint(const tof_spacetimehit_t* locTOFSpacetimeHit);
 
 		float dPositionMatchCut_DoubleEnded;
+		float dTimeMatchCut_PositionWellDefined;
+		float dTimeMatchCut_PositionNotWellDefined;
 
 		size_t MAX_TOFSpacetimeHitPoolSize;
 		deque<tof_spacetimehit_t*> dTOFSpacetimeHitPool_All;

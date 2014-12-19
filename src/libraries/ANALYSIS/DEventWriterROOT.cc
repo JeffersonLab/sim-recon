@@ -118,7 +118,7 @@ void DEventWriterROOT::Create_ThrownTree(string locOutputFileName) const
 		//create basic/misc. tree branches (run#, event#, etc.)
 		Create_Branch_Fundamental<UInt_t>(locTree, "", "RunNumber", "i");
 		Create_Branch_Fundamental<UInt_t>(locTree, "", "EventNumber", "i");
-		Create_Branch_Fundamental<Double_t>(locTree, "", "RFTime_Thrown", "D");
+		Create_Branch_Fundamental<Double_t>(locTree, "", "RFTime_Thrown", "F");
 
 		//create thrown particle branches
 		//BEAM
@@ -130,7 +130,7 @@ void DEventWriterROOT::Create_ThrownTree(string locOutputFileName) const
 		string locNumThrownString = "NumThrown";
 		Create_Branch_Fundamental<ULong64_t>(locTree, "", "NumPIDThrown_FinalState", "l"); //19 digits
 		Create_Branch_Fundamental<ULong64_t>(locTree, "", "PIDThrown_Decaying", "l");
-		Create_Branch_Fundamental<Double_t>(locTree, "", "MCWeight", "D");
+		Create_Branch_Fundamental<Double_t>(locTree, "", "MCWeight", "F");
 		Create_Branch_Fundamental<UInt_t>(locTree, "", locNumThrownString, "i");
 		Create_Branches_ThrownParticle(locTree, "Thrown", locNumThrownString, true);
 	}
@@ -408,15 +408,15 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	Create_Branch_Fundamental<UInt_t>(locTree, "", "RunNumber", "i");
 	Create_Branch_Fundamental<UInt_t>(locTree, "", "EventNumber", "i");
 	if(locIsMCDataFlag)
-		Create_Branch_Fundamental<Double_t>(locTree, "", "RFTime_Thrown", "D");
+		Create_Branch_Fundamental<Double_t>(locTree, "", "RFTime_Thrown", "F");
 
 	//create combo-dependent, particle-independent branches
-	Create_Branch_Fundamental<Double_t>(locTree, "", "RFTime_Measured", "D");
+	Create_Branch_Fundamental<Double_t>(locTree, "", "RFTime_Measured", "F");
 	if(locKinFitFlag)
 	{
-		Create_Branch_Fundamental<Double_t>(locTree, "", "ChiSq_KinFit", "D");
+		Create_Branch_Fundamental<Double_t>(locTree, "", "ChiSq_KinFit", "F");
 		Create_Branch_Fundamental<UInt_t>(locTree, "", "NDF_KinFit", "i");
-		Create_Branch_Fundamental<Double_t>(locTree, "", "RFTime_KinFit", "D");
+		Create_Branch_Fundamental<Double_t>(locTree, "", "RFTime_KinFit", "F");
 	}
 
 	//create thrown particle branches
@@ -431,7 +431,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 		string locNumThrownString = "NumThrown";
 		Create_Branch_Fundamental<ULong64_t>(locTree, "", "NumPIDThrown_FinalState", "l"); //19 digits
 		Create_Branch_Fundamental<ULong64_t>(locTree, "", "PIDThrown_Decaying", "l");
-		Create_Branch_Fundamental<Double_t>(locTree, "", "MCWeight", "D");
+		Create_Branch_Fundamental<Double_t>(locTree, "", "MCWeight", "F");
 		Create_Branch_Fundamental<UInt_t>(locTree, "", locNumThrownString, "i");
 		Create_Branches_ThrownParticle(locTree, "Thrown", locNumThrownString, false);
 	}
@@ -593,32 +593,33 @@ void DEventWriterROOT::Create_Branches_FinalStateParticle(TTree* locTree, string
 	}
 
 	//PID QUALITY
-	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "AvgBeta_Timing", "D");
-	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "HitTime", "D");
-	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "ChiSq_Timing_Measured", "D");
+	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "AvgBeta_Timing", "F");
+	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "HitTime", "F");
+	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "ChiSq_Timing_Measured", "F");
 	if(locKinFitFlag)
-		Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "ChiSq_Timing_KinFit", "D");
+		Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "ChiSq_Timing_KinFit", "F");
 	Create_Branch_Fundamental<UInt_t>(locTree, locParticleBranchName, "NDF_Timing", "i");
 	if(locIsChargedFlag)
 	{
-		Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "ChiSq_Tracking", "D");
+		Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "ChiSq_Tracking", "F");
 		Create_Branch_Fundamental<UInt_t>(locTree, locParticleBranchName, "NDF_Tracking", "i");
-		Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "ChiSq_DCdEdx", "D");
+		Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "ChiSq_DCdEdx", "F");
 		Create_Branch_Fundamental<UInt_t>(locTree, locParticleBranchName, "NDF_DCdEdx", "i");
 	}
 
 	//DEPOSITED ENERGY
 	if(locIsChargedFlag)
 	{
-		Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "dEdx_CDC", "D");
-		Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "dEdx_FDC", "D");
-		Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "dEdx_TOF", "D");
-		Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "dEdx_ST", "D");
+		Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "dEdx_CDC", "F");
+		Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "dEdx_FDC", "F");
+		Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "dEdx_TOF", "F");
+		Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "dEdx_ST", "F");
 	}
-	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "Energy_BCAL", "D");
-	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", "D");
-	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "TrackDOCA_BCAL", "D");
-	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "TrackDOCA_FCAL", "D");
+	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "Energy_BCAL", "F");
+	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", "F");
+	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "TrackBCAL_DeltaPhi", "F");
+	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "TrackBCAL_DeltaZ", "F");
+	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "TrackFCAL_DOCA", "F");
 }
 
 void DEventWriterROOT::Create_Branches_Beam(TTree* locTree, string locParticleBranchName, bool locKinFitFlag) const
@@ -651,24 +652,25 @@ void DEventWriterROOT::Create_Branches_UnusedParticle(TTree* locTree, string loc
 	Create_Branch_ClonesArray(locTree, locParticleBranchName, "P4_Measured", "TLorentzVector", (*dNumUnusedArraySizeMap)[locTree]);
 
 	//PID QUALITY
-	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "ChiSq_Tracking", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "ChiSq_Tracking", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "F");
 	Create_Branch_FundamentalArray<UInt_t>(locTree, locParticleBranchName, "NDF_Tracking", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "i");
-	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "AvgBeta_Timing", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
-	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "HitTime", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
-	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "ChiSq_Timing", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "AvgBeta_Timing", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "F");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "HitTime", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "F");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "ChiSq_Timing", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "F");
 	Create_Branch_FundamentalArray<UInt_t>(locTree, locParticleBranchName, "NDF_Timing", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "i");
-	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "ChiSq_DCdEdx", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "ChiSq_DCdEdx", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "F");
 	Create_Branch_FundamentalArray<UInt_t>(locTree, locParticleBranchName, "NDF_DCdEdx", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "i");
 
 	//DEPOSITED ENERGY
-	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "dEdx_CDC", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
-	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "dEdx_FDC", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
-	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "dEdx_TOF", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
-	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "dEdx_ST", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
-	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "Energy_BCAL", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
-	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
-	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "TrackDOCA_BCAL", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
-	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "TrackDOCA_FCAL", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "dEdx_CDC", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "F");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "dEdx_FDC", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "F");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "dEdx_TOF", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "F");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "dEdx_ST", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "F");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "Energy_BCAL", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "F");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "F");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "TrackBCAL_DeltaPhi", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "F");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "TrackBCAL_DeltaZ", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "F");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "TrackFCAL_DOCA", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "F");
 }
 
 void DEventWriterROOT::Create_Branches_ThrownParticle(TTree* locTree, string locParticleBranchName, string locArraySizeString, bool locIsOnlyThrownFlag) const
@@ -1339,11 +1341,11 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 
 		const DBCALShower* locBCALShower = NULL;
 		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
-			locBCALShower = dynamic_cast<const DBCALShower*>(locChargedTrackHypothesis->dBCALShowerMatchParams.dShowerObject);
+			locBCALShower = locChargedTrackHypothesis->dBCALShowerMatchParams.dBCALShower;
 
 		const DFCALShower* locFCALShower = NULL;
 		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
-			locFCALShower = dynamic_cast<const DFCALShower*>(locChargedTrackHypothesis->dFCALShowerMatchParams.dShowerObject);
+			locFCALShower = locChargedTrackHypothesis->dFCALShowerMatchParams.dFCALShower;
 
 		//IDENTIFIER / MATCHING
 		Fill_FundamentalData<Int_t>(locTree, locParticleBranchName, "ObjectID", locChargedTrackHypothesis->candidateid);
@@ -1383,16 +1385,20 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", locFCALEnergy);
 
 		//Track DOCA to Shower - BCAL
-		double locDOCAToShower_BCAL = 999.0;
+		double locTrackBCAL_DeltaPhi = 999.0, locTrackBCAL_DeltaZ = 999.0;
 		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
-			locDOCAToShower_BCAL = locChargedTrackHypothesis->dBCALShowerMatchParams.dDOCAToShower;
-		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackDOCA_BCAL", locDOCAToShower_BCAL);
+		{
+			locTrackBCAL_DeltaPhi = locChargedTrackHypothesis->dBCALShowerMatchParams.dDeltaPhiToShower;
+			locTrackBCAL_DeltaZ = locChargedTrackHypothesis->dBCALShowerMatchParams.dDeltaZToShower;
+		}
+		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackBCAL_DeltaPhi", locTrackBCAL_DeltaPhi);
+		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackBCAL_DeltaZ", locTrackBCAL_DeltaZ);
 
 		//Track DOCA to Shower - FCAL
 		double locDOCAToShower_FCAL = 999.0;
 		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
 			locDOCAToShower_FCAL = locChargedTrackHypothesis->dFCALShowerMatchParams.dDOCAToShower;
-		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackDOCA_FCAL", locDOCAToShower_FCAL);
+		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackFCAL_DOCA", locDOCAToShower_FCAL);
 	}
 	else
 	{
@@ -1435,15 +1441,22 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", locFCALEnergy);
 
 		//Track DOCA to Shower - BCAL
-		double locDistanceToNearestTrack_BCAL = 999.0;
+		double locNearestTrackBCALDeltaPhi = 999.0, locNearestTrackBCALDeltaZ = 999.0;
 		if(locBCALShower != NULL)
 		{
-			if(!locDetectorMatches->Get_DistanceToNearestTrack(locBCALShower, locDistanceToNearestTrack_BCAL))
-				locDistanceToNearestTrack_BCAL = 999.0;
-			if(locDistanceToNearestTrack_BCAL > 999.0)
-				locDistanceToNearestTrack_BCAL = 999.0;
+			if(!locDetectorMatches->Get_DistanceToNearestTrack(locBCALShower, locNearestTrackBCALDeltaPhi, locNearestTrackBCALDeltaZ))
+			{
+				locNearestTrackBCALDeltaPhi = 999.0;
+				locNearestTrackBCALDeltaZ = 999.0;
+			}
+			else if((locNearestTrackBCALDeltaPhi > 999.0) || (locNearestTrackBCALDeltaZ > 999.0))
+			{
+				locNearestTrackBCALDeltaPhi = 999.0;
+				locNearestTrackBCALDeltaZ = 999.0;
+			}
 		}
-		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackDOCA_BCAL", locDistanceToNearestTrack_BCAL);
+		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackBCAL_DeltaPhi", locNearestTrackBCALDeltaPhi);
+		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackBCAL_DeltaZ", locNearestTrackBCALDeltaZ);
 
 		//Track DOCA to Shower - FCAL
 		double locDistanceToNearestTrack_FCAL = 999.0;
@@ -1454,7 +1467,7 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 			if(locDistanceToNearestTrack_FCAL > 999.0)
 				locDistanceToNearestTrack_FCAL = 999.0;
 		}
-		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackDOCA_FCAL", locDistanceToNearestTrack_FCAL);
+		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackFCAL_DOCA", locDistanceToNearestTrack_FCAL);
 	}
 }
 
@@ -1475,11 +1488,11 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 
 		const DBCALShower* locBCALShower = NULL;
 		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
-			locBCALShower = dynamic_cast<const DBCALShower*>(locChargedTrackHypothesis->dBCALShowerMatchParams.dShowerObject);
+			locBCALShower = locChargedTrackHypothesis->dBCALShowerMatchParams.dBCALShower;
 
 		const DFCALShower* locFCALShower = NULL;
 		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
-			locFCALShower = dynamic_cast<const DFCALShower*>(locChargedTrackHypothesis->dFCALShowerMatchParams.dShowerObject);
+			locFCALShower = locChargedTrackHypothesis->dFCALShowerMatchParams.dFCALShower;
 
 		//IDENTIFIERS / MATCHING
 		Fill_FundamentalData<Int_t>(locTree, "Unused", "ObjectID", locChargedTrackHypothesis->candidateid, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
@@ -1518,16 +1531,20 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "Energy_FCAL", locFCALEnergy, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 
 		//Track DOCA to Shower - BCAL
-		double locDOCAToShower_BCAL = 999.0;
+		double locTrackBCAL_DeltaPhi = 999.0, locTrackBCAL_DeltaZ = 999.0;
 		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
-			locDOCAToShower_BCAL = locChargedTrackHypothesis->dBCALShowerMatchParams.dDOCAToShower;
-		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackDOCA_BCAL", locDOCAToShower_BCAL, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+		{
+			locTrackBCAL_DeltaPhi = locChargedTrackHypothesis->dBCALShowerMatchParams.dDeltaPhiToShower;
+			locTrackBCAL_DeltaZ = locChargedTrackHypothesis->dBCALShowerMatchParams.dDeltaZToShower;
+		}
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackBCAL_DeltaPhi", locTrackBCAL_DeltaPhi, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackBCAL_DeltaZ", locTrackBCAL_DeltaZ, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 
 		//Track DOCA to Shower - FCAL
 		double locDOCAToShower_FCAL = 999.0;
 		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
 			locDOCAToShower_FCAL = locChargedTrackHypothesis->dFCALShowerMatchParams.dDOCAToShower;
-		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackDOCA_FCAL", locDOCAToShower_FCAL, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackFCAL_DOCA", locDOCAToShower_FCAL, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 	}
 	else
 	{
@@ -1576,15 +1593,22 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "Energy_FCAL", locFCALEnergy, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 
 		//Track DOCA to Shower - BCAL
-		double locDistanceToNearestTrack_BCAL = 999.0;
+		double locNearestTrackBCALDeltaPhi = 999.0, locNearestTrackBCALDeltaZ = 999.0;
 		if(locBCALShower != NULL)
 		{
-			if(!locDetectorMatches->Get_DistanceToNearestTrack(locBCALShower, locDistanceToNearestTrack_BCAL))
-				locDistanceToNearestTrack_BCAL = 999.0;
-			if(locDistanceToNearestTrack_BCAL > 999.0)
-				locDistanceToNearestTrack_BCAL = 999.0;
+			if(!locDetectorMatches->Get_DistanceToNearestTrack(locBCALShower, locNearestTrackBCALDeltaPhi, locNearestTrackBCALDeltaZ))
+			{
+				locNearestTrackBCALDeltaPhi = 999.0;
+				locNearestTrackBCALDeltaZ = 999.0;
+			}
+			else if((locNearestTrackBCALDeltaPhi > 999.0) || (locNearestTrackBCALDeltaZ > 999.0))
+			{
+				locNearestTrackBCALDeltaPhi = 999.0;
+				locNearestTrackBCALDeltaZ = 999.0;
+			}
 		}
-		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackDOCA_BCAL", locDistanceToNearestTrack_BCAL, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackBCAL_DeltaPhi", locNearestTrackBCALDeltaPhi, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackBCAL_DeltaZ", locNearestTrackBCALDeltaZ, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 
 		//Track DOCA to Shower - FCAL
 		double locDistanceToNearestTrack_FCAL = 999.0;
@@ -1595,7 +1619,7 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 			if(locDistanceToNearestTrack_FCAL > 999.0)
 				locDistanceToNearestTrack_FCAL = 999.0;
 		}
-		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackDOCA_FCAL", locDistanceToNearestTrack_FCAL, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackFCAL_DOCA", locDistanceToNearestTrack_FCAL, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 	}
 }
 

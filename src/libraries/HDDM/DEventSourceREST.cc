@@ -610,6 +610,16 @@ jerror_t DEventSourceREST::Extract_DTOFPoint(hddm_r::HDDM *record,
       tofpoint->t = iter->getT();
       tofpoint->dE = iter->getDE();
       tofpoint->tErr = iter->getTerr();
+
+      //Status
+      int locStatus = iter->getStatus(); //horizontal_bar + 45*vertical_bar + 45*4*horizontal_status + 45*4*4*vertical_status
+      tofpoint->dVerticalBarStatus = locStatus/(45*4*4);
+		locStatus %= 45*4*4; //Assume compiler optimizes multiplication
+      tofpoint->dHorizontalBarStatus = locStatus/(45*4);
+		locStatus %= 45*4;
+      tofpoint->dVerticalBar = locStatus/45;
+      tofpoint->dHorizontalBar = locStatus % 45;
+
       data.push_back(tofpoint);
    }
 
@@ -895,16 +905,15 @@ jerror_t DEventSourceREST::Extract_DMCTrigger(hddm_r::HDDM *record,
 //--------------------------------
 // Extract_DDetectorMatches
 //--------------------------------
-jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hddm_r::HDDM *record,
-                                   JFactory<DDetectorMatches>* factory)
+jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hddm_r::HDDM *record, JFactory<DDetectorMatches>* factory)
 {
    /// Copies the data from the detectorMatches hddm record. This is
    /// called from JEventSourceREST::GetObjects. If factory is NULL, this
    /// returns OBJECT_NOT_AVAILABLE immediately.
 
-   if (factory==NULL) {
+   if(factory==NULL)
      return OBJECT_NOT_AVAILABLE;
-   }
+
    string tag = (factory->Tag())? factory->Tag() : "";
    vector<DDetectorMatches*> data;
 
@@ -927,8 +936,9 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
 
    // loop over chargedTrack records
    hddm_r::DetectorMatchesList::iterator iter;
-   for (iter = detectormatches.begin(); iter != detectormatches.end(); ++iter) {
-      if (iter->getJtag() != tag)
+   for(iter = detectormatches.begin(); iter != detectormatches.end(); ++iter)
+	{
+      if(iter->getJtag() != tag)
          continue;
 
       DDetectorMatches *locDetectorMatches = new DDetectorMatches();
@@ -940,15 +950,16 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locShowerIndex = bcalIter->getShower();
          size_t locTrackIndex = bcalIter->getTrack();
 
-         DShowerMatchParams locShowerMatchParams;
+         DBCALShowerMatchParams locShowerMatchParams;
          locShowerMatchParams.dTrackTimeBased = locTrackTimeBasedVector[locTrackIndex];
-         locShowerMatchParams.dShowerObject = locBCALShowers[locShowerIndex];
+         locShowerMatchParams.dBCALShower = locBCALShowers[locShowerIndex];
 
          locShowerMatchParams.dx = bcalIter->getDx();
          locShowerMatchParams.dFlightTime = bcalIter->getTflight();
          locShowerMatchParams.dFlightTimeVariance = bcalIter->getTflightvar();
          locShowerMatchParams.dPathLength = bcalIter->getPathlength();
-         locShowerMatchParams.dDOCAToShower = bcalIter->getDoca();
+         locShowerMatchParams.dDeltaPhiToShower = bcalIter->getDeltaphi();
+         locShowerMatchParams.dDeltaZToShower = bcalIter->getDeltaz();
 
          locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locBCALShowers[locShowerIndex], locShowerMatchParams);
       }
@@ -960,9 +971,9 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locShowerIndex = fcalIter->getShower();
          size_t locTrackIndex = fcalIter->getTrack();
 
-         DShowerMatchParams locShowerMatchParams;
+         DFCALShowerMatchParams locShowerMatchParams;
          locShowerMatchParams.dTrackTimeBased = locTrackTimeBasedVector[locTrackIndex];
-         locShowerMatchParams.dShowerObject = locFCALShowers[locShowerIndex];
+         locShowerMatchParams.dFCALShower = locFCALShowers[locShowerIndex];
 
          locShowerMatchParams.dx = fcalIter->getDx();
          locShowerMatchParams.dFlightTime = fcalIter->getTflight();
@@ -1007,11 +1018,16 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          locTOFHitMatchParams.dTrackTimeBased = locTrackTimeBasedVector[locTrackIndex];
          locTOFHitMatchParams.dTOFPoint = locTOFPoints[locHitIndex];
 
+         locTOFHitMatchParams.dHitTime = tofIter->getThit();
+         locTOFHitMatchParams.dHitTimeVariance = tofIter->getThitvar();
+         locTOFHitMatchParams.dHitEnergy = tofIter->getEhit();
+
          locTOFHitMatchParams.dEdx = tofIter->getDEdx();
          locTOFHitMatchParams.dFlightTime = tofIter->getTflight();
          locTOFHitMatchParams.dFlightTimeVariance = tofIter->getTflightvar();
          locTOFHitMatchParams.dPathLength = tofIter->getPathlength();
-         locTOFHitMatchParams.dDOCAToHit = tofIter->getDoca();
+         locTOFHitMatchParams.dDeltaXToHit = tofIter->getDeltax();
+         locTOFHitMatchParams.dDeltaYToHit = tofIter->getDeltay();
 
          locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locTOFPoints[locHitIndex], locTOFHitMatchParams);
       }
@@ -1021,8 +1037,9 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
       for(; bcaldocaIter != bcaldocaList.end(); ++bcaldocaIter)
       {
          size_t locShowerIndex = bcaldocaIter->getShower();
-         double locDOCA = bcaldocaIter->getDoca();
-         locDetectorMatches->Set_DistanceToNearestTrack(locBCALShowers[locShowerIndex], locDOCA);
+         double locDeltaPhi = bcaldocaIter->getDeltaphi();
+         double locDeltaZ = bcaldocaIter->getDeltaz();
+         locDetectorMatches->Set_DistanceToNearestTrack(locBCALShowers[locShowerIndex], locDeltaPhi, locDeltaZ);
       }
 
       const hddm_r::FcalDOCAtoTrackList &fcaldocaList = iter->getFcalDOCAtoTracks();

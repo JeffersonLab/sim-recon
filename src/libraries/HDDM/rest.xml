@@ -50,8 +50,14 @@
               sector="int" t="float" dE="float"
               tunit="ns" Eunit="GeV"/>
     <tofPoint maxOccurs="unbounded" minOccurs="0" jtag="string"
-              x="float" y="float" z="float" t="float" dE="float" terr="float"
+              status="int" x="float" y="float" z="float" t="float" dE="float" terr="float"
               lunit="cm" tunit="ns" Eunit="GeV"/>
+              <!-- 
+                tofPoint::status = horizontal_bar + 45*vertical_bar + 45*4*horizontal_status + 45*4*4*vertical_status
+                *_bar = 0 -> 44 (0 for none (not matched to this plane))
+                *_Status: 0 if no hit (not matched to this plane), 1 if only North hit above threshold, 2 if only South hit above threshold, 3 if both hits above threshold
+                Note that if it's a single-ended bar, the status cannot be 3. 
+              -->
     <RFtime minOccurs="0" jtag="string"
             tsync="float" tunit="ns"/>
     <trigger minOccurs="0" jtag="string"
@@ -71,7 +77,7 @@
       -->
       <bcalMatchParams maxOccurs="unbounded" minOccurs="0"
                 track="int" shower="int"
-                dx="float" doca="float" pathlength="float" tflight="float" tflightvar="float"
+                dx="float" deltaphi="float" deltaz="float" pathlength="float" tflight="float" tflightvar="float"
                 tunit="ns" lunit="cm"/>
       <fcalMatchParams maxOccurs="unbounded" minOccurs="0"
                 track="int" shower="int"
@@ -79,7 +85,8 @@
                 tunit="ns" lunit="cm"/>
       <tofMatchParams maxOccurs="unbounded" minOccurs="0"
                 track="int" hit="int"
-                dEdx="float" doca="float" pathlength="float" tflight="float" tflightvar="float"
+                dEdx="float" thit="float" thitvar="float" ehit="float"
+                deltax="float" deltay="float" pathlength="float" tflight="float" tflightvar="float"
                 tunit="ns" lunit="cm" dEdx_unit="GeV/cm"/>
       <scMatchParams maxOccurs="unbounded" minOccurs="0"
                 track="int" hit="int"
@@ -87,7 +94,7 @@
                 pathlength="float" tflight="float" tflightvar="float" deltaphi="float"
                 tunit="ns" lunit="cm" aunit="rad" Eunit="GeV" dEdx_unit="GeV/cm"/>
       <bcalDOCAtoTrack maxOccurs="unbounded" minOccurs="0"
-                shower="int" doca="float"
+                shower="int" deltaphi="float" deltaz="float"
                 lunit="cm"/>
       <fcalDOCAtoTrack maxOccurs="unbounded" minOccurs="0"
                 shower="int" doca="float"

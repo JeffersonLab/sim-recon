@@ -355,11 +355,10 @@ bool DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const 
 	locStartTime = 0.0;
 
 	//BCAL
-	DShowerMatchParams locBCALShowerMatchParams;
+	DBCALShowerMatchParams locBCALShowerMatchParams;
 	if(dParticleID->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams))
 	{
-		const DBCALShower* locBCALShower = dynamic_cast<const DBCALShower*>(locBCALShowerMatchParams.dShowerObject);
-		locStartTime = locBCALShower->t - locBCALShowerMatchParams.dFlightTime;
+		locStartTime = locBCALShowerMatchParams.dBCALShower->t - locBCALShowerMatchParams.dFlightTime;
 		return true;
 	}
 
@@ -367,8 +366,7 @@ bool DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const 
 	DTOFHitMatchParams locTOFHitMatchParams;
 	if(dParticleID->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
 	{
-		const DTOFPoint* locTOFPoint = locTOFHitMatchParams.dTOFPoint;
-		locStartTime = locTOFPoint->t - locTOFHitMatchParams.dFlightTime;
+		locStartTime = locTOFHitMatchParams.dHitTime - locTOFHitMatchParams.dFlightTime;
 		return true;
 	}
 
@@ -381,11 +379,10 @@ bool DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const 
 	}
 
 	//FCAL
-	DShowerMatchParams locFCALShowerMatchParams;
+	DFCALShowerMatchParams locFCALShowerMatchParams;
 	if(dParticleID->Get_BestFCALMatchParams(locTrackTimeBased, locDetectorMatches, locFCALShowerMatchParams))
 	{
-		const DFCALShower* locFCALShower = dynamic_cast<const DFCALShower*>(locFCALShowerMatchParams.dShowerObject);
-		locStartTime = locFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime;
+		locStartTime = locFCALShowerMatchParams.dFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime;
 		return true;
 	}
 
@@ -404,7 +401,6 @@ double DEventRFBunch_factory_Combo::Calc_StartTime(const DNeutralShower* locNeut
 	double locHitTime = locNeutralShower->dSpacetimeVertex.T();
 	return locHitTime - locFlightTime;
 }
-
 
 int DEventRFBunch_factory_Combo::Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes)
 {

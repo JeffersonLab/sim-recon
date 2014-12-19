@@ -21,6 +21,7 @@
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALShower.h>
 #include <TOF/DTOFPoint.h>
+#include <TOF/DTOFGeometry_factory.h>
 #include <START_COUNTER/DSCHit.h>
 #include <TRACKING/DTrackFitter.h>
 #include <TRACKING/DTrackFinder.h>
@@ -73,9 +74,9 @@ class DParticleID:public jana::JObject{
 	bool MatchToSC(const DReferenceTrajectory* rt, const vector<const DSCHit*>& locSCHits, double& locStartTime, double& locTimeVariance) const;
 
 	//matching tracks to hits/showers routines (can be called by DDetectorMatches factory)
-	bool MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, DShowerMatchParams& locShowerMatchParams) const;
+	bool MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, DBCALShowerMatchParams& locShowerMatchParams) const;
 	bool MatchToTOF(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DTOFPoint* locTOFPoint, double locInputStartTime, DTOFHitMatchParams& locTOFHitMatchParams) const;
-	bool MatchToFCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, DShowerMatchParams& locShowerMatchParams) const;
+	bool MatchToFCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, DFCALShowerMatchParams& locShowerMatchParams) const;
 	bool MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams) const;
 
 	// Alternate SC matching algorithm for straight line tracks
@@ -85,14 +86,18 @@ class DParticleID:public jana::JObject{
 
 	//select "best" matches //called by several factories
 	bool Get_BestSCMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DSCHitMatchParams& locBestMatchParams) const;
-	bool Get_BestBCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DShowerMatchParams& locBestMatchParams) const;
+	void Get_BestSCMatchParams(vector<DSCHitMatchParams>& locSCHitMatchParams, DSCHitMatchParams& locBestMatchParams) const;
+	bool Get_BestBCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DBCALShowerMatchParams& locBestMatchParams) const;
+	void Get_BestBCALMatchParams(DVector3 locMomentum, vector<DBCALShowerMatchParams>& locShowerMatchParams, DBCALShowerMatchParams& locBestMatchParams) const;
 	bool Get_BestTOFMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DTOFHitMatchParams& locBestMatchParams) const;
-	bool Get_BestFCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DShowerMatchParams& locBestMatchParams) const;
+	void Get_BestTOFMatchParams(vector<DTOFHitMatchParams>& locTOFHitMatchParams, DTOFHitMatchParams& locBestMatchParams) const;
+	bool Get_BestFCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DFCALShowerMatchParams& locBestMatchParams) const;
+	void Get_BestFCALMatchParams(vector<DFCALShowerMatchParams>& locShowerMatchParams, DFCALShowerMatchParams& locBestMatchParams) const;
 
 	//matching showers to tracks routines (mostly called by DDetectorMatches factory)
 	bool Distance_ToTrack(const DBCALShower* locBCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance, double& locDeltaPhi, double& locDeltaZ) const;
 	bool Distance_ToTrack(const DFCALShower* locFCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const;
-	bool Distance_ToTrack(const DTOFPoint* locTOFPoint, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const;
+	bool Distance_ToTrack(const DTOFPoint* locTOFPoint, const DReferenceTrajectory* rt, double locInputStartTime, double& locDeltaX, double& locDeltaY) const;
 	bool Distance_ToTrack(const DSCHit* locSCHit, const DReferenceTrajectory* rt, double locInputStartTime, double& locDeltaPhi) const;
 
 	double Calc_BCALFlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, DDetectorMatches* locDetectorMatches) const;
@@ -137,6 +142,13 @@ class DParticleID:public jana::JObject{
 	vector<DVector3> sc_norm;
 	double dSCdphi;
 	double dSCphi0;
+
+	// TOF calibration constants
+		// used to update hit energy & time when matching to un-matched, position-ill-defined bars
+	const DTOFGeometry* dTOFGeometry;
+	vector<double> propagation_speed;
+	double TOF_ATTEN_LENGTH;
+	double ONESIDED_PADDLE_MIDPOINT_MAG; //+/- this number for North/South
 
   double dTargetZCenter;
   double dRFBunchFrequency;
