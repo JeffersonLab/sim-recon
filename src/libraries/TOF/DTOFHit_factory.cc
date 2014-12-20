@@ -139,6 +139,7 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	// load shift factors (only for fall 2014 runs)
 	map<string,double> tof_tdc_shift;
 	tdc_shift = -1;
+/*
 	if(eventLoop->GetCalib("/TOF/tdc_shift", tof_tdc_shift))
 	    jout << "Error loading /TOF/tdc_shift !" << endl;
 	if( tof_tdc_shift.find("TOF_TDC_SHIFT") != tof_tdc_shift.end() ) {
@@ -148,7 +149,7 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	} else {
 	    jerr << "Unable to get TOF_TDC_SHIFT from /TOF/tdc_shift !" << endl;
 	}
-
+*/
 /*
 	CheckCalibTable(adc_pedestals,"/TOF/pedestals");
 	CheckCalibTable(adc_gains,"/TOF/gains");
@@ -196,6 +197,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Apply calibration constants here
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
+		T =  t_scale * T - GetConstant(adc_time_offsets, digihit) + t_base;
 		pedestal=double(digihit->pedestal*digihit->nsamples_integral
 				/digihit->nsamples_pedestal);
 		double dA=A-pedestal;
