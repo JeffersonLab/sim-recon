@@ -2188,10 +2188,20 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
 	/// ObjList objects pointed to by event2 upon entry should be considered
 	/// owned by event1 upon return.
 
+	// Allow a list of 1 event with only config objects in test below
+	bool justconfig = false;
+	if(events1.size()==1){
+		ObjList *objs1 = events1.front();
+		justconfig = objs1->hit_objs.size()==0 && objs1->misc_objs.size()==0 && objs1->config_objs.size()!=0;
+	}else if(events2.size()==1){
+		ObjList *objs2 = events2.front();
+		justconfig = objs2->hit_objs.size()==0 && objs2->misc_objs.size()==0 && objs2->config_objs.size()!=0;
+	}
+
 	// Check number of events and throw exception if appropriate
 	unsigned int Nevents1 = events1.size();
 	unsigned int Nevents2 = events2.size();
-	if(Nevents1>0 && Nevents2>0){
+	if(Nevents1>0 && Nevents2>0 && !justconfig){
 		if(Nevents1 != Nevents2){
 			evioout << "Mismatch of number of events passed to MergeObjLists. Throwing exception." << endl;
 			evioout << "Nevents1="<<Nevents1<<"  Nevents2="<<Nevents2<<endl;
@@ -2211,6 +2221,7 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
 	// If we get here it means both events1 and events2 have events
 	list<ObjList*>::iterator iter = events1.begin();
 	for(; iter!=events1.end(); iter++){
+		if(events2.empty()) break; // in case one has just config objects in a single event
 		ObjList *objs1 = *iter;
 		ObjList *objs2 = events2.front();
 		events2.pop_front();
@@ -2460,7 +2471,8 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 	uint32_t run_type = 0;
 	uint64_t first_event_num = 1;
 	vector<uint16_t> event_types;
-	vector<map<uint32_t, DCODAROCInfo*> > rocinfos; // key=rocid
+	map<uint32_t, vector<DCODAROCInfo*> > rocinfos;  // key=event (from 0 to Mevents-1)
+	//vector<map<uint32_t, DCODAROCInfo*> > rocinfos; // key=rocid
 	
 	// Loop over children of built trigger bank
 	evioDOMNodeListP bankList = trigbank->getChildren();
@@ -2524,33 +2536,24 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 		if(vec32){
 			// Get pointer to DCODAROCInfo object for this rocid/event, instantiating it if necessary
 			uint32_t rocid = (uint32_t)bankPtr->tag;
-			uint32_t ievent=0;
-			uint32_t idx = 0;
-			while(idx+1 < vec32->size()){
-				uint64_t ts_low  = (*vec32)[idx++];
-				uint64_t ts_high = (*vec32)[idx++];
+			uint32_t Nwords_per_event = vec32->size()/Mevents;
+			if(vec32->size() != Mevents*Nwords_per_event){
+				_DBG_ << "Number of ROC data words in Trigger Bank inconsistent with header" << endl;
+				exit(-1);
+			}
 			
-				// Get pointer to DCODAROCInfo object for this rocid/event
-				// instantiating it if necessary. This is a little compliecated
-				// since we have to keep track of Mevents*Nrocs DCODAROCInfo objects
-				while(rocinfos.size() <= ievent){
-					map<uint32_t, DCODAROCInfo*> tmp;
-					rocinfos.push_back(tmp);
-				}
-				DCODAROCInfo *codarocinfo = rocinfos[ievent][rocid];
-				if(codarocinfo == NULL) codarocinfo = rocinfos[ievent][rocid] = new DCODAROCInfo;
-				ievent++;
+			uint32_t *iptr = &(*vec32)[0];
+			for(uint32_t ievent=0; ievent<Mevents; ievent++){
 
+				DCODAROCInfo *codarocinfo = new DCODAROCInfo;
 				codarocinfo->rocid = rocid;
-				codarocinfo->timestamp = (ts_high<<32) + ts_low;
 
-				// ROC-specific data is present if bit 3 is NOT set
-				if( ((trigbank->tag>>3) & 0x1) == 0x0 ){
-					for(uint32_t i=0; i<Mevents; i++){
-						if(idx >= vec32->size()) break;
-						codarocinfo->misc.push_back((*vec32)[idx++]);
-					}
-				}
+				uint64_t ts_low  = *iptr++;
+				uint64_t ts_high = *iptr++;
+				codarocinfo->timestamp = (ts_high<<32) + ts_low;
+				for(uint32_t i=2; i<Nwords_per_event; i++) codarocinfo->misc.push_back(*iptr++);
+				
+				rocinfos[ievent].push_back(codarocinfo);
 			}
 		}
 	}
@@ -2571,7 +2574,10 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 	
 	// Copy all objects into events
 	for(uint32_t i=0; i<Mevents; i++){
-		while(events.size()<=i) events.push_back(new ObjList);
+		while(events.size()<=i){
+			if(!ENABLE_DISENTANGLING && !events.empty()) break;
+			events.push_back(new ObjList);
+		}
 		ObjList *objs = events.back();
 		
 		DCODAEventInfo *codaeventinfo = new DCODAEventInfo;
@@ -2582,12 +2588,10 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 		codaeventinfo->avg_timestamp = avg_timestamps.empty() ? 0:avg_timestamps[i];
 		objs->misc_objs.push_back(codaeventinfo);
 		
-		if(rocinfos.size()<=i) continue;
-
-		map<uint32_t, DCODAROCInfo*>::iterator it=rocinfos[i].begin();
-		for(; it!=rocinfos[i].end(); it++) objs->misc_objs.push_back(it->second);
+		vector<DCODAROCInfo*> &codarocinfos = rocinfos[i];
+		for(uint32_t i=0; i<codarocinfos.size(); i++) objs->misc_objs.push_back(codarocinfos[i]);		
 	}
-
+	
 	if(VERBOSE>5) evioout << "    Leaving ParseBuiltTriggerBank()" << endl;
 }
 
@@ -2596,7 +2600,7 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 //----------------
 void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
 {
-	if(VERBOSE>5) evioout << "     Entering ParseModuleConfiguration()" << endl;
+	if(VERBOSE>5) evioout << "     Entering ParseModuleConfiguration()  (events.size()="<<events.size()<<")" << endl;
 	
 	/// Parse a bank of module configuration data. These are configuration values
 	/// programmed into the module at the beginning of the run that may be needed
@@ -2665,6 +2669,7 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
 				case kPARAMF1_TRIGLAT         : f1tdcconfig->TRIGLAT         = val; break;
 				case kPARAMF1_HSDIV           : f1tdcconfig->HSDIV           = val; break;
 				case kPARAMF1_BINSIZE         : f1tdcconfig->BINSIZE         = val; break;
+				case kPARAMF1_REFCLKDIV       : f1tdcconfig->REFCLKDIV       = val; break;
 
 				case kPARAMCAEN1290_WINWIDTH  : caen1290tdcconfig->WINWIDTH  = val; break;
 				case kPARAMCAEN1290_WINOFFSET : caen1290tdcconfig->WINOFFSET = val; break;
@@ -2848,6 +2853,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 			case 2: // Event Header
 				//slot_event_header = (*iptr>>22) & 0x1F;
 				itrigger = (*iptr>>0) & 0x3FFFFF;
+				if(VERBOSE>7) evioout << "      FADC250 Event Header: itrigger="<<itrigger<<" (objs=0x"<<hex<<objs<<dec<<", last_itrigger="<<last_itrigger<<", rocid="<<rocid<<", slot="<<slot<<")" <<endl;
 				if( (itrigger!=last_itrigger) || (objs==NULL) ){
 					if(ENABLE_DISENTANGLING){
 						if(objs){
@@ -3174,16 +3180,18 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				break;
 			case 2: // Event Header
 				//slot_event_header = (*iptr>>22) & 0x1F;
-				itrigger = (*iptr>>0) & 0x3FFFFF;
+				itrigger = (*iptr>>0) & 0x3FFFFFF;
 				if(VERBOSE>7) evioout << "      FADC125 Event Header: itrigger="<<itrigger<<" (objs=0x"<<hex<<objs<<dec<<", last_itrigger="<<last_itrigger<<", rocid="<<rocid<<", slot="<<slot<<")" <<endl;
-				if( (itrigger!=last_itrigger) && !ENABLE_DISENTANGLING ){
-					if(objs){
-						events.push_back(objs);
-						objs = NULL;
+				if( (itrigger!=last_itrigger) || (objs==NULL) ){
+					if(ENABLE_DISENTANGLING){
+						if(objs){
+							events.push_back(objs);
+							objs = NULL;
+						}
 					}
+					if(!objs) objs = new ObjList;
 					last_itrigger = itrigger;
 				}
-				if(!objs) objs = new ObjList;
 				break;
 			case 3: // Trigger Time
 				t = ((*iptr)&0xFFFFFF)<<0;
@@ -3429,7 +3437,7 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 
 	uint32_t slot_block_header     = (*iptr)>>22 & 0x001F;
 	uint32_t block_num             = (*iptr)>> 8 & 0x03FF;
-	uint32_t Nevents_block_header  = (*iptr)>> 0 & 0x000F;
+	uint32_t Nevents_block_header  = (*iptr)>> 0 & 0x00FF;
 	int modtype = (*iptr)>>18 & 0x000F;  // should match a DModuleType::type_id_t
 	if(VERBOSE>2) evioout << "    F1 Block Header: slot=" << slot_block_header << " block_num=" << block_num << " Nevents=" << Nevents_block_header << endl;
 
@@ -3581,10 +3589,11 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 	while(iptr<iend && (*iptr&0xF8000000)==0xF8000000)iptr++;
 
 	// Double check that we found all of the events we were supposed to
+	if(!ENABLE_DISENTANGLING) Nevents_block_header=1;
 	if(events.size() != Nevents_block_header){
 		stringstream ss;
 		ss << "F1TDC missing events in block! (found "<< events.size() <<" but should have found "<<Nevents_block_header<<")";
-		DumpBinary(istart, iend, 0);
+		DumpBinary(istart, iend, 128);
 		throw JException(ss.str());
 	}
 
@@ -3672,7 +3681,11 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 	
 		// This word appears to be appended to the data.
 		// Probably in the ROL. Ignore it if found.
-		if(*iptr == 0xd00dd00d) {iptr++; continue;}
+		if(*iptr == 0xd00dd00d) {
+			if(VERBOSE>7) evioout << "         CAEN skipping 0xd00dd00d word" << endl;
+			iptr++;
+			continue;
+		}
 	
 		uint32_t type = (*iptr) >> 27;
 		uint32_t edge = 0; // 1=trailing, 0=leading
