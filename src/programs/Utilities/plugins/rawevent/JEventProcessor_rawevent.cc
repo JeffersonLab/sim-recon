@@ -380,6 +380,14 @@ jerror_t JEventProcessor_rawevent::init(void) {
      if (nMod < 1)
         continue; // ignore crates with no digitization modules
 
+     // hack to configure slot for F1TDC reference signal
+     // crate = 51, slot = 17, channel = 8
+     if(crateID[i] == 51) {
+       modules[i][16] = F1TDC32;
+       detID[i][16] = 1;
+       nModules[i]++;
+     }
+
       stat = mc2codaSetCrate(expID,crateID[i],nModules[i]-2,modules[i],detID[i]);
       if (stat == -1) {
         jerr << "?JEventProcessor_rawevent...error return from mc2codaSetCrate()"
@@ -388,7 +396,7 @@ jerror_t JEventProcessor_rawevent::init(void) {
       }
     }
   }
-  
+
   // Optionally dump translation table map into file for debugging
   if (dumpmap) {
      ofstream *ofs = new ofstream("cscMap.out");
@@ -1808,6 +1816,42 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   }
 
 
+  // Write out F1TDC reference time information
+  // Set it to zero for MC
+  hitCount++;
+  nhits=1;
+  double E=0;
+  double t=0;
+  hit[0].hit_id      = hitCount;
+  hit[0].det_id      = detID;
+  // this corresponds to a particular channel set up by Beni 
+  hit[0].crate_id    = 51;
+  hit[0].slot_id     = 17;
+  hit[0].chan_id     = 8;
+  hit[0].module_id   = F1TDC32;
+  hit[0].module_mode = 0;
+  hit[0].nwords      = 1;
+  hit[0].hdata       = mcData;
+  hit[0].hdata[0]    = t;
+      
+  if (dumphits > 1) {
+	  jout << std::endl;
+	  jout << " F1TDC reference signal" << std::endl;
+	  jout << " c,s,c are " << hit[0].crate_id << ", " << hit[0].slot_id
+	       << ", " << hit[0].chan_id << std::endl;
+	  jout << " hdata is: " << hit[0].hdata[0] << std::endl;
+	  jout << " E,t are " << E << ", " << t << std::endl;
+	  jout << std::endl;
+  }
+  
+  if (nomc2coda == 0) {
+	  stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+	  if (stat != nhits) {
+		  jerr << "?error return from mc2codaWrite() for F1TDC reference time: " 
+		       << stat << std::endl << std::endl;
+		  exit(EXIT_FAILURE);
+	  }
+  }
 
   // close event
   if (nomc2coda == 0) {
@@ -1897,7 +1941,7 @@ void JEventProcessor_rawevent::readTranslationTable(void) {
    string tt_xml; 
 
    // Try getting it from CCDB first
-   if (jcalib && !NO_CCDB) {
+v   if (jcalib && !NO_CCDB) {
       map<string,string> tt;
       string namepath = "Translation/DAQ2detector";
       jout << "Reading translation table from calib DB: " << namepath << " ..." << std::endl;
