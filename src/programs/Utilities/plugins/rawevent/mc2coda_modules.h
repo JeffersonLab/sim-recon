@@ -685,12 +685,14 @@ void WriteDAQconfigBank(CODA_CRATE_MAP *crate, int roc)
 	switch(modtype){
 		case FADC250:
 			partype[Npar] = kPARAM250_NSA_NSB;   parvalue[Npar++] = FADC250_WINDOW_WIDTH;
-			partype[Npar] = kPARAM250_NPED;      parvalue[Npar++] = 4; // hardwired in 1st gen. firmware
+			//partype[Npar] = kPARAM250_NPED;      parvalue[Npar++] = 4; // hardwired in 1st gen. firmware
+			partype[Npar] = kPARAM250_NPED;      parvalue[Npar++] = 1; // we save only one pedestal channel
 			break;
 		case FADC125:
 			partype[Npar] = kPARAM125_NSA_NSB;   parvalue[Npar++] = FADC125_WINDOW_WIDTH;
-			partype[Npar] = kPARAM125_WINWIDTH;  parvalue[Npar++] = FADC125_WINDOW_WIDTH;
-			partype[Npar] = kPARAM125_NPED;      parvalue[Npar++] = 4; // hardwired in 1st gen. firmware
+			partype[Npar] = kPARAM125_WINWIDTH;  parvalue[Npar++] = FADC125_WINDOW_WIDTH;  // this is currently unused in offline code?
+			//partype[Npar] = kPARAM125_NPED;      parvalue[Npar++] = 4; // hardwired in 1st gen. firmware
+			partype[Npar] = kPARAM125_NPED;      parvalue[Npar++] = 1; // we save only one pedestal channel
 			break;
 		case F1TDC32:
 		case F1TDC48:
@@ -712,7 +714,7 @@ void WriteDAQconfigBank(CODA_CRATE_MAP *crate, int roc)
 	// write header word
 	uint32_t slot_mask = crate->moduleMask;
 	*dabufp++ = (Npar<<24) | slot_mask;
-	
+
 	// Write all parameters
 	uint32_t ii;
 	for(ii=0; ii<Npar; ii++){

@@ -125,12 +125,15 @@ mc2codaSetCrate(CODA_EXP_INFO *expID, int crateid, int nmod, int *modules, int *
 	printf("mc2codSetCrate: INFO: Crate %d has %d modules for readout\n",crateid, nmod);
 	expID->crate[(crateid-1)]->nModules = nmod;
 	expID->crate[(crateid-1)]->moduleMask = 0;
+	/*printf("slots: ");*/
 	for (ii=0;ii<MAX_SLOTS;ii++) {
 		expID->crate[(crateid-1)]->module_map[ii] = modules[ii];
 		expID->crate[(crateid-1)]->det_map[ii] = detid[ii];
-		if(modules[ii] != 0) expID->crate[(crateid-1)]->moduleMask |= (1<<ii);
+		if(modules[ii] != 0) expID->crate[(crateid-1)]->moduleMask |= (1<<(ii+1));
+		/*if(modules[ii] != 0) printf("%d ", ii+1);*/
 	}
-	
+	/*printf("\n");*/
+
 	mc2coda_ncrates_defined++;
 	
 	/* Initialization is Complete ?? */
@@ -192,7 +195,7 @@ mc2codaOpenEvent(CODA_EXP_INFO *expID, uint64_t eventNum, uint64_t trigTime, uns
 			evinfo->hcount[ii][jj] = 0;
 			/* Check if there is a valid module for this crate/slot pair  and
 			 allocate the MAX number of HIT structures for that slot */
-			if((expID->crate[ii]->moduleMask)&(1<<jj)) {
+			if((expID->crate[ii]->moduleMask)&(1<<(jj+1))) {
 				/* printf("DEBUG: Allocating hit array for crate,slot = %d,%d\n",ii,jj); */
 				evinfo->hits[ii][jj] = (CODA_HIT_INFO *) malloc(MAX_HITS_PER_SLOT * sizeof(CODA_HIT_INFO));
 			}else{
@@ -387,7 +390,7 @@ mc2codaCloseEvent(CODA_EVENT_INFO *event)
 		// the CPU.
 		det = 0;
 		for(jj=0; jj<MAX_SLOTS; jj++){
-			if(((1<<jj)&(crate->moduleMask)) == 0) continue;
+			if(((1<<(jj+1))&(crate->moduleMask)) == 0) continue;
 			det = crate->det_map[jj];
 			if(det != 0) break;
 		}
@@ -414,7 +417,7 @@ mc2codaCloseEvent(CODA_EVENT_INFO *event)
 		
 		/* Loop through all modules */
 		for(jj=0; jj<MAX_SLOTS; jj++) {
-			if(((1<<jj)&(crate->moduleMask)) == 0) continue;
+			if(((1<<(jj+1))&(crate->moduleMask)) == 0) continue;
 			
 			// If module type changes, then we need to open a new
 			// data bank
