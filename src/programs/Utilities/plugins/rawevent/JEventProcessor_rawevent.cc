@@ -1941,7 +1941,7 @@ void JEventProcessor_rawevent::readTranslationTable(void) {
    string tt_xml; 
 
    // Try getting it from CCDB first
-v   if (jcalib && !NO_CCDB) {
+   if (jcalib && !NO_CCDB) {
       map<string,string> tt;
       string namepath = "Translation/DAQ2detector";
       jout << "Reading translation table from calib DB: " << namepath << " ..." << std::endl;
