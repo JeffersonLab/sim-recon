@@ -37,6 +37,15 @@ jerror_t DBCALTDCHit_factory::init(void)
 //------------------
 jerror_t DBCALTDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
+
+  t_rollover = 65250;
+  if (runnumber>1776){
+    t_rollover = 64678;
+  }
+  if (runnumber>2010){
+    t_rollover = 64466;
+  }
+
    /// Read in calibration constants
    vector<double> raw_time_offsets;
 
@@ -113,13 +122,6 @@ jerror_t DBCALTDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
       double rel_time = 0;
       //hit->t = t_scale * (T - GetConstant(time_offsets,digihit)) + t_base;
 
-      t_rollover = 65250;
-      // if (runnumber>1776){
-      // 	t_rollover = 64678;
-      // }
-      // if (runnumber>2010){
-      // 	t_rollover = 64466;
-      // }
 
       if (tref>0){ // got reference signal
 	// Take care of rollover
