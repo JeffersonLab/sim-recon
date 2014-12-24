@@ -15,7 +15,7 @@ using namespace std;
 
 #include "units.h"
 
-DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center)
+DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, double attenutation_length)
 {
   
   // this is a problem -- both hits are on the same end...
@@ -74,8 +74,8 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   float dUp = 0.5 * fibLen + m_zLocal;
   float dDown = 0.5 * fibLen - m_zLocal;
 
-  float attUp = exp( -dUp / DBCALGeometry::ATTEN_LENGTH );
-  float attDown = exp( -dDown / DBCALGeometry::ATTEN_LENGTH );
+  float attUp = exp( -dUp / attenutation_length );
+  float attDown = exp( -dDown / attenutation_length );
  
   // use these to correct the energy
   m_E =  ( upHit.E / attUp + downHit.E / attDown ) / 2;

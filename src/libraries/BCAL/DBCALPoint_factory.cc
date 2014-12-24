@@ -14,6 +14,12 @@ using namespace jana;
 
 #include "units.h"
 
+/// temp
+static const int BCAL_NUM_MODULES  = 48;
+static const int BCAL_NUM_LAYERS   =  4;
+static const int BCAL_NUM_SECTORS  =  4;
+
+
 //----------------
 // brun
 //----------------
@@ -22,6 +28,29 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
   DGeometry* geom = app->GetDGeometry(runnumber);
   geom->GetTargetZ(m_z_target_center);
 
+
+  // load attenuation correction parameters 
+  vector< vector<double> > in_atten_parameters;
+  loop->GetCalib("/BCAL/attenuation_parameters", in_atten_parameters);
+
+  attenuation_parameters.clear();
+  int channel = 0;
+  for (int module=1; module<=BCAL_NUM_MODULES; module++) {
+	  for (int layer=1; layer<=BCAL_NUM_LAYERS; layer++) {
+		  for (int sector=1; sector<=BCAL_NUM_SECTORS; sector++) {
+			  int cell_id = DBCALGeometry::cellId(module,layer,sector);
+
+			  attenuation_parameters[cell_id] = vector<double>(3,0.);
+			  attenuation_parameters[cell_id][0] = in_atten_parameters[channel][0];
+			  attenuation_parameters[cell_id][1] = in_atten_parameters[channel][1];
+			  attenuation_parameters[cell_id][2] = in_atten_parameters[channel][2];
+
+			  channel++;
+		  }
+	  }
+  }
+
+  
   return NOERROR;
 }
 
@@ -95,7 +124,14 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
 
     if (zLocal > (0.5*fibLen + tol) || zLocal < (-0.5*fibLen - tol)) continue;
 
-    DBCALPoint *point = new DBCALPoint(*uphit,*dnhit,m_z_target_center);
+    // pass attenuation length parameters to the DBCALPoint constructor, since
+    // many of the calculations are implemented there
+    int id = DBCALGeometry::cellId( uphit->module, uphit->layer, uphit->sector );  // key the cell identification off of the upstream cell
+    double attenuation_length = DBCALGeometry::ATTEN_LENGTH;
+    double attenuation_L1=-1., attenuation_L2=-1.;  // these parameters are ignored for now
+    GetAttenuationParameters(id, attenuation_length, attenuation_L1, attenuation_L2);
+
+    DBCALPoint *point = new DBCALPoint(*uphit,*dnhit,m_z_target_center,attenuation_length);
 
     point->AddAssociatedObject(uphit);
     point->AddAssociatedObject(dnhit);
@@ -108,4 +144,22 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
   //DBCALCluster_factory.cc
 
   return NOERROR;
+}
+
+bool DBCALPoint_factory::GetAttenuationParameters(int id, double &attenuation_length, 
+						    double &attenuation_L1, double &attenuation_L2)
+{
+	attenuation_parms_t::iterator parms_itr = attenuation_parameters.find(id);
+	// couldn't find it!
+	if(parms_itr != attenuation_parameters.end()) {
+		return false;
+	}
+
+	vector<double> &parms = parms_itr->second;
+
+	attenuation_length = parms[0];
+	attenuation_L1 = parms[1];
+	attenuation_L2 = parms[2];
+
+	return true;
 }
