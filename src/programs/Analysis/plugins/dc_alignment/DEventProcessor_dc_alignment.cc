@@ -1699,7 +1699,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       double y=S(state_y);
       double tx=S(state_tx);
       double ty=S(state_ty);
-      if (isnan(x) || isnan(y)) return UNRECOVERABLE_ERROR;
+      if (std::isnan(x) || std::isnan(y)) return UNRECOVERABLE_ERROR;
       
       // Get the alignment vector and error matrix for this layer
       unsigned int layer=hits[id]->wire->layer-1;
@@ -1900,7 +1900,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       double y=S(state_y);
       double tx=S(state_tx);
       double ty=S(state_ty);
-      if (isnan(x) || isnan(y)) return UNRECOVERABLE_ERROR;
+      if (std::isnan(x) || std::isnan(y)) return UNRECOVERABLE_ERROR;
       
       // Get the alignment vector and error matrix for this layer
       unsigned int layer=hits[id]->wire->layer-1;
@@ -2296,7 +2296,7 @@ DEventProcessor_dc_alignment::FindOffsets(vector<const DFDCPseudo *>&hits,
     double y=S(state_y);
     double tx=S(state_tx);
     double ty=S(state_ty);
-    if (isnan(x) || isnan(y)) return UNRECOVERABLE_ERROR;
+    if (std::isnan(x) || std::isnan(y)) return UNRECOVERABLE_ERROR;
       
     // Get the wire plane alignment vector and error matrix for this layer
     DMatrix2x1 Aw=fdc_alignments[layer].A;

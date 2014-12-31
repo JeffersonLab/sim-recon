@@ -1395,7 +1395,7 @@ double DReferenceTrajectory::DistToRT(DVector3 hit, double *s,
 	    return numeric_limits<double>::quiet_NaN();
 	  }
 
-	  if (isnan(Ro))
+	  if (std::isnan(Ro))
 	    {
 	  }
 	}

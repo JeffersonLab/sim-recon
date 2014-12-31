@@ -656,7 +656,7 @@ jerror_t DTrackFitterRiemann::ComputeCRPhi(){
       for (unsigned int i=0;i<imax;i++){ 
 	double zi=my_circle_hits[i]->z;
         double sigma2_ms=GetProcessNoise(my_circle_hits[i]->XY,zi);
-	if (isnan(sigma2_ms)){
+	if (std::isnan(sigma2_ms)){
 	  sigma2_ms=0.;
 	}
         double Ri=my_circle_hits[i]->XY.Mod();
@@ -727,7 +727,7 @@ jerror_t DTrackFitterRiemann::ComputeCR(){
       for (unsigned int i=0;i<imax;i++){
 	double zi=my_line_hits[i]->z;
         double sigma2_ms=GetProcessNoise(my_line_hits[i]->XY,zi);
-	if (isnan(sigma2_ms)){
+	if (std::isnan(sigma2_ms)){
 	  sigma2_ms=0.;
 	}      
         CR_ms(m,k)+=sigma2_ms*(zk-zi)*(zm-zi)/sinl4;
@@ -766,7 +766,7 @@ jerror_t DTrackFitterRiemann::ComputeCz(){
       for (unsigned int i=0;i<imax;i++){
 	double zi=my_line_hits[k]->z;
 	double sigma2_ms=GetProcessNoise(my_line_hits[i]->XY,zi);
-	if (isnan(sigma2_ms)){
+	if (std::isnan(sigma2_ms)){
 	  sigma2_ms=0.;
 	}
 	Cz_ms(m,k)+=sigma2_ms*(s[k]-s[i])*(s[m]-s[i])/cosl4;

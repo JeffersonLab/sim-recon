@@ -846,7 +846,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
       double y=S(state_y);
       double tx=S(state_tx);
       double ty=S(state_ty);
-      if (isnan(x) || isnan(y)) return UNRECOVERABLE_ERROR;
+      if (std::isnan(x) || std::isnan(y)) return UNRECOVERABLE_ERROR;
       
       // x,y and tx,ty in local coordinate system	
       // To transform from (x,y) to (u,v), need to do a rotation:
