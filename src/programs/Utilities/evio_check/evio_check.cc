@@ -49,7 +49,7 @@ string HexStr(uint16_t v);
 string HexStr(uint8_t v);
 void PrintEVIOBlockHeader(uint32_t *buff);
 void PrintEVIOBankInfo(uint32_t *buff);
-uint32_t ProcessBlock(uint32_t *istart, uint32_t *iend, uint32_t &Ntoplevelbanks);
+uint32_t ProcessBlock(uint32_t blknum, uint32_t *istart, uint32_t *iend, uint32_t &Ntoplevelbanks);
 void ParseCommandLineArguments(int narg, char *argv[]);
 void Usage(void);
 
@@ -111,14 +111,18 @@ int main(int narg, char *argv[])
 		ifs.read((char*)buff, block_length*sizeof(uint32_t));
 		valid_words = ifs.gcount()/sizeof(uint32_t);
 		if(valid_words < block_length){
-			cerr << "Error reading in EVIO block!" << endl;
-			cerr << "block size is " << block_length << " words but only able to read " << valid_words << "words!" << endl;
-			exit(-4);
+			cerr << "Error reading in EVIO block!";
+			if(valid_words>=2) cerr << "  (block number: " << (swap_needed ? EVIO_SWAP32(buff[1]):buff[1]) << " )";
+			cerr << endl;
+			cerr << "block size is " << block_length << " words but only able to read " << valid_words << " words!" << endl;
+			Nerrors++;
+			break;
+			//exit(-4);
 		}
 		if(swap_needed) for(uint32_t i=0; i<8; i++) buff[i] = EVIO_SWAP32(buff[i]); // Swap EVIO block header
 
 		uint32_t Ntoplevelbanks;
-		ProcessBlock(&buff[8], &buff[valid_words], Ntoplevelbanks);
+		ProcessBlock(buff[1], &buff[8], &buff[valid_words], Ntoplevelbanks);
 		
 		Nblocks_read++;
 		Nevents_read += buff[3];
@@ -249,7 +253,7 @@ void PrintEVIOBankInfo(uint32_t *buff)
 //------------------------
 // ProcessBlock
 //------------------------
-uint32_t ProcessBlock(uint32_t *istart, uint32_t *iend, uint32_t &Ntoplevelbanks)
+uint32_t ProcessBlock(uint32_t blknum, uint32_t *istart, uint32_t *iend, uint32_t &Ntoplevelbanks)
 {
 	uint32_t *iptr = istart;
 
@@ -274,7 +278,7 @@ uint32_t ProcessBlock(uint32_t *istart, uint32_t *iend, uint32_t &Ntoplevelbanks
 		static uint32_t Nwarnings=0;
 		Nerrors++;
 		Nwarnings++;
-		if(Nwarnings<=10) _DBG_<< "WARNING! Nexpected_words="<<Nexpected_words<<" while Ntot_words="<<Ntot_words<<endl;
+		if(Nwarnings<=10) _DBG_<< "WARNING! block " << blknum << " : Nexpected_words="<<Nexpected_words<<" while Ntot_words="<<Ntot_words<<endl;
 		if(Nwarnings==10){
 			cout << "At least 10 blocks seen where the word count obtained from" << endl;
 			cout << "bank headers does not match the word count from the EVIO" << endl;
