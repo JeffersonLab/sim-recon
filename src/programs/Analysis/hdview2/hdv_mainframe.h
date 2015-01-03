@@ -35,7 +35,7 @@ class hdv_fulllistframe;
 class hdv_endviewAframe;
 class hdv_endviewBframe;
 class DKinematicData;
-#ifndef __CINT__
+#if !(defined(__CINT__) || defined(__CLING__))
 #include "trk_mainframe.h"
 #include "hdv_optionsframe.h"
 #include "hdv_debugerframe.h"

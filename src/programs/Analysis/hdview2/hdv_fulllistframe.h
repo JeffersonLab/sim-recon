@@ -31,7 +31,7 @@
 class hdv_mainframe;
 class DMCThrown;
 class DKinematicData;
-#ifndef __CINT__
+#if !(defined(__CINT__) || defined(__CLING__))
 #include "hdv_mainframe.h"
 #endif
 

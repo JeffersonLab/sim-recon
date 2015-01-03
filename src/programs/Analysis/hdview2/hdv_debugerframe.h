@@ -35,7 +35,7 @@ class DKinematicData;
 class DTrackWireBased;
 class DTrackTimeBased;
 
-#ifndef __CINT__
+#if !(defined(__CINT__) || defined(__CLING__))
 #include "hdv_mainframe.h"
 #include <PID/DKinematicData.h>
 #include <TRACKING/DTrackWireBased.h>
