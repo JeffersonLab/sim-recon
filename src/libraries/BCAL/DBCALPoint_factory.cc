@@ -33,6 +33,8 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
   vector< vector<double> > in_atten_parameters;
   loop->GetCalib("/BCAL/attenuation_parameters", in_atten_parameters);
 
+  cerr << "loading /BCAL/attenuation_parameters ..." << endl;
+
   attenuation_parameters.clear();
   int channel = 0;
   for (int module=1; module<=BCAL_NUM_MODULES; module++) {
@@ -41,9 +43,18 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
 			  int cell_id = DBCALGeometry::cellId(module,layer,sector);
 
 			  attenuation_parameters[cell_id] = vector<double>(3,0.);
-			  attenuation_parameters[cell_id][0] = in_atten_parameters[channel][0];
-			  attenuation_parameters[cell_id][1] = in_atten_parameters[channel][1];
-			  attenuation_parameters[cell_id][2] = in_atten_parameters[channel][2];
+			  //attenuation_parameters[cell_id][0] = in_atten_parameters[channel][0];
+			  //attenuation_parameters[cell_id][1] = in_atten_parameters[channel][1];
+			  //attenuation_parameters[cell_id][2] = in_atten_parameters[channel][2];
+			  // hack to workaround odd CCDB behavior
+			  attenuation_parameters[cell_id][0] = in_atten_parameters[channel][1];
+			  attenuation_parameters[cell_id][1] = in_atten_parameters[channel][2];
+			  attenuation_parameters[cell_id][2] = in_atten_parameters[channel][0];
+/*
+			  cerr << " loaded " << cell_id << " = " << attenuation_parameters[cell_id][0] << ", "
+			       << attenuation_parameters[cell_id][1] << ", "
+			       << attenuation_parameters[cell_id][2] << endl;
+*/
 
 			  channel++;
 		  }
@@ -151,7 +162,7 @@ bool DBCALPoint_factory::GetAttenuationParameters(int id, double &attenuation_le
 {
 	attenuation_parms_t::iterator parms_itr = attenuation_parameters.find(id);
 	// couldn't find it!
-	if(parms_itr != attenuation_parameters.end()) {
+	if(parms_itr == attenuation_parameters.end()) {
 		return false;
 	}
 
