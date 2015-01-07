@@ -6,6 +6,8 @@ import sbms
 Import('*')
 env = env.Clone()
 
-sbms.plugin(env)
+sbms.AddDANA(env)
+env.AppendUnique(LIBS=['expat'])
+sbms.library(env)
 
 

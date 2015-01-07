@@ -496,9 +496,11 @@ def AddDANA(env):
 	AddHDDS(env)
 	AddXERCES(env)
 	AddEVIO(env)
+	AddET(env)
+	AddCODAChannels(env)
 	DANA_LIBS  = "DANA ANALYSIS PID TAGGER TRACKING START_COUNTER"
 	DANA_LIBS += " CERE RICH CDC TRIGGER PAIR_SPECTROMETER"
-	DANA_LIBS += " FDC TOF BCAL FCAL CCAL HDGEOMETRY JANA"
+	DANA_LIBS += " FDC TOF BCAL FCAL CCAL HDGEOMETRY TTAB DAQ JANA"
 	env.PrependUnique(LIBS = DANA_LIBS.split())
 
 ##################################
@@ -560,11 +562,15 @@ def AddCODAChannels(env):
 	# Only add codaChannels library if CODA is set
 	coda = os.getenv('CODA')
 	arch = os.getenv('ARCH')
-	if(coda != None) :
-		env.AppendUnique(CXXFLAGS = ['-DHAVE_CODACHANNELS'])
-		env.AppendUnique(CPPPATH = ['%s/%s/include' % (coda,arch)])
-		env.AppendUnique(LIBPATH = ['%s/%s/lib' % (coda,arch)])
-		env.AppendUnique(LIBS=['codaChannels'])
+	etroot = os.getenv('ETROOT')
+	if(coda   == None) : return
+	if(etroot == None) : return
+
+	AddET(env)
+	env.AppendUnique(CXXFLAGS = ['-DHAVE_CODACHANNELS'])
+	env.AppendUnique(CPPPATH = ['%s/%s/include' % (coda,arch)])
+	env.AppendUnique(LIBPATH = ['%s/%s/lib' % (coda,arch)])
+	env.AppendUnique(LIBS=['codaChannels'])
 
 
 ##################################
