@@ -28,7 +28,6 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
   DGeometry* geom = app->GetDGeometry(runnumber);
   geom->GetTargetZ(m_z_target_center);
 
-
   // load attenuation correction parameters 
   vector< vector<double> > in_atten_parameters;
   loop->GetCalib("/BCAL/attenuation_parameters", in_atten_parameters);
