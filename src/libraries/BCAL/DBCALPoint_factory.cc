@@ -33,7 +33,7 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
   vector< vector<double> > in_atten_parameters;
   loop->GetCalib("/BCAL/attenuation_parameters", in_atten_parameters);
 
-  cerr << "loading /BCAL/attenuation_parameters ..." << endl;
+  cout << "loading /BCAL/attenuation_parameters ..." << endl;
 
   attenuation_parameters.clear();
   int channel = 0;
