@@ -596,10 +596,12 @@ jerror_t DEventProcessor_BCAL_Shower::evnt(jana::JEventLoop* locEventLoop, int l
 	double locVertexZ, locVertexY, locVertexX;
 	//cout << " vertex before = " << locVertexZ << " dTargetZcenter = " << dTargetZCenter << endl;
 	//locVertexZ = locVertex.Z();
-	if(locParticles.size() == 0) 
+
+	if(locParticles.size() == 0) {
+	        // Always unlock before returning
+	        japp->RootUnLock();
 		return NOERROR;
-	//if(locParticles.size() == 1)
-	//	return locParticles[0]->position();
+	}
 
 	double locDOCA, locDOCA2, locSmallestDOCA, locTime0;
 	double locAverageTime = 0.0;
@@ -2754,7 +2756,8 @@ for(size_t i = 0 ; i < locChargedTracks.size(); ++i)
 		}
 	}
 
-	UnlockState();	
+        //UnlockState();	
+	japp->RootUnLock();
 
 
 	/*
