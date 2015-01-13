@@ -93,8 +93,12 @@ jerror_t DEventProcessor_track_skimmer::evnt(jana::JEventLoop* locEventLoop, int
 	// DOCUMENTATION:
 	// ANALYSIS library: https://halldweb1.jlab.org/wiki/index.php/GlueX_Analysis_Software
 
-	unsigned int locFileNumber = Get_FileNumber(locEventLoop);
+	// See whether this is MC data or real data
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+
 	unsigned int locRunNumber = locEventLoop->GetJEvent().GetRunNumber();
+	unsigned int locUniqueID = locMCThrowns.empty() ? 1 : Get_FileNumber(locEventLoop);
 
 	//Get the analysis results for all DReactions. 
 		//Getting these objects triggers the analysis, if it wasn't performed already. 
@@ -109,13 +113,13 @@ jerror_t DEventProcessor_track_skimmer::evnt(jana::JEventLoop* locEventLoop, int
 	japp->WriteLock("EventStoreWriter");
 	{
 		if(locChargedTracks.size() >= 2)
-			dIDXAStream_2track << locRunNumber << " " << locEventNumber << " " << locFileNumber << endl;
+			dIDXAStream_2track << locRunNumber << " " << locEventNumber << " " << locUniqueID << endl;
 		if(locChargedTracks.size() >= 3)
-			dIDXAStream_3track << locRunNumber << " " << locEventNumber << " " << locFileNumber << endl;
+			dIDXAStream_3track << locRunNumber << " " << locEventNumber << " " << locUniqueID << endl;
 		if(locChargedTracks.size() >= 4)
-			dIDXAStream_4track << locRunNumber << " " << locEventNumber << " " << locFileNumber << endl;
+			dIDXAStream_4track << locRunNumber << " " << locEventNumber << " " << locUniqueID << endl;
 		if(locChargedTracks.size() >= 5)
-			dIDXAStream_5track << locRunNumber << " " << locEventNumber << " " << locFileNumber << endl;
+			dIDXAStream_5track << locRunNumber << " " << locEventNumber << " " << locUniqueID << endl;
 
 		// If a particle combo passed the cuts, save the event info in the output file
 		for(size_t loc_i = 0; loc_i < locAnalysisResultsVector.size(); ++loc_i)
@@ -127,13 +131,13 @@ jerror_t DEventProcessor_track_skimmer::evnt(jana::JEventLoop* locEventLoop, int
 				continue; // no combos passed
 
 			if(locChargedTracks.size() >= 2)
-				dIDXAStream_2track1pi0 << locRunNumber << " " << locEventNumber << " " << locFileNumber << endl;
+				dIDXAStream_2track1pi0 << locRunNumber << " " << locEventNumber << " " << locUniqueID << endl;
 			if(locChargedTracks.size() >= 3)
-				dIDXAStream_3track1pi0 << locRunNumber << " " << locEventNumber << " " << locFileNumber << endl;
+				dIDXAStream_3track1pi0 << locRunNumber << " " << locEventNumber << " " << locUniqueID << endl;
 			if(locChargedTracks.size() >= 4)
-				dIDXAStream_4track1pi0 << locRunNumber << " " << locEventNumber << " " << locFileNumber << endl;
+				dIDXAStream_4track1pi0 << locRunNumber << " " << locEventNumber << " " << locUniqueID << endl;
 			if(locChargedTracks.size() >= 5)
-				dIDXAStream_5track1pi0 << locRunNumber << " " << locEventNumber << " " << locFileNumber << endl;
+				dIDXAStream_5track1pi0 << locRunNumber << " " << locEventNumber << " " << locUniqueID << endl;
 		}
 	}
 	japp->Unlock("EventStoreWriter");
