@@ -1,8 +1,8 @@
-// hnamepath: /Independent/Hist_DetectorStudies/Reconstruction/BCALShowerPhiVsZ
-// hnamepath: /Independent/Hist_DetectorStudies/Reconstruction/BCALShowerEnergy
-// hnamepath: /Independent/Hist_DetectorStudies/Not-Matched/BCALNeutralShowerEnergy
-// hnamepath: /Independent/Hist_DetectorStudies/Not-Matched/BCALNeutralShowerDeltaT
-// hnamepath: /Independent/Hist_DetectorStudies/Not-Matched/BCALNeutralShowerDeltaTVsE
+// hnamepath: /Independent/Hist_DetectorStudies/Reconstruction/BCAL/BCALShowerPhiVsZ
+// hnamepath: /Independent/Hist_DetectorStudies/Reconstruction/BCAL/BCALShowerEnergy
+// hnamepath: /Independent/Hist_DetectorStudies/Neutrals/BCALNeutralShowerEnergy
+// hnamepath: /Independent/Hist_DetectorStudies/Neutrals/BCALNeutralShowerDeltaT
+// hnamepath: /Independent/Hist_DetectorStudies/Neutrals/BCALNeutralShowerDeltaTVsE
 
 {
 	//Goto Path
@@ -12,11 +12,11 @@
 	locDirectory->cd();
 
 	//Get Histograms
-	gDirectory->cd("Reconstruction");
+	gDirectory->cd("Reconstruction/BCAL");
 	TH2I* locHist_BCALShowerPhiVsZ = (TH2I*)gDirectory->Get("BCALShowerPhiVsZ");
 	TH1I* locHist_BCALShowerEnergy = (TH1I*)gDirectory->Get("BCALShowerEnergy");
 
-	gDirectory->cd("../Not-Matched");
+	gDirectory->cd("../../Neutrals");
 	TH1I* locHist_BCALNeutralShowerEnergy = (TH1I*)gDirectory->Get("BCALNeutralShowerEnergy"); //photon(?)
 	TH1I* locHist_BCALNeutralShowerDeltaT = (TH1I*)gDirectory->Get("BCALNeutralShowerDeltaT"); //photon(?)
 	TH2I* locHist_BCALNeutralShowerDeltaTVsE = (TH2I*)gDirectory->Get("BCALNeutralShowerDeltaTVsE"); //photon(?)
