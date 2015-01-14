@@ -234,6 +234,15 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		map<int, TH2I*> dHistMap_PVsTheta_TimeBased_GoodTrackFOM; //int is charge
 		map<int, TH2I*> dHistMap_PVsTheta_TimeBased_LowTrackFOM; //int is charge
 
+		TH2I* dHist_CDCRingVsTheta_Candidates;
+		TH2I* dHist_CDCRingVsTheta_WireBased;
+		TH2I* dHist_CDCRingVsTheta_TimeBased;
+		TH2I* dHist_CDCRingVsTheta_TimeBased_GoodTrackFOM;
+		TH2I* dHist_FDCPlaneVsP_Candidates;
+		TH2I* dHist_FDCPlaneVsP_WireBased;
+		TH2I* dHist_FDCPlaneVsP_TimeBased;
+		TH2I* dHist_FDCPlaneVsP_TimeBased_GoodTrackFOM;
+
 		//Matching
 		map<DetectorSystem_t, TH2I*> dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit;
 		map<DetectorSystem_t, TH2I*> dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit;

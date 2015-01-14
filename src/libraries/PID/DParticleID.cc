@@ -1209,6 +1209,56 @@ void DParticleID::Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHyp
 	locChargedTrackHypothesis->dFOM = (locNDF_Total > 0) ? TMath::Prob(locChiSq_Total, locNDF_Total) : numeric_limits<double>::quiet_NaN();
 }
 
+unsigned int DParticleID::Get_CDCRingBitPattern(vector<const DCDCTrackHit*>& locCDCTrackHits) const
+{
+	unsigned int locBitPattern = 0;
+	for(size_t loc_i = 0; loc_i < locCDCTrackHits.size(); ++loc_i)
+	{
+		//bit-shift to get bit for this ring, then bitwise-or
+		unsigned int locBitShift = locCDCTrackHits[loc_i]->wire->ring - 1;
+		unsigned int locBit = (1 << locBitShift); //if ring # is 1, shift 1 by 0
+		locBitPattern |= locBit;
+	}
+	return locBitPattern;
+}
+
+unsigned int DParticleID::Get_FDCPlaneBitPattern(vector<const DFDCPseudo*>& locFDCPseudos) const
+{
+	unsigned int locBitPattern = 0;
+	for(size_t loc_i = 0; loc_i < locFDCPseudos.size(); ++loc_i)
+	{
+		//bit-shift to get bit for this ring, then bitwise-or
+		unsigned int locBitShift = locFDCPseudos[loc_i]->wire->layer - 1;
+		unsigned int locBit = (1 << locBitShift); //if ring # is 1, shift 1 by 0
+		locBitPattern |= locBit;
+	}
+	return locBitPattern;
+}
+
+void DParticleID::Get_CDCRings(int locBitPattern, set<int>& locCDCRings) const
+{
+	locCDCRings.clear();
+	for(unsigned int locRing = 1; locRing <= 28; ++locRing)
+	{
+		unsigned int locBitShift = locRing - 1;
+		unsigned int locBit = (1 << locBitShift); //if ring # is 1, shift 1 by 0
+		if((locBitPattern & locBit) != 0)
+			locCDCRings.insert(locRing);
+	}
+}
+
+void DParticleID::Get_FDCPlanes(int locBitPattern, set<int>& locFDCPlanes) const
+{
+	locFDCPlanes.clear();
+	for(unsigned int locPlane = 1; locPlane <= 24; ++locPlane)
+	{
+		unsigned int locBitShift = locPlane - 1;
+		unsigned int locBit = (1 << locBitShift); //if ring # is 1, shift 1 by 0
+		if((locBitPattern & locBit) != 0)
+			locFDCPlanes.insert(locPlane);
+	}
+}
+
 Particle_t DParticleID::IDTrack(float locCharge, float locMass) const
 {
 	float locMassTolerance = 0.010;

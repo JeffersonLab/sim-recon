@@ -17,6 +17,9 @@
 #include <deque>
 #include <TROOT.h>
 #include <TH2F.h>
+#include "PID/DParticleID.h"
+
+class DParticleID;
 
 class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate>{
  public:
@@ -78,6 +81,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
 
   bool COSMICS,DEBUG_HISTS;
   DTrackFinder *finder;
+  const DParticleID* dParticleID;
 
  // drift time tables
   vector<double>cdc_drift_table;

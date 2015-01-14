@@ -72,6 +72,9 @@ jerror_t DTrackTimeBased_factory_THROWN::brun(jana::JEventLoop *loop, int runnum
 	// Set magnetic field pointer
 	bfield = dapp->GetBfield();
 
+	// Get the particle ID algorithms
+	loop->GetSingle(dParticleID);
+
 	return NOERROR;
 }
 
@@ -174,6 +177,19 @@ jerror_t DTrackTimeBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		}
 
 		_data.push_back(track);
+	}
+
+	// Set CDC ring & FDC plane hit patterns
+	for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
+	{
+		vector<const DCDCTrackHit*> locCDCTrackHits;
+		_data[loc_i]->Get(locCDCTrackHits);
+
+		vector<const DFDCPseudo*> locFDCPseudos;
+		_data[loc_i]->Get(locFDCPseudos);
+
+		_data[loc_i]->dCDCRings = dParticleID->Get_CDCRingBitPattern(locCDCTrackHits);
+		_data[loc_i]->dFDCPlanes = dParticleID->Get_FDCPlaneBitPattern(locFDCPseudos);
 	}
 
 	return NOERROR;

@@ -18,6 +18,8 @@
 #include <DVector3.h>
 #include "HDGEOMETRY/DRootGeom.h"
 #include <TRACKING/DTrackTimeBased_factory.h>
+#include <CDC/DCDCTrackHit.h>
+#include <FDC/DFDCPseudo.h>
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALShower.h>
 #include <TOF/DTOFPoint.h>
@@ -36,7 +38,6 @@
 #include <TMath.h>
 
 class DTrackTimeBased;
-class DCDCTrackHit;
 
 class DParticleID:public jana::JObject{
  public:
@@ -105,11 +106,16 @@ class DParticleID:public jana::JObject{
 	double Calc_TOFFlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, DDetectorMatches* locDetectorMatches) const;
 	double Calc_SCFlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches) const;
 
-  virtual Particle_t IDTrack(float locCharge, float locMass) const;
+	virtual Particle_t IDTrack(float locCharge, float locMass) const;
 
-  double Calc_PropagatedRFTime(const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch) const;
-  double Calc_TimingChiSq(const DKinematicData* locKinematicData, unsigned int &locNDF, double& locTimingPull) const;
-  void Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const;
+	double Calc_PropagatedRFTime(const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch) const;
+	double Calc_TimingChiSq(const DKinematicData* locKinematicData, unsigned int &locNDF, double& locTimingPull) const;
+	void Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const;
+
+	unsigned int Get_CDCRingBitPattern(vector<const DCDCTrackHit*>& locCDCTrackHits) const;
+	unsigned int Get_FDCPlaneBitPattern(vector<const DFDCPseudo*>& locFDCPseudos) const;
+	void Get_CDCRings(int locBitPattern, set<int>& locCDCRings) const;
+	void Get_FDCPlanes(int locBitPattern, set<int>& locFDCPlanes) const;
 
   protected:
 		// gas material properties

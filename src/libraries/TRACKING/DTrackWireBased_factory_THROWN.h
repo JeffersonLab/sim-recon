@@ -14,9 +14,11 @@
 #include <HDGEOMETRY/DGeometry.h>
 #include <HDGEOMETRY/DMagneticFieldMap.h>
 #include "DTrackWireBased.h"
+#include "PID/DParticleID.h"
 
 class DTrackFitter;
 class DTrackHitSelector;
+class DParticleID;
 
 class DTrackWireBased_factory_THROWN:public JFactory<DTrackWireBased>{
 	public:
@@ -33,6 +35,7 @@ class DTrackWireBased_factory_THROWN:public JFactory<DTrackWireBased>{
 		
 		DTrackFitter *fitter;
 		const DTrackHitSelector *hitselector;
+		const DParticleID* dParticleID;
 		vector<DReferenceTrajectory*> rt_pool;
 	
 		DRootGeom *RootGeom;

@@ -146,14 +146,7 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 	}
 
 	// Get the particle ID algorithms
-	vector<const DParticleID *> locPIDAlgorithms;
-	loop->Get(locPIDAlgorithms);
-	if(locPIDAlgorithms.size() < 1){
-		_DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
-		return RESOURCE_UNAVAILABLE;
-	}
-
-	dPIDAlgorithm = locPIDAlgorithms[0];
+	loop->GetSingle(dPIDAlgorithm);
 
 	//Pre-allocate memory for DReferenceTrajectory objects early
 		//The swim-step objects of these arrays take up a significant amount of memory, and it can be difficult to find enough free contiguous space for them.
@@ -261,7 +254,20 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
 
   // Filter out duplicate tracks
   FilterDuplicates();
-  
+
+  // Set CDC ring & FDC plane hit patterns
+  for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
+  {
+    vector<const DCDCTrackHit*> locCDCTrackHits;
+    _data[loc_i]->Get(locCDCTrackHits);
+
+    vector<const DFDCPseudo*> locFDCPseudos;
+    _data[loc_i]->Get(locFDCPseudos);
+
+    _data[loc_i]->dCDCRings = dPIDAlgorithm->Get_CDCRingBitPattern(locCDCTrackHits);
+    _data[loc_i]->dFDCPlanes = dPIDAlgorithm->Get_FDCPlaneBitPattern(locFDCPseudos);
+  }
+
   return NOERROR;
 }
 

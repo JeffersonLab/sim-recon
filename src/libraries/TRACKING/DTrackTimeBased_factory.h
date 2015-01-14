@@ -18,6 +18,7 @@
 #include <TOF/DTOFPoint.h>
 #include <TRACKING/DMCThrown.h>
 #include <START_COUNTER/DSCHit.h>
+#include "PID/DParticleID.h"
 
 class DTrackWireBased;
 class DTrackHitSelector;

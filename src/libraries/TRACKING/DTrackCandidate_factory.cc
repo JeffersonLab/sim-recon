@@ -131,6 +131,8 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
   cdc_endplate.SetZ(endplate_z+endplate_dz);
 
+  dParticleID = NULL;
+  eventLoop->GetSingle(dParticleID);
 
   JCalibration *jcalib = dapp->GetJCalibration(runnumber);
   map<string, double> targetparms;
@@ -547,9 +549,23 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    delete _data[loc_i];
 	  _data.clear();
   	}
+
+
+  // Set CDC ring & FDC plane hit patterns
+  for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
+  {
+    vector<const DCDCTrackHit*> locCDCTrackHits;
+    _data[loc_i]->Get(locCDCTrackHits);
+
+    vector<const DFDCPseudo*> locFDCPseudos;
+    _data[loc_i]->Get(locFDCPseudos);
+
+    _data[loc_i]->dCDCRings = dParticleID->Get_CDCRingBitPattern(locCDCTrackHits);
+    _data[loc_i]->dFDCPlanes = dParticleID->Get_FDCPlaneBitPattern(locFDCPseudos);
+  }
   
   return NOERROR;
-  }
+}
 
 
 // Obtain position and momentum at the exit of a given package using the 

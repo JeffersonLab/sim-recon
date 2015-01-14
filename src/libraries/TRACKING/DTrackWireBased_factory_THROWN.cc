@@ -67,7 +67,10 @@ jerror_t DTrackWireBased_factory_THROWN::brun(jana::JEventLoop *loop, int runnum
 	// Set DGeometry pointers so it can be used by the DReferenceTrajectory class
 	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 	geom = dapp->GetDGeometry(runnumber);
-	
+
+	// Get the particle ID algorithms
+	loop->GetSingle(dParticleID);
+
 	// Set magnetic field pointer
 	bfield = dapp->GetBfield();
 
@@ -160,6 +163,19 @@ jerror_t DTrackWireBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		//track->FOM = 1.0;
 
 		_data.push_back(track);
+	}
+
+	// Set CDC ring & FDC plane hit patterns
+	for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
+	{
+		vector<const DCDCTrackHit*> locCDCTrackHits;
+		_data[loc_i]->Get(locCDCTrackHits);
+
+		vector<const DFDCPseudo*> locFDCPseudos;
+		_data[loc_i]->Get(locFDCPseudos);
+
+		_data[loc_i]->dCDCRings = dParticleID->Get_CDCRingBitPattern(locCDCTrackHits);
+		_data[loc_i]->dFDCPlanes = dParticleID->Get_FDCPlaneBitPattern(locFDCPseudos);
 	}
 
 	return NOERROR;

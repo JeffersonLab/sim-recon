@@ -52,6 +52,11 @@ class DTrackTimeBased:public DKinematicData{
 		double ddx_CDC;
 		unsigned int dNumHitsUsedFordEdx_CDC;
 
+		// Hit CDC Rings & FDC Planes
+		// use the DParticleID Get_CDCRings & Get_FDCPlanes functions to extract the information from these
+		unsigned int dCDCRings; //CDC rings where the track has an associated DCDCTrackHit //rings correspond to bits (1 -> 28)
+		unsigned int dFDCPlanes; //FDC planes where the track has an associated DFDCPseudoHit //planes correspond to bits (1 -> 24)
+
 		void toStrings(vector<pair<string,string> > &items)const{
 			DKinematicData::toStrings(items);
 			AddString(items, "candidate","%d",candidateid);

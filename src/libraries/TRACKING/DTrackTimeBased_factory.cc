@@ -320,6 +320,19 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   // Fill in track data for missing hypotheses 
   InsertMissingHypotheses();
  
+  // Set CDC ring & FDC plane hit patterns
+  for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
+  {
+    vector<const DCDCTrackHit*> locCDCTrackHits;
+    _data[loc_i]->Get(locCDCTrackHits);
+
+    vector<const DFDCPseudo*> locFDCPseudos;
+    _data[loc_i]->Get(locFDCPseudos);
+
+    _data[loc_i]->dCDCRings = pid_algorithm->Get_CDCRingBitPattern(locCDCTrackHits);
+    _data[loc_i]->dFDCPlanes = pid_algorithm->Get_FDCPlaneBitPattern(locFDCPseudos);
+  }
+
   return NOERROR;
 }
 
