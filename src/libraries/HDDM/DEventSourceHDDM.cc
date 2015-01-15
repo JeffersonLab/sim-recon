@@ -309,7 +309,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
                      dynamic_cast<JFactory<DBCALTDCHit>*>(factory), tag);
  
    if (dataClassName == "DCDCHit")
-      return Extract_DCDCHit(record,
+      return Extract_DCDCHit(loop, record,
                      dynamic_cast<JFactory<DCDCHit>*>(factory) , tag);
  
    if (dataClassName == "DFDCHit")
@@ -933,26 +933,10 @@ jerror_t DEventSourceHDDM::Extract_DBCALSiPMSpectrum(hddm_s::HDDM *record,
       stringstream ss(iter->getVals());
 
       // Extract values and use them to fill histo
-      string entry;
-      while (ss >> entry) {
-
-	      if (entry[0] == 'X') {
-		      // get rid of the X, the rest of the entry is the number of zeroes to add
-		      stringstream sss(entry.substr(1)); 
-		      int num_zeros;
-		      sss >> num_zeros;
-
-		      for(int i=0; i<num_zeros; i++) {
-			      dana_spectrum->spectrum.Fill(t, 0.0);
-			      t += bin_width;			      
-		      }
-	      } else {
-		      stringstream sss(entry);
-		      double dE;
-		      sss >> dE;
-		      dana_spectrum->spectrum.Fill(t, dE);
-		      t += bin_width;
-	      }
+      double dE;
+      while (ss >> dE) {
+         dana_spectrum->spectrum.Fill(t, dE);
+         t += bin_width;
       }
 
       data.push_back(dana_spectrum);
@@ -1203,7 +1187,7 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(hddm_s::HDDM *record,
 //------------------
 // Extract_DCDCHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DCDCHit(hddm_s::HDDM *record,
+jerror_t DEventSourceHDDM::Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDDM *record,
                                    JFactory<DCDCHit> *factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
@@ -1218,8 +1202,12 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(hddm_s::HDDM *record,
    vector<DCDCHit*> data;
 
    if (tag == "") {
+      vector<const DCDCHit*> locTruthHits;
+      locEventLoop->Get(locTruthHits, "TRUTH");
+
       const hddm_s::CdcStrawHitList &hits = record->getCdcStrawHits();
       hddm_s::CdcStrawHitList::iterator iter;
+      int locIndex = 0;
       for (iter = hits.begin(); iter != hits.end(); ++iter) {
          DCDCHit *hit = new DCDCHit;
          hit->ring   = iter->getRing();
@@ -1229,7 +1217,10 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(hddm_s::HDDM *record,
          hit->d      = 0.; // initialize to zero to avoid any NaN
          hit->itrack = 0;  // track information is in TRUTH tag
          hit->ptype  = 0;  // ditto
+         if(!locTruthHits.empty())
+           hit->AddAssociatedObject(locTruthHits[locIndex]); //guaranteed to be in order
          data.push_back(hit);
+         ++locIndex;
       }
    }
    else if (tag == "TRUTH") {

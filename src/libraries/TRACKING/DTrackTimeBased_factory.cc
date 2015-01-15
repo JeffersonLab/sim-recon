@@ -216,17 +216,17 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   
   // get start counter hits
   vector<const DSCHit*>sc_hits;
-  eventLoop->Get(sc_hits);
+  loop->Get(sc_hits);
   
   // Get TOF points
   vector<const DTOFPoint*> tof_points;
-  eventLoop->Get(tof_points);
+  loop->Get(tof_points);
   
   // Get BCAL and FCAL showers
   vector<const DBCALShower*>bcal_showers;
-  eventLoop->Get(bcal_showers);    
+  loop->Get(bcal_showers);
   vector<const DFCALShower*>fcal_showers;
-  eventLoop->Get(fcal_showers);    
+  loop->Get(fcal_showers);
   
   vector<const DMCThrown*> mcthrowns;
   if (PID_FORCE_TRUTH) loop->Get(mcthrowns);
@@ -319,7 +319,25 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 
   // Fill in track data for missing hypotheses 
   InsertMissingHypotheses();
- 
+
+  // Set MC Hit-matching information
+  for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
+  {
+    int thrownIndex;
+    double hitFraction;
+    if(!mcthrowns.empty())
+    {
+      GetThrownIndex((DKinematicData*)_data[loc_i], (int)mcthrowns.size()+1, hitFraction, thrownIndex);
+      _data[loc_i]->dMCThrownMatchIndex = thrownIndex;
+      _data[loc_i]->dNumHitsMatchedToThrown = int(hitFraction * float(_data[loc_i]->Ndof + 5) + 0.01); // + 0.01 so that it rounds down properly
+    }
+    else
+    {
+      _data[loc_i]->dMCThrownMatchIndex = -1;
+      _data[loc_i]->dNumHitsMatchedToThrown = 0;
+    }
+  }
+
   // Set CDC ring & FDC plane hit patterns
   for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
   {
@@ -550,7 +568,7 @@ double DTrackTimeBased_factory::GetTruthMatchingFOM(int trackIndex,DTrackTimeBas
 //------------------
 // GetThrownIndex
 //------------------
-void DTrackTimeBased_factory::GetThrownIndex(const DKinematicData *kd, int &MAX_TRACKS, double &f, int &track)
+void DTrackTimeBased_factory::GetThrownIndex(const DKinematicData *kd, int MAX_TRACKS, double &f, int &track)
 {
 	vector<const DCDCTrackHit*> cdctrackhits;
 	vector<const DFDCPseudo*> fdcpseudos;
@@ -567,11 +585,12 @@ void DTrackTimeBased_factory::GetThrownIndex(const DKinematicData *kd, int &MAX_
 	// CDC hits
 	vector<int> cdc_track_no(MAX_TRACKS, 0);
 	for(unsigned int i=0; i<cdctrackhits.size(); i++){
-		vector<const DMCTrackHit*> mctrackhits;
-		cdctrackhits[i]->Get(mctrackhits);
-		if(mctrackhits.size()==0)continue;
-		if(!mctrackhits[0]->primary)continue;
-		int track = mctrackhits[0]->track;
+		const DCDCHit* locCDCHit = NULL;
+		cdctrackhits[i]->GetSingle(locCDCHit);
+		
+		vector<const DCDCHit*> locTruthCDCHits;
+      locCDCHit->Get(locTruthCDCHits);
+		int track = locTruthCDCHits[0]->itrack;
 		if(track>=0 && track<MAX_TRACKS)cdc_track_no[track]++;
 		//_DBG_ << "cdc:(i,trackhitssize,mchitssize,TrackNo,NhitsforTrackNo):  " << "(" << i << "," << cdctrackhits.size() << "," << mctrackhits.size() << "," << track << "," << cdc_track_no[track] << ")" << endl;
 		//_DBG_ << "cdc:(system,ptype,r,phi,z):  " << "(" << mctrackhits[0]->system << "," << mctrackhits[0]->ptype << "," << mctrackhits[0]->r << "," << mctrackhits[0]->phi << "," << mctrackhits[0]->z << ")" << endl;

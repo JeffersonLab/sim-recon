@@ -92,12 +92,10 @@ jerror_t DFDCPseudo_factory::init(void)
   ROUT_FIDUCIAL=48.0;
   MAX_ALLOWED_FDC_HITS=20000;
   STRIP_ANODE_TIME_CUT=10.;
-  MATCH_TRUTH_HITS=false;
 
   r2_out=ROUT_FIDUCIAL*ROUT_FIDUCIAL;
   r2_in=RIN_FIDUCIAL*RIN_FIDUCIAL;
   
-  gPARMS->SetDefaultParameter("FDC:MATCH_TRUTH_HITS",MATCH_TRUTH_HITS,"Match truth hits to pseudopoints (DEF=false)");
   gPARMS->SetDefaultParameter("FDC:ROUT_FIDUCIAL",ROUT_FIDUCIAL, "Outer fiducial radius of FDC in cm"); 
   gPARMS->SetDefaultParameter("FDC:RIN_FIDUCIAL",RIN_FIDUCIAL, "Inner fiducial radius of FDC in cm");
   gPARMS->SetDefaultParameter("FDC:MAX_ALLOWED_FDC_HITS",MAX_ALLOWED_FDC_HITS, "Max. number of FDC hits (includes both cathode strips and wires hits) to allow before considering event too busy to attempt FDC tracking");
@@ -249,7 +247,7 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	// makes that difficult. Here we have the full wire definition so
 	// we make the connection here.
 	vector<const DMCTrackHit*> mctrackhits;
-	if (MATCH_TRUTH_HITS)eventLoop->Get(mctrackhits);
+	eventLoop->Get(mctrackhits);
 
 	vector<const DFDCCathodeCluster*>::iterator uIt = uClus.begin();
 	vector<const DFDCCathodeCluster*>::iterator vIt = vClus.begin();
@@ -456,10 +454,9 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->covxy=(sigy2-sigx2)*sinangle*cosangle;
 
 	      // Try matching truth hit with this "real" hit.
-	      if (MATCH_TRUTH_HITS){
-		const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(newPseu->wire, DRIFT_SPEED*newPseu->time, mctrackhits);
-		if(mctrackhit)newPseu->AddAssociatedObject(mctrackhit);
-	      }
+			const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(newPseu->wire, DRIFT_SPEED*newPseu->time, mctrackhits);
+			if(mctrackhit)newPseu->AddAssociatedObject(mctrackhit);
+
 	      _data.push_back(newPseu);
 	    } // match in x
 	  } else _DBG_ << "Bad wire " << (*xIt)->element <<endl;

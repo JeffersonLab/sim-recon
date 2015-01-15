@@ -57,6 +57,10 @@ class DTrackTimeBased:public DKinematicData{
 		unsigned int dCDCRings; //CDC rings where the track has an associated DCDCTrackHit //rings correspond to bits (1 -> 28)
 		unsigned int dFDCPlanes; //FDC planes where the track has an associated DFDCPseudoHit //planes correspond to bits (1 -> 24)
 
+		// Matching to MC: Highest % of track hits matched to a thrown
+		int dMCThrownMatchIndex; //MC track match index (-1 if somehow no match)
+		int dNumHitsMatchedToThrown;
+
 		void toStrings(vector<pair<string,string> > &items)const{
 			DKinematicData::toStrings(items);
 			AddString(items, "candidate","%d",candidateid);
@@ -64,6 +68,8 @@ class DTrackTimeBased:public DKinematicData{
 			AddString(items, "chisq", "%f", chisq);
 			AddString(items, "Ndof", "%d", Ndof);
 			AddString(items, "FOM", "%f",FOM);
+			AddString(items, "MCMatch", "%d",dMCThrownMatchIndex);
+			AddString(items, "#HitsMCMatched", "%d",dNumHitsMatchedToThrown);
 		}
 };
 

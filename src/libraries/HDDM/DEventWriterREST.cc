@@ -174,9 +174,10 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		tof().setDE(tofpoints[i]->dE);
 
 		//Status //Assume compiler optimizes multiplication
+		hddm_r::TofStatusList tofstatus = tof().addTofStatuses(1);
 		int locStatus = tofpoints[i]->dHorizontalBar + 45*tofpoints[i]->dVerticalBar;
 		locStatus += 45*4*tofpoints[i]->dHorizontalBarStatus + 45*4*4*tofpoints[i]->dVerticalBarStatus;
-		tof().setStatus(locStatus);
+		tofstatus().setStatus(locStatus);
 	}
 
 	// push any DSCHit objects to the output record
@@ -198,6 +199,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		hddm_r::ChargedTrackList tra = res().addChargedTracks(1);
 		tra().setCandidateId(tracks[i]->candidateid);
 		tra().setPtype(tracks[i]->PID());
+
 		hddm_r::TrackFitList fit = tra().addTrackFits(1);
 		fit().setNdof(tracks[i]->Ndof);
 		fit().setChisq(tracks[i]->chisq);
@@ -210,6 +212,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		fit().setT0(tracks[i]->t0());
 		fit().setT0err(tracks[i]->t0_err());
 		fit().setT0det(tracks[i]->t0_detector());
+
 		DMatrixDSym errors = tracks[i]->TrackingErrorMatrix();
 		fit().setE11(errors(0,0));
 		fit().setE12(errors(0,1));
@@ -226,6 +229,15 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		fit().setE44(errors(3,3));
 		fit().setE45(errors(3,4));
 		fit().setE55(errors(4,4));
+
+		hddm_r::HitlayersList locHitLayers = tra().addHitlayerses(1);
+		locHitLayers().setCDCrings(tracks[i]->dCDCRings);
+		locHitLayers().setFDCplanes(tracks[i]->dFDCPlanes);
+
+		hddm_r::McmatchList locMCMatches = tra().addMcmatchs(1);
+		locMCMatches().setIthrown(tracks[i]->dMCThrownMatchIndex);
+		locMCMatches().setNumhitsmatch(tracks[i]->dNumHitsMatchedToThrown);
+
 		if (tracks[i]->dNumHitsUsedFordEdx_FDC + tracks[i]->dNumHitsUsedFordEdx_CDC > 0)
 		{
 			hddm_r::DEdxDCList elo = tra().addDEdxDCs(1);
@@ -261,7 +273,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 			locDetectorMatches[loc_i]->Get_BCALMatchParams(tracks[loc_j], locBCALShowerMatchParamsVector);
 			for(size_t loc_k = 0; loc_k < locBCALShowerMatchParamsVector.size(); ++loc_k)
 			{
-				hddm_r::BcalMatchParamsList bcalList = matches().addBcalMatchParamses(1);
+				hddm_r::BcalMatchParams_v2List bcalList = matches().addBcalMatchParams_v2s(1);
 				bcalList().setTrack(loc_j);
 
 				const DBCALShower* locBCALShower = locBCALShowerMatchParamsVector[loc_k].dBCALShower;
@@ -308,7 +320,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 			locDetectorMatches[loc_i]->Get_TOFMatchParams(tracks[loc_j], locTOFHitMatchParamsVector);
 			for(size_t loc_k = 0; loc_k < locTOFHitMatchParamsVector.size(); ++loc_k)
 			{
-				hddm_r::TofMatchParamsList tofList = matches().addTofMatchParamses(1);
+				hddm_r::TofMatchParams_v2List tofList = matches().addTofMatchParams_v2s(1);
 				tofList().setTrack(loc_j);
 
 				size_t locTOFindex = 0;
@@ -394,7 +406,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 			if(!locDetectorMatches[loc_i]->Get_DistanceToNearestTrack(bcalshowers[loc_j], locDeltaPhi, locDeltaZ))
 				continue;
 
-			hddm_r::BcalDOCAtoTrackList bcalDocaList = matches().addBcalDOCAtoTracks(1);
+			hddm_r::BcalDOCAtoTrack_v2List bcalDocaList = matches().addBcalDOCAtoTrack_v2s(1);
 			bcalDocaList().setShower(loc_j);
 			bcalDocaList().setDeltaphi(locDeltaPhi);
 			bcalDocaList().setDeltaz(locDeltaZ);

@@ -134,8 +134,8 @@ jerror_t DTrackTimeBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		vector<const DFDCPseudo*> fdchits;
 		if(hitselector && cdctrackhits.size()>0)hitselector->GetCDCHits(DTrackHitSelector::kHelical, rt, cdctrackhits, cdchits);
 		if(hitselector && fdcpseudos.size()>0)hitselector->GetFDCHits(DTrackHitSelector::kHelical, rt, fdcpseudos, fdchits);
-		for(unsigned int i=0; i<cdchits.size(); i++)track->AddAssociatedObject(cdchits[i]);
-		for(unsigned int i=0; i<fdchits.size(); i++)track->AddAssociatedObject(fdchits[i]);
+		for(unsigned int j=0; j<cdchits.size(); ++j)track->AddAssociatedObject(cdchits[j]);
+		for(unsigned int j=0; j<fdchits.size(); ++j)track->AddAssociatedObject(fdchits[j]);
 
 		// We want to get chisq and Ndof values for this track using the hits from above.
 		// We do this using the DTrackFitter object. This more or less guarantees that the
@@ -175,6 +175,13 @@ jerror_t DTrackTimeBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 				break;
 			}
 		}
+
+      // Set MC Hit-matching information
+      for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
+      {
+        track->dMCThrownMatchIndex = i;
+        track->dNumHitsMatchedToThrown = track->Ndof + 5;
+      }
 
 		_data.push_back(track);
 	}

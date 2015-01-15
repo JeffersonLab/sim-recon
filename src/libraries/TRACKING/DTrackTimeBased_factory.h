@@ -17,6 +17,7 @@
 #include <FCAL/DFCALShower.h>
 #include <TOF/DTOFPoint.h>
 #include <TRACKING/DMCThrown.h>
+#include <CDC/DCDCHit.h>
 #include <START_COUNTER/DSCHit.h>
 #include "PID/DParticleID.h"
 
@@ -70,7 +71,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
  
   void FilterDuplicates(void);  
   double GetTruthMatchingFOM(int trackIndex,DTrackTimeBased *dtrack,vector<const DMCThrown*>mcthrowns);
-  void GetThrownIndex(const DKinematicData *kd, int &MAX_TRACKS, double &f, int &track);
+  void GetThrownIndex(const DKinematicData *kd, int MAX_TRACKS, double &f, int &track);
 
   void CreateStartTimeList(const DTrackWireBased *track,
 			   vector<const DSCHit*>&sc_hits,
