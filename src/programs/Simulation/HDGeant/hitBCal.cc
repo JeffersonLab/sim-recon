@@ -914,12 +914,29 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
                vals += str;
             }
             else {
-               // lots of zeros are written and this saves space
-               vals += "0";
-            }
+		    // consolidate multiple 0's to save more space
+		    if( (ibin+1 <= bin_end) && (h->GetBinContent(ibin+1) == 0) ) {
+			    int num_zero_bins = 0;
+			    // start counting with the current bin
+			    while(dE == 0.0) {
+				    num_zero_bins++;
+
+				    if(ibin == bin_end)  // stop if we're at the end of the histogram
+					    break;
+				    ibin++;  // move to the next bin
+				    dE = h->GetBinContent(ibin);
+			    }
+
+			    sprintf(str, "X%d", num_zero_bins);
+			    vals += str;
+		    } else {
+			    // lots of zeros are written and this saves space
+			    vals += "0";
+		    }
+	    }
             vals += " ";
          }
-
+	 
          if (E_atten_sum >= THRESH_ATTENUATED_GEV) {
             specs->in[ispec].vals = strdup(vals.c_str());
             if( specs->in[ispec].vals == NULL) {
