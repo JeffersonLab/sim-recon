@@ -2,7 +2,7 @@
 // Created: Fri Nov 26 15:10:51 CST 2010
 // Creator: dwbennet
 
-/// MMD: Looking at the cdoe for the DBCALGeometry::phi( int fADC_cell ) method,
+/// MMD: Looking at the code for the DBCALGeometry::phi( int fADC_cell ) method,
 /// I have to conclude that sectors are numbered 1 through 4.  
 /// Judging by what else I've seen, I have to conclude that layers are numbered 1 through 4 or 1 through 10.  
 /// This is now the standard that I will use.
@@ -52,7 +52,7 @@ float DBCALGeometry::BCALOUTERRAD = 86.17;
 float DBCALGeometry::BCALFIBERLENGTH = 390.0;
 float DBCALGeometry::GLOBAL_CENTER = 212;
   
-float DBCALGeometry::ATTEN_LENGTH = 300.;
+float DBCALGeometry::ATTEN_LENGTH = 520.;
 float DBCALGeometry::C_EFFECTIVE  = 16.75;
 
 float DBCALGeometry::m_radius[] = { 64.3, 
@@ -315,25 +315,31 @@ DBCALGeometry::rSize( int fADC_cell ) {
 float
 DBCALGeometry::phi( int fADC_cell ) {
 
-  int fADC_lay = layer( fADC_cell );
-  int fADC_sect = sector( fADC_cell );
+  // int fADC_lay = layer( fADC_cell );
+  // int fADC_sect = sector( fADC_cell );
   
-  float sectSize;
+  // float sectSize;
 
-  int nSects;
-  if (fADC_lay <= NBCALLAYSIN) {
-    nSects = 4/NSUMSECSIN;
-  } else {
-    nSects = 4/NSUMSECSOUT;
-  }
+  // int nSects;
+  // if (fADC_lay <= NBCALLAYSIN) {
+  //   nSects = 4/NSUMSECSIN;
+  // } else {
+  //   nSects = 4/NSUMSECSOUT;
+  // }
 
-  fADC_sect += nSects * ( module( fADC_cell ) - 1 );
-  sectSize = 2 * PI / (NBCALMODS*nSects);
+  // fADC_sect += nSects * ( module( fADC_cell ) - 1 );
+  // sectSize = 2 * PI / (NBCALMODS*nSects);
   
-  float my_phi = sectSize * ( (float)fADC_sect - 0.5 );
-  my_phi += BCAL_PHI_SHIFT - 2.0*sectSize; // adjust for center of module and overall BCAL shift
+  // float my_phi = sectSize * ( (float)fADC_sect - 0.5 );
+  // my_phi += BCAL_PHI_SHIFT - 2.0*sectSize; // adjust for center of module and overall BCAL shift
   
+  float globsect = getglobalsector(module(fADC_cell), sector(fADC_cell));
+  float sectSize = 2. * PI / 48. / 4;
+  // The first 2 sectors (half of mudule 1) have negative phi
+  float my_phi = sectSize * (globsect-1.5);
+  if (my_phi < 0) my_phi += 2 * PI;
   return my_phi;
+
 }
 
 //--------------
@@ -342,17 +348,19 @@ DBCALGeometry::phi( int fADC_cell ) {
 float
 DBCALGeometry::phiSize( int fADC_cell ) {
 
-  int fADC_lay = layer( fADC_cell );
+  // int fADC_lay = layer( fADC_cell );
 
-  int nSects;
-  if (fADC_lay <= NBCALLAYSIN) {
-    nSects = 4/NSUMSECSIN;
-  } else {
-    nSects = 4/NSUMSECSOUT;
-  }
+  // int nSects;
+  // if (fADC_lay <= NBCALLAYSIN) {
+  //   nSects = 4/NSUMSECSIN;
+  // } else {
+  //   nSects = 4/NSUMSECSOUT;
+  // }
 
-  float sectSize = 2 * PI / ( NBCALMODS * nSects );
+  // float sectSize = 2 * PI / ( NBCALMODS * nSects );
   
+  float sectSize = 2 * PI / 48 / 4;
+
   return sectSize;
 }
 
