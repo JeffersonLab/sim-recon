@@ -158,6 +158,14 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	  pedestal = static_cast<double>(configObj->NSA_NSB) * PIobj->pedestal;
       }
 
+      // throw away hits from bad or noisy fibers
+      int quality = fiber_quality[digihit->row][digihit->column];
+      if (quality == k_fiber_bad || quality == k_fiber_noisy)
+            continue;
+
+      // Skip events where fADC algorithm fails
+      if (digihit->pulse_time == 0) continue;
+
       DTAGMHit *hit = new DTAGMHit;
       int row = digihit->row;
       int column = digihit->column;
@@ -167,11 +175,6 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, int eventnumber)
       double Ehigh = tagmGeom.getEhigh(column);
       hit->E = (Elow + Ehigh)/2;
       hit->t = 0;
-
-      // throw away hits from bad or noisy fibers
-      int quality = fiber_quality[row][column];
-      if (quality == k_fiber_bad || quality == k_fiber_noisy) 
-          continue;
 
       // Apply calibration constants
       double A = digihit->pulse_integral;

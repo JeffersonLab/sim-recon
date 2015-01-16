@@ -149,6 +149,9 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
       if (quality == k_counter_bad || quality == k_counter_noisy) 
           continue;
 
+      // Throw away hits where the fADC timing algorithm failed
+      if (digihit->pulse_time == 0) continue;
+
       // Get pedestal, prefer associated event pedestal if it exists,
       // otherwise, use the average pedestal from CCDB
       double pedestal = fadc_pedestals[counter];
