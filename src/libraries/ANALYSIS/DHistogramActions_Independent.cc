@@ -552,6 +552,21 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 			else //already created by another thread
 				dHist_FDCPlaneVsP_TimeBased_GoodTrackFOM = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
+			if(!locMCThrowns.empty())
+			{
+				locHistName = "MCMatchedHitsVsTheta";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHist_MCMatchedHitsVsTheta = new TH2I(locHistName.c_str(), "Fraction of Track Hits Matched to MC;#theta#circ;", dNum2DThetaBins, dMinTheta, dMaxTheta, 100, 0.0, 1.0);
+				else //already created by another thread
+					dHist_MCMatchedHitsVsTheta = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "MCMatchedHitsVsP";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHist_MCMatchedHitsVsP = new TH2I(locHistName.c_str(), "Fraction of Track Hits Matched to MC;p (GeV/c);", dNum2DPBins, dMinP, dMaxP, 100, 0.0, 1.0);
+				else //already created by another thread
+					dHist_MCMatchedHitsVsP = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+			}
+
 			for(int locCharge = -1; locCharge <= 1; locCharge += 2)
 			{
 				string locParticleROOTName = (locCharge == -1) ? "#it{q}^{-}" : "#it{q}^{+}";
@@ -1207,6 +1222,12 @@ void DHistogramAction_DetectorStudies::Fill_ReconstructionHists(JEventLoop* locE
 	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locEventLoop->Get(locTrackTimeBasedVector);
 
+	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
+	locEventLoop->Get(locMCThrownMatchingVector);
+
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns, "FinalState");
+
 	//select the best DTrackWireBased for each track: use best tracking FOM
 	map<JObject::oid_t, pair<const DTrackWireBased*, double> > locBestTrackWireBasedMap; //lowest tracking FOM for each candidate id
 	for(size_t loc_i = 0; loc_i < locTrackWireBasedVector.size(); ++loc_i)
@@ -1360,6 +1381,24 @@ void DHistogramAction_DetectorStudies::Fill_ReconstructionHists(JEventLoop* locE
 				dHistMap_PVsTheta_TimeBased_GoodTrackFOM[locCharge]->Fill(locTheta, locP);
 			else
 				dHistMap_PVsTheta_TimeBased_LowTrackFOM[locCharge]->Fill(locTheta, locP);
+		}
+
+		for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
+		{
+			if(fabs(locMCThrowns[loc_i]->charge()) < 0.9)
+				continue;
+
+			double locMatchFOM;
+			const DChargedTrackHypothesis* locChargedTrackHypothesis = locMCThrownMatchingVector[0]->Get_MatchingChargedHypothesis(locMCThrowns[loc_i], locMatchFOM);
+			if(locChargedTrackHypothesis == NULL)
+				continue;
+
+			const DTrackTimeBased* locTrackTimeBased = NULL;
+			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+
+			double locHitFraction = 1.0*locTrackTimeBased->dNumHitsMatchedToThrown/(locTrackTimeBased->Ndof + 5);
+			dHist_MCMatchedHitsVsTheta->Fill(locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi(), locHitFraction);
+			dHist_MCMatchedHitsVsP->Fill(locTrackTimeBased->momentum().Mag(), locHitFraction);
 		}
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!

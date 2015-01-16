@@ -243,6 +243,9 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		TH2I* dHist_FDCPlaneVsP_TimeBased;
 		TH2I* dHist_FDCPlaneVsP_TimeBased_GoodTrackFOM;
 
+		TH2I* dHist_MCMatchedHitsVsTheta;
+		TH2I* dHist_MCMatchedHitsVsP;
+
 		//Matching
 		map<DetectorSystem_t, TH2I*> dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit;
 		map<DetectorSystem_t, TH2I*> dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit;

@@ -71,7 +71,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
  
   void FilterDuplicates(void);  
   double GetTruthMatchingFOM(int trackIndex,DTrackTimeBased *dtrack,vector<const DMCThrown*>mcthrowns);
-  void GetThrownIndex(const DKinematicData *kd, int MAX_TRACKS, double &f, int &track);
+  int GetThrownIndex(vector<const DMCThrown*>& locMCThrowns, const DKinematicData *kd, double &f);
 
   void CreateStartTimeList(const DTrackWireBased *track,
 			   vector<const DSCHit*>&sc_hits,

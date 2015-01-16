@@ -877,7 +877,7 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
 		{
 			for(; locMcmatchIterator != locMCMatchesList.end(); ++locMcmatchIterator)
 			{
-				tra->dMCThrownMatchIndex = locMcmatchIterator->getIthrown();
+				tra->dMCThrownMatchMyID = locMcmatchIterator->getIthrown();
 				tra->dNumHitsMatchedToThrown = locMcmatchIterator->getNumhitsmatch();
 			}
 		}

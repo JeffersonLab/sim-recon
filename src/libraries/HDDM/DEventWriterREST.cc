@@ -235,7 +235,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		locHitLayers().setFDCplanes(tracks[i]->dFDCPlanes);
 
 		hddm_r::McmatchList locMCMatches = tra().addMcmatchs(1);
-		locMCMatches().setIthrown(tracks[i]->dMCThrownMatchIndex);
+		locMCMatches().setIthrown(tracks[i]->dMCThrownMatchMyID);
 		locMCMatches().setNumhitsmatch(tracks[i]->dNumHitsMatchedToThrown);
 
 		if (tracks[i]->dNumHitsUsedFordEdx_FDC + tracks[i]->dNumHitsUsedFordEdx_CDC > 0)

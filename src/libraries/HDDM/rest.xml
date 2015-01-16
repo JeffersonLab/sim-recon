@@ -42,7 +42,7 @@
                                                                 e55="float"
                 punit="GeV/c" lunit="cm" tunit="ns"/>
       <hitlayers maxOccurs="1" minOccurs="0" CDCrings="int" FDCplanes="int"/>
-      <mcmatch maxOccurs="1" minOccurs="0" ithrown="int" numhitsmatch="int"/>
+      <mcmatch maxOccurs="1" minOccurs="0" ithrown="int" numhitsmatch="int"/> <!-- ithrown is DMCThrown::myid -->
       <dEdxDC minOccurs="0"
               NsampleFDC="int" dxFDC="float" dEdxFDC="float"
               NsampleCDC="int" dxCDC="float" dEdxCDC="float"

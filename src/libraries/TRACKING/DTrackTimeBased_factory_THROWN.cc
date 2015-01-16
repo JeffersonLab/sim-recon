@@ -177,11 +177,8 @@ jerror_t DTrackTimeBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		}
 
       // Set MC Hit-matching information
-      for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
-      {
-        track->dMCThrownMatchIndex = i;
-        track->dNumHitsMatchedToThrown = track->Ndof + 5;
-      }
+      track->dMCThrownMatchMyID = thrown->myid;
+      track->dNumHitsMatchedToThrown = track->Ndof + 5;
 
 		_data.push_back(track);
 	}
