@@ -16,6 +16,13 @@
 
 using namespace jana;
 
+/** 
+   This object gives a z position to BCAL hits using timing information.
+   The z position is relative to the target center because higher objects use 
+   the position of hits relative to the target in spherical coordinates.
+
+*/
+
 class DBCALPoint : public JObject {
 
 public:
@@ -30,6 +37,8 @@ public:
   DBCALPoint( const DBCALHit& hit, float z, float z_target_center );
 
   float E() const { return m_E; }
+  float E_US() const { return m_E_US; }  ///< Return the attenuation corrected Energy of US Hit
+  float E_DS() const { return m_E_DS; }  ///< Return the attenuation corrected Energy of DS Hit
   float t() const { return m_t; }
 
   // assuming a photon, this gives time at the inner radius of BCAL
@@ -75,20 +84,22 @@ private:
   
   void convertCylindricalToSpherical();
   
-  float m_E;
+  float m_E;                     ///< Energy of the Point used in higher objects
+  float m_E_US;                  ///< Attenuation corrected Energy of US Hit that contributed to the Point
+  float m_E_DS;                  ///< Attenuation corrected Energy of DS Hit that contributed to the Point
   float m_t;
 
   int m_module, m_layer, m_sector;
 
   // cylindrical coordinate locations
-  float m_zLocal; //z-coordinate relative to the center of BCAL
-  float m_z, m_sig_z; //z-coordinate relative to the center of the target
-  float m_r, m_sig_r;
-  float m_phi, m_sig_phi;
+  float m_zLocal;                ///< z-coordinate relative to the center of BCAL
+  float m_z, m_sig_z;            ///< z-coordinate relative to the center of the target
+  float m_r, m_sig_r;            ///< distance from beam axis
+  float m_phi, m_sig_phi;        ///< azimuthal angle
   
   // spherical coordinate locations
-  float m_rho, m_sig_rho;
-  float m_theta, m_sig_theta;
+  float m_rho, m_sig_rho;        ///< spherical distance wrt target center
+  float m_theta, m_sig_theta;    ///< polar angle wrt target center
 
 };
 

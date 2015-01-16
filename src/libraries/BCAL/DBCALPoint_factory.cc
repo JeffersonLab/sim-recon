@@ -34,6 +34,9 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
 
   cout << "loading /BCAL/attenuation_parameters ..." << endl;
 
+  // if (PRINTCALIBRATION) {
+  //   jout << "DBCALPoint_factory::brun >>Printing " << endl;
+  // }
   attenuation_parameters.clear();
   int channel = 0;
   for (int module=1; module<=BCAL_NUM_MODULES; module++) {
@@ -49,6 +52,14 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
 			  attenuation_parameters[cell_id][0] = in_atten_parameters[channel][1];
 			  attenuation_parameters[cell_id][1] = in_atten_parameters[channel][2];
 			  attenuation_parameters[cell_id][2] = in_atten_parameters[channel][0];
+
+			  if (PRINTCALIBRATION) {
+			    printf("%2i  %2i  %2i %12.4f %12.4f %12.4f\n",
+				   module,layer,sector,
+				   attenuation_parameters[cell_id][0],
+				   attenuation_parameters[cell_id][1],
+				   attenuation_parameters[cell_id][2]);
+			  }
 /*
 			  cerr << " loaded " << cell_id << " = " << attenuation_parameters[cell_id][0] << ", "
 			       << attenuation_parameters[cell_id][1] << ", "
@@ -60,7 +71,6 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
 	  }
   }
 
-  
   return NOERROR;
 }
 
@@ -140,6 +150,11 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
     double attenuation_length = DBCALGeometry::ATTEN_LENGTH;
     double attenuation_L1=-1., attenuation_L2=-1.;  // these parameters are ignored for now
     GetAttenuationParameters(id, attenuation_length, attenuation_L1, attenuation_L2);
+    // if (GetAttenuationParameters(id, attenuation_length, attenuation_L1, attenuation_L2)) {
+    //   printf("got new att length %f\n",attenuation_length);
+    // } else {
+    //   printf("default att length %f\n",attenuation_length);
+    // }
 
     DBCALPoint *point = new DBCALPoint(*uphit,*dnhit,m_z_target_center,attenuation_length);
 

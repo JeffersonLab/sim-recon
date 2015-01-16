@@ -22,7 +22,12 @@ class DBCALHit;
 class DBCALPoint_factory : public JFactory<DBCALPoint> {
 
  public:
-  DBCALPoint_factory() {}
+  DBCALPoint_factory() {
+    PRINTCALIBRATION = false;
+    if(gPARMS){
+      gPARMS->SetDefaultParameter("BCALPOINT:PRINTCALIBRATION", PRINTCALIBRATION, "Print the calibration parameters.");
+    }
+  }
   ~DBCALPoint_factory() {}
 
  private:
@@ -36,6 +41,8 @@ class DBCALPoint_factory : public JFactory<DBCALPoint> {
 
   attenuation_parms_t attenuation_parameters;
  
+  bool PRINTCALIBRATION;
+
   jerror_t brun(JEventLoop *loop, int runnumber);
   jerror_t evnt(JEventLoop *loop, int eventnumber);
 

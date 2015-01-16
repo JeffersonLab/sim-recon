@@ -79,8 +79,11 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    if (eventLoop->GetCalib("/BCAL/ADC_timing_offsets", raw_time_offsets))
        jout << "Error loading /BCAL/ADC_timing_offsets !" << endl;
 
+   if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_gains" << endl;
    FillCalibTable(gains, raw_gains);
+   if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_pedestals" << endl;
    FillCalibTable(pedestals, raw_pedestals);
+   if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_time_offsets" << endl;
    FillCalibTable(time_offsets, raw_time_offsets);
 
    return NOERROR;
