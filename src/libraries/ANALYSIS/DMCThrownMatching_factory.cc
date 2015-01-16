@@ -94,7 +94,7 @@ jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eve
 
 	Find_GenReconMatches_BeamPhotons(locEventLoop, locMCThrownMatching);
 
-	Find_GenReconMatches_ChargedHypo(locMCThrowns, locChargedTrackHypotheses, locMCThrownMatching); //USE ALL THROWN: So index is correct
+	Find_GenReconMatches_ChargedHypo(locMCThrowns_Charged, locChargedTrackHypotheses, locMCThrownMatching);
 	Find_GenReconMatches_ChargedTrack(locChargedTracks, locMCThrownMatching);
 
 	Find_GenReconMatches_NeutralHypo(locMCThrowns_Neutral, locNeutralParticleHypotheses, locMCThrownMatching);
@@ -543,17 +543,16 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<co
 
 	//calculate weighted num-matched hits
 	set<pair<double, pair<const DMCThrown*, const DChargedTrackHypothesis*> > > locParticleMatches;
-
 	for(size_t loc_j = 0; loc_j < locChargedTrackHypothesisVector.size(); ++loc_j)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrackHypothesisVector[loc_j];
-
 		const DTrackTimeBased* locTrackTimeBased = NULL;
 		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+
 		if(locMyIDToThrownMap.find(locTrackTimeBased->dMCThrownMatchMyID) == locMyIDToThrownMap.end())
 			continue;
-		const DMCThrown* locMCThrown = locMyIDToThrownMap[locTrackTimeBased->dMCThrownMatchMyID];
 
+		const DMCThrown* locMCThrown = locMyIDToThrownMap[locTrackTimeBased->dMCThrownMatchMyID];
 		double locNumTrackHits = double(locTrackTimeBased->Ndof + 5);
 		//#-matched-hits * hit_fraction
 		double locMatchFOM = locTrackTimeBased->dNumHitsMatchedToThrown * locTrackTimeBased->dNumHitsMatchedToThrown/locNumTrackHits;
@@ -571,100 +570,6 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<co
 		pair<double, pair<const DMCThrown*, const DChargedTrackHypothesis*> > locMatchPair(locMatchFOM, locTrackPair);
 		locParticleMatches.insert(locMatchPair);
 	}
-
-	//loop over sets, save the best matches //sorted from least to greatest
-	set<pair<double, pair<const DMCThrown*, const DChargedTrackHypothesis*> > >::iterator locIterator = locParticleMatches.end();
-	set<const DMCThrown*> locMatchedThrowns;
-	set<const DChargedTrackHypothesis*> locMatchedHypotheses;
-	for(--locIterator; locIterator != locParticleMatches.begin(); --locIterator)
-	{
-		double locMatchFOM = locIterator->first;
-		const DMCThrown* locMCThrown = locIterator->second.first;
-		const DChargedTrackHypothesis* locChargedTrackHypothesis = locIterator->second.second;
-
-		if(locMatchedThrowns.find(locMCThrown) != locMatchedThrowns.end())
-			continue; //track match already saved
-		if(locMatchedHypotheses.find(locChargedTrackHypothesis) != locMatchedHypotheses.end())
-			continue; //track match already saved
-
-		locMatchedThrowns.insert(locMCThrown);
-
-		//automatically add all other DChargedTrackHypothesis objects from the same DChargedTrack to this match.
-		deque<const DChargedTrackHypothesis*> locMatchedChargedHypos;
-		for(size_t loc_i = 0; loc_i < locChargedTrackHypothesisVector.size(); ++loc_i)
-		{
-			if(dDebugLevel > 0)
-			{
-				cout << "CHECKING: CHARGEDHYPO: ";
-				cout << ParticleType(locChargedTrackHypothesisVector[loc_i]->PID()) << ", " << locChargedTrackHypothesisVector[loc_i]->momentum().Mag() << ", " << locChargedTrackHypothesisVector[loc_i]->momentum().Theta()*180.0/TMath::Pi() << ", " << locChargedTrackHypothesisVector[loc_i]->momentum().Phi()*180.0/TMath::Pi() << endl;
-				cout << "best id, test id = " << locChargedTrackHypothesis->candidateid << ", " << locChargedTrackHypothesisVector[loc_i]->candidateid << endl;
-			}
-			if(locChargedTrackHypothesisVector[loc_i]->candidateid == locChargedTrackHypothesis->candidateid)
-			{
-				if(dDebugLevel > 0)
-					cout << "save!" << endl;
-				locChargedToThrownMap[locChargedTrackHypothesisVector[loc_i]] = pair<const DMCThrown*, double>(locMCThrown, locMatchFOM);
-				locMatchedChargedHypos.push_back(locChargedTrackHypothesisVector[loc_i]);
-				locMatchedHypotheses.insert(locChargedTrackHypothesisVector[loc_i]);
-			}
-		}
-		locThrownToChargedMap[locMCThrown] = pair<deque<const DChargedTrackHypothesis*>, double>(locMatchedChargedHypos, locMatchFOM);
-	}
-
-	locMCThrownMatching->Set_ChargedHypoToThrownMap(locChargedToThrownMap);
-	locMCThrownMatching->Set_ThrownToChargedHypoMap(locThrownToChargedMap);
-}
-
-/*
-void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<const DMCThrown*>& locMCThrownVector, const vector<const DChargedTrackHypothesis*>& locChargedTrackHypothesisVector, DMCThrownMatching* locMCThrownMatching) const
-{
-	map<const DChargedTrackHypothesis*, pair<const DMCThrown*, double> > locChargedToThrownMap;
-	map<const DMCThrown*, pair<deque<const DChargedTrackHypothesis*>, double> > locThrownToChargedMap;
-
-	if(dDebugLevel > 0)
-		cout << "START IT!" << endl;
-
-	//build inverse covariance matrix map
-	map<const DChargedTrackHypothesis*, DMatrixDSym> locInverseCovMatrixMap;
-	for(size_t loc_i = 0; loc_i < locChargedTrackHypothesisVector.size(); ++loc_i)
-	{
-		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrackHypothesisVector[loc_i];
-		DMatrixDSym locInverse3x3Matrix(3);
-		if(Calc_InverseMatrix(locChargedTrackHypothesis->errorMatrix(), locInverse3x3Matrix))
-			locInverseCovMatrixMap.insert(pair<const DChargedTrackHypothesis*, DMatrixDSym>(locChargedTrackHypothesis, locInverse3x3Matrix));
-	}
-
-	//calculate match FOMs
-	set<pair<double, pair<const DMCThrown*, const DChargedTrackHypothesis*> > > locParticleMatches;
-	for(size_t loc_i = 0; loc_i < locMCThrownVector.size(); ++loc_i)
-	{
-		const DMCThrown* locMCThrown = locMCThrownVector[loc_i];
-		for(size_t loc_j = 0; loc_j < locChargedTrackHypothesisVector.size(); ++loc_j)
-		{
-			const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrackHypothesisVector[loc_j];
-			if(ParticleCharge(locChargedTrackHypothesis->PID()) != ParticleCharge((Particle_t)(locMCThrown->type)))
-				continue; //wrong charge
-			if(locInverseCovMatrixMap.find(locChargedTrackHypothesis) == locInverseCovMatrixMap.end())
-				continue;
-			DMatrixDSym& locInverse3x3Matrix = locInverseCovMatrixMap[locChargedTrackHypothesis];
-
-			double locMatchFOM = Calc_MatchFOM(locMCThrown->momentum(), locChargedTrackHypothesis->momentum(), locInverse3x3Matrix);
-
-			if(dDebugLevel > 0)
-			{
-				cout << "MATCHING: MCTHROWN: ";
-				cout << ParticleType((Particle_t)(locMCThrown->type)) << ", " << locMCThrown->momentum().Mag() << ", " << locMCThrown->momentum().Theta()*180.0/TMath::Pi() << ", " << locMCThrown->momentum().Phi()*180.0/TMath::Pi() << endl;
-				cout << "MATCHING: CHARGEDHYPO: ";
-				cout << ParticleType(locChargedTrackHypothesis->PID()) << ", " << locChargedTrackHypothesis->momentum().Mag() << ", " << locChargedTrackHypothesis->momentum().Theta()*180.0/TMath::Pi() << ", " << locChargedTrackHypothesis->momentum().Phi()*180.0/TMath::Pi() << endl;
-				cout << "MATCHING: FOM, candidate id: " << locMatchFOM << ", " << locChargedTrackHypothesis->candidateid << endl;
-			}
-
-			pair<const DMCThrown*, const DChargedTrackHypothesis*> locTrackPair(locMCThrown, locChargedTrackHypothesis);
-			pair<double, pair<const DMCThrown*, const DChargedTrackHypothesis*> > locMatchPair(locMatchFOM, locTrackPair);
-			locParticleMatches.insert(locMatchPair);
-		}
-	}
-
 	if(locParticleMatches.empty())
 		return; //nothing to set
 
@@ -710,7 +615,6 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<co
 	locMCThrownMatching->Set_ChargedHypoToThrownMap(locChargedToThrownMap);
 	locMCThrownMatching->Set_ThrownToChargedHypoMap(locThrownToChargedMap);
 }
-*/
 
 void DMCThrownMatching_factory::Find_GenReconMatches_NeutralParticle(const vector<const DNeutralParticle*>& locNeutralParticles, DMCThrownMatching* locMCThrownMatching) const
 {
