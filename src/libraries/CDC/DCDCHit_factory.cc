@@ -209,7 +209,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
       double T = (double)digihit->pulse_time;
   
       double q = a_scale * gains[ring-1][straw-1] * (A - pedestal);
-      double t = t_scale * (T - time_offsets[ring-1][straw-1]) + t_base;
+      double t = t_scale * T - time_offsets[ring-1][straw-1] + t_base;
 
       if (q < DIGI_THRESHOLD) 
          continue;
