@@ -24,6 +24,7 @@ jerror_t DMCThrownMatching_factory::init(void)
 	dMaximumBCALMatchAngleDegrees = 5.0;
 	dTargetCenter = 0.0; //cm
 	dMaxTotalParticleErrorForMatch = 2.0;
+	dMinTrackMatchHitFraction = 0.5;
 
 	return NOERROR;
 }
@@ -39,6 +40,7 @@ jerror_t DMCThrownMatching_factory::brun(jana::JEventLoop* locEventLoop, int run
 	gPARMS->SetDefaultParameter("MCMATCH:MAX_FCAL_DISTANCE", dMaximumFCALMatchDistance);
 	gPARMS->SetDefaultParameter("MCMATCH:MAX_BCAL_ANGLE", dMaximumBCALMatchAngleDegrees);
 	gPARMS->SetDefaultParameter("MCMATCH:MAX_TOTAL_ERROR", dMaxTotalParticleErrorForMatch);
+	gPARMS->SetDefaultParameter("MCMATCH:MIN_TRACK_MATCH", dMinTrackMatchHitFraction);
 
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
@@ -554,8 +556,12 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<co
 
 		const DMCThrown* locMCThrown = locMyIDToThrownMap[locTrackTimeBased->dMCThrownMatchMyID];
 		double locNumTrackHits = double(locTrackTimeBased->Ndof + 5);
+		double locHitFraction = locTrackTimeBased->dNumHitsMatchedToThrown/locNumTrackHits;
+		if(locHitFraction < dMinTrackMatchHitFraction)
+			continue; //not good enough!
+
 		//#-matched-hits * hit_fraction
-		double locMatchFOM = locTrackTimeBased->dNumHitsMatchedToThrown * locTrackTimeBased->dNumHitsMatchedToThrown/locNumTrackHits;
+		double locMatchFOM = locTrackTimeBased->dNumHitsMatchedToThrown * locHitFraction;
 
 		if(dDebugLevel > 0)
 		{
