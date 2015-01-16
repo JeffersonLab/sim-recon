@@ -14,7 +14,7 @@
 using namespace std;
 
 #include <JANA/JFactory.h>
-#include "TTab/DTranslationTable.h"
+#include "TTAB/DTranslationTable.h"
 #include "DBCALHit.h"
 
 // store up/down-stream values for each detector cell

@@ -9,7 +9,7 @@
 #define _DSCHit_factory_
 
 #include <JANA/JFactory.h>
-#include "TTab/DTranslationTable.h"
+#include "TTAB/DTranslationTable.h"
 #include "DSCHit.h"
 
 

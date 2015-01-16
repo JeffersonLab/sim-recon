@@ -43,8 +43,8 @@ extern "C" uint32_t *swap_int32_t(uint32_t *data, unsigned int length, uint32_t 
 #include "JEventSource_EVIO.h"
 using namespace jana;
 
-#include <TTab/DTranslationTable.h>
-#include <TTab/DTranslationTable_factory.h>
+#include <TTAB/DTranslationTable.h>
+#include <TTAB/DTranslationTable_factory.h>
 
 #define _DBG_DAQ(A) cerr<<__FILE__<<":"<<__LINE__<<" 0x"<<hex<<A<<"  cntrl:0x"<<(A&0xF0000000)<<dec<<" slot:"<<((A>>22)&0x1F)<<endl
 

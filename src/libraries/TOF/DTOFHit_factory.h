@@ -18,7 +18,7 @@ using namespace std;
 #include "DTOFTDCDigiHit.h"
 #include "DTOFHit.h"
 #include "DTOFGeometry.h"
-#include "TTab/DTranslationTable.h"
+#include "TTAB/DTranslationTable.h"
 using namespace jana;
 
 

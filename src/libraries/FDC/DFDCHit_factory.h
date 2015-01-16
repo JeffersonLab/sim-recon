@@ -12,7 +12,7 @@
 using namespace std;
 
 #include <JANA/JFactory.h>
-#include "TTab/DTranslationTable.h"
+#include "TTAB/DTranslationTable.h"
 #include "DFDCHit.h"
 
 // store constants indexed by gPlane/element number
