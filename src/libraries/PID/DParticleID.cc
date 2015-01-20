@@ -16,7 +16,7 @@ bool static DParticleID_dedx_cmp(DParticleID::dedx_t a,DParticleID::dedx_t b){
   return a.dEdx < b.dEdx;
 }
 
-// Routine for sorting hypotheses according to FOM
+// Routine for sorting hypotheses accorpding to FOM
 bool static DParticleID_hypothesis_cmp(const DTrackTimeBased *a,
 				       const DTrackTimeBased *b){
   return (a->FOM>b->FOM);
@@ -718,7 +718,7 @@ bool DParticleID::MatchToSC(const DReferenceTrajectory* rt, const vector<const D
 	return true;
 }
 
-bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams) const
+bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams, DVector3 *IntersectionPoint) const
 {
 	// NOTE: locTrackTimeBased is NULL if calling from track reconstruction!!!
 	if(sc_pos.empty() || sc_norm.empty())
@@ -793,7 +793,7 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 		if(myz < sc_pos1)
 		{
 		        L = sc_pos1;
-			locCorrectedHitTime -= L/C_EFFECTIVE;
+			locCorrectedHitTime -= L/C_EFFECTIVE;	
 		}
 		else if (myz > sc_pos[num].z())
 		{
@@ -831,6 +831,11 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 	locSCHitMatchParams.dFlightTimeVariance = 0.0; //SET ME!!!
 	locSCHitMatchParams.dPathLength = locPathLength;
 	locSCHitMatchParams.dDeltaPhiToHit = dphi;
+
+	// Optionally output intersection position	
+	if (IntersectionPoint!=NULL){
+	  *IntersectionPoint=proj_pos;
+	}
 
 	return true;
 }
