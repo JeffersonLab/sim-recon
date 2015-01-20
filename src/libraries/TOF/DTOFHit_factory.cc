@@ -29,8 +29,8 @@ static bool COSMIC_DATA = false;
 //------------------
 jerror_t DTOFHit_factory::init(void)
 {
-  //DELTA_T_ADC_TDC_MAX = 4.0; // ns
-	DELTA_T_ADC_TDC_MAX = 30.0; // ns, value based on the studies from cosmic events
+  DELTA_T_ADC_TDC_MAX = 10.0; // ns
+  //	DELTA_T_ADC_TDC_MAX = 30.0; // ns, value based on the studies from cosmic events
 	gPARMS->SetDefaultParameter("TOF:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX, "Maximum difference in ns between a (calibrated) fADC time and F1TDC time for them to be matched in a single hit");
 	
 	int analyze_cosmic_data = 0;
@@ -139,7 +139,7 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	// load shift factors (only for fall 2014 runs)
 	map<string,double> tof_tdc_shift;
 	tdc_shift = -1;
-/*
+
 	if(eventLoop->GetCalib("/TOF/tdc_shift", tof_tdc_shift))
 	    jout << "Error loading /TOF/tdc_shift !" << endl;
 	if( tof_tdc_shift.find("TOF_TDC_SHIFT") != tof_tdc_shift.end() ) {
@@ -149,7 +149,7 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	} else {
 	    jerr << "Unable to get TOF_TDC_SHIFT from /TOF/tdc_shift !" << endl;
 	}
-*/
+
 /*
 	CheckCalibTable(adc_pedestals,"/TOF/pedestals");
 	CheckCalibTable(adc_gains,"/TOF/gains");
