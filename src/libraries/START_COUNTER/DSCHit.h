@@ -15,7 +15,7 @@ class DSCHit:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(DSCHit);
 		
-		int sector;	    // sector number 1-24
+		int sector;	    // sector number 1-30
 		float dE;       // Energy loss in GeV
 		float t;        // best time (walk-corrected tdc)
 		float t_TDC;   // time from TDC, no walk correction

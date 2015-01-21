@@ -443,13 +443,13 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 
 			locHistName = "SCHitSector";
 			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-				dHist_SCHitSector = new TH1I(locHistName.c_str(), ";SC Hit Sector", 24, 0.5, 24.5);
+				dHist_SCHitSector = new TH1I(locHistName.c_str(), ";SC Hit Sector", 30, 0.5, 30.5);
 			else //already created by another thread
 				dHist_SCHitSector = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 
 			locHistName = "SCHitTimeVsSector";
 			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-				dHist_SCHitTimeVsSector = new TH2I(locHistName.c_str(), ";SC Hit Sector;SC Hit Time (ns)", 24, 0.5, 24.5, dNum2DTimeBins, dMinTime, dMaxTime);
+				dHist_SCHitTimeVsSector = new TH2I(locHistName.c_str(), ";SC Hit Sector;SC Hit Time (ns)", 30, 0.5, 30.5, dNum2DTimeBins, dMinTime, dMaxTime);
 			else //already created by another thread
 				dHist_SCHitTimeVsSector = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
@@ -461,7 +461,7 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 
 			locHistName = "SCHitEnergyVsSector";
 			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-				dHist_SCHitEnergyVsSector = new TH2I(locHistName.c_str(), ";SC Hit Sector;SC Hit Energy (MeV)", 24, 0.5, 24.5, dNum2DHitEnergyBins, dMinHitEnergy, dMaxHitEnergy);
+				dHist_SCHitEnergyVsSector = new TH2I(locHistName.c_str(), ";SC Hit Sector;SC Hit Energy (MeV)", 30, 0.5, 30.5, dNum2DHitEnergyBins, dMinHitEnergy, dMaxHitEnergy);
 			else //already created by another thread
 				dHist_SCHitEnergyVsSector = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			gDirectory->cd("..");
