@@ -64,6 +64,12 @@ DParticleID::DParticleID(JEventLoop *loop)
 	bool got_sc = locGeometry->Get("//posXYZ[@volume='StartCntr']/@X_Y_Z", sc_origin);
 	if(got_sc)
 	{
+	  // Get rotation angles
+	  vector<double>sc_rot_angles;
+	  locGeometry->Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
+	  
+	  _DBG_ << sc_rot_angles[0] << " " << sc_rot_angles[1] << endl;
+
 		double num_paddles;
 		locGeometry->Get("//mposPhi[@volume='STRC']/@ncopy",num_paddles); 
 		dSCdphi = M_TWO_PI/num_paddles;
@@ -81,7 +87,24 @@ DParticleID::DParticleID(JEventLoop *loop)
 				continue; // in case start counter is comment out in XML
 			if(sc_rioz[k].size() < 3)
 				continue; // in case start counter is comment out in XML
+			
+
+
 			DVector3 pos((sc_rioz[k][0]+sc_rioz[k][1])/2.,0.,sc_rioz[k][2]+sc_origin[2]);
+
+			DVector3 ray1(0.,(sc_rioz[k][0]+sc_rioz[k][1])/2.,sc_rioz[k][2]);
+			ray1.Print();
+			
+			ray1.RotateX(sc_rot_angles[0]*M_PI/180.);
+			ray1.RotateY(sc_rot_angles[1]*M_PI/180.);
+
+			ray1.Print();
+
+			DVector3 ray2((sc_rioz[k+1][0]+sc_rioz[k+1][1])/2.,0.,sc_rioz[k+1][2]);
+
+			
+
+
 			DVector3 dir(sc_rioz[k+1][2]-sc_rioz[k][2],0,-sc_rioz[k+1][0]+sc_rioz[k][0]);
 			dir.SetMag(1.);
 
@@ -718,7 +741,7 @@ bool DParticleID::MatchToSC(const DReferenceTrajectory* rt, const vector<const D
 	return true;
 }
 
-bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams, DVector3 *IntersectionPoint) const
+bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams, DVector3 *IntersectionPoint, DVector3 *IntersectionDir) const
 {
 	// NOTE: locTrackTimeBased is NULL if calling from track reconstruction!!!
 	if(sc_pos.empty() || sc_norm.empty())
@@ -746,6 +769,8 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 		dphi += M_TWO_PI;
 	if(fabs(dphi) >= 0.21)
 		return false; //no match
+
+	_DBG_ << phi << " " << dphi << endl;
 
 	//match successful
 	double myphi = phi;
@@ -835,6 +860,10 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 	// Optionally output intersection position	
 	if (IntersectionPoint!=NULL){
 	  *IntersectionPoint=proj_pos;
+	}
+	if (IntersectionDir!=NULL){
+	  *IntersectionDir=proj_mom;
+	  IntersectionDir->SetMag(1.);
 	}
 
 	return true;
