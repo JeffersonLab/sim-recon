@@ -127,7 +127,7 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
       // Calculate time for channel
       double pulse_time        = (double)digihit->pulse_time;
-      double hit_t             = t_scale * (pulse_time - GetConstant(time_offsets,digihit)) + t_base;
+      double hit_t             = t_scale * pulse_time - GetConstant(time_offsets,digihit) + t_base;
 
       DBCALHit *hit = new DBCALHit;
       hit->module = digihit->module;
