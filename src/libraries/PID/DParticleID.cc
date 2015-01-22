@@ -65,10 +65,8 @@ DParticleID::DParticleID(JEventLoop *loop)
 	if(got_sc)
 	{
 	  // Get rotation angles
-	  vector<double>sc_rot_angles;
-	  locGeometry->Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
-	  
-	  _DBG_ << sc_rot_angles[0] << " " << sc_rot_angles[1] << endl;
+	  //vector<double>sc_rot_angles;
+	  // locGeometry->Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
 
 		double num_paddles;
 		locGeometry->Get("//mposPhi[@volume='STRC']/@ncopy",num_paddles); 
@@ -91,18 +89,6 @@ DParticleID::DParticleID(JEventLoop *loop)
 
 
 			DVector3 pos((sc_rioz[k][0]+sc_rioz[k][1])/2.,0.,sc_rioz[k][2]+sc_origin[2]);
-
-			DVector3 ray1(0.,(sc_rioz[k][0]+sc_rioz[k][1])/2.,sc_rioz[k][2]);
-			ray1.Print();
-			
-			ray1.RotateX(sc_rot_angles[0]*M_PI/180.);
-			ray1.RotateY(sc_rot_angles[1]*M_PI/180.);
-
-			ray1.Print();
-
-			DVector3 ray2((sc_rioz[k+1][0]+sc_rioz[k+1][1])/2.,0.,sc_rioz[k+1][2]);
-
-			
 
 
 			DVector3 dir(sc_rioz[k+1][2]-sc_rioz[k][2],0,-sc_rioz[k+1][0]+sc_rioz[k][0]);
@@ -769,8 +755,6 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 		dphi += M_TWO_PI;
 	if(fabs(dphi) >= 0.21)
 		return false; //no match
-
-	_DBG_ << phi << " " << dphi << endl;
 
 	//match successful
 	double myphi = phi;
