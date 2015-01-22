@@ -174,17 +174,19 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 		double pedestal = a_pedestals[plane_index][strip_index];
 		const Df125PulseIntegral* PIobj = NULL;
-		const Df125Config *configObj = NULL;
 		digihit->GetSingle(PIobj);
-		PIobj->GetSingle(configObj);
-		if ((PIobj != NULL) && (configObj != NULL)) {
+		if (PIobj != NULL) {
 			// the measured pedestal must be scaled by the ratio of the number
 			// of samples used to calculate the pedestal and the actual pulse
-			pedestal = static_cast<double>(configObj->WINWIDTH) * PIobj->pedestal;                    ;
-		}
+            double single_sample_ped = (double)PIobj->pedestal;
+            double nsamples_integral = (double)PIobj->nsamples_integral;
+            double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
+            pedestal          = single_sample_ped * nsamples_integral/nsamples_pedestal;
+        }
+
+/*
 		const Df125PulsePedestal *PP=NULL;
 		digihit->GetSingle(PP);
-
 		double A=0.;
 		if (PP!=NULL){
 		  A=PP->pulse_peak;
@@ -192,13 +194,12 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 		  //_DBG_ << A << " " << pedestal << endl;
 		}
+        
 		if (A-pedestal<0.) continue;
-
-		//double A = (double)digihit->pulse_integral;
-      		//double ped=(double)digihit->pedestal;	
+*/
+		double A = (double)digihit->pulse_integral;
 		double q = a_scale * a_gains[plane_index][strip_index] * (A-pedestal);
-		//* (A - a_pedestals[hit->gPlane-1][hit->element-1] );
-	        double t = t_scale * (T - timing_offsets[plane_index][strip_index])+fadc_t_base;
+	    double t = t_scale * T - timing_offsets[plane_index][strip_index]+fadc_t_base;
 		
 		DFDCHit *hit = new DFDCHit;
 		hit->layer   = digihit->view;
