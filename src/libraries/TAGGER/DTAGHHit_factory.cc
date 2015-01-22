@@ -161,8 +161,11 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	  // the measured pedestal is scaled by the number
 	  // of samples used to calculate the actual pulse
 	  // when it is subtracted below
-	  //pedestal = PIobj->pedestal/PIobj->nsamples_pedestal;
-	  pedestal = PIobj->pedestal;
+          // Changed to conform to D. Lawrence changes Dec. 4 2014
+          double single_sample_ped = (double)PIobj->pedestal;
+          double nsamples_integral = (double)PIobj->nsamples_integral;
+          double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
+          pedestal          = single_sample_ped * nsamples_integral/nsamples_pedestal;
       }
 
       DTAGHHit *hit = new DTAGHHit;
@@ -175,7 +178,7 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
       // Apply calibration constants
       double A = digihit->pulse_integral;
       double T = digihit->pulse_time;
-      A -= pedestal * digihit->nsamples_integral;
+      A -= pedestal;
       hit->integral=A;
       hit->npe_fadc = A * fadc_a_scale * fadc_gains[counter];
       hit->time_fadc = T * fadc_t_scale - fadc_time_offsets[counter] + t_base;
@@ -237,8 +240,9 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
          double Ehigh = taghGeom.getEhigh(counter);
          hit->E = (Elow + Ehigh)/2;
          hit->time_fadc = 0;
+         hit->integral = 0;
          hit->npe_fadc = 0;
-	 hit->has_fADC=false;
+	    hit->has_fADC=false;
          _data.push_back(hit);
        }      
        hit->time_tdc=T;
