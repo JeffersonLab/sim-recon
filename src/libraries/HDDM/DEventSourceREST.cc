@@ -16,9 +16,6 @@
 
 #include <DVector2.h>
 #include <DEventSourceREST.h>
-#include <TAGGER/DTAGMGeometry.h>
-#include <TAGGER/DTAGHGeometry.h>
-
 
 //----------------
 // Constructor
@@ -190,16 +187,6 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
    if (dataClassName =="DMCThrown") {
       return Extract_DMCThrown(record,
                      dynamic_cast<JFactory<DMCThrown>*>(factory));
-   }
-   if (dataClassName =="DTAGMHit") {
-      return Extract_DTAGMHit(record,
-                     dynamic_cast<JFactory<DTAGMHit>*>(factory),
-                     locEventLoop);
-   }
-   if (dataClassName =="DTAGHHit") {
-      return Extract_DTAGHHit(record,
-                     dynamic_cast<JFactory<DTAGHHit>*>(factory),
-                     locEventLoop);
    }
    if (dataClassName =="DTOFPoint") {
       return Extract_DTOFPoint(record,
@@ -393,22 +380,133 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
    if (factory==NULL)
       return OBJECT_NOT_AVAILABLE;
    string tag = (factory->Tag())? factory->Tag() : "";
-   if (tag != "MCGEN")
-		return OBJECT_NOT_AVAILABLE;
 
-   vector<const DMCReaction*> dmcreactions;
-	eventLoop->Get(dmcreactions);
+	vector<DBeamPhoton*> dbeam_photons;
 
-   vector<DBeamPhoton*> dbeam_photons;
-	for(size_t loc_i = 0; loc_i < dmcreactions.size(); ++loc_i)
+   if(tag == "MCGEN")
 	{
-      DBeamPhoton *beamphoton = new DBeamPhoton;
-      *(DKinematicData*)beamphoton = dmcreactions[loc_i]->beam;
-      dbeam_photons.push_back(beamphoton);
+		vector<const DMCReaction*> dmcreactions;
+		eventLoop->Get(dmcreactions);
+
+		for(size_t loc_i = 0; loc_i < dmcreactions.size(); ++loc_i)
+		{
+		   DBeamPhoton *beamphoton = new DBeamPhoton;
+		   *(DKinematicData*)beamphoton = dmcreactions[loc_i]->beam;
+		   dbeam_photons.push_back(beamphoton);
+		}
+
+		// Copy into factories
+		factory->CopyTo(dbeam_photons);
+
+	   return NOERROR;
 	}
 
-   // Copy into factories
-   factory->CopyTo(dbeam_photons);
+	// extract the TAGH geometry
+   vector<const DTAGHGeometry*> taghGeomVect;
+   eventLoop->Get(taghGeomVect, "mc");
+   if (taghGeomVect.size() < 1)
+      return OBJECT_NOT_AVAILABLE;
+   const DTAGHGeometry* taghGeom = taghGeomVect[0];
+ 
+   // extract the TAGM geometry
+   vector<const DTAGMGeometry*> tagmGeomVect;
+   eventLoop->Get(tagmGeomVect, "mc");
+   if (tagmGeomVect.size() < 1)
+      return OBJECT_NOT_AVAILABLE;
+   const DTAGMGeometry* tagmGeom = tagmGeomVect[0];
+
+	double locTargetCenterZ = 0.0;
+	int locRunNumber = eventLoop->GetJEvent().GetRunNumber();
+	LockRead();
+	{
+		locTargetCenterZ = bTargetCenterZMap[locRunNumber];
+	}
+	UnlockRead();
+
+	DVector3 pos(0.0, 0.0, locTargetCenterZ);
+
+	// Detected photons
+   const hddm_r::TaggerHitList &tags = record->getTaggerHits();
+   hddm_r::TaggerHitList::iterator iter;
+   for (iter = tags.begin(); iter != tags.end(); ++iter)
+   {
+      if (iter->getJtag() != tag)
+         continue;
+
+      DBeamPhoton* gamma = new DBeamPhoton();
+
+		DVector3 mom(0.0, 0.0, iter->getE());
+		gamma->setPID(Gamma);
+		gamma->setMomentum(mom);
+		gamma->setPosition(pos);
+		gamma->setCharge(0);
+		gamma->setMass(0);
+		gamma->setTime(iter->getT());
+
+      unsigned int locCounter = 0;
+      if(tagmGeom->E_to_column(iter->getE(), locCounter))
+			gamma->setT0(iter->getT(), 0.200, SYS_TAGM);
+      else
+		{
+			taghGeom->E_to_counter(iter->getE(), locCounter);
+			gamma->setT0(iter->getT(), 0.350, SYS_TAGH);
+		}
+
+		dbeam_photons.push_back(gamma);
+   }
+
+   const hddm_r::TagmBeamPhotonList &locTagmBeamPhotonList = record->getTagmBeamPhotons();
+   hddm_r::TagmBeamPhotonList::iterator locTAGMiter;
+   for(locTAGMiter = locTagmBeamPhotonList.begin(); locTAGMiter != locTagmBeamPhotonList.end(); ++locTAGMiter)
+   {
+      if (locTAGMiter->getJtag() != tag)
+         continue;
+
+      DBeamPhoton* gamma = new DBeamPhoton();
+
+		DVector3 mom(0.0, 0.0, locTAGMiter->getE());
+		gamma->setPID(Gamma);
+		gamma->setMomentum(mom);
+		gamma->setPosition(pos);
+		gamma->setCharge(0);
+		gamma->setMass(0);
+		gamma->setTime(locTAGMiter->getT());
+		gamma->setT0(locTAGMiter->getT(), 0.200, SYS_TAGM);
+
+      unsigned int locCounter = 0;
+      tagmGeom->E_to_column(locTAGMiter->getE(), locCounter);
+
+		dbeam_photons.push_back(gamma);
+   }
+
+
+   const hddm_r::TaghBeamPhotonList &locTaghBeamPhotonList = record->getTaghBeamPhotons();
+   hddm_r::TaghBeamPhotonList::iterator locTAGHiter;
+   for(locTAGHiter = locTaghBeamPhotonList.begin(); locTAGHiter != locTaghBeamPhotonList.end(); ++locTAGHiter)
+   {
+      if (locTAGHiter->getJtag() != tag)
+         continue;
+
+      DBeamPhoton* gamma = new DBeamPhoton();
+
+		DVector3 mom(0.0, 0.0, locTAGHiter->getE());
+		gamma->setPID(Gamma);
+		gamma->setMomentum(mom);
+		gamma->setPosition(pos);
+		gamma->setCharge(0);
+		gamma->setMass(0);
+		gamma->setTime(locTAGHiter->getT());
+		gamma->setT0(iter->getT(), 0.350, SYS_TAGH);
+
+      unsigned int locCounter = 0;
+		taghGeom->E_to_counter(locTAGHiter->getE(), locCounter);
+
+		dbeam_photons.push_back(gamma);
+   }
+
+
+	// Copy into factories
+	factory->CopyTo(dbeam_photons);
 
    return NOERROR;
 }
@@ -470,109 +568,6 @@ jerror_t DEventSourceREST::Extract_DMCThrown(hddm_r::HDDM *record,
          mcthrown->setTime(vt);
          data.push_back(mcthrown);
       }
-   }
-
-   // Copy into factory
-   factory->CopyTo(data);
-
-   return NOERROR;
-}
-
-//------------------
-// Extract_DTAGMHit
-//------------------
-jerror_t DEventSourceREST::Extract_DTAGMHit(hddm_r::HDDM *record,
-                                   JFactory<DTAGMHit>* factory,
-                                   JEventLoop *eventLoop)
-{
-   /// Copies the data from the taggerHit hddm record. This is called
-   /// from JEventSourceREST::GetObjects. If factory is NULL, this
-   /// returns OBJECT_NOT_AVAILABLE immediately.
-
-   if (factory == NULL) {
-      return OBJECT_NOT_AVAILABLE;
-   }
-   string tag = (factory->Tag())? factory->Tag() : "";
-
-   // extract the TAGM geometry
-   vector<const DTAGMGeometry*> tagmGeomVect;
-   eventLoop->Get(tagmGeomVect, "mc");
-   if (tagmGeomVect.size() < 1)
-      return OBJECT_NOT_AVAILABLE;
-   const DTAGMGeometry* tagmGeom = tagmGeomVect[0];
-
-   vector<DTAGMHit*> data;
-
-   // loop over taggerHit records
-   const hddm_r::TaggerHitList &tags = record->getTaggerHits();
-   hddm_r::TaggerHitList::iterator iter;
-   for (iter = tags.begin(); iter != tags.end(); ++iter) {
-      if (iter->getJtag() != tag) {
-         continue;
-      }
-      DTAGMHit *taghit = new DTAGMHit();
-      taghit->E = iter->getE();
-      taghit->t = iter->getT();
-      taghit->row = 0;
-      if (tagmGeom->E_to_column(taghit->E, (unsigned int&)taghit->column))
-         data.push_back(taghit);
-      else
-         delete taghit;
-   }
-
-   // Copy into factory
-   factory->CopyTo(data);
-
-   return NOERROR;
-}
-
-//------------------
-// Extract_DTAGHHit
-//------------------
-jerror_t DEventSourceREST::Extract_DTAGHHit(hddm_r::HDDM *record,
-                                   JFactory<DTAGHHit>* factory,
-                                   JEventLoop *eventLoop)
-{
-   /// Copies the data from the taggerHit hddm record. This is called
-   /// from JEventSourceREST::GetObjects. If factory is NULL, this
-   /// returns OBJECT_NOT_AVAILABLE immediately.
-
-   if (factory==NULL) {
-      return OBJECT_NOT_AVAILABLE;
-   }
-   string tag = (factory->Tag())? factory->Tag() : "";
- 
-   // extract the TAGH geometry
-   vector<const DTAGHGeometry*> taghGeomVect;
-   eventLoop->Get(taghGeomVect, "mc");
-   if (taghGeomVect.size() < 1)
-      return OBJECT_NOT_AVAILABLE;
-   const DTAGHGeometry* taghGeom = taghGeomVect[0];
- 
-   // extract the TAGM geometry
-   vector<const DTAGMGeometry*> tagmGeomVect;
-   eventLoop->Get(tagmGeomVect, "mc");
-   if (tagmGeomVect.size() < 1)
-      return OBJECT_NOT_AVAILABLE;
-   const DTAGMGeometry* tagmGeom = tagmGeomVect[0];
-
-   vector<DTAGHHit*> data;
-
-   // loop over taggerHit records
-   const hddm_r::TaggerHitList &tags = record->getTaggerHits();
-   hddm_r::TaggerHitList::iterator iter;
-   for (iter = tags.begin(); iter != tags.end(); ++iter) {
-      if (iter->getJtag() != tag) {
-         continue;
-      }
-      DTAGHHit *taghit = new DTAGHHit();
-      taghit->E = iter->getE();
-      taghit->t = iter->getT();
-      unsigned int column;
-      if ((! tagmGeom->E_to_column(taghit->E, column)) && taghGeom->E_to_counter(taghit->E, (unsigned int&)taghit->counter_id))
-         data.push_back(taghit);
-      else
-         delete taghit;
    }
 
    // Copy into factory

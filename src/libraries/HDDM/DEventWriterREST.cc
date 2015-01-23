@@ -92,24 +92,23 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		rf().setTsync(rftimes[i]->dTime);
 	}
 
-	// push any DTAGMHit objects to the output record
-	std::vector<const DTAGMHit*> microtags;
-	locEventLoop->Get(microtags);
-	for (size_t i=0; i < microtags.size(); i++)
+	// push any DBeamPhoton objects to the output record
+	std::vector<const DBeamPhoton*> locBeamPhotons;
+	locEventLoop->Get(locBeamPhotons);
+	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 	{
-		hddm_r::TaggerHitList hit = res().addTaggerHits(1);
-		hit().setT(microtags[i]->t);
-		hit().setE(microtags[i]->E);
-	}
-
-	// push any DTAGHHit objects to the output record
-	std::vector<const DTAGHHit*> fixedtags;
-	locEventLoop->Get(fixedtags);
-	for (size_t i=0; i < fixedtags.size(); i++)
-	{
-		hddm_r::TaggerHitList hit = res().addTaggerHits(1);
-		hit().setT(fixedtags[i]->t);
-		hit().setE(fixedtags[i]->E);
+		if(locBeamPhotons[loc_i]->t0_detector() == SYS_TAGM)
+		{
+			hddm_r::TagmBeamPhotonList locTagmBeamPhotonList = res().addTagmBeamPhotons(1);
+			locTagmBeamPhotonList().setT(locBeamPhotons[loc_i]->time());
+			locTagmBeamPhotonList().setE(locBeamPhotons[loc_i]->energy());
+		}
+		else if(locBeamPhotons[loc_i]->t0_detector() == SYS_TAGH)
+		{
+			hddm_r::TaghBeamPhotonList locTaghBeamPhotonList = res().addTaghBeamPhotons(1);
+			locTaghBeamPhotonList().setT(locBeamPhotons[loc_i]->time());
+			locTaghBeamPhotonList().setE(locBeamPhotons[loc_i]->energy());
+		}
 	}
 
 	// push any DFCALShower objects to the output record

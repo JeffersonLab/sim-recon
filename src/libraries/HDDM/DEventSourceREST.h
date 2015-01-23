@@ -22,8 +22,6 @@
 #include <PID/DMCReaction.h>
 #include <PID/DBeamPhoton.h>
 #include <PID/DDetectorMatches.h>
-#include <TAGGER/DTAGMHit.h>
-#include <TAGGER/DTAGHHit.h>
 #include "TRACKING/DMCThrown.h"
 #include <TRACKING/DTrackTimeBased.h>
 #include <FCAL/DFCALShower.h>
@@ -33,6 +31,8 @@
 #include <TRIGGER/DMCTrigger.h>
 #include <DANA/DApplication.h>
 #include <PID/DRFTime.h>
+#include <TAGGER/DTAGMGeometry.h>
+#include <TAGGER/DTAGHGeometry.h>
 
 #include <DMatrix.h>
 #include <TMath.h>
@@ -62,12 +62,6 @@ class DEventSourceREST:public JEventSource
                     JEventLoop *eventLoop);
    jerror_t Extract_DMCThrown(hddm_r::HDDM *record,
                     JFactory<DMCThrown> *factory);
-   jerror_t Extract_DTAGMHit(hddm_r::HDDM *record,
-                    JFactory<DTAGMHit>* factory,
-                    JEventLoop *eventLoop);
-   jerror_t Extract_DTAGHHit(hddm_r::HDDM *record,
-                    JFactory<DTAGHHit>* factory,
-                    JEventLoop *eventLoop);
    jerror_t Extract_DSCHit(hddm_r::HDDM *record,
                     JFactory<DSCHit>* factory);
    jerror_t Extract_DTOFPoint(hddm_r::HDDM *record,
