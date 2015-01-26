@@ -247,6 +247,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 			ObjList():run_number(0),own_objects(true),eviobuff_parsed(false),eviobuff(NULL),eviobuff_size(0),DOMTree(NULL){}
 			
 			int32_t run_number;
+			uint64_t event_number;
 			bool own_objects; // keeps track of whether these objects were copied to factories or not
 			
 			vector<DDAQAddress*>    hit_objs;
@@ -288,6 +289,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		jerror_t ParseEvents(ObjList *objs_ptr);
 		int32_t GetRunNumber(evioDOMTree *evt);
 		int32_t FindRunNumber(uint32_t *iptr);
+		uint64_t FindEventNumber(uint32_t *iptr);
 		MODULE_TYPE GuessModuleType(const uint32_t *istart, const uint32_t *iend);
 		bool IsF250ADC(const uint32_t *istart, const uint32_t *iend);
 		bool IsF1TDC(const uint32_t *istart, const uint32_t *iend);

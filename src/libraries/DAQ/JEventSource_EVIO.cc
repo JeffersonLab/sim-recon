@@ -539,15 +539,18 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 		objs_ptr->eviobuff = buff;
 		objs_ptr->eviobuff_size = buff_size;
 		objs_ptr->run_number = FindRunNumber(buff);
+		objs_ptr->event_number = FindEventNumber(buff);
 	}
 
 	// Store a pointer to the ObjList object for this event in the
 	// JEvent as the Reference value. Parsing will be done later
 	// in GetObjects() -> ParseEvents() using the eviobuff pointer.
 	event.SetJEventSource(this);
-	event.SetEventNumber(++Nevents_read);
+	event.SetEventNumber((int)objs_ptr->event_number);
 	event.SetRunNumber(objs_ptr->run_number);
 	event.SetRef(objs_ptr);
+	
+	Nevents_read++;
 
 	return NOERROR;
 }
@@ -2110,7 +2113,7 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 	/// This is called from GetEvent() to quickly look for the run number
 	/// at the time the event is read in so it can be passed into
 	/// JEvent. It is what will be used for accessing the CCDB.
-	/// from this event. If a bank containing the run number of found,
+	/// from this event. If a bank containing the run number is found,
 	/// use it to provide the run number. Otherwise, return whatever run
 	/// number we were able to extract from the file name. 
 
@@ -2171,6 +2174,27 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 	}
 	
 	return filename_run_number;
+}
+
+//----------------
+// FindEventNumber
+//----------------
+uint64_t JEventSource_EVIO::FindEventNumber(uint32_t *iptr)
+{
+	/// This is called from GetEvent() to quickly look for the event number
+	/// at the time the event is read in so it can be passed into JEvent.
+	/// (See comments for FindRunNumber above.)
+	if(*iptr < 6) return Nevents_read+1;
+	
+	// Check header of Trigger bank
+	uint32_t mask = 0xFF202000;
+	if( (iptr[3]&mask) != mask ) return Nevents_read+1;
+	
+	uint64_t loevent_num = iptr[5];
+	uint64_t hievent_num = iptr[6];
+	uint64_t event_num = loevent_num + (hievent_num<<32);
+	
+	return event_num;
 }
 
 //----------------
@@ -2600,6 +2624,7 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 		codaeventinfo->event_type = event_types.empty() ? 0:event_types[i];
 		codaeventinfo->avg_timestamp = avg_timestamps.empty() ? 0:avg_timestamps[i];
 		objs->misc_objs.push_back(codaeventinfo);
+		objs->event_number = codaeventinfo->event_number;
 		
 		vector<DCODAROCInfo*> &codarocinfos = rocinfos[i];
 		for(uint32_t i=0; i<codarocinfos.size(); i++) objs->misc_objs.push_back(codarocinfos[i]);		
