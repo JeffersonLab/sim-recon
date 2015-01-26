@@ -245,7 +245,7 @@ inline static char* ParticleType(Particle_t p)
   }
 }
 
-inline static Particle_t ParticleEnum(char* locParticleName)
+inline static Particle_t ParticleEnum(const char* locParticleName)
 {
   if(strcmp(locParticleName, "Unknown") == 0)
     return Unknown;
