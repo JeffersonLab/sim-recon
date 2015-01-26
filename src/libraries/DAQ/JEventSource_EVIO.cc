@@ -1413,7 +1413,7 @@ void JEventSource_EVIO::AddSourceObjectsToCallStack(JEventLoop *loop, string cla
 	cs.start_time = 0.0;
 	cs.end_time = 0.0;
 	cs.data_source = JEventLoop::DATA_FROM_SOURCE;
-//*	loop->AddToCallStack(cs);
+	loop->AddToCallStack(cs);
 }
 
 //----------------
@@ -1431,11 +1431,11 @@ void JEventSource_EVIO::AddEmulatedObjectsToCallStack(JEventLoop *loop, string c
 	cs.caller_name = caller;
 	cs.callee_name = callee;
 	cs.data_source = JEventLoop::DATA_FROM_SOURCE;
-//*	loop->AddToCallStack(cs);
+	loop->AddToCallStack(cs);
 	cs.callee_name = cs.caller_name;
 	cs.caller_name = "<ignore>";
 	cs.data_source = JEventLoop::DATA_FROM_FACTORY;
-//*	loop->AddToCallStack(cs);
+	loop->AddToCallStack(cs);
 }
 
 

@@ -286,8 +286,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    // is because this routine is called while already in a loop->Get() call
    // so JANA will treat all other loop->Get() calls we make as being dependencies
    // of the loop->Get() call that we are already in. (Confusing eh?) 
-//*   bool record_call_stack = loop->GetCallStackRecordingStatus();
-//*   if (record_call_stack) loop->DisableCallStackRecording();
+   bool record_call_stack = loop->GetCallStackRecordingStatus();
+   if (record_call_stack) loop->DisableCallStackRecording();
    
    // Containers to hold all of the detector-specific "Digi"
    // objects. Once filled, these will be copied to the
@@ -587,21 +587,21 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    // Unfortunately, this is just us telling JANA the relationship as defined here.
    // It is not derived from the above code which would guarantee the declared relationsips
    // are correct. That would just be too complicated given how that code works.
-//*   if (record_call_stack) {
+   if (record_call_stack) {
       // re-enable call stack recording
-//*      loop->EnableCallStackRecording();
+      loop->EnableCallStackRecording();
 
-      AddToCallStack(loop, "DBCALDigiHit"      , "Df250PulseIntegral");
-      AddToCallStack(loop, "DBCALTDCDigiHit"   , "DF1TDCHit");
-      AddToCallStack(loop, "DCDCDigiHit"       , "Df125PulseIntegral");
-      AddToCallStack(loop, "DFCALDigiHit"      , "Df250PulseIntegral");
-      AddToCallStack(loop, "DFDCCathodeDigiHit", "Df125PulseIntegral");
-      AddToCallStack(loop, "DFDCWireDigiHit"   , "DF1TDCHit");
-      AddToCallStack(loop, "DSCDigiHit"        , "Df250PulseIntegral");
-      AddToCallStack(loop, "DSCTDCDigiHit"     , "DF1TDCHit");
-      AddToCallStack(loop, "DTOFDigiHit"       , "Df250PulseIntegral");
-      AddToCallStack(loop, "DTOFTDCDigiHit"    , "DCAEN1290TDCHit");      
-//*   }
+      Addf250ObjectsToCallStack(loop, "DBCALDigiHit");
+      Addf250ObjectsToCallStack(loop, "DFCALDigiHit");
+      Addf250ObjectsToCallStack(loop, "DSCDigiHit");
+      Addf250ObjectsToCallStack(loop, "DTOFDigiHit");
+      Addf125ObjectsToCallStack(loop, "DCDCDigiHit");
+      Addf125ObjectsToCallStack(loop, "DFDCCathodeDigiHit");
+      AddF1TDCObjectsToCallStack(loop, "DBCALTDCDigiHit");
+      AddF1TDCObjectsToCallStack(loop, "DFDCWireDigiHit");
+      AddF1TDCObjectsToCallStack(loop, "DSCTDCDigiHit");
+      AddCAEN1290TDCObjectsToCallStack(loop, "DTOFTDCDigiHit");
+   }
 }
 
 //---------------------------------
@@ -1052,6 +1052,46 @@ string DTranslationTable::Channel2Str(const DChannelInfo &in_channel) const
 }
 
 //----------------
+// Addf250ObjectsToCallStack
+//----------------
+void DTranslationTable::Addf250ObjectsToCallStack(JEventLoop *loop, string caller) const
+{
+	AddToCallStack(loop, caller, "Df250Config");
+	AddToCallStack(loop, caller, "Df250PulseIntegral");
+	AddToCallStack(loop, caller, "Df250PulsePedestal");
+	AddToCallStack(loop, caller, "Df250PulseTime");
+}
+
+//----------------
+// Addf125ObjectsToCallStack
+//----------------
+void DTranslationTable::Addf125ObjectsToCallStack(JEventLoop *loop, string caller) const
+{
+	AddToCallStack(loop, caller, "Df125Config");
+	AddToCallStack(loop, caller, "Df125PulseIntegral");
+	AddToCallStack(loop, caller, "Df125PulsePedestal");
+	AddToCallStack(loop, caller, "Df125PulseTime");
+}
+
+//----------------
+// AddF1TDCObjectsToCallStack
+//----------------
+void DTranslationTable::AddF1TDCObjectsToCallStack(JEventLoop *loop, string caller) const
+{
+	AddToCallStack(loop, caller, "DF1TDCConfig");
+	AddToCallStack(loop, caller, "DF1TDCHit");
+}
+
+//----------------
+// AddCAEN1290TDCObjectsToCallStack
+//----------------
+void DTranslationTable::AddCAEN1290TDCObjectsToCallStack(JEventLoop *loop, string caller) const
+{
+	AddToCallStack(loop, caller, "DCAEN1290TDCConfig");
+	AddToCallStack(loop, caller, "DCAEN1290TDCHit");
+}
+
+//----------------
 // AddToCallStack
 //----------------
 void DTranslationTable::AddToCallStack(JEventLoop *loop, 
@@ -1068,11 +1108,11 @@ void DTranslationTable::AddToCallStack(JEventLoop *loop,
    cs.caller_name = caller;
    cs.callee_name = callee;
    cs.data_source = JEventLoop::DATA_FROM_CACHE;
-//*   loop->AddToCallStack(cs);
+   loop->AddToCallStack(cs);
    cs.callee_name = cs.caller_name;
    cs.caller_name = "<ignore>";
    cs.data_source = JEventLoop::DATA_FROM_FACTORY;
-//*   loop->AddToCallStack(cs);
+   loop->AddToCallStack(cs);
 }
 
 //----------------------------------------------------------------------------
