@@ -66,7 +66,8 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   //and averaging.
   
   // compute the arrival time of the energy at the cell
-  m_t = 0.5 * ( tUp + tDown - fibLen / cEff );
+  // first get the mean time at the SiPM and then subtract the propagation time in the bar.
+  m_t = (tUp + tDown) / 2.0 - (fibLen / cEff);
   
   // now compute attentuation factors for each end based on distance
   // the light must travel
