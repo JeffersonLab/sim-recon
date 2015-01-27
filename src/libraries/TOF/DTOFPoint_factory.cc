@@ -169,7 +169,7 @@ DTOFPoint_factory::tof_spacetimehit_t* DTOFPoint_factory::Build_TOFSpacetimeHit_
 	locTOFSpacetimeHit->TOFHit = locTOFHit;
 
 	int bar = locTOFHit->bar;
-	int id = 44* + locTOFHit->bar - 1;
+	int id = 44 + locTOFHit->bar - 1;
 	double v = propagation_speed[id];
 
 	if((locTOFHit->bar < dTOFGeometry->FirstShortBar) || (locTOFHit->bar > dTOFGeometry->LastShortBar)) //double-ended bars
