@@ -290,7 +290,26 @@ DMagneticFieldMap* DApplication::GetBfield(unsigned int run_number)
 	string bfield_type = "FineMesh";
 	GetJParameterManager()->SetDefaultParameter("BFIELD_TYPE", bfield_type);
 	if(bfield_type=="CalibDB"|| bfield_type=="FineMesh"){
-		bfield = new DMagneticFieldMapFineMesh(this,run_number);
+		// see if we can load the name of the magnetic field map to use from the calib DB
+		JCalibration *jcalib = GetJCalibration(run_number);
+		map<string,string> bfield_map_name;
+		if(jcalib->GetCalib("/Magnets/Solenoid/solenoid_map", bfield_map_name)) {
+			jout << "Couldn't find default solenoid map table in CCDB, using default map ..." << endl;
+
+			// make default Bfield if we can't figure anything out
+			bfield = new DMagneticFieldMapFineMesh(this,run_number);
+		} else {
+			if( bfield_map_name.find("map_name") != bfield_map_name.end() ) {
+				if( bfield_map_name["map_name"] == "NoField" )     // special case for no magnetic field
+					bfield = new DMagneticFieldMapNoField(this);
+				else  
+					bfield = new DMagneticFieldMapFineMesh(this,run_number,bfield_map_name["map_name"]);  // pass along the name of the magnetic field map to load
+			} else {
+				jerr << "Couldn't find default solenoid map name in CCDB, using default map ..." << endl;
+				// default Bfield again
+				bfield = new DMagneticFieldMapFineMesh(this,run_number);
+			}
+		}
 		jout<<"Created Magnetic field map of type DMagneticFieldMapFineMesh."<<endl;
 	}else if(bfield_type=="Const"){
 		bfield = new DMagneticFieldMapConst(0.0, 0.0, 1.9);
