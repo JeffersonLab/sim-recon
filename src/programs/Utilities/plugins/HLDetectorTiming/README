@@ -1,0 +1,8 @@
+Using the HLDetector timing plugin (not much detail for now)
+
+1) scons install in this directory
+2) cd test
+3) adjust Run.csh to match the paths you need. 
+4) Run.sch
+5) see root files for output
+
