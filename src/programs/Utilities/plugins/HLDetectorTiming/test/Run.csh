@@ -164,8 +164,6 @@ ccdb add TOF/timing_offsets -r ${run}-${run} tof_tdc_timing_offsets.txt
 ccdb add PHOTON_BEAM/hodoscope/tdc_time_offsets -r ${run}-${run} tagh_tdc_timing_offsets.txt
 ccdb add PHOTON_BEAM/microscope/tdc_time_offsets -r ${run}-${run} tagm_tdc_timing_offsets.txt
 
-exit
-
 # Do the Track Based alignment
 set nEvents=500000
 hd_root -PPLUGINS=HLDetectorTiming -PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520 $allfiles -PNTHREADS=$nThreads -PEVENTS_TO_KEEP=$nEvents -PHLDETECTORTIMING:DO_TRACK_BASED=1 -PTRKFIT:MASS_HYPOTHESES_POSITIVE=0.14 -PTRKFIT:MASS_HYPOTHESES_NEGATIVE=0.14 
