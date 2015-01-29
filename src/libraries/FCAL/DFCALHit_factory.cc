@@ -18,7 +18,6 @@ using namespace std;
 #include "DAQ/Df250Config.h"
 using namespace jana;
 
-
 //------------------
 // init
 //------------------
@@ -147,11 +146,13 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
         }
 
         // throw away hits from bad or noisy channels
-        fcal_quality_state quality = static_cast<fcal_quality_state>(block_qualities[digihit->row][digihit->column]);
+        fcal_quality_state quality = 
+	  static_cast<fcal_quality_state>(block_qualities[digihit->row][digihit->column]);
         if ( (quality==BAD) || (quality==NOISY) ) continue;
 
-        // Get pedestal.  Prefer associated event pedestal if it exist.
-        // Otherwise, use the average pedestal from CCDB
+        // get pedestal from CCDB -- we should use it instead
+	// of the event-by-even pedestal
+
         double pedestal = pedestals[digihit->row][digihit->column];
         double integratedPedestal = 0.0;
         const Df250PulseIntegral* PIobj = NULL;
@@ -162,18 +163,21 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
         if( PIobj != NULL ){
 
-            // event by event pedestal - this needs additional
-            // testing as it assumes that the pedestal reported
-            // is one channel.  In some cases it seems to be
-            // the sum of all channels in the window.  There
-            // may be variation with FADC mode
+	  if( pedestal == 0 ) {
 
-            if( PIobj->pedestal == 0 ) continue; // Should only be true if timing failed, should already 'continue' on digihit time cut
+	    // we should use the fixed database pedestal
+	    // object as it is less susceptible to noise
+	    // than the event-by-event pedestal
 
-            pedestal = (double)PIobj->pedestal / (double)PIobj->nsamples_pedestal;
-            double nsamples_integral = (double)PIobj->nsamples_integral;
-            integratedPedestal      = pedestal * nsamples_integral;
+	    // if the database pedestal is zero then try
+	    // the event-by-event one:
 
+            pedestal = (double)PIobj->pedestal / 
+	      (double)PIobj->nsamples_pedestal;
+	  }
+
+	  double nsamples_integral = (double)PIobj->nsamples_integral;
+	  integratedPedestal = pedestal * nsamples_integral;
         }
         else{
 
@@ -204,18 +208,16 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
         // Get position of blocks on front face. (This should really come from
         // hdgeant directly so the poisitions can be shifted in mcsmear.)
         DVector2 pos = fcalGeom.positionOnFace(hit->row, hit->column);
-
         hit->x = pos.X();
         hit->y = pos.Y();
 
+	// recored the pulse integral to peak ratio since this is
+	// a useful quality metric for the PMT pulse
+	hit->intOverPeak = ( A - integratedPedestal ) / pulse_amplitude;
+
         // do some basic quality checks before creating the objects
         if( ( hit->E > 0 ) &&
-                ( digihit->pulse_time > 0 ) 
-                // this quantity is likely a useful shape discriminator
-                // but needs further study before a cut is implemented
-                // there may be problems with small pulses or unstable
-                // pedestals
-                // ( digihit->pulse_integral / pulse_amplitude < xxx ) 
+	    ( digihit->pulse_time > 0 ) 
           ){
 
             hit->AddAssociatedObject(digihit);
