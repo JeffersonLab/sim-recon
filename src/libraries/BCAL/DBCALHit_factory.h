@@ -19,8 +19,7 @@ using namespace std;
 
 // store up/down-stream values for each detector cell
 typedef pair<double,double> cell_calib_t;  
-// store constants indexed by cell ID (module/layer/sector)
-typedef  map<int,cell_calib_t>  bcal_digi_constants_t;    // switch to a hashed map?
+typedef vector<cell_calib_t>  bcal_digi_constants_t;
 
 class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 	public:
@@ -52,6 +51,10 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 		bcal_digi_constants_t pedestals;
 		bcal_digi_constants_t time_offsets;
 
+		
+		const int GetCalibIndex( int module, int layer, int sector ) const {
+			return BCAL_NUM_LAYERS*BCAL_NUM_SECTORS*(module-1) + BCAL_NUM_SECTORS*(layer-1) + (sector-1);
+		}
 
 		const double GetConstant( const bcal_digi_constants_t &the_table,
 					  const int in_module, const int in_layer,

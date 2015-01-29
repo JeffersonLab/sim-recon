@@ -166,7 +166,7 @@ jerror_t DBCALHit_factory::fini(void)
 //------------------
 // FillCalibTable
 //------------------
-void DBCALHit_factory::FillCalibTable( map<int,cell_calib_t> &table, 
+void DBCALHit_factory::FillCalibTable( bcal_digi_constants_t &table, 
                    const vector<double> &raw_table) 
 {
     char str[256];
@@ -186,12 +186,10 @@ void DBCALHit_factory::FillCalibTable( map<int,cell_calib_t> &table,
                 throw JException(str);
              }
 
-             int cell_id = DBCALGeometry::cellId(module,layer,sector);
-
-             table[cell_id] = cell_calib_t(raw_table[channel],raw_table[channel+1]);
+             table.push_back( cell_calib_t(raw_table[channel],raw_table[channel+1]) );
 
 	     if (PRINTCALIBRATION) {
-	       printf("%2i  %2i  %2i   %.10f   %.10f\n",module,layer,sector,raw_table[channel],raw_table[channel+1]);
+		     printf("%2i  %2i  %2i   %.10f   %.10f\n",module,layer,sector,raw_table[channel],raw_table[channel+1]);
 	     }
 	     
              channel += 2;
@@ -246,7 +244,7 @@ const double DBCALHit_factory::GetConstant(const bcal_digi_constants_t &the_tabl
       throw JException(str);
    }
 
-   const int the_cell = DBCALGeometry::cellId( in_module, in_layer, in_sector);
+   const int the_cell = GetCalibIndex( in_module, in_layer, in_sector);
    
    if (in_end == DBCALGeometry::kUpstream) {
        // handle the upstream end
@@ -290,9 +288,7 @@ const double DBCALHit_factory::GetConstant( const bcal_digi_constants_t &the_tab
       throw JException(str);
    }
 
-   const int the_cell = DBCALGeometry::cellId(in_hit->module,
-                                              in_hit->layer,
-                                              in_hit->sector);
+   const int the_cell = GetCalibIndex( in_hit->module, in_hit->layer, in_hit->sector );
    
    if (in_hit->end == DBCALGeometry::kUpstream) {
        // handle the upstream end
@@ -341,9 +337,7 @@ const double DBCALHit_factory::GetConstant(const bcal_digi_constants_t &the_tabl
       throw JException(str);
    }
 
-   const int the_cell = DBCALGeometry::cellId(in_digihit->module,
-                                              in_digihit->layer,
-                                              in_digihit->sector);
+   const int the_cell = GetCalibIndex( in_digihit->module, in_digihit->layer, in_digihit->sector );
    
    if (in_digihit->end == DBCALGeometry::kUpstream) {
        // handle the upstream end

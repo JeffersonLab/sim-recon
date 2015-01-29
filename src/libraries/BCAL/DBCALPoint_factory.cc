@@ -28,11 +28,11 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
   DGeometry* geom = app->GetDGeometry(runnumber);
   geom->GetTargetZ(m_z_target_center);
 
+  cout << "in DBCALPoint_factory, loading constants ..." << endl;
+
   // load attenuation correction parameters 
   vector< vector<double> > in_atten_parameters;
   loop->GetCalib("/BCAL/attenuation_parameters", in_atten_parameters);
-
-  cout << "loading /BCAL/attenuation_parameters ..." << endl;
 
   // if (PRINTCALIBRATION) {
   //   jout << "DBCALPoint_factory::brun >>Printing " << endl;
@@ -42,23 +42,28 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
   for (int module=1; module<=BCAL_NUM_MODULES; module++) {
 	  for (int layer=1; layer<=BCAL_NUM_LAYERS; layer++) {
 		  for (int sector=1; sector<=BCAL_NUM_SECTORS; sector++) {
-			  int cell_id = DBCALGeometry::cellId(module,layer,sector);
+			  //int cell_id = GetCalibIndex(module,layer,sector);
 
-			  attenuation_parameters[cell_id] = vector<double>(3,0.);
+			  vector<double> new_params(3,0.);
 			  //attenuation_parameters[cell_id][0] = in_atten_parameters[channel][0];
 			  //attenuation_parameters[cell_id][1] = in_atten_parameters[channel][1];
 			  //attenuation_parameters[cell_id][2] = in_atten_parameters[channel][2];
 			  // hack to workaround odd CCDB behavior
-			  attenuation_parameters[cell_id][0] = in_atten_parameters[channel][1];
-			  attenuation_parameters[cell_id][1] = in_atten_parameters[channel][2];
-			  attenuation_parameters[cell_id][2] = in_atten_parameters[channel][0];
+			  //attenuation_parameters[cell_id][0] = in_atten_parameters[channel][1];
+			  //attenuation_parameters[cell_id][1] = in_atten_parameters[channel][2];
+			  //attenuation_parameters[cell_id][2] = in_atten_parameters[channel][0];
+			  
+			  new_params[0] = in_atten_parameters[channel][1];
+			  new_params[1] = in_atten_parameters[channel][2];
+			  new_params[2] = in_atten_parameters[channel][0];
+			  attenuation_parameters.push_back( new_params );
 
 			  if (PRINTCALIBRATION) {
 			    printf("%2i  %2i  %2i %12.4f %12.4f %12.4f\n",
 				   module,layer,sector,
-				   attenuation_parameters[cell_id][0],
-				   attenuation_parameters[cell_id][1],
-				   attenuation_parameters[cell_id][2]);
+				   attenuation_parameters[channel][0],
+				   attenuation_parameters[channel][1],
+				   attenuation_parameters[channel][2]);
 			  }
 /*
 			  cerr << " loaded " << cell_id << " = " << attenuation_parameters[cell_id][0] << ", "
@@ -71,7 +76,12 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
 	  }
   }
 
-  return NOERROR;
+
+  // load effective velocities
+  effective_velocities.clear();
+  loop->GetCalib("/BCAL/effective_velocities", effective_velocities);
+
+    return NOERROR;
 }
 
 //----------------
@@ -132,8 +142,12 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
 
     // first check that the hits don't have absurd timing information
 
+    //int id = DBCALGeometry::cellId( uphit->module, uphit->layer, uphit->sector );  // key the cell identification off of the upstream cell
+    int table_id = GetCalibIndex( uphit->module, uphit->layer, uphit->sector );  // key the cell identification off of the upstream cell
+
     float fibLen = DBCALGeometry::BCALFIBERLENGTH;
-    float cEff = DBCALGeometry::C_EFFECTIVE;
+    //float cEff = DBCALGeometry::C_EFFECTIVE;    
+    float cEff = GetEffectiveVelocity(table_id);
 
     // get the position with respect to the center of the module -- positive
     // z in the downstream direction
@@ -146,10 +160,9 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
 
     // pass attenuation length parameters to the DBCALPoint constructor, since
     // many of the calculations are implemented there
-    int id = DBCALGeometry::cellId( uphit->module, uphit->layer, uphit->sector );  // key the cell identification off of the upstream cell
     double attenuation_length = DBCALGeometry::ATTEN_LENGTH;
     double attenuation_L1=-1., attenuation_L2=-1.;  // these parameters are ignored for now
-    GetAttenuationParameters(id, attenuation_length, attenuation_L1, attenuation_L2);
+    GetAttenuationParameters(table_id, attenuation_length, attenuation_L1, attenuation_L2);
     // if (GetAttenuationParameters(id, attenuation_length, attenuation_L1, attenuation_L2)) {
     //   printf("got new att length %f\n",attenuation_length);
     // } else {
@@ -174,17 +187,16 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
 bool DBCALPoint_factory::GetAttenuationParameters(int id, double &attenuation_length, 
 						    double &attenuation_L1, double &attenuation_L2)
 {
-	attenuation_parms_t::iterator parms_itr = attenuation_parameters.find(id);
-	// couldn't find it!
-	if(parms_itr == attenuation_parameters.end()) {
-		return false;
-	}
-
-	vector<double> &parms = parms_itr->second;
+	vector<double> &parms = attenuation_parameters.at(id);
 
 	attenuation_length = parms[0];
 	attenuation_L1 = parms[1];
 	attenuation_L2 = parms[2];
 
 	return true;
+}
+
+double DBCALPoint_factory::GetEffectiveVelocity(int id)
+{
+	return effective_velocities.at(id);
 }

@@ -169,7 +169,7 @@ jerror_t DBCALTDCHit_factory::fini(void)
 //------------------
 // FillCalibTable
 //------------------
-void DBCALTDCHit_factory::FillCalibTable( map<int,cell_calib_t> &table, 
+void DBCALTDCHit_factory::FillCalibTable( bcal_digi_constants_t &table, 
                    const vector<double> &raw_table) 
 {
     char str[256];
@@ -188,9 +188,7 @@ void DBCALTDCHit_factory::FillCalibTable( map<int,cell_calib_t> &table,
           throw JException(str);
       }
       
-      int cell_id = DBCALGeometry::cellId(module,layer,sector);
-      
-      table[cell_id] = cell_calib_t(raw_table[channel],raw_table[channel+1]);
+      table.push_back( cell_calib_t(raw_table[channel],raw_table[channel+1]) );
 
       channel += 2;
        }
@@ -237,9 +235,7 @@ const double DBCALTDCHit_factory::GetConstant( const bcal_digi_constants_t &the_
       throw JException(str);
    }
 
-   const int the_cell = DBCALGeometry::cellId( in_module,
-                      in_layer,
-                      in_sector);
+   const int the_cell = GetCalibIndex( in_module, in_layer, in_sector);
    
    if(in_end == DBCALGeometry::kUpstream) {
        // handle the upstream end
@@ -277,9 +273,7 @@ const double DBCALTDCHit_factory::GetConstant( const bcal_digi_constants_t &the_
       throw JException(str);
    }
 
-   const int the_cell = DBCALGeometry::cellId(in_hit->module,
-                     in_hit->layer,
-                     in_hit->sector);
+   const int the_cell = GetCalibIndex( in_hit->module, in_hit->layer, in_hit->sector);
    
    if(in_hit->end == DBCALGeometry::kUpstream) {
        // handle the upstream end
@@ -319,9 +313,7 @@ const double DBCALTDCHit_factory::GetConstant( const bcal_digi_constants_t &the_
       throw JException(str);
    }
 
-   const int the_cell = DBCALGeometry::cellId(in_digihit->module,
-                     in_digihit->layer,
-                     in_digihit->sector);
+   const int the_cell = GetCalibIndex( in_digihit->module, in_digihit->layer, in_digihit->sector);
    
    if(in_digihit->end == DBCALGeometry::kUpstream) {
        // handle the upstream end
