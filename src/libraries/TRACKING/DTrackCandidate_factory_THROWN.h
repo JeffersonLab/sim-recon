@@ -51,6 +51,7 @@ class DTrackCandidate_factory_THROWN:public jana::JFactory<DTrackCandidate>{
 		DTrackFitter *fitter;
 		const DTrackHitSelector *hitselector;
 		vector<DReferenceTrajectory*> rt_pool;
+		const DMagneticFieldMap *bfield;
 		const DParticleID* dParticleID;
 
 };
