@@ -908,6 +908,7 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 	// Kludge for tracking to forward detectors assuming that the planes 
 	// are perpendicular to the beam line 
 	if (step && step->origin.Z()>600.
+	    && (detector==SYS_FCAL || detector==SYS_TOF) 
 	    ){
 	  double p_sq=step->mom.Mag2();
 	  //double ds=(origin.z()-step->origin.z())*p/step->mom.z();
