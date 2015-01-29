@@ -112,7 +112,7 @@ jerror_t DEventProcessor_candidate_tree::brun(JEventLoop *loop, int runnumber)
 	}
 	lorentz_def=dapp->GetLorentzDeflections();
 		
-	DMagneticFieldMap *bfield = dapp->GetBfield();
+	DMagneticFieldMap *bfield = dapp->GetBfield(runnumber);
 	rt = new DReferenceTrajectory(bfield);
 
 	return NOERROR;

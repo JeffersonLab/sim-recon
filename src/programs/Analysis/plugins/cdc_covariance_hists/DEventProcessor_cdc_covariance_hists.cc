@@ -88,7 +88,7 @@ jerror_t DEventProcessor_cdc_covariance_hists::brun(JEventLoop *loop, int runnum
 		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program perhaps?)"<<endl;
 		return RESOURCE_UNAVAILABLE;
 	}
-	bfield=dapp->GetBfield();
+	bfield=dapp->GetBfield(runnumber);
 	rt = new DReferenceTrajectory(bfield);
 	rt->SetDRootGeom(dapp->GetRootGeom());
 	
