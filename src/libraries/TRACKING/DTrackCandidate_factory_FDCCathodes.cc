@@ -30,7 +30,7 @@
 jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop, 
 						   int runnumber) {
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
-  bfield = dapp->GetBfield();
+  bfield = dapp->GetBfield(runnumber);
   FactorForSenseOfRotation=(bfield->GetBz(0.,0.,65.)>0.)?-1.:1.;
 
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);

@@ -179,7 +179,7 @@ jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int runnumb
 	MAX_HIT_DIST2 = MAX_HIT_DIST*MAX_HIT_DIST;
 
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	dMagneticField = locApplication->GetBfield();
+	dMagneticField = locApplication->GetBfield(runnumber);
 	dFactorForSenseOfRotation=(dMagneticField->GetBz(0.,0.,65.)>0.)?-1.:1.;
 
 	const DGeometry *locGeometry = locApplication->GetDGeometry(runnumber);

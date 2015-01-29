@@ -29,6 +29,7 @@ DTrackCandidate_factory_THROWN::DTrackCandidate_factory_THROWN()
 {
 	fitter = NULL;
 	hitselector = NULL;
+	bfield = NULL;
 }
 
 //------------------
@@ -36,6 +37,9 @@ DTrackCandidate_factory_THROWN::DTrackCandidate_factory_THROWN()
 //------------------
 jerror_t DTrackCandidate_factory_THROWN::brun(jana::JEventLoop *loop, int runnumber)
 {
+	DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+	bfield = dapp->GetBfield(runnumber);
+
 	// Get pointer to DTrackFitter object that actually fits a track
 	vector<const DTrackFitter *> fitters;
 	loop->Get(fitters);
@@ -102,8 +106,7 @@ jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		if(rt_pool.size()<=_data.size()){
 			// This is a little ugly, but only gets called a few times throughout the life of the process
 			// Note: these never get deleted, even at the end of process.
-			DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-			rt_pool.push_back(new DReferenceTrajectory(dapp->GetBfield()));
+			rt_pool.push_back(new DReferenceTrajectory(bfield));
 		}
 		DReferenceTrajectory *rt = rt_pool[_data.size()];
       if(locNumInitialReferenceTrajectories == rt_pool.size()) //didn't create a new one

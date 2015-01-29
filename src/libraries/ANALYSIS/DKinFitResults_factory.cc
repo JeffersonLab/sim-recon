@@ -30,7 +30,7 @@ jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 	dAnalysisUtilities = locAnalysisUtilitiesVector[0];
 
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield();
+	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield(runnumber);
 
 	dTargetZCenter = 65.0;
 	// Get Target parameters from XML

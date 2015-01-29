@@ -123,7 +123,7 @@ jerror_t DTrackCandidate_factory::init(void)
 jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
-  bfield = dapp->GetBfield();
+  bfield = dapp->GetBfield(runnumber);
   FactorForSenseOfRotation=(bfield->GetBz(0.,0.,65.)>0.)?-1.:1.;
 
   // Get the position of the exit of the CDC endplate from DGeometry

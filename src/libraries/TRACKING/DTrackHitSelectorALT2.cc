@@ -44,7 +44,7 @@ bool static DTrackHitSelector_fdchit_cmp(pair<double,const DFDCPseudo *>a,
 //---------------------------------
 // DTrackHitSelectorALT2    (Constructor)
 //---------------------------------
-DTrackHitSelectorALT2::DTrackHitSelectorALT2(jana::JEventLoop *loop):DTrackHitSelector(loop)
+DTrackHitSelectorALT2::DTrackHitSelectorALT2(jana::JEventLoop *loop, int runnumber):DTrackHitSelector(loop)
 {
 	HS_DEBUG_LEVEL = 0;
 	MAKE_DEBUG_TREES = false;
@@ -106,7 +106,7 @@ DTrackHitSelectorALT2::DTrackHitSelectorALT2(jana::JEventLoop *loop):DTrackHitSe
 	}
 
 	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-        bfield = dapp->GetBfield(); // this should be run number based!
+        bfield = dapp->GetBfield(runnumber); // this should be run number based!
 	
 }
 

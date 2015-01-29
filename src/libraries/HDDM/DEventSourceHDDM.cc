@@ -2101,7 +2101,7 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
       else {
          if (dapp && !bfield)
             // delay getting the bfield object until we have to!
-            bfield = dapp->GetBfield();
+            bfield = dapp->GetBfield(runnumber);
          if (dapp && !geom)
             geom = dapp->GetDGeometry(runnumber);
          my_rts.push_back(new DReferenceTrajectory(bfield));

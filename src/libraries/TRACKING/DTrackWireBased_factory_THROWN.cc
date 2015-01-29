@@ -72,7 +72,7 @@ jerror_t DTrackWireBased_factory_THROWN::brun(jana::JEventLoop *loop, int runnum
 	loop->GetSingle(dParticleID);
 
 	// Set magnetic field pointer
-	bfield = dapp->GetBfield();
+	bfield = dapp->GetBfield(runnumber);
 
 	return NOERROR;
 }

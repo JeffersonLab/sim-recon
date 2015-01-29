@@ -24,7 +24,7 @@ jerror_t DVertex_factory::init(void)
 jerror_t DVertex_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
 {
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield();
+	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield(runnumber);
 
 	// Get Target parameters from XML
 	dTargetZCenter = 65.0;
