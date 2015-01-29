@@ -139,7 +139,7 @@ jerror_t DEventSourceEVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	if(loop){
 		DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 		if(dapp){
-			bfield = dapp->GetBfield();
+			bfield = dapp->GetBfield(event.GetRunNumber());
 			geom = dapp->GetDGeometry(event.GetRunNumber());
 		}
 	}

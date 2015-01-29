@@ -160,7 +160,7 @@ jerror_t MyProcessor::brun(JEventLoop *eventloop, int runnumber)
 
 	// Read in Magnetic field map
 	DApplication* dapp = dynamic_cast<DApplication*>(eventloop->GetJApplication());
-	Bfield = dapp->GetBfield();
+	Bfield = dapp->GetBfield(runnumber);
 	const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
 	dgeom->GetFDCWires(fdcwires);
 

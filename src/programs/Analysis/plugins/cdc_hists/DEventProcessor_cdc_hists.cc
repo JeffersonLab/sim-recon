@@ -89,7 +89,7 @@ jerror_t DEventProcessor_cdc_hists::init(void)
 jerror_t DEventProcessor_cdc_hists::brun(JEventLoop *eventLoop, int runnumber)
 {
 	DApplication *dapp = dynamic_cast<DApplication*>(app);
-	bfield = dapp->GetBfield();
+	bfield = dapp->GetBfield(runnumber);
 	rt = new DReferenceTrajectory(bfield);
 	
 	return NOERROR;
