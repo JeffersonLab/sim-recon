@@ -87,9 +87,10 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
 	// fill user's hit list
         int nhits = 0;
-        DFCALCluster::userhits_t* hits = (DFCALCluster::userhits_t*) malloc(sizeof(DFCALCluster::userhits_t)*FCAL_USER_HITS_MAX);
+        DFCALCluster::userhits_t* hits = 
+	  (DFCALCluster::userhits_t*) malloc(sizeof(DFCALCluster::userhits_t)*FCAL_USER_HITS_MAX);
 
-// Fill the structure that used to be used by clusterizers in Radphi 
+	// Fill the structure that used to be used by clusterizers in Radphi 
 	for (vector<const DFCALHit*>::const_iterator hit  = fcalhits.begin(); 
                                                      hit != fcalhits.end(); hit++ ) {
            if ( (**hit).E <  1e-6 ) continue;
@@ -97,12 +98,14 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	   hits->hit[nhits].ch = fcalGeom.channel( (**hit).row, (**hit).column );
            hits->hit[nhits].x = (**hit).x;
            hits->hit[nhits].y = (**hit).y;
-           hits->hit[nhits].E = (**hit).E; // adjust a hit energy either in the hit or photon factory
+           hits->hit[nhits].E = (**hit).E; 
            hits->hit[nhits].t = (**hit).t;
+	   hits->hit[nhits].intOverPeak = (**hit).intOverPeak;
            nhits++;
            
            if (nhits >= (int) FCAL_USER_HITS_MAX)  { 
-              cout << "ERROR: FCALCluster_factory: number of hits " << nhits << " larger than " << FCAL_USER_HITS_MAX << endl;
+              cout << "ERROR: FCALCluster_factory: number of hits " 
+		   << nhits << " larger than " << FCAL_USER_HITS_MAX << endl;
               break;
            }
 
@@ -220,7 +223,6 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
               clusterList[c]->saveHits( hits );
 
               _data.push_back( clusterList[c] );
-
 	   }
         }
   

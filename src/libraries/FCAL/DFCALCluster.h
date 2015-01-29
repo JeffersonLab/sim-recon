@@ -34,6 +34,9 @@ class DFCALCluster : public JObject {
       float y;
       float E;
       float t;
+     // this may be pruned at a later stage to reduce size
+     // but it is useful for development now
+      float intOverPeak;
    } userhit_t;
 
    typedef struct {
@@ -48,6 +51,7 @@ class DFCALCluster : public JObject {
       float y;
       float E;
       float t;
+      float intOverPeak;
    } DFCALClusterHit_t;
 
    void saveHits( const userhits_t* const hit );
@@ -57,11 +61,14 @@ class DFCALCluster : public JObject {
    double getEnergy() const;
    double getEmax() const;
    double getTime() const;
+   double getTimeMaxE() const;
+   double getTimeEWeight() const;
    // the centroid returned by this function is in 
    // a frame where z=0 is at the center of the target
    DVector3 getCentroid() const;
 
    double getRMS() const;
+   double getRMS_t() const;
    double getRMS_x() const;
    double getRMS_y() const;
    double getRMS_u() const;
@@ -96,27 +103,32 @@ class DFCALCluster : public JObject {
    double getHitX( const userhits_t* const hitList, const int ihit) const;
    double getHitY( const userhits_t* const hitList, const int ihit) const;
    double getHitT( const userhits_t* const hitList, const int ihit) const;
+   double getHitIntOverPeak( const userhits_t* const hitList, const int ihit) const;
    double getHitE( const userhits_t* const hitList, const int ihit) const;  // hit energy owned by cluster
    double getHitEhit( const userhits_t* const hitList, const int ihit) const; // energy in a FCAL block
 
-   double fEnergy;              // total cluster energy (GeV) or 0 if stale
-   double fTime;                // cluster time(ns) set by first (max E) block, for now
-   double fEmax;                // energy in the first block of the cluster
-   DVector3 fCentroid;          // cluster centroid position (cm) [z=0 at target center]
-   double fRMS;                 // cluster r.m.s. size (cm)
-   double fRMS_x;               // cluster r.m.s. size along X-axis (cm)
-   double fRMS_y;               // cluster r.m.s. size along Y-axis (cm)
-   double fRMS_u;               // cluster r.m.s. size in radial direction (cm)
-   double fRMS_v;               // cluster r.m.s. size in azimuth direction (cm)
-   int m_nFcalHits;             // total number of hits to work with
-                                //   need to rename other member data  
-   int fNhits;                  // number of hits owned by this cluster
-   int *fHit;                   // index list of hits owned by this cluster
-   double *fHitf;               // list of hit fractions owned by this cluster
-   double *fEexpected;          // expected energy of hit by cluster (GeV)
-   double *fEallowed;           // allowed energy of hit by cluster (GeV)
-   vector<DFCALClusterHit_t> my_hits; // container for hits that form a cluster
-                                // to be used after clustering is done
+   double fEnergy;        // total cluster energy (GeV) or 0 if stale
+   double fTime;          // cluster time(ns) set equivalent to fTimeMaxE below
+   double fTimeMaxE;      // cluster time(ns) set by first (max E) block, for now
+   double fTimeEWeight;   // cluster time(ns) energy weighted average
+   double fEmax;          // energy in the first block of the cluster
+   DVector3 fCentroid;    // cluster centroid position (cm) [z=0 at target center]
+   double fRMS;           // cluster r.m.s. size (cm)
+   double fRMS_t;         // r.m.s. of energy weighted hits (ns)
+   double fRMS_x;         // cluster r.m.s. size along X-axis (cm)
+   double fRMS_y;         // cluster r.m.s. size along Y-axis (cm)
+   double fRMS_u;         // cluster r.m.s. size in radial direction (cm)
+   double fRMS_v;         // cluster r.m.s. size in azimuth direction (cm)
+   int m_nFcalHits;       // total number of hits to work with
+                          //   need to rename other member data  
+   int fNhits;            // number of hits owned by this cluster
+   int *fHit;             // index list of hits owned by this cluster
+   double *fHitf;         // list of hit fractions owned by this cluster
+   double *fEexpected;    // expected energy of hit by cluster (GeV)
+   double *fEallowed;     // allowed energy of hit by cluster (GeV)
+
+   // container for hits that form a cluster to be used after clustering is done
+   vector<DFCALClusterHit_t> my_hits; 
 
 };
 
@@ -146,9 +158,20 @@ inline double DFCALCluster::getEmax() const
 {
    return fEmax;
 }
+
 inline double DFCALCluster::getTime() const
 {
    return fTime;
+}
+
+inline double DFCALCluster::getTimeMaxE() const
+{
+   return fTimeMaxE;
+}
+
+inline double DFCALCluster::getTimeEWeight() const
+{
+   return fTimeEWeight;
 }
 
 inline DVector3 DFCALCluster::getCentroid() const
@@ -159,6 +182,11 @@ inline DVector3 DFCALCluster::getCentroid() const
 inline double DFCALCluster::getRMS() const
 {
    return fRMS;
+}
+
+inline double DFCALCluster::getRMS_t() const
+{
+   return fRMS_t;
 }
 
 inline double DFCALCluster::getRMS_x() const
@@ -230,6 +258,16 @@ inline double DFCALCluster::getHitT(const userhits_t* const hitList, const int i
 {
    if ( ihit >= 0  && ihit < fNhits && hitList && ihit < hitList->nhits ) { 
      return  hitList->hit[ fHit[ ihit ] ].t;
+   }
+   else {
+     return 0.;
+   }
+}
+
+inline double DFCALCluster::getHitIntOverPeak(const userhits_t* const hitList, const int ihit ) const
+{
+   if ( ihit >= 0  && ihit < fNhits && hitList && ihit < hitList->nhits ) { 
+     return  hitList->hit[ fHit[ ihit ] ].intOverPeak;
    }
    else {
      return 0.;

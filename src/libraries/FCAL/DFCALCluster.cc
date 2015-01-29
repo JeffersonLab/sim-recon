@@ -14,8 +14,11 @@ DFCALCluster::DFCALCluster( const int nhits )
    fEnergy = 0;
    fEmax = 0;
    fTime = 0;
+   fTimeMaxE = 0;
+   fTimeEWeight = 0;
    fCentroid.SetXYZ( 0., 0., 0.);
    fRMS = 0;
+   fRMS_t = 0;
    fRMS_x = 0;
    fRMS_y = 0;
    fRMS_u = 0;
@@ -63,6 +66,7 @@ void DFCALCluster::saveHits( const userhits_t* const hits )
          h.x = getHitX( hits, i ) ;
          h.y = getHitY( hits, i ) ;
          h.t = getHitT( hits, i ) ;
+	 h.intOverPeak = getHitIntOverPeak( hits, i );
          my_hits.push_back(h);
       }
       else {
@@ -80,12 +84,11 @@ void DFCALCluster::saveHits( const userhits_t* const hits )
 
 int DFCALCluster::addHit(const int ihit, const double frac)
 {
-   //if (ihit >= 0 && ihit < fHitlist->nhits && fNhits < fHitlist->nhits) {
    if (ihit >= 0 ) {
       fHit[fNhits] = ihit;
       fHitf[fNhits] = frac;
       ++fNhits;
-//std::cout << " addHit: " << ihit << " with fraction " << frac << " Total hits: " << fNhits << std::endl;
+
       return 0;
    }
    else {
@@ -105,15 +108,25 @@ bool DFCALCluster::update( const userhits_t* const hitList,
 {
 
    double energy = 0;
+   double t2EWeight = 0, tEWeight = 0;
    for ( int h = 0; h < fNhits; h++ ) {
       int ih = fHit[h];
       double frac = fHitf[h];
-      energy += hitList->hit[ih].E*frac;
+      double hitEnergy = hitList->hit[ih].E*frac;
+
+      energy += hitEnergy;
+      
+      t2EWeight += hitEnergy * hitList->hit[ih].t * hitList->hit[ih].t;
+      tEWeight += hitEnergy * hitList->hit[ih].t;
    }
-   double Emax=0, Time=0;
+
+   tEWeight /= energy;
+   t2EWeight /= energy;
+
+   double eMax=0, timeMax=0;
    if (fNhits > 0) { 
-       Emax = hitList->hit[fHit[0]].E;
-       Time = hitList->hit[fHit[0]].t;
+       eMax = hitList->hit[fHit[0]].E;
+       timeMax = hitList->hit[fHit[0]].t;
    }
 
    DVector3 centroid;
@@ -206,20 +219,14 @@ bool DFCALCluster::update( const userhits_t* const hitList,
       MOM2v += hitList->hit[ih].E*frac*SQR(v);
    }
 
-   fRMS = sqrt(energy*(MOM2x+MOM2y)-SQR(MOM1x)-SQR(MOM1y))/(energy);
-   fRMS_x = sqrt(energy*MOM2x - SQR(MOM1x))/(energy);
-   fRMS_y = sqrt(energy*MOM2y - SQR(MOM1y))/(energy);
-   fRMS_u = sqrt(energy*MOM2u - SQR(MOM1u))/(energy);
-   fRMS_v = sqrt(energy*MOM2v - SQR(MOM1v))/(energy);
-
    bool something_changed = false;
    if (fabs(energy-fEnergy) > 0.001) {
       fEnergy = energy;
       something_changed = true;
    }
-   if (fabs(Emax-fEmax) > 0.001) {
-      fEmax = Emax;
-      fTime = Time;
+   if (fabs(eMax-fEmax) > 0.001) {
+      fEmax = eMax;
+      fTimeMaxE = timeMax;
       something_changed = true;
    }
    if (fabs(centroid.x()-fCentroid.x()) > 0.1 ||
@@ -227,11 +234,25 @@ bool DFCALCluster::update( const userhits_t* const hitList,
       fCentroid = centroid;
       something_changed = true;
    }
+
    if (something_changed) {
+
+      fTime = timeMax;
+      fTimeEWeight = tEWeight;
+      fRMS_t = sqrt( t2EWeight - ( tEWeight * tEWeight ) );
+
+      fRMS = sqrt(energy*(MOM2x+MOM2y)-SQR(MOM1x)-SQR(MOM1y))/(energy);
+      fRMS_x = sqrt(energy*MOM2x - SQR(MOM1x))/(energy);
+      fRMS_y = sqrt(energy*MOM2y - SQR(MOM1y))/(energy);
+      fRMS_u = sqrt(energy*MOM2u - SQR(MOM1u))/(energy);
+      fRMS_v = sqrt(energy*MOM2v - SQR(MOM1v))/(energy);
+
       for (int ih = 0; ih < hitList->nhits; ih++) {
-	shower_profile(hitList, ih,fEallowed[ih],fEexpected[ih],fcalFaceZ+0.5*DFCALGeometry::blockLength());
+	shower_profile( hitList, ih,fEallowed[ih],fEexpected[ih],
+			fcalFaceZ+0.5*DFCALGeometry::blockLength());
       }
    }
+
    return something_changed;
 }
 
