@@ -46,11 +46,25 @@ void DTrackFinder::Reset(void){
    
   axial_hits.clear();
   stereo_hits.clear();
+
+  for (unsigned int i=0;i<axial_segments.size();i++){
+    axial_segments[i].hits.clear();
+  }    
   axial_segments.clear();
+
+  for (unsigned int i=0;i<cdc_tracks.size();i++){
+    cdc_tracks[i].axial_hits.clear();
+    cdc_tracks[i].stereo_hits.clear();
+  }
   cdc_tracks.clear();
 
   fdc_hits.clear();
-  for (unsigned int i=0;i<4;i++) fdc_segments[i].clear();
+  for (unsigned int i=0;i<4;i++){
+    for (unsigned int j=0;j<fdc_segments[i].size();j++){
+      fdc_segments[i][j].hits.clear();
+    }
+    fdc_segments[i].clear();
+  }
   fdc_tracks.clear();
 
 }
