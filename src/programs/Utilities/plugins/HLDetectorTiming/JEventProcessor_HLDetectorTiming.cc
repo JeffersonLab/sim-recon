@@ -46,7 +46,9 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
 {
     BEAM_CURRENT = 50; // Assume that there is beam until first EPICs event. Set from EPICS evio data, can override on command line
 
+    fBeamEventCounter = 0;
     REQUIRE_BEAM = 1;
+    BEAM_EVENTS_TO_KEEP = 1000000000; // Set enormously high
     DO_ROUGH_TIMING = 0;
     DO_TDC_ADC_ALIGN = 0;
     DO_TRACK_BASED = 0;
@@ -58,6 +60,7 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_TRACK_BASED", DO_TRACK_BASED, "Set to > 0 to do Track Based timing corrections");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_VERIFY", DO_VERIFY, "Set to > 0 to verify timing with current constants");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:REQUIRE_BEAM", REQUIRE_BEAM, "Set to 0 to skip beam current check");
+        gPARMS->SetDefaultParameter("HLDETECTORTIMING:BEAM_EVENTS_TO_KEEP", BEAM_EVENTS_TO_KEEP, "Set to the number of beam on events to use");
     }
     return NOERROR;
 }
@@ -165,11 +168,29 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
         loop->Get(epicsValues);
         for(unsigned int j = 0; j < epicsValues.size(); j++){
             const DEPICSvalue *thisValue = epicsValues[j];
-            if (strcmp((thisValue->name).c_str(), "IBCADCRUCUR6") == 0)
+            if (strcmp((thisValue->name).c_str(), "IBCAD00CRCUR6") == 0){
                 BEAM_CURRENT = thisValue->fval;
+                Fill1DHistogram("HLDetectorTiming", "", "Beam Current",
+                        BEAM_CURRENT,
+                        "Beam Current; Beam Current [nA]; Entries",
+                        100, 0, 200);
+                }
             //cout << "EPICS Name " <<  (thisValue->name).c_str() << " Value " << thisValue->fval << endl;
         }
-        if (BEAM_CURRENT < 10.0) return NOERROR; // Skip events where we can't verify the beam current
+        if (BEAM_CURRENT < 10.0) {
+            Fill1DHistogram("HLDetectorTiming", "" , "Beam Events",
+                    0, "Beam On Events (0 = no beam, 1 = beam > 10nA)",
+                    2, -0.5, 1.5);
+            return NOERROR; // Skip events where we can't verify the beam current
+        }
+        Fill1DHistogram("HLDetectorTiming", "" , "Beam Events",
+                1, "Beam On Events (0 = no beam, 1 = beam > 10nA)",
+                2, -0.5, 1.5);
+        fBeamEventCounter++;
+        if (fBeamEventCounter >= BEAM_EVENTS_TO_KEEP) {
+            japp->Quit();
+            return NOERROR;
+        }
     }
 
     vector<const DCDCHit *> cdcHitVector;
