@@ -78,7 +78,6 @@ jerror_t JEventProcessor_HLDetectorTiming::brun(JEventLoop *eventLoop, int runnu
         return RESOURCE_UNAVAILABLE;
     }
     dParticleID = dParticleID_algos[0];
-    if (!DO_TRACK_BASED) return NOERROR;
 
     // load base time offsets
     // FCAL
@@ -110,7 +109,15 @@ jerror_t JEventProcessor_HLDetectorTiming::brun(JEventLoop *eventLoop, int runnu
     else
         jerr << "Unable to get TOF_TDC_BASE_TIME_OFFSET from /TOF/base_time_offset !" << endl;
 
-    // The TAGM and TAGH we will need the per channel offsets to adjust
+    // The SC, TOF, TAGM and TAGH we will need the per channel offsets to adjust
+    // SC
+    if (eventLoop->GetCalib("/START_COUNTER/tdc_timing_offsets", sc_tdc_time_offsets))
+          jout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;  
+
+    // TOF
+    if(eventLoop->GetCalib("TOF/timing_offsets", tof_tdc_time_offsets))
+            jout << "Error loading /TOF/timing_offsets !" << endl; 
+
     // TAGM
     std::vector< std::map<std::string, double> > table;
     if (eventLoop->GetCalib("/PHOTON_BEAM/microscope/fadc_time_offsets", table))
@@ -488,6 +495,11 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                     flightTimeCorrectedBCALTime - flightTimeCorrectedSCTime,
                     "t_{BCAL} - t_{SC} at Target; t_{BCAL} - t_{SC} [ns]; Entries",
                     100, -50, 50);
+            // Add histogram suggested by Mark Dalton
+            Fill2DHistogram("HLDetectorTiming", "TRACKING", "BCAL - SC Target Time Vs Correction",
+                    locBCALShowerMatchParams.dFlightTime, flightTimeCorrectedBCALTime - flightTimeCorrectedSCTime,
+                    "t_{BCAL} - t_{SC} at Target; Flight time [ns]; t_{BCAL} - t_{SC} [ns]",
+                    25, 0, 25, 100, -50, 50);
         }
         if (foundFCAL){
             float flightTimeCorrectedFCALTime = locFCALShowerMatchParams.dFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime;
@@ -718,6 +730,7 @@ void JEventProcessor_HLDetectorTiming::DoTDCADCAlign(void){
     //Do a finer alignement of the TDC and ADC's in the detectors that have both
     int minHits = 7;
 
+    // Use incremental shifts in case you want to run the alignment twice
     ofstream outFile;
     TH2I *thisHist = Get2DHistogram("HLDetectorTiming", "SC", "SCHit TDC_ADC Difference");
     if(thisHist != NULL){
@@ -728,7 +741,7 @@ void JEventProcessor_HLDetectorTiming::DoTDCADCAlign(void){
         outFile.open("sc_tdc_timing_offsets.txt");
         for (int i = 1; i <= nbins; i++){
             double mean = meanHist->GetBinContent(i);
-            outFile << mean << endl;
+            outFile << mean + sc_tdc_time_offsets[i - 1] << endl; // Vector indexed from zero
         }
         outFile.close();
     }
@@ -742,7 +755,7 @@ void JEventProcessor_HLDetectorTiming::DoTDCADCAlign(void){
         outFile.open("tof_tdc_timing_offsets.txt");
         for (int i = 1; i <= nbins; i++){
             double mean = meanHist->GetBinContent(i);
-            outFile << mean << endl;
+            outFile << mean + tof_tdc_time_offsets[i - 1]<< endl; // Vector indexed from zero
         }
         outFile.close();
     }
@@ -759,7 +772,7 @@ void JEventProcessor_HLDetectorTiming::DoTDCADCAlign(void){
             outFile << "0 " << i << " " << mean << endl;
             if (i == 7 || i == 25 || i == 79 || i == 97){
                 for(int j = 1; j <= 5; j++){
-                    outFile << j << " " << i << " " << mean << endl;
+                    outFile << j << " " << i << " " << mean + tagm_tdc_time_offsets[i] << endl;
                 }
             }
         }
@@ -775,7 +788,7 @@ void JEventProcessor_HLDetectorTiming::DoTDCADCAlign(void){
         outFile.open("tagh_tdc_timing_offsets.txt");
         for (int i = 1; i <= nbins; i++){
             double mean = meanHist->GetBinContent(i);
-            outFile << i << " " << mean << endl;
+            outFile << i << " " << mean + tagh_tdc_time_offsets[i] << endl;
         }
         outFile.close();
     }
