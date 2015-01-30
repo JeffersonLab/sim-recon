@@ -11,9 +11,11 @@
 
 #include <string>
 #include <time.h>
+#include <stdint.h>
 using std::string;
 
 #include <JANA/jerror.h>
+#include <JANA/JObject.h>
 
 /// A DEPICSvalue object holds information for a single
 /// EPICS value read from the data stream. Values are
