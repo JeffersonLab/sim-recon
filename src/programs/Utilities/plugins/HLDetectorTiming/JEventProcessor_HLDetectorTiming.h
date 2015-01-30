@@ -53,8 +53,8 @@ class JEventProcessor_HLDetectorTiming:public jana::JEventProcessor{
         int GetCCDBIndexBCAL(const DBCALHit *); ///< Not implimented
 
         double BEAM_CURRENT;
-        int DO_ROUGH_TIMING, DO_TDC_ADC_ALIGN, DO_TRACK_BASED, DO_VERIFY, REQUIRE_BEAM;
-
+        int DO_ROUGH_TIMING, DO_TDC_ADC_ALIGN, DO_TRACK_BASED, DO_VERIFY, REQUIRE_BEAM, BEAM_EVENTS_TO_KEEP;
+        int fBeamEventCounter;
         // The final setp requires some shifts relative to the previous values, need to store them
 
         double fcal_t_base, bcal_t_base, tof_t_base_fadc, tof_t_base_tdc;
