@@ -495,15 +495,15 @@ int main(int argC, char* argV[])
 	 << "extern \"C\" {"					<< std::endl
 	 << "#endif"						<< std::endl
 								<< std::endl
-         << "void set_" + classPrefix + "_hddm_buffersize(int size);"
+         << "void set_" + classPrefix + "_HDDM_buffersize(int size);"
 								<< std::endl
-         << "int get_" + classPrefix + "_hddm_buffersize();"	<< std::endl
-         << "void set_" + classPrefix + "_hddm_stringsize(int size);"
+         << "int get_" + classPrefix + "_HDDM_buffersize();"	<< std::endl
+         << "void set_" + classPrefix + "_HDDM_stringsize(int size);"
 								<< std::endl
-         << "int get_" + classPrefix + "_hddm_stringsize();"	<< std::endl
-         << "void set_" + classPrefix + "_hddm_headersize(int size);"
+         << "int get_" + classPrefix + "_HDDM_stringsize();"	<< std::endl
+         << "void set_" + classPrefix + "_HDDM_headersize(int size);"
 								<< std::endl
-         << "int get_" + classPrefix + "_hddm_headersize();"	<< std::endl;
+         << "int get_" + classPrefix + "_HDDM_headersize();"	<< std::endl;
    builder.constructReadFunc(rootEl);
    builder.constructSkipFunc();
    builder.constructFlushFunc(rootEl);
