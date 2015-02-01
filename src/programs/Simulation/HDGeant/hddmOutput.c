@@ -32,6 +32,8 @@ static unsigned int Nevents = 0;
 
 int openOutput (char* filename)
 {
+   set_s_HDDM_buffersize(25000000);
+   set_s_HDDM_stringsize(25000000);
    thisOutputStream = init_s_HDDM(filename);
    return (thisOutputStream == 0);
 }
