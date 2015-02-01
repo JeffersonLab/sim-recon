@@ -405,6 +405,17 @@ int main(int argC, char* argV[])
          << "int get_" + classPrefix + "_HDDM_headersize()"	<< std::endl
          << "{"							<< std::endl
          << "   return hddm_" + classPrefix + "_headersize;"	<< std::endl
+         << "}"							<< std::endl
+								<< std::endl
+         << "static int XDRerror()"				<< std::endl
+         << "{"							<< std::endl
+         << "   fprintf(stderr,\"hddm xdr library error - \""	<< std::endl
+         << "   \"data buffering has failed for some reason,\"" << std::endl
+         << "   \" probably buffer overflow.\\n\""		<< std::endl
+         << "   \"Try increasing the size of the hddm i/o\""    << std::endl
+         << "   \" buffers or maximum string size.\\n\");"	<< std::endl
+         << "   exit(9);"					<< std::endl
+         << "   return 0;"					<< std::endl
          << "}"							<< std::endl;
 
    builder.constructGroup(rootEl);
@@ -1037,7 +1048,8 @@ void CodeBuilder::constructUnpackers()
       {
          cFile << "      int m;"				<< std::endl
                << "      unsigned int mult;"			<< std::endl
-	       << "      xdr_u_int(xdrs,&mult);"		<< std::endl;
+	       << "      if (! xdr_u_int(xdrs,&mult))"		<< std::endl
+	       << "         XDRerror();"			<< std::endl;
 	 cFile << "      this1 = make_" << tagT << "(mult);"	<< std::endl;
 
 	 cFile << "      this1->mult = mult;"			<< std::endl
@@ -1084,65 +1096,77 @@ void CodeBuilder::constructUnpackers()
          }
          if (typeS == "int")
          {
-            cFile << "         xdr_int(xdrs,&this1->"
-	          << nameStr << ");"				 << std::endl;
+            cFile << "         if (! xdr_int(xdrs,&this1->"
+	          << nameStr << "))"				 << std::endl
+	          << "            XDRerror();"			 << std::endl;
          }
 	 else if (typeS == "long")
          {
             cFile << "#ifndef XDR_LONGLONG_MISSING"		 << std::endl
-                  << "         xdr_longlong_t(xdrs,&this1->"
-	          << nameStr << ");"				 << std::endl
+                  << "         if (! xdr_longlong_t(xdrs,&this1->"
+	          << nameStr << "))"				 << std::endl
+	          << "            XDRerror();"			 << std::endl
                   << "#else"					 << std::endl
                   << "         {"				 << std::endl
                   << "            int* " << nameStr << "_ = "
                   << "(int*)&this1->" << nameStr << ";"		 << std::endl
                   << "# if __BIG_ENDIAN__"			 << std::endl
-                  << "            xdr_int(xdrs,&"
-                  << nameStr << "_[0]);"			 << std::endl
-                  << "            xdr_int(xdrs,&"
-                  << nameStr << "_[1]);"			 << std::endl
+                  << "            if (! xdr_int(xdrs,&"
+                  << nameStr << "_[0]))"			 << std::endl
+                  << "               XDRerror();"		 << std::endl
+                  << "            if (! xdr_int(xdrs,&"
+                  << nameStr << "_[1]))"			 << std::endl
+                  << "               XDRerror();"		 << std::endl
                   << "# else"					 << std::endl
-                  << "            xdr_int(xdrs,&"
-                  << nameStr << "_[1]);"			 << std::endl
-                  << "            xdr_int(xdrs,&"
-                  << nameStr << "_[0]);"			 << std::endl
+                  << "            if (! xdr_int(xdrs,&"
+                  << nameStr << "_[1]))"			 << std::endl
+                  << "               XDRerror();"		 << std::endl
+                  << "            if (! xdr_int(xdrs,&"
+                  << nameStr << "_[0]))"			 << std::endl
+                  << "               XDRerror();"		 << std::endl
                   << "# endif"					 << std::endl
                   << "         }"				 << std::endl
                   << "#endif"					 << std::endl;
          }
          else if (typeS == "float")
          {
-            cFile << "         xdr_float(xdrs,&this1->"
-	          << nameStr << ");"				 << std::endl;
+            cFile << "         if (! xdr_float(xdrs,&this1->"
+	          << nameStr << "))"		 		<< std::endl
+	          << "            XDRerror();"		 	<< std::endl;
          }
          else if (typeS == "double")
          {
-            cFile << "         xdr_double(xdrs,&this1->"
-	          << nameStr << ");"				 << std::endl;
+            cFile << "         if (! xdr_double(xdrs,&this1->"
+	          << nameStr << "))"				<< std::endl
+	          << "            XDRerror();"			<< std::endl;
          }
          else if (typeS == "boolean")
          {
-            cFile << "         xdr_bool(xdrs,&this1->"
-	          << nameStr << ");"				 << std::endl;
+            cFile << "         if (! xdr_bool(xdrs,&this1->"
+	          << nameStr << "))"				<< std::endl
+	          << "            XDRerror();"			<< std::endl;
          }
          else if (typeS == "Particle_t")
          {
-            cFile << "         xdr_int(xdrs,(int*)&this1->"
-	          << nameStr << ");"				 << std::endl;
+            cFile << "         if (! xdr_int(xdrs,(int*)&this1->"
+	          << nameStr << "))"				<< std::endl
+	          << "            XDRerror();"			<< std::endl;
          }
          else if (typeS == "string")
          {
-            cFile << "         this1->" << nameStr << " = 0;"	 << std::endl
-                  << "         xdr_string(xdrs, &this1->"
-	          << nameStr << ", hddm_" + classPrefix + "_stringsize);"
-								 << std::endl;
+            cFile << "         this1->" << nameStr << " = 0;"	<< std::endl
+                  << "         if (! xdr_string(xdrs, &this1->"
+	          << nameStr << ", hddm_" + classPrefix
+                  << "_stringsize))"				<< std::endl
+                  << "            XDRerror();"			<< std::endl;
          }
          else if (typeS == "anyURI")
          {
-            cFile << "         this1->" << nameStr << " = 0;"	 << std::endl
-                  << "         xdr_string(xdrs, &this1->"
-	          << nameStr << ", hddm_" + classPrefix + "_stringsize);"
-								 << std::endl;
+            cFile << "         this1->" << nameStr << " = 0;"	<< std::endl
+                  << "         if (! xdr_string(xdrs, &this1->"
+	          << nameStr << ", hddm_" + classPrefix
+                  << "_stringsize))"				<< std::endl
+                  << "            XDRerror();"			<< std::endl;
          }
          else
          {
@@ -1164,7 +1188,8 @@ void CodeBuilder::constructUnpackers()
                << "            else"                                    << std::endl
                << "            {"                                       << std::endl
                << "               unsigned int skip;"			<< std::endl
-	       << "               xdr_u_int(xdrs,&skip);"		<< std::endl
+	       << "               if (! xdr_u_int(xdrs,&skip))"		<< std::endl
+               << "                  XDRerror();"			<< std::endl
                << "               xdr_setpos64(xdrs,xdr_getpos64(xdrs)+skip);"
 	       								<< std::endl
                << "            }"					<< std::endl
@@ -1226,7 +1251,7 @@ void CodeBuilder::constructReadFunc(DOMElement* topEl)
          << "      fp->iobuffer = newbuf;"				<< std::endl
          << "      xdrmem_create(fp->xdrs,fp->iobuffer,fp->iobuffer_size,XDR_DECODE);"
 									<< std::endl
-         << "      base = xdr_getpos64(fp->xdrs);"				<< std::endl
+         << "      base = xdr_getpos64(fp->xdrs);"			<< std::endl
          << "   }"							<< std::endl
          << "   if (fread(fp->iobuffer+4,1,size,fp->fd) != size)"	<< std::endl
          << "   {"							<< std::endl
@@ -1376,15 +1401,17 @@ void CodeBuilder::constructPackers()
             << "      \"stream offset request failed "
                       "on output hddm stream, \""		<< std::endl
             << "      \"cannot continue.\\n\");"		<< std::endl
-            << "      return -1;"					<< std::endl
+            << "      return -1;"				<< std::endl
             << "   }"						<< std::endl;
       }
-      cFile << "   xdr_u_int(xdrs,&size);"			<< std::endl
+      cFile << "   if (! xdr_u_int(xdrs,&size))"		<< std::endl
+            << "      XDRerror();"				<< std::endl
             << "   start = xdr_getpos64(xdrs);"			<< std::endl
     								<< std::endl;
       if (rep > 1)
       {
-         cFile << "   xdr_u_int(xdrs,&this1->mult);"		<< std::endl
+         cFile << "   if (! xdr_u_int(xdrs,&this1->mult))"	<< std::endl
+               << "      XDRerror();"				<< std::endl
                << "   for (m = 0; m < this1->mult; m++)"	<< std::endl
                << "   {"					<< std::endl;
       }
@@ -1406,64 +1433,76 @@ void CodeBuilder::constructPackers()
          }
          if (typeS == "int")
          {
-            cFile << "      xdr_int(xdrs,&this1->"
-                  << nameStr << ");"				 << std::endl;
+            cFile << "      if (! xdr_int(xdrs,&this1->"
+                  << nameStr << "))"				 << std::endl
+                  << "         XDRerror();"			 << std::endl;
          }
          if (typeS == "long")
          {
             cFile << "#ifndef XDR_LONGLONG_MISSING"		 << std::endl
-                  << "         xdr_longlong_t(xdrs,&this1->"
-	          << nameStr << ");"				 << std::endl
+                  << "         if (! xdr_longlong_t(xdrs,&this1->"
+	          << nameStr << "))"				 << std::endl
+	          << "            XDRerror();"			 << std::endl
                   << "#else"					 << std::endl
                   << "         {"				 << std::endl
                   << "            int* " << nameStr << "_ = "
                   << "(int*)&this1->" << nameStr << ";"		 << std::endl
                   << "# if __BIG_ENDIAN__"			 << std::endl
-                  << "            xdr_int(xdrs,&"
-                  << nameStr << "_[0]);"			 << std::endl
-                  << "            xdr_int(xdrs,&"
-                  << nameStr << "_[1]);"			 << std::endl
+                  << "            if (! xdr_int(xdrs,&"
+                  << nameStr << "_[0]))"			 << std::endl
+                  << "               XDRerror();"		 << std::endl
+                  << "            if (! xdr_int(xdrs,&"
+                  << nameStr << "_[1]))"			 << std::endl
+                  << "               XDRerror();"		 << std::endl
                   << "# else"					 << std::endl
-                  << "            xdr_int(xdrs,&"
-                  << nameStr << "_[1]);"			 << std::endl
-                  << "            xdr_int(xdrs,&"
-                  << nameStr << "_[0]);"			 << std::endl
+                  << "            if (! xdr_int(xdrs,&"
+                  << nameStr << "_[1]))"			 << std::endl
+                  << "               XDRerror();"		 << std::endl
+                  << "            if (! xdr_int(xdrs,&"
+                  << nameStr << "_[0]))"			 << std::endl
+                  << "                 XDRerror();"		 << std::endl
                   << "# endif"					 << std::endl
                   << "         }"				 << std::endl
                   << "#endif"					 << std::endl;
          }
          else if (typeS == "float")
          {
-            cFile << "      xdr_float(xdrs,&this1->"
-                  << nameStr << ");"				 << std::endl;
+            cFile << "      if (! xdr_float(xdrs,&this1->"
+                  << nameStr << "))"				 << std::endl
+                  << "         XDRerror();"			 << std::endl;
          }
          else if (typeS == "double")
          {
-            cFile << "      xdr_double(xdrs,&this1->" 
-                  << nameStr << ");" 				 << std::endl;
+            cFile << "      if (! xdr_double(xdrs,&this1->" 
+                  << nameStr << "))"		 		 << std::endl
+                  << "         XDRerror();" 			 << std::endl;
          }
          else if (typeS == "boolean")
          {
-            cFile << "      xdr_bool(xdrs,&this1->"
-                  << nameStr << ");"				 << std::endl;
+            cFile << "      if (! xdr_bool(xdrs,&this1->"
+                  << nameStr << "))"				 << std::endl
+                  << "         XDRerror();"			 << std::endl;
          }
          else if (typeS == "Particle_t")
          {
-            cFile << "      xdr_int(xdrs,(int*)&this1->"
-                  << nameStr << ");"  				 << std::endl;
+            cFile << "      if (! xdr_int(xdrs,(int*)&this1->"
+                  << nameStr << "))"				 << std::endl
+                  << "         XDRerror();"			 << std::endl;
          }
          else if (typeS == "string")
          {
-            cFile << "      xdr_string(xdrs,&this1->" 
-                  << nameStr << ", hddm_" + classPrefix + "_stringsize);"
-								 << std::endl;
+            cFile << "      if (! xdr_string(xdrs,&this1->" 
+                  << nameStr << ", hddm_" + classPrefix
+                  << "_stringsize))"				 << std::endl
+                  << "         XDRerror();"			 << std::endl;
             cFile << "      FREE(this1->" << nameStr << ");"	 << std::endl;
          }
          else if (typeS == "anyURI")
          {
-            cFile << "      xdr_string(xdrs,&this1->" 
-                  << nameStr << ", hddm_" + classPrefix + "_stringsize);"
-					 			 << std::endl;
+            cFile << "      if (! xdr_string(xdrs,&this1->" 
+                  << nameStr << ", hddm_" + classPrefix
+                  << "_stringsize))"		 		 << std::endl
+                  << "          XDRerror();"	 		 << std::endl;
             cFile << "      FREE(this1->" << nameStr << ");"	 << std::endl;
          }
          else
@@ -1511,7 +1550,8 @@ void CodeBuilder::constructPackers()
                   << "      else"				<< std::endl
                   << "      {"					<< std::endl
 		  << "         int zero=0;"			<< std::endl
-                  << "         xdr_int(xdrs,&zero);"		<< std::endl
+                  << "         if (! xdr_int(xdrs,&zero))"	<< std::endl
+                  << "            XDRerror();" 			<< std::endl
                   << "      }"					<< std::endl;
          }
       }
@@ -1536,7 +1576,8 @@ void CodeBuilder::constructPackers()
             << "      exit(9);"					<< std::endl
             << "   }"						<< std::endl;
       }
-      cFile << "   xdr_u_int(xdrs,&size);"			<< std::endl
+      cFile << "   if (! xdr_u_int(xdrs,&size))"		<< std::endl
+            << "      XDRerror();"				<< std::endl
             << "   xdr_setpos64(xdrs,end);"			<< std::endl
             << "   FREE(this1);"				<< std::endl
             << "   return size;"				<< std::endl
