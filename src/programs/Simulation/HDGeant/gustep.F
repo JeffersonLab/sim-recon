@@ -194,6 +194,7 @@
 *
 
 #define TOP_CERENKOV_EFFICIENCY 1.0
+#define BACKGROUND_PROFILING 1
 
       real xin(4), xout(4)
       real pin(5), pout(5)
