@@ -56,54 +56,88 @@ DParticleID::DParticleID(JEventLoop *loop)
   dLnI_Scint = rho_Z_over_A_LnI/dRhoZoverA_Scint;
   dKRhoZoverA_Scint = 0.1535E-3*dRhoZoverA_Scint;
 
-	// Get the geometry
-	DGeometry* locGeometry = dapp->GetDGeometry(loop->GetJEvent().GetRunNumber());
+  // Get the geometry
+  DGeometry* locGeometry = dapp->GetDGeometry(loop->GetJEvent().GetRunNumber());
 
-	// Check if Start Counter geometry is present
-	vector<double> sc_origin;
-	bool got_sc = locGeometry->Get("//posXYZ[@volume='StartCntr']/@X_Y_Z", sc_origin);
-	if(got_sc)
-	{
-	  // Get rotation angles
-	  //vector<double>sc_rot_angles;
-	  // locGeometry->Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
+  // Check if Start Counter geometry is present
+  vector<double> sc_origin;
+  bool got_sc = locGeometry->Get("//posXYZ[@volume='StartCntr']/@X_Y_Z", sc_origin);
+  if(got_sc){
+    // z-position at upstream face of scintillators.
+    double z0=sc_origin[2];
 
-		double num_paddles;
-		locGeometry->Get("//mposPhi[@volume='STRC']/@ncopy",num_paddles); 
-		dSCdphi = M_TWO_PI/num_paddles;
+    // Get rotation angles
+    vector<double>sc_rot_angles;
+    locGeometry->Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
+    double ThetaX=sc_rot_angles[0]*M_PI/180.;
+    double ThetaY=sc_rot_angles[1]*M_PI/180.;  
+    double ThetaZ=sc_rot_angles[2]*M_PI/180.;
+    //ThetaX=0.;
+    //ThetaY=0.;
+
+    double num_paddles;
+    locGeometry->Get("//mposPhi[@volume='STRC']/@ncopy",num_paddles); 
+    dSCdphi = M_TWO_PI/num_paddles;
 		
-		double Phi0;
-		locGeometry->Get("///mposPhi[@volume='STRC']/@Phi0",Phi0);
-		dSCphi0 = Phi0*M_PI/180.;
+    double Phi0;
+    locGeometry->Get("///mposPhi[@volume='STRC']/@Phi0",Phi0);
+    dSCphi0 =Phi0*M_PI/180.;
+    
+    vector<vector<double> > sc_rioz;
+    locGeometry->GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
 
-		vector<vector<double> > sc_rioz;
-		locGeometry->GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
+    // Create vectors of positions and normal vectors for each paddle
+    for (unsigned int i=0;i<30;i++){
+      double phi=dSCphi0+dSCdphi*double(i);
+      double sinphi=sin(phi);
+      double cosphi=cos(phi);
+      double r=0.5*(sc_rioz[0][0]+sc_rioz[0][1]);
+      DVector3 oldray;
+      // Rotate by phi and take into account the tilt
+      DVector3 ray(r*cosphi,r*sinphi,sc_rioz[0][2]);
+      ray.RotateX(ThetaX);
+      ray.RotateY(ThetaY);
+      ray.RotateZ(ThetaZ);
 
-		for(unsigned int k = 0; k < sc_rioz.size() - 1; ++k)
-		{
-			if(sc_origin.size() < 3)
-				continue; // in case start counter is comment out in XML
-			if(sc_rioz[k].size() < 3)
-				continue; // in case start counter is comment out in XML
-			
+      // Create stl-vectors to store positions and norm vectors
+      vector<DVector3>posvec;
+      vector<DVector3>dirvec;
+      // Loop over radial/z positions describing start counter geometry from xml
+      for(unsigned int k = 1; k < sc_rioz.size(); ++k){
+	oldray=ray;
+	r=0.5*(sc_rioz[k][0]+sc_rioz[k][1]);
+	// Point in midplane of scintillator
+	ray.SetXYZ(r*cosphi,r*sinphi,sc_rioz[k][2]);
+	// Second point in the plane of the scintillator
+	DVector3 ray2(r*cosphi-10.0*sinphi,r*sinphi+10.0*cosphi,sc_rioz[k][2]);
+	// Take into account tilt
+	ray.RotateX(ThetaX);
+	ray.RotateY(ThetaY);
+	ray.RotateZ(ThetaZ);
+	ray2.RotateX(ThetaX);
+	ray2.RotateY(ThetaY);
+	ray2.RotateZ(ThetaZ);
+	// Store one position on current plane
+	posvec.push_back(DVector3(oldray.X(),oldray.Y(),oldray.Z()+z0));
+	// Compute normal vector to plane
+	DVector3 dir=(ray-oldray).Cross(ray2-oldray);
+	dir.SetMag(1.);
+	dirvec.push_back(dir);		
+      }
+      sc_pos.push_back(posvec);
+      sc_norm.push_back(dirvec);
+		  
+      posvec.clear();
+      dirvec.clear();
+    }
 
-
-			DVector3 pos((sc_rioz[k][0]+sc_rioz[k][1])/2.,0.,sc_rioz[k][2]+sc_origin[2]);
-
-
-			DVector3 dir(sc_rioz[k+1][2]-sc_rioz[k][2],0,-sc_rioz[k+1][0]+sc_rioz[k][0]);
-			dir.SetMag(1.);
-
-			sc_pos.push_back(pos);
-			sc_norm.push_back(dir);		
-		}
 	
 		// in case start counter is comment out in XML
 		if(!sc_pos.empty())
 		{
 			// sc_leg_tcor=(sc_light_guide[2]-sc_pos[0].z())/C_EFFECTIVE;
-			sc_leg_tcor = -sc_pos[0].z()/C_EFFECTIVE;
-			double theta = sc_norm[sc_norm.size() - 1].Theta();
+			sc_leg_tcor = -sc_pos[0][0].z()/C_EFFECTIVE;
+			double theta = sc_norm[0][sc_norm.size() - 1].Theta();
 			sc_angle_cor = 1./cos(M_PI - theta);
 		}
 	}
@@ -138,6 +172,10 @@ DParticleID::DParticleID(JEventLoop *loop)
 
 	BCAL_PHI_CUT_PAR2=1.76e-3;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR2",BCAL_PHI_CUT_PAR2);
+
+	SC_DPHI_CUT=0.21;
+	gPARMS->SetDefaultParameter("SC:DPHI_CUT",SC_DPHI_CUT);
+	
 
 	dTargetZCenter = 0.0;
 	locGeometry->GetTargetZ(dTargetZCenter);
@@ -740,84 +778,89 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 	// Find intersection with a "barrel" approximation for the start counter
 	DVector3 proj_pos(NaN,NaN,NaN), proj_mom(NaN,NaN,NaN);
 	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-	if(rt->GetIntersectionWithRadius(sc_pos[1].x(), proj_pos, &locPathLength, &locFlightTime, &proj_mom) != NOERROR)
+	unsigned int sc_index=locSCHit->sector-1;
+	
+	if(rt->GetIntersectionWithPlane(sc_pos[sc_index][0],
+					sc_norm[sc_index][0], 
+					proj_pos, proj_mom, 
+					&locPathLength, 
+					&locFlightTime) != NOERROR)
 		return false;
+	// Check that the intersection isn't upstream of the paddle
+	double myz = proj_pos.z();
+	if (myz<sc_pos[sc_index][0].z()) return false;
+
 	double proj_phi = proj_pos.Phi();
-	if(proj_phi < 0.0)
-		proj_phi += M_TWO_PI;
+	//if(proj_phi < 0.0)
+	//proj_phi += M_TWO_PI;
 
 	// Look for a match in phi
-	double phi = dSCphi0 + dSCdphi*(locSCHit->sector - 1);
+	//double phi = dSCphi0 + dSCdphi*(locSCHit->sector - 1);
+	DVector3 average_pos=0.5*(sc_pos[sc_index][0]+sc_pos[sc_index][1]);
+	double phi=average_pos.Phi();
 	double dphi = phi - proj_phi; //phi could be 0 degrees & proj_phi could be 359 degrees
 	while(dphi > TMath::Pi())
 		dphi -= M_TWO_PI;
 	while(dphi < -1.0*TMath::Pi())
 		dphi += M_TWO_PI;
-	if(fabs(dphi) >= 0.21)
+	if(fabs(dphi) >= SC_DPHI_CUT)
 		return false; //no match
-
-	//match successful
-	double myphi = phi;
-	double myz = proj_pos.z();
+	
+	// Match in phi successful, refine match in nose region were applicable
 
 	// Length along scintillator
 	double L = 0.;
 
 	// Initialize the normal vector for the SC paddle to the long, unbent region
-	DVector3 norm(cos(myphi), sin(myphi), 0.);
+	DVector3 norm=sc_norm[sc_index][0];
 
 	// Now check to see if the intersection is in the nose region and find the
 	// start time
 	double locCorrectedHitTime = locSCHit->t - sc_leg_tcor;
-	double sc_pos0 = sc_pos[0].z();	
-	double sc_pos1 = sc_pos[1].z();
-	if(myz < sc_pos0)
-		myz = sc_pos0;
+	double sc_pos0 = sc_pos[sc_index][0].z();	
+	double sc_pos1 = sc_pos[sc_index][1].z();
 	if(myz <= sc_pos1)
 	{
-
 	  L=myz;
 	  locCorrectedHitTime -= L/C_EFFECTIVE;
 	}
 	else
 	{
-		unsigned int num = sc_norm.size() - 1;
-		for (unsigned int loc_i = 1; loc_i < num; ++loc_i)
-		{
-			double xhat = sc_norm[loc_i].x();
-			norm.SetXYZ(cos(myphi)*xhat, sin(myphi)*xhat, sc_norm[loc_i].z());
-			double r = sc_pos[loc_i].X();
-			DVector3 pos(r*cos(myphi), r*sin(myphi), sc_pos[loc_i].z());
-			locPathLength = 9.9E9;
-			locFlightTime = 9.9E9;
-			if(rt->GetIntersectionWithPlane(pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime) != NOERROR)
-           continue;
-			myz = proj_pos.z();
-			if(myz < sc_pos[loc_i + 1].z())
-				break;
-		}	
-	
+	  unsigned int num = sc_norm[sc_index].size() - 1;
+	  for (unsigned int loc_i = 1; loc_i < num; ++loc_i)
+	    {
+	      locPathLength = 9.9E9;
+	      locFlightTime = 9.9E9;
+	      if(rt->GetIntersectionWithPlane(sc_pos[sc_index][loc_i],
+					      sc_norm[sc_index][loc_i], 
+					      proj_pos, proj_mom, 
+					      &locPathLength, 
+					      &locFlightTime) != NOERROR)
+		continue;
+	      myz = proj_pos.z();
+	      norm=sc_norm[sc_index][loc_i];
+	      if(myz < sc_pos[sc_index][loc_i + 1].z()){
+		average_pos
+		  =0.5*(sc_pos[sc_index][loc_i]+sc_pos[sc_index][loc_i+1]);
+		dphi=average_pos.Phi()-proj_pos.Phi();
+		while(dphi > TMath::Pi())
+		  dphi -= M_TWO_PI;
+		while(dphi < -1.0*TMath::Pi())
+		  dphi += M_TWO_PI;
+		if (fabs(dphi)>SC_DPHI_CUT) return false;
+		break;
+	      }
+	    }	
+	  // Check for intersection point beyond nose
+	  if (myz> sc_pos[sc_index][num].z()) return false;
+
+	  
 		// Note: in the following code, L does not include a correction for where the start counter starts
 		// in z...	This is absorbed into locCorrectedHitTime, above.
 		if(myz < sc_pos1)
 		{
 		        L = sc_pos1;
 			locCorrectedHitTime -= L/C_EFFECTIVE;	
-		}
-		else if (myz > sc_pos[num].z())
-		{
-			// Assume that the particle hit the most downstream z position of the
-			// start counter
-			double costheta = rt->swim_steps[0].mom.CosTheta();
-			double s = (sc_pos[num].z() - rt->swim_steps[0].origin.z())/costheta;
-			double mass = rt->GetMass();
-			double p2 = rt->swim_steps[0].mom.Mag2();
-			double one_over_beta = sqrt(1. + mass*mass/p2);
-			L = (sc_pos[num].z() - sc_pos1)*sc_angle_cor + sc_pos1;
-
-			locCorrectedHitTime -= L/C_EFFECTIVE;
-			locFlightTime = s*one_over_beta/SPEED_OF_LIGHT;
-			locPathLength = s;
 		}
 		else
 		{
@@ -861,16 +904,16 @@ DParticleID::MatchToSC(const DKinematicData *kd,
   
   if(sc_pos.empty() || sc_norm.empty())
     return false;
- 
+
   // Ends in z of the straight portion	
-  double sc_pos0 = sc_pos[0].z();
-  double sc_pos1 = sc_pos[1].z();
+  double sc_pos0 = sc_pos[0][0].z();
+  double sc_pos1 = sc_pos[0][1].z();
 
   DVector3 mom=kd->momentum();
   DVector3 pos=kd->position();
   DVector3 cylpos[2];
 
-  if (finder->FindIntersectionsWithCylinder(sc_pos[1].x(),mom,pos,cylpos[0],
+  if (finder->FindIntersectionsWithCylinder(sc_pos[0][1].x(),mom,pos,cylpos[0],
 					    cylpos[1])){
     for (unsigned int j=0;j<2;j++){
       double cyl_phi=cylpos[j].Phi();
@@ -896,24 +939,24 @@ DParticleID::MatchToSC(const DKinematicData *kd,
 	      scmatch.dHitTime=sc_time-myz/C_EFFECTIVE;
 	    }
 	    else{ // intersection in nose
-	      unsigned int num = sc_norm.size() - 1;
+	      unsigned int num = sc_norm[0].size() - 1;
 	      for (unsigned int k = 1; k < num; ++k){
-		double xhat = sc_norm[k].x();
+		double xhat = sc_norm[0][k].x();
 		double cosphi=cos(phi);
 		double sinphi=sin(phi);
-		DVector3 norm(cosphi*xhat, sinphi*xhat, sc_norm[k].z());
-		double r = sc_pos[k].X();
-		DVector3 origin(r*cosphi, r*sinphi, sc_pos[k].z());
+		DVector3 norm(cosphi*xhat, sinphi*xhat, sc_norm[0][k].z());
+		double r = sc_pos[0][k].X();
+		DVector3 origin(r*cosphi, r*sinphi, sc_pos[0][k].z());
 		if (finder->FindIntersectionWithPlane(origin,norm,pos,mom,
 						      cylpos[j])){
 		  myz = cylpos[j].z();
-		  if(myz < sc_pos[k + 1].z()){
+		  if(myz < sc_pos[0][k + 1].z()){
 		    break;
 		  }
 		}
 	      }
 	      if (myz<sc_pos0) continue;
-	      if (myz>sc_pos[num].z()) continue;
+	      if (myz>sc_pos[0][num].z()) continue;
 
 	      // Note: in the following code, L does not include a correction
 	      // for where the start counter starts in z...	
@@ -1031,7 +1074,7 @@ bool DParticleID::Distance_ToTrack(const DSCHit* locSCHit, const DReferenceTraje
 	// Find intersection with a "barrel" approximation for the start counter
 	DVector3 proj_pos(NaN,NaN,NaN), proj_mom(NaN,NaN,NaN);
 	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-	if(rt->GetIntersectionWithRadius(sc_pos[1].x(), proj_pos, &locPathLength, &locFlightTime, &proj_mom) != NOERROR)
+	if(rt->GetIntersectionWithRadius(sc_pos[0][1].x(), proj_pos, &locPathLength, &locFlightTime, &proj_mom) != NOERROR)
 		return false;
 
 	double proj_phi = proj_pos.Phi();

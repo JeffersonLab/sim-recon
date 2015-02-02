@@ -144,8 +144,8 @@ class DParticleID:public jana::JObject{
 	// start counter geometry parameters
 	double sc_leg_tcor;
 	double sc_angle_cor;
-	vector<DVector3> sc_pos;
-	vector<DVector3> sc_norm;
+	vector<vector<DVector3> >sc_pos;
+	vector<vector<DVector3> >sc_norm;
 	double dSCdphi;
 	double dSCphi0;
 
@@ -158,6 +158,7 @@ class DParticleID:public jana::JObject{
 
   double dTargetZCenter;
   double dRFBunchFrequency;
+  double SC_DPHI_CUT;
 
   const DTrackFinder *finder;
 };
