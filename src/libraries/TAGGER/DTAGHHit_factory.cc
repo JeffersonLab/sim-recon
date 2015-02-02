@@ -15,6 +15,7 @@ using namespace std;
 #include "DTAGHGeometry.h"
 #include "DTAGHHit_factory.h"
 #include <DAQ/Df250PulseIntegral.h>
+#include <DAQ/Df250PulsePedestal.h>
 #include "DAQ/DF1TDCHit.h"
 
 using namespace jana;
@@ -150,7 +151,14 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
           continue;
 
       // Throw away hits where the fADC timing algorithm failed
-      if (digihit->pulse_time == 0) continue;
+      //if (digihit->pulse_time == 0) continue;
+      // The following condition signals an error state in the flash algorithm
+      // Do not make hits out of these
+      const Df250PulsePedestal* PPobj = NULL;
+      digihit->GetSingle(PPobj);
+      if (PPobj != NULL){
+          if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+      }
 
       // Get pedestal, prefer associated event pedestal if it exists,
       // otherwise, use the average pedestal from CCDB
@@ -158,9 +166,9 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
       const Df250PulseIntegral* PIobj = NULL;
       digihit->GetSingle(PIobj);
       if (PIobj != NULL) {
-	  // the measured pedestal is scaled by the number
-	  // of samples used to calculate the actual pulse
-	  // when it is subtracted below
+          // the measured pedestal is scaled by the number
+          // of samples used to calculate the actual pulse
+          // when it is subtracted below
           // Changed to conform to D. Lawrence changes Dec. 4 2014
           double single_sample_ped = (double)PIobj->pedestal;
           double nsamples_integral = (double)PIobj->nsamples_integral;
@@ -190,70 +198,70 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
       hit->AddAssociatedObject(digihit);
       _data.push_back(hit);
    }
-   
+
    // Get the trigger time from the f1 TDC
    vector<const DF1TDCHit*> tdchit;
    eventLoop->Get(tdchit);
-   
+
    int tref = 0;
    for(unsigned int i=0;i<tdchit.size();i++)
-     {
+   {
        if(tdchit[i]->rocid==51 && tdchit[i]->slot==17 && tdchit[i]->channel==8)
-	 {
-	   tref=tdchit[i]->time; // in clicks
-	   break;
-	   //       printf("tref %d %f\n",tdchit[i]->time,tref);
-	 }
-     }
-   if (tref > 0){
-     // Next, loop over TDC hits, matching them to the existing fADC hits
-     // where possible and updating their time information. If no match is
-     // found, then create a new hit with just the TDC info.
-     vector<const DTAGHTDCDigiHit*> tdcdigihits;
-     loop->Get(tdcdigihits);
-     for (unsigned int i=0; i < tdcdigihits.size(); i++) {
-       const DTAGHTDCDigiHit *digihit = tdcdigihits[i];
-       
-       // Take care of rollover
-       int tdiff = int(digihit->time) - int(tref);
-       if (tdiff < 0) tdiff += rollover_count;
-       else if (tdiff > rollover_count) tdiff -= rollover_count;
-
-       // Apply calibration constants here
-       int counter = digihit->counter_id;
-       double T = tdiff* tdc_t_scale - tdc_time_offsets[counter] + t_tdc_base;
-       
-       // Look for existing hits to see if there is a match
-       // or create new one if there is no match
-       DTAGHHit *hit = 0;
-       for (unsigned int j=0; j < _data.size(); ++j) {
-         if (_data[j]->counter_id == counter &&
-             fabs(T - _data[j]->time_fadc) < DELTA_T_ADC_TDC_MATCH_NS)
-	   {
-	     hit = _data[j];
-	   }
+       {
+           tref=tdchit[i]->time; // in clicks
+           break;
+           //       printf("tref %d %f\n",tdchit[i]->time,tref);
        }
-       if (hit == 0) {
-         hit = new DTAGHHit;
-         hit->counter_id = counter;
-         double Elow = taghGeom.getElow(counter);
-         double Ehigh = taghGeom.getEhigh(counter);
-         hit->E = (Elow + Ehigh)/2;
-         hit->time_fadc = 0;
-         hit->integral = 0;
-         hit->npe_fadc = 0;
-	    hit->has_fADC=false;
-         _data.push_back(hit);
-       }      
-       hit->time_tdc=T;
-       hit->has_TDC=true;
+   }
+   if (tref > 0){
+       // Next, loop over TDC hits, matching them to the existing fADC hits
+       // where possible and updating their time information. If no match is
+       // found, then create a new hit with just the TDC info.
+       vector<const DTAGHTDCDigiHit*> tdcdigihits;
+       loop->Get(tdcdigihits);
+       for (unsigned int i=0; i < tdcdigihits.size(); i++) {
+           const DTAGHTDCDigiHit *digihit = tdcdigihits[i];
 
-       hit->t = T;
-       
-       // apply time-walk corrections?
-       
-       hit->AddAssociatedObject(digihit);
-     }
+           // Take care of rollover
+           int tdiff = int(digihit->time) - int(tref);
+           if (tdiff < 0) tdiff += rollover_count;
+           else if (tdiff > rollover_count) tdiff -= rollover_count;
+
+           // Apply calibration constants here
+           int counter = digihit->counter_id;
+           double T = tdiff* tdc_t_scale - tdc_time_offsets[counter] + t_tdc_base;
+
+           // Look for existing hits to see if there is a match
+           // or create new one if there is no match
+           DTAGHHit *hit = 0;
+           for (unsigned int j=0; j < _data.size(); ++j) {
+               if (_data[j]->counter_id == counter &&
+                       fabs(T - _data[j]->time_fadc) < DELTA_T_ADC_TDC_MATCH_NS)
+               {
+                   hit = _data[j];
+               }
+           }
+           if (hit == 0) {
+               hit = new DTAGHHit;
+               hit->counter_id = counter;
+               double Elow = taghGeom.getElow(counter);
+               double Ehigh = taghGeom.getEhigh(counter);
+               hit->E = (Elow + Ehigh)/2;
+               hit->time_fadc = 0;
+               hit->integral = 0;
+               hit->npe_fadc = 0;
+               hit->has_fADC=false;
+               _data.push_back(hit);
+           }      
+           hit->time_tdc=T;
+           hit->has_TDC=true;
+
+           hit->t = T;
+
+           // apply time-walk corrections?
+
+           hit->AddAssociatedObject(digihit);
+       }
    }
 
    return NOERROR;
@@ -264,7 +272,7 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 jerror_t DTAGHHit_factory::erun(void)
 {
-   return NOERROR;
+    return NOERROR;
 }
 
 //------------------
@@ -272,27 +280,27 @@ jerror_t DTAGHHit_factory::erun(void)
 //------------------
 jerror_t DTAGHHit_factory::fini(void)
 {
-   return NOERROR;
+    return NOERROR;
 }
 
 //---------------------
 // load_ccdb_constants
 //---------------------
 bool DTAGHHit_factory::load_ccdb_constants(
-                       std::string table_name,
-                       std::string column_name,
-                       double result[TAGH_MAX_COUNTER+1])
+        std::string table_name,
+        std::string column_name,
+        double result[TAGH_MAX_COUNTER+1])
 {
-   std::vector< std::map<std::string, double> > table;
-   std::string ccdb_key = "/PHOTON_BEAM/hodoscope/" + table_name;
-   if (eventLoop->GetCalib(ccdb_key, table))
-   {
-       jout << "Error loading " << ccdb_key << " from ccdb!" << std::endl;
-       return false;
-   }
-   for (unsigned int i=0; i < table.size(); ++i) {
-      int counter = (table[i])["id"];
-      result[counter] = (table[i])[column_name];
-   }
-   return true;
+    std::vector< std::map<std::string, double> > table;
+    std::string ccdb_key = "/PHOTON_BEAM/hodoscope/" + table_name;
+    if (eventLoop->GetCalib(ccdb_key, table))
+    {
+        jout << "Error loading " << ccdb_key << " from ccdb!" << std::endl;
+        return false;
+    }
+    for (unsigned int i=0; i < table.size(); ++i) {
+        int counter = (table[i])["id"];
+        result[counter] = (table[i])[column_name];
+    }
+    return true;
 }

@@ -134,8 +134,18 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
     vector<const DFCALDigiHit*> digihits;
     loop->Get(digihits);
     for (unsigned int i=0; i < digihits.size(); i++) {
+
         const DFCALDigiHit *digihit = digihits[i];
-        if (digihit->pulse_time==0) continue;
+
+        // There is a slight difference between Mode 7 and 8 data
+        // The following condition signals an error state in the flash algorithm in both modes
+        // Do not make hits out of these
+        const Df250PulsePedestal* PPobj = NULL;
+        digihit->GetSingle(PPobj);
+        if (PPobj != NULL){
+            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+        }
+        //if (digihit->pulse_time==0) continue;
 
         // Check to see if the hit corresponds to a valid channel
         if (fcalGeom.isBlockActive(digihit->row,digihit->column) == false) {
@@ -147,37 +157,35 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
         // throw away hits from bad or noisy channels
         fcal_quality_state quality = 
-	  static_cast<fcal_quality_state>(block_qualities[digihit->row][digihit->column]);
+            static_cast<fcal_quality_state>(block_qualities[digihit->row][digihit->column]);
         if ( (quality==BAD) || (quality==NOISY) ) continue;
 
         // get pedestal from CCDB -- we should use it instead
-	// of the event-by-even pedestal
+        // of the event-by-even pedestal
 
         double pedestal = pedestals[digihit->row][digihit->column];
         double integratedPedestal = 0.0;
         const Df250PulseIntegral* PIobj = NULL;
-        const Df250PulsePedestal* PPobj = NULL;
 
         digihit->GetSingle(PIobj);
-        digihit->GetSingle(PPobj);
 
         if( PIobj != NULL ){
 
-	  if( pedestal == 0 ) {
+            if( pedestal == 0 ) {
 
-	    // we should use the fixed database pedestal
-	    // object as it is less susceptible to noise
-	    // than the event-by-event pedestal
+                // we should use the fixed database pedestal
+                // object as it is less susceptible to noise
+                // than the event-by-event pedestal
 
-	    // if the database pedestal is zero then try
-	    // the event-by-event one:
+                // if the database pedestal is zero then try
+                // the event-by-event one:
 
-            pedestal = (double)PIobj->pedestal / 
-	      (double)PIobj->nsamples_pedestal;
-	  }
+                pedestal = (double)PIobj->pedestal / 
+                    (double)PIobj->nsamples_pedestal;
+            }
 
-	  double nsamples_integral = (double)PIobj->nsamples_integral;
-	  integratedPedestal = pedestal * nsamples_integral;
+            double nsamples_integral = (double)PIobj->nsamples_integral;
+            integratedPedestal = pedestal * nsamples_integral;
         }
         else{
 
@@ -211,13 +219,13 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
         hit->x = pos.X();
         hit->y = pos.Y();
 
-	// recored the pulse integral to peak ratio since this is
-	// a useful quality metric for the PMT pulse
-	hit->intOverPeak = ( A - integratedPedestal ) / pulse_amplitude;
+        // recored the pulse integral to peak ratio since this is
+        // a useful quality metric for the PMT pulse
+        hit->intOverPeak = ( A - integratedPedestal ) / pulse_amplitude;
 
         // do some basic quality checks before creating the objects
         if( ( hit->E > 0 ) &&
-	    ( digihit->pulse_time > 0 ) 
+                ( digihit->pulse_time > 0 ) 
           ){
 
             hit->AddAssociatedObject(digihit);

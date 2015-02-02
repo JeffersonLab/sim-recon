@@ -169,6 +169,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
     for (unsigned int i=0; i < digihits.size(); i++) {
         const DCDCDigiHit *digihit = digihits[i];
 
+	// This error state is only present in mode 8
         if (digihit->pulse_time==0.) continue;
 
         const int &ring  = digihit->ring;
@@ -187,6 +188,16 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
             throw JException(str);
         }
 
+        // There is a slight difference between Mode 7 and 8 data
+        // The following condition signals an error state in the flash algorithm
+        // Do not make hits out of these
+        const Df125PulsePedestal* PPobj = NULL;
+        digihit->GetSingle(PPobj);
+        if (PPobj != NULL){
+            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+            if (PPobj->pulse_number == 1) continue; // Unintentionally had 2 pulses found in fall data (0-1 counting issue)
+        }
+
         // Get pedestal. Preference is given to pedestal measured
         // for event. Otherwise, use statistical one from CCDB
         double pedestal = pedestals[ring-1][straw-1];
@@ -201,6 +212,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
             pedestal = Nsample_ped * nsamples_integral/nsamples_pedestal;
         } 
 
+        if (PPobj == NULL || PIobj == NULL) continue; // We don't want hits where ANY of the associated information is missing
 
         // Apply calibration constants here
         double A = (double)digihit->pulse_integral;

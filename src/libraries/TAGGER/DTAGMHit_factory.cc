@@ -15,6 +15,7 @@ using namespace std;
 #include "DTAGMGeometry.h"
 #include "DTAGMHit_factory.h"
 #include <DAQ/Df250PulseIntegral.h>
+#include <DAQ/Df250PulsePedestal.h>
 #include <DAQ/Df250Config.h>
 #include "DAQ/DF1TDCHit.h"
 
@@ -145,6 +146,14 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, int eventnumber)
     for (unsigned int i=0; i < digihits.size(); i++) {
         const DTAGMDigiHit *digihit = digihits[i];
 
+        // The following condition signals an error state in the flash algorithm
+        // Do not make hits out of these
+        const Df250PulsePedestal* PPobj = NULL;
+        digihit->GetSingle(PPobj);
+        if (PPobj != NULL){
+            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+        }
+
         // Get pedestal, prefer associated event pedestal if it exists,
         // otherwise, use the average pedestal from CCDB
         double pedestal = fadc_pedestals[digihit->row][digihit->column];
@@ -167,7 +176,7 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, int eventnumber)
             continue;
 
         // Skip events where fADC algorithm fails
-        if (digihit->pulse_time == 0) continue;
+        //if (digihit->pulse_time == 0) continue; // Should already be caught above
 
         DTAGMHit *hit = new DTAGMHit;
         int row = digihit->row;
