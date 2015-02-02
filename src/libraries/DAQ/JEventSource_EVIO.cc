@@ -3180,7 +3180,8 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 	uint32_t itrigger = -1;
 	uint32_t last_itrigger = -2;
 	uint32_t last_pulse_time_channel=0;
-	
+    uint32_t last_slot = -1;
+    uint32_t last_channel = -1;    
 	// Loop over data words
 	for(; iptr<iend; iptr++){
 		
@@ -3254,6 +3255,9 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				nsamples_integral = 0;  // must be overwritten later in GetObjects with value from Df125Config value
 				nsamples_pedestal = 1;  // The firmware returns an already divided pedestal
 				pedestal = 0;  // This will be replaced by the one from Df250PulsePedestal in GetObjects
+                if (last_slot == slot && last_channel == channel) pulse_number = 1;
+                last_slot = slot;
+                last_channel = channel;
 				if(objs) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, 
 											 quality_factor, sum, pedestal, nsamples_integral, nsamples_pedestal));
 				break;
