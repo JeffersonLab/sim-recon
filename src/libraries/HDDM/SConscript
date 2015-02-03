@@ -155,4 +155,5 @@ swig_env = env.Clone()
 swig_env.AppendUnique(SWIGFLAGS = ["-c++","-python"])
 swig_env.AppendUnique(LIBS = ["z","bz2"])
 sbms.swig_library(swig_env, "pyhddm_r", ["pyhddm_r.i"])
+sbms.swig_library(swig_env, "pyhddm_s", ["pyhddm_s.i"])
 
