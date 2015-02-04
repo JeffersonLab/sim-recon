@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <limits>
 using namespace std;
 
 #include "DTAGHDigiHit.h"
@@ -32,6 +33,10 @@ const int DTAGHHit_factory::k_counter_noisy;
 //------------------
 jerror_t DTAGHHit_factory::init(void)
 {
+  ADC_THRESHOLD = 1000.0; // ADC integral counts
+  gPARMS->SetDefaultParameter("TAGHHit:ADC_THRESHOLD",ADC_THRESHOLD,
+			      "pedestal-subtracted pulse integral threshold");
+
    // initialize calibration constants
    fadc_a_scale = 0;
    fadc_t_scale = 0;
@@ -166,34 +171,36 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
       const Df250PulseIntegral* PIobj = NULL;
       digihit->GetSingle(PIobj);
       if (PIobj != NULL) {
-          // the measured pedestal is scaled by the number
-          // of samples used to calculate the actual pulse
-          // when it is subtracted below
-          // Changed to conform to D. Lawrence changes Dec. 4 2014
-          double single_sample_ped = (double)PIobj->pedestal;
+	  // the measured pedestal must be scaled by the ratio of the number
+	  // of samples used to calculate the integral and the pedestal          
+	  // Changed to conform to D. Lawrence changes Dec. 4 2014
+          double ped_sum = (double)PIobj->pedestal;
           double nsamples_integral = (double)PIobj->nsamples_integral;
           double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
-          pedestal          = single_sample_ped * nsamples_integral/nsamples_pedestal;
+          pedestal          = ped_sum * nsamples_integral/nsamples_pedestal;
       }
+
+      // Subtract pedestal from pulse integral
+      double A = digihit->pulse_integral;
+      A -= pedestal;
+      // Throw away hits with small pedestal-subtracted integrals
+      if (A < ADC_THRESHOLD) continue;
 
       DTAGHHit *hit = new DTAGHHit;
       hit->counter_id = counter;
       double Elow = taghGeom.getElow(counter);
       double Ehigh = taghGeom.getEhigh(counter);
       hit->E = (Elow + Ehigh)/2;
-      hit->t = 0;
 
       // Apply calibration constants
-      double A = digihit->pulse_integral;
       double T = digihit->pulse_time;
-      A -= pedestal;
-      hit->integral=A;
+      hit->integral = A;
       hit->npe_fadc = A * fadc_a_scale * fadc_gains[counter];
       hit->time_fadc = T * fadc_t_scale - fadc_time_offsets[counter] + t_base;
-      hit->time_tdc=0.;
-      hit->t=hit->time_fadc;
-      hit->has_fADC=true;
-      hit->has_TDC=false;
+      hit->time_tdc = numeric_limits<double>::quiet_NaN();
+      hit->t = hit->time_fadc;
+      hit->has_fADC = true;
+      hit->has_TDC = false;
 
       hit->AddAssociatedObject(digihit);
       _data.push_back(hit);
@@ -247,15 +254,14 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
                double Elow = taghGeom.getElow(counter);
                double Ehigh = taghGeom.getEhigh(counter);
                hit->E = (Elow + Ehigh)/2;
-               hit->time_fadc = 0;
-               hit->integral = 0;
-               hit->npe_fadc = 0;
-               hit->has_fADC=false;
+               hit->time_fadc = numeric_limits<double>::quiet_NaN();
+               hit->integral = numeric_limits<double>::quiet_NaN();
+               hit->npe_fadc = numeric_limits<double>::quiet_NaN();
+               hit->has_fADC = false;
                _data.push_back(hit);
            }      
-           hit->time_tdc=T;
-           hit->has_TDC=true;
-
+           hit->time_tdc = T;
+           hit->has_TDC = true;
            hit->t = T;
 
            // apply time-walk corrections?
