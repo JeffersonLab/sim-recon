@@ -2249,7 +2249,9 @@ jerror_t DEventSourceHDDM::Extract_DTAGMHit(hddm_s::HDDM *record,
             taghit->time_fadc = hiter->getTADC();
             taghit->column = hiter->getColumn();
             taghit->row = hiter->getRow();
-            data.push_back(taghit);
+	    taghit->has_fADC = true;
+	    taghit->has_TDC = true;         
+	    data.push_back(taghit);
          }
       }
       else if (tag == "TRUTH") {
@@ -2263,7 +2265,9 @@ jerror_t DEventSourceHDDM::Extract_DTAGMHit(hddm_s::HDDM *record,
             taghit->time_fadc = hiter->getT();
             taghit->column = hiter->getColumn();
             taghit->row = hiter->getRow();
-            data.push_back(taghit);
+	    taghit->has_fADC = true;
+	    taghit->has_TDC = true;           
+	    data.push_back(taghit);
          }
       }
    }
@@ -2306,6 +2310,8 @@ jerror_t DEventSourceHDDM::Extract_DTAGHHit( hddm_s::HDDM *record,
             taghit->npe_fadc = hiter->getNpe();
             taghit->time_fadc = hiter->getTADC();
             taghit->counter_id = hiter->getCounterId();
+	    taghit->has_fADC = true;
+	    taghit->has_TDC = true;
             data.push_back(taghit);
          }
       }
@@ -2319,6 +2325,8 @@ jerror_t DEventSourceHDDM::Extract_DTAGHHit( hddm_s::HDDM *record,
             taghit->npe_fadc = hiter->getDE() * 5e5; // ~5e5 pe/GeV
             taghit->time_fadc = hiter->getT();
             taghit->counter_id = hiter->getCounterId();
+	    taghit->has_fADC = true;
+	    taghit->has_TDC = true;
             data.push_back(taghit);
          }
       }
