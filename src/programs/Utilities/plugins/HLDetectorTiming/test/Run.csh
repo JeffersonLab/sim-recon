@@ -1,18 +1,48 @@
 #!/bin/csh
 
 # Set up the environment you will use for the running
-source /home/mstaib/commissioning/sim-recon-commissioning/Linux_RHEL6-x86_64-gcc4.4.7/setenv.csh
-setenv HALLD_MY /home/mstaib/gluex/
+source /gluonfs1/home/mstaib/commissioning/sim-recon-commissioning/Linux_CentOS6-x86_64-gcc4.4.6/setenv.csh
 
 # Set the run number and directory where to find the files
 #set run=2120
-set run=2209
+if ( $1 == "") then
+    echo Specify a run number as the first argument
+    echo Example ./Run.csh 2179
+    exit
+else
+    set run=$1
+endif
+
 #set directory=/raid12/gluex/fcal_bcal_m8/2trackskim/
-set directory=/raid12/gluex/rawdata/Run002209/
+set directory=/gluonraid1/rawdata/volatile/RunPeriod-2014-10/rawdata/
+
+# Set the number of beam events per step
+set nEventsRoughTiming=50000
+set nEventsTDCADCAlign=150000
+set nEventsTrackBased=350000
+set nEventsVerify=200000
 
 # This will find all of the evio files in the directory matching the run number
 # Don't ask me why this is how to sort it @_@ This way the run tags appear sequentially
-set allfiles=`find ${directory} -maxdepth 1 -name "*${run}*.evio" |xargs ls `
+set allfilesTest=`find ${directory} -maxdepth 2 -name "*${run}*.evio"`
+set allfiles=`find ${directory} -maxdepth 2 -name "*${run}*.evio" |xargs ls `
+
+if (  `echo $allfilesTest | awk '{print length($0)}'`  <  5 ) then
+    echo "Didn't find in first location, trying the other"
+    set directory=/gluonraid2/rawdata/volatile/RunPeriod-2014-10/rawdata/
+    set allfilesTest=`find ${directory} -maxdepth 2 -name "*${run}*.evio"`
+    set allfiles=`find ${directory} -maxdepth 2 -name "*${run}*.evio" |xargs ls `
+endif
+
+if (  `echo $allfilesTest | awk '{print length($0)}'`  < 5 ) then
+    echo "Could not find evio files for Run ${run} in the normal directories"
+    exit
+endif
+
+# Make directory for output
+mkdir -p Run${run}
+# Set number of threads
+set nThreads=1
 
 # We want to attempt to do the calibration on a SQLite version of the CCDB -nc will force no overwrite of the current CCDB
 wget --no-check-certificate -nc https://halldweb1.jlab.org/dist/ccdb.sqlite
@@ -20,10 +50,9 @@ setenv CCDB_CONNECTION sqlite:///`pwd`/ccdb.sqlite
 setenv JANA_CALIB_URL sqlite:///`pwd`/ccdb.sqlite
 
 # Run the plugin to see where the CCDB calibrations are before calibrations
-set nThreads=32
 # Measure Baseline
 #set nEvents=500000
-#hd_root -PPLUGINS=HLDetectorTiming,monitoring_hists -PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520 $allfiles -PNTHREADS=$nThreads -PEVENTS_TO_KEEP=$nEvents -PHLDETECTORTIMING:DO_VERIFY=1
+#hd_root -PPLUGINS=HLDetectorTiming,monitoring_hists -PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520 $allfiles -PNTHREADS=$nThreads -PHLDETECTORTIMING:BEAM_EVENTS_TO_KEEP=$nEvents -PHLDETECTORTIMING:DO_VERIFY=1
 #mv hd_root.root BeforeCalibration.root
 
 # Now we need to zero out the entries we will be calibrating so we don't have random starting points
@@ -137,10 +166,18 @@ rm oneVal.txt
 rm twoVal.txt
 
 # We can make our first pass at the data, just making rough timing corrections
-set nEvents=100000
 
-hd_root -PPLUGINS=HLDetectorTiming -PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520 $allfiles -PNTHREADS=$nThreads -PEVENTS_TO_KEEP=$nEvents -PHLDETECTORTIMING:DO_ROUGH_TIMING=1
-mv hd_root.root RoughTiming.root
+set Complete=0
+while ( $Complete == 0)
+    hd_root -PPLUGINS=HLDetectorTiming $allfiles -PNTHREADS=$nThreads -PHLDETECTORTIMING:BEAM_EVENTS_TO_KEEP=$nEventsRoughTiming -PHLDETECTORTIMING:DO_ROUGH_TIMING=1
+    if ( `stat -c %s hd_root.root` > 1000 ) then
+        echo Step completed
+        set Complete=1
+    else 
+        echo Step failed...Trying again
+    endif
+end
+mv hd_root.root Run${run}/RoughTiming.root
 
 # Now take the constants that were calculated and add them to the CCDB
 
@@ -153,11 +190,19 @@ ccdb add BCAL/base_time_offset -r ${run}-${run} bcal_base_time.txt
 ccdb add PHOTON_BEAM/microscope/base_time_offset -r ${run}-${run} tagm_base_time.txt
 ccdb add PHOTON_BEAM/hodoscope/base_time_offset -r ${run}-${run} tagh_base_time.txt
 
+TDCADCAlign:
 # Next run the TDC/ADC alignment with these results
-set nEvents=250000
-
-hd_root -PPLUGINS=HLDetectorTiming -PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520 $allfiles -PNTHREADS=$nThreads -PEVENTS_TO_KEEP=$nEvents -PHLDETECTORTIMING:DO_TDC_ADC_ALIGN=1
-mv hd_root.root TDCADCAlign.root
+set Complete=0
+while ( $Complete == 0)
+    hd_root -PPLUGINS=HLDetectorTiming $allfiles -PNTHREADS=$nThreads -PHLDETECTORTIMING:BEAM_EVENTS_TO_KEEP=$nEventsTDCADCAlign -PHLDETECTORTIMING:DO_TDC_ADC_ALIGN=1
+    if ( `stat -c %s hd_root.root` > 1000 ) then
+        echo Step completed
+        set Complete=1
+    else
+        echo Step failed...Trying again
+    endif
+end
+mv hd_root.root Run${run}/TDCADCAlign.root
 
 ccdb add START_COUNTER/tdc_timing_offsets -r ${run}-${run} sc_tdc_timing_offsets.txt
 ccdb add TOF/timing_offsets -r ${run}-${run} tof_tdc_timing_offsets.txt
@@ -165,9 +210,17 @@ ccdb add PHOTON_BEAM/hodoscope/tdc_time_offsets -r ${run}-${run} tagh_tdc_timing
 ccdb add PHOTON_BEAM/microscope/tdc_time_offsets -r ${run}-${run} tagm_tdc_timing_offsets.txt
 
 # Do the Track Based alignment
-set nEvents=500000
-hd_root -PPLUGINS=HLDetectorTiming -PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520 $allfiles -PNTHREADS=$nThreads -PEVENTS_TO_KEEP=$nEvents -PHLDETECTORTIMING:DO_TRACK_BASED=1 -PTRKFIT:MASS_HYPOTHESES_POSITIVE=0.14 -PTRKFIT:MASS_HYPOTHESES_NEGATIVE=0.14 
-mv hd_root.root TrackBased.root
+set Complete=0
+while ( $Complete == 0)
+    hd_root -PPLUGINS=HLDetectorTiming -PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520 $allfiles -PNTHREADS=$nThreads -PHLDETECTORTIMING:BEAM_EVENTS_TO_KEEP=$nEventsTrackBased -PHLDETECTORTIMING:DO_TRACK_BASED=1 -PTRKFIT:MASS_HYPOTHESES_POSITIVE=0.14 -PTRKFIT:MASS_HYPOTHESES_NEGATIVE=0.14 
+    if ( `stat -c %s hd_root.root` > 1000 ) then
+        echo Step completed
+        set Complete=1
+    else
+        echo Step failed...Trying again
+    endif
+end
+mv hd_root.root Run${run}/TrackBased.root
 
 ccdb add PHOTON_BEAM/hodoscope/tdc_time_offsets -r ${run}-${run} tagh_tdc_timing_offsets.txt
 ccdb add PHOTON_BEAM/hodoscope/fadc_time_offsets -r ${run}-${run} tagh_adc_timing_offsets.txt
@@ -177,8 +230,19 @@ ccdb add FCAL/base_time_offset -r ${run}-${run} fcal_base_time.txt
 ccdb add TOF/base_time_offset -r ${run}-${run} tof_base_time.txt
 ccdb add BCAL/base_time_offset -r ${run}-${run} bcal_base_time.txt
 
+DoVerify:
 # Verify Results
-set nEvents=500000
-hd_root -PPLUGINS=HLDetectorTiming,monitoring_hists -PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520 $allfiles -PNTHREADS=$nThreads -PEVENTS_TO_KEEP=$nEvents -PHLDETECTORTIMING:DO_VERIFY=1 
-mv hd_root.root FinalResult.root
+set nEvents=250000
+set Complete=0
+while ( $Complete == 0)
+    hd_root -PPLUGINS=HLDetectorTiming,monitoring_hists -PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520 $allfiles -PNTHREADS=$nThreads -PHLDETECTORTIMING:BEAM_EVENTS_TO_KEEP=$nEvents -PHLDETECTORTIMING:DO_VERIFY=1 
+    if ( `stat -c %s hd_root.root` > 1000 ) then
+        echo Step completed
+        set Complete=1
+    else
+        echo Step failed...Trying again
+    endif
+end
+mv hd_root.root Run${run}/FinalResult.root
 
+mv *.txt *.root Run${run}/

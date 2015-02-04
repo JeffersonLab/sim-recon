@@ -227,6 +227,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
     }
 
     for (i = 0; i < fdcHitVector.size(); i++){
+        if(fdcHitVector[i]->type != 1 ) continue; // ADC hits only
         Fill1DHistogram ("HLDetectorTiming", "FDC", "FDCHit time", fdcHitVector[i]->t,
                 "FDCHit time", nBins, xMin, xMax);
     }
@@ -508,14 +509,14 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "TOF - SC Target Time",
                     flightTimeCorrectedTOFTime - flightTimeCorrectedSCTime,
                     "t_{TOF} - t_{SC} at Target; t_{TOF} - t_{SC} at Target [ns]; Entries",
-                    100, -50, 50);
+                    200, -100, 100);
         }
         if (foundBCAL){
             float flightTimeCorrectedBCALTime = locBCALShowerMatchParams.dBCALShower->t - locBCALShowerMatchParams.dFlightTime;
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - SC Target Time",
                     flightTimeCorrectedBCALTime - flightTimeCorrectedSCTime,
                     "t_{BCAL} - t_{SC} at Target; t_{BCAL} - t_{SC} [ns]; Entries",
-                    100, -50, 50);
+                    600, -300, 300);
             // Add histogram suggested by Mark Dalton
             Fill2DHistogram("HLDetectorTiming", "TRACKING", "BCAL - SC Target Time Vs Correction",
                     locBCALShowerMatchParams.dFlightTime, flightTimeCorrectedBCALTime - flightTimeCorrectedSCTime,
@@ -527,7 +528,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - SC Target Time",
                     flightTimeCorrectedFCALTime - flightTimeCorrectedSCTime,
                     "t_{FCAL} - t_{SC} at Target; t_{FCAL} - t_{SC} [ns]; Entries",
-                    500, -250, 250);
+                    600, -300, 300);
         }
 
 
@@ -647,7 +648,7 @@ void JEventProcessor_HLDetectorTiming::DoRoughTiming(void){
     outFile.open("sc_base_time.txt");
     outFile << SC_ADC_Offset << " " << SC_TDC_Offset << endl;
     outFile.close();
-
+/*
     float BCAL_ADC_Offset = 0, BCAL_TDC_Offset = 0;
     thisHist = Get1DHistogram("HLDetectorTiming", "BCAL", "BCALHit time");
     if(thisHist != NULL){
@@ -663,7 +664,7 @@ void JEventProcessor_HLDetectorTiming::DoRoughTiming(void){
     outFile.open("bcal_base_time.txt");
     outFile << BCAL_ADC_Offset << " " << BCAL_TDC_Offset << endl;
     outFile.close();
-
+*/
     float CDC_ADC_Offset = 0.0;
     thisHist = Get1DHistogram("HLDetectorTiming", "CDC", "CDCHit time");
     if(thisHist != NULL){
@@ -703,7 +704,7 @@ void JEventProcessor_HLDetectorTiming::DoRoughTiming(void){
     outFile.open("fdc_base_time.txt");
     outFile << FDC_ADC_Offset << " " << FDC_TDC_Offset << endl;
     outFile.close();
-
+/*
     float FCAL_ADC_Offset = 0.0;
     thisHist = Get1DHistogram("HLDetectorTiming", "FCAL", "FCALHit time");
     if(thisHist != NULL){
@@ -718,7 +719,7 @@ void JEventProcessor_HLDetectorTiming::DoRoughTiming(void){
     outFile.open("fcal_base_time.txt");
     outFile << FCAL_ADC_Offset << endl;
     outFile.close();
-
+*/
     float TOF_ADC_Offset = 0.0, TOF_TDC_Offset = 0.0;
     thisHist = Get1DHistogram("HLDetectorTiming", "TOF", "TOFHit ADC time");
     if(thisHist != NULL){
