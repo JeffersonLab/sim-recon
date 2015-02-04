@@ -65,7 +65,6 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumb
 	for (unsigned int ih=0; ih < tagh_hits.size(); ++ih)
 	{
 	        if (!tagh_hits[ih]->has_fADC) continue; // Skip TDC-only hits (i.e. hits with no ADC info.)
-	        if (tagh_hits[ih]->integral < 1000.0) continue; // Skip hits with small pedestal-subtracted pulse integrals (ADC integral counts less than 1000)
 		DVector3 mom(0.0, 0.0, tagh_hits[ih]->E);
 		DBeamPhoton *gamma = new DBeamPhoton;
 		gamma->setPID(Gamma);
