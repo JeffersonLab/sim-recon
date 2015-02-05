@@ -36,8 +36,9 @@ class DSCHit_factory:public jana::JFactory<DSCHit>{
 		//double<string,double>  attenuation_corr_factors;
 		
 		double DELTA_T_ADC_TDC_MAX;
+		double HIT_TIME_WINDOW;
 		double ADC_THRESHOLD;
-		int rollover_count;
+		int    rollover_count;
 
 		// geometry information
 		static const int MAX_SECTORS = 30.;
