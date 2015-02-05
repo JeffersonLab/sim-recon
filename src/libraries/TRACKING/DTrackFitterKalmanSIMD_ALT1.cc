@@ -322,7 +322,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    fdc_updates[my_id].s=forward_traj[k].s;
 	    fdc_updates[my_id].residual=scale*Mlist[m];
 	    fdc_updates[my_id].variance=scale*Vlist[m];
-	    fdc_updates[my_id].doca=doca;
+	    fdc_updates[my_id].doca=fabs(doca);
 	  
 	    // update chi2
 	    chisq+=(probs[m]/prob_tot)*(1.-Hlist[m]*Klist[m])*Mlist[m]*Mlist[m]/Vlist[m];
@@ -375,7 +375,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    fdc_updates[id].residual=scale*Mdiff;
 	    fdc_updates[id].variance=scale*V;
 	    fdc_updates[id].s=forward_traj[k].s;
-	    fdc_updates[id].doca=doca;
+	    fdc_updates[id].doca=fabs(doca);
 	    fdc_updates[id].used_in_fit=true;
 	    
 	    // Update chi2 for this segment
@@ -665,12 +665,12 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  //H.Print();
 	  
 	  // The next measurement
-	  double dm=0.39,tdrift=0.;
+	  double dm=0.39,tdrift=0.,tcorr=0.;
 	  if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){	
 	    tdrift=my_cdchits[cdc_index]->tdrift-mT0
 	      -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
 	    double B=forward_traj[k_minus_1].B;
-	    ComputeCDCDrift(tdrift,B,dm,Vc);
+	    ComputeCDCDrift(tdrift,B,dm,Vc,tcorr);
 	  }
 
 	  // Residual
@@ -728,7 +728,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	      cdc_updates[cdc_index].tflight
 		=forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;  
 	      cdc_updates[cdc_index].z=newz;
-	      cdc_updates[cdc_index].tdrift=my_cdchits[cdc_index]->tdrift;
+	      cdc_updates[cdc_index].tdrift=tcorr;
 	      cdc_updates[cdc_index].B=forward_traj[k_minus_1].B; 
 	      cdc_updates[cdc_index].s=forward_traj[k_minus_1].s;
 	      cdc_updates[cdc_index].residual=res*scale;
@@ -745,7 +745,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 		     << " is stereo? " << is_stereo
 		     << " Pred " << d << " Meas " << dm
 		     << " Sigma meas " << sqrt(Vc)
-		     << " t " << tdrift
+		     << " t " << tcorr
 		     << " Chi2 " << (1.-H*K)*res*res/Vc << endl;
 	      
 	      // update number of degrees of freedom
