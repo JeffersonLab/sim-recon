@@ -89,6 +89,8 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
   // Get the geometry
   DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
   geom = dapp->GetDGeometry(runnumber);
+  // Check for magnetic field
+  dIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField*>(dapp->GetBfield(runnumber)) != NULL);
 
   // Get pointer to DTrackFitter object that actually fits a track
   vector<const DTrackFitter *> fitters;
@@ -174,6 +176,45 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
   vector<const DTrackCandidate*> candidates;
   loop->Get(candidates);
   if (candidates.size()==0) return NOERROR;
+  
+  if (dIsNoFieldFlag){
+    // Copy results over from the StraightLine candidate and add reference
+    // trajectory
+    for (unsigned int i=0;i<candidates.size();i++){
+       // Make a new wire-based track
+      DTrackWireBased *track = new DTrackWireBased;
+      
+      // Copy over DKinematicData part
+      DKinematicData *track_kd = track;
+      *track_kd=*candidates[i];
+
+      // Attach a reference trajectory --  make sure there are enough DReferenceTrajectory objects
+      unsigned int locNumInitialReferenceTrajectories = rtv.size();
+      while(rtv.size()<=num_used_rts){
+	//printf("Adding %d %d\n",rtv.size(),_data.size());
+	rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+      }
+      DReferenceTrajectory *rt = rtv[num_used_rts];
+      if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
+	     rt->Reset();
+      rt->SetDGeometry(geom);
+      rt->FastSwim(track->position(),track->momentum(),track->charge());
+      track->rt=rt;
+      
+      // candidate id
+      track->candidateid=i+1;
+
+      // Track quality properties
+      track->Ndof=candidates[i]->Ndof;
+      track->chisq=candidates[i]->chisq;	
+
+      _data.push_back(track);
+
+    }
+    return NOERROR;
+  }
+
+
 
   // Reset the number of used reference trajectories from the pool
   num_used_rts=0;

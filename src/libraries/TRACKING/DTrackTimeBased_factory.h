@@ -94,6 +94,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   double mPathLength,mEndTime,mStartTime,mFlightTime;
   DetectorSystem_t mDetector, mStartDetector;
   int mNumHypPlus,mNumHypMinus;
+  bool dIsNoFieldFlag;
 
   bool SKIP_MASS_HYPOTHESES_WIRE_BASED;
 
