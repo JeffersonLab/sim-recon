@@ -239,6 +239,19 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
       
+      // Lists of hits used in the previous pass
+      vector<const DCDCTrackHit *>cdchits;
+      track->GetT(cdchits);
+      vector<const DFDCPseudo *>fdchits;
+      track->GetT(fdchits);
+      
+      for (unsigned int k=0;k<cdchits.size();k++){
+	timebased_track->AddAssociatedObject(cdchits[k]);
+      }
+      for (unsigned int k=0;k<fdchits.size();k++){
+	timebased_track->AddAssociatedObject(fdchits[k]);
+      }
+
       _data.push_back(timebased_track);
 
     }

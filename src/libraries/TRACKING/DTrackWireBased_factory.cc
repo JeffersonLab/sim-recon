@@ -181,12 +181,14 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
     // Copy results over from the StraightLine candidate and add reference
     // trajectory
     for (unsigned int i=0;i<candidates.size();i++){
+      const DTrackCandidate *cand=candidates[i];
+
        // Make a new wire-based track
       DTrackWireBased *track = new DTrackWireBased;
       
       // Copy over DKinematicData part
       DKinematicData *track_kd = track;
-      *track_kd=*candidates[i];
+      *track_kd=*cand;
 
       // Attach a reference trajectory --  make sure there are enough DReferenceTrajectory objects
       unsigned int locNumInitialReferenceTrajectories = rtv.size();
@@ -205,8 +207,21 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
       track->candidateid=i+1;
 
       // Track quality properties
-      track->Ndof=candidates[i]->Ndof;
-      track->chisq=candidates[i]->chisq;	
+      track->Ndof=cand->Ndof;
+      track->chisq=cand->chisq;	
+
+      // Lists of hits used in the previous pass
+      vector<const DCDCTrackHit *>cdchits;
+      cand->GetT(cdchits);
+      vector<const DFDCPseudo *>fdchits;
+      cand->GetT(fdchits);
+
+      for (unsigned int k=0;k<cdchits.size();k++){
+	track->AddAssociatedObject(cdchits[k]);
+      }
+      for (unsigned int k=0;k<fdchits.size();k++){
+	track->AddAssociatedObject(fdchits[k]);
+      }
 
       _data.push_back(track);
 
