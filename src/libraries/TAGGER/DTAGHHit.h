@@ -32,8 +32,8 @@ class DTAGHHit:public jana::JObject{
         AddString(items, "time_fadc(ns)", "%f", time_fadc);
         AddString(items, "integral", "%f", integral);
         AddString(items, "npe_fadc", "%f", npe_fadc);
-        AddString(items, "has_fadc", "%d", (int)has_fADC);
-        AddString(items, "has_tdc", "%d", (int)has_TDC);
+        AddString(items, "has_fADC", "%d", (int)has_fADC);
+        AddString(items, "has_TDC", "%d", (int)has_TDC);
       }
 };
 

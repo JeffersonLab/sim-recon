@@ -29,6 +29,8 @@ class DSCHit:public jana::JObject{
 			AddString(items, "t", "%3.3f", t);
 			AddString(items, "t_TDC","%3.3f", t_TDC);
 			AddString(items, "t_fADC", "%3.3f", t_fADC);
+			AddString(items, "has_fADC", "%d", (int)has_fADC);
+			AddString(items, "has_TDC", "%d", (int)has_TDC);
 		}
 };
 

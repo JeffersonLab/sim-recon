@@ -28,11 +28,11 @@ class DPSCHit:public jana::JObject{
   void toStrings(vector<pair<string,string> > &items)const{
     AddString(items, "arm", "%4d", arm);
     AddString(items, "module", "%4d", module);
-    AddString(items, "dE (GeV)", "%f", dE);
-    AddString(items, "t (ns)", "%f", t);
+    AddString(items, "dE(GeV)", "%f", dE);
+    AddString(items, "t(ns)", "%f", t);
     AddString(items, "sigma_t", "%f", sigma_t);
-    AddString(items, "has_fADC", "%d", has_fADC);
-    AddString(items, "has_TDC", "%d", has_TDC);
+    AddString(items, "has_fADC", "%d", (int)has_fADC);
+    AddString(items, "has_TDC", "%d", (int)has_TDC);
   }
 		
 };
