@@ -33,6 +33,8 @@ class DFCALDigiHit:public jana::JObject{
 			AddString(items, "pulse_time", "%d", pulse_time);
 			AddString(items, "pedestal", "%d", pedestal);
 			AddString(items, "QF", "%d", QF);
+			AddString(items, "nsamples_integral", "%d", nsamples_integral);
+			AddString(items, "nsamples_pedestal", "%d", nsamples_pedestal);
 		}
 		
 };
