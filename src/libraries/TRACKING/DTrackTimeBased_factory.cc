@@ -261,7 +261,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   
   // get start counter hits
   vector<const DSCHit*>sc_hits;
-  //loop->Get(sc_hits);
+  loop->Get(sc_hits);
   
   // Get TOF points
   vector<const DTOFPoint*> tof_points;
