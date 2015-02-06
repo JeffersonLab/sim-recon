@@ -52,7 +52,7 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
     DO_ROUGH_TIMING = 0;
     DO_TDC_ADC_ALIGN = 0;
     DO_TRACK_BASED = 0;
-    DO_VERIFY = 0;
+    DO_VERIFY = 1;
 
     if(gPARMS){
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_ROUGH_TIMING", DO_ROUGH_TIMING, "Set to > 0 to do rough timing of all detectors");
@@ -62,6 +62,10 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:REQUIRE_BEAM", REQUIRE_BEAM, "Set to 0 to skip beam current check");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:BEAM_EVENTS_TO_KEEP", BEAM_EVENTS_TO_KEEP, "Set to the number of beam on events to use");
     }
+    
+    // Would like the code with no arguments to simply verify the current status of the calibration
+    if (DO_ROUGH_TIMING > 0 || DO_TDC_ADC_ALIGN > 0 || DO_TRACK_BASED > 0) DO_VERIFY = 0;
+
     return NOERROR;
 }
 
