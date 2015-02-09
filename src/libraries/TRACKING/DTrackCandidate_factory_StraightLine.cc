@@ -342,6 +342,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
       cand->chisq=chi2_old;
       cand->setCharge(1.0);
       cand->setPID(Unknown);
+      cand->setT0(t0,10.0,SYS_CDC);
 
       // Add hits used in the fit as associated objects
       for (unsigned int k=0;k<used_cdc_hits_best_fit.size();k++){
@@ -756,7 +757,8 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
     cand->chisq=chi2_old;
     cand->setCharge(1.0);
     cand->setPID(Unknown);
-    
+    cand->setT0(t0,10.0,SYS_FDC);
+
     _data.push_back(cand);
     
   }
