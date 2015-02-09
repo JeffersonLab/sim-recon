@@ -755,7 +755,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
 
     cand->Ndof=ndof_old;
     cand->chisq=chi2_old;
-    cand->setCharge(1.0);
+    cand->setCharge(-1.0);
     cand->setPID(Unknown);
     cand->setT0(t0,10.0,SYS_FDC);
 
