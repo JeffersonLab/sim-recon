@@ -20,11 +20,12 @@ class Df125PulseTime:public DDAQAddress{
 	public:
 		JOBJECT_PUBLIC(Df125PulseTime);
 		
-		Df125PulseTime(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0, uint32_t quality_factor=0, uint32_t time=0,bool emulated=false):DDAQAddress(rocid, slot, channel, itrigger),pulse_number(pulse_number),quality_factor(quality_factor),time(time),emulated(emulated){}
+		Df125PulseTime(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0, uint32_t quality_factor=0, uint32_t time=0, uint32_t overflows=0, bool emulated=false):DDAQAddress(rocid, slot, channel, itrigger),pulse_number(pulse_number),quality_factor(quality_factor),time(time),overflows(overflows),emulated(emulated){}
 		
 		uint32_t pulse_number;         ///< from Pulse Time Data word
 		uint32_t quality_factor;       ///< from Pulse Time Data word
 		uint32_t time;                 ///< from Pulse Time Data word
+		uint32_t overflows;            ///< (future expansion. "7" means "7 or more" samples overflowed
 		bool     emulated;             ///< true if made from Window Raw Data
 		
 		// This method is used primarily for pretty printing
