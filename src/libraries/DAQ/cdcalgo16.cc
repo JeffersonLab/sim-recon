@@ -14,6 +14,8 @@
 // are passed in along with references to many different return values.
 // 
 
+#include <stdlib.h>
+
 #include <cdcalgo16.h>
 
 // data buffer
