@@ -2098,7 +2098,7 @@ double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, c
 //------------------
 // Straw_dx
 //------------------
-double DReferenceTrajectory::Straw_dx(const DCoordinateSystem *wire, double radius)
+double DReferenceTrajectory::Straw_dx(const DCoordinateSystem *wire, double radius) const
 {
 	/// Find the distance traveled within the specified radius of the
 	/// specified wire. This will give the "dx" component of a dE/dx
