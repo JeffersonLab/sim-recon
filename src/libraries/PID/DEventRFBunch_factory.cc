@@ -26,7 +26,10 @@ jerror_t DEventRFBunch_factory::brun(jana::JEventLoop *locEventLoop, int runnumb
 	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
 
 	dMinTrackingFOM = 5.73303E-7; //5 sigma
-	dRFBunchFrequency = 2.004;
+
+	vector<double> locRFFrequencyVector;
+	locEventLoop->GetCalib("PHOTON_BEAM/rf_frequency", locRFFrequencyVector);
+	dRFBunchFrequency = locRFFrequencyVector[0];
 
 	double locTargetCenterZ;
 	locGeometry->GetTargetZ(locTargetCenterZ);
@@ -381,7 +384,7 @@ jerror_t DEventRFBunch_factory::Select_RFBunch_NoRFTime(JEventLoop* locEventLoop
 {
 	//If no RF time:
 		//Use SC hits that have a track match to compute RF time guess, if any
-			//Times could be modulo 2.004 ns still: line them up (after propagating to beamline)
+			//Times could be modulo the rf-frequency still: line them up (after propagating to beamline)
 			//Use RF time guess to vote, just as in found-rf-time case
 		//If none:
 			//Set RF time as NaN
@@ -417,7 +420,7 @@ bool DEventRFBunch_factory::Get_RFTimeGuess(JEventLoop* locEventLoop, double& lo
 
 	//Only call if no RF time:
 		//Use SC hits that have a track match to compute RF time guess, if any
-			//Times could be modulo 2.004 ns still: line them up
+			//Times could be modulo the rf-frequency still: line them up
 
 	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	Select_GoodTracks(locEventLoop, locTrackTimeBasedVector);
@@ -439,7 +442,7 @@ void DEventRFBunch_factory::Get_RFTimeGuess(vector<pair<double, const JObject*> 
 {
 	//Only call if no RF time:
 		//Use SC hits that have a track match to compute RF time guess, if any
-			//Times could be modulo 2.004 ns still: line them up
+			//Times could be modulo the rf-frequency still: line them up
 
 	locRFTimeGuess = locTimes[0].first;
 	for(size_t loc_i = 1; loc_i < locTimes.size(); ++loc_i)

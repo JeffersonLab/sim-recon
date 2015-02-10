@@ -16,7 +16,6 @@
 //------------------
 jerror_t DEventRFBunch_factory_Combo::init(void)
 {
-	dRFBunchFrequency = 2.004;
 	dShowerSelectionTag = "PreSelect";
 	dTrackSelectionTag = "PreSelect";
 	dMinThrownMatchFOM = 5.73303E-7;
@@ -30,6 +29,10 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int r
 {
 	gPARMS->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", dTrackSelectionTag);
 	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
+
+	vector<double> locRFFrequencyVector;
+	locEventLoop->GetCalib("PHOTON_BEAM/rf_frequency", locRFFrequencyVector);
+	dRFBunchFrequency = locRFFrequencyVector[0];
 
 	DApplication *locApplication = dynamic_cast<DApplication*> (locEventLoop->GetJApplication());
 	DGeometry *locGeometry = locApplication ? locApplication->GetDGeometry(runnumber):NULL;

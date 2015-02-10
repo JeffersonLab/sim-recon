@@ -155,7 +155,7 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
 	unsigned int locRunNumber = event.GetRunNumber();
 	LockRead();
 	{
-		locNewRunNumber = (bTargetCenterZMap.find(locRunNumber) == bTargetCenterZMap.end());
+		locNewRunNumber = (dTargetCenterZMap.find(locRunNumber) == dTargetCenterZMap.end());
 	}
 	UnlockRead();
 	if(locNewRunNumber)
@@ -164,9 +164,15 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
 		DGeometry* locGeometry = dapp->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
 		double locTargetCenterZ = 0.0;
 		locGeometry->GetTargetZ(locTargetCenterZ);
+
+		vector<double> locRFFrequencyVector;
+		locEventLoop->GetCalib("PHOTON_BEAM/rf_frequency", locRFFrequencyVector);
+		double locRFBunchFrequency = locRFFrequencyVector[0];
+
 		LockRead();
 		{
-			bTargetCenterZMap[locRunNumber] = locTargetCenterZ;
+			dTargetCenterZMap[locRunNumber] = locTargetCenterZ;
+			dRFFrequencyMap[locRunNumber] = locRFBunchFrequency;
 		}
 		UnlockRead();
 	}
@@ -239,7 +245,7 @@ jerror_t DEventSourceREST::Extract_DMCReaction(hddm_r::HDDM *record,
 	int locRunNumber = locEventLoop->GetJEvent().GetRunNumber();
 	LockRead();
 	{
-		locTargetCenterZ = bTargetCenterZMap[locRunNumber];
+		locTargetCenterZ = dTargetCenterZMap[locRunNumber];
 	}
 	UnlockRead();
 	DVector3 locPosition(0.0, 0.0, locTargetCenterZ);
@@ -333,7 +339,7 @@ jerror_t DEventSourceREST::Extract_DRFTime(hddm_r::HDDM *record,
       return OBJECT_NOT_AVAILABLE; //Experimental data & it's missing: bail
 
 	//Is MC data. Either:
-		//No tag: return t = 0.0, but true t is 0.0 +/- n*2.004: must select the correct beam bunch
+		//No tag: return t = 0.0, but true t is 0.0 +/- n*locRFBunchFrequency: must select the correct beam bunch
 		//TRUTH tag: get exact t from DBeamPhoton tag MCGEN
 
 	if(tag == "TRUTH")
@@ -345,14 +351,22 @@ jerror_t DEventSourceREST::Extract_DRFTime(hddm_r::HDDM *record,
    }
 	else
    {
-		//start with true RF time, increment/decrement by multiples of 2.004 ns until closest to 0
+		double locRFBunchFrequency = 0.0;
+		int locRunNumber = locEventLoop->GetJEvent().GetRunNumber();
+		LockRead();
+		{
+			locRFBunchFrequency = dRFFrequencyMap[locRunNumber];
+		}
+		UnlockRead();
+
+		//start with true RF time, increment/decrement by multiples of locRFBunchFrequency ns until closest to 0
 		double locTime = locMCGENPhotons[0]->time();
-		int locNumRFBuckets = int(locTime/2.004);
-		locTime -= double(locNumRFBuckets)*2.004;
-		while(locTime > 1.002)
-			locTime -= 2.004;
-		while(locTime < -1.002)
-			locTime += 2.004;
+		int locNumRFBuckets = int(locTime/locRFBunchFrequency);
+		locTime -= double(locNumRFBuckets)*locRFBunchFrequency;
+		while(locTime > 0.5*locRFBunchFrequency)
+			locTime -= locRFBunchFrequency;
+		while(locTime < -0.5*locRFBunchFrequency)
+			locTime += locRFBunchFrequency;
 
 	   DRFTime *locRFTime = new DRFTime;
 		locRFTime->dTime = locTime;
@@ -419,7 +433,7 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 	int locRunNumber = eventLoop->GetJEvent().GetRunNumber();
 	LockRead();
 	{
-		locTargetCenterZ = bTargetCenterZMap[locRunNumber];
+		locTargetCenterZ = dTargetCenterZMap[locRunNumber];
 	}
 	UnlockRead();
 

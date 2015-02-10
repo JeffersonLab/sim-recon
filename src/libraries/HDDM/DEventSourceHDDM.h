@@ -142,7 +142,7 @@ class DEventSourceHDDM:public JEventSource
       DApplication *dapp;
       const DMagneticFieldMap *bfield;
       const DGeometry *geom;
-      
+
    private:
       bool initialized;
    
@@ -150,7 +150,8 @@ class DEventSourceHDDM:public JEventSource
       map<hddm_s::HDDM*, vector<DReferenceTrajectory*> > rt_by_event;
       list<DReferenceTrajectory*> rt_pool;
 
-		map<unsigned int, double> bTargetCenterZMap; //unsigned int is run number
+      map<unsigned int, double> dTargetCenterZMap; //unsigned int is run number
+      map<unsigned int, double> dRFFrequencyMap; //unsigned int is run number
 
       JCalibration *jcalib;
       float uscale[192],vscale[192];
