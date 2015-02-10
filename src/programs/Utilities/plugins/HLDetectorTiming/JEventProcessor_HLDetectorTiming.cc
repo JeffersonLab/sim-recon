@@ -50,12 +50,14 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
     REQUIRE_BEAM = 1;
     BEAM_EVENTS_TO_KEEP = 1000000000; // Set enormously high
     DO_ROUGH_TIMING = 0;
+    DO_CDC_TIMING = 0;
     DO_TDC_ADC_ALIGN = 0;
     DO_TRACK_BASED = 0;
     DO_VERIFY = 1;
 
     if(gPARMS){
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_ROUGH_TIMING", DO_ROUGH_TIMING, "Set to > 0 to do rough timing of all detectors");
+        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_CDC_TIMING", DO_CDC_TIMING, "Set to > 0 to do CDC Per channel Alignment");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_TDC_ADC_ALIGN", DO_TDC_ADC_ALIGN, "Set to > 0 to do TDC/ADC alignment of SC,TOF,TAGM,TAGH");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_TRACK_BASED", DO_TRACK_BASED, "Set to > 0 to do Track Based timing corrections");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_VERIFY", DO_VERIFY, "Set to > 0 to verify timing with current constants");
@@ -64,7 +66,7 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
     }
     
     // Would like the code with no arguments to simply verify the current status of the calibration
-    if (DO_ROUGH_TIMING > 0 || DO_TDC_ADC_ALIGN > 0 || DO_TRACK_BASED > 0) DO_VERIFY = 0;
+    if (DO_ROUGH_TIMING > 0 || DO_CDC_TIMING > 0 || DO_TDC_ADC_ALIGN > 0 || DO_TRACK_BASED > 0) DO_VERIFY = 0;
 
     return NOERROR;
 }
@@ -228,6 +230,13 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
     for (i = 0; i < cdcHitVector.size(); i++){
         Fill1DHistogram ("HLDetectorTiming", "CDC", "CDCHit time", cdcHitVector[i]->t, 
                 "CDCHit time", nBins, xMin, xMax);
+        if(DO_VERIFY || DO_CDC_TIMING){
+            int nStraws = 3522;
+            Fill2DHistogram("HLDetectorTiming", "CDC", "CDCHit time per Straw Raw", 
+                    cdcHitVector[i]->t, GetCCDBIndexCDC(cdcHitVector[i]),
+                    "Hit time for each CDC wire; t [ns]; CCDB Index",
+                    750, -500, 1000, nStraws, 0.5, nStraws + 0.5);
+        }
     }
 
     for (i = 0; i < fdcHitVector.size(); i++){
@@ -418,7 +427,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
     // Certainly good enough to take a pass at the time based tracking
     // This will be the final alignment step for now
 
-    if (!DO_TRACK_BASED && !DO_VERIFY) return NOERROR; // Before this stage we aren't really ready yet, so just return
+    if (!DO_TRACK_BASED && !DO_VERIFY && !DO_CDC_TIMING) return NOERROR; // Before this stage we aren't really ready yet, so just return
 
     vector<const DTrackTimeBased *> timeBasedTrackVector;
     loop->Get(timeBasedTrackVector);
@@ -437,6 +446,33 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
 
         if(thisTrack->FOM < trackingFOMCut) continue;
         if(thisTrack->Ndof < trackingNDFCut) continue;
+
+        
+        // Do CDC Fine timing with these tracks (Requires a lot of statistics)
+        if (DO_VERIFY || DO_CDC_TIMING){
+            const vector<DTrackFitter::pull_t> *pulls = &thisTrack->pulls;
+
+            for (unsigned int iPull = 0; iPull < pulls->size(); iPull++){
+                if ((*pulls)[iPull].cdc_hit == NULL) continue;
+                int ring = (*pulls)[iPull].cdc_hit->wire->ring;
+                int straw = (*pulls)[iPull].cdc_hit->wire->straw;
+
+                double tdrift = (*pulls)[iPull].tdrift;
+                double residual = (*pulls)[iPull].resi;
+                int nStraws = 3522;
+                int CCDBIndex = GetCCDBIndexCDC(ring, straw);
+                Fill2DHistogram("HLDetectorTiming", "CDC", "CDC Drift time per Straw",
+                    tdrift, CCDBIndex,
+                    "Drift time for each CDC wire (flight time/B-field corr.); t [ns]; CCDB Index",
+                    750, -500, 1000, nStraws, 0.5, nStraws + 0.5);
+                Fill2DHistogram("HLDetectorTiming", "CDC", "CDC Residual Vs Drift Time",
+                        tdrift, residual,
+                        "CDC Residual Vs Drift time; Drift time [ns]; Residual [cm]",
+                        1020,-20, 1000, 200, -0.1, 0.1);
+            }
+        }
+        
+
         // For calibration of the timing, we might as well just look at the negatively charged tracks 
         // Should reject proton candidates
         // Will move this cut to later, statistics are lacking for Tagger SC alignment.
@@ -525,7 +561,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             Fill2DHistogram("HLDetectorTiming", "TRACKING", "BCAL - SC Target Time Vs Correction",
                     locBCALShowerMatchParams.dFlightTime, flightTimeCorrectedBCALTime - flightTimeCorrectedSCTime,
                     "t_{BCAL} - t_{SC} at Target; Flight time [ns]; t_{BCAL} - t_{SC} [ns]",
-                    25, 0, 25, 100, -50, 50);
+                    100, 0, 20, 50, -10, 10);
         }
         if (foundFCAL){
             float flightTimeCorrectedFCALTime = locFCALShowerMatchParams.dFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime;
@@ -583,7 +619,7 @@ void JEventProcessor_HLDetectorTiming::DoRoughTiming(void){
 
     thisHist = Get1DHistogram("HLDetectorTiming", "TAGH", "TAGHHit ADC time");
     if(thisHist != NULL){
-        // In the tagger hodoscope the last few bins with data can be problomatic. Ignore these last few in the fit
+        // In the tagger hodoscope the last few bins with data can be problematic. Ignore these last few in the fit
         Int_t lastBin = thisHist->FindLastBinAbove( 1 , 1); // Find last bin with content above 1 in the histogram
         for (int i = 0; i <= 12; i++){
             if ((lastBin - i) > 0) thisHist->SetBinContent((lastBin - i), 0);
@@ -652,23 +688,23 @@ void JEventProcessor_HLDetectorTiming::DoRoughTiming(void){
     outFile.open("sc_base_time.txt");
     outFile << SC_ADC_Offset << " " << SC_TDC_Offset << endl;
     outFile.close();
-/*
-    float BCAL_ADC_Offset = 0, BCAL_TDC_Offset = 0;
-    thisHist = Get1DHistogram("HLDetectorTiming", "BCAL", "BCALHit time");
-    if(thisHist != NULL){
-        //Fit a gaussian, choose start time mean - 3sigma    
-        Double_t maximum = thisHist->GetBinCenter(thisHist->GetMaximumBin());
-        TFitResultPtr fr = thisHist->Fit("gaus", "S", "", maximum - 50, maximum + 50);
-        float mean = fr->Parameter(1);
-        float sigma = fr->Parameter(2);
-        BCAL_ADC_Offset = mean - 3*sigma;
+    /*
+       float BCAL_ADC_Offset = 0, BCAL_TDC_Offset = 0;
+       thisHist = Get1DHistogram("HLDetectorTiming", "BCAL", "BCALHit time");
+       if(thisHist != NULL){
+    //Fit a gaussian, choose start time mean - 3sigma    
+    Double_t maximum = thisHist->GetBinCenter(thisHist->GetMaximumBin());
+    TFitResultPtr fr = thisHist->Fit("gaus", "S", "", maximum - 50, maximum + 50);
+    float mean = fr->Parameter(1);
+    float sigma = fr->Parameter(2);
+    BCAL_ADC_Offset = mean - 3*sigma;
     }
 
     BCAL_ADC_Offset *= -1;
     outFile.open("bcal_base_time.txt");
     outFile << BCAL_ADC_Offset << " " << BCAL_TDC_Offset << endl;
     outFile.close();
-*/
+    */
     float CDC_ADC_Offset = 0.0;
     thisHist = Get1DHistogram("HLDetectorTiming", "CDC", "CDCHit time");
     if(thisHist != NULL){
@@ -708,22 +744,22 @@ void JEventProcessor_HLDetectorTiming::DoRoughTiming(void){
     outFile.open("fdc_base_time.txt");
     outFile << FDC_ADC_Offset << " " << FDC_TDC_Offset << endl;
     outFile.close();
-/*
-    float FCAL_ADC_Offset = 0.0;
-    thisHist = Get1DHistogram("HLDetectorTiming", "FCAL", "FCALHit time");
-    if(thisHist != NULL){
-        Double_t maximum = thisHist->GetBinCenter(thisHist->GetMaximumBin());
-        TFitResultPtr fr = thisHist->Fit("gaus", "S", "", maximum - 20, maximum + 20);
-        float mean = fr->Parameter(1);
-        float sigma = fr->Parameter(2);
-        FCAL_ADC_Offset = mean - 3*sigma;
-    }
+    /*
+       float FCAL_ADC_Offset = 0.0;
+       thisHist = Get1DHistogram("HLDetectorTiming", "FCAL", "FCALHit time");
+       if(thisHist != NULL){
+       Double_t maximum = thisHist->GetBinCenter(thisHist->GetMaximumBin());
+       TFitResultPtr fr = thisHist->Fit("gaus", "S", "", maximum - 20, maximum + 20);
+       float mean = fr->Parameter(1);
+       float sigma = fr->Parameter(2);
+       FCAL_ADC_Offset = mean - 3*sigma;
+       }
 
-    FCAL_ADC_Offset *= -1;
-    outFile.open("fcal_base_time.txt");
-    outFile << FCAL_ADC_Offset << endl;
-    outFile.close();
-*/
+       FCAL_ADC_Offset *= -1;
+       outFile.open("fcal_base_time.txt");
+       outFile << FCAL_ADC_Offset << endl;
+       outFile.close();
+       */
     float TOF_ADC_Offset = 0.0, TOF_TDC_Offset = 0.0;
     thisHist = Get1DHistogram("HLDetectorTiming", "TOF", "TOFHit ADC time");
     if(thisHist != NULL){
@@ -767,6 +803,8 @@ void JEventProcessor_HLDetectorTiming::DoTDCADCAlign(void){
         outFile.open("sc_tdc_timing_offsets.txt");
         for (int i = 1; i <= nbins; i++){
             double mean = meanHist->GetBinContent(i);
+            // Don't allow any large outliers if the fit fails
+            if (fabs(mean) > 10.0) mean = 0.0;
             outFile << mean + sc_tdc_time_offsets[i - 1] << endl; // Vector indexed from zero
         }
         outFile.close();
@@ -781,6 +819,8 @@ void JEventProcessor_HLDetectorTiming::DoTDCADCAlign(void){
         outFile.open("tof_tdc_timing_offsets.txt");
         for (int i = 1; i <= nbins; i++){
             double mean = meanHist->GetBinContent(i);
+            // Don't allow any large outliers if the fit fails
+            if (fabs(mean) > 10.0) mean = 0.0;
             outFile << mean + tof_tdc_time_offsets[i - 1]<< endl; // Vector indexed from zero
         }
         outFile.close();
@@ -974,5 +1014,23 @@ int JEventProcessor_HLDetectorTiming::GetCCDBIndexTOF(const DTOFHit *thisHit){
 
 int JEventProcessor_HLDetectorTiming::GetCCDBIndexBCAL(const DBCALHit *thisHit){
     return 0;
+}
+
+int JEventProcessor_HLDetectorTiming::GetCCDBIndexCDC(const DCDCHit *thisHit){
+
+    int ring = thisHit->ring;
+    int straw = thisHit->straw;
+
+    int CCDBIndex = GetCCDBIndexCDC(ring, straw);
+    return CCDBIndex;
+}
+
+int JEventProcessor_HLDetectorTiming::GetCCDBIndexCDC(int ring, int straw){
+
+    //int Nstraws[28] = {42, 42, 54, 54, 66, 66, 80, 80, 93, 93, 106, 106, 123, 123, 135, 135, 146, 146, 158, 158, 170, 170, 182, 182, 197, 197, 209, 209};
+    int StartIndex[28] = {0, 42, 84, 138, 192, 258, 324, 404, 484, 577, 670, 776, 882, 1005, 1128, 1263, 1398, 1544, 1690, 1848, 2006, 2176, 2346, 2528, 2710, 2907, 3104, 3313};
+
+    int CCDBIndex = StartIndex[ring - 1] + straw;
+    return CCDBIndex;
 }
 

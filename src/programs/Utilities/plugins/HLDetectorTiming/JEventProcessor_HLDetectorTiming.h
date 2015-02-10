@@ -19,6 +19,7 @@
 #include <TAGGER/DTAGHHit.h>
 #include <TAGGER/DTAGMHit.h>
 #include <PID/DParticleID.h>
+#include <TRACKING/DTrackFitter.h>
 
 #include "TFitResult.h"
 #include "TF1.h"
@@ -51,11 +52,12 @@ class JEventProcessor_HLDetectorTiming:public jana::JEventProcessor{
 
         int GetCCDBIndexTOF(const DTOFHit *);
         int GetCCDBIndexBCAL(const DBCALHit *); ///< Not implimented
-
+        int GetCCDBIndexCDC(const DCDCHit *);
+        int GetCCDBIndexCDC(int, int);
         double BEAM_CURRENT;
-        int DO_ROUGH_TIMING, DO_TDC_ADC_ALIGN, DO_TRACK_BASED, DO_VERIFY, REQUIRE_BEAM, BEAM_EVENTS_TO_KEEP;
+        int DO_ROUGH_TIMING, DO_TDC_ADC_ALIGN, DO_TRACK_BASED, DO_VERIFY, REQUIRE_BEAM, BEAM_EVENTS_TO_KEEP, DO_CDC_TIMING;
         int fBeamEventCounter;
-        // The final setp requires some shifts relative to the previous values, need to store them
+        // The final setup requires some shifts relative to the previous values, need to store them
 
         double fcal_t_base, bcal_t_base, tof_t_base_fadc, tof_t_base_tdc;
         double tagm_fadc_time_offsets[103], tagm_tdc_time_offsets[103];
