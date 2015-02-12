@@ -15,7 +15,12 @@
         </product>
       </vertex>
     </reaction>
+    <!-- taggerHit for backwards compatibility only (replaced by tagmHit and taghHit) -->
     <taggerHit maxOccurs="unbounded" minOccurs="0" jtag="string"
+                t="float" E="float" tunit="ns" Eunit="GeV"/>
+    <tagmBeamPhoton maxOccurs="unbounded" minOccurs="0" jtag="string"
+                t="float" E="float" tunit="ns" Eunit="GeV"/>
+    <taghBeamPhoton maxOccurs="unbounded" minOccurs="0" jtag="string"
                 t="float" E="float" tunit="ns" Eunit="GeV"/>
     <fcalShower minOccurs="0" maxOccurs="unbounded" jtag="string"
                 x="float" y="float" z="float" t="float" E="float"
@@ -41,6 +46,8 @@
                                                     e44="float" e45="float"
                                                                 e55="float"
                 punit="GeV/c" lunit="cm" tunit="ns"/>
+      <hitlayers maxOccurs="1" minOccurs="0" CDCrings="int" FDCplanes="int"/>
+      <mcmatch maxOccurs="1" minOccurs="0" ithrown="int" numhitsmatch="int"/> <!-- ithrown is DMCThrown::myid -->
       <dEdxDC minOccurs="0"
               NsampleFDC="int" dxFDC="float" dEdxFDC="float"
               NsampleCDC="int" dxCDC="float" dEdxCDC="float"
@@ -51,7 +58,15 @@
               tunit="ns" Eunit="GeV"/>
     <tofPoint maxOccurs="unbounded" minOccurs="0" jtag="string"
               x="float" y="float" z="float" t="float" dE="float" terr="float"
-              lunit="cm" tunit="ns" Eunit="GeV"/>
+              lunit="cm" tunit="ns" Eunit="GeV">
+      <!-- 
+         tofStatus = horizontal_bar + 45*vertical_bar + 45*4*horizontal_status + 45*4*4*vertical_status
+         *_bar = 0 -> 44 (0 for none (not matched to this plane))
+         *_Status: 0 if no hit (not matched to this plane), 1 if only North hit above threshold, 2 if only South hit above threshold, 3 if both hits above threshold
+         Note that if it's a single-ended bar, the status cannot be 3. 
+      -->
+      <tofStatus maxOccurs="1" minOccurs="0" status="int"/>
+    </tofPoint>
     <RFtime minOccurs="0" jtag="string"
             tsync="float" tunit="ns"/>
     <trigger minOccurs="0" jtag="string"
@@ -69,25 +84,40 @@
           3) shower = "bcalShower"/"fcalShower" object index in file (starting at 0). 
           4) tflightPCorrelations::system = DetectorSystem_t
       -->
+      <!-- bcalMatchParams for backwards compatibility only (replaced by bcalMatchParams_v2) -->
       <bcalMatchParams maxOccurs="unbounded" minOccurs="0"
                 track="int" shower="int"
                 dx="float" doca="float" pathlength="float" tflight="float" tflightvar="float"
+                tunit="ns" lunit="cm"/>
+      <bcalMatchParams_v2 maxOccurs="unbounded" minOccurs="0"
+                track="int" shower="int"
+                dx="float" deltaphi="float" deltaz="float" pathlength="float" tflight="float" tflightvar="float"
                 tunit="ns" lunit="cm"/>
       <fcalMatchParams maxOccurs="unbounded" minOccurs="0"
                 track="int" shower="int"
                 dx="float" doca="float" pathlength="float" tflight="float" tflightvar="float"
                 tunit="ns" lunit="cm"/>
+      <!-- tofMatchParams for backwards compatibility only (replaced by tofMatchParams_v2) -->
       <tofMatchParams maxOccurs="unbounded" minOccurs="0"
                 track="int" hit="int"
                 dEdx="float" doca="float" pathlength="float" tflight="float" tflightvar="float"
+                tunit="ns" lunit="cm" dEdx_unit="GeV/cm"/>
+      <tofMatchParams_v2 maxOccurs="unbounded" minOccurs="0"
+                track="int" hit="int"
+                dEdx="float" thit="float" thitvar="float" ehit="float"
+                deltax="float" deltay="float" pathlength="float" tflight="float" tflightvar="float"
                 tunit="ns" lunit="cm" dEdx_unit="GeV/cm"/>
       <scMatchParams maxOccurs="unbounded" minOccurs="0"
                 track="int" hit="int"
                 dEdx="float" thit="float" thitvar="float" ehit="float"
                 pathlength="float" tflight="float" tflightvar="float" deltaphi="float"
                 tunit="ns" lunit="cm" aunit="rad" Eunit="GeV" dEdx_unit="GeV/cm"/>
+      <!-- bcalDOCAtoTrack for backwards compatibility only (replaced by bcalDOCAtoTrack_v2) -->
       <bcalDOCAtoTrack maxOccurs="unbounded" minOccurs="0"
                 shower="int" doca="float"
+                lunit="cm"/>
+      <bcalDOCAtoTrack_v2 maxOccurs="unbounded" minOccurs="0"
+                shower="int" deltaphi="float" deltaz="float"
                 lunit="cm"/>
       <fcalDOCAtoTrack maxOccurs="unbounded" minOccurs="0"
                 shower="int" doca="float"

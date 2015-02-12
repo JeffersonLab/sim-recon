@@ -8,9 +8,15 @@
 #include "DTrackFinder.h"
 
 #define CDC_MATCH_RADIUS 5.0
+#define CDC_STEREO_MATCH_CUT 10.0
+
+
+bool DTrackFinder_cdc_hit_cosmics_cmp(const DCDCTrackHit *a,const DCDCTrackHit *b){
+  return(a->wire->origin.Y()>b->wire->origin.Y());
+}
 
 bool DTrackFinder_cdc_hit_cmp(const DCDCTrackHit *a,const DCDCTrackHit *b){
-  return(a->wire->origin.Y()>b->wire->origin.Y());
+  return (a->wire->ring<b->wire->ring);
 }
 
 bool DTrackFinder_fdc_hit_cmp(const DTrackFinder::fdc_hit_t &a,
@@ -24,7 +30,8 @@ bool DTrackFinder_fdc_hit_cmp(const DTrackFinder::fdc_hit_t &a,
 //---------------------------------
 DTrackFinder::DTrackFinder(JEventLoop *loop)
 {
- 
+  COSMICS=false;
+  gPARMS->SetDefaultParameter("TRKFIND:COSMICS",COSMICS);
 }
 
 //---------------------------------
@@ -39,11 +46,25 @@ void DTrackFinder::Reset(void){
    
   axial_hits.clear();
   stereo_hits.clear();
+
+  for (unsigned int i=0;i<axial_segments.size();i++){
+    axial_segments[i].hits.clear();
+  }    
   axial_segments.clear();
+
+  for (unsigned int i=0;i<cdc_tracks.size();i++){
+    cdc_tracks[i].axial_hits.clear();
+    cdc_tracks[i].stereo_hits.clear();
+  }
   cdc_tracks.clear();
 
   fdc_hits.clear();
-  for (unsigned int i=0;i<4;i++) fdc_segments[i].clear();
+  for (unsigned int i=0;i<4;i++){
+    for (unsigned int j=0;j<fdc_segments[i].size();j++){
+      fdc_segments[i][j].hits.clear();
+    }
+    fdc_segments[i].clear();
+  }
   fdc_tracks.clear();
 
 }
@@ -124,9 +145,13 @@ bool DTrackFinder::FindAxialSegments(void){
 	}
 	old=j;
       }
- 
-      sort(neighbors.begin(),neighbors.end(),DTrackFinder_cdc_hit_cmp);
-
+      if (COSMICS){
+	sort(neighbors.begin(),neighbors.end(),DTrackFinder_cdc_hit_cosmics_cmp);
+      }
+      else{
+	sort(neighbors.begin(),neighbors.end(),DTrackFinder_cdc_hit_cmp);
+      }
+	
       DVector3 dir=neighbors[neighbors.size()-1]->wire->origin
 	-neighbors[0]->wire->origin;
       dir.SetMag(1.);
@@ -146,7 +171,7 @@ bool DTrackFinder::FindAxialSegments(void){
 bool DTrackFinder::LinkCDCSegments(void){
   unsigned int num_axial=axial_segments.size();
   if (num_axial<1) return false;
-  for (unsigned int i=0;i<num_axial-1;i++){
+  for (unsigned int i=0;i<num_axial;i++){
     if (axial_segments[i].matched==false){
       DTrackFinder::cdc_track_t mytrack(axial_segments[i].hits);
 
@@ -166,8 +191,14 @@ bool DTrackFinder::LinkCDCSegments(void){
 	    mytrack.axial_hits.insert(mytrack.axial_hits.end(),
 				  axial_segments[j].hits.begin(),
 				  axial_segments[j].hits.end());
-	    sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
-		 DTrackFinder_cdc_hit_cmp);
+	    if (COSMICS){
+	      sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
+		   DTrackFinder_cdc_hit_cosmics_cmp);
+	    }
+	    else{
+	      sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
+		   DTrackFinder_cdc_hit_cmp);
+	    }
 	    
 	    vhat=mytrack.axial_hits[mytrack.axial_hits.size()-1]->wire->origin
 	      -mytrack.axial_hits[0]->wire->origin;
@@ -191,8 +222,14 @@ bool DTrackFinder::LinkCDCSegments(void){
       }
       // Resort if we added axial hits and recompute direction vector
       if (got_match){
-	sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
-	     DTrackFinder_cdc_hit_cmp);
+	if (COSMICS){
+	  sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
+	       DTrackFinder_cdc_hit_cosmics_cmp);
+	}
+	else{
+	  sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
+	       DTrackFinder_cdc_hit_cmp);
+	}
 	
 	vhat=mytrack.axial_hits[mytrack.axial_hits.size()-1]->wire->origin
 	  -mytrack.axial_hits[0]->wire->origin;
@@ -236,7 +273,7 @@ bool DTrackFinder::MatchCDCHit(const DVector3 &vhat,const DVector3 &pos0,
   double t=scale*(diff.Dot(vhat)-vhat_dot_uhat*diff.Dot(uhat));
   double d=(diff+s*uhat-t*vhat).Mag();
 
-  if (d<CDC_MATCH_RADIUS) return true;
+  if (d<CDC_STEREO_MATCH_CUT) return true;
 
   return false;
 }
@@ -265,7 +302,8 @@ jerror_t DTrackFinder::cdc_track_t::FindStateVector(void){
     DVector3 pos1=origin_s+s*dir_s;
     double x=pos1.x(),y=pos1.y(),z=pos1.z();
     
-    if (z>17.0 && z<167.0){ // Check for CDC dimensions
+    if (z>17.0 && z<167.0)
+      { // Check for CDC dimensions
       sumv+=1.;
       sumx+=x;
       sumxx+=x*x;
@@ -276,7 +314,7 @@ jerror_t DTrackFinder::cdc_track_t::FindStateVector(void){
       sumyz+=y*z;
     }
   }
-  const double EPS=1e-3;
+  const double EPS=1e-4;
   double xdenom=sumv*sumxz-sumx*sumz;
   if (fabs(xdenom)<EPS) return VALUE_OUT_OF_RANGE;
  
@@ -306,6 +344,33 @@ jerror_t DTrackFinder::cdc_track_t::FindStateVector(void){
 
 }
 
+// Given two straight tracks, find the doca between them
+double DTrackFinder::FindDoca(const DVector3 &pos1,const DVector3 &mom1,
+			      const DVector3 &pos2,const DVector3 &mom2,
+			      DVector3 *poca) const{
+  DVector3 diff=pos1-pos2;
+  DVector3 uhat=mom1;
+  uhat.SetMag(1.);
+  DVector3 vhat=mom2;
+  vhat.SetMag(1.);
+
+  double vhat_dot_diff=diff.Dot(vhat);
+  double uhat_dot_diff=diff.Dot(uhat);
+  double uhat_dot_vhat=uhat.Dot(vhat);
+  double D=1.-uhat_dot_vhat*uhat_dot_vhat;
+  double N=uhat_dot_vhat*vhat_dot_diff-uhat_dot_diff;
+  double N1=vhat_dot_diff-uhat_dot_vhat*uhat_dot_diff;
+  double scale=1./D;
+  double s=scale*N;
+  double t=scale*N1;
+  
+  if (poca!=NULL) *poca=pos1+s*uhat;
+
+  diff+=s*uhat-t*vhat;
+  return diff.Mag();
+}
+
+
 // Given state vector S, find doca to wire given by origin and wdir
 double DTrackFinder::FindDoca(double z,const DMatrix4x1 &S,const DVector3 &wdir,
 			      const DVector3 &origin,DVector3 *poca) const{
@@ -315,7 +380,7 @@ double DTrackFinder::FindDoca(double z,const DMatrix4x1 &S,const DVector3 &wdir,
   DVector3 uhat(S(state_tx),S(state_ty),1.);
   uhat.SetMag(1.); 
   DVector3 vhat=wdir;
-  //  vhat.SetMag(1.);
+  vhat.SetMag(1.);
 
   double vhat_dot_diff=diff.Dot(vhat);
   double uhat_dot_diff=diff.Dot(uhat);
@@ -649,3 +714,50 @@ DTrackFinder::fdc_segment_t::FindStateVector(void) const {
 
   return DMatrix4x1(x_intercept,y_intercept,x_slope,y_slope);
 }
+
+// Find intersection between a straight line and a plane
+bool DTrackFinder::FindIntersectionWithPlane(const DVector3 &origin,
+					     const DVector3 &norm,
+					     const DVector3 &pos,
+					     const DVector3 &dir,
+					     DVector3 &outpos) const{
+  DVector3 mydir(dir);
+  mydir.SetMag(1.);
+  double dot=mydir.Dot(norm);
+  if (fabs(dot)<1e-16) return false; // parallel lines
+  double s=(origin-pos).Dot(norm)/dot;
+  outpos=pos+s*mydir;
+
+  return true;
+}
+
+
+// Find the intersections between a straight line and a cylinder of radius R
+bool DTrackFinder::FindIntersectionsWithCylinder(double R,
+						 const DVector3 &dir,
+						 const DVector3 &pos,
+						 DVector3 &out1,
+						 DVector3 &out2) const{
+  double denom=dir.Mag();
+  double ux=dir.x()/denom;
+  double uy=dir.y()/denom;
+  double uz=dir.z()/denom;
+  double ux2=ux*ux;
+  double uy2=uy*uy;
+  double ux2_plus_uy2=ux2+uy2;
+  double x0=pos.x();
+  double y0=pos.y();
+  double z0=pos.z();
+  double A=ux2_plus_uy2*R*R-uy2*x0*x0-ux2*y0*y0+2.*ux*uy*x0*y0;
+  if (A<0) return false;
+
+  double t0=-(x0*ux+y0*uy)/ux2_plus_uy2;
+  double dt=sqrt(A)/ux2_plus_uy2;
+  double tplus=t0+dt;
+  out1.SetXYZ(x0+ux*tplus,y0+uy*tplus,z0+uz*tplus);
+  double tminus=t0-dt;
+  out2.SetXYZ(x0+ux*tminus,y0+uy*tminus,z0+uz*tminus);
+
+  return true;
+}
+						

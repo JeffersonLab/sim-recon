@@ -16,7 +16,7 @@ bool static DParticleID_dedx_cmp(DParticleID::dedx_t a,DParticleID::dedx_t b){
   return a.dEdx < b.dEdx;
 }
 
-// Routine for sorting hypotheses according to FOM
+// Routine for sorting hypotheses accorpding to FOM
 bool static DParticleID_hypothesis_cmp(const DTrackTimeBased *a,
 				       const DTrackTimeBased *b){
   return (a->FOM>b->FOM);
@@ -56,45 +56,88 @@ DParticleID::DParticleID(JEventLoop *loop)
   dLnI_Scint = rho_Z_over_A_LnI/dRhoZoverA_Scint;
   dKRhoZoverA_Scint = 0.1535E-3*dRhoZoverA_Scint;
 
-	// Get the geometry
-	DGeometry* locGeometry = dapp->GetDGeometry(loop->GetJEvent().GetRunNumber());
+  // Get the geometry
+  DGeometry* locGeometry = dapp->GetDGeometry(loop->GetJEvent().GetRunNumber());
 
-	// Check if Start Counter geometry is present
-	vector<double> sc_origin;
-	bool got_sc = locGeometry->Get("//posXYZ[@volume='StartCntr']/@X_Y_Z", sc_origin);
-	if(got_sc)
-	{
-		double num_paddles;
-		locGeometry->Get("//mposPhi[@volume='STRC']/@ncopy",num_paddles); 
-		dSCdphi = M_TWO_PI/num_paddles;
+  // Check if Start Counter geometry is present
+  vector<double> sc_origin;
+  bool got_sc = locGeometry->Get("//posXYZ[@volume='StartCntr']/@X_Y_Z", sc_origin);
+  if(got_sc){
+    // z-position at upstream face of scintillators.
+    double z0=sc_origin[2];
+
+    // Get rotation angles
+    vector<double>sc_rot_angles;
+    locGeometry->Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
+    double ThetaX=sc_rot_angles[0]*M_PI/180.;
+    double ThetaY=sc_rot_angles[1]*M_PI/180.;  
+    double ThetaZ=sc_rot_angles[2]*M_PI/180.;
+    //ThetaX=0.;
+    //ThetaY=0.;
+
+    double num_paddles;
+    locGeometry->Get("//mposPhi[@volume='STRC']/@ncopy",num_paddles); 
+    dSCdphi = M_TWO_PI/num_paddles;
 		
-		double Phi0;
-		locGeometry->Get("///mposPhi[@volume='STRC']/@Phi0",Phi0);
-		dSCphi0 = Phi0*M_PI/180.;
+    double Phi0;
+    locGeometry->Get("///mposPhi[@volume='STRC']/@Phi0",Phi0);
+    dSCphi0 =Phi0*M_PI/180.;
+    
+    vector<vector<double> > sc_rioz;
+    locGeometry->GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
 
-		vector<vector<double> > sc_rioz;
-		locGeometry->GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
+    // Create vectors of positions and normal vectors for each paddle
+    for (unsigned int i=0;i<30;i++){
+      double phi=dSCphi0+dSCdphi*double(i);
+      double sinphi=sin(phi);
+      double cosphi=cos(phi);
+      double r=0.5*(sc_rioz[0][0]+sc_rioz[0][1]);
+      DVector3 oldray;
+      // Rotate by phi and take into account the tilt
+      DVector3 ray(r*cosphi,r*sinphi,sc_rioz[0][2]);
+      ray.RotateX(ThetaX);
+      ray.RotateY(ThetaY);
+      ray.RotateZ(ThetaZ);
 
-		for(unsigned int k = 0; k < sc_rioz.size() - 1; ++k)
-		{
-			if(sc_origin.size() < 3)
-				continue; // in case start counter is comment out in XML
-			if(sc_rioz[k].size() < 3)
-				continue; // in case start counter is comment out in XML
-			DVector3 pos((sc_rioz[k][0]+sc_rioz[k][1])/2.,0.,sc_rioz[k][2]+sc_origin[2]);
-			DVector3 dir(sc_rioz[k+1][2]-sc_rioz[k][2],0,-sc_rioz[k+1][0]+sc_rioz[k][0]);
-			dir.SetMag(1.);
+      // Create stl-vectors to store positions and norm vectors
+      vector<DVector3>posvec;
+      vector<DVector3>dirvec;
+      // Loop over radial/z positions describing start counter geometry from xml
+      for(unsigned int k = 1; k < sc_rioz.size(); ++k){
+	oldray=ray;
+	r=0.5*(sc_rioz[k][0]+sc_rioz[k][1]);
+	// Point in midplane of scintillator
+	ray.SetXYZ(r*cosphi,r*sinphi,sc_rioz[k][2]);
+	// Second point in the plane of the scintillator
+	DVector3 ray2(r*cosphi-10.0*sinphi,r*sinphi+10.0*cosphi,sc_rioz[k][2]);
+	// Take into account tilt
+	ray.RotateX(ThetaX);
+	ray.RotateY(ThetaY);
+	ray.RotateZ(ThetaZ);
+	ray2.RotateX(ThetaX);
+	ray2.RotateY(ThetaY);
+	ray2.RotateZ(ThetaZ);
+	// Store one position on current plane
+	posvec.push_back(DVector3(oldray.X(),oldray.Y(),oldray.Z()+z0));
+	// Compute normal vector to plane
+	DVector3 dir=(ray-oldray).Cross(ray2-oldray);
+	dir.SetMag(1.);
+	dirvec.push_back(dir);		
+      }
+      sc_pos.push_back(posvec);
+      sc_norm.push_back(dirvec);
+		  
+      posvec.clear();
+      dirvec.clear();
+    }
 
-			sc_pos.push_back(pos);
-			sc_norm.push_back(dir);		
-		}
 	
 		// in case start counter is comment out in XML
 		if(!sc_pos.empty())
 		{
 			// sc_leg_tcor=(sc_light_guide[2]-sc_pos[0].z())/C_EFFECTIVE;
-			sc_leg_tcor = -sc_pos[0].z()/C_EFFECTIVE;
-			double theta = sc_norm[sc_norm.size() - 1].Theta();
+			sc_leg_tcor = -sc_pos[0][0].z()/C_EFFECTIVE;
+			double theta = sc_norm[0][sc_norm.size() - 1].Theta();
 			sc_angle_cor = 1./cos(M_PI - theta);
 		}
 	}
@@ -130,8 +173,37 @@ DParticleID::DParticleID(JEventLoop *loop)
 	BCAL_PHI_CUT_PAR2=1.76e-3;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR2",BCAL_PHI_CUT_PAR2);
 
+	SC_DPHI_CUT=0.21;
+	gPARMS->SetDefaultParameter("SC:DPHI_CUT",SC_DPHI_CUT);
+	
+
 	dTargetZCenter = 0.0;
 	locGeometry->GetTargetZ(dTargetZCenter);
+
+	
+  // Track finder helper class
+  vector<const DTrackFinder *> finders;
+  loop->Get(finders);
+
+  if(finders.size()<1){
+    _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
+    return;
+  }
+
+  finder = finders[0];
+
+	//TOF calibration constants & geometry
+	if(loop->GetCalib("TOF/propagation_speed", propagation_speed))
+		jout << "Error loading /TOF/propagation_speed !" << endl;
+
+	map<string, double> tofparms;
+ 	loop->GetCalib("TOF/tof_parms", tofparms);
+	TOF_ATTEN_LENGTH = tofparms["TOF_ATTEN_LENGTH"];
+
+	loop->GetSingle(dTOFGeometry);
+	double locHalfPaddle_OneSided = dTOFGeometry->SHORTBARLENGTH/2.0; //GET FROM GEOMETRY??
+	double locBeamHoleWidth = dTOFGeometry->LONGBARLENGTH - 2.0*dTOFGeometry->SHORTBARLENGTH;
+	ONESIDED_PADDLE_MIDPOINT_MAG = locHalfPaddle_OneSided + locBeamHoleWidth/2.0;
 }
 
 // Group fitted tracks according to candidate id
@@ -160,6 +232,7 @@ jerror_t DParticleID::GroupTracks(vector<const DTrackTimeBased *> &tracks,
   // Final set
   sort(hypotheses.begin(),hypotheses.end(),DParticleID_hypothesis_cmp);
   grouped_tracks.push_back(hypotheses);
+
 
   return NOERROR;
 }
@@ -217,10 +290,12 @@ jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>
   return NOERROR;
 }
 
-jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const{
+jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const
+{
 	vector<dedx_t> locdEdxHits_CDC, locdEdxHits_FDC;
 	jerror_t locReturnStatus = GetDCdEdxHits(locTrackTimeBased, locdEdxHits_CDC, locdEdxHits_FDC);
-	if(locReturnStatus != NOERROR){
+	if(locReturnStatus != NOERROR)
+	{
 		locdEdx_FDC = numeric_limits<double>::quiet_NaN();
 		locdx_FDC = numeric_limits<double>::quiet_NaN();
 		locNumHitsUsedFordEdx_FDC = 0;
@@ -232,12 +307,15 @@ jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, doubl
 	return CalcDCdEdx(locTrackTimeBased, locdEdxHits_CDC, locdEdxHits_FDC, locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC, locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC);
 }
 
-jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const{
+jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const
+	{
 	locdx_CDC = 0.0;
 	locdEdx_CDC = 0.0;
 	locNumHitsUsedFordEdx_CDC = locdEdxHits_CDC.size()/2;
-	if(locNumHitsUsedFordEdx_CDC > 0){
-		for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_CDC; ++loc_i){
+	if(locNumHitsUsedFordEdx_CDC > 0)
+	{
+		for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_CDC; ++loc_i)
+		{
 			locdEdx_CDC += locdEdxHits_CDC[loc_i].dE; //weight is ~ #e- (scattering sites): dx!
 			locdx_CDC += locdEdxHits_CDC[loc_i].dx;
 		}
@@ -247,8 +325,10 @@ jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const
 	locdx_FDC = 0.0;
 	locdEdx_FDC = 0.0;
 	locNumHitsUsedFordEdx_FDC = locdEdxHits_FDC.size()/2;
-	if(locNumHitsUsedFordEdx_FDC > 0){
-		for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_FDC; ++loc_i){
+	if(locNumHitsUsedFordEdx_FDC > 0)
+	{
+		for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_FDC; ++loc_i)
+		{
 			locdEdx_FDC += locdEdxHits_FDC[loc_i].dE; //weight is ~ #e- (scattering sites): dx!
 			locdx_FDC += locdEdxHits_FDC[loc_i].dx;
 		}
@@ -362,37 +442,34 @@ void DParticleID::GetScintMPdEandSigma(double p,double M,double x,
 //to be called by track reconstruction
 bool DParticleID::MatchToBCAL(const DReferenceTrajectory* rt, const vector<const DBCALShower*>& locBCALShowers, double& locStartTime, double& locTimeVariance) const
 {
-	double d_min = 9.9E9;
-
 	//Loop over bcal showers
-	bool locMatchFlag = false;
+	vector<DBCALShowerMatchParams> locShowerMatchParamsVector;
 	for(size_t loc_i = 0; loc_i < locBCALShowers.size(); ++loc_i)
 	{
-		DShowerMatchParams locShowerMatchParams;
-		if(!MatchToBCAL(NULL, rt, locBCALShowers[loc_i], locStartTime, locShowerMatchParams))
-			continue;
-		if(locShowerMatchParams.dDOCAToShower >= d_min)
-			continue;
-		d_min = locShowerMatchParams.dDOCAToShower;
-		locStartTime = locBCALShowers[loc_i]->t - locShowerMatchParams.dFlightTime;
-//		locTimeVariance = sqrt(locShowerMatchParams.dFlightTimeVariance) - locBCALShowers[loc_i]->dCovarianceMatrix(4, 4); //uncomment when ready!!
-//		locTimeVariance *= locTimeVariance; //uncomment when ready!!
-		locTimeVariance = 0.5*0.5;
-		locMatchFlag = true;
+		DBCALShowerMatchParams locShowerMatchParams;
+		if(MatchToBCAL(NULL, rt, locBCALShowers[loc_i], locStartTime, locShowerMatchParams))
+			locShowerMatchParamsVector.push_back(locShowerMatchParams);
 	}
+	if(locShowerMatchParamsVector.empty())
+		return false;
 
-	return locMatchFlag;
+	DBCALShowerMatchParams locBestMatchParams;
+	Get_BestBCALMatchParams(rt->swim_steps[0].mom, locShowerMatchParamsVector, locBestMatchParams);
+	locStartTime = locBestMatchParams.dBCALShower->t - locBestMatchParams.dFlightTime;
+//	locTimeVariance = locBestMatchParams.dFlightTimeVariance + locBestMatchParams.dBCALShower->dCovarianceMatrix(4, 4); //uncomment when ready!!
+	locTimeVariance = 0.5*0.5;
+
+	return true;
 }
 
-bool DParticleID::MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, DShowerMatchParams& locShowerMatchParams) const
+bool DParticleID::MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, DBCALShowerMatchParams& locShowerMatchParams) const
 {
 	// NOTE: locTrackTimeBased is NULL if calling from track reconstruction!!!
 	// Get the BCAL cluster position and normal
 	DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z); 
 
 	double locFlightTime = 9.9E9, locPathLength = 9.9E9;
-	double d = rt->DistToRTwithTime(bcal_pos, &locPathLength, 
-					&locFlightTime,SYS_BCAL);
+	double d = rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime, SYS_BCAL);
 
 	if(!isfinite(d))
 		return false;
@@ -402,10 +479,11 @@ bool DParticleID::MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DR
 		return false;
 
 	DVector3 proj_pos = rt->GetLastDOCAPoint();
-	if (proj_pos.Perp()<65.) return false;  // not inside BCAL!
-	
-	double dz = proj_pos.z() - bcal_pos.z();
-	double dphi = proj_pos.Phi() - bcal_pos.Phi();
+	if(proj_pos.Perp() < 65.0)
+		return false;  // not inside BCAL!
+
+	double dz = bcal_pos.z() - proj_pos.z();
+	double dphi = bcal_pos.Phi() - proj_pos.Phi();
 	double p = rt->swim_steps[0].mom.Mag();
 	//dphi += 0.002 + 8.314e-3/(p + 0.3788)/(p + 0.3788);
 	while(dphi >	M_PI)
@@ -417,14 +495,17 @@ bool DParticleID::MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DR
 	if((fabs(dz) >= BCAL_Z_CUT) || (fabs(dphi) >= phi_cut))
 		return false; //not close enough
 
+//	if (locPathLength<0.) _DBG_ << " s " << locPathLength << " t " << locFlightTime <<endl;
+
 	//successful match
 	locShowerMatchParams.dTrackTimeBased = locTrackTimeBased;
-	locShowerMatchParams.dShowerObject = locBCALShower;
+	locShowerMatchParams.dBCALShower = locBCALShower;
 	locShowerMatchParams.dx = 0.0; //SET ME!!!!
 	locShowerMatchParams.dFlightTime = locFlightTime;
 	locShowerMatchParams.dFlightTimeVariance = 0.0; //SET ME!!!!
 	locShowerMatchParams.dPathLength = locPathLength;
-	locShowerMatchParams.dDOCAToShower = d; //DOCA of track to shower
+	locShowerMatchParams.dDeltaPhiToShower = dphi;
+	locShowerMatchParams.dDeltaZToShower = dz;
 
 	return true;
 }
@@ -441,27 +522,24 @@ bool DParticleID::MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DR
 //to be called by track reconstruction
 bool DParticleID::MatchToTOF(const DReferenceTrajectory* rt, const vector<const DTOFPoint*>& locTOFPoints, double& locStartTime, double& locTimeVariance) const
 {
-	double d_min = 9.9E9;
-
 	//Loop over tof points
-	bool locMatchFlag = false;
+	vector<DTOFHitMatchParams> locTOFHitMatchParamsVector;
 	for(size_t loc_i = 0; loc_i < locTOFPoints.size(); ++loc_i)
 	{
 		DTOFHitMatchParams locTOFHitMatchParams;
-		if(!MatchToTOF(NULL, rt, locTOFPoints[loc_i], locStartTime, locTOFHitMatchParams))
-			continue;
-		if(locTOFHitMatchParams.dDOCAToHit >= d_min)
-			continue;
-
-		d_min = locTOFHitMatchParams.dDOCAToHit;
-		locStartTime = locTOFPoints[loc_i]->t - locTOFHitMatchParams.dFlightTime;
-//		locTimeVariance = sqrt(locTOFHitMatchParams.dFlightTimeVariance) - locTOFPoints[loc_i]->tErr; //uncomment when ready!
-//		locTimeVariance *= locTimeVariance; //uncomment when ready!
-		locTimeVariance = 0.1*0.1;
-		locMatchFlag = true;
+		if(MatchToTOF(NULL, rt, locTOFPoints[loc_i], locStartTime, locTOFHitMatchParams))
+			locTOFHitMatchParamsVector.push_back(locTOFHitMatchParams);
 	}
+	if(locTOFHitMatchParamsVector.empty())
+		return false;
 
-	return locMatchFlag;
+	DTOFHitMatchParams locBestMatchParams;
+	Get_BestTOFMatchParams(locTOFHitMatchParamsVector, locBestMatchParams);
+	locStartTime = locBestMatchParams.dHitTime - locBestMatchParams.dFlightTime;
+//	locTimeVariance = locBestMatchParams.dFlightTimeVariance + locBestMatchParams.dHitTimeVariance; //uncomment when ready!
+	locTimeVariance = 0.1*0.1;
+
+	return true;
 }
 
 bool DParticleID::MatchToTOF(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DTOFPoint* locTOFPoint, double locInputStartTime, DTOFHitMatchParams& locTOFHitMatchParams) const
@@ -481,20 +559,106 @@ bool DParticleID::MatchToTOF(const DTrackTimeBased* locTrackTimeBased, const DRe
 	if(fabs(locTOFPoint->t - locFlightTime - locInputStartTime) > OUT_OF_TIME_CUT)
 		return false;
 
-	double d = (tof_pos - proj_pos).Mag();
-	double match_cut = 6.15; //current dPositionMatchCut_DoubleEnded variable in DTOFPoint_factory.cc
-	if(d >= match_cut)
-		return false;
+	//If the position in one dimension is not well-defined, compare distance only in the other direction
+	//Otherwise, cut in R
+	double locMatchCut_1D = 6.15;
+	double locMatchCut_2D = 6.15;
 
-	//successful match
+	double locDeltaX = locTOFPoint->Is_XPositionWellDefined() ? tof_pos.X() - proj_pos.X() : 999.0;
+	double locDeltaY = locTOFPoint->Is_YPositionWellDefined() ? tof_pos.Y() - proj_pos.Y() : 999.0;
+	if(!locTOFPoint->Is_XPositionWellDefined())
+	{
+		//Is unmatched horizontal paddle with only one hit above threshold: Only compare y-distance
+		if(fabs(locDeltaY) > locMatchCut_1D)
+			return false;
+	}
+	else if(!locTOFPoint->Is_YPositionWellDefined())
+	{
+		//Is unmatched vertical paddle with only one hit above threshold: Only compare x-distance
+		if(fabs(locDeltaX) > locMatchCut_1D)
+			return false;
+	}
+	else
+	{
+		//Both are good, cut on R
+		double locDistance = (tof_pos - proj_pos).Perp();
+		if(locDistance > locMatchCut_2D)
+			return false;
+	}
+
+	//SUCCESSFUL MATCH
+
+	//If position was not well-defined, correct deposited energy due to attenuation, and time due to propagation along paddle
+		//These values were reported at the midpoint of the paddle
+	float locHitEnergy = locTOFPoint->dE;
+	double locHitTime = locTOFPoint->t;
+	double locHitTimeVariance = locTOFPoint->tErr*locTOFPoint->tErr;
+	if(!locTOFPoint->Is_XPositionWellDefined())
+	{
+		//Is unmatched horizontal paddle with only one hit above threshold
+		bool locNorthIsGoodHit = (locTOFPoint->dHorizontalBarStatus == 1); //+x
+		int locBar = locTOFPoint->dHorizontalBar;
+		bool locIsDoubleEndedBar = ((locBar < dTOFGeometry->FirstShortBar) || (locBar > dTOFGeometry->LastShortBar));
+
+		//Paddle midpoint
+		double locPaddleMidPoint = 0.0; //is 0 except when is single-ended bar (22 & 23)
+		if(!locIsDoubleEndedBar)
+			locPaddleMidPoint = locNorthIsGoodHit ? ONESIDED_PADDLE_MIDPOINT_MAG : -1.0*ONESIDED_PADDLE_MIDPOINT_MAG;
+
+		//delta_x = delta_x_actual - delta_x_mid
+			//if end.x > 0: delta_x = (end.x - track.x) - (end.x - mid.x) = mid.x - track.x //if track.x > mid.x, delta_x < 0: decrease energy & increase time
+			//if end.x < 0: delta_x = (track.x - end.x) - (mid.x - end.x) = track.x - mid.x //if track.x > mid.x, delta_x > 0: increase energy & decrease time
+		double locDistanceToMidPoint = locNorthIsGoodHit ? locPaddleMidPoint - proj_pos.X() : proj_pos.X() - locPaddleMidPoint;
+
+		//Energy
+		locHitEnergy *= exp(locDistanceToMidPoint/TOF_ATTEN_LENGTH);
+
+		//Time
+		int id = 44 + locBar - 1;
+		locHitTime -= locDistanceToMidPoint/propagation_speed[id];
+		//locHitTimeVariance = //UPDATE ME!!!
+	}
+	else if(!locTOFPoint->Is_YPositionWellDefined())
+	{
+		//Is unmatched vertical paddle with only one hit above threshold
+		bool locNorthIsGoodHit = (locTOFPoint->dVerticalBarStatus == 1); //+y
+		int locBar = locTOFPoint->dVerticalBar;
+		bool locIsDoubleEndedBar = ((locBar < dTOFGeometry->FirstShortBar) || (locBar > dTOFGeometry->LastShortBar));
+
+		//Paddle midpoint
+		double locPaddleMidPoint = 0.0; //is 0 except when is single-ended bar (22 & 23)
+		if(!locIsDoubleEndedBar)
+			locPaddleMidPoint = locNorthIsGoodHit ? ONESIDED_PADDLE_MIDPOINT_MAG : -1.0*ONESIDED_PADDLE_MIDPOINT_MAG;
+
+		//delta_x = delta_x_actual - delta_x_mid
+			//if end.x > 0: delta_x = (end.x - track.x) - (end.x - mid.x) = mid.x - track.x //if track.x > mid.x, delta_x < 0: decrease energy & increase time
+			//if end.x < 0: delta_x = (track.x - end.x) - (mid.x - end.x) = track.x - mid.x //if track.x > mid.x, delta_x > 0: increase energy & decrease time
+		double locDistanceToMidPoint = locNorthIsGoodHit ? locPaddleMidPoint - proj_pos.Y() : proj_pos.Y() - locPaddleMidPoint;
+
+		//Energy
+		locHitEnergy *= exp(locDistanceToMidPoint/TOF_ATTEN_LENGTH);
+
+		//Time
+		int id = locBar - 1;
+		locHitTime -= locDistanceToMidPoint/propagation_speed[id];
+		//locHitTimeVariance = //UPDATE ME!!!
+	}
+
+	//Fill out match info
 	double dx = 2.54*proj_mom.Mag()/proj_mom.Dot(norm);
 	locTOFHitMatchParams.dTrackTimeBased = locTrackTimeBased;
 	locTOFHitMatchParams.dTOFPoint = locTOFPoint;
-	locTOFHitMatchParams.dEdx = (locTOFPoint->dE)/dx;
+
+	locTOFHitMatchParams.dHitTime = locHitTime;
+	locTOFHitMatchParams.dHitTimeVariance = locHitTimeVariance;
+	locTOFHitMatchParams.dHitEnergy = locHitEnergy;
+
+	locTOFHitMatchParams.dEdx = locHitEnergy/dx;
 	locTOFHitMatchParams.dFlightTime = locFlightTime;
 	locTOFHitMatchParams.dFlightTimeVariance = 0.0; //SET ME!!!
 	locTOFHitMatchParams.dPathLength = locPathLength;
-	locTOFHitMatchParams.dDOCAToHit = d; //DOCA of track to hit
+	locTOFHitMatchParams.dDeltaXToHit = locDeltaX;
+	locTOFHitMatchParams.dDeltaYToHit = locDeltaY;
 
 	return true;
 }
@@ -511,30 +675,28 @@ bool DParticleID::MatchToTOF(const DTrackTimeBased* locTrackTimeBased, const DRe
 //to be called by track reconstruction
 bool DParticleID::MatchToFCAL(const DReferenceTrajectory* rt, const vector<const DFCALShower*>& locFCALShowers, double& locStartTime, double& locTimeVariance) const
 {
-	double d_min = 9.9E9;
-
 	//Loop over FCAL showers
-	bool locMatchFlag = false;
+	vector<DFCALShowerMatchParams> locShowerMatchParamsVector;
 	for(size_t loc_i = 0; loc_i < locFCALShowers.size(); ++loc_i)
 	{
-		DShowerMatchParams locShowerMatchParams;
-		if(!MatchToFCAL(NULL, rt, locFCALShowers[loc_i], locStartTime, locShowerMatchParams))
-			continue;
-		if(locShowerMatchParams.dDOCAToShower >= d_min)
-			continue;
-
-		d_min = locShowerMatchParams.dDOCAToShower;
-		locStartTime = locFCALShowers[loc_i]->getTime() - locShowerMatchParams.dFlightTime;
-//		locTimeVariance = sqrt(locShowerMatchParams.dFlightTimeVariance) - sqrt(locFCALShowers[loc_i]->dCovarianceMatrix(4, 4)); //uncomment when ready!
-//		locTimeVariance *= locTimeVariance; //uncomment when ready!
-		locTimeVariance = 0.5*0.5;
-		locMatchFlag = true;
+		DFCALShowerMatchParams locShowerMatchParams;
+		if(MatchToFCAL(NULL, rt, locFCALShowers[loc_i], locStartTime, locShowerMatchParams))
+			locShowerMatchParamsVector.push_back(locShowerMatchParams);
 	}
+	if(locShowerMatchParamsVector.empty())
+		return false;
 
-	return locMatchFlag;
+	DFCALShowerMatchParams locBestMatchParams;
+	Get_BestFCALMatchParams(locShowerMatchParamsVector, locBestMatchParams);
+
+	locStartTime = locBestMatchParams.dFCALShower->getTime() - locBestMatchParams.dFlightTime;
+//	locTimeVariance = locBestMatchParams.dFlightTimeVariance + locBestMatchParams.dFCALShower->dCovarianceMatrix(4, 4); //uncomment when ready!
+	locTimeVariance = 0.5*0.5;
+
+	return true;
 }
 
-bool DParticleID::MatchToFCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, DShowerMatchParams& locShowerMatchParams) const
+bool DParticleID::MatchToFCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, DFCALShowerMatchParams& locShowerMatchParams) const
 {
 	// NOTE: locTrackTimeBased is NULL if calling from track reconstruction!!!
 
@@ -558,7 +720,7 @@ bool DParticleID::MatchToFCAL(const DTrackTimeBased* locTrackTimeBased, const DR
 		return false;
 
 	locShowerMatchParams.dTrackTimeBased = locTrackTimeBased;
-	locShowerMatchParams.dShowerObject = locFCALShower;
+	locShowerMatchParams.dFCALShower = locFCALShower;
 	locShowerMatchParams.dx = 45.0*p/(proj_mom.Dot(norm));
 	locShowerMatchParams.dFlightTime = locFlightTime;
 	locShowerMatchParams.dFlightTimeVariance = 0.0; //SET ME!!!
@@ -578,33 +740,32 @@ bool DParticleID::MatchToFCAL(const DTrackTimeBased* locTrackTimeBased, const DR
 //
 // NOTE: an initial guess for start time is expected as input so that out-of-time 
 // hits can be skipped
+
 //to be called by track reconstruction
 bool DParticleID::MatchToSC(const DReferenceTrajectory* rt, const vector<const DSCHit*>& locSCHits, double& locStartTime, double& locTimeVariance) const
 {
-	double dphi_min = 10000.0;
-
 	//Loop over SC points
-	bool locMatchFlag = false;
+	vector<DSCHitMatchParams> locSCHitMatchParamsVector;
 	for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
 	{
 		DSCHitMatchParams locSCHitMatchParams;
-		if(!MatchToSC(NULL, rt, locSCHits[loc_i], locStartTime, locSCHitMatchParams))
-			continue;
-		if(locSCHitMatchParams.dDeltaPhiToHit >= dphi_min)
-			continue;
-
-		dphi_min = locSCHitMatchParams.dDeltaPhiToHit;
-		locStartTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime;
-//		locTimeVariance = sqrt(locSCHitMatchParams.dFlightTimeVariance) - sqrt(locSCHitMatchParams.dHitTimeVariance); //uncomment when ready!
-//		locTimeVariance *= locTimeVariance; //uncomment when ready!
-		locTimeVariance = 0.3*0.3;
-		locMatchFlag = true;
+		if(MatchToSC(NULL, rt, locSCHits[loc_i], locStartTime, locSCHitMatchParams))
+			locSCHitMatchParamsVector.push_back(locSCHitMatchParams);
 	}
+	if(locSCHitMatchParamsVector.empty())
+		return false;
 
-	return locMatchFlag;
+	DSCHitMatchParams locBestMatchParams;
+	Get_BestSCMatchParams(locSCHitMatchParamsVector, locBestMatchParams);
+
+	locStartTime = locBestMatchParams.dHitTime - locBestMatchParams.dFlightTime;
+//	locTimeVariance = locBestMatchParams.dFlightTimeVariance - locBestMatchParams.dHitTimeVariance; //uncomment when ready!
+	locTimeVariance = 0.3*0.3;
+
+	return true;
 }
 
-bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams) const
+bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams, DVector3 *IntersectionPoint, DVector3 *IntersectionDir) const
 {
 	// NOTE: locTrackTimeBased is NULL if calling from track reconstruction!!!
 	if(sc_pos.empty() || sc_norm.empty())
@@ -617,84 +778,89 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 	// Find intersection with a "barrel" approximation for the start counter
 	DVector3 proj_pos(NaN,NaN,NaN), proj_mom(NaN,NaN,NaN);
 	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-	if(rt->GetIntersectionWithRadius(sc_pos[1].x(), proj_pos, &locPathLength, &locFlightTime, &proj_mom) != NOERROR)
+	unsigned int sc_index=locSCHit->sector-1;
+	
+	if(rt->GetIntersectionWithPlane(sc_pos[sc_index][0],
+					sc_norm[sc_index][0], 
+					proj_pos, proj_mom, 
+					&locPathLength, 
+					&locFlightTime) != NOERROR)
 		return false;
+	// Check that the intersection isn't upstream of the paddle
+	double myz = proj_pos.z();
+	if (myz<sc_pos[sc_index][0].z()) return false;
+
 	double proj_phi = proj_pos.Phi();
-	if(proj_phi < 0.0)
-		proj_phi += M_TWO_PI;
+	//if(proj_phi < 0.0)
+	//proj_phi += M_TWO_PI;
 
 	// Look for a match in phi
-	double phi = dSCphi0 + dSCdphi*(locSCHit->sector - 1);
+	//double phi = dSCphi0 + dSCdphi*(locSCHit->sector - 1);
+	DVector3 average_pos=0.5*(sc_pos[sc_index][0]+sc_pos[sc_index][1]);
+	double phi=average_pos.Phi();
 	double dphi = phi - proj_phi; //phi could be 0 degrees & proj_phi could be 359 degrees
 	while(dphi > TMath::Pi())
 		dphi -= M_TWO_PI;
 	while(dphi < -1.0*TMath::Pi())
 		dphi += M_TWO_PI;
-	if(fabs(dphi) >= 0.21)
+	if(fabs(dphi) >= SC_DPHI_CUT)
 		return false; //no match
-
-	//match successful
-	double myphi = phi;
-	double myz = proj_pos.z();
+	
+	// Match in phi successful, refine match in nose region were applicable
 
 	// Length along scintillator
 	double L = 0.;
 
 	// Initialize the normal vector for the SC paddle to the long, unbent region
-	DVector3 norm(cos(myphi), sin(myphi), 0.);
+	DVector3 norm=sc_norm[sc_index][0];
 
 	// Now check to see if the intersection is in the nose region and find the
 	// start time
 	double locCorrectedHitTime = locSCHit->t - sc_leg_tcor;
-	double sc_pos0 = sc_pos[0].z();
-	if(myz < sc_pos0)
-		myz = sc_pos0;
-
-	if(myz <= sc_pos[1].z())
+	double sc_pos0 = sc_pos[sc_index][0].z();	
+	double sc_pos1 = sc_pos[sc_index][1].z();
+	if(myz <= sc_pos1)
 	{
-		L=myz;
-		locCorrectedHitTime -= L/C_EFFECTIVE;
+	  L=myz;
+	  locCorrectedHitTime -= L/C_EFFECTIVE;
 	}
 	else
 	{
-		unsigned int num = sc_norm.size() - 1;
-		for (unsigned int loc_i = 1; loc_i < num; ++loc_i)
-		{
-			double xhat = sc_norm[loc_i].x();
-			norm.SetXYZ(cos(myphi)*xhat, sin(myphi)*xhat, sc_norm[loc_i].z());
-			double r = sc_pos[loc_i].X();
-			DVector3 pos(r*cos(myphi), r*sin(myphi), sc_pos[loc_i].z());
-			locPathLength = 9.9E9;
-			locFlightTime = 9.9E9;
-			if(rt->GetIntersectionWithPlane(pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime) != NOERROR)
-           continue;
-			myz = proj_pos.z();
-			if(myz < sc_pos[loc_i + 1].z())
-				break;
-		}
-		double sc_pos1 = sc_pos[1].z();
+	  unsigned int num = sc_norm[sc_index].size() - 1;
+	  for (unsigned int loc_i = 1; loc_i < num; ++loc_i)
+	    {
+	      locPathLength = 9.9E9;
+	      locFlightTime = 9.9E9;
+	      if(rt->GetIntersectionWithPlane(sc_pos[sc_index][loc_i],
+					      sc_norm[sc_index][loc_i], 
+					      proj_pos, proj_mom, 
+					      &locPathLength, 
+					      &locFlightTime) != NOERROR)
+		continue;
+	      myz = proj_pos.z();
+	      norm=sc_norm[sc_index][loc_i];
+	      if(myz < sc_pos[sc_index][loc_i + 1].z()){
+		average_pos
+		  =0.5*(sc_pos[sc_index][loc_i]+sc_pos[sc_index][loc_i+1]);
+		dphi=average_pos.Phi()-proj_pos.Phi();
+		while(dphi > TMath::Pi())
+		  dphi -= M_TWO_PI;
+		while(dphi < -1.0*TMath::Pi())
+		  dphi += M_TWO_PI;
+		if (fabs(dphi)>SC_DPHI_CUT) return false;
+		break;
+	      }
+	    }	
+	  // Check for intersection point beyond nose
+	  if (myz> sc_pos[sc_index][num].z()) return false;
 
+	  
 		// Note: in the following code, L does not include a correction for where the start counter starts
 		// in z...	This is absorbed into locCorrectedHitTime, above.
 		if(myz < sc_pos1)
 		{
-			L = sc_pos1;
-			locCorrectedHitTime -= L/C_EFFECTIVE;
-		}
-		else if (myz > sc_pos[num].z())
-		{
-			// Assume that the particle hit the most downstream z position of the
-			// start counter
-			double costheta = rt->swim_steps[0].mom.CosTheta();
-			double s = (sc_pos[num].z() - rt->swim_steps[0].origin.z())/costheta;
-			double mass = rt->GetMass();
-			double p2 = rt->swim_steps[0].mom.Mag2();
-			double one_over_beta = sqrt(1. + mass*mass/p2);
-			L = (sc_pos[num].z() - sc_pos1)*sc_angle_cor + sc_pos1;
-
-			locCorrectedHitTime -= s*one_over_beta/SPEED_OF_LIGHT + L/C_EFFECTIVE;
-			locFlightTime = s*one_over_beta/SPEED_OF_LIGHT;
-			locPathLength = s;
+		        L = sc_pos1;
+			locCorrectedHitTime -= L/C_EFFECTIVE;	
 		}
 		else
 		{
@@ -718,33 +884,140 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 	locSCHitMatchParams.dPathLength = locPathLength;
 	locSCHitMatchParams.dDeltaPhiToHit = dphi;
 
+	// Optionally output intersection position	
+	if (IntersectionPoint!=NULL){
+	  *IntersectionPoint=proj_pos;
+	}
+	if (IntersectionDir!=NULL){
+	  *IntersectionDir=proj_mom;
+	  IntersectionDir->SetMag(1.);
+	}
+
 	return true;
 }
 
+// Match to Start Counter using straight-line projection to start counter planes
+bool 
+DParticleID::MatchToSC(const DKinematicData *kd,
+		       const vector<const DSCHit*>& locSCHits,
+		       vector<DSCHitMatchParams>& locSCHitMatchParams) const{
+  
+  if(sc_pos.empty() || sc_norm.empty())
+    return false;
+
+  // Ends in z of the straight portion	
+  double sc_pos0 = sc_pos[0][0].z();
+  double sc_pos1 = sc_pos[0][1].z();
+
+  DVector3 mom=kd->momentum();
+  DVector3 pos=kd->position();
+  DVector3 cylpos[2];
+
+  if (finder->FindIntersectionsWithCylinder(sc_pos[0][1].x(),mom,pos,cylpos[0],
+					    cylpos[1])){
+    for (unsigned int j=0;j<2;j++){
+      double cyl_phi=cylpos[j].Phi();
+      for (size_t i=0;i<locSCHits.size();i++){
+	const DSCHit *locSCHit=locSCHits[i];
+	// Look for a match in phi
+	double phi = dSCphi0 + dSCdphi*(locSCHit->sector - 1);
+	
+	// First intersection point of line with cylinder
+	double dphi = cyl_phi - phi; //phi could be 0 degrees & cyl_phi could be 359 degrees
+	while(dphi > TMath::Pi())
+	  dphi -= M_TWO_PI;
+	while(dphi < -1.0*TMath::Pi())
+	  dphi += M_TWO_PI;
+	if(fabs(dphi) < 0.21){
+	  double myz=cylpos[j].z();
+	  double sc_time=locSCHit->t - sc_leg_tcor;
+	  if (myz>=sc_pos0){
+	    DSCHitMatchParams scmatch;
+	    scmatch.dSCHit=locSCHit;
+	    scmatch.dDeltaPhiToHit=dphi; 
+	    if (myz<sc_pos1){ // intersection in leg 
+	      scmatch.dHitTime=sc_time-myz/C_EFFECTIVE;
+	    }
+	    else{ // intersection in nose
+	      unsigned int num = sc_norm[0].size() - 1;
+	      for (unsigned int k = 1; k < num; ++k){
+		double xhat = sc_norm[0][k].x();
+		double cosphi=cos(phi);
+		double sinphi=sin(phi);
+		DVector3 norm(cosphi*xhat, sinphi*xhat, sc_norm[0][k].z());
+		double r = sc_pos[0][k].X();
+		DVector3 origin(r*cosphi, r*sinphi, sc_pos[0][k].z());
+		if (finder->FindIntersectionWithPlane(origin,norm,pos,mom,
+						      cylpos[j])){
+		  myz = cylpos[j].z();
+		  if(myz < sc_pos[0][k + 1].z()){
+		    break;
+		  }
+		}
+	      }
+	      if (myz<sc_pos0) continue;
+	      if (myz>sc_pos[0][num].z()) continue;
+
+	      // Note: in the following code, L does not include a correction
+	      // for where the start counter starts in z...	
+	      // This is absorbed into sc_time, above.
+	      if(myz < sc_pos1){
+		scmatch.dHitTime=sc_time-sc_pos1/C_EFFECTIVE;
+	      }
+	      else{
+		double L = (myz - sc_pos1)*sc_angle_cor + sc_pos1;
+		scmatch.dHitTime=sc_time-L/C_EFFECTIVE;
+	      }
+	    }
+	    locSCHitMatchParams.push_back(scmatch);
+	  } // back position check	
+	} // dphi check
+      } // loop over start counter hits
+    } // two intersection points    
+  } // intersection with cylinder
+
+  return true;
+}
+  
 //------------------
-// MatchToTrack
+// Distance_ToTrack
 //------------------
-// Loop over time-based tracks, looking for the closest one to the given shower
-//
 // NOTE: an initial guess for start time is expected as input so that out-of-time 
 // tracks can be skipped
-bool DParticleID::MatchToTrack(const DBCALShower* locBCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const
+bool DParticleID::Distance_ToTrack(const DBCALShower* locBCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance, double& locDeltaPhi, double& locDeltaZ) const
 {
 	// Get the BCAL cluster position and normal
 	DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z); 
 
 	double locFlightTime = 9.9E9, locPathLength = 9.9E9;
-	locDistance = rt->DistToRTwithTime(bcal_pos, &locPathLength, 
-					   &locFlightTime,SYS_BCAL);
+	locDistance = rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime,SYS_BCAL);
 	if(!isfinite(locDistance))
 		return false;
+
 	// Check that the hit is not out of time with respect to the track
 	if(fabs(locBCALShower->t - locFlightTime - locInputStartTime) > OUT_OF_TIME_CUT)
 		return false;
+
+	DVector3 proj_pos = rt->GetLastDOCAPoint();
+	if(proj_pos.Perp() < 65.0)
+		return false;  // not inside BCAL!
+
+	locDeltaZ = proj_pos.z() - bcal_pos.z();
+	locDeltaPhi = proj_pos.Phi() - bcal_pos.Phi();
+	while(locDeltaPhi >	M_PI)
+		locDeltaPhi -= M_TWO_PI;
+	while(locDeltaPhi < -M_PI)
+		locDeltaPhi += M_TWO_PI;
+
 	return true;
 }
 
-bool DParticleID::MatchToTrack(const DFCALShower* locFCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const
+//------------------
+// Distance_ToTrack
+//------------------
+// NOTE: an initial guess for start time is expected as input so that out-of-time 
+// tracks can be skipped
+bool DParticleID::Distance_ToTrack(const DFCALShower* locFCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const
 {
 	DVector3 fcal_pos = locFCALShower->getPosition();
 	DVector3 norm(0.0, 0.0, 1.0); //normal vector for the FCAL plane
@@ -761,6 +1034,63 @@ bool DParticleID::MatchToTrack(const DFCALShower* locFCALShower, const DReferenc
 	return true;
 }
 
+//------------------
+// Distance_ToTrack
+//------------------
+// NOTE: an initial guess for start time is expected as input so that out-of-time 
+// tracks can be skipped
+bool DParticleID::Distance_ToTrack(const DTOFPoint* locTOFPoint, const DReferenceTrajectory* rt, double locInputStartTime, double& locDeltaX, double& locDeltaY) const
+{
+	DVector3 tof_pos = locTOFPoint->pos;
+	DVector3 norm(0.0, 0.0, 1.0); //normal vector to TOF plane
+	DVector3 proj_pos, proj_mom;
+	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
+	if(rt->GetIntersectionWithPlane(tof_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime, SYS_TOF) != NOERROR)
+		return false;
+
+	// Check that the hit is not out of time with respect to the track
+	if(fabs(locTOFPoint->t - locFlightTime - locInputStartTime) > OUT_OF_TIME_CUT)
+		return false;
+
+	locDeltaX = locTOFPoint->Is_XPositionWellDefined() ? tof_pos.X() - proj_pos.X() : 999.0;
+	locDeltaY = locTOFPoint->Is_YPositionWellDefined() ? tof_pos.Y() - proj_pos.Y() : 999.0;
+	return true;
+}
+
+//------------------
+// Distance_ToTrack
+//------------------
+// NOTE: an initial guess for start time is expected as input so that out-of-time 
+// tracks can be skipped
+bool DParticleID::Distance_ToTrack(const DSCHit* locSCHit, const DReferenceTrajectory* rt, double locInputStartTime, double& locDeltaPhi) const
+{
+	if(sc_pos.empty() || sc_norm.empty())
+		return false;
+
+	// Check that the hit is not out of time with respect to the track
+	if(fabs(locInputStartTime - locSCHit->t) > OUT_OF_TIME_CUT)
+		return false;
+
+	// Find intersection with a "barrel" approximation for the start counter
+	DVector3 proj_pos(NaN,NaN,NaN), proj_mom(NaN,NaN,NaN);
+	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
+	if(rt->GetIntersectionWithRadius(sc_pos[0][1].x(), proj_pos, &locPathLength, &locFlightTime, &proj_mom) != NOERROR)
+		return false;
+
+	double proj_phi = proj_pos.Phi();
+	if(proj_phi < 0.0)
+		proj_phi += M_TWO_PI;
+
+	double phi = dSCphi0 + dSCdphi*(locSCHit->sector - 1);
+	locDeltaPhi = phi - proj_phi; //phi could be 0 degrees & proj_phi could be 359 degrees
+	while(locDeltaPhi > TMath::Pi())
+		locDeltaPhi -= M_TWO_PI;
+	while(locDeltaPhi < -1.0*TMath::Pi())
+		locDeltaPhi += M_TWO_PI;
+
+	return true;
+}
+
 bool DParticleID::Get_BestSCMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DSCHitMatchParams& locBestMatchParams) const
 {
 	//choose the "best" detector hit to use for computing quantities
@@ -768,37 +1098,52 @@ bool DParticleID::Get_BestSCMatchParams(const DTrackTimeBased* locTrackTimeBased
 	if(!locDetectorMatches->Get_SCMatchParams(locTrackTimeBased, locSCHitMatchParams))
 		return false;
 
+	Get_BestSCMatchParams(locSCHitMatchParams, locBestMatchParams);
+	return true;
+}
+
+void DParticleID::Get_BestSCMatchParams(vector<DSCHitMatchParams>& locSCHitMatchParams, DSCHitMatchParams& locBestMatchParams) const
+{
 	double locMinDeltaPhi = 9.9E9;
-	bool locMatchFlag = false;
 	for(size_t loc_i = 0; loc_i < locSCHitMatchParams.size(); ++loc_i)
 	{
 		if(locSCHitMatchParams[loc_i].dDeltaPhiToHit >= locMinDeltaPhi)
 			continue;
 		locMinDeltaPhi = locSCHitMatchParams[loc_i].dDeltaPhiToHit;
 		locBestMatchParams = locSCHitMatchParams[loc_i];
-		locMatchFlag = true;
 	}
-	return locMatchFlag;
 }
 
-bool DParticleID::Get_BestBCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DShowerMatchParams& locBestMatchParams) const
+bool DParticleID::Get_BestBCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DBCALShowerMatchParams& locBestMatchParams) const
 {
 	//choose the "best" shower to use for computing quantities
-	vector<DShowerMatchParams> locShowerMatchParams;
+	vector<DBCALShowerMatchParams> locShowerMatchParams;
 	if(!locDetectorMatches->Get_BCALMatchParams(locTrackTimeBased, locShowerMatchParams))
 		return false;
 
-	double locMinDistance = 9.9E9;
-	bool locMatchFlag = false;
+	Get_BestBCALMatchParams(locTrackTimeBased->momentum(), locShowerMatchParams, locBestMatchParams);
+	return true;
+}
+
+void DParticleID::Get_BestBCALMatchParams(DVector3 locMomentum, vector<DBCALShowerMatchParams>& locShowerMatchParams, DBCALShowerMatchParams& locBestMatchParams) const
+{
+	double locMinChiSq = 9.9E9;
+	double locP = locMomentum.Mag();
 	for(size_t loc_i = 0; loc_i < locShowerMatchParams.size(); ++loc_i)
 	{
-		if(locShowerMatchParams[loc_i].dDOCAToShower >= locMinDistance)
+		double locDeltaPhiCut = BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2/(locP*locP);
+		double locDeltaPhiError = locDeltaPhiCut/3.0; //Cut is "3 sigma"
+		double locMatchChiSq = locShowerMatchParams[loc_i].dDeltaPhiToShower*locShowerMatchParams[loc_i].dDeltaPhiToShower/(locDeltaPhiError*locDeltaPhiError);
+
+		double locDeltaZError = BCAL_Z_CUT/3.0; //Cut is "3 sigma"
+		locMatchChiSq += locShowerMatchParams[loc_i].dDeltaZToShower*locShowerMatchParams[loc_i].dDeltaZToShower/(locDeltaZError*locDeltaZError);
+
+		if(locMatchChiSq >= locMinChiSq)
 			continue;
-		locMinDistance = locShowerMatchParams[loc_i].dDOCAToShower;
+
+		locMinChiSq = locMatchChiSq;
 		locBestMatchParams = locShowerMatchParams[loc_i];
-		locMatchFlag = true;
 	}
-	return locMatchFlag;
 }
 
 bool DParticleID::Get_BestTOFMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DTOFHitMatchParams& locBestMatchParams) const
@@ -808,55 +1153,60 @@ bool DParticleID::Get_BestTOFMatchParams(const DTrackTimeBased* locTrackTimeBase
 	if(!locDetectorMatches->Get_TOFMatchParams(locTrackTimeBased, locTOFHitMatchParams))
 		return false;
 
-	double locMinDistance = 9.9E9;
-	bool locMatchFlag = false;
-	for(size_t loc_i = 0; loc_i < locTOFHitMatchParams.size(); ++loc_i)
-	{
-		if(locTOFHitMatchParams[loc_i].dDOCAToHit >= locMinDistance)
-			continue;
-		locMinDistance = locTOFHitMatchParams[loc_i].dDOCAToHit;
-		locBestMatchParams = locTOFHitMatchParams[loc_i];
-		locMatchFlag = true;
-	}
-	return locMatchFlag;
+	Get_BestTOFMatchParams(locTOFHitMatchParams, locBestMatchParams);
+	return true;
 }
 
-bool DParticleID::Get_BestFCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DShowerMatchParams& locBestMatchParams) const
+void DParticleID::Get_BestTOFMatchParams(vector<DTOFHitMatchParams>& locTOFHitMatchParams, DTOFHitMatchParams& locBestMatchParams) const
+{
+	double locMinDistance = 9.9E9;
+	for(size_t loc_i = 0; loc_i < locTOFHitMatchParams.size(); ++loc_i)
+	{
+		double locDeltaR = sqrt(locTOFHitMatchParams[loc_i].dDeltaXToHit*locTOFHitMatchParams[loc_i].dDeltaXToHit + locTOFHitMatchParams[loc_i].dDeltaYToHit*locTOFHitMatchParams[loc_i].dDeltaYToHit);
+		if(locDeltaR >= locMinDistance)
+			continue;
+		locMinDistance = locDeltaR;
+		locBestMatchParams = locTOFHitMatchParams[loc_i];
+	}
+}
+
+bool DParticleID::Get_BestFCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DFCALShowerMatchParams& locBestMatchParams) const
 {
 	//choose the "best" shower to use for computing quantities
-	vector<DShowerMatchParams> locShowerMatchParams;
+	vector<DFCALShowerMatchParams> locShowerMatchParams;
 	if(!locDetectorMatches->Get_FCALMatchParams(locTrackTimeBased, locShowerMatchParams))
 		return false;
 
+	Get_BestFCALMatchParams(locShowerMatchParams, locBestMatchParams);
+	return true;
+}
+
+void DParticleID::Get_BestFCALMatchParams(vector<DFCALShowerMatchParams>& locShowerMatchParams, DFCALShowerMatchParams& locBestMatchParams) const
+{
 	double locMinDistance = 9.9E9;
-	bool locMatchFlag = false;
 	for(size_t loc_i = 0; loc_i < locShowerMatchParams.size(); ++loc_i)
 	{
 		if(locShowerMatchParams[loc_i].dDOCAToShower >= locMinDistance)
 			continue;
 		locMinDistance = locShowerMatchParams[loc_i].dDOCAToShower;
 		locBestMatchParams = locShowerMatchParams[loc_i];
-		locMatchFlag = true;
 	}
-	return locMatchFlag;
 }
 
 double DParticleID::Calc_BCALFlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, DDetectorMatches* locDetectorMatches) const
 {
-	DShowerMatchParams locBCALShowerMatchParams;
+	DBCALShowerMatchParams locBCALShowerMatchParams;
 	if(!Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams))
 		return numeric_limits<double>::quiet_NaN();
-//	const DBCALShower* locBCALShower = static_cast<const DBCALShower*>(locBCALShowerMatchParams.dShowerObject);
 	double locFlightTimePCorrelation = 0.0; //SET ME!!!
 	return locFlightTimePCorrelation;
 }
 
 double DParticleID::Calc_FCALFlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, DDetectorMatches* locDetectorMatches) const
 {
-	DShowerMatchParams locFCALShowerMatchParams;
+	DFCALShowerMatchParams locFCALShowerMatchParams;
 	if(!Get_BestFCALMatchParams(locTrackTimeBased, locDetectorMatches, locFCALShowerMatchParams))
 		return numeric_limits<double>::quiet_NaN();
-//	const DFCALShower* locFCALShower = static_cast<const DFCALShower*>(locFCALShowerMatchParams.dShowerObject);
 	double locFlightTimePCorrelation = 0.0; //SET ME!!!
 	return locFlightTimePCorrelation;
 }
@@ -866,7 +1216,6 @@ double DParticleID::Calc_TOFFlightTimePCorrelation(const DTrackTimeBased* locTra
 	DTOFHitMatchParams locTOFHitMatchParams;
 	if(!Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
 		return numeric_limits<double>::quiet_NaN();
-	//locTOFHitMatchParams->dTOFPoint;
 	double locFlightTimePCorrelation = 0.0; //SET ME!!!
 	return locFlightTimePCorrelation;
 }
@@ -876,74 +1225,99 @@ double DParticleID::Calc_SCFlightTimePCorrelation(const DTrackTimeBased* locTrac
 	DSCHitMatchParams locSCHitMatchParams;
 	if(!Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams))
 		return numeric_limits<double>::quiet_NaN();
-	//locSCHitMatchParams->dSCHit;
 	double locFlightTimePCorrelation = 0.0; //SET ME!!!
 	return locFlightTimePCorrelation;
 }
 
-void DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locPropagatedRFTime, bool locRFTimeFixedFlag) const
+double DParticleID::Calc_PropagatedRFTime(const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch) const
 {
-	locPropagatedRFTime = locEventRFBunch->dTime + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
-
-	if(locRFTimeFixedFlag || (locChargedTrackHypothesis->t1_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_CDC) || (locChargedTrackHypothesis->t1_detector() == SYS_FDC))
-		return;
-
-	//Propagates RF time to the track vertex-z, and then selects the closest RF bunch
-	double locProjectedHitTime = locChargedTrackHypothesis->time();
-	while((locPropagatedRFTime - locProjectedHitTime) > (0.5*dRFBunchFrequency))
-		locPropagatedRFTime -= dRFBunchFrequency;
-	while((locPropagatedRFTime - locProjectedHitTime) < (-0.5*dRFBunchFrequency))
-		locPropagatedRFTime += dRFBunchFrequency;
+	//Propagate RF time to the track vertex-z
+	return locEventRFBunch->dTime + (locKinematicData->z() - dTargetZCenter)/SPEED_OF_LIGHT;
 }
 
-bool DParticleID::Calc_TrackStartTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locStartTime, double& locStartTimeVariance, bool locRFTimeFixedFlag) const
+double DParticleID::Calc_TimingChiSq(const DKinematicData* locKinematicData, unsigned int &locNDF, double& locPull) const
 {
-	//use RF bunch if available
-	double locPropagatedRFTime = 0.0;
-	Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch, locPropagatedRFTime, locRFTimeFixedFlag);
-	if(locPropagatedRFTime == locPropagatedRFTime)
+	if(locKinematicData->t0_detector() == locKinematicData->t1_detector())
 	{
-		locStartTime = locPropagatedRFTime;
-		locStartTimeVariance = locEventRFBunch->dTimeVariance;
-		return true;
-	}
-	else //NaN: no confidence in selecting the RF bunch: use t0 detector if available (e.g. start counter, CDC)
-	{
-		locStartTime = locChargedTrackHypothesis->t0();
-		locStartTimeVariance = locChargedTrackHypothesis->t0_err()*locChargedTrackHypothesis->t0_err();
-		return false;
-	}
-}
-
-double DParticleID::Calc_TimingChiSq(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag, unsigned int &locNDF, double& locPull) const
-{
-	double locStartTime = 0.0, locStartTimeVariance = 0.0;
-	bool locUsedRFTimeFlag = Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locRFTimeFixedFlag);
-
-	if((!locUsedRFTimeFlag) && (locChargedTrackHypothesis->t0_detector() == locChargedTrackHypothesis->t1_detector())) //e.g. both CDC (not matched to any hits)
-	{
+		// not matched to any hits
 		locNDF = 0;
 		locPull = 0.0;
 		return 0.0;
 	}
 
-	double locTimeDifference = locStartTime - locChargedTrackHypothesis->time();
-	double locTimeDifferenceVariance = (locChargedTrackHypothesis->errorMatrix())(6, 6) + locStartTimeVariance;
-
+	double locStartTimeError = locKinematicData->t0_err();
+	double locTimeDifferenceVariance = (locKinematicData->errorMatrix())(6, 6) + locStartTimeError*locStartTimeError;
+	locPull = (locKinematicData->t0() - locKinematicData->time())/sqrt(locTimeDifferenceVariance);
 	locNDF = 1;
-	locPull = locTimeDifference/sqrt(locTimeDifferenceVariance);
 	return locPull*locPull;
 }
 
-double DParticleID::Calc_TimingChiSq(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DEventRFBunch* locEventRFBunch, unsigned int &locNDF, double& locPull) const
+void DParticleID::Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const
 {
-	double locStartTimeVariance = locEventRFBunch->dTimeVariance;
-	double locStartTime = locEventRFBunch->dTime;
+	CalcDCdEdxChiSq(locChargedTrackHypothesis);
 
-	double locTimeDifferenceVariance = (locNeutralParticleHypothesis->errorMatrix())(6, 6) + locStartTimeVariance;
-	locPull = (locStartTime - locNeutralParticleHypothesis->time())/sqrt(locTimeDifferenceVariance);
-	locNDF = 1;
-	return locPull*locPull;
+	unsigned int locTimingNDF = 0;
+	double locTimingPull = 0.0;
+	double locTimingChiSq = Calc_TimingChiSq(locChargedTrackHypothesis, locTimingNDF, locTimingPull);
+	locChargedTrackHypothesis->dChiSq_Timing = locTimingChiSq;
+	locChargedTrackHypothesis->dNDF_Timing = locTimingNDF;
+
+	unsigned int locNDF_Total = locChargedTrackHypothesis->dNDF_Timing + locChargedTrackHypothesis->dNDF_DCdEdx;
+	double locChiSq_Total = locChargedTrackHypothesis->dChiSq_Timing + locChargedTrackHypothesis->dChiSq_DCdEdx;
+
+	locChargedTrackHypothesis->dChiSq = locChiSq_Total;
+	locChargedTrackHypothesis->dNDF = locNDF_Total;
+	locChargedTrackHypothesis->dFOM = (locNDF_Total > 0) ? TMath::Prob(locChiSq_Total, locNDF_Total) : numeric_limits<double>::quiet_NaN();
+}
+
+unsigned int DParticleID::Get_CDCRingBitPattern(vector<const DCDCTrackHit*>& locCDCTrackHits) const
+{
+	unsigned int locBitPattern = 0;
+	for(size_t loc_i = 0; loc_i < locCDCTrackHits.size(); ++loc_i)
+	{
+		//bit-shift to get bit for this ring, then bitwise-or
+		unsigned int locBitShift = locCDCTrackHits[loc_i]->wire->ring - 1;
+		unsigned int locBit = (1 << locBitShift); //if ring # is 1, shift 1 by 0
+		locBitPattern |= locBit;
+	}
+	return locBitPattern;
+}
+
+unsigned int DParticleID::Get_FDCPlaneBitPattern(vector<const DFDCPseudo*>& locFDCPseudos) const
+{
+	unsigned int locBitPattern = 0;
+	for(size_t loc_i = 0; loc_i < locFDCPseudos.size(); ++loc_i)
+	{
+		//bit-shift to get bit for this ring, then bitwise-or
+		unsigned int locBitShift = locFDCPseudos[loc_i]->wire->layer - 1;
+		unsigned int locBit = (1 << locBitShift); //if ring # is 1, shift 1 by 0
+		locBitPattern |= locBit;
+	}
+	return locBitPattern;
+}
+
+void DParticleID::Get_CDCRings(int locBitPattern, set<int>& locCDCRings) const
+{
+	locCDCRings.clear();
+	for(unsigned int locRing = 1; locRing <= 28; ++locRing)
+	{
+		unsigned int locBitShift = locRing - 1;
+		unsigned int locBit = (1 << locBitShift); //if ring # is 1, shift 1 by 0
+		if((locBitPattern & locBit) != 0)
+			locCDCRings.insert(locRing);
+	}
+}
+
+void DParticleID::Get_FDCPlanes(int locBitPattern, set<int>& locFDCPlanes) const
+{
+	locFDCPlanes.clear();
+	for(unsigned int locPlane = 1; locPlane <= 24; ++locPlane)
+	{
+		unsigned int locBitShift = locPlane - 1;
+		unsigned int locBit = (1 << locBitShift); //if ring # is 1, shift 1 by 0
+		if((locBitPattern & locBit) != 0)
+			locFDCPlanes.insert(locPlane);
+	}
 }
 
 Particle_t DParticleID::IDTrack(float locCharge, float locMass) const
@@ -971,23 +1345,5 @@ Particle_t DParticleID::IDTrack(float locCharge, float locMass) const
 		if (fabs(locMass - ParticleMass(Neutron)) < locMassTolerance) return Neutron;
 	}
 	return Unknown;
-}
-
-void DParticleID::Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const
-{
-	CalcDCdEdxChiSq(locChargedTrackHypothesis);
-
-	unsigned int locTimingNDF = 0;
-	double locTimingPull = 0.0;
-	double locTimingChiSq = Calc_TimingChiSq(locChargedTrackHypothesis, locEventRFBunch, locRFTimeFixedFlag, locTimingNDF, locTimingPull);
-	locChargedTrackHypothesis->dChiSq_Timing = locTimingChiSq;
-	locChargedTrackHypothesis->dNDF_Timing = locTimingNDF;
-
-	unsigned int locNDF_Total = locChargedTrackHypothesis->dNDF_Timing + locChargedTrackHypothesis->dNDF_DCdEdx;
-	double locChiSq_Total = locChargedTrackHypothesis->dChiSq_Timing + locChargedTrackHypothesis->dChiSq_DCdEdx;
-
-	locChargedTrackHypothesis->dChiSq = locChiSq_Total;
-	locChargedTrackHypothesis->dNDF = locNDF_Total;
-	locChargedTrackHypothesis->dFOM = (locNDF_Total > 0) ? TMath::Prob(locChiSq_Total, locNDF_Total) : numeric_limits<double>::quiet_NaN();
 }
 

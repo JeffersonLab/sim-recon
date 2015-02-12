@@ -44,7 +44,7 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       common /coherentGen/xMinimum,freqMaximum,beamStartZ,Theta02
       data xMinimum/0.01/
       data freqMaximum/9.0e-4/
-      data beamStartZ/-2200.0/
+      data beamStartZ/-2400.0/
       data Theta02/1.8/
       save /coherentGen/
 

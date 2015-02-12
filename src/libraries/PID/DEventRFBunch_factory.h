@@ -13,6 +13,7 @@
 #include <map>
 #include <utility>
 #include <deque>
+#include <vector>
 
 #include <TMath.h>
 
@@ -32,8 +33,6 @@
 #include <BCAL/DBCALShower.h>
 #include <TOF/DTOFPoint.h>
 #include <PID/DBeamPhoton.h>
-#include <TAGGER/DTAGMHit.h>
-#include <TAGGER/DTAGHHit.h>
 
 #include <HDGEOMETRY/DGeometry.h>
 #include <DANA/DApplication.h>
@@ -47,13 +46,30 @@ class DEventRFBunch_factory : public jana::JFactory<DEventRFBunch>
 		DEventRFBunch_factory(){};
 		~DEventRFBunch_factory(){};
 
-		bool Get_RFTime(JEventLoop *locEventLoop, double& locRFHitTime, double& locTimeVariance);
-
-		bool Find_TrackTimes(const DDetectorMatches* locDetectorMatches, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<double>& locTimes);
-		bool Find_NeutralTimes(JEventLoop* locEventLoop, vector<double>& locTimes);
-		int Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes);
+		bool Get_RFTimeGuess(JEventLoop* locEventLoop, double& locRFTimeGuess, double& locRFVariance, DetectorSystem_t& locTimeSource) const;
 
 	private:
+
+		void Select_GoodTracks(JEventLoop* locEventLoop, vector<const DTrackTimeBased*>& locSelectedTimeBasedTracks) const;
+		jerror_t Select_RFBunch(JEventLoop* locEventLoop, vector<const DTrackTimeBased*>& locTrackTimeBasedVector, const DRFTime* locRFTime);
+		int Conduct_Vote(JEventLoop* locEventLoop, double locRFTime, vector<pair<double, const JObject*> >& locTimes, bool locUsedTracksFlag, int& locHighestNumVotes);
+
+		bool Find_TrackTimes_SC(const DDetectorMatches* locDetectorMatches, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, const JObject*> >& locTimes) const;
+		bool Find_TrackTimes_NonSC(const DDetectorMatches* locDetectorMatches, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, const JObject*> >& locTimes);
+		bool Find_NeutralTimes(JEventLoop* locEventLoop, vector<pair<double, const JObject*> >& locTimes);
+
+		int Find_BestRFBunchShifts(double locRFHitTime, const vector<pair<double, const JObject*> >& locTimes, map<int, vector<const JObject*> >& locNumRFBucketsShiftedMap, set<int>& locBestRFBunchShifts);
+
+		bool Break_TieVote_BeamPhotons(vector<const DBeamPhoton*>& locBeamPhotons, double locRFTime, map<int, vector<const JObject*> >& locNumRFBucketsShiftedMap, set<int>& locBestRFBunchShifts, int locHighestNumVotes);
+		int Break_TieVote_Tracks(map<int, vector<const JObject*> >& locNumRFBucketsShiftedMap, set<int>& locBestRFBunchShifts);
+		int Break_TieVote_Neutrals(map<int, vector<const JObject*> >& locNumRFBucketsShiftedMap, set<int>& locBestRFBunchShifts);
+
+		jerror_t Select_RFBunch_NoRFTime(JEventLoop* locEventLoop, vector<const DTrackTimeBased*>& locTrackTimeBasedVector);
+
+		void Get_RFTimeGuess(vector<pair<double, const JObject*> >& locTimes, double& locRFTimeGuess, double& locRFVariance) const;
+
+		jerror_t Create_NaNRFBunch(void);
+
 		const DParticleID* dParticleID;
 
 		double dRFBunchFrequency;

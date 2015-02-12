@@ -2,17 +2,15 @@
 //    File: DFCALShower_factory.cc
 // Created: Tue May 17 11:57:50 EST 2005
 // Creator: remitche (on Linux mantrid00 2.4.20-18.8smp i686)
-// Edited: B. Schaefer 3/23/2012 removed radiation hard insert functionality
 
 #include <math.h>
 #include <DVector3.h>
-//#include <DLorentzVector.h>
 using namespace std;
 
-#include "DFCALShower_factory.h"
-#include "DFCALGeometry.h"
-//#include "DFCALCluster.h"
-#include "DFCALHit.h"
+#include "FCAL/DFCALShower_factory.h"
+#include "FCAL/DFCALGeometry.h"
+#include "FCAL/DFCALCluster.h"
+#include "FCAL/DFCALHit.h"
 #include <JANA/JEvent.h>
 #include <JANA/JApplication.h>
 using namespace jana;
@@ -22,69 +20,46 @@ using namespace jana;
 //----------------
 DFCALShower_factory::DFCALShower_factory()
 {
-    // should we use CCDB constants?
-    LOAD_CCDB_CONSTANTS = 1.;
+  // should we use CCDB constants?
+  LOAD_CCDB_CONSTANTS = 1.;
+  gPARMS->SetDefaultParameter("FCAL:LOAD_NONLIN_CCDB", LOAD_CCDB_CONSTANTS);
 
-// Set of coefficients for non-linear energy corrections 
+  SHOWER_ENERGY_THRESHOLD = 50*k_MeV;
+  gPARMS->SetDefaultParameter("FCAL:SHOWER_ENERGY_THRESHOLD", SHOWER_ENERGY_THRESHOLD);
 
-    SHOWER_ENERGY_THRESHOLD = 50*k_MeV;
+  // these need to come from database to ensure accuracy
+  // remove default value which might be close to the right solution,
+  // but not quite correct -- allow command line tuning
 
-    NON_LIN_COEF_A = 0.439287;
-    NON_LIN_COEF_B = 0.503378; 
-    NON_LIN_COEF_C = 1.80842;
-    NON_LIN_COEF_alfa = 1+0.0724789;
+  NON_LIN_COEF_A = 0; 
+  NON_LIN_COEF_B = 0;
+  NON_LIN_COEF_C = 0;
+  NON_LIN_COEF_alfa = 0;
 
-    //Loose timing cut
-    SHOWER_TIMING_WINDOW = 5.0;
-    
-// Parameters to make shower-depth correction taken from Radphi, 
-// slightly modifed to match photon-polar angle
-        FCAL_RADIATION_LENGTH = 3.1;
-        FCAL_CRITICAL_ENERGY = 0.035;
-        FCAL_SHOWER_OFFSET = 1.0;
+  gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_A", NON_LIN_COEF_A);
+  gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_B", NON_LIN_COEF_B);
+  gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_C", NON_LIN_COEF_C);
+  gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_alfa", NON_LIN_COEF_alfa);
 
-	gPARMS->SetDefaultParameter("FCAL:SHOWER_ENERGY_THRESHOLD", SHOWER_ENERGY_THRESHOLD);
-
-	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_A", NON_LIN_COEF_A);
-	if (NON_LIN_COEF_A<=0.) {
-	  cout  << "Warning: DFCALShower : parameter A=" <<  NON_LIN_COEF_A 
-		<< " is not valid!" << endl; 
-	}
-
-
-	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_B", NON_LIN_COEF_B);
-	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_C", NON_LIN_COEF_C);
-	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_alfa", NON_LIN_COEF_alfa);
-
-	gPARMS->SetDefaultParameter("FCAL:SHOWER_TIMING_WINDOW", SHOWER_TIMING_WINDOW);
+  // Parameters to make shower-depth correction taken from Radphi, 
+  // slightly modifed to match photon-polar angle
+  FCAL_RADIATION_LENGTH = 3.1;
+  FCAL_CRITICAL_ENERGY = 0.035;
+  FCAL_SHOWER_OFFSET = 1.0;
 	
-	gPARMS->SetDefaultParameter("FCAL:FCAL_RADIATION_LENGTH", FCAL_RADIATION_LENGTH);
-	gPARMS->SetDefaultParameter("FCAL:FCAL_CRITICAL_ENERGY", FCAL_CRITICAL_ENERGY);
-	gPARMS->SetDefaultParameter("FCAL:FCAL_SHOWER_OFFSET", FCAL_SHOWER_OFFSET);
-
-	gPARMS->SetDefaultParameter("FCAL:LOAD_NONLIN_CCDB", LOAD_CCDB_CONSTANTS);
+  gPARMS->SetDefaultParameter("FCAL:FCAL_RADIATION_LENGTH", FCAL_RADIATION_LENGTH);
+  gPARMS->SetDefaultParameter("FCAL:FCAL_CRITICAL_ENERGY", FCAL_CRITICAL_ENERGY);
+  gPARMS->SetDefaultParameter("FCAL:FCAL_SHOWER_OFFSET", FCAL_SHOWER_OFFSET);
 
 }
 
 //------------------
 // brun
 //------------------
-// take merging out
 jerror_t DFCALShower_factory::brun(JEventLoop *loop, int runnumber)
 {
-  /*// Get calibration constants
-	map<string, double> cluster_merging;
-	loop->GetCalib("FCAL/cluster_merging", cluster_merging);
-	if(cluster_merging.find("MIN_CLUSTER_SEPARATION")!=cluster_merging.end()){
-		MIN_CLUSTER_SEPARATION = cluster_merging["MIN_CLUSTER_SEPARATION"];
-		if(debug_level>0)jout<<"MIN_CLUSTER_SEPARATION = "<<MIN_CLUSTER_SEPARATION<<endl;
-	}else{
-		jerr<<"Unable to get from MIN_CLUSTER_SEPARATION FCAL/cluster_merging in Calib database!"<<endl;
-		loop->GetJApplication()->Quit();
-        }*/
-
+ 
     // Get calibration constants
-    FCAL_C_EFFECTIVE=15.;
     map<string, double> fcal_parms;
     loop->GetCalib("FCAL/fcal_parms", fcal_parms);
     if (fcal_parms.find("FCAL_C_EFFECTIVE")!=fcal_parms.end()){
@@ -94,18 +69,17 @@ jerror_t DFCALShower_factory::brun(JEventLoop *loop, int runnumber)
 	jerr<<"Unable to get FCAL_C_EFFECTIVE from FCAL/fcal_parms in Calib database!"<<endl;
     }
   
-    m_zTarget=65.0*k_cm;
-    m_FCALfront= DFCALGeometry::fcalFaceZ();
-    m_FCALback= m_FCALfront+DFCALGeometry::blockLength();
     DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-    if (dapp) {
-	const DGeometry *geom = dapp->GetDGeometry(runnumber);
+    const DGeometry *geom = dapp->GetDGeometry(runnumber);
+    
+    if (geom) {
 	geom->GetTargetZ(m_zTarget);
 	geom->GetFCALZ(m_FCALfront);
-	
-	vector<double>block;
-	geom->Get("//box[@name='LGBL']/@X_Y_Z",block);
-	m_FCALback=m_FCALfront+block[2];
+    }
+    else{
+      
+      cerr << "No geometry accessbile." << endl;
+      return RESOURCE_UNAVAILABLE;
     }
 
     // by default, load non-linear shower corrections from the CCDB
@@ -139,7 +113,7 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, int eventnumber)
   if(fcalClusters.size()<1)return NOERROR;
  
   // Use the center of the target as an approximation for the vertex position
-  DVector3 target(0.0, 0.0, m_zTarget);
+  DVector3 vertex(0.0, 0.0, m_zTarget);
 
   // Loop over list of DFCALCluster objects and calculate the "Non-linear" corrected
   // energy and position for each. We'll use a logarithmic energy-weighting to 
@@ -157,7 +131,7 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, int eventnumber)
     // Get corrected energy, position, and errZ
     double Ecorrected;
     DVector3 pos_corrected;
-    GetCorrectedEnergyAndPosition( cluster , Ecorrected, pos_corrected, errZ, &target);
+    GetCorrectedEnergyAndPosition( cluster , Ecorrected, pos_corrected, errZ, &vertex);
 
     if (Ecorrected>0.){		
       //up to this point, all times have been times at which light reaches
@@ -165,7 +139,7 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, int eventnumber)
       //takes the Cherenkov light to reach the back of the detector
       //so that the t reported is roughly the time of the shower at the
       //position pos_corrected	
-      cTime -= ( m_FCALback - pos_corrected.Z() )/FCAL_C_EFFECTIVE;
+      cTime -= ( m_FCALfront + DFCALGeometry::blockLength() - pos_corrected.Z() )/FCAL_C_EFFECTIVE;
 
       // Make the DFCALShower object
       DFCALShower* shower = new DFCALShower;

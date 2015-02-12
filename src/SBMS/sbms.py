@@ -496,9 +496,11 @@ def AddDANA(env):
 	AddHDDS(env)
 	AddXERCES(env)
 	AddEVIO(env)
+	AddET(env)
+	AddCODAChannels(env)
 	DANA_LIBS  = "DANA ANALYSIS PID TAGGER TRACKING START_COUNTER"
-	DANA_LIBS += " CERE RICH CDC TRIGGER"
-	DANA_LIBS += " FDC TOF BCAL FCAL CCAL HDGEOMETRY JANA"
+	DANA_LIBS += " CERE RICH CDC TRIGGER PAIR_SPECTROMETER"
+	DANA_LIBS += " FDC TOF BCAL FCAL CCAL HDGEOMETRY TTAB DAQ JANA"
 	env.PrependUnique(LIBS = DANA_LIBS.split())
 
 ##################################
@@ -560,11 +562,15 @@ def AddCODAChannels(env):
 	# Only add codaChannels library if CODA is set
 	coda = os.getenv('CODA')
 	arch = os.getenv('ARCH')
-	if(coda != None) :
-		env.AppendUnique(CXXFLAGS = ['-DHAVE_CODACHANNELS'])
-		env.AppendUnique(CPPPATH = ['%s/%s/include' % (coda,arch)])
-		env.AppendUnique(LIBPATH = ['%s/%s/lib' % (coda,arch)])
-		env.AppendUnique(LIBS=['codaChannels'])
+	etroot = os.getenv('ETROOT')
+	if(coda   == None) : return
+	if(etroot == None) : return
+
+	AddET(env)
+	env.AppendUnique(CXXFLAGS = ['-DHAVE_CODACHANNELS'])
+	env.AppendUnique(CPPPATH = ['%s/%s/include' % (coda,arch)])
+	env.AppendUnique(LIBPATH = ['%s/%s/lib' % (coda,arch)])
+	env.AppendUnique(LIBS=['codaChannels'])
 
 
 ##################################
@@ -644,11 +650,18 @@ def AddROOT(env):
 	# We also create a builder for ROOT dictionaries and add targets to
 	# build dictionaries for any headers with "ClassDef" in them.
 
-	ROOT_CFLAGS = subprocess.Popen(["root-config", "--cflags"], stdout=subprocess.PIPE).communicate()[0]
-	ROOT_LINKFLAGS = subprocess.Popen(["root-config", "--glibs"], stdout=subprocess.PIPE).communicate()[0]
+	rootsys = os.getenv('ROOTSYS', '/usr/local/root/PRO')
+	if not os.path.isdir(rootsys):
+		print 'ROOTSYS not defined or points to a non-existant directory!'
+		sys.exit(-1)
+
+	ROOT_CFLAGS = subprocess.Popen(["%s/bin/root-config" % rootsys, "--cflags"], stdout=subprocess.PIPE).communicate()[0]
+	ROOT_LINKFLAGS = subprocess.Popen(["%s/bin/root-config" % rootsys, "--glibs"], stdout=subprocess.PIPE).communicate()[0]
 	AddCompileFlags(env, ROOT_CFLAGS)
 	AddLinkFlags(env, ROOT_LINKFLAGS)
 	env.AppendUnique(LIBS = "Geom")
+	if os.getenv('LD_LIBRARY_PATH'  ) != None : env.Append(LD_LIBRARY_PATH   = os.environ['LD_LIBRARY_PATH'  ])
+	if os.getenv('DYLD_LIBRARY_PATH') != None : env.Append(DYLD_LIBRARY_PATH = os.environ['DYLD_LIBRARY_PATH'])
 
 	# NOTE on (DY)LD_LIBRARY_PATH :
 	# Linux (and most unixes) use LD_LIBRARY_PATH while Mac OS X uses
@@ -658,17 +671,25 @@ def AddROOT(env):
 	# work with. Thus, we just append to whichever are set, which may be both.
 
 	# Create Builder that can convert .h file into _Dict.cc file
-	rootsys = os.getenv('ROOTSYS', '/usr/local/root/PRO')
 	if os.getenv('LD_LIBRARY_PATH'  ) != None : env.AppendENVPath('LD_LIBRARY_PATH'  , '%s/lib' % rootsys )
 	if os.getenv('DYLD_LIBRARY_PATH') != None : env.AppendENVPath('DYLD_LIBRARY_PATH', '%s/lib' % rootsys )
+	rootcintpath  = "%s/bin/rootcint" % (rootsys)
+	rootclingpath = "%s/bin/rootcling" % (rootsys)
 	if env['SHOWBUILD']==0:
-		rootcintaction = SCons.Script.Action("%s/bin/rootcint -f $TARGET -c $SOURCE" % (rootsys), 'ROOTCINT   [$SOURCE]')
+		rootcintaction  = SCons.Script.Action("%s -f $TARGET -c $SOURCE" % (rootcintpath) , 'ROOTCINT   [$SOURCE]')
+		rootclingaction = SCons.Script.Action("%s -f $TARGET -c $SOURCE" % (rootclingpath), 'ROOTCLING  [$SOURCE]')
 	else:
-		rootcintaction = SCons.Script.Action("%s/bin/rootcint -f $TARGET -c $SOURCE" % (rootsys))
-	bld = SCons.Script.Builder(action = rootcintaction, suffix='_Dict.cc', src_suffix='.h')
+		rootcintaction  = SCons.Script.Action("%s -f $TARGET -c $SOURCE" % (rootcintpath) )
+		rootclingaction = SCons.Script.Action("%s -f $TARGET -c $SOURCE" % (rootclingpath))
+	if os.path.exists(rootclingpath) :
+		bld = SCons.Script.Builder(action = rootclingaction, suffix='_Dict.cc', src_suffix='.h')
+	elif os.path.exists(rootcintpath):
+		bld = SCons.Script.Builder(action = rootcintaction, suffix='_Dict.cc', src_suffix='.h')
+	else:
+		print 'Neither rootcint nor rootcling exists. Unable to create ROOT dictionaries if any encountered.'
+		return
+
 	env.Append(BUILDERS = {'ROOTDict' : bld})
-	if os.getenv('LD_LIBRARY_PATH'  ) != None : env.Append(LD_LIBRARY_PATH   = os.environ['LD_LIBRARY_PATH'  ])
-	if os.getenv('DYLD_LIBRARY_PATH') != None : env.Append(DYLD_LIBRARY_PATH = os.environ['DYLD_LIBRARY_PATH'])
 
 	# Generate ROOT dictionary file targets for each header
 	# containing "ClassDef"
@@ -689,6 +710,75 @@ def AddROOT(env):
 			env.AppendUnique(ALL_SOURCES = env.ROOTDict(f))
 			if(int(env['SHOWBUILD'])>1):
 				print "       ROOT dictionary for %s" % f
+	os.chdir(curpath)
+
+##################################
+# ROOTSPY Macro build function
+##################################
+def RootSpyMacroCodeGen(target, source, env):
+	# Used by AddROOTSpyMacros below. See comments there for details
+	t = '%s' % target[0]
+	s = '%s' % source[0]
+
+	base = os.path.basename(s[:-2])
+	class_name = '%s_rootspy_class' % base
+	fin  = open(s)
+	fout = open(t, 'w')
+
+	fout.write('#include <dlfcn.h>\n')
+	fout.write('#include <iostream>\n')
+	fout.write('#include <string>\n')
+	fout.write('using namespace std;\n')
+	fout.write('static string macro_data=""\n')
+	for line in fin:
+		line = line.replace('"', '\\\"')
+		fout.write('"%s\\n"\n' % line[:-1])
+	fout.write(';\n')
+	fout.write('class %s{\n' % class_name)
+	fout.write('   public:\n')
+	fout.write('   typedef void rmfcn(string, string, string);\n')
+	fout.write('   %s(){\n' % class_name)
+	fout.write('      rmfcn* fcn = (rmfcn*)dlsym(RTLD_DEFAULT, "REGISTER_ROOTSPY_MACRO");\n')
+	fout.write('      if(fcn) (*fcn)("%s","/", macro_data);\n' % base)
+	fout.write('   }\n')
+	fout.write('};\n')
+	fout.write('static %s tmp;' % class_name)
+
+	fin.close()
+	fout.close()
+
+##################################
+# ROOTSPY Macros
+##################################
+def AddROOTSpyMacros(env):
+	#
+	# This is used to generate a C++ file for each ROOT macro file
+	# where the complete macro file is embedded as a string. A small
+	# piece of code is also inserted that allows the string to be
+	# automatically registered with the RootSpy system, if present.
+	# (Basically, if the rootspy plugin is attached.) ROOT macros
+	# are identified by a file ending with a ".C" suffix. The macro
+	# name will be the basename of the file.
+	#
+
+	# Create Builder that can convert .C file into _rootspy_macro.cc file
+	if env['SHOWBUILD']==0:
+		rootmacroaction = SCons.Script.Action(RootSpyMacroCodeGen, 'ROOTSPY    [$SOURCE]')
+	else:
+		rootmacroaction = SCons.Script.Action(RootSpyMacroCodeGen)
+	bld = SCons.Script.Builder(action = rootmacroaction, suffix='_rootspy_macro.cc', src_suffix='.C')
+	env.Append(BUILDERS = {'ROOTSpyMacro' : bld})
+
+	# Find all macro files and schedule them to be converted using the above builder
+	curpath = os.getcwd()
+	srcpath = env.Dir('.').srcnode().abspath
+	if(int(env['SHOWBUILD'])>1):
+		print "---- Looking for ROOT macro files (*.C) in: %s" % srcpath
+	os.chdir(srcpath)
+	for f in glob.glob('*.C'):
+		env.AppendUnique(ALL_SOURCES = env.ROOTSpyMacro(f))
+		if(int(env['SHOWBUILD'])>1) : print "       ROOTSpy Macro for %s" % f
+
 	os.chdir(curpath)
 
 ##################################

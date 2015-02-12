@@ -13,7 +13,7 @@
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
 	if(TVirtualPad::Pad() == NULL)
-		locCanvas = new TCanvas("TrackMultiplicity"); //for testing
+		locCanvas = new TCanvas("TrackMultiplicity", "TrackMultiplicity", 1200, 800); //for testing
 	else
 		locCanvas = gPad->GetCanvas();
 

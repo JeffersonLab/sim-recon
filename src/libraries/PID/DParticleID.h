@@ -18,11 +18,15 @@
 #include <DVector3.h>
 #include "HDGEOMETRY/DRootGeom.h"
 #include <TRACKING/DTrackTimeBased_factory.h>
+#include <CDC/DCDCTrackHit.h>
+#include <FDC/DFDCPseudo.h>
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALShower.h>
 #include <TOF/DTOFPoint.h>
+#include <TOF/DTOFGeometry_factory.h>
 #include <START_COUNTER/DSCHit.h>
 #include <TRACKING/DTrackFitter.h>
+#include <TRACKING/DTrackFinder.h>
 #include <TRACKING/DReferenceTrajectory.h>
 #include <particleType.h>
 #include <PID/DChargedTrackHypothesis.h>
@@ -34,7 +38,6 @@
 #include <TMath.h>
 
 class DTrackTimeBased;
-class DCDCTrackHit;
 
 class DParticleID:public jana::JObject{
  public:
@@ -72,33 +75,47 @@ class DParticleID:public jana::JObject{
 	bool MatchToSC(const DReferenceTrajectory* rt, const vector<const DSCHit*>& locSCHits, double& locStartTime, double& locTimeVariance) const;
 
 	//matching tracks to hits/showers routines (can be called by DDetectorMatches factory)
-	bool MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, DShowerMatchParams& locShowerMatchParams) const;
+	bool MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, DBCALShowerMatchParams& locShowerMatchParams) const;
 	bool MatchToTOF(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DTOFPoint* locTOFPoint, double locInputStartTime, DTOFHitMatchParams& locTOFHitMatchParams) const;
-	bool MatchToFCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, DShowerMatchParams& locShowerMatchParams) const;
-	bool MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams) const;
+	bool MatchToFCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, DFCALShowerMatchParams& locShowerMatchParams) const;
+	bool MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams, DVector3 *IntersectionPoint=NULL, DVector3 *IntersectionDir=NULL) const;
+
+	// Alternate SC matching algorithm for straight line tracks
+	bool MatchToSC(const DKinematicData *kd,
+		       const vector<const DSCHit*>& locSCHits,
+		       vector<DSCHitMatchParams>& locSCHitMatchParams) const;
 
 	//select "best" matches //called by several factories
 	bool Get_BestSCMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DSCHitMatchParams& locBestMatchParams) const;
-	bool Get_BestBCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DShowerMatchParams& locBestMatchParams) const;
+	void Get_BestSCMatchParams(vector<DSCHitMatchParams>& locSCHitMatchParams, DSCHitMatchParams& locBestMatchParams) const;
+	bool Get_BestBCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DBCALShowerMatchParams& locBestMatchParams) const;
+	void Get_BestBCALMatchParams(DVector3 locMomentum, vector<DBCALShowerMatchParams>& locShowerMatchParams, DBCALShowerMatchParams& locBestMatchParams) const;
 	bool Get_BestTOFMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DTOFHitMatchParams& locBestMatchParams) const;
-	bool Get_BestFCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DShowerMatchParams& locBestMatchParams) const;
+	void Get_BestTOFMatchParams(vector<DTOFHitMatchParams>& locTOFHitMatchParams, DTOFHitMatchParams& locBestMatchParams) const;
+	bool Get_BestFCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DFCALShowerMatchParams& locBestMatchParams) const;
+	void Get_BestFCALMatchParams(vector<DFCALShowerMatchParams>& locShowerMatchParams, DFCALShowerMatchParams& locBestMatchParams) const;
 
-	//matching showers to tracks routines (called by DDetectorMatches factory)
-	bool MatchToTrack(const DBCALShower* locBCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const;
-	bool MatchToTrack(const DFCALShower* locFCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const;
+	//matching showers to tracks routines (mostly called by DDetectorMatches factory)
+	bool Distance_ToTrack(const DBCALShower* locBCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance, double& locDeltaPhi, double& locDeltaZ) const;
+	bool Distance_ToTrack(const DFCALShower* locFCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const;
+	bool Distance_ToTrack(const DTOFPoint* locTOFPoint, const DReferenceTrajectory* rt, double locInputStartTime, double& locDeltaX, double& locDeltaY) const;
+	bool Distance_ToTrack(const DSCHit* locSCHit, const DReferenceTrajectory* rt, double locInputStartTime, double& locDeltaPhi) const;
 
 	double Calc_BCALFlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, DDetectorMatches* locDetectorMatches) const;
 	double Calc_FCALFlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, DDetectorMatches* locDetectorMatches) const;
 	double Calc_TOFFlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, DDetectorMatches* locDetectorMatches) const;
 	double Calc_SCFlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches) const;
 
-  virtual Particle_t IDTrack(float locCharge, float locMass) const;
+	virtual Particle_t IDTrack(float locCharge, float locMass) const;
 
-  void Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locPropagatedRFTime, bool locRFTimeFixedFlag) const;
-  bool Calc_TrackStartTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locStartTime, double& locStartTimeVariance, bool locRFTimeFixedFlag) const;
-  double Calc_TimingChiSq(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag, unsigned int &locNDF, double& locTimingPull) const;
-  double Calc_TimingChiSq(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DEventRFBunch* locEventRFBunch, unsigned int &locNDF, double& locPull) const;
-  void Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const;
+	double Calc_PropagatedRFTime(const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch) const;
+	double Calc_TimingChiSq(const DKinematicData* locKinematicData, unsigned int &locNDF, double& locTimingPull) const;
+	void Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const;
+
+	unsigned int Get_CDCRingBitPattern(vector<const DCDCTrackHit*>& locCDCTrackHits) const;
+	unsigned int Get_FDCPlaneBitPattern(vector<const DFDCPseudo*>& locFDCPseudos) const;
+	void Get_CDCRings(int locBitPattern, set<int>& locCDCRings) const;
+	void Get_FDCPlanes(int locBitPattern, set<int>& locFDCPlanes) const;
 
   protected:
 		// gas material properties
@@ -127,13 +144,23 @@ class DParticleID:public jana::JObject{
 	// start counter geometry parameters
 	double sc_leg_tcor;
 	double sc_angle_cor;
-	vector<DVector3> sc_pos;
-	vector<DVector3> sc_norm;
+	vector<vector<DVector3> >sc_pos;
+	vector<vector<DVector3> >sc_norm;
 	double dSCdphi;
 	double dSCphi0;
 
+	// TOF calibration constants
+		// used to update hit energy & time when matching to un-matched, position-ill-defined bars
+	const DTOFGeometry* dTOFGeometry;
+	vector<double> propagation_speed;
+	double TOF_ATTEN_LENGTH;
+	double ONESIDED_PADDLE_MIDPOINT_MAG; //+/- this number for North/South
+
   double dTargetZCenter;
   double dRFBunchFrequency;
+  double SC_DPHI_CUT;
+
+  const DTrackFinder *finder;
 };
 
 #endif // _DParticleID_

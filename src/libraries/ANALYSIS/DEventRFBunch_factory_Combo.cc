@@ -164,12 +164,14 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 	locEventLoop->GetSingle(locEventRFBunch);
 
 	double locRFTime, locRFVariance;
+	DetectorSystem_t locTimeSource;
 	if(locEventRFBunch->dTime == locEventRFBunch->dTime)
 	{
 		locRFTime = locEventRFBunch->dTime;
 		locRFVariance = locEventRFBunch->dTimeVariance;
+		locTimeSource = locEventRFBunch->dTimeSource;
 	}
-	else if(!dEventRFBunchFactory->Get_RFTime(locEventLoop, locRFTime, locRFVariance))
+	else if(!dEventRFBunchFactory->Get_RFTimeGuess(locEventLoop, locRFTime, locRFVariance, locTimeSource))
 	{
 		//no good RF time, set to NaN for all combos
 		DEventRFBunch* locNewEventRFBunch = new DEventRFBunch(*locEventRFBunch);
@@ -189,11 +191,13 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
  	vector<const DNeutralShower*> locNeutralShowers;
 	locEventLoop->Get(locNeutralShowers, dShowerSelectionTag.c_str());
 
-	const DEventRFBunch* locThrownEventRFBunch = NULL;
-	locEventLoop->GetSingle(locThrownEventRFBunch, "Thrown", false);
+	vector<const DEventRFBunch*> locThrownEventRFBunches;
+	locEventLoop->Get(locThrownEventRFBunches, "Thrown");
+	const DEventRFBunch* locThrownEventRFBunch = locThrownEventRFBunches.empty() ? NULL : locThrownEventRFBunches[0];
 
-	const DMCThrownMatching* locMCThrownMatching = NULL;
-	locEventLoop->GetSingle(locMCThrownMatching, "", false);
+	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
+	locEventLoop->Get(locMCThrownMatchingVector);
+	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector.empty() ? NULL : locMCThrownMatchingVector[0];
 
  	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks, dTrackSelectionTag.c_str());
@@ -330,6 +334,8 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 			DEventRFBunch* locNewEventRFBunch = new DEventRFBunch();
 			locNewEventRFBunch->dTime = locNewRFTime;
 			locNewEventRFBunch->dTimeVariance = locRFVariance;
+			locNewEventRFBunch->dNumParticleVotes = locPropagatedTimes.size();
+			locNewEventRFBunch->dTimeSource = locTimeSource;
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
 			_data.push_back(locNewEventRFBunch);
@@ -349,11 +355,10 @@ bool DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const 
 	locStartTime = 0.0;
 
 	//BCAL
-	DShowerMatchParams locBCALShowerMatchParams;
+	DBCALShowerMatchParams locBCALShowerMatchParams;
 	if(dParticleID->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams))
 	{
-		const DBCALShower* locBCALShower = dynamic_cast<const DBCALShower*>(locBCALShowerMatchParams.dShowerObject);
-		locStartTime = locBCALShower->t - locBCALShowerMatchParams.dFlightTime;
+		locStartTime = locBCALShowerMatchParams.dBCALShower->t - locBCALShowerMatchParams.dFlightTime;
 		return true;
 	}
 
@@ -361,8 +366,7 @@ bool DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const 
 	DTOFHitMatchParams locTOFHitMatchParams;
 	if(dParticleID->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
 	{
-		const DTOFPoint* locTOFPoint = locTOFHitMatchParams.dTOFPoint;
-		locStartTime = locTOFPoint->t - locTOFHitMatchParams.dFlightTime;
+		locStartTime = locTOFHitMatchParams.dHitTime - locTOFHitMatchParams.dFlightTime;
 		return true;
 	}
 
@@ -375,11 +379,10 @@ bool DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const 
 	}
 
 	//FCAL
-	DShowerMatchParams locFCALShowerMatchParams;
+	DFCALShowerMatchParams locFCALShowerMatchParams;
 	if(dParticleID->Get_BestFCALMatchParams(locTrackTimeBased, locDetectorMatches, locFCALShowerMatchParams))
 	{
-		const DFCALShower* locFCALShower = dynamic_cast<const DFCALShower*>(locFCALShowerMatchParams.dShowerObject);
-		locStartTime = locFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime;
+		locStartTime = locFCALShowerMatchParams.dFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime;
 		return true;
 	}
 
@@ -398,7 +401,6 @@ double DEventRFBunch_factory_Combo::Calc_StartTime(const DNeutralShower* locNeut
 	double locHitTime = locNeutralShower->dSpacetimeVertex.T();
 	return locHitTime - locFlightTime;
 }
-
 
 int DEventRFBunch_factory_Combo::Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes)
 {

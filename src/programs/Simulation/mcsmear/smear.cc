@@ -50,6 +50,8 @@ void SmearSTC(hddm_s::HDDM *record);
 void SmearCherenkov(hddm_s::HDDM *record);
 void SmearTAGM(hddm_s::HDDM *record);
 void SmearTAGH(hddm_s::HDDM *record);
+void SmearPS(hddm_s::HDDM *record);
+void SmearPSC(hddm_s::HDDM *record);
 void InitCDCGeometry(void);
 void InitFDCGeometry(void);
 
@@ -143,6 +145,15 @@ extern double FTOF_BAR_THRESHOLD;
 // Single STC paddle energy threshold (applied after smearing)
 extern double STC_PADDLE_THRESHOLD;
 
+// Single pair spectrometer energy threshold (applied after smearing)
+extern double PSC_THRESHOLD;
+
+// PS counter resolutions and energy reponses
+extern double PS_SIGMA; // ns
+extern double PSC_SIGMA; //ns
+extern double PS_NPIX_PER_GEV;
+extern double PSC_PHOTONS_PERMEV;
+
 // Tagging counter time resolutions (s)
 extern double TAGM_TSIGMA;
 extern double TAGH_TSIGMA;
@@ -176,6 +187,10 @@ extern double TOF_PHOTONS_PERMEV;
 // Start counter resolution
 extern double START_SIGMA ;
 extern double START_PHOTONS_PERMEV;
+
+// Pair spectrometer resolution
+extern double PS_SIGMA;
+extern double PS_PHOTONS_PERMEV;
 
 extern bool SMEAR_BCAL;
 
@@ -244,6 +259,8 @@ void Smear(hddm_s::HDDM *record)
       SmearCherenkov(record);
       SmearTAGM(record);
       SmearTAGH(record);
+      SmearPS(record);
+      SmearPSC(record);
    }
    if (ADD_NOISE) {
       AddNoiseHitsCDC(record);
@@ -871,6 +888,64 @@ void SmearTAGH(hddm_s::HDDM *record)
          iter->deleteTaggerTruthHits();
    }
 }
+
+//-----------
+// SmearPS - smear hits in the pair spectrometer fine counters
+//-----------
+void SmearPS(hddm_s::HDDM *record)
+{
+   hddm_s::PsTileList tiles = record->getPsTiles();
+   hddm_s::PsTileList::iterator iter;
+   for (iter = tiles.begin(); iter != tiles.end(); ++iter) {
+      iter->deletePsHits();
+      hddm_s::PsTruthHitList thits = iter->getPsTruthHits();
+      hddm_s::PsTruthHitList::iterator titer;
+      for (titer = thits.begin(); titer != thits.end(); ++titer) {
+         // smear the time
+         double t = titer->getT() + SampleGaussian(PS_SIGMA);
+         // convert energy deposition in number of fired pixels
+         double npe = SamplePoisson(titer->getDE() * PS_NPIX_PER_GEV);
+	 hddm_s::PsHitList hits = iter->addPsHits();
+	 hits().setT(t);
+	 hits().setDE(npe/PS_NPIX_PER_GEV);
+      }
+
+      if (DROP_TRUTH_HITS)
+         iter->deletePsTruthHits();
+   }
+}
+
+//-----------
+// SmearPSC - smear hits in the pair spectrometer coarse counters
+//-----------
+void SmearPSC(hddm_s::HDDM *record)
+{
+   hddm_s::PscPaddleList paddles = record->getPscPaddles();
+   hddm_s::PscPaddleList::iterator iter;
+   for (iter = paddles.begin(); iter != paddles.end(); ++iter) {
+      iter->deletePscHits();
+      hddm_s::PscTruthHitList thits = iter->getPscTruthHits();
+      hddm_s::PscTruthHitList::iterator titer;
+      for (titer = thits.begin(); titer != thits.end(); ++titer) {
+         // smear the time
+         double t = titer->getT() + SampleGaussian(PSC_SIGMA);
+         // smear the energy
+         double npe = titer->getDE() * 1000. *  PSC_PHOTONS_PERMEV;
+         npe = npe +  SampleGaussian(sqrt(npe));
+         double NewE = npe/PSC_PHOTONS_PERMEV/1000.;
+         if (NewE > PSC_THRESHOLD) {
+            hddm_s::PscHitList hits = iter->addPscHits();
+            hits().setT(t);
+            hits().setDE(NewE);
+         }
+      }
+
+      if (DROP_TRUTH_HITS)
+         iter->deletePscTruthHits();
+   }
+}
+
+
 
 //-----------
 // InitCDCGeometry

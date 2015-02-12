@@ -45,6 +45,7 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumb
 
 	for (unsigned int ih=0; ih < tagm_hits.size(); ++ih)
 	{
+	        if (!tagm_hits[ih]->has_fADC) continue; // Skip TDC-only hits (i.e. hits with no ADC info.)		
 		DVector3 mom(0.0, 0.0, tagm_hits[ih]->E);
 		DBeamPhoton *gamma = new DBeamPhoton;
 		gamma->setPID(Gamma);
@@ -63,6 +64,7 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumb
 
 	for (unsigned int ih=0; ih < tagh_hits.size(); ++ih)
 	{
+	        if (!tagh_hits[ih]->has_fADC) continue; // Skip TDC-only hits (i.e. hits with no ADC info.)
 		DVector3 mom(0.0, 0.0, tagh_hits[ih]->E);
 		DBeamPhoton *gamma = new DBeamPhoton;
 		gamma->setPID(Gamma);

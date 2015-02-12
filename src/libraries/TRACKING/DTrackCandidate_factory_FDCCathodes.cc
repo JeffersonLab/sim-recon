@@ -9,6 +9,7 @@
 
 #include "DTrackCandidate_factory_FDCCathodes.h"
 #include "DANA/DApplication.h"
+#include <JANA/JCalibration.h>
 #include "FDC/DFDCPseudo_factory.h"
 #include "FDC/DFDCSegment_factory.h"
 #include "DHelicalFit.h"
@@ -29,7 +30,7 @@
 jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop, 
 						   int runnumber) {
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
-  bfield = dapp->GetBfield();
+  bfield = dapp->GetBfield(runnumber);
   FactorForSenseOfRotation=(bfield->GetBz(0.,0.,65.)>0.)?-1.:1.;
 
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
@@ -50,7 +51,16 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
   double endplate_dz,endplate_rmin,endplate_rmax;
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
   endplate_z+=endplate_dz;
-  dgeom->GetTargetZ(TARGET_Z);
+
+
+  JCalibration *jcalib = dapp->GetJCalibration(runnumber);
+  map<string, double> targetparms;
+  if (jcalib->Get("TARGET/target_parms",targetparms)==false){
+    TARGET_Z = targetparms["TARGET_Z_POSITION"];
+  }
+  else{
+    dgeom->GetTargetZ(TARGET_Z);
+  }
 
   DEBUG_HISTS=false;
   gPARMS->SetDefaultParameter("TRKFIND:DEBUG_HISTS", DEBUG_HISTS);

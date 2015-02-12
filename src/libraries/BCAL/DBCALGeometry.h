@@ -23,7 +23,7 @@ using namespace jana;
 #define SECTOR_SHIFT 0
 #define SECTOR_MASK 0X000F
 
-#define PI 3.1416
+#define PI 3.14159265358
 
 // with this set one will utilize the default summing -- see DBCALGeometry.cc
 // for a description of summed geometry.
@@ -45,38 +45,38 @@ public:
   
   enum End { kUpstream, kDownstream };
   
-  static const int NBCALMODS=48;         ///> number of modules
+  static const int NBCALMODS=48;         ///< number of modules
 
   //the distinction between inner layers and outer layers is important, since only the inner layers have TDC readout
 #ifdef BCAL_SUM_CELL
-  static const int NBCALLAYSIN=3;        ///> number of readout layers in inner BCAL (first 6 SiPM layers)
-  static const int NBCALLAYSOUT=1;       ///> number of readout layers in outer BCAL (outer 4 SiPM layers)
+  static const int NBCALLAYSIN=3;        ///< number of readout layers in inner BCAL (first 6 SiPM layers)
+  static const int NBCALLAYSOUT=1;       ///< number of readout layers in outer BCAL (outer 4 SiPM layers)
 #else
   static const int NBCALLAYSIN=6;
   static const int NBCALLAYSOUT=4;
 #endif
-  static int NSUMLAYSIN[NBCALLAYSIN];        ///> number of radial SiPM layers summed for digitization in each inner readout layer
-  static int NSUMLAYSOUT[NBCALLAYSOUT];        ///> number of radial SiPM layers summed for digitization in each outer readout layer
-  static int NSUMSECSIN;        ///> for the inner layers, the number of SiPM that will be summed in the azimuthal direction
-  static int NSUMSECSOUT;        ///> for the outer layer(s), the number of SiPM that will be summed in the azimuthal direction
-  static int NBCALSECSIN;   ///>number of sectors in inner region
-  static int NBCALSECSOUT;  ///>number of sectors in outer region
-  static float BCALINNERRAD;    ///> innner radius of BCAL in cm
-  static float BCAL_PHI_SHIFT;  ///> overall phi roation of BCAL in radians
+  static int NSUMLAYSIN[NBCALLAYSIN];          ///< number of radial SiPM layers summed for digitization in each inner readout layer
+  static int NSUMLAYSOUT[NBCALLAYSOUT];        ///< number of radial SiPM layers summed for digitization in each outer readout layer
+  static int NSUMSECSIN;         ///< for the inner layers, the number of SiPM that will be summed in the azimuthal direction
+  static int NSUMSECSOUT;        ///< for the outer layer(s), the number of SiPM that will be summed in the azimuthal direction
+  static int NBCALSECSIN;        ///<number of sectors in inner region
+  static int NBCALSECSOUT;       ///<number of sectors in outer region
+  static float BCALINNERRAD;     ///< innner radius of BCAL in cm
+  static float BCAL_PHI_SHIFT;   ///< overall phi roation of BCAL in radians
 
   // Enter the index of the SiPM that designates the first
   // (counting radially outward) of the outer cells (default 7)
-  static const int BCALMID=7;         ///> first outer layer (default 7)
+  static const int BCALMID=7;         ///< first outer layer (default 7)
 
   static float m_radius[11];
   static float fADC_radius[5];
-  static float BCALMIDRAD;     ///> mid radius of BCAL in cm (boundary between inner and outer layers)
-  static float BCALOUTERRAD;    ///> outer radius of BCAL in cm
-  static float BCALFIBERLENGTH; ///> BCAL Scintilator fiber lenth in cm
-  static float GLOBAL_CENTER;  ///> center of BCAL in gloobal coordinate system
+  static float BCALMIDRAD;       ///< mid radius of BCAL in cm (boundary between inner and outer layers)
+  static float BCALOUTERRAD;     ///< outer radius of BCAL in cm
+  static float BCALFIBERLENGTH;  ///< BCAL Scintilator fiber lenth in cm
+  static float GLOBAL_CENTER;    ///< center of BCAL in gloobal coordinate system
   
-  static float ATTEN_LENGTH;   ///> attenuation length
-  static float C_EFFECTIVE;    ///> speed of light in fibers 
+  static float ATTEN_LENGTH;     ///< attenuation length
+  static float C_EFFECTIVE;      ///< speed of light in fibers 
   
   static bool summingOn() {
   

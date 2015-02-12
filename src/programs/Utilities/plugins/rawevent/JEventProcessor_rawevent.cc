@@ -55,6 +55,14 @@
 
 #include "rawevent/JEventProcessor_rawevent.h"
 
+#include<cmath>
+#include<sstream>
+#include<iomanip>
+#include<algorithm>
+#include<fstream>
+#include <expat.h>
+
+#ifdef HAVE_EVIO
 
 // root histograms...probably not thread-safe
 static TH1F *tofEnergies;
@@ -82,12 +90,6 @@ extern "C" {
 #include "mc2coda.h"
 }
 
-
-#include<sstream>
-#include<iomanip>
-#include<algorithm>
-#include<fstream>
-#include <expat.h>
 
 
 // Replace use of BOOST lexical_cast with a simple templated function
@@ -172,6 +174,10 @@ static double FCAL_ADCscale = 2.5E5/4.0E1;
 static double BCAL_ADCscale = 10000.;
 static double TOF_ADCscale  = 5.2E5/0.2;
 static double SC_ADCscale   = 10000.;
+//static double TAGH_ADCscale = 10000.;
+//static double TAGM_ADCscale = 10000.;
+static double PSC_ADCscale  = 10000.;
+static double PS_ADCscale   = 10000.;
 
 //static double CDC_ADCtick = FADC125tick;
 static float CDC_ADCtick = FADC125tick;
@@ -180,12 +186,34 @@ static double FCAL_ADCtick = FADC250tick;
 static double BCAL_ADCtick = FADC250tick;
 static double TOF_ADCtick = FADC250tick;
 static double SC_ADCtick = FADC250tick;
+//static double TAGH_ADCtick = FADC250tick;
+//static double TAGM_ADCtick = FADC250tick;
+static double PSC_ADCtick = FADC250tick;
+static double PS_ADCtick = FADC250tick;
 
 static double FDC_TDCtick = F1TDC48tick;
 static double BCAL_TDCtick = F1TDC32tick;
 static double TOF_TDCtick = CAENTDCtick;
 static double SC_TDCtick = F1TDC32tick;
+//static double TAGH_TDCtick = F1TDC32tick;
+//static double TAGM_TDCtick = F1TDC32tick;
+static double PSC_TDCtick = F1TDC32tick;
 
+// optional parameters for specifying windows (in ns) in which to keep hits
+// these are useful in cases when one is generating events overlaid
+// with EM background, and the EM background window is large,
+// causing an unrealistic number of events to register in the
+// channels of certain detectors
+static double CDC_time_window = -1.;
+static double FDC_time_window = -1.;
+static double FCAL_time_window = -1.;
+static double BCAL_time_window = -1.;
+static double TOF_time_window = 100.;
+static double SC_time_window = -1.;
+static double TAGH_time_window = -1.;
+static double TAGM_time_window = -1.;
+static double PSC_time_window = 200.;
+static double PS_time_window = 200.;
 
 // debug
 static int dumphits  = 0;
@@ -204,6 +232,7 @@ extern float MEAN_PEDESTAL;
 extern float SIGMA_COMMON_PEDESTAL;
 extern float SIGMA_INDIVIDUAL_PEDESTAL;
 
+#endif //HAVE_EVIO
 
 //----------------------------------------------------------------------------
 
@@ -218,6 +247,7 @@ void InitPlugin(JApplication *app) {
 
 
 //----------------------------------------------------------------------------
+#ifdef HAVE_EVIO
 
 // Comparison operator for testing if two cscRefs are equal
 bool operator == (cscRef a, cscRef b) {
@@ -228,9 +258,11 @@ bool operator == (cscRef a, cscRef b) {
    return a.crate == b.crate;
 }
 
+#endif //HAVE_EVIO
 
 // JEventProcessor_rawevent (Constructor) invoked once only
 JEventProcessor_rawevent::JEventProcessor_rawevent() {
+#ifdef HAVE_EVIO
 
    // Default is to just read translation table from CCDB. If this fails,
    // then an attempt will be made to read from a file on the local disk.
@@ -288,6 +320,21 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
   gPARMS->SetDefaultParameter("RAWEVENT:SIGMA_COMMON_PEDESTAL",SIGMA_COMMON_PEDESTAL, "Stochastic width of common pedestal distribution. Common pedestal is used for all channels in a module but will be different module to module.");
   gPARMS->SetDefaultParameter("RAWEVENT:SIGMA_INDIVIDUAL_PEDESTAL",SIGMA_INDIVIDUAL_PEDESTAL, "Stochastic width of MEASURED pedestal");
 
+  // options for time windows
+  gPARMS->SetDefaultParameter("RAWEVENT:CDC_TIME_WINDOW",CDC_time_window, "Optional window size in which to save CDC hits (in ns)");
+  gPARMS->SetDefaultParameter("RAWEVENT:FDC_TIME_WINDOW",FDC_time_window, "Optional window size in which to save FDC hits (in ns)");
+  gPARMS->SetDefaultParameter("RAWEVENT:FCAL_TIME_WINDOW",FCAL_time_window, "Optional window size in which to save FCAL hits (in ns)");
+  gPARMS->SetDefaultParameter("RAWEVENT:BCAL_TIME_WINDOW",BCAL_time_window, "Optional window size in which to save BCAL hits (in ns)");
+  gPARMS->SetDefaultParameter("RAWEVENT:TOF_TIME_WINDOW",TOF_time_window, "Optional window size in which to save TOF hits (in ns)");
+  gPARMS->SetDefaultParameter("RAWEVENT:SC_TIME_WINDOW",SC_time_window, "Optional window size in which to save Start Counter hits (in ns)");
+  gPARMS->SetDefaultParameter("RAWEVENT:TAGH_TIME_WINDOW",TAGH_time_window, "Optional window size in which to save Tagger Hodoscope hits (in ns)");
+  gPARMS->SetDefaultParameter("RAWEVENT:TAGM_TIME_WINDOW",TAGM_time_window, "Optional window size in which to save Tagger Microscope hits (in ns)");
+  gPARMS->SetDefaultParameter("RAWEVENT:PSC_TIME_WINDOW",PSC_time_window, "Optional window size in which to save Coarse Pair Spectrometer hits (in ns)");
+  gPARMS->SetDefaultParameter("RAWEVENT:PS_TIME_WINDOW",PS_time_window, "Optional window size in which to save Fine Pair Spectrometer hits (in ns)");
+
+#endif //HAVE_EVIO
+
+
 }
 
 
@@ -296,9 +343,11 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
 
 // ~JEventProcessor_rawevent (Destructor) once only
 JEventProcessor_rawevent::~JEventProcessor_rawevent() {
+#ifdef HAVE_EVIO
   if (nomc2coda == 0) {
     mc2codaFree(expID);
   }
+#endif //HAVE_EVIO
 }
 
 
@@ -307,7 +356,7 @@ JEventProcessor_rawevent::~JEventProcessor_rawevent() {
 
 // init called once-only at beginning, independent of the number of processing threads
 jerror_t JEventProcessor_rawevent::init(void) {
-
+#ifdef HAVE_EVIO
 
   // read translation table, fill crate id arrays
   readTranslationTable();
@@ -331,6 +380,14 @@ jerror_t JEventProcessor_rawevent::init(void) {
      if (nMod < 1)
         continue; // ignore crates with no digitization modules
 
+     // hack to configure slot for F1TDC reference signal
+     // crate = 51, slot = 17, channel = 8
+     if(crateID[i] == 51) {
+       modules[i][16] = F1TDC32;
+       detID[i][16] = 1;
+       nModules[i]++;
+     }
+
       stat = mc2codaSetCrate(expID,crateID[i],nModules[i]-2,modules[i],detID[i]);
       if (stat == -1) {
         jerr << "?JEventProcessor_rawevent...error return from mc2codaSetCrate()"
@@ -339,7 +396,7 @@ jerror_t JEventProcessor_rawevent::init(void) {
       }
     }
   }
-  
+
   // Optionally dump translation table map into file for debugging
   if (dumpmap) {
      ofstream *ofs = new ofstream("cscMap.out");
@@ -378,6 +435,8 @@ jerror_t JEventProcessor_rawevent::init(void) {
     taghTimes    = new TH1F("tahft", "Tagger hodoscope times in nsec",1000,0.,250.-tMin/1000);
   }
 
+#endif //HAVE_EVIO
+
   return NOERROR;
 }
 
@@ -386,6 +445,7 @@ jerror_t JEventProcessor_rawevent::init(void) {
 
 // brun called once-only at beginning of run, independent of the number of processing threads
 jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
+#ifdef HAVE_EVIO
 
   runNumber=runnumber;
   jout << std::endl << "   brun called for run " << runNumber << std::endl;
@@ -521,6 +581,36 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 	  jerr << "Unable to get SC_TDC_SCALE from /START_COUNTER/digi_scales !" << endl;
   }
 
+  // PS and PSC scales are stored in the same table
+  if (eventLoop->GetCalib("/PHOTON_BEAM/pair_spectrometer/digi_scales", scale_factors))
+	  jout << "Error loading /PHOTON_BEAM/pair_spectrometer/digi_scales !" << endl;
+  if ( scale_factors.find("PSC_ADC_ASCALE") != scale_factors.end() ) {
+	  PSC_ADCscale = 1. / scale_factors["PSC_ADC_ASCALE"];
+  } else {
+	  jerr << "Unable to get PSC_ADC_ASCALE from /PHOTON_BEAM/pair_spectrometer/digi_scales !" << endl;
+  }
+  if ( scale_factors.find("PSC_ADC_TSCALE") != scale_factors.end() ) {
+	  PSC_ADCtick = 1000. * scale_factors["PSC_ADC_TSCALE"];
+  } else {
+	  jerr << "Unable to get PSC_ADC_TSCALE from /PHOTON_BEAM/pair_spectrometer/digi_scales !" << endl;
+  }
+  if ( scale_factors.find("PSC_TDC_SCALE") != scale_factors.end() ) {
+	  PSC_TDCtick = 1000. * scale_factors["PSC_TDC_SCALE"];
+  } else {
+	  jerr << "Unable to get PSC_TDC_SCALE from /PHOTON_BEAM/pair_spectrometer/digi_scales !" << endl;
+  }
+
+  if ( scale_factors.find("PS_ADC_ASCALE") != scale_factors.end() ) {
+	  PS_ADCscale = 1. / scale_factors["PS_ADC_ASCALE"];
+  } else {
+	  jerr << "Unable to get PS_ADC_ASCALE from /PHOTON_BEAM/pair_spectrometer/digi_scales !" << endl;
+  }
+  if ( scale_factors.find("PS_ADC_TSCALE") != scale_factors.end() ) {
+	  PS_ADCtick = 1000. * scale_factors["PS_ADC_TSCALE"];
+  } else {
+	  jerr << "Unable to get PS_ADC_TSCALE from /PHOTON_BEAM/pair_spectrometer/digi_scales !" << endl;
+  }
+
 
   // add header event if required
   // ...
@@ -530,13 +620,15 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 //   if (key.find("toftdc") == 0) _DBG_ << key << std::endl;
 //  }
   
-  
+#endif //HAVE_EVIO
+
   return NOERROR;
 }
 
 
 //----------------------------------------------------------------------------
 
+#ifdef HAVE_EVIO
 
   static bool compareDTOFHits(const DTOFHit* h1, const DTOFHit* h2) {
     if (h1->plane != h2->plane) {
@@ -643,6 +735,29 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
     }
   }
 
+  static bool compareDPSCHits(const DPSCHit* h1, const DPSCHit* h2) {
+    if (h1->arm != h2->arm) {
+      return(h1->arm<h2->arm);
+    } else if (h1->module != h2->module) {
+      return(h1->module<h2->module);
+    } else {
+      return(h1->t<h2->t);
+    }
+  }
+
+
+  static bool compareDPSHits(const DPSHit* h1, const DPSHit* h2) {
+    if (h1->arm != h2->arm) {
+      return(h1->arm<h2->arm);
+    } else if (h1->column != h2->column) {
+      return(h1->column<h2->column);
+    } else {
+      return(h1->t<h2->t);
+    }
+  }
+
+
+#endif //HAVE_EVIO
 
 //----------------------------------------------------------------------------
 
@@ -659,6 +774,7 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 //        The buffer is written to disk using a mutex-locked EVIO write.
 
 jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) {
+#ifdef HAVE_EVIO
 
   unsigned int i;
   CODA_HIT_INFO hit[10];
@@ -715,6 +831,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if ((dcdchits[i]->q > 0) && ((dcdchits[i]->t*1000.) > tMin) &&
         (dcdchits[i]->t*1000. < trigTime))
     {
+      if(CDC_time_window > 0.)
+	if(fabs(dcdchits[i]->t) > CDC_time_window)
+	  continue;
+
       //uint32_t q     = dcdchits[i]->q * (1./5.18) * (1.3E5/1.0E6); // q is in femtoCoulombs (max is ~1E6) 
       uint32_t q     = dcdchits[i]->q * CDC_ADCscale; // q is in femtoCoulombs (max is ~1E6) 
       //uint32_t t     = dcdchits[i]->t*1000.0 -tMin;    // t is in nanoseconds (max is ~900ns)
@@ -788,6 +908,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if ((dtofrawhits[i]->dE > 0) && ((dtofrawhits[i]->t*1000.) > tMin) &&
         (dtofrawhits[i]->t*1000. < trigTime))
     {
+      if(TOF_time_window > 0.)
+	if(fabs(dtofrawhits[i]->t) > TOF_time_window)
+	  continue;
+
 	//uint32_t E  = dtofrawhits[i]->dE*(5.2E5/0.2);   // E is GeV (max ~0.1)
       uint32_t E  = dtofrawhits[i]->dE*TOF_ADCscale;   // E is GeV (max ~0.1)
       uint32_t t  = dtofrawhits[i]->t*1000.-tMin;  // in picoseconds
@@ -881,6 +1005,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if ((dbcalhits[i]->E > 0) && ((dbcalhits[i]->t*1000.) > tMin) &&
         (dbcalhits[i]->t*1000. < trigTime))
     {
+      if(BCAL_time_window > 0.)
+	if(fabs(dbcalhits[i]->t) > BCAL_time_window)
+	  continue;
+
       uint32_t E = dbcalhits[i]->E*BCAL_ADCscale;  // (each fADC count ~ 100keV) (max ~2.5E4)
       uint32_t t = dbcalhits[i]->t*1000.-tMin;     // in picoseconds
 
@@ -982,6 +1110,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if (((dbcaltdchits[i]->t*1000.) > tMin) && 
          (dbcaltdchits[i]->t*1000. < trigTime))
     {
+      if(BCAL_time_window > 0.)
+	if(fabs(dbcaltdchits[i]->t) > BCAL_time_window)
+	  continue;
+
       int32_t E     = 0;
       int32_t t     = dbcaltdchits[i]->t*1000.-tMin;  // in picoseconds
 
@@ -1044,6 +1176,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if ((dfcalhits[i]->E > 0) && ((dfcalhits[i]->t*1000.) > tMin) &&
         (dfcalhits[i]->t*1000. < trigTime))
     {
+      if(FCAL_time_window > 0.)
+	if(fabs(dfcalhits[i]->t) > FCAL_time_window)
+	  continue;
+
       uint32_t E     = dfcalhits[i]->E*FCAL_ADCscale;  // E in GeV (max ~4)
       uint32_t t     = dfcalhits[i]->t*1000.-tMin;  // in picoseconds
       
@@ -1107,6 +1243,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if ((dfdchits[i]->q > 0) && ((dfdchits[i]->t*1000.) > tMin) &&
         (dfdchits[i]->t*1000. < trigTime))
     {
+      if(FDC_time_window > 0.)
+	if(fabs(dfdchits[i]->t) > FDC_time_window)
+	  continue;
+
       uint32_t q = dfdchits[i]->q*FDC_ADCscale; // for cathodes
       if (dfdchits[i]->type == 0)
          q = 0.0; // No amplitude read for wires 
@@ -1214,6 +1354,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if ((dsthits[i]->dE > 0) && ((dsthits[i]->t*1000.) > tMin) &&
         (dsthits[i]->t*1000. < trigTime))
     {
+      if(SC_time_window > 0.)
+	if(fabs(dsthits[i]->t) > SC_time_window)
+	  continue;
+
       uint32_t E     = dsthits[i]->dE*SC_ADCscale;   // dE in GeV (max ~2E-2)
       uint32_t t     = dsthits[i]->t*1000.-tMin;  // in picoseconds
 
@@ -1314,6 +1458,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       uint32_t pA = dtagmhits[i]->npix_fadc + 2500;       // in SiPM pixels
       uint32_t t = dtagmhits[i]->t*1000 - tMin;           // in ps
       uint32_t tA = dtagmhits[i]->time_fadc*1000 - tMin;  // in ps
+
+      if(TAGM_time_window > 0.)
+	if(fabs(dtagmhits[i]->t) > TAGM_time_window)
+	  continue;
 
       if (noroot == 0)
         tagmEnergies->Fill(dtagmhits[i]->npix_fadc);
@@ -1419,6 +1567,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       uint32_t t = dtaghhits[i]->t*1000 - tMin;           // in ps
       uint32_t tA = dtaghhits[i]->time_fadc*1000 - tMin;  // in ps
 
+      if(TAGH_time_window > 0.)
+	if(fabs(dtaghhits[i]->t) > TAGH_time_window)
+	  continue;
+
       if (noroot == 0)
         taghEnergies->Fill(dtaghhits[i]->npe_fadc);
       if (noroot == 0)
@@ -1506,6 +1658,201 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     jout << std::endl << "Tagger hodoscope hits: " << hc << std::endl << std::endl;
   }
 
+  // DPSCHit - FADC250 and F1TDC32 (60 ps)
+  vector<const DPSCHit*> dpschits;
+  eventLoop->Get(dpschits);
+  sort(dpschits.begin(),dpschits.end(),compareDPSCHits);
+
+  hc=0;
+  for (i=0; i < dpschits.size(); i++) {
+    if ((dpschits[i]->dE > 0) && ((dpschits[i]->t*1000.) > tMin) &&
+        (dpschits[i]->t*1000. < trigTime))
+    {
+      if(PSC_time_window > 0.)
+	if(fabs(dpschits[i]->t) > PSC_time_window)
+	  continue;
+
+      uint32_t E     = dpschits[i]->dE*PSC_ADCscale;   // dE in GeV
+      uint32_t t     = dpschits[i]->t*1000.-tMin;  // in picoseconds
+
+      hc++;
+      hitCount++;
+      nhits=1;
+      cscRef cscADC      = DPSCHitTranslationADC(dpschits[i]);
+      hit[0].hit_id      = hitCount;
+      hit[0].det_id      = detID;
+      hit[0].crate_id    = cscADC.crate;
+      hit[0].slot_id     = cscADC.slot;
+      hit[0].chan_id     = cscADC.channel;
+      hit[0].module_id   = FADC250;
+      hit[0].module_mode = FADC250_MODE_IP;
+      hit[0].nwords      = 2;
+      hit[0].hdata       = mcData;
+      hit[0].hdata[0]    = E; 
+      hit[0].hdata[1]    = static_cast<double>(t)/PSC_ADCtick;
+      if (E > 0x7ffff)
+         std::cerr << "E too large for PSC: " << E << std::endl;
+      
+      if (dumphits > 1) {
+        jout << std::endl;
+        jout << " PSC ADC arm,module is " 
+	     << dpschits[i]->arm << "," << dpschits[i]->module << std::endl;
+        jout << " c,s,c are " << cscADC.crate << ", " << cscADC.slot
+             << ", " << cscADC.channel << std::endl;
+        jout << " hdata is: " << hit[0].hdata[0] << ", " 
+             << hit[0].hdata[1] << std::endl;
+        jout << " E,t are " << E << ", " << t << std::endl;
+        jout << std::endl;
+      }
+      
+      if (nomc2coda == 0) {
+        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+        if (stat != nhits) {
+          jerr << "?error return from mc2codaWrite() for PSC ADC: " 
+               << stat << std::endl << std::endl;
+          exit(EXIT_FAILURE);
+        }
+      }
+
+      hitCount++;
+      nhits=1;
+      cscRef cscTDC      = DPSCHitTranslationTDC(dpschits[i]);
+      hit[0].hit_id      = hitCount;
+      hit[0].det_id      = detID;
+      hit[0].crate_id    = cscTDC.crate;
+      hit[0].slot_id     = cscTDC.slot;
+      hit[0].chan_id     = cscTDC.channel;
+      hit[0].module_id   = F1TDC32;
+      hit[0].module_mode = 0;
+      hit[0].nwords      = 1;
+      hit[0].hdata       = mcData;
+      hit[0].hdata[0]    = static_cast<double>(t)/PSC_TDCtick;
+      
+      if (dumphits > 1) {
+        jout << std::endl;
+        jout << " PSC TDC arm,module is " 
+	     << dpschits[i]->arm << "," << dpschits[i]->module << std::endl;
+        jout << " c,s,c are " << cscTDC.crate << ", " << cscTDC.slot 
+             << ", " << cscTDC.channel << std::endl;
+        jout << " hdata is: " << hit[0].hdata[0] << std::endl;
+        jout << " E,t are " << E << ", " << t << std::endl;
+        jout << std::endl;
+      }
+      
+      if (nomc2coda == 0) {
+        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+        if (stat != nhits) {
+          jerr << "?error return from mc2codaWrite() for PSC TDC: " 
+               << stat << std::endl << std::endl;
+          exit(EXIT_FAILURE);
+        }
+      }
+    }
+  }
+  if ((dumphits >= 1) && (hc > 0)) {
+    jout << std::endl << "PSC hits: " << hc << std::endl << std::endl;
+  }
+
+
+  // DPSHit - FADC250
+  vector<const DPSHit*> dpshits;
+  eventLoop->Get(dpshits);
+  sort(dpshits.begin(),dpshits.end(),compareDPSHits);
+
+  hc=0;
+  for (i=0; i < dpshits.size(); i++) {
+    if ((dpshits[i]->dE > 0) && ((dpshits[i]->t*1000.) > tMin) &&
+        (dpshits[i]->t*1000. < trigTime))
+    {
+      if(PS_time_window > 0.)
+	if(fabs(dpshits[i]->t) > PS_time_window)
+	  continue;
+
+      uint32_t E     = dpshits[i]->dE*PS_ADCscale;   // dE in GeV
+      uint32_t t     = dpshits[i]->t*1000.-tMin;  // in picoseconds
+
+      hc++;
+      hitCount++;
+      nhits=1;
+      cscRef cscADC      = DPSHitTranslationADC(dpshits[i]);
+      hit[0].hit_id      = hitCount;
+      hit[0].det_id      = detID;
+      hit[0].crate_id    = cscADC.crate;
+      hit[0].slot_id     = cscADC.slot;
+      hit[0].chan_id     = cscADC.channel;
+      hit[0].module_id   = FADC250;
+      hit[0].module_mode = FADC250_MODE_IP;
+      hit[0].nwords      = 2;
+      hit[0].hdata       = mcData;
+      hit[0].hdata[0]    = E; 
+      hit[0].hdata[1]    = static_cast<double>(t)/PS_ADCtick;
+      if (E > 0x7ffff)
+         std::cerr << "E too large for PS: " << E << std::endl;
+      
+      if (dumphits > 1) {
+        jout << std::endl;
+        jout << " PS ADC arm,column is " 
+	     << dpshits[i]->arm << "," << dpshits[i]->column << std::endl;
+        jout << " c,s,c are " << cscADC.crate << ", " << cscADC.slot
+             << ", " << cscADC.channel << std::endl;
+        jout << " hdata is: " << hit[0].hdata[0] << ", " 
+             << hit[0].hdata[1] << std::endl;
+        jout << " E,t are " << E << ", " << t << std::endl;
+        jout << std::endl;
+      }
+      
+      if (nomc2coda == 0) {
+        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+        if (stat != nhits) {
+          jerr << "?error return from mc2codaWrite() for PS ADC: " 
+               << stat << std::endl << std::endl;
+          exit(EXIT_FAILURE);
+        }
+      }
+    }
+  }
+  if ((dumphits >= 1) && (hc > 0)) {
+    jout << std::endl << "PS hits: " << hc << std::endl << std::endl;
+  }
+
+
+  // Write out F1TDC reference time information
+  // Set it to zero for MC
+  hitCount++;
+  nhits=1;
+  double E=0;
+  double t=0;
+  hit[0].hit_id      = hitCount;
+  hit[0].det_id      = detID;
+  // this corresponds to a particular channel set up by Beni 
+  hit[0].crate_id    = 51;
+  hit[0].slot_id     = 17;
+  hit[0].chan_id     = 8;
+  hit[0].module_id   = F1TDC32;
+  hit[0].module_mode = 0;
+  hit[0].nwords      = 1;
+  hit[0].hdata       = mcData;
+  hit[0].hdata[0]    = t;
+      
+  if (dumphits > 1) {
+	  jout << std::endl;
+	  jout << " F1TDC reference signal" << std::endl;
+	  jout << " c,s,c are " << hit[0].crate_id << ", " << hit[0].slot_id
+	       << ", " << hit[0].chan_id << std::endl;
+	  jout << " hdata is: " << hit[0].hdata[0] << std::endl;
+	  jout << " E,t are " << E << ", " << t << std::endl;
+	  jout << std::endl;
+  }
+  
+  if (nomc2coda == 0) {
+	  stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+	  if (stat != nhits) {
+		  jerr << "?error return from mc2codaWrite() for F1TDC reference time: " 
+		       << stat << std::endl << std::endl;
+		  exit(EXIT_FAILURE);
+	  }
+  }
+
   // close event
   if (nomc2coda == 0) {
     int nwords = mc2codaCloseEvent(eventID);
@@ -1521,6 +1868,9 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   chan->write(eventID->evbuf);
   pthread_mutex_unlock(&rawMutex);
 
+#else
+cout << "Built without EVIO" << endl;
+#endif
   return NOERROR;
 }
 
@@ -1530,6 +1880,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
 // erun called once-only at end of run, independent of the number of processing threads
 jerror_t JEventProcessor_rawevent::erun(void) {
+#ifdef HAVE_EVIO
 
   jout << std::endl << "   erun called for run " << runNumber << std::endl << std::endl;
 
@@ -1545,6 +1896,7 @@ jerror_t JEventProcessor_rawevent::erun(void) {
     chan=NULL;
     jout << std::endl << "  output file " << outputFileName << " closed" << std::endl << std::endl;
   }
+#endif
 
   return NOERROR;
 }
@@ -1572,6 +1924,7 @@ jerror_t JEventProcessor_rawevent::fini(void) {
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+#ifdef HAVE_EVIO
 
 void JEventProcessor_rawevent::readTranslationTable(void) {
 
@@ -1691,7 +2044,7 @@ void JEventProcessor_rawevent::StartElement(void *userData, const char *xmlname,
   string id,row,column,module,sector,layer,chan;
   string ring,straw,plane,bar,gPlane,element;
   string package,chamber,view,strip,wire;
-
+  string side;
 
   // store crate summary info, fill both maps
   if (strcasecmp(xmlname,"halld_online_translation_table") == 0) {
@@ -1797,6 +2150,8 @@ void JEventProcessor_rawevent::StartElement(void *userData, const char *xmlname,
         strip = string(atts[i+1]);
       } else if (strcasecmp(atts[i],"wire") == 0) {
         wire = string(atts[i+1]);
+      } else if (strcasecmp(atts[i],"side") == 0) {
+        side = string(atts[i+1]);
       }
     }
 
@@ -1965,19 +2320,21 @@ void JEventProcessor_rawevent::StartElement(void *userData, const char *xmlname,
              << "?startElement...illegal type for PSC: " 
              << Type << std::endl << std::endl;
       }
-      s += row + ":" + column;
+      //s += row + ":" + column;
       cscMap[s] = csc;
 
    } else if (detector == "ps") {
       if (type == "fadc250") {
-        s = "psadc::" + id;
+	      //s = "psadc::" + id;
+        s = "psadc::";
       } else {
         s = "unknownPS::";
         jerr << std::endl << std::endl 
              << "?startElement...illegal type for PS: " 
              << Type << std::endl << std::endl;
       }
-      s += row + ":" + column;
+      //s += row + ":" + column;
+      s += side + ":" + id;
       cscMap[s] = csc;
 
     } else {
@@ -2225,6 +2582,44 @@ cscRef JEventProcessor_rawevent::DTAGHHitTranslationADC(const DTAGHHit* hit) con
   return cscMap[s];
 }
 
+//----------------------------------------------------------------------------
+
+
+cscRef JEventProcessor_rawevent::DPSCHitTranslationTDC(const DPSCHit* hit) const {
+  int module_id = 8*hit->arm + hit->module;
+  string s = "pscadc::" + lexical_cast(module_id);
+  cerr << "checking = " << s << endl;
+  if (cscMap.count(s) <= 0)
+    jerr << "?unknown map entry " << s << std::endl;
+  return cscMap[s];
+}
+
+
+//----------------------------------------------------------------------------
+
+
+cscRef JEventProcessor_rawevent::DPSCHitTranslationADC(const DPSCHit* hit) const {
+  int module_id = 8*hit->arm + hit->module;
+  string s = "pscadc::" + lexical_cast(module_id);
+  cerr << "checking = " << s << endl;
+  if (cscMap.count(s) <= 0)
+    jerr << "?unknown map entry " << s << std::endl;
+  return cscMap[s];
+}
+
+//----------------------------------------------------------------------------
+
+
+cscRef JEventProcessor_rawevent::DPSHitTranslationADC(const DPSHit* hit) const {
+  string arm = hit->arm==0 ? "A" : "B";
+  string s = "psadc::" + arm + ":" + lexical_cast(hit->column);
+  cerr << "checking = " << s << endl;
+  if (cscMap.count(s) <= 0)
+    jerr << "?unknown map entry " << s << std::endl;
+  return cscMap[s];
+}
+
+#endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

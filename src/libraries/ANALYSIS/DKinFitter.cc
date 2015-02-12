@@ -2842,7 +2842,7 @@ void DKinFitter::Calc_dF_P4(DKinFitConstraint_P4* locKinFitConstraint_P4, const 
 
 	TLorentzVector locP4 = locKinFitParticle->Get_P4();
 	TVector3 locPosition = locKinFitParticle->Get_Position();
-	TVector3 locBField = Get_BField(locPosition);
+	TVector3 locBField = Get_IsBFieldNearBeamline() ? Get_BField(locPosition) : TVector3(0.0, 0.0, 0.0);
 	TVector3 locCommonVertex = locKinFitParticle->Get_CommonVertex();
 	TVector3 locDeltaX = locCommonVertex - locPosition;
 
@@ -3066,7 +3066,7 @@ TLorentzVector DKinFitter::Calc_dF_MassP4(DKinFitConstraint_P4* locKinFitConstra
 
 	TLorentzVector locP4 = locKinFitParticle->Get_P4();
 	TVector3 locPosition = locKinFitParticle->Get_Position();
-	TVector3 locBField = Get_BField(locPosition);
+	TVector3 locBField = Get_IsBFieldNearBeamline() ? Get_BField(locPosition) : TVector3(0.0, 0.0, 0.0);
 	TVector3 locCommonVertex = locKinFitParticle->Get_CommonVertex();
 	TVector3 locDeltaX = locCommonVertex - locPosition;
 
@@ -3158,7 +3158,7 @@ void DKinFitter::Calc_dF_MassDerivs(DKinFitConstraint_P4* locKinFitConstraint_P4
 
 	TLorentzVector locP4 = locKinFitParticle->Get_P4();
 	TVector3 locPosition = locKinFitParticle->Get_Position();
-	TVector3 locBField = Get_BField(locPosition);
+	TVector3 locBField = Get_IsBFieldNearBeamline() ? Get_BField(locPosition) : TVector3(0.0, 0.0, 0.0);
 	TVector3 locCommonVertex = locKinFitParticle->Get_CommonVertex();
 	TVector3 locDeltaX = locCommonVertex - locPosition;
 
@@ -4954,7 +4954,7 @@ void DKinFitter::Calc_DecayingParticleJacobian(DKinFitConstraint_P4* locP4Constr
 		int locCharge = locKinFitParticle->Get_Charge();
 		TLorentzVector locP4 = locKinFitParticle->Get_P4();
 		TVector3 locPosition = locKinFitParticle->Get_Position();
-		TVector3 locBField = Get_BField(locPosition);
+		TVector3 locBField = Get_IsBFieldNearBeamline() ? Get_BField(locPosition) : TVector3(0.0, 0.0, 0.0);
 		TVector3 locCommonVertex = locKinFitParticle->Get_CommonVertex();
 		TVector3 locDeltaX = locCommonVertex - locPosition;
 		if(dDebugLevel > 50)
@@ -5156,7 +5156,7 @@ bool DKinFitter::Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locKin
 	TLorentzVector locP4 = locKinFitParticle->Get_P4();
 	TVector3 locPosition = locKinFitParticle->Get_Position();
 	TVector3 locDeltaX = locCommonVertex - locPosition;
-	TVector3 locBField = Get_BField(locPosition);
+	TVector3 locBField = Get_IsBFieldNearBeamline() ? Get_BField(locPosition) : TVector3(0.0, 0.0, 0.0);
 	TVector3 locH = locBField.Unit();
 	double locA = -0.00299792458*(double(locCharge))*locBField.Mag();
 	double locCommonTime;
@@ -5352,7 +5352,7 @@ bool DKinFitter::Calc_PathLength(const DKinFitParticle* locKinFitParticle, const
 	TLorentzVector locP4 = locKinFitParticle->Get_P4();
 	TVector3 locPosition = locKinFitParticle->Get_Position();
 	TVector3 locDeltaX = locCommonVertex - locPosition;
-	TVector3 locBField = Get_BField(locPosition);
+	TVector3 locBField = Get_IsBFieldNearBeamline() ? Get_BField(locPosition) : TVector3(0.0, 0.0, 0.0);
 	TVector3 locH = locBField.Unit();
 
 	int locLParamIndex = locKinFitParticle->Get_LParamIndex();

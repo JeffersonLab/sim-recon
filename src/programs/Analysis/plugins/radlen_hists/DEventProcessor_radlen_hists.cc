@@ -108,14 +108,24 @@ jerror_t DEventProcessor_radlen_hists::init(void)
 	tradstep = new TTree("radstep","Radlen steps");
 	tradstep->Branch("R","radstep",&rstep_ptr);
 
-	DApplication *dapp = dynamic_cast<DApplication*>(japp);
-	bfield = dapp->GetBfield();
-
 	// Go back up to the parent directory
 	dir->cd("../");
 
 	pthread_mutex_unlock(&mutex);
 	
+	bfield = NULL;
+
+	return NOERROR;
+}
+
+//------------------
+// brun
+//------------------
+jerror_t DEventProcessor_radlen_hists::brun(JEventLoop *loop, int runnumber)
+{
+	DApplication *dapp = dynamic_cast<DApplication*>(japp);
+	bfield = dapp->GetBfield(runnumber);
+
 	return NOERROR;
 }
 

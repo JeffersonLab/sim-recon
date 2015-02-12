@@ -245,6 +245,126 @@ inline static char* ParticleType(Particle_t p)
   }
 }
 
+inline static Particle_t ParticleEnum(const char* locParticleName)
+{
+  if(strcmp(locParticleName, "Unknown") == 0)
+    return Unknown;
+  else if(strcmp(locParticleName, "Photon") == 0)
+    return Gamma;
+  else if(strcmp(locParticleName, "Positron") == 0)
+    return Positron;
+  else if(strcmp(locParticleName, "Electron") == 0)
+    return Electron;
+  else if(strcmp(locParticleName, "Neutrino") == 0)
+    return Neutrino;
+  else if(strcmp(locParticleName, "Muon+") == 0)
+    return MuonPlus;
+  else if(strcmp(locParticleName, "Muon-") == 0)
+    return MuonMinus;
+  else if(strcmp(locParticleName, "Pi0") == 0)
+    return Pi0;
+  else if(strcmp(locParticleName, "Pi+") == 0)
+    return PiPlus;
+  else if(strcmp(locParticleName, "Pi-") == 0)
+    return PiMinus;
+  else if(strcmp(locParticleName, "KLong") == 0)
+    return KLong;
+  else if(strcmp(locParticleName, "K+") == 0)
+    return KPlus;
+  else if(strcmp(locParticleName, "K-") == 0)
+    return KMinus;
+  else if(strcmp(locParticleName, "Neutron") == 0)
+    return Neutron;
+  else if(strcmp(locParticleName, "Proton") == 0)
+    return Proton;
+  else if(strcmp(locParticleName, "AntiProton") == 0)
+    return AntiProton;
+  else if(strcmp(locParticleName, "KShort") == 0)
+    return KShort;
+  else if(strcmp(locParticleName, "Eta") == 0)
+    return Eta;
+  else if(strcmp(locParticleName, "Lambda") == 0)
+    return Lambda;
+  else if(strcmp(locParticleName, "Sigma+") == 0)
+    return SigmaPlus;
+  else if(strcmp(locParticleName, "Sigma0") == 0)
+    return Sigma0;
+  else if(strcmp(locParticleName, "Sigma-") == 0)
+    return SigmaMinus;
+  else if(strcmp(locParticleName, "Xi0") == 0)
+    return Xi0;
+  else if(strcmp(locParticleName, "Xi-") == 0)
+    return XiMinus;
+  else if(strcmp(locParticleName, "Omega-") == 0)
+    return OmegaMinus;
+  else if(strcmp(locParticleName, "AntiNeutron") == 0)
+    return AntiNeutron;
+  else if(strcmp(locParticleName, "AntiLambda") == 0)
+    return AntiLambda;
+  else if(strcmp(locParticleName, "AntiSigma-") == 0)
+    return AntiSigmaMinus;
+  else if(strcmp(locParticleName, "AntiSigma0") == 0)
+    return AntiSigma0;
+  else if(strcmp(locParticleName, "AntiSigma+") == 0)
+    return AntiSigmaPlus;
+  else if(strcmp(locParticleName, "AntiXi0") == 0)
+    return AntiXi0;
+  else if(strcmp(locParticleName, "AntiXi+") == 0)
+    return AntiXiPlus;
+  else if(strcmp(locParticleName, "AntiOmega+") == 0)
+    return AntiOmegaPlus;
+  else if(strcmp(locParticleName, "Geantino") == 0)
+    return Geantino;
+  else if(strcmp(locParticleName, "Rho0") == 0)
+    return Rho0;
+  else if(strcmp(locParticleName, "Rho+") == 0)
+    return RhoPlus;
+  else if(strcmp(locParticleName, "Rho-") == 0)
+    return RhoMinus;
+  else if(strcmp(locParticleName, "omega") == 0)
+    return omega;
+  else if(strcmp(locParticleName, "EtaPrime") == 0)
+    return EtaPrime;
+  else if(strcmp(locParticleName, "phiMeson") == 0)
+    return phiMeson;
+  else if(strcmp(locParticleName, "a0(980)") == 0)
+    return a0_980;
+  else if(strcmp(locParticleName, "f0(980)") == 0)
+    return f0_980;
+  else if(strcmp(locParticleName, "K*(892)0") == 0)
+    return KStar_892_0;
+  else if(strcmp(locParticleName, "K*(892)+") == 0)
+    return KStar_892_Plus;
+  else if(strcmp(locParticleName, "K*(892)-") == 0)
+    return KStar_892_Minus;
+  else if(strcmp(locParticleName, "antiK*(892)0") == 0)
+    return AntiKStar_892_0;
+  else if(strcmp(locParticleName, "K1(1400)+") == 0)
+    return K1_1400_Plus;
+  else if(strcmp(locParticleName, "K1(1400)-") == 0)
+    return K1_1400_Minus;
+  else if(strcmp(locParticleName, "b1(1235)+") == 0)
+    return b1_1235_Plus;
+  else if(strcmp(locParticleName, "Sigma(1385)-") == 0)
+    return Sigma_1385_Minus;
+  else if(strcmp(locParticleName, "Sigma(1385)0") == 0)
+    return Sigma_1385_0;
+  else if(strcmp(locParticleName, "Sigma(1385)+") == 0)
+    return Sigma_1385_Plus;
+  else if(strcmp(locParticleName, "Deuteron") == 0)
+    return Deuteron;
+  else if(strcmp(locParticleName, "Helium") == 0)
+    return Helium;
+  else if(strcmp(locParticleName, "Triton") == 0)
+    return Triton;
+  else if(strcmp(locParticleName, "Pb208") == 0)
+    return Pb208;
+  else if(strcmp(locParticleName, "Delta++") == 0)
+    return DeltaPlusPlus;
+  else
+    return Unknown;
+}
+
 inline static unsigned short int IsFixedMass(Particle_t p)
 {
   switch (p)

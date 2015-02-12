@@ -157,7 +157,7 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
     cellHitMap[chan].tdc_hits.push_back(*hitPtr);
   }
 
-  // now go through this list and incorporate TDC hits where available
+  // now go through this list cell by cell and creat a UnifiedHit if appropriate
   for(map<readout_channel,cellHits>::const_iterator mapItr = cellHitMap.begin();
        mapItr != cellHitMap.end();
        ++mapItr) {
@@ -171,7 +171,7 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
     const vector<const DBCALHit*> &hits = mapItr->second.hits;
     const vector<const DBCALTDCHit*> &tdc_hits = mapItr->second.tdc_hits;
 
-    //if we have no ADC hits, there is nothing to do with the TDC hits either
+    //if we have no ADC hits in the cell, there is nothing to do with the TDC hits either
     if (hits.size()==0) {
 		static uint64_t Nwarnings = 0;
 		if(++Nwarnings <= 10) cout << "DBCALUnifiedHit_factory (event " << eventnumber << "): TDC hits without ADC hits" << endl;
@@ -179,73 +179,61 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
       continue;
     }
 
-    // Each SiPM sum can have multiple hits, some caused purely by
-    // dark hits. There is a question of how to handle this properly.
-    // For now, we ignore TDC info if there are >1 TDC hits per channel.
-    // If there are multiple ADC hits, but only one TDC hit, assume that
-    // the TDC hit belongs to the highest energy ADC hit. There is probably
-    // a better way to do this.
+    // At the moment we only allow 1 ADC hit in the firmware.
+    // Need to revisit handling of multiple ADC events for a hypothetical future.
 
-    //Find the index of the highest energy ADC hit.
+    // Find the index of the highest energy ADC hit.
     unsigned int highEIndex = 0;
     for(unsigned int i=1; i<hits.size(); i++){
       if(hits[i]->E > hits[highEIndex]->E) highEIndex = i;
     }
 
-    //ignore TDC hits unless we have exactly one
-    bool hasOneTDCHit = (tdc_hits.size()==1);
-    const DBCALTDCHit* tdc_hit=NULL;
-    if (hasOneTDCHit) tdc_hit = tdc_hits[0];
+    // We trust the ADC hit times.  Choose the TDC time that is closest to the ADC time
+    bool haveTDChit = false;
+    if (tdc_hits.size() > 0) haveTDChit = true;
 
+    // For each ADC hit (of which there will only be 1 for the moment
     for (unsigned int i=0; i<hits.size(); i++) {
       const DBCALHit* hit=hits[i];
 
-      bool useTDChit = (i==highEIndex) && (hasOneTDCHit);
-
-      if (enable_debug_output) {
-        E_tree = hit->E;
-        t_adc_tree = hit->t;
-        t_tdc_tree = 0;
-        layer_tree = hit->layer;
-        end_tree = hit->end;
-        if (useTDChit) t_tdc_tree = tdc_hit->t;
-      }
-
-      float E, t, t_ADC; //these are values that will be assigned to the DBCALUnifiedHit
+      float E, t, t_ADC, t_TDC=0; //these are values that will be assigned to the DBCALUnifiedHit
 
       E = hit->E;
       t_ADC = hit->t;
-
-  //We used to do a timewalk correction here for ADC times.  We've now updated the
-  //algorithm to emulate the actual fADC 250 algorithm (CFD-like), so the correction
-  //is no longer necessary.
-
-      if (useTDChit) {
-        timewalk_coefficients tdc_coeff = tdc_timewalk_map[chan];
-        t = tdc_hit->t;
-        //If E < tdc_coeff.c3, this means the energy is low enough we would not
-        //expect a TDC hit, so just ignore the TDC hit. Otherwise, use the
-        //timewalk-corrected time as the hit time.
-        if (E > tdc_coeff.c3) {
-          t -= tdc_coeff.c0 + tdc_coeff.c1/pow(E-tdc_coeff.c3,tdc_coeff.c2);
-        } else {
-          t = t_ADC;
-          useTDChit = false;
-        }
-      } else {
-        t = t_ADC;
+      
+      int goodTDCindex=0;
+      if (haveTDChit) {
+	// Loop through the TDC hits and find the closest to the ADC hit
+	float t_diff=100000;
+	for (unsigned int i=0; i<tdc_hits.size(); i++) {
+	  const DBCALTDCHit* tdc_hit=tdc_hits[i];
+	  float tdc_adc_diff = tdc_hit->t - hit->t;
+	  if (fabs(tdc_adc_diff) < fabs(t_diff)) {
+	    goodTDCindex=i;
+	    t_diff=tdc_adc_diff;
+	  }
+	  if (VERBOSE>5) {
+	    printf("DBCALUnifiedHit_factory  event %5i (%2i,%i,%i,%i) TDC %i %6.1f  ADC %6.1f diff %6.1f    best %2i %6.1f\n",
+		   eventnumber, module, layer, sector, chan.end, i, tdc_hit->t, hit->t, tdc_adc_diff, goodTDCindex, t_diff);
+	  }
+	}
+	t_TDC = tdc_hits[goodTDCindex]->t;
+	// Apply the timewalk correction
+	//timewalk_coefficients tdc_coeff = tdc_timewalk_map[chan];
+	//t_TDC -= tdc_coeff.c0 + tdc_coeff.c1/pow(E-tdc_coeff.c3,tdc_coeff.c2);
       }
 
-      if (enable_debug_output) {
-        t_adc_corrected_tree = t_ADC;
-        t_tdc_corrected_tree = useTDChit ? t : 0;
-        bcal_points_tree->Fill();
-      }
+      // Decide which time to use for further analysis
+      // Right now this is hard coded to be the ADC time
+      bool useTDChit = false;
+      t = t_ADC;
 
+      // Create the DBCALUnifiedHit
       DBCALUnifiedHit *uhit = new DBCALUnifiedHit;
       uhit->E = E;
       uhit->t = t;
       uhit->t_ADC = t_ADC;
+      uhit->t_TDC = t_TDC;
       uhit->has_TDC_hit = useTDChit;
       uhit->cellId = cellId;
       uhit->module = module;
@@ -254,11 +242,11 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
       uhit->end = chan.end;
 
       uhit->AddAssociatedObject(hit);
-      if (useTDChit) uhit->AddAssociatedObject(tdc_hit);
+      if (haveTDChit) uhit->AddAssociatedObject(tdc_hits[goodTDCindex]);
 
       _data.push_back(uhit);
-    }
-  }
+    } // end loop over ADC hist
+  } // end loop over cells
 
   return NOERROR;
 }

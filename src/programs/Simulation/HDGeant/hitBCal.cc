@@ -580,8 +580,8 @@ void hitBarrelEMcal (float xin[4], float xout[4],
          showers->in[0].pz = pin[2]*pin[4];
          showers->in[0].E = pin[3];
          showers->in[0].ptype = ipart;
-         showers->in[0].trackID = make_s_TrackID();
-         showers->in[0].trackID->itrack = gidGetId(track);
+	 showers->in[0].trackID = make_s_TrackID();
+	 showers->in[0].trackID->itrack = gidGetId(track);
          showers->mult = 1;
          showerCount++;
       }
@@ -855,7 +855,8 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 
    // Sparsely copy timing spectra from local variables into HDDM structure
    map<bcal_index, DHistogram*>::iterator iter;
-   for (iter = SiPMspectra.begin(); iter != SiPMspectra.end(); iter++) {
+   int nhits = 0;
+   for (iter = SiPMspectra.begin(); iter != SiPMspectra.end(); iter++,nhits++) {
       const bcal_index &idx = iter->first;
       int module = idx.module;
       int layer = idx.layer;
@@ -913,14 +914,36 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
                vals += str;
             }
             else {
-               // lots of zeros are written and this saves space
-               vals += "0";
-            }
+		    // consolidate multiple 0's to save more space
+		    if( (ibin+1 <= bin_end) && (h->GetBinContent(ibin+1) == 0) ) {
+			    int num_zero_bins = 0;
+			    // start counting with the current bin
+			    while(dE == 0.0) {
+				    num_zero_bins++;
+
+				    if(ibin == bin_end)  // stop if we're at the end of the histogram
+					    break;
+				    ibin++;  // move to the next bin
+				    dE = h->GetBinContent(ibin);
+			    }
+
+			    sprintf(str, "X%d", num_zero_bins);
+			    vals += str;
+		    } else {
+			    // lots of zeros are written and this saves space
+			    vals += "0";
+		    }
+	    }
             vals += " ";
          }
-
+	 
          if (E_atten_sum >= THRESH_ATTENUATED_GEV) {
             specs->in[ispec].vals = strdup(vals.c_str());
+            if( specs->in[ispec].vals == NULL) {
+                    cerr << "ERROR!!  strdup() ran out of memory:" << endl;
+                    cerr << "hit #" << (nhits+1) << ":  " << vals << endl;
+            }
+
             box->bcalCells->in[icell].bcalSiPMSpectrums->mult = ispec+1;
          }
       }

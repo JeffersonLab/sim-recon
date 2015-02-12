@@ -15,20 +15,20 @@ class DSCHit:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(DSCHit);
 		
-		int sector;	    // sector number 1-24
+		int sector;	    // sector number 1-30
 		float dE;       // Energy loss in GeV
-		float t;        // TOF to start counter in ns (best value available)
-		float sigma_t;  // uncertainty on t in ns
-		bool has_fADC;  // true if this has an fADC hit
-		bool has_TDC;   // true if this has an TDC hit
+		float t;        // best time (walk-corrected tdc)
+		float t_TDC;   // time from TDC, no walk correction
+		float t_fADC; // time from fADC
+		bool has_fADC; 
+		bool has_TDC;
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "sector", "%d", sector);
 			AddString(items, "dE", "%3.3f", dE);
 			AddString(items, "t", "%3.3f", t);
-			AddString(items, "sigma_t", "%d", sigma_t);
-			AddString(items, "has_fADC", "%d", has_fADC);
-			AddString(items, "has_TDC", "%d", has_TDC);
+			AddString(items, "t_TDC","%3.3f", t_TDC);
+			AddString(items, "t_fADC", "%3.3f", t_fADC);
 		}
 };
 

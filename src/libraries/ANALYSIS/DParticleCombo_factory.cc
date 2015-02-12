@@ -25,7 +25,7 @@ jerror_t DParticleCombo_factory::init(void)
 jerror_t DParticleCombo_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
 {
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield();
+	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield(runnumber);
 
 	double locTargetZCenter = 65.0;
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());

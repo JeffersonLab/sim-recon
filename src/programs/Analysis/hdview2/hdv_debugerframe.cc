@@ -208,7 +208,9 @@ hdv_debugerframe::hdv_debugerframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt
   SetIconName("HDView");
   
   done->Connect("Clicked()","hdv_debugerframe", this, "DoDone()");
-  
+  this->Connect("CloseWindow()", "hdv_debuggerframe", this, "DoDone()");
+  this->DontCallClose();  
+
   SetWindowName("Hall-D Event View Debugger");
   SetIconName("HDDebugView");
   

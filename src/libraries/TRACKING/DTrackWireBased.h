@@ -25,8 +25,12 @@ class DTrackWireBased:public DKinematicData{
 		int Ndof;				///< Number of degrees of freedom in the fit
 		vector<DTrackFitter::pull_t> pulls;	///< Holds pulls used in chisq calc. (not including off-diagonals)
 
-
 		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
+
+		// Hit CDC Rings & FDC Planes
+		// use the DParticleID Get_CDCRings & Get_FDCPlanes functions to extract the information from these
+		unsigned int dCDCRings; //CDC rings where the track has an associated DCDCTrackHit //rings correspond to bits (1 -> 28)
+		unsigned int dFDCPlanes; //FDC planes where the track has an associated DFDCPseudoHit //planes correspond to bits (1 -> 24)
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			DKinematicData::toStrings(items);

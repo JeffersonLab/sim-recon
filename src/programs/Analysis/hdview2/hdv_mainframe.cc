@@ -16,9 +16,11 @@ using namespace std;
 #include "MyProcessor.h"
 #include "FDC/DFDCGeometry.h"
 #include "FCAL/DFCALGeometry.h"
+#include "TOF/DTOFGeometry.h"
 #include "DVector2.h"
 #include "HDGEOMETRY/DGeometry.h"
 #include <PID/DNeutralParticle.h>
+#include <DAQ/DEPICSvalue.h>
 
 #include <TPolyMarker.h>
 #include <TLine.h>
@@ -36,12 +38,14 @@ using namespace std;
 #include <TLatex.h>
 #include <TColor.h>
 #include <TMath.h>
+#include <TArc.h>
 
 extern JApplication *japp;
 //TGeoVolume *MOTHER = NULL;
 //TGeoCombiTrans *MotherRotTrans = NULL;
 
 extern int GO;
+extern bool SKIP_EPICS_EVENTS;
 
 // These values are just used to draw the detectors for visualization.
 // These should be replaced by a database lookup or something similar
@@ -75,8 +79,10 @@ static float TARGET_Zmid = 65.0;
 static float TARGET_Zlen = 30.0;
 
 // The DFCALGeometry object is not really available at the time we need it
-// when the program first starts. Cretae one of our own here.
+// when the program first starts. Create one of our own here.
 static DFCALGeometry *fcalgeom = new DFCALGeometry;
+// ditto for DTOFGeometry
+static DTOFGeometry *tofgeom = new DTOFGeometry;
 
 static vector<vector <DFDCWire *> >fdcwires;
 
@@ -119,6 +125,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   TGLayoutHints *rhints = new TGLayoutHints(kLHintsCenterY|kLHintsRight, 2,2,2,2);
   TGLayoutHints *chints = new TGLayoutHints(kLHintsCenterY|kLHintsCenterX, 2,2,2,2);
   TGLayoutHints *bhints = new TGLayoutHints(kLHintsBottom|kLHintsCenterX, 2,2,2,2);
+  //TGLayoutHints *tofhints = new TGLayoutHints(kLHintsBottom|kLHintsCenterX, 2,2,2,2);
   TGLayoutHints *xhints = new TGLayoutHints(kLHintsNormal|kLHintsExpandX, 2,2,2,2);
   TGLayoutHints *yhints = new TGLayoutHints(kLHintsNormal|kLHintsExpandY, 2,2,2,2);
   TGLayoutHints *dhints = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0,0,0,0);
@@ -391,7 +398,11 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   for (int i=0;i<9;i++) {
     double e = pow(10,((8-(double)i)/2.0));
     char str1[128];
-    sprintf(str1,"%7.1f MeV",e);
+    if (e >= 1000) {
+      sprintf(str1,"%7.2f GeV",e/1000.);
+    } else {
+      sprintf(str1,"%7.1f MeV",e);
+    }
     BCCLables[i] =  new TGLabel(bcalColorCodes, (const char*)str1);
     //BCCLables[i]->SetTextColor(1);
     BCCLables[i]->SetBackgroundColor(BCccodes[i]);
@@ -399,11 +410,15 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   }
   // color lables FCAL
   TGLabel* FCCLables[9]; 
-  unsigned int FCccodes[9] = {0xFF0033,0xFF2233,0xFF4433,0xFF6633,0xFF8833,0xFFaa33,0xFFcc33,0xFFee33,0xFFFFaa};
+  unsigned int FCccodes[9] = {0x0000FF,0x7700FF,0xFF00FF,0xFF0077,0xFF0000,0xFF7700,0xFFFF00,0xFFFF77,0xFFFFFF};
   for (int i=0;i<9;i++) {
-    double E = pow(10.,((1. - (double)i*0.11)*log10(1./0.005)));
+    double e = pow(10,((8-(double)i)/2.0));
     char str1[128];
-    sprintf(str1,"%5.1f MeV",E);
+    if (e >= 1000) {
+      sprintf(str1,"%7.2f GeV",e/1000.);
+    } else {
+      sprintf(str1,"%7.1f MeV",e);
+    }
     FCCLables[i] =  new TGLabel(fcalColorCodes, (const char*)str1);
     FCCLables[i]->SetBackgroundColor(FCccodes[i]);
     fcalColorCodes->AddFrame(FCCLables[i],lhints);
@@ -511,6 +526,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   coordinates->Connect("Clicked(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
   
   quit->Connect("Clicked()","hdv_mainframe", this, "DoQuit()");
+  this->Connect("CloseWindow()", "hdv_mainframe", this, "DoQuit()");
+  this->DontCallClose();
   next->Connect("Clicked()","hdv_mainframe", this, "DoNext()");
   prev->Connect("Clicked()","hdv_mainframe", this, "DoPrev()");
   checkbuttons["continuous"]->Connect("Clicked()","hdv_mainframe", this, "DoCont()");
@@ -742,10 +759,11 @@ void hdv_mainframe::SetRange(void)
 		endviewA->GetCanvas()->cd();
 		endviewA->GetCanvas()->Range(xlo, ylo, xhi, yhi);
 		endviewB->GetCanvas()->cd();
-		endviewB->GetCanvas()->Range(xlo*1.3, ylo*1.3, xhi*1.3, yhi*1.3);
+		//endviewB->GetCanvas()->Range(xlo*1.3, ylo*1.3, xhi*1.3, yhi*1.3);
+		endviewB->GetCanvas()->Range(-158, -158, 158, 158);
 		endviewAmf->SetRange(xlo, ylo, xhi, yhi);
-		endviewBmf->SetRange(xlo*1.3, ylo*1.3, xhi*1.3, yhi*1.3);
-		
+		//endviewBmf->SetRange(xlo*1.3, ylo*1.3, xhi*1.3, yhi*1.3);
+		endviewBmf->SetRange(-158, -158, 158, 158);
 
 	}else{
 		// define range in each direction in cm, radians
@@ -799,7 +817,19 @@ void hdv_mainframe::DoQuit(void)
 //-------------------
 void hdv_mainframe::DoNext(void)
 {
-	if(eventloop)eventloop->OneEvent();
+	if(eventloop){
+		if(SKIP_EPICS_EVENTS){
+			while(true){
+				eventloop->OneEvent();
+				vector<const DEPICSvalue*> epicsvalues;
+				eventloop->Get(epicsvalues);
+				if(epicsvalues.empty()) break;
+				cout << "Skipping EPICS event " << eventloop->GetJEvent().GetEventNumber() << endl;
+			}
+		}else{
+			eventloop->OneEvent();
+		}
+	}
 }
 
 //-------------------
@@ -1148,6 +1178,7 @@ void hdv_mainframe::DoMyRedraw(void)
 	// put collected hits into appropriate views 
 	AddGraphicsSideA(gMYPROC->graphics_xz);
 	AddGraphicsSideB(gMYPROC->graphics_yz);
+	AddGraphicsEndB(gMYPROC->graphics_tof_hits); 
 
 	// Draw detector hits and tracks for the correct coordinates in all views
 	vector<MyProcessor::DGraphicSet>::iterator iter = gMYPROC->graphics.begin();
@@ -1287,6 +1318,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		TBox *target = new TBox(TARGET_Zmid-TARGET_Zlen/2.0, -0.5, TARGET_Zmid+TARGET_Zlen/2.0, +0.5);
 		target->SetFillColor(13);
 		graphics_sideA.push_back(target);
+
 
 		// ----- BCAL ------
 		TBox *bcal1 = new TBox(BCAL_Zmin, BCAL_Rmin, BCAL_Zmin+BCAL_Zlen, BCAL_Rmax);
@@ -1486,6 +1518,75 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		graphics_endA.push_back(fdc1);
 		graphics_endA.push_back(fdc2);
 
+
+		/*			
+		// ------ Start counter ------
+		double r_start=7.7;
+		for (unsigned int i=0;i<30;i++){
+		  double phi_0=0.209*i;
+		  double phi_1=0.209*(i+1);
+		  TLine *l = new TLine(r_start*cos(phi_0), r_start*sin(phi_0), 
+				       r_start*cos(phi_1), r_start*sin(phi_1));
+		  l->SetLineColor(10);
+		  l->SetLineWidth(2.);
+		  graphics_endA.push_back(l);
+		}
+		*/
+		
+		// ----- Start Counter -----
+		// All units are in cm.  These dimensions represent the geometry exactly.
+		Double_t inner_radius = 7.7493;	// Inner radius of the Start Counter
+		Double_t outer_radius = 8.0493;	// Outer radius of the Start Counter
+		Double_t bottom_width = 1.6289; // Width of the bottom edge of scintillator
+		Double_t top_width = 1.692;	// Width of the top edge of scintillator
+		Double_t dtr = 1.745329252e-02;	// Conversion factor from degrees to radians
+
+		// 5 x and 5 y coordinates for each of the 30 paddles
+		Double_t x_coords[31][5];
+		Double_t y_coords[31][5];
+   
+		// Initialize the x-coordinates of channel 0 (phi = [0, 12 deg] in hall coordinates)
+		x_coords[0][0] = -outer_radius;
+		x_coords[0][1] = -(outer_radius - top_width*sin(6.0*dtr));
+		x_coords[0][2] = -(inner_radius - bottom_width*sin(6.0*dtr));
+		x_coords[0][3] = -inner_radius;
+		x_coords[0][4] = -outer_radius;
+		// Initialize the x-coordinates of channel 0 (phi = [0, 12 deg] in hall coordinates)
+		y_coords[0][0] = 0.0;
+		y_coords[0][1] = top_width*cos(6.0*dtr);
+		y_coords[0][2] = bottom_width*cos(6.0*dtr);
+		y_coords[0][3] = 0.0;
+		y_coords[0][4] = 0.0;
+
+		// Create an array of TPolyLine objects 
+		TPolyLine *ch_pline[30];
+   
+		// Define array of points which define the individual scintillators
+		for (int i = 1; i < 31; i++)
+		  { 
+		    // Contruct the x-coordinates of the 30 scintillator paddles 
+		    x_coords[i][0] = x_coords[i-1][1];
+		    x_coords[i][1] = x_coords[i-1][1] + top_width*sin((6.0 + 12.0*i)*dtr);
+		    x_coords[i][2] = x_coords[i-1][2] + bottom_width*sin((6.0 + 12.0*i)*dtr);
+		    x_coords[i][3] = x_coords[i-1][2];
+		    x_coords[i][4] = x_coords[i-1][1];
+		    // Construct the y-coordinates of the 30 scintillator paddles
+		    y_coords[i][0] = y_coords[i-1][1];
+		    y_coords[i][1] = y_coords[i-1][1] + top_width*cos((6.0 + 12.0*i)*dtr);
+		    y_coords[i][2] = y_coords[i-1][2] + bottom_width*cos((6.0 + 12.0*i)*dtr);
+		    y_coords[i][3] = y_coords[i-1][2];
+		    y_coords[i][4] = y_coords[i-1][1];
+         
+		    // Construct the TPolyLine objects that defines the paddles
+		    Double_t x[5] = {x_coords[i-1][0], x_coords[i-1][1], x_coords[i-1][2], x_coords[i-1][3], x_coords[i-1][4]};
+		    Double_t y[5] = {y_coords[i-1][0], y_coords[i-1][1], y_coords[i-1][2], y_coords[i-1][3], y_coords[i-1][4]};
+		    ch_pline[i-1] = new TPolyLine(5, x, y);
+		    ch_pline[i-1]->SetFillColor(18);
+		    ch_pline[i-1]->SetLineColor(1);
+		    ch_pline[i-1]->SetLineWidth(2);
+		    graphics_endA.push_back(ch_pline[i-1]);
+		  }
+
 		// ----- TARGET ------
 		TEllipse *target = new TEllipse(0.0, 0.0, 0.5, 0.5);
 		target->SetFillColor(13);
@@ -1515,7 +1616,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		fcalblocks.clear();
 
 		if(GetCheckButton("fcal")){
-			for(int chan=0; chan<kMaxChannels; chan++){
+		  for(int chan=0; chan<DFCALGeometry::kMaxChannels; chan++){
 				int row = fcalgeom->row(chan);
 				int col = fcalgeom->column(chan);
 				if(!fcalgeom->isBlockActive(row, col))continue;
@@ -1535,6 +1636,135 @@ void hdv_mainframe::DrawDetectorsXY(void)
 			}
 		}
 
+		// ------- TOF ---------// 
+		tofblocks.clear();
+		if(GetCheckButton("tof")){
+		  
+		  TPolyLine *pmtPline[4][44] = {{ NULL }, { NULL }};
+		  
+		  // 38 PMTs for the standard modules in each side
+		  Double_t pmtX[4][44][5];
+		  Double_t pmtY[4][44][5];
+		  
+		  Double_t x[5];
+		  Double_t y[5];
+
+		  // origin: 0:DOWN; 1:NORTH; 2:UP; 3:SOUTH
+		  Double_t position_x[4] = {-126,-126,-126,126};
+		  Double_t position_y[4] = {-126,-126,126,-126};
+
+		  // PMTs from regular and half lenght modules with 6 cm x 14 cm
+		  Double_t step_x[4][5] = {{0,0,6,6,0},{0,-14,-14,0,0},{0,0,6,6,0},{0,14,14,0,0}};
+		  Double_t step_y[4][5] = {{0,-14,-14,0,0},{0,0,6,6,0},{0,14,14,0,0},{0,0,6,6,0}};
+		  Double_t step_xl[4][5] = {{0,0,3,3,0},{0,-20,-20,0,0},{0,0,3,3,0},{0,20,20,0,0}};
+		  Double_t step_yl[4][5] = {{0,-20,-20,0,0},{0,0,3,3,0},{0,20,20,0,0},{0,0,3,3,0}};
+		  Double_t step_X[4] = {6,0,6,0};
+		  Double_t step_Y[4] = {0,6,0,6};
+		  Double_t step_XL[4] = {3,0,3,0};
+		  Double_t step_YL[4] = {0,3,0,3};
+
+
+		  for (int sd=0; sd<4; sd++)
+		    {
+		      for (int i=0; i<44; i++)
+			{
+			  for (int l=0; l<5; l++)
+			    {
+			      switch(l)
+				{
+				case 0:
+				  if (i == 19 || i == 20 || i == 23 || i == 24){
+				    pmtX[sd][i][l]=position_x[sd] + step_xl[sd][l];
+				    pmtY[sd][i][l]=position_y[sd] + step_yl[sd][l];
+				  }
+				  else{
+				    pmtX[sd][i][l]=position_x[sd] + step_x[sd][l];
+				    pmtY[sd][i][l]=position_y[sd] + step_y[sd][l];
+				  }
+				  break;
+				case 1:
+				  if (i == 19 || i == 20 || i == 23 || i == 24){
+				    pmtX[sd][i][l]=position_x[sd] + step_xl[sd][l];
+				    pmtY[sd][i][l]=position_y[sd] + step_yl[sd][l];
+				  }
+				  else{
+				    pmtX[sd][i][l]=position_x[sd] + step_x[sd][l];
+				    pmtY[sd][i][l]=position_y[sd] + step_y[sd][l];
+				  }
+				  break;
+				case 2:
+				  if (i == 19 || i == 20 || i == 23 || i == 24){
+				    pmtX[sd][i][l]=position_x[sd] + step_xl[sd][l];
+				    pmtY[sd][i][l]=position_y[sd] + step_yl[sd][l];
+				  }
+				  else{
+				    pmtX[sd][i][l]=position_x[sd] + step_x[sd][l];
+				    pmtY[sd][i][l]=position_y[sd] + step_y[sd][l];
+				  }
+				  break;
+				case 3:
+				  if (i == 19 || i == 20 || i == 23 || i == 24){
+				    pmtX[sd][i][l]=position_x[sd] + step_xl[sd][l];
+				    pmtY[sd][i][l]=position_y[sd] + step_yl[sd][l];
+				  }
+				  else{
+				    pmtX[sd][i][l]=position_x[sd] + step_x[sd][l];
+				    pmtY[sd][i][l]=position_y[sd] + step_y[sd][l];
+				  }
+				  break;
+				case 4:
+				  if (i == 19 || i == 20 || i == 23 || i == 24){
+				    pmtX[sd][i][l]=position_x[sd] + step_xl[sd][l];
+				    pmtY[sd][i][l]=position_y[sd] + step_yl[sd][l];
+				  }
+				  else{
+				    pmtX[sd][i][l]=position_x[sd] + step_x[sd][l];
+				    pmtY[sd][i][l]=position_y[sd] + step_y[sd][l];
+				  }
+				  break;
+				}
+			    }
+			  if ( i == 19 || i == 20 || i == 23 || i == 24){
+			    position_x[sd] = position_x[sd] + step_XL[sd];
+			    position_y[sd] = position_y[sd] + step_YL[sd];
+			  }
+			  else{
+			    position_x[sd] = position_x[sd] + step_X[sd];
+			    position_y[sd] = position_y[sd] + step_Y[sd];
+			  }
+			}
+		    }
+		  
+		  for (int sd=0; sd<4; sd++) // for the 4 sides
+		    {
+		      for (int j=0; j<44; j++) // PMT for the standard modules
+			{
+			  for (int q=0; q<5; q++)
+			    {
+			      x[q] = pmtX[sd][j][q];
+			      y[q] = pmtY[sd][j][q];
+			    }
+			  pmtPline[sd][j] = new TPolyLine(5,x,y);
+			}
+		    }
+		  
+		  int tof_count = 0;
+		  for (int sd=0; sd<4; sd++) // for the 4 sides
+		    {
+		      for (int j=0; j<44; j++)
+			{
+			  pmtPline[sd][j]->SetFillColor(1);
+			  pmtPline[sd][j]->SetLineColor(41);
+			  pmtPline[sd][j]->SetLineWidth(2);
+			  tof_count++;
+			  graphics_endB.push_back(pmtPline[sd][j]);
+			  tofblocks[sd][tof_count] = pmtPline[sd][j];
+			}
+		      tof_count = 0;
+		    }
+
+		} // close the if tof-check button
+		
 		// ------ scale ------
 		DrawScale(endviewB->GetCanvas(), graphics_endB);
 	}
@@ -1693,7 +1923,7 @@ void hdv_mainframe::DrawDetectorsRPhi(void)
 		shift[2].Set(+blocksize/2, +blocksize/2);  // ensures the r/phi cooridinates also
 		shift[3].Set(+blocksize/2, -blocksize/2);  // define a single enclosed space
 		fcalblocks.clear();
-		for(int chan=0; chan<kMaxChannels; chan++){
+		for(int chan=0; chan<DFCALGeometry::kMaxChannels; chan++){
 			int row = fcalgeom->row(chan);
 			int col = fcalgeom->column(chan);
 			if(!fcalgeom->isBlockActive(row, col))continue;
@@ -2156,6 +2386,19 @@ TPolyLine* hdv_mainframe::GetFCALPolyLine(float x, float y)
 	int row = fcalgeom->row(y);
 	int column = fcalgeom->column(x);
 	return GetFCALPolyLine(fcalgeom->channel(row, column));
+}
+
+//------------------- 
+// GetTOFPolyLine
+//-------------------
+
+TPolyLine* hdv_mainframe::GetTOFPolyLine(int translate_side, int tof_ch)
+{
+  map <int, map<int, TPolyLine*> >::iterator iter;
+  iter = tofblocks.find(translate_side);
+  map <int, TPolyLine*>::iterator iter2 = iter->second.find(tof_ch);
+  if(iter2==iter->second.end())return NULL;
+  return iter2->second;
 }
 
 //-------------------

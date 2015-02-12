@@ -35,6 +35,7 @@ using namespace std;
 #include "DTrackCandidate_factory.h"
 #include "DTrackCandidate_factory_CDC.h"
 #include "DANA/DApplication.h"
+#include <JANA/JCalibration.h>
 
 #include <TROOT.h>
 #include <TH2F.h>
@@ -122,15 +123,35 @@ jerror_t DTrackCandidate_factory::init(void)
 jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
-  bfield = dapp->GetBfield();
+  bfield = dapp->GetBfield(runnumber);
   FactorForSenseOfRotation=(bfield->GetBz(0.,0.,65.)>0.)?-1.:1.;
+
+  dIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField*>(bfield) != NULL);
+  if(dIsNoFieldFlag)
+  {
+    //Setting this flag makes it so that JANA does not delete the objects in _data.  This factory will manage this memory.
+      //This is all of these pointers are just copied from the "StraightLine" factory, and should not be re-deleted.
+    SetFactoryFlag(NOT_OBJECT_OWNER);
+  }
+  else
+    ClearFactoryFlag(NOT_OBJECT_OWNER); //This factory will create it's own objects.
 
   // Get the position of the exit of the CDC endplate from DGeometry
   double endplate_z,endplate_dz,endplate_rmin;
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
   cdc_endplate.SetZ(endplate_z+endplate_dz);
 
-  dgeom->GetTargetZ(TARGET_Z);
+  dParticleID = NULL;
+  eventLoop->GetSingle(dParticleID);
+
+  JCalibration *jcalib = dapp->GetJCalibration(runnumber);
+  map<string, double> targetparms;
+  if (jcalib->Get("TARGET/target_parms",targetparms)==false){
+    TARGET_Z = targetparms["TARGET_Z_POSITION"];
+   }
+  else{
+    dgeom->GetTargetZ(TARGET_Z);
+  }
 
    // Initialize the stepper
   stepper=new DMagneticFieldStepper(bfield);
@@ -203,6 +224,19 @@ jerror_t DTrackCandidate_factory::fini(void)
 //------------------
 jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 {
+  if(dIsNoFieldFlag)
+  {
+    //Clear previous objects: //JANA doesn't do it because NOT_OBJECT_OWNER was set
+	  //It DID delete them though, in the "StraightLine" factory
+    _data.clear();
+
+    vector<const DTrackCandidate*> locStraightLineCandidates;
+    loop->Get(locStraightLineCandidates, "StraightLine");
+    for(size_t loc_i = 0; loc_i < locStraightLineCandidates.size(); ++loc_i)
+      _data.push_back(const_cast<DTrackCandidate*>(locStraightLineCandidates[loc_i]));
+    return NOERROR;
+  }
+
   // Clear private vectors
   cdctrackcandidates.clear();
   fdctrackcandidates.clear();
@@ -538,9 +572,23 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    delete _data[loc_i];
 	  _data.clear();
   	}
+
+
+  // Set CDC ring & FDC plane hit patterns
+  for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
+  {
+    vector<const DCDCTrackHit*> locCDCTrackHits;
+    _data[loc_i]->Get(locCDCTrackHits);
+
+    vector<const DFDCPseudo*> locFDCPseudos;
+    _data[loc_i]->Get(locFDCPseudos);
+
+    _data[loc_i]->dCDCRings = dParticleID->Get_CDCRingBitPattern(locCDCTrackHits);
+    _data[loc_i]->dFDCPlanes = dParticleID->Get_FDCPlaneBitPattern(locFDCPseudos);
+  }
   
   return NOERROR;
-  }
+}
 
 
 // Obtain position and momentum at the exit of a given package using the 

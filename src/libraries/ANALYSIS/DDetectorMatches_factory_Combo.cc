@@ -37,48 +37,34 @@ jerror_t DDetectorMatches_factory_Combo::evnt(jana::JEventLoop* locEventLoop, in
 	VT_TRACER("DDetectorMatches_factory_Combo::evnt()");
 #endif
 
-	//get new DTrackTimeBased objects, and split into reswam/no-reswim
-	vector<const DTrackTimeBased*> locTrackTimeBasedVector_NoReSwim, locTrackTimeBasedVector_ReSwam;
-	locEventLoop->Get(locTrackTimeBasedVector_NoReSwim, "Combo");
-
-	vector<const DTrackTimeBased*>::iterator locIterator = locTrackTimeBasedVector_NoReSwim.begin();
-	while(locIterator != locTrackTimeBasedVector_NoReSwim.end())
-	{
-		if((*locIterator)->rt != NULL)
-		{
-			locTrackTimeBasedVector_ReSwam.push_back((*locIterator));
-			locIterator = locTrackTimeBasedVector_NoReSwim.erase(locIterator);
-		}
-		else
-			++locIterator;
-	}
-
-	//make new object and match new time based tracks that have been swimmed
-		//despite rematching, DO NOT re-determine which showers are DNeutralShowers: VERY unlikely that this would change due to a reswim
-	DDetectorMatches* locDetectorMatches = dDetectorMatchesFactory->Create_DDetectorMatches(locEventLoop, locTrackTimeBasedVector_ReSwam);
+	//get new DTrackTimeBased objects
+	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
+	locEventLoop->Get(locTrackTimeBasedVector, "Combo");
 
 	//get and import original results (will also update bcal/fcal shower distance-to-track results)
 	const DDetectorMatches* locOriginalDetectorMatches = NULL;
 	locEventLoop->GetSingle(locOriginalDetectorMatches);
-	locDetectorMatches->Import_MatchingResults(locOriginalDetectorMatches);
 
-	//add new time-based tracks that weren't swum: get results from original time based track and clone
-	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector_NoReSwim.size(); ++loc_i)
+	DDetectorMatches* locDetectorMatches = new DDetectorMatches(*locOriginalDetectorMatches);
+
+	//add new time-based tracks: get results from original time based track and clone
+	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
-		const DTrackTimeBased* locTrackTimeBased = locTrackTimeBasedVector_NoReSwim[loc_i];
+		const DTrackTimeBased* locTrackTimeBased = locTrackTimeBasedVector[loc_i];
 		const DTrackTimeBased* locOriginalTrackTimeBased = NULL;
 		locTrackTimeBased->GetSingleT(locOriginalTrackTimeBased);
 
 		//BCAL
-		vector<DShowerMatchParams> locShowerMatchParamsVector;
-		locDetectorMatches->Get_BCALMatchParams(locOriginalTrackTimeBased, locShowerMatchParamsVector);
-		for(size_t loc_j = 0; loc_j < locShowerMatchParamsVector.size(); ++loc_j)
-			locDetectorMatches->Add_Match(locTrackTimeBased, static_cast<const DBCALShower*>(locShowerMatchParamsVector[loc_j].dShowerObject), locShowerMatchParamsVector[loc_j]);
+		vector<DBCALShowerMatchParams> locBCALShowerMatchParamsVector;
+		locDetectorMatches->Get_BCALMatchParams(locOriginalTrackTimeBased, locBCALShowerMatchParamsVector);
+		for(size_t loc_j = 0; loc_j < locBCALShowerMatchParamsVector.size(); ++loc_j)
+			locDetectorMatches->Add_Match(locTrackTimeBased, locBCALShowerMatchParamsVector[loc_j].dBCALShower, locBCALShowerMatchParamsVector[loc_j]);
 
 		//FCAL
-		locDetectorMatches->Get_FCALMatchParams(locOriginalTrackTimeBased, locShowerMatchParamsVector);
-		for(size_t loc_j = 0; loc_j < locShowerMatchParamsVector.size(); ++loc_j)
-			locDetectorMatches->Add_Match(locTrackTimeBased, static_cast<const DFCALShower*>(locShowerMatchParamsVector[loc_j].dShowerObject), locShowerMatchParamsVector[loc_j]);
+		vector<DFCALShowerMatchParams> locFCALShowerMatchParamsVector;
+		locDetectorMatches->Get_FCALMatchParams(locOriginalTrackTimeBased, locFCALShowerMatchParamsVector);
+		for(size_t loc_j = 0; loc_j < locFCALShowerMatchParamsVector.size(); ++loc_j)
+			locDetectorMatches->Add_Match(locTrackTimeBased, locFCALShowerMatchParamsVector[loc_j].dFCALShower, locFCALShowerMatchParamsVector[loc_j]);
 
 		//TOF
 		vector<DTOFHitMatchParams> locTOFHitMatchParamsVector;

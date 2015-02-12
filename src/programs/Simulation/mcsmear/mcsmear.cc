@@ -78,6 +78,7 @@ double BCAL_FADC_TIME_RESOLUTION = 4.0/sqrt(12.0); // ns
 // BCAL flags
 bool NO_T_SMEAR = false;
 bool NO_DARK_PULSES = false;
+bool FULL_DARK_HITS = false;
 bool NO_SAMPLING_FLUCTUATIONS = false;
 bool NO_SAMPLING_FLOOR_TERM = false;
 bool NO_POISSON_STATISTICS = false;
@@ -86,6 +87,8 @@ bool BCAL_DEBUG_HISTS = false;
 
 double FTOF_BAR_THRESHOLD    = 0.0;
 double STC_PADDLE_THRESHOLD  = 0.0;
+double PSC_THRESHOLD         = 0.0;
+double PS_THRESHOLD          = 0.0;
 
 double TAGM_TSIGMA = 0.200;        // ns
 double TAGH_TSIGMA = 0.350;        // ns
@@ -93,6 +96,12 @@ double TAGM_FADC_TSIGMA = 0.350;   // ns
 double TAGH_FADC_TSIGMA = 0.450;   // ns
 double TAGM_NPIX_PER_GEV = 1.e5;
 double TAGH_NPE_PER_GEV = 5.e5;
+
+// The following are place holders to be filled in with realistic numbers later
+double PS_SIGMA = 0.200; // ns
+double PSC_SIGMA = 0.200; //ns
+double PS_NPIX_PER_GEV = 1.e5;
+double PSC_PHOTONS_PERMEV = 5.e5;
 
 double FCAL_PHOT_STAT_COEF   = 0.0; //0.035;
 double FCAL_BLOCK_THRESHOLD  = 0.0; //20.0*k_MeV;
@@ -395,6 +404,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'X': BCAL_FADC_TIME_RESOLUTION = atof(&ptr[2]); break;
       case 'G': NO_T_SMEAR = true;                         break;
       case 'H': NO_DARK_PULSES = true;                     break;
+      case 'F': FULL_DARK_HITS = true;                     break;
       case 'K': NO_SAMPLING_FLUCTUATIONS = true;           break;
       case 'L': NO_SAMPLING_FLOOR_TERM = true;             break;
       case 'M': NO_POISSON_STATISTICS = true;              break;
@@ -485,6 +495,7 @@ void Usage(void)
    cout << "    -Wsigma  BCAL fADC time resolution (def. " << BCAL_FADC_TIME_RESOLUTION << " ns)" << endl;
    cout << "    -G       Don't smear BCAL times (def. smear)" << endl;
    cout << "    -H       Don't add BCAL dark hits (def. add)" << endl;
+   cout << "    -F       Do full simulation of BCAL dark hits. The default, FOR THIS SPECIAL BRANCH ONLY, is to only do a partial simulation of dark hits (only add dark hits in channels that already have real hits in them)." << endl;
    cout << "    -K       Don't apply BCAL sampling fluctuations (def. apply)" << endl;
    cout << "    -L       Don't apply BCAL sampling floor term (def. apply)" << endl;
    cout << "    -M       Don't apply BCAL Poisson statistics (def. apply)" << endl;

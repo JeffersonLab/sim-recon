@@ -161,10 +161,29 @@ C  If no hit is being recorded then nothing to do
       nlevel_in = NLEVEL
       NLEVEL = nlevellast
 
+c      write(6,*)cnames(NLEVEL)
 *	At end of track segment in sensitive medium: register hit
-
-      if ((cnames(NLEVEL).eq.'STRC').or.  ! vertex cylinder
-     +    (cnames(NLEVEL).eq.'STRP')) then  ! vertex endcap
+      if (cnames(NLEVEL)(1:3).eq.'PSF') then ! Pair spectrometer fine counters
+#ifdef MAKE_HITS_WHEN_ILOSS_0
+        if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
+          dEsum = 1e-3   ! 1 MeV in plastic
+        endif
+#endif
+        if (dEsum.gt.0) then
+          call hitPS(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART)
+        endif
+      elseif (cnames(NLEVEL)(1:3).eq.'PSC') then ! PS coarse counters
+#ifdef MAKE_HITS_WHEN_ILOSS_0
+        if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
+          dEsum = 1e-3   ! 1 MeV in plastic
+        endif
+#endif
+        if (dEsum.gt.0) then
+          call hitPSC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART)
+        endif
+      elseif (cnames(NLEVEL).eq.'STRC') then  ! start counter paddle
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-3   ! 1 MeV in plastic

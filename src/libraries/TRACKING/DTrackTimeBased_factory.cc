@@ -216,20 +216,20 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   
   // get start counter hits
   vector<const DSCHit*>sc_hits;
-  eventLoop->Get(sc_hits);
+  loop->Get(sc_hits);
   
   // Get TOF points
   vector<const DTOFPoint*> tof_points;
-  eventLoop->Get(tof_points);
+  loop->Get(tof_points);
   
   // Get BCAL and FCAL showers
   vector<const DBCALShower*>bcal_showers;
-  eventLoop->Get(bcal_showers);    
+  loop->Get(bcal_showers);
   vector<const DFCALShower*>fcal_showers;
-  eventLoop->Get(fcal_showers);    
+  loop->Get(fcal_showers);
   
   vector<const DMCThrown*> mcthrowns;
-  if (PID_FORCE_TRUTH) loop->Get(mcthrowns);
+  loop->Get(mcthrowns, "FinalState");
    
   // Loop over candidates
   for(unsigned int i=0; i<tracks.size(); i++){
@@ -319,7 +319,37 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 
   // Fill in track data for missing hypotheses 
   InsertMissingHypotheses();
- 
+
+  // Set MC Hit-matching information
+  for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
+  {
+    if(!mcthrowns.empty())
+    {
+      double hitFraction;
+      int thrownIndex = GetThrownIndex(mcthrowns, (DKinematicData*)_data[loc_i], hitFraction);
+      _data[loc_i]->dMCThrownMatchMyID = thrownIndex;
+      _data[loc_i]->dNumHitsMatchedToThrown = int(hitFraction * float(_data[loc_i]->Ndof + 5) + 0.01); // + 0.01 so that it rounds down properly
+    }
+    else
+    {
+      _data[loc_i]->dMCThrownMatchMyID = -1;
+      _data[loc_i]->dNumHitsMatchedToThrown = 0;
+    }
+  }
+
+  // Set CDC ring & FDC plane hit patterns
+  for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
+  {
+    vector<const DCDCTrackHit*> locCDCTrackHits;
+    _data[loc_i]->Get(locCDCTrackHits);
+
+    vector<const DFDCPseudo*> locFDCPseudos;
+    _data[loc_i]->Get(locFDCPseudos);
+
+    _data[loc_i]->dCDCRings = pid_algorithm->Get_CDCRingBitPattern(locCDCTrackHits);
+    _data[loc_i]->dFDCPlanes = pid_algorithm->Get_FDCPlaneBitPattern(locFDCPseudos);
+  }
+
   return NOERROR;
 }
 
@@ -495,9 +525,9 @@ double DTrackTimeBased_factory::GetTruthMatchingFOM(int trackIndex,DTrackTimeBas
   }
   
   // Get info for thrown track
-  int MAX_TRACKS = (int)mcthrowns.size()+1, thrownIndex=-1; double f = 0.;
-  GetThrownIndex(track,MAX_TRACKS,f,thrownIndex);
-  if(thrownIndex<=0 || thrownIndex>=MAX_TRACKS || f<=0.5) return 0.;
+  double f = 0.;
+  int thrownIndex = GetThrownIndex(mcthrowns, track, f);
+  if(thrownIndex<=0 || f<=0.5) return 0.;
 
   double delta_pt_over_pt = (fourMom.Pt()-gen_fourMom[thrownIndex-1].Pt())/gen_fourMom[thrownIndex-1].Pt();
   double delta_theta = (fourMom.Theta()-gen_fourMom[thrownIndex-1].Theta())*1000.0; // in milliradians
@@ -537,69 +567,80 @@ double DTrackTimeBased_factory::GetTruthMatchingFOM(int trackIndex,DTrackTimeBas
 //------------------
 // GetThrownIndex
 //------------------
-void DTrackTimeBased_factory::GetThrownIndex(const DKinematicData *kd, int &MAX_TRACKS, double &f, int &track)
+int DTrackTimeBased_factory::GetThrownIndex(vector<const DMCThrown*>& locMCThrowns, const DKinematicData *kd, double &f)
 {
-	vector<const DCDCTrackHit*> cdctrackhits;
-	vector<const DFDCPseudo*> fdcpseudos;
-	
 	// The DKinematicData object should be a DTrackCandidate, DTrackWireBased, or DParticle which
 	// has associated objects for the hits
+	vector<const DCDCTrackHit*> cdctrackhits;
 	kd->Get(cdctrackhits);
+	vector<const DFDCPseudo*> fdcpseudos;
 	kd->Get(fdcpseudos);
+
+	int locTotalNumHits = cdctrackhits.size() + fdcpseudos.size();
+	if(locTotalNumHits == 0)
+	{
+		f = 0;
+		return -1;
+	}
 
 	// The track number is buried in the truth hit objects of type DMCTrackHit. These should be 
 	// associated objects for the individual hit objects. We need to loop through them and
 	// keep track of how many hits for each track number we find
 
+	map<int, int> locHitMatches; //first int is MC my id, second is num hits
+	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
+	{
+		if(fabs(locMCThrowns[loc_i]->charge()) > 0.9)
+			locHitMatches[locMCThrowns[loc_i]->myid] = 0;
+	}
+
 	// CDC hits
-	vector<int> cdc_track_no(MAX_TRACKS, 0);
-	for(unsigned int i=0; i<cdctrackhits.size(); i++){
-		vector<const DMCTrackHit*> mctrackhits;
-		cdctrackhits[i]->Get(mctrackhits);
-		if(mctrackhits.size()==0)continue;
-		if(!mctrackhits[0]->primary)continue;
-		int track = mctrackhits[0]->track;
-		if(track>=0 && track<MAX_TRACKS)cdc_track_no[track]++;
-		//_DBG_ << "cdc:(i,trackhitssize,mchitssize,TrackNo,NhitsforTrackNo):  " << "(" << i << "," << cdctrackhits.size() << "," << mctrackhits.size() << "," << track << "," << cdc_track_no[track] << ")" << endl;
-		//_DBG_ << "cdc:(system,ptype,r,phi,z):  " << "(" << mctrackhits[0]->system << "," << mctrackhits[0]->ptype << "," << mctrackhits[0]->r << "," << mctrackhits[0]->phi << "," << mctrackhits[0]->z << ")" << endl;
+	for(size_t loc_i = 0; loc_i < cdctrackhits.size(); ++loc_i)
+	{
+		const DCDCHit* locCDCHit = NULL;
+		cdctrackhits[loc_i]->GetSingle(locCDCHit);
+		vector<const DCDCHit*> locTruthCDCHits;
+      locCDCHit->Get(locTruthCDCHits);
+
+		int itrack = locTruthCDCHits[0]->itrack;
+		if(locHitMatches.find(itrack) == locHitMatches.end())
+			continue;
+		++locHitMatches[itrack];
 	}
+
 	// FDC hits
-	vector<int> fdc_track_no(MAX_TRACKS, 0);
-	for(unsigned int i=0; i<fdcpseudos.size(); i++){
+	for(size_t loc_i = 0; loc_i < fdcpseudos.size(); ++loc_i)
+	{
 		vector<const DMCTrackHit*> mctrackhits;
-		fdcpseudos[i]->Get(mctrackhits);
-		if(mctrackhits.size()==0)continue;
-		if(!mctrackhits[0]->primary)continue;
-		int track = mctrackhits[0]->track;
-		if(track>=0 && track<MAX_TRACKS)fdc_track_no[track]++;
-		//_DBG_ << "fdc:(i,trackhitssize,mchitssize,TrackNo,NhitsforTrackNo):  " << "(" << i << "," << fdcpseudos.size() << "," << mctrackhits.size() << "," << track << "," << fdc_track_no[track] << ")" << endl;
-		//_DBG_ << "fdc:(system,ptype,r,phi,z):  " << "(" << mctrackhits[0]->system << "," << mctrackhits[0]->ptype << "," << mctrackhits[0]->r << "," << mctrackhits[0]->phi << "," << mctrackhits[0]->z << ")" << endl;
+		fdcpseudos[loc_i]->Get(mctrackhits);
+		if(mctrackhits.empty())
+			continue;
+		if(!mctrackhits[0]->primary)
+			continue;
+
+		int itrack = mctrackhits[0]->itrack;
+		if(locHitMatches.find(itrack) == locHitMatches.end())
+			continue;
+		++locHitMatches[itrack];
 	}
-	
-	// Find track number with most wires hit
-	int track_with_max_hits = 0;
-	int tot_hits_max = cdc_track_no[0] + fdc_track_no[0];
-	for(int i=1; i<MAX_TRACKS; i++){
-		int tot_hits = cdc_track_no[i] + fdc_track_no[i];
-		if(tot_hits > tot_hits_max){
-			track_with_max_hits=i;
-			tot_hits_max = tot_hits;
-		}
-		//_DBG_ << "tot_hits_max: " << tot_hits_max << endl;
-		//_DBG_ << "track_with_max_hits: " << track_with_max_hits << endl;
+
+	// Find DMCThrown::myid with most wires hit
+	map<int, int>::iterator locIterator = locHitMatches.begin();
+	int locBestMyID = -1;
+	int locBestNumHits = 0;
+	for(; locIterator != locHitMatches.end(); ++locIterator)
+	{
+		if(locIterator->second <= locBestNumHits)
+			continue;
+		locBestNumHits = locIterator->second;
+		locBestMyID = locIterator->first;
 	}
-	
-	int Ncdc = cdc_track_no[track_with_max_hits];
-	int Nfdc = fdc_track_no[track_with_max_hits];
 
 	// total fraction of reconstructed hits that match truth hits
-	if (cdctrackhits.size()+fdcpseudos.size()) f = 1.*(Ncdc+Nfdc)/(cdctrackhits.size()+fdcpseudos.size());
-	//_DBG_ << "(Ncdc(match),Nfdc(match),Ncdc(recon),Nfdc(recon)):  " << "(" << Ncdc << "," << Nfdc << "," << cdctrackhits.size() << "," << fdcpseudos.size() << ")" << endl;
+	f = 1.0*locBestNumHits/locTotalNumHits;
 	if(DEBUG_HISTS)hitMatchFOM->Fill(f);
 
-	// If there are no hits on this track, then we really should report
-	// a "non-track" (i.e. track=-1)
-	track = tot_hits_max>0 ? track_with_max_hits:-1;
+	return locBestMyID;
 }
 
 

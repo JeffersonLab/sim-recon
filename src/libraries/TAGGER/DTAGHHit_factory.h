@@ -25,6 +25,9 @@ class DTAGHHit_factory: public jana::JFactory<DTAGHHit> {
       static const int k_counter_bad = 2;
       static const int k_counter_noisy = 3;
 
+      // config. parameter
+      double ADC_THRESHOLD;
+
       // fadc pulse integration window width (samples)
       int fadc_pulse_window_size;
 
@@ -33,6 +36,9 @@ class DTAGHHit_factory: public jana::JFactory<DTAGHHit> {
       double fadc_t_scale;  // ns per fADC time count
       double tdc_t_scale;   // ns per F1TDC count
       double t_base;
+      double t_tdc_base;
+      int rollover_count;
+
 
       // calibration constants stored in row, column format
       double fadc_gains[TAGH_MAX_COUNTER+1];

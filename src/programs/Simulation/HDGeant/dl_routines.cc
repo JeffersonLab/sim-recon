@@ -88,11 +88,11 @@ extern "C" {
 	void getoptical_(int *imat, float *E, float *refl, float *abs1, float *rind, float *plsh, float *eff);
 
 	// Initialize routine pointers to use statically linked routines
-	typeof(hddsgeant3_) *hddsgeant3_ptr = hddsgeant3_;
-	typeof(md5geom_)    *md5geom_ptr    = md5geom_;
-	typeof(guplsh_)     *guplsh_ptr     = guplsh_;
-	typeof(gufld_)      *gufld_ptr      = gufld_;
-	typeof(getoptical_) *getoptical_ptr = getoptical_;
+	__typeof__(hddsgeant3_) *hddsgeant3_ptr = hddsgeant3_;
+	__typeof__(md5geom_)    *md5geom_ptr    = md5geom_;
+	__typeof__(guplsh_)     *guplsh_ptr     = guplsh_;
+	__typeof__(gufld_)      *gufld_ptr      = gufld_;
+	__typeof__(getoptical_) *getoptical_ptr = getoptical_;
 
 	// Trivial wrapper routines use pointer to dispatch call
 	void hddsgeant3_wrapper_(void){ (*hddsgeant3_ptr)(); }

@@ -59,21 +59,20 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 	locPIDHypotheses.push_back(Gamma);
 	locPIDHypotheses.push_back(Neutron);
 
-	vector<const DEventRFBunch*> locEventRFBunches;
-	locEventLoop->Get(locEventRFBunches);
-	const DEventRFBunch* locEventRFBunch = locEventRFBunches.empty() ? NULL : locEventRFBunches[0];
+	const DEventRFBunch* locEventRFBunch = NULL;
+	locEventLoop->GetSingle(locEventRFBunch);
 
 	const DVertex* locVertex = NULL;
 	locEventLoop->GetSingle(locVertex);
 
 	// Loop over DNeutralShowers
-	for (unsigned int loc_i = 0; loc_i < locNeutralShowers.size(); loc_i++)
+	for(size_t loc_i = 0; loc_i < locNeutralShowers.size(); ++loc_i)
 	{
 		const DNeutralShower *locNeutralShower = locNeutralShowers[loc_i];
 		// Loop over vertices and PID hypotheses & create DNeutralParticleHypotheses for each combination
-		for (unsigned int loc_k = 0; loc_k < locPIDHypotheses.size(); loc_k++)
+		for(size_t loc_j = 0; loc_j < locPIDHypotheses.size(); ++loc_j)
 		{
-			DNeutralParticleHypothesis* locNeutralParticleHypothesis = Create_DNeutralParticleHypothesis(locNeutralShower, locPIDHypotheses[loc_k], locEventRFBunch, locVertex);
+			DNeutralParticleHypothesis* locNeutralParticleHypothesis = Create_DNeutralParticleHypothesis(locNeutralShower, locPIDHypotheses[loc_j], locEventRFBunch, locVertex);
 			if(locNeutralParticleHypothesis != NULL)
 				_data.push_back(locNeutralParticleHypothesis);	
 		}
@@ -84,10 +83,8 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 
 DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch, const DVertex* locVertex) const
 {
-	double locStartTime = (locEventRFBunch != NULL) ? locEventRFBunch->dTime : 0.0;
-	double locStartTimeVariance = (locEventRFBunch != NULL) ? locEventRFBunch->dTimeVariance : 0.0;
-
 	DVector3 locVertexGuess = locVertex->dSpacetimeVertex.Vect();
+	double locStartTime = locVertex->dSpacetimeVertex.T();
 
 	double locHitTime = locNeutralShower->dSpacetimeVertex.T();
 	DVector3 locHitPoint = locNeutralShower->dSpacetimeVertex.Vect();
@@ -116,7 +113,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 		locPMag = locGamma*locBeta*locMass;
 		locMomentum.SetMag(locPMag);
 		locProjectedTime = locStartTime + (locVertexGuess.Z() - dTargetCenter.Z())/29.9792458;
-		Calc_ParticleCovariance_Massive(locNeutralShower, locMass, locDeltaT, locStartTimeVariance, locMomentum, locPath, locParticleCovariance);
+		Calc_ParticleCovariance_Massive(locNeutralShower, locMass, locDeltaT, locEventRFBunch->dTimeVariance, locMomentum, locPath, locParticleCovariance);
 	}
 	else
 	{
@@ -137,7 +134,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 	locNeutralParticleHypothesis->setCharge(0.0);
 	locNeutralParticleHypothesis->setMomentum(locMomentum);
 	locNeutralParticleHypothesis->setPosition(locVertexGuess);
-	locNeutralParticleHypothesis->setT0(locStartTime, sqrt(locStartTimeVariance), SYS_NULL);
+	locNeutralParticleHypothesis->setT0(locStartTime, sqrt(locEventRFBunch->dTimeVariance), locEventRFBunch->dTimeSource);
 	locNeutralParticleHypothesis->setTime(locProjectedTime);
 	locNeutralParticleHypothesis->setT1(locNeutralShower->dSpacetimeVertex.T(), sqrt(locNeutralShower->dCovarianceMatrix(4, 4)), locNeutralShower->dDetectorSystem);
 	locNeutralParticleHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
@@ -150,13 +147,8 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 	if(locPID == Gamma)
 	{
 		double locTimePull = 0.0;
-		if(locEventRFBunch != NULL)
-			locChiSq = dParticleID->Calc_TimingChiSq(locNeutralParticleHypothesis, locEventRFBunch, locNDF, locTimePull);
-		else
-			locChiSq = numeric_limits<double>::quiet_NaN();
+		locChiSq = dParticleID->Calc_TimingChiSq(locNeutralParticleHypothesis, locNDF, locTimePull);
 		locFOM = TMath::Prob(locChiSq, locNDF);
-		if(locPID == Neutron)
-			locFOM = -1.0;
 	}
 	locNeutralParticleHypothesis->dChiSq = locChiSq;
 	locNeutralParticleHypothesis->dNDF = locNDF;

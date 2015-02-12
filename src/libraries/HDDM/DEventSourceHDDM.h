@@ -59,6 +59,10 @@ using namespace std;
 #include <RICH/DRichTruthHit.h>
 #include <PID/DRFTime.h>
 #include <DANA/DApplication.h>
+#include "PAIR_SPECTROMETER/DPSHit.h"
+#include "PAIR_SPECTROMETER/DPSCHit.h"
+#include "PAIR_SPECTROMETER/DPSTruthHit.h"
+#include "PAIR_SPECTROMETER/DPSCTruthHit.h"
 
 class DEventSourceHDDM:public JEventSource
 {
@@ -93,7 +97,7 @@ class DEventSourceHDDM:public JEventSource
       jerror_t Extract_DMCReaction(hddm_s::HDDM *record, JFactory<DMCReaction> *factory, string tag, JEventLoop *loop);
       jerror_t Extract_DBeamPhoton(hddm_s::HDDM *record, JFactory<DBeamPhoton> *factory, string tag, JEventLoop *loop);
       jerror_t Extract_DMCThrown(hddm_s::HDDM *record, JFactory<DMCThrown> *factory, string tag);
-      jerror_t Extract_DCDCHit(hddm_s::HDDM *record, JFactory<DCDCHit> *factory, string tag);
+      jerror_t Extract_DCDCHit(JEventLoop* locEventLoop, hddm_s::HDDM *record, JFactory<DCDCHit> *factory, string tag);
       jerror_t Extract_DFDCHit(hddm_s::HDDM *record, JFactory<DFDCHit> *factory, string tag);
       jerror_t Extract_DFCALTruthShower(hddm_s::HDDM *record, JFactory<DFCALTruthShower> *factory, string tag);
       jerror_t Extract_DCCALHit(hddm_s::HDDM *record, JFactory<DCCALHit> *factory, string tag, JEventLoop* eventLoop);
@@ -113,6 +117,15 @@ class DEventSourceHDDM:public JEventSource
 
       jerror_t Extract_DTAGMHit( hddm_s::HDDM *record,  JFactory<DTAGMHit>* factory, string tag);
       jerror_t Extract_DTAGHHit( hddm_s::HDDM *record,  JFactory<DTAGHHit>* factory, string tag);
+
+      jerror_t Extract_DPSHit(hddm_s::HDDM *record,JFactory<DPSHit>* factory, 
+			      string tag);
+      jerror_t Extract_DPSCHit(hddm_s::HDDM *record,JFactory<DPSCHit>* factory, 
+			       string tag);
+      jerror_t Extract_DPSTruthHit(hddm_s::HDDM *record,JFactory<DPSTruthHit>* factory, 
+			      string tag);
+      jerror_t Extract_DPSCTruthHit(hddm_s::HDDM *record,JFactory<DPSCTruthHit>* factory, 
+			       string tag);
 
       Particle_t IDTrack(float locCharge, float locMass) const;
 

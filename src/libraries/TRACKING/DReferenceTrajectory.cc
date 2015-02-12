@@ -443,7 +443,7 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
       index_at_bcal=Nswim_steps-1;
       hit_bcal=true;
     }
-    if (hit_tof==false && z>618.){
+    if (hit_tof==false && z>606.){
       index_at_tof=Nswim_steps-1;
       hit_tof=true;
     }
@@ -908,6 +908,7 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 	// Kludge for tracking to forward detectors assuming that the planes 
 	// are perpendicular to the beam line 
 	if (step && step->origin.Z()>600.
+	    && (detector==SYS_FCAL || detector==SYS_TOF) 
 	    ){
 	  double p_sq=step->mom.Mag2();
 	  //double ds=(origin.z()-step->origin.z())*p/step->mom.z();
@@ -917,6 +918,7 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 		     step->origin.y()+dz_over_pz*step->mom.y(),
 		     origin.z());
 	  p_at_intersection=step->mom;
+
 	  if (s){
 	    *s=step->s+ds;
 	  } 
@@ -1395,7 +1397,7 @@ double DReferenceTrajectory::DistToRT(DVector3 hit, double *s,
 	    return numeric_limits<double>::quiet_NaN();
 	  }
 
-	  if (isnan(Ro))
+	  if (std::isnan(Ro))
 	    {
 	  }
 	}

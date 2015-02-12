@@ -136,6 +136,8 @@ hdv_optionsframe::hdv_optionsframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt
 	SetIconName("HDView");
 
 	done->Connect("Clicked()","hdv_optionsframe", this, "DoDone()");
+	this->Connect("CloseWindow()", "hdv_optionsframe", this, "DoDone()");
+        this->DontCallClose();
 
 	MapSubwindows();
 	Resize(GetDefaultSize());

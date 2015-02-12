@@ -19,6 +19,7 @@
 #include <TH1.h>
 
 class DTrackCandidate;
+class DParticleID;
 
 #include "DTrackWireBased.h"
 
@@ -60,6 +61,7 @@ class DTrackWireBased_factory:public jana::JFactory<DTrackWireBased>{
 		int DEBUG_LEVEL;
 		DTrackFitter *fitter;
 		vector<DReferenceTrajectory*> rtv;
+
 		unsigned int num_used_rts;
 		vector<double> mass_hypotheses_positive;
 		vector<double> mass_hypotheses_negative;

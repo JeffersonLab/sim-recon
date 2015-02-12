@@ -56,7 +56,7 @@ DFDCSegment_factory::~DFDCSegment_factory() {
 ///
 jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int runnumber) { 
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
-  const DMagneticFieldMap *bfield = dapp->GetBfield();
+  const DMagneticFieldMap *bfield = dapp->GetBfield(runnumber);
   double Bz=bfield->GetBz(0.,0.,65.);
   RotationSenseToCharge=(Bz>0.)?-1.:1.;
 

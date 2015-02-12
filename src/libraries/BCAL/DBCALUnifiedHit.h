@@ -28,9 +28,10 @@ class DBCALUnifiedHit : public JObject{
 
 		//If there is a associated TDC hit, t is the timewalk-corrected TDC
 		//time, otherwise t is the same as t_ADC.
-		float t;
-		float t_ADC;
-		bool has_TDC_hit;
+		float t;           ///<  Unified time, obtained from ADC and/or TDC and used for further analysis
+		float t_ADC;       ///<  Time from fADC 
+		float t_TDC;       ///<  Time of TDC hit that is closes t to the ADC time
+		bool has_TDC_hit;  ///<  Flag if the Unified Time is the TDC time
 		
 		int cellId;
 
@@ -42,6 +43,7 @@ class DBCALUnifiedHit : public JObject{
 			AddString(items, "E(GeV)", "%2.3f", E);
 			AddString(items, "t(ns)", "%4.2f", t);
 			AddString(items, "t_ADC(ns)", "%4.2f", t_ADC);
+			AddString(items, "t_TDC(ns)", "%4.2f", t_TDC);
 		}
 };
 

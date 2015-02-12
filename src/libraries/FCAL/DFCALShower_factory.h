@@ -25,7 +25,7 @@ class DFCALShower_factory:public JFactory<DFCALShower>{
 
 		void GetCorrectedEnergyAndPosition(const DFCALCluster* cluster, double &Ecorrected, DVector3 &pos_corrected, double &errZ, const DVector3 *aVertex);
 
-                double m_zTarget,m_FCALback,m_FCALfront;
+                double m_zTarget,m_FCALfront;
 
 		double LOAD_CCDB_CONSTANTS;
 		double SHOWER_ENERGY_THRESHOLD;
@@ -35,15 +35,10 @@ class DFCALShower_factory:public JFactory<DFCALShower>{
 		double NON_LIN_COEF_C;
 		double NON_LIN_COEF_alfa;
 
-		double SHOWER_TIMING_WINDOW;
 		double FCAL_RADIATION_LENGTH;
 		double FCAL_CRITICAL_ENERGY;
 		double FCAL_SHOWER_OFFSET;
 		double FCAL_C_EFFECTIVE;
-
-		// Calibration constants
-		// merging clusters, if any, should be done after matching sharged tracks
-		//double MIN_CLUSTER_SEPARATION; // minimum separation between 2 clusters for them NOT to be merged
 };
 
 

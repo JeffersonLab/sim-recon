@@ -13,7 +13,7 @@ using namespace std;
 
 #include <JANA/JFactory.h>
 #include "HDGEOMETRY/DGeometry.h"
-#include "TTab/DTranslationTable.h"
+#include "TTAB/DTranslationTable.h"
 #include "DCDCHit.h"
 
 // store constants indexed by ring/straw number

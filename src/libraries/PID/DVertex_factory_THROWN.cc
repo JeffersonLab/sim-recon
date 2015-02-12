@@ -43,6 +43,8 @@ jerror_t DVertex_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		return RESOURCE_UNAVAILABLE;
 
 	DVertex* locVertex = new DVertex;
+	locVertex->dKinFitNDF = 0;
+	locVertex->dKinFitChiSq = 0.0;
 	locVertex->dSpacetimeVertex.SetVect(locThrownTracks[0]->position());
 	locVertex->dSpacetimeVertex.SetT(locThrownTracks[0]->time());
 	

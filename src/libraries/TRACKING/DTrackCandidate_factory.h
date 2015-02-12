@@ -17,11 +17,14 @@ using namespace jana;
 #include "DTrackCandidate.h"
 #include <DVector3.h>
 #include "CDC/DCDCTrackHit.h"
+#include "HDGEOMETRY/DMagneticFieldMapNoField.h"
 #include "FDC/DFDCSegment.h"
 #include "DHelicalFit.h"
 #include "DMagneticFieldStepper.h"
+#include "PID/DParticleID.h"
 
 class DMagneticFieldMap;
+class DParticleID;
 
 /// \htmlonly
 /// <A href="index.html#legend">
@@ -124,7 +127,9 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
  
  private:
   const DMagneticFieldMap *bfield;
+  bool dIsNoFieldFlag;
   DMagneticFieldStepper *stepper;
+  const DParticleID* dParticleID;
 
   vector<const DTrackCandidate*>cdctrackcandidates;
   vector<const DTrackCandidate*>fdctrackcandidates; 

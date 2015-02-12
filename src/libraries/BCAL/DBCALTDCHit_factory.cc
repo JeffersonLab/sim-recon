@@ -13,6 +13,8 @@ using namespace std;
 #include <JANA/JEventLoop.h>
 #include <BCAL/DBCALTDCDigiHit.h>
 #include <BCAL/DBCALTDCHit_factory.h>
+#include <DAQ/DF1TDCHit.h>
+
 using namespace jana;
 
 
@@ -22,8 +24,9 @@ using namespace jana;
 jerror_t DBCALTDCHit_factory::init(void)
 {
    /// set the base conversion scale
-   t_scale    = 0.060;    // 60 ps/count
-   t_base      = 0.;    // ns
+   t_scale    = 0.058;    // 60 ps/count
+   t_base     = 0.;    // ns
+   t_rollover = 65250;
    //t_offset   = 0;
 
    return NOERROR;
@@ -34,6 +37,15 @@ jerror_t DBCALTDCHit_factory::init(void)
 //------------------
 jerror_t DBCALTDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
+
+  t_rollover = 65250;
+  if (runnumber>1776){
+    t_rollover = 64678;
+  }
+  if (runnumber>2010){
+    t_rollover = 64466;
+  }
+
    /// Read in calibration constants
    vector<double> raw_time_offsets;
 
@@ -80,6 +92,20 @@ jerror_t DBCALTDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
    /// data in HDDM format. The HDDM event source will copy
    /// the precalibrated values directly into the _data vector.
 
+   // Get the trigger time from the f1 TDC
+   // This will need to be replaced once the trigger time is encoded in a particular object
+   vector<const DF1TDCHit *>tdchit;
+   eventLoop->Get(tdchit);
+   int tref=0;
+   for(unsigned int i=0;i<tdchit.size();i++){
+     if(tdchit[i]->rocid==51&&tdchit[i]->slot==17&&tdchit[i]->channel==8){
+       tref=tdchit[i]->time; // in clicks
+       //printf("tref %d %f\n",tdchit[i]->time,tref);
+       break;
+     }
+   }
+
+
    vector<const DBCALTDCDigiHit*> digihits;
    loop->Get(digihits);
    for(unsigned int i=0; i<digihits.size(); i++){
@@ -93,7 +119,23 @@ jerror_t DBCALTDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
       // Apply calibration constants here
       double T = (double)digihit->time;
-      hit->t = t_scale * (T - GetConstant(time_offsets,digihit)) + t_base;
+      double rel_time = 0;
+      //hit->t = t_scale * (T - GetConstant(time_offsets,digihit)) + t_base;
+
+
+      if (tref>0){ // got reference signal
+	// Take care of rollover
+	int tdiff=int(digihit->time)-int(tref);
+	if (tdiff<0) tdiff+=t_rollover;
+	else if (tdiff>t_rollover) tdiff-=t_rollover;
+	t_base = -900;
+	rel_time = t_scale * (tdiff - GetConstant(time_offsets,digihit)) + t_base;
+	//printf("event %5i    %3i  %3i  %3i   %f\n",eventnumber,tref,digihit->time,tdiff,rel_time);
+      } else {
+	rel_time = t_scale * (T - GetConstant(time_offsets,digihit)) + t_base;
+      }
+      hit->t = rel_time;
+
 /*
       cout << "BCAL TDC Hit: ( " << digihit->module << ", " << digihit->layer << ", "
            << digihit->sector << ", " << digihit->end << " )  ->  "
@@ -127,7 +169,7 @@ jerror_t DBCALTDCHit_factory::fini(void)
 //------------------
 // FillCalibTable
 //------------------
-void DBCALTDCHit_factory::FillCalibTable( map<int,cell_calib_t> &table, 
+void DBCALTDCHit_factory::FillCalibTable( bcal_digi_constants_t &table, 
                    const vector<double> &raw_table) 
 {
     char str[256];
@@ -146,9 +188,7 @@ void DBCALTDCHit_factory::FillCalibTable( map<int,cell_calib_t> &table,
           throw JException(str);
       }
       
-      int cell_id = DBCALGeometry::cellId(module,layer,sector);
-      
-      table[cell_id] = cell_calib_t(raw_table[channel],raw_table[channel+1]);
+      table.push_back( cell_calib_t(raw_table[channel],raw_table[channel+1]) );
 
       channel += 2;
        }
@@ -195,9 +235,7 @@ const double DBCALTDCHit_factory::GetConstant( const bcal_digi_constants_t &the_
       throw JException(str);
    }
 
-   const int the_cell = DBCALGeometry::cellId( in_module,
-                      in_layer,
-                      in_sector);
+   const int the_cell = GetCalibIndex( in_module, in_layer, in_sector);
    
    if(in_end == DBCALGeometry::kUpstream) {
        // handle the upstream end
@@ -235,9 +273,7 @@ const double DBCALTDCHit_factory::GetConstant( const bcal_digi_constants_t &the_
       throw JException(str);
    }
 
-   const int the_cell = DBCALGeometry::cellId(in_hit->module,
-                     in_hit->layer,
-                     in_hit->sector);
+   const int the_cell = GetCalibIndex( in_hit->module, in_hit->layer, in_hit->sector);
    
    if(in_hit->end == DBCALGeometry::kUpstream) {
        // handle the upstream end
@@ -277,9 +313,7 @@ const double DBCALTDCHit_factory::GetConstant( const bcal_digi_constants_t &the_
       throw JException(str);
    }
 
-   const int the_cell = DBCALGeometry::cellId(in_digihit->module,
-                     in_digihit->layer,
-                     in_digihit->sector);
+   const int the_cell = GetCalibIndex( in_digihit->module, in_digihit->layer, in_digihit->sector);
    
    if(in_digihit->end == DBCALGeometry::kUpstream) {
        // handle the upstream end

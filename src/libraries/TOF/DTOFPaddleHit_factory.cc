@@ -54,6 +54,11 @@ jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int runnumber)
   ENERGY_ATTEN_FACTOR=exp(HALFPADDLE/ATTEN_LENGTH);
   TIME_COINCIDENCE_CUT=2.*HALFPADDLE/C_EFFECTIVE;
 
+  if(eventLoop->GetCalib("TOF/propagation_speed", propagation_speed))
+    jout << "Error loading /TOF/propagation_speed !" << endl;
+
+
+
   loop->Get(TOFGeom);
 
   return NOERROR;
@@ -88,21 +93,23 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
   for (unsigned int i = 0; i < hits.size(); i++){
     const DTOFHit *hit = hits[i];
-    if (hit->plane){
-      if (hit->end){
-	P2hitsR.push_back(hit);
-	//P2R[c2r++] = i;
+    if (hit->has_fADC && hit->has_TDC){ // good hits have both ADC and TDC info
+      if (hit->plane){
+	if (hit->end){
+	  P2hitsR.push_back(hit);
+	  //P2R[c2r++] = i;
+	} else {
+	  P2hitsL.push_back(hit);	
+	  //P2L[c2l++] = i;
+	}
       } else {
-	P2hitsL.push_back(hit);	
-	//P2L[c2l++] = i;
-      }
-    } else {
-      if (hit->end){
-	P1hitsR.push_back(hit);
-	//P1R[c1r++] = i;
-      } else {
-	P1hitsL.push_back(hit);
-	//P1L[c1l++] = i;
+	if (hit->end){
+	  P1hitsR.push_back(hit);
+	  //P1R[c1r++] = i;
+	} else {
+	  P1hitsL.push_back(hit);
+	  //P1L[c1l++] = i;
+	}
       }
     }
   }
@@ -281,9 +288,11 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
     }
     
     if (check > 0 ){
-      hit->meantime = (hit->t_north+hit->t_south)/2. - HALFPADDLE/C_EFFECTIVE;
+      int id=44*hit->orientation+hit->bar-1;
+      double v=propagation_speed[id];
+      hit->meantime = (hit->t_north+hit->t_south)/2. - HALFPADDLE/v;
       hit->timediff = (hit->t_south - hit->t_north)/2.;
-      float pos = hit->timediff * C_EFFECTIVE;  
+      float pos = hit->timediff * v;  
       hit->pos = pos;
       hit->dpos      = 2.;  // manually/artificially set to 2cm. 
       

@@ -81,7 +81,7 @@ jerror_t DEventProcessor_trkres_tree::brun(JEventLoop *loop, int runnumber)
 	
 	DApplication *dapp =  dynamic_cast<DApplication*>(loop->GetJApplication());
 	if(dapp){
-		bfield = dapp->GetBfield();
+		bfield = dapp->GetBfield(runnumber);
 	}else{
 		_DBG_<<"Unable to get DApplication pointer! (JApplication* = "<<loop->GetJApplication()<<")"<<endl;
 		exit(-1);

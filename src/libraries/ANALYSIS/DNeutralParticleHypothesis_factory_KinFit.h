@@ -13,6 +13,7 @@
 #include "JANA/JFactory.h"
 #include "PID/DNeutralParticleHypothesis.h"
 #include "PID/DNeutralShower.h"
+#include "PID/DParticleID.h"
 
 #include "ANALYSIS/DKinFitParticle.h"
 #include "ANALYSIS/DParticleCombo.h"
@@ -35,7 +36,7 @@ class DNeutralParticleHypothesis_factory_KinFit : public jana::JFactory<DNeutral
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		DNeutralParticleHypothesis* Build_NeutralParticleHypothesis(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DKinFitParticle* locKinFitParticle, const DNeutralShower* locNeutralShower, const DParticleCombo* locParticleCombo);
-		double dTargetZCenter;
+		const DParticleID* dParticleID;
 };
 
 #endif // _DNeutralParticleHypothesis_factory_KinFit_

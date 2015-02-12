@@ -34,6 +34,7 @@ unsigned int EVENTS_TO_SKIP = 0;
 unsigned int EVENTS_TO_KEEP = 1;
 unsigned int SPECIFIC_OFFSET_TO_KEEP = 0;
 unsigned int SPECIFIC_EVENT_TO_KEEP = 0;
+unsigned int BUFFER_SIZE = 20000000;
 bool EVENT_TO_KEEP_MODE = false;
 
 
@@ -76,6 +77,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
 			switch(ptr[1]){
 				case 'h': Usage();  break;
 				case 'o': OUTFILENAME=&ptr[2];  break;
+				case 'b': BUFFER_SIZE=atoi(&ptr[2]); break;
 				case 's': EVENTS_TO_SKIP=atoi(&ptr[2]); break;
 				case 'k': EVENTS_TO_KEEP=atoi(&ptr[2]); break;
 				case 'e': SPECIFIC_OFFSET_TO_KEEP=atoi(&ptr[2]); break;
@@ -134,6 +136,7 @@ void Usage(void)
 	cout<<"    -kNeventsToKeep  Set number of events to keep (def. 1)"<<endl;
 	cout<<"    -eSingleEvent    Keep only the single, specified event (file pos.)"<<endl;
 	cout<<"    -ESingleEvent    Keep only the single, specified event (event number)"<<endl;
+	cout<<"    -bBufferSize     Size of EVIO input buffer in bytes (def. " << (BUFFER_SIZE>>20) << "MB)" << endl;
 	cout<<endl;
 	cout<<" This will copy a continguous set of events from the combined event streams"<<endl;
 	cout<<" into a seperate output file. The primary use for this would be to copy"<<endl;
@@ -178,7 +181,7 @@ void Process(unsigned int &NEvents, unsigned int &NEvents_read)
 	for(unsigned int i=0; i<INFILENAMES.size(); i++){
 		try{
 			cout << "Opening input file : \"" << INFILENAMES[i] << "\"" << endl;
-			evioFileChannel *ichan = new evioFileChannel(INFILENAMES[i], "r");
+			evioFileChannel *ichan = new evioFileChannel(INFILENAMES[i], "r", BUFFER_SIZE);
 			ichan->open();
 			while( ichan->read() ){
 				NEvents_read++;

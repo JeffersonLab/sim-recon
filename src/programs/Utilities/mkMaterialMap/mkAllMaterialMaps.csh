@@ -1,15 +1,15 @@
 #!/bin/tcsh -f
 
 # Target
-mkMaterialMap -Nr 2 -Nz 2 -rmin 0 -rmax 1.5 -zmin 50 -zmax 80 -n_r 5 -n_z 5 -n_phi 10
+mkMaterialMap -Nr 2 -Nz 2 -rmin 0 -rmax 1.8 -zmin 64.9 -zmax 65.1 -n_r 5 -n_z 5 -n_phi 10
 mv material_map material_map00_target
 
 # Target wall
-mkMaterialMap -Nr 20 -Nz 2 -rmin 1.50 -rmax 1.55 -zmin 50 -zmax 80 -n_r 100 -n_z 5 -n_phi 10
+mkMaterialMap -Nr 20 -Nz 2 -rmin 1.82 -rmax 1.9 -zmin 23.0 -zmax 65.1 -n_r 100 -n_z 5 -n_phi 10
 mv material_map material_map01_target_wall
 
 # Scattering chamber
-mkMaterialMap -Nr 100 -Nz 400 -rmin 0.0 -rmax 4.7 -zmin 43.9 -zmax 86.1 -n_r 100 -n_z 5 -n_phi 10
+mkMaterialMap -Nr 100 -Nz 400 -rmin 0.0 -rmax 4.7 -zmin 17.0 -zmax 86.1 -n_r 100 -n_z 5 -n_phi 10
 mv material_map material_map02_scattering_chamber
 
 # Start Counter barrel

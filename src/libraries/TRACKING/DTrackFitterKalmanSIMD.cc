@@ -138,12 +138,18 @@ double DTrackFitterKalmanSIMD::cdc_drift_distance(double t,double B){
 
 // Convert time to distance for the cdc and compute variance
 void DTrackFitterKalmanSIMD::ComputeCDCDrift(double t,double B,
-					     double &d, double &V){
-  d=0.;
-  V=0.2028; // initalize with (cell size)/12.
+					     double &d, double &V, double &tcorr){
+  d=0.39; // initialize at half-cell
+  V=0.0507; // initialize with (cell size)/12.
+
   if (t>0){
     double dtc =(CDC_DRIFT_BSCALE_PAR1 + CDC_DRIFT_BSCALE_PAR2 * B)* t;
-    double tcorr=t-dtc;
+    tcorr=t-dtc;
+
+    // Not sure what to do here -- for now ignore time info for this wire
+    if (tcorr>cdc_drift_table[cdc_drift_table.size()-1]){
+      return;
+    }
 
     unsigned int index=0;
     index=locate(cdc_drift_table,tcorr);
@@ -154,6 +160,13 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double t,double B,
     double sigma=CDC_RES_PAR1/(tcorr+1.)+CDC_RES_PAR2;
     V=sigma*sigma+mVarT0*0.0001/(dt*dt);
   }
+  else if (t>-2.){ //ns, close to wire
+    d=0.;
+    double dt=cdc_drift_table[1]-cdc_drift_table[0];
+    V=CDC_RES_PAR1+CDC_RES_PAR2+mVarT0*0.0001/(dt*dt);
+  }
+  
+
 }
 
 
@@ -187,9 +200,6 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   endplate_z-=0.5*endplate_dz;
   endplate_r2min=endplate_rmin*endplate_rmin;
   endplate_r2max=endplate_rmax*endplate_rmax;
-
-  // center of the target
-  geom->GetTargetZ(TARGET_Z);
 
   // Beginning of the cdc
   vector<double>cdc_center;
@@ -274,33 +284,33 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     Hstepsize=(TH2F*)gROOT->FindObject("Hstepsize");
     if (!Hstepsize){
       Hstepsize=new TH2F("Hstepsize","step size numerator",
-			 362,0,362,130,0,65);
+			 900,-100,350,130,0,65);
       Hstepsize->SetXTitle("z (cm)");
       Hstepsize->SetYTitle("r (cm)");
     } 
     HstepsizeDenom=(TH2F*)gROOT->FindObject("HstepsizeDenom");
     if (!HstepsizeDenom){
       HstepsizeDenom=new TH2F("HstepsizeDenom","step size denominator",
-			 362,0,362,130,0,65);
+			 900,-100,350,130,0,65);
       HstepsizeDenom->SetXTitle("z (cm)");
       HstepsizeDenom->SetYTitle("r (cm)");
     }
-       
+    
     fdc_t0=(TH2F*)gROOT->FindObject("fdc_t0");
     if (!fdc_t0){
-      fdc_t0=new TH2F("fdc_t0","t0 estimate from tracks vs momentum",100,0,7,200,-50,50);
+      fdc_t0=new TH2F("fdc_t0","t0 estimate from tracks vs momentum",100,0,7,200,-50,350);
     } 
     fdc_t0_timebased=(TH2F*)gROOT->FindObject("fdc_t0_timebased");
     if (!fdc_t0_timebased){
-      fdc_t0_timebased=new TH2F("fdc_t0_timebased","time-based t0 estimate from tracks vs momentum",100,0,7,200,-50,50);
+      fdc_t0_timebased=new TH2F("fdc_t0_timebased","time-based t0 estimate from tracks vs momentum",100,0,7,200,-50,350);
     }
     fdc_t0_vs_theta=(TH2F*)gROOT->FindObject("fdc_t0_vs_theta");
     if (!fdc_t0_vs_theta){
-      fdc_t0_vs_theta=new TH2F("fdc_t0_vs_theta","t0 estimate from tracks vs. #theta",140,0,140,200,-50,50);
+      fdc_t0_vs_theta=new TH2F("fdc_t0_vs_theta","t0 estimate from tracks vs. #theta",140,0,140,200,-50,350);
     }  
     fdc_t0_timebased_vs_theta=(TH2F*)gROOT->FindObject("fdc_t0_timebased_vs_theta");
     if (!fdc_t0_timebased_vs_theta){
-      fdc_t0_timebased_vs_theta=new TH2F("fdc_t0_timebased_vs_theta","t0_timebased estimate from tracks vs. #theta",140,0,140,200,-50,50);
+      fdc_t0_timebased_vs_theta=new TH2F("fdc_t0_timebased_vs_theta","t0_timebased estimate from tracks vs. #theta",140,0,140,200,-50,350);
     }
     cdc_drift=(TH2F*)gROOT->FindObject("cdc_drift");
     if (!cdc_drift){
@@ -361,13 +371,19 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     fdc_time_vs_d=(TH2F*)gROOT->FindObject("fdc_time_vs_d");
     if (!fdc_time_vs_d){
       fdc_time_vs_d=new TH2F("fdc_time_vs_d","fdc drift time vs distance",100,0,0.5,
-			     200,-20,380.);
+			     200,-20,3800.);
     } 
     fdc_dy_vs_d=(TH2F*)gROOT->FindObject("fdc_dy_vs_d");
     if (!fdc_dy_vs_d){
       fdc_dy_vs_d=new TH2F("fdc_dy_vs_d","fdc dy vs distance",100,-0.5,0.5,
-			     200,-20,380.);
+			     200,-1,1.);
     }
+    fdc_dy_vs_dE=(TH2F*)gROOT->FindObject("fdc_dy_vs_dE");
+    if (!fdc_dy_vs_dE){
+      fdc_dy_vs_dE=new TH2F("fdc_dy_vs_dE","fdc dy vs dE",100,0,1000.0,
+			     200,-1,1.);
+    }
+
 
     fdc_drift_vs_B=(TH2F*)gROOT->FindObject("fdc_drift_vs_B");
     if (!fdc_drift_vs_B){
@@ -403,6 +419,14 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   jcalib->Get("CDC/cdc_resolution_parms", cdc_res_parms);
   CDC_RES_PAR1 = cdc_res_parms["res_par1"];
   CDC_RES_PAR2 = cdc_res_parms["res_par2"];
+
+  // Parameters for correcting for deflection due to Lorentz force
+  map<string,double>lorentz_parms;
+  jcalib->Get("FDC/lorentz_deflection_parms",lorentz_parms);
+  LORENTZ_NR_PAR1=lorentz_parms["nr_par1"];
+  LORENTZ_NR_PAR2=lorentz_parms["nr_par2"];
+  LORENTZ_NZ_PAR1=lorentz_parms["nz_par1"];
+  LORENTZ_NZ_PAR2=lorentz_parms["nz_par2"];
  
   /*
   if (jcalib->Get("FDC/fdc_drift2", tvals)==false){
@@ -425,6 +449,16 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 
   for (unsigned int i=0;i<5;i++)I5x5(i,i)=1.;
   
+  
+   // center of the target
+  map<string, double> targetparms;
+  if (jcalib->Get("TARGET/target_parms",targetparms)==false){
+    TARGET_Z = targetparms["TARGET_Z_POSITION"];
+  }
+  else{
+    geom->GetTargetZ(TARGET_Z);
+  }
+
   // Inform user of some configuration settings
   static bool config_printed = false;
   if(!config_printed){
@@ -438,6 +472,8 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 	  }
 	  jout << ss.str();
   } // config_printed
+
+
 }
 
 //-----------------
@@ -605,7 +641,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
     }
     mT0=input_params.t0();
 
-    // _DBG_ << SystemName(input_params.t0_detector()) << " " << mT0 <<endl;
+    //_DBG_ << SystemName(input_params.t0_detector()) << " " << mT0 <<endl;
     
   }
   
@@ -1760,10 +1796,11 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
 	my_fdchits[hit_id]->nr=tanr;
 	my_fdchits[hit_id]->nz=tanz;
 	*/
-
-	my_fdchits[hit_id]->nr=1.05*0.1458*Bz*(1.-0.048*Br);
-	my_fdchits[hit_id]->nz=1.05*(0.1717+0.01227*Bz)*(Br*cos(my_phi));
 	
+	my_fdchits[hit_id]->nr=LORENTZ_NR_PAR1*Bz*(1.+LORENTZ_NR_PAR2*Br);
+	my_fdchits[hit_id]->nz=(LORENTZ_NZ_PAR1+LORENTZ_NZ_PAR2*Bz)*(Br*cos(my_phi));
+	
+
 	my_id--;
 	
 	unsigned int num=1;
@@ -2972,13 +3009,15 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
   double phi0=phi_=input_params.momentum().Phi();
   
   // Guess for momentum error
-  double dpt_over_pt=0.;
+  double dpt_over_pt=0.025;
+  /*
   if (theta_deg<15){
     dpt_over_pt=0.107-0.0178*theta_deg+0.000966*theta_deg_sq;
   }
   else {
     dpt_over_pt=0.0288+0.00579*theta_deg-2.77e-5*theta_deg_sq;
   }
+  */
   /* 
   if (theta_deg<28.){
     theta_deg=28.;
@@ -2991,11 +3030,14 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
   */
   double sig_lambda=0.006;
   if (theta_deg>30.){
-    sig_lambda=-0.077+0.0038*theta_deg-1.98e-5*theta_deg_sq;
+    //sig_lambda=-0.077+0.0038*theta_deg-1.98e-5*theta_deg_sq;
+    sig_lambda=0.016;
   }
   else if (theta_deg>14.){
-    sig_lambda=-0.138+0.0155*theta_deg-0.00034*theta_deg_sq;
+    //sig_lambda=-0.138+0.0155*theta_deg-0.00034*theta_deg_sq;
+    sig_lambda=0.012;
   }
+  
   double dp_over_p_sq
     =dpt_over_pt*dpt_over_pt+tanl_*tanl_*sig_lambda*sig_lambda;
 
@@ -3123,7 +3165,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       C0(state_tx,state_tx)=C0(state_ty,state_ty)=temp*temp;
       C0(state_q_over_p,state_q_over_p)=dp_over_p_sq*q_over_p_*q_over_p_;
 
-      C0*=1.+1./tsquare;
+      //C0*=1.+1./tsquare;
 
       // The position from the track candidate is reported just outside the 
       // start counter for tracks containing cdc hits. Propagate to the 
@@ -3977,12 +4019,12 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	double prediction=doca*cosstereo;
 
 	// Measurement
-	double measurement=0.39,tdrift=0.;
+	double measurement=0.39,tdrift=0.,tcorr=0.;
 	if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){	
 	  tdrift=my_cdchits[cdc_index]->tdrift-mT0
 	    -central_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
 	  double B=central_traj[k_minus_1].B;
-	  ComputeCDCDrift(tdrift,B,measurement,V);
+	  ComputeCDCDrift(tdrift,B,measurement,V,tcorr);
 	}
 
        	// Projection matrix        
@@ -4056,12 +4098,13 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	    cdc_updates[cdc_index].C=Cc;
 	    cdc_updates[cdc_index].tflight
 	      =central_traj[k_minus_1].t*TIME_UNIT_CONVERSION;  
-	    cdc_updates[cdc_index].tdrift=my_cdchits[cdc_index]->tdrift;
+	    cdc_updates[cdc_index].tdrift=tcorr;
 	    cdc_updates[cdc_index].xy.Set(xy0.X()
 					  -Sc(state_D)*sin(Sc(state_phi)),
 					  xy0.Y()
 					  +Sc(state_D)*cos(Sc(state_phi)));
-	    cdc_updates[cdc_index].B=central_traj[k_minus_1].B;
+	    cdc_updates[cdc_index].doca=prediction;
+    	    cdc_updates[cdc_index].B=central_traj[k_minus_1].B;
 	    cdc_updates[cdc_index].s=central_traj[k_minus_1].s;
 	    cdc_updates[cdc_index].residual=dm*scale;
 	    cdc_updates[cdc_index].variance=V*scale;
@@ -5222,12 +5265,12 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	//H.Print();
 	
 	// The next measurement
-	double dm=0.39,tdrift=0.;
+	double dm=0.39,tdrift=0.,tcorr=0.;
 	if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){	
 	  tdrift=my_cdchits[cdc_index]->tdrift-mT0
 	      -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
 	  double B=forward_traj[k_minus_1].B;
-	  ComputeCDCDrift(tdrift,B,dm,V);
+	  ComputeCDCDrift(tdrift,B,dm,V,tcorr);
 	}
 	  
 	// residual
@@ -5290,7 +5333,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	      =forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;  
 	    cdc_updates[cdc_index].xy.Set(S(state_x),S(state_y));
 	    cdc_updates[cdc_index].z=newz;
-	    cdc_updates[cdc_index].tdrift=my_cdchits[cdc_index]->tdrift;
+	    cdc_updates[cdc_index].tdrift=tcorr;
+	    cdc_updates[cdc_index].doca=d;
 	    cdc_updates[cdc_index].B=forward_traj[k_minus_1].B;
 	    cdc_updates[cdc_index].s=forward_traj[k_minus_1].s;
 	    cdc_updates[cdc_index].residual=res*scale;
@@ -6647,7 +6691,8 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
     ftime=0.;
     
     // Scale cut for pruning hits according to the iteration number
-    if (fit_type==kTimeBased){
+    if (fit_type==kTimeBased)
+      {
       fdc_anneal=FORWARD_ANNEAL_SCALE/pow(my_fdc_anneal_const,iter)+1.;
       cdc_anneal=ANNEAL_SCALE/pow(my_cdc_anneal_const,iter)+1.;
     }
@@ -6752,7 +6797,11 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       cdchits_used_in_fit.push_back(my_cdchits[m]->hit);
       pulls.push_back(pull_t(last_cdc_updates[m].residual,
 			     sqrt(last_cdc_updates[m].variance),
-			     last_cdc_updates[m].s));
+			     last_cdc_updates[m].s,
+			     last_cdc_updates[m].tdrift,
+			     last_cdc_updates[m].doca,		    
+			     my_cdchits[m]->hit,NULL
+			     ));
       if (fit_type==kTimeBased){
 	if (ESTIMATE_T0_TB){
 	  EstimateT0Forward(my_cdchits[m],last_cdc_updates[m]);
@@ -6773,7 +6822,10 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       fdchits_used_in_fit.push_back(my_fdchits[m]->hit);
       pulls.push_back(pull_t(last_fdc_updates[m].residual,
 			     sqrt(last_fdc_updates[m].variance),
-			     last_fdc_updates[m].s));
+			     last_fdc_updates[m].s,
+			     last_fdc_updates[m].tdrift,
+			     last_fdc_updates[m].doca,
+			     NULL,my_fdchits[m]->hit));
       if (fit_type==kTimeBased && ESTIMATE_T0_TB){
 	EstimateT0(last_fdc_updates[m],my_fdchits[m]);
       }
@@ -7027,7 +7079,10 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
       cdchits_used_in_fit.push_back(my_cdchits[m]->hit);
       pulls.push_back(pull_t(last_cdc_updates[m].residual,
 			     sqrt(last_cdc_updates[m].variance),
-			     last_cdc_updates[m].s));
+			     last_cdc_updates[m].s,
+			     last_cdc_updates[m].tdrift,
+			     last_cdc_updates[m].doca,			     
+			     my_cdchits[m]->hit,NULL));
       if (fit_type==kTimeBased){
 	if (ESTIMATE_T0_TB){
 	  EstimateT0Forward(my_cdchits[m],last_cdc_updates[m]);
@@ -7266,7 +7321,10 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
       cdchits_used_in_fit.push_back(my_cdchits[m]->hit);
       pulls.push_back(pull_t(last_cdc_updates[m].residual,
 			     sqrt(last_cdc_updates[m].variance),
-			     last_cdc_updates[m].s));
+			     last_cdc_updates[m].s,
+			     last_cdc_updates[m].tdrift,
+			     last_cdc_updates[m].doca,
+			     my_cdchits[m]->hit,NULL));
       if (fit_type==kTimeBased){
 	if (ESTIMATE_T0_TB){
 	  EstimateT0Central(my_cdchits[m],last_cdc_updates[m]);

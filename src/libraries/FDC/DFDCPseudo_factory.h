@@ -114,12 +114,13 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		double r2_out,r2_in;
 		double STRIP_ANODE_TIME_CUT;
 		unsigned int MAX_ALLOWED_FDC_HITS;
-		bool DEBUG_HISTS,USE_FDC,MATCH_TRUTH_HITS;
+		bool DEBUG_HISTS,USE_FDC;
 
-		TH2F *qa_qc_diff;
-		TH2F *qa_vs_qc, *dtv_vs_dtu;
-		TH2F *uv_dt_vs_u,*uv_dt_vs_v,*v_wire_dt_vs_wire,*u_wire_dt_vs_wire;
-		TH2F *Hxy;
+		TH2F *qv_vs_qu, *dtv_vs_dtu;
+		TH2F *uv_dt_vs_u,*uv_dt_vs_v,*v_wire_dt_vs_wire;
+		TH2F *tv_vs_tu,*u_wire_dt_vs_wire;
+		TH2F *Hxy,*ut_vs_u,*vt_vs_v;
+		TH2F *v_vs_u;
 
 		JStreamLog* _log;
 };

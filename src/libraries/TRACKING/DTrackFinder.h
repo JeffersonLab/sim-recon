@@ -119,6 +119,16 @@ class DTrackFinder:public jana::JObject{
   
   double FindDoca(double z,const DMatrix4x1 &S,const DVector3 &wdir,
 		  const DVector3 &origin,DVector3 *poca=NULL) const;
+  double FindDoca(const DVector3 &pos1,const DVector3 &mom1,
+		  const DVector3 &pos2,const DVector3 &mom2,
+		  DVector3 *poca) const;
+  bool FindIntersectionsWithCylinder(double R,const DVector3 &dir,
+				     const DVector3 &pos,DVector3 &out1,
+				     DVector3 &out2) const;
+  bool FindIntersectionWithPlane(const DVector3 &origin,const DVector3 &norm,
+				 const DVector3 &pos,const DVector3 &dir,
+				 DVector3 &outpos) const;
+ 
 
  private:
   // Prohibit default constructor
@@ -132,6 +142,8 @@ class DTrackFinder:public jana::JObject{
   vector<fdc_hit_t>fdc_hits;
   vector<fdc_segment_t>fdc_segments[4];
   vector<fdc_segment_t>fdc_tracks;
+ 
+  bool COSMICS;
 };
 
 #endif // _DTrackFinder_

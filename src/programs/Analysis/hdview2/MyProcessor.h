@@ -93,6 +93,7 @@ class MyProcessor:public JEventProcessor
   vector<TObject*> graphics_xyB;
   vector<TObject*> graphics_xz;
   vector<TObject*> graphics_yz;
+  vector<TObject*> graphics_tof_hits;
   
   void GetFactoryNames(vector<string> &facnames);
   void GetFactories(vector<JFactory_base*> &factories);

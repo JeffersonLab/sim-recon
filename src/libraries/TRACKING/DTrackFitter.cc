@@ -44,7 +44,7 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
 		return;
 	}
-	bfield = dapp->GetBfield(); // this should be run number based!
+	bfield = dapp->GetBfield(run_number); 
 	lorentz_def=dapp->GetLorentzDeflections(run_number);
 	geom = dapp->GetDGeometry(run_number);
 

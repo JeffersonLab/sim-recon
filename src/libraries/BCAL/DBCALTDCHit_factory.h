@@ -13,8 +13,7 @@
 
 // store up/down-stream values for each detector cell
 typedef pair<double,double> cell_calib_t;  
-// store constants indexed by cell ID (module/layer/sector)
-typedef  map<int,cell_calib_t>  bcal_digi_constants_t;    // switch to a hashed map?
+typedef vector<cell_calib_t>  bcal_digi_constants_t; 
 
 class DBCALTDCHit_factory:public jana::JFactory<DBCALTDCHit>{
 	public:
@@ -32,8 +31,13 @@ class DBCALTDCHit_factory:public jana::JFactory<DBCALTDCHit>{
 		// overall scale factors
 		double t_scale;
                 double t_base;
+		int t_rollover;
 
 		bcal_digi_constants_t time_offsets;
+
+		const int GetCalibIndex( int module, int layer, int sector ) const {
+			return BCAL_NUM_TDC_LAYERS*BCAL_NUM_SECTORS*(module-1) + BCAL_NUM_SECTORS*(layer-1) + (sector-1);
+		}
 
 		const double GetConstant( const bcal_digi_constants_t &the_table,
 					  const int in_module, const int in_layer,
@@ -54,7 +58,7 @@ class DBCALTDCHit_factory:public jana::JFactory<DBCALTDCHit>{
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		void FillCalibTable( map<int,cell_calib_t> &table, 
+		void FillCalibTable( bcal_digi_constants_t &table, 
 				     const vector<double> &raw_table);
 };
 

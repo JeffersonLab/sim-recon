@@ -15,9 +15,8 @@
 #include <DMatrix.h>
 
 #include "PID/DMCReaction.h"
+#include "PID/DBeamPhoton.h"
 #include "TRACKING/DMCThrown.h"
-#include "TAGGER/DTAGMHit.h"
-#include "TAGGER/DTAGHHit.h"
 #include "FCAL/DFCALShower.h"
 #include "PID/DNeutralShower.h"
 #include <PID/DDetectorMatches.h>

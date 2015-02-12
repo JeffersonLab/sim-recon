@@ -64,7 +64,7 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
 
   vector< map<string, double> > tvals;
   cdc_drift_table.clear();
-  if (jcalib->Get("CDC/cdc_drift_table", tvals)==false){    
+  if (jcalib->Get("CDC/cdc_drift_table::NoBField", tvals)==false){    
     for(unsigned int i=0; i<tvals.size(); i++){
       map<string, double> &row = tvals[i];
       cdc_drift_table.push_back(1000.*row["t"]);
@@ -80,8 +80,11 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
   CDC_RES_PAR1 = cdc_res_parms["res_par1"];
   CDC_RES_PAR2 = cdc_res_parms["res_par2"];
   
-  COSMICS=true;
+  COSMICS=false;
   gPARMS->SetDefaultParameter("TRKFIND:COSMICS",COSMICS);
+  
+  DEBUG_HISTS=false;
+  gPARMS->SetDefaultParameter("TRKFIND:DEBUG_HISTS",DEBUG_HISTS);
 
   // Get pointer to TrackFinder object 
   vector<const DTrackFinder *> finders;
@@ -94,6 +97,11 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
 
   // Drop the const qualifier from the DTrackFinder pointer
   finder = const_cast<DTrackFinder*>(finders[0]);
+
+  dapp->Lock();
+
+  Hvres=(TH2F *)gROOT->FindObject("Hvres");
+  if (!Hvres) Hvres=new TH2F("Hvres","Residual along wire",100,-0.25,0.25,24,0.5,24.5);
 
   return NOERROR;
 }
@@ -196,10 +204,22 @@ jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, int eventn
       }
       
       //Run the Kalman Filter algorithm
-      DoFilter(t0,my_z,S,hits);	    
+      DoFilter(t0,my_z,S,hits);	   
     }
   }
 
+  // Set CDC ring & FDC plane hit patterns
+  for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
+  {
+    vector<const DCDCTrackHit*> locCDCTrackHits;
+    _data[loc_i]->Get(locCDCTrackHits);
+
+    vector<const DFDCPseudo*> locFDCPseudos;
+    _data[loc_i]->Get(locFDCPseudos);
+
+    _data[loc_i]->dCDCRings = dParticleID->Get_CDCRingBitPattern(locCDCTrackHits);
+    _data[loc_i]->dFDCPlanes = dParticleID->Get_FDCPlaneBitPattern(locFDCPseudos);
+  }
 
   return NOERROR;
 }
@@ -299,6 +319,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
 	DVector3 pos,origin,dir(0,0,1.); 
 	finder->FindDoca(trajectory[last_index].z,Sbest,dir,origin,&pos);
 	cand->setPosition(pos);
+
 	if (trajectory[0].z<pos.z()) sign=-1.;
       }
       else{ 
@@ -391,6 +412,8 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
   DMatrix4x1 S0; // State vector from reference trajectory
   double V=1.15*(0.78*0.78/12.); // sigma=cell_size/sqrt(12.)*scale_factor
 
+  const double d_EPS=1e-8;
+
   //Initialize chi2 and ndof
   chi2=0.;
   ndof=0;
@@ -456,7 +479,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
       double s=scale*N;
       double t=scale*N1;
       diff+=s*tdir-t*wdir;
-      double d=diff.Mag();
+      double d=diff.Mag()+d_EPS; // prevent division by zero
 
       // The next measurement and its variance
       double tdrift=hits[cdc_index]->tdrift-trajectory[k].t;
@@ -472,10 +495,6 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
       // Track projection
       double one_over_d=1./d;
       double diffx=diff.x(),diffy=diff.y(),diffz=diff.z();
- 
-      H(state_x)=H_T(state_x)=diffx*one_over_d;
-      H(state_y)=H_T(state_y)=diffy*one_over_d;
-
       double wx=wdir.x(),wy=wdir.y();
 
       double dN1dtx=2.*tx*wdir_dot_diff-wx*tdir_dot_diff-tdir_dot_wdir*dx0;
@@ -499,42 +518,55 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 	=one_over_d*(diffx*(tx*dsdty-wx*dtdty)+diffy*(s+ty*dsdty-wy*dtdty)
 		     +diffz*(dsdty-dtdty));
 
-      double InvV=1./(V+H*C*H_T);
+      double dsdx=scale*(tdir_dot_wdir*wx-wdir2*tx);
+      double dtdx=scale*(tdir2*wx-tdir_dot_wdir*tx);
+      double dsdy=scale*(tdir_dot_wdir*wy-wdir2*ty);
+      double dtdy=scale*(tdir2*wy-tdir_dot_wdir*ty);
       
-      // Compute Kalman gain matrix
-      K=InvV*(C*H_T);
+      H(state_x)=H_T(state_x)
+	=one_over_d*(diffx*(1.+dsdx*tx-dtdx*wx)+diffy*(dsdx*ty-dtdx*wy)
+		     +diffz*(dsdx-dtdx));
+      H(state_y)=H_T(state_y)
+	=one_over_d*(diffx*(dsdy*tx-dtdy*wx)+diffy*(1.+dsdy*ty-dtdy*wy)
+		     +diffz*(dsdy-dtdy));
 
-      // Update state vector covariance matrix
-      DMatrix4x4 Ctest=C-K*(H*C);
 
-      //C.Print();
-      //K.Print();
-      //Ctest.Print();
+      double InvV=1./(V+H*C*H_T);
 
-      // Check that Ctest is positive definite
-      if (Ctest(0,0)>0.0 && Ctest(1,1)>0.0 && Ctest(2,2)>0.0 && Ctest(3,3)>0.0)
-	{
-	C=Ctest;
+      // Check how far this hit is from the projection
+      double chi2check=res*res*InvV;
+      if (chi2check<10.){
+	// Compute Kalman gain matrix
+	K=InvV*(C*H_T);
+	
+	// Update state vector covariance matrix
+	DMatrix4x4 Ctest=C-K*(H*C);
+	
+	//C.Print();
+	//K.Print();
+	//Ctest.Print();
+	
+	// Check that Ctest is positive definite
+	if (Ctest(0,0)>0.0 && Ctest(1,1)>0.0 && Ctest(2,2)>0.0 && Ctest(3,3)>0.0){
+	  C=Ctest;
+	  
+	  // Update the state vector 
+	  //S=S+res*K;
+	  S+=res*K;
 
-	// Update the state vector 
-	//S=S+res*K;
-	S+=res*K;
+	  // Compute new residual 
+	  d=finder->FindDoca(trajectory[k].z,S,wdir,origin);
+	  res=dmeas-d;
 
-	// Compute new residual 
-	d=finder->FindDoca(trajectory[k].z,S,wdir,origin);
-	res=dmeas-d;
-
-	//printf(" d %f meas %f sig %f %f\n",d,dmeas,sqrt(V),sqrt(V-H*C*H_T));	
-
-	// Update chi2 
-	chi2+=res*res/(V-H*C*H_T);
-	ndof++;	
+	  // Update chi2 
+	  chi2+=res*res/(V-H*C*H_T);
+	  ndof++;	
+	}
+	else{
+	  //	_DBG_ << "Bad C!" << endl;
+	  return VALUE_OUT_OF_RANGE;
+	}
       }
-      else{
-	//	_DBG_ << "Bad C!" << endl;
-	return VALUE_OUT_OF_RANGE;
-      }
-
       // move to next cdc hit
       if (cdc_index>0){
 	cdc_index--;
@@ -606,11 +638,10 @@ inline double DTrackCandidate_factory_StraightLine::CDCDriftVariance(double t){
   if (t<0.) t=0.;
   
   double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
-  //sigma+=0.02;
+  sigma+=0.005;
   
   //sigma=0.08/(t+1.)+0.03;
-
-  sigma=0.1;
+  sigma=0.15;
   
   return sigma*sigma;
 }
@@ -670,6 +701,24 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
     double z=trajectory[last_index].z;
     finder->FindDoca(z,Sbest,dir,origin,&pos);
     cand->setPosition(pos);
+
+    if (DEBUG_HISTS){
+      for (unsigned int id=0;id<hits.size();id++){	  
+	double cospsi=hits[id]->wire->udir.y();
+	double sinpsi=hits[id]->wire->udir.x();
+	
+	DVector3 norm(0,0,1);
+	DVector3 intersection;
+	finder->FindIntersectionWithPlane(hits[id]->wire->origin,norm,
+					  pos,cand->momentum(),intersection);
+	// To transform from (x,y) to (u,v), need to do a rotation:
+	double v = intersection.y()*cospsi+intersection.x()*sinpsi;
+
+	Hvres->Fill(v-hits[id]->s,hits[id]->wire->layer);
+
+      }
+    }
+
 
     cand->Ndof=ndof_old;
     cand->chisq=chi2_old;
@@ -751,8 +800,8 @@ DTrackCandidate_factory_StraightLine::SetReferenceTrajectory(double t0,double z,
   S(state_y)+=S(state_ty)*dz;
   trajectory.push_front(trajectory_t(z+dz,t,S,J));
   
-  //if (true){
-  if (false){
+  if (false)
+    {
     printf("Trajectory:\n");
     for (unsigned int i=0;i<trajectory.size();i++){
     printf(" x %f y %f z %f first hit %d num in layer %d\n",trajectory[i].S(state_x),
@@ -773,7 +822,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
   DMatrix2x4 H;  // Track projection matrix
   DMatrix4x2 H_T; // Transpose of track projection matrix 
   DMatrix4x2 K;  // Kalman gain matrix
-  DMatrix2x2 V(0.0075,0.,0.,0.0075);  // Measurement variance 
+  DMatrix2x2 V(0.0009,0.,0.,0.0009);  // Measurement variance 
   DMatrix2x2 Vtemp,InvV;
   DMatrix2x1 Mdiff;
   DMatrix4x4 I; // identity matrix
@@ -811,7 +860,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
       double y=S(state_y);
       double tx=S(state_tx);
       double ty=S(state_ty);
-      if (isnan(x) || isnan(y)) return UNRECOVERABLE_ERROR;
+      if (std::isnan(x) || std::isnan(y)) return UNRECOVERABLE_ERROR;
       
       // x,y and tx,ty in local coordinate system	
       // To transform from (x,y) to (u,v), need to do a rotation:
@@ -844,17 +893,19 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 	// predicted positions in two cathode planes' coordinate systems
 	double phi_u=hits[my_id]->phi_u;
 	double phi_v=hits[my_id]->phi_v;
+
 	double cosphi_u=cos(phi_u);
 	double sinphi_u=sin(phi_u);
 	double cosphi_v=cos(phi_v);
 	double sinphi_v=sin(phi_v);
-	double vv=-vpred*sinphi_v+uwire*cosphi_v;
-	double vu=-vpred*sinphi_u+uwire*cosphi_u;
+
+	double vv=-vpred*sinphi_v-uwire*cosphi_v;
+	double vu=-vpred*sinphi_u-uwire*cosphi_u;
 
 	// Difference between measurements and predictions
 	Mdiff(0)=hits[my_id]->u-vu;
 	Mdiff(1)=hits[my_id]->v-vv;
-	
+
 	// Matrix for transforming from state-vector space to measurement space
 	double temp2=tv*sinalpha*cosalpha;
 	double dvdy=cospsi+sinpsi*temp2;
@@ -901,7 +952,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 	// update vector
 	DMatrix2x2 RC=V-H*C*H_T;
 	DMatrix2x1 res=Mdiff-H*K*Mdiff;
-	
+
 	chi2+=RC.Chi2(res);
 	ndof+=2;
       }

@@ -20,10 +20,12 @@ extern jerror_t TRACKING_init(JEventLoop *loop);
 extern jerror_t HDDM_init(JEventLoop *loop);
 extern jerror_t PID_init(JEventLoop *loop);
 extern jerror_t ANALYSIS_init(JEventLoop *loop);
-extern jerror_t HDEVIO_init(JEventLoop *loop);
+extern jerror_t DAQ_init(JEventLoop *loop);
+extern jerror_t TTAB_init(JEventLoop *loop);
 extern jerror_t CERE_init(JEventLoop *loop);
 extern jerror_t RICH_init(JEventLoop *loop);
 extern jerror_t TRIGGER_init(JEventLoop *loop);
+extern jerror_t PAIR_SPECTROMETER_init(JEventLoop *loop);
 
 //---------------------------------
 // DFactoryGenerator    (Constructor)
@@ -58,10 +60,12 @@ jerror_t DFactoryGenerator::GenerateFactories(JEventLoop *loop)
 	HDDM_init(loop);
 	PID_init(loop);
 	ANALYSIS_init(loop);
-	//HDEVIO_init(loop);
+	DAQ_init(loop);
+	TTAB_init(loop);
 	CERE_init(loop);
 	RICH_init(loop);
 	TRIGGER_init(loop);
+	PAIR_SPECTROMETER_init(loop);
 	
 	return NOERROR;
 }

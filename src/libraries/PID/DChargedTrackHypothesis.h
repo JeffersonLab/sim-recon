@@ -38,8 +38,8 @@ class DChargedTrackHypothesis : public DKinematicData
 			//IGNORE DATA IF THE dTrackTimeBased MEMBER OF THESE IS NULL: NO MATCH
 		DSCHitMatchParams dSCHitMatchParams;
 		DTOFHitMatchParams dTOFHitMatchParams;
-		DShowerMatchParams dBCALShowerMatchParams;
-		DShowerMatchParams dFCALShowerMatchParams;
+		DBCALShowerMatchParams dBCALShowerMatchParams;
+		DFCALShowerMatchParams dFCALShowerMatchParams;
 
 		void toStrings(vector<pair<string,string> > &items) const
 		{

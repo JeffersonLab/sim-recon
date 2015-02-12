@@ -11,6 +11,7 @@
 #include "DFDCGeometry.h"
 #include <TRACKING/DTrackHitSelectorTHROWN.h>
 #include <TROOT.h>
+#include <FDC/DFDCCathodeDigiHit.h>
 
 #define HALF_CELL 0.5
 #define MAX_DEFLECTION 0.15
@@ -91,12 +92,10 @@ jerror_t DFDCPseudo_factory::init(void)
   ROUT_FIDUCIAL=48.0;
   MAX_ALLOWED_FDC_HITS=20000;
   STRIP_ANODE_TIME_CUT=10.;
-  MATCH_TRUTH_HITS=false;
 
   r2_out=ROUT_FIDUCIAL*ROUT_FIDUCIAL;
   r2_in=RIN_FIDUCIAL*RIN_FIDUCIAL;
   
-  gPARMS->SetDefaultParameter("FDC:MATCH_TRUTH_HITS",MATCH_TRUTH_HITS,"Match truth hits to pseudopoints (DEF=false)");
   gPARMS->SetDefaultParameter("FDC:ROUT_FIDUCIAL",ROUT_FIDUCIAL, "Outer fiducial radius of FDC in cm"); 
   gPARMS->SetDefaultParameter("FDC:RIN_FIDUCIAL",RIN_FIDUCIAL, "Inner fiducial radius of FDC in cm");
   gPARMS->SetDefaultParameter("FDC:MAX_ALLOWED_FDC_HITS",MAX_ALLOWED_FDC_HITS, "Max. number of FDC hits (includes both cathode strips and wires hits) to allow before considering event too busy to attempt FDC tracking");
@@ -136,16 +135,17 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
 
     // Histograms may already exist. (Another thread may have created them)
     // Try and get pointers to the existing ones.
+    v_vs_u=(TH2F*)gROOT->FindObject("v_vs_u");
+    if (!v_vs_u) v_vs_u=new TH2F("v_vs_u","v vs u",192,0.5,192.5,192,0.5,192.5);
 
-    qa_vs_qc= (TH2F*) gROOT->FindObject("qa_vs_qc");
-    if (!qa_vs_qc) qa_vs_qc=new TH2F("qa_vs_qc","Anode charge from wire versus charge derived from cathodes",100,0,5,100,0,5);
+    qv_vs_qu= (TH2F*) gROOT->FindObject("qv_vs_qu");
+    if (!qv_vs_qu) qv_vs_qu=new TH2F("qv_vs_qu","Anode charge from each cathode",100,0,20000,100,0,20000);
 
-    qa_qc_diff=(TH2F*)gROOT->FindObject("qa_qc_diff");
-    if (!qa_qc_diff) qa_qc_diff=new TH2F("qa_qc_diff","(qa-qcv) vs (qa-qcu)",
-					 200,-25,25,200,-25,25);
+    tv_vs_tu= (TH2F*) gROOT->FindObject("tv_vs_tu");
+    if (!tv_vs_tu) tv_vs_tu=new TH2F("tv_vs_tu","t(v) vs t(u)",100,-50,250,100,-50,250);
 
      dtv_vs_dtu= (TH2F*) gROOT->FindObject("dtv_vs_dtu");
-    if (!dtv_vs_dtu) dtv_vs_dtu=new TH2F("dtv_vs_dtu","t(wire)-t(v) vs t(wire)-t(u)",100,-50,50,100,-50,50);
+    if (!dtv_vs_dtu) dtv_vs_dtu=new TH2F("dtv_vs_dtu","t(wire)-t(v) vs t(wire)-t(u)",100,-50,25000,100,-50,25000);
 
     u_wire_dt_vs_wire=(TH2F *) gROOT->FindObject("u_wire_dt_vs_wire");
     if (!u_wire_dt_vs_wire) u_wire_dt_vs_wire=new TH2F("u_wire_dt_vs_wire","wire/u cathode time difference vs wire number",
@@ -153,16 +153,23 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
     v_wire_dt_vs_wire=(TH2F *) gROOT->FindObject("v_wire_dt_vs_wire");
     if (!v_wire_dt_vs_wire) v_wire_dt_vs_wire=new TH2F("v_wire_dt_vs_wire","wire/v cathode time difference vs wire number",
 						       96,0.5,96.5,100,-50,50);
- uv_dt_vs_u=(TH2F *) gROOT->FindObject("uv_dt_vs_u");
+    uv_dt_vs_u=(TH2F *) gROOT->FindObject("uv_dt_vs_u");
     if (!uv_dt_vs_u) uv_dt_vs_u=new TH2F("uv_dt_vs_u","uv time difference vs u",
-			   192,0.5,192.5,100,-50,50); 
+					 192,0.5,192.5,100,-50,50); 
     uv_dt_vs_v=(TH2F *) gROOT->FindObject("uv_dt_vs_v");
     if (!uv_dt_vs_v) uv_dt_vs_v=new TH2F("uv_dt_vs_v","uv time difference vs v",
-			   192,0.5,192.5,100,-50,50);
+					 192,0.5,192.5,100,-50,50);
     Hxy=(TH2F *) gROOT->FindObject("Hxy");
     if (!Hxy){
       Hxy=new TH2F("Hxy","xy on FDC plane 1",4000,-50,50,200,-50,50);
     }
+
+    ut_vs_u=(TH2F *) gROOT->FindObject("ut_vs_u");
+    if (!ut_vs_u) ut_vs_u=new TH2F("ut_vs_u","u time  vs u",
+				   192,0.5,192.5,100,0,6000); 
+    vt_vs_v=(TH2F *) gROOT->FindObject("vt_vs_v");
+    if (!vt_vs_v) vt_vs_v=new TH2F("vt_vs_v","v time  vs v",
+				   192,0.5,192.5,100,0,6000); 
 
     dapp->Unlock();
   }
@@ -240,7 +247,7 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	// makes that difficult. Here we have the full wire definition so
 	// we make the connection here.
 	vector<const DMCTrackHit*> mctrackhits;
-	if (MATCH_TRUTH_HITS)eventLoop->Get(mctrackhits);
+	eventLoop->Get(mctrackhits);
 
 	vector<const DFDCCathodeCluster*>::iterator uIt = uClus.begin();
 	vector<const DFDCCathodeCluster*>::iterator vIt = vClus.begin();
@@ -329,32 +336,62 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 							   vpeaks[j].pos,phi_v);
 	double y_from_strips=DFDCGeometry::getYLocalStrips(upeaks[i].pos,phi_u,
 							   vpeaks[j].pos,phi_v);
+	int old_wire_num=-1;
 	for(xIt=x.begin();xIt!=x.end();xIt++){
 	  if ((*xIt)->element<=WIRES_PER_PLANE && (*xIt)->element>0){
 	    const DFDCWire *wire=fdcwires[layer-1][(*xIt)->element-1];
 	    double x_from_wire=wire->u;
+
+	    //printf("xs %f xw %f\n",x_from_strips,x_from_wire);
 
 	    // Test radial value for checking whether or not the hit is within
 	    // the fiducial region of the detector
 	    double r2test=x_from_wire*x_from_wire+y_from_strips*y_from_strips;
 	    double delta_x=x_from_wire-x_from_strips;
 	 
+	    if (old_wire_num==(*xIt)->element) continue;
+	    old_wire_num=(*xIt)->element;
+
 	    if (fabs(delta_x)<0.5*WIRE_SPACING && r2test<r2_out
 		&& r2test>r2_in){
 	      double dt1 = (*xIt)->t - upeaks[i].t;
 	      double dt2 = (*xIt)->t - vpeaks[j].t;
 
+	      //      printf("dt1 %f dt2 %f\n",dt1,dt2);
+
 	      if (DEBUG_HISTS){
+
 		if (layer==1){
 		  dtv_vs_dtu->Fill(dt1,dt2);
+		  tv_vs_tu->Fill(upeaks[i].t, vpeaks[j].t);
 		  u_wire_dt_vs_wire->Fill((*xIt)->element,(*xIt)->t-upeaks[i].t);
 		  v_wire_dt_vs_wire->Fill((*xIt)->element,(*xIt)->t-vpeaks[j].t);
-		  uv_dt_vs_u->Fill(upeaks[i].pos,upeaks[i].t-vpeaks[j].t);
-		  uv_dt_vs_v->Fill(vpeaks[j].pos,upeaks[i].t-vpeaks[j].t);
-		  Hxy->Fill(x_from_strips,y_from_strips);
+
+		  
+
+		  int uid=u[upeaks[i].cluster]->members[1]->element;
+		  int vid=v[vpeaks[j].cluster]->members[1]->element;
+
+		  const DFDCCathodeDigiHit *vdigihit;
+		  v[vpeaks[j].cluster]->members[1]->GetSingle(vdigihit);
+		  const DFDCCathodeDigiHit *udigihit;
+		  u[upeaks[i].cluster]->members[1]->GetSingle(udigihit);
+		  if (vdigihit!=NULL && udigihit!=NULL){
+		    int dt=udigihit->pulse_time-vdigihit->pulse_time;
+		    // printf("%d %d\n",udigihit->pulse_time,vdigihit->pulse_time);
+		    uv_dt_vs_u->Fill(uid,dt);
+		    uv_dt_vs_v->Fill(vid,dt);
+		    v_vs_u->Fill(uid,vid);
+		    ut_vs_u->Fill(uid,udigihit->pulse_time);
+		    vt_vs_v->Fill(vid,udigihit->pulse_time);
+		  }
+		  //  Hxy->Fill(x_from_strips,y_from_strips);
 		}
 	      }
-	      if (sqrt(dt1*dt1+dt2*dt2)>STRIP_ANODE_TIME_CUT) continue;
+	      //	      if (sqrt(dt1*dt1+dt2*dt2)>STRIP_ANODE_TIME_CUT) continue;
+
+	      // Temporary cut until TDC timing is worked out
+	      if (fabs(vpeaks[j].t-upeaks[i].t)>STRIP_ANODE_TIME_CUT) continue;
 
 	      // Charge and energy loss
 	      double q_cathodes=0.5*(upeaks[i].q+vpeaks[j].q);
@@ -362,10 +399,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      double dE=charge_to_energy*q_cathodes;
       
 	      if (DEBUG_HISTS){
-		qa_vs_qc->Fill(1e6*dE,1e6*((*xIt)->q));
-		
-		qa_qc_diff->Fill(1e6*(((*xIt)->q-charge_to_energy*upeaks[i].q)),
-				 1e6*(((*xIt)->q-charge_to_energy*vpeaks[i].q)));
+		qv_vs_qu->Fill(upeaks[i].q,vpeaks[j].q);
 	      }
 	      
 	      int status=upeaks[i].numstrips+vpeaks[j].numstrips;
@@ -382,7 +416,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->s      = y_from_strips;
 	      newPseu->ds     = 0.; // place holder
 	      newPseu->wire   = wire;
-	      newPseu->time   = (*xIt)->t;
+	      //newPseu->time   = (*xIt)->t;
+	      newPseu->time=0.5*(upeaks[i].t+vpeaks[j].t);
 	      newPseu->status = status;
 	      newPseu->itrack = (*xIt)->itrack;
 	      
@@ -390,7 +425,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->AddAssociatedObject(u[upeaks[i].cluster]);
 	      
 	      newPseu->dE = dE;
-	      
+	      newPseu->q = q_cathodes;
 	    
 	      // It can occur (although rarely) that newPseu->wire is NULL
 	      // which causes us to crash below. In these cases, we can't really
@@ -407,6 +442,11 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->xy.Set((newPseu->w)*cosangle+(newPseu->s)*sinangle,
 			       -(newPseu->w)*sinangle+(newPseu->s)*cosangle);
 	      
+	      if (DEBUG_HISTS && layer==1){
+		Hxy->Fill(x_from_strips,y_from_strips);
+
+	      }
+
 	      double sigx2=HALF_CELL*HALF_CELL/3.;
 	      double sigy2=MAX_DEFLECTION*MAX_DEFLECTION/3.;
 	      newPseu->covxx=sigx2*cosangle*cosangle+sigy2*sinangle*sinangle;
@@ -414,10 +454,9 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->covxy=(sigy2-sigx2)*sinangle*cosangle;
 
 	      // Try matching truth hit with this "real" hit.
-	      if (MATCH_TRUTH_HITS){
-		const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(newPseu->wire, DRIFT_SPEED*newPseu->time, mctrackhits);
-		if(mctrackhit)newPseu->AddAssociatedObject(mctrackhit);
-	      }
+			const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(newPseu->wire, DRIFT_SPEED*newPseu->time, mctrackhits);
+			if(mctrackhit)newPseu->AddAssociatedObject(mctrackhit);
+
 	      _data.push_back(newPseu);
 	    } // match in x
 	  } else _DBG_ << "Bad wire " << (*xIt)->element <<endl;

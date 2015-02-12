@@ -14,6 +14,7 @@ using std::string;
 #include "DApplication.h"
 #include <HDDM/DEventSourceHDDMGenerator.h>
 #include <HDDM/DEventSourceRESTGenerator.h>
+#include <DAQ/JEventSourceGenerator_EVIO.h>
 #include <HDGEOMETRY/DMagneticFieldMapCalibDB.h>
 #include <HDGEOMETRY/DMagneticFieldMapFineMesh.h>
 #include <HDGEOMETRY/DMagneticFieldMapConst.h>
@@ -81,6 +82,7 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 		event_source_generator = new DEventSourceHDDMGenerator();
 		AddEventSourceGenerator(event_source_generator);
 		AddEventSourceGenerator(new DEventSourceRESTGenerator());
+		AddEventSourceGenerator(new JEventSourceGenerator_EVIO());
 	}
 	factory_generator = new DFactoryGenerator();
 	AddFactoryGenerator(factory_generator);
@@ -274,6 +276,15 @@ DGeometry* DApplication::GetDGeometry(unsigned int run_number)
 //---------------------------------
 DMagneticFieldMap* DApplication::GetBfield(unsigned int run_number)
 {
+	const char *ccdb_help = 
+		" \n"
+		" Could not load the solenoid field map from the CCDB!\n"
+		" Please specify the solenoid field map to use on the command line, e.g.:\n"
+		" \n"
+		"   -PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520\n"
+		" or\n"
+		"   -PBFIELD_TYPE=NoField\n";
+	
 	pthread_mutex_lock(&mutex);
 
 	// If field map already exists, return it immediately
@@ -286,9 +297,42 @@ DMagneticFieldMap* DApplication::GetBfield(unsigned int run_number)
 	// Allow a trivial homogeneous map to be used if 
 	// specified on the command line
 	string bfield_type = "FineMesh";
+	string bfield_map = "";
 	GetJParameterManager()->SetDefaultParameter("BFIELD_TYPE", bfield_type);
-	if(bfield_type=="CalibDB"|| bfield_type=="FineMesh"){
-		bfield = new DMagneticFieldMapFineMesh(this,run_number);
+	if( GetJParameterManager()->Exists("BFIELD_MAP") ) {
+		bfield_map = GetJParameterManager()->GetParameter("BFIELD_MAP")->GetValue();
+
+		bfield = new DMagneticFieldMapFineMesh(this,run_number,bfield_map);  // pass along the name of the magnetic field map to load
+		
+	}
+	else if(bfield_type=="CalibDB"|| bfield_type=="FineMesh"){
+		// see if we can load the name of the magnetic field map to use from the calib DB
+		JCalibration *jcalib = GetJCalibration(run_number);
+		map<string,string> bfield_map_name;
+		if(jcalib->GetCalib("/Magnets/Solenoid/solenoid_map", bfield_map_name)) {
+			if( bfield_map != "" )  { // still make the map if the magnetic field map is passed in on the command line
+				bfield = new DMagneticFieldMapFineMesh(this,run_number);
+			} else {
+				jerr << "Couldn't find default solenoid map table in CCDB, using default map ..." << endl;
+				jerr << ccdb_help << endl;
+				exit(-1);
+			}
+		} else {
+			if( bfield_map_name.find("map_name") != bfield_map_name.end() ) {
+				if( bfield_map_name["map_name"] == "NoField" )     // special case for no magnetic field
+					bfield = new DMagneticFieldMapNoField(this);
+				else  
+					bfield = new DMagneticFieldMapFineMesh(this,run_number,bfield_map_name["map_name"]);  // pass along the name of the magnetic field map to load
+			} else {
+				if( bfield_map != "" )  { // still make the map if the magnetic field map is passed in on the command line
+					bfield = new DMagneticFieldMapFineMesh(this,run_number);
+				} else {
+					jerr << "Couldn't find default solenoid map name in CCDB, using default map ..." << endl;
+					jerr << ccdb_help << endl;
+					exit(-1);
+				}
+			}
+		}
 		jout<<"Created Magnetic field map of type DMagneticFieldMapFineMesh."<<endl;
 	}else if(bfield_type=="Const"){
 		bfield = new DMagneticFieldMapConst(0.0, 0.0, 1.9);

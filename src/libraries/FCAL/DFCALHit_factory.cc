@@ -10,41 +10,43 @@
 #include <iomanip>
 using namespace std;
 
-#include <FCAL/DFCALDigiHit.h>
-#include <FCAL/DFCALGeometry.h>
-#include "DFCALHit_factory.h"
-#include <DAQ/Df250PulseIntegral.h>
+#include "FCAL/DFCALDigiHit.h"
+#include "FCAL/DFCALGeometry.h"
+#include "FCAL/DFCALHit_factory.h"
+#include "DAQ/Df250PulseIntegral.h"
+#include "DAQ/Df250PulsePedestal.h"
+#include "DAQ/Df250Config.h"
 using namespace jana;
-
-
-//#define FCAL_MAX_CHANNELS   2800
 
 //------------------
 // init
 //------------------
 jerror_t DFCALHit_factory::init(void)
 {
-        // initialize calibration tables
-   vector< vector<double > > new_gains(kBlocksTall, 
-                   vector<double>(kBlocksWide));
-   vector< vector<double > > new_pedestals(kBlocksTall, 
-                  vector<double>(kBlocksWide));
-   vector< vector<double > > new_t0s(kBlocksTall, 
-                 vector<double>(kBlocksWide));
-   vector< vector<double > > new_qualities(kBlocksTall, 
-                  vector<double>(kBlocksWide));
+    // initialize calibration tables
+    vector< vector<double > > new_gains(DFCALGeometry::kBlocksTall, 
+            vector<double>(DFCALGeometry::kBlocksWide));
+    vector< vector<double > > new_pedestals(DFCALGeometry::kBlocksTall, 
+            vector<double>(DFCALGeometry::kBlocksWide));
+    vector< vector<double > > new_t0s(DFCALGeometry::kBlocksTall, 
+            vector<double>(DFCALGeometry::kBlocksWide));
+    vector< vector<double > > new_qualities(DFCALGeometry::kBlocksTall, 
+            vector<double>(DFCALGeometry::kBlocksWide));
 
-   gains = new_gains;
-   pedestals = new_pedestals;
-   time_offsets = new_t0s;
-   block_qualities = new_qualities;
+    gains = new_gains;
+    pedestals = new_pedestals;
+    time_offsets = new_t0s;
+    block_qualities = new_qualities;
 
-   /// set the base conversion scales
-   a_scale = 4.0E1/2.5E5; 
-   t_scale = 0.0625;   // 62.5 ps/count
-   t_base  = 0.;       // ns
-    
-   return NOERROR;
+    // set the base conversion scales --
+    // a_scale should definitely come from
+    // the DB so set it to a value that will
+    // be noticeably wrong
+    a_scale = 0.0;      // GeV/FADC integral unit
+    t_scale = 0.0625;   // 62.5 ps/count
+    t_base  = 0.;       // ns
+
+    return NOERROR;
 }
 
 //------------------
@@ -52,59 +54,59 @@ jerror_t DFCALHit_factory::init(void)
 //------------------
 jerror_t DFCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
-   // extract the FCAL Geometry
-   vector<const DFCALGeometry*> fcalGeomVect;
-   eventLoop->Get( fcalGeomVect );
-   if (fcalGeomVect.size() < 1)
-      return OBJECT_NOT_AVAILABLE;
-   const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
+    // extract the FCAL Geometry
+    vector<const DFCALGeometry*> fcalGeomVect;
+    eventLoop->Get( fcalGeomVect );
+    if (fcalGeomVect.size() < 1)
+        return OBJECT_NOT_AVAILABLE;
+    const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
 
-   /// Read in calibration constants
-   vector< double > raw_gains;
-   vector< double > raw_pedestals;
-   vector< double > raw_time_offsets;
-   vector< double > raw_block_qualities;    // we should change this to an int?
+    /// Read in calibration constants
+    vector< double > raw_gains;
+    vector< double > raw_pedestals;
+    vector< double > raw_time_offsets;
+    vector< double > raw_block_qualities;    // we should change this to an int?
 
-   jout << "In DFCALHit_factory, loading constants..." << endl;
-   
-   // load scale factors
-   map<string,double> scale_factors;
-   if (eventLoop->GetCalib("/FCAL/digi_scales", scale_factors))
-       jout << "Error loading /FCAL/digi_scales !" << endl;
-   if (scale_factors.find("FCAL_ADC_ASCALE") != scale_factors.end())
-       a_scale = scale_factors["FCAL_ADC_ASCALE"];
-   else
-       jerr << "Unable to get FCAL_ADC_ASCALE from /FCAL/digi_scales !" << endl;
-   if (scale_factors.find("FCAL_ADC_TSCALE") != scale_factors.end())
-       t_scale = scale_factors["FCAL_ADC_TSCALE"];
-   else
-       jerr << "Unable to get FCAL_ADC_TSCALE from /FCAL/digi_scales !" << endl;
+    jout << "In DFCALHit_factory, loading constants..." << endl;
 
-   // load base time offset
-   map<string,double> base_time_offset;
-   if (eventLoop->GetCalib("/FCAL/base_time_offset",base_time_offset))
-       jout << "Error loading /FCAL/base_time_offset !" << endl;
-   if (base_time_offset.find("FCAL_BASE_TIME_OFFSET") != base_time_offset.end())
-       t_base = base_time_offset["FCAL_BASE_TIME_OFFSET"];
-   else
-       jerr << "Unable to get FCAL_BASE_TIME_OFFSET from /FCAL/base_time_offset !" << endl;
+    // load scale factors
+    map<string,double> scale_factors;
+    if (eventLoop->GetCalib("/FCAL/digi_scales", scale_factors))
+        jout << "Error loading /FCAL/digi_scales !" << endl;
+    if (scale_factors.find("FCAL_ADC_ASCALE") != scale_factors.end())
+        a_scale = scale_factors["FCAL_ADC_ASCALE"];
+    else
+        jerr << "Unable to get FCAL_ADC_ASCALE from /FCAL/digi_scales !" << endl;
+    if (scale_factors.find("FCAL_ADC_TSCALE") != scale_factors.end())
+        t_scale = scale_factors["FCAL_ADC_TSCALE"];
+    else
+        jerr << "Unable to get FCAL_ADC_TSCALE from /FCAL/digi_scales !" << endl;
 
-   // load constant tables
-   if (eventLoop->GetCalib("/FCAL/gains", raw_gains))
-       jout << "Error loading /FCAL/gains !" << endl;
-   if (eventLoop->GetCalib("/FCAL/pedestals", raw_pedestals))
-       jout << "Error loading /FCAL/pedestals !" << endl;
-   if (eventLoop->GetCalib("/FCAL/timing_offsets", raw_time_offsets))
-       jout << "Error loading /FCAL/timing_offsets !" << endl;
-   if (eventLoop->GetCalib("/FCAL/block_quality", raw_block_qualities))
-       jout << "Error loading /FCAL/block_quality !" << endl;
+    // load base time offset
+    map<string,double> base_time_offset;
+    if (eventLoop->GetCalib("/FCAL/base_time_offset",base_time_offset))
+        jout << "Error loading /FCAL/base_time_offset !" << endl;
+    if (base_time_offset.find("FCAL_BASE_TIME_OFFSET") != base_time_offset.end())
+        t_base = base_time_offset["FCAL_BASE_TIME_OFFSET"];
+    else
+        jerr << "Unable to get FCAL_BASE_TIME_OFFSET from /FCAL/base_time_offset !" << endl;
 
-   FillCalibTable(gains, raw_gains, fcalGeom);
-   FillCalibTable(pedestals, raw_pedestals, fcalGeom);
-   FillCalibTable(time_offsets, raw_time_offsets, fcalGeom);
-   FillCalibTable(block_qualities, raw_block_qualities, fcalGeom);
+    // load constant tables
+    if (eventLoop->GetCalib("/FCAL/gains", raw_gains))
+        jout << "Error loading /FCAL/gains !" << endl;
+    if (eventLoop->GetCalib("/FCAL/pedestals", raw_pedestals))
+        jout << "Error loading /FCAL/pedestals !" << endl;
+    if (eventLoop->GetCalib("/FCAL/timing_offsets", raw_time_offsets))
+        jout << "Error loading /FCAL/timing_offsets !" << endl;
+    if (eventLoop->GetCalib("/FCAL/block_quality", raw_block_qualities))
+        jout << "Error loading /FCAL/block_quality !" << endl;
 
-   return NOERROR;
+    FillCalibTable(gains, raw_gains, fcalGeom);
+    FillCalibTable(pedestals, raw_pedestals, fcalGeom);
+    FillCalibTable(time_offsets, raw_time_offsets, fcalGeom);
+    FillCalibTable(block_qualities, raw_block_qualities, fcalGeom);
+
+    return NOERROR;
 }
 
 //------------------
@@ -112,74 +114,130 @@ jerror_t DFCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 {
-   /// Generate DFCALHit object for each DFCALDigiHit object.
-   /// This is where the first set of calibration constants
-   /// is applied to convert from digitzed units into natural
-   /// units.
-   ///
-   /// Note that this code does NOT get called for simulated
-   /// data in HDDM format. The HDDM event source will copy
-   /// the precalibrated values directly into the _data vector.
-   char str[256];
+    /// Generate DFCALHit object for each DFCALDigiHit object.
+    /// This is where the first set of calibration constants
+    /// is applied to convert from digitzed units into natural
+    /// units.
+    ///
+    /// Note that this code does NOT get called for simulated
+    /// data in HDDM format. The HDDM event source will copy
+    /// the precalibrated values directly into the _data vector.
+    char str[256];
 
-   // extract the FCAL Geometry (for positionOnFace())
-   vector<const DFCALGeometry*> fcalGeomVect;
-   eventLoop->Get( fcalGeomVect );
-   if (fcalGeomVect.size() < 1)
-      return OBJECT_NOT_AVAILABLE;
-   const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
-   
-   vector<const DFCALDigiHit*> digihits;
-   loop->Get(digihits);
-   for (unsigned int i=0; i < digihits.size(); i++) {
-      const DFCALDigiHit *digihit = digihits[i];
+    // extract the FCAL Geometry (for positionOnFace())
+    vector<const DFCALGeometry*> fcalGeomVect;
+    eventLoop->Get( fcalGeomVect );
+    if (fcalGeomVect.size() < 1)
+        return OBJECT_NOT_AVAILABLE;
+    const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
 
-      // Check to see if the hit corresponds to a valid channel
-      if (fcalGeom.isBlockActive(digihit->row,digihit->column) == false) {
-          sprintf(str, "DFCALHit corresponds to inactive channel!  "
-                       "row=%d, col=%d", 
-                  digihit->row, digihit->column);
-          throw JException(str);
-      }
+    vector<const DFCALDigiHit*> digihits;
+    loop->Get(digihits);
+    for (unsigned int i=0; i < digihits.size(); i++) {
 
-      // Get pedestal.  Prefer associated event pedestal if it exist.
-      // Otherwise, use the average pedestal from CCDB
-      double pedestal = pedestals[digihit->row][digihit->column];
-      vector<const Df250PulseIntegral*> PIvect;
-      digihit->Get(PIvect);
-      if (!PIvect.empty()) {
-          const Df250PulseIntegral *PIobj = PIvect[0];
-          pedestal = PIobj->pedestal;
-      }
-      
-      DFCALHit *hit = new DFCALHit;
-      hit->row    = digihit->row;
-      hit->column = digihit->column;
+        const DFCALDigiHit *digihit = digihits[i];
 
-      // throw away hits from bad or noisy channels
-      fcal_quality_state quality = static_cast<fcal_quality_state>(block_qualities[hit->row][hit->column]);
-      if ( (quality==BAD) || (quality==NOISY) ) 
-          return NOERROR;
+        // There is a slight difference between Mode 7 and 8 data
+        // The following condition signals an error state in the flash algorithm in both modes
+        // Do not make hits out of these
+        const Df250PulsePedestal* PPobj = NULL;
+        digihit->GetSingle(PPobj);
+        if (PPobj != NULL){
+            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+        }
+        //if (digihit->pulse_time==0) continue;
 
-      // Apply calibration constants
-      double A = (double)digihit->pulse_integral;
-      double T = (double)digihit->pulse_time;
-      hit->E = a_scale * gains[hit->row][hit->column] * (A - pedestal);
-      hit->t = t_scale * (T - time_offsets[hit->row][hit->column]) + t_base;
+        // Check to see if the hit corresponds to a valid channel
+        if (fcalGeom.isBlockActive(digihit->row,digihit->column) == false) {
+            sprintf(str, "DFCALHit corresponds to inactive channel!  "
+                    "row=%d, col=%d", 
+                    digihit->row, digihit->column);
+            throw JException(str);
+        }
 
-      // Get position of blocks on front face. (This should really come from
-      // hdgeant directly so the poisitions can be shifted in mcsmear.)
-      DVector2 pos = fcalGeom.positionOnFace(hit->row, hit->column);
-      
-      hit->x = pos.X();
-      hit->y = pos.Y();
-      
-      hit->AddAssociatedObject(digihit);
-      
-      _data.push_back(hit);
-   }
-   
-   return NOERROR;
+        // throw away hits from bad or noisy channels
+        fcal_quality_state quality = 
+            static_cast<fcal_quality_state>(block_qualities[digihit->row][digihit->column]);
+        if ( (quality==BAD) || (quality==NOISY) ) continue;
+
+        // get pedestal from CCDB -- we should use it instead
+        // of the event-by-even pedestal
+
+        double pedestal = pedestals[digihit->row][digihit->column];
+        double integratedPedestal = 0.0;
+        const Df250PulseIntegral* PIobj = NULL;
+
+        digihit->GetSingle(PIobj);
+
+        if( PIobj != NULL ){
+
+            if( pedestal == 0 ) {
+
+                // we should use the fixed database pedestal
+                // object as it is less susceptible to noise
+                // than the event-by-event pedestal
+
+                // if the database pedestal is zero then try
+                // the event-by-event one:
+
+                pedestal = (double)PIobj->pedestal / 
+                    (double)PIobj->nsamples_pedestal;
+            }
+
+            double nsamples_integral = (double)PIobj->nsamples_integral;
+            integratedPedestal = pedestal * nsamples_integral;
+        }
+        else{
+
+            cerr << "ERROR! no associated FCAL integral object." << endl;
+        }
+
+        double pulse_amplitude = 0;
+
+        if( PPobj != NULL ){
+
+            pulse_amplitude = (double)PPobj->pulse_peak - pedestal;
+        }
+        else{
+
+            cerr << "ERROR! no associated FCAL pedestal object." << endl;
+        }
+
+        DFCALHit *hit = new DFCALHit;
+        hit->row    = digihit->row;
+        hit->column = digihit->column;
+
+        // Apply calibration constants
+        double A = (double)digihit->pulse_integral;
+        double T = (double)digihit->pulse_time;
+        hit->E = a_scale * gains[hit->row][hit->column] * (A - integratedPedestal);
+        hit->t = t_scale * T - time_offsets[hit->row][hit->column] + t_base;
+
+        // Get position of blocks on front face. (This should really come from
+        // hdgeant directly so the poisitions can be shifted in mcsmear.)
+        DVector2 pos = fcalGeom.positionOnFace(hit->row, hit->column);
+        hit->x = pos.X();
+        hit->y = pos.Y();
+
+        // recored the pulse integral to peak ratio since this is
+        // a useful quality metric for the PMT pulse
+        hit->intOverPeak = ( A - integratedPedestal ) / pulse_amplitude;
+
+        // do some basic quality checks before creating the objects
+        if( ( hit->E > 0 ) &&
+                ( digihit->pulse_time > 0 ) 
+          ){
+
+            hit->AddAssociatedObject(digihit);
+            _data.push_back(hit);
+        }
+        else{
+
+            delete hit;
+        }
+    }
+
+    return NOERROR;
 }
 
 //------------------
@@ -187,7 +245,7 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 jerror_t DFCALHit_factory::erun(void)
 {
-   return NOERROR;
+    return NOERROR;
 }
 
 //------------------
@@ -195,51 +253,51 @@ jerror_t DFCALHit_factory::erun(void)
 //------------------
 jerror_t DFCALHit_factory::fini(void)
 {
-   return NOERROR;
+    return NOERROR;
 }
 
 //------------------
 // FillCalibTable
 //------------------
 void DFCALHit_factory::FillCalibTable( fcal_digi_constants_t &table, 
-                                       const vector<double> &raw_table, 
-                                       const DFCALGeometry &fcalGeom)
+        const vector<double> &raw_table, 
+        const DFCALGeometry &fcalGeom)
 {
     char str[256];
 
     // sanity check that we have the right geometry
     // (deprecate this?) 
     if (fcalGeom.numActiveBlocks() != FCAL_MAX_CHANNELS) {
-       sprintf(str, "FCAL geometry is wrong size! channels=%d (should be %d)", 
-       fcalGeom.numActiveBlocks(), FCAL_MAX_CHANNELS);
-       throw JException(str);
+        sprintf(str, "FCAL geometry is wrong size! channels=%d (should be %d)", 
+                fcalGeom.numActiveBlocks(), FCAL_MAX_CHANNELS);
+        throw JException(str);
     }
 
     // check to see if the table is the right size
     if ( fcalGeom.numActiveBlocks() != static_cast<int>(raw_table.size()) ) {
-         sprintf(str, "FCAL constant table is wrong size! channels=%d (should be %d)", 
-         fcalGeom.numActiveBlocks(), static_cast<int>(raw_table.size()));
-         throw JException(str);
+        sprintf(str, "FCAL constant table is wrong size! channels=%d (should be %d)", 
+                fcalGeom.numActiveBlocks(), static_cast<int>(raw_table.size()));
+        throw JException(str);
     }
 
     for (int channel=0; channel < static_cast<int>(raw_table.size()); channel++)
     {
-       // make sure that we don't try to load info for channels that don't exist
-       if (channel == fcalGeom.numActiveBlocks())
-          break;
-   
-       int row = fcalGeom.row(channel);
-       int col = fcalGeom.column(channel);
+        // make sure that we don't try to load info for channels that don't exist
+        if (channel == fcalGeom.numActiveBlocks())
+            break;
 
-       // results from DFCALGeometry should be self consistent, but add in some
-       // sanity checking just to be sure
-       if (fcalGeom.isBlockActive(row,col) == false) {
-           sprintf(str, "Loading FCAL constant for inactive channel!  "
-                        "row=%d, col=%d", row, col);
-           throw JException(str);
-       }
+        int row = fcalGeom.row(channel);
+        int col = fcalGeom.column(channel);
 
-       table[row][col] = raw_table[channel];
+        // results from DFCALGeometry should be self consistent, but add in some
+        // sanity checking just to be sure
+        if (fcalGeom.isBlockActive(row,col) == false) {
+            sprintf(str, "Loading FCAL constant for inactive channel!  "
+                    "row=%d, col=%d", row, col);
+            throw JException(str);
+        }
+
+        table[row][col] = raw_table[channel];
     }
 }
 
@@ -248,100 +306,100 @@ void DFCALHit_factory::FillCalibTable( fcal_digi_constants_t &table,
 //   Allow a few different interfaces
 //------------------------------------
 const double DFCALHit_factory::GetConstant(const fcal_digi_constants_t &the_table,
-                                           const int in_row, 
-                                           const int in_column) const
+        const int in_row, 
+        const int in_column) const
 {
-   char str[256];
-   
-   if ( (in_row <= 0) || (in_row > kBlocksTall)) {
-      sprintf(str, "Bad row # requested in DFCALHit_factory::GetConstant()!"
-                   " requested=%d , should be %ud", in_row, kBlocksTall);
-      cerr << str << endl;
-      throw JException(str);
-   }
-   if ( (in_column <= 0) || (in_column > kBlocksWide)) {
-      sprintf(str, "Bad column # requested in DFCALHit_factory::GetConstant()!"
-                   " requested=%d , should be %ud", in_column, kBlocksWide);
-      cerr << str << endl;
-      throw JException(str);
-   }
-   
-   return the_table[in_row][in_column];
+    char str[256];
+
+    if ( (in_row <= 0) || (in_row > DFCALGeometry::kBlocksTall)) {
+        sprintf(str, "Bad row # requested in DFCALHit_factory::GetConstant()!"
+                " requested=%d , should be %ud", in_row, DFCALGeometry::kBlocksTall);
+        cerr << str << endl;
+        throw JException(str);
+    }
+    if ( (in_column <= 0) || (in_column > DFCALGeometry::kBlocksWide)) {
+        sprintf(str, "Bad column # requested in DFCALHit_factory::GetConstant()!"
+                " requested=%d , should be %ud", in_column, DFCALGeometry::kBlocksWide);
+        cerr << str << endl;
+        throw JException(str);
+    }
+
+    return the_table[in_row][in_column];
 }
 
 const double DFCALHit_factory::GetConstant(const fcal_digi_constants_t &the_table,
-                                           const DFCALDigiHit *in_digihit) const
+        const DFCALDigiHit *in_digihit) const
 {
-   char str[256];
-   
-   if ( (in_digihit->row <= 0) || (in_digihit->row > kBlocksTall)) {
-      sprintf(str, "Bad row # requested in DFCALHit_factory::GetConstant()!"
-                   " requested=%d , should be %ud", 
-              in_digihit->row, kBlocksTall);
-      cerr << str << endl;
-      throw JException(str);
-   }
-   if ( (in_digihit->column <= 0) || (in_digihit->column > kBlocksWide)) {
-      sprintf(str, "Bad column # requested in DFCALHit_factory::GetConstant()!"
-                   " requested=%d , should be %ud",
-              in_digihit->column, kBlocksWide);
-      cerr << str << endl;
-      throw JException(str);
-   }
-   
-   return the_table[in_digihit->row][in_digihit->column];
+    char str[256];
+
+    if ( (in_digihit->row <= 0) || (in_digihit->row > DFCALGeometry::kBlocksTall)) {
+        sprintf(str, "Bad row # requested in DFCALHit_factory::GetConstant()!"
+                " requested=%d , should be %ud", 
+                in_digihit->row, DFCALGeometry::kBlocksTall);
+        cerr << str << endl;
+        throw JException(str);
+    }
+    if ( (in_digihit->column <= 0) || (in_digihit->column > DFCALGeometry::kBlocksWide)) {
+        sprintf(str, "Bad column # requested in DFCALHit_factory::GetConstant()!"
+                " requested=%d , should be %ud",
+                in_digihit->column, DFCALGeometry::kBlocksWide);
+        cerr << str << endl;
+        throw JException(str);
+    }
+
+    return the_table[in_digihit->row][in_digihit->column];
 }
 
 const double DFCALHit_factory::GetConstant(const fcal_digi_constants_t &the_table,
-                  const DFCALHit *in_hit) const {
+        const DFCALHit *in_hit) const {
 
-   char str[256];
-   
-   if ( (in_hit->row <= 0) || (in_hit->row > kBlocksTall)) {
-      sprintf(str, "Bad row # requested in DFCALHit_factory::GetConstant()! "
-                   "requested=%d , should be %ud", in_hit->row, kBlocksTall);
-      cerr << str << endl;
-      throw JException(str);
-   }
-   if ( (in_hit->column <= 0) || (in_hit->column > kBlocksWide)) {
-      sprintf(str, "Bad column # requested in DFCALHit_factory::GetConstant()!"
-                   " requested=%d , should be %ud", 
-              in_hit->column, kBlocksWide);
-      cerr << str << endl;
-      throw JException(str);
-   }
-   
-   return the_table[in_hit->row][in_hit->column];
+    char str[256];
+
+    if ( (in_hit->row <= 0) || (in_hit->row > DFCALGeometry::kBlocksTall)) {
+        sprintf(str, "Bad row # requested in DFCALHit_factory::GetConstant()! "
+                "requested=%d , should be %ud", in_hit->row, DFCALGeometry::kBlocksTall);
+        cerr << str << endl;
+        throw JException(str);
+    }
+    if ( (in_hit->column <= 0) || (in_hit->column > DFCALGeometry::kBlocksWide)) {
+        sprintf(str, "Bad column # requested in DFCALHit_factory::GetConstant()!"
+                " requested=%d , should be %ud", 
+                in_hit->column, DFCALGeometry::kBlocksWide);
+        cerr << str << endl;
+        throw JException(str);
+    }
+
+    return the_table[in_hit->row][in_hit->column];
 }
 /*
-const double DFCALHit_factory::GetConstant(const fcal_digi_constants_t &the_table,
-                                           const DTranslationTable *ttab,
-                                           const int in_rocid,
-                                           const int in_slot,
-                                           const int in_channel) const
-{
+   const double DFCALHit_factory::GetConstant(const fcal_digi_constants_t &the_table,
+   const DTranslationTable *ttab,
+   const int in_rocid,
+   const int in_slot,
+   const int in_channel) const
+   {
    char str[256];
-   
+
    DTranslationTable::csc_t daq_index = { in_rocid, in_slot, in_channel };
    DTranslationTable::DChannelInfo channel_info = ttab->GetDetectorIndex(daq_index);
-   
+
    if ( (channel_info.fcal.row <= 0) 
-       || (channel_info.fcal.row > static_cast<unsigned int>(kBlocksTall))) {
-      sprintf(str, "Bad row # requested in DFCALHit_factory::GetConstant()!"
-                   " requested=%d , should be %ud", 
-              channel_info.fcal.row, kBlocksTall);
-      cerr << str << endl;
-      throw JException(str);
+   || (channel_info.fcal.row > static_cast<unsigned int>(DFCALGeometry::kBlocksTall))) {
+   sprintf(str, "Bad row # requested in DFCALHit_factory::GetConstant()!"
+   " requested=%d , should be %ud", 
+   channel_info.fcal.row, DFCALGeometry::kBlocksTall);
+   cerr << str << endl;
+   throw JException(str);
    }
    if ( (channel_info.fcal.col <= 0) 
-       || (channel_info.fcal.col > static_cast<unsigned int>(kBlocksWide))) {
-       sprintf(str, "Bad column # requested in DFCALHit_factory::GetConstant()!"
-                    " requested=%d , should be %ud",
-               channel_info.fcal.row, kBlocksWide);
-      cerr << str << endl;
-      throw JException(str);
+   || (channel_info.fcal.col > static_cast<unsigned int>(DFCALGeometry::kBlocksWide))) {
+   sprintf(str, "Bad column # requested in DFCALHit_factory::GetConstant()!"
+   " requested=%d , should be %ud",
+   channel_info.fcal.row, DFCALGeometry::kBlocksWide);
+   cerr << str << endl;
+   throw JException(str);
    }
 
    return the_table[channel_info.fcal.row][channel_info.fcal.col];
-}
-*/
+   }
+   */

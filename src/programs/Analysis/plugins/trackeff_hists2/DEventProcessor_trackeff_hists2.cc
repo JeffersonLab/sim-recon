@@ -72,7 +72,7 @@ jerror_t DEventProcessor_trackeff_hists2::brun(JEventLoop *loop, int runnumber)
 	DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 	const DGeometry *dgeom = dapp->GetDGeometry(runnumber);
 	
-	rt_thrown = new DReferenceTrajectory(dgeom->GetBfield());
+	rt_thrown = new DReferenceTrajectory(dgeom->GetBfield(runnumber));
 	
 	double dz, rmin, rmax;
 	dgeom->GetCDCEndplate(CDCZmax, dz, rmin, rmax);

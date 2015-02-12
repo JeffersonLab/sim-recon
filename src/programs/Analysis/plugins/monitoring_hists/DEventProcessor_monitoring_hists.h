@@ -39,7 +39,10 @@ class DEventProcessor_monitoring_hists : public JEventProcessor
 		DHistogramAction_NumReconstructedObjects dHistogramAction_NumReconstructedObjects;
 		DHistogramAction_ReconnedThrownKinematics dHistogramAction_ReconnedThrownKinematics;
 		DHistogramAction_DetectorStudies dHistogramAction_DetectorStudies;
+		DHistogramAction_EventVertex dHistogramAction_EventVertex;
 //		DHistogramAction_ObjectMemory dHistogramAction_ObjectMemory;
+
+		TH1D* dHist_IsEvent; //counts events
 };
 
 #endif // _DEventProcessor_monitoring_hists_

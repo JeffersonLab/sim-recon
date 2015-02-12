@@ -255,6 +255,7 @@ extern bool SMEAR_BCAL;
 extern bool NO_E_SMEAR;
 extern bool NO_T_SMEAR;
 extern bool NO_DARK_PULSES;
+extern bool FULL_DARK_HITS;
 extern bool NO_SAMPLING_FLUCTUATIONS;
 extern bool NO_SAMPLING_FLOOR_TERM;
 extern bool NO_POISSON_STATISTICS;
@@ -615,8 +616,12 @@ void GetSiPMSpectra(hddm_s::HDDM *record,
    // dark hit only events. In this case, we must create the BCAL 
    // tree here.
    hddm_s::BarrelEMcalList bcals = record->getBarrelEMcals();
-   if (bcals.size() == 0)
-      bcals = record->getHitViews().begin()->addBarrelEMcals();
+   if (bcals.size() == 0){
+      if(record->getHitViews().empty()){
+		record->getPhysicsEvent().addHitViews();
+	  }
+     bcals = record->getHitViews().begin()->addBarrelEMcals();
+   }
 
    // Loop over GEANT hits in BCAL
    hddm_s::BcalSiPMSpectrumList specs = record->getBcalSiPMSpectrums();
@@ -1104,6 +1109,7 @@ void AddDarkHitsForNonHitSiPMs(map<int, SumSpectra> &bcalfADC)
    // histograms for multiple summed cells.
 
    if(NO_DARK_PULSES)return;
+   if(!FULL_DARK_HITS)return;
 
    DHistogram *hup_tmp = GetHistoFromPool();
    DHistogram *hdn_tmp = GetHistoFromPool();
@@ -1572,8 +1578,12 @@ void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
    /// into only a single physicsEvent.
 
    hddm_s::BarrelEMcalList bcals = record->getBarrelEMcals();
-   if (bcals.size() == 0)
+   if (bcals.size() == 0){
+      if(record->getHitViews().empty()){
+		record->getPhysicsEvent().addHitViews();
+	  }
       bcals = record->getHitViews().begin()->addBarrelEMcals();
+   }
    hddm_s::BcalCellList cells = bcals().getBcalCells();
    hddm_s::BcalCellList::iterator iter;
    for (iter = cells.begin(); iter != cells.end(); ++iter) {

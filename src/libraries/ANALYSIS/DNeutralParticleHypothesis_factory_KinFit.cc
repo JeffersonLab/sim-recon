@@ -24,11 +24,7 @@ jerror_t DNeutralParticleHypothesis_factory_KinFit::init(void)
 //------------------
 jerror_t DNeutralParticleHypothesis_factory_KinFit::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
-	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
-
-	dTargetZCenter = 0.0;
-	locGeometry->GetTargetZ(dTargetZCenter);
+	locEventLoop->GetSingle(dParticleID);
 	return NOERROR;
 }
 
@@ -107,7 +103,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory_KinFit::Build_Neu
 		locNewNeutralParticleHypothesis->setPathLength(locKinFitParticle->Get_PathLength(), locKinFitParticle->Get_PathLengthUncertainty());
 	else
 	{
-		double locPathLength =  locNewNeutralParticleHypothesis->pathLength() - locKinFitParticle->Get_PathLength();
+		double locPathLength = locNewNeutralParticleHypothesis->pathLength() - locKinFitParticle->Get_PathLength();
 		double locPathLengthUncertainty_Orig = locNewNeutralParticleHypothesis->pathLength_err();
 		double locPathLengthUncertainty_KinFit = locKinFitParticle->Get_PathLengthUncertainty();
 		double locPathLengthUncertainty = sqrt(locPathLengthUncertainty_Orig*locPathLengthUncertainty_Orig + locPathLengthUncertainty_KinFit*locPathLengthUncertainty_KinFit);
@@ -116,20 +112,22 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory_KinFit::Build_Neu
 
 	// Calculate DNeutralParticleHypothesis FOM
 	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
-	double locRFTime = locEventRFBunch->dTime;
-	double locPropagatedRFTime = locRFTime + (locNewNeutralParticleHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
-	double locStartTimeVariance = locEventRFBunch->dTimeVariance;
+	double locPropagatedRFTime = dParticleID->Calc_PropagatedRFTime(locNewNeutralParticleHypothesis, locEventRFBunch);
+	locNewNeutralParticleHypothesis->setT0(locPropagatedRFTime, sqrt(locEventRFBunch->dTimeVariance), locEventRFBunch->dTimeSource);
 
-	double locPathLength = locNewNeutralParticleHypothesis->pathLength();
-	double locBeta = locNewNeutralParticleHypothesis->momentum().Mag()/locNewNeutralParticleHypothesis->energy();
-	double locFlightTime = locPathLength/(locBeta*SPEED_OF_LIGHT);
-	double locProjectedTime = locNewNeutralParticleHypothesis->t1() - locFlightTime;
-
-	double locTimeDifference = locPropagatedRFTime - locProjectedTime;
-	double locTimeDifferenceVariance = (locNewNeutralParticleHypothesis->errorMatrix())(6, 6) + locStartTimeVariance;
-	locNewNeutralParticleHypothesis->dChiSq = locTimeDifference*locTimeDifference/locTimeDifferenceVariance;
-	unsigned int locNDF = 1;
-	locNewNeutralParticleHypothesis->dFOM = TMath::Prob(locNewNeutralParticleHypothesis->dChiSq, locNDF);
+	// Calculate DNeutralParticleHypothesis FOM
+	unsigned int locNDF = 0;
+	double locChiSq = 0.0;
+	double locFOM = -1.0; //undefined for non-photons
+	if(locNewNeutralParticleHypothesis->PID() == Gamma)
+	{
+		double locTimePull = 0.0;
+		locChiSq = dParticleID->Calc_TimingChiSq(locNewNeutralParticleHypothesis, locNDF, locTimePull);
+		locFOM = TMath::Prob(locChiSq, locNDF);
+	}
+	locNewNeutralParticleHypothesis->dChiSq = locChiSq;
+	locNewNeutralParticleHypothesis->dNDF = locNDF;
+	locNewNeutralParticleHypothesis->dFOM = locFOM;
 
 	return locNewNeutralParticleHypothesis;
 }

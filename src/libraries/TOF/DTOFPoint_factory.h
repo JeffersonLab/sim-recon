@@ -1,6 +1,6 @@
 // $Id$
 //
-//    File: DTOFPoint_factory.h
+//				File: DTOFPoint_factory.h
 // Created: Tue Oct 18 09:50:52 EST 2005
 // Creator: remitche (on Linux mantrid00 2.4.20-18.8smp i686)
 //
@@ -12,7 +12,6 @@
 #include "DTOFGeometry_factory.h"
 #include "DTOFPoint.h"
 #include "DTOFPaddleHit.h"
-#include <list>
 #include <deque>
 
 /// \htmlonly
@@ -27,53 +26,64 @@
 
 using namespace std;
 
-class DTOFPoint_factory:public JFactory<DTOFPoint>{
- public:
-  DTOFPoint_factory(){};
-  ~DTOFPoint_factory(){
-    for (unsigned int i=0;i<dTOFSpacetimeHitMatchPool.size();i++) delete dTOFSpacetimeHitMatchPool[i];
-    for (unsigned int i=0;i<dTOFSpacetimeHitPool.size();i++) delete dTOFSpacetimeHitPool[i];
-  };
-  
-  double VELOCITY;
-  double HALFPADDLE;
-  double BARWIDTH;
-  double E_THRESHOLD;
-  double ATTEN_LENGTH;
-  
-  vector <const DTOFGeometry*> TOFGeom;
-  
-  class tof_spacetimehit_t {
-  public:
-    tof_spacetimehit_t(){}
-    
-    double x;
-    double y;
-    double t;
-    double pos_cut; //x_cut for horizontal bars, y_cut for vertical bars
-    double t_cut;
-    const DTOFPaddleHit *TOFHit;
-  };
-  
-  class tof_spacetimehitmatch_t {
-  public:
-    tof_spacetimehitmatch_t(){}
-    
-    double delta_r;
-    double delta_t;
-    tof_spacetimehit_t* dTOFSpacetimeHit_Horizontal;
-    tof_spacetimehit_t* dTOFSpacetimeHit_Vertical;
-  };
-  
- private:
-  jerror_t brun(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
-  jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
-  
-  unsigned int MAX_TOFSpacetimeHits;
-  unsigned int MAX_TOFSpacetimeHitMatches;
-  float dPositionMatchCut_DoubleEnded;
-  deque<tof_spacetimehit_t*> dTOFSpacetimeHitPool;
-  deque<tof_spacetimehitmatch_t*> dTOFSpacetimeHitMatchPool;
+class DTOFPoint_factory : public JFactory<DTOFPoint>
+{
+	public:
+
+		double HALFPADDLE;
+		double HALFPADDLE_ONESIDED;
+		double E_THRESHOLD;
+		double ATTEN_LENGTH;
+		double ONESIDED_PADDLE_MIDPOINT_MAG; //+/- this number for North/South
+		vector<double> propagation_speed;
+		
+		const DTOFGeometry* dTOFGeometry;
+		
+		class tof_spacetimehit_t
+		{
+			public:
+				double x;
+				double y;
+				double t;
+				double pos_cut; //x_cut for horizontal bars, y_cut for vertical bars
+				double t_cut;
+				const DTOFPaddleHit* TOFHit;
+				bool dIsDoubleEndedBar;
+				bool dPositionWellDefinedFlag;
+				bool dIsSingleEndedNorthPaddle; //if !this and !dIsDoubleEndedBar, is single-ended south paddle
+		};
+		
+		class tof_spacetimehitmatch_t
+		{
+			public:
+				double delta_r;
+				double delta_t;
+				tof_spacetimehit_t* dTOFSpacetimeHit_Horizontal;
+				tof_spacetimehit_t* dTOFSpacetimeHit_Vertical;
+				bool dBothPositionsWellDefinedFlag;
+		};
+
+	private:
+		jerror_t brun(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+
+		tof_spacetimehit_t* Get_TOFSpacetimeHitResource(void);
+
+		tof_spacetimehit_t* Build_TOFSpacetimeHit_Horizontal(const DTOFPaddleHit* locTOFHit);
+		tof_spacetimehit_t* Build_TOFSpacetimeHit_Vertical(const DTOFPaddleHit* locTOFHit);
+
+		bool Match_Hits(tof_spacetimehit_t* locTOFSpacetimeHit_Horizontal, tof_spacetimehit_t* locTOFSpacetimeHit_Vertical, tof_spacetimehitmatch_t& locTOFSpacetimeHitMatch);
+
+		void Create_MatchedTOFPoint(const tof_spacetimehit_t* locTOFSpacetimeHit_Horizontal, const tof_spacetimehit_t* locTOFSpacetimeHit_Vertical);
+		void Create_UnMatchedTOFPoint(const tof_spacetimehit_t* locTOFSpacetimeHit);
+
+		float dPositionMatchCut_DoubleEnded;
+		float dTimeMatchCut_PositionWellDefined;
+		float dTimeMatchCut_PositionNotWellDefined;
+
+		size_t MAX_TOFSpacetimeHitPoolSize;
+		deque<tof_spacetimehit_t*> dTOFSpacetimeHitPool_All;
+		deque<tof_spacetimehit_t*> dTOFSpacetimeHitPool_Available;
 };
 
 #endif // _DTOFPoint_factory_

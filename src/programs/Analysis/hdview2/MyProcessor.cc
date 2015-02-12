@@ -37,6 +37,12 @@ using namespace std;
 #include "JANA/JGeometry.h"
 #include "TRACKING/DMCTrajectoryPoint.h"
 #include "FCAL/DFCALHit.h"
+#include "TOF/DTOFGeometry.h"
+#include "TOF/DTOFHit.h"
+#include "TOF/DTOFTDCDigiHit.h" 
+#include "TOF/DTOFDigiHit.h"
+#include "TOF/DTOFPaddleHit.h"
+#include "TOF/DTOFPoint.h"
 #include "FDC/DFDCGeometry.h"
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
@@ -49,6 +55,7 @@ using namespace std;
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALIncidentParticle.h"
 #include "TOF/DTOFPoint.h"
+#include "START_COUNTER/DSCHit.h"
 #include "DVector2.h"
 
 extern hdv_mainframe *hdvmf;
@@ -153,7 +160,7 @@ jerror_t MyProcessor::brun(JEventLoop *eventloop, int runnumber)
 
 	// Read in Magnetic field map
 	DApplication* dapp = dynamic_cast<DApplication*>(eventloop->GetJApplication());
-	Bfield = dapp->GetBfield();
+	Bfield = dapp->GetBfield(runnumber);
 	const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
 	dgeom->GetFDCWires(fdcwires);
 
@@ -210,9 +217,12 @@ void MyProcessor::FillGraphics(void)
 	graphics_xyB.clear(); // The objects placed in these will be deleted by hdv_mainframe
 	graphics_xz.clear();  // The objects placed in these will be deleted by hdv_mainframe
 	graphics_yz.clear();  // The objects placed in these will be deleted by hdv_mainframe
-	
+	graphics_tof_hits.clear();  // The objects placed in these will be deleted by hdv_mainframe
+
 	if(!loop)return;
 
+	vector<const DSCHit *>schits;
+	loop->Get(schits);
 	vector<const DTrackCandidate*> trCand;
 	loop->Get(trCand);
 	vector<const DTrackTimeBased*> trTB;
@@ -418,21 +428,265 @@ void MyProcessor::FillGraphics(void)
 	    float g = s*grey;
 	    float b = f*(1.0-grey) + grey;
 #endif
-	    double s = log10(hit->E/0.005)/log10(1.0/0.005); // s=1 for 1GeV energy deposit
-	    float r = 1.;
-	    float g = 1.-s;
-	    float b = 0.2;
-	    if(s<0.0){
+
+	    // The aim is to have a log scale in energy (see BCAL)
+	    double E = 1000*hit->E;      // Change Energy to MeV
+	    if(E<0.0) continue;
+	    double logE = log10(E);      
+
+	    float r,g,b;
+	    if (logE<0){
 	      r = 1.;
 	      g = 1.;
-	      b = 0.9;
+	      b = 1.;
+	    } else {
+	      if (logE<1){
+		r = 1.;
+		g = 1.;
+		b = 1.-logE;
+	      } else {
+		if (logE<2){
+		  r = 1.;
+		  g = 1.-(logE-1);
+		  b = 0.;
+		} else {
+		  if (logE<3){
+		    r = 1.;
+		    g = 0.;
+		    b = 1.-(logE-2);
+		  } else {
+		    if (logE<4){
+		      r = 1.-(logE-3);
+		      g = 0.;
+		      b = 1.;
+		    } else {
+		      r = 0;
+		      g = 0;
+		      b = 0;
+		    }
+		  }
+		}
+	      }
 	    }
-	    
 	    poly->SetFillColor(TColor::GetColor(r,g,b));
 	  }
 	}
-	
+	// TOF hits
+	if(hdvmf->GetCheckButton("tof")){
 
+	  double hit_north[45];
+	  double hit_south[45];
+	  double hit_up[45];
+	  double hit_down[45];
+
+	  memset(hit_north,0,sizeof(hit_north));
+	  memset(hit_south,0,sizeof(hit_south));
+	  memset(hit_up,0,sizeof(hit_up));
+	  memset(hit_down,0,sizeof(hit_down));
+
+          vector<const DTOFHit*> tofhits;
+          loop->Get(tofhits);
+
+          for(unsigned int i=0; i<tofhits.size(); i++){
+            const DTOFHit *tof_hit = tofhits[i];
+
+	    int plane = tof_hit->plane;
+            int bar = tof_hit->bar;
+            int end = tof_hit->end;
+            float t = tof_hit->t;
+	    
+	    int translate_side;
+	    TPolyLine *pmtPline;
+
+
+	    // Flash the PMTs that do have fADC hits
+
+	    /*
+	    double dE_padd = 0.2/5.2E5 * 40000;
+	    double thold = 0.2/5.2E5 * 115;
+	    if (tof_hit->has_fADC && (tof_hit->dE - dE_padd > thold)){
+	    */
+
+	    if (tof_hit->has_fADC){
+	      switch(plane)
+		{
+		case 0:
+		  if(end == 1){
+		    //cout << "Down : " << bar << endl;
+		    translate_side = 0;
+		    pmtPline = hdvmf->GetTOFPolyLine(translate_side, bar);
+		    pmtPline->SetFillColor(2);
+		  }
+		  else if(end == 0){
+		    //cout << "Up : " << bar << endl;
+		    translate_side = 2;
+		    pmtPline = hdvmf->GetTOFPolyLine(translate_side, bar);
+		    pmtPline->SetFillColor(2);
+		}
+		  else{
+		  cerr << "Out of range TOF end" << endl;
+		  }
+		  break;
+		case 1:
+		  if(end == 0){
+		    //cout << "North : " << bar << endl;
+		    translate_side = 3;
+		    pmtPline = hdvmf->GetTOFPolyLine(translate_side, bar);
+		    pmtPline->SetFillColor(2);
+		  }
+		  else if(end == 1){
+		    //cout << "South : " << bar << endl;
+		    translate_side = 1;
+		    pmtPline = hdvmf->GetTOFPolyLine(translate_side, bar);
+		    pmtPline->SetFillColor(2);
+		  }
+		  else{
+		    cerr << "Out of range TOF end" << endl;
+		  }
+		  break;
+		default:
+		  cerr << "Out of range TOF plane" << endl;
+		  exit(0);
+		} // close the switch plane loop
+	    } // if for the fADC
+
+	    // Draw the position from the events that do have tdc hits 
+	    // with the current status of the TOFHit object those hits appear with no match from the fADC
+	    //Float_t hit_dist;
+
+	    if (tof_hit->has_TDC){
+	      switch(plane)
+		{
+		case 0:
+		  if(end == 1){
+		    if (hit_down[bar]<=0 || (t < hit_down[bar]) ){
+		      hit_down[bar] = t;
+		    }
+		  }
+		  else if(end == 0){
+		    if (hit_up[bar]<=0 || (t < hit_up[bar]) ){
+		      hit_up[bar] = t;
+		    }
+		  }
+		  else{
+		  cerr << "Out of range TOF end" << endl;
+		  }
+		  break;
+		case 1:
+		  if(end == 0){
+		    if (hit_north[bar]<=0 || (t < hit_north[bar]) ){
+		      hit_north[bar] = t;
+		    }
+		  }
+		  else if(end == 1){
+		    if (hit_south[bar]<=0 || (t < hit_south[bar]) ){
+		      hit_south[bar] = t;
+		    }
+		  }
+		  else{
+		    cerr << "Out of range TOF end" << endl;
+		  }
+		  break;
+		default:
+		  cerr << "Out of range TOF plane" << endl;
+		  exit(0);
+		}
+	      
+	    } // close the switch if there is a TDC Hit
+	    
+	  } // close the for TOFHit object
+
+	  // Draw the TDC Points here
+
+	  Float_t hit_dist;
+	  Float_t distY_Horz = -126; // Horizontal plane start counting from the Bottom to Top
+	  Float_t distX_Vert =  -126; // Vertical plane start counting from the South to North
+	  int tdc_hits = 0;
+	  
+	  for(Int_t i_tdc = 1; i_tdc <= 44; i_tdc++){
+	    if ( i_tdc == 20 || i_tdc == 21 || i_tdc == 24 || i_tdc == 25 ){
+	      distY_Horz = distY_Horz + 1.5;
+	      distX_Vert = distX_Vert + 1.5;
+	    }
+	    else{
+	      distY_Horz = distY_Horz + 3.0;
+	      distX_Vert = distX_Vert + 3.0;
+	    }
+	    if(hit_north[i_tdc] > 0 && hit_south[i_tdc] > 0){
+	      hit_dist =  (15.2*(Float_t(hit_south[i_tdc] - hit_north[i_tdc])/2));
+	      TArc *tdc_cir = new TArc(hit_dist,distY_Horz,2);
+	      tdc_cir->SetFillColor(kGreen);
+
+	      graphics_tof_hits.push_back(tdc_cir);
+	      tdc_hits++;
+	    }
+	    if(hit_up[i_tdc] > 0 && hit_down[i_tdc] > 0){
+	      hit_dist =  (15.2*(Float_t(hit_down[i_tdc] - hit_up[i_tdc])/2) );
+	      TArc *tdc_cir = new TArc(distX_Vert,hit_dist,2);
+	      tdc_cir->SetFillColor(kBlue);
+
+	      graphics_tof_hits.push_back(tdc_cir);
+	      tdc_hits++;
+	    }
+	    if ( i_tdc == 20 || i_tdc == 21 || i_tdc == 24 || i_tdc == 25 ){
+	      distY_Horz = distY_Horz + 1.5;
+	      distX_Vert = distX_Vert + 1.5;
+	    }
+	    else{
+	      distY_Horz = distY_Horz + 3.0;
+	      distX_Vert = distX_Vert + 3.0;
+	    }
+	  }
+
+        } // close the if check button for the TOF
+
+	// Start counter hits 
+	for (unsigned int i=0;i<schits.size();i++){
+	  DGraphicSet gset(6,kLine,2.0);
+	  double r_start=7.7493;
+	  double phi0=0.2094395*(schits[i]->sector-1);  // span 12 deg in phi
+	  double phi1=0.2094395*(schits[i]->sector);
+	  TVector3 point1(r_start*cos(phi0),r_start*sin(phi0),38.75); 
+	  gset.points.push_back(point1); // upstream end of sctraight section of scint
+	  TVector3 point2(r_start*cos(phi1),r_start*sin(phi1),38.75);
+	  gset.points.push_back(point2); 
+	  TVector3 point3(r_start*cos(phi1),r_start*sin(phi1),78.215);
+	  gset.points.push_back(point3); // downstream end of sctraight section of scint
+	  TVector3 point4(r_start*cos(phi0),r_start*sin(phi0),78.215);
+	  gset.points.push_back(point4); 
+	  TVector3 point5(r_start*cos(phi0),r_start*sin(phi0),38.75);
+	  gset.points.push_back(point5);
+	
+	  /*
+	  // ST dimensions
+	  Double_t dtr = 1.74532925e-02;		// Conversion factor from degrees to radians
+	  Double_t st_straight = 39.465;		// Distance of the straight section along scintillator path
+	  Double_t st_arc_angle = 18.5;		// Angle of the bend arc
+	  Double_t st_arc_radius = 12.0;		// Radius of the bend arc
+	  Double_t st_to_beam = 7.74926;		// Distance from beam to bottom side of scintillator paddle
+	  Double_t st_len_cone = 16.056;		// Length of the cone section along scintillator path
+	  Double_t st_thickness = 0.3;		// Thickness of the scintillator paddles
+	  Double_t st_beam_to_arc_radius = 4.25;	// Distance from the beam line to the arc radius
+
+	  // Nose Arrays
+	  Double_t tp_nose_z[5];
+	  Double_t tp_nose_y[5];
+	  Double_t bm_nose_z[5];
+	  Double_t bm_nose_y[5];
+	
+	  // Offsets for Hall coordinates
+	  Double_t z_center = 65.0;	// Target Center (0,0,65)
+	  Double_t us_end_pt = -26.25;    // Distance of upstream end relative to target
+	  Double_t ds_end_pt = 97.4;	// Distance of downstream end relative
+
+	  // Top start counter paddle straight section
+	  TPolyLine *top_paddle_straight;
+	  Double_t tp_straight_z[5] = {us_end_pt + z_center, us_end_pt + z_center, us_end_pt + st_straight + z_center, us_end_pt + st_straight + z_center, us_end_pt + z_center};
+	  Double_t tp_straight_y[5] = {st_to_beam, st_to_beam + st_thickness, st_to_beam + st_thickness, st_to_beam, st_to_beam};
+	  */
+	  graphics.push_back(gset);
+	}
+	  
 	// CDC hits
 	if(hdvmf->GetCheckButton("cdc")){
 		vector<const DCDCTrackHit*> cdctrackhits;

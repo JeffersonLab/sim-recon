@@ -53,6 +53,7 @@ class DAnalysisAction
 			//NEVER EVER: Grab objects that are created post-kinfit (e.g. DParticleCombo, DKinFitResults, etc.) from the JEventLoop if Get_UseKinFitResultsFlag() == false: CAN CAUSE DEPENDENCY LOOP
 
 		TDirectoryFile* CreateAndChangeTo_ActionDirectory(void); //get the directory this action should write ROOT objects to. //MUST(!) LOCK PRIOR TO ENTRY! (not performed in here!)
+		TDirectoryFile* ChangeTo_BaseDirectory(void); //get and change to the base (file/global) directory //MUST(!) LOCK PRIOR TO ENTRY! (not performed in here!)
 		TDirectoryFile* CreateAndChangeTo_Directory(TDirectoryFile* locBaseDirectory, string locDirName, string locDirTitle); //MUST(!) LOCK PRIOR TO ENTRY! (not performed in here!)
 		TDirectoryFile* CreateAndChangeTo_Directory(string locDirName, string locDirTitle); //MUST LOCK PRIOR TO ENTRY! (not performed in here!)
 		TDirectoryFile* CreateAndChangeTo_Directory(string locBaseDirectoryPath, string locDirName, string locDirTitle); //MUST LOCK PRIOR TO ENTRY! (not performed in here!)

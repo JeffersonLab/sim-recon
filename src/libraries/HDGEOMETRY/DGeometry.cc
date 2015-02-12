@@ -931,7 +931,7 @@ bool DGeometry::GetFDCCathodes(vector<vector<DFDCCathode *> >&fdccathodes) const
   }
   // Generate the vector of cathode plane parameters
   for (int i=0;i<2*FDC_NUM_LAYERS; i++){
-    double angle=(i%2)?(M_PI+CATHODE_ROT_ANGLE):(-CATHODE_ROT_ANGLE);
+    double angle=(i%2)?(M_PI-CATHODE_ROT_ANGLE):(CATHODE_ROT_ANGLE);
 
     angle+=fdc_cathode_offsets[i].dphi;
     vector<DFDCCathode *>temp;
@@ -1433,7 +1433,7 @@ bool DGeometry::GetTargetZ(double &z_target) const
 	if(!Get("//composition[@name='targetVessel']/posXYZ[@volume='targetTube']/@X_Y_Z", xyz_vessel)) return false;
 	if(!Get("//composition[@name='Target']/posXYZ[@volume='targetVessel']/@X_Y_Z", xyz_target)) return false;
 	if(!Get("//composition[@name='GlueXdetector']/posXYZ[@volume='Target']/@X_Y_Z", xyz_detector)) return false;
-	
+
 	z_target = xyz_vessel[2] + xyz_target[2] + xyz_detector[2];
 
 	return true;

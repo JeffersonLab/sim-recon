@@ -40,6 +40,7 @@ class DFDCPseudo : public JObject {
 		int status; ///< status word for pseudopoint
 		double covxx,covxy,covyy; ///< Covariance terms for (x,y) 
 		double dE; ///< 
+		double q; ///< anode charge deduced from cathode strips
 		int itrack;
 		DVector2 xy; ///< rough x,y coordinates in lab coordinate system
 

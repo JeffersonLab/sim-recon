@@ -17,6 +17,7 @@ using namespace jana;
 
 class DFCALGeometry : public JObject {
 
+  /*
 #define kBlocksWide 59
 #define kBlocksTall 59
 #define kMaxChannels kBlocksWide * kBlocksTall
@@ -24,25 +25,32 @@ class DFCALGeometry : public JObject {
 //   this is now used to convert from row/col to coordiantes y/x and back - MK
 #define kMidBlock (kBlocksWide-1)/2 			
 #define kBeamHoleSize 3
+  */
 
 public:
 	
 	JOBJECT_PUBLIC(DFCALGeometry);
 
-	//static const int kBlocksWide      = 53;
-	//static const int kBlocksTall      = 53;
-	//static const int kMaxChannels     = kBlocksWide * kBlocksTall;
-	//static const int kBeamHoleSize    =  3;
-
 	DFCALGeometry();
 	~DFCALGeometry(){}
+
+	// these numbers are fixed for the FCAL as constructed
+	// it probably doesn't make sense to retrieve them
+	// from a database as they aren't going to change unless
+	// the detector is reconstructed
+
+	enum { kBlocksWide = 59 };
+	enum { kBlocksTall = 59 };
+	enum { kMaxChannels = kBlocksWide * kBlocksTall };
+	enum { kMidBlock = ( kBlocksWide - 1 ) / 2 };
+	enum { kBeamHoleSize = 3 };
 
 	static double blockSize()  { return 4*k_cm; }
 	static double radius()  { return 1.2*k_m; }
 	static double blockLength()  { return 45.0*k_cm; }
-	static double fcalFaceZ()  { return 625.3*k_cm; }
+	//	static double fcalFaceZ()  { return 625.3*k_cm; }
 
-        static double fcalMidplane() { return fcalFaceZ() + 0.5 * blockLength() ; } 
+	//        static double fcalMidplane() { return fcalFaceZ() + 0.5 * blockLength() ; } 
 	
 	bool isBlockActive( int row, int column ) const;
 	int  numActiveBlocks() const { return m_numActiveBlocks; }
@@ -60,12 +68,12 @@ public:
 	int row   ( float y ) const;
 	int column( float x ) const;
 
-		void toStrings(vector<pair<string,string> > &items)const{
-			AddString(items, "kBlocksWide", "%d", kBlocksWide);
-			AddString(items, "kBlocksTall", "%d", kBlocksTall);
-			AddString(items, "kMaxChannels", "%d", kMaxChannels);
-			AddString(items, "kBeamHoleSize", "%2.3f", kBeamHoleSize);
-		}
+	void toStrings(vector<pair<string,string> > &items) const {
+	  AddString(items, "kBlocksWide", "%d", (int)kBlocksWide);
+	  AddString(items, "kBlocksTall", "%d", (int)kBlocksTall);
+	  AddString(items, "kMaxChannels", "%d", (int)kMaxChannels);
+	  AddString(items, "kBeamHoleSize", "%2.3f", (int)kBeamHoleSize);
+	}
 	
 private:
 

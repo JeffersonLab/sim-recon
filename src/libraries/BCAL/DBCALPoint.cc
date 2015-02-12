@@ -15,7 +15,7 @@ using namespace std;
 
 #include "units.h"
 
-DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center)
+DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, double attenuation_length)
 {
   
   // this is a problem -- both hits are on the same end...
@@ -33,7 +33,7 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   
   float fibLen = DBCALGeometry::BCALFIBERLENGTH;
   float cEff = DBCALGeometry::C_EFFECTIVE;
-  
+
   // figure out which hit is upstream and which is downstream
   // (downstream means farthest from the target)
 
@@ -74,11 +74,13 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   float dUp = 0.5 * fibLen + m_zLocal;
   float dDown = 0.5 * fibLen - m_zLocal;
 
-  float attUp = exp( -dUp / DBCALGeometry::ATTEN_LENGTH );
-  float attDown = exp( -dDown / DBCALGeometry::ATTEN_LENGTH );
+  float attUp = exp( -dUp / attenuation_length );
+  float attDown = exp( -dDown / attenuation_length );
  
   // use these to correct the energy
-  m_E =  ( upHit.E / attUp + downHit.E / attDown ) / 2;
+  m_E_US =  ( upHit.E / attUp );
+  m_E_DS =  ( downHit.E / attDown );
+  m_E =  ( m_E_US + m_E_DS ) / 2;
   
   m_r = DBCALGeometry::r( cellId );
   //for a uniform distribution of width a, the RMS is a/sqrt(12)
@@ -101,7 +103,7 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
     //4 ns/sqrt(12) due to FPGA algorithm.
     //For now just set the value as large as needed.
 
-    m_sig_z = 30.0;
+    m_sig_z = 10.0;
   }
 
   m_module = hit1.module;

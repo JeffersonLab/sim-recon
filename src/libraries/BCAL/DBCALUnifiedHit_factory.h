@@ -16,7 +16,13 @@ class DBCALUnifiedHit_factory : public JFactory<DBCALUnifiedHit> {
 
  public:
 
-  DBCALUnifiedHit_factory() {}
+  int VERBOSE;
+  DBCALUnifiedHit_factory() {
+    VERBOSE = 0;
+    if(gPARMS){
+      gPARMS->SetDefaultParameter("BCALUNIFIEDHIT:VERBOSE", VERBOSE, "Set level of verbosity.");
+    }
+  }
   ~DBCALUnifiedHit_factory() {}
 
   TTree *bcal_points_tree;

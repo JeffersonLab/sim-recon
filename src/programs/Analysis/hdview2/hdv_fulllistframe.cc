@@ -148,6 +148,8 @@ hdv_fulllistframe::hdv_fulllistframe(hdv_mainframe *hdvmf, const TGWindow *p, UI
 
 	//&&&&&&&&&&&&&&&& Connections
 	close->Connect("Clicked()","hdv_fulllistframe", this, "DoClose()");
+        this->Connect("CloseWindow()", "hdv_fulllistframe", this, "DoClose()");
+        this->DontCallClose();
 
 	// Finish up and map the window
 	SetWindowName("Hall-D Event Viewer Full Particle Listing");
