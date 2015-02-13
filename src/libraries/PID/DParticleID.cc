@@ -898,6 +898,94 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 	return true;
 }
 
+// Predict the start counter paddle that would match a track whose reference 
+// trajectory is given by rt.
+unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, 
+					  const double dphi_cut) const
+{
+  if(sc_pos.empty() || sc_norm.empty())
+    return 0;
+
+  unsigned int best_sc_index=0;
+  double min_dphi=1e6;
+  // loop over geometry for all SC paddles looking for track intersections
+  for (unsigned int sc_index=0;sc_index<30;sc_index++){
+    // Find intersection with the leg region of the start counter
+    DVector3 proj_pos, proj_mom(NaN,NaN,NaN);
+    if(rt->GetIntersectionWithPlane(sc_pos[sc_index][0],sc_norm[sc_index][0], 
+				    proj_pos, proj_mom) != NOERROR)
+      continue;
+
+    // Check that the intersection isn't upstream of the paddle
+    double myz = proj_pos.z();
+    if (myz<sc_pos[sc_index][0].z()) continue;
+
+    // Compute phi difference
+    double proj_phi = proj_pos.Phi();
+    DVector3 average_pos=0.5*(sc_pos[sc_index][0]+sc_pos[sc_index][1]);
+    double phi=average_pos.Phi();
+    double dphi = phi - proj_phi; //phi could be 0 degrees & proj_phi could be 359 degrees
+
+    while(dphi > TMath::Pi())
+      dphi -= M_TWO_PI;
+    while(dphi < -1.0*TMath::Pi())
+      dphi += M_TWO_PI;
+    if(fabs(dphi) >= SC_DPHI_CUT)
+      continue;
+    
+    // Match in phi successful, refine match in nose region were applicable
+    // Initialize the normal vector for the SC paddle to the long, unbent region
+    DVector3 norm=sc_norm[sc_index][0];
+    double sc_pos1 = sc_pos[sc_index][1].z();
+    if(myz <= sc_pos1){
+      if (fabs(dphi)<min_dphi){
+	best_sc_index=sc_index;
+	min_dphi=fabs(dphi);
+      }
+    }
+    else{
+      bool got_match=true;
+      unsigned int num = sc_norm[sc_index].size() - 1;
+      for (unsigned int loc_i = 1; loc_i < num; ++loc_i){
+	if(rt->GetIntersectionWithPlane(sc_pos[sc_index][loc_i],
+					sc_norm[sc_index][loc_i], 
+					proj_pos, proj_mom) != NOERROR)
+	  continue;
+	myz = proj_pos.z();
+	norm=sc_norm[sc_index][loc_i];
+	if(myz < sc_pos[sc_index][loc_i + 1].z()){
+	  average_pos
+	    =0.5*(sc_pos[sc_index][loc_i]+sc_pos[sc_index][loc_i+1]);
+	  dphi=average_pos.Phi()-proj_pos.Phi();
+	  while(dphi > TMath::Pi())
+	    dphi -= M_TWO_PI;
+	  while(dphi < -1.0*TMath::Pi())
+	    dphi += M_TWO_PI;
+	  if (fabs(dphi)>SC_DPHI_CUT){
+	    got_match=false;
+	    break;
+	  }
+	}
+      }	
+      if (got_match==false) continue; //doesn't match well with nose region
+
+      // Check for intersection point beyond nose
+      if (myz> sc_pos[sc_index][num].z()) continue;
+
+      if (fabs(dphi)<min_dphi){
+	best_sc_index=sc_index;
+	min_dphi=fabs(dphi);
+      }
+    }
+  }
+  if (min_dphi<dphi_cut) return best_sc_index+1;
+
+  return 0;
+}
+
+
+
+
 // Match to Start Counter using straight-line projection to start counter planes
 bool 
 DParticleID::MatchToSC(const DKinematicData *kd,
