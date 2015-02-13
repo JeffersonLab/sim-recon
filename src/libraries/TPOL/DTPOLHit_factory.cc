@@ -85,9 +85,6 @@ jerror_t DTPOLHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
     // adc_time_offsets (adc_timing_offsets)
     if (eventLoop->GetCalib("/TPOL/adc_timing_offsets", adc_time_offsets))
         jout << "Error loading /TPOL/adc_timing_offsets !" << endl;
-    // timewalk_parameters (timewalk_parms)
-    if(eventLoop->GetCalib("TPOL/timewalk_parms", timewalk_parameters))
-        jout << "Error loading /TPOL/timewalk_parms !" << endl;
 
     return NOERROR;
 }

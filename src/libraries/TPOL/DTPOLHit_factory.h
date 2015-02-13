@@ -20,19 +20,19 @@ class DTPOLHit_factory:public jana::JFactory<DTPOLHit>{
 		vector<double>  a_gains;
 		vector<double>  a_pedestals;
 		vector<double>  adc_time_offsets;
-		vector<vector<double> >timewalk_parameters;
 
-		//map<string,double>  propogation_corr_factors;
-		//double<string,double>  attenuation_corr_factors;
-		
-		double DELTA_T_ADC_TDC_MAX;
 		double HIT_TIME_WINDOW;
 		double ADC_THRESHOLD;
-		int    rollover_count;
 
-		// geometry information
+		// detector geometry (mm, degrees)
+		// "JUNCTION" refers to ring side, "OHMIC" refers to sector side
 		static const int NSECTORS = 32;
-		static const int NRINGS   = 32;
+		static const int NRINGS   = 24;
+
+		static double INNER_RADIUS = 22.0 / 2.; // From "ACTIVE INNER DIAMETER" in catalog
+		static double OUTER_RADIUS = 70.0 / 2.; // From "ACTIVE OUTER DIAMETER" in catalog
+		double SECTOR_DIVISION = 360. / NSECTORS;
+		double RING_DIVISION   = (OUTER_RADIUS - INNER_RADIUS) / NRINGS; // 1mm, agrees with "JUNCTION ELEMENT SEPARATION" in catalog
 
 		DTPOLHit* FindMatch(int sector, double T);
 

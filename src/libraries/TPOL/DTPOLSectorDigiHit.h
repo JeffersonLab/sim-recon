@@ -8,7 +8,7 @@ class DTPOLSectorDigiHit:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(DTPOLSectorDigiHit);
 		
-		int     sector;             // sector number 1-32
+		int      sector;             // sector number 1-32
 		uint32_t pulse_integral;    // identified pulse integral as returned by FPGA algorithm
 		uint32_t pulse_time;        // identified pulse time as returned by FPGA algorithm
 		uint32_t pedestal;          // pedestal info used by FPGA (if any)
