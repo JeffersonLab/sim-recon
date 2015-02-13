@@ -193,20 +193,17 @@ bool DEventRFBunch_factory::Find_TrackTimes_NonSC(const DDetectorMatches* locDet
 {
 	locTimes.clear();
 
-	//Order of preference: BCAL, TOF, FCAL
+	//Use TOF/BCAL time to match to RF bunches:
+		//FCAL time resolution not good enough (right?)
+		//max can be off = rf-frequency/2 ns (if off by more, will pick wrong beam bunch)
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
 		const DTrackTimeBased* locTrackTimeBased = locTrackTimeBasedVector[loc_i];
 
-		DBCALShowerMatchParams locBCALShowerMatchParams;
-		if(dParticleID->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams))
-		{
-			const DBCALShower* locBCALShower = locBCALShowerMatchParams.dBCALShower;
-			double locPropagatedTime = locBCALShower->t - locBCALShowerMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
-			locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
-			continue;
-		}
-
+		//TOF resolution = 80ps, 3sigma = 240ps
+			//max PID delta-t = 762ps (assuming 499 MHz and no buffer)
+			//for pion-proton: delta-t is ~750ps at ~170 MeV/c or lower: cannot have proton this slow anyway
+			//for pion-kaon delta-t is ~750ps at ~80 MeV/c or lower: won't reconstruct these anyway, and not likely to be foreward-going anyway
 		DTOFHitMatchParams locTOFHitMatchParams;
 		if(dParticleID->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
 		{
@@ -215,11 +212,18 @@ bool DEventRFBunch_factory::Find_TrackTimes_NonSC(const DDetectorMatches* locDet
 			continue;
 		}
 
-		DFCALShowerMatchParams locFCALShowerMatchParams;
-		if(dParticleID->Get_BestFCALMatchParams(locTrackTimeBased, locDetectorMatches, locFCALShowerMatchParams))
+		// Else match to BCAL if fast enough (low time resolution for slow particles)
+		double locP = locTrackTimeBased->momentum().Mag();
+		//at 250 MeV/c, BCAL t-resolution is ~310ps (3sigma = 920ps), BCAL delta-t error is ~40ps: ~960 ps < 1 ns: OK!!
+		//at 225 MeV/c, BCAL t-resolution is ~333ps (3sigma = 999ps), BCAL delta-t error is ~40ps: ~1040ps: bad at 499 MHz
+		if((locP < 0.25) && (dRFBunchFrequency < 2.005))
+			continue; //too slow for the BCAL to distinguish RF bunch
+
+		DBCALShowerMatchParams locBCALShowerMatchParams;
+		if(dParticleID->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams))
 		{
-			const DFCALShower* locFCALShower = locFCALShowerMatchParams.dFCALShower;
-			double locPropagatedTime = locFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
+			const DBCALShower* locBCALShower = locBCALShowerMatchParams.dBCALShower;
+			double locPropagatedTime = locBCALShower->t - locBCALShowerMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 			locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
 			continue;
 		}

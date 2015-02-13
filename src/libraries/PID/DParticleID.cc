@@ -1239,7 +1239,7 @@ double DParticleID::Calc_PropagatedRFTime(const DKinematicData* locKinematicData
 
 double DParticleID::Calc_TimingChiSq(const DKinematicData* locKinematicData, unsigned int &locNDF, double& locPull) const
 {
-	if(locKinematicData->t0_detector() == locKinematicData->t1_detector())
+	if((locKinematicData->t0_detector() == SYS_NULL) || (locKinematicData->t1_detector() == SYS_NULL))
 	{
 		// not matched to any hits
 		locNDF = 0;
