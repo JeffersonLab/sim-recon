@@ -95,7 +95,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   DetectorSystem_t mDetector, mStartDetector;
   int mNumHypPlus,mNumHypMinus;
   bool dIsNoFieldFlag;
-
+  bool USE_SC_TIME; // use start counter hits for t0
   bool SKIP_MASS_HYPOTHESES_WIRE_BASED;
 
   // start counter geometry

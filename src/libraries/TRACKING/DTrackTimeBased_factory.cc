@@ -115,6 +115,9 @@ jerror_t DTrackTimeBased_factory::init(void)
 	PID_FORCE_TRUTH = false;
 	gPARMS->SetDefaultParameter("TRKFIT:PID_FORCE_TRUTH", PID_FORCE_TRUTH);
 
+	USE_SC_TIME=true;
+	gPARMS->SetDefaultParameter("TRKFIT:USE_SC_TIME",USE_SC_TIME);
+
 	return NOERROR;
 }
 
@@ -261,7 +264,9 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   
   // get start counter hits
   vector<const DSCHit*>sc_hits;
-  loop->Get(sc_hits);
+  if (USE_SC_TIME){
+    loop->Get(sc_hits);
+  }
   
   // Get TOF points
   vector<const DTOFPoint*> tof_points;
