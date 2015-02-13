@@ -14,6 +14,8 @@
 #include <TRACKING/DTrackFitter.h>
 #include <TRACKING/DTrackHitSelector.h>
 #include "PID/DParticleID.h"
+#include "HDGEOMETRY/DMagneticFieldMapNoField.h"
+
 
 #include <TH2.h>
 #include <TH1.h>
@@ -77,6 +79,7 @@ class DTrackWireBased_factory:public jana::JFactory<DTrackWireBased>{
 		bool SKIP_MASS_HYPOTHESES_WIRE_BASED;
 		bool USE_HITS_FROM_CANDIDATE;
 		double MIN_FIT_P;
+		bool dIsNoFieldFlag;
 
 		const DParticleID* dPIDAlgorithm;
 };

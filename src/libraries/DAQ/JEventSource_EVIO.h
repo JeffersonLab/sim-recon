@@ -207,6 +207,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		uint32_t  EMULATE_SPARSIFICATION_THRESHOLD;
 		uint32_t EMULATE_FADC250_TIME_THRESHOLD;
 		uint32_t EMULATE_FADC125_TIME_THRESHOLD;
+		uint32_t EMULATE_FADC125_TIME_UPSAMPLE;        ///< Use the CMU upsampling algorithm when emulating f125 pulse times
 		string MODTYPE_MAP_FILENAME;
 		bool ENABLE_DISENTANGLING;
 		bool F250_IGNORE_PULSETIME;

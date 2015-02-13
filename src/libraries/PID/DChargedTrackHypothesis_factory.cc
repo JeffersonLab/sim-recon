@@ -83,8 +83,8 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 
 	// CDC/FDC: Default if no other timing info
 	locChargedTrackHypothesis->setTime(locTrackTimeBased->t0());
-	locChargedTrackHypothesis->setT0(locTrackTimeBased->t0(), locTrackTimeBased->t0_err(), SYS_CDC);
-	locChargedTrackHypothesis->setT1(locTrackTimeBased->t0(), locTrackTimeBased->t0_err(), SYS_CDC);
+	locChargedTrackHypothesis->setT0(numeric_limits<double>::quiet_NaN(), numeric_limits<double>::quiet_NaN(), SYS_NULL);
+	locChargedTrackHypothesis->setT1(numeric_limits<double>::quiet_NaN(), numeric_limits<double>::quiet_NaN(), SYS_NULL);
 	locChargedTrackHypothesis->setPathLength(numeric_limits<double>::quiet_NaN(), 0.0);
 	locCovarianceMatrix(6, 6) = locTrackTimeBased->t0_err()*locTrackTimeBased->t0_err();
 
@@ -146,7 +146,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 	if(dPIDAlgorithm->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
 	{
 		locChargedTrackHypothesis->dTOFHitMatchParams = locTOFHitMatchParams;
-		if(locChargedTrackHypothesis->t1_detector() == SYS_CDC)
+		if(locChargedTrackHypothesis->t1_detector() == SYS_NULL)
 		{
 			locChargedTrackHypothesis->setT1(locTOFHitMatchParams.dHitTime, sqrt(locTOFHitMatchParams.dHitTimeVariance), SYS_TOF);
 			locChargedTrackHypothesis->setTime(locTOFHitMatchParams.dHitTime - locTOFHitMatchParams.dFlightTime);
@@ -169,7 +169,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 	if(dPIDAlgorithm->Get_BestFCALMatchParams(locTrackTimeBased, locDetectorMatches, locFCALShowerMatchParams))
 	{
 		locChargedTrackHypothesis->dFCALShowerMatchParams = locFCALShowerMatchParams;
-		if(locChargedTrackHypothesis->t1_detector() == SYS_CDC)
+		if(locChargedTrackHypothesis->t1_detector() == SYS_NULL)
 		{
 			const DFCALShower* locFCALShower = locFCALShowerMatchParams.dFCALShower;
 //			locChargedTrackHypothesis->setT1(locFCALShower->getTime(), sqrt(locFCALShower->dCovarianceMatrix(4, 4)), SYS_FCAL); //uncomment when ready!!

@@ -27,12 +27,16 @@
   class hddm_istream_proxy {
   public:
     hddm_istream_proxy( const std::string& fname ) {
+      ifs = NULL;
+      hddm_ifs = NULL;
       open( fname );
     }
 
     virtual ~hddm_istream_proxy() {
-      delete ifs;
-      delete hddm_ifs;
+      if(hddm_ifs != NULL)
+	delete hddm_ifs;
+      //if(ifs != NULL)
+      //delete ifs;
     }
 
     void open( const std::string& fname ) {
@@ -40,9 +44,9 @@
 
       // error check?
       ifs = new std::ifstream(fname.c_str());
-      if (ifs && ifs->is_open()) 
+      if (ifs && ifs->is_open())  {
 	hddm_ifs = new hddm_r::istream(*ifs);
-      else  {
+      } else {
 	ifs = NULL;
 	// maybe should throw an exception?
 	return;
@@ -50,13 +54,18 @@
     }
     
     void close() {
+      if(hddm_ifs != NULL) {
 	delete hddm_ifs;
-	delete ifs;
-	ifs = NULL;
 	hddm_ifs = NULL;
+      }
+      if(ifs != NULL) {
+	//delete ifs;
+	ifs = NULL;
+      }
     }
 
     void reset() {
+      //ifs->seekg(0);
       close();
       open(filename);
     }
@@ -74,16 +83,17 @@
       // stop reading once we hit the end of file
       // and close everything out
       if(ifs->eof()) {
-	delete hddm_ifs;
-	delete ifs;
-	ifs = NULL;
-	hddm_ifs = NULL;
+	//delete hddm_ifs;
+	//delete ifs;
+	//ifs = NULL;
+	//hddm_ifs = NULL;
 	return false;
       }
 
       (*hddm_ifs) >> record;
 
       // skip over comments
+      /*
       while (true) {
 	hddm_r::ReconstructedPhysicsEvent &re
 	  = record.getReconstructedPhysicsEvent();
@@ -96,7 +106,8 @@
 	  break;
 	}
       }
-      
+      */
+
       return true;
     }
 

@@ -15,7 +15,7 @@
 class DPSDigiHit:public jana::JObject{
  public:
   JOBJECT_PUBLIC(DPSDigiHit);
-
+  
   DPSGeometry::Arm arm;   // North: 0, South: 1
   int column;
   uint32_t pulse_integral; ///< identified pulse integral as returned by FPGA algorithm
@@ -32,6 +32,8 @@ class DPSDigiHit:public jana::JObject{
     AddString(items, "pulse_time", "%d", pulse_time);
     AddString(items, "pedestal", "%d", pedestal);
     AddString(items, "QF", "%d", QF);
+    AddString(items, "nsamples_integral", "%d", nsamples_integral);
+    AddString(items, "nsamples_pedestal", "%d", nsamples_pedestal);
   }
 		
 };

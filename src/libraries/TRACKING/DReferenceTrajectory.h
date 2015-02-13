@@ -93,7 +93,7 @@ class DReferenceTrajectory{
 		double DistToRTBruteForce(const DCoordinateSystem *wire, double *s=NULL) const;
 		double DistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL) const;
 		double DistToRTBruteForce(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL) const;
-		double Straw_dx(const DCoordinateSystem *wire, double radius);
+		double Straw_dx(const DCoordinateSystem *wire, double radius) const;
 		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire, int *istep_ptr=NULL) const;
 		swim_step_t* FindClosestSwimStep(const DVector3 &origin, DVector3 norm, int *istep_ptr=NULL) const;
 		swim_step_t* FindPlaneCrossing(const DVector3 &origin, DVector3 norm, int *istep_ptr=NULL) const;

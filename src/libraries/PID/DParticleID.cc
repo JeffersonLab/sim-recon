@@ -28,7 +28,9 @@ bool static DParticleID_hypothesis_cmp(const DTrackTimeBased *a,
 //---------------------------------
 DParticleID::DParticleID(JEventLoop *loop)
 {
-  dRFBunchFrequency = 2.004;
+	vector<double> locRFFrequencyVector;
+	loop->GetCalib("PHOTON_BEAM/rf_frequency", locRFFrequencyVector);
+	dRFBunchFrequency = locRFFrequencyVector[0];
 
 	C_EFFECTIVE = 15.0;
 	ATTEN_LENGTH = 150.0;
@@ -1237,7 +1239,7 @@ double DParticleID::Calc_PropagatedRFTime(const DKinematicData* locKinematicData
 
 double DParticleID::Calc_TimingChiSq(const DKinematicData* locKinematicData, unsigned int &locNDF, double& locPull) const
 {
-	if(locKinematicData->t0_detector() == locKinematicData->t1_detector())
+	if((locKinematicData->t0_detector() == SYS_NULL) || (locKinematicData->t1_detector() == SYS_NULL))
 	{
 		// not matched to any hits
 		locNDF = 0;

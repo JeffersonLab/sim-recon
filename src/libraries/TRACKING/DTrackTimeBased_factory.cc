@@ -23,6 +23,7 @@ using namespace std;
 #include <TRACKING/DTrackHitSelector.h>
 #include <TRACKING/DMCTrackHit.h>
 #include <SplitString.h>
+#include "HDGEOMETRY/DMagneticFieldMapNoField.h"
 #include <deque>
 
 using namespace jana;
@@ -125,6 +126,8 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
   // Get the geometry
   DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
   geom = dapp->GetDGeometry(runnumber);
+   // Check for magnetic field
+  dIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField*>(dapp->GetBfield(runnumber)) != NULL);
 
   // Get pointer to TrackFitter object that actually fits a track
   vector<const DTrackFitter *> fitters;
@@ -209,10 +212,52 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 		rtv.resize(MAX_DReferenceTrajectoryPoolSize);
 	}
 
+
+
   // Get candidates and hits
   vector<const DTrackWireBased*> tracks;
   loop->Get(tracks);
   if (tracks.size()==0) return NOERROR;
+
+  if (dIsNoFieldFlag){
+    // Copy wire-based results -- no further steps are currently needed for the
+    // StraightLine fitter
+    for (unsigned int i=0;i<tracks.size();i++){
+      const DTrackWireBased *track = tracks[i];
+
+      // Copy over the results of the wire-based fit to DTrackTimeBased
+      DTrackTimeBased *timebased_track = new DTrackTimeBased;
+      
+      // Copy over DKinematicData part
+      DKinematicData *track_kd = timebased_track;
+      *track_kd = *track;
+      
+      timebased_track->rt = track->rt;
+      timebased_track->chisq = track->chisq;
+      timebased_track->Ndof = track->Ndof;
+      timebased_track->pulls = track->pulls;
+      timebased_track->trackid = track->id;
+      timebased_track->candidateid=track->candidateid;
+      
+      // Lists of hits used in the previous pass
+      vector<const DCDCTrackHit *>cdchits;
+      track->GetT(cdchits);
+      vector<const DFDCPseudo *>fdchits;
+      track->GetT(fdchits);
+      
+      for (unsigned int k=0;k<cdchits.size();k++){
+	timebased_track->AddAssociatedObject(cdchits[k]);
+      }
+      for (unsigned int k=0;k<fdchits.size();k++){
+	timebased_track->AddAssociatedObject(fdchits[k]);
+      }
+
+      _data.push_back(timebased_track);
+
+    }
+    return NOERROR;
+  }
+
   
   // get start counter hits
   vector<const DSCHit*>sc_hits;

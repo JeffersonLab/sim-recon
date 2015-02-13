@@ -86,7 +86,8 @@ class DEventSourceREST:public JEventSource
    // Warning: Class JEventSource methods must be re-entrant, so do not
    // store any data here that might change from event to event.
 
-	map<unsigned int, double> bTargetCenterZMap; //unsigned int is run number
+	map<unsigned int, double> dTargetCenterZMap; //unsigned int is run number
+	map<unsigned int, double> dRFFrequencyMap; //unsigned int is run number
 
    std::ifstream *ifs;		// input hddm file ifstream
    hddm_r::istream *fin;	// provides hddm layer on top of ifstream
