@@ -303,17 +303,18 @@ DMagneticFieldMap* DApplication::GetBfield(unsigned int run_number)
 		bfield_map = GetJParameterManager()->GetParameter("BFIELD_MAP")->GetValue();
 	}
 	if(bfield_type=="CalibDB"|| bfield_type=="FineMesh"){
+		// if the magnetic field map got passed in on the command line, then use that value instead of the CCDB values
+		if( bfield_map != "" )  { 
+			bfield = new DMagneticFieldMapFineMesh(this,run_number,bfield_map);
+		}
+
 		// see if we can load the name of the magnetic field map to use from the calib DB
 		JCalibration *jcalib = GetJCalibration(run_number);
 		map<string,string> bfield_map_name;
 		if(jcalib->GetCalib("/Magnets/Solenoid/solenoid_map", bfield_map_name)) {
-			if( bfield_map != "" )  { // still make the map if the magnetic field map is passed in on the command line
-				bfield = new DMagneticFieldMapFineMesh(this,run_number);
-			} else {
-				jerr << "Couldn't find default solenoid map table in CCDB, using default map ..." << endl;
-				jerr << ccdb_help << endl;
-				exit(-1);
-			}
+			// if we can't find information in the CCDB, then quit with an error message
+			jerr << ccdb_help << endl;
+			exit(-1);
 		} else {
 			if( bfield_map_name.find("map_name") != bfield_map_name.end() ) {
 				if( bfield_map_name["map_name"] == "NoField" )     // special case for no magnetic field
@@ -321,13 +322,9 @@ DMagneticFieldMap* DApplication::GetBfield(unsigned int run_number)
 				else  
 					bfield = new DMagneticFieldMapFineMesh(this,run_number,bfield_map_name["map_name"]);  // pass along the name of the magnetic field map to load
 			} else {
-				if( bfield_map != "" )  { // still make the map if the magnetic field map is passed in on the command line
-					bfield = new DMagneticFieldMapFineMesh(this,run_number);
-				} else {
-					jerr << "Couldn't find default solenoid map name in CCDB, using default map ..." << endl;
-					jerr << ccdb_help << endl;
-					exit(-1);
-				}
+				// if we can't find information in the CCDB, then quit with an error message
+				jerr << ccdb_help << endl;
+				exit(-1);
 			}
 		}
 		jout<<"Created Magnetic field map of type DMagneticFieldMapFineMesh."<<endl;
