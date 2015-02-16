@@ -37,7 +37,13 @@ jerror_t JEventProcessor_danarest::brun(JEventLoop *locEventLoop, int runnumber)
 //-------------------------------
 jerror_t JEventProcessor_danarest::evnt(JEventLoop *locEventLoop, int eventnumber)
 {
-   // Write this event to the rest output stream.
+	//Ignore EPICS events
+	vector<const DEPICSvalue*> locEPICSValues;
+	locEventLoop->Get(locEPICSValues);
+	if(!locEPICSValues.empty())
+		return NOERROR;
+
+	// Write this event to the rest output stream.
 	vector<const DEventWriterREST*> locEventWriterRESTVector;
 	locEventLoop->Get(locEventWriterRESTVector);
 	locEventWriterRESTVector[0]->Write_RESTEvent(locEventLoop, "");
