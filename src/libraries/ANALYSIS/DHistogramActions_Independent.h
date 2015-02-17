@@ -247,9 +247,10 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		TH2I* dHist_MCMatchedHitsVsP;
 
 		//Matching
-		map<DetectorSystem_t, TH2I*> dHistMap_PVsTheta_TimeBased_GoodTrackFOM_HasHit;
-		map<DetectorSystem_t, TH2I*> dHistMap_PVsTheta_TimeBased_GoodTrackFOM_NoHit;
-		TH2I* dHist_TrackPVsTheta_NoHitMatch;
+		map<DetectorSystem_t, TH2I*> dHistMap_PVsTheta_WireBased_GoodTrackFOM_HasHit;
+		map<DetectorSystem_t, TH2I*> dHistMap_PVsTheta_WireBased_GoodTrackFOM_NoHit;
+		TH2I* dHist_TrackPVsTheta_WireBased_NoHitMatch;
+		TH2I* dHist_TrackPVsTheta_WireBased_HitMatch;
 		TH2I* dHist_SCTrackDeltaPhiVsP;
 		TH2I* dHist_FCALTrackDistanceVsP;
 		TH2I* dHist_FCALTrackDistanceVsTheta;

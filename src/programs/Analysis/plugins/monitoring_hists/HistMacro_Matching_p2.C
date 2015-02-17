@@ -1,10 +1,10 @@
 // hnamepath: /Independent/Hist_DetectorStudies/Matching/BCAL_DeltaPhiVsP
 // hnamepath: /Independent/Hist_DetectorStudies/Matching/BCAL_DeltaZVsTheta
-// hnamepath: /Independent/Hist_DetectorStudies/Matching/PVsTheta_TimeBased_GoodTrackFOM_HasHit_BCAL
-// hnamepath: /Independent/Hist_DetectorStudies/Matching/PVsTheta_TimeBased_GoodTrackFOM_NoHit_BCAL
+// hnamepath: /Independent/Hist_DetectorStudies/Matching/PVsTheta_WireBased_GoodTrackFOM_HasHit_BCAL
+// hnamepath: /Independent/Hist_DetectorStudies/Matching/PVsTheta_WireBased_GoodTrackFOM_NoHit_BCAL
 // hnamepath: /Independent/Hist_DetectorStudies/Matching/SC_TrackDeltaPhiVsP
-// hnamepath: /Independent/Hist_DetectorStudies/Matching/PVsTheta_TimeBased_GoodTrackFOM_HasHit_ST
-// hnamepath: /Independent/Hist_DetectorStudies/Matching/PVsTheta_TimeBased_GoodTrackFOM_NoHit_ST
+// hnamepath: /Independent/Hist_DetectorStudies/Matching/PVsTheta_WireBased_GoodTrackFOM_HasHit_ST
+// hnamepath: /Independent/Hist_DetectorStudies/Matching/PVsTheta_WireBased_GoodTrackFOM_NoHit_ST
 
 {
 	double locMinNumCountsForRatio = 5.0;
@@ -19,12 +19,12 @@
 	gDirectory->cd("Matching");
 	TH2I* locHist_BCAL_DeltaPhiVsP = (TH2I*)gDirectory->Get("BCAL_DeltaPhiVsP");
 	TH2I* locHist_BCAL_DeltaZVsTheta = (TH2I*)gDirectory->Get("BCAL_DeltaZVsTheta");
-	TH2I* locHist_PVsTheta_HasHit_BCAL = (TH2I*)gDirectory->Get("PVsTheta_TimeBased_GoodTrackFOM_HasHit_BCAL");
-	TH2I* locHist_PVsTheta_NoHit_BCAL = (TH2I*)gDirectory->Get("PVsTheta_TimeBased_GoodTrackFOM_NoHit_BCAL");
+	TH2I* locHist_PVsTheta_HasHit_BCAL = (TH2I*)gDirectory->Get("PVsTheta_WireBased_GoodTrackFOM_HasHit_BCAL");
+	TH2I* locHist_PVsTheta_NoHit_BCAL = (TH2I*)gDirectory->Get("PVsTheta_WireBased_GoodTrackFOM_NoHit_BCAL");
 
 	TH2I* locHist_SC_TrackDeltaPhiVsP = (TH2I*)gDirectory->Get("SC_TrackDeltaPhiVsP");
-	TH2I* locHist_PVsTheta_HasHit_SC = (TH2I*)gDirectory->Get("PVsTheta_TimeBased_GoodTrackFOM_HasHit_ST");
-	TH2I* locHist_PVsTheta_NoHit_SC = (TH2I*)gDirectory->Get("PVsTheta_TimeBased_GoodTrackFOM_NoHit_ST");
+	TH2I* locHist_PVsTheta_HasHit_SC = (TH2I*)gDirectory->Get("PVsTheta_WireBased_GoodTrackFOM_HasHit_ST");
+	TH2I* locHist_PVsTheta_NoHit_SC = (TH2I*)gDirectory->Get("PVsTheta_WireBased_GoodTrackFOM_NoHit_ST");
 
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
