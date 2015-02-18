@@ -163,5 +163,3 @@ template <typename DType> void DEventWriterROOT::Fill_TObjectData(TTree* locTree
 }
 
 #endif //_DEventWriterROOT_
-
-
