@@ -529,7 +529,6 @@ inline double DTrackFitterKalmanSIMD::cdc_variance(double B,double t){
 // Variance for position along wire
 inline double DTrackFitterKalmanSIMD::fdc_y_variance(double dE){
   double sigma=2.6795e-4*FDC_CATHODE_SIGMA/dE;//+0.005;
-  sigma=0.05;
 
   return sigma*sigma;
 }
