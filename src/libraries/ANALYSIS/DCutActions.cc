@@ -40,13 +40,13 @@ bool DCutAction_AllTracksHaveDetectorMatch::Perform_Action(JEventLoop* locEventL
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-		if(locChargedTrackHypothesis->dSCHitMatchParams.dTrackTimeBased != NULL)
+		if(locChargedTrackHypothesis->dSCHitMatchParams.dTrack != NULL)
 			continue;
-		if(locChargedTrackHypothesis->dTOFHitMatchParams.dTrackTimeBased != NULL)
+		if(locChargedTrackHypothesis->dTOFHitMatchParams.dTrack != NULL)
 			continue;
-		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
+		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrack != NULL)
 			continue;
-		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
+		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrack != NULL)
 			continue;
 		return false;
 	}

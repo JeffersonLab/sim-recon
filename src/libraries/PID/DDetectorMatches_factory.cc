@@ -201,5 +201,3 @@ jerror_t DDetectorMatches_factory::fini(void)
 {
 	return NOERROR;
 }
-
-

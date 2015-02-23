@@ -1009,7 +1009,7 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locTrackIndex = bcalIter_v2->getTrack();
 
          DBCALShowerMatchParams locShowerMatchParams;
-         locShowerMatchParams.dTrackTimeBased = locTrackTimeBasedVector[locTrackIndex];
+         locShowerMatchParams.dTrack = locTrackTimeBasedVector[locTrackIndex];
          locShowerMatchParams.dBCALShower = locBCALShowers[locShowerIndex];
          locShowerMatchParams.dx = bcalIter_v2->getDx();
          locShowerMatchParams.dFlightTime = bcalIter_v2->getTflight();
@@ -1029,7 +1029,7 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locTrackIndex = bcalIter->getTrack();
 
          DBCALShowerMatchParams locShowerMatchParams;
-         locShowerMatchParams.dTrackTimeBased = locTrackTimeBasedVector[locTrackIndex];
+         locShowerMatchParams.dTrack = locTrackTimeBasedVector[locTrackIndex];
          locShowerMatchParams.dBCALShower = locBCALShowers[locShowerIndex];
 
          locShowerMatchParams.dx = bcalIter->getDx();
@@ -1050,7 +1050,7 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locTrackIndex = fcalIter->getTrack();
 
          DFCALShowerMatchParams locShowerMatchParams;
-         locShowerMatchParams.dTrackTimeBased = locTrackTimeBasedVector[locTrackIndex];
+         locShowerMatchParams.dTrack = locTrackTimeBasedVector[locTrackIndex];
          locShowerMatchParams.dFCALShower = locFCALShowers[locShowerIndex];
 
          locShowerMatchParams.dx = fcalIter->getDx();
@@ -1070,7 +1070,7 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locTrackIndex = scIter->getTrack();
 
          DSCHitMatchParams locSCHitMatchParams;
-         locSCHitMatchParams.dTrackTimeBased = locTrackTimeBasedVector[locTrackIndex];
+         locSCHitMatchParams.dTrack = locTrackTimeBasedVector[locTrackIndex];
          locSCHitMatchParams.dSCHit = locSCHits[locHitIndex];
 
          locSCHitMatchParams.dEdx = scIter->getDEdx();
@@ -1093,7 +1093,7 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locTrackIndex = tofIter_v2->getTrack();
 
          DTOFHitMatchParams locTOFHitMatchParams;
-         locTOFHitMatchParams.dTrackTimeBased = locTrackTimeBasedVector[locTrackIndex];
+         locTOFHitMatchParams.dTrack = locTrackTimeBasedVector[locTrackIndex];
          locTOFHitMatchParams.dTOFPoint = locTOFPoints[locHitIndex];
 
          locTOFHitMatchParams.dHitTime = tofIter_v2->getThit();
@@ -1118,7 +1118,7 @@ jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hd
          size_t locTrackIndex = tofIter->getTrack();
 
          DTOFHitMatchParams locTOFHitMatchParams;
-         locTOFHitMatchParams.dTrackTimeBased = locTrackTimeBasedVector[locTrackIndex];
+         locTOFHitMatchParams.dTrack = locTrackTimeBasedVector[locTrackIndex];
          locTOFHitMatchParams.dTOFPoint = locTOFPoints[locHitIndex];
 
          locTOFHitMatchParams.dHitTime = locTOFHitMatchParams.dTOFPoint->t;

@@ -1340,11 +1340,11 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 		locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
 
 		const DBCALShower* locBCALShower = NULL;
-		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
+		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrack != NULL)
 			locBCALShower = locChargedTrackHypothesis->dBCALShowerMatchParams.dBCALShower;
 
 		const DFCALShower* locFCALShower = NULL;
-		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
+		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrack != NULL)
 			locFCALShower = locChargedTrackHypothesis->dFCALShowerMatchParams.dFCALShower;
 
 		//IDENTIFIER / MATCHING
@@ -1375,9 +1375,9 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 		//DEPOSITED ENERGY
 		Fill_FundamentalData<Float_t>(locTree, locParticleBranchName, "dEdx_CDC", locTrackTimeBased->ddEdx_CDC);
 		Fill_FundamentalData<Float_t>(locTree, locParticleBranchName, "dEdx_FDC", locTrackTimeBased->ddEdx_FDC);
-		double locTOFdEdx = (locChargedTrackHypothesis->dTOFHitMatchParams.dTrackTimeBased != NULL) ? locChargedTrackHypothesis->dTOFHitMatchParams.dEdx : 0.0;
+		double locTOFdEdx = (locChargedTrackHypothesis->dTOFHitMatchParams.dTrack != NULL) ? locChargedTrackHypothesis->dTOFHitMatchParams.dEdx : 0.0;
 		Fill_FundamentalData<Float_t>(locTree, locParticleBranchName, "dEdx_TOF", locTOFdEdx);
-		double locSCdEdx = (locChargedTrackHypothesis->dSCHitMatchParams.dTrackTimeBased != NULL) ? locChargedTrackHypothesis->dSCHitMatchParams.dEdx : 0.0;
+		double locSCdEdx = (locChargedTrackHypothesis->dSCHitMatchParams.dTrack != NULL) ? locChargedTrackHypothesis->dSCHitMatchParams.dEdx : 0.0;
 		Fill_FundamentalData<Float_t>(locTree, locParticleBranchName, "dEdx_ST", locSCdEdx);
 		double locBCALEnergy = (locBCALShower != NULL) ? locBCALShower->E : 0.0;
 		Fill_FundamentalData<Float_t>(locTree, locParticleBranchName, "Energy_BCAL", locBCALEnergy);
@@ -1386,7 +1386,7 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 
 		//Track DOCA to Shower - BCAL
 		double locTrackBCAL_DeltaPhi = 999.0, locTrackBCAL_DeltaZ = 999.0;
-		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
+		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrack != NULL)
 		{
 			locTrackBCAL_DeltaPhi = locChargedTrackHypothesis->dBCALShowerMatchParams.dDeltaPhiToShower;
 			locTrackBCAL_DeltaZ = locChargedTrackHypothesis->dBCALShowerMatchParams.dDeltaZToShower;
@@ -1396,7 +1396,7 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 
 		//Track DOCA to Shower - FCAL
 		double locDOCAToShower_FCAL = 999.0;
-		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
+		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrack != NULL)
 			locDOCAToShower_FCAL = locChargedTrackHypothesis->dFCALShowerMatchParams.dDOCAToShower;
 		Fill_FundamentalData<Float_t>(locTree, locParticleBranchName, "TrackFCAL_DOCA", locDOCAToShower_FCAL);
 	}
@@ -1487,11 +1487,11 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 		locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
 
 		const DBCALShower* locBCALShower = NULL;
-		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
+		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrack != NULL)
 			locBCALShower = locChargedTrackHypothesis->dBCALShowerMatchParams.dBCALShower;
 
 		const DFCALShower* locFCALShower = NULL;
-		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
+		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrack != NULL)
 			locFCALShower = locChargedTrackHypothesis->dFCALShowerMatchParams.dFCALShower;
 
 		//IDENTIFIERS / MATCHING
@@ -1521,9 +1521,9 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 		//DEPOSITED ENERGY
 		Fill_FundamentalData<Float_t>(locTree, "Unused", "dEdx_CDC", locTrackTimeBased->ddEdx_CDC, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		Fill_FundamentalData<Float_t>(locTree, "Unused", "dEdx_FDC", locTrackTimeBased->ddEdx_FDC, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
-		double locTOFdEdx = (locChargedTrackHypothesis->dTOFHitMatchParams.dTrackTimeBased != NULL) ? locChargedTrackHypothesis->dTOFHitMatchParams.dEdx : 0.0;
+		double locTOFdEdx = (locChargedTrackHypothesis->dTOFHitMatchParams.dTrack != NULL) ? locChargedTrackHypothesis->dTOFHitMatchParams.dEdx : 0.0;
 		Fill_FundamentalData<Float_t>(locTree, "Unused", "dEdx_TOF", locTOFdEdx, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
-		double locSCdEdx = (locChargedTrackHypothesis->dSCHitMatchParams.dTrackTimeBased != NULL) ? locChargedTrackHypothesis->dSCHitMatchParams.dEdx : 0.0;
+		double locSCdEdx = (locChargedTrackHypothesis->dSCHitMatchParams.dTrack != NULL) ? locChargedTrackHypothesis->dSCHitMatchParams.dEdx : 0.0;
 		Fill_FundamentalData<Float_t>(locTree, "Unused", "dEdx_ST", locSCdEdx, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		double locBCALEnergy = (locBCALShower != NULL) ? locBCALShower->E : 0.0;
 		Fill_FundamentalData<Float_t>(locTree, "Unused", "Energy_BCAL", locBCALEnergy, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
@@ -1532,7 +1532,7 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 
 		//Track DOCA to Shower - BCAL
 		double locTrackBCAL_DeltaPhi = 999.0, locTrackBCAL_DeltaZ = 999.0;
-		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
+		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrack != NULL)
 		{
 			locTrackBCAL_DeltaPhi = locChargedTrackHypothesis->dBCALShowerMatchParams.dDeltaPhiToShower;
 			locTrackBCAL_DeltaZ = locChargedTrackHypothesis->dBCALShowerMatchParams.dDeltaZToShower;
@@ -1542,7 +1542,7 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 
 		//Track DOCA to Shower - FCAL
 		double locDOCAToShower_FCAL = 999.0;
-		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
+		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrack != NULL)
 			locDOCAToShower_FCAL = locChargedTrackHypothesis->dFCALShowerMatchParams.dDOCAToShower;
 		Fill_FundamentalData<Float_t>(locTree, "Unused", "TrackFCAL_DOCA", locDOCAToShower_FCAL, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 	}
