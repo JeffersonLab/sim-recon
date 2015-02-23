@@ -13,6 +13,8 @@ DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 	dTTreeOutputFileName = "";
 	dEnableTTreeOutputFlag = false;
 	dMinThrownMatchFOMForROOT = -1.0; //always
+
+	dEventStoreQuery = pair<string, string>("all", "");
 }
 
 string DReaction::Get_DetectedParticlesROOTName(void) const
