@@ -177,6 +177,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 	protected:
 	
 		void ConnectToET(const char* source_name);
+		void Cleanup(void);
 		
 		int32_t last_run_number;
 		int32_t filename_run_number;
@@ -275,6 +276,14 @@ class JEventSource_EVIO: public jana::JEventSource{
 		uint32_t BUFFER_SIZE;
 		pthread_mutex_t evio_buffer_pool_mutex;
 		deque<uint32_t*> evio_buffer_pool;
+		
+		// In order to efficiently free memory after this source has
+		// exhausted it's event supply, the last calls to FreeEvent
+		// must be able to recognize itself as such. Use the
+		// current_event_count counter to keep track of how many events
+		// are currently being processed by processing threads.
+		pthread_mutex_t current_event_count_mutex;
+		uint32_t current_event_count;
 		
 		// List of the data types this event source can provide
 		// (filled in the constructor)

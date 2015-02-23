@@ -260,6 +260,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	
 	last_run_number = 0;
 	filename_run_number = 0;
+	current_event_count = 0;
 	
 	// Try extracting the run number from the filename. (This is
 	// only used if the run number is not found in the EVIO data.)
@@ -275,6 +276,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	
 	pthread_mutex_init(&evio_buffer_pool_mutex, NULL);
 	pthread_mutex_init(&stored_events_mutex, NULL);
+	pthread_mutex_init(&current_event_count_mutex, NULL);
 }
 
 //----------------
@@ -492,6 +494,44 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 }
 
 //----------------
+// Cleanup
+//----------------
+void JEventSource_EVIO::Cleanup(void)
+{
+	/// This is called internally by the JEventSource_EVIO class
+	/// once all events have been read in. Its purpose is to
+	/// free the hidden memory in all of the container class
+	/// members of the JEventSource_EVIO class. This is needed
+	/// for jobs that process a lot of input files and therefore
+	/// create a lot JEventSource_EVIO objects. JANA does not delete
+	/// these objects until the end of the job so this tends to
+	/// act like a memory leak. The data used can be substantial
+	/// (nearly 1GB per JEventSource_EVIO object).
+	if(hdevio) delete hdevio;
+	hdevio = NULL;
+	if(chan) delete chan;
+	chan = NULL;
+
+	module_type.clear();
+	modtype_translate.clear();
+	
+	for(uint32_t i=0; i<hit_objs.size(); i++) hit_objs[i].resize(0);
+	hit_objs.resize(0);
+	
+	while(!stored_events.empty()){
+		delete stored_events.front();
+		stored_events.pop();
+	}
+	while(!evio_buffer_pool.empty()) {
+		delete evio_buffer_pool.back();
+		evio_buffer_pool.pop_back();
+	}
+	while(!event_source_data_types.empty()){
+		event_source_data_types.erase(event_source_data_types.begin());
+	}
+}
+
+//----------------
 // GetEvent
 //----------------
 jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
@@ -545,6 +585,12 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 		objs_ptr->eviobuff_size = buff_size;
 		objs_ptr->run_number = FindRunNumber(buff);
 		objs_ptr->event_number = FindEventNumber(buff);
+
+		// Increment counter that keeps track of how many events
+		// are currently being processed.
+		pthread_mutex_lock(&current_event_count_mutex);
+		current_event_count++;
+		pthread_mutex_unlock(&current_event_count_mutex);
 	}
 
 	// Store a pointer to the ObjList object for this event in the
@@ -588,13 +634,32 @@ void JEventSource_EVIO::FreeEvent(JEvent &event)
 
 		if(objs_ptr->DOMTree != NULL) delete objs_ptr->DOMTree;
 		if(objs_ptr->eviobuff){
-			// Return EVIO buffer to pool for recycling
-			pthread_mutex_lock(&evio_buffer_pool_mutex);
-			evio_buffer_pool.push_front(objs_ptr->eviobuff);
-			pthread_mutex_unlock(&evio_buffer_pool_mutex);
+
+			// If we have not already stopped reading events from
+			// the source then return this buffer to the pool. Otherwise,
+			// delete the buffer.
+			if(hdevio){
+				// Return EVIO buffer to pool for recycling
+				pthread_mutex_lock(&evio_buffer_pool_mutex);
+				evio_buffer_pool.push_front(objs_ptr->eviobuff);
+				pthread_mutex_unlock(&evio_buffer_pool_mutex);
+			}else{
+				free(objs_ptr->eviobuff);
+			}
 		}
 	
 		delete objs_ptr;
+
+		// Decrement counter that keeps track of how many events
+		// are currently being processed.
+		pthread_mutex_lock(&current_event_count_mutex);
+		current_event_count--;
+		bool last_event = (hdevio==NULL) && (current_event_count==0);
+		pthread_mutex_unlock(&current_event_count_mutex);
+
+		// If we are the last event, then clean up as much memory as
+		// possible.
+		if(last_event) Cleanup(); 
 	}
 }
 
@@ -825,11 +890,15 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 							continue;
 							break;
 						case HDEVIO::HDEVIO_EOF:
+							if(hdevio) delete hdevio;
+							hdevio = NULL;
 							return NO_MORE_EVENTS_IN_SOURCE;
 							break;
 						default:
 							cout << endl << "err_code=" << hdevio->err_code << endl;
 							cout << endl << mess << endl;
+							if(hdevio) delete hdevio;
+							hdevio = NULL;
 							return NO_MORE_EVENTS_IN_SOURCE;
 							break;
 					}
