@@ -129,21 +129,21 @@ class DHistogramAction_Reconstruction : public DAnalysisAction
 		dNumFCALTOFXYBins(260), dNumShowerEnergyBins(800), dNumPhiBins(720), dNum2DBCALZBins(450), dNum2DPhiBins(360),
 		dNumHitEnergyBins(500), dNum2DThetaBins(280), dNumFOMBins(500), dNum2DFOMBins(200), dNum2DPBins(400),
 		dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMaxBCALP(1.5), dMinPhi(-180.0), dMaxPhi(180.0), dMinHitEnergy(0.0),
-		dMaxHitEnergy(50.0), dMinTheta(0.0), dMaxTheta(140.0), dMinP(0.0), dMaxP(12.0), dGoodTrackFOM(5.73303E-7) {}
+		dMaxHitEnergy(50.0), dMinTheta(0.0), dMaxTheta(140.0), dMinP(0.0), dMaxP(12.0), dGoodTrackFOM(5.73303E-7), dHighTrackFOM(0.98) {}
 
 		DHistogramAction_Reconstruction(string locActionUniqueString) :
 		DAnalysisAction(NULL, "Hist_Reconstruction", false, locActionUniqueString),
 		dNumFCALTOFXYBins(260), dNumShowerEnergyBins(800), dNumPhiBins(720), dNum2DBCALZBins(450), dNum2DPhiBins(360),
 		dNumHitEnergyBins(500), dNum2DThetaBins(280), dNumFOMBins(500), dNum2DFOMBins(200), dNum2DPBins(400),
 		dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMaxBCALP(1.5), dMinPhi(-180.0), dMaxPhi(180.0), dMinHitEnergy(0.0),
-		dMaxHitEnergy(50.0), dMinTheta(0.0), dMaxTheta(140.0), dMinP(0.0), dMaxP(12.0), dGoodTrackFOM(5.73303E-7) {}
+		dMaxHitEnergy(50.0), dMinTheta(0.0), dMaxTheta(140.0), dMinP(0.0), dMaxP(12.0), dGoodTrackFOM(5.73303E-7), dHighTrackFOM(0.98) {}
 
 		DHistogramAction_Reconstruction(void) :
 		DAnalysisAction(NULL, "Hist_Reconstruction", false, ""),
 		dNumFCALTOFXYBins(260), dNumShowerEnergyBins(800), dNumPhiBins(720), dNum2DBCALZBins(450), dNum2DPhiBins(360),
 		dNumHitEnergyBins(500), dNum2DThetaBins(280), dNumFOMBins(500), dNum2DFOMBins(200), dNum2DPBins(400),
 		dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMaxBCALP(1.5), dMinPhi(-180.0), dMaxPhi(180.0), dMinHitEnergy(0.0),
-		dMaxHitEnergy(50.0), dMinTheta(0.0), dMaxTheta(140.0), dMinP(0.0), dMaxP(12.0), dGoodTrackFOM(5.73303E-7) {}
+		dMaxHitEnergy(50.0), dMinTheta(0.0), dMaxTheta(140.0), dMinP(0.0), dMaxP(12.0), dGoodTrackFOM(5.73303E-7), dHighTrackFOM(0.98) {}
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -152,7 +152,7 @@ class DHistogramAction_Reconstruction : public DAnalysisAction
 		double dMinShowerEnergy, dMaxShowerEnergy, dMaxBCALP, dMinPhi, dMaxPhi, dMinHitEnergy;
 		double dMaxHitEnergy, dMinTheta, dMaxTheta, dMinP, dMaxP;
 
-		double dGoodTrackFOM;
+		double dGoodTrackFOM, dHighTrackFOM;
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
@@ -180,6 +180,10 @@ class DHistogramAction_Reconstruction : public DAnalysisAction
 		map<int, TH2I*> dHistMap_PVsTheta_TimeBased; //int is charge
 		map<int, TH2I*> dHistMap_PVsTheta_TimeBased_GoodTrackFOM; //int is charge
 		map<int, TH2I*> dHistMap_PVsTheta_TimeBased_LowTrackFOM; //int is charge
+		map<int, TH2I*> dHistMap_PVsTheta_TimeBased_HighTrackFOM; //int is charge
+
+		map<int, TH2I*> dHistMap_PVsTheta_GoodWireBased_GoodTimeBased; //int is charge
+		map<int, TH2I*> dHistMap_PVsTheta_GoodWireBased_BadTimeBased; //int is charge
 
 		TH2I* dHist_CDCRingVsTheta_Candidates;
 		TH2I* dHist_CDCRingVsTheta_WireBased;

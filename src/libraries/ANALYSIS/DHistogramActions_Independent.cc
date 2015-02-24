@@ -302,6 +302,8 @@ void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)
 
 	string locHistName, locHistTitle;
 
+	bool locIsRESTEvent = (string(locEventLoop->GetJEvent().GetJEventSource()->className()) == string("DEventSourceREST"));
+
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
 
@@ -401,17 +403,20 @@ void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)
 		else //already created by another thread
 			dHist_TrackingFOMVsNumHits = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
-		locHistName = "CDCRingVsTheta_Candidates";
-		if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-			dHist_CDCRingVsTheta_Candidates = new TH2I(locHistName.c_str(), "Hits on Track Candidates;#theta#circ;CDC Ring", dNum2DThetaBins, dMinTheta, dMaxTheta, 28, 0.5, 28.5);
-		else //already created by another thread
-			dHist_CDCRingVsTheta_Candidates = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+		if(!locIsRESTEvent)
+		{
+			locHistName = "CDCRingVsTheta_Candidates";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_CDCRingVsTheta_Candidates = new TH2I(locHistName.c_str(), "Hits on Track Candidates;#theta#circ;CDC Ring", dNum2DThetaBins, dMinTheta, dMaxTheta, 28, 0.5, 28.5);
+			else //already created by another thread
+				dHist_CDCRingVsTheta_Candidates = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
-		locHistName = "CDCRingVsTheta_WireBased";
-		if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-			dHist_CDCRingVsTheta_WireBased = new TH2I(locHistName.c_str(), "Hits on Wire-Based Tracks;#theta#circ;CDC Ring", dNum2DThetaBins, dMinTheta, dMaxTheta, 28, 0.5, 28.5);
-		else //already created by another thread
-			dHist_CDCRingVsTheta_WireBased = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+			locHistName = "CDCRingVsTheta_WireBased";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_CDCRingVsTheta_WireBased = new TH2I(locHistName.c_str(), "Hits on Wire-Based Tracks;#theta#circ;CDC Ring", dNum2DThetaBins, dMinTheta, dMaxTheta, 28, 0.5, 28.5);
+			else //already created by another thread
+				dHist_CDCRingVsTheta_WireBased = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+		}
 
 		locHistName = "CDCRingVsTheta_TimeBased";
 		if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
@@ -425,17 +430,20 @@ void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)
 		else //already created by another thread
 			dHist_CDCRingVsTheta_TimeBased_GoodTrackFOM = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
-		locHistName = "FDCPlaneVsP_Candidates";
-		if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-			dHist_FDCPlaneVsP_Candidates = new TH2I(locHistName.c_str(), "Hits on Track Candidates;p (GeV/c);FDC Plane", dNum2DPBins, dMinP, dMaxP, 24, 0.5, 24.5);
-		else //already created by another thread
-			dHist_FDCPlaneVsP_Candidates = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+		if(!locIsRESTEvent)
+		{
+			locHistName = "FDCPlaneVsP_Candidates";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_FDCPlaneVsP_Candidates = new TH2I(locHistName.c_str(), "Hits on Track Candidates;p (GeV/c);FDC Plane", dNum2DPBins, dMinP, dMaxP, 24, 0.5, 24.5);
+			else //already created by another thread
+				dHist_FDCPlaneVsP_Candidates = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 
-		locHistName = "FDCPlaneVsP_WireBased";
-		if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-			dHist_FDCPlaneVsP_WireBased = new TH2I(locHistName.c_str(), "Hits on Wire-Based Tracks;p (GeV/c);FDC Plane", dNum2DPBins, dMinP, dMaxP, 24, 0.5, 24.5);
-		else //already created by another thread
-			dHist_FDCPlaneVsP_WireBased = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+			locHistName = "FDCPlaneVsP_WireBased";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_FDCPlaneVsP_WireBased = new TH2I(locHistName.c_str(), "Hits on Wire-Based Tracks;p (GeV/c);FDC Plane", dNum2DPBins, dMinP, dMaxP, 24, 0.5, 24.5);
+			else //already created by another thread
+				dHist_FDCPlaneVsP_WireBased = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+		}
 
 		locHistName = "FDCPlaneVsP_TimeBased";
 		if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
@@ -470,21 +478,24 @@ void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)
 			string locParticleName = (locCharge == -1) ? "q-" : "q+";
 			CreateAndChangeTo_Directory(locParticleName.c_str(), locParticleName.c_str());
 
-			// PVsTheta Track Candidates
-			locHistName = string("PVsTheta_Candidates_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(" Track Candidates;#theta#circ;p (GeV/c)");
-			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistMap_PVsTheta_Candidates[locCharge] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
-			else
-				dHistMap_PVsTheta_Candidates[locCharge] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+			if(!locIsRESTEvent)
+			{
+				// PVsTheta Track Candidates
+				locHistName = string("PVsTheta_Candidates_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(" Track Candidates;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_Candidates[locCharge] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_Candidates[locCharge] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
 
-			// PVsTheta Wire-Based Tracks
-			locHistName = string("PVsTheta_WireBased_") + locParticleName;
-			locHistTitle = locParticleROOTName + string(" Wire-Based Tracks;#theta#circ;p (GeV/c)");
-			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistMap_PVsTheta_WireBased[locCharge] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
-			else
-				dHistMap_PVsTheta_WireBased[locCharge] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+				// PVsTheta Wire-Based Tracks
+				locHistName = string("PVsTheta_WireBased_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(" Wire-Based Tracks;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_WireBased[locCharge] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_WireBased[locCharge] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+			}
 
 			// PVsTheta Time-Based Tracks
 			locHistName = string("PVsTheta_TimeBased_") + locParticleName;
@@ -510,6 +521,33 @@ void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)
 			else
 				dHistMap_PVsTheta_TimeBased_LowTrackFOM[locCharge] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
 
+			// PVsTheta Time-Based Tracks High Track FOM
+			locHistName = string("PVsTheta_TimeBased_HighTrackFOM_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(" Time-Based Tracks, High Tracking FOM;#theta#circ;p (GeV/c)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_PVsTheta_TimeBased_HighTrackFOM[locCharge] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_PVsTheta_TimeBased_HighTrackFOM[locCharge] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+
+			if(!locIsRESTEvent)
+			{
+				// PVsTheta: Good Wire-Based, Good Time-Based
+				locHistName = string("PVsTheta_GoodWireBased_GoodTimeBased_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(" Good Wire-Based, Good Time-Based;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_GoodWireBased_GoodTimeBased[locCharge] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_GoodWireBased_GoodTimeBased[locCharge] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+
+				// PVsTheta: Good Wire-Based, Bad Time-Based
+				locHistName = string("PVsTheta_GoodWireBased_BadTimeBased_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(" Good Wire-Based, Bad Time-Based;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_GoodWireBased_BadTimeBased[locCharge] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_GoodWireBased_BadTimeBased[locCharge] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+			}
+
 			gDirectory->cd(".."); //end of charge
 		}
 		gDirectory->cd(".."); //End of "Tracking"
@@ -528,6 +566,8 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 	if(Get_NumPreviousParticleCombos() != 0)
 		return true;
 
+	bool locIsRESTEvent = (string(locEventLoop->GetJEvent().GetJEventSource()->className()) == string("DEventSourceREST"));
+
 	vector<const DBCALShower*> locBCALShowers;
 	locEventLoop->Get(locBCALShowers);
 
@@ -543,12 +583,6 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
 
-	vector<const DTrackCandidate*> locTrackCandidates;
-	locEventLoop->Get(locTrackCandidates);
-
-	vector<const DTrackWireBased*> locTrackWireBasedVector;
-	locEventLoop->Get(locTrackWireBasedVector);
-
 	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locEventLoop->Get(locTrackTimeBasedVector);
 
@@ -560,6 +594,16 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 
 	const DParticleID* locParticleID = NULL;
 	locEventLoop->GetSingle(locParticleID);
+
+	const DDetectorMatches* locDetectorMatches_WireBased = NULL;
+	vector<const DTrackCandidate*> locTrackCandidates;
+	vector<const DTrackWireBased*> locTrackWireBasedVector;
+	if(!locIsRESTEvent)
+	{
+		locEventLoop->GetSingle(locDetectorMatches_WireBased, "WireBased");
+		locEventLoop->Get(locTrackCandidates);
+		locEventLoop->Get(locTrackWireBasedVector);
+	}
 
 	//select the best DTrackWireBased for each track: use best tracking FOM
 	map<JObject::oid_t, pair<const DTrackWireBased*, double> > locBestTrackWireBasedMap; //lowest tracking FOM for each candidate id
@@ -576,7 +620,9 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 	}
 
 	//select the best DTrackTimeBased for each track: use best tracking FOM
+		//also, make map from WBT -> TBT (if not rest)
 	map<JObject::oid_t, const DTrackTimeBased*> locBestTrackTimeBasedMap; //lowest tracking FOM for each candidate id
+	map<const DTrackWireBased*, const DTrackTimeBased*> locWireToTimeBasedTrackMap;
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
 		JObject::oid_t locCandidateID = locTrackTimeBasedVector[loc_i]->candidateid;
@@ -584,6 +630,11 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 			locBestTrackTimeBasedMap[locCandidateID] = locTrackTimeBasedVector[loc_i];
 		else if(locTrackTimeBasedVector[loc_i]->FOM > locBestTrackTimeBasedMap[locCandidateID]->FOM)
 			locBestTrackTimeBasedMap[locCandidateID] = locTrackTimeBasedVector[loc_i];
+		if(locIsRESTEvent)
+			continue;
+		const DTrackWireBased* locTrackWireBased = NULL;
+		locTrackTimeBasedVector[loc_i]->GetSingle(locTrackWireBased);
+		locWireToTimeBasedTrackMap[locTrackWireBased] = locTrackTimeBasedVector[loc_i];
 	}
 
 	//Fill Histograms
@@ -691,6 +742,36 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 				dHistMap_PVsTheta_TimeBased_GoodTrackFOM[locCharge]->Fill(locTheta, locP);
 			else
 				dHistMap_PVsTheta_TimeBased_LowTrackFOM[locCharge]->Fill(locTheta, locP);
+			if(locTrackTimeBased->FOM > dHighTrackFOM)
+				dHistMap_PVsTheta_TimeBased_HighTrackFOM[locCharge]->Fill(locTheta, locP);
+		}
+
+		// If "Good" WBT, see if TBT is good
+		locWireBasedIterator = locBestTrackWireBasedMap.begin();
+		for(; locWireBasedIterator != locBestTrackWireBasedMap.end(); ++locWireBasedIterator)
+		{
+			const DTrackWireBased* locTrackWireBased = locWireBasedIterator->second.first;
+			if(locWireBasedIterator->second.second < dGoodTrackFOM)
+				continue; //no good
+			if(!locDetectorMatches_WireBased->Get_IsMatchedToHit(locTrackWireBased))
+				continue; //no good
+
+			int locCharge = (locTrackWireBased->charge() > 0.0) ? 1 : -1;
+			double locTheta = locTrackWireBased->momentum().Theta()*180.0/TMath::Pi();
+			double locP = locTrackWireBased->momentum().Mag();
+
+			map<const DTrackWireBased*, const DTrackTimeBased*>::iterator locReconIterator = locWireToTimeBasedTrackMap.find(locTrackWireBased);
+			if(locReconIterator == locWireToTimeBasedTrackMap.end())
+			{
+				dHistMap_PVsTheta_GoodWireBased_BadTimeBased[locCharge]->Fill(locTheta, locP);
+				continue; //no time-based
+			}
+
+			const DTrackTimeBased* locTrackTimeBased = locReconIterator->second;
+			if((locTrackTimeBased->FOM < dGoodTrackFOM) || (!locDetectorMatches->Get_IsMatchedToHit(locTrackTimeBased)))
+				dHistMap_PVsTheta_GoodWireBased_BadTimeBased[locCharge]->Fill(locTheta, locP);
+			else
+				dHistMap_PVsTheta_GoodWireBased_GoodTimeBased[locCharge]->Fill(locTheta, locP);
 		}
 
 		for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
@@ -726,6 +807,8 @@ void DHistogramAction_DetectorMatching::Initialize(JEventLoop* locEventLoop)
 
 	string locHistName, locHistTitle;
 
+	bool locIsRESTEvent = (string(locEventLoop->GetJEvent().GetJEventSource()->className()) == string("DEventSourceREST"));
+
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
@@ -736,6 +819,9 @@ void DHistogramAction_DetectorMatching::Initialize(JEventLoop* locEventLoop)
 		for(unsigned int locDummy = 0; locDummy < 2; ++locDummy)
 		{
 			bool locIsTimeBased = (locDummy == 0);
+			if(locIsRESTEvent && (!locIsTimeBased))
+				continue;
+
 			string locDirectoryName = locIsTimeBased ? "Matching_TimeBased" : "Matching_WireBased";
 			CreateAndChangeTo_Directory(locDirectoryName.c_str(), locDirectoryName.c_str());
 			string locTrackString = locIsTimeBased ? "Time-Based Tracks" : "Wire-Based Tracks";
@@ -895,8 +981,11 @@ bool DHistogramAction_DetectorMatching::Perform_Action(JEventLoop* locEventLoop,
 	if(Get_NumPreviousParticleCombos() != 0)
 		return true;
 
+	bool locIsRESTEvent = (string(locEventLoop->GetJEvent().GetJEventSource()->className()) == string("DEventSourceREST"));
+
 	Fill_MatchingHists(locEventLoop, true); //Time-based tracks
-	Fill_MatchingHists(locEventLoop, false); //Wire-based tracks
+	if(!locIsRESTEvent)
+		Fill_MatchingHists(locEventLoop, false); //Wire-based tracks
 
 	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }
