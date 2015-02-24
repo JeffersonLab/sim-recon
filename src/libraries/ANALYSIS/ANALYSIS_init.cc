@@ -67,7 +67,11 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DHistogramAction_TrackMultiplicity();
 	DHistogramAction_TOFHitStudy();
 	DHistogramAction_NumReconstructedObjects();
-	DHistogramAction_DetectorStudies();
+	DHistogramAction_DetectorMatchParams();
+	DHistogramAction_Neutrals();
+	DHistogramAction_DetectorPID();
+	DHistogramAction_DetectorMatching();
+	DHistogramAction_Reconstruction();
 	DHistogramAction_ObjectMemory();
 
 	DHistogramAction_PID(NULL);

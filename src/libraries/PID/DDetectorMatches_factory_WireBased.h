@@ -27,7 +27,7 @@ class DDetectorMatches_factory_WireBased : public jana::JFactory<DDetectorMatche
 {
 	public:
 		DDetectorMatches_factory_WireBased(){};
-		~DDetectorMatches_factory_WireBased(){};
+		virtual ~DDetectorMatches_factory_WireBased(){};
 		const char* Tag(void){return "WireBased";}
 
 		//called by DDetectorMatches tag=Combo factory

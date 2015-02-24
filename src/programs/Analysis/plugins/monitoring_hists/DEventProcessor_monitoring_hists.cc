@@ -67,8 +67,13 @@ jerror_t DEventProcessor_monitoring_hists::brun(JEventLoop *locEventLoop, int ru
 	dHistogramAction_TrackMultiplicity.Initialize(locEventLoop);
 	dHistogramAction_DetectedParticleKinematics.Initialize(locEventLoop);
 	dHistogramAction_NumReconstructedObjects.Initialize(locEventLoop);
-	dHistogramAction_DetectorStudies.Initialize(locEventLoop);
 	dHistogramAction_EventVertex.Initialize(locEventLoop);
+
+	dHistogramAction_DetectorMatchParams.Initialize(locEventLoop);
+	dHistogramAction_Neutrals.Initialize(locEventLoop);
+	dHistogramAction_DetectorPID.Initialize(locEventLoop);
+	dHistogramAction_DetectorMatching.Initialize(locEventLoop);
+	dHistogramAction_Reconstruction.Initialize(locEventLoop);
 
 //	dHistogramAction_ObjectMemory.dMaxNumEvents = 200000;
 //	dHistogramAction_ObjectMemory.Initialize(locEventLoop);
@@ -101,8 +106,12 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, int ev
 	dHistogramAction_TrackMultiplicity(locEventLoop);
 	dHistogramAction_DetectedParticleKinematics(locEventLoop);
 	dHistogramAction_NumReconstructedObjects(locEventLoop);
-	dHistogramAction_DetectorStudies(locEventLoop);
 	dHistogramAction_EventVertex(locEventLoop);
+	dHistogramAction_DetectorMatchParams(locEventLoop);
+	dHistogramAction_Neutrals(locEventLoop);
+	dHistogramAction_DetectorPID(locEventLoop);
+	dHistogramAction_DetectorMatching(locEventLoop);
+	dHistogramAction_Reconstruction(locEventLoop);
 //	dHistogramAction_ObjectMemory(locEventLoop);
 
 	if(!locMCThrowns.empty())

@@ -377,7 +377,7 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 		dHistMap_DeltaBetaVsP[locPID]->Fill(locP, locDeltaBeta);
 		dHistMap_TOFFOMVsDeltaBeta[locPID]->Fill(locDeltaBeta, locFOM_Timing);
 		pair<Particle_t, Particle_t> locPIDPair(locPID, Unknown); //default unless matched
-		if((locMCThrown != NULL) && (locMatchFOM >= dMinThrownMatchFOM)) //else bogus track (not matched to any thrown tracks)
+		if(locMCThrown != NULL) //else bogus track (not matched to any thrown tracks)
 			locPIDPair.second = (Particle_t)(locMCThrown->type); //matched
 		if(dHistMap_PIDFOMForTruePID.find(locPIDPair) != dHistMap_PIDFOMForTruePID.end()) //else hist not created or PID is weird
 			dHistMap_PIDFOMForTruePID[locPIDPair]->Fill(locChargedTrackHypothesis->dFOM);
@@ -441,7 +441,7 @@ void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* l
 		dHistMap_DeltaBetaVsP[locPID]->Fill(locP, locDeltaBeta);
 		dHistMap_TOFFOMVsDeltaBeta[locPID]->Fill(locDeltaBeta, locNeutralParticleHypothesis->dFOM);
 		pair<Particle_t, Particle_t> locPIDPair(locPID, Unknown); //default unless matched
-		if((locMCThrown != NULL) && (locMatchFOM >= dMinThrownMatchFOM)) //else bogus track (not matched to any thrown tracks)
+		if(locMCThrown != NULL) //else bogus track (not matched to any thrown tracks)
 			locPIDPair.second = (Particle_t)(locMCThrown->type); //matched
 		if(dHistMap_PIDFOMForTruePID.find(locPIDPair) != dHistMap_PIDFOMForTruePID.end()) //else hist not created or PID is weird
 			dHistMap_PIDFOMForTruePID[locPIDPair]->Fill(locNeutralParticleHypothesis->dFOM);
