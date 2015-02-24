@@ -185,7 +185,7 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 		void Fill_ReconstructionHists(JEventLoop* locEventLoop);
 		void Fill_NeutralHists(JEventLoop* locEventLoop);
-		void Fill_MatchingHists(JEventLoop* locEventLoop);
+		void Fill_MatchingHists(JEventLoop* locEventLoop, bool locIsTimeBased);
 		void Fill_MatchedHists(JEventLoop* locEventLoop, bool locUseTruePIDFlag);
 		void Fill_PIDHists(JEventLoop* locEventLoop);
 
@@ -247,23 +247,23 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		TH2I* dHist_MCMatchedHitsVsP;
 
 		//Matching
-		map<DetectorSystem_t, TH2I*> dHistMap_PVsTheta_WireBased_GoodTrackFOM_HasHit;
-		map<DetectorSystem_t, TH2I*> dHistMap_PVsTheta_WireBased_GoodTrackFOM_NoHit;
-		TH2I* dHist_TrackPVsTheta_WireBased_NoHitMatch;
-		TH2I* dHist_TrackPVsTheta_WireBased_HitMatch;
-		TH2I* dHist_SCTrackDeltaPhiVsP;
-		TH2I* dHist_FCALTrackDistanceVsP;
-		TH2I* dHist_FCALTrackDistanceVsTheta;
-		TH2I* dHist_BCALDeltaPhiVsP;
-		TH2I* dHist_BCALDeltaZVsTheta;
-		TH2I* dHist_TOFTrackDistanceVsP;
-		TH2I* dHist_TOFTrackDistanceVsTheta;
-		TH2I* dHist_TOFTrackDeltaXVsHorizontalPaddle;
-		TH2I* dHist_TOFTrackDeltaXVsVerticalPaddle;
-		TH2I* dHist_TOFTrackDeltaYVsHorizontalPaddle;
-		TH2I* dHist_TOFTrackDeltaYVsVerticalPaddle;
-		TH1I* dHist_TOFTrackDistance_BothPlanes;
-		TH1I* dHist_TOFTrackDistance_OnePlane;
+		map<DetectorSystem_t, map<bool, TH2I*> > dHistMap_PVsTheta_HasHit;
+		map<DetectorSystem_t, map<bool, TH2I*> > dHistMap_PVsTheta_NoHit;
+		map<bool, TH2I*> dHistMap_TrackPVsTheta_NoHitMatch;
+		map<bool, TH2I*> dHistMap_TrackPVsTheta_HitMatch;
+		map<bool, TH2I*> dHistMap_SCTrackDeltaPhiVsP;
+		map<bool, TH2I*> dHistMap_FCALTrackDistanceVsP;
+		map<bool, TH2I*> dHistMap_FCALTrackDistanceVsTheta;
+		map<bool, TH2I*> dHistMap_BCALDeltaPhiVsP;
+		map<bool, TH2I*> dHistMap_BCALDeltaZVsTheta;
+		map<bool, TH2I*> dHistMap_TOFTrackDistanceVsP;
+		map<bool, TH2I*> dHistMap_TOFTrackDistanceVsTheta;
+		map<bool, TH2I*> dHistMap_TOFTrackDeltaXVsHorizontalPaddle;
+		map<bool, TH2I*> dHistMap_TOFTrackDeltaXVsVerticalPaddle;
+		map<bool, TH2I*> dHistMap_TOFTrackDeltaYVsHorizontalPaddle;
+		map<bool, TH2I*> dHistMap_TOFTrackDeltaYVsVerticalPaddle;
+		map<bool, TH1I*> dHistMap_TOFTrackDistance_BothPlanes;
+		map<bool, TH1I*> dHistMap_TOFTrackDistance_OnePlane;
 
 		//Neutrals
 		TH1I* dHist_BCALTrackDOCA;

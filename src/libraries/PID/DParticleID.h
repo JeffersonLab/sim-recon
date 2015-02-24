@@ -34,6 +34,7 @@
 #include <PID/DEventRFBunch.h>
 #include <PID/DDetectorMatches.h>
 #include <TRACKING/DMagneticFieldStepper.h>
+#include <TRACKING/DTrackWireBased.h>
 
 #include <TMath.h>
 
@@ -101,6 +102,12 @@ class DParticleID:public jana::JObject{
 	bool Distance_ToTrack(const DFCALShower* locFCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const;
 	bool Distance_ToTrack(const DTOFPoint* locTOFPoint, const DReferenceTrajectory* rt, double locInputStartTime, double& locDeltaX, double& locDeltaY) const;
 	bool Distance_ToTrack(const DSCHit* locSCHit, const DReferenceTrajectory* rt, double locInputStartTime, double& locDeltaPhi) const;
+
+	//select closest shower/hit to track //track MUST be either DTrackTimeBased or DTrackWireBased //NULL if no possibly-valid matches
+	const DBCALShower* Get_ClosestToTrack_BCAL(const DKinematicData* locTrack, vector<const DBCALShower*>& locBCALShowers, double& locBestMatchDeltaPhi, double& locBestMatchDeltaZ) const;
+	const DFCALShower* Get_ClosestToTrack_FCAL(const DKinematicData* locTrack, vector<const DFCALShower*>& locFCALShowers, double& locBestDistance) const;
+	const DTOFPoint* Get_ClosestToTrack_TOF(const DKinematicData* locTrack, vector<const DTOFPoint*>& locTOFPoints, double& locBestDeltaX, double& locBestDeltaY) const;
+	const DSCHit* Get_ClosestToTrack_SC(const DKinematicData* locTrack, vector<const DSCHit*>& locSCHits, double& locBestDeltaPhi) const;
 
 	double Calc_BCALFlightTimePCorrelation(const DKinematicData* locTrack, DDetectorMatches* locDetectorMatches) const;
 	double Calc_FCALFlightTimePCorrelation(const DKinematicData* locTrack, DDetectorMatches* locDetectorMatches) const;

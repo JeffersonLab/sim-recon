@@ -620,8 +620,13 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 		gDirectory->cd(".."); //End of "Reconstruction"
 
 		//Matching
-		CreateAndChangeTo_Directory("Matching", "Matching");
+		for(unsigned int locDummy = 0; locDummy < 2; ++locDummy)
 		{
+			bool locIsTimeBased = (locDummy == 0);
+			string locDirectoryName = locIsTimeBased ? "Matching_TimeBased" : "Matching_WireBased";
+			CreateAndChangeTo_Directory(locDirectoryName.c_str(), locDirectoryName.c_str());
+			string locTrackString = locIsTimeBased ? "Time-Based Tracks" : "Wire-Based Tracks";
+
 			//Kinematics of has (no) hit
 			vector<DetectorSystem_t> locDetectorSystems;
 			locDetectorSystems.push_back(SYS_START);  locDetectorSystems.push_back(SYS_BCAL);
@@ -633,132 +638,135 @@ void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
 				double locMaxTheta = ((locSystem == SYS_FCAL) || (locSystem == SYS_TOF)) ? 20.0 : dMaxTheta;
 				double locMaxP = (locSystem == SYS_BCAL) ? 4.0 : dMaxP;
 
-				// PVsTheta Wire-Based Tracks Good Track FOM Has Hit
-				locHistName = string("PVsTheta_WireBased_GoodTrackFOM_HasHit_") + SystemName(locSystem);
-				locHistTitle = string("Wire-Based Tracks, Good Tracking FOM, ") + SystemName(locSystem) + string(" Has Hit;#theta#circ;p (GeV/c)");
+				// PVsTheta Has Hit
+				locHistName = string("PVsTheta_HasHit_") + SystemName(locSystem);
+				locHistTitle = locTrackString + string(", Has Other Match, ") + SystemName(locSystem) + string(" Has Hit;#theta#circ;p (GeV/c)");
 				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-					dHistMap_PVsTheta_WireBased_GoodTrackFOM_HasHit[locSystem] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+					dHistMap_PVsTheta_HasHit[locSystem][locIsTimeBased] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 				else
-					dHistMap_PVsTheta_WireBased_GoodTrackFOM_HasHit[locSystem] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPBins, dMinP, locMaxP);
+					dHistMap_PVsTheta_HasHit[locSystem][locIsTimeBased] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPBins, dMinP, locMaxP);
 
-				// PVsTheta Wire-Based Tracks Good Track FOM Has Hit
-				locHistName = string("PVsTheta_WireBased_GoodTrackFOM_NoHit_") + SystemName(locSystem);
-				locHistTitle = string("Wire-Based Tracks, Good Tracking FOM, ") + SystemName(locSystem) + string(" No Hit;#theta#circ;p (GeV/c)");
+				// PVsTheta Has No Hit
+				locHistName = string("PVsTheta_NoHit_") + SystemName(locSystem);
+				locHistTitle = locTrackString + string(", Has Other Match, ") + SystemName(locSystem) + string(" No Hit;#theta#circ;p (GeV/c)");
 				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-					dHistMap_PVsTheta_WireBased_GoodTrackFOM_NoHit[locSystem] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+					dHistMap_PVsTheta_NoHit[locSystem][locIsTimeBased] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 				else
-					dHistMap_PVsTheta_WireBased_GoodTrackFOM_NoHit[locSystem] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPBins, dMinP, locMaxP);
+					dHistMap_PVsTheta_NoHit[locSystem][locIsTimeBased] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPBins, dMinP, locMaxP);
 			}
 
 			//TRACKING
-			locHistName = "WireBasedTrack_PVsTheta_NoHitMatch";
-			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-				dHist_TrackPVsTheta_WireBased_NoHitMatch = new TH2I(locHistName.c_str(), "Wire-Based Tracks, No Hit Match;#theta#circ;p (GeV/c)", dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+			locHistName = "PVsTheta_NoHitMatch";
+			locHistTitle = locTrackString + string(", No Hit Match;#theta#circ;p (GeV/c)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //check to see if already created by another thread
+				dHistMap_TrackPVsTheta_NoHitMatch[locIsTimeBased] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else //already created by another thread
-				dHist_TrackPVsTheta_WireBased_NoHitMatch = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_TrackPVsTheta_NoHitMatch[locIsTimeBased] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
 
-			locHistName = "WireBasedTrack_PVsTheta_HitMatch";
-			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
-				dHist_TrackPVsTheta_WireBased_HitMatch = new TH2I(locHistName.c_str(), "Wire-Based Tracks, Hit Match;#theta#circ;p (GeV/c)", dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+			locHistName = "PVsTheta_HitMatch";
+			locHistTitle = locTrackString + string(", Hit Match;#theta#circ;p (GeV/c)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //check to see if already created by another thread
+				dHistMap_TrackPVsTheta_HitMatch[locIsTimeBased] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else //already created by another thread
-				dHist_TrackPVsTheta_WireBased_HitMatch = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_TrackPVsTheta_HitMatch[locIsTimeBased] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
 
 			//SC
 			locHistName = "SC_TrackDeltaPhiVsP";
-			locHistTitle = ";p (GeV/c);SC / Track #Delta#phi#circ";
+			locHistTitle = locTrackString + string(";p (GeV/c);SC / Track #Delta#phi#circ");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_SCTrackDeltaPhiVsP = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_SCTrackDeltaPhiVsP[locIsTimeBased] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_SCTrackDeltaPhiVsP = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DDeltaPhiBins, dSCMatchMinDeltaPhi, dSCMatchMaxDeltaPhi);
+				dHistMap_SCTrackDeltaPhiVsP[locIsTimeBased] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DDeltaPhiBins, dSCMatchMinDeltaPhi, dSCMatchMaxDeltaPhi);
 
 			//FCAL
 			locHistName = "FCAL_TrackDistanceVsP";
-			locHistTitle = ";p (GeV/c);FCAL / Track Distance (cm)";
+			locHistTitle = locTrackString + string(";p (GeV/c);FCAL / Track Distance (cm)");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_FCALTrackDistanceVsP = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_FCALTrackDistanceVsP[locIsTimeBased] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_FCALTrackDistanceVsP = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+				dHistMap_FCALTrackDistanceVsP[locIsTimeBased] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
 
 			locHistName = "FCAL_TrackDistanceVsTheta";
-			locHistTitle = ";#theta#circ;FCAL / Track Distance (cm)";
+			locHistTitle = locTrackString + string(";#theta#circ;FCAL / Track Distance (cm)");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_FCALTrackDistanceVsTheta = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_FCALTrackDistanceVsTheta[locIsTimeBased] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_FCALTrackDistanceVsTheta = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, 20.0, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+				dHistMap_FCALTrackDistanceVsTheta[locIsTimeBased] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, 20.0, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
 
 			//BCAL
 			locHistName = "BCAL_DeltaPhiVsP";
-			locHistTitle = ";p (GeV/c);BCAL / Track #Delta#phi#circ";
+			locHistTitle = locTrackString + string(";p (GeV/c);BCAL / Track #Delta#phi#circ");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_BCALDeltaPhiVsP = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_BCALDeltaPhiVsP[locIsTimeBased] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_BCALDeltaPhiVsP = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, 4.0, dNum2DDeltaPhiBins, dMinDeltaPhi, dMaxDeltaPhi);
+				dHistMap_BCALDeltaPhiVsP[locIsTimeBased] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, 4.0, dNum2DDeltaPhiBins, dMinDeltaPhi, dMaxDeltaPhi);
 
 			locHistName = "BCAL_DeltaZVsTheta";
-			locHistTitle = ";#theta#circ;BCAL / Track #Deltaz (cm)";
+			locHistTitle = locTrackString + string(";#theta#circ;BCAL / Track #Deltaz (cm)");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_BCALDeltaZVsTheta = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_BCALDeltaZVsTheta[locIsTimeBased] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_BCALDeltaZVsTheta = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DDeltaZBins, dMinDeltaZ, dMaxDeltaZ);
+				dHistMap_BCALDeltaZVsTheta[locIsTimeBased] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DDeltaZBins, dMinDeltaZ, dMaxDeltaZ);
 
 			//TOF
 			locHistName = "TOF_TrackDistanceVsP";
-			locHistTitle = ";p (GeV/c);TOF / Track Distance (cm)";
+			locHistTitle = locTrackString + string(";p (GeV/c);TOF / Track Distance (cm)");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_TOFTrackDistanceVsP = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_TOFTrackDistanceVsP[locIsTimeBased] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_TOFTrackDistanceVsP = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+				dHistMap_TOFTrackDistanceVsP[locIsTimeBased] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
 
 			locHistName = "TOF_TrackDistanceVsTheta";
-			locHistTitle = ";#theta#circ;TOF / Track Distance (cm)";
+			locHistTitle = locTrackString + string(";#theta#circ;TOF / Track Distance (cm)");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_TOFTrackDistanceVsTheta = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_TOFTrackDistanceVsTheta[locIsTimeBased] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_TOFTrackDistanceVsTheta = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, 20.0, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+				dHistMap_TOFTrackDistanceVsTheta[locIsTimeBased] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, 20.0, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
 
 			locHistName = "TOF_TrackDeltaXVsHorizontalPaddle";
-			locHistTitle = ";TOF Horizontal Paddle;TOF / Track #DeltaX (cm)";
+			locHistTitle = locTrackString + string(";TOF Horizontal Paddle;TOF / Track #DeltaX (cm)");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_TOFTrackDeltaXVsHorizontalPaddle = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_TOFTrackDeltaXVsHorizontalPaddle[locIsTimeBased] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_TOFTrackDeltaXVsHorizontalPaddle = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, -1.0*dMaxTrackMatchDOCA, dMaxTrackMatchDOCA);
+				dHistMap_TOFTrackDeltaXVsHorizontalPaddle[locIsTimeBased] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, -1.0*dMaxTrackMatchDOCA, dMaxTrackMatchDOCA);
 
 			locHistName = "TOF_TrackDeltaXVsVerticalPaddle";
-			locHistTitle = ";TOF Vertical Paddle;TOF / Track #DeltaX (cm)";
+			locHistTitle = locTrackString + string(";TOF Vertical Paddle;TOF / Track #DeltaX (cm)");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_TOFTrackDeltaXVsVerticalPaddle = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_TOFTrackDeltaXVsVerticalPaddle[locIsTimeBased] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_TOFTrackDeltaXVsVerticalPaddle = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, -1.0*dMaxTrackMatchDOCA, dMaxTrackMatchDOCA);
+				dHistMap_TOFTrackDeltaXVsVerticalPaddle[locIsTimeBased] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, -1.0*dMaxTrackMatchDOCA, dMaxTrackMatchDOCA);
 
 			locHistName = "TOF_TrackDeltaYVsHorizontalPaddle";
-			locHistTitle = ";TOF Horizontal Paddle;TOF / Track #DeltaY (cm)";
+			locHistTitle = locTrackString + string(";TOF Horizontal Paddle;TOF / Track #DeltaY (cm)");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_TOFTrackDeltaYVsHorizontalPaddle = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_TOFTrackDeltaYVsHorizontalPaddle[locIsTimeBased] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_TOFTrackDeltaYVsHorizontalPaddle = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, -1.0*dMaxTrackMatchDOCA, dMaxTrackMatchDOCA);
+				dHistMap_TOFTrackDeltaYVsHorizontalPaddle[locIsTimeBased] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, -1.0*dMaxTrackMatchDOCA, dMaxTrackMatchDOCA);
 
 			locHistName = "TOF_TrackDeltaYVsVerticalPaddle";
-			locHistTitle = ";TOF Vertical Paddle;TOF / Track #DeltaY (cm)";
+			locHistTitle = locTrackString + string(";TOF Vertical Paddle;TOF / Track #DeltaY (cm)");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_TOFTrackDeltaYVsVerticalPaddle = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_TOFTrackDeltaYVsVerticalPaddle[locIsTimeBased] = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_TOFTrackDeltaYVsVerticalPaddle = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, -1.0*dMaxTrackMatchDOCA, dMaxTrackMatchDOCA);
+				dHistMap_TOFTrackDeltaYVsVerticalPaddle[locIsTimeBased] = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, dNum2DTrackDOCABins, -1.0*dMaxTrackMatchDOCA, dMaxTrackMatchDOCA);
 
 			locHistName = "TOF_TrackDistance_BothPlanes";
-			locHistTitle = "TOF Hit in Both Planes;TOF / Track Distance (cm)";
+			locHistTitle = locTrackString + string("TOF Hit in Both Planes;TOF / Track Distance (cm)");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_TOFTrackDistance_BothPlanes = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_TOFTrackDistance_BothPlanes[locIsTimeBased] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_TOFTrackDistance_BothPlanes = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+				dHistMap_TOFTrackDistance_BothPlanes[locIsTimeBased] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
 
 			locHistName = "TOF_TrackDistance_OnePlane";
-			locHistTitle = "TOF Hit in One Plane;TOF / Track Distance (cm)";
+			locHistTitle = locTrackString + string("TOF Hit in One Plane;TOF / Track Distance (cm)");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHist_TOFTrackDistance_OnePlane = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_TOFTrackDistance_OnePlane[locIsTimeBased] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHist_TOFTrackDistance_OnePlane = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+				dHistMap_TOFTrackDistance_OnePlane[locIsTimeBased] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), dNumTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+
+			gDirectory->cd("..");
 		}
-		gDirectory->cd("..");
 
 		//Showers not matched to tracks, Tracks not matched to hits
 		CreateAndChangeTo_Directory("Neutrals", "Neutrals");
@@ -1185,7 +1193,8 @@ bool DHistogramAction_DetectorStudies::Perform_Action(JEventLoop* locEventLoop, 
 	locEventLoop->Get(locMCThrowns);
 
 	Fill_ReconstructionHists(locEventLoop);
-	Fill_MatchingHists(locEventLoop);
+	Fill_MatchingHists(locEventLoop, true);
+	Fill_MatchingHists(locEventLoop, false);
 	Fill_NeutralHists(locEventLoop);
 	Fill_MatchedHists(locEventLoop, false);
 	Fill_PIDHists(locEventLoop);
@@ -1410,40 +1419,51 @@ void DHistogramAction_DetectorStudies::Fill_ReconstructionHists(JEventLoop* locE
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
-void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLoop)
+void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLoop, bool locIsTimeBased)
 {
-	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
-	locEventLoop->Get(locTrackTimeBasedVector);
-
-	vector<const DTrackWireBased*> locTrackWireBasedVector;
-	locEventLoop->Get(locTrackWireBasedVector);
-
-	//select the best DTrackTimeBased for each track: use best tracking FOM
-	map<JObject::oid_t, const DTrackTimeBased*> locBestTrackTimeBasedMap; //lowest tracking FOM for each candidate id
-	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
+	//get the best tracks for each candidate id, based on tracking FOM
+	map<JObject::oid_t, const DKinematicData*> locBestTrackMap; //lowest tracking FOM for each candidate id
+	if(locIsTimeBased)
 	{
-		JObject::oid_t locCandidateID = locTrackTimeBasedVector[loc_i]->candidateid;
-		if(locBestTrackTimeBasedMap.find(locCandidateID) == locBestTrackTimeBasedMap.end())
-			locBestTrackTimeBasedMap[locCandidateID] = locTrackTimeBasedVector[loc_i];
-		else if(locTrackTimeBasedVector[loc_i]->FOM > locBestTrackTimeBasedMap[locCandidateID]->FOM)
-			locBestTrackTimeBasedMap[locCandidateID] = locTrackTimeBasedVector[loc_i];
+		vector<const DTrackTimeBased*> locTrackTimeBasedVector;
+		locEventLoop->Get(locTrackTimeBasedVector);
+
+		//select the best DTrackTimeBased for each track: use best tracking FOM
+		for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
+		{
+			JObject::oid_t locCandidateID = locTrackTimeBasedVector[loc_i]->candidateid;
+			if(locBestTrackMap.find(locCandidateID) == locBestTrackMap.end())
+				locBestTrackMap[locCandidateID] = locTrackTimeBasedVector[loc_i];
+			else if(locTrackTimeBasedVector[loc_i]->FOM > (dynamic_cast<const DTrackTimeBased*>(locBestTrackMap[locCandidateID]))->FOM)
+				locBestTrackMap[locCandidateID] = locTrackTimeBasedVector[loc_i];
+		}
 	}
-
-	//select the best DTrackWireBased for each track: use best tracking FOM
-	map<JObject::oid_t, pair<const DTrackWireBased*, double> > locBestTrackWireBasedMap; //lowest tracking FOM for each candidate id //double is FOM
-	for(size_t loc_i = 0; loc_i < locTrackWireBasedVector.size(); ++loc_i)
+	else
 	{
-		if(locTrackWireBasedVector[loc_i]->Ndof == 0)
-			continue;
-		double locTrackingFOM = TMath::Prob(locTrackWireBasedVector[loc_i]->chisq, locTrackWireBasedVector[loc_i]->Ndof);
-		if(locTrackingFOM < dGoodTrackFOM)
-			continue;
+		vector<const DTrackWireBased*> locTrackWireBasedVector;
+		locEventLoop->Get(locTrackWireBasedVector);
 
-		JObject::oid_t locCandidateID = locTrackWireBasedVector[loc_i]->candidateid;
-		if(locBestTrackWireBasedMap.find(locCandidateID) == locBestTrackWireBasedMap.end())
-			locBestTrackWireBasedMap[locCandidateID] = pair<const DTrackWireBased*, double>(locTrackWireBasedVector[loc_i], locTrackingFOM);
-		else if(locTrackingFOM > locBestTrackWireBasedMap[locCandidateID].second)
-			locBestTrackWireBasedMap[locCandidateID] = pair<const DTrackWireBased*, double>(locTrackWireBasedVector[loc_i], locTrackingFOM);
+		//compute tracking FOMs
+		map<const DTrackWireBased*, double> locTrackingFOMMap;
+		for(size_t loc_i = 0; loc_i < locTrackWireBasedVector.size(); ++loc_i)
+		{
+			if(locTrackWireBasedVector[loc_i]->Ndof == 0)
+				continue;
+			locTrackingFOMMap[locTrackWireBasedVector[loc_i]] = TMath::Prob(locTrackWireBasedVector[loc_i]->chisq, locTrackWireBasedVector[loc_i]->Ndof);
+		}
+
+		//select the best DTrackTimeBased for each track: use best tracking FOM
+		map<const DTrackWireBased*, double>::iterator locWireBasedIterator;
+		for(locWireBasedIterator = locTrackingFOMMap.begin(); locWireBasedIterator != locTrackingFOMMap.end(); ++locWireBasedIterator)
+		{
+			const DTrackWireBased* locTrackWireBased = locWireBasedIterator->first;
+			double locTrackingFOM = locWireBasedIterator->second;
+			JObject::oid_t locCandidateID = locTrackWireBased->candidateid;
+			if(locBestTrackMap.find(locCandidateID) == locBestTrackMap.end())
+				locBestTrackMap[locCandidateID] = locTrackWireBased;
+			else if(locTrackingFOM > locTrackingFOMMap[dynamic_cast<const DTrackWireBased*>(locBestTrackMap[locCandidateID])])
+				locBestTrackMap[locCandidateID] = locTrackWireBased;
+		}
 	}
 
 	vector<const DBCALShower*> locBCALShowers;
@@ -1458,250 +1478,121 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 	vector<const DSCHit*> locSCHits;
 	locEventLoop->Get(locSCHits);
 
+	string locDetectorMatchesTag = locIsTimeBased ? "" : "WireBased";
 	const DDetectorMatches* locDetectorMatches = NULL;
-	locEventLoop->GetSingle(locDetectorMatches);
+	locEventLoop->GetSingle(locDetectorMatches, locDetectorMatchesTag.c_str());
 
-	map<JObject::oid_t, const DTrackTimeBased*>::iterator locTimeBasedIterator;
-	map<JObject::oid_t, pair<const DTrackWireBased*, double> >::iterator locWireBasedIterator;
+	map<JObject::oid_t, const DKinematicData*>::iterator locTrackIterator;
 
-	//TIME-BASED TRACK / BCAL MATCHES
-	map<const DTrackTimeBased*, pair<double, double> > locBCALTrackDistanceMap; //first double is delta-phi, second delta-z
-	for(locTimeBasedIterator = locBestTrackTimeBasedMap.begin(); locTimeBasedIterator != locBestTrackTimeBasedMap.end(); ++locTimeBasedIterator)
+	//TRACK / BCAL CLOSEST MATCHES
+	map<const DKinematicData*, pair<double, double> > locBCALTrackDistanceMap; //first double is delta-phi, second delta-z
+	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		const DTrackTimeBased* locTrackTimeBased = locTimeBasedIterator->second;
-		double locInputStartTime = locTrackTimeBased->t0();
-		const DReferenceTrajectory* locReferenceTrajectory = locTrackTimeBased->rt;
-		if(locReferenceTrajectory == NULL)
-			continue;
-		double locMinDistance = 999.0, locBestMatchDeltaPhi = 0.0, locBestMatchDeltaZ = 0.0;
-		for(size_t loc_i = 0; loc_i < locBCALShowers.size(); ++loc_i)
-		{
-			double locDistance = 0.0, locDeltaPhi = 0.0, locDeltaZ = 0.0;
-			if(!dParticleID->Distance_ToTrack(locBCALShowers[loc_i], locReferenceTrajectory, locInputStartTime, locDistance, locDeltaPhi, locDeltaZ))
-				continue;
-			if(locDistance > locMinDistance)
-				continue;
-			locMinDistance = locDistance;
-			locBestMatchDeltaPhi = locDeltaPhi;
-			locBestMatchDeltaZ = locDeltaZ;
-		}
-		if(locMinDistance > 998.0)
-			continue;
-		locBCALTrackDistanceMap[locTrackTimeBased] = pair<double, double>(locBestMatchDeltaPhi, locBestMatchDeltaZ);
+		double locBestMatchDeltaPhi = 0.0, locBestMatchDeltaZ = 0.0;
+		if(dParticleID->Get_ClosestToTrack_BCAL(locTrackIterator->second, locBCALShowers, locBestMatchDeltaPhi, locBestMatchDeltaZ) != NULL)
+			locBCALTrackDistanceMap[locTrackIterator->second] = pair<double, double>(locBestMatchDeltaPhi, locBestMatchDeltaZ);
 	}
 
-	//TIME-BASED TRACK / FCAL MATCHES
-	map<const DTrackTimeBased*, double> locFCALTrackDistanceMap;
-	for(locTimeBasedIterator = locBestTrackTimeBasedMap.begin(); locTimeBasedIterator != locBestTrackTimeBasedMap.end(); ++locTimeBasedIterator)
+	//TRACK / FCAL CLOSEST MATCHES
+	map<const DKinematicData*, double> locFCALTrackDistanceMap;
+	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		const DTrackTimeBased* locTrackTimeBased = locTimeBasedIterator->second;
-		double locInputStartTime = locTrackTimeBased->t0();
-		const DReferenceTrajectory* locReferenceTrajectory = locTrackTimeBased->rt;
-		if(locReferenceTrajectory == NULL)
-			continue;
-		double locMinDistance = 999.0;
-		for(size_t loc_i = 0; loc_i < locFCALShowers.size(); ++loc_i)
-		{
-			double locDistance = 0.0;
-			if(!dParticleID->Distance_ToTrack(locFCALShowers[loc_i], locReferenceTrajectory, locInputStartTime, locDistance))
-				continue;
-			if(locDistance < locMinDistance)
-				locMinDistance = locDistance;
-		}
-		if(locMinDistance > 998.0)
-			continue;
-		locFCALTrackDistanceMap[locTrackTimeBased] = locMinDistance;
+		double locBestDistance = 999.0;
+		if(dParticleID->Get_ClosestToTrack_FCAL(locTrackIterator->second, locFCALShowers, locBestDistance) != NULL)
+			locFCALTrackDistanceMap[locTrackIterator->second] = locBestDistance;
 	}
 
-	//TIME-BASED TRACK / TOF MATCHES
-	map<const DTrackTimeBased*, pair<const DTOFPoint*, pair<double, double> > > locTOFTrackDistanceMap; //doubles: delta-x, delta-y
-	for(locTimeBasedIterator = locBestTrackTimeBasedMap.begin(); locTimeBasedIterator != locBestTrackTimeBasedMap.end(); ++locTimeBasedIterator)
+	//TRACK / TOF CLOSEST MATCHES
+	map<const DKinematicData*, pair<const DTOFPoint*, pair<double, double> > > locTOFTrackDistanceMap; //doubles: delta-x, delta-y
+	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		const DTrackTimeBased* locTrackTimeBased = locTimeBasedIterator->second;
-		double locInputStartTime = locTrackTimeBased->t0();
-		const DReferenceTrajectory* locReferenceTrajectory = locTrackTimeBased->rt;
-		if(locReferenceTrajectory == NULL)
+		double locBestDeltaX, locBestDeltaY;
+		const DTOFPoint* locClosestTOFPoint = dParticleID->Get_ClosestToTrack_TOF(locTrackIterator->second, locTOFPoints, locBestDeltaX, locBestDeltaY);
+		if(locClosestTOFPoint == NULL)
 			continue;
-		double locMinDistance = 9.9E9;
-		double locFinalDeltaX = 0.0, locFinalDeltaY = 0.0;
-		const DTOFPoint* locClosestTOFPoint = NULL;
-		for(size_t loc_i = 0; loc_i < locTOFPoints.size(); ++loc_i)
-		{
-			double locDistance = 0.0, locDeltaX = 0.0, locDeltaY = 0.0;
-			if(!dParticleID->Distance_ToTrack(locTOFPoints[loc_i], locReferenceTrajectory, locInputStartTime, locDeltaX, locDeltaY))
-				continue;
-			locDistance = sqrt(locDeltaX*locDeltaX + locDeltaY*locDeltaY);
-			if(locDistance > locMinDistance)
-				continue;
-			locMinDistance = locDistance;
-			locFinalDeltaX = locDeltaX;
-			locFinalDeltaY = locDeltaY;
-			locClosestTOFPoint = locTOFPoints[loc_i];
-		}
-		if(locMinDistance > 9.8E9)
-			continue;
-		pair<double, double> locDeltas(locFinalDeltaX, locFinalDeltaY);
-		locTOFTrackDistanceMap[locTrackTimeBased] = pair<const DTOFPoint*, pair<double, double> >(locClosestTOFPoint, locDeltas);
+		pair<double, double> locDeltas(locBestDeltaX, locBestDeltaY);
+		locTOFTrackDistanceMap[locTrackIterator->second] = pair<const DTOFPoint*, pair<double, double> >(locClosestTOFPoint, locDeltas);
 	}
 
-	//TIME-BASED TRACK / SC MATCHES
-	map<const DTrackTimeBased*, double> locSCTrackDistanceMap;
-	for(locTimeBasedIterator = locBestTrackTimeBasedMap.begin(); locTimeBasedIterator != locBestTrackTimeBasedMap.end(); ++locTimeBasedIterator)
+	//TRACK / SC CLOSEST MATCHES
+	map<const DKinematicData*, double> locSCTrackDistanceMap;
+	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
-		const DTrackTimeBased* locTrackTimeBased = locTimeBasedIterator->second;
-		double locInputStartTime = locTrackTimeBased->t0();
-		const DReferenceTrajectory* locReferenceTrajectory = locTrackTimeBased->rt;
-		if(locReferenceTrajectory == NULL)
-			continue;
-		double locMinDeltaPhi = TMath::Pi();
-		for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
-		{
-			double locDeltaPhi = 0.0;
-			if(!dParticleID->Distance_ToTrack(locSCHits[loc_i], locReferenceTrajectory, locInputStartTime, locDeltaPhi))
-				continue;
-			if(locDeltaPhi < locMinDeltaPhi)
-				locMinDeltaPhi = locDeltaPhi;
-		}
-		if(locMinDeltaPhi > (TMath::Pi() - 0.000001))
-			continue;
-		locSCTrackDistanceMap[locTrackTimeBased] = locMinDeltaPhi;
-	}
-
-	//(UN)MATCHED WIRE-BASED TRACKS //updated as matching is performed below
-	set<const DTrackWireBased*> locUnMatchedTrackWireBaseds, locMatchedTrackWireBaseds;
-	for(locWireBasedIterator = locBestTrackWireBasedMap.begin(); locWireBasedIterator != locBestTrackWireBasedMap.end(); ++locWireBasedIterator)
-		locUnMatchedTrackWireBaseds.insert(locWireBasedIterator->second.first);
-
-	//WIRE-BASED TRACK / BCAL MATCHES
-	vector<pair<double, double> > locWireBasedPTheta_MatchToBCAL;
-	vector<pair<double, double> > locWireBasedPTheta_NoMatchToBCAL;
-	for(locWireBasedIterator = locBestTrackWireBasedMap.begin(); locWireBasedIterator != locBestTrackWireBasedMap.end(); ++locWireBasedIterator)
-	{
-		const DTrackWireBased* locWireBasedTrack = locWireBasedIterator->second.first;
-		bool locMatchSuccessfulFlag = false;
-		for(size_t loc_j = 0; loc_j < locBCALShowers.size(); ++loc_j)
-		{
-			//Try to match them
-			DBCALShowerMatchParams locBCALShowerMatchParams;
-			if(!dParticleID->MatchToBCAL(NULL, locWireBasedTrack->rt, locBCALShowers[loc_j], locWireBasedTrack->t0(), locBCALShowerMatchParams))
-				continue;
-			//Match successful
-			locMatchSuccessfulFlag = true;
-			locMatchedTrackWireBaseds.insert(locWireBasedTrack);
-			locUnMatchedTrackWireBaseds.erase(locWireBasedTrack);
-			break;
-		}
-		pair<double, double> locPThetaPair(locWireBasedTrack->momentum().Mag(), locWireBasedTrack->momentum().Theta()*180.0/TMath::Pi());
-		vector<pair<double, double> >& locPThetaVector = locMatchSuccessfulFlag ? locWireBasedPTheta_MatchToBCAL : locWireBasedPTheta_NoMatchToBCAL;
-		locPThetaVector.push_back(locPThetaPair);
-	}
-
-	//WIRE-BASED TRACK / FCAL MATCHES
-	vector<pair<double, double> > locWireBasedPTheta_MatchToFCAL;
-	vector<pair<double, double> > locWireBasedPTheta_NoMatchToFCAL;
-	for(locWireBasedIterator = locBestTrackWireBasedMap.begin(); locWireBasedIterator != locBestTrackWireBasedMap.end(); ++locWireBasedIterator)
-	{
-		const DTrackWireBased* locWireBasedTrack = locWireBasedIterator->second.first;
-		bool locMatchSuccessfulFlag = false;
-		for(size_t loc_j = 0; loc_j < locFCALShowers.size(); ++loc_j)
-		{
-			//Try to match them
-			DFCALShowerMatchParams locFCALShowerMatchParams;
-			if(!dParticleID->MatchToFCAL(NULL, locWireBasedTrack->rt, locFCALShowers[loc_j], locWireBasedTrack->t0(), locFCALShowerMatchParams))
-				continue;
-			//Match successful
-			locMatchSuccessfulFlag = true;
-			locMatchedTrackWireBaseds.insert(locWireBasedTrack);
-			locUnMatchedTrackWireBaseds.erase(locWireBasedTrack);
-			break;
-		}
-		pair<double, double> locPThetaPair(locWireBasedTrack->momentum().Mag(), locWireBasedTrack->momentum().Theta()*180.0/TMath::Pi());
-		vector<pair<double, double> >& locPThetaVector = locMatchSuccessfulFlag ? locWireBasedPTheta_MatchToFCAL : locWireBasedPTheta_NoMatchToFCAL;
-		locPThetaVector.push_back(locPThetaPair);
-	}
-
-	//WIRE-BASED TRACK / TOF MATCHES
-	vector<pair<double, double> > locWireBasedPTheta_MatchToTOF;
-	vector<pair<double, double> > locWireBasedPTheta_NoMatchToTOF;
-	for(locWireBasedIterator = locBestTrackWireBasedMap.begin(); locWireBasedIterator != locBestTrackWireBasedMap.end(); ++locWireBasedIterator)
-	{
-		const DTrackWireBased* locWireBasedTrack = locWireBasedIterator->second.first;
-		bool locMatchSuccessfulFlag = false;
-		for(size_t loc_j = 0; loc_j < locTOFPoints.size(); ++loc_j)
-		{
-			//Try to match them
-			DTOFHitMatchParams locTOFHitMatchParams;
-			if(!dParticleID->MatchToTOF(NULL, locWireBasedTrack->rt, locTOFPoints[loc_j], locWireBasedTrack->t0(), locTOFHitMatchParams))
-				continue;
-			//Match successful
-			locMatchSuccessfulFlag = true;
-			locMatchedTrackWireBaseds.insert(locWireBasedTrack);
-			locUnMatchedTrackWireBaseds.erase(locWireBasedTrack);
-			break;
-		}
-		pair<double, double> locPThetaPair(locWireBasedTrack->momentum().Mag(), locWireBasedTrack->momentum().Theta()*180.0/TMath::Pi());
-		vector<pair<double, double> >& locPThetaVector = locMatchSuccessfulFlag ? locWireBasedPTheta_MatchToTOF : locWireBasedPTheta_NoMatchToTOF;
-		locPThetaVector.push_back(locPThetaPair);
-	}
-
-	//WIRE-BASED TRACK / SC MATCHES
-	vector<pair<double, double> > locWireBasedPTheta_MatchToSC;
-	vector<pair<double, double> > locWireBasedPTheta_NoMatchToSC;
-	for(locWireBasedIterator = locBestTrackWireBasedMap.begin(); locWireBasedIterator != locBestTrackWireBasedMap.end(); ++locWireBasedIterator)
-	{
-		const DTrackWireBased* locWireBasedTrack = locWireBasedIterator->second.first;
-		bool locMatchSuccessfulFlag = false;
-		for(size_t loc_j = 0; loc_j < locSCHits.size(); ++loc_j)
-		{
-			//Try to match them
-			DSCHitMatchParams locSCHitMatchParams;
-			if(!dParticleID->MatchToSC(NULL, locWireBasedTrack->rt, locSCHits[loc_j], locWireBasedTrack->t0(), locSCHitMatchParams))
-				continue;
-			//Match successful
-			locMatchSuccessfulFlag = true;
-			locMatchedTrackWireBaseds.insert(locWireBasedTrack);
-			locUnMatchedTrackWireBaseds.erase(locWireBasedTrack);
-			break;
-		}
-		pair<double, double> locPThetaPair(locWireBasedTrack->momentum().Mag(), locWireBasedTrack->momentum().Theta()*180.0/TMath::Pi());
-		vector<pair<double, double> >& locPThetaVector = locMatchSuccessfulFlag ? locWireBasedPTheta_MatchToSC : locWireBasedPTheta_NoMatchToSC;
-		locPThetaVector.push_back(locPThetaPair);
+		double locBestDeltaPhi = 999.0;
+		if(dParticleID->Get_ClosestToTrack_SC(locTrackIterator->second, locSCHits, locBestDeltaPhi) != NULL)
+			locSCTrackDistanceMap[locTrackIterator->second] = locBestDeltaPhi;
 	}
 
 	//Fill Histograms
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//BCAL
-		map<const DTrackTimeBased*, pair<double, double> >::iterator locBCALIterator = locBCALTrackDistanceMap.begin();
+		map<const DKinematicData*, pair<double, double> >::iterator locBCALIterator = locBCALTrackDistanceMap.begin();
 		for(; locBCALIterator != locBCALTrackDistanceMap.end(); ++locBCALIterator)
 		{
-			const DTrackTimeBased* locTrackTimeBased = locBCALIterator->first;
-			dHist_BCALDeltaPhiVsP->Fill(locTrackTimeBased->momentum().Mag(), locBCALIterator->second.first*180.0/TMath::Pi());
-			dHist_BCALDeltaZVsTheta->Fill(locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi(), locBCALIterator->second.second);
+			const DKinematicData* locTrack = locBCALIterator->first;
+			dHistMap_BCALDeltaPhiVsP[locIsTimeBased]->Fill(locTrack->momentum().Mag(), locBCALIterator->second.first*180.0/TMath::Pi());
+			dHistMap_BCALDeltaZVsTheta[locIsTimeBased]->Fill(locTrack->momentum().Theta()*180.0/TMath::Pi(), locBCALIterator->second.second);
 		}
-		for(size_t loc_i = 0; loc_i < locWireBasedPTheta_MatchToBCAL.size(); ++loc_i)
-			dHistMap_PVsTheta_WireBased_GoodTrackFOM_HasHit[SYS_BCAL]->Fill(locWireBasedPTheta_MatchToBCAL[loc_i].second, locWireBasedPTheta_MatchToBCAL[loc_i].first);
-		for(size_t loc_i = 0; loc_i < locWireBasedPTheta_NoMatchToBCAL.size(); ++loc_i)
-			dHistMap_PVsTheta_WireBased_GoodTrackFOM_NoHit[SYS_BCAL]->Fill(locWireBasedPTheta_NoMatchToBCAL[loc_i].second, locWireBasedPTheta_NoMatchToBCAL[loc_i].first);
+
+		//Does-it-match, by detector
+		for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
+		{
+			const DKinematicData* locTrack = locTrackIterator->second;
+			double locTheta = locTrack->momentum().Theta()*180.0/TMath::Pi();
+			double locP = locTrack->momentum().Mag();
+
+			//BCAL
+			if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_FCAL) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_TOF) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_START))
+			{
+				if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_BCAL))
+					dHistMap_PVsTheta_HasHit[SYS_BCAL][locIsTimeBased]->Fill(locTheta, locP);
+				else
+					dHistMap_PVsTheta_NoHit[SYS_BCAL][locIsTimeBased]->Fill(locTheta, locP);
+			}
+
+			//FCAL
+			if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_BCAL) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_TOF) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_START))
+			{
+				if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_FCAL))
+					dHistMap_PVsTheta_HasHit[SYS_FCAL][locIsTimeBased]->Fill(locTheta, locP);
+				else
+					dHistMap_PVsTheta_NoHit[SYS_FCAL][locIsTimeBased]->Fill(locTheta, locP);
+			}
+
+			//TOF
+			if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_BCAL) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_FCAL) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_START))
+			{
+				if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_TOF))
+					dHistMap_PVsTheta_HasHit[SYS_TOF][locIsTimeBased]->Fill(locTheta, locP);
+				else
+					dHistMap_PVsTheta_NoHit[SYS_TOF][locIsTimeBased]->Fill(locTheta, locP);
+			}
+
+			//SC
+			if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_BCAL) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_FCAL) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_TOF))
+			{
+				if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_START))
+					dHistMap_PVsTheta_HasHit[SYS_START][locIsTimeBased]->Fill(locTheta, locP);
+				else
+					dHistMap_PVsTheta_NoHit[SYS_START][locIsTimeBased]->Fill(locTheta, locP);
+			}
+		}
 
 		//FCAL
-		map<const DTrackTimeBased*, double>::iterator locFCALIterator = locFCALTrackDistanceMap.begin();
+		map<const DKinematicData*, double>::iterator locFCALIterator = locFCALTrackDistanceMap.begin();
 		for(; locFCALIterator != locFCALTrackDistanceMap.end(); ++locFCALIterator)
 		{
-			const DTrackTimeBased* locTrackTimeBased = locFCALIterator->first;
-			dHist_FCALTrackDistanceVsP->Fill(locTrackTimeBased->momentum().Mag(), locFCALIterator->second);
-			dHist_FCALTrackDistanceVsTheta->Fill(locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi(), locFCALIterator->second);
+			const DKinematicData* locTrack = locFCALIterator->first;
+			dHistMap_FCALTrackDistanceVsP[locIsTimeBased]->Fill(locTrack->momentum().Mag(), locFCALIterator->second);
+			dHistMap_FCALTrackDistanceVsTheta[locIsTimeBased]->Fill(locTrack->momentum().Theta()*180.0/TMath::Pi(), locFCALIterator->second);
 		}
-		for(size_t loc_i = 0; loc_i < locWireBasedPTheta_MatchToFCAL.size(); ++loc_i)
-			dHistMap_PVsTheta_WireBased_GoodTrackFOM_HasHit[SYS_FCAL]->Fill(locWireBasedPTheta_MatchToFCAL[loc_i].second, locWireBasedPTheta_MatchToFCAL[loc_i].first);
-		for(size_t loc_i = 0; loc_i < locWireBasedPTheta_NoMatchToFCAL.size(); ++loc_i)
-			dHistMap_PVsTheta_WireBased_GoodTrackFOM_NoHit[SYS_FCAL]->Fill(locWireBasedPTheta_NoMatchToFCAL[loc_i].second, locWireBasedPTheta_NoMatchToFCAL[loc_i].first);
 
 		//TOF
-		map<const DTrackTimeBased*, pair<const DTOFPoint*, pair<double, double> > >::iterator locTOFIterator = locTOFTrackDistanceMap.begin();
+		map<const DKinematicData*, pair<const DTOFPoint*, pair<double, double> > >::iterator locTOFIterator = locTOFTrackDistanceMap.begin();
 		for(; locTOFIterator != locTOFTrackDistanceMap.end(); ++locTOFIterator)
 		{
-			const DTrackTimeBased* locTrackTimeBased = locTOFIterator->first;
+			const DKinematicData* locTrack = locTOFIterator->first;
 			const DTOFPoint* locTOFPoint = locTOFIterator->second.first;
 			double locDeltaX = locTOFIterator->second.second.first;
 			double locDeltaY = locTOFIterator->second.second.second;
@@ -1709,58 +1600,42 @@ void DHistogramAction_DetectorStudies::Fill_MatchingHists(JEventLoop* locEventLo
 			double locDistance = sqrt(locDeltaX*locDeltaX + locDeltaY*locDeltaY);
 			if((locDeltaX < 500.0) && (locDeltaY < 500.0)) //else position not well-defined
 			{
-				dHist_TOFTrackDistanceVsP->Fill(locTrackTimeBased->momentum().Mag(), locDistance);
-				dHist_TOFTrackDistanceVsTheta->Fill(locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi(), locDistance);
+				dHistMap_TOFTrackDistanceVsP[locIsTimeBased]->Fill(locTrack->momentum().Mag(), locDistance);
+				dHistMap_TOFTrackDistanceVsTheta[locIsTimeBased]->Fill(locTrack->momentum().Theta()*180.0/TMath::Pi(), locDistance);
 				if((locTOFPoint->dHorizontalBar != 0) && (locTOFPoint->dVerticalBar != 0))
-					dHist_TOFTrackDistance_BothPlanes->Fill(locDistance);
+					dHistMap_TOFTrackDistance_BothPlanes[locIsTimeBased]->Fill(locDistance);
 				else
-					dHist_TOFTrackDistance_OnePlane->Fill(locDistance);
+					dHistMap_TOFTrackDistance_OnePlane[locIsTimeBased]->Fill(locDistance);
 			}
 
-			dHist_TOFTrackDeltaXVsHorizontalPaddle->Fill(locTOFPoint->dHorizontalBar, locDeltaX);
-			dHist_TOFTrackDeltaXVsVerticalPaddle->Fill(locTOFPoint->dVerticalBar, locDeltaX);
+			dHistMap_TOFTrackDeltaXVsHorizontalPaddle[locIsTimeBased]->Fill(locTOFPoint->dHorizontalBar, locDeltaX);
+			dHistMap_TOFTrackDeltaXVsVerticalPaddle[locIsTimeBased]->Fill(locTOFPoint->dVerticalBar, locDeltaX);
 
-			dHist_TOFTrackDeltaYVsHorizontalPaddle->Fill(locTOFPoint->dHorizontalBar, locDeltaY);
-			dHist_TOFTrackDeltaYVsVerticalPaddle->Fill(locTOFPoint->dVerticalBar, locDeltaY);
+			dHistMap_TOFTrackDeltaYVsHorizontalPaddle[locIsTimeBased]->Fill(locTOFPoint->dHorizontalBar, locDeltaY);
+			dHistMap_TOFTrackDeltaYVsVerticalPaddle[locIsTimeBased]->Fill(locTOFPoint->dVerticalBar, locDeltaY);
 		}
-		for(size_t loc_i = 0; loc_i < locWireBasedPTheta_MatchToTOF.size(); ++loc_i)
-			dHistMap_PVsTheta_WireBased_GoodTrackFOM_HasHit[SYS_TOF]->Fill(locWireBasedPTheta_MatchToTOF[loc_i].second, locWireBasedPTheta_MatchToTOF[loc_i].first);
-		for(size_t loc_i = 0; loc_i < locWireBasedPTheta_NoMatchToTOF.size(); ++loc_i)
-			dHistMap_PVsTheta_WireBased_GoodTrackFOM_NoHit[SYS_TOF]->Fill(locWireBasedPTheta_NoMatchToTOF[loc_i].second, locWireBasedPTheta_NoMatchToTOF[loc_i].first);
 
 		//SC
-		map<const DTrackTimeBased*, double>::iterator locSCIterator = locSCTrackDistanceMap.begin();
+		map<const DKinematicData*, double>::iterator locSCIterator = locSCTrackDistanceMap.begin();
 		if(locSCHits.size() <= 4) //don't fill if every paddle fired!
 		{
 			for(; locSCIterator != locSCTrackDistanceMap.end(); ++locSCIterator)
 			{
-				const DTrackTimeBased* locTrackTimeBased = locSCIterator->first;
-				dHist_SCTrackDeltaPhiVsP->Fill(locTrackTimeBased->momentum().Mag(), locSCIterator->second*180.0/TMath::Pi());
+				const DKinematicData* locTrack = locSCIterator->first;
+				dHistMap_SCTrackDeltaPhiVsP[locIsTimeBased]->Fill(locTrack->momentum().Mag(), locSCIterator->second*180.0/TMath::Pi());
 			}
 		}
-		for(size_t loc_i = 0; loc_i < locWireBasedPTheta_MatchToSC.size(); ++loc_i)
-			dHistMap_PVsTheta_WireBased_GoodTrackFOM_HasHit[SYS_START]->Fill(locWireBasedPTheta_MatchToSC[loc_i].second, locWireBasedPTheta_MatchToSC[loc_i].first);
-		for(size_t loc_i = 0; loc_i < locWireBasedPTheta_NoMatchToSC.size(); ++loc_i)
-			dHistMap_PVsTheta_WireBased_GoodTrackFOM_NoHit[SYS_START]->Fill(locWireBasedPTheta_NoMatchToSC[loc_i].second, locWireBasedPTheta_NoMatchToSC[loc_i].first);
 
-		//Matched wire-based tracks
-		set<const DTrackWireBased*>::iterator locWireBasedSetIterator = locMatchedTrackWireBaseds.begin();
-		for(; locWireBasedSetIterator != locMatchedTrackWireBaseds.end(); ++locWireBasedSetIterator)
+		//Is-Matched to Something
+		for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 		{
-			const DTrackWireBased* locTrackWireBased = *locWireBasedSetIterator;
-			double locTheta = locTrackWireBased->momentum().Theta()*180.0/TMath::Pi();
-			double locP = locTrackWireBased->momentum().Mag();
-			dHist_TrackPVsTheta_WireBased_HitMatch->Fill(locTheta, locP);
-		}
-
-		//Un-Matched wire-based tracks
-		locWireBasedSetIterator = locUnMatchedTrackWireBaseds.begin();
-		for(; locWireBasedSetIterator != locUnMatchedTrackWireBaseds.end(); ++locWireBasedSetIterator)
-		{
-			const DTrackWireBased* locTrackWireBased = *locWireBasedSetIterator;
-			double locTheta = locTrackWireBased->momentum().Theta()*180.0/TMath::Pi();
-			double locP = locTrackWireBased->momentum().Mag();
-			dHist_TrackPVsTheta_WireBased_NoHitMatch->Fill(locTheta, locP);
+			const DKinematicData* locTrack = locTrackIterator->second;
+			double locTheta = locTrack->momentum().Theta()*180.0/TMath::Pi();
+			double locP = locTrack->momentum().Mag();
+			if(locDetectorMatches->Get_IsMatchedToHit(locTrack))
+				dHistMap_TrackPVsTheta_HitMatch[locIsTimeBased]->Fill(locTheta, locP);
+			else
+				dHistMap_TrackPVsTheta_NoHitMatch[locIsTimeBased]->Fill(locTheta, locP);
 		}
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!

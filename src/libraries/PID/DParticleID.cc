@@ -1283,6 +1283,118 @@ void DParticleID::Get_BestFCALMatchParams(vector<DFCALShowerMatchParams>& locSho
 	}
 }
 
+const DBCALShower* DParticleID::Get_ClosestToTrack_BCAL(const DKinematicData* locTrack, vector<const DBCALShower*>& locBCALShowers, double& locBestMatchDeltaPhi, double& locBestMatchDeltaZ) const
+{
+	const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
+	const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
+	if((locTrackTimeBased == NULL) && (locTrackWireBased == NULL))
+		return NULL;
+	const DReferenceTrajectory* locReferenceTrajectory = (locTrackTimeBased != NULL) ? locTrackTimeBased->rt : locTrackWireBased->rt;
+	if(locReferenceTrajectory == NULL)
+		return NULL;
+
+	double locInputStartTime = locTrack->t0();
+	double locMinDistance = 999.0;
+	const DBCALShower* locBestBCALShower = NULL;
+	for(size_t loc_i = 0; loc_i < locBCALShowers.size(); ++loc_i)
+	{
+		double locDistance = 0.0, locDeltaPhi = 0.0, locDeltaZ = 0.0;
+		if(!Distance_ToTrack(locBCALShowers[loc_i], locReferenceTrajectory, locInputStartTime, locDistance, locDeltaPhi, locDeltaZ))
+			continue;
+		if(locDistance > locMinDistance)
+			continue;
+		locBestBCALShower = locBCALShowers[loc_i];
+		locMinDistance = locDistance;
+		locBestMatchDeltaPhi = locDeltaPhi;
+		locBestMatchDeltaZ = locDeltaZ;
+	}
+	return locBestBCALShower;
+}
+
+const DFCALShower* DParticleID::Get_ClosestToTrack_FCAL(const DKinematicData* locTrack, vector<const DFCALShower*>& locFCALShowers, double& locBestDistance) const
+{
+	const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
+	const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
+	if((locTrackTimeBased == NULL) && (locTrackWireBased == NULL))
+		return NULL;
+	const DReferenceTrajectory* locReferenceTrajectory = (locTrackTimeBased != NULL) ? locTrackTimeBased->rt : locTrackWireBased->rt;
+	if(locReferenceTrajectory == NULL)
+		return NULL;
+
+	double locInputStartTime = locTrack->t0();
+	locBestDistance = 999.0;
+	const DFCALShower* locBestFCALShower = NULL;
+	for(size_t loc_i = 0; loc_i < locFCALShowers.size(); ++loc_i)
+	{
+		double locDistance = 0.0;
+		if(!Distance_ToTrack(locFCALShowers[loc_i], locReferenceTrajectory, locInputStartTime, locDistance))
+			continue;
+		if(locDistance > locBestDistance)
+			continue;
+		locBestDistance = locDistance;
+		locBestFCALShower = locFCALShowers[loc_i];
+	}
+	return locBestFCALShower;
+}
+
+const DTOFPoint* DParticleID::Get_ClosestToTrack_TOF(const DKinematicData* locTrack, vector<const DTOFPoint*>& locTOFPoints, double& locBestDeltaX, double& locBestDeltaY) const
+{
+	const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
+	const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
+	if((locTrackTimeBased == NULL) && (locTrackWireBased == NULL))
+		return NULL;
+	const DReferenceTrajectory* locReferenceTrajectory = (locTrackTimeBased != NULL) ? locTrackTimeBased->rt : locTrackWireBased->rt;
+	if(locReferenceTrajectory == NULL)
+		return NULL;
+
+	double locMinDistance = 9.9E9;
+	const DTOFPoint* locClosestTOFPoint = NULL;
+	double locInputStartTime = locTrack->t0();
+	for(size_t loc_i = 0; loc_i < locTOFPoints.size(); ++loc_i)
+	{
+		double locDistance = 0.0, locDeltaX = 0.0, locDeltaY = 0.0;
+		if(!Distance_ToTrack(locTOFPoints[loc_i], locReferenceTrajectory, locInputStartTime, locDeltaX, locDeltaY))
+			continue;
+		locDistance = sqrt(locDeltaX*locDeltaX + locDeltaY*locDeltaY);
+		if(locDistance > locMinDistance)
+			continue;
+		locMinDistance = locDistance;
+		locBestDeltaX = locDeltaX;
+		locBestDeltaY = locDeltaY;
+		locClosestTOFPoint = locTOFPoints[loc_i];
+	}
+
+	return locClosestTOFPoint;
+}
+
+const DSCHit* DParticleID::Get_ClosestToTrack_SC(const DKinematicData* locTrack, vector<const DSCHit*>& locSCHits, double& locBestDeltaPhi) const
+{
+	const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
+	const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
+	if((locTrackTimeBased == NULL) && (locTrackWireBased == NULL))
+		return NULL;
+	const DReferenceTrajectory* locReferenceTrajectory = (locTrackTimeBased != NULL) ? locTrackTimeBased->rt : locTrackWireBased->rt;
+	if(locReferenceTrajectory == NULL)
+		return NULL;
+
+	double locInputStartTime = locTrack->t0();
+	const DSCHit* locBestSCHit = NULL;
+
+	locBestDeltaPhi = TMath::Pi();
+	for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
+	{
+		double locDeltaPhi = 0.0;
+		if(!Distance_ToTrack(locSCHits[loc_i], locReferenceTrajectory, locInputStartTime, locDeltaPhi))
+			continue;
+		if(locDeltaPhi > locBestDeltaPhi)
+			continue;
+		locBestDeltaPhi = locDeltaPhi;
+		locBestSCHit = locSCHits[loc_i];
+	}
+
+	return locBestSCHit;
+}
+
 double DParticleID::Calc_BCALFlightTimePCorrelation(const DKinematicData* locTrack, DDetectorMatches* locDetectorMatches) const
 {
 	DBCALShowerMatchParams locBCALShowerMatchParams;

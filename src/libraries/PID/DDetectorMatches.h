@@ -125,6 +125,7 @@ class DDetectorMatches : public JObject
 		inline bool Get_IsMatchedToTrack(const DBCALShower* locBCALShower) const;
 		inline bool Get_IsMatchedToTrack(const DFCALShower* locFCALShower) const;
 		inline bool Get_IsMatchedToHit(const DKinematicData* locTrack) const;
+		inline bool Get_IsMatchedToDetector(const DKinematicData* locTrack, DetectorSystem_t locDetectorSystem) const;
 
 		inline bool Get_TrackMatchParams(const DBCALShower* locBCALShower, vector<DBCALShowerMatchParams>& locMatchParams) const;
 		inline bool Get_TrackMatchParams(const DFCALShower* locFCALShower, vector<DFCALShowerMatchParams>& locMatchParams) const;
@@ -248,6 +249,20 @@ inline bool DDetectorMatches::Get_IsMatchedToHit(const DKinematicData* locTrack)
 	if(locSCIterator != dTrackSCMatchParams.end())
 		return true;
 	return false;
+}
+
+inline bool DDetectorMatches::Get_IsMatchedToDetector(const DKinematicData* locTrack, DetectorSystem_t locDetectorSystem) const
+{
+	if(locDetectorSystem == SYS_BCAL)
+		return (dTrackBCALMatchParams.find(locTrack) != dTrackBCALMatchParams.end());
+	else if(locDetectorSystem == SYS_FCAL)
+		return (dTrackFCALMatchParams.find(locTrack) != dTrackFCALMatchParams.end());
+	else if(locDetectorSystem == SYS_TOF)
+		return (dTrackTOFMatchParams.find(locTrack) != dTrackTOFMatchParams.end());
+	else if(locDetectorSystem == SYS_START)
+		return (dTrackSCMatchParams.find(locTrack) != dTrackSCMatchParams.end());
+	else
+		return false;
 }
 
 inline bool DDetectorMatches::Get_TrackMatchParams(const DBCALShower* locBCALShower, vector<DBCALShowerMatchParams>& locMatchParams) const
