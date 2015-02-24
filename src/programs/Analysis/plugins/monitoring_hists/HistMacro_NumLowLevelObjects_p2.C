@@ -70,6 +70,8 @@
 		locHist_NumBCALHits->GetYaxis()->SetLabelSize(0.05);
 		locHist_NumBCALHits->Draw();
 	}
+	gPad->SetLogy();
+	gPad->Update();
 
 	locCanvas->cd(5);
 	gPad->SetTicks();

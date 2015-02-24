@@ -1,17 +1,17 @@
-// hnamepath: /Independent/Hist_DetectorStudies/Matched_ReconstructedPID/PiMinus/SCDeltaT
-// hnamepath: /Independent/Hist_DetectorStudies/Matched_ReconstructedPID/PiMinus/SCDeltaTVsP
-// hnamepath: /Independent/Hist_DetectorStudies/Matched_ReconstructedPID/PiMinus/SCDeltaTVsPhi
-// hnamepath: /Independent/Hist_DetectorStudies/Matched_ReconstructedPID/PiMinus/SCDeltaTVsTheta
+// hnamepath: /Independent/Hist_DetectorMatchParams/ReconstructedPID/Pi-/SCDeltaT
+// hnamepath: /Independent/Hist_DetectorMatchParams/ReconstructedPID/Pi-/SCDeltaTVsP
+// hnamepath: /Independent/Hist_DetectorMatchParams/ReconstructedPID/Pi-/SCDeltaTVsPhi
+// hnamepath: /Independent/Hist_DetectorMatchParams/ReconstructedPID/Pi-/SCDeltaTVsTheta
 
 {
 	//Goto Path
-	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_DetectorStudies");
+	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_DetectorMatchParams");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
 
 	//Get Histograms
-	gDirectory->cd("Matched_ReconstructedPID/Pi-");
+	gDirectory->cd("ReconstructedPID/Pi-");
 	TH1I* locHist_SCDeltaT_PiMinus = (TH1I*)gDirectory->Get("SCDeltaT"); //pi-
 	TH2I* locHist_SCDeltaTVsP_PiMinus = (TH2I*)gDirectory->Get("SCDeltaTVsP"); //pi-
 	TH2I* locHist_SCDeltaTVsPhi_PiMinus = (TH2I*)gDirectory->Get("SCDeltaTVsPhi"); //pi-

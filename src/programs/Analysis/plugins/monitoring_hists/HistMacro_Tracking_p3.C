@@ -1,18 +1,18 @@
-// hnamepath: /Independent/Hist_DetectorStudies/PID/q-/dEdxVsP_CDC
-// hnamepath: /Independent/Hist_DetectorStudies/PID/q+/dEdxVsP_CDC
-// hnamepath: /Independent/Hist_DetectorStudies/PID/q-/dEdxVsP_FDC
-// hnamepath: /Independent/Hist_DetectorStudies/PID/q+/dEdxVsP_FDC
+// hnamepath: /Independent/Hist_DetectorPID/q-/dEdxVsP_CDC
+// hnamepath: /Independent/Hist_DetectorPID/q+/dEdxVsP_CDC
+// hnamepath: /Independent/Hist_DetectorPID/q-/dEdxVsP_FDC
+// hnamepath: /Independent/Hist_DetectorPID/q+/dEdxVsP_FDC
 
 {
 	//Goto Path
 	TDirectory *locInitDirectory = gDirectory;
-	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_DetectorStudies");
+	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_DetectorPID");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
 
 	//Get Histograms
-	gDirectory->cd("PID/q-");
+	gDirectory->cd("q-");
 	TH2I* locHist_CDCdEdXVsP_QMinus = (TH2I*)gDirectory->Get("dEdxVsP_CDC"); //q-
 	TH2I* locHist_FDCdEdXVsP_QMinus = (TH2I*)gDirectory->Get("dEdxVsP_FDC"); //q-
 	gDirectory->cd("../q+");

@@ -1,23 +1,22 @@
-// hnamepath: /Independent/Hist_DetectorStudies/Reconstruction/TOF/TOFPointYVsX
-// hnamepath: /Independent/Hist_DetectorStudies/Reconstruction/TOF/TOFPointEnergy
-// hnamepath: /Independent/Hist_DetectorStudies/PID/q-/TOFdEdXVsP
-// hnamepath: /Independent/Hist_DetectorStudies/PID/q+/TOFdEdXVsP
-// hnamepath: /Independent/Hist_DetectorStudies/PID/q-/BetaVsP_TOF
-// hnamepath: /Independent/Hist_DetectorStudies/PID/q+/BetaVsP_TOF
+// hnamepath: /Independent/Hist_Reconstruction/TOFPointYVsX
+// hnamepath: /Independent/Hist_Reconstruction/TOFPointEnergy
+// hnamepath: /Independent/Hist_DetectorPID/q-/TOFdEdXVsP
+// hnamepath: /Independent/Hist_DetectorPID/q+/TOFdEdXVsP
+// hnamepath: /Independent/Hist_DetectorPID/q-/BetaVsP_TOF
+// hnamepath: /Independent/Hist_DetectorPID/q+/BetaVsP_TOF
 
 {
 	//Goto Path
-	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_DetectorStudies");
+	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_Reconstruction");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
 
 	//Get Histograms
-	gDirectory->cd("Reconstruction/TOF");
 	TH2I* locHist_TOFPointYVsX = (TH2I*)gDirectory->Get("TOFPointYVsX");
 	TH1I* locHist_TOFPointEnergy = (TH1I*)gDirectory->Get("TOFPointEnergy");
 
-	gDirectory->cd("../../PID/q-");
+	gDirectory->cd("../Hist_DetectorPID/q-");
 	TH2I* locHist_TOFdEdXVsP_QMinus = (TH2I*)gDirectory->Get("TOFdEdXVsP"); //q-
 	TH2I* locHist_BetaVsP_QMinus = (TH2I*)gDirectory->Get("BetaVsP_TOF"); //q-
 	gDirectory->cd("../q+");

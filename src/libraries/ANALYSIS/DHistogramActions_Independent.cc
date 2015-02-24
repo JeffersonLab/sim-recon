@@ -365,6 +365,19 @@ void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)
 		else //already created by another thread
 			dHist_SCHitSector = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 
+		locHistName = "SCHitEnergy";
+		if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+			dHist_SCHitEnergy = new TH1I(locHistName.c_str(), ";SC Hit Energy (MeV)", dNumHitEnergyBins, dMinHitEnergy, dMaxHitEnergy);
+		else //already created by another thread
+			dHist_SCHitEnergy = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+
+		locHistName = "SCHitEnergyVsSector";
+		if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+			dHist_SCHitEnergyVsSector = new TH2I(locHistName.c_str(), ";SC Hit Sector;SC Hit Energy (MeV)", 30, 0.5, 30.5, dNum2DHitEnergyBins, dMinHitEnergy, dMaxHitEnergy);
+		else //already created by another thread
+			dHist_SCHitEnergyVsSector = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
+		gDirectory->cd("..");
+
 		//TRACKING
 		CreateAndChangeTo_Directory("Tracking", "Tracking");
 		locHistName = "NumDCHitsPerTrack";
@@ -663,7 +676,11 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 		}
 
 		for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
+		{
 			dHist_SCHitSector->Fill(locSCHits[loc_i]->sector);
+			dHist_SCHitEnergy->Fill(locSCHits[loc_i]->dE*1.0E3);
+			dHist_SCHitEnergyVsSector->Fill(locSCHits[loc_i]->sector, locSCHits[loc_i]->dE*1.0E3);
+		}
 
 		for(size_t loc_i = 0; loc_i < locTrackCandidates.size(); ++loc_i)
 		{
@@ -822,7 +839,7 @@ void DHistogramAction_DetectorMatching::Initialize(JEventLoop* locEventLoop)
 			if(locIsRESTEvent && (!locIsTimeBased))
 				continue;
 
-			string locDirectoryName = locIsTimeBased ? "Matching_TimeBased" : "Matching_WireBased";
+			string locDirectoryName = locIsTimeBased ? "TimeBased" : "WireBased";
 			CreateAndChangeTo_Directory(locDirectoryName.c_str(), locDirectoryName.c_str());
 			string locTrackString = locIsTimeBased ? "Time-Based Tracks" : "Wire-Based Tracks";
 

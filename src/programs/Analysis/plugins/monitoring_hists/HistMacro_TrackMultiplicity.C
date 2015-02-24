@@ -23,5 +23,7 @@
 	gPad->SetGrid();
 	if(locHist != NULL)
 		locHist->Draw("COLZ");
+	gPad->SetLogz();
+	gPad->Update();
 }
 

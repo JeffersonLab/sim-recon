@@ -1,5 +1,5 @@
-// hnamepath: /Independent/Hist_DetectorStudies/Reconstruction/Tracking/NumDCHitsPerTrackVsTheta
-// hnamepath: /Independent/Hist_DetectorStudies/Reconstruction/Tracking/TrackingFOM
+// hnamepath: /Independent/Hist_Reconstruction/Tracking/NumDCHitsPerTrackVsTheta
+// hnamepath: /Independent/Hist_Reconstruction/Tracking/TrackingFOM
 // hnamepath: /Independent/Hist_NumReconstructedObjects/NumTrackCandidates
 // hnamepath: /Independent/Hist_NumReconstructedObjects/NumWireBasedTracks
 // hnamepath: /Independent/Hist_NumReconstructedObjects/NumTimeBasedTracks
@@ -7,13 +7,13 @@
 {
 	//Goto Path
 	TDirectory *locInitDirectory = gDirectory;
-	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_DetectorStudies");
+	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_Reconstruction");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
 
 	//Get Histograms
-	gDirectory->cd("Reconstruction/Tracking");
+	gDirectory->cd("Tracking");
 	TH2I* locHist_NumDCHitsPerTrackVsTheta = (TH2I*)gDirectory->Get("NumDCHitsPerTrackVsTheta");
 	TH1I* locHist_TrackingFOM = (TH1I*)gDirectory->Get("TrackingFOM");
 

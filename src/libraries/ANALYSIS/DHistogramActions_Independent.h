@@ -127,28 +127,28 @@ class DHistogramAction_Reconstruction : public DAnalysisAction
 		DHistogramAction_Reconstruction(const DReaction* locReaction, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_Reconstruction", false, locActionUniqueString),
 		dNumFCALTOFXYBins(260), dNumShowerEnergyBins(800), dNumPhiBins(720), dNum2DBCALZBins(450), dNum2DPhiBins(360),
-		dNumHitEnergyBins(500), dNum2DThetaBins(280), dNumFOMBins(500), dNum2DFOMBins(200), dNum2DPBins(400),
+		dNumHitEnergyBins(500), dNum2DHitEnergyBins(250), dNum2DThetaBins(280), dNumFOMBins(500), dNum2DFOMBins(200), dNum2DPBins(400),
 		dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMaxBCALP(1.5), dMinPhi(-180.0), dMaxPhi(180.0), dMinHitEnergy(0.0),
 		dMaxHitEnergy(50.0), dMinTheta(0.0), dMaxTheta(140.0), dMinP(0.0), dMaxP(12.0), dGoodTrackFOM(5.73303E-7), dHighTrackFOM(0.98) {}
 
 		DHistogramAction_Reconstruction(string locActionUniqueString) :
 		DAnalysisAction(NULL, "Hist_Reconstruction", false, locActionUniqueString),
 		dNumFCALTOFXYBins(260), dNumShowerEnergyBins(800), dNumPhiBins(720), dNum2DBCALZBins(450), dNum2DPhiBins(360),
-		dNumHitEnergyBins(500), dNum2DThetaBins(280), dNumFOMBins(500), dNum2DFOMBins(200), dNum2DPBins(400),
+		dNumHitEnergyBins(500), dNum2DHitEnergyBins(250), dNum2DThetaBins(280), dNumFOMBins(500), dNum2DFOMBins(200), dNum2DPBins(400),
 		dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMaxBCALP(1.5), dMinPhi(-180.0), dMaxPhi(180.0), dMinHitEnergy(0.0),
 		dMaxHitEnergy(50.0), dMinTheta(0.0), dMaxTheta(140.0), dMinP(0.0), dMaxP(12.0), dGoodTrackFOM(5.73303E-7), dHighTrackFOM(0.98) {}
 
 		DHistogramAction_Reconstruction(void) :
 		DAnalysisAction(NULL, "Hist_Reconstruction", false, ""),
 		dNumFCALTOFXYBins(260), dNumShowerEnergyBins(800), dNumPhiBins(720), dNum2DBCALZBins(450), dNum2DPhiBins(360),
-		dNumHitEnergyBins(500), dNum2DThetaBins(280), dNumFOMBins(500), dNum2DFOMBins(200), dNum2DPBins(400),
+		dNumHitEnergyBins(500), dNum2DHitEnergyBins(250), dNum2DThetaBins(280), dNumFOMBins(500), dNum2DFOMBins(200), dNum2DPBins(400),
 		dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMaxBCALP(1.5), dMinPhi(-180.0), dMaxPhi(180.0), dMinHitEnergy(0.0),
 		dMaxHitEnergy(50.0), dMinTheta(0.0), dMaxTheta(140.0), dMinP(0.0), dMaxP(12.0), dGoodTrackFOM(5.73303E-7), dHighTrackFOM(0.98) {}
 
 		void Initialize(JEventLoop* locEventLoop);
 
 		unsigned int dNumFCALTOFXYBins, dNumShowerEnergyBins, dNumPhiBins, dNum2DBCALZBins, dNum2DPhiBins;
-		unsigned int dNumHitEnergyBins, dNum2DThetaBins, dNumFOMBins, dNum2DFOMBins, dNum2DPBins;
+		unsigned int dNumHitEnergyBins, dNum2DHitEnergyBins, dNum2DThetaBins, dNumFOMBins, dNum2DFOMBins, dNum2DPBins;
 		double dMinShowerEnergy, dMaxShowerEnergy, dMaxBCALP, dMinPhi, dMaxPhi, dMinHitEnergy;
 		double dMaxHitEnergy, dMinTheta, dMaxTheta, dMinP, dMaxP;
 
@@ -168,6 +168,8 @@ class DHistogramAction_Reconstruction : public DAnalysisAction
 		TH2I* dHist_TOFPointYVsX;
 
 		TH1I* dHist_SCHitSector;
+		TH1I* dHist_SCHitEnergy;
+		TH2I* dHist_SCHitEnergyVsSector;
 
 		TH1I* dHist_NumDCHitsPerTrack;
 		TH2I* dHist_NumDCHitsPerTrackVsTheta;
