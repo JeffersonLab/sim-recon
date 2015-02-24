@@ -54,6 +54,7 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
     DO_TDC_ADC_ALIGN = 0;
     DO_TRACK_BASED = 0;
     DO_VERIFY = 1;
+    DO_OPTIONAL = 0;
 
     if(gPARMS){
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_ROUGH_TIMING", DO_ROUGH_TIMING, "Set to > 0 to do rough timing of all detectors");
@@ -63,6 +64,7 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_VERIFY", DO_VERIFY, "Set to > 0 to verify timing with current constants");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:REQUIRE_BEAM", REQUIRE_BEAM, "Set to 0 to skip beam current check");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:BEAM_EVENTS_TO_KEEP", BEAM_EVENTS_TO_KEEP, "Set to the number of beam on events to use");
+        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_OPTIONAL", BEAM_EVENTS_TO_KEEP, "Set to >0 to enable optional histograms ");
     }
     
     // Would like the code with no arguments to simply verify the current status of the calibration
@@ -89,8 +91,16 @@ jerror_t JEventProcessor_HLDetectorTiming::brun(JEventLoop *eventLoop, int runnu
     dParticleID = dParticleID_algos[0];
 
     // load base time offsets
-    // FCAL
     map<string,double> base_time_offset;
+    //CDC
+    if (eventLoop->GetCalib("/CDC/base_time_offset",base_time_offset))
+        jout << "Error loading /CDC/base_time_offset !" << endl;
+    if (base_time_offset.find("CDC_BASE_TIME_OFFSET") != base_time_offset.end())
+        cdc_t_base = base_time_offset["CDC_BASE_TIME_OFFSET"];
+    else
+        jerr << "Unable to get CDC_BASE_TIME_OFFSET from /CDC/base_time_offset !" << endl;
+
+    //FCAL
     if (eventLoop->GetCalib("/FCAL/base_time_offset",base_time_offset))
         jout << "Error loading /FCAL/base_time_offset !" << endl;
     if (base_time_offset.find("FCAL_BASE_TIME_OFFSET") != base_time_offset.end())
@@ -121,11 +131,11 @@ jerror_t JEventProcessor_HLDetectorTiming::brun(JEventLoop *eventLoop, int runnu
     // The SC, TOF, TAGM and TAGH we will need the per channel offsets to adjust
     // SC
     if (eventLoop->GetCalib("/START_COUNTER/tdc_timing_offsets", sc_tdc_time_offsets))
-          jout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;  
+        jout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;  
 
     // TOF
     if(eventLoop->GetCalib("TOF/timing_offsets", tof_tdc_time_offsets))
-            jout << "Error loading /TOF/timing_offsets !" << endl; 
+        jout << "Error loading /TOF/timing_offsets !" << endl; 
 
     // TAGM
     std::vector< std::map<std::string, double> > table;
@@ -180,7 +190,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                         BEAM_CURRENT,
                         "Beam Current; Beam Current [nA]; Entries",
                         100, 0, 200);
-                }
+            }
             //cout << "EPICS Name " <<  (thisValue->name).c_str() << " Value " << thisValue->fval << endl;
         }
         if (BEAM_CURRENT < 10.0) {
@@ -236,6 +246,12 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                     cdcHitVector[i]->t, GetCCDBIndexCDC(cdcHitVector[i]),
                     "Hit time for each CDC wire; t [ns]; CCDB Index",
                     750, -500, 1000, nStraws, 0.5, nStraws + 0.5);
+            if (DO_OPTIONAL){
+                Fill2DHistogram("HLDetectorTiming", "CDC", "CDC Energy Vs. Drift Time",
+                        cdcHitVector[i]->t, cdcHitVector[i]->q , 
+                        "CDC Energy Vs. Drift Time; Drift Time [ns]; Integral [arb.]",
+                        800, 0, 800, 500, -10000, 7000000);
+            }
         }
     }
 
@@ -441,18 +457,23 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
 
         // Some quality cuts for the tracks we will use
         // Keep this minimal for now and investigate later
-        float trackingFOMCut = 0.01;
-        int trackingNDFCut = 5;
+        //float trackingFOMCut = 0.01;
+        float trackingFOMCut =0.0027;
+        //int trackingNDFCut = 5;
+        int trackingNDFCut = 7;
 
         if(thisTrack->FOM < trackingFOMCut) continue;
         if(thisTrack->Ndof < trackingNDFCut) continue;
 
-        
+
         // Do CDC Fine timing with these tracks (Requires a lot of statistics)
         if (DO_VERIFY || DO_CDC_TIMING){
             const vector<DTrackFitter::pull_t> *pulls = &thisTrack->pulls;
 
-            for (unsigned int iPull = 0; iPull < pulls->size(); iPull++){
+            // Since there is no smoothing of the track, the first value in the pulls is tied to the 
+            // tracking result. Dont use this one since the residual is always zero.
+
+            for (unsigned int iPull = 1; iPull < pulls->size(); iPull++){
                 if ((*pulls)[iPull].cdc_hit == NULL) continue;
                 int ring = (*pulls)[iPull].cdc_hit->wire->ring;
                 int straw = (*pulls)[iPull].cdc_hit->wire->straw;
@@ -462,16 +483,16 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                 int nStraws = 3522;
                 int CCDBIndex = GetCCDBIndexCDC(ring, straw);
                 Fill2DHistogram("HLDetectorTiming", "CDC", "CDC Drift time per Straw",
-                    tdrift, CCDBIndex,
-                    "Drift time for each CDC wire (flight time/B-field corr.); t [ns]; CCDB Index",
-                    750, -500, 1000, nStraws, 0.5, nStraws + 0.5);
+                        tdrift, CCDBIndex,
+                        "Drift time for each CDC wire (flight time/B-field corr.); t [ns]; CCDB Index",
+                        750, -500, 1000, nStraws, 0.5, nStraws + 0.5);
                 Fill2DHistogram("HLDetectorTiming", "CDC", "CDC Residual Vs Drift Time",
                         tdrift, residual,
                         "CDC Residual Vs Drift time; Drift time [ns]; Residual [cm]",
                         1020,-20, 1000, 200, -0.1, 0.1);
             }
         }
-        
+
 
         // For calibration of the timing, we might as well just look at the negatively charged tracks 
         // Should reject proton candidates
@@ -505,7 +526,21 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
 
         // These "flightTime" corrected time are essentially that detector's estimate of the target time
         float flightTimeCorrectedSCTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime; 
+        // There appears to be some problem with the CDC times when the SC is used as t0
+        // This histogram should help diagnose the issue
+        vector < const DCDCTrackHit *> cdcTrackHitVector;
+        thisTrack->Get(cdcTrackHitVector);
+        if (cdcTrackHitVector.size() != 0){
+            float earliestTime = 10000; // Initialize high
+            for (unsigned int iCDC = 0; iCDC < cdcTrackHitVector.size(); iCDC++){
+                if (cdcTrackHitVector[iCDC]->tdrift < earliestTime) earliestTime = cdcTrackHitVector[iCDC]->tdrift;
+            }
 
+            Fill1DHistogram("HLDetectorTiming", "TRACKING", "Earliest CDC Time Minus Matched SC Time",
+                    earliestTime - locSCHitMatchParams.dHitTime,
+                    "Earliest CDC Time Minus Matched SC Time; t_{CDC} - t_{SC} [ns];",
+                    200, -50, 150);
+        }
         // Loop over TAGM hits
         for (unsigned int j = 0 ; j < tagmHitVector.size(); j++){
             int nTAGMColumns = 102;
@@ -812,18 +847,58 @@ void JEventProcessor_HLDetectorTiming::DoTDCADCAlign(void){
 
     thisHist = Get2DHistogram("HLDetectorTiming", "TOF", "TOFHit TDC_ADC Difference");
     if(thisHist != NULL){
-        TObjArray histArray;
-        thisHist->FitSlicesY(0, 0, -1, minHits, "QNR", &histArray); 
-        TH1D * meanHist = (TH1D *) histArray[1];
-        int nbins = meanHist->GetNbinsX();
-        outFile.open("tof_tdc_timing_offsets.txt");
-        for (int i = 1; i <= nbins; i++){
-            double mean = meanHist->GetBinContent(i);
-            // Don't allow any large outliers if the fit fails
-            if (fabs(mean) > 10.0) mean = 0.0;
-            outFile << mean + tof_tdc_time_offsets[i - 1]<< endl; // Vector indexed from zero
+        // The FitSlicesY routine isn't working great here. Will handle this like the TAGM/TAGH.
+        /*
+           TObjArray histArray;
+           thisHist->FitSlicesY(0, 0, -1, minHits, "QNR", &histArray); 
+           TH1D * meanHist = (TH1D *) histArray[1];
+           int nbins = meanHist->GetNbinsX();
+           outFile.open("tof_tdc_timing_offsets.txt");
+           for (int i = 1; i <= nbins; i++){
+           double mean = meanHist->GetBinContent(i);
+        // Don't allow any large outliers if the fit fails
+        if (fabs(mean) > 10.0) mean = 0.0;
+        outFile << mean + tof_tdc_time_offsets[i - 1]<< endl; // Vector indexed from zero
         }
         outFile.close();
+        */
+        int nBinsX = thisHist->GetNbinsX();
+        int nBinsY = thisHist->GetNbinsY();
+        TH1D * selected_TOF_TDCADCOffset = new TH1D("selected_TOF_TDCADCOffset", "Selected TOF TDC/ADC Offset; CCDB Index; Offset [ns]", nBinsX, 0.5, nBinsX + 0.5);
+
+        outFile.open("tof_tdc_timing_offsets.txt");
+        outFile.close(); // Clear Output File
+
+        for (int i = 1 ; i <= nBinsX; i++){
+            TH1D *projY = thisHist->ProjectionY("temp", i, i);
+            // Scan over the histogram
+            double maxEntries = 0;
+            double maxMean = 0;
+            for (int j = 1 ; j <= projY->GetNbinsX();j++){
+                int minBin = j;
+                int maxBin = (j + (projY->GetNbinsX() / 15) <= projY->GetNbinsX()) ? (j + projY->GetNbinsX() / 15) : projY->GetNbinsX();
+                double sum = 0, nEntries = 0;
+                for (int bin = minBin; bin <= maxBin; bin++){
+                    sum += projY->GetBinContent(bin) * projY->GetBinCenter(bin);
+                    nEntries += projY->GetBinContent(bin);
+                    if (bin == maxBin){
+                        if (nEntries > maxEntries) {
+                            maxMean = sum / nEntries;
+                            maxEntries = nEntries;
+                        }
+                    }
+                }
+            }
+            outFile.open("tof_tdc_timing_offsets.txt", ios::out | ios::app);
+            outFile << maxMean + tof_tdc_time_offsets[i - 1]<< endl;
+            outFile.close();
+            // Some histograms for tracking the magnitude of the shifts
+            selected_TOF_TDCADCOffset->SetBinContent(i, maxMean);
+            Fill2DHistogram("HLDetectorTiming", "TOF", "Selected TOF TDC/ADC Offset",
+                    i, maxMean,
+                    "Selected Mean position for TOF TDC/ADC offset",
+                    nBinsX, 0.5, nBinsX + 0.5, nBinsY, projY->GetBinCenter(0), projY->GetBinCenter(projY->GetNbinsX()));
+        }
     }
 
     thisHist = Get2DHistogram("HLDetectorTiming", "TAGM", "TAGMHit TDC_ADC Difference");
@@ -873,9 +948,9 @@ void JEventProcessor_HLDetectorTiming::DoTrackBased(void){
         outFile.close(); // clear file
         outFile.open("tagm_adc_timing_offsets.txt", ios::out | ios::trunc);
         outFile.close(); // clear file
-
         int nBinsX = thisHist->GetNbinsX();
         int nBinsY = thisHist->GetNbinsY();
+        TH1D * selectedTAGMOffset = new TH1D("selectedTAGMOffset", "Selected TAGM Offset; Column; Offset [ns]", nBinsX, 0.5, nBinsX + 0.5);
         for (int i = 1 ; i <= nBinsX; i++){ 
             TH1D *projY = thisHist->ProjectionY("temp", i, i);
             // Scan over the histogram
@@ -896,25 +971,43 @@ void JEventProcessor_HLDetectorTiming::DoTrackBased(void){
                     } 
                 }
             }
+            selectedTAGMOffset->SetBinContent(i, maxMean);
             Fill2DHistogram("HLDetectorTiming", "TRACKING", "Selected TAGM Offset",
                     i, maxMean,
                     "Selected Mean position for TAGM offset",
                     nBinsX, 0.5, nBinsX + 0.5, nBinsY, projY->GetBinCenter(0), projY->GetBinCenter(projY->GetNbinsX()));
+        }
+
+        TFitResultPtr fr1 = selectedTAGMOffset->Fit("pol2", "SQ", "", 0.5, nBinsX + 0.5);
+
+        for (int i = 1 ; i <= nBinsX; i++){
+            double x0 = fr1->Parameter(0);
+            double x1 = fr1->Parameter(1);
+            double x2 = fr1->Parameter(2);
+            double fitResult = x0 + i*x1 + i*i*x2;
+
+            double outlierCut = 7;
+            double valueToUse = selectedTAGMOffset->GetBinContent(i);
+            if (fabs(selectedTAGMOffset->GetBinContent(i) - fitResult) > outlierCut && valueToUse != 0.0){
+                valueToUse = fitResult;
+            }
+
+            selectedTAGMOffset->SetBinContent(i, valueToUse);
 
             outFile.open("tagm_tdc_timing_offsets.txt", ios::out | ios::app);
-            outFile << "0 " << i << " " << maxMean + tagm_tdc_time_offsets[i] << endl;
+            outFile << "0 " << i << " " << valueToUse + tagm_tdc_time_offsets[i] << endl;
             if (i == 7 || i == 25 || i == 79 || i == 97){
                 for(int j = 1; j <= 5; j++){
-                    outFile << j << " " << i << " " << maxMean + tagm_tdc_time_offsets[i] << endl;
+                    outFile << j << " " << i << " " << valueToUse + tagm_tdc_time_offsets[i] << endl;
                 }
             }
             outFile.close();
             // Apply the same shift to the adc offsets
             outFile.open("tagm_adc_timing_offsets.txt", ios::out | ios::app);
-            outFile << "0 " << i << " " << maxMean + tagm_fadc_time_offsets[i] << endl;
+            outFile << "0 " << i << " " << valueToUse + tagm_fadc_time_offsets[i] << endl;
             if (i == 7 || i == 25 || i == 79 || i == 97){
                 for(int j = 1; j <= 5; j++){
-                    outFile << j << " " << i << " " << maxMean + tagm_fadc_time_offsets[i] << endl;
+                    outFile << j << " " << i << " " << valueToUse + tagm_fadc_time_offsets[i] << endl;
                 }
             }
             outFile.close();
@@ -930,6 +1023,7 @@ void JEventProcessor_HLDetectorTiming::DoTrackBased(void){
 
         int nBinsX = thisHist->GetNbinsX();
         int nBinsY = thisHist->GetNbinsY();
+        TH1D * selectedTAGHOffset = new TH1D("selectedTAGHOffset", "Selected TAGH Offset; ID; Offset [ns]", nBinsX, 0.5, nBinsX + 0.5);
         for (int i = 1 ; i <= nBinsX; i++){
             TH1D *projY = thisHist->ProjectionY("temp", i, i);
             // Scan over the histogram
@@ -956,12 +1050,50 @@ void JEventProcessor_HLDetectorTiming::DoTrackBased(void){
                     i, maxMean,
                     "Selected Mean position for offset",
                     nBinsX, 0.5, nBinsX + 0.5, nBinsY, projY->GetBinCenter(0), projY->GetBinCenter(projY->GetNbinsX()));
+            selectedTAGHOffset->SetBinContent(i, maxMean);
+            /*
+               outFile.open("tagh_tdc_timing_offsets.txt", ios::out | ios::app);
+               outFile << i << " " << maxMean + tagh_tdc_time_offsets[i] << endl;
+               outFile.close();
+               outFile.open("tagh_adc_timing_offsets.txt", ios::out | ios::app);
+               outFile << i << " " << maxMean + tagh_fadc_time_offsets[i] << endl;
+               outFile.close();
+               */
+        }
+
+        // Fit 1D histogram. If value is far from the fit use the fitted value
+        // Two behaviors above and below microscope
+        TFitResultPtr fr1 = selectedTAGHOffset->Fit("pol2", "SQ", "", 0.5, 131.5);
+        TFitResultPtr fr2 = selectedTAGHOffset->Fit("pol2", "SQ", "", 182.5, 274.5);        
+
+        for (int i = 1 ; i <= nBinsX; i++){
+            double fitResult = 0.0;
+            if (i < 150){
+                double x0 = fr1->Parameter(0);
+                double x1 = fr1->Parameter(1);
+                double x2 = fr1->Parameter(2);
+                fitResult = x0 + i*x1 + i*i*x2;
+            }
+            else{
+                double x0 = fr2->Parameter(0);
+                double x1 = fr2->Parameter(1);
+                double x2 = fr2->Parameter(2);
+                fitResult = x0 + i*x1 + i*i*x2;
+            }
+
+            double outlierCut = 7;
+            double valueToUse = selectedTAGHOffset->GetBinContent(i);
+            if (fabs(selectedTAGHOffset->GetBinContent(i) - fitResult) > outlierCut && valueToUse != 0.0){
+                valueToUse = fitResult;
+            }
+
+            selectedTAGHOffset->SetBinContent(i, valueToUse);
 
             outFile.open("tagh_tdc_timing_offsets.txt", ios::out | ios::app);
-            outFile << i << " " << maxMean + tagh_tdc_time_offsets[i] << endl;
+            outFile << i << " " << valueToUse + tagh_tdc_time_offsets[i] << endl;
             outFile.close();
             outFile.open("tagh_adc_timing_offsets.txt", ios::out | ios::app);
-            outFile << i << " " << maxMean + tagh_fadc_time_offsets[i] << endl;
+            outFile << i << " " << valueToUse + tagh_fadc_time_offsets[i] << endl;
             outFile.close();
         }
     }
@@ -996,6 +1128,17 @@ void JEventProcessor_HLDetectorTiming::DoTrackBased(void){
         float mean = fr->Parameter(1);
         outFile.open("fcal_base_time.txt");
         outFile << fcal_t_base - mean << endl; 
+        outFile.close();
+    }
+
+    this1DHist = Get1DHistogram("HLDetectorTiming", "TRACKING", "Earliest CDC Time Minus Matched SC Time");
+    if(this1DHist != NULL){
+        //Gaussian
+        Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
+        TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 15, maximum + 10);
+        float mean = fr->Parameter(1);
+        outFile.open("cdc_base_time.txt");
+        outFile << cdc_t_base - mean << endl;
         outFile.close();
     }
 

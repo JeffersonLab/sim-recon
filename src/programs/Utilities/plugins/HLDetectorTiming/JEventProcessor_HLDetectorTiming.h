@@ -55,11 +55,11 @@ class JEventProcessor_HLDetectorTiming:public jana::JEventProcessor{
         int GetCCDBIndexCDC(const DCDCHit *);
         int GetCCDBIndexCDC(int, int);
         double BEAM_CURRENT;
-        int DO_ROUGH_TIMING, DO_TDC_ADC_ALIGN, DO_TRACK_BASED, DO_VERIFY, REQUIRE_BEAM, BEAM_EVENTS_TO_KEEP, DO_CDC_TIMING;
+        int DO_ROUGH_TIMING, DO_TDC_ADC_ALIGN, DO_TRACK_BASED, DO_VERIFY, REQUIRE_BEAM, BEAM_EVENTS_TO_KEEP, DO_CDC_TIMING, DO_OPTIONAL;
         int fBeamEventCounter;
         // The final setup requires some shifts relative to the previous values, need to store them
 
-        double fcal_t_base, bcal_t_base, tof_t_base_fadc, tof_t_base_tdc;
+        double fcal_t_base, bcal_t_base, tof_t_base_fadc, tof_t_base_tdc, cdc_t_base;
         double tagm_fadc_time_offsets[103], tagm_tdc_time_offsets[103];
         double tagh_fadc_time_offsets[275], tagh_tdc_time_offsets[275];
         vector<double> sc_tdc_time_offsets;
