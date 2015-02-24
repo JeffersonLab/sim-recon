@@ -25,7 +25,7 @@ class DTrackHitSelector_factory:public jana::JFactory<DTrackHitSelector>{
 			// that the default can be changed easily by simply
 			// changing the tag here or on the command line.
 			vector<const DTrackHitSelector*> selectors;
-			loop->Get(selectors, "ALT1");
+			loop->Get(selectors, "ALT2");
 			for(unsigned int i=0; i< selectors.size(); i++){
 				_data.push_back(const_cast<DTrackHitSelector*>(selectors[i]));
 			}
