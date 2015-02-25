@@ -50,38 +50,27 @@ class DTOFGeometry : public JObject {
   }
   
   
-  int y2bar(float x, float y, int orientation) const   ///> convert local x,y to 
-  ///> bar number
+  int y2bar(double y) const   ///> convert local position y to bar number
   {
-    int N1 = NWIDEBARS/2;
-    int N2 = (NLONGBARS - NWIDEBARS )/2;
-    int N3 = NSHORTBARS/4;
-    int N4 = (NLONGBARS - NWIDEBARS )/2;
-
-    int bar;
-    if (orientation == 0) {float temp = y; y = -1.0*x; x = temp;}
-
-    if (fabs(y)<N3*BARWIDTH){ // short bars on each side of the beam hole
-      
-      bar = N1 + N2 + (int)((y+N3*BARWIDTH)/BARWIDTH) ;
-      
-    } else if (fabs(y)<(N3*BARWIDTH + N2*BARWIDTH/2.)){ // 2 long narrow bars on each side of the beam 
-      if (y<0){
-	bar = N1+N2 + ((int)((y + N3*BARWIDTH)/(BARWIDTH/2.))-1);
-      } else {
-	bar = N1+N2+N3+N3 + (int)((y - N3*BARWIDTH)/(BARWIDTH/2.));
-      }
-      
-    } else { // 19 long wide bars on the both sides of the beam
-      if (y<0){
-	bar = N1 + ((int)((y + N2*BARWIDTH/2 + N3*BARWIDTH)/BARWIDTH)-1);
-      } else {
-	bar = N1+N2+N3+N3+N4 + ((int)((y - N2*BARWIDTH/2 - N3*BARWIDTH)/BARWIDTH));
-      }
+    int jl=-1;
+    int n=50;
+    int ju=n;
+    int jm=0;
+    while(ju-jl>1){
+      jm=(ju+jl)>>1;
+        if (y>=YPOS[jm])
+            jl=jm;
+        else
+            ju=jm;
     }
-    
+    if (y==YPOS[0]) jm=0;
+    else if (y==YPOS[n-1]) jm=n-1;
 
-    return bar;
+    if (jm>0){
+      if (fabs(y-YPOS[jm-1])<fabs(y-YPOS[jm])) return jm-1;
+    }
+
+    return jm;
   }
 
 		void toStrings(vector<pair<string,string> > &items)const{
