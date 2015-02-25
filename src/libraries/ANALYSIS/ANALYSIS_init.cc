@@ -89,6 +89,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DCutAction_PIDFOM(NULL, Unknown, Unknown, 0.0);
 	DCutAction_AllTracksHaveDetectorMatch(NULL);
 	DCutAction_CombinedPIDFOM(NULL, 0.0);
+	DCutAction_EachPIDFOM(NULL, 0.0);
 	DCutAction_CombinedTrackingFOM(NULL, 0.0);
 	DCutAction_MissingMass(NULL, false, 0.0, 0.0);
 	DCutAction_MissingMassSquared(NULL, false, 0.0, 0.0);

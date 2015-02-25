@@ -99,9 +99,9 @@ class DCutAction_MaxNumParticleCombos : public DAnalysisAction
 class DCutAction_PIDFOM : public DAnalysisAction
 {
 	public:
-		DCutAction_PIDFOM(const DReaction* locReaction, Particle_t locStepPID, Particle_t locParticleID, double locMinimumConfidenceLevel, string locActionUniqueString = "") : 
+		DCutAction_PIDFOM(const DReaction* locReaction, Particle_t locStepPID, Particle_t locParticleID, double locMinimumConfidenceLevel, bool locCutNDFZeroFlag = false, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Cut_PIDFOM", false, locActionUniqueString), 
-		dStepPID(locStepPID), dParticleID(locParticleID), dMinimumConfidenceLevel(locMinimumConfidenceLevel){}
+		dStepPID(locStepPID), dParticleID(locParticleID), dMinimumConfidenceLevel(locMinimumConfidenceLevel), dCutNDFZeroFlag(locCutNDFZeroFlag){}
 
 		string Get_ActionName(void) const;
 		inline void Initialize(JEventLoop* locEventLoop){}
@@ -112,13 +112,15 @@ class DCutAction_PIDFOM : public DAnalysisAction
 		Particle_t dStepPID;
 		Particle_t dParticleID;
 		double dMinimumConfidenceLevel;
+		bool dCutNDFZeroFlag;
 };
 
-class DCutAction_CombinedPIDFOM : public DAnalysisAction
+class DCutAction_EachPIDFOM : public DAnalysisAction
 {
 	public:
-		DCutAction_CombinedPIDFOM(const DReaction* locReaction, double locMinimumConfidenceLevel, string locActionUniqueString = "") : 
-		DAnalysisAction(locReaction, "Cut_CombinedPIDFOM", false, locActionUniqueString), dMinimumConfidenceLevel(locMinimumConfidenceLevel){}
+		DCutAction_EachPIDFOM(const DReaction* locReaction, double locMinimumConfidenceLevel, bool locCutNDFZeroFlag = false, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Cut_EachPIDFOM", false, locActionUniqueString),
+		dMinimumConfidenceLevel(locMinimumConfidenceLevel), dCutNDFZeroFlag(locCutNDFZeroFlag){}
 
 		string Get_ActionName(void) const;
 		inline void Initialize(JEventLoop* locEventLoop){}
@@ -127,6 +129,23 @@ class DCutAction_CombinedPIDFOM : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
 		double dMinimumConfidenceLevel;
+		bool dCutNDFZeroFlag;
+};
+
+class DCutAction_CombinedPIDFOM : public DAnalysisAction
+{
+	public:
+		DCutAction_CombinedPIDFOM(const DReaction* locReaction, double locMinimumConfidenceLevel, bool locCutNDFZeroFlag = false, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Cut_CombinedPIDFOM", false, locActionUniqueString), dMinimumConfidenceLevel(locMinimumConfidenceLevel), dCutNDFZeroFlag(locCutNDFZeroFlag){}
+
+		string Get_ActionName(void) const;
+		inline void Initialize(JEventLoop* locEventLoop){}
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		double dMinimumConfidenceLevel;
+		bool dCutNDFZeroFlag;
 };
 
 class DCutAction_CombinedTrackingFOM : public DAnalysisAction

@@ -43,7 +43,7 @@ class DEventWriterROOT : public JObject
 		JOBJECT_PUBLIC(DEventWriterROOT);
 
 		DEventWriterROOT(JEventLoop* locEventLoop);
-		~DEventWriterROOT(void);
+		virtual ~DEventWriterROOT(void);
 
 		void Create_DataTrees(JEventLoop* locEventLoop) const;
 		void Create_ThrownTree(string locOutputFileName) const;

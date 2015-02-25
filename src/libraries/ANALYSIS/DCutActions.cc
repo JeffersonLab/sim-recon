@@ -71,10 +71,48 @@ bool DCutAction_PIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticle
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
 			if((locNeutralParticleHypothesis->dFOM < dMinimumConfidenceLevel) && (locNeutralParticleHypothesis->dNDF > 0))
 				return false;
+			if(dCutNDFZeroFlag && (locNeutralParticleHypothesis->dNDF == 0))
+				return false;
 		}
 		else
 		{
 			const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+			if((locChargedTrackHypothesis->dFOM < dMinimumConfidenceLevel) && (locChargedTrackHypothesis->dNDF > 0))
+				return false;
+			if(dCutNDFZeroFlag && (locChargedTrackHypothesis->dNDF == 0))
+				return false;
+		}
+	}
+	return true;
+}
+
+string DCutAction_EachPIDFOM::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinimumConfidenceLevel;
+	return locStream.str();
+}
+
+bool DCutAction_EachPIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	deque<const DKinematicData*> locParticles;
+	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
+
+	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
+	{
+		if(ParticleCharge(locParticles[loc_i]->PID()) == 0)
+		{
+			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
+			if(dCutNDFZeroFlag && (locNeutralParticleHypothesis->dNDF == 0))
+				return false;
+			if((locNeutralParticleHypothesis->dFOM < dMinimumConfidenceLevel) && (locNeutralParticleHypothesis->dNDF > 0))
+				return false;
+		}
+		else
+		{
+			const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+			if(dCutNDFZeroFlag && (locChargedTrackHypothesis->dNDF == 0))
+				return false;
 			if((locChargedTrackHypothesis->dFOM < dMinimumConfidenceLevel) && (locChargedTrackHypothesis->dNDF > 0))
 				return false;
 		}
@@ -101,12 +139,16 @@ bool DCutAction_CombinedPIDFOM::Perform_Action(JEventLoop* locEventLoop, const D
 		if(ParticleCharge(locParticles[loc_i]->PID()) == 0)
 		{
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
+			if(dCutNDFZeroFlag && (locNeutralParticleHypothesis->dNDF == 0))
+				return false;
 			locTotalNDF += locNeutralParticleHypothesis->dNDF;
 			locTotalChiSq += locNeutralParticleHypothesis->dChiSq;
 		}
 		else
 		{
 			const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+			if(dCutNDFZeroFlag && (locChargedTrackHypothesis->dNDF == 0))
+				return false;
 			locTotalNDF += locChargedTrackHypothesis->dNDF;
 			locTotalChiSq += locChargedTrackHypothesis->dChiSq;
 		}
