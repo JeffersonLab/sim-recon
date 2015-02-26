@@ -170,6 +170,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:F250_NSB", F250_NSB, "For f250PulseIntegral object.  NSB value for emulation from window raw data and for pulse integral pedestal normalization.");
 		gPARMS->SetDefaultParameter("EVIO:F250_NSPED", F250_NSPED, "For f250PulseIntegral object.  Number of pedestal samples value for emulation from window raw data and for pulse integral normalization.");
 
+		gPARMS->SetDefaultParameter("EVIO:F125_NSA", F125_NSA, "For f125PulseIntegral object.  NSA value for emulation from window raw data and for pulse integral pedestal normalization.");
+		gPARMS->SetDefaultParameter("EVIO:F125_NSB", F125_NSB, "For f125PulseIntegral object.  NSB value for emulation from window raw data and for pulse integral pedestal normalization.");
 		gPARMS->SetDefaultParameter("EVIO:F125_NSPED", F125_NSPED, "For f125PulseIntegral object.  Number of pedestal samples value for emulation from window raw data and for pulse integral normalization.");
 		gPARMS->SetDefaultParameter("EVIO:RUN_NUMBER", USER_RUN_NUMBER, "User-supplied run number. Override run number from other sources with this.(will be ignored if set to zero)");
 	}
