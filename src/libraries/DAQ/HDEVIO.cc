@@ -134,7 +134,7 @@ bool HDEVIO::ReadBlock(void)
 bool HDEVIO::read(uint32_t *user_buff, uint32_t user_buff_len)
 {
 	/// Read the next EVIO event into the user supplied buffer.
-	/// Return truw if successful and false otherwise. Details of
+	/// Return true if successful and false otherwise. Details of
 	/// the error will be in err_mess.
 	
 	err_code = HDEVIO_OK;
