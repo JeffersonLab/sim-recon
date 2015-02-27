@@ -21,6 +21,8 @@
 
 #include "TRACKING/DMCThrown.h"
 #include "TRACKING/DTrackTimeBased.h"
+#include "TRACKING/DTrackWireBased.h"
+#include "TRACKING/DTrackCandidate.h"
 
 #include "PID/DChargedTrack.h"
 #include "PID/DNeutralShower.h"
@@ -59,6 +61,9 @@ class DAnalysisUtilities : public JObject
 
 		void Get_UnusedChargedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DChargedTrack*>& locUnusedChargedTracks) const;
 		void Get_UnusedNeutralShowers(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DNeutralShower*>& locUnusedNeutralShowers) const;
+		void Get_UnusedTimeBasedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DTrackTimeBased*>& locUnusedTimeBasedTracks) const;
+		void Get_UnusedWireBasedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DTrackWireBased*>& locUnusedWireBasedTracks) const;
+		void Get_UnusedTrackCandidates(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DTrackCandidate*>& locUnusedTrackCandidates) const;
 
 		void Get_ThrownParticleSteps(JEventLoop* locEventLoop, deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps) const;
 		bool Are_ThrownPIDsSameAsDesired(JEventLoop* locEventLoop, const deque<Particle_t>& locDesiredPIDs, Particle_t locMissingPID = Unknown) const;
@@ -87,6 +92,10 @@ class DAnalysisUtilities : public JObject
 		DLorentzVector Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const;
 		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, bool locUseKinFitDataFlag) const;
 		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const;
+
+		// These routines use the MEAURED particle data.  For the kinfit-data result, just use the error matrix from the missing particle
+		DMatrixDSym Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo) const;
+		DMatrixDSym Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs) const;
 
 		double Calc_CrudeTime(const deque<const DKinematicData*>& locParticles, const DVector3& locCommonVertex) const;
 		double Calc_CrudeTime(const deque<const DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const;
