@@ -131,7 +131,9 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	F250_NSPED = 4;
 	F250_EMULATION_THRESHOLD = 20;
 	F125_NSA = 40;
-	F125_NSB = 5;
+	F125_NSB = 3;
+	F125_NSA_CDC = 80;
+	F125_NSB_CDC = 5;
 	F125_NSPED = 16;
 	F125_EMULATION_THRESHOLD = 20;
 	EMULATE_FADC125_TIME_UPSAMPLE = true;
@@ -172,6 +174,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 
 		gPARMS->SetDefaultParameter("EVIO:F125_NSA", F125_NSA, "For f125PulseIntegral object.  NSA value for emulation from window raw data and for pulse integral pedestal normalization.");
 		gPARMS->SetDefaultParameter("EVIO:F125_NSB", F125_NSB, "For f125PulseIntegral object.  NSB value for emulation from window raw data and for pulse integral pedestal normalization.");
+		gPARMS->SetDefaultParameter("EVIO:F125_NSA_CDC", F125_NSA_CDC, "For f125PulseIntegral object.  NSA value for emulation from window raw data and for pulse integral pedestal normalization. This is applied to rocid 24-28 only!");
+		gPARMS->SetDefaultParameter("EVIO:F125_NSB_CDC", F125_NSB_CDC, "For f125PulseIntegral object.  NSB value for emulation from window raw data and for pulse integral pedestal normalization. This is applied to rocid 24-28 only!");
 		gPARMS->SetDefaultParameter("EVIO:F125_NSPED", F125_NSPED, "For f125PulseIntegral object.  Number of pedestal samples value for emulation from window raw data and for pulse integral normalization.");
 		gPARMS->SetDefaultParameter("EVIO:RUN_NUMBER", USER_RUN_NUMBER, "User-supplied run number. Override run number from other sources with this.(will be ignored if set to zero)");
 	}
@@ -1639,7 +1643,15 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 		      break;
 		  }
 		}
-				  
+		
+		// Choose value of NSA and NSB based on rocid (eechh!)
+		uint32_t NSA = F125_NSA;
+		uint32_t NSB = F125_NSB;
+		if(f125WindowRawData->rocid>=24 && f125WindowRawData->rocid<=28){
+			NSA = F125_NSA_CDC;
+			NSB = F125_NSB_CDC;
+		}
+ 
 		// Get a vector of the samples for this channel
 		const vector<uint16_t> &samplesvector = f125WindowRawData->samples;
 		uint32_t nsamples=samplesvector.size();
@@ -1649,11 +1661,11 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 		uint32_t nsamples_used = 0;
 
 		uint32_t BinTC = T==NULL ? 0:(T->time >> 6);
-		uint32_t StartSample = BinTC - F125_NSB;
-		if( F125_NSB > BinTC) {
+		uint32_t StartSample = BinTC - NSB;
+		if( NSB > BinTC) {
 		  StartSample = 0;
 		} 
-		uint32_t EndSample = BinTC + F125_NSA;
+		uint32_t EndSample = BinTC + NSA;
 		if (EndSample>nsamples-1){
 		  EndSample = nsamples;
 		}
