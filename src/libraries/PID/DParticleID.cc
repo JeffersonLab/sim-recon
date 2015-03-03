@@ -175,9 +175,11 @@ DParticleID::DParticleID(JEventLoop *loop)
 	BCAL_PHI_CUT_PAR2=1.76e-3;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR2",BCAL_PHI_CUT_PAR2);
 
-	SC_DPHI_CUT=0.21;
+	SC_DPHI_CUT=0.105;
 	gPARMS->SetDefaultParameter("SC:DPHI_CUT",SC_DPHI_CUT);
 	
+	SC_DPHI_CUT_WB=0.21;
+	gPARMS->SetDefaultParameter("SC:DPHI_CUT_WB",SC_DPHI_CUT_WB);
 
 	dTargetZCenter = 0.0;
 	locGeometry->GetTargetZ(dTargetZCenter);
@@ -206,6 +208,21 @@ DParticleID::DParticleID(JEventLoop *loop)
 	double locHalfPaddle_OneSided = dTOFGeometry->SHORTBARLENGTH/2.0; //GET FROM GEOMETRY??
 	double locBeamHoleWidth = dTOFGeometry->LONGBARLENGTH - 2.0*dTOFGeometry->SHORTBARLENGTH;
 	ONESIDED_PADDLE_MIDPOINT_MAG = locHalfPaddle_OneSided + locBeamHoleWidth/2.0;
+
+	// Start counter calibration constants
+	vector<map<string,double> >tvals;
+
+	if(loop->GetCalib("/START_COUNTER/propagation_speed",tvals))
+	  jout << "Error loading /START_COUNTER/propagation_speed !" << endl;
+	else{
+	  for(unsigned int i=0; i<tvals.size(); i++){
+            map<string, double> &row = tvals[i];
+	    sc_veff[SC_STRAIGHT].push_back(row["SC_STRAIGHT_PROPAGATION_B"]);
+	    sc_veff[SC_BEND].push_back(row["SC_BEND_PROPAGATION_B"]);
+	    sc_veff[SC_NOSE].push_back(row["SC_NOSE_PROPAGATION_B"]);
+	  }
+	}
+
 }
 
 // Group fitted tracks according to candidate id
@@ -665,6 +682,35 @@ bool DParticleID::MatchToTOF(const DKinematicData* locTrack, const DReferenceTra
 	return true;
 }
 
+// Given a reference trajectory from a track, predict which TOF paddles should
+// fire due to the charged particle passing through the TOF planes.
+bool DParticleID::PredictTOFPaddles(const DReferenceTrajectory *rt,
+				    unsigned int &hbar,unsigned int &vbar,
+				    DVector3 *intersection) const{
+  // Initialize output variables
+  vbar=0;
+  hbar=0;
+  // Find intersection with TOF plane given by tof_pos
+  DVector3 tof_pos(0,0,dTOFGeometry->CenterMPlane);
+  DVector3 norm(0.0, 0.0, 1.0); //normal vector to TOF plane
+  DVector3 proj_mom,proj_pos;
+  double locPathLength = 9.9E9, locFlightTime = 9.9E9;
+  if(rt->GetIntersectionWithPlane(tof_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime,SYS_TOF) != NOERROR)
+    return false;
+
+  double x=proj_pos.x();
+  double y=proj_pos.y();
+
+  vbar=dTOFGeometry->y2bar(x);
+  hbar=dTOFGeometry->y2bar(y);
+
+  if (intersection) *intersection=proj_pos;
+
+  return true;
+}
+
+
+
 //------------------
 // MatchToFCAL
 //------------------
@@ -744,14 +790,14 @@ bool DParticleID::MatchToFCAL(const DKinematicData* locTrack, const DReferenceTr
 // hits can be skipped
 
 //to be called by track reconstruction
-bool DParticleID::MatchToSC(const DReferenceTrajectory* rt, const vector<const DSCHit*>& locSCHits, double& locStartTime, double& locTimeVariance) const
+bool DParticleID::MatchToSC(const DReferenceTrajectory* rt, const vector<const DSCHit*>& locSCHits, double& locStartTime, double& locTimeVariance, bool locIsTimeBased) const
 {
 	//Loop over SC points
 	vector<DSCHitMatchParams> locSCHitMatchParamsVector;
 	for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
 	{
 		DSCHitMatchParams locSCHitMatchParams;
-		if(MatchToSC(NULL, rt, locSCHits[loc_i], locStartTime, locSCHitMatchParams))
+		if(MatchToSC(NULL, rt, locSCHits[loc_i], locStartTime, locSCHitMatchParams,locIsTimeBased))
 			locSCHitMatchParamsVector.push_back(locSCHitMatchParams);
 	}
 	if(locSCHitMatchParamsVector.empty())
@@ -767,7 +813,7 @@ bool DParticleID::MatchToSC(const DReferenceTrajectory* rt, const vector<const D
 	return true;
 }
 
-bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams, DVector3 *IntersectionPoint, DVector3 *IntersectionDir) const
+bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams, bool locIsTimeBased, DVector3 *IntersectionPoint, DVector3 *IntersectionDir) const
 {
 	// NOTE: locTrack is NULL if calling from track reconstruction!!!
 	if(sc_pos.empty() || sc_norm.empty())
@@ -798,6 +844,7 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 
 	// Look for a match in phi
 	//double phi = dSCphi0 + dSCdphi*(locSCHit->sector - 1);
+	double sc_dphi_cut=(locIsTimeBased)?SC_DPHI_CUT:SC_DPHI_CUT_WB;
 	DVector3 average_pos=0.5*(sc_pos[sc_index][0]+sc_pos[sc_index][1]);
 	double phi=average_pos.Phi();
 	double dphi = phi - proj_phi; //phi could be 0 degrees & proj_phi could be 359 degrees
@@ -805,7 +852,7 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 		dphi -= M_TWO_PI;
 	while(dphi < -1.0*TMath::Pi())
 		dphi += M_TWO_PI;
-	if(fabs(dphi) >= SC_DPHI_CUT)
+	if(fabs(dphi) >= sc_dphi_cut)
 		return false; //no match
 	
 	// Match in phi successful, refine match in nose region were applicable
@@ -849,7 +896,7 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 		  dphi -= M_TWO_PI;
 		while(dphi < -1.0*TMath::Pi())
 		  dphi += M_TWO_PI;
-		if (fabs(dphi)>SC_DPHI_CUT) return false;
+		if (fabs(dphi)>sc_dphi_cut) return false;
 		break;
 	      }
 	    }	
@@ -930,7 +977,7 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt,
       dphi -= M_TWO_PI;
     while(dphi < -1.0*TMath::Pi())
       dphi += M_TWO_PI;
-    if(fabs(dphi) >= SC_DPHI_CUT)
+    if(fabs(dphi) >= SC_DPHI_CUT_WB)
       continue;
     
     // Match in phi successful, refine match in nose region were applicable
@@ -961,7 +1008,7 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt,
 	    dphi -= M_TWO_PI;
 	  while(dphi < -1.0*TMath::Pi())
 	    dphi += M_TWO_PI;
-	  if (fabs(dphi)>SC_DPHI_CUT){
+	  if (fabs(dphi)>SC_DPHI_CUT_WB){
 	    got_match=false;
 	    break;
 	  }
@@ -1018,7 +1065,7 @@ DParticleID::MatchToSC(const DKinematicData *kd,
 	  dphi -= M_TWO_PI;
 	while(dphi < -1.0*TMath::Pi())
 	  dphi += M_TWO_PI;
-	if(fabs(dphi) < 0.21){
+	if(fabs(dphi) < SC_DPHI_CUT_WB){
 	  double myz=cylpos[j].z();
 	  double sc_time=locSCHit->t - sc_leg_tcor;
 	  if (myz>=sc_pos0){
