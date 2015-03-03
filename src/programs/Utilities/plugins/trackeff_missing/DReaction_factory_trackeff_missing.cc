@@ -73,18 +73,19 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 // CUT TIGHTLY ON PARTICLE ID HERE!!!! // Want as clean of an event sample as possible.
 
+	// Missing Mass Squared
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56));
+
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05)); //5% confidence level cut //require kinematic fit converges
 
+	// Missing Mass Squared
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56, "Post-KinFit"));
+
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
-
-	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56));
-
-// CUT TIGHTLY ON MISSING MASS SQUARED HERE!!!! // Want as clean of an event sample as possible.
 
 	// Tracking Efficiency
 	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
@@ -146,6 +147,9 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 // CUT TIGHTLY ON PARTICLE ID HERE!!!! // Want as clean of an event sample as possible.
 
+	// Missing Mass Squared
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.2, 0.2));
+
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05)); //5% confidence level cut //require kinematic fit converges
@@ -155,9 +159,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 
 	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.2, 0.2));
-
-// CUT TIGHTLY ON MISSING MASS SQUARED HERE!!!! // Want as clean of an event sample as possible.
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.2, 0.2, "Post-KinFit"));
 
 	// Tracking Efficiency
 	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
@@ -219,6 +221,9 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 // CUT TIGHTLY ON PARTICLE ID HERE!!!! // Want as clean of an event sample as possible.
 
+	// Missing Mass Squared
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.2, 0.2));
+
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05)); //5% confidence level cut //require kinematic fit converges
@@ -228,9 +233,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 
 	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.2, 0.2));
-
-// CUT TIGHTLY ON MISSING MASS SQUARED HERE!!!! // Want as clean of an event sample as possible.
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.2, 0.2, "Post-KinFit"));
 
 	// Tracking Efficiency
 	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin

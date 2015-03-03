@@ -45,7 +45,7 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 /**************************************************** b1pi Control Variables ****************************************************/
 
 	// Type of kinematic fit to perform:
-	locReaction->Set_KinFitType(d_P4AndVertexFit); //defined in DKinFitResults.h
+//	locReaction->Set_KinFitType(d_P4AndVertexFit); //defined in DKinFitResults.h
 
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
 	locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
@@ -83,23 +83,23 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	locReaction->Add_AnalysisAction(new DCutAction_CombinedPIDFOM(locReaction, 0.01)); //1%
 
 	//Kinematic Fit Results and Confidence Level Cut
-	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.01)); //1%
+//	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+//	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.01)); //1%
 
 	//Post-Fit Kinematics
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboGenReconComparison(locReaction, true, "PostKinFit"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, "PostKinFit"));
+//	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboGenReconComparison(locReaction, true, "PostKinFit"));
+//	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, "PostKinFit"));
 
 	//Constrained Mass Distributions
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 650, 0.3, 1.6, "PostKinFit")); //false: measured data
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 500, 0.0, 0.5, "Pi0_PostKinFit")); //false: measured data
 
 	//omega mass
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 600, 0.2, 1.4, "omega_PostKinFit")); //true: kinfit data
+//	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 600, 0.2, 1.4, "omega_PostKinFit")); //true: kinfit data
 
 	//resonance masses
-	locReaction->Add_AnalysisAction(new DCustomAction_HistMass_b1_1235(locReaction, true)); //true: kinfit data
-	locReaction->Add_AnalysisAction(new DCustomAction_HistMass_X_2000(locReaction, true)); //true: kinfit data
+//	locReaction->Add_AnalysisAction(new DCustomAction_HistMass_b1_1235(locReaction, true)); //true: kinfit data
+//	locReaction->Add_AnalysisAction(new DCustomAction_HistMass_X_2000(locReaction, true)); //true: kinfit data
 
 	_data.push_back(locReaction); //Register the DReaction
 

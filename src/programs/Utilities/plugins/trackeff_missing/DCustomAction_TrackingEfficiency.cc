@@ -25,7 +25,6 @@ void DCustomAction_TrackingEfficiency::Initialize(JEventLoop* locEventLoop)
 	double locTargetZCenter = 0.0, locTargetLength = 1.0;
 	locGeometry->GetTargetZ(locTargetZCenter);
 	locGeometry->GetTargetLength(locTargetLength);
-cout << "center, length = " << locTargetZCenter << ", " << locTargetLength << endl;
 	dMinVertexZ = locTargetZCenter - 0.5*locTargetLength;
 	dMaxVertexZ = locTargetZCenter + 0.5*locTargetLength;
 	dVertexZBinSize = locTargetLength/double(dNumVertexZBins);
@@ -267,7 +266,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 		return true; //invalid reaction setup
 	if(ParticleCharge(dMissingPID) == 0)
 		return true; //NOT SUPPORTED (YET?)
-cout << "wega" << endl;
+
 	const DKinematicData* locMissingParticle = locParticleCombo->Get_MissingParticle(); //is NULL if no kinfit!!
 
 	// Get missing particle p4 & covariance
@@ -288,10 +287,9 @@ cout << "wega" << endl;
 
 	double locVertexZ = locParticleCombo->Get_EventVertex().Z();
 	int locVertexZBin = int((locVertexZ - dMinVertexZ)/dVertexZBinSize);
-	cout << "wega, z, bin = " << locVertexZ << ", " << locVertexZBin << endl;
 	if((locVertexZBin < 0) || (locVertexZBin >= int(dNumVertexZBins)))
 		return true; //not within range
-cout << "pass" << endl;
+
 	/************************************************** TRACK CANDIDATES *************************************************/
 
 	/*

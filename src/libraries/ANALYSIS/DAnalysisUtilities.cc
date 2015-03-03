@@ -503,13 +503,13 @@ void DAnalysisUtilities::Get_UnusedTimeBasedTracks(JEventLoop* locEventLoop, con
 
 	for(size_t loc_i = 0; loc_i < locSourceChargedTracks.size(); ++loc_i)
 	{
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locSourceChargedTracks[loc_i]->GetSingle(locTrackTimeBased);
+		//only need the candidate id: same for all hypotheses for a given track
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = locSourceChargedTracks[loc_i]->dChargedTrackHypotheses[0];
 
 		vector<const DTrackTimeBased*>::iterator locIterator;
 		for(locIterator = locUnusedTimeBasedTracks.begin(); locIterator != locUnusedTimeBasedTracks.end();)
 		{
-			if(locTrackTimeBased->candidateid != (*locIterator)->candidateid)
+			if(locChargedTrackHypothesis->candidateid != (*locIterator)->candidateid)
 				++locIterator; //not-used (yet)
 			else
 				locIterator = locUnusedTimeBasedTracks.erase(locIterator); //used
@@ -527,17 +527,13 @@ void DAnalysisUtilities::Get_UnusedWireBasedTracks(JEventLoop* locEventLoop, con
 
 	for(size_t loc_i = 0; loc_i < locSourceChargedTracks.size(); ++loc_i)
 	{
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locSourceChargedTracks[loc_i]->GetSingle(locTrackTimeBased);
-		vector<const DTrackWireBased*> locTrackWireBasedVector;
-		locTrackTimeBased->Get(locTrackWireBasedVector);
-		if(locTrackWireBasedVector.empty())
-			return; //no wire-based tracks (e.g. REST data)
+		//only need the candidate id: same for all hypotheses for a given track
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = locSourceChargedTracks[loc_i]->dChargedTrackHypotheses[0];
 
 		vector<const DTrackWireBased*>::iterator locIterator;
 		for(locIterator = locUnusedWireBasedTracks.begin(); locIterator != locUnusedWireBasedTracks.end();)
 		{
-			if(locTrackWireBasedVector[0]->candidateid != (*locIterator)->candidateid)
+			if(locChargedTrackHypothesis->candidateid != (*locIterator)->candidateid)
 				++locIterator; //not-used (yet)
 			else
 				locIterator = locUnusedWireBasedTracks.erase(locIterator); //used
@@ -553,25 +549,18 @@ void DAnalysisUtilities::Get_UnusedTrackCandidates(JEventLoop* locEventLoop, con
 	deque<const DChargedTrack*> locSourceChargedTracks;
 	locParticleCombo->Get_DetectedFinalChargedParticles_SourceObjects(locSourceChargedTracks);
 
+	set<unsigned int> locUsedCandidateIndices;
 	for(size_t loc_i = 0; loc_i < locSourceChargedTracks.size(); ++loc_i)
 	{
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locSourceChargedTracks[loc_i]->GetSingle(locTrackTimeBased);
-		vector<const DTrackWireBased*> locTrackWireBasedVector;
-		locTrackTimeBased->Get(locTrackWireBasedVector);
-		if(locTrackWireBasedVector.empty())
-			return; //no wire-based tracks (e.g. REST data)
-		const DTrackCandidate* locTrackCandidate = NULL;
-		locTrackWireBasedVector[0]->GetSingle(locTrackCandidate);
+		//only need the candidate id: same for all hypotheses for a given track
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = locSourceChargedTracks[loc_i]->dChargedTrackHypotheses[0];
+		locUsedCandidateIndices.insert(locChargedTrackHypothesis->candidateid - 1); //id = index + 1
+	}
 
-		vector<const DTrackCandidate*>::iterator locIterator;
-		for(locIterator = locUnusedTrackCandidates.begin(); locIterator != locUnusedTrackCandidates.end();)
-		{
-			if(locTrackCandidate != (*locIterator))
-				++locIterator; //not-used (yet)
-			else
-				locIterator = locUnusedTrackCandidates.erase(locIterator); //used
-		}
+	for(int loc_i = locUnusedTrackCandidates.size() - 1; loc_i >= 0; --loc_i)
+	{
+		if(locUsedCandidateIndices.find(loc_i) != locUsedCandidateIndices.end())
+			locUnusedTrackCandidates.erase(locUnusedTrackCandidates.begin() + loc_i);
 	}
 }
 
