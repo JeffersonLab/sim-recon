@@ -918,7 +918,7 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 		}
 	}
 
-	double dx = 0.3*proj_mom.Mag()/(proj_mom.Dot(norm));
+	double dx = 0.3*proj_mom.Mag()/fabs(proj_mom.Dot(norm));
 
 	// For the dEdx measurement we now need to take into account that L does not 
 	// compensate for the position in z at which the start counter paddle starts
