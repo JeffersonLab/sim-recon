@@ -376,7 +376,6 @@ void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)
 			dHist_SCHitEnergyVsSector = new TH2I(locHistName.c_str(), ";SC Hit Sector;SC Hit Energy (MeV)", 30, 0.5, 30.5, dNum2DHitEnergyBins, dMinHitEnergy, dMaxHitEnergy);
 		else //already created by another thread
 			dHist_SCHitEnergyVsSector = static_cast<TH2I*>(gDirectory->Get(locHistName.c_str()));
-		gDirectory->cd("..");
 
 		//TRACKING
 		CreateAndChangeTo_Directory("Tracking", "Tracking");
