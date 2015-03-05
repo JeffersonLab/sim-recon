@@ -34,12 +34,22 @@ jerror_t DBCALHit_factory::init(void)
 //------------------
 jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
+  // Only print messages for one thread whenever run number changes
+  static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
+  static set<int> runs_announced;
+  pthread_mutex_lock(&print_mutex);
+  bool print_messages = false;
+  if(runs_announced.find(runnumber) == runs_announced.end()){
+    print_messages = true;
+    runs_announced.insert(runnumber);
+  }
+
    /// Read in calibration constants
    vector<double> raw_gains;
    vector<double> raw_pedestals;
    vector<double> raw_time_offsets;
 
-   jout << "In DBCALHit_factory, loading constants..." << endl;
+    if(print_messages) jout << "In DBCALHit_factory, loading constants..." << endl;
    
    // load scale factors
    map<string,double> scale_factors;
