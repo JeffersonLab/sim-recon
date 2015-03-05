@@ -462,6 +462,10 @@ void DCustomAction_TrackingEfficiency::Fill_NonPIDHistograms(const DKinematicDat
 	double locDeltaPOverP = (locMeasuredP - locMissingP)/locMissingP;
 	double locDeltaTheta = locMeasuredTheta - locMissingTheta;
 	double locDeltaPhi = locMeasuredPhi - locMissingPhi;
+	while(locDeltaPhi > TMath::Pi())
+		locDeltaPhi -= 2.0*TMath::Pi();
+	while(locDeltaPhi < -1.0*TMath::Pi())
+		locDeltaPhi += 2.0*TMath::Pi();
 
 	//Optional: Fill histograms
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!

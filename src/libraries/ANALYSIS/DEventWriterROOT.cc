@@ -5,10 +5,14 @@ unsigned int dInitNumUnusedArraySize = 100;
 unsigned int gNumEventWriterThreads = 0;
 string* dThrownTreeFileName = NULL;
 
+//KEEP TRACK OF THE ARRAY SIZES USED FOR THE BRANCH MEMORY
 map<TTree*, unsigned int>* dNumThrownArraySizeMap = NULL;
 map<TTree*, unsigned int>* dNumUnusedArraySizeMap = NULL;
+
+//KEEP TRACK OF THE OBJECTS USED FOR THE BRANCH MEMORY
 map<string, map<string, TClonesArray*> >* dClonesArrayMap = NULL; //first key is tree name, 2nd key is branch name
 map<string, map<string, TObject*> >* dTObjectMap = NULL; //first key is tree name, 2nd key is branch name
+
 deque<TFile*>* dOutputROOTFiles = NULL;
 
 DEventWriterROOT::DEventWriterROOT(JEventLoop* locEventLoop)
@@ -38,44 +42,46 @@ DEventWriterROOT::~DEventWriterROOT(void)
 	japp->RootWriteLock();
 	{
 		--gNumEventWriterThreads;
-		if(gNumEventWriterThreads == 0)
+		if(gNumEventWriterThreads != 0)
 		{
-			if(dNumUnusedArraySizeMap != NULL)
+			japp->RootUnLock();
+			return;
+		}
+		if(dOutputROOTFiles != NULL)
+		{
+			for(size_t loc_i = 0; loc_i < dOutputROOTFiles->size(); ++loc_i)
 			{
-				delete dNumUnusedArraySizeMap;
-				dNumUnusedArraySizeMap = NULL;
+				(*dOutputROOTFiles)[loc_i]->Write();
+				(*dOutputROOTFiles)[loc_i]->Close();
+				delete (*dOutputROOTFiles)[loc_i];
 			}
-			if(dNumThrownArraySizeMap != NULL)
-			{
-				delete dNumThrownArraySizeMap;
-				dNumThrownArraySizeMap = NULL;
-			}
-			if(dOutputROOTFiles != NULL)
-			{
-				for(size_t loc_i = 0; loc_i < dOutputROOTFiles->size(); ++loc_i)
-				{
-					(*dOutputROOTFiles)[loc_i]->Write();
-					(*dOutputROOTFiles)[loc_i]->Close();
-					delete (*dOutputROOTFiles)[loc_i];
-				}
-				delete dOutputROOTFiles;
-				dOutputROOTFiles = NULL;
-			}
-			if(dClonesArrayMap != NULL)
-			{
-				delete dClonesArrayMap;
-				dClonesArrayMap = NULL;
-			}
-			if(dTObjectMap != NULL)
-			{
-				delete dTObjectMap;
-				dTObjectMap = NULL;
-			}
-			if(dThrownTreeFileName != NULL)
-			{
-				delete dThrownTreeFileName;
-				dThrownTreeFileName = NULL;
-			}
+			delete dOutputROOTFiles;
+			dOutputROOTFiles = NULL;
+		}
+		if(dNumUnusedArraySizeMap != NULL)
+		{
+			delete dNumUnusedArraySizeMap;
+			dNumUnusedArraySizeMap = NULL;
+		}
+		if(dNumThrownArraySizeMap != NULL)
+		{
+			delete dNumThrownArraySizeMap;
+			dNumThrownArraySizeMap = NULL;
+		}
+		if(dClonesArrayMap != NULL)
+		{
+			delete dClonesArrayMap;
+			dClonesArrayMap = NULL;
+		}
+		if(dTObjectMap != NULL)
+		{
+			delete dTObjectMap;
+			dTObjectMap = NULL;
+		}
+		if(dThrownTreeFileName != NULL)
+		{
+			delete dThrownTreeFileName;
+			dThrownTreeFileName = NULL;
 		}
 	}
 	japp->RootUnLock();
@@ -133,6 +139,9 @@ void DEventWriterROOT::Create_ThrownTree(string locOutputFileName) const
 		Create_Branch_Fundamental<Float_t>(locTree, "", "MCWeight", "F");
 		Create_Branch_Fundamental<UInt_t>(locTree, "", locNumThrownString, "i");
 		Create_Branches_ThrownParticle(locTree, "Thrown", locNumThrownString, true);
+
+		//CUSTOM
+		Create_CustomBranches_ThrownTree(locTree);
 	}
 	japp->RootUnLock();
 }
@@ -238,49 +247,46 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	//fill maps
 	map<Particle_t, unsigned int> locParticleNumberMap_Current;
 	Particle_t locPID;
-	ostringstream locPIDStream, locPositionStream, locParticleNameStream, locMassStream;
 	TObjString *locObjString_PID, *locObjString_Position, *locObjString_ParticleName;
 	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 	{
 		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
 
 		//initial particle
-		locPID = locReactionStep->Get_InitialParticleID();
-		locPIDStream.str("");
-		locPIDStream << PDGtype(locPID);
-		locObjString_PID = new TObjString(locPIDStream.str().c_str());
-		locPositionStream.str("");
-		locPositionStream << loc_i << "_" << -1;
-		locObjString_Position = new TObjString(locPositionStream.str().c_str());
-		locPositionToPIDMap->Add(locObjString_Position, locObjString_PID);
-		if((loc_i == 0) && ((locPID == Gamma) || (locPID == Electron) || (locPID == Positron)))
 		{
-			locParticleNameStream.str("");
-			locParticleNameStream << "Beam" << Convert_ToBranchName(ParticleType(locPID));
-			locObjString_ParticleName = new TObjString(locParticleNameStream.str().c_str());
-			locNameToPIDMap->Add(locObjString_ParticleName, locObjString_PID);
-			locParticleNameList->AddLast(locObjString_ParticleName);
+			ostringstream locPIDStream, locPositionStream, locParticleNameStream;
+			locPID = locReactionStep->Get_InitialParticleID();
+			locPIDStream << PDGtype(locPID);
+			locObjString_PID = new TObjString(locPIDStream.str().c_str());
+			locPositionStream << loc_i << "_" << -1;
+			locObjString_Position = new TObjString(locPositionStream.str().c_str());
+			locPositionToPIDMap->Add(locObjString_Position, locObjString_PID);
+			if((loc_i == 0) && ((locPID == Gamma) || (locPID == Electron) || (locPID == Positron)))
+			{
+				locParticleNameStream << "Beam" << Convert_ToBranchName(ParticleType(locPID));
+				locObjString_ParticleName = new TObjString(locParticleNameStream.str().c_str());
+				locNameToPIDMap->Add(locObjString_ParticleName, locObjString_PID);
+				locParticleNameList->AddLast(locObjString_ParticleName);
+			}
 		}
 
 		//target particle
 		locPID = locReactionStep->Get_TargetParticleID();
 		if((loc_i == 0) && (locPID != Unknown))
 		{
-			locPIDStream.str("");
+			ostringstream locPIDStream, locPositionStream, locParticleNameStream;
 			locPIDStream << PDGtype(locPID);
 			locObjString_PID = new TObjString(locPIDStream.str().c_str());
-			locPositionStream.str("");
 			locPositionStream << loc_i << "_" << -2;
 			locObjString_Position = new TObjString(locPositionStream.str().c_str());
 			locPositionToPIDMap->Add(locObjString_Position, locObjString_PID);
-			locParticleNameStream.str("");
 			locParticleNameStream << "Target" << Convert_ToBranchName(ParticleType(locPID));
 			locObjString_ParticleName = new TObjString(locParticleNameStream.str().c_str());
 			locNameToPositionMap->Add(locObjString_ParticleName, locObjString_Position);
 			locNameToPIDMap->Add(locObjString_ParticleName, locObjString_PID);
 			string locPIDName = locParticleNameStream.str() + string("__PID");
 			locMiscInfoMap->Add(new TObjString(locPIDName.c_str()), locObjString_PID);
-			locMassStream.str("");
+			ostringstream locMassStream;
 			locMassStream << ParticleMass(locPID);
 			locMiscInfoMap->Add(new TObjString("Target__Mass"), new TObjString(locMassStream.str().c_str()));
 			locParticleNameList->AddLast(locObjString_ParticleName);
@@ -291,18 +297,17 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 		locReactionStep->Get_FinalParticleIDs(locFinalParticleIDs);
 		for(size_t loc_j = 0; loc_j < locFinalParticleIDs.size(); ++loc_j)
 		{
+			ostringstream locPIDStream, locPositionStream;
 			locPID = locFinalParticleIDs[loc_j];
-			locPIDStream.str("");
 			locPIDStream << PDGtype(locPID);
 			locObjString_PID = new TObjString(locPIDStream.str().c_str());
 
-			locPositionStream.str("");
 			locPositionStream << loc_i << "_" << loc_j;
 			locObjString_Position = new TObjString(locPositionStream.str().c_str());
 
 			if(locReactionStep->Get_MissingParticleIndex() == int(loc_j)) //missing particle
 			{
-				locParticleNameStream.str("");
+				ostringstream locParticleNameStream;
 				locParticleNameStream << "Missing" << Convert_ToBranchName(ParticleType(locPID));
 				locObjString_ParticleName = new TObjString(locParticleNameStream.str().c_str());
 				locNameToPositionMap->Add(locObjString_ParticleName, locObjString_Position);
@@ -310,7 +315,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 				locNameToPIDMap->Add(locObjString_ParticleName, locObjString_PID);
 				string locPIDName = locParticleNameStream.str() + string("__PID");
 				locMiscInfoMap->Add(new TObjString(locPIDName.c_str()), locObjString_PID);
-				locMassStream.str("");
+				ostringstream locMassStream;
 				locMassStream << ParticleMass(locPID);
 				string locMassName = locParticleNameStream.str() + string("__Mass");
 				locMiscInfoMap->Add(new TObjString(locMassName.c_str()), new TObjString(locMassStream.str().c_str()));
@@ -333,7 +338,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 				break;
 			}
 
-			locParticleNameStream.str("");
+			ostringstream locParticleNameStream;
 			if(locDecaysFlag)
 				locParticleNameStream << "Decaying";
 			locParticleNameStream << Convert_ToBranchName(ParticleType(locPID));
@@ -348,7 +353,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 			locNameToPIDMap->Add(locObjString_ParticleName, locObjString_PID);
 			if(locDecaysFlag)
 			{
-				locMassStream.str("");
+				ostringstream locMassStream;
 				locMassStream << ParticleMass(locPID);
 				string locMassName = locParticleNameStream.str() + string("__Mass");
 				locMiscInfoMap->Add(new TObjString(locMassName.c_str()), new TObjString(locMassStream.str().c_str()));
@@ -390,7 +395,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 				++locDecayParentInstance;
 		}
 		//construct the name 
-		locParticleNameStream.str("");
+		ostringstream locParticleNameStream;
 		locParticleNameStream << "Decaying";
 		locParticleNameStream << Convert_ToBranchName(ParticleType(locPID));
 		if(locParticleNumberMap[locPID] > 1)
@@ -451,13 +456,13 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 			Create_Branch_NoSplitTObject<TLorentzVector>(locTree, "Production", "X4", (*dTObjectMap)[locTree->GetName()]);
 
 			// beam
-			locParticleNameStream.str("");
+			ostringstream locParticleNameStream;
 			locParticleNameStream << "Beam" << Convert_ToBranchName(ParticleType(locPID));
 			Create_Branches_Beam(locTree, locParticleNameStream.str(), locKinFitFlag);
 		}
 		else //decaying
 		{
-			locParticleNameStream.str("");
+			ostringstream locParticleNameStream;
 			locParticleNameStream << "Decaying" << Convert_ToBranchName(ParticleType(locPID));
 			if(IsDetachedVertex(locPID))
 				Create_Branch_NoSplitTObject<TLorentzVector>(locTree, locParticleNameStream.str(), "X4", (*dTObjectMap)[locTree->GetName()]);
@@ -476,7 +481,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 			else
 				++locParticleNumberMap_Current[locPID];
 
-			locParticleNameStream.str("");
+			ostringstream locParticleNameStream;
 			locParticleNameStream << Convert_ToBranchName(ParticleType(locPID));
 			if(locParticleNumberMap[locPID] > 1)
 				locParticleNameStream << locParticleNumberMap_Current[locPID];
@@ -502,6 +507,9 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	string locNumUnusedString = "NumUnused";
 	Create_Branch_Fundamental<UInt_t>(locTree, "", locNumUnusedString, "i");
 	Create_Branches_UnusedParticle(locTree, "Unused", locNumUnusedString, locIsMCDataFlag);
+
+	//Custom branches
+	Create_CustomBranches_DataTree(locTree, locReaction, locIsMCDataFlag);
 }
 
 void DEventWriterROOT::Get_DecayProductNames(const DReaction* locReaction, size_t locReactionStepIndex, TMap* locPositionToNameMap, TList*& locDecayProductNames, deque<size_t>& locSavedSteps) const
@@ -648,8 +656,8 @@ void DEventWriterROOT::Create_Branches_UnusedParticle(TTree* locTree, string loc
 		Create_Branch_FundamentalArray<Int_t>(locTree, locParticleBranchName, "MatchID", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "I");
 
 	//KINEMATICS: MEASURED //at the production vertex
-	Create_Branch_ClonesArray(locTree, locParticleBranchName, "X4_Measured", "TLorentzVector", (*dNumUnusedArraySizeMap)[locTree]);
-	Create_Branch_ClonesArray(locTree, locParticleBranchName, "P4_Measured", "TLorentzVector", (*dNumUnusedArraySizeMap)[locTree]);
+	Create_Branch_ClonesArray(locTree, locParticleBranchName, "X4_Measured", "TLorentzVector", (*dNumUnusedArraySizeMap)[locTree], (*dClonesArrayMap)[locTree->GetName()]);
+	Create_Branch_ClonesArray(locTree, locParticleBranchName, "P4_Measured", "TLorentzVector", (*dNumUnusedArraySizeMap)[locTree], (*dClonesArrayMap)[locTree->GetName()]);
 
 	//PID QUALITY
 	Create_Branch_FundamentalArray<Float_t>(locTree, locParticleBranchName, "ChiSq_Tracking", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "F");
@@ -682,15 +690,15 @@ void DEventWriterROOT::Create_Branches_ThrownParticle(TTree* locTree, string loc
 		Create_Branch_FundamentalArray<Int_t>(locTree, locParticleBranchName, "MatchID", locArraySizeString, (*dNumThrownArraySizeMap)[locTree], "I");
 
 	//KINEMATICS: THROWN //at the production vertex
-	Create_Branch_ClonesArray(locTree, locParticleBranchName, "X4_Thrown", "TLorentzVector", (*dNumThrownArraySizeMap)[locTree]);
-	Create_Branch_ClonesArray(locTree, locParticleBranchName, "P4_Thrown", "TLorentzVector", (*dNumThrownArraySizeMap)[locTree]);
+	Create_Branch_ClonesArray(locTree, locParticleBranchName, "X4_Thrown", "TLorentzVector", (*dNumThrownArraySizeMap)[locTree], (*dClonesArrayMap)[locTree->GetName()]);
+	Create_Branch_ClonesArray(locTree, locParticleBranchName, "P4_Thrown", "TLorentzVector", (*dNumThrownArraySizeMap)[locTree], (*dClonesArrayMap)[locTree->GetName()]);
 }
 
-string DEventWriterROOT::Create_Branch_ClonesArray(TTree* locTree, string locParticleBranchName, string locVariableName, string locClassName, unsigned int locSize) const
+string DEventWriterROOT::Create_Branch_ClonesArray(TTree* locTree, string locParticleBranchName, string locVariableName, string locClassName, unsigned int locSize, map<string, TClonesArray*>& locClonesArrayMap) const
 {
 	string locBranchName = (locParticleBranchName != "") ? locParticleBranchName + string("__") + locVariableName : locVariableName;
-	(*dClonesArrayMap)[locTree->GetName()].insert(pair<string, TClonesArray*>(locBranchName, new TClonesArray(locClassName.c_str(), locSize)));
-	locTree->Branch(locBranchName.c_str(), &((*dClonesArrayMap)[locTree->GetName()][locBranchName]), 32000, 0); //0: don't split
+	locClonesArrayMap.insert(pair<string, TClonesArray*>(locBranchName, new TClonesArray(locClassName.c_str(), locSize)));
+	locTree->Branch(locBranchName.c_str(), &(locClonesArrayMap[locBranchName]), 32000, 0); //0: don't split
 	return locBranchName;
 }
 
@@ -838,6 +846,9 @@ void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
 			if(locNumThrown > (*dNumThrownArraySizeMap)[locTree])
 				(*dNumThrownArraySizeMap)[locTree] = locNumThrown;
 		}
+
+		//Custom Branches
+		Fill_CustomBranches_ThrownTree(locTree, locEventLoop);
 
 		locTree->Fill();
 	}
@@ -1212,6 +1223,9 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 			//update array sizes
 			if(locNumUnused > (*dNumUnusedArraySizeMap)[locTree])
 				(*dNumUnusedArraySizeMap)[locTree] = locNumUnused;
+
+			//Custom Branches
+			Fill_CustomBranches_DataTree(locTree, locEventLoop, locParticleCombo);
 
 			locTree->Fill();
 		}

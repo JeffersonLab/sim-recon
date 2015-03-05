@@ -216,6 +216,7 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 				locBinArray[54] = 1.0E6;
 
 				loc2DHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), 3 + locActionNames.size(), 0.5, 3.5 + float(locActionNames.size()), 54, locBinArray);
+				delete[] locBinArray;
 				loc2DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combo Blueprints");
 				loc2DHist->GetXaxis()->SetBinLabel(2, "Cut Beam, RF #Deltat");
 				loc2DHist->GetXaxis()->SetBinLabel(3, "Cut Particle PID");
