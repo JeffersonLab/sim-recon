@@ -63,6 +63,7 @@ jerror_t DFCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
         print_messages = true;
         runs_announced.insert(runnumber);
     }
+    pthread_mutex_unlock(&print_mutex);
 
     // extract the FCAL Geometry
     vector<const DFCALGeometry*> fcalGeomVect;

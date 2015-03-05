@@ -33,6 +33,7 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
     print_messages = true;
     runs_announced.insert(runnumber);
   }
+  pthread_mutex_unlock(&print_mutex);
 
   DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
   DGeometry* geom = app->GetDGeometry(runnumber);

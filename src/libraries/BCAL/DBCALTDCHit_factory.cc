@@ -46,6 +46,7 @@ jerror_t DBCALTDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
     print_messages = true;
     runs_announced.insert(runnumber);
   }
+  pthread_mutex_unlock(&print_mutex);
 
   t_rollover = 65250;
   if (runnumber>1776){

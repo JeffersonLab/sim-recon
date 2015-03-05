@@ -43,6 +43,7 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
     print_messages = true;
     runs_announced.insert(runnumber);
   }
+  pthread_mutex_unlock(&print_mutex);
 
    /// Read in calibration constants
    vector<double> raw_gains;

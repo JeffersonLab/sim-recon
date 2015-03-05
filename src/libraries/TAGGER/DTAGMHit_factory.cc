@@ -67,6 +67,7 @@ jerror_t DTAGMHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
         print_messages = true;
         runs_announced.insert(runnumber);
     }
+    pthread_mutex_unlock(&print_mutex);
 
     /// set the base conversion scales
     fadc_a_scale    = 1.1;        // pixels per count
