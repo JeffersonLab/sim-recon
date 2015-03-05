@@ -8,6 +8,7 @@
 #include "TDirectoryFile.h"
 #include "TFile.h"
 #include "TROOT.h"
+#include "TClass.h"
 
 #include "JANA/JEventLoop.h"
 #include "DANA/DApplication.h"
@@ -52,11 +53,25 @@ class DAnalysisAction
 			//NEVER: Grab DParticleCombo objects (of any tag!) from the JEventLoop within these methods unless you know EXACTLY what you're doing (and if you're doing this, you probably don't)
 			//NEVER EVER: Grab objects that are created post-kinfit (e.g. DParticleCombo, DKinFitResults, etc.) from the JEventLoop if Get_UseKinFitResultsFlag() == false: CAN CAUSE DEPENDENCY LOOP
 
-		TDirectoryFile* CreateAndChangeTo_ActionDirectory(void); //get the directory this action should write ROOT objects to. //MUST(!) LOCK PRIOR TO ENTRY! (not performed in here!)
-		TDirectoryFile* ChangeTo_BaseDirectory(void); //get and change to the base (file/global) directory //MUST(!) LOCK PRIOR TO ENTRY! (not performed in here!)
-		TDirectoryFile* CreateAndChangeTo_Directory(TDirectoryFile* locBaseDirectory, string locDirName, string locDirTitle); //MUST(!) LOCK PRIOR TO ENTRY! (not performed in here!)
-		TDirectoryFile* CreateAndChangeTo_Directory(string locDirName, string locDirTitle); //MUST LOCK PRIOR TO ENTRY! (not performed in here!)
-		TDirectoryFile* CreateAndChangeTo_Directory(string locBaseDirectoryPath, string locDirName, string locDirTitle); //MUST LOCK PRIOR TO ENTRY! (not performed in here!)
+		//Create/Navigate Directories //MUST(!) LOCK PRIOR TO ENTRY! (not performed in these functions!)
+		TDirectoryFile* CreateAndChangeTo_ActionDirectory(void); //get the directory this action should write ROOT objects to.
+		TDirectoryFile* ChangeTo_BaseDirectory(void); //get and change to the base (file/global) directory
+		TDirectoryFile* CreateAndChangeTo_Directory(TDirectoryFile* locBaseDirectory, string locDirName, string locDirTitle);
+		TDirectoryFile* CreateAndChangeTo_Directory(string locDirName, string locDirTitle);
+		TDirectoryFile* CreateAndChangeTo_Directory(string locBaseDirectoryPath, string locDirName, string locDirTitle);
+
+		//Create/Get Histograms
+		//1D
+		template <typename DHistType> DHistType* GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax) const;
+		template <typename DHistType, typename DBinType> DHistType* GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges) const;
+		//2D
+		template <typename DHistType> DHistType* GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax) const;
+		template <typename DHistType, typename DBinType> DHistType* GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, DBinType* locYBinEdges) const;
+		template <typename DHistType, typename DBinType> DHistType* GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax) const;
+		template <typename DHistType, typename DBinType> DHistType* GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, DBinType* locYBinEdges) const;
+		//3D
+		template <typename DHistType> DHistType* GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax, Int_t locNumBinsZ, Double_t locZRangeMin, Double_t locZRangeMax) const;
+		template <typename DHistType, typename DBinType> DHistType* GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, DBinType* locYBinEdges, Int_t locNumBinsZ, DBinType* locZBinEdges) const;
 
 		//Valid only during function-call operators (and the functions it calls):
 		size_t Get_NumPreviousParticleCombos(void) const{return dNumPreviousParticleCombos;}
@@ -135,5 +150,148 @@ inline TDirectoryFile* DAnalysisAction::CreateAndChangeTo_Directory(string locBa
 	return CreateAndChangeTo_Directory(locBaseDirectory, locDirName, locDirTitle);
 }
 
-#endif // _DAnalysisAction_
+template <typename DHistType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax) const
+{
+	//1D Histogram
+	if((!DHistType::Class()->InheritsFrom("TH1")) || (string(DHistType::Class()->GetName()) == "TH1") || DHistType::Class()->InheritsFrom("TH2") || DHistType::Class()->InheritsFrom("TH3"))
+	{
+		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
+		abort();
+	}
 
+	const char* locHistNameCString = locHistName.c_str();
+	const char* locHistTitleCString = locHistTitle.c_str();
+	TObject* locHist = gDirectory->Get(locHistNameCString);
+	if(locHist == NULL)
+		return new DHistType(locHistNameCString, locHistTitleCString, locNumBinsX, locXRangeMin, locXRangeMax);
+	else //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+		return static_cast<DHistType*>(locHist);
+}
+
+template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges) const
+{
+	//1D Histogram
+	if((!DHistType::Class()->InheritsFrom("TH1")) || (string(DHistType::Class()->GetName()) == "TH1") || DHistType::Class()->InheritsFrom("TH2") || DHistType::Class()->InheritsFrom("TH3"))
+	{
+		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
+		abort();
+	}
+
+	const char* locHistNameCString = locHistName.c_str();
+	const char* locHistTitleCString = locHistTitle.c_str();
+	TObject* locHist = gDirectory->Get(locHistNameCString);
+	if(locHist == NULL)
+		return new DHistType(locHistNameCString, locHistTitleCString, locNumBinsX, locXBinEdges);
+	else //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+		return static_cast<DHistType*>(locHist);
+}
+
+template <typename DHistType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax) const
+{
+	//2D Histogram
+	if((!DHistType::Class()->InheritsFrom("TH2")) || (string(DHistType::Class()->GetName()) == "TH2") || DHistType::Class()->InheritsFrom("TH3"))
+	{
+		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
+		abort();
+	}
+
+	const char* locHistNameCString = locHistName.c_str();
+	const char* locHistTitleCString = locHistTitle.c_str();
+	TObject* locHist = gDirectory->Get(locHistNameCString);
+	if(locHist == NULL)
+		return new DHistType(locHistNameCString, locHistTitleCString, locNumBinsX, locXRangeMin, locXRangeMax, locNumBinsY, locYRangeMin, locYRangeMax);
+	else //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+		return static_cast<DHistType*>(locHist);
+}
+
+template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, DBinType* locYBinEdges) const
+{
+	//2D Histogram
+	if((!DHistType::Class()->InheritsFrom("TH2")) || (string(DHistType::Class()->GetName()) == "TH2") || DHistType::Class()->InheritsFrom("TH3"))
+	{
+		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
+		abort();
+	}
+
+	const char* locHistNameCString = locHistName.c_str();
+	const char* locHistTitleCString = locHistTitle.c_str();
+	TObject* locHist = gDirectory->Get(locHistNameCString);
+	if(locHist == NULL)
+		return new DHistType(locHistNameCString, locHistTitleCString, locNumBinsX, locXBinEdges, locNumBinsY, locYBinEdges);
+	else //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+		return static_cast<DHistType*>(locHist);
+}
+
+template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax) const
+{
+	//2D Histogram
+	if((!DHistType::Class()->InheritsFrom("TH2")) || (string(DHistType::Class()->GetName()) == "TH2") || DHistType::Class()->InheritsFrom("TH3"))
+	{
+		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
+		abort();
+	}
+
+	const char* locHistNameCString = locHistName.c_str();
+	const char* locHistTitleCString = locHistTitle.c_str();
+	TObject* locHist = gDirectory->Get(locHistNameCString);
+	if(locHist == NULL)
+		return new DHistType(locHistNameCString, locHistTitleCString, locNumBinsX, locXBinEdges, locNumBinsY, locYRangeMin, locYRangeMax);
+	else //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+		return static_cast<DHistType*>(locHist);
+}
+
+template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, DBinType* locYBinEdges) const
+{
+	//2D Histogram
+	if((!DHistType::Class()->InheritsFrom("TH2")) || (string(DHistType::Class()->GetName()) == "TH2") || DHistType::Class()->InheritsFrom("TH3"))
+	{
+		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
+		abort();
+	}
+
+	const char* locHistNameCString = locHistName.c_str();
+	const char* locHistTitleCString = locHistTitle.c_str();
+	TObject* locHist = gDirectory->Get(locHistNameCString);
+	if(locHist == NULL)
+		return new DHistType(locHistNameCString, locHistTitleCString, locNumBinsX, locXRangeMin, locXRangeMax, locNumBinsY, locYBinEdges);
+	else //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+		return static_cast<DHistType*>(locHist);
+}
+
+template <typename DHistType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax, Int_t locNumBinsZ, Double_t locZRangeMin, Double_t locZRangeMax) const
+{
+	//3D Histogram
+	if((!DHistType::Class()->InheritsFrom("TH3")) || (string(DHistType::Class()->GetName()) == "TH3"))
+	{
+		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
+		abort();
+	}
+
+	const char* locHistNameCString = locHistName.c_str();
+	const char* locHistTitleCString = locHistTitle.c_str();
+	TObject* locHist = gDirectory->Get(locHistNameCString);
+	if(locHist == NULL)
+		return new DHistType(locHistNameCString, locHistTitleCString, locNumBinsX, locXRangeMin, locXRangeMax, locNumBinsY, locYRangeMin, locYRangeMax, locNumBinsZ, locZRangeMin, locZRangeMax);
+	else //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+		return static_cast<DHistType*>(locHist);
+}
+
+template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, DBinType* locYBinEdges, Int_t locNumBinsZ, DBinType* locZBinEdges) const
+{
+	//3D Histogram
+	if((!DHistType::Class()->InheritsFrom("TH3")) || (string(DHistType::Class()->GetName()) == "TH3"))
+	{
+		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
+		abort();
+	}
+
+	const char* locHistNameCString = locHistName.c_str();
+	const char* locHistTitleCString = locHistTitle.c_str();
+	TObject* locHist = gDirectory->Get(locHistNameCString);
+	if(locHist == NULL)
+		return new DHistType(locHistNameCString, locHistTitleCString, locNumBinsX, locXBinEdges, locNumBinsY, locYBinEdges, locNumBinsZ, locZBinEdges);
+	else //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+		return static_cast<DHistType*>(locHist);
+}
+
+#endif // _DAnalysisAction_
