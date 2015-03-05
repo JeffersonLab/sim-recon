@@ -408,7 +408,6 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
   }
   
   for (unsigned int j=0;j<cdc_backward_ids.size();j++){	  
-    DTrackCandidate *can = new DTrackCandidate;
     const DTrackCandidate *cdccan = cdctrackcandidates[cdc_backward_ids[j]]; 
 
     // Sometimes the cdc track candidate parameters for tracks that are actually
@@ -420,6 +419,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       num_fdc_cands_remaining--;
     }
     else{
+      DTrackCandidate *can = new DTrackCandidate;
       can->setMomentum(cdccan->momentum());
       can->setPosition(cdccan->position());
       can->setCharge(cdccan->charge());
