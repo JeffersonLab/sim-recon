@@ -51,6 +51,17 @@ jerror_t DCDCHit_factory::init(void)
 //------------------
 jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
+    // Only print messages for one thread whenever run number change
+    static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
+    static set<int> runs_announced;
+    pthread_mutex_lock(&print_mutex);
+    bool print_messages = false;
+    if(runs_announced.find(runnumber) == runs_announced.end()){
+        print_messages = true;
+        runs_announced.insert(runnumber);
+    }
+    pthread_mutex_unlock(&print_mutex);
+
     // calculate the number of straws in each ring
     CalcNstraws(eventLoop, runnumber, Nstraws);
     Nrings = Nstraws.size();
@@ -60,7 +71,7 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
     vector<double> raw_pedestals;
     vector<double> raw_time_offsets;
 
-    jout << "In DCDCHit_factory, loading constants..." << std::endl;
+    if(print_messages) jout << "In DCDCHit_factory, loading constants..." << std::endl;
 
     // load scale factors
     map<string,double> scale_factors;
