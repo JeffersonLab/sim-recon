@@ -139,7 +139,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 		{
 			// sc_leg_tcor=(sc_light_guide[2]-sc_pos[0].z())/C_EFFECTIVE;
 			sc_leg_tcor = -sc_pos[0][0].z()/C_EFFECTIVE;
-			double theta = sc_norm[0][sc_norm.size() - 1].Theta();
+			double theta = sc_norm[0][sc_norm[0].size()-2].Theta();
 			sc_angle_cor = 1./cos(M_PI - theta);
 		}
 	}
