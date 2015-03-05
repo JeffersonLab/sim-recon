@@ -72,8 +72,8 @@ jerror_t DTrackWireBased_factory::init(void)
 	fitter = NULL;
 	MAX_DReferenceTrajectoryPoolSize = 50;
 
-	DEBUG_HISTS = true;	
-	//DEBUG_HISTS = false;
+	//DEBUG_HISTS = true;	
+	DEBUG_HISTS = false;
 	DEBUG_LEVEL = 0;
 	
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",DEBUG_LEVEL);
