@@ -723,7 +723,7 @@ DPSCDigiHit* DTranslationTable::MakePSCDigiHit(const PSCIndex_t &idx,
    DPSCDigiHit *h = new DPSCDigiHit();
    CopyDf250Info(h, pi, pt, pp);
 
-   h->id = idx.id;
+   h->counter_id = idx.id;
 
    return h;
 }
@@ -874,7 +874,7 @@ DPSCTDCDigiHit*  DTranslationTable::MakePSCTDCDigiHit(
    DPSCTDCDigiHit *h = new DPSCTDCDigiHit();
    CopyDF1TDCInfo(h, hit);
 
-   h->id = idx.id;
+   h->counter_id = idx.id;
 
    return h;
 }
