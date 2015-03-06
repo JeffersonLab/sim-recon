@@ -1665,14 +1665,14 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
   hc=0;
   for (i=0; i < dpschits.size(); i++) {
-    if ((dpschits[i]->dE > 0) && ((dpschits[i]->t*1000.) > tMin) &&
+    if ((dpschits[i]->npe_fadc > 0) && ((dpschits[i]->t*1000.) > tMin) &&
         (dpschits[i]->t*1000. < trigTime))
     {
       if(PSC_time_window > 0.)
 	if(fabs(dpschits[i]->t) > PSC_time_window)
 	  continue;
 
-      uint32_t E     = dpschits[i]->dE*PSC_ADCscale;   // dE in GeV
+      uint32_t E     = dpschits[i]->npe_fadc*PSC_ADCscale;   // dE in GeV
       uint32_t t     = dpschits[i]->t*1000.-tMin;  // in picoseconds
 
       hc++;
@@ -1761,14 +1761,14 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
   hc=0;
   for (i=0; i < dpshits.size(); i++) {
-    if ((dpshits[i]->dE > 0) && ((dpshits[i]->t*1000.) > tMin) &&
+    if ((dpshits[i]->npix_fadc > 0) && ((dpshits[i]->t*1000.) > tMin) &&
         (dpshits[i]->t*1000. < trigTime))
     {
       if(PS_time_window > 0.)
 	if(fabs(dpshits[i]->t) > PS_time_window)
 	  continue;
 
-      uint32_t E     = dpshits[i]->dE*PS_ADCscale;   // dE in GeV
+      uint32_t E     = dpshits[i]->npix_fadc*PS_ADCscale;   // dE in GeV
       uint32_t t     = dpshits[i]->t*1000.-tMin;  // in picoseconds
 
       hc++;
