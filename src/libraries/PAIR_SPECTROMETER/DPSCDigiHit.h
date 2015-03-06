@@ -10,13 +10,12 @@
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
-#include "DPSGeometry.h"
 
 class DPSCDigiHit:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(DPSCDigiHit);
 		
-		int id;
+		int counter_id;
 		uint32_t pulse_integral; ///< identified pulse integral as returned by FPGA algorithm
 		uint32_t pulse_time;     ///< identified pulse time as returned by FPGA algorithm
 		uint32_t pedestal;       ///< pedestal info used by FPGA (if any)
@@ -25,7 +24,7 @@ class DPSCDigiHit:public jana::JObject{
 		uint32_t nsamples_pedestal;    ///< number of samples used in pedestal
 		
 		void toStrings(vector<pair<string,string> > &items)const{
-			AddString(items, "id", "%d", id);
+			AddString(items, "counter_id", "%d", counter_id);
 			AddString(items, "pulse_integral", "%d", pulse_integral);
 			AddString(items, "pulse_time", "%d", pulse_time);
 			AddString(items, "pedestal", "%d", pedestal);

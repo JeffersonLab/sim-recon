@@ -10,21 +10,19 @@
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
-#include "DPSGeometry.h"
 
 class DPSCTDCDigiHit:public jana::JObject{
  public:
   JOBJECT_PUBLIC(DPSCTDCDigiHit);
 		
   // Add data members here. For example:
-  int id;
+  int counter_id;
   uint32_t time; ///< TDC time measurement
   
   void toStrings(vector<pair<string,string> > &items)const{
-    AddString(items, "id", "%d", id);
+    AddString(items, "counter_id", "%d", counter_id);
     AddString(items, "time", "%d", time);
   }
-		
 };
 
 #endif // _DPSCTDCDigiHit_

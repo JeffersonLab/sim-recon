@@ -24,6 +24,8 @@ class DPSHit_factory:public jana::JFactory<DPSHit>{
 		DPSHit_factory(){};
 		~DPSHit_factory(){};
 
+		// config. parameter
+		double ADC_THRESHOLD;
 
                 // overall scale factors
                 double a_scale;
@@ -46,6 +48,7 @@ class DPSHit_factory:public jana::JFactory<DPSHit>{
 
 		const double  GetHitEnergy(const DPSHit  *in_hit, const DPSGeometry &psGeom) const;
 		const double  GetHitEnergy(const DPSDigiHit  *in_hit, const DPSGeometry &psGeom) const;
+		const double  GetRoughHitEnergy(const DPSDigiHit  *in_hit, const DPSGeometry &psGeom) const;
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -55,7 +58,7 @@ class DPSHit_factory:public jana::JFactory<DPSHit>{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
                 void FillCalibTable(ps_digi_constants_t &table, string table_name,
-                                    const DPSGeometry &tofGeom);
+                                    const DPSGeometry &psGeom);
 
 };
 

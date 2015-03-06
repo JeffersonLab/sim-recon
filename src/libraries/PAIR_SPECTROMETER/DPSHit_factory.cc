@@ -4,8 +4,6 @@
 // Created: Wed Oct 15 16:45:01 EDT 2014
 // Creator: staylor (on Linux gluon05.jlab.org 2.6.32-358.18.1.el6.x86_64 x86_64)
 //
-
-
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -13,10 +11,7 @@
 using namespace std;
 
 #include "DPSHit_factory.h"
-#include "DPSDigiHit.h"
-#include "DPSHit.h"
 #include <DAQ/Df250PulseIntegral.h>
-#include <DAQ/Df250Config.h>
 using namespace jana;
 
 
@@ -25,12 +20,16 @@ using namespace jana;
 //------------------
 jerror_t DPSHit_factory::init(void)
 {
-	/// set the base conversion scales
-	a_scale    = 0.0001; 
-	t_scale    = 0.0625;   // 62.5 ps/count
-	t_base     = 0.;    // ns
+  ADC_THRESHOLD = 500.0; // ADC integral counts
+  gPARMS->SetDefaultParameter("PSHit:ADC_THRESHOLD",ADC_THRESHOLD,
+			      "pedestal-subtracted pulse integral threshold");	
 
-	return NOERROR;
+  /// set the base conversion scales
+  a_scale    = 0.0001; 
+  t_scale    = 0.0625;   // 62.5 ps/count
+  t_base     = 0.;    // ns
+  
+  return NOERROR;
 }
 
 //------------------
@@ -124,8 +123,6 @@ jerror_t DPSHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	for (unsigned int i=0; i < digihits.size(); i++){
 		const DPSDigiHit *digihit = digihits[i];
 
-		DPSHit *hit = new DPSHit;
-
 		// Make sure channel id is in valid range
 		if( (digihit->arm < 0) && (digihit->arm >= psGeom.NUM_ARMS) ) {
 			sprintf(str, "DPSDigiHit arm out of range! arm=%d (should be 0-%d)", 
@@ -137,37 +134,41 @@ jerror_t DPSHit_factory::evnt(JEventLoop *loop, int eventnumber)
 				digihit->column, psGeom.NUM_FINE_COLUMNS);
 			throw JException(str);
 		}
-		
-		// The PSHit class labels hits as
-		//   arm:     North/South (0/1)
-		//   column:  1-185
-		hit->arm     = digihit->arm;
-		hit->column  = digihit->column;
-
-                // Get pedestal.  Prefer associated event pedestal if it exists.
-                // Otherwise, use the average pedestal from CCDB
+				
+		// Get pedestal, prefer associated event pedestal if it exists,
+		// otherwise, use the average pedestal from CCDB
                 double pedestal = GetConstant(adc_pedestals,digihit,psGeom);
-                const Df250PulseIntegral* PIobj = NULL;
-                const Df250Config *configObj = NULL;
-                digihit->GetSingle(PIobj);
-                PIobj->GetSingle(configObj);
-                if ((PIobj != NULL) && (configObj != NULL)) {
-                        // the measured pedestal must be scaled by the ratio of the number
-                        // of samples used to calculate the pedestal and the actual pulse
-                        pedestal = static_cast<double>(configObj->NSA_NSB) * PIobj->pedestal;
-                }
+		const Df250PulseIntegral* PIobj = NULL;
+		digihit->GetSingle(PIobj);
+		if (PIobj != NULL) {
+		  // the measured pedestal must be scaled by the ratio of the number
+		  // of samples used to calculate the integral and the pedestal          
+		  // Changed to conform to D. Lawrence changes Dec. 4 2014
+		  double ped_sum = (double)PIobj->pedestal;
+		  double nsamples_integral = (double)PIobj->nsamples_integral;
+		  double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
+		  pedestal          = ped_sum * nsamples_integral/nsamples_pedestal;
+		}
 
                 // Apply calibration constants here
                 double A = (double)digihit->pulse_integral;
+		A -= pedestal;
+		// Throw away hits with small pedestal-subtracted integrals
+		if (A < ADC_THRESHOLD) continue;
                 double T = (double)digihit->pulse_time;
 
-		hit->E = GetHitEnergy(digihit, psGeom);
-		hit->dE = a_scale * GetConstant(adc_gains, digihit, psGeom) * (A - pedestal);
+		DPSHit *hit = new DPSHit;
+		// The PSHit class labels hits as
+		//   arm:     North/South (0/1)
+		//   column:    1-145
+		hit->arm     = digihit->arm;
+		hit->column  = digihit->column;
+		hit->integral = A;
+		hit->npix_fadc = A * a_scale * GetConstant(adc_gains, digihit, psGeom);
                 hit->t = t_scale * (T - GetConstant(adc_time_offsets, digihit, psGeom)) + t_base;
-                hit->sigma_t = 4.0;    // ns (what is the fADC time resolution?)
-                hit->has_fADC = true;
-                hit->has_TDC  = false; // will get set to true below if appropriate
-
+		//hit->E = GetHitEnergy(digihit, psGeom);
+		hit->E = GetRoughHitEnergy(digihit, psGeom); // use rough-calibration for now
+	
 		hit->AddAssociatedObject(digihit);
                 
                 _data.push_back(hit);
@@ -224,6 +225,26 @@ void DPSHit_factory::FillCalibTable(ps_digi_constants_t &table, string table_nam
 			throw JException(str);
 		}
 	}
+}
+
+//------------------------------------ 
+// GetRoughHitEnergy
+//------------------------------------ 
+const double  DPSHit_factory::GetRoughHitEnergy(const DPSDigiHit  *in_hit, const DPSGeometry &psGeom) const
+{
+	if( (in_hit->arm != DPSGeometry::kNorth) && (in_hit->arm != DPSGeometry::kSouth))
+		return 0.;
+	if( (in_hit->column<=0) || (in_hit->column>psGeom.NUM_ARMS) )
+		return 0.;
+	double E = 0.0;
+	if (in_hit->column>0&&in_hit->column<=88+17) {//columns 1-105 are 2mm wide: 26MeV/tile
+	  double offset = 0.026*17;
+	  E = 3.45 + 0.026*in_hit->column - offset;
+	}
+	else if (in_hit->column>88+17&&in_hit->column<=128+17) {//columns 106-145 are 1mm wide: 13MeV/tile
+	  E = 5.74 + 0.013*(in_hit->column-88-17);
+	}
+	return E;
 }
 
 //------------------------------------ 

@@ -16,7 +16,7 @@ class DPSDigiHit:public jana::JObject{
  public:
   JOBJECT_PUBLIC(DPSDigiHit);
   
-  DPSGeometry::Arm arm;   // North: 0, South: 1
+  DPSGeometry::Arm arm;   // North(left): 0, South(right): 1
   int column;
   uint32_t pulse_integral; ///< identified pulse integral as returned by FPGA algorithm
   uint32_t pulse_time;     ///< identified pulse time as returned by FPGA algorithm
@@ -26,7 +26,7 @@ class DPSDigiHit:public jana::JObject{
   uint32_t nsamples_pedestal;    ///< number of samples used in pedestal
   
   void toStrings(vector<pair<string,string> > &items)const{
-    AddString(items, "arm", "%d", arm==0 ? "north" : "south");
+    AddString(items, "arm", "%d", arm);
     AddString(items, "column", "%d", column);
     AddString(items, "pulse_integral", "%d", pulse_integral);
     AddString(items, "pulse_time", "%d", pulse_time);
@@ -35,7 +35,6 @@ class DPSDigiHit:public jana::JObject{
     AddString(items, "nsamples_integral", "%d", nsamples_integral);
     AddString(items, "nsamples_pedestal", "%d", nsamples_pedestal);
   }
-		
 };
 
 #endif // _DPSDigiHit_
