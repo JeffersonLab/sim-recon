@@ -82,10 +82,8 @@ class DEventWriterROOT : public JObject
 		template <typename DType> void Fill_ClonesData(TTree* locTree, string locParticleBranchName, string locVariableName, DType* locObject, unsigned int locArrayIndex, const map<string, TClonesArray*>& locClonesArrayMap) const;
 		template <typename DType> void Fill_TObjectData(TTree* locTree, string locParticleBranchName, string locVariableName, DType* locObject, const map<string, TObject*>& locTObjectMap) const;
 
-		//calls the next-below method with locMinArraySize = locArrayIndex
-		template <typename DType> void Fill_FundamentalData(TTree* locTree, string locParticleBranchName, string locVariableName, DType locValue, unsigned int locArrayIndex, unsigned int locCurrentArraySize) const;
-		//locMinArraySize: the minimum array size needed for this event: if it is less than the current size, a new, larger array will be created
-			//this method is useful for auto-expanding the array to the size you know you need, rather than calling new for each new array index
+		//locMinArraySize: the minimum array size needed for this tree entry: if it is less than the current size, a new, larger array will be created
+			//THIS NUMBER MUST REMAIN CONSTANT FOR THE TREE ENTRY. Else it may need to expand the array (with a new call) mid-entry, losing the previous information
 		template <typename DType> void Fill_FundamentalData(TTree* locTree, string locParticleBranchName, string locVariableName, DType locValue, unsigned int locArrayIndex, unsigned int locMinArraySize, unsigned int locCurrentArraySize) const;
 
 		const DAnalysisUtilities* dAnalysisUtilities;
@@ -139,8 +137,9 @@ template <typename DType> DType* DEventWriterROOT::Get_BranchAddress(TTree* locT
 	//only works for fundamental types!!!
 	if(locMinimumSize > locCurrentSize) //creates a new array if it is too small
 	{
-		delete[] (DType*)locTree->GetBranch(locBranchName.c_str())->GetAddress();
+		DType* locOldBranchAddress = (DType*)locTree->GetBranch(locBranchName.c_str())->GetAddress();
 		locTree->SetBranchAddress(locBranchName.c_str(), new DType[locMinimumSize]);
+		delete[] locOldBranchAddress;
 	}
 	return (DType*)locTree->GetBranch(locBranchName.c_str())->GetAddress();
 }
@@ -157,21 +156,16 @@ template <typename DType> void DEventWriterROOT::Fill_FundamentalData(TTree* loc
 	Fill_FundamentalData<DType>(locTree, "", locVariableName, locValue, 0, 1, 1);
 }
 
-template <typename DType> void DEventWriterROOT::Fill_FundamentalData(TTree* locTree, string locParticleBranchName, string locVariableName, DType locValue, unsigned int locArrayIndex, unsigned int locCurrentArraySize) const
-{
-	Fill_FundamentalData(locTree, locParticleBranchName, locVariableName, locValue, locArrayIndex, locArrayIndex, locCurrentArraySize);
-}
-
 template <typename DType> void DEventWriterROOT::Fill_FundamentalData(TTree* locTree, string locParticleBranchName, string locVariableName, DType locValue, unsigned int locArrayIndex, unsigned int locMinArraySize, unsigned int locCurrentArraySize) const
 {
 	string locBranchName = (locParticleBranchName != "") ? locParticleBranchName + string("__") + locVariableName : locVariableName;
 	if(locArrayIndex >= locMinArraySize)
-		locMinArraySize = locArrayIndex + 1; //in case a user screws this up
+	{
+		cout << "ERROR: Trying to fill array index beyond requested bound. ABORTING." << endl;
+		abort();
+	}
 	DType* locBranchPointer = Get_BranchAddress<DType>(locTree, locBranchName, locMinArraySize, locCurrentArraySize);
-	if(locMinArraySize == 1)
-		*locBranchPointer = locValue;
-	else
-		locBranchPointer[locArrayIndex] = locValue;
+	locBranchPointer[locArrayIndex] = locValue;
 }
 
 template <typename DType> void DEventWriterROOT::Fill_ClonesData(TTree* locTree, string locParticleBranchName, string locVariableName, DType* locObject, unsigned int locArrayIndex, const map<string, TClonesArray*>& locClonesArrayMap) const

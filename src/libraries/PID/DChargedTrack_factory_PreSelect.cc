@@ -113,6 +113,10 @@ jerror_t DChargedTrack_factory_PreSelect::erun(void)
 //------------------
 jerror_t DChargedTrack_factory_PreSelect::fini(void)
 {
+	//Clear objects from last event
+	for(size_t loc_i = 0; loc_i < dCreatedChargedTracks.size(); ++loc_i)
+		delete dCreatedChargedTracks[loc_i];
+
 	return NOERROR;
 }
 

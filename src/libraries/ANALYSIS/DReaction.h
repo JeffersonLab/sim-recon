@@ -22,6 +22,8 @@ class DReaction : public JObject
 
 		// CONSTRUCTOR:
 		DReaction(string locReactionName); //User must specify a unique reaction name upon construction
+		// DESTRUCTOR:
+		virtual ~DReaction(void);
 
 		// SET OBJECT DATA:
 		void Set_KinFitType(DKinFitType locKinFitType){dKinFitType = locKinFitType;}
