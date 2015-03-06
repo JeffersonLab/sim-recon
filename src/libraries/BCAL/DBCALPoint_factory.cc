@@ -90,9 +90,16 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
 
   // load effective velocities
   effective_velocities.clear();
-  loop->GetCalib("/BCAL/effective_velocities", effective_velocities);
 
-    return NOERROR;
+  // Passing in the member vector directly was sometimes causing a crash...
+  vector <double> effective_velocities_temp;
+  loop->GetCalib("/BCAL/effective_velocities", effective_velocities_temp);
+
+  for (unsigned int i = 0; i < effective_velocities_temp.size(); i++){
+    effective_velocities.push_back(effective_velocities_temp.at(i));
+  }
+
+  return NOERROR;
 }
 
 //----------------
