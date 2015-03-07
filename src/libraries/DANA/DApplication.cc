@@ -37,6 +37,10 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 {
 	pthread_mutex_init(&mutex, NULL);
 	
+	//disable inherently (and horrorifically)-unsafe registration of EVERY TObject with the global TObjectTable //multithreading!!
+		//simply setting/checking a bool is not thread-safe due to cache non-coherence and operation re-shuffling by the compiler
+	TObject::SetObjectStat(kFALSE);
+
 	// Add plugin paths to Hall-D specific binary directories
 	const char *bms_osname = getenv("BMS_OSNAME");
 	string sbms_osname(bms_osname==NULL ? "":bms_osname);
@@ -301,11 +305,8 @@ DMagneticFieldMap* DApplication::GetBfield(unsigned int run_number)
 	GetJParameterManager()->SetDefaultParameter("BFIELD_TYPE", bfield_type);
 	if( GetJParameterManager()->Exists("BFIELD_MAP") ) {
 		bfield_map = GetJParameterManager()->GetParameter("BFIELD_MAP")->GetValue();
-
-		bfield = new DMagneticFieldMapFineMesh(this,run_number,bfield_map);  // pass along the name of the magnetic field map to load
-		
 	}
-	else if(bfield_type=="CalibDB"|| bfield_type=="FineMesh"){
+	if(bfield_type=="CalibDB"|| bfield_type=="FineMesh"){
 		// if the magnetic field map got passed in on the command line, then use that value instead of the CCDB values
 		if( bfield_map != "" )  { 
 			bfield = new DMagneticFieldMapFineMesh(this,run_number,bfield_map);

@@ -25,6 +25,43 @@ DEventWriterREST::DEventWriterREST(JEventLoop* locEventLoop, string locOutputFil
 
 bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString) const
 {
+	std::vector<const DMCReaction*> reactions;
+	locEventLoop->Get(reactions);
+
+	std::vector<const DRFTime*> rftimes;
+	locEventLoop->Get(rftimes);
+
+	std::vector<const DBeamPhoton*> locBeamPhotons;
+	locEventLoop->Get(locBeamPhotons);
+
+	std::vector<const DFCALShower*> fcalshowers;
+	locEventLoop->Get(fcalshowers);
+
+	std::vector<const DBCALShower*> bcalshowers;
+	locEventLoop->Get(bcalshowers);
+
+	std::vector<const DTOFPoint*> tofpoints;
+	locEventLoop->Get(tofpoints);
+
+	std::vector<const DSCHit*> starthits;
+	locEventLoop->Get(starthits);
+
+	std::vector<const DTrackTimeBased*> tracks;
+	locEventLoop->Get(tracks);
+
+	std::vector<const DDetectorMatches*> locDetectorMatches;
+	locEventLoop->Get(locDetectorMatches);
+
+	//Check to see if there are any objects to write out.  If so, don't write out an empty event
+	bool locOutputDataPresentFlag = false;
+	if((!reactions.empty()) || (!rftimes.empty()) || (!locBeamPhotons.empty()) || (!tracks.empty()))
+		locOutputDataPresentFlag = true;
+	else if((!fcalshowers.empty()) || (!bcalshowers.empty()) || (!tofpoints.empty()) || (!starthits.empty()))
+		locOutputDataPresentFlag = true;
+	//don't need to check detector matches: no matches if none of the above objects
+	if(!locOutputDataPresentFlag)
+		return true; //had correct response to data
+
 	string locOutputFileName = Get_OutputFileName(locOutputFileNameSubString);
 
 	hddm_r::HDDM locRecord;
@@ -36,8 +73,6 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	res().setEventNo(event.GetEventNumber());
 
 	// push any DMCReaction objects to the output record
-	std::vector<const DMCReaction*> reactions;
-	locEventLoop->Get(reactions);
 	for (size_t i=0; i < reactions.size(); i++)
 	{
 		hddm_r::ReactionList rea = res().addReactions(1);
@@ -84,8 +119,6 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	}
 
 	// push any DRFTime objects to the output record
-	std::vector<const DRFTime*> rftimes;
-	locEventLoop->Get(rftimes);
 	for (size_t i=0; i < rftimes.size(); i++)
 	{
 		hddm_r::RFtimeList rf = res().addRFtimes(1);
@@ -93,8 +126,6 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	}
 
 	// push any DBeamPhoton objects to the output record
-	std::vector<const DBeamPhoton*> locBeamPhotons;
-	locEventLoop->Get(locBeamPhotons);
 	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 	{
 		if(locBeamPhotons[loc_i]->t0_detector() == SYS_TAGM)
@@ -112,8 +143,6 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	}
 
 	// push any DFCALShower objects to the output record
-	std::vector<const DFCALShower*> fcalshowers;
-	locEventLoop->Get(fcalshowers);
 	for (size_t i=0; i < fcalshowers.size(); i++)
 	{
 		hddm_r::FcalShowerList fcal = res().addFcalShowers(1);
@@ -137,8 +166,6 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	}
 
 	// push any DBCALShower objects to the output record
-	std::vector<const DBCALShower*> bcalshowers;
-	locEventLoop->Get(bcalshowers);
 	for (size_t i=0; i < bcalshowers.size(); i++)
 	{
 		hddm_r::BcalShowerList bcal = res().addBcalShowers(1);
@@ -161,8 +188,6 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	}
 
 	// push any DTOFPoint objects to the output record
-	std::vector<const DTOFPoint*> tofpoints;
-	locEventLoop->Get(tofpoints);
 	for (size_t i=0; i < tofpoints.size(); i++)
 	{
 		hddm_r::TofPointList tof = res().addTofPoints(1);
@@ -180,8 +205,6 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	}
 
 	// push any DSCHit objects to the output record
-	std::vector<const DSCHit*> starthits;
-	locEventLoop->Get(starthits);
 	for (size_t i=0; i < starthits.size(); i++)
 	{
 		hddm_r::StartHitList hit = res().addStartHits(1);
@@ -191,8 +214,6 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	}
 
 	// push any DTrackTimeBased objects to the output record
-	std::vector<const DTrackTimeBased*> tracks;
-	locEventLoop->Get(tracks);
 	for (size_t i=0; i < tracks.size(); ++i)
 	{
 		hddm_r::ChargedTrackList tra = res().addChargedTracks(1);
@@ -261,8 +282,6 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	}
 
 	// push any DDetectorMatches objects to the output record
-	std::vector<const DDetectorMatches*> locDetectorMatches;
-	locEventLoop->Get(locDetectorMatches);
 	for(size_t loc_i = 0; loc_i < locDetectorMatches.size(); ++loc_i)
 	{
 		hddm_r::DetectorMatchesList matches = res().addDetectorMatcheses(1);

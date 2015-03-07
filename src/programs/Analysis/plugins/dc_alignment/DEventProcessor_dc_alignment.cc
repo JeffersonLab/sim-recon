@@ -234,7 +234,7 @@ jerror_t DEventProcessor_dc_alignment::init(void)
     }
     cdc_alignments.push_back(tempvec);
   }
-
+  
    if (READ_CDC_FILE){
     ifstream cdcfile("cdc_alignment.dat");  
     for (unsigned int ring=0;ring<cdc_alignments.size();ring++){
@@ -251,6 +251,9 @@ jerror_t DEventProcessor_dc_alignment::init(void)
 	cdc_alignments[ring][straw].A(k_dYu)=dyu;
 	cdc_alignments[ring][straw].A(k_dXd)=dxd;
 	cdc_alignments[ring][straw].A(k_dYd)=dyd;
+
+	double var=0.0001;
+	cdc_alignments[ring][straw].E=DMatrix4x4(var,0.,0.,0., 0.,var,0.,0., 0.,0.,var,0., 0.,0.,0.,var);
       }
     }
     cdcfile.close();
@@ -293,7 +296,7 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   JCalibration *jcalib = dapp->GetJCalibration((loop->GetJEvent()).GetRunNumber());
   vector< map<string, double> > tvals;
   cdc_drift_table.clear();
-  if (jcalib->Get("CDC/cdc_drift_table", tvals)==false){    
+  if (jcalib->Get("CDC/cdc_drift_table::NoBField", tvals)==false){    
     for(unsigned int i=0; i<tvals.size(); i++){
       map<string, double> &row = tvals[i];
       cdc_drift_table.push_back(1000.*row["t"]);
@@ -321,11 +324,56 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
     exit(0);
   }
 
-  dapp->Lock();
-
+   // Get offsets tweaking nominal geometry from calibration database
+   vector<map<string,double> >vals;
+  vector<cdc_offset_t>tempvec;
+ 
   unsigned int numstraws[28]={42,42,54,54,66,66,80,80,93,93,106,106,123,123,
 			      135,135,146,146,158,158,170,170,182,182,197,197,
 			      209,209};
+  if (jcalib->Get("CDC/wire_alignment",vals)==false){
+    unsigned int straw_count=0,ring_count=0;
+    for(unsigned int i=0; i<vals.size(); i++){
+      map<string,double> &row = vals[i];
+
+      // put the vector of offsets for the current ring into the offsets vector
+      if (straw_count==numstraws[ring_count]){
+	straw_count=0;
+	ring_count++;
+	
+	cdc_offsets.push_back(tempvec);
+
+	tempvec.clear();
+      }
+      
+      // Get the offsets from the calibration database 
+      cdc_offset_t temp;
+      temp.dx_u=row["dxu"];
+      //temp.dx_u=0.;
+
+      temp.dy_u=row["dyu"];
+      //temp.dy_u=0.;
+      
+      temp.dx_d=row["dxd"];
+      //temp.dx_d=0.;
+
+      temp.dy_d=row["dyd"];
+      //temp.dy_d=0.;
+
+      tempvec.push_back(temp);
+     
+      straw_count++;
+    }
+    cdc_offsets.push_back(tempvec);
+  }
+  else{
+    jerr<< "CDC wire alignment table not available... bailing... " <<endl;
+    exit(0);
+  }
+
+
+  dapp->Lock();
+
   for (int i=0;i<28;i++){
     char title[40];
     sprintf(title,"cdc_residual_ring%d",i+1);
@@ -427,8 +475,13 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   }  
   Hcdcres_vs_drift_time=(TH2F*)gROOT->FindObject("Hcdcres_vs_drift_time");
   if (!Hcdcres_vs_drift_time){
-    Hcdcres_vs_drift_time=new TH2F("Hcdcres_vs_drift_time","cdc Residual vs drift time",400,-20,780,100,-1.,1.);
+    Hcdcres_vs_drift_time=new TH2F("Hcdcres_vs_drift_time","cdc Residual vs drift time",400,-20,780,500,-1.,1.);
   } 
+  Hcdcres_vs_d=(TH2F*)gROOT->FindObject("Hcdcres_vs_d");
+  if (!Hcdcres_vs_d){
+    Hcdcres_vs_d=new TH2F("Hcdcres_vs_d","cdc Residual vs distance to wire",400,0,0.8,500,-1.,1.);
+  } 
+
   Hdrift_time=(TH2F*)gROOT->FindObject("Hdrift_time");
   if (!Hdrift_time){
     Hdrift_time=new TH2F("Hdrift_time",
@@ -496,6 +549,16 @@ jerror_t DEventProcessor_dc_alignment::fini(void)
   printf("Events processed = %d\n",myevt);
 
   if (RUN_BENCHMARK==false){
+    
+  for (unsigned int ring=0;ring<cdc_alignments.size();ring++){
+      for (unsigned int straw=0;straw<cdc_alignments[ring].size();
+	   straw++){
+	if (fabs(cdc_alignments[ring][straw].A(k_dXu))>0.19)
+	cout << cdc_alignments[ring][straw].A(k_dXu) << " " 
+	     << sqrt(cdc_alignments[ring][straw].E(k_dXu,k_dXu)) << endl;
+      }
+  }
+
     ofstream cdcfile("cdc_alignment.dat");
     //cdcfile << "Ring straw dXu dYu dXd dYd" << endl;
     for (unsigned int ring=0;ring<cdc_alignments.size();ring++){
@@ -509,6 +572,23 @@ jerror_t DEventProcessor_dc_alignment::fini(void)
       }
     }
     cdcfile.close();
+
+    ofstream cdcfile2("cdc_alignment_update.dat");
+    //cdcfile << "Ring straw dXu dYu dXd dYd" << endl;
+    for (unsigned int ring=0;ring<cdc_alignments.size();ring++){
+      for (unsigned int straw=0;straw<cdc_alignments[ring].size();
+	   straw++){
+	//	cdcfile << ring+1 << " " << straw+1 << " " 
+	cdcfile2 << (cdc_alignments[ring][straw].A(k_dXu)+cdc_offsets[ring][straw].dx_u) << " " 
+		 << (cdc_alignments[ring][straw].A(k_dYu)+cdc_offsets[ring][straw].dy_u) << " "
+		 << (cdc_alignments[ring][straw].A(k_dXd)+cdc_offsets[ring][straw].dx_d) << " "
+		 << (cdc_alignments[ring][straw].A(k_dYd)+cdc_offsets[ring][straw].dy_d) << endl;
+      }
+    }
+    cdcfile2.close();
+
+    
+
     
     if (ALIGN_WIRE_PLANES){
       ofstream fdcfile("fdc_alignment.dat");
@@ -554,7 +634,8 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
   vector<const DFDCPseudo*>pseudos;
   loop->Get(pseudos);
   vector<const DCDCTrackHit*>cdcs;
-  if (COSMICS) loop->Get(cdcs);
+  //if (COSMICS) 
+  loop->Get(cdcs);
 
   if (cdcs.size()>20 /* && cdcs.size()<60*/){
     // Add the hits to the finder helper class, link axial hits into segments
@@ -646,7 +727,7 @@ DEventProcessor_dc_alignment::DoFilter(double t0,double OuterZ,DMatrix4x1 &S,
   unsigned int numhits=hits.size();
   unsigned int maxindex=numhits-1;
 
-  int NEVENTS=300000;
+  int NEVENTS=100000;
   double anneal_factor=pow(1e4,(double(NEVENTS-myevt))/(NEVENTS-1.));
   if (myevt>NEVENTS) anneal_factor=1.;  
   anneal_factor=1.;
@@ -702,7 +783,7 @@ DEventProcessor_dc_alignment::DoFilter(double t0,double OuterZ,DMatrix4x1 &S,
     double prelimprob=TMath::Prob(chi2_old,ndof_old);
     Hcdc_prelimprob->Fill(prelimprob);
     
-    if (prelimprob>0.001){
+    if (prelimprob>0.0001){
       
       // Perform a time-based pass
       S=Sbest;
@@ -737,7 +818,7 @@ DEventProcessor_dc_alignment::DoFilter(double t0,double OuterZ,DMatrix4x1 &S,
 	
 	PlotLines(trajectory);
 	
-	if (prob>1e-6)
+	if (prob>1e-3)
 	  {
 	    // run the smoother (opposite direction to filter)
 	    vector<cdc_update_t>smoothed_updates(updates.size());
@@ -754,6 +835,7 @@ DEventProcessor_dc_alignment::DoFilter(double t0,double OuterZ,DMatrix4x1 &S,
 		int ring_id=smoothed_updates[k].ring_id;
 		int straw_id=smoothed_updates[k].straw_id;
 		Hcdcres_vs_drift_time->Fill(tdrift,res);
+		Hcdcres_vs_d->Fill(d,res);
 		Hcdcdrift_time->Fill(tdrift,d);
 		Hcdc_time_vs_d->Fill(d,tdrift);
 	        Hcdc_ring_res[ring_id]->Fill(straw_id+1,res); 
@@ -1342,6 +1424,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
   ndof=0;
 
   double doca2=0.;
+  const double d_EPS=1e-8;
  
   // CDC index and wire position variables
   unsigned int cdc_index=hits.size()-1;
@@ -1415,7 +1498,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       double s=scale*N;
       double t=scale*N1;
       diff+=s*tdir-t*wdir;
-      double d=diff.Mag();
+      double d=diff.Mag()+d_EPS; // prevent division by zero
 
       // The next measurement and its variance
       double tdrift=hits[cdc_index]->tdrift-trajectory[k].t;
@@ -1434,10 +1517,6 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       // Track projection
       double one_over_d=1./d;
       double diffx=diff.x(),diffy=diff.y(),diffz=diff.z();
- 
-      H(state_x)=H_T(state_x)=diffx*one_over_d;
-      H(state_y)=H_T(state_y)=diffy*one_over_d;
-
       double wx=wdir.x(),wy=wdir.y();
 
       double dN1dtx=2.*tx*wdir_dot_diff-wx*tdir_dot_diff-tdir_dot_wdir*dx0;
@@ -1460,6 +1539,18 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       H(state_ty)=H_T(state_ty)
 	=one_over_d*(diffx*(tx*dsdty-wx*dtdty)+diffy*(s+ty*dsdty-wy*dtdty)
 		     +diffz*(dsdty-dtdty));
+
+      double dsdx=scale*(tdir_dot_wdir*wx-wdir2*tx);
+      double dtdx=scale*(tdir2*wx-tdir_dot_wdir*tx);
+      double dsdy=scale*(tdir_dot_wdir*wy-wdir2*ty);
+      double dtdy=scale*(tdir2*wy-tdir_dot_wdir*ty);
+      
+      H(state_x)=H_T(state_x)
+	=one_over_d*(diffx*(1.+dsdx*tx-dtdx*wx)+diffy*(dsdx*ty-dtdx*wy)
+		     +diffz*(dsdx-dtdx));
+      H(state_y)=H_T(state_y)
+	=one_over_d*(diffx*(dsdy*tx-dtdy*wx)+diffy*(1.+dsdy*ty-dtdy*wy)
+		     +diffz*(dsdy-dtdy));
 
       // Matrices to rotate alignment error matrix into measurement space
       DMatrix1x4 G;
@@ -1564,7 +1655,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
   DMatrix2x4 H;  // Track projection matrix
   DMatrix4x2 H_T; // Transpose of track projection matrix 
   DMatrix4x2 K;  // Kalman gain matrix
-  DMatrix2x2 V(0.0075*anneal_factor,0.,0.,0.0075*anneal_factor);  // Measurement variance 
+  DMatrix2x2 V(0.0008*anneal_factor,0.,0.,0.0008*anneal_factor);  // Measurement variance 
   DMatrix2x2 Vtemp,InvV;
   DMatrix2x1 Mdiff;
   DMatrix4x4 I; // identity matrix
@@ -1608,7 +1699,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       double y=S(state_y);
       double tx=S(state_tx);
       double ty=S(state_ty);
-      if (isnan(x) || isnan(y)) return UNRECOVERABLE_ERROR;
+      if (std::isnan(x) || std::isnan(y)) return UNRECOVERABLE_ERROR;
       
       // Get the alignment vector and error matrix for this layer
       unsigned int layer=hits[id]->wire->layer-1;
@@ -1660,8 +1751,8 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	double sinphi_u=sin(phi_u);
 	double cosphi_v=cos(phi_v);
 	double sinphi_v=sin(phi_v);
-	double vv=-vpred*sinphi_v+uwire*cosphi_v+A(kV);
-	double vu=-vpred*sinphi_u+uwire*cosphi_u+A(kU);
+	double vv=-vpred*sinphi_v-uwire*cosphi_v+A(kV);
+	double vu=-vpred*sinphi_u-uwire*cosphi_u+A(kU);
 
 	// Difference between measurements and predictions
 	Mdiff(0)=hits[my_id]->u-vu;
@@ -1809,7 +1900,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       double y=S(state_y);
       double tx=S(state_tx);
       double ty=S(state_ty);
-      if (isnan(x) || isnan(y)) return UNRECOVERABLE_ERROR;
+      if (std::isnan(x) || std::isnan(y)) return UNRECOVERABLE_ERROR;
       
       // Get the alignment vector and error matrix for this layer
       unsigned int layer=hits[id]->wire->layer-1;
@@ -2205,7 +2296,7 @@ DEventProcessor_dc_alignment::FindOffsets(vector<const DFDCPseudo *>&hits,
     double y=S(state_y);
     double tx=S(state_tx);
     double ty=S(state_ty);
-    if (isnan(x) || isnan(y)) return UNRECOVERABLE_ERROR;
+    if (std::isnan(x) || std::isnan(y)) return UNRECOVERABLE_ERROR;
       
     // Get the wire plane alignment vector and error matrix for this layer
     DMatrix2x1 Aw=fdc_alignments[layer].A;

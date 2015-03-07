@@ -386,8 +386,8 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
   // Next compute the avalanche position along wire.  
   // Correct avalanche position with deflection along wire due to 
   // Lorentz force.
-  xyz[1]+=( 0.1458*B[2]*(1.-0.048*Br) )*dx
-    +((B[2]<0)?1.:-1.)*(0.1717-0.01227*fabs(B[2]))*(Br*cos(phi))*xyz[2]
+  xyz[1]+=( -0.125*B[2]*(1.-0.048*Br) )*dx
+    +(-0.18-0.0129*(B[2]))*(Br*cos(phi))*xyz[2]
     +( -0.000176 )*dx*dx2/(dz2+0.001);
   // Add transverse diffusion
   xyz[1]+=(( 0.01 )*pow(dx2+dz2,0.125)+( 0.0061 )*dx2)*rndno[0];

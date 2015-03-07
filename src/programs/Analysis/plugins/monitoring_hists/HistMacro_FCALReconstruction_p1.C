@@ -1,22 +1,21 @@
-// hnamepath: /Independent/Hist_DetectorStudies/Reconstruction/FCAL/FCALShowerYVsX
-// hnamepath: /Independent/Hist_DetectorStudies/Reconstruction/FCAL/FCALShowerEnergy
-// hnamepath: /Independent/Hist_DetectorStudies/Neutrals/FCALNeutralShowerEnergy
-// hnamepath: /Independent/Hist_DetectorStudies/Neutrals/FCALNeutralShowerDeltaT
-// hnamepath: /Independent/Hist_DetectorStudies/Neutrals/FCALNeutralShowerDeltaTVsE
+// hnamepath: /Independent/Hist_Reconstruction/FCALShowerYVsX
+// hnamepath: /Independent/Hist_Reconstruction/FCALShowerEnergy
+// hnamepath: /Independent/Hist_Neutrals/FCALNeutralShowerEnergy
+// hnamepath: /Independent/Hist_Neutrals/FCALNeutralShowerDeltaT
+// hnamepath: /Independent/Hist_Neutrals/FCALNeutralShowerDeltaTVsE
 
 {
 	//Goto Path
-	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_DetectorStudies");
+	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_Reconstruction");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
 
 	//Get Histograms
-	gDirectory->cd("Reconstruction/FCAL");
 	TH2I* locHist_FCALShowerYVsX = (TH2I*)gDirectory->Get("FCALShowerYVsX");
 	TH1I* locHist_FCALShowerEnergy = (TH1I*)gDirectory->Get("FCALShowerEnergy");
 
-	gDirectory->cd("../../Neutrals");
+	gDirectory->cd("../Hist_Neutrals");
 	TH1I* locHist_FCALNeutralShowerEnergy = (TH1I*)gDirectory->Get("FCALNeutralShowerEnergy"); //photon(?)
 	TH1I* locHist_FCALNeutralShowerDeltaT = (TH1I*)gDirectory->Get("FCALNeutralShowerDeltaT"); //photon(?)
 	TH2I* locHist_FCALNeutralShowerDeltaTVsE = (TH2I*)gDirectory->Get("FCALNeutralShowerDeltaTVsE"); //photon(?)

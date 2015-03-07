@@ -462,6 +462,12 @@ jerror_t DParticleCombo_factory::erun(void)
 //------------------
 jerror_t DParticleCombo_factory::fini(void)
 {
+	for(size_t loc_i = 0; loc_i < dParticleComboStepPool_All.size(); ++loc_i)
+		delete dParticleComboStepPool_All[loc_i];
+
+	for(size_t loc_i = 0; loc_i < dKinematicDataPool_All.size(); ++loc_i)
+		delete dKinematicDataPool_All[loc_i];
+
 	return NOERROR;
 }
 

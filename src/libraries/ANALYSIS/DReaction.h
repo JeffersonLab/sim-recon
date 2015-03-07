@@ -22,42 +22,47 @@ class DReaction : public JObject
 
 		// CONSTRUCTOR:
 		DReaction(string locReactionName); //User must specify a unique reaction name upon construction
+		// DESTRUCTOR:
+		virtual ~DReaction(void);
 
 		// SET OBJECT DATA:
-		inline void Set_KinFitType(DKinFitType locKinFitType){dKinFitType = locKinFitType;}
-		inline void Add_ReactionStep(const DReactionStep* locReactionStep){dReactionSteps.push_back(locReactionStep);}
-		inline void Clear_ReactionSteps(void){dReactionSteps.clear();}
-		inline void Add_AnalysisAction(DAnalysisAction* locAnalysisAction){dAnalysisActions.push_back(locAnalysisAction);}
+		void Set_KinFitType(DKinFitType locKinFitType){dKinFitType = locKinFitType;}
+		void Add_ReactionStep(const DReactionStep* locReactionStep){dReactionSteps.push_back(locReactionStep);}
+		void Clear_ReactionSteps(void){dReactionSteps.clear();}
+		void Add_AnalysisAction(DAnalysisAction* locAnalysisAction){dAnalysisActions.push_back(locAnalysisAction);}
 
 		// SET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
-		inline void Set_MinChargedPIDFOM(double locMinChargedPIDFOM){dMinChargedPIDFOM = pair<bool, double>(true, locMinChargedPIDFOM);}
-		inline void Set_MinPhotonPIDFOM(double locMinPhotonPIDFOM){dMinPhotonPIDFOM = pair<bool, double>(true, locMinPhotonPIDFOM);}
-		inline void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT){dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);}
-		inline void Set_MinProtonMomentum(double locMinProtonMomentum){dMinProtonMomentum = pair<bool, double>(true, locMinProtonMomentum);}
-		inline void Set_MaxExtraGoodTracks(size_t locMaxExtraGoodTracks){dMaxExtraGoodTracks = pair<bool, size_t>(true, locMaxExtraGoodTracks);}
+		void Set_MinChargedPIDFOM(double locMinChargedPIDFOM){dMinChargedPIDFOM = pair<bool, double>(true, locMinChargedPIDFOM);}
+		void Set_MinPhotonPIDFOM(double locMinPhotonPIDFOM){dMinPhotonPIDFOM = pair<bool, double>(true, locMinPhotonPIDFOM);}
+		void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT){dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);}
+		void Set_MinProtonMomentum(double locMinProtonMomentum){dMinProtonMomentum = pair<bool, double>(true, locMinProtonMomentum);}
+		void Set_MaxExtraGoodTracks(size_t locMaxExtraGoodTracks){dMaxExtraGoodTracks = pair<bool, size_t>(true, locMaxExtraGoodTracks);}
 
 		// SET PRE-COMBO-BLUEPRINT INVARIANT MASS CUTS
-		inline void Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass);
+		void Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass);
+
+		// SET EventStore QUERY
+		void Set_EventStoreQuery(string locSkimName, string locAdditionalQuery = "");
 
 		// ADD COMBO PRE-SELECTION ACTION
-		inline void Add_ComboPreSelectionAction(DAnalysisAction* locAction){dComboPreSelectionActions.push_back(locAction);}
+		void Add_ComboPreSelectionAction(DAnalysisAction* locAction){dComboPreSelectionActions.push_back(locAction);}
 
 		// GET CONTROL MEMBERS:
-		inline string Get_ReactionName(void) const{return dReactionName;}
-		inline DKinFitType Get_KinFitType(void) const{return dKinFitType;}
+		string Get_ReactionName(void) const{return dReactionName;}
+		DKinFitType Get_KinFitType(void) const{return dKinFitType;}
 
 		// GET REACTION STEPS:
-		inline size_t Get_NumReactionSteps(void) const{return dReactionSteps.size();}
+		size_t Get_NumReactionSteps(void) const{return dReactionSteps.size();}
 		const DReactionStep* Get_ReactionStep(size_t locStepIndex) const;
 		void Get_ReactionSteps(Particle_t locInitialPID, deque<const DReactionStep*>& locReactionSteps) const;
 
 		// GET ANALYSIS ACTIONS:
-		inline size_t Get_NumAnalysisActions(void) const{return dAnalysisActions.size();}
+		size_t Get_NumAnalysisActions(void) const{return dAnalysisActions.size();}
 		DAnalysisAction* Get_AnalysisAction(size_t locActionIndex) const;
 		DAnalysisAction* Get_LastAnalysisAction(void) const;
 
 		// GET COMBO PRE-SELECTION CUTS:
-		inline size_t Get_NumComboPreSelectionActions(void) const{return dComboPreSelectionActions.size();}
+		size_t Get_NumComboPreSelectionActions(void) const{return dComboPreSelectionActions.size();}
 		DAnalysisAction* Get_ComboPreSelectionAction(size_t locActionIndex) const;
 
 		// GET PIDs:
@@ -75,21 +80,24 @@ class DReaction : public JObject
 		string Get_DecayChainFinalParticlesROOTNames(size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, bool locKinFitResultsFlag, bool locExpandDecayingParticlesFlag) const;
 
 		// GET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
-		inline pair<bool, double> Get_MinChargedPIDFOM(void) const{return dMinChargedPIDFOM;}
-		inline pair<bool, double> Get_MinPhotonPIDFOM(void) const{return dMinPhotonPIDFOM;}
-		inline pair<bool, double> Get_MaxPhotonRFDeltaT(void) const{return dMaxPhotonRFDeltaT;}
-		inline pair<bool, double> Get_MinProtonMomentum(void) const{return dMinProtonMomentum;}
-		inline pair<bool, size_t> Get_MaxExtraGoodTracks(void) const{return dMaxExtraGoodTracks;}
+		pair<bool, double> Get_MinChargedPIDFOM(void) const{return dMinChargedPIDFOM;}
+		pair<bool, double> Get_MinPhotonPIDFOM(void) const{return dMinPhotonPIDFOM;}
+		pair<bool, double> Get_MaxPhotonRFDeltaT(void) const{return dMaxPhotonRFDeltaT;}
+		pair<bool, double> Get_MinProtonMomentum(void) const{return dMinProtonMomentum;}
+		pair<bool, size_t> Get_MaxExtraGoodTracks(void) const{return dMaxExtraGoodTracks;}
 
 		// GET PRE-COMBO-BLUEPRINT MASS CUTS
 		bool Get_InvariantMassCut(Particle_t locStepInitialPID, double& locMinInvariantMass, double& locMaxInvariantMass) const;
 
+		// GET EventStore QUERY
+		pair<string, string> Get_EventStoreQuery(void) const{return dEventStoreQuery;}
+
 		// ROOT OUTPUT:
 		void Enable_TTreeOutput(string locTTreeOutputFileName);
-		inline string Get_TTreeOutputFileName(void) const{return dTTreeOutputFileName;}
-		inline bool Get_EnableTTreeOutputFlag(void) const{return dEnableTTreeOutputFlag;}
-		inline void Set_MinThrownMatchFOMForROOT(double locMinThrownMatchFOMForROOT){dMinThrownMatchFOMForROOT = locMinThrownMatchFOMForROOT;}
-		inline double Get_MinThrownMatchFOMForROOT(void) const{return dMinThrownMatchFOMForROOT;}
+		string Get_TTreeOutputFileName(void) const{return dTTreeOutputFileName;}
+		bool Get_EnableTTreeOutputFlag(void) const{return dEnableTTreeOutputFlag;}
+		void Set_MinThrownMatchFOMForROOT(double locMinThrownMatchFOMForROOT){dMinThrownMatchFOMForROOT = locMinThrownMatchFOMForROOT;}
+		double Get_MinThrownMatchFOMForROOT(void) const{return dMinThrownMatchFOMForROOT;}
 
 		// OTHER:
 		bool Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex = 1) const;
@@ -128,11 +136,19 @@ class DReaction : public JObject
 
 		// COMBO PRE-SELECTION CUTS
 		deque<DAnalysisAction*> dComboPreSelectionActions;
+
+		// EVENT STORE QUERY
+		pair<string, string> dEventStoreQuery; // First is skim name (default = "all"), second is additional query (default = "")
 };
 
 inline void DReaction::Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass)
 {
 	dInvariantMassCuts[locStepInitialPID] = pair<double, double>(locMinInvariantMass, locMaxInvariantMass);
+}
+
+inline void DReaction::Set_EventStoreQuery(string locSkimName, string locAdditionalQuery)
+{
+	dEventStoreQuery = pair<string, string>(locSkimName, locAdditionalQuery);
 }
 
 inline const DReactionStep* DReaction::Get_ReactionStep(size_t locStepIndex) const

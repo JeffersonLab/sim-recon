@@ -70,8 +70,19 @@ jerror_t DSCHit_factory::init(void)
 //------------------
 jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
+    // Only print messages for one thread whenever run number change
+    static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
+    static set<int> runs_announced;
+    pthread_mutex_lock(&print_mutex);
+    bool print_messages = false;
+    if(runs_announced.find(runnumber) == runs_announced.end()){
+        print_messages = true;
+        runs_announced.insert(runnumber);
+    }
+    pthread_mutex_unlock(&print_mutex);
+
     /// Read in calibration constants
-    jout << "In DSCHit_factory, loading constants..." << endl;
+    if(print_messages) jout << "In DSCHit_factory, loading constants..." << endl;
 
     // F1TDC tframe(ns) and rollover count
     map<string,int> tdc_parms;
@@ -118,7 +129,7 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
         jerr << "Unable to get SC_TDC_SCALE from /START_COUNTER/digi_scales !" 
             << endl;
 
-    jout << "TDC scale = " << tdc_scale << " ns/count" << endl;
+    if(print_messages) jout << "TDC scale = " << tdc_scale << " ns/count" << endl;
 
 
     // load base time offset

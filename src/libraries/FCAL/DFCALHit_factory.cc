@@ -54,6 +54,17 @@ jerror_t DFCALHit_factory::init(void)
 //------------------
 jerror_t DFCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
+    // Only print messages for one thread whenever run number change
+    static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
+    static set<int> runs_announced;
+    pthread_mutex_lock(&print_mutex);
+    bool print_messages = false;
+    if(runs_announced.find(runnumber) == runs_announced.end()){
+        print_messages = true;
+        runs_announced.insert(runnumber);
+    }
+    pthread_mutex_unlock(&print_mutex);
+
     // extract the FCAL Geometry
     vector<const DFCALGeometry*> fcalGeomVect;
     eventLoop->Get( fcalGeomVect );
@@ -67,7 +78,7 @@ jerror_t DFCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
     vector< double > raw_time_offsets;
     vector< double > raw_block_qualities;    // we should change this to an int?
 
-    jout << "In DFCALHit_factory, loading constants..." << endl;
+    if(print_messages) jout << "In DFCALHit_factory, loading constants..." << endl;
 
     // load scale factors
     map<string,double> scale_factors;

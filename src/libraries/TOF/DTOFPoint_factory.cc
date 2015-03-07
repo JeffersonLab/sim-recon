@@ -402,6 +402,7 @@ void DTOFPoint_factory::Create_MatchedTOFPoint(const tof_spacetimehit_t* locTOFS
 	locTOFPoint->AddAssociatedObject(locTOFHit_Vertical);
 	locTOFPoint->pos.SetXYZ(locMatchX, locMatchY, locMatchZ);
 	locTOFPoint->t = locMatchT;
+	locTOFPoint->tErr = 0.0; //SET ME
 	locTOFPoint->dE = locMatchdE;
 
 	locTOFPoint->dHorizontalBar = locTOFHit_Horizontal->bar;
@@ -427,6 +428,7 @@ void DTOFPoint_factory::Create_UnMatchedTOFPoint(const tof_spacetimehit_t* locTO
 
 		locTOFPoint->pos.SetXYZ(locTOFSpacetimeHit->x, locTOFSpacetimeHit->y, locPointZ);
 		locTOFPoint->t = locTOFSpacetimeHit->t;
+		locTOFPoint->tErr = 0.0; //SET ME
 		locTOFPoint->dE = locPaddleHit->dE;
 
 		locTOFPoint->dHorizontalBar = locIsHorizontalBarFlag ? locPaddleHit->bar : 0;
@@ -451,6 +453,7 @@ void DTOFPoint_factory::Create_UnMatchedTOFPoint(const tof_spacetimehit_t* locTO
 		float locPointY = locTOFSpacetimeHit->y;
 		locTOFPoint->pos.SetXYZ(locPointX, locPointY, locPointZ);
 		locTOFPoint->t = locTOFSpacetimeHit->t;
+		locTOFPoint->tErr = 0.0; //SET ME
 
 		bool locNorthAboveThresholdFlag = (locPaddleHit->E_north > E_THRESHOLD);
 

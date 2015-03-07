@@ -115,6 +115,18 @@ jerror_t DTrackTimeBased_factory::init(void)
 	PID_FORCE_TRUTH = false;
 	gPARMS->SetDefaultParameter("TRKFIT:PID_FORCE_TRUTH", PID_FORCE_TRUTH);
 
+	USE_SC_TIME=true;
+	gPARMS->SetDefaultParameter("TRKFIT:USE_SC_TIME",USE_SC_TIME);
+
+	USE_TOF_TIME=true;
+	gPARMS->SetDefaultParameter("TRKFIT:USE_TOF_TIME",USE_TOF_TIME);
+
+	USE_FCAL_TIME=true;
+	gPARMS->SetDefaultParameter("TRKFIT:USE_FCAL_TIME",USE_FCAL_TIME);
+	
+	USE_BCAL_TIME=true;
+	gPARMS->SetDefaultParameter("TRKFIT:USE_BCAL_TIME",USE_BCAL_TIME);
+       
 	return NOERROR;
 }
 
@@ -261,17 +273,25 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   
   // get start counter hits
   vector<const DSCHit*>sc_hits;
-  loop->Get(sc_hits);
+  if (USE_SC_TIME){
+    loop->Get(sc_hits);
+  }
   
   // Get TOF points
   vector<const DTOFPoint*> tof_points;
-  loop->Get(tof_points);
-  
+  if (USE_TOF_TIME){
+    loop->Get(tof_points);
+  }
+
   // Get BCAL and FCAL showers
   vector<const DBCALShower*>bcal_showers;
-  loop->Get(bcal_showers);
+  if (USE_BCAL_TIME){
+    loop->Get(bcal_showers);
+  }
   vector<const DFCALShower*>fcal_showers;
-  loop->Get(fcal_showers);
+  if (USE_FCAL_TIME){
+    loop->Get(fcal_showers);
+  }
   
   vector<const DMCThrown*> mcthrowns;
   loop->Get(mcthrowns, "FinalState");

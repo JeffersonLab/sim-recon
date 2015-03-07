@@ -208,6 +208,62 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	// Here's an example:
 	//
 
+	vector<const Df125WindowRawData*> f125WindowRawData_vec;
+	loop->Get(f125WindowRawData_vec);
+	sort(f125WindowRawData_vec.begin(), f125WindowRawData_vec.end(), Df125WindowRawData_cmp);
+
+	vector<const Df125PulseRawData*> f125PulseRawData_vec;
+	loop->Get(f125PulseRawData_vec);
+	sort(f125PulseRawData_vec.begin(), f125PulseRawData_vec.end(), Df125PulseRawData_cmp);
+
+	vector<const Df125PulseIntegral*> f125PulseIntegral_vec;
+	loop->Get(f125PulseIntegral_vec);
+	sort(f125PulseIntegral_vec.begin(), f125PulseIntegral_vec.end(), Df125PulseIntegral_cmp);
+
+	vector<const Df125PulseTime*> f125PulseTime_vec;
+	loop->Get(f125PulseTime_vec);
+	sort(f125PulseTime_vec.begin(), f125PulseTime_vec.end(), Df125PulseTime_cmp);
+
+	vector<const Df125PulsePedestal*> f125PulsePedestal_vec;
+	loop->Get(f125PulsePedestal_vec);
+	sort(f125PulsePedestal_vec.begin(), f125PulsePedestal_vec.end(), Df125PulsePedestal_cmp);
+
+	vector<const Df125TriggerTime*> f125TriggerTime_vec;
+	loop->Get(f125TriggerTime_vec);
+	sort(f125TriggerTime_vec.begin(), f125TriggerTime_vec.end(), Df125TriggerTime_cmp);
+
+	vector<const DF1TDCHit*> F1TDCHit_vec;
+	loop->Get(F1TDCHit_vec);
+	sort(F1TDCHit_vec.begin(), F1TDCHit_vec.end(), DF1TDCHit_cmp);
+
+	vector<const DF1TDCTriggerTime*> F1TDCTriggerTime_vec;
+	loop->Get(F1TDCTriggerTime_vec);
+	sort(F1TDCTriggerTime_vec.begin(), F1TDCTriggerTime_vec.end(), DF1TDCTriggerTime_cmp);
+
+	vector<const Df250WindowRawData*> f250WindowRawData_vec;
+	loop->Get(f250WindowRawData_vec);
+	sort(f250WindowRawData_vec.begin(), f250WindowRawData_vec.end(), Df250WindowRawData_cmp);
+
+	vector<const Df250PulseRawData*> f250PulseRawData_vec;
+	loop->Get(f250PulseRawData_vec);
+	sort(f250PulseRawData_vec.begin(), f250PulseRawData_vec.end(), Df250PulseRawData_cmp);
+
+	vector<const Df250PulseIntegral*> f250PulseIntegral_vec;
+	loop->Get(f250PulseIntegral_vec);
+	sort(f250PulseIntegral_vec.begin(), f250PulseIntegral_vec.end(), Df250PulseIntegral_cmp);
+
+	vector<const Df250PulseTime*> f250PulseTime_vec;
+	loop->Get(f250PulseTime_vec);
+	sort(f250PulseTime_vec.begin(), f250PulseTime_vec.end(), Df250PulseTime_cmp);
+
+	vector<const Df250PulsePedestal*> f250PulsePedestal_vec;
+	loop->Get(f250PulsePedestal_vec);
+	sort(f250PulsePedestal_vec.begin(), f250PulsePedestal_vec.end(), Df250PulsePedestal_cmp);
+
+	vector<const Df250TriggerTime*> f250TriggerTime_vec;
+	loop->Get(f250TriggerTime_vec);
+	sort(f250TriggerTime_vec.begin(), f250TriggerTime_vec.end(), Df250TriggerTime_cmp);
+
 	/// Trees are filled with data
 	japp->RootWriteLock();
 
@@ -216,9 +272,6 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	const uint32_t numDf125WRDpedsamps = 10;
 	const Int_t Df125WRDminpeakheight = 100;
 	/// Get a vector of Df125WindowRawData objects for this event (1 object for each crate/slot/channel above threshold)
-	vector<const Df125WindowRawData*> f125WindowRawData_vec;
-	loop->Get(f125WindowRawData_vec);
-	sort(f125WindowRawData_vec.begin(), f125WindowRawData_vec.end(), Df125WindowRawData_cmp);
 	unsigned int num_f125WRD = f125WindowRawData_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f125WRDtree_exists && num_f125WRD>0) {
@@ -306,9 +359,6 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	const uint32_t numDf125PRDpedsamps= 4;
 	const Int_t Df125PRDminpeakheight = 11;
 	/// Get a vector of Df125PulseRawData objects for this event (1 object for each crate/slot/channel above threshold)
-	vector<const Df125PulseRawData*> f125PulseRawData_vec;
-	loop->Get(f125PulseRawData_vec);
-	sort(f125PulseRawData_vec.begin(), f125PulseRawData_vec.end(), Df125PulseRawData_cmp);
 	unsigned int num_f125PRD = f125PulseRawData_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f125PRDtree_exists && num_f125PRD>0) {
@@ -397,9 +447,6 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 
 	/// Df125PulseIntegral
 	/// Get a vector of Df125PulseIntegral objects for this event (1 object for each crate/slot/channel above threshold)
-	vector<const Df125PulseIntegral*> f125PulseIntegral_vec;
-	loop->Get(f125PulseIntegral_vec);
-	sort(f125PulseIntegral_vec.begin(), f125PulseIntegral_vec.end(), Df125PulseIntegral_cmp);
 	unsigned int num_f125PI = f125PulseIntegral_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f125PItree_exists && num_f125PI>0) {
@@ -438,9 +485,6 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 
 	/// Df125PulseTime
 	/// Get a vector of Df125PulseTime objects for this event (1 object for each crate/slot/channel above threshold)
-	vector<const Df125PulseTime*> f125PulseTime_vec;
-	loop->Get(f125PulseTime_vec);
-	sort(f125PulseTime_vec.begin(), f125PulseTime_vec.end(), Df125PulseTime_cmp);
 	unsigned int num_f125PT = f125PulseTime_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f125PTtree_exists && num_f125PT>0) {
@@ -476,9 +520,6 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 
 	/// Df125PulsePedestal
 	/// Get a vector of Df125PulsePedestal objects for this event (1 object for each crate/slot/channel above threshold)
-	vector<const Df125PulsePedestal*> f125PulsePedestal_vec;
-	loop->Get(f125PulsePedestal_vec);
-	sort(f125PulsePedestal_vec.begin(), f125PulsePedestal_vec.end(), Df125PulsePedestal_cmp);
 	unsigned int num_f125PP = f125PulsePedestal_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f125PPtree_exists && num_f125PP>0) {
@@ -515,9 +556,6 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 
 	/// Df125TriggerTime
 	/// Get a vector of Df125TriggerTime objects for this event (1 object for each crate/slot)
-	vector<const Df125TriggerTime*> f125TriggerTime_vec;
-	loop->Get(f125TriggerTime_vec);
-	sort(f125TriggerTime_vec.begin(), f125TriggerTime_vec.end(), Df125TriggerTime_cmp);
 	unsigned int num_f125TT = f125TriggerTime_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f125TTtree_exists && num_f125TT>0) {
@@ -547,9 +585,6 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 
 	/// DF1TDCHit
 	/// Get a vector of DF1TDCHit objects for this event (1 object for each crate/slot/channel above threshold)
-	vector<const DF1TDCHit*> F1TDCHit_vec;
-	loop->Get(F1TDCHit_vec);
-	sort(F1TDCHit_vec.begin(), F1TDCHit_vec.end(), DF1TDCHit_cmp);
 	unsigned int num_F1TDCH = F1TDCHit_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!F1TDCHtree_exists && num_F1TDCH>0) {
@@ -585,9 +620,6 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 
 	/// DF1TDCTriggerTime
 	/// Get a vector of DF1TDCTriggerTime objects for this event (1 object for each crate/slot)
-	vector<const DF1TDCTriggerTime*> F1TDCTriggerTime_vec;
-	loop->Get(F1TDCTriggerTime_vec);
-	sort(F1TDCTriggerTime_vec.begin(), F1TDCTriggerTime_vec.end(), DF1TDCTriggerTime_cmp);
 	unsigned int num_F1TDCTT = F1TDCTriggerTime_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!F1TDCTTtree_exists && num_F1TDCTT>0) {
@@ -617,9 +649,6 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	const uint32_t numDf250WRDpedsamps= 10;
 	const Int_t Df250WRDminpeakheight = 11;
 	/// Get a vector of Df250WindowRawData objects for this event (1 object for each crate/slot/channel above threshold)
-	vector<const Df250WindowRawData*> f250WindowRawData_vec;
-	loop->Get(f250WindowRawData_vec);
-	sort(f250WindowRawData_vec.begin(), f250WindowRawData_vec.end(), Df250WindowRawData_cmp);
 	unsigned int num_f250WRD = f250WindowRawData_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f250WRDtree_exists && num_f250WRD>0) {
@@ -706,9 +735,6 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	const uint32_t numDf250PRDpedsamps= 4;
 	const Int_t Df250PRDminpeakheight = 11;
 	/// Get a vector of Df250PulseRawData objects for this event (1 object for each crate/slot/channel above threshold)
-	vector<const Df250PulseRawData*> f250PulseRawData_vec;
-	loop->Get(f250PulseRawData_vec);
-	sort(f250PulseRawData_vec.begin(), f250PulseRawData_vec.end(), Df250PulseRawData_cmp);
 	unsigned int num_f250PRD = f250PulseRawData_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f250PRDtree_exists && num_f250PRD>0) {
@@ -797,9 +823,6 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 
 	/// Df250PulseIntegral
 	/// Get a vector of Df250PulseIntegral objects for this event (1 object for each crate/slot/channel above threshold)
-	vector<const Df250PulseIntegral*> f250PulseIntegral_vec;
-	loop->Get(f250PulseIntegral_vec);
-	sort(f250PulseIntegral_vec.begin(), f250PulseIntegral_vec.end(), Df250PulseIntegral_cmp);
 	unsigned int num_f250PI = f250PulseIntegral_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f250PItree_exists && num_f250PI>0) {
@@ -842,9 +865,6 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 
 	/// Df250PulseTime
 	/// Get a vector of Df250PulseTime objects for this event (1 object for each crate/slot/channel above threshold)
-	vector<const Df250PulseTime*> f250PulseTime_vec;
-	loop->Get(f250PulseTime_vec);
-	sort(f250PulseTime_vec.begin(), f250PulseTime_vec.end(), Df250PulseTime_cmp);
 	unsigned int num_f250PT = f250PulseTime_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f250PTtree_exists && num_f250PT>0) {
@@ -880,9 +900,6 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 
 	/// Df250PulsePedestal
 	/// Get a vector of Df250PulsePedestal objects for this event (1 object for each crate/slot/channel above threshold)
-	vector<const Df250PulsePedestal*> f250PulsePedestal_vec;
-	loop->Get(f250PulsePedestal_vec);
-	sort(f250PulsePedestal_vec.begin(), f250PulsePedestal_vec.end(), Df250PulsePedestal_cmp);
 	unsigned int num_f250PP = f250PulsePedestal_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f250PPtree_exists && num_f250PP>0) {
@@ -919,9 +936,6 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 
 	/// Df250TriggerTime
 	/// Get a vector of Df250TriggerTime objects for this event (1 object for each crate/slot)
-	vector<const Df250TriggerTime*> f250TriggerTime_vec;
-	loop->Get(f250TriggerTime_vec);
-	sort(f250TriggerTime_vec.begin(), f250TriggerTime_vec.end(), Df250TriggerTime_cmp);
 	unsigned int num_f250TT = f250TriggerTime_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f250TTtree_exists && num_f250TT>0) {

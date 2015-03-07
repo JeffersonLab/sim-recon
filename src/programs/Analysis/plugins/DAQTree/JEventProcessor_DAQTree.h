@@ -26,6 +26,7 @@
    Df125PulseRawData \n
    Df125PulseIntegral \n
    Df125PulseTime \n
+   Df125PulsePedestal \n
    Df125TriggerTime \n
    DF1TDCHit \n
    DF1TDCTriggerTime \n
@@ -33,22 +34,11 @@
    Df250PulseRawData \n
    Df250PulseIntegral \n
    Df250PulseTime \n
+   Df250PulsePedestal \n
    Df250TriggerTime \n
 
- The data types that will ultimately be supported are: \n
-   Df125PulseIntegral \n	
-   Df125PulseRawData \n	
-   Df125PulseTime \n
-   Df125TriggerTime \n	
-   Df125WindowRawData \n	
-   DF1TDCHit \n
-   DF1TDCTriggerTime \n
-   Df250PulseIntegral \n
-   Df250PulseRawData \n
-   Df250PulseTime \n
+ The data types that might be added in future: \n
    Df250StreamingRawData \n
-   Df250TriggerTime \n
-   Df250WindowRawData \n
    Df250WindowSum \n
 
  Wiki documentation can be found here: https://halldweb1.jlab.org/wiki/index.php/DAQTree_plugin

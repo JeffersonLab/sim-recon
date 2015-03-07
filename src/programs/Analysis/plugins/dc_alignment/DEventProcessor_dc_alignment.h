@@ -65,6 +65,10 @@ typedef struct{
 }cdc_update_t;
 
 typedef struct{
+  double dx_u,dy_u,dx_d,dy_d;
+}cdc_offset_t;
+
+typedef struct{
   unsigned int id;
   DMatrix4x1 S;
   DMatrix4x4 C; 
@@ -288,6 +292,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   TH1F *Hfcalmatch;
   TH1F *Hztarg;
   TH2F *Hcdc_ring_res[28],*Hcdc_ring_time[28];
+  TH2F *Hcdcres_vs_d;
 
   double target_to_fcal_distance;
   DMatrix4x1 Zero4x1;
@@ -319,7 +324,8 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   vector<wire_align_t>fdc_alignments;
   vector<cathode_align_t>fdc_cathode_alignments;
   vector<vector<DFDCWire*> >fdcwires;
-  DMatrix3x1 fdc_drift_parms;
+  DMatrix3x1 fdc_drift_parms; 
+  vector<vector<cdc_offset_t> >cdc_offsets;
 };
 
 
@@ -328,12 +334,14 @@ inline double DEventProcessor_dc_alignment::cdc_variance(double t){
   //  return 0.001*0.001;
   if (t<0.) t=0.;
   
+  CDC_RES_PAR1=0.254;
+  CDC_RES_PAR2=0.025;
   double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
   //sigma+=0.02;
   
   //sigma=0.08/(t+1.)+0.03;
 
-  sigma=0.05;
+  //  sigma=0.035;
   
   return sigma*sigma;
 }

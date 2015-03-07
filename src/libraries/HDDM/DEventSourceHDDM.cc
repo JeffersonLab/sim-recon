@@ -2375,7 +2375,7 @@ jerror_t DEventSourceHDDM::Extract_DPSHit(hddm_s::HDDM *record,
       for (iter = hits.begin(); iter != hits.end(); ++iter) {
          DPSHit *hit = new DPSHit;
          hit->column = iter->getColumn();
-         hit->dE = iter->getDE();
+         hit->npix_fadc = iter->getDE();
          hit->t = iter->getT();
          data.push_back(hit);
       }
@@ -2386,7 +2386,7 @@ jerror_t DEventSourceHDDM::Extract_DPSHit(hddm_s::HDDM *record,
       for (iter = hits.begin(); iter != hits.end(); ++iter) {
          DPSHit *hit = new DPSHit;
          hit->column = iter->getColumn();
-         hit->dE = iter->getDE();
+         hit->npix_fadc = iter->getDE() * 1e5; // ~1e5 pixels/GeV
          hit->t = iter->getT();
          data.push_back(hit);
       }
@@ -2462,7 +2462,7 @@ jerror_t DEventSourceHDDM::Extract_DPSCHit(hddm_s::HDDM *record,
       for (iter = hits.begin(); iter != hits.end(); ++iter) {
          DPSCHit *hit = new DPSCHit;
          hit->module = iter->getModule();
-         hit->dE = iter->getDE();
+         hit->npe_fadc = iter->getDE();
          hit->t = iter->getT();
          data.push_back(hit);
       }
@@ -2473,7 +2473,7 @@ jerror_t DEventSourceHDDM::Extract_DPSCHit(hddm_s::HDDM *record,
       for (iter = hits.begin(); iter != hits.end(); ++iter) {
          DPSCHit *hit = new DPSCHit;
          hit->module = iter->getModule();
-         hit->dE = iter->getDE();
+         hit->npe_fadc = iter->getDE() * 5e5; // ~5e5 pe/GeV
          hit->t = iter->getT();
          data.push_back(hit);
       }

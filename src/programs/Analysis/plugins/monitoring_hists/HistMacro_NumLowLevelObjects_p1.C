@@ -35,6 +35,8 @@
 		locHist_NumSCHits->GetYaxis()->SetLabelSize(0.05);
 		locHist_NumSCHits->Draw();
 	}
+	gPad->SetLogy();
+	gPad->Update();
 
 	locCanvas->cd(2);
 	gPad->SetTicks();
@@ -46,6 +48,8 @@
 		locHist_NumCDCHits->GetYaxis()->SetLabelSize(0.05);
 		locHist_NumCDCHits->Draw();
 	}
+	gPad->SetLogy();
+	gPad->Update();
 
 	locCanvas->cd(3);
 	gPad->SetTicks();
@@ -57,6 +61,8 @@
 		locHist_NumFDCWireHits->GetYaxis()->SetLabelSize(0.05);
 		locHist_NumFDCWireHits->Draw();
 	}
+	gPad->SetLogy();
+	gPad->Update();
 
 	locCanvas->cd(4);
 	gPad->SetTicks();
@@ -68,5 +74,7 @@
 		locHist_NumFDCCathodeHits->GetYaxis()->SetLabelSize(0.05);
 		locHist_NumFDCCathodeHits->Draw();
 	}
+	gPad->SetLogy();
+	gPad->Update();
 }
 

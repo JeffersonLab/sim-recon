@@ -177,6 +177,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 	protected:
 	
 		void ConnectToET(const char* source_name);
+		void Cleanup(void);
 		
 		int32_t last_run_number;
 		int32_t filename_run_number;
@@ -220,6 +221,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		uint32_t F250_EMULATION_THRESHOLD;   ///< Minimum difference between max and min samples to do emulation
 		uint32_t F125_NSA;                   ///< Number of samples to integrate after thershold crossing
 		uint32_t F125_NSB;                   ///< Number of samples to integrate before thershold crossing
+		uint32_t F125_NSA_CDC;               ///< Number of samples to integrate after thershold crossing rocid 24-28 only!
+		uint32_t F125_NSB_CDC;               ///< Number of samples to integrate before thershold crossing rocid 24-28 only!
 		uint32_t F125_EMULATION_THRESHOLD; 
 		uint32_t F125_NSPED;                 ///< Number of samples to integrate for pedestal
 		uint32_t USER_RUN_NUMBER;            ///< Run number supplied by user
@@ -275,6 +278,14 @@ class JEventSource_EVIO: public jana::JEventSource{
 		uint32_t BUFFER_SIZE;
 		pthread_mutex_t evio_buffer_pool_mutex;
 		deque<uint32_t*> evio_buffer_pool;
+		
+		// In order to efficiently free memory after this source has
+		// exhausted it's event supply, the last calls to FreeEvent
+		// must be able to recognize itself as such. Use the
+		// current_event_count counter to keep track of how many events
+		// are currently being processed by processing threads.
+		pthread_mutex_t current_event_count_mutex;
+		uint32_t current_event_count;
 		
 		// List of the data types this event source can provide
 		// (filled in the constructor)

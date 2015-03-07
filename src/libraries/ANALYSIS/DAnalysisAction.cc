@@ -37,23 +37,6 @@ dPerformAntiCut(false), dReaction(locReaction), dActionName(locActionBaseName), 
 	}
 }
 
-bool DAnalysisAction::operator()(JEventLoop* locEventLoop)
-{
-	dNumPreviousParticleCombos = 0;
-	bool locResult = Perform_Action(locEventLoop, NULL);
-	return (dPerformAntiCut ? !locResult : locResult);
-}
-
-bool DAnalysisAction::operator()(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
-{
-	//THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
-	dNumParticleCombos = 1;
-	dNumPreviousParticleCombos = 0;
-
-	bool locResult = Perform_Action(locEventLoop, locParticleCombo);
-	return (dPerformAntiCut ? !locResult : locResult);
-}
-
 void DAnalysisAction::operator()(JEventLoop* locEventLoop, set<const DParticleCombo*>& locSurvivingParticleCombos)
 {
 #ifdef VTRACE
@@ -104,39 +87,3 @@ TDirectoryFile* DAnalysisAction::CreateAndChangeTo_ActionDirectory(void)
 	locDirTitle = locActionName;
 	return CreateAndChangeTo_Directory(locDirectory, locDirName, locDirTitle);
 }
-
-TDirectoryFile* DAnalysisAction::ChangeTo_BaseDirectory(void)
-{
-	//get and change to the base (file/global) directory //MUST(!) LOCK PRIOR TO ENTRY! (not performed in here!)
-	TFile* locFile = (TFile*)gROOT->FindObject(dOutputFileName.c_str());
-	if(locFile != NULL)
-		locFile->cd("");
-	else
-		gDirectory->Cd("/");
-	return (TDirectoryFile*)gDirectory;
-}
-
-TDirectoryFile* DAnalysisAction::CreateAndChangeTo_Directory(TDirectoryFile* locBaseDirectory, string locDirName, string locDirTitle)
-{
-	//MUST LOCK PRIOR TO ENTRY! (not performed in here!)
-	locBaseDirectory->cd();
-	TDirectoryFile* locSubDirectory = static_cast<TDirectoryFile*>(locBaseDirectory->Get(locDirName.c_str()));
-	if(locSubDirectory == NULL) //else folder already created by a different thread
-		locSubDirectory = new TDirectoryFile(locDirName.c_str(), locDirTitle.c_str());
-	locSubDirectory->cd();
-	return locSubDirectory;
-}
-
-TDirectoryFile* DAnalysisAction::CreateAndChangeTo_Directory(string locDirName, string locDirTitle)
-{
-	//MUST LOCK PRIOR TO ENTRY! (not performed in here!)
-	return CreateAndChangeTo_Directory((TDirectoryFile*)gDirectory, locDirName, locDirTitle);
-}
-
-TDirectoryFile* DAnalysisAction::CreateAndChangeTo_Directory(string locBaseDirectoryPath, string locDirName, string locDirTitle)
-{
-	//MUST LOCK PRIOR TO ENTRY! (not performed in here!)
-	TDirectoryFile* locBaseDirectory = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locBaseDirectoryPath.c_str()));
-	return CreateAndChangeTo_Directory(locBaseDirectory, locDirName, locDirTitle);
-}
-

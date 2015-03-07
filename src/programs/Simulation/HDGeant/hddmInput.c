@@ -51,7 +51,7 @@
  *	decision was made to store this information in the reaction tag.
  */
 
-#define TARGET_LENGTH 30
+#define TARGET_LENGTH 0.2
 #define BEAM_DIAMETER 0.5
 #define TARGET_CENTER 65
 
@@ -165,18 +165,39 @@ int loadInput ()
             v[0] = 1;
             v[1] = 1;
             v[2] = TARGET_CENTER;
-            while (v[0]*v[0] + v[1]*v[1] > 0.25)
+	    while (v[0]*v[0] + v[1]*v[1] > 0.25)
             {
-               int len = 3;
+	      //int len = 3;
+	      int len=2;
                grndm_(v,&len);
                v[0] -= 0.5;
                v[1] -= 0.5;
-               v[2] -= 0.5;
+	       // v[2] -= 0.5;
             }
+	    // kludge to include air and FDC gas in addition to plastic target
+	    /*
+	    int done=0;
+	    while (!done){
+	      int len=2;
+	      float myrand[2];
+	      float maxweight=1.2;
+	      float myweight=0.001205;
+	      grndm_(myrand,&len);
+	      
+	      v[2]=-336.7+953.1*myrand[0];
+	      if (v[2]<-336.3825) myweight=1.2;
+	      if (v[2]>64.9 && v[2]<65.1) myweight=1.0;
+	      if ((v[2]>174.4&&v[2]<188.4) || (v[2]>232.6 && v[2]<246.6)
+		  || (v[2]>291.2&&v[2]<305.2) || (v[2]>329.5 && v[2]<343.5))
+		myweight=0.001753;
+		  
+	      if (myweight/maxweight>myrand[1]) done=1;
+	    }
+	    */
             v[0] *= BEAM_DIAMETER;
             v[1] *= BEAM_DIAMETER;
-            v[2] *= TARGET_LENGTH;
-            v[2] += TARGET_CENTER;
+            //v[2] *= TARGET_LENGTH;
+            //v[2] += TARGET_CENTER;
             vert->origin->vx = v[0];
             vert->origin->vy = v[1];
             vert->origin->vz = v[2];

@@ -64,6 +64,16 @@ jerror_t DTOFHit_factory::init(void)
 //------------------
 jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
+    // Only print messages for one thread whenever run number change
+    static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
+    static set<int> runs_announced;
+    pthread_mutex_lock(&print_mutex);
+    bool print_messages = false;
+    if(runs_announced.find(runnumber) == runs_announced.end()){
+        print_messages = true;
+        runs_announced.insert(runnumber);
+    }
+    pthread_mutex_unlock(&print_mutex);
     
         // read in geometry information
         vector<const DTOFGeometry*> tofGeomVect;
@@ -78,7 +88,7 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
         vector<double> raw_tdc_offsets;
         vector<double> raw_tdc_scales;
 
-        jout << "In DTOFHit_factory, loading constants..." << endl;
+        if(print_messages) jout << "In DTOFHit_factory, loading constants..." << endl;
 
 	// load scale factors
 	map<string,double> scale_factors;
@@ -144,8 +154,8 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	    jout << "Error loading /TOF/tdc_shift !" << endl;
 	if( tof_tdc_shift.find("TOF_TDC_SHIFT") != tof_tdc_shift.end() ) {
 	  tdc_shift = tof_tdc_shift["TOF_TDC_SHIFT"];
-	  cout << "getting tdc_shift" << endl << endl;
-	  cout << "tdc_shift = " << tdc_shift << endl << endl;
+	  if(print_messages) jout << "getting tdc_shift" << endl << endl;
+	  if(print_messages) jout << "tdc_shift = " << tdc_shift << endl << endl;
 	} else {
 	    jerr << "Unable to get TOF_TDC_SHIFT from /TOF/tdc_shift !" << endl;
 	}

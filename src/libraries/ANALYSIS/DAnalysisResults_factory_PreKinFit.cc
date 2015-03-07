@@ -88,6 +88,7 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 				locBinArray[54] = 1.0E6;
 				locHistTitle = locReactionName + string(";# Particle Combinations;# Events");
 				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 54, locBinArray);
+				delete[] locBinArray;
 			}
 			dHistMap_NumParticleCombos[locReaction] = loc1DHist;
 
@@ -133,6 +134,7 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 
 				locHistTitle = locReactionName + string(";;# Particle Combos Survived Action");
 				loc2DHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), locNumActions + 1, -0.5, locNumActions + 1 - 0.5, 54, locBinArray); //+1 for # tracks
+				delete[] locBinArray;
 				loc2DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combos"); // at least one DParticleCombo object before any actions
 				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
 					loc2DHist->GetXaxis()->SetBinLabel(2 + loc_j, locActionNames[loc_j].c_str());

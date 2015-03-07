@@ -23,6 +23,7 @@
 %inline %{
   #include <iostream>
   #include <fstream>
+  #include <stdexcept>
 
   class hddm_istream_proxy {
   public:
@@ -54,6 +55,7 @@
     }
     
     void close() {
+      ifs->close();
       if(hddm_ifs != NULL) {
 	delete hddm_ifs;
 	hddm_ifs = NULL;
@@ -71,6 +73,8 @@
     }
 
     bool eof() {
+      if(ifs == NULL)
+	return true;
       return ifs->eof();
     }
     
@@ -89,8 +93,14 @@
 	//hddm_ifs = NULL;
 	return false;
       }
-
-      (*hddm_ifs) >> record;
+      
+      try {
+	(*hddm_ifs) >> record;
+      } catch (const std::runtime_error& error) {
+	std::cout << error.what() << std::endl;
+	std::cout << "skipping ..." << std::endl;
+	return false;
+      }
 
       // skip over comments
       /*
@@ -112,7 +122,8 @@
     }
 
     void skip(int nskip) {
-      hddm_ifs->skip(nskip);
+      if(hddm_ifs != NULL)
+	hddm_ifs->skip(nskip);
     }
 
     //////////////// get methods ////////////////////////////////

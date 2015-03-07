@@ -24,11 +24,22 @@ static const int BCAL_NUM_SECTORS  =  4;
 // brun
 //----------------
 jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
+  // Only print messages for one thread whenever run number changes
+  static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
+  static set<int> runs_announced;
+  pthread_mutex_lock(&print_mutex);
+  bool print_messages = false;
+  if(runs_announced.find(runnumber) == runs_announced.end()){
+    print_messages = true;
+    runs_announced.insert(runnumber);
+  }
+  pthread_mutex_unlock(&print_mutex);
+
   DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
   DGeometry* geom = app->GetDGeometry(runnumber);
   geom->GetTargetZ(m_z_target_center);
 
-  cout << "in DBCALPoint_factory, loading constants ..." << endl;
+  if(print_messages) jout << "in DBCALPoint_factory, loading constants ..." << endl;
 
   // load attenuation correction parameters 
   vector< vector<double> > in_atten_parameters;
@@ -79,9 +90,16 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
 
   // load effective velocities
   effective_velocities.clear();
-  loop->GetCalib("/BCAL/effective_velocities", effective_velocities);
 
-    return NOERROR;
+  // Passing in the member vector directly was sometimes causing a crash...
+  vector <double> effective_velocities_temp;
+  loop->GetCalib("/BCAL/effective_velocities", effective_velocities_temp);
+
+  for (unsigned int i = 0; i < effective_velocities_temp.size(); i++){
+    effective_velocities.push_back(effective_velocities_temp.at(i));
+  }
+
+  return NOERROR;
 }
 
 //----------------

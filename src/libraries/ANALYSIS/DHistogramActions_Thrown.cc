@@ -1121,9 +1121,6 @@ bool DHistogramAction_ReconnedThrownKinematics::Perform_Action(JEventLoop* locEv
 			locBeta_Timing = locNeutralParticleHypothesis->measuredBeta();
 		}
 
-		if(locMatchFOM < dMinThrownMatchFOM)
-			continue; //not well reconstructed
-
 		DVector3 locMomentum = locMCThrown->momentum();
 		double locPhi = locMomentum.Phi()*180.0/TMath::Pi();
 		double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
@@ -2014,7 +2011,7 @@ bool DHistogramAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DP
 			else
 				locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(static_cast<const DChargedTrackHypothesis*>(locParticles[loc_j]), locMatchFOM);
 
-			bool locCutResult = ((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM)) ? false : (((Particle_t)locMCThrown->type) == locPID);
+			bool locCutResult = (locMCThrown == NULL) ? false : (((Particle_t)locMCThrown->type) == locPID);
 			if(!locCutResult)
 				locComboTruePIDStatus = 0;
 

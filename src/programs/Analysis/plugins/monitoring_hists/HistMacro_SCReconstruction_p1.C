@@ -1,23 +1,22 @@
-// hnamepath: /Independent/Hist_DetectorStudies/Reconstruction/SC/SCHitEnergy
-// hnamepath: /Independent/Hist_DetectorStudies/Reconstruction/SC/SCHitEnergyVsSector
-// hnamepath: /Independent/Hist_DetectorStudies/PID/q-/SCdEdXVsP
-// hnamepath: /Independent/Hist_DetectorStudies/PID/q+/SCdEdXVsP
-// hnamepath: /Independent/Hist_DetectorStudies/PID/q-/BetaVsP_SC
-// hnamepath: /Independent/Hist_DetectorStudies/PID/q+/BetaVsP_SC
+// hnamepath: /Independent/Hist_Reconstruction/SCHitEnergy
+// hnamepath: /Independent/Hist_Reconstruction/SCHitEnergyVsSector
+// hnamepath: /Independent/Hist_DetectorPID/q-/SCdEdXVsP
+// hnamepath: /Independent/Hist_DetectorPID/q+/SCdEdXVsP
+// hnamepath: /Independent/Hist_DetectorPID/q-/BetaVsP_SC
+// hnamepath: /Independent/Hist_DetectorPID/q+/BetaVsP_SC
 
 {
 	//Goto Path
-	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_DetectorStudies");
+	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_Reconstruction");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
 
 	//Get Histograms
-	gDirectory->cd("Reconstruction/SC");
 	TH1I* locHist_SCHitEnergy = (TH1I*)gDirectory->Get("SCHitEnergy");
 	TH2I* locHist_SCHitEnergyVsSector = (TH2I*)gDirectory->Get("SCHitEnergyVsSector");
 
-	gDirectory->cd("../../PID/q-");
+	gDirectory->cd("../Hist_DetectorPID/q-");
 	TH2I* locHist_SCdEdXVsP_QMinus = (TH2I*)gDirectory->Get("SCdEdXVsP"); //q-
 	TH2I* locHist_BetaVsP_QMinus = (TH2I*)gDirectory->Get("BetaVsP_SC"); //q-
 	gDirectory->cd("../q+");

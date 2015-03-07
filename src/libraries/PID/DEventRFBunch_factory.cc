@@ -14,6 +14,7 @@ using namespace jana;
 //------------------
 jerror_t DEventRFBunch_factory::init(void)
 {
+	dMinTrackingFOM = 0.0;
 	return NOERROR;
 }
 
@@ -24,8 +25,6 @@ jerror_t DEventRFBunch_factory::brun(jana::JEventLoop *locEventLoop, int runnumb
 {
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
-
-	dMinTrackingFOM = 5.73303E-7; //5 sigma
 
 	vector<double> locRFFrequencyVector;
 	locEventLoop->GetCalib("PHOTON_BEAM/rf_frequency", locRFFrequencyVector);

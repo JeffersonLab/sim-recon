@@ -58,13 +58,25 @@ jerror_t DTAGMHit_factory::init(void)
 //------------------
 jerror_t DTAGMHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
+    // Only print messages for one thread whenever run number change
+    static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
+    static set<int> runs_announced;
+    pthread_mutex_lock(&print_mutex);
+    bool print_messages = false;
+    if(runs_announced.find(runnumber) == runs_announced.end()){
+        print_messages = true;
+        runs_announced.insert(runnumber);
+    }
+    pthread_mutex_unlock(&print_mutex);
+
     /// set the base conversion scales
     fadc_a_scale    = 1.1;        // pixels per count
     fadc_t_scale    = 0.0625;     // ns per count
     tdc_t_scale     = 0.0600;     // ns per count
     t_base           = 0.;      // ns
 
-    jout << "In DTAGMHit_factory, loading constants..." << std::endl;
+	 pthread_mutex_unlock(&print_mutex);
+    if(print_messages) jout << "In DTAGMHit_factory, loading constants..." << std::endl;
 
     // F1TDC tframe(ns) and rollover count
     map<string,int> tdc_parms;
@@ -106,7 +118,7 @@ jerror_t DTAGMHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
         jerr << "Unable to get TDC_SCALE from database !" 
             << endl;
     }
-    jout << "TDC scale = " << tdc_t_scale << " ns/count" << endl;
+    if(print_messages) jout << "TDC scale = " << tdc_t_scale << " ns/count" << endl;
 
     if (load_ccdb_constants("fadc_gains", "gain", fadc_gains) &&
             load_ccdb_constants("fadc_pedestals", "pedestal", fadc_pedestals) &&

@@ -68,6 +68,7 @@ class DParticleCombo : public JObject
 		set<pair<const JObject*, Particle_t> > Get_DecayingParticleSourceObjects(size_t locStepIndex) const;
 		bool Get_ApplyKinFitMassConstraintOnInitialParticleFlag(size_t locStepIndex) const;
 		bool Check_AreMeasuredParticlesIdentical(const DParticleCombo* locParticleCombo) const;
+		DLorentzVector Get_EventVertex(void) const;
 
 	private:
 		// PRIVATE METHODS:
@@ -262,6 +263,13 @@ inline void DParticleCombo::Get_DecayChainParticles_Measured(int locStepIndex, d
 {
 	locMeasuredParticles.clear();
 	Get_DecayChainParticles_Measured_Recursive(locStepIndex, locMeasuredParticles);
+}
+
+inline DLorentzVector DParticleCombo::Get_EventVertex(void) const
+{
+	if(dParticleComboSteps.empty())
+		return DLorentzVector();
+	return dParticleComboSteps[0]->Get_SpacetimeVertex();
 }
 
 #endif // _DParticleCombo_

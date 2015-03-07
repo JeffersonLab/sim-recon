@@ -40,13 +40,24 @@ jerror_t DFDCHit_factory::init(void)
 //------------------
 jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
+    // Only print messages for one thread whenever run number change
+    static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
+    static set<int> runs_announced;
+    pthread_mutex_lock(&print_mutex);
+    bool print_messages = false;
+    if(runs_announced.find(runnumber) == runs_announced.end()){
+        print_messages = true;
+        runs_announced.insert(runnumber);
+    }
+    pthread_mutex_unlock(&print_mutex);
+
    // reset constants tables
    a_gains.clear();
    a_pedestals.clear();
    timing_offsets.clear();
 
    // now load them all
-   jout << "In DFDCHit_factory, loading constants..." << endl;
+   if(print_messages) jout << "In DFDCHit_factory, loading constants..." << endl;
 
    // load scale factors
    map<string,double> scale_factors;

@@ -95,8 +95,12 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   DetectorSystem_t mDetector, mStartDetector;
   int mNumHypPlus,mNumHypMinus;
   bool dIsNoFieldFlag;
-
+  bool USE_SC_TIME; // use start counter hits for t0
+  bool USE_FCAL_TIME; // use fcal hits for t0
+  bool USE_BCAL_TIME; // use bcal hits for t0
+  bool USE_TOF_TIME; // use tof hits for t0
   bool SKIP_MASS_HYPOTHESES_WIRE_BASED;
+  double SC_DPHI_CUT_WB;
 
   // start counter geometry
   double sc_light_guide_length_cor;

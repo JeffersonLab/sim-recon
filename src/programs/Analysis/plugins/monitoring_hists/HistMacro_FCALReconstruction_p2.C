@@ -1,19 +1,19 @@
-// hnamepath: /Independent/Hist_DetectorStudies/Matched_ReconstructedPID/Proton/FCALShowerDeltaT
-// hnamepath: /Independent/Hist_DetectorStudies/Matched_ReconstructedPID/Proton/FCALShowerDeltaTVsP
-// hnamepath: /Independent/Hist_DetectorStudies/Matched_ReconstructedPID/PiMinus/FCALShowerDeltaT
-// hnamepath: /Independent/Hist_DetectorStudies/Matched_ReconstructedPID/PiMinus/FCALShowerDeltaTVsP
-// hnamepath: /Independent/Hist_DetectorStudies/PID/q-/BetaVsP_FCAL
-// hnamepath: /Independent/Hist_DetectorStudies/PID/q+/BetaVsP_FCAL
+// hnamepath: /Independent/Hist_DetectorMatchParams/ReconstructedPID/Proton/FCALShowerDeltaT
+// hnamepath: /Independent/Hist_DetectorMatchParams/ReconstructedPID/Proton/FCALShowerDeltaTVsP
+// hnamepath: /Independent/Hist_DetectorMatchParams/ReconstructedPID/Pi-/FCALShowerDeltaT
+// hnamepath: /Independent/Hist_DetectorMatchParams/ReconstructedPID/Pi-/FCALShowerDeltaTVsP
+// hnamepath: /Independent/Hist_DetectorPID/q-/BetaVsP_FCAL
+// hnamepath: /Independent/Hist_DetectorPID/q+/BetaVsP_FCAL
 
 {
 	//Goto Path
-	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_DetectorStudies");
+	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_DetectorMatchParams");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
 
 	//Get Histograms
-	gDirectory->cd("Matched_ReconstructedPID/Proton");
+	gDirectory->cd("ReconstructedPID/Proton");
 	TH1I* locHist_FCALShowerDeltaT_Proton = (TH1I*)gDirectory->Get("FCALShowerDeltaT"); //proton
 	TH2I* locHist_FCALShowerDeltaTVsP_Proton = (TH2I*)gDirectory->Get("FCALShowerDeltaTVsP"); //proton
 
@@ -21,7 +21,7 @@
 	TH1I* locHist_FCALShowerDeltaT_PiMinus = (TH1I*)gDirectory->Get("FCALShowerDeltaT"); //pi-
 	TH2I* locHist_FCALShowerDeltaTVsP_PiMinus = (TH2I*)gDirectory->Get("FCALShowerDeltaTVsP"); //pi-
 
-	gDirectory->cd("../../PID/q-");
+	gDirectory->cd("../../../Hist_DetectorPID/q-");
 	TH2I* locHist_BetaVsP_QMinus = (TH2I*)gDirectory->Get("BetaVsP_FCAL"); //q-
 	gDirectory->cd("../q+");
 	TH2I* locHist_BetaVsP_QPlus = (TH2I*)gDirectory->Get("BetaVsP_FCAL"); //q-

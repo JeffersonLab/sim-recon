@@ -16,24 +16,20 @@ class DPSHit:public jana::JObject{
  public:
   JOBJECT_PUBLIC(DPSHit);
 
-  DPSGeometry::Arm arm;   // North: 0, South: 1
+  DPSGeometry::Arm arm;   // North(left): 0, South(right): 1
   int column;
-  double E;       // The photon energy corresponding to this channel
-  double dE;
+  double E;  
   double t;
-  float sigma_t;  // uncertainty on t in ns
-  bool has_fADC;  // true if this has an fADC hit
-  bool has_TDC;   // true if this has an TDC hit
+  double integral;
+  double npix_fadc;
 
   void toStrings(vector<pair<string,string> > &items)const{
     AddString(items, "arm", "%d", arm);
     AddString(items, "column", "%d", column);
-    AddString(items, "E(GeV)", "%f",E);
-    AddString(items, "dE(GeV)", "%f",dE);
+    AddString(items, "E(GeV)", "%f", E);
     AddString(items, "t(ns)", "%f", t);
-    AddString(items, "sigma_t", "%f", sigma_t);
-    AddString(items, "has_fADC", "%d", (int)has_fADC);
-    AddString(items, "has_TDC", "%d", (int)has_TDC);
+    AddString(items, "integral", "%f", integral);
+    AddString(items, "npix_fadc", "%f", npix_fadc);
   }
 };
 
