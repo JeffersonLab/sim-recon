@@ -1,4 +1,5 @@
 #include "ANALYSIS/DReaction.h"
+#include "ANALYSIS/DAnalysisAction.h"
 
 DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 {
