@@ -234,7 +234,7 @@ const double  DPSHit_factory::GetRoughHitEnergy(const DPSDigiHit  *in_hit, const
 {
 	if( (in_hit->arm != DPSGeometry::kNorth) && (in_hit->arm != DPSGeometry::kSouth))
 		return 0.;
-	if( (in_hit->column<=0) || (in_hit->column>psGeom.NUM_ARMS) )
+	if( (in_hit->column<=0) || (in_hit->column>psGeom.NUM_FINE_COLUMNS) )
 		return 0.;
 	double E = 0.0;
 	if (in_hit->column>0&&in_hit->column<=88+17) {//columns 1-105 are 2mm wide: 26MeV/tile
@@ -254,7 +254,7 @@ const double  DPSHit_factory::GetHitEnergy(const DPSHit  *in_hit, const DPSGeome
 {
 	if( (in_hit->arm != DPSGeometry::kNorth) && (in_hit->arm != DPSGeometry::kSouth))
 		return 0.;
-	if( (in_hit->column<=0) || (in_hit->column>psGeom.NUM_ARMS) )
+	if( (in_hit->column<=0) || (in_hit->column>psGeom.NUM_FINE_COLUMNS) )
 		return 0.;
 	if( in_hit->arm == DPSGeometry::kNorth )
 		return ( energy_range[in_hit->column-1][0] + energy_range[in_hit->column-1][1] ) / 2.;
@@ -269,7 +269,7 @@ const double  DPSHit_factory::GetHitEnergy(const DPSDigiHit  *in_hit, const DPSG
 {
 	if( (in_hit->arm != DPSGeometry::kNorth) && (in_hit->arm != DPSGeometry::kSouth))
 		return 0.;
-	if( (in_hit->column<=0) || (in_hit->column>psGeom.NUM_ARMS) )
+	if( (in_hit->column<=0) || (in_hit->column>psGeom.NUM_FINE_COLUMNS) )
 		return 0.;
 	if( in_hit->arm == DPSGeometry::kNorth )
 		return ( energy_range[in_hit->column-1][0] + energy_range[in_hit->column-1][1] ) / 2.;
