@@ -61,6 +61,9 @@ DParticleID::DParticleID(JEventLoop *loop)
   // Get the geometry
   DGeometry* locGeometry = dapp->GetDGeometry(loop->GetJEvent().GetRunNumber());
 
+  // Get z position of face of FCAL
+  locGeometry->GetFCALZ(dFCALz);
+
   // Check if Start Counter geometry is present
   vector<double> sc_origin;
   bool got_sc = locGeometry->Get("//posXYZ[@volume='StartCntr']/@X_Y_Z", sc_origin);
@@ -195,6 +198,9 @@ DParticleID::DParticleID(JEventLoop *loop)
   }
 
   finder = finders[0];
+  
+  // FCAL geometry
+  loop->GetSingle(dFCALGeometry);
 
 	//TOF calibration constants & geometry
 	if(loop->GetCalib("TOF/propagation_speed", propagation_speed))
@@ -682,6 +688,32 @@ bool DParticleID::MatchToTOF(const DKinematicData* locTrack, const DReferenceTra
 	return true;
 }
 
+// Given a reference trajectory from a track, predict which FCAL block (if any)
+// should fire.
+bool DParticleID::PredictFCALHit(const DReferenceTrajectory *rt,
+				 unsigned int &row, unsigned int &col,
+				 DVector3 *intersection) const{
+   // Initialize output variables
+  row=0;
+  col=0;
+  // Find intersection with FCAL plane given by fcal_pos
+  DVector3 fcal_pos(0,0,dFCALz);
+  DVector3 norm(0.0, 0.0, 1.0); //normal vector to FCAL plane
+  DVector3 proj_mom,proj_pos;
+  double locPathLength = 9.9E9, locFlightTime = 9.9E9;
+  if(rt->GetIntersectionWithPlane(fcal_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime,SYS_FCAL) != NOERROR)
+    return false;
+
+  if (intersection) *intersection=proj_pos;
+
+  double x=proj_pos.x();
+  double y=proj_pos.y();
+  row=dFCALGeometry->row(float(y));
+  col=dFCALGeometry->column(float(x));
+  return (dFCALGeometry->isBlockActive(row,col));
+}
+
+
 // Given a reference trajectory from a track, predict which TOF paddles should
 // fire due to the charged particle passing through the TOF planes.
 bool DParticleID::PredictTOFPaddles(const DReferenceTrajectory *rt,
@@ -837,7 +869,7 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	// Check that the intersection isn't upstream of the paddle
 	double myz = proj_pos.z();
 	if (myz<sc_pos[sc_index][0].z()) return false;
-
+	
 	double proj_phi = proj_pos.Phi();
 	//if(proj_phi < 0.0)
 	//proj_phi += M_TWO_PI;

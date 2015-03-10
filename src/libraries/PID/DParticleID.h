@@ -22,6 +22,7 @@
 #include <FDC/DFDCPseudo.h>
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALShower.h>
+#include <FCAL/DFCALGeometry_factory.h>
 #include <TOF/DTOFPoint.h>
 #include <TOF/DTOFGeometry_factory.h>
 #include <START_COUNTER/DSCHit.h>
@@ -80,6 +81,9 @@ class DParticleID:public jana::JObject{
 	bool PredictTOFPaddles(const DReferenceTrajectory *rt,
 			       unsigned int &hbar,unsigned int &vbar,
 			       DVector3 *intersection=NULL) const;
+	bool PredictFCALHit(const DReferenceTrajectory *rt,
+			    unsigned int &row, unsigned int &col,
+			    DVector3 *intersection=NULL) const;
 
 	//matching tracks to hits/showers routines (can be called by DDetectorMatches factory)
 	bool MatchToBCAL(const DKinematicData* locTrack, const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, DBCALShowerMatchParams& locShowerMatchParams) const;
@@ -168,6 +172,10 @@ class DParticleID:public jana::JObject{
 	  SC_NOSE,
 	};
 	vector<double>sc_veff[3];
+
+	// FCAL geometry
+	double dFCALz;
+	const DFCALGeometry *dFCALGeometry;
 
 	// TOF calibration constants
 		// used to update hit energy & time when matching to un-matched, position-ill-defined bars
