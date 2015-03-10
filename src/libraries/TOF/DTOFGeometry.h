@@ -68,6 +68,7 @@ class DTOFGeometry : public JObject {
 
     if (jm>0){
       if (fabs(y-YPOS[jm-1])<fabs(y-YPOS[jm])) return jm-1;
+      if (fabs(y-YPOS[jm+1])<fabs(y-YPOS[jm])) return jm+1;
     }
 
     return jm;
