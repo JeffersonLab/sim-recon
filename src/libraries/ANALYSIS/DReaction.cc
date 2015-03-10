@@ -23,6 +23,8 @@ DReaction::~DReaction(void)
 	//DO NOT DELETE REACTION STEPS: MIGHT BE SHARED BETWEEN DIFFERENT DREACTIONS
 	for(size_t loc_i = 0; loc_i < dAnalysisActions.size(); ++loc_i)
 		delete dAnalysisActions[loc_i];
+	for(size_t loc_i = 0; loc_i < dComboPreSelectionActions.size(); ++loc_i)
+		delete dComboPreSelectionActions[loc_i];
 }
 
 string DReaction::Get_DetectedParticlesROOTName(void) const

@@ -260,17 +260,21 @@ jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop
 
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 	{
-		locAnalysisResults = new DAnalysisResults();
 		locReaction = locReactions[loc_i];
+		locAnalysisResults = new DAnalysisResults();
 		locAnalysisResults->Set_Reaction(locReaction);
 
 		if(dCombosByReaction.find(locReaction) == dCombosByReaction.end())
 		{
 			dApplication->RootWriteLock();
-			dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(0); //initial: a new event
+			{
+				dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(0); //initial: a new event
+			}
 			dApplication->RootUnLock();
+			_data.push_back(locAnalysisResults);
 			continue;
 		}
+
 		set<const DParticleCombo*>& locSurvivingParticleCombos = dCombosByReaction[locReaction];
 
 		//find the true particle combo

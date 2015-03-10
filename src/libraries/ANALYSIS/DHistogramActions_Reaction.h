@@ -77,8 +77,8 @@ class DHistogramAction_PID : public DAnalysisAction
 
 		DHistogramAction_PID(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_PID", false, locActionUniqueString), 
-		dNumFOMBins(200), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(300), dNum2DThetaBins(140), dNumPullBins(500), dNum2DPullBins(250), 
-		dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(150.0)
+		dNumFOMBins(200), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(250), dNum2DThetaBins(140), dNumPullBins(500), dNum2DPullBins(250),
+		dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(150.0)
 		{
 			dThrownPIDs.clear();
 			dThrownPIDs.push_back(Gamma);  dThrownPIDs.push_back(Neutron);
@@ -144,8 +144,8 @@ class DHistogramAction_TrackVertexComparison : public DAnalysisAction
 	public:
 		DHistogramAction_TrackVertexComparison(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_TrackVertexComparison", false, locActionUniqueString), 
-		dNumDeltaVertexZBins(200), dNumDeltaVertexTBins(100), dNumDOCABins(100), dNum2DPBins(300), dNumThetaBins(300), dMinDeltaVertexZ(-10.0), dMaxDeltaVertexZ(10.0), 
-		dMinDeltaVertexT(-5.0), dMaxDeltaVertexT(5.0), dMinDOCA(0.0), dMaxDOCA(10.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(150.0)
+		dNumDeltaVertexZBins(200), dNumDeltaVertexTBins(100), dNumDOCABins(100), dNum2DPBins(250), dNumThetaBins(300), dMinDeltaVertexZ(-10.0), dMaxDeltaVertexZ(10.0),
+		dMinDeltaVertexT(-5.0), dMaxDeltaVertexT(5.0), dMinDOCA(0.0), dMaxDOCA(10.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(150.0)
 		{
 			dAnalysisUtilities = NULL;
 		}
@@ -179,9 +179,9 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 	public:
 		DHistogramAction_ParticleComboKinematics(const DReaction* locReaction, bool locUseKinFitResultsFlag, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_ParticleComboKinematics", locUseKinFitResultsFlag, locActionUniqueString), 
-		dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(200), dNumVertexXYBins(200), dNumBetaBins(400), dNumDeltaBetaBins(400), 
-		dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumDeltaTRFBins(500),
-		dMinT(-5.0), dMaxT(5.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), 
+		dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(200), dNumVertexXYBins(200), dNumBetaBins(400), dNumDeltaBetaBins(400),
+		dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumDeltaTRFBins(500),
+		dMinT(-5.0), dMaxT(5.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0),
 		dMinVertexXY(-5.0), dMaxVertexXY(5.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinDeltaTRF(-10.0), dMaxDeltaTRF(10.0)
 		{
 			dParticleID = NULL;

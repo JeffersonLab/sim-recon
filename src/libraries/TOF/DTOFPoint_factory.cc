@@ -474,3 +474,9 @@ void DTOFPoint_factory::Create_UnMatchedTOFPoint(const tof_spacetimehit_t* locTO
 	}
 }
 
+jerror_t DTOFPoint_factory::fini(void)
+{
+	for(size_t loc_i = 0; loc_i < dTOFSpacetimeHitPool_All.size(); ++loc_i)
+		delete dTOFSpacetimeHitPool_All[loc_i];
+	return NOERROR;
+}

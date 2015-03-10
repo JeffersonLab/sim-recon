@@ -64,8 +64,9 @@ class DTOFPoint_factory : public JFactory<DTOFPoint>
 		};
 
 	private:
-		jerror_t brun(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
-		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+		jerror_t brun(JEventLoop *loop, int eventnumber);
+		jerror_t evnt(JEventLoop *loop, int eventnumber);
+		jerror_t fini(void);
 
 		tof_spacetimehit_t* Get_TOFSpacetimeHitResource(void);
 

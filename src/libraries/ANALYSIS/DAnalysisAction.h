@@ -94,6 +94,10 @@ class DAnalysisAction
 		size_t dNumPreviousParticleCombos;
 		size_t dNumParticleCombos;
 
+		template <typename DHistType> bool Check_IsValidTH1(string locHistName) const;
+		template <typename DHistType> bool Check_IsValidTH2(string locHistName) const;
+		template <typename DHistType> bool Check_IsValidTH3(string locHistName) const;
+
 		DAnalysisAction(void); //to force inheriting classes to call the public constructor
 };
 
@@ -153,11 +157,8 @@ inline TDirectoryFile* DAnalysisAction::CreateAndChangeTo_Directory(string locBa
 template <typename DHistType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax) const
 {
 	//1D Histogram
-	if((!DHistType::Class()->InheritsFrom("TH1")) || (string(DHistType::Class()->GetName()) == "TH1") || DHistType::Class()->InheritsFrom("TH2") || DHistType::Class()->InheritsFrom("TH3"))
-	{
-		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
-		abort();
-	}
+	if(!Check_IsValidTH1<DHistType>(locHistName))
+		return NULL;
 
 	const char* locHistNameCString = locHistName.c_str();
 	const char* locHistTitleCString = locHistTitle.c_str();
@@ -171,11 +172,8 @@ template <typename DHistType> DHistType* DAnalysisAction::GetOrCreate_Histogram(
 template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges) const
 {
 	//1D Histogram
-	if((!DHistType::Class()->InheritsFrom("TH1")) || (string(DHistType::Class()->GetName()) == "TH1") || DHistType::Class()->InheritsFrom("TH2") || DHistType::Class()->InheritsFrom("TH3"))
-	{
-		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
-		abort();
-	}
+	if(!Check_IsValidTH1<DHistType>(locHistName))
+		return NULL;
 
 	const char* locHistNameCString = locHistName.c_str();
 	const char* locHistTitleCString = locHistTitle.c_str();
@@ -189,11 +187,8 @@ template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::Get
 template <typename DHistType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax) const
 {
 	//2D Histogram
-	if((!DHistType::Class()->InheritsFrom("TH2")) || (string(DHistType::Class()->GetName()) == "TH2") || DHistType::Class()->InheritsFrom("TH3"))
-	{
-		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
-		abort();
-	}
+	if(!Check_IsValidTH2<DHistType>(locHistName))
+		return NULL;
 
 	const char* locHistNameCString = locHistName.c_str();
 	const char* locHistTitleCString = locHistTitle.c_str();
@@ -207,11 +202,8 @@ template <typename DHistType> DHistType* DAnalysisAction::GetOrCreate_Histogram(
 template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, DBinType* locYBinEdges) const
 {
 	//2D Histogram
-	if((!DHistType::Class()->InheritsFrom("TH2")) || (string(DHistType::Class()->GetName()) == "TH2") || DHistType::Class()->InheritsFrom("TH3"))
-	{
-		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
-		abort();
-	}
+	if(!Check_IsValidTH2<DHistType>(locHistName))
+		return NULL;
 
 	const char* locHistNameCString = locHistName.c_str();
 	const char* locHistTitleCString = locHistTitle.c_str();
@@ -225,11 +217,8 @@ template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::Get
 template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax) const
 {
 	//2D Histogram
-	if((!DHistType::Class()->InheritsFrom("TH2")) || (string(DHistType::Class()->GetName()) == "TH2") || DHistType::Class()->InheritsFrom("TH3"))
-	{
-		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
-		abort();
-	}
+	if(!Check_IsValidTH2<DHistType>(locHistName))
+		return NULL;
 
 	const char* locHistNameCString = locHistName.c_str();
 	const char* locHistTitleCString = locHistTitle.c_str();
@@ -243,11 +232,8 @@ template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::Get
 template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, DBinType* locYBinEdges) const
 {
 	//2D Histogram
-	if((!DHistType::Class()->InheritsFrom("TH2")) || (string(DHistType::Class()->GetName()) == "TH2") || DHistType::Class()->InheritsFrom("TH3"))
-	{
-		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
-		abort();
-	}
+	if(!Check_IsValidTH2<DHistType>(locHistName))
+		return NULL;
 
 	const char* locHistNameCString = locHistName.c_str();
 	const char* locHistTitleCString = locHistTitle.c_str();
@@ -261,11 +247,8 @@ template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::Get
 template <typename DHistType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax, Int_t locNumBinsZ, Double_t locZRangeMin, Double_t locZRangeMax) const
 {
 	//3D Histogram
-	if((!DHistType::Class()->InheritsFrom("TH3")) || (string(DHistType::Class()->GetName()) == "TH3"))
-	{
-		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
-		abort();
-	}
+	if(!Check_IsValidTH3<DHistType>(locHistName))
+		return NULL;
 
 	const char* locHistNameCString = locHistName.c_str();
 	const char* locHistTitleCString = locHistTitle.c_str();
@@ -279,11 +262,8 @@ template <typename DHistType> DHistType* DAnalysisAction::GetOrCreate_Histogram(
 template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, DBinType* locYBinEdges, Int_t locNumBinsZ, DBinType* locZBinEdges) const
 {
 	//3D Histogram
-	if((!DHistType::Class()->InheritsFrom("TH3")) || (string(DHistType::Class()->GetName()) == "TH3"))
-	{
-		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". ABORTING." << endl;
-		abort();
-	}
+	if(!Check_IsValidTH3<DHistType>(locHistName))
+		return NULL;
 
 	const char* locHistNameCString = locHistName.c_str();
 	const char* locHistTitleCString = locHistTitle.c_str();
@@ -292,6 +272,42 @@ template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::Get
 		return new DHistType(locHistNameCString, locHistTitleCString, locNumBinsX, locXBinEdges, locNumBinsY, locYBinEdges, locNumBinsZ, locZBinEdges);
 	else //already created by another thread, or directory name is duplicate (e.g. two identical steps)
 		return static_cast<DHistType*>(locHist);
+}
+
+template <typename DHistType> bool DAnalysisAction::Check_IsValidTH3(string locHistName) const
+{
+	const char* locTypeName = DHistType::Class()->GetName();
+	const char* locBadTypeName = "TH3";
+	if((!DHistType::Class()->InheritsFrom("TH3")) || (string(locTypeName) == string(locBadTypeName)))
+	{
+		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". HISTOGRAM NOT CREATED." << endl;
+		return false;
+	}
+	return true;
+}
+
+template <typename DHistType> bool DAnalysisAction::Check_IsValidTH2(string locHistName) const
+{
+	const char* locTypeName = DHistType::Class()->GetName();
+	const char* locBadTypeName = "TH2";
+	if((!DHistType::Class()->InheritsFrom("TH2")) || (string(locTypeName) == string(locBadTypeName)) || DHistType::Class()->InheritsFrom("TH3"))
+	{
+		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". HISTOGRAM NOT CREATED." << endl;
+		return false;
+	}
+	return true;
+}
+
+template <typename DHistType> bool DAnalysisAction::Check_IsValidTH1(string locHistName) const
+{
+	const char* locTypeName = DHistType::Class()->GetName();
+	const char* locBadTypeName = "TH1";
+	if((!DHistType::Class()->InheritsFrom("TH1")) || (string(locTypeName) == string(locBadTypeName)) || DHistType::Class()->InheritsFrom("TH2") || DHistType::Class()->InheritsFrom("TH3"))
+	{
+		cout << "ERROR, WRONG CLASS TYPE IN GetOrCreate_Histogram for HISTOGRAM " << locHistName << ". HISTOGRAM NOT CREATED." << endl;
+		return false;
+	}
+	return true;
 }
 
 #endif // _DAnalysisAction_

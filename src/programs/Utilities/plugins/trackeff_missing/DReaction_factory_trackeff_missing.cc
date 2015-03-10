@@ -49,7 +49,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// locReaction->Set_MinChargedPIDFOM(5.73303E-7);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*2.004); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
+	locReaction->Set_MaxPhotonRFDeltaT(4.0); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Current (09/26/2014): "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma). 
@@ -123,7 +123,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// locReaction->Set_MinChargedPIDFOM(5.73303E-7);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*2.004); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
+	locReaction->Set_MaxPhotonRFDeltaT(4.0); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Current (09/26/2014): "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma).
@@ -197,7 +197,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// locReaction->Set_MinChargedPIDFOM(5.73303E-7);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*2.004); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
+	locReaction->Set_MaxPhotonRFDeltaT(4.0); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Current (09/26/2014): "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma).

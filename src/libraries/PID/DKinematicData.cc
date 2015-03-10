@@ -24,7 +24,6 @@ const double kLarge = 1.e20;
 //
 DMatrixDSym* DKinematicData::nullMatrix()
 {
-  //static DMatrixDSym* sNullMatrix = new DMatrixDSym(0,7);
   static DMatrixDSym* sNullMatrix = new DMatrixDSym(7);
   return sNullMatrix;
 }                         

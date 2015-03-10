@@ -37,7 +37,7 @@ jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int runn
 	locEventLoop->Get(locMCThrowns);
 
 	//MAKE CONTROL HISTOGRAMS
-	string locHistName, locHistTitle, locDirName, locDirTitle;
+	string locHistName, locHistTitle;
 	const DReaction* locReaction;
 	TDirectoryFile* locDirectoryFile;
 	string locReactionName;
@@ -65,12 +65,11 @@ jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int runn
 			for(size_t loc_j = 0; loc_j < locNumActions; ++loc_j)
 				locActionNames.push_back(locReaction->Get_AnalysisAction(loc_j)->Get_ActionName());
 
-			locDirName = locReactionName;
-			locDirTitle = locReactionName;
+			const char* locDirName = locReactionName.c_str();
 			locFile->cd();
-			locDirectoryFile = static_cast<TDirectoryFile*>(locFile->GetDirectory(locDirName.c_str()));
+			locDirectoryFile = static_cast<TDirectoryFile*>(locFile->GetDirectory(locDirName));
 			if(locDirectoryFile == NULL)
-				locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirTitle.c_str());
+				locDirectoryFile = new TDirectoryFile(locDirName, locDirName);
 			locDirectoryFile->cd();
 
 			locHistName = "NumEventsSurvivedAction";
@@ -231,12 +230,16 @@ jerror_t DAnalysisResults_factory::evnt(jana::JEventLoop* locEventLoop, int even
 
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 	{
-		locAnalysisResults = new DAnalysisResults();
 		locReaction = locReactions[loc_i];
+		locAnalysisResults = new DAnalysisResults();
 		locAnalysisResults->Set_Reaction(locReaction);
 
 		if(dCombosByReaction.find(locReaction) == dCombosByReaction.end())
+		{
+			_data.push_back(locAnalysisResults);
 			continue;
+		}
+
 		set<const DParticleCombo*>& locSurvivingParticleCombos = dCombosByReaction[locReaction];
 
 		//find the true particle combo
