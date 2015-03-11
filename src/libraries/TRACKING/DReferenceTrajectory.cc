@@ -115,6 +115,11 @@ DReferenceTrajectory::DReferenceTrajectory(const DReferenceTrajectory& rt)
 	this->MIN_STEP_SIZE = rt.GetMinStepSize();
 	this->MAX_STEP_SIZE = rt.GetMaxStepSize();
 	this->debug_level=rt.debug_level;
+	this->zmin_track_boundary = -100.0;  // boundary at which to stop swimming
+	this->zmax_track_boundary = 670.0;   // boundary at which to stop swimming
+	this->Rmax_interior = 65.0; // Maximum radius (in cm) corresponding to inside of BCAL
+	this->Rmax_exterior = 88.0; // Maximum radius (in cm) corresponding to outside of BCAL
+	
 
 	this->swim_steps = new swim_step_t[this->max_swim_steps];
 	this->last_swim_step = NULL;
