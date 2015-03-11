@@ -52,21 +52,18 @@ class DTOFGeometry : public JObject {
   
   int y2bar(double y) const   ///> convert local position y to bar number
   {
-    int jl=-1;
-    int n=50;
-    int ju=n;
-    int jm=0;
-    while(ju-jl>1){
-      jm=(ju+jl)>>1;
+    int jm=1;
+    if (y>YPOS[44]) jm=44;
+    else if (y>YPOS[1]){
+      int jl=-1;
+      int ju=44;
+      while(ju-jl>1){
+	jm=(ju+jl)>>1;
         if (y>=YPOS[jm])
-            jl=jm;
+	  jl=jm;
         else
-            ju=jm;
-    }
-    if (y==YPOS[0]) jm=0;
-    else if (y==YPOS[n-1]) jm=n-1;
-
-    if (jm>0){
+	  ju=jm;
+      }     
       if (fabs(y-YPOS[jm-1])<fabs(y-YPOS[jm])) return jm-1;
       if (fabs(y-YPOS[jm+1])<fabs(y-YPOS[jm])) return jm+1;
     }
