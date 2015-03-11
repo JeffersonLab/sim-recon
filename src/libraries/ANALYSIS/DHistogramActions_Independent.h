@@ -208,24 +208,24 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		DHistogramAction_DetectorMatching(const DReaction* locReaction, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_DetectorMatching", false, locActionUniqueString),
 		dNum2DThetaBins(280), dNum2DPBins(250), dNum2DPhiBins(360), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(300), dNum2DTrackDOCABins(200), dNumTrackDOCABins(400),
-		dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0),
+		dNumFCALTOFXYBins(260), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0),
 		dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0), dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0) {}
 
 		DHistogramAction_DetectorMatching(string locActionUniqueString) :
 		DAnalysisAction(NULL, "Hist_DetectorMatching", false, locActionUniqueString),
 		dNum2DThetaBins(280), dNum2DPBins(250), dNum2DPhiBins(360), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(300), dNum2DTrackDOCABins(200), dNumTrackDOCABins(400),
-		dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0),
+		dNumFCALTOFXYBins(260), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0),
 		dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0), dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0) {}
 
 		DHistogramAction_DetectorMatching(void) :
 		DAnalysisAction(NULL, "Hist_DetectorMatching", false, ""),
 		dNum2DThetaBins(280), dNum2DPBins(250), dNum2DPhiBins(360), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(300), dNum2DTrackDOCABins(200), dNumTrackDOCABins(400),
-		dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0),
+		dNumFCALTOFXYBins(260), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0),
 		dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0), dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0) {}
 
 		void Initialize(JEventLoop* locEventLoop);
 
-		unsigned int dNum2DThetaBins, dNum2DPBins, dNum2DPhiBins, dNum2DDeltaPhiBins, dNum2DDeltaZBins, dNum2DTrackDOCABins, dNumTrackDOCABins;
+		unsigned int dNum2DThetaBins, dNum2DPBins, dNum2DPhiBins, dNum2DDeltaPhiBins, dNum2DDeltaZBins, dNum2DTrackDOCABins, dNumTrackDOCABins, dNumFCALTOFXYBins;
 		double dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dSCMatchMinDeltaPhi, dSCMatchMaxDeltaPhi, dMinTrackDOCA, dMaxTrackMatchDOCA;
 		double dMinDeltaPhi, dMaxDeltaPhi, dMinDeltaZ, dMaxDeltaZ;
 
@@ -233,10 +233,25 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 		void Fill_MatchingHists(JEventLoop* locEventLoop, bool locIsTimeBased);
 
+		//bool is time/wire-based for true/false
 		map<DetectorSystem_t, map<bool, TH2I*> > dHistMap_PVsTheta_HasHit;
 		map<DetectorSystem_t, map<bool, TH2I*> > dHistMap_PVsTheta_NoHit;
 		map<DetectorSystem_t, map<bool, TH2I*> > dHistMap_PhiVsTheta_HasHit;
 		map<DetectorSystem_t, map<bool, TH2I*> > dHistMap_PhiVsTheta_NoHit;
+
+		map<bool, TH2I*> dHistMap_SCPaddleVsTheta_HasHit;
+		map<bool, TH2I*> dHistMap_SCPaddleVsTheta_NoHit;
+		map<bool, TH2I*> dHistMap_TrackTOFYVsX_HasHit;
+		map<bool, TH2I*> dHistMap_TrackTOFYVsX_NoHit;
+		map<bool, TH2I*> dHistMap_TrackTOF2DPaddles_HasHit;
+		map<bool, TH2I*> dHistMap_TrackTOF2DPaddles_NoHit;
+		map<bool, TH2I*> dHistMap_TrackFCALYVsX_HasHit;
+		map<bool, TH2I*> dHistMap_TrackFCALYVsX_NoHit;
+		map<bool, TH2I*> dHistMap_TrackFCALRowVsColumn_HasHit;
+		map<bool, TH2I*> dHistMap_TrackFCALRowVsColumn_NoHit;
+//		map<bool, TH2I*> dHistMap_TrackBCALModuleVsZ_HasHit;
+//		map<bool, TH2I*> dHistMap_TrackBCALModuleVsZ_NoHit;
+
 		map<bool, TH2I*> dHistMap_TrackPVsTheta_NoHitMatch;
 		map<bool, TH2I*> dHistMap_TrackPVsTheta_HitMatch;
 		map<bool, TH2I*> dHistMap_SCTrackDeltaPhiVsP;

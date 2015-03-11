@@ -741,6 +741,50 @@ void DHistogramAction_DetectorMatching::Initialize(JEventLoop* locEventLoop)
 				dHistMap_PhiVsTheta_NoHit[locSystem][locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPhiBins, dMinPhi, dMaxPhi);
 			}
 
+			//physical detector elements of has (no) hit
+			//SC
+			locHistName = "SCPaddleVsTheta_HasHit";
+			locHistTitle = locTrackString + string(", Has Other Match, SC Has Hit;#theta#circ;Projected SC Paddle");
+			dHistMap_SCPaddleVsTheta_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, 30, 0.5, 30.5);
+
+			locHistName = "SCPaddleVsTheta_NoHit";
+			locHistTitle = locTrackString + string(", Has Other Match, SC No Hit;#theta#circ;Projected SC Paddle");
+			dHistMap_SCPaddleVsTheta_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, 30, 0.5, 30.5);
+
+			//TOF
+			locHistName = "TrackTOFYVsX_HasHit";
+			locHistTitle = locTrackString + string(", Has Other Match, TOF Has Hit;Projected TOF Hit X (cm);Projected TOF Hit Y (cm)");
+			dHistMap_TrackTOFYVsX_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumFCALTOFXYBins, -130.0, 130.0, dNumFCALTOFXYBins, -130.0, 130.0);
+
+			locHistName = "TrackTOFYVsX_NoHit";
+			locHistTitle = locTrackString + string(", Has Other Match, TOF No Hit;Projected TOF Hit X (cm);Projected TOF Hit Y (cm)");
+			dHistMap_TrackTOFYVsX_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumFCALTOFXYBins, -130.0, 130.0, dNumFCALTOFXYBins, -130.0, 130.0);
+
+			locHistName = "TrackTOF2DPaddles_HasHit";
+			locHistTitle = locTrackString + string(", Has Other Match, TOF Has Hit;Projected Vertical TOF Paddle;Projected Horizontal TOF Paddle");
+			dHistMap_TrackTOF2DPaddles_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, 44, 0.5, 44.5, 44, 0.5, 44.5);
+
+			locHistName = "TrackTOF2DPaddles_NoHit";
+			locHistTitle = locTrackString + string(", Has Other Match, TOF No Hit;Projected Vertical TOF Paddle;Projected Horizontal TOF Paddle");
+			dHistMap_TrackTOF2DPaddles_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, 44, 0.5, 44.5, 44, 0.5, 44.5);
+
+			//FCAL
+			locHistName = "TrackFCALYVsX_HasHit";
+			locHistTitle = locTrackString + string(", Has Other Match, FCAL Has Hit;Projected FCAL Hit X (cm);Projected FCAL Hit Y (cm)");
+			dHistMap_TrackFCALYVsX_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumFCALTOFXYBins, -130.0, 130.0, dNumFCALTOFXYBins, -130.0, 130.0);
+
+			locHistName = "TrackFCALYVsX_NoHit";
+			locHistTitle = locTrackString + string(", Has Other Match, FCAL No Hit;Projected FCAL Hit X (cm);Projected FCAL Hit Y (cm)");
+			dHistMap_TrackFCALYVsX_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumFCALTOFXYBins, -130.0, 130.0, dNumFCALTOFXYBins, -130.0, 130.0);
+
+			locHistName = "TrackFCALRowVsColumn_HasHit";
+			locHistTitle = locTrackString + string(", Has Other Match, FCAL Has Hit;Projected FCAL Hit Column;Projected FCAL Hit Row");
+			dHistMap_TrackFCALRowVsColumn_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, 59, -0.5, 58.5, 59, -0.5, 58.5);
+
+			locHistName = "TrackFCALRowVsColumn_NoHit";
+			locHistTitle = locTrackString + string(", Has Other Match, FCAL No Hit;Projected FCAL Hit Column;Projected FCAL Hit Row");
+			dHistMap_TrackFCALRowVsColumn_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, 59, -0.5, 58.5, 59, -0.5, 58.5);
+
 			//TRACKING
 			locHistName = "PVsTheta_NoHitMatch";
 			locHistTitle = locTrackString + string(", No Hit Match;#theta#circ;p (GeV/c)");
@@ -939,6 +983,45 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			locSCTrackDistanceMap[locTrackIterator->second] = locBestDeltaPhi;
 	}
 
+	//PROJECTED HIT POSITIONS
+	map<const DKinematicData*, int> dProjectedSCPaddleMap;
+	map<const DKinematicData*, pair<int, int> > dProjectedTOF2DPaddlesMap; //pair: vertical, horizontal
+	map<const DKinematicData*, pair<float, float> > dProjectedTOFXYMap; //pair: x, y
+	map<const DKinematicData*, pair<int, int> > dProjectedFCALRowColumnMap; //pair: column, row
+	map<const DKinematicData*, pair<float, float> > dProjectedFCALXYMap; //pair: x, y
+	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
+	{
+		const DKinematicData* locTrack = locTrackIterator->second;
+		const DReferenceTrajectory* locReferenceTrajectory = NULL;
+		if(locIsTimeBased)
+			locReferenceTrajectory = (static_cast<const DTrackTimeBased*>(locTrack))->rt;
+		else
+			locReferenceTrajectory = (static_cast<const DTrackWireBased*>(locTrack))->rt;
+
+		//SC
+		unsigned int locProjectedSCPaddle = locParticleID->PredictSCSector(locReferenceTrajectory, 999.9);
+		if(locProjectedSCPaddle != 0)
+			dProjectedSCPaddleMap[locTrack] = locProjectedSCPaddle;
+
+		//TOF
+		DVector3 locTOFIntersection;
+		unsigned int locHorizontalBar = 0, locVerticalBar = 0;
+		if(locParticleID->PredictTOFPaddles(locReferenceTrajectory, locHorizontalBar, locVerticalBar, &locTOFIntersection))
+		{
+			dProjectedTOF2DPaddlesMap[locTrack] = pair<int, int>(locVerticalBar, locHorizontalBar);
+			dProjectedTOFXYMap[locTrack] = pair<float, float>(locTOFIntersection.X(), locTOFIntersection.Y());
+		}
+
+		//FCAL
+		DVector3 locFCALIntersection;
+		unsigned int locRow = 0, locColumn = 0;
+		if(locParticleID->PredictFCALHit(locReferenceTrajectory, locRow, locColumn, &locFCALIntersection))
+		{
+			dProjectedFCALRowColumnMap[locTrack] = pair<int, int>(locColumn, locRow);
+			dProjectedFCALXYMap[locTrack] = pair<float, float>(locFCALIntersection.X(), locFCALIntersection.Y());
+		}
+	}
+
 	//Fill Histograms
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
@@ -974,6 +1057,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 				}
 			}
 
+
 			//FCAL
 			if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_BCAL) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_TOF) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_START))
 			{
@@ -981,11 +1065,25 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 				{
 					dHistMap_PVsTheta_HasHit[SYS_FCAL][locIsTimeBased]->Fill(locTheta, locP);
 					dHistMap_PhiVsTheta_HasHit[SYS_FCAL][locIsTimeBased]->Fill(locTheta, locPhi);
+					if(dProjectedFCALRowColumnMap.find(locTrack) != dProjectedFCALRowColumnMap.end())
+					{
+						pair<float, float>& locPositionPair = dProjectedFCALXYMap[locTrack];
+						dHistMap_TrackFCALYVsX_HasHit[locIsTimeBased]->Fill(locPositionPair.first, locPositionPair.second);
+						pair<int, int>& locElementPair = dProjectedFCALRowColumnMap[locTrack];
+						dHistMap_TrackFCALRowVsColumn_HasHit[locIsTimeBased]->Fill(locElementPair.first, locElementPair.second);
+					}
 				}
 				else
 				{
 					dHistMap_PVsTheta_NoHit[SYS_FCAL][locIsTimeBased]->Fill(locTheta, locP);
 					dHistMap_PhiVsTheta_NoHit[SYS_FCAL][locIsTimeBased]->Fill(locTheta, locPhi);
+					if(dProjectedFCALRowColumnMap.find(locTrack) != dProjectedFCALRowColumnMap.end())
+					{
+						pair<float, float>& locPositionPair = dProjectedFCALXYMap[locTrack];
+						dHistMap_TrackFCALYVsX_NoHit[locIsTimeBased]->Fill(locPositionPair.first, locPositionPair.second);
+						pair<int, int>& locElementPair = dProjectedFCALRowColumnMap[locTrack];
+						dHistMap_TrackFCALRowVsColumn_NoHit[locIsTimeBased]->Fill(locElementPair.first, locElementPair.second);
+					}
 				}
 			}
 
@@ -996,11 +1094,25 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 				{
 					dHistMap_PVsTheta_HasHit[SYS_TOF][locIsTimeBased]->Fill(locTheta, locP);
 					dHistMap_PhiVsTheta_HasHit[SYS_TOF][locIsTimeBased]->Fill(locTheta, locPhi);
+					if(dProjectedTOFXYMap.find(locTrack) != dProjectedTOFXYMap.end())
+					{
+						pair<float, float>& locPositionPair = dProjectedTOFXYMap[locTrack];
+						dHistMap_TrackTOFYVsX_HasHit[locIsTimeBased]->Fill(locPositionPair.first, locPositionPair.second);
+						pair<int, int>& locElementPair = dProjectedTOF2DPaddlesMap[locTrack];
+						dHistMap_TrackTOF2DPaddles_HasHit[locIsTimeBased]->Fill(locElementPair.first, locElementPair.second);
+					}
 				}
 				else
 				{
 					dHistMap_PVsTheta_NoHit[SYS_TOF][locIsTimeBased]->Fill(locTheta, locP);
 					dHistMap_PhiVsTheta_NoHit[SYS_TOF][locIsTimeBased]->Fill(locTheta, locPhi);
+					if(dProjectedTOFXYMap.find(locTrack) != dProjectedTOFXYMap.end())
+					{
+						pair<float, float>& locPositionPair = dProjectedTOFXYMap[locTrack];
+						dHistMap_TrackTOFYVsX_NoHit[locIsTimeBased]->Fill(locPositionPair.first, locPositionPair.second);
+						pair<int, int>& locElementPair = dProjectedTOF2DPaddlesMap[locTrack];
+						dHistMap_TrackTOF2DPaddles_NoHit[locIsTimeBased]->Fill(locElementPair.first, locElementPair.second);
+					}
 				}
 			}
 
@@ -1011,11 +1123,15 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 				{
 					dHistMap_PVsTheta_HasHit[SYS_START][locIsTimeBased]->Fill(locTheta, locP);
 					dHistMap_PhiVsTheta_HasHit[SYS_START][locIsTimeBased]->Fill(locTheta, locPhi);
+					if(dProjectedSCPaddleMap.find(locTrack) != dProjectedSCPaddleMap.end())
+						dHistMap_SCPaddleVsTheta_HasHit[locIsTimeBased]->Fill(locTheta, dProjectedSCPaddleMap[locTrack]);
 				}
 				else
 				{
 					dHistMap_PVsTheta_NoHit[SYS_START][locIsTimeBased]->Fill(locTheta, locP);
 					dHistMap_PhiVsTheta_NoHit[SYS_START][locIsTimeBased]->Fill(locTheta, locPhi);
+					if(dProjectedSCPaddleMap.find(locTrack) != dProjectedSCPaddleMap.end())
+						dHistMap_SCPaddleVsTheta_NoHit[locIsTimeBased]->Fill(locTheta, dProjectedSCPaddleMap[locTrack]);
 				}
 			}
 		}
