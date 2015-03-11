@@ -2013,6 +2013,8 @@ jerror_t DEventSourceHDDM::Extract_DSCHit(hddm_s::HDDM *record,
          hit->t = iter->getT();
 	 hit->t_TDC=hit->t;
 	 hit->t_fADC=hit->t;
+	 hit->has_TDC=true;
+	 hit->has_fADC=true;
          data.push_back(hit);
       }
    }
