@@ -658,6 +658,10 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
     w->udir=downstream-upstream;
     w->udir.SetMag(1.);
     w->stereo=stereo_sign*w->udir.Angle(DVector3(0.,0.,1.));
+    // other directions for our wire coordinate system
+    w->sdir=w->origin;
+    w->sdir.SetMag(1.);
+    w->tdir = w->udir.Cross(w->sdir);
 
     stereowires.push_back(w);
   }
@@ -722,6 +726,10 @@ bool DGeometry::GetCDCAxialWires(unsigned int ring,unsigned int ncopy,
     w->udir=downstream-upstream;
     w->udir.SetMag(1.);
     w->stereo=w->udir.Angle(DVector3(0.,0.,1.));
+    // other directions for our wire coordinate system
+    w->sdir=w->origin;
+    w->sdir.SetMag(1.);
+    w->tdir = w->udir.Cross(w->sdir);
 
     axialwires.push_back(w);
   }
