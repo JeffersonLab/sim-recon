@@ -455,6 +455,56 @@ void DParticleID::GetScintMPdEandSigma(double p,double M,double x,
   sigma_dE=4.*Xi/2.354;
 }
 
+// Calculate the most probable energy loss per unit length in units of
+// GeV/cm in the FDC or CDC gas for a particle of momentum p and mass "mass"
+double DParticleID::GetMostProbabledEdx_DC(double p,double mass,double dx, bool locIsCDCFlag) const{
+  double betagamma=p/mass;
+  double beta2=1./(1.+1./betagamma/betagamma);
+  if (beta2<1e-6) beta2=1e-6;
+
+  // Electron mass
+  double Me=0.000511; //GeV
+
+  double locKRhoZoverAGas = locIsCDCFlag ? dKRhoZoverA_CDC : dKRhoZoverA_FDC;
+  double locLnIGas = locIsCDCFlag ? dLnI_CDC : dLnI_FDC;
+
+  // First (non-logarithmic) term in Bethe-Bloch formula
+  double mean_dedx=locKRhoZoverAGas/beta2;
+
+  // Most probable energy loss from Landau theory (see Leo, pp. 51-52)
+  return mean_dedx*(log(mean_dedx*dx)
+		    -log((1.-beta2)/2./Me/beta2)-2.*locLnIGas-beta2+0.200);
+}
+
+// Empirical form for sigma/mean for gaseous detectors with num_dedx
+// samples and sampling thickness path_length.  Assumes that the number of
+// hits has already been converted from an (unsigned) int to a double.
+double DParticleID::GetdEdxSigma_DC(double num_hits,double p,double mass,
+				  double mean_path_length, bool locIsCDCFlag) const{
+  // kinematic quantities
+  double betagamma=p/mass;
+  double betagamma2=betagamma*betagamma;
+  double beta2=1./(1.+1./betagamma2);
+  if (beta2<1e-6) beta2=1e-6;
+
+  double Me=0.000511; //GeV
+  double m_ratio=Me/mass;
+  double two_Me_betagamma_sq=2.*Me*betagamma2;
+  double Tmax
+    =two_Me_betagamma_sq/(1.+2.*sqrt(1.+betagamma2)*m_ratio+m_ratio*m_ratio);
+  // Energy truncation for knock-on electrons
+  double T0=(Tmax>100.e-6)?100.e-6:Tmax;  //100.e-6: energy cut for bethe-bloch
+
+  // Bethe-Bloch
+  double locKRhoZoverAGas = locIsCDCFlag ? dKRhoZoverA_CDC : dKRhoZoverA_FDC;
+  double locLnIGas = locIsCDCFlag ? dLnI_CDC : dLnI_FDC;
+  double mean_dedx=locKRhoZoverAGas/beta2
+    *(log(two_Me_betagamma_sq*T0)-2.*locLnIGas-beta2*(1.+T0/Tmax));
+
+  return 0.41*mean_dedx*pow(num_hits,-0.43)*pow(mean_path_length,-0.32);
+  //return 0.41*mean_dedx*pow(double(num_hits),-0.5)*pow(mean_path_length,-0.32);
+}
+
 //------------------
 // MatchToBCAL
 //------------------

@@ -77,7 +77,7 @@ class DTOFHitMatchParams
 		double dHitTimeVariance; //This can be different from DTOFPoint::tErr, if the DTOFPoint was (e.g.) an unmatched, single-ended paddle
 		double dHitEnergy; //This can be different from DTOFPoint::dE, if the DTOFPoint was (e.g.) an unmatched, single-ended paddle
 
-		double dEdx; //dE/dx; dE: the energy lost by the track, dx: the distance the track traveled through the detector system
+		double dEdx; //dE/dx; dE: the energy lost by the track, dx: the distance the track traveled through the detector system (dHitEnergy/dEdx)
 		double dFlightTime; //flight time from DKinematicData::position() to the hit
 		double dFlightTimeVariance;
 		double dPathLength; //path length from DKinematicData::position() to the hit
@@ -104,7 +104,7 @@ class DSCHitMatchParams
 		double dHitTimeVariance;
 		double dHitEnergy; //not the same as DSCHit energy: corrected for attenuation
 
-		double dEdx; //dE/dx; dE: the energy lost by the track, dx: the distance the track traveled through the detector system (dHitEnergy/dx)
+		double dEdx; //dE/dx; dE: the energy lost by the track, dx: the distance the track traveled through the detector system (dHitEnergy/dEdx)
 		double dFlightTime; //flight time from DKinematicData::position() to the hit
 		double dFlightTimeVariance;
 		double dPathLength; //path length from DKinematicData::position() to the hit

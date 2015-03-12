@@ -67,8 +67,9 @@ class DParticleID:public jana::JObject{
   jerror_t CalcdEdxHit(const DVector3 &mom, const DVector3 &pos, const DCDCTrackHit *hit, pair <double,double> &dedx) const;
   jerror_t GroupTracks(vector<const DTrackTimeBased *> &tracks, vector<vector<const DTrackTimeBased*> >&grouped_tracks) const;
 
-  void GetScintMPdEandSigma(double p,double M,double x,double &most_prob_dE,
-			    double &sigma_dE) const;
+  void GetScintMPdEandSigma(double p,double M,double x,double &most_prob_dE, double &sigma_dE) const;
+  double GetMostProbabledEdx_DC(double p,double mass,double dx, bool locIsCDCFlag) const; //bool is false for FDC
+  double GetdEdxSigma_DC(double num_hits,double p,double mass, double mean_path_length, bool locIsCDCFlag) const; //bool is false for FDC
 
 	//called by track reconstruction
 	bool MatchToTOF(const DReferenceTrajectory* rt, const vector<const DTOFPoint*>& locTOFPoints, double& locStartTime, double& locTimeVariance) const;
