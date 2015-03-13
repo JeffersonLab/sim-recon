@@ -51,6 +51,7 @@
 	gPad->SetTicks();
 	gPad->SetGrid();
 	if(locHist_NoKinFit_MM_M3pi != NULL) {	
+		locHist_NoKinFit_MM_M3pi->Rebin2D();
 		locHist_NoKinFit_MM_M3pi->GetXaxis()->SetTitleSize(0.05);
 		locHist_NoKinFit_MM_M3pi->GetYaxis()->SetTitleSize(0.05);
 		locHist_NoKinFit_MM_M3pi->GetXaxis()->SetLabelSize(0.05);
@@ -62,6 +63,7 @@
 	gPad->SetTicks();
 	gPad->SetGrid();
 	if(locHist_KinFitCut10_MM_M3pi != NULL) {
+		locHist_KinFitCut10_MM_M3pi->Rebin2D();
 		locHist_KinFitCut10_MM_M3pi->SetTitle("MM off #pi^{+}#pi^{-}#pi^{0} vs M_{#pi^{+}#pi^{-}#pi^{0}}: KinFit CL > 0.1");
 		locHist_KinFitCut10_MM_M3pi->GetXaxis()->SetTitleSize(0.05);
 		locHist_KinFitCut10_MM_M3pi->GetYaxis()->SetTitleSize(0.05);
@@ -79,6 +81,8 @@
 		locHist_KinFitCut10_M3pi->SetTitle("M_{#pi^{+}#pi^{-}#pi^{0}}: KinFit CL > 0.1");
 		locHist_KinFitCut10_M3pi->GetXaxis()->SetTitleSize(0.05);
 		locHist_KinFitCut10_M3pi->GetXaxis()->SetLabelSize(0.05);
+		locHist_KinFitCut10_M3pi->GetYaxis()->SetTitleSize(0.05);
+                locHist_KinFitCut10_M3pi->GetYaxis()->SetLabelSize(0.05);
 		locHist_KinFitCut10_M3pi->Draw();
 	}
 }

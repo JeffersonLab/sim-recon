@@ -32,7 +32,8 @@
 	gPad->SetTicks();
 	gPad->SetGrid();
 	gPad->SetLogz();
-	if(locHist_NoKinFit_DeltaZ_M2pi != NULL) {	
+	if(locHist_NoKinFit_DeltaZ_M2pi != NULL) {
+		locHist_NoKinFit_DeltaZ_M2pi->Rebin2D();	
 		locHist_NoKinFit_DeltaZ_M2pi->GetXaxis()->SetRangeUser(0.,1.);
 		locHist_NoKinFit_DeltaZ_M2pi->GetXaxis()->SetTitleSize(0.05);
 		locHist_NoKinFit_DeltaZ_M2pi->GetYaxis()->SetTitleSize(0.05);
@@ -46,6 +47,7 @@
 	gPad->SetGrid();
 	gPad->SetLogz();
 	if(locHist_KinFitCut10_DeltaZ_M2pi != NULL) {
+		locHist_KinFitCut10_DeltaZ_M2pi->Rebin2D();
 		locHist_KinFitCut10_DeltaZ_M2pi->SetTitle("Vertex #DeltaZ of #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}: KinFit CL > 0.1");
 		locHist_KinFitCut10_DeltaZ_M2pi->GetXaxis()->SetRangeUser(0.,1.);
 		locHist_KinFitCut10_DeltaZ_M2pi->GetXaxis()->SetTitleSize(0.05);
@@ -67,6 +69,8 @@
 		locHist_NoKinFit_M2pi->GetXaxis()->SetRangeUser(0.,1.);
 		locHist_NoKinFit_M2pi->GetXaxis()->SetTitleSize(0.05);
 		locHist_NoKinFit_M2pi->GetXaxis()->SetLabelSize(0.05);
+		locHist_NoKinFit_M2pi->GetYaxis()->SetTitleSize(0.05);
+                locHist_NoKinFit_M2pi->GetYaxis()->SetLabelSize(0.05);
 		locHist_NoKinFit_M2pi->Draw();
 	}
 
@@ -82,6 +86,8 @@
 		locHist_KinFitCut10_M2pi->GetXaxis()->SetRangeUser(0.,1.);
 		locHist_KinFitCut10_M2pi->GetXaxis()->SetTitleSize(0.05);
 		locHist_KinFitCut10_M2pi->GetXaxis()->SetLabelSize(0.05);
+		locHist_KinFitCut10_M2pi->GetYaxis()->SetTitleSize(0.05);
+                locHist_KinFitCut10_M2pi->GetYaxis()->SetLabelSize(0.05);
 		locHist_KinFitCut10_M2pi->Draw();
 	}
 

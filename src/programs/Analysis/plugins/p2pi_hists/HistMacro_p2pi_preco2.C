@@ -13,7 +13,7 @@
 	locDirectory->cd();
 	TH2I* locHist_KinFitCut10_Proton_dEdx_P = (TH2I*)gDirectory->Get("Proton_dEdx_P");
 	TH2I* locHist_KinFitCut10_Proton_P_Theta = (TH2I*)gDirectory->Get("Proton_P_Theta");
-	TH2I* locHist_KinFitCut10_DeltaE_M2pi = (TH2I*)gDirectory->Get("dDeltaE_M2pi");
+	TH2I* locHist_KinFitCut10_DeltaE_M2pi = (TH2I*)gDirectory->Get("DeltaE_M2pi");
 
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
@@ -27,7 +27,8 @@
 	locCanvas->cd(1);
 	gPad->SetTicks();
 	gPad->SetGrid();
-	if(locHist_KinFitCut10_Proton_dEdx_P != NULL) {	
+	if(locHist_KinFitCut10_Proton_dEdx_P != NULL) {
+		locHist_KinFitCut10_Proton_dEdx_P->Rebin2D();	
 		locHist_KinFitCut10_Proton_dEdx_P->SetTitle("dE/dx vs p: KinFit CL > 0.1");
 		locHist_KinFitCut10_Proton_dEdx_P->GetXaxis()->SetTitleSize(0.05);
 		locHist_KinFitCut10_Proton_dEdx_P->GetYaxis()->SetTitleSize(0.05);
@@ -41,6 +42,7 @@
 	gPad->SetGrid();
 	if(locHist_KinFitCut10_Proton_P_Theta != NULL) {
 		locHist_KinFitCut10_Proton_P_Theta->SetTitle("p vs. #theta: KinFit CL > 0.1");
+		locHist_KinFitCut10_Proton_P_Theta->GetYaxis()->SetRangeUser(0.,5.);
 		locHist_KinFitCut10_Proton_P_Theta->GetXaxis()->SetTitleSize(0.05);
 		locHist_KinFitCut10_Proton_P_Theta->GetYaxis()->SetTitleSize(0.05);
 		locHist_KinFitCut10_Proton_P_Theta->GetXaxis()->SetLabelSize(0.05);
@@ -52,6 +54,7 @@
 	gPad->SetTicks();
 	gPad->SetGrid();
 	if(locHist_KinFitCut10_DeltaE_M2pi != NULL) {
+		locHist_KinFitCut10_DeltaE_M2pi->Rebin2D();
 		locHist_KinFitCut10_DeltaE_M2pi->SetTitle("#DeltaE vs M_{#pi^{+}#pi^{-}}: KinFit CL > 0.1");
 		locHist_KinFitCut10_DeltaE_M2pi->GetXaxis()->SetTitleSize(0.05);
 		locHist_KinFitCut10_DeltaE_M2pi->GetYaxis()->SetTitleSize(0.05);
