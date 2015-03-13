@@ -71,7 +71,7 @@
 		locHist_KinFitCut10_DeltaE->GetYaxis()->SetTitleSize(0.05);
 		locHist_KinFitCut10_DeltaE->GetXaxis()->SetLabelSize(0.05);
 		locHist_KinFitCut10_DeltaE->GetYaxis()->SetLabelSize(0.05);
-		locHist_KinFitCut10_DeltaE->Draw("colz");	
+		locHist_KinFitCut10_DeltaE->Draw();	
 	}
 
 }
