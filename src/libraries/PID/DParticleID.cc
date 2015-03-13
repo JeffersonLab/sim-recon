@@ -41,20 +41,23 @@ DParticleID::DParticleID(JEventLoop *loop)
     _DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
 		return;
   }
-  const DRootGeom *RootGeom = dapp->GetRootGeom(loop->GetJEvent().GetRunNumber());
 
   // Get material properties for chamber gas
-  double rho_Z_over_A_LnI=0,radlen=0;
-
-  RootGeom->FindMat("CDchamberGas", dRhoZoverA_CDC, rho_Z_over_A_LnI, radlen);
+  // !!!!!!!!!!! Hard-coded for now -- will need to fix if the gas mixtures
+  // change significantly...
+  double rho_Z_over_A_LnI=0;
+  dRhoZoverA_CDC=0.000843;
+  rho_Z_over_A_LnI=-0.013169;
   dLnI_CDC = rho_Z_over_A_LnI/dRhoZoverA_CDC;
   dKRhoZoverA_CDC = 0.1535E-3*dRhoZoverA_CDC;
 
-  RootGeom->FindMat("FDchamberGas", dRhoZoverA_FDC, rho_Z_over_A_LnI, radlen);
+  dRhoZoverA_FDC=0.000865;
+  rho_Z_over_A_LnI=-0.013569;
   dLnI_FDC = rho_Z_over_A_LnI/dRhoZoverA_FDC;
   dKRhoZoverA_FDC = 0.1535E-3*dRhoZoverA_FDC;
 
-  RootGeom->FindMat("Scintillator", dRhoZoverA_Scint, rho_Z_over_A_LnI, radlen);
+  dRhoZoverA_Scint=0.519523;
+  rho_Z_over_A_LnI=-8.507655;
   dLnI_Scint = rho_Z_over_A_LnI/dRhoZoverA_Scint;
   dKRhoZoverA_Scint = 0.1535E-3*dRhoZoverA_Scint;
 
@@ -187,7 +190,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 	dTargetZCenter = 0.0;
 	locGeometry->GetTargetZ(dTargetZCenter);
 
-	
+  
   // Track finder helper class
   vector<const DTrackFinder *> finders;
   loop->Get(finders);
@@ -762,6 +765,32 @@ bool DParticleID::PredictFCALHit(const DReferenceTrajectory *rt,
   col=dFCALGeometry->column(float(x));
   return (dFCALGeometry->isBlockActive(row,col));
 }
+
+// Given a reference trajectory from a track, predict which BCAL wedge should
+// have a hit
+bool DParticleID::PredictBCALWedge(const DReferenceTrajectory *rt,
+				   unsigned int &module,unsigned int &sector,
+				   DVector3 *intersection) const{
+  /*
+  //initialize output variables 
+  sector=0;
+  module=0;
+  // Find intersection of track with inner radius of BCAL
+  DVector3 proj_pos;
+  printf("--------------\n");
+  if (rt->GetIntersectionWithRadius(65.0,proj_pos)==NOERROR){
+    double phi=180./M_PI*proj_pos.Phi();
+    if (phi<0)phi+=360.;
+    printf("%f %f \n",phi,phi/7.5);
+    printf("... %d\n",int(round(phi/7.5)));
+    if (intersection) *intersection=proj_pos;
+    
+    return true;
+  }
+  */
+  return false;
+}
+				   
 
 
 // Given a reference trajectory from a track, predict which TOF paddles should
