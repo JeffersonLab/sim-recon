@@ -24,7 +24,7 @@
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
 	if(TVirtualPad::Pad() == NULL)
-		locCanvas = new TCanvas("p2pi_preco", "p2pi_preco", 1200, 800); //for testing
+		locCanvas = new TCanvas("p2pi_preco1", "p2pi_preco1", 1200, 800); //for testing
 	else
 		locCanvas = gPad->GetCanvas();
 	locCanvas->Divide(2, 2);

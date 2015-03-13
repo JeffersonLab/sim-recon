@@ -14,7 +14,7 @@
 	TH1I* locHist_NoKinFit_MPi0 = (TH1I*)gDirectory->Get("InvariantMass");
 
 	//Go to NoKinFit directory
-	TDirectory *locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p3pi_hists_NoKinFit_Measured_Measured");
+	TDirectory *locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p3pi_hists_NoKinFit_Measured");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
