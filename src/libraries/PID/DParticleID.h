@@ -85,6 +85,9 @@ class DParticleID:public jana::JObject{
 	bool PredictFCALHit(const DReferenceTrajectory *rt,
 			    unsigned int &row, unsigned int &col,
 			    DVector3 *intersection=NULL) const;
+	bool PredictBCALWedge(const DReferenceTrajectory *rt,
+			      unsigned int &module,unsigned int &sector,
+			      DVector3 *intersection=NULL) const;
 
 	//matching tracks to hits/showers routines (can be called by DDetectorMatches factory)
 	bool MatchToBCAL(const DKinematicData* locTrack, const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, DBCALShowerMatchParams& locShowerMatchParams) const;
