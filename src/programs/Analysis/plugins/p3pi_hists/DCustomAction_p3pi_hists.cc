@@ -18,12 +18,12 @@ void DCustomAction_p3pi_hists::Initialize(JEventLoop* locEventLoop)
 			//If another thread has already created the folder, it just changes to it. 
 		CreateAndChangeTo_ActionDirectory();
 
-		dEgamma = GetOrCreate_Histogram<TH1I>("Egamma", "TAGGER photon energy; E_{gamma}", 400, 2., 12.);
+		dEgamma = GetOrCreate_Histogram<TH1I>("Egamma", "TAGGER photon energy; E_{#gamma}", 400, 2., 12.);
 		
 		if(dMissingPID == Proton)
 			dMM_M3pi = GetOrCreate_Histogram<TH2I>("MM_M3pi", "MM off #pi^{+}#pi^{-}#pi^{0} vs M_{#pi^{+}#pi^{-}#pi^{0}}; M_{#pi^{+}#pi^{-}#pi^{0}}; MM", 200, 0.0, 2.0, 200, 0., 4.);
 		else {
-			dMM2_M3pi = GetOrCreate_Histogram<TH2I>("MM2_M3pi", "MM^{2} off #pi^{+}#pi^{-}#pi^{0} vs M_{#pi^{+}#pi^{-}#pi^{0}}; M_{#pi^{+}#pi^{-}#pi^{0}}; MM^2", 200, 0.0, 2.0, 200, -1., 1.);
+			dMM2_M3pi = GetOrCreate_Histogram<TH2I>("MM2_M3pi", "MM^{2} off #pi^{+}#pi^{-}#pi^{0} vs M_{#pi^{+}#pi^{-}#pi^{0}}; M_{#pi^{+}#pi^{-}#pi^{0}}; MM^{2}", 200, 0.0, 2.0, 200, -1., 1.);
                         dProton_dEdx_P = GetOrCreate_Histogram<TH2I>("Proton_dEdx_P","dE/dx vs p; p; dE/dx",200,0,2,500,0,5);
                         dProton_P_Theta = GetOrCreate_Histogram<TH2I>("Proton_P_Theta","p vs #theta; #theta; p (GeV/c)",180,0,180,120,0,12);
                         dDeltaE_M3pi = GetOrCreate_Histogram<TH2I>("dDeltaE_M3pi", "#Delta E vs M_{#pi^{+}#pi^{-}#pi^{0}}; M_{#pi^{+}#pi^{-}#pi^{0}}; #Delta E (tagger - tracks)", 200, 0.0, 2.0, 200, -5., 5.);

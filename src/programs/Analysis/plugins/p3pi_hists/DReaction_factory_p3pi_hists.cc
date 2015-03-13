@@ -85,7 +85,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
         // Custom histograms for p3pi (no KinFit cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,100,0.,1., "NoKinFit_Measured"));
-        locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "NoKinFit_Measured_Measured"));
+        locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "NoKinFit_Measured"));
 
 	// Require KinFit converges
         locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0));
@@ -145,7 +145,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
         // Custom histograms for p3pi (no KinFit cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,100,0.,1., "NoKinFit_Measured"));
-        locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "NoKinFit_Measured_Measured"));
+        locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "NoKinFit_Measured"));
 
 	// Require KinFit converges
         locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0));
@@ -217,7 +217,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
         // Custom histograms for p3pi (no KinFit cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,100,0.,1., "NoKinFit_Measured"));
-        locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "NoKinFit_Measured_Measured"));
+        locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "NoKinFit_Measured"));
 
 	// Require KinFit converges
         locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0));
@@ -277,7 +277,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
         // Custom histograms for p3pi (no KinFit cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,100,0.,1., "NoKinFit_Measured"));
-        locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "NoKinFit_Measured_Measured"));
+        locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "NoKinFit_Measured"));
 
 	// Require KinFit converges
         locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0));

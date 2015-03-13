@@ -18,17 +18,17 @@ void DCustomAction_p2pi_hists::Initialize(JEventLoop* locEventLoop)
 			//If another thread has already created the folder, it just changes to it. 
 		CreateAndChangeTo_ActionDirectory();
 		
-		dEgamma = GetOrCreate_Histogram<TH1I>("Egamma", "TAGGER photon energy; E_{gamma}", 400, 2., 12.);
+		dEgamma = GetOrCreate_Histogram<TH1I>("Egamma", "TAGGER photon energy; E_{#gamma}", 400, 2., 12.);
 		if(dMissingPID == Proton) {
 			dMM_M2pi = GetOrCreate_Histogram<TH2I>("MM_M2pi", "MM off #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; MM", 200, 0.0, 2.0, 200, 0., 4.);
-			dVertexDeltaZ_M2pi = GetOrCreate_Histogram<TH2I>("DeltaZ_M2pi", "Vertex #Delta{Z} of #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; #pi^{+}#pi^{-} vertex #Delta{Z} (cm)", 200, 0.0, 2.0, 200, -50, 50.);
-			dVertexDeltaMag_M2pi = GetOrCreate_Histogram<TH2I>("DeltaMag_M2pi", "Vertex #Delta{Mag} of #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; #pi^{+}#pi^{-} vertex #Delta{Magnitude} (cm)", 200, 0.0, 2.0, 200, 0, 50.);
+			dVertexDeltaZ_M2pi = GetOrCreate_Histogram<TH2I>("DeltaZ_M2pi", "Vertex #DeltaZ of #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; #pi^{+}#pi^{-} vertex #DeltaZ (cm)", 200, 0.0, 2.0, 200, -50, 50.);
+			dVertexDeltaMag_M2pi = GetOrCreate_Histogram<TH2I>("DeltaMag_M2pi", "Vertex #DeltaMag of #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; #pi^{+}#pi^{-} vertex #Delta Magnitude (cm)", 200, 0.0, 2.0, 200, 0, 50.);
 		}
 		else {
-			dMM2_M2pi = GetOrCreate_Histogram<TH2I>("MM2_M2pi", "MM^{2} off #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; MM^2", 200, 0.0, 2.0, 200, -1., 1.);
+			dMM2_M2pi = GetOrCreate_Histogram<TH2I>("MM2_M2pi", "MM^{2} off #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; MM^{2}", 200, 0.0, 2.0, 200, -1., 1.);
 			dProton_dEdx_P = GetOrCreate_Histogram<TH2I>("Proton_dEdx_P","dE/dx vs p; p; dE/dx",200,0,2,500,0,5);
 			dProton_P_Theta = GetOrCreate_Histogram<TH2I>("Proton_P_Theta","p vs #theta; #theta; p (GeV/c)",180,0,180,120,0,12);
-			dDeltaE_M2pi = GetOrCreate_Histogram<TH2I>("dDeltaE_M2pi", "#Delta E vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; #Delta E (tagger - tracks)", 200, 0.0, 2.0, 200, -5., 5.);
+			dDeltaE_M2pi = GetOrCreate_Histogram<TH2I>("dDeltaE_M2pi", "#DeltaE vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; #DeltaE (tagger - tracks)", 200, 0.0, 2.0, 200, -5., 5.);
 		}
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
