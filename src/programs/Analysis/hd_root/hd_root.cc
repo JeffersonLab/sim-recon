@@ -46,6 +46,7 @@ int main(int narg, char *argv[])
 	
 	delete myproc;
 	
+	abort();
 	return 0;
 }
 
