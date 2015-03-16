@@ -42,7 +42,8 @@ DRootGeom::DRootGeom(JApplication *japp, unsigned int run_number)
 //---------------------------------
 DRootGeom::~DRootGeom()
 {
-  delete DRGeom;
+  if(DRGeom != NULL)
+    delete DRGeom;
 }
 
 //---------------------------------
@@ -356,6 +357,7 @@ jerror_t DRootGeom::FindMat(const char* matname,double &rhoZ_overA,
   TGeoMaterial *mat=DRGeom->GetMaterial(matname);
   if (mat==NULL){
     _DBG_<<"Missing material " << matname <<endl;
+    pthread_mutex_unlock(const_cast<pthread_mutex_t*>(&mutex));
     return RESOURCE_UNAVAILABLE;
   }
   double A=mat->GetA();
@@ -425,11 +427,13 @@ jerror_t DRootGeom::FindMatLL(DVector3 pos,double &density, double &A, double &Z
   if (cnode==NULL){
     _DBG_<<"Missing cnode at position (" <<pos.X()<<","<<pos.Y()<<","
 	 <<pos.Z()<<")"<<endl;
+    pthread_mutex_unlock(const_cast<pthread_mutex_t*>(&mutex));
     return RESOURCE_UNAVAILABLE;
   }
   TGeoVolume *cvol = cnode->GetVolume();
   if (cvol==NULL){
     _DBG_<<"Missing cvol" <<endl;
+    pthread_mutex_unlock(const_cast<pthread_mutex_t*>(&mutex));
     return RESOURCE_UNAVAILABLE;
   }
   TGeoMaterial *cmat = cvol->GetMedium()->GetMaterial();
@@ -462,11 +466,13 @@ jerror_t DRootGeom::FindMatLL(DVector3 pos,double &density, double &A, double &Z
   if (cnode==NULL){
     _DBG_<<"Missing cnode at position (" <<pos.X()<<","<<pos.Y()<<","
 	 <<pos.Z()<<")"<<endl;
+    pthread_mutex_unlock(const_cast<pthread_mutex_t*>(&mutex));
     return RESOURCE_UNAVAILABLE;
   }
   TGeoVolume *cvol = cnode->GetVolume();
   if (cvol==NULL){
     _DBG_<<"Missing cvol" <<endl;
+    pthread_mutex_unlock(const_cast<pthread_mutex_t*>(&mutex));
     return RESOURCE_UNAVAILABLE;
   }
   TGeoMaterial *cmat = cvol->GetMedium()->GetMaterial();

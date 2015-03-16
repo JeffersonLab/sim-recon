@@ -108,6 +108,7 @@ void DGeometry::ReadMaterialMaps(void) const
 	JCalibration * jcalib = dapp->GetJCalibration(runnumber);
 	if(!jcalib){
 		_DBG_<<"ERROR:  Unable to get JCalibration object!"<<endl;
+		pthread_mutex_unlock(&materialmap_mutex);
 		return;
 	}
 
@@ -129,6 +130,7 @@ void DGeometry::ReadMaterialMaps(void) const
 	// Inform user what's happening
 	if(material_namepaths.size()==0){
 		jerr<<"No material maps found in calibration DB!!"<<endl;
+		pthread_mutex_unlock(&materialmap_mutex);
 		return;
 	}
 	jout<<"Found "<<material_namepaths.size()<<" material maps in calib. DB for run "<<runnumber<<endl;
