@@ -81,6 +81,7 @@ class DFCALCluster : public JObject {
 
 // get hits that form a cluster after clustering is finished
    inline const vector<DFCALClusterHit_t> GetHits() const { return my_hits; }
+   inline uint32_t GetNHits(void) const { return my_hits.size(); }
 
    void toStrings(vector<pair<string,string> > &items) const {
       AddString(items, "x(cm)", "%3.1f", getCentroid().x());
