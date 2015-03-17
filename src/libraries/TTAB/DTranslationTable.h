@@ -313,6 +313,7 @@ class DTranslationTable:public jana::JObject{
 		set<string> supplied_data_types;
 		int VERBOSE;
 		string SYSTEMS_TO_PARSE;
+		string ROCID_MAP_FILENAME;
 		
 		mutable JStreamLog ttout;
 

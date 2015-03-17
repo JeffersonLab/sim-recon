@@ -21,7 +21,7 @@ using namespace std;
 static pthread_mutex_t tt_mutex = PTHREAD_MUTEX_INITIALIZER;
 static bool tt_initialized = false;
 static map<DTranslationTable::csc_t, DTranslationTable::DChannelInfo> TT;
-string ROCID_MAP_FILENAME;
+//string ROCID_MAP_FILENAME;
 static map<uint32_t, uint32_t> rocid_map;     // (see ReadOptionalROCidTranslation() for details)
 static map<uint32_t, uint32_t> rocid_inv_map; // (see ReadOptionalROCidTranslation() for details)
 static map<DTranslationTable::Detector_t, set<uint32_t> > rocid_by_system;
