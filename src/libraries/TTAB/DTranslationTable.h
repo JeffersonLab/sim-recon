@@ -306,6 +306,8 @@ class DTranslationTable:public jana::JObject{
 		const DChannelInfo &GetDetectorIndex(const csc_t &in_daq_index) const;
 		const csc_t &GetDAQIndex(const DChannelInfo &in_channel) const;
 
+		//public so that StartElement can access it
+		static map<DTranslationTable::Detector_t, set<uint32_t> >& Get_ROCID_By_System(void); //this is static so that StartElement can access it
 
 	protected:
 		string XML_FILENAME;
@@ -318,6 +320,34 @@ class DTranslationTable:public jana::JObject{
 		mutable JStreamLog ttout;
 
 		string Channel2Str(const DChannelInfo &in_channel) const;
+
+	private:
+
+		/****************************************** STATIC-VARIABLE-ACCESSING PRIVATE MEMBER FUNCTIONS ******************************************/
+
+		//Some variables needs to be shared amongst threads (e.g. the memory used for the branch variables)
+		//However, you cannot make them global/extern/static/static-member variables in the header file:
+			//The header file is included in the TTAB library AND in each plugin that uses it
+				//When a header file is included in a src file, it's contents are essentially copied directly into it
+			//Thus there are two instances of each static variable: one in each translation unit (library)
+			//Supposedly(?) they are linked together during runtime when loading, so there is (supposedly) no undefined behavior.
+			//However, this causes a double free (double-deletion) when these libraries are closed at the end of the program, crashing it.
+		//Thus the variables must be in a single source file that is compiled into a single library
+		//However, you (somehow?) cannot make them global/extern variables in the cpp function
+			//This also (somehow?) causes the double-free problem above for (at least) stl containers
+			//It works for pointers-to-stl-containers and fundamental types, but I dunno why.
+			//It's not good encapsulation anyway though.
+		//THE SOLUTION:
+			//Define the variables as static, in the source file, WITHIN A PRIVATE MEMBER FUNCTION.
+			//Thus the static variables themselves only have function scope.
+			//Access is only available via the private member functions, thus access is fully controlled.
+			//They are shared amongst threads, so locks are necessary, but since they are private this class can handle it internally
+
+		pthread_mutex_t& Get_TT_Mutex(void) const;
+		bool& Get_TT_Initialized(void) const;
+		map<DTranslationTable::csc_t, DTranslationTable::DChannelInfo>& Get_TT(void) const;
+		map<uint32_t, uint32_t>& Get_ROCID_Map(void) const;
+		map<uint32_t, uint32_t>& Get_ROCID_Inv_Map(void) const;
 };
 
 //---------------------------------

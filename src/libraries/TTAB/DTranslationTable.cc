@@ -18,13 +18,41 @@ using namespace jana;
 using namespace std;
 
 // Use one translation table for all threads
-static pthread_mutex_t tt_mutex = PTHREAD_MUTEX_INITIALIZER;
-static bool tt_initialized = false;
-static map<DTranslationTable::csc_t, DTranslationTable::DChannelInfo> TT;
-//string ROCID_MAP_FILENAME;
-static map<uint32_t, uint32_t> rocid_map;     // (see ReadOptionalROCidTranslation() for details)
-static map<uint32_t, uint32_t> rocid_inv_map; // (see ReadOptionalROCidTranslation() for details)
-static map<DTranslationTable::Detector_t, set<uint32_t> > rocid_by_system;
+pthread_mutex_t& DTranslationTable::Get_TT_Mutex(void) const
+{
+	static pthread_mutex_t tt_mutex = PTHREAD_MUTEX_INITIALIZER;
+	return tt_mutex;
+}
+
+bool& DTranslationTable::Get_TT_Initialized(void) const
+{
+	static bool tt_initialized = false;
+	return tt_initialized;
+}
+
+map<DTranslationTable::csc_t, DTranslationTable::DChannelInfo>& DTranslationTable::Get_TT(void) const
+{
+	static map<DTranslationTable::csc_t, DTranslationTable::DChannelInfo> TT;
+	return TT;
+}
+
+map<uint32_t, uint32_t>& DTranslationTable::Get_ROCID_Map(void) const
+{
+	static map<uint32_t, uint32_t> rocid_map;     // (see ReadOptionalROCidTranslation() for details)
+	return rocid_map;
+}
+
+map<uint32_t, uint32_t>& DTranslationTable::Get_ROCID_Inv_Map(void) const
+{
+	static map<uint32_t, uint32_t> rocid_inv_map; // (see ReadOptionalROCidTranslation() for details)
+	return rocid_inv_map;
+}
+
+map<DTranslationTable::Detector_t, set<uint32_t> >& DTranslationTable::Get_ROCID_By_System(void)
+{
+	static map<DTranslationTable::Detector_t, set<uint32_t> > rocid_by_system;
+	return rocid_by_system;
+}
 
 //...................................
 // Less than operator for csc_t data types. This is used by
@@ -184,16 +212,16 @@ void DTranslationTable::ReadOptionalROCidTranslation(void)
             std::cout << "  " << line;
          }
       }else{
-         rocid_map[from] = to;
-         rocid_inv_map[to] = from;
+         Get_ROCID_Map()[from] = to;
+         Get_ROCID_Inv_Map()[to] = from;
       }
    }
    ifs.close();
    
-   if (rocid_map.size() == rocid_inv_map.size()) {
-      std::cout << "   Read " << rocid_map.size() << " entries" << std::endl;
+   if (Get_ROCID_Map().size() == Get_ROCID_Inv_Map().size()) {
+      std::cout << "   Read " << Get_ROCID_Map().size() << " entries" << std::endl;
       map<uint32_t,uint32_t>::iterator iter;
-      for (iter=rocid_map.begin(); iter != rocid_map.end(); iter++) {
+      for (iter=Get_ROCID_Map().begin(); iter != Get_ROCID_Map().end(); iter++) {
          std::cout << "   rocid " << iter->first << " -> rocid "
                     << iter->second << std::endl;
       }
@@ -242,19 +270,19 @@ void DTranslationTable::SetSystemsToParse(string systems, JEventSource *eventsou
 	while(std::getline(ss, token, ',')) {
 		
 		// Get initial list of rocids based on token
-		set<uint32_t> rocids = rocid_by_system[name_to_id[token]];
+		set<uint32_t> rocids = Get_ROCID_By_System()[name_to_id[token]];
 		
 		// Let "FDC" be an alias for both cathode strips and wires
 		if(token == "FDC"){
-			set<uint32_t> rocids1 = rocid_by_system[name_to_id["FDC_CATHODES"]];
-			set<uint32_t> rocids2 = rocid_by_system[name_to_id["FDC_WIRES"]];
+			set<uint32_t> rocids1 = Get_ROCID_By_System()[name_to_id["FDC_CATHODES"]];
+			set<uint32_t> rocids2 = Get_ROCID_By_System()[name_to_id["FDC_WIRES"]];
 			rocids.insert(rocids1.begin(), rocids1.end());
 			rocids.insert(rocids2.begin(), rocids2.end());
 		}
 
 		// More likely than not, someone specifying "PS" will also want "PSC" 
 		if(token == "PS"){
-			set<uint32_t> rocids1 = rocid_by_system[name_to_id["PSC"]];
+			set<uint32_t> rocids1 = Get_ROCID_By_System()[name_to_id["PSC"]];
 			rocids.insert(rocids1.begin(), rocids1.end());
 		}
 
@@ -321,8 +349,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       
       // Apply optional rocid translation
       uint32_t rocid = pi->rocid;
-      map<uint32_t, uint32_t>::iterator rocid_iter = rocid_map.find(rocid);
-      if (rocid_iter != rocid_map.end()) rocid = rocid_iter->second;
+      map<uint32_t, uint32_t>::iterator rocid_iter = Get_ROCID_Map().find(rocid);
+      if (rocid_iter != Get_ROCID_Map().end()) rocid = rocid_iter->second;
       
       if (VERBOSE > 4)
          ttout << "    Looking for rocid:" << rocid << " slot:" << pi->slot
@@ -331,8 +359,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       // Create crate,slot,channel index and find entry in Translation table.
       // If none is found, then just quietly skip this hit.
       csc_t csc = {rocid, pi->slot, pi->channel};
-      map<csc_t, DChannelInfo>::const_iterator iter = TT.find(csc);
-      if (iter == TT.end()) {
+      map<csc_t, DChannelInfo>::const_iterator iter = Get_TT().find(csc);
+      if (iter == Get_TT().end()) {
          if (VERBOSE > 6)
             ttout << "     - Didn't find it" << std::endl;
          continue;
@@ -393,8 +421,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
       // Apply optional rocid translation
       uint32_t rocid = pi->rocid;
-      map<uint32_t, uint32_t>::iterator rocid_iter = rocid_map.find(rocid);
-      if (rocid_iter != rocid_map.end()) rocid = rocid_iter->second;
+      map<uint32_t, uint32_t>::iterator rocid_iter = Get_ROCID_Map().find(rocid);
+      if (rocid_iter != Get_ROCID_Map().end()) rocid = rocid_iter->second;
       
       if (VERBOSE > 4)
          ttout << "    Looking for rocid:" << rocid << " slot:" << pi->slot
@@ -403,8 +431,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       // Create crate,slot,channel index and find entry in Translation table.
       // If none is found, then just quietly skip this hit.
       csc_t csc = {pi->rocid, pi->slot, pi->channel};
-      map<csc_t, DChannelInfo>::const_iterator iter = TT.find(csc);
-      if (iter == TT.end()) {
+      map<csc_t, DChannelInfo>::const_iterator iter = Get_TT().find(csc);
+      if (iter == Get_TT().end()) {
           if (VERBOSE > 6)
              ttout << "     - Didn't find it" << std::endl;
           continue;
@@ -446,8 +474,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
       // Apply optional rocid translation
       uint32_t rocid = hit->rocid;
-      map<uint32_t, uint32_t>::iterator rocid_iter = rocid_map.find(rocid);
-      if (rocid_iter != rocid_map.end()) rocid = rocid_iter->second;
+      map<uint32_t, uint32_t>::iterator rocid_iter = Get_ROCID_Map().find(rocid);
+      if (rocid_iter != Get_ROCID_Map().end()) rocid = rocid_iter->second;
 
       if (VERBOSE > 4)
          ttout << "    Looking for rocid:" << rocid << " slot:" << hit->slot
@@ -456,8 +484,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       // Create crate,slot,channel index and find entry in Translation table.
       // If none is found, then just quietly skip this hit.
       csc_t csc = {hit->rocid, hit->slot, hit->channel};
-      map<csc_t, DChannelInfo>::const_iterator iter = TT.find(csc);
-      if (iter == TT.end()) {
+      map<csc_t, DChannelInfo>::const_iterator iter = Get_TT().find(csc);
+      if (iter == Get_TT().end()) {
           if (VERBOSE > 6)
              ttout << "     - Didn't find it" << std::endl;
           continue;
@@ -506,8 +534,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
       // Apply optional rocid translation
       uint32_t rocid = hit->rocid;
-      map<uint32_t, uint32_t>::iterator rocid_iter = rocid_map.find(rocid);
-      if (rocid_iter != rocid_map.end()) rocid = rocid_iter->second;
+      map<uint32_t, uint32_t>::iterator rocid_iter = Get_ROCID_Map().find(rocid);
+      if (rocid_iter != Get_ROCID_Map().end()) rocid = rocid_iter->second;
 
       if (VERBOSE > 4)
          ttout << "    Looking for rocid:" << rocid << " slot:" << hit->slot
@@ -516,8 +544,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       // Create crate,slot,channel index and find entry in Translation table.
       // If none is found, then just quietly skip this hit.
       csc_t csc = {hit->rocid, hit->slot, hit->channel};
-      map<csc_t, DChannelInfo>::const_iterator iter = TT.find(csc);
-      if (iter == TT.end()) {
+      map<csc_t, DChannelInfo>::const_iterator iter = Get_TT().find(csc);
+      if (iter == Get_TT().end()) {
           if (VERBOSE > 6)
              ttout << "     - Didn't find it" << std::endl;
           continue;
@@ -902,8 +930,8 @@ DTOFTDCDigiHit*  DTranslationTable::MakeTOFTDCDigiHit(
 const DTranslationTable::DChannelInfo 
      &DTranslationTable::GetDetectorIndex(const csc_t &in_daq_index) const
 {
-    map<DTranslationTable::csc_t, DTranslationTable::DChannelInfo>::const_iterator detector_index_itr = TT.find(in_daq_index);
-    if (detector_index_itr == TT.end()) { 
+    map<DTranslationTable::csc_t, DTranslationTable::DChannelInfo>::const_iterator detector_index_itr = Get_TT().find(in_daq_index);
+    if (detector_index_itr == Get_TT().end()) {
        stringstream ss_err;
        ss_err << "Could not find detector channel in Translaton Table: "
               << "rocid = " << in_daq_index.rocid
@@ -921,12 +949,12 @@ const DTranslationTable::DChannelInfo
 const DTranslationTable::csc_t 
      &DTranslationTable::GetDAQIndex(const DChannelInfo &in_channel) const
 {
-    map<DTranslationTable::csc_t, DTranslationTable::DChannelInfo>::const_iterator tt_itr = TT.begin();
+    map<DTranslationTable::csc_t, DTranslationTable::DChannelInfo>::const_iterator tt_itr = Get_TT().begin();
 
     // search through the whole Table to find the key that corresponds to our detector channel
     // this is not terribly efficient - linear in the size of the table
     bool found = false;
-    for (; tt_itr != TT.end(); tt_itr++) {
+    for (; tt_itr != Get_TT().end(); tt_itr++) {
        const DTranslationTable::DChannelInfo &det_channel = tt_itr->second;
        if ( det_channel.det_sys == in_channel.det_sys ) {
           switch ( in_channel.det_sys ) {
@@ -985,7 +1013,7 @@ const DTranslationTable::csc_t
        break;
     }
     
-    if (tt_itr == TT.end()) { 
+    if (tt_itr == Get_TT().end()) {
        stringstream ss_err;
        ss_err << "Could not find DAQ channel in Translaton Table:  "
               << Channel2Str(in_channel) << std::endl;
@@ -1134,9 +1162,9 @@ void DTranslationTable::ReadTranslationTable(JCalibration *jcalib)
 {
    // It seems expat is not thread safe so we lock a mutex here and
    // read in the translation table just once
-   pthread_mutex_lock(&tt_mutex);
-   if (tt_initialized) {
-      pthread_mutex_unlock(&tt_mutex);
+   pthread_mutex_lock(&Get_TT_Mutex());
+   if (Get_TT_Initialized()) {
+      pthread_mutex_unlock(&Get_TT_Mutex());
       return;
    }
 
@@ -1168,7 +1196,7 @@ void DTranslationTable::ReadTranslationTable(JCalibration *jcalib)
       ifstream ifs(XML_FILENAME.c_str());
       if (! ifs.is_open()) {
          jerr << " Error: Cannot open file! Translation table unavailable." << std::endl;
-         pthread_mutex_unlock(&tt_mutex);
+         pthread_mutex_unlock(&Get_TT_Mutex());
          return;
       }
       
@@ -1194,7 +1222,7 @@ void DTranslationTable::ReadTranslationTable(JCalibration *jcalib)
       exit(EXIT_FAILURE);
    }
    XML_SetElementHandler(xmlParser,StartElement,EndElement);
-   XML_SetUserData(xmlParser, &TT);
+   XML_SetUserData(xmlParser, &Get_TT());
 
    // Parse XML string
    int status=XML_Parse(xmlParser, tt_xml.c_str(), tt_xml.size(), 1); // "1" indicates this is the final piece of XML
@@ -1203,11 +1231,11 @@ void DTranslationTable::ReadTranslationTable(JCalibration *jcalib)
       jerr << XML_ErrorString(XML_GetErrorCode(xmlParser)) << std::endl;
    }
    
-   jout << TT.size() << " channels defined in translation table" << std::endl;
+   jout << Get_TT().size() << " channels defined in translation table" << std::endl;
    XML_ParserFree(xmlParser);
 
-   pthread_mutex_unlock(&tt_mutex);
-   tt_initialized = true;
+   pthread_mutex_unlock(&Get_TT_Mutex());
+   Get_TT_Initialized() = true;
 }
 
 //---------------------------------
@@ -1459,7 +1487,7 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
       ci.CSC = csc;
       ci.module_type = (DModuleType::type_id_t)mc2codaType;
       ci.det_sys = DetectorStr2DetID(detector);
-	  rocid_by_system[ci.det_sys].insert(crate);
+      DTranslationTable::Get_ROCID_By_System()[ci.det_sys].insert(crate);
 
       // detector-specific indexes
       switch (ci.det_sys) {
