@@ -1,7 +1,7 @@
-// hnamepath: /Independent/Hist_DetectorPID/q-/dEdxVsP_CDC
-// hnamepath: /Independent/Hist_DetectorPID/q+/dEdxVsP_CDC
-// hnamepath: /Independent/Hist_DetectorPID/q-/dEdxVsP_FDC
-// hnamepath: /Independent/Hist_DetectorPID/q+/dEdxVsP_FDC
+// hnamepath: /Independent/Hist_DetectorPID/CDC/dEdxVsP_q-
+// hnamepath: /Independent/Hist_DetectorPID/CDC/dEdxVsP_q+
+// hnamepath: /Independent/Hist_DetectorPID/FDC/dEdxVsP_q-
+// hnamepath: /Independent/Hist_DetectorPID/FDC/dEdxVsP_q+
 
 {
 	//Goto Path
@@ -12,12 +12,12 @@
 	locDirectory->cd();
 
 	//Get Histograms
-	gDirectory->cd("q-");
-	TH2I* locHist_CDCdEdXVsP_QMinus = (TH2I*)gDirectory->Get("dEdxVsP_CDC"); //q-
-	TH2I* locHist_FDCdEdXVsP_QMinus = (TH2I*)gDirectory->Get("dEdxVsP_FDC"); //q-
-	gDirectory->cd("../q+");
-	TH2I* locHist_CDCdEdXVsP_QPlus = (TH2I*)gDirectory->Get("dEdxVsP_CDC"); //q-
-	TH2I* locHist_FDCdEdXVsP_QPlus = (TH2I*)gDirectory->Get("dEdxVsP_FDC"); //q-
+	gDirectory->cd("CDC");
+	TH2I* locHist_CDCdEdXVsP_QMinus = (TH2I*)gDirectory->Get("dEdXVsP_q-"); //q-
+	TH2I* locHist_CDCdEdXVsP_QPlus = (TH2I*)gDirectory->Get("dEdXVsP_q+"); //q+
+	gDirectory->cd("../FDC");
+	TH2I* locHist_FDCdEdXVsP_QMinus = (TH2I*)gDirectory->Get("dEdXVsP_q-"); //q-
+	TH2I* locHist_FDCdEdXVsP_QPlus = (TH2I*)gDirectory->Get("dEdXVsP_q+"); //q+
 
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;

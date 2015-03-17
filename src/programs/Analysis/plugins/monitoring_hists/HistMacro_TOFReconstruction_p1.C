@@ -1,9 +1,9 @@
 // hnamepath: /Independent/Hist_Reconstruction/TOFPointYVsX
 // hnamepath: /Independent/Hist_Reconstruction/TOFPointEnergy
-// hnamepath: /Independent/Hist_DetectorPID/q-/TOFdEdXVsP
-// hnamepath: /Independent/Hist_DetectorPID/q+/TOFdEdXVsP
-// hnamepath: /Independent/Hist_DetectorPID/q-/BetaVsP_TOF
-// hnamepath: /Independent/Hist_DetectorPID/q+/BetaVsP_TOF
+// hnamepath: /Independent/Hist_DetectorPID/TOF/dEdXVsP_q-
+// hnamepath: /Independent/Hist_DetectorPID/TOF/dEdXVsP_q+
+// hnamepath: /Independent/Hist_DetectorPID/TOF/BetaVsP_q-
+// hnamepath: /Independent/Hist_DetectorPID/TOF/BetaVsP_q+
 
 {
 	//Goto Path
@@ -16,12 +16,11 @@
 	TH2I* locHist_TOFPointYVsX = (TH2I*)gDirectory->Get("TOFPointYVsX");
 	TH1I* locHist_TOFPointEnergy = (TH1I*)gDirectory->Get("TOFPointEnergy");
 
-	gDirectory->cd("../Hist_DetectorPID/q-");
-	TH2I* locHist_TOFdEdXVsP_QMinus = (TH2I*)gDirectory->Get("TOFdEdXVsP"); //q-
-	TH2I* locHist_BetaVsP_QMinus = (TH2I*)gDirectory->Get("BetaVsP_TOF"); //q-
-	gDirectory->cd("../q+");
-	TH2I* locHist_TOFdEdXVsP_QPlus = (TH2I*)gDirectory->Get("TOFdEdXVsP"); //q+
-	TH2I* locHist_BetaVsP_QPlus = (TH2I*)gDirectory->Get("BetaVsP_TOF"); //q+
+	gDirectory->cd("../Hist_DetectorPID/TOF");
+	TH2I* locHist_TOFdEdXVsP_QMinus = (TH2I*)gDirectory->Get("dEdXVsP_q-"); //q-
+	TH2I* locHist_BetaVsP_QMinus = (TH2I*)gDirectory->Get("BetaVsP_q-"); //q-
+	TH2I* locHist_TOFdEdXVsP_QPlus = (TH2I*)gDirectory->Get("dEdXVsP_q+"); //q+
+	TH2I* locHist_BetaVsP_QPlus = (TH2I*)gDirectory->Get("BetaVsP_q+"); //q+
 
 	//Beta-vs-p functions
 	TF1* locBetaVsPFunc_Proton = new TF1("BetaVsPFunc_Proton", "x/sqrt(x*x + [0]*[0])", 0.0, 12.0);

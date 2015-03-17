@@ -1,9 +1,9 @@
 // hnamepath: /Independent/Hist_Reconstruction/SCHitEnergy
 // hnamepath: /Independent/Hist_Reconstruction/SCHitEnergyVsSector
-// hnamepath: /Independent/Hist_DetectorPID/q-/SCdEdXVsP
-// hnamepath: /Independent/Hist_DetectorPID/q+/SCdEdXVsP
-// hnamepath: /Independent/Hist_DetectorPID/q-/BetaVsP_SC
-// hnamepath: /Independent/Hist_DetectorPID/q+/BetaVsP_SC
+// hnamepath: /Independent/Hist_DetectorPID/SC/dEdXVsP_q-
+// hnamepath: /Independent/Hist_DetectorPID/SC/dEdXVsP_q+
+// hnamepath: /Independent/Hist_DetectorPID/SC/BetaVsP_q-
+// hnamepath: /Independent/Hist_DetectorPID/SC/BetaVsP_q+
 
 {
 	//Goto Path
@@ -16,12 +16,11 @@
 	TH1I* locHist_SCHitEnergy = (TH1I*)gDirectory->Get("SCHitEnergy");
 	TH2I* locHist_SCHitEnergyVsSector = (TH2I*)gDirectory->Get("SCHitEnergyVsSector");
 
-	gDirectory->cd("../Hist_DetectorPID/q-");
-	TH2I* locHist_SCdEdXVsP_QMinus = (TH2I*)gDirectory->Get("SCdEdXVsP"); //q-
-	TH2I* locHist_BetaVsP_QMinus = (TH2I*)gDirectory->Get("BetaVsP_SC"); //q-
-	gDirectory->cd("../q+");
-	TH2I* locHist_SCdEdXVsP_QPlus = (TH2I*)gDirectory->Get("SCdEdXVsP"); //q+
-	TH2I* locHist_BetaVsP_QPlus = (TH2I*)gDirectory->Get("BetaVsP_SC"); //q+
+	gDirectory->cd("../Hist_DetectorPID/SC");
+	TH2I* locHist_SCdEdXVsP_QMinus = (TH2I*)gDirectory->Get("dEdXVsP_q-"); //q-
+	TH2I* locHist_BetaVsP_QMinus = (TH2I*)gDirectory->Get("BetaVsP_q-"); //q-
+	TH2I* locHist_SCdEdXVsP_QPlus = (TH2I*)gDirectory->Get("dEdXVsP_q+"); //q+
+	TH2I* locHist_BetaVsP_QPlus = (TH2I*)gDirectory->Get("BetaVsP_q+"); //q+
 
 	//Beta-vs-p functions
 	TF1* locBetaVsPFunc_Proton = new TF1("BetaVsPFunc_Proton", "x/sqrt(x*x + [0]*[0])", 0.0, 12.0);

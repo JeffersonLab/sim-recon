@@ -2,8 +2,8 @@
 // hnamepath: /Independent/Hist_DetectorMatchParams/ReconstructedPID/Proton/BCALShowerDeltaTVsP
 // hnamepath: /Independent/Hist_DetectorMatchParams/ReconstructedPID/Pi-/BCALShowerDeltaT
 // hnamepath: /Independent/Hist_DetectorMatchParams/ReconstructedPID/Pi-/BCALShowerDeltaTVsP
-// hnamepath: /Independent/Hist_DetectorPID/q-/BetaVsP_BCAL
-// hnamepath: /Independent/Hist_DetectorPID/q+/BetaVsP_BCAL
+// hnamepath: /Independent/Hist_DetectorPID/BCAL/BetaVsP_q-
+// hnamepath: /Independent/Hist_DetectorPID/BCAL/BetaVsP_q+
 
 {
 	//Goto Path
@@ -21,10 +21,9 @@
 	TH1I* locHist_BCALShowerDeltaT_PiMinus = (TH1I*)gDirectory->Get("BCALShowerDeltaT"); //pi-
 	TH2I* locHist_BCALShowerDeltaTVsP_PiMinus = (TH2I*)gDirectory->Get("BCALShowerDeltaTVsP"); //pi-
 
-	gDirectory->cd("../../../Hist_DetectorPID/q-");
-	TH2I* locHist_BetaVsP_QMinus = (TH2I*)gDirectory->Get("BetaVsP_BCAL"); //q-
-	gDirectory->cd("../q+");
-	TH2I* locHist_BetaVsP_QPlus = (TH2I*)gDirectory->Get("BetaVsP_BCAL"); //q-
+	gDirectory->cd("../../../Hist_DetectorPID/BCAL");
+	TH2I* locHist_BetaVsP_QMinus = (TH2I*)gDirectory->Get("BetaVsP_q-"); //q-
+	TH2I* locHist_BetaVsP_QPlus = (TH2I*)gDirectory->Get("BetaVsP_q+"); //q+
 
 	//Beta-vs-p functions
 	TF1* locBetaVsPFunc_Proton = new TF1("BetaVsPFunc_Proton", "x/sqrt(x*x + [0]*[0])", 0.0, 12.0);
