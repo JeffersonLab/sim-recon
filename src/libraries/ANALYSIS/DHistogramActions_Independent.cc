@@ -720,29 +720,36 @@ void DHistogramAction_DetectorMatching::Initialize(JEventLoop* locEventLoop)
 				double locMaxTheta = ((locSystem == SYS_FCAL) || (locSystem == SYS_TOF)) ? 12.0 : dMaxTheta;
 				double locMaxP = (locSystem == SYS_BCAL) ? 3.0 : dMaxP;
 
+				string locSystemName = SystemName(locSystem);
+				if(locSystemName == "ST")
+					locSystemName = "SC";
+				CreateAndChangeTo_Directory(locSystemName, locSystemName);
+
 				// PVsTheta Has Hit
-				locHistName = string("PVsTheta_HasHit_") + SystemName(locSystem);
-				locHistTitle = locTrackString + string(", Has Other Match, ") + SystemName(locSystem) + string(" Has Hit;#theta#circ;p (GeV/c)");
+				locHistName = string("PVsTheta_HasHit_") + locSystemName;
+				locHistTitle = locTrackString + string(", Has Other Match, ") + locSystemName + string(" Has Hit;#theta#circ;p (GeV/c)");
 				dHistMap_PVsTheta_HasHit[locSystem][locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPBins, dMinP, locMaxP);
 
 				// PVsTheta Has No Hit
-				locHistName = string("PVsTheta_NoHit_") + SystemName(locSystem);
-				locHistTitle = locTrackString + string(", Has Other Match, ") + SystemName(locSystem) + string(" No Hit;#theta#circ;p (GeV/c)");
+				locHistName = string("PVsTheta_NoHit_") + locSystemName;
+				locHistTitle = locTrackString + string(", Has Other Match, ") + locSystemName + string(" No Hit;#theta#circ;p (GeV/c)");
 				dHistMap_PVsTheta_NoHit[locSystem][locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPBins, dMinP, locMaxP);
 
 				// PhiVsTheta Has Hit
-				locHistName = string("PhiVsTheta_HasHit_") + SystemName(locSystem);
-				locHistTitle = locTrackString + string(", Has Other Match, ") + SystemName(locSystem) + string(" Has Hit;#theta#circ;#phi#circ");
+				locHistName = string("PhiVsTheta_HasHit_") + locSystemName;
+				locHistTitle = locTrackString + string(", Has Other Match, ") + locSystemName + string(" Has Hit;#theta#circ;#phi#circ");
 				dHistMap_PhiVsTheta_HasHit[locSystem][locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPhiBins, dMinPhi, dMaxPhi);
 
 				// PhiVsTheta Has No Hit
-				locHistName = string("PhiVsTheta_NoHit_") + SystemName(locSystem);
-				locHistTitle = locTrackString + string(", Has Other Match, ") + SystemName(locSystem) + string(" No Hit;#theta#circ;#phi#circ");
+				locHistName = string("PhiVsTheta_NoHit_") + locSystemName;
+				locHistTitle = locTrackString + string(", Has Other Match, ") + locSystemName + string(" No Hit;#theta#circ;#phi#circ");
 				dHistMap_PhiVsTheta_NoHit[locSystem][locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, locMaxTheta, dNum2DPhiBins, dMinPhi, dMaxPhi);
+
+				gDirectory->cd("..");
 			}
 
-			//physical detector elements of has (no) hit
 			//SC
+			CreateAndChangeTo_Directory("SC", "SC");
 			locHistName = "SCPaddleVsTheta_HasHit";
 			locHistTitle = locTrackString + string(", Has Other Match, SC Has Hit;#theta#circ;Projected SC Paddle");
 			dHistMap_SCPaddleVsTheta_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, 30, 0.5, 30.5);
@@ -751,7 +758,13 @@ void DHistogramAction_DetectorMatching::Initialize(JEventLoop* locEventLoop)
 			locHistTitle = locTrackString + string(", Has Other Match, SC No Hit;#theta#circ;Projected SC Paddle");
 			dHistMap_SCPaddleVsTheta_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, 30, 0.5, 30.5);
 
+			locHistName = "SC_TrackDeltaPhiVsP";
+			locHistTitle = locTrackString + string(";p (GeV/c);SC / Track #Delta#phi#circ");
+			dHistMap_SCTrackDeltaPhiVsP[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltaPhiBins, dSCMatchMinDeltaPhi, dSCMatchMaxDeltaPhi);
+			gDirectory->cd("..");
+
 			//TOF
+			CreateAndChangeTo_Directory("TOF", "TOF");
 			locHistName = "TrackTOFYVsX_HasHit";
 			locHistTitle = locTrackString + string(", Has Other Match, TOF Has Hit;Projected TOF Hit X (cm);Projected TOF Hit Y (cm)");
 			dHistMap_TrackTOFYVsX_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumFCALTOFXYBins, -130.0, 130.0, dNumFCALTOFXYBins, -130.0, 130.0);
@@ -768,56 +781,6 @@ void DHistogramAction_DetectorMatching::Initialize(JEventLoop* locEventLoop)
 			locHistTitle = locTrackString + string(", Has Other Match, TOF No Hit;Projected Vertical TOF Paddle;Projected Horizontal TOF Paddle");
 			dHistMap_TrackTOF2DPaddles_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, 44, 0.5, 44.5, 44, 0.5, 44.5);
 
-			//FCAL
-			locHistName = "TrackFCALYVsX_HasHit";
-			locHistTitle = locTrackString + string(", Has Other Match, FCAL Has Hit;Projected FCAL Hit X (cm);Projected FCAL Hit Y (cm)");
-			dHistMap_TrackFCALYVsX_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumFCALTOFXYBins, -130.0, 130.0, dNumFCALTOFXYBins, -130.0, 130.0);
-
-			locHistName = "TrackFCALYVsX_NoHit";
-			locHistTitle = locTrackString + string(", Has Other Match, FCAL No Hit;Projected FCAL Hit X (cm);Projected FCAL Hit Y (cm)");
-			dHistMap_TrackFCALYVsX_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumFCALTOFXYBins, -130.0, 130.0, dNumFCALTOFXYBins, -130.0, 130.0);
-
-			locHistName = "TrackFCALRowVsColumn_HasHit";
-			locHistTitle = locTrackString + string(", Has Other Match, FCAL Has Hit;Projected FCAL Hit Column;Projected FCAL Hit Row");
-			dHistMap_TrackFCALRowVsColumn_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, 59, -0.5, 58.5, 59, -0.5, 58.5);
-
-			locHistName = "TrackFCALRowVsColumn_NoHit";
-			locHistTitle = locTrackString + string(", Has Other Match, FCAL No Hit;Projected FCAL Hit Column;Projected FCAL Hit Row");
-			dHistMap_TrackFCALRowVsColumn_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, 59, -0.5, 58.5, 59, -0.5, 58.5);
-
-			//TRACKING
-			locHistName = "PVsTheta_NoHitMatch";
-			locHistTitle = locTrackString + string(", No Hit Match;#theta#circ;p (GeV/c)");
-			dHistMap_TrackPVsTheta_NoHitMatch[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
-
-			locHistName = "PVsTheta_HitMatch";
-			locHistTitle = locTrackString + string(", Hit Match;#theta#circ;p (GeV/c)");
-			dHistMap_TrackPVsTheta_HitMatch[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
-
-			//SC
-			locHistName = "SC_TrackDeltaPhiVsP";
-			locHistTitle = locTrackString + string(";p (GeV/c);SC / Track #Delta#phi#circ");
-			dHistMap_SCTrackDeltaPhiVsP[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltaPhiBins, dSCMatchMinDeltaPhi, dSCMatchMaxDeltaPhi);
-
-			//FCAL
-			locHistName = "FCAL_TrackDistanceVsP";
-			locHistTitle = locTrackString + string(";p (GeV/c);FCAL / Track Distance (cm)");
-			dHistMap_FCALTrackDistanceVsP[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
-
-			locHistName = "FCAL_TrackDistanceVsTheta";
-			locHistTitle = locTrackString + string(";#theta#circ;FCAL / Track Distance (cm)");
-			dHistMap_FCALTrackDistanceVsTheta[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, 20.0, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
-
-			//BCAL
-			locHistName = "BCAL_DeltaPhiVsP";
-			locHistTitle = locTrackString + string(";p (GeV/c);BCAL / Track #Delta#phi#circ");
-			dHistMap_BCALDeltaPhiVsP[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, 4.0, dNum2DDeltaPhiBins, dMinDeltaPhi, dMaxDeltaPhi);
-
-			locHistName = "BCAL_DeltaZVsTheta";
-			locHistTitle = locTrackString + string(";#theta#circ;BCAL / Track #Deltaz (cm)");
-			dHistMap_BCALDeltaZVsTheta[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DDeltaZBins, dMinDeltaZ, dMaxDeltaZ);
-
-			//TOF
 			locHistName = "TOF_TrackDistanceVsP";
 			locHistTitle = locTrackString + string(";p (GeV/c);TOF / Track Distance (cm)");
 			dHistMap_TOFTrackDistanceVsP[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
@@ -849,6 +812,70 @@ void DHistogramAction_DetectorMatching::Initialize(JEventLoop* locEventLoop)
 			locHistName = "TOF_TrackDistance_OnePlane";
 			locHistTitle = locTrackString + string("TOF Hit in One Plane;TOF / Track Distance (cm)");
 			dHistMap_TOFTrackDistance_OnePlane[locIsTimeBased] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+			gDirectory->cd("..");
+
+			//FCAL
+			CreateAndChangeTo_Directory("FCAL", "FCAL");
+			locHistName = "TrackFCALYVsX_HasHit";
+			locHistTitle = locTrackString + string(", Has Other Match, FCAL Has Hit;Projected FCAL Hit X (cm);Projected FCAL Hit Y (cm)");
+			dHistMap_TrackFCALYVsX_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumFCALTOFXYBins, -130.0, 130.0, dNumFCALTOFXYBins, -130.0, 130.0);
+
+			locHistName = "TrackFCALYVsX_NoHit";
+			locHistTitle = locTrackString + string(", Has Other Match, FCAL No Hit;Projected FCAL Hit X (cm);Projected FCAL Hit Y (cm)");
+			dHistMap_TrackFCALYVsX_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumFCALTOFXYBins, -130.0, 130.0, dNumFCALTOFXYBins, -130.0, 130.0);
+
+			locHistName = "TrackFCALRowVsColumn_HasHit";
+			locHistTitle = locTrackString + string(", Has Other Match, FCAL Has Hit;Projected FCAL Hit Column;Projected FCAL Hit Row");
+			dHistMap_TrackFCALRowVsColumn_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, 59, -0.5, 58.5, 59, -0.5, 58.5);
+
+			locHistName = "TrackFCALRowVsColumn_NoHit";
+			locHistTitle = locTrackString + string(", Has Other Match, FCAL No Hit;Projected FCAL Hit Column;Projected FCAL Hit Row");
+			dHistMap_TrackFCALRowVsColumn_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, 59, -0.5, 58.5, 59, -0.5, 58.5);
+
+			locHistName = "FCAL_TrackDistanceVsP";
+			locHistTitle = locTrackString + string(";p (GeV/c);FCAL / Track Distance (cm)");
+			dHistMap_FCALTrackDistanceVsP[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+
+			locHistName = "FCAL_TrackDistanceVsTheta";
+			locHistTitle = locTrackString + string(";#theta#circ;FCAL / Track Distance (cm)");
+			dHistMap_FCALTrackDistanceVsTheta[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, 20.0, dNum2DTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+			gDirectory->cd("..");
+
+			//BCAL
+			CreateAndChangeTo_Directory("BCAL", "BCAL");
+			locHistName = "TrackBCALModuleVsZ_HasHit";
+			locHistTitle = locTrackString + string(", Has Other Match, BCAL Has Hit;Projected BCAL Hit Z (cm);Projected BCAL Hit Module");
+			dHistMap_TrackBCALModuleVsZ_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DBCALZBins, 0.0, 450.0, 48, 0.5, 48.5);
+
+			locHistName = "TrackBCALModuleVsZ_NoHit";
+			locHistTitle = locTrackString + string(", Has Other Match, BCAL No Hit;Projected BCAL Hit Z (cm);Projected BCAL Hit Module");
+			dHistMap_TrackBCALModuleVsZ_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DBCALZBins, 0.0, 450.0, 48, 0.5, 48.5);
+
+			locHistName = "TrackBCALPhiVsZ_HasHit";
+			locHistTitle = locTrackString + string(", Has Other Match, BCAL Has Hit;Projected BCAL Hit Z (cm);Projected BCAL Hit #phi#circ");
+			dHistMap_TrackBCALPhiVsZ_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DBCALZBins, 0.0, 450.0, dNum2DPhiBins, dMinPhi, dMaxPhi);
+
+			locHistName = "TrackBCALPhiVsZ_NoHit";
+			locHistTitle = locTrackString + string(", Has Other Match, BCAL No Hit;Projected BCAL Hit Z (cm);Projected BCAL Hit #phi#circ");
+			dHistMap_TrackBCALPhiVsZ_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DBCALZBins, 0.0, 450.0, dNum2DPhiBins, dMinPhi, dMaxPhi);
+
+			locHistName = "BCAL_DeltaPhiVsP";
+			locHistTitle = locTrackString + string(";p (GeV/c);BCAL / Track #Delta#phi#circ");
+			dHistMap_BCALDeltaPhiVsP[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, 4.0, dNum2DDeltaPhiBins, dMinDeltaPhi, dMaxDeltaPhi);
+
+			locHistName = "BCAL_DeltaZVsTheta";
+			locHistTitle = locTrackString + string(";#theta#circ;BCAL / Track #Deltaz (cm)");
+			dHistMap_BCALDeltaZVsTheta[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DDeltaZBins, dMinDeltaZ, dMaxDeltaZ);
+			gDirectory->cd("..");
+
+			//TRACKING
+			locHistName = "PVsTheta_NoHitMatch";
+			locHistTitle = locTrackString + string(", No Hit Match;#theta#circ;p (GeV/c)");
+			dHistMap_TrackPVsTheta_NoHitMatch[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+
+			locHistName = "PVsTheta_HitMatch";
+			locHistTitle = locTrackString + string(", Hit Match;#theta#circ;p (GeV/c)");
+			dHistMap_TrackPVsTheta_HitMatch[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
 
 			gDirectory->cd("..");
 		}
@@ -989,6 +1016,8 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	map<const DKinematicData*, pair<float, float> > dProjectedTOFXYMap; //pair: x, y
 	map<const DKinematicData*, pair<int, int> > dProjectedFCALRowColumnMap; //pair: column, row
 	map<const DKinematicData*, pair<float, float> > dProjectedFCALXYMap; //pair: x, y
+	map<const DKinematicData*, pair<float, int> > dProjectedBCALModuleSectorMap; //pair: z, module
+	map<const DKinematicData*, pair<float, float> > dProjectedBCALPhiZMap; //pair: z, phi
 	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
 		const DKinematicData* locTrack = locTrackIterator->second;
@@ -1022,6 +1051,15 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			dProjectedFCALRowColumnMap[locTrack] = pair<int, int>(locColumn, locRow);
 			dProjectedFCALXYMap[locTrack] = pair<float, float>(locFCALIntersection.X(), locFCALIntersection.Y());
 		}
+
+		//BCAL
+		DVector3 locBCALIntersection;
+		unsigned int locModule = 0, locSector = 0;
+		if(locParticleID->PredictBCALWedge(locReferenceTrajectory, locModule, locSector, &locBCALIntersection))
+		{
+			dProjectedBCALModuleSectorMap[locTrack] = pair<float, int>(locBCALIntersection.Z(), locModule);
+			dProjectedBCALPhiZMap[locTrack] = pair<float, float>(locBCALIntersection.Z(), locBCALIntersection.Phi()*180.0/TMath::Pi());
+		}
 	}
 
 	//Fill Histograms
@@ -1051,14 +1089,27 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 				{
 					dHistMap_PVsTheta_HasHit[SYS_BCAL][locIsTimeBased]->Fill(locTheta, locP);
 					dHistMap_PhiVsTheta_HasHit[SYS_BCAL][locIsTimeBased]->Fill(locTheta, locPhi);
+					if(dProjectedBCALModuleSectorMap.find(locTrack) != dProjectedBCALModuleSectorMap.end())
+					{
+						pair<float, float>& locPositionPair = dProjectedBCALPhiZMap[locTrack];
+						dHistMap_TrackBCALPhiVsZ_HasHit[locIsTimeBased]->Fill(locPositionPair.first, locPositionPair.second);
+						pair<float, int>& locElementPair = dProjectedBCALModuleSectorMap[locTrack];
+						dHistMap_TrackBCALModuleVsZ_HasHit[locIsTimeBased]->Fill(locElementPair.first, locElementPair.second);
+					}
 				}
 				else
 				{
 					dHistMap_PVsTheta_NoHit[SYS_BCAL][locIsTimeBased]->Fill(locTheta, locP);
 					dHistMap_PhiVsTheta_NoHit[SYS_BCAL][locIsTimeBased]->Fill(locTheta, locPhi);
+					if(dProjectedBCALModuleSectorMap.find(locTrack) != dProjectedBCALModuleSectorMap.end())
+					{
+						pair<float, float>& locPositionPair = dProjectedBCALPhiZMap[locTrack];
+						dHistMap_TrackBCALPhiVsZ_NoHit[locIsTimeBased]->Fill(locPositionPair.first, locPositionPair.second);
+						pair<float, int>& locElementPair = dProjectedBCALModuleSectorMap[locTrack];
+						dHistMap_TrackBCALModuleVsZ_NoHit[locIsTimeBased]->Fill(locElementPair.first, locElementPair.second);
+					}
 				}
 			}
-
 
 			//FCAL
 			if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_BCAL) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_TOF) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_START))
