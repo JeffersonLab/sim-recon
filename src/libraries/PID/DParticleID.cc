@@ -767,23 +767,24 @@ bool DParticleID::PredictFCALHit(const DReferenceTrajectory *rt,
 bool DParticleID::PredictBCALWedge(const DReferenceTrajectory *rt,
 				   unsigned int &module,unsigned int &sector,
 				   DVector3 *intersection) const{
-  /*
   //initialize output variables 
   sector=0;
   module=0;
   // Find intersection of track with inner radius of BCAL
   DVector3 proj_pos;
-  printf("--------------\n");
   if (rt->GetIntersectionWithRadius(65.0,proj_pos)==NOERROR){
     double phi=180./M_PI*proj_pos.Phi();
     if (phi<0)phi+=360.;
-    printf("%f %f \n",phi,phi/7.5);
-    printf("... %d\n",int(round(phi/7.5)));
+    double slice=phi/7.5;
+    double mid_slice=round(slice);
+    module=int(mid_slice)+1;
+    sector=int(round((phi-7.5*mid_slice+3.75)/1.875))+1;
+    
     if (intersection) *intersection=proj_pos;
     
     return true;
   }
-  */
+  
   return false;
 }
 				   
