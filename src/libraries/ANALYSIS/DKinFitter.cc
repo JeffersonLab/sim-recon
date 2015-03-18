@@ -102,8 +102,6 @@ void DKinFitter::Preallocate_MatrixMemory(void)
 
 void DKinFitter::Reset_NewEvent(void)
 {
-	Reset_NewFit();
-
 	// delete pool sizes if too large, preventing memory-leakage-like behavor.
 	if(dKinFitParticlePool_All.size() > dMaxKinFitParticlePoolSize)
 	{
@@ -152,6 +150,8 @@ void DKinFitter::Reset_NewEvent(void)
 		dLargeMatrixDSymPool_All.resize(dMaxLargeMatrixDSymPoolSize);
 	}
 	dLargeMatrixDSymPool_Available = dLargeMatrixDSymPool_All;
+
+	Reset_NewFit();
 }
 
 void DKinFitter::Reset_NewFit(void)
