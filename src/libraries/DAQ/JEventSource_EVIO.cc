@@ -1,5 +1,5 @@
-// $Id: JEventSource_EVIO.cc 16947 2014-12-20 05:34:19Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc $
+// $Id$
+// $HeadURL$
 //
 //    File: JEventSource_EVIO.cc
 // Created: Tue Aug  7 15:22:29 EDT 2012
@@ -62,7 +62,7 @@ using namespace jana;
 set<uint32_t> ROCIDS_TO_PARSE;
 
 // Naomi's CDC timing algortihm
-#include <cdcalgo16.h>
+#include <fa125algo.h>
 
 //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 // If EVIO support is not available, define dummy methods
@@ -1881,6 +1881,8 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 	// Loop over all window raw data objects
 	for(unsigned int i=0; i<wrd_objs.size(); i++){
 		const Df125WindowRawData *f125WindowRawData = (Df125WindowRawData*)wrd_objs[i];
+		
+		int rocid = f125WindowRawData->rocid;
 
 		// Get a vector of the samples for this channel
 		const vector<uint16_t> &samplesvector = f125WindowRawData->samples;
@@ -1907,15 +1909,15 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		pedestalavg = pedestalsum / Nped_samples;
 
 		if(EMULATE_FADC125_TIME_UPSAMPLE){
-			cdc_algos_data_t cdc_algos_data;
-			cdc_algos2(samplesvector, cdc_algos_data);
+			fa125_algos_data_t fa125_algos_data;
+			fa125_algos(rocid, samplesvector, fa125_algos_data);
 			
-			found_hit = true;
-			time = cdc_algos_data.time;
-			quality_factor = cdc_algos_data.q_code;
-			pedestalavg = cdc_algos_data.pedestal;
-			pulse_peak = cdc_algos_data.maxamp;
-			overflows = cdc_algos_data.overflows;
+			found_hit      = true;
+			time           = fa125_algos_data.time;
+			quality_factor = fa125_algos_data.q_code;
+			pedestalavg    = fa125_algos_data.pedestal;
+			pulse_peak     = fa125_algos_data.maxamp;
+			overflows      = fa125_algos_data.overflows;
 			
 			// The upsampling algorithm reports times in units of 1/10 of a 
 			// sample while the f250 algorithm reports it in units of 1/64

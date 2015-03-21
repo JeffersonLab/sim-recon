@@ -1,68 +1,80 @@
-
 //
-// $Id:$
+// $Id$
 //
 //
-// (See comments in cdcalgo16.h)
+// (See comments in fa125algo16.h)
 //
 // The #defines below might normally be placed in the header file, but
 // these have some generic names and are intended only for this CDC
 // timing algorithm. They may also be replaced with JANA configuration
 // parameters and/or CCDB constants.
 //
-// The main entry point here is the cdc_algos2 routine. The samples
+// The main entry point here is the fa125_algos routine. The samples
 // are passed in along with references to many different return values.
 // 
 
 #include <stdlib.h>
 
-#include <cdcalgo16.h>
+#include <fa125algo.h>
 
-// data buffer
-#define NADCBUFFER 180   //number of samples in buffer from adc
-// nadcbuffer should be >= WINDOW_END-XTHR_SAMPLE+NSAMPLES
-// to ensure that there will be enough data to upsample near WINDOW_END
-
-// hit search 
-// run 1602 use WINDOW_START 46, WINDOW_END ~130, HIT_THRES ~300, LIMIT_PED_MAX ~200
-// run 2016 use WINDOW_START 46, WINDOW_END ~130, HIT_THRES 100, LIMIT_PED_MAX 511
-// run 2016 has a few channels firing often with value~300
-
-#define WINDOW_START 46  //earliest sample for start of hit
-#define WINDOW_END 99   //last sample for hit arrival, and last sample included in integral
-
-#define HIT_THRES 300   // 5 sigma hit threshold
-#define NPED 16         // number of samples used for pedestal used to find hit. must be 2**integer
-#define NPED2 16        // number of samples used for pedestal calculated just before hit (returned, not used here). must be 2**integer
+#ifndef _DBG_
+#define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
+#define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
+#endif
 
 
-// cdc_time
-#define HIGH_THRESHOLD 80   // 4 sigma threshold
-#define LOW_THRESHOLD 20    // 1 sigma threshold
-#define ROUGH_DT 24     // if pulse fails QA, return this many tenth-samples before threshold xing
-#define INT_SAMPLE 6    // if pulse fails QA, start integration with this sample 
+#define CDC_NW 180      //trigger window length (data buffer length)
+#define CDC_WS 46       //hit window start
+#define CDC_WE 150      //hit window end
 
-//cdc_time good pulse criteria
-#define LIMIT_PED_MAX 511    //return rough time if any sample in 0 to PED_SAMPLE exceeds this
-#define LIMIT_ADC_MAX 4095  // return rough time if any sample in PED_SAMPLE+1 to NSAMPLES exceeds this
+#define CDC_H 125       // 5 sigma hit threshold
+#define CDC_NP 16       // # samples used for pedestal used to find hit. 2**integer
+#define CDC_NP2 16      // # samples used for pedestal calculated just before hit. 2**integer
 
-// cdc_time upsampling
-#define NSAMPLES 15     //number of samples in subset of array to pass to cdc_time
-#define XTHR_SAMPLE 9   // the hit_thres xing sample is sample[9] passed into cdc_time, starting with sample[0]
-#define PED_SAMPLE 5    // take local ped as sample[5] passed into cdc_time
-//#define NUPSAMPLED 8       // number of upsampled values to calculate, minimum is 8 (moved to header so it can set size of iubuf array DL)
-#define SET_ADC_MIN 20     // add an offset to the adc values to set the min value equal to SET_ADC_MIN
-#define LIMIT_UPS_ERR 30   // upsampling error tolerance, return midpoint time if error is greater than this
+#define CDC_TH 100      // 4 sigma threshold
+#define CDC_TL 25       // 1 sigma threshold
+#define CDC_RT 24       // if pulse fails QA, return this many tenth-samples before threshold xing
+#define CDC_IS 6        // if pulse fails QA, start integration with this sample 
+#define CDC_IE 200      // end integration at the earlier of WE, or this many samples after threshold crossing of TH  
+
+#define CDC_LIMIT_PED_MAX 511   //return rough time if any sample in 0 to PED_SAMPLE exceeds this
+#define CDC_LIMIT_ADC_MAX 4094  // return rough time if any sample in PED_SAMPLE+1 to NSAMPLES exceeds this
+
+#define CDC_NU 15       //number of samples in subset of array to pass to cdc_time
+#define CDC_XTHR 9      // the hit_thres xing sample is sample[9] passed into cdc_time
+#define CDC_PED 5       // take local ped as sample[5] passed into cdc_time
+
+#define CDC_SET_ADC_MIN 20      // add an offset to the adc values to set the min value equal to this
+#define CDC_LIMIT_UPS_ERR 30    // upsampling error tolerance, return midpoint time if error is greater than this
 
 
-//diagnostic output
-#define VERBOSE_T 0   // set to 1/0 to switch cdc_time text output on/off
-#define VERBOSE_U 0   // set to 1/0 to switch upsampling text output on/off
-#define VERBOSE_S 0   // set to 1/0 to switch hit search output on/off
-#define VERBOSE 0     // set to 1/0 to switch other text output on/off
+
+#define FDC_NW 100      //trigger window length (data buffer length)
+#define FDC_WS 30       //hit window start
+#define FDC_WE 52       //hit window end
+
+#define FDC_H 100       // 5 sigma hit threshold
+#define FDC_NP 16       // # samples used for pedestal used to find hit. 2**integer
+#define FDC_NP2 16      // # samples used for pedestal calculated just before hit. 2**integer
+
+#define FDC_TH 80       // 4 sigma threshold
+#define FDC_TL 20       // 1 sigma threshold
+#define FDC_RT 24       // if pulse fails QA, return this many tenth-samples before threshold xing
+#define FDC_IS 6        // if pulse fails QA, start integration with this sample 
+#define FDC_IE 10       // end integration at the earlier of WE, or this many samples after threshold crossing of TH  
+
+#define FDC_LIMIT_PED_MAX 511   //return rough time if any sample in 0 to PED_SAMPLE exceeds this
+#define FDC_LIMIT_ADC_MAX 4094  // return rough time if any sample in PED_SAMPLE+1 to NSAMPLES exceeds this
+
+#define FDC_NU 15       //number of samples in subset of array to pass to cdc_time
+#define FDC_XTHR 9      // the hit_thres xing sample is sample[9] passed into cdc_time
+#define FDC_PED 5       // take local ped as sample[5] passed into cdc_time
+
+#define FDC_SET_ADC_MIN 20      // add an offset to the adc values to set the min value equal to this
+#define FDC_LIMIT_UPS_ERR 30    // upsampling error tolerance, return midpoint time if error is greater than this
 
 
-// functions cdc_hit, cdc_time etc
+// FA125 emulation functions cdc_hit, cdc_time etc
 
 
   // cdc_time q_code values:
@@ -85,111 +97,135 @@
 
 
 // Wrapper for routine below
-void cdc_algos2(vector<uint16_t> samples, cdc_algos_data_t &cdc_algos_data)
+void fa125_algos(int rocid, vector<uint16_t> samples, fa125_algos_data_t &fa125_algos_data)
 {
-	if(samples.size()<=WINDOW_END){
-		cout << "The number of samples passed into the cdc_algos2 routine is less than the" << endl;
-		cout << "minimum (" << samples.size() << " <= " << WINDOW_END << "). The code is" << endl;
+	// Since we would have to write a lot of "cdc_algos_data."'s, make another
+	// reference that's smaller so we just have to write "d." instead
+	fa125_algos_data_t &d = fa125_algos_data;
+
+	// This was defined in the cdcmininewt.C macro as the following:
+	//
+	//	Int_t maxnsamples = CDC_NU;
+	//	if (FDC_NU > maxnsamples) maxnsamples = FDC_NU;
+	//	const Int_t NSAMPLES = maxnsamples;
+	//
+	// It seems like it should depend on it being a CDC or FDC hit but
+	// the following line follows more closely with Naomi's original code.
+	d.NSAMPLES = CDC_NU>FDC_NU ? CDC_NU:FDC_NU;
+
+	bool cdchit = kFALSE;
+	if ((rocid > 24)&&(rocid < 29)) cdchit = kTRUE;   //CDC has rocid 25 to 28
+
+	if (cdchit) {
+
+		d.WINDOW_START = CDC_WS;
+		d.WINDOW_END = CDC_WE;
+
+		d.HIT_THRES = CDC_H;
+		d.NPED = CDC_NP;
+		d.NPED2 = CDC_NP2;
+
+		d.HIGH_THRESHOLD = CDC_TH;
+		d.LOW_THRESHOLD = CDC_TL;
+		d.ROUGH_DT = CDC_RT;
+		d.INT_SAMPLE = CDC_IS;
+		d.INT_END = CDC_IE;
+
+		d.LIMIT_PED_MAX = CDC_LIMIT_PED_MAX;
+		d.LIMIT_ADC_MAX = CDC_LIMIT_ADC_MAX;
+
+		d.XTHR_SAMPLE = CDC_XTHR;
+		d.PED_SAMPLE = CDC_PED;
+
+		d.SET_ADC_MIN = CDC_SET_ADC_MIN;
+		d.LIMIT_UPS_ERR = CDC_LIMIT_UPS_ERR; 
+
+	} else {
+
+		d.WINDOW_START = FDC_WS;
+		d.WINDOW_END = FDC_WE;
+
+		d.HIT_THRES = FDC_H;
+		d.NPED = FDC_NP;
+		d.NPED2 = FDC_NP2;
+
+		d.HIGH_THRESHOLD = FDC_TH;
+		d.LOW_THRESHOLD = FDC_TL;
+		d.ROUGH_DT = FDC_RT;
+		d.INT_SAMPLE = FDC_IS;
+		d.INT_END = FDC_IE;
+
+		d.LIMIT_PED_MAX = FDC_LIMIT_PED_MAX;
+		d.LIMIT_ADC_MAX = FDC_LIMIT_ADC_MAX;
+
+		d.XTHR_SAMPLE = FDC_XTHR;
+		d.PED_SAMPLE = FDC_PED;
+
+		d.SET_ADC_MIN = FDC_SET_ADC_MIN;
+		d.LIMIT_UPS_ERR = FDC_LIMIT_UPS_ERR; 
+
+	}
+
+
+	if(samples.size()<=d.WINDOW_END){
+		cout << "The number of samples passed into the fa125_algos routine is less than the" << endl;
+		cout << "minimum (" << samples.size() << " <= " << d.WINDOW_END << "). The code is" << endl;
 		cout << "currently not capable of handling this. " << endl;
 		exit(-1);
 	}
 	
 	// Copy uint16_t samples into Int_t type array so we can pass it into the cdc_algos2
 	// routine that does the actual work
-	Int_t adc[WINDOW_END+1];
-	for(uint32_t i=0; i<=WINDOW_END; i++) adc[i] = (Int_t)samples[i];
+	Int_t adc[d.WINDOW_END+1];
+	for(uint32_t i=0; i<=d.WINDOW_END; i++) adc[i] = (Int_t)samples[i];
 	
-	// Since we would have to write a lot of "cdc_algos_data."'s, make another
-	// reference that's smaller so we just have to write "d." instead
-	cdc_algos_data_t &d = cdc_algos_data;
-	cdc_algos2(d.time, d.q_code, d.pedestal, d.integral, d.overflows, d.maxamp, d.initped, adc, d.iubuf, d.ups_err1, d.ups_err2, d.subsetmax, d.subsetmin, d.subsetstart);
+	// Call the actual routine that does the heavy lifting
+	fa125_algos(d.time, d.q_code, d.pedestal, d.integral, d.overflows, d.maxamp, adc, d.NSAMPLES, d.WINDOW_START, d.WINDOW_END, d.HIT_THRES, d.NPED, d.NPED2, d.HIGH_THRESHOLD, d.LOW_THRESHOLD, d.ROUGH_DT, d.INT_SAMPLE, d.INT_END, d.LIMIT_PED_MAX, d.LIMIT_ADC_MAX, d.XTHR_SAMPLE, d.PED_SAMPLE, d.SET_ADC_MIN, d.LIMIT_UPS_ERR);
 
 }
 
 
 
-void cdc_algos2(Int_t &time, Int_t &q_code, Int_t &pedestal, Long_t &integral, Int_t &overflows, Int_t &maxamp, Int_t &initped, Int_t adc[], Int_t iubuf[], Int_t &ups_err1, Int_t &ups_err2, Int_t &subsetmax, Int_t &subsetmin, Int_t &subsetstart) {
+void fa125_algos(Int_t &time, Int_t &q_code, Int_t &pedestal, Long_t &integral, Int_t &overflows, Int_t &maxamp, Int_t adc[], const Int_t NSAMPLES, Int_t WINDOW_START, Int_t WINDOW_END, Int_t HIT_THRES, Int_t NPED, Int_t NPED2, Int_t HIGH_THRESHOLD, Int_t LOW_THRESHOLD, Int_t ROUGH_DT, Int_t INT_SAMPLE, Int_t INT_END, Int_t LIMIT_PED_MAX, Int_t LIMIT_ADC_MAX, Int_t XTHR_SAMPLE, Int_t PED_SAMPLE, Int_t SET_ADC_MIN, Int_t LIMIT_UPS_ERR) {
 
  
-  Int_t adc_subset[NSAMPLES] = {0}; 
+  Int_t adc_subset[NSAMPLES]; 
 
   Int_t hitfound=0; //hit found or not (1=found,0=not)
   Int_t hitsample=-1;  // if hit found, sample number of threshold crossing
 
-  Float_t time_samples=0; // hit time in samples since start of adc buffer
-  Float_t time_ns=0; // hit time in ns since start of adc buffer
-
-  //  Int_t time=0;    // hit time in 0.1xsamples since start of buffer passed to cdc_time
-  //  Int_t q_code=-1; //quality code, 0=good, 1=returned rough estimate (high threshold not met)
-
-  //  Int_t pedestal=0;   // pedestal just before hit
-
   Int_t integral1=0;   // signal integral, from le time to threshold crossing
   Long_t integral2=0;   // signal integral, from threshold crossing to end of signal
 
-  //  Int_t integral=0;   // signal integral, total
-  //  Int_t overflows=0;  // count of samples with overflow bit set (need raw data, not possible from my root files)
-  //  Int_t maxamp=0;     // signal amplitude at first max after hit
-
   Int_t i=0;
 
-  Int_t pulselength=0; //duration of pulse, from sample following le_time to WINDOW_END
+  time=0;       // hit time in 0.1xsamples since start of buffer passed to cdc_time
+  q_code=-1;    // quality code, 0=good, 1=returned rough estimate
+  pedestal=0;   // pedestal just before hit
+  integral=0;   // signal integral, total
+  overflows=0;  // count of samples with overflow bit set (need raw data, not possible from my root files)
+  maxamp=0;     // signal amplitude at first max after hit
 
-  cdc_hit(hitfound,hitsample,pedestal,adc,adc_subset);   // look for hit using mean pedestal of 16 samples before trigger 
 
-  subsetmax = 0;
-  subsetmin = 4095; 
-  subsetstart = 0;
+  // look for hit using mean pedestal of 16 samples before trigger 
+  cdc_hit(hitfound,hitsample,pedestal,adc, WINDOW_START, WINDOW_END, HIT_THRES, NPED, NPED2, XTHR_SAMPLE, PED_SAMPLE);
+
 
   if (hitfound==1) {
 
     for (i=0; i<NSAMPLES; i++) {
       adc_subset[i] = adc[hitsample+i-XTHR_SAMPLE];
-      if (VERBOSE) printf("adc_subset[%i] %i\n",i,adc_subset[i]);
-      if (adc_subset[i]<subsetmin) subsetmin = adc_subset[i];
     }
 
-    subsetstart = hitsample-XTHR_SAMPLE;
-    subsetmax = adc_subset[NSAMPLES-1];
+    cdc_time(time, q_code, integral1, adc_subset, NSAMPLES, HIGH_THRESHOLD, LOW_THRESHOLD, ROUGH_DT, INT_SAMPLE, LIMIT_PED_MAX, LIMIT_ADC_MAX, XTHR_SAMPLE, PED_SAMPLE, SET_ADC_MIN, LIMIT_UPS_ERR);
 
-    cdc_time(time, q_code, integral1, adc_subset, iubuf, ups_err1, ups_err2);
+    cdc_integral(integral2, overflows, hitsample, adc, WINDOW_END, INT_END);
 
-    cdc_integral(integral2, overflows, hitsample, adc);
-
-    cdc_max(maxamp, hitsample, adc);
+    cdc_max(maxamp, hitsample, adc, WINDOW_END);
 
     time = 10*(hitsample-XTHR_SAMPLE) + time;   // integer number * 0.1 samples
 
     integral = (Long_t)integral1 + integral2;
-
-    //repeat initial pedestal calc here for diagnostics as it is not supposed to be returned by cdc_hit
-    for (i=0; i<NPED; i++) initped += adc[WINDOW_START-NPED+i];
-    initped = initped/NPED;   // Integer div is ok as fpga will do 2 rightshifts
-
-
-
-    if (VERBOSE) {
-      time_samples = 0.1*time;
-      time_ns = time_samples*8.0;
-
-      pulselength = WINDOW_END - (Int_t)time_samples;
-
-      printf ("Integral part 1 %i\n",integral1);
-      printf ("Integral part 2 %li\n",integral2);
-      printf ("Integral starts at sample %i, includes %i, ends at %i\n",(Int_t)time_samples,hitsample,WINDOW_END);
-
-      printf("\n   Hit found...\n");
-      printf("\n   Pedestal %i  (initial pedestal %i)\n",pedestal, initped);
-      printf("\n   Max amplitude %i\n",maxamp);
-      printf("\n   Integral %li - samples %i x pedestal %i = %li\n",integral,pulselength,pedestal,integral-(Long_t)(pulselength*pedestal));
-      printf("\n   Overflow count %i\n",overflows);
-      printf("\n   Time %5.1f samples (%4.1f ns) since start of ADC buffer\n",time_samples,time_ns);
-      printf("\n   Q-code is %i \n\n",q_code);
-      if (q_code>0) printf("\n*** This is a rough estimate ***\n\n");
-    }
-  } else { 
-
-    //    if (VERBOSE && !VERBOSE_S) printf("\n   ADC values did not go over threshold \n\n");
 
   }
 
@@ -198,7 +234,8 @@ void cdc_algos2(Int_t &time, Int_t &q_code, Int_t &pedestal, Long_t &integral, I
 
 
 
-void cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t &ped, Int_t adc[], Int_t adc_subset[]){
+void cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t &ped, Int_t adc[], Int_t WINDOW_START, Int_t WINDOW_END, Int_t HIT_THRES, Int_t NPED, Int_t NPED2, Int_t XTHR_SAMPLE, Int_t PED_SAMPLE) {
+
 
   ped=0;  //pedestal
   Int_t threshold=0;
@@ -206,7 +243,6 @@ void cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t &ped, Int_t adc[], Int_t a
   Int_t i=0;
 
   // calc pedestal as mean of NPED samples before trigger
-
   for (i=0; i<NPED; i++) ped += adc[WINDOW_START-NPED+i];
 
   ped = ped/NPED;   // Integer div is ok as fpga will do 2 rightshifts
@@ -214,17 +250,12 @@ void cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t &ped, Int_t adc[], Int_t a
   threshold = ped + HIT_THRES;
 
   // look for threshold crossing
-
-  if (VERBOSE) printf("Searching for ADC value >= %i\n",threshold);
-
   i = WINDOW_START - 1;
   hitfound = 0;
 
   while ((hitfound==0) && (i<WINDOW_END)) {
 
     i++;
-
-    if (VERBOSE_S) printf("  ADC[%i] %i\n",i,adc[i]);
 
     if (adc[i] >= threshold) {
 
@@ -236,13 +267,6 @@ void cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t &ped, Int_t adc[], Int_t a
 
   if (hitfound == 1) {
 
-    //copy values to small array of samples to send to time module
-
-    for (i=0;i<NSAMPLES;i++) {
-      adc_subset[i] = adc[hitsample+i];
-    }
-
-
     //calculate new pedestal ending just before the hit
 
     ped = 0;
@@ -252,14 +276,6 @@ void cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t &ped, Int_t adc[], Int_t a
     }
 
     ped = ped/NPED2;
-
-    if (VERBOSE) printf("\n   ADC value %i at sample %i over threshold %i, pedestal %i\n\n",adc[hitsample],hitsample,threshold,ped);
-
-  }
-
-
-  if ((VERBOSE) && (hitfound==0)) {
-    printf("\n   ADC values did not go over threshold %i \n\n",threshold);
   }
 
 
@@ -268,15 +284,18 @@ void cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t &ped, Int_t adc[], Int_t a
 
 
 
-void cdc_integral(Long_t& integral, Int_t& overflows, Int_t hitsample, Int_t adc[]) {
+void cdc_integral(Long_t& integral, Int_t& overflows, Int_t hitsample, Int_t adc[], Int_t WINDOW_END, Int_t INT_END) {
 
   Int_t i=0;
 
   integral = 0;
   overflows = 0;
 
+  Int_t lastsample = hitsample + INT_END;
 
-  for (i = hitsample; i <= WINDOW_END; i++ ) {
+  if (lastsample > WINDOW_END) lastsample = WINDOW_END;
+
+  for (i = hitsample; i <= lastsample; i++ ) {
 
     integral += (Long_t)adc[i];
     if (adc[i]>4095) overflows++;    // only a placeholder at present. need to test on sample's overflow bit
@@ -289,7 +308,7 @@ void cdc_integral(Long_t& integral, Int_t& overflows, Int_t hitsample, Int_t adc
 
 
 
-void cdc_max(Int_t& maxamp, Int_t hitsample, Int_t adc[]) {
+void cdc_max(Int_t& maxamp, Int_t hitsample, Int_t adc[], Int_t WINDOW_END) {
 
   maxamp = 0;
 
@@ -310,7 +329,7 @@ void cdc_max(Int_t& maxamp, Int_t hitsample, Int_t adc[]) {
 
 
 
-void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t iubuf[], Int_t &ups_err1, Int_t &ups_err2){
+void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t NSAMPLES, Int_t HIGH_THRESHOLD, Int_t LOW_THRESHOLD, Int_t ROUGH_DT, Int_t INT_SAMPLE, Int_t LIMIT_PED_MAX, Int_t LIMIT_ADC_MAX, Int_t XTHR_SAMPLE, Int_t PED_SAMPLE, Int_t SET_ADC_MIN, Int_t LIMIT_UPS_ERR) {
 
 
   // returned quantities:
@@ -350,12 +369,13 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
 
   // internal constants
 
+  const Int_t NUPSAMPLED = 8;       // number of upsampled values to calculate, minimum is 8
 
   const Int_t START_SEARCH = PED_SAMPLE+1; // -- start looking for hi threshold xing with this sample
 
   const Int_t ROUGH_TIME = (XTHR_SAMPLE*10)-ROUGH_DT; // --return this for time if the algo fails
 
-  //  Int_t iubuf[NUPSAMPLED] = {0};  // array of upsampled values
+  Int_t iubuf[NUPSAMPLED] = {0};  // array of upsampled values
    
   //	-- iubuf 0 corresponds to 0.2 before low thres xing sample
   //	-- iubuf 1 maps to low thres xing sample
@@ -388,11 +408,15 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
   Int_t sum = 0;
   Int_t ifrac = 0;
   
+  // upsampling checks
+  Int_t ups_err1 = 0;
+  Int_t ups_err2 = 0;
+  Int_t ups_err_sum = 0;
+  Int_t ups_adjust = 0;
+
 
   Int_t i = 0;
 
-  ups_err1 = 0;
-  ups_err2 = 0;
 
 
   //check all samples are >0
@@ -412,17 +436,12 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
 
   if (adczero) {
 
-    if (VERBOSE) printf ("ADC value 0 found\n");
-
     le_time = ROUGH_TIME;
     q_code = 5;
 
     integral = 0;    
 
     for (i=INT_SAMPLE; i<XTHR_SAMPLE; i++) integral += adc[i];
-
-    if (VERBOSE_T) printf("Leading edge time is %i x 0.1 samples since the time of the first sample supplied \n",le_time);
-    if (VERBOSE_T) printf("Quality code is 1 - this is a rough estimate\n");
 
     return;
    
@@ -446,17 +465,12 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
 
   if (adclimit) {
 
-    if (VERBOSE) printf ("ADC value >= %i found\n",LIMIT_ADC_MAX);
-
     le_time = ROUGH_TIME;
     q_code = 6;
 
     integral = 0;    
 
     for (i=INT_SAMPLE; i<XTHR_SAMPLE; i++) integral += adc[i];
-
-    if (VERBOSE_T) printf("Leading edge time is %i x 0.1 samples since the time of the first sample supplied \n",le_time);
-    if (VERBOSE_T) printf("Quality code is 1 - this is a rough estimate\n");
 
     return;
    
@@ -481,17 +495,12 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
 
   if (pedlimit) {
 
-    if (VERBOSE) printf ("Pedestal value >= %i found\n",LIMIT_PED_MAX);
-
     le_time = ROUGH_TIME;
     q_code = 7;
 
     integral = 0;    
 
     for (i=INT_SAMPLE; i<XTHR_SAMPLE; i++) integral += adc[i];
-
-    if (VERBOSE_T) printf("Leading edge time is %i x 0.1 samples since the time of the first sample supplied \n",le_time);
-    if (VERBOSE_T) printf("Quality code is 1 - this is a rough estimate\n");
 
     return;
    
@@ -522,8 +531,6 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
     i++;
   }
 
-  if (VERBOSE_T) printf("adjusted adc values by %i\n",adcoffset);
-
   // eg if adcmin is 100, setmin is 30, adcoffset = 30 - 100 = -70, move adc down by 70
  
 
@@ -533,8 +540,6 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
 
   adc_thres_hi = adc[PED_SAMPLE] + HIGH_THRESHOLD;
   adc_thres_lo = adc[PED_SAMPLE] + LOW_THRESHOLD;
-
-  if (VERBOSE_T) printf("thresholds: hi %i lo %i\n",adc_thres_hi,adc_thres_lo);
 
   // search for high threshold crossing
 
@@ -554,8 +559,6 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
 
   if (!over_threshold) {
 
-    if (VERBOSE) printf ("ADC data did not go over threshold %i\n",adc_thres_hi);
-
     le_time = ROUGH_TIME;
     q_code = 1;
 
@@ -563,14 +566,9 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
 
     for (i=INT_SAMPLE; i<XTHR_SAMPLE; i++) integral += adc[i];
 
-    if (VERBOSE_T) printf("Leading edge time is %i x 0.1 samples since the time of the first sample supplied \n",le_time);
-    if (VERBOSE_T) printf("Quality code is 1 - this is a rough estimate\n");
-
     return;
    
   }
-
-  if (VERBOSE_T) printf("threshold %i met or exceeded by sample %i value %i\n",adc_thres_hi,adc_sample_hi,adc[adc_sample_hi]);
 
 
   // search for low threshold crossing
@@ -579,8 +577,6 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
   i = adc_sample_hi-1;
 
   while ((!below_threshold) && (i>=PED_SAMPLE)) {   //************changed START_SEARCH to PED_SAMPLE**********
-
-    if (VERBOSE_T) printf("adc[%i] %i\n",i,adc[i]);
 
     if (adc[i] <= adc_thres_lo) {
       adc_sample_lo = i;
@@ -593,8 +589,6 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
 
   if (adc_sample_lo > NSAMPLES-7) {
 
-    if (VERBOSE) printf ("Leading edge time is outside the upsampled region\n");
-
     le_time = ROUGH_TIME;
     q_code = 2;
 
@@ -602,23 +596,15 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
 
     for (i=INT_SAMPLE; i<XTHR_SAMPLE; i++) integral += adc[i];
 
-    if (VERBOSE_T) printf("Leading edge time is %i x 0.1 samples since the time of the first sample supplied \n",le_time);
-    if (VERBOSE_T) printf("Quality code is 1 - this is a rough estimate\n");
-
     return;
    
   }
 
-
-
-  if (VERBOSE_T) printf("threshold %i met or preceded by sample %i value %i\n",adc_thres_lo,adc_sample_lo,adc[adc_sample_lo]);
-
-  if (VERBOSE_T) printf("itime1 %i x 0.1 samples\n",itime1);
-           
+          
 
   //upsample values from adc_sample_lo - 0.2 to adc_sample_lo + 1.2 
 
-  upsamplei(adc,adc_sample_lo,iubuf);
+  upsamplei(adc, adc_sample_lo, iubuf, NUPSAMPLED);
 
 
 
@@ -639,12 +625,9 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
 
   if (negups) {
 
-    if (VERBOSE) printf ("Negative upsampled value returned\n");
-
     le_time = itime1 + 5;   // better bail-out //midway between adc_sample_lo and _lo + 1
 
     q_code = 8;
-
  
     integral = 0;    
 
@@ -652,11 +635,6 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
     for (i=PED_SAMPLE-1; i<XTHR_SAMPLE; i++) {
       if (i>adc_sample_lo) integral += adc[i];
     }
-
-    //    for (i=INT_SAMPLE; i<XTHR_SAMPLE; i++) integral += adc[i];
-
-    if (VERBOSE_T) printf("Leading edge time is %i x 0.1 samples since the time of the first sample supplied \n",le_time);
-    if (VERBOSE_T) printf("Quality code is 8 - this is a rough estimate\n");
 
     return;
    
@@ -670,15 +648,14 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
   ups_err1 = iubuf[1] - adc[adc_sample_lo];
   ups_err2 = iubuf[6] - adc[adc_sample_lo+1];
 
-  Int_t ups_err_sum = ups_err1 + ups_err2;
+  ups_err_sum = ups_err1 + ups_err2;
 
-  Int_t ups_adjust = (Int_t)(0.5*ups_err_sum);
+  ups_adjust = (Int_t)(0.5*ups_err_sum);
+
 
   // if this is more than set limit, bail out
 
   if (ups_err_sum > LIMIT_UPS_ERR) { //upsampled 
-
-    if (VERBOSE) printf ("Upsampling error sum is over limit %i\n",LIMIT_UPS_ERR);
 
     le_time = itime1 + 5;   // better bail-out //midway between adc_sample_lo and _lo + 1
 
@@ -690,13 +667,7 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
       if (i>adc_sample_lo) integral += adc[i];
     }
 
-
-    if (VERBOSE_T) printf("Leading edge time is %i x 0.1 samples since the time of the first sample supplied \n",le_time);
-    if (VERBOSE_T) printf("Quality code is 9 - this is a rough estimate\n");
-
     return;
-
-
   }
 
 
@@ -709,15 +680,10 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
   adc_thres_lo = adc_thres_lo + ups_adjust;
 
   //iubuf(0) is at adc_sample_lo - 0.2
-  if (VERBOSE) printf ("iubuf[1] %i err %i iubuf[6] %i err %i Correction is %i Moved threshold to %i\n",iubuf[1],ups_err1,iubuf[6],ups_err2,ups_adjust,adc_thres_lo);
-
-
   //search through upsampled array
 
 
   if (iubuf[NUPSAMPLED-1]<= adc_thres_lo) { //bad upsampling
-
-    if (VERBOSE) printf ("Last upsampled point is <= low timing threshold\n");
 
     le_time = itime1 + 5;   //midway
 
@@ -729,11 +695,7 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
       if (i>adc_sample_lo) integral += adc[i];
     }
 
-    if (VERBOSE_T) printf("Leading edge time is %i x 0.1 samples since the time of the first sample supplied \n",le_time);
-    if (VERBOSE_T) printf("Quality code is 3 - this is a rough estimate\n");
-
     return;
-
   }
 
 
@@ -759,9 +721,6 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
 
   if (!below_threshold) { //upsampled points did not go below thres
 
-    if (VERBOSE) printf ("Upsampled points did not go below low timing threshold\n");
-
-
     le_time = itime1 + 5;   //midway
 
     q_code = 4;
@@ -772,24 +731,14 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
       if (i>adc_sample_lo) integral += adc[i];
     }
 
-
-    if (VERBOSE_T) printf("Leading edge time is %i x 0.1 samples since the time of the first sample supplied \n",le_time);
-    if (VERBOSE_T) printf("Quality code is 1 - this is a rough estimate\n");
-
     return;
-
-
   }
 
 
 
 
-
-  if (VERBOSE_T) printf("threshold %i met or preceded by upsampled point %i value %i\n",adc_thres_lo,adc_sample_lo2,iubuf[adc_sample_lo2]);
-
   itime2 = adc_sample_lo2*2;  //  convert from sample/5 to sample/10
 
-  if (VERBOSE_T) printf("itime2 %i x 0.1 samples\n",itime2);
 
 
   //interpolate
@@ -801,8 +750,6 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
     denom = iubuf[adc_sample_lo2+1] - iubuf[adc_sample_lo2];
     limit = (adc_thres_lo - iubuf[adc_sample_lo2])*2;
 
-    if (VERBOSE_T) printf("denom %i limit %i\n",denom,limit);
-  
     sum = 0;
     ifrac = 0;
                           
@@ -813,8 +760,6 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
 
     }
 
-    if (VERBOSE_T) printf("sum %i ifrac %i\n",sum,ifrac);
-
     if (2*(sum-limit) > denom) { //  --round
       itime3 = ifrac - 1;        
     } else {
@@ -823,7 +768,6 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
 
   }
 
-  if (VERBOSE_T) printf("itime3 %i x 0.1 samples\n",itime3);
 
   //--              need to subtract 1/5 sample from itime2 because upsampling starts
   //--              1 minisample before adc_sample_lo
@@ -836,13 +780,11 @@ void cdc_time(Int_t &le_time, Int_t &q_code, Int_t &integral, Int_t adc[], Int_t
     if (i>adc_sample_lo) integral += adc[i];
   }
 
-  if (VERBOSE_T) printf("Leading edge time is %i x 0.1 samples since the time of the first sample supplied \n",le_time);
-  if (VERBOSE_T) printf("Quality code is 0 - good\n");
 
 }
 
 
-void upsamplei(Int_t x[], Int_t startpos, Int_t z[]) {
+void upsamplei(Int_t x[], Int_t startpos, Int_t z[], const Int_t NUPSAMPLED) {
 
   // x is array of samples
   // z is array of upsampled data
@@ -891,8 +833,6 @@ void upsamplei(Int_t x[], Int_t startpos, Int_t z[]) {
 
     z[dk] = (Int_t)(5*z[dk])/Kscale;
 
-    if (VERBOSE_U) printf("upsampled %i %i \n",dk,z[dk]);
-    
   }
 
 }
