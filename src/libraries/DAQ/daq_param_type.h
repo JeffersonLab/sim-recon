@@ -1,5 +1,5 @@
-// $Id: daq_param_type.h 16894 2014-12-16 16:06:59Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/daq_param_type.h $
+// $Id$
+// $HeadURL$
 //
 //    File: daq_param_type.h
 // Created: Fri Sep 26 08:06:38 EDT 2014

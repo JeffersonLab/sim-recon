@@ -1,5 +1,5 @@
-// $Id: DEPICSvalue.h 16643 2014-11-24 21:17:40Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/DEPICSvalue.h $
+// $Id$
+// $HeadURL$
 //
 //    File: DEPICSvalue.h
 // Created: Tue Nov 11 21:40:17 EST 2014

@@ -1,5 +1,5 @@
-// $Id: Df250PulseIntegral.h 16751 2014-12-04 21:51:43Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/Df250PulseIntegral.h $
+// $Id$
+// $HeadURL$
 //
 //    File: Df250PulseIntegral.h
 // Created: Tue Aug  7 15:24:50 EDT 2012

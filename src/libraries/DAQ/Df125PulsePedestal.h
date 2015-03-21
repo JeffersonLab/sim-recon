@@ -1,5 +1,5 @@
-// $Id: Df125PulsePedestal.h 16643 2014-11-24 21:17:40Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/Df125PulsePedestal.h $
+// $Id$
+// $HeadURL$
 //
 //    File: Df125PulsePedestal.h
 // Created: Mon Jul 28 09:44:35 EDT 2014

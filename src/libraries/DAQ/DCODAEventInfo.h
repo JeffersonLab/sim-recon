@@ -1,5 +1,5 @@
-// $Id: DCODAEventInfo.h 16643 2014-11-24 21:17:40Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/DCODAEventInfo.h $
+// $Id$
+// $HeadURL$
 //
 //    File: DCODAEventInfo.h
 // Created: Wed Oct 15 11:35:43 EDT 2014

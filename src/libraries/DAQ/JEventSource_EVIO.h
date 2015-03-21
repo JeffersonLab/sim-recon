@@ -1,5 +1,5 @@
-// $Id: JEventSource_EVIO.h 16910 2014-12-17 12:12:17Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h $
+// $Id$
+// $HeadURL$
 //
 //    File: JEventSource_EVIO.h
 // Created: Tue Aug  7 15:22:29 EDT 2012

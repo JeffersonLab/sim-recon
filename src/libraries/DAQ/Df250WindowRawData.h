@@ -1,5 +1,5 @@
-// $Id: Df250WindowRawData.h 16643 2014-11-24 21:17:40Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/Df250WindowRawData.h $
+// $Id$
+// $HeadURL$
 //
 //    File: Df250WindowRawData.h
 // Created: Tue Aug  7 15:24:27 EDT 2012

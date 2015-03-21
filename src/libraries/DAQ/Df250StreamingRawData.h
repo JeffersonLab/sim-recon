@@ -1,5 +1,5 @@
-// $Id: Df250StreamingRawData.h 16643 2014-11-24 21:17:40Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/Df250StreamingRawData.h $
+// $Id$
+// $HeadURL$
 //
 //    File: Df250StreamingRawData.h
 // Created: Tue Aug  7 15:25:15 EDT 2012

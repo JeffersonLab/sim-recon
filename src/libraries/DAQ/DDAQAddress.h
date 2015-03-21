@@ -1,5 +1,5 @@
-// $Id: DDAQAddress.h 16643 2014-11-24 21:17:40Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/DDAQAddress.h $
+// $Id$
+// $HeadURL$
 //
 //    File: DDAQAddress.h
 // Created: Mon Jun 24 10:11:30 EDT 2013

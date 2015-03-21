@@ -1,4 +1,4 @@
-// $Id: DAQ_init.cc $
+// $Id$
 
 #include <JANA/JEventLoop.h>
 using namespace jana;

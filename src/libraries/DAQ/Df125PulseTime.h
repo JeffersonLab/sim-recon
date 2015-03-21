@@ -1,5 +1,5 @@
-// $Id: Df125PulseTime.h 16643 2014-11-24 21:17:40Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/Df125PulseTime.h $
+// $Id$
+// $HeadURL$
 //
 //    File: Df125PulseTime.h
 // Created: Mon Jul  8 12:01:57 EDT 2013

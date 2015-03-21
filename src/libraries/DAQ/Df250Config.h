@@ -1,5 +1,5 @@
-// $Id: Df250Config.h 16643 2014-11-24 21:17:40Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/Df250Config.h $
+// $Id$
+// $HeadURL$
 //
 //    File: Df250Config.h
 // Created: Sun Sep  7 15:52:50 EDT 2014

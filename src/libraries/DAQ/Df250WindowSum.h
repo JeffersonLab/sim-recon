@@ -1,5 +1,5 @@
-// $Id: Df250WindowSum.h 16643 2014-11-24 21:17:40Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/Df250WindowSum.h $
+// $Id$
+// $HeadURL$
 //
 //    File: Df250WindowSum.h
 // Created: Tue Aug  7 15:24:31 EDT 2012

@@ -1,5 +1,5 @@
-// $Id: DF1TDCTriggerTime.h 16643 2014-11-24 21:17:40Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/DF1TDCTriggerTime.h $
+// $Id$
+// $HeadURL$
 //
 //    File: DF1TDCTriggerTime.h
 // Created: Sat Nov 24 11:16:07 EST 2012

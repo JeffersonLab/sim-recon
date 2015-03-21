@@ -1,5 +1,5 @@
-// $Id: DF1TDCHit.h 16643 2014-11-24 21:17:40Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/DF1TDCHit.h $
+// $Id$
+// $HeadURL$
 //
 //    File: DF1TDCHit.h
 // Created: Fri Aug 10 12:02:49 EDT 2012

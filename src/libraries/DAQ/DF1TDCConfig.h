@@ -1,5 +1,5 @@
-// $Id: DF1TDCConfig.h 16947 2014-12-20 05:34:19Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/DF1TDCConfig.h $
+// $Id$
+// $HeadURL$
 //
 //    File: DF1TDCConfig.h
 // Created: Sun Sep  7 15:52:50 EDT 2014

@@ -1,5 +1,5 @@
-// $Id: JFactoryGenerator_DAQ.h 16643 2014-11-24 21:17:40Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/JFactoryGenerator_DAQ.h $
+// $Id$
+// $HeadURL$
 //
 //    File: JFactoryGenerator_DAQ.h
 // Created: Thu Aug  9 12:40:08 EDT 2012

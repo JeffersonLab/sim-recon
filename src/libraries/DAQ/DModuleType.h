@@ -1,5 +1,5 @@
-// $Id: DModuleType.h 16643 2014-11-24 21:17:40Z davidl $
-// $HeadURL: https://halldsvn.jlab.org/repos/branches/sim-recon-commissioning/src/programs/Utilities/plugins/DAQ/DModuleType.h $
+// $Id$
+// $HeadURL$
 //
 //    File: DModuleType.h
 // Created: Thu Aug  9 08:56:08 EDT 2012
