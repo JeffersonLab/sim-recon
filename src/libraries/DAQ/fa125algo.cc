@@ -167,7 +167,7 @@ void fa125_algos(int rocid, vector<uint16_t> samples, fa125_algos_data_t &fa125_
 	}
 
 
-	if(samples.size()<=d.WINDOW_END){
+	if(samples.size()<=(uint32_t)d.WINDOW_END){
 		cout << "The number of samples passed into the fa125_algos routine is less than the" << endl;
 		cout << "minimum (" << samples.size() << " <= " << d.WINDOW_END << "). The code is" << endl;
 		cout << "currently not capable of handling this. " << endl;
@@ -177,7 +177,7 @@ void fa125_algos(int rocid, vector<uint16_t> samples, fa125_algos_data_t &fa125_
 	// Copy uint16_t samples into Int_t type array so we can pass it into the cdc_algos2
 	// routine that does the actual work
 	Int_t adc[d.WINDOW_END+1];
-	for(uint32_t i=0; i<=d.WINDOW_END; i++) adc[i] = (Int_t)samples[i];
+	for(uint32_t i=0; i<=(uint32_t)d.WINDOW_END; i++) adc[i] = (Int_t)samples[i];
 	
 	// Call the actual routine that does the heavy lifting
 	fa125_algos(d.time, d.q_code, d.pedestal, d.integral, d.overflows, d.maxamp, adc, d.NSAMPLES, d.WINDOW_START, d.WINDOW_END, d.HIT_THRES, d.NPED, d.NPED2, d.HIGH_THRESHOLD, d.LOW_THRESHOLD, d.ROUGH_DT, d.INT_SAMPLE, d.INT_END, d.LIMIT_PED_MAX, d.LIMIT_ADC_MAX, d.XTHR_SAMPLE, d.PED_SAMPLE, d.SET_ADC_MIN, d.LIMIT_UPS_ERR);
