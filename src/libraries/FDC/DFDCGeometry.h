@@ -24,8 +24,9 @@
 #define WIRE_SPACING          1.0
 #define U_OF_WIRE_ZERO        (-((WIRES_PER_PLANE-1)*WIRE_SPACING)/2)
 #define STRIPS_PER_PLANE      192 
-#define STRIP_SPACING         0.5
+#define STRIP_SPACING         0.5007
 #define U_OF_STRIP_ZERO		   (-((STRIPS_PER_PLANE-1)*STRIP_SPACING)/2)
+#define STRIP_ZERO_OFFSET     -96.5
 #define STRIP_GAP             0.1
 #define MAX_HITS             100
 //#define K2                  1.15
