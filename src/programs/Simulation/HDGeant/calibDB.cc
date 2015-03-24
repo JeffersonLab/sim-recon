@@ -14,6 +14,7 @@ using namespace std;
 #include <HDGEOMETRY/DMagneticFieldMapConst.h>
 #include "HDGEOMETRY/DMagneticFieldMapSpoiled.h"
 #include "HDGEOMETRY/DMagneticFieldMapParameterized.h"
+#include "HDGEOMETRY/DMagneticFieldMapNoField.h"
 
 extern "C" {
 #include "calibDB.h"
@@ -54,7 +55,7 @@ void initcalibdb_(char *bfield_type, char *bfield_map, int *runno)
 
    // Get the JCalibration object
    jcalib = japp->GetJCalibration(*runno);
-   
+ 
    // The actual DMagneticFieldMap subclass can be specified in
    // the control.in file. Since it is read in as integers of
    // "MIXED" format through ffkey though (who knows what that
@@ -68,11 +69,40 @@ void initcalibdb_(char *bfield_type, char *bfield_map, int *runno)
    if(bfield_type[0] == 0)strcpy(bfield_type, "CalibDB");
    string bfield_type_str(bfield_type);
 
+   const char *ccdb_help =
+	   " \n"
+	   " Could not load the solenoid field map from the CCDB!\n"
+	   " Please specify the solenoid field map to use on the command line, e.g.:\n"
+	   " \n"
+	   "   -PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520\n"
+	   " or\n"
+	   "   -PBFIELD_TYPE=NoField\n";
+
    if(bfield_type_str=="CalibDB"){
+     // if the magnetic field is specified in control.in, then use that value instead of the CCDB values
      if(strlen(bfield_map))
        Bmap = new DMagneticFieldMapFineMesh(japp,*runno,bfield_map);
-     else
-       Bmap = new DMagneticFieldMapFineMesh(japp,*runno);
+     else {
+          
+       // see if we can load the name of the magnetic field map to use from the calib DB
+       map<string,string> bfield_map_name;
+       if(jcalib->GetCalib("/Magnets/Solenoid/solenoid_map", bfield_map_name)) {
+	 // if we can't find information in the CCDB, then quit with an error message
+	 _DBG_<<ccdb_help<<endl;
+	 exit(-1);
+       } else {
+	 if( bfield_map_name.find("map_name") != bfield_map_name.end() ) {
+	   if( bfield_map_name["map_name"] == "NoField" )     // special case for no magnetic field
+	     Bmap = new DMagneticFieldMapNoField(japp);
+	   else
+	     Bmap = new DMagneticFieldMapFineMesh(japp,*runno,bfield_map_name["map_name"]);  // pass along the name of the magnetic field map to load
+	 } else {
+	   // if we can't find information in the CCDB, then quit with an error message
+	   jerr << ccdb_help << endl;
+	   exit(-1);
+	 }
+       }
+     }
    }
    else if(bfield_type_str=="NoField"){
      nofield=true;
