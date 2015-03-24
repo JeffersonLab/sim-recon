@@ -1286,6 +1286,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
          newHit->module  = ahiter->getModule();
          newHit->element = ahiter->getWire();
          newHit->q       = ahiter->getDE();
+	 newHit->pulse_height = 0.; // not measured
          newHit->t       = ahiter->getT();
          newHit->d       = 0.; // initialize to zero to avoid any NaN
          newHit->itrack  = 0;  // track information is in TRUTH tag
@@ -1310,6 +1311,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
             newHit->element -= 1000;
          newHit->plane   = chiter->getPlane();
          newHit->q       = chiter->getQ();
+	 newHit->pulse_height = newHit->q; 
          newHit->t       = chiter->getT();
          newHit->d       = 0.; // initialize to zero to avoid any NaN
          newHit->itrack  = 0;  // track information is in TRUTH tag
@@ -1331,6 +1333,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
          newHit->module  = atiter->getModule();
          newHit->element = atiter->getWire();
          newHit->q       = atiter->getDE();
+	 newHit->pulse_height=0.; // not measured
          newHit->t       = atiter->getT();
          newHit->d       = atiter->getD();
          newHit->itrack  = atiter->getItrack();
@@ -1356,6 +1359,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(hddm_s::HDDM *record,
             newHit->element -= 1000;
          newHit->plane   = ctiter->getPlane();
          newHit->q       = ctiter->getQ();
+	 newHit->pulse_height = newHit->q;
          newHit->t       = ctiter->getT();
          newHit->d       = 0.; // initialize to zero to avoid any NaN
          newHit->itrack  = ctiter->getItrack();
