@@ -912,7 +912,7 @@ bool DGeometry::GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const{
 // GetFDCCathodes
 //---------------------------------
 bool DGeometry::GetFDCCathodes(vector<vector<DFDCCathode *> >&fdccathodes) const{
-// Get offsets tweaking nominal geometry from calibration database
+  // Get offsets tweaking nominal geometry from calibration database
   JCalibration * jcalib = dapp->GetJCalibration(runnumber);
   vector<map<string,double> >vals;
   vector<fdc_cathode_offset_t>fdc_cathode_offsets;
@@ -939,6 +939,24 @@ bool DGeometry::GetFDCCathodes(vector<vector<DFDCCathode *> >&fdccathodes) const
       fdc_cathode_offsets.push_back(temp);
     }
   }
+  vector<double>fdc_cathode_pitches;
+  if (jcalib->Get("FDC/strip_pitches",vals)==false){
+    for(unsigned int i=0; i<vals.size(); i++){
+      map<string,double> &row = vals[i];
+
+      // Get the offsets from the calibration database 
+      fdc_cathode_pitches.push_back(row["strip_pitch_u"]);
+      fdc_cathode_pitches.push_back(row["strip_pitch_d"]);
+    }
+  }
+  else{
+    jerr << "Strip pitch calibration unavailable -- setting default..." <<endl;
+    // set some sensible default
+    for (unsigned int i=0;i<2*FDC_NUM_LAYERS;i++){
+      fdc_cathode_pitches.push_back(STRIP_SPACING);
+    }
+  }
+
   // Generate the vector of cathode plane parameters
   for (int i=0;i<2*FDC_NUM_LAYERS; i++){
     double angle=(i%2)?(M_PI-CATHODE_ROT_ANGLE):(CATHODE_ROT_ANGLE);
@@ -950,7 +968,7 @@ bool DGeometry::GetFDCCathodes(vector<vector<DFDCCathode *> >&fdccathodes) const
       c->layer = i+1;
       c->strip = j+1;
       c->angle = angle;
-      c->u=U_OF_STRIP_ZERO+STRIP_SPACING*(float)j+fdc_cathode_offsets[i].du;
+      c->u=fdc_cathode_pitches[i]*((float)j+STRIP_ZERO_OFFSET)+fdc_cathode_offsets[i].du;
       temp.push_back(c);
     }
     fdccathodes.push_back(temp);
