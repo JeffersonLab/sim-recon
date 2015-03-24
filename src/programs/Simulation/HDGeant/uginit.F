@@ -258,6 +258,8 @@ C..geant..
       call FFKEY('driftclusters',driftclusters,1,'INTEGER')
       call FFKEY('tgtwidth',tgtwidth,2,'REAL')
       call FFKEY('trefsigma',trigger_time_sigma_ns,1,'REAL')
+      call FFKEY('runno',runno_ff,1,'INTEGER')
+      runno_ff = -1
       call gtgamaff()
       CALL GFFGO
 *
@@ -377,6 +379,14 @@ C..geant..
 *		  call HDDSgeant3_runtime
 *		endif
       call Goptimize
+
+C Check for FFREAD card specifying run number, initialize geant run number, use 
+C for calibration database
+      if (runno_ff .ge. 0) then
+         myrunno = runno_ff
+         call seteventid(runno_ff,0)
+      endif
+
       call initcalibdb(bfield_type, bfield_map, myrunno)
       call copytocplusplus(infile,outfile,postsmear,mcsmearopts
      +,deleteunsmeared)

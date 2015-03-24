@@ -344,4 +344,10 @@ c DRAY 0 no delta ray production
 c      1 delta ray production with generation of secondaries (default)
 c      2 delta ray production without generation of secondaries
 
+c If RUNNO card gives a non-negative value, use that value to initialize
+c the calibration database and initialize the run number. Run number
+c encoded in hddm events will overwrite this run number. Particle gun
+c events will use this value.
+c RUNNO 1501
+
 END
