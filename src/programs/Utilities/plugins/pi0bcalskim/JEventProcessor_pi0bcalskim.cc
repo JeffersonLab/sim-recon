@@ -1,7 +1,7 @@
 // $Id$
 //
 //    File: JEventProcessor_pi0bcalskim.cc
-// Created: Mon Dec  1 14:57:11 EST 2014
+// Created: Mon Dec  1 14:57:11 EST 2014 (copied structure from pi0fcalskim plugin)
 // Creator: wmcginle (on Linux ifarm1101 2.6.32-220.7.1.el6.x86_64 x86_64)
 //
 
@@ -101,7 +101,7 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, int eventnumber)
   if(locBCALShowers.size() < 2 ) return NOERROR;
 
 	bool Candidate = false;
-	double sh1_E,sh2_E,inv_mass,kinfitVertexZ;
+	double sh1_E, sh2_E, inv_mass, kinfitVertexZ=0.0, kinfitVertexX=0.0, kinfitVertexY=0.0, kinfitVertexT=0.0;
 	vector <const DBCALShower *> matchedShowers;
 	DVector3 mypos(0.0,0.0,0.0);
 	for(unsigned int i = 0 ; i < locTrackTimeBased.size() ; ++i)
@@ -111,14 +111,14 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, int eventnumber)
 			double x = locBCALShowers[j]->x;
 			double y = locBCALShowers[j]->y;
 			double z = locBCALShowers[j]->z;
-			double E = locBCALShowers[j]->E;
+		//	double E = locBCALShowers[j]->E;
 			DVector3 pos_bcal(x,y,z);
 			double R = pos_bcal.Perp();
-			double phi = pos_bcal.Phi();
-			double L2 = 0.81*2.54+65.0;
-			double L3 = L2 + 0.81*2.54*2;
-			double L4 = L3 + 0.81*2.54*3;
-			double L5 = L4 + 0.97*2.54*4;
+		//	double phi = pos_bcal.Phi();
+		//	double L2 = 0.81*2.54+65.0;
+		//	double L3 = L2 + 0.81*2.54*2;
+		//	double L4 = L3 + 0.81*2.54*3;
+		//	double L5 = L4 + 0.97*2.54*4;
 			locTrackTimeBased[i]->rt->GetIntersectionWithRadius(R, mypos);
 			double dPhi = TMath::Abs(mypos.Phi()-pos_bcal.Phi());
 			double dZ = TMath::Abs(mypos.Z() - z);	
@@ -131,16 +131,13 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, int eventnumber)
 
 	//japp->RootWriteLock();
 	
-	double kinfitVertexX, kinfitVertexY, kinfitVertexT;
-	for (int i = 0 ; i < kinfitVertex.size(); i++)
+	for (unsigned int i = 0 ; i < kinfitVertex.size(); i++)
 	{
 		kinfitVertexX = kinfitVertex[i]->dSpacetimeVertex.X();
 		kinfitVertexY = kinfitVertex[i]->dSpacetimeVertex.Y();
 		kinfitVertexZ = kinfitVertex[i]->dSpacetimeVertex.Z();
 		kinfitVertexT = kinfitVertex[i]->dSpacetimeVertex.T();
-		//		goodVertexZ->Fill(kinfitVertexZ);
 	}
-	
 
   for(unsigned int i=0; i<locBCALShowers.size() ; i++)	
   {
