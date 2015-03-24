@@ -23,10 +23,11 @@ class DFDCHit : public JObject{
 		int layer;			// 1(V), 2(X), or 3(U)
 		int module;			// 1 through 8, 1 module = 3 detection layers
 		int element;			// wire or strip number
-	    int plane;				// for cathodes only: u(3) or v(1) plane, u@+45,v@-45  
+	    int plane;				// for cathodes only: u(3) or v(1) plane, u@+15,v@-15  
 	    int gPlane;				// 1 through 72
 	    int gLayer;				// 1 through 24
 	    float q;				// charge deposited
+	    float pulse_height;                 // amplitude of signal
 	    float t;				// drift time
 	    float r;				// perpendicular distance from 
 	    					// center of chamber to wire/strip center
@@ -52,9 +53,10 @@ class DFDCHit : public JObject{
 			AddString(items, "plane",  "%s",      plane==1 ? "V":(plane==2 ? "X":"U"));
 			AddString(items, "gPlane", "%d",      gPlane);
 			AddString(items, "gLayer", "%d",      gLayer);
-			AddString(items, "q",      "%10.4e",  q);
-			AddString(items, "t",      "%f",      t);
-			AddString(items, "r",      "%f",      r);
+			AddString(items, "q",      "%10.2f",  q);
+			AddString(items, "pulse height","%10.2f", pulse_height);
+			AddString(items, "t",      "%10.2f",      t);
+			AddString(items, "r",      "%10.2f",      r);
 			AddString(items, "d",      "%f",      d);
 			AddString(items, "type",   "%d",      type);
 			AddString(items, "itrack", "%d",      itrack);

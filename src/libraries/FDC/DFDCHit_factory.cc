@@ -221,6 +221,8 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
         if (A-pedestal<0.) continue;
         */
         double A = (double)digihit->pulse_integral;
+	if (A-pedestal<0.) continue;
+
         double q = a_scale * a_gains[plane_index][strip_index] * (A-pedestal);
         double t = t_scale * T - timing_offsets[plane_index][strip_index]+fadc_t_base;
 
@@ -238,7 +240,8 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
         hit->ptype   = 0;// MC data only
         hit->q = q;
         hit->t = t;
-
+	hit->pulse_height=a_gains[plane_index][strip_index]
+	  *double(PPobj->pulse_peak-PPobj->pedestal);
 
         //cerr << "FDC hitL  plane = " << hit->gPlane << "  element = " << hit->element << endl;
 
