@@ -4,7 +4,12 @@
 
 {
 	TDirectory *locTopDirectory = gDirectory;
-	TDirectory *locReactionDirectory = (TDirectory*)locTopDirectory->FindObjectAny("p3pi_pmiss_FCAL-BCAL");
+	TDirectory *locTopDirectory = gDirectory;
+	TDirectory *locReactionDirectory;
+	if((TDirectory*)locTopDirectory->FindObjectAny("p3pi_pmiss_FCAL-BCAL") != 0)
+	  locReactionDirectory = (TDirectory*)locTopDirectory->FindObjectAny("p3pi_pmiss_FCAL-BCAL");
+	else
+	  return;
 
 	//Go to Pi0 mass directory
 	TDirectory *locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Hist_InvariantMass_NoKinFit_Measured");
