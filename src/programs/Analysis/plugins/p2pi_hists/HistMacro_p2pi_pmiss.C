@@ -4,7 +4,11 @@
 
 {
 	TDirectory *locTopDirectory = gDirectory;
-	TDirectory *locReactionDirectory = (TDirectory*)locTopDirectory->FindObjectAny("p2pi_pmiss");
+	TDirectory *locReactionDirectory;
+	if((TDirectory*)locTopDirectory->FindObjectAny("p2pi_pmiss") != 0)
+	  locReactionDirectory = (TDirectory*)locTopDirectory->FindObjectAny("p2pi_pmiss");
+	else
+	  return;
 
 	//Go to NoKinFit directory
 	TDirectory *locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p2pi_hists_NoKinFit_Measured");

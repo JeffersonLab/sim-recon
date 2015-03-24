@@ -3,7 +3,11 @@
 
 {
 	TDirectory *locTopDirectory = gDirectory;
-	TDirectory *locReactionDirectory = (TDirectory*)locTopDirectory->FindObjectAny("kshort2pi");
+	TDirectory *locReactionDirectory;
+	if((TDirectory*)locTopDirectory->FindObjectAny("kshort2pi") != 0)
+	  locReactionDirectory = (TDirectory*)locTopDirectory->FindObjectAny("kshort2pi");
+	else
+	  return;
 
 	//Go to NoKinFit directory
 	TDirectory *locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p2pi_hists_NoKinFit_Measured");

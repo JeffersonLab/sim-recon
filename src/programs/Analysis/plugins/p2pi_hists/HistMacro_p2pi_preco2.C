@@ -4,7 +4,11 @@
 
 {
 	TDirectory *locTopDirectory = gDirectory;
-	TDirectory *locReactionDirectory = (TDirectory*)locTopDirectory->FindObjectAny("p2pi_preco");
+	TDirectory *locReactionDirectory;
+	if((TDirectory*)locTopDirectory->FindObjectAny("p2pi_preco") != 0)
+	  locReactionDirectory = (TDirectory*)locTopDirectory->FindObjectAny("p2pi_preco");
+	else
+	  return;
 
 	//Go to KinFitCut10 directory
 	TDirectory *locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p2pi_hists_KinFitCut10_Measured");
