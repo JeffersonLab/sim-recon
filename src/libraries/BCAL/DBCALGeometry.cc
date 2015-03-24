@@ -336,7 +336,7 @@ DBCALGeometry::phi( int fADC_cell ) {
   float globsect = getglobalsector(module(fADC_cell), sector(fADC_cell));
   float sectSize = 2. * PI / 48. / 4;
   // The first 2 sectors (half of mudule 1) have negative phi
-  float my_phi = sectSize * (globsect-1.5);
+  float my_phi = sectSize * (globsect-2.5);
   if (my_phi < 0) my_phi += 2 * PI;
   return my_phi;
 
