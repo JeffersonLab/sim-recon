@@ -51,7 +51,7 @@
  *	decision was made to store this information in the reaction tag.
  */
 
-#define TARGET_LENGTH 0.2
+#define TARGET_LENGTH 29.9746
 #define BEAM_DIAMETER 0.5
 #define TARGET_CENTER 65
 
@@ -167,12 +167,11 @@ int loadInput ()
             v[2] = TARGET_CENTER;
 	    while (v[0]*v[0] + v[1]*v[1] > 0.25)
             {
-	      //int len = 3;
-	      int len=2;
+	       int len = 3;
                grndm_(v,&len);
                v[0] -= 0.5;
                v[1] -= 0.5;
-	       // v[2] -= 0.5;
+	       v[2] -= 0.5;
             }
 	    // kludge to include air and FDC gas in addition to plastic target
 	    /*
@@ -196,8 +195,8 @@ int loadInput ()
 	    */
             v[0] *= BEAM_DIAMETER;
             v[1] *= BEAM_DIAMETER;
-            //v[2] *= TARGET_LENGTH;
-            //v[2] += TARGET_CENTER;
+            v[2] *= TARGET_LENGTH;
+            v[2] += TARGET_CENTER;
             vert->origin->vx = v[0];
             vert->origin->vy = v[1];
             vert->origin->vz = v[2];
