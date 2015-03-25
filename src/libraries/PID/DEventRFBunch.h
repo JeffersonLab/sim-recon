@@ -22,7 +22,7 @@ class DEventRFBunch : public jana::JObject
 	public:
 		JOBJECT_PUBLIC(DEventRFBunch);
 
-		DetectorSystem_t dTimeSource; //e.g. SYS_RF, SYS_START
+		DetectorSystem_t dTimeSource; //e.g. SYS_RF, SYS_START, SYS_NULL (no valid source or not enough tracks/showers to pick it)
 
 		double dTime; //The RF time propagated to the center of the target.  This time is defined at the center of the target. 
 		double dTimeVariance;

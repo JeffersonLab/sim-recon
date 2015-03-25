@@ -1267,6 +1267,21 @@ void DHistogramAction_DetectorPID::Initialize(JEventLoop* locEventLoop)
 			//If another thread has already created the folder, it just changes to it.
 		CreateAndChangeTo_ActionDirectory();
 
+		//q = 0
+		//BCAL
+		CreateAndChangeTo_Directory("BCAL", "BCAL");
+		locHistName = "BetaVsP_q0";
+		locHistTitle = "BCAL q^{0};Shower Energy (GeV);#beta";
+		dHistMap_BetaVsP[SYS_BCAL][0] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxBCALP, dNum2DBetaBins, dMinBeta, dMaxBeta);
+		gDirectory->cd("..");
+
+		//FCAL
+		CreateAndChangeTo_Directory("FCAL", "FCAL");
+		locHistName = "BetaVsP_q0";
+		locHistTitle = "FCAL q^{0};Shower Energy (GeV);#beta";
+		dHistMap_BetaVsP[SYS_FCAL][0] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxBCALP, dNum2DBetaBins, dMinBeta, dMaxBeta);
+		gDirectory->cd("..");
+
 		//q +/-
 		for(int locCharge = -1; locCharge <= 1; locCharge += 2)
 		{
@@ -1447,6 +1462,9 @@ bool DHistogramAction_DetectorPID::Perform_Action(JEventLoop* locEventLoop, cons
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks, "PreSelect");
 
+	vector<const DNeutralParticle*> locNeutralParticles;
+	locEventLoop->Get(locNeutralParticles, "PreSelect");
+
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
 
@@ -1459,6 +1477,22 @@ bool DHistogramAction_DetectorPID::Perform_Action(JEventLoop* locEventLoop, cons
 	//Fill Histograms
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
+		if(locEventRFBunch->dTimeSource != SYS_NULL) //only histogram beta for neutrals if the t0 is well known
+		{
+			for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)
+			{
+				//doesn't matter which hypothesis you use for beta: t0 is from DEventVertex time
+				const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_BestFOM();
+				double locBeta_Timing = locNeutralParticleHypothesis->measuredBeta();
+				const DNeutralShower* locNeutralShower = locNeutralParticles[loc_i]->dNeutralShower;
+				double locShowerEnergy = locNeutralShower->dEnergy;
+				if(locNeutralShower->dDetectorSystem == SYS_BCAL)
+					dHistMap_BetaVsP[SYS_BCAL][0]->Fill(locShowerEnergy, locBeta_Timing);
+				else
+					dHistMap_BetaVsP[SYS_FCAL][0]->Fill(locShowerEnergy, locBeta_Timing);
+			}
+		}
+
 		for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
 		{
 			const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestTrackingFOM();
