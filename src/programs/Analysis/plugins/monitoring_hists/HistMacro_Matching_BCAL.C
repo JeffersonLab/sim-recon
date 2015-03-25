@@ -1,5 +1,5 @@
-// hnamepath: /Independent/Hist_DetectorMatching/TimeBased/BCAL/DeltaPhiVsP
-// hnamepath: /Independent/Hist_DetectorMatching/TimeBased/BCAL/DeltaZVsTheta
+// hnamepath: /Independent/Hist_DetectorMatching/TimeBased/BCAL/BCALDeltaPhiVsP
+// hnamepath: /Independent/Hist_DetectorMatching/TimeBased/BCAL/BCALDeltaZVsTheta
 // hnamepath: /Independent/Hist_DetectorMatching/TimeBased/BCAL/PVsTheta_HasHit
 // hnamepath: /Independent/Hist_DetectorMatching/TimeBased/BCAL/PVsTheta_NoHit
 // hnamepath: /Independent/Hist_DetectorMatching/TimeBased/BCAL/TrackBCALModuleVsZ_HasHit
