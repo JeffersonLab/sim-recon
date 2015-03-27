@@ -12,6 +12,8 @@ using namespace jana;
 #include "DPSCTruthHit.h"
 #include "DPSTruthHit.h"
 #include "DPSGeometry_factory.h"
+#include "DPSCPair_factory.h"
+#include "DPSPair_factory.h"
 
 jerror_t PAIR_SPECTROMETER_init(JEventLoop *loop)
 {
@@ -25,6 +27,8 @@ jerror_t PAIR_SPECTROMETER_init(JEventLoop *loop)
   loop->AddFactory(new JFactory<DPSCHit>("TRUTH"));
   loop->AddFactory(new JFactory<DPSCTruthHit>());
   loop->AddFactory(new JFactory<DPSTruthHit>());
-  
+  loop->AddFactory(new DPSCPair_factory());
+  loop->AddFactory(new DPSPair_factory());
+
   return NOERROR;
 }
