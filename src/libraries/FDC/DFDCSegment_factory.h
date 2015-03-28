@@ -68,6 +68,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 					DMatrix &CR);
   double GetRotationSense(unsigned int n,vector<xyz_t>&XYZ,DMatrix &CR, 
 		   DMatrix &CRPhi);
+  jerror_t CircleFit(vector<const DFDCPseudo *>points);
 
 	protected:
 		///

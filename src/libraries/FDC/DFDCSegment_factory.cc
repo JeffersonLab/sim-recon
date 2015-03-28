@@ -715,6 +715,71 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	if (error==NOERROR){  
 	  double charge=RotationSenseToCharge*rotation_sense;
 
+	  // Since the cell size is 0.5 cm and the Lorentz deflection can be
+	  // mm scale, a circle radius on the order of 1 cm is at the level of 
+	  // how well the points are defined at this stage.  Use a simple circle
+	  // fit assuming the circle goes through the origin.
+	  if (rc<1.0) {
+	    CircleFit(neighbors);
+
+	    // Linear regression to find z0, tanl   
+	    double sumv=0.,sumx=0.;
+	    double sumy=0.,sumxx=0.,sumxy=0.;
+	    double sperp=0.,sperp_old=0.,ratio,Delta;
+	    double z=0,zlast=0;
+	    double two_rc=2.*rc;
+	    DVector2 oldxy=points[0]->xy;
+	    for (unsigned int k=1;k<points.size();k++){
+	      zlast=z;
+	      z=points[k]->wire->origin.z();
+	      if (fabs(z-zlast)<0.01) continue;
+
+	      DVector2 diffxy=points[k]->xy-oldxy;
+	      double Phi=points[k]->xy.Phi();
+	      double cosPhi=cos(Phi);
+	      double sinPhi=sin(Phi);
+	      double var=cosPhi*cosPhi*points[k]->covxx
+		+sinPhi*sinPhi*points[k]->covyy
+		+2.*sinPhi*cosPhi*points[k]->covxy;
+
+	      sperp_old=sperp;
+	      ratio=diffxy.Mod()/(two_rc);
+	      // Make sure the argument for the arcsin does not go out of range...
+	      sperp=sperp_old+(ratio>1?two_rc*(M_PI_2):two_rc*asin(ratio));
+
+	      // Assume errors in s dominated by errors in R 
+	      double inv_var=1./var;
+	      sumv+=inv_var;
+	      sumy+=sperp*inv_var;
+	      sumx+=z*inv_var;
+	      sumxx+=z*z*inv_var;
+	      sumxy+=sperp*z*inv_var;
+	      
+	      // Save the current x and y coordinates
+	      //oldx=XYZ(k,0);
+	      //oldy=XYZ(k,1);
+	      oldxy=points[k]->xy;
+	    }
+	    // last point is at "vertex" --> give it a large error...
+	    sperp+=oldxy.Mod()/two_rc;
+	    double inv_var=0.01;
+	    sumv+=inv_var;
+	    sumy+=sperp*inv_var;
+	    sumx+=TARGET_Z*inv_var;
+	    sumxx+=TARGET_Z*TARGET_Z*inv_var;
+	    sumxy+=sperp*TARGET_Z*inv_var;
+	    
+	    Delta=sumv*sumxx-sumx*sumx;
+	    double denom=sumv*sumxy-sumy*sumx;
+	    if (fabs(Delta)>EPS && fabs(denom)>EPS){
+	      // Track parameters z0 and tan(lambda)
+	      tanl=-Delta/denom; 
+	      // Vertex position
+	      sperp-=sperp_old; 
+	      zvertex=zlast-tanl*sperp;
+	    }
+	  }
+
 	  // Estimate for azimuthal angle
 	  phi0=atan2(-xc,yc); 
 	  if (rotation_sense<0) phi0+=M_PI;
@@ -789,6 +854,35 @@ double DFDCSegment_factory::GetRotationSense(unsigned int n,vector<xyz_t>&XYZ,
   if (slope<0.) return -1.;
   return 1.;
 }
+
+// Simple least squares circle fit forcing the circle to go through (0,0)
+jerror_t DFDCSegment_factory::CircleFit(vector<const DFDCPseudo *>points){  
+  double alpha=0.0, beta=0.0, gamma=0.0, deltax=0.0, deltay=0.0;
+  // Loop over hits to calculate alpha, beta, gamma, and delta
+  for(unsigned int i=0;i<points.size();i++){
+    const DFDCPseudo *hit = points[i];
+    double x=hit->xy.X();
+    double y=hit->xy.Y();
+    double x_sq=x*x;
+    double y_sq=y*y;
+    double x_sq_plus_y_sq=x_sq+y_sq;
+    alpha += x_sq;
+    beta += y_sq;
+    gamma += x*y;
+    deltax += 0.5*x*x_sq_plus_y_sq;
+    deltay += 0.5*y*x_sq_plus_y_sq;
+  }
+  
+  // Calculate xc,yc - the center of the circle
+  double denom = alpha*beta-gamma*gamma;
+  if(fabs(denom)<1.0E-20)return UNRECOVERABLE_ERROR;
+  xc = (deltax*beta-deltay*gamma)/denom;
+  yc = (deltay*alpha-deltax*gamma)/denom;
+  rc = sqrt(xc*xc + yc*yc);
+
+  return NOERROR;
+}
+
 
 //----------------------------------------------------------------------------
 // The following routine is no longer in use: 
