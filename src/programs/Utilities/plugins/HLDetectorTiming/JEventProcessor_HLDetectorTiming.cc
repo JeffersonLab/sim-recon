@@ -13,6 +13,8 @@ using namespace jana;
 #include <JANA/JFactory.h>
 
 #include "PID/DDetectorMatches.h"
+#include "FCAL/DFCALGeometry.h"
+#include "BCAL/DBCALGeometry.h"
 #include "HistogramTools.h"
 
 extern "C"{
@@ -55,6 +57,7 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
     DO_TRACK_BASED = 0;
     DO_VERIFY = 1;
     DO_OPTIONAL = 0;
+    DO_FITS = 1;
 
     if(gPARMS){
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_ROUGH_TIMING", DO_ROUGH_TIMING, "Set to > 0 to do rough timing of all detectors");
@@ -64,7 +67,8 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_VERIFY", DO_VERIFY, "Set to > 0 to verify timing with current constants");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:REQUIRE_BEAM", REQUIRE_BEAM, "Set to 0 to skip beam current check");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:BEAM_EVENTS_TO_KEEP", BEAM_EVENTS_TO_KEEP, "Set to the number of beam on events to use");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_OPTIONAL", BEAM_EVENTS_TO_KEEP, "Set to >0 to enable optional histograms ");
+        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_OPTIONAL", DO_OPTIONAL, "Set to >0 to enable optional histograms ");
+        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_FITS", DO_FITS, "Set to 0 to disable end of run fits ");
     }
     
     // Would like the code with no arguments to simply verify the current status of the calibration
@@ -204,6 +208,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                 2, -0.5, 1.5);
         fBeamEventCounter++;
         if (fBeamEventCounter >= BEAM_EVENTS_TO_KEEP) {
+            cout<< "Maximum number of Beam Events reached" << endl;
             japp->Quit();
             return NOERROR;
         }
@@ -247,10 +252,12 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                     "Hit time for each CDC wire; t [ns]; CCDB Index",
                     750, -500, 1000, nStraws, 0.5, nStraws + 0.5);
             if (DO_OPTIONAL){
+                /*
                 Fill2DHistogram("HLDetectorTiming", "CDC", "CDC Energy Vs. Drift Time",
                         cdcHitVector[i]->t, cdcHitVector[i]->q , 
                         "CDC Energy Vs. Drift Time; Drift Time [ns]; Integral [arb.]",
                         800, 0, 800, 500, -10000, 7000000);
+                        */
             }
         }
     }
@@ -269,6 +276,21 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
     for (i = 0; i < bcalHitVector.size(); i++){
         Fill1DHistogram ("HLDetectorTiming", "BCAL", "BCALHit time", bcalHitVector[i]->t,
                 "BCALHit time", nBins, xMin, xMax);
+        if (DO_OPTIONAL){
+            int the_cell = (bcalHitVector[i]->module - 1) * 16 + (bcalHitVector[i]->layer - 1) * 4 + bcalHitVector[i]->sector;
+            if (bcalHitVector[i]->end == 0){
+                Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Upstream Per Channel Hit Time",
+                        the_cell, bcalHitVector[i]->t,
+                        "BCALHit Upstream Per Channel Hit Time; cellID; t [ns] ",
+                        768, 0.5, 768.5, 100, -50, 50);
+            }
+            else{
+                Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Downstream Per Channel Hit Time",
+                        the_cell, bcalHitVector[i]->t,
+                        "BCALHit Downstream Per Channel Hit Time; cellID; t [ns] ",
+                        768, 0.5, 768.5, 250, -50, 50);
+            }
+        }
     }
     for (i = 0; i < tofHitVector.size(); i++){
         Fill1DHistogram ("HLDetectorTiming", "TOF", "TOFHit time", tofHitVector[i]->t,
@@ -277,7 +299,22 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
     for (i = 0; i < fcalHitVector.size(); i++){
         Fill1DHistogram ("HLDetectorTiming", "FCAL", "FCALHit time", fcalHitVector[i]->t,
                 "FCALHit time", nBins, xMin, xMax);
+        if (DO_OPTIONAL){
+            // extract the FCAL Geometry
+            vector<const DFCALGeometry*> fcalGeomVect;
+            loop->Get( fcalGeomVect );
+            if (fcalGeomVect.size() < 1){
+                cout << "FCAL Geometry not available?" << endl;
+                return OBJECT_NOT_AVAILABLE;
+            }
+            const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
+            Fill2DHistogram("HLDetectorTiming", "FCAL", "FCALHit Per Channel Time",
+                    fcalGeom.channel(fcalHitVector[i]->row, fcalHitVector[i]->column), fcalHitVector[i]->t,
+                    "FCAL Per Channel Hit time; channel; t [ns]",
+                    fcalGeom.numActiveBlocks(), 0.5, fcalGeom.numActiveBlocks() + 0.5, 250, -50, 50); 
+        }
     }
+
     for (i = 0; i < tagmHitVector.size(); i++){
         Fill1DHistogram ("HLDetectorTiming", "TAGM", "TAGMHit time", tagmHitVector[i]->t,
                 "TAGMHit time", nBins, xMin, xMax);
@@ -324,6 +361,12 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                         title,
                         50, 0, 30000, 50, -10, 10, false);
             }
+            if (DO_OPTIONAL){
+                Fill2DHistogram("HLDetectorTiming", "SC", "SC Per Channel TDC Time",
+                        scHitVector[i]->sector, scHitVector[i]->t_TDC,
+                        "SC t_{TDC} ; Sector; t_{TDC} [ns]",
+                        nSCCounters, 0.5, nSCCounters + 0.5, 100, -50, 50);
+            }
         }
 
     }
@@ -350,6 +393,11 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             Fill2DHistogram("HLDetectorTiming", "TAGM", "TAGMHit TDC_ADC Difference",
                     tagmHitVector[i]->column, tagmHitVector[i]->time_tdc - tagmHitVector[i]->time_fadc,
                     "TAGM #Deltat TDC-ADC; Column ;t_{TDC} - t_{ADC} [ns]", nTAGMCounters, 0.5, nTAGMCounters + 0.5, 100, -10, 10);
+            if (DO_OPTIONAL){
+                Fill2DHistogram("HLDetectorTiming", "TAGM", "TAGM Per Channel TDC Time",
+                        tagmHitVector[i]->column, tagmHitVector[i]->time_tdc,
+                        "TAGM Per Channel TDC time; Column ;t_{TDC} [ns]", nTAGMCounters, 0.5, nTAGMCounters + 0.5, 100, -50, 50);
+            }
             if (DO_TDC_ADC_ALIGN){
                 // TString::Form() is not thread safe! (I learned this the hard way)
                 // Do it the old fashioned way
@@ -388,6 +436,11 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             Fill2DHistogram("HLDetectorTiming", "TAGH", "TAGHHit TDC_ADC Difference",
                     taghHitVector[i]->counter_id, taghHitVector[i]->time_tdc - taghHitVector[i]->time_fadc,
                     "TAGH #Deltat TDC-ADC; Counter ID ;t_{TDC} - t_{ADC} [ns]", nTAGHCounters, 0.5, nTAGHCounters + 0.5, 100, -10, 10);
+            if (DO_OPTIONAL){
+                Fill2DHistogram("HLDetectorTiming", "TAGH", "TAGM Per Channel TDC Time",
+                        taghHitVector[i]->counter_id, taghHitVector[i]->time_tdc - taghHitVector[i]->time_fadc,
+                        "TAGH Per Channel TDC Time; Counter ID ;t_{TDC} [ns]", nTAGHCounters, 0.5, nTAGHCounters + 0.5, 100, -50, 50);
+            }
 
             if (DO_TDC_ADC_ALIGN){
                 char name [200];
@@ -422,7 +475,12 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             int nTOFCounters = 176;
             Fill2DHistogram("HLDetectorTiming", "TOF", "TOFHit TDC_ADC Difference",
                     GetCCDBIndexTOF(tofHitVector[i]), tofHitVector[i]->t_TDC - tofHitVector[i]->t_fADC,
-                    "TOF #Deltat TDC-ADC; CDCB Index ;t_{TDC} - t_{ADC} [ns]", nTOFCounters, 0.5, nTOFCounters + 0.5, 100, -10, 10, true);
+                    "TOF #Deltat TDC-ADC; CDCB Index ;t_{TDC} - t_{ADC} [ns]", nTOFCounters, 0.5, nTOFCounters + 0.5, 100, -10, 10);
+            if (DO_OPTIONAL){
+                Fill2DHistogram("HLDetectorTiming", "TOF", "TOFHit Per Channel TDC Time",
+                        GetCCDBIndexTOF(tofHitVector[i]), tofHitVector[i]->t_TDC,
+                        "TOF Per Channel TDC Time; CDCB Index ;t_{TDC} [ns]", nTOFCounters, 0.5, nTOFCounters + 0.5, 100, -50, 50);
+            }
 
             if (DO_TDC_ADC_ALIGN){
                 // TString->Form(...) is not thread safe, trying sprintf
@@ -633,9 +691,12 @@ jerror_t JEventProcessor_HLDetectorTiming::fini(void)
     //Here is where we do the fits to the data to see if we have a reasonable alignment
     SortDirectories(); //Defined in HistogramTools.h
 
+    if (DO_FITS == 0) return NOERROR;
+
     if (DO_ROUGH_TIMING) DoRoughTiming();
     if (DO_TDC_ADC_ALIGN) DoTDCADCAlign();
     if (DO_TRACK_BASED) DoTrackBased();
+
     return NOERROR;
 }
 // Do the roughest level of timing for this run
