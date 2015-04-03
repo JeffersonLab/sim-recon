@@ -332,7 +332,10 @@ DMagneticFieldMap* DApplication::GetBfield(unsigned int run_number)
 				}
 			}
 		}
-		jout<<"Created Magnetic field map of type DMagneticFieldMapFineMesh."<<endl;
+		string subclass = "<none>";
+		if(dynamic_cast<DMagneticFieldMapFineMesh*>(bfield)) subclass = "DMagneticFieldMapFineMesh";
+		if(dynamic_cast<DMagneticFieldMapNoField*>(bfield)) subclass = "DMagneticFieldMapNoField";
+		jout<<"Created Magnetic field map of type " << subclass <<endl;
 	}else if(bfield_type=="Const"){
 		bfield = new DMagneticFieldMapConst(0.0, 0.0, 1.9);
 		jout<<"Created Magnetic field map of type DMagneticFieldMapConst."<<endl;
