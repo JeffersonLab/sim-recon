@@ -1005,7 +1005,8 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
       //temp.dphi=0.;
       
       temp.dz=row["dZ"];
-      temp.dz=0.;
+      //  temp.dz=0.;
+
       fdc_wire_offsets.push_back(temp);
     }
   }
@@ -1456,7 +1457,7 @@ bool DGeometry::GetTargetZ(double &z_target) const
 	vector<double> xyz_target;
 	vector<double> xyz_detector;
        
-	z_target=0.;
+	z_target=65.;
 
 	if(!Get("//composition[@name='targetVessel']/posXYZ[@volume='targetTube']/@X_Y_Z", xyz_vessel)) return false;
 	if(!Get("//composition[@name='Target']/posXYZ[@volume='targetVessel']/@X_Y_Z", xyz_target)) return false;
