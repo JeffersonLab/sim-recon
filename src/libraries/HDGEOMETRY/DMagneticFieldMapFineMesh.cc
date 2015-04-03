@@ -58,7 +58,7 @@ DMagneticFieldMapFineMesh::~DMagneticFieldMapFineMesh()
 //---------------------------------
 int DMagneticFieldMapFineMesh::ReadMap(string namepath, int runnumber, string context)
 {
-  /// Read the magnetic field map in from the calibration database.
+ /// Read the magnetic field map in from the calibration database.
   /// This will read in the map and figure out the number of grid
   /// points in each direction (x,y, and z) and the range in each.
   /// The gradiant of the field is calculated for all but the most
@@ -67,7 +67,10 @@ int DMagneticFieldMapFineMesh::ReadMap(string namepath, int runnumber, string co
   // Read in map from calibration database. This should really be
   // built into a run-dependent geometry framework, but for now
   // we do it this way. 
-  if(!jcalib)return 0;
+  if(!jcalib){
+    jerr << "ERROR: jcalib pointer is NULL in DMagneticFieldMapFineMesh::ReadMap() !" << endl;
+    return 0;
+  }
   
   jout<<"Reading Magnetic field map from "<<namepath<<" ..."<<endl;
   vector< vector<float> > Bmap;
