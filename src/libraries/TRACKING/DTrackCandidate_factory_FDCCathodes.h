@@ -74,6 +74,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 		     const DFDCSegment *segment);
   bool LinkStraySegment(const DFDCSegment *segment);
 
+  double MATCHING_PHI_CUT;
   bool DEBUG_HISTS,USE_FDC,APPLY_MOMENTUM_CORRECTION;
   double p_factor1,p_factor2;
   TH2F *match_dist_fdc,*match_center_dist2;

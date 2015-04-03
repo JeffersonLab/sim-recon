@@ -13,6 +13,7 @@
 #include "FDC/DFDCPseudo_factory.h"
 #include "FDC/DFDCSegment_factory.h"
 #include "DHelicalFit.h"
+#include "DHoughFind.h"
 #include <TROOT.h>
 #include <TH1F.h>
 #include <TH2F.h>
@@ -78,6 +79,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
   description += "target (via DGeometry::GetTargetZ()";
   MAX_R_VERTEX_LIMIT = 50.0;
   gPARMS->SetDefaultParameter("TRKFIND:MAX_R_VERTEX_LIMIT", MAX_R_VERTEX_LIMIT, description);
+
+  MATCHING_PHI_CUT=10.0;
+  gPARMS->SetDefaultParameter("TRKFIND:MATCHING_PHI_CUT", MATCHING_PHI_CUT);
 
   if(DEBUG_HISTS) {
     dapp->Lock();
@@ -150,6 +154,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
   vector<const DFDCSegment*>segments;
   eventLoop->Get(segments);
+
   // abort if there are no segments
   if (segments.size()==0.) return NOERROR;
 
@@ -169,7 +174,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
   }
 
   // Now collect stray segments
-  // if (false)
+  //if (false)
   for (unsigned int i=0;i<4;i++){
     for (unsigned int k=0;k<packages[i].size();k++){
       DFDCSegment *segment=packages[i][k];
@@ -270,6 +275,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(DFDCSegment *seg
   for (unsigned int j=0;j<package.size();j++){
     DFDCSegment *segment2=package[j];
     doca2=DocaSqToHelix(segment2->hits[0]);
+
     if (doca2<doca2_min){
       doca2_min=doca2;
       if(doca2<Match(p)){
@@ -324,6 +330,38 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(DFDCSegment *seg
       match_center_dist2->Fill(my_p,circle_center_diff2_min);
     }
   }
+
+  if (match==NULL) { // Try Hough transform
+    double max=0.;
+    for (unsigned int j=0;j<package.size();j++){    
+      DFDCSegment *segment2=package[j];
+      double dphi=segment2->hits[0]->xy.Phi()-segment->hits[0]->xy.Phi();
+      if (dphi>M_PI) dphi-=2*M_PI;
+      else if (dphi<-M_PI) dphi+=2.*M_PI;
+      dphi*=180./M_PI;
+
+      if (fabs(dphi)<MATCHING_PHI_CUT){
+        DHoughFind hough(-400.0, +400.0, -400.0, +400.0, 100, 100);
+	for (unsigned int m=0;m<segment->hits.size();m++){
+	  const DFDCPseudo *hit=segment->hits[m];
+	  hough.AddPoint(hit->xy.X(),hit->xy.Y());
+	}
+
+	for (unsigned int m=0;m<segment2->hits.size();m++){
+	  const DFDCPseudo *hit=segment2->hits[m];
+	  hough.AddPoint(hit->xy.X(),hit->xy.Y());
+	}
+	DVector2 Ro=hough.Find();
+	double this_max=hough.GetMaxBinContent();
+	if (this_max>10.0 && this_max>max){
+	  max=this_max;
+	  match=segment2;
+	  match_id=j;
+	}
+      }
+    }
+  }
+ 
     
   return match;
 }
