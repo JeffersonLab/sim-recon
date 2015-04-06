@@ -3,13 +3,16 @@ macro plot_pi0_photons
 * Plot histograms obtained using pi_plot from the bggen.nt file
 * 02/09/11 ES
 *
+* Note: the input bggen file should be produced assigning the negative values for pi0 (-7) and 
+*       eta (-17) in the pythia-geant.map file to allow decays in pythia (via bggen).
+*
 *
 * set options
 *
-* hi/create/title_global 'BGGEN Photons from [p]^0! /10 MeV/s E"g#0.1,0.06GeV'
-hi/create/title_global 'BGGEN Photons from [p]^0! /10 MeV/s E"g#0.2GeV'
-* hi/create/title_global 'BGGEN Photons from [c] /10 MeV/s E"g#0.5GeV'
-* hi/create/title_global 'BGGEN Photons from [c] /10 MeV/s E"g#0.1,0.06GeV'
+hi/create/title_global 'BGGEN (E=1-6 GeV) [p]^0! /10 MeV/s, E[g]"G#0.5GeV'
+* hi/create/title_global 'BGGEN (E=1-6 GeV) [c] /10 MeV/s, E[g]"G#0.5GeV'
+* hi/create/title_global 'BGGEN (E=1-10GeV) [p]^0! /10 MeV/s E"G#0.1,0.06GeV'
+* hi/create/title_global 'BGGEN (E=1-10GeV) [c] /10 MeV/s, E"G#0.1,0.06GeV'
 option ndate
 option nbox
 * set stat 1111111
@@ -58,46 +61,47 @@ zone
 h/file 2 bggen.nt 0 -x
 *
 * define histograms per 10 MeV
+emin=0
+emax=4
+thetamin=0
+thetamax=180
+*
+message emin=[emin] emax=[emax], thetamin=[thetamin] thetamax=[thetamax]
 *
 * momentum
 *
-* 1dh 100 'fcal only photons' 400 0 4
-* 1dh 101 'bcal only photons' 400 0 4
-* 1dh 102 'fcal and bcal photons' 400 0 4
-* 1dh 103 'failed photons' 400 0 4
+1dh 100 'E[g] (GeV), fcal only photons' 400 [emin] [emax]
+1dh 101 'E[g] (GeV), bcal only photons' 400 [emin] [emax]
+1dh 102 'E[g] (GeV), fcal and bcal photons' 400 [emin] [emax]
+1dh 103 'E[g] (GeV), failed photons' 400 0 4
 *
 * angle
 *
-1dh 100 'fcal only photons' 180 0 180
-1dh 101 'bcal only photons' 180 0 180
-1dh 102 'fcal and bcal photons' 180 0 180
-1dh 103 'failed photons' 180 0 180
+* 1dh 100 '[q] (deg), fcal only photons' 180 [thetamin] [thetamax]
+* 1dh 101 '[q] (deg), bcal only photons' 180 [thetamin] [thetamax]
+* 1dh 102 '[q] (deg), fcal and bcal photons' 180 [thetamin] [thetamax]
+* 1dh 103 '[q] (deg), failed photons' 180 [thetamin] [thetamax]
 *
 npts1 = 1001
-*
-* message PDE ntubes dt DR sqrtDR pedr atten angle90 angle45 angle15 
-* message [PDE] [ntubes] [dt] [DR] [sqrtDR] [pedr] [atten] [angle90] [angle45] [angle15] 
 * wait
-*
-emin=0
-emax=4
 ymin=0
 ymax=10000
 *  KPHYTH flags gamma=22, pi0=111, eta=221
 nevents=999999999
 *
-* nt/plot //lun2/9.pi_plot.f(0,0,111,100) pin(3,1).gt.2 [nevents]
+nt/plot //lun2/9.pi_plot.f(0,0,111,100) pin(3,1).gt.1.and.pin(3,1).lt.6 [nevents]
+* nt/plot //lun2/9.pi_plot.f(0,0,221,100) pin(3,1).gt.1.and.pin(3,1).lt.6 [nevents]
+* nt/plot //lun2/9.pi_plot.f(1,0,111,100)  !  [nevents]
 * nt/plot //lun2/9.pi_plot.f(1,0,221,100)  !  [nevents]
-nt/plot //lun2/9.pi_plot.f(1,0,111,100)  !  [nevents]
 *
 zone 2 2
 *
 * open metafile
 *
-* for/file 66 plot_pi0_photons.ps
-* meta 66 -111
-for/file 66 plot_pi0_photons_angle_cut2.eps
-meta 66 -113
+for/file 66 plot_pi0_photons_E1-6.ps
+meta 66 -111
+* for/file 66 plot_pi0_photons_angle_cut2.eps
+* meta 66 -113
 *
 *
 option stat

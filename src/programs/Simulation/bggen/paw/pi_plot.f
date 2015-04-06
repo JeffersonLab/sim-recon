@@ -37,8 +37,8 @@ C
       data icnt /0/
       DATA ievstart/0/
       DATA thcut /10./
-      DATA fcal_thresh, bcal_thresh  /0.2, 0.2/
-c      DATA fcal_thresh, bcal_thresh  /0.5, 0.5/
+c      DATA fcal_thresh, bcal_thresh  /0.2, 0.2/
+      DATA fcal_thresh, bcal_thresh  /0.5, 0.5/
 c      DATA fcal_thresh, bcal_thresh  /0.1, 0.06/
 c
 c     count entries
