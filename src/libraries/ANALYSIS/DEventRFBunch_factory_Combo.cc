@@ -412,20 +412,8 @@ int DEventRFBunch_factory_Combo::Find_BestRFBunchShift(double locRFHitTime, cons
 	int locBestRFBunchShift = 0;
 	for(unsigned int loc_i = 0; loc_i < locTimes.size(); ++loc_i)
 	{
-		double locPropagatedTrackTime = locTimes[loc_i];
-		//do manually: tricky to convert int to float...
-		int locNumRFBucketsShifted = 0;
-		double locTempRFHitTime = locRFHitTime;
-		while((locTempRFHitTime - locPropagatedTrackTime) > (0.5*dRFBunchFrequency))
-		{
-			locTempRFHitTime -= dRFBunchFrequency;
-			--locNumRFBucketsShifted;
-		}
-		while((locTempRFHitTime - locPropagatedTrackTime) < (-0.5*dRFBunchFrequency))
-		{
-			locTempRFHitTime += dRFBunchFrequency;
-			++locNumRFBucketsShifted;
-		}
+		double locDeltaT = locTimes[loc_i] - locRFHitTime;
+		int locNumRFBucketsShifted = (locDeltaT > 0.0) ? int(locDeltaT/dRFBunchFrequency + 0.5) : int(locDeltaT/dRFBunchFrequency - 0.5);
 
 		if(locNumRFBucketsShiftedMap.find(locNumRFBucketsShifted) == locNumRFBucketsShiftedMap.end())
 			locNumRFBucketsShiftedMap[locNumRFBucketsShifted] = 1;

@@ -133,7 +133,7 @@ jerror_t DEventRFBunch_factory::Select_RFBunch(JEventLoop* locEventLoop, vector<
 		return Create_NaNRFBunch();
 
 	DEventRFBunch* locEventRFBunch = new DEventRFBunch;
-	locEventRFBunch->dTime = locRFTime->dTime - dRFBunchFrequency*double(locBestRFBunchShift);
+	locEventRFBunch->dTime = locRFTime->dTime + dRFBunchFrequency*double(locBestRFBunchShift);
 	locEventRFBunch->dTimeVariance = locRFTime->dTimeVariance;
 	locEventRFBunch->dNumParticleVotes = locHighestNumVotes;
 	locEventRFBunch->dTimeSource = SYS_RF;
@@ -263,7 +263,7 @@ int DEventRFBunch_factory::Find_BestRFBunchShifts(double locRFHitTime, const vec
 
 	for(unsigned int loc_i = 0; loc_i < locTimes.size(); ++loc_i)
 	{
-		double locDeltaT = locRFHitTime - locTimes[loc_i].first;
+		double locDeltaT = locTimes[loc_i].first - locRFHitTime;
 		int locNumRFBucketsShifted = (locDeltaT > 0.0) ? int(locDeltaT/dRFBunchFrequency + 0.5) : int(locDeltaT/dRFBunchFrequency - 0.5);
 		locNumRFBucketsShiftedMap[locNumRFBucketsShifted].push_back(locTimes[loc_i].second);
 
@@ -289,7 +289,7 @@ bool DEventRFBunch_factory::Break_TieVote_BeamPhotons(vector<const DBeamPhoton*>
 	set<int> locInputRFBunchShifts = locBestRFBunchShifts; //only test these RF bunch selections
 	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 	{
-		double locDeltaT = locRFTime - locBeamPhotons[loc_i]->time();
+		double locDeltaT = locBeamPhotons[loc_i]->time() - locRFTime;
 		int locNumRFBucketsShifted = (locDeltaT > 0.0) ? int(locDeltaT/dRFBunchFrequency + 0.5) : int(locDeltaT/dRFBunchFrequency - 0.5);
 		if(locInputRFBunchShifts.find(locNumRFBucketsShifted) == locInputRFBunchShifts.end())
 			continue; //only use beam votes to break input tie, not contribute to other beam buckets
