@@ -58,6 +58,7 @@
 #include<cmath>
 #include<sstream>
 #include<iomanip>
+#include<limits>
 #include<algorithm>
 #include<fstream>
 #include <expat.h>
@@ -482,6 +483,22 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
   // the EVIO files as are used to read them in
   jout << "Loading ADC/TDC scale factors..." << endl;
 
+  //F1TDCs
+  map<string, int> tdc_parms;
+  if(eventLoop->GetCalib("/F1TDC/rollover", tdc_parms))
+    jout << "Error loading /F1TDC/rollover !" << endl;
+  map<string, int>::const_iterator locMapIterator = tdc_parms.find("tframe");
+  double dRolloverTimeWindowLength = (locMapIterator != tdc_parms.end()) ? double(tdc_parms["tframe"]) : std::numeric_limits<double>::quiet_NaN();
+
+  locMapIterator = tdc_parms.find("count");
+  uint64_t dNumTDCTicksInRolloverTimeWindow = (locMapIterator != tdc_parms.end()) ? double(tdc_parms["count"]) : std::numeric_limits<double>::quiet_NaN();
+  double locTDCToNsScaleFactor = dRolloverTimeWindowLength/double(dNumTDCTicksInRolloverTimeWindow);
+
+  FDC_TDCtick = 1000.0*locTDCToNsScaleFactor*2.0; //FDC has fewer TDC-ticks per ns
+  BCAL_TDCtick = 1000.0*locTDCToNsScaleFactor;
+  SC_TDCtick = 1000.0*locTDCToNsScaleFactor;
+  PSC_TDCtick = 1000.0*locTDCToNsScaleFactor;
+
   map<string,double> scale_factors;
   if (eventLoop->GetCalib("/CDC/digi_scales", scale_factors))
 	  jout << "Error loading /CDC/digi_scales !" << endl;
@@ -508,11 +525,6 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
   } else {
 	  jerr << "Unable to get FDC_ADC_TSCALE from /FDC/digi_scales !" << endl;
   }
-  if ( scale_factors.find("FDC_TDC_SCALE") != scale_factors.end() ) {
-	  FDC_TDCtick = 1000. * scale_factors["FDC_TDC_SCALE"];
-  } else {
-	  jerr << "Unable to get FDC_TDC_SCALE from /FDC/digi_scales !" << endl;
-  }
 
   if (eventLoop->GetCalib("/FCAL/digi_scales", scale_factors))
 	  jout << "Error loading /FCAL/digi_scales !" << endl;
@@ -538,11 +550,6 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 	  BCAL_ADCtick = 1000. * scale_factors["BCAL_ADC_TSCALE"];
   } else {
 	  jerr << "Unable to get BCAL_ADC_TSCALE from /BCAL/digi_scales !" << endl;
-  }
-  if ( scale_factors.find("BCAL_TDC_SCALE") != scale_factors.end() ) {
-	  BCAL_TDCtick = 1000. * scale_factors["BCAL_TDC_SCALE"];
-  } else {
-	  jerr << "Unable to get BCAL_TDC_SCALE from /BCAL/digi_scales !" << endl;
   }
 
   if (eventLoop->GetCalib("/TOF/digi_scales", scale_factors))
@@ -575,11 +582,6 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
   } else {
 	  jerr << "Unable to get SC_ADC_TSCALE from /START_COUNTER/digi_scales !" << endl;
   }
-  if ( scale_factors.find("SC_TDC_SCALE") != scale_factors.end() ) {
-	  SC_TDCtick = 1000. * scale_factors["SC_TDC_SCALE"];
-  } else {
-	  jerr << "Unable to get SC_TDC_SCALE from /START_COUNTER/digi_scales !" << endl;
-  }
 
   // PS and PSC scales are stored in the same table
   if (eventLoop->GetCalib("/PHOTON_BEAM/pair_spectrometer/digi_scales", scale_factors))
@@ -593,11 +595,6 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 	  PSC_ADCtick = 1000. * scale_factors["PSC_ADC_TSCALE"];
   } else {
 	  jerr << "Unable to get PSC_ADC_TSCALE from /PHOTON_BEAM/pair_spectrometer/digi_scales !" << endl;
-  }
-  if ( scale_factors.find("PSC_TDC_SCALE") != scale_factors.end() ) {
-	  PSC_TDCtick = 1000. * scale_factors["PSC_TDC_SCALE"];
-  } else {
-	  jerr << "Unable to get PSC_TDC_SCALE from /PHOTON_BEAM/pair_spectrometer/digi_scales !" << endl;
   }
 
   if ( scale_factors.find("PS_ADC_ASCALE") != scale_factors.end() ) {
@@ -2036,7 +2033,7 @@ void JEventProcessor_rawevent::StartElement(void *userData, const char *xmlname,
   
   static int crate=0, slot=0;
 
-  static string type,Type;
+  static string type,Type, locSystem;
   int mc2codaType;
   int channel = 0;
   string Detector;
@@ -2116,7 +2113,7 @@ void JEventProcessor_rawevent::StartElement(void *userData, const char *xmlname,
         row = string(atts[i+1]);
       } else if (strcasecmp(atts[i],"column") == 0) {
         column = string(atts[i+1]);
-       } else if (strcasecmp(atts[i],"col") == 0) {
+      } else if (strcasecmp(atts[i],"col") == 0) {
         column = string(atts[i+1]);
       } else if (strcasecmp(atts[i],"module") == 0) {
         module = string(atts[i+1]);
@@ -2152,6 +2149,8 @@ void JEventProcessor_rawevent::StartElement(void *userData, const char *xmlname,
         wire = string(atts[i+1]);
       } else if (strcasecmp(atts[i],"side") == 0) {
         side = string(atts[i+1]);
+      } else if (strcasecmp(atts[i],"system") == 0) {
+       	locSystem = string(atts[i+1]);
       }
     }
 
