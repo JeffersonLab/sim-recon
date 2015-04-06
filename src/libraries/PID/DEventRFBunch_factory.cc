@@ -26,9 +26,9 @@ jerror_t DEventRFBunch_factory::brun(jana::JEventLoop *locEventLoop, int runnumb
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
 
-	vector<double> locRFFrequencyVector;
-	locEventLoop->GetCalib("PHOTON_BEAM/rf_frequency", locRFFrequencyVector);
-	dRFBunchFrequency = locRFFrequencyVector[0];
+	vector<double> locRFPeriodVector;
+	locEventLoop->GetCalib("PHOTON_BEAM/RF/rf_period", locRFPeriodVector);
+	dRFBunchPeriod = locRFPeriodVector[0];
 
 	double locTargetCenterZ;
 	locGeometry->GetTargetZ(locTargetCenterZ);
@@ -133,7 +133,7 @@ jerror_t DEventRFBunch_factory::Select_RFBunch(JEventLoop* locEventLoop, vector<
 		return Create_NaNRFBunch();
 
 	DEventRFBunch* locEventRFBunch = new DEventRFBunch;
-	locEventRFBunch->dTime = locRFTime->dTime + dRFBunchFrequency*double(locBestRFBunchShift);
+	locEventRFBunch->dTime = locRFTime->dTime + dRFBunchPeriod*double(locBestRFBunchShift);
 	locEventRFBunch->dTimeVariance = locRFTime->dTimeVariance;
 	locEventRFBunch->dNumParticleVotes = locHighestNumVotes;
 	locEventRFBunch->dTimeSource = SYS_RF;
@@ -215,7 +215,7 @@ bool DEventRFBunch_factory::Find_TrackTimes_NonSC(const DDetectorMatches* locDet
 		double locP = locTrackTimeBased->momentum().Mag();
 		//at 250 MeV/c, BCAL t-resolution is ~310ps (3sigma = 920ps), BCAL delta-t error is ~40ps: ~960 ps < 1 ns: OK!!
 		//at 225 MeV/c, BCAL t-resolution is ~333ps (3sigma = 999ps), BCAL delta-t error is ~40ps: ~1040ps: bad at 499 MHz
-		if((locP < 0.25) && (dRFBunchFrequency < 2.005))
+		if((locP < 0.25) && (dRFBunchPeriod < 2.005))
 			continue; //too slow for the BCAL to distinguish RF bunch
 
 		DBCALShowerMatchParams locBCALShowerMatchParams;
@@ -264,7 +264,7 @@ int DEventRFBunch_factory::Find_BestRFBunchShifts(double locRFHitTime, const vec
 	for(unsigned int loc_i = 0; loc_i < locTimes.size(); ++loc_i)
 	{
 		double locDeltaT = locTimes[loc_i].first - locRFHitTime;
-		int locNumRFBucketsShifted = (locDeltaT > 0.0) ? int(locDeltaT/dRFBunchFrequency + 0.5) : int(locDeltaT/dRFBunchFrequency - 0.5);
+		int locNumRFBucketsShifted = (locDeltaT > 0.0) ? int(locDeltaT/dRFBunchPeriod + 0.5) : int(locDeltaT/dRFBunchPeriod - 0.5);
 		locNumRFBucketsShiftedMap[locNumRFBucketsShifted].push_back(locTimes[loc_i].second);
 
 		int locNumVotesThisShift = locNumRFBucketsShiftedMap[locNumRFBucketsShifted].size();
@@ -290,7 +290,7 @@ bool DEventRFBunch_factory::Break_TieVote_BeamPhotons(vector<const DBeamPhoton*>
 	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 	{
 		double locDeltaT = locBeamPhotons[loc_i]->time() - locRFTime;
-		int locNumRFBucketsShifted = (locDeltaT > 0.0) ? int(locDeltaT/dRFBunchFrequency + 0.5) : int(locDeltaT/dRFBunchFrequency - 0.5);
+		int locNumRFBucketsShifted = (locDeltaT > 0.0) ? int(locDeltaT/dRFBunchPeriod + 0.5) : int(locDeltaT/dRFBunchPeriod - 0.5);
 		if(locInputRFBunchShifts.find(locNumRFBucketsShifted) == locInputRFBunchShifts.end())
 			continue; //only use beam votes to break input tie, not contribute to other beam buckets
 
@@ -408,7 +408,7 @@ jerror_t DEventRFBunch_factory::Select_RFBunch_NoRFTime(JEventLoop* locEventLoop
 	int locBestRFBunchShift = Conduct_Vote(locEventLoop, locRFTimeGuess, locTimes, true, locHighestNumVotes);
 
 	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
-	locEventRFBunch->dTime = locRFTimeGuess + dRFBunchFrequency*double(locBestRFBunchShift);
+	locEventRFBunch->dTime = locRFTimeGuess + dRFBunchPeriod*double(locBestRFBunchShift);
 	locEventRFBunch->dTimeVariance = locTimeVariance;
 	locEventRFBunch->dNumParticleVotes = locHighestNumVotes;
 	locEventRFBunch->dTimeSource = locTimeSource;
@@ -451,8 +451,8 @@ void DEventRFBunch_factory::Get_RFTimeGuess(vector<pair<double, const JObject*> 
 	for(size_t loc_i = 1; loc_i < locTimes.size(); ++loc_i)
 	{
 		double locDeltaT = locTimes[loc_i].first - locTimes[0].first;
-		double locNumRFBucketsShifted = (locDeltaT > 0.0) ? floor(locDeltaT/dRFBunchFrequency + 0.5) : floor(locDeltaT/dRFBunchFrequency - 0.5);
-		locRFTimeGuess += locTimes[loc_i].first - locNumRFBucketsShifted*dRFBunchFrequency;
+		double locNumRFBucketsShifted = (locDeltaT > 0.0) ? floor(locDeltaT/dRFBunchPeriod + 0.5) : floor(locDeltaT/dRFBunchPeriod - 0.5);
+		locRFTimeGuess += locTimes[loc_i].first - locNumRFBucketsShifted*dRFBunchPeriod;
 	}
 	locRFTimeGuess /= double(locTimes.size());
 

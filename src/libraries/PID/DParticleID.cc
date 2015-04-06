@@ -28,10 +28,6 @@ bool static DParticleID_hypothesis_cmp(const DTrackTimeBased *a,
 //---------------------------------
 DParticleID::DParticleID(JEventLoop *loop)
 {
-	vector<double> locRFFrequencyVector;
-	loop->GetCalib("PHOTON_BEAM/rf_frequency", locRFFrequencyVector);
-	dRFBunchFrequency = locRFFrequencyVector[0];
-
 	C_EFFECTIVE = 15.0;
 	ATTEN_LENGTH = 150.0;
 	OUT_OF_TIME_CUT = 200.0;

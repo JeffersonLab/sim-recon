@@ -227,9 +227,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
       double locTargetCenterZ = 0.0;
       locGeometry->GetTargetZ(locTargetCenterZ);
 
-      vector<double> locRFBunchPeriodVector;
-      loop->GetCalib("PHOTON_BEAM/rf_frequency", locRFBunchPeriodVector);
-      double locRFBunchPeriod = locRFBunchPeriodVector[0];
+      vector<double> locRFPeriodVector;
+      loop->GetCalib("PHOTON_BEAM/RF/rf_period", locRFPeriodVector);
+      double locRFBunchPeriod = locRFPeriodVector[0];
 
       LockRead();
       {

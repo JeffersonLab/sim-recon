@@ -30,9 +30,9 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int r
 	gPARMS->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", dTrackSelectionTag);
 	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
 
-	vector<double> locRFFrequencyVector;
-	locEventLoop->GetCalib("PHOTON_BEAM/rf_frequency", locRFFrequencyVector);
-	dRFBunchFrequency = locRFFrequencyVector[0];
+	vector<double> locRFPeriodVector;
+	locEventLoop->GetCalib("PHOTON_BEAM/RF/rf_period", locRFPeriodVector);
+	dRFBunchPeriod = locRFPeriodVector[0];
 
 	DApplication *locApplication = dynamic_cast<DApplication*> (locEventLoop->GetJApplication());
 	DGeometry *locGeometry = locApplication ? locApplication->GetDGeometry(runnumber):NULL;
@@ -306,7 +306,7 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 
 		// Find # RF Bunch Shifts
 		int locNumBunchShifts = Find_BestRFBunchShift(locRFTime, locPropagatedTimes);
-		double locNewRFTime = locRFTime + (double)(locNumBunchShifts)*dRFBunchFrequency;
+		double locNewRFTime = locRFTime + (double)(locNumBunchShifts)*dRFBunchPeriod;
 
 		//Hist
 		bool locIsAllTruePID = false;
@@ -413,7 +413,7 @@ int DEventRFBunch_factory_Combo::Find_BestRFBunchShift(double locRFHitTime, cons
 	for(unsigned int loc_i = 0; loc_i < locTimes.size(); ++loc_i)
 	{
 		double locDeltaT = locTimes[loc_i] - locRFHitTime;
-		int locNumRFBucketsShifted = (locDeltaT > 0.0) ? int(locDeltaT/dRFBunchFrequency + 0.5) : int(locDeltaT/dRFBunchFrequency - 0.5);
+		int locNumRFBucketsShifted = (locDeltaT > 0.0) ? int(locDeltaT/dRFBunchPeriod + 0.5) : int(locDeltaT/dRFBunchPeriod - 0.5);
 
 		if(locNumRFBucketsShiftedMap.find(locNumRFBucketsShifted) == locNumRFBucketsShiftedMap.end())
 			locNumRFBucketsShiftedMap[locNumRFBucketsShifted] = 1;

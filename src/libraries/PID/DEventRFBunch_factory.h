@@ -72,7 +72,7 @@ class DEventRFBunch_factory : public jana::JFactory<DEventRFBunch>
 
 		const DParticleID* dParticleID;
 
-		double dRFBunchFrequency;
+		double dRFBunchPeriod;
 		DVector3 dTargetCenter;
 
 		double dMinTrackingFOM;

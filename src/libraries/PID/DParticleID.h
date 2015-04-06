@@ -189,7 +189,6 @@ class DParticleID:public jana::JObject{
 	double ONESIDED_PADDLE_MIDPOINT_MAG; //+/- this number for North/South
 
   double dTargetZCenter;
-  double dRFBunchFrequency;
   double SC_DPHI_CUT,SC_DPHI_CUT_WB;
 
   const DTrackFinder *finder;
