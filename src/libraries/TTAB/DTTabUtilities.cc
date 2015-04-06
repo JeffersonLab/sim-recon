@@ -37,7 +37,7 @@ DTTabUtilities::DTTabUtilities(JEventLoop* locEventLoop)
 
 	if(locEventLoop->GetJEvent().GetRunNumber() == 0) //PSC data with bad run number. Use hard-coded values from run 2012
 	{
-		dRolloverTimeWindowLength= 3744;
+		dRolloverTimeWindowLength = 3744;
 		dNumTDCTicksInRolloverTimeWindow = 64466;
 	}
 }
@@ -64,29 +64,30 @@ double DTTabUtilities::Convert_DigiTimeToNs(const JObject* locTDCDigiHit) const
 
 double DTTabUtilities::Convert_DigiTimeToNs(const DF1TDCHit* locF1TDCHit) const
 {
-	double locDeltaT = std::numeric_limits<double>::quiet_NaN();
-	if(Convert_DigiTimeToNs_GlobalSystemClock(locF1TDCHit, locDeltaT))
-		return locDeltaT;
-	return Convert_DigiTimeToNs_TriggerReferenceSignal(locF1TDCHit);
-}
-
-bool DTTabUtilities::Convert_DigiTimeToNs_GlobalSystemClock(const DF1TDCHit* locF1TDCHit, double& locDeltaT) const
-{
-	//compare the digi time to the global system clock available on the crate, then convert to ns
-		//GlueX Doc 2686 Appendix A, using the global system clock
     uint32_t locROCID = locF1TDCHit->rocid;
 
     // Get iterators for the DCODAROCInfo and DF1TDCConfig for this ROC
     map<uint32_t, const DCODAROCInfo*>::const_iterator locROCInfoIterator = dCODAROCInfoMap.find(locROCID);
     map<uint32_t, const DF1TDCConfig*>::const_iterator locF1TDCConfigIterator = dF1TDCConfigMap.find(locROCID);
 
-    // See if info is present in the datastream
-    if((locROCInfoIterator == dCODAROCInfoMap.end()) || (locF1TDCConfigIterator == dF1TDCConfigMap.end()))
-    	return false; //info needed for this method is not in the datastream (e.g. early Fall 2014 commissioning data). use the old method
-
     // Get DCODAROCInfo and DF1TDCConfig for this ROC
-    const DF1TDCConfig* locF1TDCConfig = locF1TDCConfigIterator->second;
-    const DCODAROCInfo* locCODAROCInfo = locROCInfoIterator->second;
+    const DF1TDCConfig* locF1TDCConfig = (locF1TDCConfigIterator != dF1TDCConfigMap.end()) ? locF1TDCConfigIterator->second : NULL;
+    const DCODAROCInfo* locCODAROCInfo = (locROCInfoIterator != dCODAROCInfoMap.end()) ? locROCInfoIterator->second : NULL;
+
+    if(locCODAROCInfo == NULL) //e.g. MC
+    	return Convert_DigiTimeToNs_TriggerReferenceSignal(locF1TDCHit);
+
+    if(locF1TDCConfig == NULL) //e.g. Early Fall 2014 Commissioning Data (use CCDB constants)
+    	return Convert_DigiTimeToNs_GlobalSystemClock_CCDB(locF1TDCHit, locCODAROCInfo);
+
+    // Have all objects needed, call the main function
+	return Convert_DigiTimeToNs_GlobalSystemClock_ConfigInfo(locF1TDCHit, locCODAROCInfo, locF1TDCConfig);
+}
+
+double DTTabUtilities::Convert_DigiTimeToNs_GlobalSystemClock_ConfigInfo(const DF1TDCHit* locF1TDCHit, const DCODAROCInfo* locCODAROCInfo, const DF1TDCConfig* locF1TDCConfig) const
+{
+	//compare the digi time to the global system clock available on the crate, then convert to ns
+		//GlueX Doc 2686 Appendix A, using the global system clock
 
     //GlueX DOC 747
     //48-channel-readout = F1TDCV3 (FDC) = low-resolution readout (115 ps vs 57 ps) //fewer (factor 2) TDC-ticks per ns
@@ -99,7 +100,35 @@ bool DTTabUtilities::Convert_DigiTimeToNs_GlobalSystemClock(const DF1TDCHit* loc
 		locTDCToNsScaleFactor *= 2.0; //fewer TDC-ticks per ns
 
 	//Calculate rollover window size for the F1TDCs
-	uint64_t dRolloverTimeWindowLength = (uint64_t(32))*(uint64_t(locF1TDCConfig->REFCNT + 2));
+	uint64_t locRolloverTimeWindowLength = (uint64_t(32))*(uint64_t(locF1TDCConfig->REFCNT + 2));
+
+	// Transition the reference time into this F1TDC time window (get remainder)
+	// DCODAROCInfo::timestamp is the number of clock ticks of the global system clock since it was reset (at the beginning of the run)
+    uint64_t locReferenceClockTime = (uint64_t(4))*locCODAROCInfo->timestamp; // one clock tick = 4 ns
+	uint64_t locNumRollovers = locReferenceClockTime/locRolloverTimeWindowLength;
+	uint64_t locReferenceTimeThisWindow = locReferenceClockTime - locNumRollovers*locRolloverTimeWindowLength;
+
+	//compute and return the time difference
+	double locDeltaT = locTDCToNsScaleFactor*double(locF1TDCHit->time) - double(locReferenceTimeThisWindow); // in ns
+	if(locDeltaT < 0.0) // Take care of rollover
+		locDeltaT += double(locRolloverTimeWindowLength); //the time rolled over between the hit and reference times
+
+	return locDeltaT;
+}
+
+double DTTabUtilities::Convert_DigiTimeToNs_GlobalSystemClock_CCDB(const DF1TDCHit* locF1TDCHit, const DCODAROCInfo* locCODAROCInfo) const
+{
+	//compare the digi time to the global system clock available on the crate, then convert to ns
+		//GlueX Doc 2686 Appendix A, using the global system clock, but the CCDB for the constants
+
+    //GlueX DOC 747
+    //48-channel-readout = F1TDCV3 (FDC) = low-resolution readout (115 ps vs 57 ps) //fewer (factor 2) TDC-ticks per ns
+	bool locIsLowResolutionReadout = (locF1TDCHit->modtype == DModuleType::F1TDC48);
+
+	//Calculate TDC -> ns Scale Factor
+	double locTDCToNsScaleFactor = dRolloverTimeWindowLength/double(dNumTDCTicksInRolloverTimeWindow);
+	if(locIsLowResolutionReadout) //should use HIGHRES bit from the data-stream, but it's not available
+		locTDCToNsScaleFactor *= 2.0; //fewer TDC-ticks per ns
 
 	// Transition the reference time into this F1TDC time window (get remainder)
 	// DCODAROCInfo::timestamp is the number of clock ticks of the global system clock since it was reset (at the beginning of the run)
@@ -108,11 +137,11 @@ bool DTTabUtilities::Convert_DigiTimeToNs_GlobalSystemClock(const DF1TDCHit* loc
 	uint64_t locReferenceTimeThisWindow = locReferenceClockTime - locNumRollovers*dRolloverTimeWindowLength;
 
 	//compute and return the time difference
-	locDeltaT = locTDCToNsScaleFactor*double(locF1TDCHit->time) - double(locReferenceTimeThisWindow); // in ns
+	double locDeltaT = locTDCToNsScaleFactor*double(locF1TDCHit->time) - double(locReferenceTimeThisWindow); // in ns
 	if(locDeltaT < 0.0) // Take care of rollover
 		locDeltaT += double(dRolloverTimeWindowLength); //the time rolled over between the hit and reference times
 
-	return true;
+	return locDeltaT;
 }
 
 double DTTabUtilities::Convert_DigiTimeToNs_TriggerReferenceSignal(const DF1TDCHit* locF1TDCHit) const
@@ -124,6 +153,7 @@ double DTTabUtilities::Convert_DigiTimeToNs_TriggerReferenceSignal(const DF1TDCH
     //48-channel-readout = F1TDCV3 (FDC) = low-resolution readout (115 ps vs 57 ps) //fewer (factor 2) TDC-ticks per ns
 	bool locIsLowResolutionReadout = (locF1TDCHit->modtype == DModuleType::F1TDC48);
 
+	//Calculate TDC -> ns Scale Factor
 	double locTDCToNsScaleFactor = dRolloverTimeWindowLength/double(dNumTDCTicksInRolloverTimeWindow);
 	if(locIsLowResolutionReadout) //should use HIGHRES bit from the data-stream, but it's not available
 		locTDCToNsScaleFactor *= 2.0; //fewer TDC-ticks per ns

@@ -47,7 +47,8 @@ class DTTabUtilities : public jana::JObject
 		uint64_t dNumTDCTicksInRolloverTimeWindow; //"N" or "N_{frame}"
 
 		double Convert_DigiTimeToNs(const DF1TDCHit* locF1TDCHit) const;
-		bool Convert_DigiTimeToNs_GlobalSystemClock(const DF1TDCHit* locHit, double& locDeltaT) const;
+		double Convert_DigiTimeToNs_GlobalSystemClock_ConfigInfo(const DF1TDCHit* locF1TDCHit, const DCODAROCInfo* locCODAROCInfo, const DF1TDCConfig* locF1TDCConfig) const;
+		double Convert_DigiTimeToNs_GlobalSystemClock_CCDB(const DF1TDCHit* locF1TDCHit, const DCODAROCInfo* locCODAROCInfo) const;
 		double Convert_DigiTimeToNs_TriggerReferenceSignal(const DF1TDCHit* locF1TDCHit) const;
 };
 
