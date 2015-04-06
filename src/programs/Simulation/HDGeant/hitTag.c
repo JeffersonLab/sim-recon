@@ -44,7 +44,6 @@
 #include <bintree.h>
 #include <calibDB.h>
 
-#define BEAM_BUCKET_SPACING_NS  2.
 #define MICRO_TWO_HIT_RESOL     25.
 #define MICRO_MAX_HITS          5000
 #define FIXED_TWO_HIT_RESOL     25.
@@ -66,6 +65,7 @@ binTree_t* hodoTree = 0;
 static int microCount = 0;
 static int hodoCount = 0;
 static int printDone = 0;
+static float rf_period = -1.0;
 
 /* register hits during event initialization (from gukine) */
 
@@ -73,12 +73,26 @@ void hitTagger (float xin[4], float xout[4],
                 float pin[5], float pout[5], float dEsum,
                 int track, int stack, int history)
 {
+
+   /* read rf_period from calibdb */
+   if(rf_period < 0.0)
+   {
+	  char dbname[] = "/PHOTON_BEAM/RF/rf_period::mc";
+	  unsigned int ndata = 1;
+	  if (GetCalib(dbname, &ndata, &rf_period)) {
+		 fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
+				 "failed to read RF period",
+				 "from calibdb, cannot continue.");
+		 exit (2);
+	  }
+   }
+
    int micro_chan;
    int hodo_chan;
    double Etag = 0;
    double E = pin[3];
    double t = xin[3]*1e9-(xin[2]-REF_TIME_Z_CM)/C_CM_PER_NS;
-   t = floor(t/BEAM_BUCKET_SPACING_NS+0.5)*BEAM_BUCKET_SPACING_NS;
+   t = floor(t/rf_period+0.5)*rf_period;
 
    /* read tagger set endpoint energy from calibdb */
    if (endpoint_energy_GeV == 0) {
