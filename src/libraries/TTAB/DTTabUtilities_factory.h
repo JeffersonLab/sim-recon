@@ -60,7 +60,7 @@ inline jerror_t DTTabUtilities_factory::evnt(jana::JEventLoop *eventLoop, int ev
 	bool locFoundFlag = false;
 	for(size_t loc_i = 0; loc_i < locF1TDCHits.size(); ++loc_i)
 	{
-		if((locF1TDCHits[loc_i]->rocid != 51) || (locF1TDCHits[loc_i]->slot != 17) || (locF1TDCHits[loc_i]->channel == 8))
+		if((locF1TDCHits[loc_i]->rocid != 51) || (locF1TDCHits[loc_i]->slot != 17) || (locF1TDCHits[loc_i]->channel != 8))
 			continue;
 		_data[0]->Set_TriggerReferenceSignal(locF1TDCHits[loc_i]->time); //in TDC clicks
 		locFoundFlag = true;
