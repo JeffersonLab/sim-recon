@@ -11,6 +11,9 @@
 
 #include <JANA/JObject.h>
 
+using namespace jana;
+using namespace std;
+
 class DCODAROCInfo:public JObject{
 	public:
 		JOBJECT_PUBLIC(DCODAROCInfo);

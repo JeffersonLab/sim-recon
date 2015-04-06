@@ -15,9 +15,9 @@ using namespace std;
 #include <START_COUNTER/DSCDigiHit.h>
 #include <START_COUNTER/DSCTDCDigiHit.h>
 #include <DAQ/Df250PulsePedestal.h>
+#include <DAQ/Df250PulseIntegral.h>
 #include <DAQ/Df250Config.h>
 #include "DSCHit_factory.h"
-#include "DAQ/DF1TDCHit.h"
 
 using namespace jana;
 
@@ -60,7 +60,6 @@ jerror_t DSCHit_factory::init(void)
     t_scale    = 0.0625;   // 62.5 ps/count
     t_base     = 0.;       // ns
     t_tdc_base = 0.;
-    tdc_scale  = 0.060;    // 60 ps/count
 
     return NOERROR;
 }
@@ -84,21 +83,6 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
     /// Read in calibration constants
     if(print_messages) jout << "In DSCHit_factory, loading constants..." << endl;
 
-    // F1TDC tframe(ns) and rollover count
-    map<string,int> tdc_parms;
-    double tframe=-1.;
-    rollover_count=0;
-    if (eventLoop->GetCalib("/F1TDC/rollover",tdc_parms))
-        jout << "Error loading /F1TDC/rollover !" <<endl;
-    if (tdc_parms.find("tframe")!=tdc_parms.end())
-        tframe=double(tdc_parms["tframe"]);
-    else 
-        jerr << "Unable to get tframe from /F1TDC/rollover !" <<endl;
-    if (tdc_parms.find("count")!=tdc_parms.end())
-        rollover_count=tdc_parms["count"];
-    else 
-        jerr << "Unable to get rollover count from /F1TDC/rollover !" <<endl;
-
     // load scale factors
     map<string,double> scale_factors;
     // a_scale (SC_ADC_SCALE)
@@ -115,22 +99,6 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
     else
         jerr << "Unable to get SC_ADC_TSCALE from /START_COUNTER/digi_scales !" 
             << endl;
-
-    // tdc_scale (SC_TDC_SCALE)   
-    // By default we will use the F1TDC entries in the ccdb to find tdc_scale
-    if (tframe>0. && rollover_count>0){ 
-        tdc_scale=tframe/double(rollover_count);
-        //_DBG_ << tdc_scale << endl;
-    }
-    // otherwise fall back on old scheme for getting tdc_scale
-    else if (scale_factors.find("SC_TDC_SCALE") != scale_factors.end())
-        tdc_scale = scale_factors["SC_TDC_SCALE"];
-    else
-        jerr << "Unable to get SC_TDC_SCALE from /START_COUNTER/digi_scales !" 
-            << endl;
-
-    if(print_messages) jout << "TDC scale = " << tdc_scale << " ns/count" << endl;
-
 
     // load base time offset
     map<string,double> base_time_offset;
@@ -210,6 +178,9 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
     loop->Get(digihits);
     sort(digihits.begin(),digihits.end(),DSCHit_fadc_cmp);
 
+	const DTTabUtilities* locTTabUtilities = NULL;
+	loop->GetSingle(locTTabUtilities);
+
     char str[256];
 
     for (unsigned int i = 0; i < digihits.size(); i++)
@@ -280,95 +251,71 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
     vector<const DF1TDCHit*> tdchit;
     eventLoop->Get(tdchit);
 
-    int tref = 0;
-    for(unsigned int i=0;i<tdchit.size();i++)
-    {
-        if(tdchit[i]->rocid==51 && tdchit[i]->slot==17 && tdchit[i]->channel==8)
-        {
-            tref=tdchit[i]->time; // in clicks
-            if (tref > 0) break;
-            //       printf("tref %d %f\n",tdchit[i]->time,tref);
-        }
-    }
-    //if (tref > 0)
-    //{ // got reference signal
-        // Next, loop over TDC hits, matching them to the
-        // existing fADC hits where possible and updating
-        // their time information. If no match is found, then
-        // create a new hit with just the TDC info.
-        vector<const DSCTDCDigiHit*> tdcdigihits;
-        loop->Get(tdcdigihits);
-        sort(tdcdigihits.begin(),tdcdigihits.end(),DSCHit_tdc_cmp);
+	// Next, loop over TDC hits, matching them to the
+	// existing fADC hits where possible and updating
+	// their time information. If no match is found, then
+	// create a new hit with just the TDC info.
+	vector<const DSCTDCDigiHit*> tdcdigihits;
+	loop->Get(tdcdigihits);
+	sort(tdcdigihits.begin(),tdcdigihits.end(),DSCHit_tdc_cmp);
 
-        for (unsigned int i = 0; i < tdcdigihits.size(); i++)
-        {
-            const DSCTDCDigiHit *digihit = tdcdigihits[i];
+	for (unsigned int i = 0; i < tdcdigihits.size(); i++)
+	{
+		const DSCTDCDigiHit *digihit = tdcdigihits[i];
 
-            // Make sure sector is in valid range
-            if((digihit->sector <= 0) && (digihit->sector > MAX_SECTORS)) 
-            {
-                sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)", 
-                        digihit->sector, MAX_SECTORS);
-                throw JException(str);
-            }
+		// Make sure sector is in valid range
+		if((digihit->sector <= 0) && (digihit->sector > MAX_SECTORS))
+		{
+			sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)",
+					digihit->sector, MAX_SECTORS);
+			throw JException(str);
+		}
 
-            // Take care of rollover
-            int tdiff = int(digihit->time) - int(tref);
-            if (tdiff < 0) tdiff += rollover_count;
-            else if (tdiff > rollover_count) tdiff -= rollover_count;
+		unsigned int id = digihit->sector - 1;
+		double T = locTTabUtilities->Convert_DigiTimeToNs(digihit) - tdc_time_offsets[id] + t_tdc_base;
 
-            // Apply calibration constants here
-            double T = (double)digihit->time;
+		// cout << "T = " << T << endl;
+		// jout << "T = " << T << endl;
 
-            //printf("T %d %f\n",digihit->time,0.0559*T);
-            //tdc_scale=0.0559; // hard code correctd tdc conversion scale (need to put in CCDB)
-            unsigned int id = digihit->sector - 1;
-            T = tdc_scale * tdiff - tdc_time_offsets[id] + t_tdc_base;
+		// Look for existing hits to see if there is a match
+		//   or create new one if there is no match
+	// Require that the trigger corrected TDC time fall within
+	//   a reasonable time window so that when a hit is associated with
+	//   a hit in the TDC and not the ADC it is a "decent" TDC hit
+	if (fabs(T) < HIT_TIME_WINDOW)
+	  {
+	//jout << " T cut = " << T << endl;
+	DSCHit *hit = FindMatch(digihit->sector, T);
+	if (! hit)
+	  {
+		hit = new DSCHit;
+		hit->sector = digihit->sector;
+		hit->dE = 0.0;
+		hit->t_fADC= numeric_limits<double>::quiet_NaN();
+		hit->has_fADC=false;
+		_data.push_back(hit);
+	  }
 
-            // cout << "T = " << T << endl;
-            // jout << "T = " << T << endl;
-            // printf("T = %f scale %f\n", T, tdc_scale);
+	hit->has_TDC=true;
+	hit->t_TDC=T;
+	//jout << "t_tDC = " << hit->t_TDC << endl;
 
-            // Look for existing hits to see if there is a match
-            //   or create new one if there is no match
-	    // Require that the trigger corrected TDC time fall within 
-	    //   a reasonable time window so that when a hit is associated with
-	    //   a hit in the TDC and not the ADC it is a "decent" TDC hit
-	    if (fabs(T) < HIT_TIME_WINDOW)
-	      {
-		//jout << " T cut = " << T << endl;
-		DSCHit *hit = FindMatch(digihit->sector, T); 
-		if (! hit) 
-		  {
-		    hit = new DSCHit;
-		    hit->sector = digihit->sector;
-		    hit->dE = 0.0;
-		    hit->t_fADC= numeric_limits<double>::quiet_NaN();
-		    hit->has_fADC=false;
-		    _data.push_back(hit);
-		  } 
-	      
-		hit->has_TDC=true;
-		hit->t_TDC=T;
-		//jout << "t_tDC = " << hit->t_TDC << endl;
-	    	      
-		if (hit->dE > 0.0)
-		  {       
-		    // Correct for time walk
-		    // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
-		    double A  = hit->dE;
-		    double C1 = timewalk_parameters[id][1];
-		    double C2 = timewalk_parameters[id][2];
-		    double A0 = timewalk_parameters[id][3];
-		    T -= C1*(pow(A,C2) - pow(A0,C2));	
-		  }
-		hit->t=T;
-		//jout << " T cut TW Corr = " << T << endl;
-		hit->AddAssociatedObject(digihit);
-	      } // Hit time window cut
-	      
-        }
-	//}
+	if (hit->dE > 0.0)
+	  {
+		// Correct for time walk
+		// The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
+		double A  = hit->dE;
+		double C1 = timewalk_parameters[id][1];
+		double C2 = timewalk_parameters[id][2];
+		double A0 = timewalk_parameters[id][3];
+		T -= C1*(pow(A,C2) - pow(A0,C2));
+	  }
+	hit->t=T;
+	//jout << " T cut TW Corr = " << T << endl;
+	hit->AddAssociatedObject(digihit);
+	  } // Hit time window cut
+
+	}
 
 
     // Apply calibration constants to convert pulse integrals to energy 

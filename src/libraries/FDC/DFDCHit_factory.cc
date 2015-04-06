@@ -30,7 +30,6 @@ jerror_t DFDCHit_factory::init(void)
    t_scale      = 8.0/10.0;     // 8 ns/count and integer time is in 1/10th of sample
    t_base       = 0.;           // ns
    fadc_t_base  = 0.;           // ns
-   tdc_scale    = 0.115;        // 115 ps/count
 
    return NOERROR;
 }
@@ -72,11 +71,6 @@ jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
        t_scale = scale_factors["FDC_ADC_TSCALE"];
    } else {
        jerr << "Unable to get FDC_ADC_TSCALE from /FDC/digi_scales !" << endl;
-   }
-   if( scale_factors.find("FDC_TDC_SCALE") != scale_factors.end() ) {
-       tdc_scale = scale_factors["FDC_TDC_SCALE"];
-   } else {
-       jerr << "Unable to get FDC_TDC_SCALE from /FDC/digi_scales !" << endl;
    }
 
    // load base time offset
@@ -138,6 +132,9 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
    /// data in HDDM format. The HDDM event source will copy
    /// the precalibrated values directly into the _data vector.
    char str[256];
+
+	const DTTabUtilities* locTTabUtilities = NULL;
+	loop->GetSingle(locTTabUtilities);
 
 	// Make hits out of all DFDCCathodeDigiHit hits
 	vector<const DFDCCathodeDigiHit*> cathodedigihits;
@@ -298,8 +295,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
         }
 
         // Apply calibration constants here
-        double T = (double)digihit->time;
-        T = tdc_scale * (T - timing_offsets[hit->gPlane-1][hit->element-1]) + t_base;
+        double T = locTTabUtilities->Convert_DigiTimeToNs(digihit) - timing_offsets[hit->gPlane-1][hit->element-1] + t_base;
         hit->q = 0.0; // no charge measured for wires in FDC
         hit->t = T;
 

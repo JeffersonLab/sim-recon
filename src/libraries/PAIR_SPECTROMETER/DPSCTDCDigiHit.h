@@ -17,7 +17,8 @@ class DPSCTDCDigiHit:public jana::JObject{
 		
   // Add data members here. For example:
   int counter_id;
-  uint32_t time; ///< TDC time measurement
+
+  uint32_t time;
   
   void toStrings(vector<pair<string,string> > &items)const{
     AddString(items, "counter_id", "%d", counter_id);

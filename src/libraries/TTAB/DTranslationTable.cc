@@ -145,6 +145,7 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
    supplied_data_types.insert("DFCALDigiHit");
    supplied_data_types.insert("DFDCCathodeDigiHit");
    supplied_data_types.insert("DFDCWireDigiHit");
+   supplied_data_types.insert("DRFDigiTime");
    supplied_data_types.insert("DSCDigiHit");
    supplied_data_types.insert("DSCTDCDigiHit");
    supplied_data_types.insert("DTOFDigiHit");
@@ -326,6 +327,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    vector<DFCALDigiHit*> vfcal;
    vector<DFDCCathodeDigiHit*> vfdccathode;
    vector<DFDCWireDigiHit*> vfdcwire;
+   vector<DRFDigiTime*> vrf;
+   vector<DRFTDCDigiTime*> vrftdc;
    vector<DSCDigiHit*> vsc;
    vector<DSCTDCDigiHit*> vsctdc;
    vector<DTOFDigiHit*> vtof;
@@ -385,22 +388,25 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
             vfcal.push_back( MakeFCALDigiHit(chaninfo.fcal, pi, pt, pp) );
             break;
          case SC:
-            vsc.push_back  ( MakeSCDigiHit(  chaninfo.sc,   pi, pt, pp) );
+            vsc.push_back  ( MakeSCDigiHit(  chaninfo.sc, pi, pt, pp) );
             break;
          case TOF:
-            vtof.push_back ( MakeTOFDigiHit( chaninfo.tof,  pi, pt, pp) ); 
+            vtof.push_back ( MakeTOFDigiHit( chaninfo.tof, pi, pt, pp) );
             break;
          case TAGM:
-            vtagm.push_back( MakeTAGMDigiHit(chaninfo.tagm, pi, pt, pp) ); 
+            vtagm.push_back( MakeTAGMDigiHit(chaninfo.tagm, pi, pt, pp) );
             break;
          case TAGH:
-            vtagh.push_back( MakeTAGHDigiHit(chaninfo.tagh, pi, pt, pp) ); 
+            vtagh.push_back( MakeTAGHDigiHit(chaninfo.tagh, pi, pt, pp) );
             break;
          case PS:
-            vps.push_back  ( MakePSDigiHit(chaninfo.ps,     pi, pt, pp) ); 
+            vps.push_back  ( MakePSDigiHit(chaninfo.ps, pi, pt, pp) );
             break;
          case PSC:
-            vpsc.push_back ( MakePSCDigiHit(chaninfo.psc,   pi, pt, pp) ); 
+            vpsc.push_back ( MakePSCDigiHit(chaninfo.psc, pi, pt, pp) );
+            break;
+         case RF:
+        	vrf.push_back( MakeRFDigiTime(chaninfo.rf, pt) );
             break;
          default:
             if (VERBOSE > 4)
@@ -480,7 +486,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       if (VERBOSE > 4)
          ttout << "    Looking for rocid:" << rocid << " slot:" << hit->slot
                << " chan:" << hit->channel << std::endl;
-      
+
       // Create crate,slot,channel index and find entry in Translation table.
       // If none is found, then just quietly skip this hit.
       csc_t csc = {hit->rocid, hit->slot, hit->channel};
@@ -498,13 +504,16 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       // Create the appropriate hit type based on detector type
       switch (chaninfo.det_sys) {
          case BCAL:
-            vbcaltdc.push_back( MakeBCALTDCDigiHit(chaninfo.bcal, hit) ); 
+            vbcaltdc.push_back( MakeBCALTDCDigiHit(chaninfo.bcal, hit) );
             break;
          case FDC_WIRES:
             vfdcwire.push_back( MakeFDCWireDigiHit(chaninfo.fdc_wires, hit) );
             break;
+         case RF:
+        	vrftdc.push_back( MakeRFTDCDigiTime(chaninfo.rf, hit) );
+            break;
          case SC:
-            vsctdc.push_back( MakeSCTDCDigiHit(chaninfo.sc, hit) ); 
+            vsctdc.push_back( MakeSCTDCDigiHit(chaninfo.sc, hit) );
             break;
          case TAGM:
             vtagmtdc.push_back( MakeTAGMTDCDigiHit(chaninfo.tagm, hit) );
@@ -560,6 +569,9 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
          case TOF:
             vtoftdc.push_back( MakeTOFTDCDigiHit(chaninfo.tof, hit) );
             break;
+         case RF:
+        	vrftdc.push_back( MakeRFTDCDigiTime(chaninfo.rf, hit) );
+            break;
          default:     
              if (VERBOSE > 4)
                 ttout << "       - Don't know how to make DigiHit objects"
@@ -578,6 +590,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       ttout << "        vfcal.size() = " << vfcal.size() << std::endl;
       ttout << "  vfdccathode.size() = " << vfdccathode.size() << std::endl;
       ttout << "     vfdcwire.size() = " << vfdcwire.size() << std::endl;
+      ttout << "          vrf.size() = " << vrf.size() << std::endl;
+      ttout << "       vrftdc.size() = " << vrftdc.size() << std::endl;
       ttout << "          vsc.size() = " << vsc.size() << std::endl;
       ttout << "       vsctdc.size() = " << vsctdc.size() << std::endl;
       ttout << "         vtof.size() = " << vtof.size() << std::endl;
@@ -599,6 +613,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    CopyToFactory(loop, vfcal);
    CopyToFactory(loop, vfdccathode);
    CopyToFactory(loop, vfdcwire);
+   CopyToFactory(loop, vrf);
+   CopyToFactory(loop, vrftdc);
    CopyToFactory(loop, vsc);
    CopyToFactory(loop, vsctdc);
    CopyToFactory(loop, vtof);
@@ -627,6 +643,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       Addf125ObjectsToCallStack(loop, "DFDCCathodeDigiHit");
       AddF1TDCObjectsToCallStack(loop, "DBCALTDCDigiHit");
       AddF1TDCObjectsToCallStack(loop, "DFDCWireDigiHit");
+      AddF1TDCObjectsToCallStack(loop, "DRFDigiTime");
+      AddF1TDCObjectsToCallStack(loop, "DRFTDCDigiTime");
       AddF1TDCObjectsToCallStack(loop, "DSCTDCDigiHit");
       AddCAEN1290TDCObjectsToCallStack(loop, "DTOFTDCDigiHit");
    }
@@ -847,6 +865,53 @@ DFDCWireDigiHit* DTranslationTable::MakeFDCWireDigiHit(
 }
 
 //---------------------------------
+// MakeRFDigiTime
+//---------------------------------
+DRFTDCDigiTime*  DTranslationTable::MakeRFTDCDigiTime(
+                                   const RFIndex_t &idx,
+                                   const DF1TDCHit *hit) const
+{
+   DRFTDCDigiTime *h = new DRFTDCDigiTime();
+   CopyDF1TDCInfo(h, hit);
+
+   h->dSystem = idx.dSystem;
+   h->dIsCAENTDCFlag = false;
+
+   return h;
+}
+
+//---------------------------------
+// MakeRFDigiTime
+//---------------------------------
+DRFTDCDigiTime*  DTranslationTable::MakeRFTDCDigiTime(
+                                   const RFIndex_t &idx,
+                                   const DCAEN1290TDCHit *hit) const
+{
+   DRFTDCDigiTime *h = new DRFTDCDigiTime();
+   CopyDCAEN1290TDCInfo(h, hit);
+
+   h->dSystem = idx.dSystem;
+   h->dIsCAENTDCFlag = true;
+
+   return h;
+}
+
+//---------------------------------
+// MakeRFDigiTime
+//---------------------------------
+DRFDigiTime*  DTranslationTable::MakeRFDigiTime(
+                                   const RFIndex_t &idx,
+                                   const Df250PulseTime *hit) const
+{
+   DRFDigiTime *h = new DRFDigiTime();
+   h->time = hit->time;
+
+   h->dSystem = idx.dSystem;
+
+   return h;
+}
+
+//---------------------------------
 // MakeSCTDCDigiHit
 //---------------------------------
 DSCTDCDigiHit*  DTranslationTable::MakeSCTDCDigiHit(
@@ -986,6 +1051,10 @@ const DTranslationTable::csc_t
              if ( det_channel.psc == in_channel.psc )
                 found = true;
              break;
+          case DTranslationTable::RF:
+             if ( det_channel.rf == in_channel.rf )
+                found = true;
+             break;
           case DTranslationTable::SC:
              if ( det_channel.sc == in_channel.sc )
                 found = true;
@@ -1058,6 +1127,9 @@ string DTranslationTable::Channel2Str(const DChannelInfo &in_channel) const
        break;
     case DTranslationTable::PSC:
        ss << "id = " << in_channel.psc.id;
+       break;
+    case DTranslationTable::RF:
+       ss << "system = " << SystemName(in_channel.rf.dSystem);
        break;
     case DTranslationTable::SC:
        ss << "sector = " << in_channel.sc.sector;
@@ -1283,6 +1355,8 @@ DTranslationTable::Detector_t DetectorStr2DetID(string &type)
       return DTranslationTable::PS;
    } else if ( type == "psc" ) {
       return DTranslationTable::PSC;
+   } else if ( type == "rf" ) {
+      return DTranslationTable::RF;
    } else if ( type == "st" ) {
            // The start counter is labelled by "ST" in the translation table
            // but we stick with the "SC" label in this plugin for consistency
@@ -1309,7 +1383,7 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
    static string type,Type;
    int mc2codaType= 0;
    int channel = 0;
-   string Detector;
+   string Detector, locSystem;
    int end=0;
    int row=0,column=0,module=0,sector=0,layer=0,chan=0;
    int ring=0,straw=0,plane=0,bar=0,gPlane=0,element=0;
@@ -1442,6 +1516,8 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
             else if (sval == "B")
                strip_type = 3;
          }
+         else if (tag == "system")
+        	 locSystem = sval;
       }
       
       // ignore certain module types
@@ -1517,6 +1593,9 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
             ci.fdc_wires.chamber = chamber;
             ci.fdc_wires.wire = wire;
             break;
+         case DTranslationTable::RF:
+            ci.rf.dSystem = NameToSystem(locSystem.c_str());
+            break;
          case DTranslationTable::SC:
             ci.sc.sector = sector;
             break;
@@ -1533,12 +1612,12 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
             ci.tof.end = end;
             break;
          case DTranslationTable::PS:
-	    ci.ps.side = side;
-	    ci.ps.id = id;
-	    break;
+	        ci.ps.side = side;
+	        ci.ps.id = id;
+	        break;
          case DTranslationTable::PSC:
-	    ci.psc.id = id;
-	    break;
+	        ci.psc.id = id;
+            break;
          case DTranslationTable::UNKNOWN_DETECTOR:
 		 default:
             break;

@@ -9,7 +9,7 @@
 #define _DSCHit_factory_
 
 #include <JANA/JFactory.h>
-#include "TTAB/DTranslationTable.h"
+#include "TTAB/DTTabUtilities.h"
 #include "DSCHit.h"
 
 
@@ -21,9 +21,8 @@ class DSCHit_factory:public jana::JFactory<DSCHit>{
 		// overall scale factors
 		double a_scale;
 		double t_scale;
-                double t_base;
+        double t_base;
 		double t_tdc_base;
-		double tdc_scale;
 
 		// calibration constants stored by channel
 		vector<double>  a_gains;
@@ -38,7 +37,6 @@ class DSCHit_factory:public jana::JFactory<DSCHit>{
 		double DELTA_T_ADC_TDC_MAX;
 		double HIT_TIME_WINDOW;
 		double ADC_THRESHOLD;
-		int    rollover_count;
 
 		// geometry information
 		static const int MAX_SECTORS = 30.;

@@ -3592,7 +3592,7 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 					if(VERBOSE>5) evioout << "      Found F1 data  : chip=" << chip << " chan=" << chan_on_chip  << " time=" << time << " (header: chip=" << chip_f1header << ")" << endl;
 					//if(chip!=chip_f1header) throw JException("F1 chip number in data does not match header!");
 					channel = F1TDC_channel(chip, chan_on_chip, modtype);
-					hit = new DF1TDCHit(rocid, slot_block_header, channel, itrigger, trig_time_f1header, time, *iptr);
+					hit = new DF1TDCHit(rocid, slot_block_header, channel, itrigger, trig_time_f1header, time, *iptr, MODULE_TYPE(modtype));
 					if(objs)objs->hit_objs.push_back(hit);
 					break;
 				case 0xF8000000: // Filler word

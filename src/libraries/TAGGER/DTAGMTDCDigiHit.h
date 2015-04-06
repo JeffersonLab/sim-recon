@@ -18,7 +18,8 @@ class DTAGMTDCDigiHit: public jana::JObject {
       // Add data members here. For example:
       int row;         ///< row number 1-5
       int column;      ///< column number 1-102
-      uint32_t time;   ///< hit time
+
+	  uint32_t time;
       
       // This method is used primarily for pretty printing
       // the second argument to AddString is printf style format
@@ -31,4 +32,3 @@ class DTAGMTDCDigiHit: public jana::JObject {
 };
 
 #endif // _DTAGMTDCDigiHit_
-

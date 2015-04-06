@@ -34,7 +34,6 @@ jerror_t DPSCHit_factory::init(void)
   a_scale    = 0.0001; 
   t_scale    = 0.0625;   // 62.5 ps/count
   t_base     = 0.;    // ns
-  tdc_scale  = 0.060;    // 60 ps/count
 	
   return NOERROR;
 }
@@ -58,21 +57,6 @@ jerror_t DPSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
   /// Read in calibration constants
   if(print_messages) jout << "In DPSCHit_factory, loading constants..." << endl;
 	
-  // F1TDC tframe(ns) and rollover count
-  map<string,int> tdc_parms;
-  tframe=-1;
-  int rollover_count=0;
-  if (eventLoop->GetCalib("/F1TDC/rollover",tdc_parms))
-    jout << "Error loading /F1TDC/rollover !" <<endl;
-  if (tdc_parms.find("tframe")!=tdc_parms.end())
-    tframe=tdc_parms["tframe"];
-  else 
-    jerr << "Unable to get tframe from /F1TDC/rollover !" <<endl;
-  if (tdc_parms.find("count")!=tdc_parms.end())
-    rollover_count=tdc_parms["count"];
-  else 
-    jerr << "Unable to get rollover count from /F1TDC/rollover !" <<endl;
-
   // extract the PS Geometry
   vector<const DPSGeometry*> psGeomVect;
   eventLoop->Get( psGeomVect );
@@ -94,11 +78,6 @@ jerror_t DPSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
   else
     jerr << "Unable to get PSC_ADC_TSCALE from /PHOTON_BEAM/pair_spectrometer/digi_scales !" 
 	 << endl;
-  if (scale_factors.find("PSC_TDC_SCALE") != scale_factors.end())
-    tdc_scale = scale_factors["PSC_TDC_SCALE"];
-  else
-    jerr << "Unable to get PSC_TDC_SCALE from /PHOTON_BEAM/pair_spectrometer/digi_scales !" 
-	 << endl;
 
   // load base time offset
   map<string,double> base_time_offset;
@@ -108,22 +87,6 @@ jerror_t DPSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
     t_base = base_time_offset["PS_COARSE_BASE_TIME_OFFSET"];
   else
     jerr << "Unable to get PS_COARSE_BASE_TIME_OFFSET from /PHOTON_BEAM/pair_spectrometer/base_time_offset !" << endl;
-
-  // tdc_scale
-  // By default we will use the F1TDC entries in the ccdb to find tdc_scale
-  if (tframe>0 && rollover_count>0){ 
-    tdc_scale=double(tframe)/double(rollover_count);
-  }
-  else {
-    jerr << "Unable to get TDC_SCALE from database !" 
-	 << endl;
-  }
-  if (runnumber==0) { // use hard-coded values when runnumber is 0
-    tframe = 3744;
-    rollover_count = 64466; 
-    tdc_scale = double(tframe)/double(rollover_count);
-  }
-  if(print_messages) jout << "TDC scale = " << tdc_scale << " ns/count" << endl;
 
   /// Read in calibration constants
   vector<double> raw_adc_pedestals;
@@ -170,6 +133,9 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
   if (psGeomVect.size() < 1)
     return OBJECT_NOT_AVAILABLE;
   const DPSGeometry& psGeom = *(psGeomVect[0]);
+
+	const DTTabUtilities* locTTabUtilities = NULL;
+	loop->GetSingle(locTTabUtilities);
 
   // First, make hits out of all fADC250 hits
   vector<const DPSCDigiHit*> digihits;
@@ -240,18 +206,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
   // create a new hit with just the TDC info.
   vector<const DPSCTDCDigiHit*> tdcdigihits;
   loop->Get(tdcdigihits);
-  vector<const DCODAROCInfo*> codarocinfos;
-  loop->Get(codarocinfos);
 
-  int tref = 0;
-  for(unsigned int i=0;i<codarocinfos.size();i++) {
-      if(codarocinfos[i]->rocid==95) {
-	  uint64_t cycles = (uint64_t)(4*codarocinfos[i]->timestamp/tframe);
-	  tref=4*codarocinfos[i]->timestamp - cycles*tframe; // in ns
-	  break;
-      }
-  }
-  if (tref > 0) {
     for(unsigned int i=0; i<tdcdigihits.size(); i++) {
       const DPSCTDCDigiHit *digihit = tdcdigihits[i];
 	    
@@ -266,12 +221,8 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	module  = digihit->counter_id - psGeom.NUM_COARSE_COLUMNS;
       }
 
-      // Take care of rollover
-      double tdiff = tdc_scale*digihit->time - tref; // in ns
-      if (tdiff < 0) tdiff += tframe;
-      else if (tdiff > tframe) tdiff -= tframe;
       // Apply calibration constants here
-      double T = tdiff - tdc_scale*GetConstant(tdc_time_offsets, digihit, psGeom) + t_base; 
+      double T = locTTabUtilities->Convert_DigiTimeToNs(digihit) - GetConstant(tdc_time_offsets, digihit, psGeom) + t_base;
       // Look for existing hits to see if there is a match
       // or create new one if there is no match
       DPSCHit *hit = FindMatch(arm, module, T);
@@ -292,7 +243,6 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
                 
       hit->AddAssociatedObject(digihit);
     }
-  }
 
   return NOERROR;
 }

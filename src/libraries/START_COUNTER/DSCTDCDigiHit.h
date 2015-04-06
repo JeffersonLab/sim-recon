@@ -17,8 +17,9 @@ class DSCTDCDigiHit:public jana::JObject{
 		
 		// Add data members here. For example:
 		int sector;		///< sector number 1-24
-		uint32_t time;	///< hit time
 		
+		uint32_t time;
+
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
 		void toStrings(vector<pair<string,string> > &items)const{

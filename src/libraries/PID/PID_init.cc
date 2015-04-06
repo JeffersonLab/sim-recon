@@ -25,7 +25,6 @@ using namespace jana;
 #include "DMCThrown_factory_Decaying.h"
 #include "DMCThrown_factory_Primary.h"
 
-#include "DRFTime.h"
 #include "DBeamPhoton.h"
 #include "DMCReaction.h"
 
@@ -35,8 +34,6 @@ jerror_t PID_init(JEventLoop *loop)
 {
 	/// Create and register PID data factories
 	loop->AddFactory(new JFactory<DMCReaction>());
-	loop->AddFactory(new JFactory<DRFTime>());
-	loop->AddFactory(new JFactory<DRFTime>("TRUTH"));
 	loop->AddFactory(new JFactory<DBeamPhoton>("MCGEN"));
 	loop->AddFactory(new DBeamPhoton_factory);
 	loop->AddFactory(new DBeamPhoton_factory_TRUTH);

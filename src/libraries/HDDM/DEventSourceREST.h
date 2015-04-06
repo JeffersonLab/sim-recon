@@ -87,7 +87,7 @@ class DEventSourceREST:public JEventSource
    // store any data here that might change from event to event.
 
 	map<unsigned int, double> dTargetCenterZMap; //unsigned int is run number
-	map<unsigned int, double> dRFFrequencyMap; //unsigned int is run number
+	map<unsigned int, double> dRFBunchPeriodMap; //unsigned int is run number
 
    std::ifstream *ifs;		// input hddm file ifstream
    hddm_r::istream *fin;	// provides hddm layer on top of ifstream

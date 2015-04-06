@@ -12,6 +12,8 @@
 using namespace std;
 
 #include <JANA/JFactory.h>
+#include "TTAB/DTTabUtilities.h"
+
 #include "DTAGMHit.h"
 #include "DTAGMGeometry.h"
 
@@ -31,11 +33,8 @@ class DTAGMHit_factory: public jana::JFactory<DTAGMHit> {
       // overall scale factors
       double fadc_a_scale;  // pixels per fADC pulse integral count
       double fadc_t_scale;  // ns per fADC time count
-      double tdc_t_scale;   // ns per F1TDC count
       double t_base;
       double t_tdc_base;
-      int rollover_count;
-
 
       // calibration constants stored in row, column format
       double fadc_gains[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];

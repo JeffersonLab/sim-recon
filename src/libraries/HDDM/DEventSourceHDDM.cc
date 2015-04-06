@@ -227,14 +227,14 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
       double locTargetCenterZ = 0.0;
       locGeometry->GetTargetZ(locTargetCenterZ);
 
-      vector<double> locRFFrequencyVector;
-      loop->GetCalib("PHOTON_BEAM/rf_frequency", locRFFrequencyVector);
-      double locRFBunchFrequency = locRFFrequencyVector[0];
+      vector<double> locRFBunchPeriodVector;
+      loop->GetCalib("PHOTON_BEAM/rf_frequency", locRFBunchPeriodVector);
+      double locRFBunchPeriod = locRFBunchPeriodVector[0];
 
       LockRead();
       {
          dTargetCenterZMap[locRunNumber] = locTargetCenterZ;
-         dRFFrequencyMap[locRunNumber] = locRFBunchFrequency;
+         dRFBunchPeriodMap[locRunNumber] = locRFBunchPeriod;
       }
       UnlockRead();
    }
@@ -414,7 +414,7 @@ jerror_t DEventSourceHDDM::Extract_DRFTime(hddm_s::HDDM *record,
          continue;
       DRFTime *locRFTime = new DRFTime;
       locRFTime->dTime = iter->getTsync();
-      locRFTime->dTimeVariance = 0.0015; //1.5ps
+      locRFTime->dTimeVariance = 0.0; //SET ME!!
       locRFTimes.push_back(locRFTime);
    }
 
@@ -432,46 +432,46 @@ jerror_t DEventSourceHDDM::Extract_DRFTime(hddm_s::HDDM *record,
 	vector<const DBeamPhoton*> locMCGENPhotons;
 	locEventLoop->Get(locMCGENPhotons, "MCGEN");
 	if(locMCGENPhotons.empty())
-      return OBJECT_NOT_AVAILABLE; //Experimental data & it's missing: bail
+		return OBJECT_NOT_AVAILABLE; //Experimental data & it's missing: bail
 
 	//Is MC data. Either:
-		//No tag: return t = 0.0, but true t is 0.0 +/- n*locRFBunchFrequency: must select the correct beam bunch
+		//No tag: return t = 0.0, but true t is 0.0 +/- n*locRFBunchPeriod: must select the correct beam bunch
 		//TRUTH tag: get exact t from DBeamPhoton tag MCGEN
 
 	if(tag == "TRUTH")
-   {
-	   DRFTime *locRFTime = new DRFTime;
+	{
+		DRFTime *locRFTime = new DRFTime;
 		locRFTime->dTime = locMCGENPhotons[0]->time();
 		locRFTime->dTimeVariance = 0.0;
 		locRFTimes.push_back(locRFTime);
-   }
+	}
 	else
-   {
-		double locRFBunchFrequency = 0.0;
+	{
+		double locRFBunchPeriod = 0.0;
 		int locRunNumber = locEventLoop->GetJEvent().GetRunNumber();
 		LockRead();
 		{
-			locRFBunchFrequency = dRFFrequencyMap[locRunNumber];
+			locRFBunchPeriod = dRFBunchPeriodMap[locRunNumber];
 		}
 		UnlockRead();
 
-		//start with true RF time, increment/decrement by multiples of locRFBunchFrequency ns until closest to 0
+		//start with true RF time, increment/decrement by multiples of locRFBunchPeriod ns until closest to 0
 		double locTime = locMCGENPhotons[0]->time();
-		int locNumRFBuckets = int(locTime/locRFBunchFrequency);
-		locTime -= double(locNumRFBuckets)*locRFBunchFrequency;
-		while(locTime > 0.5*locRFBunchFrequency)
-			locTime -= locRFBunchFrequency;
-		while(locTime < -0.5*locRFBunchFrequency)
-			locTime += locRFBunchFrequency;
+		int locNumRFBuckets = int(locTime/locRFBunchPeriod);
+		locTime -= double(locNumRFBuckets)*locRFBunchPeriod;
+		while(locTime > 0.5*locRFBunchPeriod)
+			locTime -= locRFBunchPeriod;
+		while(locTime < -0.5*locRFBunchPeriod)
+			locTime += locRFBunchPeriod;
 
-	   DRFTime *locRFTime = new DRFTime;
+		DRFTime *locRFTime = new DRFTime;
 		locRFTime->dTime = locTime;
 		locRFTime->dTimeVariance = 0.0;
 		locRFTimes.push_back(locRFTime);
-   }
+	}
 
-   // Copy into factories
-   factory->CopyTo(locRFTimes);
+	// Copy into factories
+	factory->CopyTo(locRFTimes);
 
    return NOERROR;
 }

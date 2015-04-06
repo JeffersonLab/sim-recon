@@ -44,6 +44,8 @@ using namespace jana;
 #include <FCAL/DFCALDigiHit.h>
 #include <FDC/DFDCCathodeDigiHit.h>
 #include <FDC/DFDCWireDigiHit.h>
+#include <RF/DRFDigiTime.h>
+#include <RF/DRFTDCDigiTime.h>
 #include <START_COUNTER/DSCDigiHit.h>
 #include <START_COUNTER/DSCTDCDigiHit.h>
 #include <TOF/DTOFDigiHit.h>
@@ -56,6 +58,7 @@ using namespace jana;
 #include <PAIR_SPECTROMETER/DPSCDigiHit.h>
 #include <PAIR_SPECTROMETER/DPSCTDCDigiHit.h>
 
+#include "GlueX.h"
 
 class DTranslationTable:public jana::JObject{
 	public:
@@ -88,13 +91,14 @@ class DTranslationTable:public jana::JObject{
 			FDC_WIRES,
 			PS,
 			PSC,
+			RF,
 			SC,
 			TAGH,
 			TAGM,
 			TOF,
 			NUM_DETECTOR_TYPES
 		};
-		
+
 		string DetectorName(Detector_t type) const {
 			switch(type){
 				case BCAL: return "BCAL";
@@ -104,6 +108,7 @@ class DTranslationTable:public jana::JObject{
 				case FDC_WIRES: return "FDC_WIRES";
 				case PS: return "PS";
 				case PSC: return "PSC";
+				case RF: return "RF";
 				case SC: return "SC";
 				case TAGH: return "TAGH";
 				case TAGM: return "TAGM";
@@ -113,7 +118,7 @@ class DTranslationTable:public jana::JObject{
 					return "UNKNOWN";
 			}
 		}
-		
+
 		class BCALIndex_t{
 			public:
 			uint32_t module;
@@ -191,6 +196,15 @@ class DTranslationTable:public jana::JObject{
 			}
 		};
 
+		class RFIndex_t{
+			public:
+			DetectorSystem_t dSystem;
+
+			inline bool operator==(const RFIndex_t &rhs) const {
+				return (dSystem == rhs.dSystem);
+			}
+		};
+
 		class SCIndex_t{
 			public:
 			uint32_t sector;
@@ -245,6 +259,7 @@ class DTranslationTable:public jana::JObject{
 					FDC_WiresIndex_t fdc_wires;
 					PSIndex_t ps;
 					PSCIndex_t psc;
+					RFIndex_t rf;
 					SCIndex_t sc;
 					TAGHIndex_t tagh;
 					TAGMIndex_t tagm;
@@ -266,8 +281,9 @@ class DTranslationTable:public jana::JObject{
 		DTOFDigiHit*  MakeTOFDigiHit( const TOFIndex_t &idx,  const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
 		DTAGMDigiHit* MakeTAGMDigiHit(const TAGMIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
 		DTAGHDigiHit* MakeTAGHDigiHit(const TAGHIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
-		DPSDigiHit*   MakePSDigiHit(  const PSIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
-		DPSCDigiHit*  MakePSCDigiHit( const PSCIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DPSDigiHit*   MakePSDigiHit(  const PSIndex_t &idx,   const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DPSCDigiHit*  MakePSCDigiHit( const PSCIndex_t &idx,  const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DRFDigiTime*  MakeRFDigiTime( const RFIndex_t &idx,   const Df250PulseTime *hit) const;
 
 		// fADC125
 		DCDCDigiHit* MakeCDCDigiHit(const CDCIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt, const Df125PulsePedestal *pp) const;
@@ -276,6 +292,7 @@ class DTranslationTable:public jana::JObject{
 		// F1TDC
 		DBCALTDCDigiHit* MakeBCALTDCDigiHit(const BCALIndex_t &idx,      const DF1TDCHit *hit) const;
 		DFDCWireDigiHit* MakeFDCWireDigiHit(const FDC_WiresIndex_t &idx, const DF1TDCHit *hit) const;
+		DRFTDCDigiTime*  MakeRFTDCDigiTime( const RFIndex_t &idx,        const DF1TDCHit *hit) const;
 		DSCTDCDigiHit*   MakeSCTDCDigiHit(  const SCIndex_t &idx,        const DF1TDCHit *hit) const;
 		DTAGMTDCDigiHit* MakeTAGMTDCDigiHit(const TAGMIndex_t &idx,      const DF1TDCHit *hit) const;
 		DTAGHTDCDigiHit* MakeTAGHTDCDigiHit(const TAGHIndex_t &idx,      const DF1TDCHit *hit) const;
@@ -283,6 +300,7 @@ class DTranslationTable:public jana::JObject{
 		
 		// CAEN1290TDC
 		DTOFTDCDigiHit*  MakeTOFTDCDigiHit(const TOFIndex_t &idx,        const DCAEN1290TDCHit *hit) const;
+		DRFTDCDigiTime*  MakeRFTDCDigiTime(const RFIndex_t &idx,         const DCAEN1290TDCHit *hit) const;
 
 		void Addf250ObjectsToCallStack(JEventLoop *loop, string caller) const;
 		void Addf125ObjectsToCallStack(JEventLoop *loop, string caller) const;
@@ -413,9 +431,9 @@ void DTranslationTable::CopyDf125Info(T *h, const Df125PulseIntegral *pi, const 
 template<class T>
 void DTranslationTable::CopyDF1TDCInfo(T *h, const DF1TDCHit *hit) const
 {
-	/// Copy info from the fADC125 into a hit object.
+	/// Copy info from the f1tdc into a hit object.
+
 	h->time = hit->time;
-	
 	h->AddAssociatedObject(hit);
 }
 

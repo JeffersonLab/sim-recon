@@ -13,6 +13,7 @@ extern jerror_t CDC_init(JEventLoop *loop);
 extern jerror_t FDC_init(JEventLoop *loop);
 extern jerror_t FCAL_init(JEventLoop *loop);
 extern jerror_t CCAL_init(JEventLoop *loop);
+extern jerror_t RF_init(JEventLoop *loop);
 extern jerror_t START_COUNTER_init(JEventLoop *loop);
 extern jerror_t TAGGER_init(JEventLoop *loop);
 extern jerror_t TOF_init(JEventLoop *loop);
@@ -53,6 +54,7 @@ jerror_t DFactoryGenerator::GenerateFactories(JEventLoop *loop)
 	FDC_init(loop);
 	FCAL_init(loop);
 	CCAL_init(loop);
+	RF_init(loop);
 	START_COUNTER_init(loop);
 	TAGGER_init(loop);
 	TOF_init(loop);

@@ -8,14 +8,16 @@
 #ifndef _DPSCHit_factory_
 #define _DPSCHit_factory_
 
+#include <vector>
+#include <utility>
+
 #include <JANA/JFactory.h>
+#include "TTAB/DTTabUtilities.h"
+
 #include "DPSCHit.h"
 #include "DPSCDigiHit.h"
 #include "DPSCTDCDigiHit.h"
 #include "DPSGeometry.h"
-
-#include <vector>
-#include <utility>
 
 typedef vector< pair<double,double> > psc_digi_constants_t;
 

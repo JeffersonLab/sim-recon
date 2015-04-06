@@ -17,7 +17,8 @@ class DTAGHTDCDigiHit: public jana::JObject {
       
       // Add data members here. For example:
       int counter_id;  ///< counter id 1-274
-      uint32_t time;   ///< hit time
+
+	  uint32_t time;
       
       // This method is used primarily for pretty printing
       // the second argument to AddString is printf style format

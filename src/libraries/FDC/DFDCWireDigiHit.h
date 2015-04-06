@@ -18,7 +18,7 @@ class DFDCWireDigiHit:public jana::JObject{
 		uint32_t package;
 		uint32_t chamber;
 		uint32_t wire;
-		uint32_t time;	///< hit time
+		uint32_t time;
 		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format

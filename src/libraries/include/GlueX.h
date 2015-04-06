@@ -9,6 +9,8 @@
 #ifndef _GlueX_
 #define _GlueX_
 
+#include <string.h>
+
 enum DetectorSystem_t{
      SYS_NULL       = 0x0000,
      SYS_CDC        = 0x0001,
@@ -24,6 +26,8 @@ enum DetectorSystem_t{
      SYS_CCAL       = 0x0400,
      SYS_TAGH       = 0x0800,
      SYS_RF         = 0x1000,
+     SYS_PS         = 0x2000,
+     SYS_PSC        = 0x4000,
 };
 
 inline const char* SystemName(DetectorSystem_t sys)
@@ -71,8 +75,48 @@ inline const char* SystemName(DetectorSystem_t sys)
           case SYS_RF:
               return "RF";
               break;
+          case SYS_PS:
+              return "PS";
+              break;
+          case SYS_PSC:
+              return "PSC";
+              break;
      }
      return "UNKNOWN";
+}
+
+inline DetectorSystem_t NameToSystem(const char* locSystemName)
+{
+	if(strcmp(locSystemName, "CDC") == 0)
+		return SYS_CDC;
+	else if(strcmp(locSystemName, "FDC") == 0)
+		return SYS_FDC;
+	else if(strcmp(locSystemName, "BCAL") == 0)
+		return SYS_BCAL;
+	else if(strcmp(locSystemName, "TOF") == 0)
+		return SYS_TOF;
+	else if(strcmp(locSystemName, "Cherenkov") == 0)
+		return SYS_CHERENKOV;
+	else if(strcmp(locSystemName, "UPV") == 0)
+		return SYS_FCAL;
+	else if(strcmp(locSystemName, "TAGM") == 0)
+		return SYS_TAGM;
+	else if(strcmp(locSystemName, "TAGH") == 0)
+		return SYS_TAGH;
+	else if(strcmp(locSystemName, "ST") == 0)
+		return SYS_START;
+	else if(strcmp(locSystemName, "RICH") == 0)
+		return SYS_RICH;
+	else if(strcmp(locSystemName, "CCAL") == 0)
+		return SYS_CCAL;
+	else if(strcmp(locSystemName, "RF") == 0)
+		return SYS_RF;
+	else if(strcmp(locSystemName, "PS") == 0)
+		return SYS_PS;
+	else if(strcmp(locSystemName, "PSC") == 0)
+		return SYS_PSC;
+	else
+		return SYS_NULL;
 }
 
 #endif // _GlueX_

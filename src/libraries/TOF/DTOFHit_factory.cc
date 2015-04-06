@@ -248,19 +248,28 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
         _data.push_back(hit);
     }
 
-    //Find the Trigger Time from the TI:
+	//Get the TDC hits
+    vector<const DTOFTDCDigiHit*> tdcdigihits;
+    loop->Get(tdcdigihits);
+    const DF1TDCHit* locF1TDCHit = NULL;
+    if(!tdcdigihits.empty())
+    	tdcdigihits[0]->GetSingle(locF1TDCHit);
+    unsigned int locROCID = (locF1TDCHit == NULL) ? 78 : locF1TDCHit->rocid;
+
+    //	Find the Trigger Time from the TI:
     // and determine which 4ns pulse the trigger is
     // within 24 ns.
-    vector<const DCODAROCInfo*> TIInfo;
-    loop->Get(TIInfo);
+    vector<const DCODAROCInfo*> locCODAROCInfos;
+    loop->Get(locCODAROCInfos);
 
-    unsigned long TriggerTime = 0;
-    for (unsigned int k=0; k<TIInfo.size(); k++){
-        if (TIInfo[k]->rocid == 78){
-            TriggerTime = TIInfo[k]->timestamp;
-            break;
-        }
-    }
+    uint64_t TriggerTime = 0;
+	for (unsigned int k=0; k<locCODAROCInfos.size(); k++)
+	{
+		if (locCODAROCInfos[k]->rocid != locROCID)
+			continue;
+		TriggerTime = locCODAROCInfos[k]->timestamp;
+		break;
+	}
 
     // TriggerBIT is not really a bit...
     int TriggerBIT = TriggerTime%6;  
@@ -269,9 +278,8 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
     // existing fADC hits where possible and updating
     // their time information. If no match is found, then
     // create a new hit with just the TDC info.
-    vector<const DTOFTDCDigiHit*> tdcdigihits;
-    loop->Get(tdcdigihits);
-    for(unsigned int i=0; i<tdcdigihits.size(); i++){
+    for(unsigned int i=0; i<tdcdigihits.size(); i++)
+    {
         const DTOFTDCDigiHit *digihit = tdcdigihits[i];
 
         // Apply calibration constants here
@@ -567,7 +575,6 @@ const double DTOFHit_factory::GetConstant( const tof_digi_constants_t &the_table
         return the_table[in_digihit->plane][in_digihit->bar-1].second;
     }
 }
-
 
 /*
    const double DTOFHit_factory::GetConstant( const tof_digi_constants_t &the_table,

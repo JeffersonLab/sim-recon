@@ -12,8 +12,11 @@
 using namespace std;
 
 #include <JANA/JFactory.h>
-#include "TTAB/DTranslationTable.h"
+#include "TTAB/DTTabUtilities.h"
+
 #include "DFDCHit.h"
+#include "DFDCWireDigiHit.h"
+#include "DFDCCathodeDigiHit.h"
 
 // store constants indexed by gPlane/element number
 typedef  vector< vector<double> >  fdc_digi_constants_t;
@@ -28,7 +31,6 @@ class DFDCHit_factory:public jana::JFactory<DFDCHit>{
 		double t_scale;
 		double t_base;
 		double fadc_t_base;
-		double tdc_scale;
 
 		// calibration constant tables
 		fdc_digi_constants_t a_gains;
