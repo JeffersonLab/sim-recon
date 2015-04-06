@@ -30,13 +30,8 @@ class DTTabUtilities : public jana::JObject
 	public:
 		JOBJECT_PUBLIC(DTTabUtilities);
 		
-		DTTabUtilities(JEventLoop* locEventLoop);
 		double Convert_DigiTimeToNs(const JObject* locTDCDigiHit) const;
 
-		void Set_TriggerReferenceSignal(uint64_t locTriggerReferenceSignal){dTriggerReferenceSignal = locTriggerReferenceSignal;}
-		void Set_CODAROCInfoMap(const map<uint32_t, const DCODAROCInfo*>& locCODAROCInfoMap){dCODAROCInfoMap = locCODAROCInfoMap;}
-
-	private:
 		//New System
 		map<uint32_t, const DCODAROCInfo*> dCODAROCInfoMap; //key is rocid
 		map<uint32_t, const DF1TDCConfig*> dF1TDCConfigMap; //key is rocid
@@ -45,6 +40,8 @@ class DTTabUtilities : public jana::JObject
 		uint64_t dTriggerReferenceSignal;
 		uint64_t dRolloverTimeWindowLength; //"T" or "T_{frame}"
 		uint64_t dNumTDCTicksInRolloverTimeWindow; //"N" or "N_{frame}"
+
+	private:
 
 		double Convert_DigiTimeToNs(const DF1TDCHit* locF1TDCHit) const;
 		double Convert_DigiTimeToNs_GlobalSystemClock_ConfigInfo(const DF1TDCHit* locF1TDCHit, const DCODAROCInfo* locCODAROCInfo, const DF1TDCConfig* locF1TDCConfig) const;

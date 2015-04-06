@@ -7,41 +7,6 @@
 
 #include "DTTabUtilities.h"
 
-DTTabUtilities::DTTabUtilities(JEventLoop* locEventLoop)
-{
-	//import run-dependent info here (either from CCDB or event stream)
-
-	// Get DF1TDCConfig's, put into map (will use to convert F1TDC digi time to ns)
-		// Should be constant for a given run
-	vector<const DF1TDCConfig*> locF1TDCConfigs;
-	locEventLoop->Get(locF1TDCConfigs);
-	for(size_t loc_i = 0; loc_i < locF1TDCConfigs.size(); ++loc_i)
-		dF1TDCConfigMap[locF1TDCConfigs[loc_i]->rocid] = locF1TDCConfigs[loc_i];
-
-	//Early Commissioning Data: Code & CCDB constants
-	//BCAL, RF: none
-	//SC, TAGH, TAGM: Uses F1TDC rollover
-	//FDC: is bad (tdc_scale fixed at 0.115, no ref time or tframe). Use F1TDC rollover x 2
-	//PSC: Uses F1TDC rollover; if run = 0 change run = 2012 (same as old hardcoded)
-
-	// F1TDC tframe(ns) and rollover count
-	map<string, int> tdc_parms;
-	if(locEventLoop->GetCalib("/F1TDC/rollover", tdc_parms))
-		jout << "Error loading /F1TDC/rollover !" << endl;
-
-	map<string, int>::const_iterator locMapIterator = tdc_parms.find("tframe");
-	dRolloverTimeWindowLength = (locMapIterator != tdc_parms.end()) ? uint64_t(tdc_parms["tframe"]) : 0;
-
-	locMapIterator = tdc_parms.find("count");
-	dNumTDCTicksInRolloverTimeWindow = (locMapIterator != tdc_parms.end()) ? uint64_t(tdc_parms["count"]) : 0;
-
-	if(locEventLoop->GetJEvent().GetRunNumber() == 0) //PSC data with bad run number. Use hard-coded values from run 2012
-	{
-		dRolloverTimeWindowLength = 3744;
-		dNumTDCTicksInRolloverTimeWindow = 64466;
-	}
-}
-
 double DTTabUtilities::Convert_DigiTimeToNs(const JObject* locTDCDigiHit) const
 {
 	//See if the input object is an DF1TDCHit. If so, convert it
