@@ -43,7 +43,7 @@ class DTTabUtilities : public jana::JObject
 
 		//Old System ONLY //Early Fall 2014 Commissioning data ONLY
 		uint64_t dTriggerReferenceSignal;
-		double dRolloverTimeWindowLength; //"T" or "T_{frame}"
+		uint64_t dRolloverTimeWindowLength; //"T" or "T_{frame}"
 		uint64_t dNumTDCTicksInRolloverTimeWindow; //"N" or "N_{frame}"
 
 		double Convert_DigiTimeToNs(const DF1TDCHit* locF1TDCHit) const;

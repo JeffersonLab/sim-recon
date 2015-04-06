@@ -30,10 +30,10 @@ DTTabUtilities::DTTabUtilities(JEventLoop* locEventLoop)
 		jout << "Error loading /F1TDC/rollover !" << endl;
 
 	map<string, int>::const_iterator locMapIterator = tdc_parms.find("tframe");
-	dRolloverTimeWindowLength = (locMapIterator != tdc_parms.end()) ? double(tdc_parms["tframe"]) : std::numeric_limits<double>::quiet_NaN();
+	dRolloverTimeWindowLength = (locMapIterator != tdc_parms.end()) ? uint64_t(tdc_parms["tframe"]) : 0;
 
 	locMapIterator = tdc_parms.find("count");
-	dNumTDCTicksInRolloverTimeWindow = (locMapIterator != tdc_parms.end()) ? double(tdc_parms["count"]) : std::numeric_limits<double>::quiet_NaN();
+	dNumTDCTicksInRolloverTimeWindow = (locMapIterator != tdc_parms.end()) ? uint64_t(tdc_parms["count"]) : 0;
 
 	if(locEventLoop->GetJEvent().GetRunNumber() == 0) //PSC data with bad run number. Use hard-coded values from run 2012
 	{
@@ -126,7 +126,7 @@ double DTTabUtilities::Convert_DigiTimeToNs_GlobalSystemClock_CCDB(const DF1TDCH
 	bool locIsLowResolutionReadout = (locF1TDCHit->modtype == DModuleType::F1TDC48);
 
 	//Calculate TDC -> ns Scale Factor
-	double locTDCToNsScaleFactor = dRolloverTimeWindowLength/double(dNumTDCTicksInRolloverTimeWindow);
+	double locTDCToNsScaleFactor = double(dRolloverTimeWindowLength)/double(dNumTDCTicksInRolloverTimeWindow);
 	if(locIsLowResolutionReadout) //should use HIGHRES bit from the data-stream, but it's not available
 		locTDCToNsScaleFactor *= 2.0; //fewer TDC-ticks per ns
 
@@ -154,11 +154,11 @@ double DTTabUtilities::Convert_DigiTimeToNs_TriggerReferenceSignal(const DF1TDCH
 	bool locIsLowResolutionReadout = (locF1TDCHit->modtype == DModuleType::F1TDC48);
 
 	//Calculate TDC -> ns Scale Factor
-	double locTDCToNsScaleFactor = dRolloverTimeWindowLength/double(dNumTDCTicksInRolloverTimeWindow);
+	double locTDCToNsScaleFactor = double(dRolloverTimeWindowLength)/double(dNumTDCTicksInRolloverTimeWindow);
 	if(locIsLowResolutionReadout) //should use HIGHRES bit from the data-stream, but it's not available
 		locTDCToNsScaleFactor *= 2.0; //fewer TDC-ticks per ns
 
-	int64_t locDeltaTDC = int64_t(uint64_t(locF1TDCHit->time) - dTriggerReferenceSignal);
+	int64_t locDeltaTDC = int64_t(locF1TDCHit->time) - int64_t(dTriggerReferenceSignal);
 
 	// Take care of rollover
 	if(locDeltaTDC < 0)
