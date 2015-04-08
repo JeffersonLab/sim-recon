@@ -11,6 +11,7 @@
 using namespace std;
 
 #include "DPSHit_factory.h"
+#include <DAQ/Df250PulsePedestal.h>
 #include <DAQ/Df250PulseIntegral.h>
 using namespace jana;
 
@@ -134,17 +135,27 @@ jerror_t DPSHit_factory::evnt(JEventLoop *loop, int eventnumber)
     const DPSDigiHit *digihit = digihits[i];
 
     // Make sure channel id is in valid range
-    if( (digihit->arm < 0) && (digihit->arm >= psGeom.NUM_ARMS) ) {
+    if( (digihit->arm < 0) || (digihit->arm >= psGeom.NUM_ARMS) ) {
       sprintf(str, "DPSDigiHit arm out of range! arm=%d (should be 0-%d)", 
 	      digihit->arm, psGeom.NUM_ARMS);
       throw JException(str);
     }
-    if( (digihit->arm <= 0) && (digihit->column > psGeom.NUM_FINE_COLUMNS) ) {
+    if( (digihit->column <= 0) || (digihit->column > psGeom.NUM_FINE_COLUMNS) ) {
       sprintf(str, "DPSDigiHit column out of range! column=%d (should be 0-%d)", 
 	      digihit->column, psGeom.NUM_FINE_COLUMNS);
       throw JException(str);
     }
-				
+
+    // Throw away hits where the fADC timing algorithm failed
+    //if (digihit->pulse_time == 0) continue;
+    // The following condition signals an error state in the flash algorithm
+    // Do not make hits out of these
+    const Df250PulsePedestal* PPobj = NULL;
+    digihit->GetSingle(PPobj);
+    if (PPobj != NULL){
+      if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+    }
+	
     // Get pedestal, prefer associated event pedestal if it exists,
     // otherwise, use the average pedestal from CCDB
     double pedestal = GetConstant(adc_pedestals,digihit,psGeom);
