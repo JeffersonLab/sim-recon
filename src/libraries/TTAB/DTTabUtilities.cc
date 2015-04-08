@@ -68,10 +68,7 @@ double DTTabUtilities::Convert_DigiTimeToNs_GlobalSystemClock_ConfigInfo(const D
 	uint64_t locRolloverTimeWindowLength = (uint64_t(32))*(uint64_t(locF1TDCConfig->REFCNT + 2));
 
 	// Transition the reference time into this F1TDC time window (get remainder)
-	// DCODAROCInfo::timestamp is the number of clock ticks of the global system clock since it was reset (at the beginning of the run)
-    uint64_t locReferenceClockTime = (uint64_t(4))*locCODAROCInfo->timestamp; // one clock tick = 4 ns
-	uint64_t locNumRollovers = locReferenceClockTime/locRolloverTimeWindowLength;
-	uint64_t locReferenceTimeThisWindow = locReferenceClockTime - locNumRollovers*locRolloverTimeWindowLength;
+	uint64_t locReferenceTimeThisWindow = Calc_ROCRefTimeThisWindow(locCODAROCInfo, locRolloverTimeWindowLength);
 
 	//compute and return the time difference
 	double locDeltaT = locTDCToNsScaleFactor*double(locF1TDCHit->time) - double(locReferenceTimeThisWindow); // in ns
@@ -91,15 +88,10 @@ double DTTabUtilities::Convert_DigiTimeToNs_GlobalSystemClock_CCDB(const DF1TDCH
 	bool locIsLowResolutionReadout = (locF1TDCHit->modtype == DModuleType::F1TDC48);
 
 	//Calculate TDC -> ns Scale Factor
-	double locTDCToNsScaleFactor = double(dRolloverTimeWindowLength)/double(dNumTDCTicksInRolloverTimeWindow);
-	if(locIsLowResolutionReadout) //should use HIGHRES bit from the data-stream, but it's not available
-		locTDCToNsScaleFactor *= 2.0; //fewer TDC-ticks per ns
+	double locTDCToNsScaleFactor = Calc_TDCToNsScaleFactor_CCDB(locIsLowResolutionReadout);
 
 	// Transition the reference time into this F1TDC time window (get remainder)
-	// DCODAROCInfo::timestamp is the number of clock ticks of the global system clock since it was reset (at the beginning of the run)
-    uint64_t locReferenceClockTime = (uint64_t(4))*locCODAROCInfo->timestamp; // one clock tick = 4 ns
-	uint64_t locNumRollovers = locReferenceClockTime/dRolloverTimeWindowLength;
-	uint64_t locReferenceTimeThisWindow = locReferenceClockTime - locNumRollovers*dRolloverTimeWindowLength;
+	uint64_t locReferenceTimeThisWindow = Calc_ROCRefTimeThisWindow(locCODAROCInfo, dRolloverTimeWindowLength);
 
 	//compute and return the time difference
 	double locDeltaT = locTDCToNsScaleFactor*double(locF1TDCHit->time) - double(locReferenceTimeThisWindow); // in ns
@@ -119,15 +111,37 @@ double DTTabUtilities::Convert_DigiTimeToNs_TriggerReferenceSignal(const DF1TDCH
 	bool locIsLowResolutionReadout = (locF1TDCHit->modtype == DModuleType::F1TDC48);
 
 	//Calculate TDC -> ns Scale Factor
+	double locTDCToNsScaleFactor = Calc_TDCToNsScaleFactor_CCDB(locIsLowResolutionReadout);
+
+	//Calc delta-t //potentially different scale factors between trigger reference & hit
+	double locDeltaT = locTDCToNsScaleFactor*double(locF1TDCHit->time) - Convert_TriggerReferenceSignal();
+
+	// Take care of rollover
+	if(locDeltaT < 0)
+		locDeltaT += double(dRolloverTimeWindowLength);
+
+	return locDeltaT;
+}
+
+double DTTabUtilities::Calc_TDCToNsScaleFactor_CCDB(bool locIsLowResolutionReadout) const
+{
 	double locTDCToNsScaleFactor = double(dRolloverTimeWindowLength)/double(dNumTDCTicksInRolloverTimeWindow);
 	if(locIsLowResolutionReadout) //should use HIGHRES bit from the data-stream, but it's not available
 		locTDCToNsScaleFactor *= 2.0; //fewer TDC-ticks per ns
+	return locTDCToNsScaleFactor;
+}
 
-	int64_t locDeltaTDC = int64_t(locF1TDCHit->time) - int64_t(dTriggerReferenceSignal);
+uint64_t DTTabUtilities::Calc_ROCRefTimeThisWindow(const DCODAROCInfo* locCODAROCInfo, uint64_t locRolloverTimeWindowLength) const
+{
+	// Transition the reference time into this F1TDC time window (get remainder)
+	// DCODAROCInfo::timestamp is the number of clock ticks of the global system clock since it was reset (at the beginning of the run)
+    uint64_t locReferenceClockTime = (uint64_t(4))*locCODAROCInfo->timestamp; // one clock tick = 4 ns
+	uint64_t locNumRollovers = locReferenceClockTime/locRolloverTimeWindowLength;
+	return (locReferenceClockTime - locNumRollovers*locRolloverTimeWindowLength);
+}
 
-	// Take care of rollover
-	if(locDeltaTDC < 0)
-		locDeltaTDC += int64_t(dNumTDCTicksInRolloverTimeWindow);
-
-	return locTDCToNsScaleFactor * double(locDeltaTDC);
+double DTTabUtilities::Convert_TriggerReferenceSignal(void) const
+{
+	double locTDCToNsScaleFactor = Calc_TDCToNsScaleFactor_CCDB(dTriggerReferenceSignalIsLowResTDC);
+	return locTDCToNsScaleFactor * double(dTriggerReferenceSignal);
 }

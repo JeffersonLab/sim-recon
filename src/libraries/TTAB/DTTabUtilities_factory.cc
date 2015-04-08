@@ -73,6 +73,7 @@ jerror_t DTTabUtilities_factory::evnt(jana::JEventLoop *locEventLoop, int eventn
 		if((locF1TDCHits[loc_i]->rocid != 51) || (locF1TDCHits[loc_i]->slot != 17) || (locF1TDCHits[loc_i]->channel != 8))
 			continue;
 		locTTabUtilities->dTriggerReferenceSignal = locF1TDCHits[loc_i]->time; //in TDC clicks
+		locTTabUtilities->dTriggerReferenceSignalIsLowResTDC = (locF1TDCHits[loc_i]->modtype == DModuleType::F1TDC48);
 		locFoundFlag = true;
 		break;
 	}

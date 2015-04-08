@@ -38,10 +38,15 @@ class DTTabUtilities : public jana::JObject
 
 		//Old System ONLY //Early Fall 2014 Commissioning data ONLY
 		uint64_t dTriggerReferenceSignal;
+		bool dTriggerReferenceSignalIsLowResTDC;
 		uint64_t dRolloverTimeWindowLength; //"T" or "T_{frame}"
 		uint64_t dNumTDCTicksInRolloverTimeWindow; //"N" or "N_{frame}"
 
 		bool dIsFallCommissioningDataFlag;
+
+		uint64_t Calc_ROCRefTimeThisWindow(const DCODAROCInfo* locCODAROCInfo, uint64_t locRolloverTimeWindowLength) const;
+		double Calc_TDCToNsScaleFactor_CCDB(bool locIsLowResolutionReadout) const;
+		double Convert_TriggerReferenceSignal(void) const;
 
 	private:
 

@@ -8,6 +8,9 @@
 #ifndef _DRFTime_factory_
 #define _DRFTime_factory_
 
+#include <limits>
+#include <iostream>
+
 #include <JANA/JFactory.h>
 #include "TTAB/DTTabUtilities.h"
 
@@ -15,12 +18,19 @@
 #include "DRFDigiTime.h"
 #include "DRFTDCDigiTime.h"
 
-class DRFTime_factory:public jana::JFactory<DRFTime>{
+using namespace std;
+using namespace jana;
+
+class DRFTime_factory : public jana::JFactory<DRFTime>
+{
 	public:
 		DRFTime_factory(){};
 		~DRFTime_factory(){};
 
-		double Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo);
+		double Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo) const;
+
+		double Convert_TDCToTime(const DRFTDCDigiTime* locRFTDCDigiTime, const DTTabUtilities* locTTabUtilities) const;
+		double Convert_ADCToTime(const DRFDigiTime* locRFDigiTime) const;
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -37,4 +47,3 @@ class DRFTime_factory:public jana::JFactory<DRFTime>{
 };
 
 #endif // _DRFTime_factory_
-

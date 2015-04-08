@@ -5,12 +5,7 @@
 // Creator: pmatt (on Linux pmattdesktop.jlab.org 2.6.32-504.12.2.el6.x86_64 x86_64)
 //
 
-#include <iostream>
-#include <iomanip>
-using namespace std;
-
 #include "DRFTime_factory.h"
-using namespace jana;
 
 //------------------
 // init
@@ -63,14 +58,7 @@ jerror_t DRFTime_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
 			continue; //time already found for this system
 		if(dTimeOffsetMap_TDCs.find(locSystem) == dTimeOffsetMap_TDCs.end())
 			continue; //system not recognized
-
-		double locRFTime = -1.0*dTimeOffsetMap_TDCs[locSystem];
-		if(locRFTDCDigiTime->dIsCAENTDCFlag)
-			locRFTime += dTScale_CAEN*double(locRFTDCDigiTime->time);
-		else
-			locRFTime += locTTabUtilities->Convert_DigiTimeToNs(locRFTDCDigiTime);
-
-		locRFTimeBySystemMap[locSystem] = locRFTime;
+		locRFTimeBySystemMap[locSystem] = Convert_TDCToTime(locRFTDCDigiTime, locTTabUtilities) - dTimeOffsetMap_TDCs[locSystem];
 	}
 
 	//FADC250's if no F1TDC's (have worse resolution)
@@ -80,12 +68,11 @@ jerror_t DRFTime_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
 		{
 			const DRFDigiTime* locRFDigiTime = locRFDigiTimes[loc_i];
 			DetectorSystem_t locSystem = locRFDigiTime->dSystem;
-			if(locRFTimeBySystemMap.find(locSystem) != locRFTimeBySystemMap.end())
-				continue; //time already found for this system
 			if(dTimeOffsetMap.find(locSystem) == dTimeOffsetMap.end())
 				continue; //system not recognized
-			double locRFTime = dTScale_FADC250*locRFDigiTime->time - dTimeOffsetMap[locSystem];
-			locRFTimeBySystemMap[locSystem] = locRFTime;
+			if(locRFTimeBySystemMap.find(locSystem) != locRFTimeBySystemMap.end())
+				continue; //time already found for this system
+			locRFTimeBySystemMap[locSystem] = Convert_ADCToTime(locRFDigiTime) - dTimeOffsetMap[locSystem];
 		}
 	}
 
@@ -107,13 +94,26 @@ jerror_t DRFTime_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
 	return NOERROR;
 }
 
-double DRFTime_factory::Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo)
+double DRFTime_factory::Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo) const
 {
 	while((locTimeToStep - locTimeToStepTo) > 0.5*dRFBunchPeriod)
 		locTimeToStep -= dRFBunchPeriod;
 	while((locTimeToStepTo - locTimeToStep) > 0.5*dRFBunchPeriod)
 		locTimeToStep += dRFBunchPeriod;
 	return locTimeToStep;
+}
+
+double DRFTime_factory::Convert_TDCToTime(const DRFTDCDigiTime* locRFTDCDigiTime, const DTTabUtilities* locTTabUtilities) const
+{
+	if(locRFTDCDigiTime->dIsCAENTDCFlag)
+		return dTScale_CAEN*double(locRFTDCDigiTime->time);
+	else
+		return locTTabUtilities->Convert_DigiTimeToNs(locRFTDCDigiTime);
+}
+
+double DRFTime_factory::Convert_ADCToTime(const DRFDigiTime* locRFDigiTime) const
+{
+	return dTScale_FADC250*locRFDigiTime->time;
 }
 
 //------------------
@@ -131,4 +131,3 @@ jerror_t DRFTime_factory::fini(void)
 {
 	return NOERROR;
 }
-
