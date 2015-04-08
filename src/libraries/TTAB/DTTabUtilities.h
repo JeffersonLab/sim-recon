@@ -41,6 +41,8 @@ class DTTabUtilities : public jana::JObject
 		uint64_t dRolloverTimeWindowLength; //"T" or "T_{frame}"
 		uint64_t dNumTDCTicksInRolloverTimeWindow; //"N" or "N_{frame}"
 
+		bool dIsFallCommissioningDataFlag;
+
 	private:
 
 		double Convert_DigiTimeToNs(const DF1TDCHit* locF1TDCHit) const;

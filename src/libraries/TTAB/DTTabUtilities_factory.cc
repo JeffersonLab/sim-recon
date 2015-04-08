@@ -50,6 +50,7 @@ jerror_t DTTabUtilities_factory::evnt(jana::JEventLoop *locEventLoop, int eventn
 	locTTabUtilities->dF1TDCConfigMap = dF1TDCConfigMap;
 	locTTabUtilities->dRolloverTimeWindowLength = dRolloverTimeWindowLength;
 	locTTabUtilities->dNumTDCTicksInRolloverTimeWindow = dNumTDCTicksInRolloverTimeWindow;
+	locTTabUtilities->dIsFallCommissioningDataFlag = (locEventLoop->GetJEvent().GetRunNumber() <= 2439);
 
 	// Get DCODAROCInfo's, put into map
 	vector<const DCODAROCInfo*> locCODAROCInfos;

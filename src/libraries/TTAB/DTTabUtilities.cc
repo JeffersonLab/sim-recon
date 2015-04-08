@@ -42,7 +42,7 @@ double DTTabUtilities::Convert_DigiTimeToNs(const DF1TDCHit* locF1TDCHit) const
     if(locCODAROCInfo == NULL) //e.g. MC
     	return Convert_DigiTimeToNs_TriggerReferenceSignal(locF1TDCHit);
 
-    if(locF1TDCConfig == NULL) //e.g. Early Fall 2014 Commissioning Data (use CCDB constants)
+    if((locF1TDCConfig == NULL) || dIsFallCommissioningDataFlag) //e.g. Early Fall 2014 Commissioning Data (use CCDB constants)
     	return Convert_DigiTimeToNs_GlobalSystemClock_CCDB(locF1TDCHit, locCODAROCInfo);
 
     // Have all objects needed, call the main function
