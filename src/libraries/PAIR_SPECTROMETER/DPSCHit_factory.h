@@ -26,13 +26,15 @@ class DPSCHit_factory:public jana::JFactory<DPSCHit>{
   DPSCHit_factory(){};
   ~DPSCHit_factory(){};
 
+  // config. parameters
+  double DELTA_T_ADC_TDC_MAX;  
+  double ADC_THRESHOLD;
 
   // overall scale factors
   double a_scale;
   double t_scale;
   double t_base;
-  double tdc_scale;
-  int tframe;
+  double t_tdc_base;
 
   // calibration constants stored by channel
   psc_digi_constants_t  adc_gains;
@@ -40,8 +42,8 @@ class DPSCHit_factory:public jana::JFactory<DPSCHit>{
   psc_digi_constants_t  adc_time_offsets;
   psc_digi_constants_t  tdc_time_offsets;
 
-  double DELTA_T_ADC_TDC_MAX;
-
+  const DPSGeometry::Arm GetArm(const int counter_id,const int num_counters_per_arm) const;
+  const int GetModule(const int counter_id,const int num_counters_per_arm) const;
   DPSCHit* FindMatch(DPSGeometry::Arm arm, int module, double T);
 
   const double GetConstant( const psc_digi_constants_t &the_table,
@@ -53,7 +55,6 @@ class DPSCHit_factory:public jana::JFactory<DPSCHit>{
 			    const DPSCTDCDigiHit *the_hit, const DPSGeometry &psGeom ) const;
   const double GetConstant( const psc_digi_constants_t &the_table,
 			    const DPSCHit *the_hit, const DPSGeometry &psGeom ) const;
-
 
  private:
   jerror_t init(void);						///< Called once at program start.

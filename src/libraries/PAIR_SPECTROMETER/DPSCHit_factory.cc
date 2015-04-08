@@ -15,8 +15,8 @@ using namespace std;
 #include "DPSCHit_factory.h"
 #include "DPSCDigiHit.h"
 #include "DPSCTDCDigiHit.h"
+#include <DAQ/Df250PulsePedestal.h>
 #include <DAQ/Df250PulseIntegral.h>
-#include <DAQ/DCODAROCInfo.h>
 using namespace jana;
 
 
@@ -26,15 +26,19 @@ using namespace jana;
 jerror_t DPSCHit_factory::init(void)
 {
   DELTA_T_ADC_TDC_MAX = 4.0; // ns
-  gPARMS->SetDefaultParameter("PSC:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX,
+  gPARMS->SetDefaultParameter("PSCHit:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX,
 			      "Maximum difference in ns between a (calibrated) fADC time and"
 			      " F1TDC time for them to be matched in a single hit");
-	
+  ADC_THRESHOLD = 500.0; // ADC integral counts
+  gPARMS->SetDefaultParameter("PSCHit:ADC_THRESHOLD",ADC_THRESHOLD,
+			      "pedestal-subtracted pulse integral threshold");
+
   /// set the base conversion scales
   a_scale    = 0.0001; 
   t_scale    = 0.0625;   // 62.5 ps/count
   t_base     = 0.;    // ns
-	
+  t_tdc_base = 0.;
+
   return NOERROR;
 }
 
@@ -87,6 +91,11 @@ jerror_t DPSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
     t_base = base_time_offset["PS_COARSE_BASE_TIME_OFFSET"];
   else
     jerr << "Unable to get PS_COARSE_BASE_TIME_OFFSET from /PHOTON_BEAM/pair_spectrometer/base_time_offset !" << endl;
+  //
+  if (base_time_offset.find("PS_COARSE_TDC_BASE_TIME_OFFSET") != base_time_offset.end())
+    t_tdc_base = base_time_offset["PS_COARSE_TDC_BASE_TIME_OFFSET"];
+  else
+    jerr << "Unable to get PS_COARSE_TDC_BASE_TIME_OFFSET from /PHOTON_BEAM/pair_spectrometer/base_time_offset !" << endl;
 
   /// Read in calibration constants
   vector<double> raw_adc_pedestals;
@@ -134,8 +143,8 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
     return OBJECT_NOT_AVAILABLE;
   const DPSGeometry& psGeom = *(psGeomVect[0]);
 
-	const DTTabUtilities* locTTabUtilities = NULL;
-	loop->GetSingle(locTTabUtilities);
+  const DTTabUtilities* locTTabUtilities = NULL;
+  loop->GetSingle(locTTabUtilities);
 
   // First, make hits out of all fADC250 hits
   vector<const DPSCDigiHit*> digihits;
@@ -145,28 +154,24 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
   for (unsigned int i=0; i < digihits.size(); i++){
     const DPSCDigiHit *digihit = digihits[i];
 
-    DPSCHit *hit = new DPSCHit;
-
     // Make sure channel id is in valid range
     const int PSC_MAX_CHANNELS = psGeom.NUM_COARSE_COLUMNS*psGeom.NUM_ARMS;
-    if( (digihit->counter_id <= 0) && (digihit->counter_id > PSC_MAX_CHANNELS)) {
+    if( (digihit->counter_id <= 0) || (digihit->counter_id > PSC_MAX_CHANNELS)) {
       sprintf(str, "DPSCDigiHit sector out of range! sector=%d (should be 1-%d)", 
 	      digihit->counter_id, PSC_MAX_CHANNELS);
       throw JException(str);
     }
-		
-    // The translation table has PSC channels labaled as paddles 1-16
-    // The PSCHit class labels hits as
-    //   arm:     North/South (0/1)
-    //   module:  1-8
-    if( digihit->counter_id <= psGeom.NUM_COARSE_COLUMNS ) {
-      hit->arm     = DPSGeometry::kNorth;
-      hit->module  = digihit->counter_id;
-    } else {
-      hit->arm     = DPSGeometry::kSouth;
-      hit->module  = digihit->counter_id - psGeom.NUM_COARSE_COLUMNS;
-    }
 
+    // Throw away hits where the fADC timing algorithm failed
+    //if (digihit->pulse_time == 0) continue;
+    // The following condition signals an error state in the flash algorithm
+    // Do not make hits out of these
+    const Df250PulsePedestal* PPobj = NULL;
+    digihit->GetSingle(PPobj);
+    if (PPobj != NULL){
+      if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+    }
+    
     // Get pedestal, prefer associated event pedestal if it exists,
     // otherwise, use the average pedestal from CCDB
     double pedestal = GetConstant(adc_pedestals,digihit,psGeom);
@@ -185,11 +190,16 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
     // Apply calibration constants here
     double A = (double)digihit->pulse_integral;
     A -= pedestal;
+    // Throw away hits with small pedestal-subtracted integrals
+    if (A < ADC_THRESHOLD) continue;
     double T = (double)digihit->pulse_time;
 
+    DPSCHit *hit = new DPSCHit;
+    hit->arm = GetArm(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
+    hit->module = GetModule(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
     hit->integral = A;
     hit->npe_fadc = A * a_scale * GetConstant(adc_gains, digihit, psGeom);
-    hit->time_fadc = t_scale * (T - GetConstant(adc_time_offsets, digihit, psGeom)) + t_base;
+    hit->time_fadc = t_scale * T - GetConstant(adc_time_offsets, digihit, psGeom) + t_base;
     hit->t = hit->time_fadc;
     hit->time_tdc = numeric_limits<double>::quiet_NaN();
     hit->has_fADC = true;
@@ -210,19 +220,12 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
     for(unsigned int i=0; i<tdcdigihits.size(); i++) {
       const DPSCTDCDigiHit *digihit = tdcdigihits[i];
 	    
-      // calculate geometry information as described above
-      DPSGeometry::Arm arm;
-      int module = -1;
-      if( digihit->counter_id <= psGeom.NUM_COARSE_COLUMNS ) {
-	arm     = DPSGeometry::kNorth;
-	module  = digihit->counter_id;
-      } else {
-	arm     = DPSGeometry::kSouth;
-	module  = digihit->counter_id - psGeom.NUM_COARSE_COLUMNS;
-      }
+      // calculate geometry information 
+      DPSGeometry::Arm arm = GetArm(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
+      int module = GetModule(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
 
       // Apply calibration constants here
-      double T = locTTabUtilities->Convert_DigiTimeToNs(digihit) - GetConstant(tdc_time_offsets, digihit, psGeom) + t_base;
+      double T = locTTabUtilities->Convert_DigiTimeToNs(digihit) - GetConstant(tdc_time_offsets, digihit, psGeom) + t_tdc_base;
       // Look for existing hits to see if there is a match
       // or create new one if there is no match
       DPSCHit *hit = FindMatch(arm, module, T);
@@ -263,7 +266,6 @@ DPSCHit* DPSCHit_factory::FindMatch(DPSGeometry::Arm arm, int module, double T)
     if(hit->arm != arm) continue;
     if(hit->module != module) continue;
                 
-    //double delta_T = fabs(hit->t - T);
     double delta_T = fabs(T - hit->t);
     if(delta_T > DELTA_T_ADC_TDC_MAX) continue;
 
@@ -282,6 +284,16 @@ DPSCHit* DPSCHit_factory::FindMatch(DPSGeometry::Arm arm, int module, double T)
   return best_match;
 }
 
+// The translation table has PSC channels labaled as paddles 1-16
+// The PSCHit class labels hits as
+//   arm:     North/South (0/1)
+//   module:  1-8
+const DPSGeometry::Arm DPSCHit_factory::GetArm(const int counter_id,const int num_counters_per_arm) const {
+  return counter_id <= num_counters_per_arm ? DPSGeometry::kNorth :  DPSGeometry::kSouth;
+}
+const int DPSCHit_factory::GetModule(const int counter_id,const int num_counters_per_arm) const {
+  return counter_id <= num_counters_per_arm ? counter_id : counter_id - num_counters_per_arm;
+}
 
 //------------------
 // erun
@@ -327,7 +339,7 @@ void DPSCHit_factory::FillCalibTable(psc_digi_constants_t &table, vector<double>
       throw JException(str);
     }
 
-    table[column] = pair<double,double>(raw_table[channel],raw_table[channel+psGeom.NUM_COARSE_COLUMNS]);
+    table[column] = pair<double,double>(raw_table[column],raw_table[column+psGeom.NUM_COARSE_COLUMNS]);
     channel += 2;
   }
 
@@ -406,18 +418,10 @@ const double DPSCHit_factory::GetConstant( const psc_digi_constants_t &the_table
 					   const DPSCDigiHit *in_digihit, const DPSGeometry &psGeom) const
 {
   char str[256];
-
   // calculate geometry information 
-  DPSGeometry::Arm arm;
-  int module = -1;
-  if( in_digihit->counter_id <= psGeom.NUM_COARSE_COLUMNS ) {
-    arm     = DPSGeometry::kNorth;
-    module  = in_digihit->counter_id;
-  } else {
-    arm     = DPSGeometry::kSouth;
-    module  = in_digihit->counter_id - psGeom.NUM_COARSE_COLUMNS;
-  }
-        
+  DPSGeometry::Arm arm = GetArm(in_digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
+  int module = GetModule(in_digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
+         
   if( (module <= 0) || (module > psGeom.NUM_COARSE_COLUMNS)) {
     sprintf(str, "Bad module # requested in DPSCHit_factory::GetConstant()! requested=%d , should be 1-%d", module, psGeom.NUM_COARSE_COLUMNS);
     cerr << str << endl;
@@ -437,18 +441,10 @@ const double DPSCHit_factory::GetConstant( const psc_digi_constants_t &the_table
 					   const DPSCTDCDigiHit *in_digihit, const DPSGeometry &psGeom ) const
 {
   char str[256];
-        
   // calculate geometry information 
-  DPSGeometry::Arm arm;
-  int module = -1;
-  if( in_digihit->counter_id <= psGeom.NUM_COARSE_COLUMNS ) {
-    arm     = DPSGeometry::kNorth;
-    module  = in_digihit->counter_id;
-  } else {
-    arm     = DPSGeometry::kSouth;
-    module  = in_digihit->counter_id - psGeom.NUM_COARSE_COLUMNS;
-  }
-        
+  DPSGeometry::Arm arm = GetArm(in_digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
+  int module = GetModule(in_digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
+  
   if( (module <= 0) || (module > psGeom.NUM_COARSE_COLUMNS)) {
     sprintf(str, "Bad module # requested in DPSCHit_factory::GetConstant()! requested=%d , should be 1-%d", module, psGeom.NUM_COARSE_COLUMNS);
     cerr << str << endl;
@@ -462,6 +458,5 @@ const double DPSCHit_factory::GetConstant( const psc_digi_constants_t &the_table
   } else {
     return the_table[module-1].second;
   }
-
 }
 
