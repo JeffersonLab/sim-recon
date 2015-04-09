@@ -359,7 +359,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                 Fill2DHistogram("HLDetectorTiming", "SC_TimeWalk", name,
                         scHitVector[i]->dE, scHitVector[i]->t_TDC - scHitVector[i]->t_fADC,
                         title,
-                        50, 0, 30000, 50, -10, 10, false);
+                        50, 0, 0.05, 50, -10, 10, false);
             }
             if (DO_OPTIONAL){
                 Fill2DHistogram("HLDetectorTiming", "SC", "SC Per Channel TDC Time",
@@ -438,7 +438,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                     "TAGH #Deltat TDC-ADC; Counter ID ;t_{TDC} - t_{ADC} [ns]", nTAGHCounters, 0.5, nTAGHCounters + 0.5, 100, -10, 10);
             if (DO_OPTIONAL){
                 Fill2DHistogram("HLDetectorTiming", "TAGH", "TAGM Per Channel TDC Time",
-                        taghHitVector[i]->counter_id, taghHitVector[i]->time_tdc - taghHitVector[i]->time_fadc,
+                        taghHitVector[i]->counter_id, taghHitVector[i]->time_tdc,
                         "TAGH Per Channel TDC Time; Counter ID ;t_{TDC} [ns]", nTAGHCounters, 0.5, nTAGHCounters + 0.5, 100, -50, 50);
             }
 
@@ -450,7 +450,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                 Fill2DHistogram("HLDetectorTiming", "TAGH_TimeWalk", name,
                         taghHitVector[i]->integral, taghHitVector[i]->time_tdc - taghHitVector[i]->time_fadc,
                         title,
-                        50, 0, 5000, 50, -10, 10, false);
+                        50, 0, 10000, 50, -10, 10, false);
             }
         }
     }
@@ -491,7 +491,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                 Fill2DHistogram("HLDetectorTiming", "TOF_TimeWalk", name,
                         tofHitVector[i]->dE, tofHitVector[i]->t_TDC - tofHitVector[i]->t_fADC,
                         title,
-                        50, 0, 30000, 50, -10, 10, false);
+                        50, 0, 0.05, 50, -10, 10, false);
             }
         }
     }
