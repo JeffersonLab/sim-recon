@@ -67,7 +67,7 @@ class DTrackTimeBased:public DKinematicData{
 			AddString(items, "wirebased","%d",trackid);
 			AddString(items, "chisq", "%f", chisq);
 			AddString(items, "Ndof", "%d", Ndof);
-			AddString(items, "FOM", "%f",FOM);
+			AddString(items, "FOM", "%f",(float)FOM);
 			AddString(items, "MCMatchID", "%d",dMCThrownMatchMyID);
 			AddString(items, "#HitsMCMatched", "%d",dNumHitsMatchedToThrown);
 		}
