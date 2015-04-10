@@ -20,6 +20,7 @@
 #include <DAQ/DCODAROCInfo.h>
 #include <DAQ/DF1TDCConfig.h>
 #include <DAQ/DF1TDCHit.h>
+#include <DAQ/DCAEN1290TDCHit.h>
 
 using namespace std;
 
@@ -30,19 +31,27 @@ class DTTabUtilities : public jana::JObject
 	public:
 		JOBJECT_PUBLIC(DTTabUtilities);
 		
-		double Convert_DigiTimeToNs(const JObject* locTDCDigiHit) const;
+		DTTabUtilities(void);
 
-		//New System
+		double Convert_DigiTimeToNs_F1TDC(const JObject* locTDCDigiHit) const;
+		double Convert_DigiTimeToNs_F1TDC(const DF1TDCHit* locF1TDCHit) const;
+		double Convert_DigiTimeToNs_CAEN1290TDC(const JObject* locTDCDigiHit) const;
+		double Convert_DigiTimeToNs_CAEN1290TDC(const DCAEN1290TDCHit* locCAEN1290TDCHit) const;
+
+		//F1TDCs: New System
+		bool dIsFallCommissioningDataFlag;
 		map<uint32_t, const DCODAROCInfo*> dCODAROCInfoMap; //key is rocid
 		map<uint32_t, const DF1TDCConfig*> dF1TDCConfigMap; //key is rocid
 
-		//Old System ONLY //Early Fall 2014 Commissioning data ONLY
+		//F1TDCs: Old System ONLY //Early Fall 2014 Commissioning data ONLY
 		uint64_t dTriggerReferenceSignal;
 		bool dTriggerReferenceSignalIsLowResTDC;
 		uint64_t dRolloverTimeWindowLength; //"T" or "T_{frame}"
 		uint64_t dNumTDCTicksInRolloverTimeWindow; //"N" or "N_{frame}"
 
-		bool dIsFallCommissioningDataFlag;
+		//CAEN1290s:
+		int dCAENTIPhaseDifference; //0 -> 5
+		double dTScale_CAEN;
 
 		uint64_t Calc_ROCRefTimeThisWindow(const DCODAROCInfo* locCODAROCInfo, uint64_t locRolloverTimeWindowLength) const;
 		double Calc_TDCToNsScaleFactor_CCDB(bool locIsLowResolutionReadout) const;
@@ -50,10 +59,9 @@ class DTTabUtilities : public jana::JObject
 
 	private:
 
-		double Convert_DigiTimeToNs(const DF1TDCHit* locF1TDCHit) const;
-		double Convert_DigiTimeToNs_GlobalSystemClock_ConfigInfo(const DF1TDCHit* locF1TDCHit, const DCODAROCInfo* locCODAROCInfo, const DF1TDCConfig* locF1TDCConfig) const;
-		double Convert_DigiTimeToNs_GlobalSystemClock_CCDB(const DF1TDCHit* locF1TDCHit, const DCODAROCInfo* locCODAROCInfo) const;
-		double Convert_DigiTimeToNs_TriggerReferenceSignal(const DF1TDCHit* locF1TDCHit) const;
+		double Convert_DigiTimeToNs_F1TDC_GlobalSystemClock_ConfigInfo(const DF1TDCHit* locF1TDCHit, const DCODAROCInfo* locCODAROCInfo, const DF1TDCConfig* locF1TDCConfig) const;
+		double Convert_DigiTimeToNs_F1TDC_GlobalSystemClock_CCDB(const DF1TDCHit* locF1TDCHit, const DCODAROCInfo* locCODAROCInfo) const;
+		double Convert_DigiTimeToNs_F1TDC_TriggerReferenceSignal(const DF1TDCHit* locF1TDCHit) const;
 };
 
 #endif // _DTTabUtilities_

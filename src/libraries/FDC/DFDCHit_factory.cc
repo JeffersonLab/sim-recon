@@ -295,7 +295,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
         }
 
         // Apply calibration constants here
-        double T = locTTabUtilities->Convert_DigiTimeToNs(digihit) - timing_offsets[hit->gPlane-1][hit->element-1] + t_base;
+        double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - timing_offsets[hit->gPlane-1][hit->element-1] + t_base;
         hit->q = 0.0; // no charge measured for wires in FDC
         hit->t = T;
 

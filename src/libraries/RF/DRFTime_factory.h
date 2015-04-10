@@ -27,6 +27,7 @@ class DRFTime_factory : public jana::JFactory<DRFTime>
 		DRFTime_factory(){};
 		~DRFTime_factory(){};
 
+		void Extract_DetectorSystemAndType(string locKeyName, DetectorSystem_t& locSystem, bool& locIsTDCFlag) const;
 		double Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo) const;
 
 		double Convert_TDCToTime(const DRFTDCDigiTime* locRFTDCDigiTime, const DTTabUtilities* locTTabUtilities) const;
@@ -41,9 +42,15 @@ class DRFTime_factory : public jana::JFactory<DRFTime>
 
 		double dRFBunchPeriod;
 		double dTScale_FADC250;
-		double dTScale_CAEN;
-		map<DetectorSystem_t, double> dTimeOffsetMap;
+
+		map<DetectorSystem_t, double> dTimeOffsetMap_ADCs;
 		map<DetectorSystem_t, double> dTimeOffsetMap_TDCs;
+
+		map<DetectorSystem_t, double> dTimeOffsetVarianceMap_ADCs;
+		map<DetectorSystem_t, double> dTimeOffsetVarianceMap_TDCs;
+
+		map<DetectorSystem_t, double> dTimeResolutionSqMap_ADCs;
+		map<DetectorSystem_t, double> dTimeResolutionSqMap_TDCs;
 };
 
 #endif // _DRFTime_factory_

@@ -199,7 +199,7 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	   // Apply calibration constants here
 	   int counter = digihit->counter_id;
-	   double T = locTTabUtilities->Convert_DigiTimeToNs(digihit) - tdc_time_offsets[counter] + t_tdc_base;
+	   double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - tdc_time_offsets[counter] + t_tdc_base;
 
 	   // Look for existing hits to see if there is a match
 	   // or create new one if there is no match

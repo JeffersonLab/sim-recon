@@ -272,7 +272,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		}
 
 		unsigned int id = digihit->sector - 1;
-		double T = locTTabUtilities->Convert_DigiTimeToNs(digihit) - tdc_time_offsets[id] + t_tdc_base;
+		double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - tdc_time_offsets[id] + t_tdc_base;
 
 		// cout << "T = " << T << endl;
 		// jout << "T = " << T << endl;

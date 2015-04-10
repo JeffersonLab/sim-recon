@@ -41,6 +41,12 @@ jerror_t DTTabUtilities_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 		dNumTDCTicksInRolloverTimeWindow = 64466;
 	}
 
+	//CAEN1290/TI Phase Difference
+	dCAENTIPhaseDifference = 1;
+	map<string, double> tof_tdc_shift;
+	if(!eventLoop->GetCalib("/TOF/tdc_shift", tof_tdc_shift))
+		dCAENTIPhaseDifference = tof_tdc_shift["TOF_TDC_SHIFT"];
+	dCAENTIPhaseDifference = 1;
 	return NOERROR;
 }
 
@@ -50,7 +56,8 @@ jerror_t DTTabUtilities_factory::evnt(jana::JEventLoop *locEventLoop, int eventn
 	locTTabUtilities->dF1TDCConfigMap = dF1TDCConfigMap;
 	locTTabUtilities->dRolloverTimeWindowLength = dRolloverTimeWindowLength;
 	locTTabUtilities->dNumTDCTicksInRolloverTimeWindow = dNumTDCTicksInRolloverTimeWindow;
-	locTTabUtilities->dIsFallCommissioningDataFlag = (locEventLoop->GetJEvent().GetRunNumber() <= 2439);
+	locTTabUtilities->dIsFallCommissioningDataFlag = (locEventLoop->GetJEvent().GetRunNumber() <= 2700);
+	locTTabUtilities->dCAENTIPhaseDifference = dCAENTIPhaseDifference;
 
 	// Get DCODAROCInfo's, put into map
 	vector<const DCODAROCInfo*> locCODAROCInfos;

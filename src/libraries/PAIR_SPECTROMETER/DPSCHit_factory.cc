@@ -225,7 +225,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
       int module = GetModule(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
 
       // Apply calibration constants here
-      double T = locTTabUtilities->Convert_DigiTimeToNs(digihit) - GetConstant(tdc_time_offsets, digihit, psGeom) + t_tdc_base;
+      double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - GetConstant(tdc_time_offsets, digihit, psGeom) + t_tdc_base;
       // Look for existing hits to see if there is a match
       // or create new one if there is no match
       DPSCHit *hit = FindMatch(arm, module, T);

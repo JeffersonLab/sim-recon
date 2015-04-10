@@ -7,27 +7,32 @@
 
 #include "DTTabUtilities.h"
 
-double DTTabUtilities::Convert_DigiTimeToNs(const JObject* locTDCDigiHit) const
+DTTabUtilities::DTTabUtilities(void)
+{
+	dTScale_CAEN = 0.025; // 25 ps/count (TOF)
+}
+
+double DTTabUtilities::Convert_DigiTimeToNs_F1TDC(const JObject* locTDCDigiHit) const
 {
 	//See if the input object is an DF1TDCHit. If so, convert it
 	const DF1TDCHit* locF1TDCHit = dynamic_cast<const DF1TDCHit*>(locTDCDigiHit);
 	if(locF1TDCHit != NULL) //it's an F1TDCHit
-		return Convert_DigiTimeToNs(locF1TDCHit);
+		return Convert_DigiTimeToNs_F1TDC(locF1TDCHit);
 
 	//Get the DF1TDCHit associated object
 	vector<const DF1TDCHit*> locF1TDCHits;
 	locTDCDigiHit->Get(locF1TDCHits);
 	if(locF1TDCHits.empty())
 	{
-		cout << "ERROR: INCORRECT INPUT OBJECT TO DTTabUtilities::Convert_DigiTimeToNs(). RETURNING NaN." << endl;
+		cout << "ERROR: INCORRECT INPUT OBJECT TO DTTabUtilities::Convert_DigiTimeToNs_F1TDC(). RETURNING NaN." << endl;
 		return std::numeric_limits<double>::quiet_NaN();
 	}
 
 	//Convert
-	return Convert_DigiTimeToNs(locF1TDCHits[0]);
+	return Convert_DigiTimeToNs_F1TDC(locF1TDCHits[0]);
 }
 
-double DTTabUtilities::Convert_DigiTimeToNs(const DF1TDCHit* locF1TDCHit) const
+double DTTabUtilities::Convert_DigiTimeToNs_F1TDC(const DF1TDCHit* locF1TDCHit) const
 {
     uint32_t locROCID = locF1TDCHit->rocid;
 
@@ -40,16 +45,16 @@ double DTTabUtilities::Convert_DigiTimeToNs(const DF1TDCHit* locF1TDCHit) const
     const DCODAROCInfo* locCODAROCInfo = (locROCInfoIterator != dCODAROCInfoMap.end()) ? locROCInfoIterator->second : NULL;
 
     if(locCODAROCInfo == NULL) //e.g. MC
-    	return Convert_DigiTimeToNs_TriggerReferenceSignal(locF1TDCHit);
+    	return Convert_DigiTimeToNs_F1TDC_TriggerReferenceSignal(locF1TDCHit);
 
     if((locF1TDCConfig == NULL) || dIsFallCommissioningDataFlag) //e.g. Early Fall 2014 Commissioning Data (use CCDB constants)
-    	return Convert_DigiTimeToNs_GlobalSystemClock_CCDB(locF1TDCHit, locCODAROCInfo);
+    	return Convert_DigiTimeToNs_F1TDC_GlobalSystemClock_CCDB(locF1TDCHit, locCODAROCInfo);
 
     // Have all objects needed, call the main function
-	return Convert_DigiTimeToNs_GlobalSystemClock_ConfigInfo(locF1TDCHit, locCODAROCInfo, locF1TDCConfig);
+	return Convert_DigiTimeToNs_F1TDC_GlobalSystemClock_ConfigInfo(locF1TDCHit, locCODAROCInfo, locF1TDCConfig);
 }
 
-double DTTabUtilities::Convert_DigiTimeToNs_GlobalSystemClock_ConfigInfo(const DF1TDCHit* locF1TDCHit, const DCODAROCInfo* locCODAROCInfo, const DF1TDCConfig* locF1TDCConfig) const
+double DTTabUtilities::Convert_DigiTimeToNs_F1TDC_GlobalSystemClock_ConfigInfo(const DF1TDCHit* locF1TDCHit, const DCODAROCInfo* locCODAROCInfo, const DF1TDCConfig* locF1TDCConfig) const
 {
 	//compare the digi time to the global system clock available on the crate, then convert to ns
 		//GlueX Doc 2686 Appendix A, using the global system clock
@@ -78,7 +83,7 @@ double DTTabUtilities::Convert_DigiTimeToNs_GlobalSystemClock_ConfigInfo(const D
 	return locDeltaT;
 }
 
-double DTTabUtilities::Convert_DigiTimeToNs_GlobalSystemClock_CCDB(const DF1TDCHit* locF1TDCHit, const DCODAROCInfo* locCODAROCInfo) const
+double DTTabUtilities::Convert_DigiTimeToNs_F1TDC_GlobalSystemClock_CCDB(const DF1TDCHit* locF1TDCHit, const DCODAROCInfo* locCODAROCInfo) const
 {
 	//compare the digi time to the global system clock available on the crate, then convert to ns
 		//GlueX Doc 2686 Appendix A, using the global system clock, but the CCDB for the constants
@@ -101,7 +106,7 @@ double DTTabUtilities::Convert_DigiTimeToNs_GlobalSystemClock_CCDB(const DF1TDCH
 	return locDeltaT;
 }
 
-double DTTabUtilities::Convert_DigiTimeToNs_TriggerReferenceSignal(const DF1TDCHit* locF1TDCHit) const
+double DTTabUtilities::Convert_DigiTimeToNs_F1TDC_TriggerReferenceSignal(const DF1TDCHit* locF1TDCHit) const
 {
 	//compare the digi time to the trigger reference signal, then convert to ns
 		//GlueX Doc 2686 Appendix A, using the trigger reference signal
@@ -144,4 +149,49 @@ double DTTabUtilities::Convert_TriggerReferenceSignal(void) const
 {
 	double locTDCToNsScaleFactor = Calc_TDCToNsScaleFactor_CCDB(dTriggerReferenceSignalIsLowResTDC);
 	return locTDCToNsScaleFactor * double(dTriggerReferenceSignal);
+}
+
+double DTTabUtilities::Convert_DigiTimeToNs_CAEN1290TDC(const JObject* locTDCDigiHit) const
+{
+	//See if the input object is an DCAEN1290TDCHit. If so, convert it
+	const DCAEN1290TDCHit* locCAEN1290TDCHit = dynamic_cast<const DCAEN1290TDCHit*>(locTDCDigiHit);
+	if(locCAEN1290TDCHit != NULL) //it's an DCAEN1290TDCHit
+		return Convert_DigiTimeToNs_CAEN1290TDC(locCAEN1290TDCHit);
+
+	//Get the DF1TDCHit associated object
+	vector<const DCAEN1290TDCHit*> locCAEN1290TDCHits;
+	locTDCDigiHit->Get(locCAEN1290TDCHits);
+	if(locCAEN1290TDCHits.empty())
+	{
+		cout << "ERROR: INCORRECT INPUT OBJECT TO DTTabUtilities::Convert_DigiTimeToNs_CAEN1290TDC(). RETURNING NaN." << endl;
+		return std::numeric_limits<double>::quiet_NaN();
+	}
+
+	//Convert
+	return Convert_DigiTimeToNs_CAEN1290TDC(locCAEN1290TDCHits[0]);
+}
+
+double DTTabUtilities::Convert_DigiTimeToNs_CAEN1290TDC(const DCAEN1290TDCHit* locCAEN1290TDCHit) const
+{
+	//compare the digi time to the trigger reference signal, then convert to ns
+		//GlueX Doc 2686
+    uint32_t locROCID = locCAEN1290TDCHit->rocid;
+
+    // Get DCODAROCInfo for this ROC
+    map<uint32_t, const DCODAROCInfo*>::const_iterator locROCInfoIterator = dCODAROCInfoMap.find(locROCID);
+    if(locROCInfoIterator == dCODAROCInfoMap.end())
+    	return std::numeric_limits<double>::quiet_NaN();
+    const DCODAROCInfo* locCODAROCInfo = locROCInfoIterator->second;
+
+    int locSystemClockBinRemainder = locCODAROCInfo->timestamp % 6;
+
+	// The number of TI-counter (4 ns) blocks to shift the CAEN time to line-up with the TI time
+    int locNum4NsBlocksToShift = dCAENTIPhaseDifference - locSystemClockBinRemainder;
+    if(locNum4NsBlocksToShift < 0)
+    	locNum4NsBlocksToShift += 6;
+
+    // TDC bins are 25 ps wide, so each 4ns-TI-block is 160 bins ("TDC-ticks")
+    int locTDCShift = 160 * locNum4NsBlocksToShift;
+
+    return dTScale_CAEN*double(locCAEN1290TDCHit->time + locTDCShift);
 }
