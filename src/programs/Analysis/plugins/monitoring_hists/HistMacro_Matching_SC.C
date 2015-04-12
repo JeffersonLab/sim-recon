@@ -1,12 +1,12 @@
-// hnamepath: /Independent/Hist_DetectorMatching/WireBased/SC/SCTrackDeltaPhiVsP
-// hnamepath: /Independent/Hist_DetectorMatching/TimeBased/SC/SCTrackDeltaPhiVsP
+// hnamepath: /Independent/Hist_DetectorMatching/WireBased/SC/SCTrackDeltaPhiVsTheta
+// hnamepath: /Independent/Hist_DetectorMatching/TimeBased/SC/SCTrackDeltaPhiVsTheta
 // hnamepath: /Independent/Hist_DetectorMatching/TimeBased/SC/PVsTheta_HasHit
 // hnamepath: /Independent/Hist_DetectorMatching/TimeBased/SC/PVsTheta_NoHit
 // hnamepath: /Independent/Hist_DetectorMatching/TimeBased/SC/SCPaddleVsTheta_HasHit
 // hnamepath: /Independent/Hist_DetectorMatching/TimeBased/SC/SCPaddleVsTheta_NoHit
 
 {
-	double locMinNumCountsForRatio = 5.0;
+	double locMinNumCountsForRatio = 20.0;
 
 	//Goto Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_DetectorMatching");
@@ -16,9 +16,9 @@
 
 	//Get Histograms
 	gDirectory->cd("WireBased/SC");
-	TH2I* locHist_SC_TrackDeltaPhiVsP_WireBased = (TH2I*)gDirectory->Get("SCTrackDeltaPhiVsP");
+	TH2I* locHist_SC_TrackDeltaPhiVsTheta_WireBased = (TH2I*)gDirectory->Get("SCTrackDeltaPhiVsTheta");
 	gDirectory->cd("../../TimeBased/SC");
-	TH2I* locHist_SC_TrackDeltaPhiVsP_TimeBased = (TH2I*)gDirectory->Get("SCTrackDeltaPhiVsP");
+	TH2I* locHist_SC_TrackDeltaPhiVsTheta_TimeBased = (TH2I*)gDirectory->Get("SCTrackDeltaPhiVsTheta");
 	TH2I* locHist_PVsTheta_HasHit_SC = (TH2I*)gDirectory->Get("PVsTheta_HasHit");
 	TH2I* locHist_PVsTheta_NoHit_SC = (TH2I*)gDirectory->Get("PVsTheta_NoHit");
 	TH2I* locHist_SCPaddleVsTheta_HasHit_SC = (TH2I*)gDirectory->Get("SCPaddleVsTheta_HasHit");
@@ -36,27 +36,25 @@
 	locCanvas->cd(1);
 	gPad->SetTicks();
 	gPad->SetGrid();
-	if(locHist_SC_TrackDeltaPhiVsP_WireBased != NULL)
+	if(locHist_SC_TrackDeltaPhiVsTheta_WireBased != NULL)
 	{
-		TH1D* locDeltaPhi = locHist_SC_TrackDeltaPhiVsP_WireBased->ProjectionY("Proj_Wirebased");
-		locDeltaPhi->GetXaxis()->SetTitleSize(0.05);
-		locDeltaPhi->GetYaxis()->SetTitleSize(0.05);
-		locDeltaPhi->GetXaxis()->SetLabelSize(0.05);
-		locDeltaPhi->GetYaxis()->SetLabelSize(0.05);
-		locDeltaPhi->Draw("");
+		locHist_SC_TrackDeltaPhiVsTheta_WireBased->GetXaxis()->SetTitleSize(0.05);
+		locHist_SC_TrackDeltaPhiVsTheta_WireBased->GetYaxis()->SetTitleSize(0.05);
+		locHist_SC_TrackDeltaPhiVsTheta_WireBased->GetXaxis()->SetLabelSize(0.05);
+		locHist_SC_TrackDeltaPhiVsTheta_WireBased->GetYaxis()->SetLabelSize(0.05);
+		locHist_SC_TrackDeltaPhiVsTheta_WireBased->Draw("COLZ");
 	}
 
 	locCanvas->cd(2);
 	gPad->SetTicks();
 	gPad->SetGrid();
-	if(locHist_SC_TrackDeltaPhiVsP_TimeBased != NULL)
+	if(locHist_SC_TrackDeltaPhiVsTheta_TimeBased != NULL)
 	{
-		TH1D* locDeltaPhi = locHist_SC_TrackDeltaPhiVsP_TimeBased->ProjectionY("Proj_Timebased");
-		locDeltaPhi->GetXaxis()->SetTitleSize(0.05);
-		locDeltaPhi->GetYaxis()->SetTitleSize(0.05);
-		locDeltaPhi->GetXaxis()->SetLabelSize(0.05);
-		locDeltaPhi->GetYaxis()->SetLabelSize(0.05);
-		locDeltaPhi->Draw("");
+		locHist_SC_TrackDeltaPhiVsTheta_TimeBased->GetXaxis()->SetTitleSize(0.05);
+		locHist_SC_TrackDeltaPhiVsTheta_TimeBased->GetYaxis()->SetTitleSize(0.05);
+		locHist_SC_TrackDeltaPhiVsTheta_TimeBased->GetXaxis()->SetLabelSize(0.05);
+		locHist_SC_TrackDeltaPhiVsTheta_TimeBased->GetYaxis()->SetLabelSize(0.05);
+		locHist_SC_TrackDeltaPhiVsTheta_TimeBased->Draw("COLZ");
 	}
 
 	locCanvas->cd(3);

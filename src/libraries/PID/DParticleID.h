@@ -9,6 +9,7 @@
 #define _DParticleID_
 
 #include <deque>
+#include <map>
 #include <limits>
 #include <cmath>
 
@@ -24,6 +25,7 @@
 #include <FCAL/DFCALShower.h>
 #include <FCAL/DFCALGeometry_factory.h>
 #include <TOF/DTOFPoint.h>
+#include <TOF/DTOFPaddleHit.h>
 #include <TOF/DTOFGeometry_factory.h>
 #include <START_COUNTER/DSCHit.h>
 #include <TRACKING/DTrackFitter.h>
@@ -36,6 +38,7 @@
 #include <PID/DDetectorMatches.h>
 #include <TRACKING/DMagneticFieldStepper.h>
 #include <TRACKING/DTrackWireBased.h>
+#include <TRACKING/DTrackCandidate.h>
 
 #include <TMath.h>
 
@@ -119,7 +122,9 @@ class DParticleID:public jana::JObject{
 	//select closest shower/hit to track //track MUST be either DTrackTimeBased or DTrackWireBased //NULL if no possibly-valid matches
 	const DBCALShower* Get_ClosestToTrack_BCAL(const DKinematicData* locTrack, vector<const DBCALShower*>& locBCALShowers, double& locBestMatchDeltaPhi, double& locBestMatchDeltaZ) const;
 	const DFCALShower* Get_ClosestToTrack_FCAL(const DKinematicData* locTrack, vector<const DFCALShower*>& locFCALShowers, double& locBestDistance) const;
-	const DTOFPoint* Get_ClosestToTrack_TOF(const DKinematicData* locTrack, vector<const DTOFPoint*>& locTOFPoints, double& locBestDeltaX, double& locBestDeltaY) const;
+	const DTOFPoint* Get_ClosestToTrack_TOFPoint(const DKinematicData* locTrack, vector<const DTOFPoint*>& locTOFPoints, double& locBestDeltaX, double& locBestDeltaY) const;
+	//first in pair is vertical, second is horizontal // NULL If none / doesn't hit TOF
+	pair<const DTOFPaddleHit*, const DTOFPaddleHit*> Get_ClosestToTrack_TOFPaddles(const DKinematicData* locTrack, vector<const DTOFPaddleHit*>& locTOFPaddleHits, double& locBestDeltaX, double& locBestDeltaY) const;
 	const DSCHit* Get_ClosestToTrack_SC(const DKinematicData* locTrack, vector<const DSCHit*>& locSCHits, double& locBestDeltaPhi) const;
 
 	double Calc_BCALFlightTimePCorrelation(const DKinematicData* locTrack, DDetectorMatches* locDetectorMatches) const;
@@ -137,6 +142,15 @@ class DParticleID:public jana::JObject{
 	unsigned int Get_FDCPlaneBitPattern(vector<const DFDCPseudo*>& locFDCPseudos) const;
 	void Get_CDCRings(int locBitPattern, set<int>& locCDCRings) const;
 	void Get_FDCPlanes(int locBitPattern, set<int>& locFDCPlanes) const;
+
+	void Get_CDCNumHitRingsPerSuperlayer(int locBitPattern, map<int, int>& locNumHitRingsPerSuperlayer) const;
+	void Get_CDCNumHitRingsPerSuperlayer(const set<int>& locCDCRings, map<int, int>& locNumHitRingsPerSuperlayer) const;
+	void Get_FDCNumHitPlanesPerPackage(int locBitPattern, map<int, int>& locNumHitPlanesPerPackage) const;
+	void Get_FDCNumHitPlanesPerPackage(const set<int>& locFDCPlanes, map<int, int>& locNumHitPlanesPerPackage) const;
+
+	//ONLY CALL THIS WHEN TRYING TO GET A PURE TRACK SAMPLE
+	//track MUST be either DTrackTimeBased, DTrackWireBased, or DTrackCandidate
+	bool Cut_TrackHitPattern_Hard(const DKinematicData* locTrack, unsigned int locMinHitsPerCDCSuperlayer = 2, unsigned int locMinHitsPerFDCPackage = 4) const;
 
   protected:
 		// gas material properties

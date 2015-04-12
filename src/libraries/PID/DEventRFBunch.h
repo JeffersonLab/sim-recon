@@ -30,6 +30,7 @@ class DEventRFBunch : public jana::JObject
 
 		void toStrings(vector<pair<string,string> > &items) const
 		{
+			AddString(items, "Source System", "%s", SystemName(dTimeSource));
 			AddString(items, "t", "%3.5f", dTime);
 			AddString(items, "var_t", "%3.2f", dTimeVariance);
 			AddString(items, "#tracks", "%i", dNumParticleVotes);

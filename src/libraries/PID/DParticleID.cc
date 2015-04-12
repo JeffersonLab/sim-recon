@@ -1488,7 +1488,7 @@ const DFCALShower* DParticleID::Get_ClosestToTrack_FCAL(const DKinematicData* lo
 	return locBestFCALShower;
 }
 
-const DTOFPoint* DParticleID::Get_ClosestToTrack_TOF(const DKinematicData* locTrack, vector<const DTOFPoint*>& locTOFPoints, double& locBestDeltaX, double& locBestDeltaY) const
+const DTOFPoint* DParticleID::Get_ClosestToTrack_TOFPoint(const DKinematicData* locTrack, vector<const DTOFPoint*>& locTOFPoints, double& locBestDeltaX, double& locBestDeltaY) const
 {
 	const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
 	const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
@@ -1516,6 +1516,50 @@ const DTOFPoint* DParticleID::Get_ClosestToTrack_TOF(const DKinematicData* locTr
 	}
 
 	return locClosestTOFPoint;
+}
+
+pair<const DTOFPaddleHit*, const DTOFPaddleHit*> DParticleID::Get_ClosestToTrack_TOFPaddles(const DKinematicData* locTrack, vector<const DTOFPaddleHit*>& locTOFPaddleHits, double& locBestDeltaX, double& locBestDeltaY) const
+{
+	locBestDeltaX = 999.9;
+	locBestDeltaY = 999.9;
+
+	const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
+	const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
+	if((locTrackTimeBased == NULL) && (locTrackWireBased == NULL))
+		return pair<const DTOFPaddleHit*, const DTOFPaddleHit*>(NULL, NULL);
+	const DReferenceTrajectory* locReferenceTrajectory = (locTrackTimeBased != NULL) ? locTrackTimeBased->rt : locTrackWireBased->rt;
+	if(locReferenceTrajectory == NULL)
+		return pair<const DTOFPaddleHit*, const DTOFPaddleHit*>(NULL, NULL);
+
+	unsigned int locHorizontalBar, locVerticalBar;
+	DVector3 locIntersection;
+	if(!PredictTOFPaddles(locReferenceTrajectory, locHorizontalBar, locVerticalBar, &locIntersection))
+		return pair<const DTOFPaddleHit*, const DTOFPaddleHit*>(NULL, NULL);
+
+	double locMinDistance = 9.9E9;
+	const DTOFPaddleHit *locClosestPaddleHit_Horzontal = NULL, *locClosestPaddleHit_Vertical = NULL;
+	double locInputStartTime = locTrack->t0();
+	for(size_t loc_i = 0; loc_i < locTOFPaddleHits.size(); ++loc_i)
+	{
+		if(locTOFPaddleHits[loc_i]->orientation == 0) //vertical
+		{
+			double locDistance = fabs(dTOFGeometry->bar2y(locTOFPaddleHits[loc_i]->bar) - locIntersection.X());
+			if(locDistance > locBestDeltaX)
+				continue;
+			locBestDeltaX = locDistance;
+			locClosestPaddleHit_Vertical = locTOFPaddleHits[loc_i];
+		}
+		else //horizontal
+		{
+			double locDistance = fabs(dTOFGeometry->bar2y(locTOFPaddleHits[loc_i]->bar) - locIntersection.Y());
+			if(locDistance > locBestDeltaY)
+				continue;
+			locBestDeltaY = locDistance;
+			locClosestPaddleHit_Horzontal = locTOFPaddleHits[loc_i];
+		}
+	}
+
+	return pair<const DTOFPaddleHit*, const DTOFPaddleHit*>(locClosestPaddleHit_Vertical, locClosestPaddleHit_Horzontal);
 }
 
 const DSCHit* DParticleID::Get_ClosestToTrack_SC(const DKinematicData* locTrack, vector<const DSCHit*>& locSCHits, double& locBestDeltaPhi) const
@@ -1671,6 +1715,120 @@ void DParticleID::Get_FDCPlanes(int locBitPattern, set<int>& locFDCPlanes) const
 		if((locBitPattern & locBit) != 0)
 			locFDCPlanes.insert(locPlane);
 	}
+}
+
+void DParticleID::Get_CDCNumHitRingsPerSuperlayer(int locBitPattern, map<int, int>& locNumHitRingsPerSuperlayer) const
+{
+	set<int> locCDCRings;
+	Get_CDCRings(locBitPattern, locCDCRings);
+	Get_CDCNumHitRingsPerSuperlayer(locCDCRings, locNumHitRingsPerSuperlayer);
+}
+
+void DParticleID::Get_CDCNumHitRingsPerSuperlayer(const set<int>& locCDCRings, map<int, int>& locNumHitRingsPerSuperlayer) const
+{
+	locNumHitRingsPerSuperlayer.clear();
+	set<int>::const_iterator locIterator = locCDCRings.begin();
+	for(; locIterator != locCDCRings.end(); ++locIterator)
+	{
+		int locCDCSuperlayer = ((*locIterator) - 1)/4 + 1;
+		map<int, int>::iterator locMapIterator = locNumHitRingsPerSuperlayer.find(locCDCSuperlayer);
+		if(locMapIterator == locNumHitRingsPerSuperlayer.end())
+			locNumHitRingsPerSuperlayer.insert(pair<int, int>(locCDCSuperlayer, 1));
+		else
+			++(locMapIterator->second);
+	}
+}
+
+void DParticleID::Get_FDCNumHitPlanesPerPackage(int locBitPattern, map<int, int>& locNumHitPlanesPerPackage) const
+{
+	set<int> locFDCPlanes;
+	Get_FDCPlanes(locBitPattern, locFDCPlanes);
+	Get_FDCNumHitPlanesPerPackage(locFDCPlanes, locNumHitPlanesPerPackage);
+}
+
+void DParticleID::Get_FDCNumHitPlanesPerPackage(const set<int>& locFDCPlanes, map<int, int>& locNumHitPlanesPerPackage) const
+{
+	locNumHitPlanesPerPackage.clear();
+	set<int>::const_iterator locIterator = locFDCPlanes.begin();
+	for(; locIterator != locFDCPlanes.end(); ++locIterator)
+	{
+		int locFDCPackage = ((*locIterator) - 1)/6 + 1;
+		map<int, int>::iterator locMapIterator = locNumHitPlanesPerPackage.find(locFDCPackage);
+		if(locMapIterator == locNumHitPlanesPerPackage.end())
+			locNumHitPlanesPerPackage.insert(pair<int, int>(locFDCPackage, 1));
+		else
+			++(locMapIterator->second);
+	}
+}
+
+bool DParticleID::Cut_TrackHitPattern_Hard(const DKinematicData* locTrack, unsigned int locMinHitsPerCDCSuperlayer, unsigned int locMinHitsPerFDCPackage) const
+{
+	//THIS CUT MAY THROW AWAY A LOT OF REAL TRACKS (and should in general NOT BE USED in an analysis)
+		// it is designed to try to get a relatively "pure" sample
+
+	//In the CDC, in each super-layer between the innermost & outermost superlayers with hits, require that there be at least locMinHitsPerCDCSuperlayer hits
+		//cannot cut in the last superlayer, the track might be leaving the CDC
+		//cannot cut in the first superlayer, the track might have been produced in a decay at a detached vertex
+	//In the FDC, in each package up to the outermost package with hits, require that there be at least locMinHitsPerFDCPackage hits
+		//cannot cut in the last package, the track might be leaving the FDC
+
+	const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
+	const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
+	const DTrackCandidate* locTrackCandidate = dynamic_cast<const DTrackCandidate*>(locTrack);
+
+	map<int, int> locNumHitRingsPerSuperlayer, locNumHitPlanesPerPackage;
+	if(locTrackTimeBased != NULL)
+	{
+		Get_CDCNumHitRingsPerSuperlayer(locTrackTimeBased->dCDCRings, locNumHitRingsPerSuperlayer);
+		Get_FDCNumHitPlanesPerPackage(locTrackTimeBased->dFDCPlanes, locNumHitPlanesPerPackage);
+	}
+	else if(locTrackWireBased != NULL)
+	{
+		Get_CDCNumHitRingsPerSuperlayer(locTrackWireBased->dCDCRings, locNumHitRingsPerSuperlayer);
+		Get_FDCNumHitPlanesPerPackage(locTrackWireBased->dFDCPlanes, locNumHitPlanesPerPackage);
+	}
+	else if(locTrackCandidate != NULL)
+	{
+		Get_CDCNumHitRingsPerSuperlayer(locTrackCandidate->dCDCRings, locNumHitRingsPerSuperlayer);
+		Get_FDCNumHitPlanesPerPackage(locTrackCandidate->dFDCPlanes, locNumHitPlanesPerPackage);
+	}
+	else
+		return false;
+
+	//CDC
+	int locInnermostCDCSuperlayer = 0, locOutermostCDCSuperlayer = 0;
+	if(locNumHitRingsPerSuperlayer.size() > 1)
+	{
+		int locInnermostCDCSuperlayer = locNumHitRingsPerSuperlayer.begin()->first;
+		int locOutermostCDCSuperlayer = (--locNumHitRingsPerSuperlayer.end())->first;
+		for(int locSuperlayer = locInnermostCDCSuperlayer + 1; locSuperlayer < locOutermostCDCSuperlayer; ++locSuperlayer)
+		{
+			map<int, int>::iterator locIterator = locNumHitRingsPerSuperlayer.find(locSuperlayer);
+			if(locIterator == locNumHitRingsPerSuperlayer.end())
+				return false; //superlayer is missing!
+			if(locIterator->second < int(locMinHitsPerCDCSuperlayer))
+				return false;
+		}
+	}
+
+	//FDC
+	if(!locNumHitPlanesPerPackage.empty())
+	{
+		int locOutermostFDCPlane = (--locNumHitPlanesPerPackage.end())->first;
+		for(int locPackage = 1; locPackage < locOutermostFDCPlane; ++locPackage)
+		{
+			map<int, int>::iterator locIterator = locNumHitPlanesPerPackage.find(locPackage);
+			if(locIterator == locNumHitPlanesPerPackage.end())
+				return false; //superlayer is missing!
+			if(locIterator->second < int(locMinHitsPerFDCPackage))
+				return false;
+		}
+	}
+
+	if((locOutermostCDCSuperlayer <= 3) && locNumHitPlanesPerPackage.empty())
+		return false; //would have at least expected it to hit the first FDC package //is likely spurious
+
+	return true;
 }
 
 Particle_t DParticleID::IDTrack(float locCharge, float locMass) const

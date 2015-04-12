@@ -6,7 +6,7 @@
 // hnamepath: /Independent/Hist_DetectorMatching/TimeBased/FCAL/TrackFCALRowVsColumn_NoHit
 
 {
-	double locMinNumCountsForRatio = 5.0;
+	double locMinNumCountsForRatio = 20.0;
 
 	//Goto Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("Hist_DetectorMatching");

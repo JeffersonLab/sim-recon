@@ -27,7 +27,7 @@
 #include <PID/DParticleID.h>
 #include <PID/DEventRFBunch.h>
 #include <PID/DNeutralShower.h>
-#include <PID/DRFTime.h>
+#include <RF/DRFTime.h>
 #include <TRACKING/DTrackTimeBased.h>
 #include <START_COUNTER/DSCHit.h>
 #include <BCAL/DBCALShower.h>

@@ -20,7 +20,9 @@
 #include "JANA/JEventLoop.h"
 #include "particleType.h"
 
-#include "PID/DRFTime.h"
+#include "RF/DRFTime.h"
+#include "RF/DRFDigiTime.h"
+#include "RF/DRFTDCDigiTime.h"
 #include "PID/DChargedTrack.h"
 #include "PID/DChargedTrackHypothesis.h"
 #include "PID/DNeutralParticle.h"
@@ -210,21 +212,24 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		dNum2DThetaBins(280), dNum2DPBins(250), dNum2DPhiBins(360), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(300), dNum2DTrackDOCABins(200),
 		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0),
-		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0) {}
+		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
+		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitsPerCDCSuperlayer(2), dMinHitsPerFDCPackage(4) {}
 
 		DHistogramAction_DetectorMatching(string locActionUniqueString) :
 		DAnalysisAction(NULL, "Hist_DetectorMatching", false, locActionUniqueString),
 		dNum2DThetaBins(280), dNum2DPBins(250), dNum2DPhiBins(360), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(300), dNum2DTrackDOCABins(200),
 		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0),
-		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0) {}
+		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
+		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitsPerCDCSuperlayer(2), dMinHitsPerFDCPackage(4) {}
 
 		DHistogramAction_DetectorMatching(void) :
 		DAnalysisAction(NULL, "Hist_DetectorMatching", false, ""),
 		dNum2DThetaBins(280), dNum2DPBins(250), dNum2DPhiBins(360), dNum2DDeltaPhiBins(300), dNum2DDeltaZBins(300), dNum2DTrackDOCABins(200),
 		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0),
-		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0) {}
+		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
+		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitsPerCDCSuperlayer(2), dMinHitsPerFDCPackage(4) {}
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -232,6 +237,9 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		unsigned int dNum2DTrackDOCABins, dNumTrackDOCABins, dNumFCALTOFXYBins, dNum2DBCALZBins;
 		double dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dSCMatchMinDeltaPhi, dSCMatchMaxDeltaPhi, dMinTrackDOCA, dMaxTrackMatchDOCA;
 		double dMinDeltaPhi, dMaxDeltaPhi, dMinDeltaZ, dMaxDeltaZ;
+
+		double dMinTrackingFOM, dMinTOFPaddleMatchDistance;
+		unsigned int dMinHitsPerCDCSuperlayer, dMinHitsPerFDCPackage;
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
@@ -261,18 +269,39 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		map<bool, TH2I*> dHistMap_TrackPVsTheta_NoHitMatch;
 		map<bool, TH2I*> dHistMap_TrackPVsTheta_HitMatch;
 		map<bool, TH2I*> dHistMap_SCTrackDeltaPhiVsP;
+		map<bool, TH2I*> dHistMap_SCTrackDeltaPhiVsTheta;
 		map<bool, TH2I*> dHistMap_FCALTrackDistanceVsP;
 		map<bool, TH2I*> dHistMap_FCALTrackDistanceVsTheta;
 		map<bool, TH2I*> dHistMap_BCALDeltaPhiVsP;
 		map<bool, TH2I*> dHistMap_BCALDeltaZVsTheta;
-		map<bool, TH2I*> dHistMap_TOFTrackDistanceVsP;
-		map<bool, TH2I*> dHistMap_TOFTrackDistanceVsTheta;
-		map<bool, TH2I*> dHistMap_TOFTrackDeltaXVsHorizontalPaddle;
-		map<bool, TH2I*> dHistMap_TOFTrackDeltaXVsVerticalPaddle;
-		map<bool, TH2I*> dHistMap_TOFTrackDeltaYVsHorizontalPaddle;
-		map<bool, TH2I*> dHistMap_TOFTrackDeltaYVsVerticalPaddle;
-		map<bool, TH1I*> dHistMap_TOFTrackDistance_BothPlanes;
-		map<bool, TH1I*> dHistMap_TOFTrackDistance_OnePlane;
+
+		//DTOFPaddle Matching
+		map<bool, TH1I*> dHistMap_TOFPaddleTrackDeltaX;
+		map<bool, TH1I*> dHistMap_TOFPaddleTrackDeltaY;
+		map<bool, TH2I*> dHistMap_TOFPaddleTrackYVsVerticalPaddle_HasHit;
+		map<bool, TH2I*> dHistMap_TOFPaddleTrackYVsVerticalPaddle_NoHit;
+		map<bool, TH2I*> dHistMap_TOFPaddleHorizontalPaddleVsTrackX_HasHit;
+		map<bool, TH2I*> dHistMap_TOFPaddleHorizontalPaddleVsTrackX_NoHit;
+
+		//DTOFPoint Matching
+		map<bool, TH2I*> dHistMap_TOFPointTrackDistanceVsP;
+		map<bool, TH2I*> dHistMap_TOFPointTrackDistanceVsTheta;
+		map<bool, TH2I*> dHistMap_TOFPointTrackDeltaXVsHorizontalPaddle;
+		map<bool, TH2I*> dHistMap_TOFPointTrackDeltaXVsVerticalPaddle;
+		map<bool, TH2I*> dHistMap_TOFPointTrackDeltaYVsHorizontalPaddle;
+		map<bool, TH2I*> dHistMap_TOFPointTrackDeltaYVsVerticalPaddle;
+		map<bool, TH1I*> dHistMap_TOFPointTrackDistance_BothPlanes;
+		map<bool, TH1I*> dHistMap_TOFPointTrackDistance_OnePlane;
+
+		//cut for single-paddle efficiencies
+		//1D: delta-x to vertical DTOFPaddle
+		//1D: delta-y to horizontal DTOFPaddle
+
+		//single-paddle efficiencies
+		//2D: delta-x match-to-vertical: projected-y-position vs projected vertical tof paddle
+		//2D: delta-x no-match-to-vertical: projected-y-position vs projected vertical tof paddle
+		//2D: delta-y match-to-horizontal: projected-x-position vs projected horizontal tof paddle
+		//2D: delta-y no-match-to-horizontal: projected-x-position vs projected horizontal tof paddle
 };
 
 class DHistogramAction_DetectorPID : public DAnalysisAction
@@ -679,6 +708,8 @@ class DHistogramAction_NumReconstructedObjects : public DAnalysisAction
 		TH1I* dHist_NumTOFHits;
 		TH1I* dHist_NumBCALHits;
 		TH1I* dHist_NumFCALHits;
+
+		TH1I* dHist_NumRFSignals; //all sources
 };
 
 class DHistogramAction_TrackMultiplicity : public DAnalysisAction

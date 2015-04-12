@@ -1,7 +1,7 @@
+// hnamepath: /Independent/Hist_NumReconstructedObjects/NumRFSignals
+// hnamepath: /Independent/Hist_NumReconstructedObjects/NumTAGMHits
+// hnamepath: /Independent/Hist_NumReconstructedObjects/NumTAGHHits
 // hnamepath: /Independent/Hist_NumReconstructedObjects/NumSCHits
-// hnamepath: /Independent/Hist_NumReconstructedObjects/NumCDCHits
-// hnamepath: /Independent/Hist_NumReconstructedObjects/NumFDCWireHits
-// hnamepath: /Independent/Hist_NumReconstructedObjects/NumFDCCathodeHits
 
 {
 	//Goto Path
@@ -11,10 +11,10 @@
 	locDirectory->cd();
 
 	//Get Histograms
+	TH1I* locHist_NumRFSignals = (TH1I*)gDirectory->Get("NumRFSignals");
+	TH1I* locHist_NumTAGMHits = (TH1I*)gDirectory->Get("NumTAGMHits");
+	TH1I* locHist_NumTAGHHits = (TH1I*)gDirectory->Get("NumTAGHHits");
 	TH1I* locHist_NumSCHits = (TH1I*)gDirectory->Get("NumSCHits");
-	TH1I* locHist_NumCDCHits = (TH1I*)gDirectory->Get("NumCDCHits");
-	TH1I* locHist_NumFDCWireHits = (TH1I*)gDirectory->Get("NumFDCWireHits");
-	TH1I* locHist_NumFDCCathodeHits = (TH1I*)gDirectory->Get("NumFDCCathodeHits");
 
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
@@ -28,6 +28,39 @@
 	locCanvas->cd(1);
 	gPad->SetTicks();
 	gPad->SetGrid();
+	if(locHist_NumRFSignals != NULL)
+	{
+		locHist_NumRFSignals->GetXaxis()->SetTitleSize(0.05);
+		locHist_NumRFSignals->GetXaxis()->SetLabelSize(0.05);
+		locHist_NumRFSignals->GetYaxis()->SetLabelSize(0.05);
+		locHist_NumRFSignals->Draw();
+	}
+
+	locCanvas->cd(2);
+	gPad->SetTicks();
+	gPad->SetGrid();
+	if(locHist_NumTAGMHits != NULL)
+	{
+		locHist_NumTAGMHits->GetXaxis()->SetTitleSize(0.05);
+		locHist_NumTAGMHits->GetXaxis()->SetLabelSize(0.05);
+		locHist_NumTAGMHits->GetYaxis()->SetLabelSize(0.05);
+		locHist_NumTAGMHits->Draw();
+	}
+
+	locCanvas->cd(3);
+	gPad->SetTicks();
+	gPad->SetGrid();
+	if(locHist_NumTAGHHits != NULL)
+	{
+		locHist_NumTAGHHits->GetXaxis()->SetTitleSize(0.05);
+		locHist_NumTAGHHits->GetXaxis()->SetLabelSize(0.05);
+		locHist_NumTAGHHits->GetYaxis()->SetLabelSize(0.05);
+		locHist_NumTAGHHits->Draw();
+	}
+
+	locCanvas->cd(4);
+	gPad->SetTicks();
+	gPad->SetGrid();
 	if(locHist_NumSCHits != NULL)
 	{
 		locHist_NumSCHits->GetXaxis()->SetTitleSize(0.05);
@@ -38,43 +71,5 @@
 	gPad->SetLogy();
 	gPad->Update();
 
-	locCanvas->cd(2);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(locHist_NumCDCHits != NULL)
-	{
-		locHist_NumCDCHits->GetXaxis()->SetTitleSize(0.05);
-		locHist_NumCDCHits->GetXaxis()->SetLabelSize(0.05);
-		locHist_NumCDCHits->GetYaxis()->SetLabelSize(0.05);
-		locHist_NumCDCHits->Draw();
-	}
-	gPad->SetLogy();
-	gPad->Update();
-
-	locCanvas->cd(3);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(locHist_NumFDCWireHits != NULL)
-	{
-		locHist_NumFDCWireHits->GetXaxis()->SetTitleSize(0.05);
-		locHist_NumFDCWireHits->GetXaxis()->SetLabelSize(0.05);
-		locHist_NumFDCWireHits->GetYaxis()->SetLabelSize(0.05);
-		locHist_NumFDCWireHits->Draw();
-	}
-	gPad->SetLogy();
-	gPad->Update();
-
-	locCanvas->cd(4);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(locHist_NumFDCCathodeHits != NULL)
-	{
-		locHist_NumFDCCathodeHits->GetXaxis()->SetTitleSize(0.05);
-		locHist_NumFDCCathodeHits->GetXaxis()->SetLabelSize(0.05);
-		locHist_NumFDCCathodeHits->GetYaxis()->SetLabelSize(0.05);
-		locHist_NumFDCCathodeHits->Draw();
-	}
-	gPad->SetLogy();
-	gPad->Update();
 }
 
