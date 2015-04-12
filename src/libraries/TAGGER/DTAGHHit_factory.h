@@ -27,7 +27,8 @@ class DTAGHHit_factory: public jana::JFactory<DTAGHHit> {
       static const int k_counter_bad = 2;
       static const int k_counter_noisy = 3;
 
-      // config. parameter
+      // config. parameters
+      double DELTA_T_ADC_TDC_MAX;
       double ADC_THRESHOLD;
 
       // fadc pulse integration window width (samples)

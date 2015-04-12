@@ -27,8 +27,8 @@ class DTAGMHit_factory: public jana::JFactory<DTAGMHit> {
       static const int k_fiber_bad = 2;
       static const int k_fiber_noisy = 3;
 
-      // fadc pulse integration window width (samples)
-      int fadc_pulse_window_size;
+      // config. parameter
+      double DELTA_T_ADC_TDC_MAX; 
 
       // overall scale factors
       double fadc_a_scale;  // pixels per fADC pulse integral count

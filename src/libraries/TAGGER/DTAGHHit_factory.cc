@@ -25,15 +25,17 @@ const int DTAGHHit_factory::k_counter_good;
 const int DTAGHHit_factory::k_counter_bad;
 const int DTAGHHit_factory::k_counter_noisy;
 
-#define DELTA_T_ADC_TDC_MATCH_NS 10.0
-
 //------------------
 // init
 //------------------
 jerror_t DTAGHHit_factory::init(void)
 {
-  ADC_THRESHOLD = 1000.0; // ADC integral counts
-  gPARMS->SetDefaultParameter("TAGHHit:ADC_THRESHOLD",ADC_THRESHOLD,
+   DELTA_T_ADC_TDC_MAX = 10.0; // ns
+   gPARMS->SetDefaultParameter("TAGHHit:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX,
+			      "Maximum difference in ns between a (calibrated) fADC time and"
+			      " F1TDC time for them to be matched in a single hit");
+   ADC_THRESHOLD = 1000.0; // ADC integral counts
+   gPARMS->SetDefaultParameter("TAGHHit:ADC_THRESHOLD",ADC_THRESHOLD,
 			      "pedestal-subtracted pulse integral threshold");
 
    // initialize calibration constants
@@ -123,8 +125,8 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
       return OBJECT_NOT_AVAILABLE;
    const DTAGHGeometry& taghGeom = *(taghGeomVect[0]);
 
-	const DTTabUtilities* locTTabUtilities = NULL;
-	loop->GetSingle(locTTabUtilities);
+   const DTTabUtilities* locTTabUtilities = NULL;
+   loop->GetSingle(locTTabUtilities);
 
    // First loop over all TAGHDigiHits and make DTAGHHits out of them
    vector<const DTAGHDigiHit*> digihits;
@@ -195,41 +197,41 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
    vector<const DTAGHTDCDigiHit*> tdcdigihits;
    loop->Get(tdcdigihits);
    for (unsigned int i=0; i < tdcdigihits.size(); i++) {
-	   const DTAGHTDCDigiHit *digihit = tdcdigihits[i];
+      const DTAGHTDCDigiHit *digihit = tdcdigihits[i];
 
-	   // Apply calibration constants here
-	   int counter = digihit->counter_id;
-	   double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - tdc_time_offsets[counter] + t_tdc_base;
-
-	   // Look for existing hits to see if there is a match
-	   // or create new one if there is no match
-	   DTAGHHit *hit = 0;
-	   for (unsigned int j=0; j < _data.size(); ++j) {
-		   if (_data[j]->counter_id == counter &&
-				   fabs(T - _data[j]->time_fadc) < DELTA_T_ADC_TDC_MATCH_NS)
-		   {
-			   hit = _data[j];
-		   }
+      // Apply calibration constants here
+      int counter = digihit->counter_id;
+      double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - tdc_time_offsets[counter] + t_tdc_base;
+      
+      // Look for existing hits to see if there is a match
+      // or create new one if there is no match
+      DTAGHHit *hit = 0;
+      for (unsigned int j=0; j < _data.size(); ++j) {
+	 if (_data[j]->counter_id == counter &&
+	     fabs(T - _data[j]->time_fadc) < DELTA_T_ADC_TDC_MAX)
+	   {
+	     hit = _data[j];
 	   }
-	   if (hit == 0) {
-		   hit = new DTAGHHit;
-		   hit->counter_id = counter;
-		   double Elow = taghGeom.getElow(counter);
-		   double Ehigh = taghGeom.getEhigh(counter);
-		   hit->E = (Elow + Ehigh)/2;
-		   hit->time_fadc = numeric_limits<double>::quiet_NaN();
-		   hit->integral = numeric_limits<double>::quiet_NaN();
-		   hit->npe_fadc = numeric_limits<double>::quiet_NaN();
-		   hit->has_fADC = false;
-		   _data.push_back(hit);
-	   }
-	   hit->time_tdc = T;
-	   hit->has_TDC = true;
-	   hit->t = T;
-
-	   // apply time-walk corrections?
-
-	   hit->AddAssociatedObject(digihit);
+      }
+      if (hit == 0) {
+	hit = new DTAGHHit;
+	hit->counter_id = counter;
+	double Elow = taghGeom.getElow(counter);
+	double Ehigh = taghGeom.getEhigh(counter);
+	hit->E = (Elow + Ehigh)/2;
+	hit->time_fadc = numeric_limits<double>::quiet_NaN();
+	hit->integral = numeric_limits<double>::quiet_NaN();
+	hit->npe_fadc = numeric_limits<double>::quiet_NaN();
+	hit->has_fADC = false;
+	_data.push_back(hit);
+      }
+      hit->time_tdc = T;
+      hit->has_TDC = true;
+      hit->t = T;
+      
+      // apply time-walk corrections?
+      
+      hit->AddAssociatedObject(digihit);
    }
 
    return NOERROR;
@@ -255,20 +257,20 @@ jerror_t DTAGHHit_factory::fini(void)
 // load_ccdb_constants
 //---------------------
 bool DTAGHHit_factory::load_ccdb_constants(
-        std::string table_name,
-        std::string column_name,
-        double result[TAGH_MAX_COUNTER+1])
+   std::string table_name,
+   std::string column_name,
+   double result[TAGH_MAX_COUNTER+1])
 {
-    std::vector< std::map<std::string, double> > table;
-    std::string ccdb_key = "/PHOTON_BEAM/hodoscope/" + table_name;
-    if (eventLoop->GetCalib(ccdb_key, table))
-    {
-        jout << "Error loading " << ccdb_key << " from ccdb!" << std::endl;
-        return false;
-    }
-    for (unsigned int i=0; i < table.size(); ++i) {
-        int counter = (table[i])["id"];
-        result[counter] = (table[i])[column_name];
-    }
-    return true;
+   std::vector< std::map<std::string, double> > table;
+   std::string ccdb_key = "/PHOTON_BEAM/hodoscope/" + table_name;
+   if (eventLoop->GetCalib(ccdb_key, table))
+     {
+       jout << "Error loading " << ccdb_key << " from ccdb!" << std::endl;
+       return false;
+     }
+   for (unsigned int i=0; i < table.size(); ++i) {
+      int counter = (table[i])["id"];
+      result[counter] = (table[i])[column_name];
+   }
+   return true;
 }
