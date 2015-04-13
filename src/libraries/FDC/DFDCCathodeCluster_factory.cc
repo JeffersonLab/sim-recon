@@ -95,22 +95,23 @@ jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, int eventNo) {
   vector<vector<const DFDCHit*> >thisLayer;
   
   try {
-    eventLoop->Get(allHits);
-   
-    // Sort hits by layer number and by time
-    sort(allHits.begin(),allHits.end(),DFDCHit_cmp);
-
-    // Sift through all hits and select out U and V hits.
-    for (vector<const DFDCHit*>::iterator i = allHits.begin(); 
-	 i != allHits.end(); ++i){
-      if ((*i)->type) {
-	if ((*i)->plane == 1)
-	  vHits.push_back(*i);
-	else
-	  uHits.push_back(*i);
-      }
-    }  
-		
+    if (allHits.size()>0) {
+      eventLoop->Get(allHits);
+      
+      // Sort hits by layer number and by time
+      sort(allHits.begin(),allHits.end(),DFDCHit_cmp);
+      
+      // Sift through all hits and select out U and V hits.
+      for (vector<const DFDCHit*>::iterator i = allHits.begin(); 
+	   i != allHits.end(); ++i){
+	if ((*i)->type) {
+	  if ((*i)->plane == 1)
+	    vHits.push_back(*i);
+	  else
+	    uHits.push_back(*i);
+	}
+      }  
+    }	
     // Layer by layer, create clusters of U hits.
     if (uHits.size()>0){
       thisLayer.clear();
