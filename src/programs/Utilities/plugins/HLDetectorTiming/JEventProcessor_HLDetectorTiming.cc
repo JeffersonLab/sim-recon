@@ -57,7 +57,7 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
     DO_TRACK_BASED = 0;
     DO_VERIFY = 1;
     DO_OPTIONAL = 0;
-    DO_FITS = 1;
+    DO_FITS = 0;
 
     if(gPARMS){
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_ROUGH_TIMING", DO_ROUGH_TIMING, "Set to > 0 to do rough timing of all detectors");
@@ -68,7 +68,7 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:REQUIRE_BEAM", REQUIRE_BEAM, "Set to 0 to skip beam current check");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:BEAM_EVENTS_TO_KEEP", BEAM_EVENTS_TO_KEEP, "Set to the number of beam on events to use");
         gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_OPTIONAL", DO_OPTIONAL, "Set to >0 to enable optional histograms ");
-        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_FITS", DO_FITS, "Set to 0 to disable end of run fits ");
+        gPARMS->SetDefaultParameter("HLDETECTORTIMING:DO_FITS", DO_FITS, "Set to 1 to enable end of run fits ");
     }
     
     // Would like the code with no arguments to simply verify the current status of the calibration
@@ -93,6 +93,8 @@ jerror_t JEventProcessor_HLDetectorTiming::brun(JEventLoop *eventLoop, int runnu
         return RESOURCE_UNAVAILABLE;
     }
     dParticleID = dParticleID_algos[0];
+
+    if (DO_FITS == 0) return NOERROR;
 
     // load base time offsets
     map<string,double> base_time_offset;
