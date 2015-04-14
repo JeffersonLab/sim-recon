@@ -9,7 +9,7 @@
 
 DTTabUtilities::DTTabUtilities(void)
 {
-	dTScale_CAEN = 0.025; // 25 ps/count (TOF)
+	dTScale_CAEN = 0.0234375; // ~ 23.4375 ps/count (TOF)
 }
 
 double DTTabUtilities::Convert_DigiTimeToNs_F1TDC(const JObject* locTDCDigiHit) const
