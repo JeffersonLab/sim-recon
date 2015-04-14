@@ -43,7 +43,7 @@ jerror_t DTOFHit_factory::init(void)
 	/// Set basic conversion constants
 	a_scale    = 0.2/5.2E5;
 	t_scale    = 0.0625;   // 62.5 ps/count
-	tdc_scale  = 0.025;    // 25 ps/count
+	tdc_scale  = 0.0234375;    // 23.4375 ps/count
         t_base     = 0.;       // ns
 	t_base_tdc = 0.; // ns
 
