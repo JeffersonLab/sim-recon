@@ -57,7 +57,7 @@ using namespace std;
 #include <CERE/DCereHit.h>
 #include <RICH/DRichHit.h>
 #include <RICH/DRichTruthHit.h>
-#include <PID/DRFTime.h>
+#include <RF/DRFTime.h>
 #include <DANA/DApplication.h>
 #include "PAIR_SPECTROMETER/DPSHit.h"
 #include "PAIR_SPECTROMETER/DPSCHit.h"

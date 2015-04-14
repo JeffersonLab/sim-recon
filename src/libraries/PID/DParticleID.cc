@@ -1536,9 +1536,7 @@ pair<const DTOFPaddleHit*, const DTOFPaddleHit*> DParticleID::Get_ClosestToTrack
 	if(!PredictTOFPaddles(locReferenceTrajectory, locHorizontalBar, locVerticalBar, &locIntersection))
 		return pair<const DTOFPaddleHit*, const DTOFPaddleHit*>(NULL, NULL);
 
-	double locMinDistance = 9.9E9;
 	const DTOFPaddleHit *locClosestPaddleHit_Horzontal = NULL, *locClosestPaddleHit_Vertical = NULL;
-	double locInputStartTime = locTrack->t0();
 	for(size_t loc_i = 0; loc_i < locTOFPaddleHits.size(); ++loc_i)
 	{
 		if(locTOFPaddleHits[loc_i]->orientation == 0) //vertical
@@ -1799,8 +1797,8 @@ bool DParticleID::Cut_TrackHitPattern_Hard(const DKinematicData* locTrack, unsig
 	int locInnermostCDCSuperlayer = 0, locOutermostCDCSuperlayer = 0;
 	if(locNumHitRingsPerSuperlayer.size() > 1)
 	{
-		int locInnermostCDCSuperlayer = locNumHitRingsPerSuperlayer.begin()->first;
-		int locOutermostCDCSuperlayer = (--locNumHitRingsPerSuperlayer.end())->first;
+		locInnermostCDCSuperlayer = locNumHitRingsPerSuperlayer.begin()->first;
+		locOutermostCDCSuperlayer = (--locNumHitRingsPerSuperlayer.end())->first;
 		for(int locSuperlayer = locInnermostCDCSuperlayer + 1; locSuperlayer < locOutermostCDCSuperlayer; ++locSuperlayer)
 		{
 			map<int, int>::iterator locIterator = locNumHitRingsPerSuperlayer.find(locSuperlayer);

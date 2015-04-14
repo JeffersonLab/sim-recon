@@ -14,7 +14,7 @@
 #include <JANA/JFactory.h>
 #include <PID/DEventRFBunch.h>
 #include <PID/DBeamPhoton.h>
-#include <PID/DRFTime.h>
+#include <RF/DRFTime.h>
 #include <TRACKING/DMCThrown.h>
 
 using namespace std;
