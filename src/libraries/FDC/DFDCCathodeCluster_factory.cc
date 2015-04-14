@@ -95,9 +95,9 @@ jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, int eventNo) {
   vector<vector<const DFDCHit*> >thisLayer;
   
   try {
-    if (allHits.size()>0) {
-      eventLoop->Get(allHits);
+    eventLoop->Get(allHits);
       
+    if (allHits.size()>0) {
       // Sort hits by layer number and by time
       sort(allHits.begin(),allHits.end(),DFDCHit_cmp);
       
@@ -111,83 +111,84 @@ jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, int eventNo) {
 	    uHits.push_back(*i);
 	}
       }  
-    }	
-    // Layer by layer, create clusters of U hits.
-    if (uHits.size()>0){
-      thisLayer.clear();
-      vector<const DFDCHit*>::iterator i = uHits.begin();
-      for (int iLayer=1;iLayer<25;iLayer++){
-	if (i==uHits.end()) break;
-	
-	vector<const DFDCHit*> hits;	
-	float old_time=(*i)->t;
-	while((i!=uHits.end()) && ((*i)->gLayer == iLayer)){ 
-	  // Look for hits falling within a time slice
-	  if (fabs((*i)->t-old_time)>TIME_SLICE){
-	    // Sort hits by element number
-	    sort(hits.begin(),hits.end(),DFDCHit_element_cmp);
-	    // put into the vector
-	    thisLayer.push_back(hits);
-	    hits.clear();
-	    old_time=(*i)->t;
-	  }
-	  hits.push_back(*i);
-		  
-	  i++;
-	}
-	// Sort hits by element number
-	sort(hits.begin(),hits.end(),DFDCHit_element_cmp);
-	// add the last vector of hits
-	thisLayer.push_back(hits);
-		
-	// Create clusters from these lists of hits
-	for (unsigned int k=0;k<thisLayer.size();k++) pique(thisLayer[k]);
-
-	// Clear the hits and layer vectors for the next ones
-	thisLayer.clear();	
-	hits.clear();
-      }
-    }
-
-    // Layer by layer, create clusters of V hits.
-    if (vHits.size()>0){
-      thisLayer.clear();
-      vector<const DFDCHit*>::iterator i = vHits.begin();
-      for (int iLayer=1;iLayer<25;iLayer++){
-	if (i==vHits.end()) break;
-
-	vector<const DFDCHit*> hits;
-	float old_time=(*i)->t;
-	while((i!=vHits.end()) && ((*i)->gLayer == iLayer)){
-	  // Look for hits falling within a time slice
-	  if (fabs((*i)->t-old_time)>TIME_SLICE){
-	    // Sort hits by element number
-	    sort(hits.begin(),hits.end(),DFDCHit_element_cmp);
-	      // put into the vector
-	    thisLayer.push_back(hits);
-	    hits.clear();
-	    old_time=(*i)->t;
-	  }
-	  hits.push_back(*i);
-		  
-	  i++;
-	}
-	// Sort hits by element number
-	sort(hits.begin(),hits.end(),DFDCHit_element_cmp);
-	// add the last vector of hits
-	thisLayer.push_back(hits);
-
-	// Create clusters from these lists of hits	  		
-	for (unsigned int k=0;k<thisLayer.size();k++) pique(thisLayer[k]);
-
-	// Clear the hits and layer vectors for the next ones
+    	
+      // Layer by layer, create clusters of U hits.
+      if (uHits.size()>0){
 	thisLayer.clear();
-	hits.clear();
+	vector<const DFDCHit*>::iterator i = uHits.begin();
+	for (int iLayer=1;iLayer<25;iLayer++){
+	  if (i==uHits.end()) break;
+	  
+	  vector<const DFDCHit*> hits;	
+	  float old_time=(*i)->t;
+	  while((i!=uHits.end()) && ((*i)->gLayer == iLayer)){ 
+	    // Look for hits falling within a time slice
+	    if (fabs((*i)->t-old_time)>TIME_SLICE){
+	      // Sort hits by element number
+	      sort(hits.begin(),hits.end(),DFDCHit_element_cmp);
+	      // put into the vector
+	      thisLayer.push_back(hits);
+	      hits.clear();
+	      old_time=(*i)->t;
+	    }
+	    hits.push_back(*i);
+	    
+	    i++;
+	  }
+	  // Sort hits by element number
+	  sort(hits.begin(),hits.end(),DFDCHit_element_cmp);
+	  // add the last vector of hits
+	  thisLayer.push_back(hits);
+	  
+	  // Create clusters from these lists of hits
+	  for (unsigned int k=0;k<thisLayer.size();k++) pique(thisLayer[k]);
+	  
+	  // Clear the hits and layer vectors for the next ones
+	  thisLayer.clear();	
+	  hits.clear();
+	}
       }
+
+      // Layer by layer, create clusters of V hits.
+      if (vHits.size()>0){
+	thisLayer.clear();
+	vector<const DFDCHit*>::iterator i = vHits.begin();
+	for (int iLayer=1;iLayer<25;iLayer++){
+	  if (i==vHits.end()) break;
+	  
+	  vector<const DFDCHit*> hits;
+	  float old_time=(*i)->t;
+	  while((i!=vHits.end()) && ((*i)->gLayer == iLayer)){
+	    // Look for hits falling within a time slice
+	    if (fabs((*i)->t-old_time)>TIME_SLICE){
+	      // Sort hits by element number
+	      sort(hits.begin(),hits.end(),DFDCHit_element_cmp);
+	      // put into the vector
+	      thisLayer.push_back(hits);
+	      hits.clear();
+	      old_time=(*i)->t;
+	    }
+	    hits.push_back(*i);
+	    
+	    i++;
+	  }
+	  // Sort hits by element number
+	  sort(hits.begin(),hits.end(),DFDCHit_element_cmp);
+	  // add the last vector of hits
+	  thisLayer.push_back(hits);
+	  
+	  // Create clusters from these lists of hits	  		
+	  for (unsigned int k=0;k<thisLayer.size();k++) pique(thisLayer[k]);
+	  
+	  // Clear the hits and layer vectors for the next ones
+	  thisLayer.clear();
+	  hits.clear();
+	}
+      }
+      
+      // Ensure that the data are still in order of Z position.
+      std::sort(_data.begin(), _data.end(), DFDCCathodeCluster_gPlane_cmp);
     }
-    
-    // Ensure that the data are still in order of Z position.
-    std::sort(_data.begin(), _data.end(), DFDCCathodeCluster_gPlane_cmp);
   }
   catch (JException d) {
     cout << d << endl;
