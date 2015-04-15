@@ -660,11 +660,27 @@ void GetSiPMSpectra(hddm_s::HDDM *record,
 
       // Extract values and use them to fill histo
       int i = 0;
-      double dE;
-      while (ss >> dE) {
-         h->Fill(t, dE);
-         t += bin_width;
-         if (++i > 100000) {
+      string entry;
+      while (ss >> entry) {
+	 if (entry[0] == 'X') {
+	    // get rid of the X, the rest of the entry is the number of zeroes to add
+	    stringstream sss(entry.substr(1)); 
+	    int num_zeros;
+	    sss >> num_zeros;
+                      
+	    for(int i=0; i<num_zeros; i++) {
+	       h->Fill(t, 0.0);
+	       t += bin_width;                         
+	    }
+	 } else {
+	    stringstream sss(entry);
+	    double dE;
+	    sss >> dE;
+	    h->Fill(t, dE);
+	    t += bin_width;
+	 }
+
+	 if (++i > 100000) {
             _DBG_ << "More than 100k iterations parsing BCAL time"
                   << " spectrum string! Something is wrong!" << endl;
             exit(-1);
