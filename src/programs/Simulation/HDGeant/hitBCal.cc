@@ -926,6 +926,7 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 				    ibin++;  // move to the next bin
 				    dE = h->GetBinContent(ibin);
 			    }
+			    ibin--;  // back up for the next iteration through the loop
 
 			    sprintf(str, "X%d", num_zero_bins);
 			    vals += str;
