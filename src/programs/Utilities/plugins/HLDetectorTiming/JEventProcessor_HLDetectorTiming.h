@@ -11,6 +11,8 @@
 #include <DAQ/DEPICSvalue.h>
 #include <JANA/JEventProcessor.h>
 #include <BCAL/DBCALHit.h>
+#include <BCAL/DBCALTDCHit.h>
+#include <BCAL/DBCALUnifiedHit.h>
 #include <CDC/DCDCHit.h>
 #include <FCAL/DFCALHit.h>
 #include <FDC/DFDCHit.h>

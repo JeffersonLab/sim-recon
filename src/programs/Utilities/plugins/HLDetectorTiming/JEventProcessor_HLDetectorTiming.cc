@@ -225,8 +225,12 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
     vector<const DSCHit *> scHitVector;
     loop->Get(scHitVector);
 
-    vector<const DBCALHit *> bcalHitVector;
-    loop->Get(bcalHitVector);
+    // Grab the unified hits since we are also interested in the TDC times
+    //vector<const DBCALHit *> bcalHitVector;
+    //loop->Get(bcalHitVector);
+
+    vector<const DBCALUnifiedHit *> bcalUnifiedHitVector;
+    loop->Get(bcalUnifiedHitVector);
 
     vector<const DTOFHit *> tofHitVector;
     loop->Get(tofHitVector);
@@ -275,25 +279,71 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
         Fill1DHistogram ("HLDetectorTiming", "SC", "SCHit time", scHitVector[i]->t,
                 "SCHit time", nBins, xMin, xMax);
     }
-    for (i = 0; i < bcalHitVector.size(); i++){
-        Fill1DHistogram ("HLDetectorTiming", "BCAL", "BCALHit time", bcalHitVector[i]->t,
-                "BCALHit time", nBins, xMin, xMax);
-        if (DO_OPTIONAL){
-            int the_cell = (bcalHitVector[i]->module - 1) * 16 + (bcalHitVector[i]->layer - 1) * 4 + bcalHitVector[i]->sector;
-            if (bcalHitVector[i]->end == 0){
-                Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Upstream Per Channel Hit Time",
-                        the_cell, bcalHitVector[i]->t,
-                        "BCALHit Upstream Per Channel Hit Time; cellID; t [ns] ",
-                        768, 0.5, 768.5, 100, -50, 50);
+    for (i = 0; i < bcalUnifiedHitVector.size(); i++){
+        int the_cell = (bcalUnifiedHitVector[i]->module - 1) * 16 + (bcalUnifiedHitVector[i]->layer - 1) * 4 + bcalUnifiedHitVector[i]->sector;
+
+        // Get the underlying associated objects
+        const DBCALHit * thisADCHit;
+        const DBCALTDCHit * thisTDCHit;
+        bcalUnifiedHitVector[i]->GetSingle(thisADCHit);
+        bcalUnifiedHitVector[i]->GetSingle(thisTDCHit);
+        
+        if (thisADCHit != NULL){ //This should never be NULL but might as well check
+            Fill1DHistogram ("HLDetectorTiming", "BCAL", "BCALHit ADC time", thisADCHit->t,
+                    "BCALHit ADC time; t_{ADC} [ns]; Entries", nBins, xMin, xMax);
+
+            if (DO_OPTIONAL){
+                if (bcalUnifiedHitVector[i]->end == 0){
+                    Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Upstream Per Channel ADC Hit Time",
+                            the_cell, thisADCHit->t,
+                            "BCALHit Upstream Per Channel Hit Time; cellID; t_{ADC} [ns] ",
+                            768, 0.5, 768.5, 250, -50, 50);
+                }
+                else{
+                    Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Downstream Per Channel ADC Hit Time",
+                            the_cell, thisADCHit->t,
+                            "BCALHit Downstream Per Channel Hit Time; cellID; t_{ADC} [ns] ",
+                            768, 0.5, 768.5, 250, -50, 50);
+                }
+            }
+        }
+
+        if (thisTDCHit != NULL){ //This should never be NULL but might as well check
+            Fill1DHistogram ("HLDetectorTiming", "BCAL", "BCALHit TDC time", thisTDCHit->t,
+                    "BCALHit TDC time; t_{TDC} [ns]; Entries", nBins, xMin, xMax);
+
+            if (DO_OPTIONAL){
+                if (bcalUnifiedHitVector[i]->end == 0){
+                    Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Upstream Per Channel TDC Hit Time",
+                            the_cell, thisTDCHit->t,
+                            "BCALHit Upstream Per Channel TDC Hit Time; cellID; t_{TDC} [ns] ",
+                            768, 0.5, 768.5, 350, -50, 300);
+                }
+                else{
+                    Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Downstream Per Channel TDC Hit Time",
+                            the_cell, thisTDCHit->t,
+                            "BCALHit Downstream Per Channel TDC Hit Time; cellID; t_{TDC} [ns] ",
+                            768, 0.5, 768.5, 350, -50, 300);
+                }
+            }
+        }
+
+        if (thisADCHit != NULL && thisTDCHit != NULL){
+            if (bcalUnifiedHitVector[i]->end == 0){
+                Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Upstream Per Channel TDC-ADC Hit Time",
+                        the_cell, thisTDCHit->t - thisADCHit->t,
+                        "BCALHit Upstream Per Channel TDC-ADC Hit Time; cellID; t_{TDC} - t_{ADC} [ns] ",
+                        768, 0.5, 768.5, 350, -50, 300);
             }
             else{
-                Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Downstream Per Channel Hit Time",
-                        the_cell, bcalHitVector[i]->t,
-                        "BCALHit Downstream Per Channel Hit Time; cellID; t [ns] ",
-                        768, 0.5, 768.5, 250, -50, 50);
+                Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Downstream Per Channel TDC-ADC Hit Time",
+                        the_cell, thisTDCHit->t - thisADCHit->t,
+                        "BCALHit Downstream Per Channel TDC-ADC Hit Time; cellID; t_{TDC} - t_{ADC} [ns] ",
+                        768, 0.5, 768.5, 350, -50, 300);
             }
         }
     }
+
     for (i = 0; i < tofHitVector.size(); i++){
         Fill1DHistogram ("HLDetectorTiming", "TOF", "TOFHit time", tofHitVector[i]->t,
                 "TOFHit time", nBins, xMin, xMax);
