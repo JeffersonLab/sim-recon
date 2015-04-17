@@ -14,7 +14,6 @@
 #include "DPSDigiHit.h"
 #include "DPSGeometry.h"
 
-#include <vector>
 #include <utility>
 
 typedef vector< vector<double> > ps_digi_constants_t;
@@ -36,7 +35,6 @@ class DPSHit_factory:public jana::JFactory<DPSHit>{
   ps_digi_constants_t  adc_gains;
   ps_digi_constants_t  adc_pedestals;
   ps_digi_constants_t  adc_time_offsets;
-  vector< vector<double> > energy_range;
 
   const double GetConstant( const ps_digi_constants_t &the_table,
 			    const DPSGeometry::Arm in_arm, const int in_column,
@@ -45,10 +43,6 @@ class DPSHit_factory:public jana::JFactory<DPSHit>{
 			    const DPSDigiHit *the_digihit, const DPSGeometry &psGeom ) const;
   const double GetConstant( const ps_digi_constants_t &the_table,
 			    const DPSHit *the_hit, const DPSGeometry &psGeom ) const;
-
-  const double  GetHitEnergy(const DPSHit  *in_hit, const DPSGeometry &psGeom) const;
-  const double  GetHitEnergy(const DPSDigiHit  *in_hit, const DPSGeometry &psGeom) const;
-  const double  GetRoughHitEnergy(const DPSDigiHit  *in_hit, const DPSGeometry &psGeom) const;
 
  private:
   jerror_t init(void);						///< Called once at program start.
@@ -63,4 +57,3 @@ class DPSHit_factory:public jana::JFactory<DPSHit>{
 };
 
 #endif // _DPSHit_factory_
-

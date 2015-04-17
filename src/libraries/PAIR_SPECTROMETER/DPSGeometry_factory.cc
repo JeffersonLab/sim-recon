@@ -1,17 +1,32 @@
-
-#include <cassert>      
-
 #include "DPSGeometry_factory.h"
+#include "DPSGeometry.h"
 
 //------------------
-// evnt
+// brun
 //------------------
-jerror_t DPSGeometry_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DPSGeometry_factory::brun(JEventLoop *loop, int runnumber)
 {
+  if(!_data.empty())
+    {
+      //for change in run #
+      delete _data[0];
+      _data.clear();
+    }
 
-	DPSGeometry *psGeom = new DPSGeometry;
-     
-	_data.push_back(psGeom);
+  flags = PERSISTANT;
+  _data.push_back( new DPSGeometry(loop, factory_tag, runnumber) );
+   
+  return NOERROR;
+}
 
-        return NOERROR;
+//------------------
+// erun
+//------------------
+jerror_t DPSGeometry_factory::erun(void)
+{
+  for (unsigned int i=0; i < _data.size(); i++)
+    delete _data[i];
+  _data.clear();
+   
+  return NOERROR;
 }
