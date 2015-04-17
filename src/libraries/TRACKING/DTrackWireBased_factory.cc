@@ -210,6 +210,9 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
       track->Ndof=cand->Ndof;
       track->chisq=cand->chisq;	
 
+      // pull vector
+      track->pulls = cand->pulls;
+
       // Lists of hits used in the previous pass
       vector<const DCDCTrackHit *>cdchits;
       cand->GetT(cdchits);
