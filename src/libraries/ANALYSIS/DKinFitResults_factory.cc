@@ -133,7 +133,6 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 		if(!Create_KinFitConstraints(locParticleCombo, locDecayingKinFitParticles, locOriginalConstraints, locSortedConstraints))
 			continue; //sort-constraints failed: invalid! cannot setup kinfit
 
-		//ok to just grab the rf bunch from the first combo: if they are different between combos, then they weren't needed anyway
 		const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
 
 		//check if previous combos would have resulted in duplicate results: if so, just copy the result (or abort fit if it failed last time)
@@ -183,6 +182,8 @@ bool DKinFitResults_factory::Handle_IfKinFitResultsWillBeIdentical(const DPartic
 
 		set<const DParticleCombo*> locPreviousParticleCombos;
 		_data[loc_j]->Get_ParticleCombos(locPreviousParticleCombos);
+
+		//ok to just grab the rf bunch from the first combo: if they are different between combos, then they weren't needed anyway (else would be separate results)
 		const DEventRFBunch* locPreviousEventRFBunch = (*locPreviousParticleCombos.begin())->Get_EventRFBunch();
 
 		map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > > locDecayingKinFitParticles_CheckAgainst;
@@ -316,7 +317,6 @@ bool DKinFitResults_factory::Check_IfKinFitResultsWillBeIdentical(deque<DKinFitC
 				locConstraints_CheckAgainst.erase(locIterator);
 				break;
 			}
-
 		}
 		if(!locMatchFoundFlag)
 			return false;
@@ -348,12 +348,17 @@ bool DKinFitResults_factory::Check_IfKinFitResultsWillBeIdentical(DKinFitConstra
 	//compare sources of objects //note particles can be in a different order!
 	for(size_t loc_i = 0; loc_i < locDecayingParticles_ToCheck.size(); ++loc_i)
 	{
+		// get the input kinfit particle (particles in the constraints are clones!)
+		const DKinFitParticle* locDecayingParticle_ToCheck = dKinFitter.Get_InputKinFitParticle(locDecayingParticles_ToCheck[loc_i].first);
 		bool locMatchFoundFlag = false;
 		deque<pair<const DKinFitParticle*, bool> >::iterator locIterator = locDecayingParticles_CheckAgainst.begin();
 		for(; locIterator != locDecayingParticles_CheckAgainst.end(); ++locIterator)
 		{
+			// get the input kinfit particle (particles in the constraints are clones!)
+			const DKinFitParticle* locDecayingParticle_CheckAgainst = dKinFitter.Get_InputKinFitParticle((*locIterator).first);
+
 			//check pid & flag
-			if((*locIterator).first->Get_PID() != locDecayingParticles_ToCheck[loc_i].first->Get_PID())
+			if(locDecayingParticle_CheckAgainst->Get_PID() != locDecayingParticle_ToCheck->Get_PID())
 				continue;
 			if((*locIterator).second != locDecayingParticles_ToCheck[loc_i].second)
 				continue;
@@ -390,20 +395,22 @@ bool DKinFitResults_factory::Check_IfKinFitResultsWillBeIdentical(deque<const DK
 	//compare sources of objects //note particles can be in a different order!
 	for(size_t loc_i = 0; loc_i < locParticles_ToCheck.size(); ++loc_i)
 	{
-		const DKinematicData* locKinematicData_ToCheck = dKinFitter.Get_Source_FromInput(locParticles_ToCheck[loc_i]);
+		// get the input kinfit particle (particles in the constraints are clones!)
+		const DKinFitParticle* locInputKinFitParticle_ToCheck = dKinFitter.Get_InputKinFitParticle(locParticles_ToCheck[loc_i]);
 		bool locMatchFoundFlag = false;
 		deque<const DKinFitParticle*>::iterator locIterator = locParticles_CheckAgainst.begin();
 		for(; locIterator != locParticles_CheckAgainst.end(); ++locIterator)
 		{
-			const DKinematicData* locKinematicData_CheckAgainst = dKinFitter.Get_Source_FromInput(*locIterator);
-			if(locKinematicData_ToCheck != locKinematicData_CheckAgainst)
+			// get the input kinfit particle (particles in the constraints are clones!)
+			const DKinFitParticle* locInputKinFitParticle_CheckAgainst = dKinFitter.Get_InputKinFitParticle(*locIterator);
+			if(locInputKinFitParticle_ToCheck != locInputKinFitParticle_CheckAgainst)
 				continue;
-			if(locKinematicData_ToCheck == NULL)
+			if(locInputKinFitParticle_ToCheck == NULL)
 			{
 				//e.g. both particles missing/decaying/target: check type & pid
-				if((*locIterator)->Get_PID() != locParticles_ToCheck[loc_i]->Get_PID())
+				if(locInputKinFitParticle_CheckAgainst->Get_PID() != locInputKinFitParticle_ToCheck->Get_PID())
 					continue;
-				if((*locIterator)->Get_KinFitParticleType() != locParticles_ToCheck[loc_i]->Get_KinFitParticleType())
+				if(locInputKinFitParticle_CheckAgainst->Get_KinFitParticleType() != locInputKinFitParticle_ToCheck->Get_KinFitParticleType())
 					continue;
 			}
 			locParticles_CheckAgainst.erase(locIterator);
@@ -836,19 +843,24 @@ bool DKinFitResults_factory::Setup_KinFit(DKinFitType locKinFitType, const deque
 		double locTimeGuess = 0.0;
 		const DKinFitConstraint_VertexBase* locInitFitVertexBaseConstraint = NULL;
 		if(locThisFitVertexConstraint != NULL)
-			locInitFitVertexBaseConstraint = dynamic_cast<const DKinFitConstraint_VertexBase*>(dKinFitter.Set_Constraint(locThisFitVertexConstraint));
+		{
+			dKinFitter.Set_Constraint(locThisFitVertexConstraint);
+			locInitFitVertexBaseConstraint = static_cast<const DKinFitConstraint_VertexBase*>(locThisFitVertexConstraint);
+		}
 		else
 		{
 			locTimeGuess = Calc_TimeGuess(locThisFitSpacetimeConstraint, locDVertexGuess, locRFTime);
 			locThisFitSpacetimeConstraint->Set_TimeGuess(locTimeGuess);
 			locOriginalSpacetimeConstraint->Set_TimeGuess(locTimeGuess);
-			locInitFitVertexBaseConstraint = dynamic_cast<const DKinFitConstraint_VertexBase*>(dKinFitter.Set_Constraint(locThisFitSpacetimeConstraint));
+			dKinFitter.Set_Constraint(locThisFitSpacetimeConstraint);
+			locInitFitVertexBaseConstraint = static_cast<const DKinFitConstraint_VertexBase*>(locThisFitSpacetimeConstraint);
 		}
 
 		//perform fit
 		if(dDebugLevel > 0)
 			cout << "Perform init vertex guess kinematic fit" << endl;
 		bool locInitVertexFitStatus = dKinFitter.Fit_Reaction();
+		locInitFitVertexBaseConstraint = dynamic_cast<const DKinFitConstraint_VertexBase*>(dKinFitter.Get_OutputKinFitConstraint(locInitFitVertexBaseConstraint));
 		// it is not "necessary" for this fit to converge, because we already have a vertex/time guess (determined roughly above). 
 			//thus don't return false here: if the fit fails (e.g. max #iterations), try to go on with the next iteration
 		if(locInitVertexFitStatus)
@@ -866,8 +878,6 @@ bool DKinFitResults_factory::Setup_KinFit(DKinFitType locKinFitType, const deque
 				locOriginalSpacetimeConstraint->Set_TimeGuess(locInitFitSpacetimeConstraint->Get_CommonTime());
 			}
 		}
-		map<const DKinFitParticle*, const DKinFitParticle*> locVertexFitIOMap; //input to output
-		dKinFitter.Get_KinFitParticleIOMap(locVertexFitIOMap);
 
 		/*************************************************************** CHECK P4 STATUS *************************************************************/
 
@@ -899,7 +909,7 @@ bool DKinFitResults_factory::Setup_KinFit(DKinFitType locKinFitType, const deque
 			{
 				if(locNoConstrainParticles[loc_j]->Get_PID() == 0)
 					locUnknownMissingParticleFlag = true;
-				locVertexConstrainedMissingParticle = locVertexFitIOMap[locNoConstrainParticles[loc_j]];
+				locVertexConstrainedMissingParticle = dKinFitter.Get_OutputKinFitParticle(locNoConstrainParticles[loc_j]);
 				locLocallyOpenEndedNoConstrainParticles.push_back(locNoConstrainParticles[loc_j]);
 			}
 		}
@@ -915,9 +925,15 @@ bool DKinFitResults_factory::Setup_KinFit(DKinFitType locKinFitType, const deque
 			dKinFitter.Reset_NewFit();
 			const DKinFitConstraint_VertexBase* locP4VertexFitVertexBaseConstraint = NULL;
 			if(locThisFitVertexConstraint != NULL)
-				locP4VertexFitVertexBaseConstraint = dynamic_cast<const DKinFitConstraint_VertexBase*>(dKinFitter.Set_Constraint(locThisFitVertexConstraint));
+			{
+				dKinFitter.Set_Constraint(locThisFitVertexConstraint);
+				locP4VertexFitVertexBaseConstraint = static_cast<const DKinFitConstraint_VertexBase*>(locThisFitVertexConstraint);
+			}
 			else
-				locP4VertexFitVertexBaseConstraint = dynamic_cast<const DKinFitConstraint_VertexBase*>(dKinFitter.Set_Constraint(locThisFitSpacetimeConstraint));
+			{
+				dKinFitter.Set_Constraint(locThisFitSpacetimeConstraint);
+				locP4VertexFitVertexBaseConstraint = static_cast<const DKinFitConstraint_VertexBase*>(locThisFitSpacetimeConstraint);
+			}
 
 			//get & potentially modify p4 constraints: treat previously-constrained decaying/missing particles as detected in these constraints
 			set<DKinFitConstraint_P4*> locTempP4Constraints = locSortedConstraints[loc_i].second;
@@ -1025,6 +1041,7 @@ bool DKinFitResults_factory::Setup_KinFit(DKinFitType locKinFitType, const deque
 				cout << "Perform init p4-vertex guess kinematic fit" << endl;
 
 			bool locP4VertexFitStatus = (!locPreviousFitFailedFlag) ? dKinFitter.Fit_Reaction() : false;
+			locP4VertexFitVertexBaseConstraint = dynamic_cast<const DKinFitConstraint_VertexBase*>(dKinFitter.Get_OutputKinFitConstraint(locP4VertexFitVertexBaseConstraint));
 			if(locP4VertexFitStatus)
 			{
 				TVector3 locVertexGuess = locP4VertexFitVertexBaseConstraint->Get_CommonVertex();
@@ -1095,13 +1112,17 @@ bool DKinFitResults_factory::Setup_KinFit(DKinFitType locKinFitType, const deque
 					}
 					locThisP4Constraint->Replace_Particle(locKinFitParticle, false, locNewKinFitParticle);
 				}
-				locInitFitP4Constraints.push_back(dKinFitter.Set_Constraint(locThisP4Constraint));
+				dKinFitter.Set_Constraint(locThisP4Constraint);
+				locInitFitP4Constraints.push_back(locThisP4Constraint);
 			}
 
 			//do fit
 			if(dDebugLevel > 0)
 				cout << "Perform init full-p4 kinematic fit" << endl;
 			bool locP4OnlyFitStatus = dKinFitter.Fit_Reaction();
+
+			for(size_t loc_j = 0; loc_j < locInitFitP4Constraints.size(); ++loc_j)
+				locInitFitP4Constraints[loc_j] = dynamic_cast<const DKinFitConstraint_P4*>(dKinFitter.Get_OutputKinFitConstraint(locInitFitP4Constraints[loc_j]));
 
 			//save results: save all reconstructed decaying/missing particle info (if not saved already): p3 & cov p3
 				//save the missing & decaying-no-constrain-particles-at-this-vertex in the reconstruction map
@@ -1125,13 +1146,7 @@ bool DKinFitResults_factory::Setup_KinFit(DKinFitType locKinFitType, const deque
 				for(size_t loc_k = 0; loc_k < locNoVertexConstrainParticles.size(); ++loc_k)
 				{
 					//need the original
-					const DKinFitParticle* locVertexFitOriginal = NULL;
-					map<const DKinFitParticle*, const DKinFitParticle*>::const_iterator locIOMapIterator = locVertexFitIOMap.begin();
-					for(; locIOMapIterator != locVertexFitIOMap.end(); ++locIOMapIterator)
-					{
-						if(locIOMapIterator->second == locNoVertexConstrainParticles[loc_k])
-							locVertexFitOriginal = locIOMapIterator->first;
-					}
+					const DKinFitParticle* locVertexFitOriginal = dKinFitter.Get_InputKinFitParticle(locNoVertexConstrainParticles[loc_k]);
 					if(locVertexFitOriginal == NULL)
 						continue; //shouldn't be possible ...
 					//compare originals
@@ -1228,7 +1243,7 @@ bool DKinFitResults_factory::Setup_KinFit(DKinFitType locKinFitType, const deque
 				continue;
 			}
 
-			const DKinFitParticle* locVertexFitResult = locVertexFitIOMap[locOriginalParticle];
+			const DKinFitParticle* locVertexFitResult = dKinFitter.Get_OutputKinFitParticle(locOriginalParticle);
 			if(!locLastResortIterator->second.second)
 			{
 				//p4 fit failed, but can at least set vertex position
@@ -1516,14 +1531,16 @@ void DKinFitResults_factory::Build_KinFitResults(const DParticleCombo* locPartic
 	locKinFitResults->Set_ReverseParticleMapping(locReverseParticleMapping);
 
 	//decaying particles //input to function is the constructed decaying particles; must save the final decaying particles
-	map<const DKinFitParticle*, const DKinFitParticle*> locKinFitParticleIOMap; //map from constructed-kinfit-particle to final-kinfit-particle
-	dKinFitter.Get_KinFitParticleIOMap(locKinFitParticleIOMap);
-	for(map<const DKinFitParticle*, const DKinFitParticle*>::iterator locIterator = locKinFitParticleIOMap.begin(); locIterator != locKinFitParticleIOMap.end(); ++locIterator)
+	deque<const DKinFitParticle*> locKinFitParticles;
+	dKinFitter.Get_KinFitParticles(locKinFitParticles);
+	for(size_t loc_i = 0; loc_i < locKinFitParticles.size(); ++loc_i)
 	{
-		map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > >::const_iterator locDecayingIterator = locInitDecayingKinFitParticles.find(locIterator->first);
-		if(locDecayingIterator == locInitDecayingKinFitParticles.end())
-			continue; //not a decaying particle
-		locKinFitResults->Add_DecayingParticle(locDecayingIterator->second, locKinFitParticleIOMap[locDecayingIterator->first]);
+		if(locKinFitParticles[loc_i]->Get_KinFitParticleType() != d_DecayingParticle)
+			continue;
+		const DKinFitParticle* locInputKinFitParticle = dKinFitter.Get_InputKinFitParticle(locKinFitParticles[loc_i]);
+		map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > >::const_iterator locDecayingIterator;
+		locDecayingIterator = locInitDecayingKinFitParticles.find(locInputKinFitParticle);
+		locKinFitResults->Add_DecayingParticle(locDecayingIterator->second, locKinFitParticles[loc_i]);
 	}
 
 	//pulls

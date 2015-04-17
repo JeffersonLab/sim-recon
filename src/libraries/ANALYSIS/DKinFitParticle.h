@@ -34,6 +34,8 @@ enum DKinFitPullType
 };
 
 // dCovarianceMatrix is owned by DKinFitter (DKinFitter is responsible for new/delete)
+	//And for a given particle, it is probably shared amongst several DKinFitParticle objects (e.g. setup for different constraints/fits)
+	//However, at the end of the fit, a unique copy is set for the object
 
 class DKinFitParticle
 {

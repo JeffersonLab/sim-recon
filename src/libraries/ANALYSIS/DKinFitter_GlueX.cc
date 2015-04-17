@@ -128,35 +128,29 @@ bool DKinFitter_GlueX::Fit_Reaction(void)
 	if(!locFitStatus)
 		return locFitStatus;
 
-	const DKinFitParticle* locInputParticle;
-	const DKinFitParticle* locOutputParticle;
-	const DKinematicData* locKinematicData;
-
 	dParticleMapping_OutputToSource.clear();
 	dPulls.clear();
 
 	//convert the map of the data: convert from (input particle -> data) to (output particle -> data)
-	map<const DKinFitParticle*, const DKinFitParticle*> locKinFitParticleIOMap;
-	DKinFitter::Get_KinFitParticleIOMap(locKinFitParticleIOMap); //map of input to output
-	map<const DKinFitParticle*, const DKinematicData*>::const_iterator locParticleMappingIterator;
-	for(locParticleMappingIterator = dParticleMapping_InputToSource.begin(); locParticleMappingIterator != dParticleMapping_InputToSource.end(); ++locParticleMappingIterator)
+	map<const DKinFitParticle*, const DKinematicData*>::const_iterator locParticleMappingIterator = dParticleMapping_InputToSource.begin();
+	for(; locParticleMappingIterator != dParticleMapping_InputToSource.end(); ++locParticleMappingIterator)
 	{
-		locInputParticle = locParticleMappingIterator->first;
-		locKinematicData = locParticleMappingIterator->second;
-		if(locKinFitParticleIOMap.find(locInputParticle) == locKinFitParticleIOMap.end())
+		const DKinFitParticle* locInputParticle = locParticleMappingIterator->first;
+		const DKinematicData* locKinematicData = locParticleMappingIterator->second;
+		const DKinFitParticle* locOutputKinFitParticle = Get_OutputKinFitParticle(locInputParticle);
+		if(locOutputKinFitParticle == NULL)
 			continue; //particle added to kinfitter but not included in this fit
-		locOutputParticle = locKinFitParticleIOMap[locInputParticle];
-		dParticleMapping_OutputToSource[locOutputParticle] = locKinematicData;
+		dParticleMapping_OutputToSource[locOutputKinFitParticle] = locKinematicData;
 	}
 
 	//convert the map of the pulls: convert from (output particle -> pull) to (kinematic data -> pull)
 	map<const DKinFitParticle*, map<DKinFitPullType, double> > locPulls_KinFitter;
 	DKinFitter::Get_Pulls(locPulls_KinFitter);
-	map<const DKinFitParticle*, map<DKinFitPullType, double> >::iterator locPullIterator;
-	for(locPullIterator = locPulls_KinFitter.begin(); locPullIterator != locPulls_KinFitter.end(); ++locPullIterator)
+	map<const DKinFitParticle*, map<DKinFitPullType, double> >::iterator locPullIterator = locPulls_KinFitter.begin();
+	for(; locPullIterator != locPulls_KinFitter.end(); ++locPullIterator)
 	{
-		locOutputParticle = locPullIterator->first;
-		locKinematicData = dParticleMapping_OutputToSource[locOutputParticle];
+		const DKinFitParticle* locOutputParticle = locPullIterator->first;
+		const DKinematicData* locKinematicData = dParticleMapping_OutputToSource[locOutputParticle];
 		dPulls[locKinematicData] = locPullIterator->second;
 	}
 
