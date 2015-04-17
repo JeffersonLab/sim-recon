@@ -100,6 +100,18 @@ typedef enum {
   Sigma_1385_0 = 173,
   Sigma_1385_Plus = 174,
 
+  Jpsi = 83,
+  Eta_c = 84,
+  Chi_c0 = 85,
+  Chi_c1 = 86,
+  Chi_c2 = 87,
+  Psi2s = 88,
+  D0 = 89,
+  DPlus = 90,
+  Dstar0 = 91,
+  DstarPlus = 92,
+  Lambda_c = 93,
+
   /* These are defined in pythia-geant.map in bggen */
 
   //Rho0          = 80,  // already defined above (44)
@@ -240,6 +252,28 @@ inline static char* ParticleType(Particle_t p)
     return (char*)"Pb208";
   case DeltaPlusPlus:
     return (char*)"Delta++";
+  case Jpsi:
+    return (char*)"J/psi";
+  case Eta_c:
+    return (char*)"EtaC";
+  case Chi_c0:
+    return (char*)"ChiC0";
+  case Chi_c1:
+    return (char*)"ChiC1";
+  case Chi_c2:
+    return (char*)"ChiC2";
+  case Psi2s:
+    return (char*)"Psi(2S)";
+  case D0:
+    return (char*)"D0";
+  case DPlus:
+    return (char*)"D+";
+  case Dstar0:
+    return (char*)"D*0";
+  case DstarPlus:
+    return (char*)"D*+";
+  case Lambda_c:
+    return (char*)"LambdaC";
   default:
     return (char*)"Unknown";
   }
@@ -361,6 +395,28 @@ inline static Particle_t ParticleEnum(const char* locParticleName)
     return Pb208;
   else if(strcmp(locParticleName, "Delta++") == 0)
     return DeltaPlusPlus;
+  else if(strcmp(locParticleName, "J/psi") == 0)
+    return Jpsi;
+  else if(strcmp(locParticleName, "EtaC") == 0)
+    return Eta_c;
+  else if(strcmp(locParticleName, "ChiC0") == 0)
+    return Chi_c0;
+  else if(strcmp(locParticleName, "ChiC1") == 0)
+    return Chi_c1;
+  else if(strcmp(locParticleName, "ChiC2") == 0)
+    return Chi_c2;
+  else if(strcmp(locParticleName, "Psi(2S)") == 0)
+    return Psi2s;
+  else if(strcmp(locParticleName, "D0") == 0)
+    return D0;
+  else if(strcmp(locParticleName, "D+") == 0)
+    return DPlus;
+  else if(strcmp(locParticleName, "D*0") == 0)
+    return Dstar0;
+  else if(strcmp(locParticleName, "D*+") == 0)
+    return DstarPlus;
+  else if(strcmp(locParticleName, "LambdaC") == 0)
+    return Lambda_c;
   else
     return Unknown;
 }
@@ -407,6 +463,17 @@ inline static unsigned short int IsFixedMass(Particle_t p)
   case Helium:		return 1;
   case Triton:	return 1;
   case Pb208:	return 1;
+  case Jpsi:    return 1;
+  //case eta_c:   return 1;
+  //case chi_c0:  return 1;
+  case Chi_c1:  return 1;
+  case Chi_c2:  return 1;
+  case Psi2s:   return 1;
+  case D0:      return 1;
+  case DPlus:   return 1;
+  case Dstar0:  return 1;
+  case DstarPlus:  return 1;
+  case Lambda_c: return 1;
   default: return 0;
   }
 }
@@ -578,6 +645,29 @@ inline static char* ParticleName_ROOT(Particle_t p)
     return (char*)"#it{#Sigma}(1385)^{+}";
   case DeltaPlusPlus:
     return (char*)"#it{#Delta}(1232)^{++}";
+  case Jpsi:
+    return (char*)"J/#psi";
+  case Eta_c:
+    return (char*)"#eta_{c}";
+  case Chi_c0:
+    return (char*)"#chi_{c0}";
+  case Chi_c1:
+    return (char*)"#chi_{c1}";
+  case Chi_c2:
+    return (char*)"#chi_{c2}";
+  case Psi2s:
+    return (char*)"#psi(2S)";
+  case D0:
+    return (char*)"D^{0}";
+  case DPlus:
+    return (char*)"D{^+}";
+  case Dstar0:
+    return (char*)"D^{*0}";
+  case DstarPlus:
+    return (char*)"D^{*+}";
+  case Lambda_c:
+    return (char*)"Lambda_{c}";
+		 
   default:
     return (char*)"X";
   }
@@ -645,6 +735,17 @@ inline static double ParticleMass(Particle_t p)
   case Sigma_1385_0:		return 1.3837;
   case Sigma_1385_Plus:	return 1.38280;
   case DeltaPlusPlus:   return 1.232;
+  case Jpsi:            return 3.069916;
+  case Eta_c:           return 2.9836;
+  case Chi_c0:          return 3.41475;
+  case Chi_c1:          return 3.51066;
+  case Chi_c2:          return 3.55620;
+  case Psi2s:           return 3.686109;
+  case D0:              return 1.86484;
+  case DPlus:           return 1.86961;
+  case Dstar0:          return 2.01026;
+  case DstarPlus:       return 2.00696;
+  case Lambda_c:        return 2.28646;
   default:
     fprintf(stderr,"ParticleMass: Error: Unknown particle type %d,",p);
     fprintf(stderr," returning HUGE_VAL...\n");
@@ -714,6 +815,17 @@ inline static int ParticleCharge(Particle_t p)
   case Sigma_1385_0:		return 0;
   case Sigma_1385_Plus:	return 1;
   case DeltaPlusPlus: return 2;
+  case Jpsi:    return 0;
+  case Eta_c:   return 0;
+  case Chi_c0:  return 0;
+  case Chi_c1:  return 0;
+  case Chi_c2:  return 0;
+  case Psi2s:   return 0;
+  case D0:      return 0;
+  case DPlus:   return 1;
+  case Dstar0:  return 0;
+  case DstarPlus:  return 1;
+  case Lambda_c:   return 1;
 
   default:
     fprintf(stderr,"ParticleCharge: Error: Unknown particle type %d,",p);
@@ -784,6 +896,17 @@ inline static int PDGtype(Particle_t p)
   case Sigma_1385_Plus:	return 3224;
   case Pb208: return 1000822080; // see note 14 in PDG (pg. 416 of 2012 full listing)
   case DeltaPlusPlus: return 2224;
+  case Jpsi:          return 443;
+  case Eta_c:         return 441;
+  case Chi_c0:        return 10441;
+  case Chi_c1:        return 20443;
+  case Chi_c2:        return 445;
+  case Psi2s:         return 100443;
+  case D0:            return 421;
+  case DPlus:         return 411;
+  case Dstar0:        return 423;
+  case DstarPlus:     return 413;
+  case Lambda_c:      return 4122;
   default:		return  0;
   }
 }
@@ -847,6 +970,17 @@ inline static Particle_t PDGtoPType(int locPDG_PID)
   case 3224:			return Sigma_1385_Plus;
   case 1000822080:	return Pb208; // see note 14 in PDG (pg. 416 of 2012 full listing)
   case 2224:         return DeltaPlusPlus;
+  case 443:          return Jpsi;
+  case 441:          return Eta_c;
+  case 10441:        return Chi_c0;
+  case 20443:        return Chi_c1;
+  case 445:          return Chi_c2;
+  case 100443:       return Psi2s;
+  case 421:          return D0;
+  case 411:          return DPlus;
+  case 423:          return Dstar0;
+  case 413:          return DstarPlus;
+  case 4122:         return Lambda_c;
   default:			return Unknown;
   }
 }
@@ -938,7 +1072,18 @@ inline static int ParticleMultiplexPower(Particle_t locPID)
 		case Sigma_1385_Minus: return 32;
 		case Sigma_1385_0:     return 33;
 		case Sigma_1385_Plus:  return 34;
-      case DeltaPlusPlus:    return 35;
+	        case DeltaPlusPlus:    return 35;
+	        case Jpsi:             return 36;
+	        case Eta_c:            return 37;
+	        case Chi_c0:           return 38;
+	        case Chi_c1:           return 39;
+	        case Chi_c2:           return 40;
+	        case Psi2s:            return 41;
+	        case D0:               return 421;
+	        case DPlus:            return 411;
+	        case Dstar0:           return 423;
+	        case DstarPlus:        return 413;
+	        case Lambda_c:         return 4122;
 		default: return -1;
 	}
 }
