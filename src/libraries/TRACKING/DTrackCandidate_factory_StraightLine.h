@@ -11,6 +11,7 @@
 #include <JANA/JFactory.h>
 #include "DTrackCandidate.h"
 #include "TRACKING/DTrackFinder.h"
+#include <TRACKING/DTrackFitter.h>
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
 #include "DMatrixSIMD.h"
@@ -46,6 +47,10 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
 
   };
 
+  typedef struct{
+    double resi,err,d,tdrift,s;
+  }update_t;
+
  private:
   jerror_t init(void);						///< Called once at program start.
   jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
@@ -75,6 +80,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
 			vector<const DCDCTrackHit *>&hits,
 			vector<int>&used_hits,
 			deque<trajectory_t>&trajectory,
+			vector<update_t>&pulls,
 			double &chi2,unsigned int &ndof,bool timebased=false);
 
   double CDCDriftDistance(double t);

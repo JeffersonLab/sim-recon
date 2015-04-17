@@ -13,6 +13,7 @@
 using namespace jana;
 
 #include "PID/DKinematicData.h"
+#include <TRACKING/DTrackFitter.h>
 
 class DReferenceTrajectory;
 
@@ -39,6 +40,8 @@ class DTrackCandidate:public DKinematicData{
 		int Ndof;				///< Number of degrees of freedom in the fit
 
 		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track (if any)
+		
+		vector<DTrackFitter::pull_t> pulls; // vector of residuals and other track-related quantities 
 		
 		vector<int>used_cdc_indexes;
 		vector<int>used_fdc_indexes;

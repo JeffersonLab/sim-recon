@@ -98,11 +98,13 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
   // Drop the const qualifier from the DTrackFinder pointer
   finder = const_cast<DTrackFinder*>(finders[0]);
 
-  dapp->Lock();
-
-  Hvres=(TH2F *)gROOT->FindObject("Hvres");
-  if (!Hvres) Hvres=new TH2F("Hvres","Residual along wire",100,-0.25,0.25,24,0.5,24.5);
-
+  if (DEBUG_HISTS){
+    dapp->Lock();
+    
+    Hvres=(TH2F *)gROOT->FindObject("Hvres");
+    if (!Hvres) Hvres=new TH2F("Hvres","Residual along wire",100,-0.25,0.25,24,0.5,24.5);
+  }
+   
   return NOERROR;
 }
 
@@ -252,6 +254,10 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
   vector<int> used_cdc_hits(numhits);
   vector<int> used_cdc_hits_best_fit(numhits);
 
+  // vectors of residual information 
+  vector<update_t>pulls(numhits);
+  vector<update_t>best_pulls(numhits);
+
   // deque to store reference trajectory
   deque<trajectory_t>trajectory;
 
@@ -277,7 +283,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
 	!=NOERROR) break;
     
     C=C0;
-    if (KalmanFilter(S,C,hits,used_cdc_hits,trajectory,chi2,ndof)!=NOERROR) break;
+    if (KalmanFilter(S,C,hits,used_cdc_hits,trajectory,pulls,chi2,ndof)!=NOERROR) break;
    
     if (fabs(chi2_old-chi2)<0.1 || chi2>chi2_old) break;  
     
@@ -299,7 +305,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
       if (SetReferenceTrajectory(t0,OuterZ,S,trajectory,hits[maxindex],dzsign)
 	  ==NOERROR){
 	C=C0;
-	if (KalmanFilter(S,C,hits,used_cdc_hits,trajectory,chi2,ndof,true)!=NOERROR) break;
+	if (KalmanFilter(S,C,hits,used_cdc_hits,trajectory,pulls,chi2,ndof,true)!=NOERROR) break;
 	 
 	//printf("chi2 %f %f\n",chi2_old,chi2);
 	  
@@ -310,6 +316,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
 	Cbest=C;
 	 
 	used_cdc_hits_best_fit=used_cdc_hits;
+	best_pulls=pulls;
       }
       else break;
     }
@@ -319,7 +326,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
 
       double sign=1.;
       unsigned int last_index=trajectory.size()-1;
-      if (COSMICS==false){
+      if (true /*COSMICS==false*/){
 	DVector3 pos,origin,dir(0,0,1.); 
 	finder->FindDoca(trajectory[last_index].z,Sbest,dir,origin,&pos);
 	cand->setPosition(pos);
@@ -344,10 +351,15 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
       cand->setPID(Unknown);
       cand->setT0(t0,10.0,SYS_CDC);
 
-      // Add hits used in the fit as associated objects
+      // Add hits used in the fit as associated objects and add best pull 
+      // vector to the candidate
       for (unsigned int k=0;k<used_cdc_hits_best_fit.size();k++){
 	if (used_cdc_hits_best_fit[k]==1){
 	  cand->AddAssociatedObject(hits[k]);
+	  cand->pulls.push_back(DTrackFitter::pull_t(best_pulls[k].resi,
+						     best_pulls[k].err,
+				       best_pulls[k].s,best_pulls[k].tdrift,
+				       best_pulls[k].d,hits[k],NULL));
 	}
       }
       
@@ -416,6 +428,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 					   vector<const DCDCTrackHit *>&hits,
 						   vector<int>&used_hits,
 					   deque<trajectory_t>&trajectory,
+						   vector<update_t>&pulls,
 					   double &chi2,unsigned int &ndof,
 					   bool timebased){
   DMatrix1x4 H;  // Track projection matrix
@@ -576,11 +589,19 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 	  res=dmeas-d;
 
 	  // Update chi2 
-	  chi2+=res*res/(V-H*C*H_T);
+	  double fit_V=V-H*C*H_T;
+	  chi2+=res*res/fit_V;
 	  ndof++;
 
 	  // Flag that we used this hit
 	  used_hits[cdc_index]=1;
+
+	  // fill pull vector
+	  pulls[cdc_index].resi=res;
+	  pulls[cdc_index].d=d;
+	  pulls[cdc_index].err=sqrt(fit_V);
+	  pulls[cdc_index].tdrift=tdrift;
+	  pulls[cdc_index].s=29.98*trajectory[k].t; // assume beta=1
 	}
 	else{
 	  //	_DBG_ << "Bad C!" << endl;
@@ -661,7 +682,7 @@ inline double DTrackCandidate_factory_StraightLine::CDCDriftVariance(double t){
   sigma+=0.005;
   
   //sigma=0.08/(t+1.)+0.03;
-  sigma=0.15;
+  sigma=0.045;
   
   return sigma*sigma;
 }
