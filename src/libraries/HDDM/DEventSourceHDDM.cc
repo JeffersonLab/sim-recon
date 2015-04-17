@@ -947,10 +947,25 @@ jerror_t DEventSourceHDDM::Extract_DBCALSiPMSpectrum(hddm_s::HDDM *record,
       stringstream ss(iter->getVals());
 
       // Extract values and use them to fill histo
-      double dE;
-      while (ss >> dE) {
-         dana_spectrum->spectrum.Fill(t, dE);
-         t += bin_width;
+      string entry;
+      while (ss >> entry) {
+              if (entry[0] == 'X') {
+                      // get rid of the X, the rest of the entry is the number of zeroes to add
+                      stringstream sss(entry.substr(1)); 
+                      int num_zeros;
+                      sss >> num_zeros;
+                      
+                      for(int i=0; i<num_zeros; i++) {
+                              dana_spectrum->spectrum.Fill(t, 0.0);
+                              t += bin_width;                         
+                      }
+              } else {
+                      stringstream sss(entry);
+                      double dE;
+                      sss >> dE;
+                      dana_spectrum->spectrum.Fill(t, dE);
+                      t += bin_width;
+              }
       }
 
       data.push_back(dana_spectrum);
