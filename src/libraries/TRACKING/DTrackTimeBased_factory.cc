@@ -247,6 +247,8 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
       timebased_track->rt = track->rt;
       timebased_track->chisq = track->chisq;
       timebased_track->Ndof = track->Ndof;
+      timebased_track->FOM =  TMath::Prob(timebased_track->chisq,
+					  timebased_track->Ndof);
       timebased_track->pulls = track->pulls;
       timebased_track->trackid = track->id;
       timebased_track->candidateid=track->candidateid;
