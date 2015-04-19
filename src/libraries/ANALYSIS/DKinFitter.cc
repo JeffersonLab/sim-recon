@@ -1595,7 +1595,7 @@ bool DKinFitter::Resolve_InclusiveP4(const deque<DKinFitConstraint*>& locKinFitC
 
 		for(size_t loc_i = 0; loc_i < locP4Constraint->dInitialParticles.size(); ++loc_i)
 		{
-			DKinFitParticle* locKinFitParticle = locP4Constraint->dFinalParticles[loc_i];
+			DKinFitParticle* locKinFitParticle = locP4Constraint->dInitialParticles[loc_i];
 			if(locKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
 				continue;
 			if(locKinFitParticle->Get_PID() == 0)
