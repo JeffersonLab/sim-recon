@@ -680,10 +680,10 @@ void DCustomAction_TrackingEfficiency::Fill_ResolutionAndTrackEff_Hists(const DK
 	double locDeltaPOverP = (locMeasuredP - locMissingP)/locMissingP;
 	double locDeltaTheta = locMeasuredTheta - locMissingTheta;
 	double locDeltaPhi = locMeasuredPhi - locMissingPhi;
-	while(locDeltaPhi > TMath::Pi())
-		locDeltaPhi -= 2.0*TMath::Pi();
-	while(locDeltaPhi < -1.0*TMath::Pi())
-		locDeltaPhi += 2.0*TMath::Pi();
+	while(locDeltaPhi > 180.0)
+		locDeltaPhi -= 360.0;
+	while(locDeltaPhi < -180.0)
+		locDeltaPhi += 360.0;
 
 	//Optional: Fill histograms
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
