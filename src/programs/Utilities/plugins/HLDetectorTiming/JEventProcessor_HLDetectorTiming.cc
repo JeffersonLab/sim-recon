@@ -281,7 +281,8 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
     }
     for (i = 0; i < bcalUnifiedHitVector.size(); i++){
         int the_cell = (bcalUnifiedHitVector[i]->module - 1) * 16 + (bcalUnifiedHitVector[i]->layer - 1) * 4 + bcalUnifiedHitVector[i]->sector;
-
+        // There is one less layer of TDCs so the numbering relects this
+        int the_tdc_cell = (bcalUnifiedHitVector[i]->module - 1) * 12 + (bcalUnifiedHitVector[i]->layer - 1) * 4 + bcalUnifiedHitVector[i]->sector;
         // Get the underlying associated objects
         const DBCALHit * thisADCHit;
         const DBCALTDCHit * thisTDCHit;
@@ -308,22 +309,22 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             }
         }
 
-        if (thisTDCHit != NULL){ //This should never be NULL but might as well check
+        if (thisTDCHit != NULL){
             Fill1DHistogram ("HLDetectorTiming", "BCAL", "BCALHit TDC time", thisTDCHit->t,
                     "BCALHit TDC time; t_{TDC} [ns]; Entries", nBins, xMin, xMax);
 
             if (DO_OPTIONAL){
                 if (bcalUnifiedHitVector[i]->end == 0){
                     Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Upstream Per Channel TDC Hit Time",
-                            the_cell, thisTDCHit->t,
+                            the_tdc_cell, thisTDCHit->t,
                             "BCALHit Upstream Per Channel TDC Hit Time; cellID; t_{TDC} [ns] ",
-                            768, 0.5, 768.5, 350, -50, 300);
+                            576, 0.5, 576.5, 350, -50, 300);
                 }
                 else{
                     Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Downstream Per Channel TDC Hit Time",
-                            the_cell, thisTDCHit->t,
+                            the_tdc_cell, thisTDCHit->t,
                             "BCALHit Downstream Per Channel TDC Hit Time; cellID; t_{TDC} [ns] ",
-                            768, 0.5, 768.5, 350, -50, 300);
+                            576, 0.5, 576.5, 350, -50, 300);
                 }
             }
         }
@@ -331,15 +332,15 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
         if (thisADCHit != NULL && thisTDCHit != NULL){
             if (bcalUnifiedHitVector[i]->end == 0){
                 Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Upstream Per Channel TDC-ADC Hit Time",
-                        the_cell, thisTDCHit->t - thisADCHit->t,
+                        the_tdc_cell, thisTDCHit->t - thisADCHit->t,
                         "BCALHit Upstream Per Channel TDC-ADC Hit Time; cellID; t_{TDC} - t_{ADC} [ns] ",
-                        768, 0.5, 768.5, 350, -50, 300);
+                        576, 0.5, 576.5, 350, -50, 300);
             }
             else{
                 Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Downstream Per Channel TDC-ADC Hit Time",
-                        the_cell, thisTDCHit->t - thisADCHit->t,
+                        the_tdc_cell, thisTDCHit->t - thisADCHit->t,
                         "BCALHit Downstream Per Channel TDC-ADC Hit Time; cellID; t_{TDC} - t_{ADC} [ns] ",
-                        768, 0.5, 768.5, 350, -50, 300);
+                        576, 0.5, 576.5, 350, -50, 300);
             }
         }
     }
