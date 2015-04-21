@@ -147,6 +147,15 @@ class DGeometry{
 
 		bool GetStartCounterGeom(vector<vector<DVector3> >&pos,
 					 vector<vector<DVector3> >&norm) const; // < vectors containing positions and norm 3-vectors for start counter 
+		// There are 30 sets of positions (pos) of points along the 
+		// start counter, one set for each paddle, and a corresponding
+		// set of norms at various points along the start counter.
+		// For example, to access the most upstream point of paddle 1
+		// use pos[0][0].  The end of the barrel section before the 
+		// nose region is at pos[0][1].  The tip of the nose region 
+		// for this paddle is at pos[0][pos[0].size()-1].  The bend
+		// region is modeled by many closely-spaced points starting 
+		// after pos[0][1].
 
 
 		vector<DMaterialMap*> GetMaterialMapVector(void) const;
