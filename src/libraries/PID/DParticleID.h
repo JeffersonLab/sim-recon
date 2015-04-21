@@ -98,11 +98,6 @@ class DParticleID:public jana::JObject{
 	bool MatchToFCAL(const DKinematicData* locTrack, const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, DFCALShowerMatchParams& locShowerMatchParams) const;
 	bool MatchToSC(const DKinematicData* locTrack, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams, bool locIsTimeBased=false, DVector3 *IntersectionPoint=NULL, DVector3 *IntersectionDir=NULL) const;
 
-	// Alternate SC matching algorithm for straight line tracks
-	bool MatchToSC(const DKinematicData *kd,
-		       const vector<const DSCHit*>& locSCHits,
-		       vector<DSCHitMatchParams>& locSCHitMatchParams) const;
-
 	//select "best" matches //called by several factories
 	bool Get_BestSCMatchParams(const DKinematicData* locTrack, const DDetectorMatches* locDetectorMatches, DSCHitMatchParams& locBestMatchParams) const;
 	void Get_BestSCMatchParams(vector<DSCHitMatchParams>& locSCHitMatchParams, DSCHitMatchParams& locBestMatchParams) const;

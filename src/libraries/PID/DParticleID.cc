@@ -59,88 +59,13 @@ DParticleID::DParticleID(JEventLoop *loop)
   // Get z position of face of FCAL
   locGeometry->GetFCALZ(dFCALz);
 
-  // Check if Start Counter geometry is present
-  vector<double> sc_origin;
-  bool got_sc = locGeometry->Get("//posXYZ[@volume='StartCntr']/@X_Y_Z", sc_origin);
-  if(got_sc){
-    // z-position at upstream face of scintillators.
-    double z0=sc_origin[2];
+  // Get start counter geometry;
+  if (locGeometry->GetStartCounterGeom(sc_pos,sc_norm)){
+    sc_leg_tcor = -sc_pos[0][0].z()/C_EFFECTIVE;
+    double theta = sc_norm[0][sc_norm[0].size()-2].Theta();
+    sc_angle_cor = 1./cos(M_PI_2 - theta);
+  }
 
-    // Get rotation angles
-    vector<double>sc_rot_angles;
-    locGeometry->Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
-    double ThetaX=sc_rot_angles[0]*M_PI/180.;
-    double ThetaY=sc_rot_angles[1]*M_PI/180.;  
-    double ThetaZ=sc_rot_angles[2]*M_PI/180.;
-    //ThetaX=0.;
-    //ThetaY=0.;
-
-    double num_paddles;
-    locGeometry->Get("//mposPhi[@volume='STRC']/@ncopy",num_paddles); 
-    dSCdphi = M_TWO_PI/num_paddles;
-		
-    double Phi0;
-    locGeometry->Get("///mposPhi[@volume='STRC']/@Phi0",Phi0);
-    dSCphi0 =Phi0*M_PI/180.;
-    
-    vector<vector<double> > sc_rioz;
-    locGeometry->GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
-
-    // Create vectors of positions and normal vectors for each paddle
-    for (unsigned int i=0;i<30;i++){
-      double phi=dSCphi0+dSCdphi*double(i);
-      double sinphi=sin(phi);
-      double cosphi=cos(phi);
-      double r=0.5*(sc_rioz[0][0]+sc_rioz[0][1]);
-      DVector3 oldray;
-      // Rotate by phi and take into account the tilt
-      DVector3 ray(r*cosphi,r*sinphi,sc_rioz[0][2]);
-      ray.RotateX(ThetaX);
-      ray.RotateY(ThetaY);
-      ray.RotateZ(ThetaZ);
-
-      // Create stl-vectors to store positions and norm vectors
-      vector<DVector3>posvec;
-      vector<DVector3>dirvec;
-      // Loop over radial/z positions describing start counter geometry from xml
-      for(unsigned int k = 1; k < sc_rioz.size(); ++k){
-	oldray=ray;
-	r=0.5*(sc_rioz[k][0]+sc_rioz[k][1]);
-	// Point in midplane of scintillator
-	ray.SetXYZ(r*cosphi,r*sinphi,sc_rioz[k][2]);
-	// Second point in the plane of the scintillator
-	DVector3 ray2(r*cosphi-10.0*sinphi,r*sinphi+10.0*cosphi,sc_rioz[k][2]);
-	// Take into account tilt
-	ray.RotateX(ThetaX);
-	ray.RotateY(ThetaY);
-	ray.RotateZ(ThetaZ);
-	ray2.RotateX(ThetaX);
-	ray2.RotateY(ThetaY);
-	ray2.RotateZ(ThetaZ);
-	// Store one position on current plane
-	posvec.push_back(DVector3(oldray.X(),oldray.Y(),oldray.Z()+z0));
-	// Compute normal vector to plane
-	DVector3 dir=(ray-oldray).Cross(ray2-oldray);
-	dir.SetMag(1.);
-	dirvec.push_back(dir);		
-      }
-      sc_pos.push_back(posvec);
-      sc_norm.push_back(dirvec);
-		  
-      posvec.clear();
-      dirvec.clear();
-    }
-
-	
-		// in case start counter is comment out in XML
-		if(!sc_pos.empty())
-		{
-			// sc_leg_tcor=(sc_light_guide[2]-sc_pos[0].z())/C_EFFECTIVE;
-			sc_leg_tcor = -sc_pos[0][0].z()/C_EFFECTIVE;
-			double theta = sc_norm[0][sc_norm[0].size()-2].Theta();
-			sc_angle_cor = 1./cos(M_PI_2 - theta);
-		}
-	}
 
 	//Get calibration constants
 	map<string, double> locPIDParams;
@@ -1134,92 +1059,6 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt,
   return 0;
 }
 
-
-
-
-// Match to Start Counter using straight-line projection to start counter planes
-bool 
-DParticleID::MatchToSC(const DKinematicData *kd,
-		       const vector<const DSCHit*>& locSCHits,
-		       vector<DSCHitMatchParams>& locSCHitMatchParams) const{
-  
-  if(sc_pos.empty() || sc_norm.empty())
-    return false;
-
-  // Ends in z of the straight portion	
-  double sc_pos0 = sc_pos[0][0].z();
-  double sc_pos1 = sc_pos[0][1].z();
-
-  DVector3 mom=kd->momentum();
-  DVector3 pos=kd->position();
-  DVector3 cylpos[2];
-
-  if (finder->FindIntersectionsWithCylinder(sc_pos[0][1].x(),mom,pos,cylpos[0],
-					    cylpos[1])){
-    for (unsigned int j=0;j<2;j++){
-      double cyl_phi=cylpos[j].Phi();
-      for (size_t i=0;i<locSCHits.size();i++){
-	const DSCHit *locSCHit=locSCHits[i];
-	// Look for a match in phi
-	double phi = dSCphi0 + dSCdphi*(locSCHit->sector - 1);
-	
-	// First intersection point of line with cylinder
-	double dphi = cyl_phi - phi; //phi could be 0 degrees & cyl_phi could be 359 degrees
-	while(dphi > TMath::Pi())
-	  dphi -= M_TWO_PI;
-	while(dphi < -1.0*TMath::Pi())
-	  dphi += M_TWO_PI;
-	if(fabs(dphi) < SC_DPHI_CUT_WB){
-	  double myz=cylpos[j].z();
-	  double sc_time=locSCHit->t - sc_leg_tcor;
-	  if (myz>=sc_pos0){
-	    DSCHitMatchParams scmatch;
-	    scmatch.dSCHit=locSCHit;
-	    scmatch.dDeltaPhiToHit=dphi; 
-	    if (myz<sc_pos1){ // intersection in leg 
-	      scmatch.dHitTime=sc_time-myz/C_EFFECTIVE;
-	    }
-	    else{ // intersection in nose
-	      unsigned int num = sc_norm[0].size() - 1;
-	      for (unsigned int k = 1; k < num; ++k){
-		double xhat = sc_norm[0][k].x();
-		double cosphi=cos(phi);
-		double sinphi=sin(phi);
-		DVector3 norm(cosphi*xhat, sinphi*xhat, sc_norm[0][k].z());
-		double r = sc_pos[0][k].X();
-		DVector3 origin(r*cosphi, r*sinphi, sc_pos[0][k].z());
-		if (finder->FindIntersectionWithPlane(origin,norm,pos,mom,
-						      cylpos[j])){
-		  myz = cylpos[j].z();
-		  if(myz < sc_pos[0][k + 1].z()){
-		    break;
-		  }
-		}
-	      }
-	      if (myz<sc_pos0) continue;
-	      if (myz>sc_pos[0][num].z()) continue;
-
-	      // Note: in the following code, L does not include a correction
-	      // for where the start counter starts in z...	
-	      // This is absorbed into sc_time, above.
-	      if(myz < sc_pos1){
-		scmatch.dHitTime=sc_time-sc_pos1/C_EFFECTIVE;
-	      }
-	      else{
-		double L = (myz - sc_pos1)*sc_angle_cor + sc_pos1;
-		scmatch.dHitTime=sc_time-L/C_EFFECTIVE;
-	      }
-	    }
-	    locSCHitMatchParams.push_back(scmatch);
-	  } // back position check	
-	} // dphi check
-      } // loop over start counter hits
-    } // two intersection points    
-  } // intersection with cylinder
-
-  return true;
-}
-  
 //------------------
 // Distance_ToTrack
 //------------------
