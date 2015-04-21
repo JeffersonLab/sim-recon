@@ -128,8 +128,20 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
     _DBG_<< "FDC geometry not available!" <<endl;
     USE_FDC=false;
   }
+ 
+  // Get offsets tweaking nominal geometry from calibration database
+  JCalibration * jcalib = dapp->GetJCalibration(runnumber);
+  vector<map<string,double> >vals;
+  if (jcalib->Get("FDC/cell_offsets",vals)==false){
+    for(unsigned int i=0; i<vals.size(); i++){
+      map<string,double> &row = vals[i];
 
-
+      // Get the offsets from the calibration database 
+      xshifts.push_back(row["xshift"]);
+      yshifts.push_back(row["yshift"]);
+    }
+  }
+  
   if(DEBUG_HISTS){
     dapp->Lock();
 
@@ -159,17 +171,27 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
     uv_dt_vs_v=(TH2F *) gROOT->FindObject("uv_dt_vs_v");
     if (!uv_dt_vs_v) uv_dt_vs_v=new TH2F("uv_dt_vs_v","uv time difference vs v",
 					 192,0.5,192.5,100,-50,50);
-    Hxy=(TH2F *) gROOT->FindObject("Hxy");
-    if (!Hxy){
-      Hxy=new TH2F("Hxy","xy on FDC plane 1",4000,-50,50,200,-50,50);
-    }
-
+ 
     ut_vs_u=(TH2F *) gROOT->FindObject("ut_vs_u");
     if (!ut_vs_u) ut_vs_u=new TH2F("ut_vs_u","u time  vs u",
 				   192,0.5,192.5,100,0,6000); 
     vt_vs_v=(TH2F *) gROOT->FindObject("vt_vs_v");
     if (!vt_vs_v) vt_vs_v=new TH2F("vt_vs_v","v time  vs v",
 				   192,0.5,192.5,100,0,6000); 
+    
+    dx_vs_dE=(TH2F*)gROOT->FindObject("dx_vs_dE");
+    if (!dx_vs_dE) dx_vs_dE=new TH2F("dx_vs_dE","dx vs dE",100,0,25e-6,
+				     100,-0.5,0.5);
+
+
+    for (unsigned int i=0;i<24;i++){
+      char hname[80];
+      sprintf(hname,"Hxy%d",i);
+      Hxy[i]=(TH2F *) gROOT->FindObject(hname);
+      if (!Hxy[i]){
+	Hxy[i]=new TH2F(hname,hname,4000,-50,50,200,-50,50);
+      }
+    }
 
     dapp->Unlock();
   }
@@ -323,7 +345,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
   }
   if (upeaks.size()*vpeaks.size()>0){
     // Rotation angles for strips
-    unsigned int ind=2*(layer-1);
+    unsigned int ilay=layer-1;
+    unsigned int ind=2*ilay;
     float phi_u=fdccathodes[ind][0]->angle;
     float phi_v=fdccathodes[ind+1][0]->angle;
 
@@ -341,7 +364,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	  if ((*xIt)->element<=WIRES_PER_PLANE && (*xIt)->element>0){
 	    const DFDCWire *wire=fdcwires[layer-1][(*xIt)->element-1];
 	    double x_from_wire=wire->u;
-
+	    
 	    //printf("xs %f xw %f\n",x_from_strips,x_from_wire);
 
 	    // Test radial value for checking whether or not the hit is within
@@ -357,10 +380,9 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      double dt1 = (*xIt)->t - upeaks[i].t;
 	      double dt2 = (*xIt)->t - vpeaks[j].t;
 
-	      //      printf("dt1 %f dt2 %f\n",dt1,dt2);
+	      //printf("dt1 %f dt2 %f\n",dt1,dt2);
 
 	      if (DEBUG_HISTS){
-
 		if (layer==1){
 		  dtv_vs_dtu->Fill(dt1,dt2);
 		  tv_vs_tu->Fill(upeaks[i].t, vpeaks[j].t);
@@ -410,17 +432,17 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->phi_v=phi_v;
 	      newPseu->u = upeaks[i].pos;
 	      newPseu->v = vpeaks[j].pos;
-	      newPseu->w      = x_from_wire;
+	      newPseu->w      = x_from_wire-xshifts[ilay];
 	      newPseu->dw     = 0.; // place holder
-	      newPseu->w_c    = x_from_strips;
-	      newPseu->s      = y_from_strips;
+	      newPseu->w_c    = x_from_strips-xshifts[ilay];
+	      newPseu->s      = y_from_strips-yshifts[ilay];
 	      newPseu->ds     = 0.; // place holder
 	      newPseu->wire   = wire;
 	      //newPseu->time   = (*xIt)->t;
 	      newPseu->time=0.5*(upeaks[i].t+vpeaks[j].t);
 	      newPseu->status = status;
 	      newPseu->itrack = (*xIt)->itrack;
-	      
+
 	      newPseu->AddAssociatedObject(v[vpeaks[j].cluster]);
 	      newPseu->AddAssociatedObject(u[upeaks[i].cluster]);
 	      
@@ -441,11 +463,6 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 
 	      newPseu->xy.Set((newPseu->w)*cosangle+(newPseu->s)*sinangle,
 			       -(newPseu->w)*sinangle+(newPseu->s)*cosangle);
-	      
-	      if (DEBUG_HISTS && layer==1){
-		Hxy->Fill(x_from_strips,y_from_strips);
-
-	      }
 
 	      double sigx2=HALF_CELL*HALF_CELL/3.;
 	      double sigy2=MAX_DEFLECTION*MAX_DEFLECTION/3.;
@@ -458,6 +475,12 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 			if(mctrackhit)newPseu->AddAssociatedObject(mctrackhit);
 
 	      _data.push_back(newPseu);
+
+	      if (DEBUG_HISTS){
+		Hxy[ilay]->Fill(newPseu->w_c,newPseu->s);
+		if (ilay==6) dx_vs_dE->Fill(dE,delta_x);
+	      }
+
 	    } // match in x
 	  } else _DBG_ << "Bad wire " << (*xIt)->element <<endl;
 	} // xIt loop
@@ -506,7 +529,6 @@ void DFDCPseudo_factory::CalcMeanTime(vector<const DFDCHit *>::const_iterator pe
 }
 
 
-
 //
 /// DFDCPseudo_factory::FindCentroid()
 ///   Uses the Newton-Raphson method for solving the set of non-linear
@@ -533,13 +555,16 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
     //double dq3=(*(peak+1))->dq;
     //err_diff1=sqrt(dq1*dq1+dq2*dq2);
     //err_diff2=sqrt(dq2*dq2+dq3*dq3);
+    if ((*peak)->pulse_height<MIDDLE_STRIP_THRESHOLD) {
+      return VALUE_OUT_OF_RANGE;
+    }
    
     // Check for a peak in three adjacent strips
-    if ((*peak)->q-(*(peak-1))->q > err_diff1
-                && (*peak)->q-(*(peak+1))->q > err_diff2){
+    if ((*peak)->pulse_height-(*(peak-1))->pulse_height > err_diff1
+                && (*peak)->pulse_height-(*(peak+1))->pulse_height > err_diff2){
       // Define some matrices for use in the Newton-Raphson iteration
       DMatrix3x3 J;  //Jacobean matrix
-      DMatrix3x1 F,N,X,par,newpar;
+      DMatrix3x1 F,N,X,par,newpar,f;
       int i=0;
       double sum=0.;
  
@@ -548,7 +573,7 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
       par(K2)=1.;
       for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
  	X(i)=fdccathodes[index][(*j)->element-1]->u;
-        N(i)=double((*j)->q);
+        N(i)=double((*j)->pulse_height);
         sum+=N(i);
 	i++;
       }
@@ -572,22 +597,34 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 	  double tanh2_p=tanh_p*tanh_p;
 	  double tanh2_m=tanh_m*tanh_m;
 	  double q_over_4=0.25*par(QA);
-           
-          J(i,QA)=-0.25*(tanh_p-tanh_m);
+
+	  f(i)=tanh_p-tanh_m;
+          J(i,QA)=-0.25*f(i);
           J(i,K2)=-q_over_4*(argp/par(K2)*(1.-tanh2_p)
 			     -argm/par(K2)*(1.-tanh2_m));
           J(i,X0)=-q_over_4*par(K2)*(tanh2_m-tanh2_p); 
-	  F(i)=N(i)-q_over_4*(tanh_p-tanh_m);
+	  F(i)=N(i)-q_over_4*f(i);
 	  double new_errf=fabs(F(i));
 	  if (new_errf>errf) errf=new_errf;
         }
 	// Check for convergence
 	if (errf<TOLF){	
 	  temp.pos=par(X0);
-	  temp.q=par(QA);
 	  temp.numstrips=3;  
 	  temp.t=(*peak)->t;
 	  temp.t_rms=0.;
+
+	  // Find estimate for anode charge
+	  sum=0;
+	  double sum_f=0;
+	  unsigned int k=0;
+	  for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
+	    sum_f+=f(k);
+	    sum+=double((*j)->q);
+	    k++;
+	  }
+	  temp.q=4.*sum/sum_f;
+
 	  //CalcMeanTime(peak,temp.t,temp.t_rms);
 	  centroids.push_back(temp);
   
@@ -604,10 +641,21 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 	}
         if (errx<TOLX){
           temp.pos=par(X0);
-          temp.q=par(QA);
           temp.numstrips=3;
 	  temp.t=(*peak)->t;
 	  temp.t_rms=0.;
+	  
+	  // Find estimate for anode charge
+	  sum=0;
+	  double sum_f=0;
+	  unsigned int k=0;
+	  for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
+	    sum_f+=f(k);
+	    sum+=double((*j)->q);
+	    k++;
+	  }
+	  temp.q=4.*sum/sum_f;
+
 	  //CalcMeanTime(peak,temp.t,temp.t_rms);
           centroids.push_back(temp);
         

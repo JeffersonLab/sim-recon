@@ -109,18 +109,21 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 	private:		
 		vector<vector<DFDCWire*> >fdcwires;
 		vector<vector<DFDCCathode*> >fdccathodes;
+		vector<double>xshifts;
+		vector<double>yshifts;
 
 		double ROUT_FIDUCIAL,RIN_FIDUCIAL;
 		double r2_out,r2_in;
 		double STRIP_ANODE_TIME_CUT;
 		unsigned int MAX_ALLOWED_FDC_HITS;
-		bool DEBUG_HISTS,USE_FDC;
+		bool DEBUG_HISTS,USE_FDC,MATCH_TRUTH_HITS;
+		double MIDDLE_STRIP_THRESHOLD;
 
 		TH2F *qv_vs_qu, *dtv_vs_dtu;
 		TH2F *uv_dt_vs_u,*uv_dt_vs_v,*v_wire_dt_vs_wire;
 		TH2F *tv_vs_tu,*u_wire_dt_vs_wire;
-		TH2F *Hxy,*ut_vs_u,*vt_vs_v;
-		TH2F *v_vs_u;
+		TH2F *Hxy[24],*ut_vs_u,*vt_vs_v;
+		TH2F *v_vs_u,*dx_vs_dE;
 
 		JStreamLog* _log;
 };
