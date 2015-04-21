@@ -16,6 +16,9 @@ using namespace std;
 
 using namespace std;
 
+#ifndef M_TWO_PI
+#define M_TWO_PI 6.28318530717958647692
+#endif
 
 //---------------------------------
 // DGeometry    (Constructor)
@@ -1479,5 +1482,84 @@ bool DGeometry::GetTargetLength(double &target_length) const
 	target_length = good ? zLength[0]:0.0;
  
 	return good;
+}
+
+// Get vectors of positions and norm vectors for start counter from XML
+bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
+				    vector<vector<DVector3> >&norm
+				    ) const{
+
+  // Check if Start Counter geometry is present
+  vector<double> sc_origin;
+  bool got_sc = Get("//posXYZ[@volume='StartCntr']/@X_Y_Z", sc_origin);
+  if(got_sc){
+    // z-position at upstream face of scintillators.
+    double z0=sc_origin[2];
+    
+    // Get rotation angles
+    vector<double>sc_rot_angles;
+    Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
+    double ThetaX=sc_rot_angles[0]*M_PI/180.;
+    double ThetaY=sc_rot_angles[1]*M_PI/180.;  
+    double ThetaZ=sc_rot_angles[2]*M_PI/180.;
+
+    double num_paddles;
+    Get("//mposPhi[@volume='STRC']/@ncopy",num_paddles); 
+    double dSCdphi = M_TWO_PI/num_paddles;
+		
+    double Phi0;
+    Get("///mposPhi[@volume='STRC']/@Phi0",Phi0);
+    double dSCphi0 =Phi0*M_PI/180.;
+    
+    vector<vector<double> > sc_rioz;
+    GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
+    
+    // Create vectors of positions and normal vectors for each paddle
+    for (unsigned int i=0;i<30;i++){
+      double phi=dSCphi0+dSCdphi*double(i);
+      double sinphi=sin(phi);
+      double cosphi=cos(phi);
+      double r=0.5*(sc_rioz[0][0]+sc_rioz[0][1]);
+      DVector3 oldray;
+      // Rotate by phi and take into account the tilt
+      DVector3 ray(r*cosphi,r*sinphi,sc_rioz[0][2]);
+      ray.RotateX(ThetaX);
+      ray.RotateY(ThetaY);
+      ray.RotateZ(ThetaZ);
+
+      // Create stl-vectors to store positions and norm vectors
+      vector<DVector3>posvec;
+      vector<DVector3>dirvec;
+      // Loop over radial/z positions describing start counter geometry from xml
+      for(unsigned int k = 1; k < sc_rioz.size(); ++k){
+	oldray=ray;
+	r=0.5*(sc_rioz[k][0]+sc_rioz[k][1]);
+	// Point in midplane of scintillator
+	ray.SetXYZ(r*cosphi,r*sinphi,sc_rioz[k][2]);
+	// Second point in the plane of the scintillator
+	DVector3 ray2(r*cosphi-10.0*sinphi,r*sinphi+10.0*cosphi,sc_rioz[k][2]);
+	// Take into account tilt
+	ray.RotateX(ThetaX);
+	ray.RotateY(ThetaY);
+	ray.RotateZ(ThetaZ);
+	ray2.RotateX(ThetaX);
+	ray2.RotateY(ThetaY);
+	ray2.RotateZ(ThetaZ);
+	// Store one position on current plane
+	posvec.push_back(DVector3(oldray.X(),oldray.Y(),oldray.Z()+z0));
+	// Compute normal vector to plane
+	DVector3 dir=(ray-oldray).Cross(ray2-oldray);
+	dir.SetMag(1.);
+	dirvec.push_back(dir);		
+      }
+      pos.push_back(posvec);
+      norm.push_back(dirvec);
+		  
+      posvec.clear();
+      dirvec.clear();
+    }
+    
+  }
+  return got_sc;
 }
 

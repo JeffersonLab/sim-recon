@@ -145,6 +145,10 @@ class DGeometry{
 		bool GetTargetZ(double &z_target) const; ///< z-location og center of target
 		bool GetTargetLength(double &target_length) const; ///< z-location of center of target
 
+		bool GetStartCounterGeom(vector<vector<DVector3> >&pos,
+					 vector<vector<DVector3> >&norm) const; // < vectors containing positions and norm 3-vectors for start counter 
+
+
 		vector<DMaterialMap*> GetMaterialMapVector(void) const;
 		
 	protected:
