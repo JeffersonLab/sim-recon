@@ -48,6 +48,7 @@ jerror_t DPSCPair_factory::evnt(JEventLoop *loop, int eventnumber)
     for (unsigned int i=0; i < hits.size()-1; i++) {
       for (unsigned int j=i+1; j < hits.size(); j++) {
 	if (!hits[i]->has_TDC||!hits[j]->has_TDC) continue;
+	if (!hits[i]->has_fADC||!hits[j]->has_fADC) continue;
 	double loc_tdiff = fabs(hits[i]->t-hits[j]->t);
 	if (fabs(hits[i]->arm-hits[j]->arm)==1&&loc_tdiff<tdiff) {
 	  tdiff = loc_tdiff;
