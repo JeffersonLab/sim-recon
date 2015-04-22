@@ -266,7 +266,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
 
   // Covariance matrix
   DMatrix4x4 C0,C,Cbest;
-  C0(state_x,state_x)=C0(state_y,state_y)=1.0;     
+  C0(state_x,state_x)=C0(state_y,state_y)=9.0;     
   C0(state_tx,state_tx)=C0(state_ty,state_ty)=0.01;
    
   double chi2=1e16,chi2_old=1e16;
@@ -565,7 +565,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 
       // Check how far this hit is from the projection
       double chi2check=res*res*InvV;
-      if (chi2check<10.){
+      if (chi2check<20.){
 	// Compute Kalman gain matrix
 	K=InvV*(C*H_T);
 	
@@ -676,13 +676,13 @@ double DTrackCandidate_factory_StraightLine::CDCDriftDistance(double t){
 // Smearing function derived from fitting residuals
 inline double DTrackCandidate_factory_StraightLine::CDCDriftVariance(double t){ 
   //  return 0.001*0.001;
-  if (t<0.) t=0.;
+  //if (t<0.) t=0.;
   
-  double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
-  sigma+=0.005;
+  // double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
+  // sigma+=0.005;
   
   //sigma=0.08/(t+1.)+0.03;
-  sigma=0.045;
+  double sigma=0.035;
   
   return sigma*sigma;
 }
