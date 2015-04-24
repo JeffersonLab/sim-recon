@@ -131,7 +131,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
     if (num_fdc_hits>0){
       if (forward_traj[k].h_id>0 && forward_traj[k].h_id<1000){
 	unsigned int id=forward_traj[k].h_id-1;
-
+	
 	double cosa=my_fdchits[id]->cosa;
 	double sina=my_fdchits[id]->sina;
 	double u=my_fdchits[id]->uwire;
@@ -165,7 +165,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	double nz_sinalpha_plus_nr_cosalpha=nz*sinalpha+nr*cosalpha;
 	
 	// Variance in coordinate along wire
-	double V=fdc_y_variance(my_fdchits[id]->dE);
+	double V=my_fdchits[id]->vvar;
 		
 	// Difference between measurement and projection
 	double tv=tx*sina+ty*cosa;
@@ -174,7 +174,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 						));
 
 	if (DEBUG_HISTS && fit_type==kTimeBased){
-	  fdc_dy_vs_d->Fill(doca,Mdiff);
+	  fdc_dy_vs_d->Fill(doca,v-vpred_uncorrected);
 	}
 	
        	// To transform from (x,y) to (u,v), need to do a rotation:
@@ -248,7 +248,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	      doca=(upred-u)*cosalpha;
 	    
 	      // variance for coordinate along the wire
-	      V=fdc_y_variance(my_fdchits[my_id]->dE);
+	      V=my_fdchits[my_id]->vvar;
 	      
 	      // Difference between measurement and projection
 	      Mdiff=v-(vpred_uncorrected+doca*(nz_sinalpha_plus_nr_cosalpha
@@ -322,7 +322,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    fdc_updates[my_id].s=forward_traj[k].s;
 	    fdc_updates[my_id].residual=scale*Mlist[m];
 	    fdc_updates[my_id].variance=scale*Vlist[m];
-	    fdc_updates[my_id].doca=fabs(doca);
+	    fdc_updates[my_id].doca=doca;
 	  
 	    // update chi2
 	    chisq+=(probs[m]/prob_tot)*(1.-Hlist[m]*Klist[m])*Mlist[m]*Mlist[m]/Vlist[m];
@@ -341,18 +341,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  // Check if this hit is an outlier
 	  double chi2_hit=Mdiff*Mdiff*InvV;
 	  if (chi2_hit<fdc_chi2cut){
-	    
-	    if (chi2_hit>var_fdc_cut){
-	      // Give hits that satisfy the wide cut but are still pretty far
-	      // from the projected position less weight
-	      
-	      // ad hoc correction 
-	      double diff = chi2_hit-var_fdc_cut;
-	      V*=1.+my_fdc_anneal*diff*diff;
-	      InvV=1./(V+Vproj);
-	    }
-
-
 	    // Compute Kalman gain matrix
 	    K=InvV*(C*H_T);
 	    
@@ -375,7 +363,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    fdc_updates[id].residual=scale*Mdiff;
 	    fdc_updates[id].variance=scale*V;
 	    fdc_updates[id].s=forward_traj[k].s;
-	    fdc_updates[id].doca=fabs(doca);
+	    fdc_updates[id].doca=doca;
 	    fdc_updates[id].used_in_fit=true;
 	    
 	    // Update chi2 for this segment

@@ -452,11 +452,6 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
        }
        */
 
-    FDC_CATHODE_SIGMA=0.;
-    map<string, double> fdcparms;
-    jcalib->Get("FDC/fdc_parms", fdcparms);
-    FDC_CATHODE_SIGMA     = fdcparms["FDC_CATHODE_SIGMA"];
-
     for (unsigned int i=0;i<5;i++)I5x5(i,i)=1.;
 
 
@@ -844,6 +839,7 @@ jerror_t DTrackFitterKalmanSIMD::AddFDCHit(const DFDCPseudo *fdchit){
     hit->t=fdchit->time;
     hit->uwire=fdchit->w;
     hit->vstrip=fdchit->s;
+    hit->vvar=fdchit->ds*fdchit->ds;
     hit->z=fdchit->wire->origin.z();
     hit->cosa=fdchit->wire->udir.y();
     hit->sina=fdchit->wire->udir.x();
@@ -3019,7 +3015,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double phi0=phi_=input_params.momentum().Phi();
 
     // Guess for momentum error
-    double dpt_over_pt=0.025;
+    double dpt_over_pt=0.1;
     /*
        if (theta_deg<15){
        dpt_over_pt=0.107-0.0178*theta_deg+0.000966*theta_deg_sq;
@@ -5302,7 +5298,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                 //if (sqrt(chi2check)>NUM_CDC_SIGMA_CUT) InvV*=0.8;
                 if (chi2check<chi2cut)
                 {	  
-
+		  /*
                     if (chi2check>var_cut){
                         // Give hits that satisfy the wide cut but are still pretty far
                         // from the projected position less weight
@@ -5313,8 +5309,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                         V*=1.+my_anneal*diff*diff;
                         InvV=1./(V+Vproj);
                     }
-
-
+		  */
+		    
                     // Compute KalmanSIMD gain matrix
                     K=InvV*(C*H_T);
 

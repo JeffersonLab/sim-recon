@@ -113,7 +113,7 @@ typedef struct{
 
 typedef struct{ 
   double t,cosa,sina;
-  double uwire,vstrip,z,dE;
+  double uwire,vstrip,vvar,z,dE;
   double xres,yres,xsig,ysig;
   double nr,nz;
   int package;
@@ -528,8 +528,7 @@ inline double DTrackFitterKalmanSIMD::cdc_variance(double B,double t){
 }
 // Variance for position along wire
 inline double DTrackFitterKalmanSIMD::fdc_y_variance(double dE){
-  double sigma=2.6795e-4*FDC_CATHODE_SIGMA/dE;//+0.005;
-  sigma=0.025; // temporary fixed resolution
+  double sigma=0.025;
 
   return sigma*sigma;
 }
