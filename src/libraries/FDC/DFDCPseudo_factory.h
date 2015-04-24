@@ -34,6 +34,7 @@ using namespace jana;
 typedef struct {
   double pos;
   double q;
+  double q_from_pulse_height;
   int numstrips;
   double t; // mean time of strips in peak
   double t_rms; // rms of strips in peak
@@ -118,6 +119,7 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		unsigned int MAX_ALLOWED_FDC_HITS;
 		bool DEBUG_HISTS,USE_FDC,MATCH_TRUTH_HITS;
 		double MIDDLE_STRIP_THRESHOLD;
+		double FDC_RES_PAR1,FDC_RES_PAR2;
 
 		TH2F *qv_vs_qu, *dtv_vs_dtu;
 		TH2F *uv_dt_vs_u,*uv_dt_vs_v,*v_wire_dt_vs_wire;

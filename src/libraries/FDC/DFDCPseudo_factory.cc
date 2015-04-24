@@ -141,6 +141,13 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
       yshifts.push_back(row["yshift"]);
     }
   }
+  // Get FDC resolution parameters from database
+  map<string, double> fdcparms;
+  FDC_RES_PAR1=0.;
+  FDC_RES_PAR2=0.;
+  jcalib->Get("FDC/fdc_resolution_parms",fdcparms);
+  FDC_RES_PAR1=fdcparms["res_par1"];
+  FDC_RES_PAR2=fdcparms["res_par2"];
   
   if(DEBUG_HISTS){
     dapp->Lock();
@@ -180,8 +187,8 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
 				   192,0.5,192.5,100,0,6000); 
     
     dx_vs_dE=(TH2F*)gROOT->FindObject("dx_vs_dE");
-    if (!dx_vs_dE) dx_vs_dE=new TH2F("dx_vs_dE","dx vs dE",100,0,25e-6,
-				     100,-0.5,0.5);
+    if (!dx_vs_dE) dx_vs_dE=new TH2F("dx_vs_dE","dx vs dE",100,0,25.0,
+				     100,-0.2,0.2);
 
 
     for (unsigned int i=0;i<24;i++){
@@ -419,6 +426,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      double q_cathodes=0.5*(upeaks[i].q+vpeaks[j].q);
 	      double charge_to_energy=W_EFF/(GAS_GAIN*ELECTRON_CHARGE);
 	      double dE=charge_to_energy*q_cathodes;
+	      double q_from_pulse_height=5.0e-4*(upeaks[i].q_from_pulse_height
+					      +vpeaks[j].q_from_pulse_height);
       
 	      if (DEBUG_HISTS){
 		qv_vs_qu->Fill(upeaks[i].q,vpeaks[j].q);
@@ -436,7 +445,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->dw     = 0.; // place holder
 	      newPseu->w_c    = x_from_strips-xshifts[ilay];
 	      newPseu->s      = y_from_strips-yshifts[ilay];
-	      newPseu->ds     = 0.; // place holder
+	      newPseu->ds = FDC_RES_PAR1/q_from_pulse_height+FDC_RES_PAR2;
 	      newPseu->wire   = wire;
 	      //newPseu->time   = (*xIt)->t;
 	      newPseu->time=0.5*(upeaks[i].t+vpeaks[j].t);
@@ -462,14 +471,14 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      double cosangle=newPseu->wire->udir(1);
 
 	      newPseu->xy.Set((newPseu->w)*cosangle+(newPseu->s)*sinangle,
-			       -(newPseu->w)*sinangle+(newPseu->s)*cosangle);
+			      -(newPseu->w)*sinangle+(newPseu->s)*cosangle);
 
 	      double sigx2=HALF_CELL*HALF_CELL/3.;
 	      double sigy2=MAX_DEFLECTION*MAX_DEFLECTION/3.;
 	      newPseu->covxx=sigx2*cosangle*cosangle+sigy2*sinangle*sinangle;
 	      newPseu->covyy=sigx2*sinangle*sinangle+sigy2*cosangle*cosangle;
 	      newPseu->covxy=(sigy2-sigx2)*sinangle*cosangle;
-
+									
 	      // Try matching truth hit with this "real" hit.
 			const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(newPseu->wire, DRIFT_SPEED*newPseu->time, mctrackhits);
 			if(mctrackhit)newPseu->AddAssociatedObject(mctrackhit);
@@ -478,7 +487,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 
 	      if (DEBUG_HISTS){
 		Hxy[ilay]->Fill(newPseu->w_c,newPseu->s);
-		if (ilay==6) dx_vs_dE->Fill(dE,delta_x);
+		if (ilay==6) dx_vs_dE->Fill(q_from_pulse_height,0.2588*delta_x);
 	      }
 
 	    } // match in x
@@ -610,6 +619,7 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 	// Check for convergence
 	if (errf<TOLF){	
 	  temp.pos=par(X0);
+	  temp.q_from_pulse_height=par(QA);
 	  temp.numstrips=3;  
 	  temp.t=(*peak)->t;
 	  temp.t_rms=0.;
@@ -642,6 +652,7 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
         if (errx<TOLX){
           temp.pos=par(X0);
           temp.numstrips=3;
+	  temp.q_from_pulse_height=par(QA);
 	  temp.t=(*peak)->t;
 	  temp.t_rms=0.;
 	  
