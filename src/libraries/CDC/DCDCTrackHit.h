@@ -32,6 +32,7 @@ class DCDCTrackHit:public JObject{
 			AddString(items, "stereo(rad)", "%1.4f", wire->stereo);
 			AddString(items, "tdrift(ns)", "%3.1f", tdrift);
 			AddString(items, "dist(cm)", "%1.3f", dist);
+			AddString(items, "dE(GeV)","%3.1g",dE);
 		}
 };
 
