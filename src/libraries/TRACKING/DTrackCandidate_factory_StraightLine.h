@@ -75,6 +75,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
 			vector<const DFDCPseudo *>&hits,
 			vector<int>&used_fdc_hits,
 			deque<trajectory_t>&trajectory,
+			vector<update_t>&pulls,
 			double &chi2,unsigned int &ndof);
   jerror_t KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 			vector<const DCDCTrackHit *>&hits,

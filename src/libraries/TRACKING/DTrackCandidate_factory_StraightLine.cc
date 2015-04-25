@@ -704,6 +704,10 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
   // Use the result from the initial line fit to form a reference trajectory 
   // for the track. 
   deque<trajectory_t>trajectory;
+
+  // vectors of residual information 
+  vector<update_t>pulls(numhits);
+  vector<update_t>best_pulls(numhits);
       
   // Intial guess for covariance matrix
   DMatrix4x4 C,C0,Cbest;
@@ -722,7 +726,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
     if (SetReferenceTrajectory(t0,start_z,S,trajectory,hits)!=NOERROR) break;
 
     C=C0;
-    if (KalmanFilter(S,C,hits,used_fdc_hits,trajectory,chi2,ndof)!=NOERROR) break;
+    if (KalmanFilter(S,C,hits,used_fdc_hits,trajectory,pulls,chi2,ndof)!=NOERROR) break;
 
     // printf(" == iter %d =====chi2 %f ndof %d \n",iter,chi2,ndof);
     if (chi2>chi2_old || fabs(chi2_old-chi2)<0.1) break;  
@@ -732,6 +736,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
     Sbest=S;
 
     used_fdc_hits_best_fit=used_fdc_hits;
+    best_pulls=pulls;
   }
       
   if (iter>0){
@@ -753,6 +758,12 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
     for (unsigned int k=0;k<used_fdc_hits_best_fit.size();k++){
       if (used_fdc_hits_best_fit[k]==1){
 	cand->AddAssociatedObject(hits[k]);
+	cand->pulls.push_back(DTrackFitter::pull_t(best_pulls[k].resi,
+						   best_pulls[k].err,
+						   best_pulls[k].s,
+						   best_pulls[k].tdrift,
+						   best_pulls[k].d,NULL,
+						   hits[k]));
       }
     }
 
@@ -874,6 +885,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 					      vector<const DFDCPseudo *>&hits,
 						   vector<int>&used_hits,
 					      deque<trajectory_t>&trajectory,
+						   vector<update_t>&pulls,
 			       double &chi2,unsigned int &ndof){
   DMatrix2x4 H;  // Track projection matrix
   DMatrix4x2 H_T; // Transpose of track projection matrix 
@@ -1016,6 +1028,14 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 	ndof+=2;
 
 	used_hits[my_id]=1;
+
+	// fill pull vector
+	pulls[my_id].resi=res(1);
+	pulls[my_id].d=doca;
+	pulls[my_id].err=sqrt(RC(1,1));
+	pulls[my_id].tdrift=hits[my_id]->time-trajectory[k].t;
+	pulls[my_id].s=29.98*trajectory[k].t; // assume beta=1
+
       }
 
     }
