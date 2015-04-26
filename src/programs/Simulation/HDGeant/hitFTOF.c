@@ -83,7 +83,7 @@ void hitForwardTOF (float xin[4], float xout[4],
                     int track, int stack, int history, int ipart) {
   float x[3], t;
   float dx[3], dr;
-  float dEdx;
+  // float dEdx;  commented out to avoid compiler warnings 4/26/2015 DL
   float xlocal[3];
   float xftof[3];
   float zeroHat[] = {0,0,0};
@@ -179,12 +179,14 @@ void hitForwardTOF (float xin[4], float xout[4],
   // length of the track of this step
   dr = sqrt(dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2]);
   // calculate dEdx only if track length is >0.001 cm
-  if (dr > 1e-3) {
-    dEdx = dEsum/dr;
-  }
-  else {
-    dEdx = 0;
-  }
+  
+  // The following commented out to avoid compiler warnings 4/26/2015 DL
+//   if (dr > 1e-3) {
+//     dEdx = dEsum/dr;
+//   }
+//   else {
+//     dEdx = 0;
+//   }
 
   /* post the hit to the truth tree */
   // in other words: store the GENERATED track information
@@ -324,9 +326,10 @@ void hitForwardTOF (float xin[4], float xout[4],
       // combine the times of this weighted by the energy of the hit
       
       if (nhit < hits->mult) {         /* merge with former hit */
+		  hits->in[nhit].dE += dEnorth;
         hits->in[nhit].t = 
           (hits->in[nhit].t * hits->in[nhit].dE + tnorth * dEnorth) /
-          (hits->in[nhit].dE += dEnorth);
+          (hits->in[nhit].dE);
                 
         // now add MC tracking information 
         // first get MC pointer of this paddle
@@ -389,9 +392,10 @@ void hitForwardTOF (float xin[4], float xout[4],
       // combine the times of this weighted by the energy of the hit
       
       if (nhit < hits->mult) {         /* merge with former hit */
+		  hits->in[nhit].dE += dEsouth;
         hits->in[nhit].t = 
           (hits->in[nhit].t * hits->in[nhit].dE + tsouth * dEsouth) /
-          (hits->in[nhit].dE += dEsouth);
+          (hits->in[nhit].dE);
         extras = hits->in[nhit].ftofTruthExtras;
 
         // now add MC tracking information 
