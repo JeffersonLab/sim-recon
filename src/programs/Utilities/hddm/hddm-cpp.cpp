@@ -2042,8 +2042,8 @@ void CodeBuilder::writeClassimp(DOMElement* el)
       DOMElement *childEl = (DOMElement*)(*citer);
       XtString cnameS(childEl->getTagName());
       XtString repS(childEl->getAttribute(X("maxOccurs")));
-      int rep;
-      rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
+      // int rep;  commented out to avoid compiler warnings 4/26/2015 DL
+      // rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
       XtString hostS("m_host->");
       if (tagS == "HDDM")
       {
