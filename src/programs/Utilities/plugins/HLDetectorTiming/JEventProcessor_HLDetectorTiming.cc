@@ -334,13 +334,13 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                 Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Upstream Per Channel TDC-ADC Hit Time",
                         the_tdc_cell, thisTDCHit->t - thisADCHit->t,
                         "BCALHit Upstream Per Channel TDC-ADC Hit Time; cellID; t_{TDC} - t_{ADC} [ns] ",
-                        576, 0.5, 576.5, 350, -50, 300);
+                        576, 0.5, 576.5, 350, -150, 200);
             }
             else{
                 Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Downstream Per Channel TDC-ADC Hit Time",
                         the_tdc_cell, thisTDCHit->t - thisADCHit->t,
                         "BCALHit Downstream Per Channel TDC-ADC Hit Time; cellID; t_{TDC} - t_{ADC} [ns] ",
-                        576, 0.5, 576.5, 350, -50, 300);
+                        576, 0.5, 576.5, 350, -150, 200);
             }
         }
     }
