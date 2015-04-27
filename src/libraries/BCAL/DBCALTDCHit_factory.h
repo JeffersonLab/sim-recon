@@ -9,6 +9,7 @@
 #define _DBCALTDCHit_factory_
 
 #include <JANA/JFactory.h>
+#include "TTAB/DTTabUtilities.h"
 #include "DBCALTDCHit.h"
 
 // store up/down-stream values for each detector cell
