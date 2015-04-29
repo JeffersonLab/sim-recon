@@ -375,9 +375,9 @@ C..geant..
       call HDDSgeant3_wrapper
 *      if (runtime_geom .eq. 0) then
 *        call HDDSgeant3
-*		else
-*		  call HDDSgeant3_runtime
-*		endif
+*      else
+*        call HDDSgeant3_runtime
+*      endif
       call Goptimize
 
 C Check for FFREAD card specifying run number, initialize geant run number, use 
@@ -390,7 +390,7 @@ C for calibration database
       call initcalibdb(bfield_type, bfield_map, myrunno)
       call copytocplusplus(infile,outfile,postsmear,mcsmearopts
      +,deleteunsmeared)
-          call copygatetocplusplus(bggate(1), bggate(2))
+      call copygatetocplusplus(bggate(1), bggate(2))
 *
 *             Open the HBOOK file for output
 *

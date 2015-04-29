@@ -81,7 +81,7 @@ void hitTagger (float xin[4], float xout[4],
 	  unsigned int ndata = 1;
 	  if (GetCalib(dbname, &ndata, &rf_period)) {
 		 fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
-				 "failed to read RF period",
+				 "failed to read RF period ",
 				 "from calibdb, cannot continue.");
 		 exit (2);
 	  }

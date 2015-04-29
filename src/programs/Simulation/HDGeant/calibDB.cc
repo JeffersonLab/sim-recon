@@ -28,7 +28,18 @@ void init_runtime_xml(void);
 void md5geom_runtime(char *md5);
 extern "C" const char* GetMD5Geom(void);
 
-
+extern "C" {
+   int getcalib_(const char* namepath, unsigned int *Nvals, float* vals) {
+      int retval;
+      char name[999];
+      int n;
+      for (n=0; n < 999 && namepath[n] != ' '; ++n)
+         name[n] = namepath[n];
+      name[n] = 0;
+      retval = GetCalib(name, Nvals, vals);
+      return retval;
+   }
+};
 
 bool nofield=false;
 DMagneticFieldMap *Bmap=NULL;

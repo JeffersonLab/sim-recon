@@ -15,10 +15,31 @@
 
       real reference_time_plane_z
       parameter (reference_time_plane_z=65.0)
-      real beam_bucket_period_ns
-      parameter (beam_bucket_period_ns=2.0)
       real xnormal(2)
       real t0
+*
+* Read beam_bucket_period_ns from calibdb
+*
+      real beam_bucket_period_ns
+      common /beam_bucket_saver/beam_bucket_period_ns
+      data beam_bucket_period_ns/-1./
+      character*80 dbpath
+      integer ndata
+      integer GetCalib
+      external GetCalib
+      if (beam_bucket_period_ns .lt. 0) then
+        dbpath = "/PHOTON_BEAM/RF/rf_period::mc"
+        ndata = 1
+        if (GetCalib(dbpath, ndata, beam_bucket_period_ns) .ne. 0) then
+          write (6,*) "HDGeant error in settofg: ",
+     *                "failed to read RF period ",
+     *                "from calibdb, cannot continue."
+          stop
+        else
+          write (6,*) "settofg: beam_bucket_period_ns set to ", 
+     *                beam_bucket_period_ns
+        endif
+      endif
 
 c smear the time0 value by the trigger time sigma
       call GRANOR(xnormal(1),xnormal(2))

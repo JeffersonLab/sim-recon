@@ -199,8 +199,8 @@
 
         if (bgrate.gt.0) then
 *
-*        Superimpose background in the form of coherent bremsstrahlung
-*        beam photons sent down the photon beam line.  They are generated
+*       Superimpose background in the form of coherent bremsstrahlung
+*       beam photons sent down the photon beam line.  They are generated
 *       with a random time distribution over the duration of the gate
 *       to simulate the actual conditions of a bremsstrahlung beam.
 *
