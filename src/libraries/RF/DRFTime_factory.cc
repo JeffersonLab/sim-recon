@@ -31,7 +31,7 @@ jerror_t DRFTime_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
 	vector<double> locRFPeriodVector;
 	locEventLoop->GetCalib("PHOTON_BEAM/RF/rf_period", locRFPeriodVector);
 	dRFBunchPeriod = locRFPeriodVector[0];
-
+	
 	//Time Offsets
 	if(locEventLoop->GetCalib("/PHOTON_BEAM/RF/time_offset", locCCDBMap))
 		jout << "Error loading /PHOTON_BEAM/RF/time_offset !" << endl;
