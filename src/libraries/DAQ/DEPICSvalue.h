@@ -70,9 +70,9 @@ class DEPICSvalue:public jana::JObject{
 			timestr[timestr.length()-1] = 0;
 			AddString(items, "timestamp", "%d", timestamp);
 			AddString(items, "name", "%s", name.c_str());
-			AddString(items, "sval", "%s", sval.c_str());
+			AddString(items, "sval", "%s", sval.substr(0, 255).c_str());
 			AddString(items, "ival", "%d", ival);
-			AddString(items, "fval", "%f", fval);
+			AddString(items, "fval", "%f", (float)fval);
 			AddString(items, "t", "%s", timestr.c_str());
 		}
 };
