@@ -28,6 +28,8 @@ bool static DParticleID_hypothesis_cmp(const DTrackTimeBased *a,
 //---------------------------------
 DParticleID::DParticleID(JEventLoop *loop)
 {
+  dSCdphi=12.0*M_PI/180.;  // 12 degrees
+
 	C_EFFECTIVE = 15.0;
 	ATTEN_LENGTH = 150.0;
 	OUT_OF_TIME_CUT = 200.0;
@@ -61,6 +63,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 
   // Get start counter geometry;
   if (locGeometry->GetStartCounterGeom(sc_pos,sc_norm)){
+    dSCphi0=sc_pos[0][0].Phi();
     sc_leg_tcor = -sc_pos[0][0].z()/C_EFFECTIVE;
     double theta = sc_norm[0][sc_norm[0].size()-2].Theta();
     sc_angle_cor = 1./cos(M_PI_2 - theta);
@@ -1163,6 +1166,7 @@ bool DParticleID::Distance_ToTrack(const DSCHit* locSCHit, const DReferenceTraje
 
 	double phi = dSCphi0 + dSCdphi*(locSCHit->sector - 1);
 	locDeltaPhi = phi - proj_phi; //phi could be 0 degrees & proj_phi could be 359 degrees
+
 	while(locDeltaPhi > TMath::Pi())
 		locDeltaPhi -= M_TWO_PI;
 	while(locDeltaPhi < -1.0*TMath::Pi())
