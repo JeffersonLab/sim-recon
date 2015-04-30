@@ -81,7 +81,8 @@ class DParticleID:public jana::JObject{
 	bool MatchToSC(const DReferenceTrajectory* rt, const vector<const DSCHit*>& locSCHits, double& locStartTime, double& locTimeVariance, bool locIsTimeBased=false) const;
 
 	// Routines to predict which detector elements should fire given a track
-	unsigned int PredictSCSector(const DReferenceTrajectory* rt, const double dphi_cut) const;
+		//SC locProjBarrelRegion = true/false for barrel / (bend / nose) regions
+	unsigned int PredictSCSector(const DReferenceTrajectory* rt, const double dphi_cut, DVector3* locProjPos = NULL, bool* locProjBarrelRegion = NULL) const;
 	bool PredictTOFPaddles(const DReferenceTrajectory *rt,
 			       unsigned int &hbar,unsigned int &vbar,
 			       DVector3 *intersection=NULL) const;

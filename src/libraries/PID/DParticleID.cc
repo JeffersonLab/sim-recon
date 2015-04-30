@@ -980,8 +980,7 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 
 // Predict the start counter paddle that would match a track whose reference 
 // trajectory is given by rt.
-unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, 
-					  const double dphi_cut) const
+unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, const double dphi_cut, DVector3* locProjPos, bool* locProjBarrelRegion) const
 {
   if(sc_pos.empty() || sc_norm.empty())
     return 0;
@@ -1020,6 +1019,10 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt,
     if(myz <= sc_pos1){
       if (fabs(dphi)<min_dphi){
 	best_sc_index=sc_index;
+   if(locProjBarrelRegion != NULL)
+     *locProjBarrelRegion = true;
+   if(locProjPos != NULL)
+     *locProjPos = proj_pos;
 	min_dphi=fabs(dphi);
       }
     }
@@ -1054,10 +1057,15 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt,
 
       if (fabs(dphi)<min_dphi){
 	best_sc_index=sc_index;
+   if(locProjBarrelRegion != NULL)
+     *locProjBarrelRegion = false;
+   if(locProjPos != NULL)
+     *locProjPos = proj_pos;
 	min_dphi=fabs(dphi);
       }
     }
   }
+
   if (min_dphi<dphi_cut) return best_sc_index+1;
 
   return 0;

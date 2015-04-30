@@ -253,14 +253,21 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 
 		map<bool, TH2I*> dHistMap_SCPaddleVsTheta_HasHit;
 		map<bool, TH2I*> dHistMap_SCPaddleVsTheta_NoHit;
+		map<bool, TH1I*> dHistMap_SCPaddle_BarrelRegion_HasHit;
+		map<bool, TH1I*> dHistMap_SCPaddle_BarrelRegion_NoHit;
+		map<bool, TH1I*> dHistMap_SCPaddle_NoseRegion_HasHit; //includes bend
+		map<bool, TH1I*> dHistMap_SCPaddle_NoseRegion_NoHit; //includes bend
+
 		map<bool, TH2I*> dHistMap_TrackTOFYVsX_HasHit;
 		map<bool, TH2I*> dHistMap_TrackTOFYVsX_NoHit;
 		map<bool, TH2I*> dHistMap_TrackTOF2DPaddles_HasHit;
 		map<bool, TH2I*> dHistMap_TrackTOF2DPaddles_NoHit;
+
 		map<bool, TH2I*> dHistMap_TrackFCALYVsX_HasHit;
 		map<bool, TH2I*> dHistMap_TrackFCALYVsX_NoHit;
 		map<bool, TH2I*> dHistMap_TrackFCALRowVsColumn_HasHit;
 		map<bool, TH2I*> dHistMap_TrackFCALRowVsColumn_NoHit;
+
 		map<bool, TH2I*> dHistMap_TrackBCALModuleVsZ_HasHit;
 		map<bool, TH2I*> dHistMap_TrackBCALModuleVsZ_NoHit;
 		map<bool, TH2I*> dHistMap_TrackBCALPhiVsZ_HasHit;
@@ -292,16 +299,6 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		map<bool, TH2I*> dHistMap_TOFPointTrackDeltaYVsVerticalPaddle;
 		map<bool, TH1I*> dHistMap_TOFPointTrackDistance_BothPlanes;
 		map<bool, TH1I*> dHistMap_TOFPointTrackDistance_OnePlane;
-
-		//cut for single-paddle efficiencies
-		//1D: delta-x to vertical DTOFPaddle
-		//1D: delta-y to horizontal DTOFPaddle
-
-		//single-paddle efficiencies
-		//2D: delta-x match-to-vertical: projected-y-position vs projected vertical tof paddle
-		//2D: delta-x no-match-to-vertical: projected-y-position vs projected vertical tof paddle
-		//2D: delta-y match-to-horizontal: projected-x-position vs projected horizontal tof paddle
-		//2D: delta-y no-match-to-horizontal: projected-x-position vs projected horizontal tof paddle
 };
 
 class DHistogramAction_DetectorPID : public DAnalysisAction

@@ -687,7 +687,6 @@ void DHistogramAction_DetectorMatching::Initialize(JEventLoop* locEventLoop)
 
 	//When creating a reaction-independent action, only modify member variables within a ROOT lock. 
 		//Objects created within a plugin (such as reaction-independent actions) can be accessed by many threads simultaneously. 
-
 	string locHistName, locHistTitle;
 
 	bool locIsRESTEvent = (string(locEventLoop->GetJEvent().GetJEventSource()->className()) == string("DEventSourceREST"));
@@ -761,6 +760,22 @@ void DHistogramAction_DetectorMatching::Initialize(JEventLoop* locEventLoop)
 			locHistName = "SCPaddleVsTheta_NoHit";
 			locHistTitle = locTrackString + string(", Has Other Match, SC No Hit;#theta#circ;Projected SC Paddle");
 			dHistMap_SCPaddleVsTheta_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, 30, 0.5, 30.5);
+
+			locHistName = "SCPaddle_BarrelRegion_HasHit";
+			locHistTitle = locTrackString + string(", Has Other Match, SC Barrel Region Has Hit;#theta#circ;Projected SC Paddle");
+			dHistMap_SCPaddle_BarrelRegion_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, 30, 0.5, 30.5);
+
+			locHistName = "SCPaddle_BarrelRegion_NoHit";
+			locHistTitle = locTrackString + string(", Has Other Match, SC Barrel Region No Hit;#theta#circ;Projected SC Paddle");
+			dHistMap_SCPaddle_BarrelRegion_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, 30, 0.5, 30.5);
+
+			locHistName = "SCPaddle_NoseRegion_HasHit";
+			locHistTitle = locTrackString + string(", Has Other Match, SC Front Region Has Hit;#theta#circ;Projected SC Paddle");
+			dHistMap_SCPaddle_NoseRegion_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, 30, 0.5, 30.5);
+
+			locHistName = "SCPaddle_NoseRegion_NoHit";
+			locHistTitle = locTrackString + string(", Has Other Match, SC Front Region No Hit;#theta#circ;Projected SC Paddle");
+			dHistMap_SCPaddle_NoseRegion_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, 30, 0.5, 30.5);
 
 			locHistName = "SCTrackDeltaPhiVsP";
 			locHistTitle = locTrackString + string(";p (GeV/c);SC / Track #Delta#phi#circ");
@@ -995,7 +1010,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 				locBestTrackMap[locCandidateID] = locTrackWireBased;
 		}
 	}
-
+	
 	vector<const DBCALShower*> locBCALShowers;
 	locEventLoop->Get(locBCALShowers);
 
@@ -1070,7 +1085,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	}
 
 	//PROJECTED HIT POSITIONS
-	map<const DKinematicData*, int> dProjectedSCPaddleMap;
+	map<const DKinematicData*, pair<int, bool> > dProjectedSCPaddleMap; //pair: paddle, hit-barrel-flag (false if bend/nose)
 	map<const DKinematicData*, pair<int, int> > dProjectedTOF2DPaddlesMap; //pair: vertical, horizontal
 	map<const DKinematicData*, pair<float, float> > dProjectedTOFXYMap; //pair: x, y
 	map<const DKinematicData*, pair<int, int> > dProjectedFCALRowColumnMap; //pair: column, row
@@ -1089,9 +1104,11 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			break; //e.g. REST data: no trajectory
 
 		//SC
-		unsigned int locProjectedSCPaddle = locParticleID->PredictSCSector(locReferenceTrajectory, 999.9);
+		DVector3 locSCIntersection;
+		bool locProjBarrelFlag = false;
+		unsigned int locProjectedSCPaddle = locParticleID->PredictSCSector(locReferenceTrajectory, 999.9, &locSCIntersection, &locProjBarrelFlag);
 		if(locProjectedSCPaddle != 0)
-			dProjectedSCPaddleMap[locTrack] = locProjectedSCPaddle;
+			dProjectedSCPaddleMap[locTrack] = pair<int, bool>(locProjectedSCPaddle, locProjBarrelFlag);
 
 		//TOF
 		DVector3 locTOFIntersection;
@@ -1120,7 +1137,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			dProjectedBCALPhiZMap[locTrack] = pair<float, float>(locBCALIntersection.Z(), locBCALIntersection.Phi()*180.0/TMath::Pi());
 		}
 	}
-
+	
 	//Fill Histograms
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
@@ -1160,7 +1177,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			double locDistance = locTOFPaddleIterator->second.second;
 			dHistMap_TOFPaddleTrackDeltaX[locIsTimeBased]->Fill(locDistance);
 		}
-
+		
 		//TOF Point
 		map<const DKinematicData*, pair<const DTOFPoint*, pair<double, double> > >::iterator locTOFPointIterator = locTOFPointTrackDistanceMap.begin();
 		for(; locTOFPointIterator != locTOFPointTrackDistanceMap.end(); ++locTOFPointIterator)
@@ -1212,7 +1229,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			double locP = locTrack->momentum().Mag();
 
 			//BCAL
-			if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_FCAL) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_TOF) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_START))
+			if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_START))
 			{
 				if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_BCAL))
 				{
@@ -1241,7 +1258,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			}
 
 			//FCAL
-			if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_BCAL) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_TOF) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_START))
+			if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_TOF))
 			{
 				if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_FCAL))
 				{
@@ -1270,7 +1287,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			}
 
 			//TOF Paddle
-			if((dProjectedTOFXYMap.find(locTrack) != dProjectedTOFXYMap.end()) && (locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_BCAL) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_FCAL) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_START)))
+			if((dProjectedTOFXYMap.find(locTrack) != dProjectedTOFXYMap.end()) && locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_FCAL))
 			{
 				pair<float, float>& locPositionPair = dProjectedTOFXYMap[locTrack];
 				pair<int, int>& locPaddlePair = dProjectedTOF2DPaddlesMap[locTrack]; //vertical, horizontal
@@ -1301,7 +1318,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			}
 
 			//TOF Point
-			if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_BCAL) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_FCAL) || locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_START))
+			if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_FCAL))
 			{
 				if(locDetectorMatches->Get_IsMatchedToDetector(locTrack, SYS_TOF))
 				{
@@ -1337,18 +1354,28 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 					dHistMap_PVsTheta_HasHit[SYS_START][locIsTimeBased]->Fill(locTheta, locP);
 					dHistMap_PhiVsTheta_HasHit[SYS_START][locIsTimeBased]->Fill(locTheta, locPhi);
 					if(dProjectedSCPaddleMap.find(locTrack) != dProjectedSCPaddleMap.end())
-						dHistMap_SCPaddleVsTheta_HasHit[locIsTimeBased]->Fill(locTheta, dProjectedSCPaddleMap[locTrack]);
+					{
+						dHistMap_SCPaddleVsTheta_HasHit[locIsTimeBased]->Fill(locTheta, dProjectedSCPaddleMap[locTrack].first);
+						if(dProjectedSCPaddleMap[locTrack].second)
+							dHistMap_SCPaddle_BarrelRegion_HasHit[locIsTimeBased]->Fill(dProjectedSCPaddleMap[locTrack].first);
+						else
+							dHistMap_SCPaddle_NoseRegion_HasHit[locIsTimeBased]->Fill(dProjectedSCPaddleMap[locTrack].first);
+					}
 				}
 				else
 				{
 					dHistMap_PVsTheta_NoHit[SYS_START][locIsTimeBased]->Fill(locTheta, locP);
 					dHistMap_PhiVsTheta_NoHit[SYS_START][locIsTimeBased]->Fill(locTheta, locPhi);
 					if(dProjectedSCPaddleMap.find(locTrack) != dProjectedSCPaddleMap.end())
-						dHistMap_SCPaddleVsTheta_NoHit[locIsTimeBased]->Fill(locTheta, dProjectedSCPaddleMap[locTrack]);
+					{
+						if(dProjectedSCPaddleMap[locTrack].second)
+							dHistMap_SCPaddle_BarrelRegion_NoHit[locIsTimeBased]->Fill(dProjectedSCPaddleMap[locTrack].first);
+						else
+							dHistMap_SCPaddle_NoseRegion_NoHit[locIsTimeBased]->Fill(dProjectedSCPaddleMap[locTrack].first);
+					}
 				}
 			}
 		}
-
 		//Is-Matched to Something
 		for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 		{
