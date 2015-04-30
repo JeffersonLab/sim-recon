@@ -33,6 +33,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 	C_EFFECTIVE = 15.0;
 	ATTEN_LENGTH = 150.0;
 	OUT_OF_TIME_CUT = 200.0;
+    gPARMS->SetDefaultParameter("PID:OUT_OF_TIME_CUT",OUT_OF_TIME_CUT);
 
   DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
   if(!dapp){
