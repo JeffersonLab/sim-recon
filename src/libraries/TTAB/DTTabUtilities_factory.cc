@@ -14,9 +14,26 @@ jerror_t DTTabUtilities_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 	vector<const DF1TDCConfig*> locF1TDCConfigs;
 	locEventLoop->Get(locF1TDCConfigs);
 
+	// Delete old entries
+	map<uint32_t, const DF1TDCConfig*>::iterator iter;
+	for(iter=dF1TDCConfigMap.begin(); iter!=dF1TDCConfigMap.end(); iter++){
+		delete iter->second;
+	}
 	dF1TDCConfigMap.clear();
-	for(size_t loc_i = 0; loc_i < locF1TDCConfigs.size(); ++loc_i)
-		dF1TDCConfigMap[locF1TDCConfigs[loc_i]->rocid] = locF1TDCConfigs[loc_i];
+
+	// Create DF1TDCConfig objects from ones found in this event
+	// that we can keep around for subsequent events
+	for(size_t loc_i = 0; loc_i < locF1TDCConfigs.size(); ++loc_i){
+		const DF1TDCConfig *inconf = locF1TDCConfigs[loc_i];
+		DF1TDCConfig *conf = new DF1TDCConfig(inconf->rocid, inconf->slot_mask);
+		conf->REFCNT = inconf->REFCNT;
+		conf->TRIGWIN = inconf->TRIGWIN;
+		conf->TRIGLAT = inconf->TRIGLAT;
+		conf->HSDIV = inconf->HSDIV;
+		conf->BINSIZE = inconf->BINSIZE;
+		conf->REFCLKDIV = inconf->REFCLKDIV;
+		dF1TDCConfigMap[locF1TDCConfigs[loc_i]->rocid] = conf;
+	}
 
 	//Early Commissioning Data: Code & CCDB constants
 	//BCAL, RF: none
