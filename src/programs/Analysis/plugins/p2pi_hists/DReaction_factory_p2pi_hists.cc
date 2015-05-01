@@ -17,7 +17,7 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
 	DReactionStep* locReactionStep = NULL;
 	DReaction* locReaction = new DReaction("p2pi_pmiss"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 
-	double maxDeltaT = 4.;
+	double maxDeltaT = 2.;
 
 	// DOCUMENTATION:
 	// ANALYSIS library: https://halldweb1.jlab.org/wiki/index.php/GlueX_Analysis_Software
@@ -45,7 +45,7 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(maxDeltaT); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
+	//locReaction->Set_MaxPhotonRFDeltaT(maxDeltaT); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
 
 	/**************************************************** p2pi_pmiss Analysis Actions ****************************************************/
 
@@ -105,7 +105,7 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
 	/**************************************************** kshort2pi Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_VertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	locReaction->Set_MaxPhotonRFDeltaT(maxDeltaT); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
+	//locReaction->Set_MaxPhotonRFDeltaT(maxDeltaT); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
 
 	/**************************************************** kshort2pi Analysis Actions ****************************************************/
 
@@ -162,7 +162,7 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
 	/**************************************************** p2pi_preco Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	locReaction->Set_MaxPhotonRFDeltaT(maxDeltaT); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
+	//locReaction->Set_MaxPhotonRFDeltaT(maxDeltaT); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
 
 	/**************************************************** p2pi_preco Analysis Actions ****************************************************/
 

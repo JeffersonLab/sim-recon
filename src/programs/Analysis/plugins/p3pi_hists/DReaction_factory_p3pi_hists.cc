@@ -17,9 +17,9 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	DReactionStep* locReactionStep = NULL;
 	DReaction* locReaction = new DReaction("p3pi_pmiss_2FCAL"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 
-	double maxDeltaT = 4.;
-	double minPi0FCAL = 0.08;
-	double maxPi0FCAL = 0.20;
+	double maxDeltaT = 2.;
+	double minPi0FCAL = 0.11;
+	double maxPi0FCAL = 0.16;
 	double minPi0FCAL_BCAL = 0.10;
 	double maxPi0FCAL_BCAL = 0.17;
 
@@ -67,7 +67,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(maxDeltaT); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
+	//locReaction->Set_MaxPhotonRFDeltaT(maxDeltaT); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
 
 	/**************************************************** p3pi_pmiss_2FCAL Analysis Actions ****************************************************/
 
@@ -84,14 +84,14 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
         locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05));
 
         // Custom histograms for p3pi (no KinFit cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,100,0.,1., "NoKinFit_Measured"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "NoKinFit_Measured"));
         locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "NoKinFit_Measured"));
 
 	// Require KinFit converges
         locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0));
 
         // Custom histograms for p3pi (after KinFit convergence)
-        locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,100,0.,1., "KinFitConverge_Measured"));
+        locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "KinFitConverge_Measured"));
 	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "KinFitConverge_Measured"));
 
 	// Pi0 mass cut
@@ -127,7 +127,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	/**************************************************** p3pi_pmiss FCAL-BCAL Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	locReaction->Set_MaxPhotonRFDeltaT(maxDeltaT); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
+	//locReaction->Set_MaxPhotonRFDeltaT(maxDeltaT); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
 
 	/**************************************************** p3pi_pmiss FCAL-BCAL Analysis Actions ****************************************************/
 
@@ -144,14 +144,14 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
         locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05));
 
         // Custom histograms for p3pi (no KinFit cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,100,0.,1., "NoKinFit_Measured"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "NoKinFit_Measured"));
         locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "NoKinFit_Measured"));
 
 	// Require KinFit converges
         locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0));
 
         // Custom histograms for p3pi (after KinFit convergence)
-        locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,100,0.,1., "KinFitConverge_Measured"));
+        locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "KinFitConverge_Measured"));
 	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "KinFitConverge_Measured"));
 
 	// Pi0 mass cut
@@ -199,7 +199,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	/**************************************************** p3pi_preco_2FCAL Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	locReaction->Set_MaxPhotonRFDeltaT(maxDeltaT); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
+	//locReaction->Set_MaxPhotonRFDeltaT(maxDeltaT); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
 
 	/**************************************************** p3pi_preco_2FCAL Analysis Actions ****************************************************/
 
@@ -216,14 +216,14 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
         locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05));
 
         // Custom histograms for p3pi (no KinFit cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,100,0.,1., "NoKinFit_Measured"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "NoKinFit_Measured"));
         locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "NoKinFit_Measured"));
 
 	// Require KinFit converges
         locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0));
 
         // Custom histograms for p3pi (after KinFit convergence)
-        locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,100,0.,1., "KinFitConverge_Measured"));
+        locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "KinFitConverge_Measured"));
 	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "KinFitConverge_Measured"));
 
 	// Pi0 mass cut
@@ -259,7 +259,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	/**************************************************** p3pi_preco FCAL-BCAL Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	locReaction->Set_MaxPhotonRFDeltaT(maxDeltaT); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
+	//locReaction->Set_MaxPhotonRFDeltaT(maxDeltaT); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
 
 	/**************************************************** p3pi_preco FCAL-BCAL Analysis Actions ****************************************************/
 
@@ -276,14 +276,14 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
         locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05));
 
         // Custom histograms for p3pi (no KinFit cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,100,0.,1., "NoKinFit_Measured"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "NoKinFit_Measured"));
         locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "NoKinFit_Measured"));
 
 	// Require KinFit converges
         locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0));
 
         // Custom histograms for p3pi (after KinFit convergence)
-        locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,100,0.,1., "KinFitConverge_Measured"));
+        locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "KinFitConverge_Measured"));
 	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "KinFitConverge_Measured"));
 
 	// Pi0 mass cut

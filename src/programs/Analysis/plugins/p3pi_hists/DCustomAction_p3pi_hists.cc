@@ -18,7 +18,7 @@ void DCustomAction_p3pi_hists::Initialize(JEventLoop* locEventLoop)
 			//If another thread has already created the folder, it just changes to it. 
 		CreateAndChangeTo_ActionDirectory();
 
-		dEgamma = GetOrCreate_Histogram<TH1I>("Egamma", "TAGGER photon energy; E_{#gamma}", 400, 2., 12.);
+		dEgamma = GetOrCreate_Histogram<TH1I>("Egamma", "TAGGER photon energy; E_{#gamma}", 400, 0., 12.);
 		
 		if(dMissingPID == Proton)
 			dMM_M3pi = GetOrCreate_Histogram<TH2I>("MM_M3pi", "MM off #pi^{+}#pi^{-}#pi^{0} vs M_{#pi^{+}#pi^{-}#pi^{0}}; M_{#pi^{+}#pi^{-}#pi^{0}}; MM", 200, 0.0, 2.0, 200, 0., 4.);
@@ -36,9 +36,22 @@ bool DCustomAction_p3pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 {
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
 
-        // get beam photon energy
-        const DKinematicData* locBeamPhoton = locParticleComboStep->Get_InitialParticle(); 
+	// get beam photon energy and final state particles
+        const DKinematicData* locBeamPhoton = NULL;
+        deque<const DKinematicData*> locParticles;
+        if(!Get_UseKinFitResultsFlag()) { //measured
+		locBeamPhoton = locParticleComboStep->Get_InitialParticle_Measured();
+                locParticleComboStep->Get_FinalParticles_Measured(locParticles);
+	}
+	else {
+		locBeamPhoton = locParticleComboStep->Get_InitialParticle();
+		locParticleComboStep->Get_FinalParticles(locParticles);
+	}
         double locBeamPhotonEnergy = locBeamPhoton->energy();
+
+	// cut on tagger energy
+	if(locBeamPhotonEnergy < 2.5) 
+		return true;
 
 	// calculate missing mass
 	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag());
@@ -52,7 +65,7 @@ bool DCustomAction_p3pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 	if(dMissingPID != Proton) {
 		const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(1));
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
-		dEdx = locChargedTrackHypothesis->dEdx()*1e3;
+		dEdx = locChargedTrackHypothesis->dEdx()*1e6;
 		locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();	
 	}
 

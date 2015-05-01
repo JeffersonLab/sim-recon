@@ -21,8 +21,8 @@ void DCustomAction_p2pi_taggerCoincidence::Initialize(JEventLoop* locEventLoop)
 			//If another thread has already created the folder, it just changes to it. 
 		CreateAndChangeTo_ActionDirectory();
 
-		dMatch_E_DeltaT_All = GetOrCreate_Histogram<TH2I>("Match_E_DeltaT_All", "Match Charged Track - TAGGER: Energy vs #Delta t; #Delta t; Energy", 100, -50, 50, 200, 2., 12.);
-		dMatch_E_DeltaT_SC = GetOrCreate_Histogram<TH2I>("Match_E_DeltaT_SC", "Match SC - TAGGER: Energy vs #Delta t; #Delta t; Energy", 100, -50, 50, 200, 2., 12.);
+		dMatch_E_DeltaT_All = GetOrCreate_Histogram<TH2I>("Match_E_DeltaT_All", "Match Charged Track - TAGGER: Energy vs #Delta t; #Delta t; Energy", 100, -50, 50, 400, 0., 12.);
+		dMatch_E_DeltaT_SC = GetOrCreate_Histogram<TH2I>("Match_E_DeltaT_SC", "Match SC - TAGGER: Energy vs #Delta t; #Delta t; Energy", 100, -50, 50, 400, 0., 12.);
 
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!

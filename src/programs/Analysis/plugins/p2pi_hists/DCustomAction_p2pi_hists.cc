@@ -18,7 +18,7 @@ void DCustomAction_p2pi_hists::Initialize(JEventLoop* locEventLoop)
 			//If another thread has already created the folder, it just changes to it. 
 		CreateAndChangeTo_ActionDirectory();
 		
-		dEgamma = GetOrCreate_Histogram<TH1I>("Egamma", "TAGGER photon energy; E_{#gamma}", 400, 2., 12.);
+		dEgamma = GetOrCreate_Histogram<TH1I>("Egamma", "TAGGER photon energy; E_{#gamma}", 400, 0., 12.);
 		if(dMissingPID == Proton) {
 			dMM_M2pi = GetOrCreate_Histogram<TH2I>("MM_M2pi", "MM off #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; MM", 200, 0.0, 2.0, 200, 0., 4.);
 			dVertexDeltaZ_M2pi = GetOrCreate_Histogram<TH2I>("DeltaZ_M2pi", "Vertex #DeltaZ of #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; #pi^{+}#pi^{-} vertex #DeltaZ (cm)", 200, 0.0, 2.0, 200, -50, 50.);
@@ -39,16 +39,22 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 	// should only have one reaction step
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
 
-	// get beam photon energy
-        const DKinematicData* locBeamPhoton = locParticleComboStep->Get_InitialParticle();
-        double locBeamPhotonEnergy = locBeamPhoton->energy();
-
-	// get final state particles
-	deque<const DKinematicData*> locParticles;
-	if(!Get_UseKinFitResultsFlag()) //measured
-		locParticleComboStep->Get_FinalParticles_Measured(locParticles);
-	else
+	// get beam photon energy and final state particles
+        const DKinematicData* locBeamPhoton = NULL;
+        deque<const DKinematicData*> locParticles;
+        if(!Get_UseKinFitResultsFlag()) { //measured
+		locBeamPhoton = locParticleComboStep->Get_InitialParticle_Measured();
+                locParticleComboStep->Get_FinalParticles_Measured(locParticles);
+	}
+	else {
+		locBeamPhoton = locParticleComboStep->Get_InitialParticle();
 		locParticleComboStep->Get_FinalParticles(locParticles);
+	}
+        double locBeamPhotonEnergy = locBeamPhoton->energy();
+	
+	// cut on tagger energy
+	if(locBeamPhotonEnergy < 2.5) 
+		return true;
 
 	// calculate 2pi P4
 	DLorentzVector locP4_2pi = locParticles[0]->lorentzMomentum() + locParticles[1]->lorentzMomentum();
@@ -66,7 +72,7 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 	if(dMissingPID != Proton) {
 		const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(2));
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
-		dEdx = locChargedTrackHypothesis->dEdx()*1e3;
+		dEdx = locChargedTrackHypothesis->dEdx()*1e6;
 		locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();	
 	}
 
@@ -85,8 +91,10 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 			dMM2_M2pi->Fill(locP4_2pi.M(), locMissingP4.M2());
 			dDeltaE_M2pi->Fill(locP4_2pi.M(),locMissingP4.E());
 
-			dProton_dEdx_P->Fill(locProtonP4.Vect().Mag(), dEdx);
-			dProton_P_Theta->Fill(locProtonP4.Vect().Theta()*180/TMath::Pi(), locProtonP4.Vect().Mag());
+			if(fabs(locMissingP4.M2()) < 0.05){
+				dProton_dEdx_P->Fill(locProtonP4.Vect().Mag(), dEdx);
+				dProton_P_Theta->Fill(locProtonP4.Vect().Theta()*180/TMath::Pi(), locProtonP4.Vect().Mag());
+			}
 		}
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
