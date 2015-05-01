@@ -1,6 +1,6 @@
 // hnamepath: /p2pi_preco/Custom_p2pi_hists_NoKinFit_Measured/MM2_M2pi
-// hnamepath: /p2pi_preco/Custom_p2pi_hists_KinFitCut10_Measured/MM2_M2pi
-// hnamepath: /p2pi_preco/Custom_p2pi_hists_KinFitCut10_Measured/Egamma
+// hnamepath: /p2pi_preco/Custom_p2pi_hists_KinFitConverge_Measured/MM2_M2pi
+// hnamepath: /p2pi_preco/Custom_p2pi_hists_KinFitConverge_Measured/Egamma
 
 {
 	TDirectory *locTopDirectory = gDirectory;
@@ -17,13 +17,14 @@
 	locDirectory->cd();
 	TH2I* locHist_NoKinFit_MM2_M2pi = (TH2I*)gDirectory->Get("MM2_M2pi");
 
-	//Go to KinFitCut10 directory
-	TDirectory *locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p2pi_hists_KinFitCut10_Measured");
+	//Go to KinFitConverge directory
+	TDirectory *locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p2pi_hists_KinFitConverge_Measured");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
-	TH2I* locHist_KinFitCut10_MM2_M2pi = (TH2I*)gDirectory->Get("MM2_M2pi");
-	TH1I* locHist_KinFitCut10_Egamma = (TH1I*)gDirectory->Get("Egamma");
+	TH2I* locHist_KinFitConverge_MM2_M2pi = (TH2I*)gDirectory->Get("MM2_M2pi");
+	TH1I* locHist_KinFitConverge_M2pi = (TH1I*)locHist_KinFitConverge_MM2_M2pi->ProjectionX("temp",96,105)->Clone();
+	TH1I* locHist_KinFitConverge_Egamma = (TH1I*)gDirectory->Get("Egamma");
 
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
@@ -49,40 +50,39 @@
 	locCanvas->cd(2);
 	gPad->SetTicks();
 	gPad->SetGrid();
-	if(locHist_KinFitCut10_MM2_M2pi != NULL) {
-		locHist_KinFitCut10_MM2_M2pi->Rebin2D();
-		locHist_KinFitCut10_MM2_M2pi->SetTitle("MM^{2} off #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}: KinFit CL > 0.1");
-		locHist_KinFitCut10_MM2_M2pi->GetXaxis()->SetTitleSize(0.05);
-		locHist_KinFitCut10_MM2_M2pi->GetYaxis()->SetTitleSize(0.05);
-		locHist_KinFitCut10_MM2_M2pi->GetXaxis()->SetLabelSize(0.05);
-		locHist_KinFitCut10_MM2_M2pi->GetYaxis()->SetLabelSize(0.05);
-		locHist_KinFitCut10_MM2_M2pi->Draw("colz");
+	if(locHist_KinFitConverge_MM2_M2pi != NULL) {
+		locHist_KinFitConverge_MM2_M2pi->Rebin2D();
+		locHist_KinFitConverge_MM2_M2pi->SetTitle("MM^{2} off p#pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}: KinFit Converge");
+		locHist_KinFitConverge_MM2_M2pi->GetXaxis()->SetTitleSize(0.05);
+		locHist_KinFitConverge_MM2_M2pi->GetYaxis()->SetTitleSize(0.05);
+		locHist_KinFitConverge_MM2_M2pi->GetXaxis()->SetLabelSize(0.05);
+		locHist_KinFitConverge_MM2_M2pi->GetYaxis()->SetLabelSize(0.05);
+		locHist_KinFitConverge_MM2_M2pi->Draw("colz");
 	}
 
 	locCanvas->cd(3);
 	gPad->SetTicks();
 	gPad->SetGrid();
-	if(locHist_KinFitCut10_MM2_M2pi != NULL) {
+	if(locHist_KinFitConverge_M2pi != NULL) {
 		
-		TH1I* locHist_KinFitCut10_M2pi = (TH1I*)locHist_KinFitCut10_MM2_M2pi->ProjectionX()->Clone();
-		locHist_KinFitCut10_MM2_M2pi->SetTitle("M_{#pi^{+}#pi^{-}}: KinFit CL > 0.1");
-		locHist_KinFitCut10_M2pi->GetXaxis()->SetTitleSize(0.05);
-		locHist_KinFitCut10_M2pi->GetXaxis()->SetLabelSize(0.05);
-		locHist_KinFitCut10_M2pi->GetYaxis()->SetTitleSize(0.05);
-                locHist_KinFitCut10_M2pi->GetYaxis()->SetLabelSize(0.05);
-		locHist_KinFitCut10_M2pi->Draw();
+		locHist_KinFitConverge_MM2_M2pi->SetTitle("M_{#pi^{+}#pi^{-}}: KinFit Converge |MM^2| < 0.05");
+		locHist_KinFitConverge_M2pi->GetXaxis()->SetTitleSize(0.05);
+		locHist_KinFitConverge_M2pi->GetXaxis()->SetLabelSize(0.05);
+		locHist_KinFitConverge_M2pi->GetYaxis()->SetTitleSize(0.05);
+                locHist_KinFitConverge_M2pi->GetYaxis()->SetLabelSize(0.05);
+		locHist_KinFitConverge_M2pi->Draw();
 	}
 
 	locCanvas->cd(4);
 	gPad->SetTicks();
 	gPad->SetGrid();
-	if(locHist_KinFitCut10_Egamma != NULL) {
+	if(locHist_KinFitConverge_Egamma != NULL) {
 		
-		locHist_KinFitCut10_Egamma->GetXaxis()->SetTitleSize(0.05);
-		locHist_KinFitCut10_Egamma->GetXaxis()->SetLabelSize(0.05);
-		locHist_KinFitCut10_Egamma->GetYaxis()->SetTitleSize(0.05);
-                locHist_KinFitCut10_Egamma->GetYaxis()->SetLabelSize(0.05);
-		locHist_KinFitCut10_Egamma->Draw();
+		locHist_KinFitConverge_Egamma->GetXaxis()->SetTitleSize(0.05);
+		locHist_KinFitConverge_Egamma->GetXaxis()->SetLabelSize(0.05);
+		locHist_KinFitConverge_Egamma->GetYaxis()->SetTitleSize(0.05);
+                locHist_KinFitConverge_Egamma->GetYaxis()->SetLabelSize(0.05);
+		locHist_KinFitConverge_Egamma->Draw();
 	}
 
 }
