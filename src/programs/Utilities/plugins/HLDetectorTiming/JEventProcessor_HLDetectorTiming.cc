@@ -74,6 +74,22 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
     // Would like the code with no arguments to simply verify the current status of the calibration
     if (DO_ROUGH_TIMING > 0 || DO_CDC_TIMING > 0 || DO_TDC_ADC_ALIGN > 0 || DO_TRACK_BASED > 0) DO_VERIFY = 0;
 
+    // Increase range for initial search
+    if(DO_TDC_ADC_ALIGN){
+        NBINS_TDIFF = 1400; MIN_TDIFF = -150.0; MAX_TDIFF = 550.0;
+    }
+    else{
+        NBINS_TDIFF = 50; MIN_TDIFF = -10.0; MAX_TDIFF = 10.0;
+    }
+
+    if (DO_TRACK_BASED){
+        NBINS_TAGGER_TIME = 1600; MIN_TAGGER_TIME = 0; MAX_TAGGER_TIME = 400;
+        NBINS_MATCHING = 500; MIN_MATCHING_T = -100; MAX_MATCHING_T = 400;
+    }
+    else{
+        NBINS_TAGGER_TIME = 100; MIN_TAGGER_TIME = -50; MAX_TAGGER_TIME = 50;
+        NBINS_MATCHING = 100; MIN_MATCHING_T = -25; MAX_MATCHING_T = 25;
+    }
     return NOERROR;
 }
 
@@ -334,13 +350,13 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                 Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Upstream Per Channel TDC-ADC Hit Time",
                         the_tdc_cell, thisTDCHit->t - thisADCHit->t,
                         "BCALHit Upstream Per Channel TDC-ADC Hit Time; cellID; t_{TDC} - t_{ADC} [ns] ",
-                        576, 0.5, 576.5, 350, -150, 200);
+                        576, 0.5, 576.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
             }
             else{
                 Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Downstream Per Channel TDC-ADC Hit Time",
                         the_tdc_cell, thisTDCHit->t - thisADCHit->t,
                         "BCALHit Downstream Per Channel TDC-ADC Hit Time; cellID; t_{TDC} - t_{ADC} [ns] ",
-                        576, 0.5, 576.5, 350, -150, 200);
+                        576, 0.5, 576.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
             }
         }
     }
@@ -403,8 +419,8 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             int nSCCounters = 30;
             Fill2DHistogram("HLDetectorTiming", "SC", "SCHit TDC_ADC Difference",
                     scHitVector[i]->sector, scHitVector[i]->t_TDC - scHitVector[i]->t_fADC,
-                    "SC #Deltat TDC-ADC; Sector ;t_{TDC} - t_{ADC} [ns]", nSCCounters, 0.5, nSCCounters + 0.5, 100, -10, 10);
-            if (DO_TDC_ADC_ALIGN){
+                    "SC #Deltat TDC-ADC; Sector ;t_{TDC} - t_{ADC} [ns]", nSCCounters, 0.5, nSCCounters + 0.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
+            if (DO_TRACK_BASED){
                 char name [200];
                 char title[500];
                 sprintf(name, "Sector %.2i", scHitVector[i]->sector);
@@ -445,13 +461,13 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             // We want to look at the timewalk within these ADC/TDC detectors
             Fill2DHistogram("HLDetectorTiming", "TAGM", "TAGMHit TDC_ADC Difference",
                     tagmHitVector[i]->column, tagmHitVector[i]->time_tdc - tagmHitVector[i]->time_fadc,
-                    "TAGM #Deltat TDC-ADC; Column ;t_{TDC} - t_{ADC} [ns]", nTAGMCounters, 0.5, nTAGMCounters + 0.5, 100, -10, 10);
+                    "TAGM #Deltat TDC-ADC; Column ;t_{TDC} - t_{ADC} [ns]", nTAGMCounters, 0.5, nTAGMCounters + 0.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
             if (DO_OPTIONAL){
                 Fill2DHistogram("HLDetectorTiming", "TAGM", "TAGM Per Channel TDC Time",
                         tagmHitVector[i]->column, tagmHitVector[i]->time_tdc,
                         "TAGM Per Channel TDC time; Column ;t_{TDC} [ns]", nTAGMCounters, 0.5, nTAGMCounters + 0.5, 100, -50, 50);
             }
-            if (DO_TDC_ADC_ALIGN){
+            if (DO_TRACK_BASED){
                 // TString::Form() is not thread safe! (I learned this the hard way)
                 // Do it the old fashioned way
                 char name [200];
@@ -488,14 +504,14 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             // We want to look at the timewalk within these ADC/TDC detectors
             Fill2DHistogram("HLDetectorTiming", "TAGH", "TAGHHit TDC_ADC Difference",
                     taghHitVector[i]->counter_id, taghHitVector[i]->time_tdc - taghHitVector[i]->time_fadc,
-                    "TAGH #Deltat TDC-ADC; Counter ID ;t_{TDC} - t_{ADC} [ns]", nTAGHCounters, 0.5, nTAGHCounters + 0.5, 100, -10, 10);
+                    "TAGH #Deltat TDC-ADC; Counter ID ;t_{TDC} - t_{ADC} [ns]", nTAGHCounters, 0.5, nTAGHCounters + 0.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
             if (DO_OPTIONAL){
                 Fill2DHistogram("HLDetectorTiming", "TAGH", "TAGM Per Channel TDC Time",
                         taghHitVector[i]->counter_id, taghHitVector[i]->time_tdc,
                         "TAGH Per Channel TDC Time; Counter ID ;t_{TDC} [ns]", nTAGHCounters, 0.5, nTAGHCounters + 0.5, 100, -50, 50);
             }
 
-            if (DO_TDC_ADC_ALIGN){
+            if (DO_TRACK_BASED){
                 char name [200];
                 char title[500];
                 sprintf(name, "Counter ID %.3i", taghHitVector[i]->counter_id);
@@ -528,14 +544,14 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             int nTOFCounters = 176;
             Fill2DHistogram("HLDetectorTiming", "TOF", "TOFHit TDC_ADC Difference",
                     GetCCDBIndexTOF(tofHitVector[i]), tofHitVector[i]->t_TDC - tofHitVector[i]->t_fADC,
-                    "TOF #Deltat TDC-ADC; CDCB Index ;t_{TDC} - t_{ADC} [ns]", nTOFCounters, 0.5, nTOFCounters + 0.5, 100, -10, 10);
+                    "TOF #Deltat TDC-ADC; CDCB Index ;t_{TDC} - t_{ADC} [ns]", nTOFCounters, 0.5, nTOFCounters + 0.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
             if (DO_OPTIONAL){
                 Fill2DHistogram("HLDetectorTiming", "TOF", "TOFHit Per Channel TDC Time",
                         GetCCDBIndexTOF(tofHitVector[i]), tofHitVector[i]->t_TDC,
                         "TOF Per Channel TDC Time; CDCB Index ;t_{TDC} [ns]", nTOFCounters, 0.5, nTOFCounters + 0.5, 100, -50, 50);
             }
 
-            if (DO_TDC_ADC_ALIGN){
+            if (DO_TRACK_BASED){
                 // TString->Form(...) is not thread safe, trying sprintf
                 char name [200];
                 char title[500];
@@ -633,7 +649,6 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
 
         // We want to plot the delta t at the target between the SC hit and the tagger hits
         float nBinsE = 160, EMin = 2.0, EMax = 10;
-        float nBinsdT = 100, dTMin = -50.0, dTMax = 50.0;
 
         // These "flightTime" corrected time are essentially that detector's estimate of the target time
         float flightTimeCorrectedSCTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime; 
@@ -658,11 +673,11 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             // We want to look at the timewalk within these ADC/TDC detectors
             Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGM - SC Target Time",
                     tagmHitVector[j]->column, tagmHitVector[j]->t - flightTimeCorrectedSCTime,
-                    "#Deltat TAGM-SC; Column ;t_{TAGM} - t_{SC @ target} [ns]", nTAGMColumns, 0.5, nTAGMColumns + 0.5, 100, -50, 50);
+                    "#Deltat TAGM-SC; Column ;t_{TAGM} - t_{SC @ target} [ns]", nTAGMColumns, 0.5, nTAGMColumns + 0.5, NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME);
             Fill2DHistogram("HLDetectorTiming", "TRACKING", "Tagger - SC Target Time",
                     tagmHitVector[j]->t - flightTimeCorrectedSCTime, tagmHitVector[j]->E,
                     "Tagger - SC Target Time; #Deltat_{Tagger - SC} [ns]; Energy [GeV]",
-                    nBinsdT, dTMin, dTMax, nBinsE, EMin, EMax);   
+                    NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME, nBinsE, EMin, EMax);   
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - SC 1D Target Time",
                     tagmHitVector[j]->t - flightTimeCorrectedSCTime,
                     "Tagger - SC Time at Target; #Deltat_{Tagger - SC} [ns]; Entries",
@@ -674,12 +689,12 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             // We want to look at the timewalk within these ADC/TDC detectors
             Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGH - SC Target Time",
                     taghHitVector[j]->counter_id, taghHitVector[j]->t - flightTimeCorrectedSCTime,
-                    "#Deltat TAGH-SC; Counter ID ;t_{TAGH} - t_{SC @ target} [ns]", nTAGHCounters, 0.5, nTAGHCounters + 0.5, 100, -50, 50);
+                    "#Deltat TAGH-SC; Counter ID ;t_{TAGH} - t_{SC @ target} [ns]", nTAGHCounters, 0.5, nTAGHCounters + 0.5, NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME);
 
             Fill2DHistogram("HLDetectorTiming", "TRACKING", "Tagger - SC Target Time",
                     taghHitVector[j]->t - flightTimeCorrectedSCTime, taghHitVector[j]->E,
                     "Tagger - SC Target Time; #Deltat_{Tagger - SC} [ns]; Energy [GeV]",
-                    nBinsdT, dTMin, dTMax, nBinsE, EMin, EMax);
+                    NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME, nBinsE, EMin, EMax);
 
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - SC 1D Target Time",
                     taghHitVector[j]->t - flightTimeCorrectedSCTime,
@@ -695,14 +710,14 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "TOF - SC Target Time",
                     flightTimeCorrectedTOFTime - flightTimeCorrectedSCTime,
                     "t_{TOF} - t_{SC} at Target; t_{TOF} - t_{SC} at Target [ns]; Entries",
-                    200, -100, 100);
+                    NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
         }
         if (foundBCAL){
             float flightTimeCorrectedBCALTime = locBCALShowerMatchParams.dBCALShower->t - locBCALShowerMatchParams.dFlightTime;
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - SC Target Time",
                     flightTimeCorrectedBCALTime - flightTimeCorrectedSCTime,
                     "t_{BCAL} - t_{SC} at Target; t_{BCAL} - t_{SC} [ns]; Entries",
-                    600, -300, 300);
+                    NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
             // Add histogram suggested by Mark Dalton
             Fill2DHistogram("HLDetectorTiming", "TRACKING", "BCAL - SC Target Time Vs Correction",
                     locBCALShowerMatchParams.dFlightTime, flightTimeCorrectedBCALTime - flightTimeCorrectedSCTime,
@@ -714,7 +729,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - SC Target Time",
                     flightTimeCorrectedFCALTime - flightTimeCorrectedSCTime,
                     "t_{FCAL} - t_{SC} at Target; t_{FCAL} - t_{SC} [ns]; Entries",
-                    600, -300, 300);
+                    NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
         }
 
 
