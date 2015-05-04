@@ -253,7 +253,7 @@ inline static char* ParticleType(Particle_t p)
   case DeltaPlusPlus:
     return (char*)"Delta++";
   case Jpsi:
-    return (char*)"J/psi";
+    return (char*)"Jpsi";
   case Eta_c:
     return (char*)"EtaC";
   case Chi_c0:
@@ -395,7 +395,7 @@ inline static Particle_t ParticleEnum(const char* locParticleName)
     return Pb208;
   else if(strcmp(locParticleName, "Delta++") == 0)
     return DeltaPlusPlus;
-  else if(strcmp(locParticleName, "J/psi") == 0)
+  else if(strcmp(locParticleName, "Jpsi") == 0)
     return Jpsi;
   else if(strcmp(locParticleName, "EtaC") == 0)
     return Eta_c;
