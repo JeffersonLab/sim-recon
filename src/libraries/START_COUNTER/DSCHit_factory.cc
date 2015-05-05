@@ -300,15 +300,31 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	hit->t_TDC=T;
 	//jout << "t_tDC = " << hit->t_TDC << endl;
 
+	// Grab the pulse pedestal object
+        const Df250PulsePedestal* PPobj = NULL;
+        digihit->GetSingle(PPobj);
+        if (PPobj != NULL)
+	  {
+            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+	  }
+
 	if (hit->dE > 0.0)
 	  {
-		// Correct for time walk
-		// The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
-		double A  = hit->dE;
-		double C1 = timewalk_parameters[id][1];
-		double C2 = timewalk_parameters[id][2];
-		double A0 = timewalk_parameters[id][3];
-		T -= C1*(pow(A,C2) - pow(A0,C2));
+	    // Correct for time walk
+	    // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
+	    // double A  = hit->dE;
+	    // double C1 = timewalk_parameters[id][1];
+	    // double C2 = timewalk_parameters[id][2];
+	    // double A0 = timewalk_parameters[id][3];
+	    // T -= C1*(pow(A,C2) - pow(A0,C2));
+
+	    // Correct for timewalk using pulse peak 
+	    double A        = PPobj->pulse_peak;
+	    double C1       = timewalk_parameters[id][0];
+	    double C2       = timewalk_parameters[id][1];
+	    double A_THRESH = timewalk_parameters[id][2];
+	    double A0       = timewalk_parameters[id][3];
+	    T -= C1*(pow(A/A_THRESH, C2) - pow(A0/A_THRESH, C2));
 	  }
 	hit->t=T;
 	//jout << " T cut TW Corr = " << T << endl;
