@@ -61,13 +61,14 @@ double DTTabUtilities::Convert_DigiTimeToNs_F1TDC_GlobalSystemClock_ConfigInfo(c
 
     //GlueX DOC 747
     //48-channel-readout = F1TDCV3 (FDC) = low-resolution readout (115 ps vs 57 ps) //fewer (factor 2) TDC-ticks per ns
-	bool locIsLowResolutionReadout = (locF1TDCHit->modtype == DModuleType::F1TDC48);
+	bool locIsHighResolutionReadout = (locF1TDCHit->modtype != DModuleType::F1TDC48);
 
 	//Calculate TDC -> ns Scale Factor
 	//32.0 is TREF and should be extracted from the data-stream but it's not available
 	double locTDCToNsScaleFactor = (32.0/152.0) * double(locF1TDCConfig->REFCLKDIV) / (double(locF1TDCConfig->HSDIV)); // 32 ns / #-tdc-ticks-in-32ns
-	if(locIsLowResolutionReadout) //should use HIGHRES bit from the data-stream, but it's not available
-		locTDCToNsScaleFactor *= 2.0; //fewer TDC-ticks per ns
+	//(32.0/152.0) * double(128) / (232)
+	if(locIsHighResolutionReadout) //should use HIGHRES bit from the data-stream, but it's not available
+		locTDCToNsScaleFactor /= 2.0; //more TDC-ticks per ns
 
 	//Calculate rollover window size for the F1TDCs
 	uint64_t locRolloverTimeWindowLength = (uint64_t(32))*(uint64_t(locF1TDCConfig->REFCNT + 2));
@@ -131,7 +132,7 @@ double DTTabUtilities::Convert_DigiTimeToNs_F1TDC_TriggerReferenceSignal(const D
 double DTTabUtilities::Calc_TDCToNsScaleFactor_CCDB(bool locIsLowResolutionReadout) const
 {
 	double locTDCToNsScaleFactor = double(dRolloverTimeWindowLength)/double(dNumTDCTicksInRolloverTimeWindow);
-	if(locIsLowResolutionReadout) //should use HIGHRES bit from the data-stream, but it's not available
+	if(locIsLowResolutionReadout)
 		locTDCToNsScaleFactor *= 2.0; //fewer TDC-ticks per ns
 	return locTDCToNsScaleFactor;
 }

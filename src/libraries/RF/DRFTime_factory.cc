@@ -169,9 +169,14 @@ void DRFTime_factory::Extract_DetectorSystemAndType(string locKeyName, DetectorS
 
 double DRFTime_factory::Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo) const
 {
+	return Step_TimeToNearInputTime(locTimeToStep, locTimeToStepTo, dRFBunchPeriod);
+}
+
+double DRFTime_factory::Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo, double locRFPeriod) const
+{
 	double locDeltaT = locTimeToStepTo - locTimeToStep;
-	int locNumRFBucketsToShift = (locDeltaT > 0.0) ? int(locDeltaT/dRFBunchPeriod + 0.5) : int(locDeltaT/dRFBunchPeriod - 0.5);
-	return (locTimeToStep + dRFBunchPeriod*double(locNumRFBucketsToShift));
+	int locNumRFBucketsToShift = (locDeltaT > 0.0) ? int(locDeltaT/locRFPeriod + 0.5) : int(locDeltaT/locRFPeriod - 0.5);
+	return (locTimeToStep + locRFPeriod*double(locNumRFBucketsToShift));
 }
 
 double DRFTime_factory::Convert_TDCToTime(const DRFTDCDigiTime* locRFTDCDigiTime, const DTTabUtilities* locTTabUtilities) const

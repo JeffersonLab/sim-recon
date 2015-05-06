@@ -29,6 +29,7 @@ class DRFTime_factory : public jana::JFactory<DRFTime>
 
 		void Extract_DetectorSystemAndType(string locKeyName, DetectorSystem_t& locSystem, bool& locIsTDCFlag) const;
 		double Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo) const;
+		double Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo, double locRFPeriod) const;
 
 		double Convert_TDCToTime(const DRFTDCDigiTime* locRFTDCDigiTime, const DTTabUtilities* locTTabUtilities) const;
 		double Convert_ADCToTime(const DRFDigiTime* locRFDigiTime) const;
