@@ -36,22 +36,22 @@ double DTTabUtilities::Convert_DigiTimeToNs_F1TDC(const DF1TDCHit* locF1TDCHit) 
 {
     uint32_t locROCID = locF1TDCHit->rocid;
 
-    // Get iterators for the DCODAROCInfo and DF1TDCConfig for this ROC
-    map<uint32_t, const DCODAROCInfo*>::const_iterator locROCInfoIterator = dCODAROCInfoMap.find(locROCID);
-    map<uint32_t, const DF1TDCConfig*>::const_iterator locF1TDCConfigIterator = dF1TDCConfigMap.find(locROCID);
+    // Get DF1TDCConfig for this ROC
+    vector<const DF1TDCConfig*> locF1TDCConfigs;
+    locF1TDCHit->Get(locF1TDCConfigs);
 
-    // Get DCODAROCInfo and DF1TDCConfig for this ROC
-    const DF1TDCConfig* locF1TDCConfig = (locF1TDCConfigIterator != dF1TDCConfigMap.end()) ? locF1TDCConfigIterator->second : NULL;
+    // Get DCODAROCInfo for this ROC
+    map<uint32_t, const DCODAROCInfo*>::const_iterator locROCInfoIterator = dCODAROCInfoMap.find(locROCID);
     const DCODAROCInfo* locCODAROCInfo = (locROCInfoIterator != dCODAROCInfoMap.end()) ? locROCInfoIterator->second : NULL;
 
     if(locCODAROCInfo == NULL) //e.g. MC
     	return Convert_DigiTimeToNs_F1TDC_TriggerReferenceSignal(locF1TDCHit);
 
-    if((locF1TDCConfig == NULL) || dIsFallCommissioningDataFlag) //e.g. Early Fall 2014 Commissioning Data (use CCDB constants)
+    if(locF1TDCConfigs.empty() || dHasBadOrNoF1TDCConfigInfoFlag) //e.g. Early Fall 2014 Commissioning Data (use CCDB constants)
     	return Convert_DigiTimeToNs_F1TDC_GlobalSystemClock_CCDB(locF1TDCHit, locCODAROCInfo);
 
     // Have all objects needed, call the main function
-	return Convert_DigiTimeToNs_F1TDC_GlobalSystemClock_ConfigInfo(locF1TDCHit, locCODAROCInfo, locF1TDCConfig);
+	return Convert_DigiTimeToNs_F1TDC_GlobalSystemClock_ConfigInfo(locF1TDCHit, locCODAROCInfo, locF1TDCConfigs[0]);
 }
 
 double DTTabUtilities::Convert_DigiTimeToNs_F1TDC_GlobalSystemClock_ConfigInfo(const DF1TDCHit* locF1TDCHit, const DCODAROCInfo* locCODAROCInfo, const DF1TDCConfig* locF1TDCConfig) const

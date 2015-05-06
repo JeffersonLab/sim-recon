@@ -23,9 +23,6 @@ class DTTabUtilities_factory : public jana::JFactory<DTTabUtilities>
 		jerror_t brun(jana::JEventLoop *loop, int runnumber);
 		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);
 
-		//F1TDCs: New system
-		map<uint32_t, const DF1TDCConfig*> dF1TDCConfigMap; //key is rocid
-
 		//F1TDCs: Old System ONLY //Early Fall 2014 Commissioning data ONLY
 		uint64_t dRolloverTimeWindowLength; //"T" or "T_{frame}"
 		uint64_t dNumTDCTicksInRolloverTimeWindow; //"N" or "N_{frame}"

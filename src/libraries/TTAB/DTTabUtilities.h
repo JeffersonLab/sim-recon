@@ -39,9 +39,8 @@ class DTTabUtilities : public jana::JObject
 		double Convert_DigiTimeToNs_CAEN1290TDC(const DCAEN1290TDCHit* locCAEN1290TDCHit) const;
 
 		//F1TDCs: New System
-		bool dIsFallCommissioningDataFlag;
+		bool dHasBadOrNoF1TDCConfigInfoFlag;
 		map<uint32_t, const DCODAROCInfo*> dCODAROCInfoMap; //key is rocid
-		map<uint32_t, const DF1TDCConfig*> dF1TDCConfigMap; //key is rocid
 
 		//F1TDCs: Old System ONLY //Early Fall 2014 Commissioning data ONLY
 		uint64_t dTriggerReferenceSignal;

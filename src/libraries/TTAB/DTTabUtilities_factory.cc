@@ -9,32 +9,6 @@
 
 jerror_t DTTabUtilities_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
 {
-	// Get DF1TDCConfig's, put into map (will use to convert F1TDC digi time to ns)
-		// Should be constant for a given run
-	vector<const DF1TDCConfig*> locF1TDCConfigs;
-	locEventLoop->Get(locF1TDCConfigs);
-
-	// Delete old entries
-	map<uint32_t, const DF1TDCConfig*>::iterator iter;
-	for(iter=dF1TDCConfigMap.begin(); iter!=dF1TDCConfigMap.end(); iter++){
-		delete iter->second;
-	}
-	dF1TDCConfigMap.clear();
-
-	// Create DF1TDCConfig objects from ones found in this event
-	// that we can keep around for subsequent events
-	for(size_t loc_i = 0; loc_i < locF1TDCConfigs.size(); ++loc_i){
-		const DF1TDCConfig *inconf = locF1TDCConfigs[loc_i];
-		DF1TDCConfig *conf = new DF1TDCConfig(inconf->rocid, inconf->slot_mask);
-		conf->REFCNT = inconf->REFCNT;
-		conf->TRIGWIN = inconf->TRIGWIN;
-		conf->TRIGLAT = inconf->TRIGLAT;
-		conf->HSDIV = inconf->HSDIV;
-		conf->BINSIZE = inconf->BINSIZE;
-		conf->REFCLKDIV = inconf->REFCLKDIV;
-		dF1TDCConfigMap[locF1TDCConfigs[loc_i]->rocid] = conf;
-	}
-
 	//Early Commissioning Data: Code & CCDB constants
 	//BCAL, RF: none
 	//SC, TAGH, TAGM: Uses F1TDC rollover
@@ -70,10 +44,9 @@ jerror_t DTTabUtilities_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 jerror_t DTTabUtilities_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
 	DTTabUtilities* locTTabUtilities = new DTTabUtilities();
-	locTTabUtilities->dF1TDCConfigMap = dF1TDCConfigMap;
 	locTTabUtilities->dRolloverTimeWindowLength = dRolloverTimeWindowLength;
 	locTTabUtilities->dNumTDCTicksInRolloverTimeWindow = dNumTDCTicksInRolloverTimeWindow;
-	locTTabUtilities->dIsFallCommissioningDataFlag = (locEventLoop->GetJEvent().GetRunNumber() <= 2965);
+	locTTabUtilities->dHasBadOrNoF1TDCConfigInfoFlag = (locEventLoop->GetJEvent().GetRunNumber() <= 2965);
 	locTTabUtilities->dCAENTIPhaseDifference = dCAENTIPhaseDifference;
 
 	// Get DCODAROCInfo's, put into map
