@@ -12,15 +12,25 @@
 using namespace std;
 
 #include "DPSPair_factory.h"
-#include "DPSCPair.h"
 #include "DPSHit.h"
 using namespace jana;
+
+inline bool DPSPair_SortByTimeDifference(const DPSPair* pair1, const DPSPair* pair2)
+{
+  double tdiff1 = fabs(pair1->ee.first->t-pair1->ee.second->t);
+  double tdiff2 = fabs(pair2->ee.first->t-pair2->ee.second->t);
+  return (tdiff1<tdiff2);
+}
 
 //------------------
 // init
 //------------------
 jerror_t DPSPair_factory::init(void)
 {
+  DELTA_T_PAIR_MAX = 10.0; // ns
+  gPARMS->SetDefaultParameter("PSPair:DELTA_T_PAIR_MAX",DELTA_T_PAIR_MAX,
+			      "Maximum difference in ns between a pair of hits"
+			      " in left and right arm of fine PS");
   return NOERROR;
 }
 
@@ -37,27 +47,15 @@ jerror_t DPSPair_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 jerror_t DPSPair_factory::evnt(JEventLoop *loop, int eventnumber)
 {
-  // pair spectrometer electron-positron pairs
-  // require left-right PS and PSC coincidences
-  vector<const DPSCPair*> cpairs;
-  loop->Get(cpairs);
-  if (cpairs.size()>1) {cout << "More than 1 coarse PS pair in event!!!" << endl; throw cpairs.size();}
-  // First, require coincidence in PSC (trigger)
-  if (cpairs.size()==0) return NOERROR;
-  //
+  // get fine pair spectrometer hits
   vector<const DPSHit*> hits;
   loop->Get(hits);
-  // 
+  // form PS left-right hit pairs and sort by time difference
   pair<const DPSHit*,const DPSHit*> ee;
-  bool has_pair = false;
-  double tdiff = 10.0; //ns
   if (hits.size()>1) {
     for (unsigned int i=0; i < hits.size()-1; i++) {
       for (unsigned int j=i+1; j < hits.size(); j++) {
-	double loc_tdiff = fabs(hits[i]->t-hits[j]->t);
-	if (fabs(hits[i]->arm-hits[j]->arm)==1&&loc_tdiff<tdiff) {
-	  tdiff = loc_tdiff;
-	  has_pair = true; 
+	if (fabs(hits[i]->arm-hits[j]->arm)==1&&fabs(hits[i]->t-hits[j]->t)<DELTA_T_PAIR_MAX) {
 	  if (hits[i]->arm==0) {
 	    ee.first = hits[i];
 	    ee.second = hits[j];
@@ -66,16 +64,15 @@ jerror_t DPSPair_factory::evnt(JEventLoop *loop, int eventnumber)
 	    ee.first = hits[j];
 	    ee.second = hits[i];
 	  }
+	  DPSPair *pair = new DPSPair;
+	  pair->ee = ee;
+	  _data.push_back(pair);
 	}
       }
     }
   }
-  if (!has_pair) return NOERROR;
-  //
-  DPSPair *pair = new DPSPair;
-  pair->ee = ee;
-  _data.push_back(pair);
-  
+  sort(_data.begin(),_data.end(),DPSPair_SortByTimeDifference);
+
   return NOERROR;
 }
 

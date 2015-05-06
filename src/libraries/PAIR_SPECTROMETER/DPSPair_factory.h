@@ -16,6 +16,7 @@ class DPSPair_factory:public jana::JFactory<DPSPair>{
   DPSPair_factory(){};
   ~DPSPair_factory(){};
 
+  double DELTA_T_PAIR_MAX;
 
  private:
   jerror_t init(void);						///< Called once at program start.
