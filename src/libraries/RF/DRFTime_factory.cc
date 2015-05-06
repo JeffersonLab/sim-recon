@@ -72,9 +72,10 @@ jerror_t DRFTime_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
 {
 	//The RF Time is defined at the center of the target
 	//The time offset needed to line it up to the center of the target is absorbed into the calibration constants.
+/*
 	vector<const DRFDigiTime*> locRFDigiTimes;
 	locEventLoop->Get(locRFDigiTimes);
-
+*/
 	vector<const DRFTDCDigiTime*> locRFTDCDigiTimes;
 	locEventLoop->Get(locRFTDCDigiTimes);
 
@@ -94,7 +95,7 @@ jerror_t DRFTime_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
 		double locRFTime = Convert_TDCToTime(locRFTDCDigiTime, locTTabUtilities) - dTimeOffsetMap_TDCs[locSystem];
 		locRFTimesMap[pair<DetectorSystem_t, bool>(locSystem, true)].push_back(locRFTime);
 	}
-
+/*
 	//FADC250s
 	for(size_t loc_i = 0; loc_i < locRFDigiTimes.size(); ++loc_i)
 	{
@@ -105,7 +106,7 @@ jerror_t DRFTime_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
 		double locRFTime = Convert_ADCToTime(locRFDigiTime) - dTimeOffsetMap_ADCs[locSystem];
 		locRFTimesMap[pair<DetectorSystem_t, bool>(locSystem, false)].push_back(locRFTime);
 	}
-
+*/
 	if(locRFTimesMap.empty())
 		return NOERROR; //No RF signals, will try to emulate RF bunch time from timing from other systems
 
