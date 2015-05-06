@@ -762,19 +762,19 @@ void DHistogramAction_DetectorMatching::Initialize(JEventLoop* locEventLoop)
 			dHistMap_SCPaddleVsTheta_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, 30, 0.5, 30.5);
 
 			locHistName = "SCPaddle_BarrelRegion_HasHit";
-			locHistTitle = locTrackString + string(", Has Other Match, SC Barrel Region Has Hit;#theta#circ;Projected SC Paddle");
+			locHistTitle = locTrackString + string(", Has Other Match, SC Barrel Region Has Hit;Projected SC Paddle");
 			dHistMap_SCPaddle_BarrelRegion_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, 30, 0.5, 30.5);
 
 			locHistName = "SCPaddle_BarrelRegion_NoHit";
-			locHistTitle = locTrackString + string(", Has Other Match, SC Barrel Region No Hit;#theta#circ;Projected SC Paddle");
+			locHistTitle = locTrackString + string(", Has Other Match, SC Barrel Region No Hit;Projected SC Paddle");
 			dHistMap_SCPaddle_BarrelRegion_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, 30, 0.5, 30.5);
 
 			locHistName = "SCPaddle_NoseRegion_HasHit";
-			locHistTitle = locTrackString + string(", Has Other Match, SC Front Region Has Hit;#theta#circ;Projected SC Paddle");
+			locHistTitle = locTrackString + string(", Has Other Match, SC Front Region Has Hit;Projected SC Paddle");
 			dHistMap_SCPaddle_NoseRegion_HasHit[locIsTimeBased] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, 30, 0.5, 30.5);
 
 			locHistName = "SCPaddle_NoseRegion_NoHit";
-			locHistTitle = locTrackString + string(", Has Other Match, SC Front Region No Hit;#theta#circ;Projected SC Paddle");
+			locHistTitle = locTrackString + string(", Has Other Match, SC Front Region No Hit;Projected SC Paddle");
 			dHistMap_SCPaddle_NoseRegion_NoHit[locIsTimeBased] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, 30, 0.5, 30.5);
 
 			locHistName = "SCTrackDeltaPhiVsP";
@@ -1368,6 +1368,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 					dHistMap_PhiVsTheta_NoHit[SYS_START][locIsTimeBased]->Fill(locTheta, locPhi);
 					if(dProjectedSCPaddleMap.find(locTrack) != dProjectedSCPaddleMap.end())
 					{
+						dHistMap_SCPaddleVsTheta_NoHit[locIsTimeBased]->Fill(locTheta, dProjectedSCPaddleMap[locTrack].first);
 						if(dProjectedSCPaddleMap[locTrack].second)
 							dHistMap_SCPaddle_BarrelRegion_NoHit[locIsTimeBased]->Fill(dProjectedSCPaddleMap[locTrack].first);
 						else

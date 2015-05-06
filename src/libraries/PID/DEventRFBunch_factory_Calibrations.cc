@@ -78,6 +78,7 @@ jerror_t DEventRFBunch_factory_Calibrations::evnt(JEventLoop* locEventLoop, int 
 		locHitFoundFlag = true;
 		break;
 	}
+
 	if(!locHitFoundFlag)
 		return Create_NaNRFBunch();
 
@@ -136,7 +137,7 @@ jerror_t DEventRFBunch_factory_Calibrations::Select_RFBunch(JEventLoop* locEvent
 	//If None: set DEventRFBunch::dTime to NaN
 
 	const DDetectorMatches* locDetectorMatches = NULL;
-	locEventLoop->GetSingle(locDetectorMatches);
+	locEventLoop->GetSingle(locDetectorMatches, "WireBased");
 
 	vector<pair<double, const JObject*> > locTimes;
 	int locBestRFBunchShift = 0, locHighestNumVotes = 0;

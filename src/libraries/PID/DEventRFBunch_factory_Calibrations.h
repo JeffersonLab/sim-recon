@@ -42,6 +42,7 @@ class DEventRFBunch_factory_Calibrations : public jana::JFactory<DEventRFBunch>
 	public:
 		DEventRFBunch_factory_Calibrations(){};
 		~DEventRFBunch_factory_Calibrations(){};
+		const char* Tag(void){return "Calibrations";}
 
 	private:
 
