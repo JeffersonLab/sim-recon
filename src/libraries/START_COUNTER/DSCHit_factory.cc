@@ -260,76 +260,69 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	sort(tdcdigihits.begin(),tdcdigihits.end(),DSCHit_tdc_cmp);
 
 	for (unsigned int i = 0; i < tdcdigihits.size(); i++)
-	{
-		const DSCTDCDigiHit *digihit = tdcdigihits[i];
-
-		// Make sure sector is in valid range
-		if((digihit->sector <= 0) && (digihit->sector > MAX_SECTORS))
-		{
-			sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)",
-					digihit->sector, MAX_SECTORS);
-			throw JException(str);
-		}
-
-		unsigned int id = digihit->sector - 1;
-		double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - tdc_time_offsets[id] + t_tdc_base;
-
-		// cout << "T = " << T << endl;
-		// jout << "T = " << T << endl;
-
-		// Look for existing hits to see if there is a match
-		//   or create new one if there is no match
-	// Require that the trigger corrected TDC time fall within
-	//   a reasonable time window so that when a hit is associated with
-	//   a hit in the TDC and not the ADC it is a "decent" TDC hit
-	if (fabs(T) < HIT_TIME_WINDOW)
 	  {
-	//jout << " T cut = " << T << endl;
-	DSCHit *hit = FindMatch(digihit->sector, T);
-	if (! hit)
-	  {
-		hit = new DSCHit;
-		hit->sector = digihit->sector;
-		hit->dE = 0.0;
-		hit->t_fADC= numeric_limits<double>::quiet_NaN();
-		hit->has_fADC=false;
-		_data.push_back(hit);
-	  }
+	    const DSCTDCDigiHit *digihit = tdcdigihits[i];
 
-	hit->has_TDC=true;
-	hit->t_TDC=T;
-	//jout << "t_tDC = " << hit->t_TDC << endl;
+	    // Make sure sector is in valid range
+	    if((digihit->sector <= 0) && (digihit->sector > MAX_SECTORS))
+	      {
+		sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)",
+			digihit->sector, MAX_SECTORS);
+		throw JException(str);
+	      }
 
-	// Grab the pulse pedestal object
-        const Df250PulsePedestal* PPobj = NULL;
-        digihit->GetSingle(PPobj);
-        if (PPobj != NULL)
-	  {
-            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-	  }
+	    unsigned int id = digihit->sector - 1;
+	    double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - tdc_time_offsets[id] + t_tdc_base;
 
-	if (hit->dE > 0.0)
-	  {
-	    // Correct for time walk
-	    // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
-	    // double A  = hit->dE;
-	    // double C1 = timewalk_parameters[id][1];
-	    // double C2 = timewalk_parameters[id][2];
-	    // double A0 = timewalk_parameters[id][3];
-	    // T -= C1*(pow(A,C2) - pow(A0,C2));
+	    // cout << "T = " << T << endl;
+	    // jout << "T = " << T << endl;
 
-	    // Correct for timewalk using pulse peak 
-	    double A        = PPobj->pulse_peak;
-	    double C1       = timewalk_parameters[id][0];
-	    double C2       = timewalk_parameters[id][1];
-	    double A_THRESH = timewalk_parameters[id][2];
-	    double A0       = timewalk_parameters[id][3];
-	    T -= C1*(pow(A/A_THRESH, C2) - pow(A0/A_THRESH, C2));
-	  }
-	hit->t=T;
-	//jout << " T cut TW Corr = " << T << endl;
-	hit->AddAssociatedObject(digihit);
-	  } // Hit time window cut
+	    // Look for existing hits to see if there is a match
+	    //   or create new one if there is no match
+	    // Require that the trigger corrected TDC time fall within
+	    //   a reasonable time window so that when a hit is associated with
+	    //   a hit in the TDC and not the ADC it is a "decent" TDC hit
+	    if (fabs(T) < HIT_TIME_WINDOW)
+	      {
+		//jout << " T cut = " << T << endl;
+		DSCHit *hit = FindMatch(digihit->sector, T);
+		if (! hit)
+		  {
+		    hit = new DSCHit;
+		    hit->sector = digihit->sector;
+		    hit->dE = 0.0;
+		    hit->t_fADC= numeric_limits<double>::quiet_NaN();
+		    hit->has_fADC=false;
+		    _data.push_back(hit);
+		  }
+
+		hit->has_TDC=true;
+		hit->t_TDC=T;
+		//jout << "t_tDC = " << hit->t_TDC << endl;
+
+
+		if (hit->dE > 0.0)
+		  {
+		    // Correct for time walk
+		    // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
+		    double A  = hit->dE;
+		    double C1 = timewalk_parameters[id][1];
+		    double C2 = timewalk_parameters[id][2];
+		    double A0 = timewalk_parameters[id][3];
+		    T -= C1*(pow(A,C2) - pow(A0,C2));
+
+		    // // Correct for timewalk using pulse peak instead of pulse integral
+		    // double A        = PPobj->pulse_peak;
+		    // double C1       = timewalk_parameters[id][0];
+		    // double C2       = timewalk_parameters[id][1];
+		    // double A_THRESH = timewalk_parameters[id][2];
+		    // double A0       = timewalk_parameters[id][3];
+		    // T -= C1*(pow(A/A_THRESH, C2) - pow(A0/A_THRESH, C2));
+		  }
+		hit->t=T;
+		//jout << " T cut TW Corr = " << T << endl;
+		hit->AddAssociatedObject(digihit);
+	      } // Hit time window cut
 
 	}
 
