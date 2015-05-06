@@ -19,6 +19,7 @@ using namespace jana;
 #include "DVertex_factory_THROWN.h"
 #include "DEventRFBunch_factory.h"
 #include "DEventRFBunch_factory_Thrown.h"
+#include "DEventRFBunch_factory_Calibrations.h"
 #include "DDetectorMatches_factory.h"
 #include "DDetectorMatches_factory_WireBased.h"
 #include "DMCThrown_factory_FinalState.h"
@@ -51,6 +52,7 @@ jerror_t PID_init(JEventLoop *loop)
 	loop->AddFactory(new DVertex_factory_THROWN);
 	loop->AddFactory(new DEventRFBunch_factory);
 	loop->AddFactory(new DEventRFBunch_factory_Thrown);
+	loop->AddFactory(new DEventRFBunch_factory_Calibrations);
 	loop->AddFactory(new DDetectorMatches_factory);
 	loop->AddFactory(new DDetectorMatches_factory_WireBased);
 	loop->AddFactory(new DMCThrown_factory_FinalState);
