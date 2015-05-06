@@ -209,6 +209,7 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
       // Track quality properties
       track->Ndof=cand->Ndof;
       track->chisq=cand->chisq;	
+      track->FOM = TMath::Prob(track->chisq, track->Ndof);
 
       // pull vector
       track->pulls = cand->pulls;
@@ -514,6 +515,7 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
       track->rt = rt;
       track->chisq = fitter->GetChisq();
       track->Ndof = fitter->GetNdof();
+      track->FOM = TMath::Prob(track->chisq, track->Ndof);
       track->pulls = fitter->GetPulls();
       track->candidateid = c_id+1;
       

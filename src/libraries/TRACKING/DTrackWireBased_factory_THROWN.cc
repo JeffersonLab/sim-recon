@@ -6,6 +6,7 @@
 //
 
 #include <cmath>
+#include <limits>
 using namespace std;
 
 #include <DANA/DApplication.h>
@@ -147,10 +148,12 @@ jerror_t DTrackWireBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 			fitter->ChiSq(DTrackFitter::kWireBased, rt, &chisq, &Ndof, &pulls);
 			track->chisq = chisq;
 			track->Ndof = Ndof;
+	        track->FOM = TMath::Prob(track->chisq, track->Ndof);
 			track->pulls = pulls;
 		}else{
 			track->chisq = 0.0;
 			track->Ndof = 0;
+		    track->FOM = numeric_limits<double>::quiet_NaN();
 		}
 
 		//

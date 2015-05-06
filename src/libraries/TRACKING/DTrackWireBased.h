@@ -24,6 +24,7 @@ class DTrackWireBased:public DKinematicData{
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
 		int Ndof;				///< Number of degrees of freedom in the fit
 		vector<DTrackFitter::pull_t> pulls;	///< Holds pulls used in chisq calc. (not including off-diagonals)
+		double FOM; //confidence level
 
 		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
 

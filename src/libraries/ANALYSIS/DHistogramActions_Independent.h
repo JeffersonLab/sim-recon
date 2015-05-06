@@ -176,6 +176,7 @@ class DHistogramAction_Reconstruction : public DAnalysisAction
 		TH1I* dHist_NumDCHitsPerTrack;
 		TH2I* dHist_NumDCHitsPerTrackVsTheta;
 		TH1I* dHist_TrackingFOM;
+		TH1I* dHist_TrackingFOM_WireBased;
 		TH2I* dHist_TrackingFOMVsTheta;
 		TH2I* dHist_TrackingFOMVsP;
 		TH2I* dHist_TrackingFOMVsNumHits;

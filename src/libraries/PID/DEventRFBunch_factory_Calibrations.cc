@@ -101,31 +101,19 @@ void DEventRFBunch_factory_Calibrations::Select_GoodTracks(JEventLoop* locEventL
 	vector<const DTrackWireBased*> locTrackWireBasedVector;
 	locEventLoop->Get(locTrackWireBasedVector);
 
-	//compute tracking FOMs
-	map<const DTrackWireBased*, double> locTrackingFOMMap;
+	//select the best DTrackWireBased for each track: of tracks with good hit pattern, use best tracking FOM
+	map<JObject::oid_t, const DTrackWireBased*> locBestTrackWireBasedMap; //lowest tracking chisq/ndf for each candidate id
 	for(size_t loc_i = 0; loc_i < locTrackWireBasedVector.size(); ++loc_i)
 	{
-		if(locTrackWireBasedVector[loc_i]->Ndof == 0)
+		if(locTrackWireBasedVector[loc_i]->FOM < dMinTrackingFOM)
 			continue;
-		locTrackingFOMMap[locTrackWireBasedVector[loc_i]] = TMath::Prob(locTrackWireBasedVector[loc_i]->chisq, locTrackWireBasedVector[loc_i]->Ndof);
-	}
-
-	//select the best DTrackWireBased for each track: use best tracking FOM
-	map<JObject::oid_t, const DTrackWireBased*> locBestTrackWireBasedMap; //lowest tracking chisq/ndf for each candidate id
-	map<const DTrackWireBased*, double>::iterator locWireBasedIterator;
-	for(locWireBasedIterator = locTrackingFOMMap.begin(); locWireBasedIterator != locTrackingFOMMap.end(); ++locWireBasedIterator)
-	{
-		const DTrackWireBased* locTrackWireBased = locWireBasedIterator->first;
-		double locTrackingFOM = locWireBasedIterator->second;
-		if(locTrackingFOM < dMinTrackingFOM)
+		if(!dParticleID->Cut_TrackHitPattern_Hard(locTrackWireBasedVector[loc_i], dMinHitsPerCDCSuperlayer, dMinHitsPerFDCPackage))
 			continue;
-		if(!dParticleID->Cut_TrackHitPattern_Hard(locTrackWireBased, dMinHitsPerCDCSuperlayer, dMinHitsPerFDCPackage))
-			continue;
-		JObject::oid_t locCandidateID = locTrackWireBased->candidateid;
+		JObject::oid_t locCandidateID = locTrackWireBasedVector[loc_i]->candidateid;
 		if(locBestTrackWireBasedMap.find(locCandidateID) == locBestTrackWireBasedMap.end())
-			locBestTrackWireBasedMap[locCandidateID] = locTrackWireBased;
-		else if(locTrackingFOM > locTrackingFOMMap[dynamic_cast<const DTrackWireBased*>(locBestTrackWireBasedMap[locCandidateID])])
-			locBestTrackWireBasedMap[locCandidateID] = locTrackWireBased;
+			locBestTrackWireBasedMap[locCandidateID] = locTrackWireBasedVector[loc_i];
+		else if(locTrackWireBasedVector[loc_i]->FOM > (dynamic_cast<const DTrackWireBased*>(locBestTrackWireBasedMap[locCandidateID]))->FOM)
+			locBestTrackWireBasedMap[locCandidateID] = locTrackWireBasedVector[loc_i];
 	}
 
 	//Save to the vector

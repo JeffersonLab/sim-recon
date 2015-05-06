@@ -332,6 +332,8 @@ void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)
 		dHist_NumDCHitsPerTrack = GetOrCreate_Histogram<TH1I>(locHistName, ";# Track Hits", 50, 0.5, 50.5);
 		locHistName = "NumDCHitsPerTrackVsTheta";
 		dHist_NumDCHitsPerTrackVsTheta = GetOrCreate_Histogram<TH2I>(locHistName, ";#theta#circ;# Track Hits", dNum2DThetaBins, dMinTheta, dMaxTheta, 46, 4.5, 50.5);
+		locHistName = "TrackingFOM_WireBased";
+		dHist_TrackingFOM_WireBased = GetOrCreate_Histogram<TH1I>(locHistName, ";Confidence Level", dNumFOMBins, 0.0, 1.0);
 		locHistName = "TrackingFOM";
 		dHist_TrackingFOM = GetOrCreate_Histogram<TH1I>(locHistName, ";Confidence Level", dNumFOMBins, 0.0, 1.0);
 		locHistName = "TrackingFOMVsP";
@@ -485,17 +487,14 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 	}
 
 	//select the best DTrackWireBased for each track: use best tracking FOM
-	map<JObject::oid_t, pair<const DTrackWireBased*, double> > locBestTrackWireBasedMap; //lowest tracking FOM for each candidate id
+	map<JObject::oid_t, const DTrackWireBased*> locBestTrackWireBasedMap; //lowest tracking FOM for each candidate id
 	for(size_t loc_i = 0; loc_i < locTrackWireBasedVector.size(); ++loc_i)
 	{
-		double locTrackingFOM = TMath::Prob(locTrackWireBasedVector[loc_i]->chisq, locTrackWireBasedVector[loc_i]->Ndof);
-		pair<const DTrackWireBased*, double> locTrackPair(locTrackWireBasedVector[loc_i], locTrackingFOM);
 		JObject::oid_t locCandidateID = locTrackWireBasedVector[loc_i]->candidateid;
-
 		if(locBestTrackWireBasedMap.find(locCandidateID) == locBestTrackWireBasedMap.end())
-			locBestTrackWireBasedMap[locCandidateID] = locTrackPair;
-		else if(locTrackingFOM > locBestTrackWireBasedMap[locCandidateID].second)
-			locBestTrackWireBasedMap[locCandidateID] = locTrackPair;
+			locBestTrackWireBasedMap[locCandidateID] = locTrackWireBasedVector[loc_i];
+		else if(locTrackWireBasedVector[loc_i]->FOM > locBestTrackWireBasedMap[locCandidateID]->FOM)
+			locBestTrackWireBasedMap[locCandidateID] = locTrackWireBasedVector[loc_i];
 	}
 
 	//select the best DTrackTimeBased for each track: use best tracking FOM
@@ -566,10 +565,10 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 				dHist_FDCPlaneVsP_Candidates->Fill(locTheta, *locIterator);
 		}
 
-		map<JObject::oid_t, pair<const DTrackWireBased*, double> >::iterator locWireBasedIterator = locBestTrackWireBasedMap.begin();
+		map<JObject::oid_t, const DTrackWireBased*>::iterator locWireBasedIterator = locBestTrackWireBasedMap.begin();
 		for(; locWireBasedIterator != locBestTrackWireBasedMap.end(); ++locWireBasedIterator)
 		{
-			const DTrackWireBased* locTrackWireBased = locWireBasedIterator->second.first;
+			const DTrackWireBased* locTrackWireBased = locWireBasedIterator->second;
 			int locCharge = (locTrackWireBased->charge() > 0.0) ? 1 : -1;
 			double locTheta = locTrackWireBased->momentum().Theta()*180.0/TMath::Pi();
 			double locP = locTrackWireBased->momentum().Mag();
@@ -584,6 +583,8 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 			locParticleID->Get_FDCPlanes(locTrackWireBased->dFDCPlanes, locFDCPlanes);
 			for(set<int>::iterator locIterator = locFDCPlanes.begin(); locIterator != locFDCPlanes.end(); ++locIterator)
 				dHist_FDCPlaneVsP_WireBased->Fill(locTheta, *locIterator);
+
+			dHist_TrackingFOM_WireBased->Fill(locTrackWireBased->FOM);
 		}
 
 		map<JObject::oid_t, const DTrackTimeBased*>::iterator locTimeBasedIterator = locBestTrackTimeBasedMap.begin();
@@ -633,8 +634,8 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 		locWireBasedIterator = locBestTrackWireBasedMap.begin();
 		for(; locWireBasedIterator != locBestTrackWireBasedMap.end(); ++locWireBasedIterator)
 		{
-			const DTrackWireBased* locTrackWireBased = locWireBasedIterator->second.first;
-			if(locWireBasedIterator->second.second < dGoodTrackFOM)
+			const DTrackWireBased* locTrackWireBased = locWireBasedIterator->second;
+			if(locTrackWireBased->FOM < dGoodTrackFOM)
 				continue; //no good
 			if(!locDetectorMatches_WireBased->Get_IsMatchedToHit(locTrackWireBased))
 				continue; //no good
@@ -984,30 +985,18 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		vector<const DTrackWireBased*> locTrackWireBasedVector;
 		locEventLoop->Get(locTrackWireBasedVector);
 
-		//compute tracking FOMs
-		map<const DTrackWireBased*, double> locTrackingFOMMap;
+		//select the best DTrackWireBased for each track: of tracks with good hit pattern, use best tracking FOM
 		for(size_t loc_i = 0; loc_i < locTrackWireBasedVector.size(); ++loc_i)
 		{
-			if(locTrackWireBasedVector[loc_i]->Ndof == 0)
+			if(locTrackWireBasedVector[loc_i]->FOM < dMinTrackingFOM)
 				continue;
-			locTrackingFOMMap[locTrackWireBasedVector[loc_i]] = TMath::Prob(locTrackWireBasedVector[loc_i]->chisq, locTrackWireBasedVector[loc_i]->Ndof);
-		}
-
-		//select the best DTrackTimeBased for each track: of tracks with good hit pattern, use best tracking FOM
-		map<const DTrackWireBased*, double>::iterator locWireBasedIterator;
-		for(locWireBasedIterator = locTrackingFOMMap.begin(); locWireBasedIterator != locTrackingFOMMap.end(); ++locWireBasedIterator)
-		{
-			const DTrackWireBased* locTrackWireBased = locWireBasedIterator->first;
-			double locTrackingFOM = locWireBasedIterator->second;
-			if(locTrackingFOM < dMinTrackingFOM)
+			if(!locParticleID->Cut_TrackHitPattern_Hard(locTrackWireBasedVector[loc_i], dMinHitsPerCDCSuperlayer, dMinHitsPerFDCPackage))
 				continue;
-			if(!locParticleID->Cut_TrackHitPattern_Hard(locTrackWireBased, dMinHitsPerCDCSuperlayer, dMinHitsPerFDCPackage))
-				continue;
-			JObject::oid_t locCandidateID = locTrackWireBased->candidateid;
+			JObject::oid_t locCandidateID = locTrackWireBasedVector[loc_i]->candidateid;
 			if(locBestTrackMap.find(locCandidateID) == locBestTrackMap.end())
-				locBestTrackMap[locCandidateID] = locTrackWireBased;
-			else if(locTrackingFOM > locTrackingFOMMap[dynamic_cast<const DTrackWireBased*>(locBestTrackMap[locCandidateID])])
-				locBestTrackMap[locCandidateID] = locTrackWireBased;
+				locBestTrackMap[locCandidateID] = locTrackWireBasedVector[loc_i];
+			else if(locTrackWireBasedVector[loc_i]->FOM > (dynamic_cast<const DTrackWireBased*>(locBestTrackMap[locCandidateID]))->FOM)
+				locBestTrackMap[locCandidateID] = locTrackWireBasedVector[loc_i];
 		}
 	}
 	
