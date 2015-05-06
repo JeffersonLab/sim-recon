@@ -29,7 +29,7 @@
 		locCanvas = new TCanvas("Matching_BCAL", "Matching_BCAL", 1200, 800);
 	else
 		locCanvas = gPad->GetCanvas();
-	locCanvas->Divide(2, 2);
+	locCanvas->Divide(3, 2);
 
 	//Draw
 	locCanvas->cd(1);
@@ -151,6 +151,51 @@
 		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetLabelSize(0.05);
 		locAcceptanceHist->Draw("COLZ");
+	}
+
+	locCanvas->cd(5);
+	gPad->SetTicks();
+	gPad->SetGrid();
+	if((locHist_TrackBCALModuleVsZ_HasHit_BCAL != NULL) && (locHist_TrackBCALModuleVsZ_NoHit_BCAL != NULL))
+	{
+		TH1D* locHist_TrackBCALModule_HasHit = locHist_TrackBCALModuleVsZ_HasHit_BCAL->ProjectionY("SCPaddle_HasHit");
+		TH1D* locHist_TrackBCALModule_NoHit = locHist_TrackBCALModuleVsZ_NoHit_BCAL->ProjectionY("SCPaddle_NoHit");
+
+		TH1D* loc1DFoundHist = locHist_TrackBCALModule_HasHit;
+		TH1D* loc1DMissingHist = locHist_TrackBCALModule_NoHit;
+		string locHistName = string(loc1DFoundHist->GetName()) + string("_Acceptance");
+		string locHistTitle = string("Track / BCAL Match Rate;") + string(loc1DFoundHist->GetXaxis()->GetTitle()) + string(";") + string(loc1DFoundHist->GetYaxis()->GetTitle());
+
+		TH1D* loc1DAcceptanceHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), loc1DFoundHist->GetNbinsX(), loc1DFoundHist->GetXaxis()->GetXmin(), loc1DFoundHist->GetXaxis()->GetXmax());
+		for(Int_t loc_m = 1; loc_m <= loc1DFoundHist->GetNbinsX(); ++loc_m)
+		{
+			double locNumMissing = loc1DMissingHist->GetBinContent(loc_m);
+			double locNumFound = loc1DFoundHist->GetBinContent(loc_m);
+			double locTotal = locNumMissing + locNumFound;
+			if(!(locTotal >= locMinNumCountsForRatio))
+			{
+				loc1DAcceptanceHist->SetBinContent(loc_m, 0.0);
+				loc1DAcceptanceHist->SetBinError(loc_m, 1.0/0.0);
+				continue;
+			}
+
+			double locAcceptance = locNumFound/locTotal;
+			if(!(locAcceptance > 0.0))
+				locAcceptance = 0.00001; //so that it shows up on the histogram
+			loc1DAcceptanceHist->SetBinContent(loc_m, locAcceptance);
+			double locNumFoundError = sqrt(locNumFound*(1.0 - locAcceptance));
+
+			double locAcceptanceError = locNumFoundError/locTotal;
+			loc1DAcceptanceHist->SetBinError(loc_m, locAcceptanceError);
+		}
+		loc1DAcceptanceHist->SetEntries(loc1DMissingHist->GetEntries() + loc1DFoundHist->GetEntries());
+		loc1DAcceptanceHist->SetStats(kFALSE);
+
+		loc1DAcceptanceHist->GetXaxis()->SetTitleSize(0.05);
+		loc1DAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
+		loc1DAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
+		loc1DAcceptanceHist->GetYaxis()->SetLabelSize(0.05);
+		loc1DAcceptanceHist->Draw("E1");
 	}
 }
 
