@@ -51,6 +51,10 @@ jerror_t DEventRFBunch_factory_Calibrations::evnt(JEventLoop* locEventLoop, int 
 	//There should ALWAYS be one and only one DEventRFBunch created.
 		//If there is not enough information, time is set to NaN
 
+	//This factory is designed for calibrating the timing offsets between the tagger & SC.
+	//It gets one RF time signal from the F1TDC system of choice, and tries to select the correct bunch using tracks hitting the SC.
+	//It uses wire-based tracks instead of time-based tracks since the timing has not yet been calibrated.
+
 	//Select Good Tracks
 	vector<const DTrackWireBased*> locTrackWireBasedVector;
 	Select_GoodTracks(locEventLoop, locTrackWireBasedVector);
