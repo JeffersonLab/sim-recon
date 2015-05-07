@@ -184,15 +184,12 @@ double DTTabUtilities::Convert_DigiTimeToNs_CAEN1290TDC(const DCAEN1290TDCHit* l
     	return std::numeric_limits<double>::quiet_NaN();
     const DCODAROCInfo* locCODAROCInfo = locROCInfoIterator->second;
 
-    int locSystemClockBinRemainder = locCODAROCInfo->timestamp % 6;
+    int locSystemClockBinRemainder = locCODAROCInfo->timestamp % (uint64_t(6));
 
 	// The number of TI-counter (4 ns) blocks to shift the CAEN time to line-up with the TI time
     int locNum4NsBlocksToShift = dCAENTIPhaseDifference - locSystemClockBinRemainder;
     if(locNum4NsBlocksToShift < 0)
     	locNum4NsBlocksToShift += 6;
 
-    // TDC bins are 25 ps wide, so each 4ns-TI-block is 160 bins ("TDC-ticks")
-    int locTDCShift = 160 * locNum4NsBlocksToShift;
-
-    return dTScale_CAEN*double(locCAEN1290TDCHit->time + locTDCShift);
+	return dTScale_CAEN*double(locCAEN1290TDCHit->time) + 4.0*double(locNum4NsBlocksToShift);
 }

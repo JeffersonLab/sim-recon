@@ -33,7 +33,7 @@ jerror_t DTTabUtilities_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 	}
 
 	//CAEN1290/TI Phase Difference
-	dCAENTIPhaseDifference = 0;
+	dCAENTIPhaseDifference = 1;
 	map<string, double> tof_tdc_shift;
 	if(!eventLoop->GetCalib("/TOF/tdc_shift", tof_tdc_shift))
 		dCAENTIPhaseDifference = tof_tdc_shift["TOF_TDC_SHIFT"];
