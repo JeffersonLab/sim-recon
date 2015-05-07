@@ -83,6 +83,12 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
   COSMICS=false;
   gPARMS->SetDefaultParameter("TRKFIND:COSMICS",COSMICS);
   
+  CHI2CUT = 20.0; 
+  gPARMS->SetDefaultParameter("TRKFIT:CHI2CUT",CHI2CUT);    
+
+  DO_PRUNING = 1;
+  gPARMS->SetDefaultParameter("TRKFIT:DO_PRUNING",DO_PRUNING);
+
   DEBUG_HISTS=false;
   gPARMS->SetDefaultParameter("TRKFIND:DEBUG_HISTS",DEBUG_HISTS);
 
@@ -565,7 +571,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 
       // Check how far this hit is from the projection
       double chi2check=res*res*InvV;
-      if (chi2check<20.){
+      if (chi2check < CHI2CUT || DO_PRUNING == 0){
 	// Compute Kalman gain matrix
 	K=InvV*(C*H_T);
 	

@@ -89,6 +89,9 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
   unsigned int Locate(vector<double>&xx,double x);
 
   bool COSMICS,DEBUG_HISTS;
+  float CHI2CUT;
+  int DO_PRUNING;
+
   DTrackFinder *finder;
   const DParticleID* dParticleID;
 
