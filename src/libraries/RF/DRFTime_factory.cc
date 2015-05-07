@@ -93,6 +93,7 @@ jerror_t DRFTime_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
 		if(dTimeOffsetMap_TDCs.find(locSystem) == dTimeOffsetMap_TDCs.end())
 			continue; //system not recognized
 		double locRFTime = Convert_TDCToTime(locRFTDCDigiTime, locTTabUtilities) - dTimeOffsetMap_TDCs[locSystem];
+//cout << "system, time = " << SystemName(locSystem) << ", " << locRFTime << endl;
 		locRFTimesMap[pair<DetectorSystem_t, bool>(locSystem, true)].push_back(locRFTime);
 	}
 /*
@@ -109,6 +110,18 @@ jerror_t DRFTime_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
 */
 	if(locRFTimesMap.empty())
 		return NOERROR; //No RF signals, will try to emulate RF bunch time from timing from other systems
+
+
+	//HARD-CODE USING THE F1TDC TIME FROM THE PSC UNTIL EVERYTHING IS READY
+	pair<DetectorSystem_t, bool> locPSCSystemPair(SYS_PSC, true);
+	if(locRFTimesMap.find(locPSCSystemPair) == locRFTimesMap.end())
+		return NOERROR; //bail
+	DRFTime* locRFTime = new DRFTime();
+	locRFTime->dTime = locRFTimesMap[locPSCSystemPair][0]; //This time is defined at the center of the target (CCDB offsets center it)
+	locRFTime->dTimeVariance = 0.0;
+	_data.push_back(locRFTime);
+	return NOERROR;
+
 
 	//take weighted average of times
 		//avg = Sum(w_i * x_i) / Sum (w_i)
@@ -150,7 +163,7 @@ jerror_t DRFTime_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
 	double locRFTimeVariance = 1.0 / locSumOneOverTimeVariance;
 	double locAverageRFTime = locSumTimeOverTimeVariance * locRFTimeVariance;
 
-	DRFTime* locRFTime = new DRFTime();
+	locRFTime = new DRFTime();
 	locRFTime->dTime = locAverageRFTime; //This time is defined at the center of the target (CCDB offsets center it)
 	locRFTime->dTimeVariance = locRFTimeVariance;
 	_data.push_back(locRFTime);
