@@ -43,7 +43,6 @@ jerror_t DTOFHit_factory::init(void)
 	/// Set basic conversion constants
 	a_scale    = 0.2/5.2E5;
 	t_scale    = 0.0625;   // 62.5 ps/count
-	tdc_scale  = 0.0234375;    // 23.4375 ps/count
         t_base     = 0.;       // ns
 	t_base_tdc = 0.; // ns
 
@@ -86,7 +85,6 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
         vector<double> raw_adc_gains;
         vector<double> raw_adc_offsets;
         vector<double> raw_tdc_offsets;
-        vector<double> raw_tdc_scales;
 
         if(print_messages) jout << "In DTOFHit_factory, loading constants..." << endl;
 
@@ -103,11 +101,6 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 		; //t_scale = scale_factors["TOF_ADC_TSCALE"];
 	} else {
 	    jerr << "Unable to get TOF_ADC_TSCALE from /TOF/digi_scales !" << endl;
-	}
-	if( scale_factors.find("TOF_TDC_SCALE") != scale_factors.end() ) {
-		; //tdc_scale = scale_factors["TOF_TDC_SCALE"];
-	} else {
-	    jerr << "Unable to get TOF_TDC_SCALE from /TOF/digi_scales !" << endl;
 	}
 
 	// load base time offset
@@ -129,8 +122,6 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	    jout << "Error loading /TOF/pedestals !" << endl;
         if(eventLoop->GetCalib("TOF/gains", raw_adc_gains))
 	    jout << "Error loading /TOF/gains !" << endl;
-	if(eventLoop->GetCalib("TOF/timing_scales", raw_tdc_scales))
-	    jout << "Error loading /TOF/timing_scales !" << endl;
 	if(eventLoop->GetCalib("TOF/adc_timing_offsets", raw_adc_offsets))
 	    jout << "Error loading /TOF/adc_timing_offsets !" << endl;
 	if(eventLoop->GetCalib("TOF/timing_offsets", raw_tdc_offsets))
@@ -142,30 +133,12 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
         FillCalibTable(adc_gains, raw_adc_gains, tofGeom);
         FillCalibTable(adc_time_offsets, raw_adc_offsets, tofGeom);
         FillCalibTable(tdc_time_offsets, raw_tdc_offsets, tofGeom);
-        FillCalibTable(tdc_scales, raw_tdc_scales, tofGeom);
-
-
-
-	// load shift factors (only for fall 2014 runs)
-	map<string,double> tof_tdc_shift;
-	tdc_shift = -1;
-
-	if(eventLoop->GetCalib("/TOF/tdc_shift", tof_tdc_shift))
-	    jout << "Error loading /TOF/tdc_shift !" << endl;
-	if( tof_tdc_shift.find("TOF_TDC_SHIFT") != tof_tdc_shift.end() ) {
-	  tdc_shift = tof_tdc_shift["TOF_TDC_SHIFT"];
-	  if(print_messages) jout << "getting tdc_shift" << endl << endl;
-	  if(print_messages) jout << "tdc_shift = " << tdc_shift << endl << endl;
-	} else {
-	    jerr << "Unable to get TOF_TDC_SHIFT from /TOF/tdc_shift !" << endl;
-	}
 
 /*
 	CheckCalibTable(adc_pedestals,"/TOF/pedestals");
 	CheckCalibTable(adc_gains,"/TOF/gains");
 	CheckCalibTable(adc_time_offsets,"/TOF/adc_timing_offsets");
 	CheckCalibTable(tdc_time_offsets,"/TOF/timing_offsets");
-	CheckCalibTable(tdc_scales,"/TOF/timing_scales");
 */
 	return NOERROR;
 }
@@ -183,6 +156,9 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	/// Note that this code does NOT get called for simulated
 	/// data in HDDM format. The HDDM event source will copy
 	/// the precalibrated values directly into the _data vector.
+
+	const DTTabUtilities* locTTabUtilities = NULL;
+	loop->GetSingle(locTTabUtilities);
 
 	// First, make hits out of all fADC250 hits
 	vector<const DTOFDigiHit*> digihits;
@@ -251,28 +227,6 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	//Get the TDC hits
     vector<const DTOFTDCDigiHit*> tdcdigihits;
     loop->Get(tdcdigihits);
-    const DF1TDCHit* locF1TDCHit = NULL;
-    if(!tdcdigihits.empty())
-    	tdcdigihits[0]->GetSingle(locF1TDCHit);
-    unsigned int locROCID = (locF1TDCHit == NULL) ? 78 : locF1TDCHit->rocid;
-
-    //	Find the Trigger Time from the TI:
-    // and determine which 4ns pulse the trigger is
-    // within 24 ns.
-    vector<const DCODAROCInfo*> locCODAROCInfos;
-    loop->Get(locCODAROCInfos);
-
-    uint64_t TriggerTime = 0;
-	for (unsigned int k=0; k<locCODAROCInfos.size(); k++)
-	{
-		if (locCODAROCInfos[k]->rocid != locROCID)
-			continue;
-		TriggerTime = locCODAROCInfos[k]->timestamp;
-		break;
-	}
-
-    // TriggerBIT is not really a bit...
-    int TriggerBIT = TriggerTime%6;  
 
     // Next, loop over TDC hits, matching them to the
     // existing fADC hits where possible and updating
@@ -283,38 +237,12 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
         const DTOFTDCDigiHit *digihit = tdcdigihits[i];
 
         // Apply calibration constants here
-        double T = (double)digihit->time;
+	    double T = locTTabUtilities->Convert_DigiTimeToNs_CAEN1290TDC(digihit);
+	    T += t_base_tdc - GetConstant(tdc_time_offsets, digihit) + tdc_adc_time_offset;
 
-        // Get overall shift value for this run, shift for each value
-        // of  TriggerBIT is given by tdc_shift - TriggerBIT
-        // Shift will be positive for TDC times.
-
-        // initalize to 0 in case there is no constant available
-        int nshifts = 0;
-
-        if(tdc_shift != -1){
-            int shift = tdc_shift - TriggerBIT;
-            if(shift < 0) shift += 6;
-            // TDC bins are 25 ps wide, so each block of 4 ns is 160 bins
-            nshifts = 160 * shift;
-        }
-        // cout << endl << "TriggerBIT = " << TriggerBIT << " nshifts = " << nshifts << endl << endl;
-        // cout << "uncorrected: " << tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_base_tdc + tdc_adc_time_offset << endl
-        //      << "corrected  : " << tdc_scale * (T - GetConstant(tdc_time_offsets, digihit) + nshifts) + t_base_tdc + tdc_adc_time_offset << endl;
-
-        T = tdc_scale *T - GetConstant(tdc_time_offsets, digihit) 
-            + tdc_scale * nshifts
-            + t_base_tdc + tdc_adc_time_offset; 
-
-        // future: allow for seperate TDC scales for each channel
-        //T = GetConstant(tdc_scales, digihit)
-        //  * (T - GetConstant(tdc_time_offsets, digihit));
-
-        /*
+	    /*
            cout << "TOF TDC hit =  (" << digihit->plane << "," << digihit->bar << "," << digihit->end << ")  " 
-           << tdc_scale << " " << T << "  "
-           << GetConstant(tdc_time_offsets, digihit) << " " 
-           << tdc_scale*GetConstant(tdc_time_offsets, digihit) << " " << T << endl;
+           << T << "  " << GetConstant(tdc_time_offsets, digihit) << endl;
            */
 
         // Look for existing hits to see if there is a match

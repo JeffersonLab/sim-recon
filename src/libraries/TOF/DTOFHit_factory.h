@@ -19,6 +19,7 @@ using namespace std;
 #include "DTOFHit.h"
 #include "DTOFGeometry.h"
 #include "TTAB/DTranslationTable.h"
+#include "TTAB/DTTabUtilities.h"
 using namespace jana;
 
 
@@ -41,10 +42,8 @@ class DTOFHit_factory:public jana::JFactory<DTOFHit>{
 		// overall scale factors
 		double a_scale;
 		double t_scale;
-		double tdc_scale;
-                double t_base,t_base_tdc;
+        double t_base,t_base_tdc;
 		double tdc_adc_time_offset;
-		double tdc_shift;
 
 		double DELTA_T_ADC_TDC_MAX;
 
@@ -52,7 +51,6 @@ class DTOFHit_factory:public jana::JFactory<DTOFHit>{
 		tof_digi_constants_t adc_gains;
 		tof_digi_constants_t adc_time_offsets;
 		tof_digi_constants_t tdc_time_offsets;
-		tof_digi_constants_t tdc_scales;
 
 		vector<vector<double> >timewalk_parameters;
 		

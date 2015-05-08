@@ -10,6 +10,7 @@
 
 #include <JANA/JFactory.h>
 #include "DTTabUtilities.h"
+#include "TRACKING/DMCThrown.h"
 
 using namespace jana;
 

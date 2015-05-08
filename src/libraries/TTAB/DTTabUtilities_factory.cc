@@ -43,10 +43,13 @@ jerror_t DTTabUtilities_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 
 jerror_t DTTabUtilities_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+
 	DTTabUtilities* locTTabUtilities = new DTTabUtilities();
 	locTTabUtilities->dRolloverTimeWindowLength = dRolloverTimeWindowLength;
 	locTTabUtilities->dNumTDCTicksInRolloverTimeWindow = dNumTDCTicksInRolloverTimeWindow;
-	locTTabUtilities->dHasBadOrNoF1TDCConfigInfoFlag = (locEventLoop->GetJEvent().GetRunNumber() <= 2965);
+	locTTabUtilities->dHasBadOrNoF1TDCConfigInfoFlag = ((locEventLoop->GetJEvent().GetRunNumber() <= 2965) || (!locMCThrowns.empty()));
 	locTTabUtilities->dCAENTIPhaseDifference = dCAENTIPhaseDifference;
 
 	// Get DCODAROCInfo's, put into map
