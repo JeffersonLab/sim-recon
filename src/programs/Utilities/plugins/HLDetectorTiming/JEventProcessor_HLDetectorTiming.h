@@ -20,8 +20,13 @@
 #include <START_COUNTER/DSCHit.h>
 #include <TAGGER/DTAGHHit.h>
 #include <TAGGER/DTAGMHit.h>
+#include <RF/DRFTDCDigiTime.h>
+#include <RF/DRFTime_factory.h>
+#include <PID/DEventRFBunch.h>
 #include <PID/DParticleID.h>
 #include <TRACKING/DTrackFitter.h>
+
+#include "DFactoryGenerator_p2pi.h"
 
 #include "TFitResult.h"
 #include "TF1.h"
@@ -47,24 +52,26 @@ class JEventProcessor_HLDetectorTiming:public jana::JEventProcessor{
 
         //HistogramTools *histoTools;
         const DParticleID* dParticleID;
-
+        DRFTime_factory *dRFTimeFactory;
         void DoRoughTiming();
         void DoTDCADCAlign();
         void DoTrackBased();
 
         int GetCCDBIndexTOF(const DTOFHit *);
         int GetCCDBIndexBCAL(const DBCALHit *); ///< Not implimented
+        int GetCCDBIndexTAGM(const DTAGMHit *);
         int GetCCDBIndexCDC(const DCDCHit *);
         int GetCCDBIndexCDC(int, int);
         double BEAM_CURRENT;
-        int DO_ROUGH_TIMING, DO_TDC_ADC_ALIGN, DO_TRACK_BASED, DO_VERIFY, REQUIRE_BEAM, BEAM_EVENTS_TO_KEEP, DO_CDC_TIMING, DO_OPTIONAL, DO_FITS;
+        int DO_ROUGH_TIMING, DO_TDC_ADC_ALIGN, DO_TRACK_BASED, DO_VERIFY, REQUIRE_BEAM, BEAM_EVENTS_TO_KEEP, DO_CDC_TIMING, DO_OPTIONAL, DO_FITS, DO_REACTION, USE_RF_BUNCH;
         int fBeamEventCounter;
         // The final setup requires some shifts relative to the previous values, need to store them
 
-        int NBINS_TDIFF, NBINS_TAGGER_TIME, NBINS_MATCHING;
-        float MIN_TDIFF, MAX_TDIFF;
+        int NBINS_TDIFF, NBINS_TAGGER_TIME, NBINS_MATCHING, NBINS_RF_COMPARE;
+        float MIN_TDIFF, MAX_TDIFF,;
         float MIN_TAGGER_TIME, MAX_TAGGER_TIME;
         float MIN_MATCHING_T, MAX_MATCHING_T;
+        float MIN_RF_COMPARE, MAX_RF_COMPARE;
         double fcal_t_base, bcal_t_base, tof_t_base_fadc, tof_t_base_tdc, cdc_t_base;
         double tagm_fadc_time_offsets[103], tagm_tdc_time_offsets[103];
         double tagh_fadc_time_offsets[275], tagh_tdc_time_offsets[275];
