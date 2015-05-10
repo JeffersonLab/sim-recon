@@ -125,7 +125,7 @@ jerror_t JEventProcessor_HLDetectorTiming::brun(JEventLoop *eventLoop, int runnu
     eventLoop->Get(locRFTimes);
 
     if (DO_FITS == 0) return NOERROR;
-
+    /* No longer doing fits in this code, don't need these
     // load base time offsets
     map<string,double> base_time_offset;
     //CDC
@@ -204,7 +204,7 @@ jerror_t JEventProcessor_HLDetectorTiming::brun(JEventLoop *eventLoop, int runnu
         int counter = (table[i])["id"];
         tagh_tdc_time_offsets[counter] = (table[i])["offset"];
     }
-
+*/
     return NOERROR;
 }
 
@@ -480,7 +480,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                 Fill2DHistogram("HLDetectorTiming", "SC_TimeWalk", name,
                         scHitVector[i]->dE, scHitVector[i]->t_TDC - scHitVector[i]->t_fADC,
                         title,
-                        50, 0, 0.05, 50, -10, 10, false);
+                        100, 0, 0.0075, 100, -10, 10, false);
             }
             if (DO_OPTIONAL){
                 Fill2DHistogram("HLDetectorTiming", "SC", "SC Per Channel TDC Time",
@@ -553,7 +553,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                 Fill2DHistogram("HLDetectorTiming", "TAGM_TimeWalk", name,
                         tagmHitVector[i]->integral, tagmHitVector[i]->time_tdc - tagmHitVector[i]->time_fadc,
                         title,
-                        50, 0, 5000, 50, -10, 10, false);
+                        100, 0, 2000, 100, -10, 10, false);
             }
         }
 
@@ -618,7 +618,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                 Fill2DHistogram("HLDetectorTiming", "TAGH_TimeWalk", name,
                         taghHitVector[i]->integral, taghHitVector[i]->time_tdc - taghHitVector[i]->time_fadc,
                         title,
-                        50, 0, 10000, 50, -10, 10, false);
+                        100, 1000, 7000, 100, -10, 10, false);
             }
         }
     }
@@ -659,7 +659,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                 Fill2DHistogram("HLDetectorTiming", "TOF_TimeWalk", name,
                         tofHitVector[i]->dE, tofHitVector[i]->t_TDC - tofHitVector[i]->t_fADC,
                         title,
-                        50, 0, 0.05, 50, -10, 10, false);
+                        150, 0, 0.01, 100, -10, 10, false);
             }
         }
     }
@@ -695,7 +695,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch 1D Time",
                     tagmHitVector[j]->t - thisRFBunch->dTime,
                     "Tagger - RFBunch Time; #Deltat_{Tagger - RFBunch} [ns]; Entries",
-                    40, -20, 20);
+                    160, -20, 20);
         }
         // Loop over TAGH hits
         for (unsigned int j = 0 ; j < taghHitVector.size(); j++){
@@ -713,7 +713,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch 1D Time",
                     taghHitVector[j]->t - thisRFBunch->dTime,
                     "Tagger - RFBunch Time; #Deltat_{Tagger - RFBunch} [ns]; Entries",
-                    40, -20, 20);
+                    160, -20, 20);
         }
     }
 
@@ -744,7 +744,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                     Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch 1D Time p2pi",
                             tagmHitVector[j]->t - thisRFBunch->dTime,
                             "Tagger - RFBunch Time; #Deltat_{Tagger - RFBunch} [ns]; Entries",
-                            40, -20, 20);
+                            160, -20, 20);
                 }
             }
             // Loop over TAGH hits
@@ -764,7 +764,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                     Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch 1D Time p2pi",
                             taghHitVector[j]->t - thisRFBunch->dTime,
                             "Tagger - RFBunch Time; #Deltat_{Tagger - RFBunch} [ns]; Entries",
-                            40, -20, 20);
+                            160, -20, 20);
                 }
             }
         }
@@ -879,7 +879,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - SC 1D Target Time",
                     tagmHitVector[j]->t - flightTimeCorrectedSCTime,
                     "Tagger - SC Time at Target; #Deltat_{Tagger - SC} [ns]; Entries",
-                    40, -20, 20);
+                    160, -20, 20);
         }
         // Loop over TAGH hits
         for (unsigned int j = 0 ; j < taghHitVector.size(); j++){
@@ -896,7 +896,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - SC 1D Target Time",
                     taghHitVector[j]->t - flightTimeCorrectedSCTime,
                     "Tagger - SC Time at Target; #Deltat_{Tagger - SC} [ns]; Entries",
-                    40, -20, 20);
+                    160, -20, 20);
         }
 
         if(thisTrack->charge() > 0) continue; // Cut on the charge to kill protons
