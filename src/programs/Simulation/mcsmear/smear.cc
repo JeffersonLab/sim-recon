@@ -52,6 +52,7 @@ void SmearTAGM(hddm_s::HDDM *record);
 void SmearTAGH(hddm_s::HDDM *record);
 void SmearPS(hddm_s::HDDM *record);
 void SmearPSC(hddm_s::HDDM *record);
+void SmearFMWPC(hddm_s::HDDM *record);
 void InitCDCGeometry(void);
 void InitFDCGeometry(void);
 
@@ -192,6 +193,11 @@ extern double START_PHOTONS_PERMEV;
 extern double PS_SIGMA;
 extern double PS_PHOTONS_PERMEV;
 
+// FMWPC resolutions and threshold
+extern double FMWPC_TSIGMA;
+extern double FMWPC_ASIGMA;
+extern double FMWPC_THRESHOLD;
+
 extern bool SMEAR_BCAL;
 
 // Beginning of readout window
@@ -261,6 +267,7 @@ void Smear(hddm_s::HDDM *record)
       SmearTAGH(record);
       SmearPS(record);
       SmearPSC(record);
+      SmearFMWPC(record);
    }
    if (ADD_NOISE) {
       AddNoiseHitsCDC(record);
@@ -945,6 +952,32 @@ void SmearPSC(hddm_s::HDDM *record)
    }
 }
 
+//-----------
+// SmearFMWPC - smear hits in the forward MWPC
+//-----------
+void SmearFMWPC(hddm_s::HDDM *record)
+{
+   hddm_s::FmwpcChamberList chambers = record->getFmwpcChambers();
+   hddm_s::FmwpcChamberList::iterator iter;
+   for (iter = chambers.begin(); iter != chambers.end(); ++iter) {
+      iter->deleteFmwpcHits();
+      hddm_s::FmwpcTruthHitList thits = iter->getFmwpcTruthHits();
+      hddm_s::FmwpcTruthHitList::iterator titer;
+      for (titer = thits.begin(); titer != thits.end(); ++titer) {
+         // smear the time and energy
+         double t = titer->getT() + SampleGaussian(FMWPC_TSIGMA);
+         double dE = titer->getDE() + SampleGaussian(FMWPC_ASIGMA);
+         if (dE > FMWPC_THRESHOLD) {
+            hddm_s::FmwpcHitList hits = iter->addFmwpcHits();
+            hits().setT(t);
+            hits().setDE(dE);
+         }
+      }
+
+      if (DROP_TRUTH_HITS)
+         iter->deleteFmwpcTruthHits();
+   }
+}
 
 
 //-----------

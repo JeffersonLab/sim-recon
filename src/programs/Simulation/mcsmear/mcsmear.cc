@@ -126,6 +126,11 @@ double START_PHOTONS_PERMEV  = 0.0; // used to be 8000 should be more like 200
 double TOF_SIGMA = 100.*k_psec;
 double TOF_PHOTONS_PERMEV = 400.;
 
+double FMWPC_TSIGMA = 10.0;  // ns
+double FMWPC_ASIGMA = 0.5E-6;
+double FMWPC_THRESHOLD = 0.0;
+
+
 double TRIGGER_LOOKBACK_TIME = -100; // ns
 
 bool DROP_TRUTH_HITS=false;
