@@ -68,7 +68,7 @@ class JEventProcessor_HLDetectorTiming:public jana::JEventProcessor{
         // The final setup requires some shifts relative to the previous values, need to store them
 
         int NBINS_TDIFF, NBINS_TAGGER_TIME, NBINS_MATCHING, NBINS_RF_COMPARE;
-        float MIN_TDIFF, MAX_TDIFF,;
+        float MIN_TDIFF, MAX_TDIFF;
         float MIN_TAGGER_TIME, MAX_TAGGER_TIME;
         float MIN_MATCHING_T, MAX_MATCHING_T;
         float MIN_RF_COMPARE, MAX_RF_COMPARE;
