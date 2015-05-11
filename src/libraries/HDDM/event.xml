@@ -66,7 +66,7 @@
           </bcalSiPMSpectrum>
           <bcalfADCHit end="int" E="float" maxOccurs="unbounded" minOccurs="0" t="float"/>
           <bcalTDCHit end="int" maxOccurs="unbounded" minOccurs="0" t="float"/>
-          <bcalTruthHit E="float" maxOccurs="unbounded" minOccurs="0" t="float" zLocal="float"/>
+          <bcalTruthHit E="float" maxOccurs="unbounded" minOccurs="0" t="float" zLocal="float" incident_id="int"/>
         </bcalCell>
         <bcalTruthIncidentParticle maxOccurs="unbounded" minOccurs="0" ptype="int" x="float" y="float" z="float" px="float" py="float" pz="float" id="int"/>
         <bcalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" t="float" track="int" z="float">
@@ -170,6 +170,13 @@
       </mcTrajectory>
       <RFtime minOccurs="0" jtag="string"
               tsync="float" tunit="ns"/>
+      <forwardMWPC minOccurs="0">
+	    <fmwpcChamber layer="int" maxOccurs="unbounded" minOccurs="0" wire="int">
+		  <fmwpcTruthHit dE="float" dx="float" maxOccurs="unbounded" t="float"/>
+	      <fmwpcHit dE="float" maxOccurs="unbounded" t="float"/>
+        </fmwpcChamber>
+	  </forwardMWPC>
+
     </hitView>
     <reconView minOccurs="0" version="1.0">
       <tracktimebased maxOccurs="unbounded" minOccurs="0" FOM="float" Ndof="int" chisq="float" candidateid="int" trackid="int" id="int">
