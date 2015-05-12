@@ -53,7 +53,7 @@ class stream: public xstream::ostreambuf
 		 * \brief add an entire buffer to digest calculation (overloaded from streambuf)
 		 *
 		 */
-		std::streamsize xsputn(char *buffer, std::streamsize n);
+		std::streamsize xsputn(const char *buffer, std::streamsize n);
 
 	protected:
 		xstream::buffer buf; /*!<buffer data to calculate digest */
@@ -201,7 +201,7 @@ class block_stream: public stream{
 		 * \brief add an entire buffer to digest calculation (overloaded from streambuf)
 		 *
 		 */
-		std::streamsize xsputn(char *buffer, std::streamsize n);
+		std::streamsize xsputn(const char *buffer, std::streamsize n);
 
 	public:
 

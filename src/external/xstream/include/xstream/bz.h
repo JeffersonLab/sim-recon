@@ -31,7 +31,7 @@ enum flush_kind{
 	no_sync, /*!< flush the minimum possible data */
 	full_sync, /*!< writes current "compression block"
 	corruption at a previous position , data can be decompressed from this point onward*/
-	finish_sync, /*!< write all data so that the stream can be closed*/
+	finish_sync /*!< write all data so that the stream can be closed*/
 };
 
 /*!
@@ -98,7 +98,7 @@ class ostreambuf: private common, public xstream::ostreambuf {
 		 * \brief write an entire buffer (overloaded from streambuf)
 		 *
 		 */
-		std::streamsize xsputn(char *buffer, std::streamsize n);
+		std::streamsize xsputn(const char *buffer, std::streamsize n);
 		
 		/*!
 		 * \brief fine tuned flushing of stream

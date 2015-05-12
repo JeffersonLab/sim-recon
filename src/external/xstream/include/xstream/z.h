@@ -126,7 +126,7 @@ class ostreambuf: public common, public xstream::ostreambuf {
 		 * \brief write an entire buffer (overloaded from streambuf)
 		 *
 		 */
-		std::streamsize xsputn(char *buffer, std::streamsize n);
+		std::streamsize xsputn(const char *buffer, std::streamsize n);
 		
 		/*!
 		 * \brief fine tuned flushing of stream
