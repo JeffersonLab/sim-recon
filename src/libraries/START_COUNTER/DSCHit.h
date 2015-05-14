@@ -20,6 +20,7 @@ class DSCHit:public jana::JObject{
 		float t;        // best time (walk-corrected tdc)
 		float t_TDC;   // time from TDC, no walk correction
 		float t_fADC; // time from fADC
+		float pulse_height; // amplitude of pulse (used in time-walk corrections)
 		bool has_fADC; 
 		bool has_TDC;
 

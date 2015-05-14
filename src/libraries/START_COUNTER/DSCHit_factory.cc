@@ -197,7 +197,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
             if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
 	  }
 
-        // Make sure sector is in valid range
+	// Make sure sector is in valid range
         if( (digihit->sector <= 0) && (digihit->sector > MAX_SECTORS)) 
         {
             sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)", 
@@ -222,6 +222,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
         double A = (double)digihit->pulse_integral;
         double T = (double)digihit->pulse_time;
         double dA = A - pedestal;
+	double ped_corr_pulse_peak = PPobj->pulse_peak - PPobj->pedestal;
 
         if (digihit->pulse_time == 0) continue; // Should already be caught, but I'll leave it
         //if (dA < ADC_THRESHOLD) continue; // Will comment out until this is set to something useful by default
@@ -238,6 +239,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
         hit->has_fADC = true;
 
         hit->t = hit->t_fADC; // set time from fADC in case no TDC hit
+	hit->pulse_height = ped_corr_pulse_peak;
 
         // add in higher order corrections?
 
@@ -303,21 +305,21 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 		if (hit->dE > 0.0)
 		  {
-		    // Correct for time walk
-		    // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
-		    double A  = hit->dE;
-		    double C1 = timewalk_parameters[id][1];
-		    double C2 = timewalk_parameters[id][2];
-		    double A0 = timewalk_parameters[id][3];
-		    T -= C1*(pow(A,C2) - pow(A0,C2));
+		    // // Correct for time walk
+		    // // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
+		    // double A  = hit->dE;
+		    // double C1 = timewalk_parameters[id][1];
+		    // double C2 = timewalk_parameters[id][2];
+		    // double A0 = timewalk_parameters[id][3];
+		    // T -= C1*(pow(A,C2) - pow(A0,C2));
 
-		    // // Correct for timewalk using pulse peak instead of pulse integral
-		    // double A        = PPobj->pulse_peak;
-		    // double C1       = timewalk_parameters[id][0];
-		    // double C2       = timewalk_parameters[id][1];
-		    // double A_THRESH = timewalk_parameters[id][2];
-		    // double A0       = timewalk_parameters[id][3];
-		    // T -= C1*(pow(A/A_THRESH, C2) - pow(A0/A_THRESH, C2));
+		    // Correct for timewalk using pulse peak instead of pulse integral
+		    double A        = hit->pulse_height;
+		    double C1       = timewalk_parameters[id][0];
+		    double C2       = timewalk_parameters[id][1];
+		    double A_THRESH = timewalk_parameters[id][2];
+		    double A0       = timewalk_parameters[id][3];
+		    T -= C1*(pow(A/A_THRESH, C2) - pow(A0/A_THRESH, C2));
 		  }
 		hit->t=T;
 		//jout << " T cut TW Corr = " << T << endl;
