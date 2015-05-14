@@ -226,6 +226,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		uint32_t F125_EMULATION_THRESHOLD; 
 		uint32_t F125_NSPED;                 ///< Number of samples to integrate for pedestal
 		uint32_t USER_RUN_NUMBER;            ///< Run number supplied by user
+		uint32_t F125PULSE_NUMBER_FILTER;    ///< Discard DF125PulseXXX objects with pulse number equal or greater than this
+		uint32_t F250PULSE_NUMBER_FILTER;    ///< Discard DF250PulseXXX objects with pulse number equal or greater than this
 
 		// Utility class with multiple roles:
 		//
