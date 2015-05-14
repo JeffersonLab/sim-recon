@@ -179,7 +179,7 @@ namespace bz {
 		return c;
 	}
 
-	std::streamsize ostreambuf::xsputn (const char *buffer, std::streamsize n) {
+	std::streamsize ostreambuf::xsputn (char *buffer, std::streamsize n) {
 		LOG ("bz::ostreambuf::xsputn(" << buffer << "," << n << ")");
 
 		std::streamsize written = z_strm->avail_in;
@@ -198,7 +198,7 @@ namespace bz {
 		try{
 			//fake that the buffer is the new input buffer
 			in.size = n;
-			in.buf  = const_cast<char*>(buffer);
+			in.buf  = buffer;
 
 			flush(no_sync);
 		}
