@@ -206,4 +206,3 @@ jerror_t DRFTime_factory::fini(void)
 {
 	return NOERROR;
 }
-
