@@ -196,6 +196,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	  {
             if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
 	  }
+	else continue;
 
 	// Make sure sector is in valid range
         if( (digihit->sector <= 0) && (digihit->sector > MAX_SECTORS)) 
@@ -217,6 +218,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
             double nsamples_pedestal = (double)pulse_integral->nsamples_pedestal;
             pedestal          = single_sample_ped * nsamples_integral/nsamples_pedestal;
 	  }      	
+	else continue;
 
         // Apply calibration constants here
         double A = (double)digihit->pulse_integral;
