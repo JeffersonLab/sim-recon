@@ -27,7 +27,6 @@ class DRFTime_factory : public jana::JFactory<DRFTime>
 		DRFTime_factory(){};
 		~DRFTime_factory(){};
 
-		void Extract_DetectorSystemAndType(string locKeyName, DetectorSystem_t& locSystem, bool& locIsTDCFlag) const;
 		double Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo) const;
 		double Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo, double locRFPeriod) const;
 
@@ -41,17 +40,13 @@ class DRFTime_factory : public jana::JFactory<DRFTime>
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		double Calc_WeightedAverageRFTime(map<DetectorSystem_t, vector<double> >& locRFTimesMap, double& locRFTimeVariance) const;
+
 		double dRFBunchPeriod;
-		double dTScale_FADC250;
 
-		map<DetectorSystem_t, double> dTimeOffsetMap_ADCs;
-		map<DetectorSystem_t, double> dTimeOffsetMap_TDCs;
-
-		map<DetectorSystem_t, double> dTimeOffsetVarianceMap_ADCs;
-		map<DetectorSystem_t, double> dTimeOffsetVarianceMap_TDCs;
-
-		map<DetectorSystem_t, double> dTimeResolutionSqMap_ADCs;
-		map<DetectorSystem_t, double> dTimeResolutionSqMap_TDCs;
+		map<DetectorSystem_t, double> dTimeOffsetMap;
+		map<DetectorSystem_t, double> dTimeOffsetVarianceMap;
+		map<DetectorSystem_t, double> dTimeResolutionSqMap;
 };
 
 #endif // _DRFTime_factory_

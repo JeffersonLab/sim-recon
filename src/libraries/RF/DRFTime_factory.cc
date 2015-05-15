@@ -12,8 +12,6 @@
 //------------------
 jerror_t DRFTime_factory::init(void)
 {
-	// These are (apparently) fixed for all time
-	dTScale_FADC250 = 0.0625; // ns per count
 	return NOERROR;
 }
 
@@ -22,24 +20,20 @@ jerror_t DRFTime_factory::init(void)
 //------------------
 jerror_t DRFTime_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
-	map<string, double> locCCDBMap;
-	map<string, double>::iterator locIterator;
-	DetectorSystem_t locSystem;
-	bool locIsTDCFlag;
-
 	//RF Period
 	vector<double> locRFPeriodVector;
 	locEventLoop->GetCalib("PHOTON_BEAM/RF/rf_period", locRFPeriodVector);
 	dRFBunchPeriod = locRFPeriodVector[0];
 	
 	//Time Offsets
+	map<string, double> locCCDBMap;
+	map<string, double>::iterator locIterator;
 	if(locEventLoop->GetCalib("/PHOTON_BEAM/RF/time_offset", locCCDBMap))
 		jout << "Error loading /PHOTON_BEAM/RF/time_offset !" << endl;
 	for(locIterator = locCCDBMap.begin(); locIterator != locCCDBMap.end(); ++locIterator)
 	{
-		Extract_DetectorSystemAndType(locIterator->first, locSystem, locIsTDCFlag);
-		map<DetectorSystem_t, double>& locFactoryMap = locIsTDCFlag ? dTimeOffsetMap_TDCs : dTimeOffsetMap_ADCs;
-		locFactoryMap[locSystem] = locIterator->second;
+		DetectorSystem_t locSystem = NameToSystem(locIterator->first.c_str());
+		dTimeOffsetMap[locSystem] = locIterator->second;
 	}
 
 	//Time Offset Variances
@@ -47,9 +41,8 @@ jerror_t DRFTime_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
 		jout << "Error loading /PHOTON_BEAM/RF/time_offset_var !" << endl;
 	for(locIterator = locCCDBMap.begin(); locIterator != locCCDBMap.end(); ++locIterator)
 	{
-		Extract_DetectorSystemAndType(locIterator->first, locSystem, locIsTDCFlag);
-		map<DetectorSystem_t, double>& locFactoryMap = locIsTDCFlag ? dTimeOffsetVarianceMap_TDCs : dTimeOffsetVarianceMap_ADCs;
-		locFactoryMap[locSystem] = locIterator->second;
+		DetectorSystem_t locSystem = NameToSystem(locIterator->first.c_str());
+		dTimeOffsetVarianceMap[locSystem] = locIterator->second;
 	}
 
 	//Time Resolution Squared
@@ -57,9 +50,8 @@ jerror_t DRFTime_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
 		jout << "Error loading /PHOTON_BEAM/RF/time_resolution_sq !" << endl;
 	for(locIterator = locCCDBMap.begin(); locIterator != locCCDBMap.end(); ++locIterator)
 	{
-		Extract_DetectorSystemAndType(locIterator->first, locSystem, locIsTDCFlag);
-		map<DetectorSystem_t, double>& locFactoryMap = locIsTDCFlag ? dTimeResolutionSqMap_TDCs : dTimeResolutionSqMap_ADCs;
-		locFactoryMap[locSystem] = locIterator->second;
+		DetectorSystem_t locSystem = NameToSystem(locIterator->first.c_str());
+		dTimeResolutionSqMap[locSystem] = locIterator->second;
 	}
 
 	return NOERROR;
@@ -72,10 +64,7 @@ jerror_t DRFTime_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
 {
 	//The RF Time is defined at the center of the target
 	//The time offset needed to line it up to the center of the target is absorbed into the calibration constants.
-/*
-	vector<const DRFDigiTime*> locRFDigiTimes;
-	locEventLoop->Get(locRFDigiTimes);
-*/
+
 	vector<const DRFTDCDigiTime*> locRFTDCDigiTimes;
 	locEventLoop->Get(locRFTDCDigiTimes);
 
@@ -83,102 +72,60 @@ jerror_t DRFTime_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
 	locEventLoop->GetSingle(locTTabUtilities);
 
 	//Get All RF Times
-	map<pair<DetectorSystem_t, bool>, vector<double> > locRFTimesMap; //bool = isTDC
+	map<DetectorSystem_t, vector<double> > locRFTimesMap;
 
 	//F1TDC's
 	for(size_t loc_i = 0; loc_i < locRFTDCDigiTimes.size(); ++loc_i)
 	{
 		const DRFTDCDigiTime* locRFTDCDigiTime = locRFTDCDigiTimes[loc_i];
 		DetectorSystem_t locSystem = locRFTDCDigiTime->dSystem;
-		if(dTimeOffsetMap_TDCs.find(locSystem) == dTimeOffsetMap_TDCs.end())
+		if(dTimeOffsetMap.find(locSystem) == dTimeOffsetMap.end())
 			continue; //system not recognized
-		double locRFTime = Convert_TDCToTime(locRFTDCDigiTime, locTTabUtilities) - dTimeOffsetMap_TDCs[locSystem];
-//cout << "system, time = " << SystemName(locSystem) << ", " << locRFTime << endl;
-		locRFTimesMap[pair<DetectorSystem_t, bool>(locSystem, true)].push_back(locRFTime);
+		double locRFTime = Convert_TDCToTime(locRFTDCDigiTime, locTTabUtilities);
+		locRFTimesMap[locSystem].push_back(locRFTime);
 	}
-/*
-	//FADC250s
-	for(size_t loc_i = 0; loc_i < locRFDigiTimes.size(); ++loc_i)
-	{
-		const DRFDigiTime* locRFDigiTime = locRFDigiTimes[loc_i];
-		DetectorSystem_t locSystem = locRFDigiTime->dSystem;
-		if(dTimeOffsetMap_ADCs.find(locSystem) == dTimeOffsetMap_ADCs.end())
-			continue; //system not recognized
-		double locRFTime = Convert_ADCToTime(locRFDigiTime) - dTimeOffsetMap_ADCs[locSystem];
-		locRFTimesMap[pair<DetectorSystem_t, bool>(locSystem, false)].push_back(locRFTime);
-	}
-*/
+
 	if(locRFTimesMap.empty())
 		return NOERROR; //No RF signals, will try to emulate RF bunch time from timing from other systems
 
+	//Prefer to use the system with the best timing resolution (TOF if present)
+		//Seems to be an additional jitter when averaging times between systems
 
-	//HARD-CODE USING THE F1TDC TIME FROM THE PSC UNTIL EVERYTHING IS READY
-	pair<DetectorSystem_t, bool> locPSCSystemPair(SYS_PSC, true);
-	if(locRFTimesMap.find(locPSCSystemPair) == locRFTimesMap.end())
-		return NOERROR; //bail
-	DRFTime* locRFTime = new DRFTime();
-	locRFTime->dTime = locRFTimesMap[locPSCSystemPair][0]; //This time is defined at the center of the target (CCDB offsets center it)
-	locRFTime->dTimeVariance = 0.0;
-	_data.push_back(locRFTime);
-	return NOERROR;
-
-
-	//take weighted average of times
-		//avg = Sum(w_i * x_i) / Sum (w_i)
-			//w_i = 1/varx_i
-		//avg = Sum(x_i / varx_i) / Sum (1 / varx_i)
-			//var_avg = 1 / Sum (1 / varx_i)
-		//avg = Sum(x_i / varx_i) * var_avg
-
-	//will line up the first time near zero, then line up subsequent times to the first time
-		//cannot line up all times to zero: if first time is near +/- rf_period/2 (e.g. +/- 1.002 ns),
-		//may end up with some times near 1.002 and some near -1.002!
-
-	map<pair<DetectorSystem_t, bool>, vector<double> >::iterator locTimeIterator = locRFTimesMap.begin();
-	double locFirstTime = (locTimeIterator->second)[0];
-	locFirstTime = Step_TimeToNearInputTime(locFirstTime, 0.0);
-
-	double locSumOneOverTimeVariance = 0.0;
-	double locSumTimeOverTimeVariance = 0.0;
-	for(; locTimeIterator != locRFTimesMap.end(); ++locTimeIterator)
+	//Find the best system present in the data
+	map<DetectorSystem_t, double>::iterator locResolutionIterator = dTimeResolutionSqMap.begin();
+	double locBestResolution = 9.9E9;
+	DetectorSystem_t locBestSystem = SYS_NULL;
+	for(; locResolutionIterator != dTimeResolutionSqMap.end(); ++locResolutionIterator)
 	{
-		pair<DetectorSystem_t, bool> locSystemPair = locTimeIterator->first;
-		vector<double>& locRFTimes = locTimeIterator->second;
-		DetectorSystem_t locSystem = locSystemPair.first;
-		bool locIsTDCFlag = locSystemPair.second;
-
-		double locSingleTimeVariance = 0.0;
-		if(locIsTDCFlag)
-			locSingleTimeVariance = dTimeResolutionSqMap_TDCs[locSystem] + dTimeOffsetVarianceMap_TDCs[locSystem];
-		else
-			locSingleTimeVariance = dTimeResolutionSqMap_ADCs[locSystem] + dTimeOffsetVarianceMap_ADCs[locSystem];
-		locSumOneOverTimeVariance += double(locRFTimes.size()) / locSingleTimeVariance;
-
-		for(size_t loc_i = 0; loc_i < locRFTimes.size(); ++loc_i)
-		{
-			double locShiftedRFTime = Step_TimeToNearInputTime(locRFTimes[loc_i], locFirstTime);
-			locSumTimeOverTimeVariance += locShiftedRFTime / locSingleTimeVariance;
-		}
+		if(locResolutionIterator->second >= locBestResolution)
+			continue;
+		locBestResolution = locResolutionIterator->second;
+		locBestSystem = locResolutionIterator->first;
 	}
-	double locRFTimeVariance = 1.0 / locSumOneOverTimeVariance;
-	double locAverageRFTime = locSumTimeOverTimeVariance * locRFTimeVariance;
 
-	locRFTime = new DRFTime();
-	locRFTime->dTime = locAverageRFTime; //This time is defined at the center of the target (CCDB offsets center it)
+	//Use it (remove the others)
+	map<DetectorSystem_t, vector<double> >::iterator locTimeIterator = locRFTimesMap.begin();
+	while(locTimeIterator != locRFTimesMap.end())
+	{
+		if(locTimeIterator->first != locBestSystem)
+			locRFTimesMap.erase(locTimeIterator++);
+		else
+			++locTimeIterator;
+	}
+
+	if(locRFTimesMap.empty())
+		return NOERROR; //No RF signals, will try to emulate RF bunch time from timing from other systems
+
+	//Calculate the average RF time
+	double locRFTimeVariance = 0.0;
+	double locAverageRFTime = Calc_WeightedAverageRFTime(locRFTimesMap, locRFTimeVariance);
+
+	DRFTime* locRFTime = new DRFTime();
+	locRFTime->dTime = locAverageRFTime; //This time is defined at the center of the target (offsets with other detectors center it)
 	locRFTime->dTimeVariance = locRFTimeVariance;
 	_data.push_back(locRFTime);
 
 	return NOERROR;
-}
-
-void DRFTime_factory::Extract_DetectorSystemAndType(string locKeyName, DetectorSystem_t& locSystem, bool& locIsTDCFlag) const
-{
-	//Assumes Input is in form "System_Type" (e.g. "TOF_TDC", "TAGH_ADC")
-	size_t locUnderscoreIndex = locKeyName.find_first_of("_");
-	string locSystemName = locKeyName.substr(0, locUnderscoreIndex);
-	locSystem = NameToSystem(locSystemName.c_str());
-	string locTypeName = locKeyName.substr(locUnderscoreIndex + 1);
-	locIsTDCFlag = (locTypeName == "TDC");
 }
 
 double DRFTime_factory::Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo) const
@@ -195,15 +142,53 @@ double DRFTime_factory::Step_TimeToNearInputTime(double locTimeToStep, double lo
 
 double DRFTime_factory::Convert_TDCToTime(const DRFTDCDigiTime* locRFTDCDigiTime, const DTTabUtilities* locTTabUtilities) const
 {
+	double locRFTime = 0.0;
 	if(locRFTDCDigiTime->dIsCAENTDCFlag)
-		return locTTabUtilities->Convert_DigiTimeToNs_CAEN1290TDC(locRFTDCDigiTime);
+		locRFTime = locTTabUtilities->Convert_DigiTimeToNs_CAEN1290TDC(locRFTDCDigiTime);
 	else
-		return locTTabUtilities->Convert_DigiTimeToNs_F1TDC(locRFTDCDigiTime);
+		locRFTime = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(locRFTDCDigiTime);
+	locRFTime -= dTimeOffsetMap.find(locRFTDCDigiTime->dSystem)->second;
+	return locRFTime;
 }
 
-double DRFTime_factory::Convert_ADCToTime(const DRFDigiTime* locRFDigiTime) const
+double DRFTime_factory::Calc_WeightedAverageRFTime(map<DetectorSystem_t, vector<double> >& locRFTimesMap, double& locRFTimeVariance) const
 {
-	return dTScale_FADC250*locRFDigiTime->time;
+	//returns the average (and the variance by reference)
+
+	//will line up the first time near zero, then line up subsequent times to the first time
+		//cannot line up all times to zero: if first time is near +/- rf_period/2 (e.g. +/- 1.002 ns),
+		//may end up with some times near 1.002 and some near -1.002!
+
+	map<DetectorSystem_t, vector<double> >::iterator locTimeIterator = locRFTimesMap.begin();
+	double locFirstTime = (locTimeIterator->second)[0];
+	locFirstTime = Step_TimeToNearInputTime(locFirstTime, 0.0);
+
+	//take weighted average of times
+		//avg = Sum(w_i * x_i) / Sum (w_i)
+			//w_i = 1/varx_i
+		//avg = Sum(x_i / varx_i) / Sum (1 / varx_i)
+			//var_avg = 1 / Sum (1 / varx_i)
+		//avg = Sum(x_i / varx_i) * var_avg
+
+	double locSumOneOverTimeVariance = 0.0;
+	double locSumTimeOverTimeVariance = 0.0;
+	for(; locTimeIterator != locRFTimesMap.end(); ++locTimeIterator)
+	{
+		DetectorSystem_t locSystem = locTimeIterator->first;
+		vector<double>& locRFTimes = locTimeIterator->second;
+
+		double locSingleTimeVariance = dTimeResolutionSqMap.find(locSystem)->second + dTimeOffsetVarianceMap.find(locSystem)->second;
+		locSumOneOverTimeVariance += double(locRFTimes.size()) / locSingleTimeVariance;
+
+		for(size_t loc_i = 0; loc_i < locRFTimes.size(); ++loc_i)
+		{
+			double locShiftedRFTime = Step_TimeToNearInputTime(locRFTimes[loc_i], locFirstTime);
+			locSumTimeOverTimeVariance += locShiftedRFTime / locSingleTimeVariance;
+		}
+	}
+	locRFTimeVariance = 1.0 / locSumOneOverTimeVariance;
+	double locAverageRFTime = locSumTimeOverTimeVariance * locRFTimeVariance;
+	return locAverageRFTime;
 }
 
 //------------------
@@ -221,3 +206,4 @@ jerror_t DRFTime_factory::fini(void)
 {
 	return NOERROR;
 }
+

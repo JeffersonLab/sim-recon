@@ -78,7 +78,6 @@ double DTTabUtilities::Convert_DigiTimeToNs_F1TDC_GlobalSystemClock_ConfigInfo(c
 
 	//compute and return the time difference
 	double locDeltaT = locTDCToNsScaleFactor*double(locF1TDCHit->time) - double(locReferenceTimeThisWindow); // in ns
-	double locConvertedNum = locTDCToNsScaleFactor*double(locF1TDCHit->time);
 	if(locDeltaT < 0.0) // Take care of rollover
 		locDeltaT += double(locRolloverTimeWindowLength); //the time rolled over between the hit and reference times
 
