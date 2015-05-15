@@ -53,7 +53,8 @@ class stream: public xstream::ostreambuf
 		 * \brief add an entire buffer to digest calculation (overloaded from streambuf)
 		 *
 		 */
-		std::streamsize xsputn(const char *buffer, std::streamsize n);
+		std::streamsize xsputn(char *buffer, std::streamsize n);
+		using std::streambuf::xsputn;  // avoid compiler warnings related to 'hides overloaded virtual function' 5/15/2015 DL
 
 	protected:
 		xstream::buffer buf; /*!<buffer data to calculate digest */
@@ -201,7 +202,7 @@ class block_stream: public stream{
 		 * \brief add an entire buffer to digest calculation (overloaded from streambuf)
 		 *
 		 */
-		std::streamsize xsputn(const char *buffer, std::streamsize n);
+		std::streamsize xsputn(char *buffer, std::streamsize n);
 
 	public:
 

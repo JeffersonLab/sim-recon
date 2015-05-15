@@ -126,7 +126,8 @@ class ostreambuf: public common, public xstream::ostreambuf {
 		 * \brief write an entire buffer (overloaded from streambuf)
 		 *
 		 */
-		std::streamsize xsputn(const char *buffer, std::streamsize n);
+		std::streamsize xsputn(char *buffer, std::streamsize n);
+		using std::streambuf::xsputn;  // avoid compiler warnings related to 'hides overloaded virtual function' 5/15/2015 DL
 		
 		/*!
 		 * \brief fine tuned flushing of stream

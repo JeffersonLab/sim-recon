@@ -52,13 +52,12 @@ namespace digest{
 		return 1;
 	}
 
-	std::streamsize stream::xsputn(const char *b, std::streamsize n)
+	std::streamsize stream::xsputn(char *b, std::streamsize n)
 	{
 		LOG("digest::stream::xsputn("<<b<<", "<<n<<")");
 
 		sync();
-		char *bb = const_cast<char*>(b); // needed since b must be const to avoid compiler warnings  5/12/2015 DL
-		setp (bb, bb + n);
+		setp (b, b + n);
 		length+=n;
 		LOG("\tlength = "<<length);
 		sync();
@@ -124,7 +123,7 @@ namespace digest{
 	}
 
 
-	std::streamsize block_stream::xsputn(const char *b, std::streamsize n)
+	std::streamsize block_stream::xsputn(char *b, std::streamsize n)
 	{
 		LOG("digest::block_stream::xsputn "<<n);
 		sync();
@@ -135,8 +134,7 @@ namespace digest{
 			std::copy(b, b+r, buf.buf+t);
 			sync();
 		}
-		char *bb = const_cast<char*>(b); // needed since b must be const to avoid compiler warnings  5/12/2015 DL
-		setp(bb+r, bb+n);
+		setp(b+r, b+n);
 		sync();
 
 		return n;

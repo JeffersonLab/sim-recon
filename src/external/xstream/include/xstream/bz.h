@@ -99,6 +99,7 @@ class ostreambuf: private common, public xstream::ostreambuf {
 		 *
 		 */
 		std::streamsize xsputn(char *buffer, std::streamsize n);
+		using std::streambuf::xsputn;  // avoid compiler warnings related to 'hides overloaded virtual function' 5/15/2015 DL
 		
 		/*!
 		 * \brief fine tuned flushing of stream

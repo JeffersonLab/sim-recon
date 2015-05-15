@@ -204,7 +204,7 @@ namespace z {
 		return c;
 	}
 
-	std::streamsize ostreambuf::xsputn (const char *buffer, std::streamsize n) {
+	std::streamsize ostreambuf::xsputn (char *buffer, std::streamsize n) {
 		LOG ("z::ostreambuf::xsputn(" << buffer << "," << n << ")");
 
 		//XXX should written be defined this way???
@@ -224,7 +224,7 @@ namespace z {
 		try{
 			//fake that the buffer is the new input buffer
 			in.size = n;
-			in.buf  = const_cast<char*>(buffer); // const_cast needed since buffer must be const to avoid compiler warnings  5/12/2015 DL
+			in.buf  = buffer;
 
 			flush(no_sync);
 		}
