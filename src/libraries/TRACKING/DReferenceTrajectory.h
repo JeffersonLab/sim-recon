@@ -167,7 +167,10 @@ class DReferenceTrajectory{
 					     const DVector3 &pos,const DVector3 &B,
 					     DMatrixDSym &C) const;
 		
-
+		jerror_t BrentsAlgorithm(DVector3 &pos1,DVector3 &mom1,
+					 DVector3 &pos2,DVector3 &mom2,
+					 double ds,double q2,
+					 double &doca) const;
 
 		swim_step_t *swim_steps;
 		int Nswim_steps;
