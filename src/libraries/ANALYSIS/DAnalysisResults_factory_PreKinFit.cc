@@ -155,6 +155,8 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 
 			locDirectoryFile->cd("..");
 		}
+
+		locFile->cd(""); //return to base directory
 	}
 	dApplication->RootUnLock(); //unlock
 

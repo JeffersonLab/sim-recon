@@ -298,6 +298,7 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 				}
 			}
 		}
+		locFile->cd(""); //return to base directory
 	}
 	japp->RootUnLock(); //unlock
 

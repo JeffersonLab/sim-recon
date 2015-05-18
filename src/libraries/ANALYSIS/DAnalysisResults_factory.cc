@@ -134,6 +134,7 @@ jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int runn
 			dHistMap_NumCombosSurvivedAction1D[locReaction] = loc1DHist;
 			locDirectoryFile->cd("..");
 		}
+		locFile->cd(""); //return to base directory
 	}
 	dApplication->RootUnLock(); //unlock
 

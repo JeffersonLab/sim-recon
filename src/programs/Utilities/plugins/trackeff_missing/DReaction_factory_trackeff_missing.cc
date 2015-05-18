@@ -78,7 +78,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05)); //5% confidence level cut //require kinematic fit converges
+//	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05)); //5% confidence level cut //require kinematic fit converges
 
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56, "Post-KinFit"));
@@ -152,7 +152,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05)); //5% confidence level cut //require kinematic fit converges
+//	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05)); //5% confidence level cut //require kinematic fit converges
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -226,7 +226,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05)); //5% confidence level cut //require kinematic fit converges
+//	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05)); //5% confidence level cut //require kinematic fit converges
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
