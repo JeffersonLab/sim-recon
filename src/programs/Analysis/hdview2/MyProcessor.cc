@@ -1039,7 +1039,7 @@ void MyProcessor::FillGraphics(void)
 		vector<const DFCALGeometry*> fcalgeometries;
 		vector<const DFCALHit*> mcfcalhits;
 		loop->Get(fcalgeometries);
-		loop->Get(mcfcalhits);
+		loop->Get(mcfcalhits, "TRUTH");
 		if(fcalgeometries.size()>0){
 			const DFCALGeometry *fgeom = fcalgeometries[0];
 
