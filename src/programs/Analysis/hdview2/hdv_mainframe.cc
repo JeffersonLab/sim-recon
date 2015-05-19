@@ -1220,7 +1220,7 @@ void hdv_mainframe::DoMyRedraw(void)
 			if(eA->GetN()==2){
 				double *x = eA->GetX();
 				double *y = eA->GetY();
-				if((x[0]==x[1]) && (y[0]==y[1])){
+				if(fabs(x[0]-x[1])<0.1 && fabs(y[0]==y[1])<0.1){
 					TMarker *m = new TMarker(x[0], y[0], 8);
 					m->SetMarkerColor(iter->color);
 					m->SetMarkerSize(0.5);
