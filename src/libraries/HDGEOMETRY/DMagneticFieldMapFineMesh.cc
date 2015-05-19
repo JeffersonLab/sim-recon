@@ -26,23 +26,20 @@ DMagneticFieldMapFineMesh::DMagneticFieldMapFineMesh(JApplication *japp, unsigne
 	
 	int Npoints = ReadMap(namepath, runnumber); 
 	if(Npoints==0){
-		_DBG_<<"Error getting JCalibration object for magnetic field!"<<endl;
-		japp->Quit();
+	  _DBG_<<"Error getting JCalibration object for magnetic field!"<<endl;
+	  japp->Quit();
 	}
-	GetFineMeshMap();
+	
+	GetFineMeshMap(namepath,runnumber);
 }
 
 //---------------------------------
 // DMagneticFieldMapFineMesh    (Constructor)
 //---------------------------------
-DMagneticFieldMapFineMesh::DMagneticFieldMapFineMesh(JCalibration *jcalib, string namepath)
+DMagneticFieldMapFineMesh::DMagneticFieldMapFineMesh(JCalibration *jcalib, string namepath,int runnumber)
 {
 	this->jcalib = jcalib;
-	if(ReadMap(namepath)==0){
-		_DBG_<<"Error getting JCalibration object for magnetic field!"<<endl;
-		exit(1);
-	} 
-	GetFineMeshMap();
+	GetFineMeshMap(namepath,runnumber);
 }
 
 //---------------------------------
@@ -845,18 +842,20 @@ double DMagneticFieldMapFineMesh::GetBz(double x, double y, double z) const{
 }
 
 // Read a fine-mesh B-field map from an evio file
-void DMagneticFieldMapFineMesh::GetFineMeshMap(void){ 
+void DMagneticFieldMapFineMesh::GetFineMeshMap(string namepath,int runnumber){ 
 #ifdef HAVE_EVIO
-  string evioFileName = "finemesh.evio";
+  size_t ipos=namepath.find("/");
+  size_t ipos2=namepath.find("/",ipos+1);
+  string evioFileName =namepath.substr(ipos2+1)+".evio";
   struct stat stFileInfo;
   int intStat = stat(evioFileName.c_str(),&stFileInfo);
   if (intStat == 0){
     ReadEvioFile(evioFileName);
   }
   else{
-#endif
+#endif  
     cout << "Fine-mesh evio file does not exist." <<endl;
-    cout << "Constructing the fine-mesh B-field map..." << endl;
+    cout << "Constructing the fine-mesh B-field map..." << endl;    
     GenerateFineMesh();
 #ifdef HAVE_EVIO
     WriteEvioFile(evioFileName);

@@ -21,7 +21,7 @@ using namespace jana;
 class DMagneticFieldMapFineMesh:public DMagneticFieldMap{
  public:
   DMagneticFieldMapFineMesh(JApplication *japp, unsigned int runnumber=1, string namepath = "Magnets/Solenoid/solenoid_1350_poisson_20130925");
-  DMagneticFieldMapFineMesh(JCalibration *jcalib, string namepath = "Magnets/Solenoid/solenoid_1350_poisson_20130925");
+  DMagneticFieldMapFineMesh(JCalibration *jcalib, string namepath = "Magnets/Solenoid/solenoid_1350_poisson_20130925", int runnumber=1);
   virtual ~DMagneticFieldMapFineMesh();
   
   int ReadMap(string namepath, int runnumber=1, string context="");
@@ -47,7 +47,7 @@ class DMagneticFieldMapFineMesh:public DMagneticFieldMap{
 			   double &dBydz,
 			   double &dBzdx, double &dBzdy,
 			   double &dBzdz) const;
-  void GetFineMeshMap(void);
+  void GetFineMeshMap(string namepath,int runnumber);
   void WriteEvioFile(string evioFileName);	
   void ReadEvioFile(string evioFileName);
   void GenerateFineMesh(void);
