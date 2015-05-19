@@ -707,7 +707,7 @@ void MyProcessor::FillGraphics(void)
 			
 			// Rings for drift times.
 			// NOTE: These are not perfect since they still have TOF in them
-			if(hdvmf->GetCheckButton("cdcdrift") && wire->stereo==0.0){
+			if(hdvmf->GetCheckButton("cdcdrift") && fabs(wire->stereo)<0.05){
 				double x = wire->origin.X();
 				double y = wire->origin.Y();
 				double dist1 = cdctrackhits[i]->dist;
@@ -1853,16 +1853,18 @@ void MyProcessor::GetIntersectionWithCalorimeter(const DKinematicData* kd, DVect
 	double s_fcal = 1.0E6;
 	DVector3 origin(0.0, 0.0, FCAL_Zmin);
 	DVector3 norm(0.0, 0.0, -1.0);
-	rt.GetIntersectionWithPlane(origin, norm, pos_fcal, &s_fcal);
-	if(pos_fcal.Perp()<FCAL_Rmin || pos_fcal.Perp()>FCAL_Rmax)s_fcal = 1.0E6;
+	//rt.GetIntersectionWithPlane(origin, norm, pos_fcal, &s_fcal); // This gives different answer than below!
+	DVector3 p_at_intersection;
+	rt.GetIntersectionWithPlane(origin, norm, pos_fcal, p_at_intersection, &s_fcal, NULL, SYS_FCAL);
+	if(pos_fcal.Perp()<FCAL_Rmin || pos_fcal.Perp()>FCAL_Rmax || !isfinite(pos_fcal.Z()))s_fcal = 1.0E6;
 	
 	// Find intersection with BCAL
 	DVector3 pos_bcal;
 	double s_bcal = 1.0E6;
 	rt.GetIntersectionWithRadius(BCAL_Rmin, pos_bcal, &s_bcal);
-	if(pos_bcal.Z()<BCAL_Zmin || pos_bcal.Z()>(BCAL_Zmin+BCAL_Zlen))s_bcal = 1.0E6;
+	if(pos_bcal.Z()<BCAL_Zmin || pos_bcal.Z()>(BCAL_Zmin+BCAL_Zlen) || !isfinite(pos_bcal.Z()))s_bcal = 1.0E6;
 
-	if(s_fcal>1000.0 && s_bcal>1000.0){
+	if(s_fcal>10000.0 && s_bcal>10000.0){
 		// neither calorimeter hit
 		who = SYS_NULL;
 		pos.SetXYZ(0.0,0.0,0.0);
