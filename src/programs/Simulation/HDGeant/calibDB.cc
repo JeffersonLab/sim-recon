@@ -9,12 +9,16 @@
 using namespace std;
 
 #include <JANA/JCalibrationFile.h>
+#include <DANA/DApplication.h>
+#include <HDGEOMETRY/DGeometry.h>
 #include <HDGEOMETRY/DMagneticFieldMapFineMesh.h>
 #include <HDGEOMETRY/DMagneticFieldMapCalibDB.h>
 #include <HDGEOMETRY/DMagneticFieldMapConst.h>
 #include "HDGEOMETRY/DMagneticFieldMapSpoiled.h"
 #include "HDGEOMETRY/DMagneticFieldMapParameterized.h"
 #include "HDGEOMETRY/DMagneticFieldMapNoField.h"
+#include "HDGEOMETRY/DMagneticFieldMapPSConst.h"
+#include "HDGEOMETRY/DMagneticFieldMapPS2DMap.h"
 
 extern "C" {
 #include "calibDB.h"
@@ -43,6 +47,7 @@ extern "C" {
 
 bool nofield=false;
 DMagneticFieldMap *Bmap=NULL;
+DMagneticFieldMapPS *PS_Bmap=NULL;
 static JCalibration *jcalib=NULL;
 //static void *dlgeom_handle=NULL;
 //string HDDS_XML = "$HDDS_HOME/main_HDDS.xml";
@@ -55,7 +60,7 @@ extern "C" {
 //----------------
 // initcalibdb_
 //----------------
-void initcalibdb_(char *bfield_type, char *bfield_map, int *runno)
+void initcalibdb_(char *bfield_type, char *bfield_map, char *PS_bfield_type, char *PS_bfield_map, int *runno)
 {
    ios::sync_with_stdio(true);
 
@@ -75,6 +80,8 @@ void initcalibdb_(char *bfield_type, char *bfield_map, int *runno)
    // to eliminate that white space.
    while(strlen(bfield_type)>0 && bfield_type[strlen(bfield_type)-1]==' ')bfield_type[strlen(bfield_type)-1] = 0;
    while(strlen(bfield_map)>0 && bfield_map[strlen(bfield_map)-1]==' ')bfield_map[strlen(bfield_map)-1] = 0;
+   while(strlen(PS_bfield_type)>0 && PS_bfield_type[strlen(PS_bfield_type)-1]==' ')PS_bfield_type[strlen(PS_bfield_type)-1] = 0;
+   while(strlen(PS_bfield_map)>0 && PS_bfield_map[strlen(PS_bfield_map)-1]==' ')PS_bfield_map[strlen(PS_bfield_map)-1] = 0;
    
    // Read in the field map from the appropriate source
    if(bfield_type[0] == 0)strcpy(bfield_type, "CalibDB");
@@ -125,6 +132,77 @@ void initcalibdb_(char *bfield_type, char *bfield_map, int *runno)
      _DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<bfield_type_str<<"\" !!"<<endl;
      exit(-1);
    }   
+
+   // also load the PS magnet field map similarly to the solenoid field map above
+   if(PS_bfield_type[0] == 0)strcpy(PS_bfield_type, "CalibDB");
+   string PS_bfield_type_str(PS_bfield_type);
+
+   const char *PS_ccdb_help =
+	   " \n"
+	   " Could not load the pair spectrometer field map from the CCDB!\n"
+	   " Please specify the pair spectrometer field map to use on the command line, e.g.:\n"
+	   " \n"
+	   "   -PBFIELD_MAP=Magnets/PairSpectrometer/PS_1.8T_20150513_test\n"
+	   " or\n"
+	   "   -PBFIELD_TYPE=Const\n";
+
+   if(PS_bfield_type_str=="CalibDB"){
+     // if the magnetic field is specified in control.in, then use that value instead of the CCDB values
+     if(strlen(PS_bfield_map))
+       PS_Bmap = new DMagneticFieldMapPS2DMap(japp,*runno,PS_bfield_map);
+     else {
+          
+       // see if we can load the name of the magnetic field map to use from the calib DB
+       map<string,string> PS_bfield_map_name;
+       if(jcalib->GetCalib("/Magnets/PairSpectrometer/ps_magnet_map", PS_bfield_map_name)) {
+	 // if we can't find information in the CCDB, then quit with an error message
+	 _DBG_<<PS_ccdb_help<<endl;
+	 exit(-1);
+       } else {
+	 if( PS_bfield_map_name.find("map_name") != PS_bfield_map_name.end() ) {
+	   PS_Bmap = new DMagneticFieldMapPS2DMap(japp,*runno,PS_bfield_map_name["map_name"]);  // pass along the name of the magnetic field map to load
+	 } else {
+	   // if we can't find information in the CCDB, then quit with an error message
+	   jerr << PS_ccdb_help << endl;
+	   exit(-1);
+	 }
+       }
+     }
+   }
+   else if(PS_bfield_type_str=="Const"){
+     PS_Bmap = new DMagneticFieldMapPSConst(0.0, 1.64, 0.0);
+   }
+   else{
+     _DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<PS_bfield_type_str<<"\" !!"<<endl;
+     exit(-1);
+   }   
+
+}
+
+//----------------
+// gufld_ps_
+//----------------
+void gufld_ps_(float *r, float *B)
+{
+   /// Wrapper function to allow the FORTRAN gufld routine to
+   /// use the C++ class DMagneticFieldMap to access the 
+   /// B-field.
+
+   if(!PS_Bmap){
+      _DBG_<<"Call to gufld_ps when PS_Bmap not intialized! Exiting."<<endl;
+      exit(-1);
+   }
+   
+   double x = r[0];
+   double y = r[1];
+   double z = r[2];
+   double Bx, By, Bz;
+   
+   PS_Bmap->GetField(x, y, z, Bx, By, Bz);
+
+   B[0] = Bx;
+   B[1] = By;
+   B[2] = Bz;
 }
 
 //----------------

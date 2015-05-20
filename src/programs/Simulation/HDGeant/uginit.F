@@ -143,6 +143,8 @@
       integer outfile(20)
       integer bfield_type(20)
       integer bfield_map(20)
+      integer PS_bfield_type(20)
+      integer PS_bfield_map(20)
       common /inputFile/ iskip,infile,outfile
       data iskip/0/
       data infile/20*0/
@@ -247,6 +249,8 @@ C..geant..
       call ffkey('beam',beamE0,5,'REAL')
       call ffkey('bfieldmap', bfield_map,20,'MIXED')
       call ffkey('bfieldtype', bfield_type,20,'MIXED')
+      call ffkey('psbfieldmap', PS_bfield_map,20,'MIXED')
+      call ffkey('psbfieldtype', PS_bfield_type,20,'MIXED')
       call ffkey('nosecondaries', nosecondaries,1,'INTEGER')
       call ffkey('trajectories', storetraj,1,'INTEGER')
       call ffkey('plog', plog_particle_gun,1,'INTEGER')
@@ -387,7 +391,8 @@ C for calibration database
          call seteventid(runno_ff,0)
       endif
 
-      call initcalibdb(bfield_type, bfield_map, myrunno)
+      call initcalibdb(bfield_type, bfield_map, PS_bfield_type, 
+     +     PS_bfield_map, myrunno)
       call copytocplusplus(infile,outfile,postsmear,mcsmearopts
      +,deleteunsmeared)
       call copygatetocplusplus(bggate(1), bggate(2))
