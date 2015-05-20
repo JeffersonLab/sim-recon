@@ -1,0 +1,17 @@
+
+
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+sbms.AddCERNLIB(env)
+sbms.AddDANA(env)
+sbms.AddROOT(env)
+
+env.AppendUnique(CPPPATH = '#libraries/HDDM')
+
+sbms.executables(env)
+
+

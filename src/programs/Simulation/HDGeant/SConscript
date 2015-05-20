@@ -16,7 +16,7 @@ else:
 	# get env object and clone it
 	env = env.Clone()
 
-	SConscript(dirs=['gelhad', 'hitutil'], exports='env osname', duplicate=0)
+	SConscript(dirs=['gelhad', 'hitutil', 'utilities'], exports='env osname', duplicate=0)
 
 	env.AppendUnique(LIBS      = ['hddsGeant3', 'gelhad', 'hitutil'])
 
