@@ -8,43 +8,121 @@
 
 #include <iostream>
 #include <iomanip>
+#include <cmath>
+#include "Math/Minimizer.h"
+#include "TMinuitMinimizer.h"
+#include "Math/Factory.h"
+#include "Math/Functor.h"
 using namespace std;
 
 #include <CDC/DCDCTrackHit.h>
-
+#include <TRACKING/DTrackFinder.h>
+#include <TRACKING/DTrackFitter.h>
+#include <BCAL/DBCALShower.h>
 #include "DTrackCandidate_factory_CDCCOSMIC.h"
 using namespace jana;
-
 
 // This simple track finder is made for fitting straight line cosmic tracks 
 // in the CDC. It will automatically make a track from all CDC hits it finds. 
 // It does this by doing a linear regression on the CDC axial hits
 // in the X/Y plane.
+// Updated to include timing information in the fit.
+// Will use TMinuit (Not recommended for track fitting, but this isn't really tne "production" method)
+
+bool DTrackCandidate_CDCCOSMIC_cdc_hit_cmp(const DCDCTrackHit *a,
+        const DCDCTrackHit *b){
+
+    return(a->wire->origin.Y()>b->wire->origin.Y());
+}
+
+vector<double> Measurements, MeasurementErrors;
+vector<const DCDCWire *> Wires;
+
+Double_t fit_function(const DCDCWire * wire,const Double_t *par)
+{
+    // par[4]={x0, y0, xslope, yslope}
+    double udirx = wire->udir.x();
+    double udiry = wire->udir.y();
+    double udirz = wire->udir.z();
+    double wx = wire->origin.x();
+    double wy = wire->origin.y();
+    double wz = wire->origin.z();
+    // Distance of closest approach from track to wire
+    double value = sqrt(pow(udiry*(wx - par[0] - wz*par[2]) + udirx*(-wy + par[1] + wz*par[3]) + udirz*(wy*par[2] - par[2]*par[1] - wx*par[3] + par[0]*par[3]),2)/
+            (pow(udiry,2)*(1 + pow(par[2],2)) - 2*udiry*udirz*par[3] - 2*udirx*par[2]*(udirz + udiry*par[3]) + 
+             pow(udirx,2)*(1 + pow(par[3],2)) + pow(udirz,2)*(pow(par[2],2) + pow(par[3],2))));
+    return value;
+}
+
+double calc_chi_square(const Double_t *par)
+{
+    //calculate chisquare
+    double chisq = 0;
+    for (unsigned int i=0;i<Measurements.size(); i++) {
+        // chi square is the quadratic sum of the distance from the point to the function weighted by its error
+        double delta  = (Measurements[i]-fit_function(Wires[i],par))/MeasurementErrors[i];
+        chisq += delta*delta;
+    }
+    return chisq;
+}
+// Convert time to distance for the cdc
+double DTrackCandidate_factory_CDCCOSMIC::CDCDriftDistance(double t){
+    double d=0.;
+    if (t>cdc_drift_table[cdc_drift_table.size()-1]) return 0.78;
+    if (t>0){
+        unsigned int index=0;
+        index=Locate(cdc_drift_table,t);
+        double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
+        double frac=(t-cdc_drift_table[index])/dt;
+        d=0.01*(double(index)+frac); 
+    }
+    return d;
+}
+
+// Smearing function derived from fitting residuals
+inline double DTrackCandidate_factory_CDCCOSMIC::CDCDriftVariance(double t){ 
+    //  return 0.001*0.001;
+    //if (t<0.) t=0.;
+
+    // double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
+    // sigma+=0.005;
+
+    //sigma=0.08/(t+1.)+0.03;
+    double sigma=0.015;  
+    return sigma*sigma;
+}
+
+// Locate a position in vector xx given x
+unsigned int DTrackCandidate_factory_CDCCOSMIC::Locate(vector<double>&xx,
+        double x){
+    int n=xx.size();
+    if (x==xx[0]) return 0;
+    else if (x==xx[n-1]) return n-2;
+
+    int jl=-1;
+    int ju=n;
+    int ascnd=(xx[n-1]>=xx[0]);
+    while(ju-jl>1){
+        int jm=(ju+jl)>>1;
+        if ( (x>=xx[jm])==ascnd)
+            jl=jm;
+        else
+            ju=jm;
+    } 
+    return jl;
+}
 
 //------------------
 // init
 //------------------
 jerror_t DTrackCandidate_factory_CDCCOSMIC::init(void)
 {
-	bfield = new DMagneticFieldMapNoField(japp);
-	rt = new DReferenceTrajectory(bfield);
-	rt->Rmax_interior = 100.0; // (cm)  set larger swim volume so we can swim through the BCAL 
-	rt->Rmax_exterior = 200.0; // (cm)  set larger swim volume so we can swim through the BCAL 
+    bfield = new DMagneticFieldMapNoField(japp);
+    rt = new DReferenceTrajectory(bfield);
+    //rt->Rmax_interior = 100.0; // (cm)  set larger swim volume so we can swim through the BCAL 
+    //rt->Rmax_exterior = 200.0; // (cm)  set larger swim volume so we can swim through the BCAL 
 
-	// Optionally fill residual vs ring
-	bool FILL_HIST = false;
-	gPARMS->SetDefaultParameter("FILL_HIST", FILL_HIST);
-	if(FILL_HIST){
-		residual_vs_ring = new TH2D("residual_vs_ring", "CDC Cosmics straight line fitter", 250, 0.0, 100.0, 28, 0.5, 28.5);
-		residual_vs_ring->SetXTitle("residual (mm)");
-		residual_vs_ring->SetYTitle("ring (a.k.a. layer)");
-
-		h_chisq = new TH1D("chisq", "#chi^2", 250, 0.0, 200.0);
-		h_Ndof = new TH1D("Ndof", "Degrees of Freedom", 201, -0.5, 200.5);
-		h_chisq_per_Ndof = new TH1D("chisq_per_Ndof", "#chi^2/Ndof", 250, 0.0, 10.0);
-	}
-
-	return NOERROR;
+    return NOERROR;
 }
 
 //------------------
@@ -52,7 +130,43 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::init(void)
 //------------------
 jerror_t DTrackCandidate_factory_CDCCOSMIC::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
-	return NOERROR;
+    DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+    JCalibration *jcalib = dapp->GetJCalibration(runnumber);
+    // Get pointer to TrackFinder object 
+    vector<const DTrackFinder *> finders;
+    eventLoop->Get(finders);
+
+    if(finders.size()<1){
+        _DBG_<<"Unable to get a DTrackFinder object!"<<endl;
+        return RESOURCE_UNAVAILABLE;
+    }
+
+    // Drop the const qualifier from the DTrackFinder pointer
+    finder = const_cast<DTrackFinder*>(finders[0]);
+
+    typedef map<string,double>::iterator iter_double;
+    vector< map<string, double> > tvals;
+    if (jcalib->Get("CDC/cdc_drift_table", tvals)==false){    
+        for(unsigned int i=0; i<tvals.size(); i++){
+            map<string, double> &row = tvals[i];
+            iter_double iter = row.find("t");
+            cdc_drift_table.push_back(1000.*iter->second);
+        }
+    }
+
+    if(cdc_drift_table.empty()){
+        jerr << endl;
+        jerr << " No values found for \"CDC/cdc_drift_table\"!" <<endl;
+        jerr << endl;
+        jerr << " This probably means you'r using an old calibration DB." << endl;
+        jerr << " Check your JANA_CALIB_URL environment variable." << endl;
+        jerr << " (This message printed from DCDCTrackHit_factory::brun())" << endl;
+        exit(-1);
+    }
+    cdc_drift_table_min = cdc_drift_table[0];
+    cdc_drift_table_max = cdc_drift_table[cdc_drift_table.size()-1];
+
+    return NOERROR;
 }
 
 //------------------
@@ -60,218 +174,187 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::brun(jana::JEventLoop *eventLoop, in
 //------------------
 jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumber)
 {
-	vector<const DCDCTrackHit*> cdchits;
-	loop->Get(cdchits);
-	
-	// Sort CDC hits into axial and stereo
-	vector<const DCDCTrackHit*> axial_hits;
-	vector<const DCDCTrackHit*> stereo_hits;
-	for(unsigned int i=0; i< cdchits.size(); i++){
-		if( !cdchits[i]->is_stereo ){
-			axial_hits.push_back(cdchits[i]);
-		}else{
-			stereo_hits.push_back(cdchits[i]);
-		}
-	}
 
-	if( axial_hits.size() < 3 || stereo_hits.size() < 3) return NOERROR;
-	
-	// Cosmics are mostly virtical so parameterize x as a function of y
-	double N=0.0, Sxy=0.0, Sx=0.0, Sy=0.0, Sy2=0.0;
-	for(unsigned int i=0; i<axial_hits.size(); i++){
-		const DCDCWire *wire = axial_hits[i]->wire;
-		double x = wire->origin.X();
-		double y = wire->origin.Y();
-		
-		N += 1.0;
-		Sxy += x*y;
-		Sx += x;
-		Sy += y;
-		Sy2 += y*y;
+    vector <const DBCALShower *> bcalShowerVector;
+    loop->Get(bcalShowerVector);
 
-	}
-	
-	double m = (N*Sxy - Sx*Sy)/(N*Sy2 - Sy*Sy);
-	double b = (Sx - m*Sy)/N;
-	
-	// alpha is angle representing direction of momentum vector in
-	// lab coordinates. For cosmics, this will generally be pointing
-	// downwards so alpha will be ~270 degrees.
-	// adjust angle from x vs. y to pointing generally towards gravity in lab frame
-	double alpha = 3.0*M_PI_2 - atan(m); 
-	
-	// Make momentum vector be unit vector in X/Y plane
-	DVector3 mom(cos(alpha), sin(alpha), 0.0);
+    bool hasBCALGuess = false;
+    DMatrix4x1 BCALGuess;
+    double maxEnergy = 0.;
+    for (unsigned int i=0; i < bcalShowerVector.size(); i++){
+        const DBCALShower *firstBCALShower = bcalShowerVector[i];
+        // We need to form pairs of BCAL Showers to seed the tracks
+        for (unsigned int j=i+1; j < bcalShowerVector.size(); j++){ 
+            const DBCALShower *secondBCALShower = bcalShowerVector[j];
+            // Some quality cuts on the BCAL Showers
+            if (firstBCALShower->N_cell < 2 || secondBCALShower->N_cell < 2) continue;
+            double x1 = firstBCALShower->x;
+            double y1 = firstBCALShower->y;
+            double z1 = firstBCALShower->z;
+            double x2 = secondBCALShower->x;
+            double y2 = secondBCALShower->y;
+            double z2 = secondBCALShower->z;
+            double xslope = (x2-x1) / (z2-z1);
+            double yslope = (y2-y1) / (z2-z1);
+            double x0 = x1 - xslope*z1;
+            double y0 = y1 - yslope*z1;
+            //cout << "BCAL Track parameter guess" << endl;
+            //cout << "{x0,y0,xslope,yslope} = {" << x0 << "," << y0 << "," << xslope << "," << yslope << "}"<<endl;  
+            double totalEnergy = firstBCALShower->E + secondBCALShower->E;
+            if (totalEnergy > maxEnergy){
+                DMatrix4x1 thisGuess(x0, y0, xslope,yslope);
+                BCALGuess = thisGuess;
+                hasBCALGuess=true;
+            }
+        }
+    }
 
-	// Find vertex location in X/Y by finding point were line crosses
-	// R=90cm, choosing the value larger in Y
-	double R = 90.0; // cm
-	double A = 1.0 + m*m;
-	double B = 2.0*m;
-	double C = b*b - R*R;
-	double sqroot = sqrt(B*B - 4.0*A*C);
-	double y_vertex = (-B + sqroot)/(2.0*A);
-	double x_vertex = y_vertex*m + b;
+    // Use the track finder to get the tracks to attempt a fit
+    // Look for tracks in the CDC
+    vector<const DCDCTrackHit*>cdcs;
+    loop->Get(cdcs);
 
-	// Loop over stereo wires, calculating intersection with track
-	// Do this as a linear regression of z vs r
-	N = 0.0;
-	Sy = 0.0;
-	Sy2 = 0.0;
-	double Syz=0.0, Sz=0.0;
-	vector<const DCDCTrackHit*> stereo_hits_used;
-	for(unsigned int i=0; i<stereo_hits.size(); i++){
-		const DCDCWire *wire = stereo_hits[i]->wire;
+    // Reset the track finder
+    finder->Reset();
 
-		// Need to find intersection in X/Y plane
-		DVector2 wpos(wire->origin.X(), wire->origin.Y());
-		DVector2 wdir(wire->udir.X(), wire->udir.Y());
-		double wnorm = wdir.Mod();
-		wdir /= wnorm;
-		DVector2 tpos(x_vertex, y_vertex);
-		DVector2 tdir(mom.X(), mom.Y());
-		DVector2 pos_diff = wpos - tpos;
-		
-		// wpos, wdir, tpos, tdir are all 2D vectors while alpha and beta are 
-		// scalers in the following:
-		//
-		// wpos + alpha*wdir = tpos + beta*tdir
-		//
-		// Solving for alpha gives:
-		double alpha = (pos_diff.X()*tdir.Y() - pos_diff.Y()*tdir.X()) / (tdir.X()*wdir.Y() - tdir.Y()*wdir.X());
-		
-		// Scale alpha by 1/wnorm to get proper scaling factor for 3D direction vector
-		alpha /= wnorm;
-		
-		// If the crossing point is beyond the end of the wire, skip this stereo hit
-		if(fabs(alpha) > wire->L/2.0) continue;
-		
-		DVector3 poca_wire = wire->origin + alpha*wire->udir;
-		double z = poca_wire.Z();
-		double y = poca_wire.Y();
+    if (cdcs.size()>4){
+        for (size_t i=0;i<cdcs.size();i++) finder->AddHit(cdcs[i]);
+        finder->FindAxialSegments();
+        finder->LinkCDCSegments();
 
-		N += 1.0;
-		Syz += y*z;
-		Sy += y;
-		Sz += z;
-		Sy2 += y*y;
-		
-		stereo_hits_used.push_back(stereo_hits[i]);
-	}
-	
-	// It's possible not enough stereo straws survived for a fit
-	if(N<3.0) return NOERROR;
-	
-	double m_yz = (N*Syz - Sy*Sz)/(N*Sy2 - Sy*Sy);
-	double b_yz = (Sz - m_yz*Sy)/N;
-	double theta = 3.0*M_PI_2 - atan(m_yz);
-	
-	double z_vertex = m_yz*y_vertex + b_yz;
-	
-	// Adjust momentum vector to use calculated theta
-	mom *= fabs(sin(theta));
-	mom.SetZ(cos(theta));
+        const vector<DTrackFinder::cdc_track_t>tracks=finder->GetCDCTracks();
+        for (size_t i=0;i<tracks.size();i++){
+            // Initial guess for state vector
+            DMatrix4x1 S(tracks[i].S);
+            // list of axial and stereo hits for this track
+            hits=tracks[i].axial_hits;
+            hits.insert(hits.end(),tracks[i].stereo_hits.begin(),
+                    tracks[i].stereo_hits.end());
+            sort(hits.begin(),hits.end(),DTrackCandidate_CDCCOSMIC_cdc_hit_cmp);
 
-	// Make momentum vector be 100GeV so hdview2 will draw as stright line
-	// (hdview2 creates its own rt using the field map)
-	mom *= 100.0;
-	
-	DVector3 pos(x_vertex, y_vertex, z_vertex);
-	
-	DTrackCandidate *can = new DTrackCandidate();
-	can->setMomentum(mom);
-	can->setPosition(pos);
-	can->setCharge(1.0); // make track draw as stright line
-	can->setMass(0.139);
-	can->setPID(PiPlus);
-	can->rt = rt;
+            // Use earliest cdc time to estimate t0
+            double t0=1e6;
+            for (unsigned int j=0;j<hits.size();j++){
+                double L=(hits[0]->wire->origin-hits[j]->wire->origin).Perp();
+                double t_test=hits[j]->tdrift-L/29.98;
+                if (t_test<t0) t0=t_test;
+            }
+            //Loop over hits
+            Measurements.clear();
+            MeasurementErrors.clear();
+            Wires.clear();
+            for (unsigned int j=0;j<hits.size();j++){
+                //Calulate the Measurement from the drift time
+                double L=(hits[0]->wire->origin-hits[j]->wire->origin).Perp();
+                double measurement = CDCDriftDistance(hits[j]->tdrift - L/29.98 - t0);
+                Measurements.push_back(measurement);
+                MeasurementErrors.push_back(0.015);
+                Wires.push_back(hits[j]->wire);
+            }
 
-	rt->Swim(pos, mom, 1.0);
-	
-	CalcChisq(can, axial_hits, stereo_hits_used);
-	
-	_data.push_back(can);
+            //Perform the fit 
+            // create minimizer giving a name and a name (optionally) for the specific
+            // algorithm
+            // possible choices are: 
+            //     minName                  algoName
+            // Minuit /Minuit2             Migrad, Simplex,Combined,Scan  (default is Migrad)
+            //  Minuit2                     Fumili2
+            //  Fumili
+            //  GSLMultiMin                ConjugateFR, ConjugatePR, BFGS, 
+            //                              BFGS2, SteepestDescent
+            //  GSLMultiFit
+            //   GSLSimAn
+            //   Genetic
+            ROOT::Math::Minimizer* min = 
+                ROOT::Math::Factory::CreateMinimizer();
+            if (min == NULL || min == 0){
+                cout << "Error creating minimizer " << endl;
+                return NOERROR;
+            }
+            //TMinuitMinimizer *min = new TMinuitMinimizer(); 
 
-	return NOERROR;
+            // set tolerance , etc...
+            min->SetMaxFunctionCalls(1000000); // for Minuit/Minuit2 
+            //min->SetMaxIterations(10000);  // for GSL 
+            min->SetTolerance(0.001);
+            min->SetPrintLevel(-1);
+
+            // create funciton wrapper for minmizer
+            // a IMultiGenFunction type 
+            ROOT::Math::Functor f(&calc_chi_square,4); 
+            double step[4] = {0.01,0.01,0.01,0.01};
+            // starting point
+
+            double variable[4] = { S(0),S(1), S(2), S(3)};
+
+            min->SetFunction(f);
+
+            // Set the free variables to be minimized!
+            min->SetVariable(0,"x0",variable[0], step[0]);
+            min->SetVariable(1,"y0",variable[1], step[1]);
+            min->SetVariable(2,"xslope",variable[2], step[2]);
+            min->SetVariable(3,"yslope",variable[3], step[3]);
+
+            // do the minimization
+            if(!min->Minimize()) {
+                // The fit failed if we got here
+                // Check if there is a BCAL seed, and retry the fit 
+                if (hasBCALGuess){
+                    min->SetVariable(0,"x0",BCALGuess(0), step[0]);
+                    min->SetVariable(1,"y0",BCALGuess(1), step[1]);
+                    min->SetVariable(2,"xslope",BCALGuess(2), step[2]);
+                    min->SetVariable(3,"yslope",BCALGuess(3), step[3]);
+                    if(!min->Minimize()) return NOERROR; //Minimization Failed with BCAL Guess
+                }    
+                else return NOERROR;//Minimization Failed and no BCAL guess
+            }
+
+            const double *xs = min->X();
+
+            DVector3 pos(xs[0], xs[1], 0);
+            DVector3 mom(xs[2], xs[3], 1);
+
+            DTrackCandidate *can = new DTrackCandidate();
+            can->setMomentum(mom);
+            can->setPosition(pos);
+            can->setCharge(1.0); // make track draw as stright line
+            can->setMass(0.139);
+            can->setPID(PiPlus);
+            can->chisq=min->MinValue();
+            can->Ndof=hits.size() - 4;
+            can->rt = rt;
+            rt->Swim(pos, mom, 1.0);
+
+            // Loop through the hits and fill the pulls
+            for (unsigned int j=0;j<hits.size();j++){
+                // The following data is stored in the pulls
+                // pull_t(double resi, double err,double s=0.0,
+                //           double tdrift=0.0, double d=0.0,
+                //           const DCDCTrackHit *cdc_hit=NULL,
+                //           const DFDCPseudo *fdc_hit=NULL));
+                double L=(hits[0]->wire->origin-hits[j]->wire->origin).Perp();
+                double time = hits[j]->tdrift - L/29.98 - t0;
+                double DOCA = fit_function(hits[j]->wire,xs);
+                double measurement = CDCDriftDistance(hits[j]->tdrift - L/29.98 - t0);
+                double residual = measurement - DOCA;
+                double error = 0.015; // Just the some guess at the errors in the measurement for now
+                can->pulls.push_back(DTrackFitter::pull_t(residual, error, 0.0, time , measurement, hits[j], NULL));
+
+            }
+            _data.push_back(can);
+        }
+    }
+
+    return NOERROR;
 }
 
-//------------------
-// CalcChisq
-//------------------
-void DTrackCandidate_factory_CDCCOSMIC::CalcChisq(DTrackCandidate *can, vector<const DCDCTrackHit*> &axial_hits, vector<const DCDCTrackHit*> &stereo_hits)
-{
-	// Calculate the chi-sq and Ndof for the candidate based
-	// on the wires in the two lists provided. Assume the
-	// candiates rt member is valid and that all hits in the
-	// two lists are used in the fit.
-	//
-	// Axial hits assume a resolution of the cell size over
-	// sqrt(12). Stereo hits scle this up by 1/sin(6 degrees)
-	
-	// Ndof is easy
-	can->Ndof = (int)(axial_hits.size() + stereo_hits.size()) - 4; // 4 is for fit parameters
-	
-	// Hit resolutions
-	double sigma_axial = 0.8 / sqrt(12.0);
-	double sigma_stereo = sigma_axial/cos(6.0/57.3); // 6 degree stereo angle
-	
-	can->chisq = 0.0;
-
-	// Point on track and momentum direction
-	DVector3 tpos = rt->swim_steps[0].origin;
-	DVector3 tdir = rt->swim_steps[0].mom;
-	tdir *= 1.0/tdir.Mag();
-
-	// Axial
-	for(unsigned int i=0; i<axial_hits.size(); i++){
-		const DCDCWire *wire = axial_hits[i]->wire;
-		
-		// Distance between two skew lines is given by:
-		//
-		//  dist = pos_diff . n
-		// i.e. dot product between distance between any two points on the two
-		// lines and the normalized vector perpendicular to the two lines.
-		DVector3 pos_diff = wire->origin - tpos;
-		DVector3 n = wire->udir.Cross(tdir);
-		double dist = pos_diff.Dot(n);
-		
-		//double dist = can->rt->DistToRT(wire);
-		
-		double dchi = dist/sigma_axial;
-		can->chisq += dchi*dchi;
-		
-		if(residual_vs_ring)residual_vs_ring->Fill(fabs(dist)*10.0, wire->ring);
-	}
-
-	// Stereo
-	for(unsigned int i=0; i<stereo_hits.size(); i++){
-		const DCDCWire *wire = stereo_hits[i]->wire;
-		
-		DVector3 pos_diff = wire->origin - tpos;
-		DVector3 n = wire->udir.Cross(tdir);
-		double dist = pos_diff.Dot(n);
-
-		//double dist = can->rt->DistToRT(wire);
-		
-		double dchi = dist/sigma_stereo;
-		can->chisq += dchi*dchi;
-
-		if(residual_vs_ring) residual_vs_ring->Fill(fabs(dist)*10.0, wire->ring);
-	}
-
-	if(h_chisq){
-		h_chisq->Fill(can->chisq);
-		h_Ndof->Fill((double)can->Ndof);
-		h_chisq_per_Ndof->Fill(can->chisq/(double)can->Ndof);
-	}
-}
 
 //------------------
 // erun
 //------------------
 jerror_t DTrackCandidate_factory_CDCCOSMIC::erun(void)
 {
-	return NOERROR;
+    return NOERROR;
 }
 
 //------------------
@@ -279,12 +362,12 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::erun(void)
 //------------------
 jerror_t DTrackCandidate_factory_CDCCOSMIC::fini(void)
 {
-	if(rt) delete rt;
-	if(bfield) delete bfield;
-	
-	rt = NULL;
-	bfield = NULL;
+    if(rt) delete rt;
+    if(bfield) delete bfield;
 
-	return NOERROR;
+    rt = NULL;
+    bfield = NULL;
+
+    return NOERROR;
 }
 

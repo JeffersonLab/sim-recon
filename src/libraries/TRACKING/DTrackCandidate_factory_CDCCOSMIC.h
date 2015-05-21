@@ -9,7 +9,7 @@
 #define _DTrackCandidate_factory_CDCCOSMIC_
 
 #include <TH2.h>
-
+#include <TMinuit.h>
 #include <JANA/JFactory.h>
 #include <TRACKING/DTrackCandidate.h>
 #include <TRACKING/DReferenceTrajectory.h>
@@ -28,14 +28,23 @@ class DTrackCandidate_factory_CDCCOSMIC:public jana::JFactory<DTrackCandidate>{
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		DReferenceTrajectory *rt;
-		DMagneticFieldMapNoField *bfield;
-		TH2D *residual_vs_ring;
-		TH1D *h_chisq;
-		TH1D *h_Ndof;
-		TH1D *h_chisq_per_Ndof;
-		
-		void CalcChisq(DTrackCandidate *can, vector<const DCDCTrackHit*> &axial_hits, vector<const DCDCTrackHit*> &stereo_hits);
+        double CDCDriftDistance(double t);
+        double CDCDriftVariance(double t);
+        unsigned int Locate(vector<double>&xx,double x);
+
+        DReferenceTrajectory *rt;
+        DMagneticFieldMapNoField *bfield;
+        DTrackFinder *finder;
+        //TMinuit *ptMinuit;
+        vector<const DCDCTrackHit *> hits;
+        vector<double> cdc_drift_table;
+        double cdc_drift_table_min, cdc_drift_table_max;
+        TH2D *residual_vs_ring;
+        TH1D *h_chisq;
+        TH1D *h_Ndof;
+        TH1D *h_chisq_per_Ndof;
+
+        void CalcChisq(DTrackCandidate *can, vector<const DCDCTrackHit*> &axial_hits, vector<const DCDCTrackHit*> &stereo_hits);
 };
 
 #endif // _DTrackCandidate_factory_CDCCOSMIC_
