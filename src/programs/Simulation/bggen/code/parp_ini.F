@@ -8,6 +8,7 @@ C
 C
       INCLUDE 'include/pypars.inc'
 C
+      PARP(2)=2.
       IF(IAD.GT.0.AND.IAD.LE.200) THEN
          PARP(IAD)=VAL
       ENDIF
