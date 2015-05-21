@@ -279,6 +279,7 @@ jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, int eventnumber)
     return NOERROR;
 }
 
+/*
 //------------------
 // FindMatch
 //------------------
@@ -311,6 +312,7 @@ DTPOLHit* DTPOLHit_factory::FindMatch(int sector, double T)
 
     return best_match;
 }
+*/
 
 //------------------
 // erun
