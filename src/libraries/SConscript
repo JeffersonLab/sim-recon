@@ -6,6 +6,6 @@ Import('env osname')
 # Loop over libraries, building each
 subdirs = ['include', 'BCAL', 'FCAL', 'DANA', 'TAGGER', 'HDGEOMETRY', 'TRACKING']
 subdirs.extend(['CCAL', 'START_COUNTER', 'RF', 'TRIGGER', 'CDC', 'FDC', 'PID', 'ANALYSIS'])
-subdirs.extend(['CERE', 'HDDM', 'RICH', 'TOF', 'PAIR_SPECTROMETER', 'DAQ', 'TTAB'])
+subdirs.extend(['CERE', 'HDDM', 'RICH', 'TOF', 'PAIR_SPECTROMETER', 'TPOL', 'DAQ', 'TTAB'])
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
