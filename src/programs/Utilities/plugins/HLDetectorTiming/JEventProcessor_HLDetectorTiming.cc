@@ -107,8 +107,6 @@ jerror_t JEventProcessor_HLDetectorTiming::brun(JEventLoop *eventLoop, int runnu
 {
     // This is called whenever the run number changes
     // Get the particleID object for each run
-    // Thanks to Justin for the How-To ;)
-
     vector<const DParticleID *> dParticleID_algos;
     eventLoop->Get(dParticleID_algos);
     if(dParticleID_algos.size()<1){
@@ -117,94 +115,14 @@ jerror_t JEventProcessor_HLDetectorTiming::brun(JEventLoop *eventLoop, int runnu
     }
     dParticleID = dParticleID_algos[0];
 
-    // This is called whenever the run number changes
+    // We want to be use some of the tools available in the RFTime factory 
+    // Specifivally steping the RF back to a chosen time
     dRFTimeFactory = static_cast<DRFTime_factory*>(eventLoop->GetFactory("DRFTime"));
 
     //be sure that DRFTime_factory::init() and brun() are called
     vector<const DRFTime*> locRFTimes;
     eventLoop->Get(locRFTimes);
 
-    if (DO_FITS == 0) return NOERROR;
-    /* No longer doing fits in this code, don't need these
-    // load base time offsets
-    map<string,double> base_time_offset;
-    //CDC
-    if (eventLoop->GetCalib("/CDC/base_time_offset",base_time_offset))
-        jout << "Error loading /CDC/base_time_offset !" << endl;
-    if (base_time_offset.find("CDC_BASE_TIME_OFFSET") != base_time_offset.end())
-        cdc_t_base = base_time_offset["CDC_BASE_TIME_OFFSET"];
-    else
-        jerr << "Unable to get CDC_BASE_TIME_OFFSET from /CDC/base_time_offset !" << endl;
-
-    //FCAL
-    if (eventLoop->GetCalib("/FCAL/base_time_offset",base_time_offset))
-        jout << "Error loading /FCAL/base_time_offset !" << endl;
-    if (base_time_offset.find("FCAL_BASE_TIME_OFFSET") != base_time_offset.end())
-        fcal_t_base = base_time_offset["FCAL_BASE_TIME_OFFSET"];
-    else
-        jerr << "Unable to get FCAL_BASE_TIME_OFFSET from /FCAL/base_time_offset !" << endl;
-    // BCAL
-    if (eventLoop->GetCalib("/BCAL/base_time_offset",base_time_offset))
-        jout << "Error loading /BCAL/base_time_offset !" << endl;
-    if (base_time_offset.find("BCAL_BASE_TIME_OFFSET") != base_time_offset.end()) {
-        bcal_t_base = base_time_offset["BCAL_BASE_TIME_OFFSET"];
-    }
-    else
-        jerr << "Unable to get BCAL_BASE_TIME_OFFSET from /BCAL/base_time_offset !" << endl;
-    //TOF
-    if (eventLoop->GetCalib("/TOF/base_time_offset",base_time_offset))
-        jout << "Error loading /TOF/base_time_offset !" << endl;
-    if (base_time_offset.find("TOF_BASE_TIME_OFFSET") != base_time_offset.end())
-        tof_t_base_fadc = base_time_offset["TOF_BASE_TIME_OFFSET"];
-    else
-        jerr << "Unable to get TOF_BASE_TIME_OFFSET from /TOF/base_time_offset !" << endl;  
-
-    if (base_time_offset.find("TOF_TDC_BASE_TIME_OFFSET") != base_time_offset.end())
-        tof_t_base_tdc = base_time_offset["TOF_TDC_BASE_TIME_OFFSET"];
-    else
-        jerr << "Unable to get TOF_TDC_BASE_TIME_OFFSET from /TOF/base_time_offset !" << endl;
-
-    // The SC, TOF, TAGM and TAGH we will need the per channel offsets to adjust
-    // SC
-    if (eventLoop->GetCalib("/START_COUNTER/tdc_timing_offsets", sc_tdc_time_offsets))
-        jout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;  
-
-    // TOF
-    if(eventLoop->GetCalib("TOF/timing_offsets", tof_tdc_time_offsets))
-        jout << "Error loading /TOF/timing_offsets !" << endl; 
-
-    // TAGM
-    std::vector< std::map<std::string, double> > table;
-    if (eventLoop->GetCalib("/PHOTON_BEAM/microscope/fadc_time_offsets", table))
-        jout << "Error loading /PHOTON_BEAM/microscope/fadc_time_offsets from ccdb!" << std::endl;
-    for (unsigned int i=0; i < table.size(); ++i) {
-        //int row = (table[i])["row"];
-        int col = (table[i])["column"];
-        tagm_fadc_time_offsets[col] = (table[i])["offset"]; // Only aligning per column for now...
-    }    
-
-    if (eventLoop->GetCalib("/PHOTON_BEAM/microscope/tdc_time_offsets", table))
-        jout << "Error loading /PHOTON_BEAM/microscope/tdc_time_offsets from ccdb!" << std::endl;
-    for (unsigned int i=0; i < table.size(); ++i) {
-        //int row = (table[i])["row"];
-        int col = (table[i])["column"];
-        tagm_tdc_time_offsets[col] = (table[i])["offset"]; // Only aligning per column for now...
-    }
-    // TAGH
-    if (eventLoop->GetCalib("/PHOTON_BEAM/hodoscope/fadc_time_offsets", table))
-        jout << "Error loading /PHOTON_BEAM/hodoscope/fadc_time_offsets from ccdb!" << std::endl;
-    for (unsigned int i=0; i < table.size(); ++i) {
-        int counter = (table[i])["id"];
-        tagh_fadc_time_offsets[counter] = (table[i])["offset"];
-    }
-
-    if (eventLoop->GetCalib("/PHOTON_BEAM/hodoscope/tdc_time_offsets", table))
-        jout << "Error loading /PHOTON_BEAM/hodoscope/tdc_time_offsets from ccdb!" << std::endl;
-    for (unsigned int i=0; i < table.size(); ++i) {
-        int counter = (table[i])["id"];
-        tagh_tdc_time_offsets[counter] = (table[i])["offset"];
-    }
-*/
     return NOERROR;
 }
 
@@ -229,6 +147,10 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
             }
             //cout << "EPICS Name " <<  (thisValue->name).c_str() << " Value " << thisValue->fval << endl;
         }
+        // There is a caveat here when running multithreaded
+        // Another thread might be the one to catch the EPICS event
+        // and there is no way to reject events that may have come from earilier
+        // Expect number of entries in histograms to vary slightly over the same file with many threads
         if (BEAM_CURRENT < 10.0) {
             Fill1DHistogram("HLDetectorTiming", "" , "Beam Events",
                     0, "Beam On Events (0 = no beam, 1 = beam > 10nA)",
@@ -239,7 +161,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                 1, "Beam On Events (0 = no beam, 1 = beam > 10nA)",
                 2, -0.5, 1.5);
         fBeamEventCounter++;
-        if (fBeamEventCounter >= BEAM_EVENTS_TO_KEEP) {
+        if (fBeamEventCounter >= BEAM_EVENTS_TO_KEEP) { // Able to specify beam ON events instead of just events
             cout<< "Maximum number of Beam Events reached" << endl;
             japp->Quit();
             return NOERROR;
@@ -283,10 +205,10 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
 
     // Grab the RF time we will use for the tagger calibration
     unsigned int i = 0;
-    const DRFTDCDigiTime * thisPSRFTime = NULL;
+    const DRFTDCDigiTime * thisTOFRFTime = NULL;
     for(i = 0; i < tdcRFTimeVector.size(); i++){
-        if (tdcRFTimeVector[i]->dSystem == SYS_PSC) {
-            thisPSRFTime = tdcRFTimeVector[i];
+        if (tdcRFTimeVector[i]->dSystem == SYS_TOF) {
+            thisTOFRFTime = tdcRFTimeVector[i];
             break;
         }
     }
@@ -429,24 +351,24 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
     for (i = 0; i < scHitVector.size(); i++){
         //if(!scHitVector[i]->has_fADC || !scHitVector[i]->has_TDC) continue;
         const DSCHit *thisSCHit = scHitVector[i];
-        if(thisSCHit->has_fADC && thisPSRFTime != NULL){
+        if(thisSCHit->has_fADC && thisTOFRFTime != NULL){
             char name [200];
             char title[500];
             sprintf(name, "Sector %.2i", scHitVector[i]->sector);
             sprintf(title, "SC Sector %i t_{ADC} - t_{RF}; t_{ADC} - t_{RF} [ns]; Entries", scHitVector[i]->sector);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisPSRFTime), scHitVector[i]->t_fADC);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisTOFRFTime), scHitVector[i]->t_fADC);
             Fill1DHistogram("HLDetectorTiming", "SC_ADC_RF_Compare", name,
                     scHitVector[i]->t_fADC - locShiftedTime,
                     title,
                     NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
         }
 
-        if(thisSCHit->has_TDC && thisPSRFTime != NULL){
+        if(thisSCHit->has_TDC && thisTOFRFTime != NULL){
             char name [200];
             char title[500];
             sprintf(name, "Sector %.2i", scHitVector[i]->sector);
             sprintf(title, "SC Sector %i t_{TDC} - t_{RF}; t_{TDC} - t_{RF} [ns]; Entries", scHitVector[i]->sector);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisPSRFTime), scHitVector[i]->t_TDC);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisTOFRFTime), scHitVector[i]->t_TDC);
             Fill1DHistogram("HLDetectorTiming", "SC_TDC_RF_Compare", name,
                     scHitVector[i]->t_TDC - locShiftedTime,
                     title,
@@ -493,24 +415,24 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
     }
     for (i = 0; i < tagmHitVector.size(); i++){
         const DTAGMHit *thisTAGMHit = tagmHitVector[i];
-        if(thisTAGMHit->has_fADC && thisPSRFTime != NULL){
+        if(thisTAGMHit->has_fADC && thisTOFRFTime != NULL){
             char name [200];
             char title[500];
             sprintf(name, "Column %.3i Row %.1i", tagmHitVector[i]->column, tagmHitVector[i]->row);
             sprintf(title, "TAGM Column %i t_{ADC} - t_{RF}; t_{ADC} - t_{RF} [ns]; Entries", tagmHitVector[i]->column);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisPSRFTime), tagmHitVector[i]->time_fadc);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisTOFRFTime), tagmHitVector[i]->time_fadc);
             Fill1DHistogram("HLDetectorTiming", "TAGM_ADC_RF_Compare", name,
                     tagmHitVector[i]->time_fadc - locShiftedTime,
                     title,
                     NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
         }
 
-        if(thisTAGMHit->has_TDC && thisPSRFTime != NULL){
+        if(thisTAGMHit->has_TDC && thisTOFRFTime != NULL){
             char name [200];
             char title[500];
             sprintf(name, "Column %.3i Row %.1i", tagmHitVector[i]->column, tagmHitVector[i]->row);
             sprintf(title, "TAGM Column %i t_{TDC} - t_{RF}; t_{TDC} - t_{RF} [ns]; Entries", tagmHitVector[i]->column);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisPSRFTime), tagmHitVector[i]->time_tdc);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisTOFRFTime), tagmHitVector[i]->time_tdc);
             Fill1DHistogram("HLDetectorTiming", "TAGM_TDC_RF_Compare", name,
                     tagmHitVector[i]->time_tdc - locShiftedTime,
                     title,
@@ -560,23 +482,23 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
     }
     for (i = 0; i < taghHitVector.size(); i++){
         const DTAGHHit *thisTAGHHit = taghHitVector[i];
-        if(thisTAGHHit->has_fADC && thisPSRFTime != NULL){
+        if(thisTAGHHit->has_fADC && thisTOFRFTime != NULL){
             char name [200];
             char title[500];
             sprintf(name, "Counter ID %.3i", taghHitVector[i]->counter_id);
             sprintf(title, "TAGH Counter ID %i t_{ADC} - t_{RF}; t_{ADC} - t_{RF} [ns]; Entries", taghHitVector[i]->counter_id);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisPSRFTime), taghHitVector[i]->time_fadc);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisTOFRFTime), taghHitVector[i]->time_fadc);
             Fill1DHistogram("HLDetectorTiming", "TAGH_ADC_RF_Compare", name,
                     taghHitVector[i]->time_fadc - locShiftedTime,
                     title,
                     NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
         }
-        if(thisTAGHHit->has_TDC && thisPSRFTime != NULL){
+        if(thisTAGHHit->has_TDC && thisTOFRFTime != NULL){
             char name [200];
             char title[500];
             sprintf(name, "Counter ID %.3i", taghHitVector[i]->counter_id);
             sprintf(title, "TAGH Counter ID %i t_{TDC} - t_{RF}; t_{TDC} - t_{RF} [ns]; Entries", taghHitVector[i]->counter_id);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisPSRFTime), taghHitVector[i]->time_tdc);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisTOFRFTime), taghHitVector[i]->time_tdc);
             Fill1DHistogram("HLDetectorTiming", "TAGH_TDC_RF_Compare", name,
                     taghHitVector[i]->time_tdc - locShiftedTime,
                     title,
