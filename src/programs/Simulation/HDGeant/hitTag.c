@@ -50,8 +50,8 @@
 #define FIXED_MAX_HITS          5000
 #define C_CM_PER_NS             29.9792458
 #define REF_TIME_Z_CM           65.
-#define TAG_T_MIN_NS            -20
-#define TAG_T_MAX_NS            +20
+#define TAG_T_MIN_NS            -200
+#define TAG_T_MAX_NS            +200
 
 float endpoint_energy_GeV = 0;
 float micro_limits_Erange[2];
