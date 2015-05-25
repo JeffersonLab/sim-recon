@@ -133,7 +133,7 @@ c must be present (see above).  This means that background generation is
 c disabled when the simulation operates in particle gun mode.
 c If Emin is set in the BEAM card (see above), the rate of background photons
 c is automatically rescaled as follows:
-c       Rate(E_gamma > Thr)  =  Rate(E_gamma = 0.12 Gev) * K,
+c       Rate(E_gamma > Thr)  =  Rate(E_gamma > 0.12 GeV) * K,
 c where K is a scale factor calculated inside uginit.F:
 c       K = 1 for Thr = 0.12 GeV,
 c       K > 1 for Thr < 0.12 GeV. 
