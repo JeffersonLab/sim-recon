@@ -31,7 +31,7 @@ C
       xlum=ecurr/1.6E-19*targth*0.071*0.602 ! luminosity factor:  2.25uA on 20um (1.7e-4 RL) crystal, 30 cm LH2 (1/b) 
 C
       IF(ibrem.NE.0) THEN
-         CALL COBREMS(E0,EP,ZCOLLIM/100.,COLDIAM) ! collimator distance in m
+         CALL COBREMS(E0,EP,EEMIT,RADT,ZCOLLIM/100.,COLDIAM,0) ! collimator distance in m
       ENDIF
 C
       emn=ELIM(1)

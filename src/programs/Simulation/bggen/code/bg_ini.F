@@ -34,6 +34,8 @@ C
       EPH_LIM(2)=12.
       EELEC=12.  ! electron energy
       EPEAK=9.   ! peak right edge
+      EEMIT=1e-8 ! electron beam emittance (m.rad)
+      RADT=50e-6 ! radiator thickness (m)
       ZCOLL=7600.
       DCOLL=0.0034
       EPYMIN=3.  ! min energy for PYTHIA
@@ -59,6 +61,8 @@ C
       CALL FFKEY('EPHLIM'    , EPH_LIM(1) , 2,'REAL')
       CALL FFKEY('EELEC'     , EELEC      , 1,'REAL')
       CALL FFKEY('EPEAK'     , EPEAK      , 1,'REAL')
+      CALL FFKEY('EEMIT'     , EEMIT      , 1,'REAL')
+      CALL FFKEY('RADTHICK'  , RADT       , 1,'REAL')
       CALL FFKEY('ZCOLLIM'   , ZCOLL      , 1,'REAL')
       CALL FFKEY('DCOLLIM'   , DCOLL      , 1,'REAL')      
       CALL FFKEY('EPYTHMIN'  , EPYMIN     , 1,'REAL')

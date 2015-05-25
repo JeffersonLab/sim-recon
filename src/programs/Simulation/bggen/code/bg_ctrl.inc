@@ -6,7 +6,7 @@ C
       PARAMETER (MXPGEANT=1000,MXPKC=1000)
 C
       COMMON/PHCTRL/ NEVENT,RUNNO,EPH_LIM(2),EELEC,EPEAK,ZCOLL,EPYMIN,ELOWMIN
-     +              ,DCOLL
+     +              ,DCOLL,EEMIT,RADT
      +              ,IWROUT(3),LUNWR(3),IRND_SEQ,NPRIEV
      +              ,IDBEAM,NHBEA
      +              ,IFPYTH
@@ -37,6 +37,8 @@ C                           (3) LUN for the ntuple file
      +         ,EPEAK   ! energy of the coherent peak (the right edge) (F) 
      +         ,DCOLL   ! collimator diameter (m) (F)
      +         ,ZCOLL   ! distance to the collimator (cm) (F)
+     +         ,EEMIT   ! emittance of the electron beam (m rad)
+     +         ,RADT    ! thickness of the diamond radiator (m)
      +         ,EPYMIN  ! minimal energy for PYTHIA, (F)
 C                         below that the low energy generator is used
 C                         the value may be adjusted to the bin boundary of IDBEA
