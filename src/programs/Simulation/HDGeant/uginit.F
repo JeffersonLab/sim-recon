@@ -258,7 +258,7 @@ C..geant..
       call ffkey('postsmear',postsmear,1,'INTEGER')
       call ffkey('mcsmearopts',mcsmearopts,64,'MIXED')
       call ffkey('deleteunsmeared',deleteunsmeared,1,'INTEGER')
-      call ffkey('beam',beamE0,5,'REAL')
+      call ffkey('beam',beamE0,7,'REAL')
       call ffkey('bfieldmap', bfield_map,20,'MIXED')
       call ffkey('bfieldtype', bfield_type,20,'MIXED')
       call ffkey('psbfieldmap', PS_bfield_map,20,'MIXED')
