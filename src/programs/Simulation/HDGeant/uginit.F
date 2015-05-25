@@ -141,14 +141,21 @@
       integer iskip
       integer infile(20)
       integer outfile(20)
-      integer bfield_type(20)
-      integer bfield_map(20)
-      integer PS_bfield_type(20)
-      integer PS_bfield_map(20)
       common /inputFile/ iskip,infile,outfile
       data iskip/0/
       data infile/20*0/
       data outfile/20*0/
+
+      integer bfield_type(20)
+      integer bfield_map(20)
+      integer PS_bfield_type(20)
+      integer PS_bfield_map(20)
+      common /bfieldInfo/ bfield_type,bfield_map,
+     +                    PS_bfield_type,PS_bfield_map
+      data bfield_type/20*0/
+      data bfield_map/20*0/
+      data PS_bfield_type/20*0/
+      data PS_bfield_map/20*0/
 
       integer myrunno
       data myrunno/1/
@@ -164,11 +171,16 @@
       integer openInput, skipInput, openOutput
       external openInput, skipInput, openOutput
       real beamE0, beamEpeak, beamEmin, radColDist
-      common /beamPars/ beamE0,beamEpeak,beamEmin,radColDist,colDiam
-      data beamE0,beamEpeak,beamEmin,radColDist,colDiam/0,0,0,76.0,
-     +     0.0034/
-      data bfield_type/20*0/
-      data bfield_map/20*0/
+      real beamEmit, radThick
+      common /beamPars/ beamE0,beamEpeak,beamEmin,radColDist,colDiam,
+     +                  beamEmit, radThick
+      data beamE0/0/
+      data beamEpeak/0/
+      data beamEmin/0/
+      data radColDist/76.0/
+      data colDiam/0.0034/
+      data beamEmit/1e-8/
+      data radThick/20e-6/
 
 c The following parameters are declared in hdtrackparams.inc above.
       data nosecondaries/0/
@@ -359,7 +371,8 @@ C..geant..
         stop
       endif
       if (beamE0 .gt. 0) then
-        call cobrems(beamE0,beamEpeak,radColDist,colDiam)
+        call cobrems(beamE0,beamEpeak,beamEmit,radThick,
+     +               radColDist,colDiam,0)
       elseif (infile(1) .eq. 0) then
         continue    ! single-particle gun (mode 1), ignore background gen.
       elseif (bgrate .gt. 0) then

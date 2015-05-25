@@ -10,10 +10,9 @@ C Author: Richard Jones    8-July-1997
 C
 #define vector real
 
-      Subroutine cobrems(Emax,Epeak,Dist,colDiam)
-      real Emax,Epeak,Dist,colDiam
+      Subroutine cobrems(Emax,Epeak,emitmr,radt,dist,coldiam,polar)
+      real Emax,Epeak,emitmr,radt,dist,coldiam
       include 'cobrems.inc'
-c      vector inputs(10)
       integer i
       real c
       dpi=acos(-1d0)
@@ -23,25 +22,23 @@ c      vector inputs(10)
       Z=6               !atomic number of diamond
       a=3.56e-10        !dimension of diamond unit cell (m)
       Aphonon=0.5e9     !phonon-free recoil constant (GeV**-2)
-      betaFF=111*Z**(-1/3.)/me  !cutoff for atomic form-factor (/GeV)
+      betaFF=111*Z**(-1/3.)/me !cutoff for atomic form-factor (/GeV)
       mospread=20e-6    !crystal r.m.s. mosaic spread
-      E=Emax               !electron beam energy (GeV)
-      Erms=2.5e-3       !electron beam energy rms spread (GeV)
-      emitx=1.0e-8      !electron beam emittance in x (m r)
-      emity=0.5e-8      !electron beam emittance in y (m r)
-      spot=0.0005       !electron beam spot size at collimator
-      D=Dist            !distance from radiator to collimator
-      t=20.0e-6               !thickness of radiator (m)
-      collim=colDiam     !collimator diameter (m)
-      
-      write(6,*)colDiam
-      
+      E=Emax            !electron beam energy (GeV)
+      Erms=6.0e-3       !electron beam energy rms spread (GeV)
+      emit=emitmr       !electron beam emittance (m r)
+      spot=0.0005       !electron beam spot size at collimator (m)
+      D=dist            !distance from radiator to collimator (m)
+      t=radt            !thickness of radiator (m)
+      collim=coldiam    !collimator diameter (m)
       thx=-0.0300/E     !rotation of crystal about x (first)
-      thy=0.100         !rotation of crystal about y (second)
+      thy=0.050         !rotation of crystal about y (second)
 C-- require Epeak < Emax
       if (Epeak.ge.Emax) then
         return
       endif
+C-- decide if you want total or polarized flux
+      unpolar=(polar.eq.0)
 C-- approximate calculation of angle from primary edge energy
       edge=Epeak        !desired position of primary edge
       qtotal=9.8e-6     !Qtot for dominant lattice vector
@@ -54,25 +51,29 @@ C-- PDG formula for radiation length, converted to meters
      +                -(c**2)*(1/(1+c**2) + 0.20206 - 0.0369*(c**2)
      +                        + 0.0083*(c**4) - 0.002*(c**6)))
      +        + Z*log(1194*Z**(-2/3)))
+C-- Schiff formula for radiation length, converted to meters
+      zeta=log(1440*Z**(-2/3.))/log(183*Z**(-1/3.))
+      radlen=4*nsites*alpha**3*(hbarc/(a*me))**2/a
+     +      *Z*(Z+zeta)*log(183*Z**(-1/3.))
+C-- use either one formula or the other from above
       radlen=1/radlen
       write(6,*)
       write(6,1000)
- 1000 format('Initialization for coherent bremsstralung calculation')
+1000  format('Initialization for coherent bremsstralung calculation')
       write(6,1010) E
- 1010 format(' electron beam energy:',f12.3,'GeV')
+1010  format(' electron beam energy:',f12.3,'GeV')
+      write(6,1012) emit*1e9
+1012  format(' electron beam emittance:',f12.3,'mm.urad')
       write(6,1020) 'diamond',t*1e6
- 1020 format(' radiator crystal: ',a10,', thickness',f8.0,'um')
+1020  format(' radiator crystal: ',a10,', thickness',f8.0,'um')
       write(6,1030) radlen*1e2,mospread*1e6
- 1030 format(' radiation length:',f8.1,'cm, mosaic spread:',f8.1,'ur')
+1030  format(' radiation length:',f8.1,'cm, mosaic spread:',f8.1,'urad')
       write(6,1040) collim/(2*D)*(E/me)
- 1040 format(' photon beam collimator half-angle:',f12.3,'(m/E)')
-      write(6,1045)colDiam*1e2
- 1045 format(' Collimator diameter:',f8.3,'cm')
+1040  format(' photon beam collimator half-angle:',f12.3,'(m/E)')
       write(6,1050) thx*1e3,thy*1e3
- 1050 format(' crystal orientation: theta-x',f10.3,'mr',
-     +      /'                      theta-y',f10.3,'mr')
-  
-
+1050  format(' crystal orientation: theta-x',f10.3,'mrad',
+     +      /'                      theta-y',f10.3,'mrad')
+      write(6,*)' Collimator diameter: ',coldiam
 C  define the unit cell of the radiator crystal
       ucell(1,1)=0
       ucell(2,1)=0
@@ -104,8 +105,8 @@ C  define the crystal->lab rotation matrix
       rotate(3,3)=1
       call rotmat(rotate,0d0,dpi/2,0d0)       !point (1,0,0) along beam
       call rotmat(rotate,0d0,0d0,dpi/4)       !point (0,1,1) vertically
-      call rotmat(rotate,-thx,0d0,0d0)       !the goniometer-x rotation
-      call rotmat(rotate,0d0,-thy,0d0)       !the goniometer-y rotation
+      call rotmat(rotate,-thx,0d0,0d0)        !the goniometer-x rotation
+      call rotmat(rotate,0d0,-thy,0d0)        !the goniometer-y rotation
       write(6,2000) (rotate(1,j),j=1,3)
       write(6,2000) (rotate(2,j),j=1,3)
       write(6,2000) (rotate(3,j),j=1,3)
@@ -176,7 +177,7 @@ C  define the crystal->lab rotation matrix
       q2points=0
       q3min=1
       sum=0
-      do h=0,0
+      do h=-4,4
         do k=-10,10
           do l=-10,10
 c       do k=-2,-2
@@ -232,7 +233,7 @@ c             write(6,*) q2,xmax
      +         * ((1+(1-x)**2)
      +               - 8*(theta2/(1+theta2)**2)*(1-x)*cos(phi)**2)
      +         * acceptance(theta2)
-c    +         * polarization(x,theta2)
+     +         * polarization(x,theta2)
 C comment out the preceding line to disable polarization -RTJ
             q2points=q2points+1
             q2theta2(q2points)=theta2
@@ -343,7 +344,24 @@ c     write(6,*) dNidxdt2
       real function polarization(x,theta2)
       real x,theta2
       include 'cobrems.inc'
+      if (unpolar) then
+        polarization=1
+        return
+      endif
       polarization=2*(1-x)/((1+theta2)**2*((1-x)**2+1) - 4*theta2*(1-x))
+      end
+
+      real function acceptance2(theta2,phi)
+      real theta2,phi
+      include 'cobrems.inc'
+      real xc,yc
+      real xshift,yshift
+      parameter (xshift=1.7e-3,yshift=0)
+      real theta
+      theta=sqrt(theta2)*me/E
+      xc=D*sin(theta)*cos(phi)+xshift
+      yc=D*sin(theta)*sin(phi)+yshift
+      acceptance2 = acceptance((atan2(sqrt(xc**2+yc**2),D)*(E/me))**2)
       end
 
       real function acceptance(theta2)
@@ -355,8 +373,8 @@ c     write(6,*) dNidxdt2
       integer iter,niter
       real theta
 Comment out the following lines to enable collimation -RTJ
-         acceptance=1
-         return
+c      acceptance=1
+c      return
 Comment out the preceding lines to enable collimation -RTJ
       acceptance=0
       niter=50
@@ -454,7 +472,7 @@ C   with rotations understood in the passive sense
       integer i,ii,j
       x0=hisx(1)
       x1=hisx(nbins)
-      var0=(mospread**2+(emitx/spot)**2)
+      var0=(mospread**2+(emit/spot)**2)
       varMS=sigma2MS(t)
       sig(3)=sqrt(var0)*E/me
       sig(4)=sqrt(varMS)*E/me
@@ -528,11 +546,7 @@ c     write(6,*) norm
 
       real function sigma2MS(tt)
       real tt
-C--Chose one of the available implementations of this function below.
-c  Some formulas, although valid for a reasonable range of target thickness,
-c  can go negative for extremely small target thicknesses.  Here I protect
-c  against these unusual cases by taking the absolute value. [rtj]
-      sigma2MS=abs(sigma2MS_Geant(tt))
+      sigma2MS=sigma2MS_Geant(tt)
       end
 
       real function sigma2MS_Kaune(tt)

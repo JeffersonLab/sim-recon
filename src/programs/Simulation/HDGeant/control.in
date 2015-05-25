@@ -35,8 +35,10 @@ c      Epeak  - energy of the primary coherent peak edge (GeV)
 c      Emin   - minimum energy of the coherent bremsstrahlung beam (GeV)
 c      collz  - z position of collimator in m
 c      colld  - diameter of collimator in m 
+c      Eemit  - electron beam emittance in m.rad
+c      radthick - dimaond radiator thickneess in m
 c Omitting the final parameter Emin results in the default value being used.
-cBEAM 10. 9.999 0.0012 76.00 0.005
+cBEAM 10. 9.999 0.0012 76.00 0.005 10.e-9 20.e-6
 
 c Commenting out the following line will disable simulated hits output.
 OUTFILE 'bgtest.hddm'
