@@ -52,28 +52,30 @@ C-- PDG formula for radiation length, converted to meters
      +                        + 0.0083*(c**4) - 0.002*(c**6)))
      +        + Z*log(1194*Z**(-2/3)))
 C-- Schiff formula for radiation length, converted to meters
-      zeta=log(1440*Z**(-2/3.))/log(183*Z**(-1/3.))
-      radlen=4*nsites*alpha**3*(hbarc/(a*me))**2/a
-     +      *Z*(Z+zeta)*log(183*Z**(-1/3.))
+c     zeta=log(1440*Z**(-2/3.))/log(183*Z**(-1/3.))
+c     radlen=4*nsites*alpha**3*(hbarc/(a*me))**2/a
+c    +      *Z*(Z+zeta)*log(183*Z**(-1/3.))
 C-- use either one formula or the other from above
       radlen=1/radlen
       write(6,*)
       write(6,1000)
-1000  format('Initialization for coherent bremsstralung calculation')
+ 1000 format('Initialization for coherent bremsstralung calculation')
       write(6,1010) E
-1010  format(' electron beam energy:',f12.3,'GeV')
+ 1010 format(' electron beam energy:',f12.3,'GeV')
       write(6,1012) emit*1e9
-1012  format(' electron beam emittance:',f12.3,'mm.urad')
+ 1012 format(' electron beam emittance:',f12.3,'mm.urad')
       write(6,1020) 'diamond',t*1e6
-1020  format(' radiator crystal: ',a10,', thickness',f8.0,'um')
+ 1020 format(' radiator crystal: ',a10,', thickness',f8.0,'um')
       write(6,1030) radlen*1e2,mospread*1e6
-1030  format(' radiation length:',f8.1,'cm, mosaic spread:',f8.1,'urad')
+ 1030 format(' radiation length:',f8.1,'cm, mosaic spread:',f8.1,'urad')
       write(6,1040) collim/(2*D)*(E/me)
-1040  format(' photon beam collimator half-angle:',f12.3,'(m/E)')
+ 1040 format(' photon beam collimator half-angle:',f12.3,'(m/E)')
+      write(6,1045) colDiam*1e2
+ 1045 format(' Collimator diameter:',f8.3,'cm')
       write(6,1050) thx*1e3,thy*1e3
-1050  format(' crystal orientation: theta-x',f10.3,'mrad',
+ 1050 format(' crystal orientation: theta-x',f10.3,'mrad',
      +      /'                      theta-y',f10.3,'mrad')
-      write(6,*)' Collimator diameter: ',coldiam
+
 C  define the unit cell of the radiator crystal
       ucell(1,1)=0
       ucell(2,1)=0
@@ -177,7 +179,7 @@ C  define the crystal->lab rotation matrix
       q2points=0
       q3min=1
       sum=0
-      do h=-4,4
+      do h=-4,4  ! can replace with 0,0 for cpu speed-up if crystal alignment is "reasonable"
         do k=-10,10
           do l=-10,10
 c       do k=-2,-2
@@ -546,7 +548,11 @@ c     write(6,*) norm
 
       real function sigma2MS(tt)
       real tt
-      sigma2MS=sigma2MS_Geant(tt)
+C--Chose one of the available implementations of this function below.
+c  Some formulas, although valid for a reasonable range of target thickness,
+c  can go negative for extremely small target thicknesses.  Here I protect
+c  against these unusual cases by taking the absolute value. [rtj]
+      sigma2MS=abs(sigma2MS_Geant(tt))
       end
 
       real function sigma2MS_Kaune(tt)
