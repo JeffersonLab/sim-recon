@@ -1,4 +1,3 @@
-#define BACKGROUND_PROFILING 1
 *
 * $Id$
 *
