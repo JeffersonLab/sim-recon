@@ -16,23 +16,23 @@ C
       integer i
       real c
       dpi=acos(-1d0)
-      me=5.11e-4	!electron mass (GeV)
+      me=5.11e-4        !electron mass (GeV)
       alpha=7.297e-3    !fine structure constant
       hbarc=1.97e-16    !Planck's constant * speed of light (GeV m)
-      Z=6		!atomic number of diamond
-      a=3.56e-10	!dimension of diamond unit cell (m)
-      Aphonon=0.5e9	!phonon-free recoil constant (GeV**-2)
-      betaFF=111*Z**(-1/3.)/me	!cutoff for atomic form-factor (/GeV)
-      mospread=20e-6	!crystal r.m.s. mosaic spread
-      E=Emax		!electron beam energy (GeV)
+      Z=6               !atomic number of diamond
+      a=3.56e-10        !dimension of diamond unit cell (m)
+      Aphonon=0.5e9     !phonon-free recoil constant (GeV**-2)
+      betaFF=111*Z**(-1/3.)/me !cutoff for atomic form-factor (/GeV)
+      mospread=20e-6    !crystal r.m.s. mosaic spread
+      E=Emax            !electron beam energy (GeV)
       Erms=6.0e-3       !electron beam energy rms spread (GeV)
-      emit=emitmr	!electron beam emittance (m r)
-      spot=0.0005	!electron beam spot size at collimator (m)
-      D=dist		!distance from radiator to collimator (m)
-      t=radt		!thickness of radiator (m)
-      collim=coldiam	!collimator diameter (m)
-      thx=-0.0300/E	!rotation of crystal about x (first)
-      thy=0.050		!rotation of crystal about y (second)
+      emit=emitmr       !electron beam emittance (m r)
+      spot=0.0005       !electron beam spot size at collimator (m)
+      D=dist            !distance from radiator to collimator (m)
+      t=radt            !thickness of radiator (m)
+      collim=coldiam    !collimator diameter (m)
+      thx=-0.0300/E     !rotation of crystal about x (first)
+      thy=0.050         !rotation of crystal about y (second)
 C-- require Epeak < Emax
       if (Epeak.ge.Emax) then
         return
@@ -40,8 +40,8 @@ C-- require Epeak < Emax
 C-- decide if you want total or polarized flux
       unpolar=(polar.eq.0)
 C-- approximate calculation of angle from primary edge energy
-      edge=Epeak	!desired position of primary edge
-      qtotal=9.8e-6	!Qtot for dominant lattice vector
+      edge=Epeak        !desired position of primary edge
+      qtotal=9.8e-6     !Qtot for dominant lattice vector
       qlong=edge/(E-edge)*me**2/(2*E)
       thx=-qlong/qtotal
 C-- PDG formula for radiation length, converted to meters
@@ -103,10 +103,10 @@ C  define the crystal->lab rotation matrix
       rotate(3,1)=0
       rotate(3,2)=0
       rotate(3,3)=1
-      call rotmat(rotate,0d0,dpi/2,0d0)	!point (1,0,0) along beam
-      call rotmat(rotate,0d0,0d0,dpi/4)	!point (0,1,1) vertically
-      call rotmat(rotate,-thx,0d0,0d0)	!the goniometer-x rotation
-      call rotmat(rotate,0d0,-thy,0d0)	!the goniometer-y rotation
+      call rotmat(rotate,0d0,dpi/2,0d0)       !point (1,0,0) along beam
+      call rotmat(rotate,0d0,0d0,dpi/4)       !point (0,1,1) vertically
+      call rotmat(rotate,-thx,0d0,0d0)        !the goniometer-x rotation
+      call rotmat(rotate,0d0,-thy,0d0)        !the goniometer-y rotation
       write(6,2000) (rotate(1,j),j=1,3)
       write(6,2000) (rotate(2,j),j=1,3)
       write(6,2000) (rotate(3,j),j=1,3)
@@ -373,8 +373,8 @@ c     write(6,*) dNidxdt2
       integer iter,niter
       real theta
 Comment out the following lines to enable collimation -RTJ
-c	acceptance=1
-c	return
+c      acceptance=1
+c      return
 Comment out the preceding lines to enable collimation -RTJ
       acceptance=0
       niter=50
