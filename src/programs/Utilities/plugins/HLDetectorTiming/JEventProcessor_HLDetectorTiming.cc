@@ -203,16 +203,14 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
     const DTTabUtilities* locTTabUtilities = NULL;
     loop->GetSingle(locTTabUtilities);
 
-    // Grab the RF time we will use for the tagger calibration
-    unsigned int i = 0;
-    const DRFTDCDigiTime * thisTOFRFTime = NULL;
-    for(i = 0; i < tdcRFTimeVector.size(); i++){
-        if (tdcRFTimeVector[i]->dSystem == SYS_TOF) {
-            thisTOFRFTime = tdcRFTimeVector[i];
-            break;
-        }
+    const DRFTime* thisRFTime = NULL;
+    vector <const DRFTime*> RFTimeVector;
+    loop->Get(RFTimeVector);
+    if (RFTimeVector.size() != 0){
+        thisRFTime = RFTimeVector[0];
     }
 
+    unsigned int i = 0;
     int nBins = 2000;
     float xMin = -500, xMax = 1500;
     for (i = 0; i < cdcHitVector.size(); i++){
@@ -351,24 +349,24 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
     for (i = 0; i < scHitVector.size(); i++){
         //if(!scHitVector[i]->has_fADC || !scHitVector[i]->has_TDC) continue;
         const DSCHit *thisSCHit = scHitVector[i];
-        if(thisSCHit->has_fADC && thisTOFRFTime != NULL){
+        if(thisSCHit->has_fADC && thisRFTime != NULL){
             char name [200];
             char title[500];
             sprintf(name, "Sector %.2i", scHitVector[i]->sector);
             sprintf(title, "SC Sector %i t_{ADC} - t_{RF}; t_{ADC} - t_{RF} [ns]; Entries", scHitVector[i]->sector);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisTOFRFTime), scHitVector[i]->t_fADC);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFTime->dTime, scHitVector[i]->t_fADC);
             Fill1DHistogram("HLDetectorTiming", "SC_ADC_RF_Compare", name,
                     scHitVector[i]->t_fADC - locShiftedTime,
                     title,
                     NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
         }
 
-        if(thisSCHit->has_TDC && thisTOFRFTime != NULL){
+        if(thisSCHit->has_TDC && thisRFTime != NULL){
             char name [200];
             char title[500];
             sprintf(name, "Sector %.2i", scHitVector[i]->sector);
             sprintf(title, "SC Sector %i t_{TDC} - t_{RF}; t_{TDC} - t_{RF} [ns]; Entries", scHitVector[i]->sector);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisTOFRFTime), scHitVector[i]->t_TDC);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFTime->dTime, scHitVector[i]->t_TDC);
             Fill1DHistogram("HLDetectorTiming", "SC_TDC_RF_Compare", name,
                     scHitVector[i]->t_TDC - locShiftedTime,
                     title,
@@ -415,24 +413,24 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
     }
     for (i = 0; i < tagmHitVector.size(); i++){
         const DTAGMHit *thisTAGMHit = tagmHitVector[i];
-        if(thisTAGMHit->has_fADC && thisTOFRFTime != NULL){
+        if(thisTAGMHit->has_fADC && thisRFTime != NULL){
             char name [200];
             char title[500];
             sprintf(name, "Column %.3i Row %.1i", tagmHitVector[i]->column, tagmHitVector[i]->row);
             sprintf(title, "TAGM Column %i t_{ADC} - t_{RF}; t_{ADC} - t_{RF} [ns]; Entries", tagmHitVector[i]->column);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisTOFRFTime), tagmHitVector[i]->time_fadc);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFTime->dTime, tagmHitVector[i]->time_fadc);
             Fill1DHistogram("HLDetectorTiming", "TAGM_ADC_RF_Compare", name,
                     tagmHitVector[i]->time_fadc - locShiftedTime,
                     title,
                     NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
         }
 
-        if(thisTAGMHit->has_TDC && thisTOFRFTime != NULL){
+        if(thisTAGMHit->has_TDC && thisRFTime != NULL){
             char name [200];
             char title[500];
             sprintf(name, "Column %.3i Row %.1i", tagmHitVector[i]->column, tagmHitVector[i]->row);
             sprintf(title, "TAGM Column %i t_{TDC} - t_{RF}; t_{TDC} - t_{RF} [ns]; Entries", tagmHitVector[i]->column);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisTOFRFTime), tagmHitVector[i]->time_tdc);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFTime->dTime, tagmHitVector[i]->time_tdc);
             Fill1DHistogram("HLDetectorTiming", "TAGM_TDC_RF_Compare", name,
                     tagmHitVector[i]->time_tdc - locShiftedTime,
                     title,
@@ -482,23 +480,23 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
     }
     for (i = 0; i < taghHitVector.size(); i++){
         const DTAGHHit *thisTAGHHit = taghHitVector[i];
-        if(thisTAGHHit->has_fADC && thisTOFRFTime != NULL){
+        if(thisTAGHHit->has_fADC && thisRFTime != NULL){
             char name [200];
             char title[500];
             sprintf(name, "Counter ID %.3i", taghHitVector[i]->counter_id);
             sprintf(title, "TAGH Counter ID %i t_{ADC} - t_{RF}; t_{ADC} - t_{RF} [ns]; Entries", taghHitVector[i]->counter_id);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisTOFRFTime), taghHitVector[i]->time_fadc);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFTime->dTime, taghHitVector[i]->time_fadc);
             Fill1DHistogram("HLDetectorTiming", "TAGH_ADC_RF_Compare", name,
                     taghHitVector[i]->time_fadc - locShiftedTime,
                     title,
                     NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
         }
-        if(thisTAGHHit->has_TDC && thisTOFRFTime != NULL){
+        if(thisTAGHHit->has_TDC && thisRFTime != NULL){
             char name [200];
             char title[500];
             sprintf(name, "Counter ID %.3i", taghHitVector[i]->counter_id);
             sprintf(title, "TAGH Counter ID %i t_{TDC} - t_{RF}; t_{TDC} - t_{RF} [ns]; Entries", taghHitVector[i]->counter_id);
-            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locTTabUtilities->Convert_DigiTimeToNs_F1TDC(thisTOFRFTime), taghHitVector[i]->time_tdc);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFTime->dTime, taghHitVector[i]->time_tdc);
             Fill1DHistogram("HLDetectorTiming", "TAGH_TDC_RF_Compare", name,
                     taghHitVector[i]->time_tdc - locShiftedTime,
                     title,
@@ -647,7 +645,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
         deque<const DParticleCombo*> locPassedParticleCombos;
         locAnalysisResultsVector[0]->Get_PassedParticleCombos(locPassedParticleCombos);
 
-        for (unsigned int i=0; i < locPassedParticleCombos.size(); i++){
+        for (i=0; i < locPassedParticleCombos.size(); i++){
             double taggerTime = locPassedParticleCombos[i]->Get_ParticleComboStep(0)->Get_InitialParticle_Measured()->time();
             //cout << "We have a tagger time of " << taggerTime << endl;
             //Find matching hit by time
