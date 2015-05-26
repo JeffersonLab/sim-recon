@@ -123,10 +123,12 @@ inline TDirectoryFile* DAnalysisAction::ChangeTo_BaseDirectory(void)
 {
 	//get and change to the base (file/global) directory //MUST(!) LOCK PRIOR TO ENTRY! (not performed in here!)
 	TFile* locFile = (TFile*)gROOT->FindObject(dOutputFileName.c_str());
-	if(locFile != NULL)
-		locFile->cd("");
-	else
-		gDirectory->Cd("/");
+	if(locFile == NULL)
+	{
+		cout << "ERROR: OUTPUT HISTOGRAM FILE " << dOutputFileName << " NOT FOUND IN DAnalysisAction::ChangeTo_BaseDirectory(). ABORTING." << endl;
+		abort();
+	}
+	locFile->cd("");
 	return (TDirectoryFile*)gDirectory;
 }
 

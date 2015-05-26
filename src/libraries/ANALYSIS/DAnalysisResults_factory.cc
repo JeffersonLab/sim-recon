@@ -52,7 +52,10 @@ jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int runn
 			gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
 		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
 		if(locFile == NULL)
-			return NOERROR;
+		{
+			cout << "ERROR: OUTPUT HISTOGRAM FILE " << locOutputFileName << " NOT FOUND IN DAnalysisResults_factory::brun(). ABORTING." << endl;
+			abort();
+		}
 		locFile->cd("");
 
 		for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
