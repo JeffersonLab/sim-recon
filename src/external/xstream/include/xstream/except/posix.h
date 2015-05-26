@@ -14,7 +14,7 @@
 #include <xstream/posix.h>
 
 namespace xstream{
-	namespace posix{
+    namespace posix{
 
 /*!
  * \brief errors in POSIX usage
@@ -22,22 +22,22 @@ namespace xstream{
  */
 class general_error: public xstream::fatal_error
 {
-	private:
-		std::string syscall; /*!< syscall that caused the error */
-		int error_code; /*!< errno */
+    private:
+        std::string syscall; /*!< syscall that caused the error */
+        int error_code; /*!< errno */
 
-	public:
-		general_error(const std::string& s, const int e, const std::string& d="general error"):
-		xstream::fatal_error(d),syscall(s),error_code(e)
-		{};
+    public:
+        general_error(const std::string& s, int e, const std::string& d="general error"):
+        xstream::fatal_error(d),syscall(s),error_code(e)
+        {};
 
-		virtual ~general_error() throw()
-		{}
+        virtual ~general_error() throw()
+        {}
 
-		virtual std::string module() const
-		{
-			return (xstream::fatal_error::module()+"::posix["+syscall+"]");
-		}
+        virtual std::string module() const
+        {
+            return (xstream::fatal_error::module()+"::posix["+syscall+"]");
+        }
 };
 
 }//namespace posix

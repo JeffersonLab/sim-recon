@@ -14,7 +14,7 @@
 #include <xstream/z.h>
 
 namespace xstream{
-	namespace base64{
+    namespace base64{
 
 /*!
  * \brief errors in base64 usage
@@ -22,14 +22,14 @@ namespace xstream{
  */
 class general_error: public xstream::fatal_error
 {
-	public:
-		general_error(
-				const std::string& w="generic error in base64"
-			)
-			:xstream::fatal_error(w){};
-		virtual std::string module() const{
-			return (xstream::fatal_error::module()+"::base64");
-		}
+    public:
+        general_error(
+                const std::string& w="generic error in base64"
+            )
+            :xstream::fatal_error(w){};
+        virtual std::string module() const{
+            return (xstream::fatal_error::module()+"::base64");
+        }
 };
 
 /*!
@@ -40,12 +40,12 @@ class general_error: public xstream::fatal_error
 
 class encode_error: public general_error
 {
-	public:
-		encode_error(const std::string& w):general_error(w){};
+    public:
+        encode_error(const std::string& w):general_error(w){};
 
-		virtual std::string module() const{
-			return (general_error::module()+"::encode");
-		}
+        virtual std::string module() const{
+            return (general_error::module()+"::encode");
+        }
 };
 
 
@@ -56,12 +56,12 @@ class encode_error: public general_error
 
 class decode_error: public general_error
 {
-	public:
-		decode_error(const std::string& w):general_error(w){};
+    public:
+        decode_error(const std::string& w):general_error(w){};
 
-		virtual std::string module() const{
-			return (general_error::module()+"::decode");
-		}
+        virtual std::string module() const{
+            return (general_error::module()+"::decode");
+        }
 };
 
 }//namespace base64

@@ -22,31 +22,31 @@ namespace xstream{
 
 class fatal_error: public std::ios::failure
 {
-	public:
-		fatal_error(const std::string& w):std::ios::failure(w){};
+    public:
+        fatal_error(const std::string& w):std::ios::failure(w){};
 
-		/*!
-		 * \brief describes the current library module
-		 * (zlib,bzlib,base64,...)
-		 *
-		 */
-		virtual std::string module() const
-		{
-			return "xstream";
-		}
+        /*!
+         * \brief describes the current library module
+         * (zlib,bzlib,base64,...)
+         *
+         */
+        virtual std::string module() const
+        {
+            return "xstream";
+        }
 
-		virtual const char* what() const throw()
-		{
-			try{
-				std::string w=module();
-				w+=":: ";
-				w+=(std::ios::failure::what());
-				return w.c_str();
-			}
-			catch(...){
-				return std::ios::failure::what();
-			}
-		}
+        virtual const char* what() const throw()
+        {
+            try{
+                std::string w=module();
+                w+=":: ";
+                w+=(std::ios::failure::what());
+                return w.c_str();
+            }
+            catch(...){
+                return std::ios::failure::what();
+            }
+        }
 };
 
 #if 0
@@ -56,7 +56,7 @@ class fatal_error: public std::ios::failure
  *
  */
 class recoverable_error: public std::ios::failure {;
-	recoverable_error(const std::string& w):std::ios::failure(w){};
+    recoverable_error(const std::string& w):std::ios::failure(w){};
 };
 
 #endif

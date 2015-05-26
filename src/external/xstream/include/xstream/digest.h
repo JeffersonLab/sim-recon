@@ -12,12 +12,12 @@
 #include <streambuf>
 
 #if HAVE_INTTYPES_H
-#	include<inttypes.h>
+#    include<inttypes.h>
 #else
-#	if HAVE_STDINT_H
-#		include <stdint.h>
-#	endif
-#	error "I need inttypes.h or stdint.h to exist"	
+#    if HAVE_STDINT_H
+#        include <stdint.h>
+#    endif
+#    error "I need inttypes.h or stdint.h to exist"    
 #endif
 
 #include <iosfwd>
@@ -35,61 +35,60 @@ namespace digest{
  */
 class stream: public xstream::ostreambuf
 {
-	protected: // changed to protected to avoif clang compiler error when
-	           // sync() is called from class "common" below. 10/23/2013 DL
-		/*!
-		 * \brief update digest with as much data as possible (overloaded from streambuf)
-		 *
-		 * */
-		int sync();
-	private:   // change back to private (see note above) 10/23/2013 DL
-		/*!
-		 * \brief write a character that surpasses buffer end (overloaded from streambuf)
-		 * 
-		 */
-		int overflow(const int c);
+    protected: // changed to protected to avoif clang compiler error when
+               // sync() is called from class "common" below. 10/23/2013 DL
+        /*!
+         * \brief update digest with as much data as possible (overloaded from streambuf)
+         *
+         * */
+        int sync();
+    private:   // change back to private (see note above) 10/23/2013 DL
+        /*!
+         * \brief write a character that surpasses buffer end (overloaded from streambuf)
+         * 
+         */
+        int overflow(int c);
 
-		/*!
-		 * \brief add an entire buffer to digest calculation (overloaded from streambuf)
-		 *
-		 */
-		std::streamsize xsputn(char *buffer, std::streamsize n);
-		using std::streambuf::xsputn;  // avoid compiler warnings related to 'hides overloaded virtual function' 5/15/2015 DL
+        /*!
+         * \brief add an entire buffer to digest calculation (overloaded from streambuf)
+         *
+         */
+        std::streamsize xsputn(const char *buffer, std::streamsize n);
 
-	protected:
-		xstream::buffer buf; /*!<buffer data to calculate digest */
-		uint64_t length; /*!< number of bytes read so far */
-		
-		/*!
-		 * \brief default constructor
-		 *
-		 * allocates the buffer
-		 *
-		 * \parameter len length of buffer
-		 *
-		 * */
-		stream(size_t len);
+    protected:
+        xstream::buffer buf; /*!<buffer data to calculate digest */
+        uint64_t length; /*!< number of bytes read so far */
+        
+        /*!
+         * \brief default constructor
+         *
+         * allocates the buffer
+         *
+         * \parameter len length of buffer
+         *
+         * */
+        stream(size_t len);
 
-		/*!
-		 * \brief updates the digest
-		 * must be inplemented by classes that implement this interface
-		 *
-		 */
-		virtual void calculate_digest()=0;
+        /*!
+         * \brief updates the digest
+         * must be inplemented by classes that implement this interface
+         *
+         */
+        virtual void calculate_digest()=0;
 
-		/*!
-		 * \brief resets digest to it's initial value
-		 *
-		 */
-		virtual void reset_digest()=0;
+        /*!
+         * \brief resets digest to it's initial value
+         *
+         */
+        virtual void reset_digest()=0;
 
-		/*! destructor
-		 *
-		 * frees the buffer
-		 *
-		 * */
+        /*! destructor
+         *
+         * frees the buffer
+         *
+         * */
 
-		~stream();
+        ~stream();
 };
 
 /*!
@@ -101,40 +100,40 @@ class stream: public xstream::ostreambuf
 
 template <typename digest_type>
 class common: public stream{
-	public:
+    public:
 
-		/*
-		 * \brief constructor
-		 *
-		 * \param s size of the buffer
-		 *
-		 */
-		common(size_t s)
-			:stream(s)
-		{}
+        /*
+         * \brief constructor
+         *
+         * \param s size of the buffer
+         *
+         */
+        common(size_t s)
+            :stream(s)
+        {}
 
-		/*!
-		 * \brief return the digest value
-		 *
-		 */
-		virtual digest_type digest()=0;
+        /*!
+         * \brief return the digest value
+         *
+         */
+        virtual digest_type digest()=0;
 
-		/*!
-		 * \brief resets the digest calculation
-		 *
-		 * returns the digest of data so far and for future calculations only considers data entered from now on
-		 *
-		 */
+        /*!
+         * \brief resets the digest calculation
+         *
+         * returns the digest of data so far and for future calculations only considers data entered from now on
+         *
+         */
 
-		digest_type reset()
-		{
-			sync();
-			digest_type d = digest();
-			reset_digest();
-			return d;
-		}
+        digest_type reset()
+        {
+            sync();
+            digest_type d = digest();
+            reset_digest();
+            return d;
+        }
 };
-		
+        
 
 #if HAVE_LIBZ
 
@@ -147,15 +146,15 @@ class common: public stream{
  */
 
 class z_common : public common<unsigned long int> {
-	protected:
-		unsigned long int _digest; /*!< digest value */
+    protected:
+        unsigned long int _digest; /*!< digest value */
 
-		virtual void reset_digest();
+        virtual void reset_digest();
 
-		z_common();
+        z_common();
 
-	public:
-		virtual unsigned long int digest();
+    public:
+        virtual unsigned long int digest();
 };
 
 /*!
@@ -164,8 +163,8 @@ class z_common : public common<unsigned long int> {
  */
 
 class adler32 : public z_common {
-	private:
-		void calculate_digest();
+    private:
+        void calculate_digest();
 };
 
 /*!
@@ -174,8 +173,8 @@ class adler32 : public z_common {
  */
 
 class crc32 : public z_common {
-	private:
-		void calculate_digest();
+    private:
+        void calculate_digest();
 };
 
 /*!
@@ -183,38 +182,38 @@ class crc32 : public z_common {
  */
 
 class block_stream: public stream{
-	private:
-		const size_t chunk_size; /*!< size of the chunk used to calculate the digest */
+    private:
+        const size_t chunk_size; /*!< size of the chunk used to calculate the digest */
 
-		/*!
-		 * \brief update digest with as much data as possible (overloaded from streambuf)
-		 *
-		 * */
-		int sync();
+        /*!
+         * \brief update digest with as much data as possible (overloaded from streambuf)
+         *
+         * */
+        int sync();
 
-		/*!
-		 * \brief write a character that surpasses buffer end (overloaded from streambuf)
-		 * 
-		 */
-		int overflow(const int c);
+        /*!
+         * \brief write a character that surpasses buffer end (overloaded from streambuf)
+         * 
+         */
+        int overflow(int c);
 
-		/*!
-		 * \brief add an entire buffer to digest calculation (overloaded from streambuf)
-		 *
-		 */
-		std::streamsize xsputn(char *buffer, std::streamsize n);
+        /*!
+         * \brief add an entire buffer to digest calculation (overloaded from streambuf)
+         *
+         */
+        std::streamsize xsputn(const char *buffer, std::streamsize n);
 
-	public:
+    public:
 
-		/*!
-		 * \brief constructor
-		 *
-		 * \param chunk size in bytes of the chunk \c digest uses to update it's value 
-		 * \param blocks number of blocks of size chunk that fit in the buffer size
-		 *
-		 * */
-		block_stream(const size_t chunk, const unsigned int blocks);
-		
+        /*!
+         * \brief constructor
+         *
+         * \param chunk size in bytes of the chunk \c digest uses to update it's value 
+         * \param blocks number of blocks of size chunk that fit in the buffer size
+         *
+         * */
+        block_stream(size_t chunk, unsigned int blocks);
+        
 };
 
 
@@ -227,53 +226,53 @@ class block_stream: public stream{
 
 class md5 : public block_stream {
 
-	public:
+    public:
 
-		/*
-		 * \brief result of an \c md5 digest
-		 *
-		 */
+        /*
+         * \brief result of an \c md5 digest
+         *
+         */
 
-		struct result {
-			uint32_t a;
-			uint32_t b;
-			uint32_t c;
-			uint32_t d;
+        struct result {
+            uint32_t a;
+            uint32_t b;
+            uint32_t c;
+            uint32_t d;
 
-			bool operator==(const result& r) const{
-				return (a==r.a && b==r.b && c==r.c && d==r.d);
-			}
-		};
+            bool operator==(const result& r) const{
+                return (a==r.a && b==r.b && c==r.c && d==r.d);
+            }
+        };
 
-		/*!
-		 * \brief returns the digest of the data as an \c result structure
-		 * 
-		 */
-		result digest();
+        /*!
+         * \brief returns the digest of the data as an \c result structure
+         * 
+         */
+        result digest();
 
-		/*!
-		 * \brief resets digest value
-		 *
-		 * returns the digest of data so far and for future calculations only considers data entered from now on
-		 */
+        /*!
+         * \brief resets digest value
+         *
+         * returns the digest of data so far and for future calculations only considers data entered from now on
+         */
 
-		result reset();
-	
-		/*!
-		 * \brief default constructor
-		 *
-		 */
-		md5();
+        result reset();
+    
+        /*!
+         * \brief default constructor
+         *
+         */
+        md5();
 
-	private:
-		result result;
-		virtual void reset_digest();
+    private:
+        result result;
+        virtual void reset_digest();
 
-		virtual void calculate_digest();
+        virtual void calculate_digest();
 
-			
+            
 };
-			
+            
 #endif //have zlib
 
 /*

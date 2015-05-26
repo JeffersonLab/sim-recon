@@ -31,59 +31,59 @@ namespace fd{
  *
  */
 class streambuf: public xstream::ostreambuf, private xstream::posix::fd {
-	private:
+    private:
 
-		xstream::buffer rbuf; /*!< were read data is stored */
-		xstream::buffer wbuf; /*!< were data to be written is stored */
+        xstream::buffer rbuf; /*!< were read data is stored */
+        xstream::buffer wbuf; /*!< were data to be written is stored */
 
 
-		/*!
-		 * \brief flush as much data as possible (overloaded from streambuf)
-		 *
-		 * */
-		int sync();
+        /*!
+         * \brief flush as much data as possible (overloaded from streambuf)
+         *
+         * */
+        int sync();
 
-		/*!
-		 * \brief write a character that surpasses buffer end (overloaded from streambuf)
-		 * 
-		 */
-		int overflow(const int c);
+        /*!
+         * \brief write a character that surpasses buffer end (overloaded from streambuf)
+         * 
+         */
+        int overflow(int c);
 
-		/*!
-		 * \brief write an entire buffer (overloaded from streambuf)
-		 *
-		 */
-		std::streamsize xsputn(const char* buffer, std::streamsize n);
+        /*!
+         * \brief write an entire buffer (overloaded from streambuf)
+         *
+         */
+        std::streamsize xsputn(const char* buffer, std::streamsize n);
 
-		/*!
-		 * \brief reads \c n characters to \c buffer (overloaded from streambuf)
-		 *
-		 */
-		std::streamsize xsgetn(char *buffer, std::streamsize n);
+        /*!
+         * \brief reads \c n characters to \c buffer (overloaded from streambuf)
+         *
+         */
+        std::streamsize xsgetn(char *buffer, std::streamsize n);
 
-		/*!
-		 * \brief requests that input buffer be reloaded (overloaded from streambuf)
-		 */
-		int underflow();
+        /*!
+         * \brief requests that input buffer be reloaded (overloaded from streambuf)
+         */
+        int underflow();
 
-		void reset_write();
+        void reset_write();
 
-		void flush_write();
-		
-	public:
-		/*!
-		 * \brief construct specifying the file descriptor
-		 *
-		 * \param fd filedescriptor
-		 * \param close if true closes the file descriptor at destruction
-		 */
-		streambuf(const int fd, const bool close=true);
+        void flush_write();
+        
+    public:
+        /*!
+         * \brief construct specifying the file descriptor
+         *
+         * \param fd filedescriptor
+         * \param close if true closes the file descriptor at destruction
+         */
+        streambuf(int fd, bool close=true);
 
-		/*!
-		 * \brief closes the streambuf stream
-		 *
-		 */
-		~streambuf();
+        /*!
+         * \brief closes the streambuf stream
+         *
+         */
+        ~streambuf();
 
 };
 

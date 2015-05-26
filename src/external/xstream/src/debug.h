@@ -23,7 +23,7 @@ extern std::ostream* debug;
 /*! \brief logging macro using an ostream
  */
 
-#define LOG(d) do{(*debug)<<"["<<(__FILE__)<<": "<<__LINE__<<"]\t"<<d<<std::endl;}while(0)
+#define LOG(d) do {(*debug) << "[" << (__FILE__) << ": " << __LINE__ << "]\t" << d << std::endl;} while (0)
 
 #else
 

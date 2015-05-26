@@ -20,22 +20,22 @@ namespace xstream{
  */
 class ostreambuf: public std::streambuf
 {
-	protected:
-		/*!
-		 * \brief remaining characters in the buffer
-		 *
-		 */
-		std::streamsize inline available() const {
-			return (epptr () - pptr ());
-		}
+    protected:
+        /*!
+         * \brief remaining characters in the buffer
+         *
+         */
+        std::streamsize inline available() const {
+            return (epptr() - pptr());
+        }
 
-		/*!
-		 * \brief number of characters in the buffer
-		 *
-		 */
-		std::streamsize inline taken() const {
-			return (pptr () - pbase ());
-		}		
+        /*!
+         * \brief number of characters in the buffer
+         *
+         */
+        std::streamsize inline taken() const {
+            return (pptr() - pbase());
+        }        
 };
 
 /*!
@@ -45,42 +45,42 @@ class ostreambuf: public std::streambuf
 
 class buffer
 {
-	public:
-		char* buf; /*!< buffer where data is kept */
-		size_t size; /*!< size of buffer */
+    public:
+        char* buf; /*!< buffer where data is kept */
+        size_t size; /*!< size of buffer */
 
-		/*
-		 * \brief allocates a buffer of size \c size
-		 *
-		 * \param size length of buffer
-		 *
-		 */
-		buffer(const size_t size);
+        /*
+         * \brief allocates a buffer of size \c size
+         *
+         * \param size length of buffer
+         *
+         */
+        buffer(size_t size);
 
-		/*!
-		 * \brief increases the size of buffer
-		 *
-		 * \param factor size is updated according to \f$ size'=size*factor \f$ 
-		 * \note old data is copied to the new buffer
-		 * 
-		 */
-		void grow(const unsigned int factor=2);
+        /*!
+         * \brief increases the size of buffer
+         *
+         * \param factor size is updated according to \f$ size'=size*factor \f$ 
+         * \note old data is copied to the new buffer
+         * 
+         */
+        void grow(unsigned int factor=2);
 
-		/*!
-		 * \brief resets the size of the buffer
-		 *
-		 * \param size new length of the buffer 
-		 *
-		 * \note no copying of data is done
-		 *
-		 */
-		void resize(const size_t size);
+        /*!
+         * \brief resets the size of the buffer
+         *
+         * \param size new length of the buffer 
+         *
+         * \note no copying of data is done
+         *
+         */
+        void resize(size_t size);
 
-		/*!
-		 * \brief deallocates buffer
-		 *
-		 */
-		~buffer();
+        /*!
+         * \brief deallocates buffer
+         *
+         */
+        ~buffer();
 };
 
 /*!
@@ -90,18 +90,18 @@ class buffer
  */
 class common_buffer
 {
-	protected:
-		std::streambuf *_sb; /*!< streambuf to read/write from/to */
-		buffer in; /*!< input buffer */
-		buffer out; /*!< output buffer */
+    protected:
+        std::streambuf *_sb; /*!< streambuf to read/write from/to */
+        buffer in; /*!< input buffer */
+        buffer out; /*!< output buffer */
 
-	public:
-		/*!
-		 * \brief construct using a streambuf
-		 */
-		common_buffer(std::streambuf* sb);
+    public:
+        /*!
+         * \brief construct using a streambuf
+         */
+        common_buffer(std::streambuf* sb);
 
-		~common_buffer();
+        ~common_buffer();
 
 };
 

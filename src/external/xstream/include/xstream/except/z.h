@@ -14,7 +14,7 @@
 #include <xstream/z.h>
 
 namespace xstream{
-	namespace z{
+    namespace z{
 
 /*!
  * \brief errors in zlib usage
@@ -22,15 +22,15 @@ namespace xstream{
  */
 class general_error: public xstream::fatal_error
 {
-	public:
-		general_error(
-				const std::string& w="generic error in zlib stream"
-			)
-			:xstream::fatal_error(w){};
-		virtual std::string module() const
-		{
-			return (xstream::fatal_error::module()+"::zlib");
-		}
+    public:
+        general_error(
+                const std::string& w="generic error in zlib stream"
+            )
+            :xstream::fatal_error(w){};
+        virtual std::string module() const
+        {
+            return (xstream::fatal_error::module()+"::zlib");
+        }
 };
 
 /*!
@@ -41,27 +41,27 @@ class general_error: public xstream::fatal_error
 
 class compress_error: public general_error
 {
-	public:
-		/*!
-		 * \brief ostreambuf that caused the exception 
-		 *
-		 * */
-		xstream::z::ostreambuf* stream;
-		compress_error(
-				xstream::z::ostreambuf* p,
-				const std::string& w
-			)
-			:general_error(w),stream(p)
-			{};
+    public:
+        /*!
+         * \brief ostreambuf that caused the exception 
+         *
+         * */
+        xstream::z::ostreambuf* stream;
+        compress_error(
+                xstream::z::ostreambuf* p,
+                const std::string& w
+            )
+            :general_error(w),stream(p)
+            {};
 
-		compress_error(xstream::z::ostreambuf* p)
-			:general_error(),stream(p)
-			{};
+        compress_error(xstream::z::ostreambuf* p)
+            :general_error(),stream(p)
+            {};
 
-		virtual std::string module() const
-		{
-			return (general_error::module()+"::compress");
-		}
+        virtual std::string module() const
+        {
+            return (general_error::module()+"::compress");
+        }
 };
 
 
@@ -71,24 +71,24 @@ class compress_error: public general_error
  */
 
 class decompress_error: public general_error {
-	public:
-		/*!
-		 * \brief istreambuf that caused the exception 
-		 *
-		 * */
-		xstream::z::istreambuf* stream;
-		decompress_error(
-				xstream::z::istreambuf* p,
-				const std::string& w
-			)
-			:general_error(w),stream(p){};
+    public:
+        /*!
+         * \brief istreambuf that caused the exception 
+         *
+         * */
+        xstream::z::istreambuf* stream;
+        decompress_error(
+                xstream::z::istreambuf* p,
+                const std::string& w
+            )
+            :general_error(w),stream(p){};
 
-		decompress_error(xstream::z::istreambuf* p)
-			:general_error(),stream(p){};
+        decompress_error(xstream::z::istreambuf* p)
+            :general_error(),stream(p){};
 
-		virtual std::string module() const{
-			return (general_error::module()+"::decompress");
-		}
+        virtual std::string module() const{
+            return (general_error::module()+"::decompress");
+        }
 };
 
 }//namespace z

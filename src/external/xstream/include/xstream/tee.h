@@ -35,65 +35,65 @@ namespace tee{
  */
 class ostreambuf: public xstream::ostreambuf
 {
-	private:
+    private:
 
-		std::set<std::streambuf*> destinations; /*!< set of streambufs to write to */
+        std::set<std::streambuf*> destinations; /*!< set of streambufs to write to */
 
-		/*!
-		 * \brief flush as much data as possible (overloaded from streambuf)
-		 *
-		 * */
-		int sync();
+        /*!
+         * \brief flush as much data as possible (overloaded from streambuf)
+         *
+         * */
+        int sync();
 
-		/*!
-		 * \brief write a character that supasses buffer end (overloaded from streambuf)
-		 * 
-		 */
-		int overflow(const int c);
+        /*!
+         * \brief write a character that supasses buffer end (overloaded from streambuf)
+         * 
+         */
+        int overflow(int c);
 
-		/*!
-		 * \brief write an entire buffer (overloaded from streambuf)
-		 *
-		 */
-		std::streamsize xsputn(char const *buffer, std::streamsize n);
-		
-	public:
-		/*!
-		 * \brief construct \c NOP object
-		 */
-		ostreambuf()
-		{};
+        /*!
+         * \brief write an entire buffer (overloaded from streambuf)
+         *
+         */
+        std::streamsize xsputn(const char *buffer, std::streamsize n);
+        
+    public:
+        /*!
+         * \brief construct \c NOP object
+         */
+        ostreambuf()
+        {};
 
-		/*!
-		 * \brief add an output streembuf to write to
-		 */
-		void add(std::streambuf* sb);
+        /*!
+         * \brief add an output streembuf to write to
+         */
+        void add(std::streambuf* sb);
 
-		/*!
-		 * \brief remove a streambuf to write to
-		 *
-		 */
-		void remove(std::streambuf* sb);
+        /*!
+         * \brief remove a streambuf to write to
+         *
+         */
+        void remove(std::streambuf* sb);
 
-		/*!
-		 * \brief add an output ostream to write to
-		 * 
-		 * higher level syntatic sugar for the streambuf version
-		 */
-		void add(std::ostream& os);
+        /*!
+         * \brief add an output ostream to write to
+         * 
+         * higher level syntatic sugar for the streambuf version
+         */
+        void add(std::ostream& os);
 
-		/*!
-		 * \brief remove an output ostream to write to
-		 * 
-		 * higher level syntatic sugar for the streambuf version
-		 */
-		void remove(std::ostream& os);
+        /*!
+         * \brief remove an output ostream to write to
+         * 
+         * higher level syntatic sugar for the streambuf version
+         */
+        void remove(std::ostream& os);
 
-		/*!
-		 * \brief closes the streambuf stream
-		 *
-		 */
-		~ostreambuf();
+        /*!
+         * \brief closes the streambuf stream
+         *
+         */
+        ~ostreambuf();
 
 };
 
