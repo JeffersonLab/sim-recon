@@ -8,6 +8,8 @@
 #include <TH1I.h>
 #include <TH2I.h>
 #include <TDirectory.h>
+#include <TROOT.h>
+#include <TFile.h>
 
 using namespace std;
 using namespace jana;

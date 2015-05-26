@@ -24,6 +24,17 @@ void Fill1DHistogram (const char * plugin, const char * directoryName, const cha
     }
     catch (const std::out_of_range& oor) {
         if (print) std::cerr << ansi_green << plugin << " ===> Making New 1D Histogram " << name << ansi_normal << endl;
+        // Ensure we are at the base directory
+        string locOutputFileName = "hd_root.root";
+        if(gPARMS->Exists("OUTPUT_FILENAME"))
+            gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
+        TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
+        if(locFile == NULL)
+        {
+            cout << "ERROR: OUTPUT HISTOGRAM FILE " << locOutputFileName << " NOT FOUND IN DParticleCombo_factory_PreKinFit::brun(). ABORTING." << endl;
+            abort();
+        }
+        locFile->cd("");
         TDirectory *homedir = gDirectory;
         TDirectory *temp;
         temp = gDirectory->mkdir(plugin);
@@ -51,6 +62,17 @@ void Fill2DHistogram (const char * plugin, const char * directoryName, const cha
     }
     catch (const std::out_of_range& oor) {
         if (print) std::cerr << ansi_green << plugin << " ===> Making New 2D Histogram " << name << ansi_normal << endl;
+        // Ensure we are at the base directory
+        string locOutputFileName = "hd_root.root";
+        if(gPARMS->Exists("OUTPUT_FILENAME"))
+            gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
+        TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
+        if(locFile == NULL)
+        {
+            cout << "ERROR: OUTPUT HISTOGRAM FILE " << locOutputFileName << " NOT FOUND IN DParticleCombo_factory_PreKinFit::brun(). ABORTING." << endl;
+            abort();
+        }
+        locFile->cd("");
         TDirectory *homedir = gDirectory;
         TDirectory *temp;
         temp = gDirectory->mkdir(plugin);
