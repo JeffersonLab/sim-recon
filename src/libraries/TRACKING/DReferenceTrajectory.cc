@@ -454,7 +454,7 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
     }
     if (hit_fcal==false && z>625.){
       index_at_fcal=Nswim_steps-1;
-      hit_fcal=true;
+      hit_fcal=true;     
     }
     
     // Exit the loop if we are already inside the volume of the BCAL
@@ -895,47 +895,20 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 	}
 	// Find the closest swim step to the position where the track crosses
 	// the plane
-	swim_step_t *step = NULL;
+	int first_i=0;
 	switch(detector){
 	case SYS_FCAL:
 	  if (index_at_fcal<0) return VALUE_OUT_OF_RANGE;
-	  step=&swim_steps[index_at_fcal];
+	  first_i=index_at_fcal;
 	  break;
 	case SYS_TOF:
 	  if (index_at_tof<0) return VALUE_OUT_OF_RANGE;
-	  step=&swim_steps[index_at_tof];
+	  first_i=index_at_tof;
 	  break;
 	default:	
-	  step=FindPlaneCrossing(origin,norm);
 	  break;
 	}
-
-	// Kludge for tracking to forward detectors assuming that the planes 
-	// are perpendicular to the beam line 
-	if (step && step->origin.Z()>600.
-	    && (detector==SYS_FCAL || detector==SYS_TOF) 
-	    ){
-	  double p_sq=step->mom.Mag2();
-	  //double ds=(origin.z()-step->origin.z())*p/step->mom.z();
-	  double dz_over_pz=(origin.z()-step->origin.z())/step->mom.z();
-	  double ds=sqrt(p_sq)*dz_over_pz;
-	  pos.SetXYZ(step->origin.x()+dz_over_pz*step->mom.x(),
-		     step->origin.y()+dz_over_pz*step->mom.y(),
-		     origin.z());
-	  p_at_intersection=step->mom;
-
-	  if (s){
-	    *s=step->s+ds;
-	  } 
-	  // flight time
-	  if (t){
-	    double one_over_beta=sqrt(1.+mass_sq/p_sq);
-	    *t = step->t+ds*one_over_beta/SPEED_OF_LIGHT;
-	  }
-	  
-	  return NOERROR;
-	}
-
+	swim_step_t *step=FindPlaneCrossing(origin,norm);
 	if(!step){
 		_DBG_<<"Could not find closest swim step!"<<endl;
 		return RESOURCE_UNAVAILABLE;
@@ -1043,18 +1016,21 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 	}
 	
 	// If we got here then we need to try a straight line calculation
-	double alpha = norm.Dot(origin)/norm.Dot(step->mom);
-	pos = alpha*step->mom;
+	double p_sq=step->mom.Mag2();
+	double dz_over_pz=(origin.z()-step->origin.z())/step->mom.z();
+	double ds=sqrt(p_sq)*dz_over_pz;
+	pos.SetXYZ(step->origin.x()+dz_over_pz*step->mom.x(),
+		   step->origin.y()+dz_over_pz*step->mom.y(),
+		   origin.z());
 	p_at_intersection = step->mom;
+
 	if(s){
-		double delta_s = alpha*step->mom.Mag();
-		*s = step->s + delta_s;
+		*s = step->s + ds;
 	}
 	// flight time
 	if (t){
-	  double p_sq=step->mom.Mag2();
 	  double one_over_beta=sqrt(1.+mass_sq/p_sq);
-	  *t = step->t+alpha*sqrt(p_sq)*one_over_beta/SPEED_OF_LIGHT;
+	  *t = step->t+ds*one_over_beta/SPEED_OF_LIGHT;
 	}
 
 	return NOERROR;
@@ -1567,7 +1543,7 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 //---------------------------------
 // FindPlaneCrossing
 //---------------------------------
-DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const DVector3 &origin, DVector3 norm, int *istep_ptr) const
+DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const DVector3 &origin, DVector3 norm,int first_i,int *istep_ptr) const
 {
   /// Find the closest swim step to the position where the track crosses
   /// the plane specified by origin
@@ -1584,7 +1560,7 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const
 	norm.SetMag(1.0);
 
 	// Loop over swim steps and find the one closest to the plane
-	swim_step_t *swim_step = swim_steps;
+	swim_step_t *swim_step = &swim_steps[first_i];
 	swim_step_t *step=NULL;
 	//double min_dist = 1.0E6;
 	int istep=-1;
@@ -1596,7 +1572,7 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const
 	double forward_dist= norm.Dot(swim_step->origin-origin);
 	double backward_dist= norm.Dot(swim_steps[last_index].origin-origin);
 	if (fabs(forward_dist)<fabs(backward_dist)){ // start at beginning
-	  for(int i=0; i<Nswim_steps; i++, swim_step++){
+	  for(int i=first_i; i<Nswim_steps; i++, swim_step++){
 	      
 	    // Distance to plane is dot product of normal vector with any
 	    // vector pointing from the current step to a point in the plane
@@ -1620,7 +1596,6 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const
 	  for(int i=last_index; i>=0; i--){
 	    swim_step=&swim_steps[i];
 	    double dist = norm.Dot(swim_step->origin-origin);
-	    
 	    // We've crossed the plane when the sign of dist changes
 	    if (dist*old_dist<0 && i<last_index) {
 	      if (fabs(dist)<fabs(old_dist)){
