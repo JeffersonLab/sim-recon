@@ -167,6 +167,9 @@ void ParseCommandLineArguments(int narg, char* argv[])
 		}else if(arg=="-o"){
 			if(i==narg-1){cout<<"-o requires an argument!"<<endl; Usage();}
 			OUTPUT_FILENAME = argv[++i];
+                }else if(arg=="-R"){
+                        if(i==narg-1){cout<<"-R requires an argument!"<<endl; Usage();}
+                        RUN_NUMBER = atoi(argv[++i]);
 		}else if(arg=="-m"){
 			if(i==narg-1){cout<<"-m requires an argument!"<<endl; Usage();}
 			MUON_CHARGED_MASS = atof(argv[++i]);
@@ -174,6 +177,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
 	}
 	
 	cout<<"---- genmuX will use the following settings: ----"<<endl;
+        cout<<"RUN_NUMBER     = "<<RUN_NUMBER<<endl;
 	cout<<"MAX_EVENTS      = "<<MAX_EVENTS<<endl;
 	cout<<"NUM_TO_GEN      = "<<NUM_TO_GEN<<endl;
 	cout<<"E_BEAM_MIN      = "<<E_BEAM_MIN<<endl;
@@ -201,6 +205,7 @@ void Usage(void)
 	cout<<"    -Emax E       set the upper beam energy limit in GeV"<<endl;
 	cout<<"    -o filename   set the output filename"<<endl;
 	cout<<"    -m mass       set the rest mass of the pi(GeV) (e.g. make it an eta!)"<<endl;
+        cout<<"    -R runNum         set the run number"<<endl;
 	cout<<endl;
 	cout<<"This program will produce events with one or more muXs and write"<<endl;
 	cout<<"out the resulting decay photons in an ASCII file of the same"<<endl;

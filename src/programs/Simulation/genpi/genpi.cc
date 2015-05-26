@@ -153,12 +153,16 @@ void ParseCommandLineArguments(int narg, char* argv[])
 		}else if(arg=="-o"){
 			if(i==narg-1){cout<<"-o requires an argument!"<<endl; Usage();}
 			OUTPUT_FILENAME = argv[++i];
+		}else if(arg=="-R"){
+			if(i==narg-1){cout<<"-R requires an argument!"<<endl; Usage();}
+			RUN_NUMBER = atoi(argv[++i]);
 		}else if(arg=="-n"){
 			IS_POSITIVE = false;
 		}
 	}
 	
 	cout<<"---- genpiX will use the following settings: ----"<<endl;
+	cout<<"RUN_NUMBER     = "<<RUN_NUMBER<<endl;
 	cout<<"MAX_EVENTS     = "<<MAX_EVENTS<<endl;
 	cout<<"P_MIN          = "<<P_MIN<<endl;
 	cout<<"P_MAX          = "<<P_MAX<<endl;
@@ -193,6 +197,7 @@ void Usage(void)
 	cout<<"    -Thetamax theta   set the upper pion theta angle in degrees"<<endl;
 	cout<<"    -n                set the particle type to a pi-"<<endl;
 	cout<<"    -o filename       set the output filename"<<endl;
+	cout<<"    -R runNum         set the run number"<<endl;
 	cout<<endl;
 	cout<<"This program is essentially a single pion particle gun."<<endl;
 	cout<<"It can produce single pion events that can be converted using"<<endl;

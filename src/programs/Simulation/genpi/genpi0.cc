@@ -211,10 +211,14 @@ void ParseCommandLineArguments(int narg, char* argv[])
 		}else if(arg=="-gtheta_max"){
 			if(i==narg-1){cout<<"-gtheta_max requires an argument!"<<endl; Usage();}
 			THETA_PHOTON_MAX = atof(argv[++i])*M_PI/180.0;
+                }else if(arg=="-R"){
+                        if(i==narg-1){cout<<"-R requires an argument!"<<endl; Usage();}
+                        RUN_NUMBER = atoi(argv[++i]);
 		}
 	}
 	
 	cout<<"---- genpi0 will use the following settings: ----"<<endl;
+        cout<<"RUN_NUMBER     = "<<RUN_NUMBER<<endl;
 	cout<<"MAX_EVENTS      = "<<MAX_EVENTS<<endl;
 	cout<<"NUM_TO_GEN      = "<<NUM_TO_GEN<<endl;
 	cout<<"E_BEAM_MIN      = "<<E_BEAM_MIN<<endl;
@@ -254,6 +258,7 @@ void Usage(void)
 	cout<<"    -gtheta_max angle   set max. theta angle for photons in deg. (default: 180)"<<endl;
 	cout<<"    -o     filename     set the output filename"<<endl;
 	cout<<"    -m     mass         set the rest mass of the pi0(GeV) (e.g. make it an eta!)"<<endl;
+        cout<<"    -R     runNum       set the run number"<<endl;
 	cout<<endl;
 	cout<<"This program will produce events with one or more pi0s and write"<<endl;
 	cout<<"out the resulting decay photons in an ASCII file of the same"<<endl;
