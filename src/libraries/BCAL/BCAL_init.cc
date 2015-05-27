@@ -4,6 +4,7 @@
 #include "DBCALGeometry_factory.h"
 #include "DBCALShower_factory_IU.h"
 #include "DBCALShower_factory_KLOE.h"
+#include "DBCALShower_factory_CURVATURE.h"
 #include "DBCALShower_factory.h"
 #include "DBCALCluster_factory.h"
 #include "DBCALCluster_factory_SINGLE.h"
@@ -38,6 +39,7 @@ jerror_t BCAL_init(JEventLoop *loop)
 	loop->AddFactory(new DBCALGeometry_factory());
 	loop->AddFactory(new DBCALShower_factory_IU());
 	loop->AddFactory(new DBCALShower_factory_KLOE());
+	loop->AddFactory(new DBCALShower_factory_CURVATURE());
 	loop->AddFactory(new DBCALShower_factory());
 	loop->AddFactory(new DBCALCluster_factory());
 	loop->AddFactory(new DBCALCluster_factory_SINGLE());
