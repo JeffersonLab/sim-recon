@@ -96,7 +96,7 @@ void hitTagger (float xin[4], float xout[4],
 
    /* read tagger set endpoint energy from calibdb */
    if (endpoint_energy_GeV == 0) {
-      char dbname[] = "/PHOTON_BEAM/endpoint_energy::mc";
+      char dbname[] = "/PHOTON_BEAM/endpoint_energy";
       unsigned int ndata = 1;
       if (GetCalib(dbname, &ndata, &endpoint_energy_GeV)) {
          fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
@@ -108,7 +108,7 @@ void hitTagger (float xin[4], float xout[4],
  
    /* read microscope channel energy bounds from calibdb */
    if (micro_channel_Erange == 0) {
-      char dbname[] = "/PHOTON_BEAM/microscope/scaled_energy_range::mc";
+      char dbname[] = "/PHOTON_BEAM/microscope/scaled_energy_range";
       /* table microscope/scaled_energy_range has 3 columns:
        *     column  xlow  xhigh
        * which are returned in an array like float[3][ncolumns]
@@ -143,7 +143,7 @@ void hitTagger (float xin[4], float xout[4],
  
    /* read hodoscope channel energy bounds from calibdb */
    if (hodo_channel_Erange == 0) {
-      char dbname[] = "/PHOTON_BEAM/hodoscope/scaled_energy_range::mc";
+      char dbname[] = "/PHOTON_BEAM/hodoscope/scaled_energy_range";
       /* table hodoscope/scaled_energy_range has 3 columns:
        *     counter  xlow  xhigh
        * which are returned in an array like float[3][ncolumns]
