@@ -28,7 +28,7 @@
       integer GetCalib
       external GetCalib
       if (beam_bucket_period_ns .lt. 0) then
-        dbpath = "/PHOTON_BEAM/RF/rf_period::mc"
+        dbpath = "/PHOTON_BEAM/RF/rf_period"
         ndata = 1
         if (GetCalib(dbpath, ndata, beam_bucket_period_ns) .ne. 0) then
           write (6,*) "HDGeant error in settofg: ",
