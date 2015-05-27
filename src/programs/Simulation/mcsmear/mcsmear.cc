@@ -70,20 +70,21 @@ double BCAL_SAMPLINGCOEFA        = 0.0; // 0.042 (from calibDB BCAL/bcal_parms)
 double BCAL_SAMPLINGCOEFB        = 0.0; // 0.013 (from calibDB BCAL/bcal_parms)
 double BCAL_TIMEDIFFCOEFA        = 0.0; // 0.07 * sqrt( 2 ) (from calibDB BCAL/bcal_parms)
 double BCAL_TIMEDIFFCOEFB        = 0.0; // 0.00 * sqrt( 2 ) (from calibDB BCAL/bcal_parms)
+double BCAL_TWO_HIT_RESOL        = 0.0; // 50. (from calibDB BCAL/bcal_parms)
+double BCAL_mevPerPE             = 0.31; // Energy corresponding to one pixel firing in MeV
 
-double BCAL_TDC_THRESHOLD = 44.7; // mV
-double BCAL_ADC_THRESHOLD = 4.0;  // mV
-double BCAL_FADC_TIME_RESOLUTION = 4.0/sqrt(12.0); // ns
+double ATTEN_LENGTH              = 0.0; // 300. (from calibDB BCAL/mc_parms)
+double C_EFFECTIVE               = 0.0; // 16.75 (from calibDB BCAL/mc_parms)
+
+double BCAL_ADC_THRESHOLD_MEV = 3.5;  // MeV (To be updated/improved)
+double BCAL_FADC_TIME_RESOLUTION = 0.3;  // ns (To be updated/improved)
 
 // BCAL flags
 bool NO_T_SMEAR = false;
 bool NO_DARK_PULSES = false;
-bool FULL_DARK_HITS = false;
 bool NO_SAMPLING_FLUCTUATIONS = false;
 bool NO_SAMPLING_FLOOR_TERM = false;
 bool NO_POISSON_STATISTICS = false;
-bool NO_TIME_JITTER = false;
-bool BCAL_DEBUG_HISTS = false;
 
 double FTOF_BAR_THRESHOLD    = 0.0;
 double STC_PADDLE_THRESHOLD  = 0.0;
@@ -129,7 +130,6 @@ double TOF_PHOTONS_PERMEV = 400.;
 double FMWPC_TSIGMA = 10.0;  // ns
 double FMWPC_ASIGMA = 0.5E-6;
 double FMWPC_THRESHOLD = 0.0;
-
 
 double TRIGGER_LOOKBACK_TIME = -100; // ns
 
@@ -209,6 +209,15 @@ int main(int narg,char* argv[])
      BCAL_SAMPLINGCOEFB = bcalparms["BCAL_SAMPLINGCOEFB"];
      BCAL_TIMEDIFFCOEFA = bcalparms["BCAL_TIMEDIFFCOEFA"];
      BCAL_TIMEDIFFCOEFB = bcalparms["BCAL_TIMEDIFFCOEFB"];
+     BCAL_TWO_HIT_RESOL = bcalparms["BCAL_TWO_HIT_RESOL"];
+   }
+
+   {
+     cout<<"get BCAL/mc_parms parameters from calibDB"<<endl;
+     map<string, double> mcparms;
+     jcalib->Get("BCAL/mc_parms", mcparms);
+     ATTEN_LENGTH       =  mcparms["ATTEN_LENGTH"];
+     C_EFFECTIVE        = mcparms["C_EFFECTIVE"];
    }
 
    {
@@ -404,17 +413,13 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'p': FCAL_PHOT_STAT_COEF = atof(&ptr[2]);       break;
       case 'b': FCAL_BLOCK_THRESHOLD = atof(&ptr[2])*k_MeV; break;
       case 'B': SMEAR_BCAL = false;                        break;
-      case 'R': BCAL_TDC_THRESHOLD = atof(&ptr[2]);        break;
-      case 'W': BCAL_ADC_THRESHOLD = atof(&ptr[2]);        break;
+      case 'V': BCAL_ADC_THRESHOLD_MEV = atof(&ptr[2]);    break;
       case 'X': BCAL_FADC_TIME_RESOLUTION = atof(&ptr[2]); break;
       case 'G': NO_T_SMEAR = true;                         break;
       case 'H': NO_DARK_PULSES = true;                     break;
-      case 'F': FULL_DARK_HITS = true;                     break;
       case 'K': NO_SAMPLING_FLUCTUATIONS = true;           break;
       case 'L': NO_SAMPLING_FLOOR_TERM = true;             break;
       case 'M': NO_POISSON_STATISTICS = true;              break;
-      case 'Q': NO_TIME_JITTER = true;                     break;
-      case 'J': BCAL_DEBUG_HISTS = true;                   break;
       case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec;           break;
       case 'S': START_SIGMA= atof(&ptr[2])*k_psec;         break;
       }
@@ -452,6 +457,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
    }
    
    cout << "BCAL values will " <<  (SMEAR_BCAL ? "":"not")  << " be smeared"
+
         << endl;
    cout << "BCAL values will " <<  (SMEAR_BCAL ? "":"not")  << " be added"
         << endl;
@@ -488,24 +494,20 @@ void Usage(void)
    cout << "    -t#      CDC time window for background hits in ns (def:" << CDC_TIME_WINDOW*1.0E9 << "ns)" << endl;
    cout << "    -U#      Sigma FDC anode drift time in ns (def:" << FDC_TDRIFT_SIGMA*1.0E9 << "ns)" << endl;
    cout << "    -C#      Sigma FDC cathode strips in microns (def:" << FDC_TDRIFT_SIGMA << "ns)" << endl;
-   cout << "    -t#      FDC time window for background hits in ns (def:" << FDC_TIME_WINDOW*1.0E9 << "ns)" << endl;
+   cout << "    -T#      FDC time window for background hits in ns (def:" << FDC_TIME_WINDOW*1.0E9 << "ns)" << endl;
    cout << "    -e       hdgeant was run with LOSS=0 so scale the FDC cathode" << endl;
    cout << "             pedestal noise (def:false)" << endl;
    cout << "    -d       Drop truth hits (default: keep truth hits)" << endl;
    cout << "    -p#      FCAL photo-statistics smearing factor in GeV^3/2 (def:" << FCAL_PHOT_STAT_COEF << ")" << endl;
    cout << "    -b#      FCAL single block threshold in MeV (def:" << FCAL_BLOCK_THRESHOLD/k_MeV << ")" << endl;
    cout << "    -B       Don't process BCAL hits at all (def. process)" << endl;
-   cout << "    -Rthresh BCAL TDC threshold (def. " << BCAL_TDC_THRESHOLD << " mV)" << endl;
-   cout << "    -Wthresh BCAL ADC threshold (def. " << BCAL_ADC_THRESHOLD << " mV)" << endl;
-   cout << "    -Wsigma  BCAL fADC time resolution (def. " << BCAL_FADC_TIME_RESOLUTION << " ns)" << endl;
+   cout << "    -Vthresh BCAL ADC threshold (def. " << BCAL_ADC_THRESHOLD_MEV << " MeV)" << endl;
+   cout << "    -Xsigma  BCAL fADC time resolution (def. " << BCAL_FADC_TIME_RESOLUTION << " ns)" << endl;
    cout << "    -G       Don't smear BCAL times (def. smear)" << endl;
    cout << "    -H       Don't add BCAL dark hits (def. add)" << endl;
-   cout << "    -F       Do full simulation of BCAL dark hits. The default, FOR THIS SPECIAL BRANCH ONLY, is to only do a partial simulation of dark hits (only add dark hits in channels that already have real hits in them)." << endl;
    cout << "    -K       Don't apply BCAL sampling fluctuations (def. apply)" << endl;
    cout << "    -L       Don't apply BCAL sampling floor term (def. apply)" << endl;
    cout << "    -M       Don't apply BCAL Poisson statistics (def. apply)" << endl;
-   cout << "    -Q       Don't apply BCAL time jitter (def. apply)" << endl;
-   cout << "    -J       Create BCAL debug hists (only use with a few events!)" << endl;
    cout << "    -f#      TOF sigma in psec (def: " <<  TOF_SIGMA/k_psec << ")" << endl;
    cout << "    -h       Print this usage statement." << endl;
    cout << endl;

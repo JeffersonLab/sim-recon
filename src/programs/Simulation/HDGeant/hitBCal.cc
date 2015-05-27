@@ -80,7 +80,6 @@ extern "C" {
 // Use the following to switch on and off the single hit
 // and full spectra methods of writing out the BCAL info.
 #define WRITE_OUT_BCAL_CELL_TRUTH_HITS 1
-#define WRITE_OUT_BCAL_TIME_SPECTRA 1
 
 
 extern float BGGATE1;
@@ -354,41 +353,6 @@ void initializeBarrelEMcal(void)
    atten_full_length = exp(-390.0/ATTEN_LENGTH);
    THRESH_ATTENUATED_GEV = (THRESH_MEV/1000.0)*atten_full_length;
 
-#if WRITE_OUT_BCAL_TIME_SPECTRA
-   // Calculate timing spectrum histogram parameters and create
-   // E_CellTruth entries for each SiPM.
-   //
-   // We want the histos to cover the range specified by the BGGATE
-   // card in the control.in file (if it is set). However, we want
-   // to honor the value of SiPM_tbin_width from the calibration DB.
-   // Thus, we calculate the number of bins, but then adjust the
-   // gate width to allow an integral number of bins of the specified
-   // width.
-   // NOTE: We change the values of BGGATE1 and BGGATE2 here, but
-   // these are copies of the values used by the FORTRAN code. 
-   // Changing them here doesn't change the values used by FORTRAN.
-   if (BGGATE2 <= BGGATE1) {
-     BGGATE1 = -200.0;
-     BGGATE2 = +200.0;
-   }
-   NHISTO_BINS = (int)floor(0.5 + (BGGATE2 - BGGATE1)/SiPM_tbin_width);
-   BGGATE2 = BGGATE1 + SiPM_tbin_width*(double)NHISTO_BINS;
-   
-   for (unsigned int imodule=1; imodule <= 48; imodule++){
-     for (unsigned int ilayer=1; ilayer <= 10; ilayer++){
-         for (unsigned int isector=1; isector <= 4; isector++){
-            for (unsigned int inc=1; inc <= MAX_INCIDENT_PARTICLES; inc++) {
-              bcal_index idxUp(imodule, ilayer, isector, inc, bcal_index::kUp);
-              bcal_index idxDn(imodule, ilayer, isector, inc, bcal_index::kDown);
-
-              E_CellTruth[idxUp] = 0.0;
-              E_CellTruth[idxDn] = 0.0;
-           }
-        }
-     }
-   }
-#endif  //WRITE_OUT_BCAL_TIME_SPECTRA
-
    initialized = 1;
 }
 
@@ -397,7 +361,7 @@ void initializeBarrelEMcal(void)
 //----------------------
 void recordbcalentry_(int *mech, int *itra, int*istak, int *ipart, float *vect, float *getot)
 {
-#if WRITE_OUT_BCAL_TIME_SPECTRA
+#if WRITE_OUT_BCAL_CELL_TRUTH_HITS
    // This gets called from gustep whenever a particle is
    // "entering" one of the inner 6 BCAL layers (volumes whose name
    // starts with "BM0".) Its purpose is to record the parameters
@@ -600,6 +564,13 @@ void hitBarrelEMcal (float xin[4], float xout[4],
 
    if (dEsum > 0)
    {
+      // Guarantee a value exists at INCIDENT_ID[track]
+      if (track >= (int)INCIDENT_ID.size())
+         INCIDENT_ID.resize(track+1, 0);
+      int incident_idhit = INCIDENT_ID[track];
+      if (incident_idhit == 0)
+         incident_idhit = INCIDENT_ID[track] = find_incident_id(x);
+
       int nshot;
       s_BcalTruthHits_t* hits;
       int sector = getsector_wrapper_();
@@ -635,7 +606,7 @@ void hitBarrelEMcal (float xin[4], float xout[4],
             break;
          }
       }
-      if (nshot < (int)hits->mult)      /* merge with former hit */
+      if (nshot < (int)hits->mult && incident_idhit == hits->in[nshot].incident_id)      /* merge with former hit */
       {
          hits->in[nshot].t =
                   (hits->in[nshot].t * hits->in[nshot].E + t * dEsum)
@@ -650,6 +621,7 @@ void hitBarrelEMcal (float xin[4], float xout[4],
          hits->in[nshot].t = t;
          hits->in[nshot].E = dEsum;
          hits->in[nshot].zLocal = zLocal;
+         hits->in[nshot].incident_id = incident_idhit;
          hits->mult++;
       }
       else
@@ -661,65 +633,6 @@ void hitBarrelEMcal (float xin[4], float xout[4],
    // ......................................................
 #endif  // WRITE_OUT_BCAL_CELL_TRUTH_HITS
 
-    
-#if WRITE_OUT_BCAL_TIME_SPECTRA
-   // Fill the data structures that hold the energy weighted timing
-   // spectra for the cells that are hit. 
-    
-   // Note that this is done differently from other hits in HDGeant in
-   // that the structures filled here are not HDDM defined structures.
-   // The data is copied (sparsely) into the HDDM structures in
-   // pickBarrelEMcal below (as they are for other the cell hit and
-   // truth structures).
- 
-   if (dEsum > 0)
-   {
-      // We need the incident particle id associated with the current
-      // track. This is kept in an STL map so the association is made
-      // only once. The way this works is a little subtle so is worth 
-      // explaining:
-      // When access the map via "[]" operator, an entry in the map
-      // will be created if one does not already exist. For int types,
-      // the new entry will have a value of "0". By using particle id
-      // values starting from "1", we can test whether the association
-      // has been made.
-      // The map index is the track number and the value the
-      // incident particle id. We make the incident particle id numbers
-      // start from 1 so if we access the map
-
-      // Guarantee a value exists at INCIDENT_ID[track]
-      if (track >= (int)INCIDENT_ID.size())
-         INCIDENT_ID.resize(track+1, 0);
-      int incident_id = INCIDENT_ID[track];
-      if (incident_id == 0)
-         incident_id = INCIDENT_ID[track] = find_incident_id(x);
-   
-      // Get map index based on layer and sector
-      unsigned int sector = getsector_wrapper_();
-      unsigned int layer  = getlayer_wrapper_();
-      unsigned int module = getmodule_wrapper_();
-      bcal_index idxUp(module, layer, sector, incident_id, bcal_index::kUp);
-      bcal_index idxDn(module, layer, sector, incident_id, bcal_index::kDown);
-      
-      DHistogram *hup = GetSiPMHistogram(idxUp);
-      DHistogram *hdn = GetSiPMHistogram(idxDn);
-
-      double Z = xlocal[2];
-      double dist_up = 390.0/2.0 + Z;
-      double dist_dn = 390.0/2.0 - Z;
-
-      double Eup = dEsum*exp(-dist_up/ATTEN_LENGTH);
-      double Edn = dEsum*exp(-dist_dn/ATTEN_LENGTH);
-      double t_up = t + dist_up/C_EFFECTIVE;
-      double t_dn = t + dist_dn/C_EFFECTIVE;
-
-      hup->Fill(t_up, Eup);
-      hdn->Fill(t_dn, Edn);
-
-      E_CellTruth[idxUp] += dEsum;
-      E_CellTruth[idxDn] += dEsum;         
-   }
-#endif //WRITE_OUT_BCAL_TIME_SPECTRA
 }
 
 //----------------------
@@ -831,146 +744,6 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 
       FREE(item);
    }
-
-#if WRITE_OUT_BCAL_TIME_SPECTRA
-
-   // Copy incident particle information
-   box->bcalTruthIncidentParticles = 
-             make_s_BcalTruthIncidentParticles(BCAL_INCIDENT_PARTICLES.size());
-   box->bcalTruthIncidentParticles->mult = 0;
-   for (unsigned int i=0; i < BCAL_INCIDENT_PARTICLES.size(); i++) {
-      s_BcalTruthIncidentParticle_t *iphddm = 
-                    &box->bcalTruthIncidentParticles->in
-                          [box->bcalTruthIncidentParticles->mult++];
-      IncidentParticle_t &ip = BCAL_INCIDENT_PARTICLES[i];
-      iphddm->id = i+1;
-      iphddm->ptype = ip.ptype;
-      iphddm->x = ip.x;
-      iphddm->y = ip.y;
-      iphddm->z = ip.z;
-      iphddm->px = ip.px;
-      iphddm->py = ip.py;
-      iphddm->pz = ip.pz;
-   }
-
-   // Sparsely copy timing spectra from local variables into HDDM structure
-   map<bcal_index, DHistogram*>::iterator iter;
-   int nhits = 0;
-   for (iter = SiPMspectra.begin(); iter != SiPMspectra.end(); iter++,nhits++) {
-      const bcal_index &idx = iter->first;
-      int module = idx.module;
-      int layer = idx.layer;
-      int sector = idx.sector;
-      
-      // look to see if cell already exists this module/layer/sector 
-      int icell;
-      int ispec;
-      for (icell=0; icell < (int)box->bcalCells->mult; ++icell) {
-         if (box->bcalCells->in[icell].module == module &&
-             box->bcalCells->in[icell].sector == sector &&
-             box->bcalCells->in[icell].layer == layer)
-         {
-            break;
-         }
-      }
-      if (icell == (int)box->bcalCells->mult) {
-         box->bcalCells->in[icell].module = module;
-         box->bcalCells->in[icell].sector = sector;
-         box->bcalCells->in[icell].layer = layer;
-         ++box->bcalCells->mult;
-      }
-      ispec = box->bcalCells->in[icell].bcalSiPMSpectrums->mult;
-      s_BcalSiPMSpectrums_t *specs = make_s_BcalSiPMSpectrums(ispec+1);
-      for (int i=0; i < ispec; ++i) {
-         specs->in[i] = box->bcalCells->in[icell].bcalSiPMSpectrums->in[i];
-      }
-      if (ispec > 0)
-         FREE(box->bcalCells->in[icell].bcalSiPMSpectrums);
-      box->bcalCells->in[icell].bcalSiPMSpectrums = specs;
- 
-      // Find index of first and last non-zero bins
-      DHistogram *h = iter->second;
-      
-      // Fill in sparse data spectrum
-      int bin_start = h->FindFirstNonZeroBin();
-      int bin_end = h->FindLastNonZeroBin();
-      if (bin_end >= bin_start && bin_end > 0){
-         specs->in[ispec].tstart = h->GetBinLowEdge(bin_start);
-         specs->in[ispec].bin_width = h->GetBinWidth();
-         specs->in[ispec].end = (idx.end == bcal_index::kUp)? 0 : 1;
-         s_BcalSiPMTruth_t* truth = make_s_BcalSiPMTruth();
-         specs->in[ispec].bcalSiPMTruth = truth;
-         truth->incident_id = idx.incident_id;
-         truth->E = E_CellTruth[idx];
-         string vals = "";
-         double E_atten_sum = 0.0;
-         for (int ibin = bin_start; ibin <= bin_end; ibin++) {
-            char str[256];
-            double dE = h->GetBinContent(ibin);
-            E_atten_sum += dE;
-            if (dE != 0.0) {
-               // store in MeV since that cuts down on leading zeros
-               sprintf(str, "%3.3f", dE*1000.0);
-               vals += str;
-            }
-            else {
-		    // consolidate multiple 0's to save more space
-		    if( (ibin+1 <= bin_end) && (h->GetBinContent(ibin+1) == 0) ) {
-			    int num_zero_bins = 0;
-			    // start counting with the current bin
-			    while(dE == 0.0) {
-				    num_zero_bins++;
-
-				    if(ibin == bin_end)  // stop if we're at the end of the histogram
-					    break;
-				    ibin++;  // move to the next bin
-				    dE = h->GetBinContent(ibin);
-			    }
-			    ibin--;  // back up for the next iteration through the loop
-
-			    sprintf(str, "X%d", num_zero_bins);
-			    vals += str;
-		    } else {
-			    // lots of zeros are written and this saves space
-			    vals += "0";
-		    }
-	    }
-            vals += " ";
-         }
-	 
-         if (E_atten_sum >= THRESH_ATTENUATED_GEV) {
-            specs->in[ispec].vals = strdup(vals.c_str());
-            if( specs->in[ispec].vals == NULL) {
-                    cerr << "ERROR!!  strdup() ran out of memory:" << endl;
-                    cerr << "hit #" << (nhits+1) << ":  " << vals << endl;
-            }
-
-            box->bcalCells->in[icell].bcalSiPMSpectrums->mult = ispec+1;
-         }
-      }
-
-      // Clear energy sum. 
-      E_CellTruth[idx] = 0.0;
-      
-      // Reset the histo in preparation for the next event
-      // and add it back to the pool
-      iter->second->Reset();
-      histo_pool.push_back(iter->second);
-   }
-   
-   // Clear the sparsified list of histo objects with data
-   SiPMspectra.clear();
-   
-   // Clear list of incident particles
-   BCAL_INCIDENT_PARTICLES.clear();
-   //_DBG_<<"BCAL_INCIDENT_PARTICLE_COUNT = "<<BCAL_INCIDENT_PARTICLE_COUNT<<" pool size:"<<histo_pool.size()<<endl;
-   BCAL_INCIDENT_PARTICLE_COUNT = 0;
-   INCIDENT_ID.assign(INCIDENT_ID.size(), 0); // don't release memory so we save reallocation in next event
-   
-   // Clear warning message flag so it can be shown on the next event
-   SHOWED_INCIDENT_PARTICLE_SHORT_WARNING = false;
-   
-#endif //WRITE_OUT_BCAL_TIME_SPECTRA
 
    // Reset counters for next event
    cellCount = showerCount = 0;
