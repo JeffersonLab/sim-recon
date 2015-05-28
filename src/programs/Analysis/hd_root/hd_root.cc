@@ -116,6 +116,10 @@ void DecideOutputFilename(void)
 //-----------
 void Usage(void)
 {
+	// Make sure a JApplication object exists so we can call Usage()
+	JApplication *app = japp;
+	if(app == NULL) app = new DApplication(0, NULL);
+
 	cout<<"Usage:"<<endl;
 	cout<<"       hd_root [options] source1 source2 ..."<<endl;
 	cout<<endl;
@@ -124,6 +128,8 @@ void Usage(void)
 	cout<<"can write into."<<endl;
 	cout<<endl;
 	cout<<"Options:"<<endl;
+	cout<<endl;
+	app->Usage();
 	cout<<endl;
 	cout<<"   -h        Print this message"<<endl;
 	cout<<"   -Dname    Activate factory for data of type \"name\" (can be used multiple times)"<<endl;
