@@ -15,7 +15,7 @@ using namespace jana;
 jerror_t DEventRFBunch_factory_Calibrations::init(void)
 {
 	dMinTrackingFOM = 0.001;
-	dRFTDCSourceSystem = SYS_PSC;
+	dRFTDCSourceSystem = SYS_TOF;
 	dMinHitsPerCDCSuperlayer = 2;
 	dMinHitsPerFDCPackage = 4;
 
