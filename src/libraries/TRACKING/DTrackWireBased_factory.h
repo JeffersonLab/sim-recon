@@ -75,6 +75,7 @@ class DTrackWireBased_factory:public jana::JFactory<DTrackWireBased>{
 			   double mass); 
 		const DGeometry *geom;
 
+        bool COSMICS;
 		bool DEBUG_HISTS;
 		bool SKIP_MASS_HYPOTHESES_WIRE_BASED;
 		bool USE_HITS_FROM_CANDIDATE;
