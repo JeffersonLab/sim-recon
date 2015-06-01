@@ -83,13 +83,35 @@ double DTrackCandidate_factory_CDCCOSMIC::CDCDriftDistance(double t){
 inline double DTrackCandidate_factory_CDCCOSMIC::CDCDriftVariance(double t){ 
     //  return 0.001*0.001;
     //if (t<0.) t=0.;
+    double cutoffTime = 40.0;
+    double V = 0.0507;
+    if (t>0){
+        if (t>cdc_drift_table_max){
+            // Here the drift time is too large. Return the edge of the straw with a large error
+            V=0.0507; // straw radius^2 / 12
+            return V;
+        }
 
-    // double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
-    // sigma+=0.005;
+        double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
+        // This function is very poorly behaved at low drift times
+        // For times less than cutoffTime assume a linear behavior of our function.
+        if( t < cutoffTime ){
+            double slope = -1.0 * CDC_RES_PAR1 / (( cutoffTime + 1) * (cutoffTime + 1));
+            sigma = (CDC_RES_PAR1/(cutoffTime+1.)+CDC_RES_PAR2) + slope * (t - cutoffTime);
+        }
 
-    //sigma=0.08/(t+1.)+0.03;
-    double sigma=0.015;  
-    return sigma*sigma;
+        V=sigma*sigma;
+        return V;
+    }
+    else { // Time is negative, or exactly zero, choose position at wire, with error of t=0 hit
+        double slope = -1.0 * CDC_RES_PAR1 / (( cutoffTime + 1) * (cutoffTime + 1));
+        double sigma = (CDC_RES_PAR1/(cutoffTime+1.)+CDC_RES_PAR2) + slope * (0.0 - cutoffTime);
+        V=sigma*sigma; //Should include T0 variance...
+        return V;
+        //V=0.0507; // straw radius^2 / 12
+    }
+
+    return V;
 }
 
 // Locate a position in vector xx given x
@@ -165,6 +187,11 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::brun(jana::JEventLoop *eventLoop, in
     }
     cdc_drift_table_min = cdc_drift_table[0];
     cdc_drift_table_max = cdc_drift_table[cdc_drift_table.size()-1];
+
+    map<string, double> cdc_res_parms;
+    jcalib->Get("CDC/cdc_resolution_parms", cdc_res_parms);
+    CDC_RES_PAR1 = cdc_res_parms["res_par1"];
+    CDC_RES_PAR2 = cdc_res_parms["res_par2"];
 
     return NOERROR;
 }
@@ -337,7 +364,7 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumb
                 double DOCA = fit_function(hits[j]->wire,xs);
                 double measurement = CDCDriftDistance(hits[j]->tdrift - L/29.98 - t0);
                 double residual = measurement - DOCA;
-                double error = 0.015; // Just the some guess at the errors in the measurement for now
+                double error = sqrt(CDCDriftVariance(time)); // Just the some guess at the errors in the measurement for now
                 can->pulls.push_back(DTrackFitter::pull_t(residual, error, 0.0, time , measurement, hits[j], NULL));
 
             }

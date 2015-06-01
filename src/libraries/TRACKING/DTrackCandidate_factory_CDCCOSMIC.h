@@ -39,6 +39,8 @@ class DTrackCandidate_factory_CDCCOSMIC:public jana::JFactory<DTrackCandidate>{
         vector<const DCDCTrackHit *> hits;
         vector<double> cdc_drift_table;
         double cdc_drift_table_min, cdc_drift_table_max;
+        // Resolution parameters
+        double CDC_RES_PAR1,CDC_RES_PAR2;
         TH2D *residual_vs_ring;
         TH1D *h_chisq;
         TH1D *h_Ndof;
