@@ -258,8 +258,16 @@ void DTranslationTable::SetSystemsToParse(string systems, JEventSource *eventsou
 		jerr << "eventsource not a JEventSource_EVIO object! Cannot restrict parsing list!" << endl;
 		return;
 	}
-	
-	// Make map of system type id by name
+
+#ifndef HAVE_EVIO
+
+    // If we don't have EVIO, then the JEventSource_EVIO objects is crippled
+    // to the point where it can't be used. If this is the case, don't try
+    // doing anything else.
+
+#else // HAVE_EVIO
+
+    // Make map of system type id by name
 	map<string, Detector_t> name_to_id;
 	for(uint32_t dettype=UNKNOWN_DETECTOR; dettype<NUM_DETECTOR_TYPES; dettype++){
 		name_to_id[DetectorName((Detector_t)dettype)] = (Detector_t)dettype;
@@ -296,6 +304,8 @@ void DTranslationTable::SetSystemsToParse(string systems, JEventSource *eventsou
 			if(VERBOSE>0) ttout << "Added rocid " << rocid << " for system " << token << " to parse list" << endl;
 		}
 	}
+
+#endif //HAVE_EVIO
 }
 
 //---------------------------------
