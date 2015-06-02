@@ -32,31 +32,51 @@
 	{
         TAGH_Timing->Draw();
         TAGH_Timing->SetFillColor(kGray);
-	}
+    }
+    else{
+        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
+        text->AddText("No Matched TAGH TDC/ADC Times");
+        text->Draw();
+    }
 
-	locCanvas->cd(2);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(TAGH_TDCADC_Timing != NULL)
-	{
-		TAGH_TDCADC_Timing->Draw("colz");
-	}
+    locCanvas->cd(2);
+    gPad->SetTicks();
+    gPad->SetGrid();
+    if(TAGH_TDCADC_Timing != NULL)
+    {
+        TAGH_TDCADC_Timing->Draw("colz");
+    }
+    else{
+        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
+        text->AddText("No Matched TAGH TDC/ADC Times");
+        text->Draw();
+    }
 
-	locCanvas->cd(3);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(TAGM_Timing != NULL)
-	{
+    locCanvas->cd(3);
+    gPad->SetTicks();
+    gPad->SetGrid();
+    if(TAGM_Timing != NULL)
+    {
         TAGM_Timing->Draw();
         TAGM_Timing->SetFillColor(kGray);
-	}
+    }
+    else{
+        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
+        text->AddText("No Matched TAGM TDC/ADC Times");
+        text->Draw();
+    }
 
-	locCanvas->cd(4);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(TAGM_TDCADC_Timing != NULL)
-	{
-		TAGM_TDCADC_Timing->Draw("colz");
-	}
+    locCanvas->cd(4);
+    gPad->SetTicks();
+    gPad->SetGrid();
+    if(TAGM_TDCADC_Timing != NULL)
+    {
+        TAGM_TDCADC_Timing->Draw("colz");
+    }
+    else{
+        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
+        text->AddText("No Matched TAGM TDC/ADC Times");
+        text->Draw();
+    }
 }
 

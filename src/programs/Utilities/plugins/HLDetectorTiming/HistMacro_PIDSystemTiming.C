@@ -33,30 +33,50 @@
         SC_Timing->Draw();
         SC_Timing->SetFillColor(kGray);
 	}
+    else{
+        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
+        text->AddText("No Matched SC TDC/ADC Times");
+        text->Draw();
+    }
 
-	locCanvas->cd(2);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(SC_TDCADC_Timing != NULL)
-	{
-		SC_TDCADC_Timing->Draw("colz");
-	}
+    locCanvas->cd(2);
+    gPad->SetTicks();
+    gPad->SetGrid();
+    if(SC_TDCADC_Timing != NULL)
+    {
+        SC_TDCADC_Timing->Draw("colz");
+    }
+    else{
+        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
+        text->AddText("No Matched SC TDC/ADC Times");
+        text->Draw();
+    }
 
-	locCanvas->cd(3);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(TOF_Timing != NULL)
-	{
+    locCanvas->cd(3);
+    gPad->SetTicks();
+    gPad->SetGrid();
+    if(TOF_Timing != NULL)
+    {
         TOF_Timing->Draw();
         TOF_Timing->SetFillColor(kGray);
-	}
+    }
+    else{
+        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
+        text->AddText("No Matched TOF TDC/ADC Times");
+        text->Draw();
+    }
 
-	locCanvas->cd(4);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(TOF_TDCADC_Timing != NULL)
-	{
-		TOF_TDCADC_Timing->Draw("colz");
-	}
+    locCanvas->cd(4);
+    gPad->SetTicks();
+    gPad->SetGrid();
+    if(TOF_TDCADC_Timing != NULL)
+    {
+        TOF_TDCADC_Timing->Draw("colz");
+    }
+    else{
+        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
+        text->AddText("No Matched TOF TDC/ADC Times");
+        text->Draw();
+    }
 }
 

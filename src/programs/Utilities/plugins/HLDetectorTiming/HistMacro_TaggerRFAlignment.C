@@ -32,30 +32,50 @@
 	{
         TAGH_RF_2D->Draw("colz");
 	}
+    else{
+        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
+        text->AddText("No Matched TAGH/RFBunch Times");
+        text->Draw();
+    }
 
-	locCanvas->cd(2);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(Tagger_RF_2D != NULL)
-	{
-		Tagger_RF_2D->Draw("colz");
-	}
+    locCanvas->cd(2);
+    gPad->SetTicks();
+    gPad->SetGrid();
+    if(Tagger_RF_2D != NULL)
+    {
+        Tagger_RF_2D->Draw("colz");
+    }
+    else{
+        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
+        text->AddText("No Matched Tagger/RFBunch Times");
+        text->Draw();
+    }
 
-	locCanvas->cd(3);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(TAGM_RF_2D != NULL)
-	{
+    locCanvas->cd(3);
+    gPad->SetTicks();
+    gPad->SetGrid();
+    if(TAGM_RF_2D != NULL)
+    {
         TAGM_RF_2D->Draw("colz");
-	}
+    }
+    else{
+        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
+        text->AddText("No Matched TAGM/RFBunch Times");
+        text->Draw();
+    }
 
-	locCanvas->cd(4);
-	gPad->SetTicks();
-	gPad->SetGrid();
-	if(Tagger_RF_1D != NULL)
-	{
-		Tagger_RF_1D->Draw();
+    locCanvas->cd(4);
+    gPad->SetTicks();
+    gPad->SetGrid();
+    if(Tagger_RF_1D != NULL)
+    {
+        Tagger_RF_1D->Draw();
         Tagger_RF_1D->SetFillColor(kGray);
-	}
+    }
+    else{
+        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
+        text->AddText("No Matched Tagger/RFBunch Times");
+        text->Draw();
+    }
 }
 
