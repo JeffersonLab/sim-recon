@@ -273,9 +273,10 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumb
             for (unsigned int j=0;j<hits.size();j++){
                 //Calulate the Measurement from the drift time
                 double L=(hits[0]->wire->origin-hits[j]->wire->origin).Perp();
-                double measurement = CDCDriftDistance(hits[j]->tdrift - L/29.98 - t0);
+                double tcorr = hits[j]->tdrift - L/29.98 - t0;
+                double measurement = CDCDriftDistance(tcorr);
                 Measurements.push_back(measurement);
-                MeasurementErrors.push_back(0.015);
+                MeasurementErrors.push_back(sqrt(CDCDriftVariance(tcorr)));
                 Wires.push_back(hits[j]->wire);
             }
 
@@ -362,9 +363,9 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumb
                 double L=(hits[0]->wire->origin-hits[j]->wire->origin).Perp();
                 double time = hits[j]->tdrift - L/29.98 - t0;
                 double DOCA = fit_function(hits[j]->wire,xs);
-                double measurement = CDCDriftDistance(hits[j]->tdrift - L/29.98 - t0);
+                double measurement = CDCDriftDistance(time);
                 double residual = measurement - DOCA;
-                double error = sqrt(CDCDriftVariance(time)); // Just the some guess at the errors in the measurement for now
+                double error = sqrt(CDCDriftVariance(time));
                 can->pulls.push_back(DTrackFitter::pull_t(residual, error, 0.0, time , measurement, hits[j], NULL));
 
             }
