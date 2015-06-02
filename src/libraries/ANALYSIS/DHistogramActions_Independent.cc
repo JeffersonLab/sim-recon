@@ -2202,18 +2202,22 @@ void DHistogramAction_EventVertex::Initialize(JEventLoop* locEventLoop)
 {
 	string locHistName, locHistTitle;
 
+	//be sure that DRFTime_factory::init() and brun() are called
+	vector<const DRFTime*> locRFTimes;
+	locEventLoop->Get(locRFTimes);
+
 	//CREATE THE HISTOGRAMS
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
 
+		// Event RF Bunch Time
+		locHistName = "RFTrackDeltaT";
+		locHistTitle = ";#Deltat_{RF - Track} (ns)";
+		dRFTrackDeltaT = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumRFTBins, -3.0, 3.0);
+
 		// ALL EVENTS
 		CreateAndChangeTo_Directory("AllEvents", "AllEvents");
-
-		// Event RF Bunch Time
-		locHistName = "EventRFBunchT";
-		locHistTitle = ";Event RF Bunch Time (ns)";
-		dEventRFBunchTime_AllEvents = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumTBins, dMinT, dMaxT);
 
 		// Event Vertex-Z
 		locHistName = "EventVertexZ";
@@ -2235,11 +2239,6 @@ void DHistogramAction_EventVertex::Initialize(JEventLoop* locEventLoop)
 
 		// 2+ Good Tracks
 		CreateAndChangeTo_Directory("2+GoodTracks", "2+GoodTracks");
-
-		// Event RF Bunch Time
-		locHistName = "EventRFBunchT";
-		locHistTitle = ";Event RF Bunch Time (ns)";
-		dEventRFBunchTime_2OrMoreGoodTracks = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumTBins, dMinT, dMaxT);
 
 		// Event Vertex-Z
 		locHistName = "EventVertexZ";
@@ -2323,8 +2322,13 @@ bool DHistogramAction_EventVertex::Perform_Action(JEventLoop* locEventLoop, cons
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
 
+	const DParticleID* locParticleID = NULL;
+	locEventLoop->GetSingle(locParticleID);
+
 	const DEventRFBunch* locEventRFBunch = NULL;
 	locEventLoop->GetSingle(locEventRFBunch);
+
+	DRFTime_factory* locRFTimeFactory = static_cast<DRFTime_factory*>(locEventLoop->GetFactory("DRFTime"));
 
 	//Get time-based tracks: use best PID FOM
 		//Note that these may not be the PIDs that were used in the fit!!!
@@ -2342,14 +2346,19 @@ bool DHistogramAction_EventVertex::Perform_Action(JEventLoop* locEventLoop, cons
 	//Event Vertex
 	japp->RootWriteLock();
 	{
-		dEventRFBunchTime_AllEvents->Fill(locEventRFBunch->dTime);
+		for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
+		{
+			const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
+			double locPropagatedRFTime = locParticleID->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
+			double locShiftedRFTime = locRFTimeFactory->Step_TimeToNearInputTime(locPropagatedRFTime, locChargedTrackHypothesis->time());
+			dRFTrackDeltaT->Fill(locShiftedRFTime - locChargedTrackHypothesis->time());
+		}
 		dEventVertexZ_AllEvents->Fill(locVertex->dSpacetimeVertex.Z());
 		dEventVertexYVsX_AllEvents->Fill(locVertex->dSpacetimeVertex.X(), locVertex->dSpacetimeVertex.Y());
 		dEventVertexT_AllEvents->Fill(locVertex->dSpacetimeVertex.T());
 
 		if(locChargedTracks.size() >= 2)
 		{
-			dEventRFBunchTime_2OrMoreGoodTracks->Fill(locEventRFBunch->dTime);
 			dEventVertexZ_2OrMoreGoodTracks->Fill(locVertex->dSpacetimeVertex.Z());
 			dEventVertexYVsX_2OrMoreGoodTracks->Fill(locVertex->dSpacetimeVertex.X(), locVertex->dSpacetimeVertex.Y());
 			dEventVertexT_2OrMoreGoodTracks->Fill(locVertex->dSpacetimeVertex.T());

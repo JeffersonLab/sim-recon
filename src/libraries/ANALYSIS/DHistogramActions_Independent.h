@@ -21,6 +21,7 @@
 #include "particleType.h"
 
 #include "RF/DRFTime.h"
+#include "RF/DRFTime_factory.h"
 #include "RF/DRFDigiTime.h"
 #include "RF/DRFTDCDigiTime.h"
 #include "PID/DChargedTrack.h"
@@ -520,7 +521,7 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 	public:
 		DHistogramAction_EventVertex(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_EventVertex", false, locActionUniqueString), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumVertexXYBins(400), 
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
 		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
 		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05)
 		{
@@ -529,7 +530,7 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 
 		DHistogramAction_EventVertex(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_EventVertex", false, locActionUniqueString), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumVertexXYBins(400), 
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
 		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
 		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05)
 		{
@@ -538,14 +539,14 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 
 		DHistogramAction_EventVertex(void) : 
 		DAnalysisAction(NULL, "Hist_EventVertex", false, ""), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumVertexXYBins(400), 
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
 		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
 		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05)
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(Proton);  dFinalStatePIDs.push_back(PiMinus);
 		}
 
-		unsigned int dNumConfidenceLevelBins, dNumPullBins, dNumVertexZBins, dNumTBins, dNumVertexXYBins;
+		unsigned int dNumConfidenceLevelBins, dNumPullBins, dNumVertexZBins, dNumTBins, dNumRFTBins, dNumVertexXYBins;
 		double dMinVertexZ, dMaxVertexZ, dMinT, dMaxT, dMinVertexXY, dMaxVertexXY, dMinPull, dMaxPull;
 
 		double dPullHistConfidenceLevelCut;
@@ -557,15 +558,14 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
-		TH1I* 	dEventRFBunchTime_AllEvents;
-		TH1I* 	dEventVertexZ_AllEvents;
-		TH2I* 	dEventVertexYVsX_AllEvents;
-		TH1I* 	dEventVertexT_AllEvents;
+		TH1I* dRFTrackDeltaT;
+		TH1I* dEventVertexZ_AllEvents;
+		TH2I* dEventVertexYVsX_AllEvents;
+		TH1I* dEventVertexT_AllEvents;
 
-		TH1I* 	dEventRFBunchTime_2OrMoreGoodTracks;
-		TH1I* 	dEventVertexZ_2OrMoreGoodTracks;
-		TH2I* 	dEventVertexYVsX_2OrMoreGoodTracks;
-		TH1I* 	dEventVertexT_2OrMoreGoodTracks;
+		TH1I* dEventVertexZ_2OrMoreGoodTracks;
+		TH2I* dEventVertexYVsX_2OrMoreGoodTracks;
+		TH1I* dEventVertexT_2OrMoreGoodTracks;
 
 		TH1I* dHist_KinFitConfidenceLevel;
 		map<Particle_t, map<DKinFitPullType, TH1I*> > dHistMap_KinFitPulls;

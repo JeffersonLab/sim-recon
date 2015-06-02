@@ -40,7 +40,15 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int r
 
 	locEventLoop->GetSingle(dParticleID);
 
+	//be sure that DEventRFBunch_factory::init() and brun() are called
 	dEventRFBunchFactory = static_cast<DEventRFBunch_factory*>(locEventLoop->GetFactory("DEventRFBunch"));
+	vector<const DEventRFBunch*> locEventRFBunches;
+	locEventLoop->Get(locEventRFBunches);
+
+	//be sure that DRFTime_factory::init() and brun() are called
+	dRFTimeFactory = static_cast<DRFTime_factory*>(locEventLoop->GetFactory("DRFTime"));
+	vector<const DRFTime*> locRFTimes;
+	locEventLoop->Get(locRFTimes);
 
 	// Get DReactions:
 	// Get list of factories and find all the ones producing
@@ -106,14 +114,14 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int r
 			locDirectoryFile->cd();
 
 			// RFTime
-			locHistName = "RFTime";
+			locHistName = "RFParticleDeltaT";
 			loc1DHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 			if(loc1DHist == NULL)
 			{
-				locHistTitle = locReactionName + string(";Combo-Selected RF Time (ns)");
-				loc1DHist = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 420, -21.0, 21.0);
+				locHistTitle = locReactionName + string(";#Deltat_{RF - Particle} (ns)");
+				loc1DHist = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 600, -3.0, 3.0);
 			}
-			dHistMap_RFTime[locReaction] = loc1DHist;
+			dHistMap_RFParticleDeltaT[locReaction] = loc1DHist;
 
 			if(!locMCThrowns.empty())
 			{
@@ -315,7 +323,12 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 		const DReaction* locReaction = locParticleComboBlueprint->Get_Reaction();
 		japp->RootWriteLock();
 		{
-			dHistMap_RFTime[locReaction]->Fill(locNewRFTime);
+			for(size_t loc_j = 0; loc_j < locPropagatedTimes.size(); ++loc_j)
+			{
+				double locShiftedRFTime = dRFTimeFactory->Step_TimeToNearInputTime(locNewRFTime, locPropagatedTimes[loc_j]);
+				dHistMap_RFParticleDeltaT[locReaction]->Fill(locShiftedRFTime - locPropagatedTimes[loc_j]);
+			}
+
 			if(locThrownEventRFBunch != NULL)
 			{
 				double locDeltaT = locNewRFTime - locThrownEventRFBunch->dTime;
