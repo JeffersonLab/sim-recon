@@ -157,7 +157,6 @@ c this line is commented out, a default value of 10ns is assumed. The
 c decimal point is significant.
 TREFSIGMA 10.
 
-
 c The following card seeds the random number generator, though it may be
 c overridden if seeds are found in the input file (see below). It must be
 c unique for each run.  There are two ways to specify the random seed here.
@@ -288,23 +287,34 @@ c The magnetic field map is accessed through the HDGEOMETRY library
 c so that the same map can be used for both simulation and reconstruction.
 c There are multiple map types and for each type, more than one map may
 c exist. The map types consist of the default type of "CalibDB", the 
-c constant type of "Const" and the spoiled field type of "Spoiled".
+c constant type of "Const", the spoiled field type of "Spoiled", or
+c "NoField" if the simulation should be performed with the solenoid off.
 c The type is set using the BFIELDTYPE card. If no BFIELDTYPE card is
 c present, then no the default type "CalibDB" is used.
 c The specific parameters used for the field can be specified using the
 c BFIELDMAP card. If undefined, then the default that is hardcoded into
 c the HDGEOMETRY library is used. Note that these correspond to the
-c similarly named configuration parameters used in the econstruction.
-c The difference being that underscores are not allowed here. To
+c similarly named configuration parameters used in the reconstruction,
+c the difference being that underscores are not allowed here. To
 c specify the values to the reconstruction code used here, use the
-c -PBFIELD_TYPE=CalibDB and -PBFIELD_MAP=Magents/Solenoid/solenoid_1500
+c -PBFIELD_TYPE=CalibDB and -PBFIELD_MAP=Magnets/Solenoid/solenoid_1500
 BFIELDMAP 'Magnets/Solenoid/solenoid_1200A_poisson_20140520'
 cBFIELDTYPE 'NoField'
+
+c The pair spectrometer magnetic field map can also be accessed through the
+c HDGGEOMTRY library in a similar fashion to the solenoid field. The cards
+c PSBFIELDMAP and PSBFIELDTYPE correspond in form and meaning to BFIELDMAP
+c and BFIELDTYPE, except that only "Const" and "CalibDB" (default) are
+c supported values for PSBFIELDTYPE. To specify the values used here to
+c the reconstruction code, use options -PPSBFIELD_TYPE=CalibDB and 
+c -PPSBFIELD_MAP=Magnets/PairSpectrometer/PS_1.8T_20150513_test
+c on the jana command line.
+PSBFIELDMAP 'Magnets/PairSpectrometer/PS_1.8T_20150513_test'
+cPSBFIELDTYPE 'Const'
 
 c Use this card to enable/disable ( SAVEHITS  1/0 ) writing events with no 
 c hits in the detector to the hddm output file. Default value is 0.
   SAVEHITS  0
-
 
 c This card is used to enable/disable ( SHOWERS_IN_COL 1/0 ) simulation of 
 c showers in the primary and secondary collimators placed in the collimator cave. 
