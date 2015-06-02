@@ -24,30 +24,6 @@
 #include "RF/DRFTime_factory.h"
 #include "RF/DRFDigiTime.h"
 #include "RF/DRFTDCDigiTime.h"
-#include "PID/DChargedTrack.h"
-#include "PID/DChargedTrackHypothesis.h"
-#include "PID/DNeutralParticle.h"
-#include "PID/DNeutralShower.h"
-#include "PID/DVertex.h"
-#include "PID/DDetectorMatches.h"
-#include "PID/DNeutralParticleHypothesis.h"
-#include "PID/DEventRFBunch.h"
-#include "TRACKING/DMCThrown.h"
-
-#include "ANALYSIS/DReaction.h"
-#include "ANALYSIS/DKinFitParticle.h"
-#include "ANALYSIS/DMCThrownMatching.h"
-#include "ANALYSIS/DMCThrownMatching_factory.h"
-#include "ANALYSIS/DParticleCombo.h"
-#include "ANALYSIS/DAnalysisUtilities.h"
-#include "ANALYSIS/DAnalysisAction.h"
-#include "ANALYSIS/DCutActions.h"
-#include "ANALYSIS/DAnalysisResults.h"
-
-#include "ANALYSIS/DParticleCombo_factory_PreKinFit.h"
-#include "ANALYSIS/DKinFitResults_factory.h"
-#include "ANALYSIS/DParticleCombo_factory.h"
-
 #include "START_COUNTER/DSCHit.h"
 #include "TAGGER/DTAGHHit.h"
 #include "TAGGER/DTAGMHit.h"
@@ -64,7 +40,32 @@
 #include "TRACKING/DTrackTimeBased.h"
 #include "TRACKING/DTrackWireBased.h"
 #include "TRACKING/DTrackCandidate.h"
+#include "TRACKING/DMCThrown.h"
 
+#include "PID/DChargedTrack.h"
+#include "PID/DChargedTrackHypothesis.h"
+#include "PID/DNeutralParticle.h"
+#include "PID/DNeutralShower.h"
+#include "PID/DVertex.h"
+#include "PID/DDetectorMatches.h"
+#include "PID/DNeutralParticleHypothesis.h"
+#include "PID/DEventRFBunch.h"
+
+#include "ANALYSIS/DReaction.h"
+#include "ANALYSIS/DKinFitParticle.h"
+#include "ANALYSIS/DMCThrownMatching.h"
+#include "ANALYSIS/DMCThrownMatching_factory.h"
+#include "ANALYSIS/DParticleCombo.h"
+#include "ANALYSIS/DAnalysisUtilities.h"
+#include "ANALYSIS/DAnalysisAction.h"
+#include "ANALYSIS/DCutActions.h"
+#include "ANALYSIS/DAnalysisResults.h"
+
+#include "ANALYSIS/DParticleCombo_factory_PreKinFit.h"
+#include "ANALYSIS/DKinFitResults_factory.h"
+#include "ANALYSIS/DParticleCombo_factory.h"
+
+#include "ANALYSIS/DCutActions.h"
 
 using namespace std;
 using namespace jana;
@@ -215,7 +216,7 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0),
 		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
-		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitsPerCDCSuperlayer(2), dMinHitsPerFDCPackage(4) {}
+		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitRingsPerCDCSuperlayer(2), dMinHitPlanesPerFDCPackage(4) {}
 
 		DHistogramAction_DetectorMatching(string locActionUniqueString) :
 		DAnalysisAction(NULL, "Hist_DetectorMatching", false, locActionUniqueString),
@@ -223,7 +224,7 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0),
 		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
-		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitsPerCDCSuperlayer(2), dMinHitsPerFDCPackage(4) {}
+		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitRingsPerCDCSuperlayer(2), dMinHitPlanesPerFDCPackage(4) {}
 
 		DHistogramAction_DetectorMatching(void) :
 		DAnalysisAction(NULL, "Hist_DetectorMatching", false, ""),
@@ -231,7 +232,7 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0),
 		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
-		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitsPerCDCSuperlayer(2), dMinHitsPerFDCPackage(4) {}
+		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitRingsPerCDCSuperlayer(2), dMinHitPlanesPerFDCPackage(4) {}
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -241,7 +242,7 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		double dMinDeltaPhi, dMaxDeltaPhi, dMinDeltaZ, dMaxDeltaZ;
 
 		double dMinTrackingFOM, dMinTOFPaddleMatchDistance;
-		unsigned int dMinHitsPerCDCSuperlayer, dMinHitsPerFDCPackage;
+		unsigned int dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage;
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);

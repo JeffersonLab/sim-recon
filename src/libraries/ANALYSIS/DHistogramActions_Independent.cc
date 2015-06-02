@@ -959,6 +959,10 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	const DParticleID* locParticleID = NULL;
 	locEventLoop->GetSingle(locParticleID);
 
+	//can't make this a class member: may cause race condition
+	DCutAction_TrackHitPattern locCutAction_TrackHitPattern(NULL, dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage);
+	locCutAction_TrackHitPattern.Initialize(locEventLoop);
+
 	//get the best tracks for each candidate id, based on good hit pattern & tracking FOM
 	map<JObject::oid_t, const DKinematicData*> locBestTrackMap; //lowest tracking FOM for each candidate id
 	if(locIsTimeBased)
@@ -971,7 +975,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		{
 			if(locTrackTimeBasedVector[loc_i]->FOM < dMinTrackingFOM)
 				continue;
-			if(!locParticleID->Cut_TrackHitPattern_Hard(locTrackTimeBasedVector[loc_i], dMinHitsPerCDCSuperlayer, dMinHitsPerFDCPackage))
+			if(!locCutAction_TrackHitPattern.Cut_TrackHitPattern(locTrackTimeBasedVector[loc_i]))
 				continue;
 			JObject::oid_t locCandidateID = locTrackTimeBasedVector[loc_i]->candidateid;
 			if(locBestTrackMap.find(locCandidateID) == locBestTrackMap.end())
@@ -990,7 +994,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		{
 			if(locTrackWireBasedVector[loc_i]->FOM < dMinTrackingFOM)
 				continue;
-			if(!locParticleID->Cut_TrackHitPattern_Hard(locTrackWireBasedVector[loc_i], dMinHitsPerCDCSuperlayer, dMinHitsPerFDCPackage))
+			if(!locCutAction_TrackHitPattern.Cut_TrackHitPattern(locTrackWireBasedVector[loc_i]))
 				continue;
 			JObject::oid_t locCandidateID = locTrackWireBasedVector[loc_i]->candidateid;
 			if(locBestTrackMap.find(locCandidateID) == locBestTrackMap.end())

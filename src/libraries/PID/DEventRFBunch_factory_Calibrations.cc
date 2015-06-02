@@ -16,8 +16,8 @@ jerror_t DEventRFBunch_factory_Calibrations::init(void)
 {
 	dMinTrackingFOM = 0.001;
 	dRFTDCSourceSystem = SYS_TOF;
-	dMinHitsPerCDCSuperlayer = 2;
-	dMinHitsPerFDCPackage = 4;
+	dMinHitRingsPerCDCSuperlayer = 2;
+	dMinHitPlanesPerFDCPackage = 4;
 
 	return NOERROR;
 }
@@ -39,6 +39,9 @@ jerror_t DEventRFBunch_factory_Calibrations::brun(jana::JEventLoop *locEventLoop
 	dTargetCenter.SetXYZ(0.0, 0.0, locTargetCenterZ);
 
 	locEventLoop->GetSingle(dParticleID);
+
+	dCutAction_TrackHitPattern = new DCutAction_TrackHitPattern(NULL, dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage);
+	dCutAction_TrackHitPattern->Initialize(locEventLoop);
 
 	return NOERROR;
 }
@@ -107,7 +110,7 @@ void DEventRFBunch_factory_Calibrations::Select_GoodTracks(JEventLoop* locEventL
 	{
 		if(locTrackWireBasedVector[loc_i]->FOM < dMinTrackingFOM)
 			continue;
-		if(!dParticleID->Cut_TrackHitPattern_Hard(locTrackWireBasedVector[loc_i], dMinHitsPerCDCSuperlayer, dMinHitsPerFDCPackage))
+		if(!dCutAction_TrackHitPattern->Cut_TrackHitPattern(locTrackWireBasedVector[loc_i]))
 			continue;
 		JObject::oid_t locCandidateID = locTrackWireBasedVector[loc_i]->candidateid;
 		if(locBestTrackWireBasedMap.find(locCandidateID) == locBestTrackWireBasedMap.end())

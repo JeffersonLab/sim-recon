@@ -47,6 +47,7 @@ DCutAction_MissingMassSquared
 DCutAction_InvariantMass
 
 DCutAction_TransverseMomentum
+DCutAction_TrackHitPattern
 */
 
 class DCutAction_ThrownTopology : public DAnalysisAction
@@ -446,6 +447,34 @@ class DCutAction_TransverseMomentum : public DAnalysisAction
 		double dMaxTransverseMomentum;
 };
 
+class DCutAction_TrackHitPattern : public DAnalysisAction
+{
+	//THIS CUT MAY THROW AWAY A LOT OF REAL TRACKS
+		// It is designed to try to get a relatively "pure" sample
+
+	//In the CDC, in each super-layer between the innermost & outermost superlayers with hits, require that there be at least dMinHitRingsPerCDCSuperlayer hits
+		//cannot cut in the last superlayer, the track might be leaving the CDC
+		//cannot cut in the first superlayer, the track might have been produced in a decay at a detached vertex
+	//In the FDC, in each package up to the outermost package with hits, require that there be at least dMinHitPlanesPerFDCPackage hits
+		//cannot cut in the last package, the track might be leaving the FDC
+
+	public:
+		DCutAction_TrackHitPattern(const DReaction* locReaction, unsigned int locMinHitRingsPerCDCSuperlayer = 2, unsigned int locMinHitPlanesPerFDCPackage = 4, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Cut_TrackHitPattern", false, locActionUniqueString),
+		dMinHitRingsPerCDCSuperlayer(locMinHitRingsPerCDCSuperlayer), dMinHitPlanesPerFDCPackage(locMinHitPlanesPerFDCPackage){}
+
+		string Get_ActionName(void) const;
+		void Initialize(JEventLoop* locEventLoop);
+
+		bool Cut_TrackHitPattern(const DKinematicData* locTrack) const;
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		unsigned int dMinHitRingsPerCDCSuperlayer;
+		unsigned int dMinHitPlanesPerFDCPackage;
+
+		const DParticleID* dParticleID;
+};
 
 #endif // _DCutActions_
-

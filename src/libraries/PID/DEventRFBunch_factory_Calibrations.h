@@ -34,6 +34,8 @@
 #include <HDGEOMETRY/DGeometry.h>
 #include <DANA/DApplication.h>
 
+#include <ANALYSIS/DCutActions.h>
+
 using namespace std;
 using namespace jana;
 
@@ -64,8 +66,10 @@ class DEventRFBunch_factory_Calibrations : public jana::JFactory<DEventRFBunch>
 
 		DetectorSystem_t dRFTDCSourceSystem;
 		double dMinTrackingFOM;
-		unsigned int dMinHitsPerCDCSuperlayer;
-		unsigned int dMinHitsPerFDCPackage;
+		unsigned int dMinHitRingsPerCDCSuperlayer;
+		unsigned int dMinHitPlanesPerFDCPackage;
+
+		DCutAction_TrackHitPattern *dCutAction_TrackHitPattern;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int runnumber);	///< Called everytime a new run number is detected.

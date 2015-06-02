@@ -144,10 +144,6 @@ class DParticleID:public jana::JObject{
 	void Get_FDCNumHitPlanesPerPackage(int locBitPattern, map<int, int>& locNumHitPlanesPerPackage) const;
 	void Get_FDCNumHitPlanesPerPackage(const set<int>& locFDCPlanes, map<int, int>& locNumHitPlanesPerPackage) const;
 
-	//ONLY CALL THIS WHEN TRYING TO GET A PURE TRACK SAMPLE
-	//track MUST be either DTrackTimeBased, DTrackWireBased, or DTrackCandidate
-	bool Cut_TrackHitPattern_Hard(const DKinematicData* locTrack, unsigned int locMinHitsPerCDCSuperlayer = 2, unsigned int locMinHitsPerFDCPackage = 4) const;
-
   protected:
 		// gas material properties
 		double dKRhoZoverA_FDC, dRhoZoverA_FDC, dLnI_FDC;	
