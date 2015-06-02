@@ -53,7 +53,7 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
     BEAM_CURRENT = 50; // Assume that there is beam until first EPICs event. Set from EPICS evio data, can override on command line
 
     fBeamEventCounter = 0;
-    REQUIRE_BEAM = 1;
+    REQUIRE_BEAM = 0;
     BEAM_EVENTS_TO_KEEP = 1000000000; // Set enormously high
     DO_ROUGH_TIMING = 0;
     DO_CDC_TIMING = 0;
@@ -133,40 +133,44 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
 {
 
     // Get the EPICs events and update beam current. Skip event if current too low (<10 nA).
-    if (REQUIRE_BEAM){
-        vector<const DEPICSvalue *> epicsValues;
-        loop->Get(epicsValues);
-        for(unsigned int j = 0; j < epicsValues.size(); j++){
-            const DEPICSvalue *thisValue = epicsValues[j];
-            if (strcmp((thisValue->name).c_str(), "IBCAD00CRCUR6") == 0){
-                BEAM_CURRENT = thisValue->fval;
-                Fill1DHistogram("HLDetectorTiming", "", "Beam Current",
-                        BEAM_CURRENT,
-                        "Beam Current; Beam Current [nA]; Entries",
-                        100, 0, 200);
-            }
-            //cout << "EPICS Name " <<  (thisValue->name).c_str() << " Value " << thisValue->fval << endl;
+    vector<const DEPICSvalue *> epicsValues;
+    loop->Get(epicsValues);
+    for(unsigned int j = 0; j < epicsValues.size(); j++){
+        const DEPICSvalue *thisValue = epicsValues[j];
+        if (strcmp((thisValue->name).c_str(), "IBCAD00CRCUR6") == 0){
+            BEAM_CURRENT = thisValue->fval;
+            Fill1DHistogram("HLDetectorTiming", "", "Beam Current",
+                    BEAM_CURRENT,
+                    "Beam Current; Beam Current [nA]; Entries",
+                    100, 0, 200);
         }
-        // There is a caveat here when running multithreaded
-        // Another thread might be the one to catch the EPICS event
-        // and there is no way to reject events that may have come from earilier
-        // Expect number of entries in histograms to vary slightly over the same file with many threads
-        if (BEAM_CURRENT < 10.0) {
-            Fill1DHistogram("HLDetectorTiming", "" , "Beam Events",
-                    0, "Beam On Events (0 = no beam, 1 = beam > 10nA)",
-                    2, -0.5, 1.5);
+        //cout << "EPICS Name " <<  (thisValue->name).c_str() << " Value " << thisValue->fval << endl;
+    }
+    // There is a caveat here when running multithreaded
+    // Another thread might be the one to catch the EPICS event
+    // and there is no way to reject events that may have come from earilier
+    // Expect number of entries in histograms to vary slightly over the same file with many threads
+    if (BEAM_CURRENT < 10.0) {
+        Fill1DHistogram("HLDetectorTiming", "" , "Beam Events",
+                0, "Beam On Events (0 = no beam, 1 = beam > 10nA)",
+                2, -0.5, 1.5);
+        if (REQUIRE_BEAM){
             return NOERROR; // Skip events where we can't verify the beam current
         }
+    }
+    else{
         Fill1DHistogram("HLDetectorTiming", "" , "Beam Events",
                 1, "Beam On Events (0 = no beam, 1 = beam > 10nA)",
                 2, -0.5, 1.5);
         fBeamEventCounter++;
-        if (fBeamEventCounter >= BEAM_EVENTS_TO_KEEP) { // Able to specify beam ON events instead of just events
-            cout<< "Maximum number of Beam Events reached" << endl;
-            japp->Quit();
-            return NOERROR;
-        }
     }
+
+    if (fBeamEventCounter >= BEAM_EVENTS_TO_KEEP) { // Able to specify beam ON events instead of just events
+        cout<< "Maximum number of Beam Events reached" << endl;
+        japp->Quit();
+        return NOERROR;
+    }
+
 
     vector<const DCDCHit *> cdcHitVector;
     loop->Get(cdcHitVector);
