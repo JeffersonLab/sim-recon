@@ -1,8 +1,8 @@
 // hnamepath: /Independent/Hist_DetectorPID/FCAL/BetaVsP_q-
 // hnamepath: /Independent/Hist_DetectorPID/FCAL/BetaVsP_q0
 // hnamepath: /Independent/Hist_DetectorPID/FCAL/BetaVsP_q+
-// hnamepath: /Independent/Hist_DetectorPID/FCAL/EOverPVsP_q-
-// hnamepath: /Independent/Hist_DetectorPID/FCAL/EOverPVsP_q+
+// hnamepath: /Independent/Hist_DetectorPID/FCAL/EOverPVsTheta_q-
+// hnamepath: /Independent/Hist_DetectorPID/FCAL/EOverPVsTheta_q+
 
 {
 	//Goto Path
@@ -16,8 +16,8 @@
 	TH2I* locHist_BetaVsP_QMinus = (TH2I*)gDirectory->Get("BetaVsP_q-"); //q-
 	TH2I* locHist_BetaVsP_QZero = (TH2I*)gDirectory->Get("BetaVsP_q0"); //q0
 	TH2I* locHist_BetaVsP_QPlus = (TH2I*)gDirectory->Get("BetaVsP_q+"); //q+
-	TH2I* locHist_EOverPVsP_QPlus = (TH2I*)gDirectory->Get("EOverPVsP_q+"); //q+
-	TH2I* locHist_EOverPVsP_QMinus = (TH2I*)gDirectory->Get("EOverPVsP_q-"); //q-
+	TH2I* locHist_EOverPVsTheta_QPlus = (TH2I*)gDirectory->Get("EOverPVsTheta_q+"); //q+
+	TH2I* locHist_EOverPVsTheta_QMinus = (TH2I*)gDirectory->Get("EOverPVsTheta_q-"); //q-
 
 	//Beta-vs-p functions
 	TF1* locBetaVsPFunc_Proton = new TF1("BetaVsPFunc_Proton", "x/sqrt(x*x + [0]*[0])", 0.0, 12.0);
@@ -94,27 +94,24 @@
 	locCanvas->cd(4);
 	gPad->SetTicks();
 	gPad->SetGrid();
-	if(locHist_EOverPVsP_QPlus != NULL)
+	if(locHist_EOverPVsTheta_QPlus != NULL)
 	{
-		locHist_EOverPVsP_QPlus->GetXaxis()->SetRangeUser(0.0, 6.0);
-		locHist_EOverPVsP_QPlus->GetXaxis()->SetTitleSize(0.05);
-		locHist_EOverPVsP_QPlus->GetYaxis()->SetTitleSize(0.05);
-		locHist_EOverPVsP_QPlus->GetXaxis()->SetLabelSize(0.05);
-		locHist_EOverPVsP_QPlus->GetYaxis()->SetLabelSize(0.05);
-		locHist_EOverPVsP_QPlus->Draw("COLZ");
+		locHist_EOverPVsTheta_QPlus->GetXaxis()->SetTitleSize(0.05);
+		locHist_EOverPVsTheta_QPlus->GetYaxis()->SetTitleSize(0.05);
+		locHist_EOverPVsTheta_QPlus->GetXaxis()->SetLabelSize(0.05);
+		locHist_EOverPVsTheta_QPlus->GetYaxis()->SetLabelSize(0.05);
+		locHist_EOverPVsTheta_QPlus->Draw("COLZ");
 	}
 
 	locCanvas->cd(5);
 	gPad->SetTicks();
 	gPad->SetGrid();
-	if(locHist_EOverPVsP_QMinus != NULL)
+	if(locHist_EOverPVsTheta_QMinus != NULL)
 	{
-		locHist_EOverPVsP_QMinus->GetXaxis()->SetRangeUser(0.0, 6.0);
-		locHist_EOverPVsP_QMinus->GetXaxis()->SetTitleSize(0.05);
-		locHist_EOverPVsP_QMinus->GetYaxis()->SetTitleSize(0.05);
-		locHist_EOverPVsP_QMinus->GetXaxis()->SetLabelSize(0.05);
-		locHist_EOverPVsP_QMinus->GetYaxis()->SetLabelSize(0.05);
-		locHist_EOverPVsP_QMinus->Draw("COLZ");
+		locHist_EOverPVsTheta_QMinus->GetXaxis()->SetTitleSize(0.05);
+		locHist_EOverPVsTheta_QMinus->GetYaxis()->SetTitleSize(0.05);
+		locHist_EOverPVsTheta_QMinus->GetXaxis()->SetLabelSize(0.05);
+		locHist_EOverPVsTheta_QMinus->GetYaxis()->SetLabelSize(0.05);
+		locHist_EOverPVsTheta_QMinus->Draw("COLZ");
 	}
 }
-
