@@ -624,7 +624,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
         // Loop over TAGH hits
         for (unsigned int j = 0 ; j < taghHitVector.size(); j++){
             int nTAGHCounters = 274;
-            Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGH -  RFBunch Time",
+            Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGH - RFBunch Time",
                     taghHitVector[j]->counter_id, taghHitVector[j]->t - thisRFBunch->dTime,
                     "#Deltat TAGH-RFBunch; Counter ID ;t_{TAGH} - t_{RFBunch} [ns]",
                     nTAGHCounters, 0.5, nTAGHCounters + 0.5, NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME);
