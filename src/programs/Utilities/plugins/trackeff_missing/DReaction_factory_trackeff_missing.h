@@ -15,6 +15,7 @@
 #include <ANALYSIS/DReaction.h>
 #include <ANALYSIS/DHistogramActions.h>
 #include <ANALYSIS/DCutActions.h>
+#include "DCustomAction_CutProtonPiPlusdEdx.h"
 
 using namespace std;
 using namespace jana;
@@ -37,4 +38,3 @@ class DReaction_factory_trackeff_missing : public jana::JFactory<DReaction>
 };
 
 #endif // _DReaction_factory_trackeff_missing_
-

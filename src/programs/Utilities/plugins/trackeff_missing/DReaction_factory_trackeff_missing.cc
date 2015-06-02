@@ -49,7 +49,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// locReaction->Set_MinChargedPIDFOM(5.73303E-7);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	// locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Current (09/26/2014): "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma). 
@@ -71,7 +71,11 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// PID & Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
-// CUT TIGHTLY ON PARTICLE ID HERE!!!! // Want as clean of an event sample as possible.
+//INSERT TIGHT TIMING PID CUT HERE WHEN READY!!!! // Want as clean of an event sample as possible.
+	locReaction->Add_AnalysisAction(new DCustomAction_CutProtonPiPlusdEdx(locReaction, 2.0, true));
+
+	// Tight cut on track quality
+	locReaction->Add_AnalysisAction(new DCutAction_TrackHitPattern(locReaction, 2, 4)); //args: locMinHitRingsPerCDCSuperlayer, locMinHitPlanesPerFDCPackage
 
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56));
@@ -123,7 +127,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// locReaction->Set_MinChargedPIDFOM(5.73303E-7);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	// locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Current (09/26/2014): "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma).
@@ -145,7 +149,11 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// PID & Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
-// CUT TIGHTLY ON PARTICLE ID HERE!!!! // Want as clean of an event sample as possible.
+//INSERT TIGHT TIMING PID CUT HERE WHEN READY!!!! // Want as clean of an event sample as possible.
+	locReaction->Add_AnalysisAction(new DCustomAction_CutProtonPiPlusdEdx(locReaction, 2.0, true));
+
+	// Tight cut on track quality
+	locReaction->Add_AnalysisAction(new DCutAction_TrackHitPattern(locReaction, 2, 4)); //args: locMinHitRingsPerCDCSuperlayer, locMinHitPlanesPerFDCPackage
 
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.2, 0.2));
@@ -197,7 +205,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// locReaction->Set_MinChargedPIDFOM(5.73303E-7);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	// locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Current (09/26/2014): "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma).
@@ -219,7 +227,11 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// PID & Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
-// CUT TIGHTLY ON PARTICLE ID HERE!!!! // Want as clean of an event sample as possible.
+//INSERT TIGHT TIMING PID CUT HERE WHEN READY!!!! // Want as clean of an event sample as possible.
+	locReaction->Add_AnalysisAction(new DCustomAction_CutProtonPiPlusdEdx(locReaction, 2.0, true));
+
+	// Tight cut on track quality
+	locReaction->Add_AnalysisAction(new DCutAction_TrackHitPattern(locReaction, 2, 4)); //args: locMinHitRingsPerCDCSuperlayer, locMinHitPlanesPerFDCPackage
 
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.2, 0.2));
@@ -239,7 +251,6 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
-
 
 	return NOERROR;
 }
