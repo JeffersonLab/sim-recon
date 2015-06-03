@@ -50,10 +50,6 @@
 // and combines them into a single s_BarrelEMcal_t structure
 // that is in the hddm_s structure that will be written to
 // the output file.
-//
-// For the case of the BCAL timing spectra, a similar method is
-// used except global variable STL containers are used instead of
-// the bintree mechanism.
 //-----------------
 
 
@@ -77,14 +73,9 @@ extern "C" {
 
 #include <DHistogram.h>
 
-// Use the following to switch on and off the single hit
-// and full spectra methods of writing out the BCAL info.
+// The time histogram write-out algorithms have been removed.
+// We now are working only with the cell truth hits method.
 #define WRITE_OUT_BCAL_CELL_TRUTH_HITS 1
-
-
-extern float BGGATE1;
-extern float BGGATE2;
-
 
 static float THRESH_MEV       = 1.;
 static float TWO_HIT_RESOL    = 50.;
@@ -101,7 +92,6 @@ static double C_EFFECTIVE = 16.75;
 static double SiPM_tbin_width = 0.100;
 static double atten_full_length = exp(-390.0/ATTEN_LENGTH);
 static double THRESH_ATTENUATED_GEV = (THRESH_MEV/1000.0)*atten_full_length;
-static int NHISTO_BINS = 0; 
 
 extern s_HDDM_t* thisInputEvent;
 
@@ -180,27 +170,6 @@ class bcal_index{
       }
 };
 
-// This holds the energy-weighted time spectra for
-// each SiPM in the event. At the begining of the 
-// event it is empty and entries are added as cells
-// are hit.
-map<bcal_index, DHistogram*> SiPMspectra;
-
-// Keep a pool of DHistogram objects that recycled
-// event to minimize memory usage.
-vector<DHistogram*> histo_pool;
-
-// This is used to hold the integrated energy in GeV for
-// each cell. This is only for the SiPMspectra hits. This 
-// map will be filled with entries for each cell at initialization
-// time, but only those elements corresponding to entries in
-// histos_with_data will be reset at the end of the event.
-// n.b. an entry will be made for each end, even though they
-// will be identical for each cell. It turns out to make it 
-// simpler in the pickBarrelEMcal (and elsewhere) to just
-// keep the duplicate information.
-map<bcal_index, double> E_CellTruth;
-
 // The IncidentParticle_t class is used to hold information on
 // a single particle entering the BCAL. This is used when timing
 // spectra are written out so that sampling fluctuations (and
@@ -239,43 +208,6 @@ int BCAL_INCIDENT_PARTICLE_COUNT = 0;
 vector<int> INCIDENT_ID; // holds map of tracks to incident particle id
 bool SHOWED_INCIDENT_PARTICLE_LONG_WARNING = false;
 bool SHOWED_INCIDENT_PARTICLE_SHORT_WARNING = false;
-
-//----------------------
-// GetSiPMHistogram
-//----------------------
-DHistogram* GetSiPMHistogram(const bcal_index &idx)
-{
-   /// Look to see if an entry in the SiPMspectra map
-   /// already exists for the specified index. If so,
-   /// return it. If not, a histogram is assigned to
-   /// it from the pool. If the pool is empty, then
-   /// a new histogram is created.
-   map<bcal_index, DHistogram*>::iterator iter = SiPMspectra.find(idx);
-
-   // If we found it, return immediately
-   if (iter != SiPMspectra.end())
-      return iter->second;
-
-   // If we didn't find it, try getting one from the pool
-   DHistogram *h;
-   if (histo_pool.size() > 0) {
-      // Pool has one, take it out to use it
-      h = histo_pool.back();
-      histo_pool.pop_back();
-   }
-   else {
-      // Pool does not have one. Create a new one. This
-      // will be pushed onto the pool at the end of the
-      // event.
-      h = new DHistogram(NHISTO_BINS, BGGATE1, BGGATE2);
-   }
-   
-   // Assign this histo to the SiPMspectra map
-   SiPMspectra[idx] = h;
-
-   // Return a pointer to the histogram
-   return h;
-}
 
 //----------------------
 // initializeBarrelEMcal
@@ -555,10 +487,7 @@ void hitBarrelEMcal (float xin[4], float xout[4],
    // ......................................................
    // This section, contains the original
    // mechanism that recorded an energy weighted time average for each
-   // cell. It has since been replaced with the one right after it
-   // that records full timing spectra for each hit cell. One can
-   // however, re-eanble this with the WRITE_OUT_BCAL_CELL_TRUTH_HITS
-   // flag set at the top of the file.
+   // cell. Full timing spectra for each hit has been removed.
   
   /* post the hit to the hits tree, mark sector as hit */
 
@@ -606,8 +535,8 @@ void hitBarrelEMcal (float xin[4], float xout[4],
             break;
          }
       }
-      if (nshot < (int)hits->mult && incident_idhit == hits->in[nshot].incident_id)      /* merge with former hit */
-      {
+      if (nshot < (int)hits->mult/* && incident_idhit == hits->in[nshot].incident_id*/)      /* merge with former hit */
+      { // Merging hits based on incident ID is causing issues later (we lose hits and energy).  This may be implemented later.
          hits->in[nshot].t =
                   (hits->in[nshot].t * hits->in[nshot].E + t * dEsum)
                 / (hits->in[nshot].E + dEsum);
@@ -657,25 +586,23 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 {
    s_BarrelEMcal_t* box;  // pointer to structure we're copying into
    s_BarrelEMcal_t* item; // temporary pointer to structure we're copying from
-   unsigned int spectraCount = SiPMspectra.size(); // Number non-zero spectra
 #if TESTING_CAL_CONTAINMENT
   double Etotal = 0;
 #endif
 
    // Return quickly if nothing in BCAL
-   if (cellCount == 0 && showerCount == 0 && spectraCount == 0)
+   if (cellCount == 0 && showerCount == 0)
    {
       return (s_BarrelEMcal_t*)HDDM_NULL;
    }
 
    // Create HDDM structures to hang on output tree
    box = make_s_BarrelEMcal();
-   box->bcalCells = make_s_BcalCells(cellCount+spectraCount);
+   box->bcalCells = make_s_BcalCells(cellCount);
    box->bcalTruthShowers = make_s_BcalTruthShowers(showerCount);
 
    // Loop over items stored in barrelEMcalTree. This includes
-   // bcalCells items and bcalTruthShowers, but not bcalSiPMSpectrum
-   // (Those are handled below.)
+   // bcalCells items and bcalTruthShowers.
    while ( (item = (s_BarrelEMcal_t*) pickTwig(&barrelEMcalTree)) )
    {
 
