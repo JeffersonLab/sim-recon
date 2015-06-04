@@ -320,14 +320,12 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 			   const double z0wire,
 			   const DVector2 &origin,
 			   const DVector2 &dir,  
-			   DMatrix5x1 &Sc, double &ds_out,
-			   bool is_stereo=false);
+			   DMatrix5x1 &Sc, double &ds_out);
   jerror_t BrentsAlgorithm(double z,double dz,
 			   double dedx,const double z0wire,
 			   const DVector2 &origin,
 			   const DVector2 &dir,DMatrix5x1 &S,
-			   double &dz_out,
-			   bool is_stereo=false);
+			   double &dz_out);
   
   jerror_t PropagateForwardCDC(int length,int &index,double &z,double &r2,
 			       DMatrix5x1 &S, bool &stepped_to_boundary); 
