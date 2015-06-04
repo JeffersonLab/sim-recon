@@ -51,6 +51,11 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
 	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 
+	// Optional, use with caution: When generating particle combinations, but after the Photon/RF Delta-t cut, reject all combos with more than this # of beam photons
+		//useful for missing-particle studies when you need a very pure sample of events
+		//however, this can cut away a lot of signal events too
+	locReaction->Set_MaxNumBeamPhotonsInBunch(1);
+
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Current (09/26/2014): "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma). 
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
@@ -86,6 +91,8 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56, "Post-KinFit"));
+
+locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, true, 2.0, 3.0)); //true: fill histograms with kinematic-fit particle data
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -128,6 +135,11 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
 	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+
+	// Optional, use with caution: When generating particle combinations, but after the Photon/RF Delta-t cut, reject all combos with more than this # of beam photons
+		//useful for missing-particle studies when you need a very pure sample of events
+		//however, this can cut away a lot of signal events too
+	locReaction->Set_MaxNumBeamPhotonsInBunch(1);
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Current (09/26/2014): "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma).
@@ -206,6 +218,11 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
 	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+
+	// Optional, use with caution: When generating particle combinations, but after the Photon/RF Delta-t cut, reject all combos with more than this # of beam photons
+		//useful for missing-particle studies when you need a very pure sample of events
+		//however, this can cut away a lot of signal events too
+	locReaction->Set_MaxNumBeamPhotonsInBunch(1);
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Current (09/26/2014): "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma).
