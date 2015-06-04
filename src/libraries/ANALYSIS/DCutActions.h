@@ -49,6 +49,7 @@ DCutAction_InvariantMass
 DCutAction_TransverseMomentum
 DCutAction_TrackHitPattern
 DCutAction_CutProtonPiPlusdEdx
+DCutAction_BeamEnergy
 */
 
 class DCutAction_ThrownTopology : public DAnalysisAction
@@ -483,7 +484,7 @@ class DCutAction_CutProtonPiPlusdEdx : public DAnalysisAction
 	public:
 
 		DCutAction_CutProtonPiPlusdEdx(const DReaction* locReaction, double locTrackdEdxCut_InKeV, bool locCutProtonsInOverlapRegionFlag = false, string locActionUniqueString = "") :
-		DAnalysisAction(locReaction, "Custom_CutdEdx", false, locActionUniqueString),
+		DAnalysisAction(locReaction, "Cut_ProtonPiPlusdEdx", false, locActionUniqueString),
 		dTrackdEdxCut_InKeV(locTrackdEdxCut_InKeV), dCutProtonsInOverlapRegionFlag(locCutProtonsInOverlapRegionFlag), dOverlapRegionMinP(1.0) {}
 
 		void Initialize(JEventLoop* locEventLoop){};
@@ -498,4 +499,24 @@ class DCutAction_CutProtonPiPlusdEdx : public DAnalysisAction
 		double dOverlapRegionMinP;
 };
 
+class DCutAction_BeamEnergy : public DAnalysisAction
+{
+	public:
+
+		DCutAction_BeamEnergy(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locMinBeamEnergy, double locMaxBeamEnergy, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Cut_BeamEnergy", locUseKinFitResultsFlag, locActionUniqueString),
+		dMinBeamEnergy(locMinBeamEnergy), dMaxBeamEnergy(locMaxBeamEnergy){}
+
+		void Initialize(JEventLoop* locEventLoop){};
+		string Get_ActionName(void) const;
+
+	private:
+
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		double dMinBeamEnergy;
+		double dMaxBeamEnergy;
+};
+
 #endif // _DCutActions_
+

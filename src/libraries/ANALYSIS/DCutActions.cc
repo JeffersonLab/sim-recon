@@ -833,3 +833,25 @@ bool DCutAction_CutProtonPiPlusdEdx::Perform_Action(JEventLoop* locEventLoop, co
 
 	return true;
 }
+
+string DCutAction_BeamEnergy::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinBeamEnergy << "_" << dMaxBeamEnergy;
+	return locStream.str();
+}
+
+bool DCutAction_BeamEnergy::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	const DKinematicData* locInitParticle = NULL;
+	if(Get_UseKinFitResultsFlag())
+		locInitParticle = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle();
+	else
+		locInitParticle = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured();
+	if(locInitParticle == NULL)
+		return false;
+
+	double locBeamEnergy = locInitParticle->energy();
+	return ((locBeamEnergy >= dMinBeamEnergy) && (locBeamEnergy <= dMaxBeamEnergy));
+}
+
