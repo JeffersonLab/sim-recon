@@ -48,6 +48,7 @@ DCutAction_InvariantMass
 
 DCutAction_TransverseMomentum
 DCutAction_TrackHitPattern
+DCutAction_CutProtonPiPlusdEdx
 */
 
 class DCutAction_ThrownTopology : public DAnalysisAction
@@ -475,6 +476,26 @@ class DCutAction_TrackHitPattern : public DAnalysisAction
 		unsigned int dMinHitPlanesPerFDCPackage;
 
 		const DParticleID* dParticleID;
+};
+
+class DCutAction_CutProtonPiPlusdEdx : public DAnalysisAction
+{
+	public:
+
+		DCutAction_CutProtonPiPlusdEdx(const DReaction* locReaction, double locTrackdEdxCut_InKeV, bool locCutProtonsInOverlapRegionFlag = false, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Custom_CutdEdx", false, locActionUniqueString),
+		dTrackdEdxCut_InKeV(locTrackdEdxCut_InKeV), dCutProtonsInOverlapRegionFlag(locCutProtonsInOverlapRegionFlag), dOverlapRegionMinP(1.0) {}
+
+		void Initialize(JEventLoop* locEventLoop){};
+		string Get_ActionName(void) const;
+
+	private:
+
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		double dTrackdEdxCut_InKeV;
+		bool dCutProtonsInOverlapRegionFlag;
+		double dOverlapRegionMinP;
 };
 
 #endif // _DCutActions_
