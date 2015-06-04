@@ -10,6 +10,7 @@ DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 	dMinPhotonPIDFOM = pair<bool, double>(false, 5.73303E-7);
 	dMaxPhotonRFDeltaT = pair<bool, double>(false, 0.5*2.004);
 	dMaxExtraGoodTracks = pair<bool, size_t>(false, 4);
+	dMaxNumBeamPhotonsInBunch = pair<bool, size_t>(false, 0);
 
 	dTTreeOutputFileName = "";
 	dEnableTTreeOutputFlag = false;

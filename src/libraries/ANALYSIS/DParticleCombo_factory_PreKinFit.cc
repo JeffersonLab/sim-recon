@@ -25,6 +25,7 @@ jerror_t DParticleCombo_factory_PreKinFit::init(void)
 	dMaxPhotonRFDeltaT = pair<bool, double>(false, -1.0);
 	dMinChargedPIDFOM = pair<bool, double>(false, -1.0);
 	dMinPhotonPIDFOM = pair<bool, double>(false, -1.0);
+	dMaxNumBeamPhotonsInBunch = pair<bool, size_t>(false, 0);
 
 	dMinThrownMatchFOM = 5.73303E-7;
 	dDebugLevel = 0;
@@ -61,6 +62,12 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 	{
 		dMinPhotonPIDFOM.first = true;
 		gPARMS->GetParameter("COMBO:MIN_PHOTON_PID_FOM", dMinPhotonPIDFOM.second);
+	}
+
+	if(gPARMS->Exists("COMBO:MAX_NUM_BEAM_PHOTONS"))
+	{
+		dMaxNumBeamPhotonsInBunch.first = true;
+		gPARMS->GetParameter("COMBO:MAX_NUM_BEAM_PHOTONS", dMaxNumBeamPhotonsInBunch.second);
 	}
 
 	// Get DReactions:
@@ -178,9 +185,10 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 				loc1DHist->GetXaxis()->SetBinLabel(1, "Input"); // a new event
 				loc1DHist->GetXaxis()->SetBinLabel(2, "Has Particle Combo Blueprints");
 				loc1DHist->GetXaxis()->SetBinLabel(3, "Cut Beam, RF #Deltat");
-				loc1DHist->GetXaxis()->SetBinLabel(4, "Cut Particle PID");
+				loc1DHist->GetXaxis()->SetBinLabel(4, "Cut # Beam Photons");
+				loc1DHist->GetXaxis()->SetBinLabel(5, "Cut Particle PID");
 				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
-					loc1DHist->GetXaxis()->SetBinLabel(5 + loc_j, locActionNames[loc_j].c_str());
+					loc1DHist->GetXaxis()->SetBinLabel(6 + loc_j, locActionNames[loc_j].c_str());
 			}
 			dHistMap_NumEventsSurvivedCut_All[locReaction] = loc1DHist;
 
@@ -195,10 +203,11 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 					loc1DHist->GetXaxis()->SetBinLabel(1, "Input"); // a new event
 					loc1DHist->GetXaxis()->SetBinLabel(2, "Has Particle Combo Blueprints");
 					loc1DHist->GetXaxis()->SetBinLabel(3, "Cut Beam, RF #Deltat");
-					loc1DHist->GetXaxis()->SetBinLabel(4, "Cut Particle PID");
+					loc1DHist->GetXaxis()->SetBinLabel(4, "Cut # Beam Photons");
+					loc1DHist->GetXaxis()->SetBinLabel(5, "Cut Particle PID");
 					for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
-						loc1DHist->GetXaxis()->SetBinLabel(5 + loc_j, locActionNames[loc_j].c_str());
-					loc1DHist->GetXaxis()->SetBinLabel(5 + locActionNames.size(), "Has True Combo (Not a Cut)");
+						loc1DHist->GetXaxis()->SetBinLabel(6 + loc_j, locActionNames[loc_j].c_str());
+					loc1DHist->GetXaxis()->SetBinLabel(6 + locActionNames.size(), "Has True Combo (Not a Cut)");
 				}
 				dHistMap_NumEventsSurvivedCut_True[locReaction] = loc1DHist;
 			}
@@ -222,9 +231,10 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 				delete[] locBinArray;
 				loc2DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combo Blueprints");
 				loc2DHist->GetXaxis()->SetBinLabel(2, "Cut Beam, RF #Deltat");
-				loc2DHist->GetXaxis()->SetBinLabel(3, "Cut Particle PID");
+				loc2DHist->GetXaxis()->SetBinLabel(3, "Cut # Beam Photons");
+				loc2DHist->GetXaxis()->SetBinLabel(4, "Cut Particle PID");
 				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
-					loc2DHist->GetXaxis()->SetBinLabel(4 + loc_j, locActionNames[loc_j].c_str());
+					loc2DHist->GetXaxis()->SetBinLabel(5 + loc_j, locActionNames[loc_j].c_str());
 			}
 			dHistMap_NumBlueprintsSurvivedCut[locReaction] = loc2DHist;
 
@@ -236,9 +246,10 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 3 + locActionNames.size(), 0.5, 3.5 + float(locActionNames.size()));
 				loc1DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combo Blueprints");
 				loc1DHist->GetXaxis()->SetBinLabel(2, "Cut Beam, RF #Deltat");
-				loc1DHist->GetXaxis()->SetBinLabel(3, "Cut Particle PID");
+				loc1DHist->GetXaxis()->SetBinLabel(3, "Cut # Beam Photons");
+				loc1DHist->GetXaxis()->SetBinLabel(4, "Cut Particle PID");
 				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
-					loc1DHist->GetXaxis()->SetBinLabel(4 + loc_j, locActionNames[loc_j].c_str());
+					loc1DHist->GetXaxis()->SetBinLabel(5 + loc_j, locActionNames[loc_j].c_str());
 			}
 			dHistMap_NumBlueprintsSurvivedCut1D[locReaction] = loc1DHist;
 
@@ -531,7 +542,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 		bool locBadComboFlag = false;
 
 		if(locNumBlueprintsSurvivedCuts[locReaction].empty())
-			locNumBlueprintsSurvivedCuts[locReaction].resize(3 + dNumGoodPreComboSelectionActions[locReaction]);
+			locNumBlueprintsSurvivedCuts[locReaction].resize(4 + dNumGoodPreComboSelectionActions[locReaction]);
 		++locNumBlueprintsSurvivedCuts[locReaction][0];
 
 		//select the corresponding rf bunch
@@ -554,7 +565,10 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 
 		bool locBeamInComboFlag = (locParticleComboBlueprint->Get_ParticleComboBlueprintStep(0)->Get_InitialParticleID() == Gamma);
 		if(!locBeamInComboFlag)
+		{
 			++locNumBlueprintsSurvivedCuts[locReaction][1]; //don't need to cut
+			++locNumBlueprintsSurvivedCuts[locReaction][2]; //don't need to cut
+		}
 
 		for(size_t loc_j = 0; loc_j < locParticleComboBlueprint->Get_NumParticleComboBlueprintSteps(); ++loc_j)
 		{
@@ -586,6 +600,21 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 					break;
 				}
 				++locNumBlueprintsSurvivedCuts[locReaction][1];
+
+				//hist # photons
+				japp->RootWriteLock();
+				{
+					dHistMap_NumSurvivingBeamParticles[locReaction]->Fill(locCandidatePhotons[locReactionRFPair].size());
+				}
+				japp->RootUnLock();
+
+				if(!Cut_NumBeamPhotonsInBunch(locReaction, locCandidatePhotons[locReactionRFPair].size()))
+				{
+					locBadComboFlag = true; //too many photons match the RF time
+					locParticleCombo->Add_ParticleComboStep(locParticleComboStep); //add step so easier to check for recycling
+					break;
+				}
+				++locNumBlueprintsSurvivedCuts[locReaction][2];
 				locParticleComboStep->Set_InitialParticle(*(locCandidatePhotons[locReactionRFPair].begin()));
 			}
 
@@ -634,20 +663,13 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			delete locParticleCombo;
 			continue;
 		}
-		++locNumBlueprintsSurvivedCuts[locReaction][2];
+		++locNumBlueprintsSurvivedCuts[locReaction][3];
 
 		//if needed: clone combos for additional beam photons, hist # photons & true beam-rf delta-t (if MC and if true combo)
 		vector<DParticleCombo*> locBuiltParticleCombos;
 		if(locBeamInComboFlag)
 		{
 			Build_BeamPhotonCombos(locParticleCombo, locParticleComboBlueprint, locEventRFBunch, locCandidatePhotons[locReactionRFPair], locBuiltParticleCombos);
-
-			//hist # photons
-			japp->RootWriteLock();
-			{
-				dHistMap_NumSurvivingBeamParticles[locReaction]->Fill(locBuiltParticleCombos.size());
-			}
-			japp->RootUnLock();
 
 			//Fill PhotonRFDeltaT_True histogram, if it's MC and if it's the true combo
 			if((dTrueComboCuts.find(locReaction) != dTrueComboCuts.end()) && (locTrueComboSurvivedReactions.find(locReaction) == locTrueComboSurvivedReactions.end()))
@@ -697,7 +719,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				locCutParticleCombos.push_back(locBuiltParticleCombos[loc_j]);
 		}
 		for(int loc_j = 0; loc_j <= locLastActionSurvivedIndex; ++loc_j)
-			++locNumBlueprintsSurvivedCuts[locReaction][3 + loc_j];
+			++locNumBlueprintsSurvivedCuts[locReaction][4 + loc_j];
 
 		//all but the beam particle step is shared amongst all particles
 			//if all combos failed: recycle them.  else don't.
@@ -825,7 +847,7 @@ void DParticleCombo_factory_PreKinFit::Build_BeamPhotonCombos(DParticleCombo* lo
 			}
 			else
 			{
-				//create new combo, utilzing the previously-craeted step
+				//create new combo, utilzing the previously-created step
 				DParticleCombo* locNewParticleCombo = new DParticleCombo();
 				*locNewParticleCombo = *locParticleCombo;
 				locNewParticleCombo->Set_ParticleComboStep(*locStepIterator, 0);
@@ -1030,6 +1052,14 @@ bool DParticleCombo_factory_PreKinFit::Cut_PIDFOM(const DReaction* locReaction, 
 	if(!locMinPhotonPIDFOM.first)
 		return true;
 	return ((locNeutralParticleHypothesis->dNDF == 0) ? true : (locNeutralParticleHypothesis->dFOM >= locMinPhotonPIDFOM.second));
+}
+
+bool DParticleCombo_factory_PreKinFit::Cut_NumBeamPhotonsInBunch(const DReaction* locReaction, size_t locNumBeamPhotonsInBunch) const
+{
+	pair<bool, size_t> locMaxNumBeamPhotonsInBunch = dMaxNumBeamPhotonsInBunch.first ? dMaxNumBeamPhotonsInBunch : locReaction->Get_MaxNumBeamPhotonsInBunch();
+	if(!locMaxNumBeamPhotonsInBunch.first)
+		return true;
+	return (locNumBeamPhotonsInBunch <= locMaxNumBeamPhotonsInBunch.second);
 }
 
 //------------------
