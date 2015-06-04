@@ -31,7 +31,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
   // Vectors for cdc wires
   DVector2 origin,dir,wirepos;
   double z0w=0.; // origin in z for wire
-  bool is_stereo=false;
 
   // Set used_in_fit flags to false for fdc and cdc hits
   unsigned int num_cdc=cdc_updates.size();
@@ -78,7 +77,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
     dir=my_cdchits[cdc_index]->dir;   
     z0w=my_cdchits[cdc_index]->z0wire;
     wirepos=origin+(forward_traj[break_point_step_index].z-z0w)*dir;
-    is_stereo=my_cdchits[cdc_index]->hit->is_stereo;
   }
 
   S0_=(forward_traj[break_point_step_index].S);
@@ -316,7 +314,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    fdc_updates[my_id].C=C; 
 	    fdc_updates[my_id].tflight
 	      =forward_traj[k].t*TIME_UNIT_CONVERSION;   
-	    fdc_updates[my_id].tdrift=my_fdchits[id]->t;
+	    fdc_updates[my_id].tdrift
+	      =my_fdchits[id]->t-fdc_updates[my_id].tflight-mT0;
 	    fdc_updates[my_id].z=forward_traj[k].z;
 	    fdc_updates[my_id].B=forward_traj[k].B;
 	    fdc_updates[my_id].s=forward_traj[k].s;
@@ -357,7 +356,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    fdc_updates[id].C=C;
 	    fdc_updates[id].tflight
 	      =forward_traj[k].t*TIME_UNIT_CONVERSION;  
-	    fdc_updates[id].tdrift=my_fdchits[id]->t;
+	    fdc_updates[id].tdrift
+	      =my_fdchits[id]->t-fdc_updates[id].tflight-mT0;
 	    fdc_updates[id].z=forward_traj[k].z;
 	    fdc_updates[id].B=forward_traj[k].B;
 	    fdc_updates[id].residual=scale*Mdiff;
@@ -370,8 +370,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    chisq+=scale*Mdiff*Mdiff/V;
 		    
 	    if (DEBUG_LEVEL>10){
-	      printf("hit %d p %5.2f dm %5.2f sig %f chi2 %5.2f z %5.2f\n",
-		     id,1./S(state_q_over_p),Mdiff,sqrt(V),(1.-H*K)*Mdiff*Mdiff/V,
+	      printf("hit %d p %5.2f t %f dm %5.2f sig %f chi2 %5.2f z %5.2f\n",
+		     id,1./S(state_q_over_p),fdc_updates[id].tdrift,Mdiff,sqrt(V),(1.-H*K)*Mdiff*Mdiff/V,
 		     forward_traj[k].z);
 	    
 	    }
@@ -388,10 +388,9 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
       }
     }
     else if (more_cdc_measurements /* && z<endplate_z*/){   
-      if (is_stereo){
-	wirepos=origin;
-	wirepos+=(z-z0w)*dir;
-      }
+      // new wire position
+      wirepos=origin;
+      wirepos+=(z-z0w)*dir;
 
       // doca variables
       double dx=S(state_x)-wirepos.X();
@@ -518,8 +517,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  else do_brent=true;
 	  if (do_brent){
 	    // We have bracketed the minimum doca:  use Brent's agorithm
-	    if (BrentsAlgorithm(z,-mStepSizeZ,dedx,z0w,origin,dir,S,dz,
-				is_stereo)!=NOERROR){
+	    if (BrentsAlgorithm(z,-mStepSizeZ,dedx,z0w,origin,dir,S,dz)!=NOERROR){
 	      break_point_fdc_index=(3*num_fdc_hits)/4;
 	      return MOMENTUM_OUT_OF_RANGE;
 	    }
@@ -531,10 +529,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	      double ztemp=newz;
 	      
 	      // new wire position
-	      if (is_stereo){
-		wirepos=origin;
-		wirepos+=(ztemp-z0w)*dir;
-	      }
+	      wirepos=origin;
+	      wirepos+=(ztemp-z0w)*dir;
 
 	      // doca
 	      old_doca2=doca2;
@@ -551,10 +547,9 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 		Step(ztemp,newz,dedx,S);
 
 		// find the new distance to the wire
-		if (is_stereo){
-		  wirepos=origin;
-		  wirepos+=(newz-z0w)*dir;
-		}
+		wirepos=origin;
+		wirepos+=(newz-z0w)*dir;
+	      
 		dx=S(state_x)-wirepos.X();
 		dy=S(state_y)-wirepos.Y();
 		doca2=dx*dx+dy*dy;
@@ -563,8 +558,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	      }
 	      // Find the true doca
 	      double dz2=0.;
-	      if (BrentsAlgorithm(newz,mStepSizeZ,dedx,z0w,origin,dir,S,dz2,
-				  is_stereo)!=NOERROR){
+	      if (BrentsAlgorithm(newz,mStepSizeZ,dedx,z0w,origin,dir,S,dz2)!=NOERROR){
 		break_point_fdc_index=(3*num_fdc_hits)/4;
 		return MOMENTUM_OUT_OF_RANGE;
 	      }
@@ -630,10 +624,9 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  }
 	  
 	  // Wire position at current z
-	  if (is_stereo){
-	    wirepos=origin;
-	    wirepos+=(newz-z0w)*dir;
-	  }
+	  wirepos=origin;
+	  wirepos+=(newz-z0w)*dir;
+	  
 	  double xw=wirepos.X();
 	  double yw=wirepos.Y();
 	  
@@ -730,7 +723,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	      if (DEBUG_LEVEL>10)
 		cout << "Ring " <<  my_cdchits[cdc_index]->hit->wire->ring
 		     << " Straw " <<  my_cdchits[cdc_index]->hit->wire->straw
-		     << " is stereo? " << is_stereo
 		     << " Pred " << d << " Meas " << dm
 		     << " Sigma meas " << sqrt(Vc)
 		     << " t " << tcorr
@@ -790,7 +782,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  origin=my_cdchits[cdc_index]->origin;
 	  z0w=my_cdchits[cdc_index]->z0wire;
 	  dir=my_cdchits[cdc_index]->dir;
-	  is_stereo=my_cdchits[cdc_index]->hit->is_stereo;
 	}
 	else more_cdc_measurements=false;
       
