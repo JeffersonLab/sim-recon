@@ -72,7 +72,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 //INSERT TIGHT TIMING PID CUT HERE WHEN READY!!!! // Want as clean of an event sample as possible.
-	locReaction->Add_AnalysisAction(new DCustomAction_CutProtonPiPlusdEdx(locReaction, 2.0, true));
+	locReaction->Add_AnalysisAction(new DCutAction_CutProtonPiPlusdEdx(locReaction, 2.0, true));
 
 	// Tight cut on track quality
 	locReaction->Add_AnalysisAction(new DCutAction_TrackHitPattern(locReaction, 2, 4)); //args: locMinHitRingsPerCDCSuperlayer, locMinHitPlanesPerFDCPackage
@@ -150,7 +150,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 //INSERT TIGHT TIMING PID CUT HERE WHEN READY!!!! // Want as clean of an event sample as possible.
-	locReaction->Add_AnalysisAction(new DCustomAction_CutProtonPiPlusdEdx(locReaction, 2.0, true));
+	locReaction->Add_AnalysisAction(new DCutAction_CutProtonPiPlusdEdx(locReaction, 2.0, true));
 
 	// Tight cut on track quality
 	locReaction->Add_AnalysisAction(new DCutAction_TrackHitPattern(locReaction, 2, 4)); //args: locMinHitRingsPerCDCSuperlayer, locMinHitPlanesPerFDCPackage
@@ -228,7 +228,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 //INSERT TIGHT TIMING PID CUT HERE WHEN READY!!!! // Want as clean of an event sample as possible.
-	locReaction->Add_AnalysisAction(new DCustomAction_CutProtonPiPlusdEdx(locReaction, 2.0, true));
+	locReaction->Add_AnalysisAction(new DCutAction_CutProtonPiPlusdEdx(locReaction, 2.0, true));
 
 	// Tight cut on track quality
 	locReaction->Add_AnalysisAction(new DCutAction_TrackHitPattern(locReaction, 2, 4)); //args: locMinHitRingsPerCDCSuperlayer, locMinHitPlanesPerFDCPackage

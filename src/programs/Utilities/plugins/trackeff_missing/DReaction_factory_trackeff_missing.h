@@ -15,7 +15,6 @@
 #include <ANALYSIS/DReaction.h>
 #include <ANALYSIS/DHistogramActions.h>
 #include <ANALYSIS/DCutActions.h>
-#include "DCustomAction_CutProtonPiPlusdEdx.h"
 
 using namespace std;
 using namespace jana;
