@@ -185,6 +185,10 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		bcal().setYzcorr(0);
 		bcal().setEzcorr(0);
 		bcal().setTzcorr(0);
+
+		//N_cell
+                hddm_r::BcalClusterList bcalcluster = bcal().addBcalClusters(1);
+                bcalcluster().setNcell(bcalshowers[i]->N_cell);
 	}
 
 	// push any DTOFPoint objects to the output record

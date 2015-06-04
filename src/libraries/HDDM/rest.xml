@@ -33,7 +33,9 @@
                 xerr="float" yerr="float" zerr="float" terr="float" Eerr="float"
                 xycorr="float" xzcorr="float" yzcorr="float"
                 tzcorr="float" Ezcorr="float"
-                lunit="cm" tunit="ns" Eunit="GeV"/>
+                lunit="cm" tunit="ns" Eunit="GeV">
+	 <bcalCluster maxOccurs="1" minOccurs="0" ncell="int"/>
+    </bcalShower>
     <chargedTrack minOccurs="0" maxOccurs="unbounded" jtag="string"
                 ptype="Particle_t" candidateId="int">
       <trackFit Ndof="int" chisq="float"
