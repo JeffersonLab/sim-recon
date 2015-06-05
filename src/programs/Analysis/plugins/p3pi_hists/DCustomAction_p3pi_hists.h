@@ -12,6 +12,10 @@
 #include <iostream>
 
 #include "TH1.h"
+#include "TMath.h"
+#include "Math/Point3D.h"
+#include "Math/Vector3D.h"
+#include "Math/Plane3D.h"
 
 #include "JANA/JEventLoop.h"
 #include "JANA/JApplication.h"
@@ -23,6 +27,7 @@
 
 using namespace std;
 using namespace jana;
+using namespace ROOT::Math;
 
 class DCustomAction_p3pi_hists : public DAnalysisAction
 {
@@ -40,13 +45,16 @@ class DCustomAction_p3pi_hists : public DAnalysisAction
 		// Optional: Useful utility functions.
 		const DAnalysisUtilities* dAnalysisUtilities;
 
-		Particle_t dMissingPID;
-
 		//Store any histograms as member variables here
 		TH1I *dEgamma;
-		TH2I *dMM_M3pi;
+		TH2I *dMM2_M3pi, *dProton_dEdx_P, *dProton_P_Theta;
+		TH2I *dDeltaE_M3pi;
+		TH2I *dMM2_M3pi_ProtonTag, *dDeltaE_M3pi_ProtonTag, *dMM2_DeltaE_ProtonTag;
+                TH2I *dMM2_M3pi_CoplanarTag, *dDeltaE_M3pi_CoplanarTag, *dMM2_DeltaE_CoplanarTag;
+                TH2I *dDeltaPhi_M3pi, *dPhi3pi_PhiP;
+		TH2I *dEgamma_M3pi_ProtonTag;
+		TH2I *dMppizero_M2pi, *dMppiplus_M2pi, *dMppiminus_M2pi;
 
-		TH2I *dMM2_M3pi, *dProton_dEdx_P, *dProton_P_Theta, *dDeltaE_M3pi;
 };
 
 #endif // _DCustomAction_p3pi_hists_
