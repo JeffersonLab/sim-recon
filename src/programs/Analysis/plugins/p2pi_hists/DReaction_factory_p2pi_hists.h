@@ -16,8 +16,8 @@
 #include <ANALYSIS/DHistogramActions.h>
 #include <ANALYSIS/DCutActions.h>
 
-#include "DCustomAction_p2pi_taggerCoincidence.h"
 #include "DCustomAction_p2pi_hists.h"
+#include "DCustomAction_p2pi_unusedHists.h"
 
 using namespace std;
 using namespace jana;
