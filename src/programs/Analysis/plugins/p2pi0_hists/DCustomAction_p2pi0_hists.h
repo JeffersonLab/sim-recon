@@ -54,7 +54,7 @@ class DCustomAction_p2pi0_hists : public DAnalysisAction
 		TH2I *dMM2_M2pi0_ProtonTag, *dDeltaE_M2pi0_ProtonTag, *dMpi0_corr_ProtonTag;
 		TH2I *dMpi0_corr_MMTag;
 		TH2I *dMM2_M2pi0_Pi0Tag, *dDeltaE_M2pi0_Pi0Tag, *dMM2_DeltaE_Pi0Tag, *dEgamma_M2pi0_Pi0Tag;
-		TH2I *dDalitz1_Pi0Tag, *dDalitz2_Pi0Tag, *dDalitz3_Pi0Tag, *dDalitz4_Pi0Tag,;
+		TH2I *dDalitz1_Pi0Tag, *dDalitz2_Pi0Tag, *dDalitz3_Pi0Tag, *dDalitz4_Pi0Tag;
 
 		TH2I *dProton_dEdx_P, *dProton_P_Theta;
 
