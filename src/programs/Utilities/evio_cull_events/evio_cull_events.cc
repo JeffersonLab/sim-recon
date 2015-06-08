@@ -26,6 +26,8 @@ void ParseCommandLineArguments(int narg, char* argv[]);
 void Usage(void);
 void ctrlCHandle(int x);
 void Process(unsigned int &NEvents, unsigned int &NEvents_read);
+uint64_t FindEventNumber(evioDOMTree *evt, uint64_t &block_size);
+
 
 vector<char*> INFILENAMES;
 char *OUTFILENAME = NULL;
@@ -49,8 +51,12 @@ int main(int narg,char* argv[])
 
 	ParseCommandLineArguments(narg, argv);
 	
-	cout<<"Skipping "<<EVENTS_TO_SKIP<<endl;
-	cout<<"Keeping  "<<EVENTS_TO_KEEP<<endl;
+	if(SPECIFIC_EVENT_TO_KEEP>0) {
+		cout<<"Searching for event " << SPECIFIC_EVENT_TO_KEEP << " ..." << endl;
+	}else{
+		cout<<"Skipping "<<EVENTS_TO_SKIP<<endl;
+		cout<<"Keeping  "<<EVENTS_TO_KEEP<<endl;
+	}
 	unsigned int NEvents = 0;
 	unsigned int NEvents_read = 0;
 
@@ -82,9 +88,9 @@ void ParseCommandLineArguments(int narg, char* argv[])
 				case 'k': EVENTS_TO_KEEP=atoi(&ptr[2]); break;
 				case 'e': SPECIFIC_OFFSET_TO_KEEP=atoi(&ptr[2]); break;
 				case 'E': SPECIFIC_EVENT_TO_KEEP=atoi(&ptr[2]); EVENT_TO_KEEP_MODE=true;
-					// WE DON'T SUPPORT THIS YET!!!!
-					cout << "The -E option is not yet supported. Sorry! Contact davidl@jlab.org if you need this functionality." <<endl;
-					exit(-2);
+// 					// WE DON'T SUPPORT THIS YET!!!!
+// 					cout << "The -E option is not yet supported. Sorry! Contact davidl@jlab.org if you need this functionality." <<endl;
+// 					exit(-2);
 					break;
 			}
 		}else{
@@ -113,7 +119,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
 			sprintf(OUTFILENAME,"evt%d.evio", SPECIFIC_OFFSET_TO_KEEP);
 		}else if(SPECIFIC_EVENT_TO_KEEP>0){
 			OUTFILENAME = new char[256];
-			sprintf(OUTFILENAME,"Evt%d.evio", SPECIFIC_OFFSET_TO_KEEP);
+			sprintf(OUTFILENAME,"Evt%d.evio", SPECIFIC_EVENT_TO_KEEP);
 
 		}else{
 			OUTFILENAME = (char*)"culled.evio";
@@ -162,6 +168,10 @@ void ctrlCHandle(int x)
 {
 	QUIT++;
 	cerr<<endl<<"SIGINT received ("<<QUIT<<")....."<<endl;
+	if(QUIT>=3){
+		cerr << "3 or more SIGINTs received. exiting..." << endl;
+		exit(-1);
+	}
 }
 
 //-----------
@@ -171,6 +181,7 @@ void Process(unsigned int &NEvents, unsigned int &NEvents_read)
 {
 	NEvents = 0;
 	NEvents_read = 0;
+	time_t last_time = time(NULL);;
 
 	// Output file
 	cout<<" output file: "<<OUTFILENAME<<endl;
@@ -189,12 +200,29 @@ void Process(unsigned int &NEvents, unsigned int &NEvents_read)
 				evioDOMTree *dom = NULL;
 				bool write_event = false;
 				if(SPECIFIC_EVENT_TO_KEEP>0){
-					// If user specified a specific event by event number within file
+
+					// User specified a specific event by event number within file
+					dom = new evioDOMTree(ichan);
+					uint64_t block_size=0;
+					uint64_t eventnumber = FindEventNumber(dom, block_size);
+					uint64_t min_event = eventnumber;
+					uint64_t max_event = min_event + block_size - 1;
+					if( (SPECIFIC_EVENT_TO_KEEP >= min_event) && (SPECIFIC_EVENT_TO_KEEP <= max_event) ){
+						write_event = true;
+						if(min_event != max_event){
+							cout << endl;
+							cout << "WARNING: The CODA block size for this data is not \"1\"!" << endl;
+							cout << "The entire block of " << block_size << " events is being written" << endl;
+							cout << "that contains the requested event." << endl;
+							cout << "Events " << min_event << " - " << max_event << " will be written." << endl;
+						}
+					}
 					
-					// --- this feature not yet implemented !! ---
 				} else if(NEvents_read > EVENTS_TO_SKIP){
-					// If user specified event range or specific event by offset
+
+					// User specified event range or specific event by offset
 					write_event = true;
+
 				}
 			
 				if(write_event){
@@ -209,7 +237,16 @@ void Process(unsigned int &NEvents, unsigned int &NEvents_read)
 					QUIT = true;
 					break;
 				}
+
+				// print ticker
+				time_t t = time(NULL);
+				if((t-last_time) >= 2){
+					cout << "  " << NEvents_read << " event read  " << NEvents << " events written       \r";
+					cout.flush();
+					last_time = t;
+				}
 			}
+			cout << endl;
 			ichan->close();
 			delete ichan;
 		}catch(evioException e){
@@ -224,5 +261,46 @@ void Process(unsigned int &NEvents, unsigned int &NEvents_read)
 	// Close output file
 	ochan.close();
 
+}
+
+//----------------
+// FindEventNumber
+//----------------
+uint64_t FindEventNumber(evioDOMTree *evt, uint64_t &block_size)
+{
+	evioDOMNodeListP bankList = evt->getNodeList(typeIs<uint64_t>());
+	evioDOMNodeList::iterator iter = bankList->begin();
+	for(; iter!=bankList->end(); iter++){
+
+		// Get pointer to bank data
+		evioDOMNodeP bankPtr = *iter;
+		const vector<uint64_t> *vec = bankPtr->getVector<uint64_t>();
+		if(!vec) continue; // this should never actually happen
+		const uint32_t *iptr = (const uint32_t *)&(*vec)[0];
+	
+		// Check that parent bank is built trigger bank header
+		evioDOMNodeP trigger_bank = bankPtr->getParent();
+		if( trigger_bank == NULL ) continue;
+		if((trigger_bank->tag & 0xFF20) != 0xFF20) continue;
+	
+		// Check that grand-parent (Physics Event Bank) exists
+		evioDOMNodeP physics_event_bank = trigger_bank->getParent();
+		if( physics_event_bank == NULL ) continue;
+
+		// Bomb-proof
+		if(vec->size() < 2) continue;
+		
+		// Copy number of events in block
+		block_size = (uint64_t)physics_event_bank->num;
+	
+		// Extract event number
+		uint64_t loevent_num = iptr[0];
+		uint64_t hievent_num = iptr[1];
+		uint64_t event_num = loevent_num + (hievent_num<<32);
+	
+		return event_num;
+	}
+
+	return 0; // couldn't find the Trigger bank bank
 }
 
