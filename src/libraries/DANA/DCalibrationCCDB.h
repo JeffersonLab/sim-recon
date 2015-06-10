@@ -26,6 +26,24 @@ namespace jana
     class DCalibrationCCDB : public JCalibration
     {
     public:
+	 		/// DEPRECATED:
+			/// This file will be removed from here and the functionality 
+			/// replaced with JCalibrationCCDB.h which resides in the JANA
+			/// library. That has been updated with mutex locks to match
+			/// this file as of JANA version 0.7.3. However, JANA 0.7.3 also
+			/// changes the signature of the GetCalib virtual methods to
+			/// use uint64_t and int32_t. The following methods are wrappers
+			/// that allow this file to be used with JANA 0.7.3 (as well as
+			/// previous versions) until 0.7.3 becomes commonplace and this
+			/// file can be removed.
+			///
+			///  June 10, 2015  David Lawrence
+		 virtual bool GetCalib(string namepath, map<string, string> &svals, uint64_t event_number=0){return GetCalib(namepath,svals,(int)event_number);}
+		 virtual bool GetCalib(string namepath, vector<string> &svals, uint64_t event_number=0){return GetCalib(namepath,svals,(int)event_number);}
+		 virtual bool GetCalib(string namepath, vector< map<string, string> > &svals, uint64_t event_number=0){return GetCalib(namepath,svals,(int)event_number);}
+		 virtual bool GetCalib(string namepath, vector< vector<string> > &svals, uint64_t event_number=0){return GetCalib(namepath,svals,(int)event_number);}
+			
+	 
 
         /** @brief    Constructor
          *
