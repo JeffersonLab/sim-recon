@@ -517,13 +517,15 @@ def Add_xstream(env):
 # CCDB
 ##################################
 def AddCCDB(env):
-	ccdb_home = os.getenv('CCDB_HOME', 'ccdb')
-	CCDB_CPPPATH = "%s/include" % (ccdb_home)
-	CCDB_LIBPATH = "%s/lib" % (ccdb_home)
-	CCDB_LIBS = "ccdb"
-	env.AppendUnique(CPPPATH = CCDB_CPPPATH)
-	env.AppendUnique(LIBPATH = CCDB_LIBPATH)
-	env.AppendUnique(LIBS    = CCDB_LIBS)
+	ccdb_home = os.getenv('CCDB_HOME')
+	if(ccdb_home != None) :
+		env.AppendUnique(CXXFLAGS = ['-DHAVE_CCDB'])
+		CCDB_CPPPATH = "%s/include" % (ccdb_home)
+		CCDB_LIBPATH = "%s/lib" % (ccdb_home)
+		CCDB_LIBS = "ccdb"
+		env.AppendUnique(CPPPATH = CCDB_CPPPATH)
+		env.AppendUnique(LIBPATH = CCDB_LIBPATH)
+		env.AppendUnique(LIBS    = CCDB_LIBS)
 
 
 ##################################
