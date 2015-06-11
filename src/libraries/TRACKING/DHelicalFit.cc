@@ -716,12 +716,11 @@ jerror_t DHelicalFit::FitLineRiemann(){
   unsigned int n=projections.size();
   double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.;
   double sperp=0.,sperp_old=0., ratio=0, Delta;
-  double z_last=0.,z=0.;
+  double z=0.;
   DVector2 old_proj=projections[0].xy;
   double two_r0=2.*r0;
   for (unsigned int k=0;k<n;k++){
     sperp_old=sperp;
-    z_last=z;
     double chord=(projections[k].xy-old_proj).Mod();
     ratio=chord/two_r0;
 
@@ -752,16 +751,6 @@ jerror_t DHelicalFit::FitLineRiemann(){
   sperp=(ratio>1? two_r0*M_PI_2 : two_r0*asin(ratio));
   z_vertex=projections[0].z-sperp*tanl;
 
-  /*
-  if (z_vertex<Z_MIN){
-    z_vertex=Z_MIN;
-    tanl=(z_last-Z_MIN)/sperp;
-  }
-  else if (z_vertex>Z_MAX){
-    z_vertex=Z_MAX;
-    tanl=(z_last-Z_MAX)/sperp;
-  }
-  */
   theta=M_PI_2-atan(tanl);
 
   return NOERROR;
