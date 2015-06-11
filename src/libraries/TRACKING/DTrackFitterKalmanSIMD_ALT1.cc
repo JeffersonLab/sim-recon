@@ -22,7 +22,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
   DMatrix5x1 S0,S0_; //State vector
   DMatrix5x5 Ctest; // Covariance matrix
   //  double Vc=0.2028; // covariance for cdc wires =1.56*1.56/12.;
-  double Vc=0.0507;
+  double Vc=0.0507*1.15;
 
   // Step size variables
   double step1=mStepSizeZ;
@@ -670,18 +670,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  // Check if this hit is an outlier
 	  double chi2_hit=res*res*InvV1;
 	  if (chi2_hit<cdc_chi2cut){
-	    
-	    if (chi2_hit>var_cdc_cut){
-	      // Give hits that satisfy the wide cut but are still pretty far
-	      // from the projected position less weight
-	      
-	      // ad hoc correction 
-	      double diff = chi2_hit-var_cdc_cut;
-	      Vc*=1.+my_cdc_anneal*diff*diff;
-	      InvV1=1./(Vc+Vproj);
-	    }
-	    
-
 	    // Compute KalmanSIMD gain matrix
 	    K=InvV1*(C*H_T);
 	    
@@ -895,9 +883,31 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
   }
 
   // Check if we have a kink in the track or threw away too many hits
-  if (num_cdc>0 && break_point_fdc_index>0) return BREAK_POINT_FOUND;
-  if (num_cdc==0 && break_point_fdc_index>5) return BREAK_POINT_FOUND;
-  if (num_cdc>5 && break_point_cdc_index>4) return BREAK_POINT_FOUND;
+  if (num_cdc>0 && break_point_fdc_index>0){ 
+    if (break_point_fdc_index+num_cdc<MIN_HITS_FOR_REFIT){
+      //_DBG_ << endl;
+      unsigned int new_index=num_fdc/2;
+      if (new_index+num_fdc>=MIN_HITS_FOR_REFIT){
+	break_point_fdc_index=new_index;
+      }
+    }
+    return BREAK_POINT_FOUND;
+  }
+  if (num_cdc==0 && break_point_fdc_index>5){
+    //_DBG_ << endl;
+    if (break_point_fdc_index<num_fdc/2){
+      break_point_fdc_index=(3*num_fdc)/4;
+    }
+    return BREAK_POINT_FOUND;
+  }
+  if (num_cdc>5 && break_point_cdc_index>4){
+    //_DBG_ << endl;  
+    unsigned int new_index=num_fdc/2;
+    if (new_index+num_cdc>=MIN_HITS_FOR_REFIT){
+      break_point_fdc_index=new_index;
+    }
+    return BREAK_POINT_FOUND;
+  }
   unsigned int num_good=0; 
   unsigned int num_hits=num_cdc+num_fdc;
   for (unsigned int j=0;j<num_cdc;j++){
@@ -906,7 +916,12 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
   for (unsigned int j=0;j<num_fdc;j++){
     if (fdc_updates[j].used_in_fit) num_good++;
   }
-  if (double(num_good)/double(num_hits)<MINIMUM_HIT_FRACTION){ 
+  if (double(num_good)/double(num_hits)<MINIMUM_HIT_FRACTION){
+    //_DBG_ <<endl;
+    unsigned int new_index=num_fdc/2;
+    if (new_index+num_cdc>=MIN_HITS_FOR_REFIT){
+      break_point_fdc_index=new_index;
+    }
     return PRUNED_TOO_MANY_HITS;
   }
     

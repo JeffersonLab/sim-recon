@@ -146,28 +146,32 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double t,double B,
     if (t>0){
         double dtc =(CDC_DRIFT_BSCALE_PAR1 + CDC_DRIFT_BSCALE_PAR2 * B)* t;
         tcorr=t-dtc;
-
-        // Not sure what to do here -- for now ignore time info for this wire
-        if (tcorr>cdc_drift_table[cdc_drift_table.size()-1]){
-            // Here the drift time is too large. Return the edge of the straw with a large error
-            d=0.78;
-            V=0.0507; // straw radius^2 / 12
-            return;
-        }
-
-        unsigned int index=0;
-        index=locate(cdc_drift_table,tcorr);
-        double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
-        double frac=(tcorr-cdc_drift_table[index])/dt;
-        d=0.01*(double(index)+frac); 
-
-        double sigma=CDC_RES_PAR1/(tcorr+1.)+CDC_RES_PAR2;
+	 
+	double sigma=CDC_RES_PAR1/(tcorr+1.)+CDC_RES_PAR2;
         // This function is very poorly behaved at low drift times
         // For times less than cutoffTime assume a linear behavior of our function.
         if( tcorr < cutoffTime ){
             double slope = -1.0 * CDC_RES_PAR1 / (( cutoffTime + 1) * (cutoffTime + 1));
             sigma = (CDC_RES_PAR1/(cutoffTime+1.)+CDC_RES_PAR2) + slope * (tcorr - cutoffTime);
         }
+
+	unsigned int max_index=cdc_drift_table.size()-1;
+        if (tcorr>cdc_drift_table[max_index]){
+            // Here the drift time is too large. Return the edge of the straw 
+            d=0.78;
+
+	    double dt=cdc_drift_table[max_index]-cdc_drift_table[max_index-1];
+	    V=sigma*sigma+mVarT0*0.0001/(dt*dt);
+
+            return;
+        }
+	
+	// Drift time is within range of table -- interpolate...
+        unsigned int index=0;
+        index=locate(cdc_drift_table,tcorr);
+        double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
+        double frac=(tcorr-cdc_drift_table[index])/dt;
+        d=0.01*(double(index)+frac); 
 
         V=sigma*sigma+mVarT0*0.0001/(dt*dt);
     }
@@ -557,9 +561,9 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
 
     // Copy hits from base class into structures specific to DTrackFitterKalmanSIMD  
     if (cdchits.size()>=MIN_CDC_HITS) 
-        for(unsigned int i=0; i<cdchits.size(); i++)AddCDCHit(cdchits[i]);
+      for(unsigned int i=0; i<cdchits.size(); i++)AddCDCHit(cdchits[i]);
     if (fdchits.size()>=MIN_FDC_HITS)
-        for(unsigned int i=0; i<fdchits.size(); i++)AddFDCHit(fdchits[i]);
+      for(unsigned int i=0; i<fdchits.size(); i++)AddFDCHit(fdchits[i]);
 
     unsigned int num_good_cdchits=my_cdchits.size();
     unsigned int num_good_fdchits=my_fdchits.size(); 
@@ -3115,7 +3119,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
         C0(state_y,state_y)=1.0;  
         C0(state_tx,state_tx)=0.001;
         C0(state_ty,state_ty)=0.001;
-        if (theta_deg>12.35){
+        if (theta_deg>12.35)
+	  {
             double tsquare=tx_*tx_+ty_*ty_;
             double temp=sig_lambda*(1.+tsquare);
             C0(state_tx,state_tx)=C0(state_ty,state_ty)=temp*temp;
@@ -3246,8 +3251,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
         S0(state_D)=D_=0.;
 
         // Initialize the covariance matrix
-        double dz=5.05-0.048*theta_deg+0.00029*theta_deg_sq;
-
+        double dz=1.0;
         C0(state_z,state_z)=dz*dz;
         C0(state_q_over_pt,state_q_over_pt)
             =q_over_pt_*q_over_pt_*dpt_over_pt*dpt_over_pt;
@@ -3259,8 +3263,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
         C0(state_tanl,state_tanl)=(one_plus_tanl2)*(one_plus_tanl2)
             *sig_lambda*sig_lambda;
 
-        if (theta_deg>90.) C0*=1.+5.*tanl2;
-        else C0*=1.+5.*tanl2*tanl2;
+        //if (theta_deg>90.) C0*=1.+5.*tanl2;
+        //else C0*=1.+5.*tanl2*tanl2;
 
         // The position from the track candidate is reported just outside the 
         // start counter for tracks containing cdc hits. Propagate to the 
@@ -3669,7 +3673,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
     DMatrix5x1 K;  // KalmanSIMD gain matrix
     DMatrix5x5 Ctest; // covariance matrix
     //double V=0.2028; //1.56*1.56/12.;  // Measurement variance
-    double V=0.0507;
+    double V=0.0507*1.15;
     double InvV; // inverse of variance
     //DMatrix5x1 dS;  // perturbation in state vector
     DMatrix5x1 S0,S0_; // state vector
@@ -4169,7 +4173,12 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 
     // Check if we have a kink in the track or threw away too many cdc hits
     if (num_cdc>=MIN_HITS_FOR_REFIT){
-        if (break_point_cdc_index>1) return BREAK_POINT_FOUND;
+      if (break_point_cdc_index>1){
+	if (break_point_cdc_index<num_cdc/2){
+	  break_point_cdc_index=(3*num_cdc)/4;
+	}
+	return BREAK_POINT_FOUND;
+      }
 
         unsigned int num_good=0; 
         for (unsigned int j=0;j<num_cdc;j++){
@@ -4869,7 +4878,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
     DMatrix5x1 S0,S0_,Stest; //State vector
     DMatrix5x5 Ctest; // covariance matrix
     //DMatrix5x1 dS;  // perturbation in state vector
-    double V=0.25*0.2028; // 1.56*1.56/12.;
+    double V=0.0507*1.15;
     double InvV=1./V;  // inverse of variance
 
     // set used_in_fit flags to false for cdc hits
@@ -5407,7 +5416,12 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
     // Check if we have a kink in the track or threw away too many cdc hits
     if (num_cdc>=MIN_HITS_FOR_REFIT){
-        if (break_point_cdc_index>1) return BREAK_POINT_FOUND;
+      if (break_point_cdc_index>1){
+	if (break_point_cdc_index<num_cdc/2){
+	  break_point_cdc_index=(3*num_cdc)/4;
+	}
+	return BREAK_POINT_FOUND;
+      }
 
         unsigned int num_good=0; 
         for (unsigned int j=0;j<num_cdc;j++){
@@ -6260,8 +6274,8 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
 
     // Truncate the reference trajectory to just beyond the break point (or the minimum number of hits)
     unsigned int min_cdc_index_for_refit=MIN_HITS_FOR_REFIT-1;
-    if (break_point_cdc_index<num_hits/2)
-      break_point_cdc_index=num_hits/2;
+    //if (break_point_cdc_index<num_hits/2)
+    //  break_point_cdc_index=num_hits/2;
     if (break_point_cdc_index<min_cdc_index_for_refit){
         break_point_cdc_index=min_cdc_index_for_refit;
     }
@@ -6314,7 +6328,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
                 || (refit_error==BREAK_POINT_FOUND 
                     && break_point_cdc_index==1
                    )
-                || refit_error==PRUNED_TOO_MANY_HITS
+	    //|| refit_error==PRUNED_TOO_MANY_HITS
            ){
             C=C1;
             S=S1;
@@ -6385,12 +6399,13 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
             min_cdc_index=5;
         }
     }
-    else{
+    /*else{
         unsigned int half_num_cdchits=num_cdchits/2;
         if (break_point_cdc_index<half_num_cdchits
                 && half_num_cdchits>min_cdc_index)
             break_point_cdc_index=half_num_cdchits;
     }
+    */
     if (break_point_cdc_index<min_cdc_index){
         break_point_cdc_index=min_cdc_index;
     }
@@ -6452,7 +6467,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
                 || (refit_error==BREAK_POINT_FOUND
                     && break_point_cdc_index==1
                    )
-                || refit_error==PRUNED_TOO_MANY_HITS
+	    //|| refit_error==PRUNED_TOO_MANY_HITS
            ){
             C=C1;
             S=S1;
@@ -6543,7 +6558,7 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double fdc_anneal,
         // Now refit with the truncated trajectory and list of hits
         refit_error=KalmanForward(fdc_anneal,cdc_anneal,S1,C1,refit_chisq,refit_ndf);   
         if (refit_error==FIT_SUCCEEDED
-                || (refit_error==PRUNED_TOO_MANY_HITS)
+	    //|| (refit_error==PRUNED_TOO_MANY_HITS)
            ){
             C=C1;
             S=S1;
@@ -6638,7 +6653,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
         ftime=0.;
 
         // Scale cut for pruning hits according to the iteration number
-        if (fit_type==kTimeBased)
+	if (fit_type==kTimeBased)
         {
             fdc_anneal=FORWARD_ANNEAL_SCALE/pow(my_fdc_anneal_const,iter)+1.;
             cdc_anneal=ANNEAL_SCALE/pow(my_cdc_anneal_const,iter)+1.;
@@ -6902,7 +6917,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
         }
 
         // Scale cut for pruning hits according to the iteration number
-        if (fit_type==kTimeBased)
+	if (fit_type==kTimeBased)
         {   
             anneal_factor=anneal_scale/pow(my_anneal_const,iter2)+1.;
         }
@@ -6943,14 +6958,13 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
                     //_DBG_ << "Bad Cov" <<endl;
                 }
                 if (error==POSITION_OUT_OF_RANGE){
-                    if (break_point_cdc_index<min_cdc_index_for_refit) {
-                        break_point_cdc_index=min_cdc_index_for_refit;
-                    }
-                    //_DBG_ << "Bad position" << endl;
+		  //_DBG_ << "Bad position" << endl;
+		    unsigned int new_index=(max_cdc_index)/2;
+		    break_point_cdc_index=(new_index>min_cdc_index_for_refit)?new_index:min_cdc_index_for_refit;
                 }
                 if (error==PRUNED_TOO_MANY_HITS){
 		  //_DBG_ << "Prune" << endl;
-		  unsigned int new_index=max_cdc_index/2;
+		  unsigned int new_index=(3*max_cdc_index)/4;
 		  break_point_cdc_index=(new_index>min_cdc_index_for_refit)?new_index:min_cdc_index_for_refit;
                     // anneal_factor*=10.;
                 }
@@ -7188,13 +7202,12 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 		    //_DBG_ << "Bad Cov" <<endl;
                 }
                 if (error==POSITION_OUT_OF_RANGE){
-                    if (break_point_cdc_index<=min_cdc_index_for_refit) {
-                        break_point_cdc_index=min_cdc_index_for_refit;
-                    }
                     //_DBG_ << "Bad position" << endl;
+		    unsigned int new_index=(max_cdc_index)/2;
+		    break_point_cdc_index=(new_index>min_cdc_index_for_refit)?new_index:min_cdc_index_for_refit;
                 }
                 if (error==PRUNED_TOO_MANY_HITS){	 
-		  unsigned int new_index=max_cdc_index/2;
+		  unsigned int new_index=(3*max_cdc_index)/4;
 		  break_point_cdc_index=(new_index>min_cdc_index_for_refit)?new_index:min_cdc_index_for_refit;
                     //anneal_factor*=10.;
 		  //_DBG_ << "Prune" << endl;	  
