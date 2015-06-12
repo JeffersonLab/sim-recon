@@ -107,7 +107,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	{
 	  _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
 	}
-      break_point_fdc_index=(3*num_fdc_hits)/4;
+      break_point_fdc_index=(3*num_fdc)/4;
       return MOMENTUM_OUT_OF_RANGE;
     }
 
@@ -477,7 +477,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 		      {
 			_DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
 		      }	  
-		    break_point_fdc_index=(3*num_fdc_hits)/4;		    
+		    break_point_fdc_index=(3*num_fdc)/4;		    
 		    return MOMENTUM_OUT_OF_RANGE;
 		  }
 
@@ -493,7 +493,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 		    {
 		      _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
 		    }
-		  break_point_fdc_index=(3*num_fdc_hits)/4;
+		  break_point_fdc_index=(3*num_fdc)/4;
 		  return MOMENTUM_OUT_OF_RANGE;
 		}
 
@@ -506,7 +506,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 		    {
 		      _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
 		    }
-		  break_point_fdc_index=(3*num_fdc_hits)/4;
+		  break_point_fdc_index=(3*num_fdc)/4;
 		  return MOMENTUM_OUT_OF_RANGE;
 		}
 		
@@ -518,7 +518,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  if (do_brent){
 	    // We have bracketed the minimum doca:  use Brent's agorithm
 	    if (BrentsAlgorithm(z,-mStepSizeZ,dedx,z0w,origin,dir,S,dz)!=NOERROR){
-	      break_point_fdc_index=(3*num_fdc_hits)/4;
+	      break_point_fdc_index=(3*num_fdc)/4;
 	      return MOMENTUM_OUT_OF_RANGE;
 	    }
 	    newz=z+dz;
@@ -559,7 +559,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	      // Find the true doca
 	      double dz2=0.;
 	      if (BrentsAlgorithm(newz,mStepSizeZ,dedx,z0w,origin,dir,S,dz2)!=NOERROR){
-		break_point_fdc_index=(3*num_fdc_hits)/4;
+		break_point_fdc_index=(3*num_fdc)/4;
 		return MOMENTUM_OUT_OF_RANGE;
 	      }
 	      newz=ztemp+dz2;
@@ -887,24 +887,33 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
     if (break_point_fdc_index+num_cdc<MIN_HITS_FOR_REFIT){
       //_DBG_ << endl;
       unsigned int new_index=num_fdc/2;
-      if (new_index+num_fdc>=MIN_HITS_FOR_REFIT){
+      if (new_index+num_cdc>=MIN_HITS_FOR_REFIT){
 	break_point_fdc_index=new_index;
+      }
+      else{
+	break_point_fdc_index=MIN_HITS_FOR_REFIT-num_cdc;
       }
     }
     return BREAK_POINT_FOUND;
   }
-  if (num_cdc==0 && break_point_fdc_index>5){
+  if (num_cdc==0 && break_point_fdc_index>2){
     //_DBG_ << endl;
     if (break_point_fdc_index<num_fdc/2){
       break_point_fdc_index=(3*num_fdc)/4;
     }
+    if (break_point_fdc_index<MIN_HITS_FOR_REFIT-1){
+      break_point_fdc_index=MIN_HITS_FOR_REFIT-1;
+    }
     return BREAK_POINT_FOUND;
   }
-  if (num_cdc>5 && break_point_cdc_index>4){
+  if (num_cdc>5 && break_point_cdc_index>2){
     //_DBG_ << endl;  
     unsigned int new_index=num_fdc/2;
     if (new_index+num_cdc>=MIN_HITS_FOR_REFIT){
       break_point_fdc_index=new_index;
+    }
+    else{
+      break_point_fdc_index=MIN_HITS_FOR_REFIT-num_cdc;
     }
     return BREAK_POINT_FOUND;
   }
@@ -918,9 +927,18 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
   }
   if (double(num_good)/double(num_hits)<MINIMUM_HIT_FRACTION){
     //_DBG_ <<endl;
-    unsigned int new_index=num_fdc/2;
-    if (new_index+num_cdc>=MIN_HITS_FOR_REFIT){
-      break_point_fdc_index=new_index;
+    if (num_cdc==0){
+      unsigned int new_index=(3*num_fdc)/4;
+      break_point_fdc_index=(new_index>=MIN_HITS_FOR_REFIT)?new_index:(MIN_HITS_FOR_REFIT-1);
+    }
+    else{
+      unsigned int new_index=num_fdc/2;
+      if (new_index+num_cdc>=MIN_HITS_FOR_REFIT){
+	break_point_fdc_index=new_index;
+      }
+      else{
+	break_point_fdc_index=MIN_HITS_FOR_REFIT-num_cdc;
+      }
     }
     return PRUNED_TOO_MANY_HITS;
   }

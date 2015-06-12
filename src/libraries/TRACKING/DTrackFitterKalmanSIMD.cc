@@ -279,8 +279,8 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
             "Scale factor for annealing");
     gPARMS->SetDefaultParameter("KALMAN:ANNEAL_POW_CONST",ANNEAL_POW_CONST,
             "Annealing parameter"); 
-    FORWARD_ANNEAL_SCALE=20.0;
-    FORWARD_ANNEAL_POW_CONST=1.0;
+    FORWARD_ANNEAL_SCALE=1.5;
+    FORWARD_ANNEAL_POW_CONST=20.0;
     gPARMS->SetDefaultParameter("KALMAN:FORWARD_ANNEAL_SCALE",
             FORWARD_ANNEAL_SCALE,
             "Scale factor for annealing");
@@ -3020,14 +3020,14 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
     // Angle with respect to beam line
     double theta_deg=(180/M_PI)*input_params.momentum().Theta();
-    double theta_deg_sq=theta_deg*theta_deg;
+    //double theta_deg_sq=theta_deg*theta_deg;
     double tanl0=tanl_=tan(M_PI_2-input_params.momentum().Theta());
 
     // Azimuthal angle
     double phi0=phi_=input_params.momentum().Phi();
 
     // Guess for momentum error
-    double dpt_over_pt=0.1;
+    double dpt_over_pt=0.2;
     /*
        if (theta_deg<15){
        dpt_over_pt=0.107-0.0178*theta_deg+0.000966*theta_deg_sq;
@@ -3046,16 +3046,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
        theta_deg_sq=theta_deg*theta_deg;
        }
        */
-    double sig_lambda=0.006;
-    if (theta_deg>30.){
-        //sig_lambda=-0.077+0.0038*theta_deg-1.98e-5*theta_deg_sq;
-        sig_lambda=0.016;
-    }
-    else if (theta_deg>14.){
-        //sig_lambda=-0.138+0.0155*theta_deg-0.00034*theta_deg_sq;
-        sig_lambda=0.012;
-    }
-
+    double sig_lambda=0.02;
     double dp_over_p_sq
         =dpt_over_pt*dpt_over_pt+tanl_*tanl_*sig_lambda*sig_lambda;
 
@@ -3115,11 +3106,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
         S0(state_q_over_p)=q_over_p_;
 
         // Initial guess for forward representation covariance matrix   
-        C0(state_x,state_x)=1.0;
-        C0(state_y,state_y)=1.0;  
+        C0(state_x,state_x)=2.0;
+        C0(state_y,state_y)=2.0;  
         C0(state_tx,state_tx)=0.001;
         C0(state_ty,state_ty)=0.001;
-        if (theta_deg>12.35)
+	if (theta_deg>12.35)
 	  {
             double tsquare=tx_*tx_+ty_*ty_;
             double temp=sig_lambda*(1.+tsquare);
@@ -3177,8 +3168,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
             z_=z0;
 
             // Initial guess for forward representation covariance matrix
-            C0(state_x,state_x)=1.0;
-            C0(state_y,state_y)=1.0;   
+            C0(state_x,state_x)=2.0;
+            C0(state_y,state_y)=2.0;   
             double tsquare=tx_*tx_+ty_*ty_;
             double temp=sig_lambda*(1.+tsquare);
             C0(state_tx,state_tx)=C0(state_ty,state_ty)=temp*temp;
@@ -3251,11 +3242,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
         S0(state_D)=D_=0.;
 
         // Initialize the covariance matrix
-        double dz=1.0;
+        double dz=4.0;
         C0(state_z,state_z)=dz*dz;
         C0(state_q_over_pt,state_q_over_pt)
             =q_over_pt_*q_over_pt_*dpt_over_pt*dpt_over_pt;
-        double dphi=0.024;
+        double dphi=0.04;
         C0(state_phi,state_phi)=dphi*dphi;
         C0(state_D,state_D)=1.0;
         double tanl2=tanl_*tanl_;
