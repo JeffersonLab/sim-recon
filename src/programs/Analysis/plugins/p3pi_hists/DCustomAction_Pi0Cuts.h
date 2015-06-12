@@ -1,12 +1,12 @@
 // $Id$
 //
-//    File: DCustomAction_p3pi_Pi0Cuts.h
+//    File: DCustomAction_Pi0Cuts.h
 // Created: Thu Jan 22 11:19:46 EST 2015
 // Creator: jrsteven (on Linux ifarm1401 2.6.32-431.el6.x86_64 x86_64)
 //
 
-#ifndef _DCustomAction_p3pi_Pi0Cuts_
-#define _DCustomAction_p3pi_Pi0Cuts_
+#ifndef _DCustomAction_Pi0Cuts_
+#define _DCustomAction_Pi0Cuts_
 
 #include <string>
 #include <iostream>
@@ -22,12 +22,12 @@
 using namespace std;
 using namespace jana;
 
-class DCustomAction_p3pi_Pi0Cuts : public DAnalysisAction
+class DCustomAction_Pi0Cuts : public DAnalysisAction
 {
 	public:
 
-                DCustomAction_p3pi_Pi0Cuts(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locMinFCAL, string locActionUniqueString = "") : 
-	        DAnalysisAction(locReaction, "Custom_p3pi_Pi0Cuts", locUseKinFitResultsFlag, locActionUniqueString), dMinFCAL(locMinFCAL){}
+                DCustomAction_Pi0Cuts(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locMinFCAL, string locActionUniqueString = "") : 
+	        DAnalysisAction(locReaction, "Custom_Pi0Cuts", locUseKinFitResultsFlag, locActionUniqueString), dMinFCAL(locMinFCAL){}
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -40,5 +40,5 @@ class DCustomAction_p3pi_Pi0Cuts : public DAnalysisAction
 		
 };
 
-#endif // _DCustomAction_p3pi_Pi0Cuts_
+#endif // _DCustomAction_Pi0Cuts_
 

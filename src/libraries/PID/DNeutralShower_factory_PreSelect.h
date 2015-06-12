@@ -13,7 +13,6 @@
 
 #include <JANA/JFactory.h>
 #include <PID/DNeutralShower.h>
-#include <BCAL/DBCALShower.h>
 
 using namespace std;
 using namespace jana;
@@ -31,11 +30,6 @@ class DNeutralShower_factory_PreSelect : public jana::JFactory<DNeutralShower>
 		jerror_t evnt(jana::JEventLoop *locEventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
-
-		//Command-line values will override these
-                double dMinFCALE; //PRESELECT:MIN_FCAL_E 
-                double dMinBCALE; //PRESELECT:MIN_BCAL_E 
-		double dMinBCALNcell; //PRESELECT:MIN_BCAL_NCELL
 };
 
 #endif // _DNeutralShower_factory_PreSelect_

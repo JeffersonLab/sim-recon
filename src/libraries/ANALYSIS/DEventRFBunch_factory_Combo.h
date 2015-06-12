@@ -33,7 +33,6 @@
 #include "PID/DNeutralShower.h"
 #include "PID/DDetectorMatches.h"
 #include "PID/DEventRFBunch_factory.h"
-#include "RF/DRFTime_factory.h"
 
 #include "ANALYSIS/DMCThrownMatching.h"
 #include "ANALYSIS/DParticleComboBlueprint.h"
@@ -56,7 +55,6 @@ class DEventRFBunch_factory_Combo:public jana::JFactory<DEventRFBunch>
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		DEventRFBunch_factory* dEventRFBunchFactory;
-		DRFTime_factory* dRFTimeFactory;
 
 		const DParticleID* dParticleID;
 
@@ -73,7 +71,7 @@ class DEventRFBunch_factory_Combo:public jana::JFactory<DEventRFBunch>
 
 		bool Is_AllTruePID(const DMCThrownMatching* locMCThrownMatching, const DParticleComboBlueprint* locParticleComboBlueprint);
 
-		map<const DReaction*, TH1I*> dHistMap_RFParticleDeltaT;
+		map<const DReaction*, TH1I*> dHistMap_RFTime;
 
 		map<const DReaction*, TH1I*> dHistMap_DeltaRFTime_TruePID; //given that the PIDs are all correct, diff between selected & true RF times
 		map<const DReaction*, TH1I*> dHistMap_DeltaRFTime; //diff between selected & true RF times (all combos)

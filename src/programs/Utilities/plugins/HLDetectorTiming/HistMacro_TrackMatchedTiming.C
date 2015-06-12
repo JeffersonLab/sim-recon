@@ -37,62 +37,47 @@
         CDC_Timing->Draw();
         CDC_Timing->SetFillColor(kGray);
 	}
-    else{
-        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
-        text->AddText("No CDC Times in data");
-        text->Draw();
-    }
 
-    locCanvas->cd(2);
-    gPad->SetTicks();
-    gPad->SetGrid();
-    if(CDC_SC_Timing != NULL)
-    {
-        CDC_SC_Timing->Draw();
+	locCanvas->cd(2);
+	gPad->SetTicks();
+	gPad->SetGrid();
+	if(CDC_SC_Timing != NULL)
+	{
+		CDC_SC_Timing->Draw();
         CDC_SC_Timing->SetFillColor(kGray);
-    }
-    else{
-        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
-        text->AddText("No CDC tracks matced to SC with reasonable FOM");
-        text->Draw();
-    }
+	}
 
-    locCanvas->cd(3);
-    gPad->SetTicks();
-    gPad->SetGrid();
-    if(FCAL_SC_Timing != NULL)
-    {
+	locCanvas->cd(3);
+	gPad->SetTicks();
+	gPad->SetGrid();
+	if(FCAL_SC_Timing != NULL)
+	{
         FCAL_SC_Timing->Draw();
         FCAL_SC_Timing->SetFillColor(kGray);
-    }
+	}
     else{
         TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
         text->AddText("No Matches to SC and FCAL with reasonable FOM");
         text->Draw();
     }
 
-    locCanvas->cd(4);
-    gPad->SetTicks();
-    gPad->SetGrid();
-    if(FDC_Timing != NULL)
-    {
-        FDC_Timing->Draw();
+	locCanvas->cd(4);
+	gPad->SetTicks();
+	gPad->SetGrid();
+	if(FDC_Timing != NULL)
+	{
+		FDC_Timing->Draw();
         FDC_Timing->SetFillColor(kGray);
-    }
-    else{
-        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
-        text->AddText("No FDC Hit times");
-        text->Draw();
-    }
+	}
 
-    locCanvas->cd(5);
-    gPad->SetTicks();
-    gPad->SetGrid();
-    if(TOF_SC_Timing != NULL)
-    {
+	locCanvas->cd(5);
+	gPad->SetTicks();
+	gPad->SetGrid();
+	if(TOF_SC_Timing != NULL)
+	{
         TOF_SC_Timing->Draw();
         TOF_SC_Timing->SetFillColor(kGray);
-    }
+	}
     else{
         TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
         text->AddText("No Matches to SC and TOF with reasonable FOM");
@@ -106,11 +91,6 @@
     {
         BCAL_SC_Timing->Draw();
         BCAL_SC_Timing->SetFillColor(kGray);
-    }
-    else{
-        TPaveText *text = new TPaveText(0.1, 0.4, 0.9, 0.6);
-        text->AddText("No Matches to SC and BCAL with reasonable FOM");
-        text->Draw();
     }
 }
 

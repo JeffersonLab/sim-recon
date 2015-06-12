@@ -37,7 +37,6 @@ class DReaction : public JObject
 		void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT){dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);}
 		void Set_MinProtonMomentum(double locMinProtonMomentum){dMinProtonMomentum = pair<bool, double>(true, locMinProtonMomentum);}
 		void Set_MaxExtraGoodTracks(size_t locMaxExtraGoodTracks){dMaxExtraGoodTracks = pair<bool, size_t>(true, locMaxExtraGoodTracks);}
-		void Set_MaxNumBeamPhotonsInBunch(size_t locMaxNumBeamPhotonsInBunch){dMaxNumBeamPhotonsInBunch = pair<bool, size_t>(true, locMaxNumBeamPhotonsInBunch);}
 
 		// SET PRE-COMBO-BLUEPRINT INVARIANT MASS CUTS
 		void Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass);
@@ -86,7 +85,6 @@ class DReaction : public JObject
 		pair<bool, double> Get_MaxPhotonRFDeltaT(void) const{return dMaxPhotonRFDeltaT;}
 		pair<bool, double> Get_MinProtonMomentum(void) const{return dMinProtonMomentum;}
 		pair<bool, size_t> Get_MaxExtraGoodTracks(void) const{return dMaxExtraGoodTracks;}
-		pair<bool, size_t> Get_MaxNumBeamPhotonsInBunch(void) const{return dMaxNumBeamPhotonsInBunch;}
 
 		// GET PRE-COMBO-BLUEPRINT MASS CUTS
 		bool Get_InvariantMassCut(Particle_t locStepInitialPID, double& locMinInvariantMass, double& locMaxInvariantMass) const;
@@ -132,7 +130,6 @@ class DReaction : public JObject
 		pair<bool, double> dMaxPhotonRFDeltaT; //COMBO:MAX_PHOTON_RF_DELTAT - the maximum photon-rf time difference: used for photon selection
 		pair<bool, double> dMinProtonMomentum; //COMBO:MIN_PROTON_MOMENTUM - when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have
 		pair<bool, size_t> dMaxExtraGoodTracks; //COMBO:MAX_EXTRA_GOOD_TRACKS - "good" defined by PreSelect factory
-		pair<bool, int> dMaxNumBeamPhotonsInBunch; //COMBO:MAX_NUM_BEAM_PHOTONS cut out combos with more than this # of beam photons surviving the RF delta-t cut
 
 		// PRE-COMBO-BLUEPRINT MASS CUTS
 		map<Particle_t, pair<double, double> > dInvariantMassCuts;

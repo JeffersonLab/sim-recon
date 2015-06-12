@@ -501,7 +501,6 @@ def AddDANA(env):
 	DANA_LIBS  = "DANA ANALYSIS PID TAGGER TRACKING START_COUNTER"
 	DANA_LIBS += " CERE RICH CDC TRIGGER PAIR_SPECTROMETER RF"
 	DANA_LIBS += " FDC TOF BCAL FCAL CCAL TPOL HDGEOMETRY TTAB DAQ JANA"
-	DANA_LIBS += " expat"
 	env.PrependUnique(LIBS = DANA_LIBS.split())
 
 ##################################
@@ -517,15 +516,13 @@ def Add_xstream(env):
 # CCDB
 ##################################
 def AddCCDB(env):
-	ccdb_home = os.getenv('CCDB_HOME')
-	if(ccdb_home != None) :
-		env.AppendUnique(CXXFLAGS = ['-DHAVE_CCDB'])
-		CCDB_CPPPATH = "%s/include" % (ccdb_home)
-		CCDB_LIBPATH = "%s/lib" % (ccdb_home)
-		CCDB_LIBS = "ccdb"
-		env.AppendUnique(CPPPATH = CCDB_CPPPATH)
-		env.AppendUnique(LIBPATH = CCDB_LIBPATH)
-		env.AppendUnique(LIBS    = CCDB_LIBS)
+	ccdb_home = os.getenv('CCDB_HOME', 'ccdb')
+	CCDB_CPPPATH = "%s/include" % (ccdb_home)
+	CCDB_LIBPATH = "%s/lib" % (ccdb_home)
+	CCDB_LIBS = "ccdb"
+	env.AppendUnique(CPPPATH = CCDB_CPPPATH)
+	env.AppendUnique(LIBPATH = CCDB_LIBPATH)
+	env.AppendUnique(LIBS    = CCDB_LIBS)
 
 
 ##################################

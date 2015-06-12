@@ -21,9 +21,32 @@
 #include "particleType.h"
 
 #include "RF/DRFTime.h"
-#include "RF/DRFTime_factory.h"
 #include "RF/DRFDigiTime.h"
 #include "RF/DRFTDCDigiTime.h"
+#include "PID/DChargedTrack.h"
+#include "PID/DChargedTrackHypothesis.h"
+#include "PID/DNeutralParticle.h"
+#include "PID/DNeutralShower.h"
+#include "PID/DVertex.h"
+#include "PID/DDetectorMatches.h"
+#include "PID/DNeutralParticleHypothesis.h"
+#include "PID/DEventRFBunch.h"
+#include "TRACKING/DMCThrown.h"
+
+#include "ANALYSIS/DReaction.h"
+#include "ANALYSIS/DKinFitParticle.h"
+#include "ANALYSIS/DMCThrownMatching.h"
+#include "ANALYSIS/DMCThrownMatching_factory.h"
+#include "ANALYSIS/DParticleCombo.h"
+#include "ANALYSIS/DAnalysisUtilities.h"
+#include "ANALYSIS/DAnalysisAction.h"
+#include "ANALYSIS/DCutActions.h"
+#include "ANALYSIS/DAnalysisResults.h"
+
+#include "ANALYSIS/DParticleCombo_factory_PreKinFit.h"
+#include "ANALYSIS/DKinFitResults_factory.h"
+#include "ANALYSIS/DParticleCombo_factory.h"
+
 #include "START_COUNTER/DSCHit.h"
 #include "TAGGER/DTAGHHit.h"
 #include "TAGGER/DTAGMHit.h"
@@ -40,32 +63,7 @@
 #include "TRACKING/DTrackTimeBased.h"
 #include "TRACKING/DTrackWireBased.h"
 #include "TRACKING/DTrackCandidate.h"
-#include "TRACKING/DMCThrown.h"
 
-#include "PID/DChargedTrack.h"
-#include "PID/DChargedTrackHypothesis.h"
-#include "PID/DNeutralParticle.h"
-#include "PID/DNeutralShower.h"
-#include "PID/DVertex.h"
-#include "PID/DDetectorMatches.h"
-#include "PID/DNeutralParticleHypothesis.h"
-#include "PID/DEventRFBunch.h"
-
-#include "ANALYSIS/DReaction.h"
-#include "ANALYSIS/DKinFitParticle.h"
-#include "ANALYSIS/DMCThrownMatching.h"
-#include "ANALYSIS/DMCThrownMatching_factory.h"
-#include "ANALYSIS/DParticleCombo.h"
-#include "ANALYSIS/DAnalysisUtilities.h"
-#include "ANALYSIS/DAnalysisAction.h"
-#include "ANALYSIS/DCutActions.h"
-#include "ANALYSIS/DAnalysisResults.h"
-
-#include "ANALYSIS/DParticleCombo_factory_PreKinFit.h"
-#include "ANALYSIS/DKinFitResults_factory.h"
-#include "ANALYSIS/DParticleCombo_factory.h"
-
-#include "ANALYSIS/DCutActions.h"
 
 using namespace std;
 using namespace jana;
@@ -216,7 +214,7 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0),
 		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
-		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitRingsPerCDCSuperlayer(2), dMinHitPlanesPerFDCPackage(4) {}
+		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitsPerCDCSuperlayer(2), dMinHitsPerFDCPackage(4) {}
 
 		DHistogramAction_DetectorMatching(string locActionUniqueString) :
 		DAnalysisAction(NULL, "Hist_DetectorMatching", false, locActionUniqueString),
@@ -224,7 +222,7 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0),
 		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
-		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitRingsPerCDCSuperlayer(2), dMinHitPlanesPerFDCPackage(4) {}
+		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitsPerCDCSuperlayer(2), dMinHitsPerFDCPackage(4) {}
 
 		DHistogramAction_DetectorMatching(void) :
 		DAnalysisAction(NULL, "Hist_DetectorMatching", false, ""),
@@ -232,7 +230,7 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0),
 		dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
-		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitRingsPerCDCSuperlayer(2), dMinHitPlanesPerFDCPackage(4) {}
+		dMinTrackingFOM(0.0027), dMinTOFPaddleMatchDistance(9.0), dMinHitsPerCDCSuperlayer(2), dMinHitsPerFDCPackage(4) {}
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -242,7 +240,7 @@ class DHistogramAction_DetectorMatching : public DAnalysisAction
 		double dMinDeltaPhi, dMaxDeltaPhi, dMinDeltaZ, dMaxDeltaZ;
 
 		double dMinTrackingFOM, dMinTOFPaddleMatchDistance;
-		unsigned int dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage;
+		unsigned int dMinHitsPerCDCSuperlayer, dMinHitsPerFDCPackage;
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
@@ -313,7 +311,7 @@ class DHistogramAction_DetectorPID : public DAnalysisAction
 		DAnalysisAction(locReaction, "Hist_DetectorPID", false, locActionUniqueString),
 		dNum2DPBins(250), dNum2DdEdxBins(400), dNum2DBetaBins(400), dNum2DBCALThetaBins(260), dNum2DFCALThetaBins(120), dNumEOverPBins(600),
 		dNum2DEOverPBins(300), dNum2DDeltaBetaBins(400), dNum2DDeltadEdxBins(300), dMinP(0.0), dMaxP(10.0), dMaxBCALP(3.0), dMindEdX(0.0), dMaxdEdX(25.0),
-		dMinBeta(-0.2), dMaxBeta(1.2), dMinBCALTheta(10.0), dMaxBCALTheta(140.0), dMinFCALTheta(0.0), dMaxFCALTheta(12.0), dMinEOverP(0.0), dMaxEOverP(4.0),
+		dMinBeta(-0.2), dMaxBeta(1.2), dMinBCALTheta(10.0), dMaxBCALTheta(140.0), dMinFCALTheta(0.0), dMaxFCALTheta(12.0), dMinEOverP(0.0), dMaxEOverP(1.5),
 		dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinDeltadEdx(-30.0), dMaxDeltadEdx(30.0)
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -324,7 +322,7 @@ class DHistogramAction_DetectorPID : public DAnalysisAction
 		DAnalysisAction(NULL, "Hist_DetectorPID", false, locActionUniqueString),
 		dNum2DPBins(250), dNum2DdEdxBins(400), dNum2DBetaBins(400), dNum2DBCALThetaBins(260), dNum2DFCALThetaBins(120), dNumEOverPBins(600),
 		dNum2DEOverPBins(300), dNum2DDeltaBetaBins(400), dNum2DDeltadEdxBins(300), dMinP(0.0), dMaxP(10.0), dMaxBCALP(3.0), dMindEdX(0.0), dMaxdEdX(25.0),
-		dMinBeta(-0.2), dMaxBeta(1.2), dMinBCALTheta(10.0), dMaxBCALTheta(140.0), dMinFCALTheta(0.0), dMaxFCALTheta(12.0), dMinEOverP(0.0), dMaxEOverP(4.0),
+		dMinBeta(-0.2), dMaxBeta(1.2), dMinBCALTheta(10.0), dMaxBCALTheta(140.0), dMinFCALTheta(0.0), dMaxFCALTheta(12.0), dMinEOverP(0.0), dMaxEOverP(1.5),
 		dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinDeltadEdx(-30.0), dMaxDeltadEdx(30.0)
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -335,7 +333,7 @@ class DHistogramAction_DetectorPID : public DAnalysisAction
 		DAnalysisAction(NULL, "Hist_DetectorPID", false, ""),
 		dNum2DPBins(250), dNum2DdEdxBins(400), dNum2DBetaBins(400), dNum2DBCALThetaBins(260), dNum2DFCALThetaBins(120), dNumEOverPBins(600),
 		dNum2DEOverPBins(300), dNum2DDeltaBetaBins(400), dNum2DDeltadEdxBins(300), dMinP(0.0), dMaxP(10.0), dMaxBCALP(3.0), dMindEdX(0.0), dMaxdEdX(25.0),
-		dMinBeta(-0.2), dMaxBeta(1.2), dMinBCALTheta(10.0), dMaxBCALTheta(140.0), dMinFCALTheta(0.0), dMaxFCALTheta(12.0), dMinEOverP(0.0), dMaxEOverP(4.0),
+		dMinBeta(-0.2), dMaxBeta(1.2), dMinBCALTheta(10.0), dMaxBCALTheta(140.0), dMinFCALTheta(0.0), dMaxFCALTheta(12.0), dMinEOverP(0.0), dMaxEOverP(1.5),
 		dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinDeltadEdx(-30.0), dMaxDeltadEdx(30.0)
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -522,7 +520,7 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 	public:
 		DHistogramAction_EventVertex(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_EventVertex", false, locActionUniqueString), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumVertexXYBins(400), 
 		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
 		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05)
 		{
@@ -531,7 +529,7 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 
 		DHistogramAction_EventVertex(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_EventVertex", false, locActionUniqueString), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumVertexXYBins(400), 
 		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
 		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05)
 		{
@@ -540,14 +538,14 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 
 		DHistogramAction_EventVertex(void) : 
 		DAnalysisAction(NULL, "Hist_EventVertex", false, ""), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumVertexXYBins(400), 
 		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
 		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05)
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(Proton);  dFinalStatePIDs.push_back(PiMinus);
 		}
 
-		unsigned int dNumConfidenceLevelBins, dNumPullBins, dNumVertexZBins, dNumTBins, dNumRFTBins, dNumVertexXYBins;
+		unsigned int dNumConfidenceLevelBins, dNumPullBins, dNumVertexZBins, dNumTBins, dNumVertexXYBins;
 		double dMinVertexZ, dMaxVertexZ, dMinT, dMaxT, dMinVertexXY, dMaxVertexXY, dMinPull, dMaxPull;
 
 		double dPullHistConfidenceLevelCut;
@@ -559,14 +557,15 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
-		TH1I* dRFTrackDeltaT;
-		TH1I* dEventVertexZ_AllEvents;
-		TH2I* dEventVertexYVsX_AllEvents;
-		TH1I* dEventVertexT_AllEvents;
+		TH1I* 	dEventRFBunchTime_AllEvents;
+		TH1I* 	dEventVertexZ_AllEvents;
+		TH2I* 	dEventVertexYVsX_AllEvents;
+		TH1I* 	dEventVertexT_AllEvents;
 
-		TH1I* dEventVertexZ_2OrMoreGoodTracks;
-		TH2I* dEventVertexYVsX_2OrMoreGoodTracks;
-		TH1I* dEventVertexT_2OrMoreGoodTracks;
+		TH1I* 	dEventRFBunchTime_2OrMoreGoodTracks;
+		TH1I* 	dEventVertexZ_2OrMoreGoodTracks;
+		TH2I* 	dEventVertexYVsX_2OrMoreGoodTracks;
+		TH1I* 	dEventVertexT_2OrMoreGoodTracks;
 
 		TH1I* dHist_KinFitConfidenceLevel;
 		map<Particle_t, map<DKinFitPullType, TH1I*> > dHistMap_KinFitPulls;

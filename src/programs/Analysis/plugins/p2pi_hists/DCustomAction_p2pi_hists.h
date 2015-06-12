@@ -16,7 +16,6 @@
 #include "JANA/JEventLoop.h"
 #include "JANA/JApplication.h"
 
-#include "TAGGER/DTAGHGeometry.h"
 #include "ANALYSIS/DAnalysisAction.h"
 #include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DParticleCombo.h"
@@ -41,18 +40,12 @@ class DCustomAction_p2pi_hists : public DAnalysisAction
 		// Optional: Useful utility functions.
 		const DAnalysisUtilities* dAnalysisUtilities;
 
-		// need PID algos for SC matching
-                const DParticleID* dParticleID;
-
 		Particle_t dMissingPID;
 
 		//Store any histograms as member variables here
 		TH1I *dEgamma;
-		TH2I *dMM_M2pi;
-		TH2I *dMM2_M2pi, *dProton_dEdx_P, *dProton_P_Theta, *dDeltaE_M2pi, *dDeltaE_M2pi_ProtonTag;
-		TH2I *dDalitz_p2pi, *dMppiplus_M2pi, *dMppiminus_M2pi, *dEgamma_M2pi;
-		TH2I *dPiPlusPsi_t;
-		TH2I *dPiPlusPsi_Egamma, *dProtonPhi_Egamma;
+		TH2I *dMM_M2pi, *dVertexDeltaZ_M2pi, *dVertexDeltaMag_M2pi;
+		TH2I *dMM2_M2pi, *dProton_dEdx_P, *dProton_P_Theta, *dDeltaE_M2pi;
 };
 
 #endif // _DCustomAction_p2pi_hists_

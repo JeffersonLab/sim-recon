@@ -37,7 +37,7 @@
 class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 {
 	public:
-		DParticleCombo_factory_PreKinFit():root_hists_created(false){};
+		DParticleCombo_factory_PreKinFit(){};
 		~DParticleCombo_factory_PreKinFit(){};
 		const char* Tag(void){return "PreKinFit";}
 
@@ -58,7 +58,6 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 
 		bool Cut_PIDFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 		bool Cut_PIDFOM(const DReaction* locReaction, const DNeutralParticleHypothesis* locNeutralParticleHypothesis) const;
-		bool Cut_NumBeamPhotonsInBunch(const DReaction* locReaction, size_t locNumBeamPhotonsInBunch) const;
 
 		void Build_BeamPhotonCombos(DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint, const DEventRFBunch* locEventRFBunch, const set<const DBeamPhoton*>& locInputCandidatePhotons, vector<DParticleCombo*>& locBuiltParticleCombos);
 
@@ -90,13 +89,11 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		pair<bool, double> dMinChargedPIDFOM; //the minimum PID FOM for a particle used for this DReaction
 		pair<bool, double> dMinPhotonPIDFOM; //the minimum PID FOM for a neutral particle used for this DReaction
 		pair<bool, double> dMaxPhotonRFDeltaT; //the maximum photon-rf time difference: used for photon selection
-		pair<bool, size_t> dMaxNumBeamPhotonsInBunch; //cut out combos with more than this # of beam photons surviving the RF delta-t cut
 
 		int dDebugLevel;
 		double dTargetCenterZ;
 		double dMinThrownMatchFOM;
 		const DAnalysisUtilities* dAnalysisUtilities;
-		bool root_hists_created;
 
 		vector<const DReaction*> dReactions;
 		map<const DReaction*, bool> dMCReactionExactMatchFlags;

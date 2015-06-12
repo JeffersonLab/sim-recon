@@ -16,7 +16,8 @@
 #include <ANALYSIS/DHistogramActions.h>
 #include <ANALYSIS/DCutActions.h>
 
-#include "DCustomAction_p3pi_Pi0Cuts.h"
+#include "DCustomAction_Pi0Cuts.h"
+#include "DCustomAction_p3pi_taggerCoincidence.h"
 #include "DCustomAction_p3pi_hists.h"
 
 using namespace std;

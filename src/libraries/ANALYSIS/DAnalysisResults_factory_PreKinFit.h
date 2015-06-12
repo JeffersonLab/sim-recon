@@ -35,7 +35,7 @@ using namespace std;
 class DAnalysisResults_factory_PreKinFit : public jana::JFactory<DAnalysisResults>
 {
 	public:
-		DAnalysisResults_factory_PreKinFit():root_hists_created(false){};
+		DAnalysisResults_factory_PreKinFit(){};
 		~DAnalysisResults_factory_PreKinFit(){};
 		const char* Tag(void){return "PreKinFit";}
 
@@ -52,7 +52,6 @@ class DAnalysisResults_factory_PreKinFit : public jana::JFactory<DAnalysisResult
 		DApplication* dApplication;
 		double dMinThrownMatchFOM;
 		const DAnalysisUtilities* dAnalysisUtilities;
-		bool root_hists_created;
 
 		map<const DReaction*, bool> dMCReactionExactMatchFlags;
 		map<const DReaction*, DCutAction_TrueCombo*> dTrueComboCuts;

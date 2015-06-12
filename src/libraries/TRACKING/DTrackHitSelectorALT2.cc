@@ -142,7 +142,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
   //  double one_over_beta =sqrt(1.0+my_mass*my_mass/rt->swim_steps[0].mom.Mag2());
   
   // The variance on the residual due to measurement error.
-  double var=0.6084*ONE_OVER_12;
+  double var=0.64*ONE_OVER_12;
    
   // To estimate the impact of errors in the track momentum on the variance of the residual,
   // use a helical approximation.
@@ -155,7 +155,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
   double lambda=M_PI_2-my_step->mom.Theta();
   double cosl=cos(lambda);
   double sinl=sin(lambda);
-  double sinl2=sinl*sinl;
+  //double sinl2=sinl*sinl;
   double cosl2=cosl*cosl;
   double tanl=tan(lambda);
   double tanl2=tanl*tanl;
@@ -221,7 +221,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
     if (outermost_hit){   
       // Fractional variance in the curvature k due to resolution and multiple scattering
       double s_sq=s*s;
-      double var_k_over_k_sq_res=var*p_over_a*p_over_a*0.0720/double(N+4)/(s_sq*s_sq*sinl2)/cosl2;
+      double var_k_over_k_sq_res=var*p_over_a*p_over_a*0.0720/double(N+4)/(s_sq*s_sq)/cosl2;
       double var_k_over_k_sq_ms=var_pt_factor*var_pt_factor*last_step->invX0/s;
       // Fractional variance in pt
       var_pt_over_pt_sq=var_k_over_k_sq_ms+var_k_over_k_sq_res;
@@ -236,7 +236,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
 
     // Get "measured" distance to wire. 
     // For matching purposes this is assumed to be half a cell size
-    double dist=0.39;
+    double dist=0.4;
     
     // Residual
     double resi = dist - doca;
@@ -272,11 +272,6 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
     double dd_dx=(pos.x()-wirepos.x())/doca;
     double dd_dy=(pos.y()-wirepos.y())/doca;
     double var_d=dd_dx*dd_dx*var_x+dd_dy*dd_dy*var_y;
-    
-    // Quality of fit parameters is improved after wire-based fitting
-    if (fit_type!=kHelical){
-      var_d*=0.1;
-    }
 
     double chisq=resi*resi/(var+var_d);
     
@@ -360,8 +355,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
   
   // The variance on the residual due to measurement error.
   double var_anode = 0.25*ONE_OVER_12; // scale factor reflects field-sense wire separation
-  const double VAR_CATHODE_STRIPS=0.000225;
-  double var_cathode = VAR_CATHODE_STRIPS; 
+  double var_cathode = 0.000225; 
 
   // To estimate the impact of errors in the track momentum on the variance of the residual,
   // use a helical approximation. 
@@ -456,10 +450,9 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
     else{   
       // Cathode variance due to Lorentz deflection
       double max_deflection=0.1458*Bz*(1.-0.048*last_step->B.Perp())*0.5;
-      var_cathode=VAR_CATHODE_STRIPS+max_deflection*max_deflection/3.;
+      var_cathode=max_deflection*max_deflection/3.;
     }
-    double var_tot=var_anode+var_cathode;
-
+      
     // Variance in angles due to multiple scattering
     var_lambda = last_step->itheta02;
     var_phi=var_lambda*(1.+tanl2);
@@ -467,7 +460,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
     if (most_downstream_hit){
       // Fractional variance in the curvature k due to resolution and multiple scattering
       double s_sq=s*s;
-      double var_k_over_k_sq_res=var_tot*p_over_a*p_over_a
+      double var_k_over_k_sq_res=var_cathode*p_over_a*p_over_a
 	*0.0720/double(N+4)/(s_sq*s_sq)/cosl2;
       
 	
@@ -478,7 +471,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
        var_pt_over_pt_sq=var_k_over_k_sq_ms+var_k_over_k_sq_res;
 	
        // Variance in dip angle due to measurement error
-       var_lambda_res=12.0*var_tot*double(N-1)/double(N*(N+1))
+       var_lambda_res=12.0*var_cathode*double(N-1)/double(N*(N+1))
 	 *sinl2*sinl2/s_sq;
        
        most_downstream_hit=false;
@@ -504,7 +497,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
       =p_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p)
       +dx_ds*ds_dcosl;
     double dx_dphi=-pt_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p);  
-    double var_z0=2.*tanl2*(var_tot)*double(2*N-1)/double(N*(N+1));
+    double var_z0=2.*tanl2*var_cathode*double(2*N-1)/double(N*(N+1));
    
     double var_x=var_x0+pdx_dp*pdx_dp*var_pt_over_pt_sq+var_pos_ms
       +dx_dcosl*dx_dcosl*sinl2*var_lambda+dx_dphi*dx_dphi*var_phi

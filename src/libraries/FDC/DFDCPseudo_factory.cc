@@ -92,7 +92,6 @@ jerror_t DFDCPseudo_factory::init(void)
   ROUT_FIDUCIAL=48.0;
   MAX_ALLOWED_FDC_HITS=20000;
   STRIP_ANODE_TIME_CUT=10.;
-  MIDDLE_STRIP_THRESHOLD=0.;
 
   r2_out=ROUT_FIDUCIAL*ROUT_FIDUCIAL;
   r2_in=RIN_FIDUCIAL*RIN_FIDUCIAL;
@@ -447,7 +446,6 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->w_c    = x_from_strips-xshifts[ilay];
 	      newPseu->s      = y_from_strips-yshifts[ilay];
 	      newPseu->ds = FDC_RES_PAR1/q_from_pulse_height+FDC_RES_PAR2;
-	      //newPseu->ds=0.011/q_from_pulse_height+5e-3+2.14e-10*pow(q_from_pulse_height,6);
 	      newPseu->wire   = wire;
 	      //newPseu->time   = (*xIt)->t;
 	      newPseu->time=0.5*(upeaks[i].t+vpeaks[j].t);

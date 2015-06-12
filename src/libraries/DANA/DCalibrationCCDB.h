@@ -26,24 +26,6 @@ namespace jana
     class DCalibrationCCDB : public JCalibration
     {
     public:
-	 		/// DEPRECATED:
-			/// This file will be removed from here and the functionality 
-			/// replaced with JCalibrationCCDB.h which resides in the JANA
-			/// library. That has been updated with mutex locks to match
-			/// this file as of JANA version 0.7.3. However, JANA 0.7.3 also
-			/// changes the signature of the GetCalib virtual methods to
-			/// use uint64_t and int32_t. The following methods are wrappers
-			/// that allow this file to be used with JANA 0.7.3 (as well as
-			/// previous versions) until 0.7.3 becomes commonplace and this
-			/// file can be removed.
-			///
-			///  June 10, 2015  David Lawrence
-		 virtual bool GetCalib(string namepath, map<string, string> &svals, uint64_t event_number=0){return GetCalib(namepath,svals,(int)event_number);}
-		 virtual bool GetCalib(string namepath, vector<string> &svals, uint64_t event_number=0){return GetCalib(namepath,svals,(int)event_number);}
-		 virtual bool GetCalib(string namepath, vector< map<string, string> > &svals, uint64_t event_number=0){return GetCalib(namepath,svals,(int)event_number);}
-		 virtual bool GetCalib(string namepath, vector< vector<string> > &svals, uint64_t event_number=0){return GetCalib(namepath,svals,(int)event_number);}
-			
-	 
 
         /** @brief    Constructor
          *
@@ -148,61 +130,6 @@ namespace jana
         }
 
 
-        /** @brief    get calibration constants
-         *
-         * @parameter [in]  namepath - full resource string
-         * @parameter [out] svals - data to be returned
-         * @parameter [in]  event_number - optional parameter of event number
-         * @return true if constants were read
-         */
-        bool GetCalib(string namepath, vector<string> &svals, int event_number=0)
-        {
-            // Lock mutex for exclusive use of underlying Calibration object
-            pthread_mutex_lock(&mutex);
-		
-            //
-            try
-            {  
-				//>oO CCDB debug output
-                #ifdef CCDB_DEBUG_OUTPUT                
-                cout<<"CCDB::janaccdb"<<endl;
-                cout<<"CCDB::janaccdb REQUEST vector<string> request = '"<<namepath<<"'"<<endl;
-                #endif  //>end of  CCDB debug output
-                 
-                bool result = mCalibration->GetCalib(svals, namepath);
-
-                //>oO CCDB debug output
-                #ifdef CCDB_DEBUG_OUTPUT
-                cout<<"CCDB::janaccdb result = "<<string((result)?string("loaded"):string("failure"))<<endl;
-                if(result)
-                {
-                    string first_value(" --NAN-- ");
-                    if(svals.size()>0)
-                    {
-                        vector<string>::const_iterator iter = svals.begin();
-                        first_value.assign(*iter);
-                    }
-                    cout<<"CCDB::janaccdb selected name-values count = '"<<svals.size()<<"' first_value '"<<first_value<<"'"<<endl;
-                }
-                #endif  //>end of  CCDB debug output
-
-				pthread_mutex_unlock(&mutex);
-                return !result; //JANA has false - if success and true if error
-            }
-            catch (std::exception& ex)
-            {
-                //>oO CCDB debug output
-                #ifdef CCDB_DEBUG_OUTPUT
-                cout <<"CCDB::janaccdb Exception caught at GetCalib(string namepath, vector<string> &svals, int event_number=0)"<<endl;
-                cout <<"CCDB::janaccdb what = "<<ex.what()<<endl;
-                #endif //end of CCDB debug output
-
-                pthread_mutex_unlock(&mutex);
-                return true; //JANA has false - if success and true if error
-            }
-        }
-
-
          /** @brief    get calibration constants
          *
          * @parameter [in]  namepath - full resource string
@@ -251,7 +178,7 @@ namespace jana
             {
                 //>oO CCDB debug output
                 #ifdef CCDB_DEBUG_OUTPUT
-                cout <<"CCDB::janaccdb Exception caught at GetCalib(string namepath, vector<map<string, string> > &svals, int event_number=0)"<<endl;
+                cout <<"CCDB::janaccdb Exception caught at GetCalib(string namepath, map<string, string> &svals, int event_number=0)"<<endl;
                 cout <<"CCDB::janaccdb what = "<<ex.what()<<endl;
                 #endif
 
@@ -261,65 +188,7 @@ namespace jana
         }
 
 
-          /** @brief    get calibration constants
-         *
-         * @parameter [in]  namepath - full resource string
-         * @parameter [out] vsvals - data to be returned
-         * @parameter [in]  event_number - optional parameter of event number
-         * @return true if constants were read
-         */
-        bool GetCalib(string namepath, vector< vector<string> > &vsvals, int event_number=0)
-        {
-            // Lock mutex for exclusive use of underlying Calibration object
-            pthread_mutex_lock(&mutex);
-
-            try
-            {
-				
-				 //>oO CCDB debug output
-                 #ifdef CCDB_DEBUG_OUTPUT
-                 cout<<"CCDB::janaccdb"<<endl;
-                 cout<<"CCDB::janaccdb REQUEST vector<vector<string> > request = '"<<namepath<<"'"<<endl;
-                 #endif  //end of CCDB debug output
-                 
-                 bool result = mCalibration->GetCalib(vsvals, namepath);
-
-                 //>oO CCDB debug output
-                 #ifdef CCDB_DEBUG_OUTPUT
-                 cout<<"CCDB::janaccdb result = "<<string ((result)?string("loaded"):string("failure"))<<endl;
-                 if(result)
-                 {
-                     string first_value(" --NAN-- ");
-                     if(vsvals.size()>0 && vsvals[0].size()>0)
-                     {
-                         vector<string>::const_iterator iter = vsvals[0].begin();
-                         first_value.assign(*iter);
-                     }
-
-                     cout<<"CCDB::janaccdb selected rows = '"<<vsvals.size() <<"' selected columns = '"<<(int)((vsvals.size()>0)? vsvals[0].size() :0)
-                         <<"' first value = '"<<first_value<<"'"<<endl;
-                 }
-                 #endif  //end of CCDB debug output
-
-
-                pthread_mutex_unlock(&mutex);
-                return !result; //JANA has false - if success and true if error, CCDB otherwise
-            }
-            catch (std::exception& ex)
-            {
-                //>oO CCDB debug output
-                #ifdef CCDB_DEBUG_OUTPUT
-                cout <<"CCDB::janaccdb Exception caught at GetCalib(string namepath, vector<vector<string> > &svals, int event_number=0)"<<endl;
-                cout <<"CCDB::janaccdb what = "<<ex.what()<<endl;
-                #endif
-
-                pthread_mutex_unlock(&mutex);
-                return true; //JANA has false - if success and true if error, CCDB otherwise
-            }
-        }
-
-
-       /** @brief    GetListOfNamepaths
+        /** @brief    GetListOfNamepaths
          *
          * @parameter [in] vector<string> & namepaths
          * @return   void

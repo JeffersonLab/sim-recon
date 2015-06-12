@@ -383,7 +383,7 @@ void ExtractTrackBasedTiming(int runNumber){
     }
 
     thisHist = Get2DHistogram("HLDetectorTiming", "TRACKING", "TAGH - SC Target Time");
-    if (useRF) thisHist = Get2DHistogram("HLDetectorTiming", "TRACKING", "TAGH - RFBunch Time");
+    if (useRF) thisHist = Get2DHistogram("HLDetectorTiming", "TRACKING", "TAGH -  RFBunch Time");
     if(thisHist != NULL){
         outFile.open(prefix + "tagh_tdc_timing_offsets.txt", ios::out | ios::trunc);
         outFile.close(); // clear file

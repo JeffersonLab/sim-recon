@@ -273,7 +273,7 @@ void Smear(hddm_s::HDDM *record)
       AddNoiseHitsCDC(record);
       AddNoiseHitsFDC(record);
    }
-   if (SMEAR_BCAL)
+   if (SMEAR_BCAL) 
       SmearBCAL(record);
 }
 

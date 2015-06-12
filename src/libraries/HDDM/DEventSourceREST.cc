@@ -766,22 +766,7 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
       shower->yErr = iter->getYerr();
       shower->zErr = iter->getZerr();
       shower->tErr = iter->getTerr();
-
-      const hddm_r::BcalClusterList& locBcalClusterList = iter->getBcalClusters();
-      hddm_r::BcalClusterList::iterator locBcalClusterIterator = locBcalClusterList.begin();
-      if(locBcalClusterIterator == locBcalClusterList.end())
-	      {
-		      shower->N_cell = -1;
-	      }
-      else //should only be 1
-	      {
-		      for(; locBcalClusterIterator != locBcalClusterList.end(); ++locBcalClusterIterator)
-			      {
-				      shower->N_cell = locBcalClusterIterator->getNcell();
-			      }
-		      
-	      }
-      
+      shower->N_cell = -1;
       data.push_back(shower);
    }
 

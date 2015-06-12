@@ -77,8 +77,6 @@ jerror_t DTrackWireBased_factory::init(void)
 	DEBUG_LEVEL = 0;
 	
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",DEBUG_LEVEL);
-    COSMICS=false;
-    gPARMS->SetDefaultParameter("TRKFIND:COSMICS",COSMICS);
 
 	return NOERROR;
 }
@@ -176,16 +174,11 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
 
   // Get candidates and hits
   vector<const DTrackCandidate*> candidates;
-  if(COSMICS){
-    loop->Get(candidates,"CDCCOSMIC");
-  }
-  else{
-    loop->Get(candidates);
-  }
+  loop->Get(candidates);
   if (candidates.size()==0) return NOERROR;
   
   if (dIsNoFieldFlag){
-    // Copy results over from the StraightLine or CDCCOSMIC candidate and add reference
+    // Copy results over from the StraightLine candidate and add reference
     // trajectory
     for (unsigned int i=0;i<candidates.size();i++){
       const DTrackCandidate *cand=candidates[i];
