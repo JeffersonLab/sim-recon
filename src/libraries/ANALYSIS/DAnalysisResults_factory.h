@@ -35,7 +35,7 @@ using namespace std;
 class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 {
 	public:
-		DAnalysisResults_factory(){};
+		DAnalysisResults_factory():root_hists_created(false){};
 		~DAnalysisResults_factory(){};
 
 	private:
@@ -50,6 +50,7 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		unsigned int dDebugLevel;
 		DApplication* dApplication;
 		double dMinThrownMatchFOM;
+		bool root_hists_created;
 
 		map<const DReaction*, bool> dMCReactionExactMatchFlags;
 		map<const DReaction*, DCutAction_TrueCombo*> dTrueComboCuts;

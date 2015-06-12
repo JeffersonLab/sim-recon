@@ -136,70 +136,57 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
 		if(locFile == NULL)
 		{
-			cout << "ERROR: OUTPUT HISTOGRAM FILE " << locOutputFileName << " NOT FOUND IN DParticleCombo_factory_PreKinFit::brun(). ABORTING." << endl;
-			abort();
-		}
-		locFile->cd("");
-
-		for(size_t loc_i = 0; loc_i < dReactions.size(); ++loc_i)
-		{
-			const DReaction* locReaction = dReactions[loc_i];
-
-			//get to the correct directory
-			string locReactionName = locReaction->Get_ReactionName();
-			string locDirName = locReactionName;
-			string locDirTitle = locReactionName;
-
-			//get action names
-			vector<string> locActionNames;
-			for(size_t loc_j = 0; loc_j < locReaction->Get_NumComboPreSelectionActions(); ++loc_j)
-			{
-				DAnalysisAction* locAction = locReaction->Get_ComboPreSelectionAction(loc_j);
-				if(locAction->Get_UseKinFitResultsFlag())
-					continue;
-				locActionNames.push_back(locAction->Get_ActionName());
+			root_hists_created = false; // this is redundant since it's already set in the constructor
+			static bool warning_issued = false;
+			if(!warning_issued){
+				cout << "WARNING: output histogram file " << locOutputFileName << " not found in DParticleCombo_factory_PreKinFit::brun()." << endl;
+				cout << "         some functionality disabled." << endl;
+				warning_issued = true;
 			}
-			dNumGoodPreComboSelectionActions[locReaction] = locActionNames.size();
+		}else{
+			locFile->cd("");
 
-			//action directory
-			locFile->cd();
-			TDirectoryFile* locDirectoryFile = static_cast<TDirectoryFile*>(locFile->GetDirectory(locDirName.c_str()));
-			if(locDirectoryFile == NULL)
-				locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirTitle.c_str());
-			locDirectoryFile->cd();
-
-			//pre-combo directory
-			locDirName = "Hist_ComboConstruction";
-			locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
-			if(locDirectoryFile == NULL)
-				locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirTitle.c_str());
-			locDirectoryFile->cd();
-
-			//# Events Survived
-			locHistName = "NumEventsSurvivedCut";
-			loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-			if(loc1DHist == NULL)
+			for(size_t loc_i = 0; loc_i < dReactions.size(); ++loc_i)
 			{
-				locHistTitle = locReactionName + string(";;# Events Survived Cut");
-				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 4 + locActionNames.size(), 0.5, 4.5 + float(locActionNames.size()));
-				loc1DHist->GetXaxis()->SetBinLabel(1, "Input"); // a new event
-				loc1DHist->GetXaxis()->SetBinLabel(2, "Has Particle Combo Blueprints");
-				loc1DHist->GetXaxis()->SetBinLabel(3, "Cut Beam, RF #Deltat");
-				loc1DHist->GetXaxis()->SetBinLabel(4, "Cut # Beam Photons");
-				loc1DHist->GetXaxis()->SetBinLabel(5, "Cut Particle PID");
-				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
-					loc1DHist->GetXaxis()->SetBinLabel(6 + loc_j, locActionNames[loc_j].c_str());
-			}
-			dHistMap_NumEventsSurvivedCut_All[locReaction] = loc1DHist;
+				const DReaction* locReaction = dReactions[loc_i];
 
-			if(!locMCThrowns.empty())
-			{
-				locHistName = "NumTrueEventsSurvivedCut";
+				//get to the correct directory
+				string locReactionName = locReaction->Get_ReactionName();
+				string locDirName = locReactionName;
+				string locDirTitle = locReactionName;
+
+				//get action names
+				vector<string> locActionNames;
+				for(size_t loc_j = 0; loc_j < locReaction->Get_NumComboPreSelectionActions(); ++loc_j)
+				{
+					DAnalysisAction* locAction = locReaction->Get_ComboPreSelectionAction(loc_j);
+					if(locAction->Get_UseKinFitResultsFlag())
+						continue;
+					locActionNames.push_back(locAction->Get_ActionName());
+				}
+				dNumGoodPreComboSelectionActions[locReaction] = locActionNames.size();
+
+				//action directory
+				locFile->cd();
+				TDirectoryFile* locDirectoryFile = static_cast<TDirectoryFile*>(locFile->GetDirectory(locDirName.c_str()));
+				if(locDirectoryFile == NULL)
+					locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirTitle.c_str());
+				locDirectoryFile->cd();
+
+				//pre-combo directory
+				locDirName = "Hist_ComboConstruction";
+				locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
+				if(locDirectoryFile == NULL)
+					locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirTitle.c_str());
+				locDirectoryFile->cd();
+
+				//# Events Survived
+				locHistName = "NumEventsSurvivedCut";
 				loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
 				if(loc1DHist == NULL)
 				{
 					locHistTitle = locReactionName + string(";;# Events Survived Cut");
-					loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 5 + locActionNames.size(), 0.5, 5.5 + float(locActionNames.size()));
+					loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 4 + locActionNames.size(), 0.5, 4.5 + float(locActionNames.size()));
 					loc1DHist->GetXaxis()->SetBinLabel(1, "Input"); // a new event
 					loc1DHist->GetXaxis()->SetBinLabel(2, "Has Particle Combo Blueprints");
 					loc1DHist->GetXaxis()->SetBinLabel(3, "Cut Beam, RF #Deltat");
@@ -207,112 +194,132 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 					loc1DHist->GetXaxis()->SetBinLabel(5, "Cut Particle PID");
 					for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
 						loc1DHist->GetXaxis()->SetBinLabel(6 + loc_j, locActionNames[loc_j].c_str());
-					loc1DHist->GetXaxis()->SetBinLabel(6 + locActionNames.size(), "Has True Combo (Not a Cut)");
 				}
-				dHistMap_NumEventsSurvivedCut_True[locReaction] = loc1DHist;
-			}
-
-			//# Blueprints Survived
-			locHistName = "NumBlueprintsSurvivedCut";
-			loc2DHist = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
-			if(loc2DHist == NULL)
-			{
-				locHistTitle = locReactionName + string(";;# Combo Blueprints Survived Cut");
-
-				double* locBinArray = new double[55];
-				for(unsigned int loc_j = 0; loc_j < 6; ++loc_j)
-				{
-					for(unsigned int loc_k = 1; loc_k <= 9; ++loc_k)
-						locBinArray[loc_j*9 + loc_k - 1] = double(loc_k)*pow(10.0, double(loc_j));
-				}
-				locBinArray[54] = 1.0E6;
-
-				loc2DHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), 3 + locActionNames.size(), 0.5, 3.5 + float(locActionNames.size()), 54, locBinArray);
-				delete[] locBinArray;
-				loc2DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combo Blueprints");
-				loc2DHist->GetXaxis()->SetBinLabel(2, "Cut Beam, RF #Deltat");
-				loc2DHist->GetXaxis()->SetBinLabel(3, "Cut # Beam Photons");
-				loc2DHist->GetXaxis()->SetBinLabel(4, "Cut Particle PID");
-				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
-					loc2DHist->GetXaxis()->SetBinLabel(5 + loc_j, locActionNames[loc_j].c_str());
-			}
-			dHistMap_NumBlueprintsSurvivedCut[locReaction] = loc2DHist;
-
-			locHistName = "NumBlueprintsSurvivedCut1D";
-			loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-			if(loc1DHist == NULL)
-			{
-				locHistTitle = locReactionName + string(";;# Combo Blueprints Survived Cut");
-				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 3 + locActionNames.size(), 0.5, 3.5 + float(locActionNames.size()));
-				loc1DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combo Blueprints");
-				loc1DHist->GetXaxis()->SetBinLabel(2, "Cut Beam, RF #Deltat");
-				loc1DHist->GetXaxis()->SetBinLabel(3, "Cut # Beam Photons");
-				loc1DHist->GetXaxis()->SetBinLabel(4, "Cut Particle PID");
-				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
-					loc1DHist->GetXaxis()->SetBinLabel(5 + loc_j, locActionNames[loc_j].c_str());
-			}
-			dHistMap_NumBlueprintsSurvivedCut1D[locReaction] = loc1DHist;
-
-			//Beam, RF Delta-t
-			locHistName = "BeamPhotonRFDeltaT";
-			loc1IHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-			if(loc1IHist == NULL)
-			{
-				locHistTitle = locReactionName + string(";#Deltat_{Beam #gamma - RF} (ns)");
-				loc1IHist = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 220, -11.0, 11.0);
-			}
-			dHistMap_PhotonRFDeltaT_All[locReaction] = loc1IHist;
-
-			if(!locMCThrowns.empty())
-			{
-				locHistName = "BeamPhotonRFDeltaT_TrueCombo";
-				loc1IHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-				if(loc1IHist == NULL)
-				{
-					loc1IHist = (TH1I*)dHistMap_PhotonRFDeltaT_All[locReaction]->Clone(locHistName.c_str());
-					locHistTitle = locReactionName + string(", True Combo");
-					loc1IHist->SetTitle(locHistTitle.c_str());
-				}
-				dHistMap_PhotonRFDeltaT_True[locReaction] = loc1IHist;
-			}
-
-			//Num Beam Photons Per Blueprint
-			locHistName = "NumSurvivingBeamParticles";
-			loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-			if(loc1DHist == NULL)
-			{
-				locHistTitle = locReactionName + string(";# Surviving Beam Particles");
-				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 10, 0.5, 10.5);
-			}
-			dHistMap_NumSurvivingBeamParticles[locReaction] = loc1DHist;
-
-			//PID FOM
-			deque<Particle_t> locDetectedPIDs;
-			locReaction->Get_DetectedFinalPIDs(locDetectedPIDs);
-			for(size_t loc_j = 0; loc_j < locDetectedPIDs.size(); ++loc_j)
-			{
-				Particle_t locPID = locDetectedPIDs[loc_j];
-				string locParticleName = ParticleType(locPID);
-				string locParticleROOTName = ParticleName_ROOT(locPID);
-
-				locHistName = string("PIDConfidenceLevel_") + locParticleName;
-				locHistTitle = locParticleROOTName + string(";PID Confidence Level");
-				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-					dHistMap_PIDFOM_All[locReaction][locPID] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-				else
-					dHistMap_PIDFOM_All[locReaction][locPID] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 200, 0.0, 1.0);
+				dHistMap_NumEventsSurvivedCut_All[locReaction] = loc1DHist;
 
 				if(!locMCThrowns.empty())
 				{
-					locHistName = string("PIDConfidenceLevel_True") + locParticleName;
+					locHistName = "NumTrueEventsSurvivedCut";
+					loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+					if(loc1DHist == NULL)
+					{
+						locHistTitle = locReactionName + string(";;# Events Survived Cut");
+						loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 5 + locActionNames.size(), 0.5, 5.5 + float(locActionNames.size()));
+						loc1DHist->GetXaxis()->SetBinLabel(1, "Input"); // a new event
+						loc1DHist->GetXaxis()->SetBinLabel(2, "Has Particle Combo Blueprints");
+						loc1DHist->GetXaxis()->SetBinLabel(3, "Cut Beam, RF #Deltat");
+						loc1DHist->GetXaxis()->SetBinLabel(4, "Cut # Beam Photons");
+						loc1DHist->GetXaxis()->SetBinLabel(5, "Cut Particle PID");
+						for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
+							loc1DHist->GetXaxis()->SetBinLabel(6 + loc_j, locActionNames[loc_j].c_str());
+						loc1DHist->GetXaxis()->SetBinLabel(6 + locActionNames.size(), "Has True Combo (Not a Cut)");
+					}
+					dHistMap_NumEventsSurvivedCut_True[locReaction] = loc1DHist;
+				}
+
+				//# Blueprints Survived
+				locHistName = "NumBlueprintsSurvivedCut";
+				loc2DHist = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				if(loc2DHist == NULL)
+				{
+					locHistTitle = locReactionName + string(";;# Combo Blueprints Survived Cut");
+
+					double* locBinArray = new double[55];
+					for(unsigned int loc_j = 0; loc_j < 6; ++loc_j)
+					{
+						for(unsigned int loc_k = 1; loc_k <= 9; ++loc_k)
+							locBinArray[loc_j*9 + loc_k - 1] = double(loc_k)*pow(10.0, double(loc_j));
+					}
+					locBinArray[54] = 1.0E6;
+
+					loc2DHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), 3 + locActionNames.size(), 0.5, 3.5 + float(locActionNames.size()), 54, locBinArray);
+					delete[] locBinArray;
+					loc2DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combo Blueprints");
+					loc2DHist->GetXaxis()->SetBinLabel(2, "Cut Beam, RF #Deltat");
+					loc2DHist->GetXaxis()->SetBinLabel(3, "Cut # Beam Photons");
+					loc2DHist->GetXaxis()->SetBinLabel(4, "Cut Particle PID");
+					for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
+						loc2DHist->GetXaxis()->SetBinLabel(5 + loc_j, locActionNames[loc_j].c_str());
+				}
+				dHistMap_NumBlueprintsSurvivedCut[locReaction] = loc2DHist;
+
+				locHistName = "NumBlueprintsSurvivedCut1D";
+				loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				if(loc1DHist == NULL)
+				{
+					locHistTitle = locReactionName + string(";;# Combo Blueprints Survived Cut");
+					loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 3 + locActionNames.size(), 0.5, 3.5 + float(locActionNames.size()));
+					loc1DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combo Blueprints");
+					loc1DHist->GetXaxis()->SetBinLabel(2, "Cut Beam, RF #Deltat");
+					loc1DHist->GetXaxis()->SetBinLabel(3, "Cut # Beam Photons");
+					loc1DHist->GetXaxis()->SetBinLabel(4, "Cut Particle PID");
+					for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
+						loc1DHist->GetXaxis()->SetBinLabel(5 + loc_j, locActionNames[loc_j].c_str());
+				}
+				dHistMap_NumBlueprintsSurvivedCut1D[locReaction] = loc1DHist;
+
+				//Beam, RF Delta-t
+				locHistName = "BeamPhotonRFDeltaT";
+				loc1IHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+				if(loc1IHist == NULL)
+				{
+					locHistTitle = locReactionName + string(";#Deltat_{Beam #gamma - RF} (ns)");
+					loc1IHist = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 220, -11.0, 11.0);
+				}
+				dHistMap_PhotonRFDeltaT_All[locReaction] = loc1IHist;
+
+				if(!locMCThrowns.empty())
+				{
+					locHistName = "BeamPhotonRFDeltaT_TrueCombo";
+					loc1IHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+					if(loc1IHist == NULL)
+					{
+						loc1IHist = (TH1I*)dHistMap_PhotonRFDeltaT_All[locReaction]->Clone(locHistName.c_str());
+						locHistTitle = locReactionName + string(", True Combo");
+						loc1IHist->SetTitle(locHistTitle.c_str());
+					}
+					dHistMap_PhotonRFDeltaT_True[locReaction] = loc1IHist;
+				}
+
+				//Num Beam Photons Per Blueprint
+				locHistName = "NumSurvivingBeamParticles";
+				loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				if(loc1DHist == NULL)
+				{
+					locHistTitle = locReactionName + string(";# Surviving Beam Particles");
+					loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 10, 0.5, 10.5);
+				}
+				dHistMap_NumSurvivingBeamParticles[locReaction] = loc1DHist;
+
+				//PID FOM
+				deque<Particle_t> locDetectedPIDs;
+				locReaction->Get_DetectedFinalPIDs(locDetectedPIDs);
+				for(size_t loc_j = 0; loc_j < locDetectedPIDs.size(); ++loc_j)
+				{
+					Particle_t locPID = locDetectedPIDs[loc_j];
+					string locParticleName = ParticleType(locPID);
+					string locParticleROOTName = ParticleName_ROOT(locPID);
+
+					locHistName = string("PIDConfidenceLevel_") + locParticleName;
+					locHistTitle = locParticleROOTName + string(";PID Confidence Level");
 					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-						dHistMap_PIDFOM_True[locReaction][locPID] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+						dHistMap_PIDFOM_All[locReaction][locPID] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
 					else
-						dHistMap_PIDFOM_True[locReaction][locPID] = (TH1I*)dHistMap_PIDFOM_All[locReaction][locPID]->Clone(locHistName.c_str());
+						dHistMap_PIDFOM_All[locReaction][locPID] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 200, 0.0, 1.0);
+
+					if(!locMCThrowns.empty())
+					{
+						locHistName = string("PIDConfidenceLevel_True") + locParticleName;
+						if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+							dHistMap_PIDFOM_True[locReaction][locPID] = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+						else
+							dHistMap_PIDFOM_True[locReaction][locPID] = (TH1I*)dHistMap_PIDFOM_All[locReaction][locPID]->Clone(locHistName.c_str());
+					}
 				}
 			}
-		}
-		locFile->cd(""); //return to base directory
+			locFile->cd(""); //return to base directory
+			root_hists_created = true;
+		} // if(locFile == NULL)
 	}
 	japp->RootUnLock(); //unlock
 
@@ -415,16 +422,18 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	}
 
 	//fill histograms
-	japp->RootWriteLock();
-	{
-		for(size_t loc_i = 0; loc_i < dReactions.size(); ++loc_i)
+	if(root_hists_created){
+		japp->RootWriteLock();
 		{
-			vector<double>& locDeltaTs = locDeltaTMap[dReactions[loc_i]];
-			for(size_t loc_j = 0; loc_j < locDeltaTs.size(); ++loc_j)
-				dHistMap_PhotonRFDeltaT_All[dReactions[loc_i]]->Fill(locDeltaTs[loc_j]);
+			for(size_t loc_i = 0; loc_i < dReactions.size(); ++loc_i)
+			{
+				vector<double>& locDeltaTs = locDeltaTMap[dReactions[loc_i]];
+				for(size_t loc_j = 0; loc_j < locDeltaTs.size(); ++loc_j)
+					dHistMap_PhotonRFDeltaT_All[dReactions[loc_i]]->Fill(locDeltaTs[loc_j]);
+			}
 		}
+		japp->RootUnLock();
 	}
-	japp->RootUnLock();
 
 	//pre-sort/select valid neutral/charged particles for each reaction //pre-cut (& histogram) PID
 	map<const DReaction*, map<Particle_t, vector<double> > > dPIDFOMMap; //will histogram at the end
@@ -505,28 +514,30 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	}
 
 	//fill histograms
-	japp->RootWriteLock();
-	{
-		for(size_t loc_i = 0; loc_i < dReactions.size(); ++loc_i)
+	if(root_hists_created){
+		japp->RootWriteLock();
 		{
-			deque<Particle_t> locDetectedPIDs;
-			dReactions[loc_i]->Get_DetectedFinalPIDs(locDetectedPIDs, 0); //all pids
-			for(size_t loc_j = 0; loc_j < locDetectedPIDs.size(); ++loc_j)
+			for(size_t loc_i = 0; loc_i < dReactions.size(); ++loc_i)
 			{
-				Particle_t locPID = locDetectedPIDs[loc_j];
-				vector<double>& locPIDFOMs = dPIDFOMMap[dReactions[loc_i]][locPID];
-				for(size_t loc_k = 0; loc_k < locPIDFOMs.size(); ++loc_k)
-					dHistMap_PIDFOM_All[dReactions[loc_i]][locPID]->Fill(locPIDFOMs[loc_k]);
+				deque<Particle_t> locDetectedPIDs;
+				dReactions[loc_i]->Get_DetectedFinalPIDs(locDetectedPIDs, 0); //all pids
+				for(size_t loc_j = 0; loc_j < locDetectedPIDs.size(); ++loc_j)
+				{
+					Particle_t locPID = locDetectedPIDs[loc_j];
+					vector<double>& locPIDFOMs = dPIDFOMMap[dReactions[loc_i]][locPID];
+					for(size_t loc_k = 0; loc_k < locPIDFOMs.size(); ++loc_k)
+						dHistMap_PIDFOM_All[dReactions[loc_i]][locPID]->Fill(locPIDFOMs[loc_k]);
 
-				if(locMCThrownMatching == NULL)
-					continue;
-				vector<double>& locTruePIDFOMs = dTruePIDFOMMap[dReactions[loc_i]][locPID];
-				for(size_t loc_k = 0; loc_k < locTruePIDFOMs.size(); ++loc_k)
-					dHistMap_PIDFOM_True[dReactions[loc_i]][locPID]->Fill(locTruePIDFOMs[loc_k]);
+					if(locMCThrownMatching == NULL)
+						continue;
+					vector<double>& locTruePIDFOMs = dTruePIDFOMMap[dReactions[loc_i]][locPID];
+					for(size_t loc_k = 0; loc_k < locTruePIDFOMs.size(); ++loc_k)
+						dHistMap_PIDFOM_True[dReactions[loc_i]][locPID]->Fill(locTruePIDFOMs[loc_k]);
+				}
 			}
 		}
+		japp->RootUnLock();
 	}
-	japp->RootUnLock();
 
 	//finally, now build the combos
 	map<const DReaction*, deque<size_t> > locNumBlueprintsSurvivedCuts;
@@ -771,40 +782,42 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	}
 
 	//fill passed-cut histograms
-	japp->RootWriteLock();
-	{
-		for(size_t loc_i = 0; loc_i < dReactions.size(); ++loc_i)
+	if(root_hists_created){
+		japp->RootWriteLock();
 		{
-			const DReaction* locReaction = dReactions[loc_i];
-
-			bool locIsThrownMatchFlag = false;
-			if(locMCThrownMatching != NULL)
+			for(size_t loc_i = 0; loc_i < dReactions.size(); ++loc_i)
 			{
-				if(dAnalysisUtilities->Check_ThrownsMatchReaction(locEventLoop, locReaction, dMCReactionExactMatchFlags[locReaction]))
-					locIsThrownMatchFlag = true;
-			}
+				const DReaction* locReaction = dReactions[loc_i];
 
-			dHistMap_NumEventsSurvivedCut_All[locReaction]->Fill(1); //input event (+1 because binning begins at 1)
-			if(locIsThrownMatchFlag)
-				dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(1); //input event (+1 because binning begins at 1)
-			if(locTrueComboSurvivedReactions.find(locReaction) != locTrueComboSurvivedReactions.end())
-				dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(5 + dNumGoodPreComboSelectionActions[locReaction]); //true combo
-
-			for(size_t loc_j = 0; loc_j < locNumBlueprintsSurvivedCuts[locReaction].size(); ++loc_j)
-			{
-				if(locNumBlueprintsSurvivedCuts[locReaction][loc_j] > 0)
+				bool locIsThrownMatchFlag = false;
+				if(locMCThrownMatching != NULL)
 				{
-					dHistMap_NumEventsSurvivedCut_All[locReaction]->Fill(loc_j + 2); //+2 because binning begins at 1, and 0 is input event
-					if(locIsThrownMatchFlag)
-						dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(loc_j + 2); //+2 because binning begins at 1, and 0 is input event
-					dHistMap_NumBlueprintsSurvivedCut[locReaction]->Fill(loc_j + 1, locNumBlueprintsSurvivedCuts[locReaction][loc_j]); //+1 because 0 is has blueprint
+					if(dAnalysisUtilities->Check_ThrownsMatchReaction(locEventLoop, locReaction, dMCReactionExactMatchFlags[locReaction]))
+						locIsThrownMatchFlag = true;
 				}
-				for(size_t loc_k = 0; loc_k < locNumBlueprintsSurvivedCuts[locReaction][loc_j]; ++loc_k)
-					dHistMap_NumBlueprintsSurvivedCut1D[locReaction]->Fill(loc_j + 1); //+1 because 0 is has blueprint
+
+				dHistMap_NumEventsSurvivedCut_All[locReaction]->Fill(1); //input event (+1 because binning begins at 1)
+				if(locIsThrownMatchFlag)
+					dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(1); //input event (+1 because binning begins at 1)
+				if(locTrueComboSurvivedReactions.find(locReaction) != locTrueComboSurvivedReactions.end())
+					dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(5 + dNumGoodPreComboSelectionActions[locReaction]); //true combo
+
+				for(size_t loc_j = 0; loc_j < locNumBlueprintsSurvivedCuts[locReaction].size(); ++loc_j)
+				{
+					if(locNumBlueprintsSurvivedCuts[locReaction][loc_j] > 0)
+					{
+						dHistMap_NumEventsSurvivedCut_All[locReaction]->Fill(loc_j + 2); //+2 because binning begins at 1, and 0 is input event
+						if(locIsThrownMatchFlag)
+							dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(loc_j + 2); //+2 because binning begins at 1, and 0 is input event
+						dHistMap_NumBlueprintsSurvivedCut[locReaction]->Fill(loc_j + 1, locNumBlueprintsSurvivedCuts[locReaction][loc_j]); //+1 because 0 is has blueprint
+					}
+					for(size_t loc_k = 0; loc_k < locNumBlueprintsSurvivedCuts[locReaction][loc_j]; ++loc_k)
+						dHistMap_NumBlueprintsSurvivedCut1D[locReaction]->Fill(loc_j + 1); //+1 because 0 is has blueprint
+				}
 			}
 		}
+		japp->RootUnLock();
 	}
-	japp->RootUnLock();
 
 	return NOERROR;
 }

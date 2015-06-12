@@ -37,7 +37,7 @@
 class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 {
 	public:
-		DParticleCombo_factory_PreKinFit(){};
+		DParticleCombo_factory_PreKinFit():root_hists_created(false){};
 		~DParticleCombo_factory_PreKinFit(){};
 		const char* Tag(void){return "PreKinFit";}
 
@@ -96,6 +96,7 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		double dTargetCenterZ;
 		double dMinThrownMatchFOM;
 		const DAnalysisUtilities* dAnalysisUtilities;
+		bool root_hists_created;
 
 		vector<const DReaction*> dReactions;
 		map<const DReaction*, bool> dMCReactionExactMatchFlags;
