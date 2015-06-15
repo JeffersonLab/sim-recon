@@ -2,6 +2,7 @@
 
 #if HAVE_LIBBZ2
 
+#include <stdint.h>
 #include <algorithm>
 #include <cassert>
 
