@@ -106,29 +106,36 @@ jerror_t DApplication::Init(void)
 	int ROOT_ERROR_LEVEL_SUPRESS = 10000;
 	GetJParameterManager()->SetDefaultParameter("ROOT_ERROR_LEVEL_SUPRESS", ROOT_ERROR_LEVEL_SUPRESS);
 	InitDANARootErrorHandler(ROOT_ERROR_LEVEL_SUPRESS);
-	
+
+
+	// Only check SSE capabilities if we're going to use the variables
+	// below so as to avoid compiler warnings.
+#if USE_SIMD || USE_SSE2 || USE_SSE3
+
 	// Check if running on a cpu that supports the instruction set
 	// extensions that were assumed when this application was built
 	unsigned int cpeinfo;
 	unsigned int cpsse3;
-	unsigned int amdinfo;
+//	unsigned int amdinfo;
 	asm("mov $0x01, %%eax\ncpuid\n"
           : "=d" (cpeinfo), "=c" (cpsse3)
         );
-	asm("mov $0x80000001, %%eax\ncpuid\n"
-          : "=d" (amdinfo)
-        );
-        int mmx,sse,sse2,sse3,ssse3,sse4_1,sse4_2,sse4a;
-        mmx = ((cpeinfo >> 23) & 0x1 );
-        sse = ((cpeinfo >> 25) & 0x1 );
-        sse2 = ((cpeinfo >> 26) & 0x1 );
-        sse3 = ((cpsse3       ) & 0x1 );
-        ssse3 = ((cpsse3 >>  9) & 0x1 );
-        sse4_1 = ((cpsse3 >> 19) & 0x1 );
-        sse4_2 = ((cpsse3 >> 20) & 0x1 );
-        sse4a = ((amdinfo >>  6) & 0x1 );
+//	asm("mov $0x80000001, %%eax\ncpuid\n"
+//          : "=d" (amdinfo)
+//        );
+//
+//        int mmx = ((cpeinfo >> 23) & 0x1 );
+//        int sse = ((cpeinfo >> 25) & 0x1 );
+//        int sse2 = ((cpeinfo >> 26) & 0x1 );
+//        int sse3 = ((cpsse3       ) & 0x1 );
+//        int ssse3 = ((cpsse3 >>  9) & 0x1 );
+//        int sse4_1 = ((cpsse3 >> 19) & 0x1 );
+//        int sse4_2 = ((cpsse3 >> 20) & 0x1 );
+//        int sse4a = ((amdinfo >>  6) & 0x1 );
+#endif // USE_SIMD || USE_SSE2 || USE_SSE3
 
 #if USE_SIMD
+	int sse = ((cpeinfo >> 25) & 0x1 );
 	if (sse == 0) {
 		jerr<<"DApplication::Init error - application was built"
 		    <<" to run only on machines" << endl
@@ -141,6 +148,7 @@ jerror_t DApplication::Init(void)
 #endif
 
 #if USE_SSE2
+	int sse2 = ((cpeinfo >> 26) & 0x1 );
 	if (sse2 == 0) {
 		jerr<<"DApplication::Init error - application was built"
 		    <<" to run only on machines" << endl
@@ -153,6 +161,7 @@ jerror_t DApplication::Init(void)
 #endif
 
 #if USE_SSE3
+	int sse3 = ((cpsse3       ) & 0x1 );
 	if (sse3 == 0) {
 		jerr<<"DApplication::Init error - application was built"
 		    <<" to run only on machines" << endl
