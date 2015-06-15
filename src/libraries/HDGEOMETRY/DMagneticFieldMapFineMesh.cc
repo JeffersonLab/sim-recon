@@ -925,7 +925,7 @@ void DMagneticFieldMapFineMesh::WriteEvioFile(string evioFileName){
   // create an event tree, root node has (tag=1,num=0)
   evioDOMTree tree(1,0);
 
-  float minmaxdelta[6]={rminFine,rmaxFine,drFine,zminFine,zmaxFine,dzFine};
+  float minmaxdelta[6]={(float)rminFine,(float)rmaxFine,(float)drFine,(float)zminFine,(float)zmaxFine,(float)dzFine};
   tree.addBank(2,0,minmaxdelta,6);
 
   // Add the banks
