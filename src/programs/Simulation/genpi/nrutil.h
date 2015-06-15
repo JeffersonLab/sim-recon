@@ -8,41 +8,41 @@
 #ifndef _NR_UTILS_H_
 #define _NR_UTILS_H_
 
-static float sqrarg;
+static float sqrarg = 0;
 #define SQR(a) ((sqrarg=(a)) == 0.0 ? 0.0 : sqrarg*sqrarg)
 
-static double dsqrarg;
+static double dsqrarg = 0;
 #define DSQR(a) ((dsqrarg=(a)) == 0.0 ? 0.0 : dsqrarg*dsqrarg)
 
-static double dmaxarg1,dmaxarg2;
+static double dmaxarg1=0,dmaxarg2=0;
 #define DMAX(a,b) (dmaxarg1=(a),dmaxarg2=(b),(dmaxarg1) > (dmaxarg2) ?\
         (dmaxarg1) : (dmaxarg2))
 
-static double dminarg1,dminarg2;
+static double dminarg1=0,dminarg2=0;
 #define DMIN(a,b) (dminarg1=(a),dminarg2=(b),(dminarg1) < (dminarg2) ?\
         (dminarg1) : (dminarg2))
 
-static float maxarg1,maxarg2;
+static float maxarg1=0,maxarg2=0;
 #define FMAX(a,b) (maxarg1=(a),maxarg2=(b),(maxarg1) > (maxarg2) ?\
         (maxarg1) : (maxarg2))
 
-static float minarg1,minarg2;
+static float minarg1=0,minarg2=0;
 #define FMIN(a,b) (minarg1=(a),minarg2=(b),(minarg1) < (minarg2) ?\
         (minarg1) : (minarg2))
 
-static long lmaxarg1,lmaxarg2;
+static long lmaxarg1=0,lmaxarg2=0;
 #define LMAX(a,b) (lmaxarg1=(a),lmaxarg2=(b),(lmaxarg1) > (lmaxarg2) ?\
         (lmaxarg1) : (lmaxarg2))
 
-static long lminarg1,lminarg2;
+static long lminarg1=0,lminarg2=0;
 #define LMIN(a,b) (lminarg1=(a),lminarg2=(b),(lminarg1) < (lminarg2) ?\
         (lminarg1) : (lminarg2))
 
-static int imaxarg1,imaxarg2;
+static int imaxarg1=0,imaxarg2=0;
 #define IMAX(a,b) (imaxarg1=(a),imaxarg2=(b),(imaxarg1) > (imaxarg2) ?\
         (imaxarg1) : (imaxarg2))
 
-static int iminarg1,iminarg2;
+static int iminarg1=0,iminarg2=0;
 #define IMIN(a,b) (iminarg1=(a),iminarg2=(b),(iminarg1) < (iminarg2) ?\
         (iminarg1) : (iminarg2))
 
@@ -74,18 +74,18 @@ void free_convert_matrix(float **b, long nrl, long nrh, long ncl, long nch);
 void free_f3tensor(float ***t, long nrl, long nrh, long ncl, long nch,
 	long ndl, long ndh);
 
-inline void initialize_static_define_regs()
-{
-   sqrarg = 0;
-   dsqrarg = 0;
-   dmaxarg1 = dmaxarg2 = 0;
-   dminarg1 = dminarg2 = 0;
-   maxarg1 = maxarg2 = 0;
-   minarg1 = minarg2 = 0;
-   lmaxarg1 = lmaxarg2 = 0;
-   lminarg1 = lminarg2 = 0;
-   imaxarg1 = imaxarg2 = 0;
-   iminarg1 = iminarg2 = 0;
-}
+//inline void initialize_static_define_regs()
+//{
+//   sqrarg = 0;
+//   dsqrarg = 0;
+//   dmaxarg1 = dmaxarg2 = 0;
+//   dminarg1 = dminarg2 = 0;
+//   maxarg1 = maxarg2 = 0;
+//   minarg1 = minarg2 = 0;
+//   lmaxarg1 = lmaxarg2 = 0;
+//   lminarg1 = lminarg2 = 0;
+//   imaxarg1 = imaxarg2 = 0;
+//   iminarg1 = iminarg2 = 0;
+//}
 
 #endif /* _NR_UTILS_H_ */
