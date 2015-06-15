@@ -220,8 +220,8 @@ def swig_library(env, libname, srcs):
 		if not env['SWIG_EXISTS'] or int(env['SWIG_EXISTS']) != 1:
 			return
 		if not env['BUILDSWIG'] or int(env['BUILDSWIG']) != 1:
-			print '-- NOTE: swig exists but will not be used unless you  --'
-			print '--       add "BUILDSWIG=1" to the scons command line. --'
+			#print '-- NOTE: swig exists but will not be used unless you  --'
+			#print '--       add "BUILDSWIG=1" to the scons command line. --'
 			return
 	except:
 		return
@@ -793,6 +793,9 @@ def AddSWIG(env):
 	# if it does, set a variable to let other scripts know	
 	if ProgramExists("swig"):
 		env.AppendUnique(SWIG_EXISTS = "1")
+		if not env['BUILDSWIG'] or int(env['BUILDSWIG']) != 1:
+			print '-- NOTE: swig exists but will not be used unless you  --'
+			print '--       add "BUILDSWIG=1" to the scons command line. --'
 	else:
 		env.AppendUnique(SWIG_EXISTS = "0")
 	# TEMPORARILY DISABLE
