@@ -53,11 +53,13 @@ namespace bz {
     }
 
     unsigned long int common::input_count() const {
-        return (z_strm->total_in_hi32 * (1L << 32)) + z_strm->total_in_lo32;
+//        return (z_strm->total_in_hi32 * (1L << 32)) + z_strm->total_in_lo32;
+        return ((uint64_t)(z_strm->total_in_hi32)<< 32) + (uint64_t)(z_strm->total_in_lo32);
     }
 
     unsigned long int common::output_count() const {
-        return (z_strm->total_out_hi32 * (1L << 32)) + z_strm->total_out_lo32;
+//        return (z_strm->total_out_hi32 * (1L << 32)) + z_strm->total_out_lo32;
+        return ((uint64_t)(z_strm->total_out_hi32)<< 32) + (uint64_t)(z_strm->total_out_lo32);
     }
 
     common::~common() {
