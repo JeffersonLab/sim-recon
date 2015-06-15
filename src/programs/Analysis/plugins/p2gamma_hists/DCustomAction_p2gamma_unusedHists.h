@@ -50,7 +50,7 @@ class DCustomAction_p2gamma_unusedHists : public DAnalysisAction
 		const DParticleID* dParticleID;
 
 		//Store any histograms as member variables here
-		TH2I *dMatch_E_DeltaT_All;
+//		TH2I *dMatch_E_DeltaT_All;
 
 		// maps of histograms by track charge and match flag
 		map<bool, map<int, TH2I*> > dHistMap_TrackNhits_Theta;

@@ -300,7 +300,7 @@ void DCustomAction_p2gamma_unusedHists::FillShower(const DNeutralShower* locNeut
 			locMaxEnergyCluster = locFCALClusters[i]->getEmax();
 
 			for(unsigned int j=0; j<locFCALHits.size(); j++){
-				const DFCALCluster::DFCALClusterHit_t hit = locFCALHits[j];
+//				const DFCALCluster::DFCALClusterHit_t hit = locFCALHits[j];
 				nHits++;
 			}
 		}

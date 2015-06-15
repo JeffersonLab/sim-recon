@@ -38,7 +38,7 @@ class DCustomAction_p2gamma_hists : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
 		// Optional: Useful utility functions.
-		const DAnalysisUtilities* dAnalysisUtilities;
+//		const DAnalysisUtilities* dAnalysisUtilities;
 
 		//Store any histograms as member variables here
 		TH1I *dEgamma;

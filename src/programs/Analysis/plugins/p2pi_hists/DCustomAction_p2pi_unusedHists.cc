@@ -265,7 +265,7 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 			DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z);
 				
 			double locFlightTime = 9.9E9, locPathLength = 9.9E9;
-			double d = rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime, SYS_BCAL);
+			rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime, SYS_BCAL);
 			
 			DVector3 proj_pos = rt->GetLastDOCAPoint();
 			if(proj_pos.Perp() < 65.0)
@@ -479,7 +479,7 @@ void DCustomAction_p2pi_unusedHists::FillShower(const DNeutralShower* locNeutral
 			locMaxEnergyCluster = locFCALClusters[i]->getEmax();
 
 			for(unsigned int j=0; j<locFCALHits.size(); j++){
-				const DFCALCluster::DFCALClusterHit_t hit = locFCALHits[j];
+//				const DFCALCluster::DFCALClusterHit_t hit = locFCALHits[j];
 				nHits++;
 			}
 		}
