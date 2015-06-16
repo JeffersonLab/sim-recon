@@ -1395,8 +1395,8 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
    int channel = 0;
    string Detector, locSystem;
    int end=0;
-   int row=0,column=0,module=0,sector=0,layer=0,chan=0;
-   int ring=0,straw=0,plane=0,bar=0,gPlane=0,element=0;
+   int row=0,column=0,module=0,sector=0,layer=0,chan;
+   int ring=0,straw=0,plane=0,bar=0,gPlane,element;
    int package=0,chamber=0,view=0,strip=0,wire=0;
    int id=0, strip_type=0;
    int side=0;
@@ -1562,7 +1562,7 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
       
       // fill maps
       
-      DTranslationTable::csc_t csc = {crate,slot,channel};
+      DTranslationTable::csc_t csc = {(uint32_t)crate,(uint32_t)slot,(uint32_t)channel};
       string detector = Detector;
       std::transform(detector.begin(), detector.end(), detector.begin(), (int(*)(int)) tolower);
       
