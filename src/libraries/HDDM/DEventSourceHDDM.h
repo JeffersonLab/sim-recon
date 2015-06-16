@@ -63,6 +63,8 @@ using namespace std;
 #include "PAIR_SPECTROMETER/DPSCHit.h"
 #include "PAIR_SPECTROMETER/DPSTruthHit.h"
 #include "PAIR_SPECTROMETER/DPSCTruthHit.h"
+#include "FMWPC/DFMWPCTruthHit.h"
+#include "FMWPC/DFMWPCHit.h"
 
 class DEventSourceHDDM:public JEventSource
 {
@@ -126,6 +128,8 @@ class DEventSourceHDDM:public JEventSource
 			      string tag);
       jerror_t Extract_DPSCTruthHit(hddm_s::HDDM *record,JFactory<DPSCTruthHit>* factory, 
 			       string tag);
+      jerror_t Extract_DFMWPCTruthHit(hddm_s::HDDM *record,  JFactory<DFMWPCTruthHit> *factory, string tag);
+      jerror_t Extract_DFMWPCHit(  hddm_s::HDDM *record,  JFactory<DFMWPCHit     > *factory, string tag);
 
       Particle_t IDTrack(float locCharge, float locMass) const;
 

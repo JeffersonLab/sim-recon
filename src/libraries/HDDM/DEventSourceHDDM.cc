@@ -376,6 +376,14 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
                      dynamic_cast<JFactory<DTrackTimeBased>*>(factory), tag,
                      event.GetRunNumber());
 
+   if (dataClassName == "DFMWPCTruthHit")
+      return Extract_DFMWPCTruthHit(record, 
+                     dynamic_cast<JFactory<DFMWPCTruthHit>*>(factory), tag);
+
+   if (dataClassName == "DFMWPCHit")
+      return Extract_DFMWPCHit(record, 
+                     dynamic_cast<JFactory<DFMWPCHit>*>(factory), tag);
+
    // extract CereTruth and CereRichHit hits, yqiang Oct 3, 2012
    // removed CereTruth (merged into MCThrown), added CereHit, yqiang Oct 10 2012
    if (dataClassName == "DCereHit")
@@ -2573,6 +2581,69 @@ Particle_t DEventSourceHDDM::IDTrack(float locCharge, float locMass) const
       if (fabs(locMass - ParticleMass(Neutron)) < locMassTolerance) return Neutron;
    }
    return Unknown;
+}
+
+//------------------
+// Extract_DFMWPCTruthHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DFMWPCTruthHit(hddm_s::HDDM *record,  JFactory<DFMWPCTruthHit> *factory, string tag)
+{
+   /// Copies the data from the given hddm_s record. This is called
+   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+   /// returns OBJECT_NOT_AVAILABLE immediately.
+
+   if (factory == NULL) return OBJECT_NOT_AVAILABLE;
+   if (tag != "") return OBJECT_NOT_AVAILABLE;
+
+   vector<DFMWPCTruthHit*> data;
+
+   const hddm_s::FmwpcTruthHitList &points = record->getFmwpcTruthHits();
+   hddm_s::FmwpcTruthHitList::iterator iter;
+   for (iter = points.begin(); iter != points.end(); ++iter) {
+      DFMWPCTruthHit *hit = new DFMWPCTruthHit;
+      hit->layer = iter->getLayer();
+      hit->wire  = iter->getWire();
+      hit->dE    = iter->getDE();
+      hit->dx    = iter->getDx();
+      hit->t     = iter->getT();
+      data.push_back(hit);
+   }
+
+   // Copy into factory
+   factory->CopyTo(data);
+
+   return NOERROR;
+}
+
+//------------------
+// Extract_DFMWPCHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DFMWPCHit(hddm_s::HDDM *record,  JFactory<DFMWPCHit> *factory, string tag)
+{
+   /// Copies the data from the given hddm_s record. This is called
+   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+   /// returns OBJECT_NOT_AVAILABLE immediately.
+
+   if (factory == NULL) return OBJECT_NOT_AVAILABLE;
+   if (tag != "") return OBJECT_NOT_AVAILABLE;
+
+   vector<DFMWPCHit*> data;
+
+   const hddm_s::FmwpcHitList &points = record->getFmwpcHits();
+   hddm_s::FmwpcHitList::iterator iter;
+   for (iter = points.begin(); iter != points.end(); ++iter) {
+      DFMWPCHit *hit = new DFMWPCHit;
+      hit->layer = iter->getLayer();
+      hit->wire  = iter->getWire();
+      hit->dE    = iter->getDE();
+      hit->t     = iter->getT();
+      data.push_back(hit);
+   }
+
+   // Copy into factory
+   factory->CopyTo(data);
+
+   return NOERROR;
 }
 
 //------------------
