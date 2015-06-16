@@ -1489,7 +1489,7 @@ XtString XtString::linkType()
  */
 int CodeBuilder::element_in_list(XtString &name, parentList_t list)
 {
-   int n;
+   int n=0;
    parentList_t::iterator iter;
    for (iter = list.begin(); iter != list.end(); ++iter, ++n)
    {
