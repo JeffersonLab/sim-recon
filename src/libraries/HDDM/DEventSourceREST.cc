@@ -562,7 +562,7 @@ jerror_t DEventSourceREST::Extract_DMCThrown(hddm_r::HDDM *record,
          double py = piter->getMomentum().getPy();
          double pz = piter->getMomentum().getPz();
          double mass = sqrt(E*E - (px*px + py*py + pz*pz));
-         if (!finite(mass)) {
+         if (!isfinite(mass)) {
             mass = 0.0;
          }
          DMCThrown *mcthrown = new DMCThrown;
