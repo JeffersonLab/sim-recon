@@ -50,6 +50,7 @@ DCutAction_TransverseMomentum
 DCutAction_TrackHitPattern
 DCutAction_ProtonPiPlusdEdx
 DCutAction_BeamEnergy
+DCutAction_TrackFCALShowerEOverP
 */
 
 class DCutAction_ThrownTopology : public DAnalysisAction
@@ -520,6 +521,28 @@ class DCutAction_BeamEnergy : public DAnalysisAction
 
 		double dMinBeamEnergy;
 		double dMaxBeamEnergy;
+};
+
+class DCutAction_TrackFCALShowerEOverP : public DAnalysisAction
+{
+	// For all charged tracks except e+/e-, cuts those with FCAL E/p > input value
+	// For e+/e-, cuts those with FCAL E/p < input value
+	// Does not cut tracks without a matching FCAL shower
+
+	public:
+
+		DCutAction_TrackFCALShowerEOverP(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locShowerEOverP, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Cut_TrackFCALShowerEOverP", locUseKinFitResultsFlag, locActionUniqueString),
+		dShowerEOverP(locShowerEOverP){}
+
+		void Initialize(JEventLoop* locEventLoop){};
+		string Get_ActionName(void) const;
+
+	private:
+
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		double dShowerEOverP;
 };
 
 #endif // _DCutActions_

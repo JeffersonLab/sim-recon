@@ -855,3 +855,45 @@ bool DCutAction_BeamEnergy::Perform_Action(JEventLoop* locEventLoop, const DPart
 	return ((locBeamEnergy >= dMinBeamEnergy) && (locBeamEnergy <= dMaxBeamEnergy));
 }
 
+string DCutAction_TrackFCALShowerEOverP::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dShowerEOverP;
+	return locStream.str();
+}
+
+bool DCutAction_TrackFCALShowerEOverP::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	// For all charged tracks except e+/e-, cuts those with E/p > input value
+	// For e+/e-, cuts those with E/p < input value
+	// Does not cut tracks without a matching FCAL shower
+
+	deque<const DKinematicData*> locParticles;
+	if(Get_UseKinFitResultsFlag())
+		locParticleCombo->Get_DetectedFinalChargedParticles(locParticles);
+	else
+		locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
+
+	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
+	{
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+		const DFCALShowerMatchParams& locFCALShowerMatchParams = locChargedTrackHypothesis->dFCALShowerMatchParams;
+		if(locFCALShowerMatchParams.dTrack == NULL)
+			continue;
+
+		Particle_t locPID = locChargedTrackHypothesis->PID();
+		const DFCALShower* locFCALShower = locFCALShowerMatchParams.dFCALShower;
+		double locShowerEOverP = locFCALShower->getEnergy()/locChargedTrackHypothesis->momentum().Mag();
+
+		if((locPID == Electron) || (locPID == Positron))
+		{
+			if(locShowerEOverP < dShowerEOverP)
+				return false;
+		}
+		else if(locShowerEOverP > dShowerEOverP)
+			return false;
+	}
+
+	return true;
+}
+
