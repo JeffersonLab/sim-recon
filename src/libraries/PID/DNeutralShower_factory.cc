@@ -9,8 +9,11 @@
 
 inline bool DNeutralShower_SortByEnergy(const DNeutralShower* locNeutralShower1, const DNeutralShower* locNeutralShower2)
 {
-	// sort by increasing energy in the 1's and 0.1s digits (MeV): pseudo-random
-	return int(locNeutralShower1->dEnergy*10000.0)%100 < int(locNeutralShower2->dEnergy*10000.0)%100;
+	// truncate the track energies: in units of MeV, ignore all digits that are 10s-place and above
+	// then sort by increasing energy: pseudo-random
+	double locE1 = locNeutralShower1->dEnergy - double(int(locNeutralShower1->dEnergy*100.0))/100.0;
+	double locE2 = locNeutralShower2->dEnergy - double(int(locNeutralShower2->dEnergy*100.0))/100.0;
+	return (locE1 < locE2);
 }
 
 //------------------

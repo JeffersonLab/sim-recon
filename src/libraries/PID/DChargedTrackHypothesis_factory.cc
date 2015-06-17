@@ -9,16 +9,11 @@
 
 inline bool DChargedTrackHypothesis_SortByEnergy(const DChargedTrackHypothesis* locChargedTrackHypothesis1, const DChargedTrackHypothesis* locChargedTrackHypothesis2)
 {
-  int id1=locChargedTrackHypothesis1->candidateid;
-  int id2=locChargedTrackHypothesis2->candidateid;
-  
-  if (id1==id2){    
-    // sort by increasing energy in the 1's and 0.1s digits (MeV): pseudo-random
-    int E1=int(locChargedTrackHypothesis1->energy()*10000.0)%100;
-    int E2=int(locChargedTrackHypothesis2->energy()*10000.0)%100;
-    if (E1!=E2) return (E1<E2);
-  }
-  return (id1<id2);
+	// truncate the track energies: in units of MeV, ignore all digits that are 10s-place and above
+	// then sort by increasing energy: pseudo-random
+	double locE1 = locChargedTrackHypothesis1->energy() - double(int(locChargedTrackHypothesis1->energy()*100.0))/100.0;
+	double locE2 = locChargedTrackHypothesis2->energy() - double(int(locChargedTrackHypothesis2->energy()*100.0))/100.0;
+	return (locE1 < locE2);
 }
 
 //------------------
@@ -54,13 +49,27 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, i
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
 
+	map<JObject::oid_t, vector<DChargedTrackHypothesis*> > locChargedTrackHypotheses;
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); loc_i++)
 	{
 		DChargedTrackHypothesis* locChargedTrackHypothesis = Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBasedVector[loc_i], locDetectorMatches, locEventRFBunches[0]);
 		if(locChargedTrackHypothesis != NULL)
-			_data.push_back(locChargedTrackHypothesis);
+			locChargedTrackHypotheses[locChargedTrackHypothesis->candidateid].push_back(locChargedTrackHypothesis);
 	}
-	sort(_data.begin(), _data.end(), DChargedTrackHypothesis_SortByEnergy);
+
+	//choose the first hypothesis from each track, and sort by increasing energy in the 1's and 0.1s digits (MeV): pseudo-random
+	vector<DChargedTrackHypothesis*> locTracksToSort;
+	map<JObject::oid_t, vector<DChargedTrackHypothesis*> >::iterator locIterator = locChargedTrackHypotheses.begin();
+	for(; locIterator != locChargedTrackHypotheses.end(); ++locIterator)
+		locTracksToSort.push_back(locIterator->second[0]);
+	sort(locTracksToSort.begin(), locTracksToSort.end(), DChargedTrackHypothesis_SortByEnergy);
+
+	//now loop through the sorted vector, grab all of the hypotheses for each of those tracks from the map, and save them all in _data
+	for(size_t loc_i = 0; loc_i < locTracksToSort.size(); loc_i++)
+	{
+		JObject::oid_t locTrackID = locTracksToSort[loc_i]->candidateid;
+		_data.insert(_data.end(), locChargedTrackHypotheses[locTrackID].begin(), locChargedTrackHypotheses[locTrackID].end());
+	}
 
 	return NOERROR;
 }
