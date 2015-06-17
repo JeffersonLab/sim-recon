@@ -31,53 +31,208 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 			locParticleROOTName = ParticleName_ROOT(locPID);
 			CreateAndChangeTo_Directory(locParticleName, locParticleName);
 
-			// Confidence Level
-			locHistName = "PIDConfidenceLevel";
-			locHistTitle = locParticleROOTName + string(" PID;PID Confidence Level");
-			dHistMap_PIDFOM[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumFOMBins, 0.0, 1.0);
-
-			// Confidence Level in BCAL
-			locHistName = "TOFConfidenceLevel_BCAL";
-			locHistTitle = locParticleROOTName + string(" PID in BCAL;TOF Confidence Level");
-			dHistMap_TOFFOM_BCAL[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumFOMBins, 0.0, 1.0);
-
-			// Confidence Level in FCAL
-			locHistName = "TOFConfidenceLevel_FCAL";
-			locHistTitle = locParticleROOTName + string(" PID in FCAL;TOF Confidence Level");
-			dHistMap_TOFFOM_FCAL[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumFOMBins, 0.0, 1.0);
-
-			if(ParticleCharge(locPID) != 0)
+			//q = 0
+			if(locPID == Gamma)
 			{
-				// Confidence Level in TOF
-				locHistName = "TOFConfidenceLevel_TOF";
-				locHistTitle = locParticleROOTName + string(" PID in TOF;TOF Confidence Level");
-				dHistMap_TOFFOM_TOF[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumFOMBins, 0.0, 1.0);
+				//BCAL
+				CreateAndChangeTo_Directory("BCAL", "BCAL");
 
-				// Confidence Level in CDC
-				locHistName = "TOFConfidenceLevel_CDC";
-				locHistTitle = locParticleROOTName + string(" PID in CDC;TOF Confidence Level");
-				dHistMap_TOFFOM_CDC[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumFOMBins, 0.0, 1.0);
+				locHistName = "BetaVsP";
+				locHistTitle =  string("BCAL ") + locParticleROOTName + string(" Candidates;Shower Energy (GeV);#beta");
+				dHistMap_BetaVsP[locPID][SYS_BCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxBCALP, dNum2DBetaBins, dMinBeta, dMaxBeta);
 
-				// DC dE/dx Confidence Level
-				locHistName = "DCdEdxConfidenceLevel";
-				locHistTitle = locParticleROOTName + string(" PID;DC #it{#frac{dE}{dx}} Confidence Level");
-				dHistMap_DCdEdxFOM[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumFOMBins, 0.0, 1.0);
+				locHistName = "DeltaTVsShowerE_Photon";
+				locHistTitle = string("BCAL ") + locParticleROOTName + string(" Candidates;Shower Energy (GeV);#Deltat_{BCAL - RF}");
+				dHistMap_DeltaTVsP[locPID][SYS_BCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+
+				locHistName = "TimePullVsShowerE_Photon";
+				locHistTitle = string("BCAL ") + locParticleROOTName + string(";Shower Energy (GeV);#Deltat/#sigma_{#Deltat}");
+				dHistMap_TimePullVsP[Gamma][SYS_BCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, dMinPull, dMaxPull);
+
+				locHistName = "TimeFOMVsShowerE_Photon";
+				locHistTitle = string("BCAL ") + locParticleROOTName + string(";Shower Energy (GeV);Timing PID Confidence Level");
+				dHistMap_TimeFOMVsP[Gamma][SYS_BCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DFOMBins, 0.0, 1.0);
+
+				gDirectory->cd("..");
+
+				//FCAL
+				CreateAndChangeTo_Directory("FCAL", "FCAL");
+
+				locHistName = "BetaVsP";
+				locHistTitle =  string("FCAL ") + locParticleROOTName + string(" Candidates;Shower Energy (GeV);#beta");
+				dHistMap_BetaVsP[locPID][SYS_FCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DBetaBins, dMinBeta, dMaxBeta);
+
+				locHistName = "DeltaTVsShowerE_Photon";
+				locHistTitle = string("FCAL ") + locParticleROOTName + string(";p (GeV/c);#Deltat_{FCAL - RF}");
+				dHistMap_DeltaTVsP[locPID][SYS_FCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+
+				locHistName = "TimePullVsShowerE_Photon";
+				locHistTitle = string("FCAL ") + locParticleROOTName + string(";Shower Energy (GeV);#Deltat/#sigma_{#Deltat}");
+				dHistMap_TimePullVsP[Gamma][SYS_FCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, dMinPull, dMaxPull);
+
+				locHistName = "TimeFOMVsShowerE_Photon";
+				locHistTitle = string("FCAL ") + locParticleROOTName + string(";Shower Energy (GeV);Timing PID Confidence Level");
+				dHistMap_TimeFOMVsP[Gamma][SYS_FCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DFOMBins, 0.0, 1.0);
+
+				gDirectory->cd("..");
+				continue;
 			}
+			if(ParticleCharge(locPID) == 0)
+				continue;
 
-			//beta vs p
-			locHistName = "BetaVsP";
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#beta");
-			dHistMap_BetaVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumBetaBins, dMinBeta, dMaxBeta);
+			//SC
+			CreateAndChangeTo_Directory("SC", "SC");
 
-			//delta-beta vs p
+			locHistName = "dEdXVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);SC dE/dX (MeV/cm)");
+			dHistMap_dEdXVsP[locPID][SYS_START] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DdEdxBins, dMindEdX, dMaxdEdX);
+
+			locHistName = "DeltadEdXVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);SC #Delta(dE/dX) (MeV/cm)");
+			dHistMap_DeltadEdXVsP[locPID][SYS_START] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltadEdxBins, dMinDeltadEdx, dMaxDeltadEdx);
+
+			gDirectory->cd("..");
+
+			//TOF
+			CreateAndChangeTo_Directory("TOF", "TOF");
+
+			locHistName = "dEdXVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);TOF dE/dX (MeV/cm)");
+			dHistMap_dEdXVsP[locPID][SYS_TOF] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DdEdxBins, dMindEdX, dMaxdEdX);
+
+			locHistName = "DeltadEdXVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);TOF #Delta(dE/dX) (MeV/cm)");
+			dHistMap_DeltadEdXVsP[locPID][SYS_TOF] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltadEdxBins, dMinDeltadEdx, dMaxDeltadEdx);
+
 			locHistName = "DeltaBetaVsP";
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#Delta#beta");
-			dHistMap_DeltaBetaVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaBetaBins, dMinDeltaBeta, dMaxDeltaBeta);
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);TOF #Delta#beta");
+			dHistMap_DeltaBetaVsP[locPID][SYS_TOF] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltaBetaBins, dMinDeltaBeta, dMaxDeltaBeta);
 
-			//TOF Confidence Level vs Delta-Beta
-			locHistName = "TOFConfidenceLevelVsDeltaBeta";
-			locHistTitle = locParticleROOTName + string(";#Delta#beta;TOF Confidence Level");
-			dHistMap_TOFFOMVsDeltaBeta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumDeltaBetaBins, dMinDeltaBeta, dMaxDeltaBeta, dNumFOMBins, 0.0, 1.0);
+			locHistName = "BetaVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);TOF #beta");
+			dHistMap_BetaVsP[locPID][SYS_TOF] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DBetaBins, dMinBeta, dMaxBeta);
+
+			locHistName = "DeltaTVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);#Deltat_{TOF - RF}");
+			dHistMap_DeltaTVsP[locPID][SYS_TOF] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+
+			locHistName = string("TimePullVsP_") + locParticleName;
+			locHistTitle = string("TOF ") + locParticleROOTName + string(";p (GeV/c);#Deltat/#sigma_{#Deltat}");
+			dHistMap_TimePullVsP[locPID][SYS_TOF] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, dMinPull, dMaxPull);
+
+			locHistName = string("TimeFOMVsP_") + locParticleName;
+			locHistTitle = string("TOF ") + locParticleROOTName + string(";p (GeV/c);Timing PID Confidence Level");
+			dHistMap_TimeFOMVsP[locPID][SYS_TOF] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DFOMBins, 0.0, 1.0);
+
+			gDirectory->cd("..");
+
+			//BCAL
+			CreateAndChangeTo_Directory("BCAL", "BCAL");
+
+			locHistName = "BetaVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);BCAL #beta");
+			dHistMap_BetaVsP[locPID][SYS_BCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxBCALP, dNum2DBetaBins, dMinBeta, dMaxBeta);
+
+			locHistName = "DeltaBetaVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);BCAL #Delta#beta");
+			dHistMap_DeltaBetaVsP[locPID][SYS_BCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxBCALP, dNum2DDeltaBetaBins, dMinDeltaBeta, dMaxDeltaBeta);
+
+			locHistName = "DeltaTVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);#Deltat_{BCAL - RF}");
+			dHistMap_DeltaTVsP[locPID][SYS_BCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+
+			locHistName = string("TimePullVsP_") + locParticleName;
+			locHistTitle = string("BCAL ") + locParticleROOTName + string(";p (GeV/c);#Deltat/#sigma_{#Deltat}");
+			dHistMap_TimePullVsP[locPID][SYS_BCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, dMinPull, dMaxPull);
+
+			locHistName = string("TimeFOMVsP_") + locParticleName;
+			locHistTitle = string("BCAL ") + locParticleROOTName + string(";p (GeV/c);Timing PID Confidence Level");
+			dHistMap_TimeFOMVsP[locPID][SYS_BCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DFOMBins, 0.0, 1.0);
+
+			locHistName = "EOverPVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);BCAL E_{Shower}/p_{Track} (c);");
+			dHistMap_EOverPVsP[locPID][SYS_BCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxBCALP, dNum2DEOverPBins, dMinEOverP, dMaxEOverP);
+
+			locHistName = "EOverPVsTheta";
+			locHistTitle = locParticleROOTName + string(" Candidates;#theta#circ;BCAL E_{Shower}/p_{Track} (c);");
+			dHistMap_EOverPVsTheta[locPID][SYS_BCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DBCALThetaBins, dMinBCALTheta, dMaxBCALTheta, dNum2DEOverPBins, dMinEOverP, dMaxEOverP);
+
+			gDirectory->cd("..");
+
+			//FCAL
+			CreateAndChangeTo_Directory("FCAL", "FCAL");
+
+			locHistName = "BetaVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);FCAL #beta");
+			dHistMap_BetaVsP[locPID][SYS_FCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DBetaBins, dMinBeta, dMaxBeta);
+
+			locHistName = "DeltaBetaVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);FCAL #Delta#beta");
+			dHistMap_DeltaBetaVsP[locPID][SYS_FCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltaBetaBins, dMinDeltaBeta, dMaxDeltaBeta);
+
+			locHistName = "DeltaTVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);#Deltat_{FCAL - RF}");
+			dHistMap_DeltaTVsP[locPID][SYS_FCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+
+			locHistName = string("TimePullVsP_") + locParticleName;
+			locHistTitle = string("FCAL ") + locParticleROOTName + string(";p (GeV/c);#Deltat/#sigma_{#Deltat}");
+			dHistMap_TimePullVsP[locPID][SYS_FCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, dMinPull, dMaxPull);
+
+			locHistName = string("TimeFOMVsP_") + locParticleName;
+			locHistTitle = string("FCAL ") + locParticleROOTName + string(";p (GeV/c);Timing PID Confidence Level");
+			dHistMap_TimeFOMVsP[locPID][SYS_FCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DFOMBins, 0.0, 1.0);
+
+			locHistName = "EOverPVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);FCAL E_{Shower}/p_{Track} (c);");
+			dHistMap_EOverPVsP[locPID][SYS_FCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DEOverPBins, dMinEOverP, dMaxEOverP);
+
+			locHistName = "EOverPVsTheta";
+			locHistTitle = locParticleROOTName + string(" Candidates;#theta#circ;FCAL E_{Shower}/p_{Track} (c);");
+			dHistMap_EOverPVsTheta[locPID][SYS_FCAL] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DFCALThetaBins, dMinFCALTheta, dMaxFCALTheta, dNum2DEOverPBins, dMinEOverP, dMaxEOverP);
+
+			gDirectory->cd("..");
+
+			//CDC
+			CreateAndChangeTo_Directory("CDC", "CDC");
+
+			locHistName = "dEdXVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);CDC dE/dx (keV/cm)");
+			dHistMap_dEdXVsP[locPID][SYS_CDC] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DdEdxBins, dMindEdX, dMaxdEdX);
+
+			locHistName = "DeltadEdXVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);CDC #Delta(dE/dX) (keV/cm)");
+			dHistMap_DeltadEdXVsP[locPID][SYS_CDC] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltadEdxBins, dMinDeltadEdx, dMaxDeltadEdx);
+
+			locHistName = string("dEdXPullVsP_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);CDC #Delta(dE/dX)/#sigma_{#Delta(dE/dX)}");
+			dHistMap_dEdXPullVsP[locPID][SYS_CDC] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, dMinPull, dMaxPull);
+
+			locHistName = string("dEdXFOMVsP_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);CDC dE/dx PID Confidence Level");
+			dHistMap_dEdXFOMVsP[locPID][SYS_CDC] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DFOMBins, 0.0, 1.0);
+
+			gDirectory->cd("..");
+
+			//FDC
+			CreateAndChangeTo_Directory("FDC", "FDC");
+
+			locHistName = "dEdXVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);FDC dE/dx (keV/cm)");
+			dHistMap_dEdXVsP[locPID][SYS_FDC] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DdEdxBins, dMindEdX, dMaxdEdX);
+
+			locHistName = "DeltadEdXVsP";
+			locHistTitle = locParticleROOTName + string(" Candidates;p (GeV/c);FDC #Delta(dE/dX) (keV/cm)");
+			dHistMap_DeltadEdXVsP[locPID][SYS_FDC] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DDeltadEdxBins, dMinDeltadEdx, dMaxDeltadEdx);
+
+			locHistName = string("dEdXPullVsP_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);FDC #Delta(dE/dX)/#sigma_{#Delta(dE/dX)}");
+			dHistMap_dEdXPullVsP[locPID][SYS_FDC] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, dMinPull, dMaxPull);
+
+			locHistName = string("dEdXFOMVsP_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);FDC dE/dx PID Confidence Level");
+			dHistMap_dEdXFOMVsP[locPID][SYS_FDC] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DFOMBins, 0.0, 1.0);
+
+			gDirectory->cd("..");
 
 			//one per thrown pid:
 			if(!locMCThrowns.empty())
@@ -100,99 +255,15 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 				gDirectory->cd("..");
 			}
 
-			CreateAndChangeTo_Directory("Pulls", "Pulls");
-
-			//Delta-t Pulls - CDC
-			if(ParticleCharge(locPID) != 0) //CDC
-			{
-				locHistName = "TimePull_CDC";
-				locHistTitle = locParticleROOTName + string(";#Deltat/#sigma_{#Deltat}");
-				dHistMap_TimePull_CDC[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, -10.0, 10.0);
-
-				locHistName = "TimePullVsTheta_CDC";
-				locHistTitle = locParticleROOTName + string(";#theta#circ;#Deltat/#sigma_{#Deltat}");
-				dHistMap_TimePullVsTheta_CDC[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPullBins, -10.0, 10.0);
-
-				locHistName = "TimePullVsP_CDC";
-				locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltat/#sigma_{#Deltat}");
-				dHistMap_TimePullVsP_CDC[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, -10.0, 10.0);
-			}
-
-			//Delta-t Pulls - BCAL
-			locHistName = "TimePull_BCAL";
-			locHistTitle = locParticleROOTName + string(";#Deltat/#sigma_{#Deltat}");
-			dHistMap_TimePull_BCAL[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, -10.0, 10.0);
-
-			locHistName = "TimePullVsTheta_BCAL";
-			locHistTitle = locParticleROOTName + string(";#theta#circ;#Deltat/#sigma_{#Deltat}");
-			dHistMap_TimePullVsTheta_BCAL[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPullBins, -10.0, 10.0);
-
-			locHistName = "TimePullVsP_BCAL";
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltat/#sigma_{#Deltat}");
-			dHistMap_TimePullVsP_BCAL[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, -10.0, 10.0);
-
-			//Delta-t Pulls - TOF
-			if(ParticleCharge(locPID) != 0) //TOF
-			{
-				locHistName = "TimePull_TOF";
-				locHistTitle = locParticleROOTName + string(";#Deltat/#sigma_{#Deltat}");
-				dHistMap_TimePull_TOF[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, -10.0, 10.0);
-
-				locHistName = "TimePullVsP_TOF";
-				locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltat/#sigma_{#Deltat}");
-				dHistMap_TimePullVsP_TOF[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, -10.0, 10.0);
-			}
-
-			//Delta-t Pulls - FCAL
-			locHistName = "TimePull_FCAL";
-			locHistTitle = locParticleROOTName + string(";#Deltat/#sigma_{#Deltat}");
-			dHistMap_TimePull_FCAL[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, -10.0, 10.0);
-
-			locHistName = "TimePullVsP_FCAL";
-			locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltat/#sigma_{#Deltat}");
-			dHistMap_TimePullVsP_FCAL[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, -10.0, 10.0);
-
-			gDirectory->cd("..");
-			CreateAndChangeTo_Directory("PVsTheta", "PVsTheta");
-
-			// P Vs Theta, PID FOM < 1%
-			locHistName = "PVsTheta_LowPIDFOM";
-			locHistTitle = locParticleROOTName + string(", PID FOM < 1%;#theta#circ;p (GeV/c)");
-			dHistMap_PVsTheta_LowPIDFOM[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+			// Overall Confidence Level
+			locHistName = "PIDConfidenceLevel";
+			locHistTitle = locParticleROOTName + string(" PID;PID Confidence Level");
+			dHistMap_PIDFOM[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumFOMBins, 0.0, 1.0);
 
 			// P Vs Theta, PID FOM = NaN
 			locHistName = "PVsTheta_NaNPIDFOM";
 			locHistTitle = locParticleROOTName + string(", PID FOM = NaN;#theta#circ;p (GeV/c)");
 			dHistMap_PVsTheta_NaNPIDFOM[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
-
-			if(ParticleCharge(locPID) != 0) //no other sources of PID for neutrals
-			{
-				// P Vs Theta, TOF FOM < 1%
-				locHistName = "PVsTheta_LowTOFFOM";
-				locHistTitle = locParticleROOTName + string(", TOF FOM < 1%;#theta#circ;p (GeV/c)");
-				dHistMap_PVsTheta_LowTOFFOM[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
-
-				// P Vs Theta, TOF FOM = NaN
-				locHistName = "PVsTheta_NaNTOFFOM";
-				locHistTitle = locParticleROOTName + string(", TOF FOM = NaN;#theta#circ;p (GeV/c)");
-				dHistMap_PVsTheta_NaNTOFFOM[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
-
-				// P Vs Theta, DC dE/dx FOM < 1%
-				locHistName = "PVsTheta_LowDCdEdxFOM";
-				locHistTitle = locParticleROOTName + string(", DC #it{#frac{dE}{dx}} FOM < 1%;#theta#circ;p (GeV/c)");
-				dHistMap_PVsTheta_LowDCdEdxFOM[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
-
-				// P Vs Theta, DC dE/dx FOM = NaN
-				locHistName = "PVsTheta_NaNDCdEdxFOM";
-				locHistTitle = locParticleROOTName + string(", DC #it{#frac{dE}{dx}} FOM = NaN;#theta#circ;p (GeV/c)");
-				dHistMap_PVsTheta_NaNDCdEdxFOM[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
-
-				// P Vs Theta, Beta < 0
-				locHistName = "PVsTheta_NegativeBeta";
-				locHistTitle = locParticleROOTName + string(", #beta < 0.0;#theta#circ;p (GeV/c)");
-				dHistMap_PVsTheta_NegativeBeta[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
-			}
-			gDirectory->cd("..");
 
 			gDirectory->cd("..");
 		} //end of PID loop
@@ -247,77 +318,119 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 	Particle_t locPID = locChargedTrackHypothesis->PID();
 	double locBeta_Timing = locChargedTrackHypothesis->measuredBeta();
 	double locDeltaBeta = locChargedTrackHypothesis->deltaBeta();
-
+	double locDeltaT = (locChargedTrackHypothesis->t0() - locChargedTrackHypothesis->time());
 	double locFOM_Timing = (locChargedTrackHypothesis->dNDF_Timing > 0) ? TMath::Prob(locChargedTrackHypothesis->dChiSq_Timing, locChargedTrackHypothesis->dNDF_Timing) : numeric_limits<double>::quiet_NaN();
-	double locFOM_DCdEdx = (locChargedTrackHypothesis->dNDF_DCdEdx > 0) ? TMath::Prob(locChargedTrackHypothesis->dChiSq_DCdEdx, locChargedTrackHypothesis->dNDF_DCdEdx) : numeric_limits<double>::quiet_NaN();
 
 	double locP = locChargedTrackHypothesis->momentum().Mag();
 	double locTheta = locChargedTrackHypothesis->momentum().Theta()*180.0/TMath::Pi();
 	double locMatchFOM = 0.0;
 	const DMCThrown* locMCThrown = (locMCThrownMatching != NULL) ? locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypothesis, locMatchFOM) : NULL;
 
+	const DBCALShowerMatchParams& locBCALShowerMatchParams = locChargedTrackHypothesis->dBCALShowerMatchParams;
+	const DFCALShowerMatchParams& locFCALShowerMatchParams = locChargedTrackHypothesis->dFCALShowerMatchParams;
+	const DTOFHitMatchParams& locTOFHitMatchParams = locChargedTrackHypothesis->dTOFHitMatchParams;
+	const DSCHitMatchParams& locSCHitMatchParams = locChargedTrackHypothesis->dSCHitMatchParams;
+
+	const DTrackTimeBased* locTrackTimeBased = NULL;
+	locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+
 	double locTimePull = 0.0;
 	unsigned int locTimeNDF = 0;
 	dParticleID->Calc_TimingChiSq(locChargedTrackHypothesis, locTimeNDF, locTimePull);
+	DetectorSystem_t locTimeDetector = locChargedTrackHypothesis->t1_detector();
 
 	japp->RootWriteLock();
 	{
 		dHistMap_PIDFOM[locPID]->Fill(locChargedTrackHypothesis->dFOM);
 
-		if(locChargedTrackHypothesis->t1_detector() == SYS_CDC)
+		//SC dE/dx
+		if(locSCHitMatchParams.dTrack != NULL)
 		{
-			dHistMap_TOFFOM_CDC[locPID]->Fill(locFOM_Timing);
-			dHistMap_TimePull_CDC[locPID]->Fill(locTimePull);
-			dHistMap_TimePullVsTheta_CDC[locPID]->Fill(locTheta, locTimePull);
-			dHistMap_TimePullVsP_CDC[locPID]->Fill(locP, locTimePull);
-		}
-		else if(locChargedTrackHypothesis->t1_detector() == SYS_BCAL)
-		{
-			dHistMap_TOFFOM_BCAL[locPID]->Fill(locFOM_Timing);
-			dHistMap_TimePull_BCAL[locPID]->Fill(locTimePull);
-			dHistMap_TimePullVsTheta_BCAL[locPID]->Fill(locTheta, locTimePull);
-			dHistMap_TimePullVsP_BCAL[locPID]->Fill(locP, locTimePull);
-		}
-		else if(locChargedTrackHypothesis->t1_detector() == SYS_TOF)
-		{
-			dHistMap_TOFFOM_TOF[locPID]->Fill(locFOM_Timing);
-			dHistMap_TimePull_TOF[locPID]->Fill(locTimePull);
-			dHistMap_TimePullVsP_TOF[locPID]->Fill(locP, locTimePull);
-		}
-		else if(locChargedTrackHypothesis->t1_detector() == SYS_FCAL)
-		{
-			dHistMap_TOFFOM_FCAL[locPID]->Fill(locFOM_Timing);
-			dHistMap_TimePull_FCAL[locPID]->Fill(locTimePull);
-			dHistMap_TimePullVsP_FCAL[locPID]->Fill(locP, locTimePull);
+			dHistMap_dEdXVsP[locPID][SYS_START]->Fill(locP, locSCHitMatchParams.dEdx*1.0E3);
+			double locdx = locSCHitMatchParams.dHitEnergy/locSCHitMatchParams.dEdx;
+			double locProbabledEdx = 0.0, locSigmadEdx = 0.0;
+			dParticleID->GetScintMPdEandSigma(locP, locChargedTrackHypothesis->mass(), locdx, locProbabledEdx, locSigmadEdx);
+			dHistMap_DeltadEdXVsP[locPID][SYS_START]->Fill(locP, (locSCHitMatchParams.dEdx - locProbabledEdx)*1.0E3);
 		}
 
-		dHistMap_DCdEdxFOM[locPID]->Fill(locFOM_DCdEdx);
-		dHistMap_BetaVsP[locPID]->Fill(locP, locBeta_Timing);
-		dHistMap_DeltaBetaVsP[locPID]->Fill(locP, locDeltaBeta);
-		dHistMap_TOFFOMVsDeltaBeta[locPID]->Fill(locDeltaBeta, locFOM_Timing);
+		//TOF dE/dx
+		if(locTOFHitMatchParams.dTrack != NULL)
+		{
+			dHistMap_dEdXVsP[locPID][SYS_TOF]->Fill(locP, locTOFHitMatchParams.dEdx*1.0E3);
+			double locdx = locTOFHitMatchParams.dHitEnergy/locTOFHitMatchParams.dEdx;
+			double locProbabledEdx = 0.0, locSigmadEdx = 0.0;
+			dParticleID->GetScintMPdEandSigma(locP, locChargedTrackHypothesis->mass(), locdx, locProbabledEdx, locSigmadEdx);
+			dHistMap_DeltadEdXVsP[locPID][SYS_TOF]->Fill(locP, (locTOFHitMatchParams.dEdx - locProbabledEdx)*1.0E3);
+		}
+
+		//BCAL E/p
+		if(locBCALShowerMatchParams.dTrack != NULL)
+		{
+			const DBCALShower* locBCALShower = locBCALShowerMatchParams.dBCALShower;
+			double locEOverP = locBCALShower->E/locP;
+			dHistMap_EOverPVsP[locPID][SYS_BCAL]->Fill(locP, locEOverP);
+			dHistMap_EOverPVsTheta[locPID][SYS_BCAL]->Fill(locTheta, locEOverP);
+		}
+
+		//FCAL E/p
+		if(locFCALShowerMatchParams.dTrack != NULL)
+		{
+			const DFCALShower* locFCALShower = locFCALShowerMatchParams.dFCALShower;
+			double locEOverP = locFCALShower->getEnergy()/locP;
+			dHistMap_EOverPVsP[locPID][SYS_FCAL]->Fill(locP, locEOverP);
+			dHistMap_EOverPVsTheta[locPID][SYS_FCAL]->Fill(locTheta, locEOverP);
+		}
+
+		//Timing
+		if((locTimeDetector == SYS_TOF) || (locTimeDetector == SYS_BCAL) || (locTimeDetector == SYS_FCAL))
+		{
+			dHistMap_BetaVsP[locPID][locTimeDetector]->Fill(locP, locBeta_Timing);
+			dHistMap_DeltaBetaVsP[locPID][locTimeDetector]->Fill(locP, locDeltaBeta);
+			dHistMap_DeltaTVsP[locPID][locTimeDetector]->Fill(locP, locDeltaT);
+			dHistMap_TimePullVsP[locPID][locTimeDetector]->Fill(locP, locTimePull);
+			dHistMap_TimeFOMVsP[locPID][locTimeDetector]->Fill(locP, locFOM_Timing);
+		}
+
+		//CDC dE/dx
+		if(locTrackTimeBased->dNumHitsUsedFordEdx_CDC > 0)
+		{
+			dHistMap_dEdXVsP[locPID][SYS_CDC]->Fill(locP, locTrackTimeBased->ddEdx_CDC*1.0E6);
+			double locProbabledEdx = dParticleID->GetMostProbabledEdx_DC(locP, locChargedTrackHypothesis->mass(), locTrackTimeBased->ddx_CDC, true);
+			double locDeltadEdx = locTrackTimeBased->ddEdx_CDC - locProbabledEdx;
+			dHistMap_DeltadEdXVsP[locPID][SYS_CDC]->Fill(locP, 1.0E6*locDeltadEdx);
+			double locMeandx = locTrackTimeBased->ddx_CDC/locTrackTimeBased->dNumHitsUsedFordEdx_CDC;
+			double locSigmadEdx = dParticleID->GetdEdxSigma_DC(locTrackTimeBased->dNumHitsUsedFordEdx_CDC, locP, locChargedTrackHypothesis->mass(), locMeandx, true);
+			double locdEdXPull = locDeltadEdx/locSigmadEdx;
+			dHistMap_dEdXPullVsP[locPID][SYS_CDC]->Fill(locP, locDeltadEdx/locSigmadEdx);
+			double locdEdXChiSq = locdEdXPull*locdEdXPull;
+			double locdEdXFOM = TMath::Prob(locdEdXChiSq, locTrackTimeBased->dNumHitsUsedFordEdx_CDC);
+			dHistMap_dEdXFOMVsP[locPID][SYS_CDC]->Fill(locP, locdEdXFOM);
+		}
+
+		//FDC dE/dx
+		if(locTrackTimeBased->dNumHitsUsedFordEdx_FDC > 0)
+		{
+			dHistMap_dEdXVsP[locPID][SYS_FDC]->Fill(locP, locTrackTimeBased->ddEdx_FDC*1.0E6);
+			double locProbabledEdx = dParticleID->GetMostProbabledEdx_DC(locP, locChargedTrackHypothesis->mass(), locTrackTimeBased->ddx_FDC, false);
+			double locDeltadEdx = locTrackTimeBased->ddEdx_FDC - locProbabledEdx;
+			dHistMap_DeltadEdXVsP[locPID][SYS_FDC]->Fill(locP, 1.0E6*locDeltadEdx);
+			double locMeandx = locTrackTimeBased->ddx_FDC/locTrackTimeBased->dNumHitsUsedFordEdx_FDC;
+			double locSigmadEdx = dParticleID->GetdEdxSigma_DC(locTrackTimeBased->dNumHitsUsedFordEdx_FDC, locP, locChargedTrackHypothesis->mass(), locMeandx, false);
+			double locdEdXPull = locDeltadEdx/locSigmadEdx;
+			dHistMap_dEdXPullVsP[locPID][SYS_FDC]->Fill(locP, locDeltadEdx/locSigmadEdx);
+			double locdEdXChiSq = locdEdXPull*locdEdXPull;
+			double locdEdXFOM = TMath::Prob(locdEdXChiSq, locTrackTimeBased->dNumHitsUsedFordEdx_FDC);
+			dHistMap_dEdXFOMVsP[locPID][SYS_FDC]->Fill(locP, locdEdXFOM);
+		}
+
 		pair<Particle_t, Particle_t> locPIDPair(locPID, Unknown); //default unless matched
 		if(locMCThrown != NULL) //else bogus track (not matched to any thrown tracks)
 			locPIDPair.second = (Particle_t)(locMCThrown->type); //matched
 		if(dHistMap_PIDFOMForTruePID.find(locPIDPair) != dHistMap_PIDFOMForTruePID.end()) //else hist not created or PID is weird
 			dHistMap_PIDFOMForTruePID[locPIDPair]->Fill(locChargedTrackHypothesis->dFOM);
 
-		if((locChargedTrackHypothesis->dFOM < 0.01) && (locChargedTrackHypothesis->dNDF > 0))
-			dHistMap_PVsTheta_LowPIDFOM[locPID]->Fill(locTheta, locP);
-		else if(locChargedTrackHypothesis->dNDF == 0) //NaN
+		if(locChargedTrackHypothesis->dNDF == 0) //NaN
 			dHistMap_PVsTheta_NaNPIDFOM[locPID]->Fill(locTheta, locP);
-
-		if(locFOM_Timing < 0.01)
-			dHistMap_PVsTheta_LowTOFFOM[locPID]->Fill(locTheta, locP);
-		else if(locChargedTrackHypothesis->dNDF_Timing == 0) //NaN
-			dHistMap_PVsTheta_NaNTOFFOM[locPID]->Fill(locTheta, locP);
-
-		if(locFOM_DCdEdx < 0.01)
-			dHistMap_PVsTheta_LowDCdEdxFOM[locPID]->Fill(locTheta, locP);
-		else if(locChargedTrackHypothesis->dNDF_DCdEdx == 0) //NaN
-			dHistMap_PVsTheta_NaNDCdEdxFOM[locPID]->Fill(locTheta, locP);
-
-		if(locBeta_Timing < 0.0)
-			dHistMap_PVsTheta_NegativeBeta[locPID]->Fill(locTheta, locP);
 	}
 	japp->RootUnLock();
 }
@@ -328,9 +441,9 @@ void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* l
 
 	double locBeta_Timing = locNeutralParticleHypothesis->measuredBeta();
 	double locDeltaBeta = locNeutralParticleHypothesis->deltaBeta();
+	double locDeltaT = (locNeutralParticleHypothesis->t0() - locNeutralParticleHypothesis->time());
 
 	double locP = locNeutralParticleHypothesis->momentum().Mag();
-	double locTheta = locNeutralParticleHypothesis->momentum().Theta()*180.0/TMath::Pi();
 	double locMatchFOM = 0.0;
 	const DMCThrown* locMCThrown = (locMCThrownMatching != NULL) ? locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticleHypothesis, locMatchFOM) : NULL;
 
@@ -344,31 +457,26 @@ void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* l
 
 		if(locNeutralParticleHypothesis->t1_detector() == SYS_BCAL)
 		{
-			dHistMap_TOFFOM_BCAL[locPID]->Fill(locNeutralParticleHypothesis->dFOM);
-			dHistMap_TimePull_BCAL[locPID]->Fill(locTimePull);
-			dHistMap_TimePullVsTheta_BCAL[locPID]->Fill(locTheta, locTimePull);
-			dHistMap_TimePullVsP_BCAL[locPID]->Fill(locP, locTimePull);
+			dHistMap_BetaVsP[locPID][SYS_BCAL]->Fill(locP, locBeta_Timing);
+			dHistMap_DeltaBetaVsP[locPID][SYS_BCAL]->Fill(locP, locDeltaBeta);
+			dHistMap_DeltaTVsP[locPID][SYS_BCAL]->Fill(locP, locDeltaT);
+			dHistMap_TimePullVsP[locPID][SYS_BCAL]->Fill(locP, locTimePull);
+			dHistMap_TimeFOMVsP[locPID][SYS_BCAL]->Fill(locP, locNeutralParticleHypothesis->dFOM);
 		}
 		else if(locNeutralParticleHypothesis->t1_detector() == SYS_FCAL)
 		{
-			dHistMap_TOFFOM_FCAL[locPID]->Fill(locNeutralParticleHypothesis->dFOM);
-			dHistMap_TimePull_FCAL[locPID]->Fill(locTimePull);
-			dHistMap_TimePullVsP_FCAL[locPID]->Fill(locP, locTimePull);
+			dHistMap_BetaVsP[locPID][SYS_FCAL]->Fill(locP, locBeta_Timing);
+			dHistMap_DeltaBetaVsP[locPID][SYS_FCAL]->Fill(locP, locDeltaBeta);
+			dHistMap_DeltaTVsP[locPID][SYS_FCAL]->Fill(locP, locDeltaT);
+			dHistMap_TimePullVsP[locPID][SYS_FCAL]->Fill(locP, locTimePull);
+			dHistMap_TimeFOMVsP[locPID][SYS_FCAL]->Fill(locP, locNeutralParticleHypothesis->dFOM);
 		}
 
-		dHistMap_BetaVsP[locPID]->Fill(locP, locBeta_Timing);
-		dHistMap_DeltaBetaVsP[locPID]->Fill(locP, locDeltaBeta);
-		dHistMap_TOFFOMVsDeltaBeta[locPID]->Fill(locDeltaBeta, locNeutralParticleHypothesis->dFOM);
 		pair<Particle_t, Particle_t> locPIDPair(locPID, Unknown); //default unless matched
 		if(locMCThrown != NULL) //else bogus track (not matched to any thrown tracks)
 			locPIDPair.second = (Particle_t)(locMCThrown->type); //matched
 		if(dHistMap_PIDFOMForTruePID.find(locPIDPair) != dHistMap_PIDFOMForTruePID.end()) //else hist not created or PID is weird
 			dHistMap_PIDFOMForTruePID[locPIDPair]->Fill(locNeutralParticleHypothesis->dFOM);
-
-		if((locNeutralParticleHypothesis->dFOM < 0.01) && (locNeutralParticleHypothesis->dNDF > 0))
-			dHistMap_PVsTheta_LowPIDFOM[locPID]->Fill(locTheta, locP);
-		else if(locNeutralParticleHypothesis->dNDF == 0) //NaN
-			dHistMap_PVsTheta_NaNPIDFOM[locPID]->Fill(locTheta, locP);
 	}
 	japp->RootUnLock();
 }

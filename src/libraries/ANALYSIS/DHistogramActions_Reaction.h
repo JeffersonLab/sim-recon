@@ -77,8 +77,11 @@ class DHistogramAction_PID : public DAnalysisAction
 
 		DHistogramAction_PID(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_PID", false, locActionUniqueString), 
-		dNumFOMBins(200), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(250), dNum2DThetaBins(140), dNumPullBins(500), dNum2DPullBins(250),
-		dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(150.0)
+		dNum2DPBins(250), dNum2DdEdxBins(400), dNum2DBetaBins(400), dNum2DBCALThetaBins(260), dNum2DFCALThetaBins(120), dNum2DThetaBins(280), 
+		dNum2DEOverPBins(300), dNum2DDeltaBetaBins(400), dNum2DDeltadEdxBins(300), dNum2DDeltaTBins(400), dNum2DPullBins(200), dNumFOMBins(400), 
+		dNum2DFOMBins(200), dMinP(0.0), dMaxP(10.0), dMaxBCALP(3.0), dMindEdX(0.0), dMaxdEdX(25.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinBCALTheta(10.0), 
+		dMaxBCALTheta(140.0), dMinFCALTheta(0.0), dMaxFCALTheta(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinEOverP(0.0), dMaxEOverP(4.0), dMinDeltaBeta(-1.0), 
+		dMaxDeltaBeta(1.0), dMinDeltadEdx(-30.0), dMaxDeltadEdx(30.0), dMinDeltaT(-10.0), dMaxDeltaT(10.0), dMinPull(-10.0), dMaxPull(10.0)
 		{
 			dThrownPIDs.clear();
 			dThrownPIDs.push_back(Gamma);  dThrownPIDs.push_back(Neutron);
@@ -91,8 +94,11 @@ class DHistogramAction_PID : public DAnalysisAction
 
 		void Initialize(JEventLoop* locEventLoop);
 
-		unsigned int dNumFOMBins, dNumBetaBins, dNumDeltaBetaBins, dNum2DPBins, dNum2DThetaBins, dNumPullBins, dNum2DPullBins;
-		double dMinBeta, dMaxBeta, dMinDeltaBeta, dMaxDeltaBeta, dMinP, dMaxP, dMinTheta, dMaxTheta;
+		unsigned int dNum2DPBins, dNum2DdEdxBins, dNum2DBetaBins, dNum2DBCALThetaBins, dNum2DFCALThetaBins, dNum2DThetaBins;
+		unsigned int dNum2DEOverPBins, dNum2DDeltaBetaBins, dNum2DDeltadEdxBins, dNum2DDeltaTBins, dNum2DPullBins, dNumFOMBins, dNum2DFOMBins;
+		double dMinP, dMaxP, dMaxBCALP, dMindEdX, dMaxdEdX, dMinBeta, dMaxBeta, dMinBCALTheta, dMaxBCALTheta, dMinFCALTheta, dMaxFCALTheta, dMinTheta, dMaxTheta;
+		double dMinEOverP, dMaxEOverP, dMinDeltaBeta, dMaxDeltaBeta, dMinDeltadEdx, dMaxDeltadEdx, dMinDeltaT, dMaxDeltaT, dMinPull, dMaxPull;
+
 		deque<Particle_t> dThrownPIDs;
 
 	private:
@@ -104,35 +110,25 @@ class DHistogramAction_PID : public DAnalysisAction
 		const DParticleID* dParticleID;
 		const DAnalysisUtilities* dAnalysisUtilities;
 
-		map<Particle_t, TH1I*> dHistMap_PIDFOM;
-		map<Particle_t, TH1I*> dHistMap_TOFFOM_BCAL;
-		map<Particle_t, TH1I*> dHistMap_TOFFOM_FCAL;
-		map<Particle_t, TH1I*> dHistMap_TOFFOM_TOF;
-		map<Particle_t, TH1I*> dHistMap_TOFFOM_CDC;
-		map<Particle_t, TH1I*> dHistMap_DCdEdxFOM;
-		map<Particle_t, TH2I*> dHistMap_BetaVsP;
-		map<Particle_t, TH2I*> dHistMap_DeltaBetaVsP;
-		map<Particle_t, TH2I*> dHistMap_TOFFOMVsDeltaBeta;
+		map<Particle_t, map<DetectorSystem_t, TH2I*> > dHistMap_EOverPVsP;
+		map<Particle_t, map<DetectorSystem_t, TH2I*> > dHistMap_EOverPVsTheta;
 
-		map<Particle_t, TH1I*> dHistMap_TimePull_CDC;
-		map<Particle_t, TH1I*> dHistMap_TimePull_BCAL;
-		map<Particle_t, TH1I*> dHistMap_TimePull_TOF;
-		map<Particle_t, TH1I*> dHistMap_TimePull_FCAL;
+		map<Particle_t, map<DetectorSystem_t, TH2I*> > dHistMap_dEdXVsP;
+		map<Particle_t, map<DetectorSystem_t, TH2I*> > dHistMap_DeltadEdXVsP;
+		map<Particle_t, map<DetectorSystem_t, TH2I*> > dHistMap_dEdXPullVsP;
+		map<Particle_t, map<DetectorSystem_t, TH2I*> > dHistMap_dEdXFOMVsP;
 
-		map<Particle_t, TH2I*> dHistMap_TimePullVsTheta_CDC;
-		map<Particle_t, TH2I*> dHistMap_TimePullVsP_CDC;
-		map<Particle_t, TH2I*> dHistMap_TimePullVsTheta_BCAL;
-		map<Particle_t, TH2I*> dHistMap_TimePullVsP_BCAL;
-		map<Particle_t, TH2I*> dHistMap_TimePullVsP_TOF;
-		map<Particle_t, TH2I*> dHistMap_TimePullVsP_FCAL;
+		map<Particle_t, map<DetectorSystem_t, TH2I*> > dHistMap_BetaVsP;
+		map<Particle_t, map<DetectorSystem_t, TH2I*> > dHistMap_DeltaBetaVsP;
 
-		map<Particle_t, TH2I*> dHistMap_PVsTheta_LowPIDFOM;
+		map<Particle_t, map<DetectorSystem_t, TH2I*> > dHistMap_DeltaTVsP;
+		map<Particle_t, map<DetectorSystem_t, TH2I*> > dHistMap_TimePullVsP;
+		map<Particle_t, map<DetectorSystem_t, TH2I*> > dHistMap_TimeFOMVsP;
+
+		map<Particle_t, TH1I*> dHistMap_PIDFOM; //overall
+
 		map<Particle_t, TH2I*> dHistMap_PVsTheta_NaNPIDFOM;
-		map<Particle_t, TH2I*> dHistMap_PVsTheta_LowTOFFOM;
-		map<Particle_t, TH2I*> dHistMap_PVsTheta_NaNTOFFOM;
 		map<Particle_t, TH2I*> dHistMap_PVsTheta_NegativeBeta;
-		map<Particle_t, TH2I*> dHistMap_PVsTheta_LowDCdEdxFOM;
-		map<Particle_t, TH2I*> dHistMap_PVsTheta_NaNDCdEdxFOM;
 
 		map<pair<Particle_t, Particle_t>, TH1I*> dHistMap_PIDFOMForTruePID;
 

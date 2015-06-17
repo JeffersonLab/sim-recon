@@ -131,8 +131,14 @@ jerror_t DEventRFBunch_factory_Calibrations::Select_RFBunch(JEventLoop* locEvent
 	//Use tracks with matching SC hits, if any
 	//If None: set DEventRFBunch::dTime to NaN
 
-	const DDetectorMatches* locDetectorMatches = NULL;
-	locEventLoop->GetSingle(locDetectorMatches, "WireBased");
+	vector<const DDetectorMatches*> locDetectorMatchVector;
+	locEventLoop->Get(locDetectorMatchVector, "WireBased");
+	if(locDetectorMatchVector.empty())
+	{
+		cout << "WARNING: WIREBASED TRACKS NOT PRESENT IN DEventRFBunch_factory_Calibrations(). RETURNING NaN." << endl;
+		return Create_NaNRFBunch();
+	}
+	const DDetectorMatches* locDetectorMatches = locDetectorMatchVector[0];
 
 	vector<pair<double, const JObject*> > locTimes;
 	int locBestRFBunchShift = 0, locHighestNumVotes = 0;
