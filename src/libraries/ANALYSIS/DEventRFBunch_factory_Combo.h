@@ -69,7 +69,7 @@ class DEventRFBunch_factory_Combo:public jana::JFactory<DEventRFBunch>
 
 		bool Get_StartTime(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, double& locStartTime);
 		double Calc_StartTime(const DNeutralShower* locNeutralShower, const DVertex* locVertex);
-		int Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes);
+		int Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes, int& locBestNumVotes);
 
 		bool Is_AllTruePID(const DMCThrownMatching* locMCThrownMatching, const DParticleComboBlueprint* locParticleComboBlueprint);
 

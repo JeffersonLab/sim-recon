@@ -98,7 +98,6 @@ jerror_t DEventRFBunch_factory::Select_RFBunch(JEventLoop* locEventLoop, vector<
 		//Use tracks with matching SC hits, if any
 		//If none, use tracks with matching hits in any detector, if any
 		//If none: Let neutral showers vote (assume PID = photon) on RF bunch
-			//If highest vote total for a bunch == 1, set DEventRFBunch::dTime to NaN
 		//If None: set DEventRFBunch::dTime to NaN
 
 	//Voting when RF time present:
@@ -124,11 +123,7 @@ jerror_t DEventRFBunch_factory::Select_RFBunch(JEventLoop* locEventLoop, vector<
 	else if(Find_TrackTimes_NonSC(locDetectorMatches, locTrackTimeBasedVector, locTimes))
 		locBestRFBunchShift = Conduct_Vote(locEventLoop, locRFTime->dTime, locTimes, true, locHighestNumVotes);
 	else if(Find_NeutralTimes(locEventLoop, locTimes))
-	{
 		locBestRFBunchShift = Conduct_Vote(locEventLoop, locRFTime->dTime, locTimes, false, locHighestNumVotes);
-		if(locHighestNumVotes < 2) //Not enough consistent neutrals
-			return Create_NaNRFBunch();
-	}
 	else //SET NaN
 		return Create_NaNRFBunch();
 

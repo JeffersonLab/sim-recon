@@ -216,7 +216,7 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 	const DVertex* locVertex = NULL;
 	locEventLoop->GetSingle(locVertex);
 
-	map<int, DEventRFBunch*> locComboRFBunchMap;
+	map<pair<int, int>, DEventRFBunch*> locComboRFBunchMap; //key pair ints are: num-rf-bunch-shifts, num-votes
 
 	//pre-sort time-based tracks
 	map<pair<const DChargedTrack*, Particle_t>, const DTrackTimeBased*> locTimeBasedSourceMap;
@@ -313,7 +313,8 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 		}
 
 		// Find # RF Bunch Shifts
-		int locNumBunchShifts = Find_BestRFBunchShift(locRFTime, locPropagatedTimes);
+		int locNumParticleVotes = 0;
+		int locNumBunchShifts = Find_BestRFBunchShift(locRFTime, locPropagatedTimes, locNumParticleVotes);
 		double locNewRFTime = locRFTime + (double)(locNumBunchShifts)*dRFBunchPeriod;
 
 		//Hist
@@ -340,22 +341,23 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 		japp->RootUnLock(); //unlock
 
 		// Create new RF Bunch if doesn't already exist
-		if(locComboRFBunchMap.find(locNumBunchShifts) != locComboRFBunchMap.end()) //already created, don't recreate identical object!
+		pair<int, int> locVoteResultPair(locNumBunchShifts, locNumParticleVotes); //pair ints are: num-rf-bunch-shifts, num-votes
+		if(locComboRFBunchMap.find(locVoteResultPair) != locComboRFBunchMap.end()) //already created, don't recreate identical object!
 		{
-			locComboRFBunchMap[locNumBunchShifts]->AddAssociatedObject(locParticleComboBlueprint);
-			locComboRFBunchMap[locNumBunchShifts]->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
+			locComboRFBunchMap[locVoteResultPair]->AddAssociatedObject(locParticleComboBlueprint);
+			locComboRFBunchMap[locVoteResultPair]->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
 		}
 		else
 		{
 			DEventRFBunch* locNewEventRFBunch = new DEventRFBunch();
 			locNewEventRFBunch->dTime = locNewRFTime;
 			locNewEventRFBunch->dTimeVariance = locRFVariance;
-			locNewEventRFBunch->dNumParticleVotes = locPropagatedTimes.size();
+			locNewEventRFBunch->dNumParticleVotes = locNumParticleVotes;
 			locNewEventRFBunch->dTimeSource = locTimeSource;
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
 			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
 			_data.push_back(locNewEventRFBunch);
-			locComboRFBunchMap[locNumBunchShifts] = locNewEventRFBunch;
+			locComboRFBunchMap[locVoteResultPair] = locNewEventRFBunch;
 		}
 	}
 
@@ -418,29 +420,48 @@ double DEventRFBunch_factory_Combo::Calc_StartTime(const DNeutralShower* locNeut
 	return locHitTime - locFlightTime;
 }
 
-int DEventRFBunch_factory_Combo::Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes)
+int DEventRFBunch_factory_Combo::Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes, int& locBestNumVotes)
 {
 	//then find the #beam buckets the RF time needs to shift to match it
-	map<int, unsigned int> locNumRFBucketsShiftedMap; //key is # RF buckets the RF time is shifted to match the track, value is the # tracks at that shift
+	//key is # RF buckets the RF time is shifted to match the track, first value is the # tracks at that shift, second value is sum(delta-t^2) (for standard deviation from 0)
+		//use delta-t^2 (related to standard deviation from 0) as tie-breaker
+
+	locBestNumVotes = 0;
+	if(locTimes.empty())
+		return 0; //shouldn't happen ...
+
+	map<int, pair<unsigned int, double> > locNumRFBucketsShiftedMap;
 	int locBestRFBunchShift = 0;
 	for(unsigned int loc_i = 0; loc_i < locTimes.size(); ++loc_i)
 	{
 		double locDeltaT = locTimes[loc_i] - locRFHitTime;
 		int locNumRFBucketsShifted = (locDeltaT > 0.0) ? int(locDeltaT/dRFBunchPeriod + 0.5) : int(locDeltaT/dRFBunchPeriod - 0.5);
+		locDeltaT -= dRFBunchPeriod*double(locNumRFBucketsShifted);
 
 		if(locNumRFBucketsShiftedMap.find(locNumRFBucketsShifted) == locNumRFBucketsShiftedMap.end())
-			locNumRFBucketsShiftedMap[locNumRFBucketsShifted] = 1;
+			locNumRFBucketsShiftedMap[locNumRFBucketsShifted] = pair<unsigned int, double>(1, locDeltaT*locDeltaT);
 		else
-			++(locNumRFBucketsShiftedMap[locNumRFBucketsShifted]);
-
+		{
+			++(locNumRFBucketsShiftedMap[locNumRFBucketsShifted].first);
+			locNumRFBucketsShiftedMap[locNumRFBucketsShifted].second += locDeltaT*locDeltaT;
+		}
 		if(locNumRFBucketsShifted == locBestRFBunchShift)
 			continue;
 
-		unsigned int locBestNumTracks = locNumRFBucketsShiftedMap[locBestRFBunchShift];
-		unsigned int locNumTracks = locNumRFBucketsShiftedMap[locNumRFBucketsShifted];
+		unsigned int locBestNumTracks = locNumRFBucketsShiftedMap[locBestRFBunchShift].first;
+		unsigned int locNumTracks = locNumRFBucketsShiftedMap[locNumRFBucketsShifted].first;
 		if(locNumTracks > locBestNumTracks)
 			locBestRFBunchShift = locNumRFBucketsShifted;
+		else if(locNumTracks == locBestNumTracks)
+		{
+			double locBestDeltaTSq = locNumRFBucketsShiftedMap[locBestRFBunchShift].second;
+			double locDeltaTSq = locNumRFBucketsShiftedMap[locNumRFBucketsShifted].second;
+			if(locDeltaTSq < locBestDeltaTSq)
+				locBestRFBunchShift = locNumRFBucketsShifted;
+		}
 	}
+
+	locBestNumVotes = locNumRFBucketsShiftedMap[locBestRFBunchShift].first;
 	return locBestRFBunchShift;
 }
 

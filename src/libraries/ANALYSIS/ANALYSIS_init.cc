@@ -106,7 +106,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DCutAction_BDTSignalCombo(NULL, 0.0, false, false);
 
 	DCutAction_TrackHitPattern(NULL);
-	DCutAction_CutProtonPiPlusdEdx(NULL, 0.0);
+	DCutAction_ProtonPiPlusdEdx(NULL, 0.0);
 	DCutAction_BeamEnergy(NULL, false, 0.0, 0.0);
 
 	return NOERROR;

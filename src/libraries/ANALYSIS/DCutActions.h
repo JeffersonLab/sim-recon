@@ -48,7 +48,7 @@ DCutAction_InvariantMass
 
 DCutAction_TransverseMomentum
 DCutAction_TrackHitPattern
-DCutAction_CutProtonPiPlusdEdx
+DCutAction_ProtonPiPlusdEdx
 DCutAction_BeamEnergy
 */
 
@@ -479,11 +479,15 @@ class DCutAction_TrackHitPattern : public DAnalysisAction
 		const DParticleID* dParticleID;
 };
 
-class DCutAction_CutProtonPiPlusdEdx : public DAnalysisAction
+class DCutAction_ProtonPiPlusdEdx : public DAnalysisAction
 {
+	//At p > "dOverlapRegionMinP" (default 1.0 GeV/c) you can't distinguish between protons & pions
+		// Assume they are pions, and so for pion candidates don't cut regardless of the dE/dx
+		// For protons, only cut if "dCutProtonsInOverlapRegionFlag" is true
+
 	public:
 
-		DCutAction_CutProtonPiPlusdEdx(const DReaction* locReaction, double locTrackdEdxCut_InKeV, bool locCutProtonsInOverlapRegionFlag = false, string locActionUniqueString = "") :
+		DCutAction_ProtonPiPlusdEdx(const DReaction* locReaction, double locTrackdEdxCut_InKeV, bool locCutProtonsInOverlapRegionFlag = false, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Cut_ProtonPiPlusdEdx", false, locActionUniqueString),
 		dTrackdEdxCut_InKeV(locTrackdEdxCut_InKeV), dCutProtonsInOverlapRegionFlag(locCutProtonsInOverlapRegionFlag), dOverlapRegionMinP(1.0) {}
 

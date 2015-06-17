@@ -49,10 +49,8 @@ void DCustomAction_TrackingEfficiency::Initialize(JEventLoop* locEventLoop)
 		Create_EfficiencyHists(true);
 
 		if(!locIsRESTEvent)
-		{
 			Create_MatchingHists(false);
-			Create_MatchingHists(true);
-		}
+		Create_MatchingHists(true);
 
 		Create_PIDHists();
 	}
@@ -442,7 +440,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 		return true; //NOT SUPPORTED (YET?)
 
 	const DKinematicData* locMissingParticle = locParticleCombo->Get_MissingParticle(); //is NULL if no kinfit!!
-
+	
 	// Get missing particle p4 & covariance
 	DLorentzVector locMissingP4;
 	DMatrixDSym locMissingCovarianceMatrix(3);
@@ -458,7 +456,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 		locKinFitCovarianceMatrix.ResizeTo(3, 3);
 		locMissingCovarianceMatrix = locKinFitCovarianceMatrix;
 	}
-
+	
 	double locVertexZ = locParticleCombo->Get_EventVertex().Z();
 	int locVertexZBin = int((locVertexZ - dMinVertexZ)/dVertexZBinSize);
 	if((locVertexZBin < 0) || (locVertexZBin >= int(dNumVertexZBins)))
@@ -500,7 +498,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 
 		DVector3 locDeltaP3 = locUnusedWireBasedTracks[loc_i]->momentum() - locMissingP4.Vect();
 		double locMatchFOM = Calc_MatchFOM(locDeltaP3, locCovarianceMatrix);
-
+	
 		if(locMatchFOM > locBestWireBasedMatchFOM)
 		{
 			locBestWireBasedMatchFOM = locMatchFOM;
@@ -508,15 +506,19 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 		}
 	}
 
-	const DDetectorMatches* locDetectorMatches_WireBased = NULL;
-	locEventLoop->GetSingle(locDetectorMatches_WireBased, "WireBased");
+	if(locBestTrackWireBased != NULL)
+	{
+		vector<const DDetectorMatches*> locMatchVector_WireBased;
+		locEventLoop->Get(locMatchVector_WireBased, "WireBased");
 
-	bool locHasDetectorMatch_WireBased = (locBestTrackWireBased == NULL) ? false : locDetectorMatches_WireBased->Get_IsMatchedToHit(locBestTrackWireBased);
-	Fill_ResolutionAndTrackEff_Hists(locBestTrackWireBased, locMissingP4, locVertexZBin, locBestWireBasedMatchFOM, locHasDetectorMatch_WireBased, false);
+		const DDetectorMatches* locDetectorMatches_WireBased = locMatchVector_WireBased.empty() ? NULL : locMatchVector_WireBased[0];
+		bool locHasDetectorMatch_WireBased = (locBestTrackWireBased == NULL) ? false : locDetectorMatches_WireBased->Get_IsMatchedToHit(locBestTrackWireBased);
+		Fill_ResolutionAndTrackEff_Hists(locBestTrackWireBased, locMissingP4, locVertexZBin, locBestWireBasedMatchFOM, locHasDetectorMatch_WireBased, false);
 
-	//Matching
-	if((locBestTrackWireBased != NULL) && (locBestWireBasedMatchFOM >= dMinTrackMatchFOM))
-		Fill_MatchingHists(locEventLoop, locBestTrackWireBased, false);
+		//Matching
+		if(locBestWireBasedMatchFOM >= dMinTrackMatchFOM)
+			Fill_MatchingHists(locEventLoop, locBestTrackWireBased, false);
+	}
 
 	/************************************************* TIME-BASED TRACKS *************************************************/
 

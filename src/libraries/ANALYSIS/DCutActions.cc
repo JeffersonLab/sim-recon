@@ -792,14 +792,14 @@ bool DCutAction_TrackHitPattern::Cut_TrackHitPattern(const DKinematicData* locTr
 	return true;
 }
 
-string DCutAction_CutProtonPiPlusdEdx::Get_ActionName(void) const
+string DCutAction_ProtonPiPlusdEdx::Get_ActionName(void) const
 {
 	ostringstream locStream;
 	locStream << DAnalysisAction::Get_ActionName() << "_" << dTrackdEdxCut_InKeV;
 	return locStream.str();
 }
 
-bool DCutAction_CutProtonPiPlusdEdx::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+bool DCutAction_ProtonPiPlusdEdx::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	//ONLY Cut between p/pi+ in the CDC (not the FDC: most protons large angles, so most high dE/dx tracks in the FDC are pions)
 
@@ -825,9 +825,9 @@ bool DCutAction_CutProtonPiPlusdEdx::Perform_Action(JEventLoop* locEventLoop, co
 		const DTrackTimeBased* locTrackTimeBased = NULL;
 		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
 
-		if((locPID == Proton) && (locTrackTimeBased->ddEdx_CDC*1.0E6 > dTrackdEdxCut_InKeV))
+		if((locPID == Proton) && (locTrackTimeBased->ddEdx_CDC*1.0E6 < dTrackdEdxCut_InKeV))
 			return false;
-		if((locPID == PiPlus) && (locTrackTimeBased->ddEdx_CDC*1.0E6 < dTrackdEdxCut_InKeV))
+		if((locPID == PiPlus) && (locTrackTimeBased->ddEdx_CDC*1.0E6 > dTrackdEdxCut_InKeV))
 			return false;
 	}
 
