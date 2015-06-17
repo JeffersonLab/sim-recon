@@ -58,6 +58,7 @@
 		locHist_SCHitEnergy->GetXaxis()->SetTitleSize(0.05);
 		locHist_SCHitEnergy->GetXaxis()->SetLabelSize(0.05);
 		locHist_SCHitEnergy->Draw();
+		gPad->SetLogy();
 	}
 
 	locCanvas->cd(4);
@@ -70,6 +71,7 @@
 		locHist_SCHitEnergyVsSector->GetXaxis()->SetLabelSize(0.05);
 		locHist_SCHitEnergyVsSector->GetYaxis()->SetLabelSize(0.05);
 		locHist_SCHitEnergyVsSector->Draw("COLZ");
+		gPad->SetLogz();
 	}
 
 	locCanvas->cd(2);

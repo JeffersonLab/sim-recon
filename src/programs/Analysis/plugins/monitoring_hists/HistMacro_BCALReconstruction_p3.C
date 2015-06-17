@@ -52,7 +52,7 @@
 	gPad->SetGrid();
 	if(locHist_BetaVsP_QMinus != NULL)
 	{
-		locHist_BetaVsP_QMinus->GetXaxis()->SetRangeUser(0.0, 4.0);
+		locHist_BetaVsP_QMinus->GetXaxis()->SetRangeUser(0.0, 2.0);
 		locHist_BetaVsP_QMinus->GetXaxis()->SetTitleSize(0.05);
 		locHist_BetaVsP_QMinus->GetYaxis()->SetTitleSize(0.05);
 		locHist_BetaVsP_QMinus->GetXaxis()->SetLabelSize(0.05);
@@ -67,7 +67,7 @@
 	gPad->SetGrid();
 	if(locHist_BetaVsP_QZero != NULL)
 	{
-		locHist_BetaVsP_QZero->GetXaxis()->SetRangeUser(0.0, 4.0);
+		locHist_BetaVsP_QZero->GetXaxis()->SetRangeUser(0.0, 2.0);
 		locHist_BetaVsP_QZero->GetXaxis()->SetTitleSize(0.05);
 		locHist_BetaVsP_QZero->GetYaxis()->SetTitleSize(0.05);
 		locHist_BetaVsP_QZero->GetXaxis()->SetLabelSize(0.05);
@@ -80,7 +80,7 @@
 	gPad->SetGrid();
 	if(locHist_BetaVsP_QPlus != NULL)
 	{
-		locHist_BetaVsP_QPlus->GetXaxis()->SetRangeUser(0.0, 4.0);
+		locHist_BetaVsP_QPlus->GetXaxis()->SetRangeUser(0.0, 2.0);
 		locHist_BetaVsP_QPlus->GetXaxis()->SetTitleSize(0.05);
 		locHist_BetaVsP_QPlus->GetYaxis()->SetTitleSize(0.05);
 		locHist_BetaVsP_QPlus->GetXaxis()->SetLabelSize(0.05);
@@ -96,7 +96,7 @@
 	gPad->SetGrid();
 	if(locHist_EOverPVsP_QPlus != NULL)
 	{
-		locHist_EOverPVsP_QPlus->GetXaxis()->SetRangeUser(0.0, 4.0);
+		locHist_EOverPVsP_QPlus->GetXaxis()->SetRangeUser(0.0, 2.0);
 		locHist_EOverPVsP_QPlus->GetXaxis()->SetTitleSize(0.05);
 		locHist_EOverPVsP_QPlus->GetYaxis()->SetTitleSize(0.05);
 		locHist_EOverPVsP_QPlus->GetXaxis()->SetLabelSize(0.05);
@@ -109,7 +109,7 @@
 	gPad->SetGrid();
 	if(locHist_EOverPVsP_QMinus != NULL)
 	{
-		locHist_EOverPVsP_QMinus->GetXaxis()->SetRangeUser(0.0, 4.0);
+		locHist_EOverPVsP_QMinus->GetXaxis()->SetRangeUser(0.0, 2.0);
 		locHist_EOverPVsP_QMinus->GetXaxis()->SetTitleSize(0.05);
 		locHist_EOverPVsP_QMinus->GetYaxis()->SetTitleSize(0.05);
 		locHist_EOverPVsP_QMinus->GetXaxis()->SetLabelSize(0.05);
