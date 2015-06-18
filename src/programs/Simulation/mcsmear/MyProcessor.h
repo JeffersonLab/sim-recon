@@ -35,6 +35,6 @@ class MyProcessor:public JEventProcessor
       unsigned long Nevents_written;
 
    private:
-      bool HDDM_USE_COMPRESSION;
+      int  HDDM_USE_COMPRESSION;
       bool HDDM_USE_INTEGRITY_CHECKS;
 };
