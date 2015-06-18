@@ -70,26 +70,31 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// PID & Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with pre-kinematic-fit particle data
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56));
 
 //INSERT TIGHT TIMING PID CUT HERE WHEN READY!!!! // Want as clean of an event sample as possible.
+	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Unknown, SYS_NULL)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
 	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.0, true)); //select p/pi+ above/below 2.0, //true/false: cut all/no proton candidates above p = 1 GeV/c
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "Post-dEdx"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Post-dEdx")); //false: fill histograms with pre-kinematic-fit particle data
+	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56, "Post-dEdx"));
 
 	// Tight cut on track quality
-	locReaction->Add_AnalysisAction(new DCutAction_TrackHitPattern(locReaction, 2, 4)); //args: locMinHitRingsPerCDCSuperlayer, locMinHitPlanesPerFDCPackage
-
-	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56));
+//	locReaction->Add_AnalysisAction(new DCutAction_TrackHitPattern(locReaction, 2, 4)); //args: locMinHitRingsPerCDCSuperlayer, locMinHitPlanesPerFDCPackage
 
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 //	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05)); //5% confidence level cut //require kinematic fit converges
 
+//INSERT MASS-CUT OR KINFIT CUT
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56, "Post-KinFit"));
 
 	// Kinematics
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
-	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, "Post-KinFit")); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
 	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
@@ -137,7 +142,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.2, 0.2));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.4, 0.4));
 
 	/**************************************************** TrackEff_MissingPiMinus Analysis Actions ****************************************************/
 
@@ -147,26 +152,35 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// PID & Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with pre-kinematic-fit particle data
 
 //INSERT TIGHT TIMING PID CUT HERE WHEN READY!!!! // Want as clean of an event sample as possible.
-	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.0, true));
+	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Unknown, SYS_NULL)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
+	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.0, true)); //select p/pi+ above/below 2.0, //true/false: cut all/no proton candidates above p = 1 GeV/c
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "Post-dEdx"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Post-dEdx")); //false: fill histograms with pre-kinematic-fit particle data
+	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 
 	// Tight cut on track quality
-	locReaction->Add_AnalysisAction(new DCutAction_TrackHitPattern(locReaction, 2, 4)); //args: locMinHitRingsPerCDCSuperlayer, locMinHitPlanesPerFDCPackage
+//	locReaction->Add_AnalysisAction(new DCutAction_TrackHitPattern(locReaction, 2, 4)); //args: locMinHitRingsPerCDCSuperlayer, locMinHitPlanesPerFDCPackage
 
 	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.2, 0.2));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4));
 
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 //	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05)); //5% confidence level cut //require kinematic fit converges
 
-	// Kinematics
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
-	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
-
+//INSERT MASS-CUT OR KINFIT CUT
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4, "Post-KinFit"));
+
+	// Missing Mass Cut
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.06, 0.1));
+
+	// Kinematics
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, "Post-KinFit")); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
 	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
@@ -215,7 +229,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.2, 0.2));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.4, 0.4));
 
 	/**************************************************** TrackEff_MissingPiPlus Analysis Actions ****************************************************/
 
@@ -225,12 +239,18 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// PID & Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with pre-kinematic-fit particle data
 
 //INSERT TIGHT TIMING PID CUT HERE WHEN READY!!!! // Want as clean of an event sample as possible.
-	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.0, true));
+	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Unknown, SYS_NULL)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
+	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.0, true)); //select p/pi+ above/below 2.0, //true/false: cut all/no proton candidates above p = 1 GeV/c
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "Post-dEdx"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Post-dEdx")); //false: fill histograms with pre-kinematic-fit particle data
+	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 
 	// Tight cut on track quality
-	locReaction->Add_AnalysisAction(new DCutAction_TrackHitPattern(locReaction, 2, 4)); //args: locMinHitRingsPerCDCSuperlayer, locMinHitPlanesPerFDCPackage
+//	locReaction->Add_AnalysisAction(new DCutAction_TrackHitPattern(locReaction, 2, 4)); //args: locMinHitRingsPerCDCSuperlayer, locMinHitPlanesPerFDCPackage
 
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4));
@@ -239,12 +259,11 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 //	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05)); //5% confidence level cut //require kinematic fit converges
 
-	// Kinematics
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
-	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
+	// Missing Mass Cut
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.06, 0.1));
 
-	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.2, 0.2, "Post-KinFit"));
+	// Kinematics
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, "Post-KinFit")); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
 	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
