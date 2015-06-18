@@ -51,6 +51,7 @@ DCutAction_TrackHitPattern
 DCutAction_ProtonPiPlusdEdx
 DCutAction_BeamEnergy
 DCutAction_TrackFCALShowerEOverP
+DCutAction_PIDDeltaT
 */
 
 class DCutAction_ThrownTopology : public DAnalysisAction
@@ -531,9 +532,9 @@ class DCutAction_TrackFCALShowerEOverP : public DAnalysisAction
 
 	public:
 
-		DCutAction_TrackFCALShowerEOverP(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locShowerEOverP, string locActionUniqueString = "") :
+		DCutAction_TrackFCALShowerEOverP(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locShowerEOverPCut, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Cut_TrackFCALShowerEOverP", locUseKinFitResultsFlag, locActionUniqueString),
-		dShowerEOverP(locShowerEOverP){}
+		dShowerEOverPCut(locShowerEOverPCut){}
 
 		void Initialize(JEventLoop* locEventLoop){};
 		string Get_ActionName(void) const;
@@ -542,7 +543,30 @@ class DCutAction_TrackFCALShowerEOverP : public DAnalysisAction
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
-		double dShowerEOverP;
+		double dShowerEOverPCut;
+};
+
+class DCutAction_PIDDeltaT : public DAnalysisAction
+{
+	//if dPID = Unknown, apply cut to all PIDs
+	//if dSystem = SYS_NULL, apply cut to all systems
+
+	public:
+
+		DCutAction_PIDDeltaT(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locDeltaTCut, Particle_t locPID = Unknown, DetectorSystem_t locSystem = SYS_NULL, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Cut_PIDDeltaT", locUseKinFitResultsFlag, locActionUniqueString),
+		dDeltaTCut(locDeltaTCut), dPID(locPID), dSystem(locSystem){}
+
+		void Initialize(JEventLoop* locEventLoop){};
+		string Get_ActionName(void) const;
+
+	private:
+
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		double dDeltaTCut;
+		Particle_t dPID;
+		DetectorSystem_t dSystem;
 };
 
 #endif // _DCutActions_

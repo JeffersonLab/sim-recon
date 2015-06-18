@@ -318,7 +318,7 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 	Particle_t locPID = locChargedTrackHypothesis->PID();
 	double locBeta_Timing = locChargedTrackHypothesis->measuredBeta();
 	double locDeltaBeta = locChargedTrackHypothesis->deltaBeta();
-	double locDeltaT = (locChargedTrackHypothesis->t0() - locChargedTrackHypothesis->time());
+	double locDeltaT = (locChargedTrackHypothesis->time() - locChargedTrackHypothesis->t0());
 	double locFOM_Timing = (locChargedTrackHypothesis->dNDF_Timing > 0) ? TMath::Prob(locChargedTrackHypothesis->dChiSq_Timing, locChargedTrackHypothesis->dNDF_Timing) : numeric_limits<double>::quiet_NaN();
 
 	double locP = locChargedTrackHypothesis->momentum().Mag();

@@ -858,7 +858,7 @@ bool DCutAction_BeamEnergy::Perform_Action(JEventLoop* locEventLoop, const DPart
 string DCutAction_TrackFCALShowerEOverP::Get_ActionName(void) const
 {
 	ostringstream locStream;
-	locStream << DAnalysisAction::Get_ActionName() << "_" << dShowerEOverP;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dShowerEOverPCut;
 	return locStream.str();
 }
 
@@ -887,10 +887,45 @@ bool DCutAction_TrackFCALShowerEOverP::Perform_Action(JEventLoop* locEventLoop, 
 
 		if((locPID == Electron) || (locPID == Positron))
 		{
-			if(locShowerEOverP < dShowerEOverP)
+			if(locShowerEOverP < dShowerEOverPCut)
 				return false;
 		}
-		else if(locShowerEOverP > dShowerEOverP)
+		else if(locShowerEOverP > dShowerEOverPCut)
+			return false;
+	}
+
+	return true;
+}
+
+string DCutAction_PIDDeltaT::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dPID << "_" << dSystem << "_" << dDeltaTCut;
+	return locStream.str();
+}
+
+bool DCutAction_PIDDeltaT::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	//if dPID = Unknown, apply cut to all PIDs
+	//if dSystem = SYS_NULL, apply cut to all systems
+
+	deque<const DKinematicData*> locParticles;
+	if(Get_UseKinFitResultsFlag())
+		locParticleCombo->Get_DetectedFinalChargedParticles(locParticles);
+	else
+		locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
+
+	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
+	{
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+		if((dPID != Unknown) && (locChargedTrackHypothesis->PID() != dPID))
+			continue;
+		if((dSystem != SYS_NULL) && (locChargedTrackHypothesis->t0_detector() != dSystem))
+			continue;
+
+		double locDeltaT = locChargedTrackHypothesis->time() - locChargedTrackHypothesis->t0();
+
+		if(fabs(locDeltaT) > dDeltaTCut)
 			return false;
 	}
 
