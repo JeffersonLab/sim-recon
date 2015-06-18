@@ -422,7 +422,10 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'M': NO_POISSON_STATISTICS = true;              break;
       case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec;           break;
       case 'S': START_SIGMA= atof(&ptr[2])*k_psec;         break;
-      }
+ 	  case '-':
+	  	if(string(ptr)=="--help") Usage();
+		break;
+     }
     }
     else {
       INFILENAME = argv[i];
