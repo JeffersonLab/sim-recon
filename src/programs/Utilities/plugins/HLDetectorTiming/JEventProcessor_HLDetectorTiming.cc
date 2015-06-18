@@ -602,8 +602,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
     const DEventRFBunch *thisRFBunch = NULL;
     loop->GetSingle(thisRFBunch, "Calibrations"); // SC only hits
 
-    if (USE_RF_BUNCH){
-        if (thisRFBunch == NULL || thisRFBunch->dNumParticleVotes < 2) return NOERROR; // Require 2 votes on this RF bunch
+    if (USE_RF_BUNCH && thisRFBunch->dNumParticleVotes >= 2){
         // Loop over TAGM hits
         for (unsigned int j = 0 ; j < tagmHitVector.size(); j++){
             int nTAGMColumns = 122;
@@ -775,6 +774,18 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
         float flightTimeCorrectedSCTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime; 
         // There appears to be some problem with the CDC times when the SC is used as t0
         // This histogram should help diagnose the issue
+        if (USE_RF_BUNCH && thisRFBunch->dNumParticleVotes >= 2){
+            char name [200];
+            char title[500];
+            sprintf(name, "Sector %.2i", locSCHitMatchParams.dSCHit->sector);
+            sprintf(title, "SC Sector %i t_{Target} - t_{RF}; t_{Target} - t_{RF} [ns]; Entries", locSCHitMatchParams.dSCHit->sector);
+            double locShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(thisRFTime->dTime, flightTimeCorrectedSCTime);
+            Fill1DHistogram("HLDetectorTiming", "SC_Target_RF_Compare", name,
+                    flightTimeCorrectedSCTime - locShiftedTime,
+                    title,
+                    NBINS_RF_COMPARE, MIN_RF_COMPARE, MAX_RF_COMPARE);
+        }
+
         vector < const DCDCTrackHit *> cdcTrackHitVector;
         thisTrack->Get(cdcTrackHitVector);
         if (cdcTrackHitVector.size() != 0){
