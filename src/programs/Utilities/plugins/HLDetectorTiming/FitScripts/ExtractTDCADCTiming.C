@@ -306,7 +306,7 @@ void ExtractTDCADCTiming(int runNumber){
             // Scan over the histogram
             //chose the correct number of bins based on the histogram
             float nsPerBin = (projY->GetBinCenter(projY->GetNbinsX()) - projY->GetBinCenter(1)) / projY->GetNbinsX();
-            float timeWindow = 2; //ns (Full Width)
+            float timeWindow = 0.5; //ns (Full Width) -- Pretty kiler resolution
             int binWindow = int(timeWindow / nsPerBin);
             double maxEntries = 0;
             double maxMean = 0;

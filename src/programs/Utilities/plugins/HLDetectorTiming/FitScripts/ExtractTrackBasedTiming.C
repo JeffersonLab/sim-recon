@@ -282,9 +282,10 @@ void ExtractTrackBasedTiming(int runNumber){
             }
             else{
                 selectedTAGMOffset->SetBinContent(i, maxMean);
+                TAGMOffsetDistribution->Fill(maxMean);
             }
         }
-
+        /*
         if (!useRF){
             //TFitResultPtr fr1 = selectedTAGMOffset->Fit("pol1", "SQ", "", 0.5, nBinsX + 0.5);
             TFitResultPtr fr1 = selectedTAGMOffset->Fit("pol1", "SQ", "", 5, 50);
@@ -306,7 +307,7 @@ void ExtractTrackBasedTiming(int runNumber){
                 if (valueToUse != 0 ) TAGMOffsetDistribution->Fill(valueToUse);
             }
         }
-
+*/
         double meanOffset = TAGMOffsetDistribution->GetMean();
         // This might be in units of beam bunches, so we need to convert
         if (useRF) meanOffset *= RF_Period;
@@ -497,7 +498,7 @@ void ExtractTrackBasedTiming(int runNumber){
         TH1F * selectedSCSectorOffsetDistribution = new TH1F("selectedSCSectorOffsetDistribution", "Selected TDC-RF offset;Time;Entries", 100, -3.0, 3.0);
         TF1* f = new TF1("f","pol0(0)+gaus(1)", -3.0, 3.0);
         for (int sector = 1; sector <= 30; sector++){
-            TH1I *scRFHist = Get1DHistogram("HLDetectorTiming", "SC_TDC_RF_Compare", Form("Sector %.2i", sector));
+            TH1I *scRFHist = Get1DHistogram("HLDetectorTiming", "SC_Target_RF_Compare", Form("Sector %.2i", sector));
             if (scRFHist == NULL) continue;
             //Do the fit
             TFitResultPtr fr = scRFHist->Fit("pol0", "SQ", "", -2, 2);
@@ -537,7 +538,7 @@ void ExtractTrackBasedTiming(int runNumber){
     if(this1DHist != NULL){
         //Gaussian
         Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
-        TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 10, maximum + 10);
+        TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 1.5, maximum + 1.5);
         float mean = fr->Parameter(1);
         outFile.open(prefix + "tof_base_time.txt");
         outFile << tof_t_base_fadc - mean - meanSCOffset<< " " << tof_t_base_tdc - mean - meanSCOffset<< endl;
@@ -548,7 +549,7 @@ void ExtractTrackBasedTiming(int runNumber){
     if(this1DHist != NULL){
         //Gaussian
         Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
-        TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 10, maximum + 10);
+        TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 5, maximum + 5);
         float mean = fr->Parameter(1);
         outFile.open(prefix + "bcal_base_time.txt");
         outFile << bcal_t_base_fadc - mean - meanSCOffset << " " << bcal_t_base_tdc - mean - meanSCOffset << endl; // TDC info not used
@@ -559,7 +560,7 @@ void ExtractTrackBasedTiming(int runNumber){
     if(this1DHist != NULL){
         //Gaussian
         Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
-        TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 10, maximum + 10);
+        TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 5, maximum + 5);
         float mean = fr->Parameter(1);
         outFile.open(prefix + "fcal_base_time.txt");
         outFile << fcal_t_base - mean - meanSCOffset<< endl; 
