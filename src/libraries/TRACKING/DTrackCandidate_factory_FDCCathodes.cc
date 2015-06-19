@@ -617,7 +617,7 @@ void DTrackCandidate_factory_FDCCathodes::LinkSegments(unsigned int pack1,
 
       // Create the fit object and add the hits
       DHelicalFit fit;
-      double max_r=0.,z_at_max_r=0.,x_at_max_r=0.,y_at_max_r=0.;
+      double max_r=0.;
       for (unsigned int m=0;m<mysegments.size();m++){
 	for (unsigned int n=0;n<mysegments[m]->hits.size();n++){
 	  const DFDCPseudo *hit=mysegments[m]->hits[n];
@@ -626,9 +626,6 @@ void DTrackCandidate_factory_FDCCathodes::LinkSegments(unsigned int pack1,
 	  double r=hit->xy.Mod();
 	  if (r>max_r){
 	    max_r=r;
-	    z_at_max_r=hit->wire->origin.z();
-	    x_at_max_r=hit->xy.X();
-	    y_at_max_r=hit->xy.Y();
 	  }
 	}
       }
