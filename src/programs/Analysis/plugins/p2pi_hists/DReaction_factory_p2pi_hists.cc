@@ -98,6 +98,9 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 
+	// Recommended: Enable ROOT TTree output for this DReaction
+        locReaction->Enable_TTreeOutput("tree_p2pi_hists.root"); //string is file name (must end in ".root"!!): doen't need to be unique, feel free to change
+
 	/**************************************************** p2pi_preco Analysis Actions ****************************************************/
 
 	// Recommended: Analysis actions automatically performed by the DAnalysisResults factories to histogram useful quantities.

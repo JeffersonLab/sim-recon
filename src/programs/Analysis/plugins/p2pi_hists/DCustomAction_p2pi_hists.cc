@@ -105,11 +105,7 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 	locPiPlus_P4.Boost(locBoostVector);
 	double locPsi = locPiPlus_P4.Phi();
 
-	double dEdxCut = 0.8;
-	if(locEventLoop->GetJEvent().GetRunNumber() == 2931)
-		dEdxCut = 2.0;
-	if(locEventLoop->GetJEvent().GetRunNumber() == 3079)
-		dEdxCut = 0.9;
+	double dEdxCut = 2.2;
 
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
@@ -128,7 +124,10 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 				dProton_dEdx_P->Fill(locProtonP4.Vect().Mag(), dEdx);
 				dProton_P_Theta->Fill(locProtonP4.Vect().Theta()*180/TMath::Pi(), locProtonP4.Vect().Mag());
 
-				if(dEdx < dEdxCut) return false;
+				if(dEdx < dEdxCut) {
+					japp->RootUnLock();
+					return false;
+				}
 
 				dEgamma_M2pi->Fill(locP4_2pi.M(), locBeamPhotonEnergy);
 				dDeltaE_M2pi_ProtonTag->Fill(locP4_2pi.M(),locMissingP4.E());
@@ -150,7 +149,11 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 					if(locBeamPhotonEnergy > 2.5 && locBeamPhotonEnergy < 3.0){
 						dPiPlusPsi_t->Fill(fabs(t), locPsi*180/TMath::Pi());
 					}
-					
+					//else { 
+					//	japp->RootUnLock();
+					//	return false;
+					//}
+
 					japp->RootUnLock(); //RELEASE ROOT LOCK!!
 					return true;
 				}			

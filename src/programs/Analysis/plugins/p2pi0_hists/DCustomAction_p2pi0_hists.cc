@@ -92,7 +92,7 @@ bool DCustomAction_p2pi0_hists::Perform_Action(JEventLoop* locEventLoop, const D
 	DLorentzVector locPi01P_P4 = locProtonP4; locPi01P_P4 += locPi01_P4;
 	DLorentzVector locPi02P_P4 = locProtonP4; locPi02P_P4 += locPi02_P4;
 
-	double dEdxCut = 0.8;
+	double dEdxCut = 2.2;
 
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{

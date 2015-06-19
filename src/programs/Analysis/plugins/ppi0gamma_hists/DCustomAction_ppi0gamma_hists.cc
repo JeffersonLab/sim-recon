@@ -75,7 +75,7 @@ bool DCustomAction_ppi0gamma_hists::Perform_Action(JEventLoop* locEventLoop, con
 	double dEdx = locChargedTrackHypothesis->dEdx()*1e6;
 	DLorentzVector locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();	
 
-	double dEdxCut = 0.8;
+	double dEdxCut = 2.2;
 	
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{

@@ -127,7 +127,7 @@ bool DCustomAction_p2k_hists::Perform_Action(JEventLoop* locEventLoop, const DPa
 	dEdx = locChargedTrackHypothesis->dEdx()*1e6;
 	locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();	
 
-	double dEdxCut = 0.8;
+	double dEdxCut = 2.2;
 
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{

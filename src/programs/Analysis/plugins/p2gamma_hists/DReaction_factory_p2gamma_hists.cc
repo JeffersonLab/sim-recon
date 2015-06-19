@@ -54,9 +54,6 @@ jerror_t DReaction_factory_p2gamma_hists::init(void)
 	// POCA cut on all tracks
 	locReaction->Add_AnalysisAction(new DCutAction_AllVertexZ(locReaction, 50., 80.));
 
-	// PID & Kinematics
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-
 	// Custom histograms for p2gamma_hists (no KinFit cut)
         locReaction->Add_AnalysisAction(new DCustomAction_p2gamma_hists(locReaction, false, "NoKinFit_Measured"));
 	locReaction->Add_AnalysisAction(new DCustomAction_p2gamma_unusedHists(locReaction, false, "NoKinFit_Measured"));

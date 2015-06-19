@@ -99,11 +99,7 @@ bool DCustomAction_p2gamma_hists::Perform_Action(JEventLoop* locEventLoop, const
 	TLorentzVector locDelta = (locProtonP4 - locProtonP4Init);
 	double t = locDelta.M2();
 
-	double dEdxCut = 0.8;
-	if(locEventLoop->GetJEvent().GetRunNumber() == 2931)
-		dEdxCut = 2.0;
-	if(locEventLoop->GetJEvent().GetRunNumber() == 3079)
-		dEdxCut = 0.9;
+	double dEdxCut = 2.2;
 	
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
@@ -120,7 +116,10 @@ bool DCustomAction_p2gamma_hists::Perform_Action(JEventLoop* locEventLoop, const
 		dDeltaPhi_M2g->Fill(loc2g_P4.M(), locDeltaPhi);
 
 		// require proton and pi0 are back-to-back
-		if(locDeltaPhi < 175. || locDeltaPhi > 185.) return false;
+		if(locDeltaPhi < 175. || locDeltaPhi > 185.) {
+			japp->RootUnLock();	
+			return false;
+		}
 		dMM2_M2g_CoplanarTag->Fill(loc2g_P4.M(), locMissingP4.M2());
 		dDeltaE_M2g_CoplanarTag->Fill(loc2g_P4.M(), locMissingP4.E());
 		if(loc2g_P4.M() > 0.10 && loc2g_P4.M() < 0.16)
