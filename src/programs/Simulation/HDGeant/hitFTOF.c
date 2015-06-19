@@ -262,13 +262,35 @@ void hitForwardTOF (float xin[4], float xout[4],
     // propagte time to the end of the bar
     // column = 0 is a full paddle column ==1,2 is a half paddle
 
-    float tnorth = (column == 2) ? 0 : t + dxnorth/C_EFFECTIVE;
-    float tsouth = (column == 1) ? 0 : t + dxsouth/C_EFFECTIVE;
+    float tnorth = t + dxnorth/C_EFFECTIVE;
+    float tsouth = t + dxsouth/C_EFFECTIVE;
     
     // calculate energy seen by PM for this track step using attenuation factor
-    float dEnorth = (column == 2) ? 0 : dEsum * exp(-dxnorth/ATTEN_LENGTH);
-    float dEsouth = (column == 1) ? 0 : dEsum * exp(-dxsouth/ATTEN_LENGTH);
-    
+    float dEnorth = dEsum * exp(-dxnorth/ATTEN_LENGTH);
+    float dEsouth = dEsum * exp(-dxsouth/ATTEN_LENGTH);
+
+    if (plane==0){
+      if (column==1){
+	tnorth=0.;
+	dEnorth=0.;
+      }
+      else if (column==2){	
+	tsouth=0.;
+	dEsouth=0.;
+      }
+    }
+    else{
+      if (column==2){
+	tnorth=0.;
+	dEnorth=0.;
+      }
+      else if (column==1){
+	tsouth=0.;
+	dEsouth=0.;
+      }
+    }
+
+
     int padl = row;
     if (row>44)
       padl = row-23;
@@ -326,10 +348,10 @@ void hitForwardTOF (float xin[4], float xout[4],
       // combine the times of this weighted by the energy of the hit
       
       if (nhit < hits->mult) {         /* merge with former hit */
-		  hits->in[nhit].dE += dEnorth;
+	float dEnew=hits->in[nhit].dE + dEnorth;
         hits->in[nhit].t = 
-          (hits->in[nhit].t * hits->in[nhit].dE + tnorth * dEnorth) /
-          (hits->in[nhit].dE);
+          (hits->in[nhit].t * hits->in[nhit].dE + tnorth * dEnorth) /dEnew;
+	hits->in[nhit].dE=dEnew;
                 
         // now add MC tracking information 
         // first get MC pointer of this paddle
@@ -392,10 +414,10 @@ void hitForwardTOF (float xin[4], float xout[4],
       // combine the times of this weighted by the energy of the hit
       
       if (nhit < hits->mult) {         /* merge with former hit */
-		  hits->in[nhit].dE += dEsouth;
+	float dEnew=hits->in[nhit].dE + dEsouth;
         hits->in[nhit].t = 
-          (hits->in[nhit].t * hits->in[nhit].dE + tsouth * dEsouth) /
-          (hits->in[nhit].dE);
+          (hits->in[nhit].t * hits->in[nhit].dE + tsouth * dEsouth) / dEnew;
+	hits->in[nhit].dE=dEnew;
         extras = hits->in[nhit].ftofTruthExtras;
 
         // now add MC tracking information 
