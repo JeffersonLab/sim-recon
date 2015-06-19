@@ -708,9 +708,9 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
         // Some quality cuts for the tracks we will use
         // Keep this minimal for now and investigate later
         //float trackingFOMCut = 0.01;
-        float trackingFOMCut =0.0027;
-        //int trackingNDFCut = 5;
-        int trackingNDFCut = 7;
+        //float trackingFOMCut =0.0027;
+        float trackingFOMCut = 2.87E-7;
+        int trackingNDFCut = 5;
 
         if(thisTrack->FOM < trackingFOMCut) continue;
         if(thisTrack->Ndof < trackingNDFCut) continue;
