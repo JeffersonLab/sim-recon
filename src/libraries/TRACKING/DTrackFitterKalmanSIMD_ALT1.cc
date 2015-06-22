@@ -24,10 +24,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
   //  double Vc=0.2028; // covariance for cdc wires =1.56*1.56/12.;
   double Vc=0.0507*1.15;
 
-  // Step size variables
-  double step1=mStepSizeZ;
-  double step2=mStepSizeZ;
-
   // Vectors for cdc wires
   DVector2 origin,dir,wirepos;
   double z0w=0.; // origin in z for wire
@@ -409,13 +405,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 			 forward_traj[k].K_rho_Z_over_A,
 			 forward_traj[k].rho_Z_over_A,
 			 forward_traj[k].LnI);
-	  }
-	    
-	  // Last 2 step sizes
-	  if (k>=2){
-	    double z1=forward_traj[k_minus_1].z;
-	    step1=-forward_traj[k].z+z1;
-	    step2=-z1+forward_traj[k-2].z;
 	  }
 	  
 	  // track direction variables
