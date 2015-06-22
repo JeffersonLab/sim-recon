@@ -116,8 +116,7 @@ int loadOutput ()
    if ((hitView->Cerenkov = pickCerenkov()) != HDDM_NULL) {
       ++packages_hit;
    }
-   // add RICH, yqiang, Oct 11 2012
-   if ((hitView->RICH = pickRich()) != HDDM_NULL) {
+   if ((hitView->DIRC = pickDirc()) != HDDM_NULL) {
 	   ++packages_hit;
    }
    if ((hitView->forwardTOF = pickForwardTOF()) != HDDM_NULL) {

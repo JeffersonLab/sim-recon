@@ -1,21 +1,21 @@
 /*
- * DRichTruthHit.h
+ * DDIRCTruthHit.h
  *
  *  Created on: Oct 7, 2013
  *      Author: yqiang
  */
 
-#ifndef DRICHTRUTHHIT_H_
-#define DRICHTRUTHHIT_H_
+#ifndef DDIRCTRUTHHIT_H_
+#define DDIRCTRUTHHIT_H_
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
 using namespace jana;
 
-class DRichTruthHit: public JObject {
+class DDIRCTruthHit: public JObject {
 
 public:
-	JOBJECT_PUBLIC (DRichTruthHit);
+	JOBJECT_PUBLIC (DDIRCTruthHit);
 
 	float x, y, z;	// true point of intersection
 	float px, py, pz; // true 3 momentum of particle
@@ -42,4 +42,4 @@ public:
 	}
 };
 
-#endif /* DRICHTRUTHHIT_H_ */
+#endif /* DDIRCTRUTHHIT_H_ */

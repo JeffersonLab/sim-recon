@@ -4,6 +4,7 @@
 // Created: Tue Aug 23 04:47:57 EDT 2005
 // Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
 // Modified: yqiang, Oct 10 2012, add RICH
+// Modified: jrsteven, June 22 2015, move RICH -> DIRC and remove CERE
 //
 
 #ifndef _GlueX_
@@ -22,7 +23,7 @@ enum DetectorSystem_t{
      SYS_UPV        = 0x0040,
      SYS_TAGM       = 0x0080,
      SYS_START      = 0x0100,
-     SYS_RICH       = 0x0200,
+     SYS_DIRC       = 0x0200,
      SYS_CCAL       = 0x0400,
      SYS_TAGH       = 0x0800,
      SYS_RF         = 0x1000,
@@ -66,8 +67,8 @@ inline const char* SystemName(DetectorSystem_t sys)
           case SYS_START:
               return "ST";
               break;
-          case SYS_RICH:
-              return "RICH";
+          case SYS_DIRC:
+              return "DIRC";
               break;
           case SYS_CCAL:
               return "CCAL";
@@ -105,8 +106,8 @@ inline DetectorSystem_t NameToSystem(const char* locSystemName)
 		return SYS_TAGH;
 	else if(strcmp(locSystemName, "ST") == 0)
 		return SYS_START;
-	else if(strcmp(locSystemName, "RICH") == 0)
-		return SYS_RICH;
+	else if(strcmp(locSystemName, "DIRC") == 0)
+		return SYS_DIRC;
 	else if(strcmp(locSystemName, "CCAL") == 0)
 		return SYS_CCAL;
 	else if(strcmp(locSystemName, "RF") == 0)

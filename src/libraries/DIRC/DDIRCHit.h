@@ -1,24 +1,25 @@
 /*
- * DRichHit.h
+ * DDIRCHit.h
  *
  *  Created on: Oct 11, 2012
  *      Author: yqiang
  */
 
-#ifndef DRICHHIT_H_
-#define DRICHHIT_H_
+#ifndef DDIRCHIT_H_
+#define DDIRCHIT_H_
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
 using namespace jana;
 
-class DRichHit: public JObject {
+class DDIRCHit: public JObject {
 
 public:
-	JOBJECT_PUBLIC (DRichHit);
+	JOBJECT_PUBLIC (DDIRCHit);
 
 	float x, y, z;	// true point of intersection
 	float t;	// time
+	float E;	// energy
 
 	void toStrings(vector<pair<string, string> >&items) const {
 		AddString(items, "x", "%1.3f", x);
@@ -28,4 +29,4 @@ public:
 	}
 };
 
-#endif /* DRICHHIT_H_ */
+#endif /* DDIRCHIT_H_ */

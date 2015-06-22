@@ -225,15 +225,14 @@ c      write(6,*)cnames(NLEVEL)
           call hitCerenkov(xin,xout,pin,pout,-dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
         endif
-* add RICH support, yqiang, Oct 11 2012
-      elseif (cnames(NLEVEL).eq.'RAWN') then ! RICH window: truth
+      elseif (cnames(NLEVEL).eq.'RAWN') then ! DIRC window: truth
         if (dEsum.gt.0) then
-          call hitRich(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
+          call hitDirc(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
         endif
-      elseif (cnames(NLEVEL).eq.'RDCD') then ! RICH Cathode: counter
+      elseif (cnames(NLEVEL).eq.'RDCD') then ! DIRC Cathode: counter
         if ((dEsum.gt.0).and.(IPART.eq.50)) then
-          call hitRich(xin,xout,pin,pout,-dEsum,ITRA,ISTAK,ISTORY,
+          call hitDirc(xin,xout,pin,pout,-dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
         endif
       elseif ((cnames(NLEVEL).eq.'FTOC').or.  ! forward TOF counter

@@ -97,6 +97,12 @@
           <trackID minOccurs="0" itrack="int"/>
         </richTruthPoint>
       </RICH>
+      <DIRC minOccurs="0">
+        <dircHit maxOccurs="unbounded" minOccurs="0" t="float" x="float" y="float" z="float" E="float"/>
+        <dircTruthPoint E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float">
+          <trackID minOccurs="0" itrack="int"/>
+        </dircTruthPoint>
+      </DIRC>
       <forwardTOF minOccurs="0">
         <ftofCounter bar="int" maxOccurs="unbounded" minOccurs="0" plane="int">
           <!-- ftof hits are either north / beam-left (end=0) or south / beam-right (end=1)-->

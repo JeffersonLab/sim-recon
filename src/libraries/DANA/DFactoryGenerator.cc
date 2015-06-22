@@ -5,6 +5,7 @@
 // Creator: davidl (on Darwin Harriet.local 8.6.0 powerpc)
 // Modified:	Oct 3, 2012, Yi Qiang: add CERE
 //				Oct 11 2012, Yi Qiang: add RICH
+// Modified:    June 22, 2015, jrsteven: move RICH -> DIRC and remove CERE
 
 #include "DFactoryGenerator.h"
 
@@ -24,7 +25,7 @@ extern jerror_t ANALYSIS_init(JEventLoop *loop);
 extern jerror_t DAQ_init(JEventLoop *loop);
 extern jerror_t TTAB_init(JEventLoop *loop);
 extern jerror_t CERE_init(JEventLoop *loop);
-extern jerror_t RICH_init(JEventLoop *loop);
+extern jerror_t DIRC_init(JEventLoop *loop);
 extern jerror_t TRIGGER_init(JEventLoop *loop);
 extern jerror_t PAIR_SPECTROMETER_init(JEventLoop *loop);
 extern jerror_t FMWPC_init(JEventLoop *loop);
@@ -66,7 +67,7 @@ jerror_t DFactoryGenerator::GenerateFactories(JEventLoop *loop)
 	DAQ_init(loop);
 	TTAB_init(loop);
 	CERE_init(loop);
-	RICH_init(loop);
+	DIRC_init(loop);
 	TRIGGER_init(loop);
 	PAIR_SPECTROMETER_init(loop);
 	FMWPC_init(loop);

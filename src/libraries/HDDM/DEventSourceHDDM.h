@@ -8,6 +8,7 @@
 // Changes:   Oct 3, 2012 Yi Qiang: add classes for Cerenkov detector
 //         OCt 10, 2012 Yi Qiang: modifed Cerenkov classes with general Cere hits
 //         Oct 8, 2013 Yi Qiang: added dedicated object for RICH Truth Hit
+//         June 22, 2015 J. Stevens: changed RICH -> DIRC and remove CERE
 //
 
 #ifndef _JEVENT_SOURCEHDDM_H_
@@ -55,8 +56,8 @@ using namespace std;
 // modified by yqiang, Oct 10 2012
 // added RichTruthHit object, yqiang, Oct 7, 2013
 #include <CERE/DCereHit.h>
-#include <RICH/DRichHit.h>
-#include <RICH/DRichTruthHit.h>
+#include "DIRC/DDIRCHit.h"
+#include "DIRC/DDIRCTruthHit.h"
 #include <RF/DRFTime.h>
 #include <DANA/DApplication.h>
 #include "PAIR_SPECTROMETER/DPSHit.h"
@@ -136,10 +137,10 @@ class DEventSourceHDDM:public JEventSource
       // add RICH hit and Truth, yqiang Oct 3, 2012
       // modifed by yqiang, Oct 10 2012 now include both truth hits in DMCThrown
       // Oct 8, 2013, added dedicated object for RICH truth hit
-      jerror_t GetRichTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
+      jerror_t GetDIRCTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
       jerror_t Extract_DCereHit(hddm_s::HDDM *record, JFactory<DCereHit> *factory, string tag);
-      jerror_t Extract_DRichHit(hddm_s::HDDM *record, JFactory<DRichHit> *factory, string tag);
-      jerror_t Extract_DRichTruthHit(hddm_s::HDDM *record, JFactory<DRichTruthHit> *factory, string tag);
+      jerror_t Extract_DDIRCHit(hddm_s::HDDM *record, JFactory<DDIRCHit> *factory, string tag);
+      jerror_t Extract_DDIRCTruthHit(hddm_s::HDDM *record, JFactory<DDIRCTruthHit> *factory, string tag);
 
       std::ifstream *ifs;
       hddm_s::istream *fin;

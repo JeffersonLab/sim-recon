@@ -11,7 +11,7 @@
 // Oct 11, 2012 Yi Qiang: complete functions for Cherenkov detector
 // Oct 8, 2013 Yi Qiang: added dedicated object for RICH Truth Hit
 // July 5, 2014 R.T.Jones: changed over from c to c++ API for hddm
-//
+// June 22, 2015 J. Stevens: changed RICH -> DIRC and remove CERE
 //
 // DEventSourceHDDM methods
 //
@@ -384,19 +384,19 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
       return Extract_DFMWPCHit(record, 
                      dynamic_cast<JFactory<DFMWPCHit>*>(factory), tag);
 
+   if (dataClassName == "DDIRCHit")
+      return Extract_DDIRCHit(record, 
+                     dynamic_cast<JFactory<DDIRCHit>*>(factory), tag);
+
+   if (dataClassName == "DDIRCTruthHit")
+      return Extract_DDIRCTruthHit(record,
+                     dynamic_cast<JFactory<DDIRCTruthHit>*>(factory), tag);
+
    // extract CereTruth and CereRichHit hits, yqiang Oct 3, 2012
    // removed CereTruth (merged into MCThrown), added CereHit, yqiang Oct 10 2012
    if (dataClassName == "DCereHit")
       return Extract_DCereHit(record, 
                      dynamic_cast<JFactory<DCereHit>*>(factory), tag);
-   if (dataClassName == "DRichHit")
-      return Extract_DRichHit(record, 
-                     dynamic_cast<JFactory<DRichHit>*>(factory), tag);
-
-   // added DRichTruthHit
-   if (dataClassName == "DRichTruthHit")
-      return Extract_DRichTruthHit(record,
-                     dynamic_cast<JFactory<DRichTruthHit>*>(factory), tag);
 
    return OBJECT_NOT_AVAILABLE;
 }
@@ -509,8 +509,7 @@ jerror_t DEventSourceHDDM::Extract_DMCTrackHit(hddm_s::HDDM *record,
    GetCherenkovTruthHits(record, data);
    GetFCALTruthHits(record, data);
    GetSCTruthHits(record, data);
-   // added RICH truth hits, yqiang, Oct 10 2012
-   GetRichTruthHits(record, data);
+   GetDIRCTruthHits(record, data);
 
    // It has happened that some CDC hits have "nan" for the drift time
    // in a peculiar event Alex Somov came across. This ultimately caused
@@ -672,14 +671,13 @@ jerror_t DEventSourceHDDM::GetCherenkovTruthHits(hddm_s::HDDM *record,
 }
 
 //-------------------
-// GetCherenkovRichTruthHits
-// added by yqiang, Oct 11 2012
+// GetDIRCTruthHits
 //-------------------
-jerror_t DEventSourceHDDM::GetRichTruthHits(hddm_s::HDDM *record,
+jerror_t DEventSourceHDDM::GetDIRCTruthHits(hddm_s::HDDM *record,
                                             vector<DMCTrackHit*>& data)
 {
-   const hddm_s::RichTruthPointList &points = record->getRichTruthPoints();
-   hddm_s::RichTruthPointList::iterator iter;
+   const hddm_s::DircTruthPointList &points = record->getDircTruthPoints();
+   hddm_s::DircTruthPointList::iterator iter;
    for (iter = points.begin(); iter != points.end(); ++iter) {
       float x = iter->getX();
       float y = iter->getY();
@@ -690,7 +688,7 @@ jerror_t DEventSourceHDDM::GetRichTruthHits(hddm_s::HDDM *record,
       mctrackhit->track   = iter->getTrack();
       mctrackhit->primary = iter->getPrimary();
       mctrackhit->ptype   = iter->getPtype();    // save GEANT particle typ()e
-      mctrackhit->system  = SYS_RICH;
+      mctrackhit->system  = SYS_DIRC;
       const hddm_s::TrackIDList &ids = iter->getTrackIDs();
       mctrackhit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
       data.push_back(mctrackhit);
@@ -2647,11 +2645,10 @@ jerror_t DEventSourceHDDM::Extract_DFMWPCHit(hddm_s::HDDM *record,  JFactory<DFM
 }
 
 //------------------
-// Extract_DCereRichHit
-// added by yqiang Oct 3, 2012
+// Extract_DDIRCHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DRichHit(hddm_s::HDDM *record,
-                                   JFactory<DRichHit>* factory, string tag)
+jerror_t DEventSourceHDDM::Extract_DDIRCHit(hddm_s::HDDM *record,
+                                   JFactory<DDIRCHit>* factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2662,16 +2659,17 @@ jerror_t DEventSourceHDDM::Extract_DRichHit(hddm_s::HDDM *record,
    if (tag != "")
       return OBJECT_NOT_AVAILABLE;
 
-   vector<DRichHit*> data;
+   vector<DDIRCHit*> data;
 
-   const hddm_s::RichHitList &hits = record->getRichHits();
-   hddm_s::RichHitList::iterator iter;
+   const hddm_s::DircHitList &hits = record->getDircHits();
+   hddm_s::DircHitList::iterator iter;
    for (iter = hits.begin(); iter != hits.end(); ++iter) {
-      DRichHit *hit = new DRichHit;
+      DDIRCHit *hit = new DDIRCHit;
       hit->x = iter->getX();
       hit->y = iter->getY();
       hit->z = iter->getZ();
       hit->t = iter->getT();
+      hit->E = iter->getE();
       data.push_back(hit);
    }
 
@@ -2724,12 +2722,11 @@ jerror_t DEventSourceHDDM::Extract_DCereHit(hddm_s::HDDM *record,
    return NOERROR;
 }
 
-/*
- * Extract_DRichTruthHit
- * added by yqiang Oct 7, 2013
- */
-jerror_t DEventSourceHDDM::Extract_DRichTruthHit(hddm_s::HDDM *record,
-                                   JFactory<DRichTruthHit>* factory,
+//----------------------
+// Extract_DDIRCTruthHit
+//----------------------
+jerror_t DEventSourceHDDM::Extract_DDIRCTruthHit(hddm_s::HDDM *record,
+                                   JFactory<DDIRCTruthHit>* factory,
                                    string tag)
 {
    if (factory == NULL)
@@ -2737,12 +2734,12 @@ jerror_t DEventSourceHDDM::Extract_DRichTruthHit(hddm_s::HDDM *record,
    if (tag != "")
       return OBJECT_NOT_AVAILABLE;
 
-   vector<DRichTruthHit*> data;
+   vector<DDIRCTruthHit*> data;
 
-   const hddm_s::RichTruthPointList &points = record->getRichTruthPoints();
-   hddm_s::RichTruthPointList::iterator iter;
+   const hddm_s::DircTruthPointList &points = record->getDircTruthPoints();
+   hddm_s::DircTruthPointList::iterator iter;
    for (iter = points.begin(); iter != points.end(); ++iter) {
-      DRichTruthHit *hit = new DRichTruthHit;
+      DDIRCTruthHit *hit = new DDIRCTruthHit;
       hit->x       = iter->getX();
       hit->y       = iter->getY();
       hit->z       = iter->getZ();
