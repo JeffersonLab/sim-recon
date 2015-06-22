@@ -908,7 +908,7 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 	default:	
 	  break;
 	}
-	swim_step_t *step=FindPlaneCrossing(origin,norm);
+	swim_step_t *step=FindPlaneCrossing(origin,norm,first_i);
 	if(!step){
 		_DBG_<<"Could not find closest swim step!"<<endl;
 		return RESOURCE_UNAVAILABLE;
