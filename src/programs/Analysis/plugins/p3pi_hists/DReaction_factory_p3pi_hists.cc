@@ -76,7 +76,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	//Kinematics Pre-Pi0Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Pre-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, "Pre-Pi0Cut"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Pre-Pi0Cut"));
 
 	// Custom histograms for p3pi (no KinFit cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "NoKinFit_Measured"));
@@ -87,7 +87,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	//Kinematics Post-Pi0Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Post-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, "Post-Pi0Cut"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Post-Pi0Cut"));
 
 	// Custom histograms for p3pi (after Pi0 mass cut)
 	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "CutPi0_Measured"));
@@ -97,14 +97,14 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	//	Missing Mass Squared (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 600, -0.06, 0.06));
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.05, 0.05));
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
 
 	// Omega Mass (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 500, 0.4, 1.4, "Omega_Kinfit"));
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.7, 0.9));
 
 	// Kinematics of final selection
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
@@ -134,7 +134,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	//Kinematics Pre-Pi0Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Pre-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, "Pre-Pi0Cut"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Pre-Pi0Cut"));
 
 	// Custom histograms for p3pi (no KinFit cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "NoKinFit_Measured"));
@@ -145,7 +145,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	//Kinematics Post-Pi0Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Post-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, "Post-Pi0Cut"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Post-Pi0Cut"));
 
 	// Custom histograms for p3pi (after Pi0 mass cut)
 	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "CutPi0_Measured"));
@@ -155,14 +155,14 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	//	Missing Mass Squared (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 600, -0.06, 0.06));
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.05, 0.05));
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
 
 	// Omega Mass (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 500, 0.4, 1.4, "Omega_Kinfit"));
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.7, 0.9));
 
 	// Kinematics of final selection
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
@@ -192,7 +192,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	//Kinematics Pre-Pi0Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Pre-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, "Pre-Pi0Cut"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Pre-Pi0Cut"));
 
 	// Custom histograms for p3pi (no KinFit cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "NoKinFit_Measured"));
@@ -203,7 +203,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	//Kinematics Post-Pi0Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Post-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, "Post-Pi0Cut"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Post-Pi0Cut"));
 
 	// Custom histograms for p3pi (after Pi0 mass cut)
 	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "CutPi0_Measured"));
@@ -213,14 +213,14 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	//	Missing Mass Squared (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 600, -0.06, 0.06));
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.05, 0.05));
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
 
 	// Omega Mass (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 500, 0.4, 1.4, "Omega_Kinfit"));
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.7, 0.9));
 
 	// Kinematics of final selection
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
@@ -242,12 +242,12 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "Pre-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
 //	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, false)); //select p/pi+ above/below 2.0, //true/false: cut all/no proton candidates above p = 1 GeV/c
 
 	//Kinematics Pre-Pi0Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Pre-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, "Pre-Pi0Cut"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Pre-Pi0Cut"));
 
 	// Custom histograms for p3pi (no KinFit cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "NoKinFit_Measured"));
@@ -258,7 +258,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	//Kinematics Post-Pi0Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Post-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, "Post-Pi0Cut"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Post-Pi0Cut"));
 
 	// Custom histograms for p3pi (after Pi0 mass cut)
 	locReaction->Add_AnalysisAction(new DCustomAction_p3pi_hists(locReaction, false, "CutPi0_Measured"));
@@ -268,14 +268,14 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	//	Missing Mass Squared (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 600, -0.06, 0.06));
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.05, 0.05));
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
 
 	// Omega Mass (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 500, 0.4, 1.4, "Omega_Kinfit"));
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.7, 0.9));
 
 	// Kinematics of final selection
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
@@ -302,6 +302,9 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 
+	locReaction->Set_MaxExtraGoodTracks(1); //not ideal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+
 	/**************************************************** p3pi_pmiss_any Analysis Actions ****************************************************/
 
 	// PID
@@ -311,7 +314,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	//Kinematics Pre-Pi0Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Pre-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, "Pre-Pi0Cut"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Pre-Pi0Cut"));
 
 	// Custom histograms for p3pi (no KinFit cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "NoKinFit_Measured"));
@@ -321,7 +324,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	//Kinematics Post-Pi0Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Post-Pi0Cut"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, "Post-Pi0Cut"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Post-Pi0Cut"));
 
 	//	Missing Mass Squared (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, -1.0, 2.0));
@@ -332,7 +335,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.7, 0.9));
 
 	// Kinematics of final selection
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
