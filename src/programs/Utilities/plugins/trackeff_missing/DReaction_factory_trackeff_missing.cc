@@ -75,11 +75,15 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// PID Cuts
 	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_NULL)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
 	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, true)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
 
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+
+	// Track DOCA, etc.
+	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
+	locReaction->Add_AnalysisAction(new DCutAction_MaxTrackDOCA(locReaction, Gamma, 3.0));
 
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56));
@@ -155,6 +159,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 
+	// Track DOCA, etc.
+	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
+	locReaction->Add_AnalysisAction(new DCutAction_MaxTrackDOCA(locReaction, Gamma, 3.0));
+
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4));
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.03, 0.06));
@@ -229,6 +237,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+
+	// Track DOCA, etc.
+	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
+	locReaction->Add_AnalysisAction(new DCutAction_MaxTrackDOCA(locReaction, Gamma, 3.0));
 
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4));

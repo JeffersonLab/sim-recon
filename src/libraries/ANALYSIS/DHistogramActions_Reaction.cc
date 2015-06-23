@@ -1042,13 +1042,11 @@ void DHistogramAction_InvariantMass::Initialize(JEventLoop* locEventLoop)
 
 	string locParticleNamesForHist = Get_Reaction()->Get_DecayChainFinalParticlesROOTNames(dInitialPID, Get_UseKinFitResultsFlag());
 
-	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
-	locEventLoop->Get(locAnalysisUtilitiesVector);
+	locEventLoop->GetSingle(dAnalysisUtilities);
 
 	//CREATE THE HISTOGRAMS
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
-		dAnalysisUtilities = locAnalysisUtilitiesVector[0];
 		CreateAndChangeTo_ActionDirectory();
 
 		locHistName = "InvariantMass";
@@ -1102,19 +1100,25 @@ void DHistogramAction_MissingMass::Initialize(JEventLoop* locEventLoop)
 	string locInitialParticlesROOTName = Get_Reaction()->Get_InitialParticlesROOTName();
 	string locFinalParticlesROOTName = Get_Reaction()->Get_DecayChainFinalParticlesROOTNames(0, dMissingMassOffOfStepIndex, dMissingMassOffOfPIDs, Get_UseKinFitResultsFlag(), true);
 
-	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
-	locEventLoop->Get(locAnalysisUtilitiesVector);
+	locEventLoop->GetSingle(dAnalysisUtilities);
 
 	//CREATE THE HISTOGRAMS
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
-		dAnalysisUtilities = locAnalysisUtilitiesVector[0];
 		CreateAndChangeTo_ActionDirectory();
+
 		string locHistName = "MissingMass";
 		ostringstream locStream;
 		locStream << locMassPerBin;
 		string locHistTitle = string(";") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass (GeV/c^{2});# Combos / ") + locStream.str() + string(" MeV/c^{2}");
 		dHist_MissingMass = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumMassBins, dMinMass, dMaxMass);
+
+		locHistName = "MissingMassVsBeamE";
+		locMassPerBin *= ((double)dNumMassBins)/((double)dNum2DMassBins);
+		locStream.str("");
+		locStream << locMassPerBin;
+		locHistTitle = string(";Beam Energy (GeV);") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass (GeV/c^{2});# Combos / ") + locStream.str() + string(" MeV/c^{2}");
+		dHist_MissingMassVsBeamE = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DBeamEBins, dMinBeamE, dMaxBeamE, dNum2DMassBins, dMinMass, dMaxMass);
 
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
@@ -1143,9 +1147,11 @@ bool DHistogramAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, cons
 	}
 
 	double locMissingMass = locMissingP4.M();
+	double locBeamEnergy = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle()->energy();
 	japp->RootWriteLock();
 	{
 		dHist_MissingMass->Fill(locMissingMass);
+		dHist_MissingMassVsBeamE->Fill(locBeamEnergy, locMissingMass);
 	}
 	japp->RootUnLock();
 
@@ -1158,19 +1164,25 @@ void DHistogramAction_MissingMassSquared::Initialize(JEventLoop* locEventLoop)
 	string locInitialParticlesROOTName = Get_Reaction()->Get_InitialParticlesROOTName();
 	string locFinalParticlesROOTName = Get_Reaction()->Get_DecayChainFinalParticlesROOTNames(0, dMissingMassOffOfStepIndex, dMissingMassOffOfPIDs, Get_UseKinFitResultsFlag(), true);
 
-	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
-	locEventLoop->Get(locAnalysisUtilitiesVector);
+	locEventLoop->GetSingle(dAnalysisUtilities);
 
 	//CREATE THE HISTOGRAMS
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
-		dAnalysisUtilities = locAnalysisUtilitiesVector[0];
 		CreateAndChangeTo_ActionDirectory();
+
 		string locHistName = "MissingMassSquared";
 		ostringstream locStream;
 		locStream << locMassSqPerBin;
 		string locHistTitle = string(";") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass Squared (GeV/c^{2})^{2};# Combos / ") + locStream.str() + string(" (MeV/c^{2})^{2}");
 		dHist_MissingMassSquared = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumMassBins, dMinMassSq, dMaxMassSq);
+
+		locHistName = "MissingMassSquaredVsBeamE";
+		locMassSqPerBin *= ((double)dNumMassBins)/((double)dNum2DMassBins);
+		locStream.str();
+		locStream << locMassSqPerBin;
+		locHistTitle = string(";Beam Energy (GeV);") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass Squared (GeV/c^{2})^{2};# Combos / ") + locStream.str() + string(" (MeV/c^{2})^{2}");
+		dHist_MissingMassSquaredVsBeamE = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DBeamEBins, dMinBeamE, dMaxBeamE, dNum2DMassBins, dMinMassSq, dMaxMassSq);
 
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
@@ -1199,9 +1211,11 @@ bool DHistogramAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoo
 	}
 
 	double locMissingMassSquared = locMissingP4.M2();
+	double locBeamEnergy = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle()->energy();
 	japp->RootWriteLock();
 	{
 		dHist_MissingMassSquared->Fill(locMissingMassSquared);
+		dHist_MissingMassSquaredVsBeamE->Fill(locBeamEnergy, locMissingMassSquared);
 	}
 	japp->RootUnLock();
 

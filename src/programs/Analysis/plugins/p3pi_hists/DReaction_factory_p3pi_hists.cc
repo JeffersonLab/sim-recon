@@ -251,8 +251,9 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "Pre-Pi0Cut"));
+	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
-//	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, false)); //select p/pi+ above/below 2.0, //true/false: cut all/no proton candidates above p = 1 GeV/c
+	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, false)); //select p/pi+ above/below 2.0, //true/false: cut all/no proton candidates above p = 1 GeV/c
 
 	//Kinematics Pre-Pi0Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Pre-Pi0Cut"));
@@ -321,6 +322,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "Pre-Pi0Cut"));
+	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
 	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, false)); //select p/pi+ above/below 2.0, //true/false: cut all/no proton candidates above p = 1 GeV/c
 
@@ -328,10 +330,8 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Pre-Pi0Cut"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Pre-Pi0Cut"));
 
-	// Custom histograms for p3pi (no KinFit cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false,500,0.,1., "NoKinFit_Measured"));
-
-	// Pi0 mass cut
+	// Pi0 mass
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 500, 0.0, 1.0, "Pi0"));
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, minPi0FCAL_BCAL, maxPi0FCAL_BCAL));
 
 	//Kinematics Post-Pi0Cut
@@ -342,7 +342,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingTransverseMomentum(locReaction, false, 500, 0.0, 1.0));
 
 	//	Missing Mass Squared (Hist and Cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1000, -1.0, 2.0));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56));
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, 0.3, 1.3));
 
 	// Omega Mass (Hist and Cut)
