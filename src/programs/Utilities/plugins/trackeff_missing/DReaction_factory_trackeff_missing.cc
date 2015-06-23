@@ -242,8 +242,6 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
-	_data.push_back(locReaction); //Register the DReaction with the factory
-
 	return NOERROR;
 }
 
