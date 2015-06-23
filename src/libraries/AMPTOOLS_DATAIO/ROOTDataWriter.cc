@@ -3,7 +3,6 @@
 #include <cassert>
 
 #include "AMPTOOLS_DATAIO/ROOTDataWriter.h"
-#include "CLHEP/Vector/LorentzVector.h"
 
 #include "TFile.h"
 #include "TTree.h"
@@ -47,23 +46,23 @@ ROOTDataWriter::~ROOTDataWriter()
 void
 ROOTDataWriter::writeEvent( const Kinematics& kin )
 {
-  vector< HepLorentzVector > particleList = kin.particleList();
+  vector< TLorentzVector > particleList = kin.particleList();
   
   m_nPart = particleList.size() - 1;
   
   assert( particleList.size() <= Kinematics::kMaxParticles );
   
-  m_eBeam = particleList[0].t();
-  m_pxBeam = particleList[0].px();
-  m_pyBeam = particleList[0].py();
-  m_pzBeam = particleList[0].pz();
+  m_eBeam = particleList[0].E();
+  m_pxBeam = particleList[0].Px();
+  m_pyBeam = particleList[0].Py();
+  m_pzBeam = particleList[0].Pz();
     
   for( int i = 0; i < m_nPart; ++i ){
     
-    m_e[i] = particleList[i+1].t();
-    m_px[i] = particleList[i+1].x();
-    m_py[i] = particleList[i+1].y();
-    m_pz[i] = particleList[i+1].z();
+    m_e[i] = particleList[i+1].E();
+    m_px[i] = particleList[i+1].Px();
+    m_py[i] = particleList[i+1].Py();
+    m_pz[i] = particleList[i+1].Pz();
   }
 
   m_weight = kin.weight(); //will not get saved if branch not added in IOinit()

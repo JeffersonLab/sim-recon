@@ -1,4 +1,6 @@
 
+#include "TLorentzVector.h"
+
 #include "AMPTOOLS_DATAIO/HDDMDataWriter.h"
 #include "HDDM/hddm_s.hpp"
 
@@ -44,7 +46,7 @@ void HDDMDataWriter::
 writeEvent( const Kinematics& kin, const vector<int>& ptype,
 	    float vx, float vy, float vz)
 {
-  vector< HepLorentzVector > particleList = kin.particleList();
+  vector< TLorentzVector > particleList = kin.particleList();
   int nParticles=kin.particleList().size();
   
   // Start a new event in the HDDM record
@@ -65,10 +67,10 @@ writeEvent( const Kinematics& kin, const vector<int>& ptype,
   hddm_s::BeamList bs = rs().addBeams();
   bs().setType((Particle_t)1);
   hddm_s::MomentumList bmoms = bs().addMomenta();
-  bmoms().setPx(kin.particle(0).px());
-  bmoms().setPy(kin.particle(0).py());
-  bmoms().setPz(kin.particle(0).pz());
-  bmoms().setE(kin.particle(0).e());
+  bmoms().setPx(kin.particle(0).Px());
+  bmoms().setPy(kin.particle(0).Py());
+  bmoms().setPz(kin.particle(0).Pz());
+  bmoms().setE(kin.particle(0).E());
   hddm_s::PropertiesList bpros = bs().addPropertiesList();
   bpros().setCharge(0);
   bpros().setMass(0.0);
@@ -92,10 +94,10 @@ writeEvent( const Kinematics& kin, const vector<int>& ptype,
       ps(i-1).setParentid(0);   /* All internally generated particles have no parent */
       ps(i-1).setMech(0);       /* maybe this should be set to something? */
       hddm_s::MomentumList pmoms = ps(i-1).addMomenta();
-      pmoms().setPx(kin.particle(i).px());
-      pmoms().setPy(kin.particle(i).py());
-      pmoms().setPz(kin.particle(i).pz());
-      pmoms().setE(kin.particle(i).e());
+      pmoms().setPx(kin.particle(i).Px());
+      pmoms().setPy(kin.particle(i).Py());
+      pmoms().setPz(kin.particle(i).Pz());
+      pmoms().setE(kin.particle(i).E());
   }
   
   if (nParticles > 0)

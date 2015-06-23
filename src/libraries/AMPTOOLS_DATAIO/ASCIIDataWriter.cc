@@ -2,8 +2,9 @@
 #include <cassert>
 #include <cstdio>
 
+#include "TLorentzVector.h"
+
 #include "ASCIIDataWriter.h"
-#include "CLHEP/Vector/LorentzVector.h"
 
 
 ASCIIDataWriter::ASCIIDataWriter( const string& outFile )
@@ -32,7 +33,7 @@ ASCIIDataWriter::~ASCIIDataWriter()
 void
 ASCIIDataWriter::writeEvent( const Kinematics& kin, vector<int> &types)
 {
-  vector< HepLorentzVector > particleList = kin.particleList();
+  vector< TLorentzVector > particleList = kin.particleList();
 	
   m_nPart = particleList.size() - 2;
   
@@ -43,10 +44,10 @@ ASCIIDataWriter::writeEvent( const Kinematics& kin, vector<int> &types)
   fprintf(fid,"9000 %d %d\n",m_eventCounter+1,m_nPart+1);
   
   
-  fprintf(fid,"1 %d %f\n",types[1],particleList[1].m());
+  fprintf(fid,"1 %d %f\n",types[1],particleList[1].M());
   fprintf(fid,"   1 %f %f %f %f\n",
-	  particleList[1].px(), particleList[1].py(),
-	  particleList[1].pz(), particleList[1].t());
+          particleList[1].Px(), particleList[1].Py(),
+          particleList[1].Pz(), particleList[1].E());
   
   for( int i = 0; i < m_nPart; i++ ){
 
@@ -65,11 +66,11 @@ ASCIIDataWriter::writeEvent( const Kinematics& kin, vector<int> &types)
     }
     
 
-    fprintf(fid,"%d %d %f\n",i+2,types[i+2],particleList[i+2].m());
+    fprintf(fid,"%d %d %f\n",i+2,types[i+2],particleList[i+2].M());
 
     fprintf(fid,"   %d %f %f %f %f\n",charge,
-	    particleList[i+2].px(),particleList[i+2].py(),
-	    particleList[i+2].pz(),particleList[i+2].t());
+	    particleList[i+2].Px(),particleList[i+2].Py(),
+	    particleList[i+2].Pz(),particleList[i+2].E());
 
   }
   

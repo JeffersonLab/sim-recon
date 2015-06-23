@@ -8,11 +8,8 @@
 
 using namespace std;
 
-#include "CLHEP/Vector/LorentzVector.h"
 #include "IUAmpTools/Kinematics.h"
 #include "HDDM/hddm_s.hpp"
-
-using namespace CLHEP;
 
 class HDDMDataWriter
 {

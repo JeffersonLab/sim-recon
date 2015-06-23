@@ -1,14 +1,18 @@
 
 #include <vector>
 #include <cassert>
+#include <iostream>
+
+#include "TLorentzVector.h"
 
 #include "AMPTOOLS_DATAIO/ROOTDataReader.h"
 #include "IUAmpTools/Kinematics.h"
-#include "CLHEP/Vector/LorentzVector.h"
 
 #include "TH1.h"
 #include "TFile.h"
 #include "TTree.h"
+
+using namespace std;
 
 ROOTDataReader::ROOTDataReader( const vector< string >& args ):
  UserDataReader< ROOTDataReader >( args ),
@@ -74,14 +78,14 @@ ROOTDataReader::getEvent()
     m_inTree->GetEntry( m_eventCounter++ );
     assert( m_nPart < Kinematics::kMaxParticles );
     
-    vector< HepLorentzVector > particleList;
+    vector< TLorentzVector > particleList;
     
     particleList.
-      push_back( HepLorentzVector( m_pxBeam, m_pyBeam, m_pzBeam, m_eBeam ) );
+      push_back( TLorentzVector( m_pxBeam, m_pyBeam, m_pzBeam, m_eBeam ) );
     
     for( int i = 0; i < m_nPart; ++i ){
       
-      particleList.push_back( HepLorentzVector( m_px[i], m_py[i], m_pz[i], m_e[i] ) );
+      particleList.push_back( TLorentzVector( m_px[i], m_py[i], m_pz[i], m_e[i] ) );
     }
     
     return new Kinematics( particleList, m_useWeight ? m_weight : 1.0 );
