@@ -56,6 +56,8 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
 	locReaction->Set_MaxExtraGoodTracks(1);
 
+	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+
 	/************************************************** TrackEff_MissingProton Pre-Combo Custom Cuts *************************************************/
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
@@ -68,33 +70,23 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 		//These actions are executed sequentially, and are executed on each surviving (non-cut) particle combination 
 		//Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
 
-	// PID & Kinematics
+	// Hist PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with pre-kinematic-fit particle data
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56));
 
-//INSERT TIGHT TIMING PID CUT HERE WHEN READY!!!! // Want as clean of an event sample as possible.
+	// PID Cuts
 	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Unknown, SYS_NULL)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
-	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.0, true)); //select p/pi+ above/below 2.0, //true/false: cut all/no proton candidates above p = 1 GeV/c
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "Post-dEdx"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Post-dEdx")); //false: fill histograms with pre-kinematic-fit particle data
-	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56, "Post-dEdx"));
-
-	// Tight cut on track quality
-//	locReaction->Add_AnalysisAction(new DCutAction_TrackHitPattern(locReaction, 2, 4)); //args: locMinHitRingsPerCDCSuperlayer, locMinHitPlanesPerFDCPackage
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_NULL)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
+	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, true)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
 
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-//	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05)); //5% confidence level cut //require kinematic fit converges
 
-//INSERT MASS-CUT OR KINFIT CUT
 	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56, "Post-KinFit"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56));
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, 0.75, 0.95));
 
 	// Kinematics
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, "Post-KinFit")); //true: fill histograms with kinematic-fit particle data
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
 	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
@@ -138,6 +130,8 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
 	locReaction->Set_MaxExtraGoodTracks(1);
 
+	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+
 	/************************************************** TrackEff_MissingPiMinus Pre-Combo Custom Cuts *************************************************/
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
@@ -150,37 +144,23 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 		//These actions are executed sequentially, and are executed on each surviving (non-cut) particle combination
 		//Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
 
-	// PID & Kinematics
+	// Hist PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with pre-kinematic-fit particle data
 
-//INSERT TIGHT TIMING PID CUT HERE WHEN READY!!!! // Want as clean of an event sample as possible.
+	// PID Cuts
 	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Unknown, SYS_NULL)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
-	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.0, true)); //select p/pi+ above/below 2.0, //true/false: cut all/no proton candidates above p = 1 GeV/c
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "Post-dEdx"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Post-dEdx")); //false: fill histograms with pre-kinematic-fit particle data
-	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
-
-	// Tight cut on track quality
-//	locReaction->Add_AnalysisAction(new DCutAction_TrackHitPattern(locReaction, 2, 4)); //args: locMinHitRingsPerCDCSuperlayer, locMinHitPlanesPerFDCPackage
-
-	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_NULL)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
+	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, true)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
 
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-//	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05)); //5% confidence level cut //require kinematic fit converges
 
-//INSERT MASS-CUT OR KINFIT CUT
 	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4, "Post-KinFit"));
-
-	// Missing Mass Cut
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.06, 0.1));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4));
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.03, 0.06));
 
 	// Kinematics
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, "Post-KinFit")); //true: fill histograms with kinematic-fit particle data
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
 	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
@@ -225,6 +205,8 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
 	locReaction->Set_MaxExtraGoodTracks(1);
 
+	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+
 	/************************************************** TrackEff_MissingPiPlus Pre-Combo Custom Cuts *************************************************/
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
@@ -237,36 +219,28 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 		//These actions are executed sequentially, and are executed on each surviving (non-cut) particle combination
 		//Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
 
-	// PID & Kinematics
+	// Hist PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with pre-kinematic-fit particle data
 
-//INSERT TIGHT TIMING PID CUT HERE WHEN READY!!!! // Want as clean of an event sample as possible.
+	// PID Cuts
 	locReaction->Add_AnalysisAction(new DCutAction_TrackFCALShowerEOverP(locReaction, false, 0.5)); //false: measured data //value: cut e+/e- below this, tracks above this
-	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Unknown, SYS_NULL)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
-	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.0, true)); //select p/pi+ above/below 2.0, //true/false: cut all/no proton candidates above p = 1 GeV/c
-	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "Post-dEdx"));
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Post-dEdx")); //false: fill histograms with pre-kinematic-fit particle data
-	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
-
-	// Tight cut on track quality
-//	locReaction->Add_AnalysisAction(new DCutAction_TrackHitPattern(locReaction, 2, 4)); //args: locMinHitRingsPerCDCSuperlayer, locMinHitPlanesPerFDCPackage
-
-	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4));
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_NULL)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
+	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, true)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
 
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-//	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05)); //5% confidence level cut //require kinematic fit converges
 
-	// Missing Mass Cut
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.06, 0.1));
+	// Missing Mass Squared
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4));
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.03, 0.06));
 
 	// Kinematics
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, "Post-KinFit")); //true: fill histograms with kinematic-fit particle data
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
 	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
+
+	_data.push_back(locReaction); //Register the DReaction with the factory
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
