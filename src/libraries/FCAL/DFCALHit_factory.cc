@@ -200,7 +200,9 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
         }
         else{
 
-            cerr << "ERROR! no associated FCAL integral object." << endl;
+	  static uint64_t nWarningsFCALIntegral = 0;
+	  if(++nWarningsFCALIntegral <= 20) cerr << "ERROR! no associated FCAL integral object." << endl;
+	  if(nWarningsFCALIntegral == 20  ) cerr << "DFCALHit_factory: LAST WARNING (others will be suppressed)" << endl;
         }
 
         double pulse_amplitude = 0;
@@ -211,7 +213,10 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
         }
         else{
 
-            cerr << "ERROR! no associated FCAL pedestal object." << endl;
+	  static uint64_t nWarningsFCALPedestal = 0;
+	  if(++nWarningsFCALPedestal <= 20) cerr << "ERROR! no associated FCAL pedestal object." << endl;
+	  if(nWarningsFCALPedestal == 20  ) cerr << "DFCALHit_factory: LAST WARNING (others will be suppressed)" << endl;
+	  
         }
 
         DFCALHit *hit = new DFCALHit;
