@@ -5,13 +5,13 @@
 #include <sstream>
 #include <cstdlib>
 
+#include "TLorentzVector.h"
+#include "TLorentzRotation.h"
+
 #include "IUAmpTools/Kinematics.h"
 #include "AMPTOOLS_AMPS/TwoPSAngles.h"
 #include "AMPTOOLS_AMPS/clebschGordan.h"
 #include "AMPTOOLS_AMPS/wignerD.h"
-#include "CLHEP/Vector/LorentzVector.h"
-#include "CLHEP/Vector/LorentzRotation.h"
-#include "CLHEP/Vector/ThreeVector.h"
 
 TwoPSAngles::TwoPSAngles( const vector< string >& args ) :
 UserAmplitude< TwoPSAngles >( args )
@@ -38,29 +38,29 @@ UserAmplitude< TwoPSAngles >( args )
 complex< GDouble >
 TwoPSAngles::calcAmplitude( GDouble** pKin ) const {
   
-  HepLorentzVector beam   ( pKin[0][1], pKin[0][2], pKin[0][3], pKin[0][0] ); 
-  HepLorentzVector recoil ( pKin[1][1], pKin[1][2], pKin[1][3], pKin[1][0] ); 
-  HepLorentzVector p1     ( pKin[2][1], pKin[2][2], pKin[2][3], pKin[2][0] ); 
-  HepLorentzVector p2     ( pKin[3][1], pKin[3][2], pKin[3][3], pKin[3][0] ); 
+  TLorentzVector beam   ( pKin[0][1], pKin[0][2], pKin[0][3], pKin[0][0] ); 
+  TLorentzVector recoil ( pKin[1][1], pKin[1][2], pKin[1][3], pKin[1][0] ); 
+  TLorentzVector p1     ( pKin[2][1], pKin[2][2], pKin[2][3], pKin[2][0] ); 
+  TLorentzVector p2     ( pKin[3][1], pKin[3][2], pKin[3][3], pKin[3][0] ); 
   
-  HepLorentzVector resonance = p1 + p2;
+  TLorentzVector resonance = p1 + p2;
   
-  HepLorentzRotation resRestBoost( -resonance.boostVector() );
+  TLorentzRotation resRestBoost( -resonance.BoostVector() );
   
-  HepLorentzVector beam_res   = resRestBoost * beam;
-  HepLorentzVector recoil_res = resRestBoost * recoil;
-  HepLorentzVector p1_res = resRestBoost * p1;
+  TLorentzVector beam_res   = resRestBoost * beam;
+  TLorentzVector recoil_res = resRestBoost * recoil;
+  TLorentzVector p1_res = resRestBoost * p1;
   
-  Hep3Vector z = beam_res.vect().unit();
-  Hep3Vector y = recoil_res.vect().cross(z).unit();
-  Hep3Vector x = y.cross(z);
+  TVector3 z = beam_res.Vect().Unit();
+  TVector3 y = recoil_res.Vect().Cross(z).Unit();
+  TVector3 x = y.Cross(z);
   
-  Hep3Vector angles( (p1_res.vect()).dot(x),
-                    (p1_res.vect()).dot(y),
-                    (p1_res.vect()).dot(z) );
+  TVector3 angles( (p1_res.Vect()).Dot(x),
+                   (p1_res.Vect()).Dot(y),
+                   (p1_res.Vect()).Dot(z) );
   
-  GDouble cosTheta = angles.cosTheta();
-  GDouble phi = angles.phi();
+  GDouble cosTheta = angles.CosTheta();
+  GDouble phi = angles.Phi();
   
   GDouble coef = sqrt( ( 2. * m_j + 1 ) / ( 4 * 3.1416 ) );
   

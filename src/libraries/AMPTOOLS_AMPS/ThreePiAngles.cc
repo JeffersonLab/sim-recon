@@ -6,14 +6,14 @@
 #include <string>
 #include <sstream>
 
+#include "TLorentzVector.h"
+#include "TLorentzRotation.h"
+
 #include "IUAmpTools/AmpParameter.h"
 #include "AMPTOOLS_AMPS/ThreePiAngles.h"
 #include "AMPTOOLS_AMPS/clebschGordan.h"
 #include "AMPTOOLS_AMPS/wignerD.h"
 #include "AMPTOOLS_AMPS/breakupMomentum.h"
-#include "CLHEP/Vector/LorentzVector.h"
-#include "CLHEP/Vector/LorentzRotation.h"
-#include "CLHEP/Vector/ThreeVector.h"
 
 ThreePiAngles::ThreePiAngles( const vector< string >& args ) :
 UserAmplitude< ThreePiAngles >( args )
@@ -60,47 +60,47 @@ complex< GDouble >
 ThreePiAngles::calcAmplitude( GDouble** pKin ) const
 {
 
-  HepLorentzVector beam   ( pKin[0][1], pKin[0][2], pKin[0][3], pKin[0][0] ); 
-  HepLorentzVector recoil ( pKin[1][1], pKin[1][2], pKin[1][3], pKin[1][0] ); 
-  HepLorentzVector p1     ( pKin[2][1], pKin[2][2], pKin[2][3], pKin[2][0] ); 
-  HepLorentzVector p2     ( pKin[3][1], pKin[3][2], pKin[3][3], pKin[3][0] ); 
-  HepLorentzVector p3     ( pKin[4][1], pKin[4][2], pKin[4][3], pKin[4][0] ); 
+  TLorentzVector beam   ( pKin[0][1], pKin[0][2], pKin[0][3], pKin[0][0] ); 
+  TLorentzVector recoil ( pKin[1][1], pKin[1][2], pKin[1][3], pKin[1][0] ); 
+  TLorentzVector p1     ( pKin[2][1], pKin[2][2], pKin[2][3], pKin[2][0] ); 
+  TLorentzVector p2     ( pKin[3][1], pKin[3][2], pKin[3][3], pKin[3][0] ); 
+  TLorentzVector p3     ( pKin[4][1], pKin[4][2], pKin[4][3], pKin[4][0] ); 
   
-  HepLorentzVector isobar = p1 + p2;
-  HepLorentzVector resonance = isobar + p3;
+  TLorentzVector isobar = p1 + p2;
+  TLorentzVector resonance = isobar + p3;
   
   // orientation of production plane in lab
-  GDouble alpha = recoil.vect().phi();
+  GDouble alpha = recoil.Vect().Phi();
   
-  HepLorentzRotation resRestBoost( -resonance.boostVector() );
+  TLorentzRotation resRestBoost( -resonance.BoostVector() );
   
-  HepLorentzVector beam_res   = resRestBoost * beam;
-  HepLorentzVector recoil_res = resRestBoost * recoil;
-  HepLorentzVector p3_res     = resRestBoost * p3;
+  TLorentzVector beam_res   = resRestBoost * beam;
+  TLorentzVector recoil_res = resRestBoost * recoil;
+  TLorentzVector p3_res     = resRestBoost * p3;
 
-  Hep3Vector zRes = -recoil_res.vect().unit();
-  Hep3Vector yRes = beam_res.vect().cross(zRes).unit();
-  Hep3Vector xRes = yRes.cross(zRes);
+  TVector3 zRes = -recoil_res.Vect().Unit();
+  TVector3 yRes = beam_res.Vect().Cross(zRes).Unit();
+  TVector3 xRes = yRes.Cross(zRes);
   
-  Hep3Vector anglesRes( (p3_res.vect()).dot(xRes),
-                        (p3_res.vect()).dot(yRes),
-                        (p3_res.vect()).dot(zRes) );
+  TVector3 anglesRes( (p3_res.Vect()).Dot(xRes),
+                      (p3_res.Vect()).Dot(yRes),
+                      (p3_res.Vect()).Dot(zRes) );
 
-  GDouble cosThetaRes = anglesRes.cosTheta();
-  GDouble phiRes = anglesRes.phi();
+  GDouble cosThetaRes = anglesRes.CosTheta();
+  GDouble phiRes = anglesRes.Phi();
 
-  HepLorentzRotation isoRestBoost( -isobar.boostVector() );
-  HepLorentzVector p1_iso = isoRestBoost * p1;
+  TLorentzRotation isoRestBoost( -isobar.BoostVector() );
+  TLorentzVector p1_iso = isoRestBoost * p1;
     
-  Hep3Vector anglesIso( (p1_iso.vect()).dot(xRes),
-                        (p1_iso.vect()).dot(yRes),
-                        (p1_iso.vect()).dot(zRes) );
+  TVector3 anglesIso( (p1_iso.Vect()).Dot(xRes),
+                      (p1_iso.Vect()).Dot(yRes),
+                      (p1_iso.Vect()).Dot(zRes) );
 
-  GDouble cosThetaIso = anglesIso.cosTheta();
-  GDouble phiIso = anglesIso.phi();
+  GDouble cosThetaIso = anglesIso.CosTheta();
+  GDouble phiIso = anglesIso.Phi();
   
-  GDouble k = breakupMomentum( resonance.m(), isobar.m(), p3.m() );
-  GDouble q = breakupMomentum( isobar.m(), p1.m(), p2.m() );
+  GDouble k = breakupMomentum( resonance.M(), isobar.M(), p3.M() );
+  GDouble q = breakupMomentum( isobar.M(), p1.M(), p2.M() );
   
   const vector< int >& perm = getCurrentPermutation();
   

@@ -7,15 +7,15 @@
 #include <string>
 #include <sstream>
 
+#include "TLorentzVector.h"
+#include "TLorentzRotation.h"
+
 #include "IUAmpTools/AmpParameter.h"
 #include "b1piAngAmp.h"
 #include "AMPTOOLS_AMPS/barrierFactor.h"
 #include "AMPTOOLS_AMPS/clebschGordan.h"
 #include "AMPTOOLS_AMPS/wignerD.h"
 #include "AMPTOOLS_AMPS/breakupMomentum.h"
-#include "CLHEP/Vector/LorentzVector.h"
-#include "CLHEP/Vector/LorentzRotation.h"
-#include "CLHEP/Vector/ThreeVector.h"
 
 b1piAngAmp::b1piAngAmp( const vector< string >& args ):
   UserAmplitude< b1piAngAmp >( args ),
@@ -99,8 +99,8 @@ b1piAngAmp::b1piAngAmp( const vector< string >& args ):
   mIz[6]=+1;
 }
 
-void PrintHEPvector(HepLorentzVector &v){
-  printf("(%6.3f, %6.3f, %6.3f; %6.3f m=%6.3f)\n",v.x(),v.y(),v.z(),v.t(),v.m());
+void PrintHEPvector(TLorentzVector &v){
+  printf("(%6.3f, %6.3f, %6.3f; %6.3f m=%6.3f)\n",v.X(),v.Y(),v.Z(),v.T(),v.M());
 }
 void PrintArrVector(GDouble *v){
   printf("arr(%6.3f, %6.3f, %6.3f; %6.3f m=%6.3f)\n",v[1],v[2],v[3],v[0],
@@ -112,25 +112,25 @@ void PrintArrVector(GDouble *v){
 inline GDouble b1piAngAmp::N(int J) const
 { return sqrt((2*J+1)/(4*M_PI)); }
 
-HepLorentzVector& MoveToRF(HepLorentzVector &parent,
-			  HepLorentzVector &daughter)
+TLorentzVector& MoveToRF(TLorentzVector &parent,
+			  TLorentzVector &daughter)
 {
-  daughter.rotateZ(-parent.phi());
-  daughter.rotateY(-parent.theta());
-  daughter.boost(0,0,-parent.rho()/parent.e());    
+  daughter.RotateZ(-parent.Phi());
+  daughter.RotateY(-parent.Theta());
+  daughter.Boost(0,0,-parent.Rho()/parent.E());
   return daughter;
 }
 
 
 inline complex <GDouble> b1piAngAmp::
 BreitWigner(GDouble m0, GDouble Gamma0, int L,
-	    HepLorentzVector &P1, HepLorentzVector &P2) const
+	    TLorentzVector &P1, TLorentzVector &P2) const
 {
   
-  HepLorentzVector Ptot=P1+P2;
-  GDouble m  = Ptot.m();
-  GDouble mass1 = P1.m();
-  GDouble mass2 = P2.m();
+  TLorentzVector Ptot=P1+P2;
+  GDouble m  = Ptot.M();
+  GDouble mass1 = P1.M();
+  GDouble mass2 = P2.M();
   
   
   // assert positive breakup momenta     
@@ -244,8 +244,8 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
 
   if(abs(Iz_b1+Iz_pi) > mI_X) return CZero;
 
-  HepLorentzVector beam  (pKin[0][1], pKin[0][2], pKin[0][3], pKin[0][0]); 
-  HepLorentzVector recoil(pKin[1][1], pKin[1][2], pKin[1][3], pKin[1][0]);
+  TLorentzVector beam  (pKin[0][1], pKin[0][2], pKin[0][3], pKin[0][0]); 
+  TLorentzVector recoil(pKin[1][1], pKin[1][2], pKin[1][3], pKin[1][0]);
   GDouble InvSqrt2=1/sqrt(2.0);
   GDouble m0_rho=0.775,G0_rho=0.149;
   GDouble m0_omega=0.783, m0_b1=1.223;
@@ -256,74 +256,74 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
   //  2      3         4         5   6
                         
 
-  HepLorentzVector rhos_pip(pKin[6][1], pKin[6][2], pKin[6][3], pKin[6][0]);
-  HepLorentzVector rhos_pim(pKin[5][1], pKin[5][2], pKin[5][3], pKin[5][0]);
-  HepLorentzVector rho = rhos_pip + rhos_pim;
+  TLorentzVector rhos_pip(pKin[6][1], pKin[6][2], pKin[6][3], pKin[6][0]);
+  TLorentzVector rhos_pim(pKin[5][1], pKin[5][2], pKin[5][3], pKin[5][0]);
+  TLorentzVector rho = rhos_pip + rhos_pim;
 
-  if( useCutoff && rho.m()+0.135 > m0_omega+3*mG0_omega){
+  if( useCutoff && rho.M()+0.135 > m0_omega+3*mG0_omega){
     //cout << "s";
     return CZero;
   }
 
-  HepLorentzVector omegas_pi(pKin[4][1], pKin[4][2], pKin[4][3], pKin[4][0]);
-  HepLorentzVector omega = rho + omegas_pi;
+  TLorentzVector omegas_pi(pKin[4][1], pKin[4][2], pKin[4][3], pKin[4][0]);
+  TLorentzVector omega = rho + omegas_pi;
 
-  if(useCutoff && fabs(omega.m()-m0_omega) > 3*mG0_omega){
+  if(useCutoff && fabs(omega.M()-m0_omega) > 3*mG0_omega){
     //cout << "s";
     return CZero; 
   }
 
-  HepLorentzVector b1s_pi(pKin[3][1], pKin[3][2], pKin[3][3], pKin[3][0]);
-  HepLorentzVector b1 = omega + b1s_pi;
+  TLorentzVector b1s_pi(pKin[3][1], pKin[3][2], pKin[3][3], pKin[3][0]);
+  TLorentzVector b1 = omega + b1s_pi;
 
-  if( useCutoff && (fabs(b1.m()-m0_b1) > 3*mG0_b1 ||
-		    b1.m() < (m0_omega - 3*mG0_omega)) ){
+  if( useCutoff && (fabs(b1.M()-m0_b1) > 3*mG0_b1 ||
+		    b1.M() < (m0_omega - 3*mG0_omega)) ){
     //cout << "s";
     return CZero;
   }
 
   //printf("DEBUG: proceeding with b1pi amp calc. mG0_omega=%f, disbale BWomega=%d\n",mG0_omega,m_disableBW_omega);
 
-  HepLorentzVector Xs_pi(pKin[2][1], pKin[2][2], pKin[2][3], pKin[2][0]);
-  HepLorentzVector X = b1 + Xs_pi;
+  TLorentzVector Xs_pi(pKin[2][1], pKin[2][2], pKin[2][3], pKin[2][0]);
+  TLorentzVector X = b1 + Xs_pi;
 
-  GDouble q = breakupMomentum( X.m(), b1.m(), Xs_pi.m() );
+  GDouble q = breakupMomentum( X.M(), b1.M(), Xs_pi.M() );
 
 
   // orientation of production plane in lab
-  GDouble alpha = recoil.vect().phi();
+  GDouble alpha = recoil.Vect().Phi();
   
   //Resonance RF, Godfried-Jackson frame
-  HepLorentzRotation XRFboost( -X.boostVector() );
+  TLorentzRotation XRFboost( -X.BoostVector() );
 
-  HepLorentzVector beam_XRF   = XRFboost * beam;
-  HepLorentzVector recoil_XRF = XRFboost * recoil;
+  TLorentzVector beam_XRF   = XRFboost * beam;
+  TLorentzVector recoil_XRF = XRFboost * recoil;
   
   //Define coordinate system
-  Hep3Vector zGJ = beam_XRF.vect().unit();
-  Hep3Vector yGJ = zGJ.cross(recoil_XRF.vect()).unit();
-  Hep3Vector xGJ = yGJ.cross(zGJ);
+  TVector3 zGJ = beam_XRF.Vect().Unit();
+  TVector3 yGJ = zGJ.Cross(recoil_XRF.Vect()).Unit();
+  TVector3 xGJ = yGJ.Cross(zGJ);
 
   
-  HepLorentzVector b1_XRF      = XRFboost * b1;
-  HepLorentzVector omega_XRF   = XRFboost * omega;
-  HepLorentzVector rho_XRF     = XRFboost * rho;
-  HepLorentzVector rhos_pip_XRF= XRFboost * rhos_pip;
+  TLorentzVector b1_XRF      = XRFboost * b1;
+  TLorentzVector omega_XRF   = XRFboost * omega;
+  TLorentzVector rho_XRF     = XRFboost * rho;
+  TLorentzVector rhos_pip_XRF= XRFboost * rhos_pip;
 
-  HepLorentzVector omega_b1RF(MoveToRF(b1_XRF, omega_XRF));
-  HepLorentzVector rho_omegaRF(MoveToRF(omega_b1RF, 
+  TLorentzVector omega_b1RF(MoveToRF(b1_XRF, omega_XRF));
+  TLorentzVector rho_omegaRF(MoveToRF(omega_b1RF, 
 					MoveToRF(b1_XRF, rho_XRF)));
-  HepLorentzVector rhos_pip_rhoRF(MoveToRF(rho_omegaRF,
+  TLorentzVector rhos_pip_rhoRF(MoveToRF(rho_omegaRF,
 					    MoveToRF(omega_b1RF, 
 						     MoveToRF(b1_XRF,rhos_pip_XRF))));
 
-  Hep3Vector ang_b1( (b1_XRF.vect()).dot(xGJ),
-		     (b1_XRF.vect()).dot(yGJ),
-		     (b1_XRF.vect()).dot(zGJ) );
+  TVector3 ang_b1( (b1_XRF.Vect()).Dot(xGJ),
+		     (b1_XRF.Vect()).Dot(yGJ),
+		     (b1_XRF.Vect()).Dot(zGJ) );
   
   //printf("%f %f    %f %f \n",
-  // omega.m(), (rho+omegas_pi).m(),
-  //	 rho.m(), (rhos_pip+rhos_pim).m());
+  // omega.M(), (rho+omegas_pi).M(),
+  //	 rho.M(), (rhos_pip+rhos_pim).M());
 
 
   // SUMMATION GUIDE:
@@ -334,10 +334,10 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
 
   int pol=(mpolBeam==1 ? +1 : -1); // y and x-pol. respectively
   const int* epsilon_R=&mepsilon_R;
-  GDouble rho_omegaRF_cosTheta=rho_omegaRF.cosTheta();
-  GDouble rho_omegaRF_phi     =rho_omegaRF.phi();
-  GDouble rhos_pip_rhoRF_cosTheta=rhos_pip_rhoRF.cosTheta();
-  GDouble rhos_pip_rhoRF_phi     =rhos_pip_rhoRF.phi();
+  GDouble rho_omegaRF_cosTheta=rho_omegaRF.CosTheta();
+  GDouble rho_omegaRF_phi     =rho_omegaRF.Phi();
+  GDouble rhos_pip_rhoRF_cosTheta=rhos_pip_rhoRF.CosTheta();
+  GDouble rhos_pip_rhoRF_phi     =rhos_pip_rhoRF.Phi();
 
 
 
@@ -466,8 +466,8 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
 		
 		l_omegaDepTerm += 
 		  L_omegaDepTerm *
-		  conj(wignerD(1, *l_b1, *l_omega, omega_b1RF.cosTheta(), 
-			       omega_b1RF.phi())) *
+		  conj(wignerD(1, *l_b1, *l_omega, omega_b1RF.CosTheta(), 
+			       omega_b1RF.Phi())) *
 		  CB(*L_b1, 1, 0, *l_omega, 1, *l_omega);
 	      }
 	      
@@ -479,7 +479,7 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
 	    
 	    l_b1DepTerm += 
 	      L_b1DepTerm * CB(mL_X, 1, 0, *l_b1, mJ_X, *l_b1)*
-	      conj(wignerD(mJ_X, m_X, *l_b1, ang_b1.cosTheta(), ang_b1.phi()));
+	      conj(wignerD(mJ_X, m_X, *l_b1, ang_b1.CosTheta(), ang_b1.Phi()));
 	    
 	    
 	  }

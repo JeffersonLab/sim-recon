@@ -1,5 +1,5 @@
 
-PACKAGES = AmpTools:CLHEP
+PACKAGES = AmpTools:ROOT
 
 ifdef HALLD_SHARED
 include $(HALLD_HOME)/src/BMS/Makefile.shlib

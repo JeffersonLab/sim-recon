@@ -15,7 +15,6 @@ using std::complex;
 using namespace std;
 
 
-
 #ifdef GPU_ACCELERATION
 void
 GPUb1piAngAmp_exec(dim3 dimGrid, dim3 dimBlock, GPU_AMP_PROTO,
@@ -49,7 +48,7 @@ public:
   GDouble u_b1(int L_b1) const;
 
   inline complex<GDouble> BreitWigner(GDouble m0, GDouble Gamma0, int L,
-			       HepLorentzVector &P1,HepLorentzVector &P2) const;
+			       TLorentzVector &P1,TLorentzVector &P2) const;
   inline GDouble CB(int j1, int j2, int m1, int m2, int J, int M) const;
 
   inline GDouble N(int J) const;

@@ -6,12 +6,13 @@
 #include <complex>
 #include <cstdlib>
 
+#include "TLorentzVector.h"
+
 #include "barrierFactor.h"
 #include "breakupMomentum.h"
 
 #include "IUAmpTools/Kinematics.h"
 #include "AMPTOOLS_AMPS/BreitWigner.h"
-#include "CLHEP/Vector/LorentzVector.h"
 
 BreitWigner::BreitWigner( const vector< string >& args ) :
 UserAmplitude< BreitWigner >( args )
@@ -35,14 +36,14 @@ UserAmplitude< BreitWigner >( args )
 complex< GDouble >
 BreitWigner::calcAmplitude( GDouble** pKin ) const
 {
-  HepLorentzVector P1, P2, Ptot, Ptemp;
+  TLorentzVector P1, P2, Ptot, Ptemp;
   
   for( unsigned int i = 0; i < m_daughters.first.size(); ++i ){
     
     string num; num += m_daughters.first[i];
     int index = atoi(num.c_str());
-    Ptemp.set( pKin[index][1], pKin[index][2], 
-               pKin[index][3], pKin[index][0] );                
+    Ptemp.SetPxPyPzE( pKin[index][1], pKin[index][2],
+                      pKin[index][3], pKin[index][0] );
     P1 += Ptemp;
     Ptot += Ptemp;
   }
@@ -51,15 +52,15 @@ BreitWigner::calcAmplitude( GDouble** pKin ) const
     
     string num; num += m_daughters.second[i];
     int index = atoi(num.c_str());
-    Ptemp.set( pKin[index][1], pKin[index][2], 
-               pKin[index][3], pKin[index][0] );                
+    Ptemp.SetPxPyPzE( pKin[index][1], pKin[index][2],
+                      pKin[index][3], pKin[index][0] );
     P2 += Ptemp;
     Ptot += Ptemp;
   }
   
-  GDouble mass  = Ptot.m();
-  GDouble mass1 = P1.m();
-  GDouble mass2 = P2.m();
+  GDouble mass  = Ptot.M();
+  GDouble mass1 = P1.M();
+  GDouble mass2 = P2.M();
   
   // assert positive breakup momenta     
   GDouble q0 = fabs( breakupMomentum(m_mass0, mass1, mass2) );
