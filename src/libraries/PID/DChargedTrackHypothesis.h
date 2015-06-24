@@ -34,12 +34,16 @@ class DChargedTrackHypothesis : public DKinematicData
 		double dChiSq; //total chi-squared used for PID determination
 		double dFOM; //overall FOM for PID determination
 
-		//selected matches to detector systems
-			//IGNORE DATA IF THE dTrackTimeBased MEMBER OF THESE IS NULL: NO MATCH
-		DSCHitMatchParams dSCHitMatchParams;
-		DTOFHitMatchParams dTOFHitMatchParams;
-		DBCALShowerMatchParams dBCALShowerMatchParams;
-		DFCALShowerMatchParams dFCALShowerMatchParams;
+		//THESE RETURN NULL IF NO MATCH TO THAT SYSTEM
+		const DSCHitMatchParams* Get_SCHitMatchParams(void) const;
+		const DTOFHitMatchParams* Get_TOFHitMatchParams(void) const;
+		const DBCALShowerMatchParams* Get_BCALShowerMatchParams(void) const;
+		const DFCALShowerMatchParams* Get_FCALShowerMatchParams(void) const;
+
+		void Set_SCHitMatchParams(const DSCHitMatchParams& locSCHitMatchParams);
+		void Set_TOFHitMatchParams(const DTOFHitMatchParams& locTOFHitMatchParams);
+		void Set_BCALShowerMatchParams(const DBCALShowerMatchParams& locBCALShowerMatchParams);
+		void Set_FCALShowerMatchParams(const DFCALShowerMatchParams& locFCALShowerMatchParams);
 
 		void toStrings(vector<pair<string,string> > &items) const
 		{
@@ -51,7 +55,55 @@ class DChargedTrackHypothesis : public DKinematicData
 			AddString(items, "PID_ChiSq", "%f", dChiSq);
 			AddString(items, "PID_FOM", "%f", dFOM);
 		}
+
+	private:
+		//IGNORE DATA IF THE dTrack MEMBER OF THESE IS NULL: NO MATCH
+		DSCHitMatchParams dSCHitMatchParams;
+		DTOFHitMatchParams dTOFHitMatchParams;
+		DBCALShowerMatchParams dBCALShowerMatchParams;
+		DFCALShowerMatchParams dFCALShowerMatchParams;
 };
+
+//THESE RETURN NULL IF NO MATCH TO THAT SYSTEM
+inline const DSCHitMatchParams* DChargedTrackHypothesis::Get_SCHitMatchParams(void) const
+{
+	return ((dSCHitMatchParams.dTrack == NULL) ? NULL : &dSCHitMatchParams);
+}
+
+inline const DTOFHitMatchParams* DChargedTrackHypothesis::Get_TOFHitMatchParams(void) const
+{
+	return ((dTOFHitMatchParams.dTrack == NULL) ? NULL : &dTOFHitMatchParams);
+}
+
+inline const DBCALShowerMatchParams* DChargedTrackHypothesis::Get_BCALShowerMatchParams(void) const
+{
+	return ((dBCALShowerMatchParams.dTrack == NULL) ? NULL : &dBCALShowerMatchParams);
+}
+
+inline const DFCALShowerMatchParams* DChargedTrackHypothesis::Get_FCALShowerMatchParams(void) const
+{
+	return ((dFCALShowerMatchParams.dTrack == NULL) ? NULL : &dFCALShowerMatchParams);
+}
+
+inline void DChargedTrackHypothesis::Set_SCHitMatchParams(const DSCHitMatchParams& locSCHitMatchParams)
+{
+	dSCHitMatchParams = locSCHitMatchParams;
+}
+
+inline void DChargedTrackHypothesis::Set_TOFHitMatchParams(const DTOFHitMatchParams& locTOFHitMatchParams)
+{
+	dTOFHitMatchParams = locTOFHitMatchParams;
+}
+
+inline void DChargedTrackHypothesis::Set_BCALShowerMatchParams(const DBCALShowerMatchParams& locBCALShowerMatchParams)
+{
+	dBCALShowerMatchParams = locBCALShowerMatchParams;
+}
+
+inline void DChargedTrackHypothesis::Set_FCALShowerMatchParams(const DFCALShowerMatchParams& locFCALShowerMatchParams)
+{
+	dFCALShowerMatchParams = locFCALShowerMatchParams;
+}
 
 #endif // _DChargedTrackHypothesis_
 

@@ -40,13 +40,13 @@ bool DCutAction_AllTracksHaveDetectorMatch::Perform_Action(JEventLoop* locEventL
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-		if(locChargedTrackHypothesis->dSCHitMatchParams.dTrack != NULL)
+		if(locChargedTrackHypothesis->Get_SCHitMatchParams() != NULL)
 			continue;
-		if(locChargedTrackHypothesis->dTOFHitMatchParams.dTrack != NULL)
+		if(locChargedTrackHypothesis->Get_TOFHitMatchParams() != NULL)
 			continue;
-		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrack != NULL)
+		if(locChargedTrackHypothesis->Get_BCALShowerMatchParams() != NULL)
 			continue;
-		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrack != NULL)
+		if(locChargedTrackHypothesis->Get_FCALShowerMatchParams() != NULL)
 			continue;
 		return false;
 	}
@@ -877,12 +877,12 @@ bool DCutAction_TrackFCALShowerEOverP::Perform_Action(JEventLoop* locEventLoop, 
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-		const DFCALShowerMatchParams& locFCALShowerMatchParams = locChargedTrackHypothesis->dFCALShowerMatchParams;
-		if(locFCALShowerMatchParams.dTrack == NULL)
+		const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
+		if(locFCALShowerMatchParams == NULL)
 			continue;
 
 		Particle_t locPID = locChargedTrackHypothesis->PID();
-		const DFCALShower* locFCALShower = locFCALShowerMatchParams.dFCALShower;
+		const DFCALShower* locFCALShower = locFCALShowerMatchParams->dFCALShower;
 		double locShowerEOverP = locFCALShower->getEnergy()/locChargedTrackHypothesis->momentum().Mag();
 
 		if((locPID == Electron) || (locPID == Positron))

@@ -108,7 +108,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 	DSCHitMatchParams locSCHitMatchParams;
 	if(dPIDAlgorithm->Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams))
 	{
-		locChargedTrackHypothesis->dSCHitMatchParams = locSCHitMatchParams;
+		locChargedTrackHypothesis->Set_SCHitMatchParams(locSCHitMatchParams);
 
 		double locPropagatedTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime;
 		locChargedTrackHypothesis->setTime(locPropagatedTime);
@@ -133,7 +133,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 	DBCALShowerMatchParams locBCALShowerMatchParams;
 	if(dPIDAlgorithm->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams))
 	{
-		locChargedTrackHypothesis->dBCALShowerMatchParams = locBCALShowerMatchParams;
+		locChargedTrackHypothesis->Set_BCALShowerMatchParams(locBCALShowerMatchParams);
 		const DBCALShower* locBCALShower = locBCALShowerMatchParams.dBCALShower;
 		locChargedTrackHypothesis->setT1(locBCALShower->t, locBCALShower->tErr, SYS_BCAL);
 		locChargedTrackHypothesis->setTime(locBCALShower->t - locBCALShowerMatchParams.dFlightTime);
@@ -154,7 +154,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 	DTOFHitMatchParams locTOFHitMatchParams;
 	if(dPIDAlgorithm->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
 	{
-		locChargedTrackHypothesis->dTOFHitMatchParams = locTOFHitMatchParams;
+		locChargedTrackHypothesis->Set_TOFHitMatchParams(locTOFHitMatchParams);
 		if(locChargedTrackHypothesis->t1_detector() == SYS_NULL)
 		{
 			locChargedTrackHypothesis->setT1(locTOFHitMatchParams.dHitTime, sqrt(locTOFHitMatchParams.dHitTimeVariance), SYS_TOF);
@@ -177,7 +177,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 	DFCALShowerMatchParams locFCALShowerMatchParams;
 	if(dPIDAlgorithm->Get_BestFCALMatchParams(locTrackTimeBased, locDetectorMatches, locFCALShowerMatchParams))
 	{
-		locChargedTrackHypothesis->dFCALShowerMatchParams = locFCALShowerMatchParams;
+		locChargedTrackHypothesis->Set_FCALShowerMatchParams(locFCALShowerMatchParams);
 		if(locChargedTrackHypothesis->t1_detector() == SYS_NULL)
 		{
 			const DFCALShower* locFCALShower = locFCALShowerMatchParams.dFCALShower;

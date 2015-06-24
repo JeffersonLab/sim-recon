@@ -325,10 +325,10 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 	double locMatchFOM = 0.0;
 	const DMCThrown* locMCThrown = (locMCThrownMatching != NULL) ? locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypothesis, locMatchFOM) : NULL;
 
-	const DBCALShowerMatchParams& locBCALShowerMatchParams = locChargedTrackHypothesis->dBCALShowerMatchParams;
-	const DFCALShowerMatchParams& locFCALShowerMatchParams = locChargedTrackHypothesis->dFCALShowerMatchParams;
-	const DTOFHitMatchParams& locTOFHitMatchParams = locChargedTrackHypothesis->dTOFHitMatchParams;
-	const DSCHitMatchParams& locSCHitMatchParams = locChargedTrackHypothesis->dSCHitMatchParams;
+	const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
+	const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
+	const DTOFHitMatchParams* locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
+	const DSCHitMatchParams* locSCHitMatchParams = locChargedTrackHypothesis->Get_SCHitMatchParams();
 
 	const DTrackTimeBased* locTrackTimeBased = NULL;
 	locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
@@ -343,38 +343,38 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 		dHistMap_PIDFOM[locPID]->Fill(locChargedTrackHypothesis->dFOM);
 
 		//SC dE/dx
-		if(locSCHitMatchParams.dTrack != NULL)
+		if(locSCHitMatchParams != NULL)
 		{
-			dHistMap_dEdXVsP[locPID][SYS_START]->Fill(locP, locSCHitMatchParams.dEdx*1.0E3);
-			double locdx = locSCHitMatchParams.dHitEnergy/locSCHitMatchParams.dEdx;
+			dHistMap_dEdXVsP[locPID][SYS_START]->Fill(locP, locSCHitMatchParams->dEdx*1.0E3);
+			double locdx = locSCHitMatchParams->dHitEnergy/locSCHitMatchParams->dEdx;
 			double locProbabledEdx = 0.0, locSigmadEdx = 0.0;
 			dParticleID->GetScintMPdEandSigma(locP, locChargedTrackHypothesis->mass(), locdx, locProbabledEdx, locSigmadEdx);
-			dHistMap_DeltadEdXVsP[locPID][SYS_START]->Fill(locP, (locSCHitMatchParams.dEdx - locProbabledEdx)*1.0E3);
+			dHistMap_DeltadEdXVsP[locPID][SYS_START]->Fill(locP, (locSCHitMatchParams->dEdx - locProbabledEdx)*1.0E3);
 		}
 
 		//TOF dE/dx
-		if(locTOFHitMatchParams.dTrack != NULL)
+		if(locTOFHitMatchParams != NULL)
 		{
-			dHistMap_dEdXVsP[locPID][SYS_TOF]->Fill(locP, locTOFHitMatchParams.dEdx*1.0E3);
-			double locdx = locTOFHitMatchParams.dHitEnergy/locTOFHitMatchParams.dEdx;
+			dHistMap_dEdXVsP[locPID][SYS_TOF]->Fill(locP, locTOFHitMatchParams->dEdx*1.0E3);
+			double locdx = locTOFHitMatchParams->dHitEnergy/locTOFHitMatchParams->dEdx;
 			double locProbabledEdx = 0.0, locSigmadEdx = 0.0;
 			dParticleID->GetScintMPdEandSigma(locP, locChargedTrackHypothesis->mass(), locdx, locProbabledEdx, locSigmadEdx);
-			dHistMap_DeltadEdXVsP[locPID][SYS_TOF]->Fill(locP, (locTOFHitMatchParams.dEdx - locProbabledEdx)*1.0E3);
+			dHistMap_DeltadEdXVsP[locPID][SYS_TOF]->Fill(locP, (locTOFHitMatchParams->dEdx - locProbabledEdx)*1.0E3);
 		}
 
 		//BCAL E/p
-		if(locBCALShowerMatchParams.dTrack != NULL)
+		if(locBCALShowerMatchParams != NULL)
 		{
-			const DBCALShower* locBCALShower = locBCALShowerMatchParams.dBCALShower;
+			const DBCALShower* locBCALShower = locBCALShowerMatchParams->dBCALShower;
 			double locEOverP = locBCALShower->E/locP;
 			dHistMap_EOverPVsP[locPID][SYS_BCAL]->Fill(locP, locEOverP);
 			dHistMap_EOverPVsTheta[locPID][SYS_BCAL]->Fill(locTheta, locEOverP);
 		}
 
 		//FCAL E/p
-		if(locFCALShowerMatchParams.dTrack != NULL)
+		if(locFCALShowerMatchParams != NULL)
 		{
-			const DFCALShower* locFCALShower = locFCALShowerMatchParams.dFCALShower;
+			const DFCALShower* locFCALShower = locFCALShowerMatchParams->dFCALShower;
 			double locEOverP = locFCALShower->getEnergy()/locP;
 			dHistMap_EOverPVsP[locPID][SYS_FCAL]->Fill(locP, locEOverP);
 			dHistMap_EOverPVsTheta[locPID][SYS_FCAL]->Fill(locTheta, locEOverP);
@@ -1117,7 +1117,7 @@ void DHistogramAction_MissingMass::Initialize(JEventLoop* locEventLoop)
 		locMassPerBin *= ((double)dNumMassBins)/((double)dNum2DMassBins);
 		locStream.str("");
 		locStream << locMassPerBin;
-		locHistTitle = string(";Beam Energy (GeV);") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass (GeV/c^{2});# Combos / ") + locStream.str() + string(" MeV/c^{2}");
+		locHistTitle = string(";Beam Energy (GeV);") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass (GeV/c^{2})");
 		dHist_MissingMassVsBeamE = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DBeamEBins, dMinBeamE, dMaxBeamE, dNum2DMassBins, dMinMass, dMaxMass);
 
 		//Return to the base directory
@@ -1181,7 +1181,7 @@ void DHistogramAction_MissingMassSquared::Initialize(JEventLoop* locEventLoop)
 		locMassSqPerBin *= ((double)dNumMassBins)/((double)dNum2DMassBins);
 		locStream.str();
 		locStream << locMassSqPerBin;
-		locHistTitle = string(";Beam Energy (GeV);") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass Squared (GeV/c^{2})^{2};# Combos / ") + locStream.str() + string(" (MeV/c^{2})^{2}");
+		locHistTitle = string(";Beam Energy (GeV);") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass Squared (GeV/c^{2})^{2};");
 		dHist_MissingMassSquaredVsBeamE = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DBeamEBins, dMinBeamE, dMaxBeamE, dNum2DMassBins, dMinMassSq, dMaxMassSq);
 
 		//Return to the base directory
