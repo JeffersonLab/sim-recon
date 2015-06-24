@@ -29,10 +29,12 @@ class DTPOLHit_factory:public jana::JFactory<DTPOLHit>{
 		static const int NSECTORS = 32;
 		static const int NRINGS   = 24;
 
-		static const int INNER_RADIUS = 22 / 2; // From "ACTIVE INNER DIAMETER" in catalog
-		static const int OUTER_RADIUS = 70 / 2; // From "ACTIVE OUTER DIAMETER" in catalog
-		static const double SECTOR_DIVISION = 360. / NSECTORS;
-		static const double RING_DIVISION   = (OUTER_RADIUS - INNER_RADIUS) / DTPOLRingDigiHit::NRINGS; // 1mm, agrees with "JUNCTION ELEMENT SEPARATION" in catalog
+		static const double INNER_RADIUS = 22 / 2;       // From "ACTIVE INNER DIAMETER" in catalog
+		static const double OUTER_RADIUS = 70 / 2;       // From "ACTIVE OUTER DIAMETER" in catalog
+		static const double SECTOR_DIVISION = 360. / 32; // 360. / NSECTORS
+		static const double RING_DIVISION   = (35. - 11. ) / 24;
+		// (OUTER_RADIUS - INNER_RADIUS) / DTPOLRingDigiHit::NRINGS;
+		// 1mm, agrees with "JUNCTION ELEMENT SEPARATION" in catalog
 
 		DTPOLHit* FindMatch(int sector, double T);
 
