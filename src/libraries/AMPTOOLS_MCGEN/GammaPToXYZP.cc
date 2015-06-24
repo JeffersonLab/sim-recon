@@ -8,10 +8,10 @@
  */
 
 #include "GammaPToXYZP.h"
+#include "TLorentzVector.h"
 
 #include "AMPTOOLS_MCGEN/DalitzDecayFactory.h"
 #include "IUAmpTools/Kinematics.h"
-#include "CLHEP/Vector/LorentzVector.h"
 
 GammaPToXYZP::GammaPToXYZP( float lowMassXYZ, float highMassXYZ, 
                             float massX, float massY, float massZ,
@@ -32,21 +32,21 @@ m_childMass( 0 ) {
 Kinematics* 
 GammaPToXYZP::generate(){
   
-  HepLorentzVector resonance = m_prodMech.produceResonance( m_beam );
+  TLorentzVector resonance = m_prodMech.produceResonance( m_beam );
   double genWeight = m_prodMech.getLastGeneratedWeight();
   
-  vector< HepLorentzVector > allPart;
+  vector< TLorentzVector > allPart;
   allPart.push_back( m_beam );
   allPart.push_back( m_beam + m_target - resonance );
   
-  DalitzDecayFactory decay( resonance.m(), m_childMass );
+  DalitzDecayFactory decay( resonance.M(), m_childMass );
   
-  vector<HepLorentzVector> fsPart = decay.generateDecay();
+  vector<TLorentzVector> fsPart = decay.generateDecay();
   
-  for( vector<HepLorentzVector>::iterator aPart = fsPart.begin();
+  for( vector<TLorentzVector>::iterator aPart = fsPart.begin();
       aPart != fsPart.end(); ++aPart ){
     
-    aPart->boost( resonance.boostVector() );
+    aPart->Boost( resonance.BoostVector() );
     allPart.push_back( *aPart );
   }
   

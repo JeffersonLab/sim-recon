@@ -12,7 +12,6 @@
 #include "NBodyPhaseSpaceFactory.h"
 #include "TLorentzVector.h"
 #include "IUAmpTools/Kinematics.h"
-#include "CLHEP/Vector/LorentzVector.h"
 
 GammaPToNPartP::GammaPToNPartP( float lowMass, float highMass, 
 				vector<double> &ChildMass,
@@ -41,17 +40,17 @@ GammaPToNPartP::GammaPToNPartP( float lowMass, float highMass,
 Kinematics* 
 GammaPToNPartP::generate(){
 
-  HepLorentzVector resonance;
+  TLorentzVector resonance;
   do{
     resonance=m_prodMech.produceResonance( m_beam );
-  }while(!(resonance.e() < m_beam.e()));
+  }while(!(resonance.E() < m_beam.E()));
 
 
   //TLorentzVector tresonance(resonance.px(),resonance.py(),
   //		    resonance.pz(),resonance.e());
   double genWeight = m_prodMech.getLastGeneratedWeight();
   
-  vector< HepLorentzVector > allPart;
+  vector< TLorentzVector > allPart;
   allPart.push_back( m_beam );
   allPart.push_back( m_beam + m_target - resonance );
   
@@ -61,20 +60,20 @@ GammaPToNPartP::generate(){
   genWeight *= Xdecay.Generate();
   */
 
-  NBodyPhaseSpaceFactory psFactory(resonance.m(),m_ChildMass);
-  vector< HepLorentzVector > children = psFactory.generateDecay(false);
+  NBodyPhaseSpaceFactory psFactory(resonance.M(),m_ChildMass);
+  vector< TLorentzVector > children = psFactory.generateDecay(false);
   genWeight *= psFactory.getLastGeneratedWeight();
 
-  Hep3Vector b3(resonance.boostVector());   // boost vector from parent
+  TVector3 b3(resonance.BoostVector());   // boost vector from parent
   for (unsigned int n=0; n<children.size(); ++n ){
-    children[n].boost(b3);
+    children[n].Boost(b3);
     allPart.push_back(children[n]);
   }
 
   /*
   for(unsigned int i = 0 ; i<m_Npart ; ++i){
     TLorentzVector *tPart = Xdecay.GetDecay(i);
-    HepLorentzVector Part(tPart->Px(),tPart->Py(),tPart->Pz(),tPart->Energy());
+    TLorentzVector Part(tPart->Px(),tPart->Py(),tPart->Pz(),tPart->Energy());
     allPart.push_back(Part);
     }*/
   

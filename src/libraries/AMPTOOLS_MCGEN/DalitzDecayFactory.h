@@ -1,12 +1,11 @@
-#if !defined(DALITZDECAYFFACTORY)
+#if !defined(DALITZDECAYFACTORY)
 #define DALITZDECAYFACTORY
 
 #include <vector>
 
-#include "CLHEP/Vector/LorentzVector.h"
+#include "TLorentzVector.h"
 
 using namespace std;
-using namespace CLHEP;
 
 class DalitzDecayFactory
 {
@@ -15,7 +14,7 @@ public:
 	
 	DalitzDecayFactory( double parentMass, const vector<double>& childMass );
 	
-	vector<HepLorentzVector> generateDecay() const;
+	vector<TLorentzVector> generateDecay() const;
 	
 private:
 	

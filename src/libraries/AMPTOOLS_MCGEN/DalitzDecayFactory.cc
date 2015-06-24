@@ -5,11 +5,8 @@
 
 #include "AMPTOOLS_MCGEN/DalitzDecayFactory.h"
 
-#include "CLHEP/Vector/LorentzVector.h"
-#include "CLHEP/Vector/LorentzRotation.h"
-#include "CLHEP/Vector/ThreeVector.h"
-
-using namespace CLHEP;
+#include "TLorentzVector.h"
+#include "TLorentzRotation.h"
 
 const double DalitzDecayFactory::kPi = 3.14159;
 
@@ -27,15 +24,15 @@ m_childMass( childMass )
 }
 
 
-vector<HepLorentzVector>
+vector<TLorentzVector>
 DalitzDecayFactory::generateDecay() const {
 	
-	vector<HepLorentzVector> child( 3 );
-	vector<Hep3Vector> childMom( 3 );
+	vector<TLorentzVector> child( 3 );
+	vector<TVector3> childMom( 3 );
 	
 	// create some useful temporary variables
-	HepLorentzVector isobar;
-	Hep3Vector isobarMom;
+	TLorentzVector isobar;
+	TVector3 isobarMom;
 	double isobarMass;
 	
 	do{
@@ -47,18 +44,18 @@ DalitzDecayFactory::generateDecay() const {
 		// let the X decay to isobar + 2 in the X CM
 		// fill the isobar momentum vector and the bachelor momentum vector
 		isobarMom.
-			setRThetaPhi( cmMomentum( m_parentMass, isobarMass, m_childMass[2] ),
+			SetPtThetaPhi( cmMomentum( m_parentMass, isobarMass, m_childMass[2] ),
 						  acos( random( -0.999999, 0.999999 ) ),
 						  random( -kPi, kPi ) );
 		childMom[2] = -isobarMom;
 		
 		// setup the isobar 4 vector
-		isobar.setVect( isobarMom );
-		isobar.setE( sqrt( isobarMom.mag2() + isobarMass * isobarMass ) );
+		isobar.SetVect( isobarMom );
+		isobar.SetE( sqrt( isobarMom.Mag2() + isobarMass * isobarMass ) );
 		
 		// let the isobar decay to 0 1 in the isobar CM
 		childMom[0].
-			setRThetaPhi( cmMomentum( isobarMass, m_childMass[0], m_childMass[1] ),
+			SetPtThetaPhi( cmMomentum( isobarMass, m_childMass[0], m_childMass[1] ),
 						  acos( random( -0.999999, 0.999999 ) ),
 						  random( -kPi, kPi ) );
 		childMom[1] = -childMom[0];
@@ -66,20 +63,20 @@ DalitzDecayFactory::generateDecay() const {
 		// now we have childMom[0] and childMom[1] in the isobar rest frame
 		// and childMom[2] in the resonance rest frame		
 	}	
-	while( ( childMom[0].mag() * isobarMom.mag() ) < 
+	while( ( childMom[0].Mag() * isobarMom.Mag() ) <
 		   random( 0.0, m_maxLorentzFactor ) );
 	
 	// fill the final four-vectors
 	for( int i = 0; i < 3; ++i ){
 		
-		child[i].setVect( childMom[i] );
-		child[i].setE( sqrt( childMom[i].mag2() + 
+		child[i].SetVect( childMom[i] );
+		child[i].SetE( sqrt( childMom[i].Mag2() +
 							 m_childMass[i] * m_childMass[i] ) );
 	}
 		
 	// boost the isobar children to the resonance rest frame
-	child[0].boost( isobar.boostVector() );
-	child[1].boost( isobar.boostVector() );
+	child[0].Boost( isobar.BoostVector() );
+	child[1].Boost( isobar.BoostVector() );
 	
 	return child;
 }

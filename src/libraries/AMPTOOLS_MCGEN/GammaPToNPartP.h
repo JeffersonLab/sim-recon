@@ -8,9 +8,9 @@
  *  written by Matthew Shepherd
  */
 
+#include "TLorentzVector.h"
 
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
-#include "CLHEP/Vector/LorentzVector.h"
 
 class Kinematics;
 class AmpVecs;
@@ -32,8 +32,8 @@ private:
   
   ProductionMechanism m_prodMech;
   
-  HepLorentzVector m_beam;
-  HepLorentzVector m_target;
+  TLorentzVector m_beam;
+  TLorentzVector m_target;
   
   //double m_ChildMass[12];
   vector<double> m_ChildMass;

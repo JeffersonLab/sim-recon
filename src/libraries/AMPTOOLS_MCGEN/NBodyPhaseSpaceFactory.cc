@@ -13,13 +13,11 @@
 #include <iostream>
 #include <algorithm>
 
+#include "TLorentzVector.h"
+#include "TLorentzRotation.h"
+#include "TMath.h"
+
 #include "AMPTOOLS_MCGEN/NBodyPhaseSpaceFactory.h"
-
-#include "CLHEP/Vector/LorentzVector.h"
-#include "CLHEP/Vector/LorentzRotation.h"
-#include "CLHEP/Vector/ThreeVector.h"
-
-using namespace CLHEP;
 
 const double NBodyPhaseSpaceFactory::kPi = 3.14159;
 
@@ -30,22 +28,11 @@ NBodyPhaseSpaceFactory::NBodyPhaseSpaceFactory( double parentMass, const vector<
   m_Nd = (int)childMass.size();
 }
 
-template< typename T>
-struct CompareAsc {
-  CompareAsc(T d) : fData(d) {}
-
-  bool operator()( int i1, int i2) {
-    return *(fData + i1) < *(fData + i2);
-  }
-
-  T fData;
-};
-
-vector<HepLorentzVector>
+vector<TLorentzVector>
 NBodyPhaseSpaceFactory::generateDecay(bool uniformWeights) {
 	
 
-  vector<HepLorentzVector> child( m_Nd );
+  vector<TLorentzVector> child( m_Nd );
 
   double Tcm = m_parentMass;
   int n, m;
@@ -98,35 +85,25 @@ NBodyPhaseSpaceFactory::generateDecay(bool uniformWeights) {
   if(uniformWeights) m_lastWt = 1.0;
   else               m_lastWt = wt;
 
-  //double fWt = wt;
-
   //
   // Specification of 4-momenta (Raubold-Lynch method)
   //
-  child[0].set(0, pd[0], 0 , sqrt(pd[0]*pd[0]+m_childMass[0]*m_childMass[0]) );
+  child[0].SetPxPyPzE(0, pd[0], 0 , sqrt(pd[0]*pd[0]+m_childMass[0]*m_childMass[0]) );
   for(n=1;;){
-    child[n].set(0, -pd[n-1], 0 , 
+    child[n].SetPxPyPzE(0, -pd[n-1], 0 ,
 		    sqrt(pd[n-1]*pd[n-1]+m_childMass[n]*m_childMass[n]) );
 
     double cosZ = random(-1.,1.);
     double angY = random(0.0, 2.*kPi);
     for (m=0; m<=n; m++) {
-      child[m].rotateZ( acos(cosZ) );
-      child[m].rotateY( angY );
+      child[m].RotateZ( acos(cosZ) );
+      child[m].RotateY( angY );
     }
     if( n == m_Nd-1 ) break;
     double beta = pd[n] / sqrt(pd[n]*pd[n] + invMas[n]*invMas[n]);
-    for (m=0; m<=n; m++) child[m].boost(0,beta,0);
+    for (m=0; m<=n; m++) child[m].Boost(0,beta,0);
     n++;
   }
-
-  /*
-  // *** don't do this - leave them in the parent's cm frame ***
-  // Final boost of all decay particles from the centre of mass of the parent
-  // particle to the lab frame
-  Hep3Vector b3 = P4->boostVector();                  // boost vector from parent
-  for ( int  n=0; n<m_Nd; n++ ) child[n].boost(b3);
-  */
 
   return child;
 }

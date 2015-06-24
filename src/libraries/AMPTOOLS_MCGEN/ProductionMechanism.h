@@ -3,12 +3,11 @@
 
 #include <vector>
 
-#include "CLHEP/Vector/LorentzVector.h"
+#include "TLorentzVector.h"
 
 #include "AMPTOOLS_MCGEN/BreitWignerGenerator.h"
 #include "AMPTOOLS_MCGEN/DecayChannelGenerator.h"
 
-using namespace CLHEP;
 using namespace std;
 
 class ProductionMechanism
@@ -24,7 +23,7 @@ public:
 	void setMassRange( double low, double high );
   void setGeneratorType( Type type );
 	
-	HepLorentzVector produceResonance( const HepLorentzVector& beam );
+	TLorentzVector produceResonance( const TLorentzVector& beam );
   
   // there may be a better way to do this, like pair< , >
   // but sometimes the user doesn't care about the weight

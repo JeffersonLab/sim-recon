@@ -1,12 +1,11 @@
-#if !defined(TWOBODYDECAYFFACTORY)
+#if !defined(TWOBODYDECAYFACTORY)
 #define TWOBODYDECAYFACTORY
 
 #include <vector>
 
-#include "CLHEP/Vector/LorentzVector.h"
+#include "TLorentzVector.h"
 
 using namespace std;
-using namespace CLHEP;
 
 class TwoBodyDecayFactory
 {
@@ -15,7 +14,7 @@ public:
 	
 	TwoBodyDecayFactory( double parentMass, const vector<double>& childMass );
 	
-	vector<HepLorentzVector> generateDecay() const;
+	vector<TLorentzVector> generateDecay() const;
 	
 private:
         

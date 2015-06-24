@@ -5,14 +5,12 @@
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
 #include "particleType.h"
 
-#include "CLHEP/Vector/ThreeVector.h"
-#include "CLHEP/Vector/LorentzVector.h"
-#include "CLHEP/Vector/LorentzRotation.h"
+#include "TLorentzVector.h"
+#include "TLorentzRotation.h"
 
 const double ProductionMechanism::kPi = 3.14159;
 
 using namespace std;
-using namespace CLHEP;
 
 ProductionMechanism::ProductionMechanism( Recoil recoil, Type type, double slope ) :
 m_type( type ),
@@ -46,16 +44,16 @@ ProductionMechanism::setGeneratorType( Type type ){
 }
 
 
-HepLorentzVector
-ProductionMechanism::produceResonance( const HepLorentzVector& beam ){
+TLorentzVector
+ProductionMechanism::produceResonance( const TLorentzVector& beam ){
 	
-	HepLorentzVector target( 0, 0, 0, kMproton );
+	TLorentzVector target( 0, 0, 0, kMproton );
 	
-	HepLorentzRotation lab2cmBoost( -( target + beam ).boostVector() );
-	HepLorentzRotation cm2labBoost( ( target + beam ).boostVector() );
+	TLorentzRotation lab2cmBoost( -( target + beam ).BoostVector() );
+	TLorentzRotation cm2labBoost( ( target + beam ).BoostVector() );
 	
-	double cmEnergy = ( lab2cmBoost * ( target + beam ) ).e();
-	double beamMomCM = cmMomentum( cmEnergy, beam.m(), target.m() );
+	double cmEnergy = ( lab2cmBoost * ( target + beam ) ).E();
+	double beamMomCM = cmMomentum( cmEnergy, beam.M(), target.M() );
 
   double exptMax = exp(-1.)/m_slope;
   
@@ -70,13 +68,13 @@ ProductionMechanism::produceResonance( const HepLorentzVector& beam ){
   } 
 	while( random( 0., exptMax ) > t*exp(-m_slope*t) );
 	
-	Hep3Vector resonanceMomCM;
-	resonanceMomCM.setRThetaPhi( resMomCM,
+	TVector3 resonanceMomCM;
+	resonanceMomCM.SetPtThetaPhi( resMomCM,
                               acos( 1. - 2.*t/tMax ),
                               random( -kPi, kPi ) );
 	
-	HepLorentzVector resonanceCM( resonanceMomCM, 
-                               sqrt( resonanceMomCM.mag2() + 
+	TLorentzVector resonanceCM( resonanceMomCM, 
+                               sqrt( resonanceMomCM.Mag2() +
                                     resMass * resMass ) );
 	
 	return cm2labBoost * resonanceCM;

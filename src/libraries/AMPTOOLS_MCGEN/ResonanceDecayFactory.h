@@ -3,10 +3,10 @@
 
 #include <vector>
 
-#include "CLHEP/Vector/LorentzVector.h"
+#include "TLorentzVector.h"
+#include "TRandom.h"
 
 using namespace std;
-using namespace CLHEP;
 
 class ResonanceDecayFactory
 {
@@ -15,7 +15,7 @@ public:
     
     ResonanceDecayFactory( double resMass, double isoMass, double isoWidth, double bachMass );
     
-    vector< HepLorentzVector > generateDecay() const;
+    vector< TLorentzVector > generateDecay() const;
    
 private:
          
@@ -28,7 +28,8 @@ private:
     double m_isoMass;
     double m_isoWidth;
     double m_bachMass;
-    
+  
+    mutable TRandom m_randGen;
 };
 
 #endif

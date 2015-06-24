@@ -1,12 +1,11 @@
-#if !defined(NBODYPHASESPACEFFACTORY)
+#if !defined(NBODYPHASESPACEFACTORY)
 #define NBODYPHASESPACEFACTORY
 
 #include <vector>
 
-#include "CLHEP/Vector/LorentzVector.h"
+#include "TLorentzVector.h"
 
 using namespace std;
-using namespace CLHEP;
 
 class NBodyPhaseSpaceFactory
 {
@@ -26,7 +25,7 @@ class NBodyPhaseSpaceFactory
    *  accept/reject on generated events, resulting in uniform event weights,
    *  or to return the first generated event and set its corresponding weight.
   */	
-  vector<HepLorentzVector> generateDecay(bool uniformWeights = true );
+  vector<TLorentzVector> generateDecay(bool uniformWeights = true );
 
   /**
    * Returns the weight of the last-generated event. This is relevant

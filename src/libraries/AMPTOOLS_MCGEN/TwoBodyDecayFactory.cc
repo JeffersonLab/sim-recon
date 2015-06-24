@@ -3,13 +3,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include "TLorentzVector.h"
+#include "TLorentzRotation.h"
+
 #include "AMPTOOLS_MCGEN/TwoBodyDecayFactory.h"
-
-#include "CLHEP/Vector/LorentzVector.h"
-#include "CLHEP/Vector/LorentzRotation.h"
-#include "CLHEP/Vector/ThreeVector.h"
-
-using namespace CLHEP;
 
 const double TwoBodyDecayFactory::kPi = 3.14159;
 
@@ -21,16 +18,16 @@ m_childMass( childMass )
 }
 
 
-vector<HepLorentzVector>
+vector<TLorentzVector>
 TwoBodyDecayFactory::generateDecay() const {
 	
-	vector<HepLorentzVector> child( 2 );
-	vector<Hep3Vector> childMom( 2 );
+	vector<TLorentzVector> child( 2 );
+	vector<TVector3> childMom( 2 );
 	
     // let the X decay to isobar + 2 in the X CM
     // fill the isobar momentum vector and the bachelor momentum vector
     childMom[0].
-        setRThetaPhi( cmMomentum( m_parentMass, m_childMass[0], m_childMass[1] ),
+        SetPtThetaPhi( cmMomentum( m_parentMass, m_childMass[0], m_childMass[1] ),
                       acos( random( -0.999999, 0.999999 ) ),
                       random( -kPi, kPi ) );
     childMom[1] = -childMom[0];
@@ -38,8 +35,8 @@ TwoBodyDecayFactory::generateDecay() const {
 	// fill the final four-vectors
 	for( int i = 0; i < 2; ++i ){
 		
-		child[i].setVect( childMom[i] );
-		child[i].setE( sqrt( childMom[i].mag2() + 
+		child[i].SetVect( childMom[i] );
+		child[i].SetE( sqrt( childMom[i].Mag2() +
 							 m_childMass[i] * m_childMass[i] ) );
 	}
 

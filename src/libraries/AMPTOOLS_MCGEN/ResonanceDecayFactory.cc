@@ -1,15 +1,15 @@
 
 #include <vector>
 #include <stdlib.h>
+#include <iostream>
 
 #include "AMPTOOLS_MCGEN/ResonanceDecayFactory.h"
 
-#include "CLHEP/Vector/LorentzVector.h"
-#include "CLHEP/Vector/LorentzRotation.h"
-#include "CLHEP/Vector/ThreeVector.h"
-#include "CLHEP/Random/RandBreitWigner.h"
+#include "TLorentzVector.h"
+#include "TLorentzRotation.h"
+#include "TRandom.h"
 
-using namespace CLHEP;
+using namespace std;
 
 const double ResonanceDecayFactory::kPi = 3.14159;
 
@@ -17,9 +17,10 @@ ResonanceDecayFactory::ResonanceDecayFactory( double resMass, double isoMass, do
 m_resMass( resMass ),
 m_isoMass( isoMass ),
 m_isoWidth( isoWidth ),
-m_bachMass( bachMass ){}
+m_bachMass( bachMass ),
+m_randGen(){}
 
-vector< HepLorentzVector >
+vector< TLorentzVector >
 ResonanceDecayFactory::generateDecay() const {
     
     // initialize this high so we through a random number
@@ -28,22 +29,23 @@ ResonanceDecayFactory::generateDecay() const {
     // avoid threshold problems
     while( ( c0Mass + m_bachMass > 0.999 * m_resMass ) || ( c0Mass <= 0 ) ){
     
-        c0Mass = RandBreitWigner::shoot( m_isoMass, m_isoWidth );
+//        c0Mass = RandBreitWigner::shoot( m_isoMass, m_isoWidth );
+      c0Mass = m_randGen.BreitWigner( m_isoMass, m_isoWidth );
     }
-    
-    vector<HepLorentzVector> child( 2 );
-	vector<Hep3Vector> childMom( 2 );
+  
+    vector<TLorentzVector> child( 2 );
+	vector<TVector3> childMom( 2 );
 
-    childMom[0].setRThetaPhi( cmMomentum( m_resMass, c0Mass, m_bachMass ),
+    childMom[0].SetPtThetaPhi( cmMomentum( m_resMass, c0Mass, m_bachMass ),
                               acos( random( -0.999999, 0.999999 ) ),
                               random( -kPi, kPi ) );
     childMom[1] = -childMom[0];
     
-    child[0].setVect( childMom[0] );
-    child[0].setE( sqrt( childMom[0].mag2() + c0Mass * c0Mass ) );
+    child[0].SetVect( childMom[0] );
+    child[0].SetE( sqrt( childMom[0].Mag2() + c0Mass * c0Mass ) );
     
-    child[1].setVect( childMom[1] );
-    child[1].setE( sqrt( childMom[1].mag2() + m_bachMass * m_bachMass ) );
+    child[1].SetVect( childMom[1] );
+    child[1].SetE( sqrt( childMom[1].Mag2() + m_bachMass * m_bachMass ) );
     
     return child;
 }
