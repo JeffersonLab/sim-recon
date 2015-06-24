@@ -26,13 +26,13 @@ class DTPOLHit_factory:public jana::JFactory<DTPOLHit>{
 
 		// detector geometry (mm, degrees)
 		// "JUNCTION" refers to ring side, "OHMIC" refers to sector side
-		static const int NSECTORS = 32;
-		static const int NRINGS   = 24;
+		int NSECTORS ;
+		int NRINGS   ;
 
-		static const double INNER_RADIUS = 22 / 2;       // From "ACTIVE INNER DIAMETER" in catalog
-		static const double OUTER_RADIUS = 70 / 2;       // From "ACTIVE OUTER DIAMETER" in catalog
-		static const double SECTOR_DIVISION = 360. / 32; // 360. / NSECTORS
-		static const double RING_DIVISION   = (35. - 11. ) / 24;
+		double INNER_RADIUS;       // From "ACTIVE INNER DIAMETER" in catalog
+		double OUTER_RADIUS ;       // From "ACTIVE OUTER DIAMETER" in catalog
+		double SECTOR_DIVISION ; // 360. / NSECTORS
+		double RING_DIVISION ;
 		// (OUTER_RADIUS - INNER_RADIUS) / DTPOLRingDigiHit::NRINGS;
 		// 1mm, agrees with "JUNCTION ELEMENT SEPARATION" in catalog
 

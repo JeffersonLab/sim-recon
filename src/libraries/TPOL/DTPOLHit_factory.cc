@@ -37,6 +37,16 @@ jerror_t DTPOLHit_factory::init(void)
     /// set the base conversion scales
     a_scale    = 0.0001; 
     t_scale    = 0.0625;   // 62.5 ps/count
+    
+    NSECTORS = 32;
+    NRINGS   = 24;
+    
+    INNER_RADIUS = 22 / 2;       // From "ACTIVE INNER DIAMETER" in catalog
+    OUTER_RADIUS = 70 / 2;       // From "ACTIVE OUTER DIAMETER" in catalog
+    SECTOR_DIVISION = 360. / 32; // 360. / NSECTORS
+    RING_DIVISION   = (35. - 11. ) / 24;
+
+
 
     return NOERROR;
 }
