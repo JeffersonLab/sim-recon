@@ -2207,10 +2207,6 @@ void DHistogramAction_EventVertex::Initialize(JEventLoop* locEventLoop)
 {
 	string locHistName, locHistTitle;
 
-	//be sure that DRFTime_factory::init() and brun() are called
-	DRFTime_factory* locRFTimeFactory = static_cast<DRFTime_factory*>(locEventLoop->GetFactory("DRFTime"));
-        locRFTimeFactory->brun(locEventLoop, locEventLoop->GetJEvent().GetRunNumber()); //hack! must call directly: DRFTime may be in datastream, so getting objects may bypass brun call
-
 	//CREATE THE HISTOGRAMS
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
@@ -2333,7 +2329,15 @@ bool DHistogramAction_EventVertex::Perform_Action(JEventLoop* locEventLoop, cons
 	const DEventRFBunch* locEventRFBunch = NULL;
 	locEventLoop->GetSingle(locEventRFBunch);
 
+	//Make sure that brun() is called (to get rf period) before using.
+	//Cannot call JEventLoop->Get() because object may be in datastream (REST), bypassing factory brun() call.
+	//Must do here rather than in Initialize() function because this object is shared by all threads (which each have their own factory)
 	DRFTime_factory* locRFTimeFactory = static_cast<DRFTime_factory*>(locEventLoop->GetFactory("DRFTime"));
+	if(!locRFTimeFactory->brun_was_called())
+	{
+		locRFTimeFactory->brun(locEventLoop, locEventLoop->GetJEvent().GetRunNumber());
+		locRFTimeFactory->Set_brun_called();
+	}
 
 	//Get time-based tracks: use best PID FOM
 		//Note that these may not be the PIDs that were used in the fit!!!
@@ -2356,7 +2360,8 @@ bool DHistogramAction_EventVertex::Perform_Action(JEventLoop* locEventLoop, cons
 			const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
 			double locPropagatedRFTime = locParticleID->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
 			double locShiftedRFTime = locRFTimeFactory->Step_TimeToNearInputTime(locPropagatedRFTime, locChargedTrackHypothesis->time());
-			dRFTrackDeltaT->Fill(locShiftedRFTime - locChargedTrackHypothesis->time());
+			double locDeltaT = locShiftedRFTime - locChargedTrackHypothesis->time();
+			dRFTrackDeltaT->Fill(locDeltaT);
 		}
 		dEventVertexZ_AllEvents->Fill(locVertex->dSpacetimeVertex.Z());
 		dEventVertexYVsX_AllEvents->Fill(locVertex->dSpacetimeVertex.X(), locVertex->dSpacetimeVertex.Y());

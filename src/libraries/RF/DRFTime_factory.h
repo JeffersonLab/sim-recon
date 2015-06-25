@@ -34,7 +34,7 @@ class DRFTime_factory : public jana::JFactory<DRFTime>
 		double Convert_ADCToTime(const DRFDigiTime* locRFDigiTime) const;
 
 		jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
-
+	
 	private:
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
