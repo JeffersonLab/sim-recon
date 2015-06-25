@@ -68,10 +68,11 @@ jerror_t DBCALShower_factory_CURVATURE::brun(jana::JEventLoop *loop, int runnumb
   DGeometry* geom = app->GetDGeometry(runnumber);
   geom->GetTargetZ(m_zTarget);
 
-  char datafile[60];
+  char datafile[200];
+  char *top = getenv("HALLD_HOME");
   for (int ii = 0; ii < 2; ii++){
-    if (ii == 0) sprintf(datafile, "/home/beattite/Desktop/ShowerCurvature/center_of_shower.dat");
-    else sprintf(datafile, "/home/beattite/Desktop/ShowerCurvature/side_of_shower.dat");
+    if (ii == 0) sprintf(datafile, "%s/src/libraries/BCAL/center_of_shower.dat",top);
+    else sprintf(datafile, "%s/src/libraries/BCAL/side_of_shower.dat",top);
     ifstream in(datafile);
     for (int line = 0; line < 1536; line++){
       in >> layer >> angle >> energy >> dataposition >> datasigma;
@@ -88,7 +89,7 @@ jerror_t DBCALShower_factory_CURVATURE::brun(jana::JEventLoop *loop, int runnumb
   }
 
   PHITHRESHOLD = 4*0.06544792; // 4*2 column widths, in radians.
-  ZTHRESHOLD = 30.*k_cm; // Range in z, in cm.
+  ZTHRESHOLD = 35.*k_cm; // Range in z, in cm.
   TTHRESHOLD = 8.0*k_nsec; // Loose time range, in ns.
   ETHRESHOLD = 1.0*k_keV; // Points minimal energy, in keV.
 
@@ -234,7 +235,19 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
       else i = 1;
       j = Points[ii]->layer() - 1;
 
-      if (recon_showers_theta[m] <= 17.){ // Use a larger z-bin-width for more forward-directed showers.
+      if (recon_showers_theta[m] >= 119.){ // Get all points past the edge of the calorimeter for showers near the edge.
+        if (((fabs(Points[ii]->z() - zbinposition[i][j]) < (zbinwidth[i][j] + ZTHRESHOLD)) || (Points[ii]->z() < -48)) && (fabs(Points[ii]->t() - recon_showers_t[m]) < TTHRESHOLD) && (Points[ii]->E() > ETHRESHOLD)){
+          CurvaturePoints.push_back(Points[ii]);
+          overlap.push_back(ii);
+        }
+      }
+      else if (recon_showers_theta[m] <= 13.){ // Get all points past the edge of the calorimeter for showers near the edge.
+        if (((fabs(Points[ii]->z() - zbinposition[i][j]) < 1.7*(zbinwidth[i][j] + ZTHRESHOLD)) || (Points[ii]->z() > 342)) && (fabs(Points[ii]->t() - recon_showers_t[m]) < TTHRESHOLD) && (Points[ii]->E() > ETHRESHOLD)){
+          CurvaturePoints.push_back(Points[ii]);
+          overlap.push_back(ii);
+        }
+      }
+      else if (recon_showers_theta[m] <= 17.){ // Use a larger z-bin-width for more forward-directed showers.
         if ((fabs(Points[ii]->z() - zbinposition[i][j]) < 1.7*(zbinwidth[i][j] + ZTHRESHOLD)) && (fabs(Points[ii]->t() - recon_showers_t[m]) < TTHRESHOLD) && (Points[ii]->E() > ETHRESHOLD)){
           CurvaturePoints.push_back(Points[ii]);
           overlap.push_back(ii);
@@ -249,19 +262,33 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
     double x=0,y=0,z=0,t=0;
     int N_cell=0;
     double sig_x=0,sig_y=0,sig_z=0,sig_t=0;
-    double total_E = 0; // Weight phi by E.
-    double total_E2 = 0; // Weight everything else by E^2.
+    double total_E = 0; // Total Energy.
+    double total_E2 = 0; // Total Energy squared.  Weight averages by E^2.
+    double total_E2_squared = 0; // Used for calculating n_eff.
+    double wt = 0; // Save writing: wt = CurvaturePoints[ii]->E().
+    bool average_layer4 = false; // Keep track of showers with only layer four points.
+    int n = CurvaturePoints.size();
+    int n4 = 0; // Number of layer four points in the shower.
+
     for (int ii = 0; ii < (int)CurvaturePoints.size(); ii++){
-      total_E += CurvaturePoints[ii]->E();
-      total_E2 += CurvaturePoints[ii]->E()*CurvaturePoints[ii]->E();
-      x += CurvaturePoints[ii]->r()*cos(CurvaturePoints[ii]->phi())*CurvaturePoints[ii]->E()*CurvaturePoints[ii]->E();
-      y += CurvaturePoints[ii]->r()*sin(CurvaturePoints[ii]->phi())*CurvaturePoints[ii]->E()*CurvaturePoints[ii]->E();
-      sig_x += CurvaturePoints[ii]->r()*CurvaturePoints[ii]->r()*cos(CurvaturePoints[ii]->phi())*cos(CurvaturePoints[ii]->phi())*CurvaturePoints[ii]->E()*CurvaturePoints[ii]->E();
-      sig_y += CurvaturePoints[ii]->r()*CurvaturePoints[ii]->r()*sin(CurvaturePoints[ii]->phi())*sin(CurvaturePoints[ii]->phi())*CurvaturePoints[ii]->E()*CurvaturePoints[ii]->E();
-      z += CurvaturePoints[ii]->z()*CurvaturePoints[ii]->E()*CurvaturePoints[ii]->E();
-      sig_z += CurvaturePoints[ii]->z()*CurvaturePoints[ii]->z()*CurvaturePoints[ii]->E()*CurvaturePoints[ii]->E();
-      t += CurvaturePoints[ii]->t()*CurvaturePoints[ii]->E()*CurvaturePoints[ii]->E();
-      sig_t += CurvaturePoints[ii]->t()*CurvaturePoints[ii]->t()*CurvaturePoints[ii]->E()*CurvaturePoints[ii]->E();
+      if (CurvaturePoints[ii]->layer() == 4) n4++;
+    }
+    if (n == n4) average_layer4 = true; // If all points are layer four points, include layer four points in the averages below.
+
+    for (int ii = 0; ii < (int)CurvaturePoints.size(); ii++){
+      if (CurvaturePoints[ii]->layer() != 4 || average_layer4) wt = CurvaturePoints[ii]->E();
+      else wt = 0;
+      total_E += CurvaturePoints[ii]->E(); // We still count energy from points in layer four.
+      total_E2 += wt*wt;
+      total_E2_squared += wt*wt*wt*wt;
+      x += CurvaturePoints[ii]->r()*cos(CurvaturePoints[ii]->phi())*wt*wt;
+      y += CurvaturePoints[ii]->r()*sin(CurvaturePoints[ii]->phi())*wt*wt;
+      sig_x += CurvaturePoints[ii]->r()*CurvaturePoints[ii]->r()*cos(CurvaturePoints[ii]->phi())*cos(CurvaturePoints[ii]->phi())*wt*wt;
+      sig_y += CurvaturePoints[ii]->r()*CurvaturePoints[ii]->r()*sin(CurvaturePoints[ii]->phi())*sin(CurvaturePoints[ii]->phi())*wt*wt;
+      z += CurvaturePoints[ii]->z()*wt*wt;
+      sig_z += CurvaturePoints[ii]->z()*CurvaturePoints[ii]->z()*wt*wt;
+      t += CurvaturePoints[ii]->t()*wt*wt;
+      sig_t += CurvaturePoints[ii]->t()*CurvaturePoints[ii]->t()*wt*wt;
       N_cell++;
       shower->AddAssociatedObject(CurvaturePoints[ii]);
     }
@@ -271,18 +298,21 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
     }
     CurvaturePoints.clear();
 
+    // the variance of the mean of a weighted distribution is s^2/n_eff, where s^2 is the variance of the sample and n_eff is as calculated below.
+    double n_eff = total_E2*total_E2/total_E2_squared;
+
     x /= total_E2;
     sig_x /= total_E2;
-    sig_x = sqrt(sig_x - x*x)/sqrt(N_cell); //really this should be n_effective rather than n, change this later
+    sig_x = sqrt(sig_x - x*x)/sqrt(n_eff);
     y /= total_E2;
     sig_y /= total_E2;
-    sig_y = sqrt(sig_y - y*y)/sqrt(N_cell);
+    sig_y = sqrt(sig_y - y*y)/sqrt(n_eff);
     z /= total_E2;
     sig_z /= total_E2;
-    sig_z = sqrt(sig_z - z*z)/sqrt(N_cell);
+    sig_z = sqrt(sig_z - z*z)/sqrt(n_eff);
     t /= total_E2;
     sig_t /= total_E2;
-    sig_t = sqrt(sig_t - t*t)/sqrt(N_cell);
+    sig_t = sqrt(sig_t - t*t)/sqrt(n_eff);
 
     // Force showers to be inside the BCal's z-coordinate range.
     double bcal_down = DBCALGeometry::GLOBAL_CENTER + DBCALGeometry::BCALFIBERLENGTH/2.0 - m_zTarget;
