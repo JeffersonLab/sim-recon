@@ -179,6 +179,9 @@ class IncidentParticle_t{
 
 // Defined in this file
 int32_t GetRunNumber(hddm_s::HDDM *record);
+int GetCalibIndex(int module, int layer, int sector);
+void GetAttenuationParameters(int id, double &attenuation_length, double &attenuation_L1, double &attenuation_L2);
+double GetEffectiveVelocity(int id);
 void GetSiPMHits(hddm_s::HDDM *record,
                     map<bcal_index, CellHits> &SiPMHits,
                     vector<IncidentParticle_t> &incident_particles);
@@ -224,8 +227,12 @@ extern double BCAL_SAMPLINGCOEFB;               // 0.013 (from calibDB BCAL/bcal
 extern double BCAL_TWO_HIT_RESOL;               // 50. (from calibDB BCAL/bcal_parms)
 extern double BCAL_mevPerPE;                    // (defined below)
 
-extern double ATTEN_LENGTH;                     // 300. (from calibDB BCAL/mc_parms)
-extern double C_EFFECTIVE;                      // 16.75 (from calibDB BCAL/mc_parms)
+extern vector<vector<double> > attenuation_parameters; // Avg. of 525 (from calibDB BCAL/attenuation_parameters)
+extern vector<double> effective_velocities;     // 16.75 (from calibDB BCAL/effective_velocities)
+
+extern int BCAL_NUM_MODULES;
+extern int BCAL_NUM_LAYERS;
+extern int BCAL_NUM_SECTORS;
 
 // The following are not currently in use
 //extern double BCAL_DARKRATE_GHZ;                // 0.0176 (from calibDB BCAL/bcal_parms) for 4x4 array
@@ -309,6 +316,25 @@ void SmearBCAL(hddm_s::HDDM *record)
     bcalfADC.clear();
 }
 
+int GetCalibIndex(int module, int layer, int sector)
+{
+   return BCAL_NUM_LAYERS*BCAL_NUM_SECTORS*(module-1) + BCAL_NUM_SECTORS*(layer-1) + (sector-1);
+}
+
+void GetAttenuationParameters(int id, double &attenuation_length, double &attenuation_L1, double &attenuation_L2)
+{
+   vector<double> &parms = attenuation_parameters.at(id);
+
+   attenuation_length = parms[0];
+   attenuation_L1 = parms[1];
+   attenuation_L2 = parms[2];
+}
+
+double GetEffectiveVelocity(int id)
+{
+   return effective_velocities.at(id);
+}
+
 //-----------
 // GetSiPMHits
 //-----------
@@ -348,18 +374,37 @@ void GetSiPMHits(hddm_s::HDDM *record,
      double dist_up = 390.0/2.0 + Z;
      double dist_dn = 390.0/2.0 - Z;
 
+     int layer = 0;
+     if (iter->getLayer() == 1){
+       layer = 1;
+     }
+     else if (iter->getLayer() == 2 || iter->getLayer() == 3){
+       layer = 2;
+     }
+     else if (iter->getLayer() == 4 || iter->getLayer() == 5 || iter->getLayer() == 6){
+       layer = 3;
+     }
+     else layer = 4;
+
+     int table_id = GetCalibIndex( iter->getModule(), layer, iter->getSector() );  // key the cell identification off of the upstream cell
+
+     double cEff = GetEffectiveVelocity(table_id);
+     double attenuation_length = 0; // initialize variable
+     double attenuation_L1=-1., attenuation_L2=-1.;  // these parameters are ignored for now
+     GetAttenuationParameters(table_id, attenuation_length, attenuation_L1, attenuation_L2);
+
      // Get reference to existing CellHits, or create one if it doesn't exist
      CellHits &cellhitsup = SiPMHits[idxup];
      cellhitsup.Etruth = iter->getE(); // Energy deposited in the cell in GeV
-     cellhitsup.E = iter->getE()*exp(-dist_up/ATTEN_LENGTH)*1000.; // in attenuated MeV
-     cellhitsup.t = iter->getT() + dist_up/C_EFFECTIVE; // in ns
+     cellhitsup.E = iter->getE()*exp(-dist_up/attenuation_length)*1000.; // in attenuated MeV
+     cellhitsup.t = iter->getT() + dist_up/cEff; // in ns
      cellhitsup.end = CellHits::kUp; // Keep track of BCal end
 
      // Get reference to existing CellHits, or create one if it doesn't exist
      CellHits &cellhitsdn = SiPMHits[idxdn];
      cellhitsdn.Etruth = iter->getE(); // Energy deposited in the cell in GeV
-     cellhitsdn.E = iter->getE()*exp(-dist_dn/ATTEN_LENGTH)*1000.; // in attenuated MeV
-     cellhitsdn.t = iter->getT() + dist_dn/C_EFFECTIVE; // in ns
+     cellhitsdn.E = iter->getE()*exp(-dist_dn/attenuation_length)*1000.; // in attenuated MeV
+     cellhitsdn.t = iter->getT() + dist_dn/cEff; // in ns
      cellhitsdn.end = CellHits::kDown; // Keep track of BCal end
    }
 

@@ -73,8 +73,12 @@ double BCAL_TIMEDIFFCOEFB        = 0.0; // 0.00 * sqrt( 2 ) (from calibDB BCAL/b
 double BCAL_TWO_HIT_RESOL        = 0.0; // 50. (from calibDB BCAL/bcal_parms)
 double BCAL_mevPerPE             = 0.31; // Energy corresponding to one pixel firing in MeV
 
-double ATTEN_LENGTH              = 0.0; // 300. (from calibDB BCAL/mc_parms)
-double C_EFFECTIVE               = 0.0; // 16.75 (from calibDB BCAL/mc_parms)
+int BCAL_NUM_MODULES = 48;
+int BCAL_NUM_LAYERS = 4;
+int BCAL_NUM_SECTORS = 4;
+
+vector<vector<double> > attenuation_parameters; // Avg. of 525 (from calibDB BCAL/attenuation_parameters)
+vector<double> effective_velocities; // 16.75 (from calibDB BCAL/effective_velocities)
 
 double BCAL_ADC_THRESHOLD_MEV = 3.5;  // MeV (To be updated/improved)
 double BCAL_FADC_TIME_RESOLUTION = 0.3;  // ns (To be updated/improved)
@@ -213,11 +217,43 @@ int main(int narg,char* argv[])
    }
 
    {
-     cout<<"get BCAL/mc_parms parameters from calibDB"<<endl;
-     map<string, double> mcparms;
-     jcalib->Get("BCAL/mc_parms", mcparms);
-     ATTEN_LENGTH       =  mcparms["ATTEN_LENGTH"];
-     C_EFFECTIVE        = mcparms["C_EFFECTIVE"];
+     cout<<"get BCAL/attenuation_parameters from calibDB"<<endl;
+     vector< vector<double> > in_atten_parameters;
+     jcalib->Get("BCAL/attenuation_parameters", in_atten_parameters);
+     attenuation_parameters.clear();
+     int channel = 0;
+     for (int module=1; module<=BCAL_NUM_MODULES; module++) {
+   	  for (int layer=1; layer<=BCAL_NUM_LAYERS; layer++) {
+   		for (int sector=1; sector<=BCAL_NUM_SECTORS; sector++) {
+			//int cell_id = GetCalibIndex(module,layer,sector);
+
+			vector<double> new_params(3,0.);
+			//attenuation_parameters[cell_id][0] = in_atten_parameters[channel][0];
+			//attenuation_parameters[cell_id][1] = in_atten_parameters[channel][1];
+			//attenuation_parameters[cell_id][2] = in_atten_parameters[channel][2];
+			// hack to workaround odd CCDB behavior
+			//attenuation_parameters[cell_id][0] = in_atten_parameters[channel][1];
+			//attenuation_parameters[cell_id][1] = in_atten_parameters[channel][2];
+			//attenuation_parameters[cell_id][2] = in_atten_parameters[channel][0];
+			 
+			new_params[0] = in_atten_parameters[channel][1];
+			new_params[1] = in_atten_parameters[channel][2];
+			new_params[2] = in_atten_parameters[channel][0];
+			attenuation_parameters.push_back( new_params );
+
+			channel++;
+		}
+	  }
+     }
+   }
+
+   {
+     cout<<"get BCAL/effective_velocities parameters from calibDB"<<endl;
+     vector <double> effective_velocities_temp;
+     jcalib->Get("BCAL/effective_velocities", effective_velocities_temp);
+     for (unsigned int i = 0; i < effective_velocities_temp.size(); i++){
+       effective_velocities.push_back(effective_velocities_temp.at(i));
+     }
    }
 
    {
@@ -422,10 +458,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'M': NO_POISSON_STATISTICS = true;              break;
       case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec;           break;
       case 'S': START_SIGMA= atof(&ptr[2])*k_psec;         break;
- 	  case '-':
-	  	if(string(ptr)=="--help") Usage();
-		break;
-     }
+      }
     }
     else {
       INFILENAME = argv[i];
