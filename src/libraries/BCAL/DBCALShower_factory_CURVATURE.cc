@@ -99,11 +99,11 @@ jerror_t DBCALShower_factory_CURVATURE::brun(jana::JEventLoop *loop, int runnumb
       if (loop->GetCalib("/BCAL/curvature_side", curvature_parameters)) jout << "Error loading /BCAL/curvature_side !" << endl;
     }
     for (int line = 0; line < 1536; line++){
-      layer = curvature_parameters[line][2];
-      angle = curvature_parameters[line][4];
-      energy = curvature_parameters[line][1];
-      dataposition = curvature_parameters[line][0];
-      datasigma = curvature_parameters[line][3];
+      layer = curvature_parameters[line][0];
+      angle = curvature_parameters[line][1];
+      energy = curvature_parameters[line][2];
+      dataposition = curvature_parameters[line][3];
+      datasigma = curvature_parameters[line][4];
       if (angle == 115){ // angle bins are 5, 10, 20, 30, ..., 100, 110, 115.  [angle/10 - 1] won't work for the 115 bin, so we explicitly set these.
         position[ii][layer - 1][11][energy/50 - 1] = dataposition - 48; //table values measure from the end of the BCAL.  Points measure from the center of the target.
         sigma[ii][layer - 1][11][energy/50 - 1] = datasigma;
