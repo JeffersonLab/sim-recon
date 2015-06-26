@@ -170,7 +170,7 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 				pair<bool, double> locMinChargedPIDFOM = dMinChargedPIDFOM.first ? dMinChargedPIDFOM : locReaction->Get_MinChargedPIDFOM();
 				pair<bool, double> locMinPhotonPIDFOM = dMinPhotonPIDFOM.first ? dMinPhotonPIDFOM : locReaction->Get_MinPhotonPIDFOM();
 				pair<bool, size_t> locMaxNumBeamPhotonsInBunch = dMaxNumBeamPhotonsInBunch.first ? dMaxNumBeamPhotonsInBunch : locReaction->Get_MaxNumBeamPhotonsInBunch();
-				pair<bool, double> locMaxPhotonRFDeltaT = dMaxPhotonRFDeltaT.first ? dMaxPhotonRFDeltaT : dReactions[loc_i]->Get_MaxPhotonRFDeltaT();
+				pair<bool, double> locMaxPhotonRFDeltaT = dMaxPhotonRFDeltaT.first ? dMaxPhotonRFDeltaT : locReaction->Get_MaxPhotonRFDeltaT();
 
 				unsigned int locNumCutHistBins = locActionNames.size();
 				if(locMaxPhotonRFDeltaT.first)
@@ -622,7 +622,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 		pair<bool, double> locMinChargedPIDFOM = dMinChargedPIDFOM.first ? dMinChargedPIDFOM : locReaction->Get_MinChargedPIDFOM();
 		pair<bool, double> locMinPhotonPIDFOM = dMinPhotonPIDFOM.first ? dMinPhotonPIDFOM : locReaction->Get_MinPhotonPIDFOM();
 		pair<bool, size_t> locMaxNumBeamPhotonsInBunch = dMaxNumBeamPhotonsInBunch.first ? dMaxNumBeamPhotonsInBunch : locReaction->Get_MaxNumBeamPhotonsInBunch();
-		pair<bool, double> locMaxPhotonRFDeltaT = dMaxPhotonRFDeltaT.first ? dMaxPhotonRFDeltaT : dReactions[loc_i]->Get_MaxPhotonRFDeltaT();
+		pair<bool, double> locMaxPhotonRFDeltaT = dMaxPhotonRFDeltaT.first ? dMaxPhotonRFDeltaT : locReaction->Get_MaxPhotonRFDeltaT();
 
 		unsigned int locNumCutHistBins = 1 + dNumGoodPreComboSelectionActions[locReaction];
 		if(locNumBlueprintsSurvivedCuts[locReaction].empty())
