@@ -42,50 +42,31 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
   if(print_messages) jout << "in DBCALPoint_factory, loading constants ..." << endl;
 
   // load attenuation correction parameters 
-  vector< vector<double> > in_atten_parameters;
-  loop->GetCalib("/BCAL/attenuation_parameters", in_atten_parameters);
-
-  // if (PRINTCALIBRATION) {
-  //   jout << "DBCALPoint_factory::brun >>Printing " << endl;
-  // }
   attenuation_parameters.clear();
-  int channel = 0;
-  for (int module=1; module<=BCAL_NUM_MODULES; module++) {
-	  for (int layer=1; layer<=BCAL_NUM_LAYERS; layer++) {
-		  for (int sector=1; sector<=BCAL_NUM_SECTORS; sector++) {
-			  //int cell_id = GetCalibIndex(module,layer,sector);
 
-			  vector<double> new_params(3,0.);
-			  //attenuation_parameters[cell_id][0] = in_atten_parameters[channel][0];
-			  //attenuation_parameters[cell_id][1] = in_atten_parameters[channel][1];
-			  //attenuation_parameters[cell_id][2] = in_atten_parameters[channel][2];
-			  // hack to workaround odd CCDB behavior
-			  //attenuation_parameters[cell_id][0] = in_atten_parameters[channel][1];
-			  //attenuation_parameters[cell_id][1] = in_atten_parameters[channel][2];
-			  //attenuation_parameters[cell_id][2] = in_atten_parameters[channel][0];
-			  
-			  new_params[0] = in_atten_parameters[channel][1];
-			  new_params[1] = in_atten_parameters[channel][2];
-			  new_params[2] = in_atten_parameters[channel][0];
-			  attenuation_parameters.push_back( new_params );
+  vector< vector<double> > attenuation_parameters_temp;
+  loop->GetCalib("/BCAL/attenuation_parameters", attenuation_parameters_temp);
 
-			  if (PRINTCALIBRATION) {
-			    printf("%2i  %2i  %2i %12.4f %12.4f %12.4f\n",
-				   module,layer,sector,
-				   attenuation_parameters[channel][0],
-				   attenuation_parameters[channel][1],
-				   attenuation_parameters[channel][2]);
-			  }
-/*
-			  cerr << " loaded " << cell_id << " = " << attenuation_parameters[cell_id][0] << ", "
-			       << attenuation_parameters[cell_id][1] << ", "
-			       << attenuation_parameters[cell_id][2] << endl;
-*/
-
-			  channel++;
-		  }
-	  }
+  // avoid potential crash ...
+  for (unsigned int i = 0; i < attenuation_parameters_temp.size(); i++){
+      attenuation_parameters.push_back(attenuation_parameters_temp.at(i));
   }
+
+   if (PRINTCALIBRATION) {
+       int channel = 0;
+       for (int module=1; module<=BCAL_NUM_MODULES; module++) {
+           for (int layer=1; layer<=BCAL_NUM_LAYERS; layer++) {
+               for (int sector=1; sector<=BCAL_NUM_SECTORS; sector++) {
+                   printf("%2i  %2i  %2i %12.4f %12.4f %12.4f\n",
+                          module,layer,sector,
+                          attenuation_parameters[channel][0],
+                          attenuation_parameters[channel][1],
+                          attenuation_parameters[channel][2]);
+               }
+               channel++;
+           }
+       }
+   }
 
 
   // load effective velocities
