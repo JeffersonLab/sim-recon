@@ -87,15 +87,15 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
         locReactionStep = new DReactionStep();
         locReactionStep->Set_InitialParticleID(Gamma);
         locReactionStep->Set_TargetParticleID(Proton);
+	locReactionStep->Add_FinalParticleID(Proton);
         locReactionStep->Add_FinalParticleID(PiPlus);
         locReactionStep->Add_FinalParticleID(PiMinus);
-        locReactionStep->Add_FinalParticleID(Proton);
         locReaction->Add_ReactionStep(locReactionStep);
         dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
 	/**************************************************** p2pi_preco Control Settings ****************************************************/
 
-	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	locReaction->Set_KinFitType(d_NoFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 
 	// Recommended: Enable ROOT TTree output for this DReaction

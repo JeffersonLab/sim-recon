@@ -211,9 +211,9 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 
 	// get all charged tracks and showers for comparison to combo (no "pre-select" cut here)
         vector<const DChargedTrack*> locChargedTracks;
-        locEventLoop->Get(locChargedTracks, "PreSelect"); 
+        locEventLoop->Get(locChargedTracks); //, "PreSelect"); 
 	vector<const DNeutralShower*> locNeutralShowers;
-        locEventLoop->Get(locNeutralShowers, "PreSelect"); 
+        locEventLoop->Get(locNeutralShowers); //, "PreSelect"); 
 	vector<const DFCALShower*> locFCALShowers;
         locEventLoop->Get(locFCALShowers); 
 	vector<const DBCALShower*> locBCALShowers;
@@ -299,7 +299,8 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 					locNeutralShower->dEnergy = locBCALShowers[loc_j]->E;
 					locNeutralShower->dSpacetimeVertex.SetXYZT(locBCALShowers[loc_j]->x, locBCALShowers[loc_j]->y, locBCALShowers[loc_j]->z, locBCALShowers[loc_j]->t);
 					locNeutralShower->AddAssociatedObject(locBCALShowers[loc_j]);
-					FillShower(locNeutralShower, true, locBeamPhotonTime);
+					double locFlightTime = locBCALShowerMatchParams.dFlightTime;
+					FillShower(locNeutralShower, true, locBeamPhotonTime, locFlightTime);
 					delete locNeutralShower;
 				}
 			}
@@ -358,7 +359,8 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 					locNeutralShower->dSpacetimeVertex.SetVect(locFCALShowers[loc_j]->getPosition());
 					locNeutralShower->dSpacetimeVertex.SetT(locFCALShowers[loc_j]->getTime());
 					locNeutralShower->AddAssociatedObject(locFCALShowers[loc_j]);
-					FillShower(locNeutralShower, true, locBeamPhotonTime);
+					double locFlightTime = locFCALShowerMatchParams.dFlightTime;
+					FillShower(locNeutralShower, true, locBeamPhotonTime, locFlightTime);
 					delete locNeutralShower;
 				}
 			}
@@ -373,7 +375,8 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 	/////////////////////////////////////////////////////////////////////////////////////////
 	for(size_t loc_j = 0; loc_j < locNeutralShowers.size(); ++loc_j) {
 		locUnusedNeutralShowers.push_back(locNeutralShowers[loc_j]);
-		FillShower(locNeutralShowers[loc_j], false, locBeamPhotonTime);
+		double locFlightTime = locNeutralShowers[loc_j]->dSpacetimeVertex.Vect().Mag()/SPEED_OF_LIGHT;
+		FillShower(locNeutralShowers[loc_j], false, locBeamPhotonTime, locFlightTime);
 		
 		if(locNeutralShowers[loc_j]->dDetectorSystem == SYS_FCAL) {
 			nUnmatchedFCAL++;
@@ -446,7 +449,7 @@ void DCustomAction_p2pi_unusedHists::FillTrack(const DChargedTrack* locChargedTr
 }
 
 
-void DCustomAction_p2pi_unusedHists::FillShower(const DNeutralShower* locNeutralShower, bool locMatch, double locBeamPhotonTime)
+void DCustomAction_p2pi_unusedHists::FillShower(const DNeutralShower* locNeutralShower, bool locMatch, double locBeamPhotonTime, double locFlightTime)
 {
 	
 	int nClusters = 0;
@@ -456,7 +459,7 @@ void DCustomAction_p2pi_unusedHists::FillShower(const DNeutralShower* locNeutral
 
 	double locEnergy = locNeutralShower->dEnergy;
 	DVector3 locPosition = locNeutralShower->dSpacetimeVertex.Vect();
-	double locDeltaT = locNeutralShower->dSpacetimeVertex.T() - locBeamPhotonTime;
+	double locDeltaT = locNeutralShower->dSpacetimeVertex.T() - locFlightTime - locBeamPhotonTime;
 	
 	double locEnergyCluster = 0.;
 	double locMaxEnergyCluster = 0.;
@@ -529,9 +532,9 @@ void DCustomAction_p2pi_unusedHists::FillShower(const DNeutralShower* locNeutral
 		dHistMap_ShowerMaxEnergy_Nhits[locMatch][locSystem]->Fill(nHits, locMaxEnergyCluster/locEnergyCluster);
 		dHistMap_ShowerDeltaT_Nhits[locMatch][locSystem]->Fill(nHits, locDeltaT);
 		dHistMap_ShowerDeltaT_E[locMatch][locSystem]->Fill(locEnergy, locDeltaT);
-		if(locDeltaT > 15. && locDeltaT < 30. && locSystem == SYS_FCAL)
+		if(locDeltaT > -5. && locDeltaT < 5. && locSystem == SYS_FCAL)
 			dHistMap_ShowerE_Theta[locMatch][locSystem]->Fill(locPosition.Theta()*180./TMath::Pi(), locEnergy);
-		if(locDeltaT > 2. && locDeltaT < 25. && locSystem == SYS_BCAL)
+		if(locDeltaT > -5. && locDeltaT < 5. && locSystem == SYS_BCAL)
 			dHistMap_ShowerE_Theta[locMatch][locSystem]->Fill(locPosition.Theta()*180./TMath::Pi(), locEnergy);
 
 		if(locSystem == SYS_BCAL) {

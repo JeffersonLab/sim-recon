@@ -41,7 +41,7 @@ class DCustomAction_p2gamma_unusedHists : public DAnalysisAction
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 		void FillTrack(const DChargedTrack* locChargedTrack, bool locMatch);
-		void FillShower(const DNeutralShower* locNeutralShower, bool locMatch, double locBeamPhotonTime);
+		void FillShower(const DNeutralShower* locNeutralShower, bool locMatch, double locBeamPhotonTime, double locFlightTime);
 
 		// Optional: Useful utility functions.
 		// const DAnalysisUtilities* dAnalysisUtilities;
@@ -70,6 +70,8 @@ class DCustomAction_p2gamma_unusedHists : public DAnalysisAction
 		map<bool, map<DetectorSystem_t, TH1I*> > dHistMap_ShowerNhits;
 		map<bool, map<DetectorSystem_t, TH2I*> > dHistMap_ShowerMaxEnergy_Nhits;
 		map<bool, map<DetectorSystem_t, TH2I*> > dHistMap_ShowerDeltaT_Nhits;
+		map<bool, map<DetectorSystem_t, TH2I*> > dHistMap_ShowerDeltaT_E;
+		map<bool, map<DetectorSystem_t, TH2I*> > dHistMap_ShowerE_Theta;
 		map<bool, TH2I*> dHistMap_Layer1Energy_Theta;
 		map<bool, TH2I*> dHistMap_Layer2Energy_Theta;
 		map<bool, TH2I*> dHistMap_Layer3Energy_Theta;

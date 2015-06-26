@@ -41,7 +41,7 @@ class DCustomAction_p2pi_unusedHists : public DAnalysisAction
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 		void FillTrack(const DChargedTrack* locChargedTrack, bool locMatch);
-		void FillShower(const DNeutralShower* locNeutralShower, bool locMatch, double locBeamPhotonTime);
+		void FillShower(const DNeutralShower* locNeutralShower, bool locMatch, double locBeamPhotonTime, double locFlightTime);
 
 		// Optional: Useful utility functions.
 		// const DAnalysisUtilities* dAnalysisUtilities;

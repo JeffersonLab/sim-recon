@@ -41,17 +41,17 @@ void DCustomAction_p2gamma_unusedHists::Initialize(JEventLoop* locEventLoop)
 				locHistName = "TrackChiSq_Theta" + match[locDummy] + charge[locCharge];
 				locHistTitle = "FOM for track #chi^{2} vs #theta: " + match[locDummy] + charge[locCharge];
 				locHistTitle += "; #theta; #chi^{2}";
-				dHistMap_TrackChiSq_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 150, 0., 150., 100, 0., 10.);
+				dHistMap_TrackChiSq_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 150, 0., 150., 500, 0., 100.);
 
 				locHistName = "TrackFOM_Theta" + match[locDummy] + charge[locCharge];
 				locHistTitle = "FOM for track fit vs #theta: " + match[locDummy] + charge[locCharge];
 				locHistTitle += "; #theta; FOM";
-				dHistMap_TrackFOM_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 150, 0., 150., 100, 0., 1.);
+				dHistMap_TrackFOM_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 150, 0., 150., 1000, 0., 1.);
 
 				locHistName = "TrackP_Theta" + match[locDummy] + charge[locCharge];
 				locHistTitle = "P vs #theta: " + match[locDummy] + charge[locCharge];
 				locHistTitle += "; #theta; momentum";
-				dHistMap_TrackP_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 150, 0., 150., 120, 0., 12.);
+				dHistMap_TrackP_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 150, 0., 150., 120, 0., 6.);
 
 				locHistName = "TrackPOCAXY" + match[locDummy] + charge[locCharge];
 				locHistTitle = "POCA to beamline Y vs X: " + match[locDummy] + charge[locCharge];
@@ -98,6 +98,7 @@ void DCustomAction_p2gamma_unusedHists::Initialize(JEventLoop* locEventLoop)
 				locHistTitle = "Number of clusters in shower: " + match[locDummy] + locSystemName;
 				dHistMap_ShowerNclusters[locMatch][locSystem] = GetOrCreate_Histogram<TH1I>(locHistName.Data(), locHistTitle.Data(), 15, 0, 15);
 
+
 				locHistName = "ShowerNHits" + match[locDummy] + locSystemName;
 				locHistTitle = "Number of hits in shower: " + match[locDummy] + locSystemName;
 				dHistMap_ShowerNhits[locMatch][locSystem] = GetOrCreate_Histogram<TH1I>(locHistName.Data(), locHistTitle.Data(), 15, 0, 15);
@@ -109,6 +110,14 @@ void DCustomAction_p2gamma_unusedHists::Initialize(JEventLoop* locEventLoop)
 				locHistName = "ShowerDeltaT_NHits" + match[locDummy] + locSystemName;
 				locHistTitle = "t_{shower} - t_{#gamma} vs number of hits in shower: " + match[locDummy] + locSystemName;
 				dHistMap_ShowerDeltaT_Nhits[locMatch][locSystem] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 15, 0, 15, 200, -100., 100.);
+
+				locHistName = "ShowerDeltaT_E" + match[locDummy] + locSystemName;
+				locHistTitle = "t_{shower} - t_{#gamma} vs shower energy: " + match[locDummy] + locSystemName;
+				dHistMap_ShowerDeltaT_E[locMatch][locSystem] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 100., 0., 5., 200, -100., 100.);
+
+				locHistName = "ShowerE_Theta" + match[locDummy] + locSystemName;
+				locHistTitle = "t_{shower} - t_{#gamma} vs shower #theta: " + match[locDummy] + locSystemName;
+				dHistMap_ShowerE_Theta[locMatch][locSystem] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 150, 0., thetaMax, 120., 0., 6.);
 
 				if(locSystem == SYS_BCAL){
 					locHistName = "ShowerNcell" + match[locDummy] + locSystemName;
@@ -210,12 +219,14 @@ bool DCustomAction_p2gamma_unusedHists::Perform_Action(JEventLoop* locEventLoop,
 			const DNeutralShower* locNeutralShower = static_cast<const DNeutralShower*>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_i));
 			if(locNeutralShower == locNeutralShowers[loc_j]){
 				nMatched++;
-				FillShower(locNeutralShowers[loc_j], true, locBeamPhotonTime);
+				double locFlightTime = locNeutralShowers[loc_j]->dSpacetimeVertex.Vect().Mag()/SPEED_OF_LIGHT;
+				FillShower(locNeutralShowers[loc_j], true, locBeamPhotonTime, locFlightTime);
 			}
 		}
 
 		if(nMatched==0) {
-			FillShower(locNeutralShowers[loc_j], false, locBeamPhotonTime);
+			double locFlightTime = locNeutralShowers[loc_j]->dSpacetimeVertex.Vect().Mag()/SPEED_OF_LIGHT;
+			FillShower(locNeutralShowers[loc_j], false, locBeamPhotonTime, locFlightTime);
 			if(locNeutralShowers[loc_j]->dDetectorSystem == SYS_FCAL) nUnmatchedFCAL++;
 			if(locNeutralShowers[loc_j]->dDetectorSystem == SYS_BCAL) nUnmatchedBCAL++;
 		}	
@@ -267,7 +278,7 @@ void DCustomAction_p2gamma_unusedHists::FillTrack(const DChargedTrack* locCharge
 }
 
 
-void DCustomAction_p2gamma_unusedHists::FillShower(const DNeutralShower* locNeutralShower, bool locMatch, double locBeamPhotonTime)
+void DCustomAction_p2gamma_unusedHists::FillShower(const DNeutralShower* locNeutralShower, bool locMatch, double locBeamPhotonTime, double locFlightTime)
 {
 	
 	int nClusters = 0;
@@ -277,7 +288,7 @@ void DCustomAction_p2gamma_unusedHists::FillShower(const DNeutralShower* locNeut
 
 	double locEnergy = locNeutralShower->dEnergy;
 	DVector3 locPosition = locNeutralShower->dSpacetimeVertex.Vect();
-	double locDeltaT = locNeutralShower->dSpacetimeVertex.T() - locBeamPhotonTime;
+	double locDeltaT = locNeutralShower->dSpacetimeVertex.T() - locFlightTime - locBeamPhotonTime;
 	
 	double locEnergyCluster = 0.;
 	double locMaxEnergyCluster = 0.;
@@ -349,6 +360,11 @@ void DCustomAction_p2gamma_unusedHists::FillShower(const DNeutralShower* locNeut
 		
 		dHistMap_ShowerMaxEnergy_Nhits[locMatch][locSystem]->Fill(nHits, locMaxEnergyCluster/locEnergyCluster);
 		dHistMap_ShowerDeltaT_Nhits[locMatch][locSystem]->Fill(nHits, locDeltaT);
+		dHistMap_ShowerDeltaT_E[locMatch][locSystem]->Fill(locEnergy, locDeltaT);
+		if(locDeltaT > -5. && locDeltaT < 5. && locSystem == SYS_FCAL)
+			dHistMap_ShowerE_Theta[locMatch][locSystem]->Fill(locPosition.Theta()*180./TMath::Pi(), locEnergy);
+		if(locDeltaT > -5. && locDeltaT < 5. && locSystem == SYS_BCAL)
+			dHistMap_ShowerE_Theta[locMatch][locSystem]->Fill(locPosition.Theta()*180./TMath::Pi(), locEnergy);
 
 		if(locSystem == SYS_BCAL) {
 			dHistMap_Layer1Energy_Theta[locMatch]->Fill(locPosition.Theta()*180./TMath::Pi(), layerE[0]/locEnergy);

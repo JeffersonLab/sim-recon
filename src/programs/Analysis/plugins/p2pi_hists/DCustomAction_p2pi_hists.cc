@@ -77,7 +77,12 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 		return false;
 
 	// calculate 2pi P4
-	DLorentzVector locP4_2pi = locParticles[0]->lorentzMomentum() + locParticles[1]->lorentzMomentum();
+	DLorentzVector locP4_2pi;
+	for(size_t loc_i = 0; loc_i < 3; ++loc_i) {
+		if(locParticles[loc_i] == NULL) continue; // missing proton
+                if(locParticles[loc_i]->PID() == PiPlus || locParticles[loc_i]->PID() == PiMinus)
+                        locP4_2pi += locParticles[loc_i]->lorentzMomentum();
+        }
 
 	// calculate missing P4
 	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo,Get_UseKinFitResultsFlag());
@@ -86,7 +91,7 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 	double dEdx = 0.;
 	DLorentzVector locProtonP4;
 	if(dMissingPID != Proton) {
-		const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(2));
+		const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(0));
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
 		dEdx = locChargedTrackHypothesis->dEdx()*1e6; // convert to keV
 		locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();	
@@ -101,7 +106,7 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 	double t = locDelta.M2();
 
 	TVector3 locBoostVector = -1.*locP4_2pi.BoostVector();
-	TLorentzVector locPiPlus_P4 = locParticles[0]->lorentzMomentum();
+	TLorentzVector locPiPlus_P4 = locParticles[1]->lorentzMomentum();
 	locPiPlus_P4.Boost(locBoostVector);
 	double locPsi = locPiPlus_P4.Phi();
 
@@ -134,8 +139,8 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 
 				DLorentzVector locP4_ppiplus = locProtonP4;
 				DLorentzVector locP4_ppiminus = locProtonP4;
-				locP4_ppiplus += locParticles[0]->lorentzMomentum();
-				locP4_ppiminus += locParticles[1]->lorentzMomentum();
+				locP4_ppiplus += locParticles[1]->lorentzMomentum();
+				locP4_ppiminus += locParticles[2]->lorentzMomentum();
 				if(locBeamPhotonEnergy > 2.5 && locBeamPhotonEnergy < 3.0){
 					dDalitz_p2pi->Fill(locP4_2pi.M2(), locP4_ppiplus.M2());
 					dMppiplus_M2pi->Fill(locP4_2pi.M(), locP4_ppiplus.M());
@@ -148,11 +153,16 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 					
 					if(locBeamPhotonEnergy > 2.5 && locBeamPhotonEnergy < 3.0){
 						dPiPlusPsi_t->Fill(fabs(t), locPsi*180/TMath::Pi());
+						
+						if(fabs(t) > 0.4) {
+							japp->RootUnLock();
+							return false;
+						}
 					}
-					//else { 
-					//	japp->RootUnLock();
-					//	return false;
-					//}
+					else { 
+						japp->RootUnLock();
+						return false;
+					}
 
 					japp->RootUnLock(); //RELEASE ROOT LOCK!!
 					return true;
