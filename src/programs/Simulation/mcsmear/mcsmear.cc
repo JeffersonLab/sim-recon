@@ -80,7 +80,7 @@ int BCAL_NUM_SECTORS = 4;
 vector<vector<double> > attenuation_parameters; // Avg. of 525 (from calibDB BCAL/attenuation_parameters)
 vector<double> effective_velocities; // 16.75 (from calibDB BCAL/effective_velocities)
 
-double BCAL_ADC_THRESHOLD_MEV = 3.5;  // MeV (To be updated/improved)
+double BCAL_ADC_THRESHOLD_MEV = 2.2;  // MeV (To be updated/improved)
 double BCAL_FADC_TIME_RESOLUTION = 0.3;  // ns (To be updated/improved)
 
 // BCAL flags
