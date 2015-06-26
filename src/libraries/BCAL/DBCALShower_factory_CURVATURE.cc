@@ -5,6 +5,24 @@
 // Creator: beattite (on Linux eos.phys.uregina.ca 2.6.32-504.12.2.el6.x86_64 x86_64)
 //
 
+// This factory takes showers from the IU shower factory and alters them based on shower
+// curvature tables produced by AS.  These can be found in the CCDB under
+// BCAL/curvature_central and BCAL/curvature_side.  They give central z-positions of
+// energy depositions in the BCAL for each layer based on the reconstructed IU shower's
+// energy and theta values.  The two tables are for 'central' sectors and 'side' sectors.
+// A central sector (the one or two sectors closest to the centroid of the shower) exhibit
+// different deposition ranges in z than a side sector.
+
+// We first grab the IU showers and check for overlap in z.  We want to merge showers that
+// are close in z, t, and phi that the IU code may have reconstructed as two separate showers.
+// Next, we extract the energies and theta values for each of the IU (and merged) showers.
+// Using the curvature tables, we find the appropriate z-bin position for each layer, then
+// loop through the points in the event and put any point that falls within the z-bins for a
+// shower into that shower.  The z-bin width is determined by the error on the z-positions of
+// the depositions and on a set width factor.
+
+// These new colletions of points are then averaged (energy-squared-weighted averages in x, y,
+// z, and t) to get the shower values.
 
 #include <iostream>
 #include <iomanip>
@@ -68,26 +86,37 @@ jerror_t DBCALShower_factory_CURVATURE::brun(jana::JEventLoop *loop, int runnumb
   DGeometry* geom = app->GetDGeometry(runnumber);
   geom->GetTargetZ(m_zTarget);
 
-  char datafile[200];
-  char *top = getenv("HALLD_HOME");
+  vector< vector<double> > curvature_parameters;
+
+  // Read in curvature parameters from two tables in the database.
+  // We'll use two four-dimentional arrays (position and sigma).
+  // The indices are: [sector type (central or side)][layer (from 0 to 4)][angle bin (from 0 to 11)][energy bin (from 0 to 31)]
   for (int ii = 0; ii < 2; ii++){
-    if (ii == 0) sprintf(datafile, "%s/src/libraries/BCAL/center_of_shower.dat",top);
-    else sprintf(datafile, "%s/src/libraries/BCAL/side_of_shower.dat",top);
-    ifstream in(datafile);
+    if (ii == 0){
+      if (loop->GetCalib("/BCAL/curvature_central", curvature_parameters)) jout << "Error loading /BCAL/curvature_central !" << endl;
+    }
+    else {
+      if (loop->GetCalib("/BCAL/curvature_side", curvature_parameters)) jout << "Error loading /BCAL/curvature_side !" << endl;
+    }
     for (int line = 0; line < 1536; line++){
-      in >> layer >> angle >> energy >> dataposition >> datasigma;
-      if (angle == 115){
-        position[ii][layer - 1][11][energy/50 - 1] = dataposition - 48; //Data file values measure from the end of the BCAL.  Points measure from the center of the target.
+      layer = curvature_parameters[line][2];
+      angle = curvature_parameters[line][4];
+      energy = curvature_parameters[line][1];
+      dataposition = curvature_parameters[line][0];
+      datasigma = curvature_parameters[line][3];
+      if (angle == 115){ // angle bins are 5, 10, 20, 30, ..., 100, 110, 115.  [angle/10 - 1] won't work for the 115 bin, so we explicitly set these.
+        position[ii][layer - 1][11][energy/50 - 1] = dataposition - 48; //table values measure from the end of the BCAL.  Points measure from the center of the target.
         sigma[ii][layer - 1][11][energy/50 - 1] = datasigma;
       }
       else {
-        position[ii][layer - 1][angle/10 - 1][energy/50 - 1] = dataposition - 48; //Data file values measure from the end of the BCAL.  Points measure from the center of the target.
+        position[ii][layer - 1][angle/10 - 1][energy/50 - 1] = dataposition - 48; //table values measure from the end of the BCAL.  Points measure from the center of the target.
         sigma[ii][layer - 1][angle/10 - 1][energy/50 - 1] = datasigma;
       }
     }
-    in.close();
+    curvature_parameters.clear();
   }
 
+  // Thresholds for merging showers and including points.
   PHITHRESHOLD = 4*0.06544792; // 4*2 column widths, in radians.
   ZTHRESHOLD = 35.*k_cm; // Range in z, in cm.
   TTHRESHOLD = 8.0*k_nsec; // Loose time range, in ns.
@@ -112,7 +141,7 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
   loop->Get(bcal_showers,"IU");
   loop->Get(Points);
   
-// Calculate new shower parameters (phi, theta, E)
+// Merge overlapping showers and calculate new shower parameters (phi, theta, E)
   while (bcal_showers.size() != 0){
     double recon_x = bcal_showers[0]->x;
     double recon_y = bcal_showers[0]->y;
@@ -121,13 +150,13 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
     double recon_E = bcal_showers[0]->E;
     double recon_t = bcal_showers[0]->t/* - mcgentime*/;
     double total_E = bcal_showers[0]->E;
-    for (int ii = 1; ii < (int)bcal_showers.size(); ii++){
+    for (int ii = 1; ii < (int)bcal_showers.size(); ii++){ // compare each shower in bcal_showers to the first to check for overlap.
       double delPhi = atan2(bcal_showers[0]->y,bcal_showers[0]->x) - atan2(bcal_showers[ii]->y,bcal_showers[ii]->x);
       if (delPhi > TMath::Pi()) delPhi -= 2*TMath::Pi();
       if (delPhi < -1*TMath::Pi()) delPhi += 2*TMath::Pi();
       double delZ = bcal_showers[0]->z - bcal_showers[ii]->z;
       double delT = bcal_showers[0]->t - bcal_showers[ii]->t;
-      if (fabs(delPhi) < PHITHRESHOLD && fabs(delZ) < ZTHRESHOLD && fabs(delT) < TTHRESHOLD) overlap.push_back(ii);
+      if (fabs(delPhi) < PHITHRESHOLD && fabs(delZ) < ZTHRESHOLD && fabs(delT) < TTHRESHOLD) overlap.push_back(ii); // Showers overlap!
     }
     if (overlap.size() != 0){
       recon_x *= recon_E;
@@ -136,7 +165,7 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
       recon_E *= recon_E;
       recon_t *= recon_E;
     }
-    while (overlap.size() != 0){
+    while (overlap.size() != 0){ // If we had an overlap, average the overlapping showers together.
       recon_x += bcal_showers[overlap.back()]->x*bcal_showers[overlap.back()]->E;
       recon_y += bcal_showers[overlap.back()]->y*bcal_showers[overlap.back()]->E; // Average over x and y rather than over phi to avoid boundary errors.
       recon_theta += atan2(sqrt(bcal_showers[overlap.back()]->x*bcal_showers[overlap.back()]->x + bcal_showers[overlap.back()]->y*bcal_showers[overlap.back()]->y),bcal_showers[overlap.back()]->z-m_zTarget)*bcal_showers[overlap.back()]->E;
@@ -144,7 +173,7 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
       recon_t += (bcal_showers[overlap.back()]->t/* - mcgentime*/)*bcal_showers[overlap.back()]->E;
       total_E += bcal_showers[overlap.back()]->E;
 
-      bcal_showers.erase(bcal_showers.begin()+overlap.back());
+      bcal_showers.erase(bcal_showers.begin()+overlap.back()); // Erase the extra overlapping showers.
       overlap.pop_back();
       if (overlap.size() == 0){
         recon_x /= total_E;
@@ -155,6 +184,7 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
         recon_t /= total_E;
       }
     }
+    // Output new shower parameters for use in creating new showers.
     recon_showers_phi.push_back(recon_phi);
     recon_showers_theta.push_back(recon_theta*180.0/TMath::Pi());
     recon_showers_E.push_back(recon_E);
@@ -162,8 +192,16 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
     bcal_showers.erase(bcal_showers.begin());
   }
 
-//Create new showers.
-  for (int m = 0; m < (int)recon_showers_phi.size(); m++){
+//Create new showers.  Grab curvature parameters based on theta and energy of the old showers.
+  for (int m = 0; m < (int)recon_showers_phi.size(); m++){ // Loop over our newly output shower parameters.
+    // First, figure out which theta and energy bins we need from the tables.
+    // We have to be a little careful with the first and last bins in both
+    // theta and energy, since we want to interpolate between two adjacent
+    // bin values.  The following carefully sets the two adjacent bins based
+    // on the theta and energy values of the IU shower.
+    // We do an interpolation between values in adjacent theta bins, then
+    // a similar interpolation in adjacent energy bins so that our final z-position
+    // will be a more-or-less smooth function of both theta and energy.
     temptheta = recon_showers_theta[m];
     tempenergy = recon_showers_E[m];
     k = l = 1;
@@ -201,6 +239,11 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
       l--;
     }
 
+    // Now that we have the bins, we can use the position and sigma arrays to extrapolate or interpolate from the nearest two bins.
+    // We have to again be a bit careful with the first and last angle bins, since they don't follow the regular 10 degree
+    // interval pattern, sitting at 5 and 115 degrees respectively.  We find two interpolation offsets for the position and two
+    // for the sigma for each layer.  These are then added to the positions and widths to give us our final z-bin position with error
+    // for each layer and both central and side sectors (8 pairs in all).
     for (int ii = 0; ii < 2; ii++){
       for (int jj = 0; jj < 4; jj++){
         if (k == 0){ // Treat the k = 0 bin differently.  It lies at 15 degrees rather than the expected (from the pattern) 10 degrees.
@@ -222,6 +265,7 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
       }
     }
 
+    // We can now create the new shower.
     DBCALShower *shower = new DBCALShower;
 
     for (int ii = 0; ii < (int)Points.size(); ii++){
@@ -230,11 +274,19 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
       else delPhi = recon_showers_phi[m] - Points[ii]->phi();
       if (delPhi > TMath::Pi()) delPhi -= 2*TMath::Pi();
       if (delPhi < -1*TMath::Pi()) delPhi += 2*TMath::Pi();
-      if (fabs(delPhi) > PHITHRESHOLD) continue;
-      if (fabs(delPhi) < 0.020452475) i = 0; // 5/8 of a column width in phi.
+      if (fabs(delPhi) > PHITHRESHOLD) continue; // Don't include the point in this shower if it is far away in phi.
+      if (fabs(delPhi) < 0.020452475) i = 0; // 5/8 of a column width in phi.  This is a 'central' shower (i = 1).
       else i = 1;
       j = Points[ii]->layer() - 1;
 
+      // Below, we compare the point to the shower to see if it should be included in the shower.
+      // This uses the thresholds defined at the top of this document.  However, we have to be careful
+      // around the ends of the calorimeter.  Points that are reconstructed outside of the calorimeter
+      // need to still be considered.  So, for theta >= 119 and for theta <= 13, we must include all
+      // points past the end of the BCAL.  Also, for theta <= 17, we increase the z-bin width by a factor
+      // of 1.7.  These angles and widths might have to be played with a bit to find the best values,
+      // but for now, this seems to give good results (meaning, we catch most of the points in the
+      // event and put them in reasonable showers).
       if (recon_showers_theta[m] >= 119.){ // Get all points past the edge of the calorimeter for showers near the edge.
         if (((fabs(Points[ii]->z() - zbinposition[i][j]) < (zbinwidth[i][j] + ZTHRESHOLD)) || (Points[ii]->z() < -48)) && (fabs(Points[ii]->t() - recon_showers_t[m]) < TTHRESHOLD) && (Points[ii]->E() > ETHRESHOLD)){
           CurvaturePoints.push_back(Points[ii]);
@@ -259,6 +311,9 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
       }
     }
 
+    // Average out the showers.  This is done in much the same way as the KLOE code was.
+    // x, y, z, and t are averaged weighted by the energy of the point squared, and
+    // sig_x, sig_y, sig_z, and sig_t are calculated alongside them.
     double x=0,y=0,z=0,t=0;
     int N_cell=0;
     double sig_x=0,sig_y=0,sig_z=0,sig_t=0;
