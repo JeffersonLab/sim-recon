@@ -236,9 +236,9 @@ int main(int narg,char* argv[])
 			//attenuation_parameters[cell_id][1] = in_atten_parameters[channel][2];
 			//attenuation_parameters[cell_id][2] = in_atten_parameters[channel][0];
 			 
-			new_params[0] = in_atten_parameters[channel][1];
-			new_params[1] = in_atten_parameters[channel][2];
-			new_params[2] = in_atten_parameters[channel][0];
+			new_params[0] = in_atten_parameters[channel][0];
+			new_params[1] = in_atten_parameters[channel][1];
+			new_params[2] = in_atten_parameters[channel][2];
 			attenuation_parameters.push_back( new_params );
 
 			channel++;
