@@ -114,6 +114,7 @@
 		locHist_BetaVsP_QPlus->GetListOfFunctions()->Add(locBetaVsPFunc_Kaon);
 		locHist_BetaVsP_QPlus->GetListOfFunctions()->Add(locBetaVsPFunc_Pion);
 		locHist_BetaVsP_QPlus->Draw("COLZ");
+                gPad->SetLogz();
 	}
 
 	locCanvas->cd(6);
@@ -129,6 +130,7 @@
 		locHist_BetaVsP_QMinus->GetListOfFunctions()->Add(locBetaVsPFunc_Pion);
 		locHist_BetaVsP_QMinus->GetListOfFunctions()->Add(locBetaVsPFunc_Kaon);
 		locHist_BetaVsP_QMinus->Draw("COLZ");
+                gPad->SetLogz();
 	}
 }
 

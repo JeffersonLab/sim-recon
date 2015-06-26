@@ -60,6 +60,7 @@
 		locHist_BetaVsPQPlus->GetListOfFunctions()->Add(locBetaVsPFunc_Kaon);
 		locHist_BetaVsPQPlus->GetListOfFunctions()->Add(locBetaVsPFunc_Pion);
 		locHist_BetaVsPQPlus->Draw("COLZ");
+                gPad->SetLogz();
 	}
 
 	locCanvas->cd(2);
@@ -75,6 +76,7 @@
 		locHist_BetaVsPQMinus->GetListOfFunctions()->Add(locBetaVsPFunc_Pion);
 		locHist_BetaVsPQMinus->GetListOfFunctions()->Add(locBetaVsPFunc_Kaon);
 		locHist_BetaVsPQMinus->Draw("COLZ");
+                gPad->SetLogz();
 	}
 
 	locCanvas->cd(3);
