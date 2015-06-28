@@ -19,6 +19,7 @@
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
 #include "ANALYSIS/DMCThrownMatching.h"
+#include "ANALYSIS/DKinFitter_GlueX.h"
 
 #include "ANALYSIS/DParticleComboBlueprint_factory.h"
 
@@ -52,6 +53,8 @@ DCutAction_ProtonPiPlusdEdx
 DCutAction_BeamEnergy
 DCutAction_TrackFCALShowerEOverP
 DCutAction_PIDDeltaT
+
+DCutAction_OneVertexKinFit
 */
 
 class DCutAction_ThrownTopology : public DAnalysisAction
@@ -567,6 +570,30 @@ class DCutAction_PIDDeltaT : public DAnalysisAction
 		double dDeltaTCut;
 		Particle_t dPID;
 		DetectorSystem_t dSystem;
+};
+
+class DCutAction_OneVertexKinFit : public DAnalysisAction
+{
+	public:
+
+		DCutAction_OneVertexKinFit(const DReaction* locReaction, double locMinKinFitCL = -1.0, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_OneVertexKinFit", false, locActionUniqueString),
+		dMinKinFitCL(locMinKinFitCL) {}
+
+		void Initialize(JEventLoop* locEventLoop);
+
+	private:
+
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		double dMinKinFitCL;
+
+		const DAnalysisUtilities* dAnalysisUtilities;
+		DKinFitter_GlueX dKinFitter;
+
+		TH1I* dHist_ConfidenceLevel;
+		TH1I* dHist_VertexZ;
+		TH2I* dHist_VertexYVsX;
 };
 
 #endif // _DCutActions_

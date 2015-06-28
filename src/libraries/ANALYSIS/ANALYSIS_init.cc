@@ -110,6 +110,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DCutAction_BeamEnergy(NULL, false, 0.0, 0.0);
 	DCutAction_TrackFCALShowerEOverP(NULL, false, 0.0);
 	DCutAction_PIDDeltaT(NULL, false, 0.0);
+	DCutAction_OneVertexKinFit(NULL);
 
 	return NOERROR;
 }

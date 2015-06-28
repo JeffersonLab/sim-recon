@@ -932,3 +932,81 @@ bool DCutAction_PIDDeltaT::Perform_Action(JEventLoop* locEventLoop, const DParti
 	return true;
 }
 
+void DCutAction_OneVertexKinFit::Initialize(JEventLoop* locEventLoop)
+{
+	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield(locEventLoop->GetJEvent().GetRunNumber());
+
+	double locTargetZCenter = 65.0;
+	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
+	locGeometry->GetTargetZ(locTargetZCenter);
+
+	//Only set magnetic field if non-zero!
+	double locBx, locBy, locBz;
+	locMagneticFieldMap->GetField(0.0, 0.0, locTargetZCenter, locBx, locBy, locBz);
+	TVector3 locBField(locBx, locBy, locBz);
+	if(locBField.Mag() > 0.0)
+		dKinFitter.Set_BField(locMagneticFieldMap);
+
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		// Optional: Useful utility functions.
+		locEventLoop->GetSingle(dAnalysisUtilities);
+
+		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
+			//If another thread has already created the folder, it just changes to it. 
+		CreateAndChangeTo_ActionDirectory();
+
+		dHist_ConfidenceLevel = GetOrCreate_Histogram<TH1I>("ConfidenceLevel", "Vertex Kinematic Fit;Confidence Level", 500, 0.0, 1.0);
+		dHist_VertexZ = GetOrCreate_Histogram<TH1I>("VertexZ", "Vertex Kinematic Fit;Vertex-Z (cm)", 500, 0.0, 200.0);
+		dHist_VertexYVsX = GetOrCreate_Histogram<TH2I>("VertexYVsX", "Vertex Kinematic Fit;Vertex-X (cm);Vertex-Y (cm)", 300, -10.0, 10.0, 300, -10.0, 10.0);
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	//need to call prior to use in each event (cleans up memory allocated from last event)
+		//this call invalidates memory from previous fits (but that's OK, we aren't saving them anywhere)
+	dKinFitter.Reset_NewEvent();
+
+	//Get particles for fit (all detected q+)
+	deque<const DKinematicData*> locDetectedParticles;
+	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locDetectedParticles);
+
+	//Make DKinFitParticle objects for each one
+	deque<const DKinFitParticle*> locKinFitParticles;
+	for(size_t loc_i = 0; loc_i < locDetectedParticles.size(); ++loc_i)
+	{
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locDetectedParticles[loc_i]);
+		const DKinFitParticle* locKinFitParticle = dKinFitter.Make_DetectedParticle(locChargedTrackHypothesis);
+		locKinFitParticles.push_back(locKinFitParticle);
+	}
+
+	// vertex guess
+	TVector3 locVertexGuess = dAnalysisUtilities->Calc_CrudeVertex(locDetectedParticles);
+
+	// make & set vertex constraint
+	DKinFitConstraint_Vertex* locVertexConstraint = dKinFitter.Make_VertexConstraint(deque<const DKinFitParticle*>(), locKinFitParticles, locVertexGuess);
+	dKinFitter.Set_Constraint(locVertexConstraint);
+
+	// PERFORM THE KINEMATIC FIT
+	if(!dKinFitter.Fit_Reaction())
+		return (dMinKinFitCL < 0.0); //fit failed to converge, return false if converge required
+
+	// GET THE FIT RESULTS
+	double locConfidenceLevel = dKinFitter.Get_ConfidenceLevel();
+	TVector3 locFitVertex = locVertexConstraint->Get_CommonVertex();
+
+	//Optional: Fill histograms
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		dHist_ConfidenceLevel->Fill(locConfidenceLevel);
+		dHist_VertexZ->Fill(locFitVertex.Z());
+		dHist_VertexYVsX->Fill(locFitVertex.X(), locFitVertex.Y());
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+
+	return (locConfidenceLevel >= dMinKinFitCL);
+}
+
