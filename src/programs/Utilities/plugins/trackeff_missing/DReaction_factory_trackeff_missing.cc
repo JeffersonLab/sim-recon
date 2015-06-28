@@ -7,6 +7,7 @@
 
 #include "DReaction_factory_trackeff_missing.h"
 #include "DCustomAction_TrackingEfficiency.h"
+#include "DCustomAction_CutExtraPi0.h"
 
 //------------------
 // init
@@ -81,12 +82,17 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 
+	// Kinematic Fit: Vertex-Only Fit
+	locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7)); //cut +/- 5 sigma
+
 	// Track DOCA, etc.
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
-	locReaction->Add_AnalysisAction(new DCutAction_MaxTrackDOCA(locReaction, Gamma, 3.0));
+//	locReaction->Add_AnalysisAction(new DCutAction_MaxTrackDOCA(locReaction, Gamma, 3.0));
 
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56));
+	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.1, 0.16));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56, "PostPi0"));
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, 0.75, 0.95));
 
 	// Kinematics
@@ -159,12 +165,17 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 
+	// Kinematic Fit: Vertex-Only Fit
+	locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7)); //cut +/- 5 sigma
+
 	// Track DOCA, etc.
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
-	locReaction->Add_AnalysisAction(new DCutAction_MaxTrackDOCA(locReaction, Gamma, 3.0));
+//	locReaction->Add_AnalysisAction(new DCutAction_MaxTrackDOCA(locReaction, Gamma, 3.0));
 
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4));
+	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.1, 0.16));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4, "PostPi0"));
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.03, 0.06));
 
 	// Kinematics
@@ -238,12 +249,17 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 
+	// Kinematic Fit: Vertex-Only Fit
+	locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7)); //cut +/- 5 sigma
+
 	// Track DOCA, etc.
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
-	locReaction->Add_AnalysisAction(new DCutAction_MaxTrackDOCA(locReaction, Gamma, 3.0));
+//	locReaction->Add_AnalysisAction(new DCutAction_MaxTrackDOCA(locReaction, Gamma, 3.0));
 
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4));
+	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.1, 0.16));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4, "PostPi0"));
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.03, 0.06));
 
 	// Kinematics

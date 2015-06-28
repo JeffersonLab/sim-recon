@@ -875,10 +875,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	locEventLoop->Get(locThrownEventRFBunches, "Thrown");
 
 	vector<const DChargedTrack*> locChargedTracks;
-	locEventLoop->Get(locChargedTracks, "PreSelect");
-
-	vector<const DNeutralParticle*> locNeutralParticles;
-	locEventLoop->Get(locNeutralParticles, "PreSelect");
+	locEventLoop->Get(locChargedTracks);
 
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
@@ -905,15 +902,6 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 		if(locCandidateID > locMaxChargedID)
 			locMaxChargedID = locCandidateID;
 	}
-
-	//build hypothesis vectors from pre-select objects for "unused" info
-	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
-	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
-		locChargedTrackHypotheses.insert(locChargedTrackHypotheses.end(), locChargedTracks[loc_i]->dChargedTrackHypotheses.begin(), locChargedTracks[loc_i]->dChargedTrackHypotheses.end());
-
-	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
-	for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)
-		locNeutralParticleHypotheses.insert(locNeutralParticleHypotheses.end(), locNeutralParticles[loc_i]->dNeutralParticleHypotheses.begin(), locNeutralParticles[loc_i]->dNeutralParticleHypotheses.end());
 
 	//create map of neutral shower to new id #
 	vector<const DNeutralShower*> locNeutralShowers;
@@ -1055,8 +1043,6 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 			}
 
 			//steps
-			vector<const DChargedTrackHypothesis*> locUnusedChargedTrackHypotheses = locChargedTrackHypotheses;
-			vector<const DNeutralParticleHypothesis*> locUnusedNeutralParticleHypotheses = locNeutralParticleHypotheses;
 			for(size_t loc_k = 0; loc_k < locParticleCombo->Get_NumParticleComboSteps(); ++loc_k)
 			{
 				const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_k);
@@ -1130,34 +1116,6 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 						continue;
 					}
 
-					//remove from unused lists
-					const JObject* locSourceObject = locParticleComboStep->Get_FinalParticle_SourceObject(loc_l);
-					if(locParticleComboStep->Is_FinalParticleCharged(loc_l))
-					{
-						const DChargedTrack* locChargedTrack = dynamic_cast<const DChargedTrack*>(locSourceObject);
-						oid_t locTrackID = locChargedTrack->Get_BestFOM()->candidateid;
-						for(size_t loc_m = 0; loc_m < locUnusedChargedTrackHypotheses.size(); ++loc_m)
-						{
-							if((locUnusedChargedTrackHypotheses[loc_m]->candidateid != locTrackID) || (locUnusedChargedTrackHypotheses[loc_m]->PID() != locKinematicData_Measured->PID()))
-								continue;
-							locUnusedChargedTrackHypotheses.erase(locUnusedChargedTrackHypotheses.begin() + loc_m);
-							break;
-						}
-					}
-					else
-					{
-						const DNeutralShower* locSourceNeutralShower = dynamic_cast<const DNeutralShower*>(locSourceObject);
-						for(size_t loc_m = 0; loc_m < locUnusedNeutralParticleHypotheses.size(); ++loc_m)
-						{
-							const DNeutralShower* locAssociatedNeutralShower = NULL;
-							locUnusedNeutralParticleHypotheses[loc_m]->GetSingleT(locAssociatedNeutralShower);
-							if((locSourceNeutralShower != locAssociatedNeutralShower) || (locUnusedNeutralParticleHypotheses[loc_m]->PID() != locKinematicData_Measured->PID()))
-								continue;
-							locUnusedNeutralParticleHypotheses.erase(locUnusedNeutralParticleHypotheses.begin() + loc_m);
-							break;
-						}
-					}
-
 					//get the branch name
 					ostringstream locPositionStream;
 					locPositionStream << loc_k << "_" << loc_l;
@@ -1169,6 +1127,20 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 			}
 
 			//unused
+			vector<const DChargedTrack*> locUnusedChargedTracks;
+			dAnalysisUtilities->Get_UnusedChargedTracks(locEventLoop, locParticleCombo, locUnusedChargedTracks);
+
+			vector<const DNeutralParticle*> locUnusedNeutralParticles;
+			dAnalysisUtilities->Get_UnusedNeutralParticles(locEventLoop, locParticleCombo, locUnusedNeutralParticles);
+
+			vector<const DChargedTrackHypothesis*> locUnusedChargedTrackHypotheses;
+			for(size_t loc_i = 0; loc_i < locUnusedChargedTracks.size(); ++loc_i)
+				locUnusedChargedTrackHypotheses.insert(locUnusedChargedTrackHypotheses.end(), locUnusedChargedTracks[loc_i]->dChargedTrackHypotheses.begin(), locUnusedChargedTracks[loc_i]->dChargedTrackHypotheses.end());
+
+			vector<const DNeutralParticleHypothesis*> locUnusedNeutralParticleHypotheses;
+			for(size_t loc_i = 0; loc_i < locUnusedNeutralParticles.size(); ++loc_i)
+				locUnusedNeutralParticleHypotheses.insert(locUnusedNeutralParticleHypotheses.end(), locUnusedNeutralParticles[loc_i]->dNeutralParticleHypotheses.begin(), locUnusedNeutralParticles[loc_i]->dNeutralParticleHypotheses.end());
+
 			unsigned int locNumUnused = locUnusedChargedTrackHypotheses.size() + locUnusedNeutralParticleHypotheses.size();
 			Fill_FundamentalData<UInt_t>(locTree, "NumUnused", locNumUnused);
 			for(size_t loc_j = 0; loc_j < locUnusedChargedTrackHypotheses.size(); ++loc_j)

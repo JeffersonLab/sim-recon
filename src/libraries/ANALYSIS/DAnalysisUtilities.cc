@@ -19,6 +19,12 @@ DAnalysisUtilities::DAnalysisUtilities(JEventLoop* locEventLoop)
 	DGeometry *locGeometry = locApplication ? locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber()) : NULL;
 	if(locGeometry != NULL)
 		locGeometry->GetTargetZ(dTargetZCenter);
+
+	//For "Unused" tracks/showers
+	dTrackSelectionTag = "PreSelect";
+	dShowerSelectionTag = "PreSelect";
+	gPARMS->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", dTrackSelectionTag);
+	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
 }
 
 bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExclusiveMatchFlag, bool locIncludeDecayingToReactionFlag) const
@@ -475,7 +481,7 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(const DParticleCombo* locThr
 void DAnalysisUtilities::Get_UnusedChargedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DChargedTrack*>& locUnusedChargedTracks) const
 {
 	locUnusedChargedTracks.clear();
-	locEventLoop->Get(locUnusedChargedTracks);
+	locEventLoop->Get(locUnusedChargedTracks, dTrackSelectionTag.c_str());
 
 	deque<const DChargedTrack*> locSourceChargedTracks;
 	locParticleCombo->Get_DetectedFinalChargedParticles_SourceObjects(locSourceChargedTracks);
@@ -567,7 +573,7 @@ void DAnalysisUtilities::Get_UnusedTrackCandidates(JEventLoop* locEventLoop, con
 void DAnalysisUtilities::Get_UnusedNeutralShowers(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DNeutralShower*>& locUnusedNeutralShowers) const
 {
 	locUnusedNeutralShowers.clear();
-	locEventLoop->Get(locUnusedNeutralShowers);
+	locEventLoop->Get(locUnusedNeutralShowers, dShowerSelectionTag.c_str());
 
 	deque<const DNeutralShower*> locSourceNeutralShowers;
 	locParticleCombo->Get_DetectedFinalNeutralParticles_SourceObjects(locSourceNeutralShowers);
@@ -581,6 +587,27 @@ void DAnalysisUtilities::Get_UnusedNeutralShowers(JEventLoop* locEventLoop, cons
 				++locIterator;
 			else
 				locIterator = locUnusedNeutralShowers.erase(locIterator);
+		}
+	}
+}
+
+void DAnalysisUtilities::Get_UnusedNeutralParticles(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DNeutralParticle*>& locUnusedNeutralParticles) const
+{
+	locUnusedNeutralParticles.clear();
+	locEventLoop->Get(locUnusedNeutralParticles, dShowerSelectionTag.c_str());
+
+	deque<const DNeutralShower*> locSourceNeutralShowers;
+	locParticleCombo->Get_DetectedFinalNeutralParticles_SourceObjects(locSourceNeutralShowers);
+
+	for(size_t loc_i = 0; loc_i < locSourceNeutralShowers.size(); ++loc_i)
+	{
+		vector<const DNeutralParticle*>::iterator locIterator;
+		for(locIterator = locUnusedNeutralParticles.begin(); locIterator != locUnusedNeutralParticles.end();)
+		{
+			if(locSourceNeutralShowers[loc_i] != (*locIterator)->dNeutralShower)
+				++locIterator;
+			else
+				locIterator = locUnusedNeutralParticles.erase(locIterator);
 		}
 	}
 }
