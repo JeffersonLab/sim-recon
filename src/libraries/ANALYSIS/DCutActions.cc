@@ -911,20 +911,18 @@ bool DCutAction_PIDDeltaT::Perform_Action(JEventLoop* locEventLoop, const DParti
 
 	deque<const DKinematicData*> locParticles;
 	if(Get_UseKinFitResultsFlag())
-		locParticleCombo->Get_DetectedFinalChargedParticles(locParticles);
+		locParticleCombo->Get_DetectedFinalParticles(locParticles);
 	else
-		locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
+		locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
 
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
-		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-		if((dPID != Unknown) && (locChargedTrackHypothesis->PID() != dPID))
+		if((dPID != Unknown) && (locParticles[loc_i]->PID() != dPID))
 			continue;
-		if((dSystem != SYS_NULL) && (locChargedTrackHypothesis->t1_detector() != dSystem))
+		if((dSystem != SYS_NULL) && (locParticles[loc_i]->t1_detector() != dSystem))
 			continue;
 
-		double locDeltaT = locChargedTrackHypothesis->time() - locChargedTrackHypothesis->t0();
-
+		double locDeltaT = locParticles[loc_i]->time() - locParticles[loc_i]->t0();
 		if(fabs(locDeltaT) > dDeltaTCut)
 			return false;
 	}

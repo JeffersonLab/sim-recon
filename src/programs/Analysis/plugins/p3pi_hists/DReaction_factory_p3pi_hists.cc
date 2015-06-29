@@ -264,6 +264,8 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_BCAL)); //false: measured data //Unknown: All PIDs
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_FCAL)); //false: measured data //Unknown: All PIDs
 	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, false)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
 
 	// Kinematic Fit: Vertex-Only Fit
@@ -331,6 +333,8 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "Pre-Pi0Cut"));
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_BCAL)); //false: measured data //Unknown: All PIDs
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_FCAL)); //false: measured data //Unknown: All PIDs
 	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, false)); //select p/pi+ above/below 2.0, //true/false: cut all/no proton candidates above p = 1 GeV/c
 
 	// Kinematic Fit: Vertex-Only Fit
@@ -348,13 +352,11 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, false, 0.65, 0.9));
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, false, 0.71, 0.85));
 
-/*
-	// Omega Mass (Hist and Cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 600, 0.5, 1.1, "Omega_Kinfit"));
-
 	//	Missing Mass Squared (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56));
-*/
+
+	// Omega Mass (Hist and Cut)
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 600, 0.5, 1.1, "Omega_Kinfit"));
 
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
