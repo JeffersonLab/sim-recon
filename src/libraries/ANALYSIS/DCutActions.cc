@@ -920,7 +920,7 @@ bool DCutAction_PIDDeltaT::Perform_Action(JEventLoop* locEventLoop, const DParti
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
 		if((dPID != Unknown) && (locChargedTrackHypothesis->PID() != dPID))
 			continue;
-		if((dSystem != SYS_NULL) && (locChargedTrackHypothesis->t0_detector() != dSystem))
+		if((dSystem != SYS_NULL) && (locChargedTrackHypothesis->t1_detector() != dSystem))
 			continue;
 
 		double locDeltaT = locChargedTrackHypothesis->time() - locChargedTrackHypothesis->t0();
