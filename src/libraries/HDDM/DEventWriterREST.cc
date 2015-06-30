@@ -204,7 +204,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		//Status //Assume compiler optimizes multiplication
 		hddm_r::TofStatusList tofstatus = tof().addTofStatuses(1);
 		int locStatus = tofpoints[i]->dHorizontalBar + 45*tofpoints[i]->dVerticalBar;
-		locStatus += 45*4*tofpoints[i]->dHorizontalBarStatus + 45*4*4*tofpoints[i]->dVerticalBarStatus;
+		locStatus += 45*45*tofpoints[i]->dHorizontalBarStatus + 45*45*4*tofpoints[i]->dVerticalBarStatus;
 		tofstatus().setStatus(locStatus);
 	}
 
