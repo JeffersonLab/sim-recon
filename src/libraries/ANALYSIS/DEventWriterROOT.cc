@@ -26,7 +26,7 @@ DEventWriterROOT::~DEventWriterROOT(void)
 		}
 		for(size_t loc_i = 0; loc_i < Get_OutputROOTFiles().size(); ++loc_i)
 		{
-			Get_OutputROOTFiles()[loc_i]->Write();
+			Get_OutputROOTFiles()[loc_i]->Write(0, TObject::kOverwrite);
 			Get_OutputROOTFiles()[loc_i]->Close();
 			delete Get_OutputROOTFiles()[loc_i];
 		}
