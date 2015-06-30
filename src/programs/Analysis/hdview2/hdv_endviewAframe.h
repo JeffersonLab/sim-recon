@@ -54,7 +54,8 @@ class hdv_endviewAframe:public TGMainFrame {
 
 // The following line is supposed to avoid the warning messages about:
 // "dereferencing type-punned pointer will break strict-aliasing rules"
-#ifdef __CINT__
+#if (defined(__CINT__) || defined(__CLING__))
+
 #pragma link C++ class hdv_endviewAframe+;
 #endif
 

@@ -38,7 +38,8 @@
 
 
 class hdv_mainframe;
-#ifndef __CINT__
+#if !(defined(__CINT__) || defined(__CLING__))
+
 #include "hdv_mainframe.h"
 #endif
 
