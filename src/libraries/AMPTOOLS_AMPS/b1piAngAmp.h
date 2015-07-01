@@ -9,6 +9,8 @@
 #include <complex>
 #include <vector>
 
+#include "TLorentzVector.h"
+
 #include "GPUManager/GPUCustomTypes.h"
 
 using std::complex;
