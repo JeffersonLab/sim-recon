@@ -1,0 +1,19 @@
+
+
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+AMPTOOLS_LIBS = "AMPTOOLS_AMPS AMPTOOLS_DATAIO AMPTOOLS_MCGEN"
+env.AppendUnique(LIBS = AMPTOOLS_LIBS.split())
+
+sbms.AddHDDM(env)
+sbms.AddROOT(env)
+sbms.AddCLHEP(env)
+sbms.AddAMPTOOLS(env)
+sbms.AddAMPPLOTTER(env)
+
+sbms.executable(env)
+
