@@ -63,10 +63,6 @@ bool DCustomAction_p2gamma_hists::Perform_Action(JEventLoop* locEventLoop, const
 	}
         double locBeamPhotonEnergy = locBeamPhoton->energy();
 	
-	// cut on tagger energy
-	if(locBeamPhotonEnergy < 1.5) 
-		return false;
-	
 	// calculate missing mass
 	DLorentzVector locMissingP4; 
 	DLorentzVector locProtonP4Init(0,0,0,0.938);
@@ -77,7 +73,7 @@ bool DCustomAction_p2gamma_hists::Perform_Action(JEventLoop* locEventLoop, const
 	// reconstructed proton variables
 	const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(2));
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
-	double dEdx = locChargedTrackHypothesis->dEdx()*1e6;
+	double dEdx = locChargedTrackHypothesis->dEdx()*1e6; // convert to keV
 	DLorentzVector locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();	
 	
 	// calculate missing mass
@@ -105,7 +101,7 @@ bool DCustomAction_p2gamma_hists::Perform_Action(JEventLoop* locEventLoop, const
 	{
 		// Fill histograms here
 		dEgamma->Fill(locBeamPhotonEnergy);
-
+		
 		dMM2_M2g->Fill(loc2g_P4.M(), locMissingP4.M2());
 		dDeltaE_M2g->Fill(loc2g_P4.M(),locMissingP4.E());
 
@@ -114,49 +110,45 @@ bool DCustomAction_p2gamma_hists::Perform_Action(JEventLoop* locEventLoop, const
 		if(locDeltaPhi < 0.) locDeltaPhi += 360.;
 		dPhi2g_PhiP->Fill(locProtonP4.Phi()*180./TMath::Pi(), loc2g_P4.Phi()*180./TMath::Pi());
 		dDeltaPhi_M2g->Fill(loc2g_P4.M(), locDeltaPhi);
-
+		
 		// require proton and pi0 are back-to-back
-		if(locDeltaPhi < 175. || locDeltaPhi > 185.) {
-			japp->RootUnLock();	
-			return false;
-		}
-		dMM2_M2g_CoplanarTag->Fill(loc2g_P4.M(), locMissingP4.M2());
-		dDeltaE_M2g_CoplanarTag->Fill(loc2g_P4.M(), locMissingP4.E());
-		if(loc2g_P4.M() > 0.10 && loc2g_P4.M() < 0.16)
-			dMM2_DeltaE_CoplanarTag->Fill(locMissingP4.E(), locMissingP4.M2());
-
-		// tag proton with dE/dx
-		if(dEdx > dEdxCut) {
-			dMM2_M2g_ProtonTag->Fill(loc2g_P4.M(), locMissingP4.M2());
-			dDeltaE_M2g_ProtonTag->Fill(loc2g_P4.M(), locMissingP4.E());
+		if(locDeltaPhi > 175. && locDeltaPhi < 185.) {
+			
+			dMM2_M2g_CoplanarTag->Fill(loc2g_P4.M(), locMissingP4.M2());
+			dDeltaE_M2g_CoplanarTag->Fill(loc2g_P4.M(), locMissingP4.E());
 			if(loc2g_P4.M() > 0.10 && loc2g_P4.M() < 0.16)
-				dMM2_DeltaE_ProtonTag->Fill(locMissingP4.E(), locMissingP4.M2());
-
-			// di-photon invariant mass for exclusive g+p -> p + 2g
-			if(fabs(locMissingP4.M2()) < 0.05 && fabs(locMissingP4.E()) < 0.5) {
-				dEgamma_M2g_ProtonTag->Fill(loc2g_P4.M(),locBeamPhotonEnergy);
-			}
-		}
-
-		// for pi0 candidates require recoil proton
-		if(loc2g_P4.M() > 0.10 && loc2g_P4.M() < 0.16 && fabs(locMissingP4.M2()) < 0.05 && fabs(locMissingP4.E()) < 0.5) {
-			dProton_dEdx_P->Fill(locProtonP4.Vect().Mag(), dEdx);
-			dProton_P_Theta->Fill(locProtonP4.Vect().Theta()*180/TMath::Pi(), locProtonP4.Vect().Mag());			
-			dProtonPhi_Egamma->Fill(locBeamPhotonEnergy, locProtonP4.Phi()*180/TMath::Pi());
-			dPi0Phi_Egamma->Fill(locBeamPhotonEnergy, loc2g_P4.Phi()*180/TMath::Pi());
-
-			if(locBeamPhotonEnergy > 2.5 && locBeamPhotonEnergy < 3.0){ // 2931 is 2.9 to 3.35 GeV
-				dProtonPhi_Theta->Fill(locThetaCM*180/TMath::Pi(), locProtonP4.Phi()*180/TMath::Pi());
-				dProtonPhi_t->Fill(fabs(t), locProtonP4.Phi()*180/TMath::Pi());
-				dPi0Phi_Theta->Fill(locThetaCM*180/TMath::Pi(), loc2g_P4.Phi()*180/TMath::Pi());
-				dPi0EgammaCorr->Fill(locParticles[0]->energy(),locParticles[1]->energy());
+				dMM2_DeltaE_CoplanarTag->Fill(locMissingP4.E(), locMissingP4.M2());
+			
+			// tag proton with dE/dx
+			if(dEdx > dEdxCut) {
+				dMM2_M2g_ProtonTag->Fill(loc2g_P4.M(), locMissingP4.M2());
+				dDeltaE_M2g_ProtonTag->Fill(loc2g_P4.M(), locMissingP4.E());
+				if(loc2g_P4.M() > 0.10 && loc2g_P4.M() < 0.16)
+					dMM2_DeltaE_ProtonTag->Fill(locMissingP4.E(), locMissingP4.M2());
+				
+				// di-photon invariant mass for exclusive g+p -> p + 2g
+				if(fabs(locMissingP4.M2()) < 0.05 && fabs(locMissingP4.E()) < 0.5) {
+					dEgamma_M2g_ProtonTag->Fill(loc2g_P4.M(),locBeamPhotonEnergy);
+				}
 			}
 			
-			japp->RootUnLock();
-			return true;
+			// for pi0 candidates require recoil proton
+			if(loc2g_P4.M() > 0.10 && loc2g_P4.M() < 0.16 && fabs(locMissingP4.M2()) < 0.05 && fabs(locMissingP4.E()) < 0.5) {
+				dProton_dEdx_P->Fill(locProtonP4.Vect().Mag(), dEdx);
+				dProton_P_Theta->Fill(locProtonP4.Vect().Theta()*180/TMath::Pi(), locProtonP4.Vect().Mag());			
+				dProtonPhi_Egamma->Fill(locBeamPhotonEnergy, locProtonP4.Phi()*180/TMath::Pi());
+				dPi0Phi_Egamma->Fill(locBeamPhotonEnergy, loc2g_P4.Phi()*180/TMath::Pi());
+				
+				if(locBeamPhotonEnergy > 2.5 && locBeamPhotonEnergy < 3.0){ // 2931 is 2.9 to 3.35 GeV
+					dProtonPhi_Theta->Fill(locThetaCM*180/TMath::Pi(), locProtonP4.Phi()*180/TMath::Pi());
+					dProtonPhi_t->Fill(fabs(t), locProtonP4.Phi()*180/TMath::Pi());
+					dPi0Phi_Theta->Fill(locThetaCM*180/TMath::Pi(), loc2g_P4.Phi()*180/TMath::Pi());
+					dPi0EgammaCorr->Fill(locParticles[0]->energy(),locParticles[1]->energy());
+				}
+			}
 		}
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
-	return false; //return false if you want to use this action to apply a cut (and it fails the cut!)
+	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }

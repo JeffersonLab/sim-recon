@@ -17,6 +17,7 @@
 #include <ANALYSIS/DCutActions.h>
 
 #include "DCustomAction_p2gamma_hists.h"
+#include "DCustomAction_p2gamma_cuts.h"
 #include "DCustomAction_p2gamma_unusedHists.h"
 
 using namespace std;

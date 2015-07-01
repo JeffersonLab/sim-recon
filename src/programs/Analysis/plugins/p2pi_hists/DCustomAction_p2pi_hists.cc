@@ -72,10 +72,6 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 	}
         double locBeamPhotonEnergy = locBeamPhoton->energy();
 
-	// cut on tagger energy
-	if(locBeamPhotonEnergy < 1.5) 
-		return false;
-
 	// calculate 2pi P4
 	DLorentzVector locP4_2pi;
 	for(size_t loc_i = 0; loc_i < 3; ++loc_i) {
@@ -119,58 +115,43 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 
 		if(dMissingPID == Proton) {
 			dMM_M2pi->Fill(locP4_2pi.M(), locMissingP4.M());
-
 		}
 		else {
 			dMM2_M2pi->Fill(locP4_2pi.M(), locMissingP4.M2());
 			dDeltaE_M2pi->Fill(locP4_2pi.M(),locMissingP4.E());
 
-			if(fabs(locMissingP4.M2()) < 0.02){
+			if(fabs(locMissingP4.M2()) < 0.02 && fabs(locMissingP4.E()) < 0.2){
 				dProton_dEdx_P->Fill(locProtonP4.Vect().Mag(), dEdx);
 				dProton_P_Theta->Fill(locProtonP4.Vect().Theta()*180/TMath::Pi(), locProtonP4.Vect().Mag());
 
-				if(dEdx < dEdxCut) {
-					japp->RootUnLock();
-					return false;
-				}
-
-				dEgamma_M2pi->Fill(locP4_2pi.M(), locBeamPhotonEnergy);
-				dDeltaE_M2pi_ProtonTag->Fill(locP4_2pi.M(),locMissingP4.E());
-
-				DLorentzVector locP4_ppiplus = locProtonP4;
-				DLorentzVector locP4_ppiminus = locProtonP4;
-				locP4_ppiplus += locParticles[1]->lorentzMomentum();
-				locP4_ppiminus += locParticles[2]->lorentzMomentum();
-				if(locBeamPhotonEnergy > 2.5 && locBeamPhotonEnergy < 3.0){
-					dDalitz_p2pi->Fill(locP4_2pi.M2(), locP4_ppiplus.M2());
-					dMppiplus_M2pi->Fill(locP4_2pi.M(), locP4_ppiplus.M());
-					dMppiminus_M2pi->Fill(locP4_2pi.M(), locP4_ppiminus.M());
-				}
-
-				if(locP4_2pi.M() > 0.6 && locP4_2pi.M() < 0.9){
-					dProtonPhi_Egamma->Fill(locBeamPhotonEnergy, locProtonP4.Phi()*180/TMath::Pi());
-					dPiPlusPsi_Egamma->Fill(locBeamPhotonEnergy, locPsi*180/TMath::Pi());
+				if(dEdx > dEdxCut) {
 					
+					dEgamma_M2pi->Fill(locP4_2pi.M(), locBeamPhotonEnergy);
+					dDeltaE_M2pi_ProtonTag->Fill(locP4_2pi.M(),locMissingP4.E());
+					
+					DLorentzVector locP4_ppiplus = locProtonP4;
+					DLorentzVector locP4_ppiminus = locProtonP4;
+					locP4_ppiplus += locParticles[1]->lorentzMomentum();
+					locP4_ppiminus += locParticles[2]->lorentzMomentum();
 					if(locBeamPhotonEnergy > 2.5 && locBeamPhotonEnergy < 3.0){
-						dPiPlusPsi_t->Fill(fabs(t), locPsi*180/TMath::Pi());
-						
-						if(fabs(t) > 0.4) {
-							japp->RootUnLock();
-							return false;
-						}
-					}
-					else { 
-						japp->RootUnLock();
-						return false;
+						dDalitz_p2pi->Fill(locP4_2pi.M2(), locP4_ppiplus.M2());
+						dMppiplus_M2pi->Fill(locP4_2pi.M(), locP4_ppiplus.M());
+						dMppiminus_M2pi->Fill(locP4_2pi.M(), locP4_ppiminus.M());
 					}
 
-					japp->RootUnLock(); //RELEASE ROOT LOCK!!
-					return true;
-				}			
+					if(locP4_2pi.M() > 0.6 && locP4_2pi.M() < 0.9){
+						dProtonPhi_Egamma->Fill(locBeamPhotonEnergy, locProtonP4.Phi()*180/TMath::Pi());
+						dPiPlusPsi_Egamma->Fill(locBeamPhotonEnergy, locPsi*180/TMath::Pi());
+						
+						if(locBeamPhotonEnergy > 2.5 && locBeamPhotonEnergy < 3.0){
+							dPiPlusPsi_t->Fill(fabs(t), locPsi*180/TMath::Pi());	
+						}
+					}	
+				}	
 			}
 		}
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
-	return false; //return false if you want to use this action to apply a cut (and it fails the cut!)
+	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }

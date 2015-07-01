@@ -71,10 +71,6 @@ bool DCustomAction_p2k_hists::Perform_Action(JEventLoop* locEventLoop, const DPa
         }
         double locBeamPhotonEnergy = locBeamPhoton->energy();
 
-        // cut on tagger energy
-        if(locBeamPhotonEnergy < 1.5)
-                return true;
-
 	// get k+ and k- tracks
 	double kplus_beta = -1.;
 	double kminus_beta = -1.;

@@ -72,8 +72,9 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "Pre-Pi0Cut"));
-//	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
-//	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, false)); //select p/pi+ above/below 2.0, //true/false: cut all/no proton candidates above p = 1 GeV/c
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_BCAL)); //false: measured data //Unknown: All PIDs
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_FCAL)); //false: measured data //Unknown: All PIDs
 
 	//Kinematics Pre-Pi0Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Pre-Pi0Cut"));
@@ -133,8 +134,9 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "Pre-Pi0Cut"));
-//	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
-//	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, false)); //select p/pi+ above/below 2.0, //true/false: cut all/no proton candidates above p = 1 GeV/c
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_BCAL)); //false: measured data //Unknown: All PIDs
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_FCAL)); //false: measured data //Unknown: All PIDs
 
 	//Kinematics Pre-Pi0Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Pre-Pi0Cut"));
@@ -194,8 +196,9 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction, "Pre-Pi0Cut"));
-//	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 0.5, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs //SYS_NULL: All systems
-//	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, false)); //select p/pi+ above/below 2.0, //true/false: cut all/no proton candidates above p = 1 GeV/c
+	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_BCAL)); //false: measured data //Unknown: All PIDs
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_FCAL)); //false: measured data //Unknown: All PIDs
 
 	//Kinematics Pre-Pi0Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction, "Pre-Pi0Cut"));

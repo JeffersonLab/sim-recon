@@ -41,6 +41,13 @@ jerror_t DEventProcessor_p2gamma_hists::init(void)
 //------------------
 jerror_t DEventProcessor_p2gamma_hists::brun(jana::JEventLoop* locEventLoop, int locRunNumber)
 {
+	// This is called whenever the run number changes
+
+        //Recommended: Create output ROOT TTrees (nothing is done if already created)
+        const DEventWriterROOT* locEventWriterROOT = NULL;
+        locEventLoop->GetSingle(locEventWriterROOT);
+        locEventWriterROOT->Create_DataTrees(locEventLoop);
+
 	return NOERROR;
 }
 
@@ -72,11 +79,21 @@ jerror_t DEventProcessor_p2gamma_hists::evnt(jana::JEventLoop* locEventLoop, int
 	//REQUIRED: To run an analysis, You MUST call one at least of the below code fragments. 
 		//JANA is on-demand, so if you don't call one of these, then your analysis won't run. 
 
+	 //Recommended: Write surviving particle combinations (if any) to output ROOT TTree
+                //If no cuts are performed by the analysis actions added to a DReaction, then this saves all of its particle combinations. 
+                //The event writer gets the DAnalysisResults objects from JANA, performing the analysis. 
+        // string is DReaction factory tag: will fill trees for all DReactions that are defined in the specified factory
+        const DEventWriterROOT* locEventWriterROOT = NULL;
+        locEventLoop->GetSingle(locEventWriterROOT);
+        locEventWriterROOT->Fill_DataTrees(locEventLoop, "p2gamma_hists");
+
+	/*
 	//Get the analysis results for all DReactions. 
 		//Getting these objects triggers the analysis, if it wasn't performed already. 
 		//These objects contain the DParticleCombo objects that survived the DAnalysisAction cuts that were added to the DReactions
 	vector<const DAnalysisResults*> locAnalysisResultsVector;
 	locEventLoop->Get(locAnalysisResultsVector);
+	*/
 
 	return NOERROR;
 }

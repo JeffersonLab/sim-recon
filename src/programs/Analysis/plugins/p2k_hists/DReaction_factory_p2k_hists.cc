@@ -45,8 +45,11 @@ jerror_t DReaction_factory_p2k_hists::init(void)
 		//These actions are executed sequentially, and are executed on each surviving (non-cut) particle combination 
 		//Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
 
-	// POCA cut on all tracks
-        locReaction->Add_AnalysisAction(new DCutAction_AllVertexZ(locReaction, 50., 80.));
+	// PID
+	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_BCAL)); //false: measured data //Unknown: All PIDs
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_FCAL)); //false: measured data //Unknown: All PIDs
 
 	// Custom histograms for p2k (no KinFit cut)
         locReaction->Add_AnalysisAction(new DCustomAction_p2k_hists(locReaction, false, "NoKinFit_Measured"));

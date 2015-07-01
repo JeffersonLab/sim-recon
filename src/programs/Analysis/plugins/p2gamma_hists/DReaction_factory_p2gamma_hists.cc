@@ -40,10 +40,13 @@ jerror_t DReaction_factory_p2gamma_hists::init(void)
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
-	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	locReaction->Set_KinFitType(d_NoFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 2.004 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+
+	// Recommended: Enable ROOT TTree output for this DReaction
+        locReaction->Enable_TTreeOutput("tree_p2gamma_hists.root"); //string is file name (must end in ".root"!!): doen't need to be unique, feel free to change
 
 	/**************************************************** p2gamma_hists Analysis Actions ****************************************************/
 
@@ -51,12 +54,27 @@ jerror_t DReaction_factory_p2gamma_hists::init(void)
 		//These actions are executed sequentially, and are executed on each surviving (non-cut) particle combination 
 		//Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
 
-	// POCA cut on all tracks
-	locReaction->Add_AnalysisAction(new DCutAction_AllVertexZ(locReaction, 50., 80.));
-
-	// Custom histograms for p2gamma_hists (no KinFit cut)
+	// Custom histograms (before PID)
         locReaction->Add_AnalysisAction(new DCustomAction_p2gamma_hists(locReaction, false, "NoKinFit_Measured"));
+
+	// PID
+        locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_BCAL)); //false: measured data //Unknown: All PIDs
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_FCAL)); //false: measured data //Unknown: All PIDs
+
+	// Custom histograms (after PID)
+        locReaction->Add_AnalysisAction(new DCustomAction_p2gamma_hists(locReaction, false, "TimingCut_Measured"));
+
+	// Cuts for future analysis actions applied in CustomAction for now
+        locReaction->Add_AnalysisAction(new DCustomAction_p2gamma_cuts(locReaction, false));
+        //locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, 0, Gamma, Gamma, false, 0.1, 0.16));
+
+	// Diagnostics for unused tracks and showers with final selection
 	locReaction->Add_AnalysisAction(new DCustomAction_p2gamma_unusedHists(locReaction, false, "NoKinFit_Measured"));
+
+	// Cut beam energy for TTree entries
+        locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 2.5, 3.0));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data

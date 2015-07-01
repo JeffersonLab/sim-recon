@@ -64,10 +64,6 @@ bool DCustomAction_p3pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 	locSumInitP4.SetXYZM(0, 0, 0, 0.938);
         locSumInitP4 += locBeamPhoton->lorentzMomentum();
 
-	// cut on tagger energy
-	if(locBeamPhotonEnergy < 1.5) 
-		return true;
-
 	// calculate missing mass
 	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag());
 	

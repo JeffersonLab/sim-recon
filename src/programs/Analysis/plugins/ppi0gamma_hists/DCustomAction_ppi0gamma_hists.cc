@@ -58,10 +58,6 @@ bool DCustomAction_ppi0gamma_hists::Perform_Action(JEventLoop* locEventLoop, con
 	}
         double locBeamPhotonEnergy = locBeamPhoton->energy();
 	
-	// cut on tagger energy
-	if(locBeamPhotonEnergy < 1.5) 
-		return false;
-
 	// calculate missing mass
         DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag());
 
