@@ -1,6 +1,10 @@
 
+import sbms
+
 Import('*')
 
-subdirs = ['Analysis', 'Utilities', 'Simulation']
+Import('env osname')
+
+subdirs = ['Analysis', 'Utilities', 'Simulation', 'AmplitudeAnalysis']
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 

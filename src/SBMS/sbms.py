@@ -618,6 +618,30 @@ def AddXERCES(env):
 	env.AppendUnique(LIBPATH = XERCES_LIBPATH)
 	env.AppendUnique(LIBS    = XERCES_LIBS)
 
+##################################
+# AMPTOOLS
+##################################
+def AddAMPTOOLS(env):
+        amptoolsroot = os.getenv('AMPTOOLS', 'amptools')
+        AMPTOOLS_CPPPATH = "%s" % (amptoolsroot)
+        AMPTOOLS_LIBPATH = "%s/lib" % (amptoolsroot)
+	AMPTOOLS_LIBS = "AmpTools"
+        env.AppendUnique(CPPPATH = AMPTOOLS_CPPPATH)
+        env.AppendUnique(LIBPATH = AMPTOOLS_LIBPATH)
+        env.AppendUnique(LIBS    = AMPTOOLS_LIBS)
+	env.AppendUnique(LIBS      = ['gfortran'])
+
+##################################
+# AMPPLOTTER
+##################################
+def AddAMPPLOTTER(env):
+        ampplotterroot = os.getenv('AMPPLOTTER', 'ampplotter')
+        AMPPLOTTER_CPPPATH = "%s" % (ampplotterroot)
+        AMPPLOTTER_LIBPATH = "%s/lib" % (ampplotterroot)
+	AMPPLOTTER_LIBS = "AmpPlotter"
+        env.AppendUnique(CPPPATH = AMPPLOTTER_CPPPATH)
+        env.AppendUnique(LIBPATH = AMPPLOTTER_LIBPATH)
+	env.AppendUnique(LIBS    = AMPPLOTTER_LIBS)
 
 ##################################
 # CERNLIB

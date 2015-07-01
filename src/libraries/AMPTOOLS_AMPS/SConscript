@@ -1,0 +1,13 @@
+
+
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+sbms.AddAMPTOOLS(env)
+sbms.AddDANA(env)
+sbms.library(env)
+
+
