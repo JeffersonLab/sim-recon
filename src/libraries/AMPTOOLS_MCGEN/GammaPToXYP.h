@@ -13,6 +13,7 @@
 #include "TLorentzVector.h"
 
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
+#include "TH1.h"
 
 class Kinematics;
 class AmpVecs;
@@ -22,7 +23,7 @@ class GammaPToXYP {
 public:
   
   GammaPToXYP( float lowMassXY, float highMassXY, float massX, float massY,
-               ProductionMechanism::Type type );
+               float beamE, ProductionMechanism::Type type );
   
   Kinematics* generate();
   
@@ -36,6 +37,8 @@ private:
   TLorentzVector m_target;
   
   vector< double > m_childMass;
+
+  TH1D *cobrem_vs_E;
   
 };
 

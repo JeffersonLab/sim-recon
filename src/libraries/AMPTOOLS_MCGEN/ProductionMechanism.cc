@@ -69,7 +69,7 @@ ProductionMechanism::produceResonance( const TLorentzVector& beam ){
 	while( random( 0., exptMax ) > t*exp(-m_slope*t) );
 	
 	TVector3 resonanceMomCM;
-	resonanceMomCM.SetPtThetaPhi( resMomCM,
+	resonanceMomCM.SetMagThetaPhi( resMomCM,
                               acos( 1. - 2.*t/tMax ),
                               random( -kPi, kPi ) );
 	
