@@ -22,7 +22,6 @@
 
 #include "IUAmpTools/AmpToolsInterface.h"
 #include "IUAmpTools/ConfigFileParser.h"
-#include "CLHEP/Vector/LorentzVector.h"
 
 #include "TH1F.h"
 #include "TH2F.h"
@@ -30,7 +29,6 @@
 
 using std::complex;
 using namespace std;
-using namespace CLHEP;
 
 int main( int argc, char* argv[] ){
   
@@ -182,7 +180,7 @@ int main( int argc, char* argv[] ){
     for( int i = 0; i < batchSize; ++i ){
   		
       Kinematics* evt = ati.kinematics( i );
-      HepLorentzVector resonance( evt->particle( 2 ) + 
+      TLorentzVector resonance( evt->particle( 2 ) + 
                                   evt->particle( 3 ) + 
                                   evt->particle( 4 ) );
 
@@ -198,14 +196,14 @@ int main( int argc, char* argv[] ){
         
         if( weightedInten > rand || genFlat ){
           
-          mass->Fill( resonance.m() );
-          massW->Fill( resonance.m(), genWeight );
+          mass->Fill( resonance.M() );
+          massW->Fill( resonance.M(), genWeight );
           
           intenW->Fill( weightedInten );
-          intenWVsM->Fill( resonance.m(), weightedInten );
+          intenWVsM->Fill( resonance.M(), weightedInten );
           
-          dalitz->Fill( ( evt->particle( 2 ) + evt->particle( 3 ) ).m2(),
-                        ( evt->particle( 3 ) + evt->particle( 4 ) ).m2() );
+          dalitz->Fill( ( evt->particle( 2 ) + evt->particle( 3 ) ).M2(),
+                        ( evt->particle( 3 ) + evt->particle( 4 ) ).M2() );
            
           // we want to save events with weight 1
           evt->setWeight( 1.0 );
@@ -217,14 +215,14 @@ int main( int argc, char* argv[] ){
       }
       else{
         
-        mass->Fill( resonance.m() );
-        massW->Fill( resonance.m(), genWeight );
+        mass->Fill( resonance.M() );
+        massW->Fill( resonance.M(), genWeight );
 
-        dalitz->Fill( ( evt->particle( 2 ) + evt->particle( 3 ) ).m2(),
-                      ( evt->particle( 3 ) + evt->particle( 4 ) ).m2() );
+        dalitz->Fill( ( evt->particle( 2 ) + evt->particle( 3 ) ).M2(),
+                      ( evt->particle( 3 ) + evt->particle( 4 ) ).M2() );
 
         intenW->Fill( weightedInten );
-        intenWVsM->Fill( resonance.m(), weightedInten );
+        intenWVsM->Fill( resonance.M(), weightedInten );
         
         ++eventCounter;
       }
