@@ -634,11 +634,11 @@ jerror_t DEventSourceREST::Extract_DTOFPoint(hddm_r::HDDM *record,
 		{
 			for(; locStatusIterator != locTofStatusList.end(); ++locStatusIterator)
 			{
-				int locStatus = locStatusIterator->getStatus(); //horizontal_bar + 45*vertical_bar + 45*4*horizontal_status + 45*4*4*vertical_status
-				tofpoint->dVerticalBarStatus = locStatus/(45*4*4);
-				locStatus %= 45*4*4; //Assume compiler optimizes multiplication
-				tofpoint->dHorizontalBarStatus = locStatus/(45*4);
-				locStatus %= 45*4;
+				int locStatus = locStatusIterator->getStatus(); //horizontal_bar + 45*vertical_bar + 45*45*horizontal_status + 45*45*4*vertical_status
+				tofpoint->dVerticalBarStatus = locStatus/(45*45*4);
+				locStatus %= 45*45*4; //Assume compiler optimizes multiplication
+				tofpoint->dHorizontalBarStatus = locStatus/(45*45);
+				locStatus %= 45*45;
 				tofpoint->dVerticalBar = locStatus/45;
 				tofpoint->dHorizontalBar = locStatus % 45;
 			}
