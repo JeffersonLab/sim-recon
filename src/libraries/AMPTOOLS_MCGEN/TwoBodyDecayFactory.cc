@@ -27,7 +27,7 @@ TwoBodyDecayFactory::generateDecay() const {
     // let the X decay to isobar + 2 in the X CM
     // fill the isobar momentum vector and the bachelor momentum vector
     childMom[0].
-        SetPtThetaPhi( cmMomentum( m_parentMass, m_childMass[0], m_childMass[1] ),
+        SetMagThetaPhi( cmMomentum( m_parentMass, m_childMass[0], m_childMass[1] ),
                       acos( random( -0.999999, 0.999999 ) ),
                       random( -kPi, kPi ) );
     childMom[1] = -childMom[0];

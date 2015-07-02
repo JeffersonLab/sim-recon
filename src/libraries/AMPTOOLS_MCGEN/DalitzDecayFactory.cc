@@ -44,7 +44,7 @@ DalitzDecayFactory::generateDecay() const {
 		// let the X decay to isobar + 2 in the X CM
 		// fill the isobar momentum vector and the bachelor momentum vector
 		isobarMom.
-			SetPtThetaPhi( cmMomentum( m_parentMass, isobarMass, m_childMass[2] ),
+			SetMagThetaPhi( cmMomentum( m_parentMass, isobarMass, m_childMass[2] ),
 						  acos( random( -0.999999, 0.999999 ) ),
 						  random( -kPi, kPi ) );
 		childMom[2] = -isobarMom;
@@ -55,7 +55,7 @@ DalitzDecayFactory::generateDecay() const {
 		
 		// let the isobar decay to 0 1 in the isobar CM
 		childMom[0].
-			SetPtThetaPhi( cmMomentum( isobarMass, m_childMass[0], m_childMass[1] ),
+			SetMagThetaPhi( cmMomentum( isobarMass, m_childMass[0], m_childMass[1] ),
 						  acos( random( -0.999999, 0.999999 ) ),
 						  random( -kPi, kPi ) );
 		childMom[1] = -childMom[0];

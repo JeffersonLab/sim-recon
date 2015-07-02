@@ -36,7 +36,7 @@ ResonanceDecayFactory::generateDecay() const {
     vector<TLorentzVector> child( 2 );
 	vector<TVector3> childMom( 2 );
 
-    childMom[0].SetPtThetaPhi( cmMomentum( m_resMass, c0Mass, m_bachMass ),
+    childMom[0].SetMagThetaPhi( cmMomentum( m_resMass, c0Mass, m_bachMass ),
                               acos( random( -0.999999, 0.999999 ) ),
                               random( -kPi, kPi ) );
     childMom[1] = -childMom[0];
