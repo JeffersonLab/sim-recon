@@ -103,15 +103,15 @@ class DVector3{
     return 0.;
   }
   
-  const double x() const {return xy->d[0];};
-  const double y() const {return xy->d[1];};
-  const double z() const {return zx->d[0];}; 
-  const double X() const {return xy->d[0];};
-  const double Y() const {return xy->d[1];};
-  const double Z() const {return zx->d[0];};
-  const double Px() const {return xy->d[0];};
-  const double Py() const {return xy->d[1];};
-  const double Pz() const {return zx->d[0];}; 
+  double x() const {return xy->d[0];};
+  double y() const {return xy->d[1];};
+  double z() const {return zx->d[0];}; 
+  double X() const {return xy->d[0];};
+  double Y() const {return xy->d[1];};
+  double Z() const {return zx->d[0];};
+  double Px() const {return xy->d[0];};
+  double Py() const {return xy->d[1];};
+  double Pz() const {return zx->d[0];}; 
 
   double CosTheta() const{
     double r=Mag();
@@ -425,7 +425,7 @@ inline DVector3 operator*(const DVector3 &v1, double c){
   scale=_mm_set1_pd(c);
   return DVector3(_mm_mul_pd(v1.GetVxy(),scale),
                   _mm_mul_pd(v1.GetVzx(),scale));
-};
+}
 // Scale a vector by c
 inline DVector3 operator*(double c,const DVector3 &v1){
   ALIGNED_16_BLOCK_WITH_PTR(__m128d, 1, p)
@@ -433,7 +433,7 @@ inline DVector3 operator*(double c,const DVector3 &v1){
   scale=_mm_set1_pd(c);
   return DVector3(_mm_mul_pd(v1.GetVxy(),scale),
                   _mm_mul_pd(v1.GetVzx(),scale));
-};
+}
 
 
 #endif // USE_SSE2
