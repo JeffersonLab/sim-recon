@@ -31,6 +31,7 @@ class DTrackCandidate_factory_CDCCOSMIC:public jana::JFactory<DTrackCandidate>{
         double CDCDriftDistance(double t);
         double CDCDriftVariance(double t);
         unsigned int Locate(vector<double>&xx,double x);
+        double CDCTrackError(const DCDCWire *, const double *, double *);
 
         DReferenceTrajectory *rt;
         DMagneticFieldMapNoField *bfield;
@@ -41,6 +42,8 @@ class DTrackCandidate_factory_CDCCOSMIC:public jana::JFactory<DTrackCandidate>{
         double cdc_drift_table_min, cdc_drift_table_max;
         // Resolution parameters
         double CDC_RES_PAR1,CDC_RES_PAR2;
+        int EXCLUDERING;
+
         TH2D *residual_vs_ring;
         TH1D *h_chisq;
         TH1D *h_Ndof;

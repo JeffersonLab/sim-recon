@@ -65,6 +65,7 @@ double calc_chi_square(const Double_t *par)
     }
     return chisq;
 }
+
 // Convert time to distance for the cdc
 double DTrackCandidate_factory_CDCCOSMIC::CDCDriftDistance(double t){
     double d=0.;
@@ -81,9 +82,13 @@ double DTrackCandidate_factory_CDCCOSMIC::CDCDriftDistance(double t){
 
 // Smearing function derived from fitting residuals
 inline double DTrackCandidate_factory_CDCCOSMIC::CDCDriftVariance(double t){ 
+    //double sigma = 0.015;
+    //return sigma*sigma;
     //  return 0.001*0.001;
     //if (t<0.) t=0.;
-    double cutoffTime = 40.0;
+    //cout << "Entering Variance lookup for time " << t << endl;
+
+    double cutoffTime = 5.0;
     double V = 0.0507;
     if (t>0){
         if (t>cdc_drift_table_max){
@@ -91,14 +96,16 @@ inline double DTrackCandidate_factory_CDCCOSMIC::CDCDriftVariance(double t){
             V=0.0507; // straw radius^2 / 12
             return V;
         }
-
+        //cout << "The resolution parameters are {" << CDC_RES_PAR1 <<","<< CDC_RES_PAR2 << "}" << endl;
         double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
+        //cout << "Sigma = " << sigma << endl;
         // This function is very poorly behaved at low drift times
         // For times less than cutoffTime assume a linear behavior of our function.
-        if( t < cutoffTime ){
-            double slope = -1.0 * CDC_RES_PAR1 / (( cutoffTime + 1) * (cutoffTime + 1));
-            sigma = (CDC_RES_PAR1/(cutoffTime+1.)+CDC_RES_PAR2) + slope * (t - cutoffTime);
-        }
+       // if( t < cutoffTime ){
+       //     double slope = -1.0 * CDC_RES_PAR1 / (( cutoffTime + 1) * (cutoffTime + 1));
+       //     sigma = (CDC_RES_PAR1/(cutoffTime+1.)+CDC_RES_PAR2) + slope * (t - cutoffTime);
+            //cout << "Earlier than cutoff time...Sigma = " << sigma << endl;
+        //}
 
         V=sigma*sigma;
         return V;
@@ -106,14 +113,87 @@ inline double DTrackCandidate_factory_CDCCOSMIC::CDCDriftVariance(double t){
     else { // Time is negative, or exactly zero, choose position at wire, with error of t=0 hit
         double slope = -1.0 * CDC_RES_PAR1 / (( cutoffTime + 1) * (cutoffTime + 1));
         double sigma = (CDC_RES_PAR1/(cutoffTime+1.)+CDC_RES_PAR2) + slope * (0.0 - cutoffTime);
+        //cout << "Time is negative...sigma = " << sigma << endl;
         V=sigma*sigma; //Should include T0 variance...
         return V;
         //V=0.0507; // straw radius^2 / 12
     }
-
+    //cout << "Somehow we got here...returning Variance = " << V << endl;
     return V;
+    
 }
 
+double DTrackCandidate_factory_CDCCOSMIC::CDCTrackError(const DCDCWire *wire , const double *xs, double *dxs){
+    //First the wire parameters
+    double udirx = wire->udir.x();
+    double udiry = wire->udir.y();
+    double udirz = wire->udir.z();
+    double wx = wire->origin.x();
+    double wy = wire->origin.y();
+    double wz = wire->origin.z();
+
+    //The fitted track parameters
+    double x0 = xs[0];
+    double y0 = xs[1];
+    double xslope = xs[2];
+    double yslope = xs[3];
+
+    // We need the jacobian "matrix" for this measurement
+    // Taking these directly form Mathematica
+    
+    //df/dx0
+    double dfdx0 = ((udiry - udirz*yslope)*sqrt(pow(udiry*(wx - x0 - wz*xslope) + udirx*(-wy + y0 + wz*yslope) + 
+                             udirz*(wy*xslope - xslope*y0 - wx*yslope + x0*yslope),2)/
+                       (pow(udiry,2)*(1 + pow(xslope,2)) - 2*udiry*udirz*yslope - 2*udirx*xslope*(udirz + udiry*yslope) + pow(udirx,2)*(1 + pow(yslope,2)) + 
+                                 pow(udirz,2)*(pow(xslope,2) + pow(yslope,2)))))/
+           (udiry*(-wx + x0 + wz*xslope) + (udirx - udirz*xslope)*(wy - y0) - (udirx*wz + udirz*(-wx + x0))*yslope);
+
+    //df/dy0
+    double dfdy0 = ((udirx - udirz*xslope)*sqrt(pow(udiry*(wx - x0 - wz*xslope) + udirx*(-wy + y0 + wz*yslope) + 
+                             udirz*(wy*xslope - xslope*y0 - wx*yslope + x0*yslope),2)/
+                       (pow(udiry,2)*(1 + pow(xslope,2)) - 2*udiry*udirz*yslope - 2*udirx*xslope*(udirz + udiry*yslope) + pow(udirx,2)*(1 + pow(yslope,2)) + 
+                                 pow(udirz,2)*(pow(xslope,2) + pow(yslope,2)))))/
+           (udiry*(wx - x0 - wz*xslope) + udirx*(-wy + y0 + wz*yslope) + udirz*(wy*xslope - xslope*y0 - wx*yslope + x0*yslope));
+
+    //df/dxslope
+    double dfdxslope = ((udiry - udirz*yslope)*pow(pow(udiry*(wx - x0 - wz*xslope) + udirx*(-wy + y0 + wz*yslope) + 
+                             udirz*(wy*xslope - xslope*y0 - wx*yslope + x0*yslope),2)/
+                       (pow(udiry,2)*(1 + pow(xslope,2)) - 2*udiry*udirz*yslope - 2*udirx*xslope*(udirz + udiry*yslope) + pow(udirx,2)*(1 + pow(yslope,2)) + 
+                                 pow(udirz,2)*(pow(xslope,2) + pow(yslope,2))),1.5)*
+                 (pow(udiry,2)*(wz + wx*xslope - x0*xslope) - udiry*udirz*(wy - y0 + wz*yslope) + pow(udirx,2)*(wz + (wy - y0)*yslope) + 
+                         pow(udirz,2)*(wx*xslope - x0*xslope + wy*yslope - y0*yslope) - 
+                                udirx*(udirz*(wx - x0 + wz*xslope) + udiry*(wy*xslope - xslope*y0 + wx*yslope - x0*yslope))))/
+           ((udiry*(-wx + x0 + wz*xslope) + (udirx - udirz*xslope)*(wy - y0) - (udirx*wz + udirz*(-wx + x0))*yslope)*
+                 pow(udiry*(wx - x0 - wz*xslope) + udirx*(-wy + y0 + wz*yslope) + udirz*(wy*xslope - xslope*y0 - wx*yslope + x0*yslope),2));
+
+    //df/dyslope
+    double dfdyslope = ((udirx - udirz*xslope)*(udiry*(wx - x0 - wz*xslope) + udirx*(-wy + y0 + wz*yslope) + udirz*(wy*xslope - xslope*y0 - wx*yslope + x0*yslope))*
+                 (pow(udiry,2)*(wz + wx*xslope - x0*xslope) - udiry*udirz*(wy - y0 + wz*yslope) + pow(udirx,2)*(wz + (wy - y0)*yslope) + 
+                         pow(udirz,2)*(wx*xslope - x0*xslope + wy*yslope - y0*yslope) - 
+                                udirx*(udirz*(wx - x0 + wz*xslope) + udiry*(wy*xslope - xslope*y0 + wx*yslope - x0*yslope))))/
+           (sqrt(pow(udiry*(wx - x0 - wz*xslope) + udirx*(-wy + y0 + wz*yslope) + udirz*(wy*xslope - xslope*y0 - wx*yslope + x0*yslope),2)/
+                        (pow(udiry,2)*(1 + pow(xslope,2)) - 2*udiry*udirz*yslope - 2*udirx*xslope*(udirz + udiry*yslope) + pow(udirx,2)*(1 + pow(yslope,2)) + 
+                                  pow(udirz,2)*(pow(xslope,2) + pow(yslope,2))))*
+                 pow(pow(udiry,2)*(1 + pow(xslope,2)) - 2*udiry*udirz*yslope - 2*udirx*xslope*(udirz + udiry*yslope) + 
+                            pow(udirx,2)*(1 + pow(yslope,2)) + pow(udirz,2)*(pow(xslope,2) + pow(yslope,2)),2));
+
+    // Since these only will be useful when we have the covariance matrix of the track parameters we have an aditional cut on our track quality.
+    // Propogation of errors says that the error in the track measurement is given by
+    // ( dfdx0 dfdy0 dfdxslope dfdyslope) (                         ) (  dfdx0  ) 
+    //                                    ( Trk. covariance matrix  ) (  dfdy0  )  = The variance in the estimated track DOCA for this particular wire
+    //                                    (                         ) (dfdxslope)
+    //                                    (                         ) (dfdyslope)
+    // If these were passed around as vectors and matrices this would be prettier, but since its short we can just type it out
+    
+    double variance = (dfdx0*dxs[0]  + dfdy0*dxs[1]  + dfdxslope*dxs[2]  + dfdyslope*dxs[3])  * dfdx0 
+                    + (dfdx0*dxs[4]  + dfdy0*dxs[5]  + dfdxslope*dxs[6]  + dfdyslope*dxs[7])  * dfdy0
+                    + (dfdx0*dxs[8]  + dfdy0*dxs[9]  + dfdxslope*dxs[10] + dfdyslope*dxs[11]) * dfdxslope
+                    + (dfdx0*dxs[12] + dfdy0*dxs[13] + dfdxslope*dxs[14] + dfdyslope*dxs[15]) * dfdyslope;
+
+    double error = sqrt(variance);
+
+    return error;
+}
 // Locate a position in vector xx given x
 unsigned int DTrackCandidate_factory_CDCCOSMIC::Locate(vector<double>&xx,
         double x){
@@ -141,6 +221,11 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::init(void)
 {
     bfield = new DMagneticFieldMapNoField(japp);
     rt = new DReferenceTrajectory(bfield);
+
+    EXCLUDERING=0;
+    if (gPARMS){
+        gPARMS->SetDefaultParameter("CDCCOSMIC:EXCLUDERING", EXCLUDERING, "Ring to exclude in CDC Cosmic Tracking");
+    }
     //rt->Rmax_interior = 100.0; // (cm)  set larger swim volume so we can swim through the BCAL 
     //rt->Rmax_exterior = 200.0; // (cm)  set larger swim volume so we can swim through the BCAL 
 
@@ -250,6 +335,7 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumb
         finder->LinkCDCSegments();
 
         const vector<DTrackFinder::cdc_track_t>tracks=finder->GetCDCTracks();
+        if (tracks.size() != 1) return NOERROR;
         for (size_t i=0;i<tracks.size();i++){
             // Initial guess for state vector
             DMatrix4x1 S(tracks[i].S);
@@ -337,7 +423,57 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumb
                 else return NOERROR;//Minimization Failed and no BCAL guess
             }
 
+            // After the first pass at the fit, do some outlier rejection to improve the results
+            float chi2cut = 20.0;
+
             const double *xs = min->X();
+
+            //Loop over hits
+            Measurements.clear();
+            MeasurementErrors.clear();
+            Wires.clear();
+            vector<const DCDCTrackHit *> AcceptedHits;
+            unsigned int nBeforeHits = hits.size(); 
+            unsigned int nAfterHits = 0;
+            for (unsigned int j=0;j<hits.size();j++){
+                //Calulate the Measurement from the drift time
+                double L=(hits[0]->wire->origin-hits[j]->wire->origin).Perp();
+                double tcorr = hits[j]->tdrift - L/29.98 - t0;
+                double measurement = CDCDriftDistance(tcorr);
+                double residual = measurement - fit_function(hits[j]->wire,xs);
+                double chi2calc = residual * residual / CDCDriftVariance(tcorr);
+                if (chi2calc > chi2cut) continue;
+                AcceptedHits.push_back(hits[j]);
+                // Skip this hit if it needs to be exluded in the final fit
+                // We still want it in the puls so mighat as well leave it in the accepted hits.
+                if (hits[j]->wire->ring == EXCLUDERING) continue;
+                nAfterHits++;
+                Measurements.push_back(measurement);
+                MeasurementErrors.push_back(sqrt(CDCDriftVariance(tcorr)));
+                Wires.push_back(hits[j]->wire);
+            }
+
+            double acceptedFraction = (double) nAfterHits / nBeforeHits;
+            if (acceptedFraction < 0.5 || nAfterHits < 5) return NOERROR;
+            hits = AcceptedHits;
+
+            // Refit
+            // Set the free variables to be minimized!
+            min->SetVariable(0,"x0",xs[0], step[0]);
+            min->SetVariable(1,"y0",xs[1], step[1]);
+            min->SetVariable(2,"xslope",xs[2], step[2]);
+            min->SetVariable(3,"yslope",xs[3], step[3]);
+
+            // do the minimization
+            if(!min->Minimize() || min->CovMatrixStatus() != 3) { // Minimization converged and covariance matric accurate to get past here
+                return NOERROR; //Minimization Failed after outlier rejection
+            }
+
+            xs = min->X();
+
+            // Retrieve the covariance matrix
+            double dxs[16];// covariance matrix stored as an array
+            min->GetCovMatrix(dxs);
 
             DVector3 pos(xs[0], xs[1], 0);
             DVector3 mom(xs[2], xs[3], 1);
@@ -349,7 +485,7 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumb
             can->setMass(0.139);
             can->setPID(PiPlus);
             can->chisq=min->MinValue();
-            can->Ndof=hits.size() - 4;
+            can->Ndof=nAfterHits - 4;
             can->rt = rt;
             rt->Swim(pos, mom, 1.0);
 
@@ -364,8 +500,11 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumb
                 double time = hits[j]->tdrift - L/29.98 - t0;
                 double DOCA = fit_function(hits[j]->wire,xs);
                 double measurement = CDCDriftDistance(time);
-                double residual = measurement - DOCA;
-                double error = sqrt(CDCDriftVariance(time));
+                double residual = measurement - DOCA;   
+                double measurementError = sqrt(CDCDriftVariance(time));
+                double trackError = CDCTrackError(hits[j]->wire, xs, dxs);
+                double error = sqrt(pow(measurementError,2) + pow(trackError,2));
+                //cout << " The error is as follows, measurment error = " << measurementError << " Tracking Error " << trackError << " Total " << error << endl;
                 can->pulls.push_back(DTrackFitter::pull_t(residual, error, 0.0, time , measurement, hits[j], NULL));
 
             }
@@ -390,12 +529,6 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::erun(void)
 //------------------
 jerror_t DTrackCandidate_factory_CDCCOSMIC::fini(void)
 {
-    if(rt) delete rt;
-    if(bfield) delete bfield;
-
-    rt = NULL;
-    bfield = NULL;
-
     return NOERROR;
 }
 
