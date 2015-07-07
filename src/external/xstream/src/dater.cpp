@@ -26,8 +26,7 @@ namespace xstream {
 
         //XXX error handling could improve here
 
-        int cret;
-        cret = _sb->sputc(c);
+        _sb->sputc(c);
         
         if (separator == c) {
             write_next = true;

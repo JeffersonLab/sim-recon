@@ -74,8 +74,7 @@ namespace xstream
             char enc[4];                //encoded buffer
             encode(buf, enc);
 
-            int ret;
-            ret = write(enc, 4);
+            write(enc, 4);
 
             *pptr() = static_cast < char >(c);
             pbump(1);
