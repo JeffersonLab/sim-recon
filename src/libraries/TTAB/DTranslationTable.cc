@@ -1395,8 +1395,8 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
    int channel = 0;
    string Detector, locSystem;
    int end=0;
-   int row=0,column=0,module=0,sector=0,layer=0,chan;
-   int ring=0,straw=0,plane=0,bar=0,gPlane,element;
+   int row=0,column=0,module=0,sector=0,layer=0;
+   int ring=0,straw=0,plane=0,bar=0;
    int package=0,chamber=0,view=0,strip=0,wire=0;
    int id=0, strip_type=0;
    int side=0;
@@ -1462,16 +1462,16 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
             sector = ival;
          else if (tag == "layer")
             layer = ival;
-         else if (tag == "chan")
-            chan = ival;
+         else if (tag == "chan");
+//            chan = ival;
          else if (tag == "ring")
             ring = ival;
          else if (tag == "straw")
             straw = ival;
-         else if (tag == "gPlane")
-            gPlane = ival;
-         else if (tag == "element")
-            element = ival;
+         else if (tag == "gPlane");
+//            gPlane = ival;
+         else if (tag == "element");
+//            element = ival;
          else if (tag == "plane")
             plane = ival;
          else if (tag == "bar")
