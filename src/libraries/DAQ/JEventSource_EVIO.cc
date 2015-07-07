@@ -1574,12 +1574,10 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		}
 		// find the threshold crossing
 		uint32_t first_sample_over_threshold = 0;
-		uint32_t sample_height = 0; // temporary variable
 		for (uint32_t c_samp=0; c_samp<nsamples; c_samp++) {
 			if(VERBOSE>5) evioout << c_samp << "  " << samplesvector[c_samp] << "  " << threshold <<endl;
 			if (samplesvector[c_samp] > threshold) {
 				first_sample_over_threshold = c_samp;
-				sample_height = samplesvector[c_samp];
 				if(VERBOSE>4) evioout << " EmulateDf250PulseIntegral: object " << i << "  found value over " 
 					  << threshold << " at samp " << c_samp << " with value " << samplesvector[c_samp] <<endl;
 				break;
@@ -1771,7 +1769,6 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 
 		uint32_t time = 0;
 		uint32_t mid_sample = 0;
-		uint32_t max_sample = 0;
 		if (VMIN > threshold) { // firmware requires VMIN < F250_THRESHOLD
 			time_fraction = 0;
 		} 
@@ -1783,7 +1780,6 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 			for (uint32_t c_samp=first_sample_over_threshold; c_samp<nsamples; c_samp++) {
 				if (samplesvector[c_samp] > VPEAK) {
 					VPEAK = samplesvector[c_samp];
-					max_sample = c_samp;
 				} else {
 				  // we found the downturn
 				  break;
@@ -1986,7 +1982,6 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 			
 
 			uint32_t mid_sample = 0;
-			uint32_t max_sample = 0;
 			if (VMIN > threshold) { // firmware requires VMIN < F125_THRESHOLD
 				time_fraction = 0;
 			} 
@@ -1998,7 +1993,6 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 				for (uint32_t c_samp=first_sample_over_threshold; c_samp<Nsamples_all; c_samp++) {
 					if (samplesvector[c_samp] > VPEAK) {
 						pulse_peak = VPEAK = samplesvector[c_samp];
-						max_sample = c_samp;
 					} else {
 					  // we found the downturn
 					  break;
@@ -2157,7 +2151,6 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 	// Assume first word is number of words in bank
 	uint32_t *iend = &iptr[*iptr - 1];
 	if(*iptr > 256) iend = &iptr[256];
-	uint32_t Nrocs=0;
 	bool has_timestamps = false;
 	while(iptr<iend){
 		iptr++;
@@ -2178,7 +2171,7 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 			case 0xFF22:
 			case 0xFF26:
 				if(VERBOSE>2) evioout << " ... Trigger bank tag (0x" << hex << ((*iptr)>>16) << dec << ") does contain run number" <<endl;
-				Nrocs = (*iptr) & 0x0F;
+//				Nrocs = (*iptr) & 0x0F;
 				break;
 			default:
 				continue;
