@@ -129,7 +129,8 @@ GPUThreePiAngles_kernel( GPU_AMP_PROTO, int polBeam, GDouble polFrac, int jX,
   pcDevAmp[iEvent] = ans * 
       clebsch( 1, iZ0, 1, iZ1, iI, iZ0 + iZ1 ) *
       clebsch( iI, iZ0 + iZ1, 1, iZ2, iX, iZ0 + iZ1 + iZ2 ) *
-      G_POW( k, lX ) * G_POW( q, jI );
+      ::pow( k, lX ) * ::pow( q, jI );
+//      G_POW( k, lX ) * G_POW( q, jI );
 }
 
 void

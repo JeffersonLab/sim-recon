@@ -488,7 +488,8 @@ GPUb1piAngAmp_kernel(
   
   ThelSum *= Nterm(L_X) * 
     // barrier factor
-    (GDouble)(L_X==0 ? 1.0 : (L_X==1 ? q : G_POW(q,L_X))) *
+//    (GDouble)(L_X==0 ? 1.0 : (L_X==1 ? q : G_POW(q,L_X))) *
+    (GDouble)(L_X==0 ? 1.0 : (L_X==1 ? q : ::pow(q,L_X))) *
     // to apply polarization fraction weights: 
     (GDouble)G_SQRT((1.0-pol*polFrac)*0.5) * //(1+g) for x-pol, (1-g) for y-pol   
     (pol==1 ? i : COne)*InvSqrt2 * //to account for |eps_g> ~ sqrt(-eps/2)
