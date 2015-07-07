@@ -154,12 +154,15 @@ int main(int argc,char **argv)
   int i,npart=0,ngenerated=0,naccepted=0, imassc, imassc2;
   int nv4,max=10,part=0,chld1=-1,chld2=-1,prnt=-1,lfevents=10000;
   FILE *fout=stdout;
-  struct particleMC_t particle[20],beam,target,recoil,CM;
+  struct particleMC_t particle[20],beam,target,CM;
+  //struct particleMC_t recoil;
   struct particleMC_t *X,*Y;
-  vector4_t beta,v4[2],initBeam4;
+  vector4_t beta,v4[2];
+  // vector4_t initBeam4;
   double t,expt_max,expt,expt_min,sqrt_s,t_min=0;
   double CMenergy, t_max,slope=5.0;
-  double X_momentum, X_threshold, X_energy,xmass,ymass;
+  double X_momentum, X_energy,xmass,ymass;
+  // double X_threshold ;
   double costheta,theta,phi,lf,lfmax=0;
   int isacomment=TRUE,haveChildren=TRUE;
 
@@ -167,7 +170,7 @@ int main(int argc,char **argv)
   Y->parent = &CM;
   X= &(particle[1]);
   X->parent = &CM;
-  recoil.parent = &CM;
+  //  recoil.parent = &CM;
   CM.child[0]= X;
   CM.child[1]= Y;
   /* CM.child[1]= &recoil; */
@@ -265,9 +268,11 @@ int main(int argc,char **argv)
   while(isacomment==TRUE){
     char *pline;
     pline = fgets(line,sizeof(line),stdin);
-    token=strtok(line," ");
-    if(!(*token == '%'))
-      isacomment=FALSE;
+    if (pline!=NULL){
+      token=strtok(line," ");
+      if(!(*token == '%'))
+	isacomment=FALSE;
+    }
   }  /* get beam information */
   beam.p.space.x = atof(token);
   token=strtok(NULL," ");
@@ -285,9 +290,11 @@ int main(int argc,char **argv)
   while(isacomment==TRUE){
     char *pline;
     pline = fgets(line,sizeof(line),stdin);
-    token=strtok(line," ");
-    if(!(*token == '%'))
-      isacomment=FALSE;
+    if (pline!=NULL){
+      token=strtok(line," ");
+      if(!(*token == '%'))
+	isacomment=FALSE;
+    }
   }  /* get target information */
   target.p.space.x = atof(token);
   token=strtok(NULL," ");
@@ -305,9 +312,11 @@ int main(int argc,char **argv)
   while(isacomment==TRUE){
     char *pline;
     pline = fgets(line,sizeof(line),stdin);
-    token=strtok(line," ");
-    if(!(*token == '%'))
-      isacomment=FALSE;
+    if (pline!=NULL){
+      token=strtok(line," ");
+      if(!(*token == '%'))
+	isacomment=FALSE;
+    }
   }  
   /* get the t-channel slope */
   slope=atof(token);
@@ -318,9 +327,11 @@ int main(int argc,char **argv)
   while(isacomment==TRUE){
     char *pline;
     pline = fgets(line,sizeof(line),stdin);
-    token=strtok(line," ");
-    if(!(*token == '%'))
-      isacomment=FALSE;
+    if (pline!=NULL){
+      token=strtok(line," ");
+      if(!(*token == '%'))
+	isacomment=FALSE;
+    }
   }  /* get the number of particles to read in below */
   npart = atoi(token);
   fprintf(stderr,"Reading: number of particles need to describe the decay\n");
@@ -340,9 +351,11 @@ int main(int argc,char **argv)
     while(isacomment==TRUE){
       char *pline;
       pline = fgets(line,sizeof(line),stdin);
-      token=strtok(line," ");
-      if(!(*token == '%'))
-	isacomment=FALSE;
+      if (pline!=NULL){
+	token=strtok(line," ");
+	if(!(*token == '%'))
+	  isacomment=FALSE;
+      }
     } 
       if(!(*token == '*')) /* "*" means it's unknown at this time */
 	part = atoi(token);
@@ -421,9 +434,11 @@ int main(int argc,char **argv)
   while(isacomment==TRUE){
     char *pline;
     pline = fgets(line,sizeof(line),stdin);
-    token=strtok(line," ");
-    if(!(*token == '%'))
-      isacomment=FALSE;
+    if (pline!=NULL){
+      token=strtok(line," ");
+      if(!(*token == '%'))
+	isacomment=FALSE;
+    }
   } 
   if(!(*token == '!')){
     fprintf(stderr,"Failed to find EOI---- Check Input File\n");
@@ -446,8 +461,8 @@ int main(int argc,char **argv)
       
     target.p.t = energy(target.mass,&(target.p.space));        
     beam.p.t = energy(beam.mass,&(beam.p.space));
-    initBeam4.t= beam.p.t;  initBeam4.space.x= beam.p.space.x;
-    initBeam4.space.y= beam.p.space.y; initBeam4.space.z= beam.p.space.z;
+    //initBeam4.t= beam.p.t;  initBeam4.space.x= beam.p.space.x;
+    //initBeam4.space.y= beam.p.space.y; initBeam4.space.z= beam.p.space.z;
     sqrt_s = sqrt( SQ(beam.mass) +SQ(target.mass) + 2.0*beam.p.t * target.p.t);
     /*MassHighBW = sqrt_s - recoil.mass; */
     MassHighBW = sqrt_s; /* see do loop below */
@@ -557,7 +572,7 @@ l2:	  imassc=setChildrenMass(Y->child[i]);
     xmass = X->mass;
     ymass = Y->mass;
 
-    X_threshold = 0;
+    //X_threshold = 0;
     X_momentum = CMmomentum( CMenergy, X->mass, Y->mass);
     X_energy =  sqrt( (X->mass)*(X->mass) + X_momentum*X_momentum);
 
