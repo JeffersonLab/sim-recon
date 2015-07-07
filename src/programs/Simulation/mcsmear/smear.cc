@@ -2,8 +2,6 @@
 //
 // Created June 22, 2005  David Lawrence
 
-#define JANA_ENABLED 1
-
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -434,10 +432,6 @@ void AddNoiseHitsCDC(hddm_s::HDDM *record)
    // meeting. This parameterization is almost already obsolete.
    // 10/12/2007 D. L.
 
-#if ! JANA_ENABLED
-   if(!CDC_GEOMETRY_INITIALIZED)InitCDCGeometry();
-#endif   
-
    vector<int> Nstraw_hits;
    vector<int> straw_number;
    vector<int> ring_number;
@@ -601,10 +595,6 @@ void AddNoiseHitsFDC(hddm_s::HDDM *record)
    // intended to be added, once the wire noise model is validated.
    // The FDC noise algorithm represented below is incomplete.
   
-#if ! JANA_ENABLED
-   if(!FDC_GEOMETRY_INITIALIZED)InitFDCGeometry();
-#endif   
-
    vector<int> Nwire_hits;
    vector<int> Ncathode_hits;
    vector<int> wire_number;
@@ -979,211 +969,3 @@ void SmearFMWPC(hddm_s::HDDM *record)
    }
 }
 
-
-//-----------
-// InitCDCGeometry
-//-----------
-void InitCDCGeometry(void)
-{
-  CDC_GEOMETRY_INITIALIZED = true;
-  
-  CDC_MAX_RINGS = 28;
-  
-  //-- This was cut and pasted from DCDCTrackHit_factory.cc on 10/11/2007 --
-  
-  float degrees0 = 0.0;
-  float degrees6 = 6.0*M_PI/180.0;
-  
-  for(int ring=1; ring<=CDC_MAX_RINGS; ring++){
-    int myNstraws=0;
-    float radius = 0.0;
-    float stereo=0.0;
-    float phi_shift=0.0;
-    float deltaX=0.0, deltaY=0.0;
-    float rotX=0.0, rotY=0.0;
-    switch(ring){
-      // axial
-    case  1:   myNstraws=  42;   radius= 10.7219;   stereo=  degrees0; phi_shift= 0.00000;   break;
-    case  2:   myNstraws=  42;   radius= 12.097;           stereo=  degrees0; phi_shift= 4.285714;   break;
-    case  3:   myNstraws=  54;   radius= 13.7803;   stereo=  degrees0; phi_shift= 2.00000;   break;
-    case  4:   myNstraws=  54;   radius= 15.1621;   stereo=  degrees0; phi_shift= 5.3333333;   break;
-      
-      // -stereo
-    case  5:   myNstraws=  66;   radius= 16.9321;   stereo= -degrees6; phi_shift= 0.33333;   break;
-    case  6:   myNstraws=  66;   phi_shift= 0.33333;   deltaX= 18.2948 ;   deltaY= 0.871486;   rotX=-6.47674;   rotY=-0.302853;   break;
-    case  7:   myNstraws=  80;   radius= 20.5213;   stereo= -degrees6; phi_shift= -0.5000;   break;
-    case  8:   myNstraws=  80;   phi_shift= -0.5000;   deltaX= 21.8912;   deltaY= 0.860106;   rotX=-6.39548;   rotY=-0.245615;   break;
-      
-      // +stereo
-    case  9:   myNstraws=  93;   radius= 23.8544;   stereo= +degrees6; phi_shift= 1.1000;   break;
-    case 10:   myNstraws=  93;   phi_shift= 1.1000;   deltaX= 25.229;   deltaY= 0.852573;   rotX=+6.34142;   rotY=+0.208647;   break;
-    case 11:   myNstraws= 106;   radius= 27.1877;   stereo= +degrees6; phi_shift= -1.40;   break;
-    case 12:   myNstraws= 106;   phi_shift= -1.400;   deltaX= 28.5658;   deltaY= 0.846871;   rotX=+6.30035;   rotY=+0.181146;   break;
-      
-      // axial
-    case 13:   myNstraws= 123;   radius= 31.3799;   stereo=  degrees0; phi_shift= 0.5000000;   break;
-    case 14:   myNstraws= 123;   radius= 32.7747;   stereo=  degrees0; phi_shift= 1.9634146;   break;
-    case 15:   myNstraws= 135;   radius= 34.4343;   stereo=  degrees0; phi_shift= 1.0000000;   break;
-    case 16:   myNstraws= 135;   radius= 35.8301;   stereo=  degrees0; phi_shift= 2.3333333;   break;
-      
-      // -stereo
-    case 17:   myNstraws= 146;   radius= 37.4446;   stereo= -degrees6; phi_shift= 0.2;   break;
-    case 18:   myNstraws= 146;   phi_shift= 0.2;   deltaX= 38.8295;   deltaY= 0.835653;   rotX=-6.21919 ;   rotY=-0.128247;   break;
-    case 19:   myNstraws= 158;   radius= 40.5364;   stereo= -degrees6; phi_shift= 0.7;   break;
-    case 20:   myNstraws= 158;   phi_shift= 0.7;   deltaX=41.9225 ;   deltaY= 0.833676;   rotX=-6.20274;   rotY=-0.118271;   break;
-      
-      // +stereo
-    case 21:   myNstraws= 170;   radius= 43.6152;   stereo= +degrees6; phi_shift= 1.1000;   break;
-    case 22:   myNstraws= 170;   phi_shift= 1.1000;   deltaX=45.0025  ;   deltaY= 0.831738;   rotX=+6.18859;   rotY=+0.109325;   break;
-    case 23:   myNstraws= 182;   radius= 46.6849;   stereo= +degrees6; phi_shift= 1.40;   break;
-    case 24:   myNstraws= 182;   phi_shift= 1.400;   deltaX= 48.0733;   deltaY= 0.829899;   rotX=+6.1763;   rotY=+0.101315;   break;
-      
-      // axial
-    case 25:   myNstraws= 197;   radius= 50.37;   stereo=  degrees0; phi_shift= 0.200000000;   break;
-    case 26:   myNstraws= 197;   radius= 51.77;   stereo=  degrees0; phi_shift= 1.113705000;   break;
-    case 27:   myNstraws= 209;   radius= 53.363;   stereo=  degrees0; phi_shift= 0.800000000;   break;
-    case 28:   myNstraws= 209;   radius= 54.76;   stereo=  degrees0; phi_shift= 1.661244;   break;
-    default:
-      cerr<<__FILE__<<":"<<__LINE__<<" Invalid value for CDC ring ("<<ring<<") should be 1-28 inclusive!"<<endl;
-    }
-    NCDC_STRAWS.push_back(myNstraws);
-    CDC_RING_RADIUS.push_back(radius);
-  }
-  
-  double Nstraws = 0;
-  double alpha = 0.0;
-  for(unsigned int i=0; i<NCDC_STRAWS.size(); i++){
-    Nstraws += (double)NCDC_STRAWS[i];
-    alpha += (double)NCDC_STRAWS[i]/CDC_RING_RADIUS[i];
-  }
-}
-
-
-//-----------
-// InitFDCGeometry
-//-----------
-void InitFDCGeometry(void)
-{
-  FDC_GEOMETRY_INITIALIZED = true;
-  
-  int FDC_NUM_LAYERS = 24;
-  //int WIRES_PER_PLANE = 96;
-  //int WIRE_SPACING = 1.116;
-  
-  for (int layer=1; layer <= FDC_NUM_LAYERS; layer++) {
-    
-    float degrees00 = 0.0;
-    float degrees60 = M_PI*60.0/180.0;
-    
-    float angle = 0.0;
-    float z_anode = 212.0 + 95.5;
-    switch (layer) {
-     case  1:
-       z_anode += -92.5 - 2.0;
-       angle =  degrees00;
-       break;
-     case  2:
-       z_anode += -92.5 + 0.0;
-       angle = +degrees60;
-       break;
-     case  3:
-       z_anode += -92.5 + 2.0;
-       angle = -degrees60;
-       break;
-     case  4:
-       z_anode += -86.5 - 2.0;
-       angle =  degrees00;
-       break;
-     case  5:
-       z_anode += -86.5 + 0.0;
-       angle = +degrees60;
-       break;
-     case  6:
-       z_anode += -86.5 + 2.0;
-       angle = -degrees60;
-       break;
-     case  7:
-       z_anode += -32.5 - 2.0;
-       angle =  degrees00;
-       break;
-     case  8:
-       z_anode += -32.5 + 0.0;
-       angle = +degrees60;
-       break;
-     case  9:
-       z_anode += -32.5 + 2.0;
-       angle = -degrees60;
-       break;
-     case 10:
-       z_anode += -26.5 - 2.0;
-       angle =  degrees00;
-       break;
-     case 11:
-       z_anode += -26.5 + 0.0;
-       angle = +degrees60;
-       break;
-     case 12:
-       z_anode += -26.5 + 2.0;
-       angle = -degrees60;
-       break;
-     case 13:
-       z_anode += +26.5 - 2.0;
-       angle =  degrees00;
-       break;
-     case 14:
-       z_anode += +26.5 + 0.0;
-       angle = +degrees60;
-       break;
-     case 15:
-       z_anode += +26.5 + 2.0;
-       angle = -degrees60;
-       break;
-     case 16:
-       z_anode += +32.5 - 2.0;
-       angle =  degrees00;
-       break;
-     case 17:
-       z_anode += +32.5 + 0.0;
-       angle = +degrees60;
-       break;
-     case 18:
-       z_anode += +32.5 + 2.0;
-       angle = -degrees60;
-       break;
-     case 19:
-       z_anode += +86.5 - 2.0;
-       angle =  degrees00;
-       break;
-     case 20:
-       z_anode += +86.5 + 0.0;
-       angle = +degrees60;
-       break;
-     case 21:
-       z_anode += +86.5 + 2.0;
-       angle = -degrees60;
-       break;
-     case 22:
-       z_anode += +92.5 - 2.0;
-       angle =  degrees00;
-       break;
-     case 23:
-       z_anode += +92.5 + 0.0;
-       angle = +degrees60;
-       break;
-     case 24:
-       z_anode += +92.5 + 2.0;
-       angle = -degrees60;
-       break;
-    }
-    FDC_LAYER_Z.push_back(z_anode);
-  }
-  
-  // Coefficient used to calculate FDCsingle wire rate. We calculate
-  // it once here just to save calculating it for every wire in every event
-  FDC_RATE_COEFFICIENT = exp(-log(4.0)/23.0) / 2.0 /
-                         log(24.0) * FDC_TIME_WINDOW/1000.0e-9;
-  
-  // Something is a little off in my calculation above so I scale it down via
-  // an emprical factor:
-  FDC_RATE_COEFFICIENT *= 0.353;
-}

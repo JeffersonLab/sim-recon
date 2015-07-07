@@ -3,12 +3,6 @@
 // Created June 22, 2005  David Lawrence
 
 
-// The following flag can be used to switch from the classic mode where
-// the event loop is implemented in main() to a JANA based event-loop.
-// NOTE:  for consistency, one should set the value of #define JANA_ENABLED
-// in smear.cc to the same value!
-#define USE_JANA 1
-
 #include <iostream>
 #include <iomanip>
 using namespace std;
@@ -21,7 +15,7 @@ using namespace std;
 #include <signal.h>
 #include <time.h>
 
-#if USE_JANA
+
 #include <DANA/DApplication.h>
 #include "MyProcessor.h"
 #include "JFactoryGenerator_ThreadCancelHandler.h"
@@ -30,7 +24,7 @@ using namespace std;
 //#include <FDC/DFDCWire.h>
 #include <HDGEOMETRY/DGeometry.h>
 
-#endif
+
 
 #include "units.h"
 #include "HDDM/hddm_s.hpp"
@@ -41,9 +35,6 @@ void Usage(void);
 
 extern void SetSeeds(const char *vals);
 
-#if ! USE_JANA
-void ctrlCHandleMCSmear(int x);
-#endif
 
 char *INFILENAME = NULL;
 char *OUTFILENAME = NULL;
@@ -167,10 +158,7 @@ TH2F *cdc_drift_smear;
 //-----------
 int main(int narg,char* argv[])
 {
-#if ! USE_JANA
-   // Set up to catch SIGINTs for graceful exits
-   signal(SIGINT,ctrlCHandleMCSmear);
-#endif
+
    ParseCommandLineArguments(narg, argv);
 
    // Create DApplication object and use it to create JCalibration object
@@ -335,57 +323,6 @@ int main(int narg,char* argv[])
 
 
 
-#if ! USE_JANA
-   cout << " input file: " << INFILENAME << endl;
-   cout << " output file: " << OUTFILENAME << endl;
-   
-   // Open Input file
-   ifstream ifs(INFILENAME);
-   if (!ifs.is_open()) {
-      cout << " Error opening input file \"" << INFILENAME << "\"!" << endl;
-      exit(-1);
-   }
-   hddm_s::istream fin(ifs);
-   
-   // Output file
-   ofstream ofs(OUTFILENAME);
-   if (!ofs.is_open()){
-      cout << " Error opening output file \"" << OUTFILENAME << "\"!" << endl;
-      exit(-1);
-   }
-   hddm_s::HDDM fout(ofs);
-   
-   // Loop over events in input file
-   hddm_s::HDDM *record;
-   int NEvents = 0;
-   time_t last_time = time(NULL);
-   while (ifs->good()) {
-      fin >> *record;
-      NEvents++;
-      time_t now = time(NULL);
-      if(now != last_time){
-         cout << "  " << NEvents << " events processed      \r";
-         cout.flush();
-         last_time = now;
-      }
-      
-      // Smear values
-      Smear(record);
-      
-      // Write event to output file
-      *fout << *record;
-      
-      if (QUIT) break;
-   }
-   cout << endl;
-   
-   // close input and output files
-   ifs.close();
-   ofs.close();
-
-   cout << " " << NEvents << " events read" << endl;
-
-#else
 
    DGeometry *dgeom=dapp.GetDGeometry(1);
    
@@ -411,7 +348,7 @@ int main(int narg,char* argv[])
    
    dapp.Run(&myproc);
 
-#endif
+
    
    hfile->Write();
    hfile->Close();
@@ -565,13 +502,3 @@ void Usage(void)
    exit(0);
 }
 
-#if ! USE_JANA
-//-----------------------------------------------------------------
-// ctrlCHandleMCSmear
-//-----------------------------------------------------------------
-void ctrlCHandleMCSmear(int x)
-{
-   QUIT++;
-   cerr << endl << "SIGINT received (" << QUIT << ")....." << endl;
-}
-#endif
