@@ -23,7 +23,7 @@ class GammaPToXP {
   
 public:
   
-  GammaPToXP( float massX, float beamE);
+  GammaPToXP( float massX, float beamMaxE, float beamPeakE, float beamLowE, float beamHighE);
   
   Kinematics* generate();
   
