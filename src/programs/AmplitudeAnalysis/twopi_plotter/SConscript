@@ -11,8 +11,8 @@ env.AppendUnique(LIBS = AMPTOOLS_LIBS.split())
 
 sbms.AddHDDM(env)
 sbms.AddROOT(env)
-sbms.AddAMPTOOLS(env)
-sbms.AddAMPPLOTTER(env)
+sbms.AddAmpTools(env)
+sbms.AddAmpPlotter(env)
 
 sbms.executable(env)
 

@@ -868,9 +868,9 @@ def AddAmpTools(env):
 		AddCUDA(env)
 		AMPTOOLS_CPPPATH = "%s" % (AMPTOOLS)
 		AMPTOOLS_LIBPATH = "%s/lib" % (AMPTOOLS)
-		AMPTOOLS_LIBS = 'Amptools'
+		AMPTOOLS_LIBS = 'AmpTools'
 		if os.getenv('CUDA')!=None and os.path.exists('%s/lib/libAmpTools_GPU.a' % AMPTOOLS):
-			AMPTOOLS_LIBS = 'Amptools_GPU'
+			AMPTOOLS_LIBS = 'AmpTools_GPU'
 			print 'Using GPU enabled AMPTOOLS library'
 
 		env.AppendUnique(CPPPATH = AMPTOOLS_CPPPATH)
@@ -879,13 +879,9 @@ def AddAmpTools(env):
 		
 
 ##################################
-# AMPPLOTTER
+# AmpPlotter
 ##################################
-def AddAMPPLOTTER(env):
-	#
-	# n.b. This was copied from Justin's original implementation
-	# indentation relaced with tabs and moved here near other
-	# amptools stuff but not tested (7/7/2015 DL)
+def AddAmpPlotter(env):
 	ampplotterroot = os.getenv('AMPPLOTTER', 'ampplotter')
 	AMPPLOTTER_CPPPATH = "%s" % (ampplotterroot)
 	AMPPLOTTER_LIBPATH = "%s/lib" % (ampplotterroot)
