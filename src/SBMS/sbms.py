@@ -35,6 +35,7 @@ def library(env, libname=''):
 	env.AppendUnique(ALL_SOURCES = filter(IsNotSWIGWrapper,env.Glob('*.cc')))
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.cpp'))
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.F'))
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.f90'))
 
 	sources = env['ALL_SOURCES']
 	objects = env['MISC_OBJECTS']
