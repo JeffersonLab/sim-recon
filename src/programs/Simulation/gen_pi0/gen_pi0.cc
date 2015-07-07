@@ -76,10 +76,10 @@ int main( int argc, char* argv[] ){
 		if (arg == "-p"){  
 			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
 			else  beamPeakE = atof( argv[++i] ); }
-		if (arg == "-l"){  
+		if (arg == "-a"){  
 			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
 			else  beamLowE = atof( argv[++i] ); }
-		if (arg == "-u"){  
+		if (arg == "-b"){  
 			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
 			else  beamHighE = atof( argv[++i] ); }
 		if (arg == "-d"){
@@ -94,8 +94,8 @@ int main( int argc, char* argv[] ){
 			cout << "\t -n  <value>\t Minimum number of events to generate [optional]" << endl;
 			cout << "\t -m  <value>\t Electron beam energy (or photon energy endpoint) [optional]" << endl;
 			cout << "\t -p  <value>\t Coherent peak photon energy [optional]" << endl;
-			cout << "\t -l  <value>\t Minimum photon energy to simulate events [optional]" << endl;
-			cout << "\t -u  <value>\t Maximum photon energy to simulate events [optional]" << endl;
+			cout << "\t -a  <value>\t Minimum photon energy to simulate events [optional]" << endl;
+			cout << "\t -b  <value>\t Maximum photon energy to simulate events [optional]" << endl;
 			cout << "\t -f \t\t Generate flat in M(X) (no physics) [optional]" << endl;
 			cout << "\t -d \t\t Plot only diagnostic histograms [optional]" << endl << endl;
 			exit(1);

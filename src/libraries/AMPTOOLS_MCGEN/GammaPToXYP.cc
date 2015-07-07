@@ -28,10 +28,9 @@ double dNtdx(double x)
 }
 
 GammaPToXYP::GammaPToXYP( float lowMassXY, float highMassXY, 
-                          float massX, float massY, float beamE,
+                          float massX, float massY, float beamMaxE, float beamPeakE, float beamLowE, float beamHighE,
                           ProductionMechanism::Type type ) : 
 m_prodMech( ProductionMechanism::kProton, type, 6.0 ), // last arg is t dependence
-m_beam( 0, 0, beamE, beamE),
 m_target( 0, 0, 0, 0.938 ),
 m_childMass( 0 ) {
 
@@ -41,15 +40,15 @@ m_childMass( 0 ) {
   m_prodMech.setMassRange( lowMassXY, highMassXY );
  
   // Initialize coherent brem table
-  float Emax =  5.5;
-  float Epeak = 3.0;
-  float Elow = 2.5;
-  float Ehigh = 3.0;
+  float Emax =  beamMaxE;
+  float Epeak = beamPeakE;
+  float Elow = beamLowE;
+  float Ehigh = beamHighE;
   float Dist = 76.0;
   cobrems_(&Emax, &Epeak, &Dist);
 
   // Create histogram
-  cobrem_vs_E = new TH1D("cobrem_vs_E", "Coherent Bremstrahlung vs. E_{#gamma}", 550, 0.0, 5.5);
+  cobrem_vs_E = new TH1D("cobrem_vs_E", "Coherent Bremstrahlung vs. E_{#gamma}", (int)(100*Emax), 0.0, Emax);
   
   // Fill histogram
   for(int i=1; i<=cobrem_vs_E->GetNbinsX(); i++){
