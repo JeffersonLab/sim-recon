@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "TH1.h"
+#include "TLorentzRotation.h"
 
 #include "JANA/JEventLoop.h"
 #include "JANA/JApplication.h"
@@ -53,6 +54,7 @@ class DCustomAction_p2pi_hists : public DAnalysisAction
 		TH2I *dDalitz_p2pi, *dMppiplus_M2pi, *dMppiminus_M2pi, *dEgamma_M2pi;
 		TH2I *dPiPlusPsi_t;
 		TH2I *dPiPlusPsi_Egamma, *dProtonPhi_Egamma;
+		TH2I *dBaryonM_CosTheta_Egamma1, *dBaryonM_CosTheta_Egamma2, *dBaryonM_CosTheta_Egamma3; 
 };
 
 #endif // _DCustomAction_p2pi_hists_

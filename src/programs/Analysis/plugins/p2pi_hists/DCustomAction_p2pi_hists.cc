@@ -44,6 +44,10 @@ void DCustomAction_p2pi_hists::Initialize(JEventLoop* locEventLoop)
 			dPiPlusPsi_t = GetOrCreate_Histogram<TH2I>("PiPlusPsi_t","#psi vs |t|; |t|; #pi^{+} #psi",1000,0.,5.,360,-180,180);
 
 			dEgamma_M2pi = GetOrCreate_Histogram<TH2I>("Egamma_M2pi", "E_{#gamma} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; E_{#gamma}", 200, 0.0, 2.0, 240, 0., 6.);		
+
+			dBaryonM_CosTheta_Egamma1 = GetOrCreate_Histogram<TH2I>("BaryonM_CosTheta_Egamma1", "Baryon M_{p#pi^{+}} vs cos#theta: E_{#gamma} < 2.5; cos#theta; M_{p#pi^{+}}", 100, -1, 1, 100, 1.0, 2.5);
+			dBaryonM_CosTheta_Egamma2 = GetOrCreate_Histogram<TH2I>("BaryonM_CosTheta_Egamma2", "Baryon M_{p#pi^{+}} vs cos#theta: 2.5 < E_{#gamma} < 3.0; cos#theta; M_{p#pi^{+}}", 100, -1, 1, 100, 1.0, 2.5);
+			dBaryonM_CosTheta_Egamma3 = GetOrCreate_Histogram<TH2I>("BaryonM_CosTheta_Egamma3", "Baryon M_{p#pi^{+}} vs cos#theta: E_{#gamma} > 3.0; cos#theta; M_{p#pi^{+}}", 100, -1, 1, 100, 1.0, 2.5);
 			
 		}
 	}
@@ -93,6 +97,8 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 		locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();	
 	}
 
+	double dEdxCut = 2.2;
+
 	// production kinematics
 	DLorentzVector locSumInitP4; 
 	DLorentzVector locProtonP4Init(0,0,0,0.938);
@@ -106,7 +112,22 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 	locPiPlus_P4.Boost(locBoostVector);
 	double locPsi = locPiPlus_P4.Phi();
 
-	double dEdxCut = 2.2;
+	// copied from TwoPiAngles
+	TLorentzRotation resonanceBoost( -locP4_2pi.BoostVector() );
+	
+	TLorentzVector beam_res = resonanceBoost * locBeamPhoton->lorentzMomentum();
+	TLorentzVector recoil_res = resonanceBoost * locProtonP4;
+	TLorentzVector p1_res = resonanceBoost * locParticles[1]->lorentzMomentum();
+	
+	TVector3 z = -recoil_res.Vect().Unit();
+	TVector3 y = beam_res.Vect().Cross(z).Unit();
+	TVector3 x = y.Cross(z).Unit();
+	
+	TVector3 angles(   (p1_res.Vect()).Dot(x),
+			   (p1_res.Vect()).Dot(y),
+			   (p1_res.Vect()).Dot(z) );
+
+	double cosTheta = angles.CosTheta();
 
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
@@ -138,6 +159,15 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 						dMppiplus_M2pi->Fill(locP4_2pi.M(), locP4_ppiplus.M());
 						dMppiminus_M2pi->Fill(locP4_2pi.M(), locP4_ppiminus.M());
 					}
+					
+					// some p pi+ mass distributions (hunt for Delta++...)
+					if(locBeamPhotonEnergy < 2.5)
+						dBaryonM_CosTheta_Egamma1->Fill(cosTheta,locP4_ppiplus.M());
+					else if(locBeamPhotonEnergy < 3.0)
+						dBaryonM_CosTheta_Egamma2->Fill(cosTheta,locP4_ppiplus.M());
+					else 
+						dBaryonM_CosTheta_Egamma3->Fill(cosTheta,locP4_ppiplus.M());
+
 
 					if(locP4_2pi.M() > 0.6 && locP4_2pi.M() < 0.9){
 						dProtonPhi_Egamma->Fill(locBeamPhotonEnergy, locProtonP4.Phi()*180/TMath::Pi());

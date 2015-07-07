@@ -132,7 +132,7 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
 	locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "NoKinFit_Measured"));
 
 	// Cut beam energy for TTree entries
-	locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 2.5, 3.0));
+	//locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 2.5, 3.0));
 
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data
