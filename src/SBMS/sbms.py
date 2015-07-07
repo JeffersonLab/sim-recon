@@ -37,9 +37,11 @@ def library(env, libname=''):
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.F'))
 
 	sources = env['ALL_SOURCES']
+	objects = env['MISC_OBJECTS']
 
 	# Build static library from all source
 	myobjs = env.Object(sources)
+	myobjs.extend(objects)
 	mylib = env.Library(target = libname, source = myobjs)
 
 	# Cleaning and installation are restricted to the directory
@@ -619,31 +621,6 @@ def AddXERCES(env):
 	env.AppendUnique(LIBS    = XERCES_LIBS)
 
 ##################################
-# AMPTOOLS
-##################################
-def AddAMPTOOLS(env):
-        amptoolsroot = os.getenv('AMPTOOLS', 'amptools')
-        AMPTOOLS_CPPPATH = "%s" % (amptoolsroot)
-        AMPTOOLS_LIBPATH = "%s/lib" % (amptoolsroot)
-	AMPTOOLS_LIBS = "AmpTools"
-        env.AppendUnique(CPPPATH = AMPTOOLS_CPPPATH)
-        env.AppendUnique(LIBPATH = AMPTOOLS_LIBPATH)
-        env.AppendUnique(LIBS    = AMPTOOLS_LIBS)
-	env.AppendUnique(LIBS      = ['gfortran'])
-
-##################################
-# AMPPLOTTER
-##################################
-def AddAMPPLOTTER(env):
-        ampplotterroot = os.getenv('AMPPLOTTER', 'ampplotter')
-        AMPPLOTTER_CPPPATH = "%s" % (ampplotterroot)
-        AMPPLOTTER_LIBPATH = "%s/lib" % (ampplotterroot)
-	AMPPLOTTER_LIBS = "AmpPlotter"
-        env.AppendUnique(CPPPATH = AMPPLOTTER_CPPPATH)
-        env.AppendUnique(LIBPATH = AMPPLOTTER_LIBPATH)
-	env.AppendUnique(LIBS    = AMPPLOTTER_LIBS)
-
-##################################
 # CERNLIB
 ##################################
 def AddCERNLIB(env):
@@ -670,7 +647,7 @@ def AddROOT(env):
 	#
 	# Here we use the root-config program to give us the compiler
 	# and linker options needed for ROOT. We use the AddCompileFlags()
-	# and AddLinkFlags() routines (defined below) to split the arguments
+	# and AddLinkFlags() routines (defined above) to split the arguments
 	# into the categories scons wants. E.g. scons wants to know the
 	# search path and basenames for libraries rather than just giving it
 	# the full compiler options like "-L/path/to/lib -lmylib".
@@ -825,4 +802,96 @@ def AddSWIG(env):
 		env.AppendUnique(SWIG_EXISTS = "0")
 	# TEMPORARILY DISABLE
 	#env.Replace(USE_SWIG = "n")
+
+##################################
+# CUDA
+##################################
+def AddCUDA(env):
+	CUDA = os.getenv('CUDA_INSTALL_PATH')
+	if CUDA != None	:
+		
+		# Create Builder that can compile .cu file into object files
+		NVCC = '%s/bin/nvcc' % CUDA
+#		CUDAFLAGS = '-I%s/include -arch=compute_13 -code=compute_13' % CUDA
+		CUDAFLAGS = ['-g', '-I%s/include' % CUDA]
+		try:
+			CUDAFLAGS.extend(env['CUDAFLAGS'])
+		except:
+			pass
+		
+		CUDAFLAGS_STR = ''
+		for flag in CUDAFLAGS: CUDAFLAGS_STR = '%s %s' %(CUDAFLAGS_STR, flag)
+
+		if env['SHOWBUILD']==0:
+			nvccaction = SCons.Script.Action('%s -c %s -o $TARGET $SOURCE' % (NVCC, CUDAFLAGS_STR), 'NVCC       [$SOURCE]')
+		else:
+			nvccaction = SCons.Script.Action('%s -c %s -o $TARGET $SOURCE' % (NVCC, CUDAFLAGS_STR))
+		bld = SCons.Script.Builder(action = nvccaction, suffix='.o', src_suffix='.cu')
+		env.Append(BUILDERS = {'CUDA' : bld})
+
+		# Add flags to environment
+		env.AppendUnique(LIBPATH=['%s/lib' % CUDA, '%s/lib64' % CUDA])
+		env.AppendUnique(LIBS=['cublas', 'cudart'])
+		env.AppendUnique(CPPPATH=['%s/include' % CUDA])
+		env.AppendUnique(CXXFLAGS=['-DGPU_ACCELERATION'])
+		
+		# Temporarily change to source directory and add all .cu files
+		curpath = os.getcwd()
+		srcpath = env.Dir('.').srcnode().abspath
+		os.chdir(srcpath)
+		for f in glob.glob('*.cu'):
+			if env['SHOWBUILD']>0 : print 'Adding %s' % f
+			env.AppendUnique(MISC_OBJECTS = env.CUDA(f))
+		os.chdir(curpath)
+
+
+##################################
+# AmpTools
+##################################
+def AddAmpTools(env):
+	# Amptools can be downloaded from http://sourceforge.net/projects/amptools/
+	# It can be built with GPU support using CUDA (add GPU=1 to command
+	# line when builidng AmpTools itself). If the CUDA_INSTALL_PATH
+	# environment variable is set and the $AMPTOOLS/lib/libAmpTools_GPU.a
+	# file exists then this will automatically use the GPU enabled
+	# library. Otherwise, the CPU only library will be used.
+	# If the AMPTOOLS environment variable is not set, then a message is 
+	# printed and env left unchanged.
+	AMPTOOLS = os.getenv('AMPTOOLS')
+	if AMPTOOLS==None:
+		print ''
+		print 'AmpTools is being requested but the AMPTOOLS environment variable'
+		print 'is not set. Expect to see an error message below....'
+		print ''
+	else:
+		env.AppendUnique(CUDAFLAGS=['-I%s -I%s/src/libraries' % (AMPTOOLS, os.getenv('HALLD_HOME',os.getcwd()))])
+		AddCUDA(env)
+		AMPTOOLS_CPPPATH = "%s" % (AMPTOOLS)
+		AMPTOOLS_LIBPATH = "%s/lib" % (AMPTOOLS)
+		AMPTOOLS_LIBS = 'Amptools'
+		if os.getenv('CUDA')!=None and os.path.exists('%s/lib/libAmpTools_GPU.a' % AMPTOOLS):
+			AMPTOOLS_LIBS = 'Amptools_GPU'
+			print 'Using GPU enabled AMPTOOLS library'
+
+		env.AppendUnique(CPPPATH = AMPTOOLS_CPPPATH)
+		env.AppendUnique(LIBPATH = AMPTOOLS_LIBPATH)
+		env.AppendUnique(LIBS    = AMPTOOLS_LIBS)
+		
+
+##################################
+# AMPPLOTTER
+##################################
+def AddAMPPLOTTER(env):
+	#
+	# n.b. This was copied from Justin's original implementation
+	# indentation relaced with tabs and moved here near other
+	# amptools stuff but not tested (7/7/2015 DL)
+	ampplotterroot = os.getenv('AMPPLOTTER', 'ampplotter')
+	AMPPLOTTER_CPPPATH = "%s" % (ampplotterroot)
+	AMPPLOTTER_LIBPATH = "%s/lib" % (ampplotterroot)
+	AMPPLOTTER_LIBS = "AmpPlotter"
+	env.AppendUnique(CPPPATH = AMPPLOTTER_CPPPATH)
+	env.AppendUnique(LIBPATH = AMPPLOTTER_LIBPATH)
+	env.AppendUnique(LIBS    = AMPPLOTTER_LIBS)
+
 
