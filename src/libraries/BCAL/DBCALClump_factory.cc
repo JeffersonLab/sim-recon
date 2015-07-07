@@ -340,7 +340,7 @@ jerror_t DBCALClump_factory::evnt(JEventLoop *loop, int eventnumber) {
       vector <int> sector;
       vector <int> layer;
       
-      float seedTime = BcalMatrixU[idxMaxU[0]][idxMaxU[1]]->t;
+//      float seedTime = BcalMatrixU[idxMaxU[0]][idxMaxU[1]]->t;
       int Idx = MaxU;
       // collect hits for up stream shower
       // first move upwards in sectors from the seed
@@ -420,7 +420,7 @@ jerror_t DBCALClump_factory::evnt(JEventLoop *loop, int eventnumber) {
 	}
       }
       
-      seedTime = BcalMatrixD[idxMaxD[0]][idxMaxD[1]]->t;
+//      seedTime = BcalMatrixD[idxMaxD[0]][idxMaxD[1]]->t;
       // collect hits for down stream shower
       // first move upwards in sectors
       Idx = MaxD;
