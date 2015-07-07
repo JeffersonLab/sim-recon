@@ -82,7 +82,8 @@ void hitForwardTOF (float xin[4], float xout[4],
                     float pin[5], float pout[5], float dEsum,
                     int track, int stack, int history, int ipart) {
   float x[3], t;
-  float dx[3], dr;
+  //  float dx[3];
+  //float dr;
   // float dEdx;  commented out to avoid compiler warnings 4/26/2015 DL
   float xlocal[3];
   float xftof[3];
@@ -173,11 +174,11 @@ void hitForwardTOF (float xin[4], float xout[4],
   transformCoord(zeroHat,"local",xftof,"FTOF");
   
   // track vector of this step
-  dx[0] = xin[0] - xout[0];
-  dx[1] = xin[1] - xout[1];
-  dx[2] = xin[2] - xout[2];
+  //dx[0] = xin[0] - xout[0];
+  //dx[1] = xin[1] - xout[1];
+  //dx[2] = xin[2] - xout[2];
   // length of the track of this step
-  dr = sqrt(dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2]);
+  //dr = sqrt(dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2]);
   // calculate dEdx only if track length is >0.001 cm
   
   // The following commented out to avoid compiler warnings 4/26/2015 DL
