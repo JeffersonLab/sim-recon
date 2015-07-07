@@ -65,7 +65,7 @@ private:
   GDouble m_u_rho_1, m_u_rho_3;
   GDouble m_u_omega_1, m_u_omega_3;
   GDouble m_u_b1_0, m_u_b1_2, mG0_omega, mG0_b1;
-  GDouble m_v_p, m_v_m;
+//  GDouble m_v_p, m_v_m;
   bool m_ORTHOCHECK, m_fastCalc;
   bool m_disableBW_omega, m_disableBW_b1;
 

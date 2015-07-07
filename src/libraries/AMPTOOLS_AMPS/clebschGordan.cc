@@ -169,7 +169,7 @@ double clebschGordan(int ij1, int ij2, int im1, int im2, int ij, int im) {
 	
 	int esp;
 	double cgris;
-	double fcgris;
+//	double fcgris;
 	double j1,j2,m1,m2,j,m;
 	
 	j1 = (double) ij1;
