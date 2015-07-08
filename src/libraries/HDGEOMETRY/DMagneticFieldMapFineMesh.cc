@@ -852,16 +852,34 @@ void DMagneticFieldMapFineMesh::GetFineMeshMap(string namepath,int runnumber){
     if(ipos == string::npos)
         throw JException("Could not parse field map: "+namepath);
     string finemesh_namepath = namepath.substr(0,ipos) + "/finemeshes" + namepath.substr(ipos);
-    string evioFileName = jresman->GetResource(finemesh_namepath);
+    string evioFileName = "";
+    string evioFileNameToWrite = "";
+    // see if we can get the EVIO file as a resource
+    try {
+        evioFileName = jresman->GetResource(finemesh_namepath);
+    } catch ( JException e ) {
+        // if we can't get it as a resource, try to get it from a local file
+        size_t ipos=namepath.find("/");
+        size_t ipos2=namepath.find("/",ipos+1);
+        evioFileName = namepath.substr(ipos2+1)+".evio";
+        // see if the file exists
+        struct stat stFileInfo;
+        int intStat = stat(evioFileName.c_str(),&stFileInfo);
+        if (intStat != 0) {
+            evioFileNameToWrite = evioFileName;
+            evioFileName = "";
+        }
+    }
 
     if(evioFileName != "") {
-      ReadEvioFile(evioFileName);
+        ReadEvioFile(evioFileName);
     } else{
 #endif  
     cout << "Fine-mesh evio file does not exist." <<endl;
     cout << "Constructing the fine-mesh B-field map..." << endl;    
     GenerateFineMesh();
 #ifdef HAVE_EVIO
+    WriteEvioFile(evioFileNameToWrite);
   }
 #endif
   cout << " rmin: " << rminFine << " rmax: " << rmaxFine 
