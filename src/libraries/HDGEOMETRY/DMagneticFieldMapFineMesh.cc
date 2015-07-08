@@ -13,6 +13,8 @@ using namespace evio;
 
 #include "DMagneticFieldMapFineMesh.h"
 
+#include "JANA/JException.h"
+
 //---------------------------------
 // DMagneticFieldMapFineMesh    (Constructor)
 //---------------------------------
@@ -844,21 +846,22 @@ double DMagneticFieldMapFineMesh::GetBz(double x, double y, double z) const{
 // Read a fine-mesh B-field map from an evio file
 void DMagneticFieldMapFineMesh::GetFineMeshMap(string namepath,int runnumber){ 
 #ifdef HAVE_EVIO
-  size_t ipos=namepath.find("/");
-  size_t ipos2=namepath.find("/",ipos+1);
-  string evioFileName =namepath.substr(ipos2+1)+".evio";
-  struct stat stFileInfo;
-  int intStat = stat(evioFileName.c_str(),&stFileInfo);
-  if (intStat == 0){
-    ReadEvioFile(evioFileName);
-  }
-  else{
+    // The solenoid field map files are stored in CCDB as /Magnets/Solenoid/BFIELD_MAP_NAME
+    // The fine-mesh files are now stored as /Magnets/Solenoid/finemeshes/BFIELD_MAP_NAME
+    size_t ipos = namepath.rfind("/");
+    if(ipos == string::npos)
+        throw JException("Could not parse field map: "+namepath);
+    string finemesh_namepath = namepath.substr(0,ipos) + "/finemeshes" + namepath.substr(ipos);
+    string evioFileName = jresman->GetResource(finemesh_namepath);
+
+    if(evioFileName != "") {
+      ReadEvioFile(evioFileName);
+    } else{
 #endif  
     cout << "Fine-mesh evio file does not exist." <<endl;
     cout << "Constructing the fine-mesh B-field map..." << endl;    
     GenerateFineMesh();
 #ifdef HAVE_EVIO
-    WriteEvioFile(evioFileName);
   }
 #endif
   cout << " rmin: " << rminFine << " rmax: " << rmaxFine 
