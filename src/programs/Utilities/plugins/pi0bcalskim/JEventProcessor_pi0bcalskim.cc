@@ -101,7 +101,7 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, int eventnumber)
   if(locBCALShowers.size() < 2 ) return NOERROR;
 
 	bool Candidate = false;
-	double sh1_E, sh2_E, inv_mass, kinfitVertexZ=0.0, kinfitVertexX=0.0, kinfitVertexY=0.0, kinfitVertexT=0.0;
+	double sh1_E, sh2_E, inv_mass, kinfitVertexZ=0.0, kinfitVertexX=0.0, kinfitVertexY=0.0;
 	vector <const DBCALShower *> matchedShowers;
 	DVector3 mypos(0.0,0.0,0.0);
 	for(unsigned int i = 0 ; i < locTrackTimeBased.size() ; ++i)
@@ -136,7 +136,7 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, int eventnumber)
 		kinfitVertexX = kinfitVertex[i]->dSpacetimeVertex.X();
 		kinfitVertexY = kinfitVertex[i]->dSpacetimeVertex.Y();
 		kinfitVertexZ = kinfitVertex[i]->dSpacetimeVertex.Z();
-		kinfitVertexT = kinfitVertex[i]->dSpacetimeVertex.T();
+		//kinfitVertexT = kinfitVertex[i]->dSpacetimeVertex.T();
 	}
 
   for(unsigned int i=0; i<locBCALShowers.size() ; i++)	
