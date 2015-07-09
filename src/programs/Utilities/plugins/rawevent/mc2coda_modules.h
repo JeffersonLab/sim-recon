@@ -568,13 +568,13 @@ caen1290_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
    //uint64_t tsdiv;
    uint32_t chip, stat, edge = 0;
    uint32_t  eventNum;
-   uint64_t  timestamp;
+   // uint64_t  timestamp;
    unsigned int *start = dabufp;
    CODA_HIT_INFO *hit;
    CODA_HIT_INFO *chit[MAX_HITS_PER_CHAN];
    
    eventNum  = (event->eventid)&0xffffffff;
-   timestamp = (event->trigtime);
+   // timestamp = (event->trigtime);
    hcnt      =  event->hcount[(roc-1)][(slot-1)];
    
    

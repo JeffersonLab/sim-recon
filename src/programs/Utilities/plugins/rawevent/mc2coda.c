@@ -485,7 +485,7 @@ mc2codaResetEvent(CODA_EVENT_INFO *eventID, uint64_t eventNum, uint64_t trigTime
 	
 	CODA_EXP_INFO  *exp;
 	CODA_HIT_INFO  *tmpH;
-	int ii, jj, kk, ccnt, hcnt, lcnt;
+	int ii, jj, kk, ccnt, lcnt;
 	
 	
 	if(eventID != NULL) {
@@ -495,7 +495,7 @@ mc2codaResetEvent(CODA_EVENT_INFO *eventID, uint64_t eventNum, uint64_t trigTime
 			return(-1);
 		}
 		ccnt = exp->ncrates;
-		hcnt = eventID->nhits;
+		// hcnt = eventID->nhits;
 	} else {
 		printf("mc2codaResetEvent: ERROR: NULL pointer to Event Buffer\n");
 		return(-1);
@@ -579,12 +579,12 @@ mc2codaFreeEvent(CODA_EVENT_INFO *eventID)
 	
 	CODA_EXP_INFO  *exp;
 	CODA_HIT_INFO  *tmpH;
-	int ii, jj, kk, ccnt, hcnt, lcnt;
+	int ii, jj, kk, ccnt, lcnt;
 	
 	/* Get the crate and Hit counts */
 	exp = eventID->expid;
 	ccnt = exp->ncrates;
-	hcnt = eventID->nhits;
+	//hcnt = eventID->nhits;
 	
 	if(eventID != NULL) {
 		/* First free the Event Buffer */
