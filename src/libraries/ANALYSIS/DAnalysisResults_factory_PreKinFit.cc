@@ -338,11 +338,12 @@ jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop
 		for(; locIterator != locSurvivingParticleCombos.end(); ++locIterator)
 			locAnalysisResults->Add_PassedParticleCombo(*locIterator);
 
-		bool locIsThrownMatchFlag = false;
+//		bool locIsThrownMatchFlag = false;
 		if(!locMCThrowns.empty())
 		{
-			if(dAnalysisUtilities->Check_ThrownsMatchReaction(locEventLoop, locReaction, dMCReactionExactMatchFlags[locReaction]))
-				locIsThrownMatchFlag = true;
+			if(dAnalysisUtilities->Check_ThrownsMatchReaction(locEventLoop, locReaction, dMCReactionExactMatchFlags[locReaction])){
+//				locIsThrownMatchFlag = true;
+			}
 		}
 
 		//fill histograms
