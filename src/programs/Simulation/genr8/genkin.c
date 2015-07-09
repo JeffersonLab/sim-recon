@@ -268,7 +268,7 @@ int helicityAngles(vector4_t *vec,int nvec,
 {
 
   int i;
-  vector3_t x,y,z,xhel,yhel,zhel,analyzer;
+  vector3_t z,xhel,yhel,zhel,analyzer;
   vector4_t vecp[3],beta,parent;
   
   /* define parent 
@@ -276,8 +276,8 @@ int helicityAngles(vector4_t *vec,int nvec,
   parent = Sum4vec(vec,nvec);
  
   /* define lab frame */
-  x.x=1; x.y=0; x.z=0;
-  y.x=0; y.y=1; y.z=0;
+//  x.x=1; x.y=0; x.z=0;
+//  y.x=0; y.y=1; y.z=0;
   z.x=0; z.y=0; z.z=1;
 
   /* define helicity frame */
