@@ -138,12 +138,6 @@ jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, int eventn
     // Get the list of linked segments and fit the hits to lines
     const vector<DTrackFinder::cdc_track_t>tracks=finder->GetCDCTracks();
     for (size_t i=0;i<tracks.size();i++){
-      for (unsigned int k=0;k<bcal_showers.size();k++){
-	printf("bcal xyz %f %f %f \n",bcal_showers[k]->x,bcal_showers[k]->y,
-	       bcal_showers[k]->z);
-	printf(" x %f y %f\n",tracks[i].S(state_x)+tracks[i].S(state_tx)*(bcal_showers[k]->z-tracks[i].z),tracks[i].S(state_y)+tracks[i].S(state_ty)*(bcal_showers[k]->z-tracks[i].z));
-
-      }
 
       // start z position and direction of propagation (default = +z direction)
       double z0=tracks[i].z,dzsign=1.;
