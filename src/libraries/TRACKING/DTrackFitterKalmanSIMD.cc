@@ -6808,12 +6808,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
     for (unsigned int m=0;m<last_fdc_updates.size();m++){
         if (last_fdc_updates[m].used_in_fit){
             fdchits_used_in_fit.push_back(my_fdchits[m]->hit);
-            pulls.push_back(pull_t(last_fdc_updates[m].residual,
-                        sqrt(last_fdc_updates[m].variance),
-                        last_fdc_updates[m].s,
-                        last_fdc_updates[m].tdrift,
-                        last_fdc_updates[m].doca,
-                        NULL,my_fdchits[m]->hit));
+          
             if (fit_type==kTimeBased && ESTIMATE_T0_TB){
                 EstimateT0(last_fdc_updates[m],my_fdchits[m]);
             }
@@ -7502,6 +7497,11 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(void){
             A=cdc_updates[id].C*JT*C.InvertSym();
 	    AT=A.Transpose();
             Ss=cdc_updates[id].S+A*(Ss-S);
+	    if (!finite(Ss(state_q_over_pt))){
+	     if (DEBUG_LEVEL>5) _DBG_ << "Invalid values for smoothed parameters..." << endl;
+	      return VALUE_OUT_OF_RANGE;
+	    }
+
 	    dC=Cs-C;
             Cs=cdc_updates[id].C+dC.SandwichMultiply(AT);
 	    
@@ -7595,6 +7595,11 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(void){
 
             A=cdc_updates[cdc_index].C*JT*C.InvertSym();
             Ss=cdc_updates[cdc_index].S+A*(Ss-S);
+	    if (!finite(Ss(state_q_over_p))){
+	     if (DEBUG_LEVEL>5) _DBG_ << "Invalid values for smoothed parameters..." << endl;
+	      return VALUE_OUT_OF_RANGE;
+	    }
+
             Cs=cdc_updates[cdc_index].C+A*(Cs-C)*A.Transpose();
 	    
 	    FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[cdc_index],

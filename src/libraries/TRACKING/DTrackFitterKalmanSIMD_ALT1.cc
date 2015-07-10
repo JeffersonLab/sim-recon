@@ -948,3 +948,107 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
     
   return FIT_SUCCEEDED;
 }
+
+// Smoothing algorithm for the forward trajectory.  Updates the state vector
+// at each step (going in the reverse direction to the filter) based on the 
+// information from all the steps and outputs the state vector at the
+// outermost step.
+jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){ 
+  if (forward_traj.size()<2) return RESOURCE_UNAVAILABLE;
+  
+  unsigned int max=forward_traj.size()-1;
+  DMatrix5x1 S=(forward_traj[max].Skk);
+  DMatrix5x5 C=(forward_traj[max].Ckk);
+  DMatrix5x5 JT=(forward_traj[max].JT);
+  DMatrix5x1 Ss=S;
+  DMatrix5x5 Cs=C;
+  DMatrix5x5 A;
+
+  for (unsigned int m=max-1;m>0;m--){
+    if (forward_traj[m].h_id>0){
+      if (forward_traj[m].h_id<1000){
+	unsigned int id=forward_traj[m].h_id-1;
+	A=fdc_updates[id].C*JT*C.InvertSym();
+	Ss=fdc_updates[id].S+A*(Ss-S);
+	
+	if (!finite(Ss(state_q_over_p))){ 
+	  if (DEBUG_LEVEL>5) _DBG_ << "Invalid values for smoothed parameters..." << endl;
+	  return VALUE_OUT_OF_RANGE;
+	}
+
+	Cs=fdc_updates[id].C+A*(Cs-C)*A.Transpose();
+	
+	double cosa=my_fdchits[id]->cosa;
+	double sina=my_fdchits[id]->sina;
+	double u=my_fdchits[id]->uwire;
+	double v=my_fdchits[id]->vstrip;
+	
+	// Position and direction from state vector
+	double x=Ss(state_x);
+	double y=Ss(state_y);
+	double tx=Ss(state_tx);
+	double ty=Ss(state_ty);
+	
+	// Projected position along the wire without doca-dependent corrections
+	double vpred_uncorrected=x*sina+y*cosa;
+	
+	// Projected position in the plane of the wires transverse to the wires
+	double upred=x*cosa-y*sina;
+	
+	// Direction tangent in the u-z plane
+	double tu=tx*cosa-ty*sina;
+	double alpha=atan(tu);
+	double cosalpha=cos(alpha);
+	//double cosalpha2=cosalpha*cosalpha;
+	double sinalpha=sin(alpha);
+	
+	// (signed) distance of closest approach to wire
+	double doca=(upred-u)*cosalpha;
+
+	// Correction for lorentz effect
+	double nz=my_fdchits[id]->nz;
+	double nr=my_fdchits[id]->nr;
+	double nz_sinalpha_plus_nr_cosalpha=nz*sinalpha+nr*cosalpha;
+	
+	// Difference between measurement and projection
+	double tv=tx*sina+ty*cosa;
+	double resi=v-(vpred_uncorrected+doca*(nz_sinalpha_plus_nr_cosalpha
+					       -tv*sinalpha));
+	
+	pulls.push_back(pull_t(resi,
+			       sqrt(fdc_updates[id].variance),
+			       fdc_updates[id].s,
+			       fdc_updates[id].tdrift,
+			       fdc_updates[id].doca,
+			       NULL,my_fdchits[id]->hit));
+      }
+      else{
+	unsigned int id=forward_traj[m].h_id-1000;
+	A=cdc_updates[id].C*JT*C.InvertSym();
+	Ss=cdc_updates[id].S+A*(Ss-S);
+
+	if (!finite(Ss(state_q_over_p))){
+	  if (DEBUG_LEVEL>5) _DBG_ << "Invalid values for smoothed parameters..." << endl;
+	  return VALUE_OUT_OF_RANGE;
+	}
+
+	Cs=cdc_updates[id].C+A*(Cs-C)*A.Transpose();
+	
+	// Fill in pulls information for cdc hits
+	FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[id],
+			     cdc_updates[id]);
+      }
+    }
+    else{
+      A=forward_traj[m].Ckk*JT*C.InvertSym();
+      Ss=forward_traj[m].Skk+A*(Ss-S);
+      Cs=forward_traj[m].Ckk+A*(Cs-C)*A.Transpose();
+    }
+    
+    S=forward_traj[m].Skk;
+    C=forward_traj[m].Ckk;
+    JT=forward_traj[m].JT;
+  }
+
+  return NOERROR;
+}

@@ -19,6 +19,7 @@ class DTrackFitterKalmanSIMD_ALT1: public DTrackFitterKalmanSIMD{
     
     kalman_error_t KalmanForward(double fdc_anneal,double cdc_anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 			 double &chisq,unsigned int &numdof);
+    jerror_t SmoothForward(void); 
   
   // Virtual methods from TrackFitter base class
   string Name(void) const {return string("KalmanSIMD_ALT1");}
