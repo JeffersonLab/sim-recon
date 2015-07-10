@@ -33,6 +33,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
   unsigned int num_fdc=fdc_updates.size();
   for (unsigned int i=0;i<num_cdc;i++) cdc_updates[i].used_in_fit=false;
   for (unsigned int i=0;i<num_fdc;i++) fdc_updates[i].used_in_fit=false;
+  for (unsigned int i=0;i<forward_traj.size();i++){
+    if (forward_traj[i].h_id>999)
+      forward_traj[i].h_id=0;
+  }
   
   // Save the starting values for C and S in the deque
   forward_traj[break_point_step_index].Skk=S;
@@ -57,6 +61,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
   //mInvVarT0=mT0wires=0.;
 
   unsigned int num_fdc_hits=break_point_fdc_index+1;
+  unsigned int max_num_fdc_used_in_fit=num_fdc_hits;
   unsigned int num_cdc_hits=my_cdchits.size(); 
   unsigned int cdc_index=0;
   if (num_cdc_hits>0) cdc_index=num_cdc_hits-1;
@@ -670,19 +675,26 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    // Check that Ctest is positive definite
 	    if (Ctest(0,0)>0 && Ctest(1,1)>0 && Ctest(2,2)>0 && Ctest(3,3)>0 
 		&& Ctest(4,4)>0){
-	      C=Ctest;
+	      if (my_cdchits[cdc_index]->hit->wire->ring!=RING_TO_SKIP){
+		C=Ctest;
+	      }
 
 	      // Flag the place along the reference trajectory with hit id
-	      forward_traj[k_minus_1].h_id=1000+cdc_index;
+	      forward_traj[k].h_id=1000+cdc_index;
       	      
 	      // Update the state vector
-	      double res=dm-d;
-	      S+=res*K;
+	      double res=dm-d;  
+	      if (my_cdchits[cdc_index]->hit->wire->ring!=RING_TO_SKIP){
+		S+=res*K;
+	      }
 
 	      // Store the "improved" values of the state and covariance matrix
-	      double scale=1.-H*K;
-	      cdc_updates[cdc_index].S=S;
-	      cdc_updates[cdc_index].C=C;	  
+	      double scale=1.-H*K; 
+	      if (my_cdchits[cdc_index]->hit->wire->ring==RING_TO_SKIP){
+		scale=1.;
+	      }
+	      //cdc_updates[cdc_index].S=S;
+	      //cdc_updates[cdc_index].C=C;	  
 	      cdc_updates[cdc_index].tflight
 		=forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;  
 	      cdc_updates[cdc_index].z=newz;
@@ -691,11 +703,14 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	      cdc_updates[cdc_index].s=forward_traj[k_minus_1].s;
 	      cdc_updates[cdc_index].residual=res*scale;
 	      cdc_updates[cdc_index].variance=Vc*scale;
-	      cdc_updates[cdc_index].doca=d;
+	      cdc_updates[cdc_index].doca=dm;
 	      cdc_updates[cdc_index].used_in_fit=true;
 	    
-	      // Update chi2 for this hit
-	      chisq+=scale*res*res/Vc;
+	      // Update chi2 and number of degrees of freedom for this hit
+	      if (my_cdchits[cdc_index]->hit->wire->ring!=RING_TO_SKIP){
+		chisq+=scale*res*res/Vc;
+		numdof++;
+	      }
 
 	      if (DEBUG_LEVEL>10)
 		cout << "Ring " <<  my_cdchits[cdc_index]->hit->wire->ring
@@ -705,9 +720,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 		     << " t " << tcorr
 		     << " Chi2 " << (1.-H*K)*res*res/Vc << endl;
 	      
-	      // update number of degrees of freedom
-	      numdof++;
-
 	      break_point_cdc_index=cdc_index;
 	      break_point_step_index=k_minus_1;
 	    }
@@ -751,6 +763,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    Step(my_z,z,dedx,S);
 	  }
 	  
+	  cdc_updates[cdc_index].S=S;
+	  cdc_updates[cdc_index].C=C;	  
 	}
 
 	// new wire origin and direction
@@ -907,7 +921,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
     return BREAK_POINT_FOUND;
   }
   unsigned int num_good=0; 
-  unsigned int num_hits=num_cdc+num_fdc;
+  unsigned int num_hits=num_cdc+max_num_fdc_used_in_fit;
   for (unsigned int j=0;j<num_cdc;j++){
     if (cdc_updates[j].used_in_fit) num_good++;
   }

@@ -195,7 +195,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t KalmanLoop(void);
   virtual kalman_error_t KalmanForward(double fdc_anneal,double cdc_anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 				 double &chisq,unsigned int &numdof);
-  virtual jerror_t SmoothForward(DMatrix5x1 &S,DMatrix5x5 &C);   
+  virtual jerror_t SmoothForward(void);   
 
   kalman_error_t KalmanForwardCDC(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 			    double &chisq,unsigned int &numdof);
@@ -310,8 +310,12 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t GetProcessNoiseCentral(double ds,double chi2c_factor,
 				  double chi2a_factor,double chi2a_corr,
 				  const DMatrix5x1 &S,DMatrix5x5 &Q);  
-  jerror_t SmoothForwardCDC(DMatrix5x1 &S,DMatrix5x5 &C);   
-  jerror_t SmoothCentral(DMatrix5x1 &S,DMatrix5x5 &C);  
+  jerror_t SmoothForwardCDC(void);   
+  jerror_t SmoothCentral(void);  
+  void FillPullsVectorEntry(const DMatrix5x1 &Ss,const DMatrix5x5 &Cs,
+			    const DKalmanForwardTrajectory_t &traj,
+			    const DKalmanSIMDCDCHit_t *hit,
+			    const DKalmanUpdate_t &update);
   jerror_t SwimToPlane(DMatrix5x1 &S);
   jerror_t FindCentralResiduals(vector<DKalmanUpdate_t>updates);
   jerror_t SwimCentral(DVector3 &pos,DMatrix5x1 &Sc);
@@ -469,6 +473,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   unsigned int MIN_HITS_FOR_REFIT;
   double THETA_CUT;
   bool USE_PASS1_TIME_MODE;
+  int RING_TO_SKIP;
 
   // Maximum number of sigma's away from the predicted position to include hit
   double NUM_CDC_SIGMA_CUT,NUM_FDC_SIGMA_CUT;

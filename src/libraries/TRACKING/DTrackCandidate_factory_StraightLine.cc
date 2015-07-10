@@ -17,6 +17,7 @@ using namespace jana;
 #include <JANA/JApplication.h>
 #include <JANA/JCalibration.h>
 #include <DANA/DApplication.h>
+#include <BCAL/DBCALShower.h>
 
 bool DTrackCandidate_StraightLine_cdc_hit_cmp(const DCDCTrackHit *a,
 					      const DCDCTrackHit *b){
@@ -119,6 +120,9 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
 //------------------
 jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, int eventnumber)
 {
+  vector<const DBCALShower*>bcal_showers;
+  loop->Get(bcal_showers);
+
   // Look for tracks in the CDC
   vector<const DCDCTrackHit*>cdcs;
   loop->Get(cdcs);
@@ -134,6 +138,13 @@ jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, int eventn
     // Get the list of linked segments and fit the hits to lines
     const vector<DTrackFinder::cdc_track_t>tracks=finder->GetCDCTracks();
     for (size_t i=0;i<tracks.size();i++){
+      for (unsigned int k=0;k<bcal_showers.size();k++){
+	printf("bcal xyz %f %f %f \n",bcal_showers[k]->x,bcal_showers[k]->y,
+	       bcal_showers[k]->z);
+	printf(" x %f y %f\n",tracks[i].S(state_x)+tracks[i].S(state_tx)*(bcal_showers[k]->z-tracks[i].z),tracks[i].S(state_y)+tracks[i].S(state_ty)*(bcal_showers[k]->z-tracks[i].z));
+
+      }
+
       // start z position and direction of propagation (default = +z direction)
       double z0=tracks[i].z,dzsign=1.;
       
