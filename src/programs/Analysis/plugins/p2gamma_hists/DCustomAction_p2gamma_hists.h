@@ -39,6 +39,8 @@ class DCustomAction_p2gamma_hists : public DAnalysisAction
 
 		// Optional: Useful utility functions.
 //		const DAnalysisUtilities* dAnalysisUtilities;
+		
+		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
 
 		//Store any histograms as member variables here
 		TH1I *dEgamma;
@@ -49,6 +51,7 @@ class DCustomAction_p2gamma_hists : public DAnalysisAction
 		TH2I *dMM2_M2g_CoplanarTag, *dDeltaE_M2g_CoplanarTag, *dMM2_DeltaE_CoplanarTag;
 		TH2I *dDeltaPhi_M2g, *dPhi2g_PhiP;
 		TH2I *dEgamma_M2g_ProtonTag;
+		TH2I *dMinEgamma_M2g;
 };
 
 #endif // _DCustomAction_p2gamma_hists_

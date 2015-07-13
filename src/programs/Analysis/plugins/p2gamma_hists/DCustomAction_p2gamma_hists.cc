@@ -42,12 +42,17 @@ void DCustomAction_p2gamma_hists::Initialize(JEventLoop* locEventLoop)
 		dDeltaE_M2g_ProtonTag = GetOrCreate_Histogram<TH2I>("dDeltaE_M2g_ProtonTag", "#Delta E vs M_{#gamma#gamma}: Proton Tag; M_{#gamma#gamma}; #Delta E (tagger - p#gamma#gamma)", 500, 0.0, 1.0, 200, -5., 5.);
 		dMM2_DeltaE_ProtonTag = GetOrCreate_Histogram<TH2I>("dMM2_DeltaE_ProtonTag", "MM^{2} vs #Delta E: Proton Tag; #Delta E (tagger - p#gamma#gamma); MM^{2}", 200, -5., 5., 200, -1., 1.);
 		
+		dMinEgamma_M2g = GetOrCreate_Histogram<TH2I>("MinEgamma_M2g", "Minimum E_{#gamma} vs M_{#gamma#gamma}; M_{#gamma#gamma}; Minimum E_{#gamma}", 500, 0., 1., 200, 0., 2.);
+
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
 bool DCustomAction_p2gamma_hists::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
+	if(Get_NumPreviousParticleCombos() == 0)
+                dPreviousSourceObjects.clear();
+
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
 
         // get beam photon energy and final state particles
@@ -78,12 +83,25 @@ bool DCustomAction_p2gamma_hists::Perform_Action(JEventLoop* locEventLoop, const
 	
 	// calculate missing mass
 	DLorentzVector loc2g_P4;
+	set<pair<const JObject*, Particle_t> > locSourceObjects;
 	for(size_t loc_i = 0; loc_i < 3; ++loc_i) {
 		locMissingP4 -= locParticles[loc_i]->lorentzMomentum();
 		
-		if(locParticles[loc_i]->PID() == Gamma) 
+		if(locParticles[loc_i]->PID() == Gamma) {
+			locSourceObjects.insert(pair<const JObject*, Particle_t>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_i), locParticles[loc_i]->PID()));
 			loc2g_P4 += locParticles[loc_i]->lorentzMomentum();
+		}
 	}
+
+	bool fillHist = true;
+	if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())
+		fillHist = false; //dupe: already histed!
+	dPreviousSourceObjects.insert(locSourceObjects);
+
+
+	DLorentzVector locGamma1P4 = locParticleCombo->Get_ParticleComboStep(0)->Get_FinalParticle_Measured(0)->lorentzMomentum();
+	DLorentzVector locGamma2P4 = locParticleCombo->Get_ParticleComboStep(0)->Get_FinalParticle_Measured(1)->lorentzMomentum();
+	double locMinEgamma = min(locGamma1P4.E(), locGamma2P4.E());
 
 	// production kinematics
 	TVector3 locBoostVector = -1.*locSumInitP4.BoostVector();
@@ -102,6 +120,9 @@ bool DCustomAction_p2gamma_hists::Perform_Action(JEventLoop* locEventLoop, const
 		// Fill histograms here
 		dEgamma->Fill(locBeamPhotonEnergy);
 		
+		if(fillHist)
+			dMinEgamma_M2g->Fill(loc2g_P4.M(), locMinEgamma);
+
 		dMM2_M2g->Fill(loc2g_P4.M(), locMissingP4.M2());
 		dDeltaE_M2g->Fill(loc2g_P4.M(),locMissingP4.E());
 
