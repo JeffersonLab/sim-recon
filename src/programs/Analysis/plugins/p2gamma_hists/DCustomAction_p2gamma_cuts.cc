@@ -57,7 +57,7 @@ bool DCustomAction_p2gamma_cuts::Perform_Action(JEventLoop* locEventLoop, const 
 		return false;
 	
 	// for pi0 candidates require recoil proton
-	if(loc2g_P4.M() < 0.10 || loc2g_P4.M() > 0.16 || fabs(locMissingP4.M2()) < 0.05 || fabs(locMissingP4.E()) < 0.5) 
+	if(loc2g_P4.M() < 0.10 || loc2g_P4.M() > 0.16 || fabs(locMissingP4.M2()) > 0.05 || fabs(locMissingP4.E()) > 0.5) 
 		return false;
 
 	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
