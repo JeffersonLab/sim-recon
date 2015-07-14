@@ -31,7 +31,7 @@ using namespace std;
 #include "TRACKING/DMCTrajectoryPoint.h"
 #include "BCAL/DBCALSiPMHit.h"
 #include "BCAL/DBCALSiPMSpectrum.h"
-#include "BCAL/DBCALHit.h"
+#include "BCAL/DBCALDigiHit.h"
 #include "BCAL/DBCALIncidentParticle.h"
 #include "BCAL/DBCALTDCHit.h"
 #include "BCAL/DBCALTruthShower.h"
@@ -94,7 +94,7 @@ class DEventSourceHDDM:public JEventSource
       jerror_t Extract_DBCALTruthCell(hddm_s::HDDM *record, JFactory<DBCALTruthCell> *factory, string tag);
       jerror_t Extract_DBCALSiPMHit(hddm_s::HDDM *record, JFactory<DBCALSiPMHit> *factory, string tag);
       jerror_t Extract_DBCALSiPMSpectrum(hddm_s::HDDM *record, JFactory<DBCALSiPMSpectrum>* factory, string tag);
-      jerror_t Extract_DBCALHit(hddm_s::HDDM *record, JFactory<DBCALHit> *factory, string tag);
+      jerror_t Extract_DBCALDigiHit(hddm_s::HDDM *record, JFactory<DBCALDigiHit> *factory, string tag);
       jerror_t Extract_DBCALIncidentParticle(hddm_s::HDDM *record, JFactory<DBCALIncidentParticle> *factory, string tag);
       jerror_t Extract_DBCALTDCHit(hddm_s::HDDM *record, JFactory<DBCALTDCHit> *factory, string tag);
       jerror_t Extract_DMCReaction(hddm_s::HDDM *record, JFactory<DMCReaction> *factory, string tag, JEventLoop *loop);

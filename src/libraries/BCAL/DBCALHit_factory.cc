@@ -118,14 +118,6 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
    loop->Get(digihits);
    for(unsigned int i=0; i<digihits.size(); i++){
       const DBCALDigiHit *digihit = digihits[i];
-     
-      // Get Df250PulseIntegral object from DBCALDigiHit object
-      const Df250PulseIntegral* PIobj = NULL;
-      digihit->GetSingle(PIobj);
-
-      // Calculate attenuated energy for channel
-      double integral          = (double)PIobj->integral;
-      double single_sample_ped = (double)PIobj->pedestal;
 
       // There is a slight difference between Mode 7 and 8 data
       // The following condition signals an error state in the flash algorithm
@@ -135,9 +127,25 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
       if (PPobj != NULL){
           if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
       }
+     
+      // Get Df250PulseIntegral object from DBCALDigiHit object
+      const Df250PulseIntegral* PIobj = NULL;
+      digihit->GetSingle(PIobj);
+      double integral, single_sample_ped, nsamples_integral, nsamples_pedestal;
 
-      double nsamples_integral = (double)PIobj->nsamples_integral;
-      double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
+      if (PIobj == NULL && digihit->pedestal == 1 && digihit->QF == 1){ // This is a simulated event.  Set the pedestal to zero.
+          integral = (double)digihit->pulse_integral;
+          single_sample_ped = 0.;
+          nsamples_integral = 0.;
+          nsamples_pedestal = 1.;
+      }
+      else { // Calculate attenuated energy for channel
+          integral          = (double)PIobj->integral;
+          single_sample_ped = (double)PIobj->pedestal;
+          nsamples_integral = (double)PIobj->nsamples_integral;
+          nsamples_pedestal = (double)PIobj->nsamples_pedestal;
+      }
+
       double totalpedestal     = single_sample_ped * nsamples_integral/nsamples_pedestal;
       double gain              = GetConstant(gains,digihit);
       double hit_E = 0;

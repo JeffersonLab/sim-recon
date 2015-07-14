@@ -302,9 +302,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
       return Extract_DBCALSiPMHit(record,
                      dynamic_cast<JFactory<DBCALSiPMHit>*>(factory), tag);
  
-   if (dataClassName == "DBCALHit")
-      return Extract_DBCALHit(record,
-                     dynamic_cast<JFactory<DBCALHit>*>(factory), tag);
+   if (dataClassName == "DBCALDigiHit")
+      return Extract_DBCALDigiHit(record,
+                     dynamic_cast<JFactory<DBCALDigiHit>*>(factory), tag);
 
    if (dataClassName == "DBCALIncidentParticle")
       return Extract_DBCALIncidentParticle(record,
@@ -833,10 +833,10 @@ jerror_t DEventSourceHDDM::Extract_DBCALSiPMHit(hddm_s::HDDM *record,
 }
 
 //------------------
-// Extract_DBCALHit
+// Extract_DBCALDigiHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DBCALHit(hddm_s::HDDM *record,
-                                   JFactory<DBCALHit> *factory, string tag)
+jerror_t DEventSourceHDDM::Extract_DBCALDigiHit(hddm_s::HDDM *record,
+                                   JFactory<DBCALDigiHit> *factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -847,22 +847,23 @@ jerror_t DEventSourceHDDM::Extract_DBCALHit(hddm_s::HDDM *record,
    if (tag != "")
       return OBJECT_NOT_AVAILABLE;
    
-   vector<DBCALHit*> data;
+   vector<DBCALDigiHit*> data;
 
-   const hddm_s::BcalfADCHitList &hits = record->getBcalfADCHits();
-   hddm_s::BcalfADCHitList::iterator iter;
-   for (iter = hits.begin(); iter != hits.end(); ++iter) {
-      DBCALHit *response = new DBCALHit;
-      response->module = iter->getModule();
-      response->layer  = iter->getLayer();
-      response->sector = iter->getSector();
-      response->E      = iter->getE();
-      response->t      = iter->getT();
-      response->end    = (iter->getEnd() == 0)? DBCALGeometry::kUpstream :
+   const hddm_s::BcalfADCDigiHitList &digihits = record->getBcalfADCDigiHits();
+   hddm_s::BcalfADCDigiHitList::iterator iter;
+   for (iter = digihits.begin(); iter != digihits.end(); ++iter) {
+      DBCALDigiHit *response = new DBCALDigiHit;
+      response->module            = iter->getModule();
+      response->layer             = iter->getLayer();
+      response->sector            = iter->getSector();
+      response->pulse_integral    = (uint32_t)iter->getPulse_integral();
+      response->pulse_time        = (uint32_t)iter->getPulse_time();
+      response->pedestal          = 1;
+      response->QF                = 1;
+      response->nsamples_integral = 1;
+      response->nsamples_pedestal = 1;
+      response->end               = (iter->getEnd() == 0)? DBCALGeometry::kUpstream :
                                                 DBCALGeometry::kDownstream;
-      response->cellId = DBCALGeometry::cellId(iter->getModule(),
-                                               iter->getLayer(),
-                                               iter->getSector());
       data.push_back(response);
    }
 

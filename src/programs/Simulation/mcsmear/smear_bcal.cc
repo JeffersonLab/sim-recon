@@ -226,6 +226,8 @@ extern double BCAL_SAMPLINGCOEFA;               // 0.042 (from calibDB BCAL/bcal
 extern double BCAL_SAMPLINGCOEFB;               // 0.013 (from calibDB BCAL/bcal_parms)
 extern double BCAL_TWO_HIT_RESOL;               // 50. (from calibDB BCAL/bcal_parms)
 extern double BCAL_mevPerPE;                    // (defined below)
+extern double BCAL_NS_PER_ADC_COUNT;            // 0.0625 (defined in mcsmear.cc)
+extern double BCAL_MEV_PER_ADC_COUNT;           // 0.029 (defined in mcsmear.cc)
 
 extern vector<vector<double> > attenuation_parameters; // Avg. of 525 (from calibDB BCAL/attenuation_parameters)
 extern vector<double> effective_velocities;     // 16.75 (from calibDB BCAL/effective_velocities)
@@ -754,10 +756,10 @@ void FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<int, fADCHitLi
       vector<fADCHit> dnhits;
 
       for(int ii = 0; ii < (int)sumhits.EUP.size(); ii++){
-        if(sumhits.EUP[ii] > thresh_MeV && sumhits.tUP[ii] < 1000) uphits.push_back(fADCHit(sumhits.EUP[ii]/1000.0,sumhits.tUP[ii])); // Fill uphits and dnhits with energies (in GeV)
-      }                                                                                                                              // and times when they cross an energy threshold.
+        if(sumhits.EUP[ii] > thresh_MeV && sumhits.tUP[ii] < 1000) uphits.push_back(fADCHit(sumhits.EUP[ii],sumhits.tUP[ii])); // Fill uphits and dnhits with energies (in MeV)
+      }                                                                                                                        // and times when they cross an energy threshold.
       for(int ii = 0; ii < (int)sumhits.EDN.size(); ii++){
-        if(sumhits.EDN[ii] > thresh_MeV && sumhits.tDN[ii] < 1000) dnhits.push_back(fADCHit(sumhits.EDN[ii]/1000.0,sumhits.tDN[ii]));
+        if(sumhits.EDN[ii] > thresh_MeV && sumhits.tDN[ii] < 1000) dnhits.push_back(fADCHit(sumhits.EDN[ii],sumhits.tDN[ii]));
       }
       
       // If at least one readout channel has a hit, add the readout cell to fADCHits
@@ -832,18 +834,19 @@ void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
          iter->setSector(hitlist.sumsector);
       }
       
-      // Copy hits into HDDM
+      // Copy hits into BcalfADCDigiHit HDDM structure.
+      // Energies and times must be converted to units of ADC counts.
       for (unsigned int i = 0; i < hitlist.uphits.size(); i++) {
-         hddm_s::BcalfADCHitList fadcs = iter->addBcalfADCHits();
+         hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
          fadcs().setEnd(bcal_index::kUp);
-         fadcs().setE(hitlist.uphits[i].E);
-         fadcs().setT(hitlist.uphits[i].t);
+         fadcs().setPulse_integral(round(hitlist.uphits[i].E/BCAL_MEV_PER_ADC_COUNT));
+         fadcs().setPulse_time(round(hitlist.uphits[i].t/BCAL_NS_PER_ADC_COUNT));
       }
       for (unsigned int i = 0; i < hitlist.dnhits.size(); i++) {
-         hddm_s::BcalfADCHitList fadcs = iter->addBcalfADCHits();
+         hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
          fadcs().setEnd(bcal_index::kDown);
-         fadcs().setE(hitlist.dnhits[i].E);
-         fadcs().setT(hitlist.dnhits[i].t);
+         fadcs().setPulse_integral(round(hitlist.dnhits[i].E/BCAL_MEV_PER_ADC_COUNT));
+         fadcs().setPulse_time(round(hitlist.dnhits[i].t/BCAL_NS_PER_ADC_COUNT));
       }
    }
 }

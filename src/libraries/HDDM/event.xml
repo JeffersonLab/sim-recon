@@ -65,6 +65,7 @@
             <bcalSiPMTruth minOccurs="0" incident_id="int" E="float"/>
           </bcalSiPMSpectrum>
           <bcalfADCHit end="int" E="float" maxOccurs="unbounded" minOccurs="0" t="float"/>
+          <bcalfADCDigiHit end="int" pulse_integral="int" maxOccurs="unbounded" minOccurs="0" pulse_time="int"/>
           <bcalTDCHit end="int" maxOccurs="unbounded" minOccurs="0" t="float"/>
           <bcalTruthHit E="float" maxOccurs="unbounded" minOccurs="0" t="float" zLocal="float" incident_id="int"/>
         </bcalCell>
