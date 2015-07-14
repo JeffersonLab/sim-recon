@@ -1,0 +1,14 @@
+source /group/halld/Software/builds/sim-recon/sim-recon-commissioning/Linux_CentOS6-x86_64-gcc4.4.6/setenv.csh
+setenv HALLD_MY /u/home/elton/halld 
+setenv CCDB_CONNECTION sqlite:////group/halld/Software/calib/ccdb_sqlite/ccdb_2015-02-08.sqlite
+setenv JANA_CALIB_URL sqlite:////group/halld/Software/calib/ccdb_sqlite/ccdb_2015-02-08.sqlite
+
+# > scons -u install  // add -j3 for running 3 threads
+
+# RUN COMMAND
+# hd_root -PPLUGINS=BCAL_Eff -PEVENTS_TO_KEEP=1000 -PNTHREADS=4  -PTRKFIT:MASS_HYPOTHESES_NEGATIVE=0.13957 -PTRKFIT:MASS_HYPOTHESES_POSITIVE=0.13957 /volatile/halld/home/elton/BCAL_Eff/hd_rawdata_001506_001.evio -PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520 -o /volatile/halld/home/elton/BCAL_Eff/hd_rawdata_001506_001.root  
+# hd_root -PPLUGINS=bcal_hits -PEVENTS_TO_KEEP=1000 -PNTHREADS=4 -PTRKFIT:MASS_HYPOTHESES_NEGATIVE=0.13957 -PTRKFIT:MASS_HYPOTHESES_POSITIVE=0.13957 /volatile/halld/home/elton/BCAL_Eff/hd_rawdata_001506_001.evio -PBFIELD_MAP=Magnets/Solenoid/solenoid_1200A_poisson_20140520 -o /volatile/halld/home/elton/bcal_hits/hd_rawdata_001506_001.root   
+
+# The plugin is thread safe so if you want to run multi-threaded then add to the command line -PNTHREADS=X
+
+    

@@ -1,0 +1,16 @@
+
+import os
+
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+sbms.AddROOTSpyMacros(env)
+sbms.AddDANA(env)
+coda = os.getenv('CODA')
+if coda != None:
+	sbms.plugin(env)
+
+

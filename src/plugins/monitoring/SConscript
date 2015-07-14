@@ -1,0 +1,33 @@
+
+Import('*')
+
+subdirs = [
+'BCAL_online',
+'CDC_online',
+'DAQ_online',
+'FCAL_online',
+'FDC_online',
+'PSC_online',
+'RF_online',
+'PS_online',
+'PSPair_online',
+'ST_online_lowlevel',
+'ST_online_tracking',
+'TAGH_online',
+'TAGM_online',
+'TOF_online',
+'TRIG_online',
+'TPOL_online',
+'CDC_expert',
+'TOF_TDC_shift',
+'BCAL_Eff',
+'BCAL_inv_mass',
+'CDC_drift' ]
+
+#'L3_online',
+#'CODA_online',
+#'EVNT_online',
+
+
+SConscript(dirs=subdirs, exports='env osname', duplicate=0)
+
