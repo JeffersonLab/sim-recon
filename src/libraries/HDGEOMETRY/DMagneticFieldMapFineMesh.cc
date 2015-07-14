@@ -158,7 +158,7 @@ int DMagneticFieldMapFineMesh::ReadMap(string namepath, int runnumber, string co
 	
   // Distance between map points for r and z
   dx = (xmax-xmin)/(double)(Nx-1);
-  dy = (ymax-ymin)/(double)(Ny-1);
+  dy = (ymax-ymin)/(double)((Ny < 2)? 1 : Ny-1);
   dz = (zmax-zmin)/(double)(Nz-1);
   
   one_over_dx=1./dx;
