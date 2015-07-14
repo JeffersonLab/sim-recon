@@ -305,6 +305,18 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
           overlap.push_back(ii);
         }
       }
+      else if (recon_showers_theta[m] <= 25.){ // Use a larger z-bin-width for more forward-directed showers.
+        if ((fabs(Points[ii]->z() - zbinposition[i][j]) < 1.4*(zbinwidth[i][j] + ZTHRESHOLD)) && (fabs(Points[ii]->t() - recon_showers_t[m]) < TTHRESHOLD) && (Points[ii]->E() > ETHRESHOLD)){
+          CurvaturePoints.push_back(Points[ii]);
+          overlap.push_back(ii);
+        }
+      }
+      else if (recon_showers_theta[m] <= 50.){ // Use a larger z-bin-width for more forward-directed showers.
+        if ((fabs(Points[ii]->z() - zbinposition[i][j]) < 1.2*(zbinwidth[i][j] + ZTHRESHOLD)) && (fabs(Points[ii]->t() - recon_showers_t[m]) < TTHRESHOLD) && (Points[ii]->E() > ETHRESHOLD)){
+          CurvaturePoints.push_back(Points[ii]);
+          overlap.push_back(ii);
+        }
+      }
       else if ((fabs(Points[ii]->z() - zbinposition[i][j]) < (zbinwidth[i][j] + ZTHRESHOLD)) && (fabs(Points[ii]->t() - recon_showers_t[m]) < TTHRESHOLD) && (Points[ii]->E() > ETHRESHOLD)){
         CurvaturePoints.push_back(Points[ii]);
         overlap.push_back(ii);
