@@ -473,7 +473,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   unsigned int MIN_HITS_FOR_REFIT;
   double THETA_CUT;
   bool USE_PASS1_TIME_MODE;
-  int RING_TO_SKIP;
+  int RING_TO_SKIP,PLANE_TO_SKIP;
 
   // Maximum number of sigma's away from the predicted position to include hit
   double NUM_CDC_SIGMA_CUT,NUM_FDC_SIGMA_CUT;

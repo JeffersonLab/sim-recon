@@ -298,19 +298,21 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  
 	  // Adjust the state vector and the covariance using the hit 
 	    //information
-	  DMatrix5x5 sum=I5x5;
-	  DMatrix5x5 sum2;
-	  for (unsigned int m=0;m<Klist.size();m++){
-	    double my_prob=probs[m]/prob_tot;
-	    S+=my_prob*(Mlist[m]*Klist[m]);
-	    sum+=my_prob*(Klist[m]*Hlist[m]);
-	    sum2+=(my_prob*my_prob*Vlist[m])*MultiplyTranspose(Klist[m]);
+	  if (my_fdchits[id]->hit->wire->layer!=PLANE_TO_SKIP){
+	    DMatrix5x5 sum=I5x5;
+	    DMatrix5x5 sum2;
+	    for (unsigned int m=0;m<Klist.size();m++){
+	      double my_prob=probs[m]/prob_tot;
+	      S+=my_prob*(Mlist[m]*Klist[m]);
+	      sum+=my_prob*(Klist[m]*Hlist[m]);
+	      sum2+=(my_prob*my_prob*Vlist[m])*MultiplyTranspose(Klist[m]);
+	    }
+	    C=C.SandwichMultiply(sum)+sum2;
 	  }
-	  C=C.SandwichMultiply(sum)+sum2;
-	  
 	  for (unsigned int m=0;m<Hlist.size();m++){
 	    unsigned int my_id=used_ids[m];
-	    double scale=1.-Hlist[m]*Klist[m];
+	    double scale=1.-Hlist[m]*Klist[m];    
+	    if (my_fdchits[id]->hit->wire->layer==PLANE_TO_SKIP) scale=1.;
 	    fdc_updates[my_id].S=S;
 	    fdc_updates[my_id].C=C; 
 	    fdc_updates[my_id].tflight
@@ -344,15 +346,18 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    // Compute Kalman gain matrix
 	    K=InvV*(C*H_T);
 	    
-	    // Update the state vector 
-	    S+=Mdiff*K;
+	    if (my_fdchits[id]->hit->wire->layer!=PLANE_TO_SKIP){
+	      // Update the state vector 
+	      S+=Mdiff*K;
 	    
-	    // Update state vector covariance matrix
-	    //C=C-K*(H*C);    
-	    C=C.SubSym(K*(H*C));
+	      // Update state vector covariance matrix
+	      //C=C-K*(H*C);    
+	      C=C.SubSym(K*(H*C));
+	    }
 
 	    // Store the "improved" values for the state vector and covariance
 	    double scale=1.-H*K;
+	    if (my_fdchits[id]->hit->wire->layer==PLANE_TO_SKIP) scale=1.;
 	    fdc_updates[id].S=S;
 	    fdc_updates[id].C=C;
 	    fdc_updates[id].tflight
@@ -367,8 +372,12 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    fdc_updates[id].doca=doca;
 	    fdc_updates[id].used_in_fit=true;
 	    
-	    // Update chi2 for this segment
-	    chisq+=scale*Mdiff*Mdiff/V;
+	    if (my_fdchits[id]->hit->wire->layer!=PLANE_TO_SKIP){
+	      // Update chi2 for this segment
+	      chisq+=scale*Mdiff*Mdiff/V;
+	      // update number of degrees of freedom
+	      numdof++;
+	    }
 		    
 	    if (DEBUG_LEVEL>10){
 	      printf("hit %d p %5.2f t %f dm %5.2f sig %f chi2 %5.2f z %5.2f\n",
@@ -376,8 +385,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 		     forward_traj[k].z);
 	    
 	    }
-	      // update number of degrees of freedom
-	    numdof++;
+	      
 
 
 	    break_point_fdc_index=id;
@@ -962,7 +970,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
   DMatrix5x5 JT=(forward_traj[max].JT);
   DMatrix5x1 Ss=S;
   DMatrix5x5 Cs=C;
-  DMatrix5x5 A;
+  DMatrix5x5 A,dC;
 
   for (unsigned int m=max-1;m>0;m--){
     if (forward_traj[m].h_id>0){
@@ -975,8 +983,8 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
 	  if (DEBUG_LEVEL>5) _DBG_ << "Invalid values for smoothed parameters..." << endl;
 	  return VALUE_OUT_OF_RANGE;
 	}
-
-	Cs=fdc_updates[id].C+A*(Cs-C)*A.Transpose();
+	dC=A*(Cs-C)*A.Transpose();
+	Cs=fdc_updates[id].C+dC;
 	
 	double cosa=my_fdchits[id]->cosa;
 	double sina=my_fdchits[id]->sina;
@@ -1015,8 +1023,33 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
 	double resi=v-(vpred_uncorrected+doca*(nz_sinalpha_plus_nr_cosalpha
 					       -tv*sinalpha));
 	
-	pulls.push_back(pull_t(resi,
-			       sqrt(fdc_updates[id].variance),
+	// Variance from filter step
+	double V=fdc_updates[id].variance;
+	// Compute projection matrix and find the variance for the residual
+	DMatrix5x1 H_T;
+	double temp2=nz_sinalpha_plus_nr_cosalpha-tv*sinalpha;
+	H_T(state_x)=sina+cosa*cosalpha*temp2;	
+	H_T(state_y)=cosa-sina*cosalpha*temp2;	
+       
+	double cos2_minus_sin2=cosalpha*cosalpha-sinalpha*sinalpha;
+	double fac=nz*cos2_minus_sin2-2.*nr*cosalpha*sinalpha;
+	double doca_cosalpha=doca*cosalpha;
+	double temp=doca_cosalpha*fac;	
+	H_T(state_tx)=cosa*temp
+	  -doca_cosalpha*(tu*sina+tv*cosa*cos2_minus_sin2)
+	  ;
+	H_T(state_ty)=-sina*temp
+	  -doca_cosalpha*(tu*cosa-tv*sina*cos2_minus_sin2)
+	  ;
+
+	if (my_fdchits[id]->hit->wire->layer==PLANE_TO_SKIP){
+	  V+=Cs.SandwichMultiply(H_T);
+	}
+	else{
+	  V-=dC.SandwichMultiply(H_T);
+	}
+
+	pulls.push_back(pull_t(resi,sqrt(V),
 			       fdc_updates[id].s,
 			       fdc_updates[id].tdrift,
 			       fdc_updates[id].doca,

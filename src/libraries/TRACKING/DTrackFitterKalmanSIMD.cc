@@ -235,6 +235,9 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 
     RING_TO_SKIP=0;
     gPARMS->SetDefaultParameter("KALMAN:RING_TO_SKIP",RING_TO_SKIP);
+    
+    PLANE_TO_SKIP=0;
+    gPARMS->SetDefaultParameter("KALMAN:PLANE_TO_SKIP",PLANE_TO_SKIP);
    
     MIN_HITS_FOR_REFIT=8; 
     gPARMS->SetDefaultParameter("KALMAN:MIN_HITS_FOR_REFIT", MIN_HITS_FOR_REFIT);
@@ -4089,7 +4092,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 		      cdc_updates[cdc_index].B=central_traj[k_minus_1].B;
 		      cdc_updates[cdc_index].s=central_traj[k_minus_1].s;
 		      cdc_updates[cdc_index].residual=dm*scale;
-		      cdc_updates[cdc_index].variance=V*scale;
+		      cdc_updates[cdc_index].variance=V;
 		      cdc_updates[cdc_index].used_in_fit=true;
 		      
 		      // Update chi2 for this hit
@@ -5314,7 +5317,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 		      cdc_updates[cdc_index].B=forward_traj[k_minus_1].B;
 		      cdc_updates[cdc_index].s=forward_traj[k_minus_1].s;
 		      cdc_updates[cdc_index].residual=res*scale;
-		      cdc_updates[cdc_index].variance=V*scale;
+		      cdc_updates[cdc_index].variance=V;
 		      cdc_updates[cdc_index].used_in_fit=true;
 		      
 		      // Update chi2 for this segment
@@ -7547,14 +7550,13 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(void){
 	    H_T(state_phi)
 	      =-myS(state_D)*cosstereo_over_doca*(dx*cosphi+dy*sinphi);
 	    H_T(state_z)=-cosstereo_over_doca*(dx*dir.X()+dy*dir.Y());
-	    double V=cdc_updates[id].variance-dC.SandwichMultiply(H_T);
-		
-	    pulls.push_back(pull_t(cdc_updates[id].doca-d,
-                        sqrt(V),
-                        cdc_updates[id].s,
-                        cdc_updates[id].tdrift,
-				   d,
-                        my_cdchits[id]->hit,NULL));
+	    double V=cdc_updates[id].variance;
+	    V+=Cs.SandwichMultiply(Jc*H_T);
+
+	    pulls.push_back(pull_t(cdc_updates[id].doca-d,sqrt(V),
+				   cdc_updates[id].s,cdc_updates[id].tdrift,
+				   d,my_cdchits[id]->hit,NULL,
+				   diff.Phi()));
 
         }
         else{
@@ -7636,34 +7638,42 @@ void DTrackFitterKalmanSIMD::FillPullsVectorEntry(const DMatrix5x1 &Ss,
 
   // Use Brent's algorithm to find the doca to the wire
   DMatrix5x1 myS=Ss;
+  DMatrix5x5 myC=Cs;
   double mydz;
   double z=traj.z;
   DVector2 origin=hit->origin;
   DVector2 dir=hit->dir;
   double z0wire=hit->z0wire;
   BrentsAlgorithm(z,-mStepSizeZ,dEdx,z0wire,origin,dir,myS,mydz);
-  DVector2 wirepos=origin+(z+mydz-z0wire)*dir;
+  double new_z=z+mydz;
+  DVector2 wirepos=origin+(new_z-z0wire)*dir;
   double cosstereo=hit->cosstereo;
   DVector2 xy(myS(state_x),myS(state_y));
 	    
   DVector2 diff=xy-wirepos;
   double d=cosstereo*diff.Mod();
-  /*
-  // Find the field and gradient at (old_x,old_y,old_z)
-  bfield->GetFieldAndGradient(old_xy.X(),old_xy.Y(),Ss(state_z),
-  Bx,By,Bz,
-  dBxdx,dBxdy,dBxdz,dBydx,
-  dBydy,dBydz,dBzdx,dBzdy,dBzdz);
-  DMatrix5x5 Jc;
-  StepJacobian(old_xy,xy-old_xy,myds,Ss,dEdx,Jc);
-  */
   
-  pulls.push_back(pull_t(update.doca-d,
-			 sqrt(update.variance),
-			 update.s,
-                        update.tdrift,
-				   d,
-                        hit->hit,NULL));
+  // Find the field and gradient at (old_x,old_y,old_z) and compute the 
+  // Jacobian matrix for transforming from S to myS
+  bfield->GetFieldAndGradient(Ss(state_x),Ss(state_y),z,
+			      Bx,By,Bz,dBxdx,dBxdy,dBxdz,dBydx,
+			      dBydy,dBydz,dBzdx,dBzdy,dBzdz);
+  DMatrix5x5 Jc;
+  StepJacobian(z,new_z,Ss,dEdx,Jc);
+
+  // Find the projection matrix
+  DMatrix5x1 H_T;
+  double cosstereo2_over_d=cosstereo*cosstereo/d;
+  H_T(state_x)=diff.X()*cosstereo2_over_d;
+  H_T(state_y)=diff.Y()*cosstereo2_over_d;
+
+  // Find the variance for this hit
+  double V=update.variance;
+  V+=myC.SandwichMultiply(Jc*H_T);
+    
+  pulls.push_back(pull_t(update.doca-d,sqrt(V),
+			 update.s,update.tdrift,d,hit->hit,NULL,
+			 diff.Phi()));
 }
 
 /*---------------------------------------------------------------------------*/
