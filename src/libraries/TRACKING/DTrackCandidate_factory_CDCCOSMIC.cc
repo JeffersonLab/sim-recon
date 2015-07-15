@@ -69,6 +69,15 @@ double calc_chi_square(const Double_t *par)
 // Convert time to distance for the cdc
 double DTrackCandidate_factory_CDCCOSMIC::CDCDriftDistance(double t){
     double d=0.;
+    /*
+    // Try 9th order polynomial fit to the drift distribution
+    double p[10]= { 0.0, 0.0077461, -9.31638e-05, 7.3452e-07, -3.47947e-09, 1.01626e-11, -1.84211e-14, 2.01549e-17, -1.21754e-20, 3.11542e-24};
+    if (t > 0.0){
+        d = p[0] + p[1] * t + p[2] * pow(t,2) + p[3] * pow(t,3) + p[4] * pow(t,4)
+            + p[5] * pow(t,5) + p[6] * pow(t,6) + p[7] * pow(t,7) + p[8] * pow(t,8) + p[9] * pow(t,9);
+    }
+    */
+    
     if (t>cdc_drift_table[cdc_drift_table.size()-1]) return 0.78;
     if (t>0){
         unsigned int index=0;
@@ -193,6 +202,26 @@ double DTrackCandidate_factory_CDCCOSMIC::CDCTrackError(const DCDCWire *wire , c
     double error = sqrt(variance);
 
     return error;
+}
+
+double DTrackCandidate_factory_CDCCOSMIC::GetDOCAPhi(const DCDCWire *wire, DTrackCandidate *locTrack){
+    // Get the vector pointing from the wire to the doca point
+    DVector3 trackPosition = locTrack->position();
+    DVector3 trackMomentum = locTrack->momentum();
+    DVector3 wirePosition = wire->origin;
+    DVector3 wireDirection = wire->udir;
+    //wirePosition.Print(); wireDirection.Print();
+    Float_t a = trackMomentum.Dot(trackMomentum);
+    Float_t b = trackMomentum.Dot(wireDirection);
+    Float_t c = wireDirection.Dot(wireDirection);
+    DVector3 w0 = trackPosition - wirePosition;
+    Float_t d = trackMomentum.Dot(w0);
+    Float_t e = wireDirection.Dot(w0);
+    Float_t sc = ((b*e - c*d)/(a*c-b*b));
+    //if (sc < 0) continue; // Track must come from location away from origin
+    DVector3 POCAOnTrack = trackPosition + sc * trackMomentum;
+    DVector3 LOCA = w0 + ((b*e - c*d)/(a*c-b*b))*trackMomentum - ((a*e - b*d)/(a*c-b*b))*wireDirection;
+    return LOCA.Phi();
 }
 // Locate a position in vector xx given x
 unsigned int DTrackCandidate_factory_CDCCOSMIC::Locate(vector<double>&xx,
@@ -348,6 +377,7 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumb
             // Use earliest cdc time to estimate t0
             double t0=1e6;
             for (unsigned int j=0;j<hits.size();j++){
+                if (hits[j]->wire->ring == EXCLUDERING) continue;    
                 double L=(hits[0]->wire->origin-hits[j]->wire->origin).Perp();
                 double t_test=hits[j]->tdrift-L/29.98;
                 if (t_test<t0) t0=t_test;
@@ -505,7 +535,8 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumb
                 double trackError = CDCTrackError(hits[j]->wire, xs, dxs);
                 double error = sqrt(pow(measurementError,2) + pow(trackError,2));
                 //cout << " The error is as follows, measurment error = " << measurementError << " Tracking Error " << trackError << " Total " << error << endl;
-                can->pulls.push_back(DTrackFitter::pull_t(residual, error, 0.0, time , measurement, hits[j], NULL));
+                double docaphi = GetDOCAPhi(hits[j]->wire, can);
+                can->pulls.push_back(DTrackFitter::pull_t(residual, error, 0.0, time , measurement, hits[j], NULL,docaphi));
 
             }
             _data.push_back(can);
