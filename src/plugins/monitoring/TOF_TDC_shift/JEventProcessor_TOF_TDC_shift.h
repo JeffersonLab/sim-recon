@@ -14,6 +14,8 @@
 #include <TH2I.h>
 #include "TTree.h"
 
+using namespace std;
+
 class JEventProcessor_TOF_TDC_shift:public jana::JEventProcessor{
  public:
   JEventProcessor_TOF_TDC_shift();
