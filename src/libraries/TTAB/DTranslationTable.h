@@ -57,6 +57,7 @@ using namespace jana;
 #include <PAIR_SPECTROMETER/DPSDigiHit.h>
 #include <PAIR_SPECTROMETER/DPSCDigiHit.h>
 #include <PAIR_SPECTROMETER/DPSCTDCDigiHit.h>
+#include <TPOL/DTPOLSectorDigiHit.h>
 
 #include "GlueX.h"
 
@@ -96,6 +97,7 @@ class DTranslationTable:public jana::JObject{
 			TAGH,
 			TAGM,
 			TOF,
+			TPOLSECTOR,
 			NUM_DETECTOR_TYPES
 		};
 
@@ -113,6 +115,7 @@ class DTranslationTable:public jana::JObject{
 				case TAGH: return "TAGH";
 				case TAGM: return "TAGM";
 				case TOF: return "TOF";
+			        case TPOLSECTOR: return "TPOL"; // is set to TPOL to match what is in CCDB, fix later
 				case UNKNOWN_DETECTOR:
 				default:
 					return "UNKNOWN";
@@ -244,6 +247,15 @@ class DTranslationTable:public jana::JObject{
 			}
 		};
 		
+		class TPOLSECTORIndex_t{
+			public:
+			uint32_t sector;
+
+			inline bool operator==(const TPOLSECTORIndex_t &rhs) const {
+			    return (sector==rhs.sector);
+			}
+		};
+
 		// DChannelInfo holds translation between indexing schemes
 		// for one channel.
 		class DChannelInfo{
@@ -264,6 +276,7 @@ class DTranslationTable:public jana::JObject{
 					TAGHIndex_t tagh;
 					TAGMIndex_t tagm;
 					TOFIndex_t tof;
+					TPOLSECTORIndex_t tpolsector;
 				};
 		};
 		
@@ -275,15 +288,16 @@ class DTranslationTable:public jana::JObject{
 		void ApplyTranslationTable(jana::JEventLoop *loop) const;
 		
 		// fADC250
-		DBCALDigiHit* MakeBCALDigiHit(const BCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
-		DFCALDigiHit* MakeFCALDigiHit(const FCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
-		DSCDigiHit*   MakeSCDigiHit(  const SCIndex_t &idx,   const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
-		DTOFDigiHit*  MakeTOFDigiHit( const TOFIndex_t &idx,  const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
-		DTAGMDigiHit* MakeTAGMDigiHit(const TAGMIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
-		DTAGHDigiHit* MakeTAGHDigiHit(const TAGHIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
-		DPSDigiHit*   MakePSDigiHit(  const PSIndex_t &idx,   const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
-		DPSCDigiHit*  MakePSCDigiHit( const PSCIndex_t &idx,  const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
-		DRFDigiTime*  MakeRFDigiTime( const RFIndex_t &idx,   const Df250PulseTime *hit) const;
+		DBCALDigiHit*       MakeBCALDigiHit(const BCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DFCALDigiHit*       MakeFCALDigiHit(const FCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DSCDigiHit*         MakeSCDigiHit(  const SCIndex_t &idx,   const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DTOFDigiHit*        MakeTOFDigiHit( const TOFIndex_t &idx,  const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DTAGMDigiHit*       MakeTAGMDigiHit(const TAGMIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DTAGHDigiHit*       MakeTAGHDigiHit(const TAGHIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DPSDigiHit*         MakePSDigiHit(  const PSIndex_t &idx,   const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DPSCDigiHit*        MakePSCDigiHit( const PSCIndex_t &idx,  const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
+		DRFDigiTime*        MakeRFDigiTime( const RFIndex_t &idx,   const Df250PulseTime *hit) const;
+		DTPOLSectorDigiHit* MakeTPOLSectorDigiHit(const TPOLSECTORIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
 
 		// fADC125
 		DCDCDigiHit* MakeCDCDigiHit(const CDCIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt, const Df125PulsePedestal *pp) const;
