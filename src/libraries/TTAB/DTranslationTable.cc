@@ -157,6 +157,7 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
    supplied_data_types.insert("DPSDigiHit");
    supplied_data_types.insert("DPSCDigiHit");
    supplied_data_types.insert("DPSCTDCDigiHit");
+   supplied_data_types.insert("DTPOLSectorDigiHit");
 }
 
 //---------------------------------
@@ -350,7 +351,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    vector<DPSDigiHit*> vps;
    vector<DPSCDigiHit*> vpsc;
    vector<DPSCTDCDigiHit*> vpsctdc;
-   
+   vector<DTPOLSectorDigiHit*> vtpolsector;
+
    // Df250PulseIntegral (will apply Df250PulseTime via associated objects)
    vector<const Df250PulseIntegral*> pulseintegrals250;
    loop->Get(pulseintegrals250);
@@ -417,6 +419,9 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
             break;
          case RF:
         	vrf.push_back( MakeRFDigiTime(chaninfo.rf, pt) );
+            break;
+         case TPOLSECTOR:
+            vtpolsector.push_back( MakeTPOLSectorDigiHit(chaninfo.tpolsector, pi, pt, pp) );
             break;
          default:
             if (VERBOSE > 4)
@@ -613,6 +618,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       ttout << "          vps.size() = " << vps.size() << std::endl;
       ttout << "         vpsc.size() = " << vpsc.size() << std::endl;
       ttout << "      vpsctdc.size() = " << vpsctdc.size() << std::endl;
+      ttout << "  vtpolsector.size() = " << vtpolsector.size() << std::endl;
    }
    
    // Find factory for each container and copy the object pointers into it
@@ -636,6 +642,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    CopyToFactory(loop, vps);
    CopyToFactory(loop, vpsc);
    CopyToFactory(loop, vpsctdc);
+   CopyToFactory(loop, vtpolsector);
 
    // Add to JANA's call stack some entries to make janadot draw something reasonable
    // Unfortunately, this is just us telling JANA the relationship as defined here.
@@ -1000,6 +1007,21 @@ DTOFTDCDigiHit*  DTranslationTable::MakeTOFTDCDigiHit(
 }
 
 //---------------------------------
+// MakeTPOLSectorDigiHit
+//---------------------------------
+DTPOLSectorDigiHit* DTranslationTable::MakeTPOLSectorDigiHit(const TPOLSECTORIndex_t &idx,
+							     const Df250PulseIntegral *pi,
+							     const Df250PulseTime *pt,
+							     const Df250PulsePedestal *pp) const
+{
+   DTPOLSectorDigiHit *h = new DTPOLSectorDigiHit();
+   CopyDf250Info(h, pi, pt, pp);
+
+   h->sector = idx.sector;
+   return h;
+}
+
+//---------------------------------
 // GetDetectorIndex
 //---------------------------------
 const DTranslationTable::DChannelInfo 
@@ -1081,6 +1103,10 @@ const DTranslationTable::csc_t
              if ( det_channel.tof == in_channel.tof )
                 found = true;
              break;
+          case DTranslationTable::TPOLSECTOR:
+             if ( det_channel.tpolsector == in_channel.tpolsector )
+                found = true;
+             break;
           default:
              jerr << "DTranslationTable::GetDAQIndex(): "
                   << "Invalid detector type = " << in_channel.det_sys 
@@ -1153,6 +1179,9 @@ string DTranslationTable::Channel2Str(const DChannelInfo &in_channel) const
     case DTranslationTable::TOF:
        ss << "plane = " << in_channel.tof.plane << " bar = " << in_channel.tof.bar
           << " end = " << in_channel.tof.end;
+       break;
+    case DTranslationTable::TPOLSECTOR:
+       ss << "sector = " << in_channel.tpolsector.sector;
        break;
     default:
        ss << "Unknown detector type" << std::endl;
@@ -1378,6 +1407,8 @@ DTranslationTable::Detector_t DetectorStr2DetID(string &type)
       return DTranslationTable::TAGM;
    } else if ( type == "tof" ) {
       return DTranslationTable::TOF;
+   } else if ( type == "tpol" ) {
+      return DTranslationTable::TPOLSECTOR;
    } else {
       return DTranslationTable::UNKNOWN_DETECTOR;
    }
@@ -1627,6 +1658,9 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
 	        break;
          case DTranslationTable::PSC:
 	        ci.psc.id = id;
+            break;
+         case DTranslationTable::TPOLSECTOR:
+            ci.tpolsector.sector = sector;
             break;
          case DTranslationTable::UNKNOWN_DETECTOR:
 		 default:

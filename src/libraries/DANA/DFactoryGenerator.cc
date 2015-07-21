@@ -28,6 +28,7 @@ extern jerror_t CERE_init(JEventLoop *loop);
 extern jerror_t DIRC_init(JEventLoop *loop);
 extern jerror_t TRIGGER_init(JEventLoop *loop);
 extern jerror_t PAIR_SPECTROMETER_init(JEventLoop *loop);
+extern jerror_t TPOL_init(JEventLoop *loop);
 extern jerror_t FMWPC_init(JEventLoop *loop);
 
 //---------------------------------
@@ -70,6 +71,7 @@ jerror_t DFactoryGenerator::GenerateFactories(JEventLoop *loop)
 	DIRC_init(loop);
 	TRIGGER_init(loop);
 	PAIR_SPECTROMETER_init(loop);
+	TPOL_init(loop);
 	FMWPC_init(loop);
 	
 	return NOERROR;
