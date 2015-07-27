@@ -7,8 +7,6 @@
 class DTPOLSectorDigiHit:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(DTPOLSectorDigiHit);
-		
-		static const int NSECTORS   = 32;
 
 		int      sector;             // sector number 1-32
 		uint32_t pulse_integral;    // identified pulse integral as returned by FPGA algorithm
