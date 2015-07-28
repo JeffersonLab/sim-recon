@@ -23,7 +23,7 @@ using namespace jana;
 
 // Used to sort hits by Energy
 bool FCALHitsSort_C(const DFCALHit* const &thit1, const DFCALHit* const &thit2) {
-	return thit1->E > thit2->E;
+    return thit1->E>thit2->E;
 }
 
 //----------------
@@ -34,9 +34,11 @@ DFCALCluster_factory::DFCALCluster_factory()
 	// Set defaults
         MIN_CLUSTER_BLOCK_COUNT = 2;
         MIN_CLUSTER_SEED_ENERGY = 0.035; // GeV
+	TIME_CUT = 15.0 ; //ns
 
 	gPARMS->SetDefaultParameter("FCAL:MIN_CLUSTER_BLOCK_COUNT", MIN_CLUSTER_BLOCK_COUNT);
 	gPARMS->SetDefaultParameter("FCAL:MIN_CLUSTER_SEED_ENERGY", MIN_CLUSTER_SEED_ENERGY);
+	gPARMS->SetDefaultParameter("FCAL:TIME_CUT",TIME_CUT,"time cut for associating FCAL hits together into a cluster");
 
 }
 
@@ -102,7 +104,7 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
            hits->hit[nhits].t = (**hit).t;
 	   hits->hit[nhits].intOverPeak = (**hit).intOverPeak;
            nhits++;
-           
+      
            if (nhits >= (int) FCAL_USER_HITS_MAX)  { 
               cout << "ERROR: FCALCluster_factory: number of hits " 
 		   << nhits << " larger than " << FCAL_USER_HITS_MAX << endl;
@@ -113,7 +115,9 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
         hits->nhits = nhits;
 
         int hitUsed[nhits]; 
-        for ( int i = 0; i < nhits; i++ ) { hitUsed[i] = 0; }
+        for ( int i = 0; i < nhits; i++ ) {
+	  hitUsed[i] = 0; 
+	}
  
         const unsigned int max = 999;
 	DFCALCluster* clusterList[max];
@@ -191,7 +195,9 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
               if ( hitUsed[ih]  < 0) // cannot share seed 
 		 continue;
 	      double totalExpected = 0;
-              //cout << " Share hit: " << ih <<  " E: " << hits->hit[ih].E << endl;
+              //cout << " Share hit: " << ih <<  " E: " << hits->hit[ih].E 
+	      //   << " ch: " << hits->hit[ih].ch << " t: " << hits->hit[ih].t
+	      //	   << endl;
 	      for ( unsigned int c = 0; c < clusterCount; c++ ) {
 		 if (clusterList[c]->getHits() > 0) {
 		    totalExpected += clusterList[c]->getEexpected(ih);
@@ -202,7 +208,9 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 		 if (clusterList[c]->getHits() > 0) {
 		    double expected = clusterList[c]->getEexpected(ih);
                     //cout << " expected " << expected ;
-		    if (expected > 1e-6) {
+		    if (expected > 1e-6 
+			&& fabs(clusterList[c]->getTimeMaxE()
+				-hits->hit[ih].t)<TIME_CUT	) {
 		       clusterList[c]->addHit(ih,expected/totalExpected);
                        ++hitUsed[ih];
 		    }
