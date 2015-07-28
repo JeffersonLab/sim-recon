@@ -14,6 +14,12 @@ using namespace std;
 
 using namespace jana;
 
+// static consts need initialization
+const double DTPOLHit_factory::SECTOR_DIVISION = 360. / DTPOLHit_factory::NSECTORS;
+const double DTPOLHit_factory::INNER_RADIUS = 22. / 2;       // From "ACTIVE INNER DIAMETER" in catalog
+const double DTPOLHit_factory::OUTER_RADIUS = 70. / 2;       // From "ACTIVE OUTER DIAMETER" in catalog
+const double DTPOLHit_factory::RING_DIVISION   = (OUTER_RADIUS - INNER_RADIUS ) / DTPOLHit_factory::NRINGS;
+
 // Order hits by sector/ring. If same sector/ring, use ADC time to order hits.
 bool DTPOLSectorHit_fadc_cmp(const DTPOLSectorDigiHit *a,const DTPOLSectorDigiHit *b){
   if (a->sector==b->sector) return (a->pulse_time<b->pulse_time);
@@ -37,16 +43,6 @@ jerror_t DTPOLHit_factory::init(void)
     /// set the base conversion scales
     a_scale    = 0.0001; 
     t_scale    = 0.0625;   // 62.5 ps/count
-    
-    NSECTORS = 32;
-    NRINGS   = 24;
-    
-    INNER_RADIUS = 22 / 2;       // From "ACTIVE INNER DIAMETER" in catalog
-    OUTER_RADIUS = 70 / 2;       // From "ACTIVE OUTER DIAMETER" in catalog
-    SECTOR_DIVISION = 360. / 32; // 360. / NSECTORS
-    RING_DIVISION   = (35. - 11. ) / 24;
-
-
 
     return NOERROR;
 }
@@ -139,9 +135,9 @@ jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	}
 
         // Make sure sector is in valid range
-        if( sectordigihit->sector <= 0 || sectordigihit->sector > NSECTORS){
+        if( sectordigihit->sector <= 0 || sectordigihit->sector > DTPOLHit_factory::NSECTORS){
 	  sprintf(str, "DTPOLSectorDigiHit sector out of range! sector=%d (should be 1-%d)", 
-		  sectordigihit->sector, NSECTORS);
+		  sectordigihit->sector, DTPOLHit_factory::NSECTORS);
 	  throw JException(str);
 	}
 
@@ -349,9 +345,9 @@ const double DTPOLHit_factory::GetConstant(const vector<double> &the_table,
         const int in_sector) const{
     char str[256];
 
-    if ( (in_sector < 0) || (in_sector >= NSECTORS)){
+    if ( (in_sector < 0) || (in_sector >= DTPOLHit_factory::NSECTORS)){
       sprintf(str, "Bad sector # requested in DTPOLHit_factory::GetConstant()!"
-	      " requested=%d , should be %ud", in_sector, NSECTORS);
+	      " requested=%d , should be %ud", in_sector, DTPOLHit_factory::NSECTORS);
       cerr << str << endl;
       throw JException(str);
     }
@@ -363,10 +359,10 @@ const double DTPOLHit_factory::GetConstant(const vector<double> &the_table,
         const DSCDigiHit *in_digihit) const{
     char str[256];
 
-    if ( (in_digihit->sector < 0) || (in_digihit->sector >= NSECTORS)){
+    if ( (in_digihit->sector < 0) || (in_digihit->sector >= DTPOLHit_factory::NSECTORS)){
       sprintf(str, "Bad sector # requested in DTPOLHit_factory::GetConstant()!"
 	      " requested=%d , should be %ud", 
-	      in_digihit->sector, NSECTORS);
+	      in_digihit->sector, DTPOLHit_factory::NSECTORS);
       cerr << str << endl;
       throw JException(str);
     }
@@ -378,10 +374,10 @@ const double DTPOLHit_factory::GetConstant(const vector<double> &the_table,
 					   const DTPOLHit *in_hit) const {
   char str[256];
   
-  if ( (in_hit->sector < 0) || (in_hit->sector >= NSECTORS)){
+  if ( (in_hit->sector < 0) || (in_hit->sector >= DTPOLHit_factory::NSECTORS)){
     sprintf(str, "Bad sector # requested in DTPOLHit_factory::GetConstant()!"
 	    " requested=%d , should be %ud",
-	    in_hit->sector, NSECTORS);
+	    in_hit->sector, DTPOLHit_factory::NSECTORS);
     cerr << str << endl;
     throw JException(str);
   }

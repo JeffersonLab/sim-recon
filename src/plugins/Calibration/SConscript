@@ -1,0 +1,9 @@
+
+import sbms
+
+Import('*')
+
+# update this when plugins are added
+subdirs = []
+SConscript(dirs=subdirs, exports='env osname', duplicate=0)
+

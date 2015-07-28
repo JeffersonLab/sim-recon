@@ -12,6 +12,7 @@ using namespace jana;
 #include "DAQ/Df250WindowRawData.h"
 #include <TPOL/DTPOLSectorDigiHit.h>
 #include <TPOL/DTPOLHit.h>
+#include <TPOL/DTPOLHit_factory.h>
 
 #include <TDirectory.h>
 #include <TH1.h>
@@ -62,9 +63,9 @@ jerror_t JEventProcessor_TPOL_online::init(void) {
 
   // book hists
   tpol_num_events = new TH1I("tpol_num_events","TPOL number of events",1, 0.5, 1.5);
-  tpol_hitMultiplicity = new TH1I("tpol_hitMultiplicity",";multiplicity of TPOL hits/event;",DTPOLSectorDigiHit::NSECTORS,0.5,DTPOLSectorDigiHit::NSECTORS+0.5);
+  tpol_hitMultiplicity = new TH1I("tpol_hitMultiplicity",";multiplicity of TPOL hits/event;",DTPOLHit_factory::NSECTORS,0.5,DTPOLHit_factory::NSECTORS+0.5);
 
-  // hnHitBySector = new TH2F("hnHitBySector","TPOL hit multiplicity by sector;sector;# hits",DTPOLSectorDigiHit::NSECTORS,-0.5,DTPOLSectorDigiHit::NSECTORS-0.5,10,-0.5,9.5);
+  // hnHitBySector = new TH2F("hnHitBySector","TPOL hit multiplicity by sector;sector;# hits",DTPOLHit_factory::NSECTORS,-0.5,DTPOLHit_factory::NSECTORS-0.5,10,-0.5,9.5);
   // back to main dir
   mainDir->cd();
 
@@ -97,7 +98,7 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, int eventnumbe
   // polarity of the detector. 
   // vector<const DTPOLHit*> hits;
   // eventLoop->Get(hits);
-  // vector<const DTPOLSectorDigiHit*> sectordigihits;
+  // vector<const DTPOLHit_factory*> sectordigihits;
   // eventLoop->Get(sectordigihits);
 
   // For the spring 2015 data, we need to grab the Df250WindowRawData objects
@@ -141,9 +142,9 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, int eventnumbe
     // if((sectordigihits.size()>0))
     //   tpol_num_events->Fill(1);
 
-    // UInt_t hits[DTPOLSectorDigiHit::NSECTORS];
+    // UInt_t hits[DTPOLHit_factory::NSECTORS];
     // // initialize counts for each sector
-    // for(Int_t sector=0;sector<DTPOLSectorDigiHit::NSECTORS;sector++){
+    // for(Int_t sector=0;sector<DTPOLHit_factory::NSECTORS;sector++){
     //   hits[sector] = 0;
     // }
 
@@ -154,7 +155,7 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, int eventnumbe
     // }
 
     // // fill hit numbers for each sector
-    // for(Int_t sector=1;sector<=DTPOLSectorDigiHit::NSECTORS;sector++){
+    // for(Int_t sector=1;sector<=DTPOLHit_factory::NSECTORS;sector++){
     //   hnHitBySector->Fill(sector,hits[sector-1]);
     // }
 
