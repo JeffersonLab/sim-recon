@@ -9,7 +9,7 @@
 #define _DFCALCluster_
 
 #include <DVector3.h>
-//#include "DFCALHit.h"
+#include "DFCALHit.h"
 using namespace std;
 
 #include <JANA/JObject.h>
