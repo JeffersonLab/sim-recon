@@ -19,9 +19,6 @@
 	TH2I* locHist_NoKinFit_Proton_dEdx_P = (TH2I*)gDirectory->Get("Proton_dEdx_P");
 	TH2I* locHist_NoKinFit_Egamma_M2pi = (TH2I*)gDirectory->Get("Egamma_M2pi");
 	TH2I* locHist_NoKinFit_PiPlusPsi_Egamma = (TH2I*)gDirectory->Get("PiPlusPsi_Egamma");
-	//TH1I* locHist_NoKinFit_PiPlusPsi = (TH1I*)locHist_NoKinFit_PiPlusPsi_Egamma->ProjectionX();
-
-	cout<<" got histograms"<<endl;
 
 	//Get/Make Canvas
 	TCanvas *locCanvas = NULL;
