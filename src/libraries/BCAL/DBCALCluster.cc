@@ -12,7 +12,7 @@
 #include <math.h>
 
 DBCALCluster::DBCALCluster( const DBCALPoint* point, double z_target_center )
-  : m_points ( 0 ), m_z_target_center(z_target_center) {
+  : m_points ( 0 ),  m_hit_E_unattenuated_sum(0.0),  m_z_target_center(z_target_center) {
 
   m_points.push_back( point );
   AddAssociatedObject( point );
@@ -51,6 +51,17 @@ DBCALCluster::addPoint( const DBCALPoint* point ){
 }
 
 void
+DBCALCluster::addHit( const DBCALUnifiedHit* hit, double hit_E_unattenuated ){
+ 
+  m_hit_E_unattenuated_sum += hit_E_unattenuated; // add the energy of all hits in a cluster
+  m_single_ended_hits.push_back(make_pair(hit,hit_E_unattenuated));
+  AddAssociatedObject( hit );
+ 
+  makeFromPoints();  // call makeFromPoints so we can include hit energy in the clusterization, but don't use any of the hit positions or times to include in the cluster averaging.
+
+}
+
+void
 DBCALCluster::mergeClust( const DBCALCluster& clust ){
 
   vector< const DBCALPoint* > otherPoints = clust.points();
@@ -72,7 +83,18 @@ DBCALCluster::mergeClust( const DBCALCluster& clust ){
     m_points.push_back( *pt );
     AddAssociatedObject( *pt );
   }
-  
+
+  vector<pair<const DBCALUnifiedHit*,double> > otherHits = clust.hits();
+
+  for( vector<pair<const DBCALUnifiedHit*,double> >::const_iterator hit = otherHits.begin();
+      hit != otherHits.end();
+      ++hit ){
+
+    m_hit_E_unattenuated_sum += hit->second; //add the unattenuated energy
+    m_single_ended_hits.push_back( *hit );
+    AddAssociatedObject( hit->first );
+  }
+ 
   makeFromPoints();
 }
 
@@ -80,7 +102,7 @@ void
 DBCALCluster::makeFromPoints(){
   
   clear();
-
+  
   //In this function we take a weighted average of the phis/thetas/etc
   //of the individual DBCALPoint's to get the phi/theta/etc of the cluster. The
   //average of phi is weighted by the energy of the hit, while the other
@@ -106,9 +128,12 @@ DBCALCluster::makeFromPoints(){
   //of TDC readout so we don't gain much by including them.
   //3) Contamination by noise. (Noise is greatest in the 4th layer)
   //These outer layer hits will of course still contribute to the energy sum.
-
   //It can happen that a cluster is made up entirely of fourth layer hits.
   //In this case, we must use all hits in the average.
+
+  //Add single-ended hit energies to the cluster energy, but don't use the single-ended hits 
+  //to calculate the cluster centroid or time.
+
   int n = m_points.size();
   int n4 = 0; //number of 4th layer points in the cluster
   for( vector< const DBCALPoint* >::const_iterator pt = m_points.begin();
@@ -141,8 +166,8 @@ DBCALCluster::makeFromPoints(){
    
     double E = (**pt).E();
 
-    m_E += E;
-
+    m_E_points += E;
+    m_E = m_E_points + m_hit_E_unattenuated_sum;  // add the energy sum from points to the energy sum from single ended hits
     double wt1, wt2;
     if ((**pt).layer() != 4 || average_layer4) {
       wt1 = E;
@@ -169,7 +194,7 @@ DBCALCluster::makeFromPoints(){
     m_rho += (**pt).rho() * wt2;
     m_sig_rho += (**pt).rho() * (**pt).rho() * wt2;
   }
-  
+	
   // now adjust the standard deviations and averages
   // the variance of the mean of a weighted distribution is s^2/n_eff, where s^2 is the variance of the sample and n_eff is as calculated below
   
@@ -189,8 +214,10 @@ DBCALCluster::makeFromPoints(){
   m_sig_theta /= sqrt(n_eff2);*/
 
   // The method below for determining sig_theta works better than the one
-  // above. sigma_z is determined using errors when reconstructing MC data.
-  double sigma_z = sqrt(1.394*1.394/m_E + 0.859*0.859);
+  // above. parameters of sigma_z are determined using errors when reconstructing MC data.
+  // Using m_E_points because the cluster z position only depends on the point z positions
+  // and point energies.
+  double sigma_z = sqrt(1.394*1.394/m_E_points + 0.859*0.859);
   m_sig_theta = sigma_z*sin(m_theta)*sin(m_theta)/DBCALGeometry::BCALINNERRAD;
   
   m_phi = atan2(sum_sin_phi,sum_cos_phi);
@@ -300,7 +327,7 @@ void
 DBCALCluster::clear(){
  
   m_E = 0;
-  
+  m_E_points = 0; 
   m_t = 0;
   m_sig_t = 0;
   
