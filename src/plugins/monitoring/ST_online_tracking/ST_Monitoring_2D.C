@@ -6,7 +6,7 @@
 {
   // Define the directory that contains the histograms
   TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("st_tracking");
-  gDirectory->ls();
+  //gDirectory->ls();
   if(dir) dir->cd();
 
   // Grab 2D histograms  
