@@ -301,7 +301,8 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points ) const {
     for( vector< const DBCALPoint* >::iterator pt = points.begin();
         pt != points.end();
         ++pt ){
-    
+       
+	if((**pt).E()<0.0) break;
       // first see if point should be added to an existing
       // cluster
       
