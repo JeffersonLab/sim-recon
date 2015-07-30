@@ -33,7 +33,7 @@ using namespace std;
 #include "BCAL/DBCALSiPMSpectrum.h"
 #include "BCAL/DBCALDigiHit.h"
 #include "BCAL/DBCALIncidentParticle.h"
-#include "BCAL/DBCALTDCHit.h"
+#include "BCAL/DBCALTDCDigiHit.h"
 #include "BCAL/DBCALTruthShower.h"
 #include "BCAL/DBCALTruthCell.h"
 #include "CDC/DCDCHit.h"
@@ -96,7 +96,7 @@ class DEventSourceHDDM:public JEventSource
       jerror_t Extract_DBCALSiPMSpectrum(hddm_s::HDDM *record, JFactory<DBCALSiPMSpectrum>* factory, string tag);
       jerror_t Extract_DBCALDigiHit(hddm_s::HDDM *record, JFactory<DBCALDigiHit> *factory, string tag);
       jerror_t Extract_DBCALIncidentParticle(hddm_s::HDDM *record, JFactory<DBCALIncidentParticle> *factory, string tag);
-      jerror_t Extract_DBCALTDCHit(hddm_s::HDDM *record, JFactory<DBCALTDCHit> *factory, string tag);
+      jerror_t Extract_DBCALTDCDigiHit(hddm_s::HDDM *record, JFactory<DBCALTDCDigiHit> *factory, string tag);
       jerror_t Extract_DMCReaction(hddm_s::HDDM *record, JFactory<DMCReaction> *factory, string tag, JEventLoop *loop);
       jerror_t Extract_DBeamPhoton(hddm_s::HDDM *record, JFactory<DBeamPhoton> *factory, string tag, JEventLoop *loop);
       jerror_t Extract_DMCThrown(hddm_s::HDDM *record, JFactory<DMCThrown> *factory, string tag);

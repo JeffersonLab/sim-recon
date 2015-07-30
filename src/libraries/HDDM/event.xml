@@ -67,6 +67,7 @@
           <bcalfADCHit end="int" E="float" maxOccurs="unbounded" minOccurs="0" t="float"/>
           <bcalfADCDigiHit end="int" pulse_integral="int" maxOccurs="unbounded" minOccurs="0" pulse_time="int"/>
           <bcalTDCHit end="int" maxOccurs="unbounded" minOccurs="0" t="float"/>
+          <bcalTDCDigiHit end="int" maxOccurs="unbounded" minOccurs="0" time="float"/>
           <bcalTruthHit E="float" maxOccurs="unbounded" minOccurs="0" t="float" zLocal="float" incident_id="int"/>
         </bcalCell>
         <bcalTruthIncidentParticle maxOccurs="unbounded" minOccurs="0" ptype="int" x="float" y="float" z="float" px="float" py="float" pz="float" id="int"/>
