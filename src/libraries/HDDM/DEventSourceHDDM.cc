@@ -1,4 +1,4 @@
-// $Id$
+// $Id: DEventSourceHDDM.cc 19023 2015-07-14 20:23:27Z beattite $
 //
 // Author: David Lawrence  June 24, 2004
 //
@@ -310,9 +310,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
       return Extract_DBCALIncidentParticle(record,
                      dynamic_cast<JFactory<DBCALIncidentParticle>*>(factory), tag);
  
-   if (dataClassName == "DBCALTDCHit")
-      return Extract_DBCALTDCHit(record,
-                     dynamic_cast<JFactory<DBCALTDCHit>*>(factory), tag);
+   if (dataClassName == "DBCALTDCDigiHit")
+      return Extract_DBCALTDCDigiHit(record,
+                     dynamic_cast<JFactory<DBCALTDCDigiHit>*>(factory), tag);
  
    if (dataClassName == "DCDCHit")
       return Extract_DCDCHit(loop, record,
@@ -985,10 +985,10 @@ jerror_t DEventSourceHDDM::Extract_DBCALSiPMSpectrum(hddm_s::HDDM *record,
 }
 
 //------------------
-// Extract_DBCALTDCHit
+// Extract_DBCALTDCDigiHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DBCALTDCHit(hddm_s::HDDM *record,
-                                   JFactory<DBCALTDCHit> *factory, string tag)
+jerror_t DEventSourceHDDM::Extract_DBCALTDCDigiHit(hddm_s::HDDM *record,
+                                   JFactory<DBCALTDCDigiHit> *factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -999,21 +999,18 @@ jerror_t DEventSourceHDDM::Extract_DBCALTDCHit(hddm_s::HDDM *record,
    if (tag != "")
       return OBJECT_NOT_AVAILABLE;
    
-   vector<DBCALTDCHit*> data;
+   vector<DBCALTDCDigiHit*> data;
 
-   const hddm_s::BcalTDCHitList &hits = record->getBcalTDCHits();
-   hddm_s::BcalTDCHitList::iterator iter;
+   const hddm_s::BcalTDCDigiHitList &hits = record->getBcalTDCDigiHits();
+   hddm_s::BcalTDCDigiHitList::iterator iter;
    for (iter = hits.begin(); iter != hits.end(); ++iter) {
-      DBCALTDCHit *bcaltdchit = new DBCALTDCHit;
+      DBCALTDCDigiHit *bcaltdchit = new DBCALTDCDigiHit;
       bcaltdchit->module = iter->getModule();
       bcaltdchit->layer  = iter->getLayer();
       bcaltdchit->sector = iter->getSector();
       bcaltdchit->end    = (iter->getEnd() == 0)? DBCALGeometry::kUpstream :
                                                 DBCALGeometry::kDownstream;
-      bcaltdchit->cellId = DBCALGeometry::cellId(iter->getModule(),
-                                                 iter->getLayer(),
-                                                 iter->getSector());
-      bcaltdchit->t      = iter->getT();
+      bcaltdchit->time   = (uint32_t)iter->getTime();
       data.push_back(bcaltdchit);
    }
          
