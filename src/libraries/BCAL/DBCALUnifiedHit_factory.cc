@@ -5,6 +5,7 @@ using namespace std;
 using namespace jana;
 
 #include "BCAL/DBCALUnifiedHit_factory.h"
+#include "BCAL/DBCALDigiHit.h"
 #include "DAQ/Df250PulsePedestal.h"
 
 #include "units.h"
@@ -198,12 +199,16 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
             const DBCALHit* hit=hits[i];
 
             // Get the pulse pedestal so we have access to the pulse peak
+            const DBCALDigiHit *digiHit;
+            hit->GetSingle(digiHit);
             const Df250PulsePedestal *pp;
-            hit->GetSingle(pp);
+            digiHit->GetSingle(pp);
 
-            float pulse_peak, E, t, t_ADC, t_TDC=0; //these are values that will be assigned to the DBCALUnifiedHit
+            if (pp == NULL) continue; // Shoudln't happen
 
-            pulse_peak = (float) pp->pulse_peak;
+            float pulse_peak = 0, E, t, t_ADC, t_TDC=0; //these are values that will be assigned to the DBCALUnifiedHit
+
+            if (pp != NULL) pulse_peak = (float) pp->pulse_peak - pp->pedestal;
             E = hit->E;
             t_ADC = hit->t;
 
@@ -225,8 +230,8 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
                 }
                 t_TDC = tdc_hits[goodTDCindex]->t;
                 // Apply the timewalk correction
-                //timewalk_coefficients tdc_coeff = tdc_timewalk_map[chan];
-                //t_TDC -= tdc_coeff.c0 + tdc_coeff.c1/pow(E-tdc_coeff.c3,tdc_coeff.c2);
+                timewalk_coefficients tdc_coeff = tdc_timewalk_map[chan];
+                t_TDC -= tdc_coeff.c0 + tdc_coeff.c1/pow(pulse_peak/14.,tdc_coeff.c2);
             }
 
             // Decide which time to use for further analysis
