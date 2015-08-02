@@ -118,5 +118,4 @@
    TPaveLabel *p1 = new TPaveLabel(0.3,0.5,0.7,0.6,terror,"brNDC");
    p1->Draw();
   }
-  
 }
