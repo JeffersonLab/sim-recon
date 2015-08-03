@@ -21,6 +21,7 @@ double PHI_MAX = 2.0*M_PI;
 double THETA_MIN = 0.0;
 double THETA_MAX = M_PI;
 bool IS_POSITIVE = true;
+int PART_TYPE = -1;
 
 int RUN_NUMBER=100;
 string OUTPUT_FILENAME="genpi.ascii";
@@ -90,7 +91,7 @@ int main(int narg, char* argv[])
 		piXs.push_back(p);
 			
 		// Write event to file
-		unsigned int type = PI_PLUS_TYPE;
+		unsigned int type = (PART_TYPE<0) ? PI_PLUS_TYPE : PART_TYPE;
 		of<<RUN_NUMBER<<" "<<nevents<<" "<<piXs.size()<<endl;
 		for(unsigned int j=0; j<piXs.size(); j++){
 			piX &p = piXs[j];
@@ -100,7 +101,8 @@ int main(int narg, char* argv[])
 			of<<"   "<<0<<" "<<p.px<<" "<<p.py<<" "<<p.pz<<" "<<p.E<<endl;
 			
 			// alternate bewtween pi+ and pi-
-			type = IS_POSITIVE ? PI_PLUS_TYPE:PI_MINUS_TYPE;
+            if(PART_TYPE<0)
+                type = IS_POSITIVE ? PI_PLUS_TYPE:PI_MINUS_TYPE;
 		}
 		
 		// Update screen
@@ -158,6 +160,9 @@ void ParseCommandLineArguments(int narg, char* argv[])
 			RUN_NUMBER = atoi(argv[++i]);
 		}else if(arg=="-n"){
 			IS_POSITIVE = false;
+		}else if(arg=="-Type"){
+			if(i==narg-1){cout<<"-Type requires an argument!"<<endl; Usage();}
+			PART_TYPE = atoi(argv[++i]);
 		}
 	}
 	
