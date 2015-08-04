@@ -134,6 +134,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	F125_PP_EMULATION_MODE = kEmulationAuto;
 	F250_EMULATION_MIN_SWING = 20; // Formerly F125_EMULATION_THRESHOLD
 	F125_THRESHOLD = 80;
+	F125_SPARSIFICATION_THRESHOLD = 0;
 	F125_NSA = 40;
 	F125_NSB = 3;
 	F125_NSA_CDC = 80;
