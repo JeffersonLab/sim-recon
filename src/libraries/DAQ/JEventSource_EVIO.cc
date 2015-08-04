@@ -177,7 +177,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:F250_PI_EMULATION_MODE", f250_pi_emulation_mode, "Set f250 pulse integral emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
 		gPARMS->SetDefaultParameter("EVIO:F250_PT_EMULATION_MODE", f250_pt_emulation_mode, "Set f250 pulse time emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
 		gPARMS->SetDefaultParameter("EVIO:F250_PP_EMULATION_MODE", f250_pp_emulation_mode, "Set f250 pulse pedestal emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
-		gPARMS->SetDefaultParameter("EVIO:F250_THRESHOLD", F250_THRESHOLD, "Identified pulse threshold used during emulation of f125.");
+		gPARMS->SetDefaultParameter("EVIO:F250_EMULATION_MIN_SWING", F250_EMULATION_MIN_SWING, "Minimum difference between min and max sample required for emulation of f250.");
+		gPARMS->SetDefaultParameter("EVIO:F250_THRESHOLD", F250_THRESHOLD, "Identified pulse threshold used during emulation of f250.");
 		gPARMS->SetDefaultParameter("EVIO:F250_SPARSIFICATION_THRESHOLD", F250_SPARSIFICATION_THRESHOLD, "Sparsification threshold used during emulation of f250.");
 		gPARMS->SetDefaultParameter("EVIO:F250_NSA", F250_NSA, "For f250PulseIntegral object.  NSA value for emulation from window raw data and for pulse integral pedestal normalization.");
 		gPARMS->SetDefaultParameter("EVIO:F250_NSB", F250_NSB, "For f250PulseIntegral object.  NSB value for emulation from window raw data and for pulse integral pedestal normalization.");
@@ -186,6 +187,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:F125_PI_EMULATION_MODE", f125_pi_emulation_mode, "Set f125 pulse integral emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
 		gPARMS->SetDefaultParameter("EVIO:F125_PT_EMULATION_MODE", f125_pt_emulation_mode, "Set f125 pulse time emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
 		gPARMS->SetDefaultParameter("EVIO:F125_PP_EMULATION_MODE", f125_pp_emulation_mode, "Set f125 pulse pedestal emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
+		gPARMS->SetDefaultParameter("EVIO:F125_EMULATION_MIN_SWING", F125_EMULATION_MIN_SWING, "Minimum difference between min and max sample required for emulation of f125.");
 		gPARMS->SetDefaultParameter("EVIO:F125_THRESHOLD", F125_THRESHOLD, "Identified pulse threshold used during emulation of f125.");
 		gPARMS->SetDefaultParameter("EVIO:F125_SPARSIFICATION_THRESHOLD", F125_SPARSIFICATION_THRESHOLD, "Sparsification threshold used during emulation of f125.");
 		gPARMS->SetDefaultParameter("EVIO:F125_NSA", F125_NSA, "For f125PulseIntegral object.  NSA value for emulation from window raw data and for pulse integral pedestal normalization.");
