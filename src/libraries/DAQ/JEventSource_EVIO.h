@@ -149,6 +149,12 @@ class JEventSource_EVIO: public jana::JEventSource{
 			kFileSource,
 			kETSource
 		};
+		
+		enum EmulationModeType{
+			kEmulationNone,
+			kEmulationAlways,
+			kEmulationAuto
+		};
 
 
 		                    JEventSource_EVIO(const char* source_name);
@@ -204,27 +210,33 @@ class JEventSource_EVIO: public jana::JEventSource{
 		bool  LOOP_FOREVER;
 		int   VERBOSE;
 		float TIMEOUT;
-		bool  EMULATE_PULSE_INTEGRAL_MODE;
-		uint32_t  EMULATE_SPARSIFICATION_THRESHOLD;
-		uint32_t EMULATE_FADC250_TIME_THRESHOLD;
-		uint32_t EMULATE_FADC125_TIME_THRESHOLD;
-		uint32_t EMULATE_FADC125_TIME_UPSAMPLE;        ///< Use the CMU upsampling algorithm when emulating f125 pulse times
 		string MODTYPE_MAP_FILENAME;
 		bool ENABLE_DISENTANGLING;
-		bool F250_IGNORE_PULSETIME;
-		bool F125_IGNORE_PULSETIME;
-		uint32_t F250_THRESHOLD;             ///< Threshold to use for firmware emulation
-		uint32_t F125_THRESHOLD;
-		uint32_t F250_NSA;                   ///< Number of samples to integrate after thershold crossing
-		uint32_t F250_NSB;                   ///< Number of samples to integrate before thershold crossing
-		uint32_t F250_NSPED;                 ///< Number of samples to integrate for pedestal
-		uint32_t F250_EMULATION_THRESHOLD;   ///< Minimum difference between max and min samples to do emulation
-		uint32_t F125_NSA;                   ///< Number of samples to integrate after thershold crossing
-		uint32_t F125_NSB;                   ///< Number of samples to integrate before thershold crossing
-		uint32_t F125_NSA_CDC;               ///< Number of samples to integrate after thershold crossing rocid 24-28 only!
-		uint32_t F125_NSB_CDC;               ///< Number of samples to integrate before thershold crossing rocid 24-28 only!
-		uint32_t F125_EMULATION_THRESHOLD; 
-		uint32_t F125_NSPED;                 ///< Number of samples to integrate for pedestal
+
+		EmulationModeType F250_PI_EMULATION_MODE;  ///< F250 Pulse Integral emulation mode
+		EmulationModeType F250_PT_EMULATION_MODE;  ///< F250 Pulse Time     emulation mode
+		EmulationModeType F250_PP_EMULATION_MODE;  ///< F250 Pulse Pedestal emulation mode
+		EmulationModeType F125_PI_EMULATION_MODE;  ///< F125 Pulse Integral emulation mode
+		EmulationModeType F125_PT_EMULATION_MODE;  ///< F125 Pulse Time     emulation mode
+		EmulationModeType F125_PP_EMULATION_MODE;  ///< F125 Pulse Pedestal emulation mode
+
+		uint32_t F250_EMULATION_MIN_SWING;         ///< Minimum difference between max and min samples to do emulation
+		uint32_t F250_THRESHOLD;                   ///< Threshold to use for firmware emulation
+		uint32_t F250_SPARSIFICATION_THRESHOLD;    ///< Sparsification thresh. applied to non-ped-subtracted integral during emulation
+		uint32_t F250_NSA;                         ///< Number of samples to integrate after threshold crossing during emulation
+		uint32_t F250_NSB;                         ///< Number of samples to integrate before threshold crossing during emulation
+		uint32_t F250_NSPED;                       ///< Number of samples to integrate for pedestal during emulation
+
+		uint32_t F125_EMULATION_MIN_SWING;         ///< Minimum difference between max and min samples to do emulation
+		uint32_t F125_THRESHOLD;                   ///< Threshold to use for firmware emulation
+		uint32_t F125_SPARSIFICATION_THRESHOLD;    ///< Sparsification thresh. applied to non-ped-subtracted integral during emulation
+		uint32_t F125_NSA;                         ///< Number of samples to integrate after threshold crossing during emulation
+		uint32_t F125_NSB;                         ///< Number of samples to integrate before threshold crossing during emulation
+		uint32_t F125_NSA_CDC;                     ///< Number of samples to integrate after thershold crossing during emulation rocid 24-28 only!
+		uint32_t F125_NSB_CDC;                     ///< Number of samples to integrate before thershold crossing during emulation rocid 24-28 only!
+		uint32_t F125_NSPED;                       ///< Number of samples to integrate for pedestal during emulation
+		uint32_t F125_TIME_UPSAMPLE;               ///< Use the CMU upsampling algorithm when emulating f125 pulse times
+
 		uint32_t USER_RUN_NUMBER;            ///< Run number supplied by user
 		uint32_t F125PULSE_NUMBER_FILTER;    ///< Discard DF125PulseXXX objects with pulse number equal or greater than this
 		uint32_t F250PULSE_NUMBER_FILTER;    ///< Discard DF250PulseXXX objects with pulse number equal or greater than this
@@ -296,8 +308,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void AddSourceObjectsToCallStack(JEventLoop *loop, string className);
 		void AddEmulatedObjectsToCallStack(JEventLoop *loop, string caller, string callee);
 		void EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
-		void EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs, 
-					       vector<JObject*> &time_objs);
+		void EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs, vector<JObject*> &pt_objs);
 		void EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);
 		void EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);
 		jerror_t ParseEvents(ObjList *objs_ptr);
