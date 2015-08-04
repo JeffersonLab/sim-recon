@@ -3,3 +3,4 @@ Darwin_*
 SunOS_*
 src/.*
 src/SBMS/*.pyc
+*~

@@ -9,7 +9,17 @@
 #define _JEventProcessor_ST_online_tracking_
 
 #include <JANA/JEventProcessor.h>
+#include <START_COUNTER/DSCHit.h>
+#include <RF/DRFTDCDigiTime.h>
+#include <RF/DRFTime_factory.h>
+#include <PID/DEventRFBunch.h>
+#include <PID/DParticleID.h>
+#include <TRACKING/DTrackFitter.h>
 
+#include "TF1.h"
+#include "TH1D.h"
+#include "TObjArray.h"
+#include "TMath.h"
 class JEventProcessor_ST_online_tracking:public jana::JEventProcessor{
 	public:
 		JEventProcessor_ST_online_tracking();
@@ -22,6 +32,7 @@ class JEventProcessor_ST_online_tracking:public jana::JEventProcessor{
 		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+const DParticleID* dParticleID;
 };
 
 #endif // _JEventProcessor_ST_online_tracking_

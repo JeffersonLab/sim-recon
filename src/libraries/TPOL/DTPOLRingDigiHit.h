@@ -8,7 +8,6 @@ class DTPOLRingDigiHit:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(DTPOLRingDigiHit);
 		
-		static const int NRINGS   = 24;
 
 		int      ring;                 // ring number 1-24
 		uint32_t pulse_integral;       // identified pulse integral as returned by FPGA algorithm

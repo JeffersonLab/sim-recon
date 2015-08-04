@@ -1,4 +1,4 @@
-// $Id$
+// $Id: mcsmear.cc 19023 2015-07-14 20:23:27Z beattite $
 //
 // Created June 22, 2005  David Lawrence
 
@@ -77,13 +77,18 @@ int BCAL_NUM_MODULES = 48;
 int BCAL_NUM_LAYERS = 4;
 int BCAL_NUM_SECTORS = 4;
 
+double BCAL_BASE_TIME_OFFSET     = 0; // -100.0 (from calibDB BCAL/base_time_offset)
+double BCAL_TDC_BASE_TIME_OFFSET = 0; // -100.0 (from calibDB BCAL/base_time_offset)
+
 vector<vector<double> > attenuation_parameters; // Avg. of 525 (from calibDB BCAL/attenuation_parameters)
 vector<double> effective_velocities; // 16.75 (from calibDB BCAL/effective_velocities)
 
-double BCAL_ADC_THRESHOLD_MEV = 2.2;  // MeV (To be updated/improved)
+double BCAL_ADC_THRESHOLD_MEV    = 2.2;  // MeV (To be updated/improved)
 double BCAL_FADC_TIME_RESOLUTION = 0.3;  // ns (To be updated/improved)
-double BCAL_MEV_PER_ADC_COUNT = 0.029;  // MeV per integrated ADC count (based on Spring 2015 calibrations)
-double BCAL_NS_PER_ADC_COUNT = 0.0625;  // ns per ADC count (based on 62.5 ps per count fADC setting)
+double BCAL_TDC_TIME_RESOLUTION  = 0.3;  // ns (To be updated/improved)
+double BCAL_MEV_PER_ADC_COUNT    = 0.029;  // MeV per integrated ADC count (based on Spring 2015 calibrations)
+double BCAL_NS_PER_ADC_COUNT     = 0.0;  // 0.0625 ns per ADC count (from calibDB BCAL/digi_scales)
+double BCAL_NS_PER_TDC_COUNT     = 0.0;  // 0.0559 ns per TDC count (from calibDB BCAL/digi_scales)
 
 // BCAL flags
 bool NO_T_SMEAR = false;
@@ -256,6 +261,22 @@ int main(int narg,char* argv[])
      for (unsigned int i = 0; i < effective_velocities_temp.size(); i++){
        effective_velocities.push_back(effective_velocities_temp.at(i));
      }
+   }
+
+   {
+     cout<<"get BCAL/digi_scales parameters from calibDB"<<endl;
+     map<string, double> bcaldigiscales;
+     jcalib->Get("BCAL/digi_scales", bcaldigiscales);
+     BCAL_NS_PER_ADC_COUNT = bcaldigiscales["BCAL_ADC_TSCALE"];
+     BCAL_NS_PER_TDC_COUNT = bcaldigiscales["BCAL_TDC_SCALE"];
+   }
+
+   {
+     cout<<"get BCAL/base_time_offset parameters from calibDB"<<endl;
+     map<string, double> bcaltimeoffsets;
+     jcalib->Get("BCAL/base_time_offset", bcaltimeoffsets);
+     BCAL_BASE_TIME_OFFSET = bcaltimeoffsets["BCAL_BASE_TIME_OFFSET"];
+     BCAL_TDC_BASE_TIME_OFFSET = bcaltimeoffsets["BCAL_TDC_BASE_TIME_OFFSET"];
    }
 
    {

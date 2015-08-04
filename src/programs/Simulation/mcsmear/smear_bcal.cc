@@ -155,6 +155,23 @@ class fADCHitList{
 };
 
 //..........................
+// TDCHitList is a utility class that is used to hold info
+// for a single F1TDC hit
+//..........................
+class TDCHitList{
+   public:
+      TDCHitList()
+      {}
+      
+      int module;
+      int sumlayer;
+      int sumsector;
+      
+      vector<double> uphits;
+      vector<double> dnhits;
+};
+
+//..........................
 // IncidentParticle_t is a utility class for holding the
 // parameters of particles recorded as incident on the 
 // BCAL (shower causing)
@@ -194,11 +211,13 @@ void SortSiPMHits(map<bcal_index,
                      CellHits> &SiPMHits,
                      map<int, SumHits> &bcalfADC, double Resolution);
 void SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC);
-void ApplyTimeSmearing(double sigma_ns, map<int, fADCHitList> &fADCHits);
+void ApplyTimeSmearing(double sigma_ns, double sigma_ns_TDC, map<int, fADCHitList> &fADCHits, map<int, TDCHitList> &TDCHits);
 void FindHits(double thresh_MeV,
               map<int, SumHits> &bcalfADC,
-              map<int, fADCHitList> &fADCHits);
+              map<int, fADCHitList> &fADCHits,
+              map<int, TDCHitList> &TDCHits);
 void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
+                        map<int, TDCHitList> &TDCHits,
                         hddm_s::HDDM *record);
 
 // Mutex used to control accessing the ROOT global memory
@@ -219,6 +238,7 @@ extern bool NO_POISSON_STATISTICS;
 extern bool NO_THRESHOLD_CUT;
 
 extern double BCAL_FADC_TIME_RESOLUTION; // ns
+extern double BCAL_TDC_TIME_RESOLUTION; // ns
 extern double BCAL_ADC_THRESHOLD_MEV; // MeV
 
 // setup response parameters
@@ -227,6 +247,7 @@ extern double BCAL_SAMPLINGCOEFB;               // 0.013 (from calibDB BCAL/bcal
 extern double BCAL_TWO_HIT_RESOL;               // 50. (from calibDB BCAL/bcal_parms)
 extern double BCAL_mevPerPE;                    // (defined below)
 extern double BCAL_NS_PER_ADC_COUNT;            // 0.0625 (defined in mcsmear.cc)
+extern double BCAL_NS_PER_TDC_COUNT;            // 0.0559 (defined in mcsmear.cc)
 extern double BCAL_MEV_PER_ADC_COUNT;           // 0.029 (defined in mcsmear.cc)
 
 extern vector<vector<double> > attenuation_parameters; // Avg. of 525 (from calibDB BCAL/attenuation_parameters)
@@ -235,6 +256,9 @@ extern vector<double> effective_velocities;     // 16.75 (from calibDB BCAL/effe
 extern int BCAL_NUM_MODULES;
 extern int BCAL_NUM_LAYERS;
 extern int BCAL_NUM_SECTORS;
+
+extern double BCAL_BASE_TIME_OFFSET;            // -100.0 (from calibDB BCAL/base_time_offset)
+extern double BCAL_TDC_BASE_TIME_OFFSET;        // -100.0 (from calibDB BCAL/base_time_offset)
 
 // The following are not currently in use
 //extern double BCAL_DARKRATE_GHZ;                // 0.0176 (from calibDB BCAL/bcal_parms) for 4x4 array
@@ -307,13 +331,14 @@ void SmearBCAL(hddm_s::HDDM *record)
    
     // Apply energy threshold to dismiss low-energy hits
     map<int, fADCHitList> fADCHits;
-    FindHits(BCAL_ADC_THRESHOLD_MEV, bcalfADC, fADCHits);
+    map<int, TDCHitList> TDCHits;
+    FindHits(BCAL_ADC_THRESHOLD_MEV, bcalfADC, fADCHits, TDCHits);
 
     // Apply time smearing to emulate the fADC resolution
-    ApplyTimeSmearing(BCAL_FADC_TIME_RESOLUTION, fADCHits);
+    ApplyTimeSmearing(BCAL_FADC_TIME_RESOLUTION, BCAL_TDC_TIME_RESOLUTION, fADCHits, TDCHits);
    
     // Copy hits into HDDM tree
-    CopyBCALHitsToHDDM(fADCHits, record);
+    CopyBCALHitsToHDDM(fADCHits, TDCHits, record);
    
     bcalfADC.clear();
 }
@@ -672,11 +697,11 @@ void SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
    
    double Esmeared = 0;
    double sigma = 0;
-   double sigma1 = 43.*0.045;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
-   double sigma2 = 46.*0.045;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
-   double sigma3 = 49.*0.045;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
-   double sigma4 = 52.*0.045;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
-   // Values from logbook entry are in units of integrated ADC counts.  Average SiPM gain ~ 0.045 MeV per integrated ADC count.
+   double sigma1 = 43.*BCAL_MEV_PER_ADC_COUNT;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
+   double sigma2 = 46.*BCAL_MEV_PER_ADC_COUNT;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
+   double sigma3 = 49.*BCAL_MEV_PER_ADC_COUNT;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
+   double sigma4 = 52.*BCAL_MEV_PER_ADC_COUNT;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
+   // Values from logbook entry are in units of integrated ADC counts.  Average SiPM gain ~ 0.029 MeV per integrated ADC count.
 
    // Loop over all fADC readout cells
    for(int imodule=1; imodule<=DBCALGeometry::NBCALMODS; imodule++){
@@ -716,11 +741,12 @@ void SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
 //-----------
 // ApplyTimeSmearing
 //-----------
-void ApplyTimeSmearing(double sigma_ns, map<int, fADCHitList> &fADCHits)
+void ApplyTimeSmearing(double sigma_ns, double sigma_ns_TDC, map<int, fADCHitList> &fADCHits, map<int, TDCHitList> &TDCHits)
 {
    /// The fADC250 will extract a time from the samples by applying an algorithm
    /// to a few of the samples taken every 4ns. The perfect times from HDGeant
    /// must be smeared to reflect the timing resolution of the fADC250.
+   /// The F1TDC250 does something similar, but with ???ns samples.
 
    if(NO_T_SMEAR) return;
 
@@ -738,14 +764,29 @@ void ApplyTimeSmearing(double sigma_ns, map<int, fADCHitList> &fADCHits)
          hitlist.dnhits[i].t += gDRandom.Gaus(sigma_ns);
       }
    }
+
+   map<int, TDCHitList>::iterator itTDC = TDCHits.begin();
+   for(; itTDC!=TDCHits.end(); itTDC++){
+      TDCHitList &TDChitlist = itTDC->second;
+      
+      // upstream
+      for(unsigned int i=0; i<TDChitlist.uphits.size(); i++){
+         TDChitlist.uphits[i] += gDRandom.Gaus(sigma_ns_TDC);
+      }
+
+      // downstream
+      for(unsigned int i=0; i<TDChitlist.dnhits.size(); i++){
+         TDChitlist.dnhits[i] += gDRandom.Gaus(sigma_ns_TDC);
+      }
+   }
 }
 
 //-----------
 // FindHits
 //-----------
-void FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<int, fADCHitList> &fADCHits)
+void FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<int, fADCHitList> &fADCHits, map<int,TDCHitList> &TDCHits)
 {
-   /// Loop over Sumhits objects and find hits that cross the energy threshold
+   /// Loop over Sumhits objects and find hits that cross the energy threshold (ADC)
    map<int, SumHits>::iterator iter = bcalfADC.begin();
    for(; iter!=bcalfADC.end(); iter++){
       
@@ -755,14 +796,28 @@ void FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<int, fADCHitLi
       vector<fADCHit> uphits;
       vector<fADCHit> dnhits;
 
+      vector<double> uphitsTDC;
+      vector<double> dnhitsTDC;
+
+      // The histogram should have the signal size for the ADC, but the TADC
+      // leg will actually have a larger size since the pre-amp gain will be
+      // set differently. Scale the threshold down here to accomodate this.
+      double preamp_gain_tdc = 5.0;
+      double thresh_MeV_TDC = thresh_MeV/preamp_gain_tdc;
+      
+      //the outermost layer of the detector is not equipped with TDCs, so don't generate any TDC hits
+      int layer = DBCALGeometry::layer(fADCId);
+
       for(int ii = 0; ii < (int)sumhits.EUP.size(); ii++){
-        if(sumhits.EUP[ii] > thresh_MeV && sumhits.tUP[ii] < 1000) uphits.push_back(fADCHit(sumhits.EUP[ii],sumhits.tUP[ii])); // Fill uphits and dnhits with energies (in MeV)
-      }                                                                                                                        // and times when they cross an energy threshold.
-      for(int ii = 0; ii < (int)sumhits.EDN.size(); ii++){
-        if(sumhits.EDN[ii] > thresh_MeV && sumhits.tDN[ii] < 1000) dnhits.push_back(fADCHit(sumhits.EDN[ii],sumhits.tDN[ii]));
+        if(sumhits.EUP[ii] > thresh_MeV && sumhits.tUP[ii] < 2000) uphits.push_back(fADCHit(sumhits.EUP[ii],sumhits.tUP[ii])); // Fill uphits and dnhits with energies (in MeV)
+        if(layer != 4 && sumhits.EUP[ii] > thresh_MeV_TDC && sumhits.tUP[ii] < 2000) uphitsTDC.push_back(sumhits.tUP[ii]);     // and times when they cross an energy threshold.
+      }                                                                                                                        // Also fill TDC uphits and dnhits with times if
+      for(int ii = 0; ii < (int)sumhits.EDN.size(); ii++){                                                                     // they are not layer 4 hits and cross threshold.
+        if(sumhits.EDN[ii] > thresh_MeV && sumhits.tDN[ii] < 2000) dnhits.push_back(fADCHit(sumhits.EDN[ii],sumhits.tDN[ii]));
+        if(layer != 4 && sumhits.EDN[ii] > thresh_MeV_TDC && sumhits.tDN[ii] < 2000) dnhitsTDC.push_back(sumhits.tDN[ii]);
       }
       
-      // If at least one readout channel has a hit, add the readout cell to fADCHits
+      // If at least one ADC readout channel has a hit, add the readout cell to fADCHits
       if(uphits.size()>0 || dnhits.size()>0){
          fADCHitList &hitlist = fADCHits[fADCId];
 
@@ -776,6 +831,21 @@ void FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<int, fADCHitLi
          hitlist.uphits = uphits;
          hitlist.dnhits = dnhits;
       }
+      
+      // If at least one TDC readout channel has a hit, add the readout cell to TDCHits
+      if(uphitsTDC.size()>0 || dnhitsTDC.size()>0){
+         TDCHitList &hitlistTDC = TDCHits[fADCId];
+
+         // The module, fADC layer, and fADC sector are encoded in fADCId
+         // (n.b. yes, these are the same methods used for extracting 
+         // similar quantities from the cellId.)
+         hitlistTDC.module = DBCALGeometry::module(fADCId);
+         hitlistTDC.sumlayer = DBCALGeometry::layer(fADCId);
+         hitlistTDC.sumsector = DBCALGeometry::sector(fADCId);
+         
+         hitlistTDC.uphits = uphitsTDC;
+         hitlistTDC.dnhits = dnhitsTDC;
+      }
    }
 }
 
@@ -783,6 +853,7 @@ void FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<int, fADCHitLi
 // CopyBCALHitsToHDDM
 //-----------
 void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
+                        map<int, TDCHitList> &TDCHits,
                         hddm_s::HDDM *record)
 {
    /// Loop over fADCHitList objects and copy the fADC hits into the HDDM tree.
@@ -804,12 +875,13 @@ void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
    hddm_s::BcalCellList::iterator iter;
    for (iter = cells.begin(); iter != cells.end(); ++iter) {
 
-      // Delete any existing bcalfADCHit structures
-       iter->deleteBcalfADCHits();
+      // Delete any existing bcalfADCDigiHit and bcalTDCDigiHit structures
+       iter->deleteBcalfADCDigiHits();
+       iter->deleteBcalTDCDigiHits();
    }
 
    // If we have no cells over threshold, then bail now.
-   if (fADCHits.size() == 0)
+   if (fADCHits.size() == 0 && TDCHits.size() == 0)
       return;
    
    // Create bcalfADCHit structures to hold our fADC hits
@@ -836,17 +908,69 @@ void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       
       // Copy hits into BcalfADCDigiHit HDDM structure.
       // Energies and times must be converted to units of ADC counts.
+      // Because we use unsigned integers, times must be positive.  HDGEANT can output negative times,
+      // so we can offset the times now to ensure they are positive before the conversion, then
+      // fix the offset layer in the hit factories.  Also, any hit that still has a negative time
+      // will be ignored.
       for (unsigned int i = 0; i < hitlist.uphits.size(); i++) {
-         hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
-         fadcs().setEnd(bcal_index::kUp);
-         fadcs().setPulse_integral(round(hitlist.uphits[i].E/BCAL_MEV_PER_ADC_COUNT));
-         fadcs().setPulse_time(round(hitlist.uphits[i].t/BCAL_NS_PER_ADC_COUNT));
+         int integer_time = round((hitlist.uphits[i].t-BCAL_BASE_TIME_OFFSET)/BCAL_NS_PER_ADC_COUNT);
+         if (integer_time >= 0){
+            hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
+            fadcs().setEnd(bcal_index::kUp);
+            fadcs().setPulse_integral(round(hitlist.uphits[i].E/BCAL_MEV_PER_ADC_COUNT));
+            fadcs().setPulse_time(integer_time);
+         }
       }
       for (unsigned int i = 0; i < hitlist.dnhits.size(); i++) {
-         hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
-         fadcs().setEnd(bcal_index::kDown);
-         fadcs().setPulse_integral(round(hitlist.dnhits[i].E/BCAL_MEV_PER_ADC_COUNT));
-         fadcs().setPulse_time(round(hitlist.dnhits[i].t/BCAL_NS_PER_ADC_COUNT));
+         int integer_time = round((hitlist.dnhits[i].t-BCAL_BASE_TIME_OFFSET)/BCAL_NS_PER_ADC_COUNT);
+         if (integer_time >= 0){
+            hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
+            fadcs().setEnd(bcal_index::kDown);
+            fadcs().setPulse_integral(round(hitlist.dnhits[i].E/BCAL_MEV_PER_ADC_COUNT));
+            fadcs().setPulse_time(integer_time);
+         } 
+      }
+   }
+
+   // Create bcalTDCDigiHit structures to hold our F1TDC hits
+   map<int, TDCHitList>::iterator ittdc;
+   for (ittdc = TDCHits.begin(); ittdc != TDCHits.end(); ittdc++) {
+      // Get pointer to our TDC hit information that needs to be copied to HDDM
+      TDCHitList &hitlist = ittdc->second;
+      // Check if this cell is already present in the cells list
+      cells = bcals().getBcalCells();
+      for (iter = cells.begin(); iter != cells.end(); ++iter) {
+         if (iter->getModule() == ittdc->second.module &&
+             iter->getSector() == ittdc->second.sumsector &&
+             iter->getLayer() == ittdc->second.sumlayer)
+         {
+            break;
+         }
+      }
+      if (iter == cells.end()) {
+         iter = bcals().addBcalCells().begin();
+         iter->setModule(hitlist.module);
+         iter->setLayer(hitlist.sumlayer);
+         iter->setSector(hitlist.sumsector);
+      }
+      
+      // Copy hits into BcalTDCDigiHit HDDM structure.
+      // Times must be converted to units of TDC counts.
+      for (unsigned int i = 0; i < hitlist.uphits.size(); ++i) {
+         int integer_time = round((hitlist.uphits[i]-BCAL_TDC_BASE_TIME_OFFSET)/BCAL_NS_PER_TDC_COUNT);
+         if (integer_time >= 0){
+            hddm_s::BcalTDCDigiHitList tdcs = iter->addBcalTDCDigiHits();
+            tdcs().setEnd(bcal_index::kUp);
+            tdcs().setTime(integer_time);
+         }
+      }
+      for (unsigned int i = 0; i < hitlist.dnhits.size(); i++) {
+         int integer_time = round((hitlist.dnhits[i]-BCAL_TDC_BASE_TIME_OFFSET)/BCAL_NS_PER_TDC_COUNT);
+         if (integer_time >= 0){
+            hddm_s::BcalTDCDigiHitList tdcs = iter->addBcalTDCDigiHits();
+            tdcs().setEnd(bcal_index::kDown);
+            tdcs().setTime(round((hitlist.dnhits[i]-BCAL_TDC_BASE_TIME_OFFSET)/BCAL_NS_PER_TDC_COUNT));
+         }
       }
    }
 }
