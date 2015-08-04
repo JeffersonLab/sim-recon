@@ -2127,14 +2127,14 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 	/// implements an upsampling technique developed by Naomi Jarvis at
 	/// CMU. This was not implemented in the firmware for the 2014 commissioning
 	/// run, but was implemented for later runs. The second algorithm is
-	/// suppose to match the firmware algorithm used in the f125 during the
+	/// supposed to match the firmware algorithm used in the f125 during the
 	/// 2014 commissioning run. This is a copy of the f250 algorithm. At the
 	/// time I'm writing this, it does not appear to give identical, or even 
 	/// terribly close results to what the actual firmware reported. To select
 	/// using this second algorithm (the "f250 algorithm") set the 
 	/// EVIO:F125_TIME_UPSAMPLE config. parameter to "0". To turn
 	/// on emulation for data that actually has hits in the data stream from
-	/// the firmware, set the EVIO:F125_IGNORE_PULSETIME config. parameter
+	/// the firmware, set the EVIO:F125_PT_EMULATION_MODE config. parameter
 	/// to 1.
 	///
 	/// NOTE: The upsampling algorithm here currently converts the value reported
@@ -2298,7 +2298,7 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 				}
 			}
 			// if no signal, don't process further
-			if (max-min < F250_EMULATION_MIN_SWING) {
+			if (max-min < F125_EMULATION_MIN_SWING) {
 				if(VERBOSE>4) evioout << " EmulateDf125PulseTime: object " << i << " max - min < " << F250_EMULATION_MIN_SWING <<endl;
 				continue;
 			}
