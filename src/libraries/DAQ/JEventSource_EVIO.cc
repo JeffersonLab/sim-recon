@@ -116,32 +116,45 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	LOOP_FOREVER = false;
 	VERBOSE = 0;
 	TIMEOUT = 2.0;
-	EMULATE_PULSE_INTEGRAL_MODE = true;
-	EMULATE_SPARSIFICATION_THRESHOLD = 0; // =0 is equivalent to no threshold
-	EMULATE_FADC250_TIME_THRESHOLD = 10;
-	EMULATE_FADC125_TIME_THRESHOLD = 80;
 	MODTYPE_MAP_FILENAME = "modtype.map";
 	ENABLE_DISENTANGLING = true;
-	F250_IGNORE_PULSETIME = false;
-	F125_IGNORE_PULSETIME = false;
+
+	F250_PI_EMULATION_MODE = kEmulationAuto;
+	F250_PT_EMULATION_MODE = kEmulationAuto;
+	F250_PP_EMULATION_MODE = kEmulationAuto;
+	F250_EMULATION_MIN_SWING = 20; // Formerly F250_EMULATION_THRESHOLD
 	F250_THRESHOLD = 120;
-	F125_THRESHOLD = 80;
+	F250_SPARSIFICATION_THRESHOLD = 0; // =0 is equivalent to no threshold
 	F250_NSA = 50;
 	F250_NSB = 5;
 	F250_NSPED = 4;
-	F250_EMULATION_THRESHOLD = 20;
+
+	F125_PI_EMULATION_MODE = kEmulationAuto;
+	F125_PT_EMULATION_MODE = kEmulationAuto;
+	F125_PP_EMULATION_MODE = kEmulationAuto;
+	F250_EMULATION_MIN_SWING = 20; // Formerly F125_EMULATION_THRESHOLD
+	F125_THRESHOLD = 80;
+	F125_SPARSIFICATION_THRESHOLD = 0;
 	F125_NSA = 40;
 	F125_NSB = 3;
 	F125_NSA_CDC = 80;
 	F125_NSB_CDC = 5;
 	F125_NSPED = 16;
-	F125_EMULATION_THRESHOLD = 20;
-	EMULATE_FADC125_TIME_UPSAMPLE = true;
+	F125_TIME_UPSAMPLE = true;
+
 	USER_RUN_NUMBER = 0;
 	F125PULSE_NUMBER_FILTER = 1000;
 	F250PULSE_NUMBER_FILTER = 1000;
 	
 	if(gPARMS){
+		// JANA doesn't know about EmulationModeType so we use temporary variables
+		uint32_t f250_pi_emulation_mode = F250_PI_EMULATION_MODE;
+		uint32_t f250_pt_emulation_mode = F250_PT_EMULATION_MODE;
+		uint32_t f250_pp_emulation_mode = F250_PP_EMULATION_MODE;
+		uint32_t f125_pi_emulation_mode = F125_PI_EMULATION_MODE;
+		uint32_t f125_pt_emulation_mode = F125_PT_EMULATION_MODE;
+		uint32_t f125_pp_emulation_mode = F125_PP_EMULATION_MODE;
+
 		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
 		gPARMS->SetDefaultParameter("EVIO:DUMP_MODULE_MAP", DUMP_MODULE_MAP, "Write module map used to file when source is destroyed. n.b. If more than one input file is used, the map file will be overwritten!");
 		gPARMS->SetDefaultParameter("EVIO:MAKE_DOM_TREE", MAKE_DOM_TREE, "Set this to 0 to disable generation of EVIO DOM Tree and parsing of event. (for benchmarking/debugging)");
@@ -157,32 +170,43 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:ET_DEBUG_WORDS_TO_DUMP", ET_DEBUG_WORDS_TO_DUMP, "Number of words to dump to screen from ET buffer (useful for debugging only).");
 		gPARMS->SetDefaultParameter("EVIO:LOOP_FOREVER", LOOP_FOREVER, "If reading from EVIO file, keep re-opening file and re-reading events forever (only useful for debugging) If reading from ET, this is ignored.");
 		gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
-		gPARMS->SetDefaultParameter("EVIO:EMULATE_PULSE_INTEGRAL_MODE", EMULATE_PULSE_INTEGRAL_MODE, "If non-zero, and Df250WindowRawData objects exist in the event AND no Df250PulseIntegral objects exist, then use the waveform data to generate Df250PulseIntegral objects. Default is for this feature to be on. Set this to zero to disable it.");
-		gPARMS->SetDefaultParameter("EVIO:EMULATE_SPARSIFICATION_THRESHOLD", EMULATE_SPARSIFICATION_THRESHOLD, "If EVIO:EMULATE_PULSE_INTEGRAL_MODE is on, then this is used to apply a cut on the non-pedestal-subtracted integral to determine if a Df250PulseIntegral is produced or not.");
-		gPARMS->SetDefaultParameter("EVIO:EMULATE_FADC250_TIME_THRESHOLD", EMULATE_FADC250_TIME_THRESHOLD, "If EVIO:EMULATE_PULSE_INTEGRAL_MODE is on, then DF250PulseTime objects will be emulated as well. This sets the sample threshold above pedestal from which the time will be determined.");
-		gPARMS->SetDefaultParameter("EVIO:EMULATE_FADC125_TIME_THRESHOLD", EMULATE_FADC125_TIME_THRESHOLD, "If EVIO:EMULATE_PULSE_INTEGRAL_MODE is on, then DF125PulseTime objects will be emulated as well. This sets the sample threshold above pedestal from which the time will be determined.");
-		gPARMS->SetDefaultParameter("EVIO:EMULATE_FADC125_TIME_UPSAMPLE", EMULATE_FADC125_TIME_UPSAMPLE, "If true, then use the CMU upsampling algorithm to determine times for the DF125PulseTime objects when using emulaton. Set to zero to use the f250 algorithm that was in f125 firmware for 2014 commissioning data.");
 		gPARMS->SetDefaultParameter("ET:TIMEOUT", TIMEOUT, "Set the timeout in seconds for each attempt at reading from ET system (repeated attempts will still be made indefinitely until program quits or the quit_on_et_timeout flag is set.");
 		gPARMS->SetDefaultParameter("EVIO:MODTYPE_MAP_FILENAME", MODTYPE_MAP_FILENAME, "Optional module type conversion map for use with files generated with the non-standard module types");
 		gPARMS->SetDefaultParameter("EVIO:ENABLE_DISENTANGLING", ENABLE_DISENTANGLING, "Enable/disable disentangling of multi-block events. Enabled by default. Set to 0 to disable.");
 
-		gPARMS->SetDefaultParameter("EVIO:F250_IGNORE_PULSETIME", F250_IGNORE_PULSETIME, "Set this to non-zero to inhibit creation of Df250PulseTime and Df250PulsePedestal objects directly from data stream. If Window Raw Data exists, these objects may still be created from it.");
-		gPARMS->SetDefaultParameter("EVIO:F125_IGNORE_PULSETIME", F125_IGNORE_PULSETIME, "Set this to non-zero to inhibit creation of Df125PulseTime and Df125PulsePedestal objects directly from data stream. If Window Raw Data exists, these objects may still be created from it.");
-
-		gPARMS->SetDefaultParameter("EVIO:F250_THRESHOLD", F250_THRESHOLD, "For F250 window raw data. Threshold to emulate a PulseIntegral and PulseTime objects.");
+		gPARMS->SetDefaultParameter("EVIO:F250_PI_EMULATION_MODE", f250_pi_emulation_mode, "Set f250 pulse integral emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
+		gPARMS->SetDefaultParameter("EVIO:F250_PT_EMULATION_MODE", f250_pt_emulation_mode, "Set f250 pulse time emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
+		gPARMS->SetDefaultParameter("EVIO:F250_PP_EMULATION_MODE", f250_pp_emulation_mode, "Set f250 pulse pedestal emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
+		gPARMS->SetDefaultParameter("EVIO:F250_EMULATION_MIN_SWING", F250_EMULATION_MIN_SWING, "Minimum difference between min and max sample required for emulation of f250.");
+		gPARMS->SetDefaultParameter("EVIO:F250_THRESHOLD", F250_THRESHOLD, "Identified pulse threshold used during emulation of f250.");
+		gPARMS->SetDefaultParameter("EVIO:F250_SPARSIFICATION_THRESHOLD", F250_SPARSIFICATION_THRESHOLD, "Sparsification threshold used during emulation of f250.");
 		gPARMS->SetDefaultParameter("EVIO:F250_NSA", F250_NSA, "For f250PulseIntegral object.  NSA value for emulation from window raw data and for pulse integral pedestal normalization.");
 		gPARMS->SetDefaultParameter("EVIO:F250_NSB", F250_NSB, "For f250PulseIntegral object.  NSB value for emulation from window raw data and for pulse integral pedestal normalization.");
 		gPARMS->SetDefaultParameter("EVIO:F250_NSPED", F250_NSPED, "For f250PulseIntegral object.  Number of pedestal samples value for emulation from window raw data and for pulse integral normalization.");
 
+		gPARMS->SetDefaultParameter("EVIO:F125_PI_EMULATION_MODE", f125_pi_emulation_mode, "Set f125 pulse integral emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
+		gPARMS->SetDefaultParameter("EVIO:F125_PT_EMULATION_MODE", f125_pt_emulation_mode, "Set f125 pulse time emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
+		gPARMS->SetDefaultParameter("EVIO:F125_PP_EMULATION_MODE", f125_pp_emulation_mode, "Set f125 pulse pedestal emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
+		gPARMS->SetDefaultParameter("EVIO:F125_EMULATION_MIN_SWING", F125_EMULATION_MIN_SWING, "Minimum difference between min and max sample required for emulation of f125.");
+		gPARMS->SetDefaultParameter("EVIO:F125_THRESHOLD", F125_THRESHOLD, "Identified pulse threshold used during emulation of f125.");
+		gPARMS->SetDefaultParameter("EVIO:F125_SPARSIFICATION_THRESHOLD", F125_SPARSIFICATION_THRESHOLD, "Sparsification threshold used during emulation of f125.");
 		gPARMS->SetDefaultParameter("EVIO:F125_NSA", F125_NSA, "For f125PulseIntegral object.  NSA value for emulation from window raw data and for pulse integral pedestal normalization.");
 		gPARMS->SetDefaultParameter("EVIO:F125_NSB", F125_NSB, "For f125PulseIntegral object.  NSB value for emulation from window raw data and for pulse integral pedestal normalization.");
 		gPARMS->SetDefaultParameter("EVIO:F125_NSA_CDC", F125_NSA_CDC, "For f125PulseIntegral object.  NSA value for emulation from window raw data and for pulse integral pedestal normalization. This is applied to rocid 24-28 only!");
 		gPARMS->SetDefaultParameter("EVIO:F125_NSB_CDC", F125_NSB_CDC, "For f125PulseIntegral object.  NSB value for emulation from window raw data and for pulse integral pedestal normalization. This is applied to rocid 24-28 only!");
 		gPARMS->SetDefaultParameter("EVIO:F125_NSPED", F125_NSPED, "For f125PulseIntegral object.  Number of pedestal samples value for emulation from window raw data and for pulse integral normalization.");
-		gPARMS->SetDefaultParameter("EVIO:RUN_NUMBER", USER_RUN_NUMBER, "User-supplied run number. Override run number from other sources with this.(will be ignored if set to zero)");
+		gPARMS->SetDefaultParameter("EVIO:F125_TIME_UPSAMPLE", F125_TIME_UPSAMPLE, "If true, then use the CMU upsampling algorithm to determine times for the DF125PulseTime objects when using emulaton. Set to zero to use the f250 algorithm that was in f125 firmware for 2014 commissioning data.");
 
+		gPARMS->SetDefaultParameter("EVIO:RUN_NUMBER", USER_RUN_NUMBER, "User-supplied run number. Override run number from other sources with this.(will be ignored if set to zero)");
 		gPARMS->SetDefaultParameter("EVIO:F125PULSE_NUMBER_FILTER", F125PULSE_NUMBER_FILTER, "Ignore data for DF125XXX objects with a pulse number equal or greater than this.");
 		gPARMS->SetDefaultParameter("EVIO:F250PULSE_NUMBER_FILTER", F250PULSE_NUMBER_FILTER, "Ignore data for DF250XXX objects with a pulse number equal or greater than this.");
+
+		F250_PI_EMULATION_MODE = (EmulationModeType)f250_pi_emulation_mode;
+		F250_PT_EMULATION_MODE = (EmulationModeType)f250_pt_emulation_mode;
+		F250_PP_EMULATION_MODE = (EmulationModeType)f250_pp_emulation_mode;
+		F125_PI_EMULATION_MODE = (EmulationModeType)f125_pi_emulation_mode;
+		F125_PT_EMULATION_MODE = (EmulationModeType)f125_pt_emulation_mode;
+		F125_PP_EMULATION_MODE = (EmulationModeType)f125_pp_emulation_mode;
 	}
 	
 	// Try to open the file.
@@ -1192,48 +1216,118 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		AddSourceObjectsToCallStack(loop, hoiter->first); 
 	}
 
-	// Optionally generate Df250PulseIntegral and Df250PulseTime objects from Df250WindowRawData objects. 
-	if(EMULATE_PULSE_INTEGRAL_MODE && !hit_objs_by_type["Df250WindowRawData"].empty()){
-	
-		// Emulate PulseTime and PulsePedestal if no PulseTime objects exist
-		vector<JObject*> pt_objs;
-		vector<JObject*> pp_objs;
-		if(hit_objs_by_type["Df250PulseTime"].empty()){
-			EmulateDf250PulseTime(hit_objs_by_type["Df250WindowRawData"], pt_objs, pp_objs);
-			if(pt_objs.size() != 0) hit_objs_by_type["Df250PulseTime"] = pt_objs;
-			if(pp_objs.size() != 0) hit_objs_by_type["Df250PulsePedestal"] = pp_objs;
-			
-			// Add entries to JANA's callstack to indicate correct relationship of emulated objects
-			if(pt_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df250PulseTime", "Df250WindowRawData");
-			if(pp_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df250PulsePedestal", "Df250WindowRawData");
-		}else{
-			// copy these so we can make object associations later
-			pt_objs = hit_objs_by_type["Df250PulseTime"];
-			pp_objs = hit_objs_by_type["Df250PulsePedestal"];
-		}
+	// Get references to various objects
+	vector<JObject*> &f250_wrd_objs = hit_objs_by_type["Df250WindowRawData"];
+	vector<JObject*> &f250_pt_objs  = hit_objs_by_type["Df250PulseTime"];
+	vector<JObject*> &f250_pp_objs  = hit_objs_by_type["Df250PulsePedestal"];
+	vector<JObject*> &f250_pi_objs  = hit_objs_by_type["Df250PulseIntegral"];
 
-		// Emulate PulseIntegral if no Pulse integral objects exist
-		vector<JObject*> pi_objs;
-		if(hit_objs_by_type["Df250PulseIntegral"].empty()){
-			EmulateDf250PulseIntegral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
-			if(pi_objs.size() != 0){
-				// Pulse integral objects were emulated
+	vector<JObject*> &f125_wrd_objs = hit_objs_by_type["Df125WindowRawData"];
+	vector<JObject*> &f125_pt_objs  = hit_objs_by_type["Df125PulseTime"];
+	vector<JObject*> &f125_pp_objs  = hit_objs_by_type["Df125PulsePedestal"];
+	vector<JObject*> &f125_pi_objs  = hit_objs_by_type["Df125PulseIntegral"];
+
+	// Emulate PulseTime and PulsePedestal
+	// Emulation of pulse time and pulse pedestal are done at
+	// the same time since that's how the original firmware
+	// does it. The EmulateDf250PulseTime() method will check
+	// the value of F250_PT_EMULATION_MODE and 
+	// F250_PP_EMULATION_MODE and modify the f250_pt_objs and f250_pp_objs
+	// vectors as appropriate (possibly deleting some objects).
+	if( (F250_PT_EMULATION_MODE != kEmulationNone) || (F250_PP_EMULATION_MODE != kEmulationNone) ){
+		EmulateDf250PulseTime(f250_wrd_objs, f250_pt_objs, f250_pp_objs);
+	}
+
+	// Repeat for f125 Pulse Time and Pulse Pedestal
+	if( (F125_PT_EMULATION_MODE != kEmulationNone) || (F125_PP_EMULATION_MODE != kEmulationNone) ){
+		EmulateDf125PulseTime(f125_wrd_objs, f125_pt_objs, f125_pp_objs);
+	}
+
+	// Emulate PulseIntegral
+	// Similar to above, EmulateDf250PulseIntegral() will modify
+	// f250_pi_objs by adding/deleting objects based on the value of 
+	// F250_PI_EMULATION_MODE.
+	if(F250_PI_EMULATION_MODE != kEmulationNone){
+		EmulateDf250PulseIntegral(f250_wrd_objs, f250_pi_objs);
+	}
+
+	// Repeat for f125 Pulse Integral
+	if(F125_PI_EMULATION_MODE != kEmulationNone){
+		EmulateDf125PulseIntegral(f125_wrd_objs, f125_pi_objs, f125_pt_objs);
+	}
+
+	// Make PulseTime, PulsePedstal, and PulseIntegral objects associated objects of one another
+	vector<Df250PulseIntegral*> f250_ppi_objs;
+	vector<Df250PulseTime*>     f250_ppt_objs;
+	vector<Df250PulsePedestal*> f250_ppp_objs;
+	CopyContainerElementsWithCast(f250_pi_objs, f250_ppi_objs);
+	CopyContainerElementsWithCast(f250_pt_objs, f250_ppt_objs);
+	CopyContainerElementsWithCast(f250_pp_objs, f250_ppp_objs);
+	LinkAssociationsWithPulseNumber(f250_ppt_objs, f250_ppi_objs);
+	LinkAssociationsWithPulseNumber(f250_ppp_objs, f250_ppi_objs);
+	LinkAssociationsWithPulseNumber(f250_ppp_objs, f250_ppt_objs);
+
+	vector<Df125PulseIntegral*> f125_ppi_objs;
+	vector<Df125PulseTime*>     f125_ppt_objs;
+	vector<Df125PulsePedestal*> f125_ppp_objs;
+	CopyContainerElementsWithCast(f125_pi_objs, f125_ppi_objs);
+	CopyContainerElementsWithCast(f125_pt_objs, f125_ppt_objs);
+	CopyContainerElementsWithCast(f125_pp_objs, f125_ppp_objs);
+	LinkAssociationsWithPulseNumber(f125_ppt_objs, f125_ppi_objs);
+	LinkAssociationsWithPulseNumber(f125_ppp_objs, f125_ppi_objs);
+	LinkAssociationsWithPulseNumber(f125_ppp_objs, f125_ppt_objs);
+
+	// To make JANA aware of the correct association between
+	// emulated objects and the Window Raw Data objects, we
+	// have to explicitly tell it. This is tricky since, for
+	// example, not all PulseIntegral objects may be emulated.
+	// The best we can do is check if any objects are emulated
+	// and if so, add the association.
+	// F250 -----------
+	if(!f250_wrd_objs.empty()){
+		for(uint32_t i=0; i<f250_ppi_objs.size(); i++){
+			if(f250_ppi_objs[i]->emulated){
 				AddEmulatedObjectsToCallStack(loop, "Df250PulseIntegral", "Df250WindowRawData");
-				hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
-
-				// Make PulseTime, PulsePedstal, and PulseIntegral objects associated objects of one another
-				vector<Df250PulseIntegral*> ppi_objs;
-				vector<Df250PulseTime*>     ppt_objs;
-				vector<Df250PulsePedestal*> ppp_objs;
-				CopyContainerElementsWithCast(pi_objs, ppi_objs);
-				CopyContainerElementsWithCast(pt_objs, ppt_objs);
-				CopyContainerElementsWithCast(pp_objs, ppp_objs);
-				LinkAssociationsWithPulseNumber(ppt_objs, ppi_objs);
-				LinkAssociationsWithPulseNumber(ppp_objs, ppi_objs);
-			}	
+				break;
+			}
+		}
+		for(uint32_t i=0; i<f250_ppt_objs.size(); i++){
+			if(f250_ppt_objs[i]->emulated){
+				AddEmulatedObjectsToCallStack(loop, "Df250PulseTime", "Df250WindowRawData");
+				break;
+			}
+		}
+		for(uint32_t i=0; i<f250_ppp_objs.size(); i++){
+			if(f250_ppp_objs[i]->emulated){
+				AddEmulatedObjectsToCallStack(loop, "Df250PulsePedestal", "Df250WindowRawData");
+				break;
+			}
 		}
 	}
-	
+
+	// F125 -----------
+	if(!f125_wrd_objs.empty()){
+		for(uint32_t i=0; i<f125_ppi_objs.size(); i++){
+			if(f125_ppi_objs[i]->emulated){
+				AddEmulatedObjectsToCallStack(loop, "Df125PulseIntegral", "Df125WindowRawData");
+				break;
+			}
+		}
+		for(uint32_t i=0; i<f125_ppt_objs.size(); i++){
+			if(f125_ppt_objs[i]->emulated){
+				AddEmulatedObjectsToCallStack(loop, "Df125PulseTime", "Df125WindowRawData");
+				break;
+			}
+		}
+		for(uint32_t i=0; i<f125_ppp_objs.size(); i++){
+			if(f125_ppp_objs[i]->emulated){
+				AddEmulatedObjectsToCallStack(loop, "Df125PulsePedestal", "Df125WindowRawData");
+				break;
+			}
+		}
+	}
+
+#if 0	
 	// Optionally generate Df125PulseIntegral and Df125PulseTime objects from Df125WindowRawData objects. 
 	if(EMULATE_PULSE_INTEGRAL_MODE && !hit_objs_by_type["Df125WindowRawData"].empty()){
 	
@@ -1275,6 +1369,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			}	
 		}
 	}
+#endif
 	
 	// Now, add data objects to call stack for the classes we can provide, but for which
 	// there are no objects for this event. Again, this is so janadot will display things
@@ -1529,12 +1624,59 @@ void JEventSource_EVIO::AddEmulatedObjectsToCallStack(JEventLoop *loop, string c
 //----------------
 void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs)
 {
+	if(VERBOSE>3) evioout << " Entering  EmulateDf250PulseIntegral ..." <<endl;
+
+	// If emulation is being forced, then delete any existing objects.
+	// We take extra care to check that we don't delete any existing
+	// emulated objects. (I don't think there actually can be any at
+	// this point, but this may protect against future upgrades to
+	// the code.)
+	if(F250_PI_EMULATION_MODE==kEmulationAlways){
+		vector<JObject*> emulated_pi_objs;
+		for(uint32_t j=0; j<pi_objs.size(); j++){
+			Df250PulseIntegral *pi = (Df250PulseIntegral*)pi_objs[j];
+			if(pi->emulated){
+				emulated_pi_objs.push_back(pi);
+			}else{
+				delete pi;
+			}
+		}
+		pi_objs = emulated_pi_objs;
+	}
+
 	uint32_t pulse_number = 0;
 	uint32_t quality_factor = 0;
 
 	// Loop over all window raw data objects
 	for(unsigned int i=0; i<wrd_objs.size(); i++){
 		const Df250WindowRawData *f250WindowRawData = (Df250WindowRawData*)wrd_objs[i];
+		
+		// If in auto mode then check if any pulse time objects already
+		// exist for this channel and clear the emulate_pi flag if so.
+		bool emulate_pi = true;
+		if(F250_PI_EMULATION_MODE == kEmulationAuto){
+			for(uint32_t j=0; j<pi_objs.size(); j++){
+				Df250PulseIntegral *pi = (Df250PulseIntegral*)pi_objs[j];
+				if(pi->rocid == f250WindowRawData->rocid){
+					if(pi->slot == f250WindowRawData->slot){
+						if(pi->channel == f250WindowRawData->channel){
+							if(pi->emulated){
+								jerr << "Emulating channel that already has emulated objects!" << endl;
+								jerr << "This likely means there is a bug in JEventSource_EVIO.cc" <<endl;
+								jerr << "PulseIntegral250: rocid="<<pi->rocid<<" slot="<<pi->slot<<" channel="<<pi->channel<<endl;
+								jerr << "please report error to davidl@jlab.org" << endl;
+								exit(-1);
+							}
+							emulate_pi = false;
+							break;
+						}
+					}
+				}
+			}
+		}
+		
+		// If we're not emulating a pulse integral here then no need to proceed.
+		if(!emulate_pi) continue;
 		
 		// Get a vector of the samples for this channel
 		const vector<uint16_t> &samplesvector = f250WindowRawData->samples;
@@ -1558,9 +1700,9 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 			}
 		}
 		// if no signal, don't process further
-		if (max-min < F250_EMULATION_THRESHOLD) {
+		if (max-min < F250_EMULATION_MIN_SWING) {
 			if(VERBOSE>4) evioout << " EmulateDf250PulseIntergral: object " << i << " max - min < " 
-					      << F250_EMULATION_THRESHOLD <<endl;
+					      << F250_EMULATION_MIN_SWING <<endl;
 			continue;
 		}
 		// if the min and max are reasonable compared to the threshold then use the requested threshold
@@ -1594,6 +1736,9 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		  signalsum += samplesvector[c_samp];
 		  nsamples_used++;
 		}
+		
+		// Apply sparsification threshold
+		if(signalsum < F250_SPARSIFICATION_THRESHOLD) continue;
 
 		// create new Df250PulseIntegral object
 		Df250PulseIntegral *myDf250PulseIntegral = new Df250PulseIntegral;
@@ -1613,50 +1758,93 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		myDf250PulseIntegral->AddAssociatedObject(f250WindowRawData);
 		pi_objs.push_back(myDf250PulseIntegral);
 	}
+
+	if(VERBOSE>3) evioout << " Leaving  EmulateDf250PulseIntegral" <<endl;
 }
 
 //----------------
 // EmulateDf125PulseIntegral
 //----------------
 void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs,
-						  vector<JObject*> &time_objs)
+						  vector<JObject*> &pt_objs)
 {
 	if(VERBOSE>3) evioout << " Entering  EmulateDf125PulseIntegral ..." <<endl;
+
+	// If emulation is being forced, then delete any existing objects.
+	// We take extra care to check that we don't delete any existing
+	// emulated objects. (I don't think there actually can be any at
+	// this point, but this may protect against future upgrades to
+	// the code.)
+	if(F125_PI_EMULATION_MODE==kEmulationAlways){
+		vector<JObject*> emulated_pi_objs;
+		for(uint32_t j=0; j<pi_objs.size(); j++){
+			Df125PulseIntegral *pi = (Df125PulseIntegral*)pi_objs[j];
+			if(pi->emulated){
+				emulated_pi_objs.push_back(pi);
+			}else{
+				delete pi;
+			}
+		}
+		pi_objs = emulated_pi_objs;
+	}
 
 	uint32_t pulse_number = 0;
 	uint32_t quality_factor = 0;
 	// Loop over all window raw data objects
 	for(unsigned int i=0; i<wrd_objs.size(); i++){
-		const Df125WindowRawData *f125WindowRawData = (Df125WindowRawData*)wrd_objs[i];
+		const Df125WindowRawData *wrd = (Df125WindowRawData*)wrd_objs[i];
 		
-		// create new Df125PulseIntegral object
-		Df125PulseIntegral *myDf125PulseIntegral = new Df125PulseIntegral;
-		myDf125PulseIntegral->rocid =f125WindowRawData->rocid;
-		myDf125PulseIntegral->slot = f125WindowRawData->slot;
-		myDf125PulseIntegral->channel = f125WindowRawData->channel;
-		myDf125PulseIntegral->itrigger = f125WindowRawData->itrigger;
+		// If in auto mode then check if any pulse time objects already
+		// exist for this channel and clear the emulate_pi flag if so.
+		bool emulate_pi = true;
+		if(F125_PI_EMULATION_MODE == kEmulationAuto){
+			for(uint32_t j=0; j<pi_objs.size(); j++){
+				Df125PulseIntegral *pi = (Df125PulseIntegral*)pi_objs[j];
+				if(pi->rocid == wrd->rocid){
+					if(pi->slot == wrd->slot){
+						if(pi->channel == wrd->channel){
+							if(pi->emulated){
+								jerr << "Emulating channel that already has emulated objects!" << endl;
+								jerr << "This likely means there is a bug in JEventSource_EVIO.cc" <<endl;
+								jerr << "PulseIntegral125: rocid="<<pi->rocid<<" slot="<<pi->slot<<" channel="<<pi->channel<<endl;
+								jerr << "please report error to davidl@jlab.org" << endl;
+								exit(-1);
+							}
+							emulate_pi = false;
+							break;
+						}
+					}
+				}
+			}
+		}
 		
+		// If we're not emulating a pulse integral here then no need to proceed.
+		if(!emulate_pi) continue;
+		
+		// Find pulse time for this channel
 		const Df125PulseTime *T = NULL;
-		for (unsigned int k=0; k<time_objs.size(); k++){
-		    const Df125PulseTime *t = (Df125PulseTime*)time_objs[k];
-		    if ( (t->rocid == myDf125PulseIntegral->rocid ) &&
-			 (t->slot == myDf125PulseIntegral->slot ) &&
-			 (t->channel == myDf125PulseIntegral->channel ) ){
-			  T = t;
-		      break;
-		  }
+		for (unsigned int k=0; k<pt_objs.size(); k++){
+			const Df125PulseTime *t = (Df125PulseTime*)pt_objs[k];
+			if( t->rocid == wrd->rocid ){
+				if( t->slot == wrd->slot ) {
+					if( t->channel == wrd->channel ){
+						T = t;
+						break;
+					}
+				}
+			}
 		}
 		
 		// Choose value of NSA and NSB based on rocid (eechh!)
 		uint32_t NSA = F125_NSA;
 		uint32_t NSB = F125_NSB;
-		if(f125WindowRawData->rocid>=24 && f125WindowRawData->rocid<=28){
+		if(wrd->rocid>=24 && wrd->rocid<=28){
 			NSA = F125_NSA_CDC;
 			NSB = F125_NSB_CDC;
 		}
  
 		// Get a vector of the samples for this channel
-		const vector<uint16_t> &samplesvector = f125WindowRawData->samples;
+		const vector<uint16_t> &samplesvector = wrd->samples;
 		uint32_t nsamples=samplesvector.size();
 		uint32_t signalsum = 0;
 
@@ -1677,6 +1865,15 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 			nsamples_used++;
 		}
 		
+		// Apply sparsification threshold
+		if(signalsum < F125_SPARSIFICATION_THRESHOLD) continue;
+		
+		// create new Df125PulseIntegral object
+		Df125PulseIntegral *myDf125PulseIntegral = new Df125PulseIntegral;
+		myDf125PulseIntegral->rocid =wrd->rocid;
+		myDf125PulseIntegral->slot = wrd->slot;
+		myDf125PulseIntegral->channel = wrd->channel;
+		myDf125PulseIntegral->itrigger = wrd->itrigger;
 		myDf125PulseIntegral->pulse_number = pulse_number;
 		myDf125PulseIntegral->quality_factor = quality_factor;
 		myDf125PulseIntegral->integral = signalsum;
@@ -1686,17 +1883,10 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 		myDf125PulseIntegral->emulated = true;
 
 		// Add the Df125WindowRawData object as an associated object
-		myDf125PulseIntegral->AddAssociatedObject(f125WindowRawData);
-		
-		// Apply sparsification threshold
-		if(myDf125PulseIntegral->integral >= EMULATE_SPARSIFICATION_THRESHOLD){
-			// Integral is above threshold so keep it
-			pi_objs.push_back(myDf125PulseIntegral);
-		}else{
-			// Integral is below threshold so discard the hit.
-			delete myDf125PulseIntegral;
-		}
+		myDf125PulseIntegral->AddAssociatedObject(wrd);
+		pi_objs.push_back(myDf125PulseIntegral);
 	}
+
 	if(VERBOSE>3) evioout << " Leaving  EmulateDf125PulseIntegral" <<endl;
 }
 
@@ -1705,10 +1895,92 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 //----------------
 void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs)
 {
+	if(VERBOSE>3) evioout << " Entering  EmulateDf250PulseTime ..." <<endl;
+
+	// If emulation is being forced, then delete any existing objects.
+	// We take extra care to check that we don't delete any existing
+	// emulated objects. (I don't think there actually can be any at
+	// this point, but this may protect against future upgrades to
+	// the code.)
+	if(F250_PT_EMULATION_MODE==kEmulationAlways){
+		vector<JObject*> emulated_pt_objs;
+		for(uint32_t j=0; j<pt_objs.size(); j++){
+			Df250PulseTime *pt = (Df250PulseTime*)pt_objs[j];
+			if(pt->emulated){
+				emulated_pt_objs.push_back(pt);
+			}else{
+				delete pt;
+			}
+		}
+		pt_objs = emulated_pt_objs;
+	}
+	if(F250_PP_EMULATION_MODE==kEmulationAlways){
+		vector<JObject*> emulated_pp_objs;
+		for(uint32_t j=0; j<pp_objs.size(); j++){
+			Df250PulsePedestal *pp = (Df250PulsePedestal*)pp_objs[j];
+			if(pp->emulated){
+				emulated_pp_objs.push_back(pp);
+			}else{
+				delete pp;
+			}
+		}
+		pt_objs = emulated_pp_objs;
+	}
+
 
 	// Loop over all window raw data objects
 	for(unsigned int i=0; i<wrd_objs.size(); i++){
 		const Df250WindowRawData *f250WindowRawData = (Df250WindowRawData*)wrd_objs[i];
+
+		// If in auto mode then check if any pulse time objects already
+		// exists for this channel and clear the emulate_pt flag if so.
+		bool emulate_pt = true;
+		if(F250_PT_EMULATION_MODE == kEmulationAuto){
+			for(uint32_t j=0; j<pt_objs.size(); j++){
+				Df250PulseTime *pt = (Df250PulseTime*)pt_objs[j];
+				if(pt->rocid == f250WindowRawData->rocid){
+					if(pt->slot == f250WindowRawData->slot){
+						if(pt->channel == f250WindowRawData->channel){
+							if(pt->emulated){
+								jerr << "Emulating channel that already has emulated objects!" << endl;
+								jerr << "This likely means there is a bug in JEventSource_EVIO.cc" <<endl;
+								jerr << "PulseTime: rocid="<<pt->rocid<<" slot="<<pt->slot<<" channel="<<pt->channel<<endl;
+								jerr << "please report error to davidl@jlab.org" << endl;
+								exit(-1);
+							}
+							emulate_pt = false;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		// Ditto for pulse pedestal objects
+		bool emulate_pp = true;
+		if(F250_PP_EMULATION_MODE == kEmulationAuto){
+			for(uint32_t j=0; j<pp_objs.size(); j++){
+				Df250PulsePedestal *pp = (Df250PulsePedestal*)pp_objs[j];
+				if(pp->rocid == f250WindowRawData->rocid){
+					if(pp->slot == f250WindowRawData->slot){
+						if(pp->channel == f250WindowRawData->channel){
+							if(pp->emulated){
+								jerr << "Emulating channel that already has emulated objects!" << endl;
+								jerr << "This likely means there is a bug in JEventSource_EVIO.cc" <<endl;
+								jerr << "PulsePedestal: rocid="<<pp->rocid<<" slot="<<pp->slot<<" channel="<<pp->channel<<endl;
+								jerr << "please report error to davidl@jlab.org" << endl;
+								exit(-1);
+							}
+							emulate_pp = false;
+							break;
+						}
+					}
+				}
+			}
+		}
+		
+		// Skip to next wrd if nothing is to be emulated
+		if( (!emulate_pt) && (!emulate_pp) ) continue;
 
 		// Get a vector of the samples for this channel
 		const vector<uint16_t> &samplesvector = f250WindowRawData->samples;
@@ -1731,9 +2003,9 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 			}
 		}
 		// if no signal, don't process further
-		if (max-min < F250_EMULATION_THRESHOLD) {
+		if (max-min < F250_EMULATION_MIN_SWING) {
 			if(VERBOSE>4) evioout << " EmulateDf250PulseIntergral: object " << i << " max - min < " 
-					      << F250_EMULATION_THRESHOLD <<endl;
+					      << F250_EMULATION_MIN_SWING <<endl;
 			continue;
 		}
 		// if the min and max are reasonable compared to the threshold then use the requested threshold
@@ -1813,42 +2085,39 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 				      << " time=" << time << " sample_over=" << first_sample_over_threshold << endl;
 
 		// create new Df250PulseTime object
-		Df250PulseTime *myDf250PulseTime = new Df250PulseTime;
-		myDf250PulseTime->rocid =f250WindowRawData->rocid;
-		myDf250PulseTime->slot = f250WindowRawData->slot;
-		myDf250PulseTime->channel = f250WindowRawData->channel;
-		myDf250PulseTime->itrigger = f250WindowRawData->itrigger;
-		myDf250PulseTime->pulse_number = 0;
-		myDf250PulseTime->quality_factor = 0;
-		myDf250PulseTime->time = time;
-		myDf250PulseTime->emulated = true;
+		if(emulate_pt){
+			Df250PulseTime *myDf250PulseTime = new Df250PulseTime;
+			myDf250PulseTime->rocid =f250WindowRawData->rocid;
+			myDf250PulseTime->slot = f250WindowRawData->slot;
+			myDf250PulseTime->channel = f250WindowRawData->channel;
+			myDf250PulseTime->itrigger = f250WindowRawData->itrigger;
+			myDf250PulseTime->pulse_number = 0;
+			myDf250PulseTime->quality_factor = 0;
+			myDf250PulseTime->time = time;
+			myDf250PulseTime->emulated = true;
+			myDf250PulseTime->AddAssociatedObject(f250WindowRawData);
+			pt_objs.push_back(myDf250PulseTime);
+		}
 
 		// create new Df250PulsePedestal object
-		Df250PulsePedestal *myDf250PulsePedestal = new Df250PulsePedestal;
-		myDf250PulsePedestal->rocid =f250WindowRawData->rocid;
-		myDf250PulsePedestal->slot = f250WindowRawData->slot;
-		myDf250PulsePedestal->channel = f250WindowRawData->channel;
-		myDf250PulsePedestal->itrigger = f250WindowRawData->itrigger;
-		myDf250PulsePedestal->pulse_number = 0;
-		myDf250PulsePedestal->pedestal = pedestalavg; // Return the average pedestal. This is what the firmware will do.
-		myDf250PulsePedestal->pulse_peak = VPEAK;
-		myDf250PulsePedestal->emulated = true;
-
-		// Add the Df250WindowRawData object as an associated object
-		myDf250PulseTime->AddAssociatedObject(f250WindowRawData);
-		myDf250PulsePedestal->AddAssociatedObject(f250WindowRawData);
-		
-		// Add to list of Df250PulseTime and Df250PulsePedestal objects
-		pt_objs.push_back(myDf250PulseTime);
-		pp_objs.push_back(myDf250PulsePedestal);	
+		if(emulate_pp){
+			Df250PulsePedestal *myDf250PulsePedestal = new Df250PulsePedestal;
+			myDf250PulsePedestal->rocid =f250WindowRawData->rocid;
+			myDf250PulsePedestal->slot = f250WindowRawData->slot;
+			myDf250PulsePedestal->channel = f250WindowRawData->channel;
+			myDf250PulsePedestal->itrigger = f250WindowRawData->itrigger;
+			myDf250PulsePedestal->pulse_number = 0;
+			myDf250PulsePedestal->pedestal = pedestalavg; // Return the average pedestal. This is what the firmware will do.
+			myDf250PulsePedestal->pulse_peak = VPEAK;
+			myDf250PulsePedestal->emulated = true;
+			myDf250PulsePedestal->AddAssociatedObject(f250WindowRawData);
+			pp_objs.push_back(myDf250PulsePedestal);	
+		}
 	}
 	
-	// Add PulseTime and PulsePedestal objects as associate objects of one another
-	vector<Df250PulseTime*>     ppt_objs;
-	vector<Df250PulsePedestal*> ppp_objs;
-	CopyContainerElementsWithCast(pt_objs, ppt_objs);
-	CopyContainerElementsWithCast(pp_objs, ppp_objs);
-	LinkAssociationsWithPulseNumber(ppt_objs, ppp_objs);
+	// PulseTime and PulsePedestal objects are associated to one another in GetObjects 
+
+	if(VERBOSE>3) evioout << " Leaving  EmulateDf250PulseTime" <<endl;
 }
 
 //----------------
@@ -1860,14 +2129,14 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 	/// implements an upsampling technique developed by Naomi Jarvis at
 	/// CMU. This was not implemented in the firmware for the 2014 commissioning
 	/// run, but was implemented for later runs. The second algorithm is
-	/// suppose to match the firmware algorithm used in the f125 during the
+	/// supposed to match the firmware algorithm used in the f125 during the
 	/// 2014 commissioning run. This is a copy of the f250 algorithm. At the
 	/// time I'm writing this, it does not appear to give identical, or even 
 	/// terribly close results to what the actual firmware reported. To select
 	/// using this second algorithm (the "f250 algorithm") set the 
-	/// EVIO:EMULATE_FADC125_TIME_UPSAMPLE config. parameter to "0". To turn
+	/// EVIO:F125_TIME_UPSAMPLE config. parameter to "0". To turn
 	/// on emulation for data that actually has hits in the data stream from
-	/// the firmware, set the EVIO:F125_IGNORE_PULSETIME config. parameter
+	/// the firmware, set the EVIO:F125_PT_EMULATION_MODE config. parameter
 	/// to 1.
 	///
 	/// NOTE: The upsampling algorithm here currently converts the value reported
@@ -1876,6 +2145,38 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 	/// is implemented in firmware, the units reported by the firmware will
 	/// change to 1/10 of a sample!  2/9/2014 DL
 
+	if(VERBOSE>3) evioout << " Entering  EmulateDf125PulseTime ..." <<endl;
+
+	// If emulation is being forced, then delete any existing objects.
+	// We take extra care to check that we don't delete any existing
+	// emulated objects. (I don't think there actually can be any at
+	// this point, but this may protect against future upgrades to
+	// the code.)
+	if(F125_PT_EMULATION_MODE==kEmulationAlways){
+		vector<JObject*> emulated_pt_objs;
+		for(uint32_t j=0; j<pt_objs.size(); j++){
+			Df125PulseTime *pt = (Df125PulseTime*)pt_objs[j];
+			if(pt->emulated){
+				emulated_pt_objs.push_back(pt);
+			}else{
+				delete pt;
+			}
+		}
+		pt_objs = emulated_pt_objs;
+	}
+	if(F125_PP_EMULATION_MODE==kEmulationAlways){
+		vector<JObject*> emulated_pp_objs;
+		for(uint32_t j=0; j<pp_objs.size(); j++){
+			Df125PulsePedestal *pp = (Df125PulsePedestal*)pp_objs[j];
+			if(pp->emulated){
+				emulated_pp_objs.push_back(pp);
+			}else{
+				delete pp;
+			}
+		}
+		pt_objs = emulated_pp_objs;
+	}
+
 	uint32_t Nped_samples = 4;   // number of samples to use for pedestal calculation (PED_SAMPLE)
 	uint32_t Nsamples = 14; // Number of samples used to define leading edge (was NSAMPLES in Naomi's code)
 
@@ -1883,6 +2184,53 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 	for(unsigned int i=0; i<wrd_objs.size(); i++){
 		const Df125WindowRawData *f125WindowRawData = (Df125WindowRawData*)wrd_objs[i];
 		
+		// If in auto mode then check if any pulse time objects already
+		// exists for this channel and clear the emulate_pt flag if so.
+		bool emulate_pt = true;
+		if(F125_PT_EMULATION_MODE == kEmulationAuto){
+			for(uint32_t j=0; j<pt_objs.size(); j++){
+				Df125PulseTime *pt = (Df125PulseTime*)pt_objs[j];
+				if(pt->rocid == f125WindowRawData->rocid){
+					if(pt->slot == f125WindowRawData->slot){
+						if(pt->channel == f125WindowRawData->channel){
+							if(pt->emulated){
+								jerr << "Emulating channel that already has emulated objects!" << endl;
+								jerr << "This likely means there is a bug in JEventSource_EVIO.cc" <<endl;
+								jerr << "PulseTime: rocid="<<pt->rocid<<" slot="<<pt->slot<<" channel="<<pt->channel<<endl;
+								jerr << "please report error to davidl@jlab.org" << endl;
+								exit(-1);
+							}
+							emulate_pt = false;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		// Ditto for pulse pedestal objects
+		bool emulate_pp = true;
+		if(F125_PP_EMULATION_MODE == kEmulationAuto){
+			for(uint32_t j=0; j<pp_objs.size(); j++){
+				Df125PulsePedestal *pp = (Df125PulsePedestal*)pp_objs[j];
+				if(pp->rocid == f125WindowRawData->rocid){
+					if(pp->slot == f125WindowRawData->slot){
+						if(pp->channel == f125WindowRawData->channel){
+							if(pp->emulated){
+								jerr << "Emulating channel that already has emulated objects!" << endl;
+								jerr << "This likely means there is a bug in JEventSource_EVIO.cc" <<endl;
+								jerr << "PulsePedestal: rocid="<<pp->rocid<<" slot="<<pp->slot<<" channel="<<pp->channel<<endl;
+								jerr << "please report error to davidl@jlab.org" << endl;
+								exit(-1);
+							}
+							emulate_pp = false;
+							break;
+						}
+					}
+				}
+			}
+		}
+
 		int rocid = f125WindowRawData->rocid;
 
 		// Get a vector of the samples for this channel
@@ -1909,7 +2257,7 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		}
 		pedestalavg = pedestalsum / Nped_samples;
 
-		if(EMULATE_FADC125_TIME_UPSAMPLE){
+		if(F125_TIME_UPSAMPLE){
 			fa125_algos_data_t fa125_algos_data;
 			fa125_algos(rocid, samplesvector, fa125_algos_data);
 			
@@ -1932,7 +2280,7 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 			// here.  DL
 			found_hit = pulse_peak > 0;
 
-		}else{  // not EMULATE_FADC125_TIME_UPSAMPLE
+		}else{  // not F125_TIME_UPSAMPLE
 
 			//----------F250 algorithm ----------
 			// variables to store the sample numbers
@@ -1952,9 +2300,8 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 				}
 			}
 			// if no signal, don't process further
-			if (max-min < F125_EMULATION_THRESHOLD) {
-				if(VERBOSE>4) evioout << " EmulateDf125PulseTime: object " << i << " max - min < " 
-							  << F125_EMULATION_THRESHOLD <<endl;
+			if (max-min < F125_EMULATION_MIN_SWING) {
+				if(VERBOSE>4) evioout << " EmulateDf125PulseTime: object " << i << " max - min < " << F250_EMULATION_MIN_SWING <<endl;
 				continue;
 			}
 			// if the min and max are reasonable compared to the threshold then use the requested threshold
@@ -2029,7 +2376,7 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 						  << " time=" << time  << " sample_over=" << first_sample_over_threshold << endl;
 
 
-		}   // EMULATE_FADC125_TIME_UPSAMPLE
+		}   // F125_TIME_UPSAMPLE
 
 		// At this point we know we have a hit and will be able to extract a time.
 		// Go ahead and make the PulseTime object, filling in the "rough" time.
@@ -2039,44 +2386,43 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		if(found_hit){
 		
 			// create new Df125PulseTime object
-			Df125PulseTime *myDf125PulseTime = new Df125PulseTime;
-			myDf125PulseTime->rocid =f125WindowRawData->rocid;
-			myDf125PulseTime->slot = f125WindowRawData->slot;
-			myDf125PulseTime->channel = f125WindowRawData->channel;
-			myDf125PulseTime->itrigger = f125WindowRawData->itrigger;
-			myDf125PulseTime->pulse_number = 0;
-			myDf125PulseTime->quality_factor = quality_factor;
-			myDf125PulseTime->time = time; 
-			myDf125PulseTime->overflows = overflows; 
-			myDf125PulseTime->emulated = true;
+			if(emulate_pt){
+				Df125PulseTime *myDf125PulseTime = new Df125PulseTime;
+				myDf125PulseTime->rocid =f125WindowRawData->rocid;
+				myDf125PulseTime->slot = f125WindowRawData->slot;
+				myDf125PulseTime->channel = f125WindowRawData->channel;
+				myDf125PulseTime->itrigger = f125WindowRawData->itrigger;
+				myDf125PulseTime->pulse_number = 0;
+				myDf125PulseTime->quality_factor = quality_factor;
+				myDf125PulseTime->time = time; 
+				myDf125PulseTime->overflows = overflows; 
+				myDf125PulseTime->emulated = true;
+				myDf125PulseTime->AddAssociatedObject(f125WindowRawData);
+				pt_objs.push_back(myDf125PulseTime);
 
-			// create new Df125PulsePedestal object
-			Df125PulsePedestal *myDf125PulsePedestal = new Df125PulsePedestal;
-			myDf125PulsePedestal->rocid =f125WindowRawData->rocid;
-			myDf125PulsePedestal->slot = f125WindowRawData->slot;
-			myDf125PulsePedestal->channel = f125WindowRawData->channel;
-			myDf125PulsePedestal->itrigger = f125WindowRawData->itrigger;
-			myDf125PulsePedestal->pulse_number = 0;
-			myDf125PulsePedestal->pedestal = pedestalavg;
-			myDf125PulsePedestal->pulse_peak = pulse_peak;
-			myDf125PulsePedestal->emulated = true;
-			
-			// Add the Df125WindowRawData object as an associated object
-			myDf125PulseTime->AddAssociatedObject(f125WindowRawData);
-			myDf125PulsePedestal->AddAssociatedObject(f125WindowRawData);
-			
-			// The following is empirical from the first BCAL/CDC cosmic data
-			//myDf125PulseTime->time -= 170.0;
-			if(myDf125PulseTime->time > 10000){
-				// If calculated time is <170.0, then the unsigned int is problematic. Flag this if it happens
-				myDf125PulseTime->time = 0;
-				myDf125PulseTime->quality_factor = 2;
+				// The following is empirical from the first BCAL/CDC cosmic data
+				//myDf125PulseTime->time -= 170.0;
+				if(myDf125PulseTime->time > 10000){
+					// If calculated time is <170.0, then the unsigned int is problematic. Flag this if it happens
+					myDf125PulseTime->time = 0;
+					myDf125PulseTime->quality_factor = 2;
+				}
 			}
 
-			// Add to list of Df125PulseTime objects
-			pt_objs.push_back(myDf125PulseTime);
-			pp_objs.push_back(myDf125PulsePedestal);
-
+			// create new Df125PulsePedestal object
+			if(emulate_pp){
+				Df125PulsePedestal *myDf125PulsePedestal = new Df125PulsePedestal;
+				myDf125PulsePedestal->rocid =f125WindowRawData->rocid;
+				myDf125PulsePedestal->slot = f125WindowRawData->slot;
+				myDf125PulsePedestal->channel = f125WindowRawData->channel;
+				myDf125PulsePedestal->itrigger = f125WindowRawData->itrigger;
+				myDf125PulsePedestal->pulse_number = 0;
+				myDf125PulsePedestal->pedestal = pedestalavg;
+				myDf125PulsePedestal->pulse_peak = pulse_peak;
+				myDf125PulsePedestal->emulated = true;
+				myDf125PulsePedestal->AddAssociatedObject(f125WindowRawData);
+				pp_objs.push_back(myDf125PulsePedestal);
+			}			
 		} // found_hit		
 	} // i loop over wrd_objs.size()
 	
@@ -2086,6 +2432,8 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 	CopyContainerElementsWithCast(pt_objs, ppt_objs);
 	CopyContainerElementsWithCast(pp_objs, ppp_objs);
 	LinkAssociationsWithPulseNumber(ppt_objs, ppp_objs);
+
+	if(VERBOSE>3) evioout << " Leaving  EmulateDf125PulseTime" <<endl;
 }
 
 //----------------
@@ -2977,7 +3325,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				quality_factor = (*iptr>>19) & 0x03;
 				pulse_time = (*iptr>>0) & 0x7FFFF;
 				if(VERBOSE>7) evioout << "      FADC250 Pulse Time: chan="<<channel<<" pulse_number="<<pulse_number<<" pulse_time="<<pulse_time<<endl;
-				if( (objs!=NULL) && (pulse_number<F250PULSE_NUMBER_FILTER) && (!F250_IGNORE_PULSETIME)) {
+				if( (objs!=NULL) && (pulse_number<F250PULSE_NUMBER_FILTER) && (F250_PT_EMULATION_MODE!=kEmulationAlways)) {
 					objs->hit_objs.push_back(new Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 				}
 				break;
@@ -2992,7 +3340,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				pedestal = (*iptr>>12) & 0x1FF;
 				pulse_peak = (*iptr>>0) & 0xFFF;
 				if(VERBOSE>7) evioout << "      FADC250 Pulse Pedestal chan="<<channel<<" pulse_number="<<pulse_number<<" pedestal="<<pedestal<<" pulse_peak="<<pulse_peak<<endl;
-				if( (objs!=NULL) && (pulse_number<F250PULSE_NUMBER_FILTER) && (!F250_IGNORE_PULSETIME)) {
+				if( (objs!=NULL) && (pulse_number<F250PULSE_NUMBER_FILTER) && (F250_PP_EMULATION_MODE!=kEmulationAlways)) {
 					objs->hit_objs.push_back(new Df250PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
 				}
 				break;
@@ -3049,13 +3397,14 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 			AddIfAppropriate(hit_objs[i], vpp);
 		}
 		
-		// Connect Df250PulseIntegral with Df250PulseTime, and Df250PulseRawData
+		// Connect Df250PulseIntegral, Df250PulseTime, and
+		// Df250PulsePedestal with Df250PulseRawData
+		// (n.b. the associations between pi, pt, and pp are
+		// done in GetObjects where emulated objects are
+		// also available.) 
 		LinkAssociationsWithPulseNumber(vprd, vpi);
 		LinkAssociationsWithPulseNumber(vprd, vpt);
 		LinkAssociationsWithPulseNumber(vprd, vpp);
-		LinkAssociationsWithPulseNumber(vpi, vpt);
-		LinkAssociationsWithPulseNumber(vpi, vpp);
-		LinkAssociationsWithPulseNumber(vpt, vpp);
 		
 		// Connect Df250WindowSum and Df250WindowRawData
 		LinkAssociations(vwrd, vws);
@@ -3309,7 +3658,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				channel = (*iptr>>20) & 0x7F;
 				pulse_number = (*iptr>>18) & 0x03;
 				pulse_time = (*iptr>>0) & 0xFFFF;
- 				if( (objs!=NULL) && (pulse_number<F125PULSE_NUMBER_FILTER) && (!F125_IGNORE_PULSETIME) ) {
+ 				if( (objs!=NULL) && (pulse_number<F125PULSE_NUMBER_FILTER) && (F125_PT_EMULATION_MODE!=kEmulationAlways) ) {
 					objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 				}
 				last_pulse_time_channel = channel;
@@ -3321,7 +3670,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				pulse_number = (*iptr>>21) & 0x03;
 				pedestal = (*iptr>>12) & 0x1FF;
 				pulse_peak = (*iptr>>0) & 0xFFF;
-				if( (objs!=NULL) && (pulse_number<F125PULSE_NUMBER_FILTER) && (!F125_IGNORE_PULSETIME) ) {
+				if( (objs!=NULL) && (pulse_number<F125PULSE_NUMBER_FILTER) && (F125_PP_EMULATION_MODE!=kEmulationAlways) ) {
 					objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
 				}
 				break;
