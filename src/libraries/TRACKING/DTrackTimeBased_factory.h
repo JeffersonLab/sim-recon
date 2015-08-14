@@ -108,7 +108,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   vector<DVector3>sc_pos;
   vector<DVector3>sc_norm;
 
- 
+  int myevt;
 };
 
 #endif // _DTrackTimeBased_factory_
