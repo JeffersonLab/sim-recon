@@ -2376,6 +2376,8 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 			if((bankPtr->tag & 0xFF00) == 0xFF00){
 				if(VERBOSE>6) evioout << "      Bank tag="<<hex<<data_bank->tag<<dec<<" is in reserved CODA range and has correct lineage. Assuming it's a built trigger bank."<< endl;
 				ParseBuiltTriggerBank(bankPtr, tmp_events);
+				if(VERBOSE>5) evioout << "     Merging objects in ParseEVIOEvent" << endl;
+				MergeObjLists(full_events, tmp_events);
 			}
 			continue;  // if this wasn't a trigger bank, then it has the wrong lineage to be a data bank
 		}
@@ -2539,6 +2541,8 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 	evioDOMNodeListP bankList = trigbank->getChildren();
 	evioDOMNodeList::iterator iter = bankList->begin();
 	for(int ibank=1; iter!=bankList->end(); iter++, ibank++){
+	
+		if(VERBOSE>7) evioout << "       Looking for data in child banks ..." << endl;
 
 		evioDOMNodeP bankPtr = *iter;
 		
@@ -2557,6 +2561,8 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 
 		// unit64_t = common data (1st part)
 		if(vec64){
+			
+			if(VERBOSE>9) evioout << "       found uint64_t data" << endl;
 
 			// In addition to the first event number (1st word) there are three
 			// additional pieces of information that may be present:
@@ -2587,6 +2593,9 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 		
 		// uint16_t = common data (2nd part)
 		if(vec16){
+
+			if(VERBOSE>9) evioout << "       found uint16_t data" << endl;
+
 			for(uint32_t i=0; i<Mevents; i++){
 				if(i>=vec16->size()) break;
 				event_types.push_back((*vec16)[i]);
@@ -2595,6 +2604,9 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 		
 		// uint32_t = inidivdual ROC timestamps and misc. roc-specfic data
 		if(vec32){
+
+			if(VERBOSE>9) evioout << "       found uint32_t data" << endl;
+
 			// Get pointer to DCODAROCInfo object for this rocid/event, instantiating it if necessary
 			uint32_t rocid = (uint32_t)bankPtr->tag;
 			uint32_t Nwords_per_event = vec32->size()/Mevents;
@@ -2614,6 +2626,7 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 				codarocinfo->timestamp = (ts_high<<32) + ts_low;
 				for(uint32_t i=2; i<Nwords_per_event; i++) codarocinfo->misc.push_back(*iptr++);
 				
+				if(VERBOSE>7) evioout << "       Adding DCODAROCInfo for rocid="<<rocid<< " with timestamp " << codarocinfo->timestamp << endl;
 				rocinfos[ievent].push_back(codarocinfo);
 			}
 		}
@@ -2654,6 +2667,7 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 		for(uint32_t i=0; i<codarocinfos.size(); i++) objs->misc_objs.push_back(codarocinfos[i]);		
 	}
 	
+	if(VERBOSE>6) evioout << "      Found "<<events.size()<<" events in Built Trigger Bank"<< endl;
 	if(VERBOSE>5) evioout << "    Leaving ParseBuiltTriggerBank()" << endl;
 }
 
