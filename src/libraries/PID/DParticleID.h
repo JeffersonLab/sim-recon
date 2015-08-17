@@ -22,6 +22,7 @@
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCPseudo.h>
 #include <BCAL/DBCALShower.h>
+#include <BCAL/DBCALCluster.h>
 #include <FCAL/DFCALShower.h>
 #include <FCAL/DFCALGeometry_factory.h>
 #include <TOF/DTOFPoint.h>

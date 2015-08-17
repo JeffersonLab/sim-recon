@@ -93,13 +93,13 @@ DParticleID::DParticleID(JEventLoop *loop)
 	FCAL_CUT_PAR2=0.88;
 	gPARMS->SetDefaultParameter("FCAL:CUT_PAR2",FCAL_CUT_PAR2);
 
-	BCAL_Z_CUT=10.;
+	BCAL_Z_CUT=20.;
 	gPARMS->SetDefaultParameter("BCAL:Z_CUT",BCAL_Z_CUT);
 
-	BCAL_PHI_CUT_PAR1=0.0175;
+	BCAL_PHI_CUT_PAR1=0.016;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR1",BCAL_PHI_CUT_PAR1);
 
-	BCAL_PHI_CUT_PAR2=1.76e-3;
+	BCAL_PHI_CUT_PAR2=0.01;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR2",BCAL_PHI_CUT_PAR2);
 
 	SC_DPHI_CUT=0.105;
@@ -502,6 +502,7 @@ bool DParticleID::MatchToBCAL(const DReferenceTrajectory* rt, const vector<const
 	return true;
 }
 
+
 bool DParticleID::MatchToBCAL(const DKinematicData* locTrack, const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, DBCALShowerMatchParams& locShowerMatchParams) const
 {
 	// NOTE: locTrack is NULL if calling from track reconstruction!!!
@@ -517,23 +518,56 @@ bool DParticleID::MatchToBCAL(const DKinematicData* locTrack, const DReferenceTr
 	// Check that the hit is not out of time with respect to the track
 	if(fabs(locBCALShower->t - locFlightTime - locInputStartTime) > OUT_OF_TIME_CUT)
 		return false;
-
+	
 	DVector3 proj_pos = rt->GetLastDOCAPoint();
-	if(proj_pos.Perp() < 65.0)
-		return false;  // not inside BCAL!
+	//if(proj_pos.Perp() < 64.0)
+	//  return false;  // not inside BCAL!
 
-	double dz = bcal_pos.z() - proj_pos.z();
-	double dphi = bcal_pos.Phi() - proj_pos.Phi();
-	double p = rt->swim_steps[0].mom.Mag();
-	//dphi += 0.002 + 8.314e-3/(p + 0.3788)/(p + 0.3788);
-	while(dphi >	M_PI)
-		dphi -= M_TWO_PI;
+	// Rough phi cut
+	double dphi=bcal_pos.Phi()-proj_pos.Phi();
+	while(dphi > M_PI)
+	  dphi -= M_TWO_PI;
 	while(dphi < -M_PI)
-		dphi += M_TWO_PI;
-	double phi_cut = BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2/(p*p);
+	  dphi += M_TWO_PI;
+	
+	if (fabs(dphi)>0.13) // 7.5 degrees = one bcal module
+	  return false;
+	
+	// rough z cut
+	double dz=proj_pos.z()-locBCALShower->z;
+	if (fabs(dz)>BCAL_Z_CUT)
+	  return false; 
 
-	if((fabs(dz) >= BCAL_Z_CUT) || (fabs(dphi) >= phi_cut))
-		return false; //not close enough
+	// Get clusters associated with this shower
+	vector<const DBCALCluster*>clusters;
+	locBCALShower->Get(clusters);
+
+	// loop over clusters and points associated with this shower, finding 
+	// the closest match between a point and the track
+	double dphi_min=1000.;
+	for (unsigned int k=0;k<clusters.size();k++){
+	  vector<const DBCALPoint*>points=clusters[k]->points();
+	  for (unsigned int m=0;m<points.size();m++){
+	    double rpoint=points[m]->r();
+	    if (rt->GetIntersectionWithRadius(rpoint,proj_pos)==NOERROR){
+	      dphi=points[m]->phi()-proj_pos.Phi();
+	      while(dphi > M_PI)
+		dphi -= M_TWO_PI;
+	      while(dphi < -M_PI)
+		dphi += M_TWO_PI;
+	      if (fabs(dphi)<fabs(dphi_min)){
+		dphi_min=dphi;
+	      }
+	    }
+	  }
+	}
+
+
+	double p = rt->swim_steps[0].mom.Mag();
+	double phi_cut = BCAL_PHI_CUT_PAR1 + BCAL_PHI_CUT_PAR2/(p*p);
+	// Look for a match in phi 
+	if (fabs(dphi_min) >= phi_cut)
+	  return false; //not close enough
 
 //	if (locPathLength<0.) _DBG_ << " s " << locPathLength << " t " << locFlightTime <<endl;
 
@@ -544,7 +578,7 @@ bool DParticleID::MatchToBCAL(const DKinematicData* locTrack, const DReferenceTr
 	locShowerMatchParams.dFlightTime = locFlightTime;
 	locShowerMatchParams.dFlightTimeVariance = 0.0; //SET ME!!!!
 	locShowerMatchParams.dPathLength = locPathLength;
-	locShowerMatchParams.dDeltaPhiToShower = dphi;
+	locShowerMatchParams.dDeltaPhiToShower = dphi_min;
 	locShowerMatchParams.dDeltaZToShower = dz;
 
 	return true;
