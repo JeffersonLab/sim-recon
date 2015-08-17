@@ -15,8 +15,11 @@
 #include "HistogramTools.h" // To make my life easier
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALTDCHit.h"
+#include "BCAL/DBCALCluster.h"
+#include "BCAL/DBCALPoint.h"
 #include "BCAL/DBCALUnifiedHit.h"
-#include "PID/DDetectorMatches.h"
+#include "PID/DChargedTrack.h"
+#include "TRACKING/DTrackTimeBased.h"
 #include "DAQ/Df250PulsePedestal.h" // Needed for pulse peak information
 #include "BCAL/DBCALDigiHit.h"
 
@@ -180,7 +183,63 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, int eventnumber
                         576, 0.5, 576.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
             }
         }
+    }
+    /*************************************************
+        _________  _____  _______       _
+       /_  __/ _ \/ ___/ /_  __(_)_ _  (_)__  ___ _
+        / / / // / /__    / / / /  ' \/ / _ \/ _ `/
+       /_/ /____/\___/   /_/ /_/_/_/_/_/_//_/\_, /
+                                            /___/
+    **************************************************/
 
+    // Now we will use the track matching in order to work out the time offsets and effective velocities
+    // We just need to grab the charged particles in order to get their detector matches
+    // Note that this method is only really applicable for runs with the solenoid on...
+
+    vector <const DChargedTrack *> chargedTrackVector;
+    loop->Get(chargedTrackVector);
+
+    for (unsigned int iTrack = 0; iTrack < chargedTrackVector.size(); iTrack++){
+        // Pick out the best charged track hypothesis for this charged track based only on the Tracking FOM
+        const DChargedTrackHypothesis* bestHypothesis = chargedTrackVector[iTrack]->Get_BestTrackingFOM();
+
+        // Now from this hypothesis we can get the detector matches to the BCAL
+        const DBCALShowerMatchParams* bcalMatch = bestHypothesis->Get_BCALShowerMatchParams();
+        if (bcalMatch == NULL) continue; 
+
+        // We also need the reference trajectory, which is buried deep in there
+        const DTrackTimeBased *timeBasedTrack = (const DTrackTimeBased *) bcalMatch->dTrack;
+        const DReferenceTrajectory *rt = timeBasedTrack->rt;
+
+        // Get the shower from the match
+        const DBCALShower *thisShower = bcalMatch->dBCALShower;
+
+        // Get the clusters from the showers
+        vector <const DBCALCluster *> clusterVector;
+        thisShower->Get(clusterVector);
+
+        // Loop over clusters within the shower
+        for (unsigned int iCluster = 0; iCluster < clusterVector.size(); iCluster++){
+            // Get the points
+            vector <const DBCALPoint*> pointVector = clusterVector[iCluster]->points();
+            // Loop over the points within the cluster
+            for (unsigned int iPoint = 0; iPoint < pointVector.size(); iPoint++){
+                const DBCALPoint *thisPoint = pointVector[iPoint];
+                if (thisPoint->E() < 0.05) continue; // The timing is known not to be great for very low energy, so only use our best info 
+                DVector3 proj_pos = rt->GetLastDOCAPoint();
+                double rpoint = thisPoint->r();
+                if (rt->GetIntersectionWithRadius(rpoint,proj_pos)==NOERROR){
+                    // Now proj_pos contains the projected position of the track at this particular point within the BCAL
+                    // We can plot the difference of the projected position and the BCAL position as a function of the channel
+                    char name[200];
+                    sprintf(name , "Module %.2i Layer %.2i Sector %.2i", thisPoint->module(), thisPoint->layer(), thisPoint->sector());
+                    Fill2DHistogram ("BCAL_TDC_Offsets", "Z Position", name,
+                            proj_pos.z(), thisPoint->z(),
+                            "Z_{point} Vs. Z_{Track}; Z_{Track} [cm]; Z_{Point} [cm]",
+                            400, -100, 400, 400, -100, 400); 
+                }
+            }
+        }
     }
 
     return NOERROR;
