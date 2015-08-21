@@ -22,6 +22,7 @@
 #include "PID/DChargedTrack.h"
 #include "TRACKING/DTrackTimeBased.h"
 #include "PID/DEventRFBunch.h"
+#include "PID/DDetectorMatches.h"
 #include "DAQ/Df250PulsePedestal.h" // Needed for pulse peak information
 #include "BCAL/DBCALDigiHit.h"
 
@@ -74,7 +75,6 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int runnumber)
     DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
     DGeometry* geom = app->GetDGeometry(runnumber);
     geom->GetTargetZ(Z_TARGET);
-
     return NOERROR;
 }
 
