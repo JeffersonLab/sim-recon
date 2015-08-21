@@ -18,14 +18,16 @@
 #include "BCAL/DBCALCluster.h"
 #include "BCAL/DBCALPoint.h"
 #include "BCAL/DBCALUnifiedHit.h"
+#include "BCAL/DBCALGeometry.h"
 #include "PID/DChargedTrack.h"
 #include "TRACKING/DTrackTimeBased.h"
+#include "PID/DEventRFBunch.h"
 #include "DAQ/Df250PulsePedestal.h" // Needed for pulse peak information
 #include "BCAL/DBCALDigiHit.h"
 
 using namespace jana;
 
-
+#include "DANA/DApplication.h"
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
@@ -66,9 +68,13 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int runnumber)
 {
     // This is called whenever the run number changes
+    DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
+    DGeometry* geom = app->GetDGeometry(runnumber);
+    geom->GetTargetZ(Z_TARGET);
+
     return NOERROR;
 }
 
@@ -196,6 +202,10 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, int eventnumber
     // We just need to grab the charged particles in order to get their detector matches
     // Note that this method is only really applicable for runs with the solenoid on...
 
+    // We need the RF bunch for the event in order to check the global alignemtn of the timing
+    const DEventRFBunch *thisRFBunch = NULL;
+    loop->GetSingle(thisRFBunch);
+
     vector <const DChargedTrack *> chargedTrackVector;
     loop->Get(chargedTrackVector);
 
@@ -205,6 +215,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, int eventnumber
 
         // Now from this hypothesis we can get the detector matches to the BCAL
         const DBCALShowerMatchParams* bcalMatch = bestHypothesis->Get_BCALShowerMatchParams();
+        const DSCHitMatchParams* scMatch = bestHypothesis->Get_SCHitMatchParams(); // Needed for quality cut later
         if (bcalMatch == NULL) continue; 
 
         // We also need the reference trajectory, which is buried deep in there
@@ -227,16 +238,35 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, int eventnumber
                 const DBCALPoint *thisPoint = pointVector[iPoint];
                 if (thisPoint->E() < 0.05) continue; // The timing is known not to be great for very low energy, so only use our best info 
                 DVector3 proj_pos = rt->GetLastDOCAPoint();
+                double pathLength, flightTime;
                 double rpoint = thisPoint->r();
-                if (rt->GetIntersectionWithRadius(rpoint,proj_pos)==NOERROR){
+                if (rt->GetIntersectionWithRadius(rpoint,proj_pos, &pathLength, &flightTime)==NOERROR){
                     // Now proj_pos contains the projected position of the track at this particular point within the BCAL
                     // We can plot the difference of the projected position and the BCAL position as a function of the channel
                     char name[200];
                     sprintf(name , "Module %.2i Layer %.2i Sector %.2i", thisPoint->module(), thisPoint->layer(), thisPoint->sector());
+                    // These results are in slightly different coordinate systems. We want one where the center of the BCAL is z=0
+                    double localTrackHitZ = proj_pos.z() - DBCALGeometry::GLOBAL_CENTER;
+                    double localBCALHitZ = thisPoint->z() - DBCALGeometry::GLOBAL_CENTER + Z_TARGET;
                     Fill2DHistogram ("BCAL_TDC_Offsets", "Z Position", name,
-                            proj_pos.z(), thisPoint->z(),
+                            localTrackHitZ, localBCALHitZ,
                             "Z_{point} Vs. Z_{Track}; Z_{Track} [cm]; Z_{Point} [cm]",
-                            400, -100, 400, 400, -100, 400); 
+                            500, -250, 250, 500, -250, 250); 
+
+                    // Now fill some histograms that are useful for aligning the BCAL with the rest of the detector systems
+                    if (thisRFBunch->dNumParticleVotes >= 2 && scMatch != NULL){ // Require good RF bunch and this track match the SC
+                        // Get the time of the BCAL point
+                        double pointTime = thisPoint->t();
+                        // We have the flight time to our BCAL point, so we can get the target time
+                        double targetCenterTime = pointTime - flightTime - ((timeBasedTrack->position()).Z() - Z_TARGET) / SPEED_OF_LIGHT;
+
+                        // Now we just plot the difference in from the RF Time to get out the correction
+                        int the_cell = (thisPoint->module() - 1) * 16 + (thisPoint->layer() - 1) * 4 + thisPoint->sector();
+                        Fill2DHistogram("BCAL_Global_Offsets", "Target Time", "Target Time Minus RF Time Vs. Cell Number",
+                                the_cell, targetCenterTime - thisRFBunch->dTime,
+                                "Target Time Minus RF Time Vs. Cell Number; CCDB Index; t_{Target} - t_{RF} [ns]",
+                                768, 0.5, 768.5, 200, -10, 10);
+                    }
                 }
             }
         }
