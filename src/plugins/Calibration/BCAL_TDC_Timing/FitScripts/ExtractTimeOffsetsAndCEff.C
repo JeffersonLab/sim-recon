@@ -113,6 +113,45 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
     TH1F *h1_c0_all = new TH1F ("h1_c0_all", "Value of c0; CCDB Index; c0 [cm]", 768, 0.5, 768.5);
     TH1F *h1_c1_all = new TH1F ("h1_c1_all", "Value of c1; CCDB Index; c1 [cm]", 768, 0.5, 768.5);
     TH2I *h2_c0_c1 = new TH2I("h2_c0_c1", "c_{1} Vs. c_{0}; c_{0}; c_{1}", 100, -15, 15, 100, 0.85, 1.15);
+
+    // Fit the global offset histogram to get the per channel global offset
+    double globalOffset[768]; 
+    TH1D * selectedBCALOffset = new TH1D("selectedBCALOffset", "Selected Global BCAL Offset; CCDB Index; Offset [ns]", 768, 0.5, 768 + 0.5);
+    TH1I * BCALOffsetDistribution = new TH1I("BCALOffsetDistribution", "Global BCAL Offset; Global Offset [ns]; Entries", 100, -10, 10);
+
+    thisHist = Get2DHistogram("BCAL_Global_Offsets", "Target Time", "Target Time Minus RF Time Vs. Cell Number");
+    if(thisHist != NULL){
+        int nBinsX = thisHist->GetNbinsX();
+        int nBinsY = thisHist->GetNbinsY();
+        for (int i = 1 ; i <= nBinsX; i++){
+            TH1D *projY = thisHist->ProjectionY("temp", i, i);
+            // Scan over the histogram
+            float nsPerBin = (projY->GetBinCenter(projY->GetNbinsX()) - projY->GetBinCenter(1)) / projY->GetNbinsX();
+            float timeWindow = 0.5; //ns (Full Width)
+            int binWindow = int(timeWindow / nsPerBin);
+            double maxEntries = 0;
+            double maxMean = 0;
+            for (int j = 1 ; j <= projY->GetNbinsX();j++){
+                int minBin = j;
+                int maxBin = (j + binWindow) <= projY->GetNbinsX() ? (j + binWindow) : projY->GetNbinsX();
+                double sum = 0, nEntries = 0;
+                for (int bin = minBin; bin <= maxBin; bin++){
+                    sum += projY->GetBinContent(bin) * projY->GetBinCenter(bin);
+                    nEntries += projY->GetBinContent(bin);
+                    if (bin == maxBin){
+                        if (nEntries > maxEntries) {
+                            maxMean = sum / nEntries;
+                            maxEntries = nEntries;
+                        }
+                    }
+                }
+            }
+            globalOffset[i-1] = maxMean;
+            selectedBCALOffset->SetBinContent(i, maxMean);
+            BCALOffsetDistribution->Fill(maxMean);
+        }
+    }
+
     outputFile->cd("Fits");
     // Now we want to loop through all available module/layer/sector and try to make a fit of each one
     for (unsigned int iModule = 1; iModule <=48; iModule++){
@@ -148,29 +187,29 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
                         h1_c0->Fill(c0); h1_c1->Fill(c1); h2_c0_c1->Fill(c0,c1); 
                         h1_c0_all->SetBinContent(the_cell, c0); h1_c0_all->SetBinError(the_cell, c0_err);
                         h1_c1_all->SetBinContent(the_cell, c1); h1_c1_all->SetBinError(the_cell, c1_err);
-                        adcOffsetFile << adc_offsets[(the_cell - 1) * 2] + 0.5 * c0 / C_eff << endl;
-                        adcOffsetFile << adc_offsets[ the_cell*2 - 1] - 0.5 * c0 / C_eff << endl;
+                        adcOffsetFile << adc_offsets[(the_cell - 1) * 2] + 0.5 * c0 / C_eff + globalOffset[the_cell] << endl;
+                        adcOffsetFile << adc_offsets[ the_cell*2 - 1] - 0.5 * c0 / C_eff + globalOffset[the_cell] << endl;
                         if (iLayer != 4){
-                            tdcOffsetFile << tdc_offsets[(the_tdc_cell - 1) * 2] + 0.5 * c0 / C_eff << endl;
-                            tdcOffsetFile << tdc_offsets[the_tdc_cell*2 - 1] - 0.5 * c0 / C_eff << endl;
+                            tdcOffsetFile << tdc_offsets[(the_tdc_cell - 1) * 2] + 0.5 * c0 / C_eff + globalOffset[the_cell] << endl;
+                            tdcOffsetFile << tdc_offsets[the_tdc_cell*2 - 1] - 0.5 * c0 / C_eff + globalOffset[the_cell] << endl;
                         }
                     }
                     else {
                         cout << "WARNING: Fit Status "<< fitStatus << " for Upstream " << name << endl;
-                        adcOffsetFile << adc_offsets[(the_cell - 1) * 2] << endl;
-                        adcOffsetFile << adc_offsets[the_cell*2 - 1] << endl;
+                        adcOffsetFile << adc_offsets[(the_cell - 1) * 2] + globalOffset[the_cell] << endl;
+                        adcOffsetFile << adc_offsets[the_cell*2 - 1] + globalOffset[the_cell] << endl;
                         if (iLayer != 4){
-                            tdcOffsetFile << tdc_offsets[(the_tdc_cell - 1) * 2] << endl;
-                            tdcOffsetFile << tdc_offsets[the_tdc_cell*2 - 1] << endl;
+                            tdcOffsetFile << tdc_offsets[(the_tdc_cell - 1) * 2] + globalOffset[the_cell] << endl;
+                            tdcOffsetFile << tdc_offsets[the_tdc_cell*2 - 1] + globalOffset[the_cell] << endl;
                         }
                     }
                 }
                 else{
-                    adcOffsetFile << adc_offsets[ (the_cell-1) * 2] << endl;
-                    adcOffsetFile << adc_offsets[  the_cell*2  - 1] << endl;
+                    adcOffsetFile << adc_offsets[ (the_cell-1) * 2] + globalOffset[the_cell] << endl;
+                    adcOffsetFile << adc_offsets[  the_cell*2  - 1] + globalOffset[the_cell] << endl;
                     if (iLayer != 4){
-                        tdcOffsetFile << tdc_offsets[(the_tdc_cell -1) * 2] << endl;
-                        tdcOffsetFile << tdc_offsets[ the_tdc_cell*2 - 1] << endl;
+                        tdcOffsetFile << tdc_offsets[(the_tdc_cell -1) * 2] + globalOffset[the_cell] << endl;
+                        tdcOffsetFile << tdc_offsets[ the_tdc_cell*2 - 1] + globalOffset[the_cell] << endl;
                     }
                 }
             }
