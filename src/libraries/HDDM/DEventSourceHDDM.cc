@@ -155,7 +155,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    /// JEventSource base class. It creates the objects of the type
    /// on which factory is based. It uses the hddm_s::HDDM* object
    /// kept in the ref field of the JEvent object passed.
-   static bool print_calib_info = true;
+   static bool print_calib_info = true;  
 
    // We must have a factory to hold the data
    if (!factory)
@@ -194,7 +194,10 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
          // Notify user
          map<string,float>::iterator iter;
          if(print_calib_info) {
-             print_calib_info = false;           // only print once
+             // print out some diagnostic info, but only once per execution
+             // warning:  this is not technically thread safe, but since this 
+             // is just a diagnostic print out, we are going to hold our noses for now...
+             print_calib_info = false;           
              jout << "Read " << tvals.size()
                   << " values from FDC/strip_calib in calibDB"
                   << endl;
@@ -217,7 +220,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    }
 
    //Get target center
-      //multiple reader threads can access this object: need lock
+   //multiple reader threads can access this object: need lock
    bool locNewRunNumber = false;
    unsigned int locRunNumber = event.GetRunNumber();
    LockRead();
