@@ -22,6 +22,7 @@
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCPseudo.h>
 #include <BCAL/DBCALShower.h>
+#include <BCAL/DBCALCluster.h>
 #include <FCAL/DFCALShower.h>
 #include <FCAL/DFCALGeometry_factory.h>
 #include <TOF/DTOFPoint.h>
@@ -176,12 +177,23 @@ class DParticleID:public jana::JObject{
 	double dSCdphi;
 	double dSCphi0;
 	// start counter calibration parameters
+	// Propagation time (pt) parameters
 	enum sc_region_t{
 	  SC_STRAIGHT,
 	  SC_BEND,
 	  SC_NOSE,
 	};
 	vector<double>sc_veff[3];
+	vector<double>sc_pt_yint[3];
+	vector<double>sc_pt_slope[3];
+	// Attenuation (attn) calibration paramerters
+	enum sc_region_attn{
+	  SC_STRAIGHT_ATTN,
+	  SC_BENDNOSE_ATTN,
+	};
+	vector<double> sc_attn_A[2];
+	vector<double> sc_attn_B[2];
+	vector<double> sc_attn_C[2];
 
 	// FCAL geometry
 	double dFCALz;
