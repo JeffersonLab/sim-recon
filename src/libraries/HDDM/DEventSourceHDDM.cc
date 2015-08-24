@@ -155,6 +155,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    /// JEventSource base class. It creates the objects of the type
    /// on which factory is based. It uses the hddm_s::HDDM* object
    /// kept in the ref field of the JEvent object passed.
+   static bool print_calib_info = true;
 
    // We must have a factory to hold the data
    if (!factory)
@@ -191,15 +192,19 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
             return VALUE_OUT_OF_RANGE;
          }
          // Notify user
-         jout << "Read " << tvals.size()
-              << " values from FDC/strip_calib in calibDB"
-              << endl;
-         jout << "   strip_calib columns (alphabetical): ";
          map<string,float>::iterator iter;
+         if(print_calib_info) {
+             print_calib_info = false;           // only print once
+             jout << "Read " << tvals.size()
+                  << " values from FDC/strip_calib in calibDB"
+                  << endl;
+             jout << "   strip_calib columns (alphabetical): ";
+             for (iter=tvals[0].begin(); iter!=tvals[0].end(); iter++) {
+                 jout << iter->first << " ";
+                 jout << endl;
+             }
+         }
          for (iter=tvals[0].begin(); iter!=tvals[0].end(); iter++) {
-            jout << iter->first << " ";
-            jout << endl;
-
             // Copy values into tables. We preserve the order since
             // that is how it was originally done in hitFDC.c
             for (unsigned int i=0; i<tvals.size(); i++) {
