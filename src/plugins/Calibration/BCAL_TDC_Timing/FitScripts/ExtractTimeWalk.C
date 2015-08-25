@@ -52,7 +52,10 @@ void ExtractTimeWalk(TString filename = "hd_root.root"){
     // Using the pulse peak, the functional form is
     // t_TDC - tADC = c0 + c1 / ( pulse height / threshold ) ^ c2
     // The threshold in ADC counts is ~14 so this is in the denominator
-    TF1 *f1 = new TF1("f1", "[0]+[1]/TMath::Power(x/14,[2])", 15, 400);
+    double a_thresh = 14.0;
+    char formula[100];
+    sprintf(formula,  "[0]+[1]/TMath::Power(x/%d,[2])", a_thresh);
+    TF1 *f1 = new TF1("f1", formula , 15, 400);
     f1->SetParLimits(2, 0.25, 1.5);
 
     // Make some histograms to get the distributions of the fit parameters
@@ -99,7 +102,7 @@ void ExtractTimeWalk(TString filename = "hd_root.root"){
                         double c2 = fr->Parameter(2);
                         h1_c0->Fill(c0); h1_c1->Fill(c1); h1_c2->Fill(c2);
                         h2_c0_c1->Fill(c0,c1); h2_c0_c2->Fill(c0,c2); h2_c1_c2->Fill(c1,c2);
-                        textFile << iModule << " " << iLayer << " " << iSector << " 0 " << c0 << " " << c1 << " " << c2 << " 0.0" << endl;
+                        textFile << iModule << " " << iLayer << " " << iSector << " 0 " << c0 << " " << c1 << " " << c2 << " " << a_thresh << endl;
                     }
                     else {
                         cout << "WARNING: Fit Status "<< fitStatus << " for Upstream " << name << endl;
@@ -124,7 +127,7 @@ void ExtractTimeWalk(TString filename = "hd_root.root"){
                         double c2 = fr->Parameter(2);
                         h1_c0->Fill(c0); h1_c1->Fill(c1); h1_c2->Fill(c2);
                         h2_c0_c1->Fill(c0,c1); h2_c0_c2->Fill(c0,c2); h2_c1_c2->Fill(c1,c2);
-                        textFile << iModule << " " << iLayer << " " << iSector << " 1 " << c0 << " " << c1 << " " << c2 << " 0.0" << endl;
+                        textFile << iModule << " " << iLayer << " " << iSector << " 1 " << c0 << " " << c1 << " " << c2 << " " << a_thresh << endl;
                     }
                     else {
                         cout << "WARNING: Fit Status "<< fitStatus << " for Downstream " << name << endl;
