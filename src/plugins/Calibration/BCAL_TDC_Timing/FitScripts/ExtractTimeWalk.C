@@ -106,11 +106,11 @@ void ExtractTimeWalk(TString filename = "hd_root.root"){
                     }
                     else {
                         cout << "WARNING: Fit Status "<< fitStatus << " for Upstream " << name << endl;
-                        textFile << iModule << " " << iLayer << " " << iSector << " 0  0.0  0.0  0.0  0.0" << endl;
+                        textFile << iModule << " " << iLayer << " " << iSector << " 0  0.0  0.0  0.0  1.0" << endl;
                     }
                 }
                 else{
-                    textFile << iModule << " " << iLayer << " " << iSector << " 0  0.0  0.0  0.0  0.0" << endl;
+                    textFile << iModule << " " << iLayer << " " << iSector << " 0  0.0  0.0  0.0  1.0" << endl;
                 }
 
                 outputFile->cd("Downstream");
@@ -131,11 +131,11 @@ void ExtractTimeWalk(TString filename = "hd_root.root"){
                     }
                     else {
                         cout << "WARNING: Fit Status "<< fitStatus << " for Downstream " << name << endl;
-                        textFile << iModule << " " << iLayer << " " << iSector << " 1  0.0  0.0  0.0  0.0" << endl;
+                        textFile << iModule << " " << iLayer << " " << iSector << " 1  0.0  0.0  0.0  1.0" << endl;
                     }
                 }
                 else{
-                    textFile << iModule << " " << iLayer << " " << iSector << " 1  0.0  0.0  0.0  0.0" << endl;
+                    textFile << iModule << " " << iLayer << " " << iSector << " 1  0.0  0.0  0.0  1.0" << endl;
                 }
             }
         }
