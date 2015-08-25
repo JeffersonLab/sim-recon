@@ -69,6 +69,8 @@ DEventSourceHDDM::DEventSourceHDDM(const char* source_name)
    bfield = NULL;
    geom = NULL;
    
+   dRunNumber = -1;
+   
    pthread_mutex_init(&rt_mutex, NULL);
 }
 
@@ -155,7 +157,6 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    /// JEventSource base class. It creates the objects of the type
    /// on which factory is based. It uses the hddm_s::HDDM* object
    /// kept in the ref field of the JEvent object passed.
-   static bool print_calib_info = true;  
 
    // We must have a factory to hold the data
    if (!factory)
@@ -174,6 +175,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    JEventLoop *loop = event.GetJEventLoop();
    if (initialized == false && loop) {
       initialized = true;
+      dRunNumber = event.GetRunNumber();
       dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
       if (dapp) {
          jcalib = dapp->GetJCalibration(event.GetRunNumber());
@@ -191,22 +193,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
                   << endl;
             return VALUE_OUT_OF_RANGE;
          }
-         // Notify user
          map<string,float>::iterator iter;
-         if(print_calib_info) {
-             // print out some diagnostic info, but only once per execution
-             // warning:  this is not technically thread safe, but since this 
-             // is just a diagnostic print out, we are going to hold our noses for now...
-             print_calib_info = false;           
-             jout << "Read " << tvals.size()
-                  << " values from FDC/strip_calib in calibDB"
-                  << endl;
-             jout << "   strip_calib columns (alphabetical): ";
-             for (iter=tvals[0].begin(); iter!=tvals[0].end(); iter++) {
-                 jout << iter->first << " ";
-                 jout << endl;
-             }
-         }
          for (iter=tvals[0].begin(); iter!=tvals[0].end(); iter++) {
             // Copy values into tables. We preserve the order since
             // that is how it was originally done in hitFDC.c
@@ -217,6 +204,20 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
             }
          }
       }
+   }
+
+   // Warning: This class is not completely thread-safe and can fail if running
+   // running in multithreaded mode over files with events from multiple runs
+   // It is expected that simulated data will rarely contain events from multiple
+   // runs, as this is an intermediate format in the simulation chain, so for 
+   // now we just insert a sanity check, and push the problem to the future
+   if(dRunNumber != event.GetRunNumber()) {
+       jerr << endl
+            << "WARNING:  DEventSourceHDDM cannot currently handle HDDM files containing" << endl
+            << "events with multiple runs!  If you encounter this error message," << endl
+            << "please contact the GlueX Offline Software Group: halld-offline@jlab.org" << endl 
+            << endl;
+       exit(-1);
    }
 
    //Get target center
