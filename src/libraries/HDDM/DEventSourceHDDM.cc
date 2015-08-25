@@ -69,6 +69,8 @@ DEventSourceHDDM::DEventSourceHDDM(const char* source_name)
    bfield = NULL;
    geom = NULL;
    
+   dRunNumber = -1;
+   
    pthread_mutex_init(&rt_mutex, NULL);
 }
 
@@ -173,6 +175,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    JEventLoop *loop = event.GetJEventLoop();
    if (initialized == false && loop) {
       initialized = true;
+      dRunNumber = event.GetRunNumber();
       dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
       if (dapp) {
          jcalib = dapp->GetJCalibration(event.GetRunNumber());
@@ -190,16 +193,8 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
                   << endl;
             return VALUE_OUT_OF_RANGE;
          }
-         // Notify user
-         jout << "Read " << tvals.size()
-              << " values from FDC/strip_calib in calibDB"
-              << endl;
-         jout << "   strip_calib columns (alphabetical): ";
          map<string,float>::iterator iter;
          for (iter=tvals[0].begin(); iter!=tvals[0].end(); iter++) {
-            jout << iter->first << " ";
-            jout << endl;
-
             // Copy values into tables. We preserve the order since
             // that is how it was originally done in hitFDC.c
             for (unsigned int i=0; i<tvals.size(); i++) {
@@ -211,8 +206,22 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
       }
    }
 
+   // Warning: This class is not completely thread-safe and can fail if running
+   // running in multithreaded mode over files with events from multiple runs
+   // It is expected that simulated data will rarely contain events from multiple
+   // runs, as this is an intermediate format in the simulation chain, so for 
+   // now we just insert a sanity check, and push the problem to the future
+   if(dRunNumber != event.GetRunNumber()) {
+       jerr << endl
+            << "WARNING:  DEventSourceHDDM cannot currently handle HDDM files containing" << endl
+            << "events with multiple runs!  If you encounter this error message," << endl
+            << "please contact the GlueX Offline Software Group: halld-offline@jlab.org" << endl 
+            << endl;
+       exit(-1);
+   }
+
    //Get target center
-      //multiple reader threads can access this object: need lock
+   //multiple reader threads can access this object: need lock
    bool locNewRunNumber = false;
    unsigned int locRunNumber = event.GetRunNumber();
    LockRead();
