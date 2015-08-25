@@ -27,93 +27,70 @@ jerror_t DBCALUnifiedHit_factory::init(void)
         bcal_points_tree->Branch("end",&end_tree,"end/O");
     }
 
+    USE_TDC = false;
+    if (gPARMS){
+        gPARMS->SetDefaultParameter("BCAL:USE_TDC", USE_TDC, "Set to 1 to use TDC times");
+    }
+
+    if (USE_TDC){
+        jout << "DBCALUnifiedHit_factory: Using TDC times when available." << endl;
+    }
+    else{
+        jout << "DBCALUnifiedHit_factory: Using ADC times only." << endl;
+    }
+
     return NOERROR;
 }
 
 jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber) {
 
-    //get timewalk corrections from CCDB
+    if (USE_TDC){
+        //get timewalk corrections from CCDB
+        JCalibration *jcalib = eventLoop->GetJCalibration();
+        //these tables hold: module layer sector end c0 c1 c2 c3
+        vector<vector<float> > tdc_timewalk_table;
+        jcalib->Get("BCAL/timewalk_tdc",tdc_timewalk_table);
 
-    JCalibration *jcalib = eventLoop->GetJCalibration();
-    //these tables hold: module layer sector end c0 c1 c2 c3
-    vector<vector<float> > tdc_timewalk_table;
-    jcalib->Get("BCAL/timewalk_tdc",tdc_timewalk_table);
-
-    for (vector<vector<float> >::const_iterator iter = tdc_timewalk_table.begin();
-            iter != tdc_timewalk_table.end();
-            ++iter) {
-        if (iter->size() != 8) {
-            cout << "DBCALUnifiedHit_factory: Wrong number of values in timewalk_tdc table (should be 8)" << endl;
-            continue;
+        for (vector<vector<float> >::const_iterator iter = tdc_timewalk_table.begin();
+                iter != tdc_timewalk_table.end();
+                ++iter) {
+            if (iter->size() != 8) {
+                cout << "DBCALUnifiedHit_factory: Wrong number of values in timewalk_tdc table (should be 8)" << endl;
+                continue;
+            }
+            //be really careful about float->int conversions
+            int module = (int)((*iter)[0]+0.5);
+            int layer  = (int)((*iter)[1]+0.5);
+            int sector = (int)((*iter)[2]+0.5);
+            int endi   = (int)((*iter)[3]+0.5);
+            DBCALGeometry::End end = (endi==0) ? DBCALGeometry::kUpstream : DBCALGeometry::kDownstream;
+            float c0 = (*iter)[4];
+            float c1 = (*iter)[5];
+            float c2 = (*iter)[6];
+            float a_thresh = (*iter)[7];
+            int cellId = DBCALGeometry::cellId(module, layer, sector);
+            readout_channel channel(cellId,end);
+            tdc_timewalk_map[channel] = timewalk_coefficients(c0,c1,c2,a_thresh);
         }
-        //be really careful about float->int conversions
-        int module = (int)((*iter)[0]+0.5);
-        int layer  = (int)((*iter)[1]+0.5);
-        int sector = (int)((*iter)[2]+0.5);
-        int endi   = (int)((*iter)[3]+0.5);
-        DBCALGeometry::End end = (endi==0) ? DBCALGeometry::kUpstream : DBCALGeometry::kDownstream;
-        float c0 = (*iter)[4];
-        float c1 = (*iter)[5];
-        float c2 = (*iter)[6];
-        float c3 = (*iter)[7];
-        int cellId = DBCALGeometry::cellId(module, layer, sector);
-        readout_channel channel(cellId,end);
-        tdc_timewalk_map[channel] = timewalk_coefficients(c0,c1,c2,c3);
-    }
 
-    for (int module=1; module<=DBCALGeometry::NBCALMODS; module++) {
-        //shouldn't be hardcoded
-        for (int sector=1; sector<=4; sector++) {
-            for (int layer=1; layer<=DBCALGeometry::NBCALLAYSIN; layer++) {
-                int id = DBCALGeometry::cellId(module, layer, sector);
-                if (tdc_timewalk_map.count(readout_channel(id,DBCALGeometry::kUpstream)) != 1) {
-                    cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_tdc_table: "
-                        << endl << " module " << module << " layer " << layer << " sector " << sector << " upstream" << endl;
-                }
-                if (tdc_timewalk_map.count(readout_channel(id,DBCALGeometry::kDownstream)) != 1) {
-                    cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_tdc_table: "
-                        << endl << " module " << module << " layer " << layer << " sector " << sector << " downstream" << endl;
+        for (int module=1; module<=DBCALGeometry::NBCALMODS; module++) {
+            //shouldn't be hardcoded
+            for (int sector=1; sector<=4; sector++) {
+                for (int layer=1; layer<=DBCALGeometry::NBCALLAYSIN; layer++) {
+                    int id = DBCALGeometry::cellId(module, layer, sector);
+                    if (tdc_timewalk_map.count(readout_channel(id,DBCALGeometry::kUpstream)) != 1) {
+                        cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_tdc_table: "
+                            << endl << " module " << module << " layer " << layer << " sector " << sector << " upstream" << endl;
+                    }
+                    if (tdc_timewalk_map.count(readout_channel(id,DBCALGeometry::kDownstream)) != 1) {
+                        cout << "DBCALUnifiedHit_factory: Channel missing in timewalk_tdc_table: "
+                            << endl << " module " << module << " layer " << layer << " sector " << sector << " downstream" << endl;
+                    }
                 }
             }
         }
     }
 
-    //The code commented out above reads in constants from the CCDB.
-    //This is the correct thing to do, but until the timewalk correction
-    //is more stable, just put the constants in this file.
-
-    //for now, since we are only dealing with simulated data, assume all
-    //sectors and modules are identical and timewalk coefficients only depend
-    //on layer
-
-    //first index labels the layer, the second labels the coefficient (c0,c1,...)
-    //only three layers of TDCs!
-    //const double tdc_timewalk_array[3][4] = {{16.0081, 0.365565, 0.54665, 0.00640507},
-    //    {15.2826, 0.835660, 0.374335, 0.0111243},
-    //    {15.6251, 0.530827, 0.475919, 0.0102508} };
-
-    //Oct. 16, 2014 - Altered ADC time code.  No longer uses threshold crossing.
-    //Now uses actual fADC 250 timing algorithm for simulation (CFD-like algorithm).
-    //Current understanding: no need for time-walk correction for ADC times.
-    /*
-       for (int module=1; module<=48; module++) {
-       for (int layer=1; layer<=3; layer++) {
-       for (int sector=1; sector<=4; sector++) {
-       int id = DBCALGeometry::cellId(module, layer, sector);
-       readout_channel chan_up(id,DBCALGeometry::kUpstream);
-       readout_channel chan_dn(id,DBCALGeometry::kDownstream);
-
-       timewalk_coefficients coeffs(tdc_timewalk_array[layer-1][0],
-       tdc_timewalk_array[layer-1][1],
-       tdc_timewalk_array[layer-1][2],
-       tdc_timewalk_array[layer-1][3]);
-
-       tdc_timewalk_map[chan_up] = coeffs;
-       tdc_timewalk_map[chan_dn] = coeffs;
-       }
-       }
-       }
-       */
     return NOERROR;
 }
 
@@ -204,8 +181,6 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
             const Df250PulsePedestal *pp;
             digiHit->GetSingle(pp);
 
-            if (pp == NULL) continue; // Shoudln't happen
-
             float pulse_peak = 0, E, t, t_ADC, t_TDC=0; //these are values that will be assigned to the DBCALUnifiedHit
 
             if (pp != NULL) pulse_peak = (float) pp->pulse_peak - pp->pedestal;
@@ -229,16 +204,16 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
                     }
                 }
                 t_TDC = tdc_hits[goodTDCindex]->t;
-                // Apply the timewalk correction
-                timewalk_coefficients tdc_coeff = tdc_timewalk_map[chan];
-                t_TDC -= tdc_coeff.c0 + tdc_coeff.c1/pow(pulse_peak/14.,tdc_coeff.c2);
+                if (USE_TDC && pp != NULL){
+                    // Apply the timewalk correction
+                    timewalk_coefficients tdc_coeff = tdc_timewalk_map[chan];
+                    t_TDC -= tdc_coeff.c0 + tdc_coeff.c1/pow(pulse_peak/tdc_coeff.a_thresh, tdc_coeff.c2);
+                }
             }
 
             // Decide which time to use for further analysis
-            // Right now this is hard coded to be the ADC time
-            bool useTDChit = true;
             t = t_ADC;
-            if ( useTDChit && haveTDChit){
+            if ( USE_TDC && haveTDChit){
                 t = t_TDC;
             }
 
