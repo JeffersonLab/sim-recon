@@ -4,6 +4,6 @@ import sbms
 Import('*')
 
 # update this when plugins are added
-subdirs = []
+subdirs = ['BCAL_attenlength_gainratio']
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
