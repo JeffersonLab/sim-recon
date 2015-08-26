@@ -299,24 +299,13 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
         }
 
         if (thisADCHit != NULL && thisTDCHit != NULL){
-            char name[200];
-            sprintf(name, "Index %.3i Module %.2i Layer %.2i Sector %.2i", the_tdc_cell, bcalUnifiedHitVector[i]->module, bcalUnifiedHitVector[i]->layer, bcalUnifiedHitVector[i]->sector);
             if (bcalUnifiedHitVector[i]->end == 0){
-                Fill2DHistogram ("HLDetectorTiming", "BCAL_Upstream_Timewalk", name,
-                            bcalUnifiedHitVector[i]->E, thisTDCHit->t - thisADCHit->t,
-                            "Timewalk; E [GeV]; t_{TDC} - t_{ADC} [ns]",
-                            250, 0.0, 0.35, NBINS_TDIFF, MIN_TDIFF , MAX_TDIFF );
-
                 Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Upstream Per Channel TDC-ADC Hit Time",
                         the_tdc_cell, thisTDCHit->t - thisADCHit->t,
                         "BCALHit Upstream Per Channel TDC-ADC Hit Time; cellID; t_{TDC} - t_{ADC} [ns] ",
                         576, 0.5, 576.5, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
             }
             else{
-                Fill2DHistogram ("HLDetectorTiming", "BCAL_Downstream_Timewalk", name,
-                        bcalUnifiedHitVector[i]->E, thisTDCHit->t - thisADCHit->t,
-                        "Timewalk; E [GeV]; t_{TDC} - t_{ADC} [ns]",
-                        250, 0.0, 0.35, NBINS_TDIFF, MIN_TDIFF, MAX_TDIFF);
                 Fill2DHistogram ("HLDetectorTiming", "BCAL", "BCALHit Downstream Per Channel TDC-ADC Hit Time",
                         the_tdc_cell, thisTDCHit->t - thisADCHit->t,
                         "BCALHit Downstream Per Channel TDC-ADC Hit Time; cellID; t_{TDC} - t_{ADC} [ns] ",

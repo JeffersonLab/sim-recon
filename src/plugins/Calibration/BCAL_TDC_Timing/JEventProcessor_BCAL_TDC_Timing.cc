@@ -114,13 +114,11 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, int eventnumber
         thisADCHit->GetSingle(thisDigiHit);
         const Df250PulsePedestal *pp;
         thisDigiHit->GetSingle(pp);
-        if (pp == NULL){
-            jout << "Missing pulse peak information?" << endl;
-            continue;
+        int pulse_peak = 0;
+        if (pp != NULL){
+            pulse_peak = pp->pulse_peak;
+            pulse_peak -= pp->pedestal;
         }
-        uint32_t pulse_peak = pp->pulse_peak;
-        //Subtract off the pedestal
-        pulse_peak -= pp->pedestal;
 
         // The raw information from the DBCALHit and DBCALTDCHit is not corrected for timewalk yet, so we can always plot the before and after.
         if (thisADCHit != NULL && thisTDCHit != NULL){
