@@ -166,6 +166,9 @@ jerror_t JEventProcessor_DAQ_online::init(void)
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kConfigF1, "DAQ Config F1");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kConfigCAEN1190, "DAQ Config CAEN1190");
 
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEPICSheader, "EPICS header");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEPICSdata, "EPICS data");
+
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF800FAFA, "0xf800fafa");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kD00DD00D, "0xd00dd00d");
 
@@ -415,13 +418,29 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 	if(!ref) return;
 	uint32_t *istart = JEventSource_EVIO::GetEVIOBufferFromRef(ref);
 	uint32_t evio_buffsize = JEventSource_EVIO::GetEVIOBufferSizeFromRef(ref);
-	uint32_t *iend = &istart[evio_buffsize/sizeof(uint32_t)];
+	uint32_t evio_buffwords = evio_buffsize/sizeof(uint32_t);
+	uint32_t *iend = &istart[evio_buffwords];
 	
-	if( istart==NULL || evio_buffsize<(10*sizeof(uint32_t)) ) return;
-	if(istart[7] == 0xc0da0100){
+	if( istart==NULL ) return;
+	if( (evio_buffwords>=10) && (istart[7]==0xc0da0100) ){
 		// NTH is first 8 words so skip them
 		istart= &istart[8];
 		evio_buffsize -= 8*sizeof(uint32_t);
+		evio_buffwords -= 8;
+	}
+	
+	// Check if this is EPICS data
+	if( evio_buffwords >= 4 ){
+		if( istart[1] == (0x60<<16) + (0xD<<8) + (0x1<<0) ){
+			if( istart[2] == (0x61<<24) + (0x1<<16) + (0x1<<0) ){
+				
+				japp->RootWriteLock();
+				daq_words_by_type->Fill(kEPICSheader, 3.0); // EVIO outer and segment headers + timestamp
+				daq_words_by_type->Fill(kEPICSdata, istart[0]/sizeof(uint32_t) - 3);
+				japp->RootUnLock();
+				return; // no further parsing needed
+			}
+		}
 	}
 	
 	// Physics event length
@@ -442,7 +461,7 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 	for(uint32_t i=0; i<kNEVIOWordTypes; i++) word_stats[i] = 0;
 
 	word_stats[kNevents]++;
-	word_stats[kTotWords] += evio_buffsize/sizeof(uint32_t);
+	word_stats[kTotWords] += evio_buffwords;
 
 	// Loop over data banks
 	uint32_t *iptr = &istart[3+trigger_bank_len];

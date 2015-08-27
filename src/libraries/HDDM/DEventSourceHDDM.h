@@ -150,7 +150,8 @@ class DEventSourceHDDM:public JEventSource
 
    private:
       bool initialized;
-   
+      int dRunNumber;
+
       pthread_mutex_t rt_mutex;
       map<hddm_s::HDDM*, vector<DReferenceTrajectory*> > rt_by_event;
       list<DReferenceTrajectory*> rt_pool;
