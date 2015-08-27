@@ -8,26 +8,25 @@
 #include "JEventProcessor_ST_online_tracking.h"
 using namespace jana;
 using namespace std;
-
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
-#include <stdint.h>
-#include <vector>
-
 // ROOT header files
 #include <TDirectory.h>
 #include <TH1.h>
 #include <TH2.h>
-#include <TEfficiency.h>
 // ST header files
 #include "START_COUNTER/DSCHit.h"
 #include "START_COUNTER/DSCDigiHit.h"
-
+// C++ header files
+#include <stdint.h>
+#include <vector>
+#include <stdio.h>
 // Include some JANA libraries
 // PID libraries
 #include "PID/DDetectorMatches.h"
 #include "PID/DParticleID.h"
+#include "PID/DChargedTrack.h"
 // Tracking libraries
 #include "TRACKING/DTrackTimeBased.h"
 
@@ -48,8 +47,10 @@ static TH2I *h2_dedx_P_mag_negtv;
 static TH1D *h_phi_sec_hit_cntr;
 static TH1D *h_phi_sec_pred_hit_cntr;
 static TH1D *pEff;
+static TH1D *MacropEff;
 static TH1D *h_phi_sec_adc_cntr;
 static TH1D *pEff_adc;
+static TH1D *MacropEff_adc;
 // Declare detection efficency counters
 uint32_t phi_sec_cntr[NCHANNELS];
 uint32_t phi_sec_pred_hit_cntr[NCHANNELS];
@@ -114,9 +115,10 @@ jerror_t JEventProcessor_ST_online_tracking::init(void)
   h_phi_sec_pred_hit_cntr = new TH1D("h_phi_sec_pred_hit_cntr", "phi_sec_pred_hit_cntr; Sector; Predicted Hit Counts", 31, -0.5, 30.5);
   h_phi_sec_hit_cntr      = new TH1D("h_phi_sec_hit_cntr", "phi_sec_hit_cntr; Sector; Hit Counts", 31, -0.5, 30.5);
   pEff= new TH1D("pEff", "Hit Efficiency; Sector; N_{HIT}/N_{TRK}", 31, -0.5, 30.5);
-
+  MacropEff= new TH1D("MacropEff", "Hit Efficiency; Sector; N_{HIT}/N_{TRK}", 31, -0.5, 30.5);
   h_phi_sec_adc_cntr = new TH1D("h_phi_sec_adc_cntr", "phi_sec_adc_cntr; Sector; adc Counts", 31, -0.5, 30.5);
   pEff_adc = new TH1D("pEff_adc", "ADC Efficiency; Sector; N_{ADC}/N_{TRK}", 31, -0.5, 30.5);
+  MacropEff_adc = new TH1D("MacropEff_adc", "ADC Efficiency; Sector; N_{ADC}/N_{TRK}", 31, -0.5, 30.5);
   // cd back to main directory
   gDirectory->cd("../");
   main->cd();
@@ -137,8 +139,17 @@ jerror_t JEventProcessor_ST_online_tracking::init(void)
 //------------------
 jerror_t JEventProcessor_ST_online_tracking::brun(JEventLoop *eventLoop, int runnumber)
 {
-	// This is called whenever the run number changes
-	return NOERROR;
+  // This is called whenever the run number changes
+  // Get the particleID object for each run
+  vector<const DParticleID *> dParticleID_algos;
+  eventLoop->Get(dParticleID_algos);
+  if(dParticleID_algos.size() < 1)
+    {
+      _DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
+      return RESOURCE_UNAVAILABLE;
+    }
+  dParticleID = dParticleID_algos[0];
+  return NOERROR;
 }
 
 //------------------
@@ -160,73 +171,96 @@ jerror_t JEventProcessor_ST_online_tracking::evnt(JEventLoop *eventLoop, int eve
 	//  ... fill historgrams or trees ...
 	// japp->RootUnLock();
   vector<const DSCDigiHit*>       st_adc_digi_hits;
-  vector<const DDetectorMatches*> glx_matches;
-  vector<const DTrackTimeBased*>  tb_tracks;
   vector<const DParticleID*>      pid_algorithm;
   vector<const DSCHit*>           st_hits;
   eventLoop->Get(st_adc_digi_hits);
-  eventLoop->Get(glx_matches);
-  eventLoop->Get(tb_tracks);
   eventLoop->Get(pid_algorithm);
   eventLoop->Get(st_hits);
   vector<DVector3> sc_track_position;
- 
+  vector<const DChargedTrack*> chargedTrackVector;
+  eventLoop->Get(chargedTrackVector);
+  // Grab the associated detector matches object
+  const DDetectorMatches* locDetectorMatches = NULL;
+  eventLoop->GetSingle(locDetectorMatches);
   // Lock ROOT mutex so other threads won't interfere 
   japp->RootWriteLock();
 
   sc_track_position.clear();
-  // Loop over time based tracks only, no matching
-  for (uint32_t i = 0; i < tb_tracks.size(); i++)
+ 
+// Loop over charged tracks
+  for (uint32_t i = 0; i < chargedTrackVector.size(); i++)
     {
-      // Reset hit counters since there are multiple time based tracks 
-      //   per track per event
+      // Grab the charged track
+      const DChargedTrack *thisChargedTrack = chargedTrackVector[i];
       
-      memset(phi_sec_cntr, 0, sizeof(phi_sec_cntr));
-      
-      // Get the charge of the track and cut on charged tracks
-      int q = tb_tracks[i]->charge();
-      //      h_q->Fill(q);      
-      if (q != 0) // This includes any charged track (pi/p or k) It can be determined from the mass hypothesis on hd_root command 
-	{
-	  // Acquire the tracking FOM
-          float  chisq      = tb_tracks[i]->chisq;
-	  int    ndof       = tb_tracks[i]->Ndof;
-	  double track_prob = TMath::Prob(chisq, ndof);
-	  // Cut on tracks with "good" FOM
-	  if (track_prob > 0.001)
-	    {
-	      // Define vertex vector
-	      DVector3 vertex;
-	      
-	      // Vertex info
-	      vertex = tb_tracks[i]->position();
-	      // Cartesian Coordinates
-	      double z_v = vertex.z();
-	      double r_v = vertex.Perp();
-	      DVector3 momentum_vec;
-	      momentum_vec = tb_tracks[i]->momentum();
-	      // Cut on vertex (target 30 mm LH2 centered at z = 65 cm 
- 	      //   with scattering chamber diameter = 5 cm
-	      Bool_t z_vertex_cut = ((50.0 <= z_v) && (z_v <= 80.0)); 
-	      Bool_t r_vertex_cut = (r_v < 2.5);
-	      // applied vertex cut
-	      if (z_vertex_cut && r_vertex_cut)
-		{
-		  DLorentzVector Lor_Mom = tb_tracks[i]->lorentzMomentum();
-		  double P_mag = Lor_Mom.P(); 
-		  double phi_mom = momentum_vec.Phi()*RAD2DEG;
-		  if (phi_mom < 0.0) phi_mom += 360.0;
-		  for (uint32_t j = 0; j < NCHANNELS; j++)
-		    {
-		      if (phi_mom >= phi_sec[j][0] && phi_mom <= phi_sec[j][1])
-			{
-			  phi_sec_cntr[j] += 1;
-			}
-		    }
+      // Declare the time based track object
+      const DTrackTimeBased *timeBasedTrack;
 
+      // Grab associated time based track object by selecting charged track with best FOM
+      thisChargedTrack->Get_BestTrackingFOM()->GetSingle(timeBasedTrack);
+      // Implement quality cuts for the time based tracks 
+      float trackingFOMCut = 0.0027;  // 3 sigma cut
+      if(timeBasedTrack->FOM  < trackingFOMCut)  continue;
+      // Get the charge of the track and cut on charged tracks
+      int q = timeBasedTrack->charge();
+      // Grab the ST hit match params object and cut on only tracks matched to the ST
+      DSCHitMatchParams locSCHitMatchParams;
+      bool foundSC = dParticleID->Get_BestSCMatchParams(timeBasedTrack, locDetectorMatches, locSCHitMatchParams);
+      if (!foundSC) continue;
+      // Define vertex vector
+      DVector3 vertex;
+      // Vertex info
+      vertex = timeBasedTrack->position();
+      // Cartesian Coordinates
+      double z_v = vertex.z();
+      double r_v = vertex.Perp();
+      // Liquid hydrogen target cuts 
+      // Target length 30 cm, centered at z = 65.0 cm
+      // Upstream Diameter of target cell = 2.42 cm
+      // ID of scattering chamber = 7.49 cm
+      bool z_vertex_cut = 50.0 <= z_v && z_v <= 80.0; 
+      bool r_vertex_cut = r_v < 3.745;
+      // applied vertex cut
+      if (!z_vertex_cut) continue;
+      if (!r_vertex_cut) continue;
+      // Declare a vector which quantizes the point of the intersection of a charged particle 
+      //   with a plane in the middle of the scintillator 
+      DVector3 IntersectionPoint;
+      // Declare a vector which quantizes the unit vector of the charged particle track traversing
+      //   through the scintillator with its origin at the intersection point
+      DVector3 IntersectionDir;
+      // Grab the paramteres associated to a track matched to the ST
+      vector<DSCHitMatchParams> st_params;
+      bool st_match = locDetectorMatches->Get_SCMatchParams(timeBasedTrack, st_params); 
+      // If st_match = true, there is a match between this track and the ST
+      if (!st_match) continue;
+
+      bool st_match_pid = dParticleID->MatchToSC(timeBasedTrack, 
+						 timeBasedTrack->rt, 
+						 st_params[0].dSCHit, 
+						 st_params[0].dSCHit->t, 
+						 locSCHitMatchParams, 
+						 true,
+						 &IntersectionPoint, &IntersectionDir);      
+      if(!st_match_pid) continue;  
+
+      DVector3 momentum_vec;
+      momentum_vec = timeBasedTrack->momentum();
+      // applied vertex cut
+      DLorentzVector Lor_Mom = timeBasedTrack->lorentzMomentum();
+      double P_mag = Lor_Mom.P(); 
+      double phi_mom = momentum_vec.Phi()*RAD2DEG;
+      if (phi_mom < 0.0) phi_mom += 360.0;
+      for (uint32_t j = 0; j < NCHANNELS; j++)
+	{
+	  if (phi_mom >= phi_sec[j][0] && phi_mom <= phi_sec[j][1])
+	    {
+	      phi_sec_cntr[j] += 1;
+	    }
+	}
 		  // Grab the ST sector predicted to be hit by the charged time based track
 		  // 0.069 rad = 4 deg, 0.087 rad = 5 deg, 0.105 rad = 6 deg
-		  uint32_t st_pred_id = pid_algorithm[0]->PredictSCSector(tb_tracks[i]->rt, 0.069);
+		  uint32_t st_pred_id = pid_algorithm[0]->PredictSCSector(timeBasedTrack->rt, 0.069);
 		  uint32_t st_pred_id_index = st_pred_id - 1;
 		  
 		  if (st_pred_id != 0) 
@@ -249,63 +283,37 @@ jerror_t JEventProcessor_ST_online_tracking::evnt(JEventLoop *eventLoop, int eve
 			    phi_sec_adc_hit_cntr[phi_sec_adc_hit_sector_index] += 1;
 			}
 		    } // end if (st_pred_id != 0) 	
-		  // Declare the ST hit match paramters object
-		  DSCHitMatchParams st_matches;
-		  // Declare a vector which quantizes the point of the intersection of a charged particle 
-		  //   with a plane in the middle of the scintillator 
-		  DVector3 IntersectionPoint;
-		  // Declare a vector which quantizes the unit vector of the charged particle track traversing
-		  //   through the scintillator with its origin at the intersection point
-		  DVector3 IntersectionDir;
-		  vector<DSCHitMatchParams> st_params;
-		  bool st_match = glx_matches[0]->Get_SCMatchParams(tb_tracks[i], st_params);
-		  // st_match true = there is a match between this track and ST
-
-		  if (st_match)
+		  
+		  if (st_match_pid)  // Get the intersection point which can not be obtained from st_match
 		    {
-		      
-		      // This boolian is needed to acess the intersection point information of a match and all st_params variables	    
-		      bool st_match_pid = pid_algorithm[0]->MatchToSC(tb_tracks[i], 
-								      tb_tracks[i]->rt, 
-								      st_params[0].dSCHit, 
-								      st_params[0].dSCHit->t, 
-								      st_matches, 
-								      true,
-								      &IntersectionPoint, &IntersectionDir);
-		      if (st_match_pid)  // Get the intersection point which can not be obtained from st_match
+		      // Grab the sector
+		      Int_t sector_m = st_params[0].dSCHit->sector;
+		      //Acquire the energy loss per unit length in the ST (arbitrary units)
+		      double dEdx = st_params[0].dEdx;
+		      double dphi = st_params[0].dDeltaPhiToHit*RAD2DEG;
+		      // Fill dEdx vs Momentum 
+		      h2_dedx_P_mag->Fill(P_mag,dEdx);
+		      // Fill dEdx vs Momentum with cut on positive charges  
+		      if (q > 0)
 			{
-			  // Grab the sector
-			  Int_t sector_m = st_params[0].dSCHit->sector;
-			  //Acquire the energy loss per unit length in the ST (arbitrary units)
-			  double dEdx = st_params[0].dEdx;
-			  double dphi = st_params[0].dDeltaPhiToHit*RAD2DEG;
-			  // Fill dEdx vs Momentum 
-			  h2_dedx_P_mag->Fill(P_mag,dEdx);
-			  // Fill dEdx vs Momentum with cut on positive charges  
-			  if (q > 0)
-			    {
-			      h2_dedx_P_mag_postv->Fill(P_mag,dEdx);
-			    }
-			  // Fill dEdx vs Momentum with cut on negative charges  
-			  if (q < 0)
-			    {
-			      h2_dedx_P_mag_negtv->Fill(P_mag,dEdx);
-			    }
-			  // Obtain the intersection point with the ST		  
-			  double phi_ip   = IntersectionPoint.Phi()*RAD2DEG;
-			  // Correct phi calculation
-			  if (phi_ip < 0.0) phi_ip += 360.0;
-			  // Acquire the intersection point
-			  sc_track_position.push_back(IntersectionPoint);
-			  //Fill 2D histos
-			  h2_phi_vs_sector->Fill(sector_m,phi_ip);
-			  h2_dphi_sector->Fill(sector_m,dphi);
-			}  // PID match cut
-		    }      // Detector match cut
-		}          // Vertex cut
-	    }              // Tracking FOM cut
-	}                  // Charged track cut
-    }                      // Time based track loop 
+			  h2_dedx_P_mag_postv->Fill(P_mag,dEdx);
+			}
+		      // Fill dEdx vs Momentum with cut on negative charges  
+		      if (q < 0)
+			{
+			  h2_dedx_P_mag_negtv->Fill(P_mag,dEdx);
+			}
+		      // Obtain the intersection point with the ST		  
+		      double phi_ip   = IntersectionPoint.Phi()*RAD2DEG;
+		      // Correct phi calculation
+		      if (phi_ip < 0.0) phi_ip += 360.0;
+		      // Acquire the intersection point
+		      sc_track_position.push_back(IntersectionPoint);
+		      //Fill 2D histos
+		      h2_phi_vs_sector->Fill(sector_m,phi_ip);
+		      h2_dphi_sector->Fill(sector_m,dphi);
+		    }  // PID match cut
+    }                  // Charged track loop
   // Fill 2D histo
   for (uint32_t i = 0; i < sc_track_position.size(); i++)
     {
@@ -343,16 +351,16 @@ jerror_t JEventProcessor_ST_online_tracking::fini(void)
      
 
     }
-  //How to get Binomial errors in an efficiency plot
-  // hit object efficiency
-  h_phi_sec_hit_cntr->Sumw2();
-  h_phi_sec_pred_hit_cntr->Sumw2();
-  pEff->Sumw2();
-  pEff->Divide(h_phi_sec_hit_cntr,h_phi_sec_pred_hit_cntr,1,1,"B");
-  // adc efficiency
-  h_phi_sec_adc_cntr->Sumw2();
-  pEff_adc->Sumw2();
-  pEff_adc->Divide(h_phi_sec_adc_cntr,h_phi_sec_pred_hit_cntr,1,1,"B");
+  // //How to get Binomial errors in an efficiency plot
+  // // hit object efficiency
+  // h_phi_sec_hit_cntr->Sumw2();
+  // h_phi_sec_pred_hit_cntr->Sumw2();
+  // pEff->Sumw2();
+  // pEff->Divide(h_phi_sec_hit_cntr,h_phi_sec_pred_hit_cntr,1,1,"B");
+  // // adc efficiency
+  // h_phi_sec_adc_cntr->Sumw2();
+  // pEff_adc->Sumw2();
+  // pEff_adc->Divide(h_phi_sec_adc_cntr,h_phi_sec_pred_hit_cntr,1,1,"B");
   return NOERROR;
 }
 

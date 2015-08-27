@@ -98,6 +98,11 @@ class JEventProcessor_DAQ_online:public jana::JEventProcessor{
 			
 			kSpacer6,
 
+			kEPICSheader,
+			kEPICSdata,
+			
+			kSpacer7,
+
 			kF800FAFA,
 			kD00DD00D,
 			

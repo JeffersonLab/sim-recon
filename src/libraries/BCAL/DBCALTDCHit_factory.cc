@@ -99,10 +99,6 @@ jerror_t DBCALTDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
     /// This is where the first set of calibration constants
     /// is applied to convert from digitzed units into natural
     /// units.
-    ///
-    /// Note that this code does NOT get called for simulated
-    /// data in HDDM format. The HDDM event source will copy
-    /// the precalibrated values directly into the _data vector.
 
     // Get the TTabUtilities object
     const DTTabUtilities* locTTabUtilities = NULL;
@@ -120,7 +116,13 @@ jerror_t DBCALTDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
         hit->end    = digihit->end;
 
         // Apply calibration constants here
-        double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - GetConstant(time_offsets,digihit) + t_base;
+        double T;
+
+        //See if the input object is an DF1TDCHit. If so, it is real data.  If not, it is simulated data.
+        const DF1TDCHit* F1TDCHit = NULL;
+        digihit->GetSingle(F1TDCHit);
+        if (F1TDCHit != NULL) T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - GetConstant(time_offsets,digihit) + t_base; // This is real data.
+        else T = digihit->time*t_scale - GetConstant(time_offsets,digihit) + t_base; // This is simulated data.  Use a simplified time conversion.
         hit->t = T;
 
         /*

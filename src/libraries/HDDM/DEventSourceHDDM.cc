@@ -1,4 +1,4 @@
-// $Id$
+// $Id: DEventSourceHDDM.cc 19023 2015-07-14 20:23:27Z beattite $
 //
 // Author: David Lawrence  June 24, 2004
 //
@@ -68,6 +68,8 @@ DEventSourceHDDM::DEventSourceHDDM(const char* source_name)
    dapp = NULL;
    bfield = NULL;
    geom = NULL;
+   
+   dRunNumber = -1;
    
    pthread_mutex_init(&rt_mutex, NULL);
 }
@@ -173,6 +175,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    JEventLoop *loop = event.GetJEventLoop();
    if (initialized == false && loop) {
       initialized = true;
+      dRunNumber = event.GetRunNumber();
       dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
       if (dapp) {
          jcalib = dapp->GetJCalibration(event.GetRunNumber());
@@ -190,16 +193,8 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
                   << endl;
             return VALUE_OUT_OF_RANGE;
          }
-         // Notify user
-         jout << "Read " << tvals.size()
-              << " values from FDC/strip_calib in calibDB"
-              << endl;
-         jout << "   strip_calib columns (alphabetical): ";
          map<string,float>::iterator iter;
          for (iter=tvals[0].begin(); iter!=tvals[0].end(); iter++) {
-            jout << iter->first << " ";
-            jout << endl;
-
             // Copy values into tables. We preserve the order since
             // that is how it was originally done in hitFDC.c
             for (unsigned int i=0; i<tvals.size(); i++) {
@@ -211,8 +206,22 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
       }
    }
 
+   // Warning: This class is not completely thread-safe and can fail if running
+   // running in multithreaded mode over files with events from multiple runs
+   // It is expected that simulated data will rarely contain events from multiple
+   // runs, as this is an intermediate format in the simulation chain, so for 
+   // now we just insert a sanity check, and push the problem to the future
+   if(dRunNumber != event.GetRunNumber()) {
+       jerr << endl
+            << "WARNING:  DEventSourceHDDM cannot currently handle HDDM files containing" << endl
+            << "events with multiple runs!  If you encounter this error message," << endl
+            << "please contact the GlueX Offline Software Group: halld-offline@jlab.org" << endl 
+            << endl;
+       exit(-1);
+   }
+
    //Get target center
-      //multiple reader threads can access this object: need lock
+   //multiple reader threads can access this object: need lock
    bool locNewRunNumber = false;
    unsigned int locRunNumber = event.GetRunNumber();
    LockRead();
@@ -310,9 +319,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
       return Extract_DBCALIncidentParticle(record,
                      dynamic_cast<JFactory<DBCALIncidentParticle>*>(factory), tag);
  
-   if (dataClassName == "DBCALTDCHit")
-      return Extract_DBCALTDCHit(record,
-                     dynamic_cast<JFactory<DBCALTDCHit>*>(factory), tag);
+   if (dataClassName == "DBCALTDCDigiHit")
+      return Extract_DBCALTDCDigiHit(record,
+                     dynamic_cast<JFactory<DBCALTDCDigiHit>*>(factory), tag);
  
    if (dataClassName == "DCDCHit")
       return Extract_DCDCHit(loop, record,
@@ -985,10 +994,10 @@ jerror_t DEventSourceHDDM::Extract_DBCALSiPMSpectrum(hddm_s::HDDM *record,
 }
 
 //------------------
-// Extract_DBCALTDCHit
+// Extract_DBCALTDCDigiHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DBCALTDCHit(hddm_s::HDDM *record,
-                                   JFactory<DBCALTDCHit> *factory, string tag)
+jerror_t DEventSourceHDDM::Extract_DBCALTDCDigiHit(hddm_s::HDDM *record,
+                                   JFactory<DBCALTDCDigiHit> *factory, string tag)
 {
    /// Copies the data from the given hddm_s structure. This is called
    /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -999,21 +1008,18 @@ jerror_t DEventSourceHDDM::Extract_DBCALTDCHit(hddm_s::HDDM *record,
    if (tag != "")
       return OBJECT_NOT_AVAILABLE;
    
-   vector<DBCALTDCHit*> data;
+   vector<DBCALTDCDigiHit*> data;
 
-   const hddm_s::BcalTDCHitList &hits = record->getBcalTDCHits();
-   hddm_s::BcalTDCHitList::iterator iter;
+   const hddm_s::BcalTDCDigiHitList &hits = record->getBcalTDCDigiHits();
+   hddm_s::BcalTDCDigiHitList::iterator iter;
    for (iter = hits.begin(); iter != hits.end(); ++iter) {
-      DBCALTDCHit *bcaltdchit = new DBCALTDCHit;
+      DBCALTDCDigiHit *bcaltdchit = new DBCALTDCDigiHit;
       bcaltdchit->module = iter->getModule();
       bcaltdchit->layer  = iter->getLayer();
       bcaltdchit->sector = iter->getSector();
       bcaltdchit->end    = (iter->getEnd() == 0)? DBCALGeometry::kUpstream :
                                                 DBCALGeometry::kDownstream;
-      bcaltdchit->cellId = DBCALGeometry::cellId(iter->getModule(),
-                                                 iter->getLayer(),
-                                                 iter->getSector());
-      bcaltdchit->t      = iter->getT();
+      bcaltdchit->time   = (uint32_t)iter->getTime();
       data.push_back(bcaltdchit);
    }
          

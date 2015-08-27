@@ -215,6 +215,8 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 //------------------
 jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 {
+  // Save event number to help with debugging
+  myevt=eventnumber;
   if(!fitter)return NOERROR;
 
 	if(rtv.size() > MAX_DReferenceTrajectoryPoolSize){
@@ -445,13 +447,25 @@ jerror_t DTrackTimeBased_factory::fini(void)
 void DTrackTimeBased_factory::FilterDuplicates(void)
 {
 	/// Look through all current DTrackTimeBased objects and remove any
-	/// that have all of their hits in common with another track
+	/// that have most of their hits in common with another track
 	
 	if(_data.size()==0)return;
 
 	if(DEBUG_LEVEL>2)_DBG_<<"Looking for clones of time-based tracks ..."<<endl;
-
-	set<unsigned int> indexes_to_delete;
+	// We want to remove duplicate tracks corresponding to actual particles,
+	// not just duplicate fitted tracks for certain mass hypotheses -- this
+	// is partly because at a later stage the holes in the list of mass 
+	// hypotheses are filled in, thereby spoiling the whole point of this
+	// part of the code!
+	// Keep track of pairs of candididate id's, one for which we want to 
+	// keep all the results of fitting with different mass hypotheses,
+	// the other for which we want to delete all the results of fitting.
+	// We need both vectors to take into account potential ambiguities: 
+	// for one mass hypothesis starting with one candidate may be "better"
+	// than starting with a second clone candidate, whereas for a second
+	// mass hypothesis, the opposite may be true.
+	vector<unsigned int> candidates_to_keep;
+	vector<unsigned int> candidates_to_delete;
 	for(unsigned int i=0; i<_data.size()-1; i++){
 		DTrackTimeBased *dtrack1 = _data[i];
 
@@ -468,14 +482,7 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 		for(unsigned int j=i+1; j<_data.size(); j++){
 			DTrackTimeBased *dtrack2 = _data[j];
 			if (dtrack2->candidateid==cand1) continue;
-			
-			// Particles with the same mass but from different
-			// candidates are filtered at the Wire-based level.
-			// Here, it's possible to have multiple tracks with
-			// different masses that are clones due to that.
-			// Hence, we cut different mass clones is appropriate.
-			//if (dtrack2->mass() != dtrack1->mass())continue;
-
+	
 			vector<const DCDCTrackHit*> cdchits2;
 			vector<const DFDCPseudo*> fdchits2;
 			dtrack2->Get(cdchits2);
@@ -495,86 +502,88 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 				_DBG_<<"   Ncdc="<<Ncdc<<" num_cdc1="<<num_cdc1<<" num_cdc2="<<num_cdc2<<endl;
 				_DBG_<<"   Nfdc="<<Nfdc<<" num_fdc1="<<num_fdc1<<" num_fdc2="<<num_fdc2<<endl;
 			}
-			unsigned int total = Ncdc + Nfdc;
-			if (total==0) continue;
+			unsigned int total = Ncdc + Nfdc;	
+			// If the tracks share at most one hit, consider them
+			// to be separate tracks
+			if (total<=1) continue;
 
-			// Deal with the case where (within +-1 cdc hit), 
-			// all the cdc hits were common between the two 
-			// tracks but there were no fdc hits used in one or 
-			// both of the tracks.
-			if (Ncdc>0 && (num_fdc1*num_fdc2)==0){
-			  if (num_cdc1>num_cdc2){
-			    if (Ncdc<num_cdc2-1) continue;
-			  }
-			  else if (Ncdc<num_cdc1-1) continue;
+			// Deal with the case where there are cdc hits in 
+			// common between the tracks but there were no fdc 
+			// hits used in one of the tracks.
+			if (Ncdc>0 && (num_fdc1>0 || num_fdc2>0) 
+			    && (num_fdc1*num_fdc2)==0) continue;
 
-			  if(total1<total2){
-			    indexes_to_delete.insert(i);
-			  }else if(total2<total1){
-			    indexes_to_delete.insert(j);
-			  }else if(dtrack1->FOM > dtrack2->FOM){
-			    indexes_to_delete.insert(j);
-			  }else{
-			    indexes_to_delete.insert(i);
-			  }
-			  continue;
-			}	
-			// Deal with the case where (within +-1 fdc hit), 
-			// all the fdc hits were common between the two 
-			// tracks but there were no cdc hits used in one  
-			// or both of the tracks.			
-			if (Nfdc>0 && (num_cdc1*num_cdc2)==0){
-			  if (num_fdc1>num_fdc2){
-			    if (Nfdc<num_fdc2-1) continue;
-			  }
-			  else if (Nfdc<num_fdc1-1) continue;
+			// Deal with the case where there are fdc hits in
+			// common between the tracks but no cdc hits used in 
+			// one of the tracks.			
+			if (Nfdc>0 && (num_cdc1>0 || num_cdc2>0)
+			    && (num_cdc1*num_cdc2)==0) continue;
 
-			  if(total1<total2){
-			    indexes_to_delete.insert(i);
-			  }else if(total2<total1){
-			    indexes_to_delete.insert(j);
-			  }else if(dtrack1->FOM > dtrack2->FOM){
-			    indexes_to_delete.insert(j);
-			  }else{
-			    indexes_to_delete.insert(i);
-			  }
-			  continue;
+			// Look for tracks with many common hits in the CDC
+			if (num_cdc1>0 && num_cdc2>0){
+			  if (double(Ncdc)/double(num_cdc1)<0.9) continue;
+			  if (double(Ncdc)/double(num_cdc2)<0.9) continue;
 			}
-
-			if(Ncdc!=num_cdc1 && Ncdc!=num_cdc2)continue;
-		       
-			if(Nfdc!=num_fdc1 && Nfdc!=num_fdc2)continue;
-		      	
-			if(total!=total1 && total!=total2)continue;
-
+			// Look for tracks with many common hits in the FDC
+			if (num_fdc1>0 && num_fdc2>0){
+			  if (double(Nfdc)/double(num_fdc1)<0.9) continue;
+			  if (double(Nfdc)/double(num_fdc2)<0.9) continue;
+			}
+			
 			if(total1<total2){
-				indexes_to_delete.insert(i);
+			  candidates_to_delete.push_back(cand1);
+			  candidates_to_keep.push_back(dtrack2->candidateid);
 			}else if(total2<total1){
-				indexes_to_delete.insert(j);
+			  candidates_to_delete.push_back(dtrack2->candidateid);
+			  candidates_to_keep.push_back(cand1);
 			}else if(dtrack1->FOM > dtrack2->FOM){
-				indexes_to_delete.insert(j);
+			  candidates_to_delete.push_back(dtrack2->candidateid);
+			  candidates_to_keep.push_back(cand1);
 			}else{
-				indexes_to_delete.insert(i);
+			  candidates_to_delete.push_back(cand1);
+			  candidates_to_keep.push_back(dtrack2->candidateid);
 			}
 		}
 	}
 	
-	if(DEBUG_LEVEL>2)_DBG_<<"Found "<<indexes_to_delete.size()<<" time-based clones"<<endl;
+	if(DEBUG_LEVEL>2)_DBG_<<"Found "<<candidates_to_delete.size()<<" time-based clones"<<endl;
+
 
 	// Return now if we're keeping everyone
-	if(indexes_to_delete.size()==0)return;
+	if(candidates_to_delete.size()==0)return;
+
+	// Deal with the ambiguity problem mentioned above
+	for (unsigned int i=0;i<candidates_to_keep.size();i++){
+	  for (unsigned int j=0;j<candidates_to_delete.size();j++){
+	    if (candidates_to_keep[i]==candidates_to_delete[j]){
+	      candidates_to_delete.erase(candidates_to_delete.begin()+j);
+	      break;
+	    }
+	  }
+	  
+	}
 
 	// Copy pointers that we want to keep to a new container and delete
 	// the clone objects
 	vector<DTrackTimeBased*> new_data;
-	for(unsigned int i=0; i<_data.size(); i++){
-		if(indexes_to_delete.find(i)==indexes_to_delete.end()){
-			new_data.push_back(_data[i]);
-		}else{
-			delete _data[i];
-			if(DEBUG_LEVEL>1)_DBG_<<"Deleting clone time-based track "<<i<<endl;
-		}
-	}	
+	sort(_data.begin(),_data.end(),DTrackTimeBased_cmp);
+	for (unsigned int i=0;i<_data.size();i++){
+	  bool keep_track=true;
+	  for (unsigned int j=0;j<candidates_to_delete.size();j++){
+	    if (_data[i]->candidateid==candidates_to_delete[j]){
+	      keep_track=false;
+	      if(DEBUG_LEVEL>1){
+		_DBG_<<"Deleting clone time-based fitted result "<<i
+		     << " in event " << myevt << endl;
+	      }
+	      break;
+	    }
+	  }
+	  if (keep_track){
+	    new_data.push_back(_data[i]);
+	  }
+	  else delete _data[i];
+	}
 	_data = new_data;
 }
 

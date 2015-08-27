@@ -235,7 +235,14 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 		const vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses = locChargedTracks[loc_i]->dChargedTrackHypotheses;
 		for(size_t loc_j = 0; loc_j < locChargedTrackHypotheses.size(); ++loc_j)
 		{
-			double locPropagatedTime = locChargedTrackHypotheses[loc_j]->time() + (dTargetCenterZ - locChargedTrackHypotheses[loc_j]->z())/29.9792458;
+			//Prefer hit time from TOF (has best time resolution, wrong-mass/path-length doesn't factor into it since voting per-combo)
+				//If time() not from TOF, use ST time instead if available
+			double locStartTime = locChargedTrackHypotheses[loc_j]->time();
+			const DSCHitMatchParams* locSCHitMatchParams = locChargedTrackHypotheses[loc_j]->Get_SCHitMatchParams();
+			if((locChargedTrackHypotheses[loc_j]->t1_detector() != SYS_TOF) && (locSCHitMatchParams != NULL))
+				locStartTime = locSCHitMatchParams->dHitTime - locSCHitMatchParams->dFlightTime;
+
+			double locPropagatedTime = locStartTime + (dTargetCenterZ - locChargedTrackHypotheses[loc_j]->z())/29.9792458;
 			dPropagatedStartTimes_Charged[locChargedTrackHypotheses[loc_j]] = locPropagatedTime;
 		}
 	}
@@ -372,14 +379,6 @@ bool DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const 
 	// Use time-based tracking time as initial guess
 	locStartTime = 0.0;
 
-	//BCAL
-	DBCALShowerMatchParams locBCALShowerMatchParams;
-	if(dParticleID->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams))
-	{
-		locStartTime = locBCALShowerMatchParams.dBCALShower->t - locBCALShowerMatchParams.dFlightTime;
-		return true;
-	}
-
 	//TOF
 	DTOFHitMatchParams locTOFHitMatchParams;
 	if(dParticleID->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
@@ -393,6 +392,14 @@ bool DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const 
 	if(dParticleID->Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams))
 	{
 		locStartTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime;
+		return true;
+	}
+
+	//BCAL
+	DBCALShowerMatchParams locBCALShowerMatchParams;
+	if(dParticleID->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams))
+	{
+		locStartTime = locBCALShowerMatchParams.dBCALShower->t - locBCALShowerMatchParams.dFlightTime;
 		return true;
 	}
 

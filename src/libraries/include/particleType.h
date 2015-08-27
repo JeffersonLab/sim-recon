@@ -532,119 +532,119 @@ inline static char* ParticleName_ROOT(Particle_t p)
 
   switch (p) {
   case Unknown:
-    return (char*)"#it{X}";
+    return (char*)"X";
   case Gamma:
-    return (char*)"#it{#gamma}";
+    return (char*)"#gamma";
   case Positron:
-    return (char*)"#it{e}^{+}";
+    return (char*)"e^{+}";
   case Electron:
-    return (char*)"#it{e}^{-}";
+    return (char*)"e^{-}";
   case Neutrino:
-    return (char*)"#it{#nu}";
+    return (char*)"#nu";
   case MuonPlus:
-    return (char*)"#it{#mu}^{+}";
+    return (char*)"#mu^{+}";
   case MuonMinus:
-    return (char*)"#it{#mu}^{-}";
+    return (char*)"#mu^{-}";
   case Pi0:
-    return (char*)"#it{#pi}^{0}";
+    return (char*)"#pi^{0}";
   case PiPlus:
-    return (char*)"#it{#pi}^{+}";
+    return (char*)"#pi^{+}";
   case PiMinus:
-    return (char*)"#it{#pi}^{-}";
+    return (char*)"#pi^{-}";
   case KLong:
-    return (char*)"#it{K}^{0}_{L}";
+    return (char*)"K^{0}_{L}";
   case KPlus:
-    return (char*)"#it{K}^{+}";
+    return (char*)"K^{+}";
   case KMinus:
-    return (char*)"#it{K}^{-}";
+    return (char*)"K^{-}";
   case Neutron:
-    return (char*)"#it{n}";
+    return (char*)"n";
   case Proton:
-    return (char*)"#it{p}";
+    return (char*)"p";
   case AntiProton:
-    return (char*)"#it{#bar{p}}";
+    return (char*)"#bar{p}";
   case KShort:
-    return (char*)"#it{K}^{0}_{S}";
+    return (char*)"K^{0}_{S}";
   case Eta:
-    return (char*)"#it{#eta}";
+    return (char*)"#eta";
   case Lambda:
-    return (char*)"#it{#Lambda}";
+    return (char*)"#Lambda";
   case SigmaPlus:
-    return (char*)"#it{#Sigma}^{+}";
+    return (char*)"#Sigma^{+}";
   case Sigma0:
-    return (char*)"#it{#Sigma}^{0}";
+    return (char*)"#Sigma^{0}";
   case SigmaMinus:
-    return (char*)"#it{#Sigma}^{-}";
+    return (char*)"#Sigma^{-}";
   case Xi0:
-    return (char*)"#it{#Xi}^{0}";
+    return (char*)"#Xi^{0}";
   case XiMinus:
-    return (char*)"#it{#Xi}^{-}";
+    return (char*)"#Xi^{-}";
   case OmegaMinus:
-    return (char*)"#it{#Omega}^{-}";
+    return (char*)"#Omega^{-}";
   case AntiNeutron:
-    return (char*)"#it{#bar^{n}}";
+    return (char*)"#bar^{n}";
   case AntiLambda:
-    return (char*)"#it{#bar^{#Lambda}}";
+    return (char*)"#bar^{#Lambda}";
   case AntiSigmaMinus:
-    return (char*)"#it{#bar{#Sigma}}^{-}";
+    return (char*)"#bar{#Sigma}^{-}";
   case AntiSigma0:
-    return (char*)"#it{#bar{#Sigma}}^{0}";
+    return (char*)"#bar{#Sigma}^{0}";
   case AntiSigmaPlus:
-    return (char*)"#it{#bar{#Sigma}}^{+}";
+    return (char*)"#bar{#Sigma}^{+}";
   case AntiXi0:
-    return (char*)"#it{#bar{#Xi}}^{0}";
+    return (char*)"#bar{#Xi}^{0}";
   case AntiXiPlus:
-    return (char*)"#it{#bar{#Xi}}^{+}";
+    return (char*)"#bar{#Xi}^{+}";
   case AntiOmegaPlus:
-    return (char*)"#it{#bar{#Omega}}^{+}";
+    return (char*)"#bar{#Omega}^{+}";
   case Geantino:
     return (char*)"geantino";
   case Rho0:
-    return (char*)"#it{#rho}^{0}";
+    return (char*)"#rho^{0}";
   case RhoPlus:
-    return (char*)"#it{#rho}^{+}";
+    return (char*)"#rho^{+}";
   case RhoMinus:
-    return (char*)"#it{#rho}^{-}";
+    return (char*)"#rho^{-}";
   case omega:
-    return (char*)"#it{#omega}";
+    return (char*)"#omega";
   case EtaPrime:
-    return (char*)"#it{#eta'}";
+    return (char*)"#eta'";
   case phiMeson:
-    return (char*)"#it{#phi}";
+    return (char*)"#phi";
   case a0_980:
-    return (char*)"#it{a}_{0}(980)";
+    return (char*)"a_{0}(980)";
   case f0_980:
-    return (char*)"#it{f}_{0}(980)";
+    return (char*)"f_{0}(980)";
   case KStar_892_0:
-    return (char*)"#it{K}*(892)^{0}";
+    return (char*)"K*(892)^{0}";
   case KStar_892_Plus:
-    return (char*)"#it{K}*(892)^{+}";
+    return (char*)"K*(892)^{+}";
   case KStar_892_Minus:
-    return (char*)"#it{K}*(892)^{-}";
+    return (char*)"K*(892)^{-}";
   case AntiKStar_892_0:
-    return (char*)"#it{#bar{K*}}(892)^{0}";
+    return (char*)"#bar{K*}(892)^{0}";
   case K1_1400_Plus:
-    return (char*)"#it{K}_{1}(1400)^{+}";
+    return (char*)"K_{1}(1400)^{+}";
   case K1_1400_Minus:
-    return (char*)"#it{K}_{1}(1400)^{-}";
+    return (char*)"K_{1}(1400)^{-}";
   case b1_1235_Plus:
-    return (char*)"#it{b}_{1}(1235)^{+}";
+    return (char*)"b_{1}(1235)^{+}";
   case Deuteron:
-    return (char*)"#it{d}";
+    return (char*)"d";
   case Helium:
-    return (char*)"#it{He}";
+    return (char*)"He";
   case Triton:
-    return (char*)"#it{t}";
+    return (char*)"t";
   case Pb208:
-    return (char*)"#it{Pb^{208}}";
+    return (char*)"Pb^{208}";
   case Sigma_1385_Minus:
-    return (char*)"#it{#Sigma}(1385)^{-}";
+    return (char*)"#Sigma(1385)^{-}";
   case Sigma_1385_0:
-    return (char*)"#it{#Sigma}(1385)^{0}";
+    return (char*)"#Sigma(1385)^{0}";
   case Sigma_1385_Plus:
-    return (char*)"#it{#Sigma}(1385)^{+}";
+    return (char*)"#Sigma(1385)^{+}";
   case DeltaPlusPlus:
-    return (char*)"#it{#Delta}(1232)^{++}";
+    return (char*)"#Delta(1232)^{++}";
   case Jpsi:
     return (char*)"J/#psi";
   case Eta_c:
@@ -1072,18 +1072,18 @@ inline static int ParticleMultiplexPower(Particle_t locPID)
 		case Sigma_1385_Minus: return 32;
 		case Sigma_1385_0:     return 33;
 		case Sigma_1385_Plus:  return 34;
-	        case DeltaPlusPlus:    return 35;
-	        case Jpsi:             return 36;
-	        case Eta_c:            return 37;
-	        case Chi_c0:           return 38;
-	        case Chi_c1:           return 39;
-	        case Chi_c2:           return 40;
-	        case Psi2s:            return 41;
-	        case D0:               return 421;
-	        case DPlus:            return 411;
-	        case Dstar0:           return 423;
-	        case DstarPlus:        return 413;
-	        case Lambda_c:         return 4122;
+		case DeltaPlusPlus:    return 35;
+		case Jpsi:             return 36;
+		case Eta_c:            return 37;
+		case Chi_c0:           return 38;
+		case Chi_c1:           return 39;
+		case Chi_c2:           return 40;
+		case Psi2s:            return 41;
+		case D0:               return 42;
+		case DPlus:            return 43;
+		case Dstar0:           return 44;
+		case DstarPlus:        return 45;
+		case Lambda_c:         return 46;
 		default: return -1;
 	}
 }
