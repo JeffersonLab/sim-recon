@@ -144,9 +144,8 @@ typedef struct{
 typedef struct{
   DMatrix5x5 C;
   DMatrix5x1 S;
-  DVector2 xy;
-  double doca,z;
-  double tdrift,tflight,s,B;
+  double doca;
+  double tcorr,tdrift;
   double residual,variance;
   bool used_in_fit;
 }DKalmanUpdate_t;
@@ -342,13 +341,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   DMatrixDSym Get7x7ErrorMatrix(DMatrixDSym C); 
   DMatrixDSym Get7x7ErrorMatrixForward(DMatrixDSym C);
 
-  jerror_t EstimateT0(const DKalmanUpdate_t &fdc_update,
-		      const DKalmanSIMDFDCHit_t *hit);
-  jerror_t EstimateT0Central(const DKalmanSIMDCDCHit_t *hit,
-			     const DKalmanUpdate_t &cdc_update); 
-  jerror_t EstimateT0Forward(const DKalmanSIMDCDCHit_t *hit,
-			     const DKalmanUpdate_t &cdc_update);
-
   kalman_error_t ForwardFit(const DMatrix5x1 &S,const DMatrix5x5 &C0); 
   kalman_error_t ForwardCDCFit(const DMatrix5x1 &S,const DMatrix5x5 &C0);  
   kalman_error_t CentralFit(const DVector2 &startpos,
@@ -447,11 +439,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   vector<double>fdc_drift_table;
 
   // Vertex time
-  double mT0,mT0MinimumDriftTime,mT0Average;
+  double mT0,mT0MinimumDriftTime;
   // Variance in vertex time
   double mVarT0;
-  // inverse of vertex time variance;
-  double mInvVarT0;
   // Detector giving t0
   DetectorSystem_t mT0Detector;
 
@@ -509,12 +499,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   unsigned int last_material_map;
 
   TH2F *Hstepsize,*HstepsizeDenom;
-  TH2F *fdc_t0,*fdc_t0_vs_theta,*fdc_t0_timebased,*fdc_t0_timebased_vs_theta;
-  TH2F *cdc_drift,*fdc_drift,*fdc_yres_vs_dE;
-  TH2F *cdc_res,*cdc_drift_vs_B,*fdc_drift_vs_B;
-  TH2F *cdc_drift_forward,*cdc_res_forward,*cdc_res_vs_tanl,*cdc_res_vs_B,*cdc_res_vs_dE;
-  TH2F *cdc_time_vs_d;
-  TH2F *res_vs_s,*norm_res_vs_s;
 };
 
 // Smearing function derived from fitting residuals

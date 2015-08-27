@@ -297,8 +297,9 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  }
 	  
 	  // Adjust the state vector and the covariance using the hit 
-	    //information
-	  if (my_fdchits[id]->hit->wire->layer!=PLANE_TO_SKIP){
+	  //information
+	  bool skip_plane=(my_fdchits[id]->hit->wire->layer==PLANE_TO_SKIP);
+	  if (skip_plane==false){
 	    DMatrix5x5 sum=I5x5;
 	    DMatrix5x5 sum2;
 	    for (unsigned int m=0;m<Klist.size();m++){
@@ -309,29 +310,29 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    }
 	    C=C.SandwichMultiply(sum)+sum2;
 	  }
+	  
 	  for (unsigned int m=0;m<Hlist.size();m++){
 	    unsigned int my_id=used_ids[m];
-	    double scale=1.-Hlist[m]*Klist[m];    
-	    if (my_fdchits[id]->hit->wire->layer==PLANE_TO_SKIP) scale=1.;
+	    double scale=(skip_plane)?1.:(1.-Hlist[m]*Klist[m]);    
 	    fdc_updates[my_id].S=S;
 	    fdc_updates[my_id].C=C; 
-	    fdc_updates[my_id].tflight
-	      =forward_traj[k].t*TIME_UNIT_CONVERSION;   
 	    fdc_updates[my_id].tdrift
-	      =my_fdchits[id]->t-fdc_updates[my_id].tflight-mT0;
-	    fdc_updates[my_id].z=forward_traj[k].z;
-	    fdc_updates[my_id].B=forward_traj[k].B;
-	    fdc_updates[my_id].s=forward_traj[k].s;
+	      =my_fdchits[my_id]->t-forward_traj[k].t*TIME_UNIT_CONVERSION-mT0;
+	    fdc_updates[my_id].tcorr=fdc_updates[my_id].tdrift; // temporary!
 	    fdc_updates[my_id].residual=scale*Mlist[m];
 	    fdc_updates[my_id].variance=scale*Vlist[m];
 	    fdc_updates[my_id].doca=doca;
-	  
+	    
 	    // update chi2
-	    chisq+=(probs[m]/prob_tot)*(1.-Hlist[m]*Klist[m])*Mlist[m]*Mlist[m]/Vlist[m];
+	    if (skip_plane==false){
+	      chisq+=(probs[m]/prob_tot)*(1.-Hlist[m]*Klist[m])*Mlist[m]*Mlist[m]/Vlist[m];
+	    }
 	  }
 
 	  // update number of degrees of freedom
-	  numdof++;
+	  if (skip_plane==false){
+	    numdof++;
+	  }
 	}
 	else{
 	   // Variance for this hit
@@ -346,7 +347,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    // Compute Kalman gain matrix
 	    K=InvV*(C*H_T);
 	    
-	    if (my_fdchits[id]->hit->wire->layer!=PLANE_TO_SKIP){
+	    bool skip_plane=(my_fdchits[id]->hit->wire->layer==PLANE_TO_SKIP);
+	    if (skip_plane==false){
 	      // Update the state vector 
 	      S+=Mdiff*K;
 	    
@@ -356,23 +358,18 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    }
 
 	    // Store the "improved" values for the state vector and covariance
-	    double scale=1.-H*K;
-	    if (my_fdchits[id]->hit->wire->layer==PLANE_TO_SKIP) scale=1.;
+	    double scale=(skip_plane)?1.:(1.-H*K);
 	    fdc_updates[id].S=S;
 	    fdc_updates[id].C=C;
-	    fdc_updates[id].tflight
-	      =forward_traj[k].t*TIME_UNIT_CONVERSION;  
 	    fdc_updates[id].tdrift
-	      =my_fdchits[id]->t-fdc_updates[id].tflight-mT0;
-	    fdc_updates[id].z=forward_traj[k].z;
-	    fdc_updates[id].B=forward_traj[k].B;
+	      =my_fdchits[id]->t-forward_traj[k].t*TIME_UNIT_CONVERSION-mT0;
+	    fdc_updates[id].tcorr=fdc_updates[id].tdrift; // temporary!
 	    fdc_updates[id].residual=scale*Mdiff;
 	    fdc_updates[id].variance=scale*V;
-	    fdc_updates[id].s=forward_traj[k].s;
 	    fdc_updates[id].doca=doca;
 	    fdc_updates[id].used_in_fit=true;
 	    
-	    if (my_fdchits[id]->hit->wire->layer!=PLANE_TO_SKIP){
+	    if (skip_plane==false){
 	      // Update chi2 for this segment
 	      chisq+=scale*Mdiff*Mdiff/V;
 	      // update number of degrees of freedom
@@ -683,39 +680,28 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    // Check that Ctest is positive definite
 	    if (Ctest(0,0)>0 && Ctest(1,1)>0 && Ctest(2,2)>0 && Ctest(3,3)>0 
 		&& Ctest(4,4)>0){
+	      bool skip_ring
+		=(my_cdchits[cdc_index]->hit->wire->ring==RING_TO_SKIP);
+	      // update covariance matrix and state vector
 	      if (my_cdchits[cdc_index]->hit->wire->ring!=RING_TO_SKIP){
 		C=Ctest;
+		S+=res*K;
 	      }
 
 	      // Flag the place along the reference trajectory with hit id
 	      forward_traj[k].h_id=1000+cdc_index;
-      	      
-	      // Update the state vector
-	      double res=dm-d;  
-	      if (my_cdchits[cdc_index]->hit->wire->ring!=RING_TO_SKIP){
-		S+=res*K;
-	      }
 
-	      // Store the "improved" values of the state and covariance matrix
-	      double scale=1.-H*K; 
-	      if (my_cdchits[cdc_index]->hit->wire->ring==RING_TO_SKIP){
-		scale=1.;
-	      }
-	      //cdc_updates[cdc_index].S=S;
-	      //cdc_updates[cdc_index].C=C;	  
-	      cdc_updates[cdc_index].tflight
-		=forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;  
-	      cdc_updates[cdc_index].z=newz;
-	      cdc_updates[cdc_index].tdrift=tcorr;
-	      cdc_updates[cdc_index].B=forward_traj[k_minus_1].B; 
-	      cdc_updates[cdc_index].s=forward_traj[k_minus_1].s;
+	      // Store updated info related to this hit
+	      double scale=(skip_ring)?1.:(1.-H*K); 
+	      cdc_updates[cdc_index].tdrift=tdrift;
+	      cdc_updates[cdc_index].tcorr=tcorr;
 	      cdc_updates[cdc_index].residual=res*scale;
-	      cdc_updates[cdc_index].variance=Vc*scale;
+	      cdc_updates[cdc_index].variance=Vc;
 	      cdc_updates[cdc_index].doca=dm;
 	      cdc_updates[cdc_index].used_in_fit=true;
 	    
 	      // Update chi2 and number of degrees of freedom for this hit
-	      if (my_cdchits[cdc_index]->hit->wire->ring!=RING_TO_SKIP){
+	      if (skip_ring==false){
 		chisq+=scale*res*res/Vc;
 		numdof++;
 	      }
@@ -1050,10 +1036,11 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
 	}
 
 	pulls.push_back(pull_t(resi,sqrt(V),
-			       fdc_updates[id].s,
+			       forward_traj[m].s,
 			       fdc_updates[id].tdrift,
 			       fdc_updates[id].doca,
-			       NULL,my_fdchits[id]->hit));
+			       NULL,my_fdchits[id]->hit,
+			       forward_traj[m].z));
       }
       else{
 	unsigned int id=forward_traj[m].h_id-1000;
