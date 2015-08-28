@@ -119,6 +119,10 @@ jerror_t JEventProcessor_HLDetectorTiming::brun(JEventLoop *eventLoop, int runnu
     // Specifivally steping the RF back to a chosen time
     dRFTimeFactory = static_cast<DRFTime_factory*>(eventLoop->GetFactory("DRFTime"));
 
+    DApplication* app = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+    DGeometry* geom = app->GetDGeometry(runnumber);
+    geom->GetTargetZ(Z_TARGET);
+
     //be sure that DRFTime_factory::init() and brun() are called
     vector<const DRFTime*> locRFTimes;
     eventLoop->Get(locRFTimes);
@@ -771,7 +775,8 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
         // the idea will be to fix the SC time and reference the other PID detectors off of this
 
         // These "flightTime" corrected time are essentially that detector's estimate of the target time
-        float flightTimeCorrectedSCTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime; 
+        float targetCenterCorrection = ((thisTrack->position()).Z() - Z_TARGET) / SPEED_OF_LIGHT;
+        float flightTimeCorrectedSCTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime - targetCenterCorrection; 
         // There appears to be some problem with the CDC times when the SC is used as t0
         // This histogram should help diagnose the issue
         if (USE_RF_BUNCH && thisRFBunch->dNumParticleVotes >= 2){
@@ -838,14 +843,14 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
 
         if (foundTOF){
             // Now check the TOF matching. Do this on a full detector level.
-            float flightTimeCorrectedTOFTime = locTOFHitMatchParams.dHitTime - locTOFHitMatchParams.dFlightTime;
+            float flightTimeCorrectedTOFTime = locTOFHitMatchParams.dHitTime - locTOFHitMatchParams.dFlightTime - targetCenterCorrection;
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "TOF - SC Target Time",
                     flightTimeCorrectedTOFTime - flightTimeCorrectedSCTime,
                     "t_{TOF} - t_{SC} at Target; t_{TOF} - t_{SC} at Target [ns]; Entries",
                     NBINS_MATCHING, MIN_MATCHING_T, MAX_MATCHING_T);
         }
         if (foundBCAL){
-            float flightTimeCorrectedBCALTime = locBCALShowerMatchParams.dBCALShower->t - locBCALShowerMatchParams.dFlightTime;
+            float flightTimeCorrectedBCALTime = locBCALShowerMatchParams.dBCALShower->t - locBCALShowerMatchParams.dFlightTime - targetCenterCorrection;
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - SC Target Time",
                     flightTimeCorrectedBCALTime - flightTimeCorrectedSCTime,
                     "t_{BCAL} - t_{SC} at Target; t_{BCAL} - t_{SC} [ns]; Entries",
@@ -857,7 +862,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumbe
                     100, 0, 20, 50, -10, 10);
         }
         if (foundFCAL){
-            float flightTimeCorrectedFCALTime = locFCALShowerMatchParams.dFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime;
+            float flightTimeCorrectedFCALTime = locFCALShowerMatchParams.dFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime - targetCenterCorrection;
             Fill1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - SC Target Time",
                     flightTimeCorrectedFCALTime - flightTimeCorrectedSCTime,
                     "t_{FCAL} - t_{SC} at Target; t_{FCAL} - t_{SC} [ns]; Entries",
