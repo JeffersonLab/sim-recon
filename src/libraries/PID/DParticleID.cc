@@ -65,7 +65,7 @@ DParticleID::DParticleID(JEventLoop *loop)
   // Get start counter geometry;
   if (locGeometry->GetStartCounterGeom(sc_pos,sc_norm)){
     dSCphi0=sc_pos[0][0].Phi();
-    //sc_leg_tcor = -sc_pos[0][0].z()/C_EFFECTIVE;
+    sc_leg_tcor = -sc_pos[0][0].z()/C_EFFECTIVE;
     double theta = sc_norm[0][sc_norm[0].size()-2].Theta();
     sc_angle_cor = 1./cos(M_PI_2 - theta);
   }
@@ -140,59 +140,18 @@ DParticleID::DParticleID(JEventLoop *loop)
 	ONESIDED_PADDLE_MIDPOINT_MAG = locHalfPaddle_OneSided + locBeamHoleWidth/2.0;
 
 	// Start counter calibration constants
-	// vector<map<string,double> > tvals;
-	vector<map<string,double> > pt_vals;
-	vector<map<string,double> > attn_vals;
+	vector<map<string,double> >tvals;
 
-	// if(loop->GetCalib("/START_COUNTER/propagation_speed",tvals))
-	//   jout << "Error loading /START_COUNTER/propagation_speed !" << endl;
-	// else{
-	//   for(unsigned int i=0; i<tvals.size(); i++){
-        //     map<string, double> &row = tvals[i];
-	//     sc_veff[SC_STRAIGHT].push_back(row["SC_STRAIGHT_PROPAGATION_B"]);
-	//     sc_veff[SC_BEND].push_back(row["SC_BEND_PROPAGATION_B"]);
-	//     sc_veff[SC_NOSE].push_back(row["SC_NOSE_PROPAGATION_B"]);
-	//   }
-	// }
-
-	// Individual propagation speed calibrations (beam data)
-	if(loop->GetCalib("/START_COUNTER/propagation_speed", pt_vals))
+	if(loop->GetCalib("/START_COUNTER/propagation_speed",tvals))
 	  jout << "Error loading /START_COUNTER/propagation_speed !" << endl;
-	else
-	  {
-	    for(unsigned int i = 0; i < pt_vals.size(); i++)
-	      {
-		// Functional form is: A + B*x
-		map<string, double> &row = pt_vals[i];
-		sc_pt_yint[SC_STRAIGHT].push_back(row["SC_STRAIGHT_PROPAGATION_A"]);
-		sc_pt_yint[SC_BEND].push_back(row["SC_BEND_PROPAGATION_A"]);
-		sc_pt_yint[SC_NOSE].push_back(row["SC_NOSE_PROPAGATION_A"]);
-		    
-		sc_pt_slope[SC_STRAIGHT].push_back(row["SC_STRAIGHT_PROPAGATION_B"]);
-		sc_pt_slope[SC_BEND].push_back(row["SC_BEND_PROPAGATION_B"]);
-		sc_pt_slope[SC_NOSE].push_back(row["SC_NOSE_PROPAGATION_B"]);
-	      }
+	else{
+	  for(unsigned int i=0; i<tvals.size(); i++){
+            map<string, double> &row = tvals[i];
+	    sc_veff[SC_STRAIGHT].push_back(row["SC_STRAIGHT_PROPAGATION_B"]);
+	    sc_veff[SC_BEND].push_back(row["SC_BEND_PROPAGATION_B"]);
+	    sc_veff[SC_NOSE].push_back(row["SC_NOSE_PROPAGATION_B"]);
 	  }
-
-	// Individual attneuation calibrations (FIU bench mark data) 
-	if(loop->GetCalib("START_COUNTER/attenuation_factor", attn_vals))
-	  jout << "Error in loading START_COUNTER/attenuation_factor !" << endl;
-	else
-	  {
-	    for(unsigned int i = 0; i < attn_vals.size(); i++)
-	      {
-		// Functional form is: A*exp(B*x) + C
-		map<string, double> &row = attn_vals[i];
-		sc_attn_A[SC_STRAIGHT_ATTN].push_back(row["SC_STRAIGHT_ATTENUATION_A"]);
-		sc_attn_A[SC_BENDNOSE_ATTN].push_back(row["SC_BENDNOSE_ATTENUATION_A"]); 
-
-		sc_attn_B[SC_STRAIGHT_ATTN].push_back(row["SC_STRAIGHT_ATTENUATION_B"]);
-		sc_attn_B[SC_BENDNOSE_ATTN].push_back(row["SC_BENDNOSE_ATTENUATION_B"]); 
-
-		sc_attn_C[SC_STRAIGHT_ATTN].push_back(row["SC_STRAIGHT_ATTENUATION_C"]);
-		sc_attn_C[SC_BENDNOSE_ATTN].push_back(row["SC_BENDNOSE_ATTENUATION_C"]); 
-	      }
-	  }
+	}
 
 }
 
@@ -973,33 +932,13 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 
 	// Now check to see if the intersection is in the nose region and find the
 	// start time
-	//double locCorrectedHitTime = locSCHit->t - sc_leg_tcor;
-	// double sc_pos0 = sc_pos[sc_index][0].z();	
-	// double sc_pos1 = sc_pos[sc_index][1].z();
-
-	// Start Counter geometry in hall coordinates, obtained from xml file 
-	double sc_pos_soss = sc_pos[sc_index][0].z();   // Start of straight section
-	double sc_pos_eoss = sc_pos[sc_index][1].z();   // End of straight section
-	double sc_pos_eobs = sc_pos[sc_index][11].z();  // End of bend section
-	double sc_pos_eons = sc_pos[sc_index][12].z();  // End of nose section
-	// Grab the time-walk corrected start counter hit time, and the pulse integral
-	double locCorrectedHitTime   = locSCHit->t;
-	double locCorrectedHitEnergy = locSCHit->dE;
-
-	//if(myz <= sc_pos1)
-
-	// Check to see if hit occured in the straight section
-	if (myz <= sc_pos_eoss)
+	double locCorrectedHitTime = locSCHit->t - sc_leg_tcor;
+	double sc_pos0 = sc_pos[sc_index][0].z();	
+	double sc_pos1 = sc_pos[sc_index][1].z();
+	if(myz <= sc_pos1)
 	{
-	  //L=myz;
-	  //locCorrectedHitTime -= L/C_EFFECTIVE;
-	  
-	  // Calculate hit distance along scintillator relative to upstream end
-	  L = myz - sc_pos_soss;
-	  // Apply propagation time correction
-	  locCorrectedHitTime -= L*sc_pt_slope[SC_STRAIGHT][sc_index] + sc_pt_yint[SC_STRAIGHT][sc_index];
-	  // Apply attenuation correction
-	  locCorrectedHitEnergy *= 1.0/(exp(sc_attn_B[SC_STRAIGHT_ATTN][sc_index]*L));
+	  L=myz;
+	  locCorrectedHitTime -= L/C_EFFECTIVE;
 	}
 	else
 	{
@@ -1029,65 +968,21 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	      }
 	    }	
 	  // Check for intersection point beyond nose
-	  if (myz > sc_pos[sc_index][num].z()) return false;
+	  if (myz> sc_pos[sc_index][num].z()) return false;
 
 	  
-	  // Note: in the following code, L does not include a correction for where the start counter starts
-	  // in z...	This is absorbed into locCorrectedHitTime, above.
-	  //if(myz < sc_pos1)
-	  
-	  // If location cannot be located in straight, bend, or nose section then 
-	  // force it to be located at the end/start of the straight/bend section
-	  if(myz < sc_pos_eoss)  // Assume hit at end of straight section
-	    {
-	      // L = sc_pos1;
-	      // locCorrectedHitTime -= L/C_EFFECTIVE;
-	      
-	      // Define the distance to be at the end of the end/start of the straight/bend section
-	      L = sc_pos_eoss - sc_pos_soss;
-	      // Apply propagation time correction
-	      locCorrectedHitTime -= L*sc_pt_slope[SC_STRAIGHT][sc_index] + sc_pt_yint[SC_STRAIGHT][sc_index];
-	      // Apply attenuation correction
-	      locCorrectedHitEnergy *= 1.0/(exp(sc_attn_B[SC_STRAIGHT_ATTN][sc_index]*L));
-	    }
-	  // else
-	  //   {
-	  //     L = (myz - sc_pos1)*sc_angle_cor + sc_pos1;
-	  //     locCorrectedHitTime -= L/C_EFFECTIVE;
-	  //   }
-	  
-	  // Check to see if hit occured in bend section and apply corrections
-	  else if(myz > sc_pos_eoss && myz <= sc_pos_eobs)
-	    {     
-	      //L = (myz - sc_pos_eoss)*sc_angle_corr);
-	      //locCorrectedHitTime -= L/C_EFFECTIVE;
-	      
-	      // Calculate the hit position relative to the upstream end
-	      L = (myz - sc_pos_eoss)*sc_angle_cor + (sc_pos_eoss - sc_pos_soss);
-	      // Apply propagation time correction
-	      locCorrectedHitTime -= L*sc_pt_slope[SC_BEND][sc_index] + sc_pt_yint[SC_BEND][sc_index];  
-	      // Apply attenuation correction
-	      locCorrectedHitEnergy *= (sc_attn_A[SC_STRAIGHT_ATTN][sc_index]/
-					((sc_attn_A[SC_BENDNOSE_ATTN][sc_index]*
-					  exp(sc_attn_B[SC_BENDNOSE_ATTN][sc_index]*L)) +
-					 sc_attn_C[SC_BENDNOSE_ATTN][sc_index]));
-	    }
-
-	  // Check to see if hit occured in nose section and apply corrections
-	  else if(myz > sc_pos_eobs && myz <= sc_pos_eons)
-	    {
-	      //L = (myz - sc_pos_eoss)*sc_angle_cor;
-	      
-	      // Calculate the hit position relative to the upstream end
-	      L = (myz - sc_pos_eoss)*sc_angle_cor + (sc_pos_eoss - sc_pos_soss);
-	      // Apply propagation time correction
-	      locCorrectedHitTime -= L*sc_pt_slope[SC_NOSE][sc_index] + sc_pt_yint[SC_NOSE][sc_index]; 
-	      // Apply attenuation correction
-	      locCorrectedHitEnergy *= (sc_attn_A[SC_STRAIGHT_ATTN][sc_index]/
-					((sc_attn_A[SC_BENDNOSE_ATTN][sc_index]*
-					  exp(sc_attn_B[SC_BENDNOSE_ATTN][sc_index]*L)) +
-					 sc_attn_C[SC_BENDNOSE_ATTN][sc_index]));
-	    }
+		// Note: in the following code, L does not include a correction for where the start counter starts
+		// in z...	This is absorbed into locCorrectedHitTime, above.
+		if(myz < sc_pos1)
+		{
+		        L = sc_pos1;
+			locCorrectedHitTime -= L/C_EFFECTIVE;	
+		}
+		else
+		{
+			L = (myz - sc_pos1)*sc_angle_cor + sc_pos1;
+			locCorrectedHitTime -= L/C_EFFECTIVE;
+		}
 	}
 
 	double dx = 0.3*proj_mom.Mag()/fabs(proj_mom.Dot(norm));
@@ -1096,8 +991,7 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	// compensate for the position in z at which the start counter paddle starts
 	locSCHitMatchParams.dTrack = locTrack;
 	locSCHitMatchParams.dSCHit = locSCHit;
-	//locSCHitMatchParams.dHitEnergy = (locSCHit->dE)*exp((L - sc_pos0)/ATTEN_LENGTH);
-	locSCHitMatchParams.dHitEnergy = locCorrectedHitEnergy;
+	locSCHitMatchParams.dHitEnergy = (locSCHit->dE)*exp((L - sc_pos0)/ATTEN_LENGTH);
 	locSCHitMatchParams.dEdx = locSCHitMatchParams.dHitEnergy/dx;
 	locSCHitMatchParams.dHitTime = locCorrectedHitTime;
 	locSCHitMatchParams.dHitTimeVariance = 0.0; //SET ME!!!
