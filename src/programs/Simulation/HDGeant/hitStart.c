@@ -8,13 +8,6 @@
  *
  * changes: Wed Jun 20 13:19:56 EDT 2007 B. Zihlmann 
  *          add ipart to the function hitStartCntr
- * changes: Tue Aug 25 17:49:21 EDT 2015 E. Pooser
- *          1) Change ANGLE_COR from 1.038 to 1.054 (this corresponds to the
- *          correct 18.5 deg bend towards the beam line in the nose region)
- *          2) Add channel by channel corrections for the propagation time and
- *          attenuation in which constants were determined from beam data and 
- *          bench data (taken at FIU) respectively
- *          
  *
  * Programmer's Notes:
  * -------------------
@@ -46,20 +39,8 @@ static float TWO_HIT_RESOL   = 25.;
 static int   START_MAX_HITS  = 100;
 static float THRESH_MEV      = 0.150;
 static float LIGHT_GUIDE     = 0.;
-//static float ANGLE_COR       = 1.038;
-static float ANGLE_COR       = 1.054;
+static float ANGLE_COR       = 1.038;
 static float BENT_REGION     = 39.465;
-static float STRAIGHT_LENGTH = 39.465;
-static float BEND_LENGTH     = 3.592375;
-static float NOSE_LENGTH     = 15.536625;
-
-static float SC_STRAIGHT_ATTENUATION_A[30], SC_STRAIGHT_ATTENUATION_B[30], SC_STRAIGHT_ATTENUATION_C[30];
-static float SC_BENDNOSE_ATTENUATION_A[30], SC_BENDNOSE_ATTENUATION_B[30], SC_BENDNOSE_ATTENUATION_C[30];
-static float SC_STRAIGHT_PROPAGATION_A[30], SC_STRAIGHT_PROPAGATION_B[30];
-static float SC_BEND_PROPAGATION_A[30],     SC_BEND_PROPAGATION_B[30];
-static float SC_NOSE_PROPAGATION_A[30],     SC_NOSE_PROPAGATION_B[30];
-
-static int   NCHANNELS = 30;
 
 // Comment by RTJ:
 // When I introduced the convenience constant MAX_HITS,
@@ -79,8 +60,8 @@ static int initialized = 0;
 
 void hitStartCntr (float xin[4], float xout[4],
                    float pin[5], float pout[5], float dEsum,
-                    int track, int stack, int history, int ipart)
-{     
+                   int track, int stack, int history, int ipart)
+{
    float x[3], t;
    float dx[3], dr;
    float dEdx;
@@ -97,7 +78,7 @@ void hitStartCntr (float xin[4], float xout[4],
       int ncounter = 0;
       int i;
       for ( i=0;i<(int)nvalues;i++){
-        //printf("%d %s \n", i, strings[i].str);
+        //printf("%d %s \n",i,strings[i].str);
         if (!strcmp(strings[i].str,"START_ATTEN_LENGTH")) {
           ATTEN_LENGTH  = values[i];
           ncounter++;
@@ -129,7 +110,7 @@ void hitStartCntr (float xin[4], float xout[4],
         if (!strcmp(strings[i].str,"START_BENT_REGION")) {
           BENT_REGION  = values[i];
           ncounter++;
-        }
+        }	
       }
       if (ncounter==8){
         printf("START: ALL parameters loaded from Data Base\n");
@@ -139,53 +120,6 @@ void hitStartCntr (float xin[4], float xout[4],
         printf("START: SOME parameters found more than once in Data Base\n");
       }
     }
-
-    // Attenuations correction constants for straight section
-    int sc_straight_attenuation_a = GetColumn("START_COUNTER/attenuation_factor", &NCHANNELS, SC_STRAIGHT_ATTENUATION_A, "SC_STRAIGHT_ATTENUATION_A");
-    if (sc_straight_attenuation_a) 
-      printf("ERROR LOADING SC_STRAIGHT_ATTENUATION_A from START_COUNTER/attenuation_factor");
-    int sc_straight_attenuation_b = GetColumn("START_COUNTER/attenuation_factor", &NCHANNELS, SC_STRAIGHT_ATTENUATION_B, "SC_STRAIGHT_ATTENUATION_B");
-    if (sc_straight_attenuation_b) 
-      printf("ERROR LOADING SC_STRAIGHT_ATTENUATION_B from START_COUNTER/attenuation_factor");
-    int sc_straight_attenuation_c = GetColumn("START_COUNTER/attenuation_factor", &NCHANNELS, SC_STRAIGHT_ATTENUATION_C, "SC_STRAIGHT_ATTENUATION_C");
-    if (sc_straight_attenuation_c) 
-      printf("ERROR LOADING SC_STRAIGHT_ATTENUATION_C from START_COUNTER/attenuation_factor");
-
-    // Attenuation correction constants for bend/nose section
-    int sc_bendnose_attenuation_a = GetColumn("START_COUNTER/attenuation_factor", &NCHANNELS, SC_BENDNOSE_ATTENUATION_A, "SC_BENDNOSE_ATTENUATION_A");
-    if (sc_bendnose_attenuation_a) 
-      printf("ERROR LOADING SC_BENDNOSE_ATTENUATION_A from START_COUNTER/attenuation_factor");
-    int sc_bendnose_attenuation_b = GetColumn("START_COUNTER/attenuation_factor", &NCHANNELS, SC_BENDNOSE_ATTENUATION_B, "SC_BENDNOSE_ATTENUATION_B");
-    if (sc_bendnose_attenuation_b) 
-      printf("ERROR LOADING SC_BENDNOSE_ATTENUATION_B from START_COUNTER/attenuation_factor");
-    int sc_bendnose_attenuation_c = GetColumn("START_COUNTER/attenuation_factor", &NCHANNELS, SC_BENDNOSE_ATTENUATION_C, "SC_BENDNOSE_ATTENUATION_C");
-    if (sc_bendnose_attenuation_c) 
-      printf("ERROR LOADING SC_BENDNOSE_ATTENUATION_C from START_COUNTER/attenuation_factor");
-
-    // Propagation time correction constants for straight section
-    int sc_straight_propagation_a = GetColumn("START_COUNTER/propagation_speed", &NCHANNELS, SC_STRAIGHT_PROPAGATION_A, "SC_STRAIGHT_PROPAGATION_A");
-    if (sc_straight_propagation_a) 
-      printf("ERROR LOADING SC_STRAIGHT_PROPAGATION_A from START_COUNTER/propagation_speed");
-    int sc_straight_propagation_b = GetColumn("START_COUNTER/propagation_speed", &NCHANNELS, SC_STRAIGHT_PROPAGATION_B, "SC_STRAIGHT_PROPAGATION_B");
-    if (sc_straight_propagation_b) 
-      printf("ERROR LOADING SC_STRAIGHT_PROPAGATION_B from START_COUNTER/propagation_speed");
-
-    // Propagation time correction constants for bend section
-    int sc_bend_propagation_a = GetColumn("START_COUNTER/propagation_speed", &NCHANNELS, SC_BEND_PROPAGATION_A, "SC_BEND_PROPAGATION_A");
-    if (sc_bend_propagation_a) 
-      printf("ERROR LOADING SC_BEND_PROPAGATION_A from START_COUNTER/propagation_speed");
-    int sc_bend_propagation_b = GetColumn("START_COUNTER/propagation_speed", &NCHANNELS, SC_BEND_PROPAGATION_B, "SC_BEND_PROPAGATION_B");
-    if (sc_bend_propagation_b) 
-      printf("ERROR LOADING SC_BEND_PROPAGATION_B from START_COUNTER/propagation_speed");
-
-    // Propagation time correction constants for nose section
-    int sc_nose_propagation_a = GetColumn("START_COUNTER/propagation_speed", &NCHANNELS, SC_NOSE_PROPAGATION_A, "SC_NOSE_PROPAGATION_A");
-    if (sc_nose_propagation_a) 
-      printf("ERROR LOADING SC_NOSE_PROPAGATION_A from START_COUNTER/propagation_speed");
-    int sc_nose_propagation_b = GetColumn("START_COUNTER/propagation_speed", &NCHANNELS, SC_NOSE_PROPAGATION_B, "SC_NOSE_PROPAGATION_B");
-    if (sc_nose_propagation_b) 
-      printf("ERROR LOADING SC_NOSE_PROPAGATION_B from START_COUNTER/propagation_speed");
-
     initialized = 1;
    }
 
@@ -207,17 +141,17 @@ void hitStartCntr (float xin[4], float xout[4],
       dEdx = 0;
    }
 
-   /* float dbent  = 0.0; */
-   /* float dpath  = 0.0; */
-   /* if(xlocal[2] >= BENT_REGION){ */
-   /*   dbent = ( xlocal[2] - BENT_REGION )*ANGLE_COR; */
-   /*   dpath = BENT_REGION + dbent; */
-   /* } else { */
-   /*   dpath  = xlocal[2]; */
-   /* } */
+   float dbent  = 0.0;
+   float dpath  = 0.0;
+   if(xlocal[2] >= BENT_REGION){
+     dbent = ( xlocal[2] - BENT_REGION )*ANGLE_COR;
+     dpath =BENT_REGION + dbent;
+   } else {
+     dpath  = xlocal[2];
+   }
 
-   /* float dEcorr = dEsum * exp(-dpath/ATTEN_LENGTH); */
-   /* float tcorr  = t + dpath/C_EFFECTIVE; */
+   float dEcorr = dEsum * exp(-dpath/ATTEN_LENGTH);
+   float tcorr  = t + dpath/C_EFFECTIVE;
 
 
    //   printf("x_gl, z_gl, x_l, z_l %f %f %f\n",
@@ -238,7 +172,7 @@ void hitStartCntr (float xin[4], float xout[4],
          s_StartCntr_t* stc = *twig = make_s_StartCntr();
          s_StcTruthPoints_t* points = make_s_StcTruthPoints(1);
          stc->stcTruthPoints = points;
-	 int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
          points->in[0].primary = (stack <= a);
          points->in[0].track = track;
          points->in[0].t = t;
@@ -249,13 +183,15 @@ void hitStartCntr (float xin[4], float xout[4],
          points->in[0].py = pin[1]*pin[4];
          points->in[0].pz = pin[2]*pin[4];
          points->in[0].E = pin[3];
-	 points->in[0].dEdx = dEdx;
-	 points->in[0].ptype = ipart;
+         points->in[0].dEdx = dEcorr;
+         points->in[0].ptype = ipart;
          points->in[0].sector = getsector_wrapper_();
          points->in[0].trackID = make_s_TrackID();
          points->in[0].trackID->itrack = gidGetId(track);
          points->mult = 1;
          pointCount++;
+
+
       }
    }
 
@@ -275,60 +211,9 @@ void hitStartCntr (float xin[4], float xout[4],
        
       //      printf("x_gl, z_gl, x_l, z_l %f %f %f %f %f %f\n",
       //  x[0],x[1],x[2], xlocal[0],xlocal[1],xlocal[2]);
-      
-      float dbent  = 0.0;
-      float dpath  = 0.0;
-      if(xlocal[2] >= BENT_REGION){
-      	dbent = ( xlocal[2] - BENT_REGION )*ANGLE_COR;
-      	dpath = BENT_REGION + dbent;
-      } else {
-      	dpath  = xlocal[2];
-      }
 
-      /* float dEcorr = dEsum * exp(-dpath/ATTEN_LENGTH); */
-      /* float tcorr  = t + dpath/C_EFFECTIVE; */
 
-      /* printf("\n Sector %d Fired \n t = %.5f \n dEsum = %.5f \n dpath = %.5f \n",  */
-      /* 	     sector, t, dEsum, dpath); */
 
-      int sector_index = sector - 1;
-      float dEcorr = 9.9E+9;
-      float tcorr  = 9.9E+9;
-      
-      if (xlocal[2] <= STRAIGHT_LENGTH)
-	{
-	  dEcorr = dEsum * exp(dpath*SC_STRAIGHT_ATTENUATION_B[sector_index]);
-	  tcorr  = t + dpath * SC_STRAIGHT_PROPAGATION_B[sector_index] + SC_STRAIGHT_PROPAGATION_A[sector_index];
-
-	  /* printf("HIT OCCURED IN STRAIGHT SECTION \n"); */
-	  /* printf("Attenuation Corrections: A = %.5f, B = %.5f, C = %.5f \n", SC_STRAIGHT_ATTENUATION_A[sector_index], SC_STRAIGHT_ATTENUATION_B[sector_index], SC_STRAIGHT_ATTENUATION_C[sector_index]); */
-	  /* printf("Time Corrections: B = %.5f, A = %.5f \n", SC_STRAIGHT_PROPAGATION_B[sector_index], SC_STRAIGHT_PROPAGATION_A[sector_index]);  */
-	}
-      else if (xlocal[2] > STRAIGHT_LENGTH && xlocal[2] <= (STRAIGHT_LENGTH + BEND_LENGTH))
-	{
-	  dEcorr = dEsum * ((SC_BENDNOSE_ATTENUATION_A[sector_index] * exp(dpath*SC_BENDNOSE_ATTENUATION_B[sector_index]) + SC_BENDNOSE_ATTENUATION_C[sector_index]) / 
-				  SC_STRAIGHT_ATTENUATION_A[sector_index]);
-	  tcorr  = t + dpath * SC_BEND_PROPAGATION_B[sector_index] + SC_BEND_PROPAGATION_A[sector_index];
-
-	  /* printf("HIT OCCURED IN BEND SECTION \n"); */
-	  /* printf("Attenuation Corrections: A = %.5f, B = %.5f, C = %.5f \n", SC_BENDNOSE_ATTENUATION_A[sector_index], SC_BENDNOSE_ATTENUATION_B[sector_index], SC_BENDNOSE_ATTENUATION_C[sector_index]); */
-	  /* printf("Time Corrections: B = %.5f,  A = %.5f \n", SC_BEND_PROPAGATION_B[sector_index], SC_BEND_PROPAGATION_A[sector_index]);  */
-	}
-      else if (xlocal[2] > (STRAIGHT_LENGTH + BEND_LENGTH) && xlocal[2] <= (STRAIGHT_LENGTH + BEND_LENGTH + NOSE_LENGTH))
-	{
-	  dEcorr = dEsum * ((SC_BENDNOSE_ATTENUATION_A[sector_index] * exp(dpath*SC_BENDNOSE_ATTENUATION_B[sector_index]) + SC_BENDNOSE_ATTENUATION_C[sector_index]) / 
-				  SC_STRAIGHT_ATTENUATION_A[sector_index]);
-	  
-	  tcorr  = t + dpath * SC_NOSE_PROPAGATION_B[sector_index] + SC_NOSE_PROPAGATION_A[sector_index];
-
-	  /* printf("HIT OCCURED IN NOSE SECTION \n"); */
-	  /* printf("Attenuation Corrections: A = %.5f, B = %.5f, C = %.5f \n", SC_BENDNOSE_ATTENUATION_A[sector_index], SC_BENDNOSE_ATTENUATION_B[sector_index], SC_BENDNOSE_ATTENUATION_C[sector_index]); */
-	  /* printf("Time Corrections: B = %.5f,  A = %.5f \n", SC_NOSE_PROPAGATION_B[sector_index], SC_NOSE_PROPAGATION_A[sector_index]); */ 
-	}
-      else return;
-
-      /* printf("tcorr = %.5f \n dEcorr = %.5f \n", tcorr, dEcorr); */
-    
       //      float dpath = xlocal[2]+(10.2-xlocal[0])*0.4;
       //      float tcorr = t + dpath/C_EFFECTIVE;
       //      float dEcorr = dEsum * exp(-dpath/ATTEN_LENGTH);
