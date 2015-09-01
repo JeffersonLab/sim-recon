@@ -43,6 +43,7 @@ class DRFTime_factory : public jana::JFactory<DRFTime>
 
 		double Calc_WeightedAverageRFTime(map<DetectorSystem_t, vector<double> >& locRFTimesMap, double& locRFTimeVariance) const;
 
+		DetectorSystem_t dOverrideRFSourceSystem; //Choose this system over the best-resolution system if data is present (default SYS_NULL (disabled))
 		double dRFBunchPeriod;
 
 		map<DetectorSystem_t, double> dTimeOffsetMap;
