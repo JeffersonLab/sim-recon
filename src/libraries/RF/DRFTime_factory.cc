@@ -12,6 +12,7 @@
 //------------------
 jerror_t DRFTime_factory::init(void)
 {
+	dOverrideRFSourceSystem = SYS_NULL; 
 	return NOERROR;
 }
 
@@ -54,6 +55,10 @@ jerror_t DRFTime_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
 		dTimeResolutionSqMap[locSystem] = locIterator->second;
 	}
 
+	string locSystemName = "NULL";
+	gPARMS->SetDefaultParameter("RF:SOURCE_SYSTEM", locSystemName);
+	dOverrideRFSourceSystem = NameToSystem(locSystemName.c_str());
+
 	return NOERROR;
 }
 
@@ -92,15 +97,24 @@ jerror_t DRFTime_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
 		//Seems to be an additional jitter when averaging times between systems
 
 	//Find the best system present in the data
-	map<DetectorSystem_t, double>::iterator locResolutionIterator = dTimeResolutionSqMap.begin();
-	double locBestResolution = 9.9E9;
 	DetectorSystem_t locBestSystem = SYS_NULL;
-	for(; locResolutionIterator != dTimeResolutionSqMap.end(); ++locResolutionIterator)
+	if(locRFTimesMap.find(dOverrideRFSourceSystem) != locRFTimesMap.end())
+		locBestSystem = dOverrideRFSourceSystem; //Overriden on command line: use this system
+	else
 	{
-		if(locResolutionIterator->second >= locBestResolution)
-			continue;
-		locBestResolution = locResolutionIterator->second;
-		locBestSystem = locResolutionIterator->first;
+		//Not overriden or not present, search for the system with the best resolution
+		map<DetectorSystem_t, double>::iterator locResolutionIterator = dTimeResolutionSqMap.begin();
+		double locBestResolution = 9.9E9;
+		for(; locResolutionIterator != dTimeResolutionSqMap.end(); ++locResolutionIterator)
+		{
+			DetectorSystem_t locSystem = locResolutionIterator->first;
+			if(locRFTimesMap.find(locSystem) == locRFTimesMap.end())
+				continue; // this system is not in the data stream for this event
+			if(locResolutionIterator->second >= locBestResolution)
+				continue;
+			locBestResolution = locResolutionIterator->second;
+			locBestSystem = locResolutionIterator->first;
+		}
 	}
 
 	//Use it (remove the others)
