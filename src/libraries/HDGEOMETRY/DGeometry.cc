@@ -1493,14 +1493,23 @@ bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
   vector<double> sc_origin;
   bool got_sc = Get("//posXYZ[@volume='StartCntr']/@X_Y_Z", sc_origin);
   if(got_sc){
+    // Offset from beam center
+    vector<double>sc_origin_delta;
+    Get("//posXYZ[@volume='startCntr']/@X_Y_Z", sc_origin_delta);
+    double dx=sc_origin_delta[0];
+    double dy=sc_origin_delta[1];
+
     // z-position at upstream face of scintillators.
     double z0=sc_origin[2];
     
     // Get rotation angles
     vector<double>sc_rot_angles;
+    //Get("//posXYZ[@volume='startCntr']/@rot", sc_rot_angles);
+    //double ThetaX=sc_rot_angles[0]*M_PI/180.;
+    //double ThetaY=sc_rot_angles[1]*M_PI/180.;
     Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
     double ThetaX=sc_rot_angles[0]*M_PI/180.;
-    double ThetaY=sc_rot_angles[1]*M_PI/180.;  
+    double ThetaY=sc_rot_angles[1]*M_PI/180.;
     double ThetaZ=sc_rot_angles[2]*M_PI/180.;
 
     double num_paddles;
@@ -1522,7 +1531,9 @@ bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
       double r=0.5*(sc_rioz[0][0]+sc_rioz[0][1]);
       DVector3 oldray;
       // Rotate by phi and take into account the tilt
-      DVector3 ray(r*cosphi,r*sinphi,sc_rioz[0][2]);
+      double x=r*cosphi+dx;
+      double y=r*sinphi+dy;
+      DVector3 ray(x,y,sc_rioz[0][2]);
       ray.RotateX(ThetaX);
       ray.RotateY(ThetaY);
       ray.RotateZ(ThetaZ);
@@ -1535,9 +1546,11 @@ bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
 	oldray=ray;
 	r=0.5*(sc_rioz[k][0]+sc_rioz[k][1]);
 	// Point in midplane of scintillator
-	ray.SetXYZ(r*cosphi,r*sinphi,sc_rioz[k][2]);
+	x=r*cosphi+dx;
+	y=r*sinphi+dy;
+	ray.SetXYZ(x,y,sc_rioz[k][2]);
 	// Second point in the plane of the scintillator
-	DVector3 ray2(r*cosphi-10.0*sinphi,r*sinphi+10.0*cosphi,sc_rioz[k][2]);
+	DVector3 ray2(x-10.0*sinphi,y+10.0*cosphi,sc_rioz[k][2]);
 	// Take into account tilt
 	ray.RotateX(ThetaX);
 	ray.RotateY(ThetaY);
