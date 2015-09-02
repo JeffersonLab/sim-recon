@@ -11,23 +11,6 @@
 #include "IUAmpTools/Kinematics.h"
 #include "AMPTOOLS_AMPS/Pi0Regge.h"
 
-// FORTRAN routines
-extern "C"{
-void diffcross_(float* Eg, float* t, float* DSG);
-};
-
-// Wrapper function for cross section
-GDouble DiffCross(double x, double y)
-{
-        float xx = x;
-	float yy = y;
-	float zz = 0;
-        diffcross_(&xx, &yy, &zz);
-
-	return (double)zz;
-}
-
-
 Pi0Regge::Pi0Regge( const vector< string >& args ) :
 UserAmplitude< Pi0Regge >( args )
 {
@@ -47,22 +30,24 @@ Pi0Regge::calcAmplitude( GDouble** pKin ) const {
 	TLorentzVector cm = recoil + p1;
 	TLorentzRotation cmBoost( -cm.BoostVector() );
 	
+	TLorentzVector beam_cm = cmBoost * beam;
 	TLorentzVector target_cm = cmBoost * target;
 	TLorentzVector recoil_cm = cmBoost * recoil;
 	
-	// some variables for photon polarization dependence (not currently implemented)
-	//TLorentzVector p1_cm = cmBoost * p1;
-	//GDouble phi = p1_cm.Phi();
-	//if(phi < -1*PI) phi += 2*PI;
-	//if(phi > PI) phi -= 2*PI;
-	//GDouble cosTheta = p1_cm.CosTheta();
-	
-	// factors needed to calculate amplitude in fortran code
-	float Eg = beam.E();
-	float t = (target_cm - recoil_cm).M2();
-	
-	GDouble W = DiffCross(Eg, t);
-	
-	return complex< GDouble > ( sqrt(W) );
+	// phi dependence needed for polarized distribution
+	TLorentzVector p1_cm = cmBoost * p1;
+	GDouble phi = p1_cm.Phi();
+	GDouble cos2Phi = cos(2.*phi);
+
+	// factors needed to calculate amplitude in c++ code
+	GDouble Ecom = cm.M();
+	GDouble theta = p1_cm.Theta();	
+
+	// amplitude coded in c++ (include calculation of beam asymmetry)
+	GDouble BeamSigma = 0.;
+	GDouble W = Pi0PhotCS_S(Ecom, theta, BeamSigma);
+	W *= (1 - Pgamma * BeamSigma * cos2Phi);
+
+	return complex< GDouble > ( sqrt( fabs(W) ) );
 }
 
