@@ -172,6 +172,7 @@ class DParticleID:public jana::JObject{
 	// start counter geometry parameters
 	double sc_leg_tcor;
 	double sc_angle_cor;
+	vector<vector<DVector3> >sc_dir; // direction vector in plane of plastic
 	vector<vector<DVector3> >sc_pos;
 	vector<vector<DVector3> >sc_norm;
 	double dSCdphi;

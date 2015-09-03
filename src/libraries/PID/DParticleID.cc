@@ -68,6 +68,18 @@ DParticleID::DParticleID(JEventLoop *loop)
     //sc_leg_tcor = -sc_pos[0][0].z()/C_EFFECTIVE;
     double theta = sc_norm[0][sc_norm[0].size()-2].Theta();
     sc_angle_cor = 1./cos(M_PI_2 - theta);
+
+    // Create vector of direction vectors in scintillator planes
+    for (int i=0;i<30;i++){
+      vector<DVector3>temp;
+      for (unsigned int j=0;j<sc_pos[i].size()-1;j++){
+	double dx=sc_pos[i][j+1].x()-sc_pos[i][j].x();
+	double dy=sc_pos[i][j+1].y()-sc_pos[i][j].y();
+	double dz=sc_pos[i][j+1].z()-sc_pos[i][j].z();
+	temp.push_back(DVector3(dx/dz,dy/dz,1.));
+      }
+      sc_dir.push_back(temp);
+    }
   }
 
 
@@ -102,7 +114,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 	BCAL_PHI_CUT_PAR2=0.01;
 	gPARMS->SetDefaultParameter("BCAL:PHI_CUT_PAR2",BCAL_PHI_CUT_PAR2);
 
-	SC_DPHI_CUT=0.105;
+	SC_DPHI_CUT=0.125;
 	gPARMS->SetDefaultParameter("SC:DPHI_CUT",SC_DPHI_CUT);
 	
 	SC_DPHI_CUT_WB=0.21;
@@ -944,7 +956,7 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 		return false;
 	// Check that the intersection isn't upstream of the paddle
 	double myz = proj_pos.z();
-	if (myz<sc_pos[sc_index][0].z()) return false;
+	if (myz<sc_pos[sc_index][0].z()+1e-4) return false;
 	
 	double proj_phi = proj_pos.Phi();
 	//if(proj_phi < 0.0)
@@ -953,8 +965,10 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	// Look for a match in phi
 	//double phi = dSCphi0 + dSCdphi*(locSCHit->sector - 1);
 	double sc_dphi_cut=(locIsTimeBased)?SC_DPHI_CUT:SC_DPHI_CUT_WB;
-	DVector3 average_pos=0.5*(sc_pos[sc_index][0]+sc_pos[sc_index][1]);
-	double phi=average_pos.Phi();
+	DVector3 sc_pos_at_myz=sc_pos[sc_index][0]
+	  +(myz-sc_pos[sc_index][0].z())*sc_dir[sc_index][0];
+		
+	double phi=sc_pos_at_myz.Phi();
 	double dphi = phi - proj_phi; //phi could be 0 degrees & proj_phi could be 359 degrees
 	while(dphi > TMath::Pi())
 		dphi -= M_TWO_PI;
@@ -1017,9 +1031,10 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	      myz = proj_pos.z();
 	      norm=sc_norm[sc_index][loc_i];
 	      if(myz < sc_pos[sc_index][loc_i + 1].z()){
-		average_pos
-		  =0.5*(sc_pos[sc_index][loc_i]+sc_pos[sc_index][loc_i+1]);
-		dphi=average_pos.Phi()-proj_pos.Phi();
+		sc_pos_at_myz=sc_pos[sc_index][loc_i]
+		  +(myz-sc_pos[sc_index][loc_i].z())*sc_dir[sc_index][loc_i];
+		
+		dphi=sc_pos_at_myz.Phi()-proj_pos.Phi();
 		while(dphi > TMath::Pi())
 		  dphi -= M_TWO_PI;
 		while(dphi < -1.0*TMath::Pi())
@@ -1090,7 +1105,7 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	    }
 	}
 
-	double dx = 0.3*proj_mom.Mag()/fabs(proj_mom.Dot(norm));
+	double ds = 0.3*proj_mom.Mag()/fabs(proj_mom.Dot(norm));
 
 	// For the dEdx measurement we now need to take into account that L does not 
 	// compensate for the position in z at which the start counter paddle starts
@@ -1098,7 +1113,7 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	locSCHitMatchParams.dSCHit = locSCHit;
 	//locSCHitMatchParams.dHitEnergy = (locSCHit->dE)*exp((L - sc_pos0)/ATTEN_LENGTH);
 	locSCHitMatchParams.dHitEnergy = locCorrectedHitEnergy;
-	locSCHitMatchParams.dEdx = locSCHitMatchParams.dHitEnergy/dx;
+	locSCHitMatchParams.dEdx = locSCHitMatchParams.dHitEnergy/ds;
 	locSCHitMatchParams.dHitTime = locCorrectedHitTime;
 	locSCHitMatchParams.dHitTimeVariance = 0.0; //SET ME!!!
 	locSCHitMatchParams.dFlightTime = locFlightTime;
@@ -1137,7 +1152,7 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, const 
 
     // Check that the intersection isn't upstream of the paddle
     double myz = proj_pos.z();
-    if (myz<sc_pos[sc_index][0].z()) continue;
+    if (myz<sc_pos[sc_index][0].z()+1e-4) continue;
 
     // Compute phi difference
     double proj_phi = proj_pos.Phi();
@@ -1167,7 +1182,7 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, const 
       }
     }
     else{
-      bool got_match=true;
+      bool got_match=false;
       unsigned int num = sc_norm[sc_index].size() - 1;
       for (unsigned int loc_i = 1; loc_i < num; ++loc_i){
 	if(rt->GetIntersectionWithPlane(sc_pos[sc_index][loc_i],
@@ -1184,8 +1199,8 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, const 
 	    dphi -= M_TWO_PI;
 	  while(dphi < -1.0*TMath::Pi())
 	    dphi += M_TWO_PI;
-	  if (fabs(dphi)>SC_DPHI_CUT_WB){
-	    got_match=false;
+	  if (fabs(dphi)<SC_DPHI_CUT_WB){
+	    got_match=true;
 	    break;
 	  }
 	}
@@ -1194,6 +1209,8 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, const 
 
       // Check for intersection point beyond nose
       if (myz> sc_pos[sc_index][num].z()) continue;
+
+      	
 
       if (fabs(dphi)<min_dphi){
 	best_sc_index=sc_index;
