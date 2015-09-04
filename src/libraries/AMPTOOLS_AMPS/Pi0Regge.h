@@ -10,6 +10,8 @@
 #include <complex>
 #include <vector>
 
+#include "Pi0ReggeModel.h"
+
 using std::complex;
 using namespace std;
 

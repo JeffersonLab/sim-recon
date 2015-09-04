@@ -4,3 +4,7 @@ SunOS_*
 src/.*
 src/SBMS/*.pyc
 *~
+*.os
+*.so
+*.root
+*.dblite
