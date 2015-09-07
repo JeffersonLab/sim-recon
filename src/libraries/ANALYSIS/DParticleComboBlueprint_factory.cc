@@ -13,6 +13,7 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 
 	dDebugLevel = 0;
 
+	//BEWARE: IF THIS IS CHANGED, CHANGE IN THE ANALYSIS UTILITIES AND THE EVENT WRITER ALSO!!
 	dShowerSelectionTag = "PreSelect";
 	dTrackSelectionTag = "PreSelect";
 

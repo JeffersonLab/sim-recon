@@ -152,8 +152,8 @@ class DEventWriterROOT : public JObject
 
 		//TREE CREATION:
 		void Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag) const;
-		void Create_UserInfoMaps(map<Particle_t, unsigned int>& locParticleNumberMap) const;
-		void Create_Branches_Thrown(bool locIsOnlyThrownFlag) const;
+		void Create_UserInfoMaps(TTree* locTree, const DReaction* locReaction, map<Particle_t, unsigned int>& locParticleNumberMap) const;
+		void Create_Branches_Thrown(TTree* locTree, bool locIsOnlyThrownFlag) const;
 
 		//TREE CREATION: PARTICLE INFO
 		void Create_Branches_ThrownParticles(TTree* locTree, bool locIsOnlyThrownFlag) const;
@@ -162,6 +162,7 @@ class DEventWriterROOT : public JObject
 		void Create_Branches_ChargedHypotheses(TTree* locTree, bool locIsMCDataFlag) const;
 
 		//TREE CREATION: COMBO INFO
+		void Create_Branches_Combo(TTree* locTree, const DReaction* locReaction, const map<Particle_t, unsigned int>& locParticleNumberMap) const;
 		void Create_Branches_BeamComboParticle(TTree* locTree, string locParticleBranchName, bool locKinFitFlag) const;
 		void Create_Branches_ComboTrack(TTree* locTree, string locParticleBranchName, bool locKinFitFlag) const;
 		void Create_Branches_ComboNeutral(TTree* locTree, string locParticleBranchName, bool locKinFitFlag) const;
@@ -180,7 +181,7 @@ class DEventWriterROOT : public JObject
 
 		//TREE FILLING: COMBO
 		void Fill_ComboData(TTree* locTree, const DParticleCombo* locParticleCombo, unsigned int locComboIndex, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
-		void Fill_ComboStepData(const DParticleComboStep* locParticleComboStep, unsigned int locComboIndex, unsigned int locStepIndex, DKinFitType locKinFitType, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
+		void Fill_ComboStepData(TTree* locTree, const DParticleCombo* locParticleCombo, unsigned int locStepIndex, unsigned int locComboIndex, DKinFitType locKinFitType, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
 
 		//TREE FILLING: COMBO PARTICLES
 		void Fill_ComboBeamData(TTree* locTree, unsigned int locComboIndex, const DBeamPhoton* locMeasuredBeamPhoton, const DBeamPhoton* locBeamPhoton, unsigned int locBeamIndex) const;

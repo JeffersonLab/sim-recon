@@ -23,7 +23,7 @@ class DNeutralParticleHypothesis : public DKinematicData {
 		unsigned int dNDF;
 		float dFOM;
 
-		oid_t dNeutralShowerID; // id of DNeutralShower corresponding to this track
+		oid_t dNeutralShowerID; // id of DNeutralShower corresponding to this particle
 
 		void toStrings(vector<pair<string,string> > &items) const{
 			DKinematicData::toStrings(items);
