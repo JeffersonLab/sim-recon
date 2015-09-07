@@ -53,7 +53,7 @@ class DEventWriterROOT : public JObject
 		void Fill_ThrownTree(JEventLoop* locEventLoop) const;
 
 	protected:
-
+/*
 		//CUSTOM FUNCTIONS: //Inherit from this class and write custom code in these functions
 			//DO NOT: Acquire/release the ROOT lock.  It is already acquired prior to entry into these functions
 			//DO NOT: Write any code that requires a lock of ANY KIND. No reading calibration constants, accessing gParams, etc. This can cause deadlock.
@@ -63,7 +63,7 @@ class DEventWriterROOT : public JObject
 		virtual void Create_CustomBranches_ThrownTree(TTree* locTree) const{};
 		virtual void Fill_CustomBranches_DataTree(TTree* locTree, JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo) const{};
 		virtual void Fill_CustomBranches_ThrownTree(TTree* locTree, JEventLoop* locEventLoop) const{};
-
+*/
 		//UTILITY FUNCTIONS
 		string Convert_ToBranchName(string locInputName) const;
 		string Build_BranchName(string locParticleBranchName, string locVariableName) const;
@@ -99,7 +99,13 @@ class DEventWriterROOT : public JObject
 	private:
 
 		unsigned int dInitNumThrownArraySize;
-		unsigned int dInitNumUnusedArraySize;
+		unsigned int dInitNumBeamArraySize;
+		unsigned int dInitNumTrackArraySize;
+		unsigned int dInitNumShowerArraySize;
+		unsigned int dInitNumComboArraySize;
+
+		string dTrackSelectionTag;
+		string dShowerSelectionTag;
 
 		DEventWriterROOT(void){}; //don't allow default constructor
 
@@ -146,17 +152,40 @@ class DEventWriterROOT : public JObject
 
 		//TREE CREATION:
 		void Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag) const;
-		void Create_Branches_FinalStateParticle(TTree* locTree, string locParticleBranchName, bool locIsChargedFlag, bool locKinFitFlag, bool locIsMCDataFlag) const;
-		void Create_Branches_Beam(TTree* locTree, string locParticleBranchName, bool locKinFitFlag) const;
-		void Create_Branches_UnusedParticle(TTree* locTree, string locParticleBranchName, string locArraySizeString, bool locIsMCDataFlag) const;
-		void Create_Branches_ThrownParticle(TTree* locTree, string locParticleBranchName, string locArraySizeString, bool locIsOnlyThrownFlag) const;
+		void Create_UserInfoMaps(map<Particle_t, unsigned int>& locParticleNumberMap) const;
+		void Create_Branches_Thrown(bool locIsOnlyThrownFlag) const;
 
-		//TREE FILLING:
-		void Fill_ThrownParticleData(TTree* locTree, unsigned int locArrayIndex, const DMCThrown* locMCThrown, map<const DMCThrown*, unsigned int> locThrownObjectIDMap) const;
-		void Fill_ThrownParticleData(TTree* locTree, unsigned int locArrayIndex, const DMCThrown* locMCThrown, map<const DMCThrown*, unsigned int> locThrownObjectIDMap, const DMCThrownMatching* locMCThrownMatching, double locMinThrownMatchFOM, const map<const DNeutralShower*, int>& locShowerToIDMap) const;
-		void Fill_UnusedParticleData(TTree* locTree, unsigned int locArrayIndex, const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch, const map<const DNeutralShower*, int>& locShowerToIDMap, const DMCThrownMatching* locMCThrownMatching, double locMinThrownMatchFOM, map<const DMCThrown*, unsigned int> locThrownObjectIDMap, const DDetectorMatches* locDetectorMatches) const;
-		void Fill_BeamParticleData(TTree* locTree, string locParticleBranchName, const DKinematicData* locKinematicData, const DKinematicData* locKinematicData_Measured, const map<const DBeamPhoton*, int>& locBeamToIDMap) const;
-		void Fill_ParticleData(bool locKinFitFlag, TTree* locTree, string locParticleBranchName, const DKinematicData* locKinematicData, const DKinematicData* locKinematicData_Measured, const DEventRFBunch* locEventRFBunch, const map<const DNeutralShower*, int>& locShowerToIDMap, const DMCThrownMatching* locMCThrownMatching, double locMinThrownMatchFOM, map<const DMCThrown*, unsigned int> locThrownObjectIDMap, const DDetectorMatches* locDetectorMatches) const;
+		//TREE CREATION: PARTICLE INFO
+		void Create_Branches_ThrownParticles(TTree* locTree, bool locIsOnlyThrownFlag) const;
+		void Create_Branches_Beam(TTree* locTree, bool locIsMCDataFlag) const;
+		void Create_Branches_NeutralShowers(TTree* locTree, bool locIsMCDataFlag) const;
+		void Create_Branches_ChargedHypotheses(TTree* locTree, bool locIsMCDataFlag) const;
+
+		//TREE CREATION: COMBO INFO
+		void Create_Branches_BeamComboParticle(TTree* locTree, string locParticleBranchName, bool locKinFitFlag) const;
+		void Create_Branches_ComboTrack(TTree* locTree, string locParticleBranchName, bool locKinFitFlag) const;
+		void Create_Branches_ComboNeutral(TTree* locTree, string locParticleBranchName, bool locKinFitFlag) const;
+
+		//TREE FILLING: THROWN INFO
+		void Compute_ThrownPIDInfo(const vector<const DMCThrown*>& locMCThrowns_FinalState, const vector<const DMCThrown*>& locMCThrowns_Decaying, ULong64_t& locNumPIDThrown_FinalState, ULong64_t& locPIDThrown_Decaying) const;
+		void Group_ThrownParticles(const vector<const DMCThrown*>& locMCThrowns_FinalState, const vector<const DMCThrown*>& locMCThrowns_Decaying, vector<const DMCThrown*>& locMCThrownsToSave, map<const DMCThrown*, unsigned int>& locThrownIndexMap) const;
+		void Fill_ThrownInfo(TTree* locTree, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns, const map<const DMCThrown*, unsigned int>& locThrownIndexMap, ULong64_t locNumPIDThrown_FinalState, ULong64_t locPIDThrown_Decaying) const;
+		void Fill_ThrownInfo(TTree* locTree, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns, const map<const DMCThrown*, unsigned int>& locThrownIndexMap, ULong64_t locNumPIDThrown_FinalState, ULong64_t locPIDThrown_Decaying, const DMCThrownMatching* locMCThrownMatching, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
+		void Fill_ThrownParticleData(TTree* locTree, unsigned int locArrayIndex, const DMCThrown* locMCThrown, const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DMCThrownMatching* locMCThrownMatching, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
+
+		//TREE FILLING: INDEPENDENT PARTICLES
+		void Fill_BeamData(TTree* locTree, unsigned int locArrayIndex, const DBeamPhoton* locBeamPhoton, const DMCThrownMatching* locMCThrownMatching) const;
+		void Fill_ChargedHypo(TTree* locTree, unsigned int locArrayIndex, const DChargedTrackHypothesis* locChargedTrackHypothesis, const DMCThrownMatching* locMCThrownMatching, const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DDetectorMatches* locDetectorMatches) const;
+		void Fill_NeutralShower(TTree* locTree, unsigned int locArrayIndex, const DNeutralParticleHypothesis* locPhotonHypothesis, const DMCThrownMatching* locMCThrownMatching, const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DDetectorMatches* locDetectorMatches) const;
+
+		//TREE FILLING: COMBO
+		void Fill_ComboData(TTree* locTree, const DParticleCombo* locParticleCombo, unsigned int locComboIndex, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
+		void Fill_ComboStepData(const DParticleComboStep* locParticleComboStep, unsigned int locComboIndex, unsigned int locStepIndex, DKinFitType locKinFitType, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
+
+		//TREE FILLING: COMBO PARTICLES
+		void Fill_ComboBeamData(TTree* locTree, unsigned int locComboIndex, const DBeamPhoton* locMeasuredBeamPhoton, const DBeamPhoton* locBeamPhoton, unsigned int locBeamIndex) const;
+		void Fill_ComboChargedData(TTree* locTree, unsigned int locComboIndex, string locParticleBranchName, const DChargedTrackHypothesis* locMeasuredChargedHypo, const DChargedTrackHypothesis* locChargedHypo, unsigned int locChargedIndex) const;
+		void Fill_ComboNeutralData(TTree* locTree, unsigned int locComboIndex, string locParticleBranchName, const DNeutralParticleHypothesis* locMeasuredNeutralHypo, const DNeutralParticleHypothesis* locNeutralHypo, unsigned int locShowerIndex) const;
 
 		//For ROOT type string for fundamental data variables
 			//Defined in https://root.cern.ch/root/htmldoc/TTree.html

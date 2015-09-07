@@ -164,6 +164,7 @@ void DChargedTrackHypothesis_factory_Combo::Create_PIDsAsNeeded(JEventLoop* locE
 			DChargedTrackHypothesis* locNewChargedTrackHypothesis = dChargedTrackHypothesisFactory->Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBased, dDetectorMatches, locEventRFBunch);
 			locNewChargedTrackHypothesis->AddAssociatedObject(locEventRFBunch);
 			locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrack);
+			locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrackHypothesis);
 			_data.push_back(locNewChargedTrackHypothesis);
 			locCreatedPIDs.insert(locPID);
 			continue;

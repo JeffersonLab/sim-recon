@@ -21,10 +21,8 @@ DAnalysisUtilities::DAnalysisUtilities(JEventLoop* locEventLoop)
 		locGeometry->GetTargetZ(dTargetZCenter);
 
 	//For "Unused" tracks/showers
-	dTrackSelectionTag = "PreSelect";
-	dShowerSelectionTag = "PreSelect";
-	gPARMS->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", dTrackSelectionTag);
-	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
+	gPARMS->GetParameter("COMBO:TRACK_SELECT_TAG", dTrackSelectionTag);
+	gPARMS->GetParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
 }
 
 bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExclusiveMatchFlag, bool locIncludeDecayingToReactionFlag) const

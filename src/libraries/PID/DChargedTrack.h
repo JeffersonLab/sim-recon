@@ -24,6 +24,7 @@ class DChargedTrack : public jana::JObject
 	public:
 		JOBJECT_PUBLIC(DChargedTrack);
 
+		oid_t candidateid; // unique id for this track //same as for DTrackCandidate
 		vector<const DChargedTrackHypothesis*> dChargedTrackHypotheses;
 
 		int Get_Charge(void) const;
