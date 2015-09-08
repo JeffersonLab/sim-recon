@@ -120,7 +120,7 @@ void DEventWriterROOT::Create_ThrownTree(string locOutputFileName) const
 		Create_Branches_Thrown(locTree, true);
 
 		//CUSTOM
-//		Create_CustomBranches_ThrownTree(locTree);
+		Create_CustomBranches_ThrownTree(locTree);
 	}
 	japp->RootUnLock();
 }
@@ -209,7 +209,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	Create_Branches_Combo(locTree, locReaction, locParticleNumberMap);
 
 	//Custom branches
-//	Create_CustomBranches_DataTree(locTree, locReaction, locIsMCDataFlag);
+	Create_CustomBranches_DataTree(locTree, locReaction, locIsMCDataFlag);
 }
 
 void DEventWriterROOT::Create_UserInfoMaps(TTree* locTree, const DReaction* locReaction, map<Particle_t, unsigned int>& locParticleNumberMap) const
@@ -834,7 +834,7 @@ void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
 		Fill_ThrownInfo(locTree, locMCReaction, locMCThrownsToSave, locThrownIndexMap, locNumPIDThrown_FinalState, locPIDThrown_Decaying);
 
 		//Custom Branches
-//		Fill_CustomBranches_ThrownTree(locTree, locEventLoop);
+		Fill_CustomBranches_ThrownTree(locTree, locMCReaction, locMCThrownsToSave);
 
 		locTree->Fill();
 	}
@@ -1045,6 +1045,10 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 		for(size_t loc_i = 0; loc_i < locParticleCombos.size(); ++loc_i)
 			Fill_ComboData(locTree, locParticleCombos[loc_i], loc_i, locObjectToArrayIndexMap);
 
+		//CUSTOM
+		Fill_CustomBranches_DataTree(locTree, locMCReaction, locMCThrownsToSave, locMCThrownMatching, locDetectorMatches, locBeamPhotons, locIndependentChargedTrackHypotheses, locNeutralParticles, locParticleCombos);
+
+		//FILL
 		locTree->Fill();
 	}
 	japp->RootUnLock();
@@ -1405,9 +1409,6 @@ void DEventWriterROOT::Fill_ComboData(TTree* locTree, const DParticleCombo* locP
 	//STEP DATA
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 		Fill_ComboStepData(locTree, locParticleCombo, loc_i, locComboIndex, locKinFitType, locObjectToArrayIndexMap);
-
-	//Custom Branches
-//	Fill_CustomBranches_DataTree(locTree, locEventLoop, locParticleCombo, locComboIndex, locObjectToArrayIndexMap);
 }
 
 void DEventWriterROOT::Fill_ComboStepData(TTree* locTree, const DParticleCombo* locParticleCombo, unsigned int locStepIndex, unsigned int locComboIndex, DKinFitType locKinFitType, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const
@@ -1619,4 +1620,3 @@ void DEventWriterROOT::Fill_ComboNeutralData(TTree* locTree, unsigned int locCom
 			Fill_FundamentalData<Float_t>(locTree, locParticleBranchName, "ChiSq_Timing_KinFit", locNeutralHypo->dChiSq, locComboIndex);
 	}
 }
-

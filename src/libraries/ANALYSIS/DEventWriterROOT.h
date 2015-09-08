@@ -53,17 +53,21 @@ class DEventWriterROOT : public JObject
 		void Fill_ThrownTree(JEventLoop* locEventLoop) const;
 
 	protected:
-/*
+
 		//CUSTOM FUNCTIONS: //Inherit from this class and write custom code in these functions
+			//DO: Use the inherited functions for creating/filling branches.  They will make your life MUCH easier: You don't need to manage the branch memory.
 			//DO NOT: Acquire/release the ROOT lock.  It is already acquired prior to entry into these functions
 			//DO NOT: Write any code that requires a lock of ANY KIND. No reading calibration constants, accessing gParams, etc. This can cause deadlock.
+				//Note that the JEventLoop is unavailable.  This is to prevent calls to other factories that may cause deadlock.
 			//DO NOT: Call TTree::Fill().  This will be called after calling the custom fill functions.
-			//DO: Use the inherited functions for creating/filling branches.  They will make your life MUCH easier: You don't need to manage the branch memory.
-		virtual void Create_CustomBranches_DataTree(TTree* locTree, const DReaction* locReaction, bool locIsMCDataFlag) const{};
 		virtual void Create_CustomBranches_ThrownTree(TTree* locTree) const{};
-		virtual void Fill_CustomBranches_DataTree(TTree* locTree, JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo) const{};
-		virtual void Fill_CustomBranches_ThrownTree(TTree* locTree, JEventLoop* locEventLoop) const{};
-*/
+		virtual void Fill_CustomBranches_ThrownTree(TTree* locTree, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns) const{};
+		virtual void Create_CustomBranches_DataTree(TTree* locTree, const DReaction* locReaction, bool locIsMCDataFlag) const{};
+		virtual void Fill_CustomBranches_DataTree(TTree* locTree, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
+				const DMCThrownMatching* locMCThrownMatching, const DDetectorMatches* locDetectorMatches,
+				const vector<const DBeamPhoton*>& locBeamPhotons, const vector<const DChargedTrackHypothesis*>& locChargedHypos,
+				const vector<const DNeutralParticle*>& locNeutralParticles, const deque<const DParticleCombo*>& locParticleCombos) const{};
+
 		//UTILITY FUNCTIONS
 		string Convert_ToBranchName(string locInputName) const;
 		string Build_BranchName(string locParticleBranchName, string locVariableName) const;

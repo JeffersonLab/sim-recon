@@ -5,6 +5,7 @@
 #include <JANA/JFactoryGenerator.h>
 
 #include "DReaction_factory_b1pi_hists.h"
+#include "DEventWriterROOT_factory_test.h"
 
 class DFactoryGenerator_b1pi_hists: public jana::JFactoryGenerator
 {
@@ -17,6 +18,7 @@ class DFactoryGenerator_b1pi_hists: public jana::JFactoryGenerator
 		jerror_t GenerateFactories(jana::JEventLoop *loop)
 		{
 			loop->AddFactory(new DReaction_factory_b1pi_hists());
+	        loop->AddFactory(new DEventWriterROOT_factory_test());
 			return NOERROR;
 		}
 };
