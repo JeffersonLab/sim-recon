@@ -33,6 +33,7 @@
 #include <ANALYSIS/DAnalysisResults.h>
 #include <ANALYSIS/DAnalysisUtilities.h>
 #include <ANALYSIS/DMCThrownMatching.h>
+#include <ANALYSIS/DCutActions.h>
 
 using namespace std;
 using namespace jana;
@@ -111,6 +112,14 @@ class DEventWriterROOT : public JObject
 		string dTrackSelectionTag;
 		string dShowerSelectionTag;
 
+		//DEFAULT ACTIONS LISTED SEPARATELY FROM CUSTOM (in case in derived class user does something bizarre)
+		map<const DReaction*, DCutAction_ThrownTopology*> dCutActionMap_ThrownTopology;
+		map<const DReaction*, DCutAction_TrueCombo*> dCutActionMap_TrueCombo;
+		map<const DReaction*, DCutAction_BDTSignalCombo*> dCutActionMap_BDTSignalCombo;
+
+		//add in future: let user execute custom actions (outside of lock): user adds and initializes actions in derived-writer constructor
+		//map<const DReaction*, map<string, map<const DParticleCombo*, bool> > > dCustomActionResultsMap; //string is action name
+
 		DEventWriterROOT(void){}; //don't allow default constructor
 
 		/****************************************** STATIC-VARIABLE-ACCESSING PRIVATE MEMBER FUNCTIONS ******************************************/
@@ -166,7 +175,7 @@ class DEventWriterROOT : public JObject
 		void Create_Branches_ChargedHypotheses(TTree* locTree, bool locIsMCDataFlag) const;
 
 		//TREE CREATION: COMBO INFO
-		void Create_Branches_Combo(TTree* locTree, const DReaction* locReaction, const map<Particle_t, unsigned int>& locParticleNumberMap) const;
+		void Create_Branches_Combo(TTree* locTree, const DReaction* locReaction, bool locIsMCDataFlag, const map<Particle_t, unsigned int>& locParticleNumberMap) const;
 		void Create_Branches_BeamComboParticle(TTree* locTree, bool locKinFitFlag) const;
 		void Create_Branches_ComboTrack(TTree* locTree, string locParticleBranchName, bool locKinFitFlag) const;
 		void Create_Branches_ComboNeutral(TTree* locTree, string locParticleBranchName, bool locKinFitFlag) const;

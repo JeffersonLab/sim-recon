@@ -16,6 +16,25 @@ DEventWriterROOT::DEventWriterROOT(JEventLoop* locEventLoop)
 
 	locEventLoop->GetSingle(dAnalysisUtilities);
 
+	vector<const DReaction*> locReactions;
+	Get_Reactions(locEventLoop, locReactions);
+
+	//CREATE & INITIALIZE ANALYSIS ACTIONS
+	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
+	{
+		if(!locReactions[loc_i]->Get_EnableTTreeOutputFlag())
+			continue;
+
+		dCutActionMap_ThrownTopology[locReactions[loc_i]] = new DCutAction_ThrownTopology(locReactions[loc_i], true);
+		dCutActionMap_ThrownTopology[locReactions[loc_i]]->Initialize(locEventLoop);
+
+		dCutActionMap_TrueCombo[locReactions[loc_i]] = new DCutAction_TrueCombo(locReactions[loc_i], 5.73303E-7, true); //+/- 5sigma
+		dCutActionMap_TrueCombo[locReactions[loc_i]]->Initialize(locEventLoop);
+
+		dCutActionMap_BDTSignalCombo[locReactions[loc_i]] = new DCutAction_BDTSignalCombo(locReactions[loc_i], 5.73303E-7, true, true); //+/- 5sigma
+		dCutActionMap_BDTSignalCombo[locReactions[loc_i]]->Initialize(locEventLoop);
+	}
+
 	japp->RootWriteLock();
 	{
 		++Get_NumEventWriterThreads();
@@ -133,6 +152,7 @@ void DEventWriterROOT::Create_DataTrees(JEventLoop* locEventLoop) const
 	vector<const DReaction*> locReactions;
 	Get_Reactions(locEventLoop, locReactions);
 
+	//CREATE TTREES
 	japp->RootWriteLock();
 	{
 		for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
@@ -192,9 +212,12 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	Create_Branch_Fundamental<UInt_t>(locTree, "RunNumber");
 	Create_Branch_Fundamental<ULong64_t>(locTree, "EventNumber");
 
-	//create thrown particle branches
+	//create thrown branches
 	if(locIsMCDataFlag)
+	{
 		Create_Branches_Thrown(locTree, false);
+		Create_Branch_Fundamental<Float_t>(locTree, "IsThrownTopology");
+	}
 
 	Particle_t locInitialPID = locReaction->Get_ReactionStep(0)->Get_InitialParticleID();
 	bool locBeamUsedFlag = ((locInitialPID == Gamma) || (locInitialPID == Electron) || (locInitialPID == Positron));
@@ -206,7 +229,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	Create_Branches_ChargedHypotheses(locTree, locIsMCDataFlag);
 
 	//create branches for combos
-	Create_Branches_Combo(locTree, locReaction, locParticleNumberMap);
+	Create_Branches_Combo(locTree, locReaction, locIsMCDataFlag, locParticleNumberMap);
 
 	//Custom branches
 	Create_CustomBranches_DataTree(locTree, locReaction, locIsMCDataFlag);
@@ -604,7 +627,7 @@ void DEventWriterROOT::Create_Branches_NeutralShowers(TTree* locTree, bool locIs
 	Create_Branch_FundamentalArray<Float_t>(locTree, locParticleBranchName, "PhotonRFDeltaTVar", locArraySizeString, dInitNumShowerArraySize);
 }
 
-void DEventWriterROOT::Create_Branches_Combo(TTree* locTree, const DReaction* locReaction, const map<Particle_t, unsigned int>& locParticleNumberMap) const
+void DEventWriterROOT::Create_Branches_Combo(TTree* locTree, const DReaction* locReaction, bool locIsMCDataFlag, const map<Particle_t, unsigned int>& locParticleNumberMap) const
 {
 	string locNumComboString = "NumCombos";
 	Create_Branch_Fundamental<UInt_t>(locTree, locNumComboString);
@@ -614,6 +637,12 @@ void DEventWriterROOT::Create_Branches_Combo(TTree* locTree, const DReaction* lo
 	bool locKinFitFlag = (locKinFitType != d_NoFit);
 
 	//create combo-dependent, particle-independent branches
+	if(locIsMCDataFlag)
+	{
+		Create_Branch_FundamentalArray<Bool_t>(locTree, "IsTrueCombo", locNumComboString, dInitNumComboArraySize);
+		Create_Branch_FundamentalArray<Bool_t>(locTree, "IsBDTSignalCombo", locNumComboString, dInitNumComboArraySize);
+	}
+
 	Create_Branch_FundamentalArray<Float_t>(locTree, "RFTime_Measured", locNumComboString, dInitNumComboArraySize);
 	if(locKinFitFlag)
 	{
@@ -984,6 +1013,24 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)
 		locObjectToArrayIndexMap["DNeutralShower"][locNeutralParticles[loc_i]->dNeutralShower->dShowerID] = loc_i;
 
+	//EXECUTE ANALYSIS ACTIONS (Outside of ROOT Lock!)
+	Bool_t locIsThrownTopologyFlag = kFALSE;
+	vector<Bool_t> locIsTrueComboFlags;
+	vector<Bool_t> locIsBDTSignalComboFlags;
+	if(locMCReaction != NULL)
+	{
+		DCutAction_ThrownTopology* locThrownTopologyAction = dCutActionMap_ThrownTopology.find(locReaction)->second;
+		locIsThrownTopologyFlag = (*locThrownTopologyAction)(locEventLoop, NULL); //combo not used/needed
+		for(size_t loc_i = 0; loc_i < locParticleCombos.size(); ++loc_i)
+		{
+			DCutAction_TrueCombo* locTrueComboAction = dCutActionMap_TrueCombo.find(locReaction)->second;
+			locIsTrueComboFlags.push_back((*locTrueComboAction)(locEventLoop, locParticleCombos[loc_i]));
+
+			DCutAction_BDTSignalCombo* locBDTSignalComboAction = dCutActionMap_BDTSignalCombo.find(locReaction)->second;
+			locIsBDTSignalComboFlags.push_back((*locBDTSignalComboAction)(locEventLoop, locParticleCombos[loc_i]));
+		}
+	}
+
 	string locOutputFileName = locReaction->Get_TTreeOutputFileName();
 	string locTreeName = locReaction->Get_ReactionName() + string("_Tree");
 
@@ -1019,7 +1066,10 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 
 		//THROWN INFORMATION
 		if(locMCReaction != NULL)
+		{
 			Fill_ThrownInfo(locTree, locMCReaction, locMCThrownsToSave, locThrownIndexMap, locNumPIDThrown_FinalState, locPIDThrown_Decaying, locMCThrownMatching, locObjectToArrayIndexMap);
+			Fill_FundamentalData<Bool_t>(locTree, "IsThrownTopology", locIsThrownTopologyFlag);
+		}
 
 		//INDEPENDENT BEAM PARTICLES
 		Fill_FundamentalData<UInt_t>(locTree, "NumBeam", locBeamPhotons.size());
@@ -1043,7 +1093,14 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 		//COMBOS
 		Fill_FundamentalData<UInt_t>(locTree, "NumCombos", locParticleCombos.size());
 		for(size_t loc_i = 0; loc_i < locParticleCombos.size(); ++loc_i)
+		{
 			Fill_ComboData(locTree, locParticleCombos[loc_i], loc_i, locObjectToArrayIndexMap);
+			if(locMCReaction != NULL)
+			{
+				Fill_FundamentalData<Bool_t>(locTree, "IsTrueCombo", locIsTrueComboFlags[loc_i], loc_i);
+				Fill_FundamentalData<Bool_t>(locTree, "IsBDTSignalCombo", locIsBDTSignalComboFlags[loc_i], loc_i);
+			}
+		}
 
 		//CUSTOM
 		Fill_CustomBranches_DataTree(locTree, locMCReaction, locMCThrownsToSave, locMCThrownMatching, locDetectorMatches, locBeamPhotons, locIndependentChargedTrackHypotheses, locNeutralParticles, locParticleCombos);

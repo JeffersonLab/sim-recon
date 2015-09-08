@@ -29,16 +29,19 @@ using namespace std;
 /*
 //CLASSES DEFINED BELOW:
 DCutAction_MaxNumParticleCombos
+
+DCutAction_TruePID
+DCutAction_AllTruePID
+DCutAction_TrueBeamParticle
+DCutAction_TrueCombo
 DCutAction_ThrownTopology
+DCutAction_BDTSignalCombo
 
 DCutAction_PIDFOM
 DCutAction_CombinedPIDFOM
 DCutAction_CombinedTrackingFOM
-DCutAction_TrueBeamParticle
-DCutAction_TrueCombo
-DCutAction_TruePID
-DCutAction_AllTruePID
 
+DCutAction_AllTracksHaveDetectorMatch
 DCutAction_AllVertexZ
 DCutAction_MaxTrackDOCA
 DCutAction_KinFitFOM
