@@ -269,7 +269,7 @@ void DEventWriterROOT::Create_UserInfoMaps(TTree* locTree, const DReaction* locR
 			locPositionToPIDMap->Add(locObjString_Position, locObjString_PID);
 			if((loc_i == 0) && ((locPID == Gamma) || (locPID == Electron) || (locPID == Positron)))
 			{
-				locParticleNameStream << "ComboBeam" << Convert_ToBranchName(ParticleType(locPID));
+				locParticleNameStream << "ComboBeam";
 				locObjString_ParticleName = new TObjString(locParticleNameStream.str().c_str());
 				locNameToPIDMap->Add(locObjString_ParticleName, locObjString_PID);
 				locParticleNameList->AddLast(locObjString_ParticleName);
@@ -632,12 +632,7 @@ void DEventWriterROOT::Create_Branches_Combo(TTree* locTree, const DReaction* lo
 		Particle_t locInitialPID = locReactionStep->Get_InitialParticleID();
 		//should check to make sure the beam particle isn't missing...
 		if((locInitialPID == Gamma) || (locInitialPID == Electron) || (locInitialPID == Positron))
-		{
-			// beam
-			ostringstream locParticleNameStream;
-			locParticleNameStream << "ComboBeam" << Convert_ToBranchName(ParticleType(locInitialPID));
-			Create_Branches_BeamComboParticle(locTree, locParticleNameStream.str(), locKinFitFlag);
-		}
+			Create_Branches_BeamComboParticle(locTree, locKinFitFlag);
 		else //decaying
 		{
 			ostringstream locParticleNameStream;
@@ -688,8 +683,9 @@ void DEventWriterROOT::Create_Branches_Combo(TTree* locTree, const DReaction* lo
 	}
 }
 
-void DEventWriterROOT::Create_Branches_BeamComboParticle(TTree* locTree, string locParticleBranchName, bool locKinFitFlag) const
+void DEventWriterROOT::Create_Branches_BeamComboParticle(TTree* locTree, bool locKinFitFlag) const
 {
+	string locParticleBranchName = "ComboBeam";
 	string locArraySizeString = "NumCombos";
 
 	//IDENTIFIER
@@ -716,6 +712,7 @@ void DEventWriterROOT::Create_Branches_ComboTrack(TTree* locTree, string locPart
 	//PID QUALITY
 	Create_Branch_FundamentalArray<Float_t>(locTree, locParticleBranchName, "Beta_Timing_Measured", locArraySizeString, dInitNumComboArraySize);
 	Create_Branch_FundamentalArray<Float_t>(locTree, locParticleBranchName, "ChiSq_Timing_Measured", locArraySizeString, dInitNumComboArraySize);
+	Create_Branch_FundamentalArray<UInt_t>(locTree, locParticleBranchName, "NDF_Timing", locArraySizeString, dInitNumComboArraySize);
 
 	//KINFIT INFO //at the production vertex
 	if(locKinFitFlag)
@@ -741,7 +738,10 @@ void DEventWriterROOT::Create_Branches_ComboNeutral(TTree* locTree, string locPa
 	//PID QUALITY
 	Create_Branch_FundamentalArray<Float_t>(locTree, locParticleBranchName, "Beta_Timing_Measured", locArraySizeString, dInitNumComboArraySize);
 	if(locParticleBranchName.substr(0, 6) == "Photon")
+	{
 		Create_Branch_FundamentalArray<Float_t>(locTree, locParticleBranchName, "ChiSq_Timing_Measured", locArraySizeString, dInitNumComboArraySize);
+		Create_Branch_FundamentalArray<UInt_t>(locTree, locParticleBranchName, "NDF_Timing", locArraySizeString, dInitNumComboArraySize);
+	}
 
 	//KINFIT INFO //at the production vertex
 	if(locKinFitFlag)
@@ -1183,7 +1183,7 @@ void DEventWriterROOT::Fill_ThrownParticleData(TTree* locTree, unsigned int locA
 				locMatchID = locObjectToArrayIndexMap.find("DNeutralShower")->second.find(locNeutralShower->dShowerID)->second;
 		}
 		Fill_FundamentalData<Int_t>(locTree, locParticleBranchName, "MatchID", locMatchID, locArrayIndex);
-		Fill_FundamentalData<Int_t>(locTree, locParticleBranchName, "MatchFOM", locMatchFOM, locArrayIndex);
+		Fill_FundamentalData<Float_t>(locTree, locParticleBranchName, "MatchFOM", locMatchFOM, locArrayIndex);
 	}
 
 	//KINEMATICS: THROWN //at the production vertex
@@ -1204,7 +1204,7 @@ void DEventWriterROOT::Fill_BeamData(TTree* locTree, unsigned int locArrayIndex,
 	if(locMCThrownMatching != NULL)
 	{
 		Bool_t locIsGeneratorFlag = (locMCThrownMatching->Get_ReconMCGENBeamPhoton() == locBeamPhoton) ? kTRUE : kFALSE;
-		Fill_FundamentalData<Int_t>(locTree, locParticleBranchName, "IsGenerator", locIsGeneratorFlag, locArrayIndex);
+		Fill_FundamentalData<Bool_t>(locTree, locParticleBranchName, "IsGenerator", locIsGeneratorFlag, locArrayIndex);
 	}
 
 	//KINEMATICS: MEASURED
@@ -1389,7 +1389,7 @@ void DEventWriterROOT::Fill_ComboData(TTree* locTree, const DParticleCombo* locP
 			Fill_FundamentalData<UInt_t>(locTree, "NDF_KinFit", locKinFitResults->Get_NDF(), locComboIndex);
 			if((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit))
 			{
-				double locRFTime_KinFit = numeric_limits<double>::quiet_NaN(); //NOT IMPLEMENTED YET
+				double locRFTime_KinFit = -9.9E9; //NOT IMPLEMENTED YET
 				Fill_FundamentalData<Float_t>(locTree, "RFTime_KinFit", locRFTime_KinFit, locComboIndex);
 			}
 		}
@@ -1397,7 +1397,8 @@ void DEventWriterROOT::Fill_ComboData(TTree* locTree, const DParticleCombo* locP
 		{
 			Fill_FundamentalData<Float_t>(locTree, "ChiSq_KinFit", 0.0, locComboIndex);
 			Fill_FundamentalData<UInt_t>(locTree, "NDF_KinFit", 0, locComboIndex);
-			Fill_FundamentalData<Float_t>(locTree, "RFTime_KinFit", numeric_limits<double>::quiet_NaN(), locComboIndex);
+			if((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit))
+				Fill_FundamentalData<Float_t>(locTree, "RFTime_KinFit", -9.9E9, locComboIndex);
 		}
 	}
 
@@ -1433,13 +1434,10 @@ void DEventWriterROOT::Fill_ComboStepData(TTree* locTree, const DParticleCombo* 
 	else //decaying
 	{
 		string locParticleBranchName = string("Decaying") + Convert_ToBranchName(ParticleType(locInitialPID));
-		cout << "HEYA" << endl;
 		if(IsDetachedVertex(locInitialPID))
 			Fill_ClonesData<TLorentzVector>(locTree, locParticleBranchName, "X4", locStepTX4, locComboIndex);
-		cout << "ERF" << endl;
 		if(IsFixedMass(locInitialPID) && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
 		{
-			cout << "WEgha" << endl;
 			TLorentzVector locDecayP4;
 			if(locInitialParticle == NULL)
 			{
@@ -1451,7 +1449,6 @@ void DEventWriterROOT::Fill_ComboStepData(TTree* locTree, const DParticleCombo* 
 			else
 				locDecayP4.SetPxPyPzE(locInitialParticle->momentum().X(), locInitialParticle->momentum().Y(), locInitialParticle->momentum().Z(), locInitialParticle->energy());
 			Fill_ClonesData<TLorentzVector>(locTree, locParticleBranchName, "P4_KinFit", locDecayP4, locComboIndex);
-			cout << "Weherafwa" << endl;
 		}
 	}
 
@@ -1461,7 +1458,7 @@ void DEventWriterROOT::Fill_ComboStepData(TTree* locTree, const DParticleCombo* 
 		Particle_t locPID = locParticleComboStep->Get_FinalParticleID(loc_i);
 		const DKinematicData* locKinematicData = locParticleComboStep->Get_FinalParticle(loc_i);
 		const DKinematicData* locKinematicData_Measured = locParticleComboStep->Get_FinalParticle_Measured(loc_i);
-cout << "i, data, measured pointers = " << loc_i << ", " << locKinematicData << ", " << locKinematicData_Measured << endl;
+
 		//decaying particle
 		if(locParticleComboStep->Is_FinalParticleDecaying(loc_i))
 			continue;
@@ -1472,7 +1469,6 @@ cout << "i, data, measured pointers = " << loc_i << ", " << locKinematicData << 
 			string locParticleBranchName = string("Missing") + Convert_ToBranchName(ParticleType(locPID));
 			if((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit))
 			{
-				cout << "awerhre" << endl;
 				TLorentzVector locMissingP4;
 				if(locKinematicData == NULL)
 				{
@@ -1483,10 +1479,8 @@ cout << "i, data, measured pointers = " << loc_i << ", " << locKinematicData << 
 				}
 				else
 					locMissingP4.SetPxPyPzE(locKinematicData->momentum().X(), locKinematicData->momentum().Y(), locKinematicData->momentum().Z(), locKinematicData->energy());
-cout << "fill particle name = " << locParticleBranchName << endl;
-				Fill_ClonesData<TLorentzVector>(locTree, locParticleBranchName, "P4_KinFit", locMissingP4, locComboIndex);
-				cout << "aewrj5es" << endl;
 
+				Fill_ClonesData<TLorentzVector>(locTree, locParticleBranchName, "P4_KinFit", locMissingP4, locComboIndex);
 			}
 			continue;
 		}
@@ -1510,12 +1504,22 @@ cout << "fill particle name = " << locParticleBranchName << endl;
 		{
 			const DChargedTrackHypothesis* locChargedHypo = dynamic_cast<const DChargedTrackHypothesis*>(locKinematicData);
 			const DChargedTrackHypothesis* locMeasuredChargedHypo = dynamic_cast<const DChargedTrackHypothesis*>(locKinematicData_Measured);
-cout << "charge pointers = " << locChargedHypo << ", " << locMeasuredChargedHypo << endl;
-			const DChargedTrackHypothesis* locAssociatedChargedHypo = NULL;
-			locKinematicData_Measured->GetSingle(locAssociatedChargedHypo);
+
+			//find "ChargedIndex"
+			const map<oid_t, int>& locObjectIDMap = locObjectToArrayIndexMap.find("DChargedTrackHypothesis")->second;
+			vector<const DChargedTrackHypothesis*> locAssociatedChargedHypos;
+			locKinematicData_Measured->Get(locAssociatedChargedHypos);
 			int locChargedIndex = -1;
-			JObject::oid_t locObjectID = (locAssociatedChargedHypo != NULL) ? locAssociatedChargedHypo->id : locMeasuredChargedHypo->id;
-			locChargedIndex = locObjectToArrayIndexMap.find("DChargedTrackHypothesis")->second.find(locObjectID)->second;
+			for(size_t loc_j = 0; loc_j < locAssociatedChargedHypos.size(); ++loc_j)
+			{
+				map<oid_t, int>::const_iterator locIDMapIterator = locObjectIDMap.find(locAssociatedChargedHypos[loc_j]->id);
+				if(locIDMapIterator == locObjectIDMap.end())
+					continue;
+				locChargedIndex = locIDMapIterator->second;
+				break;
+			}
+			if(locChargedIndex == -1)
+				locChargedIndex = locObjectIDMap.find(locMeasuredChargedHypo->id)->second;
 
 			Fill_ComboChargedData(locTree, locComboIndex, locParticleBranchName, locMeasuredChargedHypo, locChargedHypo, locChargedIndex);
 		}
@@ -1524,8 +1528,7 @@ cout << "charge pointers = " << locChargedHypo << ", " << locMeasuredChargedHypo
 
 void DEventWriterROOT::Fill_ComboBeamData(TTree* locTree, unsigned int locComboIndex, const DBeamPhoton* locMeasuredBeamPhoton, const DBeamPhoton* locBeamPhoton, unsigned int locBeamIndex) const
 {
-	Particle_t locPID = locBeamPhoton->PID();
-	string locParticleBranchName = string("ComboBeam") + Convert_ToBranchName(ParticleType(locPID));
+	string locParticleBranchName = "ComboBeam";
 
 	//IDENTIFIER
 	Fill_FundamentalData<Int_t>(locTree, locParticleBranchName, "BeamIndex", locBeamIndex, locComboIndex);
@@ -1551,14 +1554,14 @@ void DEventWriterROOT::Fill_ComboBeamData(TTree* locTree, unsigned int locComboI
 void DEventWriterROOT::Fill_ComboChargedData(TTree* locTree, unsigned int locComboIndex, string locParticleBranchName, const DChargedTrackHypothesis* locMeasuredChargedHypo, const DChargedTrackHypothesis* locChargedHypo, unsigned int locChargedIndex) const
 {
 	//IDENTIFIER
-	Fill_FundamentalData<Float_t>(locTree, locParticleBranchName, "ChargedIndex", locChargedIndex, locComboIndex);
+	Fill_FundamentalData<Int_t>(locTree, locParticleBranchName, "ChargedIndex", locChargedIndex, locComboIndex);
 
 	//MEASURED PID INFO
 	Fill_FundamentalData<Float_t>(locTree, locParticleBranchName, "Beta_Timing_Measured", locMeasuredChargedHypo->measuredBeta(), locComboIndex);
 	Fill_FundamentalData<Float_t>(locTree, locParticleBranchName, "ChiSq_Timing_Measured", locMeasuredChargedHypo->dChiSq_Timing, locComboIndex);
+	Fill_FundamentalData<UInt_t>(locTree, locParticleBranchName, "NDF_Timing", locMeasuredChargedHypo->dNDF_Timing, locComboIndex);
 
 	//KINFIT
-	cout << "pointers = " << locChargedHypo << ", " << locMeasuredChargedHypo << endl;
 	if(locChargedHypo != locMeasuredChargedHypo)
 	{
 		//KINEMATICS
@@ -1579,7 +1582,7 @@ void DEventWriterROOT::Fill_ComboChargedData(TTree* locTree, unsigned int locCom
 void DEventWriterROOT::Fill_ComboNeutralData(TTree* locTree, unsigned int locComboIndex, string locParticleBranchName, const DNeutralParticleHypothesis* locMeasuredNeutralHypo, const DNeutralParticleHypothesis* locNeutralHypo, unsigned int locShowerIndex) const
 {
 	//IDENTIFIER
-	Fill_FundamentalData<Float_t>(locTree, locParticleBranchName, "ShowerIndex", locShowerIndex, locComboIndex);
+	Fill_FundamentalData<Int_t>(locTree, locParticleBranchName, "ShowerIndex", locShowerIndex, locComboIndex);
 
 	//KINEMATICS: MEASURED
 	DVector3 locPosition = locMeasuredNeutralHypo->position();
@@ -1593,7 +1596,10 @@ void DEventWriterROOT::Fill_ComboNeutralData(TTree* locTree, unsigned int locCom
 	//MEASURED PID INFO
 	Fill_FundamentalData<Float_t>(locTree, locParticleBranchName, "Beta_Timing_Measured", locMeasuredNeutralHypo->measuredBeta(), locComboIndex);
 	if(locParticleBranchName.substr(0, 6) == "Photon")
+	{
 		Fill_FundamentalData<Float_t>(locTree, locParticleBranchName, "ChiSq_Timing_Measured", locMeasuredNeutralHypo->dChiSq, locComboIndex);
+		Fill_FundamentalData<UInt_t>(locTree, locParticleBranchName, "NDF_Timing", locMeasuredNeutralHypo->dNDF, locComboIndex);
+	}
 
 	//KINFIT
 	if(locNeutralHypo != locMeasuredNeutralHypo)
@@ -1613,3 +1619,4 @@ void DEventWriterROOT::Fill_ComboNeutralData(TTree* locTree, unsigned int locCom
 			Fill_FundamentalData<Float_t>(locTree, locParticleBranchName, "ChiSq_Timing_KinFit", locNeutralHypo->dChiSq, locComboIndex);
 	}
 }
+

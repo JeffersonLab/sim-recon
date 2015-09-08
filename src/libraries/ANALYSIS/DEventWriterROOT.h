@@ -163,7 +163,7 @@ class DEventWriterROOT : public JObject
 
 		//TREE CREATION: COMBO INFO
 		void Create_Branches_Combo(TTree* locTree, const DReaction* locReaction, const map<Particle_t, unsigned int>& locParticleNumberMap) const;
-		void Create_Branches_BeamComboParticle(TTree* locTree, string locParticleBranchName, bool locKinFitFlag) const;
+		void Create_Branches_BeamComboParticle(TTree* locTree, bool locKinFitFlag) const;
 		void Create_Branches_ComboTrack(TTree* locTree, string locParticleBranchName, bool locKinFitFlag) const;
 		void Create_Branches_ComboNeutral(TTree* locTree, string locParticleBranchName, bool locKinFitFlag) const;
 
