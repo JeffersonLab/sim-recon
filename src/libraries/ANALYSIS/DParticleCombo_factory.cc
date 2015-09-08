@@ -120,10 +120,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 	locEventLoop->Get(locBeamPhotons, "KinFit");
 
 	DKinematicData* locKinematicData;
-	const DKinematicData* locConstKinematicData;
 	const DKinFitParticle* locKinFitParticle;
-	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses_Associated;
-	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses_Associated;
 	vector<const DParticleComboBlueprint*> locParticleComboBlueprints_Associated;
 	vector<const DParticleCombo*> locParticleCombos_Associated;
 	Particle_t locPID;
@@ -259,7 +256,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 				//FINAL PARTICLES
 				for(size_t loc_k = 0; loc_k < locParticleComboStep->Get_NumFinalParticles(); ++loc_k)
 				{
-					locConstKinematicData = locParticleComboStep->Get_FinalParticle_Measured(loc_k);
+					const DKinematicData* locKinematicData_Measured = locParticleComboStep->Get_FinalParticle_Measured(loc_k);
 					locPID = locParticleComboStep->Get_FinalParticleID(loc_k);
 					if(locParticleComboStep->Is_FinalParticleMissing(loc_k)) //missing!
 					{
@@ -288,44 +285,58 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 					{
 						for(size_t loc_l = 0; loc_l < locNeutralParticleHypotheses.size(); ++loc_l)
 						{
-							locNeutralParticleHypotheses[loc_l]->GetT(locNeutralParticleHypotheses_Associated);
-							if(locNeutralParticleHypotheses_Associated[0] != locConstKinematicData)
-								continue; //wrong track hypothesis
-							locNeutralParticleHypotheses[loc_l]->GetT(locParticleCombos_Associated);
+							vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses_Associated;
+							locNeutralParticleHypotheses[loc_l]->Get(locNeutralParticleHypotheses_Associated);
+							//loop over associated: default tag, "Combo" tag, etc.
 							bool locMatchFlag = false;
-							for(size_t loc_m = 0; loc_m < locParticleCombos_Associated.size(); ++loc_m)
+							for(size_t loc_m = 0; loc_m < locNeutralParticleHypotheses_Associated.size(); ++loc_m)
 							{
-								if(locParticleCombos_Associated[loc_m] != locParticleCombo)
-									continue;
-								locMatchFlag = true;
+								if(locNeutralParticleHypotheses_Associated[loc_m] != locKinematicData_Measured)
+									continue; //wrong neutral hypothesis
+								locNeutralParticleHypotheses[loc_l]->Get(locParticleCombos_Associated);
+								for(size_t loc_m = 0; loc_m < locParticleCombos_Associated.size(); ++loc_m)
+								{
+									if(locParticleCombos_Associated[loc_m] != locParticleCombo)
+										continue;
+									locMatchFlag = true;
+									break;
+								}
+								if(!locMatchFlag)
+									continue; // track created for a different particle combo
+								locNewParticleComboStep->Add_FinalParticle(locNeutralParticleHypotheses[loc_l]);
 								break;
 							}
-							if(!locMatchFlag)
-								continue; // track created for a different particle combo
-							locNewParticleComboStep->Add_FinalParticle(locNeutralParticleHypotheses[loc_l]);
-							break;
+							if(locMatchFlag)
+								break;
 						}
 					}
 					else //charged
 					{
 						for(size_t loc_l = 0; loc_l < locChargedTrackHypotheses.size(); ++loc_l)
 						{
-							locChargedTrackHypotheses[loc_l]->GetT(locChargedTrackHypotheses_Associated);
-							if(locChargedTrackHypotheses_Associated[0] != locConstKinematicData)
-								continue; //wrong track hypothesis
-							locChargedTrackHypotheses[loc_l]->GetT(locParticleCombos_Associated);
+							vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses_Associated;
+							locChargedTrackHypotheses[loc_l]->Get(locChargedTrackHypotheses_Associated);
+							//loop over associated: default tag, "Combo" tag, etc.
 							bool locMatchFlag = false;
-							for(size_t loc_m = 0; loc_m < locParticleCombos_Associated.size(); ++loc_m)
+							for(size_t loc_m = 0; loc_m < locChargedTrackHypotheses_Associated.size(); ++loc_m)
 							{
-								if(locParticleCombos_Associated[loc_m] != locParticleCombo)
-									continue;
-								locMatchFlag = true;
+								if(locChargedTrackHypotheses_Associated[loc_m] != locKinematicData_Measured)
+									continue; //wrong track hypothesis
+								locChargedTrackHypotheses[loc_l]->Get(locParticleCombos_Associated);
+								for(size_t loc_m = 0; loc_m < locParticleCombos_Associated.size(); ++loc_m)
+								{
+									if(locParticleCombos_Associated[loc_m] != locParticleCombo)
+										continue;
+									locMatchFlag = true;
+									break;
+								}
+								if(!locMatchFlag)
+									continue; // track created for a different particle combo
+								locNewParticleComboStep->Add_FinalParticle(locChargedTrackHypotheses[loc_l]);
 								break;
 							}
-							if(!locMatchFlag)
-								continue; // track created for a different particle combo
-							locNewParticleComboStep->Add_FinalParticle(locChargedTrackHypotheses[loc_l]);
-							break;
+							if(locMatchFlag)
+								break;
 						}
 					}
 				}
