@@ -119,6 +119,23 @@ jerror_t DPSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
   FillCalibTable(adc_time_offsets, raw_adc_offsets, psGeom);
   FillCalibTable(tdc_time_offsets, raw_tdc_offsets, psGeom);
 
+  // load time-walk corrections
+  map<string,double> timewalk_correction;
+  if (eventLoop->GetCalib("/PHOTON_BEAM/pair_spectrometer/coarse/tdc_timewalk_correction",timewalk_correction))
+    jout << "Error loading /PHOTON_BEAM/pair_spectrometer/timewalk_correction !" << endl;
+  if (timewalk_correction.find("C0") != timewalk_correction.ed())
+    c0 = timewalk_correction["C0"];
+  else
+    jerr << "Unable to get C0 from /PHOTON_BEAM/pair_spectrometer/timewalk_correction !" << endl;
+  if (timewalk_correction.find("C1") != timewalk_correction.ed())
+    c1 = timewalk_correction["C1"];
+  else
+    jerr << "Unable to get C1 from /PHOTON_BEAM/pair_spectrometer/timewalk_correction !" << endl;
+  if (timewalk_correction.find("C2") != timewalk_correction.ed())
+    c2 = timewalk_correction["C2"];
+  else
+    jerr << "Unable to get C2 from /PHOTON_BEAM/pair_spectrometer/timewalk_correction !" << endl;
+
   return NOERROR;
 }
 
@@ -171,6 +188,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
     if (PPobj != NULL){
       if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
     }
+    else continue;
     
     // Get pedestal, prefer associated event pedestal if it exists,
     // otherwise, use the average pedestal from CCDB
@@ -186,8 +204,10 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
       double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
       pedestal          = ped_sum * nsamples_integral/nsamples_pedestal;
     }
+    else continue;
 
     // Apply calibration constants here
+    double P = PPobj->pulse_peak - PPobj->pedestal;
     double A = (double)digihit->pulse_integral;
     A -= pedestal;
     // Throw away hits with small pedestal-subtracted integrals
@@ -198,6 +218,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
     hit->arm = GetArm(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
     hit->module = GetModule(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
     hit->integral = A;
+    hit->pulse_peak = P;
     hit->npe_fadc = A * a_scale * GetConstant(adc_gains, digihit, psGeom);
     hit->time_fadc = t_scale * T - GetConstant(adc_time_offsets, digihit, psGeom) + t_base;
     hit->t = hit->time_fadc;

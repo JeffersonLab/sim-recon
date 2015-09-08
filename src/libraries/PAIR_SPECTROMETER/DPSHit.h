@@ -21,6 +21,7 @@ class DPSHit:public jana::JObject{
   double E;  
   double t;
   double integral;
+  double pulse_peak;
   double npix_fadc;
 
   void toStrings(vector<pair<string,string> > &items)const{
@@ -29,6 +30,7 @@ class DPSHit:public jana::JObject{
     AddString(items, "E(GeV)", "%f", E);
     AddString(items, "t(ns)", "%f", t);
     AddString(items, "integral", "%f", integral);
+    AddString(items, "pulse_peak", "%f", pulse_peak);
     AddString(items, "npix_fadc", "%f", npix_fadc);
   }
 };
