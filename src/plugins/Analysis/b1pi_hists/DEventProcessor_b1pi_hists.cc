@@ -36,8 +36,8 @@ jerror_t DEventProcessor_b1pi_hists::init(void)
 jerror_t DEventProcessor_b1pi_hists::brun(JEventLoop *locEventLoop, int runnumber)
 {
 	//Create Trees
-    const DEventWriterROOT_test* locEventWriterROOT = NULL;
-    locEventLoop->GetSingle(locEventWriterROOT, "test");
+	const DEventWriterROOT* locEventWriterROOT = NULL;
+	locEventLoop->GetSingle(locEventWriterROOT);
 	locEventWriterROOT->Create_DataTrees(locEventLoop);
 //	locEventWriterROOT->Create_ThrownTree("tree_b1pi_thrownmc.root");
 
@@ -54,8 +54,8 @@ jerror_t DEventProcessor_b1pi_hists::evnt(JEventLoop *locEventLoop, int eventnum
 	locEventLoop->Get(locAnalysisResultsVector);
 
 	//Output TTree
-    const DEventWriterROOT_test* locEventWriterROOT = NULL;
-    locEventLoop->GetSingle(locEventWriterROOT, "test");
+	const DEventWriterROOT* locEventWriterROOT = NULL;
+	locEventLoop->GetSingle(locEventWriterROOT);
 	locEventWriterROOT->Fill_DataTrees(locEventLoop, "b1pi_hists");
 //	locEventWriterROOT->Fill_ThrownTree(locEventLoop);
 

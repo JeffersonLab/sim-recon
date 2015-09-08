@@ -19,7 +19,6 @@
 #include "HDDM/DEventWriterREST.h"
 
 #include "DFactoryGenerator_b1pi_hists.h"
-#include "DEventWriterROOT_test.h"
 
 using namespace jana;
 
