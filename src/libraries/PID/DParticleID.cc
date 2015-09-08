@@ -102,7 +102,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 	FCAL_CUT_PAR1=3.3;
 	gPARMS->SetDefaultParameter("FCAL:CUT_PAR1",FCAL_CUT_PAR1);
 
-	FCAL_CUT_PAR2=0.88;
+	FCAL_CUT_PAR2=0.0;
 	gPARMS->SetDefaultParameter("FCAL:CUT_PAR2",FCAL_CUT_PAR2);
 
 	BCAL_Z_CUT=20.;
@@ -881,7 +881,27 @@ bool DParticleID::MatchToFCAL(const DKinematicData* locTrack, const DReferenceTr
 	if(fabs(locFCALShower->getTime() - locFlightTime - locInputStartTime) > OUT_OF_TIME_CUT)
 		return false;
 
-	double d = (fcal_pos - proj_pos).Mag();
+	// Find minimum distance between track projection and each of the hits
+	// associated with the shower.
+	double d2min=100000.;
+	double xproj=proj_pos.x();
+	double yproj=proj_pos.y();
+	vector<const DFCALCluster*>clusters;
+	locFCALShower->Get(clusters);
+	for (unsigned int k=0;k<clusters.size();k++){
+	  vector<DFCALCluster::DFCALClusterHit_t>hits=clusters[k]->GetHits();
+	  for (unsigned int m=0;m<hits.size();m++){
+	    double dx=hits[m].x-xproj;
+	    double dy=hits[m].y-yproj;
+	    double d2=dx*dx+dy*dy;
+	    if (d2<d2min){
+	      d2min=d2;
+	    }
+	  }
+	}
+
+	double d = sqrt(d2min);
+	//double d = (fcal_pos - proj_pos).Mag();
 	double p=proj_mom.Mag();
 	double cut=FCAL_CUT_PAR1+FCAL_CUT_PAR2/p;
 	if(d >= cut)
