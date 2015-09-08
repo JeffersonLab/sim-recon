@@ -15,6 +15,9 @@ else:
 
 	# get env object and clone it
 	env = env.Clone()
+	print "FORTRANFLAGS before:", env['FORTRANFLAGS']
+	env['FORTRANFLAGS'] = ['-g', '-O0', '-fPIC', '-Wall']
+	print "FORTRANFLAGS after:", env['FORTRANFLAGS']
 
 	SConscript(dirs=['gelhad', 'hitutil', 'utilities'], exports='env osname', duplicate=0)
 
