@@ -636,6 +636,9 @@ void DEventWriterROOT::Create_Branches_Combo(TTree* locTree, const DReaction* lo
 	DKinFitType locKinFitType = locReaction->Get_KinFitType();
 	bool locKinFitFlag = (locKinFitType != d_NoFit);
 
+	//Is-cut
+	Create_Branch_FundamentalArray<Bool_t>(locTree, "IsComboCut", locNumComboString, dInitNumComboArraySize);
+
 	//create combo-dependent, particle-independent branches
 	if(locIsMCDataFlag)
 	{
@@ -1442,6 +1445,9 @@ void DEventWriterROOT::Fill_ComboData(TTree* locTree, const DParticleCombo* locP
 	const DReaction* locReaction = locParticleCombo->Get_Reaction();
 	const DKinFitResults* locKinFitResults = locParticleCombo->Get_KinFitResults();
 	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
+
+	//IS COMBO CUT
+	Fill_FundamentalData<Bool_t>(locTree, "IsComboCut", kFALSE, locComboIndex);
 
 	//RF INFO
 	double locRFTime = (locEventRFBunch != NULL) ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();

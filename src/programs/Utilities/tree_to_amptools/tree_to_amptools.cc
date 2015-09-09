@@ -28,7 +28,7 @@ void Convert_ToAmpToolsFormat(string locOutputFileName, TTree* locInputTree);
 
 void Convert_ToAmpToolsFormat_MCGen(string locOutputFileName, TTree* locInputTree);
 
-void Increase_ArraySize_Int(TTree* locTree, string locBranchName, int locNewSize);
+template <typename DType> void Increase_ArraySize(TTree* locTree, string locBranchName, int locNewSize);
 
 double gTargetMass = 0.0; //not yet working!!! (for MCGen only)
 vector<Particle_t> gDesiredPIDOrder; //for MC Gen tree only!!
@@ -285,6 +285,9 @@ void Convert_ToAmpToolsFormat(string locOutputFileName, TTree* locInputTree)
 	}
 	TLorentzVector locTargetP4(0.0, 0.0, 0.0, locTargetMass);
 
+	//is-combo-cut
+	locInputTree->SetBranchAddress("IsComboCut", new Bool_t[locCurrentComboArraySize]);
+
 	//beam
 	TClonesArray* locBeamP4Array = NULL;
 	if(locBeamBranchName != "") //a beam particle was in the DReaction
@@ -300,9 +303,9 @@ void Convert_ToAmpToolsFormat(string locOutputFileName, TTree* locInputTree)
 
 	//Direct (in the tree) decaying, final state p4s
 	Int_t locNumDirect = locParticleNamesWithBranches->GetEntries();
-	//pointer to an array of pointers of TClonesArrays //ugghhh
 	TClonesArray* locChargedHypoClonesArray = NULL;
 	bool locClonesArraySetFlag = false;
+	//pointer to an array of pointers of TClonesArrays //ugghhh
 	TClonesArray** locP4ClonesArray = new TClonesArray*[locNumDirect]; //matches with locParticleBranchNames & locParticleNamesWithBranches
 	TLorentzVector** locDirectP4s = new TLorentzVector*[locNumDirect];
 	for(Int_t loc_i = 0; loc_i < locNumDirect; ++loc_i)
@@ -405,8 +408,11 @@ cout << endl;
 		{
 			locCurrentComboArraySize = locNumCombos;
 
+			//IS-COMBO-CUT
+			Increase_ArraySize<Bool_t>(locInputTree, "IsComboCut", locCurrentComboArraySize);
+
 			//BEAM
-			Increase_ArraySize_Int(locInputTree, locBeamBranchName, locCurrentComboArraySize);
+			Increase_ArraySize<Int_t>(locInputTree, locBeamBranchName, locCurrentComboArraySize);
 
 			//CHARGED-HYPO
 			for(Int_t loc_i = 0; loc_i < locNumDirect; ++loc_i)
@@ -416,7 +422,7 @@ cout << endl;
 					continue;
 				//above if-statement: locParticleBranchName is guaranteed to at least be size 5
 					//UNLESS someone decides to give a particle the name (in particleType.h): "": should result in throw
-				Increase_ArraySize_Int(locInputTree, locParticleBranchName, locCurrentComboArraySize);
+				Increase_ArraySize<Int_t>(locInputTree, locParticleBranchName, locCurrentComboArraySize);
 			}
 		}
 
@@ -429,6 +435,10 @@ cout << endl;
 		//Loop over combos
 		for(UInt_t locComboIndex = 0; locComboIndex < locNumCombos; ++locComboIndex)
 		{
+			Bool_t* locIsComboCutArray = (Bool_t*)locInputTree->GetBranch("IsComboCut")->GetAddress();
+			if(locIsComboCutArray[locComboIndex] == kTRUE)
+				continue;
+
 			//GET DETECTED FINAL STATE FOUR-MOMENTA
 			for(Int_t loc_i = 0; loc_i < locNumDirect; ++loc_i)
 			{
@@ -665,11 +675,10 @@ void Convert_ToAmpToolsFormat_MCGen(string locOutputFileName, TTree* locInputTre
 	locOutputFile->Close();
 }
 
-void Increase_ArraySize_Int(TTree* locTree, string locBranchName, int locNewSize)
+template <typename DType> void Increase_ArraySize(TTree* locTree, string locBranchName, int locNewSize)
 {
 	//create a new, larger array if the current one is too small
-	Int_t* locOldBranchAddress = (Int_t*)locTree->GetBranch(locBranchName.c_str())->GetAddress();
-	locTree->SetBranchAddress(locBranchName.c_str(), new Int_t[locNewSize]);
+	DType* locOldBranchAddress = (DType*)locTree->GetBranch(locBranchName.c_str())->GetAddress();
+	locTree->SetBranchAddress(locBranchName.c_str(), new DType[locNewSize]);
 	delete[] locOldBranchAddress;
 }
-
