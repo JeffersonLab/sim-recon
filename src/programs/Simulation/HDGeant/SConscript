@@ -15,10 +15,12 @@ else:
 
 	# get env object and clone it
 	env = env.Clone()
-	print "FORTRANFLAGS before:", env['FORTRANFLAGS']
-	env['FORTRANFLAGS'] = ['-g', '-O0', '-fPIC', '-Wall']
-	print "FORTRANFLAGS after:", env['FORTRANFLAGS']
-
+	flags = env['FORTRANFLAGS']
+	print "FORTRANFLAGS before:", flags
+	for (i,flag) in enumerate(flags):
+		if '-O' in flag: flags[i] = '-O0'
+	print "FORTRANFLAGS after:", flags
+	
 	SConscript(dirs=['gelhad', 'hitutil', 'utilities'], exports='env osname', duplicate=0)
 
 	env.AppendUnique(LIBS      = ['hddsGeant3', 'gelhad', 'hitutil'])
