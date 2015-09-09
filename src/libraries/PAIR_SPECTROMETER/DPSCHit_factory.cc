@@ -119,22 +119,9 @@ jerror_t DPSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
   FillCalibTable(adc_time_offsets, raw_adc_offsets, psGeom);
   FillCalibTable(tdc_time_offsets, raw_tdc_offsets, psGeom);
 
-  // load time-walk corrections
-  map<string,double> timewalk_correction;
-  if (eventLoop->GetCalib("/PHOTON_BEAM/pair_spectrometer/coarse/tdc_timewalk_correction",timewalk_correction))
-    jout << "Error loading /PHOTON_BEAM/pair_spectrometer/timewalk_correction !" << endl;
-  if (timewalk_correction.find("C0") != timewalk_correction.ed())
-    c0 = timewalk_correction["C0"];
-  else
-    jerr << "Unable to get C0 from /PHOTON_BEAM/pair_spectrometer/timewalk_correction !" << endl;
-  if (timewalk_correction.find("C1") != timewalk_correction.ed())
-    c1 = timewalk_correction["C1"];
-  else
-    jerr << "Unable to get C1 from /PHOTON_BEAM/pair_spectrometer/timewalk_correction !" << endl;
-  if (timewalk_correction.find("C2") != timewalk_correction.ed())
-    c2 = timewalk_correction["C2"];
-  else
-    jerr << "Unable to get C2 from /PHOTON_BEAM/pair_spectrometer/timewalk_correction !" << endl;
+  // load timewalk corrections
+  if (eventLoop->GetCalib("/PHOTON_BEAM/pair_spectrometer/tdc_timewalk_corrections", tw_parameters))
+    jout << "Error loading /PHOTON_BEAM/pair_spectrometer/tdc_timewalk_corrections !" << endl;
 
   return NOERROR;
 }
@@ -262,7 +249,23 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
       }
       hit->time_tdc = T;
       hit->has_TDC = true;
-      // apply time-walk corrections?
+      // apply time-walk corrections
+      if (hit->pulse_peak > 0) {
+         if (tw_parameters[module - 1][0] == 0) {
+            c1 = tw_parameters[module - 1][3];
+            c2 = tw_parameters[module - 1][4];
+            thresh = tw_parameters[module - 1][5];
+            P_0 = tw_parameters[module - 1][6];
+         }
+         else {
+            c1 = tw_parameters[module + 7][3];
+            c2 = tw_parameters[module + 7][4];
+            thresh = tw_parameters[module + 7][5];
+            P_0 = tw_parameters[module + 7][6];
+         }
+         double P = hit->pulse_peak;
+         T -= c1*(pow(P/thresh,c2) - pow(P_0/thresh,c2));
+      }
       hit->t = T;
                 
       hit->AddAssociatedObject(digihit);
