@@ -39,7 +39,7 @@ jerror_t DEventProcessor_b1pi_hists::brun(JEventLoop *locEventLoop, int runnumbe
 	const DEventWriterROOT* locEventWriterROOT = NULL;
 	locEventLoop->GetSingle(locEventWriterROOT);
 	locEventWriterROOT->Create_DataTrees(locEventLoop);
-//	locEventWriterROOT->Create_ThrownTree("tree_b1pi_thrownmc.root");
+	locEventWriterROOT->Create_ThrownTree("tree_b1pi_thrownmc.root");
 
 	return NOERROR;
 }
@@ -57,7 +57,7 @@ jerror_t DEventProcessor_b1pi_hists::evnt(JEventLoop *locEventLoop, int eventnum
 	const DEventWriterROOT* locEventWriterROOT = NULL;
 	locEventLoop->GetSingle(locEventWriterROOT);
 	locEventWriterROOT->Fill_DataTrees(locEventLoop, "b1pi_hists");
-//	locEventWriterROOT->Fill_ThrownTree(locEventLoop);
+	locEventWriterROOT->Fill_ThrownTree(locEventLoop);
 
 	//Do Miscellaneous Cuts
 	bool locSaveEventFlag = false;

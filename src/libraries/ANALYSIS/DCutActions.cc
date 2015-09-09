@@ -349,6 +349,7 @@ bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const D
 		return false; //not a simulated event
 	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector[0];
 
+	//Check DReaction vs thrown (i.e. not combo contents)
 	if(!dAnalysisUtilities->Check_IsBDTSignalEvent(locEventLoop, Get_Reaction(), dExclusiveMatchFlag, dIncludeDecayingToReactionFlag))
 		return false;
 
