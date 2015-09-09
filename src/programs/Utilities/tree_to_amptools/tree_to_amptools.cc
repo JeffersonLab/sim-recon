@@ -216,7 +216,7 @@ cout << endl;
 	cout << endl;
 	cout << "Names of the particles whose four-momenta are included in the tree (in order):" << endl;
 	for(int loc_i = 0; loc_i < locTreeParticleNames->GetEntries(); ++loc_i)
-	cout << locTreeParticleNames->At(loc_i)->GetName() << endl;
+		cout << locTreeParticleNames->At(loc_i)->GetName() << endl;
 	cout << endl;
 
 	return locWasP4KinFit;
@@ -545,7 +545,7 @@ void Convert_ToAmpToolsFormat_MCGen(string locOutputFileName, TTree* locInputTre
 	locInputTree->SetBranchAddress("MCWeight", &locMCWeight);
 
 	//beam p4
-	TLorentzVector* locBeamP4 = new TLorentzVector;
+	TLorentzVector* locBeamP4 = NULL;
 	locInputTree->SetBranchAddress("ThrownBeam__P4", &locBeamP4);
 
 	//target
@@ -563,24 +563,24 @@ void Convert_ToAmpToolsFormat_MCGen(string locOutputFileName, TTree* locInputTre
 
 	// Parent ID
 		//the thrown particle array index of the particle this particle decayed from (-1 if none (e.g. photoproduced))
-	Int_t* locThrownParentID = new Int_t[locNumThrown];
 	TBranch* locThrownParentIDBranch = NULL;
-	locInputTree->SetBranchAddress("Thrown__ParentIndex", locThrownParentID, &locThrownParentIDBranch);
+	locInputTree->SetBranchAddress("Thrown__ParentIndex", new Int_t[locNumThrown], &locThrownParentIDBranch);
 	locThrownParentIDBranch->GetEntry(0);
+	Int_t* locParentIndexArray = (Int_t*)locInputTree->GetBranch("Thrown__ParentIndex")->GetAddress();
 
 	// PID
-	Int_t* locThrownPID = new Int_t[locNumThrown];
 	TBranch* locThrownPIDBranch = NULL;
-	locInputTree->SetBranchAddress("Thrown__PID", locThrownPID, &locThrownPIDBranch);
+	locInputTree->SetBranchAddress("Thrown__PID", new Int_t[locNumThrown], &locThrownPIDBranch);
 	locThrownPIDBranch->GetEntry(0);
+	Int_t* locPIDArray = (Int_t*)locInputTree->GetBranch("Thrown__PID")->GetAddress();
 
 	// Pick out final state thrown particles
 	map<Particle_t, deque<UInt_t> > locFinalStateIndices;
 	for(UInt_t loc_i = 0; loc_i < locNumThrown; ++loc_i)
 	{
-		if(locThrownParentID[loc_i] != -1)
+		if(locParentIndexArray[loc_i] != -1)
 			continue;
-		Particle_t locPID = PDGtoPType(locThrownPID[loc_i]);
+		Particle_t locPID = PDGtoPType(locPIDArray[loc_i]);
 		locFinalStateIndices[locPID].push_back(loc_i);
 	}
 
@@ -605,7 +605,7 @@ void Convert_ToAmpToolsFormat_MCGen(string locOutputFileName, TTree* locInputTre
 
 	//create output tree & file
 	TFile* locOutputFile = NULL;
-	TTree* locOutputTree = Create_AmpToolsTree(locOutputFileName, locOutputFile, locFinalStateIndices.size());
+	TTree* locOutputTree = Create_AmpToolsTree(locOutputFileName, locOutputFile, locSortedFinalStateIndices.size());
 
 	//grab output tree branch pointers
 	float* locBranchPointer_Weight = (float*)locOutputTree->GetBranch("Weight")->GetAddress();
@@ -617,13 +617,13 @@ void Convert_ToAmpToolsFormat_MCGen(string locOutputFileName, TTree* locInputTre
 	*locBranchPointer_TargetMass = locTargetMass;
 
 	int* locBranchPointer_NumFinalState = (int*)locOutputTree->GetBranch("NumFinalState")->GetAddress();
-	*locBranchPointer_NumFinalState = locNumThrown;
+	*locBranchPointer_NumFinalState = locSortedFinalStateIndices.size();
 
 	int* locBranchPointer_PIDFinalState = (int*)locOutputTree->GetBranch("PID_FinalState")->GetAddress();
 	for(size_t loc_j = 0; loc_j < locSortedFinalStateIndices.size(); ++loc_j)
 	{
 		UInt_t locArrayIndex = locSortedFinalStateIndices[loc_j];
-		locBranchPointer_PIDFinalState[loc_j] = locThrownPID[locArrayIndex];
+		locBranchPointer_PIDFinalState[loc_j] = locPIDArray[locArrayIndex];
 	}
 
 	float* locBranchPointer_FinalStateE = (float*)locOutputTree->GetBranch("E_FinalState")->GetAddress();
