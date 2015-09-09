@@ -21,6 +21,7 @@ DAnalysisUtilities::DAnalysisUtilities(JEventLoop* locEventLoop)
 		locGeometry->GetTargetZ(dTargetZCenter);
 
 	//For "Unused" tracks/showers
+	//BEWARE: IF THIS IS CHANGED, CHANGE IN THE BLUEPRINT FACTORY AND THE EVENT WRITER ALSO!!
 	dTrackSelectionTag = "PreSelect";
 	dShowerSelectionTag = "PreSelect";
 	gPARMS->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", dTrackSelectionTag);

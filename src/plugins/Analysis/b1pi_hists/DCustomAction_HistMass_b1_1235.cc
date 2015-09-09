@@ -79,13 +79,13 @@ bool DCustomAction_HistMass_b1_1235::Perform_Action(JEventLoop* locEventLoop, co
 
 	//calculate invariant mass
 	DLorentzVector locP4;
-	if(!locUseKinFitResultsFlag) //measured
+//	if(!locUseKinFitResultsFlag || (locParticleCombo->Get_KinFitResults() == NULL)) //measured or kinfit failed to converge
 	{
 		locP4 += locPiMinus2->lorentzMomentum();
 		locP4 += locPiPlus1->lorentzMomentum() + locPiPlus2->lorentzMomentum();
 		locP4 += locPhoton1->lorentzMomentum() + locPhoton2->lorentzMomentum();
 	}
-	else //kinfit: get kinfit objects first
+/*	else //kinfit: get kinfit objects first
 	{
 		locPiPlus1 = locParticleComboStep0->Get_FinalParticle(2);
 		locPiPlus2 = locParticleComboStep1->Get_FinalParticle(0);
@@ -96,6 +96,7 @@ bool DCustomAction_HistMass_b1_1235::Perform_Action(JEventLoop* locEventLoop, co
 		locP4 += locPiPlus1->lorentzMomentum() + locPiPlus2->lorentzMomentum();
 		locP4 += locPiZero->lorentzMomentum();
 	}
+	*/
 	double locInvariantMass = locP4.M();
 
 	//Optional: Fill histograms

@@ -84,7 +84,7 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 
 	//Kinematic Fit Results and Confidence Level Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.01)); //1%
+//	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.01)); //1%
 
 	//Post-Fit Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboGenReconComparison(locReaction, true, "PostKinFit"));

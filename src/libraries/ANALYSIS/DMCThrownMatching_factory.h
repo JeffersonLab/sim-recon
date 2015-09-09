@@ -62,7 +62,6 @@ class DMCThrownMatching_factory : public jana::JFactory<DMCThrownMatching>
 		void Find_GenReconMatches_FCALShowers(JEventLoop* locEventLoop, DMCThrownMatching* locMCThrownMatching) const;
 
 		double dMinTrackMatchHitFraction;
-		double dMinimumMatchFOM;
 		double dMaximumTOFMatchDistance;
 		double dMaximumFCALMatchDistance;
 		double dMaximumBCALMatchAngleDegrees;

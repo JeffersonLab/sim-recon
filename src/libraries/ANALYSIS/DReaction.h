@@ -98,8 +98,6 @@ class DReaction : public JObject
 		void Enable_TTreeOutput(string locTTreeOutputFileName);
 		string Get_TTreeOutputFileName(void) const{return dTTreeOutputFileName;}
 		bool Get_EnableTTreeOutputFlag(void) const{return dEnableTTreeOutputFlag;}
-		void Set_MinThrownMatchFOMForROOT(double locMinThrownMatchFOMForROOT){dMinThrownMatchFOMForROOT = locMinThrownMatchFOMForROOT;}
-		double Get_MinThrownMatchFOMForROOT(void) const{return dMinThrownMatchFOMForROOT;}
 
 		// OTHER:
 		bool Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex = 1) const;
@@ -116,7 +114,6 @@ class DReaction : public JObject
 		// ROOT TTREE OUTPUT:
 		bool dEnableTTreeOutputFlag; //default is false
 		string dTTreeOutputFileName;
-		double dMinThrownMatchFOMForROOT; //cut applied when setting matching when filling ROOT tree //default is -1 (always passes)
 
 		// REACTION AND ANALYSIS MEMBERS:
 		deque<const DReactionStep*> dReactionSteps;
