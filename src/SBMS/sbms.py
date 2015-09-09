@@ -284,6 +284,7 @@ def AddCompileFlags(env, allflags):
 		if f.startswith('-I'):
 			cpppath.append(f[2:])
 		else:
+			if f == '-g': continue
 			if f.startswith('-std=c++'):
 				cxxflags.append(f)
 			else:
