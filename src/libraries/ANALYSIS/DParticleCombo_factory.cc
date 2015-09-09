@@ -294,9 +294,9 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 								if(locNeutralParticleHypotheses_Associated[loc_m] != locKinematicData_Measured)
 									continue; //wrong neutral hypothesis
 								locNeutralParticleHypotheses[loc_l]->Get(locParticleCombos_Associated);
-								for(size_t loc_m = 0; loc_m < locParticleCombos_Associated.size(); ++loc_m)
+								for(size_t loc_n = 0; loc_n < locParticleCombos_Associated.size(); ++loc_n)
 								{
-									if(locParticleCombos_Associated[loc_m] != locParticleCombo)
+									if(locParticleCombos_Associated[loc_n] != locParticleCombo)
 										continue;
 									locMatchFlag = true;
 									break;
@@ -323,9 +323,9 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 								if(locChargedTrackHypotheses_Associated[loc_m] != locKinematicData_Measured)
 									continue; //wrong track hypothesis
 								locChargedTrackHypotheses[loc_l]->Get(locParticleCombos_Associated);
-								for(size_t loc_m = 0; loc_m < locParticleCombos_Associated.size(); ++loc_m)
+								for(size_t loc_n = 0; loc_n < locParticleCombos_Associated.size(); ++loc_n)
 								{
-									if(locParticleCombos_Associated[loc_m] != locParticleCombo)
+									if(locParticleCombos_Associated[loc_n] != locParticleCombo)
 										continue;
 									locMatchFlag = true;
 									break;
