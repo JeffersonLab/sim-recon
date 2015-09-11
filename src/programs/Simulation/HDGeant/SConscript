@@ -17,7 +17,8 @@ else:
 	# get env object and clone it
 	env = env.Clone()
 
-	vstring = subprocess.check_output(["gcc", "-dumpversion"]).rstrip()
+	sout,serr = subprocess.Popen(["gcc", "-dumpversion"], stdout = subprocess.PIPE, stderr= subprocess.PIPE).communicate()
+	vstring = sout.rstrip()
 	versions = vstring.split('.')
 	if int(versions[0]) >= 4 and int(versions[1]) >= 8:
 		env.PrependUnique(FORTRANFLAGS = ['-fno-aggressive-loop-optimizations'])
