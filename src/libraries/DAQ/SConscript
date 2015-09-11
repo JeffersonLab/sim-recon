@@ -14,6 +14,7 @@ sbms.AddEVIO(env)
 sbms.AddJANA(env)
 sbms.AddET(env)
 sbms.AddCODAChannels(env)
+sbms.AddROOT(env)
 sbms.library(env)
 
 
