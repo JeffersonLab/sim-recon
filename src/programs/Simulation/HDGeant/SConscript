@@ -1,6 +1,7 @@
 
 import os
 import sbms
+import subprocess
 
 Import('*')
 
@@ -16,6 +17,11 @@ else:
 	# get env object and clone it
 	env = env.Clone()
 
+	vstring = subprocess.check_output(["gcc", "-dumpversion"]).rstrip()
+	versions = vstring.split('.')
+	if int(versions[0]) >= 4 and int(versions[1]) >= 8:
+		env.PrependUnique(FORTRANFLAGS = ['-fno-aggressive-loop-optimizations'])
+	
 	SConscript(dirs=['gelhad', 'hitutil', 'utilities'], exports='env osname', duplicate=0)
 
 	env.AppendUnique(LIBS      = ['hddsGeant3', 'gelhad', 'hitutil'])
