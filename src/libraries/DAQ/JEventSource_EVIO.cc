@@ -9,6 +9,7 @@
 // See comments in JEventSource_EVIO.h for overview description
 
 #include <unistd.h>
+#include <stdint.h>
 
 #include <string>
 #include <cmath>
@@ -22,19 +23,17 @@ using namespace std;
 
 //#define ENABLE_UPSAMPLING
 
-#ifdef HAVE_EVIO		
+#ifdef HAVE_EVIO
+
+#if USE_HDEVIO == 0
 #include <evioFileChannel.hxx>
+#endif
 
 extern "C" uint32_t *swap_int32_t(uint32_t *data, unsigned int length, uint32_t *dest);
 #endif // HAVE_EVIO
 
-// Require codachannels to use ET here
-#ifndef HAVE_CODACHANNELS
-#undef HAVE_ET
-#endif // HAVE_CODACHANNELS
-
 #ifdef HAVE_ET
-#include <evioETChannel.hxx>
+//#include <evioETChannel.hxx>
 #include <et.h>
 #endif // HAVE_ET
 
@@ -89,8 +88,9 @@ jerror_t JEventSource_EVIO::GetObjects(jana::JEvent &event, jana::JFactory_base 
 //----------------
 JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(source_name)
 {
-	// Initialize EVIO channel pointer to NULL (subclass will instantiate and open)
-	chan = NULL;
+	// Initialize connection objects and flags to NULL
+	et_connected = false;
+	//chan = NULL;
 	hdevio = NULL;
 	source_type = kNoSource;
 	quit_on_next_ET_timeout = false;
@@ -220,8 +220,13 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		if( ! hdevio->is_open ) throw std::exception(); // throw exception if unable to open
 #else	// USE_HDEVIO
 		//-------- CODA EVIO -----------
-		chan = new evioFileChannel(this->source_name, "r", BUFFER_SIZE);
-		chan->open(); // open the file. Throws exception if not successful
+		jerr << "You are attempting to use the CODA Channels library for reading" << endl;
+		jerr << "and EVIO file and this mechanism has been disabled from in the" << endl;
+		jerr << "DAQ library. Contact davidl@jlab.org if you need this to be" << endl;
+		jerr << "reinstated." << endl;
+		quit(0);
+		//chan = new evioFileChannel(this->source_name, "r", BUFFER_SIZE);
+		//chan->open(); // open the file. Throws exception if not successful
 
 #endif // USE_HDEVIO
 
@@ -231,16 +236,16 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 
 #ifdef HAVE_ET
 		// Could not open file. Check if name starts with "ET:"
-		chan = NULL;
+		//chan = NULL;
 		if(this->source_name.substr(0,3) == "ET:"){
 			if(VERBOSE>0) evioout << "Attempting to open \""<<this->source_name<<"\" as ET (network) source..." <<endl;
 			ConnectToET(source_name);
 		}
 		
-		if(!chan) throw JException("Failed to open ET system: " + this->source_name);
+		if(!et_connected) throw JException("Failed to open ET system: " + this->source_name);
 
 		// open the channel. Throws exception if not successful
-		chan->open();
+		// chan->open(); // evioETchannel no longer used
 		source_type = kETSource;
 
 #else  // HAVE_ET
@@ -249,9 +254,9 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		if(this->source_name.substr(0,3) == "ET:"){
 			cerr << endl;
 			cerr << "=== ERROR: ET source specified and this was compiled without    ===" << endl;
-			cerr << "===        ET support. You need to install ET and CODAchannels  ===" << endl;
-			cerr << "===        and set your ETROOT and CODA environment variables   ===" << endl;
-			cerr << "===        appropriately before recompiling.                    ===" << endl;
+			cerr << "===        ET support. You need to install ET and set your      ===" << endl;
+			cerr << "===        ETROOT environment variable appropriately before     ===" << endl;
+			cerr << "===        recompiling.                                         ===" << endl;
 			cerr << endl;
 		}
 		throw e;
@@ -320,10 +325,16 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 JEventSource_EVIO::~JEventSource_EVIO()
 {
 	// close event source here
-	if(chan){
-		if(VERBOSE>0) evioout << "Closing event source \"" << this->source_name << "\"" <<endl;
-		chan->close();
-		delete chan;
+//	if(chan){
+//		if(VERBOSE>0) evioout << "Closing event source \"" << this->source_name << "\"" <<endl;
+//		chan->close();
+//		delete chan;
+//	}
+	
+	if(et_connected){
+		if(VERBOSE>0) evioout << "Closing ET connection \"" << this->source_name << "\"" <<endl;
+		et_close(sys_id);
+		et_connected = false;
 	}
 
 	if(hdevio){
@@ -502,8 +513,9 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 
 	jout << "...now connected to ET system: " << fname 
 		<< ",   station: " << station << " (station id=" << sta_id << ", attach id=" << att_id <<")" << endl;
-		
-	chan = new evioETChannel(sys_id, att_id);
+	
+	et_connected = true;	
+	// chan = new evioETChannel(sys_id, att_id);
 
 	// Make sure the size of event buffers we will allocate are at least as big
 	// as the event size used in the ET system
@@ -544,8 +556,10 @@ void JEventSource_EVIO::Cleanup(void)
 	/// (nearly 1GB per JEventSource_EVIO object).
 	if(hdevio) delete hdevio;
 	hdevio = NULL;
-	if(chan) delete chan;
-	chan = NULL;
+	//if(chan) delete chan;
+	//chan = NULL;
+	if(et_connected) et_close(sys_id);
+	et_connected = false;
 
 	module_type.clear();
 	modtype_translate.clear();
@@ -574,10 +588,11 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	if(VERBOSE>1) evioout << "GetEvent called for &event = " << hex << &event << dec << endl;
 
 	// If we couldn't even open the source, then there's nothing to do
-	bool no_source = (chan==NULL);
+	bool no_source = true;
 #if USE_HDEVIO
 	if(source_type==kFileSource && hdevio->is_open) no_source = false;
 #endif
+	if(source_type==kETSource && et_connected) no_source = false;
 	if(no_source)throw JException(string("Unable to open EVIO channel for \"") + source_name + "\"");
 
 	
@@ -941,31 +956,31 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 			} // while(!done)
 
 #else
-			if(!chan->read(buff, BUFFER_SIZE)){
-				if(LOOP_FOREVER){
-					if(Nevents_read<1){
-						// User asked us to loop forever, but we couldn't find even 1 event!
-						jerr << "No events in file!!" << endl;
-						return NO_MORE_EVENTS_IN_SOURCE;
-					}else{
-					
-						// close file
-						if(VERBOSE>0) evioout << "Closing \""<<this->source_name<<"\"" <<endl;
-						chan->close();
-						delete chan;
-						
-						// re-open file
-						evioout << "Re-opening EVIO file \""<<this->source_name<<"\"" <<endl;
-						chan = new evioFileChannel(this->source_name, "r", BUFFER_SIZE);
-						
-						// open the file and read first event (assume it will be successful again)
-						chan->open();
-						chan->read(buff, BUFFER_SIZE);
-					}
-				}else{
-					return NO_MORE_EVENTS_IN_SOURCE;
-				}
-			}
+// 			if(!chan->read(buff, BUFFER_SIZE)){
+// 				if(LOOP_FOREVER){
+// 					if(Nevents_read<1){
+// 						// User asked us to loop forever, but we couldn't find even 1 event!
+// 						jerr << "No events in file!!" << endl;
+// 						return NO_MORE_EVENTS_IN_SOURCE;
+// 					}else{
+// 					
+// 						// close file
+// 						if(VERBOSE>0) evioout << "Closing \""<<this->source_name<<"\"" <<endl;
+// 						chan->close();
+// 						delete chan;
+// 						
+// 						// re-open file
+// 						evioout << "Re-opening EVIO file \""<<this->source_name<<"\"" <<endl;
+// 						chan = new evioFileChannel(this->source_name, "r", BUFFER_SIZE);
+// 						
+// 						// open the file and read first event (assume it will be successful again)
+// 						chan->open();
+// 						chan->read(buff, BUFFER_SIZE);
+// 					}
+// 				}else{
+// 					return NO_MORE_EVENTS_IN_SOURCE;
+// 				}
+// 			}
 #endif // USE_HDEVIO
 
 		}else if(source_type==kETSource){
