@@ -175,15 +175,9 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
         for (unsigned int i=0; i<hits.size(); i++) {
             const DBCALHit* hit=hits[i];
 
-            // Get the pulse pedestal so we have access to the pulse peak
-            const DBCALDigiHit *digiHit;
-            hit->GetSingle(digiHit);
-            const Df250PulsePedestal *pp;
-            digiHit->GetSingle(pp);
+            float pulse_peak, E, t, t_ADC, t_TDC=0; //these are values that will be assigned to the DBCALUnifiedHit
 
-            float pulse_peak = 0, E, t, t_ADC, t_TDC=0; //these are values that will be assigned to the DBCALUnifiedHit
-
-            if (pp != NULL) pulse_peak = (float) pp->pulse_peak - pp->pedestal;
+            pulse_peak = hit->pulse_peak; 
             E = hit->E;
             t_ADC = hit->t;
 
@@ -204,7 +198,7 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
                     }
                 }
                 t_TDC = tdc_hits[goodTDCindex]->t;
-                if (USE_TDC && pp != NULL){
+                if (USE_TDC){
                     // Apply the timewalk correction
                     timewalk_coefficients tdc_coeff = tdc_timewalk_map[chan];
                     t_TDC -= tdc_coeff.c0 + tdc_coeff.c1/pow(pulse_peak/tdc_coeff.a_thresh, tdc_coeff.c2);

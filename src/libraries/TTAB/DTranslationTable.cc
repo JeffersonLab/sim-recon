@@ -683,6 +683,8 @@ DBCALDigiHit* DTranslationTable::MakeBCALDigiHit(const BCALIndex_t &idx,
    DBCALDigiHit *h = new DBCALDigiHit();
    CopyDf250Info(h, pi, pt, pp);
 
+   h->pulse_peak = pp->pulse_peak; // Include pulse peak information in the digihit for BCAL
+
    h->module = idx.module;
    h->layer  = idx.layer;
    h->sector = idx.sector;

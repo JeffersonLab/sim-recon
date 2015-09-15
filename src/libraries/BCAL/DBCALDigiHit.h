@@ -27,6 +27,7 @@ class DBCALDigiHit:public JObject{
 		int sector;
 		DBCALGeometry::End end;
 		uint32_t pulse_integral; ///< identified pulse integral as returned by FPGA algorithm
+        uint32_t pulse_peak;     ///< identified pulse height as returned by FPGA algorithm
 		uint32_t pulse_time;     ///< identified pulse time as returned by FPGA algorithm
 		uint32_t pedestal;       ///< pedestal info used by FPGA (if any)
 		uint32_t QF;             ///< Quality Factor from FPGA algorithms
