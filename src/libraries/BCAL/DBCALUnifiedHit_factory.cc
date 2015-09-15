@@ -5,8 +5,6 @@ using namespace std;
 using namespace jana;
 
 #include "BCAL/DBCALUnifiedHit_factory.h"
-#include "BCAL/DBCALDigiHit.h"
-#include "DAQ/Df250PulsePedestal.h"
 
 #include "units.h"
 
