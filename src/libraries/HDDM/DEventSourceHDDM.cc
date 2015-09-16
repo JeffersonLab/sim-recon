@@ -2200,7 +2200,7 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
       if (rt) {
          rt->SetMass(track->mass());
          rt->SetDGeometry(geom);
-         rt->Swim(pos, mom, track->charge());
+         rt->Swim(pos, mom, track->charge(),&errMatrix);
          rts.push_back(rt);
       }
       track->rt = rt;
