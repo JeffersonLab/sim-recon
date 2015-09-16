@@ -1135,6 +1135,7 @@ int DReferenceTrajectory::InsertSteps(const swim_step_t *start_step, double delt
 // DistToRTwithTime
 //---------------------------------
 double DReferenceTrajectory::DistToRTwithTime(DVector3 hit, double *s,double *t,
+					      double *var_t,
 					      DetectorSystem_t detector) const{
   double dist=DistToRT(hit,s,detector);
   if (s!=NULL && t!=NULL) 
@@ -1143,12 +1144,18 @@ double DReferenceTrajectory::DistToRTwithTime(DVector3 hit, double *s,double *t,
     {
       *s = 1.0E6;
       *t = 1.0E6;
+      if (var_t!=NULL){
+	*var_t=1.0E6;
+      }
     }
     else
     {
       double p_sq=last_swim_step->mom.Mag2();
       double one_over_beta=sqrt(1.+mass_sq/p_sq);
       *t=last_swim_step->t+(*s-last_swim_step->s)*one_over_beta/SPEED_OF_LIGHT;
+      if (var_t!=NULL){
+	*var_t=last_swim_step->cov_t_t;
+      }
     }
   }
   return dist;
