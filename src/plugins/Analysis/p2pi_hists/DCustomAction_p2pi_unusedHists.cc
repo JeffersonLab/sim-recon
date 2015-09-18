@@ -264,8 +264,8 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 			const DBCALShower *locBCALShower = locBCALShowers[loc_j];
 			DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z);
 				
-			double locFlightTime = 9.9E9, locPathLength = 9.9E9;
-			rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime, SYS_BCAL);
+			double locFlightTime = 9.9E9, locPathLength = 9.9E9, locFlightTimeVariance = 9.9E9;
+			rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime, &locFlightTimeVariance, SYS_BCAL);
 			
 			DVector3 proj_pos = rt->GetLastDOCAPoint();
 			if(proj_pos.Perp() < 65.0)
