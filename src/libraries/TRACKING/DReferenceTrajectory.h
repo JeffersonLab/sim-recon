@@ -87,7 +87,7 @@ class DReferenceTrajectory{
 		double DistToRT(double x, double y, double z) const {return DistToRT(DVector3(x,y,z));}
 		double DistToRT(DVector3 hit, double *s=NULL,DetectorSystem_t detector=SYS_NULL) const;
 		double DistToRTwithTime(DVector3 hit, double *s=NULL,
-					double *t=NULL,
+					double *t=NULL,double *var_t=NULL,
 					DetectorSystem_t detector=SYS_NULL) const;
 		double DistToRT(const DCoordinateSystem *wire, double *s=NULL) const;
 		double DistToRTBruteForce(const DCoordinateSystem *wire, double *s=NULL) const;

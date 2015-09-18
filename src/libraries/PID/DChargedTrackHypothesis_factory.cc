@@ -140,8 +140,9 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 		locChargedTrackHypothesis->setPathLength(locBCALShowerMatchParams.dPathLength, 0.0);
 //		double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locTrackTimeBased, SYS_BCAL); //uncomment when ready!!
 //		Add_TimeToTrackingMatrix(locChargedTrackHypothesis, locBCALShowerMatchParams.dFlightTimeVariance, locBCALShower->tErr*locBCALShower->tErr, locFlightTimePCorrelation); //uncomment when ready!!
-		locCovarianceMatrix(6, 6) = 0.00255*pow(locChargedTrackHypothesis->momentum().Mag(), -2.52) + 0.220; //delete when ready!!
-		locCovarianceMatrix(6, 6) *= locCovarianceMatrix(6, 6); //delete when ready!!
+		//locCovarianceMatrix(6, 6) = 0.00255*pow(locChargedTrackHypothesis->momentum().Mag(), -2.52) + 0.220; //delete when ready!!
+		//locCovarianceMatrix(6, 6) *= locCovarianceMatrix(6, 6); //delete when ready!!
+		locCovarianceMatrix(6,6)=0.3*0.3+locBCALShowerMatchParams.dFlightTimeVariance;
 
 		//add associated objects
 		vector<DBCALShowerMatchParams> locShowerMatchParams;

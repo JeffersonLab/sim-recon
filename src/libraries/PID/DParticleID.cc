@@ -522,7 +522,11 @@ bool DParticleID::MatchToBCAL(const DKinematicData* locTrack, const DReferenceTr
 	DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z); 
 
 	double locFlightTime = 9.9E9, locPathLength = 9.9E9;
-	double d = rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime, SYS_BCAL);
+	double locFlightTimeVariance=9.9E9;
+	double d = rt->DistToRTwithTime(bcal_pos, &locPathLength,
+					&locFlightTime, &locFlightTimeVariance,
+					SYS_BCAL);
+
 
 	if(!isfinite(d))
 		return false;
@@ -588,7 +592,7 @@ bool DParticleID::MatchToBCAL(const DKinematicData* locTrack, const DReferenceTr
 	locShowerMatchParams.dBCALShower = locBCALShower;
 	locShowerMatchParams.dx = 0.0; //SET ME!!!!
 	locShowerMatchParams.dFlightTime = locFlightTime;
-	locShowerMatchParams.dFlightTimeVariance = 0.0; //SET ME!!!!
+	locShowerMatchParams.dFlightTimeVariance = locFlightTimeVariance;
 	locShowerMatchParams.dPathLength = locPathLength;
 	locShowerMatchParams.dDeltaPhiToShower = dphi_min;
 	locShowerMatchParams.dDeltaZToShower = dz;
@@ -1259,7 +1263,7 @@ bool DParticleID::Distance_ToTrack(const DBCALShower* locBCALShower, const DRefe
 	DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z); 
 
 	double locFlightTime = 9.9E9, locPathLength = 9.9E9;
-	locDistance = rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime,SYS_BCAL);
+	locDistance = rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime,NULL,SYS_BCAL);
 	if(!isfinite(locDistance))
 		return false;
 
