@@ -326,7 +326,7 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 			DVector3 norm(0.0, 0.0, 1.0); //normal vector for the FCAL plane
 			DVector3 proj_pos, proj_mom;
 			double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-			if(rt->GetIntersectionWithPlane(fcal_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime, SYS_FCAL) != NOERROR)
+			if(rt->GetIntersectionWithPlane(fcal_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime, NULL, SYS_FCAL) != NOERROR)
 				continue;
 			
 			double dd = (fcal_pos - proj_pos).Mag();
