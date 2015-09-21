@@ -243,6 +243,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	hit->module = module;
 	hit->time_fadc = numeric_limits<double>::quiet_NaN();
 	hit->integral = numeric_limits<double>::quiet_NaN();
+	hit->pulse_peak = numeric_limits<double>::quiet_NaN();
 	hit->npe_fadc = numeric_limits<double>::quiet_NaN();
 	hit->has_fADC = false;
 	_data.push_back(hit);
