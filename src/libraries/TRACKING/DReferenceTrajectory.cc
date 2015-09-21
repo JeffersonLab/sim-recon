@@ -1009,6 +1009,9 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 			  double one_over_beta=sqrt(1.+mass_sq/p_sq);
 			  *t = step->t+ds*one_over_beta/SPEED_OF_LIGHT;
 			}
+			if (var_t){
+			  *var_t=step->cov_t_t;
+			}
 			
 			// Success. Go ahead and return
 			return NOERROR;
