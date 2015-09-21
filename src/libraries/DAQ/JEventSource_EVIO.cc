@@ -495,6 +495,22 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 		et_close(sys_id);
 		cerr << "Unable to create station " << station << endl;
 		cerr << et_perror(status);
+		
+		// Check that the number of events in the ET system is not
+		// less than the number of events we specified for the station CUE.
+		int Nevents = 0;
+		et_system_getnumevents(sys_id, &Nevents);
+		if(Nevents <= ET_STATION_NEVENTS){
+		jerr << "NOTE: The number of events specified for the station cue is equal to" << endl;
+		jerr << "or greater than the number of events in the entire ET system:" << endl;
+		jerr << endl;
+		jerr << "     " << ET_STATION_NEVENTS << " >= " << Nevents << endl;
+		jerr << endl;
+		jerr << "Try re-running with: " << endl;
+		jerr << endl;
+		jerr << "      -PEVIO:ET_STATION_NEVENTS=" << (Nevents+1)/2 << endl;
+		jerr << endl; 
+		}
 		return;
 	}
 	if(status==ET_ERROR_EXISTS){
