@@ -509,7 +509,7 @@ bool DParticleID::MatchToBCAL(const DReferenceTrajectory* rt, const vector<const
 	Get_BestBCALMatchParams(rt->swim_steps[0].mom, locShowerMatchParamsVector, locBestMatchParams);
 	locStartTime = locBestMatchParams.dBCALShower->t - locBestMatchParams.dFlightTime;
 //	locTimeVariance = locBestMatchParams.dFlightTimeVariance + locBestMatchParams.dBCALShower->dCovarianceMatrix(4, 4); //uncomment when ready!!
-	locTimeVariance = 0.5*0.5;
+	locTimeVariance = 0.3*0.3+locBestMatchParams.dFlightTimeVariance;
 
 	return true;
 }
@@ -627,7 +627,7 @@ bool DParticleID::MatchToTOF(const DReferenceTrajectory* rt, const vector<const 
 	Get_BestTOFMatchParams(locTOFHitMatchParamsVector, locBestMatchParams);
 	locStartTime = locBestMatchParams.dHitTime - locBestMatchParams.dFlightTime;
 //	locTimeVariance = locBestMatchParams.dFlightTimeVariance + locBestMatchParams.dHitTimeVariance; //uncomment when ready!
-	locTimeVariance = 0.1*0.1;
+	locTimeVariance = 0.1*0.1+locBestMatchParams.dFlightTimeVariance;
 
 	return true;
 }
@@ -642,7 +642,8 @@ bool DParticleID::MatchToTOF(const DKinematicData* locTrack, const DReferenceTra
 	DVector3 norm(0.0, 0.0, 1.0); //normal vector to TOF plane
 	DVector3 proj_pos, proj_mom;
 	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-	if(rt->GetIntersectionWithPlane(tof_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime,SYS_TOF) != NOERROR)
+	double locFlightTimeVariance=9.9E9;
+	if(rt->GetIntersectionWithPlane(tof_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime,&locFlightTimeVariance,SYS_TOF) != NOERROR)
 		return false;
 
 	// Check that the hit is not out of time with respect to the track
@@ -745,7 +746,7 @@ bool DParticleID::MatchToTOF(const DKinematicData* locTrack, const DReferenceTra
 
 	locTOFHitMatchParams.dEdx = locHitEnergy/dx;
 	locTOFHitMatchParams.dFlightTime = locFlightTime;
-	locTOFHitMatchParams.dFlightTimeVariance = 0.0; //SET ME!!!
+	locTOFHitMatchParams.dFlightTimeVariance = locFlightTimeVariance;
 	locTOFHitMatchParams.dPathLength = locPathLength;
 	locTOFHitMatchParams.dDeltaXToHit = locDeltaX;
 	locTOFHitMatchParams.dDeltaYToHit = locDeltaY;
@@ -765,8 +766,8 @@ bool DParticleID::PredictFCALHit(const DReferenceTrajectory *rt,
   DVector3 fcal_pos(0,0,dFCALz);
   DVector3 norm(0.0, 0.0, 1.0); //normal vector to FCAL plane
   DVector3 proj_mom,proj_pos;
-  double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-  if(rt->GetIntersectionWithPlane(fcal_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime,SYS_FCAL) != NOERROR)
+  if(rt->GetIntersectionWithPlane(fcal_pos, norm, proj_pos, proj_mom,
+				  NULL,NULL,NULL,SYS_FCAL) != NOERROR)
     return false;
 
   if (intersection) *intersection=proj_pos;
@@ -818,8 +819,8 @@ bool DParticleID::PredictTOFPaddles(const DReferenceTrajectory *rt,
   DVector3 tof_pos(0,0,dTOFGeometry->CenterMPlane);
   DVector3 norm(0.0, 0.0, 1.0); //normal vector to TOF plane
   DVector3 proj_mom,proj_pos;
-  double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-  if(rt->GetIntersectionWithPlane(tof_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime,SYS_TOF) != NOERROR)
+  if(rt->GetIntersectionWithPlane(tof_pos, norm, proj_pos, proj_mom, 
+				  NULL,NULL,NULL,SYS_TOF) != NOERROR)
     return false;
 
   double x=proj_pos.x();
@@ -863,7 +864,7 @@ bool DParticleID::MatchToFCAL(const DReferenceTrajectory* rt, const vector<const
 
 	locStartTime = locBestMatchParams.dFCALShower->getTime() - locBestMatchParams.dFlightTime;
 //	locTimeVariance = locBestMatchParams.dFlightTimeVariance + locBestMatchParams.dFCALShower->dCovarianceMatrix(4, 4); //uncomment when ready!
-	locTimeVariance = 0.5*0.5;
+	locTimeVariance = 0.5*0.5+locBestMatchParams.dFlightTimeVariance;
 
 	return true;
 }
@@ -878,7 +879,8 @@ bool DParticleID::MatchToFCAL(const DKinematicData* locTrack, const DReferenceTr
 	DVector3 norm(0.0, 0.0, 1.0); //normal vector for the FCAL plane
 	DVector3 proj_pos, proj_mom;
 	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-	if(rt->GetIntersectionWithPlane(fcal_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime, SYS_FCAL) != NOERROR)
+	double locFlightTimeVariance=9.9E9;
+	if(rt->GetIntersectionWithPlane(fcal_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime, &locFlightTimeVariance,SYS_FCAL) != NOERROR)
 		return false;
 
 	// Check that the hit is not out of time with respect to the track
@@ -915,7 +917,7 @@ bool DParticleID::MatchToFCAL(const DKinematicData* locTrack, const DReferenceTr
 	locShowerMatchParams.dFCALShower = locFCALShower;
 	locShowerMatchParams.dx = 45.0*p/(proj_mom.Dot(norm));
 	locShowerMatchParams.dFlightTime = locFlightTime;
-	locShowerMatchParams.dFlightTimeVariance = 0.0; //SET ME!!!
+	locShowerMatchParams.dFlightTimeVariance = locFlightTimeVariance;
 	locShowerMatchParams.dPathLength = locPathLength;
 	locShowerMatchParams.dDOCAToShower = d;
 
@@ -952,7 +954,7 @@ bool DParticleID::MatchToSC(const DReferenceTrajectory* rt, const vector<const D
 
 	locStartTime = locBestMatchParams.dHitTime - locBestMatchParams.dFlightTime;
 //	locTimeVariance = locBestMatchParams.dFlightTimeVariance - locBestMatchParams.dHitTimeVariance; //uncomment when ready!
-	locTimeVariance = 0.3*0.3;
+	locTimeVariance = 0.3*0.3+locBestMatchParams.dFlightTimeVariance;
 
 	return true;
 }
@@ -970,13 +972,14 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	// Find intersection with a "barrel" approximation for the start counter
 	DVector3 proj_pos(NaN,NaN,NaN), proj_mom(NaN,NaN,NaN);
 	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
+	double locFlightTimeVariance=9.9E9;
 	unsigned int sc_index=locSCHit->sector-1;
 	
 	if(rt->GetIntersectionWithPlane(sc_pos[sc_index][0],
 					sc_norm[sc_index][0], 
 					proj_pos, proj_mom, 
-					&locPathLength, 
-					&locFlightTime) != NOERROR)
+					&locPathLength, &locFlightTime,
+					&locFlightTimeVariance) != NOERROR)
 		return false;
 	// Check that the intersection isn't upstream of the paddle
 	double myz = proj_pos.z();
@@ -1049,8 +1052,8 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	      if(rt->GetIntersectionWithPlane(sc_pos[sc_index][loc_i],
 					      sc_norm[sc_index][loc_i], 
 					      proj_pos, proj_mom, 
-					      &locPathLength, 
-					      &locFlightTime) != NOERROR)
+					      &locPathLength, &locFlightTime, 
+					      &locFlightTimeVariance) != NOERROR)
 		continue;
 	      myz = proj_pos.z();
 	      norm=sc_norm[sc_index][loc_i];
@@ -1141,7 +1144,7 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	locSCHitMatchParams.dHitTime = locCorrectedHitTime;
 	locSCHitMatchParams.dHitTimeVariance = 0.0; //SET ME!!!
 	locSCHitMatchParams.dFlightTime = locFlightTime;
-	locSCHitMatchParams.dFlightTimeVariance = 0.0; //SET ME!!!
+	locSCHitMatchParams.dFlightTimeVariance = locFlightTimeVariance;
 	locSCHitMatchParams.dPathLength = locPathLength;
 	locSCHitMatchParams.dDeltaPhiToHit = dphi;
 
@@ -1296,7 +1299,7 @@ bool DParticleID::Distance_ToTrack(const DFCALShower* locFCALShower, const DRefe
 	DVector3 norm(0.0, 0.0, 1.0); //normal vector for the FCAL plane
 	DVector3 proj_pos, proj_mom;
 	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-	if(rt->GetIntersectionWithPlane(fcal_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime,SYS_FCAL) != NOERROR)
+	if(rt->GetIntersectionWithPlane(fcal_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime,NULL,SYS_FCAL) != NOERROR)
 		return false;
 
 	// Check that the hit is not out of time with respect to the track
@@ -1318,7 +1321,7 @@ bool DParticleID::Distance_ToTrack(const DTOFPoint* locTOFPoint, const DReferenc
 	DVector3 norm(0.0, 0.0, 1.0); //normal vector to TOF plane
 	DVector3 proj_pos, proj_mom;
 	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-	if(rt->GetIntersectionWithPlane(tof_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime, SYS_TOF) != NOERROR)
+	if(rt->GetIntersectionWithPlane(tof_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime, NULL, SYS_TOF) != NOERROR)
 		return false;
 
 	// Check that the hit is not out of time with respect to the track
