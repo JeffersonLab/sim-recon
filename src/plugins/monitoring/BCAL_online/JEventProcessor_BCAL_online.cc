@@ -189,6 +189,13 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	float Eclust_min = -0.2;
 	float Eclust_max = 6.0;
 
+	int numphibins = 192;
+	float pi=3.14159265358;
+	float phibinsize=2*pi/numphibins;
+	float phimin=-phibinsize;
+	float phimax=2*pi+phibinsize;
+	numphibins+=2;
+
 	gStyle->SetTitleOffset(1, "Y");
   	gStyle->SetTitleSize(0.05,"xyz");
 	gStyle->SetTitleSize(0.08,"h");
@@ -197,13 +204,18 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	gStyle->SetTitleAlign(13);
 	gStyle->SetNdivisions(505,"xy");
 
+	gStyle->SetStatH(0.20);
+	gStyle->SetStatW(0.30);
+	gStyle->SetStatX(0.99);
+	gStyle->SetStatY(0.99);
+
 	bcal_num_events = new TH1I("bcal_num_events","BCAL Number of events",1, 0.5, 1.5);
 
 	bcal_fadc_digi_integral = new TH1I("bcal_fadc_digi_integral","BCAL Integral (DBCALDigiHit);Integral (fADC counts)", 500, 0, 40000);
 	bcal_fadc_digi_pedestal = new TH1I("bcal_fadc_digi_pedestal","BCAL Pedestal (DBCALDigiHit);Pedestal (fADC counts)", 150, -10, 140);
 	bcal_fadc_digi_good_pedestal = new TH1I("bcal_fadc_digi_good_pedestal","BCAL Good Pedestal (DBCALDigiHit);Pedestal (fADC counts)", 150, -10, 140);
 	bcal_fadc_digi_QF = new TH1I("bcal_fadc_digi_QF","Qualtiy Factor (DBCALDigiHit);Qualtiy Factor", 20, 0, 20);
-	bcal_fadc_digi_time = new TH1I("bcal_fadc_digi_time","ADC Time (DBCALDigiHit);Time (fADC time/62.5 ps)", 550, -600, 6000);
+	bcal_fadc_digi_time = new TH1I("bcal_fadc_digi_time","ADC Time (DBCALDigiHit);Time (fADC time/62.5 ps)", 410, -160, 6400);
 	bcal_fadc_digi_occ = new TH2I("bcal_fadc_digi_occ","ADC occupancy (DBCALDigiHit);Module", 48, 0.5, 48.5, 33, 0.5, 33.5);
 	bcal_fadc_digi_pedestal_ave = new TProfile2D("bcal_fadc_digi_pedestal_ave",
 						     "Mean pedestal per cell (DBCALDigiHit);Module", 
@@ -264,7 +276,7 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_point_sigRho = new TH1I("bcal_point_sigRho","sigRho (DBCALPoint)", 100, 0, 30);
 	bcal_point_theta = new TH1I("bcal_point_theta","theta (DBCALPoint)", 500, 0, 3);
 	bcal_point_sigTheta = new TH1I("bcal_point_sigTheta","sigTheta (DBCALPoint)", 100, 0, 1);
-	bcal_point_phi = new TH1I("bcal_point_phi","phi (DBCALPoint)",200, -0.1309, 6.4141);
+	bcal_point_phi = new TH1I("bcal_point_phi","phi (DBCALPoint)",numphibins,phimin,phimax);
 	bcal_point_sigPhi = new TH1I("bcal_point_sigPhi","sigPhi (DBCALPoint)", 100, 0, 0.1);
 	bcal_point_z = new TH1I("bcal_point_z","Z wrt target center (DBCALPoint);Z wrt target center (cm)", 600, -100, 500);
 	bcal_point_sigZ = new TH1I("bcal_point_sigZ","sigZ (DBCALPoint)", 100, 0, 35);
@@ -300,7 +312,13 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_cluster_sigRho = new TH1I("bcal_cluster_sigRho","sigRho (DBCALCluster)", 100, 0, 50);
 	bcal_cluster_theta = new TH1I("bcal_cluster_theta","theta (DBCALCluster)", 500, 0, 3);
 	bcal_cluster_sigTheta = new TH1I("bcal_cluster_sigTheta","sigTheta (DBCALCluster)", 100, 0, 0.5);
-	bcal_cluster_phi = new TH1I("bcal_cluster_phi","phi (DBCALCluster)", 200, -0.1309, 6.4141);
+
+	numphibins = 384;
+	phibinsize=2*pi/numphibins;
+	phimin=-phibinsize;
+	phimax=2*pi+phibinsize;
+	numphibins+=2;
+	bcal_cluster_phi = new TH1I("bcal_cluster_phi","phi (DBCALCluster)",numphibins,phimin,phimax);
 	bcal_cluster_sigPhi = new TH1I("bcal_cluster_sigPhi","sigPhi (DBCALCluster)", 100, 0, 0.1);
 	bcal_cluster_rho_theta = new TH2I("bcal_cluster_rho_theta","theta vs rho (DBCALCluster);rho;theta", 100, 0, 360, 100, 0, 2.2);
 
@@ -516,7 +534,7 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, int eventnumber) {
 		bcal_tdc_digi_time->Fill(hit->time);
 		vector<const DF1TDCHit*> f1tdchits;
 		hit->Get(f1tdchits);
-		bcal_tdc_digi_reltime->Fill(f1tdchits[0]->time,f1tdchits[0]->trig_time);
+		if (f1tdchits.size()>0) bcal_tdc_digi_reltime->Fill(f1tdchits[0]->time,f1tdchits[0]->trig_time);
 
 		int layer = hit->layer;
 		int glosect = DBCALGeometry::getglobalsector(hit->module, hit->sector);
