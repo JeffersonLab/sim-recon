@@ -151,6 +151,7 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
       double hit_E = 0;
       if (integral > 0) hit_E  = gain * (integral - totalpedestal);
       if ( hit_E < 0 ) continue;  // Throw away negative energy hits  
+      int pulse_peak_pedsub = digihit->pulse_peak - digihit->pedestal / digihit->nsamples_pedestal;
       // Calculate time for channel
       double pulse_time        = (double)digihit->pulse_time;
       double hit_t             = t_scale * pulse_time - GetConstant(time_offsets,digihit) + t_base;
@@ -161,7 +162,8 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
       hit->sector = digihit->sector;
       hit->end    = digihit->end;
 
-      hit->E = hit_E;  
+      hit->E = hit_E;
+      hit->pulse_peak = pulse_peak_pedsub;
       hit->t = hit_t;
 
       hit->AddAssociatedObject(digihit);

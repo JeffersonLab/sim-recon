@@ -23,8 +23,6 @@
 #include "TRACKING/DTrackTimeBased.h"
 #include "PID/DEventRFBunch.h"
 #include "PID/DDetectorMatches.h"
-#include "DAQ/Df250PulsePedestal.h" // Needed for pulse peak information
-#include "BCAL/DBCALDigiHit.h"
 
 using namespace jana;
 
@@ -109,16 +107,8 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, int eventnumber
         bcalUnifiedHitVector[i]->GetSingle(thisADCHit);
         bcalUnifiedHitVector[i]->GetSingle(thisTDCHit);
 
-        // From the ADC hit we can extract the pulse peak information, just have to go down the chain a little...
-        const DBCALDigiHit *thisDigiHit;
-        thisADCHit->GetSingle(thisDigiHit);
-        const Df250PulsePedestal *pp;
-        thisDigiHit->GetSingle(pp);
-        int pulse_peak = 0;
-        if (pp != NULL){
-            pulse_peak = pp->pulse_peak;
-            pulse_peak -= pp->pedestal;
-        }
+        // From the ADC hit we can extract the pulse peak information...
+        int pulse_peak = thisADCHit->pulse_peak;
 
         // The raw information from the DBCALHit and DBCALTDCHit is not corrected for timewalk yet, so we can always plot the before and after.
         if (thisADCHit != NULL && thisTDCHit != NULL){
