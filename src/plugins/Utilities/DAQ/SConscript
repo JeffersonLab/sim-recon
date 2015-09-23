@@ -13,7 +13,7 @@ sbms.AddJANA(env)
 sbms.AddET(env)
 sbms.AddROOT(env)
 sbms.AddCCDB(env)
-sbms.AddCODAChannels(env)
+#sbms.AddCODAChannels(env)
 sbms.plugin(env)
 
 

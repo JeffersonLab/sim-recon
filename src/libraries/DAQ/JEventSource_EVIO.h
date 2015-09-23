@@ -31,13 +31,13 @@ using namespace jana;
 #include "HDEVIO.h"
 
 #ifdef HAVE_EVIO
-#include <evioChannel.hxx>
+//#include <evioChannel.hxx>
 #include <evioUtil.hxx>
 using namespace evio;
 #endif // HAVE_EVIO
 
 #ifdef HAVE_ET
-#include <evioETChannel.hxx>
+//#include <evioETChannel.hxx>
 #include <et.h>
 #endif // HAVE_ET
 
@@ -188,7 +188,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		int32_t last_run_number;
 		int32_t filename_run_number;
 		
-		evioChannel *chan;
+		bool et_connected;
+		//evioChannel *chan;
 		HDEVIO *hdevio;
 		EVIOSourceType source_type;
 		map<tagNum, MODULE_TYPE> module_type;
