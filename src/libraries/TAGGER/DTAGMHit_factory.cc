@@ -225,6 +225,7 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		hit->time_fadc = 0;
 		hit->npix_fadc = 0;
 		hit->integral = 0;
+		hit->pulse_peak = 0;
 		hit->has_fADC=false;
 		_data.push_back(hit);
 	    }

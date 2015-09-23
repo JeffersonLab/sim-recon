@@ -868,7 +868,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       rt->SetMass(mass);
       rt->SetDGeometry(geom);
       rt->q = timebased_track->charge();
-      rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge());
+      rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge(),&timebased_track->errorMatrix());
 
       if(rt->Nswim_steps <= 1)
       {
@@ -1006,7 +1006,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   rt->SetMass(my_mass);
   rt->SetDGeometry(geom);
   rt->q = timebased_track->charge();
-  rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge());
+  rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge(),&timebased_track->errorMatrix());
   timebased_track->rt=rt;
   
   // Get the hits used in the fit and add them as associated objects 

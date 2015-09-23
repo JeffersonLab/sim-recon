@@ -1855,7 +1855,7 @@ void MyProcessor::GetIntersectionWithCalorimeter(const DKinematicData* kd, DVect
 	DVector3 norm(0.0, 0.0, -1.0);
 	//rt.GetIntersectionWithPlane(origin, norm, pos_fcal, &s_fcal); // This gives different answer than below!
 	DVector3 p_at_intersection;
-	rt.GetIntersectionWithPlane(origin, norm, pos_fcal, p_at_intersection, &s_fcal, NULL, SYS_FCAL);
+	rt.GetIntersectionWithPlane(origin, norm, pos_fcal, p_at_intersection, &s_fcal, NULL, NULL, SYS_FCAL);
 	if(pos_fcal.Perp()<FCAL_Rmin || pos_fcal.Perp()>FCAL_Rmax || !isfinite(pos_fcal.Z()))s_fcal = 1.0E6;
 	
 	// Find intersection with BCAL

@@ -87,7 +87,7 @@ class DReferenceTrajectory{
 		double DistToRT(double x, double y, double z) const {return DistToRT(DVector3(x,y,z));}
 		double DistToRT(DVector3 hit, double *s=NULL,DetectorSystem_t detector=SYS_NULL) const;
 		double DistToRTwithTime(DVector3 hit, double *s=NULL,
-					double *t=NULL,
+					double *t=NULL,double *var_t=NULL,
 					DetectorSystem_t detector=SYS_NULL) const;
 		double DistToRT(const DCoordinateSystem *wire, double *s=NULL) const;
 		double DistToRTBruteForce(const DCoordinateSystem *wire, double *s=NULL) const;
@@ -107,8 +107,8 @@ class DReferenceTrajectory{
 			      const DCoordinateSystem *wire=NULL);
 
 		int InsertSteps(const swim_step_t *start_step, double delta_s, double step_size=0.02); 
-		jerror_t GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s=NULL,double *t=NULL,DetectorSystem_t detector=SYS_NULL) const;	
-		jerror_t GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, DVector3 &p_at_intersection,double *s=NULL,double *t=NULL,DetectorSystem_t detector=SYS_NULL) const;
+		jerror_t GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s=NULL,double *t=NULL,double *var_t=NULL,DetectorSystem_t detector=SYS_NULL) const;	
+		jerror_t GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, DVector3 &p_at_intersection,double *s=NULL,double *t=NULL,double *var_t=NULL,DetectorSystem_t detector=SYS_NULL) const;
 		jerror_t GetIntersectionWithRadius(double R,DVector3 &mypos,
 						   double *s=NULL,
 						   double *t=NULL,

@@ -52,7 +52,7 @@ jerror_t DTAGHHit_factory::init(void)
       tdc_time_offsets[counter] = 0;
       counter_quality[counter] = 0;
    }
-    
+
    return NOERROR;
 }
 
@@ -137,7 +137,7 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
       // throw away hits from bad or noisy counters
       int quality = counter_quality[counter];
-      if (quality == k_counter_bad || quality == k_counter_noisy) 
+      if (quality == k_counter_bad || quality == k_counter_noisy)
           continue;
 
       // Throw away hits where the fADC timing algorithm failed
@@ -146,8 +146,10 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
       // Do not make hits out of these
       const Df250PulsePedestal* PPobj = NULL;
       digihit->GetSingle(PPobj);
+      double pulse_peak = 0.0;
       if (PPobj != NULL){
           if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+          pulse_peak = PPobj->pulse_peak - PPobj->pedestal;
       }
 
       // Get pedestal, prefer associated event pedestal if it exists,
@@ -157,7 +159,7 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
       digihit->GetSingle(PIobj);
       if (PIobj != NULL) {
 	  // the measured pedestal must be scaled by the ratio of the number
-	  // of samples used to calculate the integral and the pedestal          
+	  // of samples used to calculate the integral and the pedestal
 	  // Changed to conform to D. Lawrence changes Dec. 4 2014
           double ped_sum = (double)PIobj->pedestal;
           double nsamples_integral = (double)PIobj->nsamples_integral;
@@ -180,6 +182,7 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
       // Apply calibration constants
       double T = digihit->pulse_time;
       hit->integral = A;
+      hit->pulse_peak = pulse_peak;
       hit->npe_fadc = A * fadc_a_scale * fadc_gains[counter];
       hit->time_fadc = T * fadc_t_scale - fadc_time_offsets[counter] + t_base;
       hit->time_tdc = numeric_limits<double>::quiet_NaN();
@@ -202,7 +205,7 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
       // Apply calibration constants here
       int counter = digihit->counter_id;
       double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - tdc_time_offsets[counter] + t_tdc_base;
-      
+
       // Look for existing hits to see if there is a match
       // or create new one if there is no match
       DTAGHHit *hit = 0;
@@ -221,6 +224,7 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	hit->E = (Elow + Ehigh)/2;
 	hit->time_fadc = numeric_limits<double>::quiet_NaN();
 	hit->integral = numeric_limits<double>::quiet_NaN();
+    hit->pulse_peak = numeric_limits<double>::quiet_NaN();
 	hit->npe_fadc = numeric_limits<double>::quiet_NaN();
 	hit->has_fADC = false;
 	_data.push_back(hit);
@@ -228,9 +232,9 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
       hit->time_tdc = T;
       hit->has_TDC = true;
       hit->t = T;
-      
+
       // apply time-walk corrections?
-      
+
       hit->AddAssociatedObject(digihit);
    }
 
