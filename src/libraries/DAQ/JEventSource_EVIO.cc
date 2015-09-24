@@ -330,12 +330,14 @@ JEventSource_EVIO::~JEventSource_EVIO()
 //		chan->close();
 //		delete chan;
 //	}
-	
+
+#ifdef HAVE_ET	
 	if(et_connected){
 		if(VERBOSE>0) evioout << "Closing ET connection \"" << this->source_name << "\"" <<endl;
 		et_close(sys_id);
 		et_connected = false;
 	}
+#endif
 
 	if(hdevio){
 		if(VERBOSE>0) evioout << "Closing hdevio event source \"" << this->source_name << "\"" <<endl;
@@ -553,7 +555,7 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 	jerr << "To get ET support." << endl;
 	jerr << endl;
 	throw exception();
-#endif
+#endif  // HAVE_ET
 }
 
 //----------------
@@ -574,8 +576,10 @@ void JEventSource_EVIO::Cleanup(void)
 	hdevio = NULL;
 	//if(chan) delete chan;
 	//chan = NULL;
+#ifdef HAVE_ET
 	if(et_connected) et_close(sys_id);
 	et_connected = false;
+#endif  // HAVE_ET
 
 	module_type.clear();
 	modtype_translate.clear();
