@@ -87,7 +87,7 @@ class DTrackFitter:public jana::JObject{
 		pull_t(double resi, double err,double s=0.0,
 		       double tdrift=0.0, double d=0.0,
 		       const DCDCTrackHit *cdc_hit=NULL,
-		       const DFDCPseudo *fdc_hit=NULL, double docaphi=0.0):resi(resi),err(err),s(s),tdrift(tdrift),d(d),cdc_hit(cdc_hit),fdc_hit(fdc_hit),docaphi(docaphi){}
+		       const DFDCPseudo *fdc_hit=NULL, double docaphi=0.0, double docaz=0.0):resi(resi),err(err),s(s),tdrift(tdrift),d(d),cdc_hit(cdc_hit),fdc_hit(fdc_hit),docaphi(docaphi),docaz(docaz){}
 		    double resi;	// residual of measurement
 		    double err;		// estimated error of measurement
 		    double s;
@@ -96,6 +96,7 @@ class DTrackFitter:public jana::JObject{
 			 const DCDCTrackHit *cdc_hit;
 			 const DFDCPseudo *fdc_hit;
              double docaphi; // phi of doca in CDC straws
+             double docaz; // z of DOCA in CDC
 		};
 		
 		// Constructor and destructor

@@ -32,7 +32,7 @@ class DTrackCandidate_factory_CDCCOSMIC:public jana::JFactory<DTrackCandidate>{
         double CDCDriftVariance(double t);
         unsigned int Locate(vector<double>&xx,double x);
         double CDCTrackError(const DCDCWire *, const double *, double *);
-        double GetDOCAPhi(const DCDCWire *, DTrackCandidate *);
+        void GetDOCAPhiandZ(const DCDCWire *, DTrackCandidate *, double &, double &);
         DReferenceTrajectory *rt;
         DMagneticFieldMapNoField *bfield;
         DTrackFinder *finder;
