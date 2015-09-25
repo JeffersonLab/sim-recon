@@ -128,7 +128,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 	DNeutralParticleHypothesis* locNeutralParticleHypothesis = new DNeutralParticleHypothesis;
 	locNeutralParticleHypothesis->AddAssociatedObject(locNeutralShower);
 
-	locNeutralParticleHypothesis->dNeutralShowerID = locNeutralShower->id;
+	locNeutralParticleHypothesis->dNeutralShowerID = locNeutralShower->dShowerID;
 	locNeutralParticleHypothesis->setPID(locPID);
 	locNeutralParticleHypothesis->setMass(locMass);
 	locNeutralParticleHypothesis->setCharge(0.0);

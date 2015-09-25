@@ -204,7 +204,7 @@ double DTrackCandidate_factory_CDCCOSMIC::CDCTrackError(const DCDCWire *wire , c
     return error;
 }
 
-double DTrackCandidate_factory_CDCCOSMIC::GetDOCAPhi(const DCDCWire *wire, DTrackCandidate *locTrack){
+void DTrackCandidate_factory_CDCCOSMIC::GetDOCAPhiandZ(const DCDCWire *wire, DTrackCandidate *locTrack, double &phi, double &z){
     // Get the vector pointing from the wire to the doca point
     DVector3 trackPosition = locTrack->position();
     DVector3 trackMomentum = locTrack->momentum();
@@ -220,8 +220,10 @@ double DTrackCandidate_factory_CDCCOSMIC::GetDOCAPhi(const DCDCWire *wire, DTrac
     Float_t sc = ((b*e - c*d)/(a*c-b*b));
     //if (sc < 0) continue; // Track must come from location away from origin
     DVector3 POCAOnTrack = trackPosition + sc * trackMomentum;
+    z = POCAOnTrack.Z();
     DVector3 LOCA = w0 + ((b*e - c*d)/(a*c-b*b))*trackMomentum - ((a*e - b*d)/(a*c-b*b))*wireDirection;
-    return LOCA.Phi();
+    phi = LOCA.Phi();
+    return;
 }
 // Locate a position in vector xx given x
 unsigned int DTrackCandidate_factory_CDCCOSMIC::Locate(vector<double>&xx,
@@ -535,8 +537,9 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumb
                 double trackError = CDCTrackError(hits[j]->wire, xs, dxs);
                 double error = sqrt(pow(measurementError,2) + pow(trackError,2));
                 //cout << " The error is as follows, measurment error = " << measurementError << " Tracking Error " << trackError << " Total " << error << endl;
-                double docaphi = GetDOCAPhi(hits[j]->wire, can);
-                can->pulls.push_back(DTrackFitter::pull_t(residual, error, 0.0, time , measurement, hits[j], NULL,docaphi));
+                double docaphi, docaz;
+                GetDOCAPhiandZ(hits[j]->wire, can, docaphi, docaz);
+                can->pulls.push_back(DTrackFitter::pull_t(residual, error, 0.0, time , measurement, hits[j], NULL,docaphi,docaz));
 
             }
             _data.push_back(can);

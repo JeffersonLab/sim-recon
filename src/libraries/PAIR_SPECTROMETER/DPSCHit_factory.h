@@ -36,6 +36,14 @@ class DPSCHit_factory:public jana::JFactory<DPSCHit>{
   double t_base;
   double t_tdc_base;
 
+  // timewalk parameters per module
+  vector<vector<double> > tw_parameters;
+  double c0;
+  double c1;
+  double c2;
+  double thresh;
+  double P_0;
+
   // calibration constants stored by channel
   psc_digi_constants_t  adc_gains;
   psc_digi_constants_t  adc_pedestals;

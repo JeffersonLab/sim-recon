@@ -138,6 +138,7 @@ jerror_t DPSHit_factory::evnt(JEventLoop *loop, int eventnumber)
     if (PPobj != NULL){
       if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
     }
+    else continue;
 	
     // Get pedestal, prefer associated event pedestal if it exists,
     // otherwise, use the average pedestal from CCDB
@@ -153,8 +154,10 @@ jerror_t DPSHit_factory::evnt(JEventLoop *loop, int eventnumber)
       double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
       pedestal          = ped_sum * nsamples_integral/nsamples_pedestal;
     }
+    else continue;
 
     // Apply calibration constants here
+    double P = PPobj->pulse_peak - PPobj->pedestal;
     double A = (double)digihit->pulse_integral;
     A -= pedestal;
     // Throw away hits with small pedestal-subtracted integrals
@@ -168,6 +171,7 @@ jerror_t DPSHit_factory::evnt(JEventLoop *loop, int eventnumber)
     hit->arm     = digihit->arm;
     hit->column  = digihit->column;
     hit->integral = A;
+    hit->pulse_peak = P;
     hit->npix_fadc = A * a_scale * GetConstant(adc_gains, digihit, psGeom);
     hit->t = t_scale * T - GetConstant(adc_time_offsets, digihit, psGeom) + t_base;
     hit->E = 0.5*(psGeom.getElow(digihit->arm,digihit->column) + psGeom.getEhigh(digihit->arm,digihit->column));

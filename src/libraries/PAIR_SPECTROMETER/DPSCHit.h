@@ -20,6 +20,7 @@ class DPSCHit:public jana::JObject{
   int module;
   double t;
   double integral;
+  double pulse_peak;
   double time_tdc;
   double time_fadc;
   double npe_fadc;
@@ -32,6 +33,7 @@ class DPSCHit:public jana::JObject{
     AddString(items, "time_tdc(ns)", "%f", time_tdc);
     AddString(items, "time_fadc(ns)", "%f", time_fadc);
     AddString(items, "integral", "%f", integral);
+    AddString(items, "pulse_peak", "%f", pulse_peak);
     AddString(items, "npe_fadc", "%f", npe_fadc);
     AddString(items, "has_fADC", "%d", (int)has_fADC);
     AddString(items, "has_TDC", "%d", (int)has_TDC);

@@ -41,14 +41,16 @@ jerror_t DNeutralParticleHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEv
 	locEventLoop->Get(locKinFitResultsVector);
 
 	map<const DKinFitParticle*, DNeutralParticleHypothesis*> locKinFitParticleMap;
-	map<DNeutralParticleHypothesis*, deque<const DParticleCombo*> > locNeutralParticleComboMap;
-	map<const DKinematicData*, const DKinFitParticle*> locReverseParticleMapping;
 
 	for(size_t loc_i = 0; loc_i < locKinFitResultsVector.size(); ++loc_i)
 	{
 		set<const DParticleCombo*> locParticleCombos;
 		locKinFitResultsVector[loc_i]->Get_ParticleCombos(locParticleCombos);
-		const DParticleCombo* locParticleCombo = *(locParticleCombos.begin());
+
+		set<const DParticleCombo*>::iterator locComboIterator = locParticleCombos.begin();
+		const DParticleCombo* locParticleCombo = *locComboIterator;
+
+		map<const DKinematicData*, const DKinFitParticle*> locReverseParticleMapping;
 		locKinFitResultsVector[loc_i]->Get_ReverseParticleMapping(locReverseParticleMapping);
 		for(size_t loc_j = 0; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
 		{
@@ -60,24 +62,27 @@ jerror_t DNeutralParticleHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEv
 				if(!locParticleComboStep->Is_FinalParticleNeutral(loc_k))
 					continue;
 				const DKinFitParticle* locKinFitParticle = locReverseParticleMapping[locParticleComboStep->Get_FinalParticle_Measured(loc_k)];
+
+				map<const DKinFitParticle*, DNeutralParticleHypothesis*>::iterator locNewHypoIterator = locKinFitParticleMap.find(locKinFitParticle);
+				if(locNewHypoIterator != locKinFitParticleMap.end())
+				{
+					for(locComboIterator = locParticleCombos.begin(); locComboIterator != locParticleCombos.end(); ++locComboIterator)
+						locNewHypoIterator->second->AddAssociatedObject(*locComboIterator);
+					continue; //new particle already created for this kinfit particle
+				}
+
 				const DNeutralShower* locNeutralShower = static_cast<const DNeutralShower*>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_k));
 				const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticleComboStep->Get_FinalParticle(loc_k));
+
 				DNeutralParticleHypothesis* locNewNeutralParticleHypothesis = Build_NeutralParticleHypothesis(locNeutralParticleHypothesis, locKinFitParticle, locNeutralShower, locParticleCombo);
 				locKinFitParticleMap[locKinFitParticle] = locNewNeutralParticleHypothesis;
-				locNeutralParticleComboMap[locNewNeutralParticleHypothesis] = deque<const DParticleCombo*>(1, locParticleCombo);
+
+				for(locComboIterator = locParticleCombos.begin(); locComboIterator != locParticleCombos.end(); ++locComboIterator)
+					locNewNeutralParticleHypothesis->AddAssociatedObject(*locComboIterator);
+
+				_data.push_back(locNewNeutralParticleHypothesis);
 			}
 		}
-	}
-
-	//now set the particle combos as associated objects of the neutral tracks, and save the tracks //this marks which combos they originated from
-	map<DNeutralParticleHypothesis*, deque<const DParticleCombo*> >::iterator locIterator;
-	for(locIterator = locNeutralParticleComboMap.begin(); locIterator != locNeutralParticleComboMap.end(); ++locIterator)
-	{
-		DNeutralParticleHypothesis* locNewNeutralParticleHypothesis = locIterator->first;
-		deque<const DParticleCombo*>& locParticleCombos = locIterator->second;
-		for(size_t loc_i = 0; loc_i < locParticleCombos.size(); ++loc_i)
-			locNewNeutralParticleHypothesis->AddAssociatedObject(locParticleCombos[loc_i]);
-		_data.push_back(locNewNeutralParticleHypothesis);
 	}
 
 	return NOERROR;

@@ -1278,7 +1278,6 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
 			locStepName = locReactionStep->Get_StepName();
 			locStepROOTName = locReactionStep->Get_StepROOTName();
-
 			if(locDetectedPIDs[loc_i].empty())
 				continue;
 

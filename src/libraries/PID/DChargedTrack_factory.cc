@@ -45,6 +45,7 @@ jerror_t DChargedTrack_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	for(; locIterator != locHypothesesByTrackID.end(); ++locIterator)
 	{
 		DChargedTrack* locChargedTrack = new DChargedTrack();
+		locChargedTrack->candidateid = locIterator->first;
 		locChargedTrack->dChargedTrackHypotheses = locIterator->second;
 		_data.push_back(locChargedTrack);
 	}
