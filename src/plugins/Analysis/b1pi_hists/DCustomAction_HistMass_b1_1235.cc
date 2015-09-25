@@ -41,7 +41,7 @@ void DCustomAction_HistMass_b1_1235::Initialize(JEventLoop* locEventLoop)
 bool DCustomAction_HistMass_b1_1235::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	//Optional: check whether the user wanted to use the kinematic fit results when performing this action
-	bool locUseKinFitResultsFlag = Get_UseKinFitResultsFlag();
+//	bool locUseKinFitResultsFlag = Get_UseKinFitResultsFlag();
 
 	const DParticleComboStep* locParticleComboStep0 = locParticleCombo->Get_ParticleComboStep(0);
 	const DParticleComboStep* locParticleComboStep1 = locParticleCombo->Get_ParticleComboStep(1);
