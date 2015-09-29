@@ -11,7 +11,7 @@
 #include <cmath>
 #include "DBCALGeometry.h"
 
-#include <HDGEOMETRY/DGeometry.h>
+//#include <HDGEOMETRY/DGeometry.h>
 
 // On each module there is a 10x4 (r/phi) array of SiPMs
 
@@ -45,7 +45,7 @@ int DBCALGeometry::NSUMLAYSOUT[] = {1,1,1,1};
 
 int DBCALGeometry::NBCALSECSIN = 4/DBCALGeometry::NSUMSECSIN;
 int DBCALGeometry::NBCALSECSOUT = 4/DBCALGeometry::NSUMSECSOUT;
-float DBCALGeometry::BCAL_PHI_SHIFT = 0.0; // will be overwritten in constructor
+//float DBCALGeometry::BCAL_PHI_SHIFT = 0.0; // will be overwritten in constructor
 
 float DBCALGeometry::BCALINNERRAD = 64.3;   
 float DBCALGeometry::BCALOUTERRAD = 86.17;
@@ -106,13 +106,13 @@ DBCALGeometry::DBCALGeometry()
   }
   
   //Get pointer to DGeometry object
-  DApplication* dapp=dynamic_cast<DApplication*>(japp);
-  const DGeometry *dgeom  = dapp->GetDGeometry(9999);
+  //DApplication* dapp=dynamic_cast<DApplication*>(japp);
+  //const DGeometry *dgeom  = dapp->GetDGeometry(9999);
 
   // Get overall phi shift of BCAL
-  double my_BCAL_PHI_SHIFT;
-  dgeom->GetBCALPhiShift(my_BCAL_PHI_SHIFT);
-  BCAL_PHI_SHIFT = (float)(my_BCAL_PHI_SHIFT*M_PI/180.0);  // convert to radians
+  //double my_BCAL_PHI_SHIFT;
+  //dgeom->GetBCALPhiShift(my_BCAL_PHI_SHIFT);
+  //BCAL_PHI_SHIFT = (float)(my_BCAL_PHI_SHIFT*M_PI/180.0);  // convert to radians
 
 }
 
