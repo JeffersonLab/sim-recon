@@ -283,7 +283,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction));
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, false)); //false: focus on keeping signal
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_FCAL)); //false: measured data
@@ -358,7 +358,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	// PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction));
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //false: focus on keeping signal
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_FCAL)); //false: measured data

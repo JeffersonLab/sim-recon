@@ -48,6 +48,8 @@ bool DCustomAction_dEdxCut::Perform_Action(JEventLoop* locEventLoop, const DPart
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
 		Particle_t locPID = locChargedTrackHypothesis->PID();
+		if(ParticleCharge(locPID) < 0)
+			continue; //only need to separate q+
 
 		const DTrackTimeBased* locTrackTimeBased = NULL;
 		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
@@ -55,15 +57,37 @@ bool DCustomAction_dEdxCut::Perform_Action(JEventLoop* locEventLoop, const DPart
 		double locP = locTrackTimeBased->momentum().Mag();
 		double locdEdx = locTrackTimeBased->ddEdx_CDC*1.0E6;
 
+		//if requested max rejection, only do so if no timing information
+			//assume time resolution good enough to separate protons and pions
+		bool locHasNoTimeInfoFlag = (locChargedTrackHypothesis->dNDF_Timing == 0);
+
 		if((ParticleMass(locPID) + 0.0001) >= ParticleMass(Proton))
 		{
-			if(locdEdx < dFunc_dEdxCut_SelectHeavy->Eval(locP))
-				return false;
+			//protons
+			if(dMaxRejectionFlag && locHasNoTimeInfoFlag) //focus on rejecting background pions
+			{
+				if(locdEdx < dFunc_dEdxCut_SelectLight->Eval(locP))
+					return false;
+			}
+			else //focus on keeping signal protons
+			{
+				if(locdEdx < dFunc_dEdxCut_SelectHeavy->Eval(locP))
+					return false;
+			}
 		}
 		else
 		{
-			if(locdEdx > dFunc_dEdxCut_SelectLight->Eval(locP))
-				return false;
+			//pions
+			if(dMaxRejectionFlag && locHasNoTimeInfoFlag) //focus on rejecting background protons
+			{
+				if(locdEdx > dFunc_dEdxCut_SelectHeavy->Eval(locP))
+					return false;
+			}
+			else //focus on keeping signal pions
+			{
+				if(locdEdx > dFunc_dEdxCut_SelectLight->Eval(locP))
+					return false;
+			}
 		}
 	}
 

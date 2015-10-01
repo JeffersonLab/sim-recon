@@ -76,7 +76,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 	// PID Cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction));
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, PiPlus, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, PiPlus, SYS_FCAL)); //false: measured data
@@ -90,7 +90,6 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Track DOCA, etc.
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
-//	locReaction->Add_AnalysisAction(new DCutAction_MaxTrackDOCA(locReaction, Gamma, 3.0));
 
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56));
@@ -161,7 +160,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 	// PID Cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction));
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_FCAL)); //false: measured data
@@ -178,7 +177,6 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Track DOCA, etc.
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
-//	locReaction->Add_AnalysisAction(new DCutAction_MaxTrackDOCA(locReaction, Gamma, 3.0));
 
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4));
@@ -250,7 +248,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 
 	// PID Cuts
-	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction));
+	locReaction->Add_AnalysisAction(new DCustomAction_dEdxCut(locReaction, true)); //true: focus on rejecting background
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_TOF)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_BCAL)); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 2.0, Proton, SYS_FCAL)); //false: measured data
@@ -264,7 +262,6 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Track DOCA, etc.
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
-//	locReaction->Add_AnalysisAction(new DCutAction_MaxTrackDOCA(locReaction, Gamma, 3.0));
 
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4));
