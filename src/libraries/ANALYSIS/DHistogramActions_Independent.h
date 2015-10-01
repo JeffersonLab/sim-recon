@@ -196,10 +196,10 @@ class DHistogramAction_Reconstruction : public DAnalysisAction
 		TH2I* dHist_CDCRingVsTheta_WireBased;
 		TH2I* dHist_CDCRingVsTheta_TimeBased;
 		TH2I* dHist_CDCRingVsTheta_TimeBased_GoodTrackFOM;
-		TH2I* dHist_FDCPlaneVsP_Candidates;
-		TH2I* dHist_FDCPlaneVsP_WireBased;
-		TH2I* dHist_FDCPlaneVsP_TimeBased;
-		TH2I* dHist_FDCPlaneVsP_TimeBased_GoodTrackFOM;
+		TH2I* dHist_FDCPlaneVsTheta_Candidates;
+		TH2I* dHist_FDCPlaneVsTheta_WireBased;
+		TH2I* dHist_FDCPlaneVsTheta_TimeBased;
+		TH2I* dHist_FDCPlaneVsTheta_TimeBased_GoodTrackFOM;
 
 		TH2I* dHist_MCMatchedHitsVsTheta;
 		TH2I* dHist_MCMatchedHitsVsP;
