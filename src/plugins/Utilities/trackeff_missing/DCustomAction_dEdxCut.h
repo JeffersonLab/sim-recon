@@ -11,6 +11,8 @@
 #include <string>
 #include <iostream>
 
+#include "TF1.h"
+
 #include "JANA/JEventLoop.h"
 #include "JANA/JApplication.h"
 
@@ -27,7 +29,7 @@ class DCustomAction_dEdxCut : public DAnalysisAction
 	public:
 
 		DCustomAction_dEdxCut(const DReaction* locReaction, string locActionUniqueString = "") : 
-		DAnalysisAction(locReaction, "Custom_dEdxCut", locActionUniqueString) {}
+		DAnalysisAction(locReaction, "Custom_dEdxCut", false, locActionUniqueString) {}
 
 		void Initialize(JEventLoop* locEventLoop);
 

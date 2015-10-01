@@ -15,10 +15,6 @@ void DCustomAction_dEdxCut::Initialize(JEventLoop* locEventLoop)
 
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
-		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
-			//If another thread has already created the folder, it just changes to it. 
-		CreateAndChangeTo_ActionDirectory();
-
 		string locFuncName = "df_dEdxCut_SelectHeavy"; //e.g. proton
 		if(gDirectory->Get(locFuncName.c_str()) != NULL) //already created by another thread
 			dFunc_dEdxCut_SelectHeavy = static_cast<TF1*>(gDirectory->Get(locFuncName.c_str()));
@@ -59,7 +55,7 @@ bool DCustomAction_dEdxCut::Perform_Action(JEventLoop* locEventLoop, const DPart
 		double locP = locTrackTimeBased->momentum().Mag();
 		double locdEdx = locTrackTimeBased->ddEdx_CDC*1.0E6;
 
-		if((ParticleMass(locPID) - 0.0001) >= ParticleMass(Prootn))
+		if((ParticleMass(locPID) + 0.0001) >= ParticleMass(Proton))
 		{
 			if(locdEdx < dFunc_dEdxCut_SelectHeavy->Eval(locP))
 				return false;

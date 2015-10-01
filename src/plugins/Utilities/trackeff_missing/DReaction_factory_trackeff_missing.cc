@@ -86,7 +86,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 
 	// Kinematic Fit: Vertex-Only Fit
-	locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7)); //cut +/- 5 sigma
+	locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7, 44.0, 85.0)); //cut +/- 5 sigma, vertex-z between 44 & 85
 
 	// Track DOCA, etc.
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
@@ -174,7 +174,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 
 	// Kinematic Fit: Vertex-Only Fit
-	locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7)); //cut +/- 5 sigma
+	locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7, 44.0, 85.0)); //cut +/- 5 sigma, vertex-z between 44 & 85
 
 	// Track DOCA, etc.
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
@@ -260,7 +260,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 
 	// Kinematic Fit: Vertex-Only Fit
-	locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7)); //cut +/- 5 sigma
+	locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7, 44.0, 85.0)); //cut +/- 5 sigma, vertex-z between 44 & 85
 
 	// Track DOCA, etc.
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
