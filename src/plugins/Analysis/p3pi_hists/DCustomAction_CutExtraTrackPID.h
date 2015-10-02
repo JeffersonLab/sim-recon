@@ -38,7 +38,7 @@ class DCustomAction_CutExtraTrackPID : public DAnalysisAction
 
 		Particle_t dExtraTrackTargetPID;
 		map<DetectorSystem_t, double> dPIDCuts;
-		DCustomAction_dEdxCut ddEdxCutAction;
+		DCustomAction_dEdxCut* ddEdxCutAction;
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 

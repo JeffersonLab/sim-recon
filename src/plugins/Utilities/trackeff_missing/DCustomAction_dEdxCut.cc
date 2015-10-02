@@ -57,18 +57,28 @@ bool DCustomAction_dEdxCut::Perform_Action(JEventLoop* locEventLoop, const DPart
 bool DCustomAction_dEdxCut::Cut_dEdx(const DChargedTrackHypothesis* locChargedTrackHypothesis) const
 {
 	Particle_t locPID = locChargedTrackHypothesis->PID();
-	if(ParticleCharge(locPID) < 0)
-		return true; //only need to separate q+
 
 	const DTrackTimeBased* locTrackTimeBased = NULL;
 	locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
 
 	double locP = locTrackTimeBased->momentum().Mag();
-	double locdEdx = locTrackTimeBased->ddEdx_CDC*1.0E6;
 
 	//if requested max rejection, only do so if no timing information
 		//assume time resolution good enough to separate protons and pions
 	bool locHasNoTimeInfoFlag = (locChargedTrackHypothesis->dNDF_Timing == 0);
+
+	if(!Cut_dEdx(locPID, locP, locTrackTimeBased->ddEdx_CDC*1.0E6, locHasNoTimeInfoFlag))
+		return false;
+	if(!Cut_dEdx(locPID, locP, locTrackTimeBased->ddEdx_FDC*1.0E6, locHasNoTimeInfoFlag))
+		return false;
+
+	return true;
+}
+
+bool DCustomAction_dEdxCut::Cut_dEdx(Particle_t locPID, double locP, double locdEdx, bool locHasNoTimeInfoFlag) const
+{
+	if(ParticleCharge(locPID) < 0)
+		return true; //only need to separate q+
 
 	if((ParticleMass(locPID) + 0.0001) >= ParticleMass(Proton))
 	{
@@ -98,5 +108,7 @@ bool DCustomAction_dEdxCut::Cut_dEdx(const DChargedTrackHypothesis* locChargedTr
 				return false;
 		}
 	}
+
+	return true;
 }
 

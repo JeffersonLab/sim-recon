@@ -379,6 +379,9 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	// Extra pi0
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.1, 0.16));
 
+	// Extra-track PID (if any)
+	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraTrackPID(locReaction, Proton));
+
 	// Omega vs missing proton
 	locReaction->Add_AnalysisAction(new DCustomAction_HistOmegaVsMissProton(locReaction));
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, false, 0.65, 0.9));
