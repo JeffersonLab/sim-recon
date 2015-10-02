@@ -1975,7 +1975,7 @@ bool DHistogramAction_Neutrals::Perform_Action(JEventLoop* locEventLoop, const D
 					dHist_BCALTrackDOCA->Fill(locDistance);
 				if(locDetectorMatches->Get_DistanceToNearestTrack(locBCALShower, locDeltaPhi, locDeltaZ))
 				{
-					dHist_BCALTrackDeltaPhi->Fill(locDeltaPhi);
+					dHist_BCALTrackDeltaPhi->Fill(180.0*locDeltaPhi/TMath::Pi());
 					dHist_BCALTrackDeltaZ->Fill(locDeltaZ);
 				}
 
