@@ -11,6 +11,8 @@
 #include <string>
 #include <iostream>
 
+#include "TF1.h"
+
 #include "JANA/JEventLoop.h"
 #include "JANA/JApplication.h"
 
@@ -26,8 +28,9 @@ class DCustomAction_dEdxCut : public DAnalysisAction
 {
 	public:
 
-		DCustomAction_dEdxCut(const DReaction* locReaction, string locActionUniqueString = "") : 
-		DAnalysisAction(locReaction, "Custom_dEdxCut", locActionUniqueString) {}
+		DCustomAction_dEdxCut(const DReaction* locReaction, bool locMaxRejectionFlag = false, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Custom_dEdxCut", false, locActionUniqueString),
+		dMaxRejectionFlag(locMaxRejectionFlag) {}
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -38,10 +41,15 @@ class DCustomAction_dEdxCut : public DAnalysisAction
 		// Optional: Useful utility functions.
 		// const DAnalysisUtilities* dAnalysisUtilities;
 
+		//specify whether to focus on keeping signal or rejecting background
+		//however, if the track has timing information, always try to keep as many good tracks as possible
+			//assume background can be rejected by timing PID cut
+			//otherwise, would cut almost all tracks above p = 1 GeV/c
+		bool dMaxRejectionFlag; // if false, keep as many good tracks as possible. if true, reject as many wrong tracks as possible
+
 		//Store any histograms as member variables here
-		TF1* dFunc_dEdxCut_SelectHeavy; //e.g. proton
-		TF1* dFunc_dEdxCut_SelectLight; //e.g. pion, kaon
+		TF1* dFunc_dEdxCut_SelectHeavy; //e.g. proton //if dMaxRejectionFlag = true, then used to cut all heavy
+		TF1* dFunc_dEdxCut_SelectLight; //e.g. pion, kaon //if dMaxRejectionFlag = true, then used to cut all light
 };
 
 #endif // _DCustomAction_dEdxCut_
-

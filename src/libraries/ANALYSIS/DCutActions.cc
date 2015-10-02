@@ -277,6 +277,20 @@ bool DCutAction_AllVertexZ::Perform_Action(JEventLoop* locEventLoop, const DPart
 	return true;
 }
 
+string DCutAction_ProductionVertexZ::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinVertexZ << "_" << dMaxVertexZ;
+	return locStream.str();
+}
+
+bool DCutAction_ProductionVertexZ::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	const DParticleComboStep* locStep = locParticleCombo->Get_ParticleComboStep(0);
+	double locVertexZ = locStep->Get_Position().Z();
+	return ((locVertexZ >= dMinVertexZ) && (locVertexZ <= dMaxVertexZ));
+}
+
 string DCutAction_MaxTrackDOCA::Get_ActionName(void) const
 {
 	ostringstream locStream;
@@ -1006,6 +1020,12 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
-	return (locConfidenceLevel >= dMinKinFitCL);
+	if(locConfidenceLevel < dMinKinFitCL)
+		return false;
+	if(dMinVertexZ < dMaxVertexZ) //don't cut otherwise
+	{
+		if((locFitVertex.Z() < dMinVertexZ) || (locFitVertex.Z() > dMaxVertexZ))
+			return false;
+	}
+	return true;
 }
-
