@@ -41,6 +41,7 @@ DCutAction_PIDFOM
 DCutAction_CombinedPIDFOM
 DCutAction_CombinedTrackingFOM
 
+DCutAction_MinTrackHits
 DCutAction_AllTracksHaveDetectorMatch
 DCutAction_ProductionVertexZ
 DCutAction_AllVertexZ
@@ -60,6 +61,22 @@ DCutAction_PIDDeltaT
 
 DCutAction_OneVertexKinFit
 */
+
+class DCutAction_MinTrackHits : public DAnalysisAction
+{
+	public:
+		DCutAction_MinTrackHits(const DReaction* locReaction, unsigned int locMinTrackHits, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Cut_MinTrackHits", false, locActionUniqueString),
+		dMinTrackHits(locMinTrackHits){}
+
+		string Get_ActionName(void) const;
+		void Initialize(JEventLoop* locEventLoop){}
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		unsigned int dMinTrackHits;
+};
 
 class DCutAction_ThrownTopology : public DAnalysisAction
 {

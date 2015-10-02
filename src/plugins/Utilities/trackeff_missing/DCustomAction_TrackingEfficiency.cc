@@ -687,6 +687,12 @@ void DCustomAction_TrackingEfficiency::Fill_ResolutionAndTrackEff_Hists(const DK
 	while(locDeltaPhi < -180.0)
 		locDeltaPhi += 360.0;
 
+	bool locTrackFoundFlag = false;
+//	if((locTrack != NULL) && (locTrackMatchFOM >= dMinTrackMatchFOM))
+//		locTrackFoundFlag = true;
+	if((locTrack != NULL) && (locDeltaPOverP < 0.25) && (locDeltaTheta < 10.0) && (locDeltaPhi < 15.0))
+		locTrackFoundFlag = true;
+
 	//Optional: Fill histograms
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
@@ -706,7 +712,7 @@ void DCustomAction_TrackingEfficiency::Fill_ResolutionAndTrackEff_Hists(const DK
 		}
 
 		//Efficiency
-		if((locTrack != NULL) && (locTrackMatchFOM >= dMinTrackMatchFOM))
+		if(locTrackFoundFlag)
 		{
 			//Found
 			dHistMap_TrackFound_PVsTheta[locIsTimeBasedFlag][locVertexZBin]->Fill(locMissingTheta, locMissingP);
