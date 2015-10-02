@@ -69,8 +69,8 @@ bool DCustomAction_dEdxCut::Cut_dEdx(const DChargedTrackHypothesis* locChargedTr
 
 	if(!Cut_dEdx(locPID, locP, locTrackTimeBased->ddEdx_CDC*1.0E6, locHasNoTimeInfoFlag))
 		return false;
-	if(!Cut_dEdx(locPID, locP, locTrackTimeBased->ddEdx_FDC*1.0E6, locHasNoTimeInfoFlag))
-		return false;
+//	if(!Cut_dEdx(locPID, locP, locTrackTimeBased->ddEdx_FDC*1.0E6, locHasNoTimeInfoFlag))
+//		return false;
 
 	return true;
 }
