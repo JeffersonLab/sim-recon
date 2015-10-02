@@ -41,7 +41,7 @@ bool DCustomAction_CutExtraTrackPID::Perform_Action(JEventLoop* locEventLoop, co
 		if(dPIDCuts.find(locSystem) == dPIDCuts.end())
 			continue;
 		
-		double locDeltaT = locParticles[loc_i]->time() - locParticles[loc_i]->t0();
+		double locDeltaT = locUnusedChargedTracks[loc_i]->time() - locUnusedChargedTracks[loc_i]->t0();
 		double dDeltaTCut = dPIDCuts.find(locSystem)->second;
 		if(fabs(locDeltaT) > dDeltaTCut)
 			return false;
