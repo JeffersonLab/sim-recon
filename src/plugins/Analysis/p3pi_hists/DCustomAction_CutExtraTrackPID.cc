@@ -26,7 +26,7 @@ bool DCustomAction_CutExtraTrackPID::Perform_Action(JEventLoop* locEventLoop, co
 	//NEVER: Grab objects that are created post-kinfit (e.g. DKinFitResults, etc.) from the JEventLoop if Get_UseKinFitResultsFlag() == false: CAN CAUSE INFINITE DEPENDENCY LOOP
 
 	vector<const DChargedTrack*> locUnusedChargedTracks;
-	dAnalysisUtilities->Get_UnusedChargedTracks(locEventLoop, locParticleCombo, locUnusedChargedTracks)
+	dAnalysisUtilities->Get_UnusedChargedTracks(locEventLoop, locParticleCombo, locUnusedChargedTracks);
 
 	for(size_t loc_i = 0; loc_i < locUnusedChargedTracks.size(); ++loc_i)
 	{

@@ -10,6 +10,7 @@
 #include "DCustomAction_HistOmegaVsMissProton.h"
 #include "DCustomAction_dEdxCut.h"
 #include "DCustomAction_CutExtraPi0.h"
+#include "DCustomAction_CutExtraTrackPID.h"
 
 //------------------
 // init
