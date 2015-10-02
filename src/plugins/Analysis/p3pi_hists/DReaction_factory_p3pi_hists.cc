@@ -303,7 +303,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	// Pi0
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 600, 0.0, 0.3, "Pi0"));
-	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.0917604, 0.169925));
+	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.0775209, 0.188047)); //+/- 3sigma
 
 	//	Missing Mass Squared (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 600, -0.06, 0.06));
@@ -375,7 +375,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	// Pi0
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 600, 0.0, 0.3, "Pi0"));
-	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.0917604, 0.169925));
+	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.0775209, 0.188047)); //+/- 3sigma
 
 	// Extra pi0
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.1, 0.16));
