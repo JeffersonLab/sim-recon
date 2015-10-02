@@ -26,6 +26,8 @@ using namespace std;
 
 #include "DRandom2.h"
 
+#include "mcsmear_globals.h"
+
 #ifndef _DBG_
 #define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
 #define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
@@ -219,59 +221,6 @@ void FindHits(double thresh_MeV,
 void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
                         map<int, TDCHitList> &TDCHits,
                         hddm_s::HDDM *record);
-
-// Mutex used to control accessing the ROOT global memory
-extern pthread_mutex_t root_mutex;
-
-// Flag used specifically for BCAL
-extern bool SMEAR_BCAL;
-
-// The following are all false by default, but can be
-// set to true via command line parameters. Setting
-// one of these to true will turn OFF the feature.
-extern bool NO_E_SMEAR;
-extern bool NO_T_SMEAR;
-extern bool NO_DARK_PULSES;
-extern bool NO_SAMPLING_FLUCTUATIONS;
-extern bool NO_SAMPLING_FLOOR_TERM;
-extern bool NO_POISSON_STATISTICS;
-extern bool NO_THRESHOLD_CUT;
-
-extern double BCAL_FADC_TIME_RESOLUTION; // ns
-extern double BCAL_TDC_TIME_RESOLUTION; // ns
-extern double BCAL_ADC_THRESHOLD_MEV; // MeV
-
-// setup response parameters
-extern double BCAL_SAMPLINGCOEFA;               // 0.042 (from calibDB BCAL/bcal_parms)
-extern double BCAL_SAMPLINGCOEFB;               // 0.013 (from calibDB BCAL/bcal_parms)
-extern double BCAL_TWO_HIT_RESOL;               // 50. (from calibDB BCAL/bcal_parms)
-extern double BCAL_mevPerPE;                    // (defined below)
-extern double BCAL_NS_PER_ADC_COUNT;            // 0.0625 (defined in mcsmear.cc)
-extern double BCAL_NS_PER_TDC_COUNT;            // 0.0559 (defined in mcsmear.cc)
-extern double BCAL_MEV_PER_ADC_COUNT;           // 0.029 (defined in mcsmear.cc)
-
-extern vector<vector<double> > attenuation_parameters; // Avg. of 525 (from calibDB BCAL/attenuation_parameters)
-extern vector<double> effective_velocities;     // 16.75 (from calibDB BCAL/effective_velocities)
-
-extern int BCAL_NUM_MODULES;
-extern int BCAL_NUM_LAYERS;
-extern int BCAL_NUM_SECTORS;
-
-extern double BCAL_BASE_TIME_OFFSET;            // -100.0 (from calibDB BCAL/base_time_offset)
-extern double BCAL_TDC_BASE_TIME_OFFSET;        // -100.0 (from calibDB BCAL/base_time_offset)
-
-// The following are not currently in use
-//extern double BCAL_DARKRATE_GHZ;                // 0.0176 (from calibDB BCAL/bcal_parms) for 4x4 array
-//extern double BCAL_DEVICEPDE;                   // 0.21   (from calibDB BCAL/bcal_parms)
-//extern double BCAL_SAMPLING_FRACT;              // 0.095  (from calibDB BCAL/bcal_parms)
-//extern double BCAL_PHOTONSPERSIDEPERMEV_INFIBER;// 75 (from calibDB BCAL/bcal_parms) 
-//extern double BCAL_SIGMA_SIG_RELATIVE;          // 0.105  (from calibDB BCAL/bcal_parms)
-//extern double BCAL_SIGMA_PED_RELATIVE;          // 0.139  (from calibDB BCAL/bcal_parms)
-//extern double BCAL_SIPM_GAIN_VARIATION;         // 0.04   (from calibDB BCAL/bcal_parms)
-//extern double BCAL_INTWINDOW_NS;                // 100    (from calibDB BCAL/bcal_parms)
-//extern double BCAL_AVG_DARK_DIGI_VALS_PER_EVENT;// 240 used to set thresholds
-//extern double BCAL_TIMEDIFFCOEFA;               // 0.07 * sqrt( 2 ) (from calibDB BCAL/bcal_parms)
-//extern double BCAL_TIMEDIFFCOEFB;               // 0.00 * sqrt( 2 ) (from calibDB BCAL/bcal_parms)
 
 //-----------
 // SmearBCAL

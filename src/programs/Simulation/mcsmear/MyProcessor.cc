@@ -124,7 +124,7 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
    if(!jcalib){
      _DBG_<<"ERROR - jcalib not set!"<<endl;
      _DBG_<<"ERROR - Exiting ..."<<endl;
-     return 0;
+     abort();
    }
    
    // get the TOF parameters
