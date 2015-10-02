@@ -34,11 +34,12 @@ class DCustomAction_dEdxCut : public DAnalysisAction
 
 		void Initialize(JEventLoop* locEventLoop);
 
+		bool Cut_dEdx(const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
+		bool Cut_dEdx(Particle_t locPID, double locP, double locdEdx, bool locHasNoTimeInfoFlag) const;
+
 	private:
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		bool Cut_dEdx(const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
-		bool Cut_dEdx(Particle_t locPID, double locP, double locdEdx, bool locHasNoTimeInfoFlag) const;
 
 		// Optional: Useful utility functions.
 		// const DAnalysisUtilities* dAnalysisUtilities;
