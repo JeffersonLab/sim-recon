@@ -37,6 +37,7 @@ class DCustomAction_dEdxCut : public DAnalysisAction
 	private:
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+		bool Cut_dEdx(const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
 		// Optional: Useful utility functions.
 		// const DAnalysisUtilities* dAnalysisUtilities;
