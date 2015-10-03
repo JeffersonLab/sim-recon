@@ -305,6 +305,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	// Various Kin Fit Cuts
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+/*
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 600, -0.06, 0.06, "PreCut"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, false, 600, 0.5, 1.1, "Omega_PreCut"));
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0)); //converged
@@ -322,14 +323,15 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.05));
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 600, -0.06, 0.06, "Cut_5"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, false, 600, 0.5, 1.1, "Omega_Cut_5"));
+*/
 
 	//	Missing Mass Squared (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 600, -0.06, 0.06));
-//	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
 
 	// Omega Mass (Hist and Cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, false, 600, 0.5, 1.1, "Omega_Kinfit"));
-	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, false, 0.69, 0.88)); //~ +/- 3sigma-ish
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 600, 0.5, 1.1, "Omega_Kinfit")); //true: kinfit
+	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.69, 0.88)); //~ +/- 3sigma-ish //true: kinfit
 
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
