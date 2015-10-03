@@ -266,7 +266,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	/**************************************************** p3pi_preco_any Control Settings ****************************************************/
 
-	locReaction->Set_KinFitType(d_VertexP4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 
 	/*********************************************** p3pi_preco_any Pre-Combo Custom Cuts ***********************************************/
@@ -338,7 +338,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	/**************************************************** p3pi_pmiss_any Control Settings ****************************************************/
 
-	locReaction->Set_KinFitType(d_VertexP4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 
 	locReaction->Set_MaxExtraGoodTracks(1); //not ideal
