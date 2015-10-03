@@ -97,7 +97,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2, "PostPi0"));
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, 0.75, 1.0));
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMass(locReaction, false, 0.87, 1.0));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
