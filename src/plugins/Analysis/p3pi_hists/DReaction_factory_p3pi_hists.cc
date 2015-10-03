@@ -307,11 +307,11 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	//	Missing Mass Squared (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 600, -0.06, 0.06));
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.006));
+	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
 
 	// Omega Mass (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, false, 600, 0.5, 1.1, "Omega_Kinfit"));
-	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, false, 0.71, 0.85));
+	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, false, 0.69, 0.88)); //~ +/- 3sigma-ish
 
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
@@ -385,17 +385,12 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	// Omega vs missing proton
 	locReaction->Add_AnalysisAction(new DCustomAction_HistOmegaVsMissProton(locReaction));
-	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, false, 0.65, 0.9));
-	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, false, 0.71, 0.85));
 
-	//	Missing Mass Squared (Hist and Cut)
+	//	Missing Mass Squared (Hist)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56));
 
-	// Omega Mass (Hist and Cut)
+	// Omega Mass (Hist)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 600, 0.5, 1.1, "Omega_Kinfit"));
-
-	// Kinematics of final selection
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 

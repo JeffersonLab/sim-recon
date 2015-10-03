@@ -64,7 +64,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 2.56));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMass(locReaction, false, 0.7, 1.2));
 
 	/**************************************************** TrackEff_MissingProton Analysis Actions ****************************************************/
 
@@ -93,10 +93,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 
 	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2));
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 1064, -0.1, 2.56, "PostPi0"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2, "PostPi0"));
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, 0.75, 1.0));
 
 	// Kinematics
@@ -150,7 +150,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.4, 0.4));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.3, 0.4));
 
 	/**************************************************** TrackEff_MissingPiMinus Analysis Actions ****************************************************/
 
@@ -182,10 +182,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 
 	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4));
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4, "PostPi0"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4, "PostPi0"));
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.03, 0.07));
 
 	// Kinematics
@@ -240,7 +240,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
 	// Example: Missing mass squared of proton
-	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.4, 0.4));
+	locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.3, 0.4));
 
 	/**************************************************** TrackEff_MissingPiPlus Analysis Actions ****************************************************/
 
@@ -269,10 +269,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 
 	// Missing Mass Squared
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4));
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
-	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 800, -0.4, 0.4, "PostPi0"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4, "PostPi0"));
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.03, 0.07));
 
 	// Kinematics
