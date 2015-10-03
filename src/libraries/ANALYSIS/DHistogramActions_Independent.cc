@@ -1726,10 +1726,18 @@ bool DHistogramAction_DetectorPID::Perform_Action(JEventLoop* locEventLoop, cons
 				double locBeta_Timing = locNeutralParticleHypothesis->measuredBeta();
 				const DNeutralShower* locNeutralShower = locNeutralParticles[loc_i]->dNeutralShower;
 				double locShowerEnergy = locNeutralShower->dEnergy;
+
+				double locDeltaT = locNeutralParticleHypothesis->time() - locEventRFBunch->dTime;
 				if(locNeutralShower->dDetectorSystem == SYS_BCAL)
+				{
 					dHistMap_BetaVsP[SYS_BCAL][0]->Fill(locShowerEnergy, locBeta_Timing);
+					dHistMap_DeltaTVsP[SYS_BCAL][Gamma]->Fill(locShowerEnergy, locDeltaT);
+				}
 				else
+				{
 					dHistMap_BetaVsP[SYS_FCAL][0]->Fill(locShowerEnergy, locBeta_Timing);
+					dHistMap_DeltaTVsP[SYS_FCAL][Gamma]->Fill(locShowerEnergy, locDeltaT);
+				}
 			}
 		}
 
