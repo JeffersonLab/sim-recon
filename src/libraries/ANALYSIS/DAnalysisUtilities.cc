@@ -479,10 +479,10 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(const DParticleCombo* locThr
 	return true;
 }
 
-void DAnalysisUtilities::Get_UnusedChargedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DChargedTrack*>& locUnusedChargedTracks, string locTrackSelectionTag) const
+void DAnalysisUtilities::Get_UnusedChargedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DChargedTrack*>& locUnusedChargedTracks) const
 {
 	locUnusedChargedTracks.clear();
-	locEventLoop->Get(locUnusedChargedTracks, locTrackSelectionTag.c_str());
+	locEventLoop->Get(locUnusedChargedTracks, dTrackSelectionTag.c_str());
 
 	deque<const DChargedTrack*> locSourceChargedTracks;
 	locParticleCombo->Get_DetectedFinalChargedParticles_SourceObjects(locSourceChargedTracks);
@@ -571,10 +571,10 @@ void DAnalysisUtilities::Get_UnusedTrackCandidates(JEventLoop* locEventLoop, con
 	}
 }
 
-void DAnalysisUtilities::Get_UnusedNeutralShowers(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DNeutralShower*>& locUnusedNeutralShowers, string locShowerSelectionTag) const
+void DAnalysisUtilities::Get_UnusedNeutralShowers(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DNeutralShower*>& locUnusedNeutralShowers) const
 {
 	locUnusedNeutralShowers.clear();
-	locEventLoop->Get(locUnusedNeutralShowers, locShowerSelectionTag.c_str());
+	locEventLoop->Get(locUnusedNeutralShowers, dShowerSelectionTag.c_str());
 
 	deque<const DNeutralShower*> locSourceNeutralShowers;
 	locParticleCombo->Get_DetectedFinalNeutralParticles_SourceObjects(locSourceNeutralShowers);
@@ -592,10 +592,10 @@ void DAnalysisUtilities::Get_UnusedNeutralShowers(JEventLoop* locEventLoop, cons
 	}
 }
 
-void DAnalysisUtilities::Get_UnusedNeutralParticles(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DNeutralParticle*>& locUnusedNeutralParticles, string locShowerSelectionTag) const
+void DAnalysisUtilities::Get_UnusedNeutralParticles(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DNeutralParticle*>& locUnusedNeutralParticles) const
 {
 	locUnusedNeutralParticles.clear();
-	locEventLoop->Get(locUnusedNeutralParticles, locShowerSelectionTag.c_str());
+	locEventLoop->Get(locUnusedNeutralParticles, dShowerSelectionTag.c_str());
 
 	deque<const DNeutralShower*> locSourceNeutralShowers;
 	locParticleCombo->Get_DetectedFinalNeutralParticles_SourceObjects(locSourceNeutralShowers);
