@@ -590,7 +590,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 		break;
 	}
 	if(locBestChargedTrackHypothesis == NULL)
-		return true; //No charged hypothesis, don't bother //shouldn't be possible!
+		return true; //No charged hypothesis, don't bother //e.g. reconned track didn't pass pre-select cuts
 
 	//if RF time is indeterminate, start time will be NaN
 	const DBCALShowerMatchParams* locBCALShowerMatchParams = locBestChargedTrackHypothesis->Get_BCALShowerMatchParams();
@@ -690,7 +690,7 @@ void DCustomAction_TrackingEfficiency::Fill_ResolutionAndTrackEff_Hists(const DK
 	bool locTrackFoundFlag = false;
 //	if((locTrack != NULL) && (locTrackMatchFOM >= dMinTrackMatchFOM))
 //		locTrackFoundFlag = true;
-	if((locTrack != NULL) && (locDeltaPOverP < 0.25) && (locDeltaTheta < 10.0) && (locDeltaPhi < 15.0))
+	if((locTrack != NULL) && (locDeltaPOverP < 0.2) && (locDeltaTheta < 10.0) && (locDeltaPhi < 15.0))
 		locTrackFoundFlag = true;
 
 	//Optional: Fill histograms
