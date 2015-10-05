@@ -270,7 +270,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 
 	// Highly Recommended: Enable ROOT TTree output for this DReaction
-	//locReaction->Enable_TTreeOutput("tree_p3pi.root"); //string is file name (must end in ".root"!!): doen't need to be unique, feel free to change
+	locReaction->Enable_TTreeOutput("tree_p3pi.root"); //string is file name (must end in ".root"!!): doen't need to be unique, feel free to change
 
 	/*********************************************** p3pi_preco_any Pre-Combo Custom Cuts ***********************************************/
 
@@ -333,8 +333,8 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
 
 	// Omega Mass (Hist and Cut)
-	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 600, 0.5, 1.1, "Omega_Kinfit")); //true: kinfit
-	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.69, 0.88)); //~ +/- 3sigma-ish //true: kinfit
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, false, 600, 0.5, 1.1, "Omega_Kinfit")); //false: not kinfit
+//	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.69, 0.88)); //~ +/- 3sigma-ish //true: kinfit
 
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
