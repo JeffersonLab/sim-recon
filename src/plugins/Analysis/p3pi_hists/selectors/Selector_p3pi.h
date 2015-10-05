@@ -21,9 +21,14 @@
 #include "TH1I.h"
 #include "TLorentzVector.h"
 
+#include <set>
+
 class Selector_p3pi : public TSelector {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
+
+	//TARGET P4
+	TLorentzVector dTargetP4;
 
 	//DEFINE OUTPUT ROOT FILE
 	TFile* dFile;

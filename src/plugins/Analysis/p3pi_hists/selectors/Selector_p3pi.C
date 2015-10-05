@@ -36,6 +36,9 @@ void Selector_p3pi::Begin(TTree * /*tree*/)
 
    TString option = GetOption();
 
+	//Target p4 //don't need to hard-code, info is available in TTree::GetUserInfo()
+	dTargetP4.SetPxPyPzE(0.0, 0.0, 0.0, 0.938272046);
+
 	//Create ROOT File (if using PROOF, do differently)
    dFile = new TFile("p3pi_hists.root", "RECREATE");
 
@@ -82,7 +85,36 @@ Bool_t Selector_p3pi::Process(Long64_t entry)
 
 	GetEntry(entry);
 
-	TLorentzVector locTargetP4(0.0, 0.0, 0.0, 0.938272046);
+	/********************************************* SETUP UNIQUENESS TRACKING ********************************************/
+
+	//PREVENT-DOUBLE COUNTING WHEN HISTOGRAMMING
+		//Sometimes, some content is the exact same between one combo and the next
+			//e.g. maybe two combos have different beam particles, but the same data for the final-state
+		//When histogramming, you don't want to double-count when this happens: artificially inflates your signal (or background)
+		//So, for each quantity you histogram, keep track of what particles you used (for a given combo)
+			//Use the combo-independent particle indices (i.e. the indices to "ChargedHypo," "NeutralShower," and/or "Beam"
+		//Then for each combo, just compare to what you used before, and make sure it's unique
+		//Tip: Use std::set if possible, it's easier/faster to search
+
+	//BE CAREFUL: This is very tricky, especially if you have a reaction with the same PID appearing in different steps
+		//e.g. g p -> pi+ pi- omega p,   omega -> pi+ pi- pi0
+		//Here, beware combos that are identical except for swapped pions (e.g. pi+_1 <--> pi+_2)
+
+	//Pi0
+	set<set<Int_t> > locParticlesUsedSoFar_Pi0Mass; //1st dimension: Combo. 2nd: particles used
+
+	//Missing Mass
+	//since missing mass uses charged, neutral and beam, need to use multiple containers
+	vector<set<Int_t> > locParticlesUsedSoFar_MissingMass_Charged; //1st dimension: Combo. 2nd: particles used
+	vector<set<Int_t> > locParticlesUsedSoFar_MissingMass_Showers; //1st dimension: Combo. 2nd: particles used
+	vector<Int_t> locParticlesUsedSoFar_MissingMass_Beam; //1st dimension: Combo
+
+	//Omega
+	//since omega uses both charged and neutral, need to use multiple containers
+	vector<set<Int_t> > locParticlesUsedSoFar_OmegaMass_Charged; //1st dimension: Combo. 2nd: particles used
+	vector<set<Int_t> > locParticlesUsedSoFar_OmegaMass_Showers; //1st dimension: Combo. 2nd: particles used
+
+	/************************************************* LOOP OVER COMBOS *************************************************/
 
 	//Loop over combos
 	for(UInt_t loc_i = 0; loc_i < NumCombos; ++loc_i)
@@ -90,6 +122,8 @@ Bool_t Selector_p3pi::Process(Long64_t entry)
 		// Is used to mark when combos are cut
 		if(IsComboCut[loc_i]) // Is false initially
 			continue; // Combo has been cut previously
+
+		/***************************************** READ/SETUP DATA FOR THIS COMBO ****************************************/
 
 		// Particle info is split between combo-dependent and combo-independent
 		// For combo-dependent (e.g. PID, kinfit p4), use the branches starting with the particle name (<Name>)
@@ -99,46 +133,140 @@ Bool_t Selector_p3pi::Process(Long64_t entry)
 			// However, these are arrays. The array index that you need is given by the branches:
 			// "<Name>__ChargedIndex," "<Name>__ShowerIndex," or "ComboBeam__BeamIndex"
 
-		// Get Measured Neutral P4's: Combo-dependent (P4 defined by vertex position)
+		// Get particle indices: These point from combo-particle to combo-independent data
+		Int_t locPhoton1Index = Photon1__ShowerIndex[loc_i];
+		Int_t locPhoton2Index = Photon2__ShowerIndex[loc_i];
+		Int_t locPiPlusIndex = PiPlus__ChargedIndex[loc_i];
+		Int_t locPiMinusIndex = PiMinus__ChargedIndex[loc_i];
+		Int_t locProtonIndex = Proton__ChargedIndex[loc_i];
+		Int_t locBeamIndex = ComboBeam__BeamIndex[loc_i];
+
+		// Get Measured Neutral P4's: Combo-dependent (P4 defined by combo-dependent vertex position)
 		TLorentzVector& locPhoton1P4 = *((TLorentzVector*)Photon1__P4_Measured->At(loc_i));
 		TLorentzVector& locPhoton2P4 = *((TLorentzVector*)Photon2__P4_Measured->At(loc_i));
 
 		// Get Measured Charged P4's: Combo-independent
-		Int_t locPiPlusIndex = PiPlus__ChargedIndex[loc_i];
 		TLorentzVector& locPiPlusP4 = *((TLorentzVector*)ChargedHypo__P4_Measured->At(locPiPlusIndex));
-
-		Int_t locPiMinusIndex = PiMinus__ChargedIndex[loc_i];
 		TLorentzVector& locPiMinusP4 = *((TLorentzVector*)ChargedHypo__P4_Measured->At(locPiMinusIndex));
-
-		Int_t locProtonIndex = Proton__ChargedIndex[loc_i];
 		TLorentzVector& locProtonP4 = *((TLorentzVector*)ChargedHypo__P4_Measured->At(locProtonIndex));
 
 		// Get Measured Beam P4: Combo-independent
-		Int_t locBeamIndex = ComboBeam__BeamIndex[loc_i];
 		TLorentzVector& locBeamP4 = *((TLorentzVector*)ComboBeam__P4_KinFit->At(locBeamIndex));
 
 		// Combine 4-vectors
 		TLorentzVector locPi0P4 = locPhoton1P4 + locPhoton2P4;
 		TLorentzVector locOmegaP4 = locPiPlusP4 + locPiMinusP4 + locPi0P4;
 		TLorentzVector locFinalStateP4 = locOmegaP4 + locProtonP4;
-		TLorentzVector locMissingP4 = locBeamP4 + locTargetP4 - locFinalStateP4;
+		TLorentzVector locMissingP4 = locBeamP4 + dTargetP4 - locFinalStateP4;
 
-		//Histogram pi0 mass & cut
+		/****************************************************** PI0 ******************************************************/
+
+		//Mass
 		double locPi0Mass = locPi0P4.M();
-		dHist_Pi0Mass->Fill(locPi0Mass);
+
+		//Build the set of photons used for the pi0 mass
+		//use set in case particles are in opposite order between combos
+			// that can't happen in this case, but could in other cases, so safer to just do it all the time
+		set<Int_t> locParticlesUsed_Pi0Mass;
+		locParticlesUsed_Pi0Mass.insert(locPhoton1Index);
+		locParticlesUsed_Pi0Mass.insert(locPhoton2Index);
+
+		//compare to what's been used so far
+		if(locParticlesUsedSoFar_Pi0Mass.find(locParticlesUsed_Pi0Mass) == locParticlesUsedSoFar_Pi0Mass.end())
+		{
+			//unique pi0 combo: histogram it, and register this combo of particles
+			dHist_Pi0Mass->Fill(locPi0Mass);
+			locParticlesUsedSoFar_Pi0Mass.insert(locParticlesUsed_Pi0Mass);
+		}
+
+		//Cut pi0 mass (+/- 3 sigma)
 		if((locPi0Mass < 0.0775209) || (locPi0Mass > 0.188047))
 			continue; //could also mark combo as cut, then save cut results to a new TTree
 
-		//Histogram missing mass squared & cut
+		/********************************************* MISSING MASS SQUARED **********************************************/
+
+		//Missing Mass Squared
 		double locMissingMassSquared = locMissingP4.M2();
-		dHist_MissingMassSquared->Fill(locMissingMassSquared);
+
+		//Build the set of final state charged particles used for the missing mass squared
+			//Will also use the pi0 set created earlier
+		set<Int_t> locParticlesUsed_MissingMass_Charged;
+		locParticlesUsed_MissingMass_Charged.insert(locPiPlusIndex);
+		locParticlesUsed_MissingMass_Charged.insert(locPiMinusIndex);
+		locParticlesUsed_MissingMass_Charged.insert(locProtonIndex);
+
+		//compare to what's been used so far
+		bool locUniqueComboFlag = true; //will mark false if otherwise
+		for(size_t loc_j = 0; loc_j < locParticlesUsedSoFar_MissingMass_Charged.size(); ++loc_j)
+		{
+			if(locParticlesUsed_MissingMass_Charged != locParticlesUsedSoFar_MissingMass_Charged[loc_j])
+				continue; //doesn't match this combo: unique so far
+
+			//charged matches this combo, check neutrals
+			if(locParticlesUsed_Pi0Mass != locParticlesUsedSoFar_MissingMass_Showers[loc_j])
+				continue; //doesn't match this combo: unique so far
+
+			//neutrals matches this combo, check beam
+			if(locBeamIndex != locParticlesUsedSoFar_MissingMass_Beam[loc_j])
+				continue; //doesn't match this combo: unique so far
+
+			//matches this combo, not unique
+			locUniqueComboFlag = false;
+			break; //no need to keep searching
+		}
+
+		if(locUniqueComboFlag)
+		{
+			//histogram it
+			dHist_MissingMassSquared->Fill(locMissingMassSquared);
+
+			//register this combo of particles
+			locParticlesUsedSoFar_MissingMass_Charged.push_back(locParticlesUsed_MissingMass_Charged);
+			locParticlesUsedSoFar_MissingMass_Showers.push_back(locParticlesUsed_Pi0Mass);
+			locParticlesUsedSoFar_MissingMass_Beam.push_back(locBeamIndex);
+		}
+
+		//Cut
 		if((locMissingMassSquared < -0.01) || (locMissingMassSquared > 0.005))
 			continue; //could also mark combo as cut, then save cut results to a new TTree
 
-		//Histogram omega mass
+		/***************************************************** OMEGA *****************************************************/
+
+		//Mass
 		double locOmegaMass = locOmegaP4.M();
-		dHist_OmegaMass->Fill(locOmegaMass);
-	}
+
+		//Build the set of charged particles used for the omega mass
+			//Will also use the pi0 set created earlier
+		set<Int_t> locParticlesUsed_OmegaMass_Charged;
+		locParticlesUsed_OmegaMass_Charged.insert(locPiPlusIndex);
+		locParticlesUsed_OmegaMass_Charged.insert(locPiMinusIndex);
+
+		//compare to what's been used so far
+		locUniqueComboFlag = true; //will mark false if otherwise
+		for(size_t loc_j = 0; loc_j < locParticlesUsedSoFar_OmegaMass_Charged.size(); ++loc_j)
+		{
+			if(locParticlesUsed_OmegaMass_Charged != locParticlesUsedSoFar_OmegaMass_Charged[loc_j])
+				continue; //doesn't match this combo: unique so far
+
+			//charged matches this combo, check neutrals
+			if(locParticlesUsed_Pi0Mass != locParticlesUsedSoFar_OmegaMass_Showers[loc_j])
+				continue; //doesn't match this combo: unique so far
+
+			//matches this combo, not unique
+			locUniqueComboFlag = false;
+			break; //no need to keep searching
+		}
+
+		if(locUniqueComboFlag)
+		{
+			//histogram it
+			dHist_OmegaMass->Fill(locOmegaMass);
+
+			//register this combo of particles
+			locParticlesUsedSoFar_OmegaMass_Charged.push_back(locParticlesUsed_OmegaMass_Charged);
+			locParticlesUsedSoFar_OmegaMass_Showers.push_back(locParticlesUsed_Pi0Mass);
+		}
+	} //end combo loop
 
    return kTRUE;
 }
