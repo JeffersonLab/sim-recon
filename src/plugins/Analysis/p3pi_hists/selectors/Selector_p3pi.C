@@ -50,7 +50,7 @@ void Selector_p3pi::Begin(TTree * /*tree*/)
 	locHistTitle = ";#gamma#gamma Invariant Mass (GeV/c^{2})";
 	dHist_Pi0Mass_KinFit = new TH1I("Pi0Mass_KinFit", locHistTitle.c_str(), 600, 0.0, 0.3);
 
-	locHistTitle = ";#gammap#rightarrow#pi^{#plus}#pi^{#minus}#gamma#gamma Missing Mass Squared (GeV/c^{2})^{2}";
+	locHistTitle = ";#gammap#rightarrowp#pi^{#plus}#pi^{#minus}#gamma#gamma Missing Mass Squared (GeV/c^{2})^{2}";
 	dHist_MissingMassSquared = new TH1I("MissingMassSquared", locHistTitle.c_str(), 600, -0.06, 0.06);
 
 	locHistTitle = ";#pi^{#plus}#pi^{#minus}#gamma#gamma Invariant Mass (GeV/c^{2})";
