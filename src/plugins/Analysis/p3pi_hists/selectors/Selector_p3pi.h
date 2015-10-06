@@ -17,11 +17,12 @@
 #include "TClonesArray.h"
 
 // Added by me
+#include <set>
+#include <map>
 #include "TFile.h"
 #include "TH1I.h"
 #include "TLorentzVector.h"
-
-#include <set>
+#include "particleType.h"
 
 class Selector_p3pi : public TSelector {
 public :
