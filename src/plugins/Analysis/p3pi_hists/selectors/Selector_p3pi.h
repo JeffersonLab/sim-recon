@@ -34,9 +34,11 @@ public :
 	TFile* dFile;
 
 	//DEFINE HISTOGRAMS
-	TH1I* dHist_Pi0Mass;
+	TH1I* dHist_Pi0Mass_Measured;
+	TH1I* dHist_Pi0Mass_KinFit;
 	TH1I* dHist_MissingMassSquared;
-	TH1I* dHist_OmegaMass;
+	TH1I* dHist_OmegaMass_Measured;
+	TH1I* dHist_OmegaMass_KinFit;
 
 	//FOR BELOW: NOTE THE FIXED ARRAY SIZES. BE CAREFUL WHEN USING THIS SELECTOR DIRECTLY!!!! 
 

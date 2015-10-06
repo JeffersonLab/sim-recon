@@ -43,14 +43,21 @@ void Selector_p3pi::Begin(TTree * /*tree*/)
    dFile = new TFile("p3pi_hists.root", "RECREATE");
 
 	//Create histograms (if using PROOF, create in SlaveBegin() instead!)
+
 	string locHistTitle = ";#gamma#gamma Invariant Mass (GeV/c^{2})";
-	dHist_Pi0Mass = new TH1I("Pi0Mass", locHistTitle.c_str(), 600, 0.0, 0.3);
+	dHist_Pi0Mass_Measured = new TH1I("Pi0Mass_Measured", locHistTitle.c_str(), 600, 0.0, 0.3);
+
+	locHistTitle = ";#gamma#gamma Invariant Mass (GeV/c^{2})";
+	dHist_Pi0Mass_KinFit = new TH1I("Pi0Mass_KinFit", locHistTitle.c_str(), 600, 0.0, 0.3);
 
 	locHistTitle = ";#gammap#rightarrow#pi^{#plus}#pi^{#minus}#gamma#gamma Missing Mass Squared (GeV/c^{2})^{2}";
 	dHist_MissingMassSquared = new TH1I("MissingMassSquared", locHistTitle.c_str(), 600, -0.06, 0.06);
 
 	locHistTitle = ";#pi^{#plus}#pi^{#minus}#gamma#gamma Invariant Mass (GeV/c^{2})";
-	dHist_OmegaMass = new TH1I("OmegaMass", locHistTitle.c_str(), 600, 0.5, 1.1);
+	dHist_OmegaMass_Measured = new TH1I("OmegaMass_Measured", locHistTitle.c_str(), 600, 0.5, 1.1);
+
+	locHistTitle = ";#pi^{#plus}#pi^{#minus}#gamma#gamma Invariant Mass (GeV/c^{2})";
+	dHist_OmegaMass_KinFit = new TH1I("OmegaMass_KinFit", locHistTitle.c_str(), 600, 0.5, 1.1);
 }
 
 void Selector_p3pi::SlaveBegin(TTree * /*tree*/)
@@ -100,6 +107,11 @@ Bool_t Selector_p3pi::Process(Long64_t entry)
 		//e.g. g p -> pi+ pi- omega p,   omega -> pi+ pi- pi0
 		//Here, beware combos that are identical except for swapped pions (e.g. pi+_1 <--> pi+_2)
 
+	//BE CAREFUL: If using charged PIDs for which hypos are not created by default (e.g. e+, e-), you must be extra cautious
+		//e.g. g p -> e+ e- pi+ pi- (Yeah, I need a better example)
+		//In this case, the e+(-) and pi+(-) will come from the same set of charged hypos
+		//So you need to check uniqueness based on PID as well
+
 	//Pi0
 	set<set<Int_t> > locParticlesUsedSoFar_Pi0Mass; //1st dimension: Combo. 2nd: particles used
 
@@ -132,6 +144,9 @@ Bool_t Selector_p3pi::Process(Long64_t entry)
 			// "ChargedHypo," "NeutralShower," or "Beam"
 			// However, these are arrays. The array index that you need is given by the branches:
 			// "<Name>__ChargedIndex," "<Name>__ShowerIndex," or "ComboBeam__BeamIndex"
+		// If using charged PIDs for which hypos are not created by default (e.g. e+, e-), beware!
+			// The energy in the "P4_Measured" will be computed with a different mass than the one you're using
+			// So you'll need to recompute it yourself.  However, the "P4_KinFit" will be fine. 
 
 		// Get particle indices: These point from combo-particle to combo-independent data
 		Int_t locPhoton1Index = Photon1__ShowerIndex[loc_i];
@@ -142,30 +157,47 @@ Bool_t Selector_p3pi::Process(Long64_t entry)
 		Int_t locBeamIndex = ComboBeam__BeamIndex[loc_i];
 
 		// Get Measured Neutral P4's: Combo-dependent (P4 defined by combo-dependent vertex position)
-		TLorentzVector& locPhoton1P4 = *((TLorentzVector*)Photon1__P4_Measured->At(loc_i));
-		TLorentzVector& locPhoton2P4 = *((TLorentzVector*)Photon2__P4_Measured->At(loc_i));
+		TLorentzVector& locPhoton1P4_Measured = *((TLorentzVector*)Photon1__P4_Measured->At(loc_i));
+		TLorentzVector& locPhoton2P4_Measured = *((TLorentzVector*)Photon2__P4_Measured->At(loc_i));
+
+		// Get KinFit Neutral P4's: Combo-dependent
+		TLorentzVector& locPhoton1P4_KinFit = *((TLorentzVector*)Photon1__P4_KinFit->At(loc_i));
+		TLorentzVector& locPhoton2P4_KinFit = *((TLorentzVector*)Photon2__P4_KinFit->At(loc_i));
 
 		// Get Measured Charged P4's: Combo-independent
-		TLorentzVector& locPiPlusP4 = *((TLorentzVector*)ChargedHypo__P4_Measured->At(locPiPlusIndex));
-		TLorentzVector& locPiMinusP4 = *((TLorentzVector*)ChargedHypo__P4_Measured->At(locPiMinusIndex));
-		TLorentzVector& locProtonP4 = *((TLorentzVector*)ChargedHypo__P4_Measured->At(locProtonIndex));
+		TLorentzVector& locPiPlusP4_Measured = *((TLorentzVector*)ChargedHypo__P4_Measured->At(locPiPlusIndex));
+		TLorentzVector& locPiMinusP4_Measured = *((TLorentzVector*)ChargedHypo__P4_Measured->At(locPiMinusIndex));
+		TLorentzVector& locProtonP4_Measured = *((TLorentzVector*)ChargedHypo__P4_Measured->At(locProtonIndex));
+
+		// Get KinFit Charged P4's: Combo-dependent
+		TLorentzVector& locPiPlusP4_KinFit = *((TLorentzVector*)PiPlus__P4_KinFit->At(loc_i));
+		TLorentzVector& locPiMinusP4_KinFit = *((TLorentzVector*)PiMinus__P4_KinFit->At(loc_i));
+		TLorentzVector& locProtonP4_KinFit = *((TLorentzVector*)Proton__P4_KinFit->At(loc_i));
 
 		// Get Measured Beam P4: Combo-independent
-		TLorentzVector& locBeamP4 = *((TLorentzVector*)ComboBeam__P4_KinFit->At(locBeamIndex));
+		TLorentzVector& locBeamP4_Measured = *((TLorentzVector*)Beam__P4_Measured->At(locBeamIndex));
+
+		// Get KinFit Beam P4: Combo-dependent
+		TLorentzVector& locBeamP4_KinFit = *((TLorentzVector*)ComboBeam__P4_KinFit->At(locBeamIndex));
 
 		// Combine 4-vectors
-		TLorentzVector locPi0P4 = locPhoton1P4 + locPhoton2P4;
-		TLorentzVector locOmegaP4 = locPiPlusP4 + locPiMinusP4 + locPi0P4;
-		TLorentzVector locFinalStateP4 = locOmegaP4 + locProtonP4;
-		TLorentzVector locMissingP4 = locBeamP4 + dTargetP4 - locFinalStateP4;
+		TLorentzVector locPi0P4_Measured = locPhoton1P4_Measured + locPhoton2P4_Measured;
+		TLorentzVector locPi0P4_KinFit = locPhoton1P4_KinFit + locPhoton2P4_KinFit;
+
+		TLorentzVector locOmegaP4_Measured = locPiPlusP4_Measured + locPiMinusP4_Measured + locPi0P4_Measured;
+		TLorentzVector locOmegaP4_KinFit = locPiPlusP4_KinFit + locPiMinusP4_KinFit + locPi0P4_KinFit;
+
+		TLorentzVector locFinalStateP4_Measured = locOmegaP4_Measured + locProtonP4_Measured;
+		TLorentzVector locMissingP4_Measured = locBeamP4_Measured + dTargetP4 - locFinalStateP4_Measured;
 
 		/****************************************************** PI0 ******************************************************/
 
 		//Mass
-		double locPi0Mass = locPi0P4.M();
+		double locPi0Mass_Measured = locPi0P4_Measured.M();
+		double locPi0Mass_KinFit = locPi0P4_KinFit.M();
 
 		//Build the set of photons used for the pi0 mass
-		//use set in case particles are in opposite order between combos
+		//use std::set in case particles are in opposite order between combos
 			// that can't happen in this case, but could in other cases, so safer to just do it all the time
 		set<Int_t> locParticlesUsed_Pi0Mass;
 		locParticlesUsed_Pi0Mass.insert(locPhoton1Index);
@@ -175,18 +207,19 @@ Bool_t Selector_p3pi::Process(Long64_t entry)
 		if(locParticlesUsedSoFar_Pi0Mass.find(locParticlesUsed_Pi0Mass) == locParticlesUsedSoFar_Pi0Mass.end())
 		{
 			//unique pi0 combo: histogram it, and register this combo of particles
-			dHist_Pi0Mass->Fill(locPi0Mass);
+			dHist_Pi0Mass_Measured->Fill(locPi0Mass_Measured);
+			dHist_Pi0Mass_KinFit->Fill(locPi0Mass_KinFit);
 			locParticlesUsedSoFar_Pi0Mass.insert(locParticlesUsed_Pi0Mass);
 		}
 
 		//Cut pi0 mass (+/- 3 sigma)
-		if((locPi0Mass < 0.0775209) || (locPi0Mass > 0.188047))
+		if((locPi0Mass_KinFit < 0.0775209) || (locPi0Mass_KinFit > 0.188047))
 			continue; //could also mark combo as cut, then save cut results to a new TTree
 
 		/********************************************* MISSING MASS SQUARED **********************************************/
 
 		//Missing Mass Squared
-		double locMissingMassSquared = locMissingP4.M2();
+		double locMissingMassSquared = locMissingP4_Measured.M2();
 
 		//Build the set of final state charged particles used for the missing mass squared
 			//Will also use the pi0 set created earlier
@@ -233,7 +266,8 @@ Bool_t Selector_p3pi::Process(Long64_t entry)
 		/***************************************************** OMEGA *****************************************************/
 
 		//Mass
-		double locOmegaMass = locOmegaP4.M();
+		double locOmegaMass_Measured = locOmegaP4_Measured.M();
+		double locOmegaMass_KinFit = locOmegaP4_KinFit.M();
 
 		//Build the set of charged particles used for the omega mass
 			//Will also use the pi0 set created earlier
@@ -260,7 +294,8 @@ Bool_t Selector_p3pi::Process(Long64_t entry)
 		if(locUniqueComboFlag)
 		{
 			//histogram it
-			dHist_OmegaMass->Fill(locOmegaMass);
+			dHist_OmegaMass_Measured->Fill(locOmegaMass_Measured);
+			dHist_OmegaMass_KinFit->Fill(locOmegaMass_KinFit);
 
 			//register this combo of particles
 			locParticlesUsedSoFar_OmegaMass_Charged.push_back(locParticlesUsed_OmegaMass_Charged);

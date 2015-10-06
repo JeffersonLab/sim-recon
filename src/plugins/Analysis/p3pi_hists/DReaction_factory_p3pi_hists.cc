@@ -305,7 +305,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	// Pi0
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 600, 0.0, 0.3, "Pi0"));
-	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.0775209, 0.188047)); //+/- 3sigma
+//	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.0775209, 0.188047)); //+/- 3sigma
 
 /*
 	// Various Kin Fit Cuts
@@ -330,7 +330,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 
 	//	Missing Mass Squared (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 600, -0.06, 0.06));
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
+//	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.01, 0.005));
 
 	// Omega Mass (Hist and Cut)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, false, 600, 0.5, 1.1, "Omega_Kinfit")); //false: not kinfit
