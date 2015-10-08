@@ -17,11 +17,13 @@
 #include "TClonesArray.h"
 
 // Added by me
+#include <iostream>
 #include <set>
 #include <map>
 #include "TFile.h"
 #include "TH1I.h"
 #include "TLorentzVector.h"
+#include "TLorentzRotation.h"
 #include "particleType.h"
 
 class Selector_p3pi : public TSelector {
@@ -40,6 +42,12 @@ public :
 	TH1I* dHist_MissingMassSquared;
 	TH1I* dHist_OmegaMass_Measured;
 	TH1I* dHist_OmegaMass_KinFit;
+	TH1I* dHist_BeamEnergy;
+	TH1I* dHist_MandelstamT;
+	TH1I* dHist_OmegaPsi;
+	TH1I* dHist_OmegaCosTheta;
+	TH1I* dHist_NumExtraTracks;
+	TH1I* dHist_ExtraPi0InvariantMass;
 
 	//FOR BELOW: NOTE THE FIXED ARRAY SIZES. BE CAREFUL WHEN USING THIS SELECTOR DIRECTLY!!!! 
 
