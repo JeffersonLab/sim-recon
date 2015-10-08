@@ -590,7 +590,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 		break;
 	}
 	if(locBestChargedTrackHypothesis == NULL)
-		return true; //No charged hypothesis, don't bother //shouldn't be possible!
+		return true; //No charged hypothesis, don't bother //e.g. reconned track didn't pass pre-select cuts
 
 	//if RF time is indeterminate, start time will be NaN
 	const DBCALShowerMatchParams* locBCALShowerMatchParams = locBestChargedTrackHypothesis->Get_BCALShowerMatchParams();
@@ -687,6 +687,12 @@ void DCustomAction_TrackingEfficiency::Fill_ResolutionAndTrackEff_Hists(const DK
 	while(locDeltaPhi < -180.0)
 		locDeltaPhi += 360.0;
 
+	bool locTrackFoundFlag = false;
+//	if((locTrack != NULL) && (locTrackMatchFOM >= dMinTrackMatchFOM))
+//		locTrackFoundFlag = true;
+	if((locTrack != NULL) && (locDeltaPOverP < 0.2) && (locDeltaTheta < 10.0) && (locDeltaPhi < 15.0))
+		locTrackFoundFlag = true;
+
 	//Optional: Fill histograms
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
@@ -706,7 +712,7 @@ void DCustomAction_TrackingEfficiency::Fill_ResolutionAndTrackEff_Hists(const DK
 		}
 
 		//Efficiency
-		if((locTrack != NULL) && (locTrackMatchFOM >= dMinTrackMatchFOM))
+		if(locTrackFoundFlag)
 		{
 			//Found
 			dHistMap_TrackFound_PVsTheta[locIsTimeBasedFlag][locVertexZBin]->Fill(locMissingTheta, locMissingP);

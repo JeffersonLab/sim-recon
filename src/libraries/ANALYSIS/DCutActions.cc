@@ -4,6 +4,29 @@
 
 #include "ANALYSIS/DCutActions.h"
 
+string DCutAction_MinTrackHits::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinTrackHits;
+	return locStream.str();
+}
+
+bool DCutAction_MinTrackHits::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	deque<const DKinematicData*> locParticles;
+	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
+	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
+	{
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+		const DTrackTimeBased* locTrackTimeBased = NULL;
+		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+		unsigned int locNumTrackHits = locTrackTimeBased->Ndof + 5;
+		if(locNumTrackHits < dMinTrackHits)
+			return false;
+	}
+	return true;
+}
+
 string DCutAction_ThrownTopology::Get_ActionName(void) const
 {
 	ostringstream locStream;
@@ -275,6 +298,20 @@ bool DCutAction_AllVertexZ::Perform_Action(JEventLoop* locEventLoop, const DPart
 			return false;
 	}
 	return true;
+}
+
+string DCutAction_ProductionVertexZ::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinVertexZ << "_" << dMaxVertexZ;
+	return locStream.str();
+}
+
+bool DCutAction_ProductionVertexZ::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	const DParticleComboStep* locStep = locParticleCombo->Get_ParticleComboStep(0);
+	double locVertexZ = locStep->Get_Position().Z();
+	return ((locVertexZ >= dMinVertexZ) && (locVertexZ <= dMaxVertexZ));
 }
 
 string DCutAction_MaxTrackDOCA::Get_ActionName(void) const
@@ -1006,6 +1043,12 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
-	return (locConfidenceLevel >= dMinKinFitCL);
+	if(locConfidenceLevel < dMinKinFitCL)
+		return false;
+	if(dMinVertexZ < dMaxVertexZ) //don't cut otherwise
+	{
+		if((locFitVertex.Z() < dMinVertexZ) || (locFitVertex.Z() > dMaxVertexZ))
+			return false;
+	}
+	return true;
 }
-
