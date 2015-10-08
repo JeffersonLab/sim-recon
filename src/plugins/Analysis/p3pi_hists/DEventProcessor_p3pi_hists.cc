@@ -46,7 +46,7 @@ jerror_t DEventProcessor_p3pi_hists::brun(jana::JEventLoop* locEventLoop, int lo
 	//Recommended: Create output ROOT TTrees (nothing is done if already created)
 	const DEventWriterROOT* locEventWriterROOT = NULL;
 	locEventLoop->GetSingle(locEventWriterROOT);
-	locEventWriterROOT->Create_DataTrees(locEventLoop);
+	//locEventWriterROOT->Create_DataTrees(locEventLoop);
 
 	return NOERROR;
 }
@@ -86,7 +86,7 @@ jerror_t DEventProcessor_p3pi_hists::evnt(jana::JEventLoop* locEventLoop, int lo
 	// string is DReaction factory tag: will fill trees for all DReactions that are defined in the specified factory
 	const DEventWriterROOT* locEventWriterROOT = NULL;
 	locEventLoop->GetSingle(locEventWriterROOT);
-	locEventWriterROOT->Fill_DataTrees(locEventLoop, "p3pi_hists");
+	//locEventWriterROOT->Fill_DataTrees(locEventLoop, "p3pi_hists");
 
 	return NOERROR;
 }
