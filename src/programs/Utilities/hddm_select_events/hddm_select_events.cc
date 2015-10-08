@@ -100,7 +100,7 @@ int main(int argc,char* argv[]) {
   //___________________________________________________________________________________________
 
   if (INFILENAME == "" || OUTFILENAME == "" || 
-      (selectType < 1 || 7 < selectType))
+      (selectType < 1 || 8 < selectType))
   {
     Usage();
   }

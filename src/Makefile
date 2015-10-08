@@ -1,3 +1,4 @@
+# trivial change
 DIRS += external
 DIRS += libraries/include
 DIRS += programs/Utilities/hddm

@@ -837,6 +837,122 @@ bool selectEvent_s(int select_type, hddm_s::HDDM &record,
   } // end of select_type 7
   //__________________________________________________________________________________________________
 
+  // Select phi events
+  else if (select_type == 8) {
+    bool foundProton = false;
+    bool foundPip    = false;
+    bool foundPim    = false;
+    bool foundPhi    = false;
+    int  idProton    = -999;
+    int  idPip       = -999;
+    int  idPim       = -999;
+    int  idPhi       = -999;
+    TLorentzVector p4photon_init;
+    TLorentzVector p4proton_init(0,0,0,ParticleMass(Proton));
+    TLorentzVector p4proton;
+    TLorentzVector p4pip;
+    TLorentzVector p4pim;
+    TLorentzVector p4phi;
+    TLorentzVector p4diff;
+    if (debug) 
+       std::cout << "---------------------------------"
+                    "---------------------------------" << std::endl;
+
+    hddm_s::ReactionList res = record.getReactions();
+    hddm_s::ReactionList::iterator riter;
+    for (riter = res.begin(); riter != res.end(); ++riter) {
+       // Get initial photon
+       p4photon_init.SetXYZT(riter->getBeam().getMomentum().getPx(),
+                             riter->getBeam().getMomentum().getPy(),
+                             riter->getBeam().getMomentum().getPz(),
+                             riter->getBeam().getMomentum().getE());
+       if (debug)
+          std::cout << "photon.        : (" << setw(5) 
+                    << p4photon_init.X() << ", " << setw(5) 
+                    << p4photon_init.Y() << ", " << p4photon_init.Z() 
+                    << ", " << setw(5) << p4photon_init.E() << ")"
+                    << std::endl;
+
+       hddm_s::VertexList vs = res().getVertices();
+       hddm_s::VertexList::iterator viter;
+       for (viter = vs.begin(); viter != vs.end(); ++viter) {
+          hddm_s::OriginList orig = viter->getOrigins();
+          hddm_s::ProductList ps = viter->getProducts();
+          if (ps.size() > 0 && orig.size() > 0) {
+             hddm_s::ProductList::iterator piter;
+             for (piter = ps.begin(); piter != ps.end(); ++piter) {
+                int type     = (int)piter->getType();
+                int id       = piter->getId();
+                int parentid = piter->getParentid();
+                double E  = piter->getMomentum().getE();
+                double px = piter->getMomentum().getPx();
+                double py = piter->getMomentum().getPy();
+                double pz = piter->getMomentum().getPz();
+                double mass = sqrt(E*E - (px*px + py*py + pz*pz));
+                if (! finite(mass))
+                   mass = 0.0;
+                if (debug) {
+                std::cout << "\t\t\t--- new particle ---" << std::endl;
+                   std::cout << "\t\t\ttype = " << type << " " 
+                             << ParticleType((Particle_t)type) 
+                             << " parentid = " << parentid << std::endl;
+                   std::cout << "\t\t\t(" << px << "," << py << "," << pz << ","
+                             << E << "), mass = " << mass << std::endl;
+                   std::cout << "\t\t\t(" << orig().getVx() << "," 
+                             << orig().getVy() << "," << orig().getVz() << ","
+                             << orig().getT() << ")" << std::endl;
+                }
+
+                // Find proton
+                if (type == Proton) {
+                   foundProton = true;
+                   idProton = id;
+                   p4proton.SetXYZT(px,py,pz,E);
+                }
+
+                // Find pi+
+                //if (type == PiPlus) {
+                //   foundPip = true;
+                //   idPip = id;
+                //   p4pip.SetXYZT(px,py,pz,E);
+                //}
+
+                // Find pi-
+                //if (type == PiMinus) {
+                //   foundPim = true;
+                //   idPim = id;
+                //   p4pim.SetXYZT(px,py,pz,E);
+                //}
+
+                // Find phi
+                //if (type == phiMeson) {
+		if( fabs(mass - 1.02) < 0.01 ) {
+		   foundPhi = true;
+                   idPhi = id;
+                   p4phi.SetXYZT(px,py,pz,E);
+                }
+
+             } // end of loop over products
+          } // end of having products and origin
+       } // end of loop over vertices
+    } // end of loop over reaction
+
+    // If we found a proton decaying from Lambda,
+    // save this event
+    //if (foundProton && foundPip && foundPim && foundPi0) {
+    if (foundProton && foundPhi) {
+
+      // make sure that total 4-mom of p, phi are close to
+      // initial state
+	    p4diff = p4photon_init + p4proton_init - p4proton - p4phi;
+
+       // Make sure that remaining |p| < 1 MeV, M < 0.1 MeV
+       if (p4diff.P() < 0.001 && p4diff.M() < 0.0001)
+	       return true;
+    } // found phi
+  } // end of select_type 8
+  //__________________________________________________________________________________________________
+
   // default is to return false
   return false;
 }
