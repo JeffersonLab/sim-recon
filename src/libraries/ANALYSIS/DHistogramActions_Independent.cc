@@ -358,16 +358,16 @@ void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)
 
 		if(!locIsRESTEvent)
 		{
-			locHistName = "FDCPlaneVsP_Candidates";
-			dHist_FDCPlaneVsP_Candidates = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Track Candidates;p (GeV/c);FDC Plane", dNum2DPBins, dMinP, dMaxP, 24, 0.5, 24.5);
-			locHistName = "FDCPlaneVsP_WireBased";
-			dHist_FDCPlaneVsP_WireBased = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Wire-Based Tracks;p (GeV/c);FDC Plane", dNum2DPBins, dMinP, dMaxP, 24, 0.5, 24.5);
+			locHistName = "FDCPlaneVsTheta_Candidates";
+			dHist_FDCPlaneVsTheta_Candidates = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Track Candidates;p (GeV/c);FDC Plane", dNum2DThetaBins, dMinTheta, dMaxTheta, 24, 0.5, 24.5);
+			locHistName = "FDCPlaneVsTheta_WireBased";
+			dHist_FDCPlaneVsTheta_WireBased = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Wire-Based Tracks;p (GeV/c);FDC Plane", dNum2DThetaBins, dMinTheta, dMaxTheta, 24, 0.5, 24.5);
 		}
 
-		locHistName = "FDCPlaneVsP_TimeBased";
-		dHist_FDCPlaneVsP_TimeBased = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Time-Based Tracks;p (GeV/c);FDC Plane", dNum2DPBins, dMinP, dMaxP, 24, 0.5, 24.5);
-		locHistName = "FDCPlaneVsP_TimeBased_GoodTrackFOM";
-		dHist_FDCPlaneVsP_TimeBased_GoodTrackFOM = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Good FOM Time-Based Tracks;p (GeV/c);FDC Plane", dNum2DPBins, dMinP, dMaxP, 24, 0.5, 24.5);
+		locHistName = "FDCPlaneVsTheta_TimeBased";
+		dHist_FDCPlaneVsTheta_TimeBased = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Time-Based Tracks;p (GeV/c);FDC Plane", dNum2DThetaBins, dMinTheta, dMaxTheta, 24, 0.5, 24.5);
+		locHistName = "FDCPlaneVsTheta_TimeBased_GoodTrackFOM";
+		dHist_FDCPlaneVsTheta_TimeBased_GoodTrackFOM = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Good FOM Time-Based Tracks;p (GeV/c);FDC Plane", dNum2DThetaBins, dMinTheta, dMaxTheta, 24, 0.5, 24.5);
 
 		if(!locMCThrowns.empty())
 		{
@@ -565,7 +565,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 			set<int> locFDCPlanes;
 			locParticleID->Get_FDCPlanes(locTrackCandidates[loc_i]->dFDCPlanes, locFDCPlanes);
 			for(set<int>::iterator locIterator = locFDCPlanes.begin(); locIterator != locFDCPlanes.end(); ++locIterator)
-				dHist_FDCPlaneVsP_Candidates->Fill(locTheta, *locIterator);
+				dHist_FDCPlaneVsTheta_Candidates->Fill(locTheta, *locIterator);
 		}
 
 		map<JObject::oid_t, const DTrackWireBased*>::iterator locWireBasedIterator = locBestTrackWireBasedMap.begin();
@@ -585,7 +585,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 			set<int> locFDCPlanes;
 			locParticleID->Get_FDCPlanes(locTrackWireBased->dFDCPlanes, locFDCPlanes);
 			for(set<int>::iterator locIterator = locFDCPlanes.begin(); locIterator != locFDCPlanes.end(); ++locIterator)
-				dHist_FDCPlaneVsP_WireBased->Fill(locTheta, *locIterator);
+				dHist_FDCPlaneVsTheta_WireBased->Fill(locTheta, *locIterator);
 
 			dHist_TrackingFOM_WireBased->Fill(locTrackWireBased->FOM);
 		}
@@ -620,9 +620,9 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 			locParticleID->Get_FDCPlanes(locTrackTimeBased->dFDCPlanes, locFDCPlanes);
 			for(set<int>::iterator locIterator = locFDCPlanes.begin(); locIterator != locFDCPlanes.end(); ++locIterator)
 			{
-				dHist_FDCPlaneVsP_TimeBased->Fill(locTheta, *locIterator);
+				dHist_FDCPlaneVsTheta_TimeBased->Fill(locTheta, *locIterator);
 				if(locTrackTimeBased->FOM > dGoodTrackFOM)
-					dHist_FDCPlaneVsP_TimeBased_GoodTrackFOM->Fill(locTheta, *locIterator);
+					dHist_FDCPlaneVsTheta_TimeBased_GoodTrackFOM->Fill(locTheta, *locIterator);
 			}
 
 			if(locTrackTimeBased->FOM > dGoodTrackFOM)
@@ -1726,10 +1726,18 @@ bool DHistogramAction_DetectorPID::Perform_Action(JEventLoop* locEventLoop, cons
 				double locBeta_Timing = locNeutralParticleHypothesis->measuredBeta();
 				const DNeutralShower* locNeutralShower = locNeutralParticles[loc_i]->dNeutralShower;
 				double locShowerEnergy = locNeutralShower->dEnergy;
+
+				double locDeltaT = locNeutralParticleHypothesis->time() - locEventRFBunch->dTime;
 				if(locNeutralShower->dDetectorSystem == SYS_BCAL)
+				{
 					dHistMap_BetaVsP[SYS_BCAL][0]->Fill(locShowerEnergy, locBeta_Timing);
+					dHistMap_DeltaTVsP[SYS_BCAL][Gamma]->Fill(locShowerEnergy, locDeltaT);
+				}
 				else
+				{
 					dHistMap_BetaVsP[SYS_FCAL][0]->Fill(locShowerEnergy, locBeta_Timing);
+					dHistMap_DeltaTVsP[SYS_FCAL][Gamma]->Fill(locShowerEnergy, locDeltaT);
+				}
 			}
 		}
 
@@ -1975,7 +1983,7 @@ bool DHistogramAction_Neutrals::Perform_Action(JEventLoop* locEventLoop, const D
 					dHist_BCALTrackDOCA->Fill(locDistance);
 				if(locDetectorMatches->Get_DistanceToNearestTrack(locBCALShower, locDeltaPhi, locDeltaZ))
 				{
-					dHist_BCALTrackDeltaPhi->Fill(locDeltaPhi);
+					dHist_BCALTrackDeltaPhi->Fill(180.0*locDeltaPhi/TMath::Pi());
 					dHist_BCALTrackDeltaZ->Fill(locDeltaZ);
 				}
 

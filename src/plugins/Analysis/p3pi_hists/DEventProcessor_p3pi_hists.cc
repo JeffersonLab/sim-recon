@@ -43,6 +43,11 @@ jerror_t DEventProcessor_p3pi_hists::brun(jana::JEventLoop* locEventLoop, int lo
 {
 	// This is called whenever the run number changes
 
+	//Recommended: Create output ROOT TTrees (nothing is done if already created)
+	const DEventWriterROOT* locEventWriterROOT = NULL;
+	locEventLoop->GetSingle(locEventWriterROOT);
+	//locEventWriterROOT->Create_DataTrees(locEventLoop);
+
 	return NOERROR;
 }
 
@@ -74,6 +79,14 @@ jerror_t DEventProcessor_p3pi_hists::evnt(jana::JEventLoop* locEventLoop, int lo
 		//These objects contain the DParticleCombo objects that survived the DAnalysisAction cuts that were added to the DReactions
 	vector<const DAnalysisResults*> locAnalysisResultsVector;
 	locEventLoop->Get(locAnalysisResultsVector);
+
+	//Recommended: Write surviving particle combinations (if any) to output ROOT TTree
+		//If no cuts are performed by the analysis actions added to a DReaction, then this saves all of its particle combinations. 
+		//The event writer gets the DAnalysisResults objects from JANA, performing the analysis. 
+	// string is DReaction factory tag: will fill trees for all DReactions that are defined in the specified factory
+	const DEventWriterROOT* locEventWriterROOT = NULL;
+	locEventLoop->GetSingle(locEventWriterROOT);
+	//locEventWriterROOT->Fill_DataTrees(locEventLoop, "p3pi_hists");
 
 	return NOERROR;
 }
