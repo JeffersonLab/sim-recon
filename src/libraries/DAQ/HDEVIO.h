@@ -55,6 +55,13 @@ class HDEVIO{
 		string filename;
 		ifstream ifs;
 		bool is_open;
+		uint32_t *fbuff;
+		uint32_t *fnext;
+		uint32_t *fbuff_end;
+		uint64_t fbuff_size;
+		uint64_t fbuff_len;
+		uint64_t _gcount;
+		
 		
 		uint32_t *buff;         // buffer holding current block (if any)
 		uint32_t *next;         // Pointer to start of next EVIO event within buff
@@ -82,6 +89,7 @@ class HDEVIO{
 		uint32_t swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len);
 		uint32_t swap_tagsegment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len);
 		uint32_t swap_segment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len);
+		void Print_fbuff(void);
 		void PrintEVIOBlockHeader(void);
 		void PrintStats(void);
 
@@ -89,6 +97,11 @@ class HDEVIO{
 
 		void ClearErrorMessage(void){ err_mess.str(""); err_mess.clear();}
 		void SetErrorMessage(string mess){ ClearErrorMessage(); err_mess<<mess;}
+		
+		void buff_read(char* s, streamsize n);
+		void buff_seekg (streamoff off, ios_base::seekdir way);
+		streamsize buff_gcount() const { return (streamsize)_gcount; }
+		
 	
 	public:
 
