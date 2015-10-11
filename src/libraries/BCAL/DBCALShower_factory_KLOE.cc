@@ -108,8 +108,8 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
     ATTEN_LENGTH = bcalGeom.ATTEN_LENGTH;
     C_EFFECTIVE = bcalGeom.C_EFFECTIVE;
     
-    fiberLength = bcalGeom.BCALFIBERLENGTH; // fiber length in cm
-    zOffset = bcalGeom.GLOBAL_CENTER;
+    fiberLength = bcalGeom.GetBCAL_length(); // fiber length in cm
+    zOffset = bcalGeom.GetBCAL_center();
 
     //the following uses some sad notation in which modmin=0 and modmax=48, when in fact there are 48 modules labelled either 0-47 or 1-48 depending on one's whim, although if we are using the methods from DBCALGeometry (e.g. cellId()), we must start counting from 1 and if we are accessing arrays we must of course start from 0
     int   modmin = 0;
@@ -123,7 +123,7 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
     int   colmin2=0;
     int   colmax2=bcalGeom.NBCALSECSOUT;
     
-    float r_inner= bcalGeom.BCALINNERRAD;
+    float r_inner= bcalGeom.GetBCAL_inner_rad();
     
     for (int i = (rowmin1+1); i < (rowmax1+1); i++){
         //this loop starts from 1, so we can use i in cellId with no adjustment
@@ -304,7 +304,7 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
   
         float r = sqrt( shower->x * shower->x + shower->y * shower->y );
       
-        float zEntry = ( shower->z - m_z_target_center ) * ( DBCALGeometry::BCALINNERRAD / r );
+        float zEntry = ( shower->z - m_z_target_center ) * ( DBCALGeometry::GetBCAL_inner_rad() / r );
       
         float scale = m_scaleZ_p0  + m_scaleZ_p1*zEntry + 
             m_scaleZ_p2*(zEntry*zEntry) + m_scaleZ_p3*(zEntry*zEntry*zEntry);
