@@ -1354,10 +1354,47 @@ bool DGeometry::GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax)
 //---------------------------------
 // GetBCALRmin
 //---------------------------------
-bool DGeometry::GetBCALRmin(double &bcal_rmin) const
+// Including the support plate
+bool DGeometry::GetBCALRmin(float &bcal_rmin) const
 {
+	vector<float> bcal_mother_Rio_Z;
+	bool good = Get("//BarrelEMcal_s/section/tubs[@name='BCAL']/@Rio_Z", bcal_mother_Rio_Z);
+	if(!good){
+		_DBG_<<"Unable to retrieve BCAL mother RioZ info."<<endl;
+		bcal_rmin = 0.0;
+		return false;
+	}
+	if(bcal_mother_Rio_Z.size() == 3){
+		bcal_rmin = bcal_mother_Rio_Z[0];
+		return true;
+	}
+	else{
+		_DBG_<<"Wrong vector size for BCAL mother RioZ!!!"<<endl;
+		bcal_rmin = 0.0;
+		return false;
+	}
+}
 
-	return false;
+//---------------------------------
+// GetBCALfADCRadii
+//---------------------------------
+bool DGeometry::GetBCALfADCRadii(vector<float> &fADC_radii) const
+{
+   vector<float> BM[5];
+
+   if(!Get("//BarrelEMcal_s/section/tubs[@name='BM01']/@Rio_Z", BM[0])) return false;
+   if(!Get("//BarrelEMcal_s/section/tubs[@name='BM02']/@Rio_Z", BM[1])) return false;
+   if(!Get("//BarrelEMcal_s/section/tubs[@name='BM04']/@Rio_Z", BM[2])) return false;
+   if(!Get("//BarrelEMcal_s/section/tubs[@name='BMF7']/@Rio_Z", BM[3])) return false;
+   if(!Get("//BarrelEMcal_s/section/tubs[@name='BMFA']/@Rio_Z", BM[4])) return false;
+
+   fADC_radii.push_back(BM[0][0]);
+   fADC_radii.push_back(BM[1][0]);
+   fADC_radii.push_back(BM[2][0]);
+   fADC_radii.push_back(BM[3][0]);
+   fADC_radii.push_back(BM[4][1]);
+
+   return true;
 }
 
 //---------------------------------
@@ -1365,43 +1402,101 @@ bool DGeometry::GetBCALRmin(double &bcal_rmin) const
 //---------------------------------
 bool DGeometry::GetBCALNmodules(unsigned int &bcal_nmodules) const
 {
-
-	return false;
+	vector<unsigned int> ncopy;
+	bool good = Get("//BarrelEMcal_s/section/composition/mposPhi/@ncopy", ncopy);
+	if(!good){
+		_DBG_<<"Unable to retrieve BCAL barrelModule ncopy info."<<endl;
+		bcal_nmodules = 0;
+		return false;
+	}
+	if(ncopy.size() == 1){
+		bcal_nmodules = ncopy[0];
+		return true;
+	}else{
+		_DBG_<<"Wrong vector size for BCAL barrelModule ncopy!!!"<<endl;
+		bcal_nmodules = 0;
+		return false;
+	}
 }
 
 //---------------------------------
 // GetBCALCenterZ
 //---------------------------------
-bool DGeometry::GetBCALCenterZ(double &bcal_center_z) const
+bool DGeometry::GetBCALCenterZ(float &bcal_center_z) const
 {
+	vector<float> z0;
+	bool good = Get("//BarrelEMcal_s/section/parameters/real[@name='z0']/@value", z0);
+	if(!good){
+		_DBG_<<"Unable to retrieve BCAL parameters z0 info."<<endl;
+		bcal_center_z = 0.0;
+		return false;
+	}
+	if(z0.size() == 1){
+		bcal_center_z = z0[0];
+		return true;
+	}else{
+		_DBG_<<"Wrong vector size for BCAL parameters z0!!!"<<endl;
+		bcal_center_z = 0.0;
+		return false;
+	}
 
-	return false;
 }
 
 //---------------------------------
 // GetBCALLength
 //---------------------------------
-bool DGeometry::GetBCALLength(double &bcal_length) const
+// The lightguides are not included
+bool DGeometry::GetBCALLength(float &bcal_length) const
 {
-
-	return false;
+	vector<float> module_length;
+	bool good = Get("//BarrelEMcal_s/section/tubs[@name='BM01']/@Rio_Z", module_length);
+	if(!good){
+		_DBG_<<"Unable to retrieve BCAL submodule RioZ info."<<endl;
+		bcal_length = 0.0;
+		return false;
+	}
+	if(module_length.size() == 3){
+		bcal_length = module_length[2];
+		return true;
+	}
+	else{
+		_DBG_<<"Wrong vector size for BCAL submodule RioZ!!!"<<endl;
+		bcal_length = 0.0;
+		return false;
+	}
 }
 
 //---------------------------------
 // GetBCALDepth
 //---------------------------------
-bool DGeometry::GetBCALDepth(double &bcal_depth) const
+// Including the support plate and the support bar
+bool DGeometry::GetBCALDepth(float &bcal_depth) const
 {
+	vector<float> bcal_moth_Rio_Z;
+	bool good = Get("//BarrelEMcal_s/section/tubs[@name='BCAL']/@Rio_Z", bcal_moth_Rio_Z);
+	if(!good){
+		_DBG_<<"Unable to retrieve BCAL mother RioZ info."<<endl;
+		bcal_depth = 0.0;
+		return false;
+	}
+	if(bcal_moth_Rio_Z.size() == 3){
+		bcal_depth = bcal_moth_Rio_Z[1] - bcal_moth_Rio_Z[0];
+		return true;
+	}
+	else{
+		_DBG_<<"Wrong vector size for BCAL mother RioZ!!!"<<endl;
+		bcal_depth = 0.0;
+		return false;
+	}
 
-	return false;
 }
 
 //---------------------------------
 // GetBCALPhiShift
 //---------------------------------
-bool DGeometry::GetBCALPhiShift(double &bcal_phi_shift) const
+bool DGeometry::GetBCALPhiShift(float &bcal_phi_shift) const
 {
-	vector<double> Phi0;
+	vector<float> Phi0;
 	bool good = Get("//BarrelEMcal_s/section/composition/mposPhi/@Phi0", Phi0);
 	if(!good) return false;
 	if(Phi0.size() == 1){
