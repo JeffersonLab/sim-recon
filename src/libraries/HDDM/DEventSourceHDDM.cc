@@ -187,7 +187,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
          // Get constants and do basic check on number of elements
          vector< map<string, float> > tvals;
          if(jcalib->Get("FDC/strip_calib", tvals))
-             throw runtime_error("Could not load CCDB table: FDC/strip_calib");
+             throw JException("Could not load CCDB table: FDC/strip_calib");
  
          if (tvals.size() != 192) {
             _DBG_ << "ERROR - strip calibration vectors are not the right size!"

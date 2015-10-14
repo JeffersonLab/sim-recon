@@ -167,7 +167,7 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
 
 		vector<double> locRFPeriodVector;
         if(locEventLoop->GetCalib("PHOTON_BEAM/RF/rf_period", locRFPeriodVector))
-            throw runtime_error("Could not load CCDB table: PHOTON_BEAM/RF/rf_period");
+            throw JException("Could not load CCDB table: PHOTON_BEAM/RF/rf_period");
 		double locRFBunchPeriod = locRFPeriodVector[0];
 
 		LockRead();
