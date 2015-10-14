@@ -186,7 +186,8 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
          }
          // Get constants and do basic check on number of elements
          vector< map<string, float> > tvals;
-         jcalib->Get("FDC/strip_calib", tvals);
+         if(jcalib->Get("FDC/strip_calib", tvals))
+             throw runtime_error("Could not load CCDB table: FDC/strip_calib");
  
          if (tvals.size() != 192) {
             _DBG_ << "ERROR - strip calibration vectors are not the right size!"
@@ -237,7 +238,8 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
       locGeometry->GetTargetZ(locTargetCenterZ);
 
       vector<double> locRFPeriodVector;
-      loop->GetCalib("PHOTON_BEAM/RF/rf_period", locRFPeriodVector);
+      if(loop->GetCalib("PHOTON_BEAM/RF/rf_period", locRFPeriodVector))
+          throw runtime_error("Could not load CCDB table: PHOTON_BEAM/RF/rf_period");
       double locRFBunchPeriod = locRFPeriodVector[0];
 
       LockRead();
