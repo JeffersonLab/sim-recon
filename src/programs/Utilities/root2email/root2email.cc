@@ -75,7 +75,8 @@ int main(int narg, char *argv[])
 		stringstream my_cmd;
 		my_cmd<<cmd.str()<<email_address[i];
 		cout<<my_cmd.str()<<endl;
-		system(my_cmd.str().c_str());
+		int res = system(my_cmd.str().c_str());
+		if(res!=0) cerr << "Error executing \""<<my_cmd<<"\"" << endl;
 	}
 	
 	
@@ -110,7 +111,8 @@ void AddPlot(TFile &f, string histname)
 		c1.Print("tmp.eps");
 		
 		// Convert EPS to PPM using ghostscript(gs)
-		system("echo quit | gs -sDEVICE=ppm -r72x72 -g565x405 -sOutputFile=tmp.ppm -dNOPAUSE tmp.eps > /dev/null");
+		int res = system("echo quit | gs -sDEVICE=ppm -r72x72 -g565x405 -sOutputFile=tmp.ppm -dNOPAUSE tmp.eps > /dev/null");
+		if(res!=0) cerr << "Error running \"gs\" command." << endl;
 
 		// Generate unique name of GIF file
 		stringstream outfile;
@@ -120,13 +122,15 @@ void AddPlot(TFile &f, string histname)
 		// Convert PPM to GIF using ppmtogif
 		stringstream cmd;
 		cmd<<"ppmtogif tmp.ppm > "<<outfile.str();
-		system(cmd.str().c_str());
+		res = system(cmd.str().c_str());
+		if(res!=0) cerr << "Error running \""<<cmd<<"\"" << endl;
 		
 		// Add histogram name to message
 		mess<<histname;
 		
 		// Delete temporary files
-		system("rm -f tmp.ppm tmp.eps");
+		res = system("rm -f tmp.ppm tmp.eps");
+		if(res!=0) cerr << "Error running \"rm\" command." << endl;
 	}
 	
 	// Add plot to list. We do this even if we failed to generate a plot
