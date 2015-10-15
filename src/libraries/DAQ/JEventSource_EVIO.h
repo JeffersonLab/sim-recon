@@ -204,6 +204,9 @@ class JEventSource_EVIO: public jana::JEventSource{
 		bool  PARSE_F125;
 		bool  PARSE_F1TDC;
 		bool  PARSE_CAEN1290TDC;
+		bool  PARSE_CONFIG;
+		bool  PARSE_EPICS;
+		bool  PARSE_TRIGGER;
 		bool  MAKE_DOM_TREE;
 		int   ET_STATION_NEVENTS;
 		bool  ET_STATION_CREATE_BLOCKING;
