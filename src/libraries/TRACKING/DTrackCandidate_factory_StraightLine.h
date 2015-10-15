@@ -85,6 +85,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
 			double &chi2,unsigned int &ndof,bool timebased=false);
 
   double CDCDriftDistance(double t);
+  double CDCDriftDistance(double dphi, double delta,double t);
   double CDCDriftVariance(double t);
   unsigned int Locate(vector<double>&xx,double x);
 
@@ -101,6 +102,12 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
   
   // Resolution parameters
   double CDC_RES_PAR1,CDC_RES_PAR2;
+
+  // variables to deal with CDC straw sag
+  vector<vector<double> >max_sag;
+  vector<vector<double> >sag_phi_offset;
+  double long_drift_func[3][3];
+  double short_drift_func[3][3];
 
   // Diagnostic histograms
   TH2F *Hvres;
