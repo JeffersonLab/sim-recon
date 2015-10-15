@@ -5,6 +5,7 @@
 // Creator: davidl (on Darwin harriet 13.4.0 i386)
 //
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "HDEVIO.h"
