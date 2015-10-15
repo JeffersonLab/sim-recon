@@ -37,8 +37,9 @@ TF1* Create_FitFunc(TH1I* locHist)
 	return locFunc;
 }
 
-int main(void)
+int main(int locRunNumber)
 {
+	//INPUT RUN NUMBER MUST BE A RUN NUMBER IN THE RUN RANGE YOU ARE TRYING TO COMMIT CONSTANTS TO
 	TDirectory *locTopDirectory = gDirectory;
 
 	//Goto Beam Path
@@ -172,9 +173,18 @@ int main(void)
 
 	//Fine time offsets (with respect to TOF)
 	double locTimeOffset_TOF = 0.0;
+
 	double locTimeOffset_FDC = locTOFFitFunc_FDC->GetParameter(1);
+	if(!(locHist_RFDeltaT_FDC_TOF->GetEntries() > 0.0))
+		locTimeOffset_FDC = 0.0;
+
 	double locTimeOffset_PSC = locTOFFitFunc_PSC->GetParameter(1);
+	if(!(locHist_RFDeltaT_PSC_TOF->GetEntries() > 0.0))
+		locTimeOffset_PSC = 0.0;
+
 	double locTimeOffset_TAGH = locTOFFitFunc_TAGH->GetParameter(1);
+	if(!(locHist_RFDeltaT_TAGH_TOF->GetEntries() > 0.0))
+		locTimeOffset_TAGH = 0.0;
 
 	//Fine time offset variances
 	double locTimeOffsetVariance_TOF = 0.0;
@@ -187,7 +197,9 @@ int main(void)
 
 	//Pipe the current constants into this macro
 		//NOTE: This dumps the "LATEST" values. If you need something else, modify this script.
-	FILE* locInputFile = gSystem->OpenPipe("ccdb dump PHOTON_BEAM/RF/time_offset", "r");
+	ostringstream locCommandStream;
+	locCommandStream << "ccdb dump PHOTON_BEAM/RF/time_offset -r " << locRunNumber;
+	FILE* locInputFile = gSystem->OpenPipe(locCommandStream.str().c_str(), "r");
 	if(locInputFile == NULL)
 		return 0;
 
