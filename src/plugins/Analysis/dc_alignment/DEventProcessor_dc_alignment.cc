@@ -437,8 +437,8 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
     for(unsigned int i=0; i<tvals.size(); i++){
       map<string, double> &row = tvals[i];
       
-      temp.push_back(row["c1"]);
-      temp2.push_back(row["c2"]);
+      temp.push_back(row["offset"]);
+      temp2.push_back(row["phi"]);
       
       straw_count++;
       if (straw_count==numstraws[ring_count]){
@@ -452,7 +452,7 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
     }
   }
 
-  if (jcalib->Get("CDC/drift_parms::NoBField", tvals)==false){
+  if (jcalib->Get("CDC/drift_parameters::NoBField", tvals)==false){
     map<string, double> &row = tvals[0]; //long drift side
     long_drift_func[0][0]=row["a1"]; 
     long_drift_func[0][1]=row["a2"];

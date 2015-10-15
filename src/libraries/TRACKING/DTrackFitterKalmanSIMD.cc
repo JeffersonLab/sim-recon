@@ -412,8 +412,8 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
       for(unsigned int i=0; i<tvals.size(); i++){
 	map<string, double> &row = tvals[i];
 	
-	temp.push_back(row["c1"]);
-	temp2.push_back(row["c2"]);
+	temp.push_back(row["offset"]);
+	temp2.push_back(row["phi"]);
 
 	straw_count++;
 	if (straw_count==straw_number[ring_count]){
@@ -427,8 +427,8 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
       }
     }
 
-    if (jcalib->Get("CDC/drift_parms", tvals)==false){
-      map<string, double> &row = tvals[0];
+    if (jcalib->Get("CDC/drift_parameters", tvals)==false){
+      map<string, double> &row = tvals[0]; // long drift side
       long_drift_func[0][0]=row["a1"];
       long_drift_func[0][1]=row["a2"];
       long_drift_func[0][2]=row["a3"];  
@@ -441,7 +441,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
       long_drift_Bscale_par1=row["B1"];
       long_drift_Bscale_par2=row["B2"];
 
-      row = tvals[1];
+      row = tvals[1]; // short drift side
       short_drift_func[0][0]=row["a1"];
       short_drift_func[0][1]=row["a2"];
       short_drift_func[0][2]=row["a3"];  
@@ -2218,7 +2218,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(DVector2 &dpos,const DMatrix5x1 &S,
         double p=pt*one_over_cosl;
         double p_sq=p*p;
         double E=sqrt(p_sq+mass2);
-        D1(state_q_over_pt)-=q_over_pt*E/p_sq*dEdx;
+        D1(state_q_over_pt)-=q_over_pt*E*dEdx/p_sq;
     }
     //  D1(state_phi)
     //  =kq_over_pt*(Bx*cosphi*sinl+By*sinphi*sinl-Bz*cosl);

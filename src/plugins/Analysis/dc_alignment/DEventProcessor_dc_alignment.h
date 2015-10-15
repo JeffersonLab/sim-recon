@@ -339,8 +339,8 @@ inline double DEventProcessor_dc_alignment::cdc_variance(double t){
   //  return 0.001*0.001;
   if (t<0.) t=0.;
   
-  CDC_RES_PAR1=0.254;
-  CDC_RES_PAR2=0.025;
+  //CDC_RES_PAR1=0.254;
+  //CDC_RES_PAR2=0.025;
   double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
   //sigma+=0.02;
   
