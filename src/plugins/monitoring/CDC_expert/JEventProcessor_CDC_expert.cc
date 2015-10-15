@@ -353,7 +353,8 @@ jerror_t JEventProcessor_CDC_expert::evnt(JEventLoop *eventLoop, int eventnumber
 
   float q,t;         // dcdchits quantities charge, time
 
-  uint32_t tr,p,a,qf,ocount; // dcdcdigihits raw quantities: time, pedestal, amplitude, quality factor, overflow count
+  // n.b. removed "qf,ocount" from following line to avoid compiler warnings. 1-/15/2015 DL
+  uint32_t tr,p,a; // dcdcdigihits raw quantities: time, pedestal, amplitude, quality factor, overflow count
   uint32_t integral; // dcdcdigihits integral, includes pedestal
   uint32_t integ;    // dcdcdigihits integral minus pedestal
 
@@ -366,7 +367,7 @@ jerror_t JEventProcessor_CDC_expert::evnt(JEventLoop *eventLoop, int eventnumber
   uint32_t nsamples_integral;    ///< number of samples used in integral 
   uint32_t nsamples_pedestal;    ///< number of samples used in pedestal
 
-  Bool_t FoundRawData=kFALSE;   //set true if found window raw data, present in mode 8 and raw mode
+//  Bool_t FoundRawData=kFALSE;   //set true if found window raw data, present in mode 8 and raw mode
 
   const uint16_t NPEDSAMPLES=16;
 
@@ -420,7 +421,7 @@ jerror_t JEventProcessor_CDC_expert::evnt(JEventLoop *eventLoop, int eventnumber
 
   // temporarily set amplitude, overflow count and integral-pedestal to 0
   a = 0;
-  ocount = 0;
+//  ocount = 0;
 
   for(uint32_t i=0; i<digihits.size(); i++) {
 
@@ -452,7 +453,7 @@ jerror_t JEventProcessor_CDC_expert::evnt(JEventLoop *eventLoop, int eventnumber
  
       if (windat->samples.size()>=NPEDSAMPLES) {
 
-        FoundRawData = kTRUE;
+//        FoundRawData = kTRUE;
 
         winped = 0;
 
@@ -483,7 +484,7 @@ jerror_t JEventProcessor_CDC_expert::evnt(JEventLoop *eventLoop, int eventnumber
       p        = digihit->pedestal;   
       tr       = digihit->pulse_time;    // raw time in 0.8 ns units
       integral = digihit->pulse_integral; // pulse integral in fadc units, pedestal not subtracted
-      qf       = digihit->QF;            // time quality factor (0=good)   
+//      qf       = digihit->QF;            // time quality factor (0=good)   
 
       //a      = digihit->amplitude;   // max amplitude , not implemented yet  
       //ocount = digihit->overflow;      // overflow count, not implemented yet

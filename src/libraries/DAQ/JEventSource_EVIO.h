@@ -34,6 +34,9 @@ using namespace jana;
 //#include <evioChannel.hxx>
 #include <evioUtil.hxx>
 using namespace evio;
+#else
+class evioDOMTree;
+typedef pair<int,int> tagNum;
 #endif // HAVE_EVIO
 
 #ifdef HAVE_ET
@@ -169,16 +172,18 @@ class JEventSource_EVIO: public jana::JEventSource{
                     bool quit_on_next_ET_timeout;
 
 	
-#ifdef HAVE_EVIO		
                     void ReadOptionalModuleTypeTranslation(void);
 		  virtual jerror_t ReadEVIOEvent(uint32_t* &buf);
              inline void GetEVIOBuffer(jana::JEvent &jevent, uint32_t* &buff, uint32_t &size) const;
-     inline evioDOMTree* GetEVIODOMTree(jana::JEvent &jevent) const;
           EVIOSourceType GetEVIOSourceType(void){ return source_type; }
 		            void AddROCIDtoParseList(uint32_t rocid){ ROCIDS_TO_PARSE.insert(rocid); }
 		   set<uint32_t> GetROCIDParseList(uint32_t rocid){ return ROCIDS_TO_PARSE; }
         static uint32_t* GetEVIOBufferFromRef(void *ref){ return ((ObjList*)ref)->eviobuff; }
          static uint32_t GetEVIOBufferSizeFromRef(void *ref){ return ((ObjList*)ref)->eviobuff_size; }
+
+#ifdef HAVE_EVIO		
+     inline evioDOMTree* GetEVIODOMTree(jana::JEvent &jevent) const;
+#endif // HAVE_EVIO		
 
 	protected:
 	
@@ -313,7 +318,6 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);
 		void EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);
 		jerror_t ParseEvents(ObjList *objs_ptr);
-		int32_t GetRunNumber(evioDOMTree *evt);
 		int32_t FindRunNumber(uint32_t *iptr);
 		uint64_t FindEventNumber(uint32_t *iptr);
 		MODULE_TYPE GuessModuleType(const uint32_t *istart, const uint32_t *iend);
@@ -322,11 +326,14 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void DumpModuleMap(void){}
 		void DumpBinary(const uint32_t *iptr, const uint32_t *iend=NULL, uint32_t MaxWords=0, const uint32_t *imark=NULL);
 
-		
 		void MergeObjLists(list<ObjList*> &events1, list<ObjList*> &events2);
 
+#if HAVE_EVIO
+		int32_t GetRunNumber(evioDOMTree *evt);
 		void ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_events);
 		void ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjList*> &tmp_events);
+		void ParseEPICSevent(evioDOMNodeP bankPtr, list<ObjList*> &events);
+#endif // HAVE_EVIO		
 		void ParseModuleConfiguration(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
@@ -336,7 +343,6 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void ParseTSBank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseTIBank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
-		void ParseEPICSevent(evioDOMNodeP bankPtr, list<ObjList*> &events);
 
 
 		// f250 methods
@@ -345,7 +351,6 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void MakeDf125WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 		void MakeDf125PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 
-#endif // HAVE_EVIO		
 
 #ifdef HAVE_ET
 		et_sys_id sys_id;
