@@ -234,8 +234,8 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, int eventnumber
                     char name[200];
                     sprintf(name , "Module %.2i Layer %.2i Sector %.2i", thisPoint->module(), thisPoint->layer(), thisPoint->sector());
                     // These results are in slightly different coordinate systems. We want one where the center of the BCAL is z=0
-                    double localTrackHitZ = proj_pos.z() - DBCALGeometry::GLOBAL_CENTER;
-                    double localBCALHitZ = thisPoint->z() - DBCALGeometry::GLOBAL_CENTER + Z_TARGET;
+                    double localTrackHitZ = proj_pos.z() - DBCALGeometry::GetBCAL_center();
+                    double localBCALHitZ = thisPoint->z() - DBCALGeometry::GetBCAL_center() + Z_TARGET;
                     Fill2DHistogram ("BCAL_TDC_Offsets", "Z Position", name,
                             localTrackHitZ, localBCALHitZ,
                             "Z_{point} Vs. Z_{Track}; Z_{Track} [cm]; Z_{Point} [cm]",
