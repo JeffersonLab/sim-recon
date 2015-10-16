@@ -106,9 +106,9 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   TARGET_Zlen = my_TARGET_Zlen;
 
   // Get overall phi shift of BCAL
-  double my_BCAL_PHI_SHIFT;
+  float my_BCAL_PHI_SHIFT;
   dgeom->GetBCALPhiShift(my_BCAL_PHI_SHIFT);
-  BCAL_PHI_SHIFT = (float)(my_BCAL_PHI_SHIFT*TMath::DegToRad());  // convert to radians
+  BCAL_PHI_SHIFT = my_BCAL_PHI_SHIFT*TMath::DegToRad();  // convert to radians
 
   UInt_t MainWidth = w;
   
