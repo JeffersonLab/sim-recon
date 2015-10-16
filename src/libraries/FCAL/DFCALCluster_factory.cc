@@ -26,6 +26,16 @@ bool FCALHitsSort_C(const DFCALHit* const &thit1, const DFCALHit* const &thit2) 
     return thit1->E>thit2->E;
 }
 
+const DFCALHit *GetDFCALHitFromClusterHit(const DFCALCluster::DFCALClusterHit_t &theClusterHit, const vector<const DFCALHit*> &fcalhits) {
+    for( vector<const DFCALHit*>::const_iterator fcalhits_itr = fcalhits.begin();
+         fcalhits_itr != fcalhits.end(); fcalhits_itr++) {
+        if(theClusterHit.id == (*fcalhits_itr)->id)
+            return *fcalhits_itr;
+    }
+
+    return NULL;
+}
+
 //----------------
 // Constructor
 //----------------
@@ -229,6 +239,14 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	   else {
 
               clusterList[c]->saveHits( hits );
+
+              // save associated FCAL hit information
+              const vector<DFCALCluster::DFCALClusterHit_t> &clusterHits = clusterList[c]->GetHits();
+              for(size_t loc_i = 0; loc_i < clusterHits.size(); loc_i++) {
+                  const DFCALHit *clusterHit = GetDFCALHitFromClusterHit(clusterHits[loc_i], fcalhits);
+                  if( clusterHit != NULL )
+                      clusterList[c]->AddAssociatedObject( clusterHit );
+              }
 
               _data.push_back( clusterList[c] );
 	   }

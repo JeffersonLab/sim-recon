@@ -17,7 +17,6 @@
 //------------------
 jerror_t DMCThrownMatching_factory::init(void)
 {
-	dMinimumMatchFOM = -1.0;
 	dDebugLevel = 0;
 	dMaximumTOFMatchDistance = 10.0; //cm
 	dMaximumFCALMatchDistance = 10.0; //cm
@@ -34,7 +33,6 @@ jerror_t DMCThrownMatching_factory::init(void)
 //------------------
 jerror_t DMCThrownMatching_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
 {
-	gPARMS->SetDefaultParameter("MCMATCH:MIN_MATCH_FOM", dMinimumMatchFOM);
 	gPARMS->SetDefaultParameter("MCMATCH:DEBUG_LEVEL", dDebugLevel);
 	gPARMS->SetDefaultParameter("MCMATCH:MAX_TOF_DISTANCE", dMaximumTOFMatchDistance);
 	gPARMS->SetDefaultParameter("MCMATCH:MAX_FCAL_DISTANCE", dMaximumFCALMatchDistance);

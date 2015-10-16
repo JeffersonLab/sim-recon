@@ -172,7 +172,7 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, int
 	vector <const DFCALCluster*> matchedFCALClusters;
 	vector <const DTrackTimeBased*> matchedTracks;
 	DVector3 mypos(0.0,0.0,0.0);
-	double p;
+
 	for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){
 	  for (unsigned int j=0; j< locBCALShowers.size(); ++j){
 	
@@ -182,7 +182,7 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, int
 		DVector3 pos_bcal(x,y,z);
 		double R = pos_bcal.Perp();
 		locTrackTimeBased[i]->rt->GetIntersectionWithRadius(R, mypos);
-		 p = locTrackTimeBased[i]->momentum().Mag();
+		 locTrackTimeBased[i]->momentum().Mag();
 		double dPhi = TMath::Abs(mypos.Phi()-pos_bcal.Phi());
 		double dZ = TMath::Abs(mypos.Z() - z);
 		

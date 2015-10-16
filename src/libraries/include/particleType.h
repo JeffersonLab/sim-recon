@@ -536,27 +536,27 @@ inline static char* ParticleName_ROOT(Particle_t p)
   case Gamma:
     return (char*)"#gamma";
   case Positron:
-    return (char*)"e^{+}";
+    return (char*)"e^{#plus}";
   case Electron:
-    return (char*)"e^{-}";
+    return (char*)"e^{#minus}";
   case Neutrino:
     return (char*)"#nu";
   case MuonPlus:
-    return (char*)"#mu^{+}";
+    return (char*)"#mu^{#plus}";
   case MuonMinus:
-    return (char*)"#mu^{-}";
+    return (char*)"#mu^{#minus}";
   case Pi0:
     return (char*)"#pi^{0}";
   case PiPlus:
-    return (char*)"#pi^{+}";
+    return (char*)"#pi^{#plus}";
   case PiMinus:
-    return (char*)"#pi^{-}";
+    return (char*)"#pi^{#minus}";
   case KLong:
     return (char*)"K^{0}_{L}";
   case KPlus:
-    return (char*)"K^{+}";
+    return (char*)"K^{#plus}";
   case KMinus:
-    return (char*)"K^{-}";
+    return (char*)"K^{#minus}";
   case Neutron:
     return (char*)"n";
   case Proton:
@@ -570,41 +570,41 @@ inline static char* ParticleName_ROOT(Particle_t p)
   case Lambda:
     return (char*)"#Lambda";
   case SigmaPlus:
-    return (char*)"#Sigma^{+}";
+    return (char*)"#Sigma^{#plus}";
   case Sigma0:
     return (char*)"#Sigma^{0}";
   case SigmaMinus:
-    return (char*)"#Sigma^{-}";
+    return (char*)"#Sigma^{#minus}";
   case Xi0:
     return (char*)"#Xi^{0}";
   case XiMinus:
-    return (char*)"#Xi^{-}";
+    return (char*)"#Xi^{#minus}";
   case OmegaMinus:
-    return (char*)"#Omega^{-}";
+    return (char*)"#Omega^{#minus}";
   case AntiNeutron:
     return (char*)"#bar^{n}";
   case AntiLambda:
     return (char*)"#bar^{#Lambda}";
   case AntiSigmaMinus:
-    return (char*)"#bar{#Sigma}^{-}";
+    return (char*)"#bar{#Sigma}^{#minus}";
   case AntiSigma0:
     return (char*)"#bar{#Sigma}^{0}";
   case AntiSigmaPlus:
-    return (char*)"#bar{#Sigma}^{+}";
+    return (char*)"#bar{#Sigma}^{#plus}";
   case AntiXi0:
     return (char*)"#bar{#Xi}^{0}";
   case AntiXiPlus:
-    return (char*)"#bar{#Xi}^{+}";
+    return (char*)"#bar{#Xi}^{#plus}";
   case AntiOmegaPlus:
-    return (char*)"#bar{#Omega}^{+}";
+    return (char*)"#bar{#Omega}^{#plus}";
   case Geantino:
     return (char*)"geantino";
   case Rho0:
     return (char*)"#rho^{0}";
   case RhoPlus:
-    return (char*)"#rho^{+}";
+    return (char*)"#rho^{#plus}";
   case RhoMinus:
-    return (char*)"#rho^{-}";
+    return (char*)"#rho^{#minus}";
   case omega:
     return (char*)"#omega";
   case EtaPrime:
@@ -618,17 +618,17 @@ inline static char* ParticleName_ROOT(Particle_t p)
   case KStar_892_0:
     return (char*)"K*(892)^{0}";
   case KStar_892_Plus:
-    return (char*)"K*(892)^{+}";
+    return (char*)"K*(892)^{#plus}";
   case KStar_892_Minus:
-    return (char*)"K*(892)^{-}";
+    return (char*)"K*(892)^{#minus}";
   case AntiKStar_892_0:
     return (char*)"#bar{K*}(892)^{0}";
   case K1_1400_Plus:
-    return (char*)"K_{1}(1400)^{+}";
+    return (char*)"K_{1}(1400)^{#plus}";
   case K1_1400_Minus:
-    return (char*)"K_{1}(1400)^{-}";
+    return (char*)"K_{1}(1400)^{#minus}";
   case b1_1235_Plus:
-    return (char*)"b_{1}(1235)^{+}";
+    return (char*)"b_{1}(1235)^{#plus}";
   case Deuteron:
     return (char*)"d";
   case Helium:
@@ -638,13 +638,13 @@ inline static char* ParticleName_ROOT(Particle_t p)
   case Pb208:
     return (char*)"Pb^{208}";
   case Sigma_1385_Minus:
-    return (char*)"#Sigma(1385)^{-}";
+    return (char*)"#Sigma(1385)^{#minus}";
   case Sigma_1385_0:
     return (char*)"#Sigma(1385)^{0}";
   case Sigma_1385_Plus:
-    return (char*)"#Sigma(1385)^{+}";
+    return (char*)"#Sigma(1385)^{#plus}";
   case DeltaPlusPlus:
-    return (char*)"#Delta(1232)^{++}";
+    return (char*)"#Delta(1232)^{#plus#plus}";
   case Jpsi:
     return (char*)"J/#psi";
   case Eta_c:

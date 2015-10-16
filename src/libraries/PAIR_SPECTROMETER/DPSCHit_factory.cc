@@ -119,6 +119,10 @@ jerror_t DPSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
   FillCalibTable(adc_time_offsets, raw_adc_offsets, psGeom);
   FillCalibTable(tdc_time_offsets, raw_tdc_offsets, psGeom);
 
+  // load timewalk corrections
+  if (eventLoop->GetCalib("/PHOTON_BEAM/pair_spectrometer/tdc_timewalk_corrections", tw_parameters))
+    jout << "Error loading /PHOTON_BEAM/pair_spectrometer/tdc_timewalk_corrections !" << endl;
+
   return NOERROR;
 }
 
@@ -171,6 +175,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
     if (PPobj != NULL){
       if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
     }
+    else continue;
     
     // Get pedestal, prefer associated event pedestal if it exists,
     // otherwise, use the average pedestal from CCDB
@@ -186,8 +191,10 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
       double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
       pedestal          = ped_sum * nsamples_integral/nsamples_pedestal;
     }
+    else continue;
 
     // Apply calibration constants here
+    double P = PPobj->pulse_peak - PPobj->pedestal;
     double A = (double)digihit->pulse_integral;
     A -= pedestal;
     // Throw away hits with small pedestal-subtracted integrals
@@ -198,6 +205,7 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
     hit->arm = GetArm(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
     hit->module = GetModule(digihit->counter_id,psGeom.NUM_COARSE_COLUMNS);
     hit->integral = A;
+    hit->pulse_peak = P;
     hit->npe_fadc = A * a_scale * GetConstant(adc_gains, digihit, psGeom);
     hit->time_fadc = t_scale * T - GetConstant(adc_time_offsets, digihit, psGeom) + t_base;
     hit->t = hit->time_fadc;
@@ -235,13 +243,30 @@ jerror_t DPSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	hit->module = module;
 	hit->time_fadc = numeric_limits<double>::quiet_NaN();
 	hit->integral = numeric_limits<double>::quiet_NaN();
+	hit->pulse_peak = numeric_limits<double>::quiet_NaN();
 	hit->npe_fadc = numeric_limits<double>::quiet_NaN();
 	hit->has_fADC = false;
 	_data.push_back(hit);
       }
       hit->time_tdc = T;
       hit->has_TDC = true;
-      // apply time-walk corrections?
+      // apply time-walk corrections
+      if (hit->pulse_peak > 0) {
+         if (tw_parameters[module - 1][0] == 0) {
+            c1 = tw_parameters[module - 1][3];
+            c2 = tw_parameters[module - 1][4];
+            thresh = tw_parameters[module - 1][5];
+            P_0 = tw_parameters[module - 1][6];
+         }
+         else {
+            c1 = tw_parameters[module + 7][3];
+            c2 = tw_parameters[module + 7][4];
+            thresh = tw_parameters[module + 7][5];
+            P_0 = tw_parameters[module + 7][6];
+         }
+         double P = hit->pulse_peak;
+         T -= c1*(pow(P/thresh,c2) - pow(P_0/thresh,c2));
+      }
       hit->t = T;
                 
       hit->AddAssociatedObject(digihit);

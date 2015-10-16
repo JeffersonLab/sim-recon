@@ -159,7 +159,7 @@ inline const DBeamPhoton* DMCThrownMatching::Get_MatchingTruthPhoton(const DBeam
 
 	//perhaps this is an object produced from the factories with the "KinFit" or "Combo" flags: try the source object
 	const DBeamPhoton* locAssociatedBeamPhoton = NULL;
-	locReconBeamPhoton->GetSingleT(locAssociatedBeamPhoton);
+	locReconBeamPhoton->GetSingle(locAssociatedBeamPhoton);
 	if(locAssociatedBeamPhoton == NULL)
 		return NULL;
 	return Get_MatchingTruthPhoton(locAssociatedBeamPhoton);
@@ -259,11 +259,15 @@ inline const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DChargedTr
 	}
 
 	//perhaps this is an object produced from the factories with the "KinFit" or "Combo" flags: try the source object
-	const DChargedTrack* locAssociatedChargedTrack = NULL;
-	locChargedTrackHypothesis->GetSingleT(locAssociatedChargedTrack);
-	if(locAssociatedChargedTrack == NULL)
-		return NULL;
-	return Get_MatchingMCThrown(locAssociatedChargedTrack, locMatchFOM);
+	vector<const DChargedTrack*> locAssociatedChargedTracks;
+	locChargedTrackHypothesis->Get(locAssociatedChargedTracks);
+	for(size_t loc_i = 0; loc_i < locAssociatedChargedTracks.size(); ++loc_i)
+	{
+		const DMCThrown* locMCThrown = Get_MatchingMCThrown(locAssociatedChargedTracks[loc_i], locMatchFOM);
+		if(locMCThrown != NULL)
+			return locMCThrown;
+	}
+	return NULL;
 }
 
 inline const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DChargedTrack* locChargedTrack, double& locMatchFOM) const
@@ -284,9 +288,8 @@ inline const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DNeutralPa
 		return locIterator->second.first;
 	}
 
-	//perhaps this is an object produced from the factories with the "KinFit" or "Combo" flags: try the source object
 	const DNeutralShower* locAssociatedNeutralShower_Input = NULL;
-	locNeutralParticleHypothesis->GetSingleT(locAssociatedNeutralShower_Input);
+	locNeutralParticleHypothesis->GetSingle(locAssociatedNeutralShower_Input);
 	if(locAssociatedNeutralShower_Input == NULL)
 		return NULL;
 
@@ -295,8 +298,8 @@ inline const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DNeutralPa
 	const DNeutralShower* locAssociatedNeutralShower_Check = NULL;
 	for(locParticleIterator = dNeutralToThrownMap.begin(); locParticleIterator != dNeutralToThrownMap.end(); ++locParticleIterator)
 	{
-		locParticleIterator->first->GetSingleT(locAssociatedNeutralShower_Check);
-		if(locAssociatedNeutralShower_Check == locAssociatedNeutralShower_Input)
+		locParticleIterator->first->GetSingle(locAssociatedNeutralShower_Check);
+		if(locAssociatedNeutralShower_Check->dShowerID == locAssociatedNeutralShower_Input->dShowerID)
 		{
 			locMatchFOM = locParticleIterator->second.second;
 			return locParticleIterator->second.first;

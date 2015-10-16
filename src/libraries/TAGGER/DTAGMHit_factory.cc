@@ -138,6 +138,7 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, int eventnumber)
         if (PPobj != NULL){
             if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
         }
+        else continue;
 
         // Get pedestal, prefer associated event pedestal if it exists,
         // otherwise, use the average pedestal from CCDB
@@ -154,6 +155,7 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, int eventnumber)
             double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
             pedestal          = single_sample_ped * nsamples_integral/nsamples_pedestal;
         }
+        else continue;
 
         // throw away hits from bad or noisy fibers
         int quality = fiber_quality[digihit->row][digihit->column];
@@ -174,10 +176,12 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, int eventnumber)
         hit->t = 0;
 
         // Apply calibration constants
+        double P = PPobj->pulse_peak - PPobj->pedestal;
         double A = digihit->pulse_integral;
         double T = digihit->pulse_time;
         A -= pedestal;
-        hit->integral=A;
+        hit->integral = A;
+        hit->pulse_peak = P;
         hit->npix_fadc = A * fadc_a_scale * fadc_gains[row][column];
         hit->time_fadc = T * fadc_t_scale - fadc_time_offsets[row][column] + t_base;
         hit->t=hit->time_fadc;
@@ -221,6 +225,7 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		hit->time_fadc = 0;
 		hit->npix_fadc = 0;
 		hit->integral = 0;
+		hit->pulse_peak = 0;
 		hit->has_fADC=false;
 		_data.push_back(hit);
 	    }

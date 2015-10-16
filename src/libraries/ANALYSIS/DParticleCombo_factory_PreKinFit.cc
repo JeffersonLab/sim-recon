@@ -691,7 +691,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			locParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
 
 			//initial particle
-			if(locInitialPID == Gamma) //else decaying particle: nothing to set
+			if(locInitialPID == Gamma) //else decaying particle: nothing to set yet
 			{
 				//beam photon: will later create additional combo for each one that's within the time window, just set the first one for now
 				if(locCandidatePhotons[locReactionRFPair].empty())

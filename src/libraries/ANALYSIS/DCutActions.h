@@ -29,16 +29,21 @@ using namespace std;
 /*
 //CLASSES DEFINED BELOW:
 DCutAction_MaxNumParticleCombos
+
+DCutAction_TruePID
+DCutAction_AllTruePID
+DCutAction_TrueBeamParticle
+DCutAction_TrueCombo
 DCutAction_ThrownTopology
+DCutAction_BDTSignalCombo
 
 DCutAction_PIDFOM
 DCutAction_CombinedPIDFOM
 DCutAction_CombinedTrackingFOM
-DCutAction_TrueBeamParticle
-DCutAction_TrueCombo
-DCutAction_TruePID
-DCutAction_AllTruePID
 
+DCutAction_MinTrackHits
+DCutAction_AllTracksHaveDetectorMatch
+DCutAction_ProductionVertexZ
 DCutAction_AllVertexZ
 DCutAction_MaxTrackDOCA
 DCutAction_KinFitFOM
@@ -56,6 +61,22 @@ DCutAction_PIDDeltaT
 
 DCutAction_OneVertexKinFit
 */
+
+class DCutAction_MinTrackHits : public DAnalysisAction
+{
+	public:
+		DCutAction_MinTrackHits(const DReaction* locReaction, unsigned int locMinTrackHits, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Cut_MinTrackHits", false, locActionUniqueString),
+		dMinTrackHits(locMinTrackHits){}
+
+		string Get_ActionName(void) const;
+		void Initialize(JEventLoop* locEventLoop){}
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		unsigned int dMinTrackHits;
+};
 
 class DCutAction_ThrownTopology : public DAnalysisAction
 {
@@ -263,6 +284,22 @@ class DCutAction_AllTruePID : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
 		double dMinThrownMatchFOM;
+};
+
+class DCutAction_ProductionVertexZ : public DAnalysisAction
+{
+	public:
+		DCutAction_ProductionVertexZ(const DReaction* locReaction, double locMinVertexZ, double locMaxVertexZ, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Cut_ProductionVertexZ", false, locActionUniqueString), dMinVertexZ(locMinVertexZ), dMaxVertexZ(locMaxVertexZ){}
+
+		string Get_ActionName(void) const;
+		inline void Initialize(JEventLoop* locEventLoop){}
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		double dMinVertexZ;
+		double dMaxVertexZ;
 };
 
 class DCutAction_AllVertexZ : public DAnalysisAction
@@ -574,11 +611,12 @@ class DCutAction_PIDDeltaT : public DAnalysisAction
 
 class DCutAction_OneVertexKinFit : public DAnalysisAction
 {
+	//does not cut vertex-z position if min > max
 	public:
 
-		DCutAction_OneVertexKinFit(const DReaction* locReaction, double locMinKinFitCL = -1.0, string locActionUniqueString = "") : 
+		DCutAction_OneVertexKinFit(const DReaction* locReaction, double locMinKinFitCL = -1.0, double locMinVertexZ = 1.0, double locMaxVertexZ = 0.0, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Cut_OneVertexKinFit", false, locActionUniqueString),
-		dMinKinFitCL(locMinKinFitCL) {}
+		dMinKinFitCL(locMinKinFitCL), dMinVertexZ(locMinVertexZ), dMaxVertexZ(locMaxVertexZ) {}
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -587,6 +625,8 @@ class DCutAction_OneVertexKinFit : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
 		double dMinKinFitCL;
+		double dMinVertexZ;
+		double dMaxVertexZ;
 
 		const DAnalysisUtilities* dAnalysisUtilities;
 		DKinFitter_GlueX dKinFitter;

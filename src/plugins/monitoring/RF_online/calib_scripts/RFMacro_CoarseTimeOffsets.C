@@ -18,11 +18,14 @@ double Calc_Mean(TH1I* locHist)
                 locEntries += locThisBinEntries;
                 locTotal += double(locThisBinEntries)*locHist->GetBinCenter(loc_i);
         }
+        if(locEntries == 0)
+        	return 0.0;
         return (locTotal / double(locEntries));
 }
 
-int main(void)
+int main(int locRunNumber)
 {
+	//INPUT RUN NUMBER MUST BE A RUN NUMBER IN THE RUN RANGE YOU ARE TRYING TO COMMIT CONSTANTS TO
 	TDirectory *locTopDirectory = gDirectory;
 
 	//Goto Beam Path
@@ -51,7 +54,9 @@ int main(void)
 
 	//Pipe the current constants into this macro
 		//NOTE: This dumps the "LATEST" values. If you need something else, modify this script.
-	FILE* locInputFile = gSystem->OpenPipe("ccdb dump PHOTON_BEAM/RF/time_offset", "r");
+	ostringstream locCommandStream;
+	locCommandStream << "ccdb dump PHOTON_BEAM/RF/time_offset -r " << locRunNumber;
+	FILE* locInputFile = gSystem->OpenPipe(locCommandStream.str().c_str(), "r");
 	if(locInputFile == NULL)
 		return 0;
 

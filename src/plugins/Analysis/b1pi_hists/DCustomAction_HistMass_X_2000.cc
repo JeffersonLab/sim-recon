@@ -41,7 +41,7 @@ void DCustomAction_HistMass_X_2000::Initialize(JEventLoop* locEventLoop)
 bool DCustomAction_HistMass_X_2000::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	//Optional: check whether the user wanted to use the kinematic fit results when performing this action
-	bool locUseKinFitResultsFlag = Get_UseKinFitResultsFlag();
+//	bool locUseKinFitResultsFlag = Get_UseKinFitResultsFlag();
 
 	const DParticleComboStep* locParticleComboStep0 = locParticleCombo->Get_ParticleComboStep(0);
 	const DParticleComboStep* locParticleComboStep1 = locParticleCombo->Get_ParticleComboStep(1);
@@ -80,13 +80,13 @@ bool DCustomAction_HistMass_X_2000::Perform_Action(JEventLoop* locEventLoop, con
 	dPastParticles.push_back(locCurrentParticles);
 
 	DLorentzVector locP4;
-	if(!locUseKinFitResultsFlag) //measured
+//	if(!locUseKinFitResultsFlag || (locParticleCombo->Get_KinFitResults() == NULL)) //measured or kinfit failed to converge
 	{
 		locP4 += locPiMinus1->lorentzMomentum() + locPiMinus2->lorentzMomentum();
 		locP4 += locPiPlus1->lorentzMomentum() + locPiPlus2->lorentzMomentum();
 		locP4 += locPhoton1->lorentzMomentum() + locPhoton2->lorentzMomentum();
 	}
-	else //kinfit: get kinfit objects first
+/*	else //kinfit: get kinfit objects first
 	{
 		locPiMinus1 = locParticleComboStep0->Get_FinalParticle(1);
 		locPiPlus1 = locParticleComboStep0->Get_FinalParticle(2);
@@ -98,7 +98,7 @@ bool DCustomAction_HistMass_X_2000::Perform_Action(JEventLoop* locEventLoop, con
 		locP4 += locPiMinus1->lorentzMomentum() + locPiMinus2->lorentzMomentum();
 		locP4 += locPiPlus1->lorentzMomentum() + locPiPlus2->lorentzMomentum();
 		locP4 += locPiZero->lorentzMomentum();
-	}
+	}*/
 	double locInvariantMass = locP4.M();
 
 	//Optional: Fill histograms

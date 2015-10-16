@@ -284,6 +284,7 @@ def AddCompileFlags(env, allflags):
 		if f.startswith('-I'):
 			cpppath.append(f[2:])
 		else:
+			if f == '-g': continue
 			if f.startswith('-std=c++'):
 				cxxflags.append(f)
 			else:
@@ -500,7 +501,7 @@ def AddDANA(env):
 	AddXERCES(env)
 	AddEVIO(env)
 	AddET(env)
-	AddCODAChannels(env)
+	#AddCODAChannels(env)
 	DANA_LIBS  = "DANA ANALYSIS PID TAGGER TRACKING START_COUNTER"
 	DANA_LIBS += " CERE DIRC CDC TRIGGER PAIR_SPECTROMETER RF"
 	DANA_LIBS += " FDC TOF BCAL FCAL CCAL TPOL HDGEOMETRY TTAB FMWPC"
