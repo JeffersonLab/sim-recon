@@ -47,22 +47,42 @@ void DCustomAction_p2pi_unusedHists::Initialize(JEventLoop* locEventLoop)
 				locHistName = "TrackNhits_Theta" + match[locDummy] + charge[locCharge];
 				locHistTitle = "Number of hits on track vs #theta: " + match[locDummy] + charge[locCharge];
 				locHistTitle += "; #theta; # DOF";
-				dHistMap_TrackNhits_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 150, 0., 150., 50, 0, 50);
+				dHistMap_TrackNhits_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 90, 0., 90., 35, 0, 35);
+
+				locHistName = "TrackNhitsCDC_Theta" + match[locDummy] + charge[locCharge];
+				locHistTitle = "Number of CDC ring hits on track vs #theta: " + match[locDummy] + charge[locCharge];
+				locHistTitle += "; #theta; # CDC ring hits";
+				dHistMap_TrackNhitsCDC_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 90, 0., 90., 35, 0, 35);
+
+				locHistName = "TrackNhitsFDC_Theta" + match[locDummy] + charge[locCharge];
+				locHistTitle = "Number of FDC plane hits on track vs #theta: " + match[locDummy] + charge[locCharge];
+				locHistTitle += "; #theta; # FDC plane hits";
+				dHistMap_TrackNhitsFDC_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 90, 0., 90., 35, 0, 35);
+
+				locHistName = "TrackNhitsFDCVsCDC_Theta13_16" + match[locDummy] + charge[locCharge];
+				locHistTitle = "Number of FDC plane hits vs CDC ring hits (13<#theta<16): " + match[locDummy] + charge[locCharge];
+				locHistTitle += "; # CDC ring hits; # FDC plane hits";
+				dHistMap_TrackNhitsFDCVsCDC_Theta13_16[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 35, 0, 35, 35, 0, 35);
+
+				locHistName = "TrackNhitsFDCVsCDC_Theta16_20" + match[locDummy] + charge[locCharge];
+				locHistTitle = "Number of FDC plane hits vs CDC ring hits (16<#theta<20): " + match[locDummy] + charge[locCharge];
+				locHistTitle += "; # CDC ring hits; # FDC plane hits";
+				dHistMap_TrackNhitsFDCVsCDC_Theta16_20[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 35, 0, 35, 35, 0, 35);
 
 				locHistName = "TrackChiSq_Theta" + match[locDummy] + charge[locCharge];
 				locHistTitle = "FOM for track #chi^{2} vs #theta: " + match[locDummy] + charge[locCharge];
 				locHistTitle += "; #theta; #chi^{2}";
-				dHistMap_TrackChiSq_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 150, 0., 150., 500, 0., 100.);
+				dHistMap_TrackChiSq_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 90, 0., 90., 500, 0., 100.);
 
 				locHistName = "TrackFOM_Theta" + match[locDummy] + charge[locCharge];
 				locHistTitle = "FOM for track fit vs #theta: " + match[locDummy] + charge[locCharge];
 				locHistTitle += "; #theta; FOM";
-				dHistMap_TrackFOM_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 150, 0., 150., 1000, 0., 1.);
+				dHistMap_TrackFOM_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 90, 0., 90., 1000, 0., 1.);
 
 				locHistName = "TrackP_Theta" + match[locDummy] + charge[locCharge];
 				locHistTitle = "P vs #theta: " + match[locDummy] + charge[locCharge];
 				locHistTitle += "; #theta; momentum";
-				dHistMap_TrackP_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 150, 0., 150., 120, 0., 6.);
+				dHistMap_TrackP_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 90, 0., 90., 120, 0., 3.);
 
 				locHistName = "TrackPOCAXY" + match[locDummy] + charge[locCharge];
 				locHistTitle = "POCA to beamline Y vs X: " + match[locDummy] + charge[locCharge];
@@ -92,25 +112,27 @@ void DCustomAction_p2pi_unusedHists::Initialize(JEventLoop* locEventLoop)
 				locHistName = "LowNDFTrackP_VertZ" + match[locDummy] + charge[locCharge];
 				locHistTitle = "Low NDF tracks P vs vertex Z: " + match[locDummy] + charge[locCharge];
 				locHistTitle += "; Vertex Z (cm); momentum";
-				dHistMap_LowNDFTrackP_VertZ[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 500, 0., 250., 120, 0., 6.);
+				dHistMap_LowNDFTrackP_VertZ[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 500, 0., 250., 120, 0., 3.);
 
 				locHistName = "LowNDFTrackPT_Phi" + match[locDummy] + charge[locCharge];
                                 locHistTitle = "Low NDF tracks P_{T} vs #phi: " + match[locDummy] + charge[locCharge];
                                 locHistTitle += "; #phi; transverse momentum";			
 				dHistMap_LowNDFTrackPT_Phi[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 360., -180., 180., 120, 0., 3.);
 
-	
-				/*
-				  locHistName = "TrackNposs" + match[locDummy] + charge[locCharge];
-				  locHistTitle = "Number possible hits on track vs #theta: " + match[locDummy] + charge[locCharge];
-				  locHistTitle += "; #theta; # possible hits";
-				  dHistMap_TrackNposs_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 150, 0., 150., 50, 0, 50);
-				  
-				  locHistName = "TrackHitFrac" + match[locDummy] + charge[locCharge];
-				  locHistTitle = "Fraction of possible hits used in track fit vs #theta: " + match[locDummy] + charge[locCharge];
-				  locHistTitle += "; #theta; # hits fit / # hits possible";
-				  dHistMap_TrackHitFrac_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 150, 0., 150., 100, 0., 1.);
-				*/
+				locHistName = "TrackMCHitFraction_Theta" + match[locDummy] + charge[locCharge];
+                                locHistTitle = "Track MC Hit Fraction vs #theta: " + match[locDummy] + charge[locCharge];
+                                locHistTitle += "; #theta; MC Hit Fraction";
+				dHistMap_TrackMCHitFraction_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 90., 0., 90., 100, 0., 1.);
+				
+				locHistName = "TrackMCMomRes_Theta" + match[locDummy] + charge[locCharge];
+                                locHistTitle = "Track MC Momentum Resolution vs #theta: " + match[locDummy] + charge[locCharge];
+                                locHistTitle += "; #theta; MC Momentum Resolution #Delta p/p";
+				dHistMap_TrackMCMomRes_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 90., 0., 90., 100, -0.4, 0.4);
+
+				locHistName = "TrackMCThetaRes_Theta" + match[locDummy] + charge[locCharge];
+                                locHistTitle = "Track MC Theta Resolution vs #theta: " + match[locDummy] + charge[locCharge];
+                                locHistTitle += "; #theta; MC Theta Resolution #Delta#theta (degrees)";
+				dHistMap_TrackMCThetaRes_Theta[locMatch][locCharge] = GetOrCreate_Histogram<TH2I>(locHistName.Data(), locHistTitle.Data(), 90., 0., 90., 100, -5, 5);
 			}
 			
 			vector<DetectorSystem_t> locDetectorSystems;
@@ -209,6 +231,12 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 	const DDetectorMatches* locDetectorMatches = NULL;
         locEventLoop->GetSingle(locDetectorMatches);
 
+	// thrown particles for track resolution
+	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
+        locEventLoop->Get(locMCThrownMatchingVector);
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+
 	// get all charged tracks and showers for comparison to combo (no "pre-select" cut here)
         vector<const DChargedTrack*> locChargedTracks;
         locEventLoop->Get(locChargedTracks); //, "PreSelect"); 
@@ -226,6 +254,11 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
         for(size_t loc_j = 0; loc_j < locChargedTracks.size(); ++loc_j) {
                 int nMatched = 0;
 
+		double locMatchFOM;
+		const DMCThrown* locMCThrown = NULL; 
+		if(!locMCThrowns.empty()) 
+			locMCThrown = locMCThrownMatchingVector[0]->Get_MatchingMCThrown(locChargedTracks[loc_j], locMatchFOM);
+
                 // add tracks not in combo to vector of unused tracks
                 for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i) {
 			
@@ -233,16 +266,16 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
                         if(locChargedTrack == NULL) continue; // should never happen
 
                         const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
-                        if(locChargedTracks[loc_j]->Get_BestFOM()->candidateid == locChargedTrackHypothesis->candidateid) {
+			if(locChargedTracks[loc_j]->Get_BestFOM()->candidateid == locChargedTrackHypothesis->candidateid) {
                                 nMatched++;
-				FillTrack(locChargedTracks[loc_j], true);
+				FillTrack(locChargedTracks[loc_j], true, locMCThrown);
 			}
                 }
 		
 		// plot properties of unused charged tracks
                 if(nMatched==0) {
 			locUnusedChargedTracks.push_back(locChargedTracks[loc_j]);
-			FillTrack(locChargedTracks[loc_j], false);
+			FillTrack(locChargedTracks[loc_j], false, locMCThrown);
 		}
         }
 
@@ -325,8 +358,8 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 			DVector3 fcal_pos = locFCALShower->getPosition();
 			DVector3 norm(0.0, 0.0, 1.0); //normal vector for the FCAL plane
 			DVector3 proj_pos, proj_mom;
-			double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-			if(rt->GetIntersectionWithPlane(fcal_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime, NULL, SYS_FCAL) != NOERROR)
+			double locPathLength = 9.9E9, locFlightTime = 9.9E9, locFlightTimeVariance = 9.9e9;
+			if(rt->GetIntersectionWithPlane(fcal_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime, &locFlightTimeVariance, SYS_FCAL) != NOERROR)
 				continue;
 			
 			double dd = (fcal_pos - proj_pos).Mag();
@@ -396,7 +429,7 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 }
 
 
-void DCustomAction_p2pi_unusedHists::FillTrack(const DChargedTrack* locChargedTrack, bool locMatch)
+void DCustomAction_p2pi_unusedHists::FillTrack(const DChargedTrack* locChargedTrack, bool locMatch, const DMCThrown* locMCThrown)
 {
 
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
@@ -405,29 +438,47 @@ void DCustomAction_p2pi_unusedHists::FillTrack(const DChargedTrack* locChargedTr
 	const DTrackTimeBased* locTrackTimeBased = NULL;
 	locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
 	
-	float nHits = locTrackTimeBased->Ndof + 5.;
+	double nHits = locTrackTimeBased->Ndof + 5.;
+	double locTheta = locTrackTimeBased->momentum().Theta()*180/TMath::Pi();
 
 	set<int> locCDCRings;
 	dParticleID->Get_CDCRings(locTrackTimeBased->dCDCRings, locCDCRings);
 	
-	/* Number of possible hits not implemented yet?  Always returns 0
-	  float nPoss = locTrackTimeBased->cdc_hit_usage.total_hits + locTrackTimeBased->fdc_hit_usage.total_hits;
-	  float fitFrac = 0;
-	  if(nPoss > 0.) fitFrac = nHits/nPoss;
-	  else cout<<nPoss<<" "<<nHits<<endl;
-	*/
+	set<int> locFDCPlanes;
+	dParticleID->Get_FDCPlanes(locTrackTimeBased->dFDCPlanes, locFDCPlanes);
+
+	double locHitFraction = locTrackTimeBased->dNumHitsMatchedToThrown/nHits;
+	double locMomentumRes = -999;
+	double locThetaRes = -999;
+	if(locMCThrown) {
+	  locMomentumRes = (locTrackTimeBased->momentum().Mag() - locMCThrown->momentum().Mag())/locMCThrown->momentum().Mag();
+	  locThetaRes = (locTrackTimeBased->momentum().Theta() - locMCThrown->momentum().Theta())*180./TMath::Pi();
+	}
 
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
-		dHistMap_TrackNhits_Theta[locMatch][locCharge]->Fill(locTrackTimeBased->momentum().Theta()*180/TMath::Pi(), nHits);
-		dHistMap_TrackChiSq_Theta[locMatch][locCharge]->Fill(locTrackTimeBased->momentum().Theta()*180/TMath::Pi(), locTrackTimeBased->chisq);
-		dHistMap_TrackFOM_Theta[locMatch][locCharge]->Fill(locTrackTimeBased->momentum().Theta()*180/TMath::Pi(), locTrackTimeBased->FOM);
-		dHistMap_TrackP_Theta[locMatch][locCharge]->Fill(locTrackTimeBased->momentum().Theta()*180/TMath::Pi(), locTrackTimeBased->momentum().Mag());
+		dHistMap_TrackNhits_Theta[locMatch][locCharge]->Fill(locTheta, nHits);
+		dHistMap_TrackNhitsCDC_Theta[locMatch][locCharge]->Fill(locTheta, locCDCRings.size());
+		dHistMap_TrackNhitsFDC_Theta[locMatch][locCharge]->Fill(locTheta, locFDCPlanes.size());
+		if(locTheta>13. && locTheta<16.)
+		  dHistMap_TrackNhitsFDCVsCDC_Theta13_16[locMatch][locCharge]->Fill(locCDCRings.size(), locFDCPlanes.size());
+		if(locTheta>16. && locTheta<20.)
+		  dHistMap_TrackNhitsFDCVsCDC_Theta16_20[locMatch][locCharge]->Fill(locCDCRings.size(), locFDCPlanes.size());
+		dHistMap_TrackChiSq_Theta[locMatch][locCharge]->Fill(locTheta, locTrackTimeBased->chisq);
+		dHistMap_TrackFOM_Theta[locMatch][locCharge]->Fill(locTheta, locTrackTimeBased->FOM);
+		dHistMap_TrackP_Theta[locMatch][locCharge]->Fill(locTheta, locTrackTimeBased->momentum().Mag());
 		dHistMap_TrackPOCAXY[locMatch][locCharge]->Fill(locTrackTimeBased->position().X(), locTrackTimeBased->position().Y());
 		dHistMap_TrackPOCAZ[locMatch][locCharge]->Fill(locTrackTimeBased->position().Z());
 
-		//dHistMap_TrackNposs_Theta[locMatch][locCharge]->Fill(locTrackTimeBased->momentum().Theta()*180/TMath::Pi(), nPoss);
-		//dHistMap_TrackHitFrac_Theta[locMatch][locCharge]->Fill(locTrackTimeBased->momentum().Theta()*180/TMath::Pi(), fitFrac);
+		dHistMap_TrackMCHitFraction_Theta[locMatch][locCharge]->Fill(locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi(), locHitFraction);
+		if(locMCThrown) {
+		  dHistMap_TrackMCMomRes_Theta[locMatch][locCharge]->Fill(locTheta, locMomentumRes);
+		  dHistMap_TrackMCThetaRes_Theta[locMatch][locCharge]->Fill(locTheta, locThetaRes);
+		}
+
+		for(set<int>::iterator locIterator = locFDCPlanes.begin(); locIterator != locFDCPlanes.end(); ++locIterator) {
+		  //dHistMap_TrackFDCPlaneVs_Nhits->Fill(nHits, *locIterator);
+		}
 
 		// understand low Nhits tracks
 		if(locTrackTimeBased->momentum().Theta()*180./TMath::Pi() > 30.){
@@ -549,55 +600,3 @@ void DCustomAction_p2pi_unusedHists::FillShower(const DNeutralShower* locNeutral
 
 	return;
 }
-
-
-/*
-
-        // loop over neutral showers to make list of unused showers
-        for(size_t loc_j = 0; loc_j < locNeutralShowers.size(); ++loc_j) {
-                int nMatched = 0;
-
-                // add showers not matched to tracks in combo to vector of unused showers
-                for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i) {
-
-                        const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_i));
-                        if(locChargedTrack == NULL) continue; // should never happen
-
-                        const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
-			
-			if(locNeutralShowers[loc_j]->dDetectorSystem == SYS_FCAL) {
-				DFCALShowerMatchParams locFCALShowerMatchParams;
-				bool foundFCAL = dParticleID->Get_BestFCALMatchParams(locTrackTimeBased, locDetectorMatches, locFCALShowerMatchParams);
-				if(foundFCAL){
-					const DFCALShower *locFCALShower = NULL;
-					locNeutralShowers[loc_j]->GetSingleT(locFCALShower);
-
-					if(locFCALShowerMatchParams.dFCALShower == locFCALShower) {
-						nMatched++;
-						FillShower(locNeutralShowers[loc_j], true, locBeamPhotonTime);
-					}
-				}
-			}
-			if(locNeutralShowers[loc_j]->dDetectorSystem == SYS_BCAL) {
-				DBCALShowerMatchParams locBCALShowerMatchParams;
-				bool foundBCAL = dParticleID->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams);
-				if(foundBCAL){
-					const DBCALShower *locBCALShower = NULL;
-					locNeutralShowers[loc_j]->GetSingleT(locBCALShower);
-
-					if(locBCALShowerMatchParams.dBCALShower == locBCALShower) {
-						nMatched++;
-						FillShower(locNeutralShowers[loc_j], true, locBeamPhotonTime);
-					}
-				}
-			}
-                }
-		
-		
-		// plot properties of unused showers
-                if(nMatched==0) {
-		
-		}
-*/

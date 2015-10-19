@@ -14,6 +14,8 @@ void DCustomAction_p2pi_hists::Initialize(JEventLoop* locEventLoop)
         locEventLoop->GetSingle(locParticleID);
         dParticleID = locParticleID;
 
+	locEventLoop->GetSingle(dAnalysisUtilities);
+
 	// check if a particle is missing
 	Get_Reaction()->Get_MissingPID(dMissingPID);
 
@@ -27,6 +29,9 @@ void DCustomAction_p2pi_hists::Initialize(JEventLoop* locEventLoop)
 		
 		if(dMissingPID == Proton) {
 			dMM_M2pi = GetOrCreate_Histogram<TH2I>("MM_M2pi", "MM off #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; MM", 200, 0.0, 2.0, 200, 0., 4.);
+			dMM_M2pi_noEle = GetOrCreate_Histogram<TH2I>("MM_M2pi_noEle", "MM off #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; MM", 200, 0.0, 2.0, 200, 0., 4.);
+			dt_M2pi_noEle = GetOrCreate_Histogram<TH2I>("t_M2pi_noEle", "|t| vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; t", 200, 0.0, 2.0, 1000, 0., 5.);
+			dPiPlusPsi_t = GetOrCreate_Histogram<TH2I>("PiPlusPsi_t","#psi vs |t|; |t|; #pi^{+} #psi",1000,0.,5.,360,-180,180);
 		}
 		else {
 			dMM2_M2pi = GetOrCreate_Histogram<TH2I>("MM2_M2pi", "MM^{2} off #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; MM^{2}", 200, 0.0, 2.0, 200, -1., 1.);
@@ -79,7 +84,7 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 	// calculate 2pi P4
 	DLorentzVector locP4_2pi;
 	for(size_t loc_i = 0; loc_i < 3; ++loc_i) {
-		if(locParticles[loc_i] == NULL) continue; // missing proton
+		if(locParticles[loc_i] == NULL) continue; // missing particle
                 if(locParticles[loc_i]->PID() == PiPlus || locParticles[loc_i]->PID() == PiMinus)
                         locP4_2pi += locParticles[loc_i]->lorentzMomentum();
         }
@@ -96,6 +101,7 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 		dEdx = locChargedTrackHypothesis->dEdx()*1e6; // convert to keV
 		locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();	
 	}
+	else locProtonP4 = locMissingP4;
 
 	double dEdxCut = 2.2;
 
@@ -117,7 +123,7 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 	
 	TLorentzVector beam_res = resonanceBoost * locBeamPhoton->lorentzMomentum();
 	TLorentzVector recoil_res = resonanceBoost * locProtonP4;
-	TLorentzVector p1_res = resonanceBoost * locParticles[1]->lorentzMomentum();
+	TLorentzVector p1_res = resonanceBoost * locPiPlus_P4;
 	
 	TVector3 z = -recoil_res.Vect().Unit();
 	TVector3 y = beam_res.Vect().Cross(z).Unit();
@@ -135,7 +141,18 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 		dEgamma->Fill(locBeamPhotonEnergy);
 
 		if(dMissingPID == Proton) {
-			dMM_M2pi->Fill(locP4_2pi.M(), locMissingP4.M());
+			if(locBeamPhotonEnergy > 2.5 && locBeamPhotonEnergy < 3.0) {
+				dMM_M2pi->Fill(locP4_2pi.M(), locMissingP4.M());
+				if(locParticles[1]->lorentzMomentum().Theta()*180/PI > 2. && locParticles[2]->lorentzMomentum().Theta()*180/PI > 2.) {
+					dMM_M2pi_noEle->Fill(locP4_2pi.M(), locMissingP4.M());
+					if(locMissingP4.M() > 0.8 && locMissingP4.M() < 1.05) {
+						dt_M2pi_noEle->Fill(locP4_2pi.M(), fabs(t));
+						if(locP4_2pi.M() > 0.6 && locP4_2pi.M() < 0.88){
+							dPiPlusPsi_t->Fill(fabs(t), locPsi*180/TMath::Pi());
+						}	
+					}
+				}
+			}				
 		}
 		else {
 			dMM2_M2pi->Fill(locP4_2pi.M(), locMissingP4.M2());
