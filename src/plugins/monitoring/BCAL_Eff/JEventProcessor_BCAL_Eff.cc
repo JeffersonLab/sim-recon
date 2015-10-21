@@ -378,7 +378,7 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, int locE
 	vector < const DBCALShower *> matchedShowerspos;
 	vector <const DTrackTimeBased* > matchedTracks;
 	DVector3 mypos(0.0,0.0,0.0);
-	double p;
+
 	for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){
 	  for (unsigned int j=0; j< locBCALShowers.size(); ++j){
 	
@@ -394,7 +394,7 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, int locE
 		locTrackTimeBased[i]->rt->GetIntersectionWithRadius(R, mypos);
 
 		// double q = locTrackTimeBased[i]->rt->q;
-		p = locTrackTimeBased[i]->momentum().Mag();
+		locTrackTimeBased[i]->momentum().Mag();
 		double trkmass = locTrackTimeBased[i]->mass();
 		double dPhi = TMath::Abs(mypos.Phi()-phi);
 		double dZ = TMath::Abs(mypos.Z() - z);
@@ -418,6 +418,7 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, int locE
 
         // Get kinematic-fitted vertex
 
+#if 0  // disabling since it doesn't do anything other than cause compiler warnings  10/15/2015 DL
 	double kinfitVertexX, kinfitVertexY, kinfitVertexZ, kinfitVertexT;
 	for (unsigned int i = 0 ; i < kinfitVertex.size(); i++)
 	{
@@ -427,7 +428,7 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, int locE
 		kinfitVertexT = kinfitVertex[i]->dSpacetimeVertex.T();
 		//		goodVertexZ->Fill(kinfitVertexZ);
 	}
-
+#endif
 
         // now loop over matched showers
 

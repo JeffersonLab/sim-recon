@@ -164,7 +164,7 @@ cout << endl;
 		}
 		else if(locParticleName.substr(0, 9) == string("ComboBeam"))
 		{
-			if(locWasKinFitPerformedFlag)
+			if(locWasKinFitPerformedFlag && locWasP4KinFit)
 				locBeamBranchName = locParticleName + string("__P4_KinFit");
 			else //must get from "Beam__P4_Measured"
 				locBeamBranchName = locParticleName + string("__BeamIndex");

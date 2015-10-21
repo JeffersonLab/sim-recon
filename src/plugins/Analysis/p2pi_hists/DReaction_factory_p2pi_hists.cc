@@ -30,20 +30,21 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
         locReactionStep = new DReactionStep();
         locReactionStep->Set_InitialParticleID(Gamma);
         locReactionStep->Set_TargetParticleID(Proton);
+	locReactionStep->Add_FinalParticleID(Proton, true); //true: proton missing
         locReactionStep->Add_FinalParticleID(PiPlus);
         locReactionStep->Add_FinalParticleID(PiMinus);
-        locReactionStep->Add_FinalParticleID(Proton, true); //true: proton missing
         locReaction->Add_ReactionStep(locReactionStep);
         dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
 	/**************************************************** p2pi_pmiss Control Settings ****************************************************/
 
-	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
-		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
-	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	locReaction->Set_KinFitType(d_VertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 2.004 ns)
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+
+	// Recommended: Enable ROOT TTree output for this DReaction
+        locReaction->Enable_TTreeOutput("tree_p2pi_hists.root"); //string is file name (must end in ".root"!!): doen't need to be unique, feel free to change
 
 	/**************************************************** p2pi_pmiss Analysis Actions ****************************************************/
 
@@ -51,14 +52,20 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
 		//These actions are executed sequentially, and are executed on each surviving (non-cut) particle combination 
 		//Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
 
-	// POCA cut on all tracks
-        locReaction->Add_AnalysisAction(new DCutAction_AllVertexZ(locReaction, 50., 80.));
+	// Custom histograms (before PID)
+        locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "NoCut_Measured"));
+
+	// PID
+        locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 5.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_BCAL)); //false: measured data //Unknown: All PIDs
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_FCAL)); //false: measured data //Unknown: All PIDs
+	
+	// Custom histograms for p2pi (no KinFit cut)
+        locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "TimingCut_Measured"));
 
 	// Kinematic Fit Results
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
-	
-	// Custom histograms for p2pi (no KinFit cut)
-        locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "NoKinFit_Measured"));
 
 	// Require KinFit converges
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0)); //require kinematic fit converges
@@ -66,21 +73,12 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
 	// Custom histograms for p2pi (KinFit converges)
         locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "KinFitConverge_Measured"));
 
-	// Require KinFit FOM > 0.1
-        locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.1));
-
-        // Custom histograms for p2pi (KinFit FOM > 10%)
-        locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "KinFitCut10_Measured"));
-        locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, true, "KinFitCut10_KinFit"));
-
-	// Kinematics of final selection
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data
-
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
 
 	/**************************************************** p2pi_preco Reaction Steps ****************************************************/
 
+	bool unused = false;
 	locReaction = new DReaction("p2pi_preco"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 
 	// g, p -> pi+, pi- ,p
@@ -95,7 +93,7 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
 
 	/**************************************************** p2pi_preco Control Settings ****************************************************/
 
-	locReaction->Set_KinFitType(d_NoFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	locReaction->Set_KinFitType(d_VertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 
 	// Recommended: Enable ROOT TTree output for this DReaction
@@ -108,31 +106,41 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
 		//Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
 	
 	// Custom histograms (before PID)
-        locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "NoKinFit_Measured"));
+        locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "NoCut_Measured"));
 
 	// PID
         locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs
+        locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 5.0, Unknown, SYS_TOF)); //false: measured data //Unknown: All PIDs
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_BCAL)); //false: measured data //Unknown: All PIDs
         locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 10.0, Unknown, SYS_FCAL)); //false: measured data //Unknown: All PIDs
 
 	// Custom histograms (after PID)
         locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "TimingCut_Measured"));
 
-	// Reaction specific cuts
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.02, 0.02));
-	locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, true)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
+	// Diagnostics for unused tracks and showers with final selection (only useful when analyzing EVIO data)
+	if(unused)  locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "TimingCut_Measured"));
 
-	// Cuts for future analysis actions applied in CustomAction for now
-	locReaction->Add_AnalysisAction(new DCustomAction_p2pi_cuts(locReaction, false));
-	//locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, 0, PiPlus, PiMinus, false, 0.6, 0.9));
-	//locReaction->Add_AnalysisAction(new DCutAction_MissingEnergy(locReaction, false, -0.2, 0.2));
+	// Kinematic Fit Results
+	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+	
+	// Require KinFit converges
+	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0)); //require kinematic fit converges
+	
+	// Custom histograms for p2pi (KinFit converges)
+        locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "KinFitConverge_Measured"));
 
-	// Diagnostics for unused tracks and showers with final selection
-	locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "NoKinFit_Measured"));
+	if(unused) {
+	  // Custom cuts (can be applied in TSelector)
+	  locReaction->Add_AnalysisAction(new DCutAction_ProtonPiPlusdEdx(locReaction, 2.2, true)); //select p/pi+ above/below 2.2, //true/false: cut all/no proton candidates above p = 1 GeV/c
+	  locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.006, 0.004));
+	  locReaction->Add_AnalysisAction(new DCustomAction_p2pi_cuts(locReaction, false));
 
-	// Cut beam energy for TTree entries
-	//locReaction->Add_AnalysisAction(new DCutAction_BeamEnergy(locReaction, false, 2.5, 3.0));
+	  // Diagnostics for unused tracks and showers with final selection (only useful when analyzing EVIO data)
+	  locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "KinCut_Measured"));
+	}
+
+	// Custom histograms (after kinematic cuts)
+	locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "KinCut_Measured"));
 
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data
