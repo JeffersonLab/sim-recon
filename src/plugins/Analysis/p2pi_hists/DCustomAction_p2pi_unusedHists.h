@@ -40,7 +40,7 @@ class DCustomAction_p2pi_unusedHists : public DAnalysisAction
 	private:
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		void FillTrack(const DChargedTrack* locChargedTrack, bool locMatch);
+		void FillTrack(const DChargedTrack* locChargedTrack, bool locMatch, const DMCThrown* locMCThrown);
 		void FillShower(const DNeutralShower* locNeutralShower, bool locMatch, double locBeamPhotonTime, double locFlightTime);
 
 		// Optional: Useful utility functions.
@@ -49,11 +49,12 @@ class DCustomAction_p2pi_unusedHists : public DAnalysisAction
 		// need PID algos for SC matching
 		const DParticleID* dParticleID;
 
-		//Store any histograms as member variables here
-//		TH2I *dMatch_E_DeltaT_All;
-
 		// maps of histograms by track charge and match flag
 		map<bool, map<int, TH2I*> > dHistMap_TrackNhits_Theta;
+		map<bool, map<int, TH2I*> > dHistMap_TrackNhitsCDC_Theta;
+		map<bool, map<int, TH2I*> > dHistMap_TrackNhitsFDC_Theta;
+		map<bool, map<int, TH2I*> > dHistMap_TrackNhitsFDCVsCDC_Theta13_16;
+		map<bool, map<int, TH2I*> > dHistMap_TrackNhitsFDCVsCDC_Theta16_20;
 		map<bool, map<int, TH2I*> > dHistMap_TrackChiSq_Theta;
 		map<bool, map<int, TH2I*> > dHistMap_TrackFOM_Theta;
 		map<bool, map<int, TH2I*> > dHistMap_TrackP_Theta;
@@ -64,8 +65,9 @@ class DCustomAction_p2pi_unusedHists : public DAnalysisAction
 		map<bool, map<int, TH2I*> > dHistMap_HighNDFTrackCDCHitRadius_PT;
 		map<bool, map<int, TH2I*> > dHistMap_LowNDFTrackP_VertZ;
 		map<bool, map<int, TH2I*> > dHistMap_LowNDFTrackPT_Phi;
-		//map<bool, map<int, TH2I*> > dHistMap_TrackNposs_Theta;
-		//map<bool, map<int, TH2I*> > dHistMap_TrackHitFrac_Theta;
+		map<bool, map<int, TH2I*> > dHistMap_TrackMCHitFraction_Theta;
+		map<bool, map<int, TH2I*> > dHistMap_TrackMCMomRes_Theta;
+		map<bool, map<int, TH2I*> > dHistMap_TrackMCThetaRes_Theta;
 
 		// maps of histograms by detector system and match flag
 		TH2I *dNShowerBCAL_FCAL;

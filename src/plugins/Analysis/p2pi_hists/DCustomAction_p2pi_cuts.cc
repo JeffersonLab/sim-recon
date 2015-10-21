@@ -40,7 +40,7 @@ bool DCustomAction_p2pi_cuts::Perform_Action(JEventLoop* locEventLoop, const DPa
 
 	if(dMissingPID != Proton) {
 		
-		if(fabs(locMissingP4.E()) > 0.2)
+		if(locMissingP4.E() < -0.15 || locMissingP4.E() > 0.1)
 			return false;
 		
 		if(locP4_2pi.M() < 0.6 || locP4_2pi.M() > 0.9)
