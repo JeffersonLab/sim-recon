@@ -36,7 +36,7 @@ DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp, unsigned int runnumbe
 	pthread_mutex_init(&materialmap_mutex, NULL);
 	pthread_mutex_init(&materials_mutex, NULL);
 
-	
+	ReadMaterialMaps();
 }
 
 //---------------------------------
@@ -80,7 +80,7 @@ DLorentzDeflections* DGeometry::GetLorentzDeflections(void)
 //---------------------------------
 vector<DMaterialMap*> DGeometry::GetMaterialMapVector(void) const
 {
-	ReadMaterialMaps();
+//	ReadMaterialMaps();
 
 	return materialmaps;
 }
@@ -216,7 +216,7 @@ jerror_t DGeometry::FindMatALT1(DVector3 &pos, DVector3 &mom,double &KrhoZ_overA
 				double &rhoZ_overA,double &LnI,
 				double &X0, double *s_to_boundary) const
 {
-	ReadMaterialMaps();
+//	ReadMaterialMaps();
 
 	for(unsigned int i=0; i<materialmaps.size(); i++){
 		jerror_t err = materialmaps[i]->FindMatALT1(pos,KrhoZ_overA, rhoZ_overA,LnI,X0);
@@ -254,7 +254,7 @@ jerror_t DGeometry::FindMatKalman(const DVector3 &pos,const DVector3 &mom,
 				  unsigned int &last_index,
 				  double *s_to_boundary) const
 {
-	ReadMaterialMaps();
+//	ReadMaterialMaps();
 
   //last_index=0;
   for(unsigned int i=last_index; i<materialmaps.size(); i++){
@@ -297,7 +297,7 @@ jerror_t DGeometry::FindMatKalman(const DVector3 &pos,
 				  double &chi2a_factor, double &chi2a_corr,
 				  unsigned int &last_index) const
 {
-	ReadMaterialMaps();
+//	ReadMaterialMaps();
 
   //last_index=0;
   for(unsigned int i=last_index; i<materialmaps.size(); i++){
@@ -320,7 +320,7 @@ jerror_t DGeometry::FindMatKalman(const DVector3 &pos,
 //---------------------------------
 jerror_t DGeometry::FindMat(DVector3 &pos, double &rhoZ_overA, double &rhoZ_overA_logI, double &RadLen) const
 {
-	ReadMaterialMaps();
+//	ReadMaterialMaps();
 
 	for(unsigned int i=0; i<materialmaps.size(); i++){
 		jerror_t err = materialmaps[i]->FindMat(pos, rhoZ_overA, rhoZ_overA_logI, RadLen);
@@ -334,7 +334,7 @@ jerror_t DGeometry::FindMat(DVector3 &pos, double &rhoZ_overA, double &rhoZ_over
 //---------------------------------
 jerror_t DGeometry::FindMat(DVector3 &pos, double &density, double &A, double &Z, double &RadLen) const
 {
-	ReadMaterialMaps();
+//	ReadMaterialMaps();
 
 	for(unsigned int i=0; i<materialmaps.size(); i++){
 		jerror_t err = materialmaps[i]->FindMat(pos, density, A, Z, RadLen);
@@ -356,7 +356,7 @@ jerror_t DGeometry::FindMat(DVector3 &pos, double &density, double &A, double &Z
 //---------------------------------
 const DMaterialMap* DGeometry::FindDMaterialMap(DVector3 &pos) const
 {
-	ReadMaterialMaps();
+//	ReadMaterialMaps();
 
 	for(unsigned int i=0; i<materialmaps.size(); i++){
 		const DMaterialMap* map = materialmaps[i];
