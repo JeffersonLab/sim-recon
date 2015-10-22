@@ -188,7 +188,7 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
 	  f_delta=a*sqrt_t+b*my_t+c*t3;
 	  f_0=a1*sqrt_t+b1*my_t+c1*t3;
 	  
-	  dd_dt=0.5*a/sqrt_t+b+3.*c*my_t*my_t;
+	  dd_dt=0.001*(0.5*a/sqrt_t+b+3.*c*my_t*my_t);
 	}
 	else{
 	  double my_t=0.001*tcorr;
@@ -209,7 +209,7 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
 	  f_delta=a*sqrt_t+b*my_t;
 	  f_0=a1*sqrt_t+b1*my_t;
 
-	  dd_dt=0.5*a/sqrt_t+b;
+	  dd_dt=0.001*(0.5*a/sqrt_t+b);
 	}
 
 	unsigned int max_index=cdc_drift_table.size()-1;
