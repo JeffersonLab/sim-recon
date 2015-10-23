@@ -1959,7 +1959,7 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 				delete pp;
 			}
 		}
-		pt_objs = emulated_pp_objs;
+		pp_objs = emulated_pp_objs;
 	}
 
 
@@ -2209,7 +2209,7 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 				delete pp;
 			}
 		}
-		pt_objs = emulated_pp_objs;
+		pp_objs = emulated_pp_objs;
 	}
 
 	uint32_t Nped_samples = 4;   // number of samples to use for pedestal calculation (PED_SAMPLE)
