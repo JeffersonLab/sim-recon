@@ -78,7 +78,6 @@ double DTrackCandidate_factory_CDCCOSMIC::CDCDriftDistance(double delta, double 
     }
     */
 
-    if (t>cdc_drift_table[cdc_drift_table.size()-1]) return 0.78;
     if (t>0){
         double f_0=0.;
         double f_delta=0.;
@@ -124,7 +123,7 @@ double DTrackCandidate_factory_CDCCOSMIC::CDCDriftDistance(double delta, double 
         if (t>cdc_drift_table[max_index]){
             //_DBG_ << "t: " << t <<" d " << f_delta <<endl;
             d=f_delta;
-
+            //cout << "t = " << t << " > " << cdc_drift_table[max_index] << " d = " << f_delta << endl;
             return d;
         }
 
@@ -378,8 +377,8 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::brun(jana::JEventLoop *eventLoop, in
         for(unsigned int i=0; i<tvals.size(); i++){
             map<string, double> &row = tvals[i];
 
-            temp.push_back(row["c1"]);
-            temp2.push_back(row["c2"]);
+            temp.push_back(row["offset"]);
+            temp2.push_back(row["phi"]);
 
             straw_count++;
             if (straw_count==numstraws[ring_count]){
@@ -393,7 +392,7 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::brun(jana::JEventLoop *eventLoop, in
         }
     }
 
-    if (jcalib->Get("CDC/drift_parms::NoBField", tvals)==false){
+    if (jcalib->Get("CDC/drift_parameters::NoBField", tvals)==false){
         map<string, double> &row = tvals[0]; //long drift side
         long_drift_func[0][0]=row["a1"]; 
         long_drift_func[0][1]=row["a2"];
@@ -495,11 +494,13 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumb
             Measurements.clear();
             MeasurementErrors.clear();
             Wires.clear();
+            //cout << "====" << endl << "Entering Fit Before Sag Correction " << endl << "====" << endl;
             for (unsigned int j=0;j<hits.size();j++){
                 //Calulate the Measurement from the drift time
                 double L=(hits[0]->wire->origin-hits[j]->wire->origin).Perp();
                 double tcorr = hits[j]->tdrift - L/29.98 - t0;
                 double measurement = CDCDriftDistance(0.0, tcorr); // First pass without deformation correction to get track parameters
+                //cout << " Ring " << hits[j]->wire->ring << " Straw " << hits[j]->wire->straw << " Distance = " << measurement << endl;
                 Measurements.push_back(measurement);
                 MeasurementErrors.push_back(sqrt(CDCDriftVariance(tcorr)));
                 Wires.push_back(hits[j]->wire);
@@ -604,6 +605,7 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumb
             Measurements.clear();
             MeasurementErrors.clear();
             Wires.clear();
+            //cout << "====" << endl << "Entering Fit with Sag Correction " << endl << "====" << endl;
             for (unsigned int j=0;j<hits.size();j++){
                 //Calulate the Measurement from the drift time
                 double L=(hits[0]->wire->origin-hits[j]->wire->origin).Perp();
@@ -611,11 +613,13 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumb
                 int straw_index=hits[j]->wire->straw-1;
                 double tcorr = hits[j]->tdrift - L/29.98 - t0;
                 double docaphi, docaz;
+                //cout << " Ring " << ring_index + 1 << " Straw " << straw_index + 1 << endl;
                 GetDOCAPhiandZ(hits[j]->wire, posPass1, momPass1, docaphi, docaz);
                 double dz = docaz - 92.0; //Distance relative to center of CDC
-                double delta = max_sag[ring_index][straw_index]*(1.-dz*dz/5625.)
-                    *cos(docaphi-sag_phi_offset[ring_index][straw_index]);
+                double delta = max_sag[ring_index][straw_index] * ( 1. - (dz*dz/5625.))*TMath::Cos(docaphi-sag_phi_offset[ring_index][straw_index]);
+                //cout << "  Max sag = " << max_sag[ring_index][straw_index] << " Sag Phi Offset = " << sag_phi_offset[ring_index][straw_index] << endl;
                 double measurement = CDCDriftDistance(delta, tcorr); // Use DOCA information to correct for CDC straw shape
+                //cout << "  phi_DOCA = " << docaphi << " z_DOCA = " << docaz << " delta = " << delta << " Distance = " << measurement << endl;
                 Measurements.push_back(measurement);
                 MeasurementErrors.push_back(sqrt(CDCDriftVariance(tcorr)));
                 Wires.push_back(hits[j]->wire);
