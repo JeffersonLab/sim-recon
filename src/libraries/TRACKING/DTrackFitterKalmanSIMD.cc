@@ -157,38 +157,38 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
         }
 
 
-	
+	// Variables to store values for time-to-distance functions for delta=0
+	// and delta!=0
 	double f_0=0.;
 	double f_delta=0.;
+	// Derivative of d with respect to t, needed to add t0 variance 
+	// dependence to sigma
+	double dd_dt=0;
+	// Scale factor to account for affect of B-field on maximum drift time
+	double Bscale=long_drift_Bscale_par1+long_drift_Bscale_par2*B;
 
 	//	if (delta>0)
-	if (dphi*delta>0)
-	{
-	  double a1=1.01204,a2=-0.12907;
-	  double b1=-0.1115,b2=-0.15447;
-	  double c1=0.0534781,c2=-0.293167,c3=0.491414;
-
-	  a1=long_drift_func[0][0];
-	  a2=long_drift_func[0][1];
-	  b1=long_drift_func[1][0];
-	  b2=long_drift_func[1][1];
-	  c1=long_drift_func[2][0];
-	  c2=long_drift_func[2][1];
-	  c3=long_drift_func[2][2];
+	if (dphi*delta>-EPS2){
+	  double a1=long_drift_func[0][0];
+	  double a2=long_drift_func[0][1];
+	  double b1=long_drift_func[1][0];
+	  double b2=long_drift_func[1][1];
+	  double c1=long_drift_func[2][0];
+	  double c2=long_drift_func[2][1];
+	  double c3=long_drift_func[2][2];
 
 	  // use "long side" functional form
 	  double my_t=0.001*tcorr;
 	  double sqrt_t=sqrt(my_t);
 	  double t3=my_t*my_t*my_t;
 	  double delta_mag=fabs(delta);
-	  f_delta=(a1+a2*delta_mag)*sqrt_t+(b1+b2*delta_mag)*my_t
-	    +(c1+c2*delta_mag+c3*delta*delta)*t3;
+	  double a=a1+a2*delta_mag;
+	  double b=b1+b2*delta_mag;
+	  double c=c1+c2*delta_mag+c3*delta*delta;
+	  f_delta=a*sqrt_t+b*my_t+c*t3;
 	  f_0=a1*sqrt_t+b1*my_t+c1*t3;
 	  
-	  if (tcorr>cdc_drift_table[cdc_drift_table.size()-1]){
-	    //   _DBG_ << "Used long side " << endl;
-	  }
-
+	  dd_dt=0.001*(0.5*a/sqrt_t+b+3.*c*my_t*my_t);
 	}
 	else{
 	  double my_t=0.001*tcorr;
@@ -196,32 +196,29 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
 	  double delta_mag=fabs(delta);
 
 	  // use "short side" functional form
-	  double a1=0.99629,a2=0.278015,a3=-0.72202;
-	  double b1=-0.06423,b2=-0.38465,b3=4.07484;
-	
-	  a1=short_drift_func[0][0];
-	  a2=short_drift_func[0][1];
-	  a3=short_drift_func[0][2];
-	  b1=short_drift_func[1][0];
-	  b2=short_drift_func[1][1];
-	  b3=short_drift_func[1][2];
+	  double a1=short_drift_func[0][0];
+	  double a2=short_drift_func[0][1];
+	  double a3=short_drift_func[0][2];
+	  double b1=short_drift_func[1][0];
+	  double b2=short_drift_func[1][1];
+	  double b3=short_drift_func[1][2];
 
 	  double delta_sq=delta*delta;
-	  f_delta= (a1+a2*delta_mag+a3*delta_sq)*sqrt_t
-	    +(b1+b2*delta_mag+b3*delta_sq)*my_t;
+	  double a=a1+a2*delta_mag+a3*delta_sq;
+	  double b=b1+b2*delta_mag+b3*delta_sq;
+	  f_delta=a*sqrt_t+b*my_t;
 	  f_0=a1*sqrt_t+b1*my_t;
+
+	  dd_dt=0.001*(0.5*a/sqrt_t+b);
 	}
 
 	unsigned int max_index=cdc_drift_table.size()-1;
         if (tcorr>cdc_drift_table[max_index]){
 	  //_DBG_ << "t: " << tcorr <<" d " << f_delta <<endl;
-	  d=f_delta*(long_drift_Bscale_par1+long_drift_Bscale_par2*B);
-	  //d=0.78;
+	  d=f_delta*Bscale;
+	  V=sigma*sigma+mVarT0*dd_dt*dd_dt*Bscale*Bscale;
 
-	    double dt=cdc_drift_table[max_index]-cdc_drift_table[max_index-1];
-	    V=sigma*sigma+mVarT0*0.0001/(dt*dt);
-
-            return;
+	  return;
         }
 	
 	// Drift time is within range of table -- interpolate...
@@ -236,11 +233,8 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
 	if (tcorr<tcut) {
 	  P=(tcut-tcorr)/tcut;
 	}
-	d=f_delta*(d_0/f_0*P+1.-P)*(long_drift_Bscale_par1+long_drift_Bscale_par2*B);
-
-	//d=d_0;
-	//printf("V %f %f\n",sigma*sigma,+mVarT0*0.0001/(dt*dt));
-        V=sigma*sigma+mVarT0*0.0001/(dt*dt);
+	d=f_delta*(d_0/f_0*P+1.-P)*Bscale;
+        V=sigma*sigma+mVarT0*dd_dt*dd_dt*Bscale*Bscale;
     }
     else { // Time is negative, or exactly zero, choose position at wire, with error of t=0 hit
         d=0.;
@@ -3963,7 +3957,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 		  double phi_d=diff.Phi();
 		  double delta
 		    =max_sag[ring_index][straw_index]*(1.-dz*dz/5625.)
-		    *sin(phi_d+sag_phi_offset[ring_index][straw_index]);
+		    *cos(phi_d-sag_phi_offset[ring_index][straw_index]);
 		  double dphi=phi_d-mywire->origin.Phi();
 		  while (dphi>M_PI) dphi-=2*M_PI;
 		  while (dphi<-M_PI) dphi+=2*M_PI;
@@ -5197,7 +5191,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 		  double phi_d=atan2(dy,dx);
 		  double delta
 		    =max_sag[ring_index][straw_index]*(1.-dz*dz/5625.)
-		    *sin(phi_d+sag_phi_offset[ring_index][straw_index]);
+		    *cos(phi_d-sag_phi_offset[ring_index][straw_index]);
 		  double dphi=phi_d-mywire->origin.Phi();
 		  while (dphi>M_PI) dphi-=2*M_PI;
 		  while (dphi<-M_PI) dphi+=2*M_PI;

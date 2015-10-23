@@ -588,7 +588,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 	int straw_index=hits[cdc_index]->wire->straw-1;
 	double dz=t*wdir.z();
 	double delta=max_sag[ring_index][straw_index]*(1.-dz*dz/5625.)
-	  *sin(phi_d+sag_phi_offset[ring_index][straw_index]);
+	  *cos(phi_d-sag_phi_offset[ring_index][straw_index]);
 	dmeas=CDCDriftDistance(dphi,delta,tdrift);
       }
 
