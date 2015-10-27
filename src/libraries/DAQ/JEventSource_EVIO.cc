@@ -79,6 +79,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 jerror_t JEventSource_EVIO::GetEvent(jana::JEvent &event){return NOERROR;}
     void JEventSource_EVIO::FreeEvent(jana::JEvent &event){}
 jerror_t JEventSource_EVIO::GetObjects(jana::JEvent &event, jana::JFactory_base *factory){return NOERROR;}
+jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buf){return NOERROR;}
 //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 #else  // HAVE_EVIO
