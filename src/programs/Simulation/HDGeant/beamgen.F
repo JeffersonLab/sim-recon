@@ -68,20 +68,20 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       save /genstate/
 
       call GRNDM(rndm,7)
-      phim = rndm(1)*TWOPI
+      phim = REAL(rndm(1)*TWOPI)
       rhom = mospread*sqrt(-2*log(rndm(2)))
       thxMosaic = rhom*cos(phim)
       thyMosaic = rhom*sin(phim)
-      phib = rndm(3)*TWOPI
+      phib = REAL(rndm(3)*TWOPI)
       rhob = sqrt(-2*log(rndm(4)))
       thxBeam = (emitx/spot)*rhob*cos(phib)
       thyBeam = (emity/spot)*rhob*sin(phib)
-      phis = rndm(5)*TWOPI
+      phis = REAL(rndm(5)*TWOPI)
       varMS = sigma2MS(t*rndm(6))
       rhos = sqrt(-2*varMS*log(rndm(7)))
       thxMS = rhos*cos(phis)
       thyMS = rhos*sin(phis)
-      cos45 = 1/sqrt(2d0)
+      cos45 = REAL(1/sqrt(2d0))
       rotate(1,1) = 0
       rotate(1,2) = cos45   !point (1,0,0) along beam
       rotate(1,3) = -cos45   !point (0,1,1) vertically
@@ -126,7 +126,7 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
                endif
             enddo
  4          continue
-            phi = rndm(3)*TWOPI
+            phi = REAL(rndm(3)*TWOPI)
             freq = dNcdxdp(x,phi)
             f = freq*rndm(4)
             do iq=1,q2points
@@ -137,11 +137,11 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
             enddo
  5          continue
             freq = freq*freqIntegral(nProfileBins)/fp
-            freq = freq*TWOPI
+            freq = REAL(freq*TWOPI)
             ppol = polarization(x,theta2)
          else                                  !try incoherent generation
             x = xMinimum**rndm(2)
-            phi = rndm(3)*TWOPI
+            phi = REAL(rndm(3)*TWOPI)
             theta2 = Theta02*rndm(4)/(1-rndm(4)+1e-30)
             freq = dNidxdt2(x,theta2)
             freq = freq*(Theta02+theta2)**2/Theta02
@@ -181,7 +181,7 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
 #endif
 
       call GRNDM(rndm,2)
-      phip = rndm(1)*TWOPI
+      phip = REAL(rndm(1)*TWOPI)
       rhop = sqrt(-2*log(rndm(2)))
       pbeam = E+Erms*rhop*cos(phip)
       theta = sqrt(theta2)*(me/E)
@@ -193,7 +193,7 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       plab(3) = sqrt(plab(5)**2-plab(1)**2-plab(2)**2)
       plab(4) = plab(5)
       call GRNDM(rndm,2)
-      phic = rndm(1)*TWOPI
+      phic = REAL(rndm(1)*TWOPI)
       rhoc = spot*sqrt(-2*log(rndm(2)))
       vertex(1) = (rhoc*cos(phic)-D*thxBeam+D*thetaX)*100
       vertex(2) = (rhoc*sin(phic)-D*thyBeam+D*thetaY)*100
