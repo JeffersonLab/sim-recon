@@ -76,7 +76,8 @@ int main(int narg, char *argv[])
 		my_cmd<<cmd.str()<<email_address[i];
 		cout<<my_cmd.str()<<endl;
 		int res = system(my_cmd.str().c_str());
-		if(res!=0) cerr << "Error executing \""<<my_cmd<<"\"" << endl;
+		if(res!=0) cerr << "Error executing \""<<my_cmd.str()<<"\"" << endl;
+
 	}
 	
 	
@@ -123,7 +124,7 @@ void AddPlot(TFile &f, string histname)
 		stringstream cmd;
 		cmd<<"ppmtogif tmp.ppm > "<<outfile.str();
 		res = system(cmd.str().c_str());
-		if(res!=0) cerr << "Error running \""<<cmd<<"\"" << endl;
+		if(res!=0) cerr << "Error running \""<<cmd.str()<<"\"" << endl;
 		
 		// Add histogram name to message
 		mess<<histname;
