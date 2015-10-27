@@ -39,6 +39,9 @@ def library(env, libname=''):
 
 	sources = env['ALL_SOURCES']
 	objects = env['MISC_OBJECTS']
+	if 'IGNORE_SOURCES' in env.Dictionary().keys():
+		ignore  = env['IGNORE_SOURCES']
+		sources = [s for s in env['ALL_SOURCES'] if s.name not in ignore]		
 
 	# Build static library from all source
 	myobjs = env.Object(sources)
@@ -85,6 +88,9 @@ def executable(env, exename=''):
 	ReorderCommonLibraries(env)
 
 	sources = env['ALL_SOURCES']
+	if 'IGNORE_SOURCES' in env.Dictionary().keys():
+		ignore  = env['IGNORE_SOURCES']
+		sources = [s for s in env['ALL_SOURCES'] if s.name not in ignore]		
 
 	# Build program from all source
 	myobjs = env.Object(sources)
@@ -145,6 +151,11 @@ def executables(env):
 
 	common_sources.extend(env['ALL_SOURCES'])
 
+	if 'IGNORE_SOURCES' in env.Dictionary().keys():
+		ignore  = env['IGNORE_SOURCES']
+		main_sources   = [s for s in main_sources   if s.name not in ignore]		
+		common_sources = [s for s in common_sources if s.name not in ignore]		
+
 	# Build program from all source
 	main_objs = env.Object(main_sources)
 	common_objs = env.Object(common_sources)
@@ -186,6 +197,9 @@ def plugin(env, pluginname=''):
         #print str([x.rstr() for x in env.Glob('*.cc')])
 
 	sources = env['ALL_SOURCES']
+	if 'IGNORE_SOURCES' in env.Dictionary().keys():
+		ignore  = env['IGNORE_SOURCES']
+		sources = [s for s in env['ALL_SOURCES'] if s.name not in ignore]		
 
 	# Build static library from all source
 	myobjs = env.SharedObject(sources)
