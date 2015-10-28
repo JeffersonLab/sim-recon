@@ -14,7 +14,7 @@ c      subroutine gamat(alo,aup,yes)
 c
       yes=.true.
       if(q(jma+6).lt.aup+0.5.and.q(jma).gt.alo-0.5) return
-      nmix=abs(q(jma+11))
+      nmix=INT(abs(q(jma+11)))
       if(nmix.ge.2) then
          do 1000 i=1,nmix
             if(q(jmixt+i).lt.aup+0.5.and.q(jmixt+i).gt.alo-0.5) return

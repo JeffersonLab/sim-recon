@@ -26,7 +26,7 @@ else:
 	# a path in variant directory that doesn't exist. gcc 4.8
 	# then complains about it. Remove that and add the path
 	# to the src directory.
-	env['FORTRANPATH'].remove('include')	
+	# env['FORTRANPATH'].remove('include')	
 	env.AppendUnique(FORTRANPATH=[env.Dir("include").srcnode().abspath])
 
 	sbms.executable(env, 'bggen')

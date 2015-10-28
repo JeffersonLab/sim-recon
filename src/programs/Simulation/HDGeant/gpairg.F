@@ -109,7 +109,7 @@ C.
       DIMENSION NTYPEL(2)
       DIMENSION RNDM(2)
       LOGICAL ROTATE
-      PARAMETER (ONE=1,ONETHR=ONE/3,EMAS2=2*EMASS)
+      PARAMETER (ONE=1,ONETHR=ONE/3,EMAS2=REAL(2*EMASS))
 c
 c  Here we take over the standard Geant3 e+e- pair production cross section
 c  as a good approximation to the total l+l- lepton pair production cross
@@ -117,16 +117,16 @@ c  section.  The only change is to convert a fraction (emmu/emass)**2 from
 c  electron to muon pairs, if allowed by energy conservation.
 c
       real xsratio
-      parameter (xsratio=(emass/emmu)**2)
+      parameter (xsratio=REAL((emass/emmu)**2))
       real mlepton
       integer lepton
       call grndm(rndm,1)
       if (rndm(1).lt.xsratio) then
          lepton = 5
-         mlepton = EMMU
+         mlepton = REAL(EMMU)
       else
          lepton = 2
-         mlepton = EMASS
+         mlepton = REAL(EMASS)
       endif
 C.
 C.    ------------------------------------------------------------------
@@ -245,7 +245,7 @@ C
       THETA  = GBTETH(EEL1, EMASS1, X)*mlepton/EEL1
       SINTH  = SIN(THETA)
       COSTH  = COS(THETA)
-      PHI    = TWOPI*RNDM(2)
+      PHI    = REAL(TWOPI*RNDM(2))
       COSPHI = COS(PHI)
       SINPHI = SIN(PHI)
   

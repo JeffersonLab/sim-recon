@@ -366,7 +366,8 @@ void hitStartCntr (float xin[4], float xout[4],
          }
          hits->in[nhit].t = 
                  (hits->in[nhit].t * hits->in[nhit].dE + tcorr * dEcorr) /
-                 (hits->in[nhit].dE += dEcorr);
+                 (hits->in[nhit].dE + dEcorr);
+			hits->in[nhit].dE += dEcorr;
       }
       else if (nhit < MAX_HITS)		/* create new hit */
       {

@@ -119,7 +119,7 @@ C.    ------------------------------------------------------------------
 *        update the vertex number
          ISTAK = 0
          JK=LQ(JKINE-ITRA)
-         IVERT=Q(JK+6)
+         IVERT=INT(Q(JK+6))
       ENDIF
       IPART  = IQ(JST+2)
       DO 60 I = 1,3
@@ -148,10 +148,10 @@ C.    ------------------------------------------------------------------
       IF(P2.GT.0.) THEN
          PP    = SQRT(P2)
          HNORM = ONE/PP
-         VECT(4) = PVERT(1)*HNORM
-         VECT(5) = PVERT(2)*HNORM
-         VECT(6) = PVERT(3)*HNORM
-         VECT(7) = PP
+         VECT(4) = REAL(PVERT(1)*HNORM)
+         VECT(5) = REAL(PVERT(2)*HNORM)
+         VECT(6) = REAL(PVERT(3)*HNORM)
+         VECT(7) = REAL(PP)
       ELSE
          VECT(4) = 0.
          VECT(5) = 0.
@@ -166,7 +166,7 @@ C.    ------------------------------------------------------------------
          DO 90 I = 1,5
             NAPART(I) = IQ(JPA+I)
    90    CONTINUE
-         ITRTYP = Q(JPA+6)
+         ITRTYP = INT(Q(JPA+6))
          AMASS  = Q(JPA+7)
          CHARGE = Q(JPA+8)
          TLIFE  = Q(JPA+9)
@@ -177,8 +177,8 @@ C.    ------------------------------------------------------------------
       DAMASS = AMASS
       GETOTD = SQRT(P2+DAMASS**2)
       GEKIND = GETOTD - DAMASS
-      GETOT  = GETOTD
-      GEKIN  = GEKIND
+      GETOT  = REAL(GETOTD)
+      GEKIN  = REAL(GEKIND)
 *
       IF (ITRTYP.EQ.7) THEN
 *
@@ -220,18 +220,18 @@ C.    ------------------------------------------------------------------
       ELSE IF (ITRTYP.EQ.3) THEN
 *       Neutral hadrons
          CALL GRNDM(RNDM,2)
-         SUMLIF = -CLIGHT*TLIFE*LOG(RNDM(1))
+         SUMLIF = REAL(-CLIGHT*TLIFE*LOG(RNDM(1)))
          ZINTHA = -LOG(RNDM(2))
       ELSE IF (ITRTYP.EQ.4) THEN
 *       Charged hadrons
          CALL GRNDM(RNDM,3)
-         SUMLIF = -CLIGHT*TLIFE*LOG(RNDM(1))
+         SUMLIF = REAL(-CLIGHT*TLIFE*LOG(RNDM(1)))
          ZINTHA = -LOG(RNDM(2))
          ZINTDR = -LOG(RNDM(3))
       ELSE IF (ITRTYP.EQ.5) THEN
 *       Muons
          CALL GRNDM(RNDM,5)
-         SUMLIF = -CLIGHT*TLIFE*LOG(RNDM(1))
+         SUMLIF = REAL(-CLIGHT*TLIFE*LOG(RNDM(1)))
          ZINTBR = -LOG(RNDM(2))
          ZINTPA = -LOG(RNDM(3))
          ZINTDR = -LOG(RNDM(4))

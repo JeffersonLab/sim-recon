@@ -39,12 +39,12 @@ void hitCerenkov (float xin[4], float xout[4],
                   float pin[5], float pout[5], float dEsum,
                   int track, int stack, int history, int ipart)
 {
-   float x[3], t;
+   //float x[3], t;
 
-   x[0] = (xin[0] + xout[0])/2;
-   x[1] = (xin[1] + xout[1])/2;
-   x[2] = (xin[2] + xout[2])/2;
-   t    = (xin[3] + xout[3])/2 * 1e9;
+   //x[0] = (xin[0] + xout[0])/2;
+   //x[1] = (xin[1] + xout[1])/2;
+   //x[2] = (xin[2] + xout[2])/2;
+   float t    = (xin[3] + xout[3])/2 * 1e9;
 
    /* post the hit to the truth tree */
 
@@ -112,7 +112,8 @@ void hitCerenkov (float xin[4], float xout[4],
       if (nshot < hits->mult)            /* merge with former hit */
       {
          hits->in[nshot].t = (hits->in[nshot].t * hits->in[nshot].pe + t*pe)
-                            / (hits->in[nshot].pe += pe);
+                            / (hits->in[nshot].pe + pe);
+			hits->in[nshot].pe += pe;
       }
       else if (nshot < MAX_HITS)         /* create new shot */
       {

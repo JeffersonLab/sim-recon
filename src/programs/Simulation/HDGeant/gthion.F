@@ -56,7 +56,7 @@ C.
       PARAMETER (EPSMAC=1.E-11)
 #endif
       PARAMETER (THRESH=0.7,ONE=1)
-      PARAMETER (TWOTHR=2*ONE/3,AMU=0.9314943)
+      PARAMETER (TWOTHR=REAL(2*ONE/3),AMU=0.9314943)
       PARAMETER (DME=7.84572E-8,CNORM=2.5)
       REAL VNEXT(6)
       DIMENSION RNDM(2)
@@ -75,21 +75,21 @@ C.    ------------------------------------------------------------------
          JLOSS = LQ(JMA-3)
          JRANG = LQ(JMA-16) + NEK1
          JCOEF = LQ(JMA-18) + 3*NEK1
-         RMASS  = PMASS/AMASS
+         RMASS  = REAL(PMASS/AMASS)
          CUTPRO = MAX(CUTHAD*RMASS,ELOW(1))
-         IKCUT = GEKA*LOG10(CUTPRO) + GEKB
+         IKCUT = INT(GEKA*LOG10(CUTPRO) + GEKB)
          GKR   = (CUTPRO - ELOW(IKCUT))/(ELOW(IKCUT+1) - ELOW(IKCUT))
          STOPC = (1.-GKR)*Q(JRANG+IKCUT) + GKR*Q(JRANG+IKCUT+1)
          if(a.eq.0) a=1.007970
          FACFLU = DME*(Z*DENS/A)
-         CHAR23 = ONE/CHARGE**TWOTHR
+         CHAR23 = REAL(ONE/CHARGE**TWOTHR)
          IF(IMCKOV.EQ.1) THEN
             JTCKOV = LQ(JTM-3)
             JABSCO = LQ(JTCKOV-1)
             JEFFIC = LQ(JTCKOV-2)
             JINDEX = LQ(JTCKOV-3)
             JCURIN = LQ(JTCKOV-4)
-            NPCKOV = Q(JTCKOV+1)
+            NPCKOV = INT(Q(JTCKOV+1))
          ENDIF
       ENDIF
 *
@@ -114,7 +114,7 @@ C.    ------------------------------------------------------------------
       OMCMOL=Q(JPROB+21)*CHARG2
       CHCMOL=Q(JPROB+25)*ABS(CHARG1)
       IF(FIELDM.NE.0.) THEN
-         CFLD=3333.*DEGRAD*TMAXFD/ABS(FIELDM*CHARG1)
+         CFLD=REAL(3333.*DEGRAD*TMAXFD/ABS(FIELDM*CHARG1))
       ELSE
          CFLD=BIG
       ENDIF
@@ -147,13 +147,13 @@ C.    ------------------------------------------------------------------
       IF (IDRAY.GT.0) THEN
          STEPDR = BIG
          IF (GEKIN.GT.DCUTM) THEN
-            TMAX   = EMASS*GEKIN*GAMASS/(0.5*AMASS*AMASS+EMASS*GETOT)
+            TMAX   = REAL(EMASS*GEKIN*GAMASS/(0.5*AMASS*AMASS+EMASS*GETOT))
             IF (TMAX.GT.DCUTM) THEN
                Y    = DCUTM/TMAX
                SIG  = (1.-Y+BET2*Y*LOG(Y))/DCUTM
 *              extra term for spin 1/2
                IF (AMASS.GT.0.9) SIG=SIG+0.5*(TMAX-DCUTM)/(GETOT*GETOT)
-               SIG = SIG*Q(JPROB+17)*CHARG2*EMASS/BET2
+               SIG = REAL(SIG*Q(JPROB+17)*CHARG2*EMASS/BET2)
 *
                IF (SIG.GT.0.) THEN
                   STEPDR = 1./SIG
@@ -192,7 +192,7 @@ C.    ------------------------------------------------------------------
          ENDIF
          STOPMX = (STOPP - STOPC)/(RMASS*CHARG2)
          IF (STOPMX.LT.MIN(STEP,STMIN)) THEN
-            STEP = STOPMX
+            STEP = REAL(STOPMX)
             IPROC = 0
             IF(STEP.LE.0.)THEN
                GO TO 100
@@ -205,7 +205,7 @@ C.    ------------------------------------------------------------------
          ELSEIF (EKF.GE.ELOW(NEK1)) THEN
             EKF = ELOW(NEK1)*0.99
          ENDIF
-         IKF=GEKA*LOG10(EKF)+GEKB
+         IKF=INT(GEKA*LOG10(EKF)+GEKB)
          GKR=(EKF-ELOW(IKF))/(ELOW(IKF+1)-ELOW(IKF))
          IF(GKR.LT.THRESH) THEN
             IK1 = MAX(IKF-1,1)
@@ -217,12 +217,12 @@ C.    ------------------------------------------------------------------
          YCOEF2=Q(JCOEF+IK1+1)
          YCOEF3=Q(JCOEF+IK1+2)
          IF(YCOEF1.NE.0.) THEN
-            SLOSP = -YCOEF2+SIGN(ONE,YCOEF1)*SQRT(YCOEF2**2- (YCOEF3-
-     +      EKF/YCOEF1))
+            SLOSP = REAL(-YCOEF2+SIGN(ONE,YCOEF1)*SQRT(YCOEF2**2- (YCOEF3-
+     +      EKF/YCOEF1)))
          ELSE
-            SLOSP = - (YCOEF3-EKF)/YCOEF2
+            SLOSP = REAL(- (YCOEF3-EKF)/YCOEF2)
          ENDIF
-         SLOSP = STOPP - SLOSP
+         SLOSP = REAL(STOPP - SLOSP)
          SLOSS = MAX(STMIN, SLOSP/(RMASS*CHARG2) )
          IF (SLOSS.LT.STEP) THEN
             STEP = SLOSS
@@ -424,7 +424,7 @@ C.    ------------------------------------------------------------------
          LMEC(NMEC) = 3
          STOPRG = STOPP - STEP*RMASS*CHARG2
          IF (STOPRG.LE.STOPC) THEN
-            STEP = STOPMX
+            STEP = REAL(STOPMX)
             GO TO 100
          ENDIF
          IF(XCOEF1.NE.0.) THEN
@@ -441,7 +441,7 @@ C.    ------------------------------------------------------------------
 *        fluctuations : differ from that of 'ordinary' hadrons
 *
          IF (ILOSS.EQ.4.OR.IEKBIN.LE.IKCUT+1) THEN
-            DESTEP = DEMEAN
+            DESTEP = REAL(DEMEAN)
          ELSE
 *
 *     Charge exchange fluctuations + Gaussian 'Landau' fluctuations
@@ -462,7 +462,7 @@ C.    ------------------------------------------------------------------
 *
 *     Check if we are in 'Gaussian' regime ...
 *
-            CAPPA=(1.+TAM)/(TAM*(2.+TAM)*EMASS)
+            CAPPA=REAL((1.+TAM)/(TAM*(2.+TAM)*EMASS))
             CAPPA=0.5*CAPPA**2*FACFLU*CHARG2*STEP
 *
 *     ... if not , correct SIGMA !
@@ -472,13 +472,13 @@ C.    ------------------------------------------------------------------
             ENDIF
 *
             CALL GRNDM(RNDM,2)
-            DEFLUC=SIGMA*SIN(TWOPI*RNDM(1))*SQRT(-2.*LOG(RNDM(2)))
-            DESTEP=DEMEAN+DEFLUC
+            DEFLUC=REAL(SIGMA*SIN(TWOPI*RNDM(1))*SQRT(-2.*LOG(RNDM(2))))
+            DESTEP=REAL(DEMEAN+DEFLUC)
          ENDIF
 *
 *     protection against negative destep
 *
-         IF(DESTEP.LT.0.) DESTEP=DEMEAN
+         IF(DESTEP.LT.0.) DESTEP=REAL(DEMEAN)
 *                          IF (DESTEP.LT.0.) DESTEP = 0.
          GEKINT = GEKIN -DESTEP
          IF (GEKINT.LE.(1.01*CUTHAD)) GO TO 100
@@ -501,7 +501,7 @@ C.    ------------------------------------------------------------------
 * *** Update time of flight
 *
       SUMLIF = SUMLIF -STEP*AMASS/VECT(7)
-      TOFG   = TOFG +STEP*GETOT/(VECT(7)*CLIGHT)
+      TOFG   = REAL(TOFG +STEP*GETOT/(VECT(7)*CLIGHT))
       IF (TOFG.GE.TOFMAX) THEN
          ISTOP = 4
          NMEC  = NMEC +1
@@ -547,7 +547,7 @@ C.    ------------------------------------------------------------------
 #endif
 *   *   Check time cut-off for decays at rest
          IF (LMEC(NMEC).EQ.5) THEN
-            TOFG   = TOFG +SUMLIF/CLIGHT
+            TOFG   = REAL(TOFG +SUMLIF/CLIGHT)
             SUMLIF = 0.
             IF (TOFG.GE.TOFMAX) THEN
                NGKINE = 0

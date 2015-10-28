@@ -180,7 +180,7 @@
         PLAB(1) = 0
         PLAB(2) = 0
         PLAB(3) = 0
-        PLAB(4) = -PMASS
+        PLAB(4) = REAL(-PMASS)
         do nt=1,NTRACK
           call GFKINE(nt,VERT,PVERT,IPART,IVERT,ubuf,nubuf)
           call GFPART(IPART,pname,ITRTYP,AMASS,CHARGE,TLIFE,ubuf,nubuf)
@@ -256,20 +256,20 @@ c         print *, ngen,' background photons generated this event'
                PABS=pmin*(pmax/pmin)**RNDM(1)
                             ENDIF
                             IF (tlog_particle_gun.EQ.0) THEN
-               THETA=(PKINE(2)+PKINE(5)*(RNDM(2)-0.5))*DEGRAD
+               THETA=REAL((PKINE(2)+PKINE(5)*(RNDM(2)-0.5))*DEGRAD)
                             ELSE
                thetamin=PKINE(2)-0.5*PKINE(5)
                thetamax=PKINE(2)+0.5*PKINE(5)
                IF (thetamin.LE.0) thetamin=0.9
-               THETA=(thetamin*(thetamax/thetamin)**RNDM(2))*DEGRAD
+               THETA=REAL((thetamin*(thetamax/thetamin)**RNDM(2))*DEGRAD)
                             ENDIF
-            PHI=(PKINE(3)+PKINE(6)*(RNDM(3)-0.5))*DEGRAD
+            PHI=REAL((PKINE(3)+PKINE(6)*(RNDM(3)-0.5))*DEGRAD)
          ELSE
             IK=IKINE
             CALL GRNDM(RNDM,2)
             PABS=PKINE(1)
-            THETA=PI*RNDM(1)
-            PHI=TWOPI*RNDM(2)
+            THETA=REAL(PI*RNDM(1))
+            PHI=REAL(TWOPI*RNDM(2))
          ENDIF
          PLAB(1) = PABS*SIN(THETA)*COS(PHI)
          PLAB(2) = PABS*SIN(THETA)*SIN(PHI)
