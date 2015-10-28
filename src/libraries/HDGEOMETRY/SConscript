@@ -6,6 +6,8 @@ import sbms
 Import('*')
 env = env.Clone()
 
+sbms.AddDANA(env)
+
 # Compilation of DRootGeom.cc always takes forever
 # on the first pass with it eventually re-trying
 # with the fvar-tracking-assignments turned off.
@@ -15,13 +17,12 @@ env = env.Clone()
 # file using a different CXXFLAGS definition. Remove
 # the following three lines to revert to the old 
 # behavior.
+if env['COMPILER'] == 'gcc':
+	env.AppendUnique(IGNORE_SOURCES=['DRootGeom.cc'])
+	cxxflags = '%s -fvar-tracking-assignments-toggle' % env['CXXFLAGS']
+	env.AppendUnique(MISC_OBJECTS=[env.Object('DRootGeom.cc', CXXFLAGS=cxxflags)])
 
-env.AppendUnique(IGNORE_SOURCES=['DRootGeom.cc'])
-cxxflags = '%s -fvar-tracking-assignments-toggle' % env['CXXFLAGS']
-env.AppendUnique(MISC_OBJECTS=[env.Object('DRootGeom.cc', CXXFLAGS=cxxflags)])
 
-
-sbms.AddDANA(env)
 sbms.library(env)
 
 
