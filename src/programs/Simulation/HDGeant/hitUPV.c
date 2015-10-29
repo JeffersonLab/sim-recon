@@ -161,13 +161,15 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
       {
         hits->in[nhit].t =
           (hits->in[nhit].t * hits->in[nhit].E + tleft * dEleft) /
-          (hits->in[nhit].E += dEleft);
+          (hits->in[nhit].E + dEleft);
+		  hits->in[nhit].E += dEleft;
       }
       else if (nhit < MAX_HITS)         /* create new hit, north end */
       {
         hits->in[nhit].t =
           (hits->in[nhit].t * hits->in[nhit].E + tleft * dEleft) /
-          (hits->in[nhit].E += dEleft);
+          (hits->in[nhit].E + dEleft);
+		  hits->in[nhit].E += dEleft;
         hits->in[nhit].end = 0;
         hits->mult++;
       }
@@ -191,13 +193,15 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
     {
       hits->in[nhit].t =
         (hits->in[nhit].t * hits->in[nhit].E + tright * dEright) /
-        (hits->in[nhit].E += dEright);
+        (hits->in[nhit].E + dEright);
+		hits->in[nhit].E += dEright;
     }
     else if (nhit < MAX_HITS)          /* create new hit, south end */
     {
       hits->in[nhit].t = 
         (hits->in[nhit].t * hits->in[nhit].E +  tright * dEright) /
-        (hits->in[nhit].E += dEright);
+        (hits->in[nhit].E + dEright);
+		hits->in[nhit].E += dEright;
       hits->in[nhit].end = 1;
       hits->mult++;
     }
