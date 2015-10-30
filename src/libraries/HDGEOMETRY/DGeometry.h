@@ -133,12 +133,13 @@ class DGeometry{
 				       vector<vector<cdc_offset_t> >&cdc_offsets,
 				       vector<DCDCWire*> &stereowires) const;
 
-		bool GetBCALRmin(double &bcal_rmin) const; ///< minimum distance of BCAL module from beam line
+		bool GetBCALRmin(float &bcal_rmin) const; ///< minimum distance of BCAL module from beam line
+		bool GetBCALfADCRadii(vector<float> &fADC_radii) const; ///< fADC radii including the outer radius of the last layer
 		bool GetBCALNmodules(unsigned int &bcal_nmodules) const; ///< Number of BCAL modules
-		bool GetBCALCenterZ(double &bcal_center_z) const; ///< z-location of center of BCAL module in cm
-		bool GetBCALLength(double &bcal_length) const; ///< length of BCAL module in cm
-		bool GetBCALDepth(double &bcal_depth) const; ///< depth (or height) of BCAL module in cm
-		bool GetBCALPhiShift(double &bcal_phi_shift) const; ///< phi angle in degrees that first BCAL module is shifted from being centered at ph=0.0
+		bool GetBCALCenterZ(float &bcal_center_z) const; ///< z-location of center of BCAL module in cm
+		bool GetBCALLength(float &bcal_length) const; ///< length of BCAL module in cm
+		bool GetBCALDepth(float &bcal_depth) const; ///< depth (or height) of BCAL module in cm
+		bool GetBCALPhiShift(float &bcal_phi_shift) const; ///< phi angle in degrees that first BCAL module is shifted from being centered at ph=0.0
 		
 		bool GetFCALZ(double &z_fcal) const; ///< z-location of front face of FCAL in cm
 		bool GetTOFZ(vector<double> &z_tof) const; ///< z-location of front face of each of TOF in cm

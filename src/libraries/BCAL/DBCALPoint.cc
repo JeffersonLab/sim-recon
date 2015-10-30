@@ -31,7 +31,7 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
 
   // save typing
   
-  float fibLen = DBCALGeometry::BCALFIBERLENGTH;
+  float fibLen = DBCALGeometry::GetBCAL_length();
   float cEff = DBCALGeometry::C_EFFECTIVE;
 
   // figure out which hit is upstream and which is downstream
@@ -50,7 +50,7 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   m_zLocal = 0.5 * cEff * ( tUp - tDown ); 
 
   // set the z position relative to the center of the target
-  m_z = m_zLocal + DBCALGeometry::GLOBAL_CENTER - z_target_center;
+  m_z = m_zLocal + DBCALGeometry::GetBCAL_center() - z_target_center;
   //At this point m_z may be unphysical, i.e. it may be outside the BCAL.
   //For the time being, this is okay. Forcing the z-position inside the
   //BCAL at this point will bias the clustering procedure:
@@ -119,7 +119,7 @@ DBCALPoint::tInnerRadius() const {
  
   // the path length in the module
   
-  float modulePath = m_rho - DBCALGeometry::BCALINNERRAD / sin( m_theta );
+  float modulePath = m_rho - DBCALGeometry::GetBCAL_inner_rad() / sin( m_theta );
   
   // retard the time by that distance divided by the speed of light
 

@@ -144,7 +144,7 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
     //int id = DBCALGeometry::cellId( uphit->module, uphit->layer, uphit->sector );  // key the cell identification off of the upstream cell
     int table_id = GetCalibIndex( uphit->module, uphit->layer, uphit->sector );  // key the cell identification off of the upstream cell
 
-    float fibLen = DBCALGeometry::BCALFIBERLENGTH;
+    float fibLen = DBCALGeometry::GetBCAL_length();
     //float cEff = DBCALGeometry::C_EFFECTIVE;    
     float cEff = GetEffectiveVelocity(table_id);
 
