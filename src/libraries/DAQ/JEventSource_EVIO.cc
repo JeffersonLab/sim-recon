@@ -963,6 +963,11 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 						case HDEVIO::HDEVIO_EOF:
 							if(hdevio) delete hdevio;
 							hdevio = NULL;
+							if(LOOP_FOREVER && Nevents_read>=1){
+								cout << "LOOP_FOREVER: reopening " << this->source_name <<endl;
+								hdevio = new HDEVIO(this->source_name);
+								if( hdevio->is_open ) continue;
+							}
 							return NO_MORE_EVENTS_IN_SOURCE;
 							break;
 						default:
