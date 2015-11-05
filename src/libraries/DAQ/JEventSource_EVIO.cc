@@ -110,6 +110,9 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	PARSE_F125 = true;
 	PARSE_F1TDC = true;
 	PARSE_CAEN1290TDC = true;
+	PARSE_CONFIG = true;
+	PARSE_EPICS = true;
+	PARSE_TRIGGER = true;
 	BUFFER_SIZE = 20000000; // in bytes
 	ET_STATION_NEVENTS = 10;
 	ET_STATION_CREATE_BLOCKING = false;
@@ -184,6 +187,9 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:PARSE_F125", PARSE_F125, "Set this to 0 to disable parsing of data from F125 ADC modules (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:PARSE_F1TDC", PARSE_F1TDC, "Set this to 0 to disable parsing of data from F1TDC modules (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:PARSE_CAEN1290TDC", PARSE_CAEN1290TDC, "Set this to 0 to disable parsing of data from CAEN 1290 TDC modules (for benchmarking/debugging)");
+		gPARMS->SetDefaultParameter("EVIO:PARSE_CONFIG", PARSE_CONFIG, "Set this to 0 to disable parsing of ROC configuration data in the data stream (for benchmarking/debugging)");
+		gPARMS->SetDefaultParameter("EVIO:PARSE_EPICS", PARSE_EPICS, "Set this to 0 to disable parsing of EPICS events from the data stream (for benchmarking/debugging)");
+		gPARMS->SetDefaultParameter("EVIO:PARSE_TRIGGER", PARSE_TRIGGER, "Set this to 0 to disable parsing of the built trigger bank from CODA (for benchmarking/debugging)");
 
 		gPARMS->SetDefaultParameter("EVIO:BUFFER_SIZE", BUFFER_SIZE, "Size in bytes to allocate for holding a single EVIO event.");
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_NEVENTS", ET_STATION_NEVENTS, "Number of events to use if we have to create the ET station. Ignored if station already exists.");
@@ -742,6 +748,14 @@ void JEventSource_EVIO::FreeEvent(JEvent &event)
 		
 			for(unsigned int i=0; i<objs_ptr->hit_objs.size(); i++){
 				delete objs_ptr->hit_objs[i];
+			}
+
+			for(unsigned int i=0; i<objs_ptr->config_objs.size(); i++){
+				delete objs_ptr->config_objs[i];
+			}
+
+			for(unsigned int i=0; i<objs_ptr->misc_objs.size(); i++){
+				delete objs_ptr->misc_objs[i];
 			}
 		}
 
@@ -2976,6 +2990,8 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 //----------------
 void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjList*> &events)
 {
+	if(!PARSE_TRIGGER) return;
+
 	if(VERBOSE>5) evioout << "    Entering ParseBuiltTriggerBank()" << endl;
 
 	uint32_t Mevents = 1; // number of events in block (will be overwritten below)
@@ -3133,6 +3149,8 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 //----------------
 void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
 {
+	if(!PARSE_CONFIG){ iptr = iend; return; }
+
 	if(VERBOSE>5) evioout << "     Entering ParseModuleConfiguration()  (events.size()="<<events.size()<<")" << endl;
 	
 	/// Parse a bank of module configuration data. These are configuration values
@@ -4404,6 +4422,8 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 //----------------
 void JEventSource_EVIO::ParseEPICSevent(evioDOMNodeP bankPtr, list<ObjList*> &events)
 {
+	if(!PARSE_EPICS) return;
+
 	time_t timestamp=0;
 	
 	ObjList *objs = NULL;
