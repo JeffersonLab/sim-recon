@@ -8,7 +8,6 @@
 
 // See comments in JEventSource_EVIO.h for overview description
 
-#include <mcheck.h>
 #include <unistd.h>
 #include <stdint.h>
 
@@ -2751,8 +2750,6 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
 	}
 	if(Nevents2==0)return;
 	
-mcheck_check_all();
-
 	// If we get here it means both events1 and events2 have events
 	list<ObjList*>::iterator iter = events1.begin();
 	for(; iter!=events1.end(); iter++){
