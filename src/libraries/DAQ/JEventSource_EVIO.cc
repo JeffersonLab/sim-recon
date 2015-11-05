@@ -143,6 +143,26 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	F125_NSPED = 16;
 	F125_TIME_UPSAMPLE = true;
 
+    F125_CDC_WS = 46;       // hit window start - must be >= F125_CDC_NP
+    F125_CDC_WE = 150;      // hit window end - must be at least 20 less than number of samples available
+    F125_CDC_IE = 200;      // end integration at the earlier of WE, or this many samples after threshold crossing of TH  
+    F125_CDC_NP = 16;       // # samples used for pedestal used to find hit. 2**integer
+    F125_CDC_NP2 = 16;      // # samples used for pedestal calculated just before hit. 2**integer
+    F125_CDC_PG = 4;        // # samples between hit threshold crossing and local pedestal sample
+    F125_CDC_H = 125;       // 5 sigma hit threshold
+    F125_CDC_TH = 100;      // 4 sigma high timing threshold
+    F125_CDC_TL = 25;       // 1 sigma low timing threshold
+
+    F125_FDC_WS = 30;       // hit window start - must be >= F125_FDC_NP
+    F125_FDC_WE = 52;      // hit window end - must be at least 20 less than number of samples available
+    F125_FDC_IE = 10;      // end integration at the earlier of WE, or this many samples after threshold crossing of TH  
+    F125_FDC_NP = 16;       // # samples used for pedestal used to find hit. 2**integer
+    F125_FDC_NP2 = 16;      // # samples used for pedestal calculated just before hit. 2**integer
+    F125_FDC_PG = 4;        // # samples between hit threshold crossing and local pedestal sample
+    F125_FDC_H = 125;       // 5 sigma hit threshold
+    F125_FDC_TH = 100;      // 4 sigma high timing threshold
+    F125_FDC_TL = 25;       // 1 sigma low timing threshold
+
 	USER_RUN_NUMBER = 0;
 	F125PULSE_NUMBER_FILTER = 1000;
 	F250PULSE_NUMBER_FILTER = 1000;
@@ -201,6 +221,28 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:RUN_NUMBER", USER_RUN_NUMBER, "User-supplied run number. Override run number from other sources with this.(will be ignored if set to zero)");
 		gPARMS->SetDefaultParameter("EVIO:F125PULSE_NUMBER_FILTER", F125PULSE_NUMBER_FILTER, "Ignore data for DF125XXX objects with a pulse number equal or greater than this.");
 		gPARMS->SetDefaultParameter("EVIO:F250PULSE_NUMBER_FILTER", F250PULSE_NUMBER_FILTER, "Ignore data for DF250XXX objects with a pulse number equal or greater than this.");
+
+
+		gPARMS->SetDefaultParameter("EVIO:F125_CDC_WS", F125_CDC_WS, "FA125 emulation: CDC hit window start.");
+		gPARMS->SetDefaultParameter("EVIO:F125_CDC_WE", F125_CDC_WE, "FA125 emulation: CDC hit window end.");
+		gPARMS->SetDefaultParameter("EVIO:F125_CDC_IE", F125_CDC_IE, "FA125 emulation: CDC number of integrated samples, unless WE is reached.");
+		gPARMS->SetDefaultParameter("EVIO:F125_CDC_NP", F125_CDC_NP, "FA125 emulation: CDC number of samples in initial pedestal window.");
+		gPARMS->SetDefaultParameter("EVIO:F125_CDC_NP2", F125_CDC_NP2, "FA125 emulation: CDC number of samples in local pedestal window.");
+		gPARMS->SetDefaultParameter("EVIO:F125_CDC_PG", F125_CDC_PG, "FA125 emulation: CDC gap between pedestal and hit threshold crossing.");
+		gPARMS->SetDefaultParameter("EVIO:F125_CDC_H", F125_CDC_H, "FA125 emulation: CDC hit threshold.");
+		gPARMS->SetDefaultParameter("EVIO:F125_CDC_TH", F125_CDC_TH, "FA125 emulation: CDC high timing threshold.");
+		gPARMS->SetDefaultParameter("EVIO:F125_CDC_TL", F125_CDC_TL, "FA125 emulation: CDC low timing threshold.");
+
+		gPARMS->SetDefaultParameter("EVIO:F125_FDC_WS", F125_FDC_WS, "FA125 emulation: FDC hit window start.");
+		gPARMS->SetDefaultParameter("EVIO:F125_FDC_WE", F125_FDC_WE, "FA125 emulation: FDC hit window end.");
+		gPARMS->SetDefaultParameter("EVIO:F125_FDC_IE", F125_FDC_IE, "FA125 emulation: FDC number of integrated samples, unless WE is reached.");
+		gPARMS->SetDefaultParameter("EVIO:F125_FDC_NP", F125_FDC_NP, "FA125 emulation: FDC number of samples in initial pedestal window.");
+		gPARMS->SetDefaultParameter("EVIO:F125_FDC_NP2", F125_FDC_NP2, "FA125 emulation: FDC number of samples in local pedestal window.");
+		gPARMS->SetDefaultParameter("EVIO:F125_FDC_PG", F125_FDC_PG, "FA125 emulation: FDC gap between pedestal and hit threshold crossing.");
+		gPARMS->SetDefaultParameter("EVIO:F125_FDC_H", F125_FDC_H, "FA125 emulation: FDC hit threshold.");
+		gPARMS->SetDefaultParameter("EVIO:F125_FDC_TH", F125_FDC_TH, "FA125 emulation: FDC high timing threshold.");
+		gPARMS->SetDefaultParameter("EVIO:F125_FDC_TL", F125_FDC_TL, "FA125 emulation: FDC low timing threshold.");
+
 
 		F250_PI_EMULATION_MODE = (EmulationModeType)f250_pi_emulation_mode;
 		F250_PT_EMULATION_MODE = (EmulationModeType)f250_pt_emulation_mode;
@@ -1809,6 +1851,13 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs,
 						  vector<JObject*> &pt_objs)
 {
+	if(VERBOSE>3) evioout << " EmulateDf125PulseIntegral has been disabled" <<endl;
+    return;
+
+    // total cop-out by Naomi who cannot see how to make this not crash (even before the code was modified)
+    //
+    // The code below has been modified to emulate new fa125-style PI for the CDC.
+
 	if(VERBOSE>3) evioout << " Entering  EmulateDf125PulseIntegral ..." <<endl;
 
 	// If emulation is being forced, then delete any existing objects.
@@ -1876,13 +1925,13 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 			}
 		}
 		
-		// Choose value of NSA and NSB based on rocid (eechh!)
-		uint32_t NSA = F125_NSA;
-		uint32_t NSB = F125_NSB;
-		if(wrd->rocid>=24 && wrd->rocid<=28){
-			NSA = F125_NSA_CDC;
-			NSB = F125_NSB_CDC;
-		}
+		// // Choose value of NSA and NSB based on rocid (eechh!)
+		// uint32_t NSA = F125_NSA;
+		// uint32_t NSB = F125_NSB;
+		// if(wrd->rocid>=24 && wrd->rocid<=28){
+		// 	NSA = F125_NSA_CDC;
+		// 	NSB = F125_NSB_CDC;
+		// }
  
 		// Get a vector of the samples for this channel
 		const vector<uint16_t> &samplesvector = wrd->samples;
@@ -1892,22 +1941,37 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 		// loop over all samples to calculate integral
 		uint32_t nsamples_used = 0;
 
-		uint32_t BinTC = T==NULL ? 0:(T->time >> 6);
-		uint32_t StartSample = BinTC - NSB;
-		if( NSB > BinTC) {
-		  StartSample = 0;
-		} 
-		uint32_t EndSample = BinTC + NSA;
-		if (EndSample>nsamples-1){
-		  EndSample = nsamples;
-		}
-		for (uint32_t c_samp=StartSample; c_samp<EndSample; c_samp++) {
+		// uint32_t BinTC = T==NULL ? 0:(T->time >> 6);
+		// uint32_t StartSample = BinTC - NSB;
+		// if( NSB > BinTC) {
+		//   StartSample = 0;
+		// } 
+		// uint32_t EndSample = BinTC + NSA;
+		// if (EndSample>nsamples-1){
+		//   EndSample = nsamples;
+		// }
+
+        // skip this if no time info
+        if (!T) {
+          signalsum = 0;
+        } else if (!T->time) {
+          signalsum = 0;
+        } else {
+
+          // find sample containing time, time is now in units of sample/10
+	  	  uint32_t StartSample = (uint32_t)(0.1*T->time);
+
+          // CDC integration runs until NU samples before end of window (constant NU=20 in firmware)
+		  uint32_t EndSample = nsamples-20;
+
+  		  for (uint32_t c_samp=StartSample; c_samp<EndSample; c_samp++) {
 			signalsum += samplesvector[c_samp];
 			nsamples_used++;
-		}
+		  }
+        }
 		
-		// Apply sparsification threshold
-		if(signalsum < F125_SPARSIFICATION_THRESHOLD) continue;
+		// Apply sparsification threshold - T->t should be 0 if pulse is below threshold
+		// if(signalsum < F125_SPARSIFICATION_THRESHOLD) continue;
 		
 		// create new Df125PulseIntegral object
 		Df125PulseIntegral *myDf125PulseIntegral = new Df125PulseIntegral;
@@ -2185,6 +2249,9 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 	/// version used for 2014 commissioning data. When the upsampling algorithm
 	/// is implemented in firmware, the units reported by the firmware will
 	/// change to 1/10 of a sample!  2/9/2014 DL
+    ///
+    /// Changed the units to 1/10 sample to match the firmware 3 Nov 2015 NSJ.
+
 
 	if(VERBOSE>3) evioout << " Entering  EmulateDf125PulseTime ..." <<endl;
 
@@ -2300,7 +2367,8 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 
 		if(F125_TIME_UPSAMPLE){
 			fa125_algos_data_t fa125_algos_data;
-			fa125_algos(rocid, samplesvector, fa125_algos_data);
+			//fa125_algos(rocid, samplesvector, fa125_algos_data);
+ 	    	fa125_algos(rocid, samplesvector, fa125_algos_data, F125_CDC_WS, F125_CDC_WE, F125_CDC_IE, F125_CDC_NP, F125_CDC_NP2, F125_CDC_PG, F125_CDC_H, F125_CDC_TH, F125_CDC_TL, F125_FDC_WS, F125_FDC_WE, F125_FDC_IE, F125_FDC_NP, F125_FDC_NP2, F125_FDC_PG, F125_FDC_H, F125_FDC_TH, F125_FDC_TL);
 			
 			found_hit      = true;
 			time           = fa125_algos_data.time;
@@ -2313,7 +2381,7 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 			// sample while the f250 algorithm reports it in units of 1/64
 			// of a sample. Convert to units of 1/64 of a sample here to
 			// make this consistent with the other algorithms.
-			time = (time*64)/10;
+            //			time = (time*64)/10;  //removed 4Nov2015 NSJ
 			
 			// In Naomi's original code, she checked if maxamp was >0 to decide
 			// whether to add the value to the tree. Note that this ignored the
@@ -3693,6 +3761,67 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				if(VERBOSE>7) evioout << "      FADC125 Window Raw Data"<<endl;
 				MakeDf125WindowRawData(objs, rocid, slot, itrigger, iptr);
 				break;
+
+            case 5: // new CDC format
+
+				if(VERBOSE>7) evioout << "      FADC125 CDC Pulse Data"<<endl;
+
+				channel = (*iptr>>20) & 0x7F;
+				pulse_number = (*iptr>>15) & 0x1F;
+				pulse_time = (*iptr>>4) & 0x7FF;
+				quality_factor = (*iptr>>3) & 0x1; //time QF bit
+
+	            if(VERBOSE>8) evioout << "        First word " << hex << (*iptr) << dec << endl;
+	            if(VERBOSE>8) evioout << "        pulse_time = " << hex << pulse_time << dec << " " << pulse_time << endl;
+
+ 				if( (objs!=NULL) && (pulse_number<F125PULSE_NUMBER_FILTER) && (F125_PT_EMULATION_MODE!=kEmulationAlways) ) {
+					objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
+				}
+
+				quality_factor = (*iptr>>0) & 0x7; //overflow count
+                iptr++; 
+
+	            if(VERBOSE>8) evioout << "        Second word " << hex << (*iptr) << dec << endl;
+
+				if(((*iptr>>31) & 0x1) == 0){  // make sure it is a continuation word
+                  pedestal = (*iptr>>23) & 0xFF;
+                  sum = (*iptr>>9) & 0x3FFF;
+                  pulse_peak = (*iptr>>0) & 0x1FF;
+
+				}else{
+                  pedestal = 0;
+                  sum = 0;
+                  pulse_peak = 0;
+  
+                  iptr--;
+				}
+
+	            if(VERBOSE>8) evioout << "        pedestal = " << hex << pedestal << dec << " " << pedestal << endl;
+	            if(VERBOSE>8) evioout << "        amplitude = " << hex << pulse_peak << dec << " " << pulse_peak << endl;
+	            if(VERBOSE>8) evioout << "        integral = " << hex << sum << dec << " " << sum << endl;
+
+				if( (objs!=NULL) && (pulse_number<F125PULSE_NUMBER_FILTER) && (F125_PP_EMULATION_MODE!=kEmulationAlways) ) {
+					objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
+				}
+
+				nsamples_integral = 0;  // must be overwritten later in GetObjects with value from Df125Config value
+				nsamples_pedestal = 1;  // The firmware returns an already divided pedestal
+
+                if (last_slot == slot && last_channel == channel) pulse_number = 1;
+                last_slot = slot;
+                last_channel = channel;
+				if( (objs!=NULL) && (pulse_number<F125PULSE_NUMBER_FILTER) ) {
+					objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, 
+						quality_factor, sum, pedestal, nsamples_integral, nsamples_pedestal));
+				}
+
+
+				last_pulse_time_channel = channel;
+				break;
+
+
+
+
 			case 7: // Pulse Integral
 				if(VERBOSE>7) evioout << "      FADC125 Pulse Integral"<<endl;
 				channel = (*iptr>>20) & 0x7F;
@@ -3729,9 +3858,9 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 					objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
 				}
 				break;
-			case 5: // Window Sum
-			case 6: // Pulse Raw Data
-			case 9: // Streaming Raw Data
+
+			case 6: // FDC Data
+			case 9: // FDC Data
 			case 13: // Event Trailer
 			case 14: // Data not valid (empty module)
 			case 15: // Filler (non-data) word
