@@ -82,7 +82,7 @@ double DTrackCandidate_factory_CDCCOSMIC::CDCDriftDistance(double delta, double 
         double f_0=0.;
         double f_delta=0.;
 
-        if (delta>0){
+        if (delta > 0){
             double a1=long_drift_func[0][0];
             double a2=long_drift_func[0][1];
             double b1=long_drift_func[1][0];
@@ -616,7 +616,7 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumb
                 //cout << " Ring " << ring_index + 1 << " Straw " << straw_index + 1 << endl;
                 GetDOCAPhiandZ(hits[j]->wire, posPass1, momPass1, docaphi, docaz);
                 double dz = docaz - 92.0; //Distance relative to center of CDC
-                double delta = max_sag[ring_index][straw_index] * ( 1. - (dz*dz/5625.))*TMath::Cos(docaphi-sag_phi_offset[ring_index][straw_index]);
+                double delta = max_sag[ring_index][straw_index] * ( 1. - (dz*dz/5625.)) * TMath::Cos(docaphi + sag_phi_offset[ring_index][straw_index]);
                 //cout << "  Max sag = " << max_sag[ring_index][straw_index] << " Sag Phi Offset = " << sag_phi_offset[ring_index][straw_index] << endl;
                 double measurement = CDCDriftDistance(delta, tcorr); // Use DOCA information to correct for CDC straw shape
                 //cout << "  phi_DOCA = " << docaphi << " z_DOCA = " << docaz << " delta = " << delta << " Distance = " << measurement << endl;
