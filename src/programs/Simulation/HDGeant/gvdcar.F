@@ -174,12 +174,12 @@ C
 C
       GO TO 999
   45  IF(MYFLAG.EQ.0)THEN
-       NZLAST=PARS(4)
+       NZLAST=INT(PARS(4))
        IZLAST=2+3*NZLAST
        CL=PARS(5)
        GO TO 49
       ELSEIF(MYFLAG.EQ.1)THEN
-       NZLAST=PARS(4)
+       NZLAST=INT(PARS(4))
        IZLAST=2+3*NZLAST
        TMPRAD=0.
        DO 145 I=7,IZLAST+2,3
@@ -188,12 +188,12 @@ C
        PHIMIN=PARS(1)
        PHIMAX=PHIMIN+PARS(2)
        AANG=ABS(PHIMAX-PHIMIN)
-       NANG=PARS(3)
+       NANG=INT(PARS(3))
        AATMAX=NANG*360./AANG
-       LATMAX=AATMAX
+       LATMAX=INT(AATMAX)
        ALA=AATMAX-LATMAX
        IF(ALA.GT..5)LATMAX=LATMAX+1
-       AFINV=1./COS(PI/LATMAX)
+       AFINV=REAL(1./COS(PI/LATMAX))
        FINV=ABS(AFINV)
        R=TMPRAD*FINV
        CL=-R
@@ -203,11 +203,11 @@ C
       ENDIF
 C
   46  IF(MYFLAG.EQ.0)THEN
-       NZLAST=PARS(3)
+       NZLAST=INT(PARS(3))
        IZLAST=1+3*NZLAST
        CL=PARS(4)
       ELSEIF(MYFLAG.EQ.1)THEN
-       NZLAST=PARS(3)
+       NZLAST=INT(PARS(3))
        IZLAST=1+3*NZLAST
        TMPRAD=0.
        DO 146 I=6,IZLAST+2,3
@@ -239,7 +239,7 @@ C
 **
       IF(ISH.EQ.14) THEN
 C     for hyperboloid, use escribed cylinder
-         CH = SQRT(PARS(2)**2+(PARS(3)*TAN(PARS(4)*DEGRAD))**2)
+         CH = REAL(SQRT(PARS(2)**2+(PARS(3)*TAN(PARS(4)*DEGRAD))**2))
          CL = -CH
          IERR=0
          GOTO 999
@@ -261,17 +261,17 @@ C
         RMAX=PARS(2)
         IF(IROT.NE.0)THEN
          IF(Q(JROT+15).EQ.0.)THEN
-           PHI1=(PARS(4)+Q(JROT+12))*DEGRAD
-           PHI2=(PARS(5)+Q(JROT+12))*DEGRAD
+           PHI1=REAL((PARS(4)+Q(JROT+12))*DEGRAD)
+           PHI2=REAL((PARS(5)+Q(JROT+12))*DEGRAD)
          ELSEIF(Q(JROT+15).EQ.180.)THEN
-           PHI1=(PARS(4)+Q(JROT+12)-(PARS(5)-PARS(4)))*DEGRAD
-           PHI2=(PARS(5)+Q(JROT+12)-(PARS(5)-PARS(4)))*DEGRAD
+           PHI1=REAL((PARS(4)+Q(JROT+12)-(PARS(5)-PARS(4)))*DEGRAD)
+           PHI2=REAL((PARS(5)+Q(JROT+12)-(PARS(5)-PARS(4)))*DEGRAD)
          ELSE
            GOTO 999
          ENDIF
         ELSE
-         PHI1=PARS(4)*DEGRAD
-         PHI2=PARS(5)*DEGRAD
+         PHI1=REAL(PARS(4)*DEGRAD)
+         PHI2=REAL(PARS(5)*DEGRAD)
         ENDIF
         IF(IAXIS.EQ.1)THEN
          IF(PHI1.GE.0..AND.PHI2.LE.PI)THEN
@@ -379,7 +379,7 @@ C
       ENDIF
 **
       IF(ISH.EQ.14) THEN
-        RM = SQRT(PARS(2)**2+(PARS(3)*TAN(PARS(4)*DEGRAD))**2)
+        RM = REAL(SQRT(PARS(2)**2+(PARS(3)*TAN(PARS(4)*DEGRAD))**2))
         GO TO 80
       ENDIF
 *

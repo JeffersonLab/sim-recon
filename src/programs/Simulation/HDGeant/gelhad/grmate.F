@@ -25,7 +25,7 @@ c
       a=abs(q(jma+6))
       z=abs(q(jma+7))
 c
-      nmix=abs(q(jma+11))
+      nmix=INT(abs(q(jma+11)))
       if(nmix.le.1) return !pure ?
       do 1000 i=1,nmix
        q(jmixt+i)=q(jmixt+i)-da*sign(1.0,q(jmixt+i))

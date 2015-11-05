@@ -11,7 +11,7 @@
 #include <cmath>
 #include "DBCALGeometry.h"
 
-//#include <HDGEOMETRY/DGeometry.h>
+#include <HDGEOMETRY/DGeometry.h>
 
 // On each module there is a 10x4 (r/phi) array of SiPMs
 
@@ -45,12 +45,13 @@ int DBCALGeometry::NSUMLAYSOUT[] = {1,1,1,1};
 
 int DBCALGeometry::NBCALSECSIN = 4/DBCALGeometry::NSUMSECSIN;
 int DBCALGeometry::NBCALSECSOUT = 4/DBCALGeometry::NSUMSECSOUT;
-//float DBCALGeometry::BCAL_PHI_SHIFT = 0.0; // will be overwritten in constructor
+float DBCALGeometry::BCAL_PHI_SHIFT = 0.0; // will be overwritten in constructor
 
-float DBCALGeometry::BCALINNERRAD = 64.3;   
+bool DBCALGeometry::initialized = false;
+float DBCALGeometry::BCALINNERRAD = 0.0;   
 float DBCALGeometry::BCALOUTERRAD = 86.17;
-float DBCALGeometry::BCALFIBERLENGTH = 390.0;
-float DBCALGeometry::GLOBAL_CENTER = 212;
+float DBCALGeometry::BCALFIBERLENGTH = 0.0;
+float DBCALGeometry::GLOBAL_CENTER = 0.0;
   
 float DBCALGeometry::ATTEN_LENGTH = 520.;
 float DBCALGeometry::C_EFFECTIVE  = 16.75;
@@ -67,11 +68,11 @@ float DBCALGeometry::m_radius[] = { 64.3,
 				  83.70,
 				  86.17};
 
-float DBCALGeometry::fADC_radius[] = { 64.3, 
-				  66.3,
-				  70.3,
-				  76.3,
-				  86.17};
+float DBCALGeometry::fADC_radius[] = { 0, 
+				  0,
+				  0,
+				  0,
+				  0};
 
 float DBCALGeometry::BCALMIDRAD = DBCALGeometry::m_radius[DBCALGeometry::BCALMID-1];
 
@@ -104,16 +105,82 @@ DBCALGeometry::DBCALGeometry()
       std::cout<<"ERROR: Bad BCAL fADC groupings, do not evenly divide cells";
       assert (false);
   }
-  
+
+  // Initialize DBCALGeometry variables
+  if(!initialized) Initialize();
+
+}
+
+void
+DBCALGeometry::Initialize() {
   //Get pointer to DGeometry object
-  //DApplication* dapp=dynamic_cast<DApplication*>(japp);
-  //const DGeometry *dgeom  = dapp->GetDGeometry(9999);
+  DApplication* dapp=dynamic_cast<DApplication*>(japp);
+  const DGeometry *dgeom  = dapp->GetDGeometry(9999);
+
+  // Get inner rad of BCAL (including the support plate)
+  float my_BCALINNERRAD;
+  dgeom->GetBCALRmin(my_BCALINNERRAD);
+  BCALINNERRAD = my_BCALINNERRAD;
+
+  // Get layer radii (4 layers)
+  vector<float> bcal_fadc_radii;
+  dgeom->GetBCALfADCRadii(bcal_fadc_radii);
+  if(bcal_fadc_radii.size()==5){
+  	for(uint32_t i=0; i<bcal_fadc_radii.size(); i++){
+		fADC_radius[i] = bcal_fadc_radii[i];
+	}
+  }
+  else{
+  	jerr<<"Did not retrieve 5 values for BCAL fADC radii!!!" << endl;
+  	exit(-1);
+  }
+
+  // Get BCAL Global Center
+  float my_GLOBAL_CENTER;
+  dgeom->GetBCALCenterZ(my_GLOBAL_CENTER);
+  GLOBAL_CENTER = my_GLOBAL_CENTER;	
+
+  // Get BCAL fiber length
+  float my_BCALFIBERLENGTH;
+  dgeom->GetBCALLength(my_BCALFIBERLENGTH);
+  BCALFIBERLENGTH = my_BCALFIBERLENGTH;
 
   // Get overall phi shift of BCAL
-  //double my_BCAL_PHI_SHIFT;
-  //dgeom->GetBCALPhiShift(my_BCAL_PHI_SHIFT);
-  //BCAL_PHI_SHIFT = (float)(my_BCAL_PHI_SHIFT*M_PI/180.0);  // convert to radians
+  float my_BCAL_PHI_SHIFT;
+  dgeom->GetBCALPhiShift(my_BCAL_PHI_SHIFT);
+  BCAL_PHI_SHIFT = my_BCAL_PHI_SHIFT*M_PI/180.0;  // convert to radians
 
+  initialized = true;
+}
+
+float
+DBCALGeometry::GetBCAL_inner_rad() {
+	if(!initialized) Initialize();
+	return BCALINNERRAD;
+}
+
+float*
+DBCALGeometry::GetBCAL_radii() {
+	if(!initialized) Initialize();
+	return fADC_radius;
+}
+
+float
+DBCALGeometry::GetBCAL_center() {
+	if(!initialized) Initialize();
+	return GLOBAL_CENTER;
+}
+
+float
+DBCALGeometry::GetBCAL_length() {
+	if(!initialized) Initialize();
+	return BCALFIBERLENGTH;
+}
+
+float
+DBCALGeometry::GetBCAL_phi_shift() {
+	if(!initialized) Initialize();
+	return BCAL_PHI_SHIFT;
 }
 
 //--------------
@@ -363,7 +430,6 @@ DBCALGeometry::phiSize( int fADC_cell ) {
 
   return sectSize;
 }
-
 
 //--------------
 /// fADCcellId_rphi

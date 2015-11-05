@@ -198,7 +198,7 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, int 
 
 		//float timediff = t_ADCus_vec[0]-t_ADCds_vec[0];
 		//float zpos = (timediff)*17./2;
-		float zpos = point->z() - DBCALGeometry::GLOBAL_CENTER + z_target_center;
+		float zpos = point->z() - DBCALGeometry::GetBCAL_center() + z_target_center;
 		float intratio = (float)integralUS/(float)integralDS;
 		float logintratio = log(intratio);
 		if (VERBOSE>4) printf("%5i  %2i %i %i  %8.1f  %8.1f  %8.3f  %8.3f  %8.3f\n", 

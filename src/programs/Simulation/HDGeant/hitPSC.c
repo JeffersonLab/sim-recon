@@ -150,7 +150,8 @@ void hitPSC(float xin[4], float xout[4],float pin[5], float pout[5], float dEsum
          }
          hits->in[nhit].t = 
                  (hits->in[nhit].t * hits->in[nhit].dE + t * dEsum) /
-                 (hits->in[nhit].dE += dEsum);
+                 (hits->in[nhit].dE + dEsum);
+			hits->in[nhit].dE += dEsum;
       }
       else if (nhit < MAX_HITS)		/* create new hit */
       {

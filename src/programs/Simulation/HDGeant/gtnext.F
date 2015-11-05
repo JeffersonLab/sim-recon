@@ -58,7 +58,7 @@ C.
 #include "geant321/gcvdma.inc"
       DIMENSION NUMTMP(15),NAMTMP(15)
 C.
-      PARAMETER (BIG1=0.9*BIG)
+      PARAMETER (BIG1=REAL(0.9*BIG))
 C.
       CHARACTER*4 NAME
       dimension iarrin(500),cxm(3),xxm(6)
@@ -120,14 +120,14 @@ C*****  End of Code Expanded From Routine:  GROT
       SAFETY = BIG
       INGOTO = 0
       JVO    = LQ(JVOLUM-LVOLUM(NLEVEL))
-      ISH    = Q(JVO+2)
+      ISH    = INT(Q(JVO+2))
       IF (Q(JVO+3).EQ.0.) GO TO 300
       if(raytra.eq.1..and.imyse.eq.1)then
             CALL UHTOC(NAMES(NLEVEL),4,NAME,4)
             CALL GFIND(NAME,'SEEN',ISSEEN)
             if(isseen.eq.-2.or.isseen.eq.-1)goto 300
       endif
-      NIN = Q(JVO+3)
+      NIN = INT(Q(JVO+3))
       IF (NIN.LT.0) GO TO 200
 *
 * *** Case with contents positioned
@@ -141,8 +141,8 @@ C*****  End of Code Expanded From Routine:  GROT
         if(nnn.gt.0)goto 112
         clmoth=q(jvirt+4*(LVOLUM(NLEVEL)-1)+3)
         chmoth=q(jvirt+4*(LVOLUM(NLEVEL)-1)+4)
-        ndivto=q(jvirt+4*(LVOLUM(NLEVEL)-1)+2)
-        iaxis =q(jvirt+4*(LVOLUM(NLEVEL)-1)+1)
+        ndivto=INT(q(jvirt+4*(LVOLUM(NLEVEL)-1)+2))
+        iaxis =INT(q(jvirt+4*(LVOLUM(NLEVEL)-1)+1))
         if(iaxis.eq.4)then
          do 1 i=1,6
           xxm(i)=xc(i)
@@ -157,7 +157,7 @@ C*****  End of Code Expanded From Routine:  GROT
             inc=-1
           endif
           xvdiv=((cx-clmoth)*ndivto/(chmoth-clmoth))+1
-          ivdiv=xvdiv
+          ivdiv=INT(xvdiv)
           if((xvdiv-ivdiv).lt.0.0001.and.inc.eq.-1)ivdiv=ivdiv-1
           if(ivdiv.lt.1)then
             ivdiv=1
@@ -193,7 +193,7 @@ C*****  End of Code Expanded From Routine:  GROT
             endif
           endif
           xvdiv=((cx-clmoth)*ndivto/(chmoth-clmoth))+1
-          ivdiv=xvdiv
+          ivdiv=INT(xvdiv)
           if((xvdiv-ivdiv).lt.0.0001.and.inc.eq.-1)ivdiv=ivdiv-1
           if(ivdiv.lt.1)then
             ivdiv=1
@@ -280,9 +280,9 @@ C*****  End of Code Expanded From Routine:  GROT
       endif
       IF (IN.LT.0)  GO TO 300
       JIN   = LQ(JVO-IN)
-      IVOT  = Q(JIN+2)
+      IVOT  = INT(Q(JIN+2))
       JVOT  = LQ(JVOLUM-IVOT)
-      IROTT = Q(JIN+4)
+      IROTT = INT(Q(JIN+4))
 *
       IF (BTEST(IQ(JVOT),1)) THEN
 *       (case with JVOLUM structure locally developed)
@@ -306,10 +306,10 @@ C*****  End of Code Expanded From Routine:  GROT
          GO TO 179
       ENDIF
 *     (normal case)
-  170 NPAR = Q(JVOT+5)
+  170 NPAR = INT(Q(JVOT+5))
       IF (NPAR.EQ.0) THEN
          JPAR = JIN +9
-         NPAR = Q(JPAR)
+         NPAR = INT(Q(JPAR))
       ELSE
          JPAR = JVOT +6
       ENDIF
@@ -347,7 +347,7 @@ C*****  End of Code Expanded From Routine:  GRMTD
       ENDIF
 *
       IACT = 1
-      ISHT = Q(JVOT+2)
+      ISHT = INT(Q(JVOT+2))
       call ginme(xt,q(jvot+2),q(jpar+1),iyes)
       if (iyes.ne.0) then
 c        print *, 'inside when assumed outside, rounding error!'
@@ -418,7 +418,7 @@ c        print *, 'inside when assumed outside, rounding error!'
  181  if(nnn.eq.0)then
                JPAR = LQ(JGPAR-NLEVEL)
                IACT = 2
-               ISH  = Q(JVO+2)
+               ISH  = INT(Q(JVO+2))
                call ginme(xc,q(jvo+2),q(jpar+1),iyes)
                if (iyes.eq.0) then
 c                 print *, 'outside when assumed in, rounding error!'
@@ -494,7 +494,7 @@ c                 print *, 'outside when assumed in, rounding error!'
           xxm(3)=xxm(3)+snxnew*xxm(6)
           call gfcoor(xxm,iaxis,cxnew)
           xevdiv=((cxnew-clmoth)*ndivto/(chmoth-clmoth))+1
-          ivdiv=xevdiv
+          ivdiv=INT(xevdiv)
           dr= xxm(1)*xxm(4)+xxm(2)*xxm(5)
 *          if(dr.eq.0.)print *,'dr.eq.0.'
           if(dr.ge.0.)then
@@ -531,7 +531,7 @@ c                 print *, 'outside when assumed in, rounding error!'
           if(iaxis.le.3)then
             cx=x0(iaxis)
             xevdiv=((cx-clmoth)*ndivto/(chmoth-clmoth))+1
-            ievdiv=xevdiv
+            ievdiv=INT(xevdiv)
             if((xevdiv-ievdiv).lt.0.0001.and.inc.eq.-1)ievdiv=ievdiv-1
             if(ievdiv.lt.1)then
               ievdiv=1
@@ -553,7 +553,7 @@ c                 print *, 'outside when assumed in, rounding error!'
              endif
             endif
             xevdiv=((cx-clmoth)*ndivto/(chmoth-clmoth))+1
-            ievdiv=xevdiv
+            ievdiv=INT(xevdiv)
             if((xevdiv-ievdiv).lt.0.0001.and.inc.eq.-1)ievdiv=ievdiv-1
             if(ievdiv.lt.1)then
               ievdiv=1
@@ -648,10 +648,10 @@ c                 print *, 'outside when assumed in, rounding error!'
 * ***    Case of volume incompletely divided
 *
   200 JDIV   = LQ(JVO-1)
-      IAXIS  = Q(JDIV+1)
-      IVOT   = Q(JDIV+2)
+      IAXIS  = INT(Q(JDIV+1))
+      IVOT   = INT(Q(JDIV+2))
       JVOT   = LQ(JVOLUM-IVOT)
-      ISHT   = Q(JVOT+2)
+      ISHT   = INT(Q(JVOT+2))
 *
 *  ** Get the division parameters
 *
@@ -679,7 +679,7 @@ c                 print *, 'outside when assumed in, rounding error!'
          GO TO 220
       ENDIF
 *     (normal case)
-  215 NDIV = Q(JDIV+3)
+  215 NDIV = INT(Q(JDIV+3))
       ORIG = Q(JDIV+4)
       SDIV = Q(JDIV+5)
 *
@@ -714,7 +714,7 @@ c                 print *, 'outside when assumed in, rounding error!'
          RXY = XC(1)**2 + XC(2)**2
          RXY = SQRT(RXY)
          IF (XC(3).NE.0.0) THEN
-            THET = RADDEG * ATAN (RXY/XC(3))
+            THET = REAL(RADDEG * ATAN (RXY/XC(3)))
             IF (THET.LT.0.0) THET = THET + 180.0
          ELSE
             THET = 90.
@@ -731,7 +731,7 @@ c                 print *, 'outside when assumed in, rounding error!'
             IF (NDIV.GT.1) IN2 = NDIV
          ELSE
             IF (XC(1).NE.0.0.OR.XC(2).NE.0.0) THEN
-               PHI = RADDEG * ATAN2 (XC(2), XC(1))
+               PHI = REAL(RADDEG * ATAN2 (XC(2), XC(1)))
             ELSE
                PHI = 0.0
             ENDIF
@@ -763,7 +763,7 @@ c                 print *, 'outside when assumed in, rounding error!'
          XT(5) = XC(5)
          XT(6) = XC(6)
       ELSE IF (IDT.EQ.3) THEN
-         PH0  = DEGRAD * (ORIG + (IN - 0.5) * SDIV)
+         PH0  = REAL(DEGRAD * (ORIG + (IN - 0.5) * SDIV))
          CPHR = COS(PH0)
          SPHR = SIN(PH0)
          XT(1) = XC(1)*CPHR + XC(2)*SPHR
@@ -943,7 +943,7 @@ c        print *, 'outside when assumed inside, rounding error!'
              if(gonly(nlevel-1).ne.0.)newfl=1
              nlevel=nlevel-1
              jvo=lq(jvolum-lvolum(nlevel))
-             nin=q(jvo+3)
+             nin=INT(q(jvo+3))
              if(nin.lt.0)goto 404
              myinfr=lindex(nlevel+1)
              jin=lq(jvo-myinfr)
@@ -969,8 +969,8 @@ c        print *, 'outside when assumed inside, rounding error!'
        if(tsafet.le.safety)safety=tsafet
        if(tsnext.le.snext)then
          snext=tsnext
-         ignext=tignex
-         ingoto=tingot
+         ignext=INT(tignex)
+         ingoto=INT(tingot)
          call gfcvol
          nlevin=nlevel
          if(ingoto.gt.0)then
