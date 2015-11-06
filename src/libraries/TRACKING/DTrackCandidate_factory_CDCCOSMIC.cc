@@ -155,11 +155,6 @@ inline double DTrackCandidate_factory_CDCCOSMIC::CDCDriftVariance(double t){
     double cutoffTime = 5.0;
     double V = 0.0507;
     if (t>0){
-        if (t>cdc_drift_table_max){
-            // Here the drift time is too large. Return the edge of the straw with a large error
-            V=0.0507; // straw radius^2 / 12
-            return V;
-        }
         //cout << "The resolution parameters are {" << CDC_RES_PAR1 <<","<< CDC_RES_PAR2 << "}" << endl;
         double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
         //cout << "Sigma = " << sigma << endl;
