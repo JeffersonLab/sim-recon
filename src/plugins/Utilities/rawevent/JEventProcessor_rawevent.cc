@@ -1271,8 +1271,8 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
         hit[0].hdata       = mcData;
         hit[0].hdata[0]    = q; 
         hit[0].hdata[1]    = static_cast<double>(t)/FDC_ADCtick;
-        if (q > 0x7ffff)
-           std::cerr << "q too large for FDC: " << q << std::endl;
+        //if (q > 0x7ffff)
+        //   std::cerr << "q too large for FDC: " << q << std::endl;
         
         if (dumphits > 2) {
           jout << std::endl;
