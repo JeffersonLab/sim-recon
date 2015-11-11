@@ -1633,6 +1633,7 @@ jerror_t DEventSourceHDDM::Extract_DFCALHit(hddm_s::HDDM *record,
          mchit->y      = pos.Y();
          mchit->E      = iter->getE();
          mchit->t      = iter->getT();
+	 mchit->intOverPeak = 6.;
          data.push_back(mchit);
        }
     }
@@ -1658,6 +1659,7 @@ jerror_t DEventSourceHDDM::Extract_DFCALHit(hddm_s::HDDM *record,
          mchit->y      = pos.Y();
          mchit->E      = iter->getE();
          mchit->t      = iter->getT();
+	 mchit->intOverPeak = 6.;
          data.push_back(mchit);
       }
    }
