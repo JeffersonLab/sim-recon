@@ -11,9 +11,6 @@ typedef struct {
 	int driftclusters;
 	float tgwidth[2];
 	int runtime_geom;
-  int get_next_evt;
-  float trigger_time_signa_ns;
-  int runno_ff;
 }controlparams_t;
 extern controlparams_t controlparams_;
 
