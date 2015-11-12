@@ -131,14 +131,15 @@
       UPWGHT = 1
       ISTORY = 0
 
-      ev = IDEVT
+      ev = event_count
       do i=1,10
         ev = ev/10.
         if (ev.lt.10) goto 2
       enddo
     2 if (int(ev).eq.ev) then
-        write(LOUT,*) IDEVT," events simulated"
+        write(LOUT,*) event_count," events simulated"
       endif
+      event_count = event_count + 1
 
 *     Get the current values of the random number seeds. Do this
 *     here so we can overwrite them in the first "if" block below

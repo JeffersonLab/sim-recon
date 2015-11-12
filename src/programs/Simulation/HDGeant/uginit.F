@@ -195,6 +195,7 @@ c The following parameters are declared in controlparams.inc above.
       data tgtwidth/2*0/
       data get_next_evt/1/
       data trigger_time_sigma_ns/10./
+      data event_count/0/
 
 C  Use this parameter to set up a minimum photon energy 
 C  for the coherent bremsstrahlung beam generator - see beamgen.F
