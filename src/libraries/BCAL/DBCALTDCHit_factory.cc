@@ -59,7 +59,6 @@ jerror_t DBCALTDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
        */
 
     /// Read in calibration constants
-    vector<double> raw_time_offsets;
 
     if(print_messages) jout << "In DBCALTDCHit_factory, loading constants..." << endl;
 
@@ -82,11 +81,21 @@ jerror_t DBCALTDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
     else
         jerr << "Unable to get BCAL_TDC_BASE_TIME_OFFSET from /BCAL/base_time_offset !" << endl;  
 
+    vector<double> raw_time_offsets;
+    vector<double> raw_channel_global_offset;
+    vector<double> raw_tdiff_u_d;
+
     if(eventLoop->GetCalib("/BCAL/TDC_offsets", raw_time_offsets))
         jout << "Error loading /BCAL/TDC_offsets !" << endl;
+    if(eventLoop->GetCalib("/BCAL/channel_global_offset", raw_channel_global_offset))
+        jout << "Error loading /BCAL/channel_global_offset !" << endl;
+    if(eventLoop->GetCalib("/BCAL/tdiff_u_d", raw_tdiff_u_d))
+        jout << "Error loading /BCAL/tdiff_u_d !" << endl;
 
     FillCalibTable(time_offsets, raw_time_offsets);
-
+    FillCalibTableShort(channel_global_offset, raw_channel_global_offset);
+    FillCalibTableShort(tdiff_u_d, raw_tdiff_u_d);
+    
     return NOERROR;
 }
 
@@ -121,8 +130,15 @@ jerror_t DBCALTDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
         //See if the input object is an DF1TDCHit. If so, it is real data.  If not, it is simulated data.
         const DF1TDCHit* F1TDCHit = NULL;
         digihit->GetSingle(F1TDCHit);
-        if (F1TDCHit != NULL) T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - GetConstant(time_offsets,digihit) + t_base; // This is real data.
-        else T = digihit->time*t_scale - GetConstant(time_offsets,digihit) + t_base; // This is simulated data.  Use a simplified time conversion.
+        double end_sign = digihit->end ? -1.0 : 1.0; // Upstream = 0 -> Positive
+        if (F1TDCHit != NULL) { // This is real data.
+            T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) + t_base - GetConstant(time_offsets,digihit) 
+                - GetConstant(channel_global_offset,digihit) - (0.5 * end_sign) * GetConstant(tdiff_u_d,digihit); 
+        }
+        else { // This is simulated data.  Use a simplified time conversion.
+            T = digihit->time * t_scale + t_base - GetConstant(time_offsets,digihit) 
+                - GetConstant(channel_global_offset,digihit) - (0.5 * end_sign) * GetConstant(tdiff_u_d,digihit); 
+        }
         hit->t = T;
 
         /*
@@ -193,6 +209,44 @@ void DBCALTDCHit_factory::FillCalibTable( bcal_digi_constants_t &table,
     }
 }
 
+//------------------
+// FillCalibTableShort
+//------------------
+void DBCALTDCHit_factory::FillCalibTableShort( bcal_digi_constants_t &table,
+        const vector<double> &raw_table)
+{
+    char str[256];
+    int channel = 0;
+
+    // reset the table before filling it
+    table.clear();
+
+    for(int module=1; module<=BCAL_NUM_MODULES; module++) {
+        for(int layer=1; layer<=BCAL_NUM_TDC_LAYERS; layer++) {
+            for(int sector=1; sector<=BCAL_NUM_SECTORS; sector++) {
+                if( channel > BCAL_MAX_TDC_CHANNELS ) {  // sanity check
+                    sprintf(str, "Too many channels for BCAL table! channel=%d (should be %d)",
+                            channel, BCAL_MAX_TDC_CHANNELS);
+                    cerr << str << endl;
+                    throw JException(str);
+                }
+
+                table.push_back( cell_calib_t(raw_table[channel],raw_table[channel]) );
+
+                channel += 1;
+            }
+        }
+    }
+
+    // check to make sure that we loaded enough channels
+    if(channel != BCAL_MAX_TDC_CHANNELS) {
+        sprintf(str, "Not enough channels for BCAL table! channel=%d (should be %d)",
+                channel, BCAL_MAX_TDC_CHANNELS);
+        cerr << str << endl;
+        throw JException(str);
+    }
+}
+
 //------------------------------------
 // GetConstant
 //   Allow a few different interfaces
@@ -210,6 +264,11 @@ const double DBCALTDCHit_factory::GetConstant( const bcal_digi_constants_t &the_
     }
     if( (in_layer <= 0) || (in_layer > BCAL_NUM_TDC_LAYERS)) {
         sprintf(str, "Bad layer # requested in DBCALTDCHit_factory::GetConstant()! requested=%d , should be 1-%d", in_layer, BCAL_NUM_TDC_LAYERS);
+        cerr << str << endl;
+        throw JException(str);
+    }
+    if( (in_sector <= 0) || (in_sector > BCAL_NUM_SECTORS)) {
+        sprintf(str, "Bad sector # requested in DBCALTDCHit_factory::GetConstant()! requested=%d , should be 1-%d", in_sector, BCAL_NUM_SECTORS);
         cerr << str << endl;
         throw JException(str);
     }
@@ -292,13 +351,6 @@ const double DBCALTDCHit_factory::GetConstant( const bcal_digi_constants_t &the_
         throw JException(str);
     }
     if( (in_digihit->sector <= 0) || (in_digihit->sector >static_cast<unsigned int>( BCAL_NUM_SECTORS))) {
-        sprintf(str, "Bad sector # requested in DBCALTDCHit_factory::GetConstant()! requested=%d , should be 1-%d", in_digihit->sector, BCAL_NUM_SECTORS);
-        cerr << str << endl;
-        throw JException(str);
-    }
-    if( (in_digihit->end != DBCALGeometry::kUpstream) && (in_digihit->end != DBCALGeometry::kDownstream) ) {
-        sprintf(str, "Bad end # requested in DBCALTDCHit_factory::GetConstant()! requested=%d , should be 0-1", in_digihit->end);
-        cerr << str << endl;
         throw JException(str);
     }
 

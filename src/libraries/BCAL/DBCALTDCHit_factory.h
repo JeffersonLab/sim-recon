@@ -35,6 +35,8 @@ class DBCALTDCHit_factory:public jana::JFactory<DBCALTDCHit>{
 		int t_rollover;
 
 		bcal_digi_constants_t time_offsets;
+        bcal_digi_constants_t channel_global_offset;
+        bcal_digi_constants_t tdiff_u_d;
 
 		const int GetCalibIndex( int module, int layer, int sector ) const {
 			return BCAL_NUM_TDC_LAYERS*BCAL_NUM_SECTORS*(module-1) + BCAL_NUM_SECTORS*(layer-1) + (sector-1);
@@ -61,6 +63,8 @@ class DBCALTDCHit_factory:public jana::JFactory<DBCALTDCHit>{
 
 		void FillCalibTable( bcal_digi_constants_t &table, 
 				     const vector<double> &raw_table);
+        void FillCalibTableShort( bcal_digi_constants_t &table,
+                     const vector<double> &raw_table);
 };
 
 #endif // _DBCALTDCHit_factory_
