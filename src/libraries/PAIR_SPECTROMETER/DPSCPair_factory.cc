@@ -57,7 +57,7 @@ jerror_t DPSCPair_factory::evnt(JEventLoop *loop, int eventnumber)
       for (unsigned int j=i+1; j < hits.size(); j++) {
 	if (!hits[i]->has_TDC||!hits[j]->has_TDC) continue;
 	if (!hits[i]->has_fADC||!hits[j]->has_fADC) continue;
-	if (fabs(hits[i]->arm-hits[j]->arm)==1&&fabs(hits[i]->t-hits[j]->t)<DELTA_T_PAIR_MAX) {
+	if (std::abs(hits[i]->arm-hits[j]->arm)==1&&fabs(hits[i]->t-hits[j]->t)<DELTA_T_PAIR_MAX) {
 	  if (hits[i]->arm==0) {
 	    ee.first = hits[i];
 	    ee.second = hits[j];

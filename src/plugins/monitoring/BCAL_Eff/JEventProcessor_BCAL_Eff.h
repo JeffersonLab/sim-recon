@@ -35,7 +35,7 @@ class JEventProcessor_BCAL_Eff : public jana::JEventProcessor
 
 
 	private:
-		const DAnalysisUtilities* dAnalysisUtilities;
+//		const DAnalysisUtilities* dAnalysisUtilities;
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop* locEventLoop, int locRunNumber);	///< Called every time a new run number is detected.
 		jerror_t evnt(jana::JEventLoop* locEventLoop, int locEventNumber);	///< Called every event.
