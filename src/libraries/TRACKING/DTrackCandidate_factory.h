@@ -146,6 +146,10 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
   double endplate_rmax;
   double TARGET_Z;
   int MAX_NUM_TRACK_CANDIDATES; //used to avoid memory spikes: if this # is exceeded, delete all tracks //to disable, set = -1!!
+
+  vector<vector<DVector3> >sc_pos;
+  vector<vector<DVector3> >sc_norm;
+
 };
 
 #endif // _DTrackCandidate_factory_
