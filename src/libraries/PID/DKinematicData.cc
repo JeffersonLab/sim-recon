@@ -14,7 +14,7 @@
 
 #include "DRandom.h"
 
-const double kLarge = 1.e20;
+//const double kLarge = 1.e20;
 
 // B field constant to convert curvature to momentum
 // const double kBfieldConstant = -0.0299792458;

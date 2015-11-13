@@ -4,7 +4,7 @@
 // Created: Tue Sep  2 11:18:22 EDT 2008
 // Creator: davidl
 //
-namespace{const char* GetMyID(){return "$Id$";}}
+//namespace{const char* GetMyID(){return "$Id$";}}
 
 #include <cmath>
 using namespace std;

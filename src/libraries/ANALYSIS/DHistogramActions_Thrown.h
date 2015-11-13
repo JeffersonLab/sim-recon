@@ -454,7 +454,7 @@ class DHistogramAction_TruePID : public DAnalysisAction
 	public:
 		DHistogramAction_TruePID(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_TruePID", false, locActionUniqueString),
-		dNumPBins(300), dNum2DPBins(150), dNumThetaBins(140), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinThrownMatchFOM(5.73303E-7)
+		dNumPBins(300), dNum2DPBins(150), dNumThetaBins(140), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0)/*, dMinThrownMatchFOM(5.73303E-7)*/
 		{
 			dAnalysisUtilities = NULL;
 		}
@@ -466,7 +466,7 @@ class DHistogramAction_TruePID : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 		void Initialize(JEventLoop* locEventLoop);
 
-		double dMinThrownMatchFOM;
+//		double dMinThrownMatchFOM;
 		const DAnalysisUtilities* dAnalysisUtilities;
 
 		TH1I* dHist_TruePIDStatus;

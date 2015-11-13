@@ -24,14 +24,14 @@ using namespace jana;
 #include <TH2.h>
 
 // Define some constants
-const uint32_t NROWS = 5;
+//const uint32_t NROWS = 5;
 const uint32_t NCOLUMNS = 100;
 const uint32_t NSINGLES = 20;
 
 const float MIN_ADC_PINT_LOG10 = 0.;
 const float MAX_ADC_PINT_LOG10 = 5.;
 const uint32_t BINCOUNT_ADC_PINT = 200;
-const float ADC_PINT_PER_PIXEL = 6.5;
+//const float ADC_PINT_PER_PIXEL = 6.5;
 const float MIN_HIT_NPIX = 0.;
 const float MAX_HIT_NPIX = 1000.;
 const uint32_t BINCOUNT_HIT_NPIX = 200;

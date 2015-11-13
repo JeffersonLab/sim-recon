@@ -139,7 +139,7 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
   int DEBUG_LEVEL,MIN_NUM_HITS;
   bool DEBUG_HISTS;
   TH2F *match_dist,*match_dist_vs_p;
-  TH2F *match_center_dist2;
+//  TH2F *match_center_dist2;
 
   double FactorForSenseOfRotation;
   DVector3 cdc_endplate;

@@ -42,7 +42,7 @@ class DBCALClump_factory : public JFactory<DBCALClump> {
  private:
   
   jerror_t init(void);
-  jerror_t brun(JEventLoop *loop);
+  jerror_t brun(JEventLoop *loop, int32_t runnumber);
   jerror_t evnt(JEventLoop *loop, int eventnumber);
   
 };

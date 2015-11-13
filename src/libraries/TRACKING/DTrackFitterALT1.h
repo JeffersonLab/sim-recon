@@ -114,10 +114,10 @@ class DTrackFitterALT1:public DTrackFitter{
 		DCoordinateSystem *target;
 		
 		int eventnumber;
-		const JGeometry *dgeom;
+//		const JGeometry *dgeom;
 		vector<DReferenceTrajectory*>rtv;
 		DReferenceTrajectory *rt, *tmprt;
-		bool hit_based;
+//		bool hit_based;
 		bool DEBUG_HISTS;
 		int  DEBUG_LEVEL;
 		double MAX_CHISQ_DIFF;

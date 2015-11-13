@@ -53,7 +53,7 @@ class DTrackTimeBased_factory_Combo:public jana::JFactory<DTrackTimeBased>
 
 		map<Particle_t, deque<Particle_t> > dParticleIDsToTry;
 
-		const DDetectorMatches* dDetectorMatches;
+//		const DDetectorMatches* dDetectorMatches;
 		vector<const DReaction*> dReactions;
 		map<const DReaction*, set<Particle_t> > dPositivelyChargedPIDs;
 		map<const DReaction*, set<Particle_t> > dNegativelyChargedPIDs;
