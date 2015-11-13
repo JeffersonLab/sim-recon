@@ -797,19 +797,19 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
 				    JEventLoop *loop,
 				    double mass){  
   if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting time based fit with mass: "<<mass<<endl;}
-  
+  // Get the hits from the wire-based track
+  vector<const DFDCPseudo*>myfdchits;
+  track->GetT(myfdchits);
+  vector<const DCDCTrackHit *>mycdchits;
+  track->GetT(mycdchits);
+
   // Do the fit
   DTrackFitter::fit_status_t status = DTrackFitter::kFitNotDone;
   if (USE_HITS_FROM_WIREBASED_FIT) {
     fitter->Reset();
     fitter->SetFitType(DTrackFitter::kTimeBased);	
     
-    // Get the hits from the wire-based track
-    vector<const DFDCPseudo*>myfdchits;
-    track->GetT(myfdchits);
     fitter->AddHits(myfdchits);
-    vector<const DCDCTrackHit *>mycdchits;
-    track->GetT(mycdchits);
     fitter->AddHits(mycdchits);
 
     status=fitter->FitTrack(track->position(),track->momentum(),
@@ -824,18 +824,26 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
     // from the wire-based track
     if (status==DTrackFitter::kFitNotDone){
       //_DBG_ << " Using wire-based hits " << endl;
-
-      vector<const DFDCPseudo*>myfdchits;
-      track->GetT(myfdchits);
       fitter->AddHits(myfdchits);
-      vector<const DCDCTrackHit *>mycdchits;
-      track->GetT(mycdchits);
       fitter->AddHits(mycdchits);
       
       status=fitter->FitTrack(track->position(),track->momentum(),
 			      track->charge(),mass,mStartTime,mStartDetector);
     }
 
+  }
+  
+  // In the transition region between the CDC and the FDC where the track 
+  // contains both CDC and FDC hits, sometimes too many hits are discarded in 
+  // the time-based phase and the time-based fit result does not improve on the 
+  // wire-based fit result.  In this case set the status word to 
+  // kFitNoImprovement and copy the wire-based parameters into the time-based
+  // class.
+  if (myfdchits.size()>3 && mycdchits.size()>3){
+    unsigned int ndof=fitter->GetNdof();
+    if (TMath::Prob(track->chisq,track->Ndof)>
+	TMath::Prob(fitter->GetChisq(),ndof)&&ndof<5)
+      status=DTrackFitter::kFitNoImprovement;
   }
       
   // Check the status value from the fit
@@ -844,8 +852,48 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
     //_DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
   case DTrackFitter::kFitFailed:
     break;
-  case DTrackFitter::kFitSuccess:
   case DTrackFitter::kFitNoImprovement:
+    {
+      // Create a new time-based track object
+      DTrackTimeBased *timebased_track = new DTrackTimeBased;
+
+      // Copy over DKinematicData part
+      DKinematicData *track_kd = timebased_track;
+      *track_kd = *track;
+
+      timebased_track->chisq = track->chisq;
+      timebased_track->Ndof = track->Ndof;
+      timebased_track->pulls = track->pulls;
+      timebased_track->trackid = track->id;
+      timebased_track->candidateid=track->candidateid;
+      timebased_track->FOM=track->FOM;
+      timebased_track->rt=track->rt;
+
+      for(unsigned int m=0; m<myfdchits.size(); m++)
+	timebased_track->AddAssociatedObject(myfdchits[m]); 
+      for(unsigned int m=0; m<mycdchits.size(); m++)
+	timebased_track->AddAssociatedObject(mycdchits[m]);
+      timebased_track->AddAssociatedObject(track);
+
+      // dEdx
+      double locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC;
+      unsigned int locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC;
+      pid_algorithm->CalcDCdEdx(timebased_track, locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC, locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC);
+  
+      timebased_track->ddEdx_FDC = locdEdx_FDC;
+      timebased_track->ddx_FDC = locdx_FDC;
+      timebased_track->dNumHitsUsedFordEdx_FDC = locNumHitsUsedFordEdx_FDC;
+      timebased_track->ddEdx_CDC = locdEdx_CDC;
+      timebased_track->ddx_CDC = locdx_CDC;
+      timebased_track->dNumHitsUsedFordEdx_CDC = locNumHitsUsedFordEdx_CDC;
+      timebased_track->setdEdx((locNumHitsUsedFordEdx_CDC >= locNumHitsUsedFordEdx_FDC) ? locdEdx_CDC : locdEdx_FDC);
+      
+      _data.push_back(timebased_track);
+      
+      return true;
+      break;
+    }
+  case DTrackFitter::kFitSuccess:
     {
       // Allocate a DReferenceTrajectory object if needed.
       // These each have a large enough memory footprint that
@@ -1022,7 +1070,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   // Add DTrack object as associate object
   vector<const DTrackWireBased*>wire_based_track;
   src_track->GetT(wire_based_track);
-  timebased_track->AddAssociatedObject(wire_based_track[0]);
+  //  timebased_track->AddAssociatedObject(wire_based_track[0]);
 
   // dEdx
   double locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC;
