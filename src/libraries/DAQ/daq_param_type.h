@@ -29,8 +29,13 @@ enum daq_param_type{
 	kPARAM125_NSA             = 0x0F01,
 	kPARAM125_NSB             = 0x0F02,
 	kPARAM125_NSA_NSB         = 0x0F03,  // NSA+NSB
-	kPARAM125_NPED            = 0x0F04,
+	kPARAM125_NPED            = 0x0F04,  // (1 + 2^P2)/(2^PBIT)
 	kPARAM125_WINWIDTH        = 0x0F05,
+	kPARAM125_P1              = 0x0F06,
+	kPARAM125_P2              = 0x0F07,
+	kPARAM125_IBIT            = 0x0F08,
+	kPARAM125_ABIT            = 0x0F09,
+	kPARAM125_PBIT            = 0x0F0A,
 
 	kPARAMF1_REFCNT           = 0x0601,
 	kPARAMF1_TRIGWIN          = 0x0602,
