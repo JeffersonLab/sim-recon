@@ -34,6 +34,7 @@ using namespace std;
 
 #include "DTrackCandidate_factory.h"
 #include "DTrackCandidate_factory_CDC.h"
+#include "START_COUNTER/DSCHit.h"
 #include "DANA/DApplication.h"
 #include <JANA/JCalibration.h>
 
@@ -125,6 +126,9 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
   bfield = dapp->GetBfield(runnumber);
   FactorForSenseOfRotation=(bfield->GetBz(0.,0.,65.)>0.)?-1.:1.;
+
+  // Get start counter geometry;
+  dgeom->GetStartCounterGeom(sc_pos,sc_norm);
 
   dIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField*>(bfield) != NULL);
   if(dIsNoFieldFlag)
@@ -236,6 +240,11 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       _data.push_back(const_cast<DTrackCandidate*>(locStraightLineCandidates[loc_i]));
     return NOERROR;
   }
+  
+   // Start counter hits
+  vector<const DSCHit *>schits;
+  loop->Get(schits);
+
 
   // Clear private vectors
   cdctrackcandidates.clear();
@@ -419,9 +428,46 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       num_fdc_cands_remaining--;
     }
     else{
+      DVector3 mom=cdccan->momentum();
+      DVector3 pos=cdccan->position();
+
+      // Use information from the start counter to refine some candidates that 
+      // seem to be pointing backwards but are probably pointing forwards.  In
+      // these cases the circle projection intersects with a start counter
+      // paddle but the z-position at the radius r just outside the start 
+      // counter barrel region is downstream of the nose, which does not make
+      // sense for a particle that is actually heading upstream...
+      if (mom.Theta()>M_PI_2){
+	double zsc=sc_pos[0][1].z();
+	if (pos.z()>zsc){
+	  unsigned int best_sc_sector_id=0;
+	  double dphi_min=1000.;
+	  double cand_phi=pos.Phi();
+	  for (unsigned int k=0;k<schits.size();k++){
+	    unsigned int sector_id=schits[k]->sector-1;
+	    double dphi=cand_phi-sc_pos[sector_id][0].Phi();
+	    if (dphi<-M_PI) dphi+=2.*M_PI;
+	    if (dphi>M_PI) dphi-=2.*M_PI;
+
+	    if (fabs(dphi)<dphi_min){
+	      best_sc_sector_id=sector_id;
+	      dphi_min=fabs(dphi);
+	    }
+	  }
+	  if (dphi_min<0.105){  
+	    // simplest approach: just change the direction -z -> +z
+	    mom.SetMagThetaPhi(mom.Mag(),M_PI-mom.Theta(),mom.Phi());
+	    pos=sc_pos[best_sc_sector_id][1];
+	    //	    _DBG_ << " Event " << eventnumber << endl;
+	  }
+	}
+	
+      }
+
+
       DTrackCandidate *can = new DTrackCandidate;
-      can->setMomentum(cdccan->momentum());
-      can->setPosition(cdccan->position());
+      can->setMomentum(mom);
+      can->setPosition(pos);
       can->setCharge(cdccan->charge());
 
       // Get the cdc hits and add them to the candidate
@@ -1227,6 +1273,11 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	 vector<const DFDCSegment *>segments;
 	 fdccan->GetT(segments);
 	 sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
+
+	 // Only try to match candidate if this fdc candidate has hits in the 
+	 // first package
+	 if (segments[0]->package>0) continue;
+	 
 	 
 	 // Abort if the track would have to pass from one quadrant into the opposite 
 	 // quadrant (this is more likely two roughly back-to-back tracks rather than 
@@ -1337,7 +1388,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	   
 	     trackcandidates.push_back(can);
 	     
-	     if (DEBUG_LEVEL>0) _DBG_ << ".. matched to CDC candidate #" << k <<endl;
+	     if (DEBUG_LEVEL>0) _DBG_ << ".. matched to FDC candidate #" << k <<endl;
 	   
 	     return true;
 	   } // got a match
