@@ -161,7 +161,10 @@ double DRFTime_factory::Convert_TDCToTime(const DRFTDCDigiTime* locRFTDCDigiTime
 		locRFTime = locTTabUtilities->Convert_DigiTimeToNs_CAEN1290TDC(locRFTDCDigiTime);
 	else
 		locRFTime = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(locRFTDCDigiTime);
-	locRFTime -= dTimeOffsetMap.find(locRFTDCDigiTime->dSystem)->second;
+
+	map<DetectorSystem_t, double>::const_iterator locIterator = dTimeOffsetMap.find(locRFTDCDigiTime->dSystem);
+	if(locIterator != dTimeOffsetMap.end())
+		locRFTime -= locIterator->second;
 	return locRFTime;
 }
 
@@ -192,6 +195,8 @@ double DRFTime_factory::Calc_WeightedAverageRFTime(map<DetectorSystem_t, vector<
 		vector<double>& locRFTimes = locTimeIterator->second;
 
 		double locSingleTimeVariance = dTimeResolutionSqMap.find(locSystem)->second + dTimeOffsetVarianceMap.find(locSystem)->second;
+		if(!(locSingleTimeVariance > 0.0))
+			continue;
 		locSumOneOverTimeVariance += double(locRFTimes.size()) / locSingleTimeVariance;
 
 		for(size_t loc_i = 0; loc_i < locRFTimes.size(); ++loc_i)
@@ -200,6 +205,13 @@ double DRFTime_factory::Calc_WeightedAverageRFTime(map<DetectorSystem_t, vector<
 			locSumTimeOverTimeVariance += locShiftedRFTime / locSingleTimeVariance;
 		}
 	}
+
+	if(!(locSumOneOverTimeVariance > 0.0))
+	{
+		locRFTimeVariance = numeric_limits<double>::quiet_NaN();
+		return locRFTimesMap.begin()->second.front();
+	}
+
 	locRFTimeVariance = 1.0 / locSumOneOverTimeVariance;
 	double locAverageRFTime = locSumTimeOverTimeVariance * locRFTimeVariance;
 	return locAverageRFTime;
