@@ -16,27 +16,7 @@ extern "C"
 	}
 }
 
-/*
-	TI-TIME UNIFORMITY CHECK:
-	1) Confirm that the copies of the global system clock present on each ROC are consistent with each other: "ROCTIs" directory
-
-	TDC->TIME CHECK:
-	1) Confirm that the tdc->time conversion is accurate for each system: "DeltaT_RF_FirstTime" directory
-
-	RF TIME CALIBRATION:
-	1) Confirm that the RF signal is arriving at approximately 499 MHz: "RF_SignalPeriod" directory
-	2) Study the resolution of each source of the RF signal: "DeltaT_RF_Itself" directory. Check in these constants. 
-	3) Do a rough alignment of each RF system with respect to the TOF signal: "AbsoluteDeltaT_RF_OtherRFs" directory & FitMacro_RF_CoarseOffsets.C Macro. Check in these constants.
-		- This is important in case the RF signal period is not exactly 499 MHz. If it's slightly wrong, add the time offsets are huge, then propagating across several micro-s will result in a many-ps error in the time. 
-	4) Study the resolution when taking the difference between RF times at different sources: "DeltaT_RF_OtherRFs" directory. 
-		- If these resolutions are much larger than the individual system uncertainties, then do not average the system times together.
-		- This is the default behavior of the DRFTime factory (for the signals in the data stream, only uses the system with the best time resolution)
-	5) Do a detailed alignment of each RF system with respect to the TOF signal: "AverageDeltaT_RF_OtherRFs" directory. Update these constants (and the uncertainties). 
-
-	CONFIRM ALIGNMENT TO TAGGER HODOSCOPE:
-	1) Once the tagger hodoscope has been aligned to the RF, confirm the alignment: "DeltaT_RF_TAGH" directory. 
-      - If it is out-of-line, realign the tagger to the RF (outside the scope of this plugin)
-*/
+//DOCUMENTATION: https://halldweb.jlab.org/wiki/index.php/RF_Calibration
 
 jerror_t JEventProcessor_RF_online::init(void)
 {
