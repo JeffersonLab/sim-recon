@@ -42,7 +42,6 @@ class JEventProcessor_RF_online : public jana::JEventProcessor
 		TDirectoryFile* dROCTIDirectory;
 
 		double dRFSignalPeriod; //not the same as the period of the beam //before multiplexing
-		map<DetectorSystem_t, double> dRFSamplingRateMap;
 		vector<DetectorSystem_t> dRFSignalSystems;
 
 		map<uint32_t, TH1I*> dHistMap_ROCInfoDeltaT; //key is rocid

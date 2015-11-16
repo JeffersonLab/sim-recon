@@ -22,9 +22,9 @@ jerror_t DRFTime_factory::init(void)
 jerror_t DRFTime_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
 	//RF Period
-	vector<double> locRFPeriodVector;
-	locEventLoop->GetCalib("PHOTON_BEAM/RF/rf_period", locRFPeriodVector);
-	dRFBunchPeriod = locRFPeriodVector[0];
+	vector<double> locBeamPeriodVector;
+	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	dBeamBunchPeriod = locBeamPeriodVector[0];
 	
 	//Time Offsets
 	map<string, double> locCCDBMap;
@@ -144,14 +144,14 @@ jerror_t DRFTime_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
 
 double DRFTime_factory::Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo) const
 {
-	return Step_TimeToNearInputTime(locTimeToStep, locTimeToStepTo, dRFBunchPeriod);
+	return Step_TimeToNearInputTime(locTimeToStep, locTimeToStepTo, dBeamBunchPeriod);
 }
 
-double DRFTime_factory::Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo, double locRFPeriod) const
+double DRFTime_factory::Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo, double locPeriod) const
 {
 	double locDeltaT = locTimeToStepTo - locTimeToStep;
-	int locNumRFBucketsToShift = (locDeltaT > 0.0) ? int(locDeltaT/locRFPeriod + 0.5) : int(locDeltaT/locRFPeriod - 0.5);
-	return (locTimeToStep + locRFPeriod*double(locNumRFBucketsToShift));
+	int locNumBucketsToShift = (locDeltaT > 0.0) ? int(locDeltaT/locPeriod + 0.5) : int(locDeltaT/locPeriod - 0.5);
+	return (locTimeToStep + locPeriod*double(locNumBucketsToShift));
 }
 
 double DRFTime_factory::Convert_TDCToTime(const DRFTDCDigiTime* locRFTDCDigiTime, const DTTabUtilities* locTTabUtilities) const
@@ -161,7 +161,10 @@ double DRFTime_factory::Convert_TDCToTime(const DRFTDCDigiTime* locRFTDCDigiTime
 		locRFTime = locTTabUtilities->Convert_DigiTimeToNs_CAEN1290TDC(locRFTDCDigiTime);
 	else
 		locRFTime = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(locRFTDCDigiTime);
-	locRFTime -= dTimeOffsetMap.find(locRFTDCDigiTime->dSystem)->second;
+
+	map<DetectorSystem_t, double>::const_iterator locIterator = dTimeOffsetMap.find(locRFTDCDigiTime->dSystem);
+	if(locIterator != dTimeOffsetMap.end())
+		locRFTime -= locIterator->second;
 	return locRFTime;
 }
 
@@ -170,8 +173,8 @@ double DRFTime_factory::Calc_WeightedAverageRFTime(map<DetectorSystem_t, vector<
 	//returns the average (and the variance by reference)
 
 	//will line up the first time near zero, then line up subsequent times to the first time
-		//cannot line up all times to zero: if first time is near +/- rf_period/2 (e.g. +/- 1.002 ns),
-		//may end up with some times near 1.002 and some near -1.002!
+		//cannot line up all times to zero: if first time is near +/- beam_period/2 (e.g. +/- 2.004 ns),
+		//may end up with some times near 2.004 and some near -2.004!
 
 	map<DetectorSystem_t, vector<double> >::iterator locTimeIterator = locRFTimesMap.begin();
 	double locFirstTime = (locTimeIterator->second)[0];
@@ -192,6 +195,8 @@ double DRFTime_factory::Calc_WeightedAverageRFTime(map<DetectorSystem_t, vector<
 		vector<double>& locRFTimes = locTimeIterator->second;
 
 		double locSingleTimeVariance = dTimeResolutionSqMap.find(locSystem)->second + dTimeOffsetVarianceMap.find(locSystem)->second;
+		if(!(locSingleTimeVariance > 0.0))
+			continue;
 		locSumOneOverTimeVariance += double(locRFTimes.size()) / locSingleTimeVariance;
 
 		for(size_t loc_i = 0; loc_i < locRFTimes.size(); ++loc_i)
@@ -200,6 +205,13 @@ double DRFTime_factory::Calc_WeightedAverageRFTime(map<DetectorSystem_t, vector<
 			locSumTimeOverTimeVariance += locShiftedRFTime / locSingleTimeVariance;
 		}
 	}
+
+	if(!(locSumOneOverTimeVariance > 0.0))
+	{
+		locRFTimeVariance = numeric_limits<double>::quiet_NaN();
+		return locRFTimesMap.begin()->second.front();
+	}
+
 	locRFTimeVariance = 1.0 / locSumOneOverTimeVariance;
 	double locAverageRFTime = locSumTimeOverTimeVariance * locRFTimeVariance;
 	return locAverageRFTime;
