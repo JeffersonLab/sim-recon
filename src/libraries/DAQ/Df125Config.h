@@ -23,6 +23,21 @@ class Df125Config:public DDAQConfig{
 		uint16_t NPED;     // Number of samples used to determine pedestal
 		uint16_t WINWIDTH; // maximum integration window size (in samples)
 		
+		// See GlueX-doc-2274
+		uint16_t PL;
+		uint16_t NW;
+		uint16_t NPK;
+		uint16_t P1;
+		uint16_t P2;
+		uint16_t PG;
+		uint16_t IE;
+		uint16_t H;
+		uint16_t TH;
+		uint16_t TL;
+		uint16_t IBIT;
+		uint16_t ABIT;
+		uint16_t PBIT;
+		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
 		void toStrings(vector<pair<string,string> > &items)const{
@@ -32,6 +47,19 @@ class Df125Config:public DDAQConfig{
 			AddString(items, "NSA_NSB"  , "%d", NSA_NSB);
 			AddString(items, "NPED"     , "%d", NPED);
 			AddString(items, "WINWIDTH" , "%d", WINWIDTH);
+			AddString(items, "PL"       , "%d", PL);
+			AddString(items, "NW"       , "%d", NW);
+			AddString(items, "NPK"      , "%d", NPK);
+			AddString(items, "P1"       , "%d", P1);
+			AddString(items, "P2"       , "%d", P2);
+			AddString(items, "PG"       , "%d", PG);
+			AddString(items, "IE"       , "%d", IE);
+			AddString(items, "H"        , "%d", H);
+			AddString(items, "TH"       , "%d", TH);
+			AddString(items, "TL"       , "%d", TL);
+			AddString(items, "IBIT"     , "%d", IBIT);
+			AddString(items, "ABIT"     , "%d", ABIT);
+			AddString(items, "PBIT"     , "%d", PBIT);
 		}
 		
 };

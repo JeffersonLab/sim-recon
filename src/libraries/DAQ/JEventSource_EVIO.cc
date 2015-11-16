@@ -3194,6 +3194,19 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
 				case kPARAM125_NSA_NSB        : f125config->NSA_NSB          = val; break;
 				case kPARAM125_NPED           : f125config->NPED             = val; break;
 				case kPARAM125_WINWIDTH       : f125config->WINWIDTH         = val; break;
+				case kPARAM125_PL             : f125config->PL               = val; break;
+				case kPARAM125_NW             : f125config->NW               = val; break;
+				case kPARAM125_NPK            : f125config->NPK              = val; break;
+				case kPARAM125_P1             : f125config->P1               = val; break;
+				case kPARAM125_P2             : f125config->P2               = val; break;
+				case kPARAM125_PG             : f125config->PG               = val; break;
+				case kPARAM125_IE             : f125config->IE               = val; break;
+				case kPARAM125_H              : f125config->H                = val; break;
+				case kPARAM125_TH             : f125config->TH               = val; break;
+				case kPARAM125_TL             : f125config->TL               = val; break;
+				case kPARAM125_IBIT           : f125config->IBIT             = val; break;
+				case kPARAM125_ABIT           : f125config->ABIT             = val; break;
+				case kPARAM125_PBIT           : f125config->PBIT             = val; break;
 
 				case kPARAMF1_REFCNT          : f1tdcconfig->REFCNT          = val; break;
 				case kPARAMF1_TRIGWIN         : f1tdcconfig->TRIGWIN         = val; break;
