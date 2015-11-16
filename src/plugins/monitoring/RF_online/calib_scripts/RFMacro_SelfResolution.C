@@ -3,12 +3,10 @@
 // hnamepath: /RF/DeltaT_RF_Itself/TAGHRF_SelfDeltaT
 // hnamepath: /RF/DeltaT_RF_Itself/PSCRF_SelfDeltaT
 
-//ccdb add PHOTON_BEAM/RF/time_resolution_sq -r <run_min>-<run_max> rf_time_resolution_sq.txt #"time resolution squared"
-
-int main(void)
+int RFMacro_SelfResolution(void)
 {
 	gStyle->SetOptStat(1111);
-	TDirectory *locTopDirectory = gDirectory;
+	gDirectory->cd("/"); //return to file base directory
 
 	//Goto Beam Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("RF");
@@ -103,4 +101,3 @@ int main(void)
 		locHist->Draw();
 	}
 }
-

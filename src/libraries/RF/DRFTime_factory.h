@@ -28,7 +28,7 @@ class DRFTime_factory : public jana::JFactory<DRFTime>
 		~DRFTime_factory(){};
 
 		double Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo) const;
-		double Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo, double locRFPeriod) const;
+		double Step_TimeToNearInputTime(double locTimeToStep, double locTimeToStepTo, double locPeriod) const;
 
 		double Convert_TDCToTime(const DRFTDCDigiTime* locRFTDCDigiTime, const DTTabUtilities* locTTabUtilities) const;
 		double Convert_ADCToTime(const DRFDigiTime* locRFDigiTime) const;
@@ -44,7 +44,7 @@ class DRFTime_factory : public jana::JFactory<DRFTime>
 		double Calc_WeightedAverageRFTime(map<DetectorSystem_t, vector<double> >& locRFTimesMap, double& locRFTimeVariance) const;
 
 		DetectorSystem_t dOverrideRFSourceSystem; //Choose this system over the best-resolution system if data is present (default SYS_NULL (disabled))
-		double dRFBunchPeriod;
+		double dBeamBunchPeriod;
 
 		map<DetectorSystem_t, double> dTimeOffsetMap;
 		map<DetectorSystem_t, double> dTimeOffsetVarianceMap;

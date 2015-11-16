@@ -3,9 +3,9 @@
 // hnamepath: /RF/DeltaT_RF_FirstTime/TAGHRF_FirstTimeDeltaT
 // hnamepath: /RF/DeltaT_RF_FirstTime/PSCRF_FirstTimeDeltaT
 
-int main(void)
+int RFMacro_TDCConversion(void)
 {
-	TDirectory *locTopDirectory = gDirectory;
+	gDirectory->cd("/"); //return to file base directory
 
 	//Goto Beam Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("RF");

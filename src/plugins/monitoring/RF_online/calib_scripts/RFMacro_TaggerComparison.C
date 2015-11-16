@@ -3,10 +3,10 @@
 // hnamepath: /RF/DeltaT_RF_TAGH/TAGHRF_TaggerDeltaT
 // hnamepath: /RF/DeltaT_RF_TAGH/PSCRF_TaggerDeltaT
 
-int main(void)
+int RFMacro_TaggerComparison(void)
 {
 	gStyle->SetOptStat(1111);
-	TDirectory *locTopDirectory = gDirectory;
+	gDirectory->cd("/"); //return to file base directory
 
 	//Goto Beam Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("RF");
