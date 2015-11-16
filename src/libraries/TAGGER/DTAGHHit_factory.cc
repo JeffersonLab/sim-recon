@@ -231,10 +231,10 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
               hit->pulse_peak = numeric_limits<double>::quiet_NaN();
               hit->npe_fadc = numeric_limits<double>::quiet_NaN();
               hit->has_fADC = false;
-              hit->time_tdc = T;
-              hit->has_TDC = true;
               _data.push_back(hit);
           }
+          hit->time_tdc = T;
+          hit->has_TDC = true;
           // apply time-walk corrections
           double c0 = tdc_twalk_c0[counter]; double c1 = tdc_twalk_c1[counter];
           double c2 = tdc_twalk_c2[counter]; double c3 = tdc_twalk_c3[counter];
