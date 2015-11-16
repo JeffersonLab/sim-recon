@@ -34,6 +34,8 @@ using namespace jana;
 #include <DAQ/Df125PulseTime.h>
 #include <DAQ/Df125PulsePedestal.h>
 #include <DAQ/Df125TriggerTime.h>
+#include <DAQ/Df125CDCPulse.h>
+#include <DAQ/Df125FDCPulse.h>
 #include <DAQ/DF1TDCHit.h>
 #include <DAQ/DF1TDCTriggerTime.h>
 #include <DAQ/DCAEN1290TDCHit.h>
@@ -301,7 +303,9 @@ class DTranslationTable:public jana::JObject{
 
 		// fADC125
 		DCDCDigiHit* MakeCDCDigiHit(const CDCIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt, const Df125PulsePedestal *pp) const;
+		DCDCDigiHit* MakeCDCDigiHit(const CDCIndex_t &idx, const Df125CDCPulse *p) const;
 		DFDCCathodeDigiHit* MakeFDCCathodeDigiHit(const FDC_CathodesIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt, const Df125PulsePedestal *pp) const;
+		DFDCCathodeDigiHit* MakeFDCCathodeDigiHit(const FDC_CathodesIndex_t &idx, const Df125FDCPulse *p) const;
 
 		// F1TDC
 		DBCALTDCDigiHit* MakeBCALTDCDigiHit(const BCALIndex_t &idx,      const DF1TDCHit *hit) const;
