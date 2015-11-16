@@ -18,9 +18,9 @@ class Df125FDCPulse:public DDAQAddress{
 	/// f125 Flash ADC module.
 	
 	public:
-		JOBJECT_PUBLIC(Df125PulseIntegral);
+		JOBJECT_PUBLIC(Df125FDCPulse);
 
-		Df125FDCPulse(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0
+		Df125FDCPulse(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0
 		                , uint32_t NPK=0
 						, uint32_t le_time=0
 						, uint32_t time_quality_bit=0
@@ -29,6 +29,8 @@ class Df125FDCPulse:public DDAQAddress{
 						, uint32_t integral=0
 						, uint32_t peak_amp=0
 						, uint32_t peak_time=0
+						, uint32_t word1=0
+						, uint32_t word2=0
 						, uint32_t nsamples_pedestal=1
 						, uint32_t nsamples_integral=1
 						, bool emulated=false )
@@ -41,6 +43,8 @@ class Df125FDCPulse:public DDAQAddress{
 						  , integral(integral)
 						  , peak_amp(peak_amp)
 						  , peak_time(peak_time)
+						  , word1(word1)
+						  , word2(word2)
 						  , nsamples_pedestal(nsamples_pedestal)
 						  , nsamples_integral(nsamples_integral)
 						  , emulated(emulated){}
@@ -53,6 +57,8 @@ class Df125FDCPulse:public DDAQAddress{
 		uint32_t integral;             ///< from second word (type 6)
 		uint32_t peak_amp;             ///< from second word (type 9)
 		uint32_t peak_time;            ///< from second word
+		uint32_t word1;                ///< first word
+		uint32_t word2;                ///< second word
 		uint32_t nsamples_pedestal;    ///< number of samples used in integral 
 		uint32_t nsamples_integral;    ///< number of samples used in pedestal
 		bool     emulated;             ///< true if made from Window Raw Data
