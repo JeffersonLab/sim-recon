@@ -446,10 +446,10 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
     mMinDriftID=2000;
     mVarT0=0.;
 
-    mCDCInternalStepSize=0.75;
+    mCDCInternalStepSize=0.5;
     //mCDCInternalStepSize=1.0;
     //mCentralStepSize=0.75;
-    mCentralStepSize=0.5;
+    mCentralStepSize=0.75;
 
     mT0Detector=SYS_CDC;
 
@@ -1382,7 +1382,8 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(const DVector2 &xy,
 jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
         double &z,double zhit,
         DMatrix5x1 &S, bool &done,
-        bool &stepped_to_boundary){
+						  bool &stepped_to_boundary,
+						  bool &stepped_to_endplate){
     DMatrix5x5 J,Q,JT;    
     DKalmanForwardTrajectory_t temp;
 
@@ -1483,11 +1484,13 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
             HstepsizeDenom->Fill(z,sqrt(S(state_x)*S(state_x)+S(state_y)*S(state_y)));
         }
     }
-    double newz=z+ds*dz_ds; // new z position  
+    double dz=stepped_to_endplate ? endplate_dz : ds*dz_ds;
+    double newz=z+dz; // new z position  
     // Check if we are stepping through the CDC endplate
     if (newz>endplate_z && z<endplate_z){
-        //_DBG_ << endl;
-        newz=endplate_z+EPS3;
+      //  _DBG_ << endl;
+      newz=endplate_z+EPS3;
+      stepped_to_endplate=true;
     }
 
     // Check if we are about to step to one of the wire planes
@@ -1564,6 +1567,7 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
     // loop over the fdc hits   
     double zhit=0.,old_zhit=0.;
     bool stepped_to_boundary=false;
+    bool stepped_to_endplate=false;
     unsigned int m=0;
     for (m=0;m<my_fdchits.size();m++){
         if (fabs(S(state_q_over_p))>Q_OVER_P_MAX
@@ -1585,7 +1589,7 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
                 }
 
                 if (PropagateForward(forward_traj_length,i,z,zhit,S,done,
-                            stepped_to_boundary)
+				     stepped_to_boundary,stepped_to_endplate)
                         !=NOERROR)
                     return UNRECOVERABLE_ERROR;
             } 
@@ -1602,11 +1606,11 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
     if (m==my_fdchits.size()){
         bool done=false;  
         if (PropagateForward(forward_traj_length,i,z,400.,S,done,
-                    stepped_to_boundary)
+			     stepped_to_boundary,stepped_to_endplate)
                 !=NOERROR)
             return UNRECOVERABLE_ERROR;  
         if (PropagateForward(forward_traj_length,i,z,400.,S,done,
-                    stepped_to_boundary)
+			     stepped_to_boundary,stepped_to_endplate)
                 !=NOERROR)
             return UNRECOVERABLE_ERROR;   
     }
@@ -2856,7 +2860,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double phi0=phi_=input_params.momentum().Phi();
 
     // Guess for momentum error
-    double dpt_over_pt=0.2;
+    double dpt_over_pt=0.1;
     /*
        if (theta_deg<15){
        dpt_over_pt=0.107-0.0178*theta_deg+0.000966*theta_deg_sq;
@@ -2915,6 +2919,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // Initial direction tangents
     double tx0=tx_=pvec.x()/pz;
     double ty0=ty_=pvec.y()/pz;
+    double one_plus_tsquare=1.+tx_*tx_+ty_*ty_;
 
     // deal with hits in FDC
     double fdc_prob=0.,fdc_chisq=1e16;
@@ -2941,8 +2946,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
         C0(state_ty,state_ty)=0.001;
 	if (theta_deg>12.35)
 	  {
-            double tsquare=tx_*tx_+ty_*ty_;
-            double temp=sig_lambda*(1.+tsquare);
+            double temp=sig_lambda*one_plus_tsquare;
             C0(state_tx,state_tx)=C0(state_ty,state_ty)=temp*temp;
         }
         C0(state_q_over_p,state_q_over_p)=dp_over_p_sq*q_over_p_*q_over_p_;
@@ -2996,11 +3000,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
             S0(state_q_over_p)=q_over_p_=q_over_p0; 
             z_=z0;
 
-            // Initial guess for forward representation covariance matrix
-            C0(state_x,state_x)=2.0;
-            C0(state_y,state_y)=2.0;   
-            double tsquare=tx_*tx_+ty_*ty_;
-            double temp=sig_lambda*(1.+tsquare);
+            // Initial guess for forward representation covariance matrix  
+            double temp=sig_lambda*one_plus_tsquare;
+	    C0(state_x,state_x)=4.0;
+            C0(state_y,state_y)=4.0;
             C0(state_tx,state_tx)=C0(state_ty,state_ty)=temp*temp;
             C0(state_q_over_p,state_q_over_p)=dp_over_p_sq*q_over_p_*q_over_p_;
 
@@ -5042,7 +5045,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                         -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
                     double B=forward_traj[k_minus_1].B;
                     ComputeCDCDrift(tdrift,B,dm,V,tcorr);
-                }
+		}
 
                 // residual
                 double res=dm-d;
