@@ -175,22 +175,34 @@
         call GRNDMQ(iseed1,iseed2,0,'S')
 
 *
-*       Fake a tagger hit of the correct energy by adding up the energy
-*       of all generated tracks and assigning them to the trigger time.
+*       Try to read the beam photon energy from the input MC record.
 *
-        PLAB(1) = 0
-        PLAB(2) = 0
-        PLAB(3) = 0
-        PLAB(4) = REAL(-PMASS)
-        do nt=1,NTRACK
-          call GFKINE(nt,VERT,PVERT,IPART,IVERT,ubuf,nubuf)
-          call GFPART(IPART,pname,ITRTYP,AMASS,CHARGE,TLIFE,ubuf,nubuf)
-          PLAB(1) = PLAB(1) + PVERT(1)
-          PLAB(2) = PLAB(2) + PVERT(2)
-          PLAB(3) = PLAB(3) + PVERT(3)
-          PLAB(4) = PLAB(4)
-     +            + sqrt(AMASS**2+PVERT(1)**2+PVERT(2)**2+PVERT(3)**2)
-        enddo
+        PLAB(4) = get_beam_momentum(0)
+        if (PLAB(4) .gt. 0) then
+          PLAB(1) = get_beam_momentum(1)
+          PLAB(2) = get_beam_momentum(2)
+          PLAB(3) = get_beam_momentum(3)
+        else
+*
+*         Fake a tagger hit of the correct energy by adding up the energy
+*         of all generated tracks minus the rest mass of the (assumed
+*         proton) target, and assigning it to the trigger time.
+*
+          PLAB(1) = 0
+          PLAB(2) = 0
+          PLAB(3) = 0
+          PLAB(4) = REAL(-PMASS)
+          do nt=1,NTRACK
+            call GFKINE(nt,VERT,PVERT,IPART,IVERT,ubuf,nubuf)
+            call GFPART(IPART,pname,ITRTYP,AMASS,CHARGE,TLIFE,
+     +                                            ubuf,nubuf)
+            PLAB(1) = PLAB(1) + PVERT(1)
+            PLAB(2) = PLAB(2) + PVERT(2)
+            PLAB(3) = PLAB(3) + PVERT(3)
+            PLAB(4) = PLAB(4) +
+     +                sqrt(AMASS**2+PVERT(1)**2+PVERT(2)**2+PVERT(3)**2)
+          enddo
+        endif
         PLAB(5) = PLAB(4)
         VERTEX(1) = VERT(1)
         VERTEX(2) = VERT(2)
