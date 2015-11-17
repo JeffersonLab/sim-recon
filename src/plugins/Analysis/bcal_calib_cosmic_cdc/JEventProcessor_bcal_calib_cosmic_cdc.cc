@@ -166,11 +166,13 @@ jerror_t JEventProcessor_bcal_calib_cosmic_cdc::evnt(JEventLoop *loop, int event
 				   cdcpos.x(), cdcpos.y(), cdcpos.z(), cdcmom.x(), cdcmom.y(), cdcmom.z(),track_m,track_c,chisq,Ndof);
 		/// Store the parameters for both track intersections with the 5 layers
 		float r[5], phi[2][5], x[2][5], y[2][5];
+		float* bcal_radii;
+		bcal_radii = DBCALGeometry::GetBCAL_radii();
 		/// For each layer boundary, calculate the intersection of the DTrackCandidate
 		/// with the circle and store the r and phi value for both intersections.
 		for (int laybound=0; laybound<=4; laybound++) {
 
-			r[laybound] =  DBCALGeometry::fADC_radius[laybound];
+			r[laybound] =  DBCALGeometry::bcal_radii[laybound];
 			
 			float A = 1 + track_m*track_m;
 			float B = 2 * track_m * track_c;

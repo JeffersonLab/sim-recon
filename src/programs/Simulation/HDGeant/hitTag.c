@@ -65,7 +65,7 @@ binTree_t* hodoTree = 0;
 static int microCount = 0;
 static int hodoCount = 0;
 static int printDone = 0;
-static float rf_period = -1.0;
+static float beam_period = -1.0;
 
 /* register hits during event initialization (from gukine) */
 
@@ -74,12 +74,12 @@ void hitTagger (float xin[4], float xout[4],
                 int track, int stack, int history)
 {
 
-   /* read rf_period from calibdb */
-   if(rf_period < 0.0)
+   /* read beam_period from calibdb */
+   if(beam_period < 0.0)
    {
-	  char dbname[] = "/PHOTON_BEAM/RF/rf_period::mc";
+	  char dbname[] = "/PHOTON_BEAM/RF/beam_period::mc";
 	  unsigned int ndata = 1;
-	  if (GetCalib(dbname, &ndata, &rf_period)) {
+	  if (GetCalib(dbname, &ndata, &beam_period)) {
 		 fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
 				 "failed to read RF period ",
 				 "from calibdb, cannot continue.");
@@ -92,7 +92,7 @@ void hitTagger (float xin[4], float xout[4],
    double Etag = 0;
    double E = pin[3];
    double t = xin[3]*1e9-(xin[2]-REF_TIME_Z_CM)/C_CM_PER_NS;
-   t = floor(t/rf_period+0.5)*rf_period;
+   t = floor(t/beam_period+0.5)*beam_period;
 
    /* read tagger set endpoint energy from calibdb */
    if (endpoint_energy_GeV == 0) {

@@ -209,6 +209,9 @@ class JEventSource_EVIO: public jana::JEventSource{
 		bool  PARSE_F125;
 		bool  PARSE_F1TDC;
 		bool  PARSE_CAEN1290TDC;
+		bool  PARSE_CONFIG;
+		bool  PARSE_EPICS;
+		bool  PARSE_TRIGGER;
 		bool  MAKE_DOM_TREE;
 		int   ET_STATION_NEVENTS;
 		bool  ET_STATION_CREATE_BLOCKING;
@@ -242,6 +245,29 @@ class JEventSource_EVIO: public jana::JEventSource{
 		uint32_t F125_NSB_CDC;                     ///< Number of samples to integrate before thershold crossing during emulation rocid 24-28 only!
 		uint32_t F125_NSPED;                       ///< Number of samples to integrate for pedestal during emulation
 		uint32_t F125_TIME_UPSAMPLE;               ///< Use the CMU upsampling algorithm when emulating f125 pulse times
+
+
+        uint32_t F125_CDC_WS;                      ///< FA125 emulation CDC hit window start
+        uint32_t F125_CDC_WE;                      ///< FA125 emulation CDC hit window end
+        uint32_t F125_CDC_IE;                      ///< FA125 emulation CDC number of integrated samples (unless WE is reached)
+        uint32_t F125_CDC_NP;                      ///< FA125 emulation CDC initial pedestal samples
+        uint32_t F125_CDC_NP2;                     ///< FA125 emulation CDC local pedestal samples
+        uint32_t F125_CDC_PG;                      ///< FA125 emulation CDC gap between pedestal and hit threshold crossing
+        uint32_t F125_CDC_H;                       ///< FA125 emulation CDC hit threshold
+        uint32_t F125_CDC_TH;                      ///< FA125 emulation CDC high timing threshold
+        uint32_t F125_CDC_TL;                      ///< FA125 emulation CDC low timing threshold
+
+        uint32_t F125_FDC_WS;                      ///< FA125 emulation FDC hit window start
+        uint32_t F125_FDC_WE;                      ///< FA125 emulation FDC hit window end
+        uint32_t F125_FDC_IE;                      ///< FA125 emulation FDC number of integrated samples (unless WE is reached)
+        uint32_t F125_FDC_NP;                      ///< FA125 emulation FDC initial pedestal samples
+        uint32_t F125_FDC_NP2;                     ///< FA125 emulation FDC local pedestal samples
+        uint32_t F125_FDC_PG;                      ///< FA125 emulation FDC gap between pedestal and hit threshold crossing
+        uint32_t F125_FDC_H;                       ///< FA125 emulation FDC hit threshold
+        uint32_t F125_FDC_TH;                      ///< FA125 emulation FDC high timing threshold
+        uint32_t F125_FDC_TL;                      ///< FA125 emulation FDC low timing threshold
+
+
 
 		uint32_t USER_RUN_NUMBER;            ///< Run number supplied by user
 		uint32_t F125PULSE_NUMBER_FILTER;    ///< Discard DF125PulseXXX objects with pulse number equal or greater than this

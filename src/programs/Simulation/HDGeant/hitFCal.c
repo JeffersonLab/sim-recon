@@ -207,7 +207,8 @@ void hitForwardEMcal (float xin[4], float xout[4],
       {
          hits->in[nhit].t =
                        (hits->in[nhit].t * hits->in[nhit].E + tcorr*dEcorr)
-                     / (hits->in[nhit].E += dEcorr);
+                     / (hits->in[nhit].E + dEcorr);
+			hits->in[nhit].E += dEcorr;
       }
       else if (nhit < MAX_HITS)         /* create new hit */
       {

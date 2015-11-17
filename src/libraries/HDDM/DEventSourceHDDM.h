@@ -157,7 +157,7 @@ class DEventSourceHDDM:public JEventSource
       list<DReferenceTrajectory*> rt_pool;
 
       map<unsigned int, double> dTargetCenterZMap; //unsigned int is run number
-      map<unsigned int, double> dRFBunchPeriodMap; //unsigned int is run number
+      map<unsigned int, double> dBeamBunchPeriodMap; //unsigned int is run number
 
       JCalibration *jcalib;
       float uscale[192],vscale[192];

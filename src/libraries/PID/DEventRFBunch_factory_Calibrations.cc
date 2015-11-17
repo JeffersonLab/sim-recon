@@ -30,9 +30,9 @@ jerror_t DEventRFBunch_factory_Calibrations::brun(jana::JEventLoop *locEventLoop
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
 
-	vector<double> locRFPeriodVector;
-	locEventLoop->GetCalib("PHOTON_BEAM/RF/rf_period", locRFPeriodVector);
-	dRFBunchPeriod = locRFPeriodVector[0];
+	vector<double> locBeamPeriodVector;
+	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	dBeamBunchPeriod = locBeamPeriodVector[0];
 
 	double locTargetCenterZ;
 	locGeometry->GetTargetZ(locTargetCenterZ);
@@ -150,7 +150,7 @@ jerror_t DEventRFBunch_factory_Calibrations::Select_RFBunch(JEventLoop* locEvent
 		return Create_NaNRFBunch();
 
 	DEventRFBunch* locEventRFBunch = new DEventRFBunch;
-	locEventRFBunch->dTime = locRFTime + dRFBunchPeriod*double(locBestRFBunchShift);
+	locEventRFBunch->dTime = locRFTime + dBeamBunchPeriod*double(locBestRFBunchShift);
 	locEventRFBunch->dTimeVariance = 0.0;
 	locEventRFBunch->dNumParticleVotes = locHighestNumVotes;
 	locEventRFBunch->dTimeSource = SYS_RF;
@@ -179,45 +179,45 @@ bool DEventRFBunch_factory_Calibrations::Find_TrackTimes_SC(const DDetectorMatch
 
 int DEventRFBunch_factory_Calibrations::Conduct_Vote(JEventLoop* locEventLoop, double locRFTime, vector<pair<double, const JObject*> >& locTimes, int& locHighestNumVotes)
 {
-	map<int, vector<const JObject*> > locNumRFBucketsShiftedMap;
+	map<int, vector<const JObject*> > locNumBeamBucketsShiftedMap;
 	set<int> locBestRFBunchShifts;
 
-	locHighestNumVotes = Find_BestRFBunchShifts(locRFTime, locTimes, locNumRFBucketsShiftedMap, locBestRFBunchShifts);
+	locHighestNumVotes = Find_BestRFBunchShifts(locRFTime, locTimes, locNumBeamBucketsShiftedMap, locBestRFBunchShifts);
 	if(locBestRFBunchShifts.size() == 1)
 		return *locBestRFBunchShifts.begin();
 
 	//break tie with total track hits (ndf), else break with total tracking chisq
-	return Break_TieVote_Tracks(locNumRFBucketsShiftedMap, locBestRFBunchShifts);
+	return Break_TieVote_Tracks(locNumBeamBucketsShiftedMap, locBestRFBunchShifts);
 }
 
-int DEventRFBunch_factory_Calibrations::Find_BestRFBunchShifts(double locRFHitTime, const vector<pair<double, const JObject*> >& locTimes, map<int, vector<const JObject*> >& locNumRFBucketsShiftedMap, set<int>& locBestRFBunchShifts)
+int DEventRFBunch_factory_Calibrations::Find_BestRFBunchShifts(double locRFHitTime, const vector<pair<double, const JObject*> >& locTimes, map<int, vector<const JObject*> >& locNumBeamBucketsShiftedMap, set<int>& locBestRFBunchShifts)
 {
 	//then find the #beam buckets the RF time needs to shift to match it
 	int locHighestNumVotes = 0;
-	locNumRFBucketsShiftedMap.clear();
+	locNumBeamBucketsShiftedMap.clear();
 	locBestRFBunchShifts.clear();
 
 	for(unsigned int loc_i = 0; loc_i < locTimes.size(); ++loc_i)
 	{
 		double locDeltaT = locTimes[loc_i].first - locRFHitTime;
-		int locNumRFBucketsShifted = (locDeltaT > 0.0) ? int(locDeltaT/dRFBunchPeriod + 0.5) : int(locDeltaT/dRFBunchPeriod - 0.5);
-		locNumRFBucketsShiftedMap[locNumRFBucketsShifted].push_back(locTimes[loc_i].second);
+		int locNumBeamBucketsShifted = (locDeltaT > 0.0) ? int(locDeltaT/dBeamBunchPeriod + 0.5) : int(locDeltaT/dBeamBunchPeriod - 0.5);
+		locNumBeamBucketsShiftedMap[locNumBeamBucketsShifted].push_back(locTimes[loc_i].second);
 
-		int locNumVotesThisShift = locNumRFBucketsShiftedMap[locNumRFBucketsShifted].size();
+		int locNumVotesThisShift = locNumBeamBucketsShiftedMap[locNumBeamBucketsShifted].size();
 		if(locNumVotesThisShift > locHighestNumVotes)
 		{
 			locHighestNumVotes = locNumVotesThisShift;
 			locBestRFBunchShifts.clear();
-			locBestRFBunchShifts.insert(locNumRFBucketsShifted);
+			locBestRFBunchShifts.insert(locNumBeamBucketsShifted);
 		}
 		else if(locNumVotesThisShift == locHighestNumVotes)
-			locBestRFBunchShifts.insert(locNumRFBucketsShifted);
+			locBestRFBunchShifts.insert(locNumBeamBucketsShifted);
 	}
 
 	return locHighestNumVotes;
 }
 
-int DEventRFBunch_factory_Calibrations::Break_TieVote_Tracks(map<int, vector<const JObject*> >& locNumRFBucketsShiftedMap, set<int>& locBestRFBunchShifts)
+int DEventRFBunch_factory_Calibrations::Break_TieVote_Tracks(map<int, vector<const JObject*> >& locNumBeamBucketsShiftedMap, set<int>& locBestRFBunchShifts)
 {
 	//Select the bunch with the most total track hits (highest total tracking NDF)
 	//If still a tie: 
@@ -233,7 +233,7 @@ int DEventRFBunch_factory_Calibrations::Break_TieVote_Tracks(map<int, vector<con
 		int locTotalTrackingNDF = 0;
 		double locTotalTrackingChiSq = 0.0;
 
-		const vector<const JObject*>& locVoters = locNumRFBucketsShiftedMap[locRFBunchShift];
+		const vector<const JObject*>& locVoters = locNumBeamBucketsShiftedMap[locRFBunchShift];
 		for(size_t loc_i = 0; loc_i < locVoters.size(); ++loc_i)
 		{
 			const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locVoters[loc_i]);

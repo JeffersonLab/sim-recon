@@ -87,7 +87,7 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, int eventnumber ){
     //so we need to make an adjustment so that the shower t is the time at
     //the shower location (x,y,z)
     double t = (**clItr).t();
-    double inner_rad = DBCALGeometry::BCALINNERRAD;
+    double inner_rad = DBCALGeometry::GetBCAL_inner_rad();
     double dist_in_BCAL = rho - inner_rad/sinTh;
     t = t + dist_in_BCAL/(30*k_cm/k_nsec);
     shower->t = t;
@@ -150,7 +150,7 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, int eventnumber ){
     
     float r = sqrt( shower->x * shower->x + shower->y * shower->y );
     
-    float zEntry = ( shower->z - m_zTarget ) * ( DBCALGeometry::BCALINNERRAD / r );
+    float zEntry = ( shower->z - m_zTarget ) * ( DBCALGeometry::GetBCAL_inner_rad() / r );
     
     float scale = m_scaleZ_p0  + m_scaleZ_p1*zEntry + 
     m_scaleZ_p2*(zEntry*zEntry) + m_scaleZ_p3*(zEntry*zEntry*zEntry);

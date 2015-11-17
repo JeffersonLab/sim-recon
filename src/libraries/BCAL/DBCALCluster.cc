@@ -26,7 +26,7 @@ DBCALCluster::DBCALCluster(double z_target_center) : m_z_target_center(z_target_
 float
 DBCALCluster::t0() const {
   
-  float path = DBCALGeometry::BCALINNERRAD / sin( m_theta );
+  float path = DBCALGeometry::GetBCAL_inner_rad() / sin( m_theta );
   
   return m_t - ( path / ( 30 * k_cm / k_nsec ) );
 }
@@ -218,7 +218,7 @@ DBCALCluster::makeFromPoints(){
   // Using m_E_points because the cluster z position only depends on the point z positions
   // and point energies.
   double sigma_z = sqrt(1.394*1.394/m_E_points + 0.859*0.859);
-  m_sig_theta = sigma_z*sin(m_theta)*sin(m_theta)/DBCALGeometry::BCALINNERRAD;
+  m_sig_theta = sigma_z*sin(m_theta)*sin(m_theta)/DBCALGeometry::GetBCAL_inner_rad();
   
   m_phi = atan2(sum_sin_phi,sum_cos_phi);
   if( m_phi < 0 ) m_phi += 2*PI;
@@ -267,8 +267,8 @@ DBCALCluster::makeFromPoints(){
   double z = m_rho*cos(m_theta) + m_z_target_center;
   double r = m_rho*sin(m_theta); 
 
-  double bcal_down = DBCALGeometry::GLOBAL_CENTER + DBCALGeometry::BCALFIBERLENGTH/2.0;
-  double bcal_up = DBCALGeometry::GLOBAL_CENTER - DBCALGeometry::BCALFIBERLENGTH/2.0;
+  double bcal_down = DBCALGeometry::GetBCAL_center() + DBCALGeometry::GetBCAL_length()/2.0;
+  double bcal_up = DBCALGeometry::GetBCAL_center() - DBCALGeometry::GetBCAL_length()/2.0;
   if (z > bcal_down) z = bcal_down;
   if (z < bcal_up) z = bcal_up;
 

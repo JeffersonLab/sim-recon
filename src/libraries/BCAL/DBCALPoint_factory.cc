@@ -15,9 +15,9 @@ using namespace jana;
 #include "units.h"
 
 /// temp
-static const int BCAL_NUM_MODULES  = 48;
-static const int BCAL_NUM_LAYERS   =  4;
-static const int BCAL_NUM_SECTORS  =  4;
+//static const int BCAL_NUM_MODULES  = 48;
+//static const int BCAL_NUM_LAYERS   =  4;
+//static const int BCAL_NUM_SECTORS  =  4;
 
 
 //----------------
@@ -144,7 +144,7 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
     //int id = DBCALGeometry::cellId( uphit->module, uphit->layer, uphit->sector );  // key the cell identification off of the upstream cell
     int table_id = GetCalibIndex( uphit->module, uphit->layer, uphit->sector );  // key the cell identification off of the upstream cell
 
-    float fibLen = DBCALGeometry::BCALFIBERLENGTH;
+    float fibLen = DBCALGeometry::GetBCAL_length();
     //float cEff = DBCALGeometry::C_EFFECTIVE;    
     float cEff = GetEffectiveVelocity(table_id);
 

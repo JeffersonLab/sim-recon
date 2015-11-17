@@ -7260,7 +7260,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(void){
             A=cdc_updates[id].C*JT*C.InvertSym();
 	    AT=A.Transpose();
             Ss=cdc_updates[id].S+A*(Ss-S);
-	    if (!finite(Ss(state_q_over_pt))){
+	    if (!isfinite(Ss(state_q_over_pt))){
 	     if (DEBUG_LEVEL>5) _DBG_ << "Invalid values for smoothed parameters..." << endl;
 	      return VALUE_OUT_OF_RANGE;
 	    }
@@ -7358,7 +7358,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(void){
 
             A=cdc_updates[cdc_index].C*JT*C.InvertSym();
             Ss=cdc_updates[cdc_index].S+A*(Ss-S);
-	    if (!finite(Ss(state_q_over_p))){
+	    if (!isfinite(Ss(state_q_over_p))){
 	     if (DEBUG_LEVEL>5) _DBG_ << "Invalid values for smoothed parameters..." << endl;
 	      return VALUE_OUT_OF_RANGE;
 	    }

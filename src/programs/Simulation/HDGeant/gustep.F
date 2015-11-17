@@ -476,7 +476,7 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
         call GRANOR(rnd(1),rnd(2))
         sigma = sqrt(NGPHOT * (TOP_CERENKOV_EFFICIENCY
      +                      * (1 - TOP_CERENKOV_EFFICIENCY)))
-        NGPHOT = TOP_CERENKOV_EFFICIENCY*NGPHOT + rnd(1)*sigma + 0.5
+        NGPHOT = INT(TOP_CERENKOV_EFFICIENCY*NGPHOT + rnd(1)*sigma + 0.5)
         call GSKPHO(0)
       elseif (NGPHOT.gt.0) then
         call GRNDM(rnd,NGPHOT)
@@ -489,7 +489,7 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
 
 #ifdef ACTIVE_COLLIMATOR_SIMS
       if (IDEVT.ne.evno) then
-        if (IDEVT.eq.1) then
+        if (event_count.eq.1) then
           call hbnt(ntacol,'active collimator ntuple, all events',' ')
           call hbname(ntacol,'charge',evno,ntacoldef)
           call hbnt(ntacol+1,'active collimator ntuple, charged events',

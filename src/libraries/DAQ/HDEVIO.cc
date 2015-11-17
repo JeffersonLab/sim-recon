@@ -68,7 +68,7 @@ void HDEVIO::buff_read(char* s, streamsize nwords)
 	uint64_t left = ((uint64_t)fbuff_end - (uint64_t)fnext)/sizeof(uint32_t);
 	
 	// First, copy what's already in fbuff
-	uint64_t Ncopied = nwords<left ? nwords:left;
+	uint64_t Ncopied = nwords<(int64_t)left ? (uint64_t)nwords:left;
 	_gcount = Ncopied*sizeof(uint32_t);
 	if(_gcount>0) memcpy((char*)s, (char*)fnext, _gcount);
 	left -= Ncopied;
@@ -78,7 +78,7 @@ void HDEVIO::buff_read(char* s, streamsize nwords)
 	// If needed, read in another chunk from the file.
 	// Try and keep last 8 words so if a seekg is called to back
 	// us up that amount, we don't have to call seekg on the file.
-	if( Ncopied < nwords ){
+	if( (int64_t)Ncopied < nwords ){
 	
 		// Initialize to start of buffer
 		uint32_t *myfbuff = fbuff;
@@ -129,7 +129,7 @@ void HDEVIO::buff_seekg (streamoff off, ios_base::seekdir way)
 		// Add requested offset
 		fpos += off_words; // desired position relative to start of fbuff
 		
-		if(fpos>=0 && fpos<fbuff_len){
+		if(fpos>=0 && fpos<(int64_t)fbuff_len){
 			// Request is to a point inside current buffer
 			fnext = &fbuff[fpos];
 			_gcount = 0;

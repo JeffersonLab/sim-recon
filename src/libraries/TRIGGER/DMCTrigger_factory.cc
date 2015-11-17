@@ -34,7 +34,7 @@ jerror_t DMCTrigger_factory::init(void)
 jerror_t DMCTrigger_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
 	// Get attenuation parameters
-	double L_over_2 = DBCALGeometry::BCALFIBERLENGTH/2.0;
+	double L_over_2 = DBCALGeometry::GetBCAL_length()/2.0;
 	double Xo = DBCALGeometry::ATTEN_LENGTH;
 	unattenuate_to_center = exp(+L_over_2/Xo);
 
