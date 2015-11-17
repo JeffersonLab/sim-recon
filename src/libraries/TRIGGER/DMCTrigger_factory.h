@@ -42,7 +42,7 @@ class DMCTrigger_factory:public jana::JFactory<DMCTrigger>{
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		bool REQUIRE_START_COUNTER;
+//		bool REQUIRE_START_COUNTER;
 		double unattenuate_to_center;
 };
 

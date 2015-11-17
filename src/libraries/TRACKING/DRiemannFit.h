@@ -72,9 +72,9 @@ class DRiemannFit{
 
   // Cirlce fit parameters
   double N[3]; 
-  double varN[3][3];
+//  double varN[3][3];
   double dist_to_origin;
-  double xavg[3],var_avg;
+//  double xavg[3],var_avg;
 };
 
 #endif //_DRIEMANN_FIT_H_

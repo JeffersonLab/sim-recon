@@ -51,7 +51,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   bool PID_FORCE_TRUTH;
   unsigned int MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING;
   bool BYPASS_TB_FOR_FORWARD_TRACKS;
-  bool SKIP_MASS_HYPOTHESES_TIMEBASED;
+//  bool SKIP_MASS_HYPOTHESES_TIMEBASED;
   bool USE_HITS_FROM_WIREBASED_FIT;
 
   DTrackFitter *fitter;
@@ -91,8 +91,10 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   // Geometry
   const DGeometry *geom;
 
-  double mPathLength,mEndTime,mStartTime,mFlightTime;
-  DetectorSystem_t mDetector, mStartDetector;
+//  double mPathLength,mEndTime,mStartTime,mFlightTime;
+  double mStartTime;
+//  DetectorSystem_t mDetector, mStartDetector;
+  DetectorSystem_t mStartDetector;
   int mNumHypPlus,mNumHypMinus;
   bool dIsNoFieldFlag;
   bool USE_SC_TIME; // use start counter hits for t0
@@ -100,11 +102,11 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   bool USE_BCAL_TIME; // use bcal hits for t0
   bool USE_TOF_TIME; // use tof hits for t0
   bool SKIP_MASS_HYPOTHESES_WIRE_BASED;
-  double SC_DPHI_CUT_WB;
+//  double SC_DPHI_CUT_WB;
 
   // start counter geometry
-  double sc_light_guide_length_cor;
-  double sc_angle_cor;
+//  double sc_light_guide_length_cor;
+//  double sc_angle_cor;
   vector<DVector3>sc_pos;
   vector<DVector3>sc_norm;
 

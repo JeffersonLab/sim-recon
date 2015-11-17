@@ -414,7 +414,7 @@ int main(int argC, char* argV[])
          ifx = new xstream::xdr::istream(isbuf);
          memcpy(new_buffer,event_buffer,4);
          *ifx >> tsize;
-         delete event_buffer;
+         delete[] event_buffer;
          event_buffer = new_buffer;
       }
       ifs->read(event_buffer+4,tsize);

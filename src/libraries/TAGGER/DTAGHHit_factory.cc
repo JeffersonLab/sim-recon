@@ -32,11 +32,11 @@ jerror_t DTAGHHit_factory::init(void)
 {
    DELTA_T_ADC_TDC_MAX = 10.0; // ns
    gPARMS->SetDefaultParameter("TAGHHit:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX,
-			      "Maximum difference in ns between a (calibrated) fADC time and"
-			      " F1TDC time for them to be matched in a single hit");
+   "Maximum difference in ns between a (calibrated) fADC time and"
+   " F1TDC time for them to be matched in a single hit");
    ADC_THRESHOLD = 1000.0; // ADC integral counts
    gPARMS->SetDefaultParameter("TAGHHit:ADC_THRESHOLD",ADC_THRESHOLD,
-			      "pedestal-subtracted pulse integral threshold");
+   "pedestal-subtracted pulse integral threshold");
 
    // initialize calibration constants
    fadc_a_scale = 0;
@@ -97,7 +97,11 @@ jerror_t DTAGHHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
        load_ccdb_constants("fadc_pedestals", "pedestal", fadc_pedestals) &&
        load_ccdb_constants("fadc_time_offsets", "offset", fadc_time_offsets) &&
        load_ccdb_constants("tdc_time_offsets", "offset", tdc_time_offsets) &&
-       load_ccdb_constants("counter_quality", "code", counter_quality) )
+       load_ccdb_constants("counter_quality", "code", counter_quality) &&
+       load_ccdb_constants("tdc_timewalk", "c0", tdc_twalk_c0) &&
+       load_ccdb_constants("tdc_timewalk", "c1", tdc_twalk_c1) &&
+       load_ccdb_constants("tdc_timewalk", "c2", tdc_twalk_c2) &&
+       load_ccdb_constants("tdc_timewalk", "c3", tdc_twalk_c3))
    {
       return NOERROR;
    }
@@ -158,9 +162,9 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
       const Df250PulseIntegral* PIobj = NULL;
       digihit->GetSingle(PIobj);
       if (PIobj != NULL) {
-	  // the measured pedestal must be scaled by the ratio of the number
-	  // of samples used to calculate the integral and the pedestal
-	  // Changed to conform to D. Lawrence changes Dec. 4 2014
+          // the measured pedestal must be scaled by the ratio of the number
+          // of samples used to calculate the integral and the pedestal
+          // Changed to conform to D. Lawrence changes Dec. 4 2014
           double ped_sum = (double)PIobj->pedestal;
           double nsamples_integral = (double)PIobj->nsamples_integral;
           double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
@@ -210,34 +214,37 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
       // or create new one if there is no match
       DTAGHHit *hit = 0;
       for (unsigned int j=0; j < _data.size(); ++j) {
-	 if (_data[j]->counter_id == counter &&
-	     fabs(T - _data[j]->time_fadc) < DELTA_T_ADC_TDC_MAX)
-	   {
-	     hit = _data[j];
-	   }
-      }
-      if (hit == 0) {
-	hit = new DTAGHHit;
-	hit->counter_id = counter;
-	double Elow = taghGeom.getElow(counter);
-	double Ehigh = taghGeom.getEhigh(counter);
-	hit->E = (Elow + Ehigh)/2;
-	hit->time_fadc = numeric_limits<double>::quiet_NaN();
-	hit->integral = numeric_limits<double>::quiet_NaN();
-    hit->pulse_peak = numeric_limits<double>::quiet_NaN();
-	hit->npe_fadc = numeric_limits<double>::quiet_NaN();
-	hit->has_fADC = false;
-	_data.push_back(hit);
-      }
-      hit->time_tdc = T;
-      hit->has_TDC = true;
-      hit->t = T;
-
-      // apply time-walk corrections?
-
-      hit->AddAssociatedObject(digihit);
+          if (_data[j]->counter_id == counter &&
+              fabs(T - _data[j]->time_fadc) < DELTA_T_ADC_TDC_MAX)
+              {
+                  hit = _data[j];
+              }
+          }
+          if (hit == 0) {
+              hit = new DTAGHHit;
+              hit->counter_id = counter;
+              double Elow = taghGeom.getElow(counter);
+              double Ehigh = taghGeom.getEhigh(counter);
+              hit->E = (Elow + Ehigh)/2;
+              hit->time_fadc = numeric_limits<double>::quiet_NaN();
+              hit->integral = numeric_limits<double>::quiet_NaN();
+              hit->pulse_peak = numeric_limits<double>::quiet_NaN();
+              hit->npe_fadc = numeric_limits<double>::quiet_NaN();
+              hit->has_fADC = false;
+              _data.push_back(hit);
+          }
+          hit->time_tdc = T;
+          hit->has_TDC = true;
+          // apply time-walk corrections
+          double c0 = tdc_twalk_c0[counter]; double c1 = tdc_twalk_c1[counter];
+          double c2 = tdc_twalk_c2[counter]; double c3 = tdc_twalk_c3[counter];
+          double P = hit->pulse_peak;
+          if (P > 0.0) {
+              T -= (P <= c3 || c3 <= 0.0) ? c0 + c1/pow(P,c2) : c0 +  c1*(1.0+c2)/pow(c3,c2) - c1*c2*P/pow(c3,1.0+c2);
+          }
+          hit->t = T;
+          hit->AddAssociatedObject(digihit);
    }
-
    return NOERROR;
 }
 

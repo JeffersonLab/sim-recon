@@ -15,9 +15,9 @@ using namespace jana;
 #include "units.h"
 
 /// temp
-static const int BCAL_NUM_MODULES  = 48;
-static const int BCAL_NUM_LAYERS   =  4;
-static const int BCAL_NUM_SECTORS  =  4;
+//static const int BCAL_NUM_MODULES  = 48;
+//static const int BCAL_NUM_LAYERS   =  4;
+//static const int BCAL_NUM_SECTORS  =  4;
 
 
 //----------------

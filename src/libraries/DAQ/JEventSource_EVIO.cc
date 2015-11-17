@@ -1489,6 +1489,31 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			}
 		}
 	}
+	
+	// The f125 firmware used for the 2014 and Spring 2015 commissioning
+	// data was hardwired to report pedestals that were an average of
+	// 4 samples. Since only the average was reported, the number of
+	// samples used for this data was always "1". For the firmware 
+	// implemented in late 2015, configuration parameters were introduced
+	// to allow a different number of samples to be used for the pedestal
+	// and a different divisor as well. Here, we need to replace the 
+	// nsamples field of the PulsePedestal objects (which should be set to
+	// a default value of "1") with values determined by the config.
+	// parameters. We use the value NPED which should be calculated in
+	// the coda_config code on the ROCs when the data was taken.
+	vector<JObject*> &vpp125 = hit_objs_by_type["Df125PulsePedestal"];
+	for(unsigned int i=0; i<vpp125.size(); i++){
+		Df125PulsePedestal *pp = (Df125PulsePedestal*)vpp125[i];
+		if(!pp->emulated){
+			const Df125Config*conf = NULL;
+			pp->GetSingle(conf);
+			if(conf!=NULL){
+				if(conf->NPED != 0xFFFF){
+					pp->nsamples = conf->NPED;
+				}
+			}
+		}
+	}
 
 	// Initially, the F250, F125 firmware does not include the
 	// pedestal measurement in the pulse integral data
@@ -1545,18 +1570,13 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		// If a Df125PulsePedestal object is associated with this
 		// then copy its pedestal into the pedestal member of this
 		// pulse integral object. Furthermore, if the pedestal is
-		// *not* emulated and we have a configuration parameter from
-		// the datastream for the number of samples the pedestal
-		// represents, then copy this into the nsamples_pedestal.
+		// *not* emulated then copy the number of pedestal samples.
+		// (n.b. the value of nsamples should have been set based
+		// on the configuration parameter in a separate loop over
+		// Df125PulsePedestal objects above.)
 		if(pp){
 			pi->pedestal = pp->pedestal;
-			if(!pp->emulated){
-				if(conf!=NULL){
-					if(conf->NPED != 0xFFFF){
-						pi->nsamples_pedestal = conf->NPED;
-					}
-				}
-			}
+			if(!pp->emulated) pi->nsamples_pedestal = pp->nsamples;
 		}
 
 		// If this pulse integral is *not* emulated AND there is
@@ -3711,8 +3731,9 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 	uint32_t itrigger = -1;
 	uint32_t last_itrigger = -2;
 	uint32_t last_pulse_time_channel=0;
-    uint32_t last_slot = -1;
-    uint32_t last_channel = -1;    
+	uint32_t last_slot = -1;
+	uint32_t last_channel = -1;    
+
 	// Loop over data words
 	for(; iptr<iend; iptr++){
 		
@@ -3729,8 +3750,10 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		uint32_t pulse_number = 0;
 		uint32_t pulse_time = 0;
 		uint32_t quality_factor = 0;
+		uint32_t overflow_count = 0;
 		uint32_t pedestal = 0;
 		uint32_t pulse_peak = 0;
+		uint32_t peak_time = 0;
 		uint32_t nsamples_integral = 0;
 		uint32_t nsamples_pedestal = 0;
 
@@ -3780,65 +3803,89 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				MakeDf125WindowRawData(objs, rocid, slot, itrigger, iptr);
 				break;
 
-            case 5: // new CDC format
+			case 5: // CDC pulse data (new)  (GlueX-doc-2274-v8)
 
-				if(VERBOSE>7) evioout << "      FADC125 CDC Pulse Data"<<endl;
-
-				channel = (*iptr>>20) & 0x7F;
-				pulse_number = (*iptr>>15) & 0x1F;
-				pulse_time = (*iptr>>4) & 0x7FF;
-				quality_factor = (*iptr>>3) & 0x1; //time QF bit
-
-	            if(VERBOSE>8) evioout << "        First word " << hex << (*iptr) << dec << endl;
-	            if(VERBOSE>8) evioout << "        pulse_time = " << hex << pulse_time << dec << " " << pulse_time << endl;
-
- 				if( (objs!=NULL) && (pulse_number<F125PULSE_NUMBER_FILTER) && (F125_PT_EMULATION_MODE!=kEmulationAlways) ) {
-					objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
+				// Word 1:
+				channel        = (*iptr>>20) & 0x7F;
+				pulse_number   = (*iptr>>15) & 0x1F;
+				pulse_time     = (*iptr>>4 ) & 0x7FF;
+				quality_factor = (*iptr>>3 ) & 0x1; //time QF bit
+				overflow_count = (*iptr>>0 ) & 0x7;
+				if(VERBOSE>8) evioout << "      FADC125 CDC Pulse Data word1: " << hex << (*iptr) << dec << endl;
+				if(VERBOSE>7) evioout << "      FADC125 CDC Pulse Data (chan="<<channel<<" pulse="<<pulse_number<<" time="<<pulse_time<<" QF="<<quality_factor<<" OC="<<overflow_count<<")"<<endl;
+				
+				// Word 2:
+				++iptr;
+				if(iptr>=iend){
+					jerr << " Truncated f125 CDC hit (block ends before continuation word!)" << endl;
+					continue;
 				}
-
-				quality_factor = (*iptr>>0) & 0x7; //overflow count
-                iptr++; 
-
-	            if(VERBOSE>8) evioout << "        Second word " << hex << (*iptr) << dec << endl;
-
-				if(((*iptr>>31) & 0x1) == 0){  // make sure it is a continuation word
-                  pedestal = (*iptr>>23) & 0xFF;
-                  sum = (*iptr>>9) & 0x3FFF;
-                  pulse_peak = (*iptr>>0) & 0x1FF;
-
-				}else{
-                  pedestal = 0;
-                  sum = 0;
-                  pulse_peak = 0;
-  
-                  iptr--;
+				if( ((*iptr>>31) & 0x1) != 0 ){
+					jerr << " Truncated f125 CDC hit (missing continuation word!)" << endl;
+					continue;
 				}
+				pedestal   = (*iptr>>23) & 0xFF;
+				sum        = (*iptr>>9 ) & 0x3FFF;
+				pulse_peak = (*iptr>>0 ) & 0x1FF;
+				if(VERBOSE>8) evioout << "      FADC125 CDC Pulse Data word2: " << hex << (*iptr) << dec << endl;
+				if(VERBOSE>7) evioout << "      FADC125 CDC Pulse Data (pedestal="<<pedestal<<" sum="<<sum<<" peak="<<pulse_peak<<")"<<endl;
 
-	            if(VERBOSE>8) evioout << "        pedestal = " << hex << pedestal << dec << " " << pedestal << endl;
-	            if(VERBOSE>8) evioout << "        amplitude = " << hex << pulse_peak << dec << " " << pulse_peak << endl;
-	            if(VERBOSE>8) evioout << "        integral = " << hex << sum << dec << " " << sum << endl;
-
-				if( (objs!=NULL) && (pulse_number<F125PULSE_NUMBER_FILTER) && (F125_PP_EMULATION_MODE!=kEmulationAlways) ) {
-					objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
-				}
-
+				// Create hit objects
 				nsamples_integral = 0;  // must be overwritten later in GetObjects with value from Df125Config value
-				nsamples_pedestal = 1;  // The firmware returns an already divided pedestal
+				nsamples_pedestal = 1;  // The firmware pedestal divided by 2^PBIT where PBIT is a config. parameter
 
-                if (last_slot == slot && last_channel == channel) pulse_number = 1;
-                last_slot = slot;
-                last_channel = channel;
-				if( (objs!=NULL) && (pulse_number<F125PULSE_NUMBER_FILTER) ) {
-					objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, 
-						quality_factor, sum, pedestal, nsamples_integral, nsamples_pedestal));
+ 				if( (objs!=NULL) && (pulse_number<F125PULSE_NUMBER_FILTER) ) {
+					if(F125_PT_EMULATION_MODE!=kEmulationAlways) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time, overflow_count));
+					if(F125_PP_EMULATION_MODE!=kEmulationAlways) objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak, nsamples_pedestal));
+					if(F125_PI_EMULATION_MODE!=kEmulationAlways) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, overflow_count, sum, pedestal, nsamples_integral, nsamples_pedestal));
 				}
 
-
-				last_pulse_time_channel = channel;
+				// n.b. We don't record last_slot, last_channel, etc... here since those
+				// are only used by data types corresponding to older firmware that did 
+				// not write out data type 5.
 				break;
 
+			case 6: // FDC pulse data-integral (new)  (GlueX-doc-2274-v8)
 
+				// Word 1:
+				channel        = (*iptr>>20) & 0x7F;
+				pulse_number   = (*iptr>>15) & 0x1F;
+				pulse_time     = (*iptr>>4 ) & 0x7FF;
+				quality_factor = (*iptr>>3 ) & 0x1; //time QF bit
+				overflow_count = (*iptr>>0 ) & 0x7;
+				if(VERBOSE>8) evioout << "      FADC125 FDC Pulse Data(integral) word1: " << hex << (*iptr) << dec << endl;
+				if(VERBOSE>7) evioout << "      FADC125 FDC Pulse Data (chan="<<channel<<" pulse="<<pulse_number<<" time="<<pulse_time<<" QF="<<quality_factor<<" OC="<<overflow_count<<")"<<endl;
+				
+				// Word 2:
+				++iptr;
+				if(iptr>=iend){
+					jerr << " Truncated f125 FDC hit (block ends before continuation word!)" << endl;
+					continue;
+				}
+				if( ((*iptr>>31) & 0x1) != 0 ){
+					jerr << " Truncated f125 FDC hit (missing continuation word!)" << endl;
+					continue;
+				}
+				sum       = (*iptr>>19) & 0xFFF;
+				peak_time = (*iptr>>11) & 0xFF;
+				pedestal  = (*iptr>>0 ) & 0x7FF;
+				if(VERBOSE>8) evioout << "      FADC125 FDC Pulse Data(integral) word2: " << hex << (*iptr) << dec << endl;
+				if(VERBOSE>7) evioout << "      FADC125 FDC Pulse Data (integral="<<sum<<" time="<<peak_time<<" pedestal="<<pedestal<<")"<<endl;
 
+				// Create hit objects
+				nsamples_integral = 0;  // must be overwritten later in GetObjects with value from Df125Config value
+				nsamples_pedestal = 1;  // The firmware pedestal divided by 2^PBIT where PBIT is a config. parameter
+
+ 				if( (objs!=NULL) && (pulse_number<F125PULSE_NUMBER_FILTER) ) {
+					if(F125_PT_EMULATION_MODE!=kEmulationAlways) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time, overflow_count, peak_time));
+					if(F125_PP_EMULATION_MODE!=kEmulationAlways) objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak, nsamples_pedestal));
+					if(F125_PI_EMULATION_MODE!=kEmulationAlways) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, overflow_count, sum, pedestal, nsamples_integral, nsamples_pedestal));
+				}
+
+				// n.b. We don't record last_slot, last_channel, etc... here since those
+				// are only used by data types corresponding to older firmware that did 
+				// not write out data type 6.
+				break;
 
 			case 7: // Pulse Integral
 				if(VERBOSE>7) evioout << "      FADC125 Pulse Integral"<<endl;
@@ -3865,6 +3912,48 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				}
 				last_pulse_time_channel = channel;
 				break;
+
+			case 9: // FDC pulse data-peak (new)  (GlueX-doc-2274-v8)
+
+				// Word 1:
+				channel        = (*iptr>>20) & 0x7F;
+				pulse_number   = (*iptr>>15) & 0x1F;
+				pulse_time     = (*iptr>>4 ) & 0x7FF;
+				quality_factor = (*iptr>>3 ) & 0x1; //time QF bit
+				overflow_count = (*iptr>>0 ) & 0x7;
+				if(VERBOSE>8) evioout << "      FADC125 FDC Pulse Data(peak) word1: " << hex << (*iptr) << dec << endl;
+				if(VERBOSE>7) evioout << "      FADC125 FDC Pulse Data (chan="<<channel<<" pulse="<<pulse_number<<" time="<<pulse_time<<" QF="<<quality_factor<<" OC="<<overflow_count<<")"<<endl;
+				
+				// Word 2:
+				++iptr;
+				if(iptr>=iend){
+					jerr << " Truncated f125 FDC hit (block ends before continuation word!)" << endl;
+					continue;
+				}
+				if( ((*iptr>>31) & 0x1) != 0 ){
+					jerr << " Truncated f125 FDC hit (missing continuation word!)" << endl;
+					continue;
+				}
+				pulse_peak = (*iptr>>19) & 0xFFF;
+				peak_time  = (*iptr>>11) & 0xFF;
+				pedestal   = (*iptr>>0 ) & 0x7FF;
+				if(VERBOSE>8) evioout << "      FADC125 FDC Pulse Data(peak) word2: " << hex << (*iptr) << dec << endl;
+				if(VERBOSE>7) evioout << "      FADC125 FDC Pulse Data (integral="<<sum<<" time="<<peak_time<<" pedestal="<<pedestal<<")"<<endl;
+
+				// Create hit objects
+				nsamples_integral = 0;  // must be overwritten later in GetObjects with value from Df125Config value
+				nsamples_pedestal = 1;  // The firmware pedestal divided by 2^PBIT where PBIT is a config. parameter
+
+ 				if( (objs!=NULL) && (pulse_number<F125PULSE_NUMBER_FILTER) ) {
+					if(F125_PT_EMULATION_MODE!=kEmulationAlways) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time, overflow_count, peak_time));
+					if(F125_PP_EMULATION_MODE!=kEmulationAlways) objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak, nsamples_pedestal));
+				}
+
+				// n.b. We don't record last_slot, last_channel, etc... here since those
+				// are only used by data types corresponding to older firmware that did 
+				// not write out data type 6.
+				break;
+
 			case 10: // Pulse Pedestal (consistent with Beni's hand-edited version of Cody's document)
 				if(VERBOSE>7) evioout << "      FADC125 Pulse Pedestal"<<endl;
 				//channel = (*iptr>>20) & 0x7F;
@@ -3872,13 +3961,12 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				pulse_number = (*iptr>>21) & 0x03;
 				pedestal = (*iptr>>12) & 0x1FF;
 				pulse_peak = (*iptr>>0) & 0xFFF;
+				nsamples_pedestal = 1;  // The firmware returns an already divided pedestal
 				if( (objs!=NULL) && (pulse_number<F125PULSE_NUMBER_FILTER) && (F125_PP_EMULATION_MODE!=kEmulationAlways) ) {
-					objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
+					objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak, nsamples_pedestal));
 				}
 				break;
 
-			case 6: // FDC Data
-			case 9: // FDC Data
 			case 13: // Event Trailer
 			case 14: // Data not valid (empty module)
 			case 15: // Filler (non-data) word

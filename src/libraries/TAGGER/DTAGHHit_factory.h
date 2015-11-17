@@ -46,6 +46,10 @@ class DTAGHHit_factory: public jana::JFactory<DTAGHHit> {
       double fadc_time_offsets[TAGH_MAX_COUNTER+1];
       double tdc_time_offsets[TAGH_MAX_COUNTER+1];
       double counter_quality[TAGH_MAX_COUNTER+1];
+      double tdc_twalk_c0[TAGH_MAX_COUNTER+1];
+      double tdc_twalk_c1[TAGH_MAX_COUNTER+1];
+      double tdc_twalk_c2[TAGH_MAX_COUNTER+1];
+      double tdc_twalk_c3[TAGH_MAX_COUNTER+1];
 
       bool load_ccdb_constants(std::string table_name,
                                std::string column_name,

@@ -1,0 +1,52 @@
+
+Nov. 11, 2015
+David Lawrence
+
+
+This plugin will extract reconstructed particle
+parameters and write them to an HDDM file that
+can then be used as input to a simulation job.
+For now, it only deals with charged tracks. The
+simplest usage example is:
+
+> hd_ana -PPLUGINS=recon2mc hd_rawdata_002931_002.evio
+
+
+A few configuration parameters exist that can be
+used to filter which tracks are written. These are:
+
+OUTFILENAME  Filename for output HDDM file
+
+MIN_FOM      Minimum tracking FOM for track to be
+             passed to output
+
+MIN_P        Minimum reconstructed track momentum in
+             GeV/c for track to be passed to output
+
+MAX_P        Maximum reconstructed track momentum in
+             GeV/c for track to be passed to output
+
+PIDLIST      Comma separated list of GEANT particle
+             numbers indicating types of particles to
+				 keep. Empty string means keep them all
+				 (probably not what you want)
+
+VERTEX       Comma separated vertex coordinates in cm.
+             If empty (default) the reconstructed vertex
+				 is used.
+
+
+Usually, one will want to filter on the particle
+type. Otherwise, all mass hypotheses will be written
+out resulting in multiple tracks on top of one another.
+
+The VERTEX parameter is provided in case you would like
+to force all particles to come from a specific location
+(e.g. the center of the target). Otherwise, the single
+track reconstructed vertex will be used.
+
+If you want to apply other criteria to filter out
+events or tracks you will need to modify the 
+JEventProcessor_recon2mc.cc file. There is a comment
+block in the evnt() method that indicates the best
+place to do this.
