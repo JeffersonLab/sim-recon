@@ -656,7 +656,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    double phi_d=atan2(dy,dx);
 	    double delta
 	      =max_sag[ring_index][straw_index]*(1.-dz*dz/5625.)
-	      *cos(phi_d-sag_phi_offset[ring_index][straw_index]);
+	      *cos(phi_d + sag_phi_offset[ring_index][straw_index]);
 	    double dphi=phi_d-mywire->origin.Phi();
 	    while (dphi>M_PI) dphi-=2*M_PI;
 	    while (dphi<-M_PI) dphi+=2*M_PI;

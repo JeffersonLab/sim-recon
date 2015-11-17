@@ -168,7 +168,7 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
 	double Bscale=long_drift_Bscale_par1+long_drift_Bscale_par2*B;
 
 	//	if (delta>0)
-	if (dphi*delta>-EPS2){
+	if (delta>-EPS2){
 	  double a1=long_drift_func[0][0];
 	  double a2=long_drift_func[0][1];
 	  double b1=long_drift_func[1][0];
@@ -3957,7 +3957,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 		  double phi_d=diff.Phi();
 		  double delta
 		    =max_sag[ring_index][straw_index]*(1.-dz*dz/5625.)
-		    *cos(phi_d-sag_phi_offset[ring_index][straw_index]);
+		    *cos(phi_d + sag_phi_offset[ring_index][straw_index]);
 		  double dphi=phi_d-mywire->origin.Phi();
 		  while (dphi>M_PI) dphi-=2*M_PI;
 		  while (dphi<-M_PI) dphi+=2*M_PI;
@@ -5191,7 +5191,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 		  double phi_d=atan2(dy,dx);
 		  double delta
 		    =max_sag[ring_index][straw_index]*(1.-dz*dz/5625.)
-		    *cos(phi_d-sag_phi_offset[ring_index][straw_index]);
+		    *cos(phi_d + sag_phi_offset[ring_index][straw_index]);
 		  double dphi=phi_d-mywire->origin.Phi();
 		  while (dphi>M_PI) dphi-=2*M_PI;
 		  while (dphi<-M_PI) dphi+=2*M_PI;
