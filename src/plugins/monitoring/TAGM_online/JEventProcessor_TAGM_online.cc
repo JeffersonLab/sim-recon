@@ -25,7 +25,7 @@ using namespace jana;
 
 // Define some constants
 const uint32_t NROWS = 5;
-const uint32_t NCOLUMNS = 100;
+const uint32_t NCOLUMNS = 102;
 const uint32_t NSINGLES = 20;
 
 const float MIN_ADC_PINT_LOG10 = 0.;
