@@ -71,8 +71,12 @@
     </tofPoint>
     <RFtime minOccurs="0" jtag="string"
             tsync="float" tunit="ns"/>
+    <!-- trigger for backwards compatibility only (replaced by trigger_v2) -->
     <trigger minOccurs="0" jtag="string"
 			L1a="boolean" L1b="boolean" L1c="boolean"/>
+    <trigger_v2 minOccurs="0" jtag="string"
+			    L1a="boolean" L1b="boolean" L1c="boolean"
+                Ebcal="float" Efcal="float" Nschits="int" Ntofhits="int" />
 
     <detectorMatches minOccurs="1" maxOccurs="1" jtag="string">
       <!-- 
