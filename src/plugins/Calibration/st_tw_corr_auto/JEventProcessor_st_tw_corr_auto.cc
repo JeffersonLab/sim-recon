@@ -136,6 +136,7 @@ jerror_t JEventProcessor_st_tw_corr_auto::evnt(JEventLoop *loop, int eventnumber
 	{
 	  if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
 	}
+	else continue;
       // Extract the information we're interested in 
       double adc_pp;
       if(PPobj != NULL)
