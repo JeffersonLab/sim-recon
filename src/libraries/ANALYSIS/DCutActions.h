@@ -58,6 +58,7 @@ DCutAction_ProtonPiPlusdEdx
 DCutAction_BeamEnergy
 DCutAction_TrackFCALShowerEOverP
 DCutAction_PIDDeltaT
+DCutAction_PIDTimingBeta
 
 DCutAction_OneVertexKinFit
 */
@@ -605,6 +606,31 @@ class DCutAction_PIDDeltaT : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
 		double dDeltaTCut;
+		Particle_t dPID;
+		DetectorSystem_t dSystem;
+};
+
+class DCutAction_PIDTimingBeta : public DAnalysisAction
+{
+	//if dPID = Unknown, apply cut to all PIDs
+	//if dSystem = SYS_NULL, apply cut to all systems
+	//RECOMMENDED ONLY FOR CUTTING ON NEUTRALS (e.g. separating photons and neutrons)
+
+	public:
+
+		DCutAction_PIDTimingBeta(const DReaction* locReaction, double locMinBeta, double locMaxBeta, Particle_t locPID = Unknown, DetectorSystem_t locSystem = SYS_NULL, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Cut_PIDTimingBeta", false, locActionUniqueString),
+		dMinBeta(locMinBeta), dMaxBeta(locMaxBeta), dPID(locPID), dSystem(locSystem){}
+
+		void Initialize(JEventLoop* locEventLoop){};
+		string Get_ActionName(void) const;
+
+	private:
+
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		double dMinBeta;
+		double dMaxBeta;
 		Particle_t dPID;
 		DetectorSystem_t dSystem;
 };
