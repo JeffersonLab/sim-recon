@@ -449,7 +449,7 @@ class DHistogramAction_DetectorMatchParams : public DAnalysisAction
 		dNumShowerEnergyBins(800), dNumShowerDepthBins(400), dNum2DPBins(250), dNum2DThetaBins(280), dNum2DHitEnergyBins(250),
 		dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMaxBCALP(1.5), dMinShowerDepth(0.0), dMaxShowerDepth(20.0), dMinP(0.0), dMaxP(10.0), 
 		dMinTheta(0.0), dMaxTheta(140.0), dMinHitEnergy(0.0), dMaxHitEnergy(50.0), dNum2DPhiBins(360), dMinPhi(-180.0), dMaxPhi(180.0),
-		dTrackSelectionTag("")
+		dTrackSelectionTag("NotATag")
 		{
 			dTrackingPIDs.push_back(PiPlus);  dTrackingPIDs.push_back(KPlus);  dTrackingPIDs.push_back(Proton);
 			dTrackingPIDs.push_back(PiMinus);  dTrackingPIDs.push_back(KMinus);
@@ -461,7 +461,7 @@ class DHistogramAction_DetectorMatchParams : public DAnalysisAction
 		dNumShowerEnergyBins(800), dNumShowerDepthBins(400), dNum2DPBins(250), dNum2DThetaBins(280), dNum2DHitEnergyBins(250),
 		dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMaxBCALP(1.5), dMinShowerDepth(0.0), dMaxShowerDepth(20.0), dMinP(0.0), dMaxP(10.0), 
 		dMinTheta(0.0), dMaxTheta(140.0), dMinHitEnergy(0.0), dMaxHitEnergy(50.0), dNum2DPhiBins(360), dMinPhi(-180.0), dMaxPhi(180.0),
-		dTrackSelectionTag("")
+		dTrackSelectionTag("NotATag")
 		{
 			dTrackingPIDs.push_back(PiPlus);  dTrackingPIDs.push_back(KPlus);  dTrackingPIDs.push_back(Proton);
 			dTrackingPIDs.push_back(PiMinus);  dTrackingPIDs.push_back(KMinus);
@@ -473,7 +473,7 @@ class DHistogramAction_DetectorMatchParams : public DAnalysisAction
 		dNumShowerEnergyBins(800), dNumShowerDepthBins(400), dNum2DPBins(250), dNum2DThetaBins(280), dNum2DHitEnergyBins(250),
 		dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMaxBCALP(1.5), dMinShowerDepth(0.0), dMaxShowerDepth(20.0), dMinP(0.0), dMaxP(10.0), 
 		dMinTheta(0.0), dMaxTheta(140.0), dMinHitEnergy(0.0), dMaxHitEnergy(50.0), dNum2DPhiBins(360), dMinPhi(-180.0), dMaxPhi(180.0),
-		dTrackSelectionTag("")
+		dTrackSelectionTag("NotATag")
 		{
 			dTrackingPIDs.push_back(PiPlus);  dTrackingPIDs.push_back(KPlus);  dTrackingPIDs.push_back(Proton);
 			dTrackingPIDs.push_back(PiMinus);  dTrackingPIDs.push_back(KMinus);
@@ -518,7 +518,7 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 		DAnalysisAction(locReaction, "Hist_EventVertex", false, locActionUniqueString), 
 		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
 		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
-		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05), dTrackSelectionTag("")
+		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05), dTrackSelectionTag("NotATag")
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(Proton);  dFinalStatePIDs.push_back(PiMinus);
 		}
@@ -527,7 +527,7 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 		DAnalysisAction(NULL, "Hist_EventVertex", false, locActionUniqueString), 
 		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
 		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
-		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05), dTrackSelectionTag("")
+		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05), dTrackSelectionTag("NotATag")
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(Proton);  dFinalStatePIDs.push_back(PiMinus);
 		}
@@ -536,7 +536,7 @@ class DHistogramAction_EventVertex : public DAnalysisAction
 		DAnalysisAction(NULL, "Hist_EventVertex", false, ""), 
 		dNumConfidenceLevelBins(400), dNumPullBins(200), dNumVertexZBins(600), dNumTBins(400), dNumRFTBins(300), dNumVertexXYBins(400),
 		dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinT(-20.0), dMaxT(20.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), 
-		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05), dTrackSelectionTag("")
+		dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(0.05), dTrackSelectionTag("NotATag")
 		{
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(Proton);  dFinalStatePIDs.push_back(PiMinus);
 		}
