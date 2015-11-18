@@ -37,6 +37,7 @@ class DSCHit_factory:public jana::JFactory<DSCHit>{
 		double DELTA_T_ADC_TDC_MAX;
 		double HIT_TIME_WINDOW;
 		double ADC_THRESHOLD;
+        double USE_TIMEWALK_CORRECTION;
 
 		// geometry information
 		static const int MAX_SECTORS = 30.;
