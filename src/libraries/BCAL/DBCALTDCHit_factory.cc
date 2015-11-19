@@ -220,13 +220,17 @@ void DBCALTDCHit_factory::FillCalibTableShort( bcal_digi_constants_t &table,
 
     // reset the table before filling it
     table.clear();
-
+    // These short tables have 768 values
     for(int module=1; module<=BCAL_NUM_MODULES; module++) {
-        for(int layer=1; layer<=BCAL_NUM_TDC_LAYERS; layer++) {
+        for(int layer=1; layer<=BCAL_NUM_LAYERS; layer++) {
             for(int sector=1; sector<=BCAL_NUM_SECTORS; sector++) {
-                if( channel > BCAL_MAX_TDC_CHANNELS ) {  // sanity check
+                if (layer == 4) {
+                    channel += 1;
+                    continue;
+                }
+                if( channel > BCAL_MAX_CHANNELS/2 ) {  // sanity check
                     sprintf(str, "Too many channels for BCAL table! channel=%d (should be %d)",
-                            channel, BCAL_MAX_TDC_CHANNELS);
+                            channel, BCAL_MAX_CHANNELS/2);
                     cerr << str << endl;
                     throw JException(str);
                 }
@@ -239,9 +243,9 @@ void DBCALTDCHit_factory::FillCalibTableShort( bcal_digi_constants_t &table,
     }
 
     // check to make sure that we loaded enough channels
-    if(channel != BCAL_MAX_TDC_CHANNELS) {
+    if(channel != BCAL_MAX_CHANNELS/2) {
         sprintf(str, "Not enough channels for BCAL table! channel=%d (should be %d)",
-                channel, BCAL_MAX_TDC_CHANNELS);
+                channel, BCAL_MAX_CHANNELS/2);
         cerr << str << endl;
         throw JException(str);
     }
