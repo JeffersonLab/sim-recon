@@ -50,7 +50,8 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 		bcal_digi_constants_t gains;
 		bcal_digi_constants_t pedestals;
 		bcal_digi_constants_t time_offsets;
-
+        bcal_digi_constants_t channel_global_offset;
+        bcal_digi_constants_t tdiff_u_d;
 		
 		const int GetCalibIndex( int module, int layer, int sector ) const {
 			return BCAL_NUM_LAYERS*BCAL_NUM_SECTORS*(module-1) + BCAL_NUM_SECTORS*(layer-1) + (sector-1);
@@ -76,6 +77,8 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 		
 		void FillCalibTable( bcal_digi_constants_t &table, 
 				     const vector<double> &raw_table);
+        void FillCalibTableShort( bcal_digi_constants_t &table,
+                    const vector<double> &raw_table);
 		    
 };
 
