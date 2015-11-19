@@ -44,6 +44,10 @@ class DMCTrigger_factory:public jana::JFactory<DMCTrigger>{
 
 //		bool REQUIRE_START_COUNTER;
 		double unattenuate_to_center;
+
+        int USE_OLD_BCAL_HITS;
+        double BCAL_CHANNEL_THRESHOLD;
+        double FCAL_CHANNEL_THRESHOLD;
 };
 
 #endif // _DMCTrigger_factory_
