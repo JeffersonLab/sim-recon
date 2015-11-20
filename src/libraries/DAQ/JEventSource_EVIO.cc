@@ -42,6 +42,7 @@ extern "C" uint32_t *swap_int32_t(uint32_t *data, unsigned int length, uint32_t 
 #include "JEventSource_EVIO.h"
 using namespace jana;
 
+#include <DANA/DStatusBits.h>
 #include <TTAB/DTranslationTable.h>
 #include <TTAB/DTranslationTable_factory.h>
 
@@ -100,6 +101,9 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	evioout.SetTag("--- EVIO ---: ");
 	evioout.SetTimestampFlag();
 	evioout.SetThreadstampFlag();
+	
+	// Define base set of status bits
+	if(japp) DStatusBits::SetStatusBitDescriptions(japp);
 
 	// Get configuration parameters
 	AUTODETECT_MODULE_TYPES = true;
@@ -721,6 +725,11 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	event.SetEventNumber((int)objs_ptr->event_number);
 	event.SetRunNumber(objs_ptr->run_number);
 	event.SetRef(objs_ptr);
+	event.SetStatusBit(kSTATUS_EVIO);
+	if( source_type == kFileSource ) event.SetStatusBit(kSTATUS_FROM_FILE);
+	if( source_type == kETSource   ) event.SetStatusBit(kSTATUS_FROM_ET);
+	if(objs_ptr)
+		if(objs_ptr->eviobuff) FindEventType(objs_ptr->eviobuff, event);
 	
 	Nevents_read++;
 
@@ -2595,7 +2604,7 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 
 	if(VERBOSE>1) evioout << " .. Searching for run number ..." <<endl;
 	if(USER_RUN_NUMBER>0){
-		if(VERBOSE>1) evioout << "  returning user-spplied run number: " << USER_RUN_NUMBER << endl;
+		if(VERBOSE>1) evioout << "  returning user-supplied run number: " << USER_RUN_NUMBER << endl;
 		return USER_RUN_NUMBER;
 	}
 
@@ -2670,6 +2679,28 @@ uint64_t JEventSource_EVIO::FindEventNumber(uint32_t *iptr)
 	uint64_t event_num = loevent_num + (hievent_num<<32);
 	
 	return event_num;
+}
+
+//----------------
+// FindEventType
+//----------------
+void JEventSource_EVIO::FindEventType(uint32_t *iptr, JEvent &event)
+{
+	/// This is called from GetEvent to quickly determine the type of
+	/// event this is (Physics, EPICS, SYNC, BOR, ...)
+	uint32_t head = iptr[1];
+	if( (head & 0xff000f) ==  0x600001){
+		event.SetStatusBit(kSTATUS_EPICS_EVENT);
+	}else if( (head & 0xffffff00) ==  0xff501000){
+		event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+	}else if( (head & 0xffffff00) ==  0xff701000){
+		event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+	}else if( (head & 0xfff000ff) ==  0xffd00000){
+		event.SetStatusBit(kSTATUS_CONTROL_EVENT);
+		if( (head>>16) == 0xffd0 ) event.SetStatusBit(kSTATUS_SYNC_EVENT);
+	}else{
+//		DumpBinary(iptr, &iptr[16]);
+	}	
 }
 
 //----------------
@@ -2809,7 +2840,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 			if(VERBOSE>9) evioout << "     bank has no parent. Checking if it's an EPICS event ... " << endl;
 			
 			if(bankPtr->tag==96 && bankPtr->num==1){
-				// This looks like and EPICS event. Hand it over to EPICS parser
+				// This looks like an EPICS event. Hand it over to EPICS parser
 				ParseEPICSevent(bankPtr, full_events);
 			}else{
 				if(VERBOSE>9) evioout << "     Not an EPICS event bank. skipping ... " << endl;

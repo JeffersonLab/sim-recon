@@ -13,6 +13,7 @@
 #include <JANA/JFactory_base.h>
 #include <JANA/JEventLoop.h>
 #include <JANA/JEvent.h>
+#include <DANA/DStatusBits.h>
 
 #include <DVector2.h>
 #include <DEventSourceREST.h>
@@ -109,6 +110,9 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
       event.SetRunNumber(re.getRunNo());
       event.SetJEventSource(this);
       event.SetRef(record);
+      event.SetStatusBit(kSTATUS_REST);
+      event.SetStatusBit(kSTATUS_FROM_FILE);
+	  event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
       ++Nevents_read;
       break;
    }
