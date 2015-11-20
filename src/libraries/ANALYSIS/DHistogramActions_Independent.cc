@@ -2656,7 +2656,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 		}
 		if(locNeutralParticle == NULL)
 			continue;
-		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_Hypothesis(Gamma);
+		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticle->Get_Hypothesis(Gamma);
 		if(locNeutralParticleHypothesis->dFOM < dMinPIDFOM)
 			continue;
 
