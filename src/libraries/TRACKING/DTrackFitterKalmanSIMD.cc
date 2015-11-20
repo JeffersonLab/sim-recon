@@ -2879,7 +2879,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
        theta_deg_sq=theta_deg*theta_deg;
        }
        */
-    double sig_lambda=0.02;
+    double sig_lambda=0.01;
     double dp_over_p_sq
         =dpt_over_pt*dpt_over_pt+tanl_*tanl_*sig_lambda*sig_lambda;
 
@@ -3074,11 +3074,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
         S0(state_D)=D_=0.;
 
         // Initialize the covariance matrix
-        double dz=4.0;
+        double dz=1.0;
         C0(state_z,state_z)=dz*dz;
         C0(state_q_over_pt,state_q_over_pt)
             =q_over_pt_*q_over_pt_*dpt_over_pt*dpt_over_pt;
-        double dphi=0.04;
+        double dphi=0.02;
         C0(state_phi,state_phi)=dphi*dphi;
         C0(state_D,state_D)=1.0;
         double tanl2=tanl_*tanl_;
@@ -3818,7 +3818,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 
                 // prediction for measurement  
                 DVector2 diff=xy-wirexy;
-                double doca=diff.Mod();
+                double doca=diff.Mod()+EPS;
                 double cosstereo=my_cdchits[cdc_index]->cosstereo;
                 double prediction=doca*cosstereo;
 
@@ -5027,7 +5027,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                 dy=S(state_y)-yw;
                 dx=S(state_x)-xw;      
                 double cosstereo=my_cdchits[cdc_index]->cosstereo;
-                double d=sqrt(dx*dx+dy*dy)*cosstereo;
+                double d=sqrt(dx*dx+dy*dy)*cosstereo+EPS;
 
                 //printf("z %f d %f z-1 %f\n",newz,d,forward_traj[k_minus_1].z);
 
@@ -7054,6 +7054,14 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
                 unsigned int id=forward_traj[m].h_id-1000;
                 A=cdc_updates[id].C*JT*C.InvertSym();
                 Ss=cdc_updates[id].S+A*(Ss-S);
+		if ((!isfinite(Ss(0)))|| (!isfinite(Ss(1))) 
+		    || (!isfinite(Ss(2))) || (!isfinite(Ss(3)))
+		|| (!isfinite(Ss(4)))
+		){
+		  if (DEBUG_LEVEL>5) 
+		    _DBG_ << "Invalid values for smoothed parameters..." << endl;
+		  return VALUE_OUT_OF_RANGE;
+		}
                 Cs=cdc_updates[id].C+A*(Cs-C)*A.Transpose();
 
 		
@@ -7099,8 +7107,12 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(void){
             A=cdc_updates[id].C*JT*C.InvertSym();
 	    AT=A.Transpose();
             Ss=cdc_updates[id].S+A*(Ss-S);
-	    if (!finite(Ss(state_q_over_pt))){
-	     if (DEBUG_LEVEL>5) _DBG_ << "Invalid values for smoothed parameters..." << endl;
+	    if ((!isfinite(Ss(0)))|| (!isfinite(Ss(1))) 
+		|| (!isfinite(Ss(2))) || (!isfinite(Ss(3)))
+		|| (!isfinite(Ss(4)))
+		){
+	      if (DEBUG_LEVEL>5) 
+		_DBG_ << "Invalid values for smoothed parameters..." << endl;
 	      return VALUE_OUT_OF_RANGE;
 	    }
 
@@ -7126,7 +7138,8 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(void){
 	    DVector2 wirepos=origin+(myS(state_z)-z0wire)*dir;
 	    double cosstereo=my_cdchits[id]->cosstereo;
 	    DVector2 diff=xy-wirepos;
-	    double d=cosstereo*diff.Mod();
+	    double d=cosstereo*diff.Mod()+EPS; 
+	    // here we add a small number to avoid division by zero errors
 
 	    // Find the field and gradient at (old_x,old_y,old_z)
             bfield->GetFieldAndGradient(old_xy.X(),old_xy.Y(),Ss(state_z),
@@ -7197,8 +7210,12 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(void){
 
             A=cdc_updates[cdc_index].C*JT*C.InvertSym();
             Ss=cdc_updates[cdc_index].S+A*(Ss-S);
-	    if (!finite(Ss(state_q_over_p))){
-	     if (DEBUG_LEVEL>5) _DBG_ << "Invalid values for smoothed parameters..." << endl;
+	    if ((!isfinite(Ss(0)))|| (!isfinite(Ss(1))) 
+		|| (!isfinite(Ss(2))) || (!isfinite(Ss(3)))
+		|| (!isfinite(Ss(4)))
+		){
+	      if (DEBUG_LEVEL>5) 
+		_DBG_ << "Invalid values for smoothed parameters..." << endl;
 	      return VALUE_OUT_OF_RANGE;
 	    }
 
