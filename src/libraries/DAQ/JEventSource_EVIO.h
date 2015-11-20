@@ -62,6 +62,8 @@ typedef pair<int,int> tagNum;
 #include "Df125PulsePedestal.h"
 #include "Df125PulseRawData.h"
 #include "Df125WindowRawData.h"
+#include "Df125CDCPulse.h"
+#include "Df125FDCPulse.h"
 #include "DF1TDCConfig.h"
 #include "DF1TDCHit.h"
 #include "DF1TDCTriggerTime.h"
