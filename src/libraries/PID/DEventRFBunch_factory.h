@@ -58,11 +58,11 @@ class DEventRFBunch_factory : public jana::JFactory<DEventRFBunch>
 		bool Find_TrackTimes_NonSC(const DDetectorMatches* locDetectorMatches, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, const JObject*> >& locTimes);
 		bool Find_NeutralTimes(JEventLoop* locEventLoop, vector<pair<double, const JObject*> >& locTimes);
 
-		int Find_BestRFBunchShifts(double locRFHitTime, const vector<pair<double, const JObject*> >& locTimes, map<int, vector<const JObject*> >& locNumRFBucketsShiftedMap, set<int>& locBestRFBunchShifts);
+		int Find_BestRFBunchShifts(double locRFHitTime, const vector<pair<double, const JObject*> >& locTimes, map<int, vector<const JObject*> >& locNumBeamBucketsShiftedMap, set<int>& locBestRFBunchShifts);
 
-		bool Break_TieVote_BeamPhotons(vector<const DBeamPhoton*>& locBeamPhotons, double locRFTime, map<int, vector<const JObject*> >& locNumRFBucketsShiftedMap, set<int>& locBestRFBunchShifts, int locHighestNumVotes);
-		int Break_TieVote_Tracks(map<int, vector<const JObject*> >& locNumRFBucketsShiftedMap, set<int>& locBestRFBunchShifts);
-		int Break_TieVote_Neutrals(map<int, vector<const JObject*> >& locNumRFBucketsShiftedMap, set<int>& locBestRFBunchShifts);
+		bool Break_TieVote_BeamPhotons(vector<const DBeamPhoton*>& locBeamPhotons, double locRFTime, map<int, vector<const JObject*> >& locNumBeamBucketsShiftedMap, set<int>& locBestRFBunchShifts, int locHighestNumVotes);
+		int Break_TieVote_Tracks(map<int, vector<const JObject*> >& locNumBeamBucketsShiftedMap, set<int>& locBestRFBunchShifts);
+		int Break_TieVote_Neutrals(map<int, vector<const JObject*> >& locNumBeamBucketsShiftedMap, set<int>& locBestRFBunchShifts);
 
 		jerror_t Select_RFBunch_NoRFTime(JEventLoop* locEventLoop, vector<const DTrackTimeBased*>& locTrackTimeBasedVector);
 
@@ -72,7 +72,7 @@ class DEventRFBunch_factory : public jana::JFactory<DEventRFBunch>
 
 		const DParticleID* dParticleID;
 
-		double dRFBunchPeriod;
+		double dBeamBunchPeriod;
 		DVector3 dTargetCenter;
 
 		double dMinTrackingFOM;

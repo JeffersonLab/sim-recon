@@ -479,8 +479,8 @@ def IsNotSWIGWrapper(fileNode):
 ##################################
 def AddJANA(env):
 	jana_home = os.getenv('JANA_HOME', '/no/default/jana/path')
-	JANA_CFLAGS = subprocess.Popen(["%s/bin/jana-config" % jana_home, "--cflags"], stdout=subprocess.PIPE).communicate()[0]
-	JANA_LINKFLAGS = subprocess.Popen(["%s/bin/jana-config" % jana_home, "--libs"], stdout=subprocess.PIPE).communicate()[0]
+	JANA_CFLAGS = subprocess.Popen(["%s/bin/jana-config" % jana_home,"--jana-only","--cflags"], stdout=subprocess.PIPE).communicate()[0]
+	JANA_LINKFLAGS = subprocess.Popen(["%s/bin/jana-config" % jana_home,"--jana-only","--libs"], stdout=subprocess.PIPE).communicate()[0]
 
 	AddCompileFlags(env, JANA_CFLAGS)
 	AddLinkFlags(env, JANA_LINKFLAGS)

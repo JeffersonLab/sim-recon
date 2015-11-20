@@ -195,6 +195,7 @@ c The following parameters are declared in controlparams.inc above.
       data tgtwidth/2*0/
       data get_next_evt/1/
       data trigger_time_sigma_ns/10./
+      data event_count/0/
 
 C  Use this parameter to set up a minimum photon energy 
 C  for the coherent bremsstrahlung beam generator - see beamgen.F
@@ -274,8 +275,6 @@ C..geant..
       call FFKEY('driftclusters',driftclusters,1,'INTEGER')
       call FFKEY('tgtwidth',tgtwidth,2,'REAL')
       call FFKEY('trefsigma',trigger_time_sigma_ns,1,'REAL')
-      call FFKEY('runno',runno_ff,1,'INTEGER')
-      runno_ff = -1
       call gtgamaff()
       CALL GFFGO
 *
@@ -396,14 +395,6 @@ C..geant..
 *        call HDDSgeant3_runtime
 *      endif
       call Goptimize
-
-C Check for FFREAD card specifying run number, initialize geant run number, use 
-C for calibration database
-      if (runno_ff .ge. 0) then
-         myrunno = runno_ff
-         call seteventid(runno_ff,0)
-      endif
-
       call initcalibdb(bfield_type, bfield_map, PS_bfield_type, 
      +     PS_bfield_map, myrunno)
       call copytocplusplus(infile,outfile,postsmear,mcsmearopts

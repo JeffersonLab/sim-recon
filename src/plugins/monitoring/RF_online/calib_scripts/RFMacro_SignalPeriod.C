@@ -3,10 +3,10 @@
 // hnamepath: /RF/RF_SignalPeriod/TAGHRF_SignalPeriod
 // hnamepath: /RF/RF_SignalPeriod/PSCRF_SignalPeriod
 
-int main(void)
+int RFMacro_SignalPeriod(void)
 {
 	gStyle->SetOptStat(1111);
-	TDirectory *locTopDirectory = gDirectory;
+	gDirectory->cd("/"); //return to file base directory
 
 	//Goto Beam Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("RF");

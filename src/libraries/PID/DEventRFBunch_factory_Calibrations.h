@@ -54,14 +54,14 @@ class DEventRFBunch_factory_Calibrations : public jana::JFactory<DEventRFBunch>
 		bool Find_TrackTimes_SC(const DDetectorMatches* locDetectorMatches, const vector<const DTrackWireBased*>& locTrackWireBasedVector, vector<pair<double, const JObject*> >& locTimes) const;
 		int Conduct_Vote(JEventLoop* locEventLoop, double locRFTime, vector<pair<double, const JObject*> >& locTimes, int& locHighestNumVotes);
 
-		int Find_BestRFBunchShifts(double locRFHitTime, const vector<pair<double, const JObject*> >& locTimes, map<int, vector<const JObject*> >& locNumRFBucketsShiftedMap, set<int>& locBestRFBunchShifts);
-		int Break_TieVote_Tracks(map<int, vector<const JObject*> >& locNumRFBucketsShiftedMap, set<int>& locBestRFBunchShifts);
+		int Find_BestRFBunchShifts(double locRFHitTime, const vector<pair<double, const JObject*> >& locTimes, map<int, vector<const JObject*> >& locNumBeamBucketsShiftedMap, set<int>& locBestRFBunchShifts);
+		int Break_TieVote_Tracks(map<int, vector<const JObject*> >& locNumBeamBucketsShiftedMap, set<int>& locBestRFBunchShifts);
 
 		jerror_t Create_NaNRFBunch(void);
 
 		const DParticleID* dParticleID;
 
-		double dRFBunchPeriod;
+		double dBeamBunchPeriod;
 		DVector3 dTargetCenter;
 
 		DetectorSystem_t dRFTDCSourceSystem;

@@ -41,14 +41,14 @@ class DCustomAction_p2gamma_cuts : public DAnalysisAction
 //		const DAnalysisUtilities* dAnalysisUtilities;
 
 		//Store any histograms as member variables here
-		TH1I *dEgamma;
+//		TH1I *dEgamma;
 
-		TH2I *dMM2_M2g, *dProton_dEdx_P, *dProton_P_Theta, *dProtonPhi_Egamma, *dProtonPhi_Theta, *dProtonPhi_t;
-		TH2I *dPi0Phi_Egamma, *dPi0Phi_Theta, *dDeltaE_M2g, *dPi0EgammaCorr;
-		TH2I *dMM2_M2g_ProtonTag, *dDeltaE_M2g_ProtonTag, *dMM2_DeltaE_ProtonTag;
-		TH2I *dMM2_M2g_CoplanarTag, *dDeltaE_M2g_CoplanarTag, *dMM2_DeltaE_CoplanarTag;
-		TH2I *dDeltaPhi_M2g, *dPhi2g_PhiP;
-		TH2I *dEgamma_M2g_ProtonTag;
+//		TH2I *dMM2_M2g, *dProton_dEdx_P, *dProton_P_Theta, *dProtonPhi_Egamma, *dProtonPhi_Theta, *dProtonPhi_t;
+//		TH2I *dPi0Phi_Egamma, *dPi0Phi_Theta, *dDeltaE_M2g, *dPi0EgammaCorr;
+//		TH2I *dMM2_M2g_ProtonTag, *dDeltaE_M2g_ProtonTag, *dMM2_DeltaE_ProtonTag;
+//		TH2I *dMM2_M2g_CoplanarTag, *dDeltaE_M2g_CoplanarTag, *dMM2_DeltaE_CoplanarTag;
+//		TH2I *dDeltaPhi_M2g, *dPhi2g_PhiP;
+//		TH2I *dEgamma_M2g_ProtonTag;
 };
 
 #endif // _DCustomAction_p2gamma_cuts_

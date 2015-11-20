@@ -72,7 +72,18 @@ float settofg_(float origin[3], float *time0);
 s_iostream_t* thisInputStream = 0;
 s_HDDM_t* thisInputEvent = 0;
 
-int extractRunNumber(int *runNo){
+float beam_momentum[4];
+float target_momentum[4];
+
+float get_beam_momentum_(const int *comp) {
+   return beam_momentum[*comp];
+}
+
+float get_target_momentum_(const int *comp) {
+   return target_momentum[*comp];
+}
+
+int extractRunNumber(int *runNo) {
   thisInputEvent = read_s_HDDM(thisInputStream);
   return *runNo = thisInputEvent->physicsEvents->in[0].runNo;
 }
@@ -143,6 +154,39 @@ int loadInput ()
       s_Vertices_t* verts;
       int vertCount, iv;
       s_Reaction_t* react = &reacts->in[ir];
+      s_Beam_t* beam = react->beam;
+      s_Target_t* target = react->target;
+
+      if (beam)
+      {
+         beam_momentum[0] = beam->momentum->E;
+         beam_momentum[1] = beam->momentum->px;
+         beam_momentum[2] = beam->momentum->py;
+         beam_momentum[3] = beam->momentum->pz;
+      }
+      else
+      {
+         beam_momentum[0] = 0;
+         beam_momentum[1] = 0;
+         beam_momentum[2] = 0;
+         beam_momentum[3] = 0;
+      }
+
+      if (target)
+      {
+         target_momentum[0] = target->momentum->E;
+         target_momentum[1] = target->momentum->px;
+         target_momentum[2] = target->momentum->py;
+         target_momentum[3] = target->momentum->pz;
+      }
+      else
+      {
+         target_momentum[0] = 0;
+         target_momentum[1] = 0;
+         target_momentum[2] = 0;
+         target_momentum[3] = 0;
+      }
+
       verts = react->vertices;
       vertCount = verts->mult;
       for (iv = 0; iv < vertCount; iv++)

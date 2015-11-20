@@ -5,9 +5,6 @@
 // hnamepath: /RF/AbsoluteDeltaT_RF_OtherRFs/RFDeltaT_PSC_TOF
 // hnamepath: /RF/AbsoluteDeltaT_RF_OtherRFs/RFDeltaT_TAGH_TOF
 
-//Commit constants with:
-//ccdb add PHOTON_BEAM/RF/time_offset -r <run_min>-<run_max> rf_coarse_time_offsets.txt #"coarse time offsets"
-
 double Calc_Mean(TH1I* locHist)
 {
         double locTotal = 0.0;
@@ -23,10 +20,10 @@ double Calc_Mean(TH1I* locHist)
         return (locTotal / double(locEntries));
 }
 
-int main(int locRunNumber)
+int RFMacro_CoarseTimeOffsets(int locRunNumber, string locVariation = "default")
 {
 	//INPUT RUN NUMBER MUST BE A RUN NUMBER IN THE RUN RANGE YOU ARE TRYING TO COMMIT CONSTANTS TO
-	TDirectory *locTopDirectory = gDirectory;
+	gDirectory->cd("/"); //return to file base directory
 
 	//Goto Beam Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("RF");
@@ -55,7 +52,7 @@ int main(int locRunNumber)
 	//Pipe the current constants into this macro
 		//NOTE: This dumps the "LATEST" values. If you need something else, modify this script.
 	ostringstream locCommandStream;
-	locCommandStream << "ccdb dump PHOTON_BEAM/RF/time_offset -r " << locRunNumber;
+	locCommandStream << "ccdb -v " << locVariation << " dump PHOTON_BEAM/RF/time_offset -r " << locRunNumber;
 	FILE* locInputFile = gSystem->OpenPipe(locCommandStream.str().c_str(), "r");
 	if(locInputFile == NULL)
 		return 0;

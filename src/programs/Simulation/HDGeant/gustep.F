@@ -489,7 +489,7 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
 
 #ifdef ACTIVE_COLLIMATOR_SIMS
       if (IDEVT.ne.evno) then
-        if (IDEVT.eq.1) then
+        if (event_count.eq.1) then
           call hbnt(ntacol,'active collimator ntuple, all events',' ')
           call hbname(ntacol,'charge',evno,ntacoldef)
           call hbnt(ntacol+1,'active collimator ntuple, charged events',

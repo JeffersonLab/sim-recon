@@ -23,7 +23,7 @@ jerror_t DBCALClump_factory::init(void)
 //----------------
 // init
 //----------------
-jerror_t DBCALClump_factory::brun(JEventLoop *loop)
+jerror_t DBCALClump_factory::brun(JEventLoop *loop, int32_t runnumber)
 {
   map<string, double> bcalparms;
 

@@ -9,10 +9,6 @@ double gRFSignalPeriod = 1000.0/499.0;
 int gRebinF1sAmount = 25;
 int gRebinTOFAmount = 2;
 
-//Commit constants with:
-//ccdb add PHOTON_BEAM/RF/time_offset -r <run_min>-<run_max> rf_fine_time_offsets.txt #"fine time offsets"
-//ccdb add PHOTON_BEAM/RF/time_offset_var -r <run_min>-<run_max> rf_time_offset_vars.txt #"time offset variances"
-
 Double_t Periodic_Gaussian_Func(Double_t* locXArray, Double_t* locParamArray)
 {
 	Double_t locValue = locParamArray[0]*TMath::Gaus(locXArray[0], locParamArray[1], locParamArray[2]);
@@ -37,10 +33,10 @@ TF1* Create_FitFunc(TH1I* locHist)
 	return locFunc;
 }
 
-int main(int locRunNumber)
+int RFMacro_FineTimeOffsets(int locRunNumber, string locVariation = "default")
 {
 	//INPUT RUN NUMBER MUST BE A RUN NUMBER IN THE RUN RANGE YOU ARE TRYING TO COMMIT CONSTANTS TO
-	TDirectory *locTopDirectory = gDirectory;
+	gDirectory->cd("/"); //return to file base directory
 
 	//Goto Beam Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("RF");
@@ -198,7 +194,7 @@ int main(int locRunNumber)
 	//Pipe the current constants into this macro
 		//NOTE: This dumps the "LATEST" values. If you need something else, modify this script.
 	ostringstream locCommandStream;
-	locCommandStream << "ccdb dump PHOTON_BEAM/RF/time_offset -r " << locRunNumber;
+	locCommandStream << "ccdb -v " << locVariation << " dump PHOTON_BEAM/RF/time_offset -r " << locRunNumber;
 	FILE* locInputFile = gSystem->OpenPipe(locCommandStream.str().c_str(), "r");
 	if(locInputFile == NULL)
 		return 0;
