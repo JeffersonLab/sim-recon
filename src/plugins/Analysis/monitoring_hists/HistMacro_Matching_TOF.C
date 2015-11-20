@@ -98,6 +98,7 @@
 		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetLabelSize(0.05);
+        locAcceptanceHist->GetZaxis()->SetRangeUser(0.6, 1.);
 		locAcceptanceHist->Draw("COLZ");
 	}
 
@@ -146,6 +147,7 @@
 		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetLabelSize(0.05);
+        locAcceptanceHist->GetZaxis()->SetRangeUser(0.6, 1.);
 		locAcceptanceHist->Draw("COLZ");
 	}
 
@@ -206,6 +208,7 @@
 		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetLabelSize(0.05);
+        locAcceptanceHist->GetZaxis()->SetRangeUser(0.6, 1.);
 		locAcceptanceHist->Draw("COLZ");
 	}
 
@@ -251,6 +254,7 @@
 		locAcceptanceHist->GetYaxis()->SetTitleSize(0.05);
 		locAcceptanceHist->GetXaxis()->SetLabelSize(0.05);
 		locAcceptanceHist->GetYaxis()->SetLabelSize(0.05);
+        locAcceptanceHist->GetZaxis()->SetRangeUser(0.6, 1.);
 		locAcceptanceHist->Draw("COLZ");
 	}
 }
