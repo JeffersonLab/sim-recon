@@ -43,7 +43,7 @@ class DStatusBits{
 		DStatusBits(){}
 		virtual ~DStatusBits(){}
 		
-		static void SetStatusBitDescriptions(JApplication *japp){
+		static void SetStatusBitDescriptions(jana::JApplication *japp){
 			// Set status bit descriptions
 			japp->SetStatusBitDescription( kSTATUS_HDDM,          "HDDM file" );
 			japp->SetStatusBitDescription( kSTATUS_REST,          "REST file" );
