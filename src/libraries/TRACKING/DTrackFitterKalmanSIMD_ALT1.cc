@@ -646,11 +646,31 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  
 	  // The next measurement
 	  double dm=0.39,tdrift=0.,tcorr=0.;
-	  if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){	
+	  if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){
+	    // Find offset of wire with respect to the center of the
+	    // straw at this z position
+	    const DCDCWire *mywire=my_cdchits[cdc_index]->hit->wire;
+	    int ring_index=mywire->ring-1;
+	    int straw_index=mywire->straw-1;
+	    double dz=newz-z0w;
+	    double phi_d=atan2(dy,dx);
+	    double delta
+	      =max_sag[ring_index][straw_index]*(1.-dz*dz/5625.)
+	      *cos(phi_d + sag_phi_offset[ring_index][straw_index]);
+	    double dphi=phi_d-mywire->origin.Phi();
+	    while (dphi>M_PI) dphi-=2*M_PI;
+	    while (dphi<-M_PI) dphi+=2*M_PI;
+	    if (mywire->origin.Y()<0) dphi*=-1.;
+
 	    tdrift=my_cdchits[cdc_index]->tdrift-mT0
 	      -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
 	    double B=forward_traj[k_minus_1].B;
-	    ComputeCDCDrift(tdrift,B,dm,Vc,tcorr);
+	    ComputeCDCDrift(dphi,delta,tdrift,B,dm,Vc,tcorr);
+
+	    //_DBG_ << "t " << tdrift << " d " << d << " delta " << delta << " dphi " << atan2(dy,dx)-mywire->origin.Phi() << endl;
+	    
+	    //_DBG_ << tcorr << " " << dphi << " " << dm << endl;
+	    
 	  }
 
 	  // Residual
