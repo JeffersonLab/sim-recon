@@ -62,6 +62,8 @@ typedef pair<int,int> tagNum;
 #include "Df125PulsePedestal.h"
 #include "Df125PulseRawData.h"
 #include "Df125WindowRawData.h"
+#include "Df125CDCPulse.h"
+#include "Df125FDCPulse.h"
 #include "DF1TDCConfig.h"
 #include "DF1TDCHit.h"
 #include "DF1TDCTriggerTime.h"
@@ -346,6 +348,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		jerror_t ParseEvents(ObjList *objs_ptr);
 		int32_t FindRunNumber(uint32_t *iptr);
 		uint64_t FindEventNumber(uint32_t *iptr);
+		void FindEventType(uint32_t *iptr, JEvent &event);
 		MODULE_TYPE GuessModuleType(const uint32_t *istart, const uint32_t *iend);
 		bool IsF250ADC(const uint32_t *istart, const uint32_t *iend);
 		bool IsF1TDC(const uint32_t *istart, const uint32_t *iend);

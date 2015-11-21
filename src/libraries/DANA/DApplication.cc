@@ -27,6 +27,7 @@ using std::string;
 #include "DFactoryGenerator.h"
 
 #include "DANARootErrorHandler.h"
+#include "DStatusBits.h"
 #include <DCalibrationGeneratorCCDB.h>
 
 
@@ -107,6 +108,8 @@ jerror_t DApplication::Init(void)
 	GetJParameterManager()->SetDefaultParameter("ROOT_ERROR_LEVEL_SUPRESS", ROOT_ERROR_LEVEL_SUPRESS);
 	InitDANARootErrorHandler(ROOT_ERROR_LEVEL_SUPRESS);
 
+	// Define base set of status bits
+	DStatusBits::SetStatusBitDescriptions(this);
 
 	// Only check SSE capabilities if we're going to use the variables
 	// below so as to avoid compiler warnings.

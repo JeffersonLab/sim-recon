@@ -13,6 +13,7 @@
 #include <JANA/JFactory_base.h>
 #include <JANA/JEventLoop.h>
 #include <JANA/JEvent.h>
+#include <DANA/DStatusBits.h>
 
 #include <DVector2.h>
 #include <DEventSourceREST.h>
@@ -109,6 +110,9 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
       event.SetRunNumber(re.getRunNo());
       event.SetJEventSource(this);
       event.SetRef(record);
+      event.SetStatusBit(kSTATUS_REST);
+      event.SetStatusBit(kSTATUS_FROM_FILE);
+	  event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
       ++Nevents_read;
       break;
    }
@@ -967,6 +971,28 @@ jerror_t DEventSourceREST::Extract_DMCTrigger(hddm_r::HDDM *record,
       trigger->L1a_fired = iter->getL1a();
       trigger->L1b_fired = iter->getL1b();
       trigger->L1c_fired = iter->getL1c();
+
+      const hddm_r::TriggerDataList& locTriggerDataList = iter->getTriggerDatas();
+	   hddm_r::TriggerDataList::iterator locTriggerDataIterator = locTriggerDataList.begin();
+		if(locTriggerDataIterator == locTriggerDataList.end())
+		{
+			trigger->Ebcal = 0.;
+			trigger->Efcal = 0.;
+			trigger->Nschits = 0;
+			trigger->Ntofhits = 0;
+			
+		}
+		else //should only be 1
+		{
+			for(; locTriggerDataIterator != locTriggerDataList.end(); ++locTriggerDataIterator)
+			{
+				trigger->Ebcal = locTriggerDataIterator->getEbcal();
+				trigger->Efcal = locTriggerDataIterator->getEfcal();
+				trigger->Nschits = locTriggerDataIterator->getNschits();
+				trigger->Ntofhits = locTriggerDataIterator->getNtofhits();
+			}
+		}
+
       data.push_back(trigger);
    }
 

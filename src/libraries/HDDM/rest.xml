@@ -72,7 +72,9 @@
     <RFtime minOccurs="0" jtag="string"
             tsync="float" tunit="ns"/>
     <trigger minOccurs="0" jtag="string"
-			L1a="boolean" L1b="boolean" L1c="boolean"/>
+			 L1a="boolean" L1b="boolean" L1c="boolean">
+      <triggerData  Ebcal="float" Efcal="float" Nschits="int" Ntofhits="int" />
+    </trigger>
 
     <detectorMatches minOccurs="1" maxOccurs="1" jtag="string">
       <!-- 

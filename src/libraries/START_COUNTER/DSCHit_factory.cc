@@ -55,6 +55,10 @@ jerror_t DSCHit_factory::init(void)
     gPARMS->SetDefaultParameter("SC:ADC_THRESHOLD", ADC_THRESHOLD,
             "Software pulse integral threshold");
 
+    USE_TIMEWALK_CORRECTION = 1.;
+    gPARMS->SetDefaultParameter("SC:USE_TIMEWALK_CORRECTION", USE_TIMEWALK_CORRECTION,
+                                "Flag to decide if timewalk corrections should be applied.");
+
     /// set the base conversion scales
     a_scale    = 0.0001; 
     t_scale    = 0.0625;   // 62.5 ps/count
@@ -129,8 +133,8 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
     if (eventLoop->GetCalib("/START_COUNTER/tdc_timing_offsets", tdc_time_offsets))
         jout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;
     // timewalk_parameters (timewalk_parms)
-    if(eventLoop->GetCalib("START_COUNTER/timewalk_parms", timewalk_parameters))
-        jout << "Error loading /START_COUNTER/timewalk_parms !" << endl;
+    if(eventLoop->GetCalib("START_COUNTER/timewalk_parms_v2", timewalk_parameters))
+        jout << "Error loading /START_COUNTER/timewalk_parms_v2 !" << endl;
 
 
     /* 
@@ -305,7 +309,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		//jout << "t_tDC = " << hit->t_TDC << endl;
 
 
-		if (hit->dE > 0.0)
+		if (USE_TIMEWALK_CORRECTION && (hit->dE > 0.0) )
 		  {
 		    // // Correct for time walk
 		    // // The correction is the form t=t_tdc- C1 (A^C2 - A0^C2)
@@ -317,10 +321,12 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 		    // Correct for timewalk using pulse peak instead of pulse integral
 		    double A        = hit->pulse_height;
-		    double C1       = timewalk_parameters[id][0];
-		    double C2       = timewalk_parameters[id][1];
-		    double A_THRESH = timewalk_parameters[id][2];
-		    double A0       = timewalk_parameters[id][3];
+		    double C0       = timewalk_parameters[id][0];
+		    double C1       = timewalk_parameters[id][1];
+		    double C2       = timewalk_parameters[id][2];
+		    double A_THRESH = timewalk_parameters[id][3];
+		    double A0       = timewalk_parameters[id][4];
+            // do correction
 		    T -= C1*(pow(A/A_THRESH, C2) - pow(A0/A_THRESH, C2));
 		  }
 		hit->t=T;
