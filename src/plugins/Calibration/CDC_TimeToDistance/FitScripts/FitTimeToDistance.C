@@ -3,6 +3,7 @@ double short_drift_func[3][3];
 double magnet_correction[2][2];
 
 vector<double> cdc_drift_table;
+double Bz_avg;
 
 unsigned int Locate(vector<double>&xx, double x){
     int n=xx.size();
@@ -22,7 +23,7 @@ unsigned int Locate(vector<double>&xx, double x){
     return jl;
 }
 
-Double_t TimeToDistance( Double_t *x, Double_t *par)
+Double_t TimeToDistanceFieldOff( Double_t *x, Double_t *par)
 {
     double d=0.;
     double delta = x[1]; // yAxis
@@ -96,16 +97,110 @@ Double_t TimeToDistance( Double_t *x, Double_t *par)
     return d;
 }
 
+Double_t TimeToDistanceFieldOn( Double_t *x, Double_t *par){
+    Double_t d=0.0;
+    double delta = x[1]; // yAxis
+    double t = x[0]; // xAxis
+    // Variables to store values for time-to-distance functions for delta=0
+    // and delta!=0
+    double f_0=0.;
+    double f_delta=0.;
+    // Scale factor to account for affect of B-field on maximum drift time
+    double Bscale=magnet_correction[0][0]+magnet_correction[0][1]*Bz_avg;
+    if (t > 0){
+        if (delta>0){
+            double a1=par[0];
+            double a2=par[1];
+            double a3=par[2];
+            double b1=par[3];
+            double b2=par[4];
+            double b3=par[5];
+            double c1=par[6];
+            double c2=par[7];
+            double c3=par[8];
+            // use "long side" functional form
+            double my_t=0.001*t;
+            double sqrt_t=sqrt(my_t);
+            double t3=my_t*my_t*my_t;
+            double delta_mag=fabs(delta);
+            double a=a1+a2*delta_mag;
+            double b=b1+b2*delta_mag;
+            double c=c1+c2*delta_mag+c3*delta*delta;
+            f_delta=a*sqrt_t+b*my_t+c*t3;
+            f_0=a1*sqrt_t+b1*my_t+c1*t3;
+
+        }
+        else{
+            double my_t=0.001*t;
+            double sqrt_t=sqrt(my_t);
+            double delta_mag=fabs(delta);
+
+            // use "short side" functional form
+            double a1=par[9];
+            double a2=par[10];
+            double a3=par[11];
+            double b1=par[12];
+            double b2=par[13];
+            double b3=par[14];
+            double c1=par[15];
+            double c2=par[16];
+            double c3=par[17];
+            double delta_sq=delta*delta;
+            double a=a1+a2*delta_mag+a3*delta_sq;
+            double b=b1+b2*delta_mag+b3*delta_sq;
+            f_delta=a*sqrt_t+b*my_t;
+            f_0=a1*sqrt_t+b1*my_t;
+
+        }
+
+        unsigned int max_index=cdc_drift_table.size()-1;
+        if (t>cdc_drift_table[max_index]){
+            d=f_delta*Bscale;
+            return d;
+        }
+
+        // Drift time is within range of table -- interpolate...
+        unsigned int index=0;
+        index=Locate(cdc_drift_table,t);
+        double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
+        double frac=(t-cdc_drift_table[index])/dt;
+        double d_0=0.01*(double(index)+frac); 
+
+        double P=0.;
+        double tcut=250.0; // ns
+        if (t<tcut) {
+            P=(tcut-t)/tcut;
+        }
+        d=f_delta*(d_0/f_0*P+1.-P)*Bscale;
+    }
+    return d;
+}
+
 
 void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
 {
     // Script for fitting the time to distance relation from data
+    TFile *thisFile = TFile::Open(inputROOTFile);
+    TH1I *Bz_hist = (TH1I *) thisFile->Get("/CDC_TimeToDistance/Bz");
+    TF2 *f2; const Int_t npar = 18;
+    bool isFieldOff = false;
+    if (Bz_hist == 0){
+        f2 = new TF2("f2",TimeToDistanceFieldOff, 0, 1000, -0.3, 0.3, npar);
+        isFieldOff = true;
+    }
+    else{
+        f2 = new TF2("f2",TimeToDistanceFieldOn, 0, 1000, -0.3, 0.3, npar);
+        Bz_avg = Bz_hist->GetMean();
+    }
+
     // We need the values from the database to serve as our starting point
 
     //Pipe the current constants into this macro
     //NOTE: This dumps the "LATEST" values. If you need something else, modify this script.
     char command[100];
-    sprintf(command, "ccdb dump /CDC/drift_parameters:%i:NoBField", run);
+    if (isFieldOff) sprintf(command, "ccdb dump /CDC/drift_parameters:%i:NoBField", run);
+    else sprintf(command, "ccdb dump /CDC/drift_parameters:%i:default", run);
+
     FILE* locInputFile = gSystem->OpenPipe(command, "r");
     if(locInputFile == NULL)
         return 0;
@@ -124,6 +219,7 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
             locConstantsStream >> long_drift_func[2][0] >> long_drift_func[2][1] >> long_drift_func[2][2];
             locConstantsStream >> magnet_correction[0][0] >> magnet_correction[0][1]; // BField params
             cout << "a1_Long = " << long_drift_func[0][0] << endl;
+            cout << "Magnet Correction : " << magnet_correction[0][0] << " " << magnet_correction[0][1] << endl;
             is_long = false;
         }
         else{
@@ -158,7 +254,6 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
     gSystem->ClosePipe(locInputFile);
     // So now you have the input to your function
 
-    const Int_t npar = 18;
     Double_t parameters[npar] =
     {long_drift_func[0][0], long_drift_func[0][1], long_drift_func[0][2],
         long_drift_func[1][0], long_drift_func[1][1], long_drift_func[1][2],
@@ -167,10 +262,8 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
         short_drift_func[1][0], short_drift_func[1][1], short_drift_func[1][2],
         short_drift_func[2][0], short_drift_func[2][1], short_drift_func[2][2]};
 
-    TF2 *f2 = new TF2("f2",TimeToDistance, 0, 1000, -0.3, 0.3, npar);
+
     f2->SetParameters(parameters);
-    
-    TFile *thisFile = TFile::Open(inputROOTFile);
     TProfile2D *profile = (TProfile2D *) thisFile->Get("/CDC_TimeToDistance/Predicted Drift Distance Vs Delta Vs t_drift");
 
     //profile->Fit("f2");

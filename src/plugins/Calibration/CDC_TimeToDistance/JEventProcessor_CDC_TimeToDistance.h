@@ -9,6 +9,7 @@
 #define _JEventProcessor_CDC_TimeToDistance_
 
 #include <JANA/JEventProcessor.h>
+#include "HDGEOMETRY/DMagneticFieldMap.h"
 
 class JEventProcessor_CDC_TimeToDistance:public jana::JEventProcessor{
 	public:
@@ -24,6 +25,7 @@ class JEventProcessor_CDC_TimeToDistance:public jana::JEventProcessor{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
         vector<vector<double> >max_sag;
         vector<vector<double> >sag_phi_offset;
+        const DMagneticFieldMap* dMagneticField;
 };
 
 #endif // _JEventProcessor_CDC_TimeToDistance_

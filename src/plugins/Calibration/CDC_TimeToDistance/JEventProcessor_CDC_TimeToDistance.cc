@@ -55,6 +55,7 @@ jerror_t JEventProcessor_CDC_TimeToDistance::brun(JEventLoop *eventLoop, int run
 {
     // This is called whenever the run number changes
     DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+    dMagneticField = dapp->GetBfield(runnumber);
     JCalibration *jcalib = dapp->GetJCalibration(runnumber);
     // This is called whenever the run number changes
     // Get the straw sag parameters from the database
@@ -124,13 +125,22 @@ jerror_t JEventProcessor_CDC_TimeToDistance::evnt(JEventLoop *loop, int eventnum
             const DCDCTrackHit* thisCDCHit = thisPull.cdc_hit;
 
             if (thisCDCHit == NULL) continue;
-
+            if (predictedDistance > 1.5 || predictedDistance < 0.0) continue; // Some strange behavior in field on data?
             int ring = thisCDCHit->wire->ring;
             int straw = thisCDCHit->wire->straw;
             // Now just make a bunch of histograms to display all of the information
             //Time to distance relation in bins
             // Calcuate delta
             double dz = docaz - 92.0;
+            // We need the BField to make a cut for the field on data
+            DVector3 udir = thisCDCHit->wire->udir;
+            DVector3 thisHitLocation = thisCDCHit->wire->origin + udir * (dz / udir.CosTheta());
+            double Bz = dMagneticField->GetBz(thisHitLocation.X(), thisHitLocation.Y(), thisHitLocation.Z());
+            if ( Bz != 0.0 ) {
+                Fill1DHistogram("CDC_TimeToDistance", "", "Bz",
+                        Bz,
+                        "B_{z};B_{z} [T]", 100, 0.0, 2.5);
+            }
             double delta = max_sag[ring - 1][straw - 1]*(1.-dz*dz/5625.)
                 *cos(docaphi + sag_phi_offset[ring - 1][straw - 1]);
             // We only really need one histogram here
