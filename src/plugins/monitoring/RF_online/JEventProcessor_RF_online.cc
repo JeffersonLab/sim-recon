@@ -22,9 +22,7 @@ jerror_t JEventProcessor_RF_online::init(void)
 {
 	//This constant should be fixed for the lifetime of GlueX.  If it ever changes, move it into the CCDB.
 	dRFSignalPeriod = 1000.0/499.0; //2.004008016
-
-	//pick a combination such that there is a bin edge at +/- 1.002 and +/- 2.004
-	double locDeltaTRangeMax = 2.2; //should be a little more than expected-RF-period / 2 //choose 2.2 for run <= 2438
+	double locDeltaTRangeMax = 2.2;
 	unsigned int locNumDeltaTBins = 1100;
 
 	dRFSignalSystems.push_back(SYS_FDC);  dRFSignalSystems.push_back(SYS_PSC);
