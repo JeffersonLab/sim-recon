@@ -24,7 +24,7 @@ jerror_t JEventProcessor_RF_online::init(void)
 	dRFSignalPeriod = 1000.0/499.0; //2.004008016
 
 	//pick a combination such that there is a bin edge at +/- 1.002 and +/- 2.004
-	double locDeltaTRangeMax = 1.1; //should be a little more than expected-RF-period / 2 //choose 2.2 for run <= 2438
+	double locDeltaTRangeMax = 2.2; //should be a little more than expected-RF-period / 2 //choose 2.2 for run <= 2438
 	unsigned int locNumDeltaTBins = 1100;
 
 	dRFSignalSystems.push_back(SYS_FDC);  dRFSignalSystems.push_back(SYS_PSC);
@@ -228,11 +228,11 @@ jerror_t JEventProcessor_RF_online::evnt(JEventLoop* locEventLoop, int eventnumb
 	{
 		set<double>& locRFTimeSet = locTDCIterator->second;
 
-		double locFirstTime = dRFTimeFactory->Step_TimeToNearInputTime(*(locRFTimeSet.begin()), 0.0, dRFSignalPeriod);
+		double locFirstTime = dRFTimeFactory->Step_TimeToNearInputTime(*(locRFTimeSet.begin()), 0.0);
 		double locAverageTime = locFirstTime;
 		set<double>::iterator locSetIterator = locRFTimeSet.begin();
 		for(++locSetIterator; locSetIterator != locRFTimeSet.end(); ++locSetIterator)
-			locAverageTime += dRFTimeFactory->Step_TimeToNearInputTime(*locSetIterator, locFirstTime, dRFSignalPeriod);
+			locAverageTime += dRFTimeFactory->Step_TimeToNearInputTime(*locSetIterator, locFirstTime);
 		locAverageTime /= double(locRFTimeSet.size());
 		locAverageRFTimes[locTDCIterator->first] = locAverageTime;
 	}
@@ -357,7 +357,7 @@ jerror_t JEventProcessor_RF_online::evnt(JEventLoop* locEventLoop, int eventnumb
 				continue;
 			set<double>::iterator locSetIterator = locRFTimeSet.begin();
 			++locSetIterator;
-			double locShiftedRFTime = dRFTimeFactory->Step_TimeToNearInputTime(*locSetIterator, *(locRFTimeSet.begin()), dRFSignalPeriod);
+			double locShiftedRFTime = dRFTimeFactory->Step_TimeToNearInputTime(*locSetIterator, *(locRFTimeSet.begin()));
 			dHistMap_SelfResolution[locTDCIterator->first]->Fill(locShiftedRFTime - *(locRFTimeSet.begin()));
 		}
 
@@ -374,7 +374,7 @@ jerror_t JEventProcessor_RF_online::evnt(JEventLoop* locEventLoop, int eventnumb
 				set<double>::iterator locSetIterator = locRFTimeSet.begin();
 				for(; locSetIterator != locRFTimeSet.end(); ++locSetIterator)
 				{
-					double locShiftedRFTime = dRFTimeFactory->Step_TimeToNearInputTime(*locSetIterator, locTAGHHits[loc_i]->time_tdc, dRFSignalPeriod);
+					double locShiftedRFTime = dRFTimeFactory->Step_TimeToNearInputTime(*locSetIterator, locTAGHHits[loc_i]->time_tdc);
 					dHistMap_RFTaggerDeltaT[locTDCIterator->first]->Fill(locShiftedRFTime - locTAGHHits[loc_i]->time_tdc);
 				}
 			}
@@ -401,7 +401,7 @@ jerror_t JEventProcessor_RF_online::evnt(JEventLoop* locEventLoop, int eventnumb
 					continue;
 				set<double>& locRFTimeSet2 = locTDCIterator2->second;
 
-				double locShiftedRFTime = dRFTimeFactory->Step_TimeToNearInputTime(*(locRFTimeSet.begin()), *(locRFTimeSet2.begin()), dRFSignalPeriod);
+				double locShiftedRFTime = dRFTimeFactory->Step_TimeToNearInputTime(*(locRFTimeSet.begin()), *(locRFTimeSet2.begin()));
 				double locDeltaT = locShiftedRFTime - *(locRFTimeSet2.begin());
 				dHistMap_RFRFDeltaTs[locSystemPair]->Fill(locDeltaT);
 			}
@@ -426,7 +426,7 @@ jerror_t JEventProcessor_RF_online::evnt(JEventLoop* locEventLoop, int eventnumb
 				if(dHistMap_AverageRFRFDeltaTs.find(locSystemPair) == dHistMap_AverageRFRFDeltaTs.end())
 					continue;
 
-				double locShiftedAverageRFTime = dRFTimeFactory->Step_TimeToNearInputTime(locAverageRFTimes[locTDCIterator->first], locAverageRFTimes[locTDCIterator2->first], dRFSignalPeriod);
+				double locShiftedAverageRFTime = dRFTimeFactory->Step_TimeToNearInputTime(locAverageRFTimes[locTDCIterator->first], locAverageRFTimes[locTDCIterator2->first]);
 				double locDeltaT = locShiftedAverageRFTime - locAverageRFTimes[locTDCIterator2->first];
 				dHistMap_AverageRFRFDeltaTs[locSystemPair]->Fill(locDeltaT);
 			}
