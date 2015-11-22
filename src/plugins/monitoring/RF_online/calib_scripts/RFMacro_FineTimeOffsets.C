@@ -5,7 +5,7 @@
 // hnamepath: /RF/AverageDeltaT_RF_OtherRFs/RFDeltaT_PSC_TOF
 // hnamepath: /RF/AverageDeltaT_RF_OtherRFs/RFDeltaT_TAGH_TOF
 
-double gRFSignalPeriod = 1000.0/499.0;
+double gBeamSignalPeriod = 2000.0/499.0;
 int gRebinF1sAmount = 25;
 int gRebinTOFAmount = 2;
 
@@ -13,9 +13,9 @@ Double_t Periodic_Gaussian_Func(Double_t* locXArray, Double_t* locParamArray)
 {
 	Double_t locValue = locParamArray[0]*TMath::Gaus(locXArray[0], locParamArray[1], locParamArray[2]);
 	if(locParamArray[1] < 0.0)
-		locValue += locParamArray[0]*TMath::Gaus(locXArray[0], locParamArray[1] + gRFSignalPeriod, locParamArray[2]);
+		locValue += locParamArray[0]*TMath::Gaus(locXArray[0], locParamArray[1] + gBeamSignalPeriod, locParamArray[2]);
 	else
-		locValue += locParamArray[0]*TMath::Gaus(locXArray[0], locParamArray[1] - gRFSignalPeriod, locParamArray[2]);
+		locValue += locParamArray[0]*TMath::Gaus(locXArray[0], locParamArray[1] - gBeamSignalPeriod, locParamArray[2]);
 
 	return locValue;
 }
@@ -26,7 +26,7 @@ TF1* Create_FitFunc(TH1I* locHist)
 	double locMean = locHist->GetBinCenter(locMaxBin);
 
 	string locFuncName = string(locHist->GetName()) + string("_Func");
-	TF1 *locFunc = new TF1(locFuncName.c_str(), Periodic_Gaussian_Func, -0.5*gRFSignalPeriod, 0.5*gRFSignalPeriod, 3);
+	TF1 *locFunc = new TF1(locFuncName.c_str(), Periodic_Gaussian_Func, -0.5*gBeamSignalPeriod, 0.5*gBeamSignalPeriod, 3);
 	locFunc->SetParameters(locHist->GetBinContent(locMaxBin), locMean, 0.1);
 	locFunc->SetParNames("Gaussian Height", "Gaussian #mu", "Gaussian #sigma");
 
