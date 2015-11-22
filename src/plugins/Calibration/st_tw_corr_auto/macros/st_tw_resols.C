@@ -55,7 +55,7 @@ void st_tw_resols(char*input_filename)
 {
   TFile *df = new TFile(input_filename);
   std::ofstream Time_resol;
-  Time_resol.open ("Time_resol.txt", std::ofstream::out);
+  Time_resol.open ("SC_time_resol.txt", std::ofstream::out);
 
   //*****************************************************************
   //*********** Grab the histograms from the root file **************

@@ -250,7 +250,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 
   unsigned int locate(vector<double>&xx,double x);
   double cdc_variance(double t); 
-  double cdc_drift_distance(double t);
+  double cdc_drift_distance(double dphi, double delta,double t);
   double fdc_drift_distance(double t);
 
   jerror_t GetProcessNoise(double dz,
@@ -326,6 +326,11 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   vector<vector<DFDCWire*> >fdcwires;
   DMatrix3x1 fdc_drift_parms; 
   vector<vector<cdc_offset_t> >cdc_offsets;
+
+  vector<vector<double> >max_sag;
+  vector<vector<double> >sag_phi_offset;
+  double long_drift_func[3][3];
+  double short_drift_func[3][3];
 };
 
 
@@ -334,8 +339,8 @@ inline double DEventProcessor_dc_alignment::cdc_variance(double t){
   //  return 0.001*0.001;
   if (t<0.) t=0.;
   
-  CDC_RES_PAR1=0.254;
-  CDC_RES_PAR2=0.025;
+  //CDC_RES_PAR1=0.254;
+  //CDC_RES_PAR2=0.025;
   double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
   //sigma+=0.02;
   

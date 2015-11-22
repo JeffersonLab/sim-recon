@@ -24,6 +24,7 @@ using namespace std;
 #include <JANA/JFactory_base.h>
 #include <JANA/JEventLoop.h>
 #include <JANA/JEvent.h>
+#include <DANA/DStatusBits.h>
 
 #include "BCAL/DBCALGeometry.h"
 
@@ -123,6 +124,9 @@ jerror_t DEventSourceHDDM::GetEvent(JEvent &event)
    event.SetEventNumber(event_number);
    event.SetRunNumber(run_number);
    event.SetRef(record);
+   event.SetStatusBit(kSTATUS_HDDM);
+   event.SetStatusBit(kSTATUS_FROM_FILE);
+   event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
  
    return NOERROR;
 }

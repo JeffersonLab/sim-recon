@@ -133,8 +133,8 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
     if (eventLoop->GetCalib("/START_COUNTER/tdc_timing_offsets", tdc_time_offsets))
         jout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;
     // timewalk_parameters (timewalk_parms)
-    if(eventLoop->GetCalib("START_COUNTER/timewalk_parms", timewalk_parameters))
-        jout << "Error loading /START_COUNTER/timewalk_parms !" << endl;
+    if(eventLoop->GetCalib("START_COUNTER/timewalk_parms_v2", timewalk_parameters))
+        jout << "Error loading /START_COUNTER/timewalk_parms_v2 !" << endl;
 
 
     /* 
@@ -321,10 +321,12 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 		    // Correct for timewalk using pulse peak instead of pulse integral
 		    double A        = hit->pulse_height;
-		    double C1       = timewalk_parameters[id][0];
-		    double C2       = timewalk_parameters[id][1];
-		    double A_THRESH = timewalk_parameters[id][2];
-		    double A0       = timewalk_parameters[id][3];
+		    double C0       = timewalk_parameters[id][0];
+		    double C1       = timewalk_parameters[id][1];
+		    double C2       = timewalk_parameters[id][2];
+		    double A_THRESH = timewalk_parameters[id][3];
+		    double A0       = timewalk_parameters[id][4];
+            // do correction
 		    T -= C1*(pow(A/A_THRESH, C2) - pow(A0/A_THRESH, C2));
 		  }
 		hit->t=T;

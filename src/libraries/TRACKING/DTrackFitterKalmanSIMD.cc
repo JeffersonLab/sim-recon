@@ -137,15 +137,16 @@ double DTrackFitterKalmanSIMD::cdc_drift_distance(double t,double B){
 }
 
 // Convert time to distance for the cdc and compute variance
-void DTrackFitterKalmanSIMD::ComputeCDCDrift(double t,double B,
-        double &d, double &V, double &tcorr){
+void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
+					     double B,
+					     double &d, double &V, double &tcorr){
     //d=0.39; // initialize at half-cell
     //V=0.0507; // initialize with (cell size)/12.
     double cutoffTime = 40.0;
     tcorr = t; // Need this value even when t is negative for calibration
     if (t>0){
-        double dtc =(CDC_DRIFT_BSCALE_PAR1 + CDC_DRIFT_BSCALE_PAR2 * B)* t;
-        tcorr=t-dtc;
+      //double dtc =(CDC_DRIFT_BSCALE_PAR1 + CDC_DRIFT_BSCALE_PAR2 * B)* t;
+        //tcorr=t-dtc;
 	 
 	double sigma=CDC_RES_PAR1/(tcorr+1.)+CDC_RES_PAR2;
         // This function is very poorly behaved at low drift times
@@ -155,15 +156,69 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double t,double B,
             sigma = (CDC_RES_PAR1/(cutoffTime+1.)+CDC_RES_PAR2) + slope * (tcorr - cutoffTime);
         }
 
+
+	// Variables to store values for time-to-distance functions for delta=0
+	// and delta!=0
+	double f_0=0.;
+	double f_delta=0.;
+	// Derivative of d with respect to t, needed to add t0 variance 
+	// dependence to sigma
+	double dd_dt=0;
+	// Scale factor to account for affect of B-field on maximum drift time
+	double Bscale=long_drift_Bscale_par1+long_drift_Bscale_par2*B;
+
+	//	if (delta>0)
+	if (delta>-EPS2){
+	  double a1=long_drift_func[0][0];
+	  double a2=long_drift_func[0][1];
+	  double b1=long_drift_func[1][0];
+	  double b2=long_drift_func[1][1];
+	  double c1=long_drift_func[2][0];
+	  double c2=long_drift_func[2][1];
+	  double c3=long_drift_func[2][2];
+
+	  // use "long side" functional form
+	  double my_t=0.001*tcorr;
+	  double sqrt_t=sqrt(my_t);
+	  double t3=my_t*my_t*my_t;
+	  double delta_mag=fabs(delta);
+	  double a=a1+a2*delta_mag;
+	  double b=b1+b2*delta_mag;
+	  double c=c1+c2*delta_mag+c3*delta*delta;
+	  f_delta=a*sqrt_t+b*my_t+c*t3;
+	  f_0=a1*sqrt_t+b1*my_t+c1*t3;
+	  
+	  dd_dt=0.001*(0.5*a/sqrt_t+b+3.*c*my_t*my_t);
+	}
+	else{
+	  double my_t=0.001*tcorr;
+	  double sqrt_t=sqrt(my_t);
+	  double delta_mag=fabs(delta);
+
+	  // use "short side" functional form
+	  double a1=short_drift_func[0][0];
+	  double a2=short_drift_func[0][1];
+	  double a3=short_drift_func[0][2];
+	  double b1=short_drift_func[1][0];
+	  double b2=short_drift_func[1][1];
+	  double b3=short_drift_func[1][2];
+
+	  double delta_sq=delta*delta;
+	  double a=a1+a2*delta_mag+a3*delta_sq;
+	  double b=b1+b2*delta_mag+b3*delta_sq;
+	  f_delta=a*sqrt_t+b*my_t;
+	  f_0=a1*sqrt_t+b1*my_t;
+
+	  dd_dt=0.001*(0.5*a/sqrt_t+b);
+	}
+
 	unsigned int max_index=cdc_drift_table.size()-1;
         if (tcorr>cdc_drift_table[max_index]){
-            // Here the drift time is too large. Return the edge of the straw 
-            d=0.78;
+	  //_DBG_ << "t: " << tcorr <<" d " << f_delta <<endl;
+	  d=f_delta*Bscale;
+	  V=sigma*sigma+mVarT0*dd_dt*dd_dt*Bscale*Bscale;
 
-	    double dt=cdc_drift_table[max_index]-cdc_drift_table[max_index-1];
-	    V=sigma*sigma+mVarT0*0.0001/(dt*dt);
-
-            return;
+	  return;
         }
 	
 	// Drift time is within range of table -- interpolate...
@@ -171,9 +226,15 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double t,double B,
         index=locate(cdc_drift_table,tcorr);
         double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
         double frac=(tcorr-cdc_drift_table[index])/dt;
-        d=0.01*(double(index)+frac); 
+        double d_0=0.01*(double(index)+frac); 
 
-        V=sigma*sigma+mVarT0*0.0001/(dt*dt);
+	double P=0.;
+	double tcut=250.0; // ns
+	if (tcorr<tcut) {
+	  P=(tcut-tcorr)/tcut;
+	}
+	d=f_delta*(d_0/f_0*P+1.-P)*Bscale;
+        V=sigma*sigma+mVarT0*dd_dt*dd_dt*Bscale*Bscale;
     }
     else { // Time is negative, or exactly zero, choose position at wire, with error of t=0 hit
         d=0.;
@@ -334,6 +395,60 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
         exit(0);
     }
 
+    int straw_number[28]={42,42,54,54,66,66,80,80,93,93,106,106,
+			  123,123,135,135,146,146,158,158,170,170,
+			  182,182,197,197,209,209};
+    max_sag.clear();
+    sag_phi_offset.clear();
+    int straw_count=0,ring_count=0;
+    if (jcalib->Get("CDC/sag_parameters", tvals)==false){
+      vector<double>temp,temp2;
+      for(unsigned int i=0; i<tvals.size(); i++){
+	map<string, double> &row = tvals[i];
+	
+	temp.push_back(row["offset"]);
+	temp2.push_back(row["phi"]);
+
+	straw_count++;
+	if (straw_count==straw_number[ring_count]){
+	  max_sag.push_back(temp);
+	  sag_phi_offset.push_back(temp2);
+	  temp.clear();
+	  temp2.clear();
+	  straw_count=0;
+	  ring_count++;
+	}
+      }
+    }
+
+    if (jcalib->Get("CDC/drift_parameters", tvals)==false){
+      map<string, double> &row = tvals[0]; // long drift side
+      long_drift_func[0][0]=row["a1"];
+      long_drift_func[0][1]=row["a2"];
+      long_drift_func[0][2]=row["a3"];  
+      long_drift_func[1][0]=row["b1"];
+      long_drift_func[1][1]=row["b2"];
+      long_drift_func[1][2]=row["b3"];
+      long_drift_func[2][0]=row["c1"];
+      long_drift_func[2][1]=row["c2"];
+      long_drift_func[2][2]=row["c3"];
+      long_drift_Bscale_par1=row["B1"];
+      long_drift_Bscale_par2=row["B2"];
+
+      row = tvals[1]; // short drift side
+      short_drift_func[0][0]=row["a1"];
+      short_drift_func[0][1]=row["a2"];
+      short_drift_func[0][2]=row["a3"];  
+      short_drift_func[1][0]=row["b1"];
+      short_drift_func[1][1]=row["b2"];
+      short_drift_func[1][2]=row["b3"];
+      short_drift_func[2][0]=row["c1"];
+      short_drift_func[2][1]=row["c2"];
+      short_drift_func[2][2]=row["c3"];
+      short_drift_Bscale_par1=row["B1"];
+      short_drift_Bscale_par2=row["B2"];
+    }
+
     map<string, double> cdc_drift_parms;
     jcalib->Get("CDC/cdc_drift_parms", cdc_drift_parms);
     CDC_DRIFT_BSCALE_PAR1 = cdc_drift_parms["bscale_par1"];
@@ -421,6 +536,7 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 
     len = 0.0;
     ftime=0.0;
+    var_ftime=0.0;
     x_=0.,y_=0.,tx_=0.,ty_=0.,q_over_p_ = 0.0;
     z_=0.,phi_=0.,tanl_=0.,q_over_pt_ =0, D_= 0.0;
     chisq_ = 0.0;
@@ -1097,7 +1213,8 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
 // Routine that extracts the state vector propagation part out of the reference
 // trajectory loop
 jerror_t DTrackFitterKalmanSIMD::PropagateCentral(int length, int &index,
-        DVector2 &my_xy,
+						  DVector2 &my_xy,
+						  double &var_t_factor,
         DMatrix5x1 &Sc,
         bool &stepped_to_boundary){
     DKalmanCentralTrajectory_t temp;
@@ -1204,7 +1321,13 @@ jerror_t DTrackFitterKalmanSIMD::PropagateCentral(int length, int &index,
     len+=step_size;
 
     // Update flight time
-    ftime+=step_size*sqrt(one_over_beta2); // in units of c=1
+    double dt=step_size*sqrt(one_over_beta2); // in units of c=1
+    double one_minus_beta2=1.-1./one_over_beta2;
+    ftime+=dt;
+    var_ftime+=dt*dt*one_minus_beta2*one_minus_beta2*0.0004;
+    var_t_factor=dt*dt*one_minus_beta2*one_minus_beta2;
+
+    //printf("t %f sigt %f\n",TIME_UNIT_CONVERSION*ftime,TIME_UNIT_CONVERSION*sqrt(var_ftime));
 
     // Multiple scattering    
     GetProcessNoiseCentral(step_size,temp.chi2c_factor,temp.chi2a_factor,
@@ -1257,6 +1380,9 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(const DVector2 &xy,
         DMatrix5x1 &Sc){
     bool stepped_to_boundary=false;
     int i=0,central_traj_length=central_traj.size();
+    // factor for scaling momentum resolution to propagate variance in flight 
+    // time
+    double var_t_factor=0; 
 
     // Magnetic field and gradient at beginning of trajectory
     //bfield->GetField(x_,y_,z_,Bx,By,Bz);
@@ -1286,7 +1412,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(const DVector2 &xy,
             && fabs(Sc(state_q_over_pt))<Q_OVER_PT_MAX
             && fabs(Sc(state_tanl))<TAN_MAX
          ){
-        if (PropagateCentral(central_traj_length,i,my_xy,Sc,stepped_to_boundary)
+      if (PropagateCentral(central_traj_length,i,my_xy,var_t_factor,Sc,stepped_to_boundary)
                 !=NOERROR) return UNRECOVERABLE_ERROR;    
         z=Sc(state_z);
         r2=my_xy.Mod2();
@@ -2090,7 +2216,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(DVector2 &dpos,const DMatrix5x1 &S,
         double p=pt*one_over_cosl;
         double p_sq=p*p;
         double E=sqrt(p_sq+mass2);
-        D1(state_q_over_pt)-=q_over_pt*E/p_sq*dEdx;
+        D1(state_q_over_pt)-=q_over_pt*E*dEdx/p_sq;
     }
     //  D1(state_phi)
     //  =kq_over_pt*(Bx*cosphi*sinl+By*sinphi*sinl-Bz*cosl);
@@ -3825,10 +3951,28 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
                 // Measurement
                 double measurement=0.39,tdrift=0.,tcorr=0.;
                 if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){	
+		  // Find offset of wire with respect to the center of the
+		  // straw at this z position
+		  const DCDCWire *mywire=my_cdchits[cdc_index]->hit->wire;
+		  int ring_index=mywire->ring-1;
+		  int straw_index=mywire->straw-1;
+		  double dz=Sc(state_z)-z0w;
+		  double phi_d=diff.Phi();
+		  double delta
+		    =max_sag[ring_index][straw_index]*(1.-dz*dz/5625.)
+		    *cos(phi_d + sag_phi_offset[ring_index][straw_index]);
+		  double dphi=phi_d-mywire->origin.Phi();
+		  while (dphi>M_PI) dphi-=2*M_PI;
+		  while (dphi<-M_PI) dphi+=2*M_PI;
+		  if (mywire->origin.Y()<0) dphi*=-1.;
+
                     tdrift=my_cdchits[cdc_index]->tdrift-mT0
                         -central_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
                     double B=central_traj[k_minus_1].B;
-                    ComputeCDCDrift(tdrift,B,measurement,V,tcorr);
+                    ComputeCDCDrift(dphi,delta,tdrift,B,measurement,V,tcorr);
+		 
+		    //_DBG_ << tcorr << " " << dphi << " " << dm << endl;
+
                 }
 
                 // Projection matrix        
@@ -5040,13 +5184,29 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
                 // The next measurement
                 double dm=0.39,tdrift=0.,tcorr=0.;
-                if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){	
+                if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){
+		  // Find offset of wire with respect to the center of the
+		  // straw at this z position
+		  const DCDCWire *mywire=my_cdchits[cdc_index]->hit->wire;
+		  int ring_index=mywire->ring-1;
+		  int straw_index=mywire->straw-1;
+		  double dz=newz-z0w;
+		  double phi_d=atan2(dy,dx);
+		  double delta
+		    =max_sag[ring_index][straw_index]*(1.-dz*dz/5625.)
+		    *cos(phi_d + sag_phi_offset[ring_index][straw_index]);
+		  double dphi=phi_d-mywire->origin.Phi();
+		  while (dphi>M_PI) dphi-=2*M_PI;
+		  while (dphi<-M_PI) dphi+=2*M_PI;
+		  if (mywire->origin.Y()<0) dphi*=-1.;
+
                     tdrift=my_cdchits[cdc_index]->tdrift-mT0
                         -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
                     double B=forward_traj[k_minus_1].B;
-                    ComputeCDCDrift(tdrift,B,dm,V,tcorr);
-		}
-
+                    ComputeCDCDrift(dphi,delta,tdrift,B,dm,V,tcorr);
+		  
+		    //_DBG_ << tcorr << " " << dphi << " " << dm << endl;
+                }
                 // residual
                 double res=dm-d;
 
@@ -6366,6 +6526,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
         // Initialize path length variable and flight time
         len=0;
         ftime=0.;
+	var_ftime=0.;
 
         // Scale cut for pruning hits according to the iteration number
 	if (fit_type==kTimeBased)
@@ -6614,6 +6775,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
         // Initialize path length variable and flight time
         len=0;
         ftime=0.;
+	var_ftime=0.;
 
         // Swim to create the reference trajectory
         jerror_t ref_track_error=SetCDCForwardReferenceTrajectory(S);
@@ -6838,6 +7000,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
         // Initialize path length variable and flight time
         len=0.;
         ftime=0.;
+	var_ftime=0.;
 
         // Scale cut for pruning hits according to the iteration number
         if (fit_type==kTimeBased)

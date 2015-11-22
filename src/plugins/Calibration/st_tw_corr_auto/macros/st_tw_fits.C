@@ -48,7 +48,7 @@ void st_tw_fits(char*input_filename)
   // df = new TFile("/lustre/expphy/work/halld/home/mkamel/st_tw_corr_auto/hd_root.root");
    TFile *df = new TFile(input_filename);
   std::ofstream results;
-  results.open ("results.txt", std::ofstream::out);
+  results.open ("st_timewalks.txt", std::ofstream::out);
   //*****************************************************************
   //*********** Grab the histograms from the root file **************
   //*****************************************************************
