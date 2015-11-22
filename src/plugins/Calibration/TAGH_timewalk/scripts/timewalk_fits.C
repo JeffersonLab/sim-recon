@@ -8,7 +8,7 @@ void GetData(TString fname,double *y,double *dy,double &min,double &max) {
         if (t>max) max = t;
         if (t<min) min = t;
         if (sigma<0.06) {y[i] = 0.0; dy[i] = 0.0;} // remove bad Gaussian-fits
-        if (i<5&&t<0.0) {y[i] = 0.0; dy[i] = 0.0;} // ignore outliers from hypo.
+        if (i<5&&t<0.1) {y[i] = 0.0; dy[i] = 0.0;} // ignore outliers
     }
     fin.close();
 }
@@ -41,7 +41,7 @@ void WriteTimewalkFitResults(ofstream &fout,ofstream &fout_ccdb,int counter,doub
     TGraphErrors gr(N,x,y,dx,dy);
     TF1 f("f",func,200.,4000.0,4);
     f.SetParameter(0,min); f.SetParLimits(0,min-10.0,0.0);
-    f.SetParameter(1,25.0); f.SetParLimits(1,1.0,80.0);
+    f.SetParameter(1,25.0); f.SetParLimits(1,1.0,90.0);
     f.SetParameter(2,0.5); f.SetParLimits(2,0.08,0.85);
     f.SetParameter(3,2250.0); f.SetParLimits(3,1400.0,4000.0);
     gr.SetTitle("TAGH counter "+TString(ss.str()));
@@ -59,7 +59,7 @@ void WriteTimewalkFitResults(ofstream &fout,ofstream &fout_ccdb,int counter,doub
     c.Clear();
     fout << counter << sep << f.GetNDF() << sep << f.GetChisquare() << sep << f.GetParameter(0);
     fout << sep << f.GetParameter(1) << sep <<  f.GetParameter(2) << sep << f.GetParameter(3);
-    fout << sep << f.GetParError(0) << sep << f.GetParError(1) << sep << f.GetParError(2) << sep << f.GetParError(2) << endl; sep = "        ";
+    fout << sep << f.GetParError(0) << sep << f.GetParError(1) << sep << f.GetParError(2) << sep << f.GetParError(3) << endl; sep = "        ";
     fout_ccdb << counter << sep << f.GetParameter(0) << sep << f.GetParameter(1) << sep << f.GetParameter(2) << sep << f.GetParameter(3) << endl;
 }
 void PrintHistogram(TH1D h) {
@@ -71,8 +71,8 @@ void PrintHistogram(TH1D h) {
 }
 void PrintHistograms(TString fname) {
     TH1D *h[4]; TH1D *he[4];
-    double min[] = {-8.0,1.0,0.0,1400.0}; double max[] = {2.0,50.0,1.0,4000.0};
-    double emin[] = {0.0,0.0,0.0,0.0}; double emax[] = {0.5,10.0,0.05,0.05};
+    double min[] = {-8.0,1.0,0.0,1400.0}; double max[] = {2.0,91.0,1.0,4000.0};
+    double emin[] = {0.0,0.0,0.0,0.0}; double emax[] = {0.5,10.0,0.05,100.0};
     for (int i=0;i<4;i++) {
         stringstream ss; ss << i; TString name = "c" + TString(ss.str());
         h[i] = new TH1D(name,"TAGH timewalk: "+name+";"+name+";counters",100,min[i],max[i]);
