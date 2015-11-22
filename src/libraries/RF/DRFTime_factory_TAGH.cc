@@ -133,9 +133,7 @@ double DRFTime_factory_TAGH::Convert_TDCToTime(const DRFTDCDigiTime* locRFTDCDig
 	else
 		locRFTime = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(locRFTDCDigiTime);
 
-	map<DetectorSystem_t, double>::const_iterator locIterator = dTimeOffsetMap.find(locRFTDCDigiTime->dSystem);
-	if(locIterator != dTimeOffsetMap.end())
-		locRFTime -= locIterator->second;
+	locRFTime -= dTimeOffset;
 	return locRFTime;
 }
 
