@@ -179,6 +179,7 @@
 *
         PLAB(4) = get_beam_momentum(0)
         if (PLAB(4) .gt. 0) then
+          call GFVERT(1,VERT,NTBEAM,NTTARG,TOFG,ubuf,nubuf)
           PLAB(1) = get_beam_momentum(1)
           PLAB(2) = get_beam_momentum(2)
           PLAB(3) = get_beam_momentum(3)
