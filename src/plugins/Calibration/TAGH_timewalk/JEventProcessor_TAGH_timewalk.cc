@@ -106,7 +106,7 @@ jerror_t JEventProcessor_TAGH_timewalk::evnt(JEventLoop *loop, int eventnumber)
     loop->Get(taghhits);
     const DRFTime* rfTime = NULL;
     vector <const DRFTime*> rfTimes;
-    loop->Get(rfTimes);
+    loop->Get(rfTimes,"TAGH");
     if (rfTimes.size() > 0)
         rfTime = rfTimes[0];
     else
