@@ -17,6 +17,8 @@ extern int SKIP_BORING_EVENTS;
 extern int PRINT_ALL;
 extern bool LIST_ASSOCIATED_OBJECTS;
 extern bool PRINT_SUMMARY_HEADER;
+extern bool PRINT_STATUS_BITS;
+extern bool ACTIVATE_TAGGED_FOR_SUMMARY;
 
 extern vector<string> toprint;
 
