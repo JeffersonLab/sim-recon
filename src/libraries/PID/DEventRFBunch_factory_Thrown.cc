@@ -21,7 +21,7 @@ jerror_t DEventRFBunch_factory_Thrown::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventRFBunch_factory_Thrown::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DEventRFBunch_factory_Thrown::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -29,7 +29,7 @@ jerror_t DEventRFBunch_factory_Thrown::brun(jana::JEventLoop *locEventLoop, int 
 //------------------
 // evnt
 //------------------
-jerror_t DEventRFBunch_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DEventRFBunch_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);

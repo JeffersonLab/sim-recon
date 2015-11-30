@@ -61,7 +61,7 @@ jerror_t DTOFHit_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
     // Only print messages for one thread whenever run number change
     static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -146,7 +146,7 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTOFHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	/// Generate DTOFHit object for each DTOFDigiHit object.
 	/// This is where the first set of calibration constants

@@ -57,7 +57,7 @@ jerror_t JEventProcessor_pedestals::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_pedestals::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_pedestals::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -65,7 +65,7 @@ jerror_t JEventProcessor_pedestals::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_pedestals::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_pedestals::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const Df250PulseIntegral*> df250pis;
 	vector<const Df125PulseIntegral*> df125pis;

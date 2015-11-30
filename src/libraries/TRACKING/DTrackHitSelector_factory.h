@@ -18,7 +18,7 @@ class DTrackHitSelector_factory:public jana::JFactory<DTrackHitSelector>{
 
 
 	private:
-		jerror_t evnt(jana::JEventLoop *loop, int eventnumber){
+		jerror_t evnt(jana::JEventLoop *loop, uint64_t eventnumber){
 
 			// This is a trivial class that simply implements the 
 			// ALT1 tagged factory as the default. It is here so

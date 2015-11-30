@@ -18,7 +18,7 @@ using namespace evio;
 //---------------------------------
 // DMagneticFieldMapFineMesh    (Constructor)
 //---------------------------------
-DMagneticFieldMapFineMesh::DMagneticFieldMapFineMesh(JApplication *japp, unsigned int runnumber, string namepath)
+DMagneticFieldMapFineMesh::DMagneticFieldMapFineMesh(JApplication *japp, int32_t runnumber, string namepath)
 {
 	jcalib = japp->GetJCalibration(runnumber);
 	jresman = japp->GetJResourceManager(runnumber);
@@ -38,7 +38,7 @@ DMagneticFieldMapFineMesh::DMagneticFieldMapFineMesh(JApplication *japp, unsigne
 //---------------------------------
 // DMagneticFieldMapFineMesh    (Constructor)
 //---------------------------------
-DMagneticFieldMapFineMesh::DMagneticFieldMapFineMesh(JCalibration *jcalib, string namepath,int runnumber)
+DMagneticFieldMapFineMesh::DMagneticFieldMapFineMesh(JCalibration *jcalib, string namepath,int32_t runnumber)
 {
 	this->jcalib = jcalib;
 	GetFineMeshMap(namepath,runnumber);
@@ -55,7 +55,7 @@ DMagneticFieldMapFineMesh::~DMagneticFieldMapFineMesh()
 //---------------------------------
 // ReadMap
 //---------------------------------
-int DMagneticFieldMapFineMesh::ReadMap(string namepath, int runnumber, string context)
+int DMagneticFieldMapFineMesh::ReadMap(string namepath, int32_t runnumber, string context)
 {
  /// Read the magnetic field map in from the calibration database.
   /// This will read in the map and figure out the number of grid
@@ -844,7 +844,7 @@ double DMagneticFieldMapFineMesh::GetBz(double x, double y, double z) const{
 }
 
 // Read a fine-mesh B-field map from an evio file
-void DMagneticFieldMapFineMesh::GetFineMeshMap(string namepath,int runnumber){ 
+void DMagneticFieldMapFineMesh::GetFineMeshMap(string namepath,int32_t runnumber){ 
 #ifdef HAVE_EVIO
     // The solenoid field map files are stored in CCDB as /Magnets/Solenoid/BFIELD_MAP_NAME
     // The fine-mesh files are now stored as /Magnets/Solenoid/finemeshes/BFIELD_MAP_NAME

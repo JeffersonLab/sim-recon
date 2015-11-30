@@ -25,7 +25,7 @@ bool Compare_TOFSpacetimeHitMatches_Distance(const DTOFPoint_factory::tof_spacet
 //------------------
 // brun
 //------------------
-jerror_t DTOFPoint_factory::brun(JEventLoop *loop, int runnumber)
+jerror_t DTOFPoint_factory::brun(JEventLoop *loop, int32_t runnumber)
 {
 
 	map<string, double> tofparms;
@@ -80,7 +80,7 @@ DTOFPoint_factory::tof_spacetimehit_t* DTOFPoint_factory::Get_TOFSpacetimeHitRes
 //------------------
 // evnt
 //------------------
-jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {	
 	// delete pool size if too large, preventing memory-leakage-like behavor.
 	if(dTOFSpacetimeHitPool_All.size() > MAX_TOFSpacetimeHitPoolSize)

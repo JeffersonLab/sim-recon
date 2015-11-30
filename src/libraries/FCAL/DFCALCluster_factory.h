@@ -23,8 +23,8 @@ class DFCALCluster_factory:public JFactory<DFCALCluster>{
 			
 	private:
 
-		jerror_t brun(JEventLoop *eventLoop, int runnumber);	
-		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	
+		jerror_t brun(JEventLoop *eventLoop, int32_t runnumber);	
+		jerror_t evnt(JEventLoop *eventLoop, uint64_t eventnumber);	
 		//< Invoked via JEventProcessor virtual method
 
 		unsigned int MIN_CLUSTER_BLOCK_COUNT;

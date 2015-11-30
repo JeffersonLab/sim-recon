@@ -17,7 +17,7 @@ class DTrackFinder_factory:public jana::JFactory<DTrackFinder>{
   ~DTrackFinder_factory(){};
 
  private:
-  jerror_t evnt(jana::JEventLoop *loop, int eventnumber){
+  jerror_t evnt(jana::JEventLoop *loop, uint64_t eventnumber){
     
     SetFactoryFlag(PERSISTANT);
     ClearFactoryFlag(WRITE_TO_OUTPUT);

@@ -49,8 +49,8 @@ class DEventProcessor_cdc_hists:public JEventProcessor{
 
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
-		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
-		jerror_t brun(JEventLoop *eventLoop, int runnumber);
+		jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);	///< Invoked via DEventProcessor virtual method
+		jerror_t brun(JEventLoop *eventLoop, int32_t runnumber);
 		jerror_t erun(void);					///< Invoked via DEventProcessor virtual method
 		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
 

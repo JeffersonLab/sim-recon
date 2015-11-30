@@ -113,7 +113,7 @@ jerror_t DEventProcessor_eta_ntuple::init(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_eta_ntuple::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_eta_ntuple::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// Get reconstructed objects
 	vector<const DBeamPhoton*> beam_photons;

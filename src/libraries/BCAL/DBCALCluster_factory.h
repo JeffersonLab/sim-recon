@@ -31,8 +31,8 @@ public:
   
 private:
 
-  jerror_t evnt(JEventLoop *loop, int eventnumber);	
-  jerror_t brun(JEventLoop *loop, int runnumber);
+  jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);	
+  jerror_t brun(JEventLoop *loop, int32_t runnumber);
   
   void clearPoints();
   

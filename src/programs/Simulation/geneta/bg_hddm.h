@@ -33,7 +33,7 @@ class Event{
       }
    
       int runNo;
-      int eventNo;
+      uint64_t eventNo;
       int reaction_type;       // copied to HDDM, but not used (as far as I know)
       int reaction_weight;     // copied to HDDM, but not used (as far as I know)
       TVector3 vertex;         // Set this to 0,0,0 to have GEANT distribute it in target

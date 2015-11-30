@@ -26,7 +26,7 @@ jerror_t DVertex_factory_THROWN::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DVertex_factory_THROWN::brun(jana::JEventLoop *loop, int runnumber)
+jerror_t DVertex_factory_THROWN::brun(jana::JEventLoop *loop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -34,7 +34,7 @@ jerror_t DVertex_factory_THROWN::brun(jana::JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DVertex_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DVertex_factory_THROWN::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DMCThrown*> locThrownTracks;
 	loop->Get(locThrownTracks);

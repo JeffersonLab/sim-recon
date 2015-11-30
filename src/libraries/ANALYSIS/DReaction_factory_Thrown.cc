@@ -24,7 +24,7 @@ jerror_t DReaction_factory_Thrown::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DReaction_factory_Thrown::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DReaction_factory_Thrown::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
  	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
 	locEventLoop->Get(locAnalysisUtilitiesVector);
@@ -35,7 +35,7 @@ jerror_t DReaction_factory_Thrown::brun(jana::JEventLoop *locEventLoop, int runn
 //------------------
 // evnt
 //------------------
-jerror_t DReaction_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DReaction_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	// delete pool sizes if too large, preventing memory-leakage-like behavor.
 	if(dReactionStepPool_All.size() > MAX_dReactionStepPoolSize){

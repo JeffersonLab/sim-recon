@@ -36,8 +36,8 @@ class DBCALUnifiedHit_factory : public JFactory<DBCALUnifiedHit> {
   };
  
   jerror_t init(void);
-  jerror_t brun(jana::JEventLoop *eventLoop, int runnumber); ///< Called everytime a new run number is detected.
-  jerror_t evnt(JEventLoop *loop, int eventnumber);
+  jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber); ///< Called everytime a new run number is detected.
+  jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);
 
   // Use TDC Times"
   bool USE_TDC;

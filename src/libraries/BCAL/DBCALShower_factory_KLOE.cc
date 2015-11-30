@@ -90,7 +90,7 @@ jerror_t DBCALShower_factory_KLOE::init()
 //------------------
 // brun
 //------------------
-jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
+jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int32_t runnumber)
 {
     //get target position
     DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
@@ -179,7 +179,7 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
     // Call core KLOE reconstruction routines
     CellRecon(loop);

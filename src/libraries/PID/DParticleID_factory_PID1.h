@@ -18,7 +18,7 @@ class DParticleID_factory_PID1:public jana::JFactory<DParticleID>{
   const char* Tag(void){return "PID1";}
   
  private:
-  jerror_t evnt(jana::JEventLoop *loop, int eventnumber){
+  jerror_t evnt(jana::JEventLoop *loop, uint64_t eventnumber){
     // Create single DParticleID object and mark the factory as
     // persistent so it doesn't get deleted every event.
     DParticleID *pid_algorithm = new DParticleID_PID1(loop);

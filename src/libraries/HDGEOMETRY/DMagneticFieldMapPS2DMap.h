@@ -23,11 +23,11 @@ class DGeometry;
 
 class DMagneticFieldMapPS2DMap:public DMagneticFieldMapPS {
  public:
-  DMagneticFieldMapPS2DMap(JApplication *japp, unsigned int runnumber=1, string namepath = "Magnets/PairSpectrometer/PS_1.8T_20150513_test");
+  DMagneticFieldMapPS2DMap(JApplication *japp, int32_t runnumber=1, string namepath = "Magnets/PairSpectrometer/PS_1.8T_20150513_test");
   DMagneticFieldMapPS2DMap(JCalibration *jcalib, string namepath = "Magnets/PairSpectrometer/PS_1.8T_20150513_test");
   virtual ~DMagneticFieldMapPS2DMap();
   
-  int ReadMap(string namepath, int runnumber=1, string context="");
+  int ReadMap(string namepath, int32_t runnumber=1, string context="");
   
   void GetField(const DVector3 &pos,DVector3 &Bout) const;
   void GetField(double x, double y, double z, double &Bx, double &By, double &Bz, int method=0) const;

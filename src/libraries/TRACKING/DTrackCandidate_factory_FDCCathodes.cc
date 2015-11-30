@@ -29,7 +29,7 @@
 /// DTrackCandidate_factory_FDCCathodes::brun():
 ///
 jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop, 
-						   int runnumber) {
+						   int32_t runnumber) {
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   bfield = dapp->GetBfield(runnumber);
   FactorForSenseOfRotation=(bfield->GetBz(0.,0.,65.)>0.)?-1.:1.;
@@ -148,7 +148,7 @@ inline bool DTrackCandidate_segment_cmp_by_z(const DFDCSegment *a,
 //------------------
 // evnt:  main segment linking routine
 //------------------
-jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
   if (!USE_FDC) return NOERROR;
 

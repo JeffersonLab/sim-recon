@@ -73,7 +73,7 @@ jerror_t DEventProcessor_rho_p_hists::init(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_rho_p_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_rho_p_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// Get reconstructed objects
 	vector<const DBeamPhoton*> beam_photons;

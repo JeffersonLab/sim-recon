@@ -49,7 +49,7 @@ jerror_t DEventProcessor_trackeff_missing::brun(jana::JEventLoop* locEventLoop, 
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_trackeff_missing::evnt(jana::JEventLoop* locEventLoop, int locEventNumber)
+jerror_t DEventProcessor_trackeff_missing::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 	//Optional: Get the analysis results for all DReactions. 
 		//Getting these objects triggers the analysis, if it wasn't performed already. 

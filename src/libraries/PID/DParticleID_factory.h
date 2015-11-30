@@ -20,7 +20,7 @@ class DParticleID_factory:public jana::JFactory<DParticleID>{
   
   
  private:
-  jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber){
+  jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber){
     // This is a trivial class that simply implements a default
     // factory. It is here so that the default can be changed 
     // easily by simply changing the tag here or on the command 

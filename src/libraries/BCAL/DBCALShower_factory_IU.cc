@@ -48,7 +48,7 @@ DBCALShower_factory_IU::DBCALShower_factory_IU(){
   }
 }
 
-jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int runnumber) {
+jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int32_t runnumber) {
   DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
   DGeometry* geom = app->GetDGeometry(runnumber);
   geom->GetTargetZ(m_zTarget);
@@ -57,7 +57,7 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int runnumber) {
 }
 
 jerror_t
-DBCALShower_factory_IU::evnt( JEventLoop *loop, int eventnumber ){
+DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
  
   vector< const DBCALCluster* > clusters;
   loop->Get( clusters );

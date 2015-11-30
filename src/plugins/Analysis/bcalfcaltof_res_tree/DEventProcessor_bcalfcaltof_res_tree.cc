@@ -48,7 +48,7 @@ jerror_t DEventProcessor_bcalfcaltof_res_tree::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_bcalfcaltof_res_tree::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t DEventProcessor_bcalfcaltof_res_tree::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	DApplication* locApplication = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
 	if(!locApplication){
@@ -85,7 +85,7 @@ jerror_t DEventProcessor_bcalfcaltof_res_tree::brun(JEventLoop *eventLoop, int r
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_bcalfcaltof_res_tree::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_bcalfcaltof_res_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	unsigned int loc_i, loc_j;
 	DVector3 locLabHitPosition, locLabHitPosition_Truth, locGeneratedVertex;

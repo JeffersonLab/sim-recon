@@ -51,7 +51,7 @@ jerror_t JEventProcessor_CDC_TimeToDistance::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_CDC_TimeToDistance::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_CDC_TimeToDistance::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
     // This is called whenever the run number changes
     DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
@@ -91,7 +91,7 @@ jerror_t JEventProcessor_CDC_TimeToDistance::brun(JEventLoop *eventLoop, int run
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_CDC_TimeToDistance::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_CDC_TimeToDistance::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
     // Getting the charged tracks will allow us to use the field on data
     vector <const DChargedTrack *> chargedTrackVector;

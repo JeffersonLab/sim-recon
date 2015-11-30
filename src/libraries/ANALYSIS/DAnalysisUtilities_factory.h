@@ -18,7 +18,7 @@ class DAnalysisUtilities_factory : public jana::JFactory<DAnalysisUtilities>
 		~DAnalysisUtilities_factory(){};
   
 	private:
-		jerror_t evnt(jana::JEventLoop *loop, int eventnumber)
+		jerror_t evnt(jana::JEventLoop *loop, uint64_t eventnumber)
 		{
 			// Create single DAnalysisUtilities object and mark the factory as
 			// persistent so it doesn't get deleted every event.

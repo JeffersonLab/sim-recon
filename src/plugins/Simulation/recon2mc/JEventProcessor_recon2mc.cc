@@ -127,7 +127,7 @@ jerror_t JEventProcessor_recon2mc::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_recon2mc::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_recon2mc::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	runNumber = runnumber;
 
@@ -137,7 +137,7 @@ jerror_t JEventProcessor_recon2mc::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_recon2mc::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_recon2mc::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// Get list of tracks
 	vector<const DTrackTimeBased*> tbts;

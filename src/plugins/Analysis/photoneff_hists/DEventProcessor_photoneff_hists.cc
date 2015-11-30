@@ -85,7 +85,7 @@ jerror_t DEventProcessor_photoneff_hists::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_photoneff_hists::brun(JEventLoop *loop, int runnumber)
+jerror_t DEventProcessor_photoneff_hists::brun(JEventLoop *loop, int32_t runnumber)
 {
 
 	return NOERROR;
@@ -110,7 +110,7 @@ jerror_t DEventProcessor_photoneff_hists::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_photoneff_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_photoneff_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DFCALHit*> fcalhits;
 	vector<const DBCALMCResponse*> bcalhits;

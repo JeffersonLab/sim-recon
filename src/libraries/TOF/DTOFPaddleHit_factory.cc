@@ -30,7 +30,7 @@ using namespace std;
 //------------------
 // brun
 //------------------
-jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int runnumber)
+jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int32_t runnumber)
 {
 
   map<string, double> tofparms;
@@ -68,7 +68,7 @@ jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 
   vector<const DTOFHit*> hits;

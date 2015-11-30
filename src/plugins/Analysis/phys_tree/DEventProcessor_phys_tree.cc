@@ -95,7 +95,7 @@ jerror_t DEventProcessor_phys_tree::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_phys_tree::brun(JEventLoop *loop, int runnumber)
+jerror_t DEventProcessor_phys_tree::brun(JEventLoop *loop, int32_t runnumber)
 {
 
 	return NOERROR;
@@ -104,7 +104,7 @@ jerror_t DEventProcessor_phys_tree::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// Get reconstructed objects and make TLorentz vectors out of each of them
 	vector<const DBeamPhoton*> beam_photons;

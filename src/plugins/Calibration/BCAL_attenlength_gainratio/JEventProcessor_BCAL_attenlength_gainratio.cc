@@ -140,7 +140,7 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_BCAL_attenlength_gainratio::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_BCAL_attenlength_gainratio::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	// This is called whenever the run number changes
 
@@ -154,7 +154,7 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::brun(JEventLoop *eventLoop,
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 
 	// Start with matched points
@@ -174,12 +174,12 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, int 
 		vector<const DBCALDigiHit*> digihits;
 		point->Get(digihits);
 		if (digihits.size()!=2) {
-			printf("Warning: BCAL_attenlength_gainratio: event %i: wrong number of BCALDigiHit objects found %i\n",
+			printf("Warning: BCAL_attenlength_gainratio: event %llu: wrong number of BCALDigiHit objects found %i\n",
 				   eventnumber,(int)digihits.size());
 			continue;
 		}
 		if (digihits[0]->end==digihits[1]->end) {
-			printf("Warning: BCAL_attenlength_gainratio: event %i: two hits in same end of point\n",eventnumber);
+			printf("Warning: BCAL_attenlength_gainratio: event %llu: two hits in same end of point\n",eventnumber);
 			continue;
 		}
 		float integralUS, integralDS;
@@ -201,7 +201,7 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, int 
 		float zpos = point->z() - DBCALGeometry::GetBCAL_center() + z_target_center;
 		float intratio = (float)integralUS/(float)integralDS;
 		float logintratio = log(intratio);
-		if (VERBOSE>4) printf("%5i  %2i %i %i  %8.1f  %8.1f  %8.3f  %8.3f  %8.3f\n", 
+		if (VERBOSE>4) printf("%5llu  %2i %i %i  %8.1f  %8.1f  %8.3f  %8.3f  %8.3f\n", 
 							  eventnumber,module,layer,sector,integralUS,integralDS,intratio,logintratio,zpos);
 		if (Energy > 0.01) {  // 10 MeV cut to remove bias due to attenuation
 			logintratiovsZ[module-1][layer-1][sector-1]->Fill(zpos, logintratio);

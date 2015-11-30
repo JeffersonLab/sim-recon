@@ -41,7 +41,7 @@ jerror_t DPhoton_factory_HDParSim::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DPhoton_factory_HDParSim::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DPhoton_factory_HDParSim::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -49,7 +49,7 @@ jerror_t DPhoton_factory_HDParSim::brun(jana::JEventLoop *eventLoop, int runnumb
 //------------------
 // evnt
 //------------------
-jerror_t DPhoton_factory_HDParSim::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DPhoton_factory_HDParSim::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// The simplest way to do this is to get the list of DMCThrown
 	// objects and copy those into our own DPhoton objects, but with smeared values.

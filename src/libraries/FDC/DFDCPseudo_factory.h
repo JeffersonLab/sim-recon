@@ -72,8 +72,8 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		/// DFDCPseudo_factory::makePseudo().
 		///
 		jerror_t init(void);
-		jerror_t evnt(JEventLoop *eventLoop, int eventNo);
-		jerror_t brun(JEventLoop *loop, int runnumber);
+		jerror_t evnt(JEventLoop *eventLoop, uint64_t eventNo);
+		jerror_t brun(JEventLoop *loop, int32_t runnumber);
 		jerror_t erun(void);
 
 		/// 

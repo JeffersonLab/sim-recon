@@ -13,7 +13,7 @@ class DEventWriterEVIO_factory : public jana::JFactory<DEventWriterEVIO>
 		~DEventWriterEVIO_factory(){};
 
 	private:
-		jerror_t evnt(jana::JEventLoop *locEventLoop, int locEventNumber)
+		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t locEventNumber)
 		{
 			// Create single DEventWriterEVIO object and marks the factory as persistent so it doesn't get deleted every event.
 			SetFactoryFlag(PERSISTANT);

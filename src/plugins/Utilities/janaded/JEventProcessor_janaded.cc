@@ -75,7 +75,7 @@ jerror_t JEventProcessor_janaded::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_janaded::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_janaded::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 
 	return NOERROR;
@@ -84,7 +84,7 @@ jerror_t JEventProcessor_janaded::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_janaded::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_janaded::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	while(true) {
 		pthread_mutex_lock(&mutex1);

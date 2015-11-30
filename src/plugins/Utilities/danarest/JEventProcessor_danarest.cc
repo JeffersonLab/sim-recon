@@ -27,7 +27,7 @@ jerror_t JEventProcessor_danarest::init(void)
 //-------------------------------
 // brun
 //-------------------------------
-jerror_t JEventProcessor_danarest::brun(JEventLoop *locEventLoop, int runnumber)
+jerror_t JEventProcessor_danarest::brun(JEventLoop *locEventLoop, int32_t runnumber)
 {
    return NOERROR;
 }
@@ -35,7 +35,7 @@ jerror_t JEventProcessor_danarest::brun(JEventLoop *locEventLoop, int runnumber)
 //-------------------------------
 // evnt
 //-------------------------------
-jerror_t JEventProcessor_danarest::evnt(JEventLoop *locEventLoop, int eventnumber)
+jerror_t JEventProcessor_danarest::evnt(JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	//Ignore EPICS events
 	vector<const DEPICSvalue*> locEPICSValues;

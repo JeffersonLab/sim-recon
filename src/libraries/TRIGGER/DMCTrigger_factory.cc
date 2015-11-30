@@ -35,7 +35,7 @@ jerror_t DMCTrigger_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DMCTrigger_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DMCTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
 	// Get attenuation parameters
 	double L_over_2 = DBCALGeometry::GetBCAL_length()/2.0;
@@ -67,7 +67,7 @@ jerror_t DMCTrigger_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DMCTrigger_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DMCTrigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// See comments in DMCTrigger_factory.h
 

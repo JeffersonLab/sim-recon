@@ -22,7 +22,7 @@ jerror_t DBeamPhoton_factory_KinFit::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DBeamPhoton_factory_KinFit::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DBeamPhoton_factory_KinFit::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -30,7 +30,7 @@ jerror_t DBeamPhoton_factory_KinFit::brun(jana::JEventLoop *locEventLoop, int ru
 //------------------
 // evnt
 //------------------
-jerror_t DBeamPhoton_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
+jerror_t DBeamPhoton_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DBeamPhoton_factory_KinFit::evnt()");

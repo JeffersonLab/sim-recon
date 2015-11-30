@@ -34,7 +34,7 @@ class DLorentzDeflections;
 
 class DGeometry{
 	public:
-		DGeometry(JGeometry *jgeom, DApplication *dapp, unsigned int runnumber);
+		DGeometry(JGeometry *jgeom, DApplication *dapp, int32_t runnumber);
 		virtual ~DGeometry();
 		virtual const char* className(void){return static_className();}
 		static const char* static_className(void){return "DGeometry";}
@@ -171,7 +171,7 @@ class DGeometry{
 		JGeometry *jgeom;
 		DApplication *dapp;
 		mutable DMagneticFieldMap *bfield;
-		unsigned int runnumber;
+		int32_t runnumber;
 		mutable vector<DMaterial*> materials;			/// Older implementation to keep track of material specs without ranges
 		mutable vector<DMaterialMap*> materialmaps;	/// Material maps generated automatically(indirectly) from XML with ranges and specs
 		mutable bool materialmaps_read;

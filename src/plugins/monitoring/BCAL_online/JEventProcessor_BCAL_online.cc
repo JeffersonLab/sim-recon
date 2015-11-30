@@ -417,7 +417,7 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_BCAL_online::brun(JEventLoop *eventLoop, int runnumber) {
+jerror_t JEventProcessor_BCAL_online::brun(JEventLoop *eventLoop, int32_t runnumber) {
 	// This is called whenever the run number changes
 	return NOERROR;
 }
@@ -426,7 +426,7 @@ jerror_t JEventProcessor_BCAL_online::brun(JEventLoop *eventLoop, int runnumber)
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, int eventnumber) {
+jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumber) {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using
 	// loop-Get(...) to get reconstructed objects (and thereby activating the

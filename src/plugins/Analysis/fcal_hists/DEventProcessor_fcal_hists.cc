@@ -46,7 +46,7 @@ jerror_t DEventProcessor_fcal_hists::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_fcal_hists::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t DEventProcessor_fcal_hists::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -54,7 +54,7 @@ jerror_t DEventProcessor_fcal_hists::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_fcal_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_fcal_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// extract the FCAL Geometry (for isBlockActive() and positionOnFace())
 	vector<const DFCALGeometry*> fcalGeomVect;

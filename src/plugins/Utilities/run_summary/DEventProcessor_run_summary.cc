@@ -93,7 +93,7 @@ jerror_t DEventProcessor_run_summary::brun(jana::JEventLoop* locEventLoop, int l
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_run_summary::evnt(jana::JEventLoop* locEventLoop, int locEventNumber)
+jerror_t DEventProcessor_run_summary::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using

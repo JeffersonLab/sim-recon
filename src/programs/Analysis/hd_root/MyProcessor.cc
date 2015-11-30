@@ -76,7 +76,7 @@ jerror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 // brun
 //------------------------------------------------------------------
-jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t MyProcessor::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	vector<string> factory_names;
 	eventLoop->GetFactoryNames(factory_names);
@@ -139,7 +139,7 @@ jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
 //------------------------------------------------------------------
 // evnt   -Fill tree here
 //------------------------------------------------------------------
-jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
+jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 {
 	// Loop over factories explicitly mentioned on command line
 	for(unsigned int i=0;i<toprint.size();i++){

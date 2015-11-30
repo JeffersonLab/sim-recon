@@ -91,7 +91,7 @@ jerror_t DTrackTimeBased_factory_Combo::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrackTimeBased_factory_Combo::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DTrackTimeBased_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	gPARMS->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", dTrackSelectionTag);
 
@@ -145,7 +145,7 @@ jerror_t DTrackTimeBased_factory_Combo::brun(jana::JEventLoop *locEventLoop, int
 //------------------
 // evnt
 //------------------
-jerror_t DTrackTimeBased_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DTrackTimeBased_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DTrackTimeBased_factory_Combo::evnt()");

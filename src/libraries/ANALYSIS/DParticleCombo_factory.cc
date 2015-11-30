@@ -22,7 +22,7 @@ jerror_t DParticleCombo_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DParticleCombo_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
+jerror_t DParticleCombo_factory::brun(jana::JEventLoop* locEventLoop, int32_t runnumber)
 {
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield(runnumber);
@@ -69,7 +69,7 @@ jerror_t DParticleCombo_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 //------------------
 // evnt
 //------------------
-jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
+jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DParticleCombo_factory::evnt()");

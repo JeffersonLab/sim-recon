@@ -61,7 +61,7 @@ jerror_t DTrigger_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrigger_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DTrigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
 	// Get attenuation parameters
 	double L_over_2 = DBCALGeometry::BCALFIBERLENGTH/2.0;
@@ -74,7 +74,7 @@ jerror_t DTrigger_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DTrigger_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// See comments in DTrigger_factory.h
 

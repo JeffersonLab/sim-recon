@@ -12,7 +12,7 @@
 //------------------
 // evnt
 //------------------
-jerror_t DBCALGeometry_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DBCALGeometry_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 
   DBCALGeometry *bcalGeom = new DBCALGeometry;

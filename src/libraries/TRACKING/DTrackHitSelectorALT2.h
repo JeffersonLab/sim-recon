@@ -17,7 +17,7 @@
 
 class DTrackHitSelectorALT2:public DTrackHitSelector{
 	public:
-	DTrackHitSelectorALT2(jana::JEventLoop *loop, int runnumber);
+	DTrackHitSelectorALT2(jana::JEventLoop *loop, int32_t runnumber);
 		virtual ~DTrackHitSelectorALT2();
 		
 		void GetCDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, vector<const DCDCTrackHit*> &cdchits_out,int N=20) const;
