@@ -175,11 +175,11 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 		point->Get(digihits);
 		if (digihits.size()!=2) {
 			printf("Warning: BCAL_attenlength_gainratio: event %llu: wrong number of BCALDigiHit objects found %i\n",
-				   eventnumber,(int)digihits.size());
+				   (long long unsigned int)eventnumber,(int)digihits.size());
 			continue;
 		}
 		if (digihits[0]->end==digihits[1]->end) {
-			printf("Warning: BCAL_attenlength_gainratio: event %llu: two hits in same end of point\n",eventnumber);
+			printf("Warning: BCAL_attenlength_gainratio: event %llu: two hits in same end of point\n",(long long unsigned int)eventnumber);
 			continue;
 		}
 		float integralUS, integralDS;
@@ -202,7 +202,7 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 		float intratio = (float)integralUS/(float)integralDS;
 		float logintratio = log(intratio);
 		if (VERBOSE>4) printf("%5llu  %2i %i %i  %8.1f  %8.1f  %8.3f  %8.3f  %8.3f\n", 
-							  eventnumber,module,layer,sector,integralUS,integralDS,intratio,logintratio,zpos);
+							  (long long unsigned int)eventnumber,module,layer,sector,integralUS,integralDS,intratio,logintratio,zpos);
 		if (Energy > 0.01) {  // 10 MeV cut to remove bias due to attenuation
 			logintratiovsZ[module-1][layer-1][sector-1]->Fill(zpos, logintratio);
 		} 
