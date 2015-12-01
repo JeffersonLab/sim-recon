@@ -129,6 +129,7 @@
 *                                                                      *
 ************************************************************************
 *
+#include "geant321/gcflag.inc"
 #include "geant321/gckine.inc"
 #include "geant321/gcunit.inc"
 #include "geant321/gcphys.inc"
@@ -156,9 +157,6 @@
       data bfield_map/20*0/
       data PS_bfield_type/20*0/
       data PS_bfield_map/20*0/
-
-      integer myrunno
-      data myrunno/1/
 
       integer postsmear
       integer mcsmearopts(64)
@@ -219,6 +217,7 @@ C..geant..
 *             PKINE(1)=particle energy
 *             IKINE and PKINE can be changed with the data card KINE
 *
+      IDRUN=1
       PKINE(1)=10.
       PKINE(5)=4.
       IKINE=1
@@ -289,7 +288,7 @@ C..geant..
 *
 *             Open the input stream
 *
-      nevent = 0
+c      nevent = 0
       if (infile(1) .gt. 0) then
         ifail = openInput(infile)
         if (ifail .ne. 0) then
@@ -298,15 +297,15 @@ C..geant..
            stop
         endif
         get_next_evt=0
-        call extractRunNumber(myrunno)
+        call extractRunNumber(IDRUN)
 
-        write(6,*) 'run number ',myrunno
+        write(6,*) 'run number ',IDRUN
         if (iskip .gt. 0) then
           ifail = skipInput(iskip)
         endif
-        if (nevent .eq. 0) then
-          nevent = 999999999
-        endif
+c        if (nevent .eq. 0) then
+c          nevent = 999999999
+c        endif
       endif
 *
 *             Open the output stream
@@ -396,7 +395,7 @@ C..geant..
 *      endif
       call Goptimize
       call initcalibdb(bfield_type, bfield_map, PS_bfield_type, 
-     +     PS_bfield_map, myrunno)
+     +     PS_bfield_map, IDRUN)
       call copytocplusplus(infile,outfile,postsmear,mcsmearopts
      +,deleteunsmeared)
       call copygatetocplusplus(bggate(1), bggate(2))
