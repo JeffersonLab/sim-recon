@@ -17,8 +17,8 @@
 using namespace std;
 
 extern "C"{
-  void cobrems_(float *Ee,float *Epeak, float *dist,float *diameter,
-		int *do_acceptance);
+  void cobrems_(float *Ee,float *Epeak, float *emitmr, float *radt,
+		float *dist,float *diameter,int *doPolFlux);
   float dntdx_(float* x);
   float dnidx_(float* x);
 }
@@ -477,8 +477,10 @@ int main(int narg, char *argv[])
   //----------------------------------------------------------------------------
   float radColDist=76.0;// meters
   //float colDiam=0.0034; // meters
-  int do_acceptance=1;
-  cobrems_(&Ee,&Epeak,&radColDist,&collDiam,&do_acceptance);
+  int doPolFlux=0;  // want total flux (1 for polarized flux)
+  float emitmr=10.e-9; // electron beam emittance
+  float radt=20.e-6; // radiator thickness in m
+  cobrems_(&Ee,&Epeak,&emitmr,&radt,&radColDist,&collDiam,&doPolFlux);
   
   // Create some diagonistic histographs
   CreateHistograms();
