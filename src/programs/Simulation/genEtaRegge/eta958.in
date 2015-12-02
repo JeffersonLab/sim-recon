@@ -1,7 +1,7 @@
 #Emin Emax (photon energy range)
-8.0 11.7
-#Electron beam energy [GeV], coherent peak [GeV] and collimator radius [cm]
-12.0 9.0 0.17
+7.0 11.7
+#Electron beam energy [GeV], coherent peak [GeV] and collimator diameter [m]
+12.0 9.0 0.0034
 #mass[GeV] width[GeV]
 0.95766 0.000205
 #g_eta_gamma_gamma g_rho_eta_gamma g_omega_eta_gamma g_phi_eta_gamma 
