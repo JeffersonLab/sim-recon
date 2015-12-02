@@ -22,6 +22,55 @@ TH2I * Get2DHistogram(const char * plugin, const char * directoryName, const cha
     return histogram;
 }
 
+void GetCCDBConstants(TString path, Int_t run, TString variation, vector<double>& container, Int_t column = 1){
+    char command[256];
+    sprintf(command, "ccdb dump %s:%i:%s", path.Data(), run, variation.Data());
+    FILE* inputPipe = gSystem->OpenPipe(command, "r");
+    if(inputPipe == NULL)
+        return 0;
+    //get the first (comment) line
+    char buff[1024];
+    if(fgets(buff, sizeof(buff), inputPipe) == NULL)
+        return 0;
+    //get the remaining lines
+    double entry;
+    int counter = 0;
+    while(fgets(buff, sizeof(buff), inputPipe) != NULL){
+        istringstream locConstantsStream(buff);
+        while (locConstantsStream >> entry){
+            counter++;
+            if (counter % column == 0) container.push_back(entry);
+        }
+    }
+    //Close the pipe
+    gSystem->ClosePipe(inputPipe);
+}
+
+//Overload this function to handle the base time offsets
+void GetCCDBConstants(TString path, Int_t run, TString variation, double& constant1, double& constant2 = NULL){
+    char command[256];
+    sprintf(command, "ccdb dump %s:%i:%s", path.Data(), run, variation.Data());
+    FILE* inputPipe = gSystem->OpenPipe(command, "r");
+    if(inputPipe == NULL)
+        return 0;
+    //get the first (comment) line
+    char buff[1024];
+    if(fgets(buff, sizeof(buff), inputPipe) == NULL)
+        return 0;
+    //get the line containing the values
+    while(fgets(buff, sizeof(buff), inputPipe) != NULL){
+        istringstream locConstantsStream(buff);
+        if(constant2 != NULL){
+            locConstantsStream >> constant1 >> constant2;
+        }
+        else{
+            locConstantsStream >> constant1;
+        }
+    }
+    //Close the pipe
+    gSystem->ClosePipe(inputPipe);
+}
+
 int GetCCDBIndexTAGM(unsigned int column, unsigned int row){
     int CCDBIndex = column + row;
     if (column > 9) CCDBIndex += 5;
@@ -32,11 +81,10 @@ int GetCCDBIndexTAGM(unsigned int column, unsigned int row){
     return CCDBIndex;
 }
 
-void ExtractTrackBasedTiming(int runNumber){
+void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 2931, TString variation = "default", TString prefix = ""){
 
-    TString fileName = Form ("Run%i/TrackBasedTiming.root", runNumber);
-    TString prefix = Form ("Run%i/constants/TrackBasedTiming/",runNumber);
-    TString inputPrefix = Form ("Run%i/constants/TDCADCTiming/",runNumber);
+    // set "prefix" in case you want to ship the txt files elsewhere...
+    cout << "Performing TDC/ADC timing fits for File: " << fileName.Data() << " Run: " << runNumber << " Variation: " << variation.Data() << endl;
 
     thisFile = TFile::Open( fileName , "UPDATE");
     if (thisFile == 0) {
@@ -54,177 +102,37 @@ void ExtractTrackBasedTiming(int runNumber){
     vector<double> tagh_tdc_time_offsets;
     vector<double> tagh_fadc_time_offsets;
 
-    double sc_t_base_fadc;
-    double sc_t_base_tdc;
-    double tof_t_base_fadc;
-    double tof_t_base_tdc;
-    double bcal_t_base_fadc;
-    double bcal_t_base_tdc;
-    double tagm_t_base_fadc;
-    double tagm_t_base_tdc;
-    double tagh_t_base_fadc;
-    double tagh_t_base_tdc;
+    double sc_t_base_fadc, sc_t_base_tdc;
+    double tof_t_base_fadc, tof_t_base_tdc;
+    double bcal_t_base_fadc, bcal_t_base_tdc;
+    double tagm_t_base_fadc, tagm_t_base_tdc;
+    double tagh_t_base_fadc, tagh_t_base_tdc;
     double fcal_t_base;
     double cdc_t_base;
 
-    ifstream inFile;
-    inFile.open(inputPrefix + "sc_tdc_timing_offsets.txt");
-    string line;
-    if (inFile.is_open()){
-        while (getline (inFile, line)){
-            sc_tdc_time_offsets.push_back(atof(line.data()));
-        }
-    }
-    inFile.close();
+    cout << "Grabbing CCDB constants..." << endl;
+    // Base times
+    GetCCDBConstants("/CDC/base_time_offset" ,runNumber, variation, cdc_t_base);
+    GetCCDBConstants("/FCAL/base_time_offset",runNumber, variation, fcal_t_base);
+    //GetCCDBConstants("/FDC/base_time_offset" ,runNumber, variation, fdc_base_time_adc, fdc_base_time_tdc);
+    GetCCDBConstants("/BCAL/base_time_offset" ,runNumber, variation, bcal_t_base_fadc, bcal_t_base_tdc);
+    GetCCDBConstants("/PHOTON_BEAM/microscope/base_time_offset" ,runNumber, variation, tagm_t_base_fadc, tagm_t_base_tdc);
+    GetCCDBConstants("/PHOTON_BEAM/hodoscope/base_time_offset" ,runNumber, variation, tagh_t_base_fadc, tagh_t_base_tdc);
+    GetCCDBConstants("/START_COUNTER/base_time_offset" ,runNumber, variation, sc_t_base_fadc, sc_t_base_tdc);
+    GetCCDBConstants("/TOF/base_time_offset" ,runNumber, variation, tof_t_base_fadc, tof_t_base_tdc);
+    // Per channel
+    //GetCCDBConstants("/BCAL/TDC_offsets"    ,runNumber, variation, bcal_tdc_offsets);
+    //GetCCDBConstants("/FCAL/timing_offsets" ,runNumber, variation, fcal_adc_offsets);
+    GetCCDBConstants("/START_COUNTER/adc_timing_offsets" ,runNumber, variation, sc_fadc_time_offsets);
+    GetCCDBConstants("/START_COUNTER/tdc_timing_offsets" ,runNumber, variation, sc_tdc_time_offsets);
+    GetCCDBConstants("/PHOTON_BEAM/microscope/fadc_time_offsets" ,runNumber, variation, tagm_fadc_time_offsets,3);// Interested in 3rd column
+    GetCCDBConstants("/PHOTON_BEAM/microscope/tdc_time_offsets"  ,runNumber, variation, tagm_tdc_time_offsets,3);
+    GetCCDBConstants("/PHOTON_BEAM/hodoscope/fadc_time_offsets"  ,runNumber, variation, tagh_fadc_time_offsets,2);// Interested in 2nd column
+    GetCCDBConstants("/PHOTON_BEAM/hodoscope/tdc_time_offsets"   ,runNumber, variation, tagh_tdc_time_offsets,2);
+    GetCCDBConstants("/TOF/adc_timing_offsets",runNumber, variation, tof_fadc_time_offsets);
+    GetCCDBConstants("/TOF/timing_offsets",runNumber, variation, tof_tdc_time_offsets);
 
-    ifstream inFile;
-    inFile.open(inputPrefix + "sc_adc_timing_offsets.txt");
-    string line;
-    if (inFile.is_open()){
-        while (getline (inFile, line)){
-            sc_fadc_time_offsets.push_back(atof(line.data()));
-        }
-    }
-    inFile.close();
-
-    inFile.open(inputPrefix + "tof_tdc_timing_offsets.txt");
-    if (inFile.is_open()){
-        while (getline (inFile, line)){
-            tof_tdc_time_offsets.push_back(atof(line.data()));
-        }
-    }
-    inFile.close();
-
-    inFile.open(inputPrefix + "tof_adc_timing_offsets.txt");
-    if (inFile.is_open()){
-        while (getline (inFile, line)){
-            tof_fadc_time_offsets.push_back(atof(line.data()));
-        }
-    }
-    inFile.close();
-
-    inFile.open(inputPrefix + "tagm_tdc_timing_offsets.txt");
-    if (inFile.is_open()){
-        while (getline (inFile, line)){
-            istringstream iss(line);
-            double r, c, offset;
-            while (iss>>r>>c>>offset){
-                //if (row != 0) continue;
-                tagm_tdc_time_offsets.push_back(offset);
-            }
-        }
-    }
-    inFile.close();
-
-    inFile.open(inputPrefix + "tagm_adc_timing_offsets.txt");
-    if (inFile.is_open()){
-        while (getline (inFile, line)){
-            istringstream iss(line);
-            double r, c, offset;
-            while (iss>>r>>c>>offset){
-                //if (row != 0) continue;
-                tagm_fadc_time_offsets.push_back(offset);
-            }
-        }
-    }
-    inFile.close();
-
-    inFile.open(inputPrefix + "tagh_tdc_timing_offsets.txt");
-    if (inFile.is_open()){
-        while (getline (inFile, line)){
-            istringstream iss(line);
-            double counter, offset;
-            while (iss>>counter>>offset){
-                tagh_tdc_time_offsets.push_back(offset);
-            }
-        }
-    }
-    inFile.close();
-
-    inFile.open(inputPrefix + "tagh_adc_timing_offsets.txt");
-    if (inFile.is_open()){
-        while (getline (inFile, line)){
-            istringstream iss(line);
-            double counter, offset;
-            while (iss>>counter>>offset){
-                tagh_fadc_time_offsets.push_back(offset);
-            }
-        }
-    }
-    inFile.close();
-
-    inFile.open(inputPrefix + "tof_base_time.txt");
-    if (inFile.is_open()){
-        while (getline (inFile, line)){
-            istringstream iss(line);
-            iss>>tof_t_base_fadc>>tof_t_base_tdc;
-        }
-    }
-    inFile.close();
-
-    inFile.open(inputPrefix + "sc_base_time.txt");
-    if (inFile.is_open()){
-        while (getline (inFile, line)){
-            istringstream iss(line);
-            iss>>sc_t_base_fadc>>sc_t_base_tdc;
-        }
-    }
-    inFile.close();
-
-    inFile.open(inputPrefix + "bcal_base_time.txt");
-    if (inFile.is_open()){
-        while (getline (inFile, line)){
-            istringstream iss(line);
-            double adc_offset, tdc_offset;
-            iss>>adc_offset>>tdc_offset; // TDC not used currently
-            bcal_t_base_fadc = adc_offset;
-            bcal_t_base_tdc = tdc_offset;
-        }
-    }
-    inFile.close();
-
-    inFile.open(inputPrefix + "tagm_base_time.txt");
-    if (inFile.is_open()){
-        while (getline (inFile, line)){
-            istringstream iss(line);
-            double adc_offset, tdc_offset;
-            iss>>adc_offset>>tdc_offset; // TDC not used currently
-            tagm_t_base_fadc = adc_offset;
-            tagm_t_base_tdc = tdc_offset;
-        }
-    }
-
-    inFile.close();
-    inFile.open(inputPrefix + "tagh_base_time.txt");
-    if (inFile.is_open()){
-        while (getline (inFile, line)){
-            istringstream iss(line);
-            double adc_offset, tdc_offset;
-            iss>>adc_offset>>tdc_offset; // TDC not used currently
-            tagh_t_base_fadc = adc_offset;
-            tagh_t_base_tdc = tdc_offset;
-        }
-    }
-    inFile.close();
-
-    inFile.open(inputPrefix + "fcal_base_time.txt");
-    if (inFile.is_open()){
-        while (getline (inFile, line)){
-            istringstream iss(line);
-            iss>>fcal_t_base; 
-        }
-    }
-    inFile.close();
-
-    inFile.open(inputPrefix + "cdc_base_time.txt");
-    if (inFile.is_open()){
-        while (getline (inFile, line)){
-            istringstream iss(line);
-            iss>>cdc_t_base; 
-        }
-    }
-    inFile.close();
-
+    cout << "Done grabbing CCDB constants...Entering fits..." << endl;
 
     // Do our final step in the timing alignment with tracking
 
@@ -285,56 +193,9 @@ void ExtractTrackBasedTiming(int runNumber){
                 TAGMOffsetDistribution->Fill(maxMean);
             }
         }
-        /*
-        if (!useRF){
-            //TFitResultPtr fr1 = selectedTAGMOffset->Fit("pol1", "SQ", "", 0.5, nBinsX + 0.5);
-            TFitResultPtr fr1 = selectedTAGMOffset->Fit("pol1", "SQ", "", 5, 50);
-
-            for (int i = 1 ; i <= nBinsX; i++){
-                double x0 = fr1->Parameter(0);
-                double x1 = fr1->Parameter(1);
-                //double x2 = fr1->Parameter(2);
-                //double fitResult = x0 + i*x1 + i*i*x2;
-                double fitResult = x0 + i*x1;
-
-                double outlierCut = 20;
-                double valueToUse = selectedTAGMOffset->GetBinContent(i);
-                if (fabs(selectedTAGMOffset->GetBinContent(i) - fitResult) > outlierCut && valueToUse != 0.0){
-                    valueToUse = fitResult;
-                }
-
-                selectedTAGMOffset->SetBinContent(i, valueToUse);
-                if (valueToUse != 0 ) TAGMOffsetDistribution->Fill(valueToUse);
-            }
-        }
-*/
         double meanOffset = TAGMOffsetDistribution->GetMean();
         // This might be in units of beam bunches, so we need to convert
         if (useRF) meanOffset *= RF_Period;
-        /*
-           for (int i = 1 ; i <= nBinsX; i++){
-           double valueToUse = selectedTAGMOffset->GetBinContent(i);
-           if (useRF) valueToUse *= RF_Period;
-           if (valueToUse == 0) valueToUse = meanOffset;
-           outFile.open(prefix + "tagm_tdc_timing_offsets.txt", ios::out | ios::app);
-           outFile << "0 " << i << " " << valueToUse + tagm_tdc_time_offsets[i-1] - meanOffset<< endl;
-           if (i == 7 || i == 25 || i == 79 || i == 97){
-           for(int j = 1; j <= 5; j++){
-           outFile << j << " " << i << " " << valueToUse + tagm_tdc_time_offsets[i-1] - meanOffset<< endl;
-           }
-           }
-           outFile.close();
-        // Apply the same shift to the adc offsets
-        outFile.open(prefix + "tagm_adc_timing_offsets.txt", ios::out | ios::app);
-        outFile << "0 " << i << " " << valueToUse + tagm_fadc_time_offsets[i-1] - meanOffset<< endl;
-        if (i == 7 || i == 25 || i == 79 || i == 97){
-        for(int j = 1; j <= 5; j++){
-        outFile << j << " " << i << " " << valueToUse + tagm_fadc_time_offsets[i-1] - meanOffset<< endl;
-        }
-        }
-        outFile.close();
-        }
-        */
 
         outFile.open(prefix + "tagm_adc_timing_offsets.txt", ios::out);
         //for (int i = 1 ; i <= nBinsX; i++){
@@ -430,48 +291,8 @@ void ExtractTrackBasedTiming(int runNumber){
             else{
                 selectedTAGHOffset->SetBinContent(i, maxMean);
             }
-            /*
-               outFile.open("tagh_tdc_timing_offsets.txt", ios::out | ios::app);
-               outFile << i << " " << maxMean + tagh_tdc_time_offsets[i] << endl;
-               outFile.close();
-               outFile.open("tagh_adc_timing_offsets.txt", ios::out | ios::app);
-               outFile << i << " " << maxMean + tagh_fadc_time_offsets[i] << endl;
-               outFile.close();
-               */
         }
 
-        // Fit 1D histogram. If value is far from the fit use the fitted value
-        // Two behaviors above and below microscope
-        // This isn't working well, so removing...
-        /*
-           TFitResultPtr fr1 = selectedTAGHOffset->Fit("pol2", "SQ", "", 0.5, 131.5);
-           TFitResultPtr fr2 = selectedTAGHOffset->Fit("pol2", "SQ", "", 182.5, 274.5);        
-
-           for (int i = 1 ; i <= nBinsX; i++){
-           double fitResult = 0.0;
-           if (i < 150){
-           double x0 = fr1->Parameter(0);
-           double x1 = fr1->Parameter(1);
-           double x2 = fr1->Parameter(2);
-           fitResult = x0 + i*x1 + i*i*x2;
-           }
-           else{
-           double x0 = fr2->Parameter(0);
-           double x1 = fr2->Parameter(1);
-           double x2 = fr2->Parameter(2);
-           fitResult = x0 + i*x1 + i*i*x2;
-           }
-
-           double outlierCut = 7;
-           double valueToUse = selectedTAGHOffset->GetBinContent(i);
-           if (fabs(selectedTAGHOffset->GetBinContent(i) - fitResult) > outlierCut && valueToUse != 0.0){
-           valueToUse = fitResult;
-           }
-
-           selectedTAGHOffset->SetBinContent(i, valueToUse);
-           if(valueToUse != 0) TAGHOffsetDistribution->Fill(valueToUse);
-           }
-           */
         double meanOffset = TAGHOffsetDistribution->GetMean();
         if (useRF) meanOffset *= RF_Period;
         for (int i = 1 ; i <= nBinsX; i++){
@@ -528,7 +349,7 @@ void ExtractTrackBasedTiming(int runNumber){
             outFile << sc_fadc_time_offsets[sector-1] + selectedSCSectorOffset->GetBinContent(sector) - meanSCOffset << endl;
         }
         outFile.close();
-        
+
         outFile.open(prefix + "sc_base_time.txt");
         outFile << sc_t_base_fadc - meanSCOffset << " " << sc_t_base_tdc - meanSCOffset << endl;
         outFile.close();
@@ -579,4 +400,4 @@ void ExtractTrackBasedTiming(int runNumber){
     }
     thisFile->Write();
     return;
-    }
+}
