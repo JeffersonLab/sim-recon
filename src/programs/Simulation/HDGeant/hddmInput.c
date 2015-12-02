@@ -357,8 +357,6 @@ int storeInput (int runNo, int eventNo, int ntracks)
                                           +plab[2]*plab[2]+amass*amass);
       ps->mult++;
    }
-   printf(">>>>>>>>>>>>>>>> here %d\n",runNo);
-
    pes->in[0].runNo = runNo;
    pes->in[0].eventNo = eventNo;
    return 0;
