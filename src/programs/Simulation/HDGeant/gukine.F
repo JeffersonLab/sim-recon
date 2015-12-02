@@ -164,7 +164,7 @@
         get_next_evt=1
       endif
       if (itry .eq. 0) then
-        itry = loadInput()
+        itry = loadInput(override_run_number,IDRUN)
 *
 *       Check for random number seeds in the input file. If they are
 *       there, then the values of iseed1 and iseed2 will be overwritten
