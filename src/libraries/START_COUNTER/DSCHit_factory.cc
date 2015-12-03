@@ -321,7 +321,7 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 		    // Correct for timewalk using pulse peak instead of pulse integral
 		    double A        = hit->pulse_height;
-		    double C0       = timewalk_parameters[id][0];
+		    //		    double C0       = timewalk_parameters[id][0];
 		    double C1       = timewalk_parameters[id][1];
 		    double C2       = timewalk_parameters[id][2];
 		    double A_THRESH = timewalk_parameters[id][3];

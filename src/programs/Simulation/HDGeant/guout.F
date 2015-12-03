@@ -64,13 +64,14 @@ C.
 C.
 #include "geant321/gcomis.inc"
 #include "geant321/gcphys.inc"
+#include "geant321/gcflag.inc"
 #include "controlparams.inc"
 C.    ------------------------------------------------------------------
 C.
       integer iskip
       integer iseen
       call gelh_outp(iskip)
-      iseen = loadOutput()
+      iseen = loadOutput(IDRUN)
 
 C     #define WRITE_ONLY_IF_SOMETHING_WAS_SEEN 1
 C     #if WRITE_ONLY_IF_SOMETHING_WAS_SEEN

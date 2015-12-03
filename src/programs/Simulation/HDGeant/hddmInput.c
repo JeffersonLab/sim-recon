@@ -136,7 +136,7 @@ int nextInput ()
  * loadInput
  *-------------------------
  */
-int loadInput ()
+int loadInput (int override_run_number, int myInputRunNo)
 {
 	/* Extracts the "thrown" particle 4-vectors and types from the
 	 * current HDDM buffer "thisInputEvent" and creates a vertex for
@@ -144,7 +144,7 @@ int loadInput ()
 	 */
    s_Reactions_t* reacts;
    int reactCount, ir;
-   int runNo = thisInputEvent->physicsEvents->in[0].runNo;
+   int runNo = (override_run_number>0)?(myInputRunNo):thisInputEvent->physicsEvents->in[0].runNo;
    int eventNo = thisInputEvent->physicsEvents->in[0].eventNo;
    seteventid_(&runNo,&eventNo);
    reacts = thisInputEvent ->physicsEvents->in[0].reactions;
@@ -456,9 +456,9 @@ int nextinput_ ()
    return nextInput();
 }
 
-int loadinput_ ()
+int loadinput_ (int *override_run_number,int *myInputRunNo)
 {
-   return loadInput();
+  return loadInput(*override_run_number,*myInputRunNo);
 }
 
 int storeinput_ (int* runNo, int* eventNo, int* ntracks)

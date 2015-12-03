@@ -63,7 +63,7 @@ int closeOutput ()
    return 0;
 }
 
-int loadOutput ()
+int loadOutput (int runNo)
 {
    int packages_hit=0;
    s_HitView_t *hitView;
@@ -85,7 +85,7 @@ int loadOutput ()
       thisOutputEvent->physicsEvents->mult = 1;
       thisOutputEvent->physicsEvents->in[0].eventNo = ++eventNo;
    }
-	
+   thisOutputEvent->physicsEvents->in[0].runNo=runNo;
 	if (Nevents == 1) {
 		if (thisOutputEvent->geometry == HDDM_NULL) {
 			thisOutputEvent->geometry = make_s_Geometry();
@@ -164,9 +164,9 @@ int flushoutput_ ()
    return flushOutput();
 }
 
-int loadoutput_ ()
+int loadoutput_ (int *runNo)
 {
-   return loadOutput();
+   return loadOutput(*runNo);
 }
 
 int closeoutput_ ()
