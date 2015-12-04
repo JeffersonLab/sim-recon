@@ -47,7 +47,7 @@ void WriteFitResults(ofstream &fout,TH1 *h,TString htype,int counter) {
     gauss.paramOn(plot,Layout(0.58,0.9,0.9),Format("NEU",AutoPrecision(1)));
     plot->Draw();
     stringstream ss; ss << counter;
-    system("mkdir -p fits_"+htype);
+    system(TString("mkdir -p fits_"+htype).Data());
     canvas->Print("fits_"+htype+"/counter_"+TString(ss.str())+".gif");
     delete canvas; delete plot;
     fout << counter << sep << max << sep << mean.getVal() << sep << mean.getError() << sep << sigma.getVal() << endl;

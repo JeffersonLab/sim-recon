@@ -27,17 +27,13 @@
 #include "TFile.h"
 #include "TLorentzVector.h"
 #include "TLorentzRotation.h"
+#include "TRandom3.h"
 
 using std::complex;
 using namespace std;
 
 int main( int argc, char* argv[] ){
   
-	// random number initialization - this is not GlueX standard and
-	// should be standardized in the future
-	
-	srand48( time( NULL ) );
-	
 	string  configfile("");
 	string  outname("");
 	string  hddmname("");
@@ -45,11 +41,14 @@ int main( int argc, char* argv[] ){
 	bool diag = false;
 	bool genFlat = false;
 	
-	double beamMaxE   = 5.5;
-	double beamPeakE  = 3.0;
-	double beamLowE   = 1.5;
-	double beamHighE  = 5.5;
+	double beamMaxE   = 12.0;
+	double beamPeakE  = 9.0;
+	double beamLowE   = 0.135;
+	double beamHighE  = 12.0;
 	
+	int runNum = 9001;
+	int seed = 0;
+
 	int nEvents = 10000;
 	int batchSize = 10000;
 	
@@ -82,6 +81,12 @@ int main( int argc, char* argv[] ){
 		if (arg == "-b"){  
 			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
 			else  beamHighE = atof( argv[++i] ); }
+		if (arg == "-r"){
+                        if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
+                        else  runNum = atoi( argv[++i] ); }
+		if (arg == "-s"){
+                        if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
+                        else  seed = atoi( argv[++i] ); }
 		if (arg == "-d"){
 			diag = true; }
 		if (arg == "-f"){
@@ -96,6 +101,8 @@ int main( int argc, char* argv[] ){
 			cout << "\t -p  <value>\t Coherent peak photon energy [optional]" << endl;
 			cout << "\t -a  <value>\t Minimum photon energy to simulate events [optional]" << endl;
 			cout << "\t -b  <value>\t Maximum photon energy to simulate events [optional]" << endl;
+			cout << "\t -r  <value>\t Run number assigned to generated events [optional]" << endl;
+			cout << "\t -s  <value>\t Random number seed initialization [optional]" << endl;
 			cout << "\t -f \t\t Generate flat in M(X) (no physics) [optional]" << endl;
 			cout << "\t -d \t\t Plot only diagnostic histograms [optional]" << endl << endl;
 			exit(1);
@@ -113,6 +120,9 @@ int main( int argc, char* argv[] ){
 	assert( cfgInfo->reactionList().size() == 1 );
 	ReactionInfo* reaction = cfgInfo->reactionList()[0];
 	
+	// random number initialization (set to 0 by default)
+	gRandom->SetSeed(seed);
+
 	// setup AmpToolsInterface
 	AmpToolsInterface::registerAmplitude( Pi0Regge() );
 	AmpToolsInterface::registerAmplitude( Pi0SAID() );
@@ -127,7 +137,7 @@ int main( int argc, char* argv[] ){
 	pTypes.push_back( Pi0 );
 	
 	HDDMDataWriter* hddmOut = NULL;
-	if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname, 9306 );
+	if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname, runNum );
 	ROOTDataWriter rootOut( outname );
 	
 	TFile* diagOut = new TFile( "gen_ppi0_diagnostic.root", "recreate" );
@@ -169,7 +179,7 @@ int main( int argc, char* argv[] ){
 			if( !diag ){
 				
 				// obtain this by looking at the maximum value of intensity * genWeight
-				double rand = drand48() * maxInten;
+				double rand = gRandom->Uniform() * maxInten;
 				
 				if( weightedInten > rand || genFlat ){
 					

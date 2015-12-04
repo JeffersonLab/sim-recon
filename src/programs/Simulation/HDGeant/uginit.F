@@ -129,6 +129,7 @@
 *                                                                      *
 ************************************************************************
 *
+#include "geant321/gcflag.inc"
 #include "geant321/gckine.inc"
 #include "geant321/gcunit.inc"
 #include "geant321/gcphys.inc"
@@ -157,9 +158,6 @@
       data PS_bfield_type/20*0/
       data PS_bfield_map/20*0/
 
-      integer myrunno
-      data myrunno/1/
-
       integer postsmear
       integer mcsmearopts(64)
       integer deleteunsmeared
@@ -167,6 +165,9 @@
       data mcsmearopts/64*0/
       data postsmear/0/
       data deleteunsmeared/0/
+      
+      integer myrunno
+      data myrunno/1/
 
       integer openInput, skipInput, openOutput
       external openInput, skipInput, openOutput
@@ -196,6 +197,7 @@ c The following parameters are declared in controlparams.inc above.
       data get_next_evt/1/
       data trigger_time_sigma_ns/10./
       data event_count/0/
+      data override_run_number/0/
 
 C  Use this parameter to set up a minimum photon energy 
 C  for the coherent bremsstrahlung beam generator - see beamgen.F
@@ -219,6 +221,7 @@ C..geant..
 *             PKINE(1)=particle energy
 *             IKINE and PKINE can be changed with the data card KINE
 *
+      IDRUN=-1
       PKINE(1)=10.
       PKINE(5)=4.
       IKINE=1
@@ -289,7 +292,7 @@ C..geant..
 *
 *             Open the input stream
 *
-      nevent = 0
+c      nevent = 0
       if (infile(1) .gt. 0) then
         ifail = openInput(infile)
         if (ifail .ne. 0) then
@@ -298,15 +301,22 @@ C..geant..
            stop
         endif
         get_next_evt=0
+*            Get the run number from the input file 
         call extractRunNumber(myrunno)
+*           .. but override it with the RUNG card if IDRUN>0        
+        if (IDRUN.lt.0) then
+           IDRUN=myrunno
+        else 
+           override_run_number=1
+        endif
 
-        write(6,*) 'run number ',myrunno
+        write(6,*) 'run number ',IDRUN,override_run_number
         if (iskip .gt. 0) then
           ifail = skipInput(iskip)
         endif
-        if (nevent .eq. 0) then
-          nevent = 999999999
-        endif
+c        if (nevent .eq. 0) then
+c          nevent = 999999999
+c        endif
       endif
 *
 *             Open the output stream
@@ -395,8 +405,10 @@ C..geant..
 *        call HDDSgeant3_runtime
 *      endif
       call Goptimize
+*         Set some default value for run number if not set otherwise
+      if (IDRUN.lt.0) IDRUN=1 
       call initcalibdb(bfield_type, bfield_map, PS_bfield_type, 
-     +     PS_bfield_map, myrunno)
+     +     PS_bfield_map, IDRUN)
       call copytocplusplus(infile,outfile,postsmear,mcsmearopts
      +,deleteunsmeared)
       call copygatetocplusplus(bggate(1), bggate(2))

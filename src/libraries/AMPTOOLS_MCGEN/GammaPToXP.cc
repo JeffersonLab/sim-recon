@@ -13,8 +13,9 @@
 
 // FORTRAN routines
 extern "C"{
-void cobrems_(float* Emax, float* Epeak, float* Dist);
+void cobrems_(float* Emax, float* Epeak, float* emitmr, float* radt, float* Dist, float* collDiam, int* doPolFluxfloat);
 float dntdx_(float* x);
+float dnidx_(float* x);
 };
 
 // Wrapper function for total
@@ -22,6 +23,12 @@ double dNtdx(double x)
 {
         float xx = x;
         return (double)dntdx_(&xx);
+}
+
+double dNidx(double x)
+{
+        float xx = x;
+        return (double)dnidx_(&xx);
 }
 
 GammaPToXP::GammaPToXP( float massX, float beamMaxE, float beamPeakE, float beamLowE, float beamHighE) : 
@@ -35,18 +42,24 @@ m_childMass( 0 ) {
   float Epeak = beamPeakE;
   float Elow = beamLowE;
   float Ehigh = beamHighE;
-  float Dist = 76.0;
-  cobrems_(&Emax, &Epeak, &Dist);
+
+  int doPolFlux=0;  // want total flux (1 for polarized flux)
+  float emitmr=10.e-9; // electron beam emittance
+  float radt=20.e-6; // radiator thickness in m
+  float collDiam=0.0034; // meters
+  float Dist = 76.0; // meters
+  cobrems_(&Emax, &Epeak, &emitmr, &radt, &Dist, &collDiam, &doPolFlux);
 
   // Create histogram
-  cobrem_vs_E = new TH1D("cobrem_vs_E", "Coherent Bremstrahlung vs. E_{#gamma}", (int)(100*Emax), 0.0, Emax);
+  cobrem_vs_E = new TH1D("cobrem_vs_E", "Coherent Bremstrahlung vs. E_{#gamma}", 1000, Elow, Ehigh);
   
   // Fill histogram
   for(int i=1; i<=cobrem_vs_E->GetNbinsX(); i++){
 	  double x = cobrem_vs_E->GetBinCenter(i)/Emax;
-	  double y = dNtdx(x);
-	  if(cobrem_vs_E->GetBinCenter(i) > Elow && cobrem_vs_E->GetBinCenter(i) < Ehigh) 
-		  cobrem_vs_E->SetBinContent(i, y);
+	  double y = 0;
+	  if(Epeak<Elow) y = dNidx(x);
+	  else y = dNtdx(x);
+	  cobrem_vs_E->SetBinContent(i, y);
   }
 
 }
