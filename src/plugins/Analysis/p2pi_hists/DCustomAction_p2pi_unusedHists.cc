@@ -601,6 +601,9 @@ void DCustomAction_p2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const D
 				t9 += tfcal;
 				t9sq += tfcal*tfcal;
 				N9 += 1;
+
+				dX_E1 = x - trkposX;
+				dY_E1 = y - trkposY;
 			}
 			
 		} // end loop over fcal hits
