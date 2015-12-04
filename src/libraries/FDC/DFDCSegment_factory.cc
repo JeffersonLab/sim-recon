@@ -493,8 +493,8 @@ DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points){
       CR(i,i)=XYZ[i].covr;
       CRPhi(i,i)=XYZ[i].covrphi;
     }
-    CRPhi(last_index,last_index)=100.;
-    CR(last_index,last_index)=100.;
+    CRPhi(last_index,last_index)=1e6;
+    CR(last_index,last_index)=1e6;
 
     // First find the center and radius of the projected circle
     error=RiemannCircleFit(points,CRPhi); 
@@ -506,6 +506,10 @@ DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points){
     // Get reference track estimates for z0 and tanl and intersection points
     // (stored in XYZ)
     error=RiemannLineFit(points,CR,XYZ);
+    if (error!=NOERROR){
+      if (DEBUG_LEVEL>0) _DBG_ << "Line fit failed..." << endl;
+      return error;
+    }
   }
 
   // Guess particle sense of rotation (+/-1);
@@ -534,6 +538,10 @@ DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points){
 
   // Preliminary line fit
   error=RiemannLineFit(points,CR,XYZ);
+  if (error!=NOERROR){
+    if (DEBUG_LEVEL>0) _DBG_ << "Line fit failed..." << endl;
+    return error;
+  }
 
   // Guess particle sense of rotation (+/-1);
   rotation_sense=GetRotationSense(points.size(),XYZ,CR,CRPhi,points);
@@ -569,6 +577,10 @@ DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points){
 
   // Final line fit
   error=RiemannLineFit(points,CR,XYZ);
+  if (error!=NOERROR){
+    if (DEBUG_LEVEL>0) _DBG_ << "Line fit failed..." << endl;
+    return error;
+  }
 
   // Guess particle sense of rotation (+/-1)
   rotation_sense=GetRotationSense(num_measured,XYZ,CR,CRPhi,points);
@@ -732,6 +744,20 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 
 	  _data.push_back(segment);
 	}
+	else {
+	  // Fit assuming particle came from (x,y)=(0,0)
+	  CircleFit(neighbors);
+	  LineFit(neighbors);
+
+	  // Create a new segment
+	  DFDCSegment *segment = new DFDCSegment;	
+	  segment->hits=neighbors;
+	  segment->package=(neighbors[0]->wire->layer-1)/6;
+	  FillSegmentData(segment);
+
+	  _data.push_back(segment);
+	}
+
       }
     }
   
