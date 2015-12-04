@@ -11,7 +11,7 @@ TH1* GetHistogram(TFile *f,int counter,int ph_bin) {
     }
     else {
         h = h2->ProjectionY(TString(h2->GetName())+"_"+TString(ss_ph.str()),ph_bin,ph_bin);
-        h->SetTitle("TAGH counter "+ss_c.str()+", Pulse-height bin "+TString(ss_ph.str()));
+        h->SetTitle("TAGH counter "+TString(ss_c.str())+", Pulse-height bin "+TString(ss_ph.str()));
     }
     h->GetXaxis()->SetTitle("time(TDC) - time(RF) [ns]");
     return h;
@@ -66,7 +66,7 @@ void WriteGaussianFitResults(ofstream &fout,TH1 *h,int counter,int ph_bin) {
     }
     else {
         stringstream ss; ss << counter;
-        system("mkdir -p fits_gaussian/counter_"+TString(ss.str()));
+        system(TString("mkdir -p fits_gaussian/counter_"+ss.str()).Data());
         canvas->Print("fits_gaussian/counter_"+TString(ss.str())+"/"+TString(h->GetName())+".gif");
     }
     delete canvas; delete plot;
