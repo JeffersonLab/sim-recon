@@ -93,7 +93,7 @@ jerror_t JEventProcessor_EVNT_online::init(void) {
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_EVNT_online::brun(JEventLoop *eventLoop, int runnumber) {
+jerror_t JEventProcessor_EVNT_online::brun(JEventLoop *eventLoop, int32_t runnumber) {
   // This is called whenever the run number changes
   return NOERROR;
 }
@@ -102,7 +102,7 @@ jerror_t JEventProcessor_EVNT_online::brun(JEventLoop *eventLoop, int runnumber)
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_EVNT_online::evnt(JEventLoop *eventLoop, int eventnumber) {
+jerror_t JEventProcessor_EVNT_online::evnt(JEventLoop *eventLoop, uint64_t eventnumber) {
 
   int nword,ntot;
   // uint32_t *buff;

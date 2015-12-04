@@ -59,7 +59,7 @@ jerror_t DTrackCandidate_factory_FDCpseudo::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrackCandidate_factory_FDCpseudo::brun(JEventLoop *loop, int runnumber)
+jerror_t DTrackCandidate_factory_FDCpseudo::brun(JEventLoop *loop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -75,7 +75,7 @@ jerror_t DTrackCandidate_factory_FDCpseudo::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DTrackCandidate_factory_FDCpseudo::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackCandidate_factory_FDCpseudo::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 
 	// Get the hits into the trkhits vector

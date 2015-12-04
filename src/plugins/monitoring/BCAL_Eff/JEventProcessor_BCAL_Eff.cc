@@ -336,7 +336,7 @@ jerror_t JEventProcessor_BCAL_Eff::brun(jana::JEventLoop* locEventLoop, int locR
 //------------------
 
 
-jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, int locEventNumber)
+jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 
 	// This is called for every event. Use of common resources like writing

@@ -59,7 +59,7 @@ jerror_t DTAGHHit_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTAGHHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DTAGHHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
     // Only print messages for one thread whenever run number change
     static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -111,7 +111,7 @@ jerror_t DTAGHHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
    /// Generate DTAGHHit object for each DTAGHDigiHit object.
    /// This is where the first set of calibration constants

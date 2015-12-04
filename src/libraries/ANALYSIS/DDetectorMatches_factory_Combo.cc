@@ -22,7 +22,7 @@ jerror_t DDetectorMatches_factory_Combo::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DDetectorMatches_factory_Combo::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DDetectorMatches_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	dDetectorMatchesFactory = static_cast<DDetectorMatches_factory*>(locEventLoop->GetFactory("DDetectorMatches"));
 	return NOERROR;
@@ -31,7 +31,7 @@ jerror_t DDetectorMatches_factory_Combo::brun(jana::JEventLoop *locEventLoop, in
 //------------------
 // evnt
 //------------------
-jerror_t DDetectorMatches_factory_Combo::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
+jerror_t DDetectorMatches_factory_Combo::evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DDetectorMatches_factory_Combo::evnt()");

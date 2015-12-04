@@ -140,7 +140,7 @@ jerror_t JEventProcessor_event_size::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_event_size::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_event_size::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	// This is called whenever the run number changes
 	return NOERROR;
@@ -149,7 +149,7 @@ jerror_t JEventProcessor_event_size::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// Ignore events with no Level 1 trigger info
 	const DTrigger *trig=NULL;

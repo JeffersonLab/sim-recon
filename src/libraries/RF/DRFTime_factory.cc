@@ -19,7 +19,7 @@ jerror_t DRFTime_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DRFTime_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DRFTime_factory::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	//RF Period
 	vector<double> locBeamPeriodVector;
@@ -65,7 +65,7 @@ jerror_t DRFTime_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DRFTime_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
+jerror_t DRFTime_factory::evnt(JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	//The RF Time is defined at the center of the target
 	//The time offset needed to line it up to the center of the target is absorbed into the calibration constants.

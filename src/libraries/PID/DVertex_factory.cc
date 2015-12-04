@@ -21,7 +21,7 @@ jerror_t DVertex_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DVertex_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
+jerror_t DVertex_factory::brun(jana::JEventLoop* locEventLoop, int32_t runnumber)
 {
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield(runnumber);
@@ -50,7 +50,7 @@ jerror_t DVertex_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
+jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 	//preferentially (kinematic fit):
 		//use tracks with a matched hit & good tracking FOM

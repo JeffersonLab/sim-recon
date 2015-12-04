@@ -24,7 +24,7 @@ jerror_t DAnalysisResults_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 
@@ -209,7 +209,7 @@ void DAnalysisResults_factory::Get_Reactions(jana::JEventLoop* locEventLoop, vec
 //------------------
 // evnt
 //------------------
-jerror_t DAnalysisResults_factory::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
+jerror_t DAnalysisResults_factory::evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DAnalysisResults_factory::evnt()");

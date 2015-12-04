@@ -245,7 +245,7 @@ jerror_t JEventProcessor_ST_online_lowlevel::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_ST_online_lowlevel::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_ST_online_lowlevel::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
   // load scale factors
   map<string,double> scale_factors;
@@ -288,7 +288,7 @@ if (eventLoop->GetCalib("/START_COUNTER/digi_scales", scale_factors))
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using

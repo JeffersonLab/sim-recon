@@ -121,7 +121,7 @@ jerror_t DTrackCandidate_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
+jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int32_t runnumber){
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
   bfield = dapp->GetBfield(runnumber);
@@ -226,7 +226,7 @@ jerror_t DTrackCandidate_factory::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
   if(dIsNoFieldFlag)
   {

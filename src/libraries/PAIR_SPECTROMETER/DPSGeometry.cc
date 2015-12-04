@@ -9,7 +9,7 @@
 //---------------------------------
 // DPSGeometry    (Constructor)
 //---------------------------------
-DPSGeometry::DPSGeometry(JEventLoop *loop, std::string tag, int runnumber)
+DPSGeometry::DPSGeometry(JEventLoop *loop, std::string tag, int32_t runnumber)
 {
   // read PS hodoscope counter energy bounds from calibdb
   char dbname[80];

@@ -37,7 +37,7 @@ class DDANAEVIO_factory : public JFactory<DDANAEVIODOMTree> {
 
 
  private:
-  jerror_t evnt(JEventLoop *eventLoop, int eventnumber);
+  jerror_t evnt(JEventLoop *eventLoop, uint64_t eventnumber);
   void get_tagNum_dictionary(void);
   static void startElement(void *userData, const char *xmlname, const char **atts);
 

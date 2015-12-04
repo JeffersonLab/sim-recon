@@ -91,7 +91,7 @@ jerror_t FillHitsProc::init(void)
 //------------------
 // brun
 //------------------
-jerror_t FillHitsProc::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t FillHitsProc::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -99,7 +99,7 @@ jerror_t FillHitsProc::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t FillHitsProc::evnt(JEventLoop *loop, int eventnumber)
+jerror_t FillHitsProc::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
   
   // FCAL Hits:

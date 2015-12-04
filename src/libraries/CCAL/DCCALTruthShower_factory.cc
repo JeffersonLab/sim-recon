@@ -24,7 +24,7 @@ jerror_t DCCALTruthShower_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DCCALTruthShower_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DCCALTruthShower_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -32,7 +32,7 @@ jerror_t DCCALTruthShower_factory::brun(jana::JEventLoop *eventLoop, int runnumb
 //------------------
 // evnt
 //------------------
-jerror_t DCCALTruthShower_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DCCALTruthShower_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 
 	// Code to generate factory data goes here. Add it like:

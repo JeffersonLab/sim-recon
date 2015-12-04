@@ -32,7 +32,7 @@ jerror_t DFDCIntersection_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DFDCIntersection_factory::brun(JEventLoop *loop, int runnumber)
+jerror_t DFDCIntersection_factory::brun(JEventLoop *loop, int32_t runnumber)
 {
   // Get pointer to DGeometry object
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
@@ -48,7 +48,7 @@ jerror_t DFDCIntersection_factory::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DFDCIntersection_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DFDCIntersection_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
   // if (!USE_FDC) return NOERROR;
 

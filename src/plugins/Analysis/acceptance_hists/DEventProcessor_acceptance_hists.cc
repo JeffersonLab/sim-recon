@@ -103,7 +103,7 @@ jerror_t DEventProcessor_acceptance_hists::init(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCTrackHit*> mctrackhits;

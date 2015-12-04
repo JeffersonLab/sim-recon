@@ -21,7 +21,7 @@ DBCALShower_factory_JLAB::DBCALShower_factory_JLAB()
 //------------------
 // brun
 //------------------
-jerror_t DBCALShower_factory_JLAB::brun(JEventLoop *loop, int runnumber)
+jerror_t DBCALShower_factory_JLAB::brun(JEventLoop *loop, int32_t runnumber)
 {
     
   // at this point load parameters from data base
@@ -32,7 +32,7 @@ jerror_t DBCALShower_factory_JLAB::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DBCALShower_factory_JLAB::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DBCALShower_factory_JLAB::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 
   vector < const DBCALClump* > ClumpList;

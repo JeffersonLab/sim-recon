@@ -28,7 +28,7 @@ jerror_t DL3Trigger_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DL3Trigger_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DL3Trigger_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -36,7 +36,7 @@ jerror_t DL3Trigger_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DL3Trigger_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DL3Trigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// Simple pass-through L3 trigger
 	// algorithm = 0x1

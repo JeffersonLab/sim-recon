@@ -20,7 +20,7 @@ class MyProcessor:public JEventProcessor
 {
 	public:
 		jerror_t init(void);					///< Called once at program start.
-		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Called every event.
+		jerror_t evnt(JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
 		jerror_t fini(void);					///< Called after last event of last event source has been processed.
 		
 		TH2F *R_vs_theta, *R_over_sintheta_vs_theta;

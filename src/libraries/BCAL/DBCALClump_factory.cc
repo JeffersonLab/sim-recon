@@ -48,7 +48,7 @@ jerror_t DBCALClump_factory::brun(JEventLoop *loop, int32_t runnumber)
 //----------------
 // evnt
 //----------------
-jerror_t DBCALClump_factory::evnt(JEventLoop *loop, int eventnumber) {
+jerror_t DBCALClump_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
 
   const DBCALHit *BcalMatrixU[48*4][4]; // Up stream
   const DBCALHit *BcalMatrixD[48*4][4]; // Down stream

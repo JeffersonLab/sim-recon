@@ -182,7 +182,7 @@ JEventProcessor_danaevio::~JEventProcessor_danaevio() {
 //----------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_danaevio::brun(JEventLoop *eventLoop, int runnumber) {
+jerror_t JEventProcessor_danaevio::brun(JEventLoop *eventLoop, int32_t runnumber) {
 
   static bool first_time = true;
   unsigned int n;
@@ -254,7 +254,7 @@ jerror_t JEventProcessor_danaevio::brun(JEventLoop *eventLoop, int runnumber) {
 //----------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_danaevio::evnt(JEventLoop *eventLoop, int eventnumber) {
+jerror_t JEventProcessor_danaevio::evnt(JEventLoop *eventLoop, uint64_t eventnumber) {
     
   unsigned int n;
 

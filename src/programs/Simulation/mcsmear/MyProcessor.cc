@@ -314,7 +314,7 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
 //------------------------------------------------------------------
 // evnt   -Fill histograms here
 //------------------------------------------------------------------
-jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
+jerror_t MyProcessor::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
    JEvent& event = loop->GetJEvent();
    JEventSource *source = event.GetJEventSource();

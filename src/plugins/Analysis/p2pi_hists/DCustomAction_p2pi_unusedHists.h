@@ -22,6 +22,7 @@
 
 #include <FCAL/DFCALCluster.h>
 #include <FCAL/DFCALHit.h>
+#include <FCAL/DFCALGeometry.h>
 #include <BCAL/DBCALCluster.h>
 #include <BCAL/DBCALPoint.h>
 
@@ -40,7 +41,7 @@ class DCustomAction_p2pi_unusedHists : public DAnalysisAction
 	private:
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		void FillTrack(const DChargedTrack* locChargedTrack, bool locMatch, const DMCThrown* locMCThrown);
+		void FillTrack(JEventLoop* locEventLoop, const DChargedTrack* locChargedTrack, bool locMatch, const DMCThrown* locMCThrown);
 		void FillShower(const DNeutralShower* locNeutralShower, bool locMatch, double locBeamPhotonTime, double locFlightTime);
 
 		// Optional: Useful utility functions.
@@ -48,6 +49,7 @@ class DCustomAction_p2pi_unusedHists : public DAnalysisAction
 
 		// need PID algos for SC matching
 		const DParticleID* dParticleID;
+		const DFCALGeometry* dFCALGeometry;
 
 		// maps of histograms by track charge and match flag
 		map<bool, map<int, TH2I*> > dHistMap_TrackNhits_Theta;
@@ -71,6 +73,11 @@ class DCustomAction_p2pi_unusedHists : public DAnalysisAction
 
 		// maps of histograms by detector system and match flag
 		TH2I *dNShowerBCAL_FCAL;
+		TH1I *h1_deltaX, *h1_deltaY, *h1_Efcal, *h1_tfcal;
+		TH1I *h1_N9, *h1_E9, *h1_t9, *h1_t9sigma;
+		TH2I *h2_YvsX9, *h2_dEdx9_vsp, *h2_E9vsp, *h2_dEdxvsE9, *h2_E9_vsTheta, *h2_E9_vsPhi;
+		TH1I *h1_N1, *h1_E1, *h1_t1, *h1_t1sigma;
+		TH2I *h2_YvsX1, *h2_dEdx1_vsp, *h2_E1vsp, *h2_dEdxvsE1, *h2_E1_vsTheta, *h2_E1_vsPhi, *h2_E1vsRlocal, *h2_YvsXcheck;
 		TH2I *dHistMap_FCALShowerDeltaR_P, *dHistMap_FCALShowerDeltaR_Theta, *dHistMap_FCALShowerDeltaD_P, *dHistMap_FCALShowerDeltaD_Theta;
 		TH2I *dHistMap_FCALShowerDeltaD_DeltaT;
 		TH2I *dHistMap_BCALShowerDeltaPhi_DeltaZ, *dHistMap_BCALShowerDeltaPhi_P, *dHistMap_BCALShowerDeltaPhi_Theta;

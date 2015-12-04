@@ -133,7 +133,7 @@ jerror_t DTrackTimeBased_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
+jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int32_t runnumber)
 {
   // Get the geometry
   DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
@@ -213,7 +213,7 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
   // Save event number to help with debugging
   myevt=eventnumber;

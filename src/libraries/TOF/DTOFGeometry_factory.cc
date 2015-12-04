@@ -9,7 +9,7 @@
 #include <HDGEOMETRY/DGeometry.h>
 #include <DANA/DApplication.h>
 
-jerror_t DTOFGeometry_factory::brun(jana::JEventLoop *loop, int runnumber)
+jerror_t DTOFGeometry_factory::brun(jana::JEventLoop *loop, int32_t runnumber)
 {
 
   flags = PERSISTANT;

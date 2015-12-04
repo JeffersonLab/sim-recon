@@ -56,7 +56,7 @@ DFCALShower_factory::DFCALShower_factory()
 //------------------
 // brun
 //------------------
-jerror_t DFCALShower_factory::brun(JEventLoop *loop, int runnumber)
+jerror_t DFCALShower_factory::brun(JEventLoop *loop, int32_t runnumber)
 {
  
     // Get calibration constants
@@ -106,7 +106,7 @@ jerror_t DFCALShower_factory::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, int eventnumber)
+jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 {
   vector<const DFCALCluster*> fcalClusters;
   eventLoop->Get(fcalClusters);

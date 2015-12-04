@@ -84,7 +84,7 @@ jerror_t DEventProcessor_trackeff_hists::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_trackeff_hists::brun(JEventLoop *loop, int runnumber)
+jerror_t DEventProcessor_trackeff_hists::brun(JEventLoop *loop, int32_t runnumber)
 {
 	
 	return NOERROR;
@@ -110,7 +110,7 @@ jerror_t DEventProcessor_trackeff_hists::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DCDCTrackHit*> cdctrackhits;
 	vector<const DFDCPseudo*> fdcpseudos;

@@ -68,7 +68,7 @@ void Process_r(unsigned int &NEvents, unsigned int &NEvents_read)
             // has the event number of interest
             class ReconstructedPhysicsEvent &reconstructedPhysicsEvent = xrec.getReconstructedPhysicsEvent();
             if (EVENT_TO_KEEP_MODE) { // need to check if reconstructedPhysicsEvent is valid!!
-               int eventNo = reconstructedPhysicsEvent.getEventNo();
+               uint64_t eventNo = reconstructedPhysicsEvent.getEventNo();
                if ((unsigned int)eventNo == SPECIFIC_EVENT_TO_KEEP) {
                   write_this_event = true;
                   QUIT = true;

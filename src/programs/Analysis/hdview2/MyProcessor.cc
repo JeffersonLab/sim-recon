@@ -155,7 +155,7 @@ jerror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 // brun 
 //------------------------------------------------------------------
-jerror_t MyProcessor::brun(JEventLoop *eventloop, int runnumber)
+jerror_t MyProcessor::brun(JEventLoop *eventloop, int32_t runnumber)
 {
 
 	// Read in Magnetic field map
@@ -179,7 +179,7 @@ jerror_t MyProcessor::brun(JEventLoop *eventloop, int runnumber)
 //------------------------------------------------------------------
 // evnt 
 //------------------------------------------------------------------
-jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
+jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 {
 	if(!eventLoop)return NOERROR;
 	loop = eventLoop;

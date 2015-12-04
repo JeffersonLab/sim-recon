@@ -21,7 +21,7 @@ const double DTAGMGeometry::kFiberLength = 2.0; // cm
 //---------------------------------
 // DTAGMGeometry    (Constructor)
 //---------------------------------
-DTAGMGeometry::DTAGMGeometry(JEventLoop *loop, std::string tag, int runnumber)
+DTAGMGeometry::DTAGMGeometry(JEventLoop *loop, std::string tag, int32_t runnumber)
 {
    /* read tagger set endpoint energy from calibdb */
    char dbname1[80];

@@ -20,7 +20,7 @@ using namespace evio;
 //---------------------------------
 // DMagneticFieldMapPS2DMap    (Constructor)
 //---------------------------------
-DMagneticFieldMapPS2DMap::DMagneticFieldMapPS2DMap(JApplication *japp, unsigned int runnumber, string namepath)
+DMagneticFieldMapPS2DMap::DMagneticFieldMapPS2DMap(JApplication *japp, int32_t runnumber, string namepath)
 {
 	jcalib = japp->GetJCalibration(runnumber);
 	jresman = japp->GetJResourceManager(runnumber);
@@ -63,7 +63,7 @@ DMagneticFieldMapPS2DMap::~DMagneticFieldMapPS2DMap()
 //---------------------------------
 // ReadMap
 //---------------------------------
-int DMagneticFieldMapPS2DMap::ReadMap(string namepath, int runnumber, string context)
+int DMagneticFieldMapPS2DMap::ReadMap(string namepath, int32_t runnumber, string context)
 {
   /// Read the magnetic field map in from the calibration database.
   /// This will read in the map and figure out the number of grid

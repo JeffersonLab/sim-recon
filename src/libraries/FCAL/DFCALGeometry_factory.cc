@@ -13,7 +13,7 @@
 //------------------
 // brun
 //------------------
-jerror_t DFCALGeometry_factory::brun(JEventLoop *loop, int runnumber)
+jerror_t DFCALGeometry_factory::brun(JEventLoop *loop, int32_t runnumber)
 {
 	assert( _data.size() == 0 );
 

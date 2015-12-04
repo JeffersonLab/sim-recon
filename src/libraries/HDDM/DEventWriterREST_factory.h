@@ -20,7 +20,7 @@ class DEventWriterREST_factory : public jana::JFactory<DEventWriterREST>
 			return NOERROR;
 		}
 
-		jerror_t evnt(jana::JEventLoop *locEventLoop, int locEventNumber)
+		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t locEventNumber)
 		{
 			// Create single DEventWriterREST object and marks the factory as persistent so it doesn't get deleted every event.
 			SetFactoryFlag(PERSISTANT);

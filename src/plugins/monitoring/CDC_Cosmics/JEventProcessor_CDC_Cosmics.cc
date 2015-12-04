@@ -58,7 +58,7 @@ jerror_t JEventProcessor_CDC_Cosmics::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_CDC_Cosmics::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_CDC_Cosmics::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
     DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
     JCalibration *jcalib = dapp->GetJCalibration(runnumber);
@@ -96,7 +96,7 @@ jerror_t JEventProcessor_CDC_Cosmics::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_CDC_Cosmics::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_CDC_Cosmics::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
     // Getting the charged tracks will allow us to use the field on data
     vector <const DChargedTrack *> chargedTrackVector;

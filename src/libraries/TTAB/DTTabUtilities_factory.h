@@ -21,8 +21,8 @@ class DTTabUtilities_factory : public jana::JFactory<DTTabUtilities>
 		virtual ~DTTabUtilities_factory(){};
 
 	private:
-		jerror_t brun(jana::JEventLoop *loop, int runnumber);
-		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);
+		jerror_t brun(jana::JEventLoop *loop, int32_t runnumber);
+		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);
 
 		//F1TDCs: Old System ONLY //Early Fall 2014 Commissioning data ONLY
 		uint64_t dRolloverTimeWindowLength; //"T" or "T_{frame}"

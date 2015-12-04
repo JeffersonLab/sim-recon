@@ -19,7 +19,7 @@ class DTrackHitSelector_factory_ALT1:public jana::JFactory<DTrackHitSelector>{
 		const char* Tag(void){return "ALT1";}
 
 	private:
-		jerror_t evnt(jana::JEventLoop *loop, int eventnumber){
+		jerror_t evnt(jana::JEventLoop *loop, uint64_t eventnumber){
 
 			// Create single DTrackHitSelector object and mark the factory as
 			// persistent so it doesn't get deleted every event.

@@ -76,14 +76,14 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		///
 		/// DFDCSegment_factory::brun():
 		///
-		jerror_t brun(JEventLoop *eventLoop, int runnumber);
+		jerror_t brun(JEventLoop *eventLoop, int32_t runnumber);
 
 		///
 		/// DFDCSegment_factory::evnt():
 		/// this is the place that finds track segments and  
 		/// converts pseudopoints into space points.
 		///
-		jerror_t evnt(JEventLoop *eventLoop, int eventNo);
+		jerror_t evnt(JEventLoop *eventLoop, uint64_t eventNo);
 
 	private:
 		JStreamLog* _log;

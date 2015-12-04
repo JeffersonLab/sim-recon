@@ -99,7 +99,7 @@ jerror_t JEventProcessor_pi0fcalskim::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_pi0fcalskim::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_pi0fcalskim::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
   eventLoop->GetSingle(dEventWriterEVIO);
 
@@ -109,7 +109,7 @@ jerror_t JEventProcessor_pi0fcalskim::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
   vector< const DFCALCluster* > clusterVec;
   loop->Get( clusterVec );

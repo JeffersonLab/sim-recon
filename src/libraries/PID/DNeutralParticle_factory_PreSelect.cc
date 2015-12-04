@@ -22,7 +22,7 @@ jerror_t DNeutralParticle_factory_PreSelect::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DNeutralParticle_factory_PreSelect::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DNeutralParticle_factory_PreSelect::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -30,7 +30,7 @@ jerror_t DNeutralParticle_factory_PreSelect::brun(jana::JEventLoop *locEventLoop
 //------------------
 // evnt
 //------------------
-jerror_t DNeutralParticle_factory_PreSelect::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DNeutralParticle_factory_PreSelect::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	//Clear objects from last event
 	_data.clear();

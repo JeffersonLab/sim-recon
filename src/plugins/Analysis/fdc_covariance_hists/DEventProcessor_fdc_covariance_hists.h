@@ -39,8 +39,8 @@ class DEventProcessor_fdc_covariance_hists:public jana::JEventProcessor{
 		
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
-		jerror_t brun(jana::JEventLoop *loop, int runnumber);
-		jerror_t evnt(jana::JEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
+		jerror_t brun(jana::JEventLoop *loop, int32_t runnumber);
+		jerror_t evnt(jana::JEventLoop *loop, uint64_t eventnumber);	///< Invoked via DEventProcessor virtual method
 		jerror_t erun(void);					///< Invoked via DEventProcessor virtual method
 		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
 			

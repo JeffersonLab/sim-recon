@@ -31,8 +31,8 @@ class DEventProcessor_trackeffv2 : public JEventProcessor
 {
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
-		jerror_t brun(JEventLoop* locEventLoop, int runnumber);
-		jerror_t evnt(JEventLoop* locEventLoop, int eventnumber);	///< Invoked via DEventProcessor virtual method
+		jerror_t brun(JEventLoop* locEventLoop, int32_t runnumber);
+		jerror_t evnt(JEventLoop* locEventLoop, uint64_t eventnumber);	///< Invoked via DEventProcessor virtual method
 		jerror_t erun(void);					///< Invoked via DEventProcessor virtual method
 		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
 

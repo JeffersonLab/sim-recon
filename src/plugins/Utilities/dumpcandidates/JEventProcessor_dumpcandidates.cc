@@ -65,7 +65,7 @@ jerror_t JEventProcessor_dumpcandidates::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_dumpcandidates::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_dumpcandidates::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	// Get pointer to geometry object
 	DApplication* dapp=dynamic_cast<DApplication*>(japp);
@@ -112,7 +112,7 @@ jerror_t JEventProcessor_dumpcandidates::brun(JEventLoop *eventLoop, int runnumb
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_dumpcandidates::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_dumpcandidates::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// Get track candidates
 	vector<const DTrackCandidate*> candidates;

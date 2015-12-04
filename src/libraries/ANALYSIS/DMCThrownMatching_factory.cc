@@ -31,7 +31,7 @@ jerror_t DMCThrownMatching_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DMCThrownMatching_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
+jerror_t DMCThrownMatching_factory::brun(jana::JEventLoop* locEventLoop, int32_t runnumber)
 {
 	gPARMS->SetDefaultParameter("MCMATCH:DEBUG_LEVEL", dDebugLevel);
 	gPARMS->SetDefaultParameter("MCMATCH:MAX_TOF_DISTANCE", dMaximumTOFMatchDistance);
@@ -50,7 +50,7 @@ jerror_t DMCThrownMatching_factory::brun(jana::JEventLoop* locEventLoop, int run
 //------------------
 // evnt
 //------------------
-jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
+jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DMCThrownMatching_factory::evnt()");

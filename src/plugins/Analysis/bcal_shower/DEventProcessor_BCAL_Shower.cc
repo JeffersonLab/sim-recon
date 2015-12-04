@@ -384,7 +384,7 @@ jerror_t DEventProcessor_BCAL_Shower::brun(jana::JEventLoop* locEventLoop, int l
 
 
 
-jerror_t DEventProcessor_BCAL_Shower::evnt(jana::JEventLoop* locEventLoop, int locEventNumber)
+jerror_t DEventProcessor_BCAL_Shower::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 	eventnum = locEventNumber;
 	// This is called for every event. Use of common resources like writing

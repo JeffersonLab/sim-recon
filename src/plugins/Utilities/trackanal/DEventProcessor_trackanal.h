@@ -53,8 +53,8 @@ class DEventProcessor_trackanal:public jana::JEventProcessor{
     
  private:
   jerror_t init(void);	
-  jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);
-  jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);
+  jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);
+  jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);
   jerror_t erun(void);
   jerror_t fini(void);
   

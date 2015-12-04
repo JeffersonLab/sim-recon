@@ -36,7 +36,7 @@ jerror_t DParticleCombo_factory_PreKinFit::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
@@ -415,7 +415,7 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 //------------------
 // evnt
 //------------------
-jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DParticleCombo_factory_PreKinFit::evnt()");

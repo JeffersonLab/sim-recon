@@ -62,9 +62,9 @@ class DEventProcessor_trackeff_hists2:public JEventProcessor{
 		track2 trk;
 		track2 *trk_ptr;
 
-		bool Search_ChargedTrackHypotheses(JEventLoop *loop, int eventnumber, const DMCThrown *mcthrown);
-		bool Search_WireBasedTracks(JEventLoop *loop, int eventnumber, const DMCThrown *mcthrown);
-		bool Search_TrackCandidates(JEventLoop *loop, int eventnumber, const DMCThrown *mcthrown);
+		bool Search_ChargedTrackHypotheses(JEventLoop *loop, uint64_t eventnumber, const DMCThrown *mcthrown);
+		bool Search_WireBasedTracks(JEventLoop *loop, uint64_t eventnumber, const DMCThrown *mcthrown);
+		bool Search_TrackCandidates(JEventLoop *loop, uint64_t eventnumber, const DMCThrown *mcthrown);
 
 
 	private:
@@ -72,8 +72,8 @@ class DEventProcessor_trackeff_hists2:public JEventProcessor{
 		bool use_rt_thrown;
 
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
-		jerror_t brun(JEventLoop *loop, int runnumber);
-		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
+		jerror_t brun(JEventLoop *loop, int32_t runnumber);
+		jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);	///< Invoked via DEventProcessor virtual method
 		jerror_t erun(void);					///< Invoked via DEventProcessor virtual method
 		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
 
