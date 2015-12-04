@@ -135,7 +135,7 @@ jerror_t JEventProcessor_BCAL_inv_mass::brun(jana::JEventLoop* locEventLoop, int
 
 
 
-jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, int locEventNumber)
+jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 
 	// This is called for every event. Use of common resources like writing

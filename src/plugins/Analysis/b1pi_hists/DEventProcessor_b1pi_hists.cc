@@ -33,7 +33,7 @@ jerror_t DEventProcessor_b1pi_hists::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_b1pi_hists::brun(JEventLoop *locEventLoop, int runnumber)
+jerror_t DEventProcessor_b1pi_hists::brun(JEventLoop *locEventLoop, int32_t runnumber)
 {
 	//Create Trees
 	const DEventWriterROOT* locEventWriterROOT = NULL;
@@ -47,7 +47,7 @@ jerror_t DEventProcessor_b1pi_hists::brun(JEventLoop *locEventLoop, int runnumbe
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_b1pi_hists::evnt(JEventLoop *locEventLoop, int eventnumber)
+jerror_t DEventProcessor_b1pi_hists::evnt(JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	//Triggers the analysis (is also automatically called by DEventWriterROOT::Fill_Trees())
 	vector<const DAnalysisResults*> locAnalysisResultsVector;

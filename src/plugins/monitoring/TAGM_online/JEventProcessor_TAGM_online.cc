@@ -569,7 +569,7 @@ jerror_t JEventProcessor_TAGM_online::init(void) {
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_TAGM_online::brun(JEventLoop *eventLoop, int runnumber) {
+jerror_t JEventProcessor_TAGM_online::brun(JEventLoop *eventLoop, int32_t runnumber) {
   // This is called whenever the run number changes
   return NOERROR;
 }
@@ -578,7 +578,7 @@ jerror_t JEventProcessor_TAGM_online::brun(JEventLoop *eventLoop, int runnumber)
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_TAGM_online::evnt(JEventLoop *eventLoop, int eventnumber) {
+jerror_t JEventProcessor_TAGM_online::evnt(JEventLoop *eventLoop, uint64_t eventnumber) {
   // This is called for every event. Use of common resources like writing
   // to a file or filling a histogram should be mutex protected. Using
   // loop-Get(...) to get reconstructed objects (and thereby activating the

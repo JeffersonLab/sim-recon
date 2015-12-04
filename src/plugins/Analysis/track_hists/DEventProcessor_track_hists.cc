@@ -103,7 +103,7 @@ jerror_t DEventProcessor_track_hists::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_track_hists::brun(JEventLoop *loop, int runnumber)
+jerror_t DEventProcessor_track_hists::brun(JEventLoop *loop, int32_t runnumber)
 {	
 	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 	if(!dapp){
@@ -146,7 +146,7 @@ jerror_t DEventProcessor_track_hists::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DChargedTrack*> chargedtracks;
 	vector<const DTrackCandidate*> candidates;

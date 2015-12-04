@@ -100,7 +100,7 @@ jerror_t DEventProcessor_bcal_calib::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_bcal_calib::brun(JEventLoop *loop, int runnumber)
+jerror_t DEventProcessor_bcal_calib::brun(JEventLoop *loop, int32_t runnumber)
 {	
   DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
    
@@ -177,7 +177,7 @@ jerror_t DEventProcessor_bcal_calib::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_bcal_calib::evnt(JEventLoop *loop, int eventnumber){
+jerror_t DEventProcessor_bcal_calib::evnt(JEventLoop *loop, uint64_t eventnumber){
   
   // Get BCAL showers
   vector<const DBCALShower*>bcalshowers;

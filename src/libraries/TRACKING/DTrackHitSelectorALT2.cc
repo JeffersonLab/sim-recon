@@ -44,7 +44,7 @@ bool static DTrackHitSelector_fdchit_cmp(pair<double,const DFDCPseudo *>a,
 //---------------------------------
 // DTrackHitSelectorALT2    (Constructor)
 //---------------------------------
-DTrackHitSelectorALT2::DTrackHitSelectorALT2(jana::JEventLoop *loop, int runnumber):DTrackHitSelector(loop)
+DTrackHitSelectorALT2::DTrackHitSelectorALT2(jana::JEventLoop *loop, int32_t runnumber):DTrackHitSelector(loop)
 {
 	HS_DEBUG_LEVEL = 0;
 	MAKE_DEBUG_TREES = false;

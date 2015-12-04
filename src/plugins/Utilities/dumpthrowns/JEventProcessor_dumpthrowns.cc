@@ -59,7 +59,7 @@ jerror_t JEventProcessor_dumpthrowns::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_dumpthrowns::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_dumpthrowns::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -67,7 +67,7 @@ jerror_t JEventProcessor_dumpthrowns::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_dumpthrowns::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_dumpthrowns::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// Get track candidates
 	vector<const DTrackCandidate*> candidates;

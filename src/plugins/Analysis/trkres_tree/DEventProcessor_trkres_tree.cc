@@ -75,7 +75,7 @@ jerror_t DEventProcessor_trkres_tree::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_trkres_tree::brun(JEventLoop *loop, int runnumber)
+jerror_t DEventProcessor_trkres_tree::brun(JEventLoop *loop, int32_t runnumber)
 {
 	pthread_mutex_lock(&mutex);
 	
@@ -104,7 +104,7 @@ jerror_t DEventProcessor_trkres_tree::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_trkres_tree::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_trkres_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DMCTrajectoryPoint*> trajpoints;
 	vector<const DCDCTrackHit*> cdchits;

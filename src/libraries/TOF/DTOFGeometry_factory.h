@@ -20,7 +20,7 @@ class DTOFGeometry_factory:public JFactory<DTOFGeometry>{
 
 
 	private:
-		jerror_t brun(jana::JEventLoop *loop, int runnumber);
+		jerror_t brun(jana::JEventLoop *loop, int32_t runnumber);
 };
 
 #endif // _DTOFGeometry_factory_

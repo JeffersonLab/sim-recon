@@ -337,7 +337,7 @@ jerror_t DEventProcessor_dc_alignment::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
+jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int32_t runnumber)
 {	
   DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
   dgeom  = dapp->GetDGeometry(runnumber);
@@ -723,7 +723,7 @@ jerror_t DEventProcessor_dc_alignment::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
+jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, uint64_t eventnumber){
   myevt++;
 
   // Reset the track finder

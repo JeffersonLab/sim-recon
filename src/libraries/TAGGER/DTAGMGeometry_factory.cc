@@ -12,7 +12,7 @@ using namespace std;
 //------------------
 // brun
 //------------------
-jerror_t DTAGMGeometry_factory::brun(JEventLoop *loop, int runnumber)
+jerror_t DTAGMGeometry_factory::brun(JEventLoop *loop, int32_t runnumber)
 {
 	if(!_data.empty())
 	{

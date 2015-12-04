@@ -58,7 +58,7 @@ jerror_t DTrackCandidate_factory_StraightLine::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int runnumber)
+jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int32_t runnumber)
 {
   DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
   JCalibration *jcalib = dapp->GetJCalibration(runnumber);
@@ -169,7 +169,7 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
 //------------------
 // evnt
 //------------------
-jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
   vector<const DBCALShower*>bcal_showers;
   loop->Get(bcal_showers);

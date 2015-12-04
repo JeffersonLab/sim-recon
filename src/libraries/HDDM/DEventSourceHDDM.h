@@ -115,7 +115,7 @@ class DEventSourceHDDM:public JEventSource
       jerror_t Extract_DSCHit(hddm_s::HDDM *record,  JFactory<DSCHit> *factory, string tag);
       jerror_t Extract_DSCTruthHit(hddm_s::HDDM *record,  JFactory<DSCTruthHit> *factory, string tag);
 
-      jerror_t Extract_DTrackTimeBased(hddm_s::HDDM *record,  JFactory<DTrackTimeBased> *factory, string tag, int runnumber);
+      jerror_t Extract_DTrackTimeBased(hddm_s::HDDM *record,  JFactory<DTrackTimeBased> *factory, string tag, int32_t runnumber);
       string StringToDMatrixDSym(string &str_vals, DMatrixDSym &mat, int Nrows, int Ncols);
 
       jerror_t Extract_DTAGMHit( hddm_s::HDDM *record,  JFactory<DTAGMHit>* factory, string tag);

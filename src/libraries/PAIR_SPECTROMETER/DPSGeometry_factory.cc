@@ -4,7 +4,7 @@
 //------------------
 // brun
 //------------------
-jerror_t DPSGeometry_factory::brun(JEventLoop *loop, int runnumber)
+jerror_t DPSGeometry_factory::brun(JEventLoop *loop, int32_t runnumber)
 {
   if(!_data.empty())
     {

@@ -25,7 +25,7 @@ jerror_t DEventRFBunch_factory_Calibrations::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventRFBunch_factory_Calibrations::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DEventRFBunch_factory_Calibrations::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
@@ -49,7 +49,7 @@ jerror_t DEventRFBunch_factory_Calibrations::brun(jana::JEventLoop *locEventLoop
 //------------------
 // evnt
 //------------------
-jerror_t DEventRFBunch_factory_Calibrations::evnt(JEventLoop* locEventLoop, int eventnumber)
+jerror_t DEventRFBunch_factory_Calibrations::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 	//There should ALWAYS be one and only one DEventRFBunch created.
 		//If there is not enough information, time is set to NaN

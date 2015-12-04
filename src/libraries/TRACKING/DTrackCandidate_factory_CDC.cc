@@ -151,7 +151,7 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int runnumber)
+jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int32_t runnumber)
 {
 	gPARMS->SetDefaultParameter("TRKFIND:DEBUG_LEVEL", DEBUG_LEVEL);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_ALLOWED_CDC_HITS", MAX_ALLOWED_CDC_HITS);
@@ -211,7 +211,7 @@ jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int runnumb
 //------------------
 // evnt
 //------------------
-jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, int eventnumber)
+jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	// Reset
 	dRejectedPhiRegions.clear();

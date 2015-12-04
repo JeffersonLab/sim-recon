@@ -18,7 +18,7 @@ jerror_t DKinFitResults_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
+jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int32_t runnumber)
 {
 	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
 	locEventLoop->Get(locAnalysisUtilitiesVector);
@@ -96,7 +96,7 @@ void DKinFitResults_factory::Reset_NewEvent(void)
 //------------------
 // evnt
 //------------------
-jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
+jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DKinFitResults_factory::evnt()");

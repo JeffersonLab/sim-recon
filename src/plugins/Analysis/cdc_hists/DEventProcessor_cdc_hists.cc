@@ -86,7 +86,7 @@ jerror_t DEventProcessor_cdc_hists::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_cdc_hists::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t DEventProcessor_cdc_hists::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	DApplication *dapp = dynamic_cast<DApplication*>(app);
 	bfield = dapp->GetBfield(runnumber);
@@ -115,7 +115,7 @@ jerror_t DEventProcessor_cdc_hists::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DMCTrackHit*> mctrackhits;
 	vector<const DCDCHit*> cdchits;

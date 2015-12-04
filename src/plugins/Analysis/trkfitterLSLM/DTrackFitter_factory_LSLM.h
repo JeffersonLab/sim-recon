@@ -18,7 +18,7 @@ class DTrackFitter_factory_LSLM:public jana::JFactory<DTrackFitter>{
 		const char* Tag(void){return "LSLM";}
 
 	private:
-		jerror_t evnt(jana::JEventLoop *loop, int eventnumber){
+		jerror_t evnt(jana::JEventLoop *loop, uint64_t eventnumber){
 
 			// Create single DTrackFitter object and mark the factory as
 			// persistent so it doesn't get deleted every event.

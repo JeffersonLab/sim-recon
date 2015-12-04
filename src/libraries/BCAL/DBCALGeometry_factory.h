@@ -20,7 +20,7 @@ class DBCALGeometry_factory:public JFactory<DBCALGeometry>{
 
 
 	private:
-		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+		jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);	///< Invoked via JEventProcessor virtual method
 };
 
 #endif // _DBCALGeometry_factory_

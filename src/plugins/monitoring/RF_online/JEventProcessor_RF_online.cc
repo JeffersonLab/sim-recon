@@ -178,7 +178,7 @@ jerror_t JEventProcessor_RF_online::init(void)
 	return NOERROR;
 }
 
-jerror_t JEventProcessor_RF_online::brun(JEventLoop* locEventLoop, int runnumber)
+jerror_t JEventProcessor_RF_online::brun(JEventLoop* locEventLoop, int32_t runnumber)
 {
 	// This is called whenever the run number changes
 	dRFTimeFactory = static_cast<DRFTime_factory*>(locEventLoop->GetFactory("DRFTime"));
@@ -190,7 +190,7 @@ jerror_t JEventProcessor_RF_online::brun(JEventLoop* locEventLoop, int runnumber
 	return NOERROR;
 }
 
-jerror_t JEventProcessor_RF_online::evnt(JEventLoop* locEventLoop, int eventnumber)
+jerror_t JEventProcessor_RF_online::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 	vector<const DCODAROCInfo*> locCODAROCInfos;
 	locEventLoop->Get(locCODAROCInfos);

@@ -33,7 +33,7 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
+jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, int32_t runnumber)
 {
 	//BE CAREFUL: DON'T DO ANYTHING THAT REQUIRES THE brun() METHOD OF THIS FACTORY TO BE CALLED!!!!
 	dTrackTimeBasedFactory_Combo = dynamic_cast<DTrackTimeBased_factory_Combo*>(locEventLoop->GetFactory("DTrackTimeBased", "Combo"));
@@ -90,7 +90,7 @@ void DParticleComboBlueprint_factory::Get_Reactions(JEventLoop *locEventLoop, ve
 //------------------
 // evnt
 //------------------
-jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
+jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DParticleComboBlueprint_factory::evnt()");

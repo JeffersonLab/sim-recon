@@ -16,7 +16,7 @@ class trackpar:public TObject{
 
 	public:
 
-		int eventnumber;
+		uint64_t eventnumber;
 		TVector3 pthrown;
 		TVector3 pfit;
 		float z_thrown;

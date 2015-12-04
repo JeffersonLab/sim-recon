@@ -189,7 +189,7 @@ jerror_t JEventProcessor_DAQTree::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_DAQTree::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_DAQTree::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	// This is called whenever the run number changes
 	return NOERROR;
@@ -198,7 +198,7 @@ jerror_t JEventProcessor_DAQTree::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using
@@ -275,7 +275,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	unsigned int num_f125WRD = f125WindowRawData_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f125WRDtree_exists && num_f125WRD>0) {
-		printf("DAQTree >>eventnum %i, found %4i Df125WindowRawData objects\n",eventnumber,num_f125WRD);
+		printf("DAQTree >>eventnum %llu, found %4i Df125WindowRawData objects\n",(long long unsigned int)eventnumber,num_f125WRD);
 		printf("DAQTree >>Creating tree Df125WindowRawData_tree\n");
 		Df125WindowRawData_tree = new TTree("Df125WindowRawData",
 											"tree of flash 125 raw window data (waveform samples) for each channel and event");
@@ -362,7 +362,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	unsigned int num_f125PRD = f125PulseRawData_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f125PRDtree_exists && num_f125PRD>0) {
-		printf("DAQTree >>eventnum %i, found %4i Df125PulseRawData objects\n",eventnumber,num_f125PRD);
+		printf("DAQTree >>eventnum %llu, found %4i Df125PulseRawData objects\n",(long long unsigned int)eventnumber,num_f125PRD);
 		printf("DAQTree >>Creating tree Df125PulseRawData_tree\n");
 		Df125PulseRawData_tree = new TTree("Df125PulseRawData",
 										   "tree of flash 125 pulse raw data for each channel and event");
@@ -450,7 +450,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	unsigned int num_f125PI = f125PulseIntegral_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f125PItree_exists && num_f125PI>0) {
-		printf("DAQTree >>eventnum %i, found %4i Df125PulseIntegral objects\n",eventnumber,num_f125PI);
+		printf("DAQTree >>eventnum %llu, found %4i Df125PulseIntegral objects\n",(long long unsigned int)eventnumber,num_f125PI);
 		printf("DAQTree >>Creating tree Df125PulseIntegral_tree\n");
 		Df125PulseIntegral_tree = new TTree("Df125PulseIntegral",
 											"tree of flash 125 pulse integral for each channel and event");
@@ -488,7 +488,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	unsigned int num_f125PT = f125PulseTime_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f125PTtree_exists && num_f125PT>0) {
-		printf("DAQTree >>eventnum %i, found %4i Df125PulseTime objects\n",eventnumber,num_f125PT);
+		printf("DAQTree >>eventnum %llu, found %4i Df125PulseTime objects\n",(long long unsigned int)eventnumber,num_f125PT);
 		printf("DAQTree >>Creating tree f125PulseTime_tree\n");
 		Df125PulseTime_tree = new TTree("Df125PulseTime",
 										"tree of flash 125 pulse times for each channel and event");
@@ -523,7 +523,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	unsigned int num_f125PP = f125PulsePedestal_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f125PPtree_exists && num_f125PP>0) {
-		printf("DAQTree >>eventnum %i, found %4i Df125PulsePedestal objects\n",eventnumber,num_f125PP);
+		printf("DAQTree >>eventnum %llu, found %4i Df125PulsePedestal objects\n",(long long unsigned int)eventnumber,num_f125PP);
 		printf("DAQTree >>Creating tree f125PulsePedestal_tree\n");
 		Df125PulsePedestal_tree = new TTree("Df125PulsePedestal",
 										"tree of flash 125 pulse times for each channel and event");
@@ -559,7 +559,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	unsigned int num_f125TT = f125TriggerTime_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f125TTtree_exists && num_f125TT>0) {
-		printf("DAQTree >>eventnum %i, found %4i Df125TriggerTime objects\n",eventnumber,num_f125TT);
+		printf("DAQTree >>eventnum %llu, found %4i Df125TriggerTime objects\n",(long long unsigned int)eventnumber,num_f125TT);
 		printf("DAQTree >>Creating tree Df125TriggerTime_tree\n");
 		Df125TriggerTime_tree = new TTree("Df125TriggerTime",
 										  "tree of flash 125 trigger times for each slot and event");
@@ -588,7 +588,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	unsigned int num_F1TDCH = F1TDCHit_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!F1TDCHtree_exists && num_F1TDCH>0) {
-		printf("DAQTree >>eventnum %i, found %4i DF1TDCHit objects\n",eventnumber,num_F1TDCH);
+		printf("DAQTree >>eventnum %llu, found %4i DF1TDCHit objects\n",(long long unsigned int)eventnumber,num_F1TDCH);
 		printf("DAQTree >>Creating tree F1TDCHit_tree\n");
 		DF1TDCHit_tree = new TTree("DF1TDCHit",	"tree of F1 TDC hit times for each channel and event");
 		DF1TDCHit_tree->Branch("channelnum",&channelnum,"channelnum/i");
@@ -623,7 +623,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	unsigned int num_F1TDCTT = F1TDCTriggerTime_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!F1TDCTTtree_exists && num_F1TDCTT>0) {
-		printf("DAQTree >>eventnum %i, found %4i DF1TDCTriggerTime objects\n",eventnumber,num_F1TDCTT);
+		printf("DAQTree >>eventnum %llu, found %4i DF1TDCTriggerTime objects\n",(long long unsigned int)eventnumber,num_F1TDCTT);
 		printf("DAQTree >>Creating tree DF1TDCTriggerTime_tree\n");
 		DF1TDCTriggerTime_tree = new TTree("DF1TDCTriggerTime", "tree of F1 TDC trigger times for each slot and event");
 		DF1TDCTriggerTime_tree->Branch("eventnum",&eventnum,"eventnum/i");
@@ -652,7 +652,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	unsigned int num_f250WRD = f250WindowRawData_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f250WRDtree_exists && num_f250WRD>0) {
-		printf("DAQTree >>eventnum %i, found %4i Df250WindowRawData objects\n",eventnumber,num_f250WRD);
+		printf("DAQTree >>eventnum %llu, found %4i Df250WindowRawData objects\n",(long long unsigned int)eventnumber,num_f250WRD);
 		printf("DAQTree >>Creating tree Df250WindowRawData_tree\n");
 		Df250WindowRawData_tree = new TTree("Df250WindowRawData",
 											"tree of flash 250 raw window data (waveform samples) for each channel and event");
@@ -738,7 +738,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	unsigned int num_f250PRD = f250PulseRawData_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f250PRDtree_exists && num_f250PRD>0) {
-		printf("DAQTree >>eventnum %i, found %4i Df250PulseRawData objects\n",eventnumber,num_f250PRD);
+		printf("DAQTree >>eventnum %llu, found %4i Df250PulseRawData objects\n",(long long unsigned int)eventnumber,num_f250PRD);
 		printf("DAQTree >>Creating tree Df250PulseRawData_tree\n");
 		Df250PulseRawData_tree = new TTree("Df250PulseRawData",
 										   "tree of flash 250 pulse raw data for each channel and event");
@@ -826,7 +826,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	unsigned int num_f250PI = f250PulseIntegral_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f250PItree_exists && num_f250PI>0) {
-		printf("DAQTree >>eventnum %i, found %4i Df250PulseIntegral objects\n",eventnumber,num_f250PI);
+		printf("DAQTree >>eventnum %llu, found %4i Df250PulseIntegral objects\n",(long long unsigned int)eventnumber,num_f250PI);
 		printf("DAQTree >>Creating tree Df250PulseIntegral_tree\n");
 		Df250PulseIntegral_tree = new TTree("Df250PulseIntegral",
 											"tree of flash 250 pulse integral for each channel and event");
@@ -868,7 +868,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	unsigned int num_f250PT = f250PulseTime_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f250PTtree_exists && num_f250PT>0) {
-		printf("DAQTree >>eventnum %i, found %4i Df250PulseTime objects\n",eventnumber,num_f250PT);
+		printf("DAQTree >>eventnum %llu, found %4i Df250PulseTime objects\n",(long long unsigned int)eventnumber,num_f250PT);
 		printf("DAQTree >>Creating tree f250PulseTime_tree\n");
 		Df250PulseTime_tree = new TTree("Df250PulseTime",
 										"tree of flash 250 pulse times for each channel and event");
@@ -903,7 +903,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	unsigned int num_f250PP = f250PulsePedestal_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f250PPtree_exists && num_f250PP>0) {
-		printf("DAQTree >>eventnum %i, found %4i Df250PulsePedestal objects\n",eventnumber,num_f250PP);
+		printf("DAQTree >>eventnum %llu, found %4i Df250PulsePedestal objects\n",(long long unsigned int)eventnumber,num_f250PP);
 		printf("DAQTree >>Creating tree f250PulsePedestal_tree\n");
 		Df250PulsePedestal_tree = new TTree("Df250PulsePedestal",
 										"tree of flash 250 pulse times for each channel and event");
@@ -939,7 +939,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	unsigned int num_f250TT = f250TriggerTime_vec.size();
 	/// Create tree if doesn't exist and objects found.
 	if (!f250TTtree_exists && num_f250TT>0) {
-		printf("DAQTree >>eventnum %i, found %4i Df250TriggerTime objects\n",eventnumber,num_f250TT);
+		printf("DAQTree >>eventnum %llu, found %4i Df250TriggerTime objects\n",(long long unsigned int)eventnumber,num_f250TT);
 		printf("DAQTree >>Creating tree Df250TriggerTime_tree\n");
 		Df250TriggerTime_tree = new TTree("Df250TriggerTime",
 										  "tree of flash 250 trigger times for each slot and event");

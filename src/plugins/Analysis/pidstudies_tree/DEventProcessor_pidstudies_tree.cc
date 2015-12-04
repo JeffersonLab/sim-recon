@@ -40,7 +40,7 @@ jerror_t DEventProcessor_pidstudies_tree::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_pidstudies_tree::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t DEventProcessor_pidstudies_tree::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -48,7 +48,7 @@ jerror_t DEventProcessor_pidstudies_tree::brun(JEventLoop *eventLoop, int runnum
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_pidstudies_tree::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_pidstudies_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	unsigned int loc_i, loc_j;
 	DLorentzVector locThrownFourMomentum, locThrownSpacetimeVertex;

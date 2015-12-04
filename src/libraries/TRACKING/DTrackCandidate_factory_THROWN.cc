@@ -35,7 +35,7 @@ DTrackCandidate_factory_THROWN::DTrackCandidate_factory_THROWN()
 //------------------
 // brun
 //------------------
-jerror_t DTrackCandidate_factory_THROWN::brun(jana::JEventLoop *loop, int runnumber)
+jerror_t DTrackCandidate_factory_THROWN::brun(jana::JEventLoop *loop, int32_t runnumber)
 {
 	DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
 	bfield = dapp->GetBfield(runnumber);
@@ -75,7 +75,7 @@ jerror_t DTrackCandidate_factory_THROWN::brun(jana::JEventLoop *loop, int runnum
 //------------------
 // evnt
 //------------------
-jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DCDCTrackHit*> cdctrackhits;

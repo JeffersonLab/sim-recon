@@ -43,7 +43,7 @@ using namespace jana;
 //---------------------------------
 DMagneticFieldMapParameterized::DMagneticFieldMapParameterized(jana::JApplication *japp, string namepath)
 {
-	int runnumber = 1;
+	int32_t runnumber = 1;
 	jcalib = japp->GetJCalibration(runnumber);
 
 	JParameterManager *jparms = japp->GetJParameterManager();

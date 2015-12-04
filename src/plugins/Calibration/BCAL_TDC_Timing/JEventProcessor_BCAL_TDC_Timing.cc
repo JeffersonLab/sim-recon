@@ -67,7 +67,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int runnumber)
+jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int32_t runnumber)
 {
     // This is called whenever the run number changes
     DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
@@ -79,7 +79,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
     vector<const DBCALUnifiedHit *> bcalUnifiedHitVector;
     loop->Get(bcalUnifiedHitVector);

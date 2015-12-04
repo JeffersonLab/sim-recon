@@ -37,7 +37,7 @@ jerror_t DPSPair_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DPSPair_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DPSPair_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
   return NOERROR;
 }
@@ -45,7 +45,7 @@ jerror_t DPSPair_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DPSPair_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DPSPair_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
   // get fine pair spectrometer hits
   vector<const DPSHit*> hits;

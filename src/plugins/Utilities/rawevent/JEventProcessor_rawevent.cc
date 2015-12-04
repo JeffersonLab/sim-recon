@@ -445,7 +445,7 @@ jerror_t JEventProcessor_rawevent::init(void) {
 
 
 // brun called once-only at beginning of run, independent of the number of processing threads
-jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
+jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int32_t runnumber) {
 #ifdef HAVE_EVIO
 
   runNumber=runnumber;
@@ -770,7 +770,7 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 //          buffer in the format planned for disentangled events.
 //        The buffer is written to disk using a mutex-locked EVIO write.
 
-jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) {
+jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, uint64_t eventnumber) {
 #ifdef HAVE_EVIO
 
   unsigned int i;

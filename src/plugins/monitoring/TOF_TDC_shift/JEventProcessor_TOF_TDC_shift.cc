@@ -53,7 +53,7 @@ jerror_t JEventProcessor_TOF_TDC_shift::init(void) {
   return NOERROR;
 }
 //----------------------------------------------------------------------------------
-jerror_t JEventProcessor_TOF_TDC_shift::brun(JEventLoop *eventLoop, int runnumber) {
+jerror_t JEventProcessor_TOF_TDC_shift::brun(JEventLoop *eventLoop, int32_t runnumber) {
 
   char filename[200];
   sprintf(filename,"TOF_TDC_shift_%6.6d.txt",runnumber);
@@ -64,7 +64,7 @@ jerror_t JEventProcessor_TOF_TDC_shift::brun(JEventLoop *eventLoop, int runnumbe
   return NOERROR;
 }
 //----------------------------------------------------------------------------------
-jerror_t JEventProcessor_TOF_TDC_shift::evnt(JEventLoop *eventLoop, int eventnumber) {
+jerror_t JEventProcessor_TOF_TDC_shift::evnt(JEventLoop *eventLoop, uint64_t eventnumber) {
 
   // Get all data objects first so we minimize the time we hold the ROOT mutex lock
 

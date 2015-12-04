@@ -98,7 +98,7 @@ DBCALCluster_factory::fini( void ){
 
 #endif
 
-jerror_t DBCALCluster_factory::brun(JEventLoop *loop, int runnumber) {
+jerror_t DBCALCluster_factory::brun(JEventLoop *loop, int32_t runnumber) {
   DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
   DGeometry* geom = app->GetDGeometry(runnumber);
   geom->GetTargetZ(m_z_target_center);
@@ -111,7 +111,7 @@ jerror_t DBCALCluster_factory::brun(JEventLoop *loop, int runnumber) {
 }
 
 jerror_t
-DBCALCluster_factory::evnt( JEventLoop *loop, int eventnumber ){
+DBCALCluster_factory::evnt( JEventLoop *loop, uint64_t eventnumber ){
 
   vector< const DBCALPoint* > twoEndPoint;
   loop->Get(twoEndPoint);

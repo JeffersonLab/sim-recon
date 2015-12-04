@@ -23,7 +23,7 @@ using namespace jana;
 //----------------
 // brun
 //----------------
-jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
+jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int32_t runnumber) {
   // Only print messages for one thread whenever run number changes
   static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
   static set<int> runs_announced;
@@ -86,7 +86,7 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
 //----------------
 // evnt
 //----------------
-jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
+jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
 
   vector<const DBCALUnifiedHit*> hits;
   loop->Get(hits);

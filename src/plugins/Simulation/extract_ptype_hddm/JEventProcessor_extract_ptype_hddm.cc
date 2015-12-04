@@ -113,7 +113,7 @@ jerror_t JEventProcessor_extract_ptype_hddm::init(void)
 // brun
 //------------------
 jerror_t JEventProcessor_extract_ptype_hddm::brun(JEventLoop *loop, 
-                                                  int runnumber)
+                                                  int32_t runnumber)
 {
    // This is called whenever the run number changes
    return NOERROR;
@@ -123,7 +123,7 @@ jerror_t JEventProcessor_extract_ptype_hddm::brun(JEventLoop *loop,
 // evnt
 //------------------
 jerror_t JEventProcessor_extract_ptype_hddm::evnt(JEventLoop *loop,
-                                                  int eventnumber)
+                                                  uint64_t eventnumber)
 {
    vector<const DMCThrown*> mcthrowns;
    loop->Get(mcthrowns);

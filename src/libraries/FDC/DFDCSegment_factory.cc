@@ -54,7 +54,7 @@ DFDCSegment_factory::~DFDCSegment_factory() {
 /// DFDCSegment_factory::brun():
 /// Initialization: read in deflection map, get magnetic field map
 ///
-jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int runnumber) { 
+jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int32_t runnumber) { 
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   const DMagneticFieldMap *bfield = dapp->GetBfield(runnumber);
   double Bz=bfield->GetBz(0.,0.,65.);
@@ -84,7 +84,7 @@ jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int runnumber) {
 /// DFDCSegment_factory::evnt():
 /// Routine where pseudopoints are combined into track segments
 ///
-jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
+jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, uint64_t eventNo) {
   myeventno=eventNo;
 
   vector<const DFDCPseudo*>pseudopoints;

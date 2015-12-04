@@ -80,7 +80,7 @@ jerror_t DBCALShower_factory_CURVATURE::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DBCALShower_factory_CURVATURE::brun(jana::JEventLoop *loop, int runnumber)
+jerror_t DBCALShower_factory_CURVATURE::brun(jana::JEventLoop *loop, int32_t runnumber)
 {
   DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
   DGeometry* geom = app->GetDGeometry(runnumber);
@@ -128,7 +128,7 @@ jerror_t DBCALShower_factory_CURVATURE::brun(jana::JEventLoop *loop, int runnumb
 //------------------
 // evnt
 //------------------
-jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
   recon_showers_phi.clear();
   recon_showers_theta.clear();

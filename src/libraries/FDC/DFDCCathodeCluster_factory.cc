@@ -88,7 +88,7 @@ jerror_t DFDCCathodeCluster_factory::init(void){
 /// This (along with DFDCCathodeCluster_factory::pique()) 
 /// is the place cathode hits are associated into cathode clusters.  
 ///
-jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, int eventNo) {
+jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, uint64_t eventNo) {
   vector<const DFDCHit*> allHits;
   vector<const DFDCHit*> uHits;
   vector<const DFDCHit*> vHits;
