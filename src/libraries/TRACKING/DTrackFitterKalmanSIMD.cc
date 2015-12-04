@@ -3165,7 +3165,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
                         return NOERROR;
                     }
                 }
-                if (forward_prob>0.001 && error==FIT_SUCCEEDED) return NOERROR;
+                if (forward_prob>0.001 
+		    && error==FIT_SUCCEEDED) return NOERROR;
 
                 // Save the best values for the parameters and chi2 for now
                 chisq_forward=chisq_;
@@ -4835,7 +4836,6 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
     DMatrix5x5 Ctest; // covariance matrix
     //DMatrix5x1 dS;  // perturbation in state vector
     double V=0.0507*1.15;
-    double InvV=1./V;  // inverse of variance
 
     // set used_in_fit flags to false for cdc hits
     unsigned int num_cdc=cdc_updates.size();
@@ -5213,7 +5213,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                 // inverse of variance including prediction
                 //InvV=1./(V+H*(C*H_T));
                 double Vproj=C.SandwichMultiply(H_T);
-                InvV=1./(V+Vproj);
+                double InvV=1./(V+Vproj);
                 if (InvV<0.){
                     if (DEBUG_LEVEL>0)
                         _DBG_ << "Negative variance???" << endl;
@@ -5422,7 +5422,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 
     // position variables
     double z=z_,newz=z_;
-    double dz=-mStepSizeZ;
     double r2_old=S(state_x)*S(state_x)+S(state_y)*S(state_y);
     double dz_old=0.;
     double dEdx=0.;
@@ -5451,7 +5450,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 
     // Adjust the step size
     double ds_dz=sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
-    dz=-mStepSizeS/ds_dz;
+    double dz=-mStepSizeS/ds_dz;
     if (fabs(dEdx)>EPS){      
         dz=(-1.)*DE_PER_STEP/fabs(dEdx)/ds_dz;
     }
@@ -5647,7 +5646,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
         C=Q.AddSym(C.SandwichMultiply(J));
 
         // Step through field
-        ds=Step(z,newz,dEdx,S);
+        Step(z,newz,dEdx,S);
 
         // Check if we passed the minimum doca to the beam line
         r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
