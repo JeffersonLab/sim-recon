@@ -72,6 +72,7 @@ typedef pair<int,int> tagNum;
 #include "DCODAEventInfo.h"
 #include "DCODAROCInfo.h"
 #include "DEPICSvalue.h"
+#include "DEventTag.h"
 
 extern set<uint32_t> ROCIDS_TO_PARSE;
 
@@ -213,6 +214,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		bool  PARSE_CAEN1290TDC;
 		bool  PARSE_CONFIG;
 		bool  PARSE_EPICS;
+		bool  PARSE_EVENTTAG;
 		bool  PARSE_TRIGGER;
 		bool  MAKE_DOM_TREE;
 		int   ET_STATION_NEVENTS;
@@ -364,6 +366,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void ParseEPICSevent(evioDOMNodeP bankPtr, list<ObjList*> &events);
 #endif // HAVE_EVIO		
 		void ParseModuleConfiguration(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
+		void ParseEventTag(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void Parsef125Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
