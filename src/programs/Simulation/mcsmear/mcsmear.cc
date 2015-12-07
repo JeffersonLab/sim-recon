@@ -248,14 +248,15 @@ void ParseCommandLineArguments(int narg, char* argv[])
    
    // Generate output filename based on input filename
    if (OUTFILENAME == NULL) {
-      char *ptr, *path_stripped;
-      path_stripped = ptr = strdup(INFILENAME);
+      char *ptr, *path_stripped, *pdup;
+      path_stripped = ptr = pdup = strdup(INFILENAME);
       while((ptr = strstr(ptr, "/")))path_stripped = ++ptr;
       ptr = strstr(path_stripped, ".hddm");
       if(ptr)*ptr=0;
       char str[256];
       sprintf(str, "%s_%ssmeared.hddm", path_stripped, ADD_NOISE ? "n":"");
       OUTFILENAME = strdup(str);
+      delete pdup;
    }
    
    cout << "BCAL values will " <<  (SMEAR_BCAL ? "":"not")  << " be smeared"
