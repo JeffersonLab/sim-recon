@@ -2017,7 +2017,7 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	double ds = sqrt(dz*dz + Rodphi*Rodphi);
 	if(s)*s=step->s + (phi>0.0 ? ds:-ds);
 	if(debug_level>3){
-		_DBG_<<"distance to rt: "<<*s<<" from step at "<<step->s<<" with ds="<<ds<<" d="<<d<<" dz="<<dz<<" Rodphi="<<Rodphi<<endl;
+	  _DBG_<<"distance to rt: "<< step->s + (phi>0.0 ? ds:-ds) <<" from step at "<<step->s<<" with ds="<<ds<<" d="<<d<<" dz="<<dz<<" Rodphi="<<Rodphi<<endl;
 		_DBG_<<"phi="<<phi<<" U="<<U<<" u="<<u<<endl;
 	}
 
@@ -2825,7 +2825,6 @@ jerror_t DReferenceTrajectory::BrentsAlgorithm(DVector3 &pos1,DVector3 &mom1,
   }
   
   // We only get here if there is a convergence issue...
-  ds=cx-x;
   doca=(pos1-pos2).Mag();
   stepper1.GetMomentum(mom1);
   stepper2.GetMomentum(mom2);
