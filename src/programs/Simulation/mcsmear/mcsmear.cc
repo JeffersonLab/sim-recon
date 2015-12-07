@@ -256,7 +256,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
       char str[256];
       sprintf(str, "%s_%ssmeared.hddm", path_stripped, ADD_NOISE ? "n":"");
       OUTFILENAME = strdup(str);
-      delete pdup;
+      free(pdup);
    }
    
    cout << "BCAL values will " <<  (SMEAR_BCAL ? "":"not")  << " be smeared"
