@@ -210,10 +210,6 @@ s_GapEMcal_t* pickGapEMcal ()
          {
             FREE(hits);
          }
-         if (hits != HDDM_NULL)
-         {
-            FREE(hits);
-         }
       }
 
       for (shower=0; shower < showers->mult; ++shower)

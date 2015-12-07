@@ -133,10 +133,7 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
       paddles->mult = 1;
       paddles->in[0].row = row;
       paddles->in[0].layer = layer;
-      if (column == 0 || column == 1)
-      {
-         paddles->in[0].upvHits = hits = make_s_UpvHits(MAX_HITS);
-      }
+      paddles->in[0].upvHits = hits = make_s_UpvHits(MAX_HITS);
       upv->upvPaddles = paddles;
       paddleCount++;
     }
