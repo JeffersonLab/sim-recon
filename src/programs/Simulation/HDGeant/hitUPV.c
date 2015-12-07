@@ -71,7 +71,6 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
   
   int layer = getlayer_wrapper_();
   int row = getrow_wrapper_();
-  int column = getcolumn_wrapper_();
   /*
     'column' is not used in the current code. It distinguishes long 
     paddles (column=0) from short paddles to the left(column=1) or 
@@ -81,8 +80,9 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
     right pair of short paddles form a long paddle which just happens 
     to have an insensitive to hits area in the middle but otherwise is identical
     to a normal long paddle. If we later change our minds and start treating 3 
-    types of paddles differently, then 'column' is available for use.
+    types of paddles differently, then 'column' can be made available for use.
   */
+  //int column = getcolumn_wrapper_();
 
   float dxleft = xlocal[0];
   float dxright = -xlocal[0];
@@ -133,10 +133,7 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
       paddles->mult = 1;
       paddles->in[0].row = row;
       paddles->in[0].layer = layer;
-      if (column == 0 || column == 1)
-      {
-         paddles->in[0].upvHits = hits = make_s_UpvHits(MAX_HITS);
-      }
+      paddles->in[0].upvHits = hits = make_s_UpvHits(MAX_HITS);
       upv->upvPaddles = paddles;
       paddleCount++;
     }

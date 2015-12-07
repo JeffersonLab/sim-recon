@@ -1763,6 +1763,7 @@ void CodeBuilder::writeMatcher()
 	 << "         if (tag_strncmp(c,b,len) != 0)"		<< std::endl
 	 << "         {"					<< std::endl
          << "            collide(b,c);"				<< std::endl
+         << "            free(this1);"				<< std::endl
          << "            return 0;"				<< std::endl
 	 << "         }"					<< std::endl;
 

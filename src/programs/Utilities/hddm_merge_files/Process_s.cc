@@ -79,4 +79,5 @@ void Process_s(unsigned int &NEvents, unsigned int &NEvents_read)
       
    // Close output file
    ofs.close();
+   delete fout;
 }
