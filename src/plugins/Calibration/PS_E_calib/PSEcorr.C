@@ -16,7 +16,7 @@
 #include <fstream>
 #include <string>
 
-#define CORRECTIONS true	// when true the correction parameters will be applied
+#define CORRECTIONS false	// when true the correction parameters will be applied
 #define TAGM true		// include TAGM when true 
 #define TAGH false		// include TAGH when true
 
