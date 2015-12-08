@@ -31,8 +31,8 @@ jerror_t DTAGMHit_factory::init(void)
 {
     DELTA_T_ADC_TDC_MAX = 10.0; // ns
     gPARMS->SetDefaultParameter("TAGMHit:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX,
-				"Maximum difference in ns between a (calibrated) fADC time and"
-				" F1TDC time for them to be matched in a single hit");
+                "Maximum difference in ns between a (calibrated) fADC time and"
+                " F1TDC time for them to be matched in a single hit");
     // initialize calibration constants
     fadc_a_scale = 0;
     fadc_t_scale = 0;
@@ -91,10 +91,10 @@ jerror_t DTAGMHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
         jerr << "Unable to get TAGM_TDC_BASE_TIME_OFFSET from /PHOTON_BEAM/microscope/base_time_offset !" << endl;
 
     if (load_ccdb_constants("fadc_gains", "gain", fadc_gains) &&
-	load_ccdb_constants("fadc_pedestals", "pedestal", fadc_pedestals) &&
-	load_ccdb_constants("fadc_time_offsets", "offset", fadc_time_offsets) &&
-	load_ccdb_constants("tdc_time_offsets", "offset", tdc_time_offsets) &&
-	load_ccdb_constants("fiber_quality", "code", fiber_quality) )
+    load_ccdb_constants("fadc_pedestals", "pedestal", fadc_pedestals) &&
+    load_ccdb_constants("fadc_time_offsets", "offset", fadc_time_offsets) &&
+    load_ccdb_constants("tdc_time_offsets", "offset", tdc_time_offsets) &&
+    load_ccdb_constants("fiber_quality", "code", fiber_quality) )
     {
         return NOERROR;
     }
@@ -155,7 +155,6 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
             pedestal          = single_sample_ped * nsamples_integral/nsamples_pedestal;
         }
-        else continue;
 
         // throw away hits from bad or noisy fibers
         int quality = fiber_quality[digihit->row][digihit->column];
@@ -192,51 +191,51 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         _data.push_back(hit);
     }
 
-	// Next, loop over TDC hits, matching them to the existing fADC hits
-	// where possible and updating their time information. If no match is
-	// found, then create a new hit with just the TDC info.
-	vector<const DTAGMTDCDigiHit*> tdcdigihits;
-	loop->Get(tdcdigihits);
-	for (unsigned int i=0; i < tdcdigihits.size(); i++) {
-	    const DTAGMTDCDigiHit *digihit = tdcdigihits[i];
+    // Next, loop over TDC hits, matching them to the existing fADC hits
+    // where possible and updating their time information. If no match is
+    // found, then create a new hit with just the TDC info.
+    vector<const DTAGMTDCDigiHit*> tdcdigihits;
+    loop->Get(tdcdigihits);
+    for (unsigned int i=0; i < tdcdigihits.size(); i++) {
+        const DTAGMTDCDigiHit *digihit = tdcdigihits[i];
 
-	    // Apply calibration constants here
-	    int row = digihit->row;
-	    int column = digihit->column;
-	    double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - tdc_time_offsets[row][column] + t_tdc_base;
+        // Apply calibration constants here
+        int row = digihit->row;
+        int column = digihit->column;
+        double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - tdc_time_offsets[row][column] + t_tdc_base;
 
-	    // Look for existing hits to see if there is a match
-	    // or create new one if there is no match
-	    DTAGMHit *hit = 0;
-	    for (unsigned int j=0; j < _data.size(); ++j) {
-	        if (_data[j]->row == row && _data[j]->column == column &&
-		    fabs(T - _data[j]->time_fadc) < DELTA_T_ADC_TDC_MAX)
-		  {
-		    hit = _data[j];
-		  }
-		}
-	    if (hit == 0) {
-	        hit = new DTAGMHit;
-		hit->row = row;
-		hit->column = column;
-		double Elow = tagmGeom.getElow(column);
-		double Ehigh = tagmGeom.getEhigh(column);
-		hit->E = (Elow + Ehigh)/2;
-		hit->time_fadc = 0;
-		hit->npix_fadc = 0;
-		hit->integral = 0;
-		hit->pulse_peak = 0;
-		hit->has_fADC=false;
-		_data.push_back(hit);
-	    }
-	    hit->time_tdc=T;
-	    hit->has_TDC=true;
-	    
-	    hit->t = T;
-	    
-	    // apply time-walk corrections?
-	    
-	    hit->AddAssociatedObject(digihit);
+        // Look for existing hits to see if there is a match
+        // or create new one if there is no match
+        DTAGMHit *hit = 0;
+        for (unsigned int j=0; j < _data.size(); ++j) {
+            if (_data[j]->row == row && _data[j]->column == column &&
+            fabs(T - _data[j]->time_fadc) < DELTA_T_ADC_TDC_MAX)
+          {
+            hit = _data[j];
+          }
+        }
+        if (hit == 0) {
+            hit = new DTAGMHit;
+        hit->row = row;
+        hit->column = column;
+        double Elow = tagmGeom.getElow(column);
+        double Ehigh = tagmGeom.getEhigh(column);
+        hit->E = (Elow + Ehigh)/2;
+        hit->time_fadc = 0;
+        hit->npix_fadc = 0;
+        hit->integral = 0;
+        hit->pulse_peak = 0;
+        hit->has_fADC=false;
+        _data.push_back(hit);
+        }
+        hit->time_tdc=T;
+        hit->has_TDC=true;
+        
+        hit->t = T;
+        
+        // apply time-walk corrections?
+        
+        hit->AddAssociatedObject(digihit);
     }
 
     return NOERROR;

@@ -1052,7 +1052,7 @@ s_ForwardDC_t* pickForwardDC ()
 		  chits->in[iok].ptype = chits->in[0].ptype;
 		  chits->in[iok].t=(float) i;
 		  //chits->in[iok].q=samples[i];
-		  istart=i-1;
+		  istart=(i > 0)? i-1 : 0;
 		  threshold_toggle=1;
 		  //iok++;
 		  //mok++;

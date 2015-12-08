@@ -334,7 +334,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 			       DMatrix5x1 &S, bool &stepped_to_boundary); 
   jerror_t PropagateForward(int length,int &index,double &z,double zhit,
 			    DMatrix5x1 &S,bool &done,
-			    bool &stepped_to_boundary);
+			    bool &stepped_to_boundary, 
+			    bool &stepped_to_endplate);
   jerror_t PropagateCentral(int length, int &index,DVector2 &my_xy,
 			    double &var_t_factor,
 			    DMatrix5x1 &Sc,bool &stepped_to_boundary);
