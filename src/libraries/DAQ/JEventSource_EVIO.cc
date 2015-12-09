@@ -116,6 +116,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	PARSE_CAEN1290TDC = true;
 	PARSE_CONFIG = true;
 	PARSE_EPICS = true;
+	PARSE_EVENTTAG = true;
 	PARSE_TRIGGER = true;
 	BUFFER_SIZE = 20000000; // in bytes
 	ET_STATION_NEVENTS = 10;
@@ -193,6 +194,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:PARSE_CAEN1290TDC", PARSE_CAEN1290TDC, "Set this to 0 to disable parsing of data from CAEN 1290 TDC modules (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:PARSE_CONFIG", PARSE_CONFIG, "Set this to 0 to disable parsing of ROC configuration data in the data stream (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:PARSE_EPICS", PARSE_EPICS, "Set this to 0 to disable parsing of EPICS events from the data stream (for benchmarking/debugging)");
+		gPARMS->SetDefaultParameter("EVIO:PARSE_EVENTTAG", PARSE_EVENTTAG, "Set this to 0 to disable parsing of event tag data in the data stream (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:PARSE_TRIGGER", PARSE_TRIGGER, "Set this to 0 to disable parsing of the built trigger bank from CODA (for benchmarking/debugging)");
 
 		gPARMS->SetDefaultParameter("EVIO:BUFFER_SIZE", BUFFER_SIZE, "Size in bytes to allocate for holding a single EVIO event.");
@@ -349,6 +351,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	event_source_data_types.insert("DCODAEventInfo");
 	event_source_data_types.insert("DCODAROCInfo");
 	event_source_data_types.insert("DEPICSvalue");
+	event_source_data_types.insert("DEventTag");
 
 	// Read in optional module type translation map if it exists	
 	ReadOptionalModuleTypeTranslation();
@@ -2860,7 +2863,19 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 				ParseBuiltTriggerBank(bankPtr, tmp_events);
 				if(VERBOSE>5) evioout << "     Merging objects in ParseEVIOEvent" << endl;
 				MergeObjLists(full_events, tmp_events);
+			
+			// Check if this is a DEventTag bank
+			}else if(bankPtr->tag == 0x0056){
+				const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+				if(vec){
+					const uint32_t *iptr = &(*vec)[0];
+					const uint32_t *iend = &(*vec)[vec->size()];
+					ParseEventTag(iptr, iend, tmp_events);
+					if(VERBOSE>5) evioout << "     Merging DEventTag objects in ParseEVIOEvent" << endl;
+					MergeObjLists(full_events, tmp_events);
+				}
 			}
+			
 			continue;  // if this wasn't a trigger bank, then it has the wrong lineage to be a data bank
 		}
 		if( physics_event_bank->getParent() != NULL ){
@@ -3269,6 +3284,45 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
 	}
 
 	if(VERBOSE>5) evioout << "     Leaving ParseModuleConfiguration()" << endl;	
+}
+
+//----------------
+// ParseEventTag
+//----------------
+void JEventSource_EVIO::ParseEventTag(const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
+{
+	if(!PARSE_EVENTTAG){ iptr = iend; return; }
+
+	if(VERBOSE>5) evioout << "     Entering ParseEventTag()  (events.size()="<<events.size()<<")" << endl;
+
+	// Make sure there is one event in the event container
+	// and get pointer to it.
+	if(events.empty()) events.push_back(new ObjList());
+	ObjList *objs = *(events.begin());
+	
+	
+	DEventTag *etag = new DEventTag;
+	
+	// event_status
+	uint64_t lo = *iptr++;
+	uint64_t hi = *iptr++;
+	etag->event_status = (hi<<32) + lo;
+	
+	// L3_status
+	lo = *iptr++;
+	hi = *iptr++;
+	etag->L3_status = (hi<<32) + lo;
+	
+	// L3_decision
+	etag->L3_decision = (DL3Trigger::L3_decision_t)*iptr++;
+
+	// L3_algorithm
+	etag->L3_algorithm = *iptr++;
+	
+	objs->misc_objs.push_back(etag);
+	
+
+	if(VERBOSE>5) evioout << "     Leaving ParseEventTag()" << endl;	
 }
 
 //----------------

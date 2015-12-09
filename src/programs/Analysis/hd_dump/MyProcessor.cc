@@ -115,27 +115,22 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 	// "boring".
 	int event_is_boring = 1;
 
-	if(SKIP_BORING_EVENTS){
-		for(unsigned int i=0;i<toprint.size();i++){
+	for(unsigned int i=0;i<toprint.size();i++){
 
-			string name =fac_info[i].dataClassName;
-			string tag = fac_info[i].tag;
-			JFactory_base *factory = eventLoop->GetFactory(name,tag.c_str());
-			if(!factory)factory = eventLoop->GetFactory("D" + name,tag.c_str());
-			if(factory){
-				try{
-					if(factory->GetNrows()>0){
-						event_is_boring=0;
-						if(PRINT_SUMMARY_HEADER)break;
-					}
-				}catch(...){
-					// someone threw an exception
+		string name =fac_info[i].dataClassName;
+		string tag = fac_info[i].tag;
+		JFactory_base *factory = eventLoop->GetFactory(name,tag.c_str());
+		if(!factory)factory = eventLoop->GetFactory("D" + name,tag.c_str());
+		if(factory){
+			try{
+				if(factory->GetNrows()>0){
+					event_is_boring=0;
+					if(PRINT_SUMMARY_HEADER)break;
 				}
+			}catch(...){
+				// someone threw an exception
 			}
 		}
-		if(event_is_boring)return NOERROR;
-	}else{
-		event_is_boring = 0;
 	}
 	
 	if(SKIP_BORING_EVENTS && event_is_boring)return NOERROR;
@@ -161,13 +156,14 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 	
 	if(PRINT_STATUS_BITS) cout << japp->StatusWordToString(eventLoop->GetJEvent().GetStatus()) << endl;
 	if(PRINT_SUMMARY_HEADER) eventLoop->PrintFactories(SPARSIFY_SUMMARY ? 2:0);
-	
+
 	// Print data for all specified factories
 	for(unsigned int i=0;i<fac_info.size();i++){
 		try{
 			string name =fac_info[i].dataClassName;
 			string tag = fac_info[i].tag;
 			eventLoop->Print(name,tag.c_str());
+
 			if(LIST_ASSOCIATED_OBJECTS)PrintAssociatedObjects(eventLoop, &fac_info[i]);
 		}catch(...){
 			// exception thrown
