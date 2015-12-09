@@ -366,7 +366,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void ParseEPICSevent(evioDOMNodeP bankPtr, list<ObjList*> &events);
 #endif // HAVE_EVIO		
 		void ParseModuleConfiguration(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
-		void ParseEventTag(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
+		void ParseEventTag(const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void Parsef125Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);

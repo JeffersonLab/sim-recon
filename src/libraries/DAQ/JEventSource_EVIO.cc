@@ -2863,7 +2863,19 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 				ParseBuiltTriggerBank(bankPtr, tmp_events);
 				if(VERBOSE>5) evioout << "     Merging objects in ParseEVIOEvent" << endl;
 				MergeObjLists(full_events, tmp_events);
+			
+			// Check if this is a DEventTag bank
+			}else if(bankPtr->tag == 0x0056){
+				const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+				if(vec){
+					const uint32_t *iptr = &(*vec)[0];
+					const uint32_t *iend = &(*vec)[vec->size()];
+					ParseEventTag(iptr, iend, tmp_events);
+					if(VERBOSE>5) evioout << "     Merging DEventTag objects in ParseEVIOEvent" << endl;
+					MergeObjLists(full_events, tmp_events);
+				}
 			}
+			
 			continue;  // if this wasn't a trigger bank, then it has the wrong lineage to be a data bank
 		}
 		if( physics_event_bank->getParent() != NULL ){
@@ -2952,10 +2964,6 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 
 			case 0x55:
 				ParseModuleConfiguration(rocid, iptr, iend, tmp_events);
-				break;
-
-			case 0x56:
-				ParseEventTag(rocid, iptr, iend, tmp_events);
 				break;
 
 			case 5:
@@ -3281,7 +3289,7 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
 //----------------
 // ParseEventTag
 //----------------
-void JEventSource_EVIO::ParseEventTag(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
+void JEventSource_EVIO::ParseEventTag(const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
 {
 	if(!PARSE_EVENTTAG){ iptr = iend; return; }
 

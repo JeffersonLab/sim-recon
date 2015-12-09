@@ -29,6 +29,7 @@ using namespace jana;
 #include "DCODAEventInfo.h"
 #include "DCODAROCInfo.h"
 #include "DEPICSvalue.h"
+#include "DEventTag.h"
 
 jerror_t DAQ_init(JEventLoop *loop)
 {
@@ -59,6 +60,7 @@ jerror_t DAQ_init(JEventLoop *loop)
 	loop->AddFactory(new JFactory<DCODAEventInfo>());
 	loop->AddFactory(new JFactory<DCODAROCInfo>());
 	loop->AddFactory(new JFactory<DEPICSvalue>());
+	loop->AddFactory(new JFactory<DEventTag>());
   
   return NOERROR;
 }
