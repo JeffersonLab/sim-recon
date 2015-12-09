@@ -633,7 +633,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  dy=S(state_y)-yw;
 	  dx=S(state_x)-xw;      
 	  double cosstereo=my_cdchits[cdc_index]->cosstereo;
-	  double d=sqrt(dx*dx+dy*dy)*cosstereo;
+	  double d=sqrt(dx*dx+dy*dy)*cosstereo+EPS;
 	  
 	  // Track projection
 	  double cosstereo2_over_d=cosstereo*cosstereo/d;

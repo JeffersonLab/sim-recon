@@ -283,6 +283,9 @@ void hitCentralDC (float xin[4], float xout[4],
     if (fabs(B[2])>1e-3){
       nvalues=78;
       status=GetColumn("CDC/cdc_drift_table",&nvalues,cdc_drift_time,"t");
+      if (status != 0) {
+	printf("CDC: cdc_drift_time table corrupted in database!\n");
+      }
       int k;
       for (k=0;k<nvalues;k++){
 	cdc_drift_time[k]*=1000.; // Scale fron micro-secons to ns
@@ -291,6 +294,9 @@ void hitCentralDC (float xin[4], float xout[4],
     
       nvalues=2;
       status = GetConstants("CDC/cdc_drift_parms", &nvalues, values, strings);
+      if (status != 0) {
+	printf("CDC: cdc_drift_parms table corrupted in database!\n");
+      }
       for ( k=0;k<(int)nvalues;k++) {
 	if (!strcmp(strings[k].str,"bscale_par1")) {
 	  BSCALE_PAR1 = values[k];
@@ -303,6 +309,9 @@ void hitCentralDC (float xin[4], float xout[4],
     else{
       nvalues=78;
       status=GetColumn("CDC/cdc_drift_table::NoBField",&nvalues,cdc_drift_time,"t");
+      if (status != 0) {
+	printf("CDC: cdc_drift_table::NoBField corrupted in database!\n");
+      }
       int k;
       for (k=0;k<nvalues;k++){
 	cdc_drift_time[k]*=1000.; // Scale fron micro-secons to ns

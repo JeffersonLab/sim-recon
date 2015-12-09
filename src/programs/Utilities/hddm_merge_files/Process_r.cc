@@ -70,5 +70,7 @@ void Process_r(unsigned int &NEvents, unsigned int &NEvents_read)
          if (QUIT)
             break;
       }
+      delete istr;
    }
+   delete ostr;
 }
