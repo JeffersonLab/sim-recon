@@ -280,7 +280,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::erun(void)
 jerror_t JEventProcessor_BCAL_TDC_Timing::fini(void)
 {
     // Called before program exit after event processing is finished.
-    SortDirectories(); // Sort the histogram directories by name
+  //SortDirectories(); // Sort the histogram directories by name
     return NOERROR;
 }
 
