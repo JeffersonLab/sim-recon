@@ -170,6 +170,7 @@ int main(int argc,char **argv)
   Y->parent = &CM;
   X= &(particle[1]);
   X->parent = &CM;
+  X->nchildren = 0;
   //  recoil.parent = &CM;
   CM.child[0]= X;
   CM.child[1]= Y;
@@ -593,8 +594,6 @@ l2:	  imassc=setChildrenMass(Y->child[i]);
        */ 
     } else{ /* it's some baryon pseudo t process */
        
-    t_min=0.4;
-    t_max=10.0;
     t_min = -( SQ( (SQ(beam.mass) -SQ(xmass) -SQ(target.mass) +SQ(ymass))/(2.0*sqrt_s))
 	       -SQ(v3mag(&(beam.p.space)) - X_momentum ));
     t_max = -( SQ( (SQ(beam.mass) -SQ(xmass) -SQ(target.mass) +SQ(ymass))/(2.0*sqrt_s))
