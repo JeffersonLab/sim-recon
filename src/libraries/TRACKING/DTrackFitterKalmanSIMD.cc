@@ -4125,8 +4125,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
     if (my_ndf<6){
         chisq=MAX_CHI2;
         my_ndf=0;
-
-        return INVALID_FIT;
+        return PRUNED_TOO_MANY_HITS;
     }
     else my_ndf-=5;
 
@@ -5366,8 +5365,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
     if (numdof<6){
         chisq=MAX_CHI2;
         numdof=0;
-
-        return INVALID_FIT;
+        return PRUNED_TOO_MANY_HITS;
     }
     numdof-=5;
 
@@ -6112,7 +6110,7 @@ DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrix(DMatrixDSym C){
 //-----------------------------------
 // This code attempts to recover tracks that are "broken".  Sometimes the fit fails because too many hits were pruned 
 // such that the number of surviving hits is less than the minimum number of degrees of freedom for a five-parameter fit.
-// This condition is flagged as an INVALID_FIT.  It may also be the case that even if we used enough hits for the fit to
+// This condition is flagged as PRUNED_TOO_MANY_HITS.  It may also be the case that even if we used enough hits for the fit to
 // be valid (i.e., make sense in terms of the number of degrees of freedom for the number of parameters (5) we are trying 
 // to determine), we throw away a number of hits near the target because the projected trajectory deviates too far away from 
 // the actual hits.  This may be an indication of a kink in the trajectory.  This condition is flagged as BREAK_POINT_FOUND.
@@ -6230,7 +6228,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
 //-----------------------------------
 // This code attempts to recover tracks that are "broken".  Sometimes the fit fails because too many hits were pruned 
 // such that the number of surviving hits is less than the minimum number of degrees of freedom for a five-parameter fit.
-// This condition is flagged as an INVALID_FIT.  It may also be the case that even if we used enough hits for the fit to
+// This condition is flagged as PRUNED_TOO_MANY_HITS.  It may also be the case that even if we used enough hits for the fit to
 // be valid (i.e., make sense in terms of the number of degrees of freedom for the number of parameters (5) we are trying 
 // to determine), we throw away a number of hits near the target because the projected trajectory deviates too far away from 
 // the actual hits.  This may be an indication of a kink in the trajectory.  This condition is flagged as BREAK_POINT_FOUND.
