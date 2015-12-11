@@ -10,6 +10,8 @@
 
 #include <iostream>
 #include <deque>
+#include <sysexits.h>
+#include <stdlib.h>
 
 #include "TFile.h"
 #include "TH1I.h"
