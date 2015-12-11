@@ -4,6 +4,6 @@ import sbms
 Import('*')
 
 # update this when plugins are added
-subdirs = ['BCAL_attenlength_gainratio','BCAL_gainmatrix','BCAL_TDC_Timing','HLDetectorTiming','TAGH_timewalk','CDC_TimeToDistance','PS_timing','PSC_TW','PS_E_calib','st_tw_corr_auto']
+subdirs = ['BCAL_attenlength_gainratio','BCAL_gainmatrix','BCAL_TDC_Timing','HLDetectorTiming','TAGH_timewalk','CDC_TimeToDistance','PS_timing','PSC_TW','PS_E_calib','st_tw_corr_auto','TAGM_TW']
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
