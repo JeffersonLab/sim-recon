@@ -903,11 +903,6 @@ bool DHistogramAction_ReconnedThrownKinematics::Perform_Action(JEventLoop* locEv
 	if(Get_NumPreviousParticleCombos() != 0)
 		return true; //else double-counting!
 
-	const DEventRFBunch* locEventRFBunch = NULL;
-	locEventLoop->GetSingle(locEventRFBunch);
-	if(locParticleCombo != NULL)
-		locEventRFBunch = locParticleCombo->Get_EventRFBunch();
-
 	const DMCThrownMatching* locMCThrownMatching = NULL;
 	locEventLoop->GetSingle(locMCThrownMatching);
 

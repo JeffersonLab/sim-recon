@@ -249,7 +249,6 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 				}
 
 				//TARGET PARTICLE //set position and time??
-				locPID = locParticleComboStep->Get_InitialParticleID();
 				if(locParticleComboStep->Is_TargetPresent())
 					locNewParticleComboStep->Set_TargetParticle(locParticleComboStep->Get_TargetParticle());
 

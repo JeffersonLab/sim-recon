@@ -2570,11 +2570,6 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 	if(Get_NumPreviousParticleCombos() != 0)
 		return true; //else double-counting!
 
-	const DEventRFBunch* locEventRFBunch = NULL;
-	locEventLoop->GetSingle(locEventRFBunch);
-	if(locParticleCombo != NULL)
-		locEventRFBunch = locParticleCombo->Get_EventRFBunch();
-
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);
 	japp->RootWriteLock();
