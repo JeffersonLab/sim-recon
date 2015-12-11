@@ -42,6 +42,11 @@ class DTAGMHit_factory: public jana::JFactory<DTAGMHit> {
       double fadc_time_offsets[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
       double tdc_time_offsets[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
       double fiber_quality[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+      double tw_c0[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+      double tw_c1[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+      double tw_c2[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+      double thresh[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+      double P_0[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
 
       bool load_ccdb_constants(std::string table_name,
                                std::string column_name,
