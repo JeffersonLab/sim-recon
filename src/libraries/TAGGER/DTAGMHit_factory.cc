@@ -238,7 +238,8 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         // apply time-walk corrections
         double P = hit->pulse_peak;
-        double c0 = tw_c0[row][column];
+        // c0 is not used, should it be??
+        //double c0 = tw_c0[row][column];
         double c1 = tw_c1[row][column];
         double c2 = tw_c2[row][column];
         double TH = thresh[row][column];

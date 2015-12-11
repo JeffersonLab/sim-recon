@@ -171,6 +171,7 @@ int main(int argc,char **argv)
   X= &(particle[1]);
   X->parent = &CM;
   X->nchildren = 0;
+  X->bookmass = 0;
   //  recoil.parent = &CM;
   CM.child[0]= X;
   CM.child[1]= Y;
