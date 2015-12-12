@@ -168,6 +168,8 @@ int main(int argc,char **argv)
 
   Y= &(particle[0]);
   Y->parent = &CM;
+  Y->nchildren = 0;
+  Y->bookmass = 0;
   X= &(particle[1]);
   X->parent = &CM;
   X->nchildren = 0;
