@@ -36,11 +36,11 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32
 
 	DApplication *locApplication = dynamic_cast<DApplication*> (locEventLoop->GetJApplication());
 	if(locApplication == NULL)
-		quick_exit(EX_UNAVAILABLE);
+		exit(EX_UNAVAILABLE);
 
 	DGeometry *locGeometry = locApplication->GetDGeometry(runnumber);
 	if(locGeometry == NULL)
-		quick_exit(EX_UNAVAILABLE);
+		exit(EX_UNAVAILABLE);
 	locGeometry->GetTargetZ(dTargetCenterZ);
 
 	locEventLoop->GetSingle(dParticleID);
