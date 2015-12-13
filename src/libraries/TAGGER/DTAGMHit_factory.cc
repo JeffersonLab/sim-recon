@@ -99,7 +99,7 @@ jerror_t DTAGMHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     load_ccdb_constants("tdc_timewalk_corrections", "c1", tw_c1) &&
     load_ccdb_constants("tdc_timewalk_corrections", "c2", tw_c2) &&
     load_ccdb_constants("tdc_timewalk_corrections", "threshold", thresh) &&
-    load_ccdb_constants("tdc_timewalk_corrections", "pp_0", P_0))
+    load_ccdb_constants("tdc_timewalk_corrections", "reference", ref))
     {
         return NOERROR;
     }
@@ -238,12 +238,12 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         // apply time-walk corrections
         double P = hit->pulse_peak;
-        // c0 is not used, should it be??
-        //double c0 = tw_c0[row][column];
+        double c0 = tw_c0[row][column];
         double c1 = tw_c1[row][column];
         double c2 = tw_c2[row][column];
         double TH = thresh[row][column];
-        double pp_0 = P_0[row][column];
+        double pp_0 = ref[row][column];
+        pp_0 = TH*pow((pp_0-c0)/c1,1/c2);
         if (P > 0) {
            T -= c1*(pow(P/TH,c2)-pow(pp_0/TH,c2));
         }

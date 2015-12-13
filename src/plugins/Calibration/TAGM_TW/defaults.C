@@ -11,7 +11,7 @@ void defaults() {
            << "-1"<< std::setw(15)
            << "0" << std::setw(15)
            << "8" << std::setw(15)
-           << "8" << std::endl;
+           << "0" << std::endl;
       if (col == 9 || col == 27 || col == 81 || col == 99) {
          for (int row = 1; row <= 5; ++row) {
             flog << row << std::setw(15)
@@ -20,7 +20,7 @@ void defaults() {
                  << "-1"<< std::setw(15)
                  << "0" << std::setw(15)
                  << "8" << std::setw(15)
-                 << "8" << std::endl;
+                 << "0" << std::endl;
          }
       }
    }
