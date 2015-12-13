@@ -254,8 +254,8 @@ jerror_t JEventProcessor_CDC_online::evnt(JEventLoop *eventLoop, uint64_t eventn
   Bool_t PED_SUB;  // if this is false, integration window info is missing, so don't plot integrals
 
 
-  uint32_t nsamples_integral;    ///< number of samples used in integral 
-  uint32_t nsamples_pedestal;    ///< number of samples used in pedestal
+  uint32_t nsamples_integral=0;    ///< number of samples used in integral 
+  uint32_t nsamples_pedestal=0;    ///< number of samples used in pedestal
 
   const uint16_t NPEDSAMPLES=16;
 

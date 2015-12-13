@@ -192,7 +192,7 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
                     }
                     if (VERBOSE>5) {
                         printf("DBCALUnifiedHit_factory  event %5llu (%2i,%i,%i,%i) TDC %i %6.1f  ADC %6.1f diff %6.1f    best %2i %6.1f\n",
-                                eventnumber, module, layer, sector, chan.end, i, tdc_hit->t, hit->t, tdc_adc_diff, goodTDCindex, t_diff);
+                                (unsigned long long int)eventnumber, module, layer, sector, chan.end, i, tdc_hit->t, hit->t, tdc_adc_diff, goodTDCindex, t_diff);
                     }
                 }
                 t_TDC = tdc_hits[goodTDCindex]->t;

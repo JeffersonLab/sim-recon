@@ -768,7 +768,7 @@ void hdv_mainframe::SetRange(void)
 	}else{
 		// define range in each direction in cm, radians
 		double r_width = 400.0/zoom_factor;
-		double phi_width = 2.0*M_PI/zoom_factor;
+		//double phi_width = 2.0*M_PI/zoom_factor;
 		double z_width = 2.0*r_width/zoom_factor;
 		double rlo = r0 - r_width/2.0;
 		double rhi = r0 + r_width/2.0;
