@@ -245,17 +245,6 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
   // Reset the number of used reference trajectories from the pool
   num_used_rts=0;
 
-  // Count the number of tracks we'll be fitting
-  unsigned int Ntracks_to_fit = 0;
-  if (SKIP_MASS_HYPOTHESES_WIRE_BASED){
-    Ntracks_to_fit=candidates.size();
-  }
-  else{
-    for(unsigned int i=0; i<candidates.size(); i++){
-      Ntracks_to_fit += candidates[i]->charge()<0.0 ? mass_hypotheses_negative.size():mass_hypotheses_positive.size();
-    }
-  }
-
   // Loop over candidates
   for(unsigned int i=0; i<candidates.size(); i++){
     const DTrackCandidate *candidate = candidates[i];
