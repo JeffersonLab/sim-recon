@@ -628,12 +628,9 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 
 	  // Find estimate for anode charge
 	  sum=0;
-	  double sum_f=0;
-	  unsigned int k=0;
+	  double sum_f=f(0)+f(1)+f(2);
 	  for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
-	    sum_f+=f(k);
 	    sum+=double((*j)->q);
-	    k++;
 	  }
 	  temp.q=4.*sum/sum_f;
 
@@ -660,12 +657,9 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 	  
 	  // Find estimate for anode charge
 	  sum=0;
-	  double sum_f=0;
-	  unsigned int k=0;
+	  double sum_f=f(0)+f(1)+f(2);
 	  for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
-	    sum_f+=f(k);
 	    sum+=double((*j)->q);
-	    k++;
 	  }
 	  temp.q=4.*sum/sum_f;
 
