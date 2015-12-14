@@ -2761,7 +2761,6 @@ jerror_t DReferenceTrajectory::BrentsAlgorithm(DVector3 &pos1,DVector3 &mom1,
     double tol2=2.0*tol1;
     if (fabs(x-xm)<=(tol2-0.5*(b-a))){
       doca=(pos1-pos2).Mag();
-      ds=cx-x;
 
       // New momenta
       stepper1.GetMomentum(mom1);
