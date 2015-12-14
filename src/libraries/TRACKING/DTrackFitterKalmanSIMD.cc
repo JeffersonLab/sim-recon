@@ -5696,7 +5696,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S){
 
     // position variables
     double z=z_,newz=z_;
-    double dz=-mStepSizeZ;
     double r2_old=S(state_x)*S(state_x)+S(state_y)*S(state_y);
     double dz_old=0.;
     double dEdx=0.;
@@ -5747,8 +5746,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S){
         }
         if (ds>mStepSizeS) ds=mStepSizeS;
         if (ds<MIN_STEP_SIZE) ds=MIN_STEP_SIZE;
-        dz=-ds*dz_ds;
-
+        double dz=-ds*dz_ds;
+	
         newz=z+dz;
 
 
