@@ -52,14 +52,14 @@ namespace xstream
             //XXX all these sputn calls need to be checked
             if (delim_w > 0 && rcol <= len) {
                 LOG("\t" << rcol << " columns to padding");
-                ret = _sb->sputn(buf, rcol);
-                ret = _sb->sputc(delim);
-                ret = _sb->sputn(buf + rcol, len - rcol);
+                ret += _sb->sputn(buf, rcol);
+                ret += (_sb->sputc(delim) == delim)? 1 : 0;
+                ret += _sb->sputn(buf + rcol, len - rcol);
                 col = len - rcol;
                 LOG("\tcol = " << col);
             }
             else {
-                ret = _sb->sputn(buf,len);
+                ret += _sb->sputn(buf,len);
                 col += len;
             }
 
