@@ -1338,6 +1338,10 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	vector<JObject*> &f125_pp_objs  = hit_objs_by_type["Df125PulsePedestal"];
 	vector<JObject*> &f125_pi_objs  = hit_objs_by_type["Df125PulseIntegral"];
 
+        //include new f125 types objs
+	vector<JObject*> &f125_cp_objs  = hit_objs_by_type["Df125CDCPulse"];
+	vector<JObject*> &f125_fp_objs  = hit_objs_by_type["Df125FDCPulse"];
+
 	// Emulate PulseTime and PulsePedestal
 	// Emulation of pulse time and pulse pedestal are done at
 	// the same time since that's how the original firmware
@@ -1351,7 +1355,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 
 	// Repeat for f125 Pulse Time and Pulse Pedestal
 	if( (F125_PT_EMULATION_MODE != kEmulationNone) || (F125_PP_EMULATION_MODE != kEmulationNone) ){
-		EmulateDf125PulseTime(f125_wrd_objs, f125_pt_objs, f125_pp_objs);
+	        EmulateDf125PulseTime(f125_wrd_objs, f125_pt_objs, f125_pp_objs, f125_cp_objs, f125_fp_objs);
 	}
 
 	// Emulate PulseIntegral
@@ -1364,7 +1368,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 
 	// Repeat for f125 Pulse Integral
 	if(F125_PI_EMULATION_MODE != kEmulationNone){
-		EmulateDf125PulseIntegral(f125_wrd_objs, f125_pi_objs, f125_pt_objs);
+	        EmulateDf125PulseIntegral(f125_wrd_objs, f125_pi_objs, f125_pt_objs, f125_cp_objs, f125_fp_objs);
 	}
 
 	// Make PulseTime, PulsePedstal, and PulseIntegral objects associated objects of one another
@@ -1855,15 +1859,9 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 // EmulateDf125PulseIntegral
 //----------------
 void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs,
-						  vector<JObject*> &pt_objs)
+						  vector<JObject*> &pt_objs, 
+						  vector<JObject*> &cp_objs, vector<JObject*> &fp_objs)
 {
-	if(VERBOSE>3) evioout << " EmulateDf125PulseIntegral has been disabled" <<endl;
-    return;
-
-    // total cop-out by Naomi who cannot see how to make this not crash (even before the code was modified)
-    //
-    // The code below has been modified to emulate new fa125-style PI for the CDC.
-
 	if(VERBOSE>3) evioout << " Entering  EmulateDf125PulseIntegral ..." <<endl;
 
 	// If emulation is being forced, then delete any existing objects.
@@ -1912,6 +1910,32 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 					}
 				}
 			}
+
+			//switch off PI emulation if CDC pulse time objects are found
+			for(uint32_t j=0; j<cp_objs.size(); j++){
+				Df125CDCPulse *cp = (Df125CDCPulse*)cp_objs[j];
+				if(cp->rocid == wrd->rocid){
+					if(cp->slot == wrd->slot){
+						if(cp->channel == wrd->channel){
+							emulate_pi = false;
+							break;
+						}
+					}
+				}
+			}
+
+			//switch off PI emulation if FDC pulse time objects are found
+			for(uint32_t j=0; j<fp_objs.size(); j++){
+				Df125FDCPulse *fp = (Df125FDCPulse*)fp_objs[j];
+				if(fp->rocid == wrd->rocid){
+					if(fp->slot == wrd->slot){
+						if(fp->channel == wrd->channel){
+							emulate_pi = false;
+							break;
+						}
+					}
+				}
+			}
 		}
 		
 		// If we're not emulating a pulse integral here then no need to proceed.
@@ -1931,13 +1955,13 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 			}
 		}
 		
-		// // Choose value of NSA and NSB based on rocid (eechh!)
-		// uint32_t NSA = F125_NSA;
-		// uint32_t NSB = F125_NSB;
-		// if(wrd->rocid>=24 && wrd->rocid<=28){
-		// 	NSA = F125_NSA_CDC;
-		// 	NSB = F125_NSB_CDC;
-		// }
+		// Choose value of NSA and NSB based on rocid (eechh!)
+		uint32_t NSA = F125_NSA;
+		uint32_t NSB = F125_NSB;
+		if(wrd->rocid>=24 && wrd->rocid<=28){
+			NSA = F125_NSA_CDC;
+		 	NSB = F125_NSB_CDC;
+		}
  
 		// Get a vector of the samples for this channel
 		const vector<uint16_t> &samplesvector = wrd->samples;
@@ -1947,37 +1971,22 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 		// loop over all samples to calculate integral
 		uint32_t nsamples_used = 0;
 
-		// uint32_t BinTC = T==NULL ? 0:(T->time >> 6);
-		// uint32_t StartSample = BinTC - NSB;
-		// if( NSB > BinTC) {
-		//   StartSample = 0;
-		// } 
-		// uint32_t EndSample = BinTC + NSA;
-		// if (EndSample>nsamples-1){
-		//   EndSample = nsamples;
-		// }
-
-        // skip this if no time info
-        if (!T) {
-          signalsum = 0;
-        } else if (!T->time) {
-          signalsum = 0;
-        } else {
-
-          // find sample containing time, time is now in units of sample/10
-	  	  uint32_t StartSample = (uint32_t)(0.1*T->time);
-
-          // CDC integration runs until NU samples before end of window (constant NU=20 in firmware)
-		  uint32_t EndSample = nsamples-20;
-
-  		  for (uint32_t c_samp=StartSample; c_samp<EndSample; c_samp++) {
+		uint32_t BinTC = T==NULL ? 0:(T->time >> 6);
+		uint32_t StartSample = BinTC - NSB;
+		if( NSB > BinTC) {
+		  StartSample = 0;
+		} 
+		uint32_t EndSample = BinTC + NSA;
+		if (EndSample>nsamples-1){
+		  EndSample = nsamples;
+		}
+		for (uint32_t c_samp=StartSample; c_samp<EndSample; c_samp++) {
 			signalsum += samplesvector[c_samp];
 			nsamples_used++;
-		  }
-        }
+		}
 		
-		// Apply sparsification threshold - T->t should be 0 if pulse is below threshold
-		// if(signalsum < F125_SPARSIFICATION_THRESHOLD) continue;
+		// Apply sparsification threshold
+		if(signalsum < F125_SPARSIFICATION_THRESHOLD) continue;
 		
 		// create new Df125PulseIntegral object
 		Df125PulseIntegral *myDf125PulseIntegral = new Df125PulseIntegral;
@@ -2234,7 +2243,7 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 //----------------
 // EmulateDf125PulseTime
 //----------------
-void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs)
+void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs, vector<JObject*> &cp_objs, vector<JObject*> &fp_objs)
 {
 	/// Emulation of the f125 can be done in one of two ways. The first
 	/// implements an upsampling technique developed by Naomi Jarvis at
@@ -2320,6 +2329,32 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 					}
 				}
 			}
+
+			//switch off PT auto-emulation if CDCPulse is found
+			for(uint32_t j=0; j<cp_objs.size(); j++){
+				Df125CDCPulse *cp = (Df125CDCPulse*)cp_objs[j];
+				if(cp->rocid == f125WindowRawData->rocid){
+					if(cp->slot == f125WindowRawData->slot){
+						if(cp->channel == f125WindowRawData->channel){
+							emulate_pt = false;
+							break;
+						}
+					}
+				}
+			}
+
+			//switch off PT auto-emulation if FDCPulse is found
+			for(uint32_t j=0; j<fp_objs.size(); j++){
+				Df125FDCPulse *fp = (Df125FDCPulse*)fp_objs[j];
+				if(fp->rocid == f125WindowRawData->rocid){
+					if(fp->slot == f125WindowRawData->slot){
+						if(fp->channel == f125WindowRawData->channel){
+							emulate_pt = false;
+							break;
+						}
+					}
+				}
+			}
 		}
 
 		// Ditto for pulse pedestal objects
@@ -2343,6 +2378,33 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 					}
 				}
 			}
+
+			//switch off PP auto-emulation if CDCPulse is found
+			for(uint32_t j=0; j<cp_objs.size(); j++){
+				Df125CDCPulse *cp = (Df125CDCPulse*)cp_objs[j];
+				if(cp->rocid == f125WindowRawData->rocid){
+					if(cp->slot == f125WindowRawData->slot){
+						if(cp->channel == f125WindowRawData->channel){
+							emulate_pp = false;
+							break;
+						}
+					}
+				}
+			}
+
+			//switch off PP auto-emulation if FDCPulse is found
+			for(uint32_t j=0; j<fp_objs.size(); j++){
+				Df125FDCPulse *fp = (Df125FDCPulse*)fp_objs[j];
+				if(fp->rocid == f125WindowRawData->rocid){
+					if(fp->slot == f125WindowRawData->slot){
+						if(fp->channel == f125WindowRawData->channel){
+							emulate_pp = false;
+							break;
+						}
+					}
+				}
+			}
+
 		}
 
 		int rocid = f125WindowRawData->rocid;
