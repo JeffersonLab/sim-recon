@@ -2283,6 +2283,8 @@ void DTrackCandidate_factory_CDC::Reject_DefiniteSpiralArms(deque<DCDCTrackCircl
 			else if(locTempSuperLayerSeed->dSuperLayer < locInnermostSuperLayerSeed->dSuperLayer)
 				locInnermostSuperLayerSeed = locTempSuperLayerSeed;
 		}
+		if (locInnermostSuperLayerSeed == NULL)
+			continue; //is impossible, but clears the warning from the static analyzer
 
 		//loop over spiral links, see if one of them is a definite spiral link
 		bool locIsDefinitelyTurningFlag = false;

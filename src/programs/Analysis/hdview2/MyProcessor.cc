@@ -1949,7 +1949,7 @@ _DBG__;
 	// Variables to hold track parameters
 	DVector3 pos, mom(0,0,0);
 	double q=0.0;
-	double mass;
+	double mass = 0.13957018;
 
 	// Find the specified track	
 	if(dataname=="DChargedTrack"){
@@ -2019,6 +2019,7 @@ _DBG_<<"mass="<<mass<<endl;
 	rt = new DReferenceTrajectory(Bfield);
 	rt->Rmax_interior = RMAX_INTERIOR;
 	rt->Rmax_exterior = RMAX_EXTERIOR;
+	rt->SetMass(mass);
 	if(MATERIAL_MAP_MODEL=="DRootGeom"){
 		rt->SetDRootGeom(RootGeom);
 		rt->SetDGeometry(NULL);
