@@ -150,7 +150,7 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_BCAL_attenlength_gainratio::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_BCAL_attenlength_gainratio::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	// This is called whenever the run number changes
 
@@ -164,7 +164,7 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::brun(JEventLoop *eventLoop,
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 
 	// Start with matched points
