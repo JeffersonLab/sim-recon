@@ -184,12 +184,12 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 		vector<const DBCALDigiHit*> digihits;
 		point->Get(digihits);
 		if (digihits.size()!=2) {
-			printf("Warning: BCAL_attenlength_gainratio: event %i: wrong number of BCALDigiHit objects found %i\n",
-				   eventnumber,(int)digihits.size());
+			printf("Warning: BCAL_attenlength_gainratio: event %llu: wrong number of BCALDigiHit objects found %i\n",
+				   (long long unsigned int)eventnumber,(int)digihits.size());
 			continue;
 		}
 		if (digihits[0]->end==digihits[1]->end) {
-			printf("Warning: BCAL_attenlength_gainratio: event %i: two hits in same end of point\n",eventnumber);
+			printf("Warning: BCAL_attenlength_gainratio: event %llu: two hits in same end of point\n",(long long unsigned int)eventnumber);
 			continue;
 		}
 		int Vmid0 = (digihits[0]->pulse_peak+digihits[0]->pedestal)/2;
@@ -219,13 +219,13 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 
 		//float timediff = t_ADCus_vec[0]-t_ADCds_vec[0];
 		//float zpos = (timediff)*17./2;
-		float zpos = point->z() - DBCALGeometry::GLOBAL_CENTER + z_target_center;
+		float zpos = point->z() - DBCALGeometry::GetBCAL_center() + z_target_center;
 		float intratio = (float)integralUS/(float)integralDS;
 		float logintratio = log(intratio);
 		float peakratio = (float)peakUS/(float)peakDS;
 		float logpeakratio = log(peakratio);
-		if (VERBOSE>4) printf("%5i  %2i %i %i  %8.1f  %8.1f  %8.3f  %8.3f  %8.3f\n", 
-							  eventnumber,module,layer,sector,integralUS,integralDS,intratio,logintratio,zpos);
+		if (VERBOSE>4) printf("%5llu  %2i %i %i  %8.1f  %8.1f  %8.3f  %8.3f  %8.3f\n", 
+							  (long long unsigned int)eventnumber,module,layer,sector,integralUS,integralDS,intratio,logintratio,zpos);
 		if (Energy > 0.01) {  // 10 MeV cut to remove bias due to attenuation
 			logintratiovsZ[module-1][layer-1][sector-1]->Fill(zpos, logintratio);
 			logintratiovsZ_all->Fill(zpos, logintratio);

@@ -22,7 +22,8 @@ subdirs = [
 'TOF_TDC_shift',
 'BCAL_Eff',
 'BCAL_inv_mass',
-'CDC_drift' ]
+'CDC_drift',
+'CDC_Cosmics' ]
 
 #'L3_online',
 #'CODA_online',

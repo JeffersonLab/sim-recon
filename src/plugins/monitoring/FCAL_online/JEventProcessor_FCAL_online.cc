@@ -156,7 +156,7 @@ jerror_t JEventProcessor_FCAL_online::init(void) {
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_FCAL_online::brun(JEventLoop *eventLoop, int runnumber) {
+jerror_t JEventProcessor_FCAL_online::brun(JEventLoop *eventLoop, int32_t runnumber) {
   // This is called whenever the run number changes
 
   DGeometry *dgeom = NULL;
@@ -181,7 +181,7 @@ jerror_t JEventProcessor_FCAL_online::brun(JEventLoop *eventLoop, int runnumber)
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, int eventnumber) {
+jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, uint64_t eventnumber) {
 
   vector< const DFCALGeometry* > geomVec;
   vector< const DFCALDigiHit*  > digiHits;

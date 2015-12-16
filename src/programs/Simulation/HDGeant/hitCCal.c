@@ -121,9 +121,19 @@ void hitComptonEMcal (float xin[4], float xout[4],
       }
       if (nhit < hits->mult)		/* merge with former hit */
       {
+			/* unclear if the intent here was to add dEcorr to hits->in[nhit].E */
+			/* in the numerator as well as denominator. This caused a compiler  */
+			/* warning so I chose for it not to. (I'm pretty sure that's right) */
+			/*                                    10/28/2015 DL                 */
+			/*
          hits->in[nhit].t =
                        (hits->in[nhit].t * hits->in[nhit].E + tcorr*dEcorr)
                      / (hits->in[nhit].E += dEcorr);
+		   */
+			hits->in[nhit].t =
+                       (hits->in[nhit].t * hits->in[nhit].E + tcorr*dEcorr)
+                     / (hits->in[nhit].E + dEcorr);
+			hits->in[nhit].E += dEcorr;
       }
       else if (nhit < MAX_HITS)         /* create new hit */
       {

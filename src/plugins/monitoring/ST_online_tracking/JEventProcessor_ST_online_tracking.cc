@@ -31,7 +31,7 @@ using namespace std;
 #include "TRACKING/DTrackTimeBased.h"
 
 // Define some constants
-const uint32_t  RAD2DEG       = 57.29577951;      // Convert radians to degrees
+const double    RAD2DEG       = 57.29577951;      // Convert radians to degrees
 const uint32_t  NCHANNELS     = 30;              // number of scintillator paddles
 
 // Declare 2D tracking histos
@@ -137,7 +137,7 @@ jerror_t JEventProcessor_ST_online_tracking::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_ST_online_tracking::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_ST_online_tracking::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
   // This is called whenever the run number changes
   // Get the particleID object for each run
@@ -155,7 +155,7 @@ jerror_t JEventProcessor_ST_online_tracking::brun(JEventLoop *eventLoop, int run
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_ST_online_tracking::evnt(JEventLoop *eventLoop, int eventnumber)
+jerror_t JEventProcessor_ST_online_tracking::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using

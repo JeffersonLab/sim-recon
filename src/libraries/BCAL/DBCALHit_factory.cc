@@ -32,7 +32,7 @@ jerror_t DBCALHit_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
   // Only print messages for one thread whenever run number changes
   static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -49,6 +49,8 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    vector<double> raw_gains;
    vector<double> raw_pedestals;
    vector<double> raw_time_offsets;
+   vector<double> raw_channel_global_offset;
+   vector<double> raw_tdiff_u_d;
 
     if(print_messages) jout << "In DBCALHit_factory, loading constants..." << endl;
    
@@ -89,6 +91,10 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
        jout << "Error loading /BCAL/ADC_pedestals !" << endl;
    if (eventLoop->GetCalib("/BCAL/ADC_timing_offsets", raw_time_offsets))
        jout << "Error loading /BCAL/ADC_timing_offsets !" << endl;
+   if(eventLoop->GetCalib("/BCAL/channel_global_offset", raw_channel_global_offset))
+       jout << "Error loading /BCAL/channel_global_offset !" << endl;
+   if(eventLoop->GetCalib("/BCAL/tdiff_u_d", raw_tdiff_u_d))
+       jout << "Error loading /BCAL/tdiff_u_d !" << endl;
 
    if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_gains" << endl;
    FillCalibTable(gains, raw_gains);
@@ -96,6 +102,10 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
    FillCalibTable(pedestals, raw_pedestals);
    if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_time_offsets" << endl;
    FillCalibTable(time_offsets, raw_time_offsets);
+   if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_channel_global_offset" << endl;
+   FillCalibTableShort(channel_global_offset, raw_channel_global_offset);
+   if (PRINTCALIBRATION) jout << "DBCALHit_factory >> raw_tdiff_u_d" << endl;
+   FillCalibTableShort(tdiff_u_d, raw_tdiff_u_d);
 
    return NOERROR;
 }
@@ -103,7 +113,7 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DBCALHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
    /// Generate DBCALHit object for each DBCALDigiHit object.
    /// This is where the first set of calibration constants
@@ -154,7 +164,9 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
       int pulse_peak_pedsub = digihit->pulse_peak - digihit->pedestal / digihit->nsamples_pedestal;
       // Calculate time for channel
       double pulse_time        = (double)digihit->pulse_time;
-      double hit_t             = t_scale * pulse_time - GetConstant(time_offsets,digihit) + t_base;
+      double end_sign          = digihit->end ? -1.0 : 1.0; // Upstream = 0 -> Positive (then subtracted)
+      double hit_t             = t_scale * pulse_time + t_base - GetConstant(channel_global_offset,digihit) 
+                                    - (0.5 * end_sign) * GetConstant(tdiff_u_d,digihit);
 
       DBCALHit *hit = new DBCALHit;
       hit->module = digihit->module;
@@ -230,6 +242,50 @@ void DBCALHit_factory::FillCalibTable( bcal_digi_constants_t &table,
         sprintf(str, "Not enough channels for BCAL table!"
                 " channel=%d (should be %d)", 
                 channel, BCAL_MAX_CHANNELS);
+        cerr << str << endl;
+        throw JException(str);
+    }
+}
+
+//------------------
+// FillCalibTableShort
+//------------------
+void DBCALHit_factory::FillCalibTableShort( bcal_digi_constants_t &table,
+        const vector<double> &raw_table)
+{
+    char str[256];
+    int channel = 0;
+
+    // reset the table before filling it
+    table.clear();
+
+    for (int module=1; module<=BCAL_NUM_MODULES; module++) {
+        for (int layer=1; layer<=BCAL_NUM_LAYERS; layer++) {
+            for (int sector=1; sector<=BCAL_NUM_SECTORS; sector++) {
+                if (channel > BCAL_MAX_CHANNELS/2) {  // sanity check
+                    sprintf(str, "Too many channels for BCAL table!"
+                            " channel=%d (should be %d)",
+                            channel, BCAL_MAX_CHANNELS/2);
+                    cerr << str << endl;
+                    throw JException(str);
+                }
+
+                table.push_back( cell_calib_t(raw_table[channel],raw_table[channel]) );
+
+                if (PRINTCALIBRATION) {
+                    printf("%2i  %2i  %2i   %.10f\n",module,layer,sector,raw_table[channel]);
+                }
+
+                channel += 1;
+            }
+        }
+    }
+
+    // check to make sure that we loaded enough channels
+    if (channel != BCAL_MAX_CHANNELS/2) {
+        sprintf(str, "Not enough channels for BCAL table!"
+                " channel=%d (should be %d)",
+                channel, BCAL_MAX_CHANNELS/2);
         cerr << str << endl;
         throw JException(str);
     }

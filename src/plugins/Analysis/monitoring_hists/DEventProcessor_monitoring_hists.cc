@@ -58,7 +58,7 @@ jerror_t DEventProcessor_monitoring_hists::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_monitoring_hists::brun(JEventLoop *locEventLoop, int runnumber)
+jerror_t DEventProcessor_monitoring_hists::brun(JEventLoop *locEventLoop, int32_t runnumber)
 {
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
@@ -92,7 +92,7 @@ jerror_t DEventProcessor_monitoring_hists::brun(JEventLoop *locEventLoop, int ru
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, int eventnumber)
+jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{

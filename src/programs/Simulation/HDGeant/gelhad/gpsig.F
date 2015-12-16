@@ -23,7 +23,7 @@ c /gelsig/ variables
        real *4 wmix        !weight of mixture component
       integer *4 i        !dummy index
 c
-      nmix=abs(q(jma+11))
+      nmix=INT(abs(q(jma+11)))
       if(nmix.eq.1) then !not a mixture ?
 c
        call sigmag(a,z,getot,sigma)

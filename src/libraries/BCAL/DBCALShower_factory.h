@@ -12,7 +12,7 @@ class DBCALShower_factory:public jana::JFactory<DBCALShower>{
 		~DBCALShower_factory(){};
 
 	private:
-		jerror_t evnt(jana::JEventLoop *loop, int eventnumber){
+		jerror_t evnt(jana::JEventLoop *loop, uint64_t eventnumber){
 
 			// This is a trivial factory that simply implements the
 			// IU tagged factory as the default. It is here so 

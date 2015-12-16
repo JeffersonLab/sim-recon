@@ -20,7 +20,7 @@ class DF1TDCTriggerTime:public DDAQAddress{
 		JOBJECT_PUBLIC(DF1TDCTriggerTime);
 
 		DF1TDCTriggerTime():DDAQAddress(0, 0, 0, 0),time(0){}
-		DF1TDCTriggerTime(uint32_t rocid, uint32_t slot, uint32_t itrigger, uint64_t time):DDAQAddress(rocid, slot, channel, itrigger),time(time){}
+		DF1TDCTriggerTime(uint32_t rocid, uint32_t slot, uint32_t itrigger, uint64_t time):DDAQAddress(rocid, slot, 0, itrigger),time(time){}
 		
 		uint64_t time;           // from Trigger Time words
 		

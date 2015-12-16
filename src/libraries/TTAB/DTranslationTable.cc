@@ -451,7 +451,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    
       // Create crate,slot,channel index and find entry in Translation table.
       // If none is found, then just quietly skip this hit.
-      csc_t csc = {pi->rocid, pi->slot, pi->channel};
+      csc_t csc = {rocid, pi->slot, pi->channel};
       map<csc_t, DChannelInfo>::const_iterator iter = Get_TT().find(csc);
       if (iter == Get_TT().end()) {
           if (VERBOSE > 6)
@@ -485,6 +485,96 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       }
    }
 
+   // Df125CDCPulse
+   vector<const Df125CDCPulse*> cdcpulses;
+   loop->Get(cdcpulses);
+   if (VERBOSE > 2)
+      ttout << "  Number Df125CDCPulse objects: "
+            << cdcpulses.size() << std::endl;
+   for (uint32_t i=0; i<cdcpulses.size(); i++) {
+      const Df125CDCPulse *p = cdcpulses[i];
+
+      // Apply optional rocid translation
+      uint32_t rocid = p->rocid;
+      map<uint32_t, uint32_t>::iterator rocid_iter = Get_ROCID_Map().find(rocid);
+      if (rocid_iter != Get_ROCID_Map().end()) rocid = rocid_iter->second;
+      
+      if (VERBOSE > 4)
+         ttout << "    Looking for rocid:" << rocid << " slot:" << p->slot
+               << " chan:" << p->channel << std::endl;
+   
+      // Create crate,slot,channel index and find entry in Translation table.
+      // If none is found, then just quietly skip this hit.
+      csc_t csc = {rocid, p->slot, p->channel};
+      map<csc_t, DChannelInfo>::const_iterator iter = Get_TT().find(csc);
+      if (iter == Get_TT().end()) {
+          if (VERBOSE > 6)
+             ttout << "     - Didn't find it" << std::endl;
+          continue;
+      }
+      const DChannelInfo &chaninfo = iter->second;
+      if (VERBOSE > 6)
+         ttout << "     - Found entry for: " << DetectorName(chaninfo.det_sys) 
+               << std::endl;
+
+      // Create the appropriate hit type based on detector type
+      switch (chaninfo.det_sys) {
+         case CDC:
+            vcdc.push_back( MakeCDCDigiHit(chaninfo.cdc, p) );
+            break;
+         default: 
+             if (VERBOSE > 4)
+                ttout << "       - Don't know how to make DigiHit"
+                      << " objects for this detector type!" << std::endl; 
+             break;
+      }
+   }
+
+   // Df125FDCPulse
+   vector<const Df125FDCPulse*> fdcpulses;
+   loop->Get(fdcpulses);
+   if (VERBOSE > 2)
+      ttout << "  Number Df125FDCPulse objects: "
+            << fdcpulses.size() << std::endl;
+   for (uint32_t i=0; i<fdcpulses.size(); i++) {
+      const Df125FDCPulse *p = fdcpulses[i];
+
+      // Apply optional rocid translation
+      uint32_t rocid = p->rocid;
+      map<uint32_t, uint32_t>::iterator rocid_iter = Get_ROCID_Map().find(rocid);
+      if (rocid_iter != Get_ROCID_Map().end()) rocid = rocid_iter->second;
+      
+      if (VERBOSE > 4)
+         ttout << "    Looking for rocid:" << rocid << " slot:" << p->slot
+               << " chan:" << p->channel << std::endl;
+   
+      // Create crate,slot,channel index and find entry in Translation table.
+      // If none is found, then just quietly skip this hit.
+      csc_t csc = {rocid, p->slot, p->channel};
+      map<csc_t, DChannelInfo>::const_iterator iter = Get_TT().find(csc);
+      if (iter == Get_TT().end()) {
+          if (VERBOSE > 6)
+             ttout << "     - Didn't find it" << std::endl;
+          continue;
+      }
+      const DChannelInfo &chaninfo = iter->second;
+      if (VERBOSE > 6)
+         ttout << "     - Found entry for: " << DetectorName(chaninfo.det_sys) 
+               << std::endl;
+
+      // Create the appropriate hit type based on detector type
+      switch (chaninfo.det_sys) {
+		case FDC_CATHODES:
+            vfdccathode.push_back( MakeFDCCathodeDigiHit(chaninfo.fdc_cathodes, p) );
+            break;
+         default: 
+             if (VERBOSE > 4)
+                ttout << "       - Don't know how to make DigiHit"
+                      << " objects for this detector type!" << std::endl; 
+             break;
+      }
+   }
+
    // DF1TDCHit
    vector<const DF1TDCHit*> f1tdchits;
    loop->Get(f1tdchits);
@@ -504,7 +594,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
       // Create crate,slot,channel index and find entry in Translation table.
       // If none is found, then just quietly skip this hit.
-      csc_t csc = {hit->rocid, hit->slot, hit->channel};
+      csc_t csc = {rocid, hit->slot, hit->channel};
       map<csc_t, DChannelInfo>::const_iterator iter = Get_TT().find(csc);
       if (iter == Get_TT().end()) {
           if (VERBOSE > 6)
@@ -567,7 +657,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       
       // Create crate,slot,channel index and find entry in Translation table.
       // If none is found, then just quietly skip this hit.
-      csc_t csc = {hit->rocid, hit->slot, hit->channel};
+      csc_t csc = {rocid, hit->slot, hit->channel};
       map<csc_t, DChannelInfo>::const_iterator iter = Get_TT().find(csc);
       if (iter == Get_TT().end()) {
           if (VERBOSE > 6)
@@ -683,7 +773,7 @@ DBCALDigiHit* DTranslationTable::MakeBCALDigiHit(const BCALIndex_t &idx,
    DBCALDigiHit *h = new DBCALDigiHit();
    CopyDf250Info(h, pi, pt, pp);
 
-   h->pulse_peak = pp->pulse_peak; // Include pulse peak information in the digihit for BCAL
+   h->pulse_peak = pp==NULL ? 0 : pp->pulse_peak; // Include pulse peak information in the digihit for BCAL
 
    h->module = idx.module;
    h->layer  = idx.layer;
@@ -828,6 +918,27 @@ DCDCDigiHit* DTranslationTable::MakeCDCDigiHit(const CDCIndex_t &idx,
 }
 
 //---------------------------------
+// MakeCDCDigiHit
+//---------------------------------
+DCDCDigiHit* DTranslationTable::MakeCDCDigiHit(const CDCIndex_t &idx,
+                                               const Df125CDCPulse *p) const
+{
+	DCDCDigiHit *h = new DCDCDigiHit();
+	h->ring              = idx.ring;
+	h->straw             = idx.straw;
+	h->pulse_integral    = p->integral;
+	h->pulse_time        = p->le_time;
+	h->pedestal          = p->pedestal;
+	h->QF                = p->time_quality_bit + (p->overflow_count<<1);
+	h->nsamples_integral = p->nsamples_integral;
+	h->nsamples_pedestal = p->nsamples_pedestal;
+
+	h->AddAssociatedObject(p);
+
+	return h;
+}
+
+//---------------------------------
 // MakeFDCCathodeDigiHit
 //---------------------------------
 DFDCCathodeDigiHit* DTranslationTable::MakeFDCCathodeDigiHit(
@@ -846,6 +957,32 @@ DFDCCathodeDigiHit* DTranslationTable::MakeFDCCathodeDigiHit(
    h->strip_type = idx.strip_type;
 
    return h;
+}
+
+
+//---------------------------------
+// MakeFDCCathodeDigiHit
+//---------------------------------
+DFDCCathodeDigiHit* DTranslationTable::MakeFDCCathodeDigiHit(
+                                       const FDC_CathodesIndex_t &idx,
+                                       const Df125FDCPulse *p) const
+{
+	DFDCCathodeDigiHit *h = new DFDCCathodeDigiHit();
+	h->package           = idx.package;
+	h->chamber           = idx.chamber;
+	h->view              = idx.view;
+	h->strip             = idx.strip;
+	h->strip_type        = idx.strip_type;
+	h->pulse_integral    = p->integral;
+	h->pulse_time        = p->le_time;
+	h->pedestal          = p->pedestal;
+	h->QF                = p->time_quality_bit + (p->overflow_count<<1);
+	h->nsamples_integral = p->nsamples_integral;
+	h->nsamples_pedestal = p->nsamples_pedestal;
+
+	h->AddAssociatedObject(p);
+
+	return h;
 }
 
 //---------------------------------

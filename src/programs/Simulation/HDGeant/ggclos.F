@@ -101,7 +101,7 @@ C.    ------------------------------------------------------------------
 *
 * *** Check if Tracking medium has been defined
 *
-         NMED=Q(JVO+4)
+         NMED=INT(Q(JVO+4))
          IF(NMED.LE.0.OR.NMED.GT.IQ(JTMED-2))THEN
             WRITE(CHMAIL,1003)IQ(JVOLUM+IVO)
             CALL GMAIL (0, 0)
@@ -115,7 +115,7 @@ C.    ------------------------------------------------------------------
          IDO = 1
          IQ(JVO) = IBSET(IQ(JVO),0)
          NINL  = IQ(JVO-2)
-         NIN   = Q(JVO+3)
+         NIN   = INT(Q(JVO+3))
          NUSED = IABS(NIN)
          IF (NIN.GT.0) THEN
 *           reserve enough additional space for sorted volumes
@@ -172,8 +172,8 @@ C.    ------------------------------------------------------------------
          ENDIF
          DO 91 IVO = 1,NVOLUM
             JVO = LQ(JVOLUM-IVO)
-            NIN = Q(JVO+3)
-            ISEARC=Q(JVO+1)
+            NIN = INT(Q(JVO+3))
+            ISEARC=INT(Q(JVO+1))
             IF(ISEARC.GT.0) GO TO 91
 *           check if sorting not possible or not wanted
             IF(NIN.LE.1.OR.NIN.GT.500.OR.IOPTIM.LT.0)THEN
@@ -251,8 +251,8 @@ c Scan the entire geometry tree for volumes with contents
         print *,'VOLUME ',NAME
         print *,' '
 #endif
-        nin=q(jvo+3)
-        isearc=q(jvo+1)
+        nin=INT(q(jvo+3))
+        isearc=INT(q(jvo+1))
 #if DEBUG_PRINT
         if(nin.eq.0)then
           print *,'No daughters.'
@@ -322,7 +322,7 @@ c one that provides the best partition of the daughters.
 #if DEBUG_PRINT
           print *,'Quality search for axis ',iaxis
 #endif
-          ish=q(jvo+2)
+          ish=INT(q(jvo+2))
 
 c Case of cartesian axis, look for full extent of the mother
 c volume and return limits in clmoth,chmoth (cm).
@@ -602,7 +602,7 @@ c that is half the minimum, and set the number of divisions accordingly.
 
           if(thimin.lt.0.04)thimin=0.04
           tmpndi=2.*thimot/thimin
-          nditmp=tmpndi+1
+          nditmp=INT(tmpndi+1)
 #if DEBUG_PRINT
           print *,nditmp,' divisions to partition ',nin,' daughters.'
 #endif
@@ -802,7 +802,7 @@ c End of loop over virtual divisions of this mother
             goto 105
           endif
           if(jflag.eq.0)then
-            ivoaxi(iaxis)=avesta
+            ivoaxi(iaxis)=INT(avesta)
           endif
           aveave=avelis/ndivto(iaxis)
           avelis=avelis/ii
@@ -853,7 +853,7 @@ c End of loop over virtual divisions of this mother
            print *,'Gsord: Aver. n. of obj. per div = ',tmpqor
          endif
 #endif
-         ndivst=ndivst+(ndivto(itmpq)+ndivto(itmpq)*(3.+tmpq)+10.)
+         ndivst=INT(ndivst+(ndivto(itmpq)+ndivto(itmpq)*(3.+tmpq)+10.))
          jflag=1
          goto 1
         else
@@ -877,7 +877,7 @@ c End of loop over virtual divisions of this mother
         endif
         if(nin.gt.ninmax)ninmax=nin
  101  continue
-       nwtota=ndivst+nvolum*5+10.
+       nwtota=INT(ndivst+nvolum*5+10.)
        if(iswit(9).eq.12345)then
         print *,'Computed number of words foreseen = ',nwtota
        endif

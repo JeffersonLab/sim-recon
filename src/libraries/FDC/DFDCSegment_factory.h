@@ -57,8 +57,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
   //		jerror_t CorrectPoints(vector<DFDCPseudo*>point,DMatrix XYZ);
   jerror_t GetHelicalTrackPosition(double z,const DFDCSegment *segment,
 				   double &xpos,double &ypos);
-  jerror_t RiemannHelicalFit(vector<const DFDCPseudo*>points,
-			     DMatrix &CR,vector<xyz_t>&XYZ);
+  jerror_t RiemannHelicalFit(vector<const DFDCPseudo*>points);
   jerror_t RiemannCircleFit(vector<const DFDCPseudo*>points,
 			    DMatrix &CRPhi);
   jerror_t RiemannLineFit(vector<const DFDCPseudo *>points,
@@ -67,21 +66,24 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 					vector<xyz_t> &XYZ,DMatrix &CRPhi,
 					DMatrix &CR);
   double GetRotationSense(unsigned int n,vector<xyz_t>&XYZ,DMatrix &CR, 
-		   DMatrix &CRPhi);
-  jerror_t CircleFit(vector<const DFDCPseudo *>points);
+			  DMatrix &CRPhi, vector<const DFDCPseudo *>&points);
+  jerror_t CircleFit(vector<const DFDCPseudo *>&points);
+  jerror_t LineFit(vector<const DFDCPseudo *>&points);
+
+  void FillSegmentData(DFDCSegment *segment);
 
 	protected:
 		///
 		/// DFDCSegment_factory::brun():
 		///
-		jerror_t brun(JEventLoop *eventLoop, int runnumber);
+		jerror_t brun(JEventLoop *eventLoop, int32_t runnumber);
 
 		///
 		/// DFDCSegment_factory::evnt():
 		/// this is the place that finds track segments and  
 		/// converts pseudopoints into space points.
 		///
-		jerror_t evnt(JEventLoop *eventLoop, int eventNo);
+		jerror_t evnt(JEventLoop *eventLoop, uint64_t eventNo);
 
 	private:
 		JStreamLog* _log;
@@ -107,9 +109,6 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 //		bool use_tof,use_sc;
 		double TARGET_Z,BEAM_VARIANCE;
 		int DEBUG_LEVEL;
-
-		//vector of flags indicating whether or not a hit has been used
-		vector<bool>used;
 
 		int myeventno;
 };

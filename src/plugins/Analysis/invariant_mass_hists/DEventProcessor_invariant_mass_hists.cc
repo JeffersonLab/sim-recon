@@ -83,7 +83,7 @@ jerror_t DEventProcessor_invariant_mass_hists::init(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// Get reconstructed objects
 	vector<const DBeamPhoton*> beam_photons;

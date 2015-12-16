@@ -144,9 +144,8 @@ typedef struct{
 typedef struct{
   DMatrix5x5 C;
   DMatrix5x1 S;
-  DVector2 xy;
-  double doca,z;
-  double tdrift,tflight,s,B;
+  double doca;
+  double tcorr,tdrift;
   double residual,variance;
   bool used_in_fit;
 }DKalmanUpdate_t;
@@ -175,7 +174,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     cov.clear();
     fcov.clear();
 
-    len=0.,ftime=0.0;
+    len=0.,ftime=0.0,var_ftime=0.0;
     x_=0.,y_=0.,tx_=0.,ty_=0.,q_over_p_ = 0.0;
     z_=0.,phi_=0.,tanl_=0.,q_over_pt_ =0, D_= 0.0;
     chisq_ = 0.0;
@@ -335,19 +334,14 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 			       DMatrix5x1 &S, bool &stepped_to_boundary); 
   jerror_t PropagateForward(int length,int &index,double &z,double zhit,
 			    DMatrix5x1 &S,bool &done,
-			    bool &stepped_to_boundary);
+			    bool &stepped_to_boundary, 
+			    bool &stepped_to_endplate);
   jerror_t PropagateCentral(int length, int &index,DVector2 &my_xy,
+			    double &var_t_factor,
 			    DMatrix5x1 &Sc,bool &stepped_to_boundary);
 
   DMatrixDSym Get7x7ErrorMatrix(DMatrixDSym C); 
   DMatrixDSym Get7x7ErrorMatrixForward(DMatrixDSym C);
-
-  jerror_t EstimateT0(const DKalmanUpdate_t &fdc_update,
-		      const DKalmanSIMDFDCHit_t *hit);
-  jerror_t EstimateT0Central(const DKalmanSIMDCDCHit_t *hit,
-			     const DKalmanUpdate_t &cdc_update); 
-  jerror_t EstimateT0Forward(const DKalmanSIMDCDCHit_t *hit,
-			     const DKalmanUpdate_t &cdc_update);
 
   kalman_error_t ForwardFit(const DMatrix5x1 &S,const DMatrix5x5 &C0); 
   kalman_error_t ForwardCDCFit(const DMatrix5x1 &S,const DMatrix5x5 &C0);  
@@ -374,7 +368,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 					    double &chisq, 
 					    unsigned int &numdof);
     
-  void ComputeCDCDrift(double t,double B,double &d, double &V, double &tcorr);
+  void ComputeCDCDrift(double dphi,double delta,double t,double B,double &d, 
+		       double &V, double &tcorr);
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   //const DGeometry *geom;
   //const DLorentzDeflections *lorentz_def;// pointer to lorentz correction map
@@ -415,7 +410,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   vector<DKalmanUpdate_t>cdc_updates;
 
   // flight time and path length
-  double ftime, len;
+  double ftime, len, var_ftime;
 
   // B-field and gradient
   double Bx,By,Bz;
@@ -445,13 +440,16 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // tables of time-to-drift values
   vector<double>cdc_drift_table;
   vector<double>fdc_drift_table;
+  // parameters for functional form for cdc time-to-distance
+  double long_drift_func[3][3];
+  double short_drift_func[3][3];
+  double long_drift_Bscale_par1,long_drift_Bscale_par2;
+  double short_drift_Bscale_par1,short_drift_Bscale_par2;
 
   // Vertex time
-  double mT0,mT0MinimumDriftTime,mT0Average;
+  double mT0,mT0MinimumDriftTime;
   // Variance in vertex time
   double mVarT0;
-  // inverse of vertex time variance;
-  double mInvVarT0;
   // Detector giving t0
   DetectorSystem_t mT0Detector;
 
@@ -492,6 +490,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // parameters for CDC resolution function
   double CDC_RES_PAR1,CDC_RES_PAR2;
 
+  vector<vector<double> >max_sag;
+  vector<vector<double> >sag_phi_offset;
+
   // Parameters for dealing with FDC drift B dependence
   double FDC_DRIFT_BSCALE_PAR1,FDC_DRIFT_BSCALE_PAR2;
 
@@ -509,12 +510,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   unsigned int last_material_map;
 
   TH2F *Hstepsize,*HstepsizeDenom;
-  TH2F *fdc_t0,*fdc_t0_vs_theta,*fdc_t0_timebased,*fdc_t0_timebased_vs_theta;
-  TH2F *cdc_drift,*fdc_drift,*fdc_yres_vs_dE;
-  TH2F *cdc_res,*cdc_drift_vs_B,*fdc_drift_vs_B;
-  TH2F *cdc_drift_forward,*cdc_res_forward,*cdc_res_vs_tanl,*cdc_res_vs_B,*cdc_res_vs_dE;
-  TH2F *cdc_time_vs_d;
-  TH2F *res_vs_s,*norm_res_vs_s;
 };
 
 // Smearing function derived from fitting residuals

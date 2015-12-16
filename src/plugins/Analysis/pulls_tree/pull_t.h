@@ -15,7 +15,7 @@
 class pull_t:public TObject{
 
 	public:
-		int eventnumber;
+		uint64_t eventnumber;
 		float resi;
 		float err;
 		float s;

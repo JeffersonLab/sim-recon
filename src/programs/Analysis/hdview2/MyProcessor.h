@@ -55,8 +55,8 @@ class MyProcessor:public JEventProcessor
   ~MyProcessor();
   
   jerror_t init(void);	///< Called once at program start.
-  jerror_t brun(JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
-  jerror_t evnt(JEventLoop *eventLoop, int eventnumber);///< Called every event.
+  jerror_t brun(JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
+  jerror_t evnt(JEventLoop *eventLoop, uint64_t eventnumber);///< Called every event.
   
   //void DrawXY(void);
   //void DrawRPhi(void);
@@ -67,7 +67,7 @@ class MyProcessor:public JEventProcessor
   //jerror_t DrawDetectors(void);
   
   const DMagneticFieldMap *Bfield;
-  int eventNo;
+  uint64_t eventNo;
   
   enum poly_type{
     kMarker =0,

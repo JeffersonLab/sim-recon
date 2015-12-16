@@ -76,7 +76,7 @@ jerror_t JEventProcessor_danahddm::init(void)
 //-------------------------------
 // brun
 //-------------------------------
-jerror_t JEventProcessor_danahddm::brun(JEventLoop *loop, int runnumber)
+jerror_t JEventProcessor_danahddm::brun(JEventLoop *loop, int32_t runnumber)
 {
    // If file is already open, don't reopen it. Just keep adding to it.
    if (file)
@@ -123,7 +123,7 @@ jerror_t JEventProcessor_danahddm::brun(JEventLoop *loop, int runnumber)
 //-------------------------------
 // evnt
 //-------------------------------
-jerror_t JEventProcessor_danahddm::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_danahddm::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
    JEvent& event = loop->GetJEvent();
    JEventSource *source = event.GetJEventSource();

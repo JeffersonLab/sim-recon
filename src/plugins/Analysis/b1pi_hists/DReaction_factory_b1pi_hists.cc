@@ -109,7 +109,7 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DReaction_factory_b1pi_hists::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DReaction_factory_b1pi_hists::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -117,7 +117,7 @@ jerror_t DReaction_factory_b1pi_hists::brun(jana::JEventLoop *eventLoop, int run
 //------------------
 // evnt
 //------------------
-jerror_t DReaction_factory_b1pi_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DReaction_factory_b1pi_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	return NOERROR;
 }

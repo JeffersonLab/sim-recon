@@ -1,11 +1,12 @@
 // Script to extract time-walk constants for the BCAL
 
-//Leave this global so the accesors don't need the pointer as an argument
-TFile *thisFile;
+namespace ExtractTimeOffsetsAndCEff {
+  //Leave this global so the accesors don't need the pointer as an argument
+  TFile *thisFile;
 
-// Accessor functions to grab histograms from our file
-// (Makes things easy with the HistogramTools fills)
-TH1I * Get1DHistogram(const char * plugin, const char * directoryName, const char * name, bool print = true){
+  // Accessor functions to grab histograms from our file
+  // (Makes things easy with the HistogramTools fills)
+  TH1I * Get1DHistogram(const char * plugin, const char * directoryName, const char * name, bool print = true){
     TH1I * histogram;
     TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
     thisFile->GetObject(fullName, histogram);
@@ -14,9 +15,9 @@ TH1I * Get1DHistogram(const char * plugin, const char * directoryName, const cha
         return NULL;
     }
     return histogram;
-}
+  }
 
-TH2I * Get2DHistogram(const char * plugin, const char * directoryName, const char * name){
+  TH2I * Get2DHistogram(const char * plugin, const char * directoryName, const char * name){
     TH2I * histogram;
     TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
     histogram = thisFile->GetObject(fullName, histogram);
@@ -25,19 +26,20 @@ TH2I * Get2DHistogram(const char * plugin, const char * directoryName, const cha
         return NULL;
     }
     return histogram;
+  }
 }
 
 // Do the extraction of the actual constants
 void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"){
 
     // Open our input and output file
-    thisFile = TFile::Open(filename);
+    ExtractTimeOffsetsAndCEff::thisFile = TFile::Open(filename);
     TFile *outputFile = TFile::Open("BCALTimeOffsetAndCEff_Results.root", "RECREATE");
     outputFile->mkdir("Fits");
     outputFile->mkdir("ResultOverview");
 
     // Check to make sure it is open
-    if (thisFile == 0) {
+    if (ExtractTimeOffsetsAndCEff::thisFile == 0) {
         cout << "Unable to open file " << fileName.Data() << "...Exiting" << endl;
         return;
     }
@@ -47,13 +49,13 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
 
     // Since we are updating existing constants we will need their current values. We can pipe them in from the CCDB...
     // We need a place to store them...
-    double tdc_offsets[1152];
-    double adc_offsets[1536];
+    double tdiff_u_d[768];
+    double channel_global_offset[768];
 
     //Pipe the current constants into this macro
     //NOTE: This dumps the "LATEST" values. If you need something else, modify this script.
     char command[100];
-    sprintf(command, "ccdb dump /BCAL/TDC_offsets:%i:default", run);
+    sprintf(command, "ccdb dump /BCAL/tdiff_u_d:%i:default", run);
     FILE* locInputFile = gSystem->OpenPipe(command, "r");
     if(locInputFile == NULL)
         return 0;
@@ -67,15 +69,15 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
     while(fgets(buff, sizeof(buff), locInputFile) != NULL){
         istringstream locConstantsStream(buff);
         locConstantsStream >> time;
-        cout << "TDC Time Offset = " << time << endl;
-        tdc_offsets[counter] = time;
+        cout << "t_up - t_down = " << time << endl;
+        tdiff_u_d[counter] = time;
         counter++;
     }
-    if (counter != 1152) cout << "Wrong number of TDC entries (" << counter << " != 1152)?" << endl;
+    if (counter != 768) cout << "Wrong number of tdiff_u_d entries (" << counter << " != 768)?" << endl;
     //Close the pipe
     gSystem->ClosePipe(locInputFile);
 
-    sprintf(command, "ccdb dump /BCAL/ADC_timing_offsets:%i:default", run);
+    sprintf(command, "ccdb dump /BCAL/channel_global_offset:%i:default", run);
     locInputFile = gSystem->OpenPipe(command, "r");
     if(locInputFile == NULL)
         return 0;
@@ -88,19 +90,19 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
     while(fgets(buff, sizeof(buff), locInputFile) != NULL){
         istringstream locConstantsStream(buff);
         locConstantsStream >> time;
-        cout << "ADC Time Offset = " << time << endl;
-        adc_offsets[counter] = time;
+        cout << "Channel Global Offset = " << time << endl;
+        channel_global_offset[counter] = time;
         counter++;
     }
-    if (counter != 1536) cout << "Wrong number of ADC entries (" << counter << " != 1536)?" << endl;
+    if (counter != 768) cout << "Wrong number of channel global offsets (" << counter << " != 768)?" << endl;
     //Close the pipe
     gSystem->ClosePipe(locInputFile);
 
     // This stream will be for outputting the results in a format suitable for the CCDB
     // Will wait to open until needed
-    ofstream adcOffsetFile, tdcOffsetFile;
-    adcOffsetFile.open("ADCOffsetsBCAL.txt");
-    tdcOffsetFile.open("TDCOffsetsBCAL.txt");
+    ofstream channel_global_offset_File, tdiff_u_d_File;
+    channel_global_offset_File.open("channel_global_offset_BCAL.txt");
+    tdiff_u_d_File.open("tdiff_u_d_BCAL.txt");
 
     // Declaration of the fit funtion
     TF1 *f1 = new TF1("f1", "[0]+[1]*x", -200, 200);
@@ -115,11 +117,10 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
     TH2I *h2_c0_c1 = new TH2I("h2_c0_c1", "c_{1} Vs. c_{0}; c_{0}; c_{1}", 100, -15, 15, 100, 0.85, 1.15);
 
     // Fit the global offset histogram to get the per channel global offset
-    double globalOffset[768]; 
     TH1D * selectedBCALOffset = new TH1D("selectedBCALOffset", "Selected Global BCAL Offset; CCDB Index; Offset [ns]", 768, 0.5, 768 + 0.5);
     TH1I * BCALOffsetDistribution = new TH1I("BCALOffsetDistribution", "Global BCAL Offset; Global Offset [ns]; Entries", 100, -10, 10);
 
-    thisHist = Get2DHistogram("BCAL_Global_Offsets", "Target Time", "Target Time Minus RF Time Vs. Cell Number");
+    thisHist = ExtractTimeOffsetsAndCEff::Get2DHistogram("BCAL_Global_Offsets", "Target Time", "Target Time Minus RF Time Vs. Cell Number");
     if(thisHist != NULL){
         int nBinsX = thisHist->GetNbinsX();
         int nBinsY = thisHist->GetNbinsY();
@@ -146,7 +147,7 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
                     }
                 }
             }
-            globalOffset[i-1] = maxMean;
+            channel_global_offset_File <<  maxMean + channel_global_offset[i-1] << endl;;
             selectedBCALOffset->SetBinContent(i, maxMean);
             BCALOffsetDistribution->Fill(maxMean);
         }
@@ -165,7 +166,7 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
 
                 // These histograms are created on the fly in the plugin, so there is a chance that they do not exist, in which case the pointer will be NULL
 
-                TH2I *h_offsets   = Get2DHistogram ("BCAL_TDC_Offsets", "Z Position", name);
+                TH2I *h_offsets   = ExtractTimeOffsetsAndCEff::Get2DHistogram ("BCAL_TDC_Offsets", "Z Position", name);
 
                 // Use FitSlicesY routine to extract the mean of each x bin
                 TObjArray ySlices;
@@ -187,38 +188,23 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
                         h1_c0->Fill(c0); h1_c1->Fill(c1); h2_c0_c1->Fill(c0,c1); 
                         h1_c0_all->SetBinContent(the_cell, c0); h1_c0_all->SetBinError(the_cell, c0_err);
                         h1_c1_all->SetBinContent(the_cell, c1); h1_c1_all->SetBinError(the_cell, c1_err);
-                        adcOffsetFile << adc_offsets[(the_cell - 1) * 2] + 0.5 * c0 / C_eff + globalOffset[the_cell] << endl;
-                        adcOffsetFile << adc_offsets[ the_cell*2 - 1] - 0.5 * c0 / C_eff + globalOffset[the_cell] << endl;
-                        if (iLayer != 4){
-                            tdcOffsetFile << tdc_offsets[(the_tdc_cell - 1) * 2] + 0.5 * c0 / C_eff + globalOffset[the_cell] << endl;
-                            tdcOffsetFile << tdc_offsets[the_tdc_cell*2 - 1] - 0.5 * c0 / C_eff + globalOffset[the_cell] << endl;
-                        }
+                        tdiff_u_d_File << tdiff_u_d[the_cell - 1] + c0 / C_eff << endl;
                     }
                     else {
                         cout << "WARNING: Fit Status "<< fitStatus << " for Upstream " << name << endl;
-                        adcOffsetFile << adc_offsets[(the_cell - 1) * 2] + globalOffset[the_cell] << endl;
-                        adcOffsetFile << adc_offsets[the_cell*2 - 1] + globalOffset[the_cell] << endl;
-                        if (iLayer != 4){
-                            tdcOffsetFile << tdc_offsets[(the_tdc_cell - 1) * 2] + globalOffset[the_cell] << endl;
-                            tdcOffsetFile << tdc_offsets[the_tdc_cell*2 - 1] + globalOffset[the_cell] << endl;
-                        }
+                        tdiff_u_d_File << tdiff_u_d[the_cell - 1] << endl;
                     }
                 }
                 else{
-                    adcOffsetFile << adc_offsets[ (the_cell-1) * 2] + globalOffset[the_cell] << endl;
-                    adcOffsetFile << adc_offsets[  the_cell*2  - 1] + globalOffset[the_cell] << endl;
-                    if (iLayer != 4){
-                        tdcOffsetFile << tdc_offsets[(the_tdc_cell -1) * 2] + globalOffset[the_cell] << endl;
-                        tdcOffsetFile << tdc_offsets[ the_tdc_cell*2 - 1] + globalOffset[the_cell] << endl;
-                    }
+                    tdiff_u_d_File << tdiff_u_d[the_cell - 1] << endl;
                 }
             }
         }
     }
-    adcOffsetFile.close();
-    tdcOffsetFile.close();
+    channel_global_offset_File.close();
+    tdiff_u_d_File.close();
     outputFile->Write();
-    thisFile->Close();
+    ExtractTimeOffsetsAndCEff::thisFile->Close();
     return;
 }
 

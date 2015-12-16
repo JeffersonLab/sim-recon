@@ -18,7 +18,7 @@ jerror_t DKinFitResults_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
+jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int32_t runnumber)
 {
 	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
 	locEventLoop->Get(locAnalysisUtilitiesVector);
@@ -96,7 +96,7 @@ void DKinFitResults_factory::Reset_NewEvent(void)
 //------------------
 // evnt
 //------------------
-jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
+jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DKinFitResults_factory::evnt()");
@@ -408,9 +408,9 @@ bool DKinFitResults_factory::Check_IfKinFitResultsWillBeIdentical(deque<const DK
 			if(locInputKinFitParticle_ToCheck == NULL)
 			{
 				//e.g. both particles missing/decaying/target: check type & pid
-				if(locInputKinFitParticle_CheckAgainst->Get_PID() != locInputKinFitParticle_ToCheck->Get_PID())
+				if((*locIterator)->Get_PID() != locParticles_ToCheck[loc_i]->Get_PID())
 					continue;
-				if(locInputKinFitParticle_CheckAgainst->Get_KinFitParticleType() != locInputKinFitParticle_ToCheck->Get_KinFitParticleType())
+				if((*locIterator)->Get_KinFitParticleType() != locParticles_ToCheck[loc_i]->Get_KinFitParticleType())
 					continue;
 			}
 			locParticles_CheckAgainst.erase(locIterator);

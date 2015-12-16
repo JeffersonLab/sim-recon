@@ -25,17 +25,22 @@ jerror_t DEventRFBunch_factory_Combo::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	gPARMS->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", dTrackSelectionTag);
 	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
 
-	vector<double> locRFPeriodVector;
-	locEventLoop->GetCalib("PHOTON_BEAM/RF/rf_period", locRFPeriodVector);
-	dRFBunchPeriod = locRFPeriodVector[0];
+	vector<double> locBeamPeriodVector;
+	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	dBeamBunchPeriod = locBeamPeriodVector[0];
 
 	DApplication *locApplication = dynamic_cast<DApplication*> (locEventLoop->GetJApplication());
-	DGeometry *locGeometry = locApplication ? locApplication->GetDGeometry(runnumber):NULL;
+	if(locApplication == NULL)
+		exit(EX_UNAVAILABLE);
+
+	DGeometry *locGeometry = locApplication->GetDGeometry(runnumber);
+	if(locGeometry == NULL)
+		exit(EX_UNAVAILABLE);
 	locGeometry->GetTargetZ(dTargetCenterZ);
 
 	locEventLoop->GetSingle(dParticleID);
@@ -155,7 +160,7 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int r
 //------------------
 // evnt
 //------------------
-jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DEventRFBunch_factory_Combo::evnt()");
@@ -322,7 +327,7 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 		// Find # RF Bunch Shifts
 		int locNumParticleVotes = 0;
 		int locNumBunchShifts = Find_BestRFBunchShift(locRFTime, locPropagatedTimes, locNumParticleVotes);
-		double locNewRFTime = locRFTime + (double)(locNumBunchShifts)*dRFBunchPeriod;
+		double locNewRFTime = locRFTime + (double)(locNumBunchShifts)*dBeamBunchPeriod;
 
 		//Hist
 		bool locIsAllTruePID = false;
@@ -437,38 +442,38 @@ int DEventRFBunch_factory_Combo::Find_BestRFBunchShift(double locRFHitTime, cons
 	if(locTimes.empty())
 		return 0; //shouldn't happen ...
 
-	map<int, pair<unsigned int, double> > locNumRFBucketsShiftedMap;
+	map<int, pair<unsigned int, double> > locNumBeamBucketsShiftedMap;
 	int locBestRFBunchShift = 0;
 	for(unsigned int loc_i = 0; loc_i < locTimes.size(); ++loc_i)
 	{
 		double locDeltaT = locTimes[loc_i] - locRFHitTime;
-		int locNumRFBucketsShifted = (locDeltaT > 0.0) ? int(locDeltaT/dRFBunchPeriod + 0.5) : int(locDeltaT/dRFBunchPeriod - 0.5);
-		locDeltaT -= dRFBunchPeriod*double(locNumRFBucketsShifted);
+		int locNumBeamBucketsShifted = (locDeltaT > 0.0) ? int(locDeltaT/dBeamBunchPeriod + 0.5) : int(locDeltaT/dBeamBunchPeriod - 0.5);
+		locDeltaT -= dBeamBunchPeriod*double(locNumBeamBucketsShifted);
 
-		if(locNumRFBucketsShiftedMap.find(locNumRFBucketsShifted) == locNumRFBucketsShiftedMap.end())
-			locNumRFBucketsShiftedMap[locNumRFBucketsShifted] = pair<unsigned int, double>(1, locDeltaT*locDeltaT);
+		if(locNumBeamBucketsShiftedMap.find(locNumBeamBucketsShifted) == locNumBeamBucketsShiftedMap.end())
+			locNumBeamBucketsShiftedMap[locNumBeamBucketsShifted] = pair<unsigned int, double>(1, locDeltaT*locDeltaT);
 		else
 		{
-			++(locNumRFBucketsShiftedMap[locNumRFBucketsShifted].first);
-			locNumRFBucketsShiftedMap[locNumRFBucketsShifted].second += locDeltaT*locDeltaT;
+			++(locNumBeamBucketsShiftedMap[locNumBeamBucketsShifted].first);
+			locNumBeamBucketsShiftedMap[locNumBeamBucketsShifted].second += locDeltaT*locDeltaT;
 		}
-		if(locNumRFBucketsShifted == locBestRFBunchShift)
+		if(locNumBeamBucketsShifted == locBestRFBunchShift)
 			continue;
 
-		unsigned int locBestNumTracks = locNumRFBucketsShiftedMap[locBestRFBunchShift].first;
-		unsigned int locNumTracks = locNumRFBucketsShiftedMap[locNumRFBucketsShifted].first;
+		unsigned int locBestNumTracks = locNumBeamBucketsShiftedMap[locBestRFBunchShift].first;
+		unsigned int locNumTracks = locNumBeamBucketsShiftedMap[locNumBeamBucketsShifted].first;
 		if(locNumTracks > locBestNumTracks)
-			locBestRFBunchShift = locNumRFBucketsShifted;
+			locBestRFBunchShift = locNumBeamBucketsShifted;
 		else if(locNumTracks == locBestNumTracks)
 		{
-			double locBestDeltaTSq = locNumRFBucketsShiftedMap[locBestRFBunchShift].second;
-			double locDeltaTSq = locNumRFBucketsShiftedMap[locNumRFBucketsShifted].second;
+			double locBestDeltaTSq = locNumBeamBucketsShiftedMap[locBestRFBunchShift].second;
+			double locDeltaTSq = locNumBeamBucketsShiftedMap[locNumBeamBucketsShifted].second;
 			if(locDeltaTSq < locBestDeltaTSq)
-				locBestRFBunchShift = locNumRFBucketsShifted;
+				locBestRFBunchShift = locNumBeamBucketsShifted;
 		}
 	}
 
-	locBestNumVotes = locNumRFBucketsShiftedMap[locBestRFBunchShift].first;
+	locBestNumVotes = locNumBeamBucketsShiftedMap[locBestRFBunchShift].first;
 	return locBestRFBunchShift;
 }
 

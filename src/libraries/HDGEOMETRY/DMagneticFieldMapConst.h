@@ -28,7 +28,7 @@ class DMagneticFieldMapConst:public DMagneticFieldMap{
 		DMagneticFieldMapConst(double Br, double Bphi, double Bz);		
 		virtual ~DMagneticFieldMapConst();
 		
-		int GetValues(string namepath, int runnumber=1, string context="");
+		int GetValues(string namepath, int32_t runnumber=1, string context="");
 		void GetField(const DVector3 &pos,DVector3 &Bout) const;
 		void GetField(double x, double y, double z, double &Bx, double &By, double &Bz, int method=0) const;
 		double GetBz(double x,double y, double z) const {return Bz;};

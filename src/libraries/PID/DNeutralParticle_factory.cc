@@ -24,7 +24,7 @@ jerror_t DNeutralParticle_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DNeutralParticle_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DNeutralParticle_factory::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -32,7 +32,7 @@ jerror_t DNeutralParticle_factory::brun(jana::JEventLoop *locEventLoop, int runn
 //------------------
 // evnt
 //------------------
-jerror_t DNeutralParticle_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DNeutralParticle_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
 	locEventLoop->Get(locNeutralParticleHypotheses);

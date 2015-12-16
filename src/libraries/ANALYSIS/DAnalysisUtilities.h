@@ -108,7 +108,7 @@ class DAnalysisUtilities : public JObject
 
 	private:
 
-		unsigned int DEBUG_LEVEL;
+//		unsigned int DEBUG_LEVEL;
 
 		double dTargetZCenter;
 		const DParticleID* dPIDAlgorithm;

@@ -12,7 +12,7 @@ using namespace jana;
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
 // ROOT header fiels
-#include <TTree.h>
+#include <TH2.h>
 // C++ header files
 #include <sstream>
 #include <stdio.h>
@@ -28,18 +28,21 @@ using namespace jana;
 // Define constants
 const uint32_t NMODULES = 8;
 
-// Define TTree
-static TTree *PSC_tree;
+// Define histograms
+static TH2F* h_dt_vs_pp_l[NMODULES];
+static TH2F* h_dt_vs_pp_r[NMODULES];
 
-// Define branches
-Double_t tdc_l;		// PSC TDC time for the left modules
-Double_t tdc_r;		// PSC TDC time for the right modules
-Double_t rf_l;		// RF time associated with the left PSC TDC time
-Double_t rf_r;		// RF time associated with the right PSC TDC time
-Double_t pp_l;		// PSC pulse peak for the left modules
-Double_t pp_r;		// PSC pulse peak for the right modules
-Int_t psc_mod_l;	// PSC left module number
-Int_t psc_mod_r;	// PSC right modules number
+// Define variables
+Int_t psc_mod_l;
+Int_t psc_mod_r;
+Double_t pp_l;
+Double_t pp_r;
+Double_t tdc_l;
+Double_t tdc_r;
+//Double_t rf_l;
+double rf_l;
+//Double_t rf_r;
+double rf_r;
 
 // Define RFTime_factory
 DRFTime_factory* dRFTimeFactory;
@@ -69,8 +72,7 @@ JEventProcessor_PSC_TW::~JEventProcessor_PSC_TW()
 }
 
 //------------------
-// init
-//------------------
+// init //------------------
 jerror_t JEventProcessor_PSC_TW::init(void)
 {
 	// This is called once at program startup. If you are creating
@@ -84,17 +86,11 @@ jerror_t JEventProcessor_PSC_TW::init(void)
 
    japp->RootWriteLock();
 
-   // Create the tree
-   PSC_tree = new TTree("PSC_tree","PSC_tree");
-   // Create branches
-   PSC_tree->Branch("tdc_l", &tdc_l, "tdc_l/D");
-   PSC_tree->Branch("tdc_r", &tdc_r, "tdc_r/D");
-   PSC_tree->Branch("rf_l", &rf_l, "rf_l/D");
-   PSC_tree->Branch("rf_r", &rf_r, "rf_r/D");
-   PSC_tree->Branch("pp_l", &pp_l, "pp_l/D");
-   PSC_tree->Branch("pp_r", &pp_r, "pp_r/D");
-   PSC_tree->Branch("psc_mod_l", &psc_mod_l, "psc_mod_l/I");
-   PSC_tree->Branch("psc_mod_r", &psc_mod_r, "psc_mod_r/I");
+   // Name histograms
+   for (uint32_t i = 0; i < NMODULES; ++i) {
+      h_dt_vs_pp_l[i] = new TH2F(Form("h_dt_vs_pp_l_%i",i+1),Form("Time difference vs. pulse peak for left PSC module %i",i+1),1000,0,1000,100,-5,5);
+      h_dt_vs_pp_r[i] = new TH2F(Form("h_dt_vs_pp_r_%i",i+1),Form("Time difference vs. pulse peak for right PSC module %i",i+1),1000,0,1000,100,-5,5);
+   }
 
    japp->RootUnLock();
 
@@ -104,7 +100,7 @@ jerror_t JEventProcessor_PSC_TW::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_PSC_TW::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_PSC_TW::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	// This is called whenever the run number changes
 
@@ -126,7 +122,7 @@ jerror_t JEventProcessor_PSC_TW::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_PSC_TW::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_PSC_TW::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using
@@ -146,7 +142,13 @@ jerror_t JEventProcessor_PSC_TW::evnt(JEventLoop *loop, int eventnumber)
    vector<const DPSCPair*>	pairs;
 
    loop->Get(pairs);
-   loop->Get(locRFTimes);
+   loop->Get(locRFTimes,"PSC");
+   const DRFTime* locRFTime = NULL;
+
+   if (locRFTimes.size() > 0)
+      locRFTime = locRFTimes[0];
+   else
+      return NOERROR;
 
    japp->RootWriteLock();
 
@@ -154,14 +156,14 @@ jerror_t JEventProcessor_PSC_TW::evnt(JEventLoop *loop, int eventnumber)
       psc_mod_l = pairs[0]->ee.first->module;
       pp_l = pairs[0]->ee.first->pulse_peak;
       tdc_l = pairs[0]->ee.first->t;
-      rf_l = dRFTimeFactory->Step_TimeToNearInputTime(locRFTimes[0]->dTime, tdc_l);
+      rf_l = dRFTimeFactory->Step_TimeToNearInputTime(locRFTime->dTime, tdc_l);
+      h_dt_vs_pp_l[psc_mod_l - 1]->Fill(pp_l,tdc_l - rf_l);
 
       psc_mod_r = pairs[0]->ee.second->module;
       pp_r = pairs[0]->ee.second->pulse_peak;
       tdc_r = pairs[0]->ee.second->t;
-      rf_r = dRFTimeFactory->Step_TimeToNearInputTime(locRFTimes[0]->dTime, tdc_r);
-
-      PSC_tree->Fill();
+      rf_r = dRFTimeFactory->Step_TimeToNearInputTime(locRFTime->dTime, tdc_r);
+      h_dt_vs_pp_r[psc_mod_r - 1]->Fill(pp_r,tdc_r - rf_r);
    }
 
    japp->RootUnLock();

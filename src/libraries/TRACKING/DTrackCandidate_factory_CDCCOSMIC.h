@@ -23,16 +23,16 @@ class DTrackCandidate_factory_CDCCOSMIC:public jana::JFactory<DTrackCandidate>{
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
-		jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
-		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
+		jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
+		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-        double CDCDriftDistance(double t);
+        double CDCDriftDistance(double delta, double t);
         double CDCDriftVariance(double t);
         unsigned int Locate(vector<double>&xx,double x);
         double CDCTrackError(const DCDCWire *, const double *, double *);
-        double GetDOCAPhi(const DCDCWire *, DTrackCandidate *);
+        void GetDOCAPhiandZ(const DCDCWire *, DVector3, DVector3, double &, double &);
         DReferenceTrajectory *rt;
         DMagneticFieldMapNoField *bfield;
         DTrackFinder *finder;
@@ -43,6 +43,10 @@ class DTrackCandidate_factory_CDCCOSMIC:public jana::JFactory<DTrackCandidate>{
         // Resolution parameters
         double CDC_RES_PAR1,CDC_RES_PAR2;
         int EXCLUDERING;
+        vector<vector<double> >max_sag;
+        vector<vector<double> >sag_phi_offset;
+        double long_drift_func[3][3];
+        double short_drift_func[3][3];
 
         TH2D *residual_vs_ring;
         TH1D *h_chisq;

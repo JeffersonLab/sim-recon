@@ -22,7 +22,7 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DChargedTrackHypothesis_factory_KinFit::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DChargedTrackHypothesis_factory_KinFit::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	locEventLoop->GetSingle(dPIDAlgorithm);
 	return NOERROR;
@@ -31,7 +31,7 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::brun(jana::JEventLoop *locEvent
 //------------------
 // evnt
 //------------------
-jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
+jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DChargedTrackHypothesis_factory_KinFit::evnt()");

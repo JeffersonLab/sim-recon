@@ -516,7 +516,8 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 		bcal_tdc_digi_time->Fill(hit->time);
 		vector<const DF1TDCHit*> f1tdchits;
 		hit->Get(f1tdchits);
-		bcal_tdc_digi_reltime->Fill(f1tdchits[0]->time,f1tdchits[0]->trig_time);
+        if(f1tdchits.size() > 0)
+            bcal_tdc_digi_reltime->Fill(f1tdchits[0]->time,f1tdchits[0]->trig_time);
 
 		int layer = hit->layer;
 		int glosect = DBCALGeometry::getglobalsector(hit->module, hit->sector);

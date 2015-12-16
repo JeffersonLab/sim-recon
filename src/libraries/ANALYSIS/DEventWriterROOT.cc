@@ -997,6 +997,10 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 		locIndependentChargedTrackHypotheses.insert(locIndependentChargedTrackHypotheses.end(), locNewTrackHypoVector.begin(), locNewTrackHypoVector.end());
 	}
 
+	//Check whether beam is used in the combo
+	Particle_t locInitialPID = locReaction->Get_ReactionStep(0)->Get_InitialParticleID();
+	bool locBeamUsedFlag = ((locInitialPID == Gamma) || (locInitialPID == Electron) || (locInitialPID == Positron));
+
 	//GET BEAM PHOTONS
 		//however, only fill with beam particles that are in the combos
 	set<const DBeamPhoton*> locBeamPhotonSet;
@@ -1005,6 +1009,8 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	{
 		const DParticleComboStep* locParticleComboStep = locParticleCombos[loc_j]->Get_ParticleComboStep(0);
 		const DKinematicData* locKinematicData = locParticleComboStep->Get_InitialParticle_Measured();
+		if(locKinematicData == NULL)
+			continue;
 		const DBeamPhoton* locBeamPhoton = dynamic_cast<const DBeamPhoton*>(locKinematicData);
 		if(locBeamPhoton == NULL)
 			continue;
@@ -1083,10 +1089,13 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 		}
 
 		//INDEPENDENT BEAM PARTICLES
-		Fill_FundamentalData<UInt_t>(locTree, "NumBeam", locBeamPhotons.size());
-		for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
-			Fill_BeamData(locTree, loc_i, locBeamPhotons[loc_i], locMCThrownMatching);
+		if(locBeamUsedFlag)
+		{
 			//however, only fill with beam particles that are in the combos
+			Fill_FundamentalData<UInt_t>(locTree, "NumBeam", locBeamPhotons.size());
+			for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
+				Fill_BeamData(locTree, loc_i, locBeamPhotons[loc_i], locMCThrownMatching);
+		}
 
 		//INDEPENDENT CHARGED TRACKS
 		Fill_FundamentalData<UInt_t>(locTree, "NumChargedHypos", locIndependentChargedTrackHypotheses.size());
@@ -1151,6 +1160,8 @@ void DEventWriterROOT::Compute_ThrownPIDInfo(const vector<const DMCThrown*>& loc
 	{
 		Particle_t locPID = locMCThrowns_FinalState[loc_i]->PID();
 		ULong64_t locPIDMultiplexID = Calc_ParticleMultiplexID(locPID);
+		if(locPIDMultiplexID == 0)
+			continue; //unrecognized PID!!!
 		unsigned int locCurrentNumParticles = (locNumPIDThrown_FinalState / locPIDMultiplexID) % 10;
 		if(locCurrentNumParticles != 9)
 			locNumPIDThrown_FinalState += locPIDMultiplexID;
@@ -1161,6 +1172,8 @@ void DEventWriterROOT::Compute_ThrownPIDInfo(const vector<const DMCThrown*>& loc
 	{
 		Particle_t locPID = locMCThrowns_Decaying[loc_i]->PID();
 		ULong64_t locPIDMultiplexID = Calc_ParticleMultiplexID(locPID);
+		if(locPIDMultiplexID == 0)
+			continue; //unrecognized PID!!!
 		if(locPID != Pi0)
 			locPIDThrown_Decaying |= locPIDMultiplexID; //bit-wise or
 		else //save pi0's as final state instead of decaying

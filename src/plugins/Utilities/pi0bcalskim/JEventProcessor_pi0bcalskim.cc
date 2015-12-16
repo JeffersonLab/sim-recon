@@ -79,7 +79,7 @@ jerror_t JEventProcessor_pi0bcalskim::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_pi0bcalskim::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_pi0bcalskim::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
   eventLoop->GetSingle(dEventWriterEVIO);
 
@@ -89,7 +89,7 @@ jerror_t JEventProcessor_pi0bcalskim::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
   vector< const DBCALShower* > locBCALShowers;
   loop->Get(locBCALShowers);

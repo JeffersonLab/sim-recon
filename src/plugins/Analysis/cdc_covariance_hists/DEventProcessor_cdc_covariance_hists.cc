@@ -80,7 +80,7 @@ jerror_t DEventProcessor_cdc_covariance_hists::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_cdc_covariance_hists::brun(JEventLoop *loop, int runnumber)
+jerror_t DEventProcessor_cdc_covariance_hists::brun(JEventLoop *loop, int32_t runnumber)
 {
 	// We need to make a DReferenceTrajectory which means we need the B-field
 	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
@@ -119,7 +119,7 @@ jerror_t DEventProcessor_cdc_covariance_hists::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_cdc_covariance_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_cdc_covariance_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCTrackHit*> mctrackhits;

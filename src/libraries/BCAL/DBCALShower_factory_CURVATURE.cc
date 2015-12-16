@@ -80,7 +80,7 @@ jerror_t DBCALShower_factory_CURVATURE::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DBCALShower_factory_CURVATURE::brun(jana::JEventLoop *loop, int runnumber)
+jerror_t DBCALShower_factory_CURVATURE::brun(jana::JEventLoop *loop, int32_t runnumber)
 {
   DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
   DGeometry* geom = app->GetDGeometry(runnumber);
@@ -128,7 +128,7 @@ jerror_t DBCALShower_factory_CURVATURE::brun(jana::JEventLoop *loop, int runnumb
 //------------------
 // evnt
 //------------------
-jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
   recon_showers_phi.clear();
   recon_showers_theta.clear();
@@ -382,8 +382,8 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
     sig_t = sqrt(sig_t - t*t)/sqrt(n_eff);
 
     // Force showers to be inside the BCal's z-coordinate range.
-    double bcal_down = DBCALGeometry::GLOBAL_CENTER + DBCALGeometry::BCALFIBERLENGTH/2.0 - m_zTarget;
-    double bcal_up = DBCALGeometry::GLOBAL_CENTER - DBCALGeometry::BCALFIBERLENGTH/2.0 - m_zTarget;
+    double bcal_down = DBCALGeometry::GetBCAL_center() + DBCALGeometry::GetBCAL_length()/2.0 - m_zTarget;
+    double bcal_up = DBCALGeometry::GetBCAL_center() - DBCALGeometry::GetBCAL_length()/2.0 - m_zTarget;
     if (z > bcal_down) z = bcal_down;
     if (z < bcal_up) z = bcal_up;
 
@@ -404,7 +404,7 @@ jerror_t DBCALShower_factory_CURVATURE::evnt(JEventLoop *loop, int eventnumber)
     // for slices of z.  These fit parameters (scale and nonlin) are then plotted 
     // as a function of z and fit.
     float r = sqrt( shower->x * shower->x + shower->y * shower->y );
-    float zEntry = ( shower->z - m_zTarget ) * ( DBCALGeometry::BCALINNERRAD / r );
+    float zEntry = ( shower->z - m_zTarget ) * ( DBCALGeometry::GetBCAL_inner_rad() / r );
     float scale = m_scaleZ_p0  + m_scaleZ_p1*zEntry + m_scaleZ_p2*(zEntry*zEntry) + m_scaleZ_p3*(zEntry*zEntry*zEntry);
     float nonlin = m_nonlinZ_p0  + m_nonlinZ_p1*zEntry + m_nonlinZ_p2*(zEntry*zEntry) + m_nonlinZ_p3*(zEntry*zEntry*zEntry);
 

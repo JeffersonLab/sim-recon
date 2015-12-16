@@ -22,7 +22,7 @@ class DTAGHGeometry : public JObject {
    
    JOBJECT_PUBLIC(DTAGHGeometry);
 
-   DTAGHGeometry(JEventLoop *loop, std::string tag, int runnumber);
+   DTAGHGeometry(JEventLoop *loop, std::string tag, int32_t runnumber);
    ~DTAGHGeometry();
 
    static const unsigned int kCounterCount;

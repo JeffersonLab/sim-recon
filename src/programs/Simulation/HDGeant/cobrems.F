@@ -149,8 +149,8 @@ C  define the crystal->lab rotation matrix
       real x
       include 'cobrems.inc'
       real phi
-      phi=dpi/4
-      dNcdx=2*dpi*dNcdxdp(x,phi)
+      phi=REAL(dpi/4)
+      dNcdx=REAL(2*dpi*dNcdxdp(x,phi))
       end
 
       real function dNcdx3(x,dRadCol,diamCol)
@@ -160,8 +160,8 @@ C  define the crystal->lab rotation matrix
       if (dRadCol.gt.0) D=dRadCol
       if (diamCol.gt.0) collim=diamCol
       if (diamCol.lt.0) collim=-2*D*diamCol*me/E
-      phi=dpi/4
-      dNcdx3=2*dpi*dNcdxdp(x,phi)
+      phi=REAL(dpi/4)
+      dNcdx3=REAL(2*dpi*dNcdxdp(x,phi))
       end
 
       real function dNcdxdp(x,phi)
@@ -175,7 +175,7 @@ C  define the crystal->lab rotation matrix
       real q3min
       integer i
       real sigma0
-      sigma0=16*dpi*t*Z**2*alpha**3*E*(hbarc/a**2)*(hbarc/a/me)**4
+      sigma0=REAL(16*dpi*t*Z**2*alpha**3*E*(hbarc/a**2)*(hbarc/a/me)**4)
       q2points=0
       q3min=1
       sum=0
@@ -208,13 +208,13 @@ c         do l=-2,-2
             if (S2.lt.1e-4) then
               goto 10
             endif
-            qnorm=2*dpi*hbarc/a
+            qnorm=REAL(2*dpi*hbarc/a)
             q(1)=qnorm*(rotate(1,1)*h + rotate(1,2)*k + rotate(1,3)*l)
             q(2)=qnorm*(rotate(2,1)*h + rotate(2,2)*k + rotate(2,3)*l)
             q(3)=qnorm*(rotate(3,1)*h + rotate(3,2)*k + rotate(3,3)*l)
             q2=q(1)**2+q(2)**2+q(3)**2
             qT2=q(1)**2+q(2)**2
-            xmax=2*E*q(3)
+            xmax=REAL(2*E*q(3))
             xmax=xmax/(xmax+me**2)
             if ((x.gt.xmax).or.(xmax.gt.1)) then
               goto 10
@@ -223,19 +223,19 @@ c             write(6,*) h,k,l,S2
 c             write(6,*) q2,xmax
             endif
             if (q(3).lt.q3min) then
-              q3min=q(3)
+              q3min=REAL(q(3))
               hmin=h
               kmin=k
               lmin=l
             endif
             theta2=(1-x)*xmax/(x*(1-xmax)) - 1
-            FF=1/(1+q2*betaFF**2)
-            sum=sum+sigma0*qT2*S2*exp(-Aphonon*q2)*(FF*betaFF**2)**2
+            FF=REAL(1/(1+q2*betaFF**2))
+            sum=REAL(sum+sigma0*qT2*S2*exp(-Aphonon*q2)*(FF*betaFF**2)**2
      +         * ((1-x)/(x*(1+theta2))**2)
      +         * ((1+(1-x)**2)
      +               - 8*(theta2/(1+theta2)**2)*(1-x)*cos(phi)**2)
      +         * acceptance(theta2)
-     +         * polarization(x,theta2)
+     +         * polarization(x,theta2))
 C comment out the preceding line to disable polarization -RTJ
             q2points=q2points+1
             q2theta2(q2points)=theta2
@@ -417,9 +417,9 @@ Comment out the preceding lines to enable collimation -RTJ
         else
           pu=exp(-u2/(2*var0))/(2*var0)
         endif
-        acceptance=acceptance + pu*du2/dpi
+        acceptance=REAL(acceptance + pu*du2/dpi
      +    * atan2(sqrt((theta2-(thetaC-u)**2)*((thetaC+u)**2-theta2)),
-     +            theta2-thetaC**2+u2)
+     +            theta2-thetaC**2+u2))
       enddo
       end
 
@@ -483,9 +483,9 @@ C  is dominantly responsible for the coherent photons in this bin in x.
 C  I just use the smallest of the two angles, but this does not work when
 C  both angles are small, and you have to be more clever -- BEWARE!!!
 C--In any case, fine-tuning below the mosaic spread limit makes no sense.
-      alph=min(abs(thx),abs(thy))
+      alph=REAL(min(abs(thx),abs(thy)))
       if (alph.eq.0) then
-        alph=max(abs(thx),abs(thy))
+        alph=REAL(max(abs(thx),abs(thy)))
       else
         alph=max(alph,mospread)
       endif
@@ -498,13 +498,13 @@ C--In any case, fine-tuning below the mosaic spread limit makes no sense.
           x=x0+(x1-x0)*(j-0.5)/nbins
           dalph=dx*alph/(x*(1-x))
           if (varMS/var0.gt.1e-4) then
-            term=dalph/varMS
+            term=REAL(dalph/varMS
      +      *(ERF(dalph/sqrt(2*(var0+varMS))) - ERF(dalph/sqrt(2*var0)))
      +         + sqrt(2/dpi)/varMS
      +      *(exp(-dalph**2/(2*(var0+varMS)))*sqrt(var0+varMS)
-     +       -exp(-dalph**2/(2*var0))*sqrt(var0))
+     +       -exp(-dalph**2/(2*var0))*sqrt(var0)))
           else
-            term=exp(-dalph**2/(2*var0))/sqrt(2*dpi*var0)
+            term=REAL(exp(-dalph**2/(2*var0))/sqrt(2*dpi*var0))
           endif
           term=term*alph/x
           norm(j)=norm(j)+term
@@ -524,13 +524,13 @@ c     write(6,*) norm
           x=x0+(x1-x0)*(j-0.5)/nbins
           dalph=dx*alph/(x*(1-x))
           if (varMS/var0.gt.1e-4) then
-            term=dalph/varMS
+            term=REAL(dalph/varMS
      +      *(ERF(dalph/sqrt(2*(var0+varMS))) - ERF(dalph/sqrt(2*var0)))
      +         + sqrt(2/dpi)/varMS
      +      *(exp(-dalph**2/(2*(var0+varMS)))*sqrt(var0+varMS)
-     +       -exp(-dalph**2/(2*var0))*sqrt(var0))
+     +       -exp(-dalph**2/(2*var0))*sqrt(var0)))
           else
-            term=exp(-dalph**2/(2*var0))/sqrt(2*dpi*var0)
+            term=REAL(exp(-dalph**2/(2*var0))/sqrt(2*dpi*var0))
           endif
           term=term*alph/x
           result(ii)=result(ii)+term*hisy(j)/norm(j)
@@ -577,9 +577,9 @@ c  tails in different ways, but both agree that the central part is much
 c  more narrow than the formulation by Kaune et.al. below.
 
       carboncor=4.2/4.6
-      sigma2MS_Kaune=8*dpi*nsites*alpha**2*Z**2*tt*(hbarc/(E*a))**2/a
+      sigma2MS_Kaune=REAL(8*dpi*nsites*alpha**2*Z**2*tt*(hbarc/(E*a))**2/a
      +              *log(183*Z**(-1/3.))
-     +              *carboncor
+     +              *carboncor)
       end
 
       real function sigma2MS_pdg(tt)

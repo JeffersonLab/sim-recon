@@ -92,7 +92,7 @@ jerror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 // brun
 //------------------------------------------------------------------
-jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t MyProcessor::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
   // Read in Magnetic field map
   JApplication* japp = eventLoop->GetJApplication();
@@ -103,7 +103,7 @@ jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
 //------------------------------------------------------------------
 // evnt
 //------------------------------------------------------------------
-jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
+jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 {
 
   if(VERBOSE) cerr << "First thing in evnt....." << endl;

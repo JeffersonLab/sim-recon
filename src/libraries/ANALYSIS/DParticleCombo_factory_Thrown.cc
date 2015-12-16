@@ -24,7 +24,7 @@ jerror_t DParticleCombo_factory_Thrown::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DParticleCombo_factory_Thrown::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DParticleCombo_factory_Thrown::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
  	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
 	locEventLoop->Get(locAnalysisUtilitiesVector);
@@ -35,7 +35,7 @@ jerror_t DParticleCombo_factory_Thrown::brun(jana::JEventLoop *locEventLoop, int
 //------------------
 // evnt
 //------------------
-jerror_t DParticleCombo_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DParticleCombo_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DParticleCombo_factory_Thrown::evnt()");

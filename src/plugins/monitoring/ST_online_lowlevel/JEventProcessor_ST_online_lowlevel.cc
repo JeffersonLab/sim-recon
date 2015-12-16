@@ -38,7 +38,7 @@ using std::string;
 //**************************************************************
 const uint32_t NCHANNELS  = 30;     // number of scintillator paddles
 const float_t  ADC_PT_RES = 0.0625; // fADC250 pulse time resolution (ns)
-const float_t  TDC_RES    = 0.0559; // f1TDC resolution (ns)
+//const float_t  TDC_RES    = 0.0559; // f1TDC resolution (ns)
 //***************** Declare Two Dimensional Histograms*************
 //*****************************************************************
 static TH2I *h2_st_adc_tdc_multi;
@@ -245,7 +245,7 @@ jerror_t JEventProcessor_ST_online_lowlevel::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_ST_online_lowlevel::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_ST_online_lowlevel::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
   // load scale factors
   map<string,double> scale_factors;
@@ -288,7 +288,7 @@ if (eventLoop->GetCalib("/START_COUNTER/digi_scales", scale_factors))
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using
@@ -368,7 +368,7 @@ jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, int eventnum
 		  if (!bool_sec150[hit_sector_adc_index])
 		    {
 		      bool_sec150[hit_sector_adc_index] = true;
-		      if (bool_sec150[hit_sector_adc_index]);
+		      if (bool_sec150[hit_sector_adc_index])
 		      {
 			
 			for (uint32_t j = 0; j < windowrawdata->samples.size(); j++)
@@ -385,7 +385,7 @@ jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, int eventnum
 		  if (!bool_sec[hit_sector_adc_index])
 		    {
 		      bool_sec[hit_sector_adc_index] = true;
-		      if (bool_sec[hit_sector_adc_index]);
+		      if (bool_sec[hit_sector_adc_index])
 		      {
 			
 			for (uint32_t j = 0; j < windowrawdata->samples.size(); j++)
@@ -402,7 +402,7 @@ jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, int eventnum
 		  if (!bool_sec1000[hit_sector_adc_index])
 		    {
 		      bool_sec1000[hit_sector_adc_index] = true;
-		      if (bool_sec1000[hit_sector_adc_index]);
+		      if (bool_sec1000[hit_sector_adc_index])
 		      {
 			
 			for (uint32_t j = 0; j < windowrawdata->samples.size(); j++)
@@ -420,7 +420,7 @@ jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, int eventnum
 		  if (!bool_sec2000[hit_sector_adc_index])
 		    {
 		      bool_sec2000[hit_sector_adc_index] = true;
-		      if (bool_sec2000[hit_sector_adc_index]);
+		      if (bool_sec2000[hit_sector_adc_index])
 		      {
 			
 			for (uint32_t j = 0; j < windowrawdata->samples.size(); j++)
@@ -438,7 +438,7 @@ jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, int eventnum
 		  if (!bool_sec3000[hit_sector_adc_index])
 		    {
 		      bool_sec3000[hit_sector_adc_index] = true;
-		      if (bool_sec3000[hit_sector_adc_index]);
+		      if (bool_sec3000[hit_sector_adc_index])
 		      {
 			
 			for (uint32_t j = 0; j < windowrawdata->samples.size(); j++)
@@ -456,7 +456,7 @@ jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, int eventnum
 		  if (!bool_sec4000[hit_sector_adc_index])
 		    {
 		      bool_sec4000[hit_sector_adc_index] = true;
-		      if (bool_sec4000[hit_sector_adc_index]);
+		      if (bool_sec4000[hit_sector_adc_index])
 		      {
 			for (uint32_t j = 0; j < windowrawdata->samples.size(); j++)
 			  {

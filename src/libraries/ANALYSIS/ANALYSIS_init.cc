@@ -85,6 +85,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DHistogramAction_ParticleComboGenReconComparison(NULL, false);
 	DHistogramAction_MissingTransverseMomentum(NULL, false, 0, 0.0, 0.0);
 	
+	DCutAction_MinTrackHits(NULL, 0);
 	DCutAction_ThrownTopology(NULL, true);
 	DCutAction_PIDFOM(NULL, Unknown, Unknown, 0.0);
 	DCutAction_AllTracksHaveDetectorMatch(NULL);
@@ -95,6 +96,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DCutAction_MissingMassSquared(NULL, false, 0.0, 0.0);
 	DCutAction_InvariantMass(NULL, Unknown, false, 0.0, 0.0);
 	DCutAction_AllVertexZ(NULL, 0.0, 0.0);
+	DCutAction_ProductionVertexZ(NULL, 0.0, 0.0);
 	DCutAction_MaxTrackDOCA(NULL, Unknown, 0.0);
 	DCutAction_KinFitFOM(NULL, 0.0);
 	DCutAction_TruePID(NULL, Unknown, Unknown, 0.0);
@@ -110,6 +112,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DCutAction_BeamEnergy(NULL, false, 0.0, 0.0);
 	DCutAction_TrackFCALShowerEOverP(NULL, false, 0.0);
 	DCutAction_PIDDeltaT(NULL, false, 0.0);
+	DCutAction_PIDTimingBeta(NULL, 0.0, 0.0);
 	DCutAction_OneVertexKinFit(NULL);
 
 	return NOERROR;

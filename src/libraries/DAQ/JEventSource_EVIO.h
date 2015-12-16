@@ -31,13 +31,16 @@ using namespace jana;
 #include "HDEVIO.h"
 
 #ifdef HAVE_EVIO
-#include <evioChannel.hxx>
+//#include <evioChannel.hxx>
 #include <evioUtil.hxx>
 using namespace evio;
+#else
+class evioDOMTree;
+typedef pair<int,int> tagNum;
 #endif // HAVE_EVIO
 
 #ifdef HAVE_ET
-#include <evioETChannel.hxx>
+//#include <evioETChannel.hxx>
 #include <et.h>
 #endif // HAVE_ET
 
@@ -59,6 +62,8 @@ using namespace evio;
 #include "Df125PulsePedestal.h"
 #include "Df125PulseRawData.h"
 #include "Df125WindowRawData.h"
+#include "Df125CDCPulse.h"
+#include "Df125FDCPulse.h"
 #include "DF1TDCConfig.h"
 #include "DF1TDCHit.h"
 #include "DF1TDCTriggerTime.h"
@@ -67,6 +72,7 @@ using namespace evio;
 #include "DCODAEventInfo.h"
 #include "DCODAROCInfo.h"
 #include "DEPICSvalue.h"
+#include "DEventTag.h"
 
 extern set<uint32_t> ROCIDS_TO_PARSE;
 
@@ -169,16 +175,18 @@ class JEventSource_EVIO: public jana::JEventSource{
                     bool quit_on_next_ET_timeout;
 
 	
-#ifdef HAVE_EVIO		
                     void ReadOptionalModuleTypeTranslation(void);
 		  virtual jerror_t ReadEVIOEvent(uint32_t* &buf);
              inline void GetEVIOBuffer(jana::JEvent &jevent, uint32_t* &buff, uint32_t &size) const;
-     inline evioDOMTree* GetEVIODOMTree(jana::JEvent &jevent) const;
           EVIOSourceType GetEVIOSourceType(void){ return source_type; }
 		            void AddROCIDtoParseList(uint32_t rocid){ ROCIDS_TO_PARSE.insert(rocid); }
 		   set<uint32_t> GetROCIDParseList(uint32_t rocid){ return ROCIDS_TO_PARSE; }
         static uint32_t* GetEVIOBufferFromRef(void *ref){ return ((ObjList*)ref)->eviobuff; }
          static uint32_t GetEVIOBufferSizeFromRef(void *ref){ return ((ObjList*)ref)->eviobuff_size; }
+
+#ifdef HAVE_EVIO		
+     inline evioDOMTree* GetEVIODOMTree(jana::JEvent &jevent) const;
+#endif // HAVE_EVIO		
 
 	protected:
 	
@@ -188,7 +196,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		int32_t last_run_number;
 		int32_t filename_run_number;
 		
-		evioChannel *chan;
+		bool et_connected;
+		//evioChannel *chan;
 		HDEVIO *hdevio;
 		EVIOSourceType source_type;
 		map<tagNum, MODULE_TYPE> module_type;
@@ -203,6 +212,10 @@ class JEventSource_EVIO: public jana::JEventSource{
 		bool  PARSE_F125;
 		bool  PARSE_F1TDC;
 		bool  PARSE_CAEN1290TDC;
+		bool  PARSE_CONFIG;
+		bool  PARSE_EPICS;
+		bool  PARSE_EVENTTAG;
+		bool  PARSE_TRIGGER;
 		bool  MAKE_DOM_TREE;
 		int   ET_STATION_NEVENTS;
 		bool  ET_STATION_CREATE_BLOCKING;
@@ -236,6 +249,29 @@ class JEventSource_EVIO: public jana::JEventSource{
 		uint32_t F125_NSB_CDC;                     ///< Number of samples to integrate before thershold crossing during emulation rocid 24-28 only!
 		uint32_t F125_NSPED;                       ///< Number of samples to integrate for pedestal during emulation
 		uint32_t F125_TIME_UPSAMPLE;               ///< Use the CMU upsampling algorithm when emulating f125 pulse times
+
+
+        uint32_t F125_CDC_WS;                      ///< FA125 emulation CDC hit window start
+        uint32_t F125_CDC_WE;                      ///< FA125 emulation CDC hit window end
+        uint32_t F125_CDC_IE;                      ///< FA125 emulation CDC number of integrated samples (unless WE is reached)
+        uint32_t F125_CDC_NP;                      ///< FA125 emulation CDC initial pedestal samples
+        uint32_t F125_CDC_NP2;                     ///< FA125 emulation CDC local pedestal samples
+        uint32_t F125_CDC_PG;                      ///< FA125 emulation CDC gap between pedestal and hit threshold crossing
+        uint32_t F125_CDC_H;                       ///< FA125 emulation CDC hit threshold
+        uint32_t F125_CDC_TH;                      ///< FA125 emulation CDC high timing threshold
+        uint32_t F125_CDC_TL;                      ///< FA125 emulation CDC low timing threshold
+
+        uint32_t F125_FDC_WS;                      ///< FA125 emulation FDC hit window start
+        uint32_t F125_FDC_WE;                      ///< FA125 emulation FDC hit window end
+        uint32_t F125_FDC_IE;                      ///< FA125 emulation FDC number of integrated samples (unless WE is reached)
+        uint32_t F125_FDC_NP;                      ///< FA125 emulation FDC initial pedestal samples
+        uint32_t F125_FDC_NP2;                     ///< FA125 emulation FDC local pedestal samples
+        uint32_t F125_FDC_PG;                      ///< FA125 emulation FDC gap between pedestal and hit threshold crossing
+        uint32_t F125_FDC_H;                       ///< FA125 emulation FDC hit threshold
+        uint32_t F125_FDC_TH;                      ///< FA125 emulation FDC high timing threshold
+        uint32_t F125_FDC_TL;                      ///< FA125 emulation FDC low timing threshold
+
+
 
 		uint32_t USER_RUN_NUMBER;            ///< Run number supplied by user
 		uint32_t F125PULSE_NUMBER_FILTER;    ///< Discard DF125PulseXXX objects with pulse number equal or greater than this
@@ -312,21 +348,25 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);
 		void EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);
 		jerror_t ParseEvents(ObjList *objs_ptr);
-		int32_t GetRunNumber(evioDOMTree *evt);
 		int32_t FindRunNumber(uint32_t *iptr);
 		uint64_t FindEventNumber(uint32_t *iptr);
+		void FindEventType(uint32_t *iptr, JEvent &event);
 		MODULE_TYPE GuessModuleType(const uint32_t *istart, const uint32_t *iend);
 		bool IsF250ADC(const uint32_t *istart, const uint32_t *iend);
 		bool IsF1TDC(const uint32_t *istart, const uint32_t *iend);
 		void DumpModuleMap(void){}
 		void DumpBinary(const uint32_t *iptr, const uint32_t *iend=NULL, uint32_t MaxWords=0, const uint32_t *imark=NULL);
 
-		
 		void MergeObjLists(list<ObjList*> &events1, list<ObjList*> &events2);
 
+#if HAVE_EVIO
+		int32_t GetRunNumber(evioDOMTree *evt);
 		void ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_events);
 		void ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjList*> &tmp_events);
+		void ParseEPICSevent(evioDOMNodeP bankPtr, list<ObjList*> &events);
+#endif // HAVE_EVIO		
 		void ParseModuleConfiguration(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
+		void ParseEventTag(const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void Parsef125Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
@@ -335,7 +375,6 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void ParseTSBank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseTIBank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
-		void ParseEPICSevent(evioDOMNodeP bankPtr, list<ObjList*> &events);
 
 
 		// f250 methods
@@ -344,7 +383,6 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void MakeDf125WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 		void MakeDf125PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 
-#endif // HAVE_EVIO		
 
 #ifdef HAVE_ET
 		et_sys_id sys_id;

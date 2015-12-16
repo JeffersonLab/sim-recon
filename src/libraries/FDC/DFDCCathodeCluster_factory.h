@@ -53,7 +53,7 @@ class DFDCCathodeCluster_factory : public JFactory<DFDCCathodeCluster> {
 		/// is the place cathode hits are associated into cathode clusters. This function 
 		/// should eventually be modified to do more sophisticated peak finding. 
 		///
-		jerror_t evnt(JEventLoop *eventLoop, int eventNo);	
+		jerror_t evnt(JEventLoop *eventLoop, uint64_t eventNo);	
 		jerror_t init(void);
 	private:
 		JStreamLog* _log;

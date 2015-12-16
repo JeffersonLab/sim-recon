@@ -8,4 +8,4 @@ Import('*')
 # was moved to src/plugins/Simulation just before the Git transition.
 
 # Optional targets
-sbms.OptionallyBuild(env, ['extract_ptype_hddm', 'hdparsim'])
+sbms.OptionallyBuild(env, ['extract_ptype_hddm', 'hdparsim', 'recon2mc'])

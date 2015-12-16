@@ -1,8 +1,8 @@
 // hnamepath: /RF/RF_BeamBunchPeriod/RFBeamBunchPeriod
 
-int main(void)
+int RFMacro_BeamBunchPeriod(void)
 {
-	TDirectory *locTopDirectory = gDirectory;
+	gDirectory->cd("/"); //return to file base directory
 
 	//Goto Beam Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("RF");
@@ -34,4 +34,3 @@ int main(void)
 		locHist->Draw();
 	}
 }
-

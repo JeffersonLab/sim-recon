@@ -28,8 +28,8 @@ class DCDCTrackHit_factory:public JFactory<DCDCTrackHit>{
 		
 	private:
 		jerror_t init(void);
-		jerror_t brun(JEventLoop *loop, int runnumber);
-		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+		jerror_t brun(JEventLoop *loop, int32_t runnumber);
+		jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);	///< Invoked via JEventProcessor virtual method
 		jerror_t erun(void);
 
 		unsigned int locate(vector<double>&xx,double x);

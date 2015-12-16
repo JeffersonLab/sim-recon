@@ -7,7 +7,7 @@
 
 #include "DTTabUtilities_factory.h"
 
-jerror_t DTTabUtilities_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
+jerror_t DTTabUtilities_factory::brun(jana::JEventLoop* locEventLoop, int32_t runnumber)
 {
 	//Early Commissioning Data: Code & CCDB constants
 	//BCAL, RF: none
@@ -41,7 +41,7 @@ jerror_t DTTabUtilities_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 	return NOERROR;
 }
 
-jerror_t DTTabUtilities_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DTTabUtilities_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);

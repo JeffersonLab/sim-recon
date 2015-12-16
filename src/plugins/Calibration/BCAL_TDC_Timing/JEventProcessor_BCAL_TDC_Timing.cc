@@ -67,7 +67,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int runnumber)
+jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int32_t runnumber)
 {
     // This is called whenever the run number changes
     DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
@@ -79,7 +79,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
     vector<const DBCALUnifiedHit *> bcalUnifiedHitVector;
     loop->Get(bcalUnifiedHitVector);
@@ -234,8 +234,8 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, int eventnumber
                     char name[200];
                     sprintf(name , "Module %.2i Layer %.2i Sector %.2i", thisPoint->module(), thisPoint->layer(), thisPoint->sector());
                     // These results are in slightly different coordinate systems. We want one where the center of the BCAL is z=0
-                    double localTrackHitZ = proj_pos.z() - DBCALGeometry::GLOBAL_CENTER;
-                    double localBCALHitZ = thisPoint->z() - DBCALGeometry::GLOBAL_CENTER + Z_TARGET;
+                    double localTrackHitZ = proj_pos.z() - DBCALGeometry::GetBCAL_center();
+                    double localBCALHitZ = thisPoint->z() - DBCALGeometry::GetBCAL_center() + Z_TARGET;
                     Fill2DHistogram ("BCAL_TDC_Offsets", "Z Position", name,
                             localTrackHitZ, localBCALHitZ,
                             "Z_{point} Vs. Z_{Track}; Z_{Track} [cm]; Z_{Point} [cm]",
@@ -280,7 +280,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::erun(void)
 jerror_t JEventProcessor_BCAL_TDC_Timing::fini(void)
 {
     // Called before program exit after event processing is finished.
-    SortDirectories(); // Sort the histogram directories by name
+  //SortDirectories(); // Sort the histogram directories by name
     return NOERROR;
 }
 

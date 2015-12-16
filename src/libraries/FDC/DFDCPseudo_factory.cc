@@ -114,7 +114,7 @@ jerror_t DFDCPseudo_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
+jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int32_t runnumber)
 {
   // Get pointer to DGeometry object
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
@@ -232,7 +232,7 @@ jerror_t DFDCPseudo_factory::erun(void){
 /// DFDCPseudo_factory::evnt():
 /// this is the place that anode hits and DFDCCathodeClusters are organized into pseudopoints.
 ///
-jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
+jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, uint64_t eventNo) {
   if (!USE_FDC) return NOERROR;
 
 	// Get all FDC hits (anode and cathode)	
@@ -628,12 +628,9 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 
 	  // Find estimate for anode charge
 	  sum=0;
-	  double sum_f=0;
-	  unsigned int k=0;
+	  double sum_f=f(0)+f(1)+f(2);
 	  for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
-	    sum_f+=f(k);
 	    sum+=double((*j)->q);
-	    k++;
 	  }
 	  temp.q=4.*sum/sum_f;
 
@@ -660,12 +657,9 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 	  
 	  // Find estimate for anode charge
 	  sum=0;
-	  double sum_f=0;
-	  unsigned int k=0;
+	  double sum_f=f(0)+f(1)+f(2);
 	  for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
-	    sum_f+=f(k);
 	    sum+=double((*j)->q);
-	    k++;
 	  }
 	  temp.q=4.*sum/sum_f;
 

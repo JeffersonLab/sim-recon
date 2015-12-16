@@ -65,7 +65,7 @@ jerror_t DEventProcessor_mc_tree::init(void) {
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_mc_tree::evnt(JEventLoop *loop, int eventnumber) {
+jerror_t DEventProcessor_mc_tree::evnt(JEventLoop *loop, uint64_t eventnumber) {
 	vector<const DBeamPhoton*> beam_photons;
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCTrackHit*> mctrackhits;

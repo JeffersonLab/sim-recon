@@ -57,8 +57,8 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
    
  protected:
   virtual jerror_t init(void);
-  virtual jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
-  virtual jerror_t brun(JEventLoop* eventLoop,int runnumber);
+  virtual jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);	///< Invoked via JEventProcessor virtual method
+  virtual jerror_t brun(JEventLoop* eventLoop,int32_t runnumber);
   virtual jerror_t erun(void);
   virtual jerror_t fini(void);
 
@@ -139,13 +139,17 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
   int DEBUG_LEVEL,MIN_NUM_HITS;
   bool DEBUG_HISTS;
   TH2F *match_dist,*match_dist_vs_p;
-  TH2F *match_center_dist2;
+//  TH2F *match_center_dist2;
 
   double FactorForSenseOfRotation;
   DVector3 cdc_endplate;
   double endplate_rmax;
   double TARGET_Z;
   int MAX_NUM_TRACK_CANDIDATES; //used to avoid memory spikes: if this # is exceeded, delete all tracks //to disable, set = -1!!
+
+  vector<vector<DVector3> >sc_pos;
+  vector<vector<DVector3> >sc_norm;
+
 };
 
 #endif // _DTrackCandidate_factory_

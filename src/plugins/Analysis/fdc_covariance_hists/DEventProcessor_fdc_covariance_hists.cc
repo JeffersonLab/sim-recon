@@ -81,7 +81,7 @@ jerror_t DEventProcessor_fdc_covariance_hists::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_fdc_covariance_hists::brun(JEventLoop *loop, int runnumber)
+jerror_t DEventProcessor_fdc_covariance_hists::brun(JEventLoop *loop, int32_t runnumber)
 {	
 	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 	if(!dapp){
@@ -119,7 +119,7 @@ jerror_t DEventProcessor_fdc_covariance_hists::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_fdc_covariance_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_fdc_covariance_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCTrackHit*> mctrackhits;

@@ -142,7 +142,7 @@ jerror_t JEventProcessor_TRIG_online::brun(jana::JEventLoop* locEventLoop, int l
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, int locEventNumber) {
+jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber) {
   // This is called for every event. Use of common resources like writing
   // to a file or filling a histogram should be mutex protected. Using
   // loop-Get(...) to get reconstructed objects (and thereby activating the

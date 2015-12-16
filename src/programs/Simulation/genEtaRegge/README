@@ -1,0 +1,30 @@
+This program generates eta events according to Laget's production cross section
+model (http://arxiv.org/abs/hep-ph/0502233).
+
+To build, type
+
+   scons -u install 
+
+in the genEtaRegge directory.
+
+To get a help message after building the executable, type genEtaRegge with no 
+arguments:
+
+  genEtaRegge: generator for eta production based on Regge trajectory formalism.
+  Usage:  genEtaRegge <options>
+    Options:  -N<number of events> (number of events to generate)
+              -O<output.hddm>   (default: eta_gen.hddm)
+              -I<input.in>      (default: eta548.in)
+              -R<run number>    (default: 9000)
+              -h                (Print this message and exit.)
+  Coupling constants, photon beam energy range, and eta decay products are
+  specified in the <input.in> file.
+
+The decay products are specified by their GEANT ids; the four-momenta are 
+generated according to n-body phase space.
+
+Note that currently the width parameter in the specification of the decaying 
+particle is not being used.
+
+To generate events with an incoherent bremsstrahlung distribution, set the 
+coherent peak position to a value less than Emin.

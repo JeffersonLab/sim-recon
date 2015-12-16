@@ -5,21 +5,17 @@
 // hnamepath: /RF/AverageDeltaT_RF_OtherRFs/RFDeltaT_PSC_TOF
 // hnamepath: /RF/AverageDeltaT_RF_OtherRFs/RFDeltaT_TAGH_TOF
 
-double gRFSignalPeriod = 1000.0/499.0;
+double gBeamSignalPeriod = 2000.0/499.0;
 int gRebinF1sAmount = 25;
 int gRebinTOFAmount = 2;
-
-//Commit constants with:
-//ccdb add PHOTON_BEAM/RF/time_offset -r <run_min>-<run_max> rf_fine_time_offsets.txt #"fine time offsets"
-//ccdb add PHOTON_BEAM/RF/time_offset_var -r <run_min>-<run_max> rf_time_offset_vars.txt #"time offset variances"
 
 Double_t Periodic_Gaussian_Func(Double_t* locXArray, Double_t* locParamArray)
 {
 	Double_t locValue = locParamArray[0]*TMath::Gaus(locXArray[0], locParamArray[1], locParamArray[2]);
 	if(locParamArray[1] < 0.0)
-		locValue += locParamArray[0]*TMath::Gaus(locXArray[0], locParamArray[1] + gRFSignalPeriod, locParamArray[2]);
+		locValue += locParamArray[0]*TMath::Gaus(locXArray[0], locParamArray[1] + gBeamSignalPeriod, locParamArray[2]);
 	else
-		locValue += locParamArray[0]*TMath::Gaus(locXArray[0], locParamArray[1] - gRFSignalPeriod, locParamArray[2]);
+		locValue += locParamArray[0]*TMath::Gaus(locXArray[0], locParamArray[1] - gBeamSignalPeriod, locParamArray[2]);
 
 	return locValue;
 }
@@ -30,16 +26,17 @@ TF1* Create_FitFunc(TH1I* locHist)
 	double locMean = locHist->GetBinCenter(locMaxBin);
 
 	string locFuncName = string(locHist->GetName()) + string("_Func");
-	TF1 *locFunc = new TF1(locFuncName.c_str(), Periodic_Gaussian_Func, -0.5*gRFSignalPeriod, 0.5*gRFSignalPeriod, 3);
+	TF1 *locFunc = new TF1(locFuncName.c_str(), Periodic_Gaussian_Func, -0.5*gBeamSignalPeriod, 0.5*gBeamSignalPeriod, 3);
 	locFunc->SetParameters(locHist->GetBinContent(locMaxBin), locMean, 0.1);
 	locFunc->SetParNames("Gaussian Height", "Gaussian #mu", "Gaussian #sigma");
 
 	return locFunc;
 }
 
-int main(void)
+int RFMacro_FineTimeOffsets(int locRunNumber, string locVariation = "default")
 {
-	TDirectory *locTopDirectory = gDirectory;
+	//INPUT RUN NUMBER MUST BE A RUN NUMBER IN THE RUN RANGE YOU ARE TRYING TO COMMIT CONSTANTS TO
+	gDirectory->cd("/"); //return to file base directory
 
 	//Goto Beam Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("RF");
@@ -172,9 +169,18 @@ int main(void)
 
 	//Fine time offsets (with respect to TOF)
 	double locTimeOffset_TOF = 0.0;
+
 	double locTimeOffset_FDC = locTOFFitFunc_FDC->GetParameter(1);
+	if(!(locHist_RFDeltaT_FDC_TOF->GetEntries() > 0.0))
+		locTimeOffset_FDC = 0.0;
+
 	double locTimeOffset_PSC = locTOFFitFunc_PSC->GetParameter(1);
+	if(!(locHist_RFDeltaT_PSC_TOF->GetEntries() > 0.0))
+		locTimeOffset_PSC = 0.0;
+
 	double locTimeOffset_TAGH = locTOFFitFunc_TAGH->GetParameter(1);
+	if(!(locHist_RFDeltaT_TAGH_TOF->GetEntries() > 0.0))
+		locTimeOffset_TAGH = 0.0;
 
 	//Fine time offset variances
 	double locTimeOffsetVariance_TOF = 0.0;
@@ -187,7 +193,9 @@ int main(void)
 
 	//Pipe the current constants into this macro
 		//NOTE: This dumps the "LATEST" values. If you need something else, modify this script.
-	FILE* locInputFile = gSystem->OpenPipe("ccdb dump PHOTON_BEAM/RF/time_offset", "r");
+	ostringstream locCommandStream;
+	locCommandStream << "ccdb -v " << locVariation << " dump PHOTON_BEAM/RF/time_offset -r " << locRunNumber;
+	FILE* locInputFile = gSystem->OpenPipe(locCommandStream.str().c_str(), "r");
 	if(locInputFile == NULL)
 		return 0;
 

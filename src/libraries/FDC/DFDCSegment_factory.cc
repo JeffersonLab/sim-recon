@@ -54,7 +54,7 @@ DFDCSegment_factory::~DFDCSegment_factory() {
 /// DFDCSegment_factory::brun():
 /// Initialization: read in deflection map, get magnetic field map
 ///
-jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int runnumber) { 
+jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int32_t runnumber) { 
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   const DMagneticFieldMap *bfield = dapp->GetBfield(runnumber);
   double Bz=bfield->GetBz(0.,0.,65.);
@@ -84,7 +84,7 @@ jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int runnumber) {
 /// DFDCSegment_factory::evnt():
 /// Routine where pseudopoints are combined into track segments
 ///
-jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
+jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, uint64_t eventNo) {
   myeventno=eventNo;
 
   vector<const DFDCPseudo*>pseudopoints;
@@ -437,13 +437,17 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
 // to a circular paraboloid surface combined with a linear fit of the arc 
 // length versus z. Uses RiemannCircleFit and RiemannLineFit.
 //
-jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
-						DMatrix &CR,vector<xyz_t>&XYZ){
+jerror_t 
+DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points){
   double Phi;
   unsigned int num_measured=points.size();
   unsigned int last_index=num_measured;
   unsigned int num_points=num_measured+1;
+  // list of points on track and corresponding covariance matrices
+  vector<xyz_t>XYZ(num_points);
+  DMatrix CR(num_points,num_points);
   DMatrix CRPhi(num_points,num_points); 
+  
  
   // Fill initial matrices for R and RPhi measurements
   for (unsigned int m=0;m<num_measured;m++){
@@ -489,8 +493,8 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
       CR(i,i)=XYZ[i].covr;
       CRPhi(i,i)=XYZ[i].covrphi;
     }
-    CRPhi(last_index,last_index)=100.;
-    CR(last_index,last_index)=100.;
+    CRPhi(last_index,last_index)=1e6;
+    CR(last_index,last_index)=1e6;
 
     // First find the center and radius of the projected circle
     error=RiemannCircleFit(points,CRPhi); 
@@ -502,10 +506,14 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
     // Get reference track estimates for z0 and tanl and intersection points
     // (stored in XYZ)
     error=RiemannLineFit(points,CR,XYZ);
+    if (error!=NOERROR){
+      if (DEBUG_LEVEL>0) _DBG_ << "Line fit failed..." << endl;
+      return error;
+    }
   }
 
   // Guess particle sense of rotation (+/-1);
-  rotation_sense=GetRotationSense(points.size(),XYZ,CR,CRPhi);
+  rotation_sense=GetRotationSense(points.size(),XYZ,CR,CRPhi,points);
 
   double r1sq=XYZ[ref_plane].xy.Mod2();
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
@@ -530,9 +538,13 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
 
   // Preliminary line fit
   error=RiemannLineFit(points,CR,XYZ);
+  if (error!=NOERROR){
+    if (DEBUG_LEVEL>0) _DBG_ << "Line fit failed..." << endl;
+    return error;
+  }
 
   // Guess particle sense of rotation (+/-1);
-  rotation_sense=GetRotationSense(points.size(),XYZ,CR,CRPhi);
+  rotation_sense=GetRotationSense(points.size(),XYZ,CR,CRPhi,points);
   
   r1sq=XYZ[ref_plane].xy.Mod2();
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
@@ -565,9 +577,13 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
 
   // Final line fit
   error=RiemannLineFit(points,CR,XYZ);
+  if (error!=NOERROR){
+    if (DEBUG_LEVEL>0) _DBG_ << "Line fit failed..." << endl;
+    return error;
+  }
 
   // Guess particle sense of rotation (+/-1)
-  rotation_sense=GetRotationSense(num_measured,XYZ,CR,CRPhi);
+  rotation_sense=GetRotationSense(num_measured,XYZ,CR,CRPhi,points);
   
   // Final update to covariance matrices
   r1sq=XYZ[ref_plane].xy.Mod2();
@@ -606,8 +622,9 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
 // Provide guess for (seed) track parameters
 //
 jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
-  // Clear all the "used" flags;
-  used.clear();
+  // Create a vector to store whether or not a hit has been used
+  vector<bool>used(points.size());
+  unsigned int total_num_used=0;
 
   // Put indices for the first point in each plane before the most downstream
   // plane in the vector x_list.
@@ -615,7 +632,6 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
   vector<unsigned int>x_list;
   x_list.push_back(0);
   for (unsigned int i=0;i<points.size();i++){
-    used.push_back(false);
     if (points[i]->wire->origin.z()!=old_z){
       x_list.push_back(i);
     }
@@ -638,6 +654,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
     for (unsigned int i=x_list[start];i<x_list[start+1];i++){
       if (used[i]==false){
 	used[i]=true;
+	total_num_used++;
 	chisq=1.e8;
 
 	// Clear track parameters
@@ -669,6 +686,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	      ){
 	    XY=points[match]->xy;
 	    used[match]=true;
+	    total_num_used++;
 	    neighbors.push_back(points[match]);	
 	  }
 	}
@@ -689,6 +707,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 		  abs(neighbors[j]->wire->wire-points[k]->wire->wire)<=1
 		  && neighbors[j]->wire->origin.z()==points[k]->wire->origin.z()){
 		used[k]=true;
+		total_num_used++;
 		neighbors.push_back(points[k]);
 		do_sort=true;
 	      }      
@@ -699,123 +718,101 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	if (do_sort)
 	  std::sort(neighbors.begin(),neighbors.end(),DFDCSegment_package_cmp);
     
-	// list of points on track and the corresponding covariances
-	unsigned int num_points_on_segment=neighbors.size()+1;
-	vector<xyz_t>XYZ(num_points_on_segment);
-	DMatrix CR(num_points_on_segment,num_points_on_segment);
-   	
 	// Arc lengths in helical model are referenced relative to the plane
 	// ref_plane within a segment.  For a 6 hit segment, ref_plane=2 is 
 	// roughly in the center of the segment.
 	ref_plane=0; 
 	
 	// Perform the Riemann Helical Fit on the track segment
-	jerror_t error=RiemannHelicalFit(neighbors,CR,XYZ);   /// initial hit-based fit
+	jerror_t error=RiemannHelicalFit(neighbors);
 		
 	if (error==NOERROR){  
-	  double charge=RotationSenseToCharge*rotation_sense;
-
 	  // Since the cell size is 0.5 cm and the Lorentz deflection can be
 	  // mm scale, a circle radius on the order of 1 cm is at the level of 
 	  // how well the points are defined at this stage.  Use a simple circle
 	  // fit assuming the circle goes through the origin.
 	  if (rc<1.0) {
 	    CircleFit(neighbors);
-
-	    // Linear regression to find z0, tanl   
-	    double sumv=0.,sumx=0.;
-	    double sumy=0.,sumxx=0.,sumxy=0.;
-	    double sperp=0.,sperp_old=0.,ratio,Delta;
-	    double z=0,zlast=0;
-	    double two_rc=2.*rc;
-	    DVector2 oldxy=points[0]->xy;
-	    for (unsigned int k=1;k<points.size();k++){
-	      zlast=z;
-	      z=points[k]->wire->origin.z();
-	      if (fabs(z-zlast)<0.01) continue;
-
-	      DVector2 diffxy=points[k]->xy-oldxy;
-	      double Phi=points[k]->xy.Phi();
-	      double cosPhi=cos(Phi);
-	      double sinPhi=sin(Phi);
-	      double var=cosPhi*cosPhi*points[k]->covxx
-		+sinPhi*sinPhi*points[k]->covyy
-		+2.*sinPhi*cosPhi*points[k]->covxy;
-
-	      sperp_old=sperp;
-	      ratio=diffxy.Mod()/(two_rc);
-	      // Make sure the argument for the arcsin does not go out of range...
-	      sperp=sperp_old+(ratio>1?two_rc*(M_PI_2):two_rc*asin(ratio));
-
-	      // Assume errors in s dominated by errors in R 
-	      double inv_var=1./var;
-	      sumv+=inv_var;
-	      sumy+=sperp*inv_var;
-	      sumx+=z*inv_var;
-	      sumxx+=z*z*inv_var;
-	      sumxy+=sperp*z*inv_var;
-	      
-	      // Save the current x and y coordinates
-	      //oldx=XYZ(k,0);
-	      //oldy=XYZ(k,1);
-	      oldxy=points[k]->xy;
-	    }
-	    // last point is at "vertex" --> give it a large error...
-	    sperp+=oldxy.Mod()/two_rc;
-	    double inv_var=0.01;
-	    sumv+=inv_var;
-	    sumy+=sperp*inv_var;
-	    sumx+=TARGET_Z*inv_var;
-	    sumxx+=TARGET_Z*TARGET_Z*inv_var;
-	    sumxy+=sperp*TARGET_Z*inv_var;
-	    
-	    Delta=sumv*sumxx-sumx*sumx;
-	    double denom=sumv*sumxy-sumy*sumx;
-	    if (fabs(Delta)>EPS && fabs(denom)>EPS){
-	      // Track parameters z0 and tan(lambda)
-	      tanl=-Delta/denom; 
-	      // Vertex position
-	      sperp-=sperp_old; 
-	      zvertex=zlast-tanl*sperp;
-	    }
+	    LineFit(neighbors);
 	  }
-
-	  // Estimate for azimuthal angle
-	  phi0=atan2(-xc,yc); 
-	  if (rotation_sense<0) phi0+=M_PI;
-	  //  if (rotation_sense<0) phi0+=M_PI;
 	  
-	  // Look for distance of closest approach nearest to target
-	  D=-rotation_sense*rc-xc/sin(phi0);
-	  
-	  // Creat a new segment
+	  // Create a new segment
 	  DFDCSegment *segment = new DFDCSegment;	
-
-	  // Initialize seed track parameters
-	  segment->q=charge; //charge 
-	  segment->phi0=phi0;      // Phi
-	  segment->D=D;       // D=distance of closest approach to origin   
-	  segment->tanl=tanl;     // tan(lambda), lambda=dip angle
-	  segment->z_vertex=zvertex;// z-position at closest approach to origin
-
 	  segment->hits=neighbors;
-	  segment->xc=xc;
-	  segment->yc=yc;
-	  segment->rc=rc;
-	  segment->Phi1=Phi1;
-	  segment->chisq=chisq;
-	  segment->Ndof=Ndof;
 	  segment->package=(neighbors[0]->wire->layer-1)/6;
-	  //printf("tanl %f \n",tanl);
-	  //printf("xc %f yc %f rc %f\n",xc,yc,rc);
+	  FillSegmentData(segment);
 
 	  _data.push_back(segment);
 	}
+	else {
+	  // Fit assuming particle came from (x,y)=(0,0)
+	  CircleFit(neighbors);
+	  LineFit(neighbors);
+
+	  // Create a new segment
+	  DFDCSegment *segment = new DFDCSegment;	
+	  segment->hits=neighbors;
+	  segment->package=(neighbors[0]->wire->layer-1)/6;
+	  FillSegmentData(segment);
+
+	  _data.push_back(segment);
+	}
+
       }
     }
+  
     // Move on to the next plane to start looking for segments
     start++;
   } //while loop over x_list planes
+
+  // Use fitted segment results to look for additional stray hits to add to 
+  // segments.  
+  if (total_num_used<used.size()){
+    for (unsigned int k=0;k<_data.size();k++){
+      if (total_num_used==used.size()) break;
+      DFDCSegment *segment=_data[k];
+      bool added_hits=false;
+      for (unsigned int i=0;i<used.size();i++){
+	if (total_num_used==used.size()) break;
+	if (used[i]==0){
+	  double z=points[i]->wire->origin.z();
+	  double z0=segment->hits[0]->wire->origin.z();
+	  if (z<z0 
+	      || z>segment->hits[segment->hits.size()-1]->wire->origin.z()){
+	    double phi_s=segment->Phi1
+	      +rotation_sense*(z-z0)/(segment->rc*segment->tanl);
+	    
+	    double dx=segment->xc+segment->rc*cos(phi_s)-points[i]->xy.X();
+	    double dy=segment->yc+segment->rc*sin(phi_s)-points[i]->xy.Y();
+	    double dr=sqrt(dx*dx+dy*dy);
+
+	    if (dr<MATCH_RADIUS){
+	      used[i]=1;
+	      added_hits=true;
+	      total_num_used++;
+	      segment->hits.push_back(points[i]);
+	    }	  
+	  } // check z position of hit
+
+	} // check if hit used already
+      }// loop over hits
+      if (added_hits){
+	sort(segment->hits.begin(),segment->hits.end(),DFDCSegment_package_cmp);
+	if (RiemannHelicalFit(segment->hits)==NOERROR){
+	  // Since the cell size is 0.5 cm and the Lorentz deflection can be
+	  // mm scale, a circle radius on the order of 1 cm is at the level of 
+	  // how well the points are defined at this stage.  Use a simple circle
+	  // fit assuming the circle goes through the origin.
+	  if (rc<1.0) {
+	    CircleFit(segment->hits);
+	    LineFit(segment->hits);
+	  }
+	  
+	  FillSegmentData(segment);
+	} 
+      }
+    } // loop over segments
+  }
 
   return NOERROR;
 }
@@ -823,40 +820,107 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 // Linear regression to find charge
 double DFDCSegment_factory::GetRotationSense(unsigned int n,vector<xyz_t>&XYZ, 
 					     DMatrix &CR, 
-					     DMatrix &CRPhi){
-  double inv_var=0.; 
-  double sumv=0.;
-  double sumy=0.;
-  double sumx=0.;
-  double sumxx=0.,sumxy=0,Delta;
-  double slope,r2;
-  double phi_old=XYZ[0].xy.Phi();
-  for (unsigned int k=0;k<n;k++){   
-    double tempz=XYZ[k].z;
-    double phi_z=XYZ[k].xy.Phi();
-    // Check for problem regions near +pi and -pi
-    if (fabs(phi_z-phi_old)>M_PI){  
-      if (phi_old<0) phi_z-=2.*M_PI;
-      else phi_z+=2.*M_PI;
-    }
-    r2=XYZ[k].xy.Mod2();
-    inv_var=r2/(CRPhi(k,k)+phi_z*phi_z*CR(k,k));
-    sumv+=inv_var;
-    sumy+=phi_z*inv_var;
-    sumx+=tempz*inv_var;
-    sumxx+=tempz*tempz*inv_var;
-    sumxy+=phi_z*tempz*inv_var;
-    phi_old=phi_z;
+					     DMatrix &CRPhi, 
+					     vector<const DFDCPseudo *>&points){
+  double Phi1=atan2(points[0]->xy.Y()-yc,points[0]->xy.X()-xc);
+  double z0=points[0]->wire->origin.z();
+  double plus_sum=0.,minus_sum=0.;
+  for (unsigned int j=1;j<points.size();j++){
+    double dphi=(points[j]->wire->origin.z()-z0)/(rc*tanl);
+    double my_x=points[j]->xy.X();
+    double my_y=points[j]->xy.Y();
+
+    double phiplus=Phi1+dphi;
+    double dxplus=xc+rc*cos(phiplus)-my_x;
+    double dyplus=yc+rc*sin(phiplus)-my_y;
+    double dxplus2=dxplus*dxplus;
+    double dyplus2=dyplus*dyplus;
+    double d2plus=dxplus2+dyplus2;
+    double varplus=(dxplus2*points[j]->covxx+dyplus2*points[j]->covyy
+		    +2.*dxplus*dyplus*points[j]->covxy)/d2plus;
+
+    plus_sum+=d2plus/varplus;
+    
+    double phiminus=Phi1-dphi;
+    double dxminus=xc+rc*cos(phiminus)-my_x;
+    double dyminus=yc+rc*sin(phiminus)-my_y;
+    double dxminus2=dxminus*dxminus;
+    double dyminus2=dyminus*dyminus;
+    double d2minus=dxminus2+dyminus2;
+    double varminus=(dxminus2*points[j]->covxx+dyminus2*points[j]->covyy
+		     +2.*dxminus*dyminus*points[j]->covxy)/d2minus;
+
+    minus_sum+=d2minus/varminus;
   }
-  Delta=sumv*sumxx-sumx*sumx;
-  slope=(sumv*sumxy-sumy*sumx)/Delta; 
-  
-  if (slope<0.) return -1.;
+
+  // Look for smallest sum to determine q
+  if (minus_sum<plus_sum) return -1.;
   return 1.;
 }
 
+// Linear regression to find z0, tanl   
+jerror_t DFDCSegment_factory::LineFit(vector<const DFDCPseudo *>&points){  
+  double sumv=0.,sumx=0.;
+  double sumy=0.,sumxx=0.,sumxy=0.;
+  double sperp=0.,sperp_old=0.,ratio,Delta;
+  double z=0,zlast=0;
+  double two_rc=2.*rc;
+  DVector2 oldxy=points[0]->xy;
+  for (unsigned int k=1;k<points.size();k++){
+    zlast=z;
+    z=points[k]->wire->origin.z();
+    if (fabs(z-zlast)<0.01) continue;
+
+    DVector2 diffxy=points[k]->xy-oldxy;
+    double Phi=points[k]->xy.Phi();
+    double cosPhi=cos(Phi);
+    double sinPhi=sin(Phi);
+    double var=cosPhi*cosPhi*points[k]->covxx
+      +sinPhi*sinPhi*points[k]->covyy
+      +2.*sinPhi*cosPhi*points[k]->covxy;
+    
+    sperp_old=sperp;
+    ratio=diffxy.Mod()/(two_rc);
+    // Make sure the argument for the arcsin does not go out of range...
+    sperp=sperp_old+(ratio>1?two_rc*(M_PI_2):two_rc*asin(ratio));
+
+    // Assume errors in s dominated by errors in R 
+    double inv_var=1./var;
+    sumv+=inv_var;
+    sumy+=sperp*inv_var;
+    sumx+=z*inv_var;
+    sumxx+=z*z*inv_var;
+    sumxy+=sperp*z*inv_var;
+    
+    // Save the current x and y coordinates
+    oldxy=points[k]->xy;
+  }
+  // last point is at "vertex" --> give it a large error...
+  sperp+=oldxy.Mod()/two_rc;
+  double inv_var=0.01;
+  sumv+=inv_var;
+  sumy+=sperp*inv_var;
+  sumx+=TARGET_Z*inv_var;
+  sumxx+=TARGET_Z*TARGET_Z*inv_var;
+  sumxy+=sperp*TARGET_Z*inv_var;
+  
+  Delta=sumv*sumxx-sumx*sumx;
+  double denom=sumv*sumxy-sumy*sumx;
+  if (fabs(Delta)>EPS && fabs(denom)>EPS){
+    // Track parameters z0 and tan(lambda)
+    tanl=-Delta/denom; 
+    // Vertex position
+    sperp-=sperp_old; 
+    zvertex=zlast-tanl*sperp;
+
+    return NOERROR;
+  }
+
+  return VALUE_OUT_OF_RANGE;
+}
+
 // Simple least squares circle fit forcing the circle to go through (0,0)
-jerror_t DFDCSegment_factory::CircleFit(vector<const DFDCPseudo *>points){  
+jerror_t DFDCSegment_factory::CircleFit(vector<const DFDCPseudo *>&points){  
   double alpha=0.0, beta=0.0, gamma=0.0, deltax=0.0, deltay=0.0;
   // Loop over hits to calculate alpha, beta, gamma, and delta
   for(unsigned int i=0;i<points.size();i++){
@@ -881,6 +945,31 @@ jerror_t DFDCSegment_factory::CircleFit(vector<const DFDCPseudo *>points){
   rc = sqrt(xc*xc + yc*yc);
 
   return NOERROR;
+}
+
+// Put fit results into the segment 
+void DFDCSegment_factory::FillSegmentData(DFDCSegment *segment){
+  // the particle's charge
+  double charge=RotationSenseToCharge*rotation_sense;
+
+  // Estimate for azimuthal angle
+  phi0=atan2(-xc,yc); 
+  if (rotation_sense<0) phi0+=M_PI;
+  
+  // Look for distance of closest approach nearest to target
+  D=-rotation_sense*rc-xc/sin(phi0);
+    
+  segment->q=charge; //charge 
+  segment->phi0=phi0;      // Phi
+  segment->D=D;       // D=distance of closest approach to origin   
+  segment->tanl=tanl;     // tan(lambda), lambda=dip angle
+  segment->z_vertex=zvertex;// z-position at closest approach to origin
+  segment->xc=xc;
+  segment->yc=yc;
+  segment->rc=rc;
+  segment->Phi1=Phi1;
+  segment->chisq=chisq;
+  segment->Ndof=Ndof;  
 }
 
 

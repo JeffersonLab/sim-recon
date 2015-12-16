@@ -283,6 +283,12 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		trigger().setL1a(triggers[i]->L1a_fired);
 		trigger().setL1b(triggers[i]->L1b_fired);
 		trigger().setL1c(triggers[i]->L1c_fired);
+
+        hddm_r::TriggerDataList data = trigger().addTriggerDatas(1);
+	    data().setEbcal(triggers[i]->Ebcal);
+		data().setEfcal(triggers[i]->Efcal);
+		data().setNschits(triggers[i]->Nschits);
+		data().setNtofhits(triggers[i]->Ntofhits);
 	}
 
 	// push any DDetectorMatches objects to the output record

@@ -37,7 +37,7 @@ jerror_t DPSPair_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DPSPair_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DPSPair_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
   return NOERROR;
 }
@@ -45,7 +45,7 @@ jerror_t DPSPair_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DPSPair_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DPSPair_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
   // get fine pair spectrometer hits
   vector<const DPSHit*> hits;
@@ -55,7 +55,7 @@ jerror_t DPSPair_factory::evnt(JEventLoop *loop, int eventnumber)
   if (hits.size()>1) {
     for (unsigned int i=0; i < hits.size()-1; i++) {
       for (unsigned int j=i+1; j < hits.size(); j++) {
-	if (fabs(hits[i]->arm-hits[j]->arm)==1&&fabs(hits[i]->t-hits[j]->t)<DELTA_T_PAIR_MAX) {
+	if (std::abs(hits[i]->arm-hits[j]->arm)==1&&fabs(hits[i]->t-hits[j]->t)<DELTA_T_PAIR_MAX) {
 	  if (hits[i]->arm==0) {
 	    ee.first = hits[i];
 	    ee.second = hits[j];

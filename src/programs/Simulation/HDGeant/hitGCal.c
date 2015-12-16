@@ -45,14 +45,14 @@ void hitGapEMcal (float xin[4], float xout[4],
                       float pin[5], float pout[5], float dEsum,
                       int track, int stack, int history, int ipart)
 {
-   float x[3], t;
+   //float x[3], t;
    float xgcal[3];
    float zeroHat[] = {0,0,0};
 
-   x[0] = (xin[0] + xout[0])/2;
-   x[1] = (xin[1] + xout[1])/2;
-   x[2] = (xin[2] + xout[2])/2;
-   t    = (xin[3] + xout[3])/2 * 1e9;
+   //x[0] = (xin[0] + xout[0])/2;
+   //x[1] = (xin[1] + xout[1])/2;
+   //x[2] = (xin[2] + xout[2])/2;
+   float t    = (xin[3] + xout[3])/2 * 1e9;
    transformCoord(zeroHat,"local",xgcal,"gCAL");
 
    /* post the hit to the truth tree */
@@ -126,7 +126,8 @@ void hitGapEMcal (float xin[4], float xout[4],
       {
          hits->in[nhit].t =
                        (hits->in[nhit].t * hits->in[nhit].E + tcorr*dEcorr)
-                     / (hits->in[nhit].E += dEcorr);
+                     / (hits->in[nhit].E + dEcorr);
+			hits->in[nhit].E += dEcorr;
       }
       else if (nhit < MAX_HITS)         /* create new hit */
       {
@@ -206,10 +207,6 @@ s_GapEMcal_t* pickGapEMcal ()
             box->gcalCells->mult++;
          }
          else if (hits != HDDM_NULL)
-         {
-            FREE(hits);
-         }
-         if (hits != HDDM_NULL)
          {
             FREE(hits);
          }

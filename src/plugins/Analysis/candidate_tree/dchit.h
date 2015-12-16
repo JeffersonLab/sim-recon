@@ -15,7 +15,7 @@
 class dchit:public TObject{
 
 	public:
-		int eventnumber;
+		uint64_t eventnumber;
 		int wire;
 		int layer;
 		float t;

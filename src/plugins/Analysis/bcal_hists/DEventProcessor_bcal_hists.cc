@@ -68,7 +68,7 @@ jerror_t DEventProcessor_bcal_hists::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_bcal_hists::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t DEventProcessor_bcal_hists::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -76,7 +76,7 @@ jerror_t DEventProcessor_bcal_hists::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DBCALShower*> showers;
 	vector<const DFCALCluster*> fcal_showers;

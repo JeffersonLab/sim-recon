@@ -58,7 +58,7 @@ jerror_t DTrackCandidate_factory_StraightLine::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int runnumber)
+jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int32_t runnumber)
 {
   DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
   JCalibration *jcalib = dapp->GetJCalibration(runnumber);
@@ -80,6 +80,57 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
   jcalib->Get("CDC/cdc_resolution_parms", cdc_res_parms);
   CDC_RES_PAR1 = cdc_res_parms["res_par1"];
   CDC_RES_PAR2 = cdc_res_parms["res_par2"];
+
+  // Get the straw sag parameters from the database
+  max_sag.clear();
+  sag_phi_offset.clear();
+  unsigned int numstraws[28]={42,42,54,54,66,66,80,80,93,93,106,106,123,123,
+			      135,135,146,146,158,158,170,170,182,182,197,197,
+			      209,209};
+  unsigned int straw_count=0,ring_count=0;
+  if (jcalib->Get("CDC/sag_parameters", tvals)==false){
+    vector<double>temp,temp2;
+    for(unsigned int i=0; i<tvals.size(); i++){
+      map<string, double> &row = tvals[i];
+      
+      temp.push_back(row["offset"]);
+      temp2.push_back(row["phi"]);
+      
+      straw_count++;
+      if (straw_count==numstraws[ring_count]){
+	max_sag.push_back(temp);
+	sag_phi_offset.push_back(temp2);
+	temp.clear();
+	temp2.clear();
+	straw_count=0;
+	ring_count++;
+      }
+    }
+  }
+
+  if (jcalib->Get("CDC/drift_parameters::NoBField", tvals)==false){
+    map<string, double> &row = tvals[0]; //long drift side
+    long_drift_func[0][0]=row["a1"]; 
+    long_drift_func[0][1]=row["a2"];
+    long_drift_func[0][2]=row["a3"];  
+    long_drift_func[1][0]=row["b1"];
+    long_drift_func[1][1]=row["b2"];
+    long_drift_func[1][2]=row["b3"];
+    long_drift_func[2][0]=row["c1"];
+    long_drift_func[2][1]=row["c2"];
+    long_drift_func[2][2]=row["c3"];
+
+    row = tvals[1]; // short drift side
+    short_drift_func[0][0]=row["a1"];
+    short_drift_func[0][1]=row["a2"];
+    short_drift_func[0][2]=row["a3"];  
+    short_drift_func[1][0]=row["b1"];
+    short_drift_func[1][1]=row["b2"];
+    short_drift_func[1][2]=row["b3"];
+    short_drift_func[2][0]=row["c1"];
+    short_drift_func[2][1]=row["c2"];
+    short_drift_func[2][2]=row["c3"];
+  }
   
   COSMICS=false;
   gPARMS->SetDefaultParameter("TRKFIND:COSMICS",COSMICS);
@@ -118,7 +169,7 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
 //------------------
 // evnt
 //------------------
-jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
   vector<const DBCALShower*>bcal_showers;
   loop->Get(bcal_showers);
@@ -526,8 +577,19 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
       double tdrift=hits[cdc_index]->tdrift-trajectory[k].t;
       double dmeas=0.39; 
       if (timebased){
-	V=CDCDriftVariance(tdrift);
-	dmeas=CDCDriftDistance(tdrift);
+	V=CDCDriftVariance(tdrift);	
+	
+	double phi_d=diff.Phi();
+	double dphi=phi_d-origin.Phi();  
+	while (dphi>M_PI) dphi-=2*M_PI;
+	while (dphi<-M_PI) dphi+=2*M_PI;
+       
+	int ring_index=hits[cdc_index]->wire->ring-1;
+	int straw_index=hits[cdc_index]->wire->straw-1;
+	double dz=t*wdir.z();
+	double delta=max_sag[ring_index][straw_index]*(1.-dz*dz/5625.)
+	  *cos(phi_d + sag_phi_offset[ring_index][straw_index]);
+	dmeas=CDCDriftDistance(dphi,delta,tdrift);
       }
 
       // residual
@@ -684,16 +746,89 @@ double DTrackCandidate_factory_StraightLine::CDCDriftDistance(double t){
   return d;
 }
 
+// Convert time to distance for the cdc
+double DTrackCandidate_factory_StraightLine::CDCDriftDistance(double dphi, 
+							double delta,double t){
+  double d=0.;
+  if (t>0){
+    double f_0=0.;
+    double f_delta=0.;
+    
+    if (delta>0){
+      double a1=long_drift_func[0][0];
+      double a2=long_drift_func[0][1];
+      double b1=long_drift_func[1][0];
+      double b2=long_drift_func[1][1];
+      double c1=long_drift_func[2][0];
+      double c2=long_drift_func[2][1];
+      double c3=long_drift_func[2][2];
+
+      // use "long side" functional form
+      double my_t=0.001*t;
+      double sqrt_t=sqrt(my_t);
+      double t3=my_t*my_t*my_t;
+      double delta_mag=fabs(delta);
+      f_delta=(a1+a2*delta_mag)*sqrt_t+(b1+b2*delta_mag)*my_t
+	+(c1+c2*delta_mag+c3*delta*delta)*t3;
+      f_0=a1*sqrt_t+b1*my_t+c1*t3;
+    }
+    else{
+      double my_t=0.001*t;
+      double sqrt_t=sqrt(my_t);
+      double delta_mag=fabs(delta);
+
+      // use "short side" functional form
+      double a1=short_drift_func[0][0];
+      double a2=short_drift_func[0][1];
+      double a3=short_drift_func[0][2];
+      double b1=short_drift_func[1][0];
+      double b2=short_drift_func[1][1];
+      double b3=short_drift_func[1][2];
+      
+      double delta_sq=delta*delta;
+      f_delta= (a1+a2*delta_mag+a3*delta_sq)*sqrt_t
+	+(b1+b2*delta_mag+b3*delta_sq)*my_t;
+      f_0=a1*sqrt_t+b1*my_t;
+    }
+    
+    unsigned int max_index=cdc_drift_table.size()-1;
+    if (t>cdc_drift_table[max_index]){
+      //_DBG_ << "t: " << t <<" d " << f_delta <<endl;
+      d=f_delta;
+
+      return d;
+    }
+    
+    // Drift time is within range of table -- interpolate...
+    unsigned int index=0;
+    index=Locate(cdc_drift_table,t);
+    double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
+    double frac=(t-cdc_drift_table[index])/dt;
+    double d_0=0.01*(double(index)+frac); 
+    
+    double P=0.;
+    double tcut=250.0; // ns
+    if (t<tcut) {
+      P=(tcut-t)/tcut;
+    }
+    d=f_delta*(d_0/f_0*P+1.-P);
+  }
+  return d;
+}
+
+
+
+
 // Smearing function derived from fitting residuals
 inline double DTrackCandidate_factory_StraightLine::CDCDriftVariance(double t){ 
   //  return 0.001*0.001;
   //if (t<0.) t=0.;
   
-  // double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
+  double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
   // sigma+=0.005;
   
   //sigma=0.08/(t+1.)+0.03;
-  double sigma=0.035;
+  //double sigma=0.035;
   
   return sigma*sigma;
 }

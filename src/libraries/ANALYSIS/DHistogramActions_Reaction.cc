@@ -31,6 +31,23 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 			locParticleROOTName = ParticleName_ROOT(locPID);
 			CreateAndChangeTo_Directory(locParticleName, locParticleName);
 
+			if(ParticleCharge(locPID) == 0)
+			{
+				//BCAL
+				CreateAndChangeTo_Directory("BCAL", "BCAL");
+				locHistName = "Beta";
+				locHistTitle =  string("BCAL ") + locParticleROOTName + string(" Candidates;#beta");
+				dHistMap_Beta[locPID][SYS_BCAL] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumBetaBins, dMinBeta, dMaxBeta);
+				gDirectory->cd("..");
+
+				//FCAL
+				CreateAndChangeTo_Directory("FCAL", "FCAL");
+				locHistName = "Beta";
+				locHistTitle =  string("FCAL ") + locParticleROOTName + string(" Candidates;#beta");
+				dHistMap_Beta[locPID][SYS_FCAL] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumBetaBins, dMinBeta, dMaxBeta);
+				gDirectory->cd("..");
+			}
+
 			//q = 0
 			if(locPID == Gamma)
 			{
@@ -254,15 +271,19 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 				gDirectory->cd("..");
 			}
 
-			// Overall Confidence Level
-			locHistName = "PIDConfidenceLevel";
-			locHistTitle = locParticleROOTName + string(" PID;PID Confidence Level");
-			dHistMap_PIDFOM[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumFOMBins, 0.0, 1.0);
+			//no FOM for massive neutrals
+			if((ParticleCharge(locPID) != 0) || (locPID == Gamma))
+			{
+				// Overall Confidence Level
+				locHistName = "PIDConfidenceLevel";
+				locHistTitle = locParticleROOTName + string(" PID;PID Confidence Level");
+				dHistMap_PIDFOM[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumFOMBins, 0.0, 1.0);
 
-			// P Vs Theta, PID FOM = NaN
-			locHistName = "PVsTheta_NaNPIDFOM";
-			locHistTitle = locParticleROOTName + string(", PID FOM = NaN;#theta#circ;p (GeV/c)");
-			dHistMap_PVsTheta_NaNPIDFOM[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+				// P Vs Theta, PID FOM = NaN
+				locHistName = "PVsTheta_NaNPIDFOM";
+				locHistTitle = locParticleROOTName + string(", PID FOM = NaN;#theta#circ;p (GeV/c)");
+				dHistMap_PVsTheta_NaNPIDFOM[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+			}
 
 			gDirectory->cd("..");
 		} //end of PID loop
@@ -437,8 +458,6 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DMCThrownMatching* locMCThrownMatching, const DEventRFBunch* locEventRFBunch)
 {
 	Particle_t locPID = locNeutralParticleHypothesis->PID();
-	if(dHistMap_PIDFOM.find(locPID) == dHistMap_PIDFOM.end())
-		return; //e.g. neutron
 
 	double locBeta_Timing = locNeutralParticleHypothesis->measuredBeta();
 	double locDeltaT = (locNeutralParticleHypothesis->t0() - locNeutralParticleHypothesis->time());
@@ -451,24 +470,22 @@ void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* l
 	unsigned int locTimeNDF = 0;
 	dParticleID->Calc_TimingChiSq(locNeutralParticleHypothesis, locTimeNDF, locTimePull);
 
+	DetectorSystem_t locSystem = locNeutralParticleHypothesis->t1_detector();
 	japp->RootWriteLock();
 	{
-		dHistMap_PIDFOM[locPID]->Fill(locNeutralParticleHypothesis->dFOM);
+		//Beta (good for all PIDs)
+		dHistMap_Beta[locPID][locSystem]->Fill(locBeta_Timing);
+		if(locPID != Gamma)
+		{
+			japp->RootUnLock();
+			return;
+		}
 
-		if(locNeutralParticleHypothesis->t1_detector() == SYS_BCAL)
-		{
-			dHistMap_BetaVsP[locPID][SYS_BCAL]->Fill(locP, locBeta_Timing);
-			dHistMap_DeltaTVsP[locPID][SYS_BCAL]->Fill(locP, locDeltaT);
-			dHistMap_TimePullVsP[locPID][SYS_BCAL]->Fill(locP, locTimePull);
-			dHistMap_TimeFOMVsP[locPID][SYS_BCAL]->Fill(locP, locNeutralParticleHypothesis->dFOM);
-		}
-		else if(locNeutralParticleHypothesis->t1_detector() == SYS_FCAL)
-		{
-			dHistMap_BetaVsP[locPID][SYS_FCAL]->Fill(locP, locBeta_Timing);
-			dHistMap_DeltaTVsP[locPID][SYS_FCAL]->Fill(locP, locDeltaT);
-			dHistMap_TimePullVsP[locPID][SYS_FCAL]->Fill(locP, locTimePull);
-			dHistMap_TimeFOMVsP[locPID][SYS_FCAL]->Fill(locP, locNeutralParticleHypothesis->dFOM);
-		}
+		dHistMap_PIDFOM[locPID]->Fill(locNeutralParticleHypothesis->dFOM);
+		dHistMap_BetaVsP[locPID][locSystem]->Fill(locP, locBeta_Timing);
+		dHistMap_DeltaTVsP[locPID][locSystem]->Fill(locP, locDeltaT);
+		dHistMap_TimePullVsP[locPID][locSystem]->Fill(locP, locTimePull);
+		dHistMap_TimeFOMVsP[locPID][locSystem]->Fill(locP, locNeutralParticleHypothesis->dFOM);
 
 		pair<Particle_t, Particle_t> locPIDPair(locPID, Unknown); //default unless matched
 		if(locMCThrown != NULL) //else bogus track (not matched to any thrown tracks)
