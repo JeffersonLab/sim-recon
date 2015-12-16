@@ -26,13 +26,17 @@ const char* JEventSourceGenerator_EVIO::Description(void)
 //---------------------------------
 double JEventSourceGenerator_EVIO::CheckOpenable(string source)
 {
-	// Test open the file and see if we can read a block
+	// First, check if the source starts with "ET:". If so,
+	// return 0.5 immediately. If it does not start with this,
+	// test open the file and see if we can read a block
 	// from it. If we can, then return 0.75 which will likely
 	// win us the right to open it. If we can't, but the file
 	// ends in ".evio" then return 0.01 which will win us
 	// the right to open it if no other source claims it. This
 	// will allow the program to print an appropriate error
 	// message/
+
+	if(source.find("ET:")==0) return 0.5;
 
 	HDEVIO *hdevio = new HDEVIO(source);
 	bool is_good_evio = false;
