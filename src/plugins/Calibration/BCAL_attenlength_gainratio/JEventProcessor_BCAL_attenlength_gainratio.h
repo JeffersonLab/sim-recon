@@ -28,10 +28,14 @@ class JEventProcessor_BCAL_attenlength_gainratio:public jana::JEventProcessor{
 		TH1I *hist_gainratio_err;
 		TH1I *hist_attenlength_relerr;
 		TH1I *hist_gainratio_relerr;
-		TH2F *hist2D_attenlength;
-		TH2F *hist2D_gainratio;
+		TH2F *hist2D_peakattenlength;
+		TH2F *hist2D_peakgainratio;
+		TH2F *hist2D_intattenlength;
+		TH2F *hist2D_intgainratio;
 
 		// Channel by channel histograms
+		TH2I *logpeakratiovsZ_all;
+		TH2I *logintratiovsZ_all;
 		TH2I *logpeakratiovsZ[nummodule][numlayer][numsector];
 		TH2I *logintratiovsZ[nummodule][numlayer][numsector];
 		TH2I *EvsZ[nummodule][numlayer][numsector];
