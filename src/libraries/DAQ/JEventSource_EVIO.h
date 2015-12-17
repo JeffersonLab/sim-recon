@@ -344,9 +344,10 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void AddSourceObjectsToCallStack(JEventLoop *loop, string className);
 		void AddEmulatedObjectsToCallStack(JEventLoop *loop, string caller, string callee);
 		void EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
-		void EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs, vector<JObject*> &pt_objs);
+		void EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs, vector<JObject*> &pt_objs, vector<JObject*> &cp_objs, vector<JObject*> &fp_objs);
 		void EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);
-		void EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);
+		void EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs, vector<JObject*> &cp_objs, vector<JObject*> &fp_objs);
+
 		jerror_t ParseEvents(ObjList *objs_ptr);
 		int32_t FindRunNumber(uint32_t *iptr);
 		uint64_t FindEventNumber(uint32_t *iptr);
