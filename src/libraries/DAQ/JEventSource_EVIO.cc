@@ -2413,10 +2413,15 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		const vector<uint16_t> &samplesvector = f125WindowRawData->samples;
 		uint32_t Nsamples_all = samplesvector.size(); // (was NADCBUFFER in Naomi's code)
 		if(Nsamples_all < (Nped_samples+Nsamples)){
-			char str[256];
-			sprintf(str, "Too few samples in Df125WindowRawData for pulse time extraction! Nsamples_all=%d, (Nped_samples+Nsamples)=%d", Nsamples_all, (Nped_samples+Nsamples));
-			jerr << str << endl;
-			throw JException(str);
+			static int Nwarn=0;
+			if(Nwarn<10){
+				char str[256];
+				sprintf(str, "Too few samples in Df125WindowRawData for pulse time extraction! Nsamples_all=%d, (Nped_samples+Nsamples)=%d", Nsamples_all, (Nped_samples+Nsamples));
+				jerr << str << endl;
+				if(++Nwarn==10) jerr << "--- Last Warning! ---" <<endl;
+			}
+			return;
+//			throw JException(str);
 		}
 		
 		bool found_hit = false;
