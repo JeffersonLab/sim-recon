@@ -1607,7 +1607,7 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
       // (e.g. CAEN1290) should have their own unique detID. We use detID of
       // zero for non-digitizing modules like CPUs nd TIDs even though potentially,
       // one could read data from these.
-      mc2codaType = ModuleStr2ModID(type);      
+//      mc2codaType = ModuleStr2ModID(type);      
       
    } else if (strcasecmp(xmlname,"channel") == 0) {
       

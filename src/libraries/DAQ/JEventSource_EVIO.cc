@@ -1785,11 +1785,11 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		for (uint32_t c_samp=1; c_samp<nsamples; c_samp++) {
 			if (samplesvector[c_samp] > max) {
 				max = samplesvector[c_samp];
-				sn_max = c_samp;
+//				sn_max = c_samp;
 			}
 			if (samplesvector[c_samp] < min) {
 				min = samplesvector[c_samp];
-				sn_min = c_samp;
+//				sn_min = c_samp;
 			}
 		}
 		// if no signal, don't process further
@@ -2115,11 +2115,11 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		for (uint32_t c_samp=1; c_samp<nsamples; c_samp++) {
 			if (samplesvector[c_samp] > max) {
 				max = samplesvector[c_samp];
-				sn_max = c_samp;
+//				sn_max = c_samp;
 			}
 			if (samplesvector[c_samp] < min) {
 				min = samplesvector[c_samp];
-				sn_min = c_samp;
+//				sn_min = c_samp;
 			}
 		}
 		// if no signal, don't process further
@@ -2156,7 +2156,7 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		for (uint32_t c_samp=0; c_samp<F250_NSPED; c_samp++) {
 			pedestalsum += samplesvector[c_samp];
 		}
-		uint32_t pedestalavg = pedestalsum /  F250_NSPED;
+		uint32_t pedestalavg = ( F250_NSPED==0 ? 0:(pedestalsum/F250_NSPED) );
 		VMIN = pedestalavg;
 
 		uint32_t time = 0;
@@ -2443,7 +2443,6 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 			//fa125_algos(rocid, samplesvector, fa125_algos_data);
  	    	fa125_algos(rocid, samplesvector, fa125_algos_data, F125_CDC_WS, F125_CDC_WE, F125_CDC_IE, F125_CDC_NP, F125_CDC_NP2, F125_CDC_PG, F125_CDC_H, F125_CDC_TH, F125_CDC_TL, F125_FDC_WS, F125_FDC_WE, F125_FDC_IE, F125_FDC_NP, F125_FDC_NP2, F125_FDC_PG, F125_FDC_H, F125_FDC_TH, F125_FDC_TL);
 			
-			found_hit      = true;
 			time           = fa125_algos_data.time;
 			quality_factor = fa125_algos_data.q_code;
 			pedestalavg    = fa125_algos_data.pedestal;
@@ -2474,11 +2473,11 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 			for (uint32_t c_samp=1; c_samp<Nsamples_all; c_samp++) {
 				if (samplesvector[c_samp] > max) {
 					max = samplesvector[c_samp];
-					sn_max = c_samp;
+//					sn_max = c_samp;
 				}
 				if (samplesvector[c_samp] < min) {
 					min = samplesvector[c_samp];
-					sn_min = c_samp;
+//					sn_min = c_samp;
 				}
 			}
 			// if no signal, don't process further
@@ -3283,6 +3282,78 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
 			
 			if(VERBOSE>6) evioout << "       DAQ parameter of type: 0x" << hex << ptype << dec << "  found with value: " << val << endl;
 			
+			// Create config object of correct type if needed and copy
+			// parameter value into it.
+			switch(ptype>>8){
+				
+				// f250
+				case 0x05:
+				if( !f250config ) f250config = new Df250Config(rocid, slot_mask);
+				switch(ptype){
+					case kPARAM250_NSA            : f250config->NSA              = val; break;
+					case kPARAM250_NSB            : f250config->NSB              = val; break;
+					case kPARAM250_NSA_NSB        : f250config->NSA_NSB          = val; break;
+					case kPARAM250_NPED           : f250config->NPED             = val; break;
+					default: _DBG_ << "UNKNOWN DAQ Config Parameter type: 0x" << hex << ptype << dec << endl;
+				}
+				break;
+
+				// f125
+				case 0x0F:
+				if( !f125config ) f125config = new Df125Config(rocid, slot_mask);
+				switch(ptype){
+					case kPARAM125_NSA            : f125config->NSA              = val; break;
+					case kPARAM125_NSB            : f125config->NSB              = val; break;
+					case kPARAM125_NSA_NSB        : f125config->NSA_NSB          = val; break;
+					case kPARAM125_NPED           : f125config->NPED             = val; break;
+					case kPARAM125_WINWIDTH       : f125config->WINWIDTH         = val; break;
+					case kPARAM125_PL             : f125config->PL               = val; break;
+					case kPARAM125_NW             : f125config->NW               = val; break;
+					case kPARAM125_NPK            : f125config->NPK              = val; break;
+					case kPARAM125_P1             : f125config->P1               = val; break;
+					case kPARAM125_P2             : f125config->P2               = val; break;
+					case kPARAM125_PG             : f125config->PG               = val; break;
+					case kPARAM125_IE             : f125config->IE               = val; break;
+					case kPARAM125_H              : f125config->H                = val; break;
+					case kPARAM125_TH             : f125config->TH               = val; break;
+					case kPARAM125_TL             : f125config->TL               = val; break;
+					case kPARAM125_IBIT           : f125config->IBIT             = val; break;
+					case kPARAM125_ABIT           : f125config->ABIT             = val; break;
+					case kPARAM125_PBIT           : f125config->PBIT             = val; break;
+					default: _DBG_ << "UNKNOWN DAQ Config Parameter type: 0x" << hex << ptype << dec << endl;
+				}
+				break;
+
+				// F1TDC
+				case 0x06:
+				if( !f1tdcconfig ) f1tdcconfig = new DF1TDCConfig(rocid, slot_mask);
+				switch(ptype){
+					case kPARAMF1_REFCNT          : f1tdcconfig->REFCNT          = val; break;
+					case kPARAMF1_TRIGWIN         : f1tdcconfig->TRIGWIN         = val; break;
+					case kPARAMF1_TRIGLAT         : f1tdcconfig->TRIGLAT         = val; break;
+					case kPARAMF1_HSDIV           : f1tdcconfig->HSDIV           = val; break;
+					case kPARAMF1_BINSIZE         : f1tdcconfig->BINSIZE         = val; break;
+					case kPARAMF1_REFCLKDIV       : f1tdcconfig->REFCLKDIV       = val; break;
+					default: _DBG_ << "UNKNOWN DAQ Config Parameter type: 0x" << hex << ptype << dec << endl;
+				}
+				break;
+
+				// caen1290
+				case 0x10:
+				if( !caen1290tdcconfig ) caen1290tdcconfig = new DCAEN1290TDCConfig(rocid, slot_mask);
+				switch(ptype){
+					case kPARAMCAEN1290_WINWIDTH  : caen1290tdcconfig->WINWIDTH  = val; break;
+					case kPARAMCAEN1290_WINOFFSET : caen1290tdcconfig->WINOFFSET = val; break;
+					default: _DBG_ << "UNKNOWN DAQ Config Parameter type: 0x" << hex << ptype << dec << endl;
+				}
+				break;
+
+				default:
+					_DBG_ << "Unknown module type: 0x" << hex << (ptype>>8) << endl;
+					exit(-1);
+			}
+
+#if 0
 			// Create config object of correct type if needed. (Only one type
 			// should be created per section!)
 			switch(ptype>>8){
@@ -3334,6 +3405,7 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
 				default:
 					_DBG_ << "UNKNOWN DAQ Config Parameter type: 0x" << hex << ptype << dec << endl;
 			}
+#endif
 			
 			iptr++;
 		}

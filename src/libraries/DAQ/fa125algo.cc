@@ -204,7 +204,7 @@ void cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t &pedestal, Int_t adc[], In
 
   for (i=0; i<NPED; i++) pedestal += adc[WINDOW_START-1-NPED+i];
 
-  pedestal = pedestal/NPED;   // Integer div is ok as fpga will do 2 rightshifts
+  pedestal = ( NPED==0 ? 0:(pedestal/NPED) );   // Integer div is ok as fpga will do 2 rightshifts
 
   threshold = pedestal + HIT_THRES;
 
@@ -234,7 +234,7 @@ void cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t &pedestal, Int_t adc[], In
       pedestal += adc[hitsample-PG-i];
     }
 
-    pedestal = pedestal/NPED2;
+    pedestal = ( NPED2==0 ? 0:(pedestal/NPED2) );
   }
 
 

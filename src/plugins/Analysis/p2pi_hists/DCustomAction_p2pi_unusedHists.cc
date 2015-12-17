@@ -608,8 +608,8 @@ void DCustomAction_p2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const D
 			
 		} // end loop over fcal hits
 
-		x9 = N9>0? x9/N9 : 0;
-		y9 = N9>0? y9/N9 : 0;
+//		x9 = N9>0? x9/N9 : 0;
+//		y9 = N9>0? y9/N9 : 0;
 		t9 = N9>0? t9/N9 : 0;
 		t9sigma = N9>0? sqrt(t9sq/N9 - t9*t9): 0;
 		

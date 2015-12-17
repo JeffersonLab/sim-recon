@@ -346,7 +346,7 @@ jerror_t JEventProcessor_CDC_drift::evnt(JEventLoop *eventLoop, uint64_t eventnu
 
 
 
-		previous = (uint32_t)(nentries/UPDATE_INTERVAL);
+//		previous = (uint32_t)(nentries/UPDATE_INTERVAL);
 
 
 
