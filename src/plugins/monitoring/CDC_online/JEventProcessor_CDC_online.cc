@@ -308,7 +308,6 @@ jerror_t JEventProcessor_CDC_online::evnt(JEventLoop *eventLoop, uint64_t eventn
       nsamples_pedestal = pi ? pi->nsamples_pedestal : 0;
 
       if ((nsamples_integral > 0) && (nsamples_pedestal > 0)) PED_SUB = kTRUE;
-      printf("pi found\n");
 
     } else if (i < (uint32_t)wrdvector.size()) { 
       windat = wrdvector[i];
@@ -317,7 +316,6 @@ jerror_t JEventProcessor_CDC_online::evnt(JEventLoop *eventLoop, uint64_t eventn
     //get amplitude from pulse peak in pulse pedestal
     digihit->GetSingle(pp);
     if (pp) a = pp->pulse_peak;
-    if (pp) printf("pp found\n");
 
     //get amplitude from CDCPulseData for new firmware
     digihit->GetSingle(cp);
