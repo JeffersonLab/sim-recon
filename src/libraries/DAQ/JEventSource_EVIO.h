@@ -72,6 +72,7 @@ typedef pair<int,int> tagNum;
 #include "DCODAEventInfo.h"
 #include "DCODAROCInfo.h"
 #include "DEPICSvalue.h"
+#include "DEventTag.h"
 
 extern set<uint32_t> ROCIDS_TO_PARSE;
 
@@ -213,6 +214,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		bool  PARSE_CAEN1290TDC;
 		bool  PARSE_CONFIG;
 		bool  PARSE_EPICS;
+		bool  PARSE_EVENTTAG;
 		bool  PARSE_TRIGGER;
 		bool  MAKE_DOM_TREE;
 		int   ET_STATION_NEVENTS;
@@ -342,9 +344,10 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void AddSourceObjectsToCallStack(JEventLoop *loop, string className);
 		void AddEmulatedObjectsToCallStack(JEventLoop *loop, string caller, string callee);
 		void EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
-		void EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs, vector<JObject*> &pt_objs);
+		void EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs, vector<JObject*> &pt_objs, vector<JObject*> &cp_objs, vector<JObject*> &fp_objs);
 		void EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);
-		void EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);
+		void EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs, vector<JObject*> &cp_objs, vector<JObject*> &fp_objs);
+
 		jerror_t ParseEvents(ObjList *objs_ptr);
 		int32_t FindRunNumber(uint32_t *iptr);
 		uint64_t FindEventNumber(uint32_t *iptr);
@@ -364,6 +367,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void ParseEPICSevent(evioDOMNodeP bankPtr, list<ObjList*> &events);
 #endif // HAVE_EVIO		
 		void ParseModuleConfiguration(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
+		void ParseEventTag(const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void Parsef125Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);

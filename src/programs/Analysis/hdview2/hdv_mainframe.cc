@@ -768,17 +768,14 @@ void hdv_mainframe::SetRange(void)
 	}else{
 		// define range in each direction in cm, radians
 		double r_width = 400.0/zoom_factor;
-		double phi_width = 2.0*M_PI/zoom_factor;
+		//double phi_width = 2.0*M_PI/zoom_factor;
 		double z_width = 2.0*r_width/zoom_factor;
 		double rlo = r0 - r_width/2.0;
 		double rhi = r0 + r_width/2.0;
-		double philo = phi0 - phi_width/2.0;
-		double phihi = phi0 + phi_width/2.0;
 		double zlo = z0 - z_width/2.0;
 		double zhi = z0 + z_width/2.0;
-		
-		philo = -0.2;
-		phihi = 2.0*M_PI+0.2;
+		double philo = -0.2;
+		double phihi = 2.0*M_PI+0.2;
 		
 		sideviewA->GetCanvas()->cd();
 		sideviewA->GetCanvas()->Range(zlo, rlo, zhi, rhi);

@@ -116,6 +116,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	PARSE_CAEN1290TDC = true;
 	PARSE_CONFIG = true;
 	PARSE_EPICS = true;
+	PARSE_EVENTTAG = true;
 	PARSE_TRIGGER = true;
 	BUFFER_SIZE = 20000000; // in bytes
 	ET_STATION_NEVENTS = 10;
@@ -193,6 +194,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:PARSE_CAEN1290TDC", PARSE_CAEN1290TDC, "Set this to 0 to disable parsing of data from CAEN 1290 TDC modules (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:PARSE_CONFIG", PARSE_CONFIG, "Set this to 0 to disable parsing of ROC configuration data in the data stream (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:PARSE_EPICS", PARSE_EPICS, "Set this to 0 to disable parsing of EPICS events from the data stream (for benchmarking/debugging)");
+		gPARMS->SetDefaultParameter("EVIO:PARSE_EVENTTAG", PARSE_EVENTTAG, "Set this to 0 to disable parsing of event tag data in the data stream (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:PARSE_TRIGGER", PARSE_TRIGGER, "Set this to 0 to disable parsing of the built trigger bank from CODA (for benchmarking/debugging)");
 
 		gPARMS->SetDefaultParameter("EVIO:BUFFER_SIZE", BUFFER_SIZE, "Size in bytes to allocate for holding a single EVIO event.");
@@ -349,6 +351,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	event_source_data_types.insert("DCODAEventInfo");
 	event_source_data_types.insert("DCODAROCInfo");
 	event_source_data_types.insert("DEPICSvalue");
+	event_source_data_types.insert("DEventTag");
 
 	// Read in optional module type translation map if it exists	
 	ReadOptionalModuleTypeTranslation();
@@ -1335,6 +1338,10 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	vector<JObject*> &f125_pp_objs  = hit_objs_by_type["Df125PulsePedestal"];
 	vector<JObject*> &f125_pi_objs  = hit_objs_by_type["Df125PulseIntegral"];
 
+        //include new f125 types objs
+	vector<JObject*> &f125_cp_objs  = hit_objs_by_type["Df125CDCPulse"];
+	vector<JObject*> &f125_fp_objs  = hit_objs_by_type["Df125FDCPulse"];
+
 	// Emulate PulseTime and PulsePedestal
 	// Emulation of pulse time and pulse pedestal are done at
 	// the same time since that's how the original firmware
@@ -1348,7 +1355,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 
 	// Repeat for f125 Pulse Time and Pulse Pedestal
 	if( (F125_PT_EMULATION_MODE != kEmulationNone) || (F125_PP_EMULATION_MODE != kEmulationNone) ){
-		EmulateDf125PulseTime(f125_wrd_objs, f125_pt_objs, f125_pp_objs);
+	        EmulateDf125PulseTime(f125_wrd_objs, f125_pt_objs, f125_pp_objs, f125_cp_objs, f125_fp_objs);
 	}
 
 	// Emulate PulseIntegral
@@ -1361,7 +1368,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 
 	// Repeat for f125 Pulse Integral
 	if(F125_PI_EMULATION_MODE != kEmulationNone){
-		EmulateDf125PulseIntegral(f125_wrd_objs, f125_pi_objs, f125_pt_objs);
+	        EmulateDf125PulseIntegral(f125_wrd_objs, f125_pi_objs, f125_pt_objs, f125_cp_objs, f125_fp_objs);
 	}
 
 	// Make PulseTime, PulsePedstal, and PulseIntegral objects associated objects of one another
@@ -1778,11 +1785,11 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		for (uint32_t c_samp=1; c_samp<nsamples; c_samp++) {
 			if (samplesvector[c_samp] > max) {
 				max = samplesvector[c_samp];
-				sn_max = c_samp;
+//				sn_max = c_samp;
 			}
 			if (samplesvector[c_samp] < min) {
 				min = samplesvector[c_samp];
-				sn_min = c_samp;
+//				sn_min = c_samp;
 			}
 		}
 		// if no signal, don't process further
@@ -1852,15 +1859,9 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 // EmulateDf125PulseIntegral
 //----------------
 void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs,
-						  vector<JObject*> &pt_objs)
+						  vector<JObject*> &pt_objs, 
+						  vector<JObject*> &cp_objs, vector<JObject*> &fp_objs)
 {
-	if(VERBOSE>3) evioout << " EmulateDf125PulseIntegral has been disabled" <<endl;
-    return;
-
-    // total cop-out by Naomi who cannot see how to make this not crash (even before the code was modified)
-    //
-    // The code below has been modified to emulate new fa125-style PI for the CDC.
-
 	if(VERBOSE>3) evioout << " Entering  EmulateDf125PulseIntegral ..." <<endl;
 
 	// If emulation is being forced, then delete any existing objects.
@@ -1909,6 +1910,32 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 					}
 				}
 			}
+
+			//switch off PI emulation if CDC pulse time objects are found
+			for(uint32_t j=0; j<cp_objs.size(); j++){
+				Df125CDCPulse *cp = (Df125CDCPulse*)cp_objs[j];
+				if(cp->rocid == wrd->rocid){
+					if(cp->slot == wrd->slot){
+						if(cp->channel == wrd->channel){
+							emulate_pi = false;
+							break;
+						}
+					}
+				}
+			}
+
+			//switch off PI emulation if FDC pulse time objects are found
+			for(uint32_t j=0; j<fp_objs.size(); j++){
+				Df125FDCPulse *fp = (Df125FDCPulse*)fp_objs[j];
+				if(fp->rocid == wrd->rocid){
+					if(fp->slot == wrd->slot){
+						if(fp->channel == wrd->channel){
+							emulate_pi = false;
+							break;
+						}
+					}
+				}
+			}
 		}
 		
 		// If we're not emulating a pulse integral here then no need to proceed.
@@ -1928,13 +1955,13 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 			}
 		}
 		
-		// // Choose value of NSA and NSB based on rocid (eechh!)
-		// uint32_t NSA = F125_NSA;
-		// uint32_t NSB = F125_NSB;
-		// if(wrd->rocid>=24 && wrd->rocid<=28){
-		// 	NSA = F125_NSA_CDC;
-		// 	NSB = F125_NSB_CDC;
-		// }
+		// Choose value of NSA and NSB based on rocid (eechh!)
+		uint32_t NSA = F125_NSA;
+		uint32_t NSB = F125_NSB;
+		if(wrd->rocid>=24 && wrd->rocid<=28){
+			NSA = F125_NSA_CDC;
+		 	NSB = F125_NSB_CDC;
+		}
  
 		// Get a vector of the samples for this channel
 		const vector<uint16_t> &samplesvector = wrd->samples;
@@ -1944,37 +1971,22 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 		// loop over all samples to calculate integral
 		uint32_t nsamples_used = 0;
 
-		// uint32_t BinTC = T==NULL ? 0:(T->time >> 6);
-		// uint32_t StartSample = BinTC - NSB;
-		// if( NSB > BinTC) {
-		//   StartSample = 0;
-		// } 
-		// uint32_t EndSample = BinTC + NSA;
-		// if (EndSample>nsamples-1){
-		//   EndSample = nsamples;
-		// }
-
-        // skip this if no time info
-        if (!T) {
-          signalsum = 0;
-        } else if (!T->time) {
-          signalsum = 0;
-        } else {
-
-          // find sample containing time, time is now in units of sample/10
-	  	  uint32_t StartSample = (uint32_t)(0.1*T->time);
-
-          // CDC integration runs until NU samples before end of window (constant NU=20 in firmware)
-		  uint32_t EndSample = nsamples-20;
-
-  		  for (uint32_t c_samp=StartSample; c_samp<EndSample; c_samp++) {
+		uint32_t BinTC = T==NULL ? 0:(T->time >> 6);
+		uint32_t StartSample = BinTC - NSB;
+		if( NSB > BinTC) {
+		  StartSample = 0;
+		} 
+		uint32_t EndSample = BinTC + NSA;
+		if (EndSample>nsamples-1){
+		  EndSample = nsamples;
+		}
+		for (uint32_t c_samp=StartSample; c_samp<EndSample; c_samp++) {
 			signalsum += samplesvector[c_samp];
 			nsamples_used++;
-		  }
-        }
+		}
 		
-		// Apply sparsification threshold - T->t should be 0 if pulse is below threshold
-		// if(signalsum < F125_SPARSIFICATION_THRESHOLD) continue;
+		// Apply sparsification threshold
+		if(signalsum < F125_SPARSIFICATION_THRESHOLD) continue;
 		
 		// create new Df125PulseIntegral object
 		Df125PulseIntegral *myDf125PulseIntegral = new Df125PulseIntegral;
@@ -2103,11 +2115,11 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		for (uint32_t c_samp=1; c_samp<nsamples; c_samp++) {
 			if (samplesvector[c_samp] > max) {
 				max = samplesvector[c_samp];
-				sn_max = c_samp;
+//				sn_max = c_samp;
 			}
 			if (samplesvector[c_samp] < min) {
 				min = samplesvector[c_samp];
-				sn_min = c_samp;
+//				sn_min = c_samp;
 			}
 		}
 		// if no signal, don't process further
@@ -2144,7 +2156,7 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		for (uint32_t c_samp=0; c_samp<F250_NSPED; c_samp++) {
 			pedestalsum += samplesvector[c_samp];
 		}
-		uint32_t pedestalavg = pedestalsum /  F250_NSPED;
+		uint32_t pedestalavg = ( F250_NSPED==0 ? 0:(pedestalsum/F250_NSPED) );
 		VMIN = pedestalavg;
 
 		uint32_t time = 0;
@@ -2231,7 +2243,7 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 //----------------
 // EmulateDf125PulseTime
 //----------------
-void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs)
+void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs, vector<JObject*> &cp_objs, vector<JObject*> &fp_objs)
 {
 	/// Emulation of the f125 can be done in one of two ways. The first
 	/// implements an upsampling technique developed by Naomi Jarvis at
@@ -2317,6 +2329,32 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 					}
 				}
 			}
+
+			//switch off PT auto-emulation if CDCPulse is found
+			for(uint32_t j=0; j<cp_objs.size(); j++){
+				Df125CDCPulse *cp = (Df125CDCPulse*)cp_objs[j];
+				if(cp->rocid == f125WindowRawData->rocid){
+					if(cp->slot == f125WindowRawData->slot){
+						if(cp->channel == f125WindowRawData->channel){
+							emulate_pt = false;
+							break;
+						}
+					}
+				}
+			}
+
+			//switch off PT auto-emulation if FDCPulse is found
+			for(uint32_t j=0; j<fp_objs.size(); j++){
+				Df125FDCPulse *fp = (Df125FDCPulse*)fp_objs[j];
+				if(fp->rocid == f125WindowRawData->rocid){
+					if(fp->slot == f125WindowRawData->slot){
+						if(fp->channel == f125WindowRawData->channel){
+							emulate_pt = false;
+							break;
+						}
+					}
+				}
+			}
 		}
 
 		// Ditto for pulse pedestal objects
@@ -2340,6 +2378,33 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 					}
 				}
 			}
+
+			//switch off PP auto-emulation if CDCPulse is found
+			for(uint32_t j=0; j<cp_objs.size(); j++){
+				Df125CDCPulse *cp = (Df125CDCPulse*)cp_objs[j];
+				if(cp->rocid == f125WindowRawData->rocid){
+					if(cp->slot == f125WindowRawData->slot){
+						if(cp->channel == f125WindowRawData->channel){
+							emulate_pp = false;
+							break;
+						}
+					}
+				}
+			}
+
+			//switch off PP auto-emulation if FDCPulse is found
+			for(uint32_t j=0; j<fp_objs.size(); j++){
+				Df125FDCPulse *fp = (Df125FDCPulse*)fp_objs[j];
+				if(fp->rocid == f125WindowRawData->rocid){
+					if(fp->slot == f125WindowRawData->slot){
+						if(fp->channel == f125WindowRawData->channel){
+							emulate_pp = false;
+							break;
+						}
+					}
+				}
+			}
+
 		}
 
 		int rocid = f125WindowRawData->rocid;
@@ -2348,10 +2413,15 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		const vector<uint16_t> &samplesvector = f125WindowRawData->samples;
 		uint32_t Nsamples_all = samplesvector.size(); // (was NADCBUFFER in Naomi's code)
 		if(Nsamples_all < (Nped_samples+Nsamples)){
-			char str[256];
-			sprintf(str, "Too few samples in Df125WindowRawData for pulse time extraction! Nsamples_all=%d, (Nped_samples+Nsamples)=%d", Nsamples_all, (Nped_samples+Nsamples));
-			jerr << str << endl;
-			throw JException(str);
+			static int Nwarn=0;
+			if(Nwarn<10){
+				char str[256];
+				sprintf(str, "Too few samples in Df125WindowRawData for pulse time extraction! Nsamples_all=%d, (Nped_samples+Nsamples)=%d", Nsamples_all, (Nped_samples+Nsamples));
+				jerr << str << endl;
+				if(++Nwarn==10) jerr << "--- Last Warning! ---" <<endl;
+			}
+			return;
+//			throw JException(str);
 		}
 		
 		bool found_hit = false;
@@ -2373,7 +2443,6 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 			//fa125_algos(rocid, samplesvector, fa125_algos_data);
  	    	fa125_algos(rocid, samplesvector, fa125_algos_data, F125_CDC_WS, F125_CDC_WE, F125_CDC_IE, F125_CDC_NP, F125_CDC_NP2, F125_CDC_PG, F125_CDC_H, F125_CDC_TH, F125_CDC_TL, F125_FDC_WS, F125_FDC_WE, F125_FDC_IE, F125_FDC_NP, F125_FDC_NP2, F125_FDC_PG, F125_FDC_H, F125_FDC_TH, F125_FDC_TL);
 			
-			found_hit      = true;
 			time           = fa125_algos_data.time;
 			quality_factor = fa125_algos_data.q_code;
 			pedestalavg    = fa125_algos_data.pedestal;
@@ -2404,11 +2473,11 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 			for (uint32_t c_samp=1; c_samp<Nsamples_all; c_samp++) {
 				if (samplesvector[c_samp] > max) {
 					max = samplesvector[c_samp];
-					sn_max = c_samp;
+//					sn_max = c_samp;
 				}
 				if (samplesvector[c_samp] < min) {
 					min = samplesvector[c_samp];
-					sn_min = c_samp;
+//					sn_min = c_samp;
 				}
 			}
 			// if no signal, don't process further
@@ -2860,7 +2929,19 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 				ParseBuiltTriggerBank(bankPtr, tmp_events);
 				if(VERBOSE>5) evioout << "     Merging objects in ParseEVIOEvent" << endl;
 				MergeObjLists(full_events, tmp_events);
+			
+			// Check if this is a DEventTag bank
+			}else if(bankPtr->tag == 0x0056){
+				const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+				if(vec){
+					const uint32_t *iptr = &(*vec)[0];
+					const uint32_t *iend = &(*vec)[vec->size()];
+					ParseEventTag(iptr, iend, tmp_events);
+					if(VERBOSE>5) evioout << "     Merging DEventTag objects in ParseEVIOEvent" << endl;
+					MergeObjLists(full_events, tmp_events);
+				}
 			}
+			
 			continue;  // if this wasn't a trigger bank, then it has the wrong lineage to be a data bank
 		}
 		if( physics_event_bank->getParent() != NULL ){
@@ -3201,6 +3282,78 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
 			
 			if(VERBOSE>6) evioout << "       DAQ parameter of type: 0x" << hex << ptype << dec << "  found with value: " << val << endl;
 			
+			// Create config object of correct type if needed and copy
+			// parameter value into it.
+			switch(ptype>>8){
+				
+				// f250
+				case 0x05:
+				if( !f250config ) f250config = new Df250Config(rocid, slot_mask);
+				switch(ptype){
+					case kPARAM250_NSA            : f250config->NSA              = val; break;
+					case kPARAM250_NSB            : f250config->NSB              = val; break;
+					case kPARAM250_NSA_NSB        : f250config->NSA_NSB          = val; break;
+					case kPARAM250_NPED           : f250config->NPED             = val; break;
+					default: _DBG_ << "UNKNOWN DAQ Config Parameter type: 0x" << hex << ptype << dec << endl;
+				}
+				break;
+
+				// f125
+				case 0x0F:
+				if( !f125config ) f125config = new Df125Config(rocid, slot_mask);
+				switch(ptype){
+					case kPARAM125_NSA            : f125config->NSA              = val; break;
+					case kPARAM125_NSB            : f125config->NSB              = val; break;
+					case kPARAM125_NSA_NSB        : f125config->NSA_NSB          = val; break;
+					case kPARAM125_NPED           : f125config->NPED             = val; break;
+					case kPARAM125_WINWIDTH       : f125config->WINWIDTH         = val; break;
+					case kPARAM125_PL             : f125config->PL               = val; break;
+					case kPARAM125_NW             : f125config->NW               = val; break;
+					case kPARAM125_NPK            : f125config->NPK              = val; break;
+					case kPARAM125_P1             : f125config->P1               = val; break;
+					case kPARAM125_P2             : f125config->P2               = val; break;
+					case kPARAM125_PG             : f125config->PG               = val; break;
+					case kPARAM125_IE             : f125config->IE               = val; break;
+					case kPARAM125_H              : f125config->H                = val; break;
+					case kPARAM125_TH             : f125config->TH               = val; break;
+					case kPARAM125_TL             : f125config->TL               = val; break;
+					case kPARAM125_IBIT           : f125config->IBIT             = val; break;
+					case kPARAM125_ABIT           : f125config->ABIT             = val; break;
+					case kPARAM125_PBIT           : f125config->PBIT             = val; break;
+					default: _DBG_ << "UNKNOWN DAQ Config Parameter type: 0x" << hex << ptype << dec << endl;
+				}
+				break;
+
+				// F1TDC
+				case 0x06:
+				if( !f1tdcconfig ) f1tdcconfig = new DF1TDCConfig(rocid, slot_mask);
+				switch(ptype){
+					case kPARAMF1_REFCNT          : f1tdcconfig->REFCNT          = val; break;
+					case kPARAMF1_TRIGWIN         : f1tdcconfig->TRIGWIN         = val; break;
+					case kPARAMF1_TRIGLAT         : f1tdcconfig->TRIGLAT         = val; break;
+					case kPARAMF1_HSDIV           : f1tdcconfig->HSDIV           = val; break;
+					case kPARAMF1_BINSIZE         : f1tdcconfig->BINSIZE         = val; break;
+					case kPARAMF1_REFCLKDIV       : f1tdcconfig->REFCLKDIV       = val; break;
+					default: _DBG_ << "UNKNOWN DAQ Config Parameter type: 0x" << hex << ptype << dec << endl;
+				}
+				break;
+
+				// caen1290
+				case 0x10:
+				if( !caen1290tdcconfig ) caen1290tdcconfig = new DCAEN1290TDCConfig(rocid, slot_mask);
+				switch(ptype){
+					case kPARAMCAEN1290_WINWIDTH  : caen1290tdcconfig->WINWIDTH  = val; break;
+					case kPARAMCAEN1290_WINOFFSET : caen1290tdcconfig->WINOFFSET = val; break;
+					default: _DBG_ << "UNKNOWN DAQ Config Parameter type: 0x" << hex << ptype << dec << endl;
+				}
+				break;
+
+				default:
+					_DBG_ << "Unknown module type: 0x" << hex << (ptype>>8) << endl;
+					exit(-1);
+			}
+
+#if 0
 			// Create config object of correct type if needed. (Only one type
 			// should be created per section!)
 			switch(ptype>>8){
@@ -3252,6 +3405,7 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
 				default:
 					_DBG_ << "UNKNOWN DAQ Config Parameter type: 0x" << hex << ptype << dec << endl;
 			}
+#endif
 			
 			iptr++;
 		}
@@ -3269,6 +3423,45 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
 	}
 
 	if(VERBOSE>5) evioout << "     Leaving ParseModuleConfiguration()" << endl;	
+}
+
+//----------------
+// ParseEventTag
+//----------------
+void JEventSource_EVIO::ParseEventTag(const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
+{
+	if(!PARSE_EVENTTAG){ iptr = iend; return; }
+
+	if(VERBOSE>5) evioout << "     Entering ParseEventTag()  (events.size()="<<events.size()<<")" << endl;
+
+	// Make sure there is one event in the event container
+	// and get pointer to it.
+	if(events.empty()) events.push_back(new ObjList());
+	ObjList *objs = *(events.begin());
+	
+	
+	DEventTag *etag = new DEventTag;
+	
+	// event_status
+	uint64_t lo = *iptr++;
+	uint64_t hi = *iptr++;
+	etag->event_status = (hi<<32) + lo;
+	
+	// L3_status
+	lo = *iptr++;
+	hi = *iptr++;
+	etag->L3_status = (hi<<32) + lo;
+	
+	// L3_decision
+	etag->L3_decision = (DL3Trigger::L3_decision_t)*iptr++;
+
+	// L3_algorithm
+	etag->L3_algorithm = *iptr++;
+	
+	objs->misc_objs.push_back(etag);
+	
+
+	if(VERBOSE>5) evioout << "     Leaving ParseEventTag()" << endl;	
 }
 
 //----------------

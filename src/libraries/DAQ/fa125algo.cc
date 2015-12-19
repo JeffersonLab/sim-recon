@@ -99,22 +99,34 @@ void fa125_algos(int rocid, vector<uint16_t> samples, fa125_algos_data_t &fa125_
 
 
 	if (samples.size()<=(uint32_t)d.WINDOW_END + 20) {
-        cout << "The number of samples passed into the fa125_algos routine (" << samples.size() << ") is less than the" << endl;
-		cout << "minimum required by the parameters in use (" << d.WINDOW_END+21 << "). " << endl;
-		cout << "Parameter WE (" << d.WINDOW_END << ") should be decreased to " << samples.size()-21 << " or less." << endl;
-		exit(-1);
+		static int Nwarn=0;
+		if(Nwarn<10){
+        	cout << "The number of samples passed into the fa125_algos routine (" << samples.size() << ") is less than the" << endl;
+			cout << "minimum required by the parameters in use (" << d.WINDOW_END+21 << "). " << endl;
+			cout << "Parameter WE (" << d.WINDOW_END << ") should be decreased to " << samples.size()-21 << " or less." << endl;
+			if(++Nwarn==10) cout <<" --- LAST WARNING! ---" << endl;
+		}
+		return;
 	}
 
 	if (d.NPED2 > d.NPED) {
-       cout << "Parameter NPED is too small or NPED2 is too large. " << endl;
-       cout << "NPED (" << d.NPED << ") should be increased or NPED2 (" << d.NPED2 << ") decreased until NPED >= NPED2." << endl;
-		exit(-1);
+		static int Nwarn=0;
+		if(Nwarn<10){
+			cout << "Parameter NPED is too small or NPED2 is too large. " << endl;
+			cout << "NPED (" << d.NPED << ") should be increased or NPED2 (" << d.NPED2 << ") decreased until NPED >= NPED2." << endl;
+			if(++Nwarn==10) cout <<" --- LAST WARNING! ---" << endl;
+		}
+		return;
 	}
 
     if (d.WINDOW_START < d.NPED) {
-      cout << "Parameter WS (" << d.WINDOW_START << ") is too small or NPED (" << d.NPED << ") too large." << endl;
-      cout << "WS should be >= NPED." << endl;
-      exit(-1);
+		static int Nwarn=0;
+		if(Nwarn<10){
+			cout << "Parameter WS (" << d.WINDOW_START << ") is too small or NPED (" << d.NPED << ") too large." << endl;
+			cout << "WS should be >= NPED." << endl;
+			if(++Nwarn==10) cout <<" --- LAST WARNING! ---" << endl;
+		}
+		return;
     }
 	
 	// Copy uint16_t samples into Int_t type array so we can pass it into the cdc_algos2
@@ -192,7 +204,7 @@ void cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t &pedestal, Int_t adc[], In
 
   for (i=0; i<NPED; i++) pedestal += adc[WINDOW_START-1-NPED+i];
 
-  pedestal = pedestal/NPED;   // Integer div is ok as fpga will do 2 rightshifts
+  pedestal = ( NPED==0 ? 0:(pedestal/NPED) );   // Integer div is ok as fpga will do 2 rightshifts
 
   threshold = pedestal + HIT_THRES;
 
@@ -222,7 +234,7 @@ void cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t &pedestal, Int_t adc[], In
       pedestal += adc[hitsample-PG-i];
     }
 
-    pedestal = pedestal/NPED2;
+    pedestal = ( NPED2==0 ? 0:(pedestal/NPED2) );
   }
 
 

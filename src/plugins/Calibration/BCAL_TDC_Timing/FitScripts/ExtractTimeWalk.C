@@ -1,11 +1,13 @@
 // Script to extract time-walk constants for the BCAL
 
 //Leave this global so the accesors don't need the pointer as an argument
-TFile *thisFile;
+
+namespace ExtractTimeWalk {
+  TFile *thisFile;
 
 // Accessor functions to grab histograms from our file
 // (Makes things easy with the HistogramTools fills)
-TH1I * Get1DHistogram(const char * plugin, const char * directoryName, const char * name, bool print = true){
+  TH1I * Get1DHistogram(const char * plugin, const char * directoryName, const char * name, bool print = true){
     TH1I * histogram;
     TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
     thisFile->GetObject(fullName, histogram);
@@ -14,9 +16,9 @@ TH1I * Get1DHistogram(const char * plugin, const char * directoryName, const cha
         return NULL;
     }
     return histogram;
-}
+  }
 
-TH2I * Get2DHistogram(const char * plugin, const char * directoryName, const char * name){
+  TH2I * Get2DHistogram(const char * plugin, const char * directoryName, const char * name){
     TH2I * histogram;
     TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
     histogram = thisFile->GetObject(fullName, histogram);
@@ -25,19 +27,20 @@ TH2I * Get2DHistogram(const char * plugin, const char * directoryName, const cha
         return NULL;
     }
     return histogram;
+  }
 }
 
 // Do the extraction of the actual constants
 void ExtractTimeWalk(TString filename = "hd_root.root"){
 
     // Open our input and output file
-    thisFile = TFile::Open(filename);
+    ExtractTimeWalk::thisFile = TFile::Open(filename);
     TFile *outputFile = TFile::Open("BCALTimewalk_Results.root", "RECREATE");
     outputFile->mkdir("Upstream");
     outputFile->mkdir("Downstream");
 
     // Check to make sure it is open
-    if (thisFile == 0) {
+    if (ExtractTimeWalk::thisFile == 0) {
         cout << "Unable to open file " << fileName.Data() << "...Exiting" << endl;
         return;
     }
@@ -79,10 +82,10 @@ void ExtractTimeWalk(TString filename = "hd_root.root"){
                 // For each M/L/S we have Upstream and downstream, lets grab them
                 // These histograms are created on the fly in the plugin, so there is a chance that they do not exist, in which case the pointer will be NULL
 
-                TH2I *h_UpstreamTW_E   = Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Upstream_Timewalk_NoCorrection_E", name);
-                TH2I *h_UpstreamTW_PP  = Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Upstream_Timewalk_NoCorrection_PP", name);
-                TH2I *h_DownstreamTW_E = Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Downstream_Timewalk_NoCorrection_E", name);
-                TH2I *h_DownstreamTW_PP = Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Downstream_Timewalk_NoCorrection_PP", name); 
+                TH2I *h_UpstreamTW_E   = ExtractTimeWalk::Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Upstream_Timewalk_NoCorrection_E", name);
+                TH2I *h_UpstreamTW_PP  = ExtractTimeWalk::Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Upstream_Timewalk_NoCorrection_PP", name);
+                TH2I *h_DownstreamTW_E = ExtractTimeWalk::Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Downstream_Timewalk_NoCorrection_E", name);
+                TH2I *h_DownstreamTW_PP = ExtractTimeWalk::Get2DHistogram ("BCAL_TDC_Timing", "BCAL_Downstream_Timewalk_NoCorrection_PP", name); 
 
                 // Use FitSlicesY routine to extract the mean of each x bin
                 TObjArray ySlicesUpstream;
@@ -142,7 +145,7 @@ void ExtractTimeWalk(TString filename = "hd_root.root"){
     }
     textFile.close();
     outputFile->Write();
-    thisFile->Close();
+    ExtractTimeWalk::thisFile->Close();
     return;
 }
 

@@ -185,7 +185,7 @@ void Process(unsigned int &NEvents, unsigned int &NEvents_read)
 
 	// Output file
 	cout<<" output file: "<<OUTFILENAME<<endl;
-	evioFileChannel ochan(OUTFILENAME, "w");
+	evioFileChannel ochan(OUTFILENAME, "w", BUFFER_SIZE);
 	ochan.open();
 	
 	// Loop over input files

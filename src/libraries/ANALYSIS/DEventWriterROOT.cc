@@ -1160,6 +1160,8 @@ void DEventWriterROOT::Compute_ThrownPIDInfo(const vector<const DMCThrown*>& loc
 	{
 		Particle_t locPID = locMCThrowns_FinalState[loc_i]->PID();
 		ULong64_t locPIDMultiplexID = Calc_ParticleMultiplexID(locPID);
+		if(locPIDMultiplexID == 0)
+			continue; //unrecognized PID!!!
 		unsigned int locCurrentNumParticles = (locNumPIDThrown_FinalState / locPIDMultiplexID) % 10;
 		if(locCurrentNumParticles != 9)
 			locNumPIDThrown_FinalState += locPIDMultiplexID;
@@ -1170,6 +1172,8 @@ void DEventWriterROOT::Compute_ThrownPIDInfo(const vector<const DMCThrown*>& loc
 	{
 		Particle_t locPID = locMCThrowns_Decaying[loc_i]->PID();
 		ULong64_t locPIDMultiplexID = Calc_ParticleMultiplexID(locPID);
+		if(locPIDMultiplexID == 0)
+			continue; //unrecognized PID!!!
 		if(locPID != Pi0)
 			locPIDThrown_Decaying |= locPIDMultiplexID; //bit-wise or
 		else //save pi0's as final state instead of decaying
