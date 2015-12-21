@@ -17,6 +17,8 @@ class DL3Trigger_factory:public jana::JFactory<DL3Trigger>{
 		~DL3Trigger_factory(){};
 
 		double FRACTION_TO_KEEP;
+		bool DO_WIRE_BASED_TRACKING;
+		bool DO_BCAL_CLUSTER;
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
