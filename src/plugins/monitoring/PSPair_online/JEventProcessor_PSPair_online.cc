@@ -281,7 +281,7 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
   double Ebh_PS = psGeom.getEhigh(0,NC_PS) + psGeom.getEhigh(1,NC_PS);
   double range = Ebh_PS-Ebl_PS;
   int NEb_PS = range/Ebw_PS-int(range/Ebw_PS) < 0.5 ? int(range/Ebw_PS) : int(range/Ebw_PS) + 1;
-  double desired_range = NEb_PS*Ebw_PS;
+//  double desired_range = NEb_PS*Ebw_PS;
 //  Ebh_PS = Ebl_PS + desired_range; // tweak the upper limit to obtain the desired constant bin width
   double Elows_PS[NEb_PS+1];
   for (int i=0;i<NEb_PS+1;i++) {
