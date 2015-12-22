@@ -4709,7 +4709,10 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 				tdc_num = ((*iptr)>>24) & 0x03;
 				event_id = ((*iptr)>>12) & 0x0fff;
 				bunch_id = (*iptr) & 0x0fff;
-				if(event_id != last_event_id) event_id_order.push_back(event_id);
+				if( find(event_id_order.begin(), event_id_order.end(), event_id) == event_id_order.end()){
+					event_id_order.push_back(event_id);
+				}
+				//if(event_id != last_event_id) event_id_order.push_back(event_id);
 				last_event_id = event_id;
 				if(VERBOSE>7) evioout << "         CAEN TDC TDC Header (tdc=" << tdc_num <<" , event id=" << event_id <<" , bunch id=" << bunch_id << ")" << endl;
 				break;
