@@ -4807,18 +4807,28 @@ DTrackCandidate_factory_CDC::DCDCSuperLayerSeed* DTrackCandidate_factory_CDC::DC
 		if(locLastAxialSuperLayerSeed->dSuperLayer == 7)
 			return locLastAxialSuperLayerSeed;
 	}
-	else if(!dSuperLayerSeeds_OuterStereo.empty())
+	if(!dSuperLayerSeeds_OuterStereo.empty())
 	{
-		if(dSuperLayerSeeds_OuterStereo[0].back() != NULL){
-			if(dSuperLayerSeeds_OuterStereo[0].back()->dSuperLayer > locLastAxialSuperLayerSeed->dSuperLayer)
-				return dSuperLayerSeeds_OuterStereo[0].back();
+		DCDCSuperLayerSeed* locLastOuterStereoSuperLayerSeed = dSuperLayerSeeds_OuterStereo[0].back();
+		if(locLastOuterStereoSuperLayerSeed != NULL){
+			if(locLastAxialSuperLayerSeed == NULL) return locLastOuterStereoSuperLayerSeed;
+			if(locLastOuterStereoSuperLayerSeed->dSuperLayer > locLastAxialSuperLayerSeed->dSuperLayer){
+				return locLastOuterStereoSuperLayerSeed;
+			}else{
+				return locLastAxialSuperLayerSeed;
+			}
 		}
 	}
-	else if(!dSuperLayerSeeds_InnerStereo.empty())
+	if(!dSuperLayerSeeds_InnerStereo.empty())
 	{
-		if(dSuperLayerSeeds_InnerStereo[0].back() != NULL){
-			if(dSuperLayerSeeds_InnerStereo[0].back()->dSuperLayer > locLastAxialSuperLayerSeed->dSuperLayer)
-				return dSuperLayerSeeds_InnerStereo[0].back();
+		DCDCSuperLayerSeed* locLastInnerStereoSuperLayerSeed = dSuperLayerSeeds_InnerStereo[0].back();
+		if(locLastInnerStereoSuperLayerSeed != NULL){
+			if(locLastAxialSuperLayerSeed == NULL) return locLastInnerStereoSuperLayerSeed;
+			if(locLastInnerStereoSuperLayerSeed->dSuperLayer > locLastAxialSuperLayerSeed->dSuperLayer){
+				return locLastInnerStereoSuperLayerSeed;
+			}else{
+				return locLastAxialSuperLayerSeed;
+			}
 		}
 	}
 	return locLastAxialSuperLayerSeed;
