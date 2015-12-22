@@ -533,7 +533,7 @@ jerror_t JEventProcessor_CDC_expert::evnt(JEventLoop *eventLoop, uint64_t eventn
         integ = integral - total_ped;
       }
              
-      straw_offset[ring] + straw;
+      // straw_offset[ring] + straw;
        
       if (PED_SUB) cdc_raw_int_vs_t->Fill(tr,integ);
       if (PED_SUB) cdc_raw_int_vs_t_ring[ring]->Fill(tr,integ);
