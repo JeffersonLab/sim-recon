@@ -14,7 +14,7 @@ jerror_t DReaction_factory_p2k_hists::init(void)
 {
 	// Make as many DReaction objects as desired
 	DReactionStep* locReactionStep = NULL;
-	DReaction* locReaction = new DReaction("p2k_pmiss"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
+	DReaction* locReaction = new DReaction("p2k_preco"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 
 	// DOCUMENTATION:
 	// ANALYSIS library: https://halldweb1.jlab.org/wiki/index.php/GlueX_Analysis_Software
@@ -22,7 +22,7 @@ jerror_t DReaction_factory_p2k_hists::init(void)
 
 	/**************************************************** p2k_preco Reaction Steps ****************************************************/
 
-	locReaction = new DReaction("p2k_preco"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
+	//locReaction = new DReaction("p2k_preco"); //needs to be a unique name for each DReaction object, CANNOT (!) be "Thrown"
 
 	// g, p -> k+, k- ,p
         locReactionStep = new DReactionStep();
