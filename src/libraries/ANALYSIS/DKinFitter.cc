@@ -2867,7 +2867,7 @@ void DKinFitter::Calc_dF(void)
 				Calc_dF_Time(locFIndex, locKinFitParticle, false);
 				if((locKinFitParticle == dRFMatchedBeamParticle) && locKinFitConstraint_Spacetime->Get_UseRFTimeFlag())
 				{
-					locFIndex = locKinFitConstraint_Vertex->Get_FIndex(NULL);
+					locFIndex = locKinFitConstraint_Spacetime->Get_FIndex(NULL);
 					if(dDebugLevel > 10)
 						cout << "DKinFitter: F index, locIsDecayingFlag = " << locFIndex << ", " << locIsDecayingFlag << endl;
 					Calc_dF_Time(locFIndex, dRFMatchedBeamParticle, true);
