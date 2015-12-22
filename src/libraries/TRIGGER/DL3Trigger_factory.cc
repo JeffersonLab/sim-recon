@@ -13,14 +13,21 @@ using namespace std;
 #include "DL3Trigger_factory.h"
 using namespace jana;
 
+#include <TRACKING/DTrackWireBased.h>
+#include <BCAL/DBCALCluster.h>
+
 //------------------
 // init
 //------------------
 jerror_t DL3Trigger_factory::init(void)
 {
 	FRACTION_TO_KEEP = 1.0;
+	DO_WIRE_BASED_TRACKING = false;
+	DO_BCAL_CLUSTER = false;
 
 	gPARMS->SetDefaultParameter("L3:FRACTION_TO_KEEP", FRACTION_TO_KEEP ,"Random Fraction of event L3 should keep. (Only used for debugging).");
+	gPARMS->SetDefaultParameter("L3:DO_WIRE_BASED_TRACKING", DO_WIRE_BASED_TRACKING ,"Activate wire-based tracking for every event");
+	gPARMS->SetDefaultParameter("L3:DO_BCAL_CLUSTER", DO_BCAL_CLUSTER ,"Activate BCAL clusters for every event");
 
 	return NOERROR;
 }
@@ -47,6 +54,16 @@ jerror_t DL3Trigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	if(FRACTION_TO_KEEP!=1.0){
 		double r = (double)random()/(double)RAND_MAX;
 		if(r > FRACTION_TO_KEEP) l3trig->L3_decision = DL3Trigger::kDISCARD_EVENT;
+	}
+	
+	if(DO_WIRE_BASED_TRACKING){
+		vector<const DTrackWireBased*> wbt;
+		loop->Get(wbt);
+	}
+
+	if(DO_BCAL_CLUSTER){
+		vector<const DBCALCluster*> bcalclusters;
+		loop->Get(bcalclusters);
 	}
 
 	return NOERROR;
