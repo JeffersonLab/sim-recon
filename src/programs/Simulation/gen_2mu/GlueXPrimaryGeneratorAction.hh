@@ -1,4 +1,14 @@
 //
+// WARNING!!!!
+//
+// This file was taken from the HDGeant4 project and has been
+// modified for use in this program. It may be out of sync with
+// that and has definitely had some of its original funtionality
+// disabled. You can compare this to the HDGeant4 version by looking
+// for the HDGeant4 project on github.com.
+//
+
+//
 // GlueXPrimaryGeneratorAction class header
 //
 // author: richard.t.jones at uconn.edu
