@@ -147,6 +147,7 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
 
 beamE0=12.0;
 beamEpeak = 9.0;
+beamEmin = 1.0;
 
       if (beamE0 == 0 || beamEpeak == 0) {
          cerr << "GlueXPrimaryGeneratorAction error: "
@@ -334,13 +335,11 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
       double x = exp(logx);
       double dNidx = fCobremsGenerator->Rate_dNidxdt2(x, 0);
       double dNidlogx = dNidx * x;
-_DBG_<<"dNidx="<<dNidx<<" x="<<x<<endl;
       fIncoherentPDFlogx.randvar.push_back(logx);
       fIncoherentPDFlogx.density.push_back(dNidlogx);
       fIncoherentPDFlogx.integral.push_back(sum);
       sum += (i < Ndim)? dNidlogx : 0;
    }
-_DBG_<<"sum="<<sum<<endl;
    for (int i=0; i <= Ndim; ++i) {
       fIncoherentPDFlogx.density[i] /= sum * dlogx;
       fIncoherentPDFlogx.integral[i] /= sum;
@@ -368,10 +367,9 @@ _DBG_<<"sum="<<sum<<endl;
    // These cutoffs should be set empirically, as low as possible
    // for good efficiency, but not too low so as to avoid excessive
    // warnings about Pcut violations.
-   fCoherentPDFx.Pcut = .001;
-   fIncoherentPDFlogx.Pcut = .001;
+   fCoherentPDFx.Pcut = .0001;
+   fIncoherentPDFlogx.Pcut = .02;
 
-_DBG_<<"fIncoherentPDFlogx.randvar.size()="<<fIncoherentPDFlogx.randvar.size()<<endl;   
    cout << "Completed Cobrems Importance Sampling PDFs." << endl;
 }
 //
@@ -668,8 +666,6 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(TVector3 &pgamma, TVector3 
    // with that applied to dNi/(dx dy) and then replace the fake variable y'
    // with the true y that was sampled as described above.
 
-_DBG__;
-
    double phiMosaic = twopi * RAND.Rndm();
    double rhoMosaic = sqrt(-2 * log(RAND.Rndm()));
    rhoMosaic *= fCobremsGenerator->getTargetCrystalMosaicSpread() * m*radian;
@@ -700,15 +696,13 @@ _DBG__;
    fCobremsGenerator->RotateTarget(thetax, thetay, thetaz);
 
    // Generate with importance sampling
-   double x, phi, theta2;
+   double x, phi, theta2=0;
    double polarization = 0;
    double Scoherent = fCoherentPDFx.Npassed / 
                       (fCoherentPDFx.Psum / fCoherentPDFx.Npassed);
    double Sincoherent = fIncoherentPDFlogx.Npassed /
                         (fIncoherentPDFlogx.Psum / fIncoherentPDFlogx.Npassed);
-_DBG__;
    if (Scoherent < Sincoherent) {
-_DBG__;
       while (true) {                             // try coherent generation
          double dNcdxPDF=0.0;
          double u = RAND.Rndm();
@@ -756,16 +750,14 @@ _DBG__;
             }
          }
          polarization = fCobremsGenerator->Polarization(x, theta2);
+		 break;
       }
-_DBG__;
    }
    else {
-_DBG__;
       while (true) {                           // try incoherent generation
          double dNidxdyPDF;
          double u = RAND.Rndm();
          for (unsigned int i=1; i < fIncoherentPDFlogx.randvar.size(); ++i) {
-_DBG_<<"i="<<i<<" u="<<u<<" fIncoherentPDFlogx.integral[i]="<<fIncoherentPDFlogx.integral[i]<<endl;
             if (u <= fIncoherentPDFlogx.integral[i]) {
                double logx0 = fIncoherentPDFlogx.randvar[i - 1];
                double logx1 = fIncoherentPDFlogx.randvar[i];
@@ -815,10 +807,9 @@ _DBG_<<"i="<<i<<" u="<<u<<" fIncoherentPDFlogx.integral[i]="<<fIncoherentPDFlogx
 
          phi = twopi * RAND.Rndm();
          polarization = 0;
+		 break;
       }
-_DBG__;
    }
-_DBG__;
 
    // Define the particle kinematics and polarization in lab coordinates
 //   G4ParticleDefinition *part = fParticleTable->FindParticle("gamma");

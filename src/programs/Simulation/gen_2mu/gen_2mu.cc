@@ -16,7 +16,7 @@ using namespace std;
 #include "GlueXPrimaryGeneratorAction.hh"
 
 TRandom *RAND = NULL;
-uint32_t MAXEVENTS = 10;
+uint32_t MAXEVENTS = 1000;
 double Z = 82.0;  // atomic number of target
 double A = 208.0; // atomic weight of target
 
@@ -33,8 +33,9 @@ int main( int argc, char* argv[] )
 
 	GlueXPrimaryGeneratorAction *photon_generator = new GlueXPrimaryGeneratorAction();
 
-
-	for(uint32_t i=0; i<MAXEVENTS; i++){
+	cout << "Event generation starting ..." << endl;
+	uint32_t Nevents_generated = 0;
+	for(Nevents_generated=0; Nevents_generated<MAXEVENTS; Nevents_generated++){
 	
 		// Generate beam photon
 		TVector3 pgamma, pol;
@@ -45,11 +46,18 @@ int main( int argc, char* argv[] )
 		GenerateMuPair(pgamma, pol, pmuplus, pmuminus);
 		
 		// Write event to file
+		
+		if(Nevents_generated%100 == 0){
+			cout << "  " << Nevents_generated << " events generated      \r";
+			cout. flush();
+		}
 	
 	}
 
 	if(photon_generator) delete photon_generator;
 	if(RAND) delete RAND;
+	
+	cout << Nevents_generated << " events generated Total." << endl;
   
 //	string  configfile("");
 //	string  outname("");
@@ -475,6 +483,8 @@ void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TL
 	double phi0=2.*pi*RAND->Rndm(); 
 	double EPlus=xPlus*Egam;
 	double EMinus=xMinus*Egam;
+
+// ----- HERE IS WHERE WE NEED TO ADD THE PHI DEPENDENCE ON PHOTON POLARIZATION -----
 
 	// mu+ mu- directions for gamma in z-direction
 	TVector3 MuPlusDirection  ( sin(thetaPlus) *cos(phi0+phiHalf),

@@ -175,7 +175,8 @@ class GlueXPrimaryGeneratorAction
       int Npassed;
 
       ImportanceSampler()
-       : Psum(0), Pcut(1), Pmax(0), Nfailed(0), Npassed(0) {}
+       : Psum(1.0), Pcut(1), Pmax(0), Nfailed(0), Npassed(1) {}
+//       : Psum(0), Pcut(1), Pmax(0), Nfailed(0), Npassed(0) {}
    };
 
  private:

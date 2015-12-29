@@ -98,7 +98,7 @@ CobremsGenerator::CobremsGenerator(double Emax_GeV, double Epeak_GeV)
    fTargetThetaz = 0; // radians
    setTargetCrystal("diamond");
    setCoherentEdge(Epeak_GeV);
-   fPhotonEnergyMin = 0.120; // GeV
+   fPhotonEnergyMin = 0.211; // GeV
    setPolarizedFlag(false);
    setCollimatedFlag(true);
 
@@ -771,15 +771,6 @@ double CobremsGenerator::Rate_dNidxdt2(double x, double theta2)
                         pow(2 - x, 2) / pow(1 + theta2, 2) ) *
                    ((fCollimatedFlag)? Acceptance(theta2) : 1);
 
-_DBG_<<"fTargetCrystal.nsites="<<fTargetCrystal.nsites<<" fTargetThickness="<<fTargetThickness<<" Z="<<Z<<endl;
-_DBG_<<"line2="<<(Z + zeta) * pow(alpha, 3) * pow(hbarc/(a*me), 2) / (a*x)<<endl;
-_DBG_<<"line3="<< (1 + pow(1 - x, 2)) - 4 * theta2 * (1 - x)<<endl;
-_DBG_<<"line4="<<pow(1 + theta2, 2)<<endl;
-_DBG_<<"line6="<<(log(MSchiff) - 2 * delta * Z / (Z + zeta))<<endl;
-_DBG_<<"line7="<<16 * theta2 * (1 - x) / pow(1 + theta2, 4)<<endl;
-_DBG_<<"line8="<<pow(2 - x, 2) / pow(1 + theta2, 2)<<endl;
-_DBG_<<"line9="<<((fCollimatedFlag)? Acceptance(theta2) : 1)<<endl;
-
    return dNidxdt2;
 }
 
@@ -874,7 +865,6 @@ double CobremsGenerator::Acceptance(double theta2)
          else {
             pu = exp(-u2 / (2 * var0)) / (2 * var0);
          }
-_DBG_<<"pu="<<pu<<" du2="<<du2<<endl;
          acceptance += pu * du2;
       }
    }
