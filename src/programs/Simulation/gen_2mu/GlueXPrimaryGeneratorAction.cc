@@ -79,12 +79,22 @@ GlueXPrimaryGeneratorAction::ImportanceSampler GlueXPrimaryGeneratorAction::fInc
 GlueXPrimaryGeneratorAction::ImportanceSampler GlueXPrimaryGeneratorAction::fIncoherentPDFy;
 double GlueXPrimaryGeneratorAction::fIncoherentPDFtheta02;
 
+int LAST_COBREMS_MECH=0; // 0=unknown, 1=Coherent, 2=Incoherent
+
 //G4Mutex GlueXPrimaryGeneratorAction::fMutex = G4MUTEX_INITIALIZER;
+
+//--------------------------------------------
+// GetMech
+//--------------------------------------------
+void GetMech(int &Ncoherent, int &Nincoherent)
+{
+	Ncoherent = GlueXPrimaryGeneratorAction::fCoherentPDFx.Npassed;
+	Nincoherent = GlueXPrimaryGeneratorAction::fIncoherentPDFlogx.Npassed;
+}
 
 //--------------------------------------------
 // GlueXPrimaryGeneratorAction (constructor)
 //--------------------------------------------
-
 GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
 {
 //   G4AutoLock barrier(&fMutex);
@@ -146,7 +156,7 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
       double radThick = (beampars[7] > 0)? beampars[7] : 20e-6;
 
 beamE0=12.0;
-beamEpeak = 9.0;
+beamEpeak = 6.0;
 beamEmin = 1.0;
 
       if (beamE0 == 0 || beamEpeak == 0) {
@@ -367,8 +377,8 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
    // These cutoffs should be set empirically, as low as possible
    // for good efficiency, but not too low so as to avoid excessive
    // warnings about Pcut violations.
-   fCoherentPDFx.Pcut = .0001;
-   fIncoherentPDFlogx.Pcut = .02;
+   fCoherentPDFx.Pcut = .0002;
+   fIncoherentPDFlogx.Pcut = .001;
 
    cout << "Completed Cobrems Importance Sampling PDFs." << endl;
 }
@@ -666,6 +676,8 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(TVector3 &pgamma, TVector3 
    // with that applied to dNi/(dx dy) and then replace the fake variable y'
    // with the true y that was sampled as described above.
 
+   LAST_COBREMS_MECH = 0;
+
    double phiMosaic = twopi * RAND.Rndm();
    double rhoMosaic = sqrt(-2 * log(RAND.Rndm()));
    rhoMosaic *= fCobremsGenerator->getTargetCrystalMosaicSpread() * m*radian;
@@ -752,6 +764,7 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(TVector3 &pgamma, TVector3 
          polarization = fCobremsGenerator->Polarization(x, theta2);
 		 break;
       }
+	  LAST_COBREMS_MECH = 1;
    }
    else {
       while (true) {                           // try incoherent generation
@@ -802,14 +815,15 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(TVector3 &pgamma, TVector3 
             ++fIncoherentPDFlogx.Nfailed;
             continue;
          }
-         ++fIncoherentPDFlogx.Psum += Pfactor;
+         fIncoherentPDFlogx.Psum += Pfactor;
          ++fIncoherentPDFlogx.Npassed;
 
          phi = twopi * RAND.Rndm();
          polarization = 0;
 		 break;
       }
-   }
+ 	  LAST_COBREMS_MECH = 2;
+  }
 
    // Define the particle kinematics and polarization in lab coordinates
 //   G4ParticleDefinition *part = fParticleTable->FindParticle("gamma");

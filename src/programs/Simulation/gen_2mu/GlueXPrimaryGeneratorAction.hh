@@ -179,10 +179,11 @@ class GlueXPrimaryGeneratorAction
 //       : Psum(0), Pcut(1), Pmax(0), Nfailed(0), Npassed(0) {}
    };
 
- private:
    static ImportanceSampler fCoherentPDFx; 
    static ImportanceSampler fIncoherentPDFlogx;
    static ImportanceSampler fIncoherentPDFy;
+
+ private:
 
    static double fIncoherentPDFtheta02;
 

@@ -2,13 +2,14 @@
 #include <stdint.h>
 
 #include <iostream>
-//#include <fstream>
+#include <fstream>
 #include <string>
 #include <vector>
 using namespace std;
 
+#include <HDDM/hddm_s.hpp>
 
-//#include "particleType.h"
+#include "particleType.h"
 
 #include <TLorentzVector.h>
 #include <TRandom2.h>
@@ -16,12 +17,22 @@ using namespace std;
 #include "GlueXPrimaryGeneratorAction.hh"
 
 TRandom *RAND = NULL;
-uint32_t MAXEVENTS = 1000;
+uint32_t MAXEVENTS = 10000;
 double Z = 82.0;  // atomic number of target
 double A = 208.0; // atomic weight of target
+bool HDDM_USE_COMPRESSION = false;
+bool HDDM_USE_INTEGRITY_CHECKS = false;
+string OUTPUT_FILENAME = "gen_2mu.hddm";
+int32_t RUN_NUMBER = 2;
 
+static ofstream *OFS = NULL;
+static hddm_s::ostream *FOUT = NULL;
+
+extern void GetMech(int &Ncoherent, int &Nincoherent);
+extern int LAST_COBREMS_MECH;
 
 void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TLorentzVector &pmuminus);
+void AddEventToHDDM(TVector3 &pgamma, TLorentzVector &pmuplus, TLorentzVector &pmuminus);
 
 
 //-----------------------
@@ -29,10 +40,52 @@ void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TL
 //-----------------------
 int main( int argc, char* argv[] )
 {
+	// Random number generator
 	RAND = new TRandom2(1);
 
+	// Coherent bremstrahlung photon generator
 	GlueXPrimaryGeneratorAction *photon_generator = new GlueXPrimaryGeneratorAction();
+	
+	// Open output HDDM file
+		// Output file
+	if( !FOUT ){
 
+		OFS = new std::ofstream(OUTPUT_FILENAME.c_str());
+		if (OFS->is_open()){
+			try{
+				FOUT = new hddm_s::ostream(*OFS);
+			}catch(exception &e){
+				cout << e.what() << endl;
+			}
+		}
+		if( !FOUT ){
+		  cout << " Error opening output file \"" << OUTPUT_FILENAME << "\"!" << endl;
+		  exit(-1);
+		}
+	}
+
+	cout << "Opened output file: " << OUTPUT_FILENAME << " 0x" << FOUT << ")" << endl;
+
+	// enable on-the-fly bzip2 compression on output stream
+	if (HDDM_USE_COMPRESSION == 0) {
+		cout << " HDDM compression disabled" << endl;
+	} else if (HDDM_USE_COMPRESSION == 1) {
+		cout << " Enabling bz2 compression of output HDDM file stream" << endl;
+		FOUT->setCompression(hddm_s::k_bz2_compression);
+	} else {
+		cout << " Enabling z compression of output HDDM file stream (default)" << endl;
+		FOUT->setCompression(hddm_s::k_z_compression);
+	}
+
+	// enable a CRC data integrity check at the end of each event record
+	if (HDDM_USE_INTEGRITY_CHECKS) {
+		cout << " Enabling CRC data integrity check in output HDDM file stream (default)" << endl;
+		FOUT->setIntegrityChecks(hddm_s::k_crc32_integrity);
+	} else {
+		cout << " HDDM integrity checks disabled" << endl;
+	}
+
+	// Start event processing
 	cout << "Event generation starting ..." << endl;
 	uint32_t Nevents_generated = 0;
 	for(Nevents_generated=0; Nevents_generated<MAXEVENTS; Nevents_generated++){
@@ -46,7 +99,9 @@ int main( int argc, char* argv[] )
 		GenerateMuPair(pgamma, pol, pmuplus, pmuminus);
 		
 		// Write event to file
+		AddEventToHDDM(pgamma, pmuplus, pmuminus);
 		
+		// Update ticker so user knows we're working
 		if(Nevents_generated%100 == 0){
 			cout << "  " << Nevents_generated << " events generated      \r";
 			cout. flush();
@@ -56,7 +111,18 @@ int main( int argc, char* argv[] )
 
 	if(photon_generator) delete photon_generator;
 	if(RAND) delete RAND;
+	if( FOUT && Nevents_generated>0) { // (program crashes if we close without writing any events!)
+		cout << "Closing file: " << OUTPUT_FILENAME << " (wrote " << Nevents_generated << " events)" << endl;
+		if(FOUT) delete FOUT;
+		if(OFS)  delete OFS;
+		FOUT = NULL;
+		OFS = NULL;
+	}
 	
+	int Ncoherent=0, Nincoherent=0;
+	GetMech(Ncoherent, Nincoherent);
+	cout << "  Ncoherent = " << Ncoherent << endl;
+	cout << "Nincoherent = " << Nincoherent << endl;
 	cout << Nevents_generated << " events generated Total." << endl;
   
 //	string  configfile("");
@@ -521,4 +587,100 @@ void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TL
 //	return G4VDiscreteProcess::PostStepDoIt( aTrack, aStep );
 }
 
+//-----------------------
+// AddEventToHDDM
+//-----------------------
+void AddEventToHDDM(TVector3 &pgamma, TLorentzVector &pmuplus, TLorentzVector &pmuminus)
+{
+	using namespace hddm_s;
+	static uint32_t event_number = 0;
+	int mech = LAST_COBREMS_MECH; // 0=unknown, 1=coherent, 2=incoherent
+
+	HDDM *hddmevent = new HDDM;
+	hddmevent->addPhysicsEvents(1);
+	PhysicsEvent &PE = hddmevent->getPhysicsEvent();
+	PE.setRunNo( RUN_NUMBER );
+	PE.setEventNo( ++event_number );
+
+	ReactionList reactions = PE.addReactions();
+	VertexList vertices = reactions().addVertices();
+	
+	// Add Beam
+	BeamList beam = reactions().addBeams();
+	beam().setType(Gamma);
+	MomentumList momenta = beam().addMomenta();
+	momenta().setE( pgamma.Mag() );
+	momenta().setPx( pgamma.x() );
+	momenta().setPy( pgamma.y() );
+	momenta().setPz( pgamma.z() );
+	PropertiesList properties = beam().addPropertiesList();
+	properties().setCharge( 0 );
+	properties().setMass( 0 );
+		
+	// Add Origin
+	TVector3 pos(0.0, 0.0, 1.0);
+	OriginList origins = vertices().addOrigins();
+	origins().setT(0.0);
+	origins().setVx(pos.x());
+	origins().setVy(pos.y());
+	origins().setVz(pos.z());
+	
+	// Add Products (particles)
+	ProductList products = vertices().addProducts(2);
+	ProductList::iterator it_product = products.begin();
+
+	// Product Mu+
+	Particle_t geanttype = MuonPlus;
+	TVector3 mom = pmuplus.Vect(); // convert back to units of GeV
+	double mass = ParticleMass(geanttype);
+	it_product->setDecayVertex(0);
+	it_product->setId(1);
+	it_product->setMech(mech);
+	it_product->setParentid(0);
+	it_product->setType(geanttype);
+	it_product->setPdgtype(PDGtype(geanttype));
+
+	// Momentum Mu+
+	momenta = it_product->addMomenta();
+	momenta().setE( sqrt(mom.Mag2() + mass*mass) );
+	momenta().setPx( mom.x() );
+	momenta().setPy( mom.y() );
+	momenta().setPz( mom.z() );
+
+	// Properties Mu+
+	properties = it_product->addPropertiesList();
+	properties().setCharge( ParticleCharge(geanttype) );
+	properties().setMass( mass );
+
+
+	it_product++;
+	
+
+	// Product Mu-
+	geanttype = MuonMinus;
+	mom = pmuminus.Vect(); // convert back to units of GeV
+	mass = ParticleMass(geanttype);
+	it_product->setDecayVertex(0);
+	it_product->setId(2);
+	it_product->setMech(mech);
+	it_product->setParentid(0);
+	it_product->setType(geanttype);
+	it_product->setPdgtype(PDGtype(geanttype));
+
+	// Momentum Mu-
+	momenta = it_product->addMomenta();
+	momenta().setE( sqrt(mom.Mag2() + mass*mass) );
+	momenta().setPx( mom.x() );
+	momenta().setPy( mom.y() );
+	momenta().setPz( mom.z() );
+
+	// Properties Mu-
+	properties = it_product->addPropertiesList();
+	properties().setCharge( ParticleCharge(geanttype) );
+	properties().setMass( mass );
+	
+	(*FOUT) << (*hddmevent);
+
+	delete hddmevent;
+}
 
