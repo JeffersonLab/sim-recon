@@ -30,6 +30,13 @@ using namespace std;
 #define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
 #endif
 
+// Defined in gen_2mu.cc
+extern double Ecoherent_peak;
+extern double Eelectron_beam;
+extern double Emin;
+extern bool   ONLY_COHERENT;
+extern bool   ONLY_INCOHERENT;
+
 static TRandom2 RAND(1);
 
 #include "GlueXPrimaryGeneratorAction.hh"
@@ -90,6 +97,10 @@ void GetMech(int &Ncoherent, int &Nincoherent)
 {
 	Ncoherent = GlueXPrimaryGeneratorAction::fCoherentPDFx.Npassed;
 	Nincoherent = GlueXPrimaryGeneratorAction::fIncoherentPDFlogx.Npassed;
+	
+	// Constructor initializes values to 1. Subtract that.
+	Ncoherent--;
+	Nincoherent--;
 }
 
 //--------------------------------------------
@@ -155,9 +166,10 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
       double beamEmit = (beampars[6] > 0)? beampars[6] : 2.5e-9;
       double radThick = (beampars[7] > 0)? beampars[7] : 20e-6;
 
-beamE0=12.0;
-beamEpeak = 6.0;
-beamEmin = 1.0;
+      // Overwrite with values from globals defined in gen_2mu.cc
+      beamE0=Eelectron_beam;
+      beamEpeak = Ecoherent_peak;
+      beamEmin = Emin;
 
       if (beamE0 == 0 || beamEpeak == 0) {
          cerr << "GlueXPrimaryGeneratorAction error: "
@@ -714,7 +726,13 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(TVector3 &pgamma, TVector3 
                       (fCoherentPDFx.Psum / fCoherentPDFx.Npassed);
    double Sincoherent = fIncoherentPDFlogx.Npassed /
                         (fIncoherentPDFlogx.Psum / fIncoherentPDFlogx.Npassed);
-   if (Scoherent < Sincoherent) {
+
+   // Allow user to force (in)coherent production
+   bool generate_coherent = Scoherent<Sincoherent;
+   if(ONLY_COHERENT) generate_coherent = true;
+   if(ONLY_INCOHERENT) generate_coherent = false;
+   
+   if (generate_coherent) {
       while (true) {                             // try coherent generation
          double dNcdxPDF=0.0;
          double u = RAND.Rndm();

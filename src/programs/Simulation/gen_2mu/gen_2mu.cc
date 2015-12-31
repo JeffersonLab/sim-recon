@@ -5,6 +5,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <sstream>
 using namespace std;
 
 #include <HDDM/hddm_s.hpp>
@@ -25,6 +26,13 @@ bool HDDM_USE_INTEGRITY_CHECKS = false;
 string OUTPUT_FILENAME = "gen_2mu.hddm";
 int32_t RUN_NUMBER = 2;
 
+double Ecoherent_peak = 6.0;
+double Eelectron_beam = 12.0;
+double Emin = 1.0;
+bool   ONLY_COHERENT = false;
+bool   ONLY_INCOHERENT = false;
+
+
 static ofstream *OFS = NULL;
 static hddm_s::ostream *FOUT = NULL;
 
@@ -33,13 +41,18 @@ extern int LAST_COBREMS_MECH;
 
 void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TLorentzVector &pmuminus);
 void AddEventToHDDM(TVector3 &pgamma, TLorentzVector &pmuplus, TLorentzVector &pmuminus);
+void Usage(string message="");
+void ParseCommandLineArguments(int narg, char *argv[]);
 
 
 //-----------------------
 // main
 //-----------------------
-int main( int argc, char* argv[] )
+int main( int narg, char* argv[] )
 {
+	// Parse the command line arguments
+	ParseCommandLineArguments(narg, argv);
+
 	// Random number generator
 	RAND = new TRandom2(1);
 
@@ -47,7 +60,6 @@ int main( int argc, char* argv[] )
 	GlueXPrimaryGeneratorAction *photon_generator = new GlueXPrimaryGeneratorAction();
 	
 	// Open output HDDM file
-		// Output file
 	if( !FOUT ){
 
 		OFS = new std::ofstream(OUTPUT_FILENAME.c_str());
@@ -109,6 +121,7 @@ int main( int argc, char* argv[] )
 	
 	}
 
+	// Delete objects (closing output file)
 	if(photon_generator) delete photon_generator;
 	if(RAND) delete RAND;
 	if( FOUT && Nevents_generated>0) { // (program crashes if we close without writing any events!)
@@ -125,267 +138,113 @@ int main( int argc, char* argv[] )
 	cout << "Nincoherent = " << Nincoherent << endl;
 	cout << Nevents_generated << " events generated Total." << endl;
   
-//	string  configfile("");
-//	string  outname("");
-//	string  hddmname("");
-//	
-//	bool diag = false;
-//	bool genFlat = false;
-//	
-//	// default upper and lower bounds 
-//	double lowMass = 0.2;
-//	double highMass = 2.0;
-//	
-//	double beamMaxE   = 12.0;
-//	double beamPeakE  = 9.0;
-//	double beamLowE   = 0.139*2;
-//	double beamHighE  = 12.0;
-//	
-//	int runNum = 9001;
-//	int seed = 0;
-//
-//	int nEvents = 10000;
-//	int batchSize = 10000;
-//	
-//	//parse command line:
-//	for (int i = 1; i < argc; i++){
-//		
-//		string arg(argv[i]);
-//		
-//		if (arg == "-c"){  
-//			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
-//			else  configfile = argv[++i]; }
-//		if (arg == "-o"){  
-//			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
-//			else  outname = argv[++i]; }
-//		if (arg == "-hd"){
-//			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
-//			else  hddmname = argv[++i]; }
-//		if (arg == "-l"){
-//			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
-//			else  lowMass = atof( argv[++i] ); }
-//		if (arg == "-u"){
-//			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
-//			else  highMass = atof( argv[++i] ); }
-//		if (arg == "-n"){  
-//			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
-//			else  nEvents = atoi( argv[++i] ); }
-//		if (arg == "-m"){
-//			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
-//			else  beamMaxE = atof( argv[++i] ); }
-//		if (arg == "-p"){
-//			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
-//			else  beamPeakE = atof( argv[++i] ); }
-//		if (arg == "-a"){
-//			if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
-//                        else  beamLowE = atof( argv[++i] ); }
-//                if (arg == "-b"){
-//                        if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
-//                        else  beamHighE = atof( argv[++i] ); }
-//		if (arg == "-r"){
-//                        if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
-//                        else  runNum = atoi( argv[++i] ); }
-//		if (arg == "-s"){
-//                        if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
-//                        else  seed = atoi( argv[++i] ); }
-//		if (arg == "-d"){
-//			diag = true; }
-//		if (arg == "-f"){
-//			genFlat = true; }
-//		if (arg == "-h"){
-//			cout << endl << " Usage for: " << argv[0] << endl << endl;
-//			cout << "\t -c  <file>\t Config file" << endl;
-//			cout << "\t -o  <name>\t ROOT file output name" << endl;
-//			cout << "\t -hd <name>\t HDDM file output name [optional]" << endl;
-//			cout << "\t -l  <value>\t Low edge of mass range (GeV) [optional]" << endl;
-//			cout << "\t -u  <value>\t Upper edge of mass range (GeV) [optional]" << endl;
-//			cout << "\t -n  <value>\t Minimum number of events to generate [optional]" << endl;
-//			cout << "\t -m  <value>\t Electron beam energy (or photon energy endpoint) [optional]" << endl;
-//                        cout << "\t -p  <value>\t Coherent peak photon energy [optional]" << endl;
-//                        cout << "\t -a  <value>\t Minimum photon energy to simulate events [optional]" << endl;
-//                        cout << "\t -b  <value>\t Maximum photon energy to simulate events [optional]" << endl;
-//			cout << "\t -r  <value>\t Run number assigned to generated events [optional]" << endl;
-//			cout << "\t -s  <value>\t Random number seed initialization [optional]" << endl;
-//			cout << "\t -f \t\t Generate flat in M(X) (no physics) [optional]" << endl;
-//			cout << "\t -d \t\t Plot only diagnostic histograms [optional]" << endl << endl;
-//			exit(1);
-//		}
-//	}
-//	
-//	if( configfile.size() == 0 || outname.size() == 0 ){
-//		cout << "No config file or output specificed:  run gen_2pi -h for help" << endl;
-//		exit(1);
-//	}
-//	
-//	// open config file and be sure only one reaction is specified
-//	ConfigFileParser parser( configfile );
-//	ConfigurationInfo* cfgInfo = parser.getConfigurationInfo();
-//	assert( cfgInfo->reactionList().size() == 1 );
-//	ReactionInfo* reaction = cfgInfo->reactionList()[0];
-//	
-//	// random number initialization (set to 0 by default)
-//	gRandom->SetSeed(seed);
-//
-//	// setup AmpToolsInterface
-//	AmpToolsInterface::registerAmplitude( TwoPiAngles() );
-//	AmpToolsInterface::registerAmplitude( BreitWigner() );
-//	AmpToolsInterface ati( cfgInfo, AmpToolsInterface::kMCGeneration );
-//	
-//	ProductionMechanism::Type type =
-//		( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
-//	
-//	// generate over a range of mass -- the daughters are two charged pions
-//	GammaPToXYP resProd( lowMass, highMass, 0.140, 0.140, beamMaxE, beamPeakE, beamLowE, beamHighE, type );
-//	
-//	// seed the distribution with a sum of noninterfering Breit-Wigners
-//	// we can easily compute the PDF for this and divide by that when
-//	// doing accept/reject -- improves efficiency if seeds are picked well
-//	
-//	if( !genFlat ){
-//		
-//		// the lines below should be tailored by the user for the particular desired
-//		// set of amplitudes -- doing so will improve efficiency.  Leaving as is
-//		// won't make MC incorrect, it just won't be as fast as it could be
-//		
-//		resProd.addResonance( 0.775, 0.146,  1.0 );
-//	}
-//	
-//	vector< int > pTypes;
-//	pTypes.push_back( Gamma );
-//	pTypes.push_back( Proton );
-//	pTypes.push_back( PiPlus );
-//	pTypes.push_back( PiMinus );
-//	
-//	HDDMDataWriter* hddmOut = NULL;
-//	if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname, runNum );
-//	ROOTDataWriter rootOut( outname );
-//	
-//	TFile* diagOut = new TFile( "gen_2pi_diagnostic.root", "recreate" );
-//	
-//	TH1F* mass = new TH1F( "M", "Resonance Mass", 180, lowMass, highMass );
-//	TH1F* massW = new TH1F( "M_W", "Weighted Resonance Mass", 180, lowMass, highMass );
-//	massW->Sumw2();
-//	TH1F* intenW = new TH1F( "intenW", "True PDF / Gen. PDF", 1000, 0, 100 );
-//	TH2F* intenWVsM = new TH2F( "intenWVsM", "Ratio vs. M", 100, lowMass, highMass, 1000, 0, 10 );
-//	
-//	TH2F* CosTheta_psi = new TH2F( "CosTheta_psi", "cos#theta vs. #psi", 180, -3.14, 3.14, 100, -1, 1);
-//	
-//	int eventCounter = 0;
-//	while( eventCounter < nEvents ){
-//		
-//		if( batchSize < 1E4 ){
-//			
-//			cout << "WARNING:  small batches could have batch-to-batch variations\n"
-//			     << "          due to different maximum intensities!" << endl;
-//		}
-//		
-//		cout << "Generating four-vectors..." << endl;
-//		
-//		ati.clearEvents();
-//		for( int i = 0; i < batchSize; ++i ){
-//			
-//			Kinematics* kin = resProd.generate();
-//			ati.loadEvent( kin, i, batchSize );
-//			delete kin;
-//		}
-//		
-//		cout << "Processing events..." << endl;
-//		
-//		// include factor of 1.5 to be safe in case we miss peak -- avoid
-//		// intensity calculation of we are generating flat data
-//		double maxInten = ( genFlat ? 1 : 1.5 * ati.processEvents( reaction->reactionName() ) );
-//		
-//		
-//		for( int i = 0; i < batchSize; ++i ){
-//			
-//			Kinematics* evt = ati.kinematics( i );
-//			TLorentzVector resonance( evt->particle( 2 ) + 
-//                                  evt->particle( 3 ) );
-//			
-//			double genWeight = evt->weight();
-//			
-//			// cannot ask for the intensity if we haven't called process events above
-//			double weightedInten = ( genFlat ? 1 : ati.intensity( i ) );
-//			
-//			if( !diag ){
-//				
-//				// obtain this by looking at the maximum value of intensity * genWeight
-//				double rand = gRandom->Uniform() * maxInten;
-//				
-//				if( weightedInten > rand || genFlat ){
-//					
-//					mass->Fill( resonance.M() );
-//					massW->Fill( resonance.M(), genWeight );
-//					
-//					intenW->Fill( weightedInten );
-//					intenWVsM->Fill( resonance.M(), weightedInten );
-//					
-//					// calculate angular variables
-//					TLorentzVector beam = evt->particle ( 0 );
-//					TLorentzVector recoil = evt->particle ( 1 );
-//					TLorentzVector p1 = evt->particle ( 2 );
-//					
-//					TLorentzRotation resonanceBoost( -resonance.BoostVector() );
-//					
-//					TLorentzVector beam_res = resonanceBoost * beam;
-//					TLorentzVector recoil_res = resonanceBoost * recoil;
-//					TLorentzVector p1_res = resonanceBoost * p1;
-//					
-//					TVector3 z = -recoil_res.Vect().Unit();
-//					TVector3 y = beam_res.Vect().Cross(z).Unit();
-//					TVector3 x = y.Cross(z).Unit();
-//					
-//					TVector3 angles(   (p1_res.Vect()).Dot(x),
-//							   (p1_res.Vect()).Dot(y),
-//							   (p1_res.Vect()).Dot(z) );
-//					
-//					GDouble CosTheta = angles.CosTheta();
-//					
-//					GDouble phi = angles.Phi();
-//					GDouble Phi = recoil.Vect().Phi();
-//					
-//					GDouble psi = phi - Phi;
-//					if(psi < -1*PI) psi += 2*PI;
-//					if(psi > PI) psi -= 2*PI;
-//					
-//					CosTheta_psi->Fill( psi, CosTheta);
-//					
-//					// we want to save events with weight 1
-//					evt->setWeight( 1.0 );
-//					
-//					if( hddmOut ) hddmOut->writeEvent( *evt, pTypes );
-//					rootOut.writeEvent( *evt );
-//					++eventCounter;
-//				}
-//			}
-//			else{
-//				
-//				mass->Fill( resonance.M() );
-//				massW->Fill( resonance.M(), genWeight );
-//				
-//				intenW->Fill( weightedInten );
-//				intenWVsM->Fill( resonance.M(), weightedInten );
-//				TLorentzVector recoil = evt->particle ( 1 );
-//				
-//				++eventCounter;
-//			}
-//			
-//			delete evt;
-//		}
-//		
-//		cout << eventCounter << " events were processed." << endl;
-//	}
-//	
-//	mass->Write();
-//	massW->Write();
-//	intenW->Write();
-//	intenWVsM->Write();
-//	CosTheta_psi->Write();
-//	diagOut->Close();
-//	
-//	if( hddmOut ) delete hddmOut;
-	
 	return 0;
+}
+
+//-----------------------
+// Usage
+//-----------------------
+void Usage(string message)
+{
+	cout << endl;
+	cout << "Usage:" << endl;
+	cout << "    gen_2mu [options]" << endl;
+	cout << endl;
+	cout << " -h           print this help message" << endl;
+	cout << " --help       print the long form help message" << endl;
+	cout << " -N events    number of events to generate" << endl;
+	cout << " -p Epeak     coherent peak energy (def="<<Ecoherent_peak<<")" << endl;
+	cout << " -b Ebeam     electron beam energy (def="<<Eelectron_beam<<")" << endl;
+	cout << " -min Emin    minimum photon energy to generate (def="<<Emin<<")" << endl;
+	cout << " -c           only generate coherent photons" << endl;
+	cout << " -i           only generate incoherent photons" << endl;
+	cout << " -pol \"X Y Z\" set photon beam polarization direction" << endl;
+	cout << endl;
+	if(message!=""){
+		cout << message << endl;
+		cout << endl;
+		exit(-1);
+	}
+
+	exit(0);
+}
+
+//-----------------------
+// ParseCommandLineArguments
+//-----------------------
+void ParseCommandLineArguments(int narg, char *argv[])
+{
+	for(int i=1; i<narg; i++){
+		string arg = argv[i];
+		string next = (i+1)<narg ? argv[i+1]:"";
+		bool has_arg = (next!="") && (next.find("-")!=0); // true if first character is not "-"
+		bool missing_arg = false; // flags if option requires second argument and it's missing
+		
+		if(arg=="-h"){
+			Usage();
+		}else if(arg=="--help"){
+			cout << "Sorry, no long-form help yet! (try \"-h\")" << endl;
+			exit(0);
+		}else if(arg=="-N"){
+			if(has_arg){
+				MAXEVENTS = atoi(next.c_str());
+				i++;
+			}else{
+				missing_arg = true;
+			}
+		}else if(arg=="-p"){
+			if(has_arg){
+				Ecoherent_peak = atof(next.c_str());
+				i++;
+			}else{
+				missing_arg = true;
+			}
+		}else if(arg=="-b"){
+			if(has_arg){
+				Eelectron_beam = atof(next.c_str());
+				i++;
+			}else{
+				missing_arg = true;
+			}
+		}else if(arg=="-min"){
+			if(has_arg){
+				Emin = atof(next.c_str());
+				i++;
+			}else{
+				missing_arg = true;
+			}
+		}else if(arg=="-c"){
+			ONLY_COHERENT = true;
+		}else if(arg=="-i"){
+			ONLY_INCOHERENT = true;
+		}else{
+			stringstream ss;
+			ss << "Unknown argument \""<<arg<<"\"!" << endl;
+			Usage(ss.str());
+		}
+
+		// Check if option required argument and is missing it
+		if(missing_arg){
+			stringstream ss;
+			ss << "Option \""<<arg<<"\" requires an argument!";
+			Usage(ss.str());
+		}
+	}
+	
+	if(ONLY_COHERENT && ONLY_INCOHERENT){
+		Usage("Cannot specify both -c and -i !");
+	}
+	
+	cout << endl;
+	cout << "---------------------------------------------" << endl;
+	cout << "     Nevents to generate: " << MAXEVENTS << endl;
+	cout << "    Electron beam energy: " << Eelectron_beam << " GeV" << endl;
+	cout << "           Coherent peak: " << Ecoherent_peak << " GeV" << endl;
+	cout << "   Minimum photon energy: " << Emin << " GeV" << endl;
+	cout <<"   Coherent photons only?: " << (ONLY_COHERENT ? "yes":"no") << endl;
+	cout <<" Incoherent photons only?: " << (ONLY_INCOHERENT ? "yes":"no") << endl;
+	cout << "---------------------------------------------" << endl;
+	cout << endl;
 }
 
 //-----------------------
@@ -393,6 +252,13 @@ int main( int argc, char* argv[] )
 //-----------------------
 void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TLorentzVector &pmuminus)
 {
+	/// This method was copied (and modified slightly) from the
+	/// GEANT 4.10.02 G4GammaConversionToMuons::PostStepDoIt method.x
+	/// Given an input photon momentum vector and polarization
+	/// vector (pgamma, and pol), it will generate a mu+mu-
+	/// pair, returning the 4-vectors in the pmuplus, pmuminus
+	/// TLorentzVector objects.
+
 //	aParticleChange.Initialize(aTrack);
 //	G4Material* aMaterial = aTrack.GetMaterial();
 //
