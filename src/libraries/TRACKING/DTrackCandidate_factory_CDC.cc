@@ -1067,6 +1067,7 @@ void DTrackCandidate_factory_CDC::Calc_SuperLayerPhiRange(DCDCSuperLayerSeed* lo
 	locSeedLastPhi = -9.9E9;
 	for(size_t loc_j = 0; loc_j < locSuperLayerSeed->dCDCRingSeeds.size(); ++loc_j)
 	{
+	  if (locSuperLayerSeed->dCDCRingSeeds[loc_j].hits.empty()) continue;
 		DCDCTrkHit *locFirstStrawHit = locSuperLayerSeed->dCDCRingSeeds[loc_j].hits.front();
 		DCDCTrkHit *locLastStrawHit = locSuperLayerSeed->dCDCRingSeeds[loc_j].hits.back();
 
