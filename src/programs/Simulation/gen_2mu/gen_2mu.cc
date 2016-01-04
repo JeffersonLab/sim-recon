@@ -14,6 +14,7 @@ using namespace std;
 
 #include <TLorentzVector.h>
 #include <TRandom2.h>
+#include <TF1.h>
 
 #include "GlueXPrimaryGeneratorAction.hh"
 
@@ -43,6 +44,11 @@ void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TL
 void AddEventToHDDM(TVector3 &pgamma, TLorentzVector &pmuplus, TLorentzVector &pmuminus);
 void Usage(string message="");
 void ParseCommandLineArguments(int narg, char *argv[]);
+
+#ifndef _DBG_
+#define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
+#define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
+#endif
 
 
 //-----------------------
@@ -415,23 +421,73 @@ void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TL
 	double phi0=2.*pi*RAND->Rndm(); 
 	double EPlus=xPlus*Egam;
 	double EMinus=xMinus*Egam;
+	
 
-// ----- HERE IS WHERE WE NEED TO ADD THE PHI DEPENDENCE ON PHOTON POLARIZATION -----
+	// ----------------------------------------------------
 
 	// mu+ mu- directions for gamma in z-direction
 	TVector3 MuPlusDirection  ( sin(thetaPlus) *cos(phi0+phiHalf),
 				   sin(thetaPlus)  *sin(phi0+phiHalf), cos(thetaPlus) );
 	TVector3 MuMinusDirection (-sin(thetaMinus)*cos(phi0-phiHalf),
 				  -sin(thetaMinus) *sin(phi0-phiHalf), cos(thetaMinus) );
-	// rotate to actual gamma direction
-	MuPlusDirection.RotateUz(GammaDirection);
-	MuMinusDirection.RotateUz(GammaDirection);
 	
 	double Pplus = sqrt(EPlus*EPlus - Mmuon*Mmuon);
 	double Pminus = sqrt(EMinus*EMinus - Mmuon*Mmuon);
 	
 	pmuplus.SetVectM(Pplus*MuPlusDirection, Mmuon);
 	pmuminus.SetVectM(Pminus*MuMinusDirection, Mmuon);
+	
+	//-- Add phi dependence on photon polarization --
+	//
+	// The polarization causes an azimuthal dependence of the mu+mu-
+	// system about the incident photon direction relative to the
+	// polarization vector that goes like:
+	//
+	//  ( 1 - 2cos(2phi) )
+	//
+	// see https://halldweb1.jlab.org/wiki/images/a/aa/20130418_cpp_rory.pdf
+	//
+	// To do this, we take the current phi angle of the mu+mu- system and assume
+	// it is evenly distributed over 0-2pi. We normalize this to get number from
+	// 0-1 and equate it with the normalized integral of the above function of phi.
+	// (The integral fraction method). This results in a transcendental equation
+	// though so we use the ROOT TF1::GetX() method to find the root of a function
+	// defined as the difference between the "random number" and the normalized
+	// integral.
+	//
+	//    f(phi) = s - (phi - 0.5*sin(2*phi))/2pi
+	//
+	//  where:
+	//      s = normalized phi from unpolarized (0 - 1)
+	//    phi = azimuthal angle of mu+mu- relative to polarization direction
+	//     pi = 3.14159......
+	//
+
+	if(LAST_COBREMS_MECH == 1){ // Only do this for coherently produced photons
+		static TF1 *normInt = NULL;
+		if(!normInt){
+			// par0 is random number "s"
+			// 0.1591549430919 = 1/2pi
+			normInt = new TF1("normInt", "[0] - (x - 0.5*sin(2.0*x))*0.1591549430919", 0.0, TMath::TwoPi());
+		}
+
+		// direction of mu+mu- system
+		TVector3 vmumu = (pmuplus+pmuminus).Vect();
+		double phi_init = vmumu.Phi();
+		double s = 0.5+phi_init/TMath::TwoPi(); // s is 0-1
+		normInt->SetParameter(0, s);
+		double deltaphi = normInt->GetX(0.0, 0.0, TMath::TwoPi()) - phi_init;
+		pmuplus.RotateZ(deltaphi);
+		pmuminus.RotateZ(deltaphi);
+	}
+
+	// Rotate to actual gamma direction.
+	// Note that for coherently produced photons, this introduces
+	// an effective phi shift in the phi_mumu distribution since
+	// the gamma direction is concentrated in one region of phi
+	// (roughly 35 degrees)
+	pmuplus.RotateUz(GammaDirection);
+	pmuminus.RotateUz(GammaDirection);
 	
 	
 //	aParticleChange.SetNumberOfSecondaries(2);
