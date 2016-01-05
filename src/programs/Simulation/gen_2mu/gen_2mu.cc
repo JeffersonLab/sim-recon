@@ -18,14 +18,17 @@ using namespace std;
 
 #include "GlueXPrimaryGeneratorAction.hh"
 
-TRandom *RAND = NULL;
+string OUTPUT_FILENAME = "gen_2mu.hddm";
+int32_t RUN_NUMBER = 2;
 uint32_t MAXEVENTS = 10000;
 double Z = 82.0;  // atomic number of target
 double A = 208.0; // atomic weight of target
 bool HDDM_USE_COMPRESSION = false;
 bool HDDM_USE_INTEGRITY_CHECKS = false;
-string OUTPUT_FILENAME = "gen_2mu.hddm";
-int32_t RUN_NUMBER = 2;
+bool USE_ELECTRON_BEAM_DIRECTION = false;
+double POLARIZATION_ANGLE = 0.0; // in degrees relative to x-axis
+
+TRandom *RAND = NULL;
 
 double Ecoherent_peak = 6.0;
 double Eelectron_beam = 12.0;
@@ -157,14 +160,18 @@ void Usage(string message)
 	cout << "    gen_2mu [options]" << endl;
 	cout << endl;
 	cout << " -h           print this help message" << endl;
-	cout << " --help       print the long form help message" << endl;
+	//cout << " --help       print the long form help message" << endl;
 	cout << " -N events    number of events to generate" << endl;
+	cout << " -o filename  set output filename (def. is gen_2mu.hddm)" << endl;
 	cout << " -p Epeak     coherent peak energy (def="<<Ecoherent_peak<<")" << endl;
 	cout << " -b Ebeam     electron beam energy (def="<<Eelectron_beam<<")" << endl;
 	cout << " -min Emin    minimum photon energy to generate (def="<<Emin<<")" << endl;
 	cout << " -c           only generate coherent photons" << endl;
 	cout << " -i           only generate incoherent photons" << endl;
-	cout << " -pol \"X Y Z\" set photon beam polarization direction" << endl;
+	cout << " -e           let electron direction define z (def." << endl;
+	cout << "              is for photon beam to define z)" << endl;
+	cout << " -pol phi     set photon beam polarization direction" << endl;
+	cout << "              relative to x-axis (def. is " << POLARIZATION_ANGLE << " degrees)" << endl; 
 	cout << endl;
 	if(message!=""){
 		cout << message << endl;
@@ -198,6 +205,13 @@ void ParseCommandLineArguments(int narg, char *argv[])
 			}else{
 				missing_arg = true;
 			}
+		}else if(arg=="-o"){
+			if(has_arg){
+				OUTPUT_FILENAME = next;
+				i++;
+			}else{
+				missing_arg = true;
+			}
 		}else if(arg=="-p"){
 			if(has_arg){
 				Ecoherent_peak = atof(next.c_str());
@@ -223,6 +237,8 @@ void ParseCommandLineArguments(int narg, char *argv[])
 			ONLY_COHERENT = true;
 		}else if(arg=="-i"){
 			ONLY_INCOHERENT = true;
+		}else if(arg=="-i"){
+			USE_ELECTRON_BEAM_DIRECTION = true;
 		}else{
 			stringstream ss;
 			ss << "Unknown argument \""<<arg<<"\"!" << endl;
@@ -243,10 +259,12 @@ void ParseCommandLineArguments(int narg, char *argv[])
 	
 	cout << endl;
 	cout << "---------------------------------------------" << endl;
+	cout << "             Output file: " << OUTPUT_FILENAME << endl;
 	cout << "     Nevents to generate: " << MAXEVENTS << endl;
 	cout << "    Electron beam energy: " << Eelectron_beam << " GeV" << endl;
 	cout << "           Coherent peak: " << Ecoherent_peak << " GeV" << endl;
 	cout << "   Minimum photon energy: " << Emin << " GeV" << endl;
+	cout << "  z-direction defined by: " << (USE_ELECTRON_BEAM_DIRECTION ? "electron":"photon") << " beam" << endl;
 	cout <<"   Coherent photons only?: " << (ONLY_COHERENT ? "yes":"no") << endl;
 	cout <<" Incoherent photons only?: " << (ONLY_INCOHERENT ? "yes":"no") << endl;
 	cout << "---------------------------------------------" << endl;
@@ -443,19 +461,19 @@ void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TL
 	// system about the incident photon direction relative to the
 	// polarization vector that goes like:
 	//
-	//  ( 1 - 2cos(2phi) )
+	//       1 + cos(2phi)
 	//
 	// see https://halldweb1.jlab.org/wiki/images/a/aa/20130418_cpp_rory.pdf
 	//
 	// To do this, we take the current phi angle of the mu+mu- system and assume
-	// it is evenly distributed over 0-2pi. We normalize this to get number from
+	// it is evenly distributed over 0-2pi. We normalize this to get a number from
 	// 0-1 and equate it with the normalized integral of the above function of phi.
 	// (The integral fraction method). This results in a transcendental equation
 	// though so we use the ROOT TF1::GetX() method to find the root of a function
 	// defined as the difference between the "random number" and the normalized
 	// integral.
 	//
-	//    f(phi) = s - (phi - 0.5*sin(2*phi))/2pi
+	//    f(phi) = s - (phi + 0.5*sin(2*phi))/2pi
 	//
 	//  where:
 	//      s = normalized phi from unpolarized (0 - 1)
@@ -468,7 +486,7 @@ void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TL
 		if(!normInt){
 			// par0 is random number "s"
 			// 0.1591549430919 = 1/2pi
-			normInt = new TF1("normInt", "[0] - (x - 0.5*sin(2.0*x))*0.1591549430919", 0.0, TMath::TwoPi());
+			normInt = new TF1("normInt", "[0] - (x + 0.5*sin(2.0*x))*0.1591549430919", 0.0, TMath::TwoPi());
 		}
 
 		// direction of mu+mu- system
@@ -477,18 +495,23 @@ void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TL
 		double s = 0.5+phi_init/TMath::TwoPi(); // s is 0-1
 		normInt->SetParameter(0, s);
 		double deltaphi = normInt->GetX(0.0, 0.0, TMath::TwoPi()) - phi_init;
+		deltaphi += POLARIZATION_ANGLE*TMath::DegToRad();
 		pmuplus.RotateZ(deltaphi);
 		pmuminus.RotateZ(deltaphi);
 	}
 
 	// Rotate to actual gamma direction.
-	// Note that for coherently produced photons, this introduces
-	// an effective phi shift in the phi_mumu distribution since
-	// the gamma direction is concentrated in one region of phi
-	// (roughly 35 degrees)
-	pmuplus.RotateUz(GammaDirection);
-	pmuminus.RotateUz(GammaDirection);
-	
+	// The pmuplus and pmuminus vectors are currently relative to the
+	// beam photon direction. This is almost always what you want.
+	// This gives the option though of rotating to the direction where
+	// z is defined by the electron beam. For coherently produced photons,
+	// this option introduces an effective phi shift in the phi_mumu
+	// distribution since the gamma direction is concentrated in one
+	// region of phi (roughly 35 degrees)
+	if(USE_ELECTRON_BEAM_DIRECTION){
+		pmuplus.RotateUz(GammaDirection);
+		pmuminus.RotateUz(GammaDirection);
+	}
 	
 //	aParticleChange.SetNumberOfSecondaries(2);
 //	// create G4DynamicParticle object for the particle1
