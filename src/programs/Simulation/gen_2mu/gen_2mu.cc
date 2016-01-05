@@ -160,8 +160,9 @@ void Usage(string message)
 	cout << "    gen_2mu [options]" << endl;
 	cout << endl;
 	cout << " -h           print this help message" << endl;
-	cout << " --help       print the long form help message" << endl;
+	//cout << " --help       print the long form help message" << endl;
 	cout << " -N events    number of events to generate" << endl;
+	cout << " -o filename  set output filename (def. is gen_2mu.hddm)" << endl;
 	cout << " -p Epeak     coherent peak energy (def="<<Ecoherent_peak<<")" << endl;
 	cout << " -b Ebeam     electron beam energy (def="<<Eelectron_beam<<")" << endl;
 	cout << " -min Emin    minimum photon energy to generate (def="<<Emin<<")" << endl;
@@ -200,6 +201,13 @@ void ParseCommandLineArguments(int narg, char *argv[])
 		}else if(arg=="-N"){
 			if(has_arg){
 				MAXEVENTS = atoi(next.c_str());
+				i++;
+			}else{
+				missing_arg = true;
+			}
+		}else if(arg=="-o"){
+			if(has_arg){
+				OUTPUT_FILENAME = next;
 				i++;
 			}else{
 				missing_arg = true;
@@ -251,6 +259,7 @@ void ParseCommandLineArguments(int narg, char *argv[])
 	
 	cout << endl;
 	cout << "---------------------------------------------" << endl;
+	cout << "             Output file: " << OUTPUT_FILENAME << endl;
 	cout << "     Nevents to generate: " << MAXEVENTS << endl;
 	cout << "    Electron beam energy: " << Eelectron_beam << " GeV" << endl;
 	cout << "           Coherent peak: " << Ecoherent_peak << " GeV" << endl;
