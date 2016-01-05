@@ -461,19 +461,19 @@ void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TL
 	// system about the incident photon direction relative to the
 	// polarization vector that goes like:
 	//
-	//  ( 1 - 2cos(2phi) )
+	//       1 + cos(2phi)
 	//
 	// see https://halldweb1.jlab.org/wiki/images/a/aa/20130418_cpp_rory.pdf
 	//
 	// To do this, we take the current phi angle of the mu+mu- system and assume
-	// it is evenly distributed over 0-2pi. We normalize this to get number from
+	// it is evenly distributed over 0-2pi. We normalize this to get a number from
 	// 0-1 and equate it with the normalized integral of the above function of phi.
 	// (The integral fraction method). This results in a transcendental equation
 	// though so we use the ROOT TF1::GetX() method to find the root of a function
 	// defined as the difference between the "random number" and the normalized
 	// integral.
 	//
-	//    f(phi) = s - (phi - 0.5*sin(2*phi))/2pi
+	//    f(phi) = s - (phi + 0.5*sin(2*phi))/2pi
 	//
 	//  where:
 	//      s = normalized phi from unpolarized (0 - 1)
@@ -486,7 +486,7 @@ void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TL
 		if(!normInt){
 			// par0 is random number "s"
 			// 0.1591549430919 = 1/2pi
-			normInt = new TF1("normInt", "[0] - (x - 0.5*sin(2.0*x))*0.1591549430919", 0.0, TMath::TwoPi());
+			normInt = new TF1("normInt", "[0] - (x + 0.5*sin(2.0*x))*0.1591549430919", 0.0, TMath::TwoPi());
 		}
 
 		// direction of mu+mu- system
