@@ -15,6 +15,7 @@ jerror_t TRIGGER_init(JEventLoop *loop) {
 
 	loop->AddFactory(new DMCTrigger_factory());
 	loop->AddFactory(new DL3Trigger_factory());
+	loop->AddFactory(new DL1Trig_factory());
 
 	return NOERROR;
 }
