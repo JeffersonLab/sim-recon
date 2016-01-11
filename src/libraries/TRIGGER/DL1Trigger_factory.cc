@@ -1,25 +1,19 @@
-// $Id$
-//
-//    File: DL1Trigger_factory.cc
-// Created: Fri Jan  8 10:57:58 EST 2016
-// Creator: davidl (on Darwin harriet.jlab.org 13.4.0 i386)
-//
-
-
 #include <iostream>
 #include <iomanip>
 using namespace std;
 
-#include "DL1Trigger_factory.h"
+#include <JANA/JApplication.h>
+#include <DAQ/DCODAROCInfo.h>
 using namespace jana;
 
-#include <DAQ/DCODAROCInfo.h>
+#include "DL1Trigger_factory.h"
 
 //------------------
 // init
 //------------------
 jerror_t DL1Trigger_factory::init(void)
 {
+
 	return NOERROR;
 }
 
@@ -59,12 +53,13 @@ jerror_t DL1Trigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 			// knowing how it was configured, but if both are
 			// read out, then the GTP word comes first. (See
 			// e-mail sent by Bryan Moffit Dec. 15, 2015).
-			l1trigger->gtp_latch = cri->misc[0];
-			l1trigger->fp_latch  = cri->misc[1];
+			l1trigger->trig_mask     = cri->misc[0]; // Global Trigger Processor latch word
+			l1trigger->fp_trig_mask  = cri->misc[1]; // Front Panel latch word
 		}
 		l1trigger->AddAssociatedObject(cri);
 		
 		_data.push_back(l1trigger);
+		break; // Should only be 1 with rocid=1
 	}
 
 	return NOERROR;
