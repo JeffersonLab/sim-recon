@@ -15,6 +15,8 @@ using namespace std;
 #include "DCDCWire.h"
 #include <DAQ/Df125PulseIntegral.h>
 #include <DAQ/Df125Config.h>
+#include <DAQ/Df125CDCPulse.h>
+
 using namespace jana;
 
 static double DIGI_THRESHOLD = -1000000.0;
@@ -174,14 +176,13 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     /// data in HDDM format. The HDDM event source will copy
     /// the precalibrated values directly into the _data vector.
 
+    /// In order to use the new Flash125 data types and maintain compatibility with the old code, what is below is a bit of a mess
+
     vector<const DCDCDigiHit*> digihits;
     loop->Get(digihits);
     char str[256];
     for (unsigned int i=0; i < digihits.size(); i++) {
         const DCDCDigiHit *digihit = digihits[i];
-
-	// This error state is only present in mode 8
-        if (digihit->pulse_time==0.) continue;
 
         const int &ring  = digihit->ring;
         const int &straw = digihit->straw;
@@ -199,31 +200,56 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             throw JException(str);
         }
 
-        // There is a slight difference between Mode 7 and 8 data
-        // The following condition signals an error state in the flash algorithm
-        // Do not make hits out of these
-        const Df125PulsePedestal* PPobj = NULL;
-        digihit->GetSingle(PPobj);
-        if (PPobj != NULL){
-            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-            if (PPobj->pulse_number == 1) continue; // Unintentionally had 2 pulses found in fall data (0-1 counting issue)
-        }
-
         // Get pedestal. Preference is given to pedestal measured
         // for event. Otherwise, use statistical one from CCDB
         double pedestal = pedestals[ring-1][straw-1];
-        const Df125PulseIntegral* PIobj = NULL;
-        digihit->GetSingle(PIobj);
-        if (PIobj != NULL) {
+
+        // Grab the pedestal from the digihit since this should be consistent between the old and new formats
+        double raw_ped           = (double)digihit->pedestal;
+        double nsamples_integral = (double)digihit->nsamples_integral;
+        double nsamples_pedestal = (double)digihit->nsamples_pedestal;
+        pedestal = raw_ped * nsamples_integral/nsamples_pedestal;
+
+        // This is the place to make quality cuts on the data. 
+        // Try to get the new data type, if that fails, try to get the old...
+        const Df125CDCPulse *CDCPulseObj = NULL;
+        digihit->GetSingle(CDCPulseObj);
+        if (CDCPulseObj != NULL){
+            // Cut on quality factor?
+        }
+        else{ // Use the old format
+            // This code will at some point become deprecated in the future...
+            // This applies to the firmware for data taken until the fall of 2015.
+            // Mode 8: Raw data and processed data (except pulse integral).
+            // Mode 7: Processed data only.
+
+            // This error state is only present in mode 8
+            if (digihit->pulse_time==0.) continue;
+
+            // There is a slight difference between Mode 7 and 8 data
+            // The following condition signals an error state in the flash algorithm
+            // Do not make hits out of these
+            const Df125PulsePedestal* PPobj = NULL;
+            digihit->GetSingle(PPobj);
+            if (PPobj != NULL){
+                if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+                if (PPobj->pulse_number == 1) continue; // Unintentionally had 2 pulses found in fall 2014 data (0-1 counting issue)
+            }
+
+            const Df125PulseIntegral* PIobj = NULL;
+            digihit->GetSingle(PIobj);
+            /*
+               if (PIobj != NULL) {
             // the measured pedestal must be scaled by the ratio of the number
             // of samples used to calculate the pedestal and the actual pulse
             double Nsample_ped = (double)PIobj->pedestal;
             double nsamples_integral = (double)PIobj->nsamples_integral;
             double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
             pedestal = Nsample_ped * nsamples_integral/nsamples_pedestal;
-        } 
-
-        if (PPobj == NULL || PIobj == NULL) continue; // We don't want hits where ANY of the associated information is missing
+            } 
+            */
+            if (PPobj == NULL || PIobj == NULL) continue; // We don't want hits where ANY of the associated information is missing
+        }
 
         // Apply calibration constants here
         double A = (double)digihit->pulse_integral;
@@ -239,15 +265,13 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         hit->ring  = ring;
         hit->straw = straw;
 
+        // Values for d, itrack, ptype only apply to MC data
         // note that ring/straw counting starts at 1
         hit->q = q;
         hit->t = t;
         hit->d = 0.0;
         hit->itrack = -1;
         hit->ptype = 0;
-
-        //std::cerr << "CDC Hit:  ring = " << hit->ring 
-        //          << "  straw = " << hit->straw << std::endl;
 
         hit->AddAssociatedObject(digihit);
 
