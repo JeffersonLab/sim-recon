@@ -1562,7 +1562,38 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			}
 		}
 	}
-	
+	vector<JObject*> &vcdcp125 = hit_objs_by_type["Df125CDCPulse"];
+	for(unsigned int i=0; i<vcdcp125.size(); i++){
+
+		Df125CDCPulse *cdcp = (Df125CDCPulse*)vcdcp125[i];
+		const Df125Config*conf = NULL;
+		cdcp->GetSingle(conf);
+
+		// If this CDCpulse is *not* emulated AND there is
+		// a configuration object from the data stream associated,
+		// then copy the number of samples for the integral from it.
+		if(!cdcp->emulated){
+			if(conf){
+				cdcp->nsamples_integral = conf->NSA_NSB;
+			}
+		}
+	}
+	vector<JObject*> &vfdcp125 = hit_objs_by_type["Df125FDCPulse"];
+	for(unsigned int i=0; i<vfdcp125.size(); i++){
+
+		Df125FDCPulse *fdcp = (Df125FDCPulse*)vfdcp125[i];
+		const Df125Config*conf = NULL;
+		fdcp->GetSingle(conf);
+
+		// If this FDCpulse is *not* emulated AND there is
+		// a configuration object from the data stream associated,
+		// then copy the number of samples for the integral from it.
+		if(!fdcp->emulated){
+			if(conf){
+				fdcp->nsamples_integral = conf->NSA_NSB;
+			}
+		}
+	}
 
 	// Loop over types of config objects, copying to appropriate factory
 	map<string, vector<JObject*> >::iterator config_iter = config_objs_by_type.begin();
