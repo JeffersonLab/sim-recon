@@ -71,6 +71,7 @@ static TH2I *bcal_fadc_saturated = NULL;
 static TH1I *bcal_tdc_t = NULL;
 static TH2I *bcal_tdc_occ = NULL;
 
+static TH1I *bcal_num_hits = NULL;
 static TH1I *bcal_Uhit_E = NULL;
 static TH1I *bcal_Uhit_t = NULL;
 static TH1I *bcal_Uhit_t_ADC = NULL;
@@ -83,6 +84,7 @@ static TH2I *bcal_Uhit_tTDC_E = NULL;
 static TH2I *bcal_Uhit_tADC_E = NULL;
 static TProfile2D *bcal_Uhit_tdiff_ave = NULL;
 
+static TH1I *bcal_num_points = NULL;
 static TH1I *bcal_point_E = NULL;
 static TH1I *bcal_point_t = NULL;
 static TH1I *bcal_point_rho = NULL;
@@ -119,6 +121,7 @@ static TH1I *bcal_cluster_phi = NULL;
 static TH1I *bcal_cluster_sigPhi = NULL;
 static TH2I *bcal_cluster_rho_theta = NULL;
 
+static TH1I *bcal_num_showers = NULL;
 static TH1I *bcal_shower_N_cell = NULL;
 static TH1I *bcal_shower_E = NULL;
 static TH1I *bcal_shower_E_raw = NULL;
@@ -240,6 +243,7 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_tdc_t = new TH1I("bcal_tdc_t","TDC Time (DBCALTDCHit);Time (ns)", 1200, timeminTDC_ns, timemaxTDC_ns);
 	bcal_tdc_occ = new TH2I("bcal_tdc_occ","TDC occupancy (DBCALTDCHit);Module", 48, 0.5, 48.5, 25, 0.5, 25.5);
 
+	bcal_num_hits = new TH1I("bcal_num_hits","Number of BCAL hits;Number of hits per event", 250, 0, 250);
 	bcal_Uhit_E = new TH1I("bcal_Uhit_E","Uncorrected Energy (DBCALUnifiedHit);Energy, not atten. corr. (GeV)", 500, Ehit_min, Ehit_max);
 	bcal_Uhit_t = new TH1I("bcal_Uhit_t","Unified time (DBCALUnifiedHit);time  (ns)", 1200, timeminTDC_ns, timemaxTDC_ns);
 	bcal_Uhit_t_TDC = new TH1I("bcal_Uhit_t_TDC","TDC time (DBCALUnifiedHit);Timewalk corrected TDC time (ns)", 1200, timeminTDC_ns, timemaxTDC_ns);
@@ -258,6 +262,7 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_Uhit_tdiff_ave = new TProfile2D("bcal_Uhit_tdiff_ave", "Mean time diff. (TDC-ADC) (DBCALDigiHit);Module", 
 					     48, 0.5, 48.5, 33, 0.5, 33.5);
 
+	bcal_num_points = new TH1I("bcal_num_points","Number of BCAL points;Number of points per event", 100, 0, 100);
 	bcal_point_E = new TH1I("bcal_point_E","Energy (DBCALPoint);Energy  (GeV)", 500, Ehit_min, Ehit_max);
 	bcal_point_t = new TH1I("bcal_point_t","time (DBCALPoint);Time (ns)", 500, timemin_ns, timemax_ns);
 	bcal_point_rho = new TH1I("bcal_point_rho","rho (DBCALPoint);rho", 450, 0, 450);
@@ -304,6 +309,7 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_cluster_sigPhi = new TH1I("bcal_cluster_sigPhi","sigPhi (DBCALCluster)", 100, 0, 0.1);
 	bcal_cluster_rho_theta = new TH2I("bcal_cluster_rho_theta","theta vs rho (DBCALCluster);rho;theta", 100, 0, 360, 100, 0, 2.2);
 
+	bcal_num_showers = new TH1I("bcal_num_showers","Number of BCAL showers;Number of showers per event", 20, 0, 20);
 	bcal_shower_N_cell = new TH1I("bcal_shower_N_cell","Number of Cells (DBCALShower)", 50, 0, 50);
 	bcal_shower_E = new TH1I("bcal_shower_E","Energy (DBCALShower);Energy  (GeV)", 500, Eclust_min, Eclust_max);
 	bcal_shower_E_raw = new TH1I("bcal_shower_E_raw","Raw Energy (DBCALShower)", 500, Eclust_min, Eclust_max);
@@ -593,6 +599,7 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 	}
 
 	// BCAL Unified Hit (combined ADC and TDC info)
+	bcal_num_hits->Fill(dbcaluhits.size());
 	for(unsigned int i=0; i<dbcaluhits.size(); i++) {
 		const DBCALUnifiedHit *Uhit = dbcaluhits[i];
 		bcal_Uhit_E->Fill(Uhit->E);
@@ -623,6 +630,7 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 	}
 	
 	// BCAL Points (combined hits from each end)
+	bcal_num_points->Fill(dbcalpoints.size());
 	for(unsigned int i=0; i<dbcalpoints.size(); i++) {
 		const DBCALPoint *point = dbcalpoints[i];
 		bcal_point_E->Fill(point->E());
@@ -676,6 +684,7 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 	}
 
 	// BCAL Showers (combined cluster with track)
+	bcal_num_showers->Fill(dbcalshowers.size());
 	for(unsigned int i=0; i<dbcalshowers.size(); i++) {
 		const DBCALShower *shower = dbcalshowers[i];
 		bcal_shower_N_cell->Fill(shower->N_cell);
