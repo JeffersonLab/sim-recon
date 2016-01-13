@@ -205,17 +205,32 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         double pedestal = pedestals[ring-1][straw-1];
 
         // Grab the pedestal from the digihit since this should be consistent between the old and new formats
-        double raw_ped           = (double)digihit->pedestal;
-        double nsamples_integral = (double)digihit->nsamples_integral;
-        double nsamples_pedestal = (double)digihit->nsamples_pedestal;
-        pedestal = raw_ped * nsamples_integral/nsamples_pedestal;
+        uint32_t raw_ped           = digihit->pedestal;
+        uint32_t nsamples_integral = digihit->nsamples_integral;
+
+        // There are a few values from the new data type that are critical for the interpretation of the data
+        uint16_t IBIT = 0; // 2^{IBIT} Scale factor for integral
+        uint16_t ABIT = 0; // 2^{ABIT} Scale factor for amplitude
+        uint16_t PBIT = 0; // 2^{PBIT} Scale factor for pedestal
 
         // This is the place to make quality cuts on the data. 
         // Try to get the new data type, if that fails, try to get the old...
         const Df125CDCPulse *CDCPulseObj = NULL;
         digihit->GetSingle(CDCPulseObj);
         if (CDCPulseObj != NULL){
-            // Cut on quality factor?
+            const Df125Config *config = NULL;
+            CDCPulseObj->GetSingle(config);
+
+            // Set some constants to defaults until they appear correctly in the config words in the future
+            IBIT = config->IBIT == 0xffff ? 4 : config->IBIT;
+            ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
+            PBIT = config->PBIT == 0xffff ? 0 : config->PBIT;
+            uint16_t NW   = config->NW   == 0xffff ? 200 : config->NW;
+            
+            // The integration window in the CDC should always extend past the end of the window
+            // Only true after about run 4100
+            nsamples_integral = (NW - (digihit->pulse_time / 10));  
+            
         }
         else{ // Use the old format
             // This code will at some point become deprecated in the future...
@@ -238,25 +253,19 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
             const Df125PulseIntegral* PIobj = NULL;
             digihit->GetSingle(PIobj);
-            /*
-               if (PIobj != NULL) {
-            // the measured pedestal must be scaled by the ratio of the number
-            // of samples used to calculate the pedestal and the actual pulse
-            double Nsample_ped = (double)PIobj->pedestal;
-            double nsamples_integral = (double)PIobj->nsamples_integral;
-            double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
-            pedestal = Nsample_ped * nsamples_integral/nsamples_pedestal;
-            } 
-            */
             if (PPobj == NULL || PIobj == NULL) continue; // We don't want hits where ANY of the associated information is missing
         }
 
-        // Apply calibration constants here
-        double A = (double)digihit->pulse_integral;
-        double T = (double)digihit->pulse_time;
+        // Complete the pedestal subtracion here since we should know the correct number of samples.
+        uint32_t scaled_ped = raw_ped << PBIT;
+        pedestal = double(scaled_ped * nsamples_integral);
 
-        double q = a_scale * gains[ring-1][straw-1] * (A - pedestal);
-        double t = t_scale * T - time_offsets[ring-1][straw-1] + t_base;
+        // Apply calibration constants here
+        double integral = double(digihit->pulse_integral << IBIT);
+        double t_raw = double(digihit->pulse_time);
+
+        double q = a_scale * gains[ring-1][straw-1] * (integral - pedestal);
+        double t = t_scale * t_raw - time_offsets[ring-1][straw-1] + t_base;
 
         if (q < DIGI_THRESHOLD) 
             continue;
