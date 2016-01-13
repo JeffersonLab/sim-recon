@@ -1067,6 +1067,7 @@ void DTrackCandidate_factory_CDC::Calc_SuperLayerPhiRange(DCDCSuperLayerSeed* lo
 	locSeedLastPhi = -9.9E9;
 	for(size_t loc_j = 0; loc_j < locSuperLayerSeed->dCDCRingSeeds.size(); ++loc_j)
 	{
+	  if (locSuperLayerSeed->dCDCRingSeeds[loc_j].hits.empty()) continue;
 		DCDCTrkHit *locFirstStrawHit = locSuperLayerSeed->dCDCRingSeeds[loc_j].hits.front();
 		DCDCTrkHit *locLastStrawHit = locSuperLayerSeed->dCDCRingSeeds[loc_j].hits.back();
 
@@ -4807,15 +4808,29 @@ DTrackCandidate_factory_CDC::DCDCSuperLayerSeed* DTrackCandidate_factory_CDC::DC
 		if(locLastAxialSuperLayerSeed->dSuperLayer == 7)
 			return locLastAxialSuperLayerSeed;
 	}
-	else if(!dSuperLayerSeeds_OuterStereo.empty())
+	if(!dSuperLayerSeeds_OuterStereo.empty())
 	{
-		if(dSuperLayerSeeds_OuterStereo[0].back()->dSuperLayer > locLastAxialSuperLayerSeed->dSuperLayer)
-			return dSuperLayerSeeds_OuterStereo[0].back();
+		DCDCSuperLayerSeed* locLastOuterStereoSuperLayerSeed = dSuperLayerSeeds_OuterStereo[0].back();
+		if(locLastOuterStereoSuperLayerSeed != NULL){
+			if(locLastAxialSuperLayerSeed == NULL) return locLastOuterStereoSuperLayerSeed;
+			if(locLastOuterStereoSuperLayerSeed->dSuperLayer > locLastAxialSuperLayerSeed->dSuperLayer){
+				return locLastOuterStereoSuperLayerSeed;
+			}else{
+				return locLastAxialSuperLayerSeed;
+			}
+		}
 	}
-	else if(!dSuperLayerSeeds_InnerStereo.empty())
+	if(!dSuperLayerSeeds_InnerStereo.empty())
 	{
-		if(dSuperLayerSeeds_InnerStereo[0].back()->dSuperLayer > locLastAxialSuperLayerSeed->dSuperLayer)
-			return dSuperLayerSeeds_InnerStereo[0].back();
+		DCDCSuperLayerSeed* locLastInnerStereoSuperLayerSeed = dSuperLayerSeeds_InnerStereo[0].back();
+		if(locLastInnerStereoSuperLayerSeed != NULL){
+			if(locLastAxialSuperLayerSeed == NULL) return locLastInnerStereoSuperLayerSeed;
+			if(locLastInnerStereoSuperLayerSeed->dSuperLayer > locLastAxialSuperLayerSeed->dSuperLayer){
+				return locLastInnerStereoSuperLayerSeed;
+			}else{
+				return locLastAxialSuperLayerSeed;
+			}
+		}
 	}
 	return locLastAxialSuperLayerSeed;
 }

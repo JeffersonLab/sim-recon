@@ -6547,9 +6547,10 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
 
             // Try to recover tracks that failed the first attempt at fitting
             if (error!=FIT_SUCCEEDED && RECOVER_BROKEN_TRACKS
-                    && num_fdchits>2  // some minimum to make this worthwhile...
-                    && break_point_fdc_index+num_cdchits>=MIN_HITS_FOR_REFIT
-                    && forward_traj.size()>2*MIN_HITS_FOR_REFIT // avoid small track stubs
+		&& num_fdchits>2  // some minimum to make this worthwhile...
+		&& break_point_fdc_index<num_fdchits
+		&& break_point_fdc_index+num_cdchits>=MIN_HITS_FOR_REFIT
+		&& forward_traj.size()>2*MIN_HITS_FOR_REFIT // avoid small track stubs
                ){
                 DMatrix5x5 Ctemp=C;
                 DMatrix5x1 Stemp=S;

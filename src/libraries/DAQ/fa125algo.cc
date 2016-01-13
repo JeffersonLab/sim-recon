@@ -201,10 +201,11 @@ void cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t &pedestal, Int_t adc[], In
   Int_t i=0;
 
   // calc pedestal as mean of NPED samples before trigger
+  for (i=0; i<NPED; i++) {
+    pedestal += adc[WINDOW_START-NPED+i];
+  }
 
-  for (i=0; i<NPED; i++) pedestal += adc[WINDOW_START-1-NPED+i];
-
-  pedestal = pedestal/NPED;   // Integer div is ok as fpga will do 2 rightshifts
+  pedestal = ( NPED==0 ? 0:(pedestal/NPED) );   // Integer div is ok as fpga will do 2 rightshifts
 
   threshold = pedestal + HIT_THRES;
 
@@ -234,7 +235,7 @@ void cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t &pedestal, Int_t adc[], In
       pedestal += adc[hitsample-PG-i];
     }
 
-    pedestal = pedestal/NPED2;
+    pedestal = ( NPED2==0 ? 0:(pedestal/NPED2) );
   }
 
 
@@ -269,50 +270,24 @@ void cdc_integral(Long_t& integral, Int_t& overflows, Int_t timesample, Int_t ad
 
 void cdc_max(Int_t& maxamp, Int_t hitsample, Int_t adc[], Int_t WINDOW_END) {
 
-  maxamp = 0;
+  int i;
+  int ndec = 0;  //number of decreasing samples
 
+  maxamp = adc[hitsample];
 
+  for (i=hitsample; i<=WINDOW_END; i++) {
 
-  int nd = 0; // num decreasing
-
-  int i = hitsample;   //start value for max amp sample
-  int imax = i;
-  int pfound = 1;
-  int debug=0;
-  int peakfound = 0;
-
-  if (debug>4) printf("        Starting with potential peak at xthr adc[%i] %i\n",i,adc[i]);
-
-  while (i<WINDOW_END && !peakfound) {
-
-    i++;
-
-    if (debug>4) printf("        Inspecting adc[%i] %i\n",i,adc[i]);
-
-    if (adc[i] > adc[i-1]) { 
-
-        pfound = 1;
-        imax = i;
-        nd = 0;   //reset count of descending values
-        if (debug>4) printf("        Increase - this could be a peak\n");
-
-    } else if (adc[i] < adc[i-1]) {
-
-      if (pfound) {
-        nd++;        
-        if (nd>1) peakfound = 1;
-        if (debug>4) printf("        Decrease after potential peak - increase decrease counter to %i\n",nd);
-      }    
-
+    if (adc[i] > adc[i-1]) {
+      maxamp = adc[i];
+      ndec = 0;
     }
-  }
 
-  maxamp = adc[imax];
+    if (adc[i] <= adc[i-1]) ndec++;
+    if (ndec==2) break;
+  }
 
 
 }
-
-
 
 
 

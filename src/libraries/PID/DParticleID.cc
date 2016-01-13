@@ -558,22 +558,34 @@ bool DParticleID::MatchToBCAL(const DKinematicData* locTrack, const DReferenceTr
 	vector<const DBCALCluster*>clusters;
 	locBCALShower->Get(clusters);
 
-	// loop over clusters and points associated with this shower, finding 
+    // make list of points associated with the shower
+    vector<const DBCALPoint*> points;
+    if(clusters.size() > 0) {
+        // classic BCAL shower objects are built from the output of the clusterizer
+        // so the points need to be accessed as shower -> cluster -> points
+        for (unsigned int k=0;k<clusters.size();k++){
+            vector<const DBCALPoint*> cluster_points=clusters[k]->points();
+            points.insert(points.end(), cluster_points.begin(), cluster_points.end());
+        }
+    } else {
+        // other BCAL shower objects directly keep a list of the points associated with the shower
+        // (e.g. "CURVATURE" showers)
+        locBCALShower->Get(points);
+    }
+
+	// loop over points associated with this shower, finding 
 	// the closest match between a point and the track
 	double dphi_min=1000.;
-	for (unsigned int k=0;k<clusters.size();k++){
-	  vector<const DBCALPoint*>points=clusters[k]->points();
-	  for (unsigned int m=0;m<points.size();m++){
-	    double rpoint=points[m]->r();
-	    if (rt->GetIntersectionWithRadius(rpoint,proj_pos)==NOERROR){
-	      dphi=points[m]->phi()-proj_pos.Phi();
-	      while(dphi > M_PI)
-		dphi -= M_TWO_PI;
-	      while(dphi < -M_PI)
-		dphi += M_TWO_PI;
-	      if (fabs(dphi)<fabs(dphi_min)){
-		dphi_min=dphi;
-	      }
+    for (unsigned int m=0;m<points.size();m++){
+      double rpoint=points[m]->r();
+	  if (rt->GetIntersectionWithRadius(rpoint,proj_pos)==NOERROR){
+        dphi=points[m]->phi()-proj_pos.Phi();
+        while(dphi > M_PI)
+		  dphi -= M_TWO_PI;
+	    while(dphi < -M_PI)
+		  dphi += M_TWO_PI;
+	    if (fabs(dphi)<fabs(dphi_min)){
+		  dphi_min=dphi;
 	    }
 	  }
 	}

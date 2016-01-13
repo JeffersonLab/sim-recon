@@ -345,6 +345,34 @@ class DTranslationTable:public jana::JObject{
 		//public so that StartElement can access it
 		static map<DTranslationTable::Detector_t, set<uint32_t> >& Get_ROCID_By_System(void); //this is static so that StartElement can access it
 
+		// This was left over from long ago and is not currently used. It seems
+		// potentially useful though in the future so I don't want to get rid
+		// of it. However, it was causing "defined but not used" warnings when
+		// defined as a simple C function. Moved it here just to prevent those
+		// warnings.
+		static int ModuleStr2ModID(string &type)
+		{
+   		if (type == "vmecpu") {
+      		return(DModuleType::VMECPU);
+   		} else if (type == "tid") {
+      		return(DModuleType::TID);
+   		} else if (type == "fadc250") {
+      		return(DModuleType::FADC250);
+   		} else if (type == "fadc125") {
+      		return(DModuleType::FADC125);
+   		} else if (type == "f1tdcv2") {
+      		return(DModuleType::F1TDC32);
+   		} else if (type == "f1tdcv3") {
+      		return(DModuleType::F1TDC48);
+   		} else if (type == "jldisc") {
+      		return(DModuleType::JLAB_DISC);
+   		} else if (type == "vx1290a") {
+      		return(DModuleType::CAEN1290);
+   		} else {
+      		return(DModuleType::UNKNOWN);
+   		}
+		}
+
 	protected:
 		string XML_FILENAME;
 		bool NO_CCDB;
