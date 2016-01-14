@@ -185,11 +185,11 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
     TF2 *f2; const Int_t npar = 18;
     bool isFieldOff = false;
     if (Bz_hist == 0){
-        f2 = new TF2("f2",TimeToDistanceFieldOff, 0, 1000, -0.3, 0.3, npar);
+        f2 = new TF2("f2",TimeToDistanceFieldOff, 0, 1500, -0.3, 0.3, npar);
         isFieldOff = true;
     }
     else{
-        f2 = new TF2("f2",TimeToDistanceFieldOn, 0, 1000, -0.3, 0.3, npar);
+        f2 = new TF2("f2",TimeToDistanceFieldOn, 0, 1500, -0.3, 0.3, npar);
         Bz_avg = Bz_hist->GetMean();
     }
 
@@ -280,7 +280,7 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
     profile->Draw("cont2 list same");
     f2->Draw("cont2 list same");
     c1->Update();
-    c1->SaveAs("Before.png");
+    c1->SaveAs(Form("Before_Run%i.png", run));
 
     TProfile2D *profileRebin = profile->Rebin2D(4,4, "Rebin");
     TFitResultPtr fr = profileRebin->Fit("f2", "S");
@@ -291,7 +291,7 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
     profile->Draw("cont2 list same");
     f2->Draw("cont2 list same");
     c2->Update();
-    c2->SaveAs("After.png");
+    c2->SaveAs(Form("After_Run%i.png", run));
 
     ofstream outputTextFile;
     outputTextFile.open("ccdb_Format.txt"); 
