@@ -6,6 +6,7 @@
 //
 
 #include "DParticleID.h"
+#include "START_COUNTER/DSCHit_factory.h"
 
 #ifndef M_TWO_PI
 #define M_TWO_PI 6.28318530717958647692
@@ -205,6 +206,16 @@ DParticleID::DParticleID(JEventLoop *loop)
 		sc_attn_C[SC_BENDNOSE_ATTN].push_back(row["SC_BENDNOSE_ATTENUATION_C"]); 
 	      }
 	  }
+
+    // Start counter individual paddle resolutions
+    if(loop->GetCalib("START_COUNTER/time_resol_paddle", sc_paddle_resols))
+        jout << "Error in loading START_COUNTER/time_resol_paddle !" << endl;
+	else {
+        if(sc_paddle_resols.size() != (unsigned int)DSCHit_factory::MAX_SECTORS)
+            jerr << "Start counter paddle resolutions table has wrong number of entries:" << endl
+                 << "  loaded = " << sc_paddle_resols.size() 
+                 << "  expexted = " << DSCHit_factory::MAX_SECTORS << endl;
+    }
 
 }
 
@@ -965,8 +976,8 @@ bool DParticleID::MatchToSC(const DReferenceTrajectory* rt, const vector<const D
 	Get_BestSCMatchParams(locSCHitMatchParamsVector, locBestMatchParams);
 
 	locStartTime = locBestMatchParams.dHitTime - locBestMatchParams.dFlightTime;
-//	locTimeVariance = locBestMatchParams.dFlightTimeVariance - locBestMatchParams.dHitTimeVariance; //uncomment when ready!
-	locTimeVariance = 0.3*0.3+locBestMatchParams.dFlightTimeVariance;
+	locTimeVariance = locBestMatchParams.dFlightTimeVariance + locBestMatchParams.dHitTimeVariance; 
+	//locTimeVariance = 0.3*0.3+locBestMatchParams.dFlightTimeVariance;
 
 	return true;
 }
@@ -1154,7 +1165,7 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	locSCHitMatchParams.dHitEnergy = locCorrectedHitEnergy;
 	locSCHitMatchParams.dEdx = locSCHitMatchParams.dHitEnergy/ds;
 	locSCHitMatchParams.dHitTime = locCorrectedHitTime;
-	locSCHitMatchParams.dHitTimeVariance = 0.0; //SET ME!!!
+	locSCHitMatchParams.dHitTimeVariance = sc_paddle_resols[sc_index]*sc_paddle_resols[sc_index];
 	locSCHitMatchParams.dFlightTime = locFlightTime;
 	locSCHitMatchParams.dFlightTimeVariance = locFlightTimeVariance;
 	locSCHitMatchParams.dPathLength = locPathLength;
