@@ -27,6 +27,22 @@ TH2I * Get2DHistogram(const char * plugin, const char * directoryName, const cha
     return histogram;
 }
 
+TCanvas * Plot2DCDC(TH2D **histograms, TString name, TString title, float minScale, float maxScale){
+    TCanvas *canvas = new TCanvas(name,name, 800, 800);
+    TH2D *axes = new TH2D(TString("axes") + name, title, 1, -65.0, 65.0, 1, -65.0, 65.0);
+    axes->SetBinContent(1,1,-1.0/0.0); // Don't draw background color
+    axes->SetStats(0);
+    axes->Fill(100,100); // without this, the color ramp is not drawn
+    axes->GetZaxis()->SetRangeUser(minScale, maxScale);
+    axes->Draw("colz");
+    for(unsigned int iring=1; iring<=28; iring++){
+        histograms[iring]->GetZaxis()->SetRangeUser(minScale, maxScale);
+        histograms[iring]->SetStats(0);
+        histograms[iring]->Draw("same col pol");  // draw remaining histos without overwriting color palette
+    }
+    return canvas;
+}
+
 // Do the extraction of the actual constants
 void ExtractCDCDeformation(TString filename = "hd_root.root"){
 
@@ -42,8 +58,8 @@ void ExtractCDCDeformation(TString filename = "hd_root.root"){
 
     // This stream will be for outputting the results in a format suitable for the CCDB
     // Will wait to open until needed
-    //ofstream textFile;
-    //textFile.open("TimewalkBCAL.txt");
+    ofstream textFile;
+    textFile.open("CDC_Deformation.txt");
 
     // We want to display the direction of the shift as well as the magnitude in the "CDC view"
     // Let's make it happen
@@ -54,7 +70,11 @@ void ExtractCDCDeformation(TString filename = "hd_root.root"){
 
     TH2D * Amplitude_view[29];
     TH2D * Direction_view[29];
+    TH2D * Vertical_view[29];
+    TH2D * Horizontal_view[29];
 
+    outputFile->mkdir("PerRing");
+    outputFile->cd("PerRing");
     for(unsigned int iring=0; iring<28; iring++){
         double r_start = radius[iring] - 0.8;
         double r_end = radius[iring] + 0.8;
@@ -66,23 +86,35 @@ void ExtractCDCDeformation(TString filename = "hd_root.root"){
         Amplitude_view[iring+1] = new TH2D(hname, "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
         sprintf(hname, "Direction_view_ring[%d]", iring+1);
         Direction_view[iring+1] = new TH2D(hname, "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
+        sprintf(hname, "Vertical_view_ring[%d]", iring+1);
+        Vertical_view[iring+1] = new TH2D(hname, "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
+        sprintf(hname, "Horizontal_view_ring[%d]", iring+1);
+        Horizontal_view[iring+1] = new TH2D(hname, "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
     }
 
     //Fit function for 
-    TF1 *f1 = new TF1("f1", "[0] + [1] * TMath::Sin(x + [2])", -3.14, 3.14);
+    TF1 *f1 = new TF1("f1", "[0] + [1] * TMath::Cos(x + [2])", -3.14, 3.14);
     f1->SetParLimits(0, 0.5, 1.0);
     f1->SetParLimits(1, 0.0, 0.35);
     //f1->SetParLimits(2, -3.14, 3.14);
     f1->SetParameters(0.78, 0.0, 0.0);
 
+    outputFile->cd();
+    outputFile->mkdir("FitParameters");
+    outputFile->cd("FitParameters");
+
     // Make some histograms to get the distributions of the fit parameters
     TH1I *h1_c0 = new TH1I("h1_c0", "Distribution of Constant", 100, 0.5, 1.0);
     TH1I *h1_c1 = new TH1I("h1_c1", "Distribution of Amplitude", 100, 0.0, 0.35);
-    TH1I *h1_c2 = new TH1I("h1_c2", "Distribution of Phase", 100, -10, 10);
+    TH1I *h1_c2 = new TH1I("h1_c2", "Direction of Longest Drift Time", 100, -3.14, 3.14);
+    TH1F *h1_c2_weighted = new TH1F("h1_c2_weighted", "Distribution of Direction weighted by amplitude", 100, -3.14, 3.14);
     TH2I *h2_c0_c1 = new TH2I("h2_c0_c1", "c_{1} Vs. c_{0}; c_{0}; c_{1}", 100, 0.5, 1.0, 100, 0, 0.35);
     TH2I *h2_c0_c2 = new TH2I("h2_c0_c2", "c_{2} Vs. c_{0}; c_{0}; c_{2}", 100, 0.5, 1.0, 100, -10, 10);
     TH2I *h2_c1_c2 = new TH2I("h2_c1_c2", "c_{2} Vs. c_{1}; c_{1}; c_{2}", 100, 0.0, 0.35, 100, -10, 10);
 
+    outputFile->cd();
+    outputFile->mkdir("Fits");
+    outputFile->cd("Fits");
 
     // Now we want to loop through all available module/layer/sector and try to make a fit of each one
     int ring = 1, straw = 1;
@@ -124,15 +156,6 @@ void ExtractCDCDeformation(TString filename = "hd_root.root"){
                     else if (total > perc95) percentile95[i-1] = projY->GetBinCenter(j);
                 }
             }
-            // Now make a graph with the values found
-            //TGraph *graph = new TGraph(16, binCenter, percentile97);
-            //char name[100];
-            //sprintf(name,"Ring %.2i Straw %.3i", ring, straw);
-            //graph->SetName(name);
-            //graph->SetTitle(name); 
-            //graph->Write();
-            //outputFile->Add(graph);
-            //TFitResultPtr fr = graph->Fit(f1, "SR+");
             f1->SetParameters(0.78, 0.0, 0.0);
             TFitResultPtr fr = extractedPoints->Fit(f1, "SR");
             Int_t fitStatus = fr;
@@ -143,15 +166,22 @@ void ExtractCDCDeformation(TString filename = "hd_root.root"){
                 // Move c2 to fit on our range
                 while (c2 > TMath::Pi()) c2 -= 2 * TMath::Pi();
                 while (c2 < -1* TMath::Pi()) c2 += 2 * TMath::Pi();
-                h1_c0->Fill(c0); h1_c1->Fill(c1); h1_c2->Fill(c2);
+                h1_c0->Fill(c0); h1_c1->Fill(c1); h1_c2->Fill(-1*c2); h1_c2_weighted->Fill(-1*c2,c1);
                 h2_c0_c1->Fill(c0,c1); h2_c0_c2->Fill(c0,c2); h2_c1_c2->Fill(c1,c2);
-                Amplitude_view[ring]->SetBinContent(straw, c1);
-                Direction_view[ring]->SetBinContent(straw, c2 + TMath::Pi() / 2); // Maximum of sin 
+                Amplitude_view[ring]->SetBinContent(straw,1,c1);
+                Direction_view[ring]->SetBinContent(straw,1,-1*c2);
+                Vertical_view[ring]->SetBinContent(straw,1,c1*TMath::Sin(-1*c2));
+                Horizontal_view[ring]->SetBinContent(straw,1,c1*TMath::Cos(-1*c2));
+                textFile << c1 << " " << c2 << endl;
             }
             else {
                 cout << "WARNING: Fit Status "<< fitStatus << " for ring " << ring << " straw " << straw << endl;
+                textFile << "0.0 0.0" << endl;
             }
 
+        }
+        else{
+            textFile << "0.0 0.0" << endl;
         }
 
         // On to the next one
@@ -161,39 +191,25 @@ void ExtractCDCDeformation(TString filename = "hd_root.root"){
             ring++;
         } 
     }
-    // Draw CDC view plots
-    TCanvas *c_Amplitude = new TCanvas("c_Amplitude","c_Amplitude", 800, 800);
-    TH2D *axes = new TH2D("axes", "Amplitude of Sinusoid", 1, -65.0, 65.0, 1, -65.0, 65.0);
-    axes->SetBinContent(1,1,-1.0/0.0); // Don't draw background color
-    double minScale = 0.0, maxScale = 0.3;
-    axes->SetStats(0);
-    axes->Fill(100,100); // without this, the color ramp is not drawn
-    axes->GetZaxis()->SetRangeUser(minScale, maxScale);
-    axes->Draw("colz");
-    for(unsigned int iring=1; iring<=28; iring++){
-        Amplitude_view[iring]->GetZaxis()->SetRangeUser(minScale, maxScale);
-        Amplitude_view[iring]->SetStats(0);
-        Amplitude_view[iring]->Draw("same col pol");  // draw remaining histos without overwriting color palette
-    }
 
-    TCanvas *c_Amplitude = new TCanvas("c_Amplitude","c_Amplitude", 800, 800);
-    TH2D *axes2 = new TH2D("axes", "Amplitude of Sinusoid", 1, -65.0, 65.0, 1, -65.0, 65.0);
-    axes2->SetBinContent(1,1,-1.0/0.0); // Don't draw background color
-    minScale = -3.14; maxScale = 3.14;
-    axes2->SetStats(0);
-    axes2->Fill(100,100); // without this, the color ramp is not drawn
-    axes2->GetZaxis()->SetRangeUser(minScale, maxScale);
+    outputFile->cd();
+    outputFile->mkdir("2D");
+    outputFile->cd("2D");
 
-    axes2->Draw("colz");
-    for(unsigned int iring=1; iring<=28; iring++){
-        Direction_view[iring]->GetZaxis()->SetRangeUser(minScale, maxScale);
-        Direction_view[iring]->SetStats(0);
-        Direction_view[iring]->Draw("same col pol");  // draw remaining histos without overwriting color palette
-    }
+    TCanvas *c_Amplitude  = Plot2DCDC(Amplitude_view,"c_Amplitude", "Amplitude of Sinusoid", 0.0, 0.3);
+    TCanvas *c_Direction  = Plot2DCDC(Direction_view,"c_Direction", "Direction of #delta", -3.14, 3.14);
+    TCanvas *c_Vertical   = Plot2DCDC(Vertical_view,"c_Vertical", "Vertical Projection of Delta", -0.3, 0.3);
+    TCanvas *c_Horizontal = Plot2DCDC(Horizontal_view,"c_Horizontal", "Horizontal Projection of Delta", -0.3, 0.3);
+
+    c_Amplitude->Write();
+    c_Direction->Write();
+    c_Horizontal->Write();
+    c_Vertical->Write();
 
     cout << "Closing Files..." << endl;
     outputFile->Write();
     thisFile->Close();
+    textFile.close();
     return;
 }
 
