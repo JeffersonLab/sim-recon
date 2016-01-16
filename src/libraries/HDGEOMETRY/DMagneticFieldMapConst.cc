@@ -17,7 +17,7 @@ using namespace std;
 //---------------------------------
 DMagneticFieldMapConst::DMagneticFieldMapConst(JApplication *japp, string namepath)
 {
-	int runnumber = 1;
+	int32_t runnumber = 1;
 	jcalib = japp->GetJCalibration(runnumber);
 	if(GetValues(namepath, runnumber)==0){
 		_DBG_<<"Error getting JCalibration object for magnetic field!"<<endl;
@@ -60,7 +60,7 @@ DMagneticFieldMapConst::~DMagneticFieldMapConst()
 //---------------------------------
 // GetValues
 //---------------------------------
-int DMagneticFieldMapConst::GetValues(string namepath, int runnumber, string context)
+int DMagneticFieldMapConst::GetValues(string namepath, int32_t runnumber, string context)
 {
 	/// Read the parameters for the constant magnetic field map from the calibration database.
 

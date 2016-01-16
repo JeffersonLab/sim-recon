@@ -6,7 +6,7 @@ import sbms
 Import('*')
 env = env.Clone()
 
-
+sbms.AddCERNLIB(env)
 sbms.AddAmpTools(env)
 sbms.AddROOT(env)
 sbms.library(env)

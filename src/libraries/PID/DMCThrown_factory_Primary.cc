@@ -21,7 +21,7 @@ jerror_t DMCThrown_factory_Primary::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DMCThrown_factory_Primary::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DMCThrown_factory_Primary::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	locEventLoop->GetSingle(dAnalysisUtilities);
 	return NOERROR;
@@ -30,7 +30,7 @@ jerror_t DMCThrown_factory_Primary::brun(jana::JEventLoop *locEventLoop, int run
 //------------------
 // evnt
 //------------------
-jerror_t DMCThrown_factory_Primary::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DMCThrown_factory_Primary::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	_data.clear();
 

@@ -316,7 +316,7 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrackCandidate_factory_CDCCOSMIC::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DTrackCandidate_factory_CDCCOSMIC::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
     DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
     JCalibration *jcalib = dapp->GetJCalibration(runnumber);
@@ -416,7 +416,7 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::brun(jana::JEventLoop *eventLoop, in
 //------------------
 // evnt
 //------------------
-jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 
     vector <const DBCALShower *> bcalShowerVector;

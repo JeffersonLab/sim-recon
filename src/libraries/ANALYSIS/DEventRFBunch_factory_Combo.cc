@@ -25,7 +25,7 @@ jerror_t DEventRFBunch_factory_Combo::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	gPARMS->SetDefaultParameter("COMBO:TRACK_SELECT_TAG", dTrackSelectionTag);
 	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
@@ -35,7 +35,12 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int r
 	dBeamBunchPeriod = locBeamPeriodVector[0];
 
 	DApplication *locApplication = dynamic_cast<DApplication*> (locEventLoop->GetJApplication());
-	DGeometry *locGeometry = locApplication ? locApplication->GetDGeometry(runnumber):NULL;
+	if(locApplication == NULL)
+		exit(EX_UNAVAILABLE);
+
+	DGeometry *locGeometry = locApplication->GetDGeometry(runnumber);
+	if(locGeometry == NULL)
+		exit(EX_UNAVAILABLE);
 	locGeometry->GetTargetZ(dTargetCenterZ);
 
 	locEventLoop->GetSingle(dParticleID);
@@ -155,7 +160,7 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int r
 //------------------
 // evnt
 //------------------
-jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DEventRFBunch_factory_Combo::evnt()");

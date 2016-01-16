@@ -124,8 +124,9 @@ jerror_t JEventProcessor_DAQ_online::init(void)
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125EventHeader, "f125 Event Header");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125TriggerTime, "f125 Trigger Time");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125WindowRawData, "f125 Window Raw Data");
-	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125WindowSum, "f125 Window Sum");
-	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125PulseRawData, "f125 Pulse Raw Data");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125CDCPulse, "f125 CDC Pulse");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125FDCPulse6, "f125 FDC Pulse (integral)");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125FDCPulse9, "f125 FDC Pulse (peak)");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125PulseIntegral, "f125 Pulse Integral");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125PulseTime, "f125 Pulse Time");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125PulsePedestal, "f125 Pulse Pedestal");
@@ -228,7 +229,7 @@ void JEventProcessor_DAQ_online::AddROCIDLabels(JEventLoop *loop)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_DAQ_online::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_DAQ_online::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	// This is called whenever the run number changes
 	return NOERROR;
@@ -237,7 +238,7 @@ jerror_t JEventProcessor_DAQ_online::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using
@@ -674,8 +675,20 @@ void JEventProcessor_DAQ_online::Parsef125Bank(uint32_t rocid, uint32_t *&iptr, 
 				word_stats[kf125WindowRawData] += window_words; 
 				iptr = &iptr[window_words];
 				break;
+			case  5: word_stats[kf125CDCPulse]++;
+				iptr++;
+				if(((*iptr>>31) & 0x1) == 0){ word_stats[kf125CDCPulse]++; iptr++; }
+				break;
+			case  6: word_stats[kf125FDCPulse6]++;
+				iptr++;
+				if(((*iptr>>31) & 0x1) == 0){ word_stats[kf125FDCPulse6]++; iptr++; }
+				break;
 			case  7: word_stats[kf125PulseIntegral]++;    iptr++;  break;
 			case  8: word_stats[kf125PulseTime]++;        iptr++;  break;
+			case  9: word_stats[kf125FDCPulse9]++;
+				iptr++;
+				if(((*iptr>>31) & 0x1) == 0){ word_stats[kf125FDCPulse9]++; iptr++; }
+				break;
 			case 10: word_stats[kf125PulsePedestal]++;    iptr++;  break;
 			case 13: word_stats[kf125EventTrailer]++;     iptr++;  break;
 			case 14: word_stats[kf125DataNotValid]++;     iptr++;  break;

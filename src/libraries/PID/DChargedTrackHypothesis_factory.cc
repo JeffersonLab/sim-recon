@@ -27,7 +27,7 @@ jerror_t DChargedTrackHypothesis_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DChargedTrackHypothesis_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DChargedTrackHypothesis_factory::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	locEventLoop->GetSingle(dPIDAlgorithm);
  	return NOERROR;
@@ -36,7 +36,7 @@ jerror_t DChargedTrackHypothesis_factory::brun(jana::JEventLoop *locEventLoop, i
 //------------------
 // evnt
 //------------------
-jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
+jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber)
 {
  	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locEventLoop->Get(locTrackTimeBasedVector);

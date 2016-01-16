@@ -24,7 +24,7 @@ jerror_t DAnalysisResults_factory_PreKinFit::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 
@@ -240,7 +240,7 @@ void DAnalysisResults_factory_PreKinFit::Get_Reactions(jana::JEventLoop* locEven
 //------------------
 // evnt
 //------------------
-jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
+jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 
 #ifdef VTRACE

@@ -49,7 +49,7 @@ DRootGeom::~DRootGeom()
 //---------------------------------
 // ReadMap
 //---------------------------------
-int DRootGeom::ReadMap(string namepath, int runnumber)
+int DRootGeom::ReadMap(string namepath, int32_t runnumber)
 {
 	/// Read the magnetic field map in from the calibration database.
 	/// This will read in the map and figure out the number of grid

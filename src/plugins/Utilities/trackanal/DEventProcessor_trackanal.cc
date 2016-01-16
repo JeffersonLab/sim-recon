@@ -146,7 +146,7 @@ jerror_t DEventProcessor_trackanal::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_trackanal::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t DEventProcessor_trackanal::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -154,7 +154,7 @@ jerror_t DEventProcessor_trackanal::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_trackanal::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_trackanal::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 
 

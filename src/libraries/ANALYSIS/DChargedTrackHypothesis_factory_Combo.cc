@@ -25,7 +25,7 @@ jerror_t DChargedTrackHypothesis_factory_Combo::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DChargedTrackHypothesis_factory_Combo::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DChargedTrackHypothesis_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
 	locEventLoop->Get(locChargedTrackHypotheses); //make sure that brun() is called for the default factory!!!
@@ -77,7 +77,7 @@ jerror_t DChargedTrackHypothesis_factory_Combo::brun(jana::JEventLoop *locEventL
 //------------------
 // evnt
 //------------------
-jerror_t DChargedTrackHypothesis_factory_Combo::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
+jerror_t DChargedTrackHypothesis_factory_Combo::evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DChargedTrackHypothesis_factory_Combo::evnt()");

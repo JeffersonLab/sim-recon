@@ -122,7 +122,7 @@ jerror_t DEventProcessor_BCAL_gainmatrix::brun(jana::JEventLoop* locEventLoop, i
 
 
 
-jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, int locEventNumber)
+jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 
 	eventnum = locEventNumber;

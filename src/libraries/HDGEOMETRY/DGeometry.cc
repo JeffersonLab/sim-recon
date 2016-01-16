@@ -23,7 +23,7 @@ using namespace std;
 //---------------------------------
 // DGeometry    (Constructor)
 //---------------------------------
-DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp, unsigned int runnumber)
+DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp, int32_t runnumber)
 {
 	this->jgeom = jgeom;
 	this->dapp = dapp;

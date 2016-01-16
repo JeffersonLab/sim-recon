@@ -2861,13 +2861,13 @@ void DKinFitter::Calc_dF(void)
 			{
 				locKinFitParticle = (locKinFitConstraint_Spacetime->dFullConstrainParticles)[loc_j];
 				locIsDecayingFlag = (locKinFitParticle->Get_KinFitParticleType() == d_DecayingParticle);
-				locFIndex = locKinFitConstraint_Vertex->Get_FIndex(locKinFitParticle);
+				locFIndex = locKinFitConstraint_Spacetime->Get_FIndex(locKinFitParticle);
 				if(dDebugLevel > 10)
 					cout << "DKinFitter: F index, locIsDecayingFlag = " << locFIndex << ", " << locIsDecayingFlag << endl;
 				Calc_dF_Time(locFIndex, locKinFitParticle, false);
 				if((locKinFitParticle == dRFMatchedBeamParticle) && locKinFitConstraint_Spacetime->Get_UseRFTimeFlag())
 				{
-					locFIndex = locKinFitConstraint_Vertex->Get_FIndex(NULL);
+					locFIndex = locKinFitConstraint_Spacetime->Get_FIndex(NULL);
 					if(dDebugLevel > 10)
 						cout << "DKinFitter: F index, locIsDecayingFlag = " << locFIndex << ", " << locIsDecayingFlag << endl;
 					Calc_dF_Time(locFIndex, dRFMatchedBeamParticle, true);
@@ -4489,18 +4489,12 @@ void DKinFitter::Calc_dF_Time(size_t locFIndex, const DKinFitParticle* locKinFit
 
 void DKinFitter::Calc_Pulls(void)
 {
-	DKinFitParticle* locKinFitParticle;
-	DKinFitParticleType locKinFitParticleType;
-	int locParamIndex;
-	double locDenominator;
-
-	locParamIndex = 0;
 	dPulls.clear();
 	map<DKinFitPullType, double> locParticlePulls;
 	for(size_t loc_i = 0; loc_i < dKinFitParticles.size(); ++loc_i)
 	{
-		locKinFitParticle = dKinFitParticles[loc_i];
-		locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
+		DKinFitParticle* locKinFitParticle = dKinFitParticles[loc_i];
+		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 
 		if((locKinFitParticleType == d_DecayingParticle) || (locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_TargetParticle))
 			continue;
@@ -4512,17 +4506,17 @@ void DKinFitter::Calc_Pulls(void)
 			cout << "e, px, vx, t param indices = " << dKinFitParticles[loc_i]->Get_EParamIndex() << ", " << dKinFitParticles[loc_i]->Get_PxParamIndex() << ", " << dKinFitParticles[loc_i]->Get_VxParamIndex() << ", " << dKinFitParticles[loc_i]->Get_TParamIndex() << endl;
 		}
 
-		locParamIndex = locKinFitParticle->Get_EParamIndex();
+		int locParamIndex = locKinFitParticle->Get_EParamIndex();
 		if(locParamIndex >= 0) //E
 		{
-			locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
+			double locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
 			locParticlePulls[d_EPull] = (locDenominator > 0.0) ? dEpsilon(locParamIndex, 0)/locDenominator : std::numeric_limits<double>::quiet_NaN();
 		}
 
 		locParamIndex = locKinFitParticle->Get_PxParamIndex();
 		if(locParamIndex >= 0) //px, py, pz
 		{
-			locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
+			double locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
 			locParticlePulls[d_PxPull] = (locDenominator > 0.0) ? dEpsilon(locParamIndex, 0)/locDenominator : std::numeric_limits<double>::quiet_NaN();
 			++locParamIndex;
 			locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
@@ -4535,7 +4529,7 @@ void DKinFitter::Calc_Pulls(void)
 		locParamIndex = locKinFitParticle->Get_VxParamIndex();
 		if(locParamIndex >= 0) //vx, vy, vz
 		{
-			locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
+			double locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
 			locParticlePulls[d_XxPull] = (locDenominator > 0.0) ? dEpsilon(locParamIndex, 0)/locDenominator : std::numeric_limits<double>::quiet_NaN();
 			++locParamIndex;
 			locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
@@ -4548,7 +4542,7 @@ void DKinFitter::Calc_Pulls(void)
 		locParamIndex = locKinFitParticle->Get_TParamIndex();
 		if(locParamIndex >= 0) //T
 		{
-			locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
+			double locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
 			locParticlePulls[d_TPull] = (locDenominator > 0.0) ? dEpsilon(locParamIndex, 0)/locDenominator : std::numeric_limits<double>::quiet_NaN();
 		}
 
@@ -4557,11 +4551,11 @@ void DKinFitter::Calc_Pulls(void)
 	}
 
 	//RF BUNCH
-	locParamIndex = dRFTimeParamIndex;
+	int locParamIndex = dRFTimeParamIndex;
 	if(locParamIndex >= 0)
 	{
 		locParticlePulls.clear();
-		locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
+		double locDenominator = sqrt(fabs(dVY(locParamIndex, locParamIndex) - (*dVEta)(locParamIndex, locParamIndex)));
 		locParticlePulls[d_TPull] = (locDenominator > 0.0) ? dEpsilon(locParamIndex, 0)/locDenominator : std::numeric_limits<double>::quiet_NaN();
 		dPulls[NULL] = locParticlePulls;
 	}

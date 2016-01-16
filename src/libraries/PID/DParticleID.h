@@ -196,6 +196,8 @@ class DParticleID:public jana::JObject{
 	vector<double> sc_attn_B[2];
 	vector<double> sc_attn_C[2];
 
+    vector<double> sc_paddle_resols;
+
 	// FCAL geometry
 	double dFCALz;
 	const DFCALGeometry *dFCALGeometry;

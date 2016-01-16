@@ -251,7 +251,7 @@ jerror_t JEventProcessor_PSPair_online::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
   // This is called whenever the run number changes
   // extract the PS geometry
@@ -281,8 +281,8 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int runnumbe
   double Ebh_PS = psGeom.getEhigh(0,NC_PS) + psGeom.getEhigh(1,NC_PS);
   double range = Ebh_PS-Ebl_PS;
   int NEb_PS = range/Ebw_PS-int(range/Ebw_PS) < 0.5 ? int(range/Ebw_PS) : int(range/Ebw_PS) + 1;
-  double desired_range = NEb_PS*Ebw_PS;
-  Ebh_PS = Ebl_PS + desired_range; // tweak the upper limit to obtain the desired constant bin width
+//  double desired_range = NEb_PS*Ebw_PS;
+//  Ebh_PS = Ebl_PS + desired_range; // tweak the upper limit to obtain the desired constant bin width
   double Elows_PS[NEb_PS+1];
   for (int i=0;i<NEb_PS+1;i++) {
     Elows_PS[i] = Ebl_PS + i*Ebw_PS;
@@ -364,7 +364,7 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int runnumbe
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_PSPair_online::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_PSPair_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
   // This is called for every event. Use of common resources like writing
   // to a file or filling a histogram should be mutex protected. Using

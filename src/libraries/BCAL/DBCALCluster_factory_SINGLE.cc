@@ -26,7 +26,7 @@ jerror_t DBCALCluster_factory_SINGLE::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DBCALCluster_factory_SINGLE::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DBCALCluster_factory_SINGLE::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
 	DApplication* app = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
 	DGeometry* geom = app->GetDGeometry(runnumber);
@@ -37,7 +37,7 @@ jerror_t DBCALCluster_factory_SINGLE::brun(jana::JEventLoop *eventLoop, int runn
 //------------------
 // evnt
 //------------------
-jerror_t DBCALCluster_factory_SINGLE::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DBCALCluster_factory_SINGLE::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// Get DBCALPoint objects
 	vector<const DBCALPoint*> bcalpoints;

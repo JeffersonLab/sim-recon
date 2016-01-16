@@ -9,22 +9,48 @@
 
 void DCustomAction_p2gamma_hists::Initialize(JEventLoop* locEventLoop)
 {
+	DApplication* dapp=dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+	JCalibration *jcalib = dapp->GetJCalibration((locEventLoop->GetJEvent()).GetRunNumber());
+
+	// Parameters for event selection to fill histograms
+	endpoint_energy = 12.;
+	map<string, double> photon_endpoint_energy;
+	if(jcalib->Get("/PHOTON_BEAM/endpoint_energy", photon_endpoint_energy) == false) {
+		endpoint_energy = photon_endpoint_energy["PHOTON_BEAM_ENDPOINT_ENERGY"];
+	}
+	endpoint_energy_bins = (int)(20*endpoint_energy);
+
+	cohmin_energy = 0.;
+	cohedge_energy = 12.;
+	map<string, double> photon_beam_param;
+	if(jcalib->Get("test/PHOTON_BEAM/coherent_energy", photon_beam_param) == false) {
+		cohmin_energy = photon_beam_param["cohmin_energy"];
+		cohedge_energy = photon_beam_param["cohedge_energy"];
+	}
+
+	dEdxCut = 2.2;
+        minMM2Cut = -0.05;
+        maxMM2Cut = 0.05;
+        missingEnergyCut = 1.0;
+        min2gMassCut = 0.10;
+        max2gMassCut = 0.16;
+
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
 			//If another thread has already created the folder, it just changes to it. 
 		CreateAndChangeTo_ActionDirectory();
 
-		dEgamma = GetOrCreate_Histogram<TH1I>("Egamma", "TAGGER photon energy; E_{#gamma}", 400, 0., 12.);
+		dEgamma = GetOrCreate_Histogram<TH1I>("Egamma", "TAGGER photon energy; E_{#gamma}", endpoint_energy_bins, 0., endpoint_energy);
 		
 		dMM2_M2g = GetOrCreate_Histogram<TH2I>("MM2_M2g", "MM^{2} off p #gamma#gamma vs M_{#gamma#gamma}; M_{#gamma#gamma}; MM^{2}", 500, 0.0, 1.0, 200, -1., 1.);
 		dProton_dEdx_P = GetOrCreate_Histogram<TH2I>("Proton_dEdx_P","dE/dx vs p; p; dE/dx",200,0,2,500,0,5);
 		dProton_P_Theta = GetOrCreate_Histogram<TH2I>("Proton_P_Theta","p vs #theta; #theta; p (GeV/c)",180,0,180,120,0,12);
-		dProtonPhi_Egamma = GetOrCreate_Histogram<TH2I>("ProtonPhi_Egamma","#phi vs E_{#gamma}; E_{#gamma}; proton #phi",240,0,6,360,-180,180);
+		dProtonPhi_Egamma = GetOrCreate_Histogram<TH2I>("ProtonPhi_Egamma","#phi vs E_{#gamma}; E_{#gamma}; proton #phi",endpoint_energy_bins, 0., endpoint_energy,360,-180,180);
 		dProtonPhi_Theta = GetOrCreate_Histogram<TH2I>("ProtonPhi_Theta","#phi vs #theta_{CM}; #pi^{0} #theta_{CM}; proton #phi",180,0,180,360,-180,180);
 		dProtonPhi_t = GetOrCreate_Histogram<TH2I>("ProtonPhi_t","#psi vs |t|; |t|; proton #phi",1000,0.,5.,360,-180,180);
 
-		dPi0Phi_Egamma = GetOrCreate_Histogram<TH2I>("Pi0Phi_Egamma","#phi vs E_{#gamma}; E_{#gamma}; #pi^{0} #phi",240,0,6,360,-180,180);
+		dPi0Phi_Egamma = GetOrCreate_Histogram<TH2I>("Pi0Phi_Egamma","#phi vs E_{#gamma}; E_{#gamma}; #pi^{0} #phi",endpoint_energy_bins, 0., endpoint_energy,360,-180,180);
 		dPi0Phi_Theta = GetOrCreate_Histogram<TH2I>("Pi0Phi_Theta","#phi vs #theta_{CM}; #pi^{0} #theta_{CM}; #pi^{0} #phi",180,0,180,360,-180,180);
 		dPi0EgammaCorr = GetOrCreate_Histogram<TH2I>("Pi0EgammaCorr","E_{#gamma 1} vs E_{#gamma 2}; E_{#gamma 2}; E_{#gamma 1}",100,0.,5., 100.,0.,5.);
 
@@ -98,7 +124,6 @@ bool DCustomAction_p2gamma_hists::Perform_Action(JEventLoop* locEventLoop, const
 		fillHist = false; //dupe: already histed!
 	dPreviousSourceObjects.insert(locSourceObjects);
 
-
 	DLorentzVector locGamma1P4 = locParticleCombo->Get_ParticleComboStep(0)->Get_FinalParticle_Measured(0)->lorentzMomentum();
 	DLorentzVector locGamma2P4 = locParticleCombo->Get_ParticleComboStep(0)->Get_FinalParticle_Measured(1)->lorentzMomentum();
 	double locMinEgamma = min(locGamma1P4.E(), locGamma2P4.E());
@@ -112,8 +137,6 @@ bool DCustomAction_p2gamma_hists::Perform_Action(JEventLoop* locEventLoop, const
 	double locThetaCM = locGamma_P4CMFrame.Vect().Angle(locPi0_P4CMFrame.Vect());
 	TLorentzVector locDelta = (locProtonP4 - locProtonP4Init);
 	double t = locDelta.M2();
-
-	double dEdxCut = 2.2;
 	
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
@@ -137,30 +160,30 @@ bool DCustomAction_p2gamma_hists::Perform_Action(JEventLoop* locEventLoop, const
 			
 			dMM2_M2g_CoplanarTag->Fill(loc2g_P4.M(), locMissingP4.M2());
 			dDeltaE_M2g_CoplanarTag->Fill(loc2g_P4.M(), locMissingP4.E());
-			if(loc2g_P4.M() > 0.10 && loc2g_P4.M() < 0.16)
+			if(loc2g_P4.M() > min2gMassCut && loc2g_P4.M() < max2gMassCut)
 				dMM2_DeltaE_CoplanarTag->Fill(locMissingP4.E(), locMissingP4.M2());
 			
 			// tag proton with dE/dx
 			if(dEdx > dEdxCut) {
 				dMM2_M2g_ProtonTag->Fill(loc2g_P4.M(), locMissingP4.M2());
 				dDeltaE_M2g_ProtonTag->Fill(loc2g_P4.M(), locMissingP4.E());
-				if(loc2g_P4.M() > 0.10 && loc2g_P4.M() < 0.16)
+				if(loc2g_P4.M() > min2gMassCut && loc2g_P4.M() < max2gMassCut)
 					dMM2_DeltaE_ProtonTag->Fill(locMissingP4.E(), locMissingP4.M2());
 				
 				// di-photon invariant mass for exclusive g+p -> p + 2g
-				if(fabs(locMissingP4.M2()) < 0.05 && fabs(locMissingP4.E()) < 0.5) {
+				if(locMissingP4.M2() > minMM2Cut && locMissingP4.M2() < maxMM2Cut && fabs(locMissingP4.E()) < missingEnergyCut) {
 					dEgamma_M2g_ProtonTag->Fill(loc2g_P4.M(),locBeamPhotonEnergy);
 				}
 			}
 			
 			// for pi0 candidates require recoil proton
-			if(loc2g_P4.M() > 0.10 && loc2g_P4.M() < 0.16 && fabs(locMissingP4.M2()) < 0.05 && fabs(locMissingP4.E()) < 0.5) {
+			if(loc2g_P4.M() > min2gMassCut && loc2g_P4.M() < max2gMassCut && locMissingP4.M2() > minMM2Cut && locMissingP4.M2() < maxMM2Cut && fabs(locMissingP4.E()) < missingEnergyCut) {
 				dProton_dEdx_P->Fill(locProtonP4.Vect().Mag(), dEdx);
 				dProton_P_Theta->Fill(locProtonP4.Vect().Theta()*180/TMath::Pi(), locProtonP4.Vect().Mag());			
 				dProtonPhi_Egamma->Fill(locBeamPhotonEnergy, locProtonP4.Phi()*180/TMath::Pi());
 				dPi0Phi_Egamma->Fill(locBeamPhotonEnergy, loc2g_P4.Phi()*180/TMath::Pi());
 				
-				if(locBeamPhotonEnergy > 2.5 && locBeamPhotonEnergy < 3.0){ // 2931 is 2.9 to 3.35 GeV
+				if(locBeamPhotonEnergy > cohmin_energy && locBeamPhotonEnergy < cohedge_energy){ 
 					dProtonPhi_Theta->Fill(locThetaCM*180/TMath::Pi(), locProtonP4.Phi()*180/TMath::Pi());
 					dProtonPhi_t->Fill(fabs(t), locProtonP4.Phi()*180/TMath::Pi());
 					dPi0Phi_Theta->Fill(locThetaCM*180/TMath::Pi(), loc2g_P4.Phi()*180/TMath::Pi());

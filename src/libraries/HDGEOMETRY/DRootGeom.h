@@ -43,7 +43,7 @@ class DRootGeom{
   virtual const char* className(void){return static_className();}
   static const char* static_className(void){return "DRootGeom";}  
 
-	int ReadMap(string namepath, int runnumber);
+	int ReadMap(string namepath, int32_t runnumber);
 	void InitTable(void);
 
   TGeoNode* GetCurrentNode(){return Current_Node;};

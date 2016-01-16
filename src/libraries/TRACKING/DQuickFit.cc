@@ -228,15 +228,6 @@ jerror_t DQuickFit::FitCircle(void)
 	x0 = (deltax*beta-deltay*gamma)/denom;
 	//y0 = (deltay-gamma*x0)/beta;
 	y0 = (deltay*alpha-deltax*gamma)/denom;
-	
-	// Calculate the phi angle traversed by the track from the
-	// origin to the last hit. NOTE: this can be off by a multiple
-	// of 2pi!
-	double delta_phi=0.0;
-	if(a){ // a should be pointer to last hit from above loop
-		delta_phi = atan2(a->y-y0, a->x-x0);
-		if(delta_phi<0.0)delta_phi += 2.0*M_PI;
-	}
 
 	// Momentum depends on magnetic field. If bfield has been
 	// set, we should use it to determine an average value of Bz
@@ -619,7 +610,6 @@ jerror_t DQuickFit::FitTrack(void)
 		//cout<<__FILE__<<":"<<__LINE__<<" deltaZ="<<deltaZ<<" deltaPhi="<<deltaPhi<<" Sxy(i)="<<deltaZ*deltaPhi<<endl;
 	}
 	float dzdphi = Syy/Sxy;
-	dzdphi = Syy/Sxy;
 	z_vertex = z_mean - phi_mean*dzdphi;
 //cout<<__FILE__<<":"<<__LINE__<<" z_mean="<<z_mean<<" phi_mean="<<phi_mean<<" dphidz="<<dphidz<<" Sxy="<<Sxy<<" Syy="<<Syy<<" z_vertex="<<z_vertex<<endl;
 	

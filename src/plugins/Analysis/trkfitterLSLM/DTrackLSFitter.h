@@ -38,9 +38,9 @@ class DTrackLSFitter:public DTrackFitter
   DTrackLSFitter(JEventLoop *loop);
   ~DTrackLSFitter();
   jerror_t init(void);						///< Called once at program start.
-  jerror_t brun(JEventLoop *eventLoop, int runnumber);			///< Called everytime a new run number is detected.
-  jerror_t evnt(JEventLoop *eventLoop, int eventnumber);		///< Called every event.
-  int eventNo;
+  jerror_t brun(JEventLoop *eventLoop, int32_t runnumber);			///< Called everytime a new run number is detected.
+  jerror_t evnt(JEventLoop *eventLoop, uint64_t eventnumber);		///< Called every event.
+  uint64_t eventNo;
   jerror_t erun(void);
   jerror_t fini(void);
   int debug_level;

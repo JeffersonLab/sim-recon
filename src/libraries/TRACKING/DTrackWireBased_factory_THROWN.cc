@@ -37,7 +37,7 @@ DTrackWireBased_factory_THROWN::DTrackWireBased_factory_THROWN()
 //------------------
 // brun
 //------------------
-jerror_t DTrackWireBased_factory_THROWN::brun(jana::JEventLoop *loop, int runnumber)
+jerror_t DTrackWireBased_factory_THROWN::brun(jana::JEventLoop *loop, int32_t runnumber)
 {
 	// Get pointer to DTrackFitter object that actually fits a track
 	vector<const DTrackFitter *> fitters;
@@ -81,7 +81,7 @@ jerror_t DTrackWireBased_factory_THROWN::brun(jana::JEventLoop *loop, int runnum
 //------------------
 // evnt
 //------------------
-jerror_t DTrackWireBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackWireBased_factory_THROWN::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DCDCTrackHit*> cdctrackhits;

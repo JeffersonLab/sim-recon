@@ -633,7 +633,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  dy=S(state_y)-yw;
 	  dx=S(state_x)-xw;      
 	  double cosstereo=my_cdchits[cdc_index]->cosstereo;
-	  double d=sqrt(dx*dx+dy*dy)*cosstereo;
+	  double d=sqrt(dx*dx+dy*dy)*cosstereo+EPS;
 	  
 	  // Track projection
 	  double cosstereo2_over_d=cosstereo*cosstereo/d;
@@ -883,8 +883,21 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
   if (numdof<6){
     chisq=MAX_CHI2;
     numdof=0;
-   
-    return INVALID_FIT;
+
+    if (num_cdc==0){
+      unsigned int new_index=(3*num_fdc)/4;
+      break_point_fdc_index=(new_index>=MIN_HITS_FOR_REFIT)?new_index:(MIN_HITS_FOR_REFIT-1);
+    }
+    else{
+      unsigned int new_index=num_fdc/2;
+      if (new_index+num_cdc>=MIN_HITS_FOR_REFIT){
+	break_point_fdc_index=new_index;
+      }
+      else{
+	break_point_fdc_index=MIN_HITS_FOR_REFIT-num_cdc;
+      }
+    }
+    return PRUNED_TOO_MANY_HITS;
   }
 
   //  chisq*=anneal_factor;

@@ -48,8 +48,8 @@ class DBCALPoint_factory : public JFactory<DBCALPoint> {
 
   bool PRINTCALIBRATION;
 
-  jerror_t brun(JEventLoop *loop, int runnumber);
-  jerror_t evnt(JEventLoop *loop, int eventnumber);
+  jerror_t brun(JEventLoop *loop, int32_t runnumber);
+  jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);
 
   const int GetCalibIndex( int module, int layer, int sector ) const {
 	  return BCAL_NUM_LAYERS*BCAL_NUM_SECTORS*(module-1) + BCAL_NUM_SECTORS*(layer-1) + (sector-1);

@@ -25,7 +25,7 @@ jerror_t DChargedTrack_factory_PreSelect::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DChargedTrack_factory_PreSelect::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DChargedTrack_factory_PreSelect::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	gPARMS->SetDefaultParameter("PRESELECT:MIN_TRACKING_FOM", dMinTrackingFOM);
 	gPARMS->SetDefaultParameter("PRESELECT:HAS_DETECTOR_MATCH_FLAG", dHasDetectorMatchFlag);
@@ -36,7 +36,7 @@ jerror_t DChargedTrack_factory_PreSelect::brun(jana::JEventLoop *locEventLoop, i
 //------------------
 // evnt
 //------------------
-jerror_t DChargedTrack_factory_PreSelect::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DChargedTrack_factory_PreSelect::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	//Clear objects from last event
 	for(size_t loc_i = 0; loc_i < dCreatedChargedTracks.size(); ++loc_i)

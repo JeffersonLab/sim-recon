@@ -59,7 +59,7 @@ jerror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 // evnt   -Fill histograms here
 //------------------------------------------------------------------
-jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
+jerror_t MyProcessor::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 #if 0
 	// Histograms are created and filled in DEventProcessor_TrackHists

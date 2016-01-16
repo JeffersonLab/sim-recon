@@ -90,7 +90,7 @@ jerror_t DBCALShower_factory_KLOE::init()
 //------------------
 // brun
 //------------------
-jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
+jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int32_t runnumber)
 {
     //get target position
     DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
@@ -179,7 +179,7 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
     // Call core KLOE reconstruction routines
     CellRecon(loop);
@@ -1006,7 +1006,7 @@ void DBCALShower_factory_KLOE::Clus_Break(int nclust)
     int n=nclust;
     tdif_a=ta_cel[n]-ta_cls[nclust];
     tdif_b=tb_cel[n]-tb_cls[nclust];
-    selnum=0;
+//    selnum=0;
     
     //----------------------------------------------------------------------
     if(tdif_a>0.0) {
@@ -1044,7 +1044,7 @@ void DBCALShower_factory_KLOE::Clus_Break(int nclust)
         n=next[n];
         tdif_a=ta_cel[n]-ta_cls[nclust];
         tdif_b=tb_cel[n]-tb_cls[nclust];
-        selnum=0;
+//        selnum=0;
         
         //**************************************************************************
         
@@ -1467,7 +1467,7 @@ float DBCALShower_factory_KLOE::Gammq(float a_gammq,float x_gammq)
     //Returns the incomplete gamma function Q(a_gammq,x_gammq)=1-P(a_gammq,x_gammq)
     
     
-    float gammcf,gamser;
+    float gammcf=0,gamser;
     
     if(a_gammq==0.0) { 
         gammq=999.0;

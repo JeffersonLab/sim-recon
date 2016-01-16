@@ -83,7 +83,7 @@ jerror_t JEventProcessor_TAGH_timewalk::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_TAGH_timewalk::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_TAGH_timewalk::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
     // This is called whenever the run number changes
     dRFTimeFactory = static_cast<DRFTime_factory*>(eventLoop->GetFactory("DRFTime"));
@@ -95,7 +95,7 @@ jerror_t JEventProcessor_TAGH_timewalk::brun(JEventLoop *eventLoop, int runnumbe
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_TAGH_timewalk::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_TAGH_timewalk::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
     // This is called for every event. Use of common resources like writing
     // to a file or filling a histogram should be mutex protected. Using

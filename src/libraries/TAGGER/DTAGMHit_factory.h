@@ -42,14 +42,19 @@ class DTAGMHit_factory: public jana::JFactory<DTAGMHit> {
       double fadc_time_offsets[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
       double tdc_time_offsets[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
       double fiber_quality[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+      double tw_c0[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+      double tw_c1[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+      double tw_c2[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+      double thresh[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+      double ref[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
 
       bool load_ccdb_constants(std::string table_name,
                                std::string column_name,
                                double table[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1]);
    private:
       jerror_t init(void);                                          ///< Called once at program start
-      jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);    ///< Called everytime a new run number is detected
-      jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);  ///< Called every event
+      jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);    ///< Called everytime a new run number is detected
+      jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);  ///< Called every event
       jerror_t erun(void);                                          ///< Called everytime run number changes, if brun has been called
       jerror_t fini(void);                                          ///< Called after last event of last event source has been processed
 };

@@ -64,7 +64,7 @@ jerror_t DTrackTimeBased_factory_HDParSim::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrackTimeBased_factory_HDParSim::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DTrackTimeBased_factory_HDParSim::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -72,7 +72,7 @@ jerror_t DTrackTimeBased_factory_HDParSim::brun(jana::JEventLoop *eventLoop, int
 //------------------
 // evnt
 //------------------
-jerror_t DTrackTimeBased_factory_HDParSim::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackTimeBased_factory_HDParSim::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// The simplest way to do this is to get the list of DTrackTimeBased
 	// objects made from the DTrackTimeBased:THROWN factory and copy those

@@ -55,7 +55,7 @@ DFCALCluster_factory::DFCALCluster_factory()
 //------------------
 // brun
 //------------------
-jerror_t DFCALCluster_factory::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t DFCALCluster_factory::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	double targetZ;
 	double fcalFrontFaceZ;
@@ -84,7 +84,7 @@ jerror_t DFCALCluster_factory::brun(JEventLoop *eventLoop, int runnumber)
 // evnt
 //    Implementation of UConn LGD clusterizer (M. Kornicer)
 //------------------
-jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
+jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 {
 
 	vector<const DFCALHit*> fcalhits;

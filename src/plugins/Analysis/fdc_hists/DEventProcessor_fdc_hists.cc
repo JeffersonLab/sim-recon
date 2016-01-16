@@ -112,7 +112,7 @@ jerror_t DEventProcessor_fdc_hists::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_fdc_hists::brun(JEventLoop *loop, int runnumber)
+jerror_t DEventProcessor_fdc_hists::brun(JEventLoop *loop, int32_t runnumber)
 {	
   DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
@@ -283,7 +283,7 @@ jerror_t DEventProcessor_fdc_hists::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, int eventnumber){
+jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, uint64_t eventnumber){
   myevt++;
   
   // Get BCAL showers, FCAL showers and FDC space points

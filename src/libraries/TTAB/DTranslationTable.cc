@@ -1399,7 +1399,6 @@ void DTranslationTable::AddToCallStack(JEventLoop *loop,
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-static int ModuleStr2ModID(string &type);
 static DTranslationTable::Detector_t DetectorStr2DetID(string &type);
 static void StartElement(void *userData, const char *xmlname, const char **atts);
 static void EndElement(void *userData, const char *xmlname);
@@ -1486,32 +1485,6 @@ void DTranslationTable::ReadTranslationTable(JCalibration *jcalib)
 
    pthread_mutex_unlock(&Get_TT_Mutex());
    Get_TT_Initialized() = true;
-}
-
-//---------------------------------
-// ModuleStr2ModID
-//---------------------------------
-int ModuleStr2ModID(string &type)
-{
-   if (type == "vmecpu") {
-      return(DModuleType::VMECPU);
-   } else if (type == "tid") {
-      return(DModuleType::TID);
-   } else if (type == "fadc250") {
-      return(DModuleType::FADC250);
-   } else if (type == "fadc125") {
-      return(DModuleType::FADC125);
-   } else if (type == "f1tdcv2") {
-      return(DModuleType::F1TDC32);
-   } else if (type == "f1tdcv3") {
-      return(DModuleType::F1TDC48);
-   } else if (type == "jldisc") {
-      return(DModuleType::JLAB_DISC);
-   } else if (type == "vx1290a") {
-      return(DModuleType::CAEN1290);
-   } else {
-      return(DModuleType::UNKNOWN);
-   }
 }
 
 //---------------------------------
@@ -1607,7 +1580,7 @@ void StartElement(void *userData, const char *xmlname, const char **atts)
       // (e.g. CAEN1290) should have their own unique detID. We use detID of
       // zero for non-digitizing modules like CPUs nd TIDs even though potentially,
       // one could read data from these.
-      mc2codaType = ModuleStr2ModID(type);      
+//      mc2codaType = ModuleStr2ModID(type);      
       
    } else if (strcasecmp(xmlname,"channel") == 0) {
       

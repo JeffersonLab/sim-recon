@@ -207,7 +207,7 @@ void GetAndSetSeeds(hddm_s::HDDM *record)
       // are set here to the fractional part of the cube roots of
       // the first three primes, truncated to 9 digits.
       if ((seed1 == 0) || (seed2 == 0) || (seed3 == 0)){
-         int eventNo = record->getPhysicsEvent().getEventNo();
+         uint64_t eventNo = record->getPhysicsEvent().getEventNo();
          seed1 = 259921049 + eventNo;
          seed2 = 442249570 + eventNo;
          seed3 = 709975946 + eventNo;

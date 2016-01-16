@@ -103,7 +103,7 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_HLDetectorTiming::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_HLDetectorTiming::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
     // This is called whenever the run number changes
     // Get the particleID object for each run
@@ -133,7 +133,7 @@ jerror_t JEventProcessor_HLDetectorTiming::brun(JEventLoop *eventLoop, int runnu
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 
     // Get the EPICs events and update beam current. Skip event if current too low (<10 nA).

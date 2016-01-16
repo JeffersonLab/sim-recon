@@ -23,7 +23,7 @@ jerror_t DBeamPhoton_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DBeamPhoton_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DBeamPhoton_factory::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	DApplication* dapp = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = dapp->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
@@ -36,7 +36,7 @@ jerror_t DBeamPhoton_factory::brun(jana::JEventLoop *locEventLoop, int runnumber
 //------------------
 // evnt
 //------------------
-jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	DVector3 pos(0.0, 0.0, dTargetCenterZ);
 

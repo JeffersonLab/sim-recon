@@ -51,7 +51,7 @@ jerror_t JEventProcessor_CDC_TimeToDistance::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_CDC_TimeToDistance::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_CDC_TimeToDistance::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
     // This is called whenever the run number changes
     DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
@@ -91,7 +91,7 @@ jerror_t JEventProcessor_CDC_TimeToDistance::brun(JEventLoop *eventLoop, int run
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_CDC_TimeToDistance::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_CDC_TimeToDistance::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
     // Getting the charged tracks will allow us to use the field on data
     vector <const DChargedTrack *> chargedTrackVector;
@@ -147,37 +147,37 @@ jerror_t JEventProcessor_CDC_TimeToDistance::evnt(JEventLoop *loop, int eventnum
             Fill2DProfile("CDC_TimeToDistance", "", "Predicted Drift Distance Vs Delta Vs t_drift",
                     time, delta, predictedDistance,
                     "Predicted Drift Distance Vs. #delta Vs. t_{drift}; t_{drift} [ns]; #delta [cm]",
-                    500, 0, 1000, 200, -0.3, 0.3);
+                    500, 0, 1500, 200, -0.3, 0.3);
             // To investigate some features, also do this in bins of Max sag
             if (max_sag[ring - 1][straw - 1] < 0.05){
                 Fill2DProfile("CDC_TimeToDistance", "", "Predicted Drift Distance Vs Delta Vs t_drift < 0.05",
                         time, delta, predictedDistance,
                         "Predicted Drift Distance Vs. #delta Vs. t_{drift}; t_{drift} [ns]; #delta [cm]",
-                        500, 0, 1000, 200, -0.3, 0.3);
+                        500, 0, 1500, 200, -0.3, 0.3);
             } 
             else if (max_sag[ring - 1][straw - 1] < 0.10){
                 Fill2DProfile("CDC_TimeToDistance", "", "Predicted Drift Distance Vs Delta Vs t_drift < 0.10",
                         time, delta, predictedDistance,
                         "Predicted Drift Distance Vs. #delta Vs. t_{drift}; t_{drift} [ns]; #delta [cm]",
-                        500, 0, 1000, 200, -0.3, 0.3);
+                        500, 0, 1500, 200, -0.3, 0.3);
             }
             else if (max_sag[ring - 1][straw - 1] < 0.15){
                 Fill2DProfile("CDC_TimeToDistance", "", "Predicted Drift Distance Vs Delta Vs t_drift < 0.15",
                         time, delta, predictedDistance,
                         "Predicted Drift Distance Vs. #delta Vs. t_{drift}; t_{drift} [ns]; #delta [cm]",
-                        500, 0, 1000, 200, -0.3, 0.3);
+                        500, 0, 1500, 200, -0.3, 0.3);
             }
             else if (max_sag[ring - 1][straw - 1] < 0.20){
                 Fill2DProfile("CDC_TimeToDistance", "", "Predicted Drift Distance Vs Delta Vs t_drift < 0.20",
                         time, delta, predictedDistance,
                         "Predicted Drift Distance Vs. #delta Vs. t_{drift}; t_{drift} [ns]; #delta [cm]",
-                        500, 0, 1000, 200, -0.3, 0.3);
+                        500, 0, 1500, 200, -0.3, 0.3);
             }
             else if (max_sag[ring - 1][straw - 1] < 0.25){
                 Fill2DProfile("CDC_TimeToDistance", "", "Predicted Drift Distance Vs Delta Vs t_drift < 0.25",
                         time, delta, predictedDistance,
                         "Predicted Drift Distance Vs. #delta Vs. t_{drift}; t_{drift} [ns]; #delta [cm]",
-                        500, 0, 1000, 200, -0.3, 0.3);
+                        500, 0, 1500, 200, -0.3, 0.3);
             }
         }   
     }

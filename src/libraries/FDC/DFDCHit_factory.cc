@@ -17,6 +17,7 @@ using namespace std;
 #include <DAQ/Df125PulseIntegral.h>
 #include <DAQ/Df125PulsePedestal.h>
 #include <DAQ/Df125Config.h>
+#include <DAQ/Df125FDCPulse.h>
 using namespace jana;
 
 
@@ -37,7 +38,7 @@ jerror_t DFDCHit_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
     // Only print messages for one thread whenever run number change
     static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -120,7 +121,7 @@ jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
    /// Generate DFDCHit object for each DFDCCathodeDigiHit and
    /// each DFDCWireDigiHit object.
@@ -180,47 +181,71 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		double T = (double)digihit->pulse_time;
 		//if (T<=0.) continue;
 
-        // There is a slight difference between Mode 7 and 8 data
-        // The following condition signals an error state in the flash algorithm
-        // Do not make hits out of these
-        const Df125PulsePedestal* PPobj = NULL;
-        digihit->GetSingle(PPobj);
-        if (PPobj != NULL){
-            if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-            if (PPobj->pulse_number == 1) continue; // Unintentionally had 2 pulses found in fall data (0-1 counting issue)
-        }
-
+        // Default pedestal from CCDB
         double pedestal = a_pedestals[plane_index][strip_index];
-        const Df125PulseIntegral* PIobj = NULL;
-        digihit->GetSingle(PIobj);
-        if (PIobj != NULL) {
-            // the measured pedestal must be scaled by the ratio of the number
-            // of samples used to calculate the pedestal and the actual pulse
-            double single_sample_ped = (double)PIobj->pedestal;
-            double nsamples_integral = (double)PIobj->nsamples_integral;
-            double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
-            pedestal          = single_sample_ped * nsamples_integral/nsamples_pedestal;
+
+        // Grab the pedestal from the digihit since this should be consistent between the old and new formats
+        uint32_t raw_ped           = digihit->pedestal;
+        uint32_t nsamples_integral = digihit->nsamples_integral;
+
+        // There are a few values from the new data type that are critical for the interpretation of the data
+        uint16_t IBIT = 0; // 2^{IBIT} Scale factor for integral
+        uint16_t ABIT = 0; // 2^{ABIT} Scale factor for amplitude
+        uint16_t PBIT = 0; // 2^{PBIT} Scale factor for pedestal
+
+        // This is the place to make quality cuts on the data.
+        // Try to get the new data type, if that fails, try to get the old...
+        uint32_t pulse_peak = 0;
+        const Df125FDCPulse *FDCPulseObj = NULL;
+        digihit->GetSingle(FDCPulseObj);
+        if (FDCPulseObj != NULL){
+            // Cut on quality factor?
+            const Df125Config *config = NULL;
+            FDCPulseObj->GetSingle(config);
+
+            // Set some constants to defaults until they appear correctly in the config words in the future
+            // The defaults are taken from Run 4607
+            IBIT = config->IBIT == 0xffff ? 4 : config->IBIT;
+            ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
+            PBIT = config->PBIT == 0xffff ? 0 : config->PBIT;
+            uint16_t NW   = config->NW   == 0xffff ? 80 : config->NW;
+            uint16_t IE   = config->IE   == 0xffff ? 16 : config->IE;
+
+            if ((NW - (digihit->pulse_time / 10)) < IE){
+                nsamples_integral = (NW - (digihit->pulse_time / 10));
+            } 
+            else{
+                nsamples_integral = IE;
+            }
+
+            pulse_peak = FDCPulseObj->peak_amp << ABIT;
+        }
+        else{
+            // There is a slight difference between Mode 7 and 8 data
+            // The following condition signals an error state in the flash algorithm
+            // Do not make hits out of these
+            const Df125PulsePedestal* PPobj = NULL;
+            digihit->GetSingle(PPobj);
+            if (PPobj != NULL){
+                if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
+                if (PPobj->pulse_number == 1) continue; // Unintentionally had 2 pulses found in fall data (0-1 counting issue)
+                pulse_peak = PPobj->pulse_peak;
+            }
+
+            const Df125PulseIntegral* PIobj = NULL;
+            digihit->GetSingle(PIobj);
+            if ( PPobj == NULL || PIobj == NULL) continue; // We don't want hits where ANY of the associated information is missing
         }
 
-        if ( PPobj == NULL || PIobj == NULL) continue; // We don't want hits where ANY of the associated information is missing
+        // Complete the pedestal subtracion here since we should know the correct number of samples.
+        uint32_t scaled_ped = raw_ped << PBIT;
+        pedestal = double(scaled_ped * nsamples_integral);
 
-        /*
-           const Df125PulsePedestal *PP=NULL;
-           digihit->GetSingle(PP);
-           double A=0.;
-           if (PP!=NULL){
-           A=PP->pulse_peak;
-           pedestal=PP->pedestal;
+        double integral = double(digihit->pulse_integral << IBIT); 
+        // Comment this line out temporarily until config words are behaving nicely
+        //if (A-pedestal<0.) continue;
 
-        //_DBG_ << A << " " << pedestal << endl;
-        }
-
-        if (A-pedestal<0.) continue;
-        */
-        double A = (double)digihit->pulse_integral;
-	if (A-pedestal<0.) continue;
-
-        double q = a_scale * a_gains[plane_index][strip_index] * (A-pedestal);
+        double q = a_scale * a_gains[plane_index][strip_index] * (integral-pedestal);
         double t = t_scale * T - timing_offsets[plane_index][strip_index]+fadc_t_base;
 
         DFDCHit *hit = new DFDCHit;
@@ -237,8 +262,8 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
         hit->ptype   = 0;// MC data only
         hit->q = q;
         hit->t = t;
-	hit->pulse_height=a_gains[plane_index][strip_index]
-	  *double(PPobj->pulse_peak-PPobj->pedestal);
+        hit->pulse_height=a_gains[plane_index][strip_index]
+            *double(pulse_peak - scaled_ped);
 
         //cerr << "FDC hitL  plane = " << hit->gPlane << "  element = " << hit->element << endl;
 
@@ -297,7 +322,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
         // Apply calibration constants here
         double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - timing_offsets[hit->gPlane-1][hit->element-1] + t_base;
         hit->q = 0.0; // no charge measured for wires in FDC
-	hit->pulse_height=0.0;
+        hit->pulse_height=0.0;
         hit->t = T;
 
         hit->AddAssociatedObject(digihit);

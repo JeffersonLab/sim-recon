@@ -8,13 +8,10 @@
 
 #include <string>
 using std::string;
-
 #include "JEventSourceGenerator_EVIO.h"
 using namespace jana;
 
-#if HAVE_EVIO
-#include <evioFileChannel.hxx>
-#endif // HAVE_EVIO
+#include "HDEVIO.h"
 
 //---------------------------------
 // Description
@@ -29,44 +26,30 @@ const char* JEventSourceGenerator_EVIO::Description(void)
 //---------------------------------
 double JEventSourceGenerator_EVIO::CheckOpenable(string source)
 {
-#if HAVE_EVIO
-	// This should return a value between 0 and 1 inclusive
-	// with 1 indicating it definitely can read events from
-	// the specified source and 0 meaning it definitely can't.
-	// Typically, this will just check the file suffix.
+	// First, check if the source starts with "ET:". If so,
+	// return 0.5 immediately. If it does not start with this,
+	// test open the file and see if we can read a block
+	// from it. If we can, then return 0.75 which will likely
+	// win us the right to open it. If we can't, but the file
+	// ends in ".evio" then return 0.01 which will win us
+	// the right to open it if no other source claims it. This
+	// will allow the program to print an appropriate error
+	// message/
 
-	// Try to open the file
-	try {
-		
-		// create evio file channel object using first arg as file name
-		evioFileChannel chan(source);
-		
-		// open the file. Throws exception if not successful
-		chan.open();
-		
-		// close file
-		chan.close();
-		
-		return 0.5;
-		
-	} catch (evioException &e) {
+	if(source.find("ET:")==0) return 0.5;
 
-		// Could not open file. Check if name starts with "ET:"
-		if(source.substr(0,3) == "ET:")return 0.1;
+	HDEVIO *hdevio = new HDEVIO(source);
+	bool is_good_evio = false;
+	bool opened = hdevio->is_open;
+	if(opened){
+		is_good_evio = hdevio->ReadBlock();
 	}
-
-	// Doesn't seem to be a source we can open
+	delete hdevio;
+	
+	if(is_good_evio) return 0.5;
+	if(source.find(".evio") != source.npos) return 0.01;
+	
 	return 0.0;
-
-#else  // HAVE_EVIO
-
-	// EVIO support not enabled. We give a small probability
-	// just so the JEventSource_EVIO constructor will get called
-	// if not other JEventSource objects claim they can ready this
-	// source. That way, the "you didn't compile in EVIO support"
-	// message will get printed.
-	return 1.0E-32;
-#endif // HAVE_EVIO
 }
 
 //---------------------------------

@@ -29,8 +29,8 @@ class DBCALShower_factory_JLAB:public JFactory<DBCALShower>{
   const char* Tag(void){return "JLAB";}
   
  private:
-  jerror_t brun(JEventLoop *loop, int runnumber);
-  jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+  jerror_t brun(JEventLoop *loop, int32_t runnumber);
+  jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);	///< Invoked via JEventProcessor virtual method
   
 };
 

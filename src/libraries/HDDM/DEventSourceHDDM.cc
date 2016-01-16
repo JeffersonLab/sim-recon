@@ -2126,7 +2126,7 @@ jerror_t DEventSourceHDDM::Extract_DSCTruthHit(hddm_s::HDDM *record,
 //------------------
 jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
                                    JFactory<DTrackTimeBased> *factory, 
-                                   string tag, int runnumber)
+                                   string tag, int32_t runnumber)
 {
    // Note: Since this is a reconstructed factory, we want to generally return OBJECT_NOT_AVAILABLE
    // rather than NOERROR. The reason being that the caller interprets "NOERROR" to mean "yes I

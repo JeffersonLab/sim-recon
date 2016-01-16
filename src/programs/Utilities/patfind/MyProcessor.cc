@@ -80,7 +80,7 @@ jerror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 // evnt
 //------------------------------------------------------------------
-jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
+jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 {
 	// Copy eventLoop pointer to object for use by other methods
 	this->eventLoop = eventLoop;

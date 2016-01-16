@@ -15,6 +15,10 @@ void DCustomAction_p2pi_unusedHists::Initialize(JEventLoop* locEventLoop)
         locEventLoop->GetSingle(locParticleID);
 	dParticleID = locParticleID;
 
+	vector<const DFCALGeometry*> locFCALGeometry;
+	locEventLoop->Get(locFCALGeometry);
+	dFCALGeometry = locFCALGeometry[0];
+	
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
@@ -33,6 +37,38 @@ void DCustomAction_p2pi_unusedHists::Initialize(JEventLoop* locEventLoop)
 		dHistMap_BCALShowerDeltaPhi_Theta = GetOrCreate_Histogram<TH2I>("BCALShowerDeltaPhi_Theta", "Unused BCAL showers #Delta#phi vs #theta; #theta; #Delta#phi", 150, 0, 150, 360, -180, 180);
 		dHistMap_BCALShowerDeltaPhi_DeltaT = GetOrCreate_Histogram<TH2I>("BCALShowerDeltaPhi_DeltaT", "Unused BCAL showers #Delta#phi vs #Deltat; #Deltat; #Delta$phi", 200, -100., 100., 360, -180, 180);
 		dHistMap_BCALShowerDeltaZ_DeltaT = GetOrCreate_Histogram<TH2I>("BCALShowerDeltaZ_DeltaT", "Unused FCAL showers #DeltaZ vs #Deltat; #Deltat; #DeltaZ", 200, -100., 100., 200, -50, 50);
+
+		int nbins = 100;
+		h1_deltaX = GetOrCreate_Histogram<TH1I>("h1_deltaX", "Fcal X - Track X", nbins,-25,25);
+		h1_deltaY = GetOrCreate_Histogram<TH1I>("h1_deltaY", "Fcal Y - Track Y", nbins,-25,25);
+		h1_Efcal = GetOrCreate_Histogram<TH1I>("h1_Efcal", "Hit energy", nbins,0,4);
+		h1_tfcal = GetOrCreate_Histogram<TH1I>("h1_tfcal", "Hit time", 250,-25,225);
+	       
+		h1_N9 = GetOrCreate_Histogram<TH1I>("h1_N9", "Hit N9", 25, 0, 25);
+		h1_E9 = GetOrCreate_Histogram<TH1I>("h1_E9", "Energy E9 (GeV)", nbins, 0, 2);
+		h1_t9 = GetOrCreate_Histogram<TH1I>("h1_t9", "Time t9 (ns)", 250, -25, 225);
+		h1_t9sigma = GetOrCreate_Histogram<TH1I>("h1_t9sigma", "Time t9sigma",nbins,0,10);
+		
+		h1_N1 = GetOrCreate_Histogram<TH1I>("h1_N1", "Hit N1", 25, 0, 25);
+		h1_E1 = GetOrCreate_Histogram<TH1I>("h1_E1", "Energy E1 (GeV)", nbins, 0, 2);
+		h1_t1 = GetOrCreate_Histogram<TH1I>("h1_t1", "Time t1 (ns)", 250, -25, 225);
+		h1_t1sigma = GetOrCreate_Histogram<TH1I>("h1_t1sigma", "Time t1sigma",nbins,0,10);
+
+		h2_YvsX9 = GetOrCreate_Histogram<TH2I>("h2_YvsX9", "Hit position Y vs X, E9",240,-120,120,240,-120,120);
+		h2_dEdx9_vsp= GetOrCreate_Histogram<TH2I>("h2_dEdx9_vsp", "Track dEdx9 vs p",nbins,0,4,nbins,0,10);
+		h2_E9vsp= GetOrCreate_Histogram<TH2I>("h2_E9vsp", "E9 vs p",nbins,0,4,nbins,0,4);
+		h2_dEdxvsE9= GetOrCreate_Histogram<TH2I>("h2_dEdxvsE9", "dEdx vs E9 energy",nbins,0,4,nbins,0,4);
+		h2_E9_vsTheta= GetOrCreate_Histogram<TH2I>("h2_E9_vsTheta", "E9 vs Theta",90,0,30,nbins,0,4);
+		h2_E9_vsPhi= GetOrCreate_Histogram<TH2I>("h2_E9_vsPhi", "E9 vs Phi",90,-180,180,nbins,0,4);
+		
+		h2_YvsX1 = GetOrCreate_Histogram<TH2I>("h2_YvsX1", "Hit position Y vs X, E1",240,-120,120,240,-120,120);
+		h2_dEdx1_vsp = GetOrCreate_Histogram<TH2I>("h2_dEdx1_vsp", "Track dEdx1 vs p",nbins,0,4,nbins,0,10);
+		h2_E1vsp = GetOrCreate_Histogram<TH2I>("h2_E1vsp", "E1 vs p",nbins,0,4,nbins,0,4);
+		h2_dEdxvsE1 = GetOrCreate_Histogram<TH2I>("h2_dEdxvsE1", "dEdx vs E1 energy",nbins,0,4,nbins,0,4);
+		h2_E1_vsTheta = GetOrCreate_Histogram<TH2I>("h2_E1_vsTheta", "E1 vs Theta",90,0,30,nbins,0,4);
+		h2_E1_vsPhi = GetOrCreate_Histogram<TH2I>("h2_E1_vsPhi", "E1 vs Phi",90,-180,180,nbins,0,4);
+		h2_E1vsRlocal = GetOrCreate_Histogram<TH2I>("h2_E1vsRlocal", "E1 vs Rtrk rel to Block center (cm)",nbins,0,5,nbins,0,4);
+		h2_YvsXcheck = GetOrCreate_Histogram<TH2I>("h2_E1vsRlocal", "E1 vs Rtrk rel to Block center (cm)",nbins,0,5,nbins,0,4);
 
 		TString locHistName;
 		TString locHistTitle;
@@ -268,14 +304,14 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
                         const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
 			if(locChargedTracks[loc_j]->Get_BestFOM()->candidateid == locChargedTrackHypothesis->candidateid) {
                                 nMatched++;
-				FillTrack(locChargedTracks[loc_j], true, locMCThrown);
+				FillTrack(locEventLoop, locChargedTracks[loc_j], true, locMCThrown);
 			}
                 }
 		
 		// plot properties of unused charged tracks
                 if(nMatched==0) {
 			locUnusedChargedTracks.push_back(locChargedTracks[loc_j]);
-			FillTrack(locChargedTracks[loc_j], false, locMCThrown);
+			FillTrack(locEventLoop, locChargedTracks[loc_j], false, locMCThrown);
 		}
         }
 
@@ -429,7 +465,7 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 }
 
 
-void DCustomAction_p2pi_unusedHists::FillTrack(const DChargedTrack* locChargedTrack, bool locMatch, const DMCThrown* locMCThrown)
+void DCustomAction_p2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const DChargedTrack* locChargedTrack, bool locMatch, const DMCThrown* locMCThrown)
 {
 
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
@@ -495,6 +531,120 @@ void DCustomAction_p2pi_unusedHists::FillTrack(const DChargedTrack* locChargedTr
 		}
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+
+	if(!locMatch) return;
+
+	// do FCAL energy sums to compare with Elton's E9 and E25 in fcal_charged
+	Double_t zfcal=625;
+        DVector3 fcal_origin(0.0,0.0,zfcal);
+        DVector3 fcal_normal(0.0,0.0,1.0);
+	DVector3 trkpos(0.0,0.0,0.0);
+        DVector3 proj_mom(0.0,0.0,0.0);
+	double theta = locTrackTimeBased->momentum().Theta()*180./TMath::Pi();
+	double phi = locTrackTimeBased->momentum().Phi()*180./TMath::Pi();
+	double p = locTrackTimeBased->momentum().Mag();
+        double dEdx = locTrackTimeBased->dEdx()*1e6;
+
+	vector<const DFCALHit*> fcalhits;
+        locEventLoop->Get(fcalhits);
+	if(fcalhits.empty()) return;
+
+	if (locTrackTimeBased->rt->GetIntersectionWithPlane(fcal_origin,fcal_normal,trkpos,proj_mom,NULL,NULL,NULL,SYS_FCAL)==NOERROR){
+		double trkposX = trkpos.X();
+		double trkposY = trkpos.Y();
+		int trkrow = dFCALGeometry->row((float)trkposY);
+		int trkcol = dFCALGeometry->column((float)trkposX);
+		
+		// loop over fcal hits
+
+		double E9=0;  // energy, x, y of 9 blocks surrounding track
+		double E9peak=0;
+		double x9=0;
+		double y9=0;
+		double t9=0;
+		double t9sq=0;
+		double t9sigma=0;
+		int N9=0;
+		int Delta_block=1;   // =1 for 3x3, =2 for 5x5
+		double dX_E1=-1000;
+		double dY_E1=-1000;
+		
+		int row_offset = 0;   // offset actual row to look for randoms
+		int col_offset = 0;
+		trkrow += row_offset;
+		trkcol += col_offset;
+		
+		for (unsigned int j=0; j < fcalhits.size(); ++j) {
+			int row = fcalhits[j]->row;
+			int col = fcalhits[j]->column;
+			double x = fcalhits[j]->x;
+			double y = fcalhits[j]->y;
+			double Efcal = fcalhits[j]->E;
+			double tfcal= fcalhits[j]->t;
+			double intOverPeak = fcalhits[j]->intOverPeak;
+			
+			// fill histograms
+			int drow = abs(row - trkrow);
+			int dcol = abs(col - trkcol);
+			
+			h1_deltaX->Fill(x - trkposX);
+			h1_deltaY->Fill(y - trkposY);
+			h1_Efcal->Fill(Efcal);
+			h1_tfcal->Fill(tfcal);
+		
+			// select hits 
+			if (drow<=Delta_block && dcol<=Delta_block && (tfcal>-15 && tfcal<50) && (intOverPeak>2.5 && intOverPeak<9)) {
+				E9 += Efcal;
+				E9peak += Efcal*6/intOverPeak;   // factor of 6 so that E9peak ~ E9
+				x9 += x;
+				y9 += y;
+				t9 += tfcal;
+				t9sq += tfcal*tfcal;
+				N9 += 1;
+
+				dX_E1 = x - trkposX;
+				dY_E1 = y - trkposY;
+			}
+			
+		} // end loop over fcal hits
+
+//		x9 = N9>0? x9/N9 : 0;
+//		y9 = N9>0? y9/N9 : 0;
+		t9 = N9>0? t9/N9 : 0;
+		t9sigma = N9>0? sqrt(t9sq/N9 - t9*t9): 0;
+		
+		japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+		{
+			if (N9>0) {
+				h1_N9->Fill(N9);
+				h1_E9->Fill(E9);
+				h1_t9->Fill(t9);
+				h1_t9sigma->Fill(t9sigma);
+				h2_YvsX9->Fill(trkposX,trkposY);
+				h2_dEdx9_vsp->Fill(p,dEdx);
+				h2_E9vsp->Fill(p,E9);
+				h2_dEdxvsE9->Fill(E9,dEdx);
+				h2_E9_vsTheta->Fill(theta,E9);
+				h2_E9_vsPhi->Fill(phi,E9);
+			}
+			if (N9==1) {
+				h1_N1->Fill(N9);
+				h1_E1->Fill(E9);
+				h1_t1->Fill(t9);
+				h1_t1sigma->Fill(t9sigma);
+				h2_YvsX1->Fill(trkposX,trkposY);
+				h2_dEdx1_vsp->Fill(p,dEdx);
+				h2_E1vsp->Fill(p,E9);
+				h2_dEdxvsE1->Fill(E9,dEdx);
+				h2_E1_vsTheta->Fill(theta,E9);
+				h2_E1_vsPhi->Fill(phi,E9);
+				double Rlocal = sqrt(dX_E1*dX_E1 + dY_E1*dY_E1);
+				h2_E1vsRlocal->Fill(Rlocal,E9);
+				h2_YvsXcheck->Fill(dX_E1,dY_E1);
+			  }
+		}
+		japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	}
 
 	return;
 }

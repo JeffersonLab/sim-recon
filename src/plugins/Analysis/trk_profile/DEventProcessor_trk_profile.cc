@@ -51,7 +51,7 @@ jerror_t DEventProcessor_trk_profile::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_trk_profile::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t DEventProcessor_trk_profile::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -59,7 +59,7 @@ jerror_t DEventProcessor_trk_profile::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_trk_profile::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_trk_profile::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// Get DChargedTrack objects to activate tracking
 	vector<const DChargedTrack*> charged_tracks;

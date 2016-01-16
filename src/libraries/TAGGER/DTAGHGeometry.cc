@@ -17,7 +17,7 @@ const unsigned int DTAGHGeometry::kCounterCount = 274;
 //---------------------------------
 // DTAGHGeometry    (Constructor)
 //---------------------------------
-DTAGHGeometry::DTAGHGeometry(JEventLoop *loop, std::string tag, int runnumber)
+DTAGHGeometry::DTAGHGeometry(JEventLoop *loop, std::string tag, int32_t runnumber)
 {
    /* read tagger set endpoint energy from calibdb */
    char dbname1[80];
