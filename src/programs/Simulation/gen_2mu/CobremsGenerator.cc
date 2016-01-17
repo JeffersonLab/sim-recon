@@ -103,10 +103,10 @@ CobremsGenerator::CobremsGenerator(double Emax_GeV, double Epeak_GeV)
    setCollimatedFlag(true);
 
 #if COBREMS_GENERATOR_VERBOSITY > 0
-   std::cout << std::endl
-             << "Initialization for coherent bremsstralung calculation"
-             << std::endl;
-   printBeamlineInfo();
+//   std::cout << std::endl
+//             << "Initialization for coherent bremsstralung calculation"
+//             << std::endl;
+//   printBeamlineInfo();
 #endif
 }
 

@@ -33,6 +33,7 @@ TRandom *RAND = NULL;
 double Ecoherent_peak = 6.0;
 double Eelectron_beam = 12.0;
 double Emin = 1.0;
+double CollimatorDiameter = 0.0034; // in meters
 bool   ONLY_COHERENT = false;
 bool   ONLY_INCOHERENT = false;
 
@@ -168,6 +169,7 @@ void Usage(string message)
 	cout << " -min Emin    minimum photon energy to generate (def="<<Emin<<")" << endl;
 	cout << " -c           only generate coherent photons" << endl;
 	cout << " -i           only generate incoherent photons" << endl;
+	cout << " -d diameter  collimator diameter in mm (def." << (CollimatorDiameter*1000.0) << " mm)" << endl;
 	cout << " -e           let electron direction define z (def." << endl;
 	cout << "              is for photon beam to define z)" << endl;
 	cout << " -pol phi     set photon beam polarization direction" << endl;
@@ -239,6 +241,13 @@ void ParseCommandLineArguments(int narg, char *argv[])
 			ONLY_INCOHERENT = true;
 		}else if(arg=="-i"){
 			USE_ELECTRON_BEAM_DIRECTION = true;
+		}else if(arg=="-d"){
+			if(has_arg){
+				CollimatorDiameter = atof(next.c_str())/1000.0;
+				i++;
+			}else{
+				missing_arg = true;
+			}
 		}else{
 			stringstream ss;
 			ss << "Unknown argument \""<<arg<<"\"!" << endl;
@@ -264,6 +273,7 @@ void ParseCommandLineArguments(int narg, char *argv[])
 	cout << "    Electron beam energy: " << Eelectron_beam << " GeV" << endl;
 	cout << "           Coherent peak: " << Ecoherent_peak << " GeV" << endl;
 	cout << "   Minimum photon energy: " << Emin << " GeV" << endl;
+	cout << "     Collimator diameter: " << (CollimatorDiameter*1000.0) << " mm" << endl;
 	cout << "  z-direction defined by: " << (USE_ELECTRON_BEAM_DIRECTION ? "electron":"photon") << " beam" << endl;
 	cout <<"   Coherent photons only?: " << (ONLY_COHERENT ? "yes":"no") << endl;
 	cout <<" Incoherent photons only?: " << (ONLY_INCOHERENT ? "yes":"no") << endl;
