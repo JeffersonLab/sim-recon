@@ -48,9 +48,11 @@ class DReaction : public JObject
 		// ADD COMBO PRE-SELECTION ACTION
 		void Add_ComboPreSelectionAction(DAnalysisAction* locAction){dComboPreSelectionActions.push_back(locAction);}
 
-		// GET CONTROL MEMBERS:
+		// GET CONTROL INFO:
 		string Get_ReactionName(void) const{return dReactionName;}
 		DKinFitType Get_KinFitType(void) const{return dKinFitType;}
+		int Get_DecayStepIndex(int locStepIndex, int locParticleIndex) const;
+		int Get_DefinedParticleStepIndex(void) const; //-1 if none //defined: missing or open-ended-decaying
 
 		// GET REACTION STEPS:
 		size_t Get_NumReactionSteps(void) const{return dReactionSteps.size();}

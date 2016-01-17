@@ -405,10 +405,11 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
-		void Create_ParticlePulls(bool locIsBeamFlag, string locStepROOTName, Particle_t locPID, map<DKinFitPullType, TH1I*>& locParticlePulls, const string& locKinFitTypeString);
+		void Create_ParticlePulls(string locFullROOTName, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH1I*>& locParticlePulls);
 
 		double dPullHistConfidenceLevelCut;
 		const DAnalysisUtilities* dAnalysisUtilities;
+		DKinFitUtils_GlueX* dKinFitUtils;
 
 		TH1I* dHist_ConfidenceLevel;
 		map<pair<size_t, Particle_t>, map<DKinFitPullType, TH1I*> > dHistMap_Pulls; //size_t is step index, 2nd is particle

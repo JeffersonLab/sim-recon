@@ -48,7 +48,6 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 
 		bool Check_IfDuplicateStepCombo(const DParticleComboBlueprint* locParticleComboBlueprint, const DParticleComboBlueprintStep* locCurrentStep, int locStepIndex, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque) const;
 		bool Check_IfStepsAreIdentical(const DParticleComboBlueprint* locParticleComboBlueprint, const DParticleComboBlueprintStep* locCurrentStep, const DParticleComboBlueprintStep* locPreviousStep) const;
-		int Grab_DecayingParticle(Particle_t locAnalysisPID, int& locResumeAtIndex, const DReaction* locReaction, int locStepIndex, int locParticleIndex);
 
 		const JObject* Grab_DetectedParticle(const DReaction* locReaction, Particle_t locAnalysisPID, int& locResumeAtIndex);
 		const JObject* Grab_NeutralShower(vector<const DNeutralShower*>& locNeutralShowers, int& locResumeAtIndex);

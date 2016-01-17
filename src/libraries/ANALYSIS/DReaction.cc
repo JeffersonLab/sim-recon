@@ -223,3 +223,64 @@ void DReaction::Get_FinalStatePIDs(deque<Particle_t>& locFinalStatePIDs, bool lo
 	}
 }
 
+int DReaction::Get_DecayStepIndex(int locStepIndex, int locParticleIndex) const
+{
+	//check if the ionput particle decays later in the reaction
+	Particle_t locDecayingPID = Get_ReactionStep(locStepIndex)->Get_FinalParticleID(locParticleIndex);
+
+	if((locDecayingPID == Gamma) || (locDecayingPID == Electron) || (locDecayingPID == Positron) || (locDecayingPID == Proton) || (locDecayingPID == AntiProton))
+		return -1; //these particles don't decay: don't search!
+
+	//check to see how many final state particles with this pid type there are before now
+	size_t locPreviousPIDCount = 0;
+	for(int loc_i = 0; loc_i <= locStepIndex; ++loc_i)
+	{
+		const DReactionStep* locReactionStep = Get_ReactionStep(loc_i);
+		for(size_t loc_j = 0; loc_j < locReactionStep->Get_NumFinalParticleIDs(); ++loc_j)
+		{
+			if((loc_i == locStepIndex) && (int(loc_j) == locParticleIndex))
+				break; //at the current particle: of the search
+			if(locReactionStep->Get_FinalParticleID(loc_j) == locDecayingPID)
+				++locPreviousPIDCount;
+		}
+	}
+
+	//now, find the (locPreviousPIDCount + 1)'th time where this pid is a decay parent
+	size_t locStepPIDCount = 0;
+	for(size_t loc_i = 0; loc_i < Get_NumReactionSteps(); ++loc_i)
+	{
+		if(Get_ReactionStep(loc_i)->Get_InitialParticleID() != locDecayingPID)
+			continue;
+		++locStepPIDCount;
+		if(locStepPIDCount <= locPreviousPIDCount)
+			continue;
+		//decays later in the reaction, at step index loc_i
+		return loc_i;
+	}
+
+	// does not decay later in the reaction
+	return -1;
+}
+
+int DReaction::Get_DefinedParticleStepIndex(void) const
+{
+	//-1 if none //defined: missing or open-ended-decaying
+	for(size_t loc_i = 0; loc_i < Get_NumReactionSteps(); ++loc_i)
+	{
+		const DReactionStep* locReactionStep = Get_ReactionStep(loc_i);
+
+		//check for open-ended-decaying particle
+		Particle_t locTargetPID = locReactionStep->Get_TargetParticleID();
+		if((loc_i == 0) && (locTargetPID == Unknown))
+			return loc_i;
+
+		//check for missing particle
+		Particle_t locMissingPID = Unknown;
+		if(locReactionStep->Get_MissingPID(locMissingPID))
+			return loc_i;
+	}
+
+	return -1;
+}
+
+

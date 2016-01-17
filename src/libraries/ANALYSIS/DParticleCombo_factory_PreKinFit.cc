@@ -1110,28 +1110,6 @@ DParticleComboStep* DParticleCombo_factory_PreKinFit::Get_ParticleComboStepResou
 	return locParticleComboStep;
 }
 
-void DParticleCombo_factory_PreKinFit::Reset_KinematicData(DKinematicData* locKinematicData)
-{
-	locKinematicData->setPID(Unknown);
-	locKinematicData->setMassFixed();
-	locKinematicData->setCharge(0);
-	locKinematicData->setMass(0.0);
-
-	locKinematicData->setMomentum(DVector3());
-	locKinematicData->setPosition(DVector3());
-	locKinematicData->setTime(0.0);
-
-	locKinematicData->setdEdx(0.0);
-	locKinematicData->setPathLength(0.0, 0.0);
-	locKinematicData->setTrackingStateVector(0.0, 0.0, 0.0, 0.0, 0.0);
-
-	locKinematicData->setT0(0.0, 0.0, SYS_NULL);
-	locKinematicData->setT1(0.0, 0.0, SYS_NULL);
-
-	locKinematicData->clearErrorMatrix();
-	locKinematicData->clearTrackingErrorMatrix();
-}
-
 DKinematicData* DParticleCombo_factory_PreKinFit::Get_KinematicDataResource(void)
 {
 	DKinematicData* locKinematicData;
@@ -1143,8 +1121,7 @@ DKinematicData* DParticleCombo_factory_PreKinFit::Get_KinematicDataResource(void
 	else
 	{
 		locKinematicData = dKinematicDataPool_Available.back();
-		Reset_KinematicData(locKinematicData);
-		locKinematicData->ClearAssociatedObjects();
+		locKinematicData->Reset();
 		dKinematicDataPool_Available.pop_back();
 	}
 	return locKinematicData;

@@ -26,99 +26,153 @@ enum DKinFitType
 class DKinFitResults : public JObject
 {
 	public:
-		DKinFitResults(void) : dMissingParticle(NULL) {}
+		DKinFitResults(void){}
 		JOBJECT_PUBLIC(DKinFitResults);
 
-		inline void Set_KinFitType(DKinFitType locKinFitType){dKinFitType = locKinFitType;}
-		inline DKinFitType Get_KinFitType(void) const{return dKinFitType;}
+		/************************************************************ SET FIT INFORMATION ***********************************************************/
 
-		inline void Set_ConfidenceLevel(double locConfidenceLevel){dConfidenceLevel = locConfidenceLevel;}
-		inline double Get_ConfidenceLevel(void) const{return dConfidenceLevel;}
+		void Set_KinFitType(DKinFitType locKinFitType){dKinFitType = locKinFitType;}
 
-		inline void Set_ChiSq(double locChiSq){dChiSq = locChiSq;}
-		inline double Get_ChiSq(void) const{return dChiSq;}
+		void Set_NumConstraints(unsigned int locNumConstraints){dNumConstraints = locNumConstraints;}
+		void Set_NumUnknowns(unsigned int locNumUnknowns){dNumUnknowns = locNumUnknowns;}
 
-		inline void Set_NDF(unsigned int locNDF){dNDF = locNDF;}
-		inline unsigned int Get_NDF(void) const{return dNDF;}
+		void Set_NDF(unsigned int locNDF){dNDF = locNDF;}
+		void Set_ChiSq(double locChiSq){dChiSq = locChiSq;}
+		void Set_ConfidenceLevel(double locConfidenceLevel){dConfidenceLevel = locConfidenceLevel;}
 
-		inline void Add_ParticleCombo(const DParticleCombo* locParticleCombo){dParticleCombos.insert(locParticleCombo);}
-		inline void Get_ParticleCombos(set<const DParticleCombo*>& locParticleCombos) const{locParticleCombos = dParticleCombos;}
+		void Set_VEta(const TMatrixDSym* locVEta){dVEta = locVEta;}
+		void Set_VXi(const TMatrixDSym* locVXi){dVXi = locVXi;}
+		void Set_V(const TMatrixDSym* locV){dV = locV;}
 
-		inline void Set_Pulls(const map<const DKinematicData*, map<DKinFitPullType, double> >& locPulls){dPulls = locPulls;}
-		inline void Get_Pulls(map<const DKinematicData*, map<DKinFitPullType, double> >& locPulls) const{locPulls = dPulls;}
+		void Set_Pulls(const map<const JObject*, map<DKinFitPullType, double> >& locPulls){dPulls = locPulls;}
 
-		inline void Set_KinFitConstraints(const deque<const DKinFitConstraint*>& locKinFitConstraints){dKinFitConstraints = locKinFitConstraints;}
-		inline void Get_KinFitConstraints(deque<const DKinFitConstraint*>& locKinFitConstraints) const{locKinFitConstraints = dKinFitConstraints;}
+		/************************************************************ GET FIT INFORMATION ***********************************************************/
 
-		inline void Set_OriginalKinFitConstraints(const deque<const DKinFitConstraint*>& locOriginalKinFitConstraints){dOriginalKinFitConstraints = locOriginalKinFitConstraints;}
-		inline void Set_OriginalKinFitConstraints(const deque<DKinFitConstraint*>& locOriginalKinFitConstraints)
-		{
-			dOriginalKinFitConstraints.insert(dOriginalKinFitConstraints.begin(), locOriginalKinFitConstraints.begin(), locOriginalKinFitConstraints.end());
-		}
-		inline void Get_OriginalKinFitConstraints(deque<const DKinFitConstraint*>& locOriginalKinFitConstraints) const{locOriginalKinFitConstraints = dOriginalKinFitConstraints;}
+		DKinFitType Get_KinFitType(void) const{return dKinFitType;}
 
-		inline void Set_ParticleMapping(const map<const DKinFitParticle*, const DKinematicData*>& locParticleMapping){dParticleMapping = locParticleMapping;}
-		inline void Get_ParticleMapping(map<const DKinFitParticle*, const DKinematicData*>& locParticleMapping) const{locParticleMapping = dParticleMapping;}
+		unsigned int Get_NumConstraints(void) const{return dNumConstraints;}
+		unsigned int Get_NumUnknowns(void) const{return dNumUnknowns;}
 
-		inline void Set_ReverseParticleMapping(const map<const DKinematicData*, const DKinFitParticle*>& locReverseParticleMapping){dReverseParticleMapping = locReverseParticleMapping;}
-		inline void Get_ReverseParticleMapping(map<const DKinematicData*, const DKinFitParticle*>& locReverseParticleMapping) const{locReverseParticleMapping = dReverseParticleMapping;}
+		unsigned int Get_NDF(void) const{return dNDF;}
+		double Get_ChiSq(void) const{return dChiSq;}
+		double Get_ConfidenceLevel(void) const{return dConfidenceLevel;}
 
-		inline void Set_MissingParticle(const DKinFitParticle* locMissingParticle){dMissingParticle = locMissingParticle;}
-		inline const DKinFitParticle* Get_MissingParticle(void) const{return dMissingParticle;}
+		const TMatrixDSym* Get_VEta(void) const{return dVEta;}
+		const TMatrixDSym* Get_VXi(void) const{return dVXi;}
+		const TMatrixDSym* Get_V(void) const{return dV;}
 
-		inline void Add_DecayingParticle(pair<Particle_t, deque<const DKinematicData*> > locDecayPair, const DKinFitParticle* locKinFitParticle){dDecayingParticles[locDecayPair] = locKinFitParticle;}
-		inline void Set_DecayingParticles(const map<pair<Particle_t, deque<const DKinematicData*> >, const DKinFitParticle*>& locDecayingParticles){dDecayingParticles = locDecayingParticles;}
-		inline void Get_DecayingParticles(map<pair<Particle_t, deque<const DKinematicData*> >, const DKinFitParticle*>& locDecayingParticles) const{locDecayingParticles = dDecayingParticles;}
+		void Get_Pulls(map<const JObject*, map<DKinFitPullType, double> >& locPulls) const{locPulls = dPulls;}
 
-		inline void Get_InputDecayingParticleInfo(map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > >& locDecayingParticleInfo) const{locDecayingParticleInfo = dInputDecayingParticleInfo;}
-		inline void Set_InputDecayingParticleInfo(const map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > >& locDecayingParticleInfo){dInputDecayingParticleInfo = locDecayingParticleInfo;}
+		/************************************************** SET PARTICLES, COMBOS, AND CONSTRAINTS **************************************************/
 
-		inline void Set_VEta(const TMatrixDSym* locVEta){dVEta = locVEta;}
-		inline const TMatrixDSym* Get_VEta(void) const{return dVEta;}
+		void Add_ParticleCombo(const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain);
+		void Add_OutputKinFitParticles(const set<DKinFitParticle*>& locOutputKinFitParticles);
+		void Add_KinFitConstraints(const set<DKinFitParticle*>& locKinFitConstraints);
 
-		inline void Set_VXi(const TMatrixDSym* locVXi){dVXi = locVXi;}
-		inline const TMatrixDSym* Get_VXi(void) const{return dVXi;}
+		void Add_ParticleMapping_SourceToInput(const JObject* locSourceJObject, const DKinFitParticle* locInputKinFitParticle);
+		void Add_ParticleMapping_InputToOutput(const DKinFitParticle* locInputKinFitParticle, const DKinFitParticle* locOutputKinFitParticle);
 
-		inline void Set_V(const TMatrixDSym* locV){dV = locV;}
-		inline const TMatrixDSym* Get_V(void) const{return dV;}
+		/************************************************** GET PARTICLES, COMBOS, AND CONSTRAINTS **************************************************/
 
-		inline void Set_NumConstraints(unsigned int locNumConstraints){dNumConstraints = locNumConstraints;}
-		inline unsigned int Get_NumConstraints(void) const{return dNumConstraints;}
+		void Get_ParticleComboMap(map<const DParticleCombo*, const DKinFitChain*>& locParticleComboMap) const{locParticleComboMap = dParticleComboMap;}
+		set<const DKinFitParticle*> Get_OutputKinFitParticles(DKinFitParticleType locKinFitParticleType) const;
+		set<const DKinFitConstraint*> Get_OutputKinFitConstraints(void) const{return dKinFitConstraints;}
 
-		inline void Set_NumUnknowns(unsigned int locNumUnknowns){dNumUnknowns = locNumUnknowns;}
-		inline unsigned int Get_NumUnknowns(void) const{return dNumUnknowns;}
+		//Source: JObject from DParticleCombo
+		//Input: DKinFitParticle used to create the kinematic fit constraints
+		//Output: DKinFitParticle's containing the fit results
+		const DKinFitParticle* Get_InputKinFitParticle(const JObject* locSourceObject) const;
+		const DKinFitParticle* Get_OutputKinFitParticle(const DKinFitParticle* locInputKinFitParticle) const;
+		const DKinFitParticle* Get_OutputKinFitParticle(const JObject* locSourceObject) const;
 
 	private:
-		double dConfidenceLevel;
-		double dChiSq;
-		unsigned int dNDF;
+
+		DKinFitType dKinFitType;
 
 		unsigned int dNumConstraints;
 		unsigned int dNumUnknowns;
 
-		map<const DKinematicData*, map<DKinFitPullType, double> > dPulls; //DKinematicData is the MEASURED particle
+		double dConfidenceLevel;
+		double dChiSq;
+		unsigned int dNDF;
+
+		map<const JObject*, map<DKinFitPullType, double> > dPulls; //JObject is the MEASURED particle (or shower!)
 
 		const TMatrixDSym* dVXi; //covariance matrix of dXi, the unmeasured parameters in the fit
 		const TMatrixDSym* dVEta; //covariance matrix of dEta, the measured parameters in the fit
 		const TMatrixDSym* dV; //full covariance matrix: dVEta at top-left and dVXi at bottom-right (+ the eta, xi covariance)
 
-		//PARTICLES: DETECTED (including beam)
-		map<const DKinFitParticle*, const DKinematicData*> dParticleMapping; //from output -> source (MEASURED) //is NULL for missing/decaying/target particles
-		map<const DKinematicData*, const DKinFitParticle*> dReverseParticleMapping; //from source (MEASURED) -> output //decaying/missing/target particles aren't present
+		//OUTPUT PARTICLES AND CONSTRAINTS
+		map<DKinFitParticleType, set<const DKinFitParticle*> > dOutputKinFitParticles;
+		set<const DKinFitConstraint*> dKinFitConstraints;
 
-		//PARTICLES: NON-DETECTED
-		map<pair<Particle_t, deque<const DKinematicData*> >, const DKinFitParticle*> dDecayingParticles; //key is PID of decaying particle + all final-state decay products
-		const DKinFitParticle* dMissingParticle; //NULL if none
+		//PARTICLE MAPS
+		//Source: JObject from DParticleCombo
+		//Input: DKinFitParticle used to create the kinematic fit constraints
+		//Output: DKinFitParticle's containing the fit results
+		map<const JObject*, const DKinFitParticle*> dParticleMap_SourceToInput;
+		map<const DKinFitParticle*, const DKinFitParticle*> dParticleMap_InputToOutput;
 
-		set<const DParticleCombo*> dParticleCombos; //multiple combos may have the same kinfit result
-		DKinFitType dKinFitType;
-
-		deque<const DKinFitConstraint*> dKinFitConstraints; //contains the results of the fit
-
-		//FOR CHECKING IF FITS WILL BE IDENTICAL
-		deque<const DKinFitConstraint*> dOriginalKinFitConstraints; //input to the fit: useful for pre-determining whether kinematic fit results will be identical
-		map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > > dInputDecayingParticleInfo;
+		//multiple combos may have the same kinfit result, and different DKinFitChain's
+		map<const DParticleCombo*, const DKinFitChain*> dParticleComboMap; //chain contains INPUT kinfit particles!
 };
+
+/****************************************************** SET PARTICLES, COMBOS, AND CONSTRAINTS ******************************************************/
+
+inline void DKinFitResults::Add_ParticleCombo(const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain)
+{
+	dParticleComboMap[locParticleCombo] = locKinFitChain;
+}
+
+inline void DKinFitResults::Add_OutputKinFitParticles(const set<DKinFitParticle*>& locOutputKinFitParticles)
+{
+	set<DKinFitParticle*>::const_iterator locIterator = locOutputKinFitParticles.begin();
+	for(; locIterator != locOutputKinFitParticles.end(); ++locIterator)
+		dOutputKinFitParticles[(*locIterator)->Get_KinFitParticleType()].insert(*locIterator);
+}
+
+inline void DKinFitResults::Add_KinFitConstraints(const set<DKinFitParticle*>& locKinFitConstraints)
+{
+	set<DKinFitParticle*>::const_iterator locIterator = locKinFitConstraints.begin();
+	for(; locIterator != locKinFitConstraints.end(); ++locIterator)
+		dKinFitConstraints.insert(*locIterator);
+}
+
+inline void DKinFitResults::Add_ParticleMapping_SourceToInput(const JObject* locSourceJObject, const DKinFitParticle* locInputKinFitParticle)
+{
+	dParticleMap_SourceToInput[locSourceJObject] = locInputKinFitParticle;
+}
+
+inline void DKinFitResults::Add_ParticleMapping_InputToOutput(const DKinFitParticle* locInputKinFitParticle, const DKinFitParticle* locOutputKinFitParticle)
+{
+	dParticleMap_InputToOutput[locInputKinFitParticle] = locOutputKinFitParticle;
+}
+
+/****************************************************** GET PARTICLES, COMBOS, AND CONSTRAINTS ******************************************************/
+
+inline const DKinFitParticle* DKinFitResults::Get_InputKinFitParticle(const JObject* locSourceObject) const
+{
+	map<const JObject*, const DKinFitParticle*>::const_iterator locIterator = dParticleMap_SourceToInput.find(locSourceObject);
+	return (locIterator != dParticleMap_SourceToInput.end()) ? locIterator->second : NULL;
+}
+
+inline const DKinFitParticle* DKinFitResults::Get_OutputKinFitParticle(const DKinFitParticle* locInputKinFitParticle) const
+{
+	map<const DKinFitParticle*, const DKinFitParticle*>::const_iterator locIterator = dParticleMap_InputToOutput.find(locInputKinFitParticle);
+	return (locIterator != dParticleMap_InputToOutput.end()) ? locIterator->second : NULL;
+}
+
+inline const DKinFitParticle* DKinFitResults::Get_OutputKinFitParticle(const JObject* locSourceObject) const
+{
+	DKinFitParticle* locInputKinFitParticle = Get_InputKinFitParticle(locSourceObject);
+	return Get_OutputKinFitParticle(locInputKinFitParticle);
+}
+
+inline set<const DKinFitParticle*> DKinFitResults::Get_OutputKinFitParticles(DKinFitParticleType locKinFitParticleType) const
+{
+	map<DKinFitParticleType, set<const DKinFitParticle*> >::const_iterator locIterator = dOutputKinFitParticles.find(locKinFitParticleType);
+	return ((locIterator != dOutputKinFitParticles.end()) ? locIterator->second : set<const DKinFitParticle*>();
+}
 
 #endif // _DKinFitResults_
 
