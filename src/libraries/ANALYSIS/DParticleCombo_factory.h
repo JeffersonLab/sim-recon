@@ -22,7 +22,7 @@
 #include "ANALYSIS/DAnalysisUtilities.h"
 #include "KINFITTER/DKinFitParticle.h"
 #include "ANALYSIS/DKinFitResults.h"
-#include "ANALYSIS/DKinFitter_GlueX.h"
+#include "ANALYSIS/DKinFitUtils_GlueX.h"
 #include "ANALYSIS/DAnalysisResults.h"
 
 using namespace std;

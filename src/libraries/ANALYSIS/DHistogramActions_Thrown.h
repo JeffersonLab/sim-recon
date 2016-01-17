@@ -32,7 +32,7 @@
 #include "TRACKING/DMCThrown.h"
 
 #include "ANALYSIS/DReaction.h"
-#include "ANALYSIS/DKinFitParticle.h"
+#include "KINFITTER/DKinFitParticle.h"
 #include "ANALYSIS/DMCThrownMatching.h"
 #include "ANALYSIS/DMCThrownMatching_factory.h"
 #include "ANALYSIS/DParticleCombo.h"

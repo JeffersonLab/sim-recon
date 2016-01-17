@@ -195,8 +195,8 @@ inline const JObject* DKinFitUtils_GlueX::Get_SourceJObject(DKinFitParticle* loc
 	if((locKinFitParticleType == d_DecayingParticle) || (locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_TargetParticle))
 		return NULL;
 
-	map<DKinFitParticle*, const JObject*>::iterator locIterator = dParticleMap_InputToSource_JObject.find(locInputKinFitParticle);
-	return (locIterator != dParticleMap_InputToSource_JObject.end()) ? locIterator->second : NULL;
+	map<DKinFitParticle*, const JObject*>::const_iterator locIterator = dParticleMap_InputToSource_JObject.find(locInputKinFitParticle);
+	return ((locIterator != dParticleMap_InputToSource_JObject.end()) ? locIterator->second : NULL);
 }
 
 #endif // _DKinFitUtils_GlueX_

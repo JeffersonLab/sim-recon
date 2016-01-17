@@ -58,7 +58,7 @@ class DKinFitResults : public JObject
 
 		void Add_ParticleCombo(const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain);
 		void Add_OutputKinFitParticles(const set<DKinFitParticle*>& locOutputKinFitParticles);
-		void Add_KinFitConstraints(const set<DKinFitParticle*>& locKinFitConstraints);
+		void Add_KinFitConstraints(const set<DKinFitConstraint*>& locKinFitConstraints);
 
 		void Add_ParticleMapping_SourceToInput(const JObject* locSourceJObject, const DKinFitParticle* locInputKinFitParticle);
 		void Add_ParticleMapping_InputToOutput(const DKinFitParticle* locInputKinFitParticle, const DKinFitParticle* locOutputKinFitParticle);
