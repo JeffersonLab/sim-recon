@@ -11,6 +11,7 @@
 #include <JANA/JFactory.h>
 #include "TTAB/DTTabUtilities.h"
 #include "DSCHit.h"
+#include "DSCDigiHit.h"
 
 
 class DSCHit_factory:public jana::JFactory<DSCHit>{

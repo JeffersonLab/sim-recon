@@ -6,6 +6,7 @@
 //
 
 #include "DParticleID.h"
+#include "START_COUNTER/DSCHit_factory.h"
 
 #ifndef M_TWO_PI
 #define M_TWO_PI 6.28318530717958647692
@@ -205,6 +206,16 @@ DParticleID::DParticleID(JEventLoop *loop)
 		sc_attn_C[SC_BENDNOSE_ATTN].push_back(row["SC_BENDNOSE_ATTENUATION_C"]); 
 	      }
 	  }
+
+    // Start counter individual paddle resolutions
+    if(loop->GetCalib("START_COUNTER/time_resol_paddle", sc_paddle_resols))
+        jout << "Error in loading START_COUNTER/time_resol_paddle !" << endl;
+	else {
+        if(sc_paddle_resols.size() != (unsigned int)DSCHit_factory::MAX_SECTORS)
+            jerr << "Start counter paddle resolutions table has wrong number of entries:" << endl
+                 << "  loaded = " << sc_paddle_resols.size() 
+                 << "  expexted = " << DSCHit_factory::MAX_SECTORS << endl;
+    }
 
 }
 
@@ -558,22 +569,34 @@ bool DParticleID::MatchToBCAL(const DKinematicData* locTrack, const DReferenceTr
 	vector<const DBCALCluster*>clusters;
 	locBCALShower->Get(clusters);
 
-	// loop over clusters and points associated with this shower, finding 
+    // make list of points associated with the shower
+    vector<const DBCALPoint*> points;
+    if(clusters.size() > 0) {
+        // classic BCAL shower objects are built from the output of the clusterizer
+        // so the points need to be accessed as shower -> cluster -> points
+        for (unsigned int k=0;k<clusters.size();k++){
+            vector<const DBCALPoint*> cluster_points=clusters[k]->points();
+            points.insert(points.end(), cluster_points.begin(), cluster_points.end());
+        }
+    } else {
+        // other BCAL shower objects directly keep a list of the points associated with the shower
+        // (e.g. "CURVATURE" showers)
+        locBCALShower->Get(points);
+    }
+
+	// loop over points associated with this shower, finding 
 	// the closest match between a point and the track
 	double dphi_min=1000.;
-	for (unsigned int k=0;k<clusters.size();k++){
-	  vector<const DBCALPoint*>points=clusters[k]->points();
-	  for (unsigned int m=0;m<points.size();m++){
-	    double rpoint=points[m]->r();
-	    if (rt->GetIntersectionWithRadius(rpoint,proj_pos)==NOERROR){
-	      dphi=points[m]->phi()-proj_pos.Phi();
-	      while(dphi > M_PI)
-		dphi -= M_TWO_PI;
-	      while(dphi < -M_PI)
-		dphi += M_TWO_PI;
-	      if (fabs(dphi)<fabs(dphi_min)){
-		dphi_min=dphi;
-	      }
+    for (unsigned int m=0;m<points.size();m++){
+      double rpoint=points[m]->r();
+	  if (rt->GetIntersectionWithRadius(rpoint,proj_pos)==NOERROR){
+        dphi=points[m]->phi()-proj_pos.Phi();
+        while(dphi > M_PI)
+		  dphi -= M_TWO_PI;
+	    while(dphi < -M_PI)
+		  dphi += M_TWO_PI;
+	    if (fabs(dphi)<fabs(dphi_min)){
+		  dphi_min=dphi;
 	    }
 	  }
 	}
@@ -953,8 +976,8 @@ bool DParticleID::MatchToSC(const DReferenceTrajectory* rt, const vector<const D
 	Get_BestSCMatchParams(locSCHitMatchParamsVector, locBestMatchParams);
 
 	locStartTime = locBestMatchParams.dHitTime - locBestMatchParams.dFlightTime;
-//	locTimeVariance = locBestMatchParams.dFlightTimeVariance - locBestMatchParams.dHitTimeVariance; //uncomment when ready!
-	locTimeVariance = 0.3*0.3+locBestMatchParams.dFlightTimeVariance;
+	locTimeVariance = locBestMatchParams.dFlightTimeVariance + locBestMatchParams.dHitTimeVariance; 
+	//locTimeVariance = 0.3*0.3+locBestMatchParams.dFlightTimeVariance;
 
 	return true;
 }
@@ -1142,7 +1165,7 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	locSCHitMatchParams.dHitEnergy = locCorrectedHitEnergy;
 	locSCHitMatchParams.dEdx = locSCHitMatchParams.dHitEnergy/ds;
 	locSCHitMatchParams.dHitTime = locCorrectedHitTime;
-	locSCHitMatchParams.dHitTimeVariance = 0.0; //SET ME!!!
+	locSCHitMatchParams.dHitTimeVariance = sc_paddle_resols[sc_index]*sc_paddle_resols[sc_index];
 	locSCHitMatchParams.dFlightTime = locFlightTime;
 	locSCHitMatchParams.dFlightTimeVariance = locFlightTimeVariance;
 	locSCHitMatchParams.dPathLength = locPathLength;
