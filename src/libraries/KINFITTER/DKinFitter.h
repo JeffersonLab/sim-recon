@@ -42,7 +42,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		/****************************************************************** PRIMARY *****************************************************************/
 
 		//CONSTRUCTOR
-		DKinFitter(DKinFitUtils* locKinFitUtils) : dKinFitUtils(locKinFitUtils){dKinFitUtils->dKinFitter = this;}
+		DKinFitter(DKinFitUtils* locKinFitUtils);
 
 		//RESET
 		void Reset_NewEvent(void);

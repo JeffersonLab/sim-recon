@@ -8,10 +8,11 @@
 #include "KINFITTER/DKinFitChain.h"
 #include "KINFITTER/DKinFitParticle.h"
 #include "KINFITTER/DKinFitConstraint.h"
-#include "ANALYSIS/DParticleCombo.h"
 
 using namespace std;
 using namespace jana;
+
+class DParticleCombo;
 
 class DKinFitResults : public JObject
 {

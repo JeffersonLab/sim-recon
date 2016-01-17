@@ -59,6 +59,7 @@ DKinFitter::DKinFitter(DKinFitUtils* locKinFitUtils) : dKinFitUtils(locKinFitUti
 	dConvergenceChiSqDiff = 0.001;
 	dConvergenceChiSqDiff_LastResort = 0.005;
 
+	dKinFitUtils->dKinFitter = this;
 	Reset_NewEvent();
 }
 

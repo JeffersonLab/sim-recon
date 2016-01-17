@@ -33,12 +33,22 @@ enum DKinFitPullType
 	d_TPull
 };
 
-// dCovarianceMatrix is owned by DKinFitter (DKinFitter is responsible for new/delete)
+// dCovarianceMatrix is owned by DKinFitUtils (DKinFitUtils is responsible for new/delete)
+class DKinFitter;
+class DKinFitUtils;
+class DKinFitConstraint_Spacetime;
+class DKinFitConstraint_Vertex;
+class DKinFitConstraint_P4;
+class DKinFitConstraint_Mass;
 
 class DKinFitParticle
 {
 	friend class DKinFitter;
 	friend class DKinFitUtils;
+	friend class DKinFitConstraint_Spacetime;
+	friend class DKinFitConstraint_Vertex;
+	friend class DKinFitConstraint_P4;
+	friend class DKinFitConstraint_Mass;
 
 	public:
 
@@ -262,7 +272,6 @@ inline void DKinFitParticle::Print_ParticleParams(void) const
 	}
 
 	cout << "DKinFitParticle: Particle E, Px, Vx, Common Vx, T, Common T indices = " << dEParamIndex << ", " << dPxParamIndex << ", " << dVxParamIndex << ", " << dCommonVxParamIndex << ", " << dTParamIndex << ", " << dCommonTParamIndex << endl;
-	cout << "DKinFitParticle: Particle CovMatrix E, Px, Vx, T, indices = " << dCovMatrixEParamIndex << ", " << dCovMatrixPxParamIndex << ", " << dCovMatrixVxParamIndex << ", " << dCovMatrixTParamIndex << endl;
 }
 
 #endif // _DKinFitParticle_
