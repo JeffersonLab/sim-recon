@@ -41,7 +41,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		//useful for manually using a different field:
 		DKinFitUtils_GlueX(const DMagneticFieldMap* locMagneticFieldMap, const DAnalysisUtilities* locAnalysisUtilities);
 
-		bool Reset_NewEvent(void);
+		void Reset_NewEvent(void);
 		void Set_MaxPoolSizes(size_t locNumReactions, size_t locExpectedNumCombos);
 
 		/************************************************************** CREATE PARTICLES ************************************************************/
@@ -64,7 +64,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		/************************************************************** RETURN MAPPING **************************************************************/
 
-		const JObject* Get_SourceJObject(const DKinFitParticle* locInputKinFitParticle) const;
+		const JObject* Get_SourceJObject(DKinFitParticle* locInputKinFitParticle) const;
 
 		/************************************************************ CREATE DKINFITCHAIN ***********************************************************/
 
@@ -165,14 +165,14 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		map<DKinFitParticle*, DKinFitParticle*> dParticleMap_SourceToInput_DetectedParticleFromDecay;
 		map<pair<const DNeutralShower*, Particle_t>, DKinFitParticle*> dParticleMap_SourceToInput_Shower;
 		map<Particle_t, DKinFitParticle*> dParticleMap_SourceToInput_Target;
-		map<DecayingParticleInfo, DKinFitParticle*> dParticleMap_SourceToInput_Decaying;
+		map<DDecayingParticleInfo, DKinFitParticle*> dParticleMap_SourceToInput_Decaying;
 		map<Particle_t, DKinFitParticle*> dParticleMap_SourceToInput_Missing;
 
 		//MAP: KINFIT INPUT -> SOURCE
 			//no maps for missing or target: would just map to PID
 			//needed for getting back to the source particle
 		map<DKinFitParticle*, const JObject*> dParticleMap_InputToSource_JObject;
-		map<DKinFitParticle*, DecayingParticleInfo> dParticleMap_InputToSource_Decaying;
+		map<DKinFitParticle*, DDecayingParticleInfo> dParticleMap_InputToSource_Decaying;
 
 		/************************************************************** MISCELLANEOUS ***************************************************************/
 
@@ -189,10 +189,10 @@ inline TLorentzVector DKinFitUtils_GlueX::Make_TLorentzVector(DLorentzVector loc
 	return TLorentzVector(locDLorentzVector.X(), locDLorentzVector.Y(), locDLorentzVector.Z(), locDLorentzVector.T());
 }
 
-inline const JObject* DKinFitUtils_GlueX::Get_SourceJObject(const DKinFitParticle* locInputKinFitParticle) const
+inline const JObject* DKinFitUtils_GlueX::Get_SourceJObject(DKinFitParticle* locInputKinFitParticle) const
 {
 	DKinFitParticleType locKinFitParticleType = locInputKinFitParticle->Get_KinFitParticleType();
-	if((locInputKinFitParticle == d_DecayingParticle) || (locInputKinFitParticle == d_MissingParticle) || (locInputKinFitParticle == d_TargetParticle))
+	if((locKinFitParticleType == d_DecayingParticle) || (locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_TargetParticle))
 		return NULL;
 
 	map<DKinFitParticle*, const JObject*>::iterator locIterator = dParticleMap_InputToSource_JObject.find(locInputKinFitParticle);

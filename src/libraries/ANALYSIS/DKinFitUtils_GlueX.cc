@@ -43,7 +43,7 @@ void DKinFitUtils_GlueX::Set_MaxPoolSizes(size_t locNumReactions, size_t locExpe
 
 /*********************************************************** OVERRIDE BASE CLASS FUNCTIONS *********************************************************/
 
-bool DKinFitUtils_GlueX::Reset_NewEvent(void)
+void DKinFitUtils_GlueX::Reset_NewEvent(void)
 {
 	dParticleMap_SourceToInput_Beam.clear();
 	dParticleMap_SourceToInput_DetectedParticle.clear();

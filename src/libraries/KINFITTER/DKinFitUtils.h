@@ -43,7 +43,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		void Set_LinkVerticesFlag(bool locLinkVerticesFlag){dLinkVerticesFlag = locLinkVerticesFlag;}
 
 		//GET INPUT FROM OUTPUT
-		DKinFitParticle* Get_InputKinFitParticle(const DKinFitParticle* locKinFitParticle) const;
+		DKinFitParticle* Get_InputKinFitParticle(DKinFitParticle* locKinFitParticle) const;
 
 		/************************************************************** CREATE PARTICLES ************************************************************/
 
@@ -196,11 +196,6 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 
 		/************************************************************* CONSTRAINT MAPPING ***********************************************************/
 
-		map<DKinFitParticle*, DKinFitConstraint_Mass*> dMassConstraintMap;
-		map<pair<set<DKinFitParticle*>, set<DKinFitParticle*> >, DKinFitConstraint_P4*> dP4ConstraintMap; //pair: initial/final state
-		map<pair<set<DKinFitParticle*>, set<DKinFitParticle*> >, DKinFitConstraint_Vertex*> dVertexConstraintMap; //pair: full/no constrain
-		map<DSpacetimeParticles, DKinFitConstraint_Spacetime*> dSpacetimeConstraintMap;
-
 		class DSpacetimeParticles //used for map only
 		{
 			public:
@@ -211,6 +206,11 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 				set<DKinFitParticle*> dOnlyConstrainTimeParticles;
 				set<DKinFitParticle*> dNoConstrainParticles;
 		};
+
+		map<DKinFitParticle*, DKinFitConstraint_Mass*> dMassConstraintMap;
+		map<pair<set<DKinFitParticle*>, set<DKinFitParticle*> >, DKinFitConstraint_P4*> dP4ConstraintMap; //pair: initial/final state
+		map<pair<set<DKinFitParticle*>, set<DKinFitParticle*> >, DKinFitConstraint_Vertex*> dVertexConstraintMap; //pair: full/no constrain
+		map<DSpacetimeParticles, DKinFitConstraint_Spacetime*> dSpacetimeConstraintMap;
 
 		/************************************************************** RESOURCE POOLS **************************************************************/
 
@@ -257,7 +257,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		deque<TMatrixDSym*> dLargeMatrixDSymPool_Available;
 };
 
-DKinFitParticle* DKinFitUtils::Get_InputKinFitParticle(const DKinFitParticle* locOutputKinFitParticle) const
+DKinFitParticle* DKinFitUtils::Get_InputKinFitParticle(DKinFitParticle* locOutputKinFitParticle) const
 {
 	map<DKinFitParticle*, DKinFitParticle*>::const_iterator locIterator = dParticleMap_OutputToInput.find(locOutputKinFitParticle);
 	return (locIterator != dParticleMap_OutputToInput.end() ? locIterator->second : NULL);

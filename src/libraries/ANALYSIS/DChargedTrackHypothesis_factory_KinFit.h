@@ -11,7 +11,7 @@
 #include <JANA/JFactory.h>
 #include <PID/DChargedTrackHypothesis.h>
 #include <PID/DChargedTrack.h>
-#include <ANALYSIS/DKinFitParticle.h>
+#include <KINFITTER/DKinFitParticle.h>
 #include <ANALYSIS/DParticleCombo.h>
 #include <PID/DParticleID.h>
 

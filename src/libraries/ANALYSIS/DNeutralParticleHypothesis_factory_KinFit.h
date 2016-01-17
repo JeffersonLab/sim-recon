@@ -15,7 +15,7 @@
 #include "PID/DNeutralShower.h"
 #include "PID/DParticleID.h"
 
-#include "ANALYSIS/DKinFitParticle.h"
+#include "KINFITTER/DKinFitParticle.h"
 #include "ANALYSIS/DParticleCombo.h"
 
 using namespace jana;

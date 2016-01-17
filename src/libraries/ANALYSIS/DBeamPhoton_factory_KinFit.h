@@ -10,7 +10,7 @@
 
 #include <JANA/JFactory.h>
 #include <PID/DBeamPhoton.h>
-#include <ANALYSIS/DKinFitParticle.h>
+#include <KINFITTER/DKinFitParticle.h>
 #include <ANALYSIS/DParticleCombo.h>
 
 using namespace jana;
