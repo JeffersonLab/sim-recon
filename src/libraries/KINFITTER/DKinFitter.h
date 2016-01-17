@@ -127,7 +127,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 
 		/************************************************************ CALCULATE MATRICES ************************************************************/
 
-		bool Iterate(void)
+		bool Iterate(void);
 
 		bool Calc_dS(void);
 		bool Calc_dU(void);
@@ -213,12 +213,12 @@ inline void DKinFitter::Add_Constraints(const set<DKinFitConstraint*>& locKinFit
 	dKinFitConstraints.insert(locKinFitConstraints.begin(), locKinFitConstraints.end());
 }
 
-inline template <typename DType> set<DType*> DKinFitter::Get_Constraints(void) const
+template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(void) const
 {
 	return Get_Constraints<DType*>(dKinFitConstraints);
 }
 
-inline template <typename DType> set<DType*> DKinFitter::Get_Constraints(DKinFitParticle* locKinFitParticle) const
+template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(DKinFitParticle* locKinFitParticle) const
 {
 	map<DKinFitParticle*, set<DKinFitConstraint*> >::const_iterator locMapIterator = dParticleConstraintMap.find(locKinFitParticle);
 	if(locMapIterator == dParticleConstraintMap.end())
@@ -228,7 +228,7 @@ inline template <typename DType> set<DType*> DKinFitter::Get_Constraints(DKinFit
 	return Get_Constraints<DType*>(locParticleConstraints);
 }
 
-inline template <typename DType> set<DType*> DKinFitter::Get_Constraints(const set<DKinFitConstraint*>& locConstraints) const
+template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(const set<DKinFitConstraint*>& locConstraints) const
 {
 	set<DType*> locTypeConstraints;
 

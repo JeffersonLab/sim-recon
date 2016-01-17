@@ -71,15 +71,15 @@ inline void DKinFitConstraint_Vertex::Reset(void)
 	dConstraintEquationParticleMap.clear();
 }
 
-inline int DKinFitConstraint_Vertex::Get_FIndex(const DKinFitParticle* locKinFitParticle) const
+inline int DKinFitConstraint_Vertex::Get_FIndex(DKinFitParticle* locKinFitParticle) const
 {
-	map<const DKinFitParticle*, unsigned int>::const_iterator locIterator = dConstraintEquationParticleMap.find(locKinFitParticle);
+	map<DKinFitParticle*, unsigned int>::const_iterator locIterator = dConstraintEquationParticleMap.find(locKinFitParticle);
 	if(locIterator == dConstraintEquationParticleMap.end())
 		return -1;
 	return locIterator->second;
 }
 
-inline virtual set<DKinFitParticle*> DKinFitConstraint_Vertex::Get_AllParticles(void) const
+inline set<DKinFitParticle*> DKinFitConstraint_Vertex::Get_AllParticles(void) const
 {
 	set<DKinFitParticle*> locAllParticles;
 	set_union(dFullConstrainParticles.begin(), dFullConstrainParticles.end(), dNoConstrainParticles.begin(), 
@@ -94,7 +94,7 @@ inline TVector3 DKinFitConstraint_Vertex::Get_CommonVertex(void) const
 	return (*dFullConstrainParticles.begin())->Get_CommonVertex();
 }
 
-inline virtual void DKinFitConstraint_Vertex::Set_CommonVertex(const TVector3& locVertex)
+inline void DKinFitConstraint_Vertex::Set_CommonVertex(const TVector3& locVertex)
 {
 	set<DKinFitParticle*>::iterator locIterator = dFullConstrainParticles.begin();
 	for(; locIterator != dFullConstrainParticles.end(); ++locIterator)
@@ -115,7 +115,7 @@ inline int DKinFitConstraint_Vertex::Get_CommonVxParamIndex(void) const
 	return (*dFullConstrainParticles.begin())->Get_CommonVxParamIndex();
 }
 
-inline virtual void DKinFitConstraint_Vertex::Set_CommonVxParamIndex(int locCommonVxParamIndex)
+inline void DKinFitConstraint_Vertex::Set_CommonVxParamIndex(int locCommonVxParamIndex)
 {
 	set<DKinFitParticle*>::iterator locIterator = dFullConstrainParticles.begin();
 	for(; locIterator != dFullConstrainParticles.end(); ++locIterator)

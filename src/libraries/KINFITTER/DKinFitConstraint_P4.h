@@ -87,7 +87,7 @@ inline DKinFitParticle* DKinFitConstraint_P4::Get_MissingParticle(void) const
 inline DKinFitParticle* DKinFitConstraint_P4::Get_OpenEndedDecayingParticle(void) const
 {
 	//look for decaying particles
-	set<DKinFitParticle*> locAllParticles = locKinFitConstraint_P4->Get_AllParticles();
+	set<DKinFitParticle*> locAllParticles = Get_AllParticles();
 	set<DKinFitParticle*>::iterator locIterator = locAllParticles.begin();
 	for(; locIterator != locAllParticles.end(); ++locIterator)
 	{

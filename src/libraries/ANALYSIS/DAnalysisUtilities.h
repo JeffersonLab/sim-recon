@@ -34,8 +34,9 @@
 #include "PID/DParticleID.h"
 #include "PID/DEventRFBunch.h"
 
+#include "KINFITTER/DKinFitParticle.h"
+
 #include "ANALYSIS/DParticleCombo.h"
-#include "ANALYSIS/DKinFitParticle.h"
 #include "ANALYSIS/DMCThrownMatching_factory.h"
 #include "ANALYSIS/DParticleCombo_factory_Thrown.h"
 #include "ANALYSIS/DReaction_factory_Thrown.h"
@@ -102,7 +103,7 @@ class DAnalysisUtilities : public JObject
 		double Calc_CrudeTime(const deque<const DKinematicData*>& locParticles, const DVector3& locCommonVertex) const;
 		double Calc_CrudeTime(const deque<const DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const;
 		DVector3 Calc_CrudeVertex(const deque<const DKinematicData*>& locParticles) const;
-		DVector3 Calc_CrudeVertex(const deque<const DKinFitParticle*>& locParticles) const;
+		DVector3 Calc_CrudeVertex(const deque<DKinFitParticle*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<const DTrackTimeBased*>& locParticles) const;
 

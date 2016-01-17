@@ -15,11 +15,13 @@
 #include "PID/DChargedTrackHypothesis.h"
 #include "PID/DNeutralParticleHypothesis.h"
 
+#include "KINFITTER/DKinFitter.h"
+
+#include "ANALYSIS/DKinUtils_GlueX.h"
 #include "ANALYSIS/DAnalysisAction.h"
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
 #include "ANALYSIS/DMCThrownMatching.h"
-#include "ANALYSIS/DKinFitter_GlueX.h"
 
 #include "ANALYSIS/DParticleComboBlueprint_factory.h"
 
@@ -655,7 +657,8 @@ class DCutAction_OneVertexKinFit : public DAnalysisAction
 		double dMaxVertexZ;
 
 		const DAnalysisUtilities* dAnalysisUtilities;
-		DKinFitter_GlueX dKinFitter;
+		DKinFitter* dKinFitter;
+		DKinFitUtils_GlueX* dKinFitUtils;
 
 		TH1I* dHist_ConfidenceLevel;
 		TH1I* dHist_VertexZ;

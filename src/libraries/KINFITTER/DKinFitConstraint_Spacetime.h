@@ -21,8 +21,8 @@ class DKinFitConstraint_Spacetime : public DKinFitConstraint_Vertex
 	friend class DKinFitUtils;
 
 	public:
-		TVector3 Get_InitTimeGuess(void) const{return dInitTimeGuess;};
-		void Set_InitTimeGuess(const TVector3& locInitTimeGuess){dInitTimeGuess = locInitTimeGuess;};
+		double Get_InitTimeGuess(void) const{return dInitTimeGuess;};
+		void Set_InitTimeGuess(double locInitTimeGuess){dInitTimeGuess = locInitTimeGuess;};
 
 		TLorentzVector Get_CommonSpacetime(void) const;
 		double Get_CommonTime(void) const;
@@ -118,7 +118,7 @@ inline void DKinFitConstraint_Spacetime::Set_CommonVertex(TVector3& locVertex)
 
 inline void DKinFitConstraint_Spacetime::Set_CommonSpacetime(TLorentzVector& locSpacetime)
 {
-	Set_CommonVertex(locSpacetime.Vect());
+	DKinFitConstraint_Vertex::Set_CommonVertex(locSpacetime.Vect());
 	Set_CommonTime(locSpacetime.T());
 }
 

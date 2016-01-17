@@ -1211,7 +1211,7 @@ DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DKinematicData*>
 	return locVertex;
 }
 
-DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DKinFitParticle*>& locParticles) const
+DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<DKinFitParticle*>& locParticles) const
 {
 	//assumes tracks are straight lines
 	//uses the midpoint of the smallest DOCA line
