@@ -23,11 +23,10 @@
 #include "PID/DKinematicData.h"
 #include "PID/DBeamPhoton.h"
 
-#include "DKinFitter.h"
-#include "DKinFitUtils.h"
+#include "KINFITTER/DKinFitter.h"
+#include "KINFITTER/DKinFitUtils.h"
 
 #include "ANALYSIS/DAnalysisUtilities.h"
-
 
 using namespace std;
 

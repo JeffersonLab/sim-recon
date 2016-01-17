@@ -8,12 +8,21 @@
 #include "JANA/JObject.h"
 #include "particleType.h"
 #include "ANALYSIS/DReactionStep.h"
-#include "ANALYSIS/DKinFitResults.h"
 
 using namespace std;
 using namespace jana;
 
 class DAnalysisAction;
+
+enum DKinFitType
+{
+	d_NoFit = 0, 
+	d_P4Fit, //also includes invariant mass constraints
+	d_VertexFit,
+	d_SpacetimeFit,
+	d_P4AndVertexFit, //also includes invariant mass constraints
+	d_P4AndSpacetimeFit //also includes invariant mass constraints
+};
 
 class DReaction : public JObject
 {
