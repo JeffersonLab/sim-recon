@@ -34,6 +34,7 @@ using namespace std;
 extern double Ecoherent_peak;
 extern double Eelectron_beam;
 extern double Emin;
+extern double CollimatorDiameter;
 extern bool   ONLY_COHERENT;
 extern bool   ONLY_INCOHERENT;
 
@@ -162,7 +163,7 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
       double beamEpeak = beampars[2];
       double beamEmin = (beampars[3] > 0)? beampars[3] : 0.120;
       double radColDist = (beampars[4] > 0)? beampars[4] : 76.;
-      double colDiam = (beampars[5] > 0)? beampars[5] : 0.0034;
+//      double colDiam = (beampars[5] > 0)? beampars[5] : 0.0034;
       double beamEmit = (beampars[6] > 0)? beampars[6] : 2.5e-9;
       double radThick = (beampars[7] > 0)? beampars[7] : 20e-6;
 
@@ -182,10 +183,15 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
       fCobremsGenerator = new CobremsGenerator(beamE0, beamEpeak);
       fCobremsGenerator->setPhotonEnergyMin(beamEmin);
       fCobremsGenerator->setCollimatorDistance(radColDist);
-      fCobremsGenerator->setCollimatorDiameter(colDiam);
+      fCobremsGenerator->setCollimatorDiameter(CollimatorDiameter);
       fCobremsGenerator->setBeamEmittance(beamEmit);
       fCobremsGenerator->setTargetThickness(radThick);
       prepareCobremsImportanceSamplingPDFs();
+
+	std::cout << std::endl
+			 << "Initialization for coherent bremsstralung calculation"
+			 << std::endl;
+	fCobremsGenerator->printBeamlineInfo();
 
 //      std::map<int, double> bgratepars;
 //      std::map<int, double> bggatepars;
