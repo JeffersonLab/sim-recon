@@ -15,7 +15,7 @@
 #include <DLorentzVector.h>
 
 #include "PID/DKinematicData.h"
-#include "ANALYSIS/DKinFitParticle.h"
+#include "KINFITTER/DKinFitParticle.h"
 
 using namespace std;
 using namespace jana;

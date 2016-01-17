@@ -20,7 +20,7 @@
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DParticleComboBlueprint.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
-#include "ANALYSIS/DKinFitParticle.h"
+#include "KINFITTER/DKinFitParticle.h"
 #include "ANALYSIS/DKinFitResults.h"
 #include "ANALYSIS/DKinFitter_GlueX.h"
 #include "ANALYSIS/DAnalysisResults.h"

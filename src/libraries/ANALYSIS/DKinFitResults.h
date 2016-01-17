@@ -122,9 +122,9 @@ inline void DKinFitResults::Add_OutputKinFitParticles(const set<DKinFitParticle*
 		dOutputKinFitParticles[(*locIterator)->Get_KinFitParticleType()].insert(*locIterator);
 }
 
-inline void DKinFitResults::Add_KinFitConstraints(const set<DKinFitParticle*>& locKinFitConstraints)
+inline void DKinFitResults::Add_KinFitConstraints(const set<DKinFitConstraint*>& locKinFitConstraints)
 {
-	set<DKinFitParticle*>::const_iterator locIterator = locKinFitConstraints.begin();
+	set<DKinFitConstraint*>::const_iterator locIterator = locKinFitConstraints.begin();
 	for(; locIterator != locKinFitConstraints.end(); ++locIterator)
 		dKinFitConstraints.insert(*locIterator);
 }
@@ -155,7 +155,7 @@ inline const DKinFitParticle* DKinFitResults::Get_OutputKinFitParticle(const DKi
 
 inline const DKinFitParticle* DKinFitResults::Get_OutputKinFitParticle(const JObject* locSourceObject) const
 {
-	DKinFitParticle* locInputKinFitParticle = Get_InputKinFitParticle(locSourceObject);
+	const DKinFitParticle* locInputKinFitParticle = Get_InputKinFitParticle(locSourceObject);
 	return Get_OutputKinFitParticle(locInputKinFitParticle);
 }
 

@@ -17,7 +17,7 @@
 
 #include "KINFITTER/DKinFitter.h"
 
-#include "ANALYSIS/DKinUtils_GlueX.h"
+#include "ANALYSIS/DKinFitUtils_GlueX.h"
 #include "ANALYSIS/DAnalysisAction.h"
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
