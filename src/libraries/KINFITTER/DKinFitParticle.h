@@ -182,7 +182,7 @@ inline void DKinFitParticle::Reset(void)
 	dSpacetimeVertex.SetXYZT(0.0, 0.0, 0.0, 0.0);
 	dCommonSpacetimeVertex.SetXYZT(0.0, 0.0, 0.0, 0.0);
 	dShowerEnergy = 0.0;
-	dMomentum.SetPxPyPz(0.0, 0.0, 0.0);
+	dMomentum.SetXYZ(0.0, 0.0, 0.0);
 	dCovarianceMatrix = NULL;
 	dPathLength = 0.0;
 	dPathLengthUncertainty = 0.0;

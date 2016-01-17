@@ -27,8 +27,8 @@ class DKinFitChainStep
 		bool Get_ConstrainDecayingMassFlag(void) const{return dConstrainDecayingMassFlag;}
 
 		//ADD PARTICLES
-		void Add_InitialParticle(const DKinFitParticle* locInitialParticle){dInitialParticles.insert(locInitialParticle);}
-		void Add_FinalParticle(const DKinFitParticle* locFinalParticle){dFinalParticles.insert(locFinalParticle);}
+		void Add_InitialParticle(DKinFitParticle* locInitialParticle){dInitialParticles.insert(locInitialParticle);}
+		void Add_FinalParticle(DKinFitParticle* locFinalParticle){dFinalParticles.insert(locFinalParticle);}
 
 		//SET CONTROL INFO
 		void Set_InitialParticleDecayFromStepIndex(int locDecayFromStepIndex){dInitialParticleDecayFromStepIndex = locDecayFromStepIndex;}
@@ -68,7 +68,7 @@ class DKinFitChain
 
 		//GET, ADD STEPS
 		const DKinFitChainStep* Get_KinFitChainStep(size_t locStepIndex) const;
-		void Add_KinFitChainStep(const DKinFitChainStep* locKinFitChainStep){dKinFitChainSteps.push_back(locKinFitChainStep);}
+		void Add_KinFitChainStep(DKinFitChainStep* locKinFitChainStep){dKinFitChainSteps.push_back(locKinFitChainStep);}
 		size_t Get_NumKinFitChainSteps(void) const{return dKinFitChainSteps.size();}
 
 		//GET CONTROL INFO
@@ -100,12 +100,12 @@ void DKinFitChain::Reset(void)
 int DKinFitChain::Get_DecayStepIndex(DKinFitParticle* locKinFitParticle) const
 {
 	map<DKinFitParticle*, int>::const_iterator locIterator = dDecayStepIndices.find(locKinFitParticle);
-	return ((locIterator != dDecayStepIndices.end()) ? locIterator->second : -1;
+	return ((locIterator != dDecayStepIndices.end()) ? locIterator->second : -1);
 }
 
 const DKinFitChainStep* DKinFitChain::Get_KinFitChainStep(size_t locStepIndex) const
 {
-	return ((locStepIndex < dKinFitChainSteps.size()) ? dKinFitChainSteps[locStepIndex] : NULL;
+	return ((locStepIndex < dKinFitChainSteps.size()) ? dKinFitChainSteps[locStepIndex] : NULL);
 }
 
 #endif // _DKinFitChain_

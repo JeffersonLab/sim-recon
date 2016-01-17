@@ -143,13 +143,13 @@ inline void DKinFitResults::Add_ParticleMapping_InputToOutput(const DKinFitParti
 inline const DKinFitParticle* DKinFitResults::Get_InputKinFitParticle(const JObject* locSourceObject) const
 {
 	map<const JObject*, const DKinFitParticle*>::const_iterator locIterator = dParticleMap_SourceToInput.find(locSourceObject);
-	return (locIterator != dParticleMap_SourceToInput.end()) ? locIterator->second : NULL;
+	return ((locIterator != dParticleMap_SourceToInput.end()) ? locIterator->second : NULL);
 }
 
 inline const DKinFitParticle* DKinFitResults::Get_OutputKinFitParticle(const DKinFitParticle* locInputKinFitParticle) const
 {
 	map<const DKinFitParticle*, const DKinFitParticle*>::const_iterator locIterator = dParticleMap_InputToOutput.find(locInputKinFitParticle);
-	return (locIterator != dParticleMap_InputToOutput.end()) ? locIterator->second : NULL;
+	return ((locIterator != dParticleMap_InputToOutput.end()) ? locIterator->second : NULL);
 }
 
 inline const DKinFitParticle* DKinFitResults::Get_OutputKinFitParticle(const JObject* locSourceObject) const
@@ -161,7 +161,7 @@ inline const DKinFitParticle* DKinFitResults::Get_OutputKinFitParticle(const JOb
 inline set<const DKinFitParticle*> DKinFitResults::Get_OutputKinFitParticles(DKinFitParticleType locKinFitParticleType) const
 {
 	map<DKinFitParticleType, set<const DKinFitParticle*> >::const_iterator locIterator = dOutputKinFitParticles.find(locKinFitParticleType);
-	return ((locIterator != dOutputKinFitParticles.end()) ? locIterator->second : set<const DKinFitParticle*>();
+	return ((locIterator != dOutputKinFitParticles.end()) ? locIterator->second : set<const DKinFitParticle*>());
 }
 
 #endif // _DKinFitResults_
