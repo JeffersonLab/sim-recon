@@ -759,7 +759,7 @@ set<pair<int, int> > DKinFitUtils_GlueX::Get_KinFitVertexParticles(const DReacti
 	deque<set<pair<int, int> > > locVertices = Setup_VertexConstraints(locReaction);
 	string locDummyString;
 	int locNumConstraints = 0;
-	locVertices = Create_VertexConstraints(locReaction, locVertices, false, locNumConstraints, locDummyString); //false: doesn't matter: not used
+	locVertices = Predict_VertexConstraints(locReaction, locVertices, false, locNumConstraints, locDummyString); //false: doesn't matter: not used
 
 	//merge vertices together
 	set<pair<int, int> > locVertexParticles;
@@ -918,7 +918,7 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReaction* locReaction, DKin
 
 		string locVertexConstraintString;
 		size_t locNumVertexConstraints = 0;
-		locVertices = Create_VertexConstraints(locReaction, locVertices, locSpacetimeFitFlag, locNumVertexConstraints, locVertexConstraintString);
+		locVertices = Predict_VertexConstraints(locReaction, locVertices, locSpacetimeFitFlag, locNumVertexConstraints, locVertexConstraintString);
 
 		if(locAllConstraintsString != "")
 			locAllConstraintsString += ", ";
@@ -1052,7 +1052,7 @@ void DKinFitUtils_GlueX::Setup_VertexConstraint(const DReaction* locReaction, si
 	}
 }
 
-deque<set<pair<int, int> > > DKinFitUtils_GlueX::Create_VertexConstraints(const DReaction* locReaction, const deque<set<pair<int, int> > >& locAllVertices, bool locSpacetimeFitFlag, size_t& locNumConstraints, string& locAllConstraintString) const
+deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const DReaction* locReaction, const deque<set<pair<int, int> > >& locAllVertices, bool locSpacetimeFitFlag, size_t& locNumConstraints, string& locAllConstraintString) const
 {
 	if(dDebugLevel > 10)
 		cout << "DKinFitUtils_GlueX: Create vertex constraints." << endl;
