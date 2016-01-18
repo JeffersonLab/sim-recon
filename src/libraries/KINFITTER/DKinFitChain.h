@@ -10,6 +10,8 @@
 //This class is not necessary to use the kinematic fitter, but it is necessary to use some of the setup help functions in DKinFitUtils
 	//Is mostly useful when coding for the generic situation of ANY possible decay chain (rather than handling a specific one)
 
+using namespace std;
+
 class DKinFitChainStep
 {
 	public:
@@ -55,7 +57,7 @@ void DKinFitChainStep::Reset(void)
 set<DKinFitParticle*> DKinFitChainStep::Get_AllParticles(void) const
 {
 	set<DKinFitParticle*> locAllParticles;
-	set_union(dInitialParticles.begin(), dInitialParticles.end(), dFinalParticles.begin(), dFinalParticles.end(), back_inserter(locAllParticles));
+	set_union(dInitialParticles.begin(), dInitialParticles.end(), dFinalParticles.begin(), dFinalParticles.end(), inserter(locAllParticles, locAllParticles.begin()));
 	return locAllParticles;
 }
 
