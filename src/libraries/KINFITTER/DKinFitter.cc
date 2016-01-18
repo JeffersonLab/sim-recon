@@ -224,8 +224,8 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	set<DKinFitConstraint_Vertex*>::iterator locVertexIterator = locVertexConstraints.begin();
 	for(; locVertexIterator != locVertexConstraints.end(); ++locVertexIterator)
 	{
-		set<DKinFitParticle*>& locAllConstraintParticles = (*locVertexIterator)->Get_AllParticles();
-		set<DKinFitParticle*>& locNoConstrainParticles = (*locVertexIterator)->Get_NoConstrainParticles();
+		set<DKinFitParticle*> locAllConstraintParticles = (*locVertexIterator)->Get_AllParticles();
+		set<DKinFitParticle*> locNoConstrainParticles = (*locVertexIterator)->Get_NoConstrainParticles();
 		set<DKinFitParticle*>::iterator locParticleIterator = locNoConstrainParticles.begin();
 		for(; locParticleIterator != locNoConstrainParticles.end(); ++locParticleIterator)
 		{
@@ -297,7 +297,7 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	//set vertex constraint flags: used if not accelerating
 	for(locVertexIterator = locVertexConstraints.begin(); locVertexIterator != locVertexConstraints.end(); ++locVertexIterator)
 	{
-		set<DKinFitParticle*>& locFullConstrainParticles = (*locVertexIterator)->Get_FullConstrainParticles();
+		set<DKinFitParticle*> locFullConstrainParticles = (*locVertexIterator)->Get_FullConstrainParticles();
 		for(locParticleIterator = locFullConstrainParticles.begin(); locParticleIterator != locFullConstrainParticles.end(); ++locParticleIterator)
 		{
 			DKinFitParticle* locParticle = *locParticleIterator;
