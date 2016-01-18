@@ -101,6 +101,7 @@ inline void DKinFitConstraint_Vertex::Set_CommonVertex(const TVector3& locVertex
 		(*locIterator)->Set_CommonVertex(locVertex);
 	for(locIterator = dNoConstrainParticles.begin(); locIterator != dNoConstrainParticles.end(); ++locIterator)
 	{
+		DKinFitParticleType locKinFitParticleType = (*locIterator)->Get_KinFitParticleType();
 		if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle))
 			(*locIterator)->Set_Position(locVertex);
 		else
