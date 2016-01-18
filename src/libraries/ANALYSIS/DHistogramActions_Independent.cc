@@ -2441,7 +2441,7 @@ bool DHistogramAction_EventVertex::Perform_Action(JEventLoop* locEventLoop, cons
 				if(dHistMap_KinFitPulls.find(locPID) == dHistMap_KinFitPulls.end())
 					continue; //PID not histogrammed
 
-				map<const DKinematicData*, map<DKinFitPullType, double> >::const_iterator locParticleIterator = locVertex->dKinFitPulls.find(locKinematicData);
+				map<const JObject*, map<DKinFitPullType, double> >::const_iterator locParticleIterator = locVertex->dKinFitPulls.find(locKinematicData);
 				if(locParticleIterator == locVertex->dKinFitPulls.end())
 					continue;
 
