@@ -50,7 +50,7 @@ class DKinFitConstraint_Vertex : public DKinFitConstraint
 		void Set_NoConstrainParticles(set<DKinFitParticle*>& locNoConstrainParticles){dNoConstrainParticles = locNoConstrainParticles;}
 
 		set<DKinFitParticle*> dFullConstrainParticles; //charged particles, decaying particles, beam particles (not neutral showers!)
-		set<DKinFitParticle*> dNoConstrainParticles; //missing particles, decaying particles, & neutral showers //not used to constrain vertex or time, but fit vertex is set for this particle
+		set<DKinFitParticle*> dNoConstrainParticles; //missing particles, decaying particles, & neutral showers //fit vertex is set for these
 
 		//key is particle, value is the constraint equation index
 		map<DKinFitParticle*, unsigned int> dConstraintEquationParticleMap;
@@ -83,7 +83,7 @@ inline set<DKinFitParticle*> DKinFitConstraint_Vertex::Get_AllParticles(void) co
 {
 	set<DKinFitParticle*> locAllParticles;
 	set_union(dFullConstrainParticles.begin(), dFullConstrainParticles.end(), dNoConstrainParticles.begin(), 
-		dNoConstrainParticles.end(), back_inserter(locAllParticles));
+		dNoConstrainParticles.end(), inserter(locAllParticles, locAllParticles.begin()));
 	return locAllParticles;
 }
 

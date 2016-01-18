@@ -69,14 +69,16 @@ inline set<DKinFitParticle*> DKinFitConstraint_Spacetime::Get_AllParticles(void)
 {
 	set<DKinFitParticle*> locAllParticles;
 	set<DKinFitParticle*> locBaseParticles = DKinFitConstraint_Vertex::Get_AllParticles();
-	set_union(locBaseParticles.begin(), locBaseParticles.end(), dOnlyConstrainTimeParticles.begin(), dOnlyConstrainTimeParticles.end(), back_inserter(locAllParticles));
+	set_union(locBaseParticles.begin(), locBaseParticles.end(), dOnlyConstrainTimeParticles.begin(), 
+		dOnlyConstrainTimeParticles.end(), inserter(locAllParticles, locAllParticles.begin()));
 	return locAllParticles;
 }
 
 inline set<DKinFitParticle*> DKinFitConstraint_Spacetime::Get_AllConstrainedParticles(void) const
 {
 	set<DKinFitParticle*> locAllConstrainedParticles;
-	set_union(dFullConstrainParticles.begin(), dFullConstrainParticles.end(), dOnlyConstrainTimeParticles.begin(), dOnlyConstrainTimeParticles.end(), back_inserter(locAllConstrainedParticles));
+	set_union(dFullConstrainParticles.begin(), dFullConstrainParticles.end(), dOnlyConstrainTimeParticles.begin(), 
+		dOnlyConstrainTimeParticles.end(), inserter(locAllConstrainedParticles, locAllConstrainedParticles.begin()));
 	return locAllConstrainedParticles;
 }
 

@@ -67,7 +67,7 @@ inline void DKinFitConstraint_P4::Reset(void)
 inline set<DKinFitParticle*> DKinFitConstraint_P4::Get_AllParticles(void) const
 {
 	set<DKinFitParticle*> locAllParticles;
-	set_union(dInitialParticles.begin(), dInitialParticles.end(), dFinalParticles.begin(), dFinalParticles.end(), back_inserter(locAllParticles));
+	set_union(dInitialParticles.begin(), dInitialParticles.end(), dFinalParticles.begin(), dFinalParticles.end(), inserter(locAllParticles, locAllParticles.begin()));
 	return locAllParticles;
 }
 
