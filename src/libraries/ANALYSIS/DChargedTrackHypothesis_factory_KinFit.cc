@@ -40,7 +40,7 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEvent
  	vector<const DKinFitResults*> locKinFitResultsVector;
 	locEventLoop->Get(locKinFitResultsVector);
 
-	map<const DKinFitParticle*, DChargedTrackHypothesis*> locNewObjectMap;
+	map<DKinFitParticle*, DChargedTrackHypothesis*> locNewObjectMap;
 
 	for(size_t loc_i = 0; loc_i < locKinFitResultsVector.size(); ++loc_i)
 	{
@@ -62,11 +62,11 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEvent
 						continue;
 
 					const DKinematicData* locMeasuredParticle = locParticleComboStep->Get_FinalParticle_Measured(loc_k);
-					const DKinFitParticle* locKinFitParticle = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticle(locMeasuredParticle);
+					DKinFitParticle* locKinFitParticle = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticle(locMeasuredParticle);
 					if(locKinFitParticle == NULL)
 						continue; //not used in fit
 
-					map<const DKinFitParticle*, DChargedTrackHypothesis*>::iterator locNewHypoIterator = locNewObjectMap.find(locKinFitParticle);
+					map<DKinFitParticle*, DChargedTrackHypothesis*>::iterator locNewHypoIterator = locNewObjectMap.find(locKinFitParticle);
 					if(locNewHypoIterator != locNewObjectMap.end())
 					{
 						locNewHypoIterator->second->AddAssociatedObject(locParticleCombo);
@@ -89,7 +89,7 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEvent
 	return NOERROR;
 }
 
-DChargedTrackHypothesis* DChargedTrackHypothesis_factory_KinFit::Build_ChargedTrackHypothesis(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DKinFitParticle* locKinFitParticle, const DChargedTrack* locChargedTrack, const DParticleCombo* locParticleCombo)
+DChargedTrackHypothesis* DChargedTrackHypothesis_factory_KinFit::Build_ChargedTrackHypothesis(const DChargedTrackHypothesis* locChargedTrackHypothesis, DKinFitParticle* locKinFitParticle, const DChargedTrack* locChargedTrack, const DParticleCombo* locParticleCombo)
 {
 	DChargedTrackHypothesis* locNewChargedTrackHypothesis = new DChargedTrackHypothesis(*locChargedTrackHypothesis);
 	locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrackHypothesis);

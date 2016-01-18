@@ -32,7 +32,7 @@ class DChargedTrackHypothesis_factory_KinFit : public jana::JFactory<DChargedTra
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		DChargedTrackHypothesis* Build_ChargedTrackHypothesis(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DKinFitParticle* locKinFitParticle, const DChargedTrack* locChargedTrack, const DParticleCombo* locParticleCombo);
+		DChargedTrackHypothesis* Build_ChargedTrackHypothesis(const DChargedTrackHypothesis* locChargedTrackHypothesis, DKinFitParticle* locKinFitParticle, const DChargedTrack* locChargedTrack, const DParticleCombo* locParticleCombo);
 		const DParticleID* dPIDAlgorithm;
 };
 

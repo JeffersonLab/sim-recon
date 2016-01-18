@@ -48,8 +48,8 @@ class DParticleCombo_factory : public jana::JFactory<DParticleCombo>
 
 		const DParticleCombo* Check_IsDuplicateCombo(const map<const DParticleCombo*, const DKinFitChain*>& locParticleComboMap, const DParticleCombo* locParticleCombo);
 
-		void Set_DecayingParticles(const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, const DParticleComboStep* locNewParticleComboStep, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults);
-		DKinFitParticle* Get_DecayingParticle(const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const DKinFitChain* locKinFitChain);
+		void Set_DecayingParticles(const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, DParticleComboStep* locNewParticleComboStep, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults);
+		DKinFitParticle* Get_DecayingParticle(const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults);
 		bool Search_ForParticleInDecay(const DKinFitChain* locKinFitChain, size_t locStepToSearch, const DKinFitParticle* locParticleToFind);
 
 		const DChargedTrackHypothesis* Get_ChargedHypothesis(const DParticleCombo* locParticleCombo, const vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses, const DKinematicData* locKinematicData_Measured) const;

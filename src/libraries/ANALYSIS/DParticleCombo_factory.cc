@@ -135,7 +135,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 
 			//search to see if the results were the same as a previous combo. if so, copy them:
 				//note that it is possible for two combos with different steps to have the same kinfit results (e.g. one has an omega or phi, and the other doesn't)
-			const DParticleCombo* locPreviousParticleCombo = Check_IsDuplicateCombo(locParticleCombos, locParticleCombo);
+			const DParticleCombo* locPreviousParticleCombo = Check_IsDuplicateCombo(locParticleComboMap, locParticleCombo);
 			if(locPreviousParticleCombo != NULL)
 			{
 				//everything is identical: copy results
@@ -176,7 +176,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 				//TARGET PARTICLE
 				if(locParticleComboStep->Is_TargetPresent())
 				{
-					set<const DKinFitParticle*> locTargetParticles = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticles(d_TargetParticle);
+					set<DKinFitParticle*> locTargetParticles = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticles(d_TargetParticle);
 					if(!locTargetParticles.empty())
 					{
 						DKinematicData* locNewKinematicData = Build_KinematicData(locPID, *locTargetParticles.begin());
@@ -193,7 +193,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 					Particle_t locPID = locParticleComboStep->Get_FinalParticleID(loc_k);
 					if(locParticleComboStep->Is_FinalParticleMissing(loc_k)) //missing!
 					{
-						set<const DKinFitParticle*> locMissingParticles = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticles(d_MissingParticle);
+						set<DKinFitParticle*> locMissingParticles = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticles(d_MissingParticle);
 						if(!locMissingParticles.empty())
 						{
 							DKinematicData* locNewKinematicData = Build_KinematicData(locPID, *locMissingParticles.begin());
@@ -251,14 +251,14 @@ const DParticleCombo* DParticleCombo_factory::Check_IsDuplicateCombo(const map<c
 	}
 }
 
-void DParticleCombo_factory::Set_DecayingParticles(const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, const DParticleComboStep* locNewParticleComboStep, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults)
+void DParticleCombo_factory::Set_DecayingParticles(const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, DParticleComboStep* locNewParticleComboStep, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults)
 {
-	DKinFitParticle* locKinFitParticle = Get_DecayingParticle(locOldParticleCombo, locStepIndex, locKinFitChain);
+	DKinFitParticle* locKinFitParticle = Get_DecayingParticle(locOldParticleCombo, locStepIndex, locKinFitChain, locKinFitResults);
 	Particle_t locPID = PDGtoPType(locKinFitParticle->Get_PID());
 	DKinematicData* locKinematicData_Position = Build_KinematicData(locPID, locKinFitParticle);
 	DKinematicData* locKinematicData_Common = Build_KinematicData(locPID, locKinFitParticle);
 	if(locKinFitParticle->Get_CommonVxParamIndex() >= 0)
-		dKinFitUtils.Propagate_TrackInfoToCommonVertex(locKinematicData_Common, locKinFitParticle, locKinFitResults->Get_VXi());
+		dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinematicData_Common, locKinFitParticle, locKinFitResults->Get_VXi());
 
 	bool locAtProdVertexFlag = locKinFitParticle->Get_VertexP4AtProductionVertex();
 	DKinematicData* locKinematicData_InitState = locAtProdVertexFlag ? locKinematicData_Common : locKinematicData_Position;
@@ -268,18 +268,18 @@ void DParticleCombo_factory::Set_DecayingParticles(const DParticleCombo* locNewP
 
 	//now, back-set the particle at the other vertex
 	int locFromStepIndex = locNewParticleComboStep->Get_InitialParticleDecayFromStepIndex();
-	DParticleComboStep* locParticleComboStep = const_cast<DParticleComboStep*>locNewParticleCombo->Get_ParticleComboStep(locFromStepIndex);
+	DParticleComboStep* locParticleComboStep = const_cast<DParticleComboStep*>(locNewParticleCombo->Get_ParticleComboStep(locFromStepIndex));
 	//find where it is the decaying particle
 	for(size_t loc_i = 0; loc_i < locParticleComboStep->Get_NumFinalParticles(); ++loc_i)
 	{
-		if(locParticleComboStep->Get_DecayStepIndex(loc_i) != locStepIndex)
+		if(locParticleComboStep->Get_DecayStepIndex(loc_i) != int(locStepIndex))
 			continue;
 		locParticleComboStep->Set_FinalParticle(locKinematicData_FinalState, loc_i);
 		break;
 	}
 }
 
-DKinFitParticle* DParticleCombo_factory::Get_DecayingParticle(const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const DKinFitChain* locKinFitChain)
+DKinFitParticle* DParticleCombo_factory::Get_DecayingParticle(const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults)
 {
 	const DParticleComboStep* locParticleComboStep = locOldParticleCombo->Get_ParticleComboStep(locComboStepIndex);
 	Particle_t locPID = locParticleComboStep->Get_InitialParticleID();
@@ -316,7 +316,7 @@ DKinFitParticle* DParticleCombo_factory::Get_DecayingParticle(const DParticleCom
 		deque<const DKinematicData*> locMeasuredParticles;
 		locOldParticleCombo->Get_DecayChainParticles_Measured(locComboStepIndex, locMeasuredParticles);
 		const DKinematicData* locMeasuredParticle = locMeasuredParticles[0];
-		const DKinFitParticle* locKinFitParticle = locKinFitResults->Get_InputParticle(locMeasuredParticle);
+		DKinFitParticle* locKinFitParticle = locKinFitResults->Get_InputParticle(locMeasuredParticle);
 
 		if(!Search_ForParticleInDecay(locKinFitChain, loc_i, locKinFitParticle))
 			continue;
@@ -326,7 +326,7 @@ DKinFitParticle* DParticleCombo_factory::Get_DecayingParticle(const DParticleCom
 	}
 }
 
-bool DParticleCombo_factory::Search_ForParticleInDecay(const DKinFitChain* locKinFitChain, size_t locStepToSearch, const DKinFitParticle* locParticleToFind)
+bool DParticleCombo_factory::Search_ForParticleInDecay(const DKinFitChain* locKinFitChain, size_t locStepToSearch, DKinFitParticle* locParticleToFind)
 {
 	const DKinFitChainStep* locKinFitChainStep = locKinFitChain->Get_KinFitChainStep(locStepToSearch);
 	set<DKinFitParticle*> locFinalParticles = locKinFitChainStep->Get_FinalParticles();
@@ -436,7 +436,7 @@ void DParticleCombo_factory::Reset_Data(void)
 	dCreatedParticleCombos.clear();
 }
 
-DKinematicData* DParticleCombo_factory::Build_KinematicData(Particle_t locPID, const DKinFitParticle* locKinFitParticle)
+DKinematicData* DParticleCombo_factory::Build_KinematicData(Particle_t locPID, DKinFitParticle* locKinFitParticle)
 {
 	DKinematicData* locKinematicData = Get_KinematicDataResource();
 	locKinematicData->setPID(locPID);

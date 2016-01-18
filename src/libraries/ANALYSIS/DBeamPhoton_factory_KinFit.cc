@@ -44,7 +44,7 @@ jerror_t DBeamPhoton_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, uint64
 		map<const DParticleCombo*, const DKinFitChain*> locParticleComboMap;
 		locKinFitResultsVector[loc_i]->Get_ParticleComboMap(locParticleComboMap);
 
-		map<const DKinFitParticle*, DBeamPhoton*> locNewObjectMap;
+		map<DKinFitParticle*, DBeamPhoton*> locNewObjectMap;
 		map<const DParticleCombo*, const DKinFitChain*>::iterator locComboIterator = locParticleComboMap.begin();
 		for(; locComboIterator != locParticleComboMap.end(); ++locComboIterator)
 		{
@@ -54,11 +54,11 @@ jerror_t DBeamPhoton_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, uint64
 				continue;
 
 			const DKinematicData* locInitialParticle = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured();
-			const DKinFitParticle* locKinFitParticle = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticle(locInitialParticle);
+			DKinFitParticle* locKinFitParticle = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticle(locInitialParticle);
 			if(locKinFitParticle == NULL)
 				continue; //not used in fit
 
-			map<const DKinFitParticle*, DBeamPhoton*>::iterator locNewPhotonIterator = locNewObjectMap.find(locKinFitParticle);
+			map<DKinFitParticle*, DBeamPhoton*>::iterator locNewPhotonIterator = locNewObjectMap.find(locKinFitParticle);
 			if(locNewPhotonIterator != locNewObjectMap.end())
 			{
 				locNewPhotonIterator->second->AddAssociatedObject(locParticleCombo);
@@ -77,7 +77,7 @@ jerror_t DBeamPhoton_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, uint64
 	return NOERROR;
 }
 
-DBeamPhoton* DBeamPhoton_factory_KinFit::Build_BeamPhoton(const DBeamPhoton* locBeamPhoton, const DKinFitParticle* locKinFitParticle, const DParticleCombo* locParticleCombo)
+DBeamPhoton* DBeamPhoton_factory_KinFit::Build_BeamPhoton(const DBeamPhoton* locBeamPhoton, DKinFitParticle* locKinFitParticle, const DParticleCombo* locParticleCombo)
 {
 	DBeamPhoton* locNewBeamPhoton = new DBeamPhoton(*locBeamPhoton);
 	locNewBeamPhoton->AddAssociatedObject(locBeamPhoton);

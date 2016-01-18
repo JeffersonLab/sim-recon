@@ -40,7 +40,7 @@ jerror_t DNeutralParticleHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEv
  	vector<const DKinFitResults*> locKinFitResultsVector;
 	locEventLoop->Get(locKinFitResultsVector);
 
-	map<const DKinFitParticle*, DNeutralParticleHypothesis*> locNewObjectMap;
+	map<DKinFitParticle*, DNeutralParticleHypothesis*> locNewObjectMap;
 
 	for(size_t loc_i = 0; loc_i < locKinFitResultsVector.size(); ++loc_i)
 	{
@@ -65,13 +65,13 @@ jerror_t DNeutralParticleHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEv
 					const DNeutralShower* locNeutralShower = static_cast<const DNeutralShower*>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_k));
 					const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticleComboStep->Get_FinalParticle(loc_k));
 
-					const DKinFitParticle* locKinFitParticle = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticle(locNeutralParticleHypothesis);
+					DKinFitParticle* locKinFitParticle = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticle(locNeutralParticleHypothesis);
 					if(locKinFitParticle == NULL)
 						locKinFitParticle = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticle(locNeutralShower);
 					if(locKinFitParticle == NULL)
 						continue; //not used in fit
 
-					map<const DKinFitParticle*, DNeutralParticleHypothesis*>::iterator locNewHypoIterator = locNewObjectMap.find(locKinFitParticle);
+					map<DKinFitParticle*, DNeutralParticleHypothesis*>::iterator locNewHypoIterator = locNewObjectMap.find(locKinFitParticle);
 					if(locNewHypoIterator != locNewObjectMap.end())
 					{
 						locNewHypoIterator->second->AddAssociatedObject(locParticleCombo);
@@ -91,7 +91,7 @@ jerror_t DNeutralParticleHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEv
 	return NOERROR;
 }
 
-DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory_KinFit::Build_NeutralParticleHypothesis(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DKinFitParticle* locKinFitParticle, const DNeutralShower* locNeutralShower, const DParticleCombo* locParticleCombo)
+DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory_KinFit::Build_NeutralParticleHypothesis(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, DKinFitParticle* locKinFitParticle, const DNeutralShower* locNeutralShower, const DParticleCombo* locParticleCombo)
 {
 	DNeutralParticleHypothesis* locNewNeutralParticleHypothesis = new DNeutralParticleHypothesis(*locNeutralParticleHypothesis);
 	locNewNeutralParticleHypothesis->AddAssociatedObject(locNeutralParticleHypothesis);
