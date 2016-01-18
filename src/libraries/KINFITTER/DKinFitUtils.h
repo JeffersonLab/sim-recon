@@ -144,6 +144,11 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		virtual TVector3 Get_BField(const TVector3& locPosition) const = 0; //must return in units of Tesla!!
 		virtual bool Get_IsBFieldNearBeamline(void) const = 0;
 
+		/************************************************************* GET CHAIN RESOURCES **********************************************************/
+
+		DKinFitChain* Get_KinFitChainResource(void);
+		DKinFitChainStep* Get_KinFitChainStepResource(void);
+
 		/************************************************************** CLONE CONSTRAINTS ***********************************************************/
 
 		//if need to modify a constraint without disrupting the original: note that particles aren't cloned!
@@ -160,15 +165,13 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 
 	private:
 
-		/************************************************************* HANDLE RESOURCES *************************************************************/
+		/*************************************************************** GET RESOURCES **************************************************************/
 
 		DKinFitParticle* Get_KinFitParticleResource(void);
 		DKinFitConstraint_Vertex* Get_KinFitConstraintVertexResource(void);
 		DKinFitConstraint_Spacetime* Get_KinFitConstraintSpacetimeResource(void);
 		DKinFitConstraint_P4* Get_KinFitConstraintP4Resource(void);
 		DKinFitConstraint_Mass* Get_KinFitConstraintMassResource(void);
-		DKinFitChain* Get_KinFitChainResource(void);
-		DKinFitChainStep* Get_KinFitChainStepResource(void);
 		TMatrixDSym* Get_LargeMatrixDSymResource(void);
 		TMatrixDSym* Get_MatrixDSymResource(void);
 
