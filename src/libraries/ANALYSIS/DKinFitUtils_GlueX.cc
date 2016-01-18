@@ -1020,7 +1020,7 @@ void DKinFitUtils_GlueX::Setup_VertexPrediction(const DReaction* locReaction, si
 		if((locDecayStepIndex >= 0) && !IsDetachedVertex(locPID))
 		{
 			//yes: combine with the decay products
-			Predict_VertexConstraint(locReaction, locDecayStepIndex, locVertexParticles, locDecayMap_ParticleToDecayStep, locIncludedStepIndices);
+			Setup_VertexPrediction(locReaction, locDecayStepIndex, locVertexParticles, locDecayMap_ParticleToDecayStep, locIncludedStepIndices);
 			continue;
 		}
 		else //does not decay, or at least, not in-place
@@ -1064,7 +1064,7 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 		}
 
 		//Create vertex/spacetime constraint, with decaying particles as no-constrain particles
-		locAllNoConstrainParticles[loc_i].insert(locAllDecayingParticles.begin(), locAllDecayingParticles.end());
+		locAllNoConstrainParticles[loc_i].insert(locAllDecayingParticles[loc_i].begin(), locAllDecayingParticles[loc_i].end());
 		set<pair<int, int> > locVertexParticles;
 		if(locSpacetimeFitFlag)
 		{
@@ -1117,7 +1117,7 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 		}
 
 		//find which decaying particles at this vertex have been previously defined
-		set<DKinFitParticle*> locVertexDecayingParticles_Defined;
+		set<pair<int, int> > locVertexDecayingParticles_Defined;
 		set_intersection(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
                           locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
                           inserter(locVertexDecayingParticles_Defined, locVertexDecayingParticles_Defined.begin()));
@@ -1130,7 +1130,7 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 		}
 
 		//find which decaying particles at this vertex have NOT been previously defined
-		set<DKinFitParticle*> locVertexDecayingParticles_NotDefined;
+		set<pair<int, int> > locVertexDecayingParticles_NotDefined;
 		set_intersection(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
                           locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
                           inserter(locVertexDecayingParticles_NotDefined, locVertexDecayingParticles_NotDefined.begin()));
@@ -1275,7 +1275,7 @@ bool DKinFitUtils_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKi
 	TLorentzVector locSpacetimeVertex;
 	pair<double, double> locPathLengthPair;
 	TMatrixDSym* locCovarianceMatrix = Get_MatrixDSymResource();
-	if(!Propagate_TrackInfoToCommonVertex(locKinFitParticle, locVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, *locCovarianceMatrix))
+	if(!DKinFitUtils::Propagate_TrackInfoToCommonVertex(locKinFitParticle, locVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, *locCovarianceMatrix))
 		return false;
 
 	locKinematicData->setMomentum(DVector3(locMomentum.X(),locMomentum.Y(),locMomentum.Z()));
