@@ -101,7 +101,7 @@ class DAnalysisUtilities : public JObject
 		DMatrixDSym Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs) const;
 
 		double Calc_CrudeTime(const deque<const DKinematicData*>& locParticles, const DVector3& locCommonVertex) const;
-		double Calc_CrudeTime(const deque<const DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const;
+		double Calc_CrudeTime(const deque<DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const;
 		DVector3 Calc_CrudeVertex(const deque<const DKinematicData*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<DKinFitParticle*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles) const;

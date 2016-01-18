@@ -1090,7 +1090,7 @@ double DAnalysisUtilities::Calc_CrudeTime(const deque<const DKinematicData*>& lo
 	return locAverageTime/(double(locParticles.size()));
 }
 
-double DAnalysisUtilities::Calc_CrudeTime(const deque<const DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const
+double DAnalysisUtilities::Calc_CrudeTime(const deque<DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const
 {
 	//crudely propagate the track times to the common vertex and return the average track time
 	DVector3 locPOCA;

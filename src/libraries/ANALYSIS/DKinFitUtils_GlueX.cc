@@ -4,6 +4,21 @@
 
 #include "DKinFitUtils_GlueX.h"
 
+bool DKinFitUtils_GlueX::DDecayingParticleInfo::operator<(const DKinFitUtils_GlueX::DDecayingParticleInfo& locDecayingParticleInfo) const
+{
+	if(dPID < locDecayingParticleInfo.dPID)
+		return true;
+	else if(dPID > locDecayingParticleInfo.dPID)
+		return false;
+
+	if(dFromInitialState < locDecayingParticleInfo.dFromInitialState)
+		return true;
+	else if(dFromInitialState > locDecayingParticleInfo.dFromInitialState)
+		return false;
+
+	return (dFromFinalState < locDecayingParticleInfo.dFromFinalState);
+}
+
 /******************************************************************** INITIALIZE *******************************************************************/
 
 DKinFitUtils_GlueX::DKinFitUtils_GlueX(const DMagneticFieldMap* locMagneticFieldMap, const DAnalysisUtilities* locAnalysisUtilities) : 
@@ -1005,7 +1020,7 @@ void DKinFitUtils_GlueX::Setup_VertexPrediction(const DReaction* locReaction, si
 		if((locDecayStepIndex >= 0) && !IsDetachedVertex(locPID))
 		{
 			//yes: combine with the decay products
-			Setup_VertexConstraint(locReaction, locDecayStepIndex, locVertexParticles, locDecayMap_ParticleToDecayStep, locIncludedStepIndices);
+			Predict_VertexConstraint(locReaction, locDecayStepIndex, locVertexParticles, locDecayMap_ParticleToDecayStep, locIncludedStepIndices);
 			continue;
 		}
 		else //does not decay, or at least, not in-place
@@ -1073,7 +1088,6 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 		if(locAllConstraintString != "")
 			locAllConstraintString += ", ";
 		locAllConstraintString += Build_VertexConstraintString(locReaction, locAllVertices[loc_i], locAllFullConstrainParticles[loc_i], locAllOnlyConstrainTimeParticles[loc_i], locAllNoConstrainParticles[loc_i], locSpacetimeFitFlag);
-		locNumConstraints += ;
 
 		//Erase this vertex from future consideration
 		locAllFullConstrainParticles.erase(locAllFullConstrainParticles.begin() + loc_i);
@@ -1130,13 +1144,13 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 		if(locSpacetimeFitFlag)
 		{
 			locVertexParticles.insert(locAllOnlyConstrainTimeParticles[locConstraintIndex].begin(), locAllOnlyConstrainTimeParticles[locConstraintIndex].end());
-			locNumConstraints += 3*locAllFullConstrainParticles[loc_i].size();
-			locNumConstraints += locAllOnlyConstrainTimeParticles[loc_i].size();
+			locNumConstraints += 3*locAllFullConstrainParticles[locConstraintIndex].size();
+			locNumConstraints += locAllOnlyConstrainTimeParticles[locConstraintIndex].size();
 		}
 		else //vertex only
 		{
 			locAllNoConstrainParticles[locConstraintIndex].insert(locAllOnlyConstrainTimeParticles[locConstraintIndex].begin(), locAllOnlyConstrainTimeParticles[locConstraintIndex].end());
-			locNumConstraints += 2*locAllFullConstrainParticles[loc_i].size();
+			locNumConstraints += 2*locAllFullConstrainParticles[locConstraintIndex].size();
 		}
 		locVertexParticles.insert(locAllFullConstrainParticles[locConstraintIndex].begin(), locAllFullConstrainParticles[locConstraintIndex].end());
 		locVertexParticles.insert(locAllNoConstrainParticles[locConstraintIndex].begin(), locAllNoConstrainParticles[locConstraintIndex].end());
@@ -1173,23 +1187,22 @@ void DKinFitUtils_GlueX::Group_VertexParticles(const DReaction* locReaction, con
 	set<pair<int, int> >::const_iterator locIterator = locVertexParticles.begin();
 	for(; locIterator != locVertexParticles.end(); ++locIterator)
 	{
-		int locStepIndex = (*locIterator)->first;
-		int locParticleIndex = (*locIterator)->second;
+		int locStepIndex = (*locIterator).first;
+		int locParticleIndex = (*locIterator).second;
 
 		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
-		Particle_t locPID = locReactionStep->Get_FinalParticleID();
 		int locDecayStepIndex = locReaction->Get_DecayStepIndex(locStepIndex, locParticleIndex);
 
 		if((locStepIndex == 0) && (locParticleIndex == -1)) //beam
 		{
-			if(dIncludeBeamlineInVertexFitFlag)
+			if(Get_IncludeBeamlineInVertexFitFlag())
 				locFullConstrainParticles.insert(*locIterator);
 			else
 				locNoConstrainParticles.insert(*locIterator);
 		}
 		else if((locStepIndex == 0) && (locParticleIndex == -2)) //target
 			locNoConstrainParticles.insert(*locIterator);
-		else if(locParticleIndex == Get_MissingParticleIndex()) //missing
+		else if(locParticleIndex == locReactionStep->Get_MissingParticleIndex()) //missing
 			locNoConstrainParticles.insert(*locIterator);
 		else if((locParticleIndex == -1) || (locDecayStepIndex >= 0)) //decaying
 		{
@@ -1198,7 +1211,7 @@ void DKinFitUtils_GlueX::Group_VertexParticles(const DReaction* locReaction, con
 			else
 				locNoConstrainParticles.insert(*locIterator);
 		}
-		else if(ParticleCharge(locPID) == 0) //detected neutral
+		else if(ParticleCharge(locReactionStep->Get_FinalParticleID(locParticleIndex)) == 0) //detected neutral
 			locOnlyConstrainTimeParticles.insert(*locIterator);
 		else //detected charged
 			locFullConstrainParticles.insert(*locIterator);
@@ -1261,8 +1274,8 @@ bool DKinFitUtils_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKi
 	TVector3 locMomentum;
 	TLorentzVector locSpacetimeVertex;
 	pair<double, double> locPathLengthPair;
-	TMatrixDSym* locCovarianceMatrix = DKinFitter::Get_MatrixDSymResource();
-	if(!DKinFitter::Propagate_TrackInfoToCommonVertex(locKinFitParticle, locVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, *locCovarianceMatrix))
+	TMatrixDSym* locCovarianceMatrix = Get_MatrixDSymResource();
+	if(!Propagate_TrackInfoToCommonVertex(locKinFitParticle, locVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, *locCovarianceMatrix))
 		return false;
 
 	locKinematicData->setMomentum(DVector3(locMomentum.X(),locMomentum.Y(),locMomentum.Z()));

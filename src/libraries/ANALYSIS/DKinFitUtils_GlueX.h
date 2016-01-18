@@ -142,6 +142,8 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 				DDecayingParticleInfo(Particle_t locPID, const set<DKinFitParticle*>& locFromInitialState, const set<DKinFitParticle*>& locFromFinalState) : 
 				dPID(locPID), dFromInitialState(locFromInitialState), dFromFinalState(locFromFinalState) {}
 
+				bool operator<(const DDecayingParticleInfo& locDecayingParticleInfo) const;
+
 				Particle_t dPID;
 				set<DKinFitParticle*> dFromInitialState;
 				set<DKinFitParticle*> dFromFinalState;
