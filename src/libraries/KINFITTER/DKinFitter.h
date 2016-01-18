@@ -119,7 +119,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 
 		/*********************************************************** FIT INITIALIZATION *************************************************************/
 
-		bool Prepare_ConstraintsAndParticles(void);
+		void Prepare_ConstraintsAndParticles(void);
 		void Set_MatrixSizes(void);
 		void Resize_Matrices(void);
 		void Zero_Matrices(void);

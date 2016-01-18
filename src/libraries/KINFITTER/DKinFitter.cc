@@ -322,9 +322,10 @@ void DKinFitter::Set_MatrixSizes(void)
 	dNumF = 0; //num constraint eqs
 
 	//Calculate dNumEta
-	for(size_t loc_i = 0; loc_i < dKinFitParticles.size(); ++loc_i)
+	set<DKinFitParticle*>::iterator locParticleIterator = dKinFitParticles.begin();
+	for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locKinFitParticle = dKinFitParticles[loc_i];
+		DKinFitParticle* locKinFitParticle = *locParticleIterator;
 		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 		if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle) || (locKinFitParticleType == d_TargetParticle))
 			continue;
@@ -346,7 +347,8 @@ void DKinFitter::Set_MatrixSizes(void)
 	}
 
 	//Calculate dNumXi and dNumF
-	for(locConstraintIterator = dKinFitConstraints.begin(); locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
+	set<DKinFitConstraint*>::iterator locConstraintIterator = dKinFitConstraints.begin();
+	for(; locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
 	{
 		DKinFitConstraint_P4* locKinFitConstraint_P4 = dynamic_cast<DKinFitConstraint_P4*>(*locConstraintIterator);
 		if(locKinFitConstraint_P4 != NULL)
@@ -529,7 +531,8 @@ void DKinFitter::Fill_InputMatrices(void)
 	//SETUP dXi (with initial guesses) and constraint equation indices
 	locParamIndex = 0;
 	int locConstraintIndex = 0;
-	for(locConstraintIterator = dKinFitConstraints.begin(); locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
+	set<DKinFitConstraint*>::iterator locConstraintIterator = dKinFitConstraints.begin();
+	for(; locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
 	{
 		DKinFitConstraint_P4* locKinFitConstraint_P4 = dynamic_cast<DKinFitConstraint_P4*>(*locConstraintIterator);
 		if(locKinFitConstraint_P4 != NULL)
@@ -542,7 +545,7 @@ void DKinFitter::Fill_InputMatrices(void)
 				continue; //no missing particles
 
 			//set initial p3 guess
-			TVector3 locMomentum = locKinFitConstraint_P4->Get_InitDefinedP3Guess();
+			TVector3 locMomentum = locKinFitConstraint_P4->Get_InitP3Guess();
 			dXi(locParamIndex, 0) = locMomentum.Px();
 			dXi(locParamIndex + 1, 0) = locMomentum.Py();
 			dXi(locParamIndex + 2, 0) = locMomentum.Pz();
@@ -708,8 +711,8 @@ void DKinFitter::Fill_InputMatrices(void)
 		Print_Matrix(dVY);
 		cout << "DKinFitter: dXi: " << endl;
 		Print_Matrix(dXi);
-		for(size_t loc_i = 0; loc_i < dKinFitParticles.size(); ++loc_i)
-			dKinFitParticles[loc_i]->Print_ParticleParams();
+		for(locParticleIterator = dKinFitParticles.begin(); locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
+			(*locParticleIterator)->Print_ParticleParams();
 	}
 }
 
@@ -839,8 +842,9 @@ bool DKinFitter::Iterate(void)
 			cout << "DKinFitter: dEta: " << endl;
 			Print_Matrix(dEta);
 			cout << "DKinFitter: dChiSq = " << dChiSq << endl;
-			for(size_t loc_i = 0; loc_i < dKinFitParticles.size(); ++loc_i)
-				dKinFitParticles[loc_i]->Print_ParticleParams();
+			set<DKinFitParticle*>::iterator locParticleIterator = dKinFitParticles.begin();
+			for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
+				(*locParticleIterator)->Print_ParticleParams();
 		}
 
 		++locNumIterations;
@@ -988,12 +992,12 @@ void DKinFitter::Calc_dF(void)
 			DKinFitParticle* locDecayingParticle = locKinFitConstraint_Mass->Get_DecayingParticle();
 			double locTargetedMass = locDecayingParticle->Get_Mass();
 
-			TLorentzVector locDecayingP4 = dKinFitUtils->Calc_DecayingP4_ByP3Derived(locDecayingParticle, true);
+			TLorentzVector locXP4 = dKinFitUtils->Calc_DecayingP4_ByP3Derived(locDecayingParticle, true);
 			if(dDebugLevel > 30)
-				cout << "Final decaying pxyzE is: " << locDecayingP4.Px() << ", " << locDecayingP4.Py() << ", " << locDecayingP4.Pz() << ", " << locDecayingP4.E() << endl;
-			dF(locFIndex, 0) += locDecayingP4.M2() - locTargetedMass*locTargetedMass;
+				cout << "Final decaying pxyzE is: " << locXP4.Px() << ", " << locXP4.Py() << ", " << locXP4.Pz() << ", " << locXP4.E() << endl;
+			dF(locFIndex, 0) += locXP4.M2() - locTargetedMass*locTargetedMass;
 
-			Calc_dF_MassDerivs(locFIndex, locDecayingParticle, locDecayingP4, 1.0, true);
+			Calc_dF_MassDerivs(locFIndex, locDecayingParticle, locXP4, 1.0, true);
 			continue;
 		}
 
@@ -1320,9 +1324,9 @@ void DKinFitter::Calc_dF_MassDerivs(size_t locFIndex, const DKinFitParticle* loc
 		if(dDebugLevel > 30)
 			cout << "DKinFitter: Calc_dF_MassDerivs() Section 2; q, mass = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << endl;
 
-		dF_dEta(locFIndex, locPxParamIndex) = 2.0*locStateSignMultiplier*(locP4.Px()*locDecayingP4.E()/locP4.E() - locDecayingP4.Px());
-		dF_dEta(locFIndex, locPxParamIndex + 1) = 2.0*locStateSignMultiplier*(locP4.Py()*locDecayingP4.E()/locP4.E() - locDecayingP4.Py());
-		dF_dEta(locFIndex, locPxParamIndex + 2) = 2.0*locStateSignMultiplier*(locP4.Pz()*locDecayingP4.E()/locP4.E() - locDecayingP4.Pz());
+		dF_dEta(locFIndex, locPxParamIndex) = 2.0*locStateSignMultiplier*(locP4.Px()*locXP4.E()/locP4.E() - locXP4.Px());
+		dF_dEta(locFIndex, locPxParamIndex + 1) = 2.0*locStateSignMultiplier*(locP4.Py()*locXP4.E()/locP4.E() - locXP4.Py());
+		dF_dEta(locFIndex, locPxParamIndex + 2) = 2.0*locStateSignMultiplier*(locP4.Pz()*locXP4.E()/locP4.E() - locXP4.Pz());
 
 		dF_dEta(locFIndex, locVxParamIndex) = 2.0*locStateSignMultiplier*locA*locPXCrossH.X();
 		dF_dEta(locFIndex, locVxParamIndex + 1) = 2.0*locStateSignMultiplier*locA*locPXCrossH.Y();
@@ -1338,12 +1342,12 @@ void DKinFitter::Calc_dF_MassDerivs(size_t locFIndex, const DKinFitParticle* loc
 			cout << "DKinFitter: Calc_dF_MassDerivs() Section 3; q, mass = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << endl;
 
 		double locEOverPSq = locP4.E()/locP4.Vect().Mag2();
-		dF_dEta(locFIndex, locEParamIndex) = 2.0*locStateSignMultiplier*(locDecayingP4.E() - locEOverPSq*locDecayingP4.Vect().Dot(locP4.Vect()));
+		dF_dEta(locFIndex, locEParamIndex) = 2.0*locStateSignMultiplier*(locXP4.E() - locEOverPSq*locXP4.Vect().Dot(locP4.Vect()));
 
-		double locDeltaXDotPXOverMagDeltaXSq = locDeltaX.Dot(locDecayingP4.Vect())/(locDeltaX.Mag2());
-		dF_dEta(locFIndex, locVxParamIndex) = 2.0*locStateSignMultiplier*locP4.Px()*(locDecayingP4.Px()/locDeltaX.X() - locDeltaXDotPXOverMagDeltaXSq);
-		dF_dEta(locFIndex, locVxParamIndex + 1) = 2.0*locStateSignMultiplier*locP4.Py()*(locDecayingP4.Py()/locDeltaX.Y() - locDeltaXDotPXOverMagDeltaXSq);
-		dF_dEta(locFIndex, locVxParamIndex + 2) = 2.0*locStateSignMultiplier*locP4.Pz()*(locDecayingP4.Pz()/locDeltaX.Z() - locDeltaXDotPXOverMagDeltaXSq);
+		double locDeltaXDotPXOverMagDeltaXSq = locDeltaX.Dot(locXP4.Vect())/(locDeltaX.Mag2());
+		dF_dEta(locFIndex, locVxParamIndex) = 2.0*locStateSignMultiplier*locP4.Px()*(locXP4.Px()/locDeltaX.X() - locDeltaXDotPXOverMagDeltaXSq);
+		dF_dEta(locFIndex, locVxParamIndex + 1) = 2.0*locStateSignMultiplier*locP4.Py()*(locXP4.Py()/locDeltaX.Y() - locDeltaXDotPXOverMagDeltaXSq);
+		dF_dEta(locFIndex, locVxParamIndex + 2) = 2.0*locStateSignMultiplier*locP4.Pz()*(locXP4.Pz()/locDeltaX.Z() - locDeltaXDotPXOverMagDeltaXSq);
 
 		dF_dXi(locFIndex, locCommonVxParamIndex) -= dF_dEta(locFIndex, locVxParamIndex);
 		dF_dXi(locFIndex, locCommonVxParamIndex) -= dF_dEta(locFIndex, locVxParamIndex + 1);
@@ -1355,9 +1359,9 @@ void DKinFitter::Calc_dF_MassDerivs(size_t locFIndex, const DKinFitParticle* loc
 		if(dDebugLevel > 30)
 			cout << "DKinFitter: Calc_dF_MassDerivs() Section 4; q, mass = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << endl;
 
-		dF_dXi(locFIndex, locPxParamIndex) = 2.0*locStateSignMultiplier*(locP4.Px()*locDecayingP4.E()/locP4.E() - locDecayingP4.Px());
-		dF_dXi(locFIndex, locPxParamIndex + 1) = 2.0*locStateSignMultiplier*(locP4.Py()*locDecayingP4.E()/locP4.E() - locDecayingP4.Py());
-		dF_dXi(locFIndex, locPxParamIndex + 2) = 2.0*locStateSignMultiplier*(locP4.Pz()*locDecayingP4.E()/locP4.E() - locDecayingP4.Pz());
+		dF_dXi(locFIndex, locPxParamIndex) = 2.0*locStateSignMultiplier*(locP4.Px()*locXP4.E()/locP4.E() - locXP4.Px());
+		dF_dXi(locFIndex, locPxParamIndex + 1) = 2.0*locStateSignMultiplier*(locP4.Py()*locXP4.E()/locP4.E() - locXP4.Py());
+		dF_dXi(locFIndex, locPxParamIndex + 2) = 2.0*locStateSignMultiplier*(locP4.Pz()*locXP4.E()/locP4.E() - locXP4.Pz());
 	}
 	else if(locKinFitParticleType == d_DecayingParticle)
 	{
@@ -1411,9 +1415,9 @@ void DKinFitter::Calc_dF_MassDerivs(size_t locFIndex, const DKinFitParticle* loc
 		if(dDebugLevel > 30)
 			cout << "DKinFitter: Calc_dF_MassDerivs() Section 6; q, mass = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << endl;
 
-		dF_dEta(locFIndex, locPxParamIndex) = 2.0*locStateSignMultiplier*(locP4.Px()*locDecayingP4.E()/locP4.E() - locDecayingP4.Px());
-		dF_dEta(locFIndex, locPxParamIndex + 1) = 2.0*locStateSignMultiplier*(locP4.Py()*locDecayingP4.E()/locP4.E() - locDecayingP4.Py());
-		dF_dEta(locFIndex, locPxParamIndex + 2) = 2.0*locStateSignMultiplier*(locP4.Pz()*locDecayingP4.E()/locP4.E() - locDecayingP4.Pz());
+		dF_dEta(locFIndex, locPxParamIndex) = 2.0*locStateSignMultiplier*(locP4.Px()*locXP4.E()/locP4.E() - locXP4.Px());
+		dF_dEta(locFIndex, locPxParamIndex + 1) = 2.0*locStateSignMultiplier*(locP4.Py()*locXP4.E()/locP4.E() - locXP4.Py());
+		dF_dEta(locFIndex, locPxParamIndex + 2) = 2.0*locStateSignMultiplier*(locP4.Pz()*locXP4.E()/locP4.E() - locXP4.Pz());
 	}
 }
 
@@ -2232,10 +2236,10 @@ void DKinFitter::Update_ParticleParams(void)
 {
 	// update common vertices
 	set<DKinFitConstraint_Vertex*> locVertexConstraints = Get_Constraints<DKinFitConstraint_Vertex>();
-	set<DKinFitConstraint_Vertex*>::iterator locIterator = locVertexConstraints.begin();
-	for(; locIterator != locVertexConstraints.end(); ++locIterator)
+	set<DKinFitConstraint_Vertex*>::iterator locVertexIterator = locVertexConstraints.begin();
+	for(; locVertexIterator != locVertexConstraints.end(); ++locVertexIterator)
 	{
-		DKinFitConstraint_Vertex* locConstraint = *locIterator;
+		DKinFitConstraint_Vertex* locConstraint = *locVertexIterator;
 		int locParamIndex = locConstraint->Get_CommonVxParamIndex();
 		TVector3 locVertex(dXi(locParamIndex, 0), dXi(locParamIndex + 1, 0), dXi(locParamIndex + 2, 0));
 		locConstraint->Set_CommonVertex(locVertex);
@@ -2243,18 +2247,19 @@ void DKinFitter::Update_ParticleParams(void)
 
 	// update common times
 	set<DKinFitConstraint_Spacetime*> locSpacetimeConstraints = Get_Constraints<DKinFitConstraint_Spacetime>();
-	set<DKinFitConstraint_Spacetime*>::iterator locIterator = locSpacetimeConstraints.begin();
-	for(; locIterator != locSpacetimeConstraints.end(); ++locIterator)
+	set<DKinFitConstraint_Spacetime*>::iterator locSpacetimeIterator = locSpacetimeConstraints.begin();
+	for(; locSpacetimeIterator != locSpacetimeConstraints.end(); ++locSpacetimeIterator)
 	{
-		DKinFitConstraint_Spacetime* locConstraint = *locIterator;
+		DKinFitConstraint_Spacetime* locConstraint = *locSpacetimeIterator;
 		int locParamIndex = locConstraint->Get_CommonTParamIndex();
 		locConstraint->Set_CommonTime(dXi(locParamIndex, 0));
 	}
 
 	// update particle information
-	for(size_t loc_i = 0; loc_i < dKinFitParticles.size(); ++loc_i)
+	set<DKinFitParticle*>::iterator locParticleIterator = dKinFitParticles.begin();
+	for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locKinFitParticle = dKinFitParticles[loc_i];
+		DKinFitParticle* locKinFitParticle = *locParticleIterator;
 		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 		if(locKinFitParticleType == d_TargetParticle)
 			continue; //nothing to update
@@ -2301,9 +2306,9 @@ void DKinFitter::Update_ParticleParams(void)
 
 	// calc non-unknown decaying particle momentum (derived from other particles)
 		//must do last because assumes all other particle p3's are updated
-	for(size_t loc_i = 0; loc_i < dKinFitParticles.size(); ++loc_i)
+	for(locParticleIterator = dKinFitParticles.begin(); locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locKinFitParticle = dKinFitParticles[loc_i];
+		DKinFitParticle* locKinFitParticle = *locParticleIterator;
 		if(locKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
 			continue;
 		locKinFitParticle->Set_Momentum(dKinFitUtils->Calc_DecayingP4_ByPosition(locKinFitParticle, true).Vect());
@@ -2314,9 +2319,10 @@ void DKinFitter::Update_ParticleParams(void)
 
 void DKinFitter::Calc_Pulls(void)
 {
-	for(size_t loc_i = 0; loc_i < dKinFitParticles.size(); ++loc_i)
+	set<DKinFitParticle*>::iterator locParticleIterator = dKinFitParticles.begin();
+	for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locKinFitParticle = dKinFitParticles[loc_i];
+		DKinFitParticle* locKinFitParticle = *locParticleIterator;
 		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 
 		if((locKinFitParticleType == d_DecayingParticle) || (locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_TargetParticle))
@@ -2325,8 +2331,8 @@ void DKinFitter::Calc_Pulls(void)
 		map<DKinFitPullType, double> locParticlePulls;
 		if(dDebugLevel >= 50)
 		{
-			cout << "pulls: q, mass = " << dKinFitParticles[loc_i]->Get_Charge() << ", " << dKinFitParticles[loc_i]->Get_Mass() << endl;
-			cout << "e, px, vx, t param indices = " << dKinFitParticles[loc_i]->Get_EParamIndex() << ", " << dKinFitParticles[loc_i]->Get_PxParamIndex() << ", " << dKinFitParticles[loc_i]->Get_VxParamIndex() << ", " << dKinFitParticles[loc_i]->Get_TParamIndex() << endl;
+			cout << "pulls: q, mass = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << endl;
+			cout << "e, px, vx, t param indices = " << locKinFitParticle->Get_EParamIndex() << ", " << locKinFitParticle->Get_PxParamIndex() << ", " << locKinFitParticle->Get_VxParamIndex() << ", " << locKinFitParticle->Get_TParamIndex() << endl;
 		}
 
 		int locParamIndex = locKinFitParticle->Get_EParamIndex();
@@ -2404,9 +2410,11 @@ void DKinFitter::Set_FinalTrackInfo(void)
 	// first update the covariance matrices of each particle with the fit results (prior to any propagation)
 		//correlations between fit and unfit measured parameters: 
 			//assume that the correlations remain unchanged: the changes in the parameters and their uncertainties should be small wrst their values
-	for(size_t loc_i = 0; loc_i < dKinFitParticles.size(); ++loc_i)
+	set<DKinFitParticle*>::iterator locParticleIterator = dKinFitParticles.begin();
+	for(; locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticleType locKinFitParticleType = dKinFitParticles[loc_i]->Get_KinFitParticleType();
+		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 		if(locKinFitParticleType == d_TargetParticle)
 			continue;
 
@@ -2419,24 +2427,24 @@ void DKinFitter::Set_FinalTrackInfo(void)
 			TMatrixDSym* locCovarianceMatrix = Get_MatrixDSymResource();
 			locCovarianceMatrix->ResizeTo(7, 7);
 			locCovarianceMatrix->Zero();
-			dKinFitParticles[loc_i]->Set_CovarianceMatrix(locCovarianceMatrix);
+			locKinFitParticle->Set_CovarianceMatrix(locCovarianceMatrix);
 		}
 		//need to update the values, so don't call Get_CovarianceMatrix() function (returns const matrix) //saves memory this way
-		TMatrixDSym& locCovarianceMatrix = *(dKinFitParticles[loc_i]->dCovarianceMatrix);
+		TMatrixDSym& locCovarianceMatrix = *(locKinFitParticle->dCovarianceMatrix);
 
-		int locPxParamIndex = dKinFitParticles[loc_i]->Get_PxParamIndex();
-		int locVxParamIndex = dKinFitParticles[loc_i]->Get_VxParamIndex();
-		int locTParamIndex = dKinFitParticles[loc_i]->Get_TParamIndex();
-		int locEParamIndex = dKinFitParticles[loc_i]->Get_EParamIndex();
+		int locPxParamIndex = locKinFitParticle->Get_PxParamIndex();
+		int locVxParamIndex = locKinFitParticle->Get_VxParamIndex();
+		int locTParamIndex = locKinFitParticle->Get_TParamIndex();
+		int locEParamIndex = locKinFitParticle->Get_EParamIndex();
 
-		int locCovMatrixEParamIndex = dKinFitParticles[loc_i]->Get_CovMatrixEParamIndex();
-		int locCovMatrixPxParamIndex = dKinFitParticles[loc_i]->Get_CovMatrixPxParamIndex();
-		int locCovMatrixVxParamIndex = dKinFitParticles[loc_i]->Get_CovMatrixVxParamIndex();
-		int locCovMatrixTParamIndex = dKinFitParticles[loc_i]->Get_CovMatrixTParamIndex();
+		int locCovMatrixEParamIndex = locKinFitParticle->Get_CovMatrixEParamIndex();
+		int locCovMatrixPxParamIndex = locKinFitParticle->Get_CovMatrixPxParamIndex();
+		int locCovMatrixVxParamIndex = locKinFitParticle->Get_CovMatrixVxParamIndex();
+		int locCovMatrixTParamIndex = locKinFitParticle->Get_CovMatrixTParamIndex();
 
 		if(dDebugLevel >= 50)
 		{
-			cout << "SETTING FINAL TRACK INFO: q, mass = " << dKinFitParticles[loc_i]->Get_Charge() << ", " << dKinFitParticles[loc_i]->Get_Mass() << endl;
+			cout << "SETTING FINAL TRACK INFO: q, mass = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << endl;
 			cout << "E, px, vx, t param indices = " << locEParamIndex << ", " << locPxParamIndex << ", " << locVxParamIndex << ", " << locTParamIndex << endl;
 			cout << "E, px, vx, t cov matrix indices = " << locCovMatrixEParamIndex << ", " << locCovMatrixPxParamIndex << ", " << locCovMatrixVxParamIndex << ", " << locCovMatrixTParamIndex << endl;
 			cout << "sizes = " << locCovarianceMatrix.GetNrows() << ", " << locCovarianceMatrix.GetNcols() << ", " << locKinFitMatrix.GetNrows() << ", " << locKinFitMatrix.GetNcols() << endl;
@@ -2451,7 +2459,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 
 			bool locP3DerivedAtProductionVertexFlag = !locKinFitParticle->Get_FromInitialState().empty(); //else decay vertex
 			bool locP3DerivedAtPositionFlag = (locP3DerivedAtProductionVertexFlag == locKinFitParticle->Get_VertexP4AtProductionVertex());
-			dKinFitUtils->Calc_DecayingParticleJacobian(dKinFitParticles[loc_i], locP3DerivedAtPositionFlag, 1.0, dNumEta, locJacobian);
+			dKinFitUtils->Calc_DecayingParticleJacobian(locKinFitParticle, locP3DerivedAtPositionFlag, 1.0, dNumEta, locJacobian);
 
 			//set vertex & time terms
 			if(locVxParamIndex >= 0)
@@ -2460,7 +2468,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 				locJacobian(locCovMatrixVxParamIndex + 1, locVxParamIndex + dNumEta + 1) = 1.0;
 				locJacobian(locCovMatrixVxParamIndex + 2, locVxParamIndex + dNumEta + 2) = 1.0;
 			}
-			int locTParamIndex = dKinFitParticles[loc_i]->Get_TParamIndex();
+			int locTParamIndex = locKinFitParticle->Get_TParamIndex();
 			if(locTParamIndex >= 0)
 				locJacobian(6, locTParamIndex + dNumEta) = 1.0;
 
@@ -2655,54 +2663,56 @@ void DKinFitter::Set_FinalTrackInfo(void)
 	} //end set cov matrix loop
 
 	// propagate the track parameters
-	for(size_t loc_i = 0; loc_i < dKinFitParticles.size(); ++loc_i)
+	for(locParticleIterator = dKinFitParticles.begin(); locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticleType locKinFitParticleType = dKinFitParticles[loc_i]->Get_KinFitParticleType();
+		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 		if((locKinFitParticleType == d_TargetParticle) || (locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle))
 			continue; // particle properties already defined at the fit vertex
 
-		if(!dKinFitParticles[loc_i]->Get_FitCommonVertexFlag())
+		if(!locKinFitParticle->Get_FitCommonVertexFlag())
 			continue; // no distance over which to propagate
 
 		pair<double, double> locPathLengthPair;
-		TMatrixDSym& locCovarianceMatrix = *(dKinFitParticles[loc_i]->dCovarianceMatrix);
+		TMatrixDSym& locCovarianceMatrix = *(locKinFitParticle->dCovarianceMatrix);
 
 		TVector3 locMomentum;
 		TLorentzVector locSpacetimeVertex;
-		if(!Propagate_TrackInfoToCommonVertex(dKinFitParticles[loc_i], dVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, locCovarianceMatrix))
+		if(!Propagate_TrackInfoToCommonVertex(locKinFitParticle, dVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, locCovarianceMatrix))
 			continue; // info not propagated
 
 		if(dDebugLevel >= 50)
 		{
-			cout << "PROPAGATED FINAL TRACK INFO: q, mass = " << dKinFitParticles[loc_i]->Get_Charge() << ", " << dKinFitParticles[loc_i]->Get_Mass() << endl;
+			cout << "PROPAGATED FINAL TRACK INFO: q, mass = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << endl;
 			cout << "p_xyz, v_xyzt = " << locMomentum.Px() << ", " << locMomentum.Py() << ", " << locMomentum.Pz() << ", " << locSpacetimeVertex.X() << ", " << locSpacetimeVertex.Y() << ", " << locSpacetimeVertex.Z() << ", " << locSpacetimeVertex.T() << endl;
-			cout << "common v_xyzt = " << dKinFitParticles[loc_i]->Get_CommonVertex().X() << ", " << dKinFitParticles[loc_i]->Get_CommonVertex().Y() << ", " << dKinFitParticles[loc_i]->Get_CommonVertex().Z() << ", " << dKinFitParticles[loc_i]->Get_CommonTime() << endl;
+			cout << "common v_xyzt = " << locKinFitParticle->Get_CommonVertex().X() << ", " << locKinFitParticle->Get_CommonVertex().Y() << ", " << locKinFitParticle->Get_CommonVertex().Z() << ", " << locKinFitParticle->Get_CommonTime() << endl;
 			cout << "path length & uncert = " << locPathLengthPair.first << ", " << locPathLengthPair.second << endl;
 			cout << "sizes = " << locCovarianceMatrix.GetNrows() << ", " << locCovarianceMatrix.GetNcols() << endl;
 		}
 
 		//no need to set the covariance matrix: already updated (passed in a reference to it)
-		dKinFitParticles[loc_i]->Set_Momentum(locMomentum);
-		dKinFitParticles[loc_i]->Set_Position(locSpacetimeVertex.Vect());
-		dKinFitParticles[loc_i]->Set_Time(locSpacetimeVertex.T());
-		dKinFitParticles[loc_i]->Set_PathLength(locPathLengthPair.first);
-		dKinFitParticles[loc_i]->Set_PathLengthUncertainty(locPathLengthPair.second);
+		locKinFitParticle->Set_Momentum(locMomentum);
+		locKinFitParticle->Set_Position(locSpacetimeVertex.Vect());
+		locKinFitParticle->Set_Time(locSpacetimeVertex.T());
+		locKinFitParticle->Set_PathLength(locPathLengthPair.first);
+		locKinFitParticle->Set_PathLengthUncertainty(locPathLengthPair.second);
 	}
 
 	//calculate the path length of decaying particles involved in 2 vertex fits
-	for(size_t loc_i = 0; loc_i < dKinFitParticles.size(); ++loc_i)
+	for(locParticleIterator = dKinFitParticles.begin(); locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticleType locKinFitParticleType = dKinFitParticles[loc_i]->Get_KinFitParticleType();
+		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 
-		if((locKinFitParticleType != d_DecayingParticle) || !dKinFitParticles[loc_i]->Get_FitCommonVertexFlag())
+		if((locKinFitParticleType != d_DecayingParticle) || !locKinFitParticle->Get_FitCommonVertexFlag())
 			continue;
 
 		pair<double, double> locPathLengthPair;
-		const TMatrixDSym& locCovarianceMatrix = *(dKinFitParticles[loc_i]->Get_CovarianceMatrix());
-		if(dKinFitUtils->Calc_PathLength(dKinFitParticles[loc_i], dVXi, locCovarianceMatrix, locPathLengthPair))
+		const TMatrixDSym& locCovarianceMatrix = *(locKinFitParticle->Get_CovarianceMatrix());
+		if(dKinFitUtils->Calc_PathLength(locKinFitParticle, dVXi, locCovarianceMatrix, locPathLengthPair))
 		{
-			dKinFitParticles[loc_i]->Set_PathLength(locPathLengthPair.first);
-			dKinFitParticles[loc_i]->Set_PathLengthUncertainty(locPathLengthPair.second);
+			locKinFitParticle->Set_PathLength(locPathLengthPair.first);
+			locKinFitParticle->Set_PathLengthUncertainty(locPathLengthPair.second);
 		}
 	}
 }
