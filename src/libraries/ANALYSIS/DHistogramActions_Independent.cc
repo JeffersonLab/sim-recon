@@ -200,7 +200,7 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		//DKinFitParticle
 		locBin = dFactoryPoolBinMap["DKinFitParticle"];
 		locBaseFactory = locEventLoop->GetFactory("DKinFitResults", "");
-		DKinFitResults_factory* locKinFitResultsFactory = static_cast<DKinFitResults_factory*>(locBaseFactory);
+//		DKinFitResults_factory* locKinFitResultsFactory = static_cast<DKinFitResults_factory*>(locBaseFactory);
 //		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitParticlePoolSize();
 		locNumObjectsMap[locBin] = 1;
 		locMemory = sizeof(DKinFitParticle)*locNumObjectsMap[locBin];

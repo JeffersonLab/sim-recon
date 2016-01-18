@@ -1441,7 +1441,7 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 			{
 				//get pulls for this particle
 				map<DKinFitPullType, double> locParticlePulls;
-				map<DKinFitPullType, double>::iterator locParticleIterator = locPulls.find(locParticles[loc_j]);
+				map<const JObject*, map<DKinFitPullType, double> >::iterator locParticleIterator = locPulls.find(locParticles[loc_j]);
 				if(locParticleIterator != locPulls.end())
 					locParticlePulls = locParticleIterator->second;
 				else //is neutral shower
