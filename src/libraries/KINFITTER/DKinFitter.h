@@ -215,25 +215,25 @@ inline void DKinFitter::Add_Constraints(const set<DKinFitConstraint*>& locKinFit
 
 template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(void) const
 {
-	return Get_Constraints<DType*>(dKinFitConstraints);
+	return Get_Constraints<DType>(dKinFitConstraints);
 }
 
 template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(DKinFitParticle* locKinFitParticle) const
 {
 	map<DKinFitParticle*, set<DKinFitConstraint*> >::const_iterator locMapIterator = dParticleConstraintMap.find(locKinFitParticle);
 	if(locMapIterator == dParticleConstraintMap.end())
-		return set<DKinFitConstraint*>();
+		return set<DType*>();
 
 	const set<DKinFitConstraint*>& locParticleConstraints = locMapIterator->second;
-	return Get_Constraints<DType*>(locParticleConstraints);
+	return Get_Constraints<DType>(locParticleConstraints);
 }
 
 template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(const set<DKinFitConstraint*>& locConstraints) const
 {
 	set<DType*> locTypeConstraints;
 
-	set<DKinFitConstraint*>::iterator locConstraintIterator = dKinFitConstraints.begin();
-	for(; locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
+	set<DKinFitConstraint*>::const_iterator locConstraintIterator = locConstraints.begin();
+	for(; locConstraintIterator != locConstraints.end(); ++locConstraintIterator)
 	{
 		DType* locConstraint = dynamic_cast<DType*>(*locConstraintIterator);
 		if(locConstraint != NULL)

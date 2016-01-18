@@ -207,7 +207,8 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	dKinFitConstraints = dKinFitUtils->Clone_ParticlesAndConstraints(dKinFitConstraints);
 
 	//Build dKinFitParticles, dParticleConstraintMap
-	for(locConstraintIterator = dKinFitConstraints.begin(); locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
+	set<DKinFitConstraint*>::iterator locConstraintIterator = dKinFitConstraints.begin();
+	for(; locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
 	{
 		set<DKinFitParticle*> locKinFitParticles = (*locConstraintIterator)->Get_AllParticles();
 		dKinFitParticles.insert(locKinFitParticles.begin(), locKinFitParticles.end());
@@ -220,11 +221,11 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	//Set dVertexP4AtProductionVertex on decaying particles
 	//Loop over vertex constraints, searching for decaying particles where their positions are defined
 	set<DKinFitConstraint_Vertex*> locVertexConstraints = Get_Constraints<DKinFitConstraint_Vertex>();
-	set<DKinFitConstraint_Vertex*>::iterator locConstraintIterator = locVertexConstraints.begin();
-	for(; locConstraintIterator != locVertexConstraints.end(); ++locConstraintIterator)
+	set<DKinFitConstraint_Vertex*>::iterator locVertexIterator = locVertexConstraints.begin();
+	for(; locVertexIterator != locVertexConstraints.end(); ++locVertexIterator)
 	{
-		set<DKinFitParticle*>& locAllConstraintParticles = (*locConstraintIterator)->Get_AllParticles();
-		set<DKinFitParticle*>& locNoConstrainParticles = (*locConstraintIterator)->Get_NoConstrainParticles();
+		set<DKinFitParticle*>& locAllConstraintParticles = (*locVertexIterator)->Get_AllParticles();
+		set<DKinFitParticle*>& locNoConstrainParticles = (*locVertexIterator)->Get_NoConstrainParticles();
 		set<DKinFitParticle*>::iterator locParticleIterator = locNoConstrainParticles.begin();
 		for(; locParticleIterator != locNoConstrainParticles.end(); ++locParticleIterator)
 		{
@@ -254,8 +255,6 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	//Initialize un-set particle data
 
 	//Common vertices
-	set<DKinFitConstraint_Vertex*> locVertexConstraints = Get_Constraints<DKinFitConstraint_Vertex>();
-	set<DKinFitConstraint_Vertex*>::iterator locVertexIterator = locVertexConstraints.begin();
 	for(; locVertexIterator != locVertexConstraints.end(); ++locVertexIterator)
 		(*locVertexIterator)->Set_CommonVertex((*locVertexIterator)->Get_InitVertexGuess());
 
@@ -281,9 +280,9 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 		locParticle->Set_Momentum(locMomentum);
 	}
 
-	//missing p3
+	//missing/open-ended-decaying p3
 	DKinFitConstraint_P4* locP4Constraint = Get_Constraints<DKinFitConstraint_P4>().begin();
-	DKinFitParticle* locKinFitParticle = locP4Constraint->Get_MissingParticle())
+	DKinFitParticle* locKinFitParticle = locP4Constraint->Get_DefinedParticle();
 	if(locKinFitParticle != NULL)
 		locKinFitParticle->Set_Momentum(locP4Constraint->Get_InitP3Guess());
 
@@ -2270,7 +2269,7 @@ void DKinFitter::Update_ParticleParams(void)
 		int locParamIndex = locKinFitParticle->Get_PxParamIndex();
 		if(locParamIndex >= 0)
 		{
-			TVector3 locMomentum(locSourceMatrix(locParamIndex, 0), locSourceMatrix(locParamIndex + 1, 0), locSourceMatrix(locParamIndex + 2, 0))
+			TVector3 locMomentum(locSourceMatrix(locParamIndex, 0), locSourceMatrix(locParamIndex + 1, 0), locSourceMatrix(locParamIndex + 2, 0));
 			locKinFitParticle->Set_Momentum(locMomentum);
 		}
 
@@ -2288,7 +2287,7 @@ void DKinFitter::Update_ParticleParams(void)
 		{
 			double locTime = locSourceMatrix(locParamIndex, 0);
 			locKinFitParticle->Set_Time(locTime);
-			if(locKinFitParticle->Get_CommonTimeParamIndex() < 0)
+			if(locKinFitParticle->Get_CommonTParamIndex() < 0)
 				locKinFitParticle->Set_CommonTime(locTime);
 		}
 
@@ -2424,7 +2423,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 		if(locReconstructedParticleFlag) //Brand new particle: Set the covariance matrix from scratch
 		{
 			//Particle had none: Make a new one
-			TMatrixDSym* locCovarianceMatrix = Get_MatrixDSymResource();
+			TMatrixDSym* locCovarianceMatrix = dKinFitUtils->Get_MatrixDSymResource();
 			locCovarianceMatrix->ResizeTo(7, 7);
 			locCovarianceMatrix->Zero();
 			locKinFitParticle->Set_CovarianceMatrix(locCovarianceMatrix);
@@ -2678,7 +2677,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 
 		TVector3 locMomentum;
 		TLorentzVector locSpacetimeVertex;
-		if(!Propagate_TrackInfoToCommonVertex(locKinFitParticle, dVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, locCovarianceMatrix))
+		if(!dKinFitUtils->Propagate_TrackInfoToCommonVertex(locKinFitParticle, dVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, locCovarianceMatrix))
 			continue; // info not propagated
 
 		if(dDebugLevel >= 50)
