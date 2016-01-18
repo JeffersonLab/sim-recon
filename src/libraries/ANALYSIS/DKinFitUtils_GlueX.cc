@@ -798,7 +798,7 @@ set<pair<int, int> > DKinFitUtils_GlueX::Get_KinFitNeutralShowers(const DReactio
 			if(locDecayStepIndex >= 0)
 				continue; //decaying particle
 
-			Particle_t locPID = Get_FinalParticleID(locParticleIndex);
+			Particle_t locPID = locReactionStep->Get_FinalParticleID(locParticleIndex);
 			if(ParticleCharge(locPID) == 0)
 				locNeutralShowers.insert(*locIterator);
 		}
@@ -853,7 +853,7 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReaction* locReaction, DKin
 			//check if initial & final states if have non-zero cov errors:
 			if((locP4StepIndex == 0) && (locReactionStep->Get_TargetParticleID() != Unknown) && dWillBeamHaveErrorsFlag)
 				locNonZeroErrorFlag = true; //beam: we're good
-			else if((locP4StepIndex != 0) && (locMassConstraintStrings.find(locP4StepIndex) == locMassConstraintStrings.end())
+			else if((locP4StepIndex != 0) && (locMassConstraintStrings.find(locP4StepIndex) == locMassConstraintStrings.end()))
 				locNonZeroErrorFlag = true; //decaying particle, but mass not constrained: we're good (unless it's e.g. an omega. ugh.)
 			else //check final state
 			{
@@ -883,7 +883,7 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReaction* locReaction, DKin
 			{
 				//system is over-constrained: we must delete a constraint
 				//if there is a missing/open-ended particle: delete a mass constraint; else, delete the p4 constraint
-				if((locDefinedParticleStepIndex < 0) || locConstrainedDecayingParticles.empty())
+				if((locDefinedParticleStepIndex < 0) || locP4ConstrainedParticleSteps.empty())
 					locIncludeP4ConstraintFlag = false; //remove the p4 constraint
 				else //remove a mass constraint: delete the one in the earliest step (so consistent) (will be by missing mass if present)
 				{
@@ -905,7 +905,7 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReaction* locReaction, DKin
 
 		//Finally, add remaining mass constraints
 		locNumConstraints += locMassConstraintStrings.size();
-		map<size_t, string>::iterator locStringIterator = locMassConstraintStrings.begin;
+		map<size_t, string>::iterator locStringIterator = locMassConstraintStrings.begin();
 		for(; locStringIterator != locMassConstraintStrings.end(); ++locStringIterator)
 		{
 			if(locAllConstraintsString != "")
@@ -937,51 +937,6 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReaction* locReaction, DKin
 	}
 
 	return locAllConstraintsString;
-}
-
-string DKinFitUtils_GlueX::Build_VertexConstraintString(const DReaction* locReaction, const set<pair<int, int> >& locAllVertexParticles, set<pair<int, int> >& locFullConstrainParticles, set<pair<int, int> >& locOnlyConstrainTimeParticles, set<pair<int, int> >& locNoConstrainParticles, bool locSpacetimeFitFlag) const
-{
-	string locConstraintString;
-	if(locSpacetimeFitFlag)
-		locConstraintString += "#it{x}^{4}_{";
-	else
-		locConstraintString += "#it{x}^{3}_{";
-
-	//initial particles
-	bool locInitialStateFlag = true;
-	set<pair<int, int> >::iterator locAllIterator = locAllVertexParticles.begin();
-	for(; locAllIterator != locAllVertexParticles.end(); ++locAllIterator)
-	{
-		pair<int, int>& locParticlePair = *locAllIterator;
-		if(locInitialStateFlag && (locParticlePair.second >= 0))
-		{
-			//now on final state particles
-			locInitialStateFlag = false;
-			locConstraintString += "#rightarrow";
-		}
-
-		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locParticlePair.first);
-		Particle_t locPID = Unknown;
-		if(locParticlePair.second == -1) //beam
-			locPID = locReactionStep->Get_InitialParticleID();
-		else if(locParticlePair.second == -2) //target
-			locPID = locReactionStep->Get_TargetParticleID();
-		else //final state
-			locPID = locReactionStep->Get_FinalParticleID(locParticlePair.second);
-
-		string locParticleString = ParticleName_ROOT(locPID);
-		if((locParticlePair.second == locReactionStep->Get_MissingParticleIndex()) && (locParticlePair.second != -1)) //-1 = beam
-			locConstraintString += string("(") + locParticleString + string(")"); //missing
-		else if(locAllFullConstrainParticles[loc_i].find(locParticlePair) != locAllFullConstrainParticles[loc_i].end()) //constraining
-			locConstraintString += string("#color[4]{") + locParticleString + string("}"); //blue
-		else if(locAllOnlyConstrainTimeParticles[loc_i].find(locParticlePair) != locAllOnlyConstrainTimeParticles[loc_i].end()) //time-only
-			locConstraintString += string("#color[3]{") + locParticleString + string("}"); //green
-		else //no-constrain
-			locConstraintString += locParticleString; //plain
-	}
-	locConstraintString += string("}"); //end of constraint
-
-	return locConstraintString;
 }
 
 deque<set<pair<int, int> > > DKinFitUtils_GlueX::Setup_VertexPredictions(const DReaction* locReaction) const
@@ -1247,6 +1202,51 @@ void DKinFitUtils_GlueX::Group_VertexParticles(const DReaction* locReaction, con
 		else //detected charged
 			locFullConstrainParticles.insert(*locIterator);
 	}
+}
+
+string DKinFitUtils_GlueX::Build_VertexConstraintString(const DReaction* locReaction, const set<pair<int, int> >& locAllVertexParticles, set<pair<int, int> >& locFullConstrainParticles, set<pair<int, int> >& locOnlyConstrainTimeParticles, set<pair<int, int> >& locNoConstrainParticles, bool locSpacetimeFitFlag) const
+{
+	string locConstraintString;
+	if(locSpacetimeFitFlag)
+		locConstraintString += "#it{x}^{4}_{";
+	else
+		locConstraintString += "#it{x}^{3}_{";
+
+	//initial particles
+	bool locInitialStateFlag = true;
+	set<pair<int, int> >::iterator locAllIterator = locAllVertexParticles.begin();
+	for(; locAllIterator != locAllVertexParticles.end(); ++locAllIterator)
+	{
+		pair<int, int> locParticlePair = *locAllIterator;
+		if(locInitialStateFlag && (locParticlePair.second >= 0))
+		{
+			//now on final state particles
+			locInitialStateFlag = false;
+			locConstraintString += "#rightarrow";
+		}
+
+		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locParticlePair.first);
+		Particle_t locPID = Unknown;
+		if(locParticlePair.second == -1) //beam
+			locPID = locReactionStep->Get_InitialParticleID();
+		else if(locParticlePair.second == -2) //target
+			locPID = locReactionStep->Get_TargetParticleID();
+		else //final state
+			locPID = locReactionStep->Get_FinalParticleID(locParticlePair.second);
+
+		string locParticleString = ParticleName_ROOT(locPID);
+		if((locParticlePair.second == locReactionStep->Get_MissingParticleIndex()) && (locParticlePair.second != -1)) //-1 = beam
+			locConstraintString += string("(") + locParticleString + string(")"); //missing
+		else if(locFullConstrainParticles.find(locParticlePair) != locFullConstrainParticles.end()) //constraining
+			locConstraintString += string("#color[4]{") + locParticleString + string("}"); //blue
+		else if(locOnlyConstrainTimeParticles.find(locParticlePair) != locOnlyConstrainTimeParticles.end()) //time-only
+			locConstraintString += string("#color[3]{") + locParticleString + string("}"); //green
+		else //no-constrain
+			locConstraintString += locParticleString; //plain
+	}
+	locConstraintString += string("}"); //end of constraint
+
+	return locConstraintString;
 }
 
 /*************************************************************** CALCULATION ROUTINES **************************************************************/
