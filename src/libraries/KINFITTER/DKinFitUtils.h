@@ -67,7 +67,6 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		DKinFitConstraint_Vertex* Make_VertexConstraint(const set<DKinFitParticle*>& locFullConstrainParticles, const set<DKinFitParticle*>& locNoConstrainParticles, TVector3 locVertexGuess = TVector3());
 		DKinFitConstraint_Spacetime* Make_SpacetimeConstraint(const set<DKinFitParticle*>& locFullConstrainParticles, const set<DKinFitParticle*>& locOnlyConstrainTimeParticles, 
 			const set<DKinFitParticle*>& locNoConstrainParticles, TLorentzVector locSpacetimeGuess = TLorentzVector());
-		deque<DKinFitConstraint_Vertex*> Create_VertexConstraints(const deque<set<DKinFitParticle*> >& locAllVertices, bool locSpacetimeFitFlag);
 
 		virtual bool Validate_Constraints(const set<DKinFitConstraint*>& locKinFitConstraints) const; //empty, can override
 
