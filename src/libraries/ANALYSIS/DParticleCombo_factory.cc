@@ -210,7 +210,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 						locNewParticleComboStep->Add_FinalParticle(Get_ChargedHypothesis(locParticleCombo, locChargedTrackHypotheses, locKinematicData_Measured));
 				}
 
-				Set_SpacetimeVertex(locNewParticleCombo, locNewParticleComboStep, loc_j, locKinFitResultsVector[loc_i]);
+				Set_SpacetimeVertex(locNewParticleCombo, locNewParticleComboStep, loc_j, locKinFitResultsVector[loc_i], locKinFitChain);
 
 				locNewParticleCombo->Add_ParticleComboStep(locNewParticleComboStep);
 			}
@@ -316,7 +316,7 @@ DKinFitParticle* DParticleCombo_factory::Get_DecayingParticle(const DParticleCom
 		deque<const DKinematicData*> locMeasuredParticles;
 		locOldParticleCombo->Get_DecayChainParticles_Measured(locComboStepIndex, locMeasuredParticles);
 		const DKinematicData* locMeasuredParticle = locMeasuredParticles[0];
-		DKinFitParticle* locKinFitParticle = locKinFitResults->Get_InputParticle(locMeasuredParticle);
+		DKinFitParticle* locKinFitParticle = locKinFitResults->Get_InputKinFitParticle(locMeasuredParticle);
 
 		if(!Search_ForParticleInDecay(locKinFitChain, loc_i, locKinFitParticle))
 			continue;
@@ -383,9 +383,9 @@ const DNeutralParticleHypothesis* DParticleCombo_factory::Get_NeutralHypothesis(
 	return NULL;
 }
 
-void DParticleCombo_factory::Set_SpacetimeVertex(const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults) const
+void DParticleCombo_factory::Set_SpacetimeVertex(const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain) const
 {
-	DKinFitType locKinFitType = locParticleCombo->Get_Reaction()->Get_KinFitType();
+	DKinFitType locKinFitType = locNewParticleCombo->Get_Reaction()->Get_KinFitType();
 	if((locKinFitType == d_NoFit) || (locKinFitType == d_P4Fit))
 		return; //neither vertex nor time was fit: no update to give
 
@@ -413,9 +413,9 @@ void DParticleCombo_factory::Set_SpacetimeVertex(const DParticleCombo* locNewPar
 	}
 
 	//instead, get from common vertex of final state particles
-	//this is the init particle: need to get the vertex from the final particle
-	DKinFitParticle* locInitKinFitParticle = *(locKinFitChain->Get_KinFitChainStep(0)->Get_FinalParticles().begin());
-	DKinFitParticle* locFinalKinFitParticle = locKinFitResults->Get_FinalKinFitParticle(locInitKinFitParticle);
+	//this is the input particle: need to get the vertex from the output particle
+	DKinFitParticle* locInputKinFitParticle = *(locKinFitChain->Get_KinFitChainStep(0)->Get_FinalParticles().begin());
+	DKinFitParticle* locFinalKinFitParticle = locKinFitResults->Get_OutputKinFitParticle(locInputKinFitParticle);
 
 	//need the spacetime vertex at the production vertex of the particle grabbed
 	TLorentzVector locSpacetimeVertex;

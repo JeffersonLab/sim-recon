@@ -50,15 +50,15 @@ class DParticleCombo_factory : public jana::JFactory<DParticleCombo>
 
 		void Set_DecayingParticles(const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, DParticleComboStep* locNewParticleComboStep, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults);
 		DKinFitParticle* Get_DecayingParticle(const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults);
-		bool Search_ForParticleInDecay(const DKinFitChain* locKinFitChain, size_t locStepToSearch, const DKinFitParticle* locParticleToFind);
+		bool Search_ForParticleInDecay(const DKinFitChain* locKinFitChain, size_t locStepToSearch, DKinFitParticle* locParticleToFind);
 
 		const DChargedTrackHypothesis* Get_ChargedHypothesis(const DParticleCombo* locParticleCombo, const vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses, const DKinematicData* locKinematicData_Measured) const;
 		const DNeutralParticleHypothesis* Get_NeutralHypothesis(const DParticleCombo* locParticleCombo, const vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses, const DKinematicData* locKinematicData_Measured) const;
 
-		void Set_SpacetimeVertex(const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults) const;
+		void Set_SpacetimeVertex(const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain) const;
 		void Reset_Data(void);
 
-		DKinematicData* Build_KinematicData(Particle_t locPID, const DKinFitParticle* locKinFitParticle);
+		DKinematicData* Build_KinematicData(Particle_t locPID, DKinFitParticle* locKinFitParticle);
 
 		DKinematicData* Get_KinematicDataResource(void);
 		DParticleComboStep* Get_ParticleComboStepResource(void);
