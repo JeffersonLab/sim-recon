@@ -29,7 +29,7 @@ class DVertex: public jana::JObject
 
 		unsigned int dKinFitNDF;
 		double dKinFitChiSq;
-		map<const DKinematicData*, map<DKinFitPullType, double> > dKinFitPulls;
+		map<const JObject*, map<DKinFitPullType, double> > dKinFitPulls;
 
 		// Objects used to calculate this added as Associated Objects
 		void toStrings(vector<pair<string,string> > &items) const

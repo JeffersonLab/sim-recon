@@ -28,6 +28,7 @@ jerror_t DVertex_factory::brun(jana::JEventLoop* locEventLoop, int32_t runnumber
 
 	// Get Target parameters from XML
 	dTargetZCenter = 65.0;
+	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
 	locGeometry->GetTargetZ(dTargetZCenter);
 
@@ -123,7 +124,21 @@ jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 	unsigned int locKinFitNDF = dKinFitter->Get_NDF();
 	double locKinFitChiSq = dKinFitter->Get_ChiSq();
 	Create_Vertex(locTFitVertex, locEventRFBunch->dTime, locKinFitNDF, locKinFitChiSq);
-	dKinFitter->Get_Pulls(_data.back()->dKinFitPulls);
+
+	//Particle Maps & Pulls
+	//Build pulls from this:
+	map<DKinFitParticle*, map<DKinFitPullType, double> > locPulls_KinFitParticle;
+	dKinFitter->Get_Pulls(locPulls_KinFitParticle);
+	//By looping over the pulls:
+	map<DKinFitParticle*, map<DKinFitPullType, double> >::iterator locMapIterator = locPulls_KinFitParticle.begin();
+	for(; locMapIterator != locPulls_KinFitParticle.end(); ++locMapIterator)
+	{
+		DKinFitParticle* locOutputKinFitParticle = locMapIterator->first;
+		DKinFitParticle* locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(locOutputKinFitParticle);
+
+		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);
+		_data.back()->dKinFitPulls[locSourceJObject] = locMapIterator->second;
+	}
 
 	return NOERROR;
 }
