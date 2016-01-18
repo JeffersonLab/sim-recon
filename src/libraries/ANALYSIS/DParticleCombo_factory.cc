@@ -24,9 +24,7 @@ jerror_t DParticleCombo_factory::init(void)
 //------------------
 jerror_t DParticleCombo_factory::brun(jana::JEventLoop* locEventLoop, int32_t runnumber)
 {
-	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield(runnumber);
-	dKinFitUtils = new DKinFitUtils_GlueX(locMagneticFieldMap);
+	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
 
 	// Get # of DReactions:
 	// Get list of factories and find all the ones producing
@@ -113,17 +111,14 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 	map<const DParticleCombo*, DParticleCombo*> locKinFitParticleComboMap;
 	for(size_t loc_i = 0; loc_i < locKinFitResultsVector.size(); ++loc_i)
 	{
-		DKinFitType locKinFitType = locKinFitResultsVector[loc_i]->Get_KinFitType();
-
 		map<const DParticleCombo*, const DKinFitChain*> locParticleComboMap;
 		locKinFitResultsVector[loc_i]->Get_ParticleComboMap(locParticleComboMap); //each result may be for several combos (duplicate results)
 
 		map<const DParticleCombo*, const DKinFitChain*>::iterator locComboIterator = locParticleComboMap.begin();
-		for(; locComboIterator != locParticleCombos.end(); ++locComboIterator)
+		for(; locComboIterator != locParticleComboMap.end(); ++locComboIterator)
 		{
 			const DParticleCombo* locParticleCombo = locComboIterator->first;
 			const DKinFitChain* locKinFitChain = locComboIterator->second;
-			const DReaction* locReaction = locParticleCombo->Get_Reaction();
 
 			locParticleCombos_FailedKinFit.erase(locParticleCombo); //kinfit successful, don't copy pointer later
 
@@ -208,7 +203,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 							locNewParticleComboStep->Add_FinalParticle(NULL);
 					}
 					else if(locParticleComboStep->Is_FinalParticleDecaying(loc_k)) //decaying
-						locNewParticleComboStep->Add_FinalParticle(NULL) //is set later, when it's in the initial state
+						locNewParticleComboStep->Add_FinalParticle(NULL); //is set later, when it's in the initial state
 					else if(locParticleComboStep->Is_FinalParticleNeutral(loc_k)) //neutral
 						locNewParticleComboStep->Add_FinalParticle(Get_NeutralHypothesis(locParticleCombo, locNeutralParticleHypotheses, locKinematicData_Measured));
 					else //charged
@@ -233,15 +228,16 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 	return NOERROR;
 }
 
-const DParticleCombo* DParticleCombo_factory::Check_IsDuplicateCombo(set<const DParticleCombo*> locParticleCombos, const DParticleCombo* locParticleCombo)
+const DParticleCombo* DParticleCombo_factory::Check_IsDuplicateCombo(const map<const DParticleCombo*, const DKinFitChain*>& locParticleComboMap, const DParticleCombo* locParticleCombo)
 {
 //if is duplicate, returns the matching previous particle combo
 //otherwise, returns NULL
-	set<const DParticleCombo*>::iterator locPreviousComboIterator = locParticleCombos.begin();
-	for(; locPreviousComboIterator != locComboIterator; ++locPreviousComboIterator)
+	map<const DParticleCombo*, const DKinFitChain*>::const_iterator locPreviousComboIterator = locParticleComboMap.begin();
+	for(; locPreviousComboIterator != locParticleComboMap.end(); ++locPreviousComboIterator)
 	{
-		const DParticleCombo* locPreviousParticleCombo = *locPreviousComboIterator;
-		if(locParticleCombo->Get_Reaction() == locPreviousParticleCombo->Get_Reaction()) //probably shouldn't be possible
+		const DParticleCombo* locPreviousParticleCombo = locPreviousComboIterator->first;
+		const DReaction* locReaction = locParticleCombo->Get_Reaction();
+		if(locReaction == locPreviousParticleCombo->Get_Reaction()) //probably shouldn't be possible
 			continue; //dreaction is the same: particle combos were different for a reason, even if the kinfit results are the same: keep both
 
 		//see if steps are identical //may have an omega or phi resonance
@@ -252,6 +248,7 @@ const DParticleCombo* DParticleCombo_factory::Check_IsDuplicateCombo(set<const D
 			continue; //particles are not identical
 
 		return locPreviousParticleCombo;
+	}
 }
 
 void DParticleCombo_factory::Set_DecayingParticles(const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, const DParticleComboStep* locNewParticleComboStep, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults)

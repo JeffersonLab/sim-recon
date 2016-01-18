@@ -46,7 +46,7 @@ class DParticleCombo_factory : public jana::JFactory<DParticleCombo>
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		const DParticleCombo* Check_IsDuplicateCombo(set<const DParticleCombo*> locParticleCombos, const DParticleCombo* locParticleCombo);
+		const DParticleCombo* Check_IsDuplicateCombo(const map<const DParticleCombo*, const DKinFitChain*>& locParticleComboMap, const DParticleCombo* locParticleCombo);
 
 		void Set_DecayingParticles(const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, const DParticleComboStep* locNewParticleComboStep, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults);
 		DKinFitParticle* Get_DecayingParticle(const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const DKinFitChain* locKinFitChain);
