@@ -17,5 +17,7 @@ class DKinFitConstraint //purely virtual: cannot directly instantiate class, can
 		virtual ~DKinFitConstraint(void) = 0; //forces abstractness
 };
 
+inline DKinFitConstraint::~DKinFitConstraint(void){}
+
 #endif // _DKinFitConstraint_
 
