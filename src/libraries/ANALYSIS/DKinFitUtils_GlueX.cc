@@ -228,7 +228,7 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_DecayingParticle(Particle_t locPID, co
 
 	DKinFitParticle* locKinFitParticle = DKinFitUtils::Make_DecayingParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), locFromInitialState, locFromFinalState);
 	dParticleMap_SourceToInput_Decaying[locDecayingParticleInfo] = locKinFitParticle;
-	dParticleMap_InputToSource_Decaying[locKinFitParticle] = locDecayingParticleInfo;
+	dParticleMap_InputToSource_Decaying.insert(pair<DKinFitParticle*, DDecayingParticleInfo>(locKinFitParticle, locDecayingParticleInfo));
 	return locKinFitParticle;
 }
 
@@ -1082,7 +1082,7 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 		locAllVertexParticles.push_back(locVertexParticles);
 
 		//The positions of these decaying particles are now defined: Can use to constrain vertices in later constraints
-		locDefinedDecayingParticles.insert(locAllDecayingParticles.begin(), locAllDecayingParticles.end());
+		locDefinedDecayingParticles.insert(locAllDecayingParticles[loc_i].begin(), locAllDecayingParticles[loc_i].end());
 
 		//add to the full constraint string
 		if(locAllConstraintString != "")
