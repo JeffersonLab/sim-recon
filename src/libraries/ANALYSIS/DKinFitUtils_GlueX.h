@@ -128,7 +128,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		string Build_VertexConstraintString(const DReaction* locReaction, const set<pair<int, int> >& locAllVertexParticles, set<pair<int, int> >& locFullConstrainParticles, set<pair<int, int> >& locOnlyConstrainTimeParticles, set<pair<int, int> >& locNoConstrainParticles, bool locSpacetimeFitFlag) const;
 
-		deque<set<pair<int, int> > > Setup_VertexConstraints(const DReaction* locReaction);
+		deque<set<pair<int, int> > > Setup_VertexPredictions(const DReaction* locReaction) const;
 		void Setup_VertexConstraint(const DReaction* locReaction, size_t locStepIndex, set<pair<int, int> >& locVertexParticles, const map<pair<int, int>, int>& locDecayMap_ParticleToDecayStep, set<size_t>& locIncludedStepIndices);
 
 		deque<set<pair<int, int> > > Predict_VertexConstraints(const DReaction* locReaction, const deque<set<pair<int, int> > >& locAllVertices, bool locSpacetimeFitFlag, size_t& locNumConstraints, string& locAllConstraintString) const;
