@@ -281,7 +281,7 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	}
 
 	//missing/open-ended-decaying p3
-	DKinFitConstraint_P4* locP4Constraint = Get_Constraints<DKinFitConstraint_P4>().begin();
+	DKinFitConstraint_P4* locP4Constraint = *(Get_Constraints<DKinFitConstraint_P4>().begin());
 	DKinFitParticle* locKinFitParticle = locP4Constraint->Get_DefinedParticle();
 	if(locKinFitParticle != NULL)
 		locKinFitParticle->Set_Momentum(locP4Constraint->Get_InitP3Guess());
