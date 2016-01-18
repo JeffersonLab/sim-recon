@@ -115,7 +115,7 @@ jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 	if(!dKinFitter->Fit_Reaction()) //if fit fails to converge: use rough results
 		return Create_Vertex(locRoughPosition, locEventRFBunch->dTime);
 
-	DKinFitConstraint_Vertex* locResultVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(dKinFitter->Get_KinFitConstraints().begin());
+	DKinFitConstraint_Vertex* locResultVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*dKinFitter->Get_KinFitConstraints().begin());
 
 	//save kinfit results
 	TVector3 locFitVertex = locResultVertexConstraint->Get_CommonVertex();

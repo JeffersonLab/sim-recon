@@ -1054,7 +1054,7 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 
 	// GET THE FIT RESULTS
 	double locConfidenceLevel = dKinFitter->Get_ConfidenceLevel();
-	DKinFitConstraint_Vertex* locResultVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(dKinFitter->Get_KinFitConstraints().begin());
+	DKinFitConstraint_Vertex* locResultVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*dKinFitter->Get_KinFitConstraints().begin());
 	TVector3 locFitVertex = locResultVertexConstraint->Get_CommonVertex();
 
 	//Optional: Fill histograms
