@@ -51,7 +51,7 @@ class DKinFitConstraint_P4 : public DKinFitConstraint
 		TVector3 dInitP3Guess; //initial guess for missing or open-ended-decaying particle. ignored if not present
 };
 
-DKinFitConstraint_P4::DKinFitConstraint_P4(void)
+inline DKinFitConstraint_P4::DKinFitConstraint_P4(void)
 {
 	Reset();
 }

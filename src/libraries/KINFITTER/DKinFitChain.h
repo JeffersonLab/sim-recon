@@ -46,7 +46,7 @@ class DKinFitChainStep
 		set<DKinFitParticle*> dFinalParticles;
 };
 
-void DKinFitChainStep::Reset(void)
+inline void DKinFitChainStep::Reset(void)
 {
 	dInitialParticleDecayFromStepIndex = -1;
 	dConstrainDecayingMassFlag = false;
@@ -54,7 +54,7 @@ void DKinFitChainStep::Reset(void)
 	dFinalParticles.clear();
 }
 
-set<DKinFitParticle*> DKinFitChainStep::Get_AllParticles(void) const
+inline set<DKinFitParticle*> DKinFitChainStep::Get_AllParticles(void) const
 {
 	set<DKinFitParticle*> locAllParticles;
 	set_union(dInitialParticles.begin(), dInitialParticles.end(), dFinalParticles.begin(), dFinalParticles.end(), inserter(locAllParticles, locAllParticles.begin()));
@@ -91,7 +91,7 @@ class DKinFitChain
 		bool dIsInclusiveChannelFlag; //i.e. does the missing particle have PID 0 (unknown)
 };
 
-void DKinFitChain::Reset(void)
+inline void DKinFitChain::Reset(void)
 {
 	dDefinedParticleStepIndex = -1;
 	dIsInclusiveChannelFlag = false;
@@ -99,13 +99,13 @@ void DKinFitChain::Reset(void)
 	dDecayStepIndices.clear();
 }
 
-int DKinFitChain::Get_DecayStepIndex(DKinFitParticle* locKinFitParticle) const
+inline int DKinFitChain::Get_DecayStepIndex(DKinFitParticle* locKinFitParticle) const
 {
 	map<DKinFitParticle*, int>::const_iterator locIterator = dDecayStepIndices.find(locKinFitParticle);
 	return ((locIterator != dDecayStepIndices.end()) ? locIterator->second : -1);
 }
 
-const DKinFitChainStep* DKinFitChain::Get_KinFitChainStep(size_t locStepIndex) const
+inline const DKinFitChainStep* DKinFitChain::Get_KinFitChainStep(size_t locStepIndex) const
 {
 	return ((locStepIndex < dKinFitChainSteps.size()) ? dKinFitChainSteps[locStepIndex] : NULL);
 }

@@ -58,7 +58,7 @@ class DKinFitConstraint_Vertex : public DKinFitConstraint
 		TVector3 dInitVertexGuess;
 };
 
-DKinFitConstraint_Vertex::DKinFitConstraint_Vertex(void)
+inline DKinFitConstraint_Vertex::DKinFitConstraint_Vertex(void)
 {
 	Reset();
 }

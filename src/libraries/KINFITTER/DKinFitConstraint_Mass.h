@@ -37,12 +37,12 @@ class DKinFitConstraint_Mass : public DKinFitConstraint
 		int dFIndex; //starting row index of the equation(s) corresponding to these constraints in the dF matrix term
 };
 
-DKinFitConstraint_Mass::DKinFitConstraint_Mass(void)
+inline DKinFitConstraint_Mass::DKinFitConstraint_Mass(void)
 {
 	Reset();
 }
 
-void DKinFitConstraint_Mass::Reset(void)
+inline void DKinFitConstraint_Mass::Reset(void)
 {
 	dFIndex = 0;
 	dDecayingParticle = NULL;

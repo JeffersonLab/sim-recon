@@ -53,7 +53,7 @@ class DKinFitConstraint_Spacetime : public DKinFitConstraint_Vertex
 		double dInitTimeGuess;
 };
 
-DKinFitConstraint_Spacetime::DKinFitConstraint_Spacetime(void)
+inline DKinFitConstraint_Spacetime::DKinFitConstraint_Spacetime(void)
 {
 	Reset();
 }
