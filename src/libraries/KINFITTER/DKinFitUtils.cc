@@ -422,7 +422,7 @@ DKinFitParticle* DKinFitUtils::Make_DecayingParticle(int locPID, int locCharge, 
 
 /************************************************************* SETUP VERTEX CONSTRAINTS ************************************************************/
 
-deque<DKinFitConstraint_Vertex*> Create_VertexConstraints(const DKinFitChain* locKinFitChain, bool locSpacetimeFitFlag)
+deque<DKinFitConstraint_Vertex*> DKinFitUtils::Create_VertexConstraints(const DKinFitChain* locKinFitChain, bool locSpacetimeFitFlag)
 {
 	deque<set<DKinFitParticle*> > locAllVertices = Setup_VertexConstraints(locKinFitChain);
 	return Create_VertexConstraints(locAllVertices, locSpacetimeFitFlag);
@@ -697,7 +697,7 @@ DKinFitConstraint_Vertex* DKinFitUtils::Make_VertexConstraint(const set<DKinFitP
 	locConstraint->Set_InitVertexGuess(locVertexGuess);
 
 	dVertexConstraintMap[locInputPair] = locConstraint;
-	return locKinFitConstraint;
+	return locConstraint;
 }
 
 DKinFitConstraint_Spacetime* DKinFitUtils::Make_SpacetimeConstraint(const set<DKinFitParticle*>& locFullConstrainParticles, const set<DKinFitParticle*>& locOnlyConstrainTimeParticles, const set<DKinFitParticle*>& locNoConstrainParticles, TLorentzVector locSpacetimeGuess)
@@ -719,7 +719,7 @@ DKinFitConstraint_Spacetime* DKinFitUtils::Make_SpacetimeConstraint(const set<DK
 	locConstraint->Set_InitTimeGuess(locSpacetimeGuess.T());
 
 	dSpacetimeConstraintMap[locSpacetimeParticles] = locConstraint;
-	return locKinFitConstraint;
+	return locConstraint;
 }
 
 /********************************************************** CLONE PARTICLES AND CONSTRAINTS ********************************************************/
@@ -1469,7 +1469,7 @@ void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFi
 		{
 			if(dDebugLevel > 30)
 				cout << "decaying, partially replace with init-state q, mass = " << (*locParticleIterator)->Get_Charge() << ", " << (*locParticleIterator)->Get_Mass() << endl;
-			Calc_DecayingParticleJacobian(*locParticleIterator, false, locStateSignMultiplier, locJacobian); //decaying particle multiplier * 1.0
+			Calc_DecayingParticleJacobian(*locParticleIterator, false, locStateSignMultiplier, locNumEta, locJacobian); //decaying particle multiplier * 1.0
 		}
 
 		//final state
@@ -1484,7 +1484,7 @@ void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFi
 				cout << "decaying, partially replace with final-state q, mass = " << (*locParticleIterator)->Get_Charge() << ", " << (*locParticleIterator)->Get_Mass() << endl;
 			//If defined by invariant mass: add p4s of final state particles
 			//If defined by missing mass: add p4s of init state, subtract final state
-			Calc_DecayingParticleJacobian(*locParticleIterator, false, locNextStateSignMultiplier, locJacobian);
+			Calc_DecayingParticleJacobian(*locParticleIterator, false, locNextStateSignMultiplier, locNumEta, locJacobian);
 		}
 	}
 	else

@@ -114,17 +114,17 @@ void DKinFitter::Print_Matrix(const TMatrixD& locMatrix) const
 
 bool DKinFitter::Get_IsInP4Constraint(DKinFitParticle* locKinFitParticle) const
 {
-	set<DKinFitConstraint_P4*> locConstraints = Get_Constraints<DKinFitConstraint_P4*>(locKinFitParticle);
+	set<DKinFitConstraint_P4*> locConstraints = Get_Constraints<DKinFitConstraint_P4>(locKinFitParticle);
 	set<DKinFitConstraint_P4*>::iterator locConstraintIterator = locConstraints.begin();
 	for(; locConstraintIterator != locConstraints.end(); ++locConstraintIterator)
 	{
-		set<DKinFitParticle*> locConstrainedParticles = (*locConstraintIterator)->Get_AllConstrainedParticles();
-		if(locConstrainedParticles.find(locKinFitParticle) != locConstrainedParticles.end())
+		set<DKinFitParticle*> locAllParticles = (*locConstraintIterator)->Get_AllParticles();
+		if(locAllParticles.find(locKinFitParticle) != locAllParticles.end())
 			return true;
 
 		//loop through particles, see if any are decaying and are derived from the input particle
-		set<DKinFitParticle*>::iterator locParticleIterator = locConstrainedParticles.begin();
-		for(; locParticleIterator != locConstrainedParticles.end(); ++locParticleIterator)
+		set<DKinFitParticle*>::iterator locParticleIterator = locAllParticles.begin();
+		for(; locParticleIterator != locAllParticles.end(); ++locParticleIterator)
 		{
 			set<DKinFitParticle*> locFromAllButDecaying = (*locParticleIterator)->Get_FromAllButDecaying();
 			if(locFromAllButDecaying.find(locKinFitParticle) != locFromAllButDecaying.end())
@@ -137,7 +137,7 @@ bool DKinFitter::Get_IsInP4Constraint(DKinFitParticle* locKinFitParticle) const
 
 bool DKinFitter::Get_IsInMassConstraint(DKinFitParticle* locKinFitParticle) const
 {
-	set<DKinFitConstraint_Mass*> locConstraints = Get_Constraints<DKinFitConstraint_Mass*>(locKinFitParticle);
+	set<DKinFitConstraint_Mass*> locConstraints = Get_Constraints<DKinFitConstraint_Mass>(locKinFitParticle);
 	set<DKinFitConstraint_Mass*>::iterator locConstraintIterator = locConstraints.begin();
 	for(; locConstraintIterator != locConstraints.end(); ++locConstraintIterator)
 	{
@@ -156,17 +156,17 @@ bool DKinFitter::Get_IsInMassConstraint(DKinFitParticle* locKinFitParticle) cons
 
 bool DKinFitter::Get_IsInVertexOrTimeConstraint(DKinFitParticle* locKinFitParticle) const
 {
-	return !Get_Constraints<DKinFitConstraint_Vertex*>(locKinFitParticle).empty();
+	return !Get_Constraints<DKinFitConstraint_Vertex>(locKinFitParticle).empty();
 }
 
 bool DKinFitter::Get_IsInSpacetimeConstraint(DKinFitParticle* locKinFitParticle) const
 {
-	return !Get_Constraints<DKinFitConstraint_Spacetime*>(locKinFitParticle).empty();
+	return !Get_Constraints<DKinFitConstraint_Spacetime>(locKinFitParticle).empty();
 }
 
 bool DKinFitter::Get_IsVertexConstrained(DKinFitParticle* locKinFitParticle) const
 {
-	set<DKinFitConstraint_Vertex*> locConstraints = Get_Constraints<DKinFitConstraint_Vertex*>(locKinFitParticle);
+	set<DKinFitConstraint_Vertex*> locConstraints = Get_Constraints<DKinFitConstraint_Vertex>(locKinFitParticle);
 	set<DKinFitConstraint_Vertex*>::iterator locSetIterator = locConstraints.begin();
 	for(; locSetIterator != locConstraints.end(); ++locSetIterator)
 	{
@@ -179,7 +179,7 @@ bool DKinFitter::Get_IsVertexConstrained(DKinFitParticle* locKinFitParticle) con
 
 bool DKinFitter::Get_IsTimeConstrained(DKinFitParticle* locKinFitParticle) const
 {
-	set<DKinFitConstraint_Spacetime*> locConstraints = Get_Constraints<DKinFitConstraint_Spacetime*>(locKinFitParticle);
+	set<DKinFitConstraint_Spacetime*> locConstraints = Get_Constraints<DKinFitConstraint_Spacetime>(locKinFitParticle);
 	set<DKinFitConstraint_Spacetime*>::iterator locSetIterator = locConstraints.begin();
 	for(; locSetIterator != locConstraints.end(); ++locSetIterator)
 	{
@@ -219,7 +219,7 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 
 	//Set dVertexP4AtProductionVertex on decaying particles
 	//Loop over vertex constraints, searching for decaying particles where their positions are defined
-	set<DKinFitConstraint_Vertex*> locVertexConstraints = Get_Constraints<DKinFitConstraint_Vertex*>();
+	set<DKinFitConstraint_Vertex*> locVertexConstraints = Get_Constraints<DKinFitConstraint_Vertex>();
 	set<DKinFitConstraint_Vertex*>::iterator locConstraintIterator = locVertexConstraints.begin();
 	for(; locConstraintIterator != locVertexConstraints.end(); ++locConstraintIterator)
 	{
@@ -254,13 +254,13 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	//Initialize un-set particle data
 
 	//Common vertices
-	set<DKinFitConstraint_Vertex*> locVertexConstraints = Get_Constraints<DKinFitConstraint_Vertex*>();
+	set<DKinFitConstraint_Vertex*> locVertexConstraints = Get_Constraints<DKinFitConstraint_Vertex>();
 	set<DKinFitConstraint_Vertex*>::iterator locVertexIterator = locVertexConstraints.begin();
 	for(; locVertexIterator != locVertexConstraints.end(); ++locVertexIterator)
 		(*locVertexIterator)->Set_CommonVertex((*locVertexIterator)->Get_InitVertexGuess());
 
 	//Common times (init vertex guess already set above)
-	set<DKinFitConstraint_Spacetime*> locSpacetimeConstraints = Get_Constraints<DKinFitConstraint_Spacetime*>();
+	set<DKinFitConstraint_Spacetime*> locSpacetimeConstraints = Get_Constraints<DKinFitConstraint_Spacetime>();
 	set<DKinFitConstraint_Spacetime*>::iterator locSpacetimeIterator = locSpacetimeConstraints.begin();
 	for(; locSpacetimeIterator != locSpacetimeConstraints.end(); ++locSpacetimeIterator)
 		(*locSpacetimeIterator)->Set_CommonTime((*locSpacetimeIterator)->Get_InitTimeGuess());
@@ -282,7 +282,7 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	}
 
 	//missing p3
-	DKinFitConstraint_P4* locP4Constraint = Get_Constraints<DKinFitConstraint_P4*>().begin();
+	DKinFitConstraint_P4* locP4Constraint = Get_Constraints<DKinFitConstraint_P4>().begin();
 	DKinFitParticle* locKinFitParticle = locP4Constraint->Get_MissingParticle())
 	if(locKinFitParticle != NULL)
 		locKinFitParticle->Set_Momentum(locP4Constraint->Get_InitP3Guess());
@@ -567,7 +567,7 @@ void DKinFitter::Fill_InputMatrices(void)
 			dXi(locParamIndex, 0) = locPosition.X();
 			dXi(locParamIndex + 1, 0) = locPosition.Y();
 			dXi(locParamIndex + 2, 0) = locPosition.Z();
-			locKinFitConstraint_Vertex->Set_VxParamIndex(locParamIndex);
+			locKinFitConstraint_Vertex->Set_CommonVxParamIndex(locParamIndex);
 			locParamIndex += 3;
 
 			set<DKinFitParticle*> locFullConstrainParticles = locKinFitConstraint_Vertex->Get_FullConstrainParticles();
@@ -587,8 +587,8 @@ void DKinFitter::Fill_InputMatrices(void)
 			dXi(locParamIndex + 1, 0) = locPosition.Y();
 			dXi(locParamIndex + 2, 0) = locPosition.Z();
 			dXi(locParamIndex + 3, 0) = locKinFitConstraint_Spacetime->Get_InitTimeGuess();
-			locKinFitConstraint_Spacetime->Set_VxParamIndex(locParamIndex);
-			locKinFitConstraint_Spacetime->Set_TParamIndex(locParamIndex + 3);
+			locKinFitConstraint_Spacetime->Set_CommonVxParamIndex(locParamIndex);
+			locKinFitConstraint_Spacetime->Set_CommonTParamIndex(locParamIndex + 3);
 			locParamIndex += 4;
 
 			set<DKinFitParticle*> locFullConstrainParticles = locKinFitConstraint_Spacetime->Get_FullConstrainParticles();
@@ -2231,7 +2231,7 @@ void DKinFitter::Calc_Vertex_Params(const DKinFitParticle* locKinFitParticle, do
 void DKinFitter::Update_ParticleParams(void)
 {
 	// update common vertices
-	set<DKinFitConstraint_Vertex*> locVertexConstraints = Get_Constraints<DKinFitConstraint_Vertex*>();
+	set<DKinFitConstraint_Vertex*> locVertexConstraints = Get_Constraints<DKinFitConstraint_Vertex>();
 	set<DKinFitConstraint_Vertex*>::iterator locIterator = locVertexConstraints.begin();
 	for(; locIterator != locVertexConstraints.end(); ++locIterator)
 	{
@@ -2242,7 +2242,7 @@ void DKinFitter::Update_ParticleParams(void)
 	}
 
 	// update common times
-	set<DKinFitConstraint_Spacetime*> locSpacetimeConstraints = Get_Constraints<DKinFitConstraint_Spacetime*>();
+	set<DKinFitConstraint_Spacetime*> locSpacetimeConstraints = Get_Constraints<DKinFitConstraint_Spacetime>();
 	set<DKinFitConstraint_Spacetime*>::iterator locIterator = locSpacetimeConstraints.begin();
 	for(; locIterator != locSpacetimeConstraints.end(); ++locIterator)
 	{
