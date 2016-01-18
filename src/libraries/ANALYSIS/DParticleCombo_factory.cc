@@ -230,8 +230,8 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 
 const DParticleCombo* DParticleCombo_factory::Check_IsDuplicateCombo(const map<const DParticleCombo*, const DKinFitChain*>& locParticleComboMap, const DParticleCombo* locParticleCombo)
 {
-//if is duplicate, returns the matching previous particle combo
-//otherwise, returns NULL
+	//if is duplicate, returns the matching previous particle combo
+	//otherwise, returns NULL
 	map<const DParticleCombo*, const DKinFitChain*>::const_iterator locPreviousComboIterator = locParticleComboMap.begin();
 	for(; locPreviousComboIterator != locParticleComboMap.end(); ++locPreviousComboIterator)
 	{
@@ -249,6 +249,8 @@ const DParticleCombo* DParticleCombo_factory::Check_IsDuplicateCombo(const map<c
 
 		return locPreviousParticleCombo;
 	}
+
+	return NULL;
 }
 
 void DParticleCombo_factory::Set_DecayingParticles(const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, DParticleComboStep* locNewParticleComboStep, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults)
@@ -324,6 +326,8 @@ DKinFitParticle* DParticleCombo_factory::Get_DecayingParticle(const DParticleCom
 		//Found!
 		return locDecayingParticle;
 	}
+
+	return NULL;
 }
 
 bool DParticleCombo_factory::Search_ForParticleInDecay(const DKinFitChain* locKinFitChain, size_t locStepToSearch, DKinFitParticle* locParticleToFind)

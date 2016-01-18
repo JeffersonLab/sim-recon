@@ -46,8 +46,8 @@ class DKinFitConstraint_Vertex : public DKinFitConstraint
 		void Set_CommonVxParamIndex(int locCommonVxParamIndex);
 		virtual void Set_CommonVertex(const TVector3& locVertex);
 
-		void Set_FullConstrainParticles(set<DKinFitParticle*>& locFullConstrainParticles){dFullConstrainParticles = locFullConstrainParticles;}
-		void Set_NoConstrainParticles(set<DKinFitParticle*>& locNoConstrainParticles){dNoConstrainParticles = locNoConstrainParticles;}
+		void Set_FullConstrainParticles(const set<DKinFitParticle*>& locFullConstrainParticles){dFullConstrainParticles = locFullConstrainParticles;}
+		void Set_NoConstrainParticles(const set<DKinFitParticle*>& locNoConstrainParticles){dNoConstrainParticles = locNoConstrainParticles;}
 
 		set<DKinFitParticle*> dFullConstrainParticles; //charged particles, decaying particles, beam particles (not neutral showers!)
 		set<DKinFitParticle*> dNoConstrainParticles; //missing particles, decaying particles, & neutral showers //fit vertex is set for these
@@ -101,10 +101,10 @@ inline void DKinFitConstraint_Vertex::Set_CommonVertex(const TVector3& locVertex
 		(*locIterator)->Set_CommonVertex(locVertex);
 	for(locIterator = dNoConstrainParticles.begin(); locIterator != dNoConstrainParticles.end(); ++locIterator)
 	{
-		if((*locIterator)->Get_KinFitParticleType() != d_DecayingParticle)
-			(*locIterator)->Set_CommonVertex(locVertex);
-		else
+		if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle))
 			(*locIterator)->Set_Position(locVertex);
+		else
+			(*locIterator)->Set_CommonVertex(locVertex);
 	}
 }
 
@@ -122,10 +122,11 @@ inline void DKinFitConstraint_Vertex::Set_CommonVxParamIndex(int locCommonVxPara
 		(*locIterator)->Set_CommonVxParamIndex(locCommonVxParamIndex);
 	for(locIterator = dNoConstrainParticles.begin(); locIterator != dNoConstrainParticles.end(); ++locIterator)
 	{
-		(*locIterator)->Set_CommonVxParamIndex(locCommonVxParamIndex);
 		DKinFitParticleType locKinFitParticleType = (*locIterator)->Get_KinFitParticleType();
 		if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle))
-			(*locIterator)->Set_VxParamIndex(locCommonVxParamIndex); //not included in fit, but particle vertex is defined by the fit result
+			(*locIterator)->Set_VxParamIndex(locCommonVxParamIndex);
+		else
+			(*locIterator)->Set_CommonVxParamIndex(locCommonVxParamIndex);
 	}
 }
 

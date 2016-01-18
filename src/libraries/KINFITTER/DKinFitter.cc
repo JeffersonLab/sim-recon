@@ -1,4 +1,5 @@
 #include "DKinFitter.h"
+#include "DKinFitUtils.h"
 
 //MAGNETIC FIELD
 	//If the particle is charged, the magnetic field is taken into account if a common vertex is simultaneously kinematically fit
@@ -240,7 +241,6 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 			set_intersection(locAllConstraintParticles.begin(), locAllConstraintParticles.end(), locFromFinalState.begin(), 
 				locFromFinalState.end(), inserter(locFinalStateParticlesAtVertex, locFinalStateParticlesAtVertex.begin()));
 
-
 			//Set vertex flag based on whether any particles found or not
 			bool locIsProductionVertex = false;
 			if(locKinFitParticle->Get_FromInitialState().empty()) //p4 defined by invariant mass (decay products)
@@ -295,8 +295,7 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 			locParticle->Set_Momentum(dKinFitUtils->Calc_DecayingP4_ByPosition(locParticle, true).Vect());
 	}
 
-	//set vertex constraint flags, register common vertex fit
-		 //constraint flags used if not accelerating
+	//set vertex constraint flags: used if not accelerating
 	for(locVertexIterator = locVertexConstraints.begin(); locVertexIterator != locVertexConstraints.end(); ++locVertexIterator)
 	{
 		set<DKinFitParticle*>& locFullConstrainParticles = (*locVertexIterator)->Get_FullConstrainParticles();
@@ -305,29 +304,12 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 			DKinFitParticle* locParticle = *locParticleIterator;
 			TVector3 locMomentum = locParticle->Get_Momentum();
 
-			//register common vertex fit: full
-			locParticle->Set_FitCommonVertexFlag(true);
-
-			//vertex constraint flags
 			unsigned short int locVertexConstraintFlag = 0;
 			if(fabs(locMomentum.Pz()) > fabs(locMomentum.Px()))
 				locVertexConstraintFlag = (fabs(locMomentum.Pz()) > fabs(locMomentum.Py())) ? 1 : 2;
 			else
 				locVertexConstraintFlag = (fabs(locMomentum.Px()) > fabs(locMomentum.Py())) ? 3 : 2;
 			locParticle->Set_VertexConstraintFlag(locVertexConstraintFlag);
-		}
-
-		//register common vertex fit: no-constrain
-		set<DKinFitParticle*>& locNoConstrainParticles = (*locVertexIterator)->Get_NoConstrainParticles();
-		for(locParticleIterator = locNoConstrainParticles.begin(); locParticleIterator != locNoConstrainParticles.end(); ++locParticleIterator)
-		{
-			DKinFitParticle* locParticle = *locParticleIterator;
-			DKinFitParticleType locKinFitParticleType = locParticle->Get_KinFitParticleType();
-
-			if((locKinFitParticleType != d_DetectedParticle) && (locKinFitParticleType != d_BeamParticle))
-				continue; //this is DEFINING the vertex, not fitting it
-
-			locParticle->Set_FitCommonVertexFlag(true);
 		}
 	}
 }
@@ -2469,7 +2451,7 @@ void DKinFitter::Set_FinalTrackInfo(void)
 
 			bool locP3DerivedAtProductionVertexFlag = !locKinFitParticle->Get_FromInitialState().empty(); //else decay vertex
 			bool locP3DerivedAtPositionFlag = (locP3DerivedAtProductionVertexFlag == locKinFitParticle->Get_VertexP4AtProductionVertex());
-			dKinFitUtils->Calc_DecayingParticleJacobian(dKinFitParticles[loc_i], locP3DerivedAtPositionFlag, 1.0, locJacobian);
+			dKinFitUtils->Calc_DecayingParticleJacobian(dKinFitParticles[loc_i], locP3DerivedAtPositionFlag, 1.0, dNumEta, locJacobian);
 
 			//set vertex & time terms
 			if(locVxParamIndex >= 0)

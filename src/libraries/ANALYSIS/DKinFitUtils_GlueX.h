@@ -202,4 +202,19 @@ inline const JObject* DKinFitUtils_GlueX::Get_SourceJObject(DKinFitParticle* loc
 	return ((locIterator != dParticleMap_InputToSource_JObject.end()) ? locIterator->second : NULL);
 }
 
+inline bool DKinFitUtils_GlueX::DDecayingParticleInfo::operator<(const DKinFitUtils_GlueX::DDecayingParticleInfo& locDecayingParticleInfo) const
+{
+	if(dPID < locDecayingParticleInfo.dPID)
+		return true;
+	else if(dPID > locDecayingParticleInfo.dPID)
+		return false;
+
+	if(dFromInitialState < locDecayingParticleInfo.dFromInitialState)
+		return true;
+	else if(dFromInitialState > locDecayingParticleInfo.dFromInitialState)
+		return false;
+
+	return (dFromFinalState < locDecayingParticleInfo.dFromFinalState);
+}
+
 #endif // _DKinFitUtils_GlueX_

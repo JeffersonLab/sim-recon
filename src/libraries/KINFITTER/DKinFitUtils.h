@@ -177,11 +177,11 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 
 		/************************************************************** CLONE RESOURCES *************************************************************/
 
-		DKinFitParticle* Clone_KinFitParticle(const DKinFitParticle* locKinFitParticle);
+		DKinFitParticle* Clone_KinFitParticle(DKinFitParticle* locKinFitParticle);
 		TMatrixDSym* Clone_MatrixDSym(const TMatrixDSym* locMatrix);
 
 		set<DKinFitParticle*> Build_CloneParticleSet(const set<DKinFitParticle*>& locInputParticles, const map<DKinFitParticle*, DKinFitParticle*>& locCloneIOMap) const;
-		set<DKinFitConstraint*>& Clone_ParticlesAndConstraints(const set<DKinFitConstraint*>& locInputConstraints);
+		set<DKinFitConstraint*> Clone_ParticlesAndConstraints(const set<DKinFitConstraint*>& locInputConstraints);
 
 		/********************************************************** SETUP VERTEX CONSTRAINTS ********************************************************/
 
@@ -197,7 +197,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		TLorentzVector Calc_DecayingP4(const DKinFitParticle* locKinFitParticle, bool locIsConstrainedParticle, double locStateSignMultiplier, bool locDontPropagateAtAllFlag = false) const;
 
 		bool Calc_PathLength(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixDSym& locCovarianceMatrix, pair<double, double>& locPathLengthPair) const;
-		void Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, TMatrixD& locJacobian) const;
+		void Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, int locNumEta, TMatrixD& locJacobian) const;
 
 		/*************************************************************** CLONE MAPPING **************************************************************/
 
@@ -211,6 +211,8 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 			public:
 				DSpacetimeParticles(const set<DKinFitParticle*>& locFullConstrainParticles, const set<DKinFitParticle*>& locOnlyConstrainTimeParticles, const set<DKinFitParticle*>& locNoConstrainParticles) : 
 				dFullConstrainParticles(locFullConstrainParticles), dOnlyConstrainTimeParticles(locOnlyConstrainTimeParticles), dNoConstrainParticles(locNoConstrainParticles) {}
+
+				bool operator<(const DSpacetimeParticles& locSpacetimeParticles) const;
 
 				set<DKinFitParticle*> dFullConstrainParticles;
 				set<DKinFitParticle*> dOnlyConstrainTimeParticles;
@@ -267,10 +269,25 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		deque<TMatrixDSym*> dLargeMatrixDSymPool_Available;
 };
 
-DKinFitParticle* DKinFitUtils::Get_InputKinFitParticle(DKinFitParticle* locOutputKinFitParticle) const
+inline DKinFitParticle* DKinFitUtils::Get_InputKinFitParticle(DKinFitParticle* locOutputKinFitParticle) const
 {
 	map<DKinFitParticle*, DKinFitParticle*>::const_iterator locIterator = dParticleMap_OutputToInput.find(locOutputKinFitParticle);
 	return (locIterator != dParticleMap_OutputToInput.end() ? locIterator->second : NULL);
+}
+
+inline bool DKinFitUtils::DSpacetimeParticles::operator<(const DKinFitUtils::DSpacetimeParticles& locSpacetimeParticles) const
+{
+	if(dFullConstrainParticles < locSpacetimeParticles.dFullConstrainParticles)
+		return true;
+	else if(dFullConstrainParticles > locSpacetimeParticles.dFullConstrainParticles)
+		return false;
+
+	if(dOnlyConstrainTimeParticles < locSpacetimeParticles.dOnlyConstrainTimeParticles)
+		return true;
+	else if(dOnlyConstrainTimeParticles > locSpacetimeParticles.dOnlyConstrainTimeParticles)
+		return false;
+
+	return (dNoConstrainParticles < locSpacetimeParticles.dNoConstrainParticles);
 }
 
 #endif // _DKinFitUtils_

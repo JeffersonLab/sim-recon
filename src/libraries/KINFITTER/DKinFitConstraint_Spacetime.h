@@ -46,7 +46,7 @@ class DKinFitConstraint_Spacetime : public DKinFitConstraint_Vertex
 		void Set_CommonSpacetime(TLorentzVector& locSpacetime);
 
 		void Set_CommonTParamIndex(int locCommonTParamIndex);
-		void Set_OnlyConstrainTimeParticles(set<DKinFitParticle*>& locOnlyConstrainTimeParticles){dOnlyConstrainTimeParticles = locOnlyConstrainTimeParticles;}
+		void Set_OnlyConstrainTimeParticles(const set<DKinFitParticle*>& locOnlyConstrainTimeParticles){dOnlyConstrainTimeParticles = locOnlyConstrainTimeParticles;}
 
 		set<DKinFitParticle*> dOnlyConstrainTimeParticles; //neutral showers //not used to constrain vertex, but fit vertex is used for time constraint
 
@@ -101,10 +101,11 @@ inline void DKinFitConstraint_Spacetime::Set_CommonTime(double locTime)
 		(*locIterator)->Set_CommonTime(locTime);
 	for(locIterator = dNoConstrainParticles.begin(); locIterator != dNoConstrainParticles.end(); ++locIterator)
 	{
-		if((*locIterator)->Get_KinFitParticleType() != d_DecayingParticle)
-			(*locIterator)->Set_CommonTime(locTime);
-		else
+		DKinFitParticleType locKinFitParticleType = (*locIterator)->Get_KinFitParticleType();
+		if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle))
 			(*locIterator)->Set_Time(locTime);
+		else
+			(*locIterator)->Set_CommonTime(locTime);
 	}
 	for(locIterator = dOnlyConstrainTimeParticles.begin(); locIterator != dOnlyConstrainTimeParticles.end(); ++locIterator)
 		(*locIterator)->Set_CommonTime(locTime);
@@ -133,10 +134,11 @@ inline void DKinFitConstraint_Spacetime::Set_CommonTParamIndex(int locCommonTPar
 		(*locIterator)->Set_CommonTParamIndex(locCommonTParamIndex);
 	for(locIterator = dNoConstrainParticles.begin(); locIterator != dNoConstrainParticles.end(); ++locIterator)
 	{
-		(*locIterator)->Set_CommonTParamIndex(locCommonTParamIndex);
 		DKinFitParticleType locKinFitParticleType = (*locIterator)->Get_KinFitParticleType();
 		if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle))
 			(*locIterator)->Set_TParamIndex(locCommonTParamIndex); //not included in fit, but particle vertex is defined by the fit result
+		else
+			(*locIterator)->Set_CommonTParamIndex(locCommonTParamIndex);
 	}
 }
 

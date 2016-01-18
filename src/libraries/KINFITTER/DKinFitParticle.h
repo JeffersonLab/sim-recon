@@ -71,7 +71,8 @@ class DKinFitParticle
 		TLorentzVector Get_CommonSpacetimeVertex(void) const{return dCommonSpacetimeVertex;}
 
 		unsigned short int Get_VertexConstraintFlag(void) const{return dVertexConstraintFlag;}
-		bool Get_FitCommonVertexFlag(void) const{return dFitCommonVertexFlag;}
+		bool Get_FitCommonVertexFlag(void) const{return (dCommonVxParamIndex >= 0);}
+		bool Get_FitCommonTimeFlag(void) const{return (dCommonTParamIndex >= 0);}
 		DKinFitParticleType Get_KinFitParticleType(void) const{return dKinFitParticleType;}
 
 		set<DKinFitParticle*> Get_FromInitialState(void) const{return dFromInitialState;}
@@ -127,7 +128,6 @@ class DKinFitParticle
 		void Set_CommonTParamIndex(int locCommonTParamIndex){dCommonTParamIndex = locCommonTParamIndex;}
 		void Set_EParamIndex(int locEParamIndex){dEParamIndex = locEParamIndex;}
 
-		void Set_FitCommonVertexFlag(bool locFitCommonVertexFlag){dFitCommonVertexFlag = locFitCommonVertexFlag;}
 		void Set_IsNeutralShowerFlag(bool locIsNeutralShowerFlag){dIsNeutralShowerFlag = locIsNeutralShowerFlag;}
 		void Set_VertexConstraintFlag(unsigned short int locVertexConstraintFlag){dVertexConstraintFlag = locVertexConstraintFlag;}
 
@@ -174,8 +174,6 @@ class DKinFitParticle
 			//note: if a decaying particle is not in a vertex fit, then this quantity doesn't matter (default true)
 		bool dVertexP4AtProductionVertex;
 
-		bool dFitCommonVertexFlag; //otherwise common vertex is the same as position
-
 		bool dIsNeutralShowerFlag;
 };
 
@@ -211,9 +209,7 @@ inline void DKinFitParticle::Reset(void)
 	dFromInitialState.clear();
 	dFromFinalState.clear();
 
-	dFitCommonVertexFlag = false;
 	dVertexP4AtProductionVertex = false;
-
 	dIsNeutralShowerFlag = false;
 }
 
@@ -260,8 +256,8 @@ inline void DKinFitParticle::Print_ParticleParams(void) const
 	cout << dMomentum.Px() << ", " << dMomentum.Py() << ", " << dMomentum.Pz() << ", ";
 	cout << dSpacetimeVertex.X() << ", " << dSpacetimeVertex.Y() << ", " << dSpacetimeVertex.Z() << ", " << dSpacetimeVertex.T() << ", " << dShowerEnergy << endl;
 
-	cout << "DKinFitParticle: dFitCommonVertexFlag, dVertexP4AtProductionVertex, dIsNeutralShowerFlag = ";
-	cout << dFitCommonVertexFlag << ", " << dVertexP4AtProductionVertex << ", " << dIsNeutralShowerFlag << endl;
+	cout << "DKinFitParticle: FitCommonVertexFlag, FitCommonTimeFlag, dVertexP4AtProductionVertex, dIsNeutralShowerFlag = ";
+	cout << Get_FitCommonVertexFlag() << ", " << Get_FitCommonTimeFlag() << ", " << dVertexP4AtProductionVertex << ", " << dIsNeutralShowerFlag << endl;
 
 	if(dCovarianceMatrix != NULL)
 	{

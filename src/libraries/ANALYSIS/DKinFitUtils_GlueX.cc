@@ -4,21 +4,6 @@
 
 #include "DKinFitUtils_GlueX.h"
 
-bool DKinFitUtils_GlueX::DDecayingParticleInfo::operator<(const DKinFitUtils_GlueX::DDecayingParticleInfo& locDecayingParticleInfo) const
-{
-	if(dPID < locDecayingParticleInfo.dPID)
-		return true;
-	else if(dPID > locDecayingParticleInfo.dPID)
-		return false;
-
-	if(dFromInitialState < locDecayingParticleInfo.dFromInitialState)
-		return true;
-	else if(dFromInitialState > locDecayingParticleInfo.dFromInitialState)
-		return false;
-
-	return (dFromFinalState < locDecayingParticleInfo.dFromFinalState);
-}
-
 /******************************************************************** INITIALIZE *******************************************************************/
 
 DKinFitUtils_GlueX::DKinFitUtils_GlueX(const DMagneticFieldMap* locMagneticFieldMap, const DAnalysisUtilities* locAnalysisUtilities) : 
