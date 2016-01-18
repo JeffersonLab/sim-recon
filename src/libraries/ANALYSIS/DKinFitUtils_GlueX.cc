@@ -66,7 +66,7 @@ bool DKinFitUtils_GlueX::Get_IncludeBeamlineInVertexFitFlag(void) const
 
 bool DKinFitUtils_GlueX::Get_IsDetachedVertex(int locPDG_PID) const
 {
-	return IsDetachedVertex(locPDG_PID);
+	return IsDetachedVertex(PDGtoPType(locPDG_PID));
 }
 
 bool DKinFitUtils_GlueX::Get_IsBFieldNearBeamline(void) const
@@ -100,7 +100,7 @@ DKinFitParticle* DKinFitUtils_GlueX::Make_BeamParticle(const DBeamPhoton* locBea
 	Particle_t locPID = locBeamPhoton->PID();
 
 	DKinFitParticle* locKinFitParticle = DKinFitUtils::Make_BeamParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), 
-		locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
+		locSpacetimeVertex, locMomentum, &(locBeamPhoton->errorMatrix()));
 	dParticleMap_SourceToInput_Beam[locSourcePair] = locKinFitParticle;
 	dParticleMap_InputToSource_JObject[locKinFitParticle] = locBeamPhoton;
 	return locKinFitParticle;
@@ -361,7 +361,7 @@ void DKinFitUtils_GlueX::Make_KinFitChainStep(const DParticleCombo* locParticleC
 			locKinFitChainStep->Add_InitialParticle(Make_BeamParticle(locBeamPhoton));
 		else //decaying particle
 		{
-			if(loc_i == 0) //open-ended
+			if(locStepIndex == 0) //open-ended
 				locKinFitChain->Set_DefinedParticleStepIndex(locKinFitStepIndex);
 			else //enclosed
 			{
@@ -422,12 +422,12 @@ void DKinFitUtils_GlueX::Make_KinFitChainStep(const DParticleCombo* locParticleC
 		}
 	}
 
-	locStepCreationMap.insert(pair<size_t, size_t>(locStepIndex, locKinFitStepIndex);
+	locStepCreationMap.insert(pair<size_t, size_t>(locStepIndex, locKinFitStepIndex));
 }
 
 /**************************************************************** MAKE CONSTRAINTS *****************************************************************/
 
-set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints) const
+set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints)
 {
 	if(dDebugLevel > 10)
 		cout << "DKinFitUtils_GlueX: Create constraints." << endl;

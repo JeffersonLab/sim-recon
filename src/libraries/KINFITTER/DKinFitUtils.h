@@ -27,20 +27,27 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 
 	public:
 
-		/************************************************************ 'STRUCTORS AND RESET **********************************************************/
+		/***************************************************************** INITIALIZE ***************************************************************/
 
+		//STRUCTORS
 		DKinFitUtils(void);
 		virtual ~DKinFitUtils(void);
 
-		//RESET //IF YOU OVERRIDE THESE IN THE DERIVED CLASS, BE SURE TO CALL THE BASE CLASS FUNCTIONS!
+		//RESET: IF YOU OVERRIDE THESE IN THE DERIVED CLASS, BE SURE TO CALL THE BASE CLASS FUNCTIONS!
 		virtual void Reset_NewEvent(void);
 		virtual void Reset_NewFit(void){};
 
+		void Preallocate_MatrixMemory(void);
+
 		/************************************************************ CONTROL AND MAPPING ***********************************************************/
 
-		//CONTROL
+		//GET CONTROL
 		bool Get_LinkVerticesFlag(void) const{return dLinkVerticesFlag;}
+		bool Get_DebugLevel(void) const{return dDebugLevel;}
+
+		//SET CONTROL
 		void Set_LinkVerticesFlag(bool locLinkVerticesFlag){dLinkVerticesFlag = locLinkVerticesFlag;}
+		void Set_DebugLevel(bool locDebugLevel){dDebugLevel = locDebugLevel;}
 
 		//GET INPUT FROM OUTPUT
 		DKinFitParticle* Get_InputKinFitParticle(DKinFitParticle* locKinFitParticle) const;
@@ -50,8 +57,10 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 		//If multiple constraints, it is EXTREMELY CRITICAL that only one DKinFitParticle be created per particle, so that the particles are correctly linked across constraints!!
 		DKinFitParticle* Make_BeamParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixDSym* locCovarianceMatrix);
 		DKinFitParticle* Make_TargetParticle(int locPID, int locCharge, double locMass);
+
 		DKinFitParticle* Make_DetectedParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixDSym* locCovarianceMatrix);
 		DKinFitParticle* Make_DetectedShower(int locPID, double locMass, TLorentzVector locSpacetimeVertex, double locShowerEnergy, const TMatrixDSym* locCovarianceMatrix);
+
 		DKinFitParticle* Make_MissingParticle(int locPID, int locCharge, double locMass);
 		DKinFitParticle* Make_DecayingParticle(int locPID, int locCharge, double locMass, const set<DKinFitParticle*>& locFromInitialState, const set<DKinFitParticle*>& locFromFinalState);
 
@@ -147,12 +156,11 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 
 		DKinFitter* dKinFitter; //is set by DKinFitter constructor!
 		bool dLinkVerticesFlag;
+		int dDebugLevel;
 
 	private:
 
 		/************************************************************* HANDLE RESOURCES *************************************************************/
-
-		void Preallocate_MatrixMemory(void);
 
 		DKinFitParticle* Get_KinFitParticleResource(void);
 		DKinFitConstraint_Vertex* Get_KinFitConstraintVertexResource(void);

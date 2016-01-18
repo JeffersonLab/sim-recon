@@ -88,16 +88,16 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 	for(size_t loc_i = 0; loc_i < locParticleCombos.size(); ++loc_i)
 	{
 		const DParticleCombo* locParticleCombo = locParticleCombos[loc_i];
-		const DReaction* locReaction = locParticleCombo->Get_Reaction();
-		if(locReaction->Get_KinFitType() == d_NoFit)
+		DKinFitType locKinFitType = locParticleCombo->Get_Reaction()->Get_KinFitType();
+		if(locKinFitType == d_NoFit)
 			continue; //don't do any kinematic fits!
 
 		//Make DKinFitChain
-		const DKinFitChain* locKinFitChain = dKinFitUtils->Make_KinFitChain(locParticleCombo, locParticleCombo->Get_KinFitType());
+		const DKinFitChain* locKinFitChain = dKinFitUtils->Make_KinFitChain(locParticleCombo, locKinFitType);
 
 		//Make Constraints
 		deque<DKinFitConstraint_Vertex*> locSortedVertexConstraints;
-		set<DKinFitConstraint*> locConstraints = dKinFitUtils->Create_Constraints(locKinFitChain, locReaction->Get_KinFitType(), locSortedVertexConstraints);
+		set<DKinFitConstraint*> locConstraints = dKinFitUtils->Create_Constraints(locKinFitChain, locKinFitType, locSortedVertexConstraints);
 
 		//see if constraints (particles) are identical to a previous kinfit
 		map<set<DKinFitConstraint*>, DKinFitResults*>::iterator locResultIterator = dConstraintResultsMap.find(locConstraints);
@@ -106,7 +106,7 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 			//this has been kinfit before, use the same result
 			DKinFitResults* locKinFitResults = locResultIterator->second;
 			if(locKinFitResults != NULL) //if false: the previous kinfit failed, this one will too
-				locKinFitResults->Add_ParticleCombo(locParticleCombo); //previous kinfit succeeded, register this combo with that fit
+				locKinFitResults->Add_ParticleCombo(locParticleCombo, locKinFitChain); //previous kinfit succeeded, register this combo with that fit
 			continue;
 		}
 

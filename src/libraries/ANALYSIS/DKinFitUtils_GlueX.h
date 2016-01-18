@@ -12,6 +12,7 @@
 #include "particleType.h"
 
 #include "HDGEOMETRY/DMagneticFieldMap.h"
+#include "HDGEOMETRY/DMagneticFieldMapNoField.h"
 #include "PID/DBeamPhoton.h"
 #include "PID/DNeutralShower.h"
 #include "PID/DKinematicData.h"
@@ -69,11 +70,11 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		/************************************************************ CREATE DKINFITCHAIN ***********************************************************/
 
 		//optional: can help make constraints
-		DKinFitChain* Make_KinFitChain(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType);
+		const DKinFitChain* Make_KinFitChain(const DParticleCombo* locParticleCombo, DKinFitType locKinFitType);
 
 		/************************************************************* CREATE CONSTRAINTS ***********************************************************/
 
-		set<DKinFitConstraint*> Create_Constraints(const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints) const;
+		set<DKinFitConstraint*> Create_Constraints(const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints);
 
 		/*********************************************************** MAKE SPACETIME GUESSES *********************************************************/
 
