@@ -564,7 +564,7 @@ deque<DKinFitConstraint_Vertex*> DKinFitUtils::Create_VertexConstraints(const de
 		set<DKinFitParticle*> locVertexDecayingParticles_Defined;
 		set_intersection(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
                           locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
-                          back_inserter(locVertexDecayingParticles_Defined));
+                          inserter(locVertexDecayingParticles_Defined, locVertexDecayingParticles_Defined.begin()));
 
 		//see if enough defined particles to constrain vertex
 		if(locVertexDecayingParticles_Defined.size() + locAllFullConstrainParticles[locConstraintIndex].size() < 2)
@@ -577,7 +577,7 @@ deque<DKinFitConstraint_Vertex*> DKinFitUtils::Create_VertexConstraints(const de
 		set<DKinFitParticle*> locVertexDecayingParticles_NotDefined;
 		set_intersection(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
                           locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
-                          back_inserter(locVertexDecayingParticles_NotDefined));
+                          inserter(locVertexDecayingParticles_NotDefined, locVertexDecayingParticles_NotDefined.begin()));
 
 		//Add decaying particles to appropriate sets
 		locAllFullConstrainParticles[loc_i].insert(locVertexDecayingParticles_Defined.begin(), locVertexDecayingParticles_Defined.end());

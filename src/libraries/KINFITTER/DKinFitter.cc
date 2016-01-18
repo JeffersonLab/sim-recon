@@ -237,8 +237,9 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 			//See which from-final-state particles are found in the vertex constraint
 			set<DKinFitParticle*> locFromFinalState = locKinFitParticle->Get_FromFinalState();
 			set<DKinFitParticle*> locFinalStateParticlesAtVertex;
-			set_intersection(locAllConstraintParticles.begin(), locAllConstraintParticles.end(),
-		                       locFromFinalState.begin(), locFromFinalState.end(), back_inserter(locFinalStateParticlesAtVertex));
+			set_intersection(locAllConstraintParticles.begin(), locAllConstraintParticles.end(), locFromFinalState.begin(), 
+				locFromFinalState.end(), inserter(locFinalStateParticlesAtVertex, locFinalStateParticlesAtVertex.begin()));
+
 
 			//Set vertex flag based on whether any particles found or not
 			bool locIsProductionVertex = false;

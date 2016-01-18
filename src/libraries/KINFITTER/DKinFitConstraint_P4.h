@@ -98,7 +98,8 @@ inline DKinFitParticle* DKinFitConstraint_P4::Get_OpenEndedDecayingParticle(void
 		//see if any of the defined-from particles match those in the constraint
 		set<DKinFitParticle*> locFromFinalState = locKinFitParticle->Get_FromFinalState();
 		set<DKinFitParticle*> locMatchingParticles;
-		set_intersection(locFromFinalState.begin(), locFromFinalState.end(), locAllParticles.begin(), locAllParticles.end(), back_inserter(locMatchingParticles));
+		set_intersection(locFromFinalState.begin(), locFromFinalState.end(), locAllParticles.begin(), 
+			locAllParticles.end(), inserter(locMatchingParticles, locMatchingParticles.begin()));
 		if(!locMatchingParticles.empty())
 			return locKinFitParticle; //open-ended decaying particle
 	}
