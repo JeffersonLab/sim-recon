@@ -119,7 +119,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
-	_data.push_back(locReaction); //Register the DReaction with the factory
+//	_data.push_back(locReaction); //Register the DReaction with the factory
 
 
 
@@ -186,7 +186,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
-	_data.push_back(locReaction); //Register the DReaction with the factory
+//	_data.push_back(locReaction); //Register the DReaction with the factory
 
 
 
@@ -253,7 +253,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	// Kinematics of final selection
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false, "Final")); //false: fill histograms with measured particle data
 
-	_data.push_back(locReaction); //Register the DReaction with the factory
+//	_data.push_back(locReaction); //Register the DReaction with the factory
 
 
 
@@ -417,7 +417,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	// Omega Mass (Hist)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 600, 0.5, 1.1, "Omega_Kinfit"));
 
-	_data.push_back(locReaction); //Register the DReaction with the factory
+//	_data.push_back(locReaction); //Register the DReaction with the factory
 
 
 	return NOERROR;
