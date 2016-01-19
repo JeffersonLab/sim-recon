@@ -210,7 +210,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         // There are a few values from the new data type that are critical for the interpretation of the data
         uint16_t IBIT = 0; // 2^{IBIT} Scale factor for integral
-        uint16_t ABIT = 0; // 2^{ABIT} Scale factor for amplitude
+//        uint16_t ABIT = 0; // 2^{ABIT} Scale factor for amplitude
         uint16_t PBIT = 0; // 2^{PBIT} Scale factor for pedestal
 
         // This is the place to make quality cuts on the data. 
@@ -223,7 +223,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
             // Set some constants to defaults until they appear correctly in the config words in the future
             IBIT = config->IBIT == 0xffff ? 4 : config->IBIT;
-            ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
+//            ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
             PBIT = config->PBIT == 0xffff ? 0 : config->PBIT;
             uint16_t NW   = config->NW   == 0xffff ? 200 : config->NW;
             
