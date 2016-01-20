@@ -225,7 +225,8 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             IBIT = config->IBIT == 0xffff ? 4 : config->IBIT;
 //            ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
             PBIT = config->PBIT == 0xffff ? 0 : config->PBIT;
-            uint16_t NW   = config->NW   == 0xffff ? 200 : config->NW;
+            uint16_t NW   = config->NW   == 0xffff ? 180 : config->NW;
+				if(NW==0) NW=180; // some data was taken (<=run 4700) where NW was written as 0 to file
             
             // The integration window in the CDC should always extend past the end of the window
             // Only true after about run 4100
