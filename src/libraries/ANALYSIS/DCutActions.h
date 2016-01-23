@@ -213,7 +213,8 @@ class DCutAction_TrueCombo : public DAnalysisAction
 		//if locExclusiveMatchFlag = false: inclusive match: require the DReaction be a subset (or the total) of the thrown
 		DCutAction_TrueCombo(const DReaction* locReaction, double locMinThrownMatchFOM, bool locExclusiveMatchFlag, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Cut_TrueCombo", false, locActionUniqueString), 
-		dMinThrownMatchFOM(locMinThrownMatchFOM), dExclusiveMatchFlag(locExclusiveMatchFlag){}
+		dMinThrownMatchFOM(locMinThrownMatchFOM), dExclusiveMatchFlag(locExclusiveMatchFlag), 
+		dCutAction_ThrownTopology(NULL), dCutAction_TrueBeamParticle(NULL){}
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -244,7 +245,8 @@ class DCutAction_BDTSignalCombo : public DAnalysisAction
 
 		DCutAction_BDTSignalCombo(const DReaction* locReaction, double locMinThrownMatchFOM, bool locExclusiveMatchFlag, bool locIncludeDecayingToReactionFlag, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Cut_BDTSignalCombo", false, locActionUniqueString), 
-		dMinThrownMatchFOM(locMinThrownMatchFOM), dExclusiveMatchFlag(locExclusiveMatchFlag), dIncludeDecayingToReactionFlag(locIncludeDecayingToReactionFlag){}
+		dMinThrownMatchFOM(locMinThrownMatchFOM), dExclusiveMatchFlag(locExclusiveMatchFlag), 
+		dIncludeDecayingToReactionFlag(locIncludeDecayingToReactionFlag), dCutAction_TrueBeamParticle(NULL){}
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -256,9 +258,9 @@ class DCutAction_BDTSignalCombo : public DAnalysisAction
 		double dMinThrownMatchFOM;
 		bool dExclusiveMatchFlag;
 		bool dIncludeDecayingToReactionFlag;
-		const DAnalysisUtilities* dAnalysisUtilities;
 
 		DCutAction_TrueBeamParticle* dCutAction_TrueBeamParticle;
+		const DAnalysisUtilities* dAnalysisUtilities;
 };
 
 class DCutAction_TruePID : public DAnalysisAction
@@ -648,7 +650,7 @@ class DCutAction_OneVertexKinFit : public DAnalysisAction
 
 		DCutAction_OneVertexKinFit(const DReaction* locReaction, double locMinKinFitCL = -1.0, double locMinVertexZ = 1.0, double locMaxVertexZ = 0.0, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Cut_OneVertexKinFit", false, locActionUniqueString),
-		dMinKinFitCL(locMinKinFitCL), dMinVertexZ(locMinVertexZ), dMaxVertexZ(locMaxVertexZ) {}
+		dMinKinFitCL(locMinKinFitCL), dMinVertexZ(locMinVertexZ), dMaxVertexZ(locMaxVertexZ), dKinFitter(NULL), dKinFitUtils(NULL) {}
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -662,9 +664,9 @@ class DCutAction_OneVertexKinFit : public DAnalysisAction
 		double dMinVertexZ;
 		double dMaxVertexZ;
 
-		const DAnalysisUtilities* dAnalysisUtilities;
 		DKinFitter* dKinFitter;
 		DKinFitUtils_GlueX* dKinFitUtils;
+		const DAnalysisUtilities* dAnalysisUtilities;
 
 		TH1I* dHist_ConfidenceLevel;
 		TH1I* dHist_VertexZ;
