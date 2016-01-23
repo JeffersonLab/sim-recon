@@ -761,6 +761,10 @@ double DKinFitUtils_GlueX::Calc_TimeGuess(const DKinFitConstraint_Spacetime* loc
 
 set<pair<int, int> > DKinFitUtils_GlueX::Get_KinFitVertexParticles(const DReaction* locReaction) const
 {
+	DKinFitType locKinFitType = locReaction->Get_KinFitType();
+	if((locKinFitType == d_NoFit) || (locKinFitType == d_P4Fit))
+		return set<pair<int, int> >();
+
 	//predict vertices
 	deque<set<pair<int, int> > > locVertices = Setup_VertexPredictions(locReaction);
 	string locDummyString;
