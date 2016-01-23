@@ -141,17 +141,25 @@ void DKinFitUtils::Reset_NewEvent(void)
 void DKinFitUtils::Preallocate_MatrixMemory(void)
 {
 	//pre-allocate matrix memory
-	for(size_t loc_i = 0; loc_i < dMaxMatrixDSymPoolSize; ++loc_i)
+	if(dMatrixDSymPool_Available.empty())
 	{
-		TMatrixDSym* locMatrix = Get_MatrixDSymResource();	
-		locMatrix->ResizeTo(7, 7);
+		for(size_t loc_i = 0; loc_i < dMaxMatrixDSymPoolSize; ++loc_i)
+		{
+			TMatrixDSym* locMatrix = Get_MatrixDSymResource();	
+			locMatrix->ResizeTo(7, 7);
+		}
+		dMatrixDSymPool_Available = dMatrixDSymPool_All;
 	}
 
 	//pre-allocate large matrix memory
-	for(size_t loc_i = 0; loc_i < dMaxLargeMatrixDSymPoolSize; ++loc_i)
+	if(dLargeMatrixDSymPool_Available.empty())
 	{
-		TMatrixDSym* locMatrix = Get_LargeMatrixDSymResource();	
-		locMatrix->ResizeTo(100, 100);
+		for(size_t loc_i = 0; loc_i < dMaxLargeMatrixDSymPoolSize; ++loc_i)
+		{
+			TMatrixDSym* locMatrix = Get_LargeMatrixDSymResource();	
+			locMatrix->ResizeTo(100, 100);
+		}
+		dLargeMatrixDSymPool_Available = dLargeMatrixDSymPool_All;
 	}
 }
 

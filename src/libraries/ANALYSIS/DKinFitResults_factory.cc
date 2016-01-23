@@ -71,6 +71,7 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 #ifdef VTRACE
 	VT_TRACER("DKinFitResults_factory::evnt()");
 #endif
+	dConstraintResultsMap.clear();
 
 	//perform all of the analysis steps that don't need the kinematic fit results (saves time by reducing #kinfits)
  	vector<const DAnalysisResults*> locAnalysisResultsVector;
