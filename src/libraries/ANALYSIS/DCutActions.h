@@ -217,6 +217,8 @@ class DCutAction_TrueCombo : public DAnalysisAction
 
 		void Initialize(JEventLoop* locEventLoop);
 
+		~DCutAction_TrueCombo(void);
+
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
@@ -245,6 +247,8 @@ class DCutAction_BDTSignalCombo : public DAnalysisAction
 		dMinThrownMatchFOM(locMinThrownMatchFOM), dExclusiveMatchFlag(locExclusiveMatchFlag), dIncludeDecayingToReactionFlag(locIncludeDecayingToReactionFlag){}
 
 		void Initialize(JEventLoop* locEventLoop);
+
+		~DCutAction_BDTSignalCombo(void);
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -647,6 +651,8 @@ class DCutAction_OneVertexKinFit : public DAnalysisAction
 		dMinKinFitCL(locMinKinFitCL), dMinVertexZ(locMinVertexZ), dMaxVertexZ(locMaxVertexZ) {}
 
 		void Initialize(JEventLoop* locEventLoop);
+
+		~DCutAction_OneVertexKinFit(void);
 
 	private:
 

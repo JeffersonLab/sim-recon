@@ -515,7 +515,7 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		gamma->setCharge(0);
 		gamma->setMass(0);
 		gamma->setTime(locTAGHiter->getT());
-		gamma->setT0(iter->getT(), 0.350, SYS_TAGH);
+		gamma->setT0(locTAGHiter->getT(), 0.350, SYS_TAGH);
 
       unsigned int locCounter = 0;
 		taghGeom->E_to_counter(locTAGHiter->getE(), locCounter);

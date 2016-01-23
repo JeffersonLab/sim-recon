@@ -124,9 +124,7 @@ inline void DKinFitResults::Add_OutputKinFitParticles(const set<DKinFitParticle*
 
 inline void DKinFitResults::Add_KinFitConstraints(const set<DKinFitConstraint*>& locKinFitConstraints)
 {
-	set<DKinFitConstraint*>::const_iterator locIterator = locKinFitConstraints.begin();
-	for(; locIterator != locKinFitConstraints.end(); ++locIterator)
-		dKinFitConstraints.insert(*locIterator);
+	dKinFitConstraints.insert(locKinFitConstraints.begin(), locKinFitConstraints.end());
 }
 
 inline void DKinFitResults::Add_ParticleMapping_SourceToInput(const JObject* locSourceJObject, DKinFitParticle* locInputKinFitParticle)

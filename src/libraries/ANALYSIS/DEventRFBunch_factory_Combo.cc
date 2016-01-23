@@ -82,7 +82,7 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32
 	locEventLoop->Get(locMCThrowns);
 
 	string locHistName, locHistTitle;
-	TH1I* loc1DHist;
+	TH1I* loc1IHist;
 
 	//Create Diagnostic Histograms
 	japp->RootWriteLock();
@@ -120,35 +120,35 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32
 
 			// RFTime
 			locHistName = "RFParticleDeltaT";
-			loc1DHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-			if(loc1DHist == NULL)
+			loc1IHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+			if(loc1IHist == NULL)
 			{
 				locHistTitle = locReactionName + string(";#Deltat_{RF - Particle} (ns)");
-				loc1DHist = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 600, -3.0, 3.0);
+				loc1IHist = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 600, -3.0, 3.0);
 			}
-			dHistMap_RFParticleDeltaT[locReaction] = loc1DHist;
+			dHistMap_RFParticleDeltaT[locReaction] = loc1IHist;
 
 			if(!locMCThrowns.empty())
 			{
 				// DeltaRFTime
 				locHistName = "DeltaRFTime";
-				loc1DHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-				if(loc1DHist == NULL)
+				loc1IHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+				if(loc1IHist == NULL)
 				{
 					locHistTitle = locReactionName + string(";RF #Deltat_{Selected - True} (ns)");
-					loc1DHist = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 220, -11.0, 11.0);
+					loc1IHist = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 220, -11.0, 11.0);
 				}
-				dHistMap_DeltaRFTime[locReaction] = loc1DHist;
+				dHistMap_DeltaRFTime[locReaction] = loc1IHist;
 
 				// DeltaRFTime_TruePID
 				locHistName = "DeltaRFTime_TruePID";
-				loc1DHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
-				if(loc1DHist == NULL)
+				loc1IHist = static_cast<TH1I*>(gDirectory->Get(locHistName.c_str()));
+				if(loc1IHist == NULL)
 				{
 					locHistTitle = locReactionName + string(", True PID;RF #Deltat_{Selected - True} (ns)");
-					loc1DHist = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 220, -11.0, 11.0);
+					loc1IHist = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 220, -11.0, 11.0);
 				}
-				dHistMap_DeltaRFTime_TruePID[locReaction] = loc1DHist;
+				dHistMap_DeltaRFTime_TruePID[locReaction] = loc1IHist;
 			}
 		}
 	}

@@ -498,6 +498,11 @@ bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const D
 	return true; //we made it!
 }
 
+DCutAction_BDTSignalCombo::~DCutAction_BDTSignalCombo(void)
+{
+	delete dCutAction_TrueBeamParticle;
+}
+
 void DCutAction_TrueCombo::Initialize(JEventLoop* locEventLoop)
 {
 	dCutAction_TrueBeamParticle = new DCutAction_TrueBeamParticle(Get_Reaction());
@@ -616,6 +621,12 @@ bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParti
 	}
 
 	return true; //we made it!
+}
+
+DCutAction_TrueCombo::~DCutAction_TrueCombo(void)
+{
+	delete dCutAction_TrueBeamParticle;
+	delete dCutAction_ThrownTopology;
 }
 
 bool DCutAction_TrueBeamParticle::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
@@ -1074,5 +1085,11 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 			return false;
 	}
 	return true;
+}
+
+DCutAction_OneVertexKinFit::~DCutAction_OneVertexKinFit(void)
+{
+	delete dKinFitter;
+	delete dKinFitUtils;
 }
 
