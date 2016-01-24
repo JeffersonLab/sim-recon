@@ -10,8 +10,8 @@ env = env.Clone()
 sbms.AddHDDM(env)
 sbms.AddROOT(env)
 
-boost = os.getenv('BOOST_ROOT','/usr')
-env.AppendUnique(CPPPATH=['%s' % boost])
+#boost = os.getenv('BOOST_ROOT','/usr')
+#env.AppendUnique(CPPPATH=['%s' % boost])
 
 sbms.executable(env)
 
