@@ -281,17 +281,21 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	}
 
 	//missing/open-ended-decaying p3
-	DKinFitConstraint_P4* locP4Constraint = *(Get_Constraints<DKinFitConstraint_P4>().begin());
-	DKinFitParticle* locKinFitParticle = locP4Constraint->Get_DefinedParticle();
-	if(locKinFitParticle != NULL)
-		locKinFitParticle->Set_Momentum(locP4Constraint->Get_InitP3Guess());
+	set<DKinFitConstraint_P4*> locP4Constraints = Get_Constraints<DKinFitConstraint_P4>();
+	if(!locP4Constraints.empty())
+	{
+		DKinFitConstraint_P4* locP4Constraint = *(locP4Constraints.begin());
+		DKinFitParticle* locKinFitParticle = locP4Constraint->Get_DefinedParticle();
+		if(locKinFitParticle != NULL)
+			locKinFitParticle->Set_Momentum(locP4Constraint->Get_InitP3Guess());
+	}
 
 	//decaying: p3
 	for(locParticleIterator = dKinFitParticles.begin(); locParticleIterator != dKinFitParticles.end(); ++locParticleIterator)
 	{
-		DKinFitParticle* locParticle = *locParticleIterator;
-		if(locParticle->Get_KinFitParticleType() == d_DecayingParticle)
-			locParticle->Set_Momentum(dKinFitUtils->Calc_DecayingP4_ByPosition(locParticle, true).Vect());
+		DKinFitParticle* locKinFitParticle = *locParticleIterator;
+		if(locKinFitParticle->Get_KinFitParticleType() == d_DecayingParticle)
+			locKinFitParticle->Set_Momentum(dKinFitUtils->Calc_DecayingP4_ByPosition(locKinFitParticle, true).Vect());
 	}
 
 	//set vertex constraint flags: used if not accelerating
