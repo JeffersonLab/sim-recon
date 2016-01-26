@@ -15,6 +15,8 @@ using namespace std;
 #include <TLorentzVector.h>
 #include <TRandom2.h>
 #include <TF1.h>
+#include <TFile.h>
+#include <TH1.h>
 
 #include "GlueXPrimaryGeneratorAction.hh"
 
@@ -27,8 +29,12 @@ bool HDDM_USE_COMPRESSION = false;
 bool HDDM_USE_INTEGRITY_CHECKS = false;
 bool USE_ELECTRON_BEAM_DIRECTION = false;
 double POLARIZATION_ANGLE = 0.0; // in degrees relative to x-axis
+bool ROOT_DEBUG_FILE = false;
 
 TRandom *RAND = NULL;
+
+TFile *rootfile = NULL;
+TH1D *expint_z = NULL;
 
 double Ecoherent_peak = 6.0;
 double Eelectron_beam = 12.0;
@@ -65,6 +71,11 @@ int main( int narg, char* argv[] )
 
 	// Random number generator
 	RAND = new TRandom2(1);
+	
+	if(ROOT_DEBUG_FILE){
+		rootfile = new TFile("gen_2mu_debug.root", "RECREATE");
+		expint_z = new TH1D("expint_z", "Z argument of expint", 20000, 0.0, 1000000.0);
+	}
 
 	// Coherent bremstrahlung photon generator
 	GlueXPrimaryGeneratorAction *photon_generator = new GlueXPrimaryGeneratorAction();
@@ -142,6 +153,12 @@ int main( int narg, char* argv[] )
 		OFS = NULL;
 	}
 	
+	if(rootfile){
+		rootfile->Write();
+		delete rootfile;
+		rootfile = NULL;
+	}
+	
 	int Ncoherent=0, Nincoherent=0;
 	GetMech(Ncoherent, Nincoherent);
 	cout << "  Ncoherent = " << Ncoherent << endl;
@@ -174,6 +191,7 @@ void Usage(string message)
 	cout << "              is for photon beam to define z)" << endl;
 	cout << " -pol phi     set photon beam polarization direction" << endl;
 	cout << "              relative to x-axis (def. is " << POLARIZATION_ANGLE << " degrees)" << endl; 
+	cout << " -debug       create and fill debug histograms in ROOT file" << endl;
 	cout << endl;
 	if(message!=""){
 		cout << message << endl;
@@ -248,6 +266,8 @@ void ParseCommandLineArguments(int narg, char *argv[])
 			}else{
 				missing_arg = true;
 			}
+		}else if(arg=="-debug"){
+			ROOT_DEBUG_FILE = true;
 		}else{
 			stringstream ss;
 			ss << "Unknown argument \""<<arg<<"\"!" << endl;

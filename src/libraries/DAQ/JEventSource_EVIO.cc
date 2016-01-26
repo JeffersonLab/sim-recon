@@ -4687,7 +4687,6 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 	uint32_t tdc_num = 0;
 	uint32_t event_id = 0;
 	uint32_t bunch_id = 0;
-	uint32_t last_event_id = event_id - 1;
 
 	// We need to accomodate multi-event blocks where
 	// events are entangled (i.e. hits from event 1
@@ -4743,8 +4742,6 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 				if( find(event_id_order.begin(), event_id_order.end(), event_id) == event_id_order.end()){
 					event_id_order.push_back(event_id);
 				}
-				//if(event_id != last_event_id) event_id_order.push_back(event_id);
-				last_event_id = event_id;
 				if(VERBOSE>7) evioout << "         CAEN TDC TDC Header (tdc=" << tdc_num <<" , event id=" << event_id <<" , bunch id=" << bunch_id << ")" << endl;
 				break;
 			case 0b00000:  // TDC Measurement

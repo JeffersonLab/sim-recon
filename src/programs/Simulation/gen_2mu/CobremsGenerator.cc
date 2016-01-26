@@ -61,6 +61,9 @@ using namespace std;
 #include <boost/math/special_functions/erf.hpp>
 #endif  // BOOST_PYTHON_WRAPPING
 
+#include <TH1.h>
+extern TH1D *expint_z;
+
 #ifndef _DBG_
 #define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
 #define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
@@ -72,14 +75,15 @@ const double CobremsGenerator::alpha = 7.2973525698e-3;
 const double CobremsGenerator::hbarc = 0.1973269718e-15;
 
 // Replaced boost::math::expint(1,z) with this to remove dependency on BOOST.
-// This uses the Gamma function as described here:
-// http://mathworld.wolfram.com/ExponentialIntegral.html
-#include <TMath.h>
-#include <boost/math/special_functions/expint.hpp>
+// This uses a spline and exponential piecewise function made
+// using the boost version.
+extern double expint_map(double z);
+//#include <boost/math/special_functions/expint.hpp>
 static double MyExpInt(double z)
 {
-	return boost::math::expint(1, z);
-//	return TMath::Gamma(0,z);
+	if(expint_z) expint_z->Fill(z);
+	return expint_map(z);
+//	return boost::math::expint(1, z);
 }
 
 CobremsGenerator::CobremsGenerator(double Emax_GeV, double Epeak_GeV)
