@@ -1,5 +1,5 @@
 // File: st_tw_fits.C
-// Last Modified: 11/10/2015
+// Last Modified: 01/26/2016
 // Creator: Mahmoud Kamel mkame006@fiu.edu
 // Purpose: Displaying histograms and tw automatic process.
 #include "TH1.h"
@@ -138,7 +138,7 @@ void st_time_resolution(char*input_filename)
       	}
       pytotal->Fit("gaus");
       gPad->Update();
-       PT_can[j]->Print(Form("ST_Sector_%i.png",j+1));
+      
       t_total_fit[j][2] = gaus->GetParameter(2)*1000;
       t_total_fit_err[j][2] = gaus->GetParError(2)*1000;
       
@@ -175,6 +175,5 @@ void st_time_resolution(char*input_filename)
   line->SetLineStyle(9);
 
   line->Draw();
-  Time_can->Print(Form("ST_Tresolution.png"));
 }
 

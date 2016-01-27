@@ -40,11 +40,13 @@
   // pi_pt_dhit_2d->GetXaxis()->CenterTitle();
   // pi_pt_dhit_2d->GetYaxis()->CenterTitle();
   if(h_r_vs_z) h_r_vs_z->Draw("colz");
+  gPad->SetLogz();
   gStyle->SetOptStat(10);
   // Pulse integral vs. f1TDC DigiHit time
   c1->cd(2);
   gPad->SetTicks();
   gPad->SetGrid();
+  gPad->SetLogz();
   // pt_tdc_dhit_2d->SetStats(0);
   // pt_tdc_dhit_2d->GetYaxis()->CenterTitle();
   // pt_tdc_dhit_2d->GetXaxis()->CenterTitle();
@@ -68,52 +70,5 @@
   // pi_dhit_2d->GetXaxis()->CenterTitle();
   // pi_dhit_2d->GetYaxis()->CenterTitle();
   if(h2_dphi_sector) h2_dphi_sector->Draw("colz");
-  // h2_tdct_adct_vs_de->SetAxisRange(0.0, 0.006.,"X");
-  // h2_tdct_adct_vs_de->SetAxisRange(-2., 2.,"Y");
-  // fADC250 pulse pedestal vs. channel histogram
-  // c1->cd(5);
- //  gPad->SetTicks();
- //  gPad->SetGrid();
- //  // ped_dhit_2d->SetStats(0);
- //  // ped_dhit_2d->SetAxisRange(-1., 31.,"X");
- //  // ped_dhit_2d->GetXaxis()->CenterTitle();
- //  // ped_dhit_2d->GetYaxis()->CenterTitle();
- //  if(h2_tdctCorr_adct_vs_de) h2_tdctCorr_adct_vs_de->Draw("colz");
- //  h2_tdctCorr_adct_vs_de->SetAxisRange(0.0, 0.006.,"X");
- //  h2_tdctCorr_adct_vs_de->SetAxisRange(-2., 2.,"Y");
- //  // fADC250 pulse time vs. channel histogram
- //  c1->cd(6);
- //  gPad->SetTicks();
- //  gPad->SetGrid();
- //  // pt_dhit_2d->SetStats(0);
- //  // pt_dhit_2d->SetAxisRange(-1., 31.,"X");
- //  // pt_dhit_2d->GetXaxis()->CenterTitle();
- //  // pt_dhit_2d->GetYaxis()->CenterTitle();
- //  if(h2_hit_det_eff) h2_hit_det_eff->Draw("colz");
- //  // ST fADC250 multiplicity vs. channel histogram
- //  c1->cd(7);
- //  gPad->SetTicks();
- //  gPad->SetGrid();
- //  // adc_multi_2d->SetStats(0);
- //  // adc_multi_2d->SetAxisRange(-1., 31.,"X");
- //  // adc_multi_2d->GetXaxis()->CenterTitle();
- //  // adc_multi_2d->GetYaxis()->CenterTitle();
- //  if(h_hit_det_eff) h_hit_det_eff->Draw("");
- //  // ST f1TDC multiplicty vs. channel histogram
- //  c1->cd(8);
- //  gPad->SetTicks();
- //  gPad->SetGrid();
- //  // tdc_multi_2d->SetStats(0);
- //  // tdc_multi_2d->SetAxisRange(-1., 31.,"X");
- //  // tdc_multi_2d->GetXaxis()->CenterTitle();
- //  // tdc_multi_2d->GetYaxis()->CenterTitle();
- //  if(h2_dt_z) h2_dt_z->Draw("colz");
- // // ST ADC vs TDC Multiplicity histogram
- //  c1->cd(9);
- //  gPad->SetTicks();
- //  gPad->SetGrid();
- //  // adc_tdc_multi_2d->SetStats(0);
- //  // adc_tdc_multi_2d->GetXaxis()->CenterTitle();
- //  // adc_tdc_multi_2d->GetYaxis()->CenterTitle();
- //  if(h2_adc_det_eff) h2_adc_det_eff->Draw("colz");
+ 
 }
