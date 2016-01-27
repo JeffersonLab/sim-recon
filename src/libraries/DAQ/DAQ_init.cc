@@ -30,6 +30,10 @@ using namespace jana;
 #include "DCODAROCInfo.h"
 #include "DEPICSvalue.h"
 #include "DEventTag.h"
+#include "Df250BORConfig.h"
+#include "Df125BORConfig.h"
+#include "DF1TDCBORConfig.h"
+#include "DCAEN1290TDCBORConfig.h"
 
 jerror_t DAQ_init(JEventLoop *loop)
 {
@@ -61,6 +65,10 @@ jerror_t DAQ_init(JEventLoop *loop)
 	loop->AddFactory(new JFactory<DCODAROCInfo>());
 	loop->AddFactory(new JFactory<DEPICSvalue>());
 	loop->AddFactory(new JFactory<DEventTag>());
+	loop->AddFactory(new JFactory<Df250BORConfig>());
+	loop->AddFactory(new JFactory<Df125BORConfig>());
+	loop->AddFactory(new JFactory<DF1TDCBORConfig>());
+	loop->AddFactory(new JFactory<DCAEN1290TDCBORConfig>());
   
   return NOERROR;
 }
