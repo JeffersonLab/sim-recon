@@ -115,6 +115,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	PARSE_F1TDC = true;
 	PARSE_CAEN1290TDC = true;
 	PARSE_CONFIG = true;
+	PARSE_BOR = true;
 	PARSE_EPICS = true;
 	PARSE_EVENTTAG = true;
 	PARSE_TRIGGER = true;
@@ -193,6 +194,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:PARSE_F1TDC", PARSE_F1TDC, "Set this to 0 to disable parsing of data from F1TDC modules (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:PARSE_CAEN1290TDC", PARSE_CAEN1290TDC, "Set this to 0 to disable parsing of data from CAEN 1290 TDC modules (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:PARSE_CONFIG", PARSE_CONFIG, "Set this to 0 to disable parsing of ROC configuration data in the data stream (for benchmarking/debugging)");
+		gPARMS->SetDefaultParameter("EVIO:PARSE_BOR", PARSE_BOR, "Set this to 0 to disable parsing of BOR events from the data stream (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:PARSE_EPICS", PARSE_EPICS, "Set this to 0 to disable parsing of EPICS events from the data stream (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:PARSE_EVENTTAG", PARSE_EVENTTAG, "Set this to 0 to disable parsing of event tag data in the data stream (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:PARSE_TRIGGER", PARSE_TRIGGER, "Set this to 0 to disable parsing of the built trigger bank from CODA (for benchmarking/debugging)");
@@ -375,6 +377,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	pthread_mutex_init(&evio_buffer_pool_mutex, NULL);
 	pthread_mutex_init(&stored_events_mutex, NULL);
 	pthread_mutex_init(&current_event_count_mutex, NULL);
+	pthread_rwlock_init(&BOR_lock, NULL);
 }
 
 //----------------
@@ -408,6 +411,10 @@ JEventSource_EVIO::~JEventSource_EVIO()
 		free(evio_buffer_pool.front());
 		evio_buffer_pool.pop_front();
 	}
+	
+	// Delete any BOR config objects
+	for(uint32_t i=0; i<BORobjs.size(); i++) delete BORobjs[i];
+	BORobjs.clear();
 	
 	// Optionally dump the module map
 	if(DUMP_MODULE_MAP)DumpModuleMap();
@@ -733,6 +740,11 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	if( source_type == kETSource   ) event.SetStatusBit(kSTATUS_FROM_ET);
 	if(objs_ptr)
 		if(objs_ptr->eviobuff) FindEventType(objs_ptr->eviobuff, event);
+	
+	// EPICS and BOR events are barrier events
+	if(event.GetStatusBit(kSTATUS_EPICS_EVENT) || event.GetStatusBit(kSTATUS_BOR_EVENT) ){
+		event.SetSequential();
+	}
 	
 	Nevents_read++;
 
@@ -1617,6 +1629,9 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	}
 	objs_ptr->own_objects = false;
 	
+	// Copy pointers to BOR objects
+	CopyBOR(loop, hit_objs_by_type);
+	
 	// Returning OBJECT_NOT_AVAILABLE tells JANA that this source cannot
 	// provide the type of object requested and it should try and generate
 	// it via a factory algorithm. Returning NOERROR on the other hand
@@ -1672,8 +1687,12 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			else if(dataClassName == "DF1TDCTriggerTime")     checkSourceFirst = ((JFactory<DF1TDCTriggerTime    >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "DCAEN1290TDCConfig")    checkSourceFirst = ((JFactory<DCAEN1290TDCConfig   >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "DCAEN1290TDCHit")       checkSourceFirst = ((JFactory<DCAEN1290TDCHit      >*)fac)->GetCheckSourceFirst();
-			else if(dataClassName == "DCODAEventInfo")        checkSourceFirst = ((JFactory<DCAEN1290TDCHit      >*)fac)->GetCheckSourceFirst();
-			else if(dataClassName == "DCODAROCInfo")          checkSourceFirst = ((JFactory<DCAEN1290TDCHit      >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "DCODAEventInfo")        checkSourceFirst = ((JFactory<DCODAEventInfo       >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "DCODAROCInfo")          checkSourceFirst = ((JFactory<DCODAROCInfo         >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df250BORConfig")        checkSourceFirst = ((JFactory<Df250BORConfig       >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df125BORConfig")        checkSourceFirst = ((JFactory<Df125BORConfig       >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "DF1TDCBORConfig")       checkSourceFirst = ((JFactory<DF1TDCBORConfig      >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "DCAEN1290TDCBORConfig") checkSourceFirst = ((JFactory<DCAEN1290TDCBORConfig>*)fac)->GetCheckSourceFirst();
 
 			if(checkSourceFirst) {
 				fac->Set_evnt_called();
@@ -1696,6 +1715,62 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	if(VERBOSE>2) evioout << "  Leaving GetObjects()" << endl;
 
 	return err;
+}
+
+//----------------
+// CopyBOR
+//----------------
+void JEventSource_EVIO::CopyBOR(JEventLoop *loop, map<string, vector<JObject*> > &hit_objs_by_type)
+{
+	/// Copy pointers to BOR (Beginning Of Run) objects into the
+	/// appropriate factories for this event. The objects are flagged
+	/// so that the factories won't delete them and the objects
+	/// may be reused on subsequent events. 
+	
+	pthread_rwlock_rdlock(&BOR_lock);
+
+	// Make list of BOR objects of each type
+	map<string, vector<JObject*> > bor_objs_by_type;
+	for(unsigned int i=0; i<BORobjs.size(); i++){
+		JObject *jobj = BORobjs[i];
+		bor_objs_by_type[jobj->className()].push_back(jobj);
+	}
+
+	// Loop over types of BOR objects, copying to appropriate factory
+	map<string, vector<JObject*> >::iterator iter = bor_objs_by_type.begin();
+	for(; iter!=bor_objs_by_type.end(); iter++){
+		const string &bor_obj_name = iter->first;
+		vector<JObject*> &bors = iter->second;
+		JFactory_base *fac = loop->GetFactory(bor_obj_name, "", false); // false= don't allow default tag replacement
+		if(fac){
+			fac->CopyTo(bors);
+			fac->SetFactoryFlag(JFactory_base::NOT_OBJECT_OWNER);
+		}
+		
+		// Associate with hit objects from this type of module
+		if(bor_obj_name == "Df250BORConfig"){
+			LinkAssociationsModuleOnlyWithCast<Df250BORConfig,Df250PulseIntegral>(bors, hit_objs_by_type["Df250PulseIntegral"]);
+			LinkAssociationsModuleOnlyWithCast<Df250BORConfig,Df250PulsePedestal>(bors, hit_objs_by_type["Df250PulsePedestal"]);
+			LinkAssociationsModuleOnlyWithCast<Df250BORConfig,Df250PulseTime>(bors, hit_objs_by_type["Df250PulseTime"]);
+			LinkAssociationsModuleOnlyWithCast<Df250BORConfig,Df250WindowRawData>(bors, hit_objs_by_type["Df250WindowRawData"]);
+		}
+		if(bor_obj_name == "Df125BORConfig"){
+			LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125CDCPulse>(bors, hit_objs_by_type["Df250PulseIntegral"]);
+			LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125FDCPulse>(bors, hit_objs_by_type["Df250PulsePedestal"]);
+			LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125PulseIntegral>(bors, hit_objs_by_type["Df250PulseTime"]);
+			LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125PulsePedestal>(bors, hit_objs_by_type["Df250WindowRawData"]);
+			LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125PulseTime>(bors, hit_objs_by_type["Df250WindowRawData"]);
+			LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125WindowRawData>(bors, hit_objs_by_type["Df250WindowRawData"]);
+		}
+		if(bor_obj_name == "DF1TDCBORConfig"){
+			LinkAssociationsModuleOnlyWithCast<DF1TDCBORConfig,Df250PulseIntegral>(bors, hit_objs_by_type["DF1TDCHit"]);
+		}
+		if(bor_obj_name == "DCAEN1290TDCBORConfig"){
+			LinkAssociationsModuleOnlyWithCast<DCAEN1290TDCBORConfig,Df250PulseIntegral>(bors, hit_objs_by_type["DCAEN1290TDCHit"]);
+		}
+	}
+
+	pthread_rwlock_unlock(&BOR_lock);
 }
 
 //----------------
@@ -2791,6 +2866,8 @@ void JEventSource_EVIO::FindEventType(uint32_t *iptr, JEvent &event)
 	uint32_t head = iptr[1];
 	if( (head & 0xff000f) ==  0x600001){
 		event.SetStatusBit(kSTATUS_EPICS_EVENT);
+	}else if( (head & 0xffffffff) ==  0x00700E01){
+		event.SetStatusBit(kSTATUS_BOR_EVENT);
 	}else if( (head & 0xffffff00) ==  0xff501000){
 		event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
 	}else if( (head & 0xffffff00) ==  0xff701000){
@@ -2934,11 +3011,34 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		// The data banks we want should have exactly two parents:
 		// - Data Bank bank       <--  parent
 		// - Physics Event bank   <--  grandparent
+		//
+		// other types of events may be inserted in the datastream though so we
+		// check for those first.
+		
+		// BOR event
+		// BOR events will have an outermost
+		// bank with tag=0x70 and num=1. If this is the outermost bank of
+		// a BOR event, then parse it. If it is a inner BOR bank then ignore it.
+		evioDOMNodeP outermostBankPtr = *iter;
+		while(outermostBankPtr->getParent()) outermostBankPtr = outermostBankPtr->getParent();
+		if(outermostBankPtr->tag==0x70 && outermostBankPtr->num==1){
+			// This is a BOR bank
+			if(VERBOSE>9) evioout << "     bank is part of BOR event ... " << endl;			
+			if(outermostBankPtr == *iter){
+				if(VERBOSE>9) evioout << "     bank is outermost EVIO bank. Parsing BOR event ..." << endl;	
+				ParseBORevent(outermostBankPtr);
+			}else{
+				if(VERBOSE>9) evioout << "     bank is not outermost EVIO bankin BOR event skipping ..." << endl;	
+			}
+			continue; // no further processing of this bank is needed
+		}		
+		
+		// EPICS event
 		evioDOMNodeP bankPtr = *iter;
 		evioDOMNodeP data_bank = bankPtr->getParent();
 		if( data_bank==NULL ) {
-			if(VERBOSE>9) evioout << "     bank has no parent. Checking if it's an EPICS event ... " << endl;
-			
+
+			if(VERBOSE>9) evioout << "     bank has no parent. Checking if it's an EPICS event ... " << endl;			
 			if(bankPtr->tag==96 && bankPtr->num==1){
 				// This looks like an EPICS event. Hand it over to EPICS parser
 				ParseEPICSevent(bankPtr, full_events);
@@ -2948,6 +3048,8 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 			
 			continue;
 		}
+		
+		// Trigger Bank
 		evioDOMNodeP physics_event_bank = data_bank->getParent();
 		if( physics_event_bank==NULL ){
 			if(VERBOSE>6) evioout << "     bank has no grandparent. Checking if this is a trigger bank ... " << endl;
@@ -4800,6 +4902,103 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 		
 		if(VERBOSE>7) evioout << "        Added " << hits.size() << " hits with event_id=" << event_id_order[i] << " to event " << i << endl;
 	}
+
+}
+
+//----------------
+// ParseBORevent
+//----------------
+void JEventSource_EVIO::ParseBORevent(evioDOMNodeP bankPtr)
+{
+	if(!PARSE_BOR) return;
+
+	// This really shouldn't be needed
+	pthread_rwlock_wrlock(&BOR_lock);
+	
+	// Delete any existing BOR config objects. BOR events should
+	// be flagged as sequential (or barrier) events so all threads
+	// that were using these should be done with them now.
+	for(uint32_t i=0; i<BORobjs.size(); i++) delete BORobjs[i];
+	BORobjs.clear();
+
+	evioDOMNodeListP bankList = bankPtr->getChildren();
+	evioDOMNodeList::iterator iter = bankList->begin();
+	if(VERBOSE>7) evioout << "     Looping over " << bankList->size() << " banks in BOR event" << endl;
+	for(int ibank=1; iter!=bankList->end(); iter++, ibank++){ // ibank only used for debugging messages
+		evioDOMNodeP childBank = *iter;
+	
+		if(childBank->tag==0x71){
+//			uint32_t rocid = childBank->num;
+			evioDOMNodeListP bankList = childBank->getChildren();
+			evioDOMNodeList::iterator iter = bankList->begin();
+			for(; iter!=bankList->end(); iter++){
+				evioDOMNodeP dataBank = *iter;
+//				uint32_t slot = dataBank->tag>>5;
+				uint32_t modType = dataBank->tag&0x1f;
+				
+				const vector<uint32_t> *vec = dataBank->getVector<uint32_t>();
+
+				const uint32_t *src = &(*vec)[0];
+				uint32_t *dest = NULL;
+				uint32_t sizeof_dest = 0;
+				
+				Df250BORConfig *f250conf = NULL;
+				Df125BORConfig *f125conf = NULL;
+				DF1TDCBORConfig *F1TDCconf = NULL;
+				DCAEN1290TDCBORConfig *caen1190conf = NULL;
+				
+				switch(modType){
+					case DModuleType::FADC250: // f250
+						f250conf = new Df250BORConfig;
+						dest = (uint32_t*)&f250conf->rocid;
+						sizeof_dest = sizeof(f250config);
+						break;
+					case DModuleType::FADC125: // f125
+						f125conf = new Df125BORConfig;
+						dest = (uint32_t*)&f125conf->rocid;
+						sizeof_dest = sizeof(f125config);
+						break;
+					
+					case DModuleType::F1TDC32: // F1TDCv2
+					case DModuleType::F1TDC48: // F1TDCv3
+						F1TDCconf = new DF1TDCBORConfig;
+						dest = (uint32_t*)&F1TDCconf->rocid;
+						sizeof_dest = sizeof(f125config);
+						break;
+					
+					case DModuleType::CAEN1190: // CAEN 1190 TDC
+					case DModuleType::CAEN1290: // CAEN 1290 TDC
+						caen1190conf = new DCAEN1290TDCBORConfig;
+						dest = (uint32_t*)&caen1190conf->rocid;
+						sizeof_dest = sizeof(caen1190config);
+						break;
+				}
+				
+				// Check that the bank size and data structure size match.
+				// If they do, then copy the data and add the object to 
+				// the event. If not, then delete the object and print
+				// a warning message.
+				if( vec->size() == (sizeof_dest/sizeof(uint32_t)) ){
+				
+					// Copy bank data, assuming format is the same
+					for(uint32_t i=0; i<vec->size(); i++) *dest++ = *src++;
+					
+					// Store object for use in this and subsequent events
+					if(f250conf) BORobjs.push_back(f250conf);
+					if(f125conf) BORobjs.push_back(f125conf);
+					if(F1TDCconf) BORobjs.push_back(F1TDCconf);
+					if(caen1190conf) BORobjs.push_back(caen1190conf);
+					
+				}else if(sizeof_dest>0){
+					if(f250conf) delete f250conf;
+					_DBG_ << "BOR bank size does not match structure! " << vec->size() <<" != " << (sizeof_dest/sizeof(uint32_t)) << endl;
+				}
+				
+			}
+		}
+	}
+	
+	pthread_rwlock_unlock(&BOR_lock);
 
 }
 
