@@ -4963,7 +4963,7 @@ void JEventSource_EVIO::ParseBORevent(evioDOMNodeP bankPtr)
 					case DModuleType::F1TDC48: // F1TDCv3
 						F1TDCconf = new DF1TDCBORConfig;
 						dest = (uint32_t*)&F1TDCconf->rocid;
-						sizeof_dest = sizeof(f125config);
+						sizeof_dest = sizeof(F1TDCconfig);
 						break;
 					
 					case DModuleType::CAEN1190: // CAEN 1190 TDC
@@ -4992,8 +4992,11 @@ void JEventSource_EVIO::ParseBORevent(evioDOMNodeP bankPtr)
 				}else if(sizeof_dest>0){
 					if(f250conf) delete f250conf;
 					_DBG_ << "BOR bank size does not match structure! " << vec->size() <<" != " << (sizeof_dest/sizeof(uint32_t)) << endl;
+					_DBG_ << "sizeof(f250config)="<<sizeof(f250config)<<endl;
+					_DBG_ << "sizeof(f125config)="<<sizeof(f125config)<<endl;
+					_DBG_ << "sizeof(F1TDCconfig)="<<sizeof(F1TDCconfig)<<endl;
+					_DBG_ << "sizeof(caen1190config)="<<sizeof(caen1190config)<<endl;
 				}
-				
 			}
 		}
 	}
