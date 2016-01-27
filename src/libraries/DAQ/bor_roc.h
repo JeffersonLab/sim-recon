@@ -1,7 +1,42 @@
-
+//
 // Data structures for holding module configuration information
 // read back from the modules themselves for packaging into the
 // Beginning Of Run (BOR) record.
+//
+// IMPORTANT: THIS FILE IS MAINTAINED IN 2 REPOSITORIES!  
+//
+// Before making changes to this file, keep these points in mind:
+//
+// 1. This file is maintained in separate repositories since the
+//    code that generates the BOR during data taking resides
+//    in the online repository and the code that must interpret
+//    it resides in the offline repository. The locations of the
+//    file in the two repositories are:
+//
+//     https://halldsvn.jlab.org/repos/trunk/online/daq/vme/src/rcm/monitor/bor_roc.h
+//     https://github.com/JeffersonLab/sim-recon/tree/master/src/libraries/DAQ/bor_roc.h
+//
+//    Any changes MUST be made in both places!
+//
+// 2. The BOR data structures are stored directly in the raw data 
+//    files. Any changes made will not be available in existing
+//    data files. Any modifications here should be added to the 
+//    end of the data structures so there is some (small) hope
+//    of being able to handle both old and new raw data files.
+//
+// 3. Any items added should either be uint32_t or an array of 
+//    uint16_t with and even number of elements. This is so
+//    the data will stay close packed on 64bit platforms where
+//    the compiler will tend to add padding bytes so that 64bit
+//    types end up on 64bit address boundaries.
+//
+//
+// The CODA driver libraries for these modules define structs
+// that map the entire register space of the module (e.g.
+// "fadc_struct" in fadcLib.h). We are only interested in a
+// subset of those values so we define different structures here.
+// Where possible, these use the same names for data members
+// that the CODA drivers used.
 //
 // An instance of the ModulesConfigBOR structure is included
 // in the ROC shared memory section defined in shmem_roc.h .
@@ -9,14 +44,21 @@
 // calls to the bor_utils.cc library in the rol_1 source directory.
 //
 // Access to the ModulesConfigBOR record from outside of the ROC
-// is made via the shared memory server.
-
-// The CODA driver libraries for these modules define structs
-// that map the entire register space of the module (e.g.
-// "fadc_struct" in fadcLib.h). We are only interested in a
-// subset of those values so we define different structures here.
-// Where possible, these use the same names for data members
-// that the CODA drivers used.
+// is made via the shared memory server. The hdBOR program is 
+// run at the start of data taking to gather this information,
+// format it into EVIO and write it to the data stream. Flags
+// are set to tell the Event Recorder to write it to the
+// beginning of every file it creates.
+//
+// The BOR is uppacked and put into JANA objects in the DAQ
+// library when the data is read in. They show up in classes
+// like "Df125BORConfig", and "DF1TDCBORConfig" that inherit 
+// from these structures.
+//
+// Any questions regarding this system can be referred to:
+//
+// davidl@jlab.org
+//
 
 #ifndef _BOR_ROC_H_
 #define _BOR_ROC_H_
