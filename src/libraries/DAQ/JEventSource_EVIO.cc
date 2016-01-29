@@ -1349,8 +1349,6 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	vector<JObject*> &f125_pt_objs  = hit_objs_by_type["Df125PulseTime"];
 	vector<JObject*> &f125_pp_objs  = hit_objs_by_type["Df125PulsePedestal"];
 	vector<JObject*> &f125_pi_objs  = hit_objs_by_type["Df125PulseIntegral"];
-
-        //include new f125 types objs
 	vector<JObject*> &f125_cp_objs  = hit_objs_by_type["Df125CDCPulse"];
 	vector<JObject*> &f125_fp_objs  = hit_objs_by_type["Df125FDCPulse"];
 
@@ -1394,15 +1392,23 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	LinkAssociationsWithPulseNumber(f250_ppp_objs, f250_ppi_objs);
 	LinkAssociationsWithPulseNumber(f250_ppp_objs, f250_ppt_objs);
 
+	vector<Df125WindowRawData*> f125_pwrd_objs;
 	vector<Df125PulseIntegral*> f125_ppi_objs;
 	vector<Df125PulseTime*>     f125_ppt_objs;
 	vector<Df125PulsePedestal*> f125_ppp_objs;
+	vector<Df125CDCPulse*>      f125_pcp_objs;
+	vector<Df125FDCPulse*>      f125_pfp_objs;
+	CopyContainerElementsWithCast(f125_wrd_objs, f125_pwrd_objs);
 	CopyContainerElementsWithCast(f125_pi_objs, f125_ppi_objs);
 	CopyContainerElementsWithCast(f125_pt_objs, f125_ppt_objs);
 	CopyContainerElementsWithCast(f125_pp_objs, f125_ppp_objs);
+	CopyContainerElementsWithCast(f125_cp_objs, f125_pcp_objs);
+	CopyContainerElementsWithCast(f125_fp_objs, f125_pfp_objs);
 	LinkAssociationsWithPulseNumber(f125_ppt_objs, f125_ppi_objs);
 	LinkAssociationsWithPulseNumber(f125_ppp_objs, f125_ppi_objs);
 	LinkAssociationsWithPulseNumber(f125_ppp_objs, f125_ppt_objs);
+	LinkAssociations(f125_pcp_objs, f125_pwrd_objs);
+	LinkAssociations(f125_pfp_objs, f125_pwrd_objs);
 
 	// To make JANA aware of the correct association between
 	// emulated objects and the Window Raw Data objects, we
