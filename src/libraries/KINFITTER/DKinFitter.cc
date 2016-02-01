@@ -1577,7 +1577,7 @@ void DKinFitter::Calc_dF_Vertex_NotDecaying(size_t locFIndex, const DKinFitParti
 			//Main case: The Sigma+ in:   g, p -> K0, Sigma+     K0 -> pi+, pi-    Sigma+ -> p, pi0
 		bool locP4DerivedAtCommonVertexFlag = (locP4DefinedByInvariantMassFlag == locVertexP4AtProductionVertexFlag);
 
-		if(locP4DefinedAtCommonVertexFlag) //Tricky case
+		if(locP4DerivedAtCommonVertexFlag) //Tricky case
 		{
 			TVector3 locR = Calc_VertexParams_P4DerivedAtCommonVertex(locKinFitParticle);
 
