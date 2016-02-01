@@ -1437,9 +1437,9 @@ void DKinFitter::Calc_dF_Vertex(size_t locFIndex, const DKinFitParticle* locKinF
 		return; //no partial derivatives
 	}
 
-	if(locKinFitParticle_DecayingSource == NULL)
+	if(locKinFitParticle_DecayingSource == NULL) //this particle is directly at the vertex
 		Calc_dF_Vertex_NotDecaying(locFIndex, locKinFitParticle);
-	else
+	else //this particle is used to define the momentum of a decaying particle
 	{
 		int locCharge = locKinFitParticle_DecayingSource->Get_Charge();
 		if((locCharge != 0) && dKinFitUtils->Get_IsBFieldNearBeamline())
@@ -1483,6 +1483,8 @@ void DKinFitter::Calc_dF_Vertex(size_t locFIndex, const DKinFitParticle* locKinF
 
 void DKinFitter::Calc_dF_Vertex_NotDecaying(size_t locFIndex, const DKinFitParticle* locKinFitParticle)
 {
+	//The input particle is directly at the vertex being constrained
+		//The input particle ITSELF may be decaying
 	DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 	int locCharge = locKinFitParticle->Get_Charge();
 
@@ -1542,7 +1544,7 @@ void DKinFitter::Calc_dF_Vertex_NotDecaying(size_t locFIndex, const DKinFitParti
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) -= dF_dEta(locFIndex + 1, locVxParamIndex + 1);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) -= dF_dEta(locFIndex + 1, locVxParamIndex + 2);
 	}
-	else if((locCharge != 0) && dKinFitUtils->Get_IsBFieldNearBeamline() && (locKinFitParticleType == d_DecayingParticle)) //DONE
+	else if((locCharge != 0) && dKinFitUtils->Get_IsBFieldNearBeamline() && (locKinFitParticleType == d_DecayingParticle))
 	{
 		//constraining this decaying charged particle in b-field //one-time contributions from decaying particle, does not include the particles it is replaced by (elsewhere)
 		if(dDebugLevel > 30)
@@ -1564,13 +1566,39 @@ void DKinFitter::Calc_dF_Vertex_NotDecaying(size_t locFIndex, const DKinFitParti
 		dF(locFIndex, 0) = locPCrossDeltaX.Dot(locH) - 0.5*locA*(locDeltaX.Mag2() - locDeltaXDotH*locDeltaXDotH);
 		dF(locFIndex + 1, 0) = locDeltaXDotH - (locPDotH/locA)*asin(locJ);
 
-		dF_dXi(locFIndex, locVxParamIndex) = locPCrossH.X() + locA*locM.X();
-		dF_dXi(locFIndex, locVxParamIndex + 1) = locPCrossH.Y() + locA*locM.Y();
-		dF_dXi(locFIndex, locVxParamIndex + 2) = locPCrossH.Z() + locA*locM.Z();
+		//true if the object's p3, & x4 are defined at its production vertex (& common x4 is at decay vertex). 
+		bool locVertexP4AtProductionVertexFlag = locKinFitParticle->Get_VertexP4AtProductionVertex();
 
-		dF_dXi(locFIndex + 1, locVxParamIndex) = locD.X();
-		dF_dXi(locFIndex + 1, locVxParamIndex + 1) = locD.Y();
-		dF_dXi(locFIndex + 1, locVxParamIndex + 2) = locD.Z();
+		//true if defined by decay products
+		bool locP4DefinedByInvariantMassFlag = locKinFitParticle->Get_FromInitialState().empty();
+
+		//Tricky when: P4-define step = common-vertex step
+			//In other words: P4 calculated by particles at a different vertex where the position is defined
+			//Main case: The Sigma+ in:   g, p -> K0, Sigma+     K0 -> pi+, pi-    Sigma+ -> p, pi0
+		bool locP4DerivedAtCommonVertexFlag = (locP4DefinedByInvariantMassFlag == locVertexP4AtProductionVertexFlag);
+
+		if(locP4DefinedAtCommonVertexFlag) //Tricky case
+		{
+			TVector3 locR = Calc_VertexParams_P4DerivedAtCommonVertex(locKinFitParticle);
+
+			dF_dXi(locFIndex, locVxParamIndex) += locPCrossH.X();
+			dF_dXi(locFIndex, locVxParamIndex + 1) += locPCrossH.Y();
+			dF_dXi(locFIndex, locVxParamIndex + 2) += locPCrossH.Z();
+
+			dF_dXi(locFIndex + 1, locVxParamIndex) += locR.X();
+			dF_dXi(locFIndex + 1, locVxParamIndex + 1) += locR.Y();
+			dF_dXi(locFIndex + 1, locVxParamIndex + 2) += locR.Z();
+		}
+		else
+		{
+			dF_dXi(locFIndex, locVxParamIndex) += locPCrossH.X() + locA*locM.X();
+			dF_dXi(locFIndex, locVxParamIndex + 1) += locPCrossH.Y() + locA*locM.Y();
+			dF_dXi(locFIndex, locVxParamIndex + 2) += locPCrossH.Z() + locA*locM.Z();
+
+			dF_dXi(locFIndex + 1, locVxParamIndex) += locD.X();
+			dF_dXi(locFIndex + 1, locVxParamIndex + 1) += locD.Y();
+			dF_dXi(locFIndex + 1, locVxParamIndex + 2) += locD.Z();
+		}
 
 		dF_dXi(locFIndex, locCommonVxParamIndex) -= dF_dXi(locFIndex, locVxParamIndex);
 		dF_dXi(locFIndex, locCommonVxParamIndex + 1) -= dF_dXi(locFIndex, locVxParamIndex + 1);
@@ -1580,7 +1608,7 @@ void DKinFitter::Calc_dF_Vertex_NotDecaying(size_t locFIndex, const DKinFitParti
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) -= dF_dXi(locFIndex + 1, locVxParamIndex + 1);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) -= dF_dXi(locFIndex + 1, locVxParamIndex + 2);
 	}
-	else if(locKinFitParticleType == d_DecayingParticle) //non-accel decaying particle //DONE
+	else if(locKinFitParticleType == d_DecayingParticle) //non-accel decaying particle
 	{
 		//constraining this decaying non-accel particle //one-time contributions from decaying particle, does not include the particles it is replaced by (elsewhere)
 
@@ -1593,15 +1621,15 @@ void DKinFitter::Calc_dF_Vertex_NotDecaying(size_t locFIndex, const DKinFitParti
 			if(dDebugLevel > 30)
 				cout << "DKinFitter: Calc_dF_Vertex() Section 4a; q, mass = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << endl;
 
-			dF_dXi(locFIndex, locVxParamIndex + 1) = locMomentum.Z();
-			dF_dXi(locFIndex, locVxParamIndex + 2) = -1.0*locMomentum.Y();
-			dF_dXi(locFIndex + 1, locVxParamIndex) = -1.0*locMomentum.Z();
-			dF_dXi(locFIndex + 1, locVxParamIndex + 2) = locMomentum.X();
+			dF_dXi(locFIndex, locVxParamIndex + 1) += locMomentum.Z();
+			dF_dXi(locFIndex, locVxParamIndex + 2) += -1.0*locMomentum.Y();
+			dF_dXi(locFIndex + 1, locVxParamIndex) += -1.0*locMomentum.Z();
+			dF_dXi(locFIndex + 1, locVxParamIndex + 2) += locMomentum.X();
 
-			dF_dXi(locFIndex, locCommonVxParamIndex + 1) = -1.0*dF_dXi(locFIndex, locVxParamIndex + 1);
-			dF_dXi(locFIndex, locCommonVxParamIndex + 2) = -1.0*dF_dXi(locFIndex, locVxParamIndex + 2);
-			dF_dXi(locFIndex + 1, locCommonVxParamIndex) = -1.0*dF_dXi(locFIndex + 1, locVxParamIndex);
-			dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) = -1.0*dF_dXi(locFIndex + 1, locVxParamIndex + 2);
+			dF_dXi(locFIndex, locCommonVxParamIndex + 1) += -1.0*dF_dXi(locFIndex, locVxParamIndex + 1);
+			dF_dXi(locFIndex, locCommonVxParamIndex + 2) += -1.0*dF_dXi(locFIndex, locVxParamIndex + 2);
+			dF_dXi(locFIndex + 1, locCommonVxParamIndex) += -1.0*dF_dXi(locFIndex + 1, locVxParamIndex);
+			dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) += -1.0*dF_dXi(locFIndex + 1, locVxParamIndex + 2);
 		}
 		else if(locVertexConstraintFlag == 2) //1 & 3 //py is largest
 		{
@@ -1611,15 +1639,15 @@ void DKinFitter::Calc_dF_Vertex_NotDecaying(size_t locFIndex, const DKinFitParti
 			if(dDebugLevel > 30)
 				cout << "DKinFitter: Calc_dF_Vertex() Section 4b; q, mass = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << endl;
 
-			dF_dXi(locFIndex, locVxParamIndex + 1) = locMomentum.Z();
-			dF_dXi(locFIndex, locVxParamIndex + 2) = -1.0*locMomentum.Y();
-			dF_dXi(locFIndex + 1, locVxParamIndex) = locMomentum.Y();
-			dF_dXi(locFIndex + 1, locVxParamIndex + 1) = -1.0*locMomentum.X();
+			dF_dXi(locFIndex, locVxParamIndex + 1) += locMomentum.Z();
+			dF_dXi(locFIndex, locVxParamIndex + 2) += -1.0*locMomentum.Y();
+			dF_dXi(locFIndex + 1, locVxParamIndex) += locMomentum.Y();
+			dF_dXi(locFIndex + 1, locVxParamIndex + 1) += -1.0*locMomentum.X();
 
-			dF_dXi(locFIndex, locCommonVxParamIndex + 1) = -1.0*dF_dXi(locFIndex, locVxParamIndex + 1);
-			dF_dXi(locFIndex, locCommonVxParamIndex + 2) = -1.0*dF_dXi(locFIndex, locVxParamIndex + 2);
-			dF_dXi(locFIndex + 1, locCommonVxParamIndex) = -1.0*dF_dXi(locFIndex + 1, locVxParamIndex);
-			dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) = -1.0*dF_dXi(locFIndex + 1, locVxParamIndex + 1);
+			dF_dXi(locFIndex, locCommonVxParamIndex + 1) += -1.0*dF_dXi(locFIndex, locVxParamIndex + 1);
+			dF_dXi(locFIndex, locCommonVxParamIndex + 2) += -1.0*dF_dXi(locFIndex, locVxParamIndex + 2);
+			dF_dXi(locFIndex + 1, locCommonVxParamIndex) += -1.0*dF_dXi(locFIndex + 1, locVxParamIndex);
+			dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) += -1.0*dF_dXi(locFIndex + 1, locVxParamIndex + 1);
 		}
 		else //2 & 3 //px is largest
 		{
@@ -1629,18 +1657,18 @@ void DKinFitter::Calc_dF_Vertex_NotDecaying(size_t locFIndex, const DKinFitParti
 			if(dDebugLevel > 30)
 				cout << "DKinFitter: Calc_dF_Vertex() Section 4c; q, mass = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << endl;
 
-			dF_dXi(locFIndex, locVxParamIndex) = -1.0*locMomentum.Z();
-			dF_dXi(locFIndex, locVxParamIndex + 2) = locMomentum.X();
-			dF_dXi(locFIndex + 1, locVxParamIndex) = locMomentum.Y();
-			dF_dXi(locFIndex + 1, locVxParamIndex + 1) = -1.0*locMomentum.X();
+			dF_dXi(locFIndex, locVxParamIndex) += -1.0*locMomentum.Z();
+			dF_dXi(locFIndex, locVxParamIndex + 2) += locMomentum.X();
+			dF_dXi(locFIndex + 1, locVxParamIndex) += locMomentum.Y();
+			dF_dXi(locFIndex + 1, locVxParamIndex + 1) += -1.0*locMomentum.X();
 
-			dF_dXi(locFIndex, locCommonVxParamIndex) = -1.0*dF_dXi(locFIndex, locVxParamIndex);
-			dF_dXi(locFIndex, locCommonVxParamIndex + 2) = -1.0*dF_dXi(locFIndex, locVxParamIndex + 2);
-			dF_dXi(locFIndex + 1, locCommonVxParamIndex) = -1.0*dF_dXi(locFIndex + 1, locVxParamIndex);
-			dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) = -1.0*dF_dXi(locFIndex + 1, locVxParamIndex + 1);
+			dF_dXi(locFIndex, locCommonVxParamIndex) += -1.0*dF_dXi(locFIndex, locVxParamIndex);
+			dF_dXi(locFIndex, locCommonVxParamIndex + 2) += -1.0*dF_dXi(locFIndex, locVxParamIndex + 2);
+			dF_dXi(locFIndex + 1, locCommonVxParamIndex) += -1.0*dF_dXi(locFIndex + 1, locVxParamIndex);
+			dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) += -1.0*dF_dXi(locFIndex + 1, locVxParamIndex + 1);
 		}
 	}
-	else //neutral detected or beam particle, or no magnetic field //DONE
+	else //neutral detected or beam particle, or no magnetic field
 	{
 		unsigned short int locVertexConstraintFlag = locKinFitParticle->Get_VertexConstraintFlag();
 		if(locVertexConstraintFlag == 1) //1 & 2 //pz is largest
@@ -1661,10 +1689,10 @@ void DKinFitter::Calc_dF_Vertex_NotDecaying(size_t locFIndex, const DKinFitParti
 			dF_dEta(locFIndex + 1, locVxParamIndex) = -1.0*locMomentum.Z();
 			dF_dEta(locFIndex + 1, locVxParamIndex + 2) = locMomentum.X();
 
-			dF_dXi(locFIndex, locCommonVxParamIndex + 1) = -1.0*dF_dEta(locFIndex, locVxParamIndex + 1);
-			dF_dXi(locFIndex, locCommonVxParamIndex + 2) = -1.0*dF_dEta(locFIndex, locVxParamIndex + 2);
-			dF_dXi(locFIndex + 1, locCommonVxParamIndex) = -1.0*dF_dEta(locFIndex + 1, locVxParamIndex);
-			dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) = -1.0*dF_dEta(locFIndex + 1, locVxParamIndex + 2);
+			dF_dXi(locFIndex, locCommonVxParamIndex + 1) += -1.0*dF_dEta(locFIndex, locVxParamIndex + 1);
+			dF_dXi(locFIndex, locCommonVxParamIndex + 2) += -1.0*dF_dEta(locFIndex, locVxParamIndex + 2);
+			dF_dXi(locFIndex + 1, locCommonVxParamIndex) += -1.0*dF_dEta(locFIndex + 1, locVxParamIndex);
+			dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) += -1.0*dF_dEta(locFIndex + 1, locVxParamIndex + 2);
 		}
 		else if(locVertexConstraintFlag == 2) //1 & 3 //py is largest
 		{
@@ -1684,10 +1712,10 @@ void DKinFitter::Calc_dF_Vertex_NotDecaying(size_t locFIndex, const DKinFitParti
 			dF_dEta(locFIndex + 1, locVxParamIndex) = locMomentum.Y();
 			dF_dEta(locFIndex + 1, locVxParamIndex + 1) = -1.0*locMomentum.X();
 
-			dF_dXi(locFIndex, locCommonVxParamIndex + 1) = -1.0*dF_dEta(locFIndex, locVxParamIndex + 1);
-			dF_dXi(locFIndex, locCommonVxParamIndex + 2) = -1.0*dF_dEta(locFIndex, locVxParamIndex + 2);
-			dF_dXi(locFIndex + 1, locCommonVxParamIndex) = -1.0*dF_dEta(locFIndex + 1, locVxParamIndex);
-			dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) = -1.0*dF_dEta(locFIndex + 1, locVxParamIndex + 1);
+			dF_dXi(locFIndex, locCommonVxParamIndex + 1) += -1.0*dF_dEta(locFIndex, locVxParamIndex + 1);
+			dF_dXi(locFIndex, locCommonVxParamIndex + 2) += -1.0*dF_dEta(locFIndex, locVxParamIndex + 2);
+			dF_dXi(locFIndex + 1, locCommonVxParamIndex) += -1.0*dF_dEta(locFIndex + 1, locVxParamIndex);
+			dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) += -1.0*dF_dEta(locFIndex + 1, locVxParamIndex + 1);
 		}
 		else //2 & 3 //px is largest
 		{
@@ -1707,16 +1735,18 @@ void DKinFitter::Calc_dF_Vertex_NotDecaying(size_t locFIndex, const DKinFitParti
 			dF_dEta(locFIndex + 1, locVxParamIndex) = locMomentum.Y();
 			dF_dEta(locFIndex + 1, locVxParamIndex + 1) = -1.0*locMomentum.X();
 
-			dF_dXi(locFIndex, locCommonVxParamIndex) = -1.0*dF_dEta(locFIndex, locVxParamIndex);
-			dF_dXi(locFIndex, locCommonVxParamIndex + 2) = -1.0*dF_dEta(locFIndex, locVxParamIndex + 2);
-			dF_dXi(locFIndex + 1, locCommonVxParamIndex) = -1.0*dF_dEta(locFIndex + 1, locVxParamIndex);
-			dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) = -1.0*dF_dEta(locFIndex + 1, locVxParamIndex + 1);
+			dF_dXi(locFIndex, locCommonVxParamIndex) += -1.0*dF_dEta(locFIndex, locVxParamIndex);
+			dF_dXi(locFIndex, locCommonVxParamIndex + 2) += -1.0*dF_dEta(locFIndex, locVxParamIndex + 2);
+			dF_dXi(locFIndex + 1, locCommonVxParamIndex) += -1.0*dF_dEta(locFIndex + 1, locVxParamIndex);
+			dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) += -1.0*dF_dEta(locFIndex + 1, locVxParamIndex + 1);
 		}
 	}
 }
 
 void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitParticle* locKinFitParticle, const DKinFitParticle* locKinFitParticle_DecayingSource, double locStateSignMultiplier)
 {
+	//The input particle is used to (perhaps indirectly) define a decaying particle at the vertex being constrained
+		//The decaying particle that this particle directly defines is accelerating: charged and in a magnetic field
 	DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 	int locCharge = locKinFitParticle->Get_Charge();
 
@@ -1731,7 +1761,7 @@ void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitPa
 	int locVxParamIndex = locKinFitParticle->Get_VxParamIndex();
 	int locCommonVxParamIndex = locKinFitParticle->Get_CommonVxParamIndex();
 
-	if((locCharge != 0) && dKinFitUtils->Get_IsBFieldNearBeamline() && ((locKinFitParticleType == d_DetectedParticle) || (locKinFitParticleType == d_BeamParticle))) //DONE
+	if((locCharge != 0) && dKinFitUtils->Get_IsBFieldNearBeamline() && ((locKinFitParticleType == d_DetectedParticle) || (locKinFitParticleType == d_BeamParticle)))
 	{
 		//detected charged particle in b-field (can be beam particle)
 		if(dDebugLevel > 30)
@@ -1744,7 +1774,6 @@ void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitPa
 		TVector3 locPosition_DecayingSource = locKinFitParticle_DecayingSource->Get_Position();
 		TVector3 locCommonVertex_DecayingSource = locKinFitParticle_DecayingSource->Get_CommonVertex();
 		TVector3 locDeltaX_DecayingSource = locCommonVertex_DecayingSource - locPosition_DecayingSource;
-		TVector3 locMomentum_DecayingSource = locKinFitParticle_DecayingSource->Get_Momentum();
 
 		TVector3 locBField_DecayingSource = dKinFitUtils->Get_BField(locPosition_DecayingSource);
 		TVector3 locH_DecayingSource = locBField_DecayingSource.Unit();
@@ -1780,7 +1809,7 @@ void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitPa
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) -= dF_dEta(locFIndex + 1, locVxParamIndex + 1);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) -= dF_dEta(locFIndex + 1, locVxParamIndex + 2);
 	}
-	else if(locKinFitParticle->Get_IsNeutralShowerFlag()) //DONE
+	else if(locKinFitParticle->Get_IsNeutralShowerFlag())
 	{
 		if(dDebugLevel > 30)
 			cout << "DKinFitter: Calc_dF_Vertex() Section 7; q, mass = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << endl;
@@ -1792,7 +1821,6 @@ void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitPa
 		TVector3 locPosition_DecayingSource = locKinFitParticle_DecayingSource->Get_Position();
 		TVector3 locCommonVertex_DecayingSource = locKinFitParticle_DecayingSource->Get_CommonVertex();
 		TVector3 locDeltaX_DecayingSource = locCommonVertex_DecayingSource - locPosition_DecayingSource;
-		TVector3 locMomentum_DecayingSource = locKinFitParticle_DecayingSource->Get_Momentum();
 
 		TVector3 locBField_DecayingSource = dKinFitUtils->Get_BField(locPosition_DecayingSource);
 		TVector3 locH_DecayingSource = locBField_DecayingSource.Unit();
@@ -1819,7 +1847,7 @@ void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitPa
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) -= dF_dEta(locFIndex + 1, locVxParamIndex + 1);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) -= dF_dEta(locFIndex + 1, locVxParamIndex + 2);
 	}
-	else if((locKinFitParticleType == d_DetectedParticle) || (locKinFitParticleType == d_BeamParticle)) //DONE
+	else if((locKinFitParticleType == d_DetectedParticle) || (locKinFitParticleType == d_BeamParticle))
 	{
 		if(dDebugLevel > 30)
 			cout << "DKinFitter: Calc_dF_Vertex() Section 8; q, mass = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << endl;
@@ -1832,7 +1860,6 @@ void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitPa
 		TVector3 locPosition_DecayingSource = locKinFitParticle_DecayingSource->Get_Position();
 		TVector3 locCommonVertex_DecayingSource = locKinFitParticle_DecayingSource->Get_CommonVertex();
 		TVector3 locDeltaX_DecayingSource = locCommonVertex_DecayingSource - locPosition_DecayingSource;
-		TVector3 locMomentum_DecayingSource = locKinFitParticle_DecayingSource->Get_Momentum();
 
 		TVector3 locBField_DecayingSource = dKinFitUtils->Get_BField(locPosition_DecayingSource);
 		TVector3 locH_DecayingSource = locBField_DecayingSource.Unit();
@@ -1847,12 +1874,12 @@ void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitPa
 		dF_dEta(locFIndex + 1, locPxParamIndex + 1) = locStateSignMultiplier*locQ.Y();
 		dF_dEta(locFIndex + 1, locPxParamIndex + 2) = locStateSignMultiplier*locQ.Z();
 	}
-	else if(locKinFitParticleType == d_MissingParticle) //DONE
+	else if((locKinFitParticleType == d_MissingParticle) || ((locKinFitParticleType == d_DecayingParticle) && (locKinFitParticle->Get_PxParamIndex() >= 0)))
 	{
+		//missing, or open-ended decaying particle
 		if(dDebugLevel > 30)
 			cout << "DKinFitter: Calc_dF_Vertex() Section 9; q, mass = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << endl;
 
-		//missing particle
 		TVector3 locQ, locM, locD;
 		double locJ;
 		Calc_Vertex_Params(locKinFitParticle_DecayingSource, locJ, locQ, locM, locD);
@@ -1860,7 +1887,6 @@ void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitPa
 		TVector3 locPosition_DecayingSource = locKinFitParticle_DecayingSource->Get_Position();
 		TVector3 locCommonVertex_DecayingSource = locKinFitParticle_DecayingSource->Get_CommonVertex();
 		TVector3 locDeltaX_DecayingSource = locCommonVertex_DecayingSource - locPosition_DecayingSource;
-		TVector3 locMomentum_DecayingSource = locKinFitParticle_DecayingSource->Get_Momentum();
 
 		TVector3 locBField_DecayingSource = dKinFitUtils->Get_BField(locPosition_DecayingSource);
 		TVector3 locH_DecayingSource = locBField_DecayingSource.Unit();
@@ -1875,7 +1901,7 @@ void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitPa
 		dF_dXi(locFIndex + 1, locPxParamIndex + 1) = locStateSignMultiplier*locQ.Y();
 		dF_dXi(locFIndex + 1, locPxParamIndex + 2) = locStateSignMultiplier*locQ.Z();
 	}
-	else if((locCharge != 0) && dKinFitUtils->Get_IsBFieldNearBeamline() && (locKinFitParticleType == d_DecayingParticle)) //DONE
+	else if((locCharge != 0) && dKinFitUtils->Get_IsBFieldNearBeamline() && (locKinFitParticleType == d_DecayingParticle))
 	{
 		//decaying charged particle in b-field (doesn't include contributions from the particles it is replaced by here)
 		if(dDebugLevel > 30)
@@ -1888,7 +1914,6 @@ void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitPa
 		TVector3 locPosition_DecayingSource = locKinFitParticle_DecayingSource->Get_Position();
 		TVector3 locCommonVertex_DecayingSource = locKinFitParticle_DecayingSource->Get_CommonVertex();
 		TVector3 locDeltaX_DecayingSource = locCommonVertex_DecayingSource - locPosition_DecayingSource;
-		TVector3 locMomentum_DecayingSource = locKinFitParticle_DecayingSource->Get_Momentum();
 
 		TVector3 locBField_DecayingSource = dKinFitUtils->Get_BField(locPosition_DecayingSource);
 		TVector3 locH_DecayingSource = locBField_DecayingSource.Unit();
@@ -1920,6 +1945,8 @@ void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitPa
 
 void DKinFitter::Calc_dF_Vertex_Decaying_NonAccel(size_t locFIndex, const DKinFitParticle* locKinFitParticle, const DKinFitParticle* locKinFitParticle_DecayingSource, double locStateSignMultiplier)
 {
+	//The input particle is used to (perhaps indirectly) define a decaying particle at the vertex being constrained
+		//The decaying particle that this particle directly defines is not accelerating: either neutral or not in a magnetic field
 	DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
 	int locCharge = locKinFitParticle->Get_Charge();
 
@@ -1997,14 +2024,16 @@ void DKinFitter::Calc_dF_Vertex_Decaying_NonAccel(size_t locFIndex, const DKinFi
 			dF_dEta(locFIndex + 1, locVxParamIndex + 1) = locA*locStateSignMultiplier*locDeltaX_DecayingSource.Y()*locH.Z();
 			dF_dEta(locFIndex + 1, locVxParamIndex + 2) = -1.0*locA*locStateSignMultiplier*(locDeltaX_DecayingSource.X()*locH.X() + locDeltaX_DecayingSource.Y()*locH.Y());
 		}
+
 		dF_dXi(locFIndex, locCommonVxParamIndex) -= dF_dEta(locFIndex, locVxParamIndex);
 		dF_dXi(locFIndex, locCommonVxParamIndex + 1) -= dF_dEta(locFIndex, locVxParamIndex + 1);
 		dF_dXi(locFIndex, locCommonVxParamIndex + 2) -= dF_dEta(locFIndex, locVxParamIndex + 2);
+
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex) -= dF_dEta(locFIndex + 1, locVxParamIndex);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) -= dF_dEta(locFIndex + 1, locVxParamIndex + 1);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) -= dF_dEta(locFIndex + 1, locVxParamIndex + 2);
 	}
-	else if(locKinFitParticle->Get_IsNeutralShowerFlag()) //DONE
+	else if(locKinFitParticle->Get_IsNeutralShowerFlag())
 	{
 		TVector3 locPosition_DecayingSource = locKinFitParticle_DecayingSource->Get_Position();
 		TVector3 locCommonVertex_DecayingSource = locKinFitParticle_DecayingSource->Get_CommonVertex();
@@ -2060,14 +2089,16 @@ void DKinFitter::Calc_dF_Vertex_Decaying_NonAccel(size_t locFIndex, const DKinFi
 			dF_dEta(locFIndex + 1, locVxParamIndex + 1) = locStateSignMultiplier*locMomentum.Y()*locDeltaXCrossDeltaXX.Z()/locDeltaXiMagSq + locMomentum.Y()*locDeltaX_DecayingSource.X()/locDeltaX.Y();
 			dF_dEta(locFIndex + 1, locVxParamIndex + 2) = locStateSignMultiplier*locMomentum.Z()*locDeltaXCrossDeltaXX.Z()/locDeltaXiMagSq;
 		}
+
 		dF_dXi(locFIndex, locCommonVxParamIndex) -= dF_dEta(locFIndex, locVxParamIndex);
 		dF_dXi(locFIndex, locCommonVxParamIndex + 1) -= dF_dEta(locFIndex, locVxParamIndex + 1);
 		dF_dXi(locFIndex, locCommonVxParamIndex + 2) -= dF_dEta(locFIndex, locVxParamIndex + 2);
+
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex) -= dF_dEta(locFIndex + 1, locVxParamIndex);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) -= dF_dEta(locFIndex + 1, locVxParamIndex + 1);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) -= dF_dEta(locFIndex + 1, locVxParamIndex + 2);
 	}
-	else if((locKinFitParticleType == d_DetectedParticle) || (locKinFitParticleType == d_BeamParticle)) //DONE
+	else if((locKinFitParticleType == d_DetectedParticle) || (locKinFitParticleType == d_BeamParticle))
 	{
 		//detected/beam, non-accelerating particle
 		TVector3 locPosition_DecayingSource = locKinFitParticle_DecayingSource->Get_Position();
@@ -2106,9 +2137,9 @@ void DKinFitter::Calc_dF_Vertex_Decaying_NonAccel(size_t locFIndex, const DKinFi
 			dF_dEta(locFIndex + 1, locPxParamIndex + 1) = -1.0*locDeltaX_DecayingSource.X();
 		}
 	}
-	else if(locKinFitParticleType == d_MissingParticle)
+	else if((locKinFitParticleType == d_MissingParticle) || ((locKinFitParticleType == d_DecayingParticle) && (locKinFitParticle->Get_PxParamIndex() >= 0)))
 	{
-		//missing
+		//missing, or open-ended decaying particle
 		TVector3 locPosition_DecayingSource = locKinFitParticle_DecayingSource->Get_Position();
 		TVector3 locCommonVertex_DecayingSource = locKinFitParticle_DecayingSource->Get_CommonVertex();
 		TVector3 locDeltaX_DecayingSource = locCommonVertex_DecayingSource - locPosition_DecayingSource;
@@ -2145,7 +2176,7 @@ void DKinFitter::Calc_dF_Vertex_Decaying_NonAccel(size_t locFIndex, const DKinFi
 			dF_dXi(locFIndex + 1, locPxParamIndex + 1) = -1.0*locDeltaX_DecayingSource.X();
 		}
 	}
-	else if((locCharge != 0) && dKinFitUtils->Get_IsBFieldNearBeamline() && (locKinFitParticleType == d_DecayingParticle)) //DONE
+	else if((locCharge != 0) && dKinFitUtils->Get_IsBFieldNearBeamline() && (locKinFitParticleType == d_DecayingParticle))
 	{
 		//decaying charged particle in b-field (doesn't include contributions from the particles it is replaced by here)
 		TVector3 locBField = dKinFitUtils->Get_BField(locPosition);
@@ -2193,9 +2224,11 @@ void DKinFitter::Calc_dF_Vertex_Decaying_NonAccel(size_t locFIndex, const DKinFi
 			dF_dXi(locFIndex + 1, locVxParamIndex + 1) += locA*locStateSignMultiplier*locDeltaX_DecayingSource.Y()*locH.Z();
 			dF_dXi(locFIndex + 1, locVxParamIndex + 2) -= locA*locStateSignMultiplier*(locDeltaX_DecayingSource.X()*locH.X() + locDeltaX_DecayingSource.Y()*locH.Y());
 		}
+
 		dF_dXi(locFIndex, locCommonVxParamIndex) -= dF_dXi(locFIndex, locVxParamIndex);
 		dF_dXi(locFIndex, locCommonVxParamIndex + 1) -= dF_dXi(locFIndex, locVxParamIndex + 1);
 		dF_dXi(locFIndex, locCommonVxParamIndex + 2) -= dF_dXi(locFIndex, locVxParamIndex + 2);
+
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex) -= dF_dXi(locFIndex + 1, locVxParamIndex);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) -= dF_dXi(locFIndex + 1, locVxParamIndex + 1);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) -= dF_dXi(locFIndex + 1, locVxParamIndex + 2);
@@ -2212,6 +2245,7 @@ void DKinFitter::Calc_Vertex_Params(const DKinFitParticle* locKinFitParticle, do
 
 	TVector3 locBField = dKinFitUtils->Get_BField(locPosition);
 	TVector3 locH = locBField.Unit();
+
 	TVector3 locPCrossH = locMomentum.Cross(locH);
 	TVector3 locPCrossDeltaX = locMomentum.Cross(locDeltaX);
 	double locPCrossHMagSq = locPCrossH.Mag2();
@@ -2231,6 +2265,38 @@ void DKinFitter::Calc_Vertex_Params(const DKinFitParticle* locKinFitParticle, do
 	locM = locDeltaX - locDeltaXDotH*locH;
 	locD = locC*(locMomentum - locPDotH*locH) - locH;
 	locQ = -1.0*locH*(asin(locJ)/locA) - locC*(locM + 2.0*(locK/locPCrossHMagSq)*locPCrossHCrossH);
+}
+
+TVector3 DKinFitter::Calc_VertexParams_P4DerivedAtCommonVertex(const DKinFitParticle* locKinFitParticle)
+{
+	int locCharge = locKinFitParticle->Get_Charge();
+	TVector3 locPosition = locKinFitParticle->Get_Position(); //x_0X
+	TVector3 locCommonVertex = locKinFitParticle->Get_CommonVertex(); //x_X
+	TVector3 locDeltaX = locCommonVertex - locPosition;
+	TVector3 locP0X = locKinFitParticle->Get_Momentum(); //at x_0X
+
+	TVector3 locBField = dKinFitUtils->Get_BField(locPosition);
+	TVector3 locH = locBField.Unit();
+	double locA = -0.00299792458*(double(locCharge))*locBField.Mag();
+
+	TVector3 locDeltaXCrossH = locDeltaX.Cross(locH);
+	TVector3 locPX = locP0X - locA*locDeltaXCrossH; //at common vertex x_X
+
+	TVector3 locP0XCrossH = locP0X.Cross(locH);
+	double locPXDotH = locPX.Dot(locH);
+	double locP0XCrossHMagSq = locP0XCrossH.Mag2();
+
+	double locDeltaXDotH = locDeltaX.Dot(locH);
+	double locPXDotDeltaX = locPX.Dot(locDeltaX);
+
+	double locK = locPXDotDeltaX - locPXDotH*locDeltaXDotH;
+	double locJ = locA*locK/locP0XCrossHMagSq;
+
+	double locC = locPXDotH/(locP0XCrossHMagSq*sqrt(1.0 - locJ*locJ));
+	TVector3 locD = locC*(locPX - locPXDotH*locH) - locH;
+
+	TVector3 locR = 2.0*locJ*locC*locP0XCrossH + locD;
+	return locR;
 }
 
 /************************************************************************ UPDATE ***********************************************************************/

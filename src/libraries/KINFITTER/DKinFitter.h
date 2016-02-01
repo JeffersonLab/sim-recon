@@ -143,6 +143,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		void Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitParticle* locKinFitParticle, const DKinFitParticle* locKinFitParticle_DecayingSource, double locStateSignMultiplier);
 		void Calc_dF_Vertex_Decaying_NonAccel(size_t locFIndex, const DKinFitParticle* locKinFitParticle, const DKinFitParticle* locKinFitParticle_DecayingSource, double locStateSignMultiplier);
 		void Calc_Vertex_Params(const DKinFitParticle* locKinFitParticle, double& locJ, TVector3& locQ, TVector3& locM, TVector3& locD);
+		TVector3 Calc_VertexParams_P4DerivedAtCommonVertex(const DKinFitParticle* locKinFitParticle);
 
 		/************************************************************* UPDATE & FINAL ***************************************************************/
 
