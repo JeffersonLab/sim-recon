@@ -991,9 +991,9 @@ void DKinFitUtils_GlueX::Setup_VertexPrediction(const DReaction* locReaction, si
 	//if new constraint: loop over the initial particles: add to constraint string
 	if(locStartNewVertexFlag)
 	{
-		locVertexParticles.insert(pair<int, int>(locStepIndex, -1)); //beam/decaying particle
+		locVertexParticles.insert(pair<int, int>(locStepIndex, -2)); //beam/decaying particle
 		if(locReactionStep->Get_TargetParticleID() != Unknown)
-			locVertexParticles.insert(pair<int, int>(locStepIndex, -2)); //target
+			locVertexParticles.insert(pair<int, int>(locStepIndex, -1)); //target
 	}
 
 	//loop over final particles: add to the vertex constraint, dive through decaying particles that decay in-place
@@ -1180,26 +1180,27 @@ void DKinFitUtils_GlueX::Group_VertexParticles(const DReaction* locReaction, con
 		int locParticleIndex = (*locIterator).second;
 
 		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locStepIndex);
+		Particle_t locInitPID = locReactionStep->Get_InitialParticleID();
 		int locDecayStepIndex = locReaction->Get_DecayStepIndex(locStepIndex, locParticleIndex);
 
-		if((locStepIndex == 0) && (locParticleIndex == -1)) //beam
+		if(locParticleIndex == -1) //target
+			locNoConstrainParticles.insert(*locIterator);
+		else if((locParticleIndex == -2) && (locInitPID == Gamma)) //beam //ASSUMES BEAM TYPE
 		{
 			if(Get_IncludeBeamlineInVertexFitFlag())
 				locFullConstrainParticles.insert(*locIterator);
 			else
 				locNoConstrainParticles.insert(*locIterator);
 		}
-		else if((locStepIndex == 0) && (locParticleIndex == -2)) //target
-			locNoConstrainParticles.insert(*locIterator);
-		else if(locParticleIndex == locReactionStep->Get_MissingParticleIndex()) //missing
-			locNoConstrainParticles.insert(*locIterator);
-		else if((locParticleIndex == -1) || (locDecayStepIndex >= 0)) //decaying
+		else if((locParticleIndex == -2) || (locDecayStepIndex >= 0)) //decaying
 		{
 			if(dLinkVerticesFlag)
 				locDecayingParticles.insert(*locIterator);
 			else
 				locNoConstrainParticles.insert(*locIterator);
 		}
+		else if(locParticleIndex == locReactionStep->Get_MissingParticleIndex()) //missing
+			locNoConstrainParticles.insert(*locIterator);
 		else if(ParticleCharge(locReactionStep->Get_FinalParticleID(locParticleIndex)) == 0) //detected neutral
 			locOnlyConstrainTimeParticles.insert(*locIterator);
 		else //detected charged
@@ -1230,9 +1231,9 @@ string DKinFitUtils_GlueX::Build_VertexConstraintString(const DReaction* locReac
 
 		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(locParticlePair.first);
 		Particle_t locPID = Unknown;
-		if(locParticlePair.second == -1) //beam
+		if(locParticlePair.second == -2) //initial particle
 			locPID = locReactionStep->Get_InitialParticleID();
-		else if(locParticlePair.second == -2) //target
+		else if(locParticlePair.second == -1) //target particle
 			locPID = locReactionStep->Get_TargetParticleID();
 		else //final state
 			locPID = locReactionStep->Get_FinalParticleID(locParticlePair.second);
