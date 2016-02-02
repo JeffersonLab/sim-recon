@@ -335,7 +335,10 @@ DKinFitParticle* DKinFitUtils::Make_BeamParticle(int locPID, int locCharge, doub
 	locKinFitParticle->Set_KinFitParticleType(d_BeamParticle);
 
 	if(dDebugLevel > 5)
-		cout << "DKinFitUtils: Beam particle set. Pointer, ID, Q, Mass, P3, V3, T = " << locKinFitParticle << ", " << locPID << ", " << locCharge << ", " << locMass << ", " << locMomentum.Px() << ", " << locMomentum.Py() << ", " << locMomentum.Pz() << ", " << locSpacetimeVertex.X() << ", " << locSpacetimeVertex.Y() << ", " << locSpacetimeVertex.Z() << ", " << locSpacetimeVertex.T() << endl;
+	{
+		cout << "DKinFitUtils: Beam particle created. Printing:" << endl;
+		locKinFitParticle->Print_ParticleParams();
+	}
 
 	return locKinFitParticle;
 }
@@ -349,7 +352,10 @@ DKinFitParticle* DKinFitUtils::Make_TargetParticle(int locPID, int locCharge, do
 	locKinFitParticle->Set_KinFitParticleType(d_TargetParticle);
 
 	if(dDebugLevel > 5)
-		cout << "DKinFitUtils: Target particle set. Pointer, ID, Q, Mass = " << locKinFitParticle << ", " << locPID << ", " << locCharge << ", " << locMass << endl;
+	{
+		cout << "DKinFitUtils: Target particle created. Printing:" << endl;
+		locKinFitParticle->Print_ParticleParams();
+	}
 
 	return locKinFitParticle;
 }

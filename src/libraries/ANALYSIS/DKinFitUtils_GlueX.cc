@@ -242,6 +242,7 @@ const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DParticleCombo* l
 
 		//Create it
 		Make_KinFitChainStep(locParticleCombo, locKinFitType, loc_i, locKinFitChain, locKinFitChainStep, locStepCreationMap);
+cout << "step created, index, num final particles = " << loc_i << ", " << locKinFitChainStep->Get_FinalParticles().size() << endl;
 		locKinFitChain->Add_KinFitChainStep(locKinFitChainStep);
 	}
 
