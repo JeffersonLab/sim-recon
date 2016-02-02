@@ -47,7 +47,7 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 
 		//SET CONTROL
 		void Set_LinkVerticesFlag(bool locLinkVerticesFlag){dLinkVerticesFlag = locLinkVerticesFlag;}
-		void Set_DebugLevel(bool locDebugLevel){dDebugLevel = locDebugLevel;}
+		void Set_DebugLevel(int locDebugLevel){dDebugLevel = locDebugLevel;}
 
 		//GET INPUT FROM OUTPUT
 		DKinFitParticle* Get_InputKinFitParticle(DKinFitParticle* locKinFitParticle) const;

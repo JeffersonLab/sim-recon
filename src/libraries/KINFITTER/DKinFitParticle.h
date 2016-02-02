@@ -260,7 +260,6 @@ inline void DKinFitParticle::Print_ParticleParams(void) const
 
 	cout << "DKinFitParticle: FitCommonVertexFlag, FitCommonTimeFlag, dVertexP4AtProductionVertex, dIsNeutralShowerFlag = ";
 	cout << Get_FitCommonVertexFlag() << ", " << Get_FitCommonTimeFlag() << ", " << dVertexP4AtProductionVertex << ", " << dIsNeutralShowerFlag << endl;
-
 	if(dCovarianceMatrix != NULL)
 	{
 		cout << "DKinFitParticle: CovMatrix Diagonal Terms: ";
@@ -270,6 +269,18 @@ inline void DKinFitParticle::Print_ParticleParams(void) const
 	}
 
 	cout << "DKinFitParticle: Particle E, Px, Vx, Common Vx, T, Common T indices = " << dEParamIndex << ", " << dPxParamIndex << ", " << dVxParamIndex << ", " << dCommonVxParamIndex << ", " << dTParamIndex << ", " << dCommonTParamIndex << endl;
+
+	cout << "dFromInitialState size, PIDs: " << dFromInitialState.size();
+	set<DKinFitParticle*>::const_iterator locIterator = dFromInitialState.begin();
+	for(; locIterator != dFromInitialState.end(); ++locIterator)
+		cout << ", " << (*locIterator)->Get_PID();
+	cout << endl;
+
+	cout << "dFromFinalState size, PIDs: " << dFromFinalState.size();
+	set<DKinFitParticle*>::const_iterator locIterator = dFromFinalState.begin();
+	for(; locIterator != dFromFinalState.end(); ++locIterator)
+		cout << ", " << (*locIterator)->Get_PID();
+	cout << endl;
 }
 
 #endif // _DKinFitParticle_

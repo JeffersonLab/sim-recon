@@ -371,7 +371,10 @@ DKinFitParticle* DKinFitUtils::Make_DetectedParticle(int locPID, int locCharge, 
 	locKinFitParticle->Set_KinFitParticleType(d_DetectedParticle);
 
 	if(dDebugLevel > 5)
-		cout << "DKinFitUtils: Detected particle set. Pointer, ID, Q, Mass, P3, V3, T, pz uncert = " << locKinFitParticle << ", " << locPID << ", " << locCharge << ", " << locMass << ", " << locMomentum.Px() << ", " << locMomentum.Py() << ", " << locMomentum.Pz() << ", " << locSpacetimeVertex.X() << ", " << locSpacetimeVertex.Y() << ", " << locSpacetimeVertex.Z() << ", " << locSpacetimeVertex.T() << ", " << sqrt((*locCovarianceMatrix)(3, 3)) << endl;
+	{
+		cout << "DKinFitUtils: Detected particle created. Printing:" << endl;
+		locKinFitParticle->Print_ParticleParams();
+	}
 
 	return locKinFitParticle;
 }
@@ -394,7 +397,10 @@ DKinFitParticle* DKinFitUtils::Make_DetectedShower(int locPID, double locMass, T
 	locKinFitParticle->Set_KinFitParticleType(d_DetectedParticle);
 
 	if(dDebugLevel > 5)
-		cout << "DKinFitUtils: Detected shower set. Pointer, ID, Q, Mass, E, V3, T = 0, " << locKinFitParticle << ", " << locPID << ", " << locMass << ", " << locShowerEnergy << ", " << locSpacetimeVertex.X() << ", " << locSpacetimeVertex.Y() << ", " << locSpacetimeVertex.Z() << ", " << locSpacetimeVertex.T() << endl;
+	{
+		cout << "DKinFitUtils: Detected shower created. Printing:" << endl;
+		locKinFitParticle->Print_ParticleParams();
+	}
 
 	return locKinFitParticle;
 }
@@ -408,7 +414,10 @@ DKinFitParticle* DKinFitUtils::Make_MissingParticle(int locPID, int locCharge, d
 	locKinFitParticle->Set_KinFitParticleType(d_MissingParticle);
 
 	if(dDebugLevel > 5)
-		cout << "DKinFitUtils: Missing particle set. Pointer, ID, Q, Mass = " << locKinFitParticle << ", " << locPID << ", " << locCharge << ", " << locMass << endl;
+	{
+		cout << "DKinFitUtils: Missing particle created. Printing:" << endl;
+		locKinFitParticle->Print_ParticleParams();
+	}
 
 	return locKinFitParticle;
 }
@@ -424,7 +433,10 @@ DKinFitParticle* DKinFitUtils::Make_DecayingParticle(int locPID, int locCharge, 
 	locKinFitParticle->Set_FromFinalState(locFromFinalState);
 
 	if(dDebugLevel > 5)
-		cout << "DKinFitUtils: Decaying particle set. Pointer, ID, Q, Mass, Pointer = " << locKinFitParticle << ", " << locPID << ", " << locCharge << ", " << locMass << endl;
+	{
+		cout << "DKinFitUtils: Decaying particle created. Printing:" << endl;
+		locKinFitParticle->Print_ParticleParams();
+	}
 
 	return locKinFitParticle;
 }

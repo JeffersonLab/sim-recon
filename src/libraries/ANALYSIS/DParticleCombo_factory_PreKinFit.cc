@@ -791,7 +791,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				for(size_t loc_j = 0; loc_j < locBuiltParticleCombos.size(); ++loc_j)
 				{
 					if(!((*dTrueComboCuts[locReaction])(locEventLoop, locBuiltParticleCombos[loc_j])))
-						continue;
+						continue; //is not the true combo
 					double locDeltaT = locBuiltParticleCombos[loc_j]->Get_ParticleComboStep(0)->Get_InitialParticle()->time() - locEventRFBunch->dTime;
 					japp->RootWriteLock();
 					{
