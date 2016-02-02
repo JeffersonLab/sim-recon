@@ -6,6 +6,7 @@ DKinFitUtils::DKinFitUtils(void)
 {
 	dKinFitter = NULL; //Is set by DKinFitter constructor
 	dLinkVerticesFlag = true;
+	dDebugLevel = 0;
 
 	size_t locNumFitsPerEventGuess = 20;
 
