@@ -162,13 +162,17 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 				Particle_t locPID = locParticleComboStep->Get_InitialParticleID();
 				if(locParticleComboStep->Is_InitialParticleDetected()) //set beam photon
 				{
+					bool locParticleFoundFlag = false;
 					for(size_t loc_k = 0; loc_k < locBeamPhotons.size(); ++loc_k)
 					{
 						if(!locBeamPhotons[loc_k]->IsAssociated(locParticleCombo))
 							continue; // beam photon created for a different particle combo
 						locNewParticleComboStep->Set_InitialParticle(locBeamPhotons[loc_k]);
+						locParticleFoundFlag = true;
 						break;
 					}
+					if(!locParticleFoundFlag) //beam not used in kinfit, re-set original
+						locNewParticleComboStep->Set_InitialParticle(locParticleComboStep->Get_InitialParticle());
 				}
 				else //decaying particle! //set here for initial state, and in previous step for final state
 					Set_DecayingParticles(locNewParticleCombo, locParticleCombo, loc_j, locNewParticleComboStep, locKinFitChain, locKinFitResultsVector[loc_i]);
@@ -183,9 +187,11 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 						DKinematicData* locNewKinematicData = Build_KinematicData(locTargetPID, *locTargetParticles.begin());
 						locNewParticleComboStep->Set_TargetParticle(locNewKinematicData);
 					}
-					else
-						locNewParticleComboStep->Set_TargetParticle(NULL);
+					else //not used in kinfit, re-set the original
+						locNewParticleComboStep->Set_TargetParticle(locParticleComboStep->Get_TargetParticle());
 				}
+				else
+					locNewParticleComboStep->Set_TargetParticle(NULL);
 
 				//FINAL PARTICLES
 				for(size_t loc_k = 0; loc_k < locParticleComboStep->Get_NumFinalParticles(); ++loc_k)
@@ -200,7 +206,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 							DKinematicData* locNewKinematicData = Build_KinematicData(locPID, *locMissingParticles.begin());
 							locNewParticleComboStep->Add_FinalParticle(locNewKinematicData);
 						}
-						else
+						else //not used in kinfit: do not create: NULL
 							locNewParticleComboStep->Add_FinalParticle(NULL);
 					}
 					else if(locParticleComboStep->Is_FinalParticleDecaying(loc_k)) //decaying
@@ -257,6 +263,12 @@ const DParticleCombo* DParticleCombo_factory::Check_IsDuplicateCombo(const map<c
 void DParticleCombo_factory::Set_DecayingParticles(const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, DParticleComboStep* locNewParticleComboStep, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults)
 {
 	DKinFitParticle* locKinFitParticle = Get_DecayingParticle(locOldParticleCombo, locStepIndex, locKinFitChain, locKinFitResults);
+	if(locKinFitParticle == NULL) //not used in fit
+	{
+		locNewParticleComboStep->Set_InitialParticle(NULL);
+		return; //no need to back-set NULL: was set to NULL by default
+	}
+
 	Particle_t locPID = PDGtoPType(locKinFitParticle->Get_PID());
 	DKinematicData* locKinematicData_Position = Build_KinematicData(locPID, locKinFitParticle);
 	DKinematicData* locKinematicData_Common = Build_KinematicData(locPID, locKinFitParticle);
@@ -367,7 +379,7 @@ const DChargedTrackHypothesis* DParticleCombo_factory::Get_ChargedHypothesis(con
 			return locChargedTrackHypotheses[loc_l];
 		}
 	}
-	return NULL;
+	return locKinematicData_Measured; //not used in fit: re-set the measured
 }
 
 const DNeutralParticleHypothesis* DParticleCombo_factory::Get_NeutralHypothesis(const DParticleCombo* locParticleCombo, const vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses, const DKinematicData* locKinematicData_Measured) const
@@ -385,7 +397,7 @@ const DNeutralParticleHypothesis* DParticleCombo_factory::Get_NeutralHypothesis(
 			return locNeutralParticleHypotheses[loc_l];
 		}
 	}
-	return NULL;
+	return locKinematicData_Measured; //not used in fit: re-set the measured
 }
 
 void DParticleCombo_factory::Set_SpacetimeVertex(const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain) const
