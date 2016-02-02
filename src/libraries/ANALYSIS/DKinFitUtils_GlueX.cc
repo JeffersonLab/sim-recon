@@ -74,7 +74,7 @@ bool DKinFitUtils_GlueX::Get_IsBFieldNearBeamline(void) const
 	if(dMagneticFieldMap == NULL)
 		return false;
 
-	return (dynamic_cast<const DMagneticFieldMapNoField*>(dMagneticFieldMap) != NULL);
+	return (dynamic_cast<const DMagneticFieldMapNoField*>(dMagneticFieldMap) == NULL);
 }
 
 TVector3 DKinFitUtils_GlueX::Get_BField(const TVector3& locPosition) const
