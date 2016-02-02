@@ -112,58 +112,6 @@ void DKinFitter::Print_Matrix(const TMatrixD& locMatrix) const
 	}
 }
 
-bool DKinFitter::Get_IsInP4Constraint(DKinFitParticle* locKinFitParticle) const
-{
-	set<DKinFitConstraint_P4*> locConstraints = Get_Constraints<DKinFitConstraint_P4>(locKinFitParticle);
-	set<DKinFitConstraint_P4*>::iterator locConstraintIterator = locConstraints.begin();
-	for(; locConstraintIterator != locConstraints.end(); ++locConstraintIterator)
-	{
-		set<DKinFitParticle*> locAllParticles = (*locConstraintIterator)->Get_AllParticles();
-		if(locAllParticles.find(locKinFitParticle) != locAllParticles.end())
-			return true;
-
-		//loop through particles, see if any are decaying and are derived from the input particle
-		set<DKinFitParticle*>::iterator locParticleIterator = locAllParticles.begin();
-		for(; locParticleIterator != locAllParticles.end(); ++locParticleIterator)
-		{
-			set<DKinFitParticle*> locFromAllButDecaying = (*locParticleIterator)->Get_FromAllButDecaying();
-			if(locFromAllButDecaying.find(locKinFitParticle) != locFromAllButDecaying.end())
-				return true; //decaying, derived from the input particle
-		}
-	}
-
-	return false;
-}
-
-bool DKinFitter::Get_IsInMassConstraint(DKinFitParticle* locKinFitParticle) const
-{
-	set<DKinFitConstraint_Mass*> locConstraints = Get_Constraints<DKinFitConstraint_Mass>(locKinFitParticle);
-	set<DKinFitConstraint_Mass*>::iterator locConstraintIterator = locConstraints.begin();
-	for(; locConstraintIterator != locConstraints.end(); ++locConstraintIterator)
-	{
-		DKinFitParticle* locDecayingParticle = (*locConstraintIterator)->Get_DecayingParticle();
-		if(locDecayingParticle == locKinFitParticle)
-			return true;
-
-		//see if is used in definition of the decaying particle
-		set<DKinFitParticle*> locFromAllButDecaying = locDecayingParticle->Get_FromAllButDecaying();
-		if(locFromAllButDecaying.find(locKinFitParticle) != locFromAllButDecaying.end())
-			return true; //decaying, derived from the input particle
-	}
-
-	return false;
-}
-
-bool DKinFitter::Get_IsInVertexOrTimeConstraint(DKinFitParticle* locKinFitParticle) const
-{
-	return !Get_Constraints<DKinFitConstraint_Vertex>(locKinFitParticle).empty();
-}
-
-bool DKinFitter::Get_IsInSpacetimeConstraint(DKinFitParticle* locKinFitParticle) const
-{
-	return !Get_Constraints<DKinFitConstraint_Spacetime>(locKinFitParticle).empty();
-}
-
 bool DKinFitter::Get_IsVertexConstrained(DKinFitParticle* locKinFitParticle) const
 {
 	set<DKinFitConstraint_Vertex*> locConstraints = Get_Constraints<DKinFitConstraint_Vertex>(locKinFitParticle);
@@ -215,7 +163,17 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 
 		set<DKinFitParticle*>::iterator locParticleIterator = locKinFitParticles.begin();
 		for(; locParticleIterator != locKinFitParticles.end(); ++locParticleIterator)
+		{
 			dParticleConstraintMap[*locParticleIterator].insert(*locConstraintIterator);
+
+			//now, for those particles that may not directly be used in a constraint, but ARE used to define a decaying particle
+			set<DKinFitParticle*> locFromAllButDecaying = (*locParticleIterator)->Get_FromAllButDecaying();
+			dKinFitParticles.insert(locFromAllButDecaying.begin(), locFromAllButDecaying.end());
+
+			set<DKinFitParticle*>::iterator locDerivingParticleIterator = locFromAllButDecaying.begin();
+			for(; locDerivingParticleIterator != locFromAllButDecaying.end(); ++locDerivingParticleIterator)
+				dParticleConstraintMap[*locDerivingParticleIterator].insert(*locConstraintIterator);
+		}
 	}
 
 	//Set dVertexP4AtProductionVertex on decaying particles
@@ -335,14 +293,14 @@ void DKinFitter::Set_MatrixSizes(void)
 
 		if(!locKinFitParticle->Get_IsNeutralShowerFlag())
 		{
-			if(Get_IsInP4Constraint(locKinFitParticle) || Get_IsInMassConstraint(locKinFitParticle) || Get_IsVertexConstrained(locKinFitParticle))
+			if(Get_IsInConstraint<DKinFitConstraint_P4>(locKinFitParticle) || Get_IsInConstraint<DKinFitConstraint_Mass>(locKinFitParticle) || Get_IsVertexConstrained(locKinFitParticle))
 				dNumEta += 3; //p3
 			if(Get_IsVertexConstrained(locKinFitParticle))
 				dNumEta += 3; //v3
 		}
 		else //neutral shower
 		{
-			if((Get_IsInP4Constraint(locKinFitParticle) || Get_IsInMassConstraint(locKinFitParticle)) && Get_IsInVertexOrTimeConstraint(locKinFitParticle))
+			if((Get_IsInConstraint<DKinFitConstraint_P4>(locKinFitParticle) || Get_IsInConstraint<DKinFitConstraint_Mass>(locKinFitParticle)) && Get_IsInConstraint<DKinFitConstraint_Vertex>(locKinFitParticle))
 				dNumEta += 4; //E + v3 (p4 fit needs p3, which is derived from v3 + kinfit vertex)
 		}
 		if(Get_IsTimeConstrained(locKinFitParticle))
@@ -486,7 +444,7 @@ void DKinFitter::Fill_InputMatrices(void)
 
 		if(!locKinFitParticle->Get_IsNeutralShowerFlag()) //non-neutral-shower
 		{
-			if(Get_IsInP4Constraint(locKinFitParticle) || Get_IsInMassConstraint(locKinFitParticle) || Get_IsVertexConstrained(locKinFitParticle)) //p3
+			if(Get_IsInConstraint<DKinFitConstraint_P4>(locKinFitParticle) || Get_IsInConstraint<DKinFitConstraint_Mass>(locKinFitParticle) || Get_IsVertexConstrained(locKinFitParticle)) //p3
 			{
 				locKinFitParticle->Set_PxParamIndex(locParamIndex);
 				dY(locParamIndex, 0) = locMomentum.Px();
@@ -505,7 +463,7 @@ void DKinFitter::Fill_InputMatrices(void)
 		}
 		else //neutral shower
 		{
-			if((Get_IsInP4Constraint(locKinFitParticle) || Get_IsInMassConstraint(locKinFitParticle)) && Get_IsInVertexOrTimeConstraint(locKinFitParticle))
+			if((Get_IsInConstraint<DKinFitConstraint_P4>(locKinFitParticle) || Get_IsInConstraint<DKinFitConstraint_Mass>(locKinFitParticle)) && Get_IsInConstraint<DKinFitConstraint_Vertex>(locKinFitParticle))
 			{
 				//E + v3 (p4 fit needs p3, which is derived from v3 + kinfit vertex)
 				locKinFitParticle->Set_EParamIndex(locParamIndex);

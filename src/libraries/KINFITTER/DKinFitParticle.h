@@ -8,8 +8,6 @@
 #include "TLorentzVector.h"
 #include "TMatrixDSym.h"
 
-//#include "DKinFitConstraints.h"
-
 using namespace std;
 
 enum DKinFitParticleType
@@ -278,6 +276,12 @@ inline void DKinFitParticle::Print_ParticleParams(void) const
 
 	cout << "dFromFinalState size, PIDs: " << dFromFinalState.size();
 	for(locIterator = dFromFinalState.begin(); locIterator != dFromFinalState.end(); ++locIterator)
+		cout << ", " << (*locIterator)->Get_PID();
+	cout << endl;
+
+	set<DKinFitParticle*> locFromAllButDecaying = Get_FromAllButDecaying();
+	cout << "FromAllButDecaying size, PIDs: " << locFromAllButDecaying.size();
+	for(locIterator = locFromAllButDecaying.begin(); locIterator != locFromAllButDecaying.end(); ++locIterator)
 		cout << ", " << (*locIterator)->Get_PID();
 	cout << endl;
 }
