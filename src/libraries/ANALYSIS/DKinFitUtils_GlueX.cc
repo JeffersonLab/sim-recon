@@ -407,7 +407,7 @@ void DKinFitUtils_GlueX::Make_KinFitChainStep(const DParticleCombo* locParticleC
 			const DKinFitParticle* locKinFitParticle = NULL;
 			pair<int, int> locParticlePair(locStepIndex, loc_j);
 			if(locKinFitVertexParticles.find(locParticlePair) == locKinFitVertexParticles.end())
-				locKinFitParticle = Make_DetectedParticle(locNeutralParticleHypothesis); //make particle
+				locKinFitChainStep->Add_FinalParticle(Make_DetectedParticle(locNeutralParticleHypothesis));
 			else //in a vertex constraint: make shower
 			{
 				const DNeutralShower* locNeutralShower = NULL;
