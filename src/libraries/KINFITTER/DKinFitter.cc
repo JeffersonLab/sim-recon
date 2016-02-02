@@ -255,7 +255,7 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	//Initialize un-set particle data
 
 	//Common vertices
-	for(; locVertexIterator != locVertexConstraints.end(); ++locVertexIterator)
+	for(locVertexIterator = locVertexConstraints.begin(); locVertexIterator != locVertexConstraints.end(); ++locVertexIterator)
 		(*locVertexIterator)->Set_CommonVertex((*locVertexIterator)->Get_InitVertexGuess());
 
 	//Common times (init vertex guess already set above)
