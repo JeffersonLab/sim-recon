@@ -176,10 +176,11 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 				//TARGET PARTICLE
 				if(locParticleComboStep->Is_TargetPresent())
 				{
+					Particle_t locTargetPID = locParticleComboStep->Get_TargetParticleID();
 					set<DKinFitParticle*> locTargetParticles = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticles(d_TargetParticle);
 					if(!locTargetParticles.empty())
 					{
-						DKinematicData* locNewKinematicData = Build_KinematicData(locPID, *locTargetParticles.begin());
+						DKinematicData* locNewKinematicData = Build_KinematicData(locTargetPID, *locTargetParticles.begin());
 						locNewParticleComboStep->Set_TargetParticle(locNewKinematicData);
 					}
 					else
