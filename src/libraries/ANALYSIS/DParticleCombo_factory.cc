@@ -159,7 +159,6 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 				locNewParticleComboStep->Set_SpacetimeVertex(locParticleComboStep->Get_SpacetimeVertex()); //overridden if kinematic fit
 
 				//INITIAL PARTICLE & SPACETIME VERTEX
-				Particle_t locPID = locParticleComboStep->Get_InitialParticleID();
 				if(locParticleComboStep->Is_InitialParticleDetected()) //set beam photon
 				{
 					bool locParticleFoundFlag = false;
@@ -379,7 +378,7 @@ const DChargedTrackHypothesis* DParticleCombo_factory::Get_ChargedHypothesis(con
 			return locChargedTrackHypotheses[loc_l];
 		}
 	}
-	return locKinematicData_Measured; //not used in fit: re-set the measured
+	return dynamic_cast<const DChargedTrackHypothesis*>(locKinematicData_Measured); //not used in fit: re-set the measured
 }
 
 const DNeutralParticleHypothesis* DParticleCombo_factory::Get_NeutralHypothesis(const DParticleCombo* locParticleCombo, const vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses, const DKinematicData* locKinematicData_Measured) const
@@ -397,7 +396,7 @@ const DNeutralParticleHypothesis* DParticleCombo_factory::Get_NeutralHypothesis(
 			return locNeutralParticleHypotheses[loc_l];
 		}
 	}
-	return locKinematicData_Measured; //not used in fit: re-set the measured
+	return dynamic_cast<const DNeutralParticleHypothesis*>(locKinematicData_Measured); //not used in fit: re-set the measured
 }
 
 void DParticleCombo_factory::Set_SpacetimeVertex(const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain) const
