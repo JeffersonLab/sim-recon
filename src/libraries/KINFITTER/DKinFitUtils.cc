@@ -833,6 +833,14 @@ set<DKinFitConstraint*> DKinFitUtils::Clone_ParticlesAndConstraints(const set<DK
 	{
 		set<DKinFitParticle*> locConstraintKinFitParticles = (*locConstraintIterator)->Get_AllParticles();
 		locAllParticles.insert(locConstraintKinFitParticles.begin(), locConstraintKinFitParticles.end());
+
+		//now, for those particles that may not directly be used in a constraint, but ARE used to define a decaying particle
+		set<DKinFitParticle*>::iterator locParticleIterator = locConstraintKinFitParticles.begin();
+		for(; locParticleIterator != locConstraintKinFitParticles.end(); ++locParticleIterator)
+		{
+			set<DKinFitParticle*> locFromAllButDecaying = (*locParticleIterator)->Get_FromAllButDecaying();
+			locAllParticles.insert(locFromAllButDecaying.begin(), locFromAllButDecaying.end());
+		}
 	}
 
 	//Clone all of the particles //keep track of clone IO for this fit
