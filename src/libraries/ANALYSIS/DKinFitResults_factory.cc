@@ -152,17 +152,21 @@ DKinFitResults* DKinFitResults_factory::Build_KinFitResults(const DParticleCombo
 	locKinFitResults->Add_KinFitConstraints(dKinFitter->Get_KinFitConstraints());
 
 	//Particle Maps & Pulls
+
 	//Build this:
 	map<const JObject*, map<DKinFitPullType, double> > locPulls_JObject;
+
 	//From this:
 	map<DKinFitParticle*, map<DKinFitPullType, double> > locPulls_KinFitParticle;
 	dKinFitter->Get_Pulls(locPulls_KinFitParticle);
+
 	//By looping over the pulls (and can do mapping too): //only particles with pulls need mapping (others have no source objects)
 	map<DKinFitParticle*, map<DKinFitPullType, double> >::iterator locMapIterator = locPulls_KinFitParticle.begin();
 	for(; locMapIterator != locPulls_KinFitParticle.end(); ++locMapIterator)
 	{
 		DKinFitParticle* locOutputKinFitParticle = locMapIterator->first;
 		DKinFitParticle* locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(locOutputKinFitParticle);
+cout << "Input, output particles = " << locInputKinFitParticle << ", " << locOutputKinFitParticle << endl;
 		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);
 
 		locPulls_JObject[locSourceJObject] = locMapIterator->second;

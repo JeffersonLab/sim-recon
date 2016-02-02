@@ -1046,7 +1046,7 @@ void DKinFitter::Calc_dF_P4(int locFIndex, const DKinFitParticle* locKinFitParti
 	}
 
 	if(dDebugLevel > 30)
-		cout << "q, mass, sign, pxyzE = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << ", " << locStateSignMultiplier << ", " << locP4.Px() << ", " << locP4.Py() << ", " << locP4.Pz() << ", " << locP4.E() << endl;
+		cout << "PID, sign, pxyzE = " << locKinFitParticle->Get_PID() << ", " << locStateSignMultiplier << ", " << locP4.Px() << ", " << locP4.Py() << ", " << locP4.Pz() << ", " << locP4.E() << endl;
 
 	if(locCommonVertexFitFlag && locChargedBFieldFlag)
 	{
