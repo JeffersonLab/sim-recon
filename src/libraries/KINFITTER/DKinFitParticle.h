@@ -277,8 +277,7 @@ inline void DKinFitParticle::Print_ParticleParams(void) const
 	cout << endl;
 
 	cout << "dFromFinalState size, PIDs: " << dFromFinalState.size();
-	set<DKinFitParticle*>::const_iterator locIterator = dFromFinalState.begin();
-	for(; locIterator != dFromFinalState.end(); ++locIterator)
+	for(locIterator = dFromFinalState.begin(); locIterator != dFromFinalState.end(); ++locIterator)
 		cout << ", " << (*locIterator)->Get_PID();
 	cout << endl;
 }
