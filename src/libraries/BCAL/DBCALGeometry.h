@@ -41,7 +41,7 @@ public:
   
   JOBJECT_PUBLIC( DBCALGeometry );
   
-  DBCALGeometry();
+  DBCALGeometry(int runnumber);
   
   enum End { kUpstream, kDownstream };
   
@@ -76,7 +76,7 @@ public:
   // Methods to access and initialize the private variables
   static bool initialized;
 
-  static void Initialize();
+  static void Initialize(int runnumber=9999);
 
   static float GetBCAL_inner_rad();
 

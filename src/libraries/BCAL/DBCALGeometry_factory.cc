@@ -9,15 +9,27 @@
 
 #include "DBCALGeometry_factory.h"
 
+
 //------------------
-// evnt
+// brun
 //------------------
-jerror_t DBCALGeometry_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
+jerror_t DBCALGeometry_factory::brun(JEventLoop *loop, int32_t runnumber)
 {
+    assert( _data.size() == 0 );
 
-  DBCALGeometry *bcalGeom = new DBCALGeometry;
-     
-  _data.push_back(bcalGeom);
+    flags = PERSISTANT;
+    _data.push_back( new DBCALGeometry(runnumber) );
+        
+    return NOERROR;
+}
 
-	return NOERROR;
+//------------------
+// erun
+//------------------
+jerror_t DBCALGeometry_factory::erun(void)
+{
+    for(unsigned int i=0; i<_data.size(); i++)delete _data[i];
+    _data.clear();
+        
+    return NOERROR;
 }
