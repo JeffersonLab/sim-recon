@@ -252,9 +252,11 @@ inline void DKinFitParticle::Print_ParticleParams(void) const
 {
 	cout << "DKinFitParticle: Particle Type Enum: " << dKinFitParticleType << endl;
 
-	cout << "DKinFitParticle: Particle PID, Q, Mass, P3, V3, T, ShowerE = " << dPID << ", " << dCharge << ", " << dMass << ", ";
-	cout << dMomentum.Px() << ", " << dMomentum.Py() << ", " << dMomentum.Pz() << ", ";
-	cout << dSpacetimeVertex.X() << ", " << dSpacetimeVertex.Y() << ", " << dSpacetimeVertex.Z() << ", " << dSpacetimeVertex.T() << ", " << dShowerEnergy << endl;
+	cout << "DKinFitParticle: Particle PID, Q, Mass = " << dPID << ", " << dCharge << ", " << dMass << endl;
+	cout << "DKinFitParticle: Particle P3, V3, T = " << dMomentum.Px() << ", " << dMomentum.Py() << ", " << dMomentum.Pz() << ", ";
+	cout << dSpacetimeVertex.X() << ", " << dSpacetimeVertex.Y() << ", " << dSpacetimeVertex.Z() << ", " << dSpacetimeVertex.T() << endl;
+	cout << "DKinFitParticle: Particle Common V3, Common T, ShowerE = " << dCommonSpacetimeVertex.X() << ", " << dCommonSpacetimeVertex.Y();
+	cout << ", " << dCommonSpacetimeVertex.Z() << ", " << dCommonSpacetimeVertex.T() << ", " << dShowerEnergy << endl;
 
 	cout << "DKinFitParticle: FitCommonVertexFlag, FitCommonTimeFlag, dVertexP4AtProductionVertex, dIsNeutralShowerFlag = ";
 	cout << Get_FitCommonVertexFlag() << ", " << Get_FitCommonTimeFlag() << ", " << dVertexP4AtProductionVertex << ", " << dIsNeutralShowerFlag << endl;
