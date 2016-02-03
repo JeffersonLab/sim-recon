@@ -20,7 +20,7 @@ class Df125FDCPulse:public DDAQAddress{
 	public:
 		JOBJECT_PUBLIC(Df125FDCPulse);
 
-		Df125FDCPulse(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0
+		Df125FDCPulse(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0
 		                , uint32_t NPK=0
 						, uint32_t le_time=0
 						, uint32_t time_quality_bit=0
