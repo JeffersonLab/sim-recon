@@ -1,0 +1,48 @@
+
+Hi Elton,
+
+To compile MakeEigensystem just type scons. In order to run it use the
+command MakeEigensystem rootfile.root. You don't need to open root for
+this, just type the command into the terminal window. The output will be a
+root file C_Eigensystem.root
+
+After you get that C_Eigensystem.root file you can go into the
+CalcGainFactors directory and run the command CalcGainFactors arg1 arg2
+arg3 on the command line.
+arg1 = rootfile that was output by the plugin to give a pi0 or e- sample.
+arg2 = C_Eigensystem.root
+arg3 = eigenvalue cutoff value that you want to use for truncating the
+matrix inversion.
+
+
+
+---------------------------------------------------------------------------
+
+Hi Elton,
+
+/work/halld/home/wmcginle/Gain_Calib
+
+There is 1 plugin and 2 scripts there.
+
+The plugin is called bcal_matrix. This takes a pi0 sample and fills a
+channel x channel 2-D histogram (C) with the ratio of (energy in each
+channel) / (Cluster Energy). It also fills 2 1-D histograms (D and L) with
+pi0 mass constraint quantities determined by the radphi bootstrap method
+paper. It also fills a single bin of a histogram with the sum of the
+difference between the reconstructed mass and the known mass.
+
+After running the plugin bcal_matrix over the data set, I run the script
+MakeEigensystem. This takes the 2-D histogram (C) and makes a matrix from
+the histogram. It then decomposes the matrix into its eigenvectors and
+eigenvalues so that we can write down the inverted matrix in terms of its
+eigendecomposition.
+
+The last script is CalcGainFactors, this script reads in the two 1-D
+histograms that the plugin outputs (D and L) along with the mass bias. It
+also reads in the eigendecomposition of the 2-D matrix and uses these
+values to calculate gain factors for each channel.
+
+We can talk more about the details if you would like.
+
+Will
+
