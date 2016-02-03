@@ -873,8 +873,7 @@ set<DKinFitConstraint*> DKinFitUtils::Clone_ParticlesAndConstraints(const set<DK
 		//final state
 		set<DKinFitParticle*> locNewFromFinalState;
 		set<DKinFitParticle*> locFromFinalState = locOutputParticle->Get_FromFinalState();
-		set<DKinFitParticle*>::iterator locParticleIterator = locFromFinalState.begin();
-		for(; locParticleIterator != locFromFinalState.end(); ++locParticleIterator)
+		for(locParticleIterator = locFromFinalState.begin(); locParticleIterator != locFromFinalState.end(); ++locParticleIterator)
 			locNewFromFinalState.insert(locCloneIOMap[*locParticleIterator]);
 		locOutputParticle->Set_FromFinalState(locNewFromFinalState);
 
