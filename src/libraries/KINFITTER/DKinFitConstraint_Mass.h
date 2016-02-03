@@ -57,8 +57,8 @@ inline set<DKinFitParticle*> DKinFitConstraint_Mass::Get_AllParticles(void) cons
 
 inline void DKinFitConstraint_Mass::Print_ConstraintInfo(void) const
 {
-	cout << "DKinFitConstraint_Mass: Decaying particle PID, q, mass: " << endl;
-	cout << dDecayingParticle->Get_PID() << ", " << dDecayingParticle->Get_Charge() << ", " << dDecayingParticle->Get_Mass() << endl;
+	cout << "DKinFitConstraint_Mass: Decaying particle PID, pointer: " << endl;
+	cout << dDecayingParticle->Get_PID() << ", " << dDecayingParticle << endl;
 }
 
 #endif // _DKinFitConstraint_Mass_

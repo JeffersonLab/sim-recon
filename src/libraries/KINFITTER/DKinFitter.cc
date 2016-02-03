@@ -145,7 +145,7 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 	//Print constraint info
 	if(dDebugLevel > 5)
 	{
-		cout << "DKinFitter: Fit constraint info:" << endl;
+		cout << "DKinFitter: Pre-fit constraint info:" << endl;
 		set<DKinFitConstraint*>::iterator locConstraintIterator = dKinFitConstraints.begin();
 		for(; locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
 			(*locConstraintIterator)->Print_ConstraintInfo();
@@ -153,6 +153,15 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 
 	//clone constraints & particles
 	dKinFitConstraints = dKinFitUtils->Clone_ParticlesAndConstraints(dKinFitConstraints);
+
+	//Print cloned constraint info
+	if(dDebugLevel > 10)
+	{
+		cout << "DKinFitter: Cloned (Fit) constraint info:" << endl;
+		set<DKinFitConstraint*>::iterator locConstraintIterator = dKinFitConstraints.begin();
+		for(; locConstraintIterator != dKinFitConstraints.end(); ++locConstraintIterator)
+			(*locConstraintIterator)->Print_ConstraintInfo();
+	}
 
 	//Build dKinFitParticles, dParticleConstraintMap
 	set<DKinFitConstraint*>::iterator locConstraintIterator = dKinFitConstraints.begin();

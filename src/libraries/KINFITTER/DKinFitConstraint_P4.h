@@ -116,14 +116,14 @@ inline DKinFitParticle* DKinFitConstraint_P4::Get_DefinedParticle() const
 
 inline void DKinFitConstraint_P4::Print_ConstraintInfo(void) const
 {
-	cout << "DKinFitConstraint_P4: Initial-state particle PID's, q's, masses: " << endl;
+	cout << "DKinFitConstraint_P4: Initial-state particle PID's, pointers: " << endl;
 	set<DKinFitParticle*>::const_iterator locIterator = dInitialParticles.begin();
 	for(; locIterator != dInitialParticles.end(); ++locIterator)
-		cout << (*locIterator)->Get_PID() << ", " << (*locIterator)->Get_Charge() << ", " << (*locIterator)->Get_Mass() << endl;
+		cout << (*locIterator)->Get_PID() << ", " << (*locIterator) << endl;
 
-	cout << "DKinFitConstraint_P4: Final-state particle PID's, q's, masses: " << endl;
+	cout << "DKinFitConstraint_P4: Final-state particle PID's, pointers: " << endl;
 	for(locIterator = dFinalParticles.begin(); locIterator != dFinalParticles.end(); ++locIterator)
-		cout << (*locIterator)->Get_PID() << ", " << (*locIterator)->Get_Charge() << ", " << (*locIterator)->Get_Mass() << endl;
+		cout << (*locIterator)->Get_PID() << ", " << (*locIterator) << endl;
 }
 
 #endif // _DKinFitConstraint_P4_
