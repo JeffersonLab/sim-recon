@@ -768,6 +768,9 @@ DKinFitParticle* DKinFitUtils::Clone_KinFitParticle(DKinFitParticle* locKinFitPa
 	*locClonedKinFitParticle = *locKinFitParticle;
 	dParticleMap_OutputToInput[locClonedKinFitParticle] = locKinFitParticle;
 
+	if(dDebugLevel > 20)
+		cout << "Cloned Particle: PID, input, output = " << locKinFitParticle->Get_PID() << ", " << locKinFitParticle << ", " << locClonedKinFitParticle << endl;
+
 	//clone covariance matrix
 	const TMatrixDSym* locCovarianceMatrix = locClonedKinFitParticle->Get_CovarianceMatrix();
 	if(locCovarianceMatrix != NULL)
