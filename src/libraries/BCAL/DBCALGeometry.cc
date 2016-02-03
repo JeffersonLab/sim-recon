@@ -76,7 +76,7 @@ float DBCALGeometry::fADC_radius[] = { 0,
 
 float DBCALGeometry::BCALMIDRAD = DBCALGeometry::m_radius[DBCALGeometry::BCALMID-1];
 
-DBCALGeometry::DBCALGeometry()  
+DBCALGeometry::DBCALGeometry(int runnumber)  
 {
   /// End if groupings do not evenly divide SiPM cells
   bool goodGeometry=true;
@@ -107,15 +107,15 @@ DBCALGeometry::DBCALGeometry()
   }
 
   // Initialize DBCALGeometry variables
-  if(!initialized) Initialize();
+  if(!initialized) Initialize(runnumber);
 
 }
 
 void
-DBCALGeometry::Initialize() {
+DBCALGeometry::Initialize(int runnumber) {
   //Get pointer to DGeometry object
   DApplication* dapp=dynamic_cast<DApplication*>(japp);
-  const DGeometry *dgeom  = dapp->GetDGeometry(9999);
+  const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
 
   // Get inner rad of BCAL (including the support plate)
   float my_BCALINNERRAD;
