@@ -854,6 +854,32 @@ set<DKinFitConstraint*> DKinFitUtils::Clone_ParticlesAndConstraints(const set<DK
 	for(; locParticleIterator != locAllParticles.end(); ++locParticleIterator)
 		locCloneIOMap[*locParticleIterator] = Clone_KinFitParticle(*locParticleIterator);
 
+	//Now, for all of the decaying cloned particles, go through and set new pointers for the from-initial and from-final state particles
+	map<DKinFitParticle*, DKinFitParticle*>::iterator locCloneIterator = locCloneIOMap.begin();
+	for(; locCloneIterator != locCloneIOMap.end(); ++locCloneIterator)
+	{
+		DKinFitParticle* locOutputParticle = locCloneIterator->second;
+		if(locOutputParticle->Get_KinFitParticleType() != d_DecayingParticle)
+			continue; //none
+
+		//initial state
+		set<DKinFitParticle*> locNewFromInitialState;
+		set<DKinFitParticle*> locFromInitialState = locOutputParticle->Get_FromInitialState();
+		set<DKinFitParticle*>::iterator locParticleIterator = locFromInitialState.begin();
+		for(; locParticleIterator != locFromInitialState.end(); ++locParticleIterator)
+			locNewFromInitialState.insert(locCloneIOMap[*locParticleIterator]);
+		locOutputParticle->Set_FromInitialState(locNewFromInitialState);
+
+		//final state
+		set<DKinFitParticle*> locNewFromFinalState;
+		set<DKinFitParticle*> locFromFinalState = locOutputParticle->Get_FromFinalState();
+		set<DKinFitParticle*>::iterator locParticleIterator = locFromFinalState.begin();
+		for(; locParticleIterator != locFromFinalState.end(); ++locParticleIterator)
+			locNewFromFinalState.insert(locCloneIOMap[*locParticleIterator]);
+		locOutputParticle->Set_FromFinalState(locNewFromFinalState);
+
+	}
+
 	//Clone the constraints, and then set the particles to the cloned particles
 	for(locConstraintIterator = locInputConstraints.begin(); locConstraintIterator != locInputConstraints.end(); ++locConstraintIterator)
 	{
