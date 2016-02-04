@@ -12,7 +12,6 @@ using namespace std;
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALPoint.h"
 #include "BCAL/DBCALGeometry.h"
-#include "BCAL/DBCALPoint_factory.h"
 
 #include "units.h"
 
