@@ -29,6 +29,7 @@
 #include "FCAL/DFCALHit.h"
 #include "TRACKING/DMCThrown.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
+#include "TRIGGER/DL1Trigger.h"
 
 using namespace std;
 using namespace jana;
@@ -41,12 +42,13 @@ using namespace jana;
 
 // root hist pointers
 
-		static TH1I* h1trig_fcal = NULL;
-		static TH1I* h1trig_fcalN = NULL;
-		static TH1I* h1trig_bcal = NULL;
-		static TH1I* h1trig_bcalN = NULL;
-		static TH1I* h1trig_tot = NULL;
-		static TH2I* h2trig_fcalVSbcal = NULL;
+     static TH1I* h1trig_trgbits = NULL; 
+     static TH1I* h1trig_fcal = NULL;
+     static TH1I* h1trig_fcalN = NULL;
+     static TH1I* h1trig_bcal = NULL;
+     static TH1I* h1trig_bcalN = NULL;
+     static TH1I* h1trig_tot = NULL;
+     static TH2I* h2trig_fcalVSbcal = NULL;
 
 
 //----------------------------------------------------------------------------------
@@ -97,6 +99,10 @@ jerror_t JEventProcessor_TRIG_online::init(void) {
 
   // book hist
         int const nbins=100;
+	
+	h1trig_trgbits = new TH1I("h1trig_trgbits", "Trig Trgbits",nbins,0,100);
+	h1trig_trgbits->SetXTitle("trig_mask + (50+fp_trig_mask)");
+	h1trig_trgbits->SetYTitle("counts");
 
 	h1trig_fcal = new TH1I("h1trig_fcal", "Trig Fcal energy (GeV)",nbins,0,4);
 	h1trig_fcal->SetXTitle("Fcal sum energy (GeV)");
@@ -163,6 +169,29 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 
 	japp->RootWriteLock();
 
+	// first get trigger bits
+
+	const DL1Trigger *trig_words = NULL;
+	uint32_t trig_mask, fp_trig_mask;
+	try {
+	  locEventLoop->GetSingle(trig_words);
+	} catch(...) {};
+	if (trig_words) {
+	  trig_mask = trig_words->trig_mask;
+	  fp_trig_mask = trig_words->fp_trig_mask;
+	}
+	else {
+	  trig_mask = 0;
+	  fp_trig_mask = 0;
+	}
+
+	int trig_bits = fp_trig_mask > 0? trig_mask + 50 + fp_trig_mask: trig_mask;
+	printf (" Event=%d trig_bits=%d trig_mask=%X fp_trig_mask=%X\n",locEventNumber,trig_bits,trig_mask,fp_trig_mask);
+
+	/* fp_trig_mask & 0x100 - upstream LED
+	   fp_trig_mask & 0x200 - downstream LED
+	   trig_mask & 0x1 - cosmic trigger*/
+
         // Compute total energy sums for fcal and bcal (as in the trigger)
         
 	// loop over all points in FCAL
@@ -179,6 +208,7 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	    bcal_energy += bcalpoints[jj]->E();
 	    }
 
+	h1trig_trgbits->Fill(trig_bits);
         h1trig_fcal->Fill(fcal_energy);
         h1trig_fcalN->Fill(fcalhits.size());
         h1trig_bcal->Fill(bcal_energy);
