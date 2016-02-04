@@ -22,7 +22,7 @@ using namespace std;
 jerror_t MyProcessor::init(void)
 {
    // open HDDM file
-   filename = "filtered.hddm";
+   filename = "bggen_filtered.hddm";
    ofs = new ofstream(filename.c_str());
    if (!ofs->is_open()) {
       fout = 0;
@@ -97,34 +97,61 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
    //---------------------- Filter Code Start ----------------------
    // Get data
    vector<const DMCThrown*> mcthrowns;
+   vector<const DMCThrown*> mcthrownsFS;
    loop->Get(mcthrowns);
-   
-   vector<const DMCTrigger*> triggers;
-   loop->Get(triggers);
+   loop->Get(mcthrownsFS,"FinalState");
 
-   // Loop over thrown tracks
-   for (unsigned int i=0; i < mcthrowns.size(); i++) {
-      
-      // keep tracks with at least 1 thrown particle greater than 1GeV/c
-      //const DMCThrown *mcthrown = mcthrowns[i];
-      //if (mcthrown->momentum().Mag() > 1.0)
-      //   write_out = true;
-
+/*   bool etaprime = false;
+   bool piplus = false;
+   bool piminus = false;
+   bool eta = false;
+   int myid;*/
+   int etaid;
+   int gammas = 0;
+/*
+   for (int i = 0; i < (int)mcthrowns.size(); i++) {
+     if (mcthrowns[i]->pdgtype == 331) {
+       etaprime = true;
+       myid = mcthrowns[i]->myid;
+       break;
+     }
    }
-   
-   // Loop over triggers
-   for(unsigned int i=0;i<triggers.size();i++){
-      const DMCTrigger *trigger = triggers[i];
-      
-      if (trigger->L1a_fired) { 
-          write_out = true;
-          break;
-      }
-      if (trigger->L1b_fired) {
-         write_out = true;
-         break;
-      }
-   }   
+
+   if (etaprime) {
+     for (int i = 0; i < (int)mcthrowns.size(); i++) {
+       if (mcthrowns[i]->pdgtype == 211 && mcthrowns[i]->parentid == myid) piplus = true;
+     }
+     for (int i = 0; i < (int)mcthrowns.size(); i++) {
+       if (mcthrowns[i]->pdgtype == -211 && mcthrowns[i]->parentid == myid) piminus = true;
+     }
+     for (int i = 0; i < (int)mcthrowns.size(); i++) {
+       if (mcthrowns[i]->pdgtype == 221 && mcthrowns[i]->parentid == myid) {
+         eta = true;
+         etaid = mcthrowns[i]->myid;
+       }
+     }
+
+//     if (piplus && piminus && eta) write_out = true;
+*/
+//     if (piplus && piminus && eta) {
+       etaid = 1;
+       for (int i = 0; i < (int)mcthrowns.size(); i++) {
+         if (mcthrowns[i]->pdgtype == 22 && mcthrowns[i]->parentid == etaid) gammas++;
+       }
+       if (gammas == 2) {
+         if (mcthrownsFS.size() == 5) write_out = true;
+       }
+//     }
+//   }
+
+/*   if (mcthrowns.size() == 6) {
+     int photoncount = 0;
+     for (unsigned int i=0; i < mcthrowns.size(); i++) {
+        const DMCThrown *mcthrown = mcthrowns[i];
+        if (mcthrown->type == 1) photoncount++;
+     }
+     if (photoncount == 2) write_out = true;
+   }*/
    
    //----------------------- Filter Code End -----------------------
    

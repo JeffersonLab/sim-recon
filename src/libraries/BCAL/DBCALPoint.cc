@@ -12,10 +12,11 @@ using namespace std;
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALPoint.h"
 #include "BCAL/DBCALGeometry.h"
+#include "BCAL/DBCALPoint_factory.h"
 
 #include "units.h"
 
-DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, double attenuation_length)
+DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, double attenuation_length, double c_effective)
 {
   
   // this is a problem -- both hits are on the same end...
@@ -32,7 +33,6 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   // save typing
   
   float fibLen = DBCALGeometry::GetBCAL_length();
-  float cEff = DBCALGeometry::C_EFFECTIVE;
 
   // figure out which hit is upstream and which is downstream
   // (downstream means farthest from the target)
@@ -47,7 +47,7 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   
   // get the position with respect to the center of the module -- positive
   // z in the downstream direction
-  m_zLocal = 0.5 * cEff * ( tUp - tDown ); 
+  m_zLocal = 0.5 * c_effective * ( tUp - tDown ); 
 
   // set the z position relative to the center of the target
   m_z = m_zLocal + DBCALGeometry::GetBCAL_center() - z_target_center;
@@ -66,7 +66,7 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   //and averaging.
   
   // compute the arrival time of the energy at the cell
-  m_t = 0.5 * ( tUp + tDown - fibLen / cEff );
+  m_t = 0.5 * ( tUp + tDown - fibLen / c_effective );
   
   // now compute attentuation factors for each end based on distance
   // the light must travel
