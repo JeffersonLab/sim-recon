@@ -31,24 +31,7 @@ using namespace jana;
 #define ansi_forward(A)     ansi_escape<<"["<<(A)<<"C"
 #define ansi_back(A)            ansi_escape<<"["<<(A)<<"D"
 #endif // ansi_escape
-/*
-vector <TDirectory *>& GetAllDirectories(void);
-map<TString, TH1I*>& Get1DMap(void);
-map<TString, TH2I*>& Get2DMap(void);
-map<TString, TProfile2D*>& Get2DProfileMap(void);
 
-void Fill1DHistogram (const char * plugin, const char * directoryName, const char * name, const double value = 0.0, const char * title = "", int nBins = 1, double xmin = 0, double xmax = 1, bool print = false);
-
-void Fill2DHistogram (const char * plugin, const char * directoryName, const char * name, const double valueX = 0.0, const double valueY = 0.0, const char * title = "", int nBinsX = 1, double xmin = 0, double xmax = 1, int nBinsY = 1, double ymin = 0, double ymax = 1, bool print = false);
-
-void Fill2DProfile (const char * plugin, const char * directoryName, const char * name, const double valueX = 0.0, const double valueY = 0.0, const double valueZ = 0.0, const char * title = "", int nBinsX = 1, double xmin = 0, double xmax = 1, int nBinsY = 1, double ymin = 0, double ymax = 1, bool print = false);
-
-TH1I * Get1DHistogram(const char *, const char *, const char *);
-
-TH2I * Get2DHistogram(const char *, const char *, const char *);
-
-void SortDirectories(void);
-*/
 vector <TDirectory *>& GetAllDirectories(void){
 	static vector <TDirectory *> allDirectories;
 	return allDirectories;
@@ -69,7 +52,7 @@ map<TString, TProfile2D*>& Get2DProfileMap(void){
     return TProfile2DMap;
 }
 
-void Fill1DHistogram (const char * plugin, const char * directoryName, const char * name, const double value, const char * title , int nBins, double xmin, double xmax, bool print){
+void Fill1DHistogram (const char * plugin, const char * directoryName, const char * name, const double value, const char * title , int nBins, double xmin, double xmax, bool print = false){
     japp->RootWriteLock();
     TH1I * histogram;
     TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
@@ -96,7 +79,7 @@ void Fill1DHistogram (const char * plugin, const char * directoryName, const cha
     return;
 }
 
-void Fill2DHistogram (const char * plugin, const char * directoryName, const char * name, const double valueX , const double valueY , const char * title , int nBinsX, double xmin, double xmax, int nBinsY, double ymin, double ymax, bool print){
+void Fill2DHistogram (const char * plugin, const char * directoryName, const char * name, const double valueX , const double valueY , const char * title , int nBinsX, double xmin, double xmax, int nBinsY, double ymin, double ymax, bool print = false){
     japp->RootWriteLock();
     TH2I * histogram;
     TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
@@ -123,7 +106,7 @@ void Fill2DHistogram (const char * plugin, const char * directoryName, const cha
     return;
 }
 
-void Fill2DProfile (const char * plugin, const char * directoryName, const char * name, const double valueX , const double valueY , const double valueZ, const char * title , int nBinsX, double xmin, double xmax, int nBinsY, double ymin, double ymax, bool print){
+void Fill2DProfile (const char * plugin, const char * directoryName, const char * name, const double valueX , const double valueY , const double valueZ, const char * title , int nBinsX, double xmin, double xmax, int nBinsY, double ymin, double ymax, bool print = false){
     japp->RootWriteLock();
     TProfile2D * profile;
     TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
