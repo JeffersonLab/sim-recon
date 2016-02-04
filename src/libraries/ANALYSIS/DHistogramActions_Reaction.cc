@@ -1436,9 +1436,12 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 			const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
 
 			deque<const DKinematicData*> locParticles;
-			locParticleComboStep->Get_DetectedFinalParticles_Measured(locParticles);
+			locParticleComboStep->Get_FinalParticles_Measured(locParticles);
 			for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 			{
+				if(!locParticleComboStep->Is_FinalParticleDetected())
+					continue;
+
 				//get pulls for this particle
 				map<DKinFitPullType, double> locParticlePulls;
 				map<const JObject*, map<DKinFitPullType, double> >::iterator locParticleIterator = locPulls.find(locParticles[loc_j]);
