@@ -1014,7 +1014,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4(const DKinFitParticle* locKinFitPar
 		locP4Sum += locStateSignMultiplier*locP4; //all but enclosed decaying particle: will instead get p4 from decay products (may still need to propagate it below)
 
 	if(dDebugLevel > 30)
-		cout << "q, mass, sign, pxyzE = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << ", " << locStateSignMultiplier << ", " << locP4.Px() << ", " << locP4.Py() << ", " << locP4.Pz() << ", " << locP4.E() << endl;
+		cout << "PID, sign, pxyzE = " << locKinFitParticle->Get_PID() << ", " << locStateSignMultiplier << ", " << locP4.Px() << ", " << locP4.Py() << ", " << locP4.Pz() << ", " << locP4.E() << endl;
 
 	if(!locDontPropagateAtAllFlag && locCommonVertexFitFlag && locChargedBFieldFlag && ((locKinFitParticleType != d_DecayingParticle) || !locDontPropagateDecayingP3Flag))
 	{
@@ -1033,7 +1033,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4(const DKinFitParticle* locKinFitPar
 	{
 		//enclosed decaying particle
 		if(dDebugLevel > 30)
-			cout << "DKinFitter: Calc_DecayingP4() Decaying Particle; q, mass = " << locKinFitParticle->Get_Charge() << ", " << locKinFitParticle->Get_Mass() << endl;
+			cout << "DKinFitter: Calc_DecayingP4() Decaying Particle; PID = " << locKinFitParticle->Get_PID() << endl;
 
 		//replace the decaying particle with the particles it's momentum is derived from
 		//initial state
@@ -1042,8 +1042,8 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4(const DKinFitParticle* locKinFitPar
 		for(; locParticleIterator != locFromInitialState.end(); ++locParticleIterator)
 		{
 			if(dDebugLevel > 30)
-				cout << "decaying, partially replace with init-state q, mass = " << (*locParticleIterator)->Get_Charge() << ", " << (*locParticleIterator)->Get_Mass() << endl;
-			Calc_DecayingP4(*locParticleIterator, false, locStateSignMultiplier, locDontPropagateAtAllFlag); //decaying particle multiplier * 1.0
+				cout << "decaying, partially replace with init-state PID = " << (*locParticleIterator)->Get_PID() << endl;
+			locP4Sum += Calc_DecayingP4(*locParticleIterator, false, locStateSignMultiplier, locDontPropagateAtAllFlag); //decaying particle multiplier * 1.0
 		}
 
 		//final state
@@ -1055,10 +1055,10 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4(const DKinFitParticle* locKinFitPar
 		for(locParticleIterator = locFromFinalState.begin(); locParticleIterator != locFromFinalState.end(); ++locParticleIterator)
 		{
 			if(dDebugLevel > 30)
-				cout << "decaying, partially replace with final-state q, mass = " << (*locParticleIterator)->Get_Charge() << ", " << (*locParticleIterator)->Get_Mass() << endl;
+				cout << "decaying, partially replace with final-state PID = " << (*locParticleIterator)->Get_PID() << endl;
 			//If defined by invariant mass: add p4s of final state particles
 			//If defined by missing mass: add p4s of init state, subtract final state
-			Calc_DecayingP4(*locParticleIterator, false, locNextStateSignMultiplier, locDontPropagateAtAllFlag);
+			locP4Sum += Calc_DecayingP4(*locParticleIterator, false, locNextStateSignMultiplier, locDontPropagateAtAllFlag);
 		}
 	}
 
@@ -1381,7 +1381,7 @@ void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFi
 	TVector3 locBField = Get_IsBFieldNearBeamline() ? Get_BField(locPosition) : TVector3(0.0, 0.0, 0.0);
 	TVector3 locCommonVertex = locKinFitParticle->Get_CommonVertex();
 	if(dDebugLevel > 50)
-		cout << "jacobian: decay product: q, mass = " << locCharge << ", " << locKinFitParticle->Get_Mass() << endl;
+		cout << "jacobian: decay product: PID = " << locKinFitParticle->Get_PID() << endl;
 
 	//This section is calculated assuming that the p4 is NEEDED at the COMMON vertex
 		//if not, need a factor of -1 on delta-x, and on the derivatives wrst the vertices
@@ -1531,7 +1531,7 @@ void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFi
 		for(; locParticleIterator != locFromInitialState.end(); ++locParticleIterator)
 		{
 			if(dDebugLevel > 30)
-				cout << "decaying, partially replace with init-state q, mass = " << (*locParticleIterator)->Get_Charge() << ", " << (*locParticleIterator)->Get_Mass() << endl;
+				cout << "decaying, partially replace with init-state PID = " << (*locParticleIterator)->Get_PID() << endl;
 			Calc_DecayingParticleJacobian(*locParticleIterator, false, locStateSignMultiplier, locNumEta, locJacobian); //decaying particle multiplier * 1.0
 		}
 
@@ -1544,7 +1544,7 @@ void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFi
 		for(locParticleIterator = locFromFinalState.begin(); locParticleIterator != locFromFinalState.end(); ++locParticleIterator)
 		{
 			if(dDebugLevel > 30)
-				cout << "decaying, partially replace with final-state q, mass = " << (*locParticleIterator)->Get_Charge() << ", " << (*locParticleIterator)->Get_Mass() << endl;
+				cout << "decaying, partially replace with final-state PID = " << (*locParticleIterator)->Get_PID() << endl;
 			//If defined by invariant mass: add p4s of final state particles
 			//If defined by missing mass: add p4s of init state, subtract final state
 			Calc_DecayingParticleJacobian(*locParticleIterator, false, locNextStateSignMultiplier, locNumEta, locJacobian);
