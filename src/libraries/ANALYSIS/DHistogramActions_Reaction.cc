@@ -1439,7 +1439,7 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 			locParticleComboStep->Get_FinalParticles_Measured(locParticles);
 			for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 			{
-				if(!locParticleComboStep->Is_FinalParticleDetected())
+				if(!locParticleComboStep->Is_FinalParticleDetected(loc_j))
 					continue;
 
 				//get pulls for this particle
