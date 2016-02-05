@@ -1,0 +1,14 @@
+
+
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+sbms.AddROOTSpyMacros(env)
+sbms.AddDANA(env)
+env.Append(LIBS=['DANA','HDDM','PID', 'xstream', 'ANALYSIS','FCAL','TAGGER'])  # this avoids undefined references for _ZTI12DApplication when attaching plugin to RootSpy
+sbms.plugin(env)
+
+
