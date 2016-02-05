@@ -38,10 +38,8 @@ static TH1I *cdc_num_events = NULL;
 static TH1I *cdc_tfit = NULL;
 static TH1I *cdc_afit = NULL;
 
-#if CREATE_TREES
 static TTree *tfit = NULL;
 static TTree *afit = NULL;
-#endif  // CREATE_TREES
 
 static bool DISABLE_FITTING = true;
 
