@@ -46,6 +46,7 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEvent
 	{
 		map<const DParticleCombo*, const DKinFitChain*> locParticleComboMap;
 		locKinFitResultsVector[loc_i]->Get_ParticleComboMap(locParticleComboMap);
+		set<DKinFitParticle*> locOutputKinFitParticles = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticles();
 
 		map<const DParticleCombo*, const DKinFitChain*>::iterator locComboIterator = locParticleComboMap.begin();
 		for(; locComboIterator != locParticleComboMap.end(); ++locComboIterator)
@@ -64,6 +65,8 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEvent
 					const DKinematicData* locMeasuredParticle = locParticleComboStep->Get_FinalParticle_Measured(loc_k);
 					DKinFitParticle* locKinFitParticle = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticle(locMeasuredParticle);
 					if(locKinFitParticle == NULL)
+						continue; //should be impossible
+					if(locOutputKinFitParticles.find(locKinFitParticle) == locOutputKinFitParticles.end())
 						continue; //not used in fit
 
 					map<DKinFitParticle*, DChargedTrackHypothesis*>::iterator locNewHypoIterator = locNewObjectMap.find(locKinFitParticle);

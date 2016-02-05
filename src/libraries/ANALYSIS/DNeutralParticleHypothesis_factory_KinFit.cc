@@ -46,6 +46,7 @@ jerror_t DNeutralParticleHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEv
 	{
 		map<const DParticleCombo*, const DKinFitChain*> locParticleComboMap;
 		locKinFitResultsVector[loc_i]->Get_ParticleComboMap(locParticleComboMap);
+		set<DKinFitParticle*> locOutputKinFitParticles = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticles();
 
 		map<const DParticleCombo*, const DKinFitChain*>::iterator locComboIterator = locParticleComboMap.begin();
 		for(; locComboIterator != locParticleComboMap.end(); ++locComboIterator)
@@ -69,6 +70,8 @@ jerror_t DNeutralParticleHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEv
 					if(locKinFitParticle == NULL)
 						locKinFitParticle = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticle(locNeutralShower);
 					if(locKinFitParticle == NULL)
+						continue; //should be impossible
+					if(locOutputKinFitParticles.find(locKinFitParticle) == locOutputKinFitParticles.end())
 						continue; //not used in fit
 
 					map<DKinFitParticle*, DNeutralParticleHypothesis*>::iterator locNewHypoIterator = locNewObjectMap.find(locKinFitParticle);

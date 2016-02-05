@@ -69,7 +69,7 @@ class DKinFitResults : public JObject
 		set<const DKinFitConstraint*> Get_OutputKinFitConstraints(void) const{return dKinFitConstraints;}
 
 		//Source: JObject from DParticleCombo
-		//Output: DKinFitParticle's containing the fit results
+		//Output: DKinFitParticle's containing the fit results (if not included in fit, is still the INPUT object)
 		DKinFitParticle* Get_OutputKinFitParticle(const JObject* locSourceObject) const;
 
 	private:
@@ -99,7 +99,7 @@ class DKinFitResults : public JObject
 		map<const JObject*, DKinFitParticle*> dParticleMap_SourceToOutput;
 
 		//multiple combos may have the same kinfit result, and different DKinFitChain's
-		map<const DParticleCombo*, const DKinFitChain*> dParticleComboMap; //chain contains output kinfit particles
+		map<const DParticleCombo*, const DKinFitChain*> dParticleComboMap; //chain contains output kinfit particles (if a particle not in a fit, is the input particle)
 };
 
 /****************************************************** SET PARTICLES, COMBOS, AND CONSTRAINTS ******************************************************/

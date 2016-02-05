@@ -43,6 +43,7 @@ jerror_t DBeamPhoton_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, uint64
 	{
 		map<const DParticleCombo*, const DKinFitChain*> locParticleComboMap;
 		locKinFitResultsVector[loc_i]->Get_ParticleComboMap(locParticleComboMap);
+		set<DKinFitParticle*> locOutputKinFitParticles = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticles();
 
 		map<DKinFitParticle*, DBeamPhoton*> locNewObjectMap;
 		map<const DParticleCombo*, const DKinFitChain*>::iterator locComboIterator = locParticleComboMap.begin();
@@ -56,6 +57,8 @@ jerror_t DBeamPhoton_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, uint64
 			const DKinematicData* locInitialParticle = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured();
 			DKinFitParticle* locKinFitParticle = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticle(locInitialParticle);
 			if(locKinFitParticle == NULL)
+				continue; //should be impossible
+			if(locOutputKinFitParticles.find(locKinFitParticle) == locOutputKinFitParticles.end())
 				continue; //not used in fit
 
 			map<DKinFitParticle*, DBeamPhoton*>::iterator locNewPhotonIterator = locNewObjectMap.find(locKinFitParticle);
