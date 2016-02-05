@@ -327,8 +327,7 @@ DKinFitParticle* DParticleCombo_factory::Get_DecayingParticle(const DParticleCom
 			//if any step decay product at any step is located as any decay product at any step in the kinfit chain: then matches
 
 		//get all measured products, then just pick the first one to search for
-		deque<const DKinematicData*> locFinalStateParticles;
-
+		deque<const DKinematicData*> locMeasuredParticles;
 		locOldParticleCombo->Get_DecayChainParticles_Measured(locComboStepIndex, locMeasuredParticles);
 		const DKinematicData* locMeasuredParticle = locMeasuredParticles[0];
 		DKinFitParticle* locKinFitParticle = locKinFitResults->Get_OutputKinFitParticle(locMeasuredParticle);
