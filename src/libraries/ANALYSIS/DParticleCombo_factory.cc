@@ -281,10 +281,10 @@ void DParticleCombo_factory::Set_DecayingParticles(const DParticleCombo* locNewP
 	locNewParticleComboStep->Set_InitialParticle(locKinematicData_InitState);
 
 DLorentzVector locKidSumP4;
-for(size_t loc_k = 0; loc_k < locParticleComboStep->Get_NumFinalParticles(); ++loc_k)
+for(size_t loc_k = 0; loc_k < locNewParticleComboStep->Get_NumFinalParticles(); ++loc_k)
 {
-	const DKinematicData* locKinematicData = locParticleComboStep->Get_FinalParticle(loc_k);
-	if(locKinematicData_Measured == NULL)
+	const DKinematicData* locKinematicData = locNewParticleComboStep->Get_FinalParticle(loc_k);
+	if(locKinematicData == NULL)
 		continue;
 	locKidSumP4 += locKinematicData->lorentzMomentum();
 }
