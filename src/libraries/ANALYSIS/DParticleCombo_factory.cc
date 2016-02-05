@@ -327,10 +327,17 @@ DKinFitParticle* DParticleCombo_factory::Get_DecayingParticle(const DParticleCom
 			//if any step decay product at any step is located as any decay product at any step in the kinfit chain: then matches
 
 		//get all measured products, then just pick the first one to search for
-		deque<const DKinematicData*> locMeasuredParticles;
+		deque<const DKinematicData*> locFinalStateParticles;
+
 		locOldParticleCombo->Get_DecayChainParticles_Measured(locComboStepIndex, locMeasuredParticles);
 		const DKinematicData* locMeasuredParticle = locMeasuredParticles[0];
 		DKinFitParticle* locKinFitParticle = locKinFitResults->Get_OutputKinFitParticle(locMeasuredParticle);
+		if(locKinFitParticle == NULL) //null: neutral shower. Use shower object
+		{
+			const DNeutralShower* locNeutralShower = NULL;
+			locMeasuredParticle->GetSingle(locNeutralShower);
+			locKinFitParticle = locKinFitResults->Get_OutputKinFitParticle(locNeutralShower);
+		}
 
 		if(!Search_ForParticleInDecay(locKinFitChain, loc_i, locKinFitParticle))
 			continue;

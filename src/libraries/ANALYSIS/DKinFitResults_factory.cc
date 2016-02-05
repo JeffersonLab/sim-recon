@@ -180,6 +180,17 @@ DKinFitResults* DKinFitResults_factory::Build_KinFitResults(const DParticleCombo
 	//Set Pulls
 	locKinFitResults->Set_Pulls(locPulls_JObject);
 
+	//Make sure that if any particles were NOT part of the kinematic fit, they are still added to the source -> output map
+	set<DKinFitParticle*> locAllKinFitParticles = locKinFitChain->Get_AllParticles();
+	set<DKinFitParticle*>::iterator locParticleIterator = locAllKinFitParticles.begin();
+	for(; locParticleIterator != locAllKinFitParticles.end(); ++locParticleIterator)
+	{
+		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(*locParticleIterator);
+		if(locSourceJObject == NULL)
+			continue; //*locParticleIterator was an OUTPUT object, rather than input
+		locKinFitResults->Add_ParticleMapping_SourceToOutput(locSourceJObject, *locParticleIterator);
+	}
+
 	_data.push_back(locKinFitResults);
 	return locKinFitResults;
 }

@@ -73,6 +73,9 @@ class DKinFitChain
 		void Add_KinFitChainStep(DKinFitChainStep* locKinFitChainStep){dKinFitChainSteps.push_back(locKinFitChainStep);}
 		size_t Get_NumKinFitChainSteps(void) const{return dKinFitChainSteps.size();}
 
+		//GET ALL PARTICLES
+		set<DKinFitParticle*> Get_AllParticles(void) const;
+
 		//GET CONTROL INFO
 		int Get_DefinedParticleStepIndex(void) const{return dDefinedParticleStepIndex;}
 		bool Get_IsInclusiveChannelFlag(void) const{return dIsInclusiveChannelFlag;}
@@ -108,6 +111,17 @@ inline int DKinFitChain::Get_DecayStepIndex(DKinFitParticle* locKinFitParticle) 
 inline const DKinFitChainStep* DKinFitChain::Get_KinFitChainStep(size_t locStepIndex) const
 {
 	return ((locStepIndex < dKinFitChainSteps.size()) ? dKinFitChainSteps[locStepIndex] : NULL);
+}
+
+inline set<DKinFitParticle*> DKinFitChain::Get_AllParticles(void) const
+{
+	set<DKinFitParticle*> locAllParticles;
+	for(size_t loc_i = 0; loc_i < dKinFitChainSteps.size(); ++loc_i)
+	{
+		set<DKinFitParticle*> locStepParticles = dKinFitChainSteps->Get_AllParticles();
+		locAllParticles.insert(locStepParticles.begin(), locStepParticles.end());
+	}
+	return locAllParticles;
 }
 
 #endif // _DKinFitChain_
