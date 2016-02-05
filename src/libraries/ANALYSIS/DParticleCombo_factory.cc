@@ -269,7 +269,7 @@ void DParticleCombo_factory::Set_DecayingParticles(const DParticleCombo* locNewP
 	}
 
 	Particle_t locPID = PDGtoPType(locKinFitParticle->Get_PID());
-cout << "kinfit PID, p = " << locPID << ", " << locKinFitParticle->Get_Momentum().Mag() << endl;
+cout << "kinfit PID, pointer, p = " << locPID << ", " << locKinFitParticle << ", " << locKinFitParticle->Get_Momentum().Mag() << endl;
 	DKinematicData* locKinematicData_Position = Build_KinematicData(locPID, locKinFitParticle);
 	DKinematicData* locKinematicData_Common = Build_KinematicData(locPID, locKinFitParticle);
 	if(locKinFitParticle->Get_CommonVxParamIndex() >= 0)
