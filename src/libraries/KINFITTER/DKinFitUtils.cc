@@ -1562,3 +1562,42 @@ void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFi
 	}
 }
 
+const DKinFitChain* DKinFitUtils::Build_OutputKinFitChain(const DKinFitChain* locInputKinFitChain, set<DKinFitParticle*>& locKinFitOutputParticles)
+{
+	//First, build map of input -> output
+	map<DKinFitParticle*, DKinFitParticle*> locInputToOutputParticleMap;
+	set<DKinFitParticle*>::iterator locParticleIterator = locKinFitOutputParticles.begin();
+	for(; locParticleIterator != locKinFitOutputParticles.end(); ++locParticleIterator)
+		locInputToOutputParticleMap[dParticleMap_OutputToInput[*locParticleIterator]] = *locParticleIterator;
+
+	DKinFitChain* locOutputKinFitChain = Get_KinFitChainResource();
+	locOutputKinFitChain->Set_DefinedParticleStepIndex(locInputKinFitChain->Get_DefinedParticleStepIndex());
+	locOutputKinFitChain->Set_IsInclusiveChannelFlag(locInputKinFitChain->Get_IsInclusiveChannelFlag());
+
+	//loop over steps
+	for(size_t loc_i = 0; loc_i < locInputKinFitChain->Get_NumKinFitChainSteps(); ++loc_i)
+	{
+		DKinFitChainStep* locInputKinFitChainStep = locInputKinFitChain->Get_KinFitChainStep(loc_i);
+		DKinFitChainStep* locOutputKinFitChainStep = Get_KinFitChainStepResource();
+
+		locOutputKinFitChainStep->Set_InitialParticleDecayFromStepIndex(locInputKinFitChainStep->Get_InitialParticleDecayFromStepIndex());
+		locOutputKinFitChainStep->Set_ConstrainDecayingMassFlag(locInputKinFitChainStep->Get_ConstrainDecayingMassFlag());
+
+		set<DKinFitParticle*> locInitialParticles = locInputKinFitChainStep->Get_InitialParticles();
+		for(locParticleIterator = locInitialParticles.begin(); locParticleIterator != locInitialParticles.end(); ++locParticleIterator)
+		{
+			if((*locParticleIterator)->Get_KinFitParticleType() == d_DecayingParticle)
+				locOutputKinFitChain->Set_DecayStepIndex(*locParticleIterator, loc_i);
+			locOutputKinFitChainStep->Add_InitialParticle(locInputToOutputParticleMap[*locParticleIterator]);
+		}
+
+		set<DKinFitParticle*> locFinalParticles = locInputKinFitChainStep->Get_FinalParticles();
+		for(locParticleIterator = locFinalParticles.begin(); locParticleIterator != locFinalParticles.end(); ++locParticleIterator)
+			locOutputKinFitChainStep->Add_FinalParticle(locInputToOutputParticleMap[*locParticleIterator]);
+
+		locOutputKinFitChain->Add_KinFitChainStep(locOutputKinFitChainStep);
+	}
+
+	return locOutputKinFitChain;
+}
+

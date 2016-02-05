@@ -94,6 +94,10 @@ class DKinFitUtils //purely virtual: cannot directly instantiate class, can only
 
 		bool Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, TMatrixDSym& locCovarianceMatrix) const;
 
+		/********************************************************* BUILD OUTPUT DKINFITCHAIN ********************************************************/
+
+		const DKinFitChain* Build_OutputKinFitChain(const DKinFitChain* locInputKinFitChain, set<DKinFitParticle*>& locKinFitOutputParticles);
+
 		/************************************************************ RESOURCE POOL SIZES ***********************************************************/
 
 		//GET CURRENT POOL SIZES

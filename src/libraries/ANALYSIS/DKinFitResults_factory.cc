@@ -121,7 +121,12 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 		bool locFitStatus = dKinFitter->Fit_Reaction();
 
 		//Build results (unless failed), and register
-		DKinFitResults* locKinFitResults = locFitStatus ? Build_KinFitResults(locParticleCombo, locKinFitChain) : NULL;
+		DKinFitResults* locKinFitResults = NULL;
+		if(locFitStatus)
+		{
+			const DKinFitChain* locOutputKinFitChain = dKinFitUtils->Build_OutputKinFitChain(locKinFitChain, dKinFitter->Get_KinFitParticles());
+			DKinFitResults* locKinFitResults = Build_KinFitResults(locParticleCombo, locOutputKinFitChain);
+		}
 		dConstraintResultsMap[locConstraints] = locKinFitResults;
 	}
 
