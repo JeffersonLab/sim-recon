@@ -248,7 +248,7 @@ jerror_t DGeometry::FindMatALT1(DVector3 &pos, DVector3 &mom,double &KrhoZ_overA
 jerror_t DGeometry::FindMatKalman(const DVector3 &pos,const DVector3 &mom,
 				  double &KrhoZ_overA, 
 				  double &rhoZ_overA, 
-				  double &LnI,
+				  double &LnI,double &Z,
 				  double &chi2c_factor,double &chi2a_factor,
 				  double &chi2a_corr,
 				  unsigned int &last_index,
@@ -260,7 +260,7 @@ jerror_t DGeometry::FindMatKalman(const DVector3 &pos,const DVector3 &mom,
   for(unsigned int i=last_index; i<materialmaps.size(); i++){
     jerror_t err = materialmaps[i]->FindMatKalman(pos,KrhoZ_overA,
 						  rhoZ_overA,LnI,chi2c_factor,
-						  chi2a_factor,chi2a_corr);
+						  chi2a_factor,chi2a_corr,Z);
     if(err==NOERROR){
       if(i==materialmaps.size()-1) last_index=0;
       else last_index=i;
@@ -293,7 +293,7 @@ return RESOURCE_UNAVAILABLE;
 jerror_t DGeometry::FindMatKalman(const DVector3 &pos,
 				  double &KrhoZ_overA, 
 				  double &rhoZ_overA, 
-				  double &LnI, double &chi2c_factor, 
+				  double &LnI, double &Z,double &chi2c_factor, 
 				  double &chi2a_factor, double &chi2a_corr,
 				  unsigned int &last_index) const
 {
@@ -304,7 +304,7 @@ jerror_t DGeometry::FindMatKalman(const DVector3 &pos,
     jerror_t err = materialmaps[i]->FindMatKalman(pos,KrhoZ_overA,
 						  rhoZ_overA,LnI,
 						  chi2c_factor,chi2a_factor,
-						  chi2a_corr);
+						  chi2a_corr,Z);
     if(err==NOERROR){
       if(i==materialmaps.size()-1) last_index=0;
       else last_index=i;

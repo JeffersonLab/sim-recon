@@ -263,12 +263,14 @@ jerror_t DMaterialMap::FindMatKalman(const DVector3 &pos,
 				     double &K_rho_Z_over_A,
 				     double &rho_Z_over_A,
 				     double &LogI, double &chi2c_factor,
-				     double &chi2a_factor, double &chi2a_corr) const
+				     double &chi2a_factor, double &chi2a_corr,
+				     double &Z) const
 {
 
 	const MaterialNode *node = FindNode(pos);
 	if(!node)return RESOURCE_UNAVAILABLE;
 	
+	Z=node->Z;
 	rho_Z_over_A = node->rhoZ_overA;
 	LogI = node->LogI;
 	K_rho_Z_over_A=node->KrhoZ_overA;
