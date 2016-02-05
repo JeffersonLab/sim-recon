@@ -1301,6 +1301,9 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 
 			for(size_t loc_j = 0; loc_j < locPIDs.size(); ++loc_j)
 			{
+				if(Get_Reaction()->Get_DecayStepIndex(loc_i, loc_j) >= 0)
+					continue; //decaying particle
+
 				Particle_t locPID = locPIDs[loc_j];
 				if(locPIDSet.find(locPID) != locPIDSet.end())
 					continue; //histograms already created for this pid
