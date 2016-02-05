@@ -118,7 +118,7 @@ inline set<DKinFitParticle*> DKinFitChain::Get_AllParticles(void) const
 	set<DKinFitParticle*> locAllParticles;
 	for(size_t loc_i = 0; loc_i < dKinFitChainSteps.size(); ++loc_i)
 	{
-		set<DKinFitParticle*> locStepParticles = dKinFitChainSteps->Get_AllParticles();
+		set<DKinFitParticle*> locStepParticles = dKinFitChainSteps[loc_i]->Get_AllParticles();
 		locAllParticles.insert(locStepParticles.begin(), locStepParticles.end());
 	}
 	return locAllParticles;
