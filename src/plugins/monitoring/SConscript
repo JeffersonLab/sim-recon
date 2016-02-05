@@ -25,7 +25,8 @@ subdirs = [
 'BCAL_Eff',
 'BCAL_inv_mass',
 'CDC_drift',
-'CDC_Cosmics']
+'CDC_Cosmics',
+'CDC_Efficiency']
 
 #'L3_online',
 #'CODA_online',
