@@ -1299,9 +1299,9 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 			locReactionStep->Get_FinalParticleIDs(locPIDs);
 			set<Particle_t> locPIDSet;
 
-			for(size_t loc_j = 0; loc_j < locPIDs[loc_i].size(); ++loc_j)
+			for(size_t loc_j = 0; loc_j < locPIDs.size(); ++loc_j)
 			{
-				Particle_t locPID = locPIDs[loc_i][loc_j];
+				Particle_t locPID = locPIDs[loc_j];
 				if(locPIDSet.find(locPID) != locPIDSet.end())
 					continue; //histograms already created for this pid
 
