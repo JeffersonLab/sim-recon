@@ -175,8 +175,7 @@ DKinFitResults* DKinFitResults_factory::Build_KinFitResults(const DParticleCombo
 		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);
 
 		locPulls_JObject[locSourceJObject] = locMapIterator->second;
-		locKinFitResults->Add_ParticleMapping_SourceToInput(locSourceJObject, locInputKinFitParticle);
-		locKinFitResults->Add_ParticleMapping_InputToOutput(locInputKinFitParticle, locOutputKinFitParticle);
+		locKinFitResults->Add_ParticleMapping_SourceToOutput(locSourceJObject, locOutputKinFitParticle);
 	}
 	//Set Pulls
 	locKinFitResults->Set_Pulls(locPulls_JObject);

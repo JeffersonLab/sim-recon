@@ -347,7 +347,7 @@ DKinFitParticle* DParticleCombo_factory::Get_DecayingParticle(const DParticleCom
 		deque<const DKinematicData*> locMeasuredParticles;
 		locOldParticleCombo->Get_DecayChainParticles_Measured(locComboStepIndex, locMeasuredParticles);
 		const DKinematicData* locMeasuredParticle = locMeasuredParticles[0];
-		DKinFitParticle* locKinFitParticle = locKinFitResults->Get_InputKinFitParticle(locMeasuredParticle);
+		DKinFitParticle* locKinFitParticle = locKinFitResults->Get_OutputKinFitParticle(locMeasuredParticle);
 
 		if(!Search_ForParticleInDecay(locKinFitChain, loc_i, locKinFitParticle))
 			continue;
@@ -446,9 +446,7 @@ void DParticleCombo_factory::Set_SpacetimeVertex(const DParticleCombo* locNewPar
 	}
 
 	//instead, get from common vertex of final state particles
-	//this is the input particle: need to get the vertex from the output particle
-	DKinFitParticle* locInputKinFitParticle = *(locKinFitChain->Get_KinFitChainStep(0)->Get_FinalParticles().begin());
-	DKinFitParticle* locFinalKinFitParticle = locKinFitResults->Get_OutputKinFitParticle(locInputKinFitParticle);
+	DKinFitParticle* locFinalKinFitParticle = *(locKinFitChain->Get_KinFitChainStep(0)->Get_FinalParticles().begin());
 
 	//need the spacetime vertex at the production vertex of the particle grabbed
 	TLorentzVector locSpacetimeVertex;
