@@ -403,7 +403,6 @@ void DKinFitUtils_GlueX::Make_KinFitChainStep(const DParticleCombo* locParticleC
 		else if(ParticleCharge(locKinematicData->PID()) == 0) //detected neutral
 		{
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locKinematicData);
-			const DKinFitParticle* locKinFitParticle = NULL;
 			pair<int, int> locParticlePair(locStepIndex, loc_j);
 			if(locKinFitVertexParticles.find(locParticlePair) == locKinFitVertexParticles.end())
 				locKinFitChainStep->Add_FinalParticle(Make_DetectedParticle(locNeutralParticleHypothesis));
