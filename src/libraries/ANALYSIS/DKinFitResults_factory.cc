@@ -157,7 +157,7 @@ DKinFitResults* DKinFitResults_factory::Build_KinFitResults(const DParticleCombo
 	locKinFitResults->Add_OutputKinFitParticles(dKinFitter->Get_KinFitParticles());
 	locKinFitResults->Add_KinFitConstraints(dKinFitter->Get_KinFitConstraints());
 
-	//Particle Maps & Pulls
+	//Pulls
 
 	//Build this:
 	map<const JObject*, map<DKinFitPullType, double> > locPulls_JObject;
@@ -166,7 +166,7 @@ DKinFitResults* DKinFitResults_factory::Build_KinFitResults(const DParticleCombo
 	map<DKinFitParticle*, map<DKinFitPullType, double> > locPulls_KinFitParticle;
 	dKinFitter->Get_Pulls(locPulls_KinFitParticle);
 
-	//By looping over the pulls (and can do mapping too): //only particles with pulls need mapping (others have no source objects)
+	//By looping over the pulls:
 	map<DKinFitParticle*, map<DKinFitPullType, double> >::iterator locMapIterator = locPulls_KinFitParticle.begin();
 	for(; locMapIterator != locPulls_KinFitParticle.end(); ++locMapIterator)
 	{
@@ -175,20 +175,26 @@ DKinFitResults* DKinFitResults_factory::Build_KinFitResults(const DParticleCombo
 		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);
 
 		locPulls_JObject[locSourceJObject] = locMapIterator->second;
-		locKinFitResults->Add_ParticleMapping_SourceToOutput(locSourceJObject, locOutputKinFitParticle);
 	}
 	//Set Pulls
 	locKinFitResults->Set_Pulls(locPulls_JObject);
 
-	//Make sure that if any particles were NOT part of the kinematic fit, they are still added to the source -> output map
+	//Particle Mapping
+	//If any particles were NOT part of the kinematic fit, they are still added to the source -> output map
 	set<DKinFitParticle*> locAllKinFitParticles = locKinFitChain->Get_AllParticles();
 	set<DKinFitParticle*>::iterator locParticleIterator = locAllKinFitParticles.begin();
 	for(; locParticleIterator != locAllKinFitParticles.end(); ++locParticleIterator)
 	{
 		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(*locParticleIterator);
-		if(locSourceJObject == NULL)
-			continue; //*locParticleIterator was an OUTPUT object, rather than input
-		locKinFitResults->Add_ParticleMapping_SourceToOutput(locSourceJObject, *locParticleIterator);
+		if(locSourceJObject != NULL)
+		{
+			locKinFitResults->Add_ParticleMapping_SourceToOutput(locSourceJObject, *locParticleIterator);
+			continue; //*locParticleIterator was an input object //not directly used in the fit
+		}
+		DKinFitParticle* locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(*locParticleIterator);
+		locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);
+		if(locSourceJObject != NULL) //else was a decaying/missing particle: no source
+			locKinFitResults->Add_ParticleMapping_SourceToOutput(locSourceJObject, *locParticleIterator);
 	}
 
 	_data.push_back(locKinFitResults);
