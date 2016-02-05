@@ -130,8 +130,8 @@ inline void DKinFitResults::Add_ParticleMapping_SourceToOutput(const JObject* lo
 
 inline DKinFitParticle* DKinFitResults::Get_OutputKinFitParticle(const JObject* locSourceObject) const
 {
-	DKinFitParticle* locInputKinFitParticle = Get_InputKinFitParticle(locSourceObject);
-	return Get_OutputKinFitParticle(locInputKinFitParticle);
+	map<const JObject*, DKinFitParticle*>::const_iterator locIterator = dParticleMap_SourceToOutput.find(locSourceObject);
+	return ((locIterator != dParticleMap_SourceToOutput.end()) ? locIterator->second : NULL);
 }
 
 inline set<DKinFitParticle*> DKinFitResults::Get_OutputKinFitParticles(DKinFitParticleType locKinFitParticleType) const
