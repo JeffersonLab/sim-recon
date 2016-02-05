@@ -158,6 +158,24 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 				locNewParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboStep->Get_ParticleComboBlueprintStep());
 				locNewParticleComboStep->Set_SpacetimeVertex(locParticleComboStep->Get_SpacetimeVertex()); //overridden if kinematic fit
 
+				//INITIAL PARTICLE & SPACETIME VERTEX
+				if(locParticleComboStep->Is_InitialParticleDetected()) //set beam photon
+				{
+					bool locParticleFoundFlag = false;
+					for(size_t loc_k = 0; loc_k < locBeamPhotons.size(); ++loc_k)
+					{
+						if(!locBeamPhotons[loc_k]->IsAssociated(locParticleCombo))
+							continue; // beam photon created for a different particle combo
+						locNewParticleComboStep->Set_InitialParticle(locBeamPhotons[loc_k]);
+						locParticleFoundFlag = true;
+						break;
+					}
+					if(!locParticleFoundFlag) //beam not used in kinfit, re-set original
+						locNewParticleComboStep->Set_InitialParticle(locParticleComboStep->Get_InitialParticle());
+				}
+				else //decaying particle! //set here for initial state, and in previous step for final state
+					Set_DecayingParticles(locNewParticleCombo, locParticleCombo, loc_j, locNewParticleComboStep, locKinFitChain, locKinFitResultsVector[loc_i]);
+
 				//TARGET PARTICLE
 				if(locParticleComboStep->Is_TargetPresent())
 				{
@@ -197,24 +215,6 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 					else //charged
 						locNewParticleComboStep->Add_FinalParticle(Get_ChargedHypothesis(locParticleCombo, locChargedTrackHypotheses, locKinematicData_Measured));
 				}
-
-				//INITIAL PARTICLE & SPACETIME VERTEX
-				if(locParticleComboStep->Is_InitialParticleDetected()) //set beam photon
-				{
-					bool locParticleFoundFlag = false;
-					for(size_t loc_k = 0; loc_k < locBeamPhotons.size(); ++loc_k)
-					{
-						if(!locBeamPhotons[loc_k]->IsAssociated(locParticleCombo))
-							continue; // beam photon created for a different particle combo
-						locNewParticleComboStep->Set_InitialParticle(locBeamPhotons[loc_k]);
-						locParticleFoundFlag = true;
-						break;
-					}
-					if(!locParticleFoundFlag) //beam not used in kinfit, re-set original
-						locNewParticleComboStep->Set_InitialParticle(locParticleComboStep->Get_InitialParticle());
-				}
-				else //decaying particle! //set here for initial state, and in previous step for final state
-					Set_DecayingParticles(locNewParticleCombo, locParticleCombo, loc_j, locNewParticleComboStep, locKinFitChain, locKinFitResultsVector[loc_i]);
 
 				Set_SpacetimeVertex(locNewParticleCombo, locNewParticleComboStep, loc_j, locKinFitResultsVector[loc_i], locKinFitChain);
 
@@ -269,7 +269,6 @@ void DParticleCombo_factory::Set_DecayingParticles(const DParticleCombo* locNewP
 	}
 
 	Particle_t locPID = PDGtoPType(locKinFitParticle->Get_PID());
-cout << "kinfit PID, pointer, p = " << locPID << ", " << locKinFitParticle << ", " << locKinFitParticle->Get_Momentum().Mag() << endl;
 	DKinematicData* locKinematicData_Position = Build_KinematicData(locPID, locKinFitParticle);
 	DKinematicData* locKinematicData_Common = Build_KinematicData(locPID, locKinFitParticle);
 	if(locKinFitParticle->Get_CommonVxParamIndex() >= 0)
@@ -280,22 +279,6 @@ cout << "kinfit PID, pointer, p = " << locPID << ", " << locKinFitParticle << ",
 	DKinematicData* locKinematicData_FinalState = locAtProdVertexFlag ? locKinematicData_Position : locKinematicData_Common;
 
 	locNewParticleComboStep->Set_InitialParticle(locKinematicData_InitState);
-
-DLorentzVector locKidSumP4;
-for(size_t loc_k = 0; loc_k < locNewParticleComboStep->Get_NumFinalParticles(); ++loc_k)
-{
-	const DKinematicData* locKinematicData = locNewParticleComboStep->Get_FinalParticle(loc_k);
-	if(locKinematicData == NULL)
-		continue;
-	locKidSumP4 += locKinematicData->lorentzMomentum();
-}
-DLorentzVector locParentP4 = locKinematicData_InitState->lorentzMomentum();
-DLorentzVector locFinalStateParentP4 = locKinematicData_FinalState->lorentzMomentum();
-cout << "set parent. parent pxyzE: " << locParentP4.Px() << ", " << locParentP4.Py() << ", " << locParentP4.Pz() << ", " << locParentP4.E() << endl;
-cout << "as final state     pxyzE: " << locFinalStateParentP4.Px() << ", " << locFinalStateParentP4.Py() << ", " << locFinalStateParentP4.Pz() << ", " << locFinalStateParentP4.E() << endl;
-cout << "kid combined       pxyzE: " << locKidSumP4.Px() << ", " << locKidSumP4.Py() << ", " << locKidSumP4.Pz() << ", " << locKidSumP4.E() << endl;
-cout << "decaying-delta-p = " << fabs(locParentP4.P() - locFinalStateParentP4.P()) << endl;
-cout << "init/kids delta-p = " << fabs(locParentP4.P() - locKidSumP4.P()) << endl;
 
 	//now, back-set the particle at the other vertex
 	int locFromStepIndex = locNewParticleComboStep->Get_InitialParticleDecayFromStepIndex();
