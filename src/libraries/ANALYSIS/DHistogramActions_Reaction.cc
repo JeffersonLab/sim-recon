@@ -1303,6 +1303,8 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 			{
 				if(Get_Reaction()->Get_DecayStepIndex(loc_i, loc_j) >= 0)
 					continue; //decaying particle
+				if(locReactionStep->Get_MissingParticleIndex() == loc_j)
+					continue; //missing particle
 
 				Particle_t locPID = locPIDs[loc_j];
 				if(locPIDSet.find(locPID) != locPIDSet.end())
