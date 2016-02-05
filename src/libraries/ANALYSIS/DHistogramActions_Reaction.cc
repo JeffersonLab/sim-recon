@@ -1245,9 +1245,6 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 	if(locKinFitType == d_NoFit)
 		return;
 
-	deque<deque<Particle_t> > locDetectedPIDs;
-	Get_Reaction()->Get_DetectedFinalPIDs(locDetectedPIDs);
-
 	locEventLoop->GetSingle(dAnalysisUtilities);
 	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
 
@@ -1297,14 +1294,20 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
 			string locStepName = locReactionStep->Get_StepName();
 			string locStepROOTName = locReactionStep->Get_StepROOTName();
-			if(locDetectedPIDs[loc_i].empty())
-				continue;
 
-			CreateAndChangeTo_Directory(locStepName, locStepName);
+			deque<Particle_t> locPIDs;
+			locReactionStep->Get_FinalParticleIDs(locPIDs);
+			set<Particle_t> locPIDSet;
 
-			for(size_t loc_j = 0; loc_j < locDetectedPIDs[loc_i].size(); ++loc_j)
+			for(size_t loc_j = 0; loc_j < locPIDs[loc_i].size(); ++loc_j)
 			{
-				Particle_t locPID = locDetectedPIDs[loc_i][loc_j];
+				Particle_t locPID = locPIDs[loc_i][loc_j];
+				if(locPIDSet.find(locPID) != locPIDSet.end())
+					continue; //histograms already created for this pid
+
+				if(locPIDSet.empty()) //first call
+					CreateAndChangeTo_Directory(locStepName, locStepName);
+
 				string locParticleName = ParticleType(locPID);
 				CreateAndChangeTo_Directory(locParticleName, locParticleName);
 
@@ -1318,10 +1321,13 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 
 				Create_ParticlePulls(locFullROOTName, locIsInVertexFitFlag, locIsNeutralShowerFlag, locParticlePulls);
 				dHistMap_Pulls[pair<size_t, Particle_t>(loc_i, locPID)] = locParticlePulls;
+				locPIDSet.insert(locPID);
 
 				gDirectory->cd("..");
 			} //end of particle loop
-			gDirectory->cd("..");
+
+			if(!locPIDSet.empty())
+				gDirectory->cd("..");
 		} //end of step loop
 
 		//Return to the base directory
