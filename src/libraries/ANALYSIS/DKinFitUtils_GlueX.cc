@@ -1039,60 +1039,12 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 		locAllNoConstrainParticles.push_back(locNoConstrainParticles);
 	}
 
-	//initial pass through vertices:
-		//only accept vertices with at least 2 detected, constraining particles
-		//will accept decaying particles on the next pass
-	set<pair<int, int> > locDefinedDecayingParticles;
-	for(size_t loc_i = 0; loc_i < locAllFullConstrainParticles.size();)
-	{
-		if(locAllFullConstrainParticles[loc_i].size() < 2)
-		{
-			++loc_i;
-			continue;
-		}
-
-		//Create vertex/spacetime constraint, with decaying particles as no-constrain particles
-		locAllNoConstrainParticles[loc_i].insert(locAllDecayingParticles[loc_i].begin(), locAllDecayingParticles[loc_i].end());
-		set<pair<int, int> > locVertexParticles;
-		if(locSpacetimeFitFlag)
-		{
-			locVertexParticles.insert(locAllOnlyConstrainTimeParticles[loc_i].begin(), locAllOnlyConstrainTimeParticles[loc_i].end());
-			locNumConstraints += 3*locAllFullConstrainParticles[loc_i].size();
-			locNumConstraints += locAllOnlyConstrainTimeParticles[loc_i].size();
-		}
-		else //vertex only
-		{
-			locAllNoConstrainParticles[loc_i].insert(locAllOnlyConstrainTimeParticles[loc_i].begin(), locAllOnlyConstrainTimeParticles[loc_i].end());
-			locNumConstraints += 2*locAllFullConstrainParticles[loc_i].size();
-		}
-		locVertexParticles.insert(locAllFullConstrainParticles[loc_i].begin(), locAllFullConstrainParticles[loc_i].end());
-		locVertexParticles.insert(locAllNoConstrainParticles[loc_i].begin(), locAllNoConstrainParticles[loc_i].end());
-		locAllVertexParticles.push_back(locVertexParticles);
-
-		//The positions of these decaying particles are now defined: Can use to constrain vertices in later constraints
-		locDefinedDecayingParticles.insert(locAllDecayingParticles[loc_i].begin(), locAllDecayingParticles[loc_i].end());
-
-		//add to the full constraint string
-		if(locAllConstraintString != "")
-			locAllConstraintString += ", ";
-		locAllConstraintString += Build_VertexConstraintString(locReaction, locAllVertices[loc_i], locAllFullConstrainParticles[loc_i], locAllOnlyConstrainTimeParticles[loc_i], locAllNoConstrainParticles[loc_i], locSpacetimeFitFlag);
-
-		//Erase this vertex from future consideration
-		locAllFullConstrainParticles.erase(locAllFullConstrainParticles.begin() + loc_i);
-		locAllDecayingParticles.erase(locAllDecayingParticles.begin() + loc_i);
-		locAllOnlyConstrainTimeParticles.erase(locAllOnlyConstrainTimeParticles.begin() + loc_i);
-		locAllNoConstrainParticles.erase(locAllNoConstrainParticles.begin() + loc_i);
-	}
-
-	//all remaining vertex constraints now need decaying particles to help constrain.
-	if(locAllFullConstrainParticles.empty() || !dLinkVerticesFlag)
-		return locAllVertexParticles; //either no remaining vertices, or cannot constrain them since linking via decaying particles is disabled
-
 	//loop over vertex-constraints-to-sort:
 		//find which constraints decaying particles should be defined-by/constrained-to
 		//find order in which constraints need to be constrained
 	size_t locConstraintIndex = 0;
 	bool locProgessMadeFlag = false;
+	set<pair<int, int> > locDefinedDecayingParticles;
 	while(!locAllFullConstrainParticles.empty())
 	{
 		if(locConstraintIndex == locAllFullConstrainParticles.size())
@@ -1106,9 +1058,10 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 
 		//find which decaying particles at this vertex have been previously defined
 		set<pair<int, int> > locVertexDecayingParticles_Defined;
-		set_intersection(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
-                          locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
-                          inserter(locVertexDecayingParticles_Defined, locVertexDecayingParticles_Defined.begin()));
+		if(dLinkVerticesFlag)
+			set_intersection(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
+				locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
+				inserter(locVertexDecayingParticles_Defined, locVertexDecayingParticles_Defined.begin()));
 
 		//see if enough defined particles to constrain vertex
 		if(locVertexDecayingParticles_Defined.size() + locAllFullConstrainParticles[locConstraintIndex].size() < 2)
@@ -1119,9 +1072,9 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 
 		//find which decaying particles at this vertex have NOT been previously defined
 		set<pair<int, int> > locVertexDecayingParticles_NotDefined;
-		set_intersection(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
-                          locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
-                          inserter(locVertexDecayingParticles_NotDefined, locVertexDecayingParticles_NotDefined.begin()));
+		set_difference(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
+			locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
+			inserter(locVertexDecayingParticles_NotDefined, locVertexDecayingParticles_NotDefined.begin()));
 
 		//Add decaying particles to appropriate sets
 		locAllFullConstrainParticles[locConstraintIndex].insert(locVertexDecayingParticles_Defined.begin(), locVertexDecayingParticles_Defined.end());
@@ -1145,7 +1098,8 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 		locAllVertexParticles.push_back(locVertexParticles);
 
 		//The positions of these decaying particles are now defined: Can use to constrain vertices in later constraints
-		locDefinedDecayingParticles.insert(locVertexDecayingParticles_NotDefined.begin(), locVertexDecayingParticles_NotDefined.end());
+		if(dLinkVerticesFlag)
+			locDefinedDecayingParticles.insert(locVertexDecayingParticles_NotDefined.begin(), locVertexDecayingParticles_NotDefined.end());
 
 		//add to the full constraint string
 		if(locAllConstraintString != "")

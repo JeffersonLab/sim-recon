@@ -531,57 +531,20 @@ deque<DKinFitConstraint_Vertex*> DKinFitUtils::Create_VertexConstraints(const de
 		locAllNoConstrainParticles.push_back(locNoConstrainParticles);
 	}
 
-	//initial pass through vertices:
-		//only accept vertices with at least 2 detected, constraining particles
-		//will accept decaying particles on the next pass
-	set<DKinFitParticle*> locDefinedDecayingParticles;
-	for(size_t loc_i = 0; loc_i < locAllFullConstrainParticles.size();)
-	{
-		if(locAllFullConstrainParticles[loc_i].size() < 2)
-		{
-			++loc_i;
-			continue;
-		}
-
-		//Create vertex/spacetime constraint, with decaying particles as no-constrain particles
-		locAllNoConstrainParticles[loc_i].insert(locAllDecayingParticles[loc_i].begin(), locAllDecayingParticles[loc_i].end());
-		if(locSpacetimeFitFlag)
-			locSortedConstraints.push_back(Make_SpacetimeConstraint(locAllFullConstrainParticles[loc_i], locAllOnlyConstrainTimeParticles[loc_i], locAllNoConstrainParticles[loc_i]));
-		else //vertex only
-		{
-			locAllNoConstrainParticles[loc_i].insert(locAllOnlyConstrainTimeParticles[loc_i].begin(), locAllOnlyConstrainTimeParticles[loc_i].end());
-			locSortedConstraints.push_back(Make_VertexConstraint(locAllFullConstrainParticles[loc_i], locAllNoConstrainParticles[loc_i]));
-		}
-
-		//The positions of these decaying particles are now defined: Can use to constrain vertices in later constraints
-		locDefinedDecayingParticles.insert(locAllDecayingParticles[loc_i].begin(), locAllDecayingParticles[loc_i].end());
-
-		//Erase this vertex from future consideration
-		locAllFullConstrainParticles.erase(locAllFullConstrainParticles.begin() + loc_i);
-		locAllDecayingParticles.erase(locAllDecayingParticles.begin() + loc_i);
-		locAllOnlyConstrainTimeParticles.erase(locAllOnlyConstrainTimeParticles.begin() + loc_i);
-		locAllNoConstrainParticles.erase(locAllNoConstrainParticles.begin() + loc_i);
-	}
-
-	//all remaining vertex constraints now need decaying particles to help constrain.
-	if(locAllFullConstrainParticles.empty() || !dLinkVerticesFlag)
-	{
-		if(dDebugLevel > 10)
-			cout << "DKinFitUtils: Vertex constraints created." << endl;
-		return locSortedConstraints; //either no remaining vertices, or cannot constrain them since linking via decaying particles is disabled
-	}
-
 	//loop over vertex-constraints-to-sort:
 		//find which constraints decaying particles should be defined-by/constrained-to
 		//find order in which constraints need to be constrained
 	size_t locConstraintIndex = 0;
 	bool locProgessMadeFlag = false;
-	while(!locAllFullConstrainParticles.empty())
+	set<DKinFitParticle*> locDefinedDecayingParticles;
+	while(!locAllFullConstrainParticles.empty()) //loop through vertices
 	{
 		if(locConstraintIndex == locAllFullConstrainParticles.size())
 		{
+			//made a full loop through
 			if(!locProgessMadeFlag)
 				break; //no progress made: cannot constrain remaining vertices
+			//reset for next pass through
 			locConstraintIndex = 0;
 			locProgessMadeFlag = false;
 			continue;
@@ -589,9 +552,10 @@ deque<DKinFitConstraint_Vertex*> DKinFitUtils::Create_VertexConstraints(const de
 
 		//find which decaying particles at this vertex have been previously defined
 		set<DKinFitParticle*> locVertexDecayingParticles_Defined;
-		set_intersection(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
-                          locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
-                          inserter(locVertexDecayingParticles_Defined, locVertexDecayingParticles_Defined.begin()));
+		if(dLinkVerticesFlag)
+			set_intersection(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
+				locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
+				inserter(locVertexDecayingParticles_Defined, locVertexDecayingParticles_Defined.begin()));
 
 		//see if enough defined particles to constrain vertex
 		if(locVertexDecayingParticles_Defined.size() + locAllFullConstrainParticles[locConstraintIndex].size() < 2)
@@ -599,12 +563,13 @@ deque<DKinFitConstraint_Vertex*> DKinFitUtils::Create_VertexConstraints(const de
 			++locConstraintIndex;
 			continue; //nope
 		}
+		//we have enough: can do fit
 
 		//find which decaying particles at this vertex have NOT been previously defined
 		set<DKinFitParticle*> locVertexDecayingParticles_NotDefined;
-		set_intersection(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
-                          locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
-                          inserter(locVertexDecayingParticles_NotDefined, locVertexDecayingParticles_NotDefined.begin()));
+		set_difference(locAllDecayingParticles[locConstraintIndex].begin(), locAllDecayingParticles[locConstraintIndex].end(),
+			locDefinedDecayingParticles.begin(), locDefinedDecayingParticles.end(),
+			inserter(locVertexDecayingParticles_NotDefined, locVertexDecayingParticles_NotDefined.end()));
 
 		//Add decaying particles to appropriate sets
 		locAllFullConstrainParticles[locConstraintIndex].insert(locVertexDecayingParticles_Defined.begin(), locVertexDecayingParticles_Defined.end());
@@ -620,7 +585,8 @@ deque<DKinFitConstraint_Vertex*> DKinFitUtils::Create_VertexConstraints(const de
 		}
 
 		//The positions of these decaying particles are now defined: Can use to constrain vertices in later constraints
-		locDefinedDecayingParticles.insert(locVertexDecayingParticles_NotDefined.begin(), locVertexDecayingParticles_NotDefined.end());
+		if(dLinkVerticesFlag)
+			locDefinedDecayingParticles.insert(locVertexDecayingParticles_NotDefined.begin(), locVertexDecayingParticles_NotDefined.end());
 
 		//Erase this vertex from future consideration
 		locAllFullConstrainParticles.erase(locAllFullConstrainParticles.begin() + locConstraintIndex);
