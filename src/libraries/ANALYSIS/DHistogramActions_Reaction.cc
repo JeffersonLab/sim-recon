@@ -1312,12 +1312,6 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 				if(locPIDSet.find(locPID) != locPIDSet.end())
 					continue; //histograms already created for this pid
 
-				string locParticleName = ParticleType(locPID);
-				CreateAndChangeTo_Directory(locParticleName, locParticleName);
-
-				string locParticleROOTName = ParticleName_ROOT(locPID);
-				string locFullROOTName = locParticleROOTName + string(", ") + locStepROOTName;
-
 				pair<int, int> locParticlePair(loc_i, loc_j);
 				bool locIsInVertexFitFlag = (locVertexParticles.find(locParticlePair) != locVertexParticles.end());
 
@@ -1327,6 +1321,12 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 
 				if(locPIDSet.empty()) //first call
 					CreateAndChangeTo_Directory(locStepName, locStepName);
+
+				string locParticleName = ParticleType(locPID);
+				CreateAndChangeTo_Directory(locParticleName, locParticleName);
+
+				string locParticleROOTName = ParticleName_ROOT(locPID);
+				string locFullROOTName = locParticleROOTName + string(", ") + locStepROOTName;
 
 				Create_ParticlePulls(locFullROOTName, locIsInVertexFitFlag, locIsNeutralShowerFlag, locParticlePulls);
 				dHistMap_Pulls[pair<size_t, Particle_t>(loc_i, locPID)] = locParticlePulls;
