@@ -1256,6 +1256,8 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 	size_t locNDF = locNumConstraints - locNumUnknowns;
 	bool locIncludeBeamlineInVertexFitFlag = dKinFitUtils->Get_IncludeBeamlineInVertexFitFlag();
 
+	bool locP4IsFit = ((locKinFitType != d_VertexFit) && (locKinFitType != d_SpacetimeFit));
+
 	//CREATE THE HISTOGRAMS
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
@@ -1310,9 +1312,6 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 				if(locPIDSet.find(locPID) != locPIDSet.end())
 					continue; //histograms already created for this pid
 
-				if(locPIDSet.empty()) //first call
-					CreateAndChangeTo_Directory(locStepName, locStepName);
-
 				string locParticleName = ParticleType(locPID);
 				CreateAndChangeTo_Directory(locParticleName, locParticleName);
 
@@ -1323,6 +1322,11 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 				bool locIsInVertexFitFlag = (locVertexParticles.find(locParticlePair) != locVertexParticles.end());
 
 				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));
+				if(locIsNeutralShowerFlag && !locP4IsFit)
+					continue; //vertex-only fit: neutral shower does not constrain: no pulls
+
+				if(locPIDSet.empty()) //first call
+					CreateAndChangeTo_Directory(locStepName, locStepName);
 
 				Create_ParticlePulls(locFullROOTName, locIsInVertexFitFlag, locIsNeutralShowerFlag, locParticlePulls);
 				dHistMap_Pulls[pair<size_t, Particle_t>(loc_i, locPID)] = locParticlePulls;
