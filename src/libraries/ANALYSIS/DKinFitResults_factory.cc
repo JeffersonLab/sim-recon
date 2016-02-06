@@ -99,6 +99,8 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 		//Make Constraints
 		deque<DKinFitConstraint_Vertex*> locSortedVertexConstraints;
 		set<DKinFitConstraint*> locConstraints = dKinFitUtils->Create_Constraints(locKinFitChain, locKinFitType, locSortedVertexConstraints);
+		if(locConstraints.empty())
+			continue; //Nothing to fit!
 
 		//see if constraints (particles) are identical to a previous kinfit
 		map<set<DKinFitConstraint*>, DKinFitResults*>::iterator locResultIterator = dConstraintResultsMap.find(locConstraints);
