@@ -226,11 +226,11 @@ void DReaction::Get_FinalStatePIDs(deque<Particle_t>& locFinalStatePIDs, bool lo
 pair<int, int> DReaction::Get_InitialParticleDecayFromIndices(int locStepIndex) const
 {
 	//check to see how many initial-state particles with this PID type there are before now
-	Particle_t locSearchPID = Get_ReactionStep(locStepIndex)->Get_InitialParticleID();
+	Particle_t locDecayingPID = Get_ReactionStep(locStepIndex)->Get_InitialParticleID();
 	size_t locPreviousPIDCount = 0;
 	for(int loc_i = 0; loc_i < locStepIndex; ++loc_i)
 	{
-		if(Get_ReactionStep(loc_i)->Get_InitialParticleID() == locSearchPID)
+		if(Get_ReactionStep(loc_i)->Get_InitialParticleID() == locDecayingPID)
 			++locPreviousPIDCount;
 	}
 
