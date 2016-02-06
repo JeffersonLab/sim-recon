@@ -1278,16 +1278,20 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 		bool locBeamFlag = (locInitialPID == Gamma);
 		if(locBeamFlag)
 		{
-			string locFullROOTName = string("Beam ") + ParticleName_ROOT(locInitialPID);
-			CreateAndChangeTo_Directory("Beam", "Beam");
-
 			pair<int, int> locParticlePair(0, -1);
 			bool locIsInVertexFitFlag = (locVertexParticles.find(locParticlePair) != locVertexParticles.end());
 			if(!locIncludeBeamlineInVertexFitFlag)
 				locIsInVertexFitFlag = false;
 
-			Create_ParticlePulls(locFullROOTName, locIsInVertexFitFlag, false, dHistMap_BeamPulls);
-			gDirectory->cd("..");
+			if(locP4IsFit || locIsInVertexFitFlag)
+			{
+				string locFullROOTName = string("Beam ") + ParticleName_ROOT(locInitialPID);
+				CreateAndChangeTo_Directory("Beam", "Beam");
+
+				Create_ParticlePulls(locFullROOTName, locIsInVertexFitFlag, false, dHistMap_BeamPulls);
+
+				gDirectory->cd("..");
+			}
 		}
 
 		//final particle pulls
