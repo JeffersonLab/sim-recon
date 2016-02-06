@@ -1346,10 +1346,11 @@ void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName
 	locParticlePulls.clear();
 
 	DKinFitType locKinFitType = Get_Reaction()->Get_KinFitType();
+	bool locP4IsFit = ((locKinFitType != d_VertexFit) && (locKinFitType != d_SpacetimeFit));
 
 	//p4 pulls:
 	string locHistName, locHistTitle;
-	if(locIsNeutralShowerFlag)
+	if(locP4IsFit && locIsNeutralShowerFlag)
 	{
 		//neutral shower not in a p4-only fit
 		//E Pull
@@ -1357,7 +1358,7 @@ void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName
 		locHistTitle = locFullROOTName + string(";E Pull;# Combos");
 		locParticlePulls[d_EPull] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
 	}
-	else if(((locKinFitType != d_VertexFit) && (locKinFitType != d_SpacetimeFit)) || locIsInVertexFitFlag)
+	else if(locP4IsFit || locIsInVertexFitFlag)
 	{
 		//all detected particles (except neutral showers) have p3 used in p4 fits and vertex fits
 		//however, don't include if the particles aren't actually in the fit (vertex-only, and too few particles at that vertex to constrain)
@@ -1379,7 +1380,7 @@ void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName
 	}
 
 	//vertex pulls:
-	if(locIsInVertexFitFlag)
+	if((locIsNeutralShowerFlag && locP4IsFit) || (!locIsNeutralShowerFlag && locIsInVertexFitFlag))
 	{
 		//Xx Pull
 		locHistName = "Pull_Xx";
