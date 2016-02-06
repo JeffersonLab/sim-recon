@@ -1103,7 +1103,7 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 			//since we need to match with particles in other constraints, save the OTHER index for the particle
 				//if was in initial state, save final-state pair. and vice versa
 			set<pair<int, int> >::iterator locDecayIterator = locVertexDecayingParticles_NotDefined.begin();
-			for(; locDecayIterator != locVertexDecayingParticles_NotDefined.begin().end(); ++locDecayIterator)
+			for(; locDecayIterator != locVertexDecayingParticles_NotDefined.end(); ++locDecayIterator)
 			{
 				pair<int, int> locParticlePair = *locDecayIterator;
 				if(locParticlePair.second < 0) //was in initial state: save final state
