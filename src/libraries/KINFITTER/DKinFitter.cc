@@ -1200,7 +1200,7 @@ void DKinFitter::Calc_dF_P4(int locFIndex, const DKinFitParticle* locKinFitParti
 		for(; locParticleIterator != locFromInitialState.end(); ++locParticleIterator)
 		{
 			if(dDebugLevel > 30)
-				cout << "decaying, partially replace with init-state q, mass = " << (*locParticleIterator)->Get_Charge() << ", " << (*locParticleIterator)->Get_Mass() << endl;
+				cout << "decaying, partially replace with init-state PID = " << (*locParticleIterator)->Get_PID() << endl;
 			Calc_dF_P4(locFIndex, *locParticleIterator, locStateSignMultiplier); //decaying particle multiplier * 1.0
 		}
 
@@ -1215,7 +1215,7 @@ void DKinFitter::Calc_dF_P4(int locFIndex, const DKinFitParticle* locKinFitParti
 		for(locParticleIterator = locFromFinalState.begin(); locParticleIterator != locFromFinalState.end(); ++locParticleIterator)
 		{
 			if(dDebugLevel > 30)
-				cout << "decaying, partially replace with final-state q, mass = " << (*locParticleIterator)->Get_Charge() << ", " << (*locParticleIterator)->Get_Mass() << endl;
+				cout << "decaying, partially replace with final-state PID = " << (*locParticleIterator)->Get_PID() << endl;
 			Calc_dF_P4(locFIndex, *locParticleIterator, locNextStateSignMultiplier);
 		}
 	}
@@ -1360,7 +1360,7 @@ void DKinFitter::Calc_dF_MassDerivs(size_t locFIndex, const DKinFitParticle* loc
 		for(; locParticleIterator != locFromInitialState.end(); ++locParticleIterator)
 		{
 			if(dDebugLevel > 30)
-				cout << "decaying, partially replace with init-state q, mass = " << (*locParticleIterator)->Get_Charge() << ", " << (*locParticleIterator)->Get_Mass() << endl;
+				cout << "decaying, partially replace with init-state PID = " << (*locParticleIterator)->Get_PID() << endl;
 			Calc_dF_MassDerivs(locFIndex, *locParticleIterator, locXP4, locStateSignMultiplier, false); //decaying particle multiplier * 1.0
 		}
 
@@ -1375,7 +1375,7 @@ void DKinFitter::Calc_dF_MassDerivs(size_t locFIndex, const DKinFitParticle* loc
 		for(locParticleIterator = locFromFinalState.begin(); locParticleIterator != locFromFinalState.end(); ++locParticleIterator)
 		{
 			if(dDebugLevel > 30)
-				cout << "decaying, partially replace with final-state q, mass = " << (*locParticleIterator)->Get_Charge() << ", " << (*locParticleIterator)->Get_Mass() << endl;
+				cout << "decaying, partially replace with final-state PID = " << (*locParticleIterator)->Get_PID() << endl;
 			Calc_dF_MassDerivs(locFIndex, *locParticleIterator, locXP4, locNextStateSignMultiplier, false);
 		}
 	}
@@ -1428,7 +1428,7 @@ void DKinFitter::Calc_dF_Vertex(size_t locFIndex, const DKinFitParticle* locKinF
 	for(; locParticleIterator != locFromInitialState.end(); ++locParticleIterator)
 	{
 		if(dDebugLevel > 30)
-			cout << "decaying, partially replace with init-state q, mass = " << (*locParticleIterator)->Get_Charge() << ", " << (*locParticleIterator)->Get_Mass() << endl;
+			cout << "decaying, partially replace with init-state PID = " << (*locParticleIterator)->Get_PID() << endl;
 		Calc_dF_Vertex(locFIndex, *locParticleIterator, locKinFitParticle, locStateSignMultiplier);
 	}
 
@@ -1443,7 +1443,7 @@ void DKinFitter::Calc_dF_Vertex(size_t locFIndex, const DKinFitParticle* locKinF
 	for(locParticleIterator = locFromFinalState.begin(); locParticleIterator != locFromFinalState.end(); ++locParticleIterator)
 	{
 		if(dDebugLevel > 30)
-			cout << "decaying, partially replace with final-state q, mass = " << (*locParticleIterator)->Get_Charge() << ", " << (*locParticleIterator)->Get_Mass() << endl;
+			cout << "decaying, partially replace with final-state PID = " << (*locParticleIterator)->Get_PID() << endl;
 		Calc_dF_Vertex(locFIndex, *locParticleIterator, locKinFitParticle, locNextStateSignMultiplier);
 	}
 }
@@ -2430,7 +2430,7 @@ void DKinFitter::Calc_Pulls(void)
 			map<DKinFitPullType, double>& locParticlePulls = locIterator->second;
 			DKinFitParticle* locKinFitParticle = locIterator->first;
 			TVector3 locMomentum = locKinFitParticle->Get_Momentum();
-			cout << "particle q, p3 = " << locKinFitParticle->Get_Charge() << ", " << locMomentum.Px() << ", " << locMomentum.Py() << ", " << locMomentum.Pz() << ":" << endl;
+			cout << "particle PID, p3 = " << locKinFitParticle->Get_PID() << ", " << locMomentum.Px() << ", " << locMomentum.Py() << ", " << locMomentum.Pz() << ":" << endl;
 			for(size_t loc_i = 0; loc_i < 8; ++loc_i)
 			{
 				if(locParticlePulls.find((DKinFitPullType)loc_i) != locParticlePulls.end())

@@ -61,6 +61,7 @@ class DReaction : public JObject
 		string Get_ReactionName(void) const{return dReactionName;}
 		DKinFitType Get_KinFitType(void) const{return dKinFitType;}
 		int Get_DecayStepIndex(int locStepIndex, int locParticleIndex) const;
+		pair<int, int> Get_InitialParticleDecayFromIndices(int locStepIndex) const; //1st is step index, 2nd is particle index
 		int Get_DefinedParticleStepIndex(void) const; //-1 if none //defined: missing or open-ended-decaying
 
 		// GET REACTION STEPS:

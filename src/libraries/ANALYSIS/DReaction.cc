@@ -223,9 +223,38 @@ void DReaction::Get_FinalStatePIDs(deque<Particle_t>& locFinalStatePIDs, bool lo
 	}
 }
 
+pair<int, int> DReaction::Get_InitialParticleDecayFromIndices(int locStepIndex) const
+{
+	//check to see how many initial-state particles with this PID type there are before now
+	Particle_t locSearchPID = Get_ReactionStep(locStepIndex)->Get_InitialParticleID();
+	size_t locPreviousPIDCount = 0;
+	for(int loc_i = 0; loc_i < locStepIndex; ++loc_i)
+	{
+		if(Get_ReactionStep(loc_i)->Get_InitialParticleID() == locSearchPID)
+			++locPreviousPIDCount;
+	}
+
+	//now, search through final-state PIDs until finding the (locPreviousPIDCount + 1)'th instance of this PID
+	size_t locSearchPIDCount = 0;
+	for(int loc_i = 0; loc_i < locStepIndex; ++loc_i)
+	{
+		const DReactionStep* locReactionStep = Get_ReactionStep(loc_i);
+		for(size_t loc_j = 0; loc_j < locReactionStep->Get_NumFinalParticleIDs(); ++loc_j)
+		{
+			if(locReactionStep->Get_FinalParticleID(loc_j) != locDecayingPID)
+				continue;
+			++locSearchPIDCount;
+			if(locSearchPIDCount <= locPreviousPIDCount)
+				continue;
+			return pair<int, int>(loc_i, loc_j);
+		}
+	}
+	return pair<int, int>(-1, -1);
+}
+
 int DReaction::Get_DecayStepIndex(int locStepIndex, int locParticleIndex) const
 {
-	//check if the ionput particle decays later in the reaction
+	//check if the input particle decays later in the reaction
 	Particle_t locDecayingPID = Get_ReactionStep(locStepIndex)->Get_FinalParticleID(locParticleIndex);
 
 	if((locDecayingPID == Gamma) || (locDecayingPID == Electron) || (locDecayingPID == Positron) || (locDecayingPID == Proton) || (locDecayingPID == AntiProton))

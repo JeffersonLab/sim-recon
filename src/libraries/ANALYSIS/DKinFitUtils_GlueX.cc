@@ -946,7 +946,6 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReaction* locReaction, DKin
 deque<set<pair<int, int> > > DKinFitUtils_GlueX::Setup_VertexPredictions(const DReaction* locReaction) const
 {
 	//create decay maps
-	map<int, int> locDecayMap_DecayToProdStep;
 	map<pair<int, int>, int> locDecayMap_ParticleToDecayStep;
 	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 	{
@@ -957,7 +956,6 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Setup_VertexPredictions(const D
 			if(locDecayStepIndex < 0)
 				continue;
 			locDecayMap_ParticleToDecayStep[pair<int, int>(loc_i, loc_j)] = locDecayStepIndex; //store step where this particle decays
-			locDecayMap_DecayToProdStep[locDecayStepIndex] = loc_i; //store step where this particle is produced
 		}
 	}
 
@@ -1049,8 +1047,10 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 	{
 		if(locConstraintIndex == locAllFullConstrainParticles.size())
 		{
+			//made a full loop through
 			if(!locProgessMadeFlag)
 				break; //no progress made: cannot constrain remaining vertices
+			//reset for next pass through
 			locConstraintIndex = 0;
 			locProgessMadeFlag = false;
 			continue;
@@ -1099,7 +1099,25 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 
 		//The positions of these decaying particles are now defined: Can use to constrain vertices in later constraints
 		if(dLinkVerticesFlag)
-			locDefinedDecayingParticles.insert(locVertexDecayingParticles_NotDefined.begin(), locVertexDecayingParticles_NotDefined.end());
+		{
+			//since we need to match with particles in other constraints, save the OTHER index for the particle
+				//if was in initial state, save final-state pair. and vice versa
+			set<pair<int, int> >::iterator locDecayIterator = locVertexDecayingParticles_NotDefined.begin();
+			for(; locDecayIterator != locVertexDecayingParticles_NotDefined.begin().end(); ++locDecayIterator)
+			{
+				pair<int, int> locParticlePair = *locDecayIterator;
+				if(locParticlePair.second < 0) //was in initial state: save final state
+				{
+					locParticlePair = locReaction->Get_InitialParticleDecayFromIndices(locParticlePair.first);
+					locDefinedDecayingParticles.insert(locParticlePair);
+				}
+				else //was in final state: save final state
+				{
+					int locDecayStepIndex = locReaction->Get_DecayStepIndex(locParticlePair.first, locParticlePair.second);
+					locDefinedDecayingParticles.insert(pair<int, int>(locDecayStepIndex, -2));
+				}
+			}
+		}
 
 		//add to the full constraint string
 		if(locAllConstraintString != "")
