@@ -1316,6 +1316,8 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 				bool locIsInVertexFitFlag = (locVertexParticles.find(locParticlePair) != locVertexParticles.end());
 
 				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));
+				if(!locP4IsFit && !locIsInVertexFitFlag)
+					continue; //p4 is not fit, and this is not in a vertex fit: no pulls
 				if(locIsNeutralShowerFlag && !locP4IsFit)
 					continue; //vertex-only fit: neutral shower does not constrain: no pulls
 

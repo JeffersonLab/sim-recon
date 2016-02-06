@@ -558,7 +558,15 @@ void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vert
 
 		//If a decaying particle was previously reconstructed, subtitute for it so can do a stand-alone vertex fit
 		bool locAttemptFitFlag = true; //if set to false in Build_NewConstraint(), will not attempt fit (a previous fit failed)
-		if(locOrigVertexConstraint->Get_FullConstrainParticles().size() < 2) //if >= 2, don't need to substitute
+		set<DKinFitParticle*> locFullConstrainSet = locOrigVertexConstraint->Get_FullConstrainParticles();
+		size_t locNumDetectedFullConstrainParticles = 0;
+		set<DKinFitParticle*>::iterator locParticleIterator = locFullConstrainSet.begin();
+		for(; locParticleIterator != locFullConstrainSet.end(); ++locParticleIterator)
+		{
+			if((*locParticleIterator)->Get_KinFitParticleType() != d_DecayingParticle)
+				++locNumDetectedFullConstrainParticles;
+		}
+		if(locNumDetectedFullConstrainParticles < 2) //if >= 2, don't need to substitute
 		{
 			//true: skip bad decaying particles (those whose reconstruction-fits failed) if at all possible
 				//if cannot skip, will set locAttemptFitFlag to false
@@ -571,7 +579,7 @@ void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vert
 		//do crude vertex guess: point on DOCA-line between the two closest (by doca) particles
 
 		//get particles
-		set<DKinFitParticle*> locFullConstrainSet = locActiveVertexConstraint->Get_FullConstrainParticles();
+		locFullConstrainSet = locActiveVertexConstraint->Get_FullConstrainParticles();
 		deque<DKinFitParticle*> locFullConstrainDeque;
 		std::copy(locFullConstrainSet.begin(), locFullConstrainSet.end(), std::back_inserter(locFullConstrainDeque));
 
@@ -670,21 +678,24 @@ void DKinFitUtils_GlueX::Construct_DetectedDecayingParticle_NoFit(DKinFitConstra
 
 DKinFitConstraint_Vertex* DKinFitUtils_GlueX::Build_NewConstraint(DKinFitConstraint_Vertex* locOrigVertexConstraint, const map<DKinFitParticle*, DKinFitParticle*>& locDecayingToDetectedParticleMap, bool& locAttemptFitFlag, bool locSkipBadDecayingFlag)
 {
+	if(dDebugLevel > 10)
+		cout << "DKinFitUtils_GlueX::Build_NewConstraint()" << endl;
 	set<DKinFitParticle*> locNewDetectedParticles, locUsedDecayingParticles;
 
 	//get "detected" versions of reconstructed decaying particles
-	set<DKinFitParticle*> locNoConstrainParticles = locOrigVertexConstraint->Get_NoConstrainParticles();
-	set<DKinFitParticle*>::iterator locNoConstrainIterator = locNoConstrainParticles.begin();
-	for(; locNoConstrainIterator != locNoConstrainParticles.end(); ++locNoConstrainIterator)
+	set<DKinFitParticle*> locFullConstrainParticles = locOrigVertexConstraint->Get_FullConstrainParticles();
+	set<DKinFitParticle*>::iterator locFullConstrainIterator = locFullConstrainParticles.begin();
+	set<DKinFitParticle*> locNewFullConstrainParticles;
+	for(; locFullConstrainIterator != locFullConstrainParticles.end(); ++locFullConstrainIterator)
 	{
-		DKinFitParticle* locInputKinFitParticle = *locNoConstrainIterator;
+		DKinFitParticle* locInputKinFitParticle = *locFullConstrainIterator;
 		if(locInputKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
+		{
+			locNewFullConstrainParticles.insert(locInputKinFitParticle);
 			continue; //not a decaying particle
+		}
 
 		map<DKinFitParticle*, DKinFitParticle*>::const_iterator locDecayIterator = locDecayingToDetectedParticleMap.find(locInputKinFitParticle);
-		if(locDecayIterator == locDecayingToDetectedParticleMap.end())
-			continue; //was not reconstructed yet
-
 		DKinFitParticle* locDetectedDecayingParticle = locDecayIterator->second;
 		if((*(locDetectedDecayingParticle->Get_CovarianceMatrix()))(0, 0) < 0.0)
 		{
@@ -695,31 +706,20 @@ DKinFitConstraint_Vertex* DKinFitUtils_GlueX::Build_NewConstraint(DKinFitConstra
 		}
 
 		//reconstructed particle found
-		locUsedDecayingParticles.insert(locInputKinFitParticle);
-		locNewDetectedParticles.insert(locDetectedDecayingParticle);
+		locNewFullConstrainParticles.insert(locDetectedDecayingParticle);
 	}
 
-	//create new constraint, this time with the new detected particles
-
-	//build new full-constrain particles
-	set<DKinFitParticle*> locFullConstrainParticles = locOrigVertexConstraint->Get_FullConstrainParticles();
-	locFullConstrainParticles.insert(locNewDetectedParticles.begin(), locNewDetectedParticles.end());
-
 	//Check if have enough particles
-	if(locFullConstrainParticles.size() < 2) //cannot fit: try again, using non-fit decaying particles
+	if(locNewFullConstrainParticles.size() < 2) //cannot fit: try again, using non-fit decaying particles
 		return Build_NewConstraint(locOrigVertexConstraint, locDecayingToDetectedParticleMap, locAttemptFitFlag, false);
 
-	//build new no-constrain particles
-	set<DKinFitParticle*> locNewNoConstrainParticles;
-	set_difference(locNoConstrainParticles.begin(), locNoConstrainParticles.end(), locUsedDecayingParticles.begin(), 
-		locUsedDecayingParticles.end(), std::inserter(locNewNoConstrainParticles, locNewNoConstrainParticles.end()));
-
-	//build new constraint
+	//create new constraint, this time with the new detected particles
+	set<DKinFitParticle*> locNoConstrainParticles = locOrigVertexConstraint->Get_NoConstrainParticles();
 	DKinFitConstraint_Spacetime* locOrigSpacetimeConstraint = dynamic_cast<DKinFitConstraint_Spacetime*>(locOrigVertexConstraint);
 	if(locOrigSpacetimeConstraint == NULL) //vertex fit
-		return Make_VertexConstraint(locFullConstrainParticles, locNewNoConstrainParticles);
+		return Make_VertexConstraint(locNewFullConstrainParticles, locNoConstrainParticles);
 	else
-		return Make_SpacetimeConstraint(locFullConstrainParticles, locOrigSpacetimeConstraint->Get_OnlyConstrainTimeParticles(), locNewNoConstrainParticles);
+		return Make_SpacetimeConstraint(locNewFullConstrainParticles, locOrigSpacetimeConstraint->Get_OnlyConstrainTimeParticles(), locNoConstrainParticles);
 }
 
 double DKinFitUtils_GlueX::Calc_TimeGuess(const DKinFitConstraint_Spacetime* locConstraint, DVector3 locVertexGuess)

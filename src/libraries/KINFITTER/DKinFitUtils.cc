@@ -457,6 +457,8 @@ deque<DKinFitConstraint_Vertex*> DKinFitUtils::Create_VertexConstraints(const DK
 
 deque<set<DKinFitParticle*> > DKinFitUtils::Setup_VertexConstraints(const DKinFitChain* locKinFitChain)
 {
+	//This function organizes the particles into different vertices
+	//It does NOT determine whether there is enough information to actually FIT the vertices in question
 	if(dDebugLevel > 10)
 		cout << "DKinFitUtils: Organize Vertex & Spacetime Constraints" << endl;
 

@@ -136,7 +136,7 @@ inline void DKinFitConstraint_Vertex::Print_ConstraintInfo(void) const
 	cout << "DKinFitConstraint_Vertex: Full-constrained particle PID's, pointers: " << endl;
 	set<DKinFitParticle*>::const_iterator locIterator = dFullConstrainParticles.begin();
 	for(; locIterator != dFullConstrainParticles.end(); ++locIterator)
-		cout << (*locIterator)->Get_PID() << ", " << (*locIterator)->Get_Charge() << ", " << (*locIterator)->Get_Mass() << endl;
+		cout << (*locIterator)->Get_PID() << ", " << (*locIterator) << endl;
 
 	cout << "DKinFitConstraint_Vertex: No-constrain particle PID's, pointers: " << endl;
 	for(locIterator = dNoConstrainParticles.begin(); locIterator != dNoConstrainParticles.end(); ++locIterator)
