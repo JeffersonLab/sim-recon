@@ -91,7 +91,7 @@ class DKinFitResults : public JObject
 		const TMatrixDSym* dV; //full covariance matrix: dVEta at top-left and dVXi at bottom-right (+ the eta, xi covariance)
 
 		//OUTPUT PARTICLES AND CONSTRAINTS
-		map<DKinFitParticleType, set<DKinFitParticle*> > dOutputKinFitParticles;
+		map<DKinFitParticleType, set<DKinFitParticle*> > dOutputKinFitParticles; //does not include particles not used in the constraints!
 		set<const DKinFitConstraint*> dKinFitConstraints;
 
 		//PARTICLE MAPS
@@ -100,7 +100,8 @@ class DKinFitResults : public JObject
 		map<const JObject*, DKinFitParticle*> dParticleMap_SourceToOutput;
 
 		//multiple combos may have the same kinfit result, and different DKinFitChain's
-		map<const DParticleCombo*, const DKinFitChain*> dParticleComboMap; //chain contains output kinfit particles (if a particle not in a fit, is the input particle)
+		//chain contains output kinfit particles (if a particle not in a constraint, is the input particle)
+		map<const DParticleCombo*, const DKinFitChain*> dParticleComboMap;
 };
 
 /****************************************************** SET PARTICLES, COMBOS, AND CONSTRAINTS ******************************************************/

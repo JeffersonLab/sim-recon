@@ -106,8 +106,14 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 		{
 			//this has been kinfit before, use the same result
 			DKinFitResults* locKinFitResults = locResultIterator->second;
-			if(locKinFitResults != NULL) //if false: the previous kinfit failed, this one will too
-				locKinFitResults->Add_ParticleCombo(locParticleCombo, locKinFitChain); //previous kinfit succeeded, register this combo with that fit
+			if(locKinFitResults != NULL)
+			{
+				//previous kinfit succeeded, build the output DKinFitChain and register this combo with that fit
+				set<DKinFitParticle*> locOutputKinFitParticles = locKinFitResults->Get_OutputKinFitParticles();
+				const DKinFitChain* locOutputKinFitChain = dKinFitUtils->Build_OutputKinFitChain(locKinFitChain, locOutputKinFitParticles);
+				locKinFitResults->Add_ParticleCombo(locParticleCombo, locOutputKinFitChain);
+			}
+			//else: the previous kinfit failed, so this one will too (don't save)
 			continue;
 		}
 
