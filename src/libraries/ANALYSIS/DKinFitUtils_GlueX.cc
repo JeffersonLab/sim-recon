@@ -929,15 +929,18 @@ string DKinFitUtils_GlueX::Get_ConstraintInfo(const DReaction* locReaction, DKin
 		size_t locNumVertexConstraints = 0;
 		locVertices = Predict_VertexConstraints(locReaction, locVertices, locSpacetimeFitFlag, locNumVertexConstraints, locVertexConstraintString);
 
-		if(locAllConstraintsString != "")
-			locAllConstraintsString += ", ";
-		locAllConstraintsString += locVertexConstraintString;
+		if(!locVertices.empty())
+		{
+			if(locAllConstraintsString != "")
+				locAllConstraintsString += ", ";
+			locAllConstraintsString += locVertexConstraintString;
 
-		locNumConstraints += locNumVertexConstraints;
-		if(locSpacetimeFitFlag)
-			locNumUnknowns += 4*locVertices.size();
-		else
-			locNumUnknowns += 3*locVertices.size();
+			locNumConstraints += locNumVertexConstraints;
+			if(locSpacetimeFitFlag)
+				locNumUnknowns += 4*locVertices.size();
+			else
+				locNumUnknowns += 3*locVertices.size();
+		}
 	}
 
 	return locAllConstraintsString;
