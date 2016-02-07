@@ -1045,7 +1045,7 @@ void DKinFitter::Calc_dF_P4(int locFIndex, const DKinFitParticle* locKinFitParti
 	int locEParamIndex = locKinFitParticle->Get_EParamIndex();
 	int locCommonVxParamIndex = locKinFitParticle->Get_CommonVxParamIndex();
 
-	if(locKinFitParticleType != d_DecayingParticle)
+	if((locKinFitParticleType != d_DecayingParticle) || (locPxParamIndex >= 0))
 	{
 		//not an enclosed decaying particle. for decaying particles, will instead get p4 from the deriving particles
 		dF(locFIndex, 0) += locStateSignMultiplier*locP4.E();
