@@ -99,7 +99,7 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 
 		//Make Constraints
 		deque<DKinFitConstraint_Vertex*> locSortedVertexConstraints;
-		set<DKinFitConstraint*> locConstraints = dKinFitUtils->Create_Constraints(locKinFitChain, locKinFitType, locSortedVertexConstraints);
+		set<DKinFitConstraint*> locConstraints = dKinFitUtils->Create_Constraints(locParticleCombo, locKinFitChain, locKinFitType, locSortedVertexConstraints);
 		if(locConstraints.empty())
 			continue; //Nothing to fit!
 

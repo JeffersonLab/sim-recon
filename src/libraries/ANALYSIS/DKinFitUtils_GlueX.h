@@ -74,7 +74,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		/************************************************************* CREATE CONSTRAINTS ***********************************************************/
 
-		set<DKinFitConstraint*> Create_Constraints(const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints);
+		set<DKinFitConstraint*> Create_Constraints(const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints);
 
 		/*********************************************************** MAKE SPACETIME GUESSES *********************************************************/
 

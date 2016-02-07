@@ -429,7 +429,7 @@ void DKinFitUtils_GlueX::Make_KinFitChainStep(const DParticleCombo* locParticleC
 
 /**************************************************************** MAKE CONSTRAINTS *****************************************************************/
 
-set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints)
+set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain, DKinFitType locKinFitType, deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints)
 {
 	if(dDebugLevel > 10)
 		cout << "DKinFitUtils_GlueX: Create constraints." << endl;
@@ -520,6 +520,23 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DKinFitChai
 				size_t locEarliestStepIndex = *locP4ConstrainedParticleSteps.begin();
 				locMassConstraints.erase(locStepMassConstraintMap[locEarliestStepIndex]); //remove constraint
 			}
+		}
+
+		//set init p3 guess
+		if(locP4Constraint != NULL)
+		{
+			if(locP4Constraint->Get_DefinedParticle() != NULL)
+			{
+				DLorentzVector locDefinedP4;
+				if(locP4Constraint->Get_IsDefinedParticleInFinalState())
+					locDefinedP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, false);
+				else
+					locDefinedP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, 0, false);
+				TVector3 locInitP3Guess(locDefinedP4.Px(), locDefinedP4.Py(), locDefinedP4.Pz());
+				locP4Constraint->Set_InitP3Guess(locInitP3Guess);
+			}
+			else
+				locP4Constraint->Set_InitP3Guess(TVector3(0.0, 0.0, 0.0));
 		}
 	}
 
