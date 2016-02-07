@@ -288,7 +288,7 @@ const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DParticleCombo* l
 		//set decaying particle in the chain
 		locKinFitChainStep->Add_InitialParticle(locDecayingParticle);
 		int locProducedStepIndex = locStepCreationMap[locParticleComboStep->Get_InitialParticleDecayFromStepIndex()];
-		if(locProducedStepIndex < 0)
+		if(locProducedStepIndex <= loc_i)
 			continue; //intial-state open-ended decaying particle
 
 		DKinFitChainStep* locProductionStep = const_cast<DKinFitChainStep*>(locKinFitChain->Get_KinFitChainStep(locProducedStepIndex));
