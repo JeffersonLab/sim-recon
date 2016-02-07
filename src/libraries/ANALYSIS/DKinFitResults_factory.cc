@@ -201,9 +201,12 @@ DKinFitResults* DKinFitResults_factory::Build_KinFitResults(const DParticleCombo
 			continue; //*locParticleIterator was an input object //not directly used in the fit
 		}
 		DKinFitParticle* locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(*locParticleIterator);
-		locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);
-		if(locSourceJObject != NULL) //else was a decaying/missing particle: no source
-			locKinFitResults->Add_ParticleMapping_SourceToOutput(locSourceJObject, *locParticleIterator);
+		if(locInputKinFitParticle != NULL)
+		{
+			locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);
+			if(locSourceJObject != NULL) //else was a decaying/missing particle: no source
+				locKinFitResults->Add_ParticleMapping_SourceToOutput(locSourceJObject, *locParticleIterator);
+		}
 	}
 
 	_data.push_back(locKinFitResults);
