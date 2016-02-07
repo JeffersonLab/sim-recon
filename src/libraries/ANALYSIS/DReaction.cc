@@ -312,4 +312,16 @@ int DReaction::Get_DefinedParticleStepIndex(void) const
 	return -1;
 }
 
+bool DReaction::Get_IsInclusiveChannelFlag(void) const
+{
+	for(size_t loc_i = 0; loc_i < Get_NumReactionSteps(); ++loc_i)
+	{
+		const DReactionStep* locReactionStep = Get_ReactionStep(loc_i);
+		Particle_t locMissingPID = Unknown;
+		if(!locReactionStep->Get_MissingPID(locMissingPID))
+			continue;
+		return (locMissingPID == Unknown);
+	}
+	return false;
+}
 

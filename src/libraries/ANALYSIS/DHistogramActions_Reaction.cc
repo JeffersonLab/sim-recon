@@ -1257,6 +1257,9 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 	bool locIncludeBeamlineInVertexFitFlag = dKinFitUtils->Get_IncludeBeamlineInVertexFitFlag();
 
 	bool locP4IsFit = ((locKinFitType != d_VertexFit) && (locKinFitType != d_SpacetimeFit));
+	bool locIsInclusiveChannelFlag = Get_Reaction()->Get_IsInclusiveChannelFlag();
+	//Below, should in theory check on whether to create pxyz pull histograms in the inclusive channel case
+		//But, this is tricky: can have inclusive (no p4) but still have mass constraints (p4)
 
 	//CREATE THE HISTOGRAMS
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
