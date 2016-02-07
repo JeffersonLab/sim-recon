@@ -78,7 +78,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		/*********************************************************** MAKE SPACETIME GUESSES *********************************************************/
 
-		void Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints);
+		void Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints, bool locIsP4FitFlag);
 
 		/************************************************************ CONSTRAINT PREDICTORS *********************************************************/
 

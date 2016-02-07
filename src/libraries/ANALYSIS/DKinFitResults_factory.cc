@@ -92,6 +92,7 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 		DKinFitType locKinFitType = locParticleCombo->Get_Reaction()->Get_KinFitType();
 		if(locKinFitType == d_NoFit)
 			continue; //don't do any kinematic fits!
+		bool locP4IsFitFlag = ((locKinFitType != d_VertexFit) && (locKinFitType != d_SpacetimeFit));
 
 		//Make DKinFitChain
 		const DKinFitChain* locKinFitChain = dKinFitUtils->Make_KinFitChain(locParticleCombo, locKinFitType);
@@ -121,7 +122,7 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnu
 
 		//Set Constraint Initial Guesses //vertices, times, and missing p3's
 		if(!locSortedVertexConstraints.empty())
-			dKinFitUtils->Set_SpacetimeGuesses(locSortedVertexConstraints);
+			dKinFitUtils->Set_SpacetimeGuesses(locSortedVertexConstraints, locP4IsFitFlag);
 
 		//Add constraints & perform fit
 		dKinFitter->Reset_NewFit();

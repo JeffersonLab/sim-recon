@@ -1567,7 +1567,7 @@ const DKinFitChain* DKinFitUtils::Build_OutputKinFitChain(const DKinFitChain* lo
 		{
 			map<DKinFitParticle*, DKinFitParticle*>::iterator locMapIterator = locInputToOutputParticleMap.find(*locParticleIterator);
 			DKinFitParticle* locKinFitParticle = (locMapIterator != locInputToOutputParticleMap.end()) ? locMapIterator->second : *locParticleIterator;
-			locOutputKinFitChainStep->Add_FinalParticle(locInputToOutputParticleMap[*locParticleIterator]);
+			locOutputKinFitChainStep->Add_FinalParticle(locKinFitParticle);
 		}
 
 		locOutputKinFitChain->Add_KinFitChainStep(locOutputKinFitChainStep);

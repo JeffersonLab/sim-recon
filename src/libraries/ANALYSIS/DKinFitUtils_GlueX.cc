@@ -541,7 +541,7 @@ set<DKinFitConstraint*> DKinFitUtils_GlueX::Create_Constraints(const DKinFitChai
 
 /********************************************************* MAKE INITIAL SPACETIME GUESSES **********************************************************/
 
-void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints)
+void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vertex*>& locSortedVertexConstraints, bool locIsP4FitFlag)
 {
 	//loop through vertices, determining initial guesses
 	map<DKinFitParticle*, DKinFitParticle*> locDecayingToDetectedParticleMap; //input decaying particle -> new detected particle
@@ -604,6 +604,9 @@ void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vert
 		}
 
 		/************************************************************** VERTEX/TIME FIT **************************************************************/
+
+		if((locSortedVertexConstraints.size() == 1) && !locIsP4FitFlag)
+			return; //only one constraint: don't do primary fit here
 
 		//Check if should attempt fit
 		if(!locAttemptFitFlag)
