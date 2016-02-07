@@ -28,8 +28,8 @@ class DKinFitConstraint_P4 : public DKinFitConstraint
 
 		DKinFitParticle* Get_MissingParticle(void) const; //NULL if none
 		DKinFitParticle* Get_OpenEndedDecayingParticle(void) const; //NULL if none
-		DKinFitParticle* Get_DefinedParticle() const; //missing or open-ended decaying particle
-		bool Get_IsDefinedParticleInFinalState() const; //false if initial state or no defined particle
+		DKinFitParticle* Get_DefinedParticle(void) const; //missing or open-ended decaying particle
+		bool Get_IsDefinedParticleInFinalState(void) const; //false if initial state or no defined particle
 
 		set<DKinFitParticle*> Get_AllParticles(void) const;
 		void Print_ConstraintInfo(void) const;
@@ -107,7 +107,7 @@ inline DKinFitParticle* DKinFitConstraint_P4::Get_OpenEndedDecayingParticle(void
 	return NULL;
 }
 
-inline DKinFitParticle* DKinFitConstraint_P4::Get_DefinedParticle() const
+inline DKinFitParticle* DKinFitConstraint_P4::Get_DefinedParticle(void) const
 {
 	DKinFitParticle* locKinFitParticle = Get_MissingParticle();
 	if(locKinFitParticle != NULL)
@@ -115,7 +115,7 @@ inline DKinFitParticle* DKinFitConstraint_P4::Get_DefinedParticle() const
 	return Get_OpenEndedDecayingParticle();
 }
 
-bool DKinFitConstraint_P4::Get_IsDefinedParticleInFinalState() const
+inline bool DKinFitConstraint_P4::Get_IsDefinedParticleInFinalState(void) const
 {
 	//false if initial state or no defined particle
 	DKinFitParticle* locDefinedParticle = Get_DefinedParticle();
