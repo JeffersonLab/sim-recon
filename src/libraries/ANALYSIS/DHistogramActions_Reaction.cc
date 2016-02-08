@@ -924,7 +924,7 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 
 			// Vertex
 			string locInitParticleROOTName = ParticleName_ROOT(locInitialPID);
-			string locInitParticleName = ParticleType(locPID);
+			string locInitParticleName = ParticleType(locInitialPID);
 			if((loc_i == 0) || IsDetachedVertex(locInitialPID))
 			{
 
@@ -1555,6 +1555,9 @@ void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName
 		locHistName = locStrings.first + string("_VsP");
 		locHistTitle = locFullROOTName + string(";p (GeV/c);") + locStrings.second;
 		locParticlePullsVsP[(*locIterator).first] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, locNum2DPBins, locMinP, locMaxP, dNumPullBins, dMinPull, dMaxPull);
+
+		if(locIsBeamFlag)
+			continue;
 
 		//vs theta
 		locHistName = locStrings.first + string("_VsTheta");

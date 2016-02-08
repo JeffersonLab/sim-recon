@@ -75,7 +75,7 @@ class DKinFitParticle
 
 		set<DKinFitParticle*> Get_FromInitialState(void) const{return dFromInitialState;}
 		set<DKinFitParticle*> Get_FromFinalState(void) const{return dFromFinalState;}
-		set<DKinFitParticle*> Get_FromAllButDecaying(void) const;
+		set<DKinFitParticle*> Get_FromAllParticles(void) const;
 
 		bool Get_VertexP4AtProductionVertex(void) const{return dVertexP4AtProductionVertex;}
 
@@ -211,22 +211,21 @@ inline void DKinFitParticle::Reset(void)
 	dIsNeutralShowerFlag = false;
 }
 
-inline set<DKinFitParticle*> DKinFitParticle::Get_FromAllButDecaying(void) const
+inline set<DKinFitParticle*> DKinFitParticle::Get_FromAllParticles(void) const
 {
 	//get all of the particles this particle is derived from, excluding decaying particles
-	set<DKinFitParticle*> locFromAllButDecaying;
+	set<DKinFitParticle*> locFromAllParticles;
 
 	//from initial state
 	set<DKinFitParticle*>::const_iterator locIterator = dFromInitialState.begin();
 	for(; locIterator != dFromInitialState.end(); ++locIterator)
 	{
 		DKinFitParticle* locKinFitParticle = *locIterator;
-		if(locKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
-			locFromAllButDecaying.insert(locKinFitParticle);
-		else
+		locFromAllParticles.insert(locKinFitParticle);
+		if(locKinFitParticle->Get_KinFitParticleType() == d_DecayingParticle)
 		{
-			set<DKinFitParticle*> locNewParticles = locKinFitParticle->Get_FromAllButDecaying();
-			locFromAllButDecaying.insert(locNewParticles.begin(), locNewParticles.end());
+			set<DKinFitParticle*> locNewParticles = locKinFitParticle->Get_FromAllParticles();
+			locFromAllParticles.insert(locNewParticles.begin(), locNewParticles.end());
 		}
 	}
 
@@ -234,16 +233,15 @@ inline set<DKinFitParticle*> DKinFitParticle::Get_FromAllButDecaying(void) const
 	for(locIterator = dFromFinalState.begin(); locIterator != dFromFinalState.end(); ++locIterator)
 	{
 		DKinFitParticle* locKinFitParticle = *locIterator;
-		if(locKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
-			locFromAllButDecaying.insert(locKinFitParticle);
-		else
+		locFromAllParticles.insert(locKinFitParticle);
+		if(locKinFitParticle->Get_KinFitParticleType() == d_DecayingParticle)
 		{
-			set<DKinFitParticle*> locNewParticles = locKinFitParticle->Get_FromAllButDecaying();
-			locFromAllButDecaying.insert(locNewParticles.begin(), locNewParticles.end());
+			set<DKinFitParticle*> locNewParticles = locKinFitParticle->Get_FromAllParticles();
+			locFromAllParticles.insert(locNewParticles.begin(), locNewParticles.end());
 		}
 	}
 
-	return locFromAllButDecaying;
+	return locFromAllParticles;
 }
 
 inline void DKinFitParticle::Print_ParticleParams(void) const
@@ -279,9 +277,9 @@ inline void DKinFitParticle::Print_ParticleParams(void) const
 		cout << ", " << (*locIterator)->Get_PID();
 	cout << endl;
 
-	set<DKinFitParticle*> locFromAllButDecaying = Get_FromAllButDecaying();
-	cout << "FromAllButDecaying size, PIDs: " << locFromAllButDecaying.size();
-	for(locIterator = locFromAllButDecaying.begin(); locIterator != locFromAllButDecaying.end(); ++locIterator)
+	set<DKinFitParticle*> locFromAllParticles = Get_FromAllParticles();
+	cout << "FromAllButDecaying size, PIDs: " << locFromAllParticles.size();
+	for(locIterator = locFromAllParticles.begin(); locIterator != locFromAllParticles.end(); ++locIterator)
 		cout << ", " << (*locIterator)->Get_PID();
 	cout << endl;
 }

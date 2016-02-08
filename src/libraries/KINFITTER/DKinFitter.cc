@@ -176,11 +176,11 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 			dParticleConstraintMap[*locParticleIterator].insert(*locConstraintIterator);
 
 			//now, for those particles that may not directly be used in a constraint, but ARE used to define a decaying particle
-			set<DKinFitParticle*> locFromAllButDecaying = (*locParticleIterator)->Get_FromAllButDecaying();
-			dKinFitParticles.insert(locFromAllButDecaying.begin(), locFromAllButDecaying.end());
+			set<DKinFitParticle*> locFromAllParticles = (*locParticleIterator)->Get_FromAllParticles();
+			dKinFitParticles.insert(locFromAllParticles.begin(), locFromAllParticles.end());
 
-			set<DKinFitParticle*>::iterator locDerivingParticleIterator = locFromAllButDecaying.begin();
-			for(; locDerivingParticleIterator != locFromAllButDecaying.end(); ++locDerivingParticleIterator)
+			set<DKinFitParticle*>::iterator locDerivingParticleIterator = locFromAllParticles.begin();
+			for(; locDerivingParticleIterator != locFromAllParticles.end(); ++locDerivingParticleIterator)
 				dParticleConstraintMap[*locDerivingParticleIterator].insert(*locConstraintIterator);
 		}
 	}

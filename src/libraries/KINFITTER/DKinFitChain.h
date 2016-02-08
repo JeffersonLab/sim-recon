@@ -36,6 +36,9 @@ class DKinFitChainStep
 		void Set_InitialParticleDecayFromStepIndex(int locDecayFromStepIndex){dInitialParticleDecayFromStepIndex = locDecayFromStepIndex;}
 		void Set_ConstrainDecayingMassFlag(bool locConstrainDecayingMassFlag){dConstrainDecayingMassFlag = locConstrainDecayingMassFlag;}
 
+		//PRINT INFO
+		void Print_InfoToScreen(void) const;
+
 	private:
 
 		//refers to the decaying particle in dInitialParticles //-1 if none, else index points to step index it is produced at
@@ -59,6 +62,20 @@ inline set<DKinFitParticle*> DKinFitChainStep::Get_AllParticles(void) const
 	set<DKinFitParticle*> locAllParticles;
 	set_union(dInitialParticles.begin(), dInitialParticles.end(), dFinalParticles.begin(), dFinalParticles.end(), inserter(locAllParticles, locAllParticles.begin()));
 	return locAllParticles;
+}
+
+inline void DKinFitChainStep::Print_InfoToScreen(void) const
+{
+	cout << "DKinFitChainStep decay from, constrain mass flags = " << dInitialParticleDecayFromStepIndex << ", " << dConstrainDecayingMassFlag << endl;
+
+	cout << "DKinFitChainStep init particles: PIDs, pointers:" << endl;
+	set<DKinFitParticle*>::const_iterator locIterator = dInitialParticles.begin();
+	for(; locIterator != dInitialParticles.end(); ++locIterator)
+		cout << (*locIterator)->Get_PID() << ", " << *locIterator << endl;
+
+	cout << "DKinFitChainStep final particles: PIDs, pointers:" << endl;
+	for(locIterator = dFinalParticles.begin(); locIterator != dFinalParticles.end(); ++locIterator)
+		cout << (*locIterator)->Get_PID() << ", " << *locIterator << endl;
 }
 
 class DKinFitChain
@@ -85,6 +102,9 @@ class DKinFitChain
 		void Set_DefinedParticleStepIndex(int locDefinedParticleStepIndex){dDefinedParticleStepIndex = locDefinedParticleStepIndex;}
 		void Set_IsInclusiveChannelFlag(bool locIsInclusiveChannelFlag){dIsInclusiveChannelFlag = locIsInclusiveChannelFlag;}
 		void Set_DecayStepIndex(DKinFitParticle* locKinFitParticle, int locDecayStepIndex){dDecayStepIndices[locKinFitParticle] = locDecayStepIndex;}
+
+		//PRINT INFO
+		void Print_InfoToScreen(void) const;
 
 	private:
 
@@ -124,5 +144,20 @@ inline set<DKinFitParticle*> DKinFitChain::Get_AllParticles(void) const
 	return locAllParticles;
 }
 
-#endif // _DKinFitChain_
+inline void DKinFitChain::Print_InfoToScreen(void) const
+{
+	for(size_t loc_i = 0; loc_i < dKinFitChainSteps.size(); ++loc_i)
+	{
+		cout << "DKinFitChain: Printing step " << loc_i << endl;
+		dKinFitChainSteps[loc_i]->Print_InfoToScreen();
+	}
 
+	cout << "DKinFitChain: PID, Pointer, decay-step indices:" << endl;
+	map<DKinFitParticle*, int>::const_iterator locIterator = dDecayStepIndices.begin();
+	for(; locIterator != dDecayStepIndices.end(); ++locIterator)
+		cout << locIterator->first->Get_PID() << ", " << locIterator->first << ", " << locIterator->second << endl;
+
+	cout << "DKinFitChain: defined particle step index, inclusive channel flag = " << dDefinedParticleStepIndex << ", " << dIsInclusiveChannelFlag << endl;
+}
+
+#endif // _DKinFitChain_

@@ -288,7 +288,7 @@ const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DParticleCombo* l
 		//set decaying particle in the chain
 		locKinFitChainStep->Add_InitialParticle(locDecayingParticle);
 		int locProducedStepIndex = locStepCreationMap[locParticleComboStep->Get_InitialParticleDecayFromStepIndex()];
-		if(locProducedStepIndex <= loc_i)
+		if((locProducedStepIndex < 0) || (locProducedStepIndex == loc_i))
 			continue; //intial-state open-ended decaying particle
 
 		DKinFitChainStep* locProductionStep = const_cast<DKinFitChainStep*>(locKinFitChain->Get_KinFitChainStep(locProducedStepIndex));
@@ -336,7 +336,10 @@ const DKinFitChain* DKinFitUtils_GlueX::Make_KinFitChain(const DParticleCombo* l
 	}
 
 	if(dDebugLevel > 10)
-		cout << "DKinFitUtils_GlueX: DKinFitChain Created." << endl;
+	{
+		cout << "DKinFitUtils_GlueX: DKinFitChain Created. Printing:" << endl;
+		locKinFitChain->Print_InfoToScreen();
+	}
 
 	return locKinFitChain;
 }

@@ -809,8 +809,8 @@ set<DKinFitConstraint*> DKinFitUtils::Clone_ParticlesAndConstraints(const set<DK
 		set<DKinFitParticle*>::iterator locParticleIterator = locConstraintKinFitParticles.begin();
 		for(; locParticleIterator != locConstraintKinFitParticles.end(); ++locParticleIterator)
 		{
-			set<DKinFitParticle*> locFromAllButDecaying = (*locParticleIterator)->Get_FromAllButDecaying();
-			locAllParticles.insert(locFromAllButDecaying.begin(), locFromAllButDecaying.end());
+			set<DKinFitParticle*> locFromAllParticles = (*locParticleIterator)->Get_FromAllParticles();
+			locAllParticles.insert(locFromAllParticles.begin(), locFromAllParticles.end());
 		}
 	}
 
@@ -1377,10 +1377,10 @@ void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFi
 
 	int locEParamIndex = locKinFitParticle->Get_EParamIndex();
 	int locPxParamIndex = locKinFitParticle->Get_PxParamIndex();
-	if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle))
+	if(((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle)) && (locPxParamIndex >= 0))
 		locPxParamIndex += locNumEta;
 	int locVxParamIndex = locKinFitParticle->Get_VxParamIndex();
-	if((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle))
+	if(((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle)) && (locVxParamIndex >= 0))
 		locVxParamIndex += locNumEta;
 	int locCommonVxParamIndex = locKinFitParticle->Get_CommonVxParamIndex() + locNumEta;
 
@@ -1532,6 +1532,12 @@ void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFi
 
 const DKinFitChain* DKinFitUtils::Build_OutputKinFitChain(const DKinFitChain* locInputKinFitChain, set<DKinFitParticle*>& locKinFitOutputParticles)
 {
+	if(dDebugLevel > 20)
+	{
+		cout << "DKinFitUtils::Build_OutputKinFitChain(): Printing input chain." << endl;
+		locInputKinFitChain->Print_InfoToScreen();
+	}
+
 	//First, build map of input -> output
 	map<DKinFitParticle*, DKinFitParticle*> locInputToOutputParticleMap;
 	set<DKinFitParticle*>::iterator locParticleIterator = locKinFitOutputParticles.begin();
@@ -1554,12 +1560,11 @@ const DKinFitChain* DKinFitUtils::Build_OutputKinFitChain(const DKinFitChain* lo
 		set<DKinFitParticle*> locInitialParticles = locInputKinFitChainStep->Get_InitialParticles();
 		for(locParticleIterator = locInitialParticles.begin(); locParticleIterator != locInitialParticles.end(); ++locParticleIterator)
 		{
-			if((*locParticleIterator)->Get_KinFitParticleType() == d_DecayingParticle)
-				locOutputKinFitChain->Set_DecayStepIndex(*locParticleIterator, loc_i);
-
 			map<DKinFitParticle*, DKinFitParticle*>::iterator locMapIterator = locInputToOutputParticleMap.find(*locParticleIterator);
 			DKinFitParticle* locKinFitParticle = (locMapIterator != locInputToOutputParticleMap.end()) ? locMapIterator->second : *locParticleIterator;
 			locOutputKinFitChainStep->Add_InitialParticle(locKinFitParticle);
+			if((*locParticleIterator)->Get_KinFitParticleType() == d_DecayingParticle)
+				locOutputKinFitChain->Set_DecayStepIndex(locKinFitParticle, loc_i);
 		}
 
 		set<DKinFitParticle*> locFinalParticles = locInputKinFitChainStep->Get_FinalParticles();
@@ -1573,6 +1578,11 @@ const DKinFitChain* DKinFitUtils::Build_OutputKinFitChain(const DKinFitChain* lo
 		locOutputKinFitChain->Add_KinFitChainStep(locOutputKinFitChainStep);
 	}
 
+	if(dDebugLevel > 20)
+	{
+		cout << "DKinFitUtils::Build_OutputKinFitChain(): Printing output chain." << endl;
+		locOutputKinFitChain->Print_InfoToScreen();
+	}
+
 	return locOutputKinFitChain;
 }
-
