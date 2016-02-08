@@ -307,7 +307,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
    
     MIN_HITS_FOR_REFIT=8; 
     gPARMS->SetDefaultParameter("KALMAN:MIN_HITS_FOR_REFIT", MIN_HITS_FOR_REFIT);
-    PHOTON_ENERGY_CUTOFF=0.15; 
+    PHOTON_ENERGY_CUTOFF=0.125; 
     gPARMS->SetDefaultParameter("KALMAN:PHOTON_ENERGY_CUTOFF",
 				PHOTON_ENERGY_CUTOFF); 
 
