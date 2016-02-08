@@ -661,13 +661,18 @@ void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vert
 				locOrigSpacetimeConstraint->Set_InitTimeGuess(locNewSpacetimeConstraint->Get_CommonTime());
 			}
 
-			//create detected particles out of reconstructed decaying particles
+			//create detected particles out of reconstructed decaying particles in this constraint
 			set<DKinFitParticle*> locOutputKinFitParticles = dKinFitter->Get_KinFitParticles();
 			set<DKinFitParticle*>::iterator locResultIterator = locOutputKinFitParticles.begin();
 			for(; locResultIterator != locOutputKinFitParticles.end(); ++locResultIterator)
 			{
 				if((*locResultIterator)->Get_KinFitParticleType() != d_DecayingParticle)
 					continue;
+
+				set<DKinFitParticle*> locAllVertexParticles = locNewVertexConstraint->Get_AllParticles();
+				if(locAllVertexParticles.find(*locResultIterator) == locAllVertexParticles.end())
+					continue; //not used in this constraint: vertex not yet defined
+
 				DKinFitParticle* locInputKinFitParticle = Get_InputKinFitParticle(*locResultIterator);
 				locDecayingToDetectedParticleMap[locInputKinFitParticle] = Make_DetectedParticle(*locResultIterator);
 			}
