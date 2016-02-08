@@ -944,6 +944,7 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locPa
 
 		if(locDoSubsetFlag)
 		{
+			Particle_t locPID = locParticleComboStep->Get_FinalParticleID(loc_i);
 			bool locPIDFoundFlag = false;
 			for(deque<Particle_t>::iterator locIterator = locToIncludePIDs.begin(); locIterator != locToIncludePIDs.end(); ++locIterator)
 			{
@@ -961,12 +962,12 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locPa
 		{
 			//measured results, or not constrained by kinfit (either non-fixed mass or excluded from kinfit)
 			if((!locUseKinFitDataFlag) || (!IsFixedMass(locParticleComboStep->Get_FinalParticleID(loc_i))))
-				locFinalStateP4 += Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), deque<Particle_t>, locSourceObjects, locUseKinFitDataFlag);
+				locFinalStateP4 += Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), deque<Particle_t>(), locSourceObjects, locUseKinFitDataFlag);
 			else //want kinfit results, and decaying particle p4 is constrained by kinfit
 			{
 				locFinalStateP4 += locParticles[loc_i]->lorentzMomentum();
 				//still need source objects of decay products! dive down anyway, but ignore p4 result
-				Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), deque<Particle_t>, locSourceObjects, locUseKinFitDataFlag);
+				Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), deque<Particle_t>(), locSourceObjects, locUseKinFitDataFlag);
 			}
 		}
 		else

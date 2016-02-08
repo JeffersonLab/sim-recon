@@ -1168,7 +1168,7 @@ bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, co
 		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
 		if((dInitialPID != Unknown) && (locParticleComboStep->Get_InitialParticleID() != dInitialPID))
 			continue;
-		if((dStepIndex != -1) && (loc_i != dStepIndex))
+		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
 			continue;
 
 		set<pair<const JObject*, Particle_t> > locSourceObjects;
@@ -1339,7 +1339,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 	bool locIncludeBeamlineInVertexFitFlag = dKinFitUtils->Get_IncludeBeamlineInVertexFitFlag();
 
 	bool locP4IsFit = ((locKinFitType != d_VertexFit) && (locKinFitType != d_SpacetimeFit));
-	bool locIsInclusiveChannelFlag = Get_Reaction()->Get_IsInclusiveChannelFlag();
+	//bool locIsInclusiveChannelFlag = Get_Reaction()->Get_IsInclusiveChannelFlag();
 	//Below, should in theory check on whether to create pxyz pull histograms in the inclusive channel case
 		//But, this is tricky: can have inclusive (no p4) but still have mass constraints (p4)
 
@@ -1382,7 +1382,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 				map<DKinFitPullType, TH2I*> locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi;
 				Create_ParticlePulls(locFullROOTName, locIsInVertexFitFlag, false, locParticlePulls, locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi);
 				dHistMap_Pulls[pair<int, Particle_t>(-1, locInitialPID)] = locParticlePulls;
-				dHistMap_PullsVsP[pair<int, Particle_t>(loc_i, locPID)] = locParticlePullsVsP;
+				dHistMap_PullsVsP[pair<int, Particle_t>(-1, locInitialPID)] = locParticlePullsVsP;
 
 				gDirectory->cd("..");
 			}
@@ -1544,27 +1544,27 @@ void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName
 	set<pair<DKinFitPullType, pair<string, string> > >::iterator locIterator = locPullTypes.begin();
 	for(; locIterator != locPullTypes.end(); ++locIterator)
 	{
-		pair<string, string>& locStrings = (*locIterator)->second;
+		pair<string, string> locStrings = (*locIterator).second;
 
 		//1D
 		locHistName = locStrings.first;
 		locHistTitle = locFullROOTName + string(";") + locStrings.second + string(";# Combos");
-		locParticlePulls[(*locIterator)->first] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
+		locParticlePulls[(*locIterator).first] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
 
 		//vs p
 		locHistName = locStrings.first + string("_VsP");
 		locHistTitle = locFullROOTName + string(";p (GeV/c);") + locStrings.second;
-		locParticlePullsVsP[(*locIterator)->first] = GetOrCreate_Histogram<TH2I>(locHistName, locNum2DPBins, locMinP, locMaxP, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
+		locParticlePullsVsP[(*locIterator).first] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, locNum2DPBins, locMinP, locMaxP, dNumPullBins, dMinPull, dMaxPull);
 
 		//vs theta
 		locHistName = locStrings.first + string("_VsTheta");
 		locHistTitle = locFullROOTName + string(";#theta#circ;") + locStrings.second;
-		locParticlePullsVsTheta[(*locIterator)->first] = GetOrCreate_Histogram<TH2I>(locHistName, dNum2DThetaBins, dMinTheta, dMaxTheta, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
+		locParticlePullsVsTheta[(*locIterator).first] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNumPullBins, dMinPull, dMaxPull);
 
 		//vs phi
 		locHistName = locStrings.first + string("_VsPhi");
 		locHistTitle = locFullROOTName + string(";#phi#circ;") + locStrings.second;
-		locParticlePullsVsPhi[(*locIterator)->first] = GetOrCreate_Histogram<TH2I>(locHistName, dNum2DPhiBins, dMinPhi, dMaxPhi, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
+		locParticlePullsVsPhi[(*locIterator).first] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNumPullBins, dMinPull, dMaxPull);
 	}
 }
 

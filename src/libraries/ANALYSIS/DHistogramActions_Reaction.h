@@ -235,7 +235,7 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		//other than first, skipped if not detached vertex
 		map<size_t, TH1I*> dHistMap_StepVertexZ;
 		map<size_t, TH2I*> dHistMap_StepVertexYVsX;
-		map<size_t, TH2I*> dHistMap_StepVertexT;
+		map<size_t, TH1I*> dHistMap_StepVertexT;
 
 		//size_t is step index where the detached-vertex particle decays
 		map<size_t, TH1I*> dHistMap_DetachedPathLength; //distance between this vertex and the previous one (if detached)
@@ -413,10 +413,7 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 		DAnalysisAction(locReaction, "Hist_KinFitResults", true, locActionUniqueString), 
 		dNumConfidenceLevelBins(400), dNumPullBins(200), dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180), dNum2DPullBins(200),
 		dNum2DConfidenceLevelBins(200), dNum2DBeamEBins(240), dMinPull(-4.0), dMaxPull(4.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
-		dMinPhi(-180.0), dMaxPhi(180.0), dMinBeamE(0.0), dMaxBeamE(12.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut)
-		{
-			dAnalysisUtilities = NULL;
-		}
+		dMinPhi(-180.0), dMaxPhi(180.0), dMinBeamE(0.0), dMaxBeamE(12.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut), dAnalysisUtilities(NULL) {}
 
 		unsigned int dNumConfidenceLevelBins, dNumPullBins, dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins, dNum2DPullBins, dNum2DConfidenceLevelBins, dNum2DBeamEBins;
 		double dMinPull, dMaxPull, dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dMinBeamE, dMaxBeamE;
@@ -426,7 +423,7 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
-		void Create_ParticlePulls(string locFullROOTName, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH2I*>& locParticlePullsVsP, map<DKinFitPullType, TH2I*>& locParticlePullsVsTheta, map<DKinFitPullType, TH2I*>& locParticlePullsVsPhi)
+		void Create_ParticlePulls(string locFullROOTName, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH1I*>& locParticlePulls, map<DKinFitPullType, TH2I*>& locParticlePullsVsP, map<DKinFitPullType, TH2I*>& locParticlePullsVsTheta, map<DKinFitPullType, TH2I*>& locParticlePullsVsPhi);
 
 		double dPullHistConfidenceLevelCut;
 		const DAnalysisUtilities* dAnalysisUtilities;
