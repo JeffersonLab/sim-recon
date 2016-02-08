@@ -282,6 +282,9 @@ void DParticleCombo_factory::Set_DecayingParticles(const DParticleCombo* locNewP
 
 	//now, back-set the particle at the other vertex
 	int locFromStepIndex = locNewParticleComboStep->Get_InitialParticleDecayFromStepIndex();
+	if((locStepIndex == 0) || (locFromStepIndex < 0))
+		return; //no other place to set it
+
 	DParticleComboStep* locParticleComboStep = const_cast<DParticleComboStep*>(locNewParticleCombo->Get_ParticleComboStep(locFromStepIndex));
 	//find where it is the decaying particle
 	for(size_t loc_i = 0; loc_i < locParticleComboStep->Get_NumFinalParticles(); ++loc_i)
