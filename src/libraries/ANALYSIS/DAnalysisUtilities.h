@@ -95,6 +95,8 @@ class DAnalysisUtilities : public JObject
 		DLorentzVector Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const;
 		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, bool locUseKinFitDataFlag) const;
 		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, deque<Particle_t> locToIncludePIDs, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, deque<Particle_t> locToIncludePIDs, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const;
 
 		// These routines use the MEAURED particle data.  For the kinfit-data result, just use the error matrix from the missing particle
 		DMatrixDSym Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo) const;
