@@ -580,17 +580,17 @@ void DKinFitUtils_GlueX::Set_SpacetimeGuesses(const deque<DKinFitConstraint_Vert
 
 		/**************************************************** SUBSTITUTE FOR DECAYING PARTICLES ******************************************************/
 
-		//If a decaying particle was previously reconstructed, subtitute for it so can do a stand-alone vertex fit
+		//If a decaying particle was previously reconstructed, substitute for it so can do a stand-alone vertex fit
 		bool locAttemptFitFlag = true; //if set to false in Build_NewConstraint(), will not attempt fit (a previous fit failed)
 		set<DKinFitParticle*> locFullConstrainSet = locOrigVertexConstraint->Get_FullConstrainParticles();
-		size_t locNumDetectedFullConstrainParticles = 0;
+		size_t locNumDecayingConstrainParticles = 0;
 		set<DKinFitParticle*>::iterator locParticleIterator = locFullConstrainSet.begin();
 		for(; locParticleIterator != locFullConstrainSet.end(); ++locParticleIterator)
 		{
-			if((*locParticleIterator)->Get_KinFitParticleType() != d_DecayingParticle)
-				++locNumDetectedFullConstrainParticles;
+			if((*locParticleIterator)->Get_KinFitParticleType() == d_DecayingParticle)
+				++locNumDecayingConstrainParticles;
 		}
-		if(locNumDetectedFullConstrainParticles < 2) //if >= 2, don't need to substitute
+		if(locNumDecayingConstrainParticles > 0)
 		{
 			//true: skip bad decaying particles (those whose reconstruction-fits failed) if at all possible
 				//if cannot skip, will set locAttemptFitFlag to false
@@ -1049,7 +1049,7 @@ void DKinFitUtils_GlueX::Setup_VertexPrediction(const DReaction* locReaction, si
 	}
 }
 
-deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const DReaction* locReaction, const deque<set<pair<int, int> > >& locAllVertices, bool locSpacetimeFitFlag, size_t& locNumConstraints, string& locAllConstraintString) const
+deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const DReaction* locReaction, deque<set<pair<int, int> > > locAllVertices, bool locSpacetimeFitFlag, size_t& locNumConstraints, string& locAllConstraintString) const
 {
 	if(dDebugLevel > 10)
 		cout << "DKinFitUtils_GlueX: Create vertex constraints." << endl;
@@ -1160,6 +1160,7 @@ deque<set<pair<int, int> > > DKinFitUtils_GlueX::Predict_VertexConstraints(const
 		locAllConstraintString += Build_VertexConstraintString(locReaction, locAllVertices[locConstraintIndex], locAllFullConstrainParticles[locConstraintIndex], locAllOnlyConstrainTimeParticles[locConstraintIndex], locAllNoConstrainParticles[locConstraintIndex], locSpacetimeFitFlag);
 
 		//Erase this vertex from future consideration
+		locAllVertices.erase(locAllVertices.begin() + locConstraintIndex);
 		locAllFullConstrainParticles.erase(locAllFullConstrainParticles.begin() + locConstraintIndex);
 		locAllDecayingParticles.erase(locAllDecayingParticles.begin() + locConstraintIndex);
 		locAllOnlyConstrainTimeParticles.erase(locAllOnlyConstrainTimeParticles.begin() + locConstraintIndex);
@@ -1245,7 +1246,7 @@ string DKinFitUtils_GlueX::Build_VertexConstraintString(const DReaction* locReac
 			locPID = locReactionStep->Get_FinalParticleID(locParticlePair.second);
 
 		string locParticleString = ParticleName_ROOT(locPID);
-		if((locParticlePair.second == locReactionStep->Get_MissingParticleIndex()) && (locParticlePair.second != -1)) //-1 = beam
+		if((locParticlePair.second == locReactionStep->Get_MissingParticleIndex()) && (locParticlePair.second != -1)) //-1 = target
 			locConstraintString += string("(") + locParticleString + string(")"); //missing
 		else if(locFullConstrainParticles.find(locParticlePair) != locFullConstrainParticles.end()) //constraining
 			locConstraintString += string("#color[4]{") + locParticleString + string("}"); //blue
@@ -1261,7 +1262,7 @@ string DKinFitUtils_GlueX::Build_VertexConstraintString(const DReaction* locReac
 
 /*************************************************************** CALCULATION ROUTINES **************************************************************/
 
-bool DKinFitUtils_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKinematicData, const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi)
+bool DKinFitUtils_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKinematicData, DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi)
 {
 	//locKinematicData must be generated from locKinFitParticle
 		//this function should only be used on decaying particles involved in two vertex fits:
@@ -1281,4 +1282,3 @@ bool DKinFitUtils_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKi
 	locKinematicData->setPathLength(locPathLengthPair.first, locPathLengthPair.second);
 	return true;
 }
-

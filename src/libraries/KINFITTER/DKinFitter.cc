@@ -323,9 +323,11 @@ void DKinFitter::Set_MatrixSizes(void)
 		bool locIsIndirectlyInVertexConstraint = Get_IsIndirectlyInConstraint<DKinFitConstraint_Vertex>(locKinFitParticle);
 		bool locChargedBFieldFlag = (locKinFitParticle->Get_Charge() != 0) && dKinFitUtils->Get_IsBFieldNearBeamline();
 
+		if(dDebugLevel >= 20)
+			cout << "PID, pointer, is in p4/mass/vert/indirectv, accel = " << locKinFitParticle->Get_PID() << ", " << locKinFitParticle << ", " << locIsInP4Constraint << ", " << locIsInMassConstraint << ", " << locIsInVertexConstraint << ", " << locIsIndirectlyInVertexConstraint << ", " << locChargedBFieldFlag << endl;
 		if(!locKinFitParticle->Get_IsNeutralShowerFlag())
 		{
-			if(locIsInP4Constraint || locIsInMassConstraint || locIsInVertexConstraint)
+			if(locIsInP4Constraint || locIsInMassConstraint || Get_IsVertexConstrained(locKinFitParticle) || locIsIndirectlyInVertexConstraint)
 				dNumEta += 3; //p3
 			if(Get_IsVertexConstrained(locKinFitParticle) || (locIsIndirectlyInVertexConstraint && locChargedBFieldFlag))
 				dNumEta += 3; //v3 //directly (first condition) or indirectly AND accelerating (second condition)
@@ -482,7 +484,7 @@ void DKinFitter::Fill_InputMatrices(void)
 
 		if(!locKinFitParticle->Get_IsNeutralShowerFlag()) //non-neutral-shower
 		{
-			if(locIsInP4Constraint || locIsInMassConstraint || locIsInVertexConstraint)
+			if(locIsInP4Constraint || locIsInMassConstraint || Get_IsVertexConstrained(locKinFitParticle) || locIsIndirectlyInVertexConstraint)
 			{
 				locKinFitParticle->Set_PxParamIndex(locParamIndex);
 				dY(locParamIndex, 0) = locMomentum.Px();
@@ -2531,13 +2533,30 @@ void DKinFitter::Set_FinalTrackInfo(void)
 		//decaying particles with momentum derived from other particles
 		if((locKinFitParticleType == d_DecayingParticle) && (locPxParamIndex < 0))
 		{
-			//enclosed decaying particle: the momentum is derived from the other particles
-			TMatrixD locJacobian(7, dNumEta + dNumXi);
+			//decaying particle: the momentum is derived from the other particles
+			//if the decaying particle is not a constraining particle (e.g. vertex no-constrain):
+			//look for particles that define the momentum that were NOT in the fit. They're uncertainties are needed, but are not in the input matrices
+
+			set<DKinFitParticle*> locDerivedFromParticles = locKinFitParticle->Get_FromAllParticles();
+			set<DKinFitParticle*>::iterator locFromIterator = locDerivedFromParticles.begin();
+			map<DKinFitParticle*, int> locAdditionalPxParamIndices;
+			for(; locFromIterator != locDerivedFromParticles.end(); ++locFromIterator)
+			{
+				DKinFitParticleType locKinFitParticleType = (*locFromIterator)->Get_KinFitParticleType();
+				if((locKinFitParticleType == d_DecayingParticle) || (locKinFitParticleType == d_TargetParticle) || (locKinFitParticleType == d_MissingParticle))
+					continue;
+				if((*locFromIterator)->Get_PxParamIndex() >= 0)
+					continue; //uncertainties are already in matrices: ignore
+				int locNewPxParamIndex = dNumEta + dNumXi + 3*locAdditionalPxParamIndices.size();
+				locAdditionalPxParamIndices[*locFromIterator] = locNewPxParamIndex;
+			}
+
+			TMatrixD locJacobian(7, dNumEta + dNumXi + 3*locAdditionalPxParamIndices.size());
 			locJacobian.Zero();
 
 			bool locP3DerivedAtProductionVertexFlag = !locKinFitParticle->Get_FromInitialState().empty(); //else decay vertex
 			bool locP3DerivedAtPositionFlag = (locP3DerivedAtProductionVertexFlag == locKinFitParticle->Get_VertexP4AtProductionVertex());
-			dKinFitUtils->Calc_DecayingParticleJacobian(locKinFitParticle, locP3DerivedAtPositionFlag, 1.0, dNumEta, locJacobian);
+			dKinFitUtils->Calc_DecayingParticleJacobian(locKinFitParticle, locP3DerivedAtPositionFlag, 1.0, dNumEta, locAdditionalPxParamIndices, locJacobian);
 
 			//set vertex & time terms
 			if(locVxParamIndex >= 0)
@@ -2556,8 +2575,36 @@ void DKinFitter::Set_FinalTrackInfo(void)
 				Print_Matrix(locJacobian);
 			}
 
-			TMatrixDSym locTempMatrix = *dV;
-			locCovarianceMatrix = locTempMatrix.Similarity(locJacobian);
+			//build matrix, transform errors
+			if(locAdditionalPxParamIndices.empty())
+			{
+				TMatrixDSym locTempCovarianceMatrix = *dV;
+				locCovarianceMatrix = locTempCovarianceMatrix.Similarity(locJacobian);
+			}
+			else //need to expand error matrix
+			{
+				TMatrixDSym locTempCovarianceMatrix(dNumEta + dNumXi + 3*locAdditionalPxParamIndices.size());
+				locTempCovarianceMatrix.SetSub(0, *dV); //insert dV
+
+				//insert p3 covariance matrices of additional particles
+				map<DKinFitParticle*, int>::iterator locPxParamIterator = locAdditionalPxParamIndices.begin();
+				for(; locPxParamIterator != locAdditionalPxParamIndices.end(); ++locPxParamIterator)
+				{
+					int locPxParamIndex = locPxParamIterator->second;
+					TMatrixDSym locAdditionalCovMatrix(3);
+					locAdditionalCovMatrix = locPxParamIterator->first->Get_CovarianceMatrix()->GetSub(0, 2, locAdditionalCovMatrix);
+					locTempCovarianceMatrix.SetSub(locPxParamIndex, locAdditionalCovMatrix);
+				}
+
+				if(dDebugLevel >= 50)
+				{
+					cout << "FULL ERROR MATRIX (for calculated cov for enclosed decaying particle):" << endl;
+					Print_Matrix(locTempCovarianceMatrix);
+				}
+
+				//transform errors
+				locCovarianceMatrix = locTempCovarianceMatrix.Similarity(locJacobian);
+			}
 
 			if(dDebugLevel >= 50)
 			{

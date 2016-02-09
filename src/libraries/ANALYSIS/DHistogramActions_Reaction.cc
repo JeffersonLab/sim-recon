@@ -855,10 +855,7 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 					locPIDs.insert(locPIDs.begin(), locInitialPID);
 			}
 
-			if(locPIDs.empty())
-				continue;
-
-			CreateAndChangeTo_Directory(locStepName, locStepName);
+			bool locDirectoryCreatedFlag = false;
 			for(size_t loc_j = 0; loc_j < locPIDs.size(); ++loc_j)
 			{
 				locPID = locPIDs[loc_j];
@@ -866,6 +863,12 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 				locParticleROOTName = ParticleName_ROOT(locPID);
 				if(dHistDeque_P[loc_i].find(locPID) != dHistDeque_P[loc_i].end())
 					continue; //pid already done
+
+				if(!locDirectoryCreatedFlag)
+				{
+					CreateAndChangeTo_Directory(locStepName, locStepName);
+					locDirectoryCreatedFlag = true;
+				}
 
 				CreateAndChangeTo_Directory(locParticleName, locParticleName);
 
@@ -927,6 +930,11 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 			string locInitParticleName = ParticleType(locInitialPID);
 			if((loc_i == 0) || IsDetachedVertex(locInitialPID))
 			{
+				if(!locDirectoryCreatedFlag)
+				{
+					CreateAndChangeTo_Directory(locStepName, locStepName);
+					locDirectoryCreatedFlag = true;
+				}
 
 				locHistName = "StepVertexZ";
 				locHistTitle = (loc_i == 0) ? ";Production Vertex-Z (cm)" : string(";") + locInitParticleROOTName + string(" Decay Vertex-Z (cm)");
@@ -944,6 +952,12 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 
 			if((loc_i != 0) && IsDetachedVertex(locInitialPID))
 			{
+				if(!locDirectoryCreatedFlag)
+				{
+					CreateAndChangeTo_Directory(locStepName, locStepName);
+					locDirectoryCreatedFlag = true;
+				}
+
 				locHistName = locInitParticleName + string("PathLength");
 				locHistTitle = string(";") + locInitParticleROOTName + string(" Path Length (cm)");
 				dHistMap_DetachedPathLength[loc_i] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPathLengthBins, 0.0, dMaxPathLength);
@@ -956,7 +970,9 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 				locHistTitle = string(";") + locInitParticleROOTName + string(" Rest Frame Lifetime (ns)");
 				dHistMap_DetachedLifetime_RestFrame[loc_i] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumLifetimeBins, 0.0, dMaxLifetime);
 			}
-			gDirectory->cd("..");
+
+			if(locDirectoryCreatedFlag)
+				gDirectory->cd("..");
 		} //end of step loop
 
 		//Return to the base directory
@@ -1360,7 +1376,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 		bool locBeamFlag = (locInitialPID == Gamma);
 		if(locBeamFlag)
 		{
-			pair<int, int> locParticlePair(0, -1);
+			pair<int, int> locParticlePair(0, -2);
 			bool locIsInVertexFitFlag = (locVertexParticles.find(locParticlePair) != locVertexParticles.end());
 			if(!locIncludeBeamlineInVertexFitFlag)
 				locIsInVertexFitFlag = false;
@@ -1591,29 +1607,29 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 	{
 		dHist_ConfidenceLevel->Fill(locConfidenceLevel);
 
-//		if(locConfidenceLevel >= dPullHistConfidenceLevelCut)
-
 		// beam
 		if(locBeamFlag)
 		{
 			const DKinematicData* locKinematicData = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured();
 			map<DKinFitPullType, double> locParticlePulls = locPulls[locKinematicData];
-
-			pair<int, Particle_t> locParticlePair(-1, locInitPID);
-			DVector3 locMomentum = locKinematicData->momentum();
-			double locP = locMomentum.Mag();
-
-			//con lev
-			dHistMap_ConfidenceLevel_VsP[locParticlePair]->Fill(locP, locConfidenceLevel);
-
-			//pulls
-			if(locConfidenceLevel >= dPullHistConfidenceLevelCut)
+			if(!locParticlePulls.empty())
 			{
-				map<DKinFitPullType, double>::iterator locIterator = locParticlePulls.begin();
-				for(; locIterator != locParticlePulls.end(); ++locIterator)
+				pair<int, Particle_t> locParticlePair(-1, locInitPID);
+				DVector3 locMomentum = locKinematicData->momentum();
+				double locP = locMomentum.Mag();
+
+				//con lev
+				dHistMap_ConfidenceLevel_VsP[locParticlePair]->Fill(locP, locConfidenceLevel);
+
+				//pulls
+				if(locConfidenceLevel >= dPullHistConfidenceLevelCut)
 				{
-					dHistMap_Pulls[locParticlePair][locIterator->first]->Fill(locIterator->second);
-					dHistMap_PullsVsP[locParticlePair][locIterator->first]->Fill(locP, locIterator->second);
+					map<DKinFitPullType, double>::iterator locIterator = locParticlePulls.begin();
+					for(; locIterator != locParticlePulls.end(); ++locIterator)
+					{
+						dHistMap_Pulls[locParticlePair][locIterator->first]->Fill(locIterator->second);
+						dHistMap_PullsVsP[locParticlePair][locIterator->first]->Fill(locP, locIterator->second);
+					}
 				}
 			}
 		}
@@ -1630,6 +1646,17 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 				if(!locParticleComboStep->Is_FinalParticleDetected(loc_j))
 					continue;
 
+				//get pulls for this particle
+				map<DKinFitPullType, double> locParticlePulls;
+				map<const JObject*, map<DKinFitPullType, double> >::iterator locParticleIterator = locPulls.find(locParticles[loc_j]);
+				if(locParticleIterator != locPulls.end())
+					locParticlePulls = locParticleIterator->second;
+				else //is neutral shower
+					locParticlePulls = locPulls[locParticleComboStep->Get_FinalParticle_SourceObject(loc_j)];
+
+				if(locParticlePulls.empty())
+					continue;
+
 				pair<int, Particle_t> locParticlePair(loc_i, locParticles[loc_j]->PID());
 				DVector3 locMomentum = locParticles[loc_j]->momentum();
 				double locP = locMomentum.Mag();
@@ -1642,14 +1669,6 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 				dHistMap_ConfidenceLevel_VsPhi[locParticlePair]->Fill(locPhi, locConfidenceLevel);
 				if(locConfidenceLevel < dPullHistConfidenceLevelCut)
 					continue;
-
-				//get pulls for this particle
-				map<DKinFitPullType, double> locParticlePulls;
-				map<const JObject*, map<DKinFitPullType, double> >::iterator locParticleIterator = locPulls.find(locParticles[loc_j]);
-				if(locParticleIterator != locPulls.end())
-					locParticlePulls = locParticleIterator->second;
-				else //is neutral shower
-					locParticlePulls = locPulls[locParticleComboStep->Get_FinalParticle_SourceObject(loc_j)];
 
 				//fill histograms
 				map<DKinFitPullType, double>::iterator locIterator = locParticlePulls.begin();

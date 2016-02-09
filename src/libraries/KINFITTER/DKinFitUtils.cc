@@ -905,7 +905,7 @@ bool DKinFitUtils::Validate_Constraints(const set<DKinFitConstraint*>& locKinFit
 
 /*************************************************************** CALCULATION ROUTINES **************************************************************/
 
-TLorentzVector DKinFitUtils::Calc_DecayingP4_ByPosition(const DKinFitParticle* locKinFitParticle, bool locAtPositionFlag, bool locDontPropagateAtAllFlag) const
+TLorentzVector DKinFitUtils::Calc_DecayingP4_ByPosition(DKinFitParticle* locKinFitParticle, bool locAtPositionFlag, bool locDontPropagateAtAllFlag) const
 {
 	//if input flag is true: return the value of the p4 at spot defined by locKinFitParticle->Get_Position() //else at the common vertex
 		//useful for setting the momentum: locKinFitParticle->Set_Momentum()
@@ -918,7 +918,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4_ByPosition(const DKinFitParticle* l
 	return Calc_DecayingP4(locKinFitParticle, locDontPropagateDecayingP3Flag, 1.0, locDontPropagateAtAllFlag);
 }
 
-TLorentzVector DKinFitUtils::Calc_DecayingP4_ByP3Derived(const DKinFitParticle* locKinFitParticle, bool locAtP3DerivedFlag, bool locDontPropagateAtAllFlag) const
+TLorentzVector DKinFitUtils::Calc_DecayingP4_ByP3Derived(DKinFitParticle* locKinFitParticle, bool locAtP3DerivedFlag, bool locDontPropagateAtAllFlag) const
 {
 	//if input flag is true: return the value of the p4 at the vertex where the p3-deriving particles are at
 		//useful for doing mass constraints
@@ -929,7 +929,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4_ByP3Derived(const DKinFitParticle* 
 	return Calc_DecayingP4(locKinFitParticle, locDontPropagateDecayingP3Flag, 1.0, locDontPropagateAtAllFlag);
 }
 
-TLorentzVector DKinFitUtils::Calc_DecayingP4_ByVertex(const DKinFitParticle* locKinFitParticle, bool locAtProductionVertexFlag, bool locDontPropagateAtAllFlag) const
+TLorentzVector DKinFitUtils::Calc_DecayingP4_ByVertex(DKinFitParticle* locKinFitParticle, bool locAtProductionVertexFlag, bool locDontPropagateAtAllFlag) const
 {
 	//if input flag is true: return the value of the p4 at the production vertex
 		//else return it at the decay vertex
@@ -942,7 +942,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4_ByVertex(const DKinFitParticle* loc
 }
 
 //Don't call this directly! Well you can, but it's a little confusing. Better to call the wrapper functions. 
-TLorentzVector DKinFitUtils::Calc_DecayingP4(const DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, bool locDontPropagateAtAllFlag) const
+TLorentzVector DKinFitUtils::Calc_DecayingP4(DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, bool locDontPropagateAtAllFlag) const
 {
 	//locDontPropagateDecayingP3Flag: if true: don't propagate first decaying particle p3 from defined vertex to the other vertex
 	//E, px, py, pz
@@ -1033,7 +1033,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4(const DKinFitParticle* locKinFitPar
 	return locP4Sum;
 }
 
-bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, TMatrixDSym& locCovarianceMatrix) const
+bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, TVector3& locMomentum, TLorentzVector& locSpacetimeVertex, pair<double, double>& locPathLengthPair, TMatrixDSym& locCovarianceMatrix) const
 {
 	// propagates the track info to the fit common vertex
 		//returns false if nothing changed (info not propagated: e.g. missing particle), else returns true
@@ -1099,7 +1099,7 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locK
 	//add common time to matrix: 11x11 or 9x9 (neutral shower): if kinfit just add in (no correlations to meas, corr to common v3), else transform
 		//note that if the common time is not kinfit, then the true uncertainty is overestimated: 
 			//cannot be obtained without a kinematic fit (3 equations (xyz), one unknown (time))
-	double locCommonTime;
+	double locCommonTime = 0.0;
 	locCommonTParamIndex_TempMatrix = locCovarianceMatrix.GetNcols();
 	if(locKinFitParticle->Get_FitCommonTimeFlag()) //spacetime was fit
 	{
@@ -1248,7 +1248,7 @@ bool DKinFitUtils::Propagate_TrackInfoToCommonVertex(const DKinFitParticle* locK
 	return Calc_PathLength(locKinFitParticle, locVXi, locCovarianceMatrix, locPathLengthPair);
 }
 
-bool DKinFitUtils::Calc_PathLength(const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixDSym& locCovarianceMatrix, pair<double, double>& locPathLengthPair) const
+bool DKinFitUtils::Calc_PathLength(DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi, const TMatrixDSym& locCovarianceMatrix, pair<double, double>& locPathLengthPair) const
 {
 	//locPathLengthPair: value, uncertainty
 	DKinFitParticleType locKinFitParticleType = locKinFitParticle->Get_KinFitParticleType();
@@ -1335,7 +1335,7 @@ bool DKinFitUtils::Calc_PathLength(const DKinFitParticle* locKinFitParticle, con
 	return true;
 }
 
-void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, int locNumEta, TMatrixD& locJacobian) const
+void DKinFitUtils::Calc_DecayingParticleJacobian(DKinFitParticle* locKinFitParticle, bool locDontPropagateDecayingP3Flag, double locStateSignMultiplier, int locNumEta, const map<DKinFitParticle*, int>& locAdditionalPxParamIndices, TMatrixD& locJacobian) const
 {
 	//locJacobian: matrix used to convert dV to the decaying particle covariance matrix: indices are px, py, pz, x, y, z, t
 		//dimensions are: 7, (dNumXi + locNumEta);
@@ -1382,6 +1382,13 @@ void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFi
 	int locVxParamIndex = locKinFitParticle->Get_VxParamIndex();
 	if(((locKinFitParticleType == d_MissingParticle) || (locKinFitParticleType == d_DecayingParticle)) && (locVxParamIndex >= 0))
 		locVxParamIndex += locNumEta;
+	if(locPxParamIndex < 0)
+	{
+		//for particles not included in the fit matrices
+		map<DKinFitParticle*, int>::const_iterator locPxParamIterator = locAdditionalPxParamIndices.find(locKinFitParticle);
+		if(locPxParamIterator != locAdditionalPxParamIndices.end())
+			locPxParamIndex = locPxParamIterator->second;
+	}
 	int locCommonVxParamIndex = locKinFitParticle->Get_CommonVxParamIndex() + locNumEta;
 
 	if(locKinFitParticleType == d_TargetParticle)
@@ -1500,7 +1507,7 @@ void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFi
 		{
 			if(dDebugLevel > 30)
 				cout << "decaying, partially replace with init-state PID = " << (*locParticleIterator)->Get_PID() << endl;
-			Calc_DecayingParticleJacobian(*locParticleIterator, false, locStateSignMultiplier, locNumEta, locJacobian); //decaying particle multiplier * 1.0
+			Calc_DecayingParticleJacobian(*locParticleIterator, false, locStateSignMultiplier, locNumEta, locAdditionalPxParamIndices, locJacobian); //decaying particle multiplier * 1.0
 		}
 
 		//final state
@@ -1515,7 +1522,7 @@ void DKinFitUtils::Calc_DecayingParticleJacobian(const DKinFitParticle* locKinFi
 				cout << "decaying, partially replace with final-state PID = " << (*locParticleIterator)->Get_PID() << endl;
 			//If defined by invariant mass: add p4s of final state particles
 			//If defined by missing mass: add p4s of init state, subtract final state
-			Calc_DecayingParticleJacobian(*locParticleIterator, false, locNextStateSignMultiplier, locNumEta, locJacobian);
+			Calc_DecayingParticleJacobian(*locParticleIterator, false, locNextStateSignMultiplier, locNumEta, locAdditionalPxParamIndices, locJacobian);
 		}
 	}
 	else

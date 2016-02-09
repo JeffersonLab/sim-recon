@@ -92,7 +92,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 
 		/*********************************************************** CALCULATION ROUTINES ***********************************************************/
 
-		bool Propagate_TrackInfoToCommonVertex(DKinematicData* locKinematicData, const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi);
+		bool Propagate_TrackInfoToCommonVertex(DKinematicData* locKinematicData, DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi);
 
 		inline TVector3 Make_TVector3(DVector3 locDVector3) const;
 		inline TLorentzVector Make_TLorentzVector(DLorentzVector locDLorentzVector) const;
@@ -131,7 +131,7 @@ class DKinFitUtils_GlueX : public DKinFitUtils
 		deque<set<pair<int, int> > > Setup_VertexPredictions(const DReaction* locReaction) const;
 		void Setup_VertexPrediction(const DReaction* locReaction, size_t locStepIndex, set<pair<int, int> >& locVertexParticles, const map<pair<int, int>, int>& locDecayMap_ParticleToDecayStep, set<size_t>& locIncludedStepIndices) const;
 
-		deque<set<pair<int, int> > > Predict_VertexConstraints(const DReaction* locReaction, const deque<set<pair<int, int> > >& locAllVertices, bool locSpacetimeFitFlag, size_t& locNumConstraints, string& locAllConstraintString) const;
+		deque<set<pair<int, int> > > Predict_VertexConstraints(const DReaction* locReaction, deque<set<pair<int, int> > > locAllVertices, bool locSpacetimeFitFlag, size_t& locNumConstraints, string& locAllConstraintString) const;
 		void Group_VertexParticles(const DReaction* locReaction, const set<pair<int, int> >& locVertexParticles, set<pair<int, int> >& locFullConstrainParticles, set<pair<int, int> >& locDecayingParticles, set<pair<int, int> >& locOnlyConstrainTimeParticles, set<pair<int, int> >& locNoConstrainParticles) const;
 
 		/*************************************************************** NESTED CLASS ***************************************************************/
