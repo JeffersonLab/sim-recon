@@ -892,6 +892,13 @@ void DKinFitter::Calc_dVdEta(void)
 	{
 		*dVEta = dVY - locG.Similarity(dVY); //destroys locG, but it's not needed anymore
 		*dV = *dVEta;
+		if(dDebugLevel > 20)
+		{
+			cout << "DKinFitter: dVEta: " << endl;
+			Print_Matrix(dVEta);
+			cout << "DKinFitter: dV: " << endl;
+			Print_Matrix(dV);
+		}
 		return;
 	}
 
@@ -918,6 +925,14 @@ void DKinFitter::Calc_dVdEta(void)
 			(*dV)(loc_i, loc_j + dNumEta) = locEtaXiCovariance(loc_i, loc_j);
 			(*dV)(loc_j + dNumEta, loc_i) = locEtaXiCovariance(loc_i, loc_j);
 		}
+	}
+
+	if(dDebugLevel > 20)
+	{
+		cout << "DKinFitter: dVEta: " << endl;
+		Print_Matrix(dVEta);
+		cout << "DKinFitter: dV: " << endl;
+		Print_Matrix(dV);
 	}
 }
 
@@ -2421,8 +2436,6 @@ void DKinFitter::Calc_Pulls(void)
 		Print_Matrix(dEpsilon);
 		cout << "DKinFitter: dVY: " << endl;
 		Print_Matrix(dVY);
-		cout << "DKinFitter: dVEta: " << endl;
-		Print_Matrix(*dVEta);
 		cout << "DKinFitter: Pulls: " << endl;
 		map<DKinFitParticle*, map<DKinFitPullType, double> >::iterator locIterator;
 		for(locIterator = dPulls.begin(); locIterator != dPulls.end(); ++locIterator)
@@ -2500,13 +2513,19 @@ void DKinFitter::Set_FinalTrackInfo(void)
 			//set vertex & time terms
 			if(locVxParamIndex >= 0)
 			{
-				locJacobian(locCovMatrixVxParamIndex, locVxParamIndex + dNumEta) = 1.0;
-				locJacobian(locCovMatrixVxParamIndex + 1, locVxParamIndex + dNumEta + 1) = 1.0;
-				locJacobian(locCovMatrixVxParamIndex + 2, locVxParamIndex + dNumEta + 2) = 1.0;
+				locJacobian(3, locVxParamIndex + dNumEta) = 1.0;
+				locJacobian(4, locVxParamIndex + dNumEta + 1) = 1.0;
+				locJacobian(5, locVxParamIndex + dNumEta + 2) = 1.0;
 			}
 			int locTParamIndex = locKinFitParticle->Get_TParamIndex();
 			if(locTParamIndex >= 0)
 				locJacobian(6, locTParamIndex + dNumEta) = 1.0;
+
+			if(dDebugLevel >= 50)
+			{
+				cout << "JACOBIAN MATRIX (enclosed decaying particle):" << endl;
+				Print_Matrix(locJacobian);
+			}
 
 			TMatrixDSym locTempMatrix = *dV;
 			locCovarianceMatrix = locTempMatrix.Similarity(locJacobian);
