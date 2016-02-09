@@ -226,7 +226,6 @@ template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(const s
 {
 	//Get all constraints of a given type
 	set<DType*> locTypeConstraints;
-
 	set<DKinFitConstraint*>::const_iterator locConstraintIterator = locConstraints.begin();
 	for(; locConstraintIterator != locConstraints.end(); ++locConstraintIterator)
 	{
@@ -234,7 +233,6 @@ template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(const s
 		if(locConstraint != NULL)
 			locTypeConstraints.insert(locConstraint);
 	}
-
 	return locTypeConstraints;
 }
 

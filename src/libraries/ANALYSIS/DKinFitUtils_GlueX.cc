@@ -395,10 +395,13 @@ void DKinFitUtils_GlueX::Make_KinFitChainStep(const DParticleCombo* locParticleC
 
 		if(locDecayStepIndex == -1) //missing particle
 		{
-			locKinFitChainStep->Add_FinalParticle(Make_MissingParticle(locPID));
 			locKinFitChain->Set_DefinedParticleStepIndex(locKinFitStepIndex);
 			if(locPID == Unknown)
+			{
 				locKinFitChain->Set_IsInclusiveChannelFlag(true);
+				continue;
+			}
+			locKinFitChainStep->Add_FinalParticle(Make_MissingParticle(locPID));
 		}
 		else if(locDecayStepIndex >= 0) //decaying particle
 		{
@@ -728,6 +731,12 @@ DKinFitConstraint_Vertex* DKinFitUtils_GlueX::Build_NewConstraint(DKinFitConstra
 		}
 
 		map<DKinFitParticle*, DKinFitParticle*>::const_iterator locDecayIterator = locDecayingToDetectedParticleMap.find(locInputKinFitParticle);
+		if(locDecayIterator == locDecayingToDetectedParticleMap.end())
+		{
+			if(!locSkipBadDecayingFlag)
+				locAttemptFitFlag = false; //cannot fit. however, still get initial guess
+			continue; //try to see if can fit without this particle
+		}
 		DKinFitParticle* locDetectedDecayingParticle = locDecayIterator->second;
 		if((*(locDetectedDecayingParticle->Get_CovarianceMatrix()))(0, 0) < 0.0)
 		{

@@ -72,11 +72,14 @@ void DKinFitter::Reset_NewEvent(void)
 
 void DKinFitter::Reset_NewFit(void)
 {
+	dKinFitUtils->Reset_NewFit();
+
 	dKinFitStatus = d_KinFitSuccessful;
 
 	dKinFitConstraints.clear();
 	dKinFitParticles.clear();
 	dParticleConstraintMap.clear();
+	dParticleConstraintMap_Direct.clear();
 
 	dNumXi = 0;
 	dNumEta = 0;
@@ -90,8 +93,6 @@ void DKinFitter::Reset_NewFit(void)
 	dV = dKinFitUtils->Get_LargeMatrixDSymResource();
 	dVXi = dKinFitUtils->Get_LargeMatrixDSymResource();
 	dVEta = dKinFitUtils->Get_LargeMatrixDSymResource();
-
-	dKinFitUtils->Reset_NewFit();
 }
 
 /********************************************************************** UTILITIES **********************************************************************/
@@ -2272,7 +2273,6 @@ void DKinFitter::Calc_Vertex_Params(const DKinFitParticle* locKinFitParticle, do
 	double locK = locPDotDeltaX - locPDotH*locDeltaXDotH;
 	locJ = locA*locK/locPCrossHMagSq;
 	double locC = locPDotH/(locPCrossHMagSq*sqrt(1.0 - locJ*locJ));
-
 	TVector3 locPCrossHCrossH = locPCrossH.Cross(locH);
 
 	locM = locDeltaX - locDeltaXDotH*locH;
