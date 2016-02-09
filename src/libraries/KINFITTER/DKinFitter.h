@@ -219,7 +219,7 @@ inline void DKinFitter::Add_Constraints(const set<DKinFitConstraint*>& locKinFit
 template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(void) const
 {
 	//Get all constraints of a given type
-	return Get_Constraints<DType>(dKinFitConstraints, locOnlyDirectFlag);
+	return Get_Constraints<DType>(dKinFitConstraints);
 }
 
 template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(const set<DKinFitConstraint*>& locConstraints) const
