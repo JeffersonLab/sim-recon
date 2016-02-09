@@ -895,9 +895,9 @@ void DKinFitter::Calc_dVdEta(void)
 		if(dDebugLevel > 20)
 		{
 			cout << "DKinFitter: dVEta: " << endl;
-			Print_Matrix(dVEta);
+			Print_Matrix(*dVEta);
 			cout << "DKinFitter: dV: " << endl;
-			Print_Matrix(dV);
+			Print_Matrix(*dV);
 		}
 		return;
 	}
@@ -930,9 +930,9 @@ void DKinFitter::Calc_dVdEta(void)
 	if(dDebugLevel > 20)
 	{
 		cout << "DKinFitter: dVEta: " << endl;
-		Print_Matrix(dVEta);
+		Print_Matrix(*dVEta);
 		cout << "DKinFitter: dV: " << endl;
-		Print_Matrix(dV);
+		Print_Matrix(*dV);
 	}
 }
 
