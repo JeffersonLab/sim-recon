@@ -1592,7 +1592,12 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		// then copy the number of samples for the integral from it.
 		if(!cdcp->emulated){
 			if(conf){
-				cdcp->nsamples_integral = conf->NSA_NSB;
+			  //cdcp->nsamples_integral = conf->NSA_NSB;
+			  int TC = (int)cdcp->le_time/10+1;
+			  //int PG = conf->PG; does not yet work
+			  int PG = 4;
+			  int END = ( (TC-PG+conf->IE) > (conf->NW - 20) ) ? (conf->NW - 20) : (TC-PG + conf->IE) ;
+			  cdcp->nsamples_integral = END - TC;
 			}
 		}
 	}
@@ -1608,7 +1613,12 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		// then copy the number of samples for the integral from it.
 		if(!fdcp->emulated){
 			if(conf){
-				fdcp->nsamples_integral = conf->NSA_NSB;
+			  //fdcp->nsamples_integral = conf->NSA_NSB;
+			  int TC = (int)fdcp->le_time/10+1;
+			  //int PG = conf->PG; does not yet work
+			  int PG = 4;
+			  int END = ( (TC-PG+conf->IE) > (conf->NW - 20) ) ? (conf->NW - 20) : (TC-PG + conf->IE) ;
+			  fdcp->nsamples_integral = END - TC;
 			}
 		}
 	}
