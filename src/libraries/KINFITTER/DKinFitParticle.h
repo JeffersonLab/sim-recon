@@ -246,7 +246,7 @@ inline set<DKinFitParticle*> DKinFitParticle::Get_FromAllParticles(void) const
 
 inline void DKinFitParticle::Print_ParticleParams(void) const
 {
-	cout << "DKinFitParticle: Particle Type Enum: " << dKinFitParticleType << endl;
+	cout << "DKinFitParticle: Particle Type Enum, pointer: " << dKinFitParticleType << ", " << this << endl;
 
 	cout << "DKinFitParticle: Particle PID, Q, Mass = " << dPID << ", " << dCharge << ", " << dMass << endl;
 	cout << "DKinFitParticle: Particle P3, V3, T = " << dMomentum.Px() << ", " << dMomentum.Py() << ", " << dMomentum.Pz() << ", ";
