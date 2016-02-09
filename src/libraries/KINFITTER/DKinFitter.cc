@@ -170,16 +170,32 @@ void DKinFitter::Prepare_ConstraintsAndParticles(void)
 		set<DKinFitParticle*> locKinFitParticles = (*locConstraintIterator)->Get_AllParticles();
 		dKinFitParticles.insert(locKinFitParticles.begin(), locKinFitParticles.end());
 
+		//loop over the particles
 		set<DKinFitParticle*>::iterator locParticleIterator = locKinFitParticles.begin();
 		for(; locParticleIterator != locKinFitParticles.end(); ++locParticleIterator)
 		{
 			dParticleConstraintMap[*locParticleIterator].insert(*locConstraintIterator);
 			dParticleConstraintMap_Direct[*locParticleIterator].insert(*locConstraintIterator);
 
-			//now, for those particles that may not directly be used in a constraint, but ARE used to define a decaying particle
+			if((*locParticleIterator)->Get_KinFitParticleType() != d_DecayingParticle)
+				continue;
+
+			//now, check for particles that may not directly be used in this constraint, but ARE used to define this decaying particle
+			
+			//this will not be the case if the particle is in a vertex constraint, but only as a no-constrain particle
+			DKinFitConstraint_Vertex* locVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*locConstraintIterator);
+			if(locVertexConstraint != NULL)
+			{
+				set<DKinFitParticle*> locNoConstrainParticles = locVertexConstraint->Get_NoConstrainParticles();
+				if(locNoConstrainParticles.find(*locParticleIterator) != locNoConstrainParticles.end())
+					continue; //is not used to constrain, so neither is it's p4-defining particles (or at least, not here)
+			}
+
+			//this decaying particle is directly used in the constraint.  all p4-defining particles are then also used (but indirectly)
 			set<DKinFitParticle*> locFromAllParticles = (*locParticleIterator)->Get_FromAllParticles();
 			dKinFitParticles.insert(locFromAllParticles.begin(), locFromAllParticles.end());
 
+			//dParticleConstraintMap
 			set<DKinFitParticle*>::iterator locDerivingParticleIterator = locFromAllParticles.begin();
 			for(; locDerivingParticleIterator != locFromAllParticles.end(); ++locDerivingParticleIterator)
 				dParticleConstraintMap[*locDerivingParticleIterator].insert(*locConstraintIterator);
