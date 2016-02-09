@@ -106,12 +106,13 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		void Print_Matrix(const TMatrixD& locMatrix) const;
 
 		template <typename DType> set<DType*> Get_Constraints(void) const;
-		template <typename DType> set<DType*> Get_Constraints(DKinFitParticle* locKinFitParticle) const;
 		template <typename DType> set<DType*> Get_Constraints(const set<DKinFitConstraint*>& locConstraints) const;
 
 		//When we ask this question, we want to know, is the particle's information used in a constraint of the given type
 			//For example, if a decaying particle is used for a vertex constraint, the particle's that DEFINE the decaying particle are also included
-		template <typename DType> bool Get_IsInConstraint(DKinFitParticle* locKinFitParticle) const;
+		template <typename DType> set<DType*> Get_Constraints(DKinFitParticle* locKinFitParticle, bool locOnlyDirectFlag = false) const;
+		template <typename DType> bool Get_IsInConstraint(DKinFitParticle* locKinFitParticle, bool locOnlyDirectFlag = false) const;
+		template <typename DType> bool Get_IsIndirectlyInConstraint(DKinFitParticle* locKinFitParticle) const;
 
 		bool Get_IsVertexConstrained(DKinFitParticle* locKinFitParticle) const;
 		bool Get_IsTimeConstrained(DKinFitParticle* locKinFitParticle) const;
@@ -166,7 +167,9 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 
 		set<DKinFitConstraint*> dKinFitConstraints;
 		set<DKinFitParticle*> dKinFitParticles;
-		map<DKinFitParticle*, set<DKinFitConstraint*> > dParticleConstraintMap;
+		map<DKinFitParticle*, set<DKinFitConstraint*> > dParticleConstraintMap; //these particles are either directly or indirectly in these constraints
+		map<DKinFitParticle*, set<DKinFitConstraint*> > dParticleConstraintMap_Direct; //these particles are directly in these constraints
+		//indirect: if only present to define the momentum of a decaying particle
 
 		/*********************************************************** FIT MATRIX VARIABLES ***********************************************************/
 
@@ -213,28 +216,10 @@ inline void DKinFitter::Add_Constraints(const set<DKinFitConstraint*>& locKinFit
 	dKinFitConstraints.insert(locKinFitConstraints.begin(), locKinFitConstraints.end());
 }
 
-template <typename DType> inline bool DKinFitter::Get_IsInConstraint(DKinFitParticle* locKinFitParticle) const
-{
-	//Return whether a particle is in a constraint of the given type
-	return !Get_Constraints<DType>(locKinFitParticle).empty();
-}
-
 template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(void) const
 {
 	//Get all constraints of a given type
-	return Get_Constraints<DType>(dKinFitConstraints);
-}
-
-template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(DKinFitParticle* locKinFitParticle) const
-{
-	//Get all constraints of a given type that a given particle is in: either directly or INDIRECTLY
-		//If the particle is used to define the p3 of a decaying particle that is used in a given constraint, it is included
-	map<DKinFitParticle*, set<DKinFitConstraint*> >::const_iterator locMapIterator = dParticleConstraintMap.find(locKinFitParticle);
-	if(locMapIterator == dParticleConstraintMap.end())
-		return set<DType*>();
-
-	const set<DKinFitConstraint*>& locParticleConstraints = locMapIterator->second;
-	return Get_Constraints<DType>(locParticleConstraints);
+	return Get_Constraints<DType>(dKinFitConstraints, locOnlyDirectFlag);
 }
 
 template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(const set<DKinFitConstraint*>& locConstraints) const
@@ -251,6 +236,31 @@ template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(const s
 	}
 
 	return locTypeConstraints;
+}
+
+template <typename DType> inline bool DKinFitter::Get_IsInConstraint(DKinFitParticle* locKinFitParticle, bool locOnlyDirectFlag) const
+{
+	//Return whether a particle is in a constraint of the given type
+	return !Get_Constraints<DType>(locKinFitParticle, locOnlyDirectFlag).empty();
+}
+
+template <typename DType> inline bool DKinFitter::Get_IsIndirectlyInConstraint(DKinFitParticle* locKinFitParticle) const
+{
+	//Return whether a particle is indirectly in a constraint of the given type //in it, but not directly
+	return (Get_IsInConstraint<DType>(locKinFitParticle, false) && !Get_IsInConstraint<DType>(locKinFitParticle, true));
+}
+
+template <typename DType> inline set<DType*> DKinFitter::Get_Constraints(DKinFitParticle* locKinFitParticle, bool locOnlyDirectFlag) const
+{
+	//Get all constraints of a given type that a given particle is in: either directly or INDIRECTLY
+		//If the particle is used to define the p3 of a decaying particle that is used in a given constraint, it is included
+	const map<DKinFitParticle*, set<DKinFitConstraint*> >& locConstraintMap = locOnlyDirectFlag ? dParticleConstraintMap_Direct : dParticleConstraintMap;
+	map<DKinFitParticle*, set<DKinFitConstraint*> >::const_iterator locMapIterator = locConstraintMap.find(locKinFitParticle);
+	if(locMapIterator == locConstraintMap.end())
+		return set<DType*>();
+
+	const set<DKinFitConstraint*>& locParticleConstraints = locMapIterator->second;
+	return Get_Constraints<DType>(locParticleConstraints);
 }
 
 #endif // _DKinFitter_
