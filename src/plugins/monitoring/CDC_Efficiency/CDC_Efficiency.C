@@ -2,8 +2,8 @@
 {
 
     //dir->cd();
-    TDirectory *dir = TFile::Open("hd_root.root");
-    dir = (TDirectory*)gDirectory->FindObjectAny("CDC_Efficiency");
+    //TDirectory *dir = TFile::Open("hd_root.root");
+    TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("CDC_Efficiency");
     if(!dir) return;
     dir->cd();
 
