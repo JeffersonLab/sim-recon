@@ -7,6 +7,7 @@
 #include <JANA/JApplication.h>
 #include <TH1I.h>
 #include <TH2I.h>
+#include <TProfile.h>
 #include <TProfile2D.h>
 #include <TDirectory.h>
 
@@ -33,18 +34,23 @@ using namespace jana;
 #endif // ansi_escape
 
 vector <TDirectory *>& GetAllDirectories(void){
-	static vector <TDirectory *> allDirectories;
-	return allDirectories;
+    static vector <TDirectory *> allDirectories;
+    return allDirectories;
 }
 
 map<TString, TH1I*>& Get1DMap(void){
-	static map<TString, TH1I*> TH1IMap;
-	return TH1IMap;
+    static map<TString, TH1I*> TH1IMap;
+    return TH1IMap;
 }
 
 map<TString, TH2I*>& Get2DMap(void){
-	static map<TString, TH2I*> TH2IMap;
-	return TH2IMap;
+    static map<TString, TH2I*> TH2IMap;
+    return TH2IMap;
+}
+
+map<TString, TProfile*>& Get1DProfileMap(void){
+    static map<TString, TProfile*> TProfile1DMap;
+    return TProfile1DMap;
 }
 
 map<TString, TProfile2D*>& Get2DProfileMap(void){
@@ -102,6 +108,33 @@ void Fill2DHistogram (const char * plugin, const char * directoryName, const cha
         return;
     }
     histogram->Fill(valueX, valueY);
+    japp->RootUnLock();
+    return;
+}
+
+void Fill1DProfile (const char * plugin, const char * directoryName, const char * name, const double valueX , const double valueY , const char * title , int nBinsX, double xmin, double xmax, bool print = false){
+    japp->RootWriteLock();
+    TProfile * profile;
+    TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
+    try {
+        profile = Get1DProfileMap().at(fullName);
+    }
+    catch (const std::out_of_range& oor) {
+        if (print) std::cerr << ansi_green << plugin << " ===> Making New 1D Profile " << name << ansi_normal << endl;
+        TDirectory *homedir = gDirectory;
+        TDirectory *temp;
+        temp = gDirectory->mkdir(plugin);
+        if(temp) GetAllDirectories().push_back(temp);
+        gDirectory->cd(plugin);
+        GetAllDirectories().push_back(gDirectory->mkdir(directoryName));
+        gDirectory->cd(directoryName);
+        Get1DProfileMap()[fullName] = new TProfile( name, title, nBinsX, xmin, xmax);
+        Get1DProfileMap()[fullName]->Fill(valueX, valueY);
+        homedir->cd();
+        japp->RootUnLock();
+        return;
+    }
+    profile->Fill(valueX, valueY);
     japp->RootUnLock();
     return;
 }
