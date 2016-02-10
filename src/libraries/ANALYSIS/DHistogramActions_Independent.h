@@ -52,7 +52,6 @@
 #include "PID/DEventRFBunch.h"
 
 #include "ANALYSIS/DReaction.h"
-#include "ANALYSIS/DKinFitParticle.h"
 #include "ANALYSIS/DMCThrownMatching.h"
 #include "ANALYSIS/DMCThrownMatching_factory.h"
 #include "ANALYSIS/DParticleCombo.h"
@@ -377,10 +376,6 @@ class DHistogramAction_DetectorPID : public DAnalysisAction
 		map<DetectorSystem_t, map<Particle_t, TH2I*> > dHistMap_DeltaTVsP;
 //		map<DetectorSystem_t, map<Particle_t, TH2I*> > dHistMap_TimePullVsP;
 //		map<DetectorSystem_t, map<Particle_t, TH2I*> > dHistMap_TimeFOMVsP;
-
-//NEW
-
-
 };
 
 class DHistogramAction_Neutrals : public DAnalysisAction

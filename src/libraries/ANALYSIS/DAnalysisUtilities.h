@@ -34,8 +34,9 @@
 #include "PID/DParticleID.h"
 #include "PID/DEventRFBunch.h"
 
+#include "KINFITTER/DKinFitParticle.h"
+
 #include "ANALYSIS/DParticleCombo.h"
-#include "ANALYSIS/DKinFitParticle.h"
 #include "ANALYSIS/DMCThrownMatching_factory.h"
 #include "ANALYSIS/DParticleCombo_factory_Thrown.h"
 #include "ANALYSIS/DReaction_factory_Thrown.h"
@@ -94,15 +95,17 @@ class DAnalysisUtilities : public JObject
 		DLorentzVector Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const;
 		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, bool locUseKinFitDataFlag) const;
 		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, deque<Particle_t> locToIncludePIDs, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, deque<Particle_t> locToIncludePIDs, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const;
 
 		// These routines use the MEAURED particle data.  For the kinfit-data result, just use the error matrix from the missing particle
 		DMatrixDSym Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo) const;
 		DMatrixDSym Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs) const;
 
 		double Calc_CrudeTime(const deque<const DKinematicData*>& locParticles, const DVector3& locCommonVertex) const;
-		double Calc_CrudeTime(const deque<const DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const;
+		double Calc_CrudeTime(const deque<DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const;
 		DVector3 Calc_CrudeVertex(const deque<const DKinematicData*>& locParticles) const;
-		DVector3 Calc_CrudeVertex(const deque<const DKinFitParticle*>& locParticles) const;
+		DVector3 Calc_CrudeVertex(const deque<DKinFitParticle*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<const DTrackTimeBased*>& locParticles) const;
 

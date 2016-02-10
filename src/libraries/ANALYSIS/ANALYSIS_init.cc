@@ -118,4 +118,3 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	return NOERROR;
 }
 
-

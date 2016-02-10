@@ -906,13 +906,24 @@ DMatrixDSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* l
 DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, bool locUseKinFitDataFlag) const
 {
 	set<pair<const JObject*, Particle_t> > locSourceObjects;
-	return Calc_FinalStateP4(locParticleCombo, locStepIndex, locSourceObjects, locUseKinFitDataFlag);
+	return Calc_FinalStateP4(locParticleCombo, locStepIndex, deque<Particle_t>(), locSourceObjects, locUseKinFitDataFlag);
 }
 
 DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
 {
+	return Calc_FinalStateP4(locParticleCombo, locStepIndex, deque<Particle_t>(), locSourceObjects, locUseKinFitDataFlag);
+}
+
+DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, deque<Particle_t> locToIncludePIDs, bool locUseKinFitDataFlag) const
+{
+	set<pair<const JObject*, Particle_t> > locSourceObjects;
+	return Calc_FinalStateP4(locParticleCombo, locStepIndex, locToIncludePIDs, locSourceObjects, locUseKinFitDataFlag);
+}
+
+DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, deque<Particle_t> locToIncludePIDs, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
+{
 	if(locUseKinFitDataFlag && (locParticleCombo->Get_KinFitResults() == NULL))
-		return Calc_FinalStateP4(locParticleCombo, locStepIndex, locSourceObjects, false); //kinematic fit failed
+		return Calc_FinalStateP4(locParticleCombo, locStepIndex, locToIncludePIDs, locSourceObjects, false); //kinematic fit failed
 
 	DLorentzVector locFinalStateP4;
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
@@ -925,20 +936,38 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locPa
 	else //kinfit
 		locParticleComboStep->Get_FinalParticles(locParticles);
 
+	bool locDoSubsetFlag = !locToIncludePIDs.empty();
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		if(locParticleComboStep->Is_FinalParticleMissing(loc_i))
 			return (DLorentzVector()); //bad!
+
+		if(locDoSubsetFlag)
+		{
+			Particle_t locPID = locParticleComboStep->Get_FinalParticleID(loc_i);
+			bool locPIDFoundFlag = false;
+			for(deque<Particle_t>::iterator locIterator = locToIncludePIDs.begin(); locIterator != locToIncludePIDs.end(); ++locIterator)
+			{
+				if((*locIterator) != locPID)
+					continue;
+				locToIncludePIDs.erase(locIterator);
+				locPIDFoundFlag = true;
+				break;
+			}
+			if(!locPIDFoundFlag)
+				continue; //skip it: don't want to include it
+		}
+
 		if(locParticleComboStep->Is_FinalParticleDecaying(loc_i))
 		{
 			//measured results, or not constrained by kinfit (either non-fixed mass or excluded from kinfit)
 			if((!locUseKinFitDataFlag) || (!IsFixedMass(locParticleComboStep->Get_FinalParticleID(loc_i))))
-				locFinalStateP4 += Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), locSourceObjects, locUseKinFitDataFlag);
+				locFinalStateP4 += Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), deque<Particle_t>(), locSourceObjects, locUseKinFitDataFlag);
 			else //want kinfit results, and decaying particle p4 is constrained by kinfit
 			{
 				locFinalStateP4 += locParticles[loc_i]->lorentzMomentum();
 				//still need source objects of decay products! dive down anyway, but ignore p4 result
-				Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), locSourceObjects, locUseKinFitDataFlag);
+				Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), deque<Particle_t>(), locSourceObjects, locUseKinFitDataFlag);
 			}
 		}
 		else
@@ -1090,7 +1119,7 @@ double DAnalysisUtilities::Calc_CrudeTime(const deque<const DKinematicData*>& lo
 	return locAverageTime/(double(locParticles.size()));
 }
 
-double DAnalysisUtilities::Calc_CrudeTime(const deque<const DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const
+double DAnalysisUtilities::Calc_CrudeTime(const deque<DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const
 {
 	//crudely propagate the track times to the common vertex and return the average track time
 	DVector3 locPOCA;
@@ -1211,7 +1240,7 @@ DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DKinematicData*>
 	return locVertex;
 }
 
-DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DKinFitParticle*>& locParticles) const
+DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<DKinFitParticle*>& locParticles) const
 {
 	//assumes tracks are straight lines
 	//uses the midpoint of the smallest DOCA line

@@ -29,6 +29,7 @@ class DParticleComboStep
 
 		// SET FINAL PARTICLES:
 		inline void Add_FinalParticle(const DKinematicData* locFinalParticle){dFinalParticles.push_back(locFinalParticle);}
+		inline void Set_FinalParticle(const DKinematicData* locFinalParticle, size_t locFinalParticleIndex){dFinalParticles[locFinalParticleIndex] = locFinalParticle;}
 
 		// SET BLUEPRINT & MEASURED STEP:
 		inline void Set_ParticleComboBlueprintStep(const DParticleComboBlueprintStep* locParticleComboBlueprintStep){dParticleComboBlueprintStep = locParticleComboBlueprintStep;}

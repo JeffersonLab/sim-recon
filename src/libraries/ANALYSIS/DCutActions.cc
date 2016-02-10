@@ -498,6 +498,12 @@ bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const D
 	return true; //we made it!
 }
 
+DCutAction_BDTSignalCombo::~DCutAction_BDTSignalCombo(void)
+{
+	if(dCutAction_TrueBeamParticle != NULL)
+		delete dCutAction_TrueBeamParticle;
+}
+
 void DCutAction_TrueCombo::Initialize(JEventLoop* locEventLoop)
 {
 	dCutAction_TrueBeamParticle = new DCutAction_TrueBeamParticle(Get_Reaction());
@@ -616,6 +622,14 @@ bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParti
 	}
 
 	return true; //we made it!
+}
+
+DCutAction_TrueCombo::~DCutAction_TrueCombo(void)
+{
+	if(dCutAction_TrueBeamParticle != NULL)
+		delete dCutAction_TrueBeamParticle;
+	if(dCutAction_ThrownTopology != NULL)
+		delete dCutAction_ThrownTopology;
 }
 
 bool DCutAction_TrueBeamParticle::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
@@ -1000,25 +1014,14 @@ bool DCutAction_PIDTimingBeta::Perform_Action(JEventLoop* locEventLoop, const DP
 
 void DCutAction_OneVertexKinFit::Initialize(JEventLoop* locEventLoop)
 {
-	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield(locEventLoop->GetJEvent().GetRunNumber());
+	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
+	dKinFitter = new DKinFitter(dKinFitUtils);
 
-	double locTargetZCenter = 65.0;
-	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
-	locGeometry->GetTargetZ(locTargetZCenter);
-
-	//Only set magnetic field if non-zero!
-	double locBx, locBy, locBz;
-	locMagneticFieldMap->GetField(0.0, 0.0, locTargetZCenter, locBx, locBy, locBz);
-	TVector3 locBField(locBx, locBy, locBz);
-	if(locBField.Mag() > 0.0)
-		dKinFitter.Set_BField(locMagneticFieldMap);
+	// Optional: Useful utility functions.
+	locEventLoop->GetSingle(dAnalysisUtilities);
 
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
-		// Optional: Useful utility functions.
-		locEventLoop->GetSingle(dAnalysisUtilities);
-
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
 			//If another thread has already created the folder, it just changes to it. 
 		CreateAndChangeTo_ActionDirectory();
@@ -1034,35 +1037,39 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 {
 	//need to call prior to use in each event (cleans up memory allocated from last event)
 		//this call invalidates memory from previous fits (but that's OK, we aren't saving them anywhere)
-	dKinFitter.Reset_NewEvent();
+	dKinFitter->Reset_NewEvent();
 
 	//Get particles for fit (all detected q+)
 	deque<const DKinematicData*> locDetectedParticles;
 	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locDetectedParticles);
 
 	//Make DKinFitParticle objects for each one
-	deque<const DKinFitParticle*> locKinFitParticles;
+	deque<DKinFitParticle*> locKinFitParticles;
+	set<DKinFitParticle*> locKinFitParticleSet;
 	for(size_t loc_i = 0; loc_i < locDetectedParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locDetectedParticles[loc_i]);
-		const DKinFitParticle* locKinFitParticle = dKinFitter.Make_DetectedParticle(locChargedTrackHypothesis);
+		DKinFitParticle* locKinFitParticle = dKinFitUtils->Make_DetectedParticle(locChargedTrackHypothesis);
 		locKinFitParticles.push_back(locKinFitParticle);
+		locKinFitParticleSet.insert(locKinFitParticle);
 	}
 
 	// vertex guess
 	TVector3 locVertexGuess = dAnalysisUtilities->Calc_CrudeVertex(locDetectedParticles);
 
 	// make & set vertex constraint
-	DKinFitConstraint_Vertex* locVertexConstraint = dKinFitter.Make_VertexConstraint(deque<const DKinFitParticle*>(), locKinFitParticles, locVertexGuess);
-	dKinFitter.Set_Constraint(locVertexConstraint);
+	set<DKinFitParticle*> locNoConstrainParticles;
+	DKinFitConstraint_Vertex* locVertexConstraint = dKinFitUtils->Make_VertexConstraint(locKinFitParticleSet, locNoConstrainParticles, locVertexGuess);
+	dKinFitter->Add_Constraint(locVertexConstraint);
 
 	// PERFORM THE KINEMATIC FIT
-	if(!dKinFitter.Fit_Reaction())
+	if(!dKinFitter->Fit_Reaction())
 		return (dMinKinFitCL < 0.0); //fit failed to converge, return false if converge required
 
 	// GET THE FIT RESULTS
-	double locConfidenceLevel = dKinFitter.Get_ConfidenceLevel();
-	TVector3 locFitVertex = locVertexConstraint->Get_CommonVertex();
+	double locConfidenceLevel = dKinFitter->Get_ConfidenceLevel();
+	DKinFitConstraint_Vertex* locResultVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*dKinFitter->Get_KinFitConstraints().begin());
+	TVector3 locFitVertex = locResultVertexConstraint->Get_CommonVertex();
 
 	//Optional: Fill histograms
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
@@ -1082,3 +1089,12 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 	}
 	return true;
 }
+
+DCutAction_OneVertexKinFit::~DCutAction_OneVertexKinFit(void)
+{
+	if(dKinFitter != NULL)
+		delete dKinFitter;
+	if(dKinFitUtils != NULL)
+		delete dKinFitUtils;
+}
+
