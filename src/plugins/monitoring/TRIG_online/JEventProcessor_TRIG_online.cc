@@ -361,9 +361,6 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	locEventLoop->Get(bcalpoints);
 	locEventLoop->Get(fcalhits);
 	locEventLoop->Get(locFCALClusters);
-
-	japp->RootWriteLock();
-
 	DFCALGeometry fcalgeom;
 
 	bool isPhysics = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_PHYSICS_EVENT);
@@ -371,6 +368,9 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	  printf ("Non-physics Event=%d\n",(int)locEventNumber);
 	  return NOERROR;
 	}
+
+	japp->RootWriteLock();
+
 
 	// first get trigger bits
 
