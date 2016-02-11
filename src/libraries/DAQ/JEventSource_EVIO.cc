@@ -1598,7 +1598,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			  int PG = 4;
 			  int END = ( (TC-PG+conf->IE) > (conf->NW - 20) ) ? (conf->NW - 20) : (TC-PG + conf->IE) ;
 			  int nsamp = END - (TC-PG);
-			  if (nsamp){
+			  if (nsamp>0){
 			    cdcp->nsamples_integral = END - (TC-PG);
 			  } else {
 			    cdcp->nsamples_integral = 1;
@@ -1626,7 +1626,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			  int PG = 4;
 			  int END = ( (TC-PG+conf->IE) > (conf->NW - 20) ) ? (conf->NW - 20) : (TC-PG + conf->IE) ;
 			  int nsamp = END - (TC-PG);
-			  if (nsamp){
+			  if (nsamp>0){
 			    cdcp->nsamples_integral = END - (TC-PG);
 			  } else {
 			    cdcp->nsamples_integral = 1;
