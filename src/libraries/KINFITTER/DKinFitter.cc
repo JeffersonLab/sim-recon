@@ -1827,7 +1827,7 @@ void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitPa
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) -= dF_dEta(locFIndex + 1, locVxParamIndex + 1);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) -= dF_dEta(locFIndex + 1, locVxParamIndex + 2);
 	}
-	else if(locKinFitParticle->Get_IsNeutralShowerFlag())
+	else if(locKinFitParticle->Get_IsNeutralShowerFlag() && (locKinFitParticle->Get_Mass() < 0.00001))
 	{
 		if(dDebugLevel > 30)
 			cout << "DKinFitter: Calc_dF_Vertex() Section 7; PID = " << locKinFitParticle->Get_PID() << endl;
@@ -1864,6 +1864,10 @@ void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitPa
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex) -= dF_dEta(locFIndex + 1, locVxParamIndex);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) -= dF_dEta(locFIndex + 1, locVxParamIndex + 1);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) -= dF_dEta(locFIndex + 1, locVxParamIndex + 2);
+	}
+	else if(locKinFitParticle->Get_IsNeutralShowerFlag() && (locKinFitParticle->Get_Mass() >= 0.00001))
+	{
+		return;
 	}
 	else if((locKinFitParticleType == d_DetectedParticle) || (locKinFitParticleType == d_BeamParticle))
 	{
@@ -2051,7 +2055,7 @@ void DKinFitter::Calc_dF_Vertex_Decaying_NonAccel(size_t locFIndex, const DKinFi
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) -= dF_dEta(locFIndex + 1, locVxParamIndex + 1);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) -= dF_dEta(locFIndex + 1, locVxParamIndex + 2);
 	}
-	else if(locKinFitParticle->Get_IsNeutralShowerFlag())
+	else if(locKinFitParticle->Get_IsNeutralShowerFlag() && (locKinFitParticle->Get_Mass() < 0.00001))
 	{
 		TVector3 locPosition_DecayingSource = locKinFitParticle_DecayingSource->Get_Position();
 		TVector3 locCommonVertex_DecayingSource = locKinFitParticle_DecayingSource->Get_CommonVertex();
@@ -2115,6 +2119,10 @@ void DKinFitter::Calc_dF_Vertex_Decaying_NonAccel(size_t locFIndex, const DKinFi
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex) -= dF_dEta(locFIndex + 1, locVxParamIndex);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) -= dF_dEta(locFIndex + 1, locVxParamIndex + 1);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) -= dF_dEta(locFIndex + 1, locVxParamIndex + 2);
+	}
+	else if(locKinFitParticle->Get_IsNeutralShowerFlag() && (locKinFitParticle->Get_Mass() >= 0.00001))
+	{
+		return;
 	}
 	else if((locKinFitParticleType == d_DetectedParticle) || (locKinFitParticleType == d_BeamParticle))
 	{
