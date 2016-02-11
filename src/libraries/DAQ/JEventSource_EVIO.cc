@@ -1597,10 +1597,17 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			  //int PG = conf->PG; does not yet work
 			  int PG = 4;
 			  int END = ( (TC-PG+conf->IE) > (conf->NW - 20) ) ? (conf->NW - 20) : (TC-PG + conf->IE) ;
-			  cdcp->nsamples_integral = END - TC;
+			  int nsamp = END - (TC-PG);
+			  if (nsamp>0){
+			    cdcp->nsamples_integral = END - (TC-PG);
+			  } else {
+			    cdcp->nsamples_integral = 1;
+			  }
+			
 			}
 		}
 	}
+
 	vector<JObject*> &vfdcp125 = hit_objs_by_type["Df125FDCPulse"];
 	for(unsigned int i=0; i<vfdcp125.size(); i++){
 
@@ -1618,7 +1625,12 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			  //int PG = conf->PG; does not yet work
 			  int PG = 4;
 			  int END = ( (TC-PG+conf->IE) > (conf->NW - 20) ) ? (conf->NW - 20) : (TC-PG + conf->IE) ;
-			  fdcp->nsamples_integral = END - TC;
+			  int nsamp = END - (TC-PG);
+			  if (nsamp>0){
+			    cdcp->nsamples_integral = END - (TC-PG);
+			  } else {
+			    cdcp->nsamples_integral = 1;
+			  }
 			}
 		}
 	}
