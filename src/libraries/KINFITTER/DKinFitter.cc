@@ -12,6 +12,8 @@
 		//if a common vertex is not simultaneously kinematically fit for a neutral shower, the fit will fail
 		//To include a neutral shower in a p4 fit without a vertex fit, create a neutral particle from it 
 			//with a full 7x7 covaraince matrix and input it instead of the neutral shower
+	//Massive neutral showers (e.g. neutron) cannot be used in vertex constraints: only spacetime constraints. However, photons can. 
+		//This is because their momentum is defined by the vertex time
 
 //P4 CONSTRAINTS:
 	//Don't do if studying an inclusive channel.
@@ -34,6 +36,8 @@
 	//Neutral and missing particles included in the constraint will not be used to constrain the vertex, but will be set with the fit common vertex
 		//This is necessary if you want the neutral particle momentum (from an input shower) to change with the reconstructed vertex
 	//decaying particles should only be used to constrain a fit if the position is defined in another vertex constraint
+	//Massive neutral showers (e.g. neutron) cannot be used in vertex constraints: only spacetime constraints. However, photons can. 
+		//This is because their momentum is defined by the vertex time
 
 //SPACETIME CONSTRAINTS:
 	//THESE ARE CURRENTLY DISABLED
