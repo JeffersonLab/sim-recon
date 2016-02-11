@@ -532,11 +532,23 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 	et_openconfig openconfig;
 	et_open_config_init(&openconfig);
 	if(host != ""){
-		et_open_config_setcast(openconfig, ET_DIRECT);
-		et_open_config_setmode(openconfig, ET_HOST_AS_LOCAL); // ET_HOST_AS_LOCAL or ET_HOST_AS_REMOTE
-		et_open_config_sethost(openconfig, host.c_str());
-		et_open_config_setport(openconfig, ET_BROADCAST_PORT);
-		et_open_config_setserverport(openconfig, port);
+		if(host.find("239.")==0){
+			cout<<__FILE__<<":"<<__LINE__<<" Configuring input ET for multicast" << endl;
+			et_open_config_setcast(openconfig, ET_MULTICAST);
+			et_open_config_addmulticast(openconfig, host.c_str());
+			et_open_config_sethost(openconfig, ET_HOST_ANYWHERE);
+			et_open_config_setport(openconfig, port);
+			struct timespec tspec={5,5};
+			et_open_config_settimeout(openconfig, tspec);
+			et_open_config_setwait(openconfig, ET_OPEN_WAIT);
+		}else{
+			cout<<__FILE__<<":"<<__LINE__<<" Configuring input ET for direct connection" << endl;
+			et_open_config_setcast(openconfig, ET_DIRECT);
+			et_open_config_setmode(openconfig, ET_HOST_AS_LOCAL); // ET_HOST_AS_LOCAL or ET_HOST_AS_REMOTE
+			et_open_config_sethost(openconfig, host.c_str());
+			et_open_config_setport(openconfig, ET_BROADCAST_PORT);
+			if(port != 0)et_open_config_setserverport(openconfig, port);
+		}
 	}
 	int err = et_open(&sys_id,fname.c_str(),openconfig);
 	if(err != ET_OK){
