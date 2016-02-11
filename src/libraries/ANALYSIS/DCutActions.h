@@ -664,8 +664,6 @@ class DCutAction_NoPIDHit : public DAnalysisAction
 		Particle_t dPID;
 };
 
-DCutAction_NoPIDHit
-
 class DCutAction_OneVertexKinFit : public DAnalysisAction
 {
 	//does not cut vertex-z position if min > max
