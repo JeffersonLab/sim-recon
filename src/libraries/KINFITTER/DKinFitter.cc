@@ -12,6 +12,8 @@
 		//if a common vertex is not simultaneously kinematically fit for a neutral shower, the fit will fail
 		//To include a neutral shower in a p4 fit without a vertex fit, create a neutral particle from it 
 			//with a full 7x7 covaraince matrix and input it instead of the neutral shower
+	//Massive neutral showers (e.g. neutron) cannot be used in vertex constraints: only spacetime constraints. However, photons can. 
+		//This is because their momentum is defined by the vertex time
 
 //P4 CONSTRAINTS:
 	//Don't do if studying an inclusive channel.
@@ -34,6 +36,8 @@
 	//Neutral and missing particles included in the constraint will not be used to constrain the vertex, but will be set with the fit common vertex
 		//This is necessary if you want the neutral particle momentum (from an input shower) to change with the reconstructed vertex
 	//decaying particles should only be used to constrain a fit if the position is defined in another vertex constraint
+	//Massive neutral showers (e.g. neutron) cannot be used in vertex constraints: only spacetime constraints. However, photons can. 
+		//This is because their momentum is defined by the vertex time
 
 //SPACETIME CONSTRAINTS:
 	//THESE ARE CURRENTLY DISABLED
@@ -1823,7 +1827,7 @@ void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitPa
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) -= dF_dEta(locFIndex + 1, locVxParamIndex + 1);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) -= dF_dEta(locFIndex + 1, locVxParamIndex + 2);
 	}
-	else if(locKinFitParticle->Get_IsNeutralShowerFlag())
+	else if(locKinFitParticle->Get_IsNeutralShowerFlag() && (locKinFitParticle->Get_Mass() < 0.00001))
 	{
 		if(dDebugLevel > 30)
 			cout << "DKinFitter: Calc_dF_Vertex() Section 7; PID = " << locKinFitParticle->Get_PID() << endl;
@@ -1860,6 +1864,10 @@ void DKinFitter::Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitPa
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex) -= dF_dEta(locFIndex + 1, locVxParamIndex);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) -= dF_dEta(locFIndex + 1, locVxParamIndex + 1);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) -= dF_dEta(locFIndex + 1, locVxParamIndex + 2);
+	}
+	else if(locKinFitParticle->Get_IsNeutralShowerFlag() && (locKinFitParticle->Get_Mass() >= 0.00001))
+	{
+		return;
 	}
 	else if((locKinFitParticleType == d_DetectedParticle) || (locKinFitParticleType == d_BeamParticle))
 	{
@@ -2047,7 +2055,7 @@ void DKinFitter::Calc_dF_Vertex_Decaying_NonAccel(size_t locFIndex, const DKinFi
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) -= dF_dEta(locFIndex + 1, locVxParamIndex + 1);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) -= dF_dEta(locFIndex + 1, locVxParamIndex + 2);
 	}
-	else if(locKinFitParticle->Get_IsNeutralShowerFlag())
+	else if(locKinFitParticle->Get_IsNeutralShowerFlag() && (locKinFitParticle->Get_Mass() < 0.00001))
 	{
 		TVector3 locPosition_DecayingSource = locKinFitParticle_DecayingSource->Get_Position();
 		TVector3 locCommonVertex_DecayingSource = locKinFitParticle_DecayingSource->Get_CommonVertex();
@@ -2111,6 +2119,10 @@ void DKinFitter::Calc_dF_Vertex_Decaying_NonAccel(size_t locFIndex, const DKinFi
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex) -= dF_dEta(locFIndex + 1, locVxParamIndex);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 1) -= dF_dEta(locFIndex + 1, locVxParamIndex + 1);
 		dF_dXi(locFIndex + 1, locCommonVxParamIndex + 2) -= dF_dEta(locFIndex + 1, locVxParamIndex + 2);
+	}
+	else if(locKinFitParticle->Get_IsNeutralShowerFlag() && (locKinFitParticle->Get_Mass() >= 0.00001))
+	{
+		return;
 	}
 	else if((locKinFitParticleType == d_DetectedParticle) || (locKinFitParticleType == d_BeamParticle))
 	{

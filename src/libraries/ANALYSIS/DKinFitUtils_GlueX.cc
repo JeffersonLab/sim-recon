@@ -354,6 +354,7 @@ void DKinFitUtils_GlueX::Make_KinFitChainStep(const DParticleCombo* locParticleC
 
 	//if doing a vertex fit, see which neutral particles can be treated as showers
 	set<pair<int, int> > locKinFitVertexParticles;
+	bool locSpactimeIsFitFlag = (locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit);
 	if((locKinFitType == d_VertexFit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit))
 		locKinFitVertexParticles = Get_KinFitVertexParticles(locReaction);
 
@@ -410,11 +411,17 @@ void DKinFitUtils_GlueX::Make_KinFitChainStep(const DParticleCombo* locParticleC
 			//e.g. omega: cannot constrain: add its decay step to this one
 			Make_KinFitChainStep(locParticleCombo, locKinFitType, locDecayStepIndex, locKinFitChain, locKinFitChainStep, locStepCreationMap);
 		}
-		else if(ParticleCharge(locKinematicData->PID()) == 0) //detected neutral
+		else if(ParticleCharge(locPID) == 0) //detected neutral
 		{
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locKinematicData);
+
+			//Determine whether we should use the particle or the shower object
 			pair<int, int> locParticlePair(locStepIndex, loc_j);
-			if(locKinFitVertexParticles.find(locParticlePair) == locKinFitVertexParticles.end())
+			bool locNeutralShowerFlag = (locKinFitVertexParticles.find(locParticlePair) != locKinFitVertexParticles.end());
+			if((ParticleMass(locPID) > 0.0) && !locSpactimeIsFitFlag)
+				locNeutralShowerFlag = false; //massive shower momentum is defined by t, which isn't fit: use particle
+
+			if(!locNeutralShowerFlag)
 				locKinFitChainStep->Add_FinalParticle(Make_DetectedParticle(locNeutralParticleHypothesis));
 			else //in a vertex constraint: make shower
 			{
