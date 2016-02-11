@@ -2103,6 +2103,10 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 		  EndSample = nsamples;
 		}
 		for (uint32_t c_samp=StartSample; c_samp<EndSample; c_samp++) {
+			if(c_samp>=samplesvector.size()){
+				_DBG_ << "Sample number outside of range of samples (c_samp="<<c_samp<<" >= samplesvector.size()="<<samplesvector.size()<<")" << endl;
+				break;
+			}
 			signalsum += samplesvector[c_samp];
 			nsamples_used++;
 		}
