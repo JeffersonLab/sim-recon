@@ -1012,6 +1012,31 @@ bool DCutAction_PIDTimingBeta::Perform_Action(JEventLoop* locEventLoop, const DP
 	return true;
 }
 
+string DCutAction_NoPIDHit::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dPID;
+	return locStream.str();
+}
+
+bool DCutAction_NoPIDHit::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	//if dPID = Unknown, apply cut to all PIDs
+
+	deque<const DKinematicData*> locParticles;
+	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
+
+	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
+	{
+		if((dPID != Unknown) && (locParticles[loc_i]->PID() != dPID))
+			continue;
+		if(locParticles[loc_i]->t1_detector() == SYS_NULL)
+			return false;
+	}
+
+	return true;
+}
+
 void DCutAction_OneVertexKinFit::Initialize(JEventLoop* locEventLoop)
 {
 	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);

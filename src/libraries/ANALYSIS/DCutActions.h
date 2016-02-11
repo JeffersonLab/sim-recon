@@ -61,6 +61,7 @@ DCutAction_BeamEnergy
 DCutAction_TrackFCALShowerEOverP
 DCutAction_PIDDeltaT
 DCutAction_PIDTimingBeta
+DCutAction_NoPIDHit
 
 DCutAction_OneVertexKinFit
 */
@@ -642,6 +643,28 @@ class DCutAction_PIDTimingBeta : public DAnalysisAction
 		Particle_t dPID;
 		DetectorSystem_t dSystem;
 };
+
+class DCutAction_NoPIDHit : public DAnalysisAction
+{
+	//if dPID = Unknown, apply cut to all PIDs
+
+	public:
+
+		DCutAction_NoPIDHit(const DReaction* locReaction, Particle_t locPID = Unknown, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Cut_NoPIDHit", false, locActionUniqueString),
+		dPID(locPID){}
+
+		void Initialize(JEventLoop* locEventLoop){};
+		string Get_ActionName(void) const;
+
+	private:
+
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		Particle_t dPID;
+};
+
+DCutAction_NoPIDHit
 
 class DCutAction_OneVertexKinFit : public DAnalysisAction
 {
