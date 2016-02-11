@@ -7,6 +7,7 @@
 
 #include "JEventProcessor_CDC_Efficiency.h"
 using namespace jana;
+#include "HDGEOMETRY/DMagneticFieldMapNoField.h"
 #include "HistogramTools.h"
 
 static TH2D *cdc_measured_ring[29]; //Filled with total actually detected before division at end
@@ -80,6 +81,7 @@ jerror_t JEventProcessor_CDC_Efficiency::init(void)
     // create root folder for cdc and cd to it, store main dir
     TDirectory *main = gDirectory;
     gDirectory->mkdir("CDC_Efficiency")->cd();
+    gDirectory->mkdir("CDC_View")->cd();
 
     for(int iring=0; iring<28; iring++){
         double r_start = radius[iring] - 0.8;
@@ -113,6 +115,8 @@ jerror_t JEventProcessor_CDC_Efficiency::init(void)
             cdc_expected_ring_DOCA7[iring+1] = new TH2D((TString)hname_expected + "DOCA7", "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
     }	
 
+    gDirectory->cd("/CDC_Efficiency");
+    gDirectory->mkdir("Track_Quality")->cd();
     if(gDirectory->Get("hChi2OverNDF") == NULL)
         hChi2OverNDF = new TH1I("hChi2OverNDF","hChi2OverNDF", 500, 0.0, 1.0);
     if(gDirectory->Get("ChargeVsTrackLength") == NULL)
@@ -134,6 +138,7 @@ jerror_t JEventProcessor_CDC_Efficiency::brun(JEventLoop *eventLoop, int32_t run
 {
     // This is called whenever the run number changes
     DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+    dIsNoFieldFlag = (dynamic_cast<const DMagneticFieldMapNoField*>(dapp->GetBfield(runnumber)) != NULL);
     JCalibration *jcalib = dapp->GetJCalibration(runnumber);
     dgeom  = dapp->GetDGeometry(runnumber);
     //bfield = dapp->GetBfield();
@@ -182,54 +187,58 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     vector< const DCDCHit *> locCDCHitVector;
     loop->Get(locCDCHitVector);
 
-    vector< const DCDCTrackHit *> locCDCTrackHitVector; // Get from the track
-
     const DDetectorMatches *detMatches;
-    loop->GetSingle(detMatches);
     vector<DSCHitMatchParams> SCMatches;
+    if(!dIsNoFieldFlag){
+        loop->GetSingle(detMatches);
+    }
 
-    vector< const DTrackTimeBased *> locTrackTimeBasedVector;
-    loop->Get(locTrackTimeBasedVector);
+    vector <const DChargedTrack *> chargedTrackVector;
+    loop->Get(chargedTrackVector);
 
-    //Loop over the DTrackCandidates and get the CDCTrackHits associated witht the tracks
-    vector< const DTrackTimeBased *>::const_iterator trackIter;
-    for (trackIter = locTrackTimeBasedVector.begin(); trackIter != locTrackTimeBasedVector.end(); trackIter++){
-        hChi2OverNDF->Fill(TMath::Prob((*trackIter)->chisq, (*trackIter)->Ndof));
+    for (unsigned int iTrack = 0; iTrack < chargedTrackVector.size(); iTrack++){
+
+        const DChargedTrackHypothesis* bestHypothesis = chargedTrackVector[iTrack]->Get_BestTrackingFOM();
+
+        // Require Single track events
+        //if (trackCandidateVector.size() != 1) return NOERROR;
+        //const DTrackCandidate* thisTrackCandidate = trackCandidateVector[0];
+        // Cut very loosely on the track quality
+        const DTrackTimeBased *thisTimeBasedTrack;
+        bestHypothesis->GetSingle(thisTimeBasedTrack);
+        hChi2OverNDF->Fill(thisTimeBasedTrack->FOM);
+        if (thisTimeBasedTrack->FOM < 1E-20) return NOERROR;
         //The cuts used for track quality
-        if(TMath::Prob((*trackIter)->chisq, (*trackIter)->Ndof) < 0.01) continue; //Traking FOM cut
-        
-        if((*trackIter)->ddEdx_CDC > 1E-3) {
-        //cout << "Cut on dEdX" << endl;
-        continue; // Trying to cut out "proton" candidates
+        if(!dIsNoFieldFlag){ // Quality cuts for Field on runs.
+            if(thisTimeBasedTrack->ddEdx_CDC > 1E-3) {
+                //cout << "Cut on dEdX" << endl;
+                continue; // Trying to cut out "proton" candidates
+            }
+            if(thisTimeBasedTrack->pmag() < 0.5 || thisTimeBasedTrack->pmag() > 6.0) {
+                //cout << "Cut on momentum" << endl;
+                continue; // Cut on the reconstructed momentum to make sure we have the right
+            }
+            if(!detMatches->Get_SCMatchParams(thisTimeBasedTrack, SCMatches)) {
+                //cout << "Cut on detector matches" << endl;
+                continue; // Require there to be at least one match to the Start Counter
+            }
+            if(fabs(thisTimeBasedTrack->position().Z() - 65.0) > 15.0 || thisTimeBasedTrack->position().Perp() > 1.0) {
+                //cout << " Cut on vertex " << endl;
+                continue; // Cut on reconstructed vertex location
+            }
+            //Let's try a cut on the angle of the track here
+            //if (TMath::Abs(((*trackIter)->momentum().Theta() * TMath::RadToDeg() ) - 90 ) > 5) continue;
         }
-        if((*trackIter)->pmag() < 0.5 || (*trackIter)->pmag() > 6.0) {
-        //cout << "Cut on momentum" << endl;
-        continue; // Cut on the reconstructed momentum to make sure we have the right
-        }
-        if(!detMatches->Get_SCMatchParams((*trackIter), SCMatches)) {
-        //cout << "Cut on detector matches" << endl;
-        continue; // Require there to be at least one match to the Start Counter
-        }
-        if(fabs((*trackIter)->position().Z() - 65.0) > 15.0 || (*trackIter)->position().Perp() > 1.0) {
-        //cout << " Cut on vertex " << endl;
-        continue; // Cut on reconstructed vertex location
-        }
-        
 
-        //cout << "Passed Track Quality Cuts" << endl;
-        // Let's try a cut on the angle of the track here
-        //if (TMath::Abs(((*trackIter)->momentum().Theta() * TMath::RadToDeg() ) - 90 ) > 5) continue;
-
-        // Get the CDCTrackHits Associated with the track
-        (*trackIter)->Get(locCDCTrackHitVector);
-        //cout << "There are " << locCDCTrackHitVector.size() << " CDCTrackHits associated with this track" << endl;
         // There are two loops over the CDC hits, first to impose some additional cuts, then to calculate the efficiency
         vector< int > ringsHit;
         bool hasRing1 = false, hasRing2 = false, hasRing27 = false, hasRing28 = false;
 
-        vector<const DCDCTrackHit *>::const_iterator iHit;
-        for (iHit = locCDCTrackHitVector.begin(); iHit != locCDCTrackHitVector.end(); iHit++){
-            const DCDCTrackHit * thisTrackHit = (*iHit);
+        // Loop over the pulls to get the appropriate information for our ring
+        vector<DTrackFitter::pull_t> pulls = thisTimeBasedTrack->pulls;
+        for (unsigned int i = 0; i < pulls.size(); i++){
+            const DCDCTrackHit * thisTrackHit = pulls[i].cdc_hit;
+            if (thisTrackHit == NULL) continue;
             //cout << "Checking ring number" << thisTrackHit->wire->ring << endl;
             if ( find(ringsHit.begin(), ringsHit.end(), thisTrackHit->wire->ring) == ringsHit.end()) ringsHit.push_back(thisTrackHit->wire->ring);
             if (thisTrackHit->wire->ring == 1) hasRing1 = true;
@@ -252,7 +261,7 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                 int wireNum = wireIndex+1;
                 DCDCWire * wire = wireByNumber[wireIndex]; 
                 double wireLength = 50;
-                double distanceToWire = (*trackIter)->rt->DistToRT(wire, &wireLength);
+                double distanceToWire = thisTimeBasedTrack->rt->DistToRT(wire, &wireLength);
                 bool expectHit = false;
                 double delta = 0.0;
                 double dz = 0.0;
@@ -260,10 +269,10 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                     // Loose cut before delta information
                     // Need to get phi_doca for each of the wires that pass this cut
                     DVector3 pos, mom;
-                    (*trackIter)->rt->GetLastDOCAPoint(pos, mom);
+                    thisTimeBasedTrack->rt->GetLastDOCAPoint(pos, mom);
                     // Form the vector between the wire and the DOCA point
                     DVector3 DOCA = (-1) * ((wire->origin - pos) - (wire->origin - pos).Dot(wire->udir) * wire->udir);
-                    
+
                     double docaphi = DOCA.Phi();
                     dz = (pos - wire->origin).Z();
                     //cout << "distanceToWire = " << distanceToWire << " DOCA = " << DOCA.Mag() << endl;
@@ -275,68 +284,68 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                 }
 
                 if (expectHit && cdc_expected_ring[ringNum] != NULL && ringNum < 29){
-                    double dx = (*trackIter)->rt->Straw_dx(wire, 0.78);
-                    Fill1DHistogram("CDC_Efficiency", "", "Expected Hits Vs Path Length",
+                    double dx = thisTimeBasedTrack->rt->Straw_dx(wire, 0.78);
+                    Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs Path Length",
                             dx,
                             "Expected Hits", 
                             100, 0 , 4.0);
-                    Fill1DHistogram("CDC_Efficiency", "", "Expected Hits Vs DOCA",
+                    Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs DOCA",
                             distanceToWire,
                             "Expected Hits",
                             100, 0 , 0.78);
-                    Fill1DHistogram("CDC_Efficiency", "", "Expected Hits Vs Tracking FOM",
-                            TMath::Prob((*trackIter)->chisq, (*trackIter)->Ndof),
+                    Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs Tracking FOM",
+                            thisTimeBasedTrack->FOM,
                             "Expected Hits",
                             100, 0 , 1.0);
-                    Fill1DHistogram("CDC_Efficiency", "", "Expected Hits Vs theta",
-                            (*trackIter)->momentum().Theta()*TMath::RadToDeg(),
+                    Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs theta",
+                            thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(),
                             "Expected Hits",
                             100, 0, 180);
-                    Fill1DHistogram("CDC_Efficiency", "", "Expected Hits Vs p",
-                            (*trackIter)->pmag(),
+                    Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs p",
+                            thisTimeBasedTrack->pmag(),
                             "Expected Hits",
                             100, 0 , 4.0);
-                    Fill1DHistogram("CDC_Efficiency", "", "Expected Hits Vs delta",
+                    Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs delta",
                             delta,
                             "Expected Hits",
                             100, -0.3 , 0.3); 
-                    Fill2DHistogram("CDC_Efficiency", "", "Expected hits p Vs Theta",
-                            (*trackIter)->momentum().Theta()*TMath::RadToDeg(), (*trackIter)->pmag(),
+                    Fill2DHistogram("CDC_Efficiency", "Offline", "Expected hits p Vs Theta",
+                            thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(), thisTimeBasedTrack->pmag(),
                             "Expected Hits",
                             100, 0, 180, 100, 0 , 4.0);
-                    
+
                     bool foundHit = false;
                     // loop over the CDC Hits to look for a match
                     for( unsigned int hitNum = 0; hitNum < locCDCHitVector.size(); hitNum++){
                         const DCDCHit * locHit = locCDCHitVector[hitNum];
                         if(locHit->ring == ringNum && locHit->straw == wireNum){
                             foundHit = true;
-                            Fill1DHistogram("CDC_Efficiency", "", "Measured Hits Vs Path Length",
+                            Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs Path Length",
                                     dx,
                                     "Measured Hits",
                                     100, 0 , 4.0);
-                            Fill1DHistogram("CDC_Efficiency", "", "Measured Hits Vs DOCA",
+                            Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs DOCA",
                                     distanceToWire,
                                     "Measured Hits",
                                     100, 0 , 0.78);
-                            Fill1DHistogram("CDC_Efficiency", "", "Measured Hits Vs Tracking FOM",
-                                    TMath::Prob((*trackIter)->chisq, (*trackIter)->Ndof),
+                            Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs Tracking FOM",
+                                    thisTimeBasedTrack->FOM,
                                     "Measured Hits",
                                     100, 0 , 1.0);
-                            Fill1DHistogram("CDC_Efficiency", "", "Measured Hits Vs theta",
-                                    (*trackIter)->momentum().Theta()*TMath::RadToDeg(),
+                            Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs theta",
+                                    thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(),
                                     "Measured Hits",
                                     100, 0, 180);
-                            Fill1DHistogram("CDC_Efficiency", "", "Measured Hits Vs p",
-                                    (*trackIter)->pmag(),
+                            Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs p",
+                                    thisTimeBasedTrack->pmag(),
                                     "Measured Hits",
                                     100, 0 , 4.0);
-                            Fill1DHistogram("CDC_Efficiency", "", "Measured Hits Vs delta",
+                            Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs delta",
                                     delta,
                                     "Measured Hits",
                                     100, -0.3 , 0.3);
-                            Fill2DHistogram("CDC_Efficiency", "", "Measured hits p Vs Theta",
-                                    (*trackIter)->momentum().Theta()*TMath::RadToDeg(), (*trackIter)->pmag(),
+                            Fill2DHistogram("CDC_Efficiency", "Offline", "Measured hits p Vs Theta",
+                                    thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(), thisTimeBasedTrack->pmag(),
                                     "Measured Hits",
                                     100, 0, 180, 100, 0 , 4.0);
                             break;
@@ -344,21 +353,77 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 
                     }
                     if (foundHit){
-                        Fill2DProfile("CDC_Efficiency", "", "Efficiency distance Vs delta",
+                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs Path Length",
+                                dx,1.0,
+                                "Efficiency; dx [cm]; Efficiency",
+                                100, 0 , 4.0);
+                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs DOCA",
+                                distanceToWire,1.0,
+                                "Efficiency; DOCA [cm]; Efficiency",
+                                100, 0 , 0.78);
+                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs Tracking FOM",
+                                thisTimeBasedTrack->FOM,1.0,
+                                "Efficiency; Tracking FOM; Efficiency",
+                                100, 0 , 1.0);
+                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs theta",
+                                thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(),1.0,
+                                "Efficiency; Track #Theta [deg]; Efficiency",
+                                100, 0, 180);
+                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs p",
+                                thisTimeBasedTrack->pmag(),1.0,
+                                "Efficiency; Momentum [GeV]; Efficiency",
+                                100, 0 , 4.0);
+                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs delta",
+                                delta,1.0,
+                                "Efficiency; #delta [cm]; Efficiency",
+                                100, -0.3 , 0.3);
+                        Fill2DProfile("CDC_Efficiency", "Online", "Measured hits p Vs Theta",
+                                thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(), thisTimeBasedTrack->pmag(),1.0,
+                                "Efficiency; Track #Theta [deg]; Momentum [GeV]",
+                                100, 0, 180, 100, 0 , 4.0);
+                        Fill2DProfile("CDC_Efficiency", "Online", "Efficiency distance Vs delta",
                                 delta,distanceToWire,1.0,
                                 "Efficiency;#delta [cm]; DOCA [cm]",
                                 100, -0.3, 0.3, 100, 0 , 1.2);
-                        Fill2DProfile("CDC_Efficiency", "", "Efficiency z Vs delta",
+                        Fill2DProfile("CDC_Efficiency", "Online", "Efficiency z Vs delta",
                                 delta,dz,1.0,
                                 "Efficiency;#delta [cm]; z [cm] (CDC local coordinates)",
                                 100, -0.3, 0.3, 150, -75 , 75);
                     }
                     else{
-                        Fill2DProfile("CDC_Efficiency", "", "Efficiency distance Vs delta",
+                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs Path Length",
+                                dx,0.0,
+                                "Efficiency; dx [cm]; Efficiency",
+                                100, 0 , 4.0);
+                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs DOCA",
+                                distanceToWire,0.0,
+                                "Efficiency; DOCA [cm]; Efficiency",
+                                100, 0 , 0.78);
+                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs Tracking FOM",
+                                thisTimeBasedTrack->FOM,0.0,
+                                "Efficiency; Tracking FOM; Efficiency",
+                                100, 0 , 1.0);
+                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs theta",
+                                thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(),0.0,
+                                "Efficiency; Track #Theta [deg]; Efficiency",
+                                100, 0, 180);
+                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs p",
+                                thisTimeBasedTrack->pmag(),0.0,
+                                "Efficiency; Momentum [GeV]; Efficiency",
+                                100, 0 , 4.0);
+                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs delta",
+                                delta,0.0,
+                                "Efficiency; #delta [cm]; Efficiency",
+                                100, -0.3 , 0.3);
+                        Fill2DProfile("CDC_Efficiency", "Online", "Measured hits p Vs Theta",
+                                thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(), thisTimeBasedTrack->pmag(),0.0,
+                                "Efficiency; Track #Theta [deg]; Momentum [GeV]",
+                                100, 0, 180, 100, 0 , 4.0);
+                        Fill2DProfile("CDC_Efficiency", "Online", "Efficiency distance Vs delta",
                                 delta,distanceToWire,0.0, 
                                 "Efficiency;#delta [cm]; DOCA [cm]",
                                 100, -0.3, 0.3, 100, 0 , 1.2);
-                        Fill2DProfile("CDC_Efficiency", "", "Efficiency z Vs delta",
+                        Fill2DProfile("CDC_Efficiency", "Online", "Efficiency z Vs delta",
                                 delta,dz,0.0,
                                 "Efficiency;#delta [cm]; z [cm] (CDC local coordinates)",
                                 100, -0.3, 0.3, 150, -75 , 75);
@@ -441,7 +506,7 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                                 //printf("Matching Hit!!!!!\n");
                                 v = cdc_measured_ring[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                 cdc_measured_ring[ringNum]->SetBinContent(wireNum, 1, v);
-                                double dx = (*trackIter)->rt->Straw_dx(wire, 0.78);
+                                double dx = thisTimeBasedTrack->rt->Straw_dx(wire, 0.78);
                                 ChargeVsTrackLength->Fill(dx,locHit->q);
                                 japp->RootUnLock();
                             }

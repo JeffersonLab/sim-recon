@@ -30,9 +30,9 @@ using namespace std;
 #include <TRACKING/DTrackCandidate_factory_StraightLine.h>
 #include <TRACKING/DReferenceTrajectory.h>
 #include <TRACKING/DTrackWireBased.h>
+#include <PID/DChargedTrack.h>
 #include <PID/DDetectorMatches.h>
 #include <CDC/DCDCHit.h>
-#include <DAQ/DEPICSvalue.h>
 
 class JEventProcessor_CDC_Efficiency:public jana::JEventProcessor{
 	public:
@@ -47,6 +47,7 @@ class JEventProcessor_CDC_Efficiency:public jana::JEventProcessor{
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
         DGeometry * dgeom;
+        bool dIsNoFieldFlag;
 		vector< vector< DCDCWire * > > cdcwires; // CDC Wires Referenced by [ring][straw]
         vector<vector<double> >max_sag;
         vector<vector<double> >sag_phi_offset;
