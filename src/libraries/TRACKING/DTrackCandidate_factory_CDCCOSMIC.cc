@@ -559,42 +559,34 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, uint64_t even
             }
 
             const double *xs = min->X();
-            // After the first pass at the fit, do some outlier rejection to improve the results
-            /*
-               float chi2cut = 20.0;
+
+            // After the first pass at the fit, See if there are any additional hits that should be added to the track
 
             //Loop over hits
-            Measurements.clear();
-            MeasurementErrors.clear();
-            Wires.clear();
-            vector<const DCDCTrackHit *> AcceptedHits;
-            unsigned int nBeforeHits = hits.size(); 
-            unsigned int nAfterHits = 0;
-            for (unsigned int j=0;j<hits.size();j++){
-            //Calulate the Measurement from the drift time
-            double L=(hits[0]->wire->origin-hits[j]->wire->origin).Perp();
-            double tcorr = hits[j]->tdrift - L/29.98 - t0;
-            double measurement = CDCDriftDistance(tcorr);
-            double residual = measurement - fit_function(hits[j]->wire,xs);
-            double chi2calc = residual * residual / CDCDriftVariance(tcorr);
-            if (chi2calc > chi2cut) continue;
-            AcceptedHits.push_back(hits[j]);
-            // Skip this hit if it needs to be exluded in the final fit
-            // We still want it in the puls so mighat as well leave it in the accepted hits.
-            if (hits[j]->wire->ring == EXCLUDERING) continue;
-            nAfterHits++;
-            Measurements.push_back(measurement);
-            MeasurementErrors.push_back(sqrt(CDCDriftVariance(tcorr)));
-            Wires.push_back(hits[j]->wire);
+            int nAdded = 0;
+            vector <const DCDCTrackHit *> CDCHits;
+            loop->Get(CDCHits);
+            for (unsigned int iHit = 0; iHit < CDCHits.size(); iHit++){
+                const DCDCTrackHit *thisHit = CDCHits[iHit];
+                bool isOnTrack = false;
+                for (unsigned int j=0;j<hits.size();j++){
+                    if (thisHit->wire->origin == hits[j]->wire->origin){
+                        isOnTrack = true;
+                        break;
+                    }
+                }
+                if(!isOnTrack){
+                    double d = fit_function(thisHit->wire,xs);
+                    if (d < 1.5){
+                        hits.push_back(thisHit);
+                        nAdded++;
+                    }
+                }
             }
-
-            double acceptedFraction = (double) nAfterHits / nBeforeHits;
-            if (acceptedFraction < 0.5 || nAfterHits < 5) return NOERROR;
-            hits = AcceptedHits;
-            */
-
+            //cout << "nAdded = " << nAdded << endl;
+            sort(hits.begin(),hits.end(),DTrackCandidate_CDCCOSMIC_cdc_hit_cmp);
+            
             // Perform second fit using docaphi and docaz information
-
             DVector3 posPass1(xs[0], xs[1], 0);
             DVector3 momPass1(xs[2], xs[3], 1);
             Measurements.clear();
