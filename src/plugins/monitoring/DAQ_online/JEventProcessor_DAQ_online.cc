@@ -420,8 +420,6 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 		int slot = hit->slot;
 		int channel = hit->channel;
 
-_DBG_ << "FDCPulse for rocid=" << rocid << endl;
-
 		if(rocid>=0 && rocid<=100) {
 			Nhits_rocid[rocid]++;
 			
