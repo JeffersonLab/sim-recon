@@ -351,6 +351,8 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 		int rocid = hit->rocid;
 		int slot = hit->slot;
 		int channel = hit->channel;
+		
+		if(hit->emulated) continue; // ignore emulated hits
 
 		if(rocid>=0 && rocid<=100) {
 			Nhits_rocid[rocid]++;
@@ -460,7 +462,6 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 	// Fill in hits by crate
 	for(uint32_t rocid=0; rocid<101; rocid++) daq_hits_per_event->Fill(rocid, Nhits_rocid[rocid]);
 
-	
 	maindir->cd();
 	// Unlock ROOT
 	japp->RootUnLock();
