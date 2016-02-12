@@ -249,11 +249,15 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 	vector<const DF1TDCHit*> f1tdchits;
 	vector<const Df250PulseIntegral*> f250PIs;
 	vector<const Df125PulseIntegral*> f125PIs;
+	vector<const Df125CDCPulse*> f125CDCs;
+	vector<const Df125FDCPulse*> f125FDCs;
 	vector<const DCAEN1290TDCHit*> caen1290hits;
 
 	loop->Get(f1tdchits);
 	loop->Get(f250PIs);
 	loop->Get(f125PIs);
+	loop->Get(f125CDCs);
+	loop->Get(f125FDCs);
 	loop->Get(caen1290hits);
 	
 	ParseEventSize(loop->GetJEvent());
@@ -355,7 +359,7 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 				printf("JEventProcessor_DAQ_online::evnt  creating occupancy histogram for crate %i\n",rocid);
 				char cratename[255],title[255];
 				sprintf(cratename,"daq_occ_crate%i",rocid);
-				sprintf(title,"Crate %i occupancy (F250);Slot;Channel",rocid);
+				sprintf(title,"Crate %i occupancy (F125);Slot;Channel",rocid);
 				daq_occ_crates[rocid] = new TH2I(cratename,title,21,0.5,21.5,16,-0.5,15.5);
 				daq_occ_crates[rocid]->SetStats(0);
 			} 
@@ -365,7 +369,7 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 				printf("JEventProcessor_DAQ_online::evnt  creating pedestal histogram for crate %i\n",rocid);
 				char cratename[255],title[255];
 				sprintf(cratename,"daq_ped_crate%i",rocid);
-				sprintf(title,"Crate %i Average Pedestal (F250);Slot;Channel",rocid);
+				sprintf(title,"Crate %i Average Pedestal (F125);Slot;Channel",rocid);
 				daq_ped_crates[rocid] = new TProfile2D(cratename,title,21,0.5,21.5,16,-0.5,15.5);
 				daq_ped_crates[rocid]->SetStats(0);
 			} 
@@ -373,7 +377,76 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 				daq_ped_crates[rocid]->Fill(slot,channel,hit->pedestal);
 			}
 		}
+	}
 
+	// Access F125 from Df125CDCPulse object
+	for(unsigned int i=0; i<f125CDCs.size(); i++) {
+		const Df125CDCPulse *hit = f125CDCs[i];
+		int rocid = hit->rocid;
+		int slot = hit->slot;
+		int channel = hit->channel;
+
+		if(rocid>=0 && rocid<=100) {
+			Nhits_rocid[rocid]++;
+			
+			if (daq_occ_crates[rocid]==NULL) {
+				printf("JEventProcessor_DAQ_online::evnt  creating occupancy histogram for crate %i\n",rocid);
+				char cratename[255],title[255];
+				sprintf(cratename,"daq_occ_crate%i",rocid);
+				sprintf(title,"Crate %i occupancy (F125);Slot;Channel",rocid);
+				daq_occ_crates[rocid] = new TH2I(cratename,title,21,0.5,21.5,16,-0.5,15.5);
+				daq_occ_crates[rocid]->SetStats(0);
+			} 
+			daq_occ_crates[rocid]->Fill(slot,channel);
+			
+			if (daq_ped_crates[rocid]==NULL) {
+				printf("JEventProcessor_DAQ_online::evnt  creating pedestal histogram for crate %i\n",rocid);
+				char cratename[255],title[255];
+				sprintf(cratename,"daq_ped_crate%i",rocid);
+				sprintf(title,"Crate %i Average Pedestal (F125);Slot;Channel",rocid);
+				daq_ped_crates[rocid] = new TProfile2D(cratename,title,21,0.5,21.5,16,-0.5,15.5);
+				daq_ped_crates[rocid]->SetStats(0);
+			} 
+			if (hit->pedestal > 0) {
+				daq_ped_crates[rocid]->Fill(slot,channel,hit->pedestal);
+			}
+		}
+	}
+
+	// Access F125 from Df125FDCPulse object
+	for(unsigned int i=0; i<f125FDCs.size(); i++) {
+		const Df125FDCPulse *hit = f125FDCs[i];
+		int rocid = hit->rocid;
+		int slot = hit->slot;
+		int channel = hit->channel;
+
+_DBG_ << "FDCPulse for rocid=" << rocid << endl;
+
+		if(rocid>=0 && rocid<=100) {
+			Nhits_rocid[rocid]++;
+			
+			if (daq_occ_crates[rocid]==NULL) {
+				printf("JEventProcessor_DAQ_online::evnt  creating occupancy histogram for crate %i\n",rocid);
+				char cratename[255],title[255];
+				sprintf(cratename,"daq_occ_crate%i",rocid);
+				sprintf(title,"Crate %i occupancy (F125);Slot;Channel",rocid);
+				daq_occ_crates[rocid] = new TH2I(cratename,title,21,0.5,21.5,16,-0.5,15.5);
+				daq_occ_crates[rocid]->SetStats(0);
+			} 
+			daq_occ_crates[rocid]->Fill(slot,channel);
+			
+			if (daq_ped_crates[rocid]==NULL) {
+				printf("JEventProcessor_DAQ_online::evnt  creating pedestal histogram for crate %i\n",rocid);
+				char cratename[255],title[255];
+				sprintf(cratename,"daq_ped_crate%i",rocid);
+				sprintf(title,"Crate %i Average Pedestal (F125);Slot;Channel",rocid);
+				daq_ped_crates[rocid] = new TProfile2D(cratename,title,21,0.5,21.5,16,-0.5,15.5);
+				daq_ped_crates[rocid]->SetStats(0);
+			} 
+			if (hit->pedestal > 0) {
+				daq_ped_crates[rocid]->Fill(slot,channel,hit->pedestal);
+			}
+		}
 	}
 
 	// Access CAEN1290 TDC hits
