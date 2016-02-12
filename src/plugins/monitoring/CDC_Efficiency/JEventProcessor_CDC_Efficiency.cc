@@ -246,8 +246,9 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
             else if (thisTrackHit->wire->ring == 27) hasRing27 = true;
             else if (thisTrackHit->wire->ring == 28) hasRing28 = true;
         }
-
-        if ( !(hasRing1 || hasRing2 ) || !(hasRing27 || hasRing28)) continue; // Has a hit in one of the two inner layers and one of the two outer
+        if(!dIsNoFieldFlag){
+            if ( !(hasRing1 || hasRing2 ) || !(hasRing27 || hasRing28)) continue; // Has a hit in one of the two inner layers and one of the two outer
+        }
         if (ringsHit.size() < 15) continue; //At least half of the rings hit
         //cout << "Passed Number of hits cuts" << endl;
 
@@ -260,7 +261,7 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
             for (unsigned int wireIndex = 0; wireIndex < wireByNumber.size(); wireIndex++){
                 int wireNum = wireIndex+1;
                 DCDCWire * wire = wireByNumber[wireIndex]; 
-                double wireLength = 50;
+                double wireLength = wire->L;
                 double distanceToWire = thisTimeBasedTrack->rt->DistToRT(wire, &wireLength);
                 bool expectHit = false;
                 double delta = 0.0;
@@ -280,7 +281,7 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                     int ring_index = wire->ring - 1;
                     int straw_index = wire->straw - 1;
                     delta = max_sag[ring_index][straw_index] * ( 1. - (dz*dz/5625.)) * TMath::Cos(docaphi + sag_phi_offset[ring_index][straw_index]);
-                    if (distanceToWire < (0.78 + delta)) expectHit = true;
+                    if (distanceToWire < (0.78 + delta) && fabs(dz) < 65.0) expectHit = true;
                 }
 
                 if (expectHit && cdc_expected_ring[ringNum] != NULL && ringNum < 29){
@@ -353,31 +354,31 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 
                     }
                     if (foundHit){
-                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs Path Length",
+                        Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs Path Length",
                                 dx,1.0,
                                 "Efficiency; dx [cm]; Efficiency",
                                 100, 0 , 4.0);
-                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs DOCA",
+                        Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs DOCA",
                                 distanceToWire,1.0,
                                 "Efficiency; DOCA [cm]; Efficiency",
                                 100, 0 , 0.78);
-                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs Tracking FOM",
+                        Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs Tracking FOM",
                                 thisTimeBasedTrack->FOM,1.0,
                                 "Efficiency; Tracking FOM; Efficiency",
                                 100, 0 , 1.0);
-                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs theta",
+                        Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs theta",
                                 thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(),1.0,
                                 "Efficiency; Track #Theta [deg]; Efficiency",
                                 100, 0, 180);
-                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs p",
+                        Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs p",
                                 thisTimeBasedTrack->pmag(),1.0,
                                 "Efficiency; Momentum [GeV]; Efficiency",
                                 100, 0 , 4.0);
-                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs delta",
+                        Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs delta",
                                 delta,1.0,
                                 "Efficiency; #delta [cm]; Efficiency",
                                 100, -0.3 , 0.3);
-                        Fill2DProfile("CDC_Efficiency", "Online", "Measured hits p Vs Theta",
+                        Fill2DProfile("CDC_Efficiency", "Online", "Efficiency p Vs Theta",
                                 thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(), thisTimeBasedTrack->pmag(),1.0,
                                 "Efficiency; Track #Theta [deg]; Momentum [GeV]",
                                 100, 0, 180, 100, 0 , 4.0);
@@ -391,31 +392,31 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                                 100, -0.3, 0.3, 150, -75 , 75);
                     }
                     else{
-                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs Path Length",
+                        Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs Path Length",
                                 dx,0.0,
                                 "Efficiency; dx [cm]; Efficiency",
                                 100, 0 , 4.0);
-                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs DOCA",
+                        Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs DOCA",
                                 distanceToWire,0.0,
                                 "Efficiency; DOCA [cm]; Efficiency",
                                 100, 0 , 0.78);
-                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs Tracking FOM",
+                        Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs Tracking FOM",
                                 thisTimeBasedTrack->FOM,0.0,
                                 "Efficiency; Tracking FOM; Efficiency",
                                 100, 0 , 1.0);
-                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs theta",
+                        Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs theta",
                                 thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(),0.0,
                                 "Efficiency; Track #Theta [deg]; Efficiency",
                                 100, 0, 180);
-                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs p",
+                        Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs p",
                                 thisTimeBasedTrack->pmag(),0.0,
                                 "Efficiency; Momentum [GeV]; Efficiency",
                                 100, 0 , 4.0);
-                        Fill1DProfile("CDC_Efficiency", "Online", "Measured Hits Vs delta",
+                        Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs delta",
                                 delta,0.0,
                                 "Efficiency; #delta [cm]; Efficiency",
                                 100, -0.3 , 0.3);
-                        Fill2DProfile("CDC_Efficiency", "Online", "Measured hits p Vs Theta",
+                        Fill2DProfile("CDC_Efficiency", "Online", "Efficiency p Vs Theta",
                                 thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(), thisTimeBasedTrack->pmag(),0.0,
                                 "Efficiency; Track #Theta [deg]; Momentum [GeV]",
                                 100, 0, 180, 100, 0 , 4.0);
