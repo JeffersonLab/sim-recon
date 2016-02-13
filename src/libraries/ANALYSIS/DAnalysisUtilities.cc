@@ -939,11 +939,10 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locPa
 	bool locDoSubsetFlag = !locToIncludePIDs.empty();
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
-		if(locParticleComboStep->Is_FinalParticleMissing(loc_i))
-			return (DLorentzVector()); //bad!
-
 		if(locDoSubsetFlag)
 		{
+			if(locParticleComboStep->Is_FinalParticleMissing(loc_i))
+				continue;
 			Particle_t locPID = locParticleComboStep->Get_FinalParticleID(loc_i);
 			bool locPIDFoundFlag = false;
 			for(deque<Particle_t>::iterator locIterator = locToIncludePIDs.begin(); locIterator != locToIncludePIDs.end(); ++locIterator)
@@ -957,6 +956,9 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locPa
 			if(!locPIDFoundFlag)
 				continue; //skip it: don't want to include it
 		}
+
+		if(locParticleComboStep->Is_FinalParticleMissing(loc_i))
+			return (DLorentzVector()); //bad!
 
 		if(locParticleComboStep->Is_FinalParticleDecaying(loc_i))
 		{
