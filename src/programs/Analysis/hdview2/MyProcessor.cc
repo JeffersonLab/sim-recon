@@ -194,6 +194,8 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 	hdvmf->SetSource(source.c_str());
 	hdvmf->DoMyRedraw();	
 
+	japp->SetSequentialEventComplete();
+	
 	return NOERROR;
 }
 

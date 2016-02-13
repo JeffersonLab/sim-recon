@@ -192,6 +192,8 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         uint16_t IBIT = 0; // 2^{IBIT} Scale factor for integral
         uint16_t ABIT = 0; // 2^{ABIT} Scale factor for amplitude
         uint16_t PBIT = 0; // 2^{PBIT} Scale factor for pedestal
+		  uint16_t NW   = 0;
+		  uint16_t IE   = 0;
 
         // This is the place to make quality cuts on the data.
         // Try to get the new data type, if that fails, try to get the old...
@@ -205,12 +207,20 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
             // Set some constants to defaults until they appear correctly in the config words in the future
             // The defaults are taken from Run 4607
-            IBIT = config->IBIT == 0xffff ? 4 : config->IBIT;
-            ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
-            PBIT = config->PBIT == 0xffff ? 0 : config->PBIT;
-            uint16_t NW   = config->NW   == 0xffff ? 80 : config->NW;
-            uint16_t IE   = config->IE   == 0xffff ? 16 : config->IE;
-
+				if(config){
+            	IBIT = config->IBIT == 0xffff ? 4 : config->IBIT;
+            	ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
+            	PBIT = config->PBIT == 0xffff ? 0 : config->PBIT;
+            	NW   = config->NW   == 0xffff ? 80 : config->NW;
+            	IE   = config->IE   == 0xffff ? 16 : config->IE;
+				}else{
+					static int Nwarnings = 0;
+					if(Nwarnings<10){
+						_DBG_ << "NO Df125Config object associated with Df125FDCPulse object!" << endl;
+						Nwarnings++;
+						if(Nwarnings==10) _DBG_ << " --- LAST WARNING!! ---" << endl;
+					}
+				}
             if ((NW - (digihit->pulse_time / 10)) < IE){
                 nsamples_integral = (NW - (digihit->pulse_time / 10));
             } 
