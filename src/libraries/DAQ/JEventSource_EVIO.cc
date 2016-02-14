@@ -976,6 +976,34 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 	//objs_ptr->eviobuff_size  = objs->eviobuff_size;
 	objs_ptr->DOMTree          = objs->DOMTree;
 	delete objs;
+	
+	// Config objects come from banks that are created when a block
+	// of events is read out. Thus, a single set of config. objects
+	// will be created when parsing a multi-event block. Here, we duplicate
+	// all config objects for the first event for every other event in the
+	// block. To make this a little more compact and maintainable, we use a
+	// #define. This allows us to write the class type once and guarantee
+	// that it shows up the same in all places. For example, using
+	// CloneConfigObject(Df125Config) will expand to something like:
+	//
+	// 		if(confobj->className() == string("Df125Config")){
+	//			c = new Df125Config(confobj->rocid,confobj->slot_mask);
+	//			*((Df125Config*)c) = *((Df125Config*)confobj);
+	//		}
+#define CloneConfigObject(T){ if(confobj->className() == string(#T)){ c = new T(confobj->rocid,confobj->slot_mask); *((T*)c) = *((T*)confobj);} }				
+	list<ObjList*>::iterator feiter = full_events.begin();
+	for(; feiter!=full_events.end(); feiter++){
+		ObjList *objs = *feiter;
+		for(uint32_t j=0; j<objs_ptr->config_objs.size(); j++){
+			DDAQConfig *confobj = objs_ptr->config_objs[j];
+			DDAQConfig *c = NULL;
+			CloneConfigObject(Df250Config);
+			CloneConfigObject(Df125Config);
+			CloneConfigObject(DF1TDCConfig);
+			CloneConfigObject(DCAEN1290TDCConfig);
+			if(c)objs->config_objs.push_back(c);
+		}
+	}
 
 	// Copy remaining events into the stored_events container
 	pthread_mutex_lock(&stored_events_mutex);
@@ -3435,6 +3463,7 @@ void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* 
 	/// in the first event of "events", creating it if needed. The config objects
 	/// are duplicated for all other events in the block later, after all event
 	/// parsing is finished and the total number of events is known.
+	/// (See the end of ParseEvents() .)
 		
 	while(iptr < iend){
 		uint32_t slot_mask = (*iptr) & 0xFFFFFF;
