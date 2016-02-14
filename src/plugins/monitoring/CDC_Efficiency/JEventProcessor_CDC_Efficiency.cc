@@ -8,6 +8,8 @@
 #include "JEventProcessor_CDC_Efficiency.h"
 using namespace jana;
 #include "HDGEOMETRY/DMagneticFieldMapNoField.h"
+#include "CDC/DCDCDigiHit.h"
+#include "DAQ/Df125CDCPulse.h"
 #include "HistogramTools.h"
 
 static TH2D *cdc_measured_ring[29]; //Filled with total actually detected before division at end
@@ -266,6 +268,7 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                 bool expectHit = false;
                 double delta = 0.0;
                 double dz = 0.0;
+
                 if (distanceToWire < 1.2 ) {
                     // Loose cut before delta information
                     // Need to get phi_doca for each of the wires that pass this cut
@@ -309,7 +312,11 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                     Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs delta",
                             delta,
                             "Expected Hits",
-                            100, -0.3 , 0.3); 
+                            100, -0.3 , 0.3);
+                    Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs delta",
+                            delta,
+                            "Expected Hits",
+                            100, -0.3 , 0.3);
                     Fill2DHistogram("CDC_Efficiency", "Offline", "Expected hits p Vs Theta",
                             thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(), thisTimeBasedTrack->pmag(),
                             "Expected Hits",
@@ -320,6 +327,10 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                     for( unsigned int hitNum = 0; hitNum < locCDCHitVector.size(); hitNum++){
                         const DCDCHit * locHit = locCDCHitVector[hitNum];
                         if(locHit->ring == ringNum && locHit->straw == wireNum){
+                            const DCDCDigiHit *thisDigiHit = NULL;
+                            locHit->GetSingle(thisDigiHit);
+                            const Df125CDCPulse *thisPulse = NULL;
+                            thisDigiHit->GetSingle(thisPulse);
                             foundHit = true;
                             Fill1DHistogram("CDC_Efficiency", "Offline", "Measured Hits Vs Path Length",
                                     dx,
@@ -345,6 +356,14 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                                     delta,
                                     "Measured Hits",
                                     100, -0.3 , 0.3);
+                            if (thisPulse != NULL){
+                                char name [200];
+                                sprintf(name, "ROC ID %.2i", thisPulse->rocid);
+                                Fill1DHistogram("CDC_Efficiency", "ROCID", name,
+                                        thisPulse->slot,
+                                        "Slot For hit associated with track",
+                                        21, -0.5 , 20.5);
+                            }
                             Fill2DHistogram("CDC_Efficiency", "Offline", "Measured hits p Vs Theta",
                                     thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(), thisTimeBasedTrack->pmag(),
                                     "Measured Hits",
