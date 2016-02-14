@@ -411,7 +411,7 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 	public:
 		DHistogramAction_KinFitResults(const DReaction* locReaction, double locPullHistConfidenceLevelCut, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_KinFitResults", true, locActionUniqueString), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dNum2DPBins(100), dNum2DThetaBins(140), dNum2DPhiBins(180), dNum2DPullBins(100),
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNum2DPBins(200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNum2DPullBins(100),
 		dNum2DConfidenceLevelBins(100), dNum2DBeamEBins(240), dMinPull(-4.0), dMaxPull(4.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
 		dMinPhi(-180.0), dMaxPhi(180.0), dMinBeamE(0.0), dMaxBeamE(12.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut), dAnalysisUtilities(NULL) {}
 
