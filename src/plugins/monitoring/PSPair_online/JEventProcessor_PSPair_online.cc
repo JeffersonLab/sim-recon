@@ -261,7 +261,7 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
     return OBJECT_NOT_AVAILABLE;
   const DPSGeometry& psGeom = *(psGeomVect[0]);
   // get photon energy bin lows for variable-width energy binning
-  double Elows_PSarm[Narms][NC_PS+1];
+  doubl Elows_PSarm[Narms][NC_PS+1];
   double wl_min=0.05,wr_min = 0.05;
   for (int i=0;i<NC_PS;i++) {
     Elows_PSarm[0][i] = psGeom.getElow(0,i+1); 

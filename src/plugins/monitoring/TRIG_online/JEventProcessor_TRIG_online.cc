@@ -252,7 +252,7 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	vector<const DFCALShower*> locFCALShowers;
 	vector<const DBCALPoint*> bcalpoints;
 	vector<const DFCALHit*> fcalhits;
-	vector<const DFCALCluster*> locFCALClusters;
+	vector<const DFCALCluster*> locFCALClusters
 	//const DDetectorMatches* locDetectorMatches = NULL;
 	//locEventLoop->GetSingle(locDetectorMatches);
 	locEventLoop->Get(locFCALShowers);

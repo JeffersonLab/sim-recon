@@ -116,7 +116,7 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, uint64_t event
 
     // Fill number of TPOL events for this file.
     Bool_t hadTPOL = false;
-    Int_t hitMultiplicity = 0;
+    Int_t hitMultiplicity = 0
     for(unsigned int i=0;i<windowrawdata.size();i++){
       if(windowrawdata[i]->rocid == 84
 	 &&
@@ -126,7 +126,7 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, uint64_t event
 	// If a waveform is found with rocid 84 and slot 13 or 14,
 	// that came from the TPOL
 	hadTPOL = true;
-	hitMultiplicity++;
+	hitMultiplicity++
 
 	// Get slot and channel of hit	
 	// UInt_t sl = windowrawdata[i]->slot;
