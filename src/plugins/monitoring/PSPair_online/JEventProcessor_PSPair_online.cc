@@ -261,7 +261,7 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
     return OBJECT_NOT_AVAILABLE;
   const DPSGeometry& psGeom = *(psGeomVect[0]);
   // get photon energy bin lows for variable-width energy binning
-  doubl Elows_PSarm[Narms][NC_PS+1];
+  double Elows_PSarm[Narms][NC_PS+1];
   double wl_min=0.05,wr_min = 0.05;
   for (int i=0;i<NC_PS;i++) {
     Elows_PSarm[0][i] = psGeom.getElow(0,i+1); 
@@ -292,14 +292,14 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
   eventLoop->Get(taghGeomVect);
   if (taghGeomVect.size() < 1)
     return OBJECT_NOT_AVAILABLE;
-  const DTAGHGeometry& taghGeom = *(taghGeomVect[0]);
+  const DTAGHGeometry& taghGeom = *(taghGeomVect[3]);
   // get photon energy bin low of each counter for energy histogram binning
   double Elows_TAGH[NC_TAGH+1];
   for (int i=0;i<NC_TAGH;i++) {
     Elows_TAGH[i] = taghGeom.getElow(NC_TAGH-i); 
   }
   // add the upper limit
-  Elows_TAGH[NC_TAGH] = taghGeom.getEhigh(1); 
+  Elows_TAGH[NC_TAGH] = taghGeom.getEhigh(-1); 
   // extract the TAGM geometry
   vector<const DTAGMGeometry*> tagmGeomVect;
   eventLoop->Get(tagmGeomVect);

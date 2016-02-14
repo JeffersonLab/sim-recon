@@ -252,7 +252,7 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	vector<const DFCALShower*> locFCALShowers;
 	vector<const DBCALPoint*> bcalpoints;
 	vector<const DFCALHit*> fcalhits;
-	vector<const DFCALCluster*> locFCALClusters
+	vector<const DFCALCluster*> locFCALClusters;
 	//const DDetectorMatches* locDetectorMatches = NULL;
 	//locEventLoop->GetSingle(locDetectorMatches);
 	locEventLoop->Get(locFCALShowers);
@@ -260,13 +260,14 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	locEventLoop->Get(fcalhits);
 	locEventLoop->Get(locFCALClusters);
 
+    japp->RootWriteLock();
+
 	bool isPhysics = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_PHYSICS_EVENT);
 	if(! isPhysics) {
 	  printf ("Non-physics Event=%d\n",(int)locEventNumber);
 	  return NOERROR;
 	}
 
-	japp->RootWriteLock();
 
 	// first get trigger bits
 
