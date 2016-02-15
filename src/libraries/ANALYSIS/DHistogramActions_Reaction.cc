@@ -1472,7 +1472,7 @@ void DHistogramAction_Dalitz::Initialize(JEventLoop* locEventLoop)
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
-bool DHistogramAction_2DInvariantMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+bool DHistogramAction_Dalitz::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	if(Get_NumPreviousParticleCombos() == 0)
 		dPreviousSourceObjects.clear();
