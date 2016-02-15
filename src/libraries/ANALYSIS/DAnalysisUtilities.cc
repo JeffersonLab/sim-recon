@@ -1326,7 +1326,7 @@ bool DAnalysisUtilities::Handle_Decursion(int& locParticleIndex, deque<size_t>& 
 {
 	do
 	{
-		if(locParticleIndex < locResumeAtIndices.size()) //else just saved a combo
+		if(locParticleIndex < int(locResumeAtIndices.size())) //else just saved a combo
 			locResumeAtIndices[locParticleIndex] = 0; //finding this particle failed: reset
 
 		--locParticleIndex; //go to previous particle
