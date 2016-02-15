@@ -113,7 +113,7 @@ class DAnalysisUtilities : public JObject
 
 	private:
 
-		bool Handle_Decursion(int& locParticleIndex, deque<size_t>& locComboDeque, deque<int>& locResumeAtIndices, deque<set<size_t> >& locPossibilities) const;
+		bool Handle_Decursion(int& locParticleIndex, deque<size_t>& locComboDeque, deque<int>& locResumeAtIndices, deque<deque<size_t> >& locPossibilities) const;
 
 		double dTargetZCenter;
 		const DParticleID* dPIDAlgorithm;

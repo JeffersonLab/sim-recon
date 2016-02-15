@@ -770,7 +770,7 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 	//NOTE: this routine assumes that the p4 of a charged decaying particle with a detached vertex is the same at both vertices!
 	//assumes missing particle is not the beam particle
 	if(locUseKinFitDataFlag && (locParticleCombo->Get_KinFitResults() == NULL))
-		return Calc_MissingP4(locParticleCombo, locStepIndex, locUpToStepIndex, locUpThroughPIDs, locSourceObjects, false); //kinematic fit failed
+		return Calc_MissingP4(locParticleCombo, locStepIndex, locUpToStepIndex, locUpThroughIndices, locSourceObjects, false); //kinematic fit failed
 
 	DLorentzVector locMissingP4;
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
@@ -1245,9 +1245,9 @@ set<set<size_t> > DAnalysisUtilities::Build_IndexCombos(const DReactionStep* loc
 	if(locToIncludePIDs.empty())
 	{
 		set<size_t> locCombo;
-		for(size_t loc_i = 0; loc_i < locReactionStepPIDs; ++loc_i)
+		for(size_t loc_i = 0; loc_i < locReactionStepPIDs.size(); ++loc_i)
 		{
-			if(loc_i == locMissingParticleIndex)
+			if(int(loc_i) == locMissingParticleIndex)
 				continue;
 			locCombo.insert(loc_i);
 		}
@@ -1256,21 +1256,21 @@ set<set<size_t> > DAnalysisUtilities::Build_IndexCombos(const DReactionStep* loc
 	}
 
 	//deque indices corresponds to locToIncludePIDs, and each set is what could pass for it
-	deque<set<size_t> > locPossibilities(locToIncludePIDs.size(), set<size_t>());
+	deque<deque<size_t> > locPossibilities(locToIncludePIDs.size(), deque<size_t>());
 	deque<int> locResumeAtIndices(locToIncludePIDs.size(), 0);
 
 	//build possibilities: loop over reaction PIDs
-	for(size_t loc_i = 0; loc_i < locReactionStepPIDs; ++loc_i)
+	for(size_t loc_i = 0; loc_i < locReactionStepPIDs.size(); ++loc_i)
 	{
-		if(loc_i == locMissingParticleIndex)
+		if(int(loc_i) == locMissingParticleIndex)
 			continue;
 		Particle_t locPID = locReactionStepPIDs[loc_i];
 
 		//register where this is a valid option: loop over to-include PIDs
-		for(size_t loc_j = 0; loc_j < locToIncludePIDs; ++loc_j)
+		for(size_t loc_j = 0; loc_j < locToIncludePIDs.size(); ++loc_j)
 		{
 			if(locToIncludePIDs[loc_j] == locPID)
-				locPossibilities[loc_j].insert(loc_i);
+				locPossibilities[loc_j].push_back(loc_i);
 		}
 	}
 
@@ -1306,7 +1306,7 @@ set<set<size_t> > DAnalysisUtilities::Build_IndexCombos(const DReactionStep* loc
 			}
 		}
 
-		if(locResumeAtIndex >= locPossibilities.size())
+		if(locResumeAtIndex >= int(locPossibilities[locParticleIndex].size()))
 		{
 			if(!Handle_Decursion(locParticleIndex, locComboDeque, locResumeAtIndices, locPossibilities))
 				break;
@@ -1314,7 +1314,7 @@ set<set<size_t> > DAnalysisUtilities::Build_IndexCombos(const DReactionStep* loc
 		}
 
 		// pid found
-		locComboDeque.push_back(locPossibilities[locResumeAtIndex]);
+		locComboDeque.push_back(locPossibilities[locParticleIndex][locResumeAtIndex]);
 		++locResumeAtIndex;
 		++locParticleIndex;
 	}
@@ -1322,7 +1322,7 @@ set<set<size_t> > DAnalysisUtilities::Build_IndexCombos(const DReactionStep* loc
 	return locCombos;
 }
 
-bool DAnalysisUtilities::Handle_Decursion(int& locParticleIndex, deque<size_t>& locComboDeque, deque<int>& locResumeAtIndices, deque<set<size_t> >& locPossibilities) const
+bool DAnalysisUtilities::Handle_Decursion(int& locParticleIndex, deque<size_t>& locComboDeque, deque<int>& locResumeAtIndices, deque<deque<size_t> >& locPossibilities) const
 {
 	do
 	{
@@ -1335,7 +1335,7 @@ bool DAnalysisUtilities::Handle_Decursion(int& locParticleIndex, deque<size_t>& 
 
 		locComboDeque.pop_back(); //reset this index
 	}
-	while(locResumeAtIndices[locParticleIndex] == locPossibilities[locParticleIndex]);
+	while(locResumeAtIndices[locParticleIndex] == locPossibilities[locParticleIndex].size());
 
 	return true;
 }
