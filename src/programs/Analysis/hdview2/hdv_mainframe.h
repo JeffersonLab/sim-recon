@@ -7,6 +7,8 @@
 // It is OK to do that in the .cc file, just not here in the 
 // header.
 
+#include <stdint.h>
+
 #include <iostream>
 #include <cmath>
 #include <string>
@@ -109,7 +111,8 @@ class hdv_mainframe:public TGMainFrame {
 
 
 		// Other (non-slot) methods
-		void SetEvent(int id);
+		void SetEvent(uint64_t id);
+		void SetRun(int32_t id);
 		void SetSource(string source);
 		bool GetDrawCandidates(void){return draw_candidates;}
 		bool GetDrawTracks(void){return draw_tracks;}
