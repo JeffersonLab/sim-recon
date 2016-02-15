@@ -189,8 +189,9 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 	string source = "<no source>";
 	if(last_jevent.GetJEventSource())source = last_jevent.GetJEventSource()->GetSourceName();
 	
-	cout<<"----------- New Event "<<eventnumber<<" -------------"<<endl;
+	cout<<"----------- New Event "<<eventnumber<<"  (run " << last_jevent.GetRunNumber()<<") -------------"<<endl;
 	hdvmf->SetEvent(eventnumber);
+	hdvmf->SetRun(last_jevent.GetRunNumber());
 	hdvmf->SetSource(source.c_str());
 	hdvmf->DoMyRedraw();	
 

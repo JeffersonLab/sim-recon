@@ -10,6 +10,9 @@ using namespace std;
 #include <pthread.h>
 #include <sys/time.h>
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+
 #include <TRACKING/DMCThrown.h>
 #include "hdv_mainframe.h"
 #include "hdview2.h"
@@ -237,8 +240,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   
   TGLabel *runlab = new TGLabel(eventlabs, "Run:");
   TGLabel *eventlab = new TGLabel(eventlabs, "Event:");
-  run = new TGLabel(eventvals, "----------");
-  event = new TGLabel(eventvals, "----------");
+  run = new TGLabel(eventvals, "------------");
+  event = new TGLabel(eventvals, "------------");
   eventlabs->AddFrame(runlab, rhints);
   eventlabs->AddFrame(eventlab,rhints);
   eventvals->AddFrame(run, lhints);
@@ -2084,14 +2087,27 @@ void hdv_mainframe::DrawLabel(TCanvas *c, vector<TObject*> &graphics, const char
 //-------------------
 // SetEvent
 //-------------------
-void hdv_mainframe::SetEvent(int id)
+void hdv_mainframe::SetEvent(uint64_t id)
 {
 	if(!event)return;
 
 	char str[256];
-	sprintf(str,"%5d", id);
+	sprintf(str,"%" PRIu64 "", id);
 	event->SetTitle(str);
 	event->Draw();
+}
+
+//-------------------
+// SetRun
+//-------------------
+void hdv_mainframe::SetRun(int32_t id)
+{
+	if(!event)return;
+
+	char str[256];
+	sprintf(str,"%06d", id);
+	run->SetTitle(str);
+	run->Draw();
 }
 
 //-------------------
