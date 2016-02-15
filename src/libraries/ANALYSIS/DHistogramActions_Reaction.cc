@@ -1187,6 +1187,7 @@ bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, co
 		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
 			continue;
 
+		//build all possible combinations of the included pids
 		set<pair<const JObject*, Particle_t> > locSourceObjects;
 		DLorentzVector locFinalStateP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, dToIncludePIDs, locSourceObjects, Get_UseKinFitResultsFlag());
 
@@ -1197,7 +1198,6 @@ bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, co
 			dPreviousSourceObjects.insert(locSourceObjects);
 		}
 
-		//get particle names so can select the correct histogram
 		double locInvariantMass = locFinalStateP4.M();
 		japp->RootWriteLock();
 		{
@@ -1208,6 +1208,7 @@ bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, co
 	}
 	return true;
 }
+
 
 void DHistogramAction_MissingMass::Initialize(JEventLoop* locEventLoop)
 {
@@ -1334,6 +1335,140 @@ bool DHistogramAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoo
 	}
 	japp->RootUnLock();
 
+	return true;
+}
+
+void DHistogramAction_2DInvariantMass::Initialize(JEventLoop* locEventLoop)
+{
+	string locHistName, locHistTitle;
+	locEventLoop->GetSingle(dAnalysisUtilities);
+
+	string locParticleNamesForHistX = "";
+	for(size_t loc_i = 0; loc_i < dXPIDs.size(); ++loc_i)
+		locParticleNamesForHistX += ParticleName_ROOT(dXPIDs[loc_i]);
+
+	string locParticleNamesForHistY = "";
+	for(size_t loc_i = 0; loc_i < dYPIDs.size(); ++loc_i)
+		locParticleNamesForHistY += ParticleName_ROOT(dYPIDs[loc_i]);
+
+	string locMassString = " Invariant Mass (GeV/c^{2});";
+
+	//CREATE THE HISTOGRAMS
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		CreateAndChangeTo_ActionDirectory();
+
+		locHistName = "2DInvariantMass";
+		locHistTitle = string(";") + locParticleNamesForHistX + locMassString + locParticleNamesForHistY + locMassString;
+		dHist_2DInvaraintMass = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumXBins, dMinX, dMaxX, dNumYBins, dMinY, dMaxY);
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+bool DHistogramAction_2DInvariantMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	if(Get_NumPreviousParticleCombos() == 0)
+		dPreviousSourceObjects.clear();
+
+	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
+	{
+		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
+		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
+			continue;
+
+		set<pair<const JObject*, Particle_t> > locXSourceObjects;
+		DLorentzVector locXP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, dXPIDs, locXSourceObjects, Get_UseKinFitResultsFlag());
+
+		set<pair<const JObject*, Particle_t> > locYSourceObjects;
+		DLorentzVector locYP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, dYPIDs, locYSourceObjects, Get_UseKinFitResultsFlag());
+
+		if(!dEnableDoubleCounting)
+		{
+			pair<set<set<pair<const JObject*, Particle_t> > >, set<set<pair<const JObject*, Particle_t> > > > locAllSourceObjects(locXSourceObjects, locYSourceObjects);
+			if(dPreviousSourceObjects.find(locAllSourceObjects) != dPreviousSourceObjects.end())
+				return true; //dupe: already histed!
+			dPreviousSourceObjects.insert(locAllSourceObjects);
+		}
+
+		double locXMass = locXP4.M();
+		double locYMass = locYP4.M();
+		japp->RootWriteLock();
+		{
+			dHist_2DInvaraintMass->Fill(locXMass, locYMass);
+		}
+		japp->RootUnLock();
+		//don't break: e.g. if multiple pi0's, histogram invariant mass of each one
+	}
+	return true;
+}
+
+void DHistogramAction_Dalitz::Initialize(JEventLoop* locEventLoop)
+{
+	string locHistName, locHistTitle;
+	locEventLoop->GetSingle(dAnalysisUtilities);
+
+	string locParticleNamesForHistX = "";
+	for(size_t loc_i = 0; loc_i < dXPIDs.size(); ++loc_i)
+		locParticleNamesForHistX += ParticleName_ROOT(dXPIDs[loc_i]);
+
+	string locParticleNamesForHistY = "";
+	for(size_t loc_i = 0; loc_i < dYPIDs.size(); ++loc_i)
+		locParticleNamesForHistY += ParticleName_ROOT(dYPIDs[loc_i]);
+
+	string locMassString = " Invariant Mass Squared (GeV/c^{2})^{2};";
+
+	//CREATE THE HISTOGRAMS
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		CreateAndChangeTo_ActionDirectory();
+
+		locHistName = "DalitzPlot";
+		locHistTitle = string(";") + locParticleNamesForHistX + locMassString + locParticleNamesForHistY + locMassString;
+		dHist_DalitzPlot = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumXBins, dMinX, dMaxX, dNumYBins, dMinY, dMaxY);
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+bool DHistogramAction_Dalitz::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	if(Get_NumPreviousParticleCombos() == 0)
+		dPreviousSourceObjects.clear();
+
+	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
+	{
+		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
+		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
+			continue;
+
+		set<pair<const JObject*, Particle_t> > locXSourceObjects;
+		DLorentzVector locXP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, dXPIDs, locXSourceObjects, Get_UseKinFitResultsFlag());
+
+		set<pair<const JObject*, Particle_t> > locYSourceObjects;
+		DLorentzVector locYP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, dYPIDs, locYSourceObjects, Get_UseKinFitResultsFlag());
+
+		if(!dEnableDoubleCounting)
+		{
+			pair<set<set<pair<const JObject*, Particle_t> > >, set<set<pair<const JObject*, Particle_t> > > > locAllSourceObjects(locXSourceObjects, locYSourceObjects);
+			if(dPreviousSourceObjects.find(locAllSourceObjects) != dPreviousSourceObjects.end())
+				return true; //dupe: already histed!
+			dPreviousSourceObjects.insert(locAllSourceObjects);
+		}
+
+		double locXMass = locXP4.M2();
+		double locYMass = locYP4.M2();
+		japp->RootWriteLock();
+		{
+			dHist_DalitzPlot->Fill(locXMass, locYMass);
+		}
+		japp->RootUnLock();
+		//don't break: e.g. if multiple pi0's, histogram invariant mass of each one
+	}
 	return true;
 }
 

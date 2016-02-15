@@ -406,6 +406,59 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
 };
 
+class DHistogramAction_2DInvariantMass : public DAnalysisAction
+{
+	public:
+		DHistogramAction_2DInvariantMass(const DReaction* locReaction, size_t locStepIndex, deque<Particle_t> locXPIDs, deque<Particle_t> locYPIDs, bool locUseKinFitResultsFlag, unsigned int locNumXBins, double locMinX, double locMaxX, unsigned int locNumYBins, double locMinY, double locMaxY, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Hist_2DInvariantMass", locUseKinFitResultsFlag, locActionUniqueString),
+		dEnableDoubleCounting(false), dStepIndex(locStepIndex), dXPIDs(locXPIDs), dYPIDs(locYPIDs),
+		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dAnalysisUtilities(NULL) {}
+
+		bool dEnableDoubleCounting;
+
+		void Initialize(JEventLoop* locEventLoop);
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		int dStepIndex;
+		deque<Particle_t> dXPIDs, dYPIDs;
+		unsigned int dNumXBins, dNumYBins;
+		double dMinX, dMaxX, dMinY, dMaxY;
+
+		const DAnalysisUtilities* dAnalysisUtilities;
+		TH2I* dHist_2DInvaraintMass;
+
+		set<pair<set<set<pair<const JObject*, Particle_t> > >, set<set<pair<const JObject*, Particle_t> > > > > dPreviousSourceObjects;
+};
+
+
+class DHistogramAction_Dalitz : public DAnalysisAction
+{
+	public:
+	DHistogramAction_Dalitz(const DReaction* locReaction, size_t locStepIndex, deque<Particle_t> locXPIDs, deque<Particle_t> locYPIDs, bool locUseKinFitResultsFlag, unsigned int locNumXBins, double locMinX, double locMaxX, unsigned int locNumYBins, double locMinY, double locMaxY, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Hist_Dalitz", locUseKinFitResultsFlag, locActionUniqueString),
+		dEnableDoubleCounting(false), dStepIndex(locStepIndex), dXPIDs(locXPIDs), dYPIDs(locYPIDs),
+		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dAnalysisUtilities(NULL) {}
+
+		bool dEnableDoubleCounting;
+
+		void Initialize(JEventLoop* locEventLoop);
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		int dStepIndex;
+		deque<Particle_t> dXPIDs, dYPIDs;
+		unsigned int dNumXBins, dNumYBins;
+		double dMinX, dMaxX, dMinY, dMaxY;
+
+		const DAnalysisUtilities* dAnalysisUtilities;
+		TH2I* dHist_DalitzPlot;
+
+		set<pair<set<set<pair<const JObject*, Particle_t> > >, set<set<pair<const JObject*, Particle_t> > > > > dPreviousSourceObjects;
+};
+
 class DHistogramAction_KinFitResults : public DAnalysisAction
 {
 	public:
