@@ -423,7 +423,7 @@ class DHistogramAction_2DInvariantMass : public DAnalysisAction
 		const DAnalysisUtilities* dAnalysisUtilities;
 		TH2I* dHist_2DInvaraintMass;
 
-		set<set<set<set<pair<const JObject*, Particle_t> > > > > dPreviousSourceObjects;
+		set<set<set<pair<const JObject*, Particle_t> > > > dPreviousSourceObjects;
 };
 
 
@@ -448,7 +448,7 @@ class DHistogramAction_Dalitz : public DAnalysisAction
 		const DAnalysisUtilities* dAnalysisUtilities;
 		TH2I* dHist_DalitzPlot;
 
-		set<pair<set<set<pair<const JObject*, Particle_t> > >, set<set<pair<const JObject*, Particle_t> > > > > dPreviousSourceObjects;
+		set<set<set<pair<const JObject*, Particle_t> > > > dPreviousSourceObjects;
 };
 
 class DHistogramAction_KinFitResults : public DAnalysisAction

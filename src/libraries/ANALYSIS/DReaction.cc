@@ -57,12 +57,13 @@ string DReaction::Get_DecayChainFinalParticlesROOTNames(size_t locStepIndex, int
 	deque<Particle_t> locPIDs;
 	dReactionSteps[locStepIndex]->Get_FinalParticleIDs(locPIDs);
 	int locMissingParticleIndex = dReactionSteps[locStepIndex]->Get_MissingParticleIndex();
+	bool locSearchPIDsFlag = !locUpThroughPIDs.empty();
 	for(size_t loc_j = 0; loc_j < locPIDs.size(); ++loc_j)
 	{
 		if(int(loc_j) == locMissingParticleIndex)
 			continue; //exclude missing!
 
-		if(int(locStepIndex) == locUpToStepIndex)
+		if(locSearchPIDsFlag && (int(locStepIndex) == locUpToStepIndex))
 		{
 			bool locPIDFoundFlag = false;
 			for(deque<Particle_t>::iterator locIterator = locUpThroughPIDs.begin(); locIterator != locUpThroughPIDs.end(); ++locIterator)

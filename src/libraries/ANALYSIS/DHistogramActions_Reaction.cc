@@ -1272,7 +1272,7 @@ bool DHistogramAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, cons
 			continue; //dupe: already histed!
 		dPreviousSourceObjects.insert(locSourceObjects);
 
-		locMassesToFill.insert(locMissingP4.M());
+		locMassesToFill.push_back(locMissingP4.M());
 	}
 
 	japp->RootWriteLock();
@@ -1342,7 +1342,7 @@ bool DHistogramAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoo
 			continue; //dupe: already histed!
 		dPreviousSourceObjects.insert(locSourceObjects);
 
-		locMassesToFill.insert(locMissingP4.M2());
+		locMassesToFill.push_back(locMissingP4.M2());
 	}
 
 	japp->RootWriteLock();
@@ -1396,7 +1396,6 @@ bool DHistogramAction_2DInvariantMass::Perform_Action(JEventLoop* locEventLoop, 
 	vector<pair<double, double> > locMassesToFill;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
-		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
 		const DReactionStep* locReactionStep = Get_Reaction->Get_ReactionStep(loc_i);
 		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
 			continue;
@@ -1421,7 +1420,7 @@ bool DHistogramAction_2DInvariantMass::Perform_Action(JEventLoop* locEventLoop, 
 				if(locXSourceObjects == locYSourceObjects)
 					continue; //the same!
 
-				set<set<set<pair<const JObject*, Particle_t> > > > locAllSourceObjects;
+				set<set<pair<const JObject*, Particle_t> > > locAllSourceObjects;
 				locAllSourceObjects.insert(locXSourceObjects);
 				locAllSourceObjects.insert(locYSourceObjects);
 				if(dPreviousSourceObjects.find(locAllSourceObjects) != dPreviousSourceObjects.end())
@@ -1481,7 +1480,6 @@ bool DHistogramAction_2DInvariantMass::Perform_Action(JEventLoop* locEventLoop, 
 	vector<pair<double, double> > locMassesToFill;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
-		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
 		const DReactionStep* locReactionStep = Get_Reaction->Get_ReactionStep(loc_i);
 		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
 			continue;
@@ -1506,7 +1504,7 @@ bool DHistogramAction_2DInvariantMass::Perform_Action(JEventLoop* locEventLoop, 
 				if(locXSourceObjects == locYSourceObjects)
 					continue; //the same!
 
-				set<set<set<pair<const JObject*, Particle_t> > > > locAllSourceObjects;
+				set<set<pair<const JObject*, Particle_t> > > locAllSourceObjects;
 				locAllSourceObjects.insert(locXSourceObjects);
 				locAllSourceObjects.insert(locYSourceObjects);
 				if(dPreviousSourceObjects.find(locAllSourceObjects) != dPreviousSourceObjects.end())

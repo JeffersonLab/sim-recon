@@ -1335,7 +1335,7 @@ bool DAnalysisUtilities::Handle_Decursion(int& locParticleIndex, deque<size_t>& 
 
 		locComboDeque.pop_back(); //reset this index
 	}
-	while(locResumeAtIndices[locParticleIndex] == locPossibilities[locParticleIndex].size());
+	while(locResumeAtIndices[locParticleIndex] == int(locPossibilities[locParticleIndex].size()));
 
 	return true;
 }
