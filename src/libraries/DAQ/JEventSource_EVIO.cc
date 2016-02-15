@@ -715,6 +715,11 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	if(!stored_events.empty()){
 		objs_ptr = stored_events.front();
 		stored_events.pop();
+				
+		// If this is a stored event then it almost certainly
+		// came from a multi-event block of physics events.
+		// Set the physics event status bit.
+		event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
 	}
 	pthread_mutex_unlock(&stored_events_mutex);
 
@@ -744,7 +749,7 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	// JEvent as the Reference value. Parsing will be done later
 	// in GetObjects() -> ParseEvents() using the eviobuff pointer.
 	event.SetJEventSource(this);
-	event.SetEventNumber((int)objs_ptr->event_number);
+	event.SetEventNumber((uint64_t)objs_ptr->event_number);
 	event.SetRunNumber(objs_ptr->run_number);
 	event.SetRef(objs_ptr);
 	event.SetStatusBit(kSTATUS_EVIO);
@@ -2894,9 +2899,16 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 		if(has_timestamps) iptr64 = &iptr64[M]; // advance past timestamps
 		if(VERBOSE>3) evioout << " .... Event num: " << event_num <<endl;
 
-		// For some reason, we have to first put this into  
-		// 64bit number and then cast it. 
+		// I'm not sure I fully understand this, but if we read from
+		// ET, then the run number is in the low 32 bits of *iptr64.
+		// If we are reading from a file, it is in the high 32 bits.
+		// No byte swapping is needed (it has already been done, though
+		// perhaps incorrectly). We handle this here by checking if
+		// this is an ET source or not.
 		uint64_t run64 = (*iptr64)>>32;
+		if(source_type==kETSource){
+			run64 = (*iptr64)&0xffffffff;
+		}
 		int32_t run = (int32_t)run64;
 		if(VERBOSE>1) evioout << " .. Found run number: " << run <<endl;
 
@@ -2914,6 +2926,7 @@ uint64_t JEventSource_EVIO::FindEventNumber(uint32_t *iptr)
 	/// This is called from GetEvent() to quickly look for the event number
 	/// at the time the event is read in so it can be passed into JEvent.
 	/// (See comments for FindRunNumber above.)
+	if(source_type==kETSource) iptr = &iptr[8]; // ET passes in block header
 	if(*iptr < 6) return Nevents_read+1;
 	
 	// Check header of Trigger bank
@@ -2922,6 +2935,10 @@ uint64_t JEventSource_EVIO::FindEventNumber(uint32_t *iptr)
 	
 	uint64_t loevent_num = iptr[5];
 	uint64_t hievent_num = iptr[6];
+	if(source_type==kETSource) {
+		loevent_num = iptr[6];
+		hievent_num = iptr[5];
+	}
 	uint64_t event_num = loevent_num + (hievent_num<<32);
 	
 	return event_num;
@@ -2934,6 +2951,7 @@ void JEventSource_EVIO::FindEventType(uint32_t *iptr, JEvent &event)
 {
 	/// This is called from GetEvent to quickly determine the type of
 	/// event this is (Physics, EPICS, SYNC, BOR, ...)
+	if(source_type==kETSource) iptr = &iptr[8]; // ET passes in block header
 	uint32_t head = iptr[1];
 	if( (head & 0xff000f) ==  0x600001){
 		event.SetStatusBit(kSTATUS_EPICS_EVENT);
@@ -3347,6 +3365,11 @@ void JEventSource_EVIO::ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjLis
 			if(vec64->size() == 0) continue; // need debug message here!
 			
 			first_event_num = (*vec64)[0];
+			
+			// Hi and lo 32bit words in 64bit numbers seem to be
+			// switched for events read from ET, but not read from
+			// file. Not sure if this is in the swapping routine
+			if(source_type==kETSource) first_event_num = (first_event_num>>32) | (first_event_num<<32);
 
 			uint32_t Ntimestamps = vec64->size()-1;
 			if(Ntimestamps==0) continue; // no more words of interest
