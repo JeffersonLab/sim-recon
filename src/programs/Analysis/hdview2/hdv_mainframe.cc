@@ -10,9 +10,6 @@ using namespace std;
 #include <pthread.h>
 #include <sys/time.h>
 
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-
 #include <TRACKING/DMCThrown.h>
 #include "hdv_mainframe.h"
 #include "hdview2.h"
@@ -2087,26 +2084,26 @@ void hdv_mainframe::DrawLabel(TCanvas *c, vector<TObject*> &graphics, const char
 //-------------------
 // SetEvent
 //-------------------
-void hdv_mainframe::SetEvent(uint64_t id)
+void hdv_mainframe::SetEvent(ULong64_t id)
 {
 	if(!event)return;
 
-	char str[256];
-	sprintf(str,"%" PRIu64 "", id);
-	event->SetTitle(str);
+	stringstream ss;
+	ss << id;
+	event->SetTitle(ss.str().c_str());
 	event->Draw();
 }
 
 //-------------------
 // SetRun
 //-------------------
-void hdv_mainframe::SetRun(int32_t id)
+void hdv_mainframe::SetRun(Int_t id)
 {
 	if(!event)return;
 
-	char str[256];
-	sprintf(str,"%06d", id);
-	run->SetTitle(str);
+	stringstream ss;
+	ss << id;
+	run->SetTitle(ss.str().c_str());
 	run->Draw();
 }
 
