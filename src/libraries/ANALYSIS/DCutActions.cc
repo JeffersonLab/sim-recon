@@ -280,7 +280,7 @@ bool DCutAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DP
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
 		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
-		const DReactionStep* locReactionStep = Get_Reaction->Get_ReactionStep(loc_i);
+		const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
 		if((dInitialPID != Unknown) && (locParticleComboStep->Get_InitialParticleID() != dInitialPID))
 			continue;
 		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))

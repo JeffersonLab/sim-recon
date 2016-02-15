@@ -1183,7 +1183,7 @@ bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, co
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
 		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
-		const DReactionStep* locReactionStep = Get_Reaction->Get_ReactionStep(loc_i);
+		const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
 		if((dInitialPID != Unknown) && (locParticleComboStep->Get_InitialParticleID() != dInitialPID))
 			continue;
 		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
@@ -1396,7 +1396,7 @@ bool DHistogramAction_2DInvariantMass::Perform_Action(JEventLoop* locEventLoop, 
 	vector<pair<double, double> > locMassesToFill;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
-		const DReactionStep* locReactionStep = Get_Reaction->Get_ReactionStep(loc_i);
+		const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
 		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
 			continue;
 
@@ -1480,7 +1480,7 @@ bool DHistogramAction_2DInvariantMass::Perform_Action(JEventLoop* locEventLoop, 
 	vector<pair<double, double> > locMassesToFill;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
-		const DReactionStep* locReactionStep = Get_Reaction->Get_ReactionStep(loc_i);
+		const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
 		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
 			continue;
 
