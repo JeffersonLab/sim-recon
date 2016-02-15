@@ -109,9 +109,11 @@ class DAnalysisUtilities : public JObject
 		DVector3 Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<const DTrackTimeBased*>& locParticles) const;
 
+		set<set<size_t> > Build_IndexCombos(const DReactionStep* locReactionStep, deque<Particle_t> locToIncludePIDs) const;
+
 	private:
 
-//		unsigned int DEBUG_LEVEL;
+		bool Handle_Decursion(int& locParticleIndex, deque<size_t>& locComboDeque, deque<int>& locResumeAtIndices, deque<set<size_t> >& locPossibilities) const;
 
 		double dTargetZCenter;
 		const DParticleID* dPIDAlgorithm;

@@ -1233,15 +1233,27 @@ DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<DKinFitParticle*>& loc
 	return locVertex;
 }
 
-set<set<size_t> > DAnalysisUtilities::Build_IndexCombos(const DReactionStep* locReactionStep, deque<Particle_t> locToIncludePIDs)
+set<set<size_t> > DAnalysisUtilities::Build_IndexCombos(const DReactionStep* locReactionStep, deque<Particle_t> locToIncludePIDs) const
 {
+	//if locToIncludePIDs is empty, will return one set with all (except missing)
 	set<set<size_t> > locCombos;
-	if(locToIncludePIDs.empty())
-		return locCombos;
 
 	deque<Particle_t> locReactionStepPIDs;
 	locReactionStep->Get_FinalParticleIDs(locReactionStepPIDs);
 	int locMissingParticleIndex = locReactionStep->Get_MissingParticleIndex();
+
+	if(locToIncludePIDs.empty())
+	{
+		set<size_t> locCombo;
+		for(size_t loc_i = 0; loc_i < locReactionStepPIDs; ++loc_i)
+		{
+			if(loc_i == locMissingParticleIndex)
+				continue;
+			locCombo.insert(loc_i);
+		}
+		locCombos.insert(locCombo);
+		return locCombos;
+	}
 
 	//deque indices corresponds to locToIncludePIDs, and each set is what could pass for it
 	deque<set<size_t> > locPossibilities(locToIncludePIDs.size(), set<size_t>());
@@ -1264,21 +1276,26 @@ set<set<size_t> > DAnalysisUtilities::Build_IndexCombos(const DReactionStep* loc
 
 	//build combos
 	int locParticleIndex = 0;
-	set<size_t> locCombo;
+	deque<size_t> locComboDeque;
 	while(true)
 	{
-		if(locParticleIndex == int(locPossibilities.size()))
+		if(locParticleIndex == int(locPossibilities.size())) //end of combo: save it
 		{
-			//end of combo: save it
-			if(!//Handle_EndOfReactionStep(locReaction, locParticleComboBlueprint, locParticleComboBlueprintStep, locStepIndex, locParticleIndex, locResumeAtIndexDeque, locNumPossibilitiesDeque, locInitialParticleStepFromIndexMap))
+			set<size_t> locComboSet; //convert set to deque
+			for(size_t loc_i = 0; loc_i < locComboDeque.size(); ++loc_i)
+				locComboSet.insert(locComboDeque[loc_i]);
+			locCombos.insert(locComboSet); //saved
+
+			if(!Handle_Decursion(locParticleIndex, locComboDeque, locResumeAtIndices, locPossibilities))
 				break;
 			continue;
 		}
+
 		int& locResumeAtIndex = locResumeAtIndices[locParticleIndex];
-		Particle_t locToIncludePID = locToIncludePIDs[locParticleIndex];
 
 		//if two identical pids: locResumeAtIndex must always be >= the previous locResumeAtIndex (prevents duplicates) e.g. g, p -> p, pi0, pi0
 		//search for same pid previously in this step
+		Particle_t locToIncludePID = locToIncludePIDs[locParticleIndex];
 		for(int loc_i = locParticleIndex - 1; loc_i >= 0; --loc_i)
 		{
 			if(locToIncludePIDs[loc_i] == locToIncludePID)
@@ -1289,38 +1306,37 @@ set<set<size_t> > DAnalysisUtilities::Build_IndexCombos(const DReactionStep* loc
 			}
 		}
 
-			if(locSourceObject == NULL)
-			{
-				if(dDebugLevel > 10)
-					cout << "can't find detected particle" << endl;
-				if(!Handle_Decursion(locParticleComboBlueprint, locResumeAtIndexDeque, locNumPossibilitiesDeque, locParticleIndex, locStepIndex, locParticleComboBlueprintStep))
-					break;
-				continue;
-			}
+		if(locResumeAtIndex >= locPossibilities.size())
+		{
+			if(!Handle_Decursion(locParticleIndex, locComboDeque, locResumeAtIndices, locPossibilities))
+				break;
+			continue;
+		}
 
 		// pid found
-		locParticleComboBlueprintStep->Add_FinalParticle_SourceObject(locSourceObject, -2); //detected
-		dCurrentComboSourceObjects.insert(locSourceObject);
+		locComboDeque.push_back(locPossibilities[locResumeAtIndex]);
+		++locResumeAtIndex;
 		++locParticleIndex;
-
-
 	}
+
+	return locCombos;
 }
 
-int Dummy()
+bool DAnalysisUtilities::Handle_Decursion(int& locParticleIndex, deque<size_t>& locComboDeque, deque<int>& locResumeAtIndices, deque<set<size_t> >& locPossibilities) const
 {
-	if(locResumeAtIndex >= int(locPossibilities[loc_i].size()))
-		return -1;
 	do
 	{
-		int locIndex = locPossibilities[];
-		const JObject* locObject = static_cast<const JObject*>(locNeutralShowers[locResumeAtIndex]);
-		++locResumeAtIndex;
+		if(locParticleIndex < locResumeAtIndices.size()) //else just saved a combo
+			locResumeAtIndices[locParticleIndex] = 0; //finding this particle failed: reset
 
-		//make sure not used currently
-		if(locCombo.find(locIndex) != locCombo.end())
-			continue;
-		return locObject;
+		--locParticleIndex; //go to previous particle
+		if(locParticleIndex < 0)
+			return false; //end of particles: end of finding all combos
+
+		locComboDeque.pop_back(); //reset this index
 	}
-	while(locResumeAtIndex < int(locNeutralShowers.size()));
+	while(locResumeAtIndices[locParticleIndex] == locPossibilities[locParticleIndex]);
+
+	return true;
 }
+
