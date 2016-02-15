@@ -1519,7 +1519,7 @@ bool DHistogramAction_Dalitz::Perform_Action(JEventLoop* locEventLoop, const DPa
 	japp->RootWriteLock();
 	{
 		for(size_t loc_i = 0; loc_i < locMassesToFill.size(); ++loc_i)
-			dHist_DalitzPlot->Fill(locMassesToFill.first, locMassesToFill.second);
+			dHist_DalitzPlot->Fill(locMassesToFill[loc_i].first, locMassesToFill[loc_i].second);
 	}
 	japp->RootUnLock();
 
