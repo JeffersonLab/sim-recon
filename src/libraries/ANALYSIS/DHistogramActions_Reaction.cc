@@ -1266,7 +1266,7 @@ bool DHistogramAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, cons
 	for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
 	{
 		set<pair<const JObject*, Particle_t> > locSourceObjects;
-		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, dMissingMassOffOfPIDs, locSourceObjects, Get_UseKinFitResultsFlag());
+		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, *locComboIterator, locSourceObjects, Get_UseKinFitResultsFlag());
 
 		if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())
 			continue; //dupe: already histed!
@@ -1336,7 +1336,7 @@ bool DHistogramAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoo
 	for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
 	{
 		set<pair<const JObject*, Particle_t> > locSourceObjects;
-		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, dMissingMassOffOfPIDs, locSourceObjects, Get_UseKinFitResultsFlag());
+		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, *locComboIterator, locSourceObjects, Get_UseKinFitResultsFlag());
 
 		if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())
 			continue; //dupe: already histed!
@@ -1435,7 +1435,7 @@ bool DHistogramAction_2DInvariantMass::Perform_Action(JEventLoop* locEventLoop, 
 	japp->RootWriteLock();
 	{
 		for(size_t loc_i = 0; loc_i < locMassesToFill.size(); ++loc_i)
-			dHist_2DInvaraintMass->Fill(locMassesToFill.first, locMassesToFill.second);
+			dHist_2DInvaraintMass->Fill(locMassesToFill[loc_i].first, locMassesToFill[loc_i].second);
 	}
 	japp->RootUnLock();
 
