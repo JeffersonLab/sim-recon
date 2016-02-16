@@ -240,8 +240,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   
   TGLabel *runlab = new TGLabel(eventlabs, "Run:");
   TGLabel *eventlab = new TGLabel(eventlabs, "Event:");
-  run = new TGLabel(eventvals, "------------");
-  event = new TGLabel(eventvals, "------------");
+  run = new TGLabel(eventvals, "--------------");
+  event = new TGLabel(eventvals, "--------------");
   eventlabs->AddFrame(runlab, rhints);
   eventlabs->AddFrame(eventlab,rhints);
   eventvals->AddFrame(run, lhints);
