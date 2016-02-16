@@ -117,6 +117,8 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, uint64_t event
     // Fill number of TPOL events for this file.
     Bool_t hadTPOL = false;
     Int_t hitMultiplicity = 0;
+    UInt_t sl = windowrawdata[windowrawdata.size()]->slot;
+    cout << sl << endl;
     for(unsigned int i=0;i<windowrawdata.size();i++){
       if(windowrawdata[i]->rocid == 84
 	 &&
