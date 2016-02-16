@@ -11,5 +11,5 @@ SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
 # Optional targets
 optdirs = ['danahddm', 'dumpcandidates', 'dumpthrowns', 'l3bdt']
-optdirs.extend(['merge_rawevents', 'syncskim', 'DAQ', 'TTab', 'rawevent'])
+optdirs.extend(['merge_rawevents', 'syncskim', 'DAQ', 'TTab', 'rawevent', 'single_particle_resolution'])
 sbms.OptionallyBuild(env, optdirs)
