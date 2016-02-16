@@ -71,7 +71,12 @@ jerror_t JEventProcessor_CDC_Efficiency::init(void)
     if(gPARMS){
         gPARMS->SetDefaultParameter("CDC_EFFICIENCY:DOCACUT", DOCACUT, "DOCA Cut on Efficiency Measurement");
     }  
-
+    
+    for (unsigned int i=0; i < 28; i++){
+        for (unsigned int j=0; j < 209; j++){
+            ChannelFromRingStraw[i][j] = -1;
+        }
+    } 
     // Some information
 
     int Nstraws[28] = {42, 42, 54, 54, 66, 66, 80, 80, 93, 93, 106, 106, 123, 123, 135, 135, 146, 146, 158, 158, 170, 170, 182, 182, 197, 197, 209, 209};
@@ -324,6 +329,8 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 
                     bool foundHit = false;
                     // loop over the CDC Hits to look for a match
+                    // We need a backwards map from ring/straw to flash channel. Unfortunately there is no easy way
+                    // Will construct the map manually
                     for( unsigned int hitNum = 0; hitNum < locCDCHitVector.size(); hitNum++){
                         const DCDCHit * locHit = locCDCHitVector[hitNum];
                         if(locHit->ring == ringNum && locHit->straw == wireNum){
@@ -357,6 +364,7 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                                     "Measured Hits",
                                     100, -0.3 , 0.3);
                             if (thisPulse != NULL){
+                                ChannelFromRingStraw[ringNum - 1][wireNum - 1] = thisPulse->channel;
                                 char name [200];
                                 sprintf(name, "ROC ID %.2i", thisPulse->rocid);
                                 Fill1DHistogram("CDC_Efficiency", "ROCID", name,
@@ -397,6 +405,12 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                                 delta,1.0,
                                 "Efficiency; #delta [cm]; Efficiency",
                                 100, -0.3 , 0.3);
+                        if( ChannelFromRingStraw[ringNum - 1][wireNum - 1] != -1){
+                            Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs Channel Number",
+                                    ChannelFromRingStraw[ringNum - 1][wireNum - 1],1.0,
+                                    "Efficiency; Channel Number; Efficiency",
+                                    73, -0.5 , 72.5);
+                        }
                         Fill2DProfile("CDC_Efficiency", "Online", "Efficiency p Vs Theta",
                                 thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(), thisTimeBasedTrack->pmag(),1.0,
                                 "Efficiency; Track #Theta [deg]; Momentum [GeV]",
@@ -435,6 +449,12 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                                 delta,0.0,
                                 "Efficiency; #delta [cm]; Efficiency",
                                 100, -0.3 , 0.3);
+                        if( ChannelFromRingStraw[ringNum - 1][wireNum - 1] != -1){
+                            Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs Channel Number",
+                                    ChannelFromRingStraw[ringNum - 1][wireNum - 1],1.0,
+                                    "Efficiency; Channel Number; Efficiency",
+                                    73, -0.5 , 72.5);
+                        }
                         Fill2DProfile("CDC_Efficiency", "Online", "Efficiency p Vs Theta",
                                 thisTimeBasedTrack->momentum().Theta()*TMath::RadToDeg(), thisTimeBasedTrack->pmag(),0.0,
                                 "Efficiency; Track #Theta [deg]; Momentum [GeV]",
