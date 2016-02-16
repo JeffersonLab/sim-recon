@@ -451,7 +451,7 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                                 100, -0.3 , 0.3);
                         if( ChannelFromRingStraw[ringNum - 1][wireNum - 1] != -1){
                             Fill1DProfile("CDC_Efficiency", "Online", "Efficiency Vs Channel Number",
-                                    ChannelFromRingStraw[ringNum - 1][wireNum - 1],1.0,
+                                    ChannelFromRingStraw[ringNum - 1][wireNum - 1],0.0,
                                     "Efficiency; Channel Number; Efficiency",
                                     73, -0.5 , 72.5);
                         }
