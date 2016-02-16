@@ -26,20 +26,20 @@ void DCustomAction_p2pi_hists::Initialize(JEventLoop* locEventLoop)
 	cohmin_energy = 0.;
 	cohedge_energy = 12.;
 	map<string, double> photon_beam_param;
-	if(jcalib->Get("/PHOTON_BEAM/coherent_energy", photon_beam_param) == false) {
+	if(jcalib->Get("/ANALYSIS/beam_asymmetry/coherent_energy", photon_beam_param) == false) {
 		cohmin_energy = photon_beam_param["cohmin_energy"];
 		cohedge_energy = photon_beam_param["cohedge_energy"];
 	}
 	else {
-		jout<<"No /PHOTON_BEAM/coherent_energy for this run number: using default range of 0-12 GeV"<<endl;
+		jout<<"No /ANALYSIS/beam_asymmetry/coherent_energy for this run number: using default range of 0-12 GeV"<<endl;
 	}
 
 	dEdxCut = 2.2;
 	minMMCut = 0.8;
 	maxMMCut = 1.05;
-	minMM2Cut = -0.006;
-	maxMM2Cut = 0.004;
-	missingEnergyCut = 1.0;
+	minMM2Cut = -0.1;
+	maxMM2Cut = 0.1;
+	missingEnergyCut = 10.0;
 	minRhoMassCut = 0.6;
 	maxRhoMassCut = 0.88;
 
