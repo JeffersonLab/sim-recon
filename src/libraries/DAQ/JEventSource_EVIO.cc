@@ -971,7 +971,7 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 	// Copy the first event's objects obtained from parsing into this event's ObjList
 	ObjList *objs = full_events.front();
 	full_events.pop_front();
-	objs_ptr->run_number       = empty_event ? objs_ptr->run_number:objs->run_number;
+	//objs_ptr->run_number       = empty_event ? objs_ptr->run_number:objs->run_number;
 	objs_ptr->own_objects      = objs->own_objects;
 	objs_ptr->hit_objs         = objs->hit_objs;
 	objs_ptr->config_objs      = objs->config_objs;
@@ -1016,6 +1016,9 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 		objs = full_events.front();
 		full_events.pop_front();
 		stored_events.push(objs);
+		
+		// Copy run number from first event
+		objs->run_number = objs_ptr->run_number;
 	}
 	pthread_mutex_unlock(&stored_events_mutex);
 
@@ -1200,6 +1203,9 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 				evioout << "Swapping is " << (swap_needed ? "":"not ") << "needed" << endl;
 				evioout << " Num. words in EVIO buffer: "<<len<<endl;
 			}
+			
+			// Chop off NTH header
+			len -= 8;
 
 			// Size of events in bytes
 			uint32_t bufsize_bytes = (len +1)*sizeof(uint32_t); // +1 is for buffer length word
@@ -1231,12 +1237,12 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 			if(!swap_needed){
 
 				// Copy NTH and all events without swapping
-				memcpy(buff, et_buff, bufsize_bytes);
+				memcpy(buff, &et_buff[8], bufsize_bytes);
 
 			}else{
 
 				// Swap+copy NTH
-				swap_int32_t(et_buff, 8, buff);
+				//swap_int32_t(et_buff, 8, buff);
 				
 				// Loop over events in stack
 				int Nevents_in_stack=0;
@@ -1244,14 +1250,14 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 				while(idx<len){
 					uint32_t mylen = EVIO_SWAP32(et_buff[idx]);
 					if(VERBOSE>7) evioout <<"        swapping event: idx=" << idx <<" mylen="<<mylen<<endl;
-					if( (idx+mylen) > len ){
+					if( (idx+mylen) > (len+8) ){
 						_DBG_ << "Bad word count while swapping events in ET event stack!" << endl;
 						_DBG_ << "idx="<<idx<<" mylen="<<mylen<<" len="<<len<<endl;
 						_DBG_ << "This indicates a problem either with the DAQ system"<<endl;
 						_DBG_ << "or this parser code! Contact davidl@jlab.org x5567 " <<endl;
 						break;
 					}
-					swap_int32_t(&et_buff[idx], mylen+1, &buff[idx]);
+					swap_int32_t(&et_buff[idx], mylen+1, &buff[idx-8]);
 					idx += mylen+1;
 					Nevents_in_stack++;
 				}
@@ -2804,6 +2810,13 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 //----------------
 int32_t JEventSource_EVIO::GetRunNumber(evioDOMTree *evt)
 {
+	// Note: This is currently not used. Preference is
+	// now given to the run number found in FindRunNumber
+	// which is called from GetEvent. This makes things
+	// a little simpler and ensures the run number originally
+	// presented to the processor/factory does not change.
+	//  2/15/2016 DL
+
 	// This is called during event parsing to get the
 	// run number for the event.
 	// Look through event to try and extract the run number.
@@ -2914,7 +2927,7 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 
 		return run;
 	}
-	
+
 	return filename_run_number;
 }
 
@@ -2926,7 +2939,6 @@ uint64_t JEventSource_EVIO::FindEventNumber(uint32_t *iptr)
 	/// This is called from GetEvent() to quickly look for the event number
 	/// at the time the event is read in so it can be passed into JEvent.
 	/// (See comments for FindRunNumber above.)
-	if(source_type==kETSource) iptr = &iptr[8]; // ET passes in block header
 	if(*iptr < 6) return Nevents_read+1;
 	
 	// Check header of Trigger bank
@@ -2951,7 +2963,6 @@ void JEventSource_EVIO::FindEventType(uint32_t *iptr, JEvent &event)
 {
 	/// This is called from GetEvent to quickly determine the type of
 	/// event this is (Physics, EPICS, SYNC, BOR, ...)
-	if(source_type==kETSource) iptr = &iptr[8]; // ET passes in block header
 	uint32_t head = iptr[1];
 	if( (head & 0xff000f) ==  0x600001){
 		event.SetStatusBit(kSTATUS_EPICS_EVENT);
@@ -2965,7 +2976,7 @@ void JEventSource_EVIO::FindEventType(uint32_t *iptr, JEvent &event)
 		event.SetStatusBit(kSTATUS_CONTROL_EVENT);
 		if( (head>>16) == 0xffd0 ) event.SetStatusBit(kSTATUS_SYNC_EVENT);
 	}else{
-//		DumpBinary(iptr, &iptr[16]);
+		DumpBinary(iptr, &iptr[16]);
 	}	
 }
 
@@ -3288,13 +3299,17 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		}
 	}
 	
-	// Set the run number for all events
-	uint32_t run_number = GetRunNumber(evt);
-	list<ObjList*>::iterator evt_iter = full_events.begin();
-	for(; evt_iter!=full_events.end();  evt_iter++){
-		ObjList *objs = *evt_iter;
-		objs->run_number = run_number;
-	}
+		// The following disabled in preference for keeping the 
+		// run number found by FindRunNumber called from
+		// GetEvent()   2/15/2016
+		
+// 	// Set the run number for all events
+// 	uint32_t run_number = GetRunNumber(evt);
+// 	list<ObjList*>::iterator evt_iter = full_events.begin();
+// 	for(; evt_iter!=full_events.end();  evt_iter++){
+// 		ObjList *objs = *evt_iter;
+// 		objs->run_number = run_number;
+// 	}
 
 	if(VERBOSE>5) evioout << "    Leaving ParseEVIOEvent()" << endl;
 }
