@@ -1,3 +1,4 @@
+# this makefile is deprecated, please use scons
 DIRS += external
 DIRS += libraries/include
 DIRS += programs/Utilities/hddm
