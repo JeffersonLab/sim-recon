@@ -109,7 +109,8 @@ class hdv_mainframe:public TGMainFrame {
 
 
 		// Other (non-slot) methods
-		void SetEvent(int id);
+		void SetEvent(ULong64_t id);
+		void SetRun(Int_t id);
 		void SetSource(string source);
 		bool GetDrawCandidates(void){return draw_candidates;}
 		bool GetDrawTracks(void){return draw_tracks;}
