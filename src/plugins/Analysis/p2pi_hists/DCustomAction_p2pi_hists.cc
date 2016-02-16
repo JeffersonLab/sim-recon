@@ -37,9 +37,9 @@ void DCustomAction_p2pi_hists::Initialize(JEventLoop* locEventLoop)
 	dEdxCut = 2.2;
 	minMMCut = 0.8;
 	maxMMCut = 1.05;
-	minMM2Cut = -0.1;
-	maxMM2Cut = 0.1;
-	missingEnergyCut = 10.0;
+	minMM2Cut = -0.006;
+	maxMM2Cut = 0.004;
+	missingEnergyCut = 1.0;
 	minRhoMassCut = 0.6;
 	maxRhoMassCut = 0.88;
 
