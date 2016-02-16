@@ -52,6 +52,8 @@ class JEventProcessor_CDC_Efficiency:public jana::JEventProcessor{
         vector<vector<double> >max_sag;
         vector<vector<double> >sag_phi_offset;
         int ChannelFromRingStraw[28][209];
+        int ROCIDFromRingStraw[28][209];
+        int SlotFromRingStraw[28][209];
         double DOCACUT;
 };
 
