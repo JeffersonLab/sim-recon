@@ -217,14 +217,20 @@ void DCutAction_MissingMass::Initialize(JEventLoop* locEventLoop)
 
 bool DCutAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	DLorentzVector locMissingP4;
-	if(dMissingMassOffOfStepIndex == -1)
-		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag());
-	else
-		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, dMissingMassOffOfPIDs, Get_UseKinFitResultsFlag());
+	//build all possible combinations of the included pids
+	set<set<size_t> > locIndexCombos = dAnalysisUtilities->Build_IndexCombos(Get_Reaction()->Get_ReactionStep(dMissingMassOffOfStepIndex), dMissingMassOffOfPIDs);
 
-	double locMissingMass = locMissingP4.M();
-	return ((locMissingMass >= dMinimumMissingMass) && (locMissingMass <= dMaximumMissingMass));
+	//loop over them: Must fail ALL to fail. if any succeed, return true
+	set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
+	for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
+	{
+		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, *locComboIterator, Get_UseKinFitResultsFlag());
+		double locMissingMass = locMissingP4.M();
+		if((locMissingMass >= dMinimumMissingMass) && (locMissingMass <= dMaximumMissingMass))
+			return true;
+	}
+
+	return false; //all failed
 }
 
 string DCutAction_MissingMassSquared::Get_ActionName(void) const
@@ -241,20 +247,26 @@ void DCutAction_MissingMassSquared::Initialize(JEventLoop* locEventLoop)
 
 bool DCutAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	DLorentzVector locMissingP4;
-	if(dMissingMassOffOfStepIndex == -1)
-		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag());
-	else
-		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, dMissingMassOffOfPIDs, Get_UseKinFitResultsFlag());
+	//build all possible combinations of the included pids
+	set<set<size_t> > locIndexCombos = dAnalysisUtilities->Build_IndexCombos(Get_Reaction()->Get_ReactionStep(dMissingMassOffOfStepIndex), dMissingMassOffOfPIDs);
 
-	double locMissingMassSq = locMissingP4.M2();
-	return ((locMissingMassSq >= dMinimumMissingMassSq) && (locMissingMassSq <= dMaximumMissingMassSq));
+	//loop over them: Must fail ALL to fail. if any succeed, return true
+	set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
+	for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
+	{
+		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, *locComboIterator, Get_UseKinFitResultsFlag());
+		double locMissingMassSq = locMissingP4.M2();
+		if((locMissingMassSq >= dMinimumMissingMassSq) && (locMissingMassSq <= dMaximumMissingMassSq))
+			return true;
+	}
+
+	return false; //all failed
 }
 
 string DCutAction_InvariantMass::Get_ActionName(void) const
 {
 	ostringstream locStream;
-	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinimumInvariantMass << "_" << dMaximumInvariantMass;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinMass << "_" << dMaxMass;
 	return locStream.str();
 }
 
@@ -265,17 +277,34 @@ void DCutAction_InvariantMass::Initialize(JEventLoop* locEventLoop)
 
 bool DCutAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	double locInvariantMass;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
 		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
-		if(locParticleComboStep->Get_InitialParticleID() != dInitialPID)
+		const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
+		if((dInitialPID != Unknown) && (locParticleComboStep->Get_InitialParticleID() != dInitialPID))
 			continue;
-		locInvariantMass = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, Get_UseKinFitResultsFlag()).M();
-//cout << "flag, init pid, inv mass = " << Get_UseKinFitResultsFlag() << ", " << ParticleType(dInitialPID) << ", " << locInvariantMass << endl;
-		if((locInvariantMass > dMaximumInvariantMass) || (locInvariantMass < dMinimumInvariantMass))
+		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
+			continue;
+
+		//build all possible combinations of the included pids
+		set<set<size_t> > locIndexCombos = dAnalysisUtilities->Build_IndexCombos(locReactionStep, dToIncludePIDs);
+
+		//loop over them: Must fail ALL to fail. if any succeed, go to the next step
+		set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
+		bool locAnyOKFlag = false;
+		for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
+		{
+			DLorentzVector locFinalStateP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, *locComboIterator, Get_UseKinFitResultsFlag());
+			double locInvariantMass = locFinalStateP4.M();
+			if((locInvariantMass > dMaxMass) || (locInvariantMass < dMinMass))
+				continue;
+			locAnyOKFlag = true;
+			break;
+		}
+		if(!locAnyOKFlag)
 			return false;
 	}
+
 	return true;
 }
 
