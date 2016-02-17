@@ -66,7 +66,7 @@ Import('*')
 def HDDM_C(target, source, env):
 
 	# Get full path to tool
-	hddmc   = str(env.File("#.%s/programs/Utilities/hddm/hddm-c" % osname))
+	hddmc   = str(env.File("%s/programs/Utilities/hddm/hddm-c" % env['variant_dir']))
 
 	# Get basename with full path for target.
 	# The first target should always be the header
@@ -85,7 +85,7 @@ def HDDM_C(target, source, env):
 def HDDM_CPP(target, source, env):
 
 	# Get full path to tool
-	hddmcpp = str(env.File("#.%s/programs/Utilities/hddm/hddm-cpp" % osname))
+	hddmcpp = str(env.File("%s/programs/Utilities/hddm/hddm-cpp" % env['variant_dir']))
 
 	# Get basename with full path for target.
 	# The first target should always be the header
