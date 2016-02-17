@@ -32,6 +32,7 @@
 #include "TRIGGER/DL1Trigger.h"
 #include <DANA/DStatusBits.h>
 #include "FCAL/DFCALGeometry.h"
+#include "DAQ/DEPICSvalue.h"
 
 
 using namespace std;
@@ -45,7 +46,10 @@ using namespace jana;
 
 // root hist pointers
 
-     static TH1I* h1trig_trgbits = NULL;
+     static TH1I* h1epics_trgbits = NULL;
+     static TH1I* h1epics_AD00 = NULL;
+     static TH2I* h2epics_pos_inner = NULL;
+     static TH2I* h2epics_pos_outer = NULL;
 
 
 //----------------------------------------------------------------------------------
@@ -84,22 +88,32 @@ jerror_t JEventProcessor_TRIG_online::init(void) {
 
  // First thread to get here makes all histograms. If one pointer is
  // already not NULL, assume all histograms are defined and return now
-	if(h1trig_trgbits != NULL){
+	if(h1epics_trgbits != NULL){
 		japp->RootUnLock();
 		return NOERROR;
 	}
 
   // create root folder for trig and cd to it, store main dir
   TDirectory *main = gDirectory;
-  gDirectory->mkdir("epics")->cd();
+  gDirectory->mkdir("EPICS_dump")->cd();
 
 
   // book hist
-        int const nbins=20;
+        int const nbins=100;
 	
-	h1trig_trgbits = new TH1I("h1trig_trgbits", "Trig Trgbits",nbins,0,20);
-	h1trig_trgbits->SetXTitle("trig_mask || (10+fp_trig_mask)");
-	h1trig_trgbits->SetYTitle("counts");
+	h1epics_trgbits = new TH1I("h1epics_trgbits", "Trig Trgbits",20,0,20);
+	h1epics_trgbits->SetXTitle("trig_mask || (10+fp_trig_mask)");
+	h1epics_trgbits->SetYTitle("counts");
+	h1epics_AD00 = new TH1I("h1epics_AD00", "Current AD00",nbins,0,500);
+	h1epics_AD00->SetXTitle("Current AD00 (nA)");
+	h1epics_AD00->SetYTitle("counts");
+
+	h2epics_pos_inner = new TH2I("h1epics_pos_inner", "Position AC inner",nbins,-50,50,nbins,-50,50);
+	h2epics_pos_inner->SetXTitle("Position AC inner x (mm)");
+	h2epics_pos_inner->SetYTitle("Position AC inner y (mm)");
+	h2epics_pos_outer = new TH2I("h1epics_pos_outer", "Position AC outer",nbins,-50,50,nbins,-50,50);
+	h2epics_pos_outer->SetXTitle("Position AC outer x (mm)");
+	h2epics_pos_outer->SetYTitle("Position AC outer y (mm)");
 
   // back to main dir
   main->cd();
@@ -136,12 +150,14 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	vector<const DBCALPoint*> bcalpoints;
 	vector<const DFCALHit*> fcalhits;
 	vector<const DFCALCluster*> locFCALClusters;
+	vector<const DEPICSvalue*> epicsvalues;
 	//const DDetectorMatches* locDetectorMatches = NULL;
 	//locEventLoop->GetSingle(locDetectorMatches);
 	locEventLoop->Get(locFCALShowers);
 	locEventLoop->Get(bcalpoints);
 	locEventLoop->Get(fcalhits);
 	locEventLoop->Get(locFCALClusters);
+	locEventLoop->Get(epicsvalues);	
 	DFCALGeometry fcalgeom;
 
 	bool isPhysics = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_PHYSICS_EVENT);
@@ -167,17 +183,63 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	  }
 
 	  int trig_bits = fp_trig_mask > 0? 10 + fp_trig_mask: trig_mask;
-	  // printf (" Event=%d trig_bits=%d trig_mask=%X fp_trig_mask=%X\n",(int)locEventNumber,trig_bits,trig_mask,fp_trig_mask);
+	  printf (" Event=%d trig_bits=%d trig_mask=%X fp_trig_mask=%X\n",(int)locEventNumber,trig_bits,trig_mask,fp_trig_mask);
 
 	  /* fp_trig_mask & 0x100 - upstream LED
 	   fp_trig_mask & 0x200 - downstream LED
 	   trig_mask & 0x1 - cosmic trigger*/
 
-	  h1trig_trgbits->Fill(trig_bits);
+	  h1epics_trgbits->Fill(trig_bits);
 	}
-	if (isEPICS) {
+	else if (isEPICS) {
+	  // else if (TEST) {
 	  // process EPICS records
 	  printf (" Event=%d is an EPICS record\n",(int)locEventNumber);
+
+
+	  // read in whatever epics values are in this event
+
+	  // save their values
+	  float pos_default=-1000.;
+	  float xpos_inner = pos_default;
+	  float ypos_inner = pos_default;;
+	  float xpos_outer = pos_default;
+	  float ypos_outer = pos_default;
+	  for(vector<const DEPICSvalue*>::const_iterator val_itr = epicsvalues.begin();
+	      val_itr != epicsvalues.end(); val_itr++) {
+		const DEPICSvalue* epics_val = *val_itr;
+		cout << "EPICS:  " << epics_val->name << " = " << epics_val->sval << endl;
+		float fconv = atof(epics_val->sval.c_str());
+		bool isDigit = epics_val->name.length()> 12 && isdigit(epics_val->name[12]);
+		// cout << "isDigit=" << isDigit << " string=" << epics_val->name << endl;
+		if ((epics_val->name.substr(0,11) == "BCAL:pulser") & isDigit) {
+		  double freq = 1.e8/fconv;  // cover to s: period is in units 10 ns
+		    cout << "BCAL:pulser=" << epics_val->name.substr(0,11) << epics_val->fval <<  " freq=" << freq <<endl;
+		}     
+		else if (epics_val->name == "IBCAD00CRCUR6") {
+		  h1epics_AD00->Fill(fconv);
+	          cout << "IBCAD00CRCUR6 " << epics_val->name << " fconv=" << fconv << endl; 
+		}
+		else if (epics_val->name == "AC:inner:position:x") {
+		  xpos_inner = fconv;
+	        }  
+		else if (epics_val->name == "AC:inner:position:y") {
+		  ypos_inner = fconv;
+	        }  
+		else if (epics_val->name == "AC:outer:position:x") {
+		  xpos_outer = fconv;
+	        }  
+		else if (epics_val->name == "AC:outer:position:y") {
+		  ypos_outer = fconv;
+	        }  
+	  }
+	  if (xpos_inner> pos_default && ypos_inner > pos_default) { 
+	    h2epics_pos_inner->Fill(xpos_inner,ypos_inner);
+	  }
+	  if (xpos_outer> pos_default && ypos_outer > pos_default) { 
+	    h2epics_pos_outer->Fill(xpos_outer,ypos_outer);
+	  }
+
 	}
 
         //UnlockState();	
