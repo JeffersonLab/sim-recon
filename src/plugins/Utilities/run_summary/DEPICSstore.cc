@@ -37,7 +37,10 @@ void DEPICSstore::AddValue(const DEPICSvalue *new_value)
 		stored_values[new_value->name].value = new DEPICSvalue(*new_value);
 		stored_values[new_value->name].first_time = new_value->timestamp;
 	} else {
-		stored_values[new_value->name].cumulative_average += stored_values[new_value->name].value->fval / static_cast<double>( new_value->timestamp - stored_values[new_value->name].value->timestamp );
+		// float values aren't working for now in DEPICSvalue objects?
+		// just use string values, which seem to be okay
+		//stored_values[new_value->name].cumulative_average += stored_values[new_value->name].value->fval / static_cast<double>( new_value->timestamp - stored_values[new_value->name].value->timestamp );   
+		stored_values[new_value->name].cumulative_average += atof(stored_values[new_value->name].value->sval.c_str()) / static_cast<double>( new_value->timestamp - stored_values[new_value->name].value->timestamp );   
 		if(stored_values[new_value->name].value != NULL)
 			delete stored_values[new_value->name].value;
 		stored_values[new_value->name].value = new DEPICSvalue(*new_value);
