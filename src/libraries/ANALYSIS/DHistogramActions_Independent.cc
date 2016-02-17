@@ -2487,7 +2487,7 @@ void DHistogramAction_DetectedParticleKinematics::Initialize(JEventLoop* locEven
 		CreateAndChangeTo_Directory(locParticleName, locParticleName);
 		locHistName = "Momentum";
 		locHistTitle = string("Beam ") + locParticleROOTName + string(";p (GeV/c)");
-		dBeamParticle_P = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPBins, dMinP, dMaxP);
+		dBeamParticle_P = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumBeamEBins, dMinP, dMaxBeamE);
 		gDirectory->cd("..");
 
 		//PID
