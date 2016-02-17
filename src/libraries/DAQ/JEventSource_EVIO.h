@@ -180,6 +180,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 
 	
                     void ReadOptionalModuleTypeTranslation(void);
+		         uint32_t* GetPoolBuffer(void);
 		  virtual jerror_t ReadEVIOEvent(uint32_t* &buf);
              inline void GetEVIOBuffer(jana::JEvent &jevent, uint32_t* &buff, uint32_t &size) const;
           EVIOSourceType GetEVIOSourceType(void){ return source_type; }

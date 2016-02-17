@@ -16,7 +16,7 @@ class JEventProcessor_TOF_online:public jana::JEventProcessor{
   JEventProcessor_TOF_online();
   ~JEventProcessor_TOF_online();
   const char* className(void){return "JEventProcessor_TOF_online";}
-
+  float TOF_TDC_SHIFT;
 
  private:
   jerror_t init(void);						///< Called once at program start.
