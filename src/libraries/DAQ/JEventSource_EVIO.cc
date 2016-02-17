@@ -58,6 +58,8 @@ using namespace jana;
 //	}
 //} // "C"
 
+// if we don't find a run number in the file, then it's nice to let the user know
+static bool  WARN_USER_RUN_FILENAME = false;   
 
 set<uint32_t> ROCIDS_TO_PARSE;
 
@@ -2922,6 +2924,10 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 			case 0xFF30:
 				// These Trigger Bank Tag values have no run number info in them
 				if(VERBOSE>2) evioout << " ... Trigger bank tag (0x" << hex << ((*iptr)>>16) << dec << ") does not contain run number" <<endl;
+                if(!WARN_USER_RUN_FILENAME) {
+                    jout << "WARNING: setting run number " << filename_run_number << " based on file name" << endl; 
+                    WARN_USER_RUN_FILENAME = true;
+                }
 				return filename_run_number;
 			case 0xFF23:
 			case 0xFF27:
@@ -2962,6 +2968,11 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 
 		return run;
 	}
+	
+    if(!WARN_USER_RUN_FILENAME) {
+        jout << "WARNING: setting run number " << filename_run_number << " based on file name" << endl; 
+        WARN_USER_RUN_FILENAME = true;
+    }
 
 	return filename_run_number;
 }
