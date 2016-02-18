@@ -29,7 +29,7 @@ def mk_setenv_csh(env):
 	ofname = '%s/setenv.csh' % ofdir
 	print 'sbms : Making setenv.csh in %s' % ofdir
 	
-	halld_home = '%s' % env.Dir("#/..").srcnode().abspath
+	halld_home = '%s' % env.Dir(env['PREFIX'])
 
 	str = ''
 
@@ -184,7 +184,7 @@ def mk_setenv_bash(env):
 	ofname = '%s/setenv.sh' % ofdir
 	print 'sbms : Making setenv.sh in %s' % ofdir
 	
-	halld_home = '%s' % env.Dir("#/..").srcnode().abspath
+	halld_home = '%s' % env.Dir(env['PREFIX'])
 
 	str = ''
 
