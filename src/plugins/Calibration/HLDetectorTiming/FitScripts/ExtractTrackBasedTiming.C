@@ -24,6 +24,7 @@ TH2I * Get2DHistogram(const char * plugin, const char * directoryName, const cha
 
 void GetCCDBConstants(TString path, Int_t run, TString variation, vector<double>& container, Int_t column = 1){
     char command[256];
+
     sprintf(command, "ccdb dump %s:%i:%s", path.Data(), run, variation.Data());
     FILE* inputPipe = gSystem->OpenPipe(command, "r");
     if(inputPipe == NULL)
@@ -47,7 +48,7 @@ void GetCCDBConstants(TString path, Int_t run, TString variation, vector<double>
 }
 
 //Overload this function to handle the base time offsets
-void GetCCDBConstants(TString path, Int_t run, TString variation, double& constant1, double& constant2 = NULL){
+void GetCCDBConstants1(TString path, Int_t run, TString variation, double& constant1){
     char command[256];
     sprintf(command, "ccdb dump %s:%i:%s", path.Data(), run, variation.Data());
     FILE* inputPipe = gSystem->OpenPipe(command, "r");
@@ -59,13 +60,27 @@ void GetCCDBConstants(TString path, Int_t run, TString variation, double& consta
         return 0;
     //get the line containing the values
     while(fgets(buff, sizeof(buff), inputPipe) != NULL){
-        istringstream locConstantsStream(buff);
-        if(constant2 != NULL){
-            locConstantsStream >> constant1 >> constant2;
-        }
-        else{
+	    istringstream locConstantsStream(buff);
             locConstantsStream >> constant1;
-        }
+    }
+    //Close the pipe
+    gSystem->ClosePipe(inputPipe);
+}
+
+void GetCCDBConstants2(TString path, Int_t run, TString variation, double& constant1, double& constant2){
+    char command[256];
+    sprintf(command, "ccdb dump %s:%i:%s", path.Data(), run, variation.Data());
+    FILE* inputPipe = gSystem->OpenPipe(command, "r");
+    if(inputPipe == NULL)
+        return 0;
+    //get the first (comment) line
+    char buff[1024];
+    if(fgets(buff, sizeof(buff), inputPipe) == NULL)
+        return 0;
+    //get the line containing the values
+    while(fgets(buff, sizeof(buff), inputPipe) != NULL){
+	    istringstream locConstantsStream(buff);
+            locConstantsStream >> constant1 >> constant2;
     }
     //Close the pipe
     gSystem->ClosePipe(inputPipe);
@@ -112,14 +127,14 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
 
     cout << "Grabbing CCDB constants..." << endl;
     // Base times
-    GetCCDBConstants("/CDC/base_time_offset" ,runNumber, variation, cdc_t_base);
-    GetCCDBConstants("/FCAL/base_time_offset",runNumber, variation, fcal_t_base);
-    //GetCCDBConstants("/FDC/base_time_offset" ,runNumber, variation, fdc_base_time_adc, fdc_base_time_tdc);
-    GetCCDBConstants("/BCAL/base_time_offset" ,runNumber, variation, bcal_t_base_fadc, bcal_t_base_tdc);
-    GetCCDBConstants("/PHOTON_BEAM/microscope/base_time_offset" ,runNumber, variation, tagm_t_base_fadc, tagm_t_base_tdc);
-    GetCCDBConstants("/PHOTON_BEAM/hodoscope/base_time_offset" ,runNumber, variation, tagh_t_base_fadc, tagh_t_base_tdc);
-    GetCCDBConstants("/START_COUNTER/base_time_offset" ,runNumber, variation, sc_t_base_fadc, sc_t_base_tdc);
-    GetCCDBConstants("/TOF/base_time_offset" ,runNumber, variation, tof_t_base_fadc, tof_t_base_tdc);
+    GetCCDBConstants1("/CDC/base_time_offset" ,runNumber, variation, cdc_t_base);
+    GetCCDBConstants1("/FCAL/base_time_offset",runNumber, variation, fcal_t_base);
+    //GetCCDBConstants2("/FDC/base_time_offset" ,runNumber, variation, fdc_base_time_adc, fdc_base_time_tdc);
+    GetCCDBConstants2("/BCAL/base_time_offset" ,runNumber, variation, bcal_t_base_fadc, bcal_t_base_tdc);
+    GetCCDBConstants2("/PHOTON_BEAM/microscope/base_time_offset" ,runNumber, variation, tagm_t_base_fadc, tagm_t_base_tdc);
+    GetCCDBConstants2("/PHOTON_BEAM/hodoscope/base_time_offset" ,runNumber, variation, tagh_t_base_fadc, tagh_t_base_tdc);
+    GetCCDBConstants2("/START_COUNTER/base_time_offset" ,runNumber, variation, sc_t_base_fadc, sc_t_base_tdc);
+    GetCCDBConstants2("/TOF/base_time_offset" ,runNumber, variation, tof_t_base_fadc, tof_t_base_tdc);
     // Per channel
     //GetCCDBConstants("/BCAL/TDC_offsets"    ,runNumber, variation, bcal_tdc_offsets);
     //GetCCDBConstants("/FCAL/timing_offsets" ,runNumber, variation, fcal_adc_offsets);
@@ -131,6 +146,16 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
     GetCCDBConstants("/PHOTON_BEAM/hodoscope/tdc_time_offsets"   ,runNumber, variation, tagh_tdc_time_offsets,2);
     GetCCDBConstants("/TOF/adc_timing_offsets",runNumber, variation, tof_fadc_time_offsets);
     GetCCDBConstants("/TOF/timing_offsets",runNumber, variation, tof_tdc_time_offsets);
+
+    cout << "CDC base times = " << cdc_t_base << endl;
+    cout << "FCAL base times = " << fcal_t_base << endl;
+    //cout << "FDC base times = " << fdc_t_base_fadc << ", " << fdc_t_base_tdc << endl;
+    cout << "BCAL base times = " << bcal_t_base_fadc << ", " << bcal_t_base_tdc << endl;
+    cout << "SC base times = " << sc_t_base_fadc << ", " << sc_t_base_tdc << endl;
+    cout << "TOF base times = " << tof_t_base_fadc << ", " << tof_t_base_tdc << endl;
+    cout << "TAGH base times = " << tagh_t_base_fadc << ", " << tagh_t_base_tdc << endl;
+    cout << "TAGH base times = " << tagm_t_base_fadc << ", " << tagm_t_base_tdc << endl;
+    cout << endl;
 
     cout << "Done grabbing CCDB constants...Entering fits..." << endl;
 
