@@ -183,7 +183,7 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	  }
 
 	  int trig_bits = fp_trig_mask > 0? 10 + fp_trig_mask: trig_mask;
-	  printf (" Event=%d trig_bits=%d trig_mask=%X fp_trig_mask=%X\n",(int)locEventNumber,trig_bits,trig_mask,fp_trig_mask);
+	  // printf (" Event=%d trig_bits=%d trig_mask=%X fp_trig_mask=%X\n",(int)locEventNumber,trig_bits,trig_mask,fp_trig_mask);
 
 	  /* fp_trig_mask & 0x100 - upstream LED
 	   fp_trig_mask & 0x200 - downstream LED
