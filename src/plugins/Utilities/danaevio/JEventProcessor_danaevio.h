@@ -46,8 +46,8 @@ class JEventProcessor_danaevio : public JEventProcessor {
 
 
  private:
-  jerror_t brun(JEventLoop *eventLoop, int runnumber);
-  jerror_t evnt(JEventLoop *eventLoop, int eventnumber);
+  jerror_t brun(JEventLoop *eventLoop, int32_t runnumber);
+  jerror_t evnt(JEventLoop *eventLoop, uint64_t eventnumber);
   
 
 //----------------------------------------------------------------------------

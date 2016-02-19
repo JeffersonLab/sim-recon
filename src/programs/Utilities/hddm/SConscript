@@ -22,6 +22,11 @@ env.Replace(CFLAGS=cflags, CXXFLAGS=cxxflags)
 sbms.AddXERCES(env)
 sbms.Add_xstream(env)
 
+# The llvm_clan_3.7.0 compiler on Linux_CentOS6-x86_64 needs
+# -pthread on the link command to work. 
+if env['COMPILER']=='clang':
+	env.AppendUnique(LINKFLAGS=['-pthread'])
+
 progs = []
 
 commonsrc = ['XString.cpp', 'XParsers.cpp', 'md5.c']

@@ -21,26 +21,21 @@ jerror_t DVertex_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DVertex_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
+jerror_t DVertex_factory::brun(jana::JEventLoop* locEventLoop, int32_t runnumber)
 {
-	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield(runnumber);
+	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
+	dKinFitter = new DKinFitter(dKinFitUtils);
 
 	// Get Target parameters from XML
 	dTargetZCenter = 65.0;
+	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
 	locGeometry->GetTargetZ(dTargetZCenter);
 
-	double locBx, locBy, locBz;
-	locMagneticFieldMap->GetField(0.0, 0.0, dTargetZCenter, locBx, locBy, locBz);
-	TVector3 locBField(locBx, locBy, locBz);
-	if(locBField.Mag() > 0.0)
-		dKinFitter.Set_BField(locMagneticFieldMap);
-
 	gPARMS->SetDefaultParameter("VERTEX:NO_KINFIT_FLAG", dNoKinematicFitFlag);
-	gPARMS->SetDefaultParameter("KINFIT:KINFITDEBUGLEVEL", dKinFitDebugLevel);
+	gPARMS->SetDefaultParameter("KINFIT:DEBUGLEVEL", dKinFitDebugLevel);
 
-	dKinFitter.Set_DebugLevel(dKinFitDebugLevel);
+	dKinFitter->Set_DebugLevel(dKinFitDebugLevel);
 
 	locEventLoop->GetSingle(dAnalysisUtilities);
 
@@ -50,7 +45,7 @@ jerror_t DVertex_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
+jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 	//preferentially (kinematic fit):
 		//use tracks with a matched hit & good tracking FOM
@@ -104,30 +99,46 @@ jerror_t DVertex_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 		return Create_Vertex(locRoughPosition, locEventRFBunch->dTime);
 
 	//prepare for kinematic fit
-	dKinFitter.Reset_NewEvent();
+	dKinFitter->Reset_NewEvent();
 	TVector3 locTRoughPosition(locRoughPosition.X(), locRoughPosition.Y(), locRoughPosition.Z());
 
 	// create particles for kinematic fit
-	deque<const DKinFitParticle*> locKinFitParticles;
+	set<DKinFitParticle*> locKinFitParticles;
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVectorToUse.size(); ++loc_i)
-		locKinFitParticles.push_back(dKinFitter.Make_DetectedParticle(locTrackTimeBasedVectorToUse[loc_i]));
+		locKinFitParticles.insert(dKinFitUtils->Make_DetectedParticle(locTrackTimeBasedVectorToUse[loc_i]));
 
 	// create vertex constraint
-	DKinFitConstraint_Vertex* locVertexConstraint = dKinFitter.Make_VertexConstraint(locKinFitParticles, locTRoughPosition);
+	set<DKinFitParticle*> locNoConstrainParticles;
+	DKinFitConstraint_Vertex* locVertexConstraint = dKinFitUtils->Make_VertexConstraint(locKinFitParticles, locNoConstrainParticles, locTRoughPosition);
 
-	dKinFitter.Reset_NewFit();
-	dKinFitter.Set_Constraint(locVertexConstraint);
+	dKinFitter->Add_Constraint(locVertexConstraint);
 
-	if(!dKinFitter.Fit_Reaction()) //if fit fails to converge: use rough results
+	if(!dKinFitter->Fit_Reaction()) //if fit fails to converge: use rough results
 		return Create_Vertex(locRoughPosition, locEventRFBunch->dTime);
 
+	DKinFitConstraint_Vertex* locResultVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*dKinFitter->Get_KinFitConstraints().begin());
+
 	//save kinfit results
-	TVector3 locFitVertex = locVertexConstraint->Get_CommonVertex();
+	TVector3 locFitVertex = locResultVertexConstraint->Get_CommonVertex();
 	DVector3 locTFitVertex(locFitVertex.X(), locFitVertex.Y(), locFitVertex.Z());
-	unsigned int locKinFitNDF = dKinFitter.Get_NDF();
-	double locKinFitChiSq = dKinFitter.Get_ChiSq();
+	unsigned int locKinFitNDF = dKinFitter->Get_NDF();
+	double locKinFitChiSq = dKinFitter->Get_ChiSq();
 	Create_Vertex(locTFitVertex, locEventRFBunch->dTime, locKinFitNDF, locKinFitChiSq);
-	dKinFitter.Get_Pulls(_data.back()->dKinFitPulls);
+
+	//Particle Maps & Pulls
+	//Build pulls from this:
+	map<DKinFitParticle*, map<DKinFitPullType, double> > locPulls_KinFitParticle;
+	dKinFitter->Get_Pulls(locPulls_KinFitParticle);
+	//By looping over the pulls:
+	map<DKinFitParticle*, map<DKinFitPullType, double> >::iterator locMapIterator = locPulls_KinFitParticle.begin();
+	for(; locMapIterator != locPulls_KinFitParticle.end(); ++locMapIterator)
+	{
+		DKinFitParticle* locOutputKinFitParticle = locMapIterator->first;
+		DKinFitParticle* locInputKinFitParticle = dKinFitUtils->Get_InputKinFitParticle(locOutputKinFitParticle);
+
+		const JObject* locSourceJObject = dKinFitUtils->Get_SourceJObject(locInputKinFitParticle);
+		_data.back()->dKinFitPulls[locSourceJObject] = locMapIterator->second;
+	}
 
 	return NOERROR;
 }
@@ -160,5 +171,4 @@ jerror_t DVertex_factory::fini(void)
 {
 	return NOERROR;
 }
-
 

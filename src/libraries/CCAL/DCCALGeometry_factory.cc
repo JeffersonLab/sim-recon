@@ -24,7 +24,7 @@ jerror_t DCCALGeometry_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DCCALGeometry_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DCCALGeometry_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
 	flags = PERSISTANT;
 	_data.push_back( new DCCALGeometry() );
@@ -35,7 +35,7 @@ jerror_t DCCALGeometry_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DCCALGeometry_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DCCALGeometry_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 
 	// Code to generate factory data goes here. Add it like:

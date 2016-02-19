@@ -24,6 +24,7 @@ using namespace std;
 #include <JANA/JFactory_base.h>
 #include <JANA/JEventLoop.h>
 #include <JANA/JEvent.h>
+#include <DANA/DStatusBits.h>
 
 #include "BCAL/DBCALGeometry.h"
 
@@ -68,6 +69,8 @@ DEventSourceHDDM::DEventSourceHDDM(const char* source_name)
    dapp = NULL;
    bfield = NULL;
    geom = NULL;
+   
+   dRunNumber = -1;
    
    pthread_mutex_init(&rt_mutex, NULL);
 }
@@ -121,6 +124,9 @@ jerror_t DEventSourceHDDM::GetEvent(JEvent &event)
    event.SetEventNumber(event_number);
    event.SetRunNumber(run_number);
    event.SetRef(record);
+   event.SetStatusBit(kSTATUS_HDDM);
+   event.SetStatusBit(kSTATUS_FROM_FILE);
+   event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
  
    return NOERROR;
 }
@@ -173,6 +179,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
    JEventLoop *loop = event.GetJEventLoop();
    if (initialized == false && loop) {
       initialized = true;
+      dRunNumber = event.GetRunNumber();
       dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
       if (dapp) {
          jcalib = dapp->GetJCalibration(event.GetRunNumber());
@@ -183,23 +190,16 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
          }
          // Get constants and do basic check on number of elements
          vector< map<string, float> > tvals;
-         jcalib->Get("FDC/strip_calib", tvals);
+         if(jcalib->Get("FDC/strip_calib", tvals))
+             throw JException("Could not load CCDB table: FDC/strip_calib");
  
          if (tvals.size() != 192) {
             _DBG_ << "ERROR - strip calibration vectors are not the right size!"
                   << endl;
             return VALUE_OUT_OF_RANGE;
          }
-         // Notify user
-         jout << "Read " << tvals.size()
-              << " values from FDC/strip_calib in calibDB"
-              << endl;
-         jout << "   strip_calib columns (alphabetical): ";
          map<string,float>::iterator iter;
          for (iter=tvals[0].begin(); iter!=tvals[0].end(); iter++) {
-            jout << iter->first << " ";
-            jout << endl;
-
             // Copy values into tables. We preserve the order since
             // that is how it was originally done in hitFDC.c
             for (unsigned int i=0; i<tvals.size(); i++) {
@@ -211,8 +211,22 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
       }
    }
 
+   // Warning: This class is not completely thread-safe and can fail if running
+   // running in multithreaded mode over files with events from multiple runs
+   // It is expected that simulated data will rarely contain events from multiple
+   // runs, as this is an intermediate format in the simulation chain, so for 
+   // now we just insert a sanity check, and push the problem to the future
+   if(dRunNumber != event.GetRunNumber()) {
+       jerr << endl
+            << "WARNING:  DEventSourceHDDM cannot currently handle HDDM files containing" << endl
+            << "events with multiple runs!  If you encounter this error message," << endl
+            << "please contact the GlueX Offline Software Group: halld-offline@jlab.org" << endl 
+            << endl;
+       exit(-1);
+   }
+
    //Get target center
-      //multiple reader threads can access this object: need lock
+   //multiple reader threads can access this object: need lock
    bool locNewRunNumber = false;
    unsigned int locRunNumber = event.GetRunNumber();
    LockRead();
@@ -227,14 +241,15 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
       double locTargetCenterZ = 0.0;
       locGeometry->GetTargetZ(locTargetCenterZ);
 
-      vector<double> locRFPeriodVector;
-      loop->GetCalib("PHOTON_BEAM/RF/rf_period", locRFPeriodVector);
-      double locRFBunchPeriod = locRFPeriodVector[0];
+      vector<double> locBeamPeriodVector;
+      if(loop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector))
+          throw runtime_error("Could not load CCDB table: PHOTON_BEAM/RF/beam_period");
+      double locBeamBunchPeriod = locBeamPeriodVector[0];
 
       LockRead();
       {
          dTargetCenterZMap[locRunNumber] = locTargetCenterZ;
-         dRFBunchPeriodMap[locRunNumber] = locRFBunchPeriod;
+         dBeamBunchPeriodMap[locRunNumber] = locBeamBunchPeriod;
       }
       UnlockRead();
    }
@@ -447,7 +462,7 @@ jerror_t DEventSourceHDDM::Extract_DRFTime(hddm_s::HDDM *record,
 		return OBJECT_NOT_AVAILABLE; //Experimental data & it's missing: bail
 
 	//Is MC data. Either:
-		//No tag: return t = 0.0, but true t is 0.0 +/- n*locRFBunchPeriod: must select the correct beam bunch
+		//No tag: return t = 0.0, but true t is 0.0 +/- n*locBeamBunchPeriod: must select the correct beam bunch
 		//TRUTH tag: get exact t from DBeamPhoton tag MCGEN
 
 	if(tag == "TRUTH")
@@ -459,22 +474,22 @@ jerror_t DEventSourceHDDM::Extract_DRFTime(hddm_s::HDDM *record,
 	}
 	else
 	{
-		double locRFBunchPeriod = 0.0;
+		double locBeamBunchPeriod = 0.0;
 		int locRunNumber = locEventLoop->GetJEvent().GetRunNumber();
 		LockRead();
 		{
-			locRFBunchPeriod = dRFBunchPeriodMap[locRunNumber];
+			locBeamBunchPeriod = dBeamBunchPeriodMap[locRunNumber];
 		}
 		UnlockRead();
 
-		//start with true RF time, increment/decrement by multiples of locRFBunchPeriod ns until closest to 0
+		//start with true RF time, increment/decrement by multiples of locBeamBunchPeriod ns until closest to 0
 		double locTime = locMCGENPhotons[0]->time();
-		int locNumRFBuckets = int(locTime/locRFBunchPeriod);
-		locTime -= double(locNumRFBuckets)*locRFBunchPeriod;
-		while(locTime > 0.5*locRFBunchPeriod)
-			locTime -= locRFBunchPeriod;
-		while(locTime < -0.5*locRFBunchPeriod)
-			locTime += locRFBunchPeriod;
+		int locNumRFBuckets = int(locTime/locBeamBunchPeriod);
+		locTime -= double(locNumRFBuckets)*locBeamBunchPeriod;
+		while(locTime > 0.5*locBeamBunchPeriod)
+			locTime -= locBeamBunchPeriod;
+		while(locTime < -0.5*locBeamBunchPeriod)
+			locTime += locBeamBunchPeriod;
 
 		DRFTime *locRFTime = new DRFTime;
 		locRFTime->dTime = locTime;
@@ -1626,6 +1641,7 @@ jerror_t DEventSourceHDDM::Extract_DFCALHit(hddm_s::HDDM *record,
          mchit->y      = pos.Y();
          mchit->E      = iter->getE();
          mchit->t      = iter->getT();
+	 mchit->intOverPeak = 6.;
          data.push_back(mchit);
        }
     }
@@ -1651,6 +1667,7 @@ jerror_t DEventSourceHDDM::Extract_DFCALHit(hddm_s::HDDM *record,
          mchit->y      = pos.Y();
          mchit->E      = iter->getE();
          mchit->t      = iter->getT();
+	 mchit->intOverPeak = 6.;
          data.push_back(mchit);
       }
    }
@@ -2113,7 +2130,7 @@ jerror_t DEventSourceHDDM::Extract_DSCTruthHit(hddm_s::HDDM *record,
 //------------------
 jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
                                    JFactory<DTrackTimeBased> *factory, 
-                                   string tag, int runnumber)
+                                   string tag, int32_t runnumber)
 {
    // Note: Since this is a reconstructed factory, we want to generally return OBJECT_NOT_AVAILABLE
    // rather than NOERROR. The reason being that the caller interprets "NOERROR" to mean "yes I
@@ -2195,7 +2212,7 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(hddm_s::HDDM *record,
       if (rt) {
          rt->SetMass(track->mass());
          rt->SetDGeometry(geom);
-         rt->Swim(pos, mom, track->charge());
+         rt->Swim(pos, mom, track->charge(),&errMatrix);
          rts.push_back(rt);
       }
       track->rt = rt;

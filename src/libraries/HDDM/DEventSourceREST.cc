@@ -13,6 +13,7 @@
 #include <JANA/JFactory_base.h>
 #include <JANA/JEventLoop.h>
 #include <JANA/JEvent.h>
+#include <DANA/DStatusBits.h>
 
 #include <DVector2.h>
 #include <DEventSourceREST.h>
@@ -109,6 +110,9 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
       event.SetRunNumber(re.getRunNo());
       event.SetJEventSource(this);
       event.SetRef(record);
+      event.SetStatusBit(kSTATUS_REST);
+      event.SetStatusBit(kSTATUS_FROM_FILE);
+	  event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
       ++Nevents_read;
       break;
    }
@@ -165,14 +169,15 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
 		double locTargetCenterZ = 0.0;
 		locGeometry->GetTargetZ(locTargetCenterZ);
 
-		vector<double> locRFPeriodVector;
-		locEventLoop->GetCalib("PHOTON_BEAM/RF/rf_period", locRFPeriodVector);
-		double locRFBunchPeriod = locRFPeriodVector[0];
+		vector<double> locBeamPeriodVector;
+        if(locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector))
+            throw JException("Could not load CCDB table: PHOTON_BEAM/RF/beam_period");
+		double locBeamBunchPeriod = locBeamPeriodVector[0];
 
 		LockRead();
 		{
 			dTargetCenterZMap[locRunNumber] = locTargetCenterZ;
-			dRFBunchPeriodMap[locRunNumber] = locRFBunchPeriod;
+			dBeamBunchPeriodMap[locRunNumber] = locBeamBunchPeriod;
 		}
 		UnlockRead();
 	}
@@ -339,7 +344,7 @@ jerror_t DEventSourceREST::Extract_DRFTime(hddm_r::HDDM *record,
 		return OBJECT_NOT_AVAILABLE; //Experimental data & it's missing: bail
 
 	//Is MC data. Either:
-		//No tag: return photon_time propagated by +/- n*locRFBunchPeriod to get close to 0.0
+		//No tag: return photon_time propagated by +/- n*locBeamBunchPeriod to get close to 0.0
 		//TRUTH tag: get exact t from DBeamPhoton tag MCGEN
 
 	if(tag == "TRUTH")
@@ -351,22 +356,22 @@ jerror_t DEventSourceREST::Extract_DRFTime(hddm_r::HDDM *record,
 	}
 	else
 	{
-		double locRFBunchPeriod = 0.0;
+		double locBeamBunchPeriod = 0.0;
 		int locRunNumber = locEventLoop->GetJEvent().GetRunNumber();
 		LockRead();
 		{
-			locRFBunchPeriod = dRFBunchPeriodMap[locRunNumber];
+			locBeamBunchPeriod = dBeamBunchPeriodMap[locRunNumber];
 		}
 		UnlockRead();
 
-		//start with true RF time, increment/decrement by multiples of locRFBunchPeriod ns until closest to 0
+		//start with true RF time, increment/decrement by multiples of locBeamBunchPeriod ns until closest to 0
 		double locTime = locMCGENPhotons[0]->time();
-		int locNumRFBuckets = int(locTime/locRFBunchPeriod);
-		locTime -= double(locNumRFBuckets)*locRFBunchPeriod;
-		while(locTime > 0.5*locRFBunchPeriod)
-			locTime -= locRFBunchPeriod;
-		while(locTime < -0.5*locRFBunchPeriod)
-			locTime += locRFBunchPeriod;
+		int locNumRFBuckets = int(locTime/locBeamBunchPeriod);
+		locTime -= double(locNumRFBuckets)*locBeamBunchPeriod;
+		while(locTime > 0.5*locBeamBunchPeriod)
+			locTime -= locBeamBunchPeriod;
+		while(locTime < -0.5*locBeamBunchPeriod)
+			locTime += locBeamBunchPeriod;
 
 		DRFTime *locRFTime = new DRFTime;
 		locRFTime->dTime = locTime;
@@ -510,7 +515,7 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		gamma->setCharge(0);
 		gamma->setMass(0);
 		gamma->setTime(locTAGHiter->getT());
-		gamma->setT0(iter->getT(), 0.350, SYS_TAGH);
+		gamma->setT0(locTAGHiter->getT(), 0.350, SYS_TAGH);
 
       unsigned int locCounter = 0;
 		taghGeom->E_to_counter(locTAGHiter->getE(), locCounter);
@@ -966,6 +971,28 @@ jerror_t DEventSourceREST::Extract_DMCTrigger(hddm_r::HDDM *record,
       trigger->L1a_fired = iter->getL1a();
       trigger->L1b_fired = iter->getL1b();
       trigger->L1c_fired = iter->getL1c();
+
+      const hddm_r::TriggerDataList& locTriggerDataList = iter->getTriggerDatas();
+	   hddm_r::TriggerDataList::iterator locTriggerDataIterator = locTriggerDataList.begin();
+		if(locTriggerDataIterator == locTriggerDataList.end())
+		{
+			trigger->Ebcal = 0.;
+			trigger->Efcal = 0.;
+			trigger->Nschits = 0;
+			trigger->Ntofhits = 0;
+			
+		}
+		else //should only be 1
+		{
+			for(; locTriggerDataIterator != locTriggerDataList.end(); ++locTriggerDataIterator)
+			{
+				trigger->Ebcal = locTriggerDataIterator->getEbcal();
+				trigger->Efcal = locTriggerDataIterator->getEfcal();
+				trigger->Nschits = locTriggerDataIterator->getNschits();
+				trigger->Ntofhits = locTriggerDataIterator->getNtofhits();
+			}
+		}
+
       data.push_back(trigger);
    }
 

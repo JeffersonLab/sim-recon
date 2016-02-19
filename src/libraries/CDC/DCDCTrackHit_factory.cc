@@ -40,7 +40,7 @@ jerror_t DCDCTrackHit_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
+jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int32_t runnumber)
 {
   // Get pointer to DGeometry object
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
@@ -101,7 +101,7 @@ jerror_t DCDCTrackHit_factory::erun(void){
 //------------------
 // evnt
 //------------------
-jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	/// Convert from ring/straw indexing to x/y position
 	/// of wire center and stereo angle.

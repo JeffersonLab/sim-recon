@@ -155,7 +155,7 @@ jerror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 // brun 
 //------------------------------------------------------------------
-jerror_t MyProcessor::brun(JEventLoop *eventloop, int runnumber)
+jerror_t MyProcessor::brun(JEventLoop *eventloop, int32_t runnumber)
 {
 
 	// Read in Magnetic field map
@@ -179,7 +179,7 @@ jerror_t MyProcessor::brun(JEventLoop *eventloop, int runnumber)
 //------------------------------------------------------------------
 // evnt 
 //------------------------------------------------------------------
-jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
+jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 {
 	if(!eventLoop)return NOERROR;
 	loop = eventLoop;
@@ -189,11 +189,14 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	string source = "<no source>";
 	if(last_jevent.GetJEventSource())source = last_jevent.GetJEventSource()->GetSourceName();
 	
-	cout<<"----------- New Event "<<eventnumber<<" -------------"<<endl;
+	cout<<"----------- New Event "<<eventnumber<<"  (run " << last_jevent.GetRunNumber()<<") -------------"<<endl;
 	hdvmf->SetEvent(eventnumber);
+	hdvmf->SetRun(last_jevent.GetRunNumber());
 	hdvmf->SetSource(source.c_str());
 	hdvmf->DoMyRedraw();	
 
+	japp->SetSequentialEventComplete();
+	
 	return NOERROR;
 }
 
@@ -1855,7 +1858,7 @@ void MyProcessor::GetIntersectionWithCalorimeter(const DKinematicData* kd, DVect
 	DVector3 norm(0.0, 0.0, -1.0);
 	//rt.GetIntersectionWithPlane(origin, norm, pos_fcal, &s_fcal); // This gives different answer than below!
 	DVector3 p_at_intersection;
-	rt.GetIntersectionWithPlane(origin, norm, pos_fcal, p_at_intersection, &s_fcal, NULL, SYS_FCAL);
+	rt.GetIntersectionWithPlane(origin, norm, pos_fcal, p_at_intersection, &s_fcal, NULL, NULL, SYS_FCAL);
 	if(pos_fcal.Perp()<FCAL_Rmin || pos_fcal.Perp()>FCAL_Rmax || !isfinite(pos_fcal.Z()))s_fcal = 1.0E6;
 	
 	// Find intersection with BCAL
@@ -1949,7 +1952,7 @@ _DBG__;
 	// Variables to hold track parameters
 	DVector3 pos, mom(0,0,0);
 	double q=0.0;
-	double mass;
+	double mass = 0.13957018;
 
 	// Find the specified track	
 	if(dataname=="DChargedTrack"){
@@ -2019,6 +2022,7 @@ _DBG_<<"mass="<<mass<<endl;
 	rt = new DReferenceTrajectory(Bfield);
 	rt->Rmax_interior = RMAX_INTERIOR;
 	rt->Rmax_exterior = RMAX_EXTERIOR;
+	rt->SetMass(mass);
 	if(MATERIAL_MAP_MODEL=="DRootGeom"){
 		rt->SetDRootGeom(RootGeom);
 		rt->SetDGeometry(NULL);

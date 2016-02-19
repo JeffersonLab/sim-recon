@@ -288,7 +288,6 @@ int main(int argC, char* argV[])
          {
             ofs << text.substr(0,end+1) << std::endl;
             text.erase(0,end+1);
-            end = 0;
          }
          else
          {
@@ -315,6 +314,7 @@ int main(int argC, char* argV[])
             std::cerr
                  << "xml-hddm : Error parsing HDDM document, "
                  << "cannot continue" << std::endl;
+            delete ifs;
             return 1;
          }
          unlink(tmpFileStr.str().c_str());

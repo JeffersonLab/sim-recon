@@ -36,6 +36,14 @@ class DPSCHit_factory:public jana::JFactory<DPSCHit>{
   double t_base;
   double t_tdc_base;
 
+  // timewalk parameters per module
+  vector<vector<double> > tw_parameters;
+  double c0;
+  double c1;
+  double c2;
+  double thresh;
+  double P_0;
+
   // calibration constants stored by channel
   psc_digi_constants_t  adc_gains;
   psc_digi_constants_t  adc_pedestals;
@@ -58,8 +66,8 @@ class DPSCHit_factory:public jana::JFactory<DPSCHit>{
 
  private:
   jerror_t init(void);						///< Called once at program start.
-  jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
-  jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
+  jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
+  jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
   jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
   jerror_t fini(void);						///< Called after last event of last event source has been processed.
 

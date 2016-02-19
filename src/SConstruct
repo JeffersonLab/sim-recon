@@ -29,7 +29,8 @@ include = "%s/include" % (installdir)
 bin = "%s/bin" % (installdir)
 lib = "%s/lib" % (installdir)
 plugins = "%s/plugins" % (installdir)
-env = Environment(    CPPPATH = [include],
+env = Environment(        ENV = os.environ,  # Bring in full environement, including PATH
+                      CPPPATH = [include],
                       LIBPATH = [lib],
                   variant_dir = ".%s" % (osname))
 
@@ -64,9 +65,18 @@ if SHOWBUILD==0:
 
 
 # Get compiler from environment variables (if set)
-env.Replace( CXX = os.getenv('CXX', 'g++'),
-             CC  = os.getenv('CC' , 'gcc'),
+env.Replace( CXX = os.getenv('CXX', 'c++'),
+             CC  = os.getenv('CC' , 'cc'),
              FC  = os.getenv('FC' , 'gfortran') )
+
+# Get compiler name
+compiler = 'unknown'
+compiler_string = subprocess.Popen([env['CC'],"-v"], stderr=subprocess.PIPE).communicate()[1]
+if 'clang' in compiler_string:
+	compiler = 'clang'
+if 'gcc' in compiler_string and 'clang' not in compiler_string:
+	compiler = 'gcc'
+env.Replace(COMPILER = compiler)
 
 # Add libraries and libraries/include to include search path
 env.PrependUnique(CPPPATH = ['#', '#libraries', '#libraries/include'])

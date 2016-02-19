@@ -42,7 +42,6 @@ class JEventProcessor_RF_online : public jana::JEventProcessor
 		TDirectoryFile* dROCTIDirectory;
 
 		double dRFSignalPeriod; //not the same as the period of the beam //before multiplexing
-		map<DetectorSystem_t, double> dRFSamplingRateMap;
 		vector<DetectorSystem_t> dRFSignalSystems;
 
 		map<uint32_t, TH1I*> dHistMap_ROCInfoDeltaT; //key is rocid
@@ -59,8 +58,8 @@ class JEventProcessor_RF_online : public jana::JEventProcessor
 		map<pair<DetectorSystem_t, DetectorSystem_t>, TH1I*> dHistMap_AbsoluteRFRFDeltaTs;
 
 		jerror_t init(void);						///< Called once at program start.
-		jerror_t brun(jana::JEventLoop* locEventLoop, int runnumber);	///< Called everytime a new run number is detected.
-		jerror_t evnt(jana::JEventLoop* locEventLoop, int eventnumber);	///< Called every event.
+		jerror_t brun(jana::JEventLoop* locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
+		jerror_t evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 };

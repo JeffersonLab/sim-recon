@@ -4,3 +4,13 @@ SunOS_*
 src/.*
 src/SBMS/*.pyc
 *~
+*.os
+*.so
+*.root
+*.dblite
+.clone_done
+.getarg_patches_done
+.sconstruct_done
+sim-recon_prereqs_version.xml
+*.png
+*.swp

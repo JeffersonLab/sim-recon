@@ -863,12 +863,12 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
 //---------------------------------
 // GetIntersectionWithPlane
 //---------------------------------
-jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s,double *t,DetectorSystem_t detector) const{
+jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s,double *t,double *var_t,DetectorSystem_t detector) const{
   DVector3 dummy;
-  return GetIntersectionWithPlane(origin,norm,pos,dummy,s,t,detector);
+  return GetIntersectionWithPlane(origin,norm,pos,dummy,s,t,var_t,detector);
 }
 jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, DVector3 &p_at_intersection, double *s,
-							double *t,DetectorSystem_t detector) const
+							double *t,double *var_t,DetectorSystem_t detector) const
 {
 	/// Get the intersection point of this trajectory with a plane.
 	/// The plane is specified by <i>origin</i> and <i>norm</i>. The
@@ -1009,6 +1009,9 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 			  double one_over_beta=sqrt(1.+mass_sq/p_sq);
 			  *t = step->t+ds*one_over_beta/SPEED_OF_LIGHT;
 			}
+			if (var_t){
+			  *var_t=step->cov_t_t;
+			}
 			
 			// Success. Go ahead and return
 			return NOERROR;
@@ -1031,6 +1034,10 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 	if (t){
 	  double one_over_beta=sqrt(1.+mass_sq/p_sq);
 	  *t = step->t+ds*one_over_beta/SPEED_OF_LIGHT;
+	}
+	// Flight time variance
+	if (var_t){
+	  *var_t=step->cov_t_t;
 	}
 
 	return NOERROR;
@@ -1135,6 +1142,7 @@ int DReferenceTrajectory::InsertSteps(const swim_step_t *start_step, double delt
 // DistToRTwithTime
 //---------------------------------
 double DReferenceTrajectory::DistToRTwithTime(DVector3 hit, double *s,double *t,
+					      double *var_t,
 					      DetectorSystem_t detector) const{
   double dist=DistToRT(hit,s,detector);
   if (s!=NULL && t!=NULL) 
@@ -1143,12 +1151,18 @@ double DReferenceTrajectory::DistToRTwithTime(DVector3 hit, double *s,double *t,
     {
       *s = 1.0E6;
       *t = 1.0E6;
+      if (var_t!=NULL){
+	*var_t=1.0E6;
+      }
     }
     else
     {
       double p_sq=last_swim_step->mom.Mag2();
       double one_over_beta=sqrt(1.+mass_sq/p_sq);
       *t=last_swim_step->t+(*s-last_swim_step->s)*one_over_beta/SPEED_OF_LIGHT;
+      if (var_t!=NULL){
+	*var_t=last_swim_step->cov_t_t;
+      }
     }
   }
   return dist;
@@ -2003,7 +2017,7 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	double ds = sqrt(dz*dz + Rodphi*Rodphi);
 	if(s)*s=step->s + (phi>0.0 ? ds:-ds);
 	if(debug_level>3){
-		_DBG_<<"distance to rt: "<<*s<<" from step at "<<step->s<<" with ds="<<ds<<" d="<<d<<" dz="<<dz<<" Rodphi="<<Rodphi<<endl;
+	  _DBG_<<"distance to rt: "<< step->s + (phi>0.0 ? ds:-ds) <<" from step at "<<step->s<<" with ds="<<ds<<" d="<<d<<" dz="<<dz<<" Rodphi="<<Rodphi<<endl;
 		_DBG_<<"phi="<<phi<<" U="<<U<<" u="<<u<<endl;
 	}
 
@@ -2747,7 +2761,6 @@ jerror_t DReferenceTrajectory::BrentsAlgorithm(DVector3 &pos1,DVector3 &mom1,
     double tol2=2.0*tol1;
     if (fabs(x-xm)<=(tol2-0.5*(b-a))){
       doca=(pos1-pos2).Mag();
-      ds=cx-x;
 
       // New momenta
       stepper1.GetMomentum(mom1);
@@ -2811,7 +2824,6 @@ jerror_t DReferenceTrajectory::BrentsAlgorithm(DVector3 &pos1,DVector3 &mom1,
   }
   
   // We only get here if there is a convergence issue...
-  ds=cx-x;
   doca=(pos1-pos2).Mag();
   stepper1.GetMomentum(mom1);
   stepper2.GetMomentum(mom2);

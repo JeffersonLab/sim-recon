@@ -30,7 +30,7 @@ jerror_t DNeutralParticleHypothesis_factory_Combo::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DNeutralParticleHypothesis_factory_Combo::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DNeutralParticleHypothesis_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	gPARMS->SetDefaultParameter("COMBO:SHOWER_SELECT_TAG", dShowerSelectionTag);
 
@@ -75,7 +75,7 @@ jerror_t DNeutralParticleHypothesis_factory_Combo::brun(jana::JEventLoop *locEve
 //------------------
 // evnt
 //------------------
-jerror_t DNeutralParticleHypothesis_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DNeutralParticleHypothesis_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DNeutralParticleHypothesis_factory_Combo::evnt()");

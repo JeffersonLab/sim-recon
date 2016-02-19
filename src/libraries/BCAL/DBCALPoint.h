@@ -32,10 +32,6 @@ public:
   // this constructor uses two hits to obtain a local z position
   DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, double attenutation_length);
   
-  // this constructor is helpful for single-ended hits when
-  // z is known -- z measured with respect to target
-  DBCALPoint( const DBCALHit& hit, float z, float z_target_center );
-
   float E() const { return m_E; }
   float E_US() const { return m_E_US; }  ///< Return the attenuation corrected Energy of US Hit
   float E_DS() const { return m_E_DS; }  ///< Return the attenuation corrected Energy of DS Hit

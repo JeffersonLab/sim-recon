@@ -310,7 +310,6 @@ void hitForwardTOF (float xin[4], float xout[4],
       //counters->in[0].bar = row;
       counters->in[0].bar = padl;
       hits = HDDM_NULL;
-      extras = HDDM_NULL;
 
       // get space for the left/top or right/down PMT data for a total
       // of MAX_HITS possible hits in a single paddle

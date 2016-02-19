@@ -123,12 +123,10 @@ inline TDirectoryFile* DAnalysisAction::ChangeTo_BaseDirectory(void)
 {
 	//get and change to the base (file/global) directory //MUST(!) LOCK PRIOR TO ENTRY! (not performed in here!)
 	TFile* locFile = (TFile*)gROOT->FindObject(dOutputFileName.c_str());
-	if(locFile == NULL)
-	{
-		cout << "ERROR: OUTPUT HISTOGRAM FILE " << dOutputFileName << " NOT FOUND IN DAnalysisAction::ChangeTo_BaseDirectory(). ABORTING." << endl;
-		abort();
-	}
-	locFile->cd("");
+	if(locFile != NULL)
+		locFile->cd("");
+	else
+		gDirectory->cd("/");
 	return (TDirectoryFile*)gDirectory;
 }
 
@@ -156,7 +154,7 @@ inline TDirectoryFile* DAnalysisAction::CreateAndChangeTo_Directory(string locBa
 	return CreateAndChangeTo_Directory(locBaseDirectory, locDirName, locDirTitle);
 }
 
-template <typename DHistType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax) const
+template <typename DHistType> inline DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax) const
 {
 	//1D Histogram
 	if(!Check_IsValidTH1<DHistType>(locHistName))
@@ -171,7 +169,7 @@ template <typename DHistType> DHistType* DAnalysisAction::GetOrCreate_Histogram(
 		return static_cast<DHistType*>(locHist);
 }
 
-template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges) const
+template <typename DHistType, typename DBinType> inline DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges) const
 {
 	//1D Histogram
 	if(!Check_IsValidTH1<DHistType>(locHistName))
@@ -186,7 +184,7 @@ template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::Get
 		return static_cast<DHistType*>(locHist);
 }
 
-template <typename DHistType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax) const
+template <typename DHistType> inline DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax) const
 {
 	//2D Histogram
 	if(!Check_IsValidTH2<DHistType>(locHistName))
@@ -201,7 +199,7 @@ template <typename DHistType> DHistType* DAnalysisAction::GetOrCreate_Histogram(
 		return static_cast<DHistType*>(locHist);
 }
 
-template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, DBinType* locYBinEdges) const
+template <typename DHistType, typename DBinType> inline DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, DBinType* locYBinEdges) const
 {
 	//2D Histogram
 	if(!Check_IsValidTH2<DHistType>(locHistName))
@@ -216,7 +214,7 @@ template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::Get
 		return static_cast<DHistType*>(locHist);
 }
 
-template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax) const
+template <typename DHistType, typename DBinType> inline DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax) const
 {
 	//2D Histogram
 	if(!Check_IsValidTH2<DHistType>(locHistName))
@@ -231,7 +229,7 @@ template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::Get
 		return static_cast<DHistType*>(locHist);
 }
 
-template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, DBinType* locYBinEdges) const
+template <typename DHistType, typename DBinType> inline DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, DBinType* locYBinEdges) const
 {
 	//2D Histogram
 	if(!Check_IsValidTH2<DHistType>(locHistName))
@@ -246,7 +244,7 @@ template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::Get
 		return static_cast<DHistType*>(locHist);
 }
 
-template <typename DHistType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax, Int_t locNumBinsZ, Double_t locZRangeMin, Double_t locZRangeMax) const
+template <typename DHistType> inline DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, Double_t locXRangeMin, Double_t locXRangeMax, Int_t locNumBinsY, Double_t locYRangeMin, Double_t locYRangeMax, Int_t locNumBinsZ, Double_t locZRangeMin, Double_t locZRangeMax) const
 {
 	//3D Histogram
 	if(!Check_IsValidTH3<DHistType>(locHistName))
@@ -261,7 +259,7 @@ template <typename DHistType> DHistType* DAnalysisAction::GetOrCreate_Histogram(
 		return static_cast<DHistType*>(locHist);
 }
 
-template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, DBinType* locYBinEdges, Int_t locNumBinsZ, DBinType* locZBinEdges) const
+template <typename DHistType, typename DBinType> inline DHistType* DAnalysisAction::GetOrCreate_Histogram(string locHistName, string locHistTitle, Int_t locNumBinsX, DBinType* locXBinEdges, Int_t locNumBinsY, DBinType* locYBinEdges, Int_t locNumBinsZ, DBinType* locZBinEdges) const
 {
 	//3D Histogram
 	if(!Check_IsValidTH3<DHistType>(locHistName))
@@ -276,7 +274,7 @@ template <typename DHistType, typename DBinType> DHistType* DAnalysisAction::Get
 		return static_cast<DHistType*>(locHist);
 }
 
-template <typename DHistType> bool DAnalysisAction::Check_IsValidTH3(string locHistName) const
+template <typename DHistType> inline bool DAnalysisAction::Check_IsValidTH3(string locHistName) const
 {
 	const char* locTypeName = DHistType::Class()->GetName();
 	const char* locBadTypeName = "TH3";
@@ -288,7 +286,7 @@ template <typename DHistType> bool DAnalysisAction::Check_IsValidTH3(string locH
 	return true;
 }
 
-template <typename DHistType> bool DAnalysisAction::Check_IsValidTH2(string locHistName) const
+template <typename DHistType> inline bool DAnalysisAction::Check_IsValidTH2(string locHistName) const
 {
 	const char* locTypeName = DHistType::Class()->GetName();
 	const char* locBadTypeName = "TH2";
@@ -300,7 +298,7 @@ template <typename DHistType> bool DAnalysisAction::Check_IsValidTH2(string locH
 	return true;
 }
 
-template <typename DHistType> bool DAnalysisAction::Check_IsValidTH1(string locHistName) const
+template <typename DHistType> inline bool DAnalysisAction::Check_IsValidTH1(string locHistName) const
 {
 	const char* locTypeName = DHistType::Class()->GetName();
 	const char* locBadTypeName = "TH1";
@@ -313,3 +311,4 @@ template <typename DHistType> bool DAnalysisAction::Check_IsValidTH1(string locH
 }
 
 #endif // _DAnalysisAction_
+

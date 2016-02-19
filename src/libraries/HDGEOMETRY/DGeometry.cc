@@ -23,7 +23,7 @@ using namespace std;
 //---------------------------------
 // DGeometry    (Constructor)
 //---------------------------------
-DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp, unsigned int runnumber)
+DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp, int32_t runnumber)
 {
 	this->jgeom = jgeom;
 	this->dapp = dapp;
@@ -36,7 +36,7 @@ DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp, unsigned int runnumbe
 	pthread_mutex_init(&materialmap_mutex, NULL);
 	pthread_mutex_init(&materials_mutex, NULL);
 
-	
+	ReadMaterialMaps();
 }
 
 //---------------------------------
@@ -80,7 +80,7 @@ DLorentzDeflections* DGeometry::GetLorentzDeflections(void)
 //---------------------------------
 vector<DMaterialMap*> DGeometry::GetMaterialMapVector(void) const
 {
-	ReadMaterialMaps();
+//	ReadMaterialMaps();
 
 	return materialmaps;
 }
@@ -216,7 +216,7 @@ jerror_t DGeometry::FindMatALT1(DVector3 &pos, DVector3 &mom,double &KrhoZ_overA
 				double &rhoZ_overA,double &LnI,
 				double &X0, double *s_to_boundary) const
 {
-	ReadMaterialMaps();
+//	ReadMaterialMaps();
 
 	for(unsigned int i=0; i<materialmaps.size(); i++){
 		jerror_t err = materialmaps[i]->FindMatALT1(pos,KrhoZ_overA, rhoZ_overA,LnI,X0);
@@ -254,7 +254,7 @@ jerror_t DGeometry::FindMatKalman(const DVector3 &pos,const DVector3 &mom,
 				  unsigned int &last_index,
 				  double *s_to_boundary) const
 {
-	ReadMaterialMaps();
+//	ReadMaterialMaps();
 
   //last_index=0;
   for(unsigned int i=last_index; i<materialmaps.size(); i++){
@@ -297,7 +297,7 @@ jerror_t DGeometry::FindMatKalman(const DVector3 &pos,
 				  double &chi2a_factor, double &chi2a_corr,
 				  unsigned int &last_index) const
 {
-	ReadMaterialMaps();
+//	ReadMaterialMaps();
 
   //last_index=0;
   for(unsigned int i=last_index; i<materialmaps.size(); i++){
@@ -320,7 +320,7 @@ jerror_t DGeometry::FindMatKalman(const DVector3 &pos,
 //---------------------------------
 jerror_t DGeometry::FindMat(DVector3 &pos, double &rhoZ_overA, double &rhoZ_overA_logI, double &RadLen) const
 {
-	ReadMaterialMaps();
+//	ReadMaterialMaps();
 
 	for(unsigned int i=0; i<materialmaps.size(); i++){
 		jerror_t err = materialmaps[i]->FindMat(pos, rhoZ_overA, rhoZ_overA_logI, RadLen);
@@ -334,7 +334,7 @@ jerror_t DGeometry::FindMat(DVector3 &pos, double &rhoZ_overA, double &rhoZ_over
 //---------------------------------
 jerror_t DGeometry::FindMat(DVector3 &pos, double &density, double &A, double &Z, double &RadLen) const
 {
-	ReadMaterialMaps();
+//	ReadMaterialMaps();
 
 	for(unsigned int i=0; i<materialmaps.size(); i++){
 		jerror_t err = materialmaps[i]->FindMat(pos, density, A, Z, RadLen);
@@ -356,7 +356,7 @@ jerror_t DGeometry::FindMat(DVector3 &pos, double &density, double &A, double &Z
 //---------------------------------
 const DMaterialMap* DGeometry::FindDMaterialMap(DVector3 &pos) const
 {
-	ReadMaterialMaps();
+//	ReadMaterialMaps();
 
 	for(unsigned int i=0; i<materialmaps.size(); i++){
 		const DMaterialMap* map = materialmaps[i];
@@ -1354,10 +1354,47 @@ bool DGeometry::GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax)
 //---------------------------------
 // GetBCALRmin
 //---------------------------------
-bool DGeometry::GetBCALRmin(double &bcal_rmin) const
+// Including the support plate
+bool DGeometry::GetBCALRmin(float &bcal_rmin) const
 {
+	vector<float> bcal_mother_Rio_Z;
+	bool good = Get("//BarrelEMcal_s/section/tubs[@name='BCAL']/@Rio_Z", bcal_mother_Rio_Z);
+	if(!good){
+		_DBG_<<"Unable to retrieve BCAL mother RioZ info."<<endl;
+		bcal_rmin = 0.0;
+		return false;
+	}
+	if(bcal_mother_Rio_Z.size() == 3){
+		bcal_rmin = bcal_mother_Rio_Z[0];
+		return true;
+	}
+	else{
+		_DBG_<<"Wrong vector size for BCAL mother RioZ!!!"<<endl;
+		bcal_rmin = 0.0;
+		return false;
+	}
+}
 
-	return false;
+//---------------------------------
+// GetBCALfADCRadii
+//---------------------------------
+bool DGeometry::GetBCALfADCRadii(vector<float> &fADC_radii) const
+{
+   vector<float> BM[5];
+
+   if(!Get("//BarrelEMcal_s/section/tubs[@name='BM01']/@Rio_Z", BM[0])) return false;
+   if(!Get("//BarrelEMcal_s/section/tubs[@name='BM02']/@Rio_Z", BM[1])) return false;
+   if(!Get("//BarrelEMcal_s/section/tubs[@name='BM04']/@Rio_Z", BM[2])) return false;
+   if(!Get("//BarrelEMcal_s/section/tubs[@name='BMF7']/@Rio_Z", BM[3])) return false;
+   if(!Get("//BarrelEMcal_s/section/tubs[@name='BMFA']/@Rio_Z", BM[4])) return false;
+
+   fADC_radii.push_back(BM[0][0]);
+   fADC_radii.push_back(BM[1][0]);
+   fADC_radii.push_back(BM[2][0]);
+   fADC_radii.push_back(BM[3][0]);
+   fADC_radii.push_back(BM[4][1]);
+
+   return true;
 }
 
 //---------------------------------
@@ -1365,43 +1402,101 @@ bool DGeometry::GetBCALRmin(double &bcal_rmin) const
 //---------------------------------
 bool DGeometry::GetBCALNmodules(unsigned int &bcal_nmodules) const
 {
-
-	return false;
+	vector<unsigned int> ncopy;
+	bool good = Get("//BarrelEMcal_s/section/composition/mposPhi/@ncopy", ncopy);
+	if(!good){
+		_DBG_<<"Unable to retrieve BCAL barrelModule ncopy info."<<endl;
+		bcal_nmodules = 0;
+		return false;
+	}
+	if(ncopy.size() == 1){
+		bcal_nmodules = ncopy[0];
+		return true;
+	}else{
+		_DBG_<<"Wrong vector size for BCAL barrelModule ncopy!!!"<<endl;
+		bcal_nmodules = 0;
+		return false;
+	}
 }
 
 //---------------------------------
 // GetBCALCenterZ
 //---------------------------------
-bool DGeometry::GetBCALCenterZ(double &bcal_center_z) const
+bool DGeometry::GetBCALCenterZ(float &bcal_center_z) const
 {
+	vector<float> z0;
+	bool good = Get("//BarrelEMcal_s/section/parameters/real[@name='z0']/@value", z0);
+	if(!good){
+		_DBG_<<"Unable to retrieve BCAL parameters z0 info."<<endl;
+		bcal_center_z = 0.0;
+		return false;
+	}
+	if(z0.size() == 1){
+		bcal_center_z = z0[0];
+		return true;
+	}else{
+		_DBG_<<"Wrong vector size for BCAL parameters z0!!!"<<endl;
+		bcal_center_z = 0.0;
+		return false;
+	}
 
-	return false;
 }
 
 //---------------------------------
 // GetBCALLength
 //---------------------------------
-bool DGeometry::GetBCALLength(double &bcal_length) const
+// The lightguides are not included
+bool DGeometry::GetBCALLength(float &bcal_length) const
 {
-
-	return false;
+	vector<float> module_length;
+	bool good = Get("//BarrelEMcal_s/section/tubs[@name='BM01']/@Rio_Z", module_length);
+	if(!good){
+		_DBG_<<"Unable to retrieve BCAL submodule RioZ info."<<endl;
+		bcal_length = 0.0;
+		return false;
+	}
+	if(module_length.size() == 3){
+		bcal_length = module_length[2];
+		return true;
+	}
+	else{
+		_DBG_<<"Wrong vector size for BCAL submodule RioZ!!!"<<endl;
+		bcal_length = 0.0;
+		return false;
+	}
 }
 
 //---------------------------------
 // GetBCALDepth
 //---------------------------------
-bool DGeometry::GetBCALDepth(double &bcal_depth) const
+// Including the support plate and the support bar
+bool DGeometry::GetBCALDepth(float &bcal_depth) const
 {
+	vector<float> bcal_moth_Rio_Z;
+	bool good = Get("//BarrelEMcal_s/section/tubs[@name='BCAL']/@Rio_Z", bcal_moth_Rio_Z);
+	if(!good){
+		_DBG_<<"Unable to retrieve BCAL mother RioZ info."<<endl;
+		bcal_depth = 0.0;
+		return false;
+	}
+	if(bcal_moth_Rio_Z.size() == 3){
+		bcal_depth = bcal_moth_Rio_Z[1] - bcal_moth_Rio_Z[0];
+		return true;
+	}
+	else{
+		_DBG_<<"Wrong vector size for BCAL mother RioZ!!!"<<endl;
+		bcal_depth = 0.0;
+		return false;
+	}
 
-	return false;
 }
 
 //---------------------------------
 // GetBCALPhiShift
 //---------------------------------
-bool DGeometry::GetBCALPhiShift(double &bcal_phi_shift) const
+bool DGeometry::GetBCALPhiShift(float &bcal_phi_shift) const
 {
-	vector<double> Phi0;
+	vector<float> Phi0;
 	bool good = Get("//BarrelEMcal_s/section/composition/mposPhi/@Phi0", Phi0);
 	if(!good) return false;
 	if(Phi0.size() == 1){
@@ -1493,14 +1588,23 @@ bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
   vector<double> sc_origin;
   bool got_sc = Get("//posXYZ[@volume='StartCntr']/@X_Y_Z", sc_origin);
   if(got_sc){
+    // Offset from beam center
+    vector<double>sc_origin_delta;
+    Get("//posXYZ[@volume='startCntr']/@X_Y_Z", sc_origin_delta);
+    double dx=sc_origin_delta[0];
+    double dy=sc_origin_delta[1];
+
     // z-position at upstream face of scintillators.
     double z0=sc_origin[2];
     
     // Get rotation angles
     vector<double>sc_rot_angles;
+    //Get("//posXYZ[@volume='startCntr']/@rot", sc_rot_angles);
+    //double ThetaX=sc_rot_angles[0]*M_PI/180.;
+    //double ThetaY=sc_rot_angles[1]*M_PI/180.;
     Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
     double ThetaX=sc_rot_angles[0]*M_PI/180.;
-    double ThetaY=sc_rot_angles[1]*M_PI/180.;  
+    double ThetaY=sc_rot_angles[1]*M_PI/180.;
     double ThetaZ=sc_rot_angles[2]*M_PI/180.;
 
     double num_paddles;
@@ -1522,7 +1626,9 @@ bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
       double r=0.5*(sc_rioz[0][0]+sc_rioz[0][1]);
       DVector3 oldray;
       // Rotate by phi and take into account the tilt
-      DVector3 ray(r*cosphi,r*sinphi,sc_rioz[0][2]);
+      double x=r*cosphi+dx;
+      double y=r*sinphi+dy;
+      DVector3 ray(x,y,sc_rioz[0][2]);
       ray.RotateX(ThetaX);
       ray.RotateY(ThetaY);
       ray.RotateZ(ThetaZ);
@@ -1535,9 +1641,11 @@ bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
 	oldray=ray;
 	r=0.5*(sc_rioz[k][0]+sc_rioz[k][1]);
 	// Point in midplane of scintillator
-	ray.SetXYZ(r*cosphi,r*sinphi,sc_rioz[k][2]);
+	x=r*cosphi+dx;
+	y=r*sinphi+dy;
+	ray.SetXYZ(x,y,sc_rioz[k][2]);
 	// Second point in the plane of the scintillator
-	DVector3 ray2(r*cosphi-10.0*sinphi,r*sinphi+10.0*cosphi,sc_rioz[k][2]);
+	DVector3 ray2(x-10.0*sinphi,y+10.0*cosphi,sc_rioz[k][2]);
 	// Take into account tilt
 	ray.RotateX(ThetaX);
 	ray.RotateY(ThetaY);

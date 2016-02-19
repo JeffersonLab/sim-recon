@@ -103,7 +103,7 @@ jerror_t DEventProcessor_candidate_tree::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_candidate_tree::brun(JEventLoop *loop, int runnumber)
+jerror_t DEventProcessor_candidate_tree::brun(JEventLoop *loop, int32_t runnumber)
 {	
 	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 	if(!dapp){
@@ -149,7 +149,7 @@ jerror_t DEventProcessor_candidate_tree::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_candidate_tree::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_candidate_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DTrackCandidate*> candidates;
 	vector<const DMCThrown*> mcthrowns;

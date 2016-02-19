@@ -432,7 +432,7 @@ const map< string, pair<uint16_t,uint8_t> > *DDANAEVIO_factory::getTagMapPointer
 //--------------------------------------------------------------------------
 
 
-jerror_t DDANAEVIO_factory::evnt(JEventLoop *loop, int eventnumber) {
+jerror_t DDANAEVIO_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
 
 
 

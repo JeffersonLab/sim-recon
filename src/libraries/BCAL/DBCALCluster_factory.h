@@ -15,6 +15,7 @@ using namespace jana;
 
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALCluster.h"
+#include "BCAL/DBCALUnifiedHit.h"
 
 #include "TTree.h"
 #include "TFile.h"
@@ -30,14 +31,14 @@ public:
   
 private:
 
-  jerror_t evnt(JEventLoop *loop, int eventnumber);	
-  jerror_t brun(JEventLoop *loop, int runnumber);
+  jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);	
+  jerror_t brun(JEventLoop *loop, int32_t runnumber);
   
   void clearPoints();
   
   // these routines combine points and clusters together
 
-  vector<DBCALCluster*> clusterize( vector< const DBCALPoint* > points ) const;
+  vector<DBCALCluster*> clusterize( vector< const DBCALPoint* > points, vector< const DBCALUnifiedHit* > hits ) const;
   void merge( vector<DBCALCluster*>& clusters ) const;
   
   // these are the routines used for testing whether things should be
@@ -50,19 +51,16 @@ private:
                 const DBCALPoint* point ) const;
   
   bool overlap( const DBCALCluster& clust, 
-                const DBCALHit* hit ) const; 
+                const DBCALUnifiedHit* hit ) const; 
   
   float m_mergeSig;
   float m_moliereRadius;
+  float m_clust_hit_timecut;
   float m_timeCut;
-
   double m_z_target_center;
-  
-  // we may consider a separate factory to provide the BCAL points at
-  // a future stage; for now have this factory own and maintain them
-  
-  vector< DBCALPoint* > m_bcalPoints;
-    
+  vector<double> effective_velocities;
+  vector< vector<double > > attenuation_parameters;
+
 #ifdef BCAL_CLUSTER_DIAGNOSTIC
   
 #define MAX_POINT 1000

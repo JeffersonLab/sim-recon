@@ -183,8 +183,8 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   
  private:
   jerror_t init(void);						///< Called once at program start.
-  jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
-  jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
+  jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
+  jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
   jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
   jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
@@ -250,7 +250,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 
   unsigned int locate(vector<double>&xx,double x);
   double cdc_variance(double t); 
-  double cdc_drift_distance(double t);
+  double cdc_drift_distance(double dphi, double delta,double t);
   double fdc_drift_distance(double t);
 
   jerror_t GetProcessNoise(double dz,
@@ -326,6 +326,11 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   vector<vector<DFDCWire*> >fdcwires;
   DMatrix3x1 fdc_drift_parms; 
   vector<vector<cdc_offset_t> >cdc_offsets;
+
+  vector<vector<double> >max_sag;
+  vector<vector<double> >sag_phi_offset;
+  double long_drift_func[3][3];
+  double short_drift_func[3][3];
 };
 
 
@@ -334,8 +339,8 @@ inline double DEventProcessor_dc_alignment::cdc_variance(double t){
   //  return 0.001*0.001;
   if (t<0.) t=0.;
   
-  CDC_RES_PAR1=0.254;
-  CDC_RES_PAR2=0.025;
+  //CDC_RES_PAR1=0.254;
+  //CDC_RES_PAR2=0.025;
   double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
   //sigma+=0.02;
   

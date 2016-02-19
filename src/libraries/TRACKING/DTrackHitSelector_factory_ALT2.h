@@ -21,7 +21,7 @@ class DTrackHitSelector_factory_ALT2:public jana::JFactory<DTrackHitSelector>{
 	private:
 		jerror_t brun(jana::JEventLoop *loop, int new_runnumber){ runnumber = new_runnumber; return NOERROR; }
 
-		jerror_t evnt(jana::JEventLoop *loop, int eventnumber){
+		jerror_t evnt(jana::JEventLoop *loop, uint64_t eventnumber){
 
 			// Create single DTrackHitSelector object and mark the factory as
 			// persistent so it doesn't get deleted every event.
@@ -33,7 +33,7 @@ class DTrackHitSelector_factory_ALT2:public jana::JFactory<DTrackHitSelector>{
 			return NOERROR;
 		}
 		
-		int runnumber;
+		int32_t runnumber;
 };
 
 #endif // _DTrackHitSelector_factory_ALT2_

@@ -13,7 +13,7 @@ using namespace std;
 //---------------------------------
 // DMagneticFieldMapCalibDB    (Constructor)
 //---------------------------------
-DMagneticFieldMapCalibDB::DMagneticFieldMapCalibDB(JApplication *japp, unsigned int runnumber, string namepath)
+DMagneticFieldMapCalibDB::DMagneticFieldMapCalibDB(JApplication *japp, int32_t runnumber, string namepath)
 {
 	jcalib = japp->GetJCalibration(runnumber);
 
@@ -50,7 +50,7 @@ DMagneticFieldMapCalibDB::~DMagneticFieldMapCalibDB()
 //---------------------------------
 // ReadMap
 //---------------------------------
-int DMagneticFieldMapCalibDB::ReadMap(string namepath, int runnumber, string context)
+int DMagneticFieldMapCalibDB::ReadMap(string namepath, int32_t runnumber, string context)
 {
   /// Read the magnetic field map in from the calibration database.
   /// This will read in the map and figure out the number of grid

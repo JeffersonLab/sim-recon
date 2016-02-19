@@ -104,8 +104,8 @@ class DTrackCandidate_factory_FDC:public JFactory<DTrackCandidate>{
 
 	protected:
 		virtual jerror_t init(void);
-		virtual jerror_t brun(JEventLoop *loop, int runnumber);
-		virtual jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+		virtual jerror_t brun(JEventLoop *loop, int32_t runnumber);
+		virtual jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);	///< Invoked via JEventProcessor virtual method
 		virtual jerror_t fini(void);	///< Invoked via JEventProcessor virtual method
 
 		DHoughFind hough;

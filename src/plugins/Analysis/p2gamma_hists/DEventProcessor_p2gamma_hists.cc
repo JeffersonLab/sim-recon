@@ -54,7 +54,7 @@ jerror_t DEventProcessor_p2gamma_hists::brun(jana::JEventLoop* locEventLoop, int
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_p2gamma_hists::evnt(jana::JEventLoop* locEventLoop, int locEventNumber)
+jerror_t DEventProcessor_p2gamma_hists::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using

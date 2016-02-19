@@ -33,12 +33,12 @@
 // Routine used to create our DEventProcessor
 
 
-static TH1F* bcal_diphoton_mass_500 = NULL;
 static TH1F* bcal_diphoton_mass_300 = NULL;
+static TH1F* bcal_diphoton_mass_500 = NULL;
 static TH1F* bcal_diphoton_mass_700 = NULL;
 static TH1F* bcal_diphoton_mass_900 = NULL;
-static TH1F* bcal_fcal_diphoton_mass_500 = NULL;
 static TH1F* bcal_fcal_diphoton_mass_300 = NULL;
+static TH1F* bcal_fcal_diphoton_mass_500 = NULL;
 static TH1F* bcal_fcal_diphoton_mass_700 = NULL;
 static TH1F* bcal_fcal_diphoton_mass_900 = NULL;
 
@@ -70,6 +70,10 @@ jerror_t JEventProcessor_BCAL_inv_mass::init(void)
 	TDirectory *main = gDirectory;
 	gDirectory->mkdir("bcal_inv_mass")->cd();
 
+        bcal_diphoton_mass_300 = new TH1F("bcal_diphoton_mass_300","bcal diphoton mass (Cluster E > 300 MeV)",100,0.0,1.0);
+        bcal_diphoton_mass_300->GetXaxis()->SetTitle("invariant mass [GeV]");
+        bcal_diphoton_mass_300->GetYaxis()->SetTitle("counts / 10 MeV");
+
 	bcal_diphoton_mass_500 = new TH1F("bcal_diphoton_mass_500","bcal diphoton mass (Cluster E > 500 MeV)",100,0.0,1.0);
 	bcal_diphoton_mass_500->GetXaxis()->SetTitle("invariant mass [GeV]");
 	bcal_diphoton_mass_500->GetYaxis()->SetTitle("counts / 10 MeV");	
@@ -78,14 +82,13 @@ jerror_t JEventProcessor_BCAL_inv_mass::init(void)
         bcal_diphoton_mass_700->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_diphoton_mass_700->GetYaxis()->SetTitle("counts / 10 MeV");
 
-        bcal_diphoton_mass_300 = new TH1F("bcal_diphoton_mass_300","bcal diphoton mass (Cluster E > 300 MeV)",100,0.0,1.0);
-        bcal_diphoton_mass_300->GetXaxis()->SetTitle("invariant mass [GeV]");
-        bcal_diphoton_mass_300->GetYaxis()->SetTitle("counts / 10 MeV");
-
         bcal_diphoton_mass_900 = new TH1F("bcal_diphoton_mass_900","bcal diphoton mass (Cluster E > 900 MeV)",100,0.0,1.0);
         bcal_diphoton_mass_900->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_diphoton_mass_900->GetYaxis()->SetTitle("counts / 10 MeV");
 
+        bcal_fcal_diphoton_mass_300 = new TH1F("bcal_fcal_diphoton_mass_300","bcal and fcal diphoton mass (Cluster E > 300 MeV)",100,0.0,1.0);
+        bcal_fcal_diphoton_mass_300->GetXaxis()->SetTitle("invariant mass [GeV]");
+        bcal_fcal_diphoton_mass_300->GetYaxis()->SetTitle("counts / 10 MeV");
 	
         bcal_fcal_diphoton_mass_500 = new TH1F("bcal_fcal_diphoton_mass_500","bcal and fcal diphoton mass (Cluster E > 500 MeV)",100,0.0,1.0);
         bcal_fcal_diphoton_mass_500->GetXaxis()->SetTitle("invariant mass [GeV]");
@@ -94,10 +97,6 @@ jerror_t JEventProcessor_BCAL_inv_mass::init(void)
         bcal_fcal_diphoton_mass_700 = new TH1F("bcal_fcal_diphoton_mass_700","bcal and fcal diphoton mass (Cluster E > 700 MeV)",100,0.0,1.0);
         bcal_fcal_diphoton_mass_700->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_fcal_diphoton_mass_700->GetYaxis()->SetTitle("counts / 10 MeV");
-
-        bcal_fcal_diphoton_mass_300 = new TH1F("bcal_fcal_diphoton_mass_300","bcal and fcal diphoton mass (Cluster E > 300 MeV)",100,0.0,1.0);
-        bcal_fcal_diphoton_mass_300->GetXaxis()->SetTitle("invariant mass [GeV]");
-        bcal_fcal_diphoton_mass_300->GetYaxis()->SetTitle("counts / 10 MeV");
 
         bcal_fcal_diphoton_mass_900 = new TH1F("bcal_fcal_diphoton_mass_900","bcal and fcal diphoton mass (Cluster E > 900 MeV)",100,0.0,1.0);
         bcal_fcal_diphoton_mass_900->GetXaxis()->SetTitle("invariant mass [GeV]");
@@ -135,7 +134,7 @@ jerror_t JEventProcessor_BCAL_inv_mass::brun(jana::JEventLoop* locEventLoop, int
 
 
 
-jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, int locEventNumber)
+jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 
 	// This is called for every event. Use of common resources like writing
@@ -172,7 +171,7 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, int
 	vector <const DFCALCluster*> matchedFCALClusters;
 	vector <const DTrackTimeBased*> matchedTracks;
 	DVector3 mypos(0.0,0.0,0.0);
-	double p;
+
 	for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){
 	  for (unsigned int j=0; j< locBCALShowers.size(); ++j){
 	
@@ -182,7 +181,7 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, int
 		DVector3 pos_bcal(x,y,z);
 		double R = pos_bcal.Perp();
 		locTrackTimeBased[i]->rt->GetIntersectionWithRadius(R, mypos);
-		 p = locTrackTimeBased[i]->momentum().Mag();
+		 locTrackTimeBased[i]->momentum().Mag();
 		double dPhi = TMath::Abs(mypos.Phi()-pos_bcal.Phi());
 		double dZ = TMath::Abs(mypos.Z() - z);
 		
@@ -258,10 +257,10 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, int
 				TLorentzVector ptot = sh1_p+sh2_p;
 				TLorentzVector ptot_raw = sh1_p_raw + sh2_p_raw ;
 				double inv_mass_raw = ptot_raw.M();
+				if(E1_raw>.3&&E2_raw>.3) bcal_diphoton_mass_300->Fill(inv_mass_raw);
 				if(E1_raw>.5&&E2_raw>.5) bcal_diphoton_mass_500->Fill(inv_mass_raw);
                	                if(E1_raw>.9&&E2_raw>.9) bcal_diphoton_mass_900->Fill(inv_mass_raw);
                		        if(E1_raw>.7&&E2_raw>.7) bcal_diphoton_mass_700->Fill(inv_mass_raw);
-               	       	        if(E1_raw>.3&&E2_raw>.3) bcal_diphoton_mass_300->Fill(inv_mass_raw);
 			}		
 			for(unsigned int j=0; j<locFCALClusters.size(); j++){
 				if (find(matchedFCALClusters.begin(), matchedFCALClusters.end(),locFCALClusters[j]) != matchedFCALClusters.end()) continue;
@@ -274,10 +273,10 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, int
 				TLorentzVector cl2_p(fcal_E*dx2/R2, fcal_E*dy2/R2, fcal_E*dz2/R2, fcal_E);
 				TLorentzVector ptot_fcal_bcal = sh1_p_raw + cl2_p;
 				double inv_mass = ptot_fcal_bcal.M();
+                                if(E1_raw>.3&&fcal_E>.3) bcal_fcal_diphoton_mass_300->Fill(inv_mass);
 				if(E1_raw>.5&&fcal_E>.5) bcal_fcal_diphoton_mass_500->Fill(inv_mass);
 			        if(E1_raw>.7&&fcal_E>.7) bcal_fcal_diphoton_mass_700->Fill(inv_mass);
                                 if(E1_raw>.9&&fcal_E>.9) bcal_fcal_diphoton_mass_900->Fill(inv_mass);
-                                if(E1_raw>.3&&fcal_E>.3) bcal_fcal_diphoton_mass_300->Fill(inv_mass);
 			}
 	}   
 

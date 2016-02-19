@@ -158,6 +158,7 @@ void init_runtime_xml_(void)
 	string cmd = "$HDDS_HOME/bin/$BMS_OSNAME/hdds-geant " + HDDS_XML + " > tmp.F";
 	cout << cmd << endl;
 	retcode = system(cmd.c_str());
+	if(retcode) cerr << "Error running command: " << retcode << endl;
 	
 	// Compile FORTRAN into shared object
 	cout<<endl;
@@ -165,6 +166,7 @@ void init_runtime_xml_(void)
 	cmd = "gfortran -shared -fPIC -o tmp.so -I$CERN/$CERN_LEVEL/include tmp.F";
 	cout << cmd << endl;
 	retcode = system(cmd.c_str());
+	if(retcode) cerr << "Error running command: " << retcode << endl;
 
 	// Attach shared object
 	cout<<endl;

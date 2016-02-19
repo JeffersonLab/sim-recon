@@ -15,15 +15,15 @@ using namespace jana;
 #include "units.h"
 
 /// temp
-static const int BCAL_NUM_MODULES  = 48;
-static const int BCAL_NUM_LAYERS   =  4;
-static const int BCAL_NUM_SECTORS  =  4;
+//static const int BCAL_NUM_MODULES  = 48;
+//static const int BCAL_NUM_LAYERS   =  4;
+//static const int BCAL_NUM_SECTORS  =  4;
 
 
 //----------------
 // brun
 //----------------
-jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
+jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int32_t runnumber) {
   // Only print messages for one thread whenever run number changes
   static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
   static set<int> runs_announced;
@@ -86,7 +86,7 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
 //----------------
 // evnt
 //----------------
-jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
+jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
 
   vector<const DBCALUnifiedHit*> hits;
   loop->Get(hits);
@@ -144,7 +144,7 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
     //int id = DBCALGeometry::cellId( uphit->module, uphit->layer, uphit->sector );  // key the cell identification off of the upstream cell
     int table_id = GetCalibIndex( uphit->module, uphit->layer, uphit->sector );  // key the cell identification off of the upstream cell
 
-    float fibLen = DBCALGeometry::BCALFIBERLENGTH;
+    float fibLen = DBCALGeometry::GetBCAL_length();
     //float cEff = DBCALGeometry::C_EFFECTIVE;    
     float cEff = GetEffectiveVelocity(table_id);
 

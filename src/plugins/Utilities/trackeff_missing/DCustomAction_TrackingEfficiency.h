@@ -34,7 +34,7 @@ class DCustomAction_TrackingEfficiency : public DAnalysisAction
 		dNumTrackDOCABins(400), dNumFCALTOFXYBins(260), dNum2DBCALZBins(450), 
 		dMinP(0.0), dMaxP(9.0), dMinTheta(0.0), dMaxTheta(180.0), dMinPhi(-180.0), dMaxPhi(180.0), dSCMatchMinDeltaPhi(-60.0), dSCMatchMaxDeltaPhi(60.0), 
 		dMinDeltaPOverP(-0.4), dMaxDeltaPOverP(0.4), dMinDeltaTheta(-20.0), dMaxDeltaTheta(20.0), dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0),
-		dMindEdX(0.0), dMaxdEdX(25.0), dMinBeta(-0.2), dMaxBeta(1.2), dMaxPBCAL(1.5), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinDeltadEdx(-30.0), dMaxDeltadEdx(30.0), 
+		dMindEdX(0.0), dMaxdEdX(25.0), dMinBeta(-0.2), dMaxBeta(1.2), dMaxPBCAL(2.5), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinDeltadEdx(-30.0), dMaxDeltadEdx(30.0),
 		dMinTrackDOCA(0.0), dMaxTrackMatchDOCA(20.0), dMinDeltaZ(-30.0), dMaxDeltaZ(30.0),
 		dMinTOFPaddleMatchDistance(9.0) {}
 

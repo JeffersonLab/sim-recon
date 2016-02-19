@@ -17,7 +17,6 @@
 #include "JANA/JEventLoop.h"
 #include "JANA/JApplication.h"
 
-#include "TAGGER/DTAGHGeometry.h"
 #include "ANALYSIS/DAnalysisAction.h"
 #include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DParticleCombo.h"
@@ -39,6 +38,11 @@ class DCustomAction_p2pi_hists : public DAnalysisAction
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
+		// Parameters for event selection to fill histograms
+		int endpoint_energy_bins;
+		double cohmin_energy, cohedge_energy, endpoint_energy;
+		double dEdxCut, minMMCut, maxMMCut, minMM2Cut, maxMM2Cut, missingEnergyCut, minRhoMassCut, maxRhoMassCut;
+
 		// Optional: Useful utility functions.
 		const DAnalysisUtilities* dAnalysisUtilities;
 
@@ -49,7 +53,7 @@ class DCustomAction_p2pi_hists : public DAnalysisAction
 
 		//Store any histograms as member variables here
 		TH1I *dEgamma;
-		TH2I *dMM_M2pi;
+		TH2I *dMM_M2pi, *dMM_M2pi_noEle, *dt_M2pi_noEle;
 		TH2I *dMM2_M2pi, *dProton_dEdx_P, *dProton_P_Theta, *dDeltaE_M2pi, *dDeltaE_M2pi_ProtonTag;
 		TH2I *dDalitz_p2pi, *dMppiplus_M2pi, *dMppiminus_M2pi, *dEgamma_M2pi;
 		TH2I *dPiPlusPsi_t;

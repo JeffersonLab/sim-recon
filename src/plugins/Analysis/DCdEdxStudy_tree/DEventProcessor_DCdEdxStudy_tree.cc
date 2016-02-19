@@ -29,7 +29,7 @@ jerror_t DEventProcessor_DCdEdxStudy_tree::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_DCdEdxStudy_tree::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t DEventProcessor_DCdEdxStudy_tree::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
   // Get the particle ID algorithms
 	vector<const DParticleID *> locPIDAlgorithms;
@@ -53,7 +53,7 @@ jerror_t DEventProcessor_DCdEdxStudy_tree::brun(JEventLoop *eventLoop, int runnu
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_DCdEdxStudy_tree::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_DCdEdxStudy_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DMCThrown*> locDMCThrownVector;
 	const DMCThrown *locDMCThrown;

@@ -28,7 +28,7 @@ jerror_t DTrackCandidate_factory_CDC_or_FDCpseudo::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrackCandidate_factory_CDC_or_FDCpseudo::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DTrackCandidate_factory_CDC_or_FDCpseudo::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
 
 	return NOERROR;
@@ -37,7 +37,7 @@ jerror_t DTrackCandidate_factory_CDC_or_FDCpseudo::brun(jana::JEventLoop *eventL
 //------------------
 // evnt
 //------------------
-jerror_t DTrackCandidate_factory_CDC_or_FDCpseudo::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackCandidate_factory_CDC_or_FDCpseudo::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 
 	/// This factory simply combines the list of candidates from the 

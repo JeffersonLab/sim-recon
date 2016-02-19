@@ -15,13 +15,31 @@ class Df125Config:public DDAQConfig{
 	public:
 		JOBJECT_PUBLIC(Df125Config);
 
-		Df125Config(uint32_t rocid, uint32_t slot_mask):DDAQConfig(rocid,slot_mask),NSA(0xFFFF),NSB(0xFFFF),NSA_NSB(0xFFFF),NPED(0xFFFF),WINWIDTH(0xFFFF){}
+		Df125Config(uint32_t rocid, uint32_t slot_mask):DDAQConfig(rocid,slot_mask)
+			,NSA(0xFFFF),NSB(0xFFFF),NSA_NSB(0xFFFF),NPED(0xFFFF),WINWIDTH(0xFFFF)
+			,PL(0xFFFF),NW(0xFFFF),NPK(0xFFFF),P1(0xFFFF),P2(0xFFFF),PG(0xFFFF)
+			,IE(0xFFFF),H(0xFFFF),TH(0xFFFF),TL(0xFFFF),IBIT(0xFFFF),ABIT(0xFFFF),PBIT(0xFFFF){}
 		
 		uint16_t NSA;      // Num. samples before threshold crossing sample
 		uint16_t NSB;      // Num. samples after  threshold crossing sample
 		uint16_t NSA_NSB;  // NSA+NSB = total number of samples in integration window
 		uint16_t NPED;     // Number of samples used to determine pedestal
 		uint16_t WINWIDTH; // maximum integration window size (in samples)
+		
+		// See GlueX-doc-2274
+		uint16_t PL;
+		uint16_t NW;
+		uint16_t NPK;
+		uint16_t P1;
+		uint16_t P2;
+		uint16_t PG;
+		uint16_t IE;
+		uint16_t H;
+		uint16_t TH;
+		uint16_t TL;
+		uint16_t IBIT;
+		uint16_t ABIT;
+		uint16_t PBIT;
 		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
@@ -32,6 +50,19 @@ class Df125Config:public DDAQConfig{
 			AddString(items, "NSA_NSB"  , "%d", NSA_NSB);
 			AddString(items, "NPED"     , "%d", NPED);
 			AddString(items, "WINWIDTH" , "%d", WINWIDTH);
+			AddString(items, "PL"       , "%d", PL);
+			AddString(items, "NW"       , "%d", NW);
+			AddString(items, "NPK"      , "%d", NPK);
+			AddString(items, "P1"       , "%d", P1);
+			AddString(items, "P2"       , "%d", P2);
+			AddString(items, "PG"       , "%d", PG);
+			AddString(items, "IE"       , "%d", IE);
+			AddString(items, "H"        , "%d", H);
+			AddString(items, "TH"       , "%d", TH);
+			AddString(items, "TL"       , "%d", TL);
+			AddString(items, "IBIT"     , "%d", IBIT);
+			AddString(items, "ABIT"     , "%d", ABIT);
+			AddString(items, "PBIT"     , "%d", PBIT);
 		}
 		
 };

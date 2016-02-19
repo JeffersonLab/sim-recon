@@ -26,7 +26,7 @@ jerror_t DNeutralParticleHypothesis_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DNeutralParticleHypothesis_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DNeutralParticleHypothesis_factory::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	// Get Target parameters from XML
 	DApplication *locApplication = dynamic_cast<DApplication*> (locEventLoop->GetJApplication());
@@ -50,7 +50,7 @@ jerror_t DNeutralParticleHypothesis_factory::brun(jana::JEventLoop *locEventLoop
 //------------------
 // evnt
 //------------------
-jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	vector<const DNeutralShower*> locNeutralShowers;
 	locEventLoop->Get(locNeutralShowers);
@@ -128,7 +128,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 	DNeutralParticleHypothesis* locNeutralParticleHypothesis = new DNeutralParticleHypothesis;
 	locNeutralParticleHypothesis->AddAssociatedObject(locNeutralShower);
 
-	locNeutralParticleHypothesis->dNeutralShowerID = locNeutralShower->id;
+	locNeutralParticleHypothesis->dNeutralShowerID = locNeutralShower->dShowerID;
 	locNeutralParticleHypothesis->setPID(locPID);
 	locNeutralParticleHypothesis->setMass(locMass);
 	locNeutralParticleHypothesis->setCharge(0.0);

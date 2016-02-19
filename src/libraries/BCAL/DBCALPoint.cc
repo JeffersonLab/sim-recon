@@ -31,7 +31,7 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
 
   // save typing
   
-  float fibLen = DBCALGeometry::BCALFIBERLENGTH;
+  float fibLen = DBCALGeometry::GetBCAL_length();
   float cEff = DBCALGeometry::C_EFFECTIVE;
 
   // figure out which hit is upstream and which is downstream
@@ -50,7 +50,7 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   m_zLocal = 0.5 * cEff * ( tUp - tDown ); 
 
   // set the z position relative to the center of the target
-  m_z = m_zLocal + DBCALGeometry::GLOBAL_CENTER - z_target_center;
+  m_z = m_zLocal + DBCALGeometry::GetBCAL_center() - z_target_center;
   //At this point m_z may be unphysical, i.e. it may be outside the BCAL.
   //For the time being, this is okay. Forcing the z-position inside the
   //BCAL at this point will bias the clustering procedure:
@@ -114,54 +114,12 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   convertCylindricalToSpherical();
 }
 
-DBCALPoint::DBCALPoint( const DBCALHit& hit, float z, float z_target_center )
-{
-  
-  int cellId = DBCALGeometry::cellId( hit.module, hit.layer, hit.sector );
-  
-  // a boolean true if upstream hit false if downstream hit
-  bool isUp = ( hit.end == DBCALGeometry::kUpstream );
-  
-  // save typing
-  float fibLen = DBCALGeometry::BCALFIBERLENGTH;
-  float cEff = DBCALGeometry::C_EFFECTIVE;
-  
-  // set the z position relative to the center of the target
-  m_z = z;
-  m_zLocal = m_z + z_target_center - DBCALGeometry::GLOBAL_CENTER;
-  
-  float d = ( isUp ? 0.5 * fibLen + m_zLocal : 0.5 * fibLen - m_zLocal );
-  float att = exp( -d / DBCALGeometry::ATTEN_LENGTH );
-  
-  m_t = hit.t - d / cEff;
-  m_E =  hit.E / att;
-  
-  m_r = DBCALGeometry::r( cellId );
-  m_sig_r = DBCALGeometry::rSize( cellId );
-  
-  m_phi = DBCALGeometry::phi( cellId );
-  m_sig_phi = DBCALGeometry::phiSize( cellId );
-  
-  // this needs more careful examination.. especially for single end
-  // hits like this one
-  
-  m_sig_z = cEff * 400 * k_psec;
-
-  m_module = hit.module;
-  m_layer = hit.layer;
-  m_sector = hit.sector;
-  
-  // recast in terms of spherical coordinates
-  convertCylindricalToSpherical();
-}
-
-
 float
 DBCALPoint::tInnerRadius() const {
  
   // the path length in the module
   
-  float modulePath = m_rho - DBCALGeometry::BCALINNERRAD / sin( m_theta );
+  float modulePath = m_rho - DBCALGeometry::GetBCAL_inner_rad() / sin( m_theta );
   
   // retard the time by that distance divided by the speed of light
 

@@ -26,7 +26,7 @@ c --- initialize relevant gheisha variables at first pass ---
 c
       if (z .lt. 1.0) go to 1000
 c
-      kk=abs(q(jma+11))
+      kk=INT(abs(q(jma+11)))
       if (kk .gt. 1) go to 10
 c
       sig=ghesig(ppvec,kinergy,a,a,z,1.0,1,dens,0.0,idvec)

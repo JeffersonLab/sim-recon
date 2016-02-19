@@ -22,7 +22,7 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DChargedTrackHypothesis_factory_KinFit::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DChargedTrackHypothesis_factory_KinFit::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	locEventLoop->GetSingle(dPIDAlgorithm);
 	return NOERROR;
@@ -31,9 +31,8 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::brun(jana::JEventLoop *locEvent
 //------------------
 // evnt
 //------------------
-jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
+jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber)
 {
-
 #ifdef VTRACE
 	VT_TRACER("DChargedTrackHypothesis_factory_KinFit::evnt()");
 #endif
@@ -41,50 +40,59 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEvent
  	vector<const DKinFitResults*> locKinFitResultsVector;
 	locEventLoop->Get(locKinFitResultsVector);
 
-	map<const DKinFitParticle*, DChargedTrackHypothesis*> locKinFitParticleMap;
-	map<DChargedTrackHypothesis*, deque<const DParticleCombo*> > locChargedParticleComboMap;
-	map<const DKinematicData*, const DKinFitParticle*> locReverseParticleMapping;
+	map<DKinFitParticle*, DChargedTrackHypothesis*> locNewObjectMap;
 
 	for(size_t loc_i = 0; loc_i < locKinFitResultsVector.size(); ++loc_i)
 	{
-		set<const DParticleCombo*> locParticleCombos;
-		locKinFitResultsVector[loc_i]->Get_ParticleCombos(locParticleCombos);
-		const DParticleCombo* locParticleCombo = *(locParticleCombos.begin());
-		locKinFitResultsVector[loc_i]->Get_ReverseParticleMapping(locReverseParticleMapping);
-		for(size_t loc_j = 0; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
+		map<const DParticleCombo*, const DKinFitChain*> locParticleComboMap;
+		locKinFitResultsVector[loc_i]->Get_ParticleComboMap(locParticleComboMap);
+		set<DKinFitParticle*> locOutputKinFitParticles = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticles();
+
+		map<const DParticleCombo*, const DKinFitChain*>::iterator locComboIterator = locParticleComboMap.begin();
+		for(; locComboIterator != locParticleComboMap.end(); ++locComboIterator)
 		{
-			const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_j);
-			for(size_t loc_k = 0; loc_k < locParticleComboStep->Get_NumFinalParticles(); ++loc_k)
+			const DParticleCombo* locParticleCombo = locComboIterator->first;
+			for(size_t loc_j = 0; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
 			{
-				if(!locParticleComboStep->Is_FinalParticleDetected(loc_k))
-					continue;
-				if(!locParticleComboStep->Is_FinalParticleCharged(loc_k))
-					continue;
-				const DKinFitParticle* locKinFitParticle = locReverseParticleMapping[locParticleComboStep->Get_FinalParticle_Measured(loc_k)];
-				const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_k));
-				const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticleComboStep->Get_FinalParticle(loc_k));
-				DChargedTrackHypothesis* locNewChargedTrackHypothesis = Build_ChargedTrackHypothesis(locChargedTrackHypothesis, locKinFitParticle, locChargedTrack, locParticleCombo);
-				locKinFitParticleMap[locKinFitParticle] = locNewChargedTrackHypothesis;
-				locChargedParticleComboMap[locNewChargedTrackHypothesis] = deque<const DParticleCombo*>(1, locParticleCombo);
+				const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_j);
+				for(size_t loc_k = 0; loc_k < locParticleComboStep->Get_NumFinalParticles(); ++loc_k)
+				{
+					if(!locParticleComboStep->Is_FinalParticleDetected(loc_k))
+						continue;
+					if(!locParticleComboStep->Is_FinalParticleCharged(loc_k))
+						continue;
+
+					const DKinematicData* locMeasuredParticle = locParticleComboStep->Get_FinalParticle_Measured(loc_k);
+					DKinFitParticle* locKinFitParticle = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticle(locMeasuredParticle);
+					if(locKinFitParticle == NULL)
+						continue; //should be impossible
+					if(locOutputKinFitParticles.find(locKinFitParticle) == locOutputKinFitParticles.end())
+						continue; //not used in fit
+
+					map<DKinFitParticle*, DChargedTrackHypothesis*>::iterator locNewHypoIterator = locNewObjectMap.find(locKinFitParticle);
+					if(locNewHypoIterator != locNewObjectMap.end())
+					{
+						locNewHypoIterator->second->AddAssociatedObject(locParticleCombo);
+						continue; //new particle already created for this kinfit particle
+					}
+
+					const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_k));
+					const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticleComboStep->Get_FinalParticle(loc_k));
+
+					DChargedTrackHypothesis* locNewChargedTrackHypothesis = Build_ChargedTrackHypothesis(locChargedTrackHypothesis, locKinFitParticle, locChargedTrack, locParticleCombo);
+					locNewObjectMap[locKinFitParticle] = locNewChargedTrackHypothesis;
+					locNewChargedTrackHypothesis->AddAssociatedObject(locParticleCombo);
+
+					_data.push_back(locNewChargedTrackHypothesis);
+				}
 			}
 		}
-	}
-
-	//now set the particle combos as associated objects of the charged tracks, and save the tracks //this marks which combos they originated from
-	map<DChargedTrackHypothesis*, deque<const DParticleCombo*> >::iterator locIterator;
-	for(locIterator = locChargedParticleComboMap.begin(); locIterator != locChargedParticleComboMap.end(); ++locIterator)
-	{
-		DChargedTrackHypothesis* locNewChargedTrackHypothesis = locIterator->first;
-		deque<const DParticleCombo*>& locParticleCombos = locIterator->second;
-		for(size_t loc_i = 0; loc_i < locParticleCombos.size(); ++loc_i)
-			locNewChargedTrackHypothesis->AddAssociatedObject(locParticleCombos[loc_i]);
-		_data.push_back(locNewChargedTrackHypothesis);
 	}
 
 	return NOERROR;
 }
 
-DChargedTrackHypothesis* DChargedTrackHypothesis_factory_KinFit::Build_ChargedTrackHypothesis(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DKinFitParticle* locKinFitParticle, const DChargedTrack* locChargedTrack, const DParticleCombo* locParticleCombo)
+DChargedTrackHypothesis* DChargedTrackHypothesis_factory_KinFit::Build_ChargedTrackHypothesis(const DChargedTrackHypothesis* locChargedTrackHypothesis, DKinFitParticle* locKinFitParticle, const DChargedTrack* locChargedTrack, const DParticleCombo* locParticleCombo)
 {
 	DChargedTrackHypothesis* locNewChargedTrackHypothesis = new DChargedTrackHypothesis(*locChargedTrackHypothesis);
 	locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrackHypothesis);

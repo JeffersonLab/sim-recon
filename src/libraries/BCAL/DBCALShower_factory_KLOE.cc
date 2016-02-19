@@ -90,7 +90,7 @@ jerror_t DBCALShower_factory_KLOE::init()
 //------------------
 // brun
 //------------------
-jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
+jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int32_t runnumber)
 {
     //get target position
     DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
@@ -108,8 +108,8 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
     ATTEN_LENGTH = bcalGeom.ATTEN_LENGTH;
     C_EFFECTIVE = bcalGeom.C_EFFECTIVE;
     
-    fiberLength = bcalGeom.BCALFIBERLENGTH; // fiber length in cm
-    zOffset = bcalGeom.GLOBAL_CENTER;
+    fiberLength = bcalGeom.GetBCAL_length(); // fiber length in cm
+    zOffset = bcalGeom.GetBCAL_center();
 
     //the following uses some sad notation in which modmin=0 and modmax=48, when in fact there are 48 modules labelled either 0-47 or 1-48 depending on one's whim, although if we are using the methods from DBCALGeometry (e.g. cellId()), we must start counting from 1 and if we are accessing arrays we must of course start from 0
     int   modmin = 0;
@@ -123,7 +123,7 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
     int   colmin2=0;
     int   colmax2=bcalGeom.NBCALSECSOUT;
     
-    float r_inner= bcalGeom.BCALINNERRAD;
+    float r_inner= bcalGeom.GetBCAL_inner_rad();
     
     for (int i = (rowmin1+1); i < (rowmax1+1); i++){
         //this loop starts from 1, so we can use i in cellId with no adjustment
@@ -179,7 +179,7 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
     // Call core KLOE reconstruction routines
     CellRecon(loop);
@@ -304,7 +304,7 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
   
         float r = sqrt( shower->x * shower->x + shower->y * shower->y );
       
-        float zEntry = ( shower->z - m_z_target_center ) * ( DBCALGeometry::BCALINNERRAD / r );
+        float zEntry = ( shower->z - m_z_target_center ) * ( DBCALGeometry::GetBCAL_inner_rad() / r );
       
         float scale = m_scaleZ_p0  + m_scaleZ_p1*zEntry + 
             m_scaleZ_p2*(zEntry*zEntry) + m_scaleZ_p3*(zEntry*zEntry*zEntry);
@@ -1006,7 +1006,7 @@ void DBCALShower_factory_KLOE::Clus_Break(int nclust)
     int n=nclust;
     tdif_a=ta_cel[n]-ta_cls[nclust];
     tdif_b=tb_cel[n]-tb_cls[nclust];
-    selnum=0;
+//    selnum=0;
     
     //----------------------------------------------------------------------
     if(tdif_a>0.0) {
@@ -1044,7 +1044,7 @@ void DBCALShower_factory_KLOE::Clus_Break(int nclust)
         n=next[n];
         tdif_a=ta_cel[n]-ta_cls[nclust];
         tdif_b=tb_cel[n]-tb_cls[nclust];
-        selnum=0;
+//        selnum=0;
         
         //**************************************************************************
         
@@ -1467,7 +1467,7 @@ float DBCALShower_factory_KLOE::Gammq(float a_gammq,float x_gammq)
     //Returns the incomplete gamma function Q(a_gammq,x_gammq)=1-P(a_gammq,x_gammq)
     
     
-    float gammcf,gamser;
+    float gammcf=0,gamser;
     
     if(a_gammq==0.0) { 
         gammq=999.0;

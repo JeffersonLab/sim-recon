@@ -34,8 +34,9 @@
 #include "PID/DParticleID.h"
 #include "PID/DEventRFBunch.h"
 
+#include "KINFITTER/DKinFitParticle.h"
+
 #include "ANALYSIS/DParticleCombo.h"
-#include "ANALYSIS/DKinFitParticle.h"
 #include "ANALYSIS/DMCThrownMatching_factory.h"
 #include "ANALYSIS/DParticleCombo_factory_Thrown.h"
 #include "ANALYSIS/DReaction_factory_Thrown.h"
@@ -90,25 +91,29 @@ class DAnalysisUtilities : public JObject
 
 		DLorentzVector Calc_MissingP4(const DParticleCombo* locParticleCombo, bool locUseKinFitDataFlag) const;
 		DLorentzVector Calc_MissingP4(const DParticleCombo* locParticleCombo, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const;
-		DLorentzVector Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, bool locUseKinFitDataFlag) const;
-		DLorentzVector Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const;
 		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, bool locUseKinFitDataFlag) const;
 		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<size_t> locToIncludeIndices, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<size_t> locToIncludeIndices, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const;
 
 		// These routines use the MEAURED particle data.  For the kinfit-data result, just use the error matrix from the missing particle
 		DMatrixDSym Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo) const;
-		DMatrixDSym Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs) const;
+		DMatrixDSym Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices) const;
 
 		double Calc_CrudeTime(const deque<const DKinematicData*>& locParticles, const DVector3& locCommonVertex) const;
-		double Calc_CrudeTime(const deque<const DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const;
+		double Calc_CrudeTime(const deque<DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const;
 		DVector3 Calc_CrudeVertex(const deque<const DKinematicData*>& locParticles) const;
-		DVector3 Calc_CrudeVertex(const deque<const DKinFitParticle*>& locParticles) const;
+		DVector3 Calc_CrudeVertex(const deque<DKinFitParticle*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<const DTrackTimeBased*>& locParticles) const;
 
+		set<set<size_t> > Build_IndexCombos(const DReactionStep* locReactionStep, deque<Particle_t> locToIncludePIDs) const;
+
 	private:
 
-		unsigned int DEBUG_LEVEL;
+		bool Handle_Decursion(int& locParticleIndex, deque<size_t>& locComboDeque, deque<int>& locResumeAtIndices, deque<deque<size_t> >& locPossibilities) const;
 
 		double dTargetZCenter;
 		const DParticleID* dPIDAlgorithm;

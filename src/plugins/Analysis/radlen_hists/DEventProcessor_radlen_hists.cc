@@ -121,7 +121,7 @@ jerror_t DEventProcessor_radlen_hists::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_radlen_hists::brun(JEventLoop *loop, int runnumber)
+jerror_t DEventProcessor_radlen_hists::brun(JEventLoop *loop, int32_t runnumber)
 {
 	DApplication *dapp = dynamic_cast<DApplication*>(japp);
 	bfield = dapp->GetBfield(runnumber);
@@ -132,7 +132,7 @@ jerror_t DEventProcessor_radlen_hists::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_radlen_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_radlen_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DMCTrajectoryPoint*> trajpoints;
 	vector<const DMCThrown*> throwns;

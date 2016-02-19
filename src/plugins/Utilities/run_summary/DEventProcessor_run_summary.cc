@@ -93,7 +93,7 @@ jerror_t DEventProcessor_run_summary::brun(jana::JEventLoop* locEventLoop, int l
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_run_summary::evnt(jana::JEventLoop* locEventLoop, int locEventNumber)
+jerror_t DEventProcessor_run_summary::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using
@@ -146,7 +146,7 @@ jerror_t DEventProcessor_run_summary::erun(void)
 	// make a branch for the run number
 	TBranch *run_branch = conditions_tree->FindBranch("run_number");
 	if(run_branch == NULL)
-		run_branch = conditions_tree->Branch("run_number", &current_run_number, "run_number/D");
+		conditions_tree->Branch("run_number", &current_run_number, "run_number/D");
 	else
 		conditions_tree->SetBranchAddress("run_number", &current_run_number);
 	
@@ -155,10 +155,18 @@ jerror_t DEventProcessor_run_summary::erun(void)
 	for(map<string, DEPICSvalue_data_t>::const_iterator epics_val_itr = epics_store.begin();
 	    epics_val_itr != epics_store.end(); epics_val_itr++) {
 		string branch_name = epics_val_itr->first;
+		// ROOT branches assume that colons define the different leaves in a branch
+		// so replace them in the name with underscores
+		std::replace( branch_name.begin(), branch_name.end(), ':', '_');
+		// also clean numerical expressions
+		std::replace( branch_name.begin(), branch_name.end(), '-', '_');  
+		std::replace( branch_name.begin(), branch_name.end(), '+', '_');  
+		std::replace( branch_name.begin(), branch_name.end(), '*', '_');  
+		std::replace( branch_name.begin(), branch_name.end(), '/', '_');  
 		TBranch *the_branch = conditions_tree->FindBranch(branch_name.c_str());
 		if(the_branch == NULL) {
 			string branch_def = branch_name + "/D";
-			the_branch = conditions_tree->Branch(branch_name.c_str(), &(epics_val_itr->second.value->fval), branch_def.c_str());
+			conditions_tree->Branch(branch_name.c_str(), &(epics_val_itr->second.value->fval), branch_def.c_str());
 		} else {
 			conditions_tree->SetBranchAddress(branch_name.c_str(), &(epics_val_itr->second.value->fval));
 		}
@@ -176,6 +184,10 @@ jerror_t DEventProcessor_run_summary::erun(void)
 jerror_t DEventProcessor_run_summary::fini(void)
 {
 	// Called before program exit after event processing is finished.
+	//cout << "=================================================" << endl;
+	//cout << "Summary of processed runs:" << endl;
+	//cout << "=================================================" << endl;
+
 	return NOERROR;
 }
 

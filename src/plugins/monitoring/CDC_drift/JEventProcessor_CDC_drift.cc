@@ -114,7 +114,7 @@ jerror_t JEventProcessor_CDC_drift::init(void) {
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
 	// create root folder for cdc and cd to it, store main dir
-	//TDirectory *main = gDirectory;
+	TDirectory *savedir = gDirectory;
 	gDirectory->mkdir("CDC_fits")->cd();
 
 
@@ -160,7 +160,7 @@ jerror_t JEventProcessor_CDC_drift::init(void) {
 	Double_t sigma; 
 	afit->Branch("sigma",&sigma,"sigma/D");
 
-
+	savedir->cd();
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
 	return NOERROR;
@@ -170,7 +170,7 @@ jerror_t JEventProcessor_CDC_drift::init(void) {
 //---------------------------------------------------------- 
 
 
-jerror_t JEventProcessor_CDC_drift::brun(JEventLoop *eventLoop, int runnumber) {
+jerror_t JEventProcessor_CDC_drift::brun(JEventLoop *eventLoop, int32_t runnumber) {
 	// This is called whenever the run number changes
 	return NOERROR;
 }
@@ -180,7 +180,7 @@ jerror_t JEventProcessor_CDC_drift::brun(JEventLoop *eventLoop, int runnumber) {
 
 
 
-jerror_t JEventProcessor_CDC_drift::evnt(JEventLoop *eventLoop, int eventnumber) {
+jerror_t JEventProcessor_CDC_drift::evnt(JEventLoop *eventLoop, uint64_t eventnumber) {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using
 	// loop-Get(...) to get reconstructed objects (and thereby activating the
@@ -346,7 +346,7 @@ jerror_t JEventProcessor_CDC_drift::evnt(JEventLoop *eventLoop, int eventnumber)
 
 
 
-		previous = (uint32_t)(nentries/UPDATE_INTERVAL);
+//		previous = (uint32_t)(nentries/UPDATE_INTERVAL);
 
 
 
@@ -422,7 +422,6 @@ jerror_t JEventProcessor_CDC_drift::evnt(JEventLoop *eventLoop, int eventnumber)
 		afit->SetBranchAddress("sigma",&ampfitparams[2]);
 
 		afit->Fill();
-
 
 
 		// **** reset histograms ****

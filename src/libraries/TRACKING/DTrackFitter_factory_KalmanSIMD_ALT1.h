@@ -15,7 +15,7 @@ class DTrackFitter_factory_KalmanSIMD_ALT1:public jana::JFactory<DTrackFitter>{
 		const char* Tag(void){return "KalmanSIMD_ALT1";}
 
 	private:
-		jerror_t evnt(jana::JEventLoop *loop, int eventnumber){
+		jerror_t evnt(jana::JEventLoop *loop, uint64_t eventnumber){
 
 			// Create single DTrackFitter object and mark the factory as
 			// persistent so it doesn't get deleted every event.

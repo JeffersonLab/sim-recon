@@ -16,8 +16,8 @@ jerror_t DNeutralShower_factory_PreSelect::init(void)
 		//This is because some/all of these pointers are just copied from earlier objects, and should not be deleted.  
 	SetFactoryFlag(NOT_OBJECT_OWNER);
 
-	dMinFCALE = 0.4;
-	dMinBCALE = 0.2;
+	dMinFCALE = 0.1;
+	dMinBCALE = 0.1;
 	dMinBCALNcell = 2;
 
 	return NOERROR;
@@ -26,7 +26,7 @@ jerror_t DNeutralShower_factory_PreSelect::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DNeutralShower_factory_PreSelect::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DNeutralShower_factory_PreSelect::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	gPARMS->SetDefaultParameter("PRESELECT:MIN_FCAL_E", dMinFCALE);
         gPARMS->SetDefaultParameter("PRESELECT:MIN_BCAL_E", dMinBCALE);
@@ -38,7 +38,7 @@ jerror_t DNeutralShower_factory_PreSelect::brun(jana::JEventLoop *locEventLoop, 
 //------------------
 // evnt
 //------------------
-jerror_t DNeutralShower_factory_PreSelect::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DNeutralShower_factory_PreSelect::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	//Clear objects from last event
 	_data.clear();

@@ -131,14 +131,15 @@
       UPWGHT = 1
       ISTORY = 0
 
-      ev = IDEVT
+      ev = event_count
       do i=1,10
         ev = ev/10.
         if (ev.lt.10) goto 2
       enddo
     2 if (int(ev).eq.ev) then
-        write(LOUT,*) IDEVT," events simulated"
+        write(LOUT,*) event_count," events simulated"
       endif
+      event_count = event_count + 1
 
 *     Get the current values of the random number seeds. Do this
 *     here so we can overwrite them in the first "if" block below
@@ -163,7 +164,7 @@
         get_next_evt=1
       endif
       if (itry .eq. 0) then
-        itry = loadInput()
+        itry = loadInput(override_run_number,IDRUN)
 *
 *       Check for random number seeds in the input file. If they are
 *       there, then the values of iseed1 and iseed2 will be overwritten
@@ -174,22 +175,35 @@
         call GRNDMQ(iseed1,iseed2,0,'S')
 
 *
-*       Fake a tagger hit of the correct energy by adding up the energy
-*       of all generated tracks and assigning them to the trigger time.
+*       Try to read the beam photon energy from the input MC record.
 *
-        PLAB(1) = 0
-        PLAB(2) = 0
-        PLAB(3) = 0
-        PLAB(4) = -PMASS
-        do nt=1,NTRACK
-          call GFKINE(nt,VERT,PVERT,IPART,IVERT,ubuf,nubuf)
-          call GFPART(IPART,pname,ITRTYP,AMASS,CHARGE,TLIFE,ubuf,nubuf)
-          PLAB(1) = PLAB(1) + PVERT(1)
-          PLAB(2) = PLAB(2) + PVERT(2)
-          PLAB(3) = PLAB(3) + PVERT(3)
-          PLAB(4) = PLAB(4)
-     +            + sqrt(AMASS**2+PVERT(1)**2+PVERT(2)**2+PVERT(3)**2)
-        enddo
+        PLAB(4) = get_beam_momentum(0)
+        if (PLAB(4) .gt. 0) then
+          call GFVERT(1,VERT,NTBEAM,NTTARG,TOFG,ubuf,nubuf)
+          PLAB(1) = get_beam_momentum(1)
+          PLAB(2) = get_beam_momentum(2)
+          PLAB(3) = get_beam_momentum(3)
+        else
+*
+*         Fake a tagger hit of the correct energy by adding up the energy
+*         of all generated tracks minus the rest mass of the (assumed
+*         proton) target, and assigning it to the trigger time.
+*
+          PLAB(1) = 0
+          PLAB(2) = 0
+          PLAB(3) = 0
+          PLAB(4) = REAL(-PMASS)
+          do nt=1,NTRACK
+            call GFKINE(nt,VERT,PVERT,IPART,IVERT,ubuf,nubuf)
+            call GFPART(IPART,pname,ITRTYP,AMASS,CHARGE,TLIFE,
+     +                                            ubuf,nubuf)
+            PLAB(1) = PLAB(1) + PVERT(1)
+            PLAB(2) = PLAB(2) + PVERT(2)
+            PLAB(3) = PLAB(3) + PVERT(3)
+            PLAB(4) = PLAB(4) +
+     +                sqrt(AMASS**2+PVERT(1)**2+PVERT(2)**2+PVERT(3)**2)
+          enddo
+        endif
         PLAB(5) = PLAB(4)
         VERTEX(1) = VERT(1)
         VERTEX(2) = VERT(2)
@@ -256,20 +270,20 @@ c         print *, ngen,' background photons generated this event'
                PABS=pmin*(pmax/pmin)**RNDM(1)
                             ENDIF
                             IF (tlog_particle_gun.EQ.0) THEN
-               THETA=(PKINE(2)+PKINE(5)*(RNDM(2)-0.5))*DEGRAD
+               THETA=REAL((PKINE(2)+PKINE(5)*(RNDM(2)-0.5))*DEGRAD)
                             ELSE
                thetamin=PKINE(2)-0.5*PKINE(5)
                thetamax=PKINE(2)+0.5*PKINE(5)
                IF (thetamin.LE.0) thetamin=0.9
-               THETA=(thetamin*(thetamax/thetamin)**RNDM(2))*DEGRAD
+               THETA=REAL((thetamin*(thetamax/thetamin)**RNDM(2))*DEGRAD)
                             ENDIF
-            PHI=(PKINE(3)+PKINE(6)*(RNDM(3)-0.5))*DEGRAD
+            PHI=REAL((PKINE(3)+PKINE(6)*(RNDM(3)-0.5))*DEGRAD)
          ELSE
             IK=IKINE
             CALL GRNDM(RNDM,2)
             PABS=PKINE(1)
-            THETA=PI*RNDM(1)
-            PHI=TWOPI*RNDM(2)
+            THETA=REAL(PI*RNDM(1))
+            PHI=REAL(TWOPI*RNDM(2))
          ENDIF
          PLAB(1) = PABS*SIN(THETA)*COS(PHI)
          PLAB(2) = PABS*SIN(THETA)*SIN(PHI)

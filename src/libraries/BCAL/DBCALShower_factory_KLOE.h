@@ -40,8 +40,8 @@ public:
     
 private:
     jerror_t init();
-    jerror_t brun(JEventLoop *loop, int runnumber);
-    jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+    jerror_t brun(JEventLoop *loop, int32_t runnumber);
+    jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);	///< Invoked via JEventProcessor virtual method
 
     void FindPointsInShower(int indx, JEventLoop *loop, vector<const DBCALPoint*> &pointsInShower);
     void CellRecon(JEventLoop *loop);

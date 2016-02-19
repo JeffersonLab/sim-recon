@@ -271,7 +271,7 @@ jerror_t DEventProcessor_trackeffv2::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_trackeffv2::brun(JEventLoop* locEventLoop, int runnumber)
+jerror_t DEventProcessor_trackeffv2::brun(JEventLoop* locEventLoop, int32_t runnumber)
 {
 	dMCThrownMatchingFactory = static_cast<DMCThrownMatching_factory*>(locEventLoop->GetFactory("DMCThrownMatching"));
 	return NOERROR;
@@ -280,7 +280,7 @@ jerror_t DEventProcessor_trackeffv2::brun(JEventLoop* locEventLoop, int runnumbe
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_trackeffv2::evnt(JEventLoop* locEventLoop, int eventnumber)
+jerror_t DEventProcessor_trackeffv2::evnt(JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 	vector<const DMCThrown*> locMCThrowns;
 	vector<const DTrackCandidate*> locTrackCandidates;

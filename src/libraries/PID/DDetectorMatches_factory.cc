@@ -18,7 +18,7 @@ jerror_t DDetectorMatches_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DDetectorMatches_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DDetectorMatches_factory::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	//LEAVE THIS EMPTY!!! OR ELSE WON'T BE INITIALIZED PROPERLY WHEN "COMBO" FACTORY CALLS Create_DDetectorMatches ON REST DATA!!
 	return NOERROR;
@@ -27,7 +27,7 @@ jerror_t DDetectorMatches_factory::brun(jana::JEventLoop *locEventLoop, int runn
 //------------------
 // evnt
 //------------------
-jerror_t DDetectorMatches_factory::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
+jerror_t DDetectorMatches_factory::evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber)
 {
 	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locEventLoop->Get(locTrackTimeBasedVector);

@@ -132,7 +132,7 @@ C.    ------------------------------------------------------------------
       Q(JST+12) = UPWGHT
 *
 #ifdef USE_UPWGHT_AS_REPEAT_COUNT
-      NALIVE = NALIVE + UPWGHT
+      NALIVE = INT(NALIVE + UPWGHT)
 #else
       NALIVE = NALIVE +1
 #endif

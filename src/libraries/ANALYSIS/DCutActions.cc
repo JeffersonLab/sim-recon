@@ -4,6 +4,29 @@
 
 #include "ANALYSIS/DCutActions.h"
 
+string DCutAction_MinTrackHits::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinTrackHits;
+	return locStream.str();
+}
+
+bool DCutAction_MinTrackHits::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	deque<const DKinematicData*> locParticles;
+	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
+	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
+	{
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+		const DTrackTimeBased* locTrackTimeBased = NULL;
+		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+		unsigned int locNumTrackHits = locTrackTimeBased->Ndof + 5;
+		if(locNumTrackHits < dMinTrackHits)
+			return false;
+	}
+	return true;
+}
+
 string DCutAction_ThrownTopology::Get_ActionName(void) const
 {
 	ostringstream locStream;
@@ -194,14 +217,20 @@ void DCutAction_MissingMass::Initialize(JEventLoop* locEventLoop)
 
 bool DCutAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	DLorentzVector locMissingP4;
-	if(dMissingMassOffOfStepIndex == -1)
-		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag());
-	else
-		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, dMissingMassOffOfPIDs, Get_UseKinFitResultsFlag());
+	//build all possible combinations of the included pids
+	set<set<size_t> > locIndexCombos = dAnalysisUtilities->Build_IndexCombos(Get_Reaction()->Get_ReactionStep(dMissingMassOffOfStepIndex), dMissingMassOffOfPIDs);
 
-	double locMissingMass = locMissingP4.M();
-	return ((locMissingMass >= dMinimumMissingMass) && (locMissingMass <= dMaximumMissingMass));
+	//loop over them: Must fail ALL to fail. if any succeed, return true
+	set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
+	for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
+	{
+		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, *locComboIterator, Get_UseKinFitResultsFlag());
+		double locMissingMass = locMissingP4.M();
+		if((locMissingMass >= dMinimumMissingMass) && (locMissingMass <= dMaximumMissingMass))
+			return true;
+	}
+
+	return false; //all failed
 }
 
 string DCutAction_MissingMassSquared::Get_ActionName(void) const
@@ -218,20 +247,26 @@ void DCutAction_MissingMassSquared::Initialize(JEventLoop* locEventLoop)
 
 bool DCutAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	DLorentzVector locMissingP4;
-	if(dMissingMassOffOfStepIndex == -1)
-		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag());
-	else
-		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, dMissingMassOffOfPIDs, Get_UseKinFitResultsFlag());
+	//build all possible combinations of the included pids
+	set<set<size_t> > locIndexCombos = dAnalysisUtilities->Build_IndexCombos(Get_Reaction()->Get_ReactionStep(dMissingMassOffOfStepIndex), dMissingMassOffOfPIDs);
 
-	double locMissingMassSq = locMissingP4.M2();
-	return ((locMissingMassSq >= dMinimumMissingMassSq) && (locMissingMassSq <= dMaximumMissingMassSq));
+	//loop over them: Must fail ALL to fail. if any succeed, return true
+	set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
+	for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
+	{
+		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, *locComboIterator, Get_UseKinFitResultsFlag());
+		double locMissingMassSq = locMissingP4.M2();
+		if((locMissingMassSq >= dMinimumMissingMassSq) && (locMissingMassSq <= dMaximumMissingMassSq))
+			return true;
+	}
+
+	return false; //all failed
 }
 
 string DCutAction_InvariantMass::Get_ActionName(void) const
 {
 	ostringstream locStream;
-	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinimumInvariantMass << "_" << dMaximumInvariantMass;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinMass << "_" << dMaxMass;
 	return locStream.str();
 }
 
@@ -242,17 +277,34 @@ void DCutAction_InvariantMass::Initialize(JEventLoop* locEventLoop)
 
 bool DCutAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	double locInvariantMass;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
 		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
-		if(locParticleComboStep->Get_InitialParticleID() != dInitialPID)
+		const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
+		if((dInitialPID != Unknown) && (locParticleComboStep->Get_InitialParticleID() != dInitialPID))
 			continue;
-		locInvariantMass = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, Get_UseKinFitResultsFlag()).M();
-//cout << "flag, init pid, inv mass = " << Get_UseKinFitResultsFlag() << ", " << ParticleType(dInitialPID) << ", " << locInvariantMass << endl;
-		if((locInvariantMass > dMaximumInvariantMass) || (locInvariantMass < dMinimumInvariantMass))
+		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
+			continue;
+
+		//build all possible combinations of the included pids
+		set<set<size_t> > locIndexCombos = dAnalysisUtilities->Build_IndexCombos(locReactionStep, dToIncludePIDs);
+
+		//loop over them: Must fail ALL to fail. if any succeed, go to the next step
+		set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
+		bool locAnyOKFlag = false;
+		for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
+		{
+			DLorentzVector locFinalStateP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, *locComboIterator, Get_UseKinFitResultsFlag());
+			double locInvariantMass = locFinalStateP4.M();
+			if((locInvariantMass > dMaxMass) || (locInvariantMass < dMinMass))
+				continue;
+			locAnyOKFlag = true;
+			break;
+		}
+		if(!locAnyOKFlag)
 			return false;
 	}
+
 	return true;
 }
 
@@ -275,6 +327,20 @@ bool DCutAction_AllVertexZ::Perform_Action(JEventLoop* locEventLoop, const DPart
 			return false;
 	}
 	return true;
+}
+
+string DCutAction_ProductionVertexZ::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinVertexZ << "_" << dMaxVertexZ;
+	return locStream.str();
+}
+
+bool DCutAction_ProductionVertexZ::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	const DParticleComboStep* locStep = locParticleCombo->Get_ParticleComboStep(0);
+	double locVertexZ = locStep->Get_Position().Z();
+	return ((locVertexZ >= dMinVertexZ) && (locVertexZ <= dMaxVertexZ));
 }
 
 string DCutAction_MaxTrackDOCA::Get_ActionName(void) const
@@ -349,6 +415,7 @@ bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const D
 		return false; //not a simulated event
 	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector[0];
 
+	//Check DReaction vs thrown (i.e. not combo contents)
 	if(!dAnalysisUtilities->Check_IsBDTSignalEvent(locEventLoop, Get_Reaction(), dExclusiveMatchFlag, dIncludeDecayingToReactionFlag))
 		return false;
 
@@ -458,6 +525,12 @@ bool DCutAction_BDTSignalCombo::Perform_Action(JEventLoop* locEventLoop, const D
 	}
 
 	return true; //we made it!
+}
+
+DCutAction_BDTSignalCombo::~DCutAction_BDTSignalCombo(void)
+{
+	if(dCutAction_TrueBeamParticle != NULL)
+		delete dCutAction_TrueBeamParticle;
 }
 
 void DCutAction_TrueCombo::Initialize(JEventLoop* locEventLoop)
@@ -578,6 +651,14 @@ bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParti
 	}
 
 	return true; //we made it!
+}
+
+DCutAction_TrueCombo::~DCutAction_TrueCombo(void)
+{
+	if(dCutAction_TrueBeamParticle != NULL)
+		delete dCutAction_TrueBeamParticle;
+	if(dCutAction_ThrownTopology != NULL)
+		delete dCutAction_ThrownTopology;
 }
 
 bool DCutAction_TrueBeamParticle::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
@@ -930,27 +1011,71 @@ bool DCutAction_PIDDeltaT::Perform_Action(JEventLoop* locEventLoop, const DParti
 	return true;
 }
 
+string DCutAction_PIDTimingBeta::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dPID << "_" << dSystem << "_" << dMinBeta << "_" << dMaxBeta;
+	return locStream.str();
+}
+
+bool DCutAction_PIDTimingBeta::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	//if dPID = Unknown, apply cut to all PIDs
+	//if dSystem = SYS_NULL, apply cut to all systems
+
+	deque<const DKinematicData*> locParticles;
+	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
+
+	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
+	{
+		if((dPID != Unknown) && (locParticles[loc_i]->PID() != dPID))
+			continue;
+		if((dSystem != SYS_NULL) && (locParticles[loc_i]->t1_detector() != dSystem))
+			continue;
+
+		double locBeta = locParticles[loc_i]->measuredBeta();
+		if((locBeta < dMinBeta) || (locBeta > dMaxBeta))
+			return false;
+	}
+
+	return true;
+}
+
+string DCutAction_NoPIDHit::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dPID;
+	return locStream.str();
+}
+
+bool DCutAction_NoPIDHit::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	//if dPID = Unknown, apply cut to all PIDs
+
+	deque<const DKinematicData*> locParticles;
+	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
+
+	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
+	{
+		if((dPID != Unknown) && (locParticles[loc_i]->PID() != dPID))
+			continue;
+		if(locParticles[loc_i]->t1_detector() == SYS_NULL)
+			return false;
+	}
+
+	return true;
+}
+
 void DCutAction_OneVertexKinFit::Initialize(JEventLoop* locEventLoop)
 {
-	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield(locEventLoop->GetJEvent().GetRunNumber());
+	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
+	dKinFitter = new DKinFitter(dKinFitUtils);
 
-	double locTargetZCenter = 65.0;
-	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
-	locGeometry->GetTargetZ(locTargetZCenter);
-
-	//Only set magnetic field if non-zero!
-	double locBx, locBy, locBz;
-	locMagneticFieldMap->GetField(0.0, 0.0, locTargetZCenter, locBx, locBy, locBz);
-	TVector3 locBField(locBx, locBy, locBz);
-	if(locBField.Mag() > 0.0)
-		dKinFitter.Set_BField(locMagneticFieldMap);
+	// Optional: Useful utility functions.
+	locEventLoop->GetSingle(dAnalysisUtilities);
 
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
-		// Optional: Useful utility functions.
-		locEventLoop->GetSingle(dAnalysisUtilities);
-
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
 			//If another thread has already created the folder, it just changes to it. 
 		CreateAndChangeTo_ActionDirectory();
@@ -966,35 +1091,39 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 {
 	//need to call prior to use in each event (cleans up memory allocated from last event)
 		//this call invalidates memory from previous fits (but that's OK, we aren't saving them anywhere)
-	dKinFitter.Reset_NewEvent();
+	dKinFitter->Reset_NewEvent();
 
 	//Get particles for fit (all detected q+)
 	deque<const DKinematicData*> locDetectedParticles;
 	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locDetectedParticles);
 
 	//Make DKinFitParticle objects for each one
-	deque<const DKinFitParticle*> locKinFitParticles;
+	deque<DKinFitParticle*> locKinFitParticles;
+	set<DKinFitParticle*> locKinFitParticleSet;
 	for(size_t loc_i = 0; loc_i < locDetectedParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locDetectedParticles[loc_i]);
-		const DKinFitParticle* locKinFitParticle = dKinFitter.Make_DetectedParticle(locChargedTrackHypothesis);
+		DKinFitParticle* locKinFitParticle = dKinFitUtils->Make_DetectedParticle(locChargedTrackHypothesis);
 		locKinFitParticles.push_back(locKinFitParticle);
+		locKinFitParticleSet.insert(locKinFitParticle);
 	}
 
 	// vertex guess
 	TVector3 locVertexGuess = dAnalysisUtilities->Calc_CrudeVertex(locDetectedParticles);
 
 	// make & set vertex constraint
-	DKinFitConstraint_Vertex* locVertexConstraint = dKinFitter.Make_VertexConstraint(deque<const DKinFitParticle*>(), locKinFitParticles, locVertexGuess);
-	dKinFitter.Set_Constraint(locVertexConstraint);
+	set<DKinFitParticle*> locNoConstrainParticles;
+	DKinFitConstraint_Vertex* locVertexConstraint = dKinFitUtils->Make_VertexConstraint(locKinFitParticleSet, locNoConstrainParticles, locVertexGuess);
+	dKinFitter->Add_Constraint(locVertexConstraint);
 
 	// PERFORM THE KINEMATIC FIT
-	if(!dKinFitter.Fit_Reaction())
+	if(!dKinFitter->Fit_Reaction())
 		return (dMinKinFitCL < 0.0); //fit failed to converge, return false if converge required
 
 	// GET THE FIT RESULTS
-	double locConfidenceLevel = dKinFitter.Get_ConfidenceLevel();
-	TVector3 locFitVertex = locVertexConstraint->Get_CommonVertex();
+	double locConfidenceLevel = dKinFitter->Get_ConfidenceLevel();
+	DKinFitConstraint_Vertex* locResultVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*dKinFitter->Get_KinFitConstraints().begin());
+	TVector3 locFitVertex = locResultVertexConstraint->Get_CommonVertex();
 
 	//Optional: Fill histograms
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
@@ -1005,6 +1134,21 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
-	return (locConfidenceLevel >= dMinKinFitCL);
+	if(locConfidenceLevel < dMinKinFitCL)
+		return false;
+	if(dMinVertexZ < dMaxVertexZ) //don't cut otherwise
+	{
+		if((locFitVertex.Z() < dMinVertexZ) || (locFitVertex.Z() > dMaxVertexZ))
+			return false;
+	}
+	return true;
+}
+
+DCutAction_OneVertexKinFit::~DCutAction_OneVertexKinFit(void)
+{
+	if(dKinFitter != NULL)
+		delete dKinFitter;
+	if(dKinFitUtils != NULL)
+		delete dKinFitUtils;
 }
 

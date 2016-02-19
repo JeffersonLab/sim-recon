@@ -36,8 +36,11 @@ class DBCALUnifiedHit_factory : public JFactory<DBCALUnifiedHit> {
   };
  
   jerror_t init(void);
-  jerror_t brun(jana::JEventLoop *eventLoop, int runnumber); ///< Called everytime a new run number is detected.
-  jerror_t evnt(JEventLoop *loop, int eventnumber);
+  jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber); ///< Called everytime a new run number is detected.
+  jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);
+
+  // Use TDC Times"
+  bool USE_TDC;
 
   float E_tree;
   float t_tdc_tree;
@@ -69,10 +72,10 @@ class DBCALUnifiedHit_factory : public JFactory<DBCALUnifiedHit> {
   class timewalk_coefficients {
    public:
     timewalk_coefficients() :
-      c0(0), c1(0), c2(0), c3(0) {}
-    timewalk_coefficients(float c0, float c1, float c2, float c3) :
-      c0(c0), c1(c1), c2(c2), c3(c3) {}
-    float c0,c1,c2,c3;
+      a_thresh(0), c0(0), c1(0), c2(0) {}
+    timewalk_coefficients(float c0, float c1, float c2, float a_thresh) :
+      a_thresh(a_thresh), c0(c0), c1(c1), c2(c2) {}
+    float a_thresh,c0,c1,c2;
   };
 
   map<readout_channel,timewalk_coefficients> tdc_timewalk_map;

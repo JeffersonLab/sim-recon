@@ -200,38 +200,43 @@ bool DHistogramAction_ObjectMemory::Perform_Action(JEventLoop* locEventLoop, con
 		//DKinFitParticle
 		locBin = dFactoryPoolBinMap["DKinFitParticle"];
 		locBaseFactory = locEventLoop->GetFactory("DKinFitResults", "");
-		DKinFitResults_factory* locKinFitResultsFactory = static_cast<DKinFitResults_factory*>(locBaseFactory);
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitParticlePoolSize();
+//		DKinFitResults_factory* locKinFitResultsFactory = static_cast<DKinFitResults_factory*>(locBaseFactory);
+//		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitParticlePoolSize();
+		locNumObjectsMap[locBin] = 1;
 		locMemory = sizeof(DKinFitParticle)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += double(locMemory);
 
 		//DKinFitConstraint_Vertex
 		locBin = dFactoryPoolBinMap["DKinFitConstraint_Vertex"];
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitConstraintVertexPoolSize();
+//		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitConstraintVertexPoolSize();
+		locNumObjectsMap[locBin] = 1;
 		locMemory = sizeof(DKinFitConstraint_Vertex)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += double(locMemory);
 
 		//DKinFitConstraint_Spacetime
 		locBin = dFactoryPoolBinMap["DKinFitConstraint_Spacetime"];
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitConstraintSpacetimePoolSize();
+//		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitConstraintSpacetimePoolSize();
+		locNumObjectsMap[locBin] = 1;
 		locMemory = sizeof(DKinFitConstraint_Spacetime)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += double(locMemory);
 
 		//DKinFitConstraint_P4
 		locBin = dFactoryPoolBinMap["DKinFitConstraint_P4"];
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitConstraintP4PoolSize();
+//		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_KinFitConstraintP4PoolSize();
+		locNumObjectsMap[locBin] = 1;
 		locMemory = sizeof(DKinFitConstraint_P4)*locNumObjectsMap[locBin];
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += double(locMemory);
 
 		//TMatrixDSym_KinFitter
 		locBin = dFactoryPoolBinMap["TMatrixDSym_KinFitter"];
-		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_MatrixDSymPoolSize() + locKinFitResultsFactory->Get_LargeMatrixDSymPoolSize();
-		locMemory = (sizeof(TMatrixDSym) + 7*7*8)*locKinFitResultsFactory->Get_MatrixDSymPoolSize(); //assume 7x7 matrix of doubles (8)
-		locMemory += (sizeof(TMatrixDSym) + 30*30*8)*locKinFitResultsFactory->Get_LargeMatrixDSymPoolSize(); //assume 30x30 matrix of doubles (8)
+//		locNumObjectsMap[locBin] = locKinFitResultsFactory->Get_MatrixDSymPoolSize() + locKinFitResultsFactory->Get_LargeMatrixDSymPoolSize();
+		locNumObjectsMap[locBin] = 1;
+//		locMemory = (sizeof(TMatrixDSym) + 7*7*8)*locKinFitResultsFactory->Get_MatrixDSymPoolSize(); //assume 7x7 matrix of doubles (8)
+//		locMemory += (sizeof(TMatrixDSym) + 30*30*8)*locKinFitResultsFactory->Get_LargeMatrixDSymPoolSize(); //assume 30x30 matrix of doubles (8)
 		locMemoryMap[locBin] = locMemory;
 		locTotalMemory += double(locMemory);
 
@@ -358,16 +363,16 @@ void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)
 
 		if(!locIsRESTEvent)
 		{
-			locHistName = "FDCPlaneVsP_Candidates";
-			dHist_FDCPlaneVsP_Candidates = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Track Candidates;p (GeV/c);FDC Plane", dNum2DPBins, dMinP, dMaxP, 24, 0.5, 24.5);
-			locHistName = "FDCPlaneVsP_WireBased";
-			dHist_FDCPlaneVsP_WireBased = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Wire-Based Tracks;p (GeV/c);FDC Plane", dNum2DPBins, dMinP, dMaxP, 24, 0.5, 24.5);
+			locHistName = "FDCPlaneVsTheta_Candidates";
+			dHist_FDCPlaneVsTheta_Candidates = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Track Candidates;p (GeV/c);FDC Plane", dNum2DThetaBins, dMinTheta, dMaxTheta, 24, 0.5, 24.5);
+			locHistName = "FDCPlaneVsTheta_WireBased";
+			dHist_FDCPlaneVsTheta_WireBased = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Wire-Based Tracks;p (GeV/c);FDC Plane", dNum2DThetaBins, dMinTheta, dMaxTheta, 24, 0.5, 24.5);
 		}
 
-		locHistName = "FDCPlaneVsP_TimeBased";
-		dHist_FDCPlaneVsP_TimeBased = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Time-Based Tracks;p (GeV/c);FDC Plane", dNum2DPBins, dMinP, dMaxP, 24, 0.5, 24.5);
-		locHistName = "FDCPlaneVsP_TimeBased_GoodTrackFOM";
-		dHist_FDCPlaneVsP_TimeBased_GoodTrackFOM = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Good FOM Time-Based Tracks;p (GeV/c);FDC Plane", dNum2DPBins, dMinP, dMaxP, 24, 0.5, 24.5);
+		locHistName = "FDCPlaneVsTheta_TimeBased";
+		dHist_FDCPlaneVsTheta_TimeBased = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Time-Based Tracks;p (GeV/c);FDC Plane", dNum2DThetaBins, dMinTheta, dMaxTheta, 24, 0.5, 24.5);
+		locHistName = "FDCPlaneVsTheta_TimeBased_GoodTrackFOM";
+		dHist_FDCPlaneVsTheta_TimeBased_GoodTrackFOM = GetOrCreate_Histogram<TH2I>(locHistName, "Hits on Good FOM Time-Based Tracks;p (GeV/c);FDC Plane", dNum2DThetaBins, dMinTheta, dMaxTheta, 24, 0.5, 24.5);
 
 		if(!locMCThrowns.empty())
 		{
@@ -565,7 +570,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 			set<int> locFDCPlanes;
 			locParticleID->Get_FDCPlanes(locTrackCandidates[loc_i]->dFDCPlanes, locFDCPlanes);
 			for(set<int>::iterator locIterator = locFDCPlanes.begin(); locIterator != locFDCPlanes.end(); ++locIterator)
-				dHist_FDCPlaneVsP_Candidates->Fill(locTheta, *locIterator);
+				dHist_FDCPlaneVsTheta_Candidates->Fill(locTheta, *locIterator);
 		}
 
 		map<JObject::oid_t, const DTrackWireBased*>::iterator locWireBasedIterator = locBestTrackWireBasedMap.begin();
@@ -585,7 +590,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 			set<int> locFDCPlanes;
 			locParticleID->Get_FDCPlanes(locTrackWireBased->dFDCPlanes, locFDCPlanes);
 			for(set<int>::iterator locIterator = locFDCPlanes.begin(); locIterator != locFDCPlanes.end(); ++locIterator)
-				dHist_FDCPlaneVsP_WireBased->Fill(locTheta, *locIterator);
+				dHist_FDCPlaneVsTheta_WireBased->Fill(locTheta, *locIterator);
 
 			dHist_TrackingFOM_WireBased->Fill(locTrackWireBased->FOM);
 		}
@@ -620,9 +625,9 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 			locParticleID->Get_FDCPlanes(locTrackTimeBased->dFDCPlanes, locFDCPlanes);
 			for(set<int>::iterator locIterator = locFDCPlanes.begin(); locIterator != locFDCPlanes.end(); ++locIterator)
 			{
-				dHist_FDCPlaneVsP_TimeBased->Fill(locTheta, *locIterator);
+				dHist_FDCPlaneVsTheta_TimeBased->Fill(locTheta, *locIterator);
 				if(locTrackTimeBased->FOM > dGoodTrackFOM)
-					dHist_FDCPlaneVsP_TimeBased_GoodTrackFOM->Fill(locTheta, *locIterator);
+					dHist_FDCPlaneVsTheta_TimeBased_GoodTrackFOM->Fill(locTheta, *locIterator);
 			}
 
 			if(locTrackTimeBased->FOM > dGoodTrackFOM)
@@ -1400,8 +1405,22 @@ void DHistogramAction_DetectorPID::Initialize(JEventLoop* locEventLoop)
 
 	string locHistName, locHistTitle, locParticleROOTName;
 
+	string locTrackSelectionTag = "NotATag", locShowerSelectionTag = "NotATag";
+	if(gPARMS->Exists("COMBO:TRACK_SELECT_TAG"))
+		gPARMS->GetParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
+	if(gPARMS->Exists("COMBO:SHOWER_SELECT_TAG"))
+		gPARMS->GetParameter("COMBO:SHOWER_SELECT_TAG", locShowerSelectionTag);
+
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
+		//So: Default tag is "", User can set it to something else
+		//In here, if tag is "", get from gparms, if not, leave it alone
+			//If gparms value does not exist, set it to (and use) "PreSelect"
+		if(dTrackSelectionTag == "NotATag")
+			dTrackSelectionTag = (locTrackSelectionTag == "NotATag") ? "PreSelect" : locTrackSelectionTag;
+		if(dShowerSelectionTag == "NotATag")
+			dShowerSelectionTag = (locShowerSelectionTag == "NotATag") ? "PreSelect" : locShowerSelectionTag;
+
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
 			//If another thread has already created the folder, it just changes to it.
 		CreateAndChangeTo_ActionDirectory();
@@ -1700,10 +1719,10 @@ bool DHistogramAction_DetectorPID::Perform_Action(JEventLoop* locEventLoop, cons
 		return true;
 
 	vector<const DChargedTrack*> locChargedTracks;
-	locEventLoop->Get(locChargedTracks, "PreSelect");
+	locEventLoop->Get(locChargedTracks, dTrackSelectionTag.c_str());
 
 	vector<const DNeutralParticle*> locNeutralParticles;
-	locEventLoop->Get(locNeutralParticles, "PreSelect");
+	locEventLoop->Get(locNeutralParticles, dShowerSelectionTag.c_str());
 
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
@@ -1726,10 +1745,18 @@ bool DHistogramAction_DetectorPID::Perform_Action(JEventLoop* locEventLoop, cons
 				double locBeta_Timing = locNeutralParticleHypothesis->measuredBeta();
 				const DNeutralShower* locNeutralShower = locNeutralParticles[loc_i]->dNeutralShower;
 				double locShowerEnergy = locNeutralShower->dEnergy;
+
+				double locDeltaT = locNeutralParticleHypothesis->time() - locEventRFBunch->dTime;
 				if(locNeutralShower->dDetectorSystem == SYS_BCAL)
+				{
 					dHistMap_BetaVsP[SYS_BCAL][0]->Fill(locShowerEnergy, locBeta_Timing);
+					dHistMap_DeltaTVsP[SYS_BCAL][Gamma]->Fill(locShowerEnergy, locDeltaT);
+				}
 				else
+				{
 					dHistMap_BetaVsP[SYS_FCAL][0]->Fill(locShowerEnergy, locBeta_Timing);
+					dHistMap_DeltaTVsP[SYS_FCAL][Gamma]->Fill(locShowerEnergy, locDeltaT);
+				}
 			}
 		}
 
@@ -1975,7 +2002,7 @@ bool DHistogramAction_Neutrals::Perform_Action(JEventLoop* locEventLoop, const D
 					dHist_BCALTrackDOCA->Fill(locDistance);
 				if(locDetectorMatches->Get_DistanceToNearestTrack(locBCALShower, locDeltaPhi, locDeltaZ))
 				{
-					dHist_BCALTrackDeltaPhi->Fill(locDeltaPhi);
+					dHist_BCALTrackDeltaPhi->Fill(180.0*locDeltaPhi/TMath::Pi());
 					dHist_BCALTrackDeltaZ->Fill(locDeltaZ);
 				}
 
@@ -2010,8 +2037,18 @@ void DHistogramAction_DetectorMatchParams::Initialize(JEventLoop* locEventLoop)
 	double locTargetZCenter = 0.0;
 	locGeometry->GetTargetZ(locTargetZCenter);
 
+	string locTrackSelectionTag = "NotATag";
+	if(gPARMS->Exists("COMBO:TRACK_SELECT_TAG"))
+		gPARMS->GetParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
+
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
+		//So: Default tag is "", User can set it to something else
+		//In here, if tag is "", get from gparms, if not, leave it alone
+			//If gparms value does not exist, set it to (and use) "PreSelect"
+		if(dTrackSelectionTag == "NotATag")
+			dTrackSelectionTag = (locTrackSelectionTag == "NotATag") ? "PreSelect" : locTrackSelectionTag;
+
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
 			//If another thread has already created the folder, it just changes to it.
 		CreateAndChangeTo_ActionDirectory();
@@ -2119,7 +2156,7 @@ bool DHistogramAction_DetectorMatchParams::Perform_Action(JEventLoop* locEventLo
 void DHistogramAction_DetectorMatchParams::Fill_Hists(JEventLoop* locEventLoop, bool locUseTruePIDFlag)
 {
 	vector<const DChargedTrack*> locChargedTracks;
-	locEventLoop->Get(locChargedTracks, "PreSelect");
+	locEventLoop->Get(locChargedTracks, dTrackSelectionTag.c_str());
 
 	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
 	locEventLoop->Get(locMCThrownMatchingVector);
@@ -2207,9 +2244,18 @@ void DHistogramAction_EventVertex::Initialize(JEventLoop* locEventLoop)
 {
 	string locHistName, locHistTitle;
 
-	//CREATE THE HISTOGRAMS
+	string locTrackSelectionTag = "NotATag";
+	if(gPARMS->Exists("COMBO:TRACK_SELECT_TAG"))
+		gPARMS->GetParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
+
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
+		//So: Default tag is "", User can set it to something else
+		//In here, if tag is "", get from gparms, if not, leave it alone
+			//If gparms value does not exist, set it to (and use) "PreSelect"
+		if(dTrackSelectionTag == "NotATag")
+			dTrackSelectionTag = (locTrackSelectionTag == "NotATag") ? "PreSelect" : locTrackSelectionTag;
+
 		CreateAndChangeTo_ActionDirectory();
 
 		// Event RF Bunch Time
@@ -2318,7 +2364,7 @@ bool DHistogramAction_EventVertex::Perform_Action(JEventLoop* locEventLoop, cons
 	locEventLoop->GetSingle(locVertex);
 
 	vector<const DChargedTrack*> locChargedTracks;
-	locEventLoop->Get(locChargedTracks, "PreSelect");
+	locEventLoop->Get(locChargedTracks, dTrackSelectionTag.c_str());
 
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
@@ -2395,7 +2441,7 @@ bool DHistogramAction_EventVertex::Perform_Action(JEventLoop* locEventLoop, cons
 				if(dHistMap_KinFitPulls.find(locPID) == dHistMap_KinFitPulls.end())
 					continue; //PID not histogrammed
 
-				map<const DKinematicData*, map<DKinFitPullType, double> >::const_iterator locParticleIterator = locVertex->dKinFitPulls.find(locKinematicData);
+				map<const JObject*, map<DKinFitPullType, double> >::const_iterator locParticleIterator = locVertex->dKinFitPulls.find(locKinematicData);
 				if(locParticleIterator == locVertex->dKinFitPulls.end())
 					continue;
 
@@ -2416,9 +2462,22 @@ void DHistogramAction_DetectedParticleKinematics::Initialize(JEventLoop* locEven
 	string locHistName, locHistTitle, locParticleName, locParticleROOTName;
 	Particle_t locPID;
 
-	//CREATE THE HISTOGRAMS
+	string locTrackSelectionTag = "NotATag", locShowerSelectionTag = "NotATag";
+	if(gPARMS->Exists("COMBO:TRACK_SELECT_TAG"))
+		gPARMS->GetParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
+	if(gPARMS->Exists("COMBO:SHOWER_SELECT_TAG"))
+		gPARMS->GetParameter("COMBO:SHOWER_SELECT_TAG", locShowerSelectionTag);
+
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
+		//So: Default tag is "", User can set it to something else
+		//In here, if tag is "", get from gparms, if not, leave it alone
+			//If gparms value does not exist, set it to (and use) "PreSelect"
+		if(dTrackSelectionTag == "NotATag")
+			dTrackSelectionTag = (locTrackSelectionTag == "NotATag") ? "PreSelect" : locTrackSelectionTag;
+		if(dShowerSelectionTag == "NotATag")
+			dShowerSelectionTag = (locShowerSelectionTag == "NotATag") ? "PreSelect" : locShowerSelectionTag;
+
 		CreateAndChangeTo_ActionDirectory();
 
 		// Beam Particle
@@ -2428,7 +2487,7 @@ void DHistogramAction_DetectedParticleKinematics::Initialize(JEventLoop* locEven
 		CreateAndChangeTo_Directory(locParticleName, locParticleName);
 		locHistName = "Momentum";
 		locHistTitle = string("Beam ") + locParticleROOTName + string(";p (GeV/c)");
-		dBeamParticle_P = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPBins, dMinP, dMaxP);
+		dBeamParticle_P = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumBeamEBins, dMinP, dMaxBeamE);
 		gDirectory->cd("..");
 
 		//PID
@@ -2516,11 +2575,6 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 	if(Get_NumPreviousParticleCombos() != 0)
 		return true; //else double-counting!
 
-	const DEventRFBunch* locEventRFBunch = NULL;
-	locEventLoop->GetSingle(locEventRFBunch);
-	if(locParticleCombo != NULL)
-		locEventRFBunch = locParticleCombo->Get_EventRFBunch();
-
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);
 	japp->RootWriteLock();
@@ -2531,7 +2585,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 	japp->RootUnLock();
 
 	vector<const DChargedTrack*> locPreSelectChargedTracks;
-	locEventLoop->Get(locPreSelectChargedTracks, "PreSelect");
+	locEventLoop->Get(locPreSelectChargedTracks, dTrackSelectionTag.c_str());
 
 	for(size_t loc_i = 0; loc_i < locPreSelectChargedTracks.size(); ++loc_i)
 	{
@@ -2588,7 +2642,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 	locEventLoop->Get(locNeutralParticles);
 
 	vector<const DNeutralShower*> locNeutralShowers;
-	locEventLoop->Get(locNeutralShowers, "PreSelect");
+	locEventLoop->Get(locNeutralShowers, dShowerSelectionTag.c_str());
 
 	for(size_t loc_i = 0; loc_i < locNeutralShowers.size(); ++loc_i)
 	{
@@ -2602,7 +2656,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 		}
 		if(locNeutralParticle == NULL)
 			continue;
-		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_Hypothesis(Gamma);
+		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticle->Get_Hypothesis(Gamma);
 		if(locNeutralParticleHypothesis->dFOM < dMinPIDFOM)
 			continue;
 
@@ -2996,9 +3050,22 @@ bool DHistogramAction_NumReconstructedObjects::Perform_Action(JEventLoop* locEve
 
 void DHistogramAction_TrackMultiplicity::Initialize(JEventLoop* locEventLoop)
 {
-	//CREATE THE HISTOGRAMS
+	string locTrackSelectionTag = "NotATag", locShowerSelectionTag = "NotATag";
+	if(gPARMS->Exists("COMBO:TRACK_SELECT_TAG"))
+		gPARMS->GetParameter("COMBO:TRACK_SELECT_TAG", locTrackSelectionTag);
+	if(gPARMS->Exists("COMBO:SHOWER_SELECT_TAG"))
+		gPARMS->GetParameter("COMBO:SHOWER_SELECT_TAG", locShowerSelectionTag);
+
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
+		//So: Default tag is "", User can set it to something else
+		//In here, if tag is "", get from gparms, if not, leave it alone
+			//If gparms value does not exist, set it to (and use) "PreSelect"
+		if(dTrackSelectionTag == "NotATag")
+			dTrackSelectionTag = (locTrackSelectionTag == "NotATag") ? "PreSelect" : locTrackSelectionTag;
+		if(dShowerSelectionTag == "NotATag")
+			dShowerSelectionTag = (locShowerSelectionTag == "NotATag") ? "PreSelect" : locShowerSelectionTag;
+
 		CreateAndChangeTo_ActionDirectory();
 
 		string locHistName("NumReconstructedParticles");
@@ -3052,7 +3119,7 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 	locEventLoop->Get(locChargedTracks);
 
 	vector<const DChargedTrack*> locGoodChargedTracks;
-	locEventLoop->Get(locGoodChargedTracks, "PreSelect");
+	locEventLoop->Get(locGoodChargedTracks, dTrackSelectionTag.c_str());
 
 	// get #tracks by PID/q type 
 	size_t locNumPositiveTracks = 0, locNumNegativeTracks = 0; 
@@ -3101,7 +3168,7 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 	locEventLoop->Get(locNeutralParticles);
 
 	vector<const DNeutralShower*> locGoodNeutralShowers;
-	locEventLoop->Get(locGoodNeutralShowers, "PreSelect");
+	locEventLoop->Get(locGoodNeutralShowers, dShowerSelectionTag.c_str());
 
 	// neutrals by pid
 	for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)

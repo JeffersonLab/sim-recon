@@ -16,7 +16,7 @@ using namespace std;
 //------------------
 // evnt
 //------------------
-jerror_t DFDCPseudo_factory_WIRESONLY::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DFDCPseudo_factory_WIRESONLY::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DFDCIntersection*> fdcintersections;
 	loop->Get(fdcintersections);

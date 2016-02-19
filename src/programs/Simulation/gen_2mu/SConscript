@@ -1,0 +1,17 @@
+
+import os
+
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+sbms.AddHDDM(env)
+sbms.AddROOT(env)
+
+#boost = os.getenv('BOOST_ROOT','/usr')
+#env.AppendUnique(CPPPATH=['%s' % boost])
+
+sbms.executable(env)
+

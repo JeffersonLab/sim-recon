@@ -14,7 +14,7 @@
 
 #include "DRandom.h"
 
-const double kLarge = 1.e20;
+//const double kLarge = 1.e20;
 
 // B field constant to convert curvature to momentum
 // const double kBfieldConstant = -0.0299792458;
@@ -814,6 +814,29 @@ DKinematicData::ValueType DKinematicData::measuredInvBeta_err( void ) const
   return err;
 }
 
+void DKinematicData::Reset(void)
+{
+	setPID(Unknown);
+	setMassFixed();
+	setCharge(0);
+	setMass(0.0);
+
+	setMomentum(DVector3());
+	setPosition(DVector3());
+	setTime(0.0);
+
+	setdEdx(0.0);
+	setPathLength(0.0, 0.0);
+	setTrackingStateVector(0.0, 0.0, 0.0, 0.0, 0.0);
+
+	setT0(0.0, 0.0, SYS_NULL);
+	setT1(0.0, 0.0, SYS_NULL);
+
+	clearErrorMatrix();
+	clearTrackingErrorMatrix();
+
+	ClearAssociatedObjects();
+}
 
 //
 // static member functions

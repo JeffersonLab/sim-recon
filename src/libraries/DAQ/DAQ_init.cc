@@ -19,6 +19,8 @@ using namespace jana;
 #include "Df125PulsePedestal.h"
 #include "Df125PulseRawData.h"
 #include "Df125WindowRawData.h"
+#include "Df125CDCPulse.h"
+#include "Df125FDCPulse.h"
 #include "DF1TDCConfig.h"
 #include "DF1TDCHit.h"
 #include "DF1TDCTriggerTime.h"
@@ -27,6 +29,11 @@ using namespace jana;
 #include "DCODAEventInfo.h"
 #include "DCODAROCInfo.h"
 #include "DEPICSvalue.h"
+#include "DEventTag.h"
+#include "Df250BORConfig.h"
+#include "Df125BORConfig.h"
+#include "DF1TDCBORConfig.h"
+#include "DCAEN1290TDCBORConfig.h"
 
 jerror_t DAQ_init(JEventLoop *loop)
 {
@@ -47,6 +54,8 @@ jerror_t DAQ_init(JEventLoop *loop)
 	loop->AddFactory(new JFactory<Df125PulsePedestal>());
 	loop->AddFactory(new JFactory<Df125PulseRawData>());
 	loop->AddFactory(new JFactory<Df125WindowRawData>());
+	loop->AddFactory(new JFactory<Df125CDCPulse>());
+	loop->AddFactory(new JFactory<Df125FDCPulse>());
 	loop->AddFactory(new JFactory<DF1TDCHit>());
 	loop->AddFactory(new JFactory<DF1TDCConfig>());
 	loop->AddFactory(new JFactory<DF1TDCTriggerTime>());
@@ -55,6 +64,11 @@ jerror_t DAQ_init(JEventLoop *loop)
 	loop->AddFactory(new JFactory<DCODAEventInfo>());
 	loop->AddFactory(new JFactory<DCODAROCInfo>());
 	loop->AddFactory(new JFactory<DEPICSvalue>());
+	loop->AddFactory(new JFactory<DEventTag>());
+	loop->AddFactory(new JFactory<Df250BORConfig>());
+	loop->AddFactory(new JFactory<Df125BORConfig>());
+	loop->AddFactory(new JFactory<DF1TDCBORConfig>());
+	loop->AddFactory(new JFactory<DCAEN1290TDCBORConfig>());
   
   return NOERROR;
 }

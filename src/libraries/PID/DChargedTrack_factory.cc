@@ -24,7 +24,7 @@ jerror_t DChargedTrack_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DChargedTrack_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DChargedTrack_factory::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -32,7 +32,7 @@ jerror_t DChargedTrack_factory::brun(jana::JEventLoop *locEventLoop, int runnumb
 //------------------
 // evnt
 //------------------
-jerror_t DChargedTrack_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DChargedTrack_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
 	locEventLoop->Get(locChargedTrackHypotheses);
@@ -45,6 +45,7 @@ jerror_t DChargedTrack_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	for(; locIterator != locHypothesesByTrackID.end(); ++locIterator)
 	{
 		DChargedTrack* locChargedTrack = new DChargedTrack();
+		locChargedTrack->candidateid = locIterator->first;
 		locChargedTrack->dChargedTrackHypotheses = locIterator->second;
 		_data.push_back(locChargedTrack);
 	}

@@ -23,19 +23,28 @@
   
   if(!gPad) return;
   TCanvas *c1 = gPad->GetCanvas();
-  c1->Divide(3,3);
+  c1->Divide(3,2);
   // ADC vs TDC
   c1->cd(1);
   gPad->SetTicks();
   gPad->SetGrid();
   if (h2_st_adc_tdc_multi) h2_st_adc_tdc_multi->Draw("colz");
+  h2_st_adc_tdc_multi->SetAxisRange(0., 40.,"X");
+  h2_st_adc_tdc_multi->SetTitle("ST ADC Vs TDC multiplicities");
+  h2_st_adc_tdc_multi->GetZaxis()->SetLabelFont(10);
+  h2_st_adc_tdc_multi->GetZaxis()->SetLabelOffset(0.0);
+
   //ADC vs Hit
-  c1->cd(2);
+  c1->cd(4);
   gPad->SetTicks();
   gPad->SetGrid();
   if (h2_st_adc_hit_multi) h2_st_adc_hit_multi->Draw("colz");
+  h2_st_adc_hit_multi->SetAxisRange(0., 40.,"X");
+  h2_st_adc_hit_multi->SetTitle("ST ADC Vs Hit multiplicities");
+  h2_st_adc_hit_multi->GetZaxis()->SetLabelFont(10);
+  h2_st_adc_hit_multi->GetZaxis()->SetLabelOffset(0.0);
   // TDC multiplicity
-  c1->cd(4);
+  c1->cd(2);
   gPad->SetTicks();
   gPad->SetGrid();
   gPad->SetLogy();
@@ -57,6 +66,7 @@
   h_hit_multi->GetYaxis()->SetTitle("Counts");
   h_hit_multi->GetXaxis()->CenterTitle();
   h_hit_multi->GetYaxis()->CenterTitle();
+  // 3, and 6 are the same quantity from two different 2D histograms
   c1->cd(3);
   gPad->SetTicks();
   gPad->SetGrid();
@@ -67,30 +77,33 @@
   h_adc_multi->GetYaxis()->SetTitle("Counts");
   h_adc_multi->GetXaxis()->CenterTitle();
   h_adc_multi->GetYaxis()->CenterTitle();
-  c1->cd(6);
-  gStyle->SetOptStat(10);
-  gPad->SetTicks();
-  gPad->SetGrid();
-  gPad->SetLogy();
-  TH1D *h_ADC_multi = h2_st_adc_hit_multi->ProjectionY();
-  h_ADC_multi->Draw();
-  h_ADC_multi->SetAxisRange(0., 40.,"X");
-  h_ADC_multi->GetYaxis()->SetTitle("Counts");
-  h_ADC_multi->GetXaxis()->CenterTitle();
-  h_ADC_multi->GetYaxis()->CenterTitle();
+ 
+  //***********  Create the OCCUPANCY canvas *****************************
+  //**********************************************************************
+  TCanvas *c2 = new TCanvas("c2","Start Counter Occupancy Histograms", 200, 10, 600, 480);
+  c2->cd(0);
+  c2->Draw();
+  c2->Update();
+  if(!gPad) return;
+  TCanvas *c2 = gPad->GetCanvas();
+  c2->Divide(3,1);
+  
   // Occupancy Histos 
-  c1->cd(7);
+  c2->cd(1);
   gStyle->SetOptStat(10);
   gStyle->SetErrorX(0); 
   gPad->SetTicks();
   gPad->SetGrid();
   if (h1_tdc_sec) h1_tdc_sec->Draw("err");
   h1_tdc_sec->SetMinimum(0);
+ 
   h1_tdc_sec->GetXaxis()->CenterTitle();
   h1_tdc_sec->GetYaxis()->CenterTitle();
-  h1_tdc_sec->SetMarkerStyle(4);
-  h1_tdc_sec->SetMarkerSize(0.5);
-  c1->cd(8);
+  h1_tdc_sec->GetYaxis()->SetTitleOffset(1.5);
+  h1_tdc_sec->SetMarkerStyle(21);
+  h1_tdc_sec->SetMarkerSize(1.2);
+  h1_tdc_sec->SetMarkerColor(4);
+  c2->cd(3);
   gStyle->SetOptStat(10);
   gPad->SetTicks();
   gPad->SetGrid();
@@ -98,9 +111,11 @@
   h1_hit_sec->SetMinimum(0);
   h1_hit_sec->GetXaxis()->CenterTitle();
   h1_hit_sec->GetYaxis()->CenterTitle();
-  h1_hit_sec->SetMarkerStyle(4);
-  h1_hit_sec->SetMarkerSize(0.5);
-  c1->cd(9);
+  h1_hit_sec->GetYaxis()->SetTitleOffset(1.5);
+  h1_hit_sec->SetMarkerStyle(21);
+  h1_hit_sec->SetMarkerSize(1.2);
+  h1_hit_sec->SetMarkerColor(4);
+  c2->cd(2);
   gStyle->SetOptStat(10);
   gPad->SetTicks();
   gPad->SetGrid();
@@ -108,6 +123,8 @@
   h1_adc_sec->SetMinimum(0);
   h1_adc_sec->GetXaxis()->CenterTitle();
   h1_adc_sec->GetYaxis()->CenterTitle();
-  h1_adc_sec->SetMarkerStyle(4);
-  h1_adc_sec->SetMarkerSize(0.5);
+  h1_adc_sec->GetYaxis()->SetTitleOffset(1.5);
+  h1_adc_sec->SetMarkerStyle(21);
+  h1_adc_sec->SetMarkerSize(1.2);
+  h1_adc_sec->SetMarkerColor(4);
 }

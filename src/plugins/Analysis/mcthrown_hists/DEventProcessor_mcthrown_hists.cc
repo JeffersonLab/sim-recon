@@ -84,7 +84,7 @@ jerror_t DEventProcessor_mcthrown_hists::init(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_mcthrown_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_mcthrown_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DMCThrown*> mcthrowns;
 	loop->Get(mcthrowns);

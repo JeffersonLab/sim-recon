@@ -133,7 +133,7 @@ jerror_t DTrackTimeBased_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
+jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int32_t runnumber)
 {
   // Get the geometry
   DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
@@ -213,8 +213,10 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
+  // Save event number to help with debugging
+  myevt=eventnumber;
   if(!fitter)return NOERROR;
 
 	if(rtv.size() > MAX_DReferenceTrajectoryPoolSize){
@@ -445,13 +447,25 @@ jerror_t DTrackTimeBased_factory::fini(void)
 void DTrackTimeBased_factory::FilterDuplicates(void)
 {
 	/// Look through all current DTrackTimeBased objects and remove any
-	/// that have all of their hits in common with another track
+	/// that have most of their hits in common with another track
 	
 	if(_data.size()==0)return;
 
 	if(DEBUG_LEVEL>2)_DBG_<<"Looking for clones of time-based tracks ..."<<endl;
-
-	set<unsigned int> indexes_to_delete;
+	// We want to remove duplicate tracks corresponding to actual particles,
+	// not just duplicate fitted tracks for certain mass hypotheses -- this
+	// is partly because at a later stage the holes in the list of mass 
+	// hypotheses are filled in, thereby spoiling the whole point of this
+	// part of the code!
+	// Keep track of pairs of candididate id's, one for which we want to 
+	// keep all the results of fitting with different mass hypotheses,
+	// the other for which we want to delete all the results of fitting.
+	// We need both vectors to take into account potential ambiguities: 
+	// for one mass hypothesis starting with one candidate may be "better"
+	// than starting with a second clone candidate, whereas for a second
+	// mass hypothesis, the opposite may be true.
+	vector<unsigned int> candidates_to_keep;
+	vector<unsigned int> candidates_to_delete;
 	for(unsigned int i=0; i<_data.size()-1; i++){
 		DTrackTimeBased *dtrack1 = _data[i];
 
@@ -468,14 +482,7 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 		for(unsigned int j=i+1; j<_data.size(); j++){
 			DTrackTimeBased *dtrack2 = _data[j];
 			if (dtrack2->candidateid==cand1) continue;
-			
-			// Particles with the same mass but from different
-			// candidates are filtered at the Wire-based level.
-			// Here, it's possible to have multiple tracks with
-			// different masses that are clones due to that.
-			// Hence, we cut different mass clones is appropriate.
-			//if (dtrack2->mass() != dtrack1->mass())continue;
-
+	
 			vector<const DCDCTrackHit*> cdchits2;
 			vector<const DFDCPseudo*> fdchits2;
 			dtrack2->Get(cdchits2);
@@ -495,86 +502,88 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 				_DBG_<<"   Ncdc="<<Ncdc<<" num_cdc1="<<num_cdc1<<" num_cdc2="<<num_cdc2<<endl;
 				_DBG_<<"   Nfdc="<<Nfdc<<" num_fdc1="<<num_fdc1<<" num_fdc2="<<num_fdc2<<endl;
 			}
-			unsigned int total = Ncdc + Nfdc;
-			if (total==0) continue;
+			unsigned int total = Ncdc + Nfdc;	
+			// If the tracks share at most one hit, consider them
+			// to be separate tracks
+			if (total<=1) continue;
 
-			// Deal with the case where (within +-1 cdc hit), 
-			// all the cdc hits were common between the two 
-			// tracks but there were no fdc hits used in one or 
-			// both of the tracks.
-			if (Ncdc>0 && (num_fdc1*num_fdc2)==0){
-			  if (num_cdc1>num_cdc2){
-			    if (Ncdc<num_cdc2-1) continue;
-			  }
-			  else if (Ncdc<num_cdc1-1) continue;
+			// Deal with the case where there are cdc hits in 
+			// common between the tracks but there were no fdc 
+			// hits used in one of the tracks.
+			if (Ncdc>0 && (num_fdc1>0 || num_fdc2>0) 
+			    && (num_fdc1*num_fdc2)==0) continue;
 
-			  if(total1<total2){
-			    indexes_to_delete.insert(i);
-			  }else if(total2<total1){
-			    indexes_to_delete.insert(j);
-			  }else if(dtrack1->FOM > dtrack2->FOM){
-			    indexes_to_delete.insert(j);
-			  }else{
-			    indexes_to_delete.insert(i);
-			  }
-			  continue;
-			}	
-			// Deal with the case where (within +-1 fdc hit), 
-			// all the fdc hits were common between the two 
-			// tracks but there were no cdc hits used in one  
-			// or both of the tracks.			
-			if (Nfdc>0 && (num_cdc1*num_cdc2)==0){
-			  if (num_fdc1>num_fdc2){
-			    if (Nfdc<num_fdc2-1) continue;
-			  }
-			  else if (Nfdc<num_fdc1-1) continue;
+			// Deal with the case where there are fdc hits in
+			// common between the tracks but no cdc hits used in 
+			// one of the tracks.			
+			if (Nfdc>0 && (num_cdc1>0 || num_cdc2>0)
+			    && (num_cdc1*num_cdc2)==0) continue;
 
-			  if(total1<total2){
-			    indexes_to_delete.insert(i);
-			  }else if(total2<total1){
-			    indexes_to_delete.insert(j);
-			  }else if(dtrack1->FOM > dtrack2->FOM){
-			    indexes_to_delete.insert(j);
-			  }else{
-			    indexes_to_delete.insert(i);
-			  }
-			  continue;
+			// Look for tracks with many common hits in the CDC
+			if (num_cdc1>0 && num_cdc2>0){
+			  if (double(Ncdc)/double(num_cdc1)<0.9) continue;
+			  if (double(Ncdc)/double(num_cdc2)<0.9) continue;
 			}
-
-			if(Ncdc!=num_cdc1 && Ncdc!=num_cdc2)continue;
-		       
-			if(Nfdc!=num_fdc1 && Nfdc!=num_fdc2)continue;
-		      	
-			if(total!=total1 && total!=total2)continue;
-
+			// Look for tracks with many common hits in the FDC
+			if (num_fdc1>0 && num_fdc2>0){
+			  if (double(Nfdc)/double(num_fdc1)<0.9) continue;
+			  if (double(Nfdc)/double(num_fdc2)<0.9) continue;
+			}
+			
 			if(total1<total2){
-				indexes_to_delete.insert(i);
+			  candidates_to_delete.push_back(cand1);
+			  candidates_to_keep.push_back(dtrack2->candidateid);
 			}else if(total2<total1){
-				indexes_to_delete.insert(j);
+			  candidates_to_delete.push_back(dtrack2->candidateid);
+			  candidates_to_keep.push_back(cand1);
 			}else if(dtrack1->FOM > dtrack2->FOM){
-				indexes_to_delete.insert(j);
+			  candidates_to_delete.push_back(dtrack2->candidateid);
+			  candidates_to_keep.push_back(cand1);
 			}else{
-				indexes_to_delete.insert(i);
+			  candidates_to_delete.push_back(cand1);
+			  candidates_to_keep.push_back(dtrack2->candidateid);
 			}
 		}
 	}
 	
-	if(DEBUG_LEVEL>2)_DBG_<<"Found "<<indexes_to_delete.size()<<" time-based clones"<<endl;
+	if(DEBUG_LEVEL>2)_DBG_<<"Found "<<candidates_to_delete.size()<<" time-based clones"<<endl;
+
 
 	// Return now if we're keeping everyone
-	if(indexes_to_delete.size()==0)return;
+	if(candidates_to_delete.size()==0)return;
+
+	// Deal with the ambiguity problem mentioned above
+	for (unsigned int i=0;i<candidates_to_keep.size();i++){
+	  for (unsigned int j=0;j<candidates_to_delete.size();j++){
+	    if (candidates_to_keep[i]==candidates_to_delete[j]){
+	      candidates_to_delete.erase(candidates_to_delete.begin()+j);
+	      break;
+	    }
+	  }
+	  
+	}
 
 	// Copy pointers that we want to keep to a new container and delete
 	// the clone objects
 	vector<DTrackTimeBased*> new_data;
-	for(unsigned int i=0; i<_data.size(); i++){
-		if(indexes_to_delete.find(i)==indexes_to_delete.end()){
-			new_data.push_back(_data[i]);
-		}else{
-			delete _data[i];
-			if(DEBUG_LEVEL>1)_DBG_<<"Deleting clone time-based track "<<i<<endl;
-		}
-	}	
+	sort(_data.begin(),_data.end(),DTrackTimeBased_cmp);
+	for (unsigned int i=0;i<_data.size();i++){
+	  bool keep_track=true;
+	  for (unsigned int j=0;j<candidates_to_delete.size();j++){
+	    if (_data[i]->candidateid==candidates_to_delete[j]){
+	      keep_track=false;
+	      if(DEBUG_LEVEL>1){
+		_DBG_<<"Deleting clone time-based fitted result "<<i
+		     << " in event " << myevt << endl;
+	      }
+	      break;
+	    }
+	  }
+	  if (keep_track){
+	    new_data.push_back(_data[i]);
+	  }
+	  else delete _data[i];
+	}
 	_data = new_data;
 }
 
@@ -788,19 +797,19 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
 				    JEventLoop *loop,
 				    double mass){  
   if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting time based fit with mass: "<<mass<<endl;}
-  
+  // Get the hits from the wire-based track
+  vector<const DFDCPseudo*>myfdchits;
+  track->GetT(myfdchits);
+  vector<const DCDCTrackHit *>mycdchits;
+  track->GetT(mycdchits);
+
   // Do the fit
   DTrackFitter::fit_status_t status = DTrackFitter::kFitNotDone;
   if (USE_HITS_FROM_WIREBASED_FIT) {
     fitter->Reset();
     fitter->SetFitType(DTrackFitter::kTimeBased);	
     
-    // Get the hits from the wire-based track
-    vector<const DFDCPseudo*>myfdchits;
-    track->GetT(myfdchits);
     fitter->AddHits(myfdchits);
-    vector<const DCDCTrackHit *>mycdchits;
-    track->GetT(mycdchits);
     fitter->AddHits(mycdchits);
 
     status=fitter->FitTrack(track->position(),track->momentum(),
@@ -815,18 +824,26 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
     // from the wire-based track
     if (status==DTrackFitter::kFitNotDone){
       //_DBG_ << " Using wire-based hits " << endl;
-
-      vector<const DFDCPseudo*>myfdchits;
-      track->GetT(myfdchits);
       fitter->AddHits(myfdchits);
-      vector<const DCDCTrackHit *>mycdchits;
-      track->GetT(mycdchits);
       fitter->AddHits(mycdchits);
       
       status=fitter->FitTrack(track->position(),track->momentum(),
 			      track->charge(),mass,mStartTime,mStartDetector);
     }
 
+  }
+  
+  // In the transition region between the CDC and the FDC where the track 
+  // contains both CDC and FDC hits, sometimes too many hits are discarded in 
+  // the time-based phase and the time-based fit result does not improve on the 
+  // wire-based fit result.  In this case set the status word to 
+  // kFitNoImprovement and copy the wire-based parameters into the time-based
+  // class.
+  if (myfdchits.size()>3 && mycdchits.size()>3){
+    unsigned int ndof=fitter->GetNdof();
+    if (TMath::Prob(track->chisq,track->Ndof)>
+	TMath::Prob(fitter->GetChisq(),ndof)&&ndof<5)
+      status=DTrackFitter::kFitNoImprovement;
   }
       
   // Check the status value from the fit
@@ -835,8 +852,48 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
     //_DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
   case DTrackFitter::kFitFailed:
     break;
-  case DTrackFitter::kFitSuccess:
   case DTrackFitter::kFitNoImprovement:
+    {
+      // Create a new time-based track object
+      DTrackTimeBased *timebased_track = new DTrackTimeBased;
+
+      // Copy over DKinematicData part
+      DKinematicData *track_kd = timebased_track;
+      *track_kd = *track;
+
+      timebased_track->chisq = track->chisq;
+      timebased_track->Ndof = track->Ndof;
+      timebased_track->pulls = track->pulls;
+      timebased_track->trackid = track->id;
+      timebased_track->candidateid=track->candidateid;
+      timebased_track->FOM=track->FOM;
+      timebased_track->rt=track->rt;
+
+      for(unsigned int m=0; m<myfdchits.size(); m++)
+	timebased_track->AddAssociatedObject(myfdchits[m]); 
+      for(unsigned int m=0; m<mycdchits.size(); m++)
+	timebased_track->AddAssociatedObject(mycdchits[m]);
+      timebased_track->AddAssociatedObject(track);
+
+      // dEdx
+      double locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC;
+      unsigned int locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC;
+      pid_algorithm->CalcDCdEdx(timebased_track, locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC, locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC);
+  
+      timebased_track->ddEdx_FDC = locdEdx_FDC;
+      timebased_track->ddx_FDC = locdx_FDC;
+      timebased_track->dNumHitsUsedFordEdx_FDC = locNumHitsUsedFordEdx_FDC;
+      timebased_track->ddEdx_CDC = locdEdx_CDC;
+      timebased_track->ddx_CDC = locdx_CDC;
+      timebased_track->dNumHitsUsedFordEdx_CDC = locNumHitsUsedFordEdx_CDC;
+      timebased_track->setdEdx((locNumHitsUsedFordEdx_CDC >= locNumHitsUsedFordEdx_FDC) ? locdEdx_CDC : locdEdx_FDC);
+      
+      _data.push_back(timebased_track);
+      
+      return true;
+      break;
+    }
+  case DTrackFitter::kFitSuccess:
     {
       // Allocate a DReferenceTrajectory object if needed.
       // These each have a large enough memory footprint that
@@ -859,7 +916,7 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       rt->SetMass(mass);
       rt->SetDGeometry(geom);
       rt->q = timebased_track->charge();
-      rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge());
+      rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge(),&timebased_track->errorMatrix());
 
       if(rt->Nswim_steps <= 1)
       {
@@ -997,7 +1054,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   rt->SetMass(my_mass);
   rt->SetDGeometry(geom);
   rt->q = timebased_track->charge();
-  rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge());
+  rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge(),&timebased_track->errorMatrix());
   timebased_track->rt=rt;
   
   // Get the hits used in the fit and add them as associated objects 
@@ -1013,7 +1070,7 @@ void DTrackTimeBased_factory::AddMissingTrackHypothesis(vector<DTrackTimeBased*>
   // Add DTrack object as associate object
   vector<const DTrackWireBased*>wire_based_track;
   src_track->GetT(wire_based_track);
-  timebased_track->AddAssociatedObject(wire_based_track[0]);
+  //  timebased_track->AddAssociatedObject(wire_based_track[0]);
 
   // dEdx
   double locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC;

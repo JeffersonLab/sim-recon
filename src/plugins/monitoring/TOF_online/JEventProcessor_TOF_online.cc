@@ -14,6 +14,7 @@
 
 using namespace std;
 using namespace jana;
+#include <DAQ/DCODAEventInfo.h>
 
 #include "TOF/DTOFHit.h"
 #include "TOF/DTOFDigiHit.h"
@@ -57,6 +58,9 @@ static TH2F *TOFSignalsRawPlane0;
 static TH2F *TOFSignalsRawPlane1;
 static TH2F *TOFTimesPlane0;
 static TH2F *TOFTimesPlane1;
+
+static TH2F *TOFWalkExample;
+
 
 //----------------------------------------------------------------------------------
 
@@ -136,6 +140,8 @@ jerror_t JEventProcessor_TOF_online::init(void) {
   TOFTimesPlane1 = new TH2F("TOFTimesPlane1","TOF TDC times Plane 1 all PMTs",
 			    800,0.,4000., 88, 0., 88.);
 
+  TOFWalkExample = new TH2F("TOFWalkEXample", "TOF T-vs-E walk correction example", 200, 10., 24000., 500, 200.,290.);
+
   // back to main dir
   main->cd();
 
@@ -148,8 +154,15 @@ jerror_t JEventProcessor_TOF_online::init(void) {
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_TOF_online::brun(JEventLoop *eventLoop, int runnumber) {
+jerror_t JEventProcessor_TOF_online::brun(JEventLoop *eventLoop, int32_t runnumber) {
   // This is called whenever the run number changes
+
+  map<string,double> tdcshift;
+  if (!eventLoop->GetCalib("/TOF/tdc_shift", tdcshift)){
+    TOF_TDC_SHIFT = tdcshift["TOF_TDC_SHIFT"];
+  }
+
+ 
   return NOERROR;
 }
 
@@ -157,7 +170,7 @@ jerror_t JEventProcessor_TOF_online::brun(JEventLoop *eventLoop, int runnumber) 
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_TOF_online::evnt(JEventLoop *eventLoop, int eventnumber) {
+jerror_t JEventProcessor_TOF_online::evnt(JEventLoop *eventLoop, uint64_t eventnumber) {
   // This is called for every event. Use of common resources like writing
   // to a file or filling a histogram should be mutex protected. Using
   // loop-Get(...) to get reconstructed objects (and thereby activating the
@@ -169,7 +182,15 @@ jerror_t JEventProcessor_TOF_online::evnt(JEventLoop *eventLoop, int eventnumber
   int count_tdc = 0;
   int count_adc = 0;
   double tdc_time,pulse_time;
-  
+
+  int ExamplePlane = 0;
+  int ExampleBar = 10;
+  int ExampleEnd = 0;
+  int RefFound = 0;
+  float tADC = 0.;
+  float tTDC = 0.;
+  float EADC = 0.;
+
   double hit_north[45];
   double hit_south[45];
   double hit_up[45];
@@ -184,6 +205,23 @@ jerror_t JEventProcessor_TOF_online::evnt(JEventLoop *eventLoop, int eventnumber
   memset(hit_south,0,sizeof(hit_south));
   memset(hit_up,0,sizeof(hit_up));
   memset(hit_down,0,sizeof(hit_down));
+
+  // First determine timing shift to resolve 6-fold ambiguity
+  vector<const DCODAEventInfo*> locCODAEventInfo;
+  eventLoop->Get(locCODAEventInfo);
+  
+  if (locCODAEventInfo.size() == 0){
+    return NOERROR;
+  }
+  uint64_t TriggerTime = locCODAEventInfo[0]->avg_timestamp;
+  int TriggerBIT = TriggerTime%6;
+  float TimingShift = TOF_TDC_SHIFT - (float)TriggerBIT;
+  //cout<<TOF_TDC_SHIFT<<endl;
+  //float TimingShift = -(float)TriggerBIT;
+  if(TimingShift <= 0) { 
+    TimingShift += 6.;
+  } 
+  TimingShift *= 4. ;
 
   // get data for tof
   vector<const DTOFHit*> dtofhits;
@@ -220,6 +258,14 @@ jerror_t JEventProcessor_TOF_online::evnt(JEventLoop *eventLoop, int eventnumber
 	  TOFTimesPlane0->Fill((float)tdc_time, (float)bar-1+end*44);
 	}
       }
+
+      if ( (plane == ExamplePlane) &&
+	   (bar == ExampleBar) &&
+	   (end == ExampleEnd)){
+	tTDC = (float)tdig->time * 0.0234375;
+	RefFound++;
+      }
+
     }
 
     dtofhit->GetSingle(digi);
@@ -241,6 +287,15 @@ jerror_t JEventProcessor_TOF_online::evnt(JEventLoop *eventLoop, int eventnumber
 	  TOFPedestalsPlane0->Fill((float)pedestal,(float)bar-1+end*44);
 	  TOFSignalsRawPlane0->Fill(integral, (float)bar-1+end*44);
 	}
+      }
+
+      if ( (plane == ExamplePlane) &&
+	   (bar == ExampleBar) &&
+	   (end == ExampleEnd)){
+	tADC = (float)digi->pulse_time * 0.0625;
+	EADC = (float)digi->pulse_integral - (float)digi->pedestal*
+	  (float)digi->nsamples_integral/(float)digi->nsamples_pedestal;
+	RefFound++;
       }
     }
     
@@ -336,6 +391,10 @@ jerror_t JEventProcessor_TOF_online::evnt(JEventLoop *eventLoop, int eventnumber
       }
     
   } // close DTOFHit size
+
+  if (RefFound>1){
+    TOFWalkExample->Fill(EADC, (tTDC-tADC+TimingShift));
+  }
 
 
   for (int i=1; i<45; i++)

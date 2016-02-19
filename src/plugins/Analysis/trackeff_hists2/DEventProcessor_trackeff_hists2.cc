@@ -67,7 +67,7 @@ jerror_t DEventProcessor_trackeff_hists2::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_trackeff_hists2::brun(JEventLoop *loop, int runnumber)
+jerror_t DEventProcessor_trackeff_hists2::brun(JEventLoop *loop, int32_t runnumber)
 {
 	DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 	const DGeometry *dgeom = dapp->GetDGeometry(runnumber);
@@ -121,7 +121,7 @@ jerror_t DEventProcessor_trackeff_hists2::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_trackeff_hists2::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_trackeff_hists2::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	
 	// Bail quick on events with too many or too few CDC hits
@@ -232,7 +232,7 @@ jerror_t DEventProcessor_trackeff_hists2::evnt(JEventLoop *loop, int eventnumber
 	return NOERROR;
 }
 
-bool DEventProcessor_trackeff_hists2::Search_ChargedTrackHypotheses(JEventLoop *loop, int eventnumber, const DMCThrown *mcthrown){
+bool DEventProcessor_trackeff_hists2::Search_ChargedTrackHypotheses(JEventLoop *loop, uint64_t eventnumber, const DMCThrown *mcthrown){
 	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
 	vector<const DMCTrajectoryPoint*> mctrajpoints;
 	vector<const DCDCTrackHit*> cdctrackhits;
@@ -338,7 +338,7 @@ bool DEventProcessor_trackeff_hists2::Search_ChargedTrackHypotheses(JEventLoop *
 	return locFoundFlag;	
 }
 
-bool DEventProcessor_trackeff_hists2::Search_WireBasedTracks(JEventLoop *loop, int eventnumber, const DMCThrown *mcthrown){
+bool DEventProcessor_trackeff_hists2::Search_WireBasedTracks(JEventLoop *loop, uint64_t eventnumber, const DMCThrown *mcthrown){
 	vector<const DMCTrajectoryPoint*> mctrajpoints;
 	vector<const DCDCTrackHit*> cdctrackhits;
 	vector<const DFDCHit*> fdchits;
@@ -431,7 +431,7 @@ bool DEventProcessor_trackeff_hists2::Search_WireBasedTracks(JEventLoop *loop, i
 	return locFoundFlag;	
 }
 
-bool DEventProcessor_trackeff_hists2::Search_TrackCandidates(JEventLoop *loop, int eventnumber, const DMCThrown *mcthrown){
+bool DEventProcessor_trackeff_hists2::Search_TrackCandidates(JEventLoop *loop, uint64_t eventnumber, const DMCThrown *mcthrown){
 	vector<const DMCTrajectoryPoint*> mctrajpoints;
 	vector<const DCDCTrackHit*> cdctrackhits;
 	vector<const DFDCHit*> fdchits;

@@ -50,7 +50,7 @@ jerror_t DTPOLHit_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTPOLHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DTPOLHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
     /// Read in calibration constants
     jout << "In DTPOLHit_factory, loading constants..." << endl;
@@ -98,7 +98,7 @@ jerror_t DTPOLHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
     /// Generate DTPOLHit object for each DTPOLSectorDigiHit 
     /// and DTPOLRingDigiHit object.

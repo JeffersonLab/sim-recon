@@ -117,7 +117,7 @@ class DEventSourceHDDM:public JEventSource
       jerror_t Extract_DSCHit(hddm_s::HDDM *record,  JFactory<DSCHit> *factory, string tag);
       jerror_t Extract_DSCTruthHit(hddm_s::HDDM *record,  JFactory<DSCTruthHit> *factory, string tag);
 
-      jerror_t Extract_DTrackTimeBased(hddm_s::HDDM *record,  JFactory<DTrackTimeBased> *factory, string tag, int runnumber);
+      jerror_t Extract_DTrackTimeBased(hddm_s::HDDM *record,  JFactory<DTrackTimeBased> *factory, string tag, int32_t runnumber);
       string StringToDMatrixDSym(string &str_vals, DMatrixDSym &mat, int Nrows, int Ncols);
 
       jerror_t Extract_DTAGMHit( hddm_s::HDDM *record,  JFactory<DTAGMHit>* factory, string tag);
@@ -152,13 +152,14 @@ class DEventSourceHDDM:public JEventSource
 
    private:
       bool initialized;
-   
+      int dRunNumber;
+
       pthread_mutex_t rt_mutex;
       map<hddm_s::HDDM*, vector<DReferenceTrajectory*> > rt_by_event;
       list<DReferenceTrajectory*> rt_pool;
 
       map<unsigned int, double> dTargetCenterZMap; //unsigned int is run number
-      map<unsigned int, double> dRFBunchPeriodMap; //unsigned int is run number
+      map<unsigned int, double> dBeamBunchPeriodMap; //unsigned int is run number
 
       JCalibration *jcalib;
       float uscale[192],vscale[192];

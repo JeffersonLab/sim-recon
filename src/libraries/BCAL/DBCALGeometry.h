@@ -41,7 +41,7 @@ public:
   
   JOBJECT_PUBLIC( DBCALGeometry );
   
-  DBCALGeometry();
+  DBCALGeometry(int runnumber);
   
   enum End { kUpstream, kDownstream };
   
@@ -61,22 +61,32 @@ public:
   static int NSUMSECSOUT;        ///< for the outer layer(s), the number of SiPM that will be summed in the azimuthal direction
   static int NBCALSECSIN;        ///<number of sectors in inner region
   static int NBCALSECSOUT;       ///<number of sectors in outer region
-  static float BCALINNERRAD;     ///< innner radius of BCAL in cm
-  static float BCAL_PHI_SHIFT;   ///< overall phi roation of BCAL in radians
 
   // Enter the index of the SiPM that designates the first
   // (counting radially outward) of the outer cells (default 7)
   static const int BCALMID=7;         ///< first outer layer (default 7)
 
   static float m_radius[11];
-  static float fADC_radius[5];
   static float BCALMIDRAD;       ///< mid radius of BCAL in cm (boundary between inner and outer layers)
   static float BCALOUTERRAD;     ///< outer radius of BCAL in cm
-  static float BCALFIBERLENGTH;  ///< BCAL Scintilator fiber lenth in cm
-  static float GLOBAL_CENTER;    ///< center of BCAL in gloobal coordinate system
   
   static float ATTEN_LENGTH;     ///< attenuation length
   static float C_EFFECTIVE;      ///< speed of light in fibers 
+
+  // Methods to access and initialize the private variables
+  static bool initialized;
+
+  static void Initialize(int runnumber=9999);
+
+  static float GetBCAL_inner_rad();
+
+  static float* GetBCAL_radii();
+
+  static float GetBCAL_center();
+
+  static float GetBCAL_length();
+
+  static float GetBCAL_phi_shift();
   
   static bool summingOn() {
   
@@ -110,6 +120,14 @@ public:
   static int getglobalsector(int module, int sector);
   static int getsector(int globalsector);
   static int getmodule(int globalsector);
+
+private:
+
+  static float BCALINNERRAD;     ///< innner radius of BCAL in cm
+  static float fADC_radius[5];   ///< BCAL layer radii (4 layers total)
+  static float GLOBAL_CENTER;    ///< center of BCAL in gloobal coordinate system
+  static float BCALFIBERLENGTH;  ///< BCAL Scintilator fiber lenth in cm
+  static float BCAL_PHI_SHIFT;     ///< overall phi roation of BCAL in radians
 
 };
 

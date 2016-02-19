@@ -25,9 +25,11 @@ class DNeutralShower : public jana::JObject
 	public:
 		JOBJECT_PUBLIC(DNeutralShower);
 
+		oid_t dShowerID;
+		DetectorSystem_t dDetectorSystem;
+
 		DLorentzVector dSpacetimeVertex;
 		double dEnergy;
-		DetectorSystem_t dDetectorSystem;
 		DMatrixDSym dCovarianceMatrix; //E, x, y, z, t
 
 		void toStrings(vector<pair<string,string> > &items) const{

@@ -37,13 +37,17 @@ class DMCTrigger_factory:public jana::JFactory<DMCTrigger>{
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
-		jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
-		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
+		jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
+		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		bool REQUIRE_START_COUNTER;
+//		bool REQUIRE_START_COUNTER;
 		double unattenuate_to_center;
+
+        int USE_OLD_BCAL_HITS;
+        double BCAL_CHANNEL_THRESHOLD;
+        double FCAL_CHANNEL_THRESHOLD;
 };
 
 #endif // _DMCTrigger_factory_

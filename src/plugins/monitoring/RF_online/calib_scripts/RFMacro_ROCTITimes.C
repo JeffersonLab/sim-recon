@@ -1,10 +1,10 @@
-int main(void)
+int RFMacro_ROCTITimes(void)
 {
 	//Each tdc-tick of the TI-time corresponds to 4 ns, so max deviation from average allowed is 3.9
 		//3.9 instead of 0: is average of all other ROCs. If a ROC is out of time, it will throw off the average when analyzing the other ROCs
 	double locMaxDeviation = 3.9;
 
-	TDirectory *locTopDirectory = gDirectory;
+	gDirectory->cd("/"); //return to file base directory
 
 	//Goto Beam Path
 	TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("RF");

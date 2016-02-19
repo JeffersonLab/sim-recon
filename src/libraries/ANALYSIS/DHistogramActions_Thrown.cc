@@ -903,11 +903,6 @@ bool DHistogramAction_ReconnedThrownKinematics::Perform_Action(JEventLoop* locEv
 	if(Get_NumPreviousParticleCombos() != 0)
 		return true; //else double-counting!
 
-	const DEventRFBunch* locEventRFBunch = NULL;
-	locEventLoop->GetSingle(locEventRFBunch);
-	if(locParticleCombo != NULL)
-		locEventRFBunch = locParticleCombo->Get_EventRFBunch();
-
 	const DMCThrownMatching* locMCThrownMatching = NULL;
 	locEventLoop->GetSingle(locMCThrownMatching);
 
@@ -1125,7 +1120,7 @@ void DHistogramAction_GenReconTrackComparison::Initialize(JEventLoop* locEventLo
 				//Pull vs Theta
 				locHistName = locPullNames[loc_j] + string("PullVsTheta");
 				locHistTitle = locParticleROOTName + string(";#theta#circ;#Delta") + locPullTitles[loc_j] + string("/#sigma_{") + locPullTitles[loc_j] + string("} (Reconstructed - Thrown)");
-				dHistMap_PullsVsTheta[locPID][dPullTypes[loc_j]] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, -10.0, 10.0);
+				dHistMap_PullsVsTheta[locPID][dPullTypes[loc_j]] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPullBins, -10.0, 10.0);
 			}
 
 			//Delta-t Pulls - CDC & ST

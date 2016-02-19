@@ -36,7 +36,7 @@ jerror_t DParticleCombo_factory_PreKinFit::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, int32_t runnumber)
 {
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
@@ -415,7 +415,7 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 //------------------
 // evnt
 //------------------
-jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 #ifdef VTRACE
 	VT_TRACER("DParticleCombo_factory_PreKinFit::evnt()");
@@ -691,7 +691,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			locParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
 
 			//initial particle
-			if(locInitialPID == Gamma) //else decaying particle: nothing to set
+			if(locInitialPID == Gamma) //else decaying particle: nothing to set yet
 			{
 				//beam photon: will later create additional combo for each one that's within the time window, just set the first one for now
 				if(locCandidatePhotons[locReactionRFPair].empty())
@@ -791,7 +791,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				for(size_t loc_j = 0; loc_j < locBuiltParticleCombos.size(); ++loc_j)
 				{
 					if(!((*dTrueComboCuts[locReaction])(locEventLoop, locBuiltParticleCombos[loc_j])))
-						continue;
+						continue; //is not the true combo
 					double locDeltaT = locBuiltParticleCombos[loc_j]->Get_ParticleComboStep(0)->Get_InitialParticle()->time() - locEventRFBunch->dTime;
 					japp->RootWriteLock();
 					{
@@ -902,7 +902,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				if(locIsThrownMatchFlag)
 					dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(1); //input event (+1 because binning begins at 1)
 				if(locTrueComboSurvivedReactions.find(locReaction) != locTrueComboSurvivedReactions.end())
-					dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(5 + dNumGoodPreComboSelectionActions[locReaction]); //true combo
+					dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(dHistMap_NumEventsSurvivedCut_True[locReaction]->GetNbinsX()); //true combo
 
 				for(size_t loc_j = 0; loc_j < locNumBlueprintsSurvivedCuts[locReaction].size(); ++loc_j)
 				{
@@ -1110,28 +1110,6 @@ DParticleComboStep* DParticleCombo_factory_PreKinFit::Get_ParticleComboStepResou
 	return locParticleComboStep;
 }
 
-void DParticleCombo_factory_PreKinFit::Reset_KinematicData(DKinematicData* locKinematicData)
-{
-	locKinematicData->setPID(Unknown);
-	locKinematicData->setMassFixed();
-	locKinematicData->setCharge(0);
-	locKinematicData->setMass(0.0);
-
-	locKinematicData->setMomentum(DVector3());
-	locKinematicData->setPosition(DVector3());
-	locKinematicData->setTime(0.0);
-
-	locKinematicData->setdEdx(0.0);
-	locKinematicData->setPathLength(0.0, 0.0);
-	locKinematicData->setTrackingStateVector(0.0, 0.0, 0.0, 0.0, 0.0);
-
-	locKinematicData->setT0(0.0, 0.0, SYS_NULL);
-	locKinematicData->setT1(0.0, 0.0, SYS_NULL);
-
-	locKinematicData->clearErrorMatrix();
-	locKinematicData->clearTrackingErrorMatrix();
-}
-
 DKinematicData* DParticleCombo_factory_PreKinFit::Get_KinematicDataResource(void)
 {
 	DKinematicData* locKinematicData;
@@ -1143,8 +1121,7 @@ DKinematicData* DParticleCombo_factory_PreKinFit::Get_KinematicDataResource(void
 	else
 	{
 		locKinematicData = dKinematicDataPool_Available.back();
-		Reset_KinematicData(locKinematicData);
-		locKinematicData->ClearAssociatedObjects();
+		locKinematicData->Reset();
 		dKinematicDataPool_Available.pop_back();
 	}
 	return locKinematicData;

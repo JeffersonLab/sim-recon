@@ -20,9 +20,9 @@
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DParticleComboBlueprint.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
-#include "ANALYSIS/DKinFitParticle.h"
+#include "KINFITTER/DKinFitParticle.h"
 #include "ANALYSIS/DKinFitResults.h"
-#include "ANALYSIS/DKinFitter_GlueX.h"
+#include "ANALYSIS/DKinFitUtils_GlueX.h"
 #include "ANALYSIS/DAnalysisResults.h"
 
 using namespace std;
@@ -41,20 +41,29 @@ class DParticleCombo_factory : public jana::JFactory<DParticleCombo>
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
-		jerror_t brun(jana::JEventLoop* locEventLoop, int runnumber);	///< Called everytime a new run number is detected.
-		jerror_t evnt(jana::JEventLoop* locEventLoop, int eventnumber);	///< Called every event.
+		jerror_t brun(jana::JEventLoop* locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
+		jerror_t evnt(jana::JEventLoop* locEventLoop, uint64_t eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		DKinFitter_GlueX dKinFitter;
+		const DParticleCombo* Check_IsDuplicateCombo(const map<const DParticleCombo*, const DKinFitChain*>& locParticleComboMap, const DParticleCombo* locParticleCombo);
 
-		DKinematicData* Build_KinematicData(Particle_t locPID, const DKinFitParticle* locKinFitParticle);
+		void Set_DecayingParticles(const DParticleCombo* locNewParticleCombo, const DParticleCombo* locOldParticleCombo, size_t locStepIndex, DParticleComboStep* locNewParticleComboStep, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults);
+		DKinFitParticle* Get_DecayingParticle(const DParticleCombo* locOldParticleCombo, size_t locComboStepIndex, const DKinFitChain* locKinFitChain, const DKinFitResults* locKinFitResults);
+		bool Search_ForParticleInDecay(const DKinFitChain* locKinFitChain, size_t locStepToSearch, DKinFitParticle* locParticleToFind);
+
+		const DChargedTrackHypothesis* Get_ChargedHypothesis(const DParticleCombo* locParticleCombo, const vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses, const DKinematicData* locKinematicData_Measured) const;
+		const DNeutralParticleHypothesis* Get_NeutralHypothesis(const DParticleCombo* locParticleCombo, const vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses, const DKinematicData* locKinematicData_Measured) const;
+
+		void Set_SpacetimeVertex(const DParticleCombo* locNewParticleCombo, DParticleComboStep* locNewParticleComboStep, size_t locStepIndex, const DKinFitResults* locKinFitResults, const DKinFitChain* locKinFitChain) const;
+		void Reset_Data(void);
+
+		DKinematicData* Build_KinematicData(Particle_t locPID, DKinFitParticle* locKinFitParticle);
 
 		DKinematicData* Get_KinematicDataResource(void);
 		DParticleComboStep* Get_ParticleComboStepResource(void);
 
-		void Reset_Data(void);
-		void Reset_KinematicData(DKinematicData* locKinematicData);
+		DKinFitUtils_GlueX* dKinFitUtils;
 
 		vector<DParticleCombo*> dCreatedParticleCombos;
 
@@ -69,4 +78,5 @@ class DParticleCombo_factory : public jana::JFactory<DParticleCombo>
 };
 
 #endif // _DParticleCombo_factory_
+
 

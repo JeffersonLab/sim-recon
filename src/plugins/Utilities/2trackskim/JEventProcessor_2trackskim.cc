@@ -27,7 +27,7 @@ jerror_t JEventProcessor_2trackskim::init(void)
 //-------------------------------
 // brun
 //-------------------------------
-jerror_t JEventProcessor_2trackskim::brun(JEventLoop *locEventLoop, int runnumber)
+jerror_t JEventProcessor_2trackskim::brun(JEventLoop *locEventLoop, int32_t runnumber)
 {
    return NOERROR;
 }
@@ -35,7 +35,7 @@ jerror_t JEventProcessor_2trackskim::brun(JEventLoop *locEventLoop, int runnumbe
 //-------------------------------
 // evnt
 //-------------------------------
-jerror_t JEventProcessor_2trackskim::evnt(JEventLoop *locEventLoop, int eventnumber)
+jerror_t JEventProcessor_2trackskim::evnt(JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 
 	const DEventWriterEVIO* locEventWriterEVIO = NULL;

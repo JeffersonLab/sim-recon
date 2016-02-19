@@ -2,7 +2,7 @@
 //
 //    File: DMagneticFieldMapNoField.cc
 
-
+#include <string>
 using namespace std;
 
 #include "DMagneticFieldMapNoField.h"

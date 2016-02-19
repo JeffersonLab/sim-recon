@@ -151,7 +151,7 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int runnumber)
+jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int32_t runnumber)
 {
 	gPARMS->SetDefaultParameter("TRKFIND:DEBUG_LEVEL", DEBUG_LEVEL);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_ALLOWED_CDC_HITS", MAX_ALLOWED_CDC_HITS);
@@ -211,7 +211,7 @@ jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int runnumb
 //------------------
 // evnt
 //------------------
-jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, int eventnumber)
+jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, uint64_t eventnumber)
 {
 	// Reset
 	dRejectedPhiRegions.clear();
@@ -1067,6 +1067,7 @@ void DTrackCandidate_factory_CDC::Calc_SuperLayerPhiRange(DCDCSuperLayerSeed* lo
 	locSeedLastPhi = -9.9E9;
 	for(size_t loc_j = 0; loc_j < locSuperLayerSeed->dCDCRingSeeds.size(); ++loc_j)
 	{
+	  if (locSuperLayerSeed->dCDCRingSeeds[loc_j].hits.empty()) continue;
 		DCDCTrkHit *locFirstStrawHit = locSuperLayerSeed->dCDCRingSeeds[loc_j].hits.front();
 		DCDCTrkHit *locLastStrawHit = locSuperLayerSeed->dCDCRingSeeds[loc_j].hits.back();
 
@@ -2283,6 +2284,8 @@ void DTrackCandidate_factory_CDC::Reject_DefiniteSpiralArms(deque<DCDCTrackCircl
 			else if(locTempSuperLayerSeed->dSuperLayer < locInnermostSuperLayerSeed->dSuperLayer)
 				locInnermostSuperLayerSeed = locTempSuperLayerSeed;
 		}
+		if (locInnermostSuperLayerSeed == NULL)
+			continue; //is impossible, but clears the warning from the static analyzer
 
 		//loop over spiral links, see if one of them is a definite spiral link
 		bool locIsDefinitelyTurningFlag = false;
@@ -4805,15 +4808,29 @@ DTrackCandidate_factory_CDC::DCDCSuperLayerSeed* DTrackCandidate_factory_CDC::DC
 		if(locLastAxialSuperLayerSeed->dSuperLayer == 7)
 			return locLastAxialSuperLayerSeed;
 	}
-	else if(!dSuperLayerSeeds_OuterStereo.empty())
+	if(!dSuperLayerSeeds_OuterStereo.empty())
 	{
-		if(dSuperLayerSeeds_OuterStereo[0].back()->dSuperLayer > locLastAxialSuperLayerSeed->dSuperLayer)
-			return dSuperLayerSeeds_OuterStereo[0].back();
+		DCDCSuperLayerSeed* locLastOuterStereoSuperLayerSeed = dSuperLayerSeeds_OuterStereo[0].back();
+		if(locLastOuterStereoSuperLayerSeed != NULL){
+			if(locLastAxialSuperLayerSeed == NULL) return locLastOuterStereoSuperLayerSeed;
+			if(locLastOuterStereoSuperLayerSeed->dSuperLayer > locLastAxialSuperLayerSeed->dSuperLayer){
+				return locLastOuterStereoSuperLayerSeed;
+			}else{
+				return locLastAxialSuperLayerSeed;
+			}
+		}
 	}
-	else if(!dSuperLayerSeeds_InnerStereo.empty())
+	if(!dSuperLayerSeeds_InnerStereo.empty())
 	{
-		if(dSuperLayerSeeds_InnerStereo[0].back()->dSuperLayer > locLastAxialSuperLayerSeed->dSuperLayer)
-			return dSuperLayerSeeds_InnerStereo[0].back();
+		DCDCSuperLayerSeed* locLastInnerStereoSuperLayerSeed = dSuperLayerSeeds_InnerStereo[0].back();
+		if(locLastInnerStereoSuperLayerSeed != NULL){
+			if(locLastAxialSuperLayerSeed == NULL) return locLastInnerStereoSuperLayerSeed;
+			if(locLastInnerStereoSuperLayerSeed->dSuperLayer > locLastAxialSuperLayerSeed->dSuperLayer){
+				return locLastInnerStereoSuperLayerSeed;
+			}else{
+				return locLastAxialSuperLayerSeed;
+			}
+		}
 	}
 	return locLastAxialSuperLayerSeed;
 }

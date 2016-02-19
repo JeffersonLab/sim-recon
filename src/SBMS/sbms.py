@@ -39,6 +39,9 @@ def library(env, libname=''):
 
 	sources = env['ALL_SOURCES']
 	objects = env['MISC_OBJECTS']
+	if 'IGNORE_SOURCES' in env.Dictionary().keys():
+		ignore  = env['IGNORE_SOURCES']
+		sources = [s for s in env['ALL_SOURCES'] if s.name not in ignore]		
 
 	# Build static library from all source
 	myobjs = env.Object(sources)
@@ -85,6 +88,9 @@ def executable(env, exename=''):
 	ReorderCommonLibraries(env)
 
 	sources = env['ALL_SOURCES']
+	if 'IGNORE_SOURCES' in env.Dictionary().keys():
+		ignore  = env['IGNORE_SOURCES']
+		sources = [s for s in env['ALL_SOURCES'] if s.name not in ignore]		
 
 	# Build program from all source
 	myobjs = env.Object(sources)
@@ -145,6 +151,11 @@ def executables(env):
 
 	common_sources.extend(env['ALL_SOURCES'])
 
+	if 'IGNORE_SOURCES' in env.Dictionary().keys():
+		ignore  = env['IGNORE_SOURCES']
+		main_sources   = [s for s in main_sources   if s.name not in ignore]		
+		common_sources = [s for s in common_sources if s.name not in ignore]		
+
 	# Build program from all source
 	main_objs = env.Object(main_sources)
 	common_objs = env.Object(common_sources)
@@ -186,6 +197,9 @@ def plugin(env, pluginname=''):
         #print str([x.rstr() for x in env.Glob('*.cc')])
 
 	sources = env['ALL_SOURCES']
+	if 'IGNORE_SOURCES' in env.Dictionary().keys():
+		ignore  = env['IGNORE_SOURCES']
+		sources = [s for s in env['ALL_SOURCES'] if s.name not in ignore]		
 
 	# Build static library from all source
 	myobjs = env.SharedObject(sources)
@@ -284,6 +298,7 @@ def AddCompileFlags(env, allflags):
 		if f.startswith('-I'):
 			cpppath.append(f[2:])
 		else:
+			if f == '-g': continue
 			if f.startswith('-std=c++'):
 				cxxflags.append(f)
 			else:
@@ -464,8 +479,8 @@ def IsNotSWIGWrapper(fileNode):
 ##################################
 def AddJANA(env):
 	jana_home = os.getenv('JANA_HOME', '/no/default/jana/path')
-	JANA_CFLAGS = subprocess.Popen(["%s/bin/jana-config" % jana_home, "--cflags"], stdout=subprocess.PIPE).communicate()[0]
-	JANA_LINKFLAGS = subprocess.Popen(["%s/bin/jana-config" % jana_home, "--libs"], stdout=subprocess.PIPE).communicate()[0]
+	JANA_CFLAGS = subprocess.Popen(["%s/bin/jana-config" % jana_home,"--jana-only","--cflags"], stdout=subprocess.PIPE).communicate()[0]
+	JANA_LINKFLAGS = subprocess.Popen(["%s/bin/jana-config" % jana_home,"--jana-only","--libs"], stdout=subprocess.PIPE).communicate()[0]
 
 	AddCompileFlags(env, JANA_CFLAGS)
 	AddLinkFlags(env, JANA_LINKFLAGS)
@@ -500,8 +515,8 @@ def AddDANA(env):
 	AddXERCES(env)
 	AddEVIO(env)
 	AddET(env)
-	AddCODAChannels(env)
-	DANA_LIBS  = "DANA ANALYSIS PID TAGGER TRACKING START_COUNTER"
+	#AddCODAChannels(env)
+	DANA_LIBS  = "DANA ANALYSIS KINFITTER PID TAGGER TRACKING START_COUNTER"
 	DANA_LIBS += " CERE DIRC CDC TRIGGER PAIR_SPECTROMETER RF"
 	DANA_LIBS += " FDC TOF BCAL FCAL CCAL TPOL HDGEOMETRY TTAB FMWPC"
 	DANA_LIBS += " DAQ JANA"
@@ -627,7 +642,7 @@ def AddXERCES(env):
 def AddCERNLIB(env):
 	env.PrependUnique(FORTRANFLAGS = ['-ffixed-line-length-0', '-fno-second-underscore'])
 	env.PrependUnique(FORTRANFLAGS = ['-fno-automatic'])
-	env.PrependUnique(FORTRANPATH = ['include'])
+	#env.PrependUnique(FORTRANPATH = ['include'])
 	cern = os.getenv('CERN', '/usr/local/cern/PRO')
 	cern_level = os.getenv('CERN_LEVEL', '2006')
 	cern_root = '%s/%s' % (cern, cern_level)

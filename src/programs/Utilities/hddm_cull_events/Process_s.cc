@@ -68,7 +68,7 @@ void Process_s(unsigned int &NEvents, unsigned int &NEvents_read)
             hddm_s::PhysicsEventList pes = record.getPhysicsEvents();
             hddm_s::PhysicsEventList::iterator eviter;
             for (eviter = pes.begin(); eviter != pes.end(); ++eviter) {
-               int eventNo = eviter->getEventNo();
+               uint64_t eventNo = eviter->getEventNo();
                if ((unsigned int)eventNo == SPECIFIC_EVENT_TO_KEEP) {
                   write_this_event = true;
                   QUIT = true;

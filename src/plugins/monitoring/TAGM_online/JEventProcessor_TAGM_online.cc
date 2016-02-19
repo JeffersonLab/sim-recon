@@ -24,14 +24,14 @@ using namespace jana;
 #include <TH2.h>
 
 // Define some constants
-const uint32_t NROWS = 5;
-const uint32_t NCOLUMNS = 100;
+//const uint32_t NROWS = 5;
+const uint32_t NCOLUMNS = 102;
 const uint32_t NSINGLES = 20;
 
 const float MIN_ADC_PINT_LOG10 = 0.;
 const float MAX_ADC_PINT_LOG10 = 5.;
 const uint32_t BINCOUNT_ADC_PINT = 200;
-const float ADC_PINT_PER_PIXEL = 6.5;
+//const float ADC_PINT_PER_PIXEL = 6.5;
 const float MIN_HIT_NPIX = 0.;
 const float MAX_HIT_NPIX = 1000.;
 const uint32_t BINCOUNT_HIT_NPIX = 200;
@@ -569,7 +569,7 @@ jerror_t JEventProcessor_TAGM_online::init(void) {
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_TAGM_online::brun(JEventLoop *eventLoop, int runnumber) {
+jerror_t JEventProcessor_TAGM_online::brun(JEventLoop *eventLoop, int32_t runnumber) {
   // This is called whenever the run number changes
   return NOERROR;
 }
@@ -578,7 +578,7 @@ jerror_t JEventProcessor_TAGM_online::brun(JEventLoop *eventLoop, int runnumber)
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_TAGM_online::evnt(JEventLoop *eventLoop, int eventnumber) {
+jerror_t JEventProcessor_TAGM_online::evnt(JEventLoop *eventLoop, uint64_t eventnumber) {
   // This is called for every event. Use of common resources like writing
   // to a file or filling a histogram should be mutex protected. Using
   // loop-Get(...) to get reconstructed objects (and thereby activating the

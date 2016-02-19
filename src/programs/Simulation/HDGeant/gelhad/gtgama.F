@@ -320,7 +320,7 @@ c      endif
 *
 * *** update time of flight
 *
-      tofg = tofg +step/clight
+      tofg = REAL(tofg +step/clight)
 *
 * *** update interaction probabilities
 *
@@ -367,10 +367,10 @@ c      endif
          xcoef2 = q(jcoef+i1+1)
          xcoef3 = q(jcoef+i1+2)
          if(xcoef1.ne.0.) then
-            stopmx = -xcoef2+sign(one,xcoef1)*sqrt(xcoef2**2 - (xcoef3-
-     +      gekin/xcoef1))
+            stopmx = REAL(-xcoef2+sign(one,xcoef1)*sqrt(xcoef2**2 - (xcoef3-
+     +      gekin/xcoef1)))
          else
-            stopmx = - (xcoef3-gekin)/xcoef2
+            stopmx = REAL(- (xcoef3-gekin)/xcoef2)
          endif
 *
 *        do not call gphot if this (overestimated) range is smaller

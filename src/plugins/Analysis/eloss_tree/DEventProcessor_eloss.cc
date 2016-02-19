@@ -61,7 +61,7 @@ jerror_t DEventProcessor_eloss::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_eloss::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t DEventProcessor_eloss::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	return NOERROR;
 }
@@ -69,7 +69,7 @@ jerror_t DEventProcessor_eloss::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_eloss::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_eloss::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DMCTrajectoryPoint*> mctrajs;
 	vector<const DChargedTrack*> tracks;

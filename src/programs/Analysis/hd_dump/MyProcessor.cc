@@ -11,6 +11,7 @@ using namespace std;
 #include <unistd.h>
 
 #include <JANA/JApplication.h>
+#include <JANA/JApplication.h>
 
 #include "MyProcessor.h"
 
@@ -20,6 +21,9 @@ int SKIP_BORING_EVENTS = 0;
 int PRINT_ALL=0;
 bool LIST_ASSOCIATED_OBJECTS = false;
 bool PRINT_SUMMARY_HEADER = true;
+bool PRINT_STATUS_BITS = false;
+bool ACTIVATE_TAGGED_FOR_SUMMARY = false;
+extern bool SPARSIFY_SUMMARY;
 
 vector<string> toprint;
 
@@ -38,7 +42,7 @@ vector<string> toprint;
 //------------------------------------------------------------------
 // brun
 //------------------------------------------------------------------
-jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t MyProcessor::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	vector<string> factory_names;
 	eventLoop->GetFactoryNames(factory_names);
@@ -59,13 +63,8 @@ jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
 			int found = 0;
 			int dfound = 0;
 			for(unsigned int j=0;j<factory_names.size();j++){
-				string name = factory_names[j];
-				string tag = "";
-				unsigned int pos = name.rfind(":",name.size()-1);
-				if(pos != (unsigned int)string::npos)
-					tag = name.substr(pos+1,name.size());
-				if(name == toprint[i])found = 1;
-				if(name == "D" + toprint[i])dfound = 1;
+				if(factory_names[j] == toprint[i])found = 1;
+				if(factory_names[j] == "D" + toprint[i])dfound = 1;
 			}
 			if(found)
 				really_toprint.push_back(toprint[i]);
@@ -108,7 +107,7 @@ jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
 //------------------------------------------------------------------
 // evnt
 //------------------------------------------------------------------
-jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
+jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 {
 
 	// If we're skipping boring events (events with no rows for any of
@@ -147,16 +146,24 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	// ourself first.
 	if(PRINT_SUMMARY_HEADER){
 		vector<JFactory_base*> myfacs = eventLoop->GetFactories();
-		for(unsigned int i=0; i<myfacs.size(); i++)myfacs[i]->GetNrows();
-		eventLoop->PrintFactories(1);
+		for(unsigned int i=0; i<myfacs.size(); i++){
+			string tag = myfacs[i]->Tag()==NULL ? "":myfacs[i]->Tag();
+			if(tag=="" || ACTIVATE_TAGGED_FOR_SUMMARY){
+				myfacs[i]->GetNrows();
+			}
+		}
 	}
 	
+	if(PRINT_STATUS_BITS) cout << japp->StatusWordToString(eventLoop->GetJEvent().GetStatus()) << endl;
+	if(PRINT_SUMMARY_HEADER) eventLoop->PrintFactories(SPARSIFY_SUMMARY ? 2:0);
+
 	// Print data for all specified factories
 	for(unsigned int i=0;i<fac_info.size();i++){
 		try{
 			string name =fac_info[i].dataClassName;
 			string tag = fac_info[i].tag;
 			eventLoop->Print(name,tag.c_str());
+
 			if(LIST_ASSOCIATED_OBJECTS)PrintAssociatedObjects(eventLoop, &fac_info[i]);
 		}catch(...){
 			// exception thrown

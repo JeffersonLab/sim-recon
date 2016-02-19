@@ -124,8 +124,9 @@ jerror_t JEventProcessor_DAQ_online::init(void)
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125EventHeader, "f125 Event Header");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125TriggerTime, "f125 Trigger Time");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125WindowRawData, "f125 Window Raw Data");
-	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125WindowSum, "f125 Window Sum");
-	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125PulseRawData, "f125 Pulse Raw Data");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125CDCPulse, "f125 CDC Pulse");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125FDCPulse6, "f125 FDC Pulse (integral)");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125FDCPulse9, "f125 FDC Pulse (peak)");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125PulseIntegral, "f125 Pulse Integral");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125PulseTime, "f125 Pulse Time");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf125PulsePedestal, "f125 Pulse Pedestal");
@@ -165,6 +166,9 @@ jerror_t JEventProcessor_DAQ_online::init(void)
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kConfigf125, "DAQ Config f125");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kConfigF1, "DAQ Config F1");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kConfigCAEN1190, "DAQ Config CAEN1190");
+
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEPICSheader, "EPICS header");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEPICSdata, "EPICS data");
 
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kF800FAFA, "0xf800fafa");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kD00DD00D, "0xd00dd00d");
@@ -225,7 +229,7 @@ void JEventProcessor_DAQ_online::AddROCIDLabels(JEventLoop *loop)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_DAQ_online::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_DAQ_online::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	// This is called whenever the run number changes
 	return NOERROR;
@@ -234,7 +238,7 @@ jerror_t JEventProcessor_DAQ_online::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using
@@ -245,11 +249,15 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DF1TDCHit*> f1tdchits;
 	vector<const Df250PulseIntegral*> f250PIs;
 	vector<const Df125PulseIntegral*> f125PIs;
+	vector<const Df125CDCPulse*> f125CDCs;
+	vector<const Df125FDCPulse*> f125FDCs;
 	vector<const DCAEN1290TDCHit*> caen1290hits;
 
 	loop->Get(f1tdchits);
 	loop->Get(f250PIs);
 	loop->Get(f125PIs);
+	loop->Get(f125CDCs);
+	loop->Get(f125FDCs);
 	loop->Get(caen1290hits);
 	
 	ParseEventSize(loop->GetJEvent());
@@ -343,6 +351,8 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, int eventnumber)
 		int rocid = hit->rocid;
 		int slot = hit->slot;
 		int channel = hit->channel;
+		
+		if(hit->emulated) continue; // ignore emulated hits
 
 		if(rocid>=0 && rocid<=100) {
 			Nhits_rocid[rocid]++;
@@ -351,7 +361,7 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, int eventnumber)
 				printf("JEventProcessor_DAQ_online::evnt  creating occupancy histogram for crate %i\n",rocid);
 				char cratename[255],title[255];
 				sprintf(cratename,"daq_occ_crate%i",rocid);
-				sprintf(title,"Crate %i occupancy (F250);Slot;Channel",rocid);
+				sprintf(title,"Crate %i occupancy (F125);Slot;Channel",rocid);
 				daq_occ_crates[rocid] = new TH2I(cratename,title,21,0.5,21.5,16,-0.5,15.5);
 				daq_occ_crates[rocid]->SetStats(0);
 			} 
@@ -361,7 +371,7 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, int eventnumber)
 				printf("JEventProcessor_DAQ_online::evnt  creating pedestal histogram for crate %i\n",rocid);
 				char cratename[255],title[255];
 				sprintf(cratename,"daq_ped_crate%i",rocid);
-				sprintf(title,"Crate %i Average Pedestal (F250);Slot;Channel",rocid);
+				sprintf(title,"Crate %i Average Pedestal (F125);Slot;Channel",rocid);
 				daq_ped_crates[rocid] = new TProfile2D(cratename,title,21,0.5,21.5,16,-0.5,15.5);
 				daq_ped_crates[rocid]->SetStats(0);
 			} 
@@ -369,7 +379,74 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, int eventnumber)
 				daq_ped_crates[rocid]->Fill(slot,channel,hit->pedestal);
 			}
 		}
+	}
 
+	// Access F125 from Df125CDCPulse object
+	for(unsigned int i=0; i<f125CDCs.size(); i++) {
+		const Df125CDCPulse *hit = f125CDCs[i];
+		int rocid = hit->rocid;
+		int slot = hit->slot;
+		int channel = hit->channel;
+
+		if(rocid>=0 && rocid<=100) {
+			Nhits_rocid[rocid]++;
+			
+			if (daq_occ_crates[rocid]==NULL) {
+				printf("JEventProcessor_DAQ_online::evnt  creating occupancy histogram for crate %i\n",rocid);
+				char cratename[255],title[255];
+				sprintf(cratename,"daq_occ_crate%i",rocid);
+				sprintf(title,"Crate %i occupancy (F125);Slot;Channel",rocid);
+				daq_occ_crates[rocid] = new TH2I(cratename,title,21,0.5,21.5,16,-0.5,15.5);
+				daq_occ_crates[rocid]->SetStats(0);
+			} 
+			daq_occ_crates[rocid]->Fill(slot,channel);
+			
+			if (daq_ped_crates[rocid]==NULL) {
+				printf("JEventProcessor_DAQ_online::evnt  creating pedestal histogram for crate %i\n",rocid);
+				char cratename[255],title[255];
+				sprintf(cratename,"daq_ped_crate%i",rocid);
+				sprintf(title,"Crate %i Average Pedestal (F125);Slot;Channel",rocid);
+				daq_ped_crates[rocid] = new TProfile2D(cratename,title,21,0.5,21.5,16,-0.5,15.5);
+				daq_ped_crates[rocid]->SetStats(0);
+			} 
+			if (hit->pedestal > 0) {
+				daq_ped_crates[rocid]->Fill(slot,channel,hit->pedestal);
+			}
+		}
+	}
+
+	// Access F125 from Df125FDCPulse object
+	for(unsigned int i=0; i<f125FDCs.size(); i++) {
+		const Df125FDCPulse *hit = f125FDCs[i];
+		int rocid = hit->rocid;
+		int slot = hit->slot;
+		int channel = hit->channel;
+
+		if(rocid>=0 && rocid<=100) {
+			Nhits_rocid[rocid]++;
+			
+			if (daq_occ_crates[rocid]==NULL) {
+				printf("JEventProcessor_DAQ_online::evnt  creating occupancy histogram for crate %i\n",rocid);
+				char cratename[255],title[255];
+				sprintf(cratename,"daq_occ_crate%i",rocid);
+				sprintf(title,"Crate %i occupancy (F125);Slot;Channel",rocid);
+				daq_occ_crates[rocid] = new TH2I(cratename,title,21,0.5,21.5,16,-0.5,15.5);
+				daq_occ_crates[rocid]->SetStats(0);
+			} 
+			daq_occ_crates[rocid]->Fill(slot,channel);
+			
+			if (daq_ped_crates[rocid]==NULL) {
+				printf("JEventProcessor_DAQ_online::evnt  creating pedestal histogram for crate %i\n",rocid);
+				char cratename[255],title[255];
+				sprintf(cratename,"daq_ped_crate%i",rocid);
+				sprintf(title,"Crate %i Average Pedestal (F125);Slot;Channel",rocid);
+				daq_ped_crates[rocid] = new TProfile2D(cratename,title,21,0.5,21.5,16,-0.5,15.5);
+				daq_ped_crates[rocid]->SetStats(0);
+			} 
+			if (hit->pedestal > 0) {
+				daq_ped_crates[rocid]->Fill(slot,channel,hit->pedestal);
+			}
+		}
 	}
 
 	// Access CAEN1290 TDC hits
@@ -385,7 +462,6 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, int eventnumber)
 	// Fill in hits by crate
 	for(uint32_t rocid=0; rocid<101; rocid++) daq_hits_per_event->Fill(rocid, Nhits_rocid[rocid]);
 
-	
 	maindir->cd();
 	// Unlock ROOT
 	japp->RootUnLock();
@@ -415,13 +491,29 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 	if(!ref) return;
 	uint32_t *istart = JEventSource_EVIO::GetEVIOBufferFromRef(ref);
 	uint32_t evio_buffsize = JEventSource_EVIO::GetEVIOBufferSizeFromRef(ref);
-	uint32_t *iend = &istart[evio_buffsize/sizeof(uint32_t)];
+	uint32_t evio_buffwords = evio_buffsize/sizeof(uint32_t);
+	uint32_t *iend = &istart[evio_buffwords];
 	
-	if( istart==NULL || evio_buffsize<(10*sizeof(uint32_t)) ) return;
-	if(istart[7] == 0xc0da0100){
+	if( istart==NULL ) return;
+	if( (evio_buffwords>=10) && (istart[7]==0xc0da0100) ){
 		// NTH is first 8 words so skip them
 		istart= &istart[8];
 		evio_buffsize -= 8*sizeof(uint32_t);
+		evio_buffwords -= 8;
+	}
+	
+	// Check if this is EPICS data
+	if( evio_buffwords >= 4 ){
+		if( istart[1] == (0x60<<16) + (0xD<<8) + (0x1<<0) ){
+			if( istart[2] == (0x61<<24) + (0x1<<16) + (0x1<<0) ){
+				
+				japp->RootWriteLock();
+				daq_words_by_type->Fill(kEPICSheader, 3.0); // EVIO outer and segment headers + timestamp
+				daq_words_by_type->Fill(kEPICSdata, istart[0]/sizeof(uint32_t) - 3);
+				japp->RootUnLock();
+				return; // no further parsing needed
+			}
+		}
 	}
 	
 	// Physics event length
@@ -442,7 +534,7 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 	for(uint32_t i=0; i<kNEVIOWordTypes; i++) word_stats[i] = 0;
 
 	word_stats[kNevents]++;
-	word_stats[kTotWords] += evio_buffsize/sizeof(uint32_t);
+	word_stats[kTotWords] += evio_buffwords;
 
 	// Loop over data banks
 	uint32_t *iptr = &istart[3+trigger_bank_len];
@@ -655,8 +747,20 @@ void JEventProcessor_DAQ_online::Parsef125Bank(uint32_t rocid, uint32_t *&iptr, 
 				word_stats[kf125WindowRawData] += window_words; 
 				iptr = &iptr[window_words];
 				break;
+			case  5: word_stats[kf125CDCPulse]++;
+				iptr++;
+				if(((*iptr>>31) & 0x1) == 0){ word_stats[kf125CDCPulse]++; iptr++; }
+				break;
+			case  6: word_stats[kf125FDCPulse6]++;
+				iptr++;
+				if(((*iptr>>31) & 0x1) == 0){ word_stats[kf125FDCPulse6]++; iptr++; }
+				break;
 			case  7: word_stats[kf125PulseIntegral]++;    iptr++;  break;
 			case  8: word_stats[kf125PulseTime]++;        iptr++;  break;
+			case  9: word_stats[kf125FDCPulse9]++;
+				iptr++;
+				if(((*iptr>>31) & 0x1) == 0){ word_stats[kf125FDCPulse9]++; iptr++; }
+				break;
 			case 10: word_stats[kf125PulsePedestal]++;    iptr++;  break;
 			case 13: word_stats[kf125EventTrailer]++;     iptr++;  break;
 			case 14: word_stats[kf125DataNotValid]++;     iptr++;  break;

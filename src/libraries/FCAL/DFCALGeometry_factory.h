@@ -20,7 +20,7 @@ public:
 
 private:
 	
-	jerror_t brun(JEventLoop *loop, int runnumber);	
+	jerror_t brun(JEventLoop *loop, int32_t runnumber);	
 	jerror_t erun(void);	
 };
 
