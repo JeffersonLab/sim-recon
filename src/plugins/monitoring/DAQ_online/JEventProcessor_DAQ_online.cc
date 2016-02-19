@@ -102,8 +102,11 @@ jerror_t JEventProcessor_DAQ_online::init(void)
 	daq_event_tdiff->SetXTitle("#deltat between events (ms)");
 	
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kUnknown, "unknown");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEVIOHeader, "EVIO len. & header");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEVIOEventNumber, "Event Number Word");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEVIOTimestamp, "Timestamp");
+
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kBORData, "BOR record");
 
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf250BlockHeader, "f250 Block Header");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf250BlockTrailer, "f250 Block Trailer");
@@ -501,6 +504,18 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 		evio_buffsize -= 8*sizeof(uint32_t);
 		evio_buffwords -= 8;
 	}
+
+	// Check if this is BOR data
+	if( evio_buffwords >= 4 ){
+		uint32_t mask = (0x70<<16) | (0x01);
+		if( (istart[1]&mask) == mask ){
+				
+			japp->RootWriteLock();
+			daq_words_by_type->Fill(kBORData, istart[0]/sizeof(uint32_t));
+			japp->RootUnLock();
+			return; // no further parsing needed
+		}
+	}
 	
 	// Check if this is EPICS data
 	if( evio_buffwords >= 4 ){
@@ -516,9 +531,18 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 		}
 	}
 	
+	if( evio_buffwords < 4 ){
+		cout << "Too few words in event (" << evio_buffwords << ") skipping..." << endl;
+		return;
+	}
+	
 	// Physics event length
 	uint32_t physics_event_len = istart[0];
 	if( (istart[1] & 0xFF001000) != 0xFF001000 ) return; // not a physics event
+	if( physics_event_len+1 > evio_buffwords ){
+		cout << "Too many words in physics event: " << physics_event_len+1 << " > " << evio_buffwords << endl;
+		return;
+	}
 	
 	// Trigger bank event length
 	uint32_t trigger_bank_len = istart[2];
@@ -526,6 +550,10 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 	uint64_t tlo = istart[2+5];
 	uint64_t thi = istart[2+6];  
 	uint64_t timestamp = (thi<<32) + (tlo<<0);
+	if( trigger_bank_len+2 > evio_buffwords ){
+		cout << "Too many words in trigger bank " << trigger_bank_len << " > " << evio_buffwords-2 << endl;
+		return;
+	}
 	
 	// Allocate memory to hold stats data
 	uint32_t Nwords[100]; // total data words for each ROC (includes event length words)
@@ -536,6 +564,8 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 	word_stats[kNevents]++;
 	word_stats[kTotWords] += evio_buffwords;
 
+	word_stats[kEVIOHeader] += 4; // physics event and built trigger bank length and header words
+
 	// Loop over data banks
 	uint32_t *iptr = &istart[3+trigger_bank_len];
 	while(iptr < iend){
@@ -544,9 +574,17 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 		uint32_t rocid = (iptr[1]>>16) & 0XFF;
 		
 		if(rocid<100) Nwords[rocid] += len+1;
+		
+		word_stats[kEVIOHeader] += 2; // ROC data bank length and header words
 
 		uint32_t *imyend = &iptr[len+1];
 		if(imyend > iend) imyend = iend;
+		
+		uint64_t Nwords = ((uint64_t)imyend - (uint64_t)iptr)/sizeof(uint32_t);
+		if(Nwords<2){
+			cout << "Nwords<2 (?)" << endl;
+			break;
+		}
 
 		DataWordStats(iptr, imyend, word_stats);
 		
@@ -616,6 +654,9 @@ void JEventProcessor_DAQ_online::DataWordStats(uint32_t *iptr, uint32_t *iend, u
 		uint32_t data_block_bank_len = *iptr++;
 		uint32_t *iendbank = &iptr[data_block_bank_len];
 		uint32_t det_id = ((*iptr) >> 16) & 0x0FFF;
+		
+		word_stats[kEVIOHeader] += 2; // data block bank length and header words
+
 		iptr++; // advance to first raw data word
 
 		uint32_t Ntoprocess = data_block_bank_len - 1; // 1 for bank header
@@ -647,6 +688,7 @@ void JEventProcessor_DAQ_online::DataWordStats(uint32_t *iptr, uint32_t *iend, u
 			case 0x55:
 				ParseModuleConfiguration(rocid, iptr, iendbank, word_stats);
 				break;
+
 			default:
 				break;
 		}
