@@ -1,28 +1,30 @@
 /*
- * DDIRCTruthHit.h
+ * DDIRCTruthPoint.h
  *
  *  Created on: Oct 7, 2013
  *      Author: yqiang
  */
 
-#ifndef DDIRCTRUTHHIT_H_
-#define DDIRCTRUTHHIT_H_
+#ifndef DDIRCTRUTHPOINT_H_
+#define DDIRCTRUTHPOINT_H_
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
 using namespace jana;
 
-class DDIRCTruthHit: public JObject {
+class DDIRCTruthPoint: public JObject {
 
 public:
-	JOBJECT_PUBLIC (DDIRCTruthHit);
+	JOBJECT_PUBLIC (DDIRCTruthPoint);
 
 	float x, y, z;	// true point of intersection
 	float px, py, pz; // true 3 momentum of particle
 	float t;	// time
 	float E;	// energy
 	int track;	///< Track number
-	//int parentID; ///< Charged track which produced CKOV (plan to add with Geant4)
+	int itrack;	///< MCThrown track index
+	int primary;	///< primary track=1    not primary track=0
+	int ptype;    /// particle type
 
 	void toStrings(vector<pair<string, string> >&items) const {
 		AddString(items, "x", "%1.3f", x);
@@ -34,8 +36,10 @@ public:
 		AddString(items, "t", "%1.3f", t);
 		AddString(items, "E", "%1.3f", E);
 		AddString(items, "track", "%d", track);
-		//AddString(items, "parentID", "%d", parentID);
+		AddString(items, "itrack", "%d", itrack);
+		AddString(items, "primary", "%d", primary);
+		AddString(items, "ptype", "%d", ptype);
 	}
 };
 
-#endif /* DDIRCTRUTHHIT_H_ */
+#endif /* DDIRCTRUTHPOINT_H_ */

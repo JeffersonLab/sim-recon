@@ -19,8 +19,8 @@
 extern s_HDDM_t* thisInputEvent;
 
 binTree_t* dircTree = 0;
-static int dircCount = 0;
-static int dircpointCount = 0;
+static int dircTruthHitCount = 0;
+static int dircTruthPointCount = 0;
 
 /* register truth points during tracking (from gustep) */
 void hitDIRC(float xin[4], float xout[4], float pin[5], float pout[5],
@@ -32,49 +32,55 @@ void hitDIRC(float xin[4], float xout[4], float pin[5], float pout[5],
 	x[2] = (xin[2] + xout[2]) / 2;
 	t = (xin[3] + xout[3]) / 2 * 1e9;
 
-	// post to truth tree
+	//printf("%f\n",dEsum);
+
+	// post dirc truth point
 	if ((history == 0) && (dEsum > 0)) {
-		int mark = (1 << 25) + dircpointCount;
+		int mark = (1 << 25) + dircTruthPointCount;
 		void** twig = getTwig(&dircTree, mark);
 		if (*twig == 0) {
 			s_DIRC_t* dirc = *twig = make_s_DIRC();
-			s_DircTruthPoints_t* points = make_s_DircTruthPoints(1);
-			dirc->dircTruthPoints = points;
-			int a =
-					thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
-			points->in[0].primary = (stack <= a);
-			points->in[0].track = track;
-			points->in[0].x = xin[0];
-			points->in[0].y = xin[1];
-			points->in[0].z = xin[2];
-			points->in[0].t = xin[3] * 1e9;
-			points->in[0].px = pin[4] * pin[0];
-			points->in[0].py = pin[4] * pin[1];
-			points->in[0].pz = pin[4] * pin[2];
-			points->in[0].E = pin[3];
-			points->in[0].ptype = ipart;
-			points->in[0].trackID = make_s_TrackID();
-			points->in[0].trackID->itrack = gidGetId(track);
-			points->mult = 1;
-			dircpointCount++;
+			s_DircTruthPoints_t* truthPoints = make_s_DircTruthPoints(1);
+			dirc->dircTruthPoints = truthPoints;
+			int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+			truthPoints->in[0].primary = (stack <= a);
+			truthPoints->in[0].track = track;
+			truthPoints->in[0].x = xin[0];
+			truthPoints->in[0].y = xin[1];
+			truthPoints->in[0].z = xin[2];
+			truthPoints->in[0].t = xin[3] * 1e9;
+			truthPoints->in[0].px = pin[4] * pin[0];
+			truthPoints->in[0].py = pin[4] * pin[1];
+			truthPoints->in[0].pz = pin[4] * pin[2];
+			truthPoints->in[0].E = pin[3];
+			truthPoints->in[0].ptype = ipart;
+			truthPoints->in[0].trackID = make_s_TrackID();
+			truthPoints->in[0].trackID->itrack = gidGetId(track);
+			truthPoints->mult = 1;
+			dircTruthPointCount++;
 		}
 	}
 
-	// post dirc hit
+	// post dirc truth hit
 	if (dEsum < 0) {
-		int mark = (1 << 20) + dircCount;
+	        //printf("found truth hit\n");
+		int mark = (1 << 20) + dircTruthHitCount;
 		void** twig = getTwig(&dircTree, mark);
 		if (*twig == 0) {
-			s_DIRC_t* dirc = *twig = make_s_DIRC();
-			s_DircHits_t* dircHits = make_s_DircHits(1);
-			dirc->dircHits = dircHits;
-			dircHits->in[0].x = xin[0];
-			dircHits->in[0].y = xin[1];
-			dircHits->in[0].z = xin[2];
-			dircHits->in[0].t = xin[3] * 1e9;
-			dircHits->in[0].E = pin[3];
-			dircHits->mult = 1;
-			dircCount++;
+		        s_DIRC_t* dirc = *twig = make_s_DIRC();
+			s_DircTruthHits_t* truthHits = make_s_DircTruthHits(1);
+			dirc->dircTruthHits = truthHits;
+			truthHits->in[0].x = xin[0];
+			truthHits->in[0].y = xin[1];
+			truthHits->in[0].z = xin[2];
+			truthHits->in[0].t = xin[3] * 1e9;
+			truthHits->in[0].px = pin[4] * pin[0];
+			truthHits->in[0].py = pin[4] * pin[1];
+			truthHits->in[0].pz = pin[4] * pin[2];
+			truthHits->in[0].E = pin[3];
+			truthHits->in[0].track = track;
+			truthHits->mult = 1;
+			dircTruthHitCount++;
 		}
 	}
 
@@ -92,52 +98,51 @@ s_DIRC_t* pickDirc() {
 	s_DIRC_t* box;
 	s_DIRC_t* item;
 
-	if ((dircCount == 0) && (dircpointCount == 0)) {
+	if ((dircTruthHitCount == 0) && (dircTruthPointCount == 0)) {
 		return HDDM_NULL ;
 	}
 
 	box = make_s_DIRC();
 	// create DIRC hits
-	box->dircHits = make_s_DircHits(dircCount);
-	box->dircTruthPoints = make_s_DircTruthPoints(dircpointCount);
+	box->dircTruthHits = make_s_DircTruthHits(dircTruthHitCount);
+	box->dircTruthPoints = make_s_DircTruthPoints(dircTruthPointCount);
 
 	while ((item = pickTwig(&dircTree))) {
 
 		// pack DIRC hits
-		s_DircHits_t* dirchits = item->dircHits;
-		int dirchit;
-		for (dirchit = 0; dirchit < dirchits->mult; ++dirchit) {
-			int m = box->dircHits->mult++;
-			box->dircHits->in[m] = dirchits->in[dirchit];
+		s_DircTruthHits_t* dircTruthHits = item->dircTruthHits;
+		int dircTruthHit;
+		for (dircTruthHit = 0; dircTruthHit < dircTruthHits->mult; ++dircTruthHit) {
+			int m = box->dircTruthHits->mult++;
+			box->dircTruthHits->in[m] = dircTruthHits->in[dircTruthHit];
 		}
-		if (dirchits != HDDM_NULL) {
-			FREE(dirchits);
+		if (dircTruthHits != HDDM_NULL) {
+			FREE(dircTruthHits);
 		}
 		// pack DIRC Truth points
-		s_DircTruthPoints_t* dircpoints = item->dircTruthPoints;
-		int dircpoint;
-		for (dircpoint = 0; dircpoint < dircpoints->mult; ++dircpoint) {
+		s_DircTruthPoints_t* dircTruthPoints = item->dircTruthPoints;
+		int dircTruthPoint;
+		for (dircTruthPoint = 0; dircTruthPoint < dircTruthPoints->mult; ++dircTruthPoint) {
 			int m = box->dircTruthPoints->mult++;
-			box->dircTruthPoints->in[m] = dircpoints->in[dircpoint];
+			box->dircTruthPoints->in[m] = dircTruthPoints->in[dircTruthPoint];
 		}
-		if (dircpoints != HDDM_NULL) {
-			FREE(dircpoints);
+		if (dircTruthPoints != HDDM_NULL) {
+			FREE(dircTruthPoints);
 		}
 		FREE(item);
 	}
 
 	// clear DIRC hits and truth
-	dircCount = dircpointCount = 0;
-	if ((box->dircHits != HDDM_NULL ) && (box->dircHits->mult == 0)) {
-		FREE(box->dircHits);
-		box->dircHits = HDDM_NULL;
+	dircTruthHitCount = dircTruthPointCount = 0;
+	if ((box->dircTruthHits != HDDM_NULL ) && (box->dircTruthHits->mult == 0)) {
+		FREE(box->dircTruthHits);
+		box->dircTruthHits = HDDM_NULL;
 	}
-	if ((box->dircTruthPoints != HDDM_NULL )
-			&& (box->dircTruthPoints->mult == 0)) {
+	if ((box->dircTruthPoints != HDDM_NULL ) && (box->dircTruthPoints->mult == 0)) {
 		FREE(box->dircTruthPoints);
 		box->dircTruthPoints = HDDM_NULL;
 	}
-	if ((box->dircHits->mult == 0) && (box->dircTruthPoints->mult == 0)) {
+	if ((box->dircTruthHits->mult == 0) && (box->dircTruthPoints->mult == 0)) {
 		FREE(box);
 		box = HDDM_NULL;
 	}

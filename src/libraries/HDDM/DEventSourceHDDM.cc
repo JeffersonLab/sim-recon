@@ -389,8 +389,12 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
                      dynamic_cast<JFactory<DDIRCHit>*>(factory), tag);
 
    if (dataClassName == "DDIRCTruthHit")
-      return Extract_DDIRCTruthHit(record,
+      return Extract_DDIRCTruthHit(record, 
                      dynamic_cast<JFactory<DDIRCTruthHit>*>(factory), tag);
+
+   if (dataClassName == "DDIRCTruthPoint")
+      return Extract_DDIRCTruthPoint(record,
+                     dynamic_cast<JFactory<DDIRCTruthPoint>*>(factory), tag);
 
    // extract CereTruth and CereRichHit hits, yqiang Oct 3, 2012
    // removed CereTruth (merged into MCThrown), added CereHit, yqiang Oct 10 2012
@@ -509,7 +513,7 @@ jerror_t DEventSourceHDDM::Extract_DMCTrackHit(hddm_s::HDDM *record,
    GetCherenkovTruthHits(record, data);
    GetFCALTruthHits(record, data);
    GetSCTruthHits(record, data);
-   GetDIRCTruthHits(record, data);
+   GetDIRCTruthPoints(record, data);
 
    // It has happened that some CDC hits have "nan" for the drift time
    // in a peculiar event Alex Somov came across. This ultimately caused
@@ -673,7 +677,7 @@ jerror_t DEventSourceHDDM::GetCherenkovTruthHits(hddm_s::HDDM *record,
 //-------------------
 // GetDIRCTruthHits
 //-------------------
-jerror_t DEventSourceHDDM::GetDIRCTruthHits(hddm_s::HDDM *record,
+jerror_t DEventSourceHDDM::GetDIRCTruthPoints(hddm_s::HDDM *record,
                                             vector<DMCTrackHit*>& data)
 {
    const hddm_s::DircTruthPointList &points = record->getDircTruthPoints();
@@ -2643,41 +2647,6 @@ jerror_t DEventSourceHDDM::Extract_DFMWPCHit(hddm_s::HDDM *record,  JFactory<DFM
 }
 
 //------------------
-// Extract_DDIRCHit
-//------------------
-jerror_t DEventSourceHDDM::Extract_DDIRCHit(hddm_s::HDDM *record,
-                                   JFactory<DDIRCHit>* factory, string tag)
-{
-   /// Copies the data from the given hddm_s structure. This is called
-   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
-   /// returns OBJECT_NOT_AVAILABLE immediately.
-
-   if (factory == NULL)
-      return OBJECT_NOT_AVAILABLE;
-   if (tag != "")
-      return OBJECT_NOT_AVAILABLE;
-
-   vector<DDIRCHit*> data;
-
-   const hddm_s::DircHitList &hits = record->getDircHits();
-   hddm_s::DircHitList::iterator iter;
-   for (iter = hits.begin(); iter != hits.end(); ++iter) {
-      DDIRCHit *hit = new DDIRCHit;
-      hit->x = iter->getX();
-      hit->y = iter->getY();
-      hit->z = iter->getZ();
-      hit->t = iter->getT();
-      hit->E = iter->getE();
-      data.push_back(hit);
-   }
-
-  // Copy into factory
-  factory->CopyTo(data);
-
-  return NOERROR;
-}
-
-//------------------
 // Extract_DCereHit
 // added by yqiang Oct 11, 2012
 //------------------
@@ -2720,6 +2689,38 @@ jerror_t DEventSourceHDDM::Extract_DCereHit(hddm_s::HDDM *record,
    return NOERROR;
 }
 
+//------------------
+// Extract_DDIRCHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DDIRCHit(hddm_s::HDDM *record,
+                                   JFactory<DDIRCHit>* factory, string tag)
+{
+   /// Copies the data from the given hddm_s structure. This is called
+   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+   /// returns OBJECT_NOT_AVAILABLE immediately.
+
+   if (factory == NULL)
+      return OBJECT_NOT_AVAILABLE;
+   if (tag != "")
+      return OBJECT_NOT_AVAILABLE;
+
+   vector<DDIRCHit*> data;
+
+   const hddm_s::DircHitList &hits = record->getDircHits();
+   hddm_s::DircHitList::iterator iter;
+   for (iter = hits.begin(); iter != hits.end(); ++iter) {
+      DDIRCHit *hit = new DDIRCHit;
+      hit->pixel = iter->getPixel();
+      hit->t = iter->getT();
+      data.push_back(hit);
+   }
+
+  // Copy into factory
+  factory->CopyTo(data);
+
+  return NOERROR;
+}
+
 //----------------------
 // Extract_DDIRCTruthHit
 //----------------------
@@ -2734,9 +2735,9 @@ jerror_t DEventSourceHDDM::Extract_DDIRCTruthHit(hddm_s::HDDM *record,
 
    vector<DDIRCTruthHit*> data;
 
-   const hddm_s::DircTruthPointList &points = record->getDircTruthPoints();
-   hddm_s::DircTruthPointList::iterator iter;
-   for (iter = points.begin(); iter != points.end(); ++iter) {
+   const hddm_s::DircTruthHitList &hits = record->getDircTruthHits();
+   hddm_s::DircTruthHitList::iterator iter;
+   for (iter = hits.begin(); iter != hits.end(); ++iter) {
       DDIRCTruthHit *hit = new DDIRCTruthHit;
       hit->x       = iter->getX();
       hit->y       = iter->getY();
@@ -2747,11 +2748,46 @@ jerror_t DEventSourceHDDM::Extract_DDIRCTruthHit(hddm_s::HDDM *record,
       hit->t       = iter->getT();
       hit->E       = iter->getE();
       hit->track   = iter->getTrack();
-      hit->primary = iter->getPrimary();
-      hit->ptype   = iter->getPtype();
-      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
-      hit->itrack = (ids.size())? ids.begin()->getItrack() : 0;
+      //hit->parent = iter->getParent(); ??
       data.push_back(hit);
+   }
+
+   factory->CopyTo(data);
+   return NOERROR;
+}
+
+//----------------------
+// Extract_DDIRCTruthPoint
+//----------------------
+jerror_t DEventSourceHDDM::Extract_DDIRCTruthPoint(hddm_s::HDDM *record,
+                                   JFactory<DDIRCTruthPoint>* factory,
+                                   string tag)
+{
+   if (factory == NULL)
+      return OBJECT_NOT_AVAILABLE;
+   if (tag != "")
+      return OBJECT_NOT_AVAILABLE;
+
+   vector<DDIRCTruthPoint*> data;
+
+   const hddm_s::DircTruthPointList &points = record->getDircTruthPoints();
+   hddm_s::DircTruthPointList::iterator iter;
+   for (iter = points.begin(); iter != points.end(); ++iter) {
+      DDIRCTruthPoint *point = new DDIRCTruthPoint;
+      point->x       = iter->getX();
+      point->y       = iter->getY();
+      point->z       = iter->getZ();
+      point->px      = iter->getPx();
+      point->py      = iter->getPy();
+      point->pz      = iter->getPz();
+      point->t       = iter->getT();
+      point->E       = iter->getE();
+      point->track   = iter->getTrack();
+      point->primary = iter->getPrimary();
+      point->ptype   = iter->getPtype();
+      const hddm_s::TrackIDList &ids = iter->getTrackIDs();
+      point->itrack = (ids.size())? ids.begin()->getItrack() : 0;
+      data.push_back(point);
    }
 
    factory->CopyTo(data);

@@ -17,14 +17,11 @@ class DDIRCHit: public JObject {
 public:
 	JOBJECT_PUBLIC (DDIRCHit);
 
-	float x, y, z;	// true point of intersection
+	int pixel;	// pixel index
 	float t;	// time
-	float E;	// energy
 
 	void toStrings(vector<pair<string, string> >&items) const {
-		AddString(items, "x", "%1.3f", x);
-		AddString(items, "y", "%1.3f", y);
-		AddString(items, "z", "%1.3f", z);
+		AddString(items, "pixel", "%d", pixel);
 		AddString(items, "t", "%1.3f", t);
 	}
 };

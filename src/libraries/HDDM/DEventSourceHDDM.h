@@ -58,6 +58,7 @@ using namespace std;
 #include <CERE/DCereHit.h>
 #include "DIRC/DDIRCHit.h"
 #include "DIRC/DDIRCTruthHit.h"
+#include "DIRC/DDIRCTruthPoint.h"
 #include <RF/DRFTime.h>
 #include <DANA/DApplication.h>
 #include "PAIR_SPECTROMETER/DPSHit.h"
@@ -88,6 +89,7 @@ class DEventSourceHDDM:public JEventSource
       jerror_t GetFCALTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
       jerror_t GetCCALTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
       jerror_t GetSCTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
+      jerror_t GetDIRCTruthPoints(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
 
 	   jerror_t Extract_DRFTime(hddm_s::HDDM *record, JFactory<DRFTime> *factory, JEventLoop* locEventLoop);
       jerror_t Extract_DBCALTruthShower(hddm_s::HDDM *record, JFactory<DBCALTruthShower> *factory, string tag);
@@ -137,10 +139,10 @@ class DEventSourceHDDM:public JEventSource
       // add RICH hit and Truth, yqiang Oct 3, 2012
       // modifed by yqiang, Oct 10 2012 now include both truth hits in DMCThrown
       // Oct 8, 2013, added dedicated object for RICH truth hit
-      jerror_t GetDIRCTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
       jerror_t Extract_DCereHit(hddm_s::HDDM *record, JFactory<DCereHit> *factory, string tag);
       jerror_t Extract_DDIRCHit(hddm_s::HDDM *record, JFactory<DDIRCHit> *factory, string tag);
       jerror_t Extract_DDIRCTruthHit(hddm_s::HDDM *record, JFactory<DDIRCTruthHit> *factory, string tag);
+      jerror_t Extract_DDIRCTruthPoint(hddm_s::HDDM *record, JFactory<DDIRCTruthPoint> *factory, string tag);
 
       std::ifstream *ifs;
       hddm_s::istream *fin;

@@ -11,11 +11,13 @@ using namespace jana;
 
 #include "DDIRCHit.h"
 #include "DDIRCTruthHit.h"
+#include "DDIRCTruthPoint.h"
 
 jerror_t DIRC_init(JEventLoop *loop) {
 	/// Create and register DIRC data factories
 	loop->AddFactory(new JFactory<DDIRCHit>());
 	loop->AddFactory(new JFactory<DDIRCTruthHit>());
+	loop->AddFactory(new JFactory<DDIRCTruthPoint>());
 
 	return NOERROR;
 }

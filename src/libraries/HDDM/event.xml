@@ -100,10 +100,11 @@
         </richTruthPoint>
       </RICH>
       <DIRC minOccurs="0">
-        <dircHit maxOccurs="unbounded" minOccurs="0" t="float" x="float" y="float" z="float" E="float"/>
+        <dircHit maxOccurs="unbounded" minOccurs="0" t="float" pixel="int"/>
+        <dircTruthHit maxOccurs="unbounded" minOccurs="0" t="float" x="float" y="float" z="float" px="float" py="float" pz="float" E="float" track="int"/>
         <dircTruthPoint E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float">
-          <trackID minOccurs="0" itrack="int"/>
-        </dircTruthPoint>
+	  <trackID minOccurs="0" itrack="int"/>
+	</dircTruthPoint>
       </DIRC>
       <forwardTOF minOccurs="0">
         <ftofCounter bar="int" maxOccurs="unbounded" minOccurs="0" plane="int">
