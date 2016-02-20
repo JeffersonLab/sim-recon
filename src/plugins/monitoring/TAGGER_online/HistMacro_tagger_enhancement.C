@@ -15,7 +15,7 @@
 	int highTimeAcc = locHist_TaggerEnergy_DeltaTSC->GetXaxis()->FindBin(35.);
 
 	//Get amorphous data from reference file
-	TFile *f = TFile::Open("/group/halld/Users/jrsteven/hist_amorph_reference.root");
+	TFile *f = TFile::Open("/group/halld/Users/jrsteven/RunPeriod-2016-02/hdmon_amorph_reference.root");
 	if(!f) return;
 	TH2D* locHist_TaggerEnergy_DeltaTSC_Amorph = (TH2D*)f->Get("TAGGER/TaggerEnergy_DeltaTSC");
 	if(!locHist_TaggerEnergy_DeltaTSC_Amorph) return;
