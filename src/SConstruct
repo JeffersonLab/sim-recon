@@ -16,6 +16,7 @@ OPTIMIZATION = ARGUMENTS.get('OPTIMIZATION', 2)
 DEBUG = ARGUMENTS.get('DEBUG', 1)
 PROFILE = ARGUMENTS.get('PROFILE', 0)
 BUILDSWIG = ARGUMENTS.get('BUILDSWIG', 0)
+PREFIX = ARGUMENTS.get('PREFIX', 0)
 
 # Get platform-specific name
 osname = os.getenv('BMS_OSNAME', 'build')
@@ -24,7 +25,16 @@ osname = os.getenv('BMS_OSNAME', 'build')
 arch = ROOT_CFLAGS = subprocess.Popen(["uname"], stdout=subprocess.PIPE).communicate()[0].strip()
 
 # Setup initial environment
-installdir = "#../%s" %(osname)
+if PREFIX == 0:
+    PREFIX = os.path.abspath(os.pardir)
+    VARIANT_DIR = "%s/src/.%s" %(PREFIX, osname)
+else:
+    if not os.path.exists(PREFIX):
+        os.makedirs(PREFIX)
+    os.makedirs("%s/src" % (PREFIX))
+    os.symlink(sbmsdir, "%s/src/SBMS" % (PREFIX))
+    VARIANT_DIR = "%s/.%s" %(PREFIX, osname)
+installdir = "%s/%s" %(PREFIX, osname)
 include = "%s/include" % (installdir)
 bin = "%s/bin" % (installdir)
 lib = "%s/lib" % (installdir)
@@ -32,7 +42,7 @@ plugins = "%s/plugins" % (installdir)
 env = Environment(        ENV = os.environ,  # Bring in full environement, including PATH
                       CPPPATH = [include],
                       LIBPATH = [lib],
-                  variant_dir = ".%s" % (osname))
+                  variant_dir = VARIANT_DIR)
 
 # These are SBMS-specific variables (i.e. not default scons ones)
 env.Replace(INSTALLDIR    = installdir,
@@ -43,6 +53,7 @@ env.Replace(INSTALLDIR    = installdir,
 				PLUGINSDIR    = plugins,
 				ALL_SOURCES   = [],        # used so we can add generated sources
 				MISC_OBJECTS  = [],        # used so we can add custom built objects
+				PREFIX        = PREFIX,
 				SHOWBUILD     = SHOWBUILD,
 				OPTIMIZATION  = OPTIMIZATION,
 				DEBUG         = DEBUG,
@@ -104,18 +115,18 @@ sbms.ApplyPlatformSpecificSettings(env, arch)
 sbms.ApplyPlatformSpecificSettings(env, osname)
 
 # "external" packages (aka xstream)
-SConscript('external/SConscript', variant_dir=".%s/external" % (osname), exports='env osname', duplicate=0)
+SConscript('external/SConscript', variant_dir="%s/external" % (VARIANT_DIR), exports='env osname', duplicate=0)
 
 # build libraries
-SConscript('libraries/SConscript', variant_dir=".%s/libraries" % (osname), exports='env osname', duplicate=0)
+SConscript('libraries/SConscript', variant_dir="%s/libraries" % (VARIANT_DIR), exports='env osname', duplicate=0)
 
 # build programs
 program_subdirs = ['programs']
-SConscript(dirs=program_subdirs, variant_dir=".%s/programs" % (osname), exports='env osname', duplicate=0)
+SConscript(dirs=program_subdirs, variant_dir="%s/programs" % (VARIANT_DIR), exports='env osname', duplicate=0)
 
 # build plugins
 program_subdirs = ['plugins']
-SConscript(dirs=program_subdirs, variant_dir=".%s/plugins" % (osname), exports='env osname', duplicate=0)
+SConscript(dirs=program_subdirs, variant_dir="%s/plugins" % (VARIANT_DIR), exports='env osname', duplicate=0)
 
 # Make install target
 env.Alias('install', installdir)
