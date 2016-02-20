@@ -169,8 +169,9 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
         bool haveTDChit = false;
         if (tdc_hits.size() > 0) haveTDChit = true;
 
-        // For each ADC hit (of which there will only be 1 for the moment
-        for (unsigned int i=0; i<hits.size(); i++) {
+        // For each ADC hit 
+        //for (unsigned int i=0; i<hits.size(); i++) {
+        for (unsigned int i=0; i<1; i++) {   // only process the first ADC hit for now
             const DBCALHit* hit=hits[i];
 
             float pulse_peak, E, t, t_ADC, t_TDC=0; //these are values that will be assigned to the DBCALUnifiedHit
