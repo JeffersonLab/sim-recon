@@ -82,14 +82,14 @@ jerror_t JEventProcessor_HLDetectorTiming::init(void)
 
     // Increase range for initial search
     if(DO_TDC_ADC_ALIGN){
-        NBINS_TDIFF = 1400; MIN_TDIFF = -150.0; MAX_TDIFF = 550.0;
+        NBINS_TDIFF = 2800; MIN_TDIFF = -150.0; MAX_TDIFF = 550.0;
     }
     else{
         NBINS_TDIFF = 50; MIN_TDIFF = -10.0; MAX_TDIFF = 10.0;
     }
 
     if (DO_TRACK_BASED){
-        NBINS_TAGGER_TIME = 1600; MIN_TAGGER_TIME = 0; MAX_TAGGER_TIME = 400;
+        NBINS_TAGGER_TIME = 1600; MIN_TAGGER_TIME = -200; MAX_TAGGER_TIME = 400;
         NBINS_MATCHING = 500; MIN_MATCHING_T = -100; MAX_MATCHING_T = 400;
     }
     else{

@@ -558,7 +558,7 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 2931
     outFile.close(); // clear file
 
     TH1D * selectedBCALOffset = new TH1D("selectedBCALOffset", "Selected BCAL TDC Offset; Column; Offset [ns]", 1152, 0.5, 1152 + 0.5);
-    TH1I * BCALOffsetDistribution = new TH1I("BCALOffsetDistribution", "BCAL TDC Offset; TDC Offset [ns]; Entries", 500, -250, 250); 
+    TH1I * BCALOffsetDistribution = new TH1I("BCALOffsetDistribution", "BCAL TDC Offset; TDC Offset [ns]; Entries", 500, -500, 500); 
 
     thisHist = Get2DHistogram("HLDetectorTiming", "BCAL", "BCALHit Upstream Per Channel TDC-ADC Hit Time");
     if(thisHist != NULL){
@@ -588,7 +588,7 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 2931
                 }
             }
             selectedBCALOffset->SetBinContent(2*i - 1, maxMean);
-            BCALOffsetDistribution->Fill(maxMean);
+            BCALOffsetDistribution->Fill(maxMean+bcal_tdc_offsets[2*i -2]);
         }
     }
 
@@ -621,7 +621,7 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 2931
             }
 
             selectedBCALOffset->SetBinContent(2*i, maxMean);
-            BCALOffsetDistribution->Fill(maxMean);
+            BCALOffsetDistribution->Fill(maxMean+bcal_tdc_offsets[2*i -1]);
         }
     }
 
