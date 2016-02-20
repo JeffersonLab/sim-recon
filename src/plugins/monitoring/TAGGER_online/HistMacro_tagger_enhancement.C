@@ -9,10 +9,10 @@
 
 	//Get diamond data for display
 	TH2D* locHist_TaggerEnergy_DeltaTSC = (TH2D*)gDirectory->Get("TaggerEnergy_DeltaTSC");
-	int lowTime = locHist_TaggerEnergy_DeltaTSC->GetXaxis()->FindBin(5.);
-	int highTime = locHist_TaggerEnergy_DeltaTSC->GetXaxis()->FindBin(20.);
-	int lowTimeAcc = locHist_TaggerEnergy_DeltaTSC->GetXaxis()->FindBin(-20.);
-	int highTimeAcc = locHist_TaggerEnergy_DeltaTSC->GetXaxis()->FindBin(-5.);
+	int lowTime = locHist_TaggerEnergy_DeltaTSC->GetXaxis()->FindBin(-10.);
+	int highTime = locHist_TaggerEnergy_DeltaTSC->GetXaxis()->FindBin(5.);
+	int lowTimeAcc = locHist_TaggerEnergy_DeltaTSC->GetXaxis()->FindBin(20.);
+	int highTimeAcc = locHist_TaggerEnergy_DeltaTSC->GetXaxis()->FindBin(35.);
 
 	//Get amorphous data from reference file
 	TFile *f = TFile::Open("/group/halld/Users/jrsteven/hist_amorph_reference.root");

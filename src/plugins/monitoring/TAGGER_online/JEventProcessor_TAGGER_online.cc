@@ -46,8 +46,8 @@ jerror_t JEventProcessor_TAGGER_online::init(void)
 	new TDirectoryFile("TAGGER", "TAGGER");
 	gDirectory->cd("TAGGER");
 
-	dTAGMPulsePeak_Column = new TH2D("TAGMPulsePeak_Column", "TAGM pulse peak vs column", 102, 0., 103., 100, 0., 4000.);
-	dTAGMIntegral_Column = new TH2D("TAGMIntegral_Column", "TAGM pulse integral vs column", 102, 0., 103., 100, 0., 4000.);
+	dTAGMPulsePeak_Column = new TH2D("TAGMPulsePeak_Column", "TAGM pulse peak vs column", 102, 0., 102., 200, 0., 2000.);
+	dTAGMIntegral_Column = new TH2D("TAGMIntegral_Column", "TAGM pulse integral vs column", 102, 0., 102., 100, 0., 4000.);
 	dTaggerEnergy_DeltaTSC = new TH2D("TaggerEnergy_DeltaTSC", "Tagger Energy vs. #Delta t (TAG-SC); #Delta t (TAG-SC); Tagger Energy", 200, -100, 100, 240, 0., 12.); 
 
 	gDirectory->cd("..");
