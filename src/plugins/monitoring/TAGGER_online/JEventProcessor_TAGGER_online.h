@@ -25,6 +25,7 @@ class JEventProcessor_TAGGER_online:public jana::JEventProcessor{
 		const char* className(void){return "JEventProcessor_TAGGER_online";}
 
 	private:
+		TH2D *dTAGMPulsePeak_Column, *dTAGMIntegral_Column;
 		TH2D *dTaggerEnergy_DeltaTSC;
 
 		jerror_t init(void);						///< Called once at program start.

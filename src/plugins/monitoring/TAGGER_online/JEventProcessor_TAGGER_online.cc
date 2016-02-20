@@ -43,9 +43,11 @@ jerror_t JEventProcessor_TAGGER_online::init(void)
 {
         japp->RootWriteLock();
 	gDirectory->Cd("/");
-	new TDirectoryFile("TAGGER_ONLINE", "TAGGER_ONLINE");
-	gDirectory->cd("TAGGER_ONLINE");
+	new TDirectoryFile("TAGGER", "TAGGER");
+	gDirectory->cd("TAGGER");
 
+	dTAGMPulsePeak_Column = new TH2D("TAGMPulsePeak_Column", "TAGM pulse peak vs column", 102, 0., 103., 100, 0., 4000.);
+	dTAGMIntegral_Column = new TH2D("TAGMIntegral_Column", "TAGM pulse integral vs column", 102, 0., 103., 100, 0., 4000.);
 	dTaggerEnergy_DeltaTSC = new TH2D("TaggerEnergy_DeltaTSC", "Tagger Energy vs. #Delta t (TAG-SC); #Delta t (TAG-SC); Tagger Energy", 200, -100, 100, 240, 0., 12.); 
 
 	gDirectory->cd("..");
@@ -77,7 +79,15 @@ jerror_t JEventProcessor_TAGGER_online::evnt(JEventLoop *loop, uint64_t eventnum
 	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); loc_i++) {
 	  const DTAGMHit* locTAGMHit;	  
 	  locBeamPhotons[loc_i]->GetSingle(locTAGMHit);
-	  if(locTAGMHit != NULL && locTAGMHit->integral < 500.) continue;
+	  if(locTAGMHit != NULL) { 
+		japp->RootWriteLock();
+		dTAGMPulsePeak_Column->Fill(locTAGMHit->column, locTAGMHit->pulse_peak);
+		dTAGMIntegral_Column->Fill(locTAGMHit->column, locTAGMHit->integral);
+		japp->RootUnLock();	
+		
+		// add threshold on TAGM hits
+		if(locTAGMHit->integral < 500.) continue;
+	  }
 
 	  for(size_t loc_j = 0; loc_j < locSCHits.size(); loc_j++) {
 	    Double_t locDeltaT = locBeamPhotons[loc_i]->time() - locSCHits[loc_j]->t;

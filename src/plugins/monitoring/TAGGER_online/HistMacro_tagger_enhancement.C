@@ -2,7 +2,7 @@
 
 {
 	TDirectory *locTopDirectory = gDirectory;
-	TDirectory *locDirectory = (TDirectory*)locTopDirectory->FindObjectAny("TAGGER_online");
+	TDirectory *locDirectory = (TDirectory*)locTopDirectory->FindObjectAny("TAGGER");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
@@ -15,13 +15,15 @@
 	int highTimeAcc = locHist_TaggerEnergy_DeltaTSC->GetXaxis()->FindBin(-5.);
 
 	//Get amorphous data from reference file
-	TFile *f = new TFile::Open();
-	TH2D* locHist_TaggerEnergy_DeltaTSC_Amorph = (TH2D*)f->Get("TaggerEnergy_DeltaTSC");
+	TFile *f = TFile::Open("/group/halld/Users/jrsteven/hist_amorph_reference.root");
+	if(!f) return;
+	TH2D* locHist_TaggerEnergy_DeltaTSC_Amorph = (TH2D*)f->Get("TAGGER/TaggerEnergy_DeltaTSC");
+	if(!locHist_TaggerEnergy_DeltaTSC_Amorph) return;
 
   	TH1F* locHist_TaggerEnergy = (TH1F*)locHist_TaggerEnergy_DeltaTSC->ProjectionY("TaggerEnergy", lowTime, highTime);
 	locHist_TaggerEnergy->SetTitle("Diamond");
 	TH1F* locHist_TaggerEnergy_Amorph = (TH1F*)locHist_TaggerEnergy_DeltaTSC_Amorph->ProjectionY("TaggerEnergy_Amorph", lowTime, highTime);
-	locHist_TaggerEnergy_Amorph->SetTitle("Amorphous");
+	locHist_TaggerEnergy_Amorph->SetTitle("Amorphous Reference");
   	TH1F* locHist_TaggerEnergyAcc = (TH1F*)locHist_TaggerEnergy_DeltaTSC->ProjectionY("TaggerEnergyAcc", lowTimeAcc, highTimeAcc);
   	TH1F* locHist_TaggerEnergyAcc_Amorph = (TH1F*)locHist_TaggerEnergy_DeltaTSC_Amorph->ProjectionY("TaggerEnergyAcc_Amorph", lowTimeAcc, highTimeAcc);
  	locHist_TaggerEnergy->Rebin(); locHist_TaggerEnergy_Amorph->Rebin();
@@ -41,6 +43,7 @@
 		}
 	}
 	locHist_TaggerEnhancement->Scale(1./scaleFactor);
+	locHist_TaggerEnhancement->SetTitle("Enhancement: Diamond/Amorphous");
 
 
 	//Get/Make Canvas
@@ -71,6 +74,10 @@
         }
 
 	locCanvas->cd(3);
+	locHist_TaggerEnhancement->GetXaxis()->SetTitleSize(0.05);
+        locHist_TaggerEnhancement->GetYaxis()->SetTitleSize(0.05);
+        locHist_TaggerEnhancement->GetXaxis()->SetLabelSize(0.05);
+        locHist_TaggerEnhancement->GetYaxis()->SetLabelSize(0.05);
 	locHist_TaggerEnhancement->Draw();
 }
 
