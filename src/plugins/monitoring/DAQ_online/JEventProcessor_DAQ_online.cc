@@ -582,7 +582,15 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 		
 		uint64_t Nwords = ((uint64_t)imyend - (uint64_t)iptr)/sizeof(uint32_t);
 		if(Nwords<2){
-			cout << "Nwords<2 (?)" << endl;
+			static int Nwarnings = 0;
+			if(Nwarnings<10){
+				cout << "Nwords<2 (?)" << endl;
+				cout << "     evio_buffwords = " << evio_buffwords << endl;
+				cout << "  physics_event_len = " << physics_event_len << endl;
+				cout << "   trigger_bank_len = " << trigger_bank_len << endl;
+				event.Print();
+				if(++Nwarnings == 10) cout << "Last warning!" << endl;
+			}
 			break;
 		}
 
@@ -654,6 +662,8 @@ void JEventProcessor_DAQ_online::DataWordStats(uint32_t *iptr, uint32_t *iend, u
 		uint32_t data_block_bank_len = *iptr++;
 		uint32_t *iendbank = &iptr[data_block_bank_len];
 		uint32_t det_id = ((*iptr) >> 16) & 0x0FFF;
+		
+		if(iendbank > iend) iendbank = iend;
 		
 		word_stats[kEVIOHeader] += 2; // data block bank length and header words
 
