@@ -366,6 +366,8 @@ void DTOFPoint_factory::Create_MatchedTOFPoint(const tof_spacetimehit_t* locTOFS
 	const DTOFPaddleHit* locTOFHit_Horizontal = locTOFSpacetimeHit_Horizontal->TOFHit;
 	const DTOFPaddleHit* locTOFHit_Vertical = locTOFSpacetimeHit_Vertical->TOFHit;
 
+    double locMatchTErr = 0.099; // one paddle t_resol = 99 ns, from Beni. single ended needs more study (sdobbs, 2016-02-22) 
+
 	//reconstruct TOF hit information, using information from the best bar: one or both of the bars may have a PMT signal below threshold
 	float locMatchX, locMatchY, locMatchZ, locMatchdE, locMatchT;
 	if(locTOFSpacetimeHit_Horizontal->dPositionWellDefinedFlag && locTOFSpacetimeHit_Vertical->dPositionWellDefinedFlag)
@@ -377,6 +379,7 @@ void DTOFPoint_factory::Create_MatchedTOFPoint(const tof_spacetimehit_t* locTOFS
 		locMatchZ = dTOFGeometry->CenterMPlane; //z: midpoint between tof planes
 		locMatchT = 0.5*(locTOFSpacetimeHit_Horizontal->t + locTOFSpacetimeHit_Vertical->t);
 		locMatchdE = 0.5*(locTOFHit_Horizontal->dE + locTOFHit_Vertical->dE);
+        locMatchTErr = 0.5 * sqrt(locMatchTErr*locMatchTErr + locMatchTErr*locMatchTErr);
 	}
 	else if(locTOFSpacetimeHit_Horizontal->dPositionWellDefinedFlag)
 	{
@@ -402,7 +405,7 @@ void DTOFPoint_factory::Create_MatchedTOFPoint(const tof_spacetimehit_t* locTOFS
 	locTOFPoint->AddAssociatedObject(locTOFHit_Vertical);
 	locTOFPoint->pos.SetXYZ(locMatchX, locMatchY, locMatchZ);
 	locTOFPoint->t = locMatchT;
-	locTOFPoint->tErr = 0.0; //SET ME
+	locTOFPoint->tErr = locMatchTErr;  
 	locTOFPoint->dE = locMatchdE;
 
 	locTOFPoint->dHorizontalBar = locTOFHit_Horizontal->bar;
@@ -420,6 +423,9 @@ void DTOFPoint_factory::Create_UnMatchedTOFPoint(const tof_spacetimehit_t* locTO
 	const DTOFPaddleHit* locPaddleHit = locTOFSpacetimeHit->TOFHit;
 	bool locIsHorizontalBarFlag = (locPaddleHit->orientation == 1);
 	float locPointZ = locIsHorizontalBarFlag ? dTOFGeometry->CenterHPlane : dTOFGeometry->CenterVPlane;
+    double locTErr = 0.099; // one paddle t_resol = 99 ns, from Beni. single ended needs more study (sdobbs, 2016-02-22) 
+                                 // assume single ended hits are this good for now
+
 	if(locTOFSpacetimeHit->dPositionWellDefinedFlag)
 	{
 		//Position is well defined
@@ -428,7 +434,7 @@ void DTOFPoint_factory::Create_UnMatchedTOFPoint(const tof_spacetimehit_t* locTO
 
 		locTOFPoint->pos.SetXYZ(locTOFSpacetimeHit->x, locTOFSpacetimeHit->y, locPointZ);
 		locTOFPoint->t = locTOFSpacetimeHit->t;
-		locTOFPoint->tErr = 0.0; //SET ME
+		locTOFPoint->tErr = locTErr;
 		locTOFPoint->dE = locPaddleHit->dE;
 
 		locTOFPoint->dHorizontalBar = locIsHorizontalBarFlag ? locPaddleHit->bar : 0;
@@ -453,7 +459,7 @@ void DTOFPoint_factory::Create_UnMatchedTOFPoint(const tof_spacetimehit_t* locTO
 		float locPointY = locTOFSpacetimeHit->y;
 		locTOFPoint->pos.SetXYZ(locPointX, locPointY, locPointZ);
 		locTOFPoint->t = locTOFSpacetimeHit->t;
-		locTOFPoint->tErr = 0.0; //SET ME
+		locTOFPoint->tErr = locTErr; 
 
 		bool locNorthAboveThresholdFlag = (locPaddleHit->E_north > E_THRESHOLD);
 
