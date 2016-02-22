@@ -45,6 +45,7 @@ using namespace jana;
 
 // root hist pointers
 
+     static TH1I* h1trig_epics = NULL; 
      static TH1I* h1trig_trgbits = NULL; 
      static TH1I* h1trig_fcal = NULL;
      static TH1I* h1trig_fcalN = NULL;
@@ -152,6 +153,10 @@ jerror_t JEventProcessor_TRIG_online::init(void) {
   // book hist
         int const nbins=100;
 	
+	h1trig_epics = new TH1I("h1trig_epics", "Epics triggers",20,0,20);
+	h1trig_epics->SetXTitle("Epics triggers");
+	h1trig_epics->SetYTitle("counts");
+
 	h1trig_trgbits = new TH1I("h1trig_trgbits", "Trig Trgbits",20,0,20);
 	h1trig_trgbits->SetXTitle("trig_mask || (10+fp_trig_mask)");
 	h1trig_trgbits->SetYTitle("counts");
@@ -366,8 +371,10 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	bool isPhysics = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_PHYSICS_EVENT);
 	if(! isPhysics) {
 	  printf ("Non-physics Event=%d\n",(int)locEventNumber);
+	  h1trig_epics->Fill(0.);
 	  return NOERROR;
 	}
+	h1trig_epics->Fill(1.);
 
 	japp->RootWriteLock();
 
@@ -388,6 +395,8 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	  fp_trig_mask = 0;
 	}
 
+	h1trig_epics->Fill(2.);
+	
 	int trig_bits = fp_trig_mask > 0? 10 + fp_trig_mask: trig_mask;
 	// printf (" Event=%d trig_bits=%d trig_mask=%X fp_trig_mask=%X\n",(int)locEventNumber,trig_bits,trig_mask,fp_trig_mask);
 
@@ -408,9 +417,10 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	  if (r <= rmin) continue;    // keep only hits that are outside a minimum radius
 
 	     // require trigger threshold in sum
-	     if (fcalhits[jj]->E > 65*0.27*7.5/1000) {
-	       fcal_energy += fcalhits[jj]->E;
-	       fcal_time += fcalhits[jj]->t*fcalhits[jj]->E;    // calculate energy weighted time
+	     // if (fcalhits[jj]->E > 65*0.27*7.5/1000) {
+	     if (fcalhits[jj]->E*7.5/fcalhits[jj]->intOverPeak > 65*0.27*7.5/1000) {
+	       fcal_energy += fcalhits[jj]->E*7.5/fcalhits[jj]->intOverPeak;
+	       fcal_time += fcalhits[jj]->t*fcalhits[jj]->E*7.5/fcalhits[jj]->intOverPeak;    // calculate energy weighted time
 	     }
 	}
 	fcal_time = fcal_energy > 0 ? fcal_time/fcal_energy : -200; 
