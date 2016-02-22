@@ -418,7 +418,7 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 
 	     // require trigger threshold in sum
 	     // if (fcalhits[jj]->E > 65*0.27*7.5/1000) {
-	     if (fcalhits[jj]->E*7.5/fcalhits[jj]->intOverPeak > 65*0.27*7.5/1000) {
+	  if (fcalhits[jj]->E*7.5/fcalhits[jj]->intOverPeak > 1.0*(65*0.27*7.5/1000)) {
 	       fcal_energy += fcalhits[jj]->E*7.5/fcalhits[jj]->intOverPeak;
 	       fcal_time += fcalhits[jj]->t*fcalhits[jj]->E*7.5/fcalhits[jj]->intOverPeak;    // calculate energy weighted time
 	     }
