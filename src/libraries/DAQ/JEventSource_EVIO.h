@@ -364,6 +364,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 
 		jerror_t ParseEvents(ObjList *objs_ptr);
 		int32_t FindRunNumber(uint32_t *iptr);
+		int32_t EpicQuestForRunNumber(void);
 		uint64_t FindEventNumber(uint32_t *iptr);
 		void FindEventType(uint32_t *iptr, JEvent &event);
 		MODULE_TYPE GuessModuleType(const uint32_t *istart, const uint32_t *iend);
