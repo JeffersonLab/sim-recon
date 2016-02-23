@@ -309,7 +309,9 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
             }
 
             if(useRF) {
-                int beamBucket = int((maxMean / RF_Period) + 0.5); // +0.5 to handle rounding correctly
+                int beamBucket;
+                if (maxMean >= 0) beamBucket = int((maxMean / RF_Period) + 0.5); // +0.5 to handle rounding correctly
+                else beamBucket = int((maxMean / RF_Period) - 0.5);
                 selectedTAGHOffset->SetBinContent(i, beamBucket);
                 TAGHOffsetDistribution->Fill(beamBucket);
             }
@@ -379,6 +381,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
         outFile << sc_t_base_fadc - meanSCOffset << " " << sc_t_base_tdc - meanSCOffset << endl;
         outFile.close();
     }
+    cout << "Mean SC offset " << meanSCOffset << endl;
 
     TH1I *this1DHist = Get1DHistogram("HLDetectorTiming", "TRACKING", "TOF - SC Target Time");
     if(this1DHist != NULL){
