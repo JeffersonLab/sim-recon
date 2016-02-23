@@ -3911,20 +3911,20 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 		switch(data_type){
 			case 0: // Block Header
 				slot = (*iptr>>22) & 0x1F;
-				if(VERBOSE>7) evioout << "      FADC250 Block Header: slot="<<slot<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Block Header: slot="<<slot<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				//iblock= (*iptr>>8) & 0x03FF;
 				//Nblock_events= (*iptr>>0) & 0xFF;
 				break;
 			case 1: // Block Trailer
 				//slot_trailer = (*iptr>>22) & 0x1F;
 				//Nwords_in_block = (*iptr>>0) & 0x3FFFFF;
-				if(VERBOSE>7) evioout << "      FADC250 Block Trailer"<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Block Trailer"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				found_block_trailer = true;
 				break;
 			case 2: // Event Header
 				//slot_event_header = (*iptr>>22) & 0x1F;
 				itrigger = (*iptr>>0) & 0x3FFFFF;
-				if(VERBOSE>7) evioout << "      FADC250 Event Header: itrigger="<<itrigger<<" (objs=0x"<<hex<<objs<<dec<<", last_itrigger="<<last_itrigger<<", rocid="<<rocid<<", slot="<<slot<<")" <<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Event Header: itrigger="<<itrigger<<" (objs=0x"<<hex<<objs<<dec<<", last_itrigger="<<last_itrigger<<", rocid="<<rocid<<", slot="<<slot<<")" <<" ("<<hex<<*iptr<<dec<<")" <<endl;
 				if( (itrigger!=last_itrigger) || (objs==NULL) ){
 					if(ENABLE_DISENTANGLING){
 						if(objs){
@@ -3938,10 +3938,11 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				break;
 			case 3: // Trigger Time
 				t = ((*iptr)&0xFFFFFF)<<0;
-				if(VERBOSE>7) evioout << "      FADC250 Trigger Time: t="<<t<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Trigger Time: t="<<t<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				iptr++;
 				if(((*iptr>>31) & 0x1) == 0){
 					t += ((*iptr)&0xFFFFFF)<<24; // from word on the street: second trigger time word is optional!!??
+					if(VERBOSE>7) evioout << "       Trigger time high word="<<(((*iptr)&0xFFFFFF))<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				}else{
 					iptr--;
 				}
@@ -3949,19 +3950,19 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				break;
 			case 4: // Window Raw Data
 				// iptr passed by reference and so will be updated automatically
-				if(VERBOSE>7) evioout << "      FADC250 Window Raw Data"<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Window Raw Data"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				MakeDf250WindowRawData(objs, rocid, slot, itrigger, iptr);
 				break;
 			case 5: // Window Sum
 				channel = (*iptr>>23) & 0x0F;
 				sum = (*iptr>>0) & 0x3FFFFF;
 				overflow = (*iptr>>22) & 0x1;
-				if(VERBOSE>7) evioout << "      FADC250 Window Sum"<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Window Sum"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				if(objs) objs->hit_objs.push_back(new Df250WindowSum(rocid, slot, channel, itrigger, sum, overflow));
 				break;				
 			case 6: // Pulse Raw Data
 				// iptr passed by reference and so will be updated automatically
-				if(VERBOSE>7) evioout << "      FADC250 Pulse Raw Data"<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Pulse Raw Data"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				MakeDf250PulseRawData(objs, rocid, slot, itrigger, iptr);
 				break;
 			case 7: // Pulse Integral
@@ -3972,7 +3973,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				nsamples_integral = 0;  // must be overwritten later in GetObjects with value from Df125Config value
 				nsamples_pedestal = 1;  // The firmware returns an already divided pedestal
 				pedestal = 0;  // This will be replaced by the one from Df250PulsePedestal in GetObjects
-				if(VERBOSE>7) evioout << "      FADC250 Pulse Integral: chan="<<channel<<" pulse_number="<<pulse_number<<" sum="<<sum<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Pulse Integral: chan="<<channel<<" pulse_number="<<pulse_number<<" sum="<<sum<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				if( (objs!=NULL) && (pulse_number<F250PULSE_NUMBER_FILTER) ) {
 					objs->hit_objs.push_back(new Df250PulseIntegral(rocid, slot, channel, itrigger, pulse_number, 
 											 quality_factor, sum, pedestal, nsamples_integral, nsamples_pedestal));
@@ -3983,7 +3984,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				pulse_number = (*iptr>>21) & 0x03;
 				quality_factor = (*iptr>>19) & 0x03;
 				pulse_time = (*iptr>>0) & 0x7FFFF;
-				if(VERBOSE>7) evioout << "      FADC250 Pulse Time: chan="<<channel<<" pulse_number="<<pulse_number<<" pulse_time="<<pulse_time<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Pulse Time: chan="<<channel<<" pulse_number="<<pulse_number<<" pulse_time="<<pulse_time<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				if( (objs!=NULL) && (pulse_number<F250PULSE_NUMBER_FILTER) && (F250_PT_EMULATION_MODE!=kEmulationAlways)) {
 					objs->hit_objs.push_back(new Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 				}
@@ -3991,14 +3992,14 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 			case 9: // Streaming Raw Data
 				// This is marked "reserved for future implementation" in the current manual (v2).
 				// As such, we don't try handling it here just yet.
-				if(VERBOSE>7) evioout << "      FADC250 Streaming Raw Data (unsupported)"<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Streaming Raw Data (unsupported)"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				break;
 			case 10: // Pulse Pedestal
 				channel = (*iptr>>23) & 0x0F;
 				pulse_number = (*iptr>>21) & 0x03;
 				pedestal = (*iptr>>12) & 0x1FF;
 				pulse_peak = (*iptr>>0) & 0xFFF;
-				if(VERBOSE>7) evioout << "      FADC250 Pulse Pedestal chan="<<channel<<" pulse_number="<<pulse_number<<" pedestal="<<pedestal<<" pulse_peak="<<pulse_peak<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Pulse Pedestal chan="<<channel<<" pulse_number="<<pulse_number<<" pedestal="<<pedestal<<" pulse_peak="<<pulse_peak<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				if( (objs!=NULL) && (pulse_number<F250PULSE_NUMBER_FILTER) && (F250_PP_EMULATION_MODE!=kEmulationAlways)) {
 					objs->hit_objs.push_back(new Df250PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
 				}
@@ -4010,7 +4011,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				// different behavior for debug mode data as regular data.
 			case 14: // Data not valid (empty module)
 			case 15: // Filler (non-data) word
-				if(VERBOSE>7) evioout << "      FADC250 Event Trailer, Data not Valid, or Filler word ("<<data_type<<")"<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Event Trailer, Data not Valid, or Filler word ("<<data_type<<")"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				break;
 		}
 
