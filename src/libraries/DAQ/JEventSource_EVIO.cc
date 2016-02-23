@@ -2905,15 +2905,54 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 	if(VERBOSE>1) evioout << " .. Searching for run number ..." <<endl;
 	if(USER_RUN_NUMBER>0){
 		if(VERBOSE>1) evioout << "  returning user-supplied run number: " << USER_RUN_NUMBER << endl;
-		return USER_RUN_NUMBER;
+		return last_run_number=USER_RUN_NUMBER;
 	}
 
 	// Assume first word is number of words in bank
 	uint32_t *iend = &iptr[*iptr - 1];
-	if(*iptr > 256) iend = &iptr[256];
+	if(*iptr > 2048) iend = &iptr[2048];
 	bool has_timestamps = false;
 	while(iptr<iend){
 		iptr++;
+
+		// EPICS event
+		if( (*iptr & 0xff000f) ==  0x600001){
+			if(VERBOSE>2) evioout << "     Found EPICS header. Looking for HD:coda:daq:run_number ..." << endl;
+			const char *cptr = (const char*)&iptr[1];
+			const char *cend = (const char*)iend;
+			const char *needle = "HD:coda:daq:run_number=";
+			while(cptr<cend){
+				if(VERBOSE>4) evioout << "       \""<<cptr<<"\"" << endl;
+				if(!strncmp(cptr, needle, strlen(needle))){
+					if(VERBOSE>2) evioout << "     Found it!" << endl;
+					return last_run_number = atoi(&cptr[strlen(needle)]);
+				}
+				cptr+=4; // should only start on 4-byte boundary!
+			}
+		}
+		
+		// BOR event
+		if( (*iptr & 0xffffffff) ==  0x00700E01){
+			// OK, this looks like a BOR event which does not include the
+			// run number. In this case, we have a couple of options:
+			// 
+			// 1. If we are reading from a file then look further into
+			//    the file to see if we can find another event with the
+			//    run number in it.
+			//
+			// 2. Return the run number found from the filename.
+			//
+			if(source_type==kFileSource){
+				int32_t run_number = EpicQuestForRunNumber();
+				if(run_number != 0){
+					if(VERBOSE>1) evioout << "      Found run number " << run_number << " from Epic Quest." <<endl;
+					return last_run_number = run_number;
+				}
+			}
+			break; // return filename_run_number with warning message
+		}
+
+		// PHYSICS event
 		switch((*iptr)>>16){
 			case 0xFF10:
 			case 0xFF11:
@@ -2928,7 +2967,7 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
                     jout << "WARNING: setting run number " << filename_run_number << " based on file name" << endl; 
                     WARN_USER_RUN_FILENAME = true;
                 }
-				return filename_run_number;
+				return last_run_number = filename_run_number;
 			case 0xFF23:
 			case 0xFF27:
 				has_timestamps = true;
@@ -2966,7 +3005,7 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 		int32_t run = (int32_t)run64;
 		if(VERBOSE>1) evioout << " .. Found run number: " << run <<endl;
 
-		return run;
+		return last_run_number = run;
 	}
 	
     if(!WARN_USER_RUN_FILENAME) {
@@ -2974,7 +3013,128 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
         WARN_USER_RUN_FILENAME = true;
     }
 
-	return filename_run_number;
+	return last_run_number = filename_run_number;
+}
+
+//----------------
+// EpicQuestForRunNumber
+//----------------
+int32_t JEventSource_EVIO::EpicQuestForRunNumber(void)
+{
+	/// This is called when an event is encountered that does
+	/// not have a run number in it. (e.g. a BOR event encountered
+	/// in FindRunNumber() ). This is a last hope of finding the
+	/// run number in the file by looking for other events that 
+	/// may contain it. Specifically, EPICS or PHYSICS events.
+	/// This only works if it is a file source so that it can open
+	/// the file and read in past the first event.
+	///
+	/// Note that this is extremely inefficient so should not be
+	/// called very often. As a precaution, this will look to see
+	/// if last_run_number is not set to 0 first and will just
+	/// return it if it is. Only if it is not will the epic quest
+	/// commence.
+	
+	if(source_type!=kFileSource) return 0;
+	if(last_run_number != 0) return last_run_number;
+	
+	uint32_t buff_len = 4000000;
+	uint32_t *buff = new uint32_t[buff_len];
+	HDEVIO *hdevio = new HDEVIO(source_name);
+	while(hdevio->read(buff, buff_len)){
+
+		// Assume first word is number of words in bank
+		uint32_t *iptr = buff;
+		uint32_t *iend = &iptr[*iptr - 1];
+		if(*iptr > 2048) iend = &iptr[2048];
+		bool has_timestamps = false;
+		while(iptr<iend){
+			iptr++;
+
+			// EPICS event
+			if( (*iptr & 0xff000f) ==  0x600001){
+				if(VERBOSE>2) evioout << "     Found EPICS header. Looking for HD:coda:daq:run_number ..." << endl;
+				const char *cptr = (const char*)&iptr[1];
+				const char *cend = (const char*)iend;
+				const char *needle = "HD:coda:daq:run_number=";
+				while(cptr<cend){
+					if(VERBOSE>4) evioout << "       \""<<cptr<<"\"" << endl;
+					if(!strncmp(cptr, needle, strlen(needle))){
+						if(VERBOSE>2) evioout << "     Found it!" << endl;
+						if(hdevio) delete hdevio;
+						if(buff) delete[] buff;
+						return atoi(&cptr[strlen(needle)]);
+					}
+					cptr+=4; // should only start on 4-byte boundary!
+				}
+			}
+			
+			// BOR event
+			if( (*iptr & 0xffffffff) ==  0x00700E01) continue;
+
+			// PHYSICS event
+			bool not_in_this_buffer = false;
+			switch((*iptr)>>16){
+				case 0xFF10:
+				case 0xFF11:
+				case 0xFF20:
+				case 0xFF21:
+				case 0xFF24:
+				case 0xFF25:
+				case 0xFF30:
+					not_in_this_buffer = true;
+					break;
+				case 0xFF23:
+				case 0xFF27:
+					has_timestamps = true;
+				case 0xFF22:
+				case 0xFF26:
+					break;
+				default:
+					continue;
+			}
+			
+			if(not_in_this_buffer) break; // go to next EVIO buffer
+			
+			iptr++;
+			if( ((*iptr)&0x00FF0000) != 0x000A0000) { iptr--; continue; }
+			uint32_t M = iptr[-3] & 0x000000FF; // Number of events from Physics Event header
+			if(VERBOSE>2) evioout << " ...(epic quest) Trigger bank " << (has_timestamps ? "does":"doesn't") << " have timestamps. Nevents in block M=" << M <<endl;
+			iptr++;
+			uint64_t *iptr64 = (uint64_t*)iptr;
+
+			uint64_t event_num = *iptr64;
+			if(source_type==kETSource) event_num = ((*iptr64)>>32) | ((*iptr64)<<32);
+			if(VERBOSE>3) evioout << " ....(epic quest) Event num: " << event_num <<endl;
+			iptr64++;
+			if(has_timestamps) iptr64 = &iptr64[M]; // advance past timestamps
+
+			// I'm not sure I fully understand this, but if we read from
+			// ET, then the run number is in the low 32 bits of *iptr64.
+			// If we are reading from a file, it is in the high 32 bits.
+			// No byte swapping is needed (it has already been done, though
+			// perhaps incorrectly). We handle this here by checking if
+			// this is an ET source or not.
+			uint64_t run64 = (*iptr64)>>32;
+			if(source_type==kETSource){
+				run64 = (*iptr64)&0xffffffff;
+			}
+			int32_t run = (int32_t)run64;
+			if(VERBOSE>1) evioout << " .. (epic quest) Found run number: " << run <<endl;
+
+			if(hdevio) delete hdevio;
+			if(buff) delete[] buff;
+			return run;
+
+		} // while(iptr<iend)
+		
+		if(hdevio->Nevents > 500) break;
+	} // while(hdevio->read(buff, buff_len))
+	
+	if(hdevio) delete hdevio;
+	if(buff) delete[] buff;
+	
+	return 0;
 }
 
 //----------------
@@ -3911,20 +4071,20 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 		switch(data_type){
 			case 0: // Block Header
 				slot = (*iptr>>22) & 0x1F;
-				if(VERBOSE>7) evioout << "      FADC250 Block Header: slot="<<slot<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Block Header: slot="<<slot<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				//iblock= (*iptr>>8) & 0x03FF;
 				//Nblock_events= (*iptr>>0) & 0xFF;
 				break;
 			case 1: // Block Trailer
 				//slot_trailer = (*iptr>>22) & 0x1F;
 				//Nwords_in_block = (*iptr>>0) & 0x3FFFFF;
-				if(VERBOSE>7) evioout << "      FADC250 Block Trailer"<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Block Trailer"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				found_block_trailer = true;
 				break;
 			case 2: // Event Header
 				//slot_event_header = (*iptr>>22) & 0x1F;
 				itrigger = (*iptr>>0) & 0x3FFFFF;
-				if(VERBOSE>7) evioout << "      FADC250 Event Header: itrigger="<<itrigger<<" (objs=0x"<<hex<<objs<<dec<<", last_itrigger="<<last_itrigger<<", rocid="<<rocid<<", slot="<<slot<<")" <<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Event Header: itrigger="<<itrigger<<" (objs=0x"<<hex<<objs<<dec<<", last_itrigger="<<last_itrigger<<", rocid="<<rocid<<", slot="<<slot<<")" <<" ("<<hex<<*iptr<<dec<<")" <<endl;
 				if( (itrigger!=last_itrigger) || (objs==NULL) ){
 					if(ENABLE_DISENTANGLING){
 						if(objs){
@@ -3938,10 +4098,11 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				break;
 			case 3: // Trigger Time
 				t = ((*iptr)&0xFFFFFF)<<0;
-				if(VERBOSE>7) evioout << "      FADC250 Trigger Time: t="<<t<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Trigger Time: t="<<t<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				iptr++;
 				if(((*iptr>>31) & 0x1) == 0){
 					t += ((*iptr)&0xFFFFFF)<<24; // from word on the street: second trigger time word is optional!!??
+					if(VERBOSE>7) evioout << "       Trigger time high word="<<(((*iptr)&0xFFFFFF))<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				}else{
 					iptr--;
 				}
@@ -3949,19 +4110,19 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				break;
 			case 4: // Window Raw Data
 				// iptr passed by reference and so will be updated automatically
-				if(VERBOSE>7) evioout << "      FADC250 Window Raw Data"<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Window Raw Data"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				MakeDf250WindowRawData(objs, rocid, slot, itrigger, iptr);
 				break;
 			case 5: // Window Sum
 				channel = (*iptr>>23) & 0x0F;
 				sum = (*iptr>>0) & 0x3FFFFF;
 				overflow = (*iptr>>22) & 0x1;
-				if(VERBOSE>7) evioout << "      FADC250 Window Sum"<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Window Sum"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				if(objs) objs->hit_objs.push_back(new Df250WindowSum(rocid, slot, channel, itrigger, sum, overflow));
 				break;				
 			case 6: // Pulse Raw Data
 				// iptr passed by reference and so will be updated automatically
-				if(VERBOSE>7) evioout << "      FADC250 Pulse Raw Data"<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Pulse Raw Data"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				MakeDf250PulseRawData(objs, rocid, slot, itrigger, iptr);
 				break;
 			case 7: // Pulse Integral
@@ -3972,7 +4133,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				nsamples_integral = 0;  // must be overwritten later in GetObjects with value from Df125Config value
 				nsamples_pedestal = 1;  // The firmware returns an already divided pedestal
 				pedestal = 0;  // This will be replaced by the one from Df250PulsePedestal in GetObjects
-				if(VERBOSE>7) evioout << "      FADC250 Pulse Integral: chan="<<channel<<" pulse_number="<<pulse_number<<" sum="<<sum<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Pulse Integral: chan="<<channel<<" pulse_number="<<pulse_number<<" sum="<<sum<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				if( (objs!=NULL) && (pulse_number<F250PULSE_NUMBER_FILTER) ) {
 					objs->hit_objs.push_back(new Df250PulseIntegral(rocid, slot, channel, itrigger, pulse_number, 
 											 quality_factor, sum, pedestal, nsamples_integral, nsamples_pedestal));
@@ -3983,7 +4144,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				pulse_number = (*iptr>>21) & 0x03;
 				quality_factor = (*iptr>>19) & 0x03;
 				pulse_time = (*iptr>>0) & 0x7FFFF;
-				if(VERBOSE>7) evioout << "      FADC250 Pulse Time: chan="<<channel<<" pulse_number="<<pulse_number<<" pulse_time="<<pulse_time<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Pulse Time: chan="<<channel<<" pulse_number="<<pulse_number<<" pulse_time="<<pulse_time<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				if( (objs!=NULL) && (pulse_number<F250PULSE_NUMBER_FILTER) && (F250_PT_EMULATION_MODE!=kEmulationAlways)) {
 					objs->hit_objs.push_back(new Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 				}
@@ -3991,14 +4152,14 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 			case 9: // Streaming Raw Data
 				// This is marked "reserved for future implementation" in the current manual (v2).
 				// As such, we don't try handling it here just yet.
-				if(VERBOSE>7) evioout << "      FADC250 Streaming Raw Data (unsupported)"<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Streaming Raw Data (unsupported)"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				break;
 			case 10: // Pulse Pedestal
 				channel = (*iptr>>23) & 0x0F;
 				pulse_number = (*iptr>>21) & 0x03;
 				pedestal = (*iptr>>12) & 0x1FF;
 				pulse_peak = (*iptr>>0) & 0xFFF;
-				if(VERBOSE>7) evioout << "      FADC250 Pulse Pedestal chan="<<channel<<" pulse_number="<<pulse_number<<" pedestal="<<pedestal<<" pulse_peak="<<pulse_peak<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Pulse Pedestal chan="<<channel<<" pulse_number="<<pulse_number<<" pedestal="<<pedestal<<" pulse_peak="<<pulse_peak<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				if( (objs!=NULL) && (pulse_number<F250PULSE_NUMBER_FILTER) && (F250_PP_EMULATION_MODE!=kEmulationAlways)) {
 					objs->hit_objs.push_back(new Df250PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
 				}
@@ -4010,7 +4171,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				// different behavior for debug mode data as regular data.
 			case 14: // Data not valid (empty module)
 			case 15: // Filler (non-data) word
-				if(VERBOSE>7) evioout << "      FADC250 Event Trailer, Data not Valid, or Filler word ("<<data_type<<")"<<endl;
+				if(VERBOSE>7) evioout << "      FADC250 Event Trailer, Data not Valid, or Filler word ("<<data_type<<")"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 				break;
 		}
 
