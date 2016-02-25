@@ -17,6 +17,7 @@ class JEventProcessor_CDC_expert:public jana::JEventProcessor{
   ~JEventProcessor_CDC_expert();
   const char* className(void){return "JEventProcessor_CDC_expert";}
 
+	bool initialized_histograms;
 
  private:
   jerror_t init(void);						///< Called once at program start.
