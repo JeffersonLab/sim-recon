@@ -9,6 +9,7 @@ subdirs = [
 'FDC_online',
 'PSC_online',
 'RF_online',
+'pedestal_online',
 'PS_online',
 'PSPair_online',
 'ST_online_lowlevel',
