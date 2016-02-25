@@ -3,6 +3,7 @@ Import('*')
 
 subdirs = [
 'BCAL_online',
+'BCAL_LEDonline',
 'CDC_online',
 'DAQ_online',
 'FCAL_online',
