@@ -925,6 +925,22 @@ jerror_t JEventProcessor_DAQ_online::erun(void)
 	// This is called whenever the run number changes, before it is
 	// changed to give you a chance to clean up before processing
 	// events from the next run number.
+
+	for (int i=0; i<highcratenum; i++) {
+		if (daq_occ_crates[i] != NULL) {
+			daq_occ_crates[i]->SetMinimum(daq_occ_crates[i]->GetMinimum(0.001));
+		}
+		if (daq_ped_crates[i] != NULL) {
+			daq_ped_crates[i]->SetMinimum(daq_ped_crates[i]->GetMinimum(0.001));
+		}
+		if (daq_TDClocked_crates[i] != NULL) {
+			daq_TDClocked_crates[i]->SetMinimum(daq_TDClocked_crates[i]->GetMinimum(0.001));
+		}
+		if (daq_TDCovr_crates[i] != NULL) {
+			daq_TDCovr_crates[i]->SetMinimum(daq_TDCovr_crates[i]->GetMinimum(0.001));
+		}
+	}
+
 	return NOERROR;
 }
 
