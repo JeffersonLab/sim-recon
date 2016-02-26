@@ -46,7 +46,6 @@ static TH2D *cdc_rt_vs_n = NULL;
 static TH1D *cdc_amp = NULL; 
 static TH2D *cdc_amp_vs_n = NULL; 
 
-static TH1D *cdc_t_qf0 = NULL;
 static TH1D *cdc_rt_qf0 = NULL;
 
 static TH1D *cdc_qf = NULL;
@@ -194,7 +193,6 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
 
 
   cdc_t = new TH1D("cdc_t","CDC time (ns);time (ns)",TBINS*2,TMIN,TMAX);
-  cdc_t_qf0 = new TH1D("cdc_t_qf0","CDC time with qf=0 (ns);time (ns)",TBINS*2,TMIN,TMAX);
   cdc_t_vs_n = new TH2D("cdc_t_vs_n",Form("CDC time (ns) vs straw number;straw %s;time (ns)",deadstraws),NSTRAWS,HALF,NSTRAWSPH,TBINS,TMIN,TMAX);
 
 
@@ -238,7 +236,7 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
   //cdc_int_badt   = new TH1I("cdc_int_badt","CDC integral (ADC units), pedestal subtracted, events with bad time flagged;ADC units",100,0,IMAX);
   //cdc_intpp_badt   = new TH1I("cdc_intpp_badt","CDC integral (ADC units), including pedestal, events with bad time flagged;ADC units",128,0,IPPMAX);
 
-  cdc_qf = new TH1D("cdc_qf","CDC time quality factor;time quality factor",10,0,10);
+  cdc_qf = new TH1D("cdc_qf","CDC time quality factor;time quality factor (0:good, 1:zero, 2:hi ped, 3: below TH, 4:late TCL, 5: neg ups, 9:hi ups)",10,0,10);
   cdc_qf_vs_n = new TH2D("cdc_qf_vs_n","CDC time quality factor vs straw number;straw;time quality factor",NSTRAWS,HALF,NSTRAWSPH,10,0,10);
   cdc_qf_vs_a = new TH2D("cdc_qf_vs_a","CDC time quality factor vs amplitude;amplitude;time quality factor",128,0,AMAX,10,0,10);
   cdc_qf_vs_rt = new TH2D("cdc_qf_vs_raw_t","CDC time quality factor vs raw time;time;time quality factor",RTBINS,RTMIN,RTMAX,10,0,10);
@@ -420,6 +418,7 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
   japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
 
+
   for (uint32_t i=0; i<hits.size(); i++) {
 
     const DCDCHit *hit = hits[i]; 
@@ -437,7 +436,7 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
         cdc_e->Fill(q);
         cdc_e_vs_n->Fill(n,q);    
       }
-    
+  
       cdc_t->Fill(t);
       cdc_t_vs_n->Fill(n,t);    
 
@@ -513,7 +512,6 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
 
       originalq = 0;
 
-      cdc_t_qf0->Fill(t);
       cdc_rt_qf0->Fill(rt);
     
     } else {
