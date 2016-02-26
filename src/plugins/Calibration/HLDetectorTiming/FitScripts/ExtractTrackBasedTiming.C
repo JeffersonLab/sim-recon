@@ -239,7 +239,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
 
             //if (valueToUse == 0) valueToUse = meanOffset;
             outFile << "0 " << column << " " << valueToUse + tagm_fadc_time_offsets[index-1] - meanOffset<< endl;
-            if (verbose) printf("0\t%i\t%.2f\t\t%.2f\t\t%.2f\t\t%.2f\n", column, valueToUse, tagm_fadc_time_offsets[index-1], meanOffset, 
+            if (verbose) printf("0\t%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n", column, valueToUse, tagm_fadc_time_offsets[index-1], meanOffset, 
                     valueToUse + tagm_fadc_time_offsets[index-1] - meanOffset);
             if (column == 9 || column == 27 || column == 81 || column == 99){
                 for (unsigned int row = 1; row <= 5; row++){
@@ -248,7 +248,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
                     if (useRF) valueToUse *= RF_Period;
                     //if (valueToUse == 0) valueToUse = meanOffset;
                     outFile << row << " " << column << " " << valueToUse + tagm_fadc_time_offsets[index-1] - meanOffset<< endl;
-                    if (verbose) printf("%i\t%i\t%.2f\t\t%.2f\t\t%.2f\t\t%.2f\n", row, column, valueToUse, tagm_fadc_time_offsets[index-1], meanOffset,
+                    if (verbose) printf("%i\t%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n", row, column, valueToUse, tagm_fadc_time_offsets[index-1], meanOffset,
                             valueToUse + tagm_fadc_time_offsets[index-1] - meanOffset);
                 }
             }
@@ -268,7 +268,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
             if (useRF) valueToUse *= RF_Period;
             //if (valueToUse == 0) valueToUse = meanOffset;
             outFile << "0 " << column << " " << valueToUse + tagm_tdc_time_offsets[index-1] - meanOffset << endl;
-            if (verbose) printf("0\t%i\t%.2f\t\t%.2f\t\t%.2f\t\t%.2f\n", column, valueToUse, tagm_tdc_time_offsets[index-1], meanOffset,
+            if (verbose) printf("0\t%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n", column, valueToUse, tagm_tdc_time_offsets[index-1], meanOffset,
                     valueToUse + tagm_tdc_time_offsets[index-1] - meanOffset);
             if (column == 9 || column == 27 || column == 81 || column == 99){
                 for (unsigned int row = 1; row <= 5; row++){
@@ -277,7 +277,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
                     if (useRF) valueToUse *= RF_Period;
                     //if (valueToUse == 0) valueToUse = meanOffset;
                     outFile << row << " " << column << " " << valueToUse + tagm_tdc_time_offsets[index-1] - meanOffset << endl;
-                    if (verbose) printf("%i\t%i\t%.2f\t\t%.2f\t\t%.2f\t\t%.2f\n", row, column, valueToUse, tagm_tdc_time_offsets[index-1], meanOffset,
+                    if (verbose) printf("%i\t%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n", row, column, valueToUse, tagm_tdc_time_offsets[index-1], meanOffset,
                             valueToUse + tagm_tdc_time_offsets[index-1] - meanOffset);
                 }
             }
@@ -357,12 +357,12 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
             //if (valueToUse == 0) valueToUse = meanOffset;
             outFile.open(prefix + "tagh_tdc_timing_offsets.txt", ios::out | ios::app);
             outFile << i << " " << valueToUse + tagh_tdc_time_offsets[i-1] - meanOffset << endl;
-            if (verbose) printf("TDC\t%i\t%.2f\t\t%.2f\t\t%.2f\t\t%.2f\n", i, valueToUse, tagh_tdc_time_offsets[i-1], meanOffset,
+            if (verbose) printf("TDC\t%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n", i, valueToUse, tagh_tdc_time_offsets[i-1], meanOffset,
                     valueToUse + tagh_tdc_time_offsets[i-1] - meanOffset);
             outFile.close();
             outFile.open(prefix + "tagh_adc_timing_offsets.txt", ios::out | ios::app);
             outFile << i << " " << valueToUse + tagh_fadc_time_offsets[i-1] - meanOffset << endl;
-            if (verbose) printf("ADC\t%i\t%.2f\t\t%.2f\t\t%.2f\t\t%.2f\n", i, valueToUse, tagh_fadc_time_offsets[i-1], meanOffset,
+            if (verbose) printf("ADC\t%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n", i, valueToUse, tagh_fadc_time_offsets[i-1], meanOffset,
                     valueToUse + tagh_fadc_time_offsets[i-1] - meanOffset);
             outFile.close();
         }
@@ -407,12 +407,12 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
             cout << "Dumping SC results...\n=======================================" << endl;
             cout << "SC mean Offset = " << meanSCOffset << endl;
             cout << "TDC Offsets" << endl;
-            cout << "Sector\tvalueToUse\toldValue\tmeanOffset\tTotal" << endl;
+            cout << "Sector\toldValue\tValueToUse\tmeanOffset\tTotal" << endl;
         }
         outFile.open(prefix + "sc_tdc_timing_offsets.txt");
         for (int sector = 1; sector <= 30; sector++){
             outFile << sc_tdc_time_offsets[sector-1] + selectedSCSectorOffset->GetBinContent(sector) - meanSCOffset << endl;
-            if (verbose) printf("%i\t%.2f\t\t%.2f\t\t%.2f\t\t%.2f\n",sector, sc_tdc_time_offsets[sector-1], selectedSCSectorOffset->GetBinContent(sector), meanSCOffset,
+            if (verbose) printf("%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n",sector, sc_tdc_time_offsets[sector-1], selectedSCSectorOffset->GetBinContent(sector), meanSCOffset,
                     sc_tdc_time_offsets[sector-1] + selectedSCSectorOffset->GetBinContent(sector) - meanSCOffset);
         }
         outFile.close();
@@ -423,7 +423,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
         outFile.open(prefix + "sc_adc_timing_offsets.txt");
         for (int sector = 1; sector <= 30; sector++){
             outFile << sc_fadc_time_offsets[sector-1] + selectedSCSectorOffset->GetBinContent(sector) - meanSCOffset << endl;
-            if (verbose) printf("%i\t%.2f\t\t%.2f\t\t%.2f\t\t%.2f\n",sector,sc_fadc_time_offsets[sector-1], selectedSCSectorOffset->GetBinContent(sector), meanSCOffset,
+            if (verbose) printf("%i\t%.3f\t\t%.3f\t\t%.3f\t\t%.3f\n",sector,sc_fadc_time_offsets[sector-1], selectedSCSectorOffset->GetBinContent(sector), meanSCOffset,
                     sc_fadc_time_offsets[sector-1] + selectedSCSectorOffset->GetBinContent(sector) - meanSCOffset);
         }
         outFile.close();
