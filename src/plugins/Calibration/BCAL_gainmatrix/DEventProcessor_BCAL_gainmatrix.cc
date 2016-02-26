@@ -87,6 +87,8 @@ jerror_t DEventProcessor_BCAL_gainmatrix::init(void)
 	BCAL_Neutrals->Branch("cl1_contains_layer4",&logical1);
 	BCAL_Neutrals->Branch("cl2_contains_layer4",&logical2);
 	BCAL_Neutrals->Branch("vertexZ",&vertexz);
+	BCAL_Neutrals->Branch("num_showers",&num_showers,"num_showers/i");
+	BCAL_Neutrals->Branch("num_tracks",&num_tracks,"num_tracks/i");
 	BCAL_Neutrals->Branch("Run_Number", &Run_Number);
 	
 	dEventWriterROOT = NULL;
@@ -99,7 +101,7 @@ jerror_t DEventProcessor_BCAL_gainmatrix::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_BCAL_gainmatrix::brun(jana::JEventLoop* locEventLoop, int locRunNumber)
+jerror_t DEventProcessor_BCAL_gainmatrix::brun(jana::JEventLoop* locEventLoop, int32_t locRunNumber)
 {
 	// This is called whenever the run number changes
 	Run_Number = locRunNumber;
@@ -156,6 +158,9 @@ jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, u
 	vector<const DTrackTimeBased*> locTrackTimeBased;
 	locEventLoop->Get(locTrackTimeBased);
 
+	num_tracks = locTrackTimeBased.size();
+	num_showers = locBCALShowers.size();
+
 	vector <const DBCALShower *> matchedShowers;
 	DVector3 mypos(0.0,0.0,0.0);
 	for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){
@@ -184,15 +189,15 @@ jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, u
 		vertexY = locVertex[i]->dSpacetimeVertex.Y();
 		vertexZ = locVertex[i]->dSpacetimeVertex.Z();
 	}
-	
+
 //OoOoOoOoOoOoOoOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO CALCULATING THE PI0 INVARIANT MASS PORTION O0O0O0O0O0O0O0O0OOooooooooooOooOoOoooooOOooooOOo
 
 	for(unsigned int i=0; i<locBCALShowers.size(); i++){
 	  	double pi0_mass = 0.1349766;
 		if (find(matchedShowers.begin(), matchedShowers.end(),locBCALShowers[i]) != matchedShowers.end()) continue;
 		const DBCALShower *s1 = locBCALShowers[i];
-		vector<const DBCALCluster*> associated_clusters1;
-		s1->Get(associated_clusters1);
+		vector<const DBCALPoint*> associated_points1;
+		s1->Get(associated_points1);
 		double dx1 = s1->x - vertexX;
 		double dy1 = s1->y - vertexY;
 		double dz1 = s1->z - vertexZ;
@@ -210,8 +215,8 @@ jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, u
 			for(unsigned int j=i+1; j<locBCALShowers.size(); j++){
 			const DBCALShower *s2 = locBCALShowers[j];
 		     	if (find(matchedShowers.begin(), matchedShowers.end(),s2) != matchedShowers.end()) continue;
-			vector<const DBCALCluster*> associated_clusters2;
-			s2->Get(associated_clusters2);
+			vector<const DBCALPoint*> associated_points2;
+			s2->Get(associated_points2);
 			double dx2 = s2->x - vertexX;
 			double dy2 = s2->y - vertexY;
 			double dz2 = s2->z - vertexZ; // shift to coordinate relative to center of target
@@ -239,38 +244,28 @@ jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, u
 			point_energy.clear();
 			logical1=0;
 			logical2=0;
-			for(unsigned int loc_j = 0; loc_j < associated_clusters1.size(); loc_j++){
-				const DBCALCluster* a_cluster1 = associated_clusters1[loc_j];
-				vector<const DBCALPoint*> associated_points1;
-				a_cluster1->Get(associated_points1); 
-				for(unsigned int loc_jj = 0; loc_jj < associated_clusters2.size(); loc_jj++){
-					const DBCALCluster* a_cluster2 = associated_clusters2[loc_jj];
-					vector<const DBCALPoint*> associated_points2;
-					a_cluster2->Get(associated_points2); 
-					for(unsigned int loc_k = 0; loc_k < associated_points1.size(); loc_k++){
-						int module1 = associated_points1[loc_k]->module(); 
-						int layer1 = associated_points1[loc_k]->layer();
-						int sector1 = associated_points1[loc_k]->sector();
-						double energy1_US = associated_points1[loc_k]->E_US();
-						double energy1_DS = associated_points1[loc_k]->E_DS();
-						int channel1 = 16*(module1-1)+4*(layer1-1)+(sector1-1);
-						if(layer1==4) logical1=1;
-						point1_energy_calib.push_back(sqrt(energy1_US*energy1_DS/E1_raw/E1_raw));
-						point1_channel.push_back(channel1);
-						for(unsigned int loc_p = 0 ; loc_p < associated_points2.size(); loc_p++){
-							int module2 = associated_points2[loc_p]->module(); 
-							int layer2 = associated_points2[loc_p]->layer();
-							int sector2 = associated_points2[loc_p]->sector();
-							double energy2_US = associated_points2[loc_p]->E_US();
-							double energy2_DS = associated_points2[loc_p]->E_DS();
-							int channel2 = 16*(module2-1)+4*(layer2-1)+(sector2-1);
-							if(layer2==4) logical2=1;
-							point2_energy_calib.push_back(sqrt(energy2_US*energy2_DS/E2_raw/E2_raw));
-							point2_channel.push_back(channel2);
-						}
-					} 
+			for(unsigned int loc_k = 0; loc_k < associated_points1.size(); loc_k++){
+				int module1 = associated_points1[loc_k]->module(); 
+				int layer1 = associated_points1[loc_k]->layer();
+				int sector1 = associated_points1[loc_k]->sector();
+				double energy1_US = associated_points1[loc_k]->E_US();
+				double energy1_DS = associated_points1[loc_k]->E_DS();
+				int channel1 = 16*(module1-1)+4*(layer1-1)+(sector1-1);
+				if(layer1==4) logical1=1;
+				point1_energy_calib.push_back(sqrt(energy1_US*energy1_DS/E1_raw/E1_raw));
+				point1_channel.push_back(channel1);
+				for(unsigned int loc_p = 0 ; loc_p < associated_points2.size(); loc_p++){
+					int module2 = associated_points2[loc_p]->module(); 
+					int layer2 = associated_points2[loc_p]->layer();
+					int sector2 = associated_points2[loc_p]->sector();
+					double energy2_US = associated_points2[loc_p]->E_US();
+					double energy2_DS = associated_points2[loc_p]->E_DS();
+					int channel2 = 16*(module2-1)+4*(layer2-1)+(sector2-1);
+					if(layer2==4) logical2=1;
+					point2_energy_calib.push_back(sqrt(energy2_US*energy2_DS/E2_raw/E2_raw));
+					point2_channel.push_back(channel2);
 				}
-			}   
+			} 
 			for ( unsigned int f = 0 ; f < point1_energy_calib.size() ; ++f){
 				frac_en.push_back(make_pair(point1_energy_calib[f],point1_channel[f]));
 			}
@@ -281,19 +276,18 @@ jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, u
 
 			for (unsigned int a = 0 ; a < frac_en.size() ; ++a){
 				point_energy.push_back(frac_en[a].first);
-				if(inv_mass_raw>0.12&&inv_mass_raw<.145&&E1_raw>.9&&E2_raw>.9&&vertexZ!=65.0&&psi>.07&&psi<.14 &&frac_en[a].first > 0.0 && frac_en[a].first < 30.0)  m_mD[frac_en[a].second][0] += -(inv_mass_raw*inv_mass_raw - pi0_mass*pi0_mass)*(inv_mass_raw*inv_mass_raw)*frac_en[a].first;
-				if(inv_mass_raw>0.12&&inv_mass_raw<.145&&E1_raw>.9&&E2_raw>.9&&vertexZ!=65.0&&psi>.07&&psi<.14 &&frac_en[a].first > 0.0 && frac_en[a].first < 30.0 ) m_mL[frac_en[a].second][0] += (inv_mass_raw*inv_mass_raw)*frac_en[a].first;
-				if(inv_mass_raw > 0.12 && inv_mass_raw <.145 && E1_raw>0.9&&E2_raw>0.9&&vertexZ!=65.0&&psi>.07&&psi<.14 && frac_en[a].first > 0.0 && frac_en[a].first < 30.0 ) m_nhits[frac_en[a].second] += 1;
+				if(inv_mass_raw>0.12&&inv_mass_raw<.15&&E1_raw>1.&&E2_raw>1.&&num_tracks>0 &&frac_en[a].first > 0.0 && frac_en[a].first < 30.0)  m_mD[frac_en[a].second][0] += -(inv_mass_raw*inv_mass_raw - pi0_mass*pi0_mass)*(inv_mass_raw*inv_mass_raw)*frac_en[a].first;
+				if(inv_mass_raw>0.12&&inv_mass_raw<.15&&E1_raw>1.&&E2_raw>1.&&num_tracks>0 &&frac_en[a].first > 0.0 && frac_en[a].first < 30.0 ) m_mL[frac_en[a].second][0] += (inv_mass_raw*inv_mass_raw)*frac_en[a].first;
+				if(inv_mass_raw > 0.12 && inv_mass_raw <.15 && E1_raw>1.&&E2_raw>1.&&num_tracks>0 && frac_en[a].first > 0.0 && frac_en[a].first < 30.0 ) m_nhits[frac_en[a].second] += 1;
 
 				for(unsigned int b = 0 ; b < frac_en.size(); ++b)
 				{
-			     	if(inv_mass_raw>.12&&inv_mass_raw<.145&&E1_raw>.9&&E2_raw>.9&&vertexZ!=65.0&&psi>.07&&psi<.14 && frac_en[a].first > 0.0 && frac_en[a].first < 30.0&& frac_en[b].first > 0.0 && frac_en[b].first < 30.0 ) m_mC[frac_en[a].second][frac_en[b].second] += (inv_mass_raw*inv_mass_raw*inv_mass_raw*inv_mass_raw)*(frac_en[a].first)*(frac_en[b].first);
+			     	if(inv_mass_raw>.12&&inv_mass_raw<.15&&E1_raw>1.&&E2_raw>1.&&num_tracks>0 && frac_en[a].first > 0.0 && frac_en[a].first < 30.0&& frac_en[b].first > 0.0 && frac_en[b].first < 30.0 ) m_mC[frac_en[a].second][frac_en[b].second] += (inv_mass_raw*inv_mass_raw*inv_mass_raw*inv_mass_raw)*(frac_en[a].first)*(frac_en[b].first);
 				}
 		        }
 			for(unsigned int h=0;h<point_energy.size();h++){
-			if(inv_mass_raw>.12&&inv_mass_raw<.145&&E1_raw>.9&&E2_raw>.9&&vertexZ!=65.0&&psi>.07&&psi<.14&& frac_en[h].first > 0.0 && frac_en[h].first < 30.0 ) m_massbias += (inv_mass_raw*inv_mass_raw - pi0_mass*pi0_mass);
+			if(inv_mass_raw>.12&&inv_mass_raw<.15&&E1_raw>1.&&E2_raw>1.&&num_tracks>0 && frac_en[h].first > 0.0 && frac_en[h].first < 30.0 ) m_massbias += (inv_mass_raw*inv_mass_raw - pi0_mass*pi0_mass);
 			}	
-
 			BCAL_Neutrals->Fill();
 			}
 		
