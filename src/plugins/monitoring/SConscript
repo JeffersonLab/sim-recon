@@ -24,6 +24,7 @@ subdirs = [
 'TRIG_online',
 'TPOL_online',
 'CDC_expert',
+'CDC_expert_2',
 'TOF_TDC_shift',
 'BCAL_Eff',
 'BCAL_inv_mass',
