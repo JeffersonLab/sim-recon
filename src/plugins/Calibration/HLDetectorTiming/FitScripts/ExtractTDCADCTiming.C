@@ -289,7 +289,7 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 2931
         outFile.open(prefix + "sc_adc_timing_offsets.txt", ios::out);
         for( int iSC = 1; iSC <= 30; iSC++){ 
             float SC_ADC_Offset = selected_SC_TDCADCOffset->GetBinContent(iSC);
-            outFile << SC_ADC_Offset - meanDiff << endl;
+            outFile << SC_ADC_Offset + sc_adc_offsets[iSC-1] - meanDiff << endl;
         }
         outFile.close();
     }
