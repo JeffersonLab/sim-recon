@@ -241,8 +241,6 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
   cdc_qf_vs_a = new TH2D("cdc_qf_vs_a","CDC time quality factor vs amplitude;amplitude;time quality factor",128,0,AMAX,10,0,10);
   cdc_qf_vs_rt = new TH2D("cdc_qf_vs_raw_t","CDC time quality factor vs raw time;time;time quality factor",RTBINS,RTMIN,RTMAX,10,0,10);
 
-
-
   xd->cd();
 
 
