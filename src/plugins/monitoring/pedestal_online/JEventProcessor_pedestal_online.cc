@@ -40,7 +40,7 @@ float pedmean, pedrms;
 
 float treepedestal[highcratenum];
 
-time_t recentwalltime=0;
+long int recentwalltime=0;
 
 static const time_t periodlength=30;  // seconds
 long int globalstarttime=0;
@@ -128,13 +128,13 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 	vector<const DEPICSvalue*> depicsvalue;
 	loop->Get(depicsvalue);
 	if (depicsvalue.size()>0) {
-		recentwalltime = depicsvalue[0]->timestamp;
-		if (VERBOSE>=2) printf("JEventProcessor_pedestal_online::evnt %i found epics event at time %i\n",eventnumber,(int)recentwalltime);
+		recentwalltime = (long int)depicsvalue[0]->timestamp;
+		if (VERBOSE>=2) printf("JEventProcessor_pedestal_online::evnt %li found epics event at time %li\n",eventnumber,recentwalltime);
 		// set the initial values
 		if (globalstarttime==0) {
 			globalstarttime=recentwalltime;
 			for (int i=0; i<highcratenum; i++) periodstarttime[i] = globalstarttime;
-			if (VERBOSE>=1) printf("\nsetting the global start time %i  %i\n\n",(int)recentwalltime,globalstarttime);
+			if (VERBOSE>=1) printf("\nsetting the global start time %li  %li\n\n",recentwalltime,globalstarttime);
 		}
 		return NOERROR;
 	}
@@ -181,7 +181,7 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 					pedmean = pedestal_vtime_hist[rocid]->GetMean();
 					pedrms = pedestal_vtime_hist[rocid]->GetRMS();
 					pednumsamps = pedestal_vtime_hist[rocid]->GetEntries();
-					if (VERBOSE>=3) printf("\t\t%li  %li  %i  %i  %8.4f  %8.4f  %7i\n",
+					if (VERBOSE>=3) printf("\t\t%li  %li  %li  %li  %8.4f  %8.4f  %7i\n",
 										   periodstarttime[rocid], globalstoptime, recentwalltime,  periodlength, 
 										   pedmean, pedrms, pednumsamps);
 					pedestal_vtime_tree[rocid]->Fill();
@@ -238,7 +238,7 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 					pedmean = pedestal_vtime_hist[rocid]->GetMean();
 					pedrms = pedestal_vtime_hist[rocid]->GetRMS();
 					pednumsamps = pedestal_vtime_hist[rocid]->GetEntries();
-					if (VERBOSE>=3) printf("\t\t%li  %li  %i  %i  %f  %f  %i\n",
+					if (VERBOSE>=3) printf("\t\t%li  %li  %li  %li  %f  %f  %i\n",
 										   periodstarttime[rocid], globalstoptime, recentwalltime,  periodlength, 
 										   pedmean, pedrms, pednumsamps);
 					pedestal_vtime_tree[rocid]->Fill();
@@ -307,7 +307,7 @@ jerror_t JEventProcessor_pedestal_online::erun(void)
 				if (pednumsamps>5) {
 					int bin = pedestal_vtime_hist[i]->GetXaxis()->FindBin(treetime);
 					float pederr = pedrms/sqrt(pednumsamps);
-					if (VERBOSE>=3) printf("crate %i event %i   %f  %f  %i\n",i,event,bin,pedmean, pedrms, pednumsamps,pederr);
+					if (VERBOSE>=3) printf("crate %i event %i bin %i   %f  %f  %i  %f\n",i, event,bin,pedmean, pedrms, pednumsamps,pederr);
 					pedestal_vtime_hist[i]->SetBinContent(bin,pedmean);
 					pedestal_vtime_hist[i]->SetBinError(bin,pederr);
 				}
