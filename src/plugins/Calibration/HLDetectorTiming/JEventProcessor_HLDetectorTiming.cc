@@ -609,20 +609,30 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
     if (USE_RF_BUNCH && thisRFBunch->dNumParticleVotes >= 2){
         // Loop over TAGM hits
         for (unsigned int j = 0 ; j < tagmHitVector.size(); j++){
-            int nTAGMColumns = 122;
-            // We want to look at the timewalk within these ADC/TDC detectors
-            Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGM - RFBunch Time",
-                    GetCCDBIndexTAGM(tagmHitVector[j]), tagmHitVector[j]->t - thisRFBunch->dTime,
-                    "#Deltat TAGM-RFBunch; Column ;t_{TAGM} - t_{SC @ target} [ns]",
-                    nTAGMColumns, 0.5, nTAGMColumns + 0.5, NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME);
-            Fill2DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch Time",
-                    tagmHitVector[j]->t - thisRFBunch->dTime, tagmHitVector[j]->E,
-                    "Tagger - RFBunch Time; #Deltat_{Tagger - SC} [ns]; Energy [GeV]",
-                    NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME, nBinsE, EMin, EMax);
-            Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch 1D Time",
-                    tagmHitVector[j]->t - thisRFBunch->dTime,
-                    "Tagger - RFBunch Time; #Deltat_{Tagger - RFBunch} [ns]; Entries",
-                    160, -20, 20);
+            int nTAGMColumns = 122; // Not really just columns, but a name is a name
+            Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGM Pulse Peak Vs. TAGM - RFBunch 1D Time",
+                    tagmHitVector[j]->t - thisRFBunch->dTime, tagmHitVector[j]->pulse_peak,
+                    "TAGM - RFBunch Time; #Deltat_{TAGM - RFBunch} [ns]; Pulse Peak [ADC Counts]",
+                    160, -20, 20, 500, 0, 1000);
+            if(tagmHitVector[j]->pulse_peak > 48){ // Make a peak cut ~12mV , Lot of noise in 2016 data...
+                // We want to look at the timewalk within these ADC/TDC detectors
+                Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGM - RFBunch Time",
+                        GetCCDBIndexTAGM(tagmHitVector[j]), tagmHitVector[j]->t - thisRFBunch->dTime,
+                        "#Deltat TAGM-RFBunch; CCDB Index ;t_{TAGM} - t_{SC @ target} [ns]",
+                        nTAGMColumns, 0.5, nTAGMColumns + 0.5, NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME);
+                Fill2DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch Time",
+                        tagmHitVector[j]->t - thisRFBunch->dTime, tagmHitVector[j]->E,
+                        "Tagger - RFBunch Time; #Deltat_{Tagger - SC} [ns]; Energy [GeV]",
+                        NBINS_TAGGER_TIME,MIN_TAGGER_TIME,MAX_TAGGER_TIME, nBinsE, EMin, EMax);
+                Fill1DHistogram("HLDetectorTiming", "TRACKING", "Tagger - RFBunch 1D Time",
+                        tagmHitVector[j]->t - thisRFBunch->dTime,
+                        "Tagger - RFBunch Time; #Deltat_{Tagger - RFBunch} [ns]; Entries",
+                        160, -20, 20);
+                Fill1DHistogram("HLDetectorTiming", "TRACKING", "TAGM - RFBunch 1D Time",
+                        tagmHitVector[j]->t - thisRFBunch->dTime,
+                        "TAGM - RFBunch Time; #Deltat_{TAGM - RFBunch} [ns]; Entries",
+                        160, -20, 20);
+            }
         }
         // Loop over TAGH hits
         for (unsigned int j = 0 ; j < taghHitVector.size(); j++){
