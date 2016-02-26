@@ -610,10 +610,12 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
         // Loop over TAGM hits
         for (unsigned int j = 0 ; j < tagmHitVector.size(); j++){
             int nTAGMColumns = 122; // Not really just columns, but a name is a name
-            Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGM Pulse Peak Vs. TAGM - RFBunch 1D Time",
-                    tagmHitVector[j]->t - thisRFBunch->dTime, tagmHitVector[j]->pulse_peak,
-                    "TAGM - RFBunch Time; #Deltat_{TAGM - RFBunch} [ns]; Pulse Peak [ADC Counts]",
-                    160, -20, 20, 500, 0, 1000);
+            if(tagmHitVector[j]->has_fADC && tagmHitVector[j]->has_TDC){
+                Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGM Pulse Peak Vs. TAGM - RFBunch 1D Time",
+                        tagmHitVector[j]->t - thisRFBunch->dTime, tagmHitVector[j]->pulse_peak,
+                        "TAGM - RFBunch Time; #Deltat_{TAGM - RFBunch} [ns]; Pulse Peak [ADC Counts]",
+                        160, -20, 20, 500, 0, 1000);
+            }
             if(tagmHitVector[j]->pulse_peak > 48){ // Make a peak cut ~12mV , Lot of noise in 2016 data...
                 // We want to look at the timewalk within these ADC/TDC detectors
                 Fill2DHistogram("HLDetectorTiming", "TRACKING", "TAGM - RFBunch Time",
