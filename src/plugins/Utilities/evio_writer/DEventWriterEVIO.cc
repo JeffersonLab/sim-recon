@@ -5,18 +5,16 @@
 //file-scope so shared amongst threads; only accessed below via locks
 size_t gEVIONumOutputThreads = 0;
 map<string, HDEVIOWriter *>* gEVIOOutputters = NULL;  // we own these writers
-map<string, pthread_t *>* gEVIOOutputThreads = NULL;
+map<string, pthread_t>* gEVIOOutputThreads = NULL;
 
 DEventWriterEVIO::DEventWriterEVIO(JEventLoop* locEventLoop)
 {
-	Nevents=0;
-	
-	ofs_debug_input = NULL;
-	ofs_debug_output = NULL;
-
 	COMPACT = true;
 	PREFER_EMULATED = false;
 	DEBUG_FILES = false; // n.b. also defined in HDEVIOWriter
+
+	ofs_debug_input = NULL;
+	ofs_debug_output = NULL;
 
 	gPARMS->SetDefaultParameter("EVIOOUT:COMPACT" , COMPACT,  "Drop words where we can to reduce output file size. This shouldn't loose any vital information, but can be turned off to help with debugging.");
 	gPARMS->SetDefaultParameter("EVIOOUT:PREFER_EMULATED" , PREFER_EMULATED,  "If true, then sample data will not be written to output, but emulated hits will. Otherwise, do exactly the opposite.");
@@ -29,7 +27,7 @@ DEventWriterEVIO::DEventWriterEVIO(JEventLoop* locEventLoop)
 		if(gEVIOOutputters == NULL)
 			gEVIOOutputters = new map<string, HDEVIOWriter *>();
 		if(gEVIOOutputThreads == NULL)
-			gEVIOOutputThreads = new map<string, pthread_t *>();
+			gEVIOOutputThreads = new map<string, pthread_t>();
 	}
 	japp->Unlock("EVIOWriter");
 
@@ -77,7 +75,7 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 	
 	// Optionally write input buffer to a debug file
 	if(DEBUG_FILES){
-		JEvent &jevent = loop->GetJEvent();
+		JEvent &jevent = locEventLoop->GetJEvent();
 		JEventSource *jes = jevent.GetJEventSource();
 		JEventSource_EVIO *jesevio = dynamic_cast<JEventSource_EVIO*>(jes);
 		if(!jesevio){
@@ -91,10 +89,6 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 			if(ofs_debug_input) ofs_debug_input->write((char*)buff, buff_size*sizeof(uint32_t));
 		}
 	}
-
-	// Keep track of number of events we've seen.
-	// (this will also be used for itrigger when it can't be obtained otherwise)
-	Nevents++;
 
 	string locOutputFileName = Get_OutputFileName(locEventLoop, locOutputFileNameSubString);
 	japp->WriteLock("EVIOWriter");
@@ -121,7 +115,7 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 	}
 	japp->Unlock("EVIOWriter");
 
-
+    return true;
 }
 
 string DEventWriterEVIO::Get_OutputFileName(JEventLoop* locEventLoop, string locOutputFileNameSubString) const
@@ -160,13 +154,13 @@ bool DEventWriterEVIO::Open_OutputFile(JEventLoop* locEventLoop, string locOutpu
 
 	// Create object to write the selected events to a file or ET system
 	// Run each connection in their own thread
-	HDEVIOWriter *locEVIOout = new HDEVIOWriter(OUTPUT_SINK_NAME);
+	HDEVIOWriter *locEVIOout = new HDEVIOWriter(locOutputFileName);
 	pthread_t locEVIOout_thr;
 	int result = pthread_create(&locEVIOout_thr, NULL, HDEVIOOutputThread, locEVIOout);
 	bool success = (result == 0);
 
 	//evaluate status
-	if(success)
+	if(!success)
 		jerr << "Unable to open EVIO file:  error code = " << result << endl;
 	else
 	{
@@ -198,7 +192,7 @@ DEventWriterEVIO::~DEventWriterEVIO(void)
 		}
 		
 		//last thread writing to EVIO files: close all files and free all memory
-		map<string, int>::iterator locIterator = gEVIOOutputters->begin();
+		map<string, HDEVIOWriter *>::iterator locIterator = gEVIOOutputters->begin();
 		for(; locIterator != gEVIOOutputters->end(); ++locIterator)
 		{
 			string locOutputFileName = locIterator->first;
@@ -226,7 +220,7 @@ DEventWriterEVIO::~DEventWriterEVIO(void)
 //------------------
 // WriteEventToBuffer
 //------------------
-void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &buff)
+void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &buff) const
 {
 	/// This method will grab certain low-level objects and write them
 	/// into EVIO banks in a format compatible with the DAQ library.
@@ -353,6 +347,8 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 	}
 	buff.push_back(0xD3850001); // 0xD3=EB id (D3 stands for hallD level 3), 0x85=16bit segment(8 is for padding), 0001=length of segment
 	buff.push_back((uint32_t)event_type); 
+
+    unsigned int Nevents = loop->GetNevents();
 	
 	//--- ROC Data ---
 	// uint32_t segments for ROC timestamp and misc. data
@@ -376,16 +372,16 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 	WriteEventTagData(buff, loop->GetJEvent().GetStatus(), l3trigger);
 
 	// Write CAEN1290TDC hits
-	WriteCAEN1290Data(buff, caen1290hits, caen1290configs);
+	WriteCAEN1290Data(buff, caen1290hits, caen1290configs, Nevents);
 
 	// Write F1TDC hits
-	WriteF1Data(buff, F1hits, F1tts, F1configs);
+	WriteF1Data(buff, F1hits, F1tts, F1configs, Nevents);
 	
 	// Write f250 hits
-	Writef250Data(buff, f250pis, f250tts, f250wrds);
+	Writef250Data(buff, f250pis, f250tts, f250wrds, Nevents);
 	
 	// Write f125 hits
-	Writef125Data(buff, f125pis, f125cdcpulses, f125fdcpulses, f125tts, f125wrds, f125configs);
+	Writef125Data(buff, f125pis, f125cdcpulses, f125fdcpulses, f125tts, f125wrds, f125configs, Nevents);
 	
 	// Update global header length
 	if(!buff.empty()) buff[0] = buff.size()-1;
@@ -394,9 +390,10 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 //------------------
 // WriteCAEN1290Data
 //------------------
-void DEventWriterEVIO::WriteCAEN1290Data(vector<uint32_t> &buff
-  , vector<const DCAEN1290TDCHit*>    &caen1290hits
-  , vector<const DCAEN1290TDCConfig*> &caen1290configs)
+void DEventWriterEVIO::WriteCAEN1290Data(vector<uint32_t> &buff,
+                                         vector<const DCAEN1290TDCHit*>    &caen1290hits,
+                                         vector<const DCAEN1290TDCConfig*> &caen1290configs,
+                                         unsigned int Nevents) const
 {
 	// Create lists of F1 hit objects indexed by rocid,slot
 	// At same time, make map of module types (32channel or 48 channel)
@@ -496,10 +493,11 @@ void DEventWriterEVIO::WriteCAEN1290Data(vector<uint32_t> &buff
 //------------------
 // WriteF1Data
 //------------------
-void DEventWriterEVIO::WriteF1Data(vector<uint32_t> &buff
-  , vector<const DF1TDCHit*>         &F1hits
-  , vector<const DF1TDCTriggerTime*> &F1tts
-  , vector<const DF1TDCConfig*>      &F1configs)
+void DEventWriterEVIO::WriteF1Data(vector<uint32_t> &buff,
+                                   vector<const DF1TDCHit*>         &F1hits,
+                                   vector<const DF1TDCTriggerTime*> &F1tts,
+                                   vector<const DF1TDCConfig*>      &F1configs,
+                                   unsigned int Nevents) const
 {
 	// Create lists of F1 hit objects indexed by rocid,slot
 	// At same time, make map of module types (32channel or 48 channel)
@@ -647,10 +645,11 @@ void DEventWriterEVIO::WriteF1Data(vector<uint32_t> &buff
 //------------------
 // Writef250Data
 //------------------
-void DEventWriterEVIO::Writef250Data(vector<uint32_t> &buff
-  , vector<const Df250PulseIntegral*> &f250pis
-  , vector<const Df250TriggerTime*>   &f250tts
-  , vector<const Df250WindowRawData*> &f250wrds)
+void DEventWriterEVIO::Writef250Data(vector<uint32_t> &buff,
+                                     vector<const Df250PulseIntegral*> &f250pis,
+                                     vector<const Df250TriggerTime*>   &f250tts,
+                                     vector<const Df250WindowRawData*> &f250wrds,
+                                     unsigned int Nevents) const
 {
 	// Create lists of Pulse Integral objects indexed by rocid,slot
 	// At same time, make list of config objects to write
@@ -816,13 +815,14 @@ void DEventWriterEVIO::Writef250Data(vector<uint32_t> &buff
 //------------------
 // Writef125Data
 //------------------
-void DEventWriterEVIO::Writef125Data(vector<uint32_t> &buff
-  , vector<const Df125PulseIntegral*> &f125pis
-  , vector<const Df125CDCPulse*>      &f125cdcpulses
-  , vector<const Df125FDCPulse*>      &f125fdcpulses
-  , vector<const Df125TriggerTime*>   &f125tts
-  , vector<const Df125WindowRawData*> &f125wrds
-  , vector<const Df125Config*>        &f125configs)
+void DEventWriterEVIO::Writef125Data(vector<uint32_t> &buff,
+                                     vector<const Df125PulseIntegral*> &f125pis,
+                                     vector<const Df125CDCPulse*>      &f125cdcpulses,
+                                     vector<const Df125FDCPulse*>      &f125fdcpulses,
+                                     vector<const Df125TriggerTime*>   &f125tts,
+                                     vector<const Df125WindowRawData*> &f125wrds,
+                                     vector<const Df125Config*>        &f125configs,
+                                     unsigned int Nevents) const
 {
 	// Make map of rocid,slot values that have some hit data.
 	// Simultaneously make map for each flavor of hit indexed by rocid,slot
@@ -1043,8 +1043,8 @@ void DEventWriterEVIO::Writef125Data(vector<uint32_t> &buff
 //------------------
 // WriteEPICSData
 //------------------
-void DEventWriterEVIO::WriteEPICSData(vector<uint32_t> &buff
-  , vector<const DEPICSvalue*> epicsValues)
+void DEventWriterEVIO::WriteEPICSData(vector<uint32_t> &buff,
+                                      vector<const DEPICSvalue*> epicsValues) const
 {
 	// Store the EPICS event in EVIO as a bank of SEGMENTs
 	// The first segment is a 32-bit unsigned int for the current
@@ -1097,9 +1097,9 @@ void DEventWriterEVIO::WriteEPICSData(vector<uint32_t> &buff
 //------------------
 // WriteEventTagData
 //------------------
-void DEventWriterEVIO::WriteEventTagData(vector<uint32_t> &buff
-  , uint64_t event_status
-  , const DL3Trigger* l3trigger)
+void DEventWriterEVIO::WriteEventTagData(vector<uint32_t> &buff,
+                                         uint64_t event_status,
+                                         const DL3Trigger* l3trigger) const
 {
 	// Here we purposefully write the DEventTag data into a bank
 	// based only on data extracted from other data objects, but
