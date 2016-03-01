@@ -14,6 +14,29 @@
 #include <evioFileChannel.hxx>
 #endif // HAVE_EVIO
 
+#include <pthread.h>
+#include <stdint.h>
+#include <fstream>
+
+#include <JANA/JEventLoop.h>
+
+#include <DAQ/Df250PulseIntegral.h>
+#include <DAQ/Df250TriggerTime.h>
+#include <DAQ/Df250WindowRawData.h>
+#include <DAQ/Df125PulseIntegral.h>
+#include <DAQ/Df125TriggerTime.h>
+#include <DAQ/Df125WindowRawData.h>
+#include <DAQ/Df125CDCPulse.h>
+#include <DAQ/Df125FDCPulse.h>
+#include <DAQ/Df125Config.h>
+#include <DAQ/DF1TDCTriggerTime.h>
+#include <DAQ/DF1TDCHit.h>
+#include <DAQ/DF1TDCConfig.h>
+#include <DAQ/DCAEN1290TDCConfig.h>
+#include <DAQ/DCAEN1290TDCHit.h>
+#include <DAQ/DEPICSvalue.h>
+#include <DAQ/DEventTag.h>
+
 using namespace std;
 using namespace jana;
 
@@ -29,9 +52,48 @@ class DEventWriterEVIO : public JObject
 
 		string Get_OutputFileName(JEventLoop* locEventLoop, string locOutputFileNameSubString) const;
 
-	private:
-		bool Write_EVIOEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString, uint32_t* locEVIOBuffer) const;
+		bool COMPACT;
+		bool PREFER_EMULATED;
+		bool DEBUG_FILES;
+
+	protected:
+		void WriteEventToBuffer(JEventLoop *locEventLoop, vector<uint32_t> &buff);
 		bool Open_OutputFile(JEventLoop* locEventLoop, string locOutputFileName) const;
+		
+		void WriteCAEN1290Data(vector<uint32_t> &buff,
+		   vector<const DCAEN1290TDCHit*>    &caen1290hits,
+		   vector<const DCAEN1290TDCConfig*> &caen1290configs);
+
+		void WriteF1Data(vector<uint32_t> &buff,
+		   vector<const DF1TDCHit*>          &F1hits,
+		   vector<const DF1TDCTriggerTime*>  &F1tts,
+		   vector<const DF1TDCConfig*>       &F1configs);
+
+		void Writef250Data(vector<uint32_t> &buff,
+		   vector<const Df250PulseIntegral*> &f250pis,
+		   vector<const Df250TriggerTime*>   &f250tts,
+		   vector<const Df250WindowRawData*> &f250wrds);
+
+		void Writef125Data(vector<uint32_t> &buff,
+		   vector<const Df125PulseIntegral*> &f125pis,
+		   vector<const Df125CDCPulse*>      &f125cdcpulses,
+		   vector<const Df125FDCPulse*>      &f125fdcpulses,
+		   vector<const Df125TriggerTime*>   &f125tts,
+		   vector<const Df125WindowRawData*> &f125wrds,
+		   vector<const Df125Config*>        &f125configs);
+
+		void WriteEPICSData(vector<uint32_t> &buff,
+		   vector<const DEPICSvalue*> epicsValues);
+
+		void WriteEventTagData(vector<uint32_t> &buff,
+		   uint64_t event_status,
+		   const DL3Trigger* l3trigger);
+
+		uint32_t Nevents;
+		
+		std::ofstream *ofs_debug_input;
+		std::ofstream *ofs_debug_output;
+
 };
 
 #endif //_DEventWriterEVIO_
