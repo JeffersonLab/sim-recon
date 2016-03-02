@@ -88,7 +88,7 @@ class DGeometry{
 				     double &X0, double *s_to_boundary=NULL) const;
 		jerror_t FindMatKalman(const DVector3 &pos,const DVector3 &mom,
 				       double &KrhoZ_overA,
-				       double &rhoZ_overA,double &LnI,
+				       double &rhoZ_overA,double &LnI,double &Z,
 				       double &chi2c_factor,
 				       double &chi2a_factor,
 				       double &chi2a_factor2,
@@ -97,6 +97,7 @@ class DGeometry{
 		jerror_t FindMatKalman(const DVector3 &pos,
 				       double &KrhoZ_overA,
 				       double &rhoZ_overA,double &LnI,
+				       double &Z,
 				       double &chi2c_factor,
 				       double &chi2a_factor,
 				       double &chi2a_factor2,

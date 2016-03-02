@@ -18,14 +18,20 @@ void DCustomAction_p2pi_hists::Initialize(JEventLoop* locEventLoop)
 	if(jcalib->Get("/PHOTON_BEAM/endpoint_energy", photon_endpoint_energy) == false) {
 		endpoint_energy = photon_endpoint_energy["PHOTON_BEAM_ENDPOINT_ENERGY"];
 	}
+	else {
+		jout<<"No /PHOTON_BEAM/endpoint_energy for this run number: using default of 12 GeV"<<endl;
+	}
 	endpoint_energy_bins = (int)(20*endpoint_energy);
 
 	cohmin_energy = 0.;
 	cohedge_energy = 12.;
 	map<string, double> photon_beam_param;
-	if(jcalib->Get("test/PHOTON_BEAM/coherent_energy", photon_beam_param) == false) {
+	if(jcalib->Get("/ANALYSIS/beam_asymmetry/coherent_energy", photon_beam_param) == false) {
 		cohmin_energy = photon_beam_param["cohmin_energy"];
 		cohedge_energy = photon_beam_param["cohedge_energy"];
+	}
+	else {
+		jout<<"No /ANALYSIS/beam_asymmetry/coherent_energy for this run number: using default range of 0-12 GeV"<<endl;
 	}
 
 	dEdxCut = 2.2;

@@ -26,6 +26,16 @@ using namespace jana;
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
+
+// Set number of channels
+const int nChan = 2800;
+
+// Define Histograms
+static TH1F* pedestal[nChan];
+//static TH1F* timingoffset_vert[nChan];
+
+
+
 extern "C"{
   void InitPlugin(JApplication *app){
     InitJANAPlugin(app);
@@ -61,13 +71,11 @@ jerror_t JEventProcessor_FCALpedestals::init(void)
   //
   japp->RootWriteLock();
 
-  m_tree = new TTree( "FCALpedestals", "FCAL track pedestals" );
-
- 
-  m_tree->Branch( "r", &m_r, "p/I" );
-  m_tree->Branch( "c", &m_c, "p/I" );
-  m_tree->Branch( "chan", &m_chan, "p/I" );
-  m_tree->Branch( "pedestal", &m_pedestal, "p/F" );
+  //TDirectory *main1 = gDirectory;
+  //gDirectory->mkdir("horizontal_offsets")->cd();
+  for (int i = 0; i < nChan; ++i) {
+    pedestal[i] = new TH1F(Form("pedestal_%i",i),Form("Pedestal for Channel %i",i),500,90,120);
+  }
  
   
  
@@ -130,12 +138,14 @@ jerror_t JEventProcessor_FCALpedestals::evnt(JEventLoop *eventLoop,
        dHitItr != digiHits.end(); ++dHitItr ){
 const DFCALDigiHit& dHit = (**dHitItr);
  m_chan = m_fcalGeom->channel( dHit.row, dHit.column );
- m_r = m_fcalGeom->row( dHit.row);  
- m_c = m_fcalGeom->column(dHit.column );   
+ //m_r = m_fcalGeom->row( dHit.row);  
+ //m_c = m_fcalGeom->column(dHit.column );   
     
      m_pedestal = dHit.pedestal;
      
-    m_tree->Fill();
+     //cout << "Channel: " << m_chan << " Pedestal: " << m_pedestal << endl;
+     pedestal[m_chan]->Fill(m_pedestal);  
+   // m_tree->Fill();
 }
 
 japp->RootUnLock(); 

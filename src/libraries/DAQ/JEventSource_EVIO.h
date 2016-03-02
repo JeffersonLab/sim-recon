@@ -180,6 +180,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 
 	
                     void ReadOptionalModuleTypeTranslation(void);
+		         uint32_t* GetPoolBuffer(void);
 		  virtual jerror_t ReadEVIOEvent(uint32_t* &buf);
              inline void GetEVIOBuffer(jana::JEvent &jevent, uint32_t* &buff, uint32_t &size) const;
           EVIOSourceType GetEVIOSourceType(void){ return source_type; }
@@ -363,6 +364,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 
 		jerror_t ParseEvents(ObjList *objs_ptr);
 		int32_t FindRunNumber(uint32_t *iptr);
+		int32_t EpicQuestForRunNumber(void);
 		uint64_t FindEventNumber(uint32_t *iptr);
 		void FindEventType(uint32_t *iptr, JEvent &event);
 		MODULE_TYPE GuessModuleType(const uint32_t *istart, const uint32_t *iend);

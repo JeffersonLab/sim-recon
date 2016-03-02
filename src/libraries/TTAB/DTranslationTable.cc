@@ -390,7 +390,10 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       const Df250PulsePedestal *pp = NULL;
 	  pi->GetSingle(pt);
 	  pi->GetSingle(pp);
-      
+
+      // Avoid f250 Error with extra PulseIntegral word
+      if( pt == NULL || pp == NULL) continue;
+
       // Create the appropriate hit type based on detector type
       switch (chaninfo.det_sys) {
          case BCAL:
