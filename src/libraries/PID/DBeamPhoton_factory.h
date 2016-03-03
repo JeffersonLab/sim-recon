@@ -27,6 +27,7 @@ class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		double dTargetCenterZ;
+        int TAGM_PEAK_CUT, TAGH_PEAK_CUT, TAGM_USE_ADC, TAGH_USE_ADC;
 };
 
 #endif // _DBeamPhoton_factory_
