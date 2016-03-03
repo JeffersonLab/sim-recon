@@ -2,6 +2,9 @@
 #include <iomanip>
 #include <vector>
 #include <TMath.h>
+#include <TCutG.h>
+#include <TFitResult.h>
+#include <TFitResultPtr.h>
 #include "JEventProcessor_TOF_TDC_shift.h"
 #include <JANA/JApplication.h>
 using namespace std;
@@ -134,20 +137,44 @@ jerror_t JEventProcessor_TOF_TDC_shift::fini(void) {
   Double_t min = +99999;
   Int_t shift = -1;
   gDirectory->cd("TOF_TDC_shift");
+
+  /*
+  // multiple ADC hits skew the rough mean, so make a broad cut around the main peak
+  // use TCutG to cut +- 60 ns (arbitrary) around the peak in X
+  const double twindow = 60.;  // (ns)
+  TCutG time_cut("time_cut",5);
+  //time_cut.SetVarX("x");
+  //time_cut.SetVarY("y");
+  time_cut.SetPoint(0,mean_time-twindow,0.);
+  time_cut.SetPoint(1,mean_time-twindow,6.);
+  time_cut.SetPoint(2,mean_time+twindow,6.);
+  time_cut.SetPoint(3,mean_time+twindow,0.);
+  time_cut.SetPoint(4,mean_time-twindow,0.);
+  */
+
+  const double fit_window = 20.;
   for(Int_t i=0;i<6;i++){
     // Get projection of (ADC time - TDC time) for each value of TI remainder
     sprintf(hname,"TOF_TDC_shift/h%d",i);
     hproj = (TH1I*)hrocTimeRemainder_AdcTdcTimeDiff->ProjectionX(hname,i+1,i+1);
-    mean[i] = hproj->GetMean();
+    //hproj = (TH1I*)hrocTimeRemainder_AdcTdcTimeDiff->ProjectionX(hname,i+1,i+1,"[time_cut]");
+    //mean[i] = hproj->GetMean();
+    double maximum = hproj->GetBinCenter(hproj->GetMaximumBin());
+    TFitResultPtr fr = hproj->Fit("gaus", "S", "", maximum - fit_window, maximum + fit_window);
+    if(fr == 0) {   // fit succeeds 
+        mean[i] = fr->Parameter(1);;
+    } else {
+        mean[i] = hproj->GetMean();
+    }
     cout << "TI remainder = " << i << " mean = " << mean[i] << endl;
-    if(mean[i] < min){
+    if(fabs(mean[i]) < min){
       min = mean[i];
       shift = i;
     }
   }
 
-  // shift value can only be 1, 3, or 5.
-  if(!(shift == 1 || shift == 3 || shift == 5)) shift = -1;
+  // shift value can only be 1, 3, or 5.  (not true anymore due to TI updates? - sdobbs 3 Mar. 2016)
+  //if(!(shift == 1 || shift == 3 || shift == 5)) shift = -1;
 
   OUTPUT << shift << endl;
 
