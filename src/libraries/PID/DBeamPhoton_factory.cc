@@ -17,17 +17,6 @@ using namespace jana;
 //------------------
 jerror_t DBeamPhoton_factory::init(void)
 {
-    TAGM_PEAK_CUT=0;
-    TAGH_PEAK_CUT=0;
-    TAGM_USE_ADC=0;
-    TAGH_USE_ADC=0;
-
-    if (gPARMS){
-        gPARMS->SetDefaultParameter("BEAMPHOTON:TAGM_PEAK_CUT", TAGM_PEAK_CUT, "TAGM pulse height cut [ADC Counts]");
-        gPARMS->SetDefaultParameter("BEAMPHOTON:TAGH_PEAK_CUT", TAGH_PEAK_CUT, "TAGH pulse height cut [ADC Counts]");
-        gPARMS->SetDefaultParameter("BEAMPHOTON:TAGM_USE_ADC", TAGM_USE_ADC, "Use ADC times in TAGM");
-        gPARMS->SetDefaultParameter("BEAMPHOTON:TAGH_USE_ADC", TAGH_USE_ADC, "Use ADC times in TAGH");
-    }
     return NOERROR;
 }
 
@@ -57,7 +46,6 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t even
     for (unsigned int ih=0; ih < tagm_hits.size(); ++ih)
     {
         if (!tagm_hits[ih]->has_fADC) continue; // Skip TDC-only hits (i.e. hits with no ADC info.)		
-        if (tagm_hits[ih]->pulse_peak < TAGM_PEAK_CUT) continue; // Cut on TAGM pulse height
         DVector3 mom(0.0, 0.0, tagm_hits[ih]->E);
         DBeamPhoton *gamma = new DBeamPhoton;
         gamma->setPID(Gamma);
@@ -65,14 +53,8 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t even
         gamma->setPosition(pos);
         gamma->setCharge(0);
         gamma->setMass(0);
-        if (TAGM_USE_ADC) {
-            gamma->setTime(tagm_hits[ih]->time_fadc);
-            gamma->setT0(tagm_hits[ih]->time_fadc, 0.200, SYS_TAGM);
-        }
-        else {
-            gamma->setTime(tagm_hits[ih]->t);
-            gamma->setT0(tagm_hits[ih]->t, 0.200, SYS_TAGM);
-        }
+        gamma->setTime(tagm_hits[ih]->t);
+        gamma->setT0(tagm_hits[ih]->t, 0.200, SYS_TAGM);
         gamma->AddAssociatedObject(tagm_hits[ih]);
         _data.push_back(gamma);
     }
@@ -83,7 +65,6 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t even
     for (unsigned int ih=0; ih < tagh_hits.size(); ++ih)
     {
         if (!tagh_hits[ih]->has_fADC) continue; // Skip TDC-only hits (i.e. hits with no ADC info.)
-        if (tagh_hits[ih]->pulse_peak < TAGH_PEAK_CUT) continue; // Cut on TAGH pulse height
         DVector3 mom(0.0, 0.0, tagh_hits[ih]->E);
         DBeamPhoton *gamma = new DBeamPhoton;
         gamma->setPID(Gamma);
@@ -91,14 +72,8 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t even
         gamma->setPosition(pos);
         gamma->setCharge(0);
         gamma->setMass(0);
-        if (TAGH_USE_ADC) {
-            gamma->setTime(tagh_hits[ih]->time_fadc);
-            gamma->setT0(tagh_hits[ih]->time_fadc, 0.350, SYS_TAGH);
-        }
-        else  {
-            gamma->setTime(tagh_hits[ih]->t);
-            gamma->setT0(tagh_hits[ih]->t, 0.350, SYS_TAGH);
-        }
+        gamma->setTime(tagh_hits[ih]->t);
+        gamma->setT0(tagh_hits[ih]->t, 0.350, SYS_TAGH);
         gamma->AddAssociatedObject(tagh_hits[ih]);
         _data.push_back(gamma);
     }

@@ -30,9 +30,14 @@ const int DTAGMHit_factory::k_fiber_noisy;
 jerror_t DTAGMHit_factory::init(void)
 {
     DELTA_T_ADC_TDC_MAX = 10.0; // ns
+    USE_ADC = 0;
+    PEAK_CUT = 0;
     gPARMS->SetDefaultParameter("TAGMHit:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX,
                 "Maximum difference in ns between a (calibrated) fADC time and"
                 " F1TDC time for them to be matched in a single hit");
+    gPARMS->SetDefaultParameter("TAGMHit:PEAK_CUT", PEAK_CUT, "TAGM pulse height cut [ADC Counts]");
+    gPARMS->SetDefaultParameter("TAGMHit:USE_ADC", USE_ADC, "Use ADC times in TAGM");
+
     // initialize calibration constants
     fadc_a_scale = 0;
     fadc_t_scale = 0;
@@ -169,6 +174,10 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         // Skip events where fADC algorithm fails
         //if (digihit->pulse_time == 0) continue; // Should already be caught above
 
+        // Skip digihit if pulse peak is lower than cut value
+        double P = PPobj->pulse_peak - PPobj->pedestal;
+        if (P < PEAK_CUT) continue;
+
         DTAGMHit *hit = new DTAGMHit;
         int row = digihit->row;
         int column = digihit->column;
@@ -180,7 +189,6 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         hit->t = 0;
 
         // Apply calibration constants
-        double P = PPobj->pulse_peak - PPobj->pedestal;
         double A = digihit->pulse_integral;
         double T = digihit->pulse_time;
         A -= pedestal;
@@ -247,8 +255,10 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         if (P > 0) {
            T -= c1*(pow(P/TH,c2)-pow(pp_0/TH,c2));
         }
-        
-        hit->t = T;
+
+        // Optionally only use ADC times
+        if (USE_ADC && hit->has_fADC) hit->t = hit->time_fadc;
+        else  hit->t = T;
         
         hit->AddAssociatedObject(digihit);
     }
