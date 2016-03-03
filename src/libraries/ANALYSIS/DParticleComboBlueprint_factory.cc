@@ -45,8 +45,8 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 
 	string MASS_HYPOTHESES_POSITIVE = locMassStream_Positive.str();
 	string MASS_HYPOTHESES_NEGATIVE = locMassStream_Negative.str();
-	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES_POSITIVE", MASS_HYPOTHESES_POSITIVE);
-	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES_NEGATIVE", MASS_HYPOTHESES_NEGATIVE);
+	gPARMS->SetDefaultParameter("TRKFIT:HYPOTHESES_POSITIVE", MASS_HYPOTHESES_POSITIVE);
+	gPARMS->SetDefaultParameter("TRKFIT:HYPOTHESES_NEGATIVE", MASS_HYPOTHESES_NEGATIVE);
 
 	// Parse MASS_HYPOTHESES strings to make list of masses to try
 	SplitString(MASS_HYPOTHESES_POSITIVE, mass_hypotheses_positive, ",");
