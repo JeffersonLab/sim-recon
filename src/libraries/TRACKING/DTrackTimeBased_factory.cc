@@ -93,9 +93,27 @@ jerror_t DTrackTimeBased_factory::init(void)
 	gPARMS->SetDefaultParameter("TRKFIT:SKIP_MASS_HYPOTHESES_WIRE_BASED",
 				    SKIP_MASS_HYPOTHESES_WIRE_BASED);
 	
+	mass_hypotheses_positive.push_back(PiPlus);
+	mass_hypotheses_positive.push_back(KPlus);
+	mass_hypotheses_positive.push_back(Proton);
+
+	mass_hypotheses_negative.push_back(PiMinus);
+	mass_hypotheses_negative.push_back(KMinus);
+
 	ostringstream locMassStream_Positive, locMassStream_Negative;
-	locMassStream_Positive << ParticleMass(PiPlus) << "," << ParticleMass(KPlus) << "," << ParticleMass(Proton);
-	locMassStream_Negative << ParticleMass(PiMinus) << "," << ParticleMass(KMinus);
+	for(size_t loc_i = 0; loc_i < mass_hypotheses_positive.size(); ++loc_i)
+	{
+		locMassStream_Positive << mass_hypotheses_positive[loc_i];
+		if(loc_i != (mass_hypotheses_positive.size() - 1))
+			locMassStream_Positive << ", ";
+	}
+	for(size_t loc_i = 0; loc_i < mass_hypotheses_negative.size(); ++loc_i)
+	{
+		locMassStream_Negative << mass_hypotheses_negative[loc_i];
+		if(loc_i != (mass_hypotheses_negative.size() - 1))
+			locMassStream_Negative << ", ";
+	}
+
 	string MASS_HYPOTHESES_POSITIVE = locMassStream_Positive.str();
 	string MASS_HYPOTHESES_NEGATIVE = locMassStream_Negative.str();
 	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES_POSITIVE", MASS_HYPOTHESES_POSITIVE);
@@ -104,12 +122,13 @@ jerror_t DTrackTimeBased_factory::init(void)
 	// Parse MASS_HYPOTHESES strings to make list of masses to try
 	SplitString(MASS_HYPOTHESES_POSITIVE, mass_hypotheses_positive, ",");
 	SplitString(MASS_HYPOTHESES_NEGATIVE, mass_hypotheses_negative, ",");
-	if(mass_hypotheses_positive.size()==0)mass_hypotheses_positive.push_back(0.0); // If empty string is specified, assume they want massless particle
-	if(mass_hypotheses_negative.size()==0)mass_hypotheses_negative.push_back(0.0); // If empty string is specified, assume they want massless particle
+	if(mass_hypotheses_positive.empty())
+		mass_hypotheses_positive.push_back(Unknown); // If empty string is specified, assume they want massless particle
+	if(mass_hypotheses_negative.empty())
+		mass_hypotheses_negative.push_back(Unknown); // If empty string is specified, assume they want massless particle
 
 	mNumHypPlus=mass_hypotheses_positive.size();
 	mNumHypMinus=mass_hypotheses_negative.size();
-
 
 	// Forces correct particle id (when available)
 	PID_FORCE_TRUTH = false;
@@ -306,7 +325,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
     if (SKIP_MASS_HYPOTHESES_WIRE_BASED){  
       // Choose list of mass hypotheses based on charge of candidate
-      vector<double> mass_hypotheses;
+      vector<int> mass_hypotheses;
       if(track->charge()<0.0){
 	mass_hypotheses = mass_hypotheses_negative;
       }else{
@@ -314,7 +333,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       }
 
       for (unsigned int j=0;j<mass_hypotheses.size();j++){
-	if (mass_hypotheses[j]>0.9 
+	if (ParticleMass(Particle_t(mass_hypotheses[j]))>0.9
 	    && track->momentum().Mag()>MOMENTUM_CUT_FOR_PROTON_ID) continue;
 	
 	// Create vector of start times from various sources
@@ -322,7 +341,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	CreateStartTimeList(track,sc_hits,tof_points,bcal_showers,fcal_showers,start_times);
 	
 	// Fit the track
-	DoFit(track,start_times,loop,mass_hypotheses[j]);
+	DoFit(track,start_times,loop,ParticleMass(Particle_t(mass_hypotheses[j])));
       }
     }
     else{  // We did not skip wire-based tracking for some hypotheses
