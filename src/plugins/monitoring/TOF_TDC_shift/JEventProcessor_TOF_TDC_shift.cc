@@ -167,7 +167,7 @@ jerror_t JEventProcessor_TOF_TDC_shift::fini(void) {
         mean[i] = hproj->GetMean();
     }
     cout << "TI remainder = " << i << " mean = " << mean[i] << endl;
-    if(fabs(mean[i]) < min){
+    if(fabs(mean[i]) < fabs(min)){
       min = mean[i];
       shift = i;
     }
