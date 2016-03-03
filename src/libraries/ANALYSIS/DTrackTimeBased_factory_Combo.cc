@@ -79,45 +79,29 @@ jerror_t DTrackTimeBased_factory_Combo::init(void)
 	locPIDDeque[0] = Proton;  locPIDDeque[1] = KPlus;  locPIDDeque[2] = PiPlus;
 	dParticleIDsToTry[Deuteron] = locPIDDeque;
 
-	vector<int> mass_hypotheses_positive, mass_hypotheses_negative;
-	mass_hypotheses_positive.push_back(PiPlus);
-	mass_hypotheses_positive.push_back(KPlus);
-	mass_hypotheses_positive.push_back(Proton);
+	vector<int> hypotheses;
+	hypotheses.push_back(PiPlus);
+	hypotheses.push_back(KPlus);
+	hypotheses.push_back(Proton);
+	hypotheses.push_back(PiMinus);
+	hypotheses.push_back(KMinus);
 
-	mass_hypotheses_negative.push_back(PiMinus);
-	mass_hypotheses_negative.push_back(KMinus);
-
-	ostringstream locMassStream_Positive, locMassStream_Negative;
-	for(size_t loc_i = 0; loc_i < mass_hypotheses_positive.size(); ++loc_i)
+	ostringstream locMassStream;
+	for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
 	{
-		locMassStream_Positive << mass_hypotheses_positive[loc_i];
-		if(loc_i != (mass_hypotheses_positive.size() - 1))
-			locMassStream_Positive << ", ";
-	}
-	for(size_t loc_i = 0; loc_i < mass_hypotheses_negative.size(); ++loc_i)
-	{
-		locMassStream_Negative << mass_hypotheses_negative[loc_i];
-		if(loc_i != (mass_hypotheses_negative.size() - 1))
-			locMassStream_Negative << ", ";
+		locMassStream << hypotheses[loc_i];
+		if(loc_i != (hypotheses.size() - 1))
+			locMassStream << ", ";
 	}
 
-	string MASS_HYPOTHESES_POSITIVE = locMassStream_Positive.str();
-	string MASS_HYPOTHESES_NEGATIVE = locMassStream_Negative.str();
-	gPARMS->SetDefaultParameter("TRKFIT:HYPOTHESES_POSITIVE", MASS_HYPOTHESES_POSITIVE);
-	gPARMS->SetDefaultParameter("TRKFIT:HYPOTHESES_NEGATIVE", MASS_HYPOTHESES_NEGATIVE);
+	string HYPOTHESES = locMassStream.str();
+	gPARMS->SetDefaultParameter("TRKFIT:HYPOTHESES", HYPOTHESES);
 
 	// Parse MASS_HYPOTHESES strings to make list of masses to try
-	SplitString(MASS_HYPOTHESES_POSITIVE, mass_hypotheses_positive, ",");
-	SplitString(MASS_HYPOTHESES_NEGATIVE, mass_hypotheses_negative, ",");
-	if(mass_hypotheses_positive.empty())
-		mass_hypotheses_positive.push_back(Unknown); // If empty string is specified, assume they want massless particle
-	if(mass_hypotheses_negative.empty())
-		mass_hypotheses_negative.push_back(Unknown); // If empty string is specified, assume they want massless particle
-
-	for(size_t loc_i = 0; loc_i < mass_hypotheses_positive.size(); ++loc_i)
-		dAvailablePIDs.insert(Particle_t(mass_hypotheses_positive[loc_i]));
-	for(size_t loc_i = 0; loc_i < mass_hypotheses_negative.size(); ++loc_i)
-		dAvailablePIDs.insert(Particle_t(mass_hypotheses_negative[loc_i]));
+	hypotheses.clear();
+	SplitString(HYPOTHESES, hypotheses, ",");
+	for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
+		dAvailablePIDs.insert(Particle_t(hypotheses[loc_i]));
 
 	return NOERROR;
 }
