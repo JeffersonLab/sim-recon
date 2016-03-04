@@ -57,6 +57,7 @@ using namespace std;
 #include "TOF/DTOFPoint.h"
 #include "START_COUNTER/DSCHit.h"
 #include "DVector2.h"
+#include "TRIGGER/DL1Trigger.h"
 
 extern hdv_mainframe *hdvmf;
 
@@ -186,6 +187,18 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 	last_jevent.FreeEvent();
 	last_jevent = loop->GetJEvent();
 	
+	char trigstring[10];
+	const DL1Trigger *trig = NULL;
+	try {
+		loop->GetSingle(trig);
+	} catch (...) {}
+	if (trig) {
+		sprintf(trigstring,"0x%04x",trig->trig_mask); 
+	} else {
+		sprintf(trigstring,"no bits");
+	}
+	hdvmf->SetTrig(trigstring);
+
 	string source = "<no source>";
 	if(last_jevent.GetJEventSource())source = last_jevent.GetJEventSource()->GetSourceName();
 	
