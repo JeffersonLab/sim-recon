@@ -18,6 +18,7 @@ using namespace std;
 #include <TText.h>
 #include <TVector3.h>
 #include <TColor.h>
+#include <TLegend.h>
 
 #include <particleType.h>
 #include "hdview2.h"
@@ -187,6 +188,7 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 	last_jevent.FreeEvent();
 	last_jevent = loop->GetJEvent();
 	
+	// get the trigger bits
 	char trigstring[10];
 	const DL1Trigger *trig = NULL;
 	try {
@@ -295,6 +297,21 @@ void MyProcessor::FillGraphics(void)
 	    }
 	  }
 
+	  // Fill BCAL points into layer histograms
+	  vector<const DBCALPoint*> locBcalPoint;
+	  loop->Get(locBcalPoint);
+	  for (int layer=0; layer<4; layer++) {
+		  BCALPointZphiLayer[layer]->Reset();
+	  }
+	  for (unsigned int k=0;k<locBcalPoint.size();k++){
+		  const DBCALPoint* point = locBcalPoint[k];
+		  printf("(m,l,s) = (%2i,%i,%i)  (z,phi) = (%7.2f,%4.2f) E=%8.3f MeV\n",
+				 point->module(), point->layer(), point->sector(),point->z(),point->phi(),point->E()*1000);
+		  //BCALPointZphiLayer[point->layer()-1]->Fill(point->phi(),point->z(),point->E());
+		  BCALPointZphiLayer[point->layer()-1]->Fill(point->phi(),point->z(),point->layer());
+	  }
+
+
 	  vector<const DBCALIncidentParticle*> locBcalParticles;
 	  loop->Get(locBcalParticles);
 	  BCALParticles->Reset();
@@ -308,15 +325,15 @@ void MyProcessor::FillGraphics(void)
 	      phi = TMath::ATan(TMath::Abs(part->y/part->x));
 	      //cout<<phi<<"   "<<part->y<<" / "<< part->x<<endl;
 	      if (part->y>0){
-		if (part->x<0.){
-		  phi = 3.1415926 - phi;
-		}
+	  	if (part->x<0.){
+	  	  phi = 3.1415926 - phi;
+	  	}
 	      } else {
-		if (part->x<0){
-		  phi += 3.1415926;
-		} else {
-		  phi = 3.1415926*2. - phi;
-		}
+	  	if (part->x<0){
+	  	  phi += 3.1415926;
+	  	} else {
+	  	  phi = 3.1415926*2. - phi;
+	  	}
 	      }
 	      
 	      phi = phi*180./3.1415926;
@@ -352,10 +369,16 @@ void MyProcessor::FillGraphics(void)
 	  }
 	  BCALHitMatrixD->Draw("colz");
 	  BCALHitCanvas->cd(3);
-	  BCALParticles->Draw("colz");
-	  for (unsigned int n=0;n<BCALPLables.size();n++){
-	    BCALPLables[n]->Draw("same");
+
+	  BCALPointZphiLayer[0]->Draw("box");
+	  for (int layer=1; layer<4; layer++) {
+		  BCALPointZphiLayer[layer]->Draw("box,same");
 	  }
+	  LayerLegend->Draw();
+	  // BCALParticles->Draw("colz");
+	  // for (unsigned int n=0;n<BCALPLables.size();n++){
+	  //   BCALPLables[n]->Draw("same");
+	  // }
 	  BCALHitCanvas->Update();
 	}
 	
@@ -1476,8 +1499,10 @@ void MyProcessor::FillGraphics(void)
 		}
 	}
 }
+
 void MyProcessor::UpdateBcalDisp(void)
 {
+	// This routine is run only once when the canvas is created.
   BCALHitCanvas = hdvmf->GetBcalDispFrame();
   BCALHitMatrixU = new TH2F("BCALHitMatrixU","BCAL Hits Upstream Energy;Sector number;Layer;Energy  (MeV)",  48*4+2, -1.5, 192.5, 10, 0., 10.);
   BCALHitMatrixD = new TH2F("BCALHitMatrixD","BCAL Hits Downstream Energy;Sector number;Layer;Energy  (MeV)",48*4+2, -1.5, 192.5, 10, 0., 10.);
@@ -1559,6 +1584,29 @@ void MyProcessor::UpdateBcalDisp(void)
       }
     }
 
+	LayerLegend = new TLegend(0.91,0.7,0.99,0.99);
+	for (int layer=0; layer<4; layer++) {
+		char name[255];
+		sprintf(name,"layer%i",layer+1);
+		BCALPointZphiLayer[layer] = new TH2F(name,"BCAL Points;Phi angle [deg];Z  (cm);Energy",48*4,0,2*M_PI,42,-80,340);
+		BCALPointZphiLayer[layer]->SetStats(0);
+		BCALPointZphiLayer[layer]->SetLineWidth(2);
+		BCALPointZphiLayer[layer]->SetLineColor(layer+1);
+		Float_t size = 0.06;
+		BCALPointZphiLayer[layer]->GetXaxis()->SetTitleSize(size);
+		BCALPointZphiLayer[layer]->GetXaxis()->SetTitleOffset(0.8);
+		BCALPointZphiLayer[layer]->GetXaxis()->SetLabelSize(size);
+		BCALPointZphiLayer[layer]->GetYaxis()->SetTitleSize(size);
+		BCALPointZphiLayer[layer]->GetYaxis()->SetTitleOffset(0.4);
+		BCALPointZphiLayer[layer]->GetYaxis()->SetLabelSize(size);
+		BCALPointZphiLayer[layer]->GetZaxis()->SetTitleSize(size);
+		BCALPointZphiLayer[layer]->GetZaxis()->SetTitleOffset(0.4);
+		BCALPointZphiLayer[layer]->GetZaxis()->SetLabelSize(size);
+		sprintf(name,"layer %i",layer+1);
+		LayerLegend->AddEntry(BCALPointZphiLayer[layer],name);
+	}
+
+
     vector<const DBCALIncidentParticle*> locBcalParticles;
     loop->Get(locBcalParticles);
     BCALParticles->Reset();
@@ -1601,14 +1649,17 @@ void MyProcessor::UpdateBcalDisp(void)
     BCALHitCanvas->Clear();
     BCALHitCanvas->Divide(1,3);
     BCALHitCanvas->cd(1);
+	gPad->SetRightMargin(0.2);
     BCALHitMatrixU->Draw("colz");
     BCALHitCanvas->cd(2);
+	gPad->SetRightMargin(0.2);
     BCALHitMatrixD->Draw("colz");
     BCALHitCanvas->cd(3);
-    BCALParticles->Draw("colz");
-    for (unsigned int n=0;n<BCALPLables.size();n++){
-      BCALPLables[n]->Draw("same");
-    }
+	gPad->SetRightMargin(0.2);
+    // BCALParticles->Draw("colz");
+    // for (unsigned int n=0;n<BCALPLables.size();n++){
+    //   BCALPLables[n]->Draw("same");
+    // }
     BCALHitCanvas->Update();
   }
   

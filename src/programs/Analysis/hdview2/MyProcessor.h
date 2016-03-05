@@ -119,6 +119,8 @@ class MyProcessor:public JEventProcessor
   TH2F *BCALHitMatrixU;
   TH2F *BCALHitMatrixD;
   TH2F *BCALParticles;
+  TH2F *BCALPointZphiLayer[4];
+  TLegend *LayerLegend;
   vector <TText*> BCALPLables;
   
   
