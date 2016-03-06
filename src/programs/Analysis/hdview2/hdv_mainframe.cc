@@ -924,8 +924,7 @@ void hdv_mainframe::DoOpenDebugerWindow(void)
 void hdv_mainframe::DoBcalDispFrame(void)
 {
 	if(bcaldispmf==NULL){
-		bcaldispmf = new TCanvas("BCALHitCanvas", "BCAL Hit Distribution", 1000, 600);
-		bcaldispmf->Divide(1,2);
+		bcaldispmf = new TCanvas("BCALHitCanvas", "BCAL Hit Distribution", 900, 900);
 	}
 
 	DoUpdateBcalDisp();
@@ -2118,9 +2117,6 @@ void hdv_mainframe::SetTrig(char *trigstring)
 {
 	if(!event)return;
 
-	//stringstream ss;
-	//ss << trig;
-	//trig->SetTitle(ss.str().c_str());
 	trig->SetTitle(trigstring);
 	trig->Draw();
 }
