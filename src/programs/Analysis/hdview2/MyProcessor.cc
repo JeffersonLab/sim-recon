@@ -101,6 +101,9 @@ MyProcessor::MyProcessor()
 	gPARMS->SetDefaultParameter("RT:RMAX_INTERIOR",	RMAX_INTERIOR, "cm track drawing Rmax inside solenoid region");
 	gPARMS->SetDefaultParameter("RT:RMAX_EXTERIOR",	RMAX_EXTERIOR, "cm track drawing Rmax outside solenoid region");
 	
+	BCALVERBOSE = 0;
+	gPARMS->SetDefaultParameter("BCALVERBOSE", BCALVERBOSE, "Verbosity level for BCAL objects and display");
+
 	gMYPROC = this;
 }
 
@@ -302,15 +305,58 @@ void MyProcessor::FillGraphics(void)
 	  loop->Get(locBcalPoint);
 	  for (int layer=0; layer<4; layer++) {
 		  BCALPointZphiLayer[layer]->Reset();
+		  BCALPointPhiTLayer[layer]->Reset();
 	  }
 	  for (unsigned int k=0;k<locBcalPoint.size();k++){
 		  const DBCALPoint* point = locBcalPoint[k];
-		  printf("(m,l,s) = (%2i,%i,%i)  (z,phi) = (%7.2f,%4.2f) E=%8.3f MeV\n",
-				 point->module(), point->layer(), point->sector(),point->z(),point->phi(),point->E()*1000);
-		  //BCALPointZphiLayer[point->layer()-1]->Fill(point->phi(),point->z(),point->E());
-		  BCALPointZphiLayer[point->layer()-1]->Fill(point->phi(),point->z(),point->layer());
+		  if (BCALVERBOSE>0) printf("(m,l,s) = (%2i,%i,%i)  (z,phi) = (%7.2f,%5.2f) t=%8.3f  E=%8.2f MeV\n",
+								   point->module(), point->layer(), point->sector(),point->z(),
+								   point->phi(),point->t(),point->E()*1000);
+		  BCALPointZphiLayer[point->layer()-1]->Fill(point->phi(),point->z(),point->E());
+		  float time = point->t();
+		  if (point->t()>100) time=99;    // put overflow in last bin
+		  if (point->t()<-100) time=-99;
+		  BCALPointPhiTLayer[point->layer()-1]->Fill(point->phi(),time,point->E());
 	  }
 
+	  // Fill BCAL Clusters into histograms
+	  vector<const DBCALCluster*> locBcalCluster;
+	  loop->Get(locBcalCluster);
+
+	  unsigned int oldsize = BCALClusterZphiHistos.size();
+	  for (unsigned int k=0;k<oldsize;k++){
+		  delete BCALClusterZphiHistos[k];
+	  }
+	  BCALClusterZphiHistos.clear();
+
+	  delete ClusterLegend;
+	  ClusterLegend = new TLegend(0.91,0.01,0.99,0.99);
+
+	  for (unsigned int k=0;k<locBcalCluster.size();k++){
+		  char name[255];
+		  sprintf(name,"ClusterZphi%i",k);
+		  BCALClusterZphiHistos.push_back(new TH2F(name,"BCAL Clusters;Phi angle [deg];Z position (cm)",48*4,0,2*M_PI,42,-80,340));
+		  int color=k+1;
+		  if (k>3) color=k+2; // remove yellow
+		  if (k>7) color=k+3; // remove white
+		  FormatHistogram(BCALClusterZphiHistos[k],color);
+		  BCALClusterZphiHistos[k]->SetLineWidth(2);
+		  sprintf(name,"Cluster %i",k+1);
+		  ClusterLegend->AddEntry(BCALClusterZphiHistos[k], name);
+
+		  const DBCALCluster* cluster = locBcalCluster[k];
+		  if (BCALVERBOSE>0) printf("cluster %2i, (phi,theta,rho) = (%6.2f,%6.2f,%7.2f) t=%8.3f  E=%8.2f MeV\n",
+									k+1,cluster->phi(), cluster->theta(), cluster->rho(), cluster->t(), cluster->E()*1000); 
+		  vector<const DBCALPoint*> clusterpoints;
+		  cluster->Get(clusterpoints);
+		  for (unsigned int l=0;l<clusterpoints.size();l++){
+			  const DBCALPoint* clusterpoint = clusterpoints[l];
+			   if (BCALVERBOSE>1) printf("    (m,l,s) = (%2i,%i,%i)  (z,phi) = (%7.2f,%5.2f) t=%8.3f  E=%8.2f MeV\n",
+										 clusterpoint->module(), clusterpoint->layer(), clusterpoint->sector(),clusterpoint->z(),
+										 clusterpoint->phi(),clusterpoint->t(),clusterpoint->E()*1000);
+			  BCALClusterZphiHistos[k]->Fill(clusterpoint->phi(),clusterpoint->z(),clusterpoint->E());
+		  }
+	  }
 
 	  vector<const DBCALIncidentParticle*> locBcalParticles;
 	  loop->Get(locBcalParticles);
@@ -350,31 +396,68 @@ void MyProcessor::FillGraphics(void)
 	  }
  	   
 	  BCALHitCanvas->Clear();
-	  BCALHitCanvas->Divide(1,3);
+	  BCALHitCanvas->Divide(1,3,0.001,0.001);
+	  float leftmargin = 0.07;
 	  BCALHitCanvas->cd(1);
-	  if (BCALHitMatrixU->GetMaximum() > 1000) {
-	    BCALHitMatrixU->Scale(0.001);  // Scale histogram to GeV
-	    BCALHitMatrixU->GetZaxis()->SetTitle("Energy  (GeV)");
-	    printf("scaling to GeV\n");
-	  } else {
-	    BCALHitMatrixU->GetZaxis()->SetTitle("Energy  (MeV)");
-	  }
-	  BCALHitMatrixU->Draw("colz");
-	  BCALHitCanvas->cd(2);
-	  if (BCALHitMatrixD->GetMaximum() > 1000) {
-	    BCALHitMatrixD->Scale(0.001);  // Scale histogram to GeV
-	    BCALHitMatrixD->GetZaxis()->SetTitle("Energy  (GeV)");
-	  } else {
-	    BCALHitMatrixU->GetZaxis()->SetTitle("Energy  (MeV)");
-	  }
-	  BCALHitMatrixD->Draw("colz");
-	  BCALHitCanvas->cd(3);
+	  gPad->SetGridx();
+	  gPad->SetGridy();
+	  gPad->SetLeftMargin(leftmargin);
+	  // if (BCALHitMatrixU->GetMaximum() < 1) {
+	  // 	  BCALHitMatrixU->Scale(1000);  // Scale histogram to MeV
+	  // 	  BCALHitMatrixU->GetZaxis()->SetTitle("Energy  (MeV)");
+	  // } else {
+	  // 	  BCALHitMatrixU->GetZaxis()->SetTitle("Energy  (GeV)");
+	  // }
+	  // BCALHitMatrixU->Draw("colz");
 
-	  BCALPointZphiLayer[0]->Draw("box");
-	  for (int layer=1; layer<4; layer++) {
-		  BCALPointZphiLayer[layer]->Draw("box,same");
+	  bool firstup=1;
+
+	  for (int layer=0; layer<4; layer++) {
+		  if (BCALPointPhiTLayer[layer]->GetEntries()>0) {
+			  if (firstup==1) {
+				  BCALPointPhiTLayer[layer]->Draw("box");
+				  firstup=0;
+			  } else {
+				  BCALPointPhiTLayer[layer]->Draw("box,same");
+			  }
+		  }
 	  }
 	  LayerLegend->Draw();
+
+	  BCALHitCanvas->cd(2);
+	  gPad->SetGridx();
+	  gPad->SetGridy();
+	  gPad->SetLeftMargin(leftmargin);
+	  // if (BCALHitMatrixD->GetMaximum() < 1) {
+	  //   BCALHitMatrixD->Scale(1000);  // Scale histogram to MeV
+	  //   BCALHitMatrixD->GetZaxis()->SetTitle("Energy  (MeV)");
+	  // } else {
+	  //   BCALHitMatrixU->GetZaxis()->SetTitle("Energy  (GeV)");
+	  // }
+	  // BCALHitMatrixD->Draw("colz");
+	  for (int layer=0; layer<4; layer++) {
+		  if (BCALPointZphiLayer[layer]->GetEntries()>0) {
+			  if (firstup==1) {
+				  BCALPointZphiLayer[layer]->Draw("box");
+				  firstup=0;
+			  } else {
+				  BCALPointZphiLayer[layer]->Draw("box,same");
+			  }
+		  }
+	  }
+	  LayerLegend->Draw();
+
+	  BCALHitCanvas->cd(3);
+	  gPad->SetGridx();
+	  gPad->SetGridy();
+	  gPad->SetLeftMargin(leftmargin);
+	  if (BCALClusterZphiHistos.size()>0) {
+		  BCALClusterZphiHistos[0]->Draw("box");
+		  for (unsigned int k=1; k<BCALClusterZphiHistos.size(); k++) {
+			  BCALClusterZphiHistos[k]->Draw("box,same");
+		  }
+	  }
+	  ClusterLegend->Draw();
 	  // BCALParticles->Draw("colz");
 	  // for (unsigned int n=0;n<BCALPLables.size();n++){
 	  //   BCALPLables[n]->Draw("same");
@@ -1587,25 +1670,18 @@ void MyProcessor::UpdateBcalDisp(void)
 	LayerLegend = new TLegend(0.91,0.7,0.99,0.99);
 	for (int layer=0; layer<4; layer++) {
 		char name[255];
-		sprintf(name,"layer%i",layer+1);
-		BCALPointZphiLayer[layer] = new TH2F(name,"BCAL Points;Phi angle [deg];Z  (cm);Energy",48*4,0,2*M_PI,42,-80,340);
-		BCALPointZphiLayer[layer]->SetStats(0);
+		sprintf(name,"PhiZLayer%i",layer+1);
+		BCALPointZphiLayer[layer] = new TH2F(name,"BCAL Points vs Z position;Phi angle [deg];Z position (cm);Energy",48*4,0,2*M_PI,42,-80,340);
+		FormatHistogram(BCALPointZphiLayer[layer],layer+1);
 		BCALPointZphiLayer[layer]->SetLineWidth(2);
-		BCALPointZphiLayer[layer]->SetLineColor(layer+1);
-		Float_t size = 0.06;
-		BCALPointZphiLayer[layer]->GetXaxis()->SetTitleSize(size);
-		BCALPointZphiLayer[layer]->GetXaxis()->SetTitleOffset(0.8);
-		BCALPointZphiLayer[layer]->GetXaxis()->SetLabelSize(size);
-		BCALPointZphiLayer[layer]->GetYaxis()->SetTitleSize(size);
-		BCALPointZphiLayer[layer]->GetYaxis()->SetTitleOffset(0.4);
-		BCALPointZphiLayer[layer]->GetYaxis()->SetLabelSize(size);
-		BCALPointZphiLayer[layer]->GetZaxis()->SetTitleSize(size);
-		BCALPointZphiLayer[layer]->GetZaxis()->SetTitleOffset(0.4);
-		BCALPointZphiLayer[layer]->GetZaxis()->SetLabelSize(size);
+		sprintf(name,"PhiTLayer%i",layer+1);
+		BCALPointPhiTLayer[layer] = new TH2F(name,"BCAL Points vs time;Phi angle [deg];time  (ns);Energy",48*4,0,2*M_PI,50,-100,100);
+		FormatHistogram(BCALPointPhiTLayer[layer],layer+1);
+		BCALPointPhiTLayer[layer]->SetLineWidth(2);
+
 		sprintf(name,"layer %i",layer+1);
 		LayerLegend->AddEntry(BCALPointZphiLayer[layer],name);
 	}
-
 
     vector<const DBCALIncidentParticle*> locBcalParticles;
     loop->Get(locBcalParticles);
@@ -1647,7 +1723,7 @@ void MyProcessor::UpdateBcalDisp(void)
     
     
     BCALHitCanvas->Clear();
-    BCALHitCanvas->Divide(1,3);
+    BCALHitCanvas->Divide(1,3,0.001,0.001);
     BCALHitCanvas->cd(1);
 	gPad->SetRightMargin(0.2);
     BCALHitMatrixU->Draw("colz");
@@ -2138,3 +2214,23 @@ void MyProcessor::GetAllWireHits(vector<pair<const DCoordinateSystem*,double> > 
 
 
 
+//------------------------------------------------------------------
+// FormatHistogram
+//------------------------------------------------------------------
+void MyProcessor::FormatHistogram(TH2* histo, int color=1)
+{
+	histo->SetStats(0);
+	histo->SetLineColor(color);
+	histo->SetMarkerColor(color);
+	Float_t size = 0.06;
+	histo->SetTitleSize(size);
+	histo->GetXaxis()->SetTitleSize(size);
+	histo->GetXaxis()->SetTitleOffset(0.8);
+	histo->GetXaxis()->SetLabelSize(size);
+	histo->GetYaxis()->SetTitleSize(size);
+	histo->GetYaxis()->SetTitleOffset(0.5);
+	histo->GetYaxis()->SetLabelSize(size);
+	histo->GetZaxis()->SetTitleSize(size);
+	histo->GetZaxis()->SetTitleOffset(0.4);
+	histo->GetZaxis()->SetLabelSize(size);
+}

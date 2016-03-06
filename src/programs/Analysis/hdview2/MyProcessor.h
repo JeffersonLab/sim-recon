@@ -101,7 +101,8 @@ class MyProcessor:public JEventProcessor
   void GetDReferenceTrajectory(string dataname, string tag, 
 			       unsigned int index, DReferenceTrajectory* &rt, vector<const DCDCTrackHit*> &cdchits);
   void GetAllWireHits(vector<pair<const DCoordinateSystem*,double> > &allhits);
-  
+  void FormatHistogram(TH2*, int);
+
  private:	
   
   hdv_mainframe *hdvmf;
@@ -115,13 +116,17 @@ class MyProcessor:public JEventProcessor
   double RMAX_INTERIOR; // Used to allow user to extend drawing range of charged tracks
   double RMAX_EXTERIOR; // Used to allow user to extend drawing range of charged tracks
 
+  uint32_t BCALVERBOSE;
   TCanvas *BCALHitCanvas;  
   TH2F *BCALHitMatrixU;
   TH2F *BCALHitMatrixD;
   TH2F *BCALParticles;
-  TH2F *BCALPointZphiLayer[4];
-  TLegend *LayerLegend;
   vector <TText*> BCALPLables;
+  TH2F *BCALPointZphiLayer[4];
+  TH2F *BCALPointPhiTLayer[4];
+  std::vector<TH2F*> BCALClusterZphiHistos;
+  TLegend *LayerLegend;
+  TLegend *ClusterLegend;
   
   
   map<string, double> photon_track_matching;
