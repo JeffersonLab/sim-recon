@@ -204,7 +204,8 @@ DEventWriterEVIO::~DEventWriterEVIO(void)
 			// clean up the output thread
 			void *retval=NULL;
 			int result = pthread_join(locEVIOOutputThread, &retval);
-			jerr << "Problem closing EVIO file:  error code = " << result << endl;
+            if(result!=0)
+                jerr << "Problem closing EVIO file:  error code = " << result << endl;
 			delete locEVIOOutputter;
 			std::cout << "Closed EVIO file " << locOutputFileName << std::endl;
 		}
@@ -339,9 +340,9 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 	buff.push_back(avg_timestamp>>32);          // high 32 bits of avg. timestamp
 	buff.push_back(run_number);
 	buff.push_back(run_type);
-	
+
 	// uint16_t segment for Event Types
-	uint16_t event_type = 1; // observed in run 2931. Not sure shat it should be
+	uint16_t event_type = 1; // observed in run 2931. Not sure what it should be
 	if(!coda_events.empty()){
 		event_type    = coda_events[0]->event_type;
 	}
