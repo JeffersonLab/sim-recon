@@ -184,7 +184,7 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     for (unsigned int i=0; i < digihits.size(); i++) {
         const DCDCDigiHit *digihit = digihits[i];
 
-        if ( digihit->QF != 0 ) continue; // Cut bad quality factor hits... (should check effect on efficiency)
+        if ( (digihit->QF & 0x1) != 0 ) continue; // Cut bad timing quality factor hits... (should check effect on efficiency)
 
         const int &ring  = digihit->ring;
         const int &straw = digihit->straw;
