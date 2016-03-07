@@ -3007,6 +3007,15 @@ int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
 
 		return last_run_number = run;
 	}
+
+    // if we're not sure what else to do, try a more comprehensive search
+    if(source_type==kFileSource){
+        int32_t run_number = EpicQuestForRunNumber();
+        if(run_number != 0){
+            if(VERBOSE>1) evioout << "      Found run number " << run_number << " from Epic Quest." <<endl;
+            return last_run_number = run_number;
+        }
+    }
 	
     if(!WARN_USER_RUN_FILENAME) {
         jout << "WARNING: setting run number " << filename_run_number << " based on file name" << endl; 
@@ -3037,7 +3046,7 @@ int32_t JEventSource_EVIO::EpicQuestForRunNumber(void)
 	
 	if(source_type!=kFileSource) return 0;
 	if(last_run_number != 0) return last_run_number;
-	
+
 	uint32_t buff_len = 4000000;
 	uint32_t *buff = new uint32_t[buff_len];
 	HDEVIO *hdevio = new HDEVIO(source_name);
@@ -3061,9 +3070,10 @@ int32_t JEventSource_EVIO::EpicQuestForRunNumber(void)
 					if(VERBOSE>4) evioout << "       \""<<cptr<<"\"" << endl;
 					if(!strncmp(cptr, needle, strlen(needle))){
 						if(VERBOSE>2) evioout << "     Found it!" << endl;
+                        int32_t run_number = atoi(&cptr[strlen(needle)]);
 						if(hdevio) delete hdevio;
 						if(buff) delete[] buff;
-						return atoi(&cptr[strlen(needle)]);
+						return run_number;
 					}
 					cptr+=4; // should only start on 4-byte boundary!
 				}
