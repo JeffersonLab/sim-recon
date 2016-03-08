@@ -251,11 +251,12 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         uint32_t scaled_ped = raw_ped << PBIT;
         pedestal = double(scaled_ped * nsamples_integral);
 
-        double integral = double(digihit->pulse_integral << IBIT); 
+        //double integral = double(digihit->pulse_integral << IBIT); 
         // Comment this line out temporarily until config words are behaving nicely
         //if (A-pedestal<0.) continue;
 
-        double q = a_scale * a_gains[plane_index][strip_index] * (integral-pedestal);
+	// ------The integral is no longer reported for FDC hits --- SJT 3/4/16
+        //double q = a_scale * a_gains[plane_index][strip_index] * (integral-pedestal);
         double t = t_scale * T - timing_offsets[plane_index][strip_index]+fadc_t_base;
 
         DFDCHit *hit = new DFDCHit;
@@ -270,10 +271,11 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         hit->type    = digihit->strip_type; // n.b. DEventSourceHDDM hardwires this as "1" for cathodes!
         hit->itrack  = -1; // MC data only
         hit->ptype   = 0;// MC data only
-        hit->q = q;
+        //hit->q = q;
         hit->t = t;
         hit->pulse_height=a_gains[plane_index][strip_index]
             *double(pulse_peak - scaled_ped);
+	hit->q=a_scale*hit->pulse_height;
 
         //cerr << "FDC hitL  plane = " << hit->gPlane << "  element = " << hit->element << endl;
 

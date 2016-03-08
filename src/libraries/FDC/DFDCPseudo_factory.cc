@@ -322,29 +322,29 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
   vector<centroid_t>vpeaks;
 
 
-  // printf("---------u clusters --------\n");
+  //printf("---------u clusters --------\n");
   // Loop over all U and V clusters looking for peaks
   for (unsigned int i=0;i<u.size();i++){
     //printf("Cluster %d\n",i);
     if (u[i]->members.size()>2)
       {
-      for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin();
-	   strip!=u[i]->members.end();strip++){  
-	//printf("  %d %f %f\n",(*strip)->element,(*strip)->q,(*strip)->t);
+      for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin()+1;
+	   strip+1!=u[i]->members.end();strip++){  
+	//printf("  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	if (FindCentroid(u[i]->members,strip,upeaks)==NOERROR){
 	  upeaks[upeaks.size()-1].cluster=i;
 	}
       }
     }
   }  
-  //printf("---------v cluster --------\n");	
+  //  printf("---------v cluster --------\n");	
   for (unsigned int i=0;i<v.size();i++){
     //printf("Cluster %d\n",i);
     if (v[i]->members.size()>2)
       {
-      for (vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin();
-	   strip!=v[i]->members.end();strip++){		
-	//printf("  %d %f %f\n",(*strip)->element,(*strip)->q,(*strip)->t);
+      for (vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin()+1;
+	   strip+1!=v[i]->members.end();strip++){		
+	//printf("  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	if (FindCentroid(v[i]->members,strip,vpeaks)==NOERROR){
 	  vpeaks[vpeaks.size()-1].cluster=i;
 	}
@@ -552,128 +552,122 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
                        vector<const DFDCHit *>::const_iterator peak,
                        vector<centroid_t>&centroids){
   centroid_t temp;
-  // Make sure we do not exceed the range of the vector
-  if (peak>H.begin() && peak+1!=H.end()){
-    double err_diff1=0.,err_diff2=0.;
+  double err_diff1=0.,err_diff2=0.;
 	 
-    // Fill in time info in temp  1/2/2008 D.L.
-    //CalcMeanTime(H, temp.t, temp.t_rms);
-
-    // Some code for checking for significance of fluctuations.
-    // Currently disabled.
-    //double dq1=(*(peak-1))->dq;
-    //double dq2=(*peak)->dq;
-    //double dq3=(*(peak+1))->dq;
-    //err_diff1=sqrt(dq1*dq1+dq2*dq2);
-    //err_diff2=sqrt(dq2*dq2+dq3*dq3);
-    if ((*peak)->pulse_height<MIDDLE_STRIP_THRESHOLD) {
-      return VALUE_OUT_OF_RANGE;
-    }
-   
-    // Check for a peak in three adjacent strips
-    if ((*peak)->pulse_height-(*(peak-1))->pulse_height > err_diff1
-                && (*peak)->pulse_height-(*(peak+1))->pulse_height > err_diff2){
-      // Define some matrices for use in the Newton-Raphson iteration
-      DMatrix3x3 J;  //Jacobean matrix
-      DMatrix3x1 F,N,X,par,newpar,f;
-      int i=0;
-      double sum=0.;
- 
-      // Initialize the matrices to some suitable starting values
-      unsigned int index=2*((*peak)->gLayer-1)+(*peak)->plane/2;
-      par(K2)=1.;
-      for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
- 	X(i)=fdccathodes[index][(*j)->element-1]->u;
-        N(i)=double((*j)->pulse_height);
-        sum+=N(i);
-	i++;
-      }
-      par(X0)=X(1);
-      par(QA)=2.*sum;
-      newpar=par;
-    
-      // Newton-Raphson procedure
-      double errf=0.,errx=0;
-      for (int iter=1;iter<=ITER_MAX;iter++){
-        errf=0.;
-        errx=0.;
-
-        // Compute Jacobian matrix: J_ij = dF_i/dx_j.
-        for (i=0;i<3;i++){
-	  double dx=(par(X0)-X(i))*ONE_OVER_H;
-          double argp=par(K2)*(dx+A_OVER_H);
-          double argm=par(K2)*(dx-A_OVER_H);
-	  double tanh_p=tanh(argp);
-	  double tanh_m=tanh(argm);
-	  double tanh2_p=tanh_p*tanh_p;
-	  double tanh2_m=tanh_m*tanh_m;
-	  double q_over_4=0.25*par(QA);
-
-	  f(i)=tanh_p-tanh_m;
-          J(i,QA)=-0.25*f(i);
-          J(i,K2)=-q_over_4*(argp/par(K2)*(1.-tanh2_p)
-			     -argm/par(K2)*(1.-tanh2_m));
-          J(i,X0)=-q_over_4*par(K2)*(tanh2_m-tanh2_p); 
-	  F(i)=N(i)-q_over_4*f(i);
-	  double new_errf=fabs(F(i));
-	  if (new_errf>errf) errf=new_errf;
-        }
-	// Check for convergence
-	if (errf<TOLF){	
-	  temp.pos=par(X0);
-	  temp.q_from_pulse_height=par(QA);
-	  temp.numstrips=3;  
-	  temp.t=(*peak)->t;
-	  temp.t_rms=0.;
-
-	  // Find estimate for anode charge
-	  sum=0;
-	  double sum_f=f(0)+f(1)+f(2);
-	  for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
-	    sum+=double((*j)->q);
-	  }
-	  temp.q=4.*sum/sum_f;
-
-	  //CalcMeanTime(peak,temp.t,temp.t_rms);
-	  centroids.push_back(temp);
+  // Fill in time info in temp  1/2/2008 D.L.
+  //CalcMeanTime(H, temp.t, temp.t_rms);
   
-	  return NOERROR;
-	}
-
-	// Find the new set of parameters
-        FindNewParmVec(N,X,F,J,par,newpar);
-
-        //Check for convergence
-        for (i=0;i<3;i++){
-	  double new_err=fabs(par(i)-newpar(i));
-          if (new_err>errx) errx=new_err;
-	}
-        if (errx<TOLX){
-          temp.pos=par(X0);
-          temp.numstrips=3;
-	  temp.q_from_pulse_height=par(QA);
-	  temp.t=(*peak)->t;
-	  temp.t_rms=0.;
-	  
-	  // Find estimate for anode charge
-	  sum=0;
-	  double sum_f=f(0)+f(1)+f(2);
-	  for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
-	    sum+=double((*j)->q);
-	  }
-	  temp.q=4.*sum/sum_f;
-
-	  //CalcMeanTime(peak,temp.t,temp.t_rms);
-          centroids.push_back(temp);
-        
-          return NOERROR;
-        }
-	par=newpar;
-      } // iterations
-    }
-  }
-  else{
+  // Some code for checking for significance of fluctuations.
+  // Currently disabled.
+  //double dq1=(*(peak-1))->dq;
+  //double dq2=(*peak)->dq;
+  //double dq3=(*(peak+1))->dq;
+  //err_diff1=sqrt(dq1*dq1+dq2*dq2);
+  //err_diff2=sqrt(dq2*dq2+dq3*dq3);
+  if ((*peak)->pulse_height<MIDDLE_STRIP_THRESHOLD) {
     return VALUE_OUT_OF_RANGE;
+  }
+  
+  // Check for a peak in three adjacent strips
+  if ((*peak)->pulse_height-(*(peak-1))->pulse_height > err_diff1
+      && (*peak)->pulse_height-(*(peak+1))->pulse_height > err_diff2){
+    // Define some matrices for use in the Newton-Raphson iteration
+    DMatrix3x3 J;  //Jacobean matrix
+    DMatrix3x1 F,N,X,par,newpar,f;
+    int i=0;
+    double sum=0.;
+ 
+    // Initialize the matrices to some suitable starting values
+    unsigned int index=2*((*peak)->gLayer-1)+(*peak)->plane/2;
+    par(K2)=1.;
+    for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
+      X(i)=fdccathodes[index][(*j)->element-1]->u;
+      N(i)=double((*j)->pulse_height);
+      sum+=N(i);
+      i++;
+    }
+    par(X0)=X(1);
+    par(QA)=2.*sum;
+    newpar=par;
+    
+    // Newton-Raphson procedure
+    double errf=0.,errx=0;
+    for (int iter=1;iter<=ITER_MAX;iter++){
+      errf=0.;
+      errx=0.;
+      
+      // Compute Jacobian matrix: J_ij = dF_i/dx_j.
+      for (i=0;i<3;i++){
+	double dx=(par(X0)-X(i))*ONE_OVER_H;
+	double argp=par(K2)*(dx+A_OVER_H);
+	double argm=par(K2)*(dx-A_OVER_H);
+	double tanh_p=tanh(argp);
+	double tanh_m=tanh(argm);
+	double tanh2_p=tanh_p*tanh_p;
+	double tanh2_m=tanh_m*tanh_m;
+	double q_over_4=0.25*par(QA);
+
+	f(i)=tanh_p-tanh_m;
+	J(i,QA)=-0.25*f(i);
+	J(i,K2)=-q_over_4*(argp/par(K2)*(1.-tanh2_p)
+			   -argm/par(K2)*(1.-tanh2_m));
+	J(i,X0)=-q_over_4*par(K2)*(tanh2_m-tanh2_p); 
+	F(i)=N(i)-q_over_4*f(i);
+	double new_errf=fabs(F(i));
+	if (new_errf>errf) errf=new_errf;
+      }
+      // Check for convergence
+      if (errf<TOLF){	
+	temp.pos=par(X0);
+	temp.q_from_pulse_height=par(QA);
+	temp.numstrips=3;  
+	temp.t=(*peak)->t;
+	temp.t_rms=0.;
+
+	// Find estimate for anode charge
+	sum=0;
+	double sum_f=f(0)+f(1)+f(2);
+	for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
+	  sum+=double((*j)->q);
+	}
+	temp.q=4.*sum/sum_f;
+	
+	//CalcMeanTime(peak,temp.t,temp.t_rms);
+	centroids.push_back(temp);
+	
+	return NOERROR;
+      }
+      
+      // Find the new set of parameters
+      FindNewParmVec(N,X,F,J,par,newpar);
+      
+      //Check for convergence
+      for (i=0;i<3;i++){
+	double new_err=fabs(par(i)-newpar(i));
+	if (new_err>errx) errx=new_err;
+      }
+      if (errx<TOLX){
+	temp.pos=par(X0);
+	temp.numstrips=3;
+	temp.q_from_pulse_height=par(QA);
+	temp.t=(*peak)->t;
+	temp.t_rms=0.;
+	
+	// Find estimate for anode charge
+	sum=0;
+	double sum_f=f(0)+f(1)+f(2);
+	for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
+	  sum+=double((*j)->q);
+	}
+	temp.q=4.*sum/sum_f;
+	
+	//CalcMeanTime(peak,temp.t,temp.t_rms);
+	centroids.push_back(temp);
+        
+	return NOERROR;
+      }
+      par=newpar;
+    } // iterations
   }
   return INFINITE_RECURSION; // error placeholder
 }
