@@ -309,14 +309,18 @@ void MyProcessor::FillGraphics(void)
 	  }
 	  for (unsigned int k=0;k<locBcalPoint.size();k++){
 		  const DBCALPoint* point = locBcalPoint[k];
-		  if (BCALVERBOSE>0) printf("(m,l,s) = (%2i,%i,%i)  (z,phi) = (%7.2f,%5.2f) t=%8.3f  E=%8.2f MeV\n",
-								   point->module(), point->layer(), point->sector(),point->z(),
-								   point->phi(),point->t(),point->E()*1000);
-		  BCALPointZphiLayer[point->layer()-1]->Fill(point->phi(),point->z(),point->E());
+		  float pointphi = point->phi()*TMath::RadToDeg();
+		  if (pointphi>360) pointphi-=360;
+		  if (pointphi<0) pointphi+=360;
+		  if (BCALVERBOSE>0) printf(" %3i (m,l,s) = (%2i,%i,%i)  (z,phi) = (%6.1f,%4.0f) t=%7.2f  E=%6.1f MeV\n",
+								   k, point->module(), point->layer(), point->sector(),point->z(),
+								   pointphi,point->t(),point->E()*1000);
+		  float weight = log(point->E()*1000);
+			  BCALPointZphiLayer[point->layer()-1]->Fill(pointphi,point->z(),weight);
 		  float time = point->t();
 		  if (point->t()>100) time=99;    // put overflow in last bin
 		  if (point->t()<-100) time=-99;
-		  BCALPointPhiTLayer[point->layer()-1]->Fill(point->phi(),time,point->E());
+		  BCALPointPhiTLayer[point->layer()-1]->Fill(pointphi,time,weight);
 	  }
 
 	  // Fill BCAL Clusters into histograms
@@ -335,7 +339,7 @@ void MyProcessor::FillGraphics(void)
 	  for (unsigned int k=0;k<locBcalCluster.size();k++){
 		  char name[255];
 		  sprintf(name,"ClusterZphi%i",k);
-		  BCALClusterZphiHistos.push_back(new TH2F(name,"BCAL Clusters;Phi angle [deg];Z position (cm)",48*4,0,2*M_PI,42,-80,340));
+		  BCALClusterZphiHistos.push_back(new TH2F(name,"BCAL Clusters;Phi angle [deg];Z position (cm)",48*4,0,360,48,-80,400));
 		  int color=k+1;
 		  if (k>3) color=k+2; // remove yellow
 		  if (k>7) color=k+3; // remove white
@@ -351,10 +355,14 @@ void MyProcessor::FillGraphics(void)
 		  cluster->Get(clusterpoints);
 		  for (unsigned int l=0;l<clusterpoints.size();l++){
 			  const DBCALPoint* clusterpoint = clusterpoints[l];
-			   if (BCALVERBOSE>1) printf("    (m,l,s) = (%2i,%i,%i)  (z,phi) = (%7.2f,%5.2f) t=%8.3f  E=%8.2f MeV\n",
-										 clusterpoint->module(), clusterpoint->layer(), clusterpoint->sector(),clusterpoint->z(),
-										 clusterpoint->phi(),clusterpoint->t(),clusterpoint->E()*1000);
-			  BCALClusterZphiHistos[k]->Fill(clusterpoint->phi(),clusterpoint->z(),clusterpoint->E());
+			  float weight = log(clusterpoint->E()*1000);
+			  float pointphi = clusterpoint->phi()*TMath::RadToDeg();
+			  if (pointphi>360) pointphi-=360;
+			  if (pointphi<0) pointphi+=360;
+			  if (BCALVERBOSE>1) printf("     (m,l,s) = (%2i,%i,%i)  (z,phi) = (%6.1f,%4.0f) t=%7.2f  E=%6.1f MeV\n",
+										clusterpoint->module(), clusterpoint->layer(), clusterpoint->sector(),clusterpoint->z(),
+										pointphi,clusterpoint->t(),clusterpoint->E()*1000);
+			  BCALClusterZphiHistos[k]->Fill(pointphi,clusterpoint->z(),weight);
 		  }
 	  }
 
@@ -394,7 +402,14 @@ void MyProcessor::FillGraphics(void)
 	    t->SetTextAlign(21);
 	    BCALPLables.push_back(t);
 	  }
- 	   
+
+	  // Get Maximum bin from cluster histograms
+	  float clustermax=0;
+	  if (BCALClusterZphiHistos.size()>0) {
+		  float max = BCALClusterZphiHistos[0]->GetMaximum();
+		  if (max>clustermax) clustermax=max;
+	  }
+
 	  BCALHitCanvas->Clear();
 	  BCALHitCanvas->Divide(1,3,0.001,0.001);
 	  float leftmargin = 0.07;
@@ -414,6 +429,7 @@ void MyProcessor::FillGraphics(void)
 
 	  for (int layer=0; layer<4; layer++) {
 		  if (BCALPointPhiTLayer[layer]->GetEntries()>0) {
+			  BCALPointPhiTLayer[layer]->SetMaximum(clustermax);
 			  if (firstup==1) {
 				  BCALPointPhiTLayer[layer]->Draw("box");
 				  firstup=0;
@@ -437,6 +453,7 @@ void MyProcessor::FillGraphics(void)
 	  // BCALHitMatrixD->Draw("colz");
 	  for (int layer=0; layer<4; layer++) {
 		  if (BCALPointZphiLayer[layer]->GetEntries()>0) {
+			  BCALPointZphiLayer[layer]->SetMaximum(clustermax);
 			  if (firstup==1) {
 				  BCALPointZphiLayer[layer]->Draw("box");
 				  firstup=0;
@@ -452,8 +469,10 @@ void MyProcessor::FillGraphics(void)
 	  gPad->SetGridy();
 	  gPad->SetLeftMargin(leftmargin);
 	  if (BCALClusterZphiHistos.size()>0) {
+		  BCALClusterZphiHistos[0]->SetMaximum(clustermax);
 		  BCALClusterZphiHistos[0]->Draw("box");
 		  for (unsigned int k=1; k<BCALClusterZphiHistos.size(); k++) {
+			  BCALClusterZphiHistos[k]->SetMaximum(clustermax);
 			  BCALClusterZphiHistos[k]->Draw("box,same");
 		  }
 	  }
@@ -1671,11 +1690,11 @@ void MyProcessor::UpdateBcalDisp(void)
 	for (int layer=0; layer<4; layer++) {
 		char name[255];
 		sprintf(name,"PhiZLayer%i",layer+1);
-		BCALPointZphiLayer[layer] = new TH2F(name,"BCAL Points vs Z position;Phi angle [deg];Z position (cm);Energy",48*4,0,2*M_PI,42,-80,340);
+		BCALPointZphiLayer[layer] = new TH2F(name,"BCAL Points vs Z position;Phi angle [deg];Z position (cm);Energy",48*4,0,360,48,-80,400);
 		FormatHistogram(BCALPointZphiLayer[layer],layer+1);
 		BCALPointZphiLayer[layer]->SetLineWidth(2);
 		sprintf(name,"PhiTLayer%i",layer+1);
-		BCALPointPhiTLayer[layer] = new TH2F(name,"BCAL Points vs time;Phi angle [deg];time  (ns);Energy",48*4,0,2*M_PI,50,-100,100);
+		BCALPointPhiTLayer[layer] = new TH2F(name,"BCAL Points vs time;Phi angle [deg];time  (ns);Energy",48*4,0,360,50,-100,100);
 		FormatHistogram(BCALPointPhiTLayer[layer],layer+1);
 		BCALPointPhiTLayer[layer]->SetLineWidth(2);
 
