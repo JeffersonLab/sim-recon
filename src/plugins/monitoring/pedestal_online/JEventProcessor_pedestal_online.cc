@@ -67,7 +67,7 @@ JEventProcessor_pedestal_online::JEventProcessor_pedestal_online()
 	VERBOSE = 0;
 
 	if(gPARMS){
-		gPARMS->SetDefaultParameter("pedestal_online:VERBOSE", VERBOSE, "Verbosity level");
+		gPARMS->SetDefaultParameter("pedestal_online:VERBOSE", VERBOSE, "pedestal_online verbosity level");
 	}
 }
 
@@ -202,7 +202,11 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 				sprintf(title,"Crate %i avg pedestal (F250);event num;pedestal (all chan avg)",rocid);
 				pedestal_vevent[rocid] = new TProfile(cratename,title,200,0.0,10000.0);
 				pedestal_vevent[rocid]->SetStats(0);
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
+				pedestal_vevent[rocid]->SetCanExtend(TH1::kXaxis);
+#else
 				pedestal_vevent[rocid]->SetBit(TH1::kCanRebin);
+#endif
 			} 
 			pedestal_vevent[rocid]->Fill(eventnumber,hit->pedestal);
 		}
@@ -258,7 +262,11 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 				sprintf(title,"Crate %i avg pedestal (F125);event num;pedestal (all chan avg)",rocid);
 				pedestal_vevent[rocid] = new TProfile(cratename,title,200,0.0,10000.0);
 				pedestal_vevent[rocid]->SetStats(0);
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
+				pedestal_vevent[rocid]->SetCanExtend(TH1::kXaxis);
+#else
 				pedestal_vevent[rocid]->SetBit(TH1::kCanRebin);
+#endif
 			} 
 			pedestal_vevent[rocid]->Fill(eventnumber,hit->pedestal);
 		}
