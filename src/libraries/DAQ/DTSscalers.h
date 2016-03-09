@@ -22,9 +22,9 @@ class DTSscalers:public JObject{
 		uint32_t inst_livetime;          // in percent x10 (instantaneous)
 		uint32_t time;                   // unix time in sec
 		uint32_t gtp_scalers[32];
-		uint32_t fp_scalers[48];
+		uint32_t fp_scalers[16];
 		uint32_t gtp_rate[32];
-		uint32_t fp_rate[48];
+		uint32_t fp_rate[16];
 		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format

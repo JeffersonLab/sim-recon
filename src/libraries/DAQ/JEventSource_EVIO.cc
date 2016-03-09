@@ -5095,9 +5095,12 @@ uint32_t JEventSource_EVIO::F1TDC_channel(uint32_t chip, uint32_t chan_on_chip, 
 //----------------
 void JEventSource_EVIO::ParseTSBank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
+	/// Parse data written to the TS roc data during sync events.
+	/// This is written by the ts_scalers routine in the conf_utils.c
+	/// file and called from ts_list.c
 	
 	uint32_t Nwords = ((uint64_t)iend - (uint64_t)iptr)/sizeof(uint32_t);
-	uint32_t Nwords_expected = (6+32+48+32+48);
+	uint32_t Nwords_expected = (6+32+16+32+16);
 	if(Nwords != Nwords_expected){
 		_DBG_ << "TS bank size does not match expected!!" << endl;
 		_DBG_ << "Found " << Nwords << " words. Expected " << Nwords_expected << endl;
@@ -5111,9 +5114,9 @@ void JEventSource_EVIO::ParseTSBank(int32_t rocid, const uint32_t* &iptr, const 
 		s->inst_livetime = *iptr++;
 		s->time = *iptr++;
 		for(uint32_t i=0; i<32; i++) s->gtp_scalers[i] = *iptr++;
-		for(uint32_t i=0; i<48; i++) s->fp_scalers[i]  = *iptr++;
+		for(uint32_t i=0; i<16; i++) s->fp_scalers[i]  = *iptr++;
 		for(uint32_t i=0; i<32; i++) s->gtp_rate[i]    = *iptr++;
-		for(uint32_t i=0; i<48; i++) s->fp_rate[i]     = *iptr++;
+		for(uint32_t i=0; i<16; i++) s->fp_rate[i]     = *iptr++;
 
 		if(events.empty()) events.push_back(new ObjList);
 		ObjList *objs = *(events.begin());
