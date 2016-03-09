@@ -354,8 +354,10 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	event_source_data_types.insert("DCAEN1290TDCHit");
 	event_source_data_types.insert("DCODAEventInfo");
 	event_source_data_types.insert("DCODAROCInfo");
+	event_source_data_types.insert("DTSscalers");
 	event_source_data_types.insert("DEPICSvalue");
 	event_source_data_types.insert("DEventTag");
+	event_source_data_types.insert("DL1Info");
 
 	// Read in optional module type translation map if it exists	
 	ReadOptionalModuleTypeTranslation();
@@ -1803,6 +1805,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			else if(dataClassName == "DCAEN1290TDCHit")       checkSourceFirst = ((JFactory<DCAEN1290TDCHit      >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "DCODAEventInfo")        checkSourceFirst = ((JFactory<DCODAEventInfo       >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "DCODAROCInfo")          checkSourceFirst = ((JFactory<DCODAROCInfo         >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "DTSscalers")            checkSourceFirst = ((JFactory<DTSscalers           >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df250BORConfig")        checkSourceFirst = ((JFactory<Df250BORConfig       >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df125BORConfig")        checkSourceFirst = ((JFactory<Df125BORConfig       >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "DF1TDCBORConfig")       checkSourceFirst = ((JFactory<DF1TDCBORConfig      >*)fac)->GetCheckSourceFirst();
@@ -3369,6 +3372,22 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		
 		// Trigger Bank
 		evioDOMNodeP physics_event_bank = data_bank->getParent();
+		
+		//  TS scalers for SYNC events. Currently us phys event tag
+		//  Don't use the parent tag in the future, to be checked
+		if((physics_event_bank != NULL) && (bankPtr != NULL)){
+		  if( (physics_event_bank->tag == 0xff70) &&  (bankPtr->tag == 0xEE02)){
+		    const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+		    if(vec->size() < 102){
+		      evioout << "  TS record for SYNC event is inconsistent. Don't parse " << endl;
+		    } else {		      
+		      ParseTSSync(bankPtr, tmp_events);
+		      MergeObjLists(full_events, tmp_events);
+		    }
+		  }
+		}		
+
+
 		if( physics_event_bank==NULL ){
 			if(VERBOSE>6) evioout << "     bank has no grandparent. Checking if this is a trigger bank ... " << endl;
 
@@ -3405,18 +3424,9 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		}
 
 		if(VERBOSE>9) evioout << "      bank lineage check OK. Continuing with parsing ... " << endl;
-		
-		// Check if this is a CODA Reserved Bank Tag. 
-		if((data_bank->tag & 0xFF00) == 0xFF00){
-			if(VERBOSE>6) evioout << "      Data Bank tag="<<hex<<data_bank->tag<<dec<<" is in reserved CODA range. This is probably not ROC data"<< endl;
-			continue;
-		}
 
-		// Check if this is a TS Bank. 
-		if((bankPtr->tag & 0xFF00) == 0xEE00){
-			if(VERBOSE>6) evioout << "      TS bank tag="<<hex<<data_bank->tag<<dec<<" (not currently handled so skip to next bank)"<< endl;
-			continue;
-		}
+		// Extract ROC id (crate number) from bank's parent
+		uint32_t rocid = data_bank->tag  & 0x0FFF;
 
 		// Get data from bank in the form of a vector of uint32_t
 		const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
@@ -3427,15 +3437,31 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		const uint32_t *iptr = &(*vec)[0];
 		const uint32_t *iend = &(*vec)[vec->size()];
 		if(VERBOSE>6) evioout << "      uint32_t bank has " << vec->size() << " words" << endl;
-
-		// Extract ROC id (crate number) from bank's parent
-		uint32_t rocid = data_bank->tag  & 0x0FFF;
 		
 		// If there are rocid's specified that we wish to parse, make sure this one
 		// is in the list. Otherwise, skip it.
 		if(!ROCIDS_TO_PARSE.empty()){
 			if(VERBOSE>4) evioout << "     Skipping parsing of rocid="<<rocid<<" due to it being in ROCIDS_TO_PARSE set." << endl;
 			if(ROCIDS_TO_PARSE.find(rocid) == ROCIDS_TO_PARSE.end()) continue;
+		}
+
+		// Check if this is a CODA Reserved Bank Tag. 
+		if((data_bank->tag & 0xFF00) == 0xFF00){
+			if(VERBOSE>6) evioout << "      Data Bank tag="<<hex<<data_bank->tag<<dec<<" is in reserved CODA range. This is probably not ROC data"<< endl;
+			continue;
+		}
+
+		// Check if this is a TS Bank. 
+		if(bankPtr->tag == 0xEE02){
+			ParseTSBank(rocid, iptr, iend, full_events);
+			//if(VERBOSE>6) evioout << "      TS bank tag="<<hex<<data_bank->tag<<dec<<" (not currently handled so skip to next bank)"<< endl;
+			continue;
+		}
+
+		// Check if this is a f250 Pedestal Bank. 
+		if(bankPtr->tag == 0xEE05){
+			if(VERBOSE>6) evioout << "      SYNC event - f250 pedestals not currently handled"<< endl;
+			continue;
 		}
 		
 		// The number of events in block is stored in lower 8 bits
@@ -3986,7 +4012,8 @@ void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr
 				break;
 				
 			case DModuleType::JLAB_TS:
-				ParseTSBank(rocid, iptr, iend, tmp_events);
+				//ParseTSBank(rocid, iptr, iend, tmp_events); // This is not used
+				_DBG_ << "What the ? ! This data type isn't supposed to be here!!" << endl;
 				break;
 				
 			case DModuleType::TID:
@@ -5085,8 +5112,34 @@ uint32_t JEventSource_EVIO::F1TDC_channel(uint32_t chip, uint32_t chan_on_chip, 
 //----------------
 void JEventSource_EVIO::ParseTSBank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
-	cout << "<><><><><> !! Parsing of JLab TS module requested !! <><><>" << endl;
-	cout << "<><><><><> !! TS parsing not yet supported        !! <><><>" << endl;
+	/// Parse data written to the TS roc data during sync events.
+	/// This is written by the ts_scalers routine in the conf_utils.c
+	/// file and called from ts_list.c
+	
+	uint32_t Nwords = ((uint64_t)iend - (uint64_t)iptr)/sizeof(uint32_t);
+	uint32_t Nwords_expected = (6+32+16+32+16);
+	if(Nwords != Nwords_expected){
+		_DBG_ << "TS bank size does not match expected!!" << endl;
+		_DBG_ << "Found " << Nwords << " words. Expected " << Nwords_expected << endl;
+		
+	}else{	
+		DTSscalers *s = new DTSscalers;
+		s->nsync_event = *iptr++;
+		s->int_count = *iptr++;
+		s->live_time = *iptr++;
+		s->busy_time = *iptr++;
+		s->inst_livetime = *iptr++;
+		s->time = *iptr++;
+		for(uint32_t i=0; i<32; i++) s->gtp_scalers[i] = *iptr++;
+		for(uint32_t i=0; i<16; i++) s->fp_scalers[i]  = *iptr++;
+		for(uint32_t i=0; i<32; i++) s->gtp_rate[i]    = *iptr++;
+		for(uint32_t i=0; i<16; i++) s->fp_rate[i]     = *iptr++;
+
+		if(events.empty()) events.push_back(new ObjList);
+		ObjList *objs = *(events.begin());
+		objs->misc_objs.push_back(s);
+	}
+
 	iptr = iend;
 }
 
@@ -5333,6 +5386,64 @@ void JEventSource_EVIO::ParseBORevent(evioDOMNodeP bankPtr)
 	pthread_rwlock_unlock(&BOR_lock);
 
 }
+
+
+//----------------
+// ParseTSSyncevent
+//----------------
+void JEventSource_EVIO::ParseTSSync(evioDOMNodeP bankPtr, list<ObjList*> &events)
+{
+  
+  DL1Info *trig_info = new DL1Info;
+  
+  //   cout << " INSIDE ParseTSSync " << endl;
+  
+  if((bankPtr->tag & 0xFFFF) == 0xEE02){
+    const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+    
+    trig_info->nsync        = (*vec)[0];
+    trig_info->trig_number  = (*vec)[1];
+    trig_info->live_time    = (*vec)[2];
+    trig_info->busy_time    = (*vec)[3];
+    trig_info->live_inst    = (*vec)[4];
+    trig_info->unix_time    = (*vec)[5];
+    
+    
+    
+    // GTP scalers
+    for(uint32_t ii = 6; ii < 38; ii++){
+      trig_info->gtp_sc.push_back((*vec)[ii]);
+    }
+    
+    // FP scalers
+    for(uint32_t ii = 38; ii < 54; ii++){
+      trig_info->fp_sc.push_back((*vec)[ii]);
+    }
+    
+    // GTP rate
+    for(uint32_t ii = 54; ii < 86; ii++){
+      trig_info->gtp_rate.push_back((*vec)[ii]);
+    }  
+    
+    // FP rate
+    for(uint32_t ii = 86; ii < 102; ii++){
+      trig_info->fp_rate.push_back((*vec)[ii]);
+    }       
+  }
+  
+  
+  if(events.empty()){				
+    events.push_back(new ObjList());
+    //     cout <<  " TSSync: Empty event " << endl;
+  }
+  
+  ObjList *objs = *(events.begin());
+  
+  objs->misc_objs.push_back(trig_info);
+  
+  
+}
+
 
 //----------------
 // ParseEPICSevent
