@@ -39,47 +39,48 @@ jerror_t DBeamPhoton_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, uint64
  	vector<const DKinFitResults*> locKinFitResultsVector;
 	locEventLoop->Get(locKinFitResultsVector);
 
-	map<const DKinFitParticle*, DBeamPhoton*> locKinFitParticleMap;
-
 	for(size_t loc_i = 0; loc_i < locKinFitResultsVector.size(); ++loc_i)
 	{
-		set<const DParticleCombo*> locParticleCombos;
-		locKinFitResultsVector[loc_i]->Get_ParticleCombos(locParticleCombos);
+		map<const DParticleCombo*, const DKinFitChain*> locParticleComboMap;
+		locKinFitResultsVector[loc_i]->Get_ParticleComboMap(locParticleComboMap);
+		set<DKinFitParticle*> locOutputKinFitParticles = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticles();
 
-		set<const DParticleCombo*>::iterator locComboIterator = locParticleCombos.begin();
-		const DParticleCombo* locParticleCombo = *locComboIterator;
-
-		if(!locParticleCombo->Get_ParticleComboStep(0)->Is_InitialParticleDetected())
-			continue;
-
-		map<const DKinematicData*, const DKinFitParticle*> locReverseParticleMapping;
-		locKinFitResultsVector[loc_i]->Get_ReverseParticleMapping(locReverseParticleMapping);
-
-		const DKinematicData* locInitialParticle = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured();
-		const DKinFitParticle* locKinFitParticle = locReverseParticleMapping[locInitialParticle];
-
-		map<const DKinFitParticle*, DBeamPhoton*>::iterator locNewPhotonIterator = locKinFitParticleMap.find(locKinFitParticle);
-		if(locNewPhotonIterator != locKinFitParticleMap.end())
+		map<DKinFitParticle*, DBeamPhoton*> locNewObjectMap;
+		map<const DParticleCombo*, const DKinFitChain*>::iterator locComboIterator = locParticleComboMap.begin();
+		for(; locComboIterator != locParticleComboMap.end(); ++locComboIterator)
 		{
-			for(locComboIterator = locParticleCombos.begin(); locComboIterator != locParticleCombos.end(); ++locComboIterator)
-				locNewPhotonIterator->second->AddAssociatedObject(*locComboIterator);
-			continue; //new particle already created for this kinfit particle
+			const DParticleCombo* locParticleCombo = locComboIterator->first;
+
+			if(!locParticleCombo->Get_ParticleComboStep(0)->Is_InitialParticleDetected())
+				continue;
+
+			const DKinematicData* locInitialParticle = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured();
+			DKinFitParticle* locKinFitParticle = locKinFitResultsVector[loc_i]->Get_OutputKinFitParticle(locInitialParticle);
+			if(locKinFitParticle == NULL)
+				continue; //should be impossible
+			if(locOutputKinFitParticles.find(locKinFitParticle) == locOutputKinFitParticles.end())
+				continue; //not used in fit
+
+			map<DKinFitParticle*, DBeamPhoton*>::iterator locNewPhotonIterator = locNewObjectMap.find(locKinFitParticle);
+			if(locNewPhotonIterator != locNewObjectMap.end())
+			{
+				locNewPhotonIterator->second->AddAssociatedObject(locParticleCombo);
+				continue; //new particle already created for this kinfit particle
+			}
+
+			const DBeamPhoton* locBeamPhoton = static_cast<const DBeamPhoton*>(locInitialParticle);
+			DBeamPhoton* locNewBeamPhoton = Build_BeamPhoton(locBeamPhoton, locKinFitParticle, locParticleCombo);
+			locNewObjectMap[locKinFitParticle] = locNewBeamPhoton;
+			locNewBeamPhoton->AddAssociatedObject(locParticleCombo);
+
+			_data.push_back(locNewBeamPhoton);
 		}
-
-		const DBeamPhoton* locBeamPhoton = static_cast<const DBeamPhoton*>(locInitialParticle);
-		DBeamPhoton* locNewBeamPhoton = Build_BeamPhoton(locBeamPhoton, locKinFitParticle, locParticleCombo);
-		locKinFitParticleMap[locKinFitParticle] = locNewBeamPhoton;
-
-		for(locComboIterator = locParticleCombos.begin(); locComboIterator != locParticleCombos.end(); ++locComboIterator)
-			locNewBeamPhoton->AddAssociatedObject(*locComboIterator);
-
-		_data.push_back(locNewBeamPhoton);
 	}
 
 	return NOERROR;
 }
 
-DBeamPhoton* DBeamPhoton_factory_KinFit::Build_BeamPhoton(const DBeamPhoton* locBeamPhoton, const DKinFitParticle* locKinFitParticle, const DParticleCombo* locParticleCombo)
+DBeamPhoton* DBeamPhoton_factory_KinFit::Build_BeamPhoton(const DBeamPhoton* locBeamPhoton, DKinFitParticle* locKinFitParticle, const DParticleCombo* locParticleCombo)
 {
 	DBeamPhoton* locNewBeamPhoton = new DBeamPhoton(*locBeamPhoton);
 	locNewBeamPhoton->AddAssociatedObject(locBeamPhoton);

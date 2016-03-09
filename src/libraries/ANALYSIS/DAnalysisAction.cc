@@ -26,15 +26,6 @@ dPerformAntiCut(false), dReaction(locReaction), dActionName(locActionBaseName), 
 		gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
 	dNumPreviousParticleCombos = 0;
 	dNumParticleCombos = 0;
-
-	if(dUseKinFitResultsFlag && (dReaction != NULL))
-	{
-		if(dReaction->Get_KinFitType() == d_NoFit)
-		{
-			jout << "ERROR: Action " << dActionName << " requires kinematic fit results when kinematic fit not enabled. Aborting." << endl;
-			abort();
-		}
-	}
 }
 
 void DAnalysisAction::operator()(JEventLoop* locEventLoop, set<const DParticleCombo*>& locSurvivingParticleCombos)

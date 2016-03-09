@@ -47,8 +47,8 @@ jerror_t JEventProcessor_FCALgains::init(void)
 
   n_channels = 2800;
   m_nElements = n_channels;
-  MASS_CUT_LO = 0.1;
-    MASS_CUT_HI = 0.17;
+  MASS_CUT_LO = 0.11;
+    MASS_CUT_HI = 0.16;
 
       InvMass1 = new TH1F("InvMass1","FCAL diphoton mass (Cluster E > 500 MeV)",500,0.0,1);
       InvMass1->GetXaxis()->SetTitle("invariant mass [GeV]");
@@ -235,7 +235,7 @@ jerror_t JEventProcessor_FCALgains::evnt(jana::JEventLoop* locEventLoop, uint64_
 	  if(trkmass < 0.15 && dRho < 5 && FOM > 0.01 ) {  
 	    h1D_ebyp->Fill(Eshwr/p);
 	    matchedShowers.push_back(locFCALShowers[j]);
-	    matchedTracks.push_back(locTrackTimeBased[i]);
+	  //  matchedTracks.push_back(locTrackTimeBased[i]);
 	    //  printf ("Matched event=%d, i=%d, j=%d, p=%f, Ztrk=%f Zshr=%f, Xtrk=%f, Xshr=%f, Ytrk=%f, Yshr=%f\n",locEventNumber,i,j,p,
 	    //  pos.Z(),z,pos.X(),x,pos.Y(),y);
 	    //  break;
@@ -286,8 +286,8 @@ jerror_t JEventProcessor_FCALgains::evnt(jana::JEventLoop* locEventLoop, uint64_
 	h1D_mPi0->Fill(inv_mass);
         h1D_massDiff->Fill(inv_mass*inv_mass-m_pi0mass*m_pi0mass);
 	///        
-	//if(E1 < 1 || E2 < 1) continue;
-	if(E1 < 0.5 || E2 < 0.5) continue;
+	if(E1 < 1 || E2 < 1) continue;
+	//if(E1 < 0.5 || E2 < 0.5) continue;
 	  if(fabs(t1-t2) >= 10.) continue;
 	    if(s1->getPosition().Pt() <= 20. || s2->getPosition().Pt() <=20.) continue;
 	      if(inv_mass < 0.03 || inv_mass > 0.3) continue;

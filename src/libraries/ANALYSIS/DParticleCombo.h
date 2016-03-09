@@ -66,7 +66,6 @@ class DParticleCombo : public JObject
 
 		// OTHER:
 		set<pair<const JObject*, Particle_t> > Get_DecayingParticleSourceObjects(size_t locStepIndex) const;
-		bool Get_ApplyKinFitMassConstraintOnInitialParticleFlag(size_t locStepIndex) const;
 		bool Check_AreMeasuredParticlesIdentical(const DParticleCombo* locParticleCombo) const;
 		DLorentzVector Get_EventVertex(void) const;
 
@@ -100,13 +99,6 @@ inline void DParticleCombo::Set_ParticleComboStep(const DParticleComboStep* locP
 	if(locStepIndex >= Get_NumParticleComboSteps())
 		return;
 	dParticleComboSteps[locStepIndex] = locParticleComboStep;
-}
-
-inline bool DParticleCombo::Get_ApplyKinFitMassConstraintOnInitialParticleFlag(size_t locStepIndex) const
-{
-	if(dReaction == NULL)
-		return false;
-	return dReaction->Get_ReactionStep(locStepIndex)->Get_ApplyKinFitMassConstraintOnInitialParticleFlag();
 }
 
 inline void DParticleCombo::Get_ParticleComboSteps(Particle_t locInitialPID, deque<const DParticleComboStep*>& locParticleComboStepDeque) const

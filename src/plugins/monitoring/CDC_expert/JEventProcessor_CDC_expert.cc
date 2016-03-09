@@ -87,7 +87,11 @@ static TH2I *cdc_raw_int_ring[29];
 static TH1I *cdc_raw_int_badt;  
 static TH1I *cdc_raw_int_overflow;  
 
-
+// Some hists are only made if run number is
+// is > 3675. We need a flag to prevent any
+// attempt to fill them which results in a
+// seg. fault.
+bool hists3675 = false;
 
 
 //----------------------------------------------------------------------------------
@@ -106,6 +110,8 @@ extern "C"{
 
 
 JEventProcessor_CDC_expert::JEventProcessor_CDC_expert() {
+
+	initialized_histograms = false;
 }
 
 
@@ -137,9 +143,13 @@ jerror_t JEventProcessor_CDC_expert::init(void) {
 jerror_t JEventProcessor_CDC_expert::brun(JEventLoop *eventLoop, int32_t runnumber) {
   // This is called whenever the run number changes
 
-
-
   japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+  
+  // Do not initialize ROOT objects twice!
+  if(initialized_histograms){
+    japp->RootUnLock();
+    return NOERROR;
+  }
 
   // max values for histogram scales, modified fa250-format readout
 
@@ -227,6 +237,8 @@ jerror_t JEventProcessor_CDC_expert::brun(JEventLoop *eventLoop, int32_t runnumb
   if (runnumber > 3675) { //new fa125 format firmware, from 11 Sept 2015
 
     gDirectory->mkdir("bad_t","CDC Bad time flagged")->cd();
+
+    hists3675 = true;
 
     cdc_o_badt     = new TH2I("cdc_o_badt","CDC occupancy by straw,ring, events with bad time flagged;straw;ring",209,0.5,209.5,28,0.5,28.5);
     cdc_ped_badt   = new TH1I("cdc_ped_badt","CDC pedestal, events with bad time flagged;straw;pedestal",256,0,PMAX);
@@ -341,7 +353,10 @@ jerror_t JEventProcessor_CDC_expert::brun(JEventLoop *eventLoop, int32_t runnumb
   // back to main dir
   main->cd();
 
+  initialized_histograms = true;
+
   japp->RootUnLock(); //RELEASE ROOT LOCK!!
+  
 
   return NOERROR;
 }
@@ -546,7 +561,7 @@ jerror_t JEventProcessor_CDC_expert::evnt(JEventLoop *eventLoop, uint64_t eventn
       if (winped) cdc_windata_ped_ring[ring]->Fill(straw,winped);
       
 
-      if (cp) {
+      if (cp && hists3675) {
 	if (qf==1) {  // rough time flag is set
 	  cdc_o_badt->Fill(straw,ring);
 	  cdc_ped_badt->Fill(p);

@@ -371,7 +371,6 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 
 	japp->RootWriteLock();
 
-
 	// first get trigger bits
 
 	const DL1Trigger *trig_words = NULL;

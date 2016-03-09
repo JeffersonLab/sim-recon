@@ -59,7 +59,7 @@ jerror_t DReaction_factory_p3pi_hists::init(void)
 	locReactionStep->Set_InitialParticleID(Pi0);
 	locReactionStep->Add_FinalParticleID(Gamma);
 	locReactionStep->Add_FinalParticleID(Gamma);
-	locReactionStep->Set_ApplyKinFitMassConstraintOnInitialParticleFlag(false);
+	locReactionStep->Set_KinFitConstrainInitMassFlag(false);
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 

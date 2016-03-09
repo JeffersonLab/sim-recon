@@ -12,3 +12,5 @@ src/SBMS/*.pyc
 .getarg_patches_done
 .sconstruct_done
 sim-recon_prereqs_version.xml
+*.png
+*.swp

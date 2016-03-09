@@ -63,7 +63,6 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		void Build_BeamPhotonCombos(DParticleCombo* locParticleCombo, const DParticleComboBlueprint* locParticleComboBlueprint, const DEventRFBunch* locEventRFBunch, const set<const DBeamPhoton*>& locInputCandidatePhotons, vector<DParticleCombo*>& locBuiltParticleCombos);
 
 		DParticleComboStep* Clone_ParticleComboStep(const DParticleComboStep* locParticleComboStep);
-		void Reset_KinematicData(DKinematicData* locKinematicData);
 		DParticleComboStep* Get_ParticleComboStepResource(void);
 		DParticleCombo* Get_ParticleComboResource(void);
 		DKinematicData* Get_KinematicDataResource(void);

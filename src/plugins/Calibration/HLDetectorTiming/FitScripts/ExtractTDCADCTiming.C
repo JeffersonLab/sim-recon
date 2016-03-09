@@ -46,7 +46,7 @@ void GetCCDBConstants(TString path, Int_t run, TString variation, vector<double>
     gSystem->ClosePipe(inputPipe);
 }
 //Overload this function to handle the base time offsets
-void GetCCDBConstants(TString path, Int_t run, TString variation, double& constant1, double& constant2 = NULL){
+void GetCCDBConstants1(TString path, Int_t run, TString variation, double& constant1){
     char command[256];
     sprintf(command, "ccdb dump %s:%i:%s", path.Data(), run, variation.Data());
     FILE* inputPipe = gSystem->OpenPipe(command, "r");
@@ -59,12 +59,26 @@ void GetCCDBConstants(TString path, Int_t run, TString variation, double& consta
     //get the line containing the values
     while(fgets(buff, sizeof(buff), inputPipe) != NULL){
         istringstream locConstantsStream(buff);
-        if(constant2 != NULL){
-            locConstantsStream >> constant1 >> constant2;
-        }
-        else{
-            locConstantsStream >> constant1;
-        }
+	locConstantsStream >> constant1;
+    }
+    //Close the pipe
+    gSystem->ClosePipe(inputPipe);
+}
+
+void GetCCDBConstants2(TString path, Int_t run, TString variation, double& constant1, double& constant2){
+    char command[256];
+    sprintf(command, "ccdb dump %s:%i:%s", path.Data(), run, variation.Data());
+    FILE* inputPipe = gSystem->OpenPipe(command, "r");
+    if(inputPipe == NULL)
+        return 0;
+    //get the first (comment) line
+    char buff[1024];
+    if(fgets(buff, sizeof(buff), inputPipe) == NULL)
+        return 0;
+    //get the line containing the values
+    while(fgets(buff, sizeof(buff), inputPipe) != NULL){
+        istringstream locConstantsStream(buff);
+	locConstantsStream >> constant1 >> constant2;
     }
     //Close the pipe
     gSystem->ClosePipe(inputPipe);
@@ -118,14 +132,23 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 2931
     double tagh_base_time_tdc, tagh_base_time_adc;
     double tof_base_time_tdc,  tof_base_time_adc;
 
-    GetCCDBConstants("/CDC/base_time_offset" ,runNumber, variation, cdc_base_time);
-    GetCCDBConstants("/FCAL/base_time_offset",runNumber, variation, fcal_base_time);
-    GetCCDBConstants("/FDC/base_time_offset" ,runNumber, variation, fdc_base_time_adc, fdc_base_time_tdc);
-    GetCCDBConstants("/BCAL/base_time_offset" ,runNumber, variation, bcal_base_time_adc, bcal_base_time_tdc);
-    GetCCDBConstants("/PHOTON_BEAM/microscope/base_time_offset" ,runNumber, variation, tagm_base_time_adc, tagm_base_time_tdc);
-    GetCCDBConstants("/PHOTON_BEAM/hodoscope/base_time_offset" ,runNumber, variation, tagh_base_time_adc, tagh_base_time_tdc);
-    GetCCDBConstants("/START_COUNTER/base_time_offset" ,runNumber, variation, sc_base_time_adc, sc_base_time_tdc);
-    GetCCDBConstants("/TOF/base_time_offset" ,runNumber, variation, tof_base_time_adc, tof_base_time_tdc);
+    GetCCDBConstants1("/CDC/base_time_offset" ,runNumber, variation, cdc_base_time);
+    GetCCDBConstants1("/FCAL/base_time_offset",runNumber, variation, fcal_base_time);
+    GetCCDBConstants2("/FDC/base_time_offset" ,runNumber, variation, fdc_base_time_adc, fdc_base_time_tdc);
+    GetCCDBConstants2("/BCAL/base_time_offset" ,runNumber, variation, bcal_base_time_adc, bcal_base_time_tdc);
+    GetCCDBConstants2("/PHOTON_BEAM/microscope/base_time_offset" ,runNumber, variation, tagm_base_time_adc, tagm_base_time_tdc);
+    GetCCDBConstants2("/PHOTON_BEAM/hodoscope/base_time_offset" ,runNumber, variation, tagh_base_time_adc, tagh_base_time_tdc);
+    GetCCDBConstants2("/START_COUNTER/base_time_offset" ,runNumber, variation, sc_base_time_adc, sc_base_time_tdc);
+    GetCCDBConstants2("/TOF/base_time_offset" ,runNumber, variation, tof_base_time_adc, tof_base_time_tdc);
+
+    cout << "CDC base times = " << cdc_base_time << endl;
+    cout << "FCAL base times = " << fcal_base_time << endl;
+    cout << "FDC base times = " << fdc_base_time_adc << ", " << fdc_base_time_tdc << endl;
+    cout << "BCAL base times = " << bcal_base_time_adc << ", " << bcal_base_time_tdc << endl;
+    cout << "SC base times = " << sc_base_time_adc << ", " << sc_base_time_tdc << endl;
+    cout << "TOF base times = " << tof_base_time_adc << ", " << tof_base_time_tdc << endl;
+    cout << "TAGH base times = " << tagh_base_time_adc << ", " << tagh_base_time_tdc << endl;
+    cout << "TAGH base times = " << tagm_base_time_adc << ", " << tagm_base_time_tdc << endl;
 
     // Then the channel by channel ADC and TDC times for those that need the calibration
     vector<double> bcal_tdc_offsets;
@@ -161,7 +184,7 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 2931
         TF1 *f = new TF1("f", "gaus");
         f->SetParameters(100, maximum, 20);
         f->FixParameter(1 , maximum);
-        TFitResultPtr fr = this1DHist->Fit(f, "S", "", maximum - 40, maximum + 10); // Cant fix value at end of range
+        TFitResultPtr fr = this1DHist->Fit(f, "S", "", maximum - 20, maximum + 20); // Cant fix value at end of range
         double mean = fr->Parameter(1);
         float sigma = fr->Parameter(2);
         CDC_ADC_Offset = mean - sigma;
@@ -185,7 +208,7 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 2931
         TF1 *f = new TF1("f", "gaus");
         f->SetParameters(100, maximum, 20);
         f->FixParameter(1 , maximum);
-        TFitResultPtr fr = this1DHist->Fit(f, "S", "", maximum - 40, maximum + 10); // Cant fix value at end of range
+        TFitResultPtr fr = this1DHist->Fit(f, "S", "", maximum - 30, maximum + 20); // Cant fix value at end of range
         double mean = fr->Parameter(1);
         float sigma = fr->Parameter(2);
         FDC_ADC_Offset = mean - sigma;
@@ -211,7 +234,7 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 2931
     if(this1DHist != NULL){
         //Gaussian
         Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
-        TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 50, maximum + 50);
+        TFitResultPtr fr = this1DHist->Fit("gaus", "S", "", maximum - 5, maximum + 5);
         double mean = fr->Parameter(1);
         sc_tdc_base_time = mean;
     }
@@ -266,7 +289,7 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 2931
         outFile.open(prefix + "sc_adc_timing_offsets.txt", ios::out);
         for( int iSC = 1; iSC <= 30; iSC++){ 
             float SC_ADC_Offset = selected_SC_TDCADCOffset->GetBinContent(iSC);
-            outFile << SC_ADC_Offset - meanDiff << endl;
+            outFile << SC_ADC_Offset + sc_adc_offsets[iSC-1] - meanDiff << endl;
         }
         outFile.close();
     }
@@ -535,7 +558,7 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 2931
     outFile.close(); // clear file
 
     TH1D * selectedBCALOffset = new TH1D("selectedBCALOffset", "Selected BCAL TDC Offset; Column; Offset [ns]", 1152, 0.5, 1152 + 0.5);
-    TH1I * BCALOffsetDistribution = new TH1I("BCALOffsetDistribution", "BCAL TDC Offset; TDC Offset [ns]; Entries", 500, -250, 250); 
+    TH1I * BCALOffsetDistribution = new TH1I("BCALOffsetDistribution", "BCAL TDC Offset; TDC Offset [ns]; Entries", 500, -500, 500); 
 
     thisHist = Get2DHistogram("HLDetectorTiming", "BCAL", "BCALHit Upstream Per Channel TDC-ADC Hit Time");
     if(thisHist != NULL){
@@ -565,7 +588,7 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 2931
                 }
             }
             selectedBCALOffset->SetBinContent(2*i - 1, maxMean);
-            BCALOffsetDistribution->Fill(maxMean);
+            BCALOffsetDistribution->Fill(maxMean+bcal_tdc_offsets[2*i -2]);
         }
     }
 
@@ -598,7 +621,7 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 2931
             }
 
             selectedBCALOffset->SetBinContent(2*i, maxMean);
-            BCALOffsetDistribution->Fill(maxMean);
+            BCALOffsetDistribution->Fill(maxMean+bcal_tdc_offsets[2*i -1]);
         }
     }
 

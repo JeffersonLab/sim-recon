@@ -128,7 +128,7 @@ void st_time_resolution(char*input_filename)
       t_min[j]=  pytotal->GetMinimum();
       for (unsigned int i = 0; i < 200; i++)
       	{bins[i]= pytotal->GetBinContent(i);
-      	  if (bins[i] < (0.1*t_max[j]))
+      	  if (bins[i] < (0.0*t_max[j]))
       	    {	
       	      pytotal->SetBinContent(i,0);
       	      pytotal->Draw("][");
@@ -138,7 +138,7 @@ void st_time_resolution(char*input_filename)
       	}
       pytotal->Fit("gaus");
       gPad->Update();
-      
+       PT_can[j]->Print(Form("ST_Sector_%i.png",j+1));
       t_total_fit[j][2] = gaus->GetParameter(2)*1000;
       t_total_fit_err[j][2] = gaus->GetParError(2)*1000;
       
@@ -175,5 +175,6 @@ void st_time_resolution(char*input_filename)
   line->SetLineStyle(9);
 
   line->Draw();
+  Time_can->Print(Form("ST_Tresolution.png"));
 }
 

@@ -171,11 +171,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	double Mdiff=v-(vpred_uncorrected+doca*(nz_sinalpha_plus_nr_cosalpha
 						-tv*sinalpha
 						));
-
-	if (DEBUG_HISTS && fit_type==kTimeBased){
-	  fdc_dy_vs_d->Fill(doca,v-vpred_uncorrected);
-	}
-	
        	// To transform from (x,y) to (u,v), need to do a rotation:
 	//   u = x*cosa-y*sina
 	//   v = y*cosa+x*sina
@@ -414,7 +409,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    dedx=GetdEdx(S(state_q_over_p), 
 			 forward_traj[k].K_rho_Z_over_A,
 			 forward_traj[k].rho_Z_over_A,
-			 forward_traj[k].LnI);
+			 forward_traj[k].LnI,forward_traj[k].Z);
 	  }
 	  
 	  // track direction variables
@@ -986,7 +981,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
   unsigned int max=forward_traj.size()-1;
   DMatrix5x1 S=(forward_traj[max].Skk);
   DMatrix5x5 C=(forward_traj[max].Ckk);
-  DMatrix5x5 JT=(forward_traj[max].JT);
+  DMatrix5x5 JT=forward_traj[max].J.Transpose();
   DMatrix5x1 Ss=S;
   DMatrix5x5 Cs=C;
   DMatrix5x5 A,dC;
@@ -1100,7 +1095,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
     
     S=forward_traj[m].Skk;
     C=forward_traj[m].Ckk;
-    JT=forward_traj[m].JT;
+    JT=forward_traj[m].J.Transpose();
   }
 
   return NOERROR;

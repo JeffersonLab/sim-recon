@@ -109,7 +109,9 @@ class hdv_mainframe:public TGMainFrame {
 
 
 		// Other (non-slot) methods
-		void SetEvent(int id);
+		void SetEvent(ULong64_t id);
+		void SetRun(Int_t id);
+		void SetTrig(char *trigstring);
 		void SetSource(string source);
 		bool GetDrawCandidates(void){return draw_candidates;}
 		bool GetDrawTracks(void){return draw_tracks;}
@@ -160,7 +162,7 @@ class hdv_mainframe:public TGMainFrame {
 		TRootEmbeddedCanvas *endviewA;
 		TRootEmbeddedCanvas *endviewB;
 		
-		TGLabel *event, *run, *source;
+		TGLabel *event, *run, *trig, *source;
 		
 		TGComboBox *timetracksfactory;
 		TGComboBox *wiretracksfactory;

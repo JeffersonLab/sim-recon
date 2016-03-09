@@ -71,8 +71,14 @@ typedef pair<int,int> tagNum;
 #include "DCAEN1290TDCHit.h"
 #include "DCODAEventInfo.h"
 #include "DCODAROCInfo.h"
+#include "DTSscalers.h"
 #include "DEPICSvalue.h"
 #include "DEventTag.h"
+#include "Df250BORConfig.h"
+#include "Df125BORConfig.h"
+#include "DF1TDCBORConfig.h"
+#include "DCAEN1290TDCBORConfig.h"
+#include "DL1Info.h"
 
 extern set<uint32_t> ROCIDS_TO_PARSE;
 
@@ -176,6 +182,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 
 	
                     void ReadOptionalModuleTypeTranslation(void);
+		         uint32_t* GetPoolBuffer(void);
 		  virtual jerror_t ReadEVIOEvent(uint32_t* &buf);
              inline void GetEVIOBuffer(jana::JEvent &jevent, uint32_t* &buff, uint32_t &size) const;
           EVIOSourceType GetEVIOSourceType(void){ return source_type; }
@@ -213,6 +220,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		bool  PARSE_F1TDC;
 		bool  PARSE_CAEN1290TDC;
 		bool  PARSE_CONFIG;
+		bool  PARSE_BOR;
 		bool  PARSE_EPICS;
 		bool  PARSE_EVENTTAG;
 		bool  PARSE_TRIGGER;
@@ -340,7 +348,15 @@ class JEventSource_EVIO: public jana::JEventSource{
 		// List of the data types this event source can provide
 		// (filled in the constructor)
 		set<string> event_source_data_types;
+		
+		// BOR events must be kept around untill another BOR event is
+		// encountered. To make things simpler, a copy of all BOR objects
+		// is made for each event. The originals are replaced when new
+		// ones come in.
+		pthread_rwlock_t BOR_lock;
+		vector<JObject*> BORobjs;
 
+		void CopyBOR(JEventLoop *loop, map<string, vector<JObject*> > &hit_objs_by_type);
 		void AddSourceObjectsToCallStack(JEventLoop *loop, string className);
 		void AddEmulatedObjectsToCallStack(JEventLoop *loop, string caller, string callee);
 		void EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
@@ -350,6 +366,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 
 		jerror_t ParseEvents(ObjList *objs_ptr);
 		int32_t FindRunNumber(uint32_t *iptr);
+		int32_t EpicQuestForRunNumber(void);
 		uint64_t FindEventNumber(uint32_t *iptr);
 		void FindEventType(uint32_t *iptr, JEvent &event);
 		MODULE_TYPE GuessModuleType(const uint32_t *istart, const uint32_t *iend);
@@ -364,6 +381,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		int32_t GetRunNumber(evioDOMTree *evt);
 		void ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_events);
 		void ParseBuiltTriggerBank(evioDOMNodeP trigbank, list<ObjList*> &tmp_events);
+		void ParseBORevent(evioDOMNodeP bankPtr);
 		void ParseEPICSevent(evioDOMNodeP bankPtr, list<ObjList*> &events);
 #endif // HAVE_EVIO		
 		void ParseModuleConfiguration(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
@@ -383,6 +401,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 		void MakeDf125WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 		void MakeDf125PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
+
+		void ParseTSSync(evioDOMNodeP bankPtr, list<ObjList*> &events);
 
 
 #ifdef HAVE_ET
@@ -597,6 +617,33 @@ void LinkAssociationsModuleOnly(vector<T*> &a, vector<U*> &b)
 			if(a[j]->slot != b[k]->slot) continue;
 
 			b[k]->AddAssociatedObject(a[j]);
+		}
+	}
+}
+
+//----------------------------
+// LinkAssociationsModuleOnlyWithCast
+//----------------------------
+template<class T, class U>
+void LinkAssociationsModuleOnlyWithCast(vector<JObject*> &a, vector<JObject*> &b)
+{
+	/// Template routine to loop over two vectors of pointers to
+	/// JObjects derived from classes T and U. Both T and U must have
+	/// "rocid" and "slot" members. It is also assumed that all JObjects
+	/// in "a" are really of type "T" and that all objects in "b" are really
+	/// of type "U". 	
+	/// When a match is found, the pointer from "a" will be added
+	/// to "b"'s AssociatedObjects list. This will NOT do the inverse
+	/// of adding "b" to "a"'s list. It is intended for associating
+	/// BOR config objects with hit objects.
+	for(unsigned int j=0; j<a.size(); j++){
+		T *t = (T*)a[j];
+		for(unsigned int k=0; k<b.size(); k++){
+			U *u = (U*)b[k];
+			if(t->rocid != u->rocid) continue;
+			if(t->slot != u->slot) continue;
+
+			u->AddAssociatedObject(t);
 		}
 	}
 }

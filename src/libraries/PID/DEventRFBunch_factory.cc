@@ -127,7 +127,7 @@ jerror_t DEventRFBunch_factory::Select_RFBunch(JEventLoop* locEventLoop, vector<
 	else //SET NaN
 		return Create_NaNRFBunch();
 
-	DEventRFBunch* locEventRFBunch = new DEventRFBunch;
+	DEventRFBunch* locEventRFBunch = new DEventRFBunch();
 	locEventRFBunch->dTime = locRFTime->dTime + dBeamBunchPeriod*double(locBestRFBunchShift);
 	locEventRFBunch->dTimeVariance = locRFTime->dTimeVariance;
 	locEventRFBunch->dNumParticleVotes = locHighestNumVotes;

@@ -121,10 +121,10 @@ void st_tw_resols(char*input_filename)
   //*****************************************************************
   Time_resol.close();
   ifstream in;
-  in.open(Form("Time_resol.txt"));
+  in.open(Form("SC_time_resol.txt"));
   float sector, t, es ,e;
   TNtuple *ntuple = new TNtuple("ntuple","data from text file","sector:t:es:e");
-  ntuple->ReadFile("Time_resol.txt");
+  ntuple->ReadFile("SC_time_resol.txt");
   ntuple->Write();
   in.close();
   //Create the canvas
@@ -134,9 +134,9 @@ void st_tw_resols(char*input_filename)
   ntuple->Draw("sector:t:es:e");
   TGraphErrors *gr=new TGraphErrors(ntuple->GetSelectedRows(),ntuple->GetV1(),ntuple->GetV2(),ntuple->GetV3(),ntuple->GetV4());
   gr->Draw("AP");
-  gr->SetTitle("Time Resolution Vs Sector Number");
+  gr->SetTitle("ST Self Time Resolution Vs Sector Number");
   gr->GetXaxis()->SetTitle("Sector Number");
-  gr->GetYaxis()->SetTitle("Time Resolution (ps)");
+  gr->GetYaxis()->SetTitle("ST Self Time Resolution (ps)");
   gr->SetMarkerStyle(21);
   gr->SetMarkerSize(3);
   gr->SetMarkerColor(4);
