@@ -101,9 +101,15 @@ jerror_t JEventProcessor_TRIG_online::init(void) {
   // book hist
         int const nbins=100;
 	
-	h1epics_trgbits = new TH1I("h1epics_trgbits", "Trig Trgbits",20,0,20);
+	h1epics_trgbits = new TH1I("h1epics_trgbits", "Trig Trgbits",30,0,30);
 	h1epics_trgbits->SetXTitle("trig_mask || (10+fp_trig_mask)");
 	h1epics_trgbits->SetYTitle("counts");
+	h1epics_trgbits = new TH1I("h1epics_trgbits", "Trig Trgbits",30,0,30);
+	h1epics_trgbits->SetXTitle("trig_mask || (10+fp_trig_mask)");
+	h1epics_trgbits->SetYTitle("counts");
+
+
+
 	h1epics_AD00 = new TH1I("h1epics_AD00", "Current AD00",nbins,0,500);
 	h1epics_AD00->SetXTitle("Current AD00 (nA)");
 	h1epics_AD00->SetYTitle("counts");
@@ -170,20 +176,31 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 
 	  const DL1Trigger *trig_words = NULL;
 	  uint32_t trig_mask, fp_trig_mask;
+	  // uint32_t nsync; /* sync event number */
+	  // uint32_t trig_number;
+	  uint32_t livetime; /* accumulated livetime */
+	  uint32_t busytime; /* accumulated busy time */
+	  // uint32_t live_inst; /* instantaneous livetime */
+	  uint32_t timestamp;   /*unix time*/
+
 	  try {
 	    locEventLoop->GetSingle(trig_words);
 	  } catch(...) {};
 	  if (trig_words) {
 	    trig_mask = trig_words->trig_mask;
 	    fp_trig_mask = trig_words->fp_trig_mask;
+	    livetime = trig_words->livetime;
+	    busytime = trig_words->busytime;
 	  }
 	  else {
 	    trig_mask = 0;
 	    fp_trig_mask = 0;
+	    livetime = 0;
+	    busytime = 0;
 	  }
 
-	  int trig_bits = fp_trig_mask > 0? 10 + fp_trig_mask: trig_mask;
-	  // printf (" Event=%d trig_bits=%d trig_mask=%X fp_trig_mask=%X\n",(int)locEventNumber,trig_bits,trig_mask,fp_trig_mask);
+	  int trig_bits = fp_trig_mask > 0? 20 + fp_trig_mask/256: trig_mask;
+	  if (fp_trig_mask>0) printf (" Event=%d trig_bits=%d trig_mask=%X fp_trig_mask=%X\n",(int)locEventNumber,trig_bits,trig_mask,fp_trig_mask);
 
 	  /* fp_trig_mask & 0x100 - upstream LED
 	   fp_trig_mask & 0x200 - downstream LED
