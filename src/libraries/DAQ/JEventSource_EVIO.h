@@ -71,6 +71,7 @@ typedef pair<int,int> tagNum;
 #include "DCAEN1290TDCHit.h"
 #include "DCODAEventInfo.h"
 #include "DCODAROCInfo.h"
+#include "DTSscalers.h"
 #include "DEPICSvalue.h"
 #include "DEventTag.h"
 #include "Df250BORConfig.h"
