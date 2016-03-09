@@ -157,8 +157,8 @@ jerror_t JEventProcessor_TRIG_online::init(void) {
 	h1trig_epics->SetXTitle("Epics triggers");
 	h1trig_epics->SetYTitle("counts");
 
-	h1trig_trgbits = new TH1I("h1trig_trgbits", "Trig Trgbits",20,0,20);
-	h1trig_trgbits->SetXTitle("trig_mask || (10+fp_trig_mask)");
+	h1trig_trgbits = new TH1I("h1trig_trgbits", "Trig Trgbits",30,0,30);
+	h1trig_trgbits->SetXTitle("trig_mask || (20+fp_trig_mask/256)");
 	h1trig_trgbits->SetYTitle("counts");
 
 	h1trig_fcal = new TH1I("h1trig_fcal", "Trig Fcal energy (GeV)",nbins,0,2);
@@ -397,8 +397,8 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 
 	h1trig_epics->Fill(2.);
 	
-	int trig_bits = fp_trig_mask > 0? 10 + fp_trig_mask: trig_mask;
-	// printf (" Event=%d trig_bits=%d trig_mask=%X fp_trig_mask=%X\n",(int)locEventNumber,trig_bits,trig_mask,fp_trig_mask);
+	int trig_bits = fp_trig_mask > 0? 20 + fp_trig_mask/256: trig_mask;
+	if (fp_trig_mask>0) printf (" Event=%d trig_bits=%d trig_mask=%X fp_trig_mask=%X\n",(int)locEventNumber,trig_bits,trig_mask,fp_trig_mask);
 
 	/* fp_trig_mask & 0x100 - upstream LED
 	   fp_trig_mask & 0x200 - downstream LED
