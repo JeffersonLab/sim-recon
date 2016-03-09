@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <vector>
+#include <cmath>
 
 #include "JEventProcessor_pedestal_online.h"
 #include <JANA/JApplication.h>
