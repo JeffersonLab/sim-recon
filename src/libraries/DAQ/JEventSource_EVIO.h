@@ -77,6 +77,7 @@ typedef pair<int,int> tagNum;
 #include "Df125BORConfig.h"
 #include "DF1TDCBORConfig.h"
 #include "DCAEN1290TDCBORConfig.h"
+#include "DL1Info.h"
 
 extern set<uint32_t> ROCIDS_TO_PARSE;
 
@@ -399,6 +400,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 		void MakeDf125WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 		void MakeDf125PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
+
+		void ParseTSSync(evioDOMNodeP bankPtr, list<ObjList*> &events);
 
 
 #ifdef HAVE_ET

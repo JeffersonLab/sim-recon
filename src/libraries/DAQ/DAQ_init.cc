@@ -34,6 +34,7 @@ using namespace jana;
 #include "Df125BORConfig.h"
 #include "DF1TDCBORConfig.h"
 #include "DCAEN1290TDCBORConfig.h"
+#include "DL1Info.h"
 
 jerror_t DAQ_init(JEventLoop *loop)
 {
@@ -69,6 +70,7 @@ jerror_t DAQ_init(JEventLoop *loop)
 	loop->AddFactory(new JFactory<Df125BORConfig>());
 	loop->AddFactory(new JFactory<DF1TDCBORConfig>());
 	loop->AddFactory(new JFactory<DCAEN1290TDCBORConfig>());
-  
+	loop->AddFactory(new JFactory<DL1Info>());
+
   return NOERROR;
 }

@@ -356,6 +356,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	event_source_data_types.insert("DCODAROCInfo");
 	event_source_data_types.insert("DEPICSvalue");
 	event_source_data_types.insert("DEventTag");
+	event_source_data_types.insert("DL1Info");
 
 	// Read in optional module type translation map if it exists	
 	ReadOptionalModuleTypeTranslation();
@@ -3369,6 +3370,22 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		
 		// Trigger Bank
 		evioDOMNodeP physics_event_bank = data_bank->getParent();
+		
+		//  TS scalers for SYNC events. Currently us phys event tag
+		//  Don't use the parent tag in the future, to be checked
+		if((physics_event_bank != NULL) && (bankPtr != NULL)){
+		  if( (physics_event_bank->tag == 0xff70) &&  (bankPtr->tag == 0xEE02)){
+		    const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+		    if(vec->size() < 102){
+		      evioout << "  TS record for SYNC event is inconsistent. Don't parse " << endl;
+		    } else {		      
+		      ParseTSSync(bankPtr, tmp_events);
+		      MergeObjLists(full_events, tmp_events);
+		    }
+		  }
+		}		
+
+
 		if( physics_event_bank==NULL ){
 			if(VERBOSE>6) evioout << "     bank has no grandparent. Checking if this is a trigger bank ... " << endl;
 
@@ -5333,6 +5350,64 @@ void JEventSource_EVIO::ParseBORevent(evioDOMNodeP bankPtr)
 	pthread_rwlock_unlock(&BOR_lock);
 
 }
+
+
+//----------------
+// ParseTSSyncevent
+//----------------
+void JEventSource_EVIO::ParseTSSync(evioDOMNodeP bankPtr, list<ObjList*> &events)
+{
+  
+  DL1Info *trig_info = new DL1Info;
+  
+  //   cout << " INSIDE ParseTSSync " << endl;
+  
+  if((bankPtr->tag & 0xFFFF) == 0xEE02){
+    const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+    
+    trig_info->nsync        = (*vec)[0];
+    trig_info->trig_number  = (*vec)[1];
+    trig_info->live_time    = (*vec)[2];
+    trig_info->busy_time    = (*vec)[3];
+    trig_info->live_inst    = (*vec)[4];
+    trig_info->unix_time    = (*vec)[5];
+    
+    
+    
+    // GTP scalers
+    for(uint32_t ii = 6; ii < 38; ii++){
+      trig_info->gtp_sc.push_back((*vec)[ii]);
+    }
+    
+    // FP scalers
+    for(uint32_t ii = 38; ii < 54; ii++){
+      trig_info->fp_sc.push_back((*vec)[ii]);
+    }
+    
+    // GTP rate
+    for(uint32_t ii = 54; ii < 86; ii++){
+      trig_info->gtp_rate.push_back((*vec)[ii]);
+    }  
+    
+    // FP rate
+    for(uint32_t ii = 86; ii < 102; ii++){
+      trig_info->fp_rate.push_back((*vec)[ii]);
+    }       
+  }
+  
+  
+  if(events.empty()){				
+    events.push_back(new ObjList());
+    //     cout <<  " TSSync: Empty event " << endl;
+  }
+  
+  ObjList *objs = *(events.begin());
+  
+  objs->misc_objs.push_back(trig_info);
+  
+  
+}
+
 
 //----------------
 // ParseEPICSevent
