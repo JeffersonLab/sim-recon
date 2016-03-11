@@ -729,12 +729,15 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	// read in another event block.
 	if(objs_ptr == NULL){
 		uint32_t *buff = NULL; // ReadEVIOEvent will allocate memory from pool for this
+		double t1 = GetTime();
 		jerror_t err = ReadEVIOEvent(buff);
+		double t2 = GetTime();
 		if(err != NOERROR) return err;
 		if(buff == NULL) return MEMORY_ALLOCATION_ERROR;
 		uint32_t buff_size = ((*buff) + 1)*4; // first word in EVIO buffer is total bank size in words
 
 		objs_ptr = new ObjList();
+		objs_ptr->time_evio_read = t2 - t1;
 		objs_ptr->eviobuff = buff;
 		objs_ptr->eviobuff_size = buff_size;
 		objs_ptr->run_number = FindRunNumber(buff);
@@ -906,11 +909,16 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 	int Nevents_in_stack=0;
 	while(iptr < iend){
 	
+		double time_dom_tree   = 0;
+		double time_evio_parse = 0;
+	
 		// Make a evioDOMTree for this DAQ event		
 		evioDOMTree *evt = NULL;
 		if(MAKE_DOM_TREE){
 			try{
+				double tstart = GetTime();
 				evt = new evioDOMTree(iptr);
+				time_dom_tree = GetTime() - tstart;
 			}catch(evioException &e){
 				_DBG_ << "Problem creating EVIO DOM Tree!!" << endl;
 				_DBG_ << e.what() << endl;
@@ -926,8 +934,9 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 			//bool skipped_parsing = true;
 			if(PARSE_EVIO_EVENTS){
 				try{
-					//skipped_parsing = false;	
+					double tstart = GetTime();
 					ParseEVIOEvent(evt, my_full_events);
+					time_evio_parse = GetTime() - tstart;
 				}catch(JException &jexception){
 					jerr << "Exception thrown from ParseEVIOEvent!" << endl;
 					jerr << jexception.toString() << endl;
@@ -937,6 +946,8 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 			// Append physics events found for this DAQ event to the list of all physics events
 			if(!my_full_events.empty()) {
 				my_full_events.front()->DOMTree = evt; // keep DOMTree pointer with first event from this DAQ event
+				my_full_events.front()->time_dom_tree   = time_dom_tree;
+				my_full_events.front()->time_evio_parse = time_evio_parse;
 				full_events.insert( full_events.end(), my_full_events.begin(), my_full_events.end() );
 			}else{
 				delete evt;
@@ -979,6 +990,8 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 	objs_ptr->config_objs      = objs->config_objs;
 	objs_ptr->misc_objs        = objs->misc_objs;
 	objs_ptr->eviobuff_parsed  = objs->eviobuff_parsed;
+	objs_ptr->time_dom_tree    = objs->time_dom_tree;
+	objs_ptr->time_evio_parse  = objs->time_evio_parse;
 	//objs_ptr->eviobuff       = objs->eviobuff;        // Don't copy this! (it causes memory leak)
 	//objs_ptr->eviobuff_size  = objs->eviobuff_size;
 	objs_ptr->DOMTree          = objs->DOMTree;

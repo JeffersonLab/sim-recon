@@ -178,7 +178,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 
                     bool quit_on_next_ET_timeout;
 
-	
+		     inline double GetTime(void);
                     void ReadOptionalModuleTypeTranslation(void);
 		         uint32_t* GetPoolBuffer(void);
 		  virtual jerror_t ReadEVIOEvent(uint32_t* &buf);
@@ -188,6 +188,9 @@ class JEventSource_EVIO: public jana::JEventSource{
 		   set<uint32_t> GetROCIDParseList(uint32_t rocid){ return ROCIDS_TO_PARSE; }
         static uint32_t* GetEVIOBufferFromRef(void *ref){ return ((ObjList*)ref)->eviobuff; }
          static uint32_t GetEVIOBufferSizeFromRef(void *ref){ return ((ObjList*)ref)->eviobuff_size; }
+           static double GetEVIOReadTimeFromRef(void *ref){ return ((ObjList*)ref)->time_evio_read; }
+           static double GetDomTreeCreationTimeFromRef(void *ref){ return ((ObjList*)ref)->time_dom_tree; }
+           static double GetEVIOParseTimeFromRef(void *ref){ return ((ObjList*)ref)->time_evio_parse; }
 
 #ifdef HAVE_EVIO		
      inline evioDOMTree* GetEVIODOMTree(jana::JEvent &jevent) const;
@@ -304,7 +307,9 @@ class JEventSource_EVIO: public jana::JEventSource{
 		class ObjList{
 		public:
 
-			ObjList():run_number(0),own_objects(true),eviobuff_parsed(false),eviobuff(NULL),eviobuff_size(0),DOMTree(NULL){}
+			ObjList():run_number(0),own_objects(true),eviobuff_parsed(false)
+				,eviobuff(NULL),eviobuff_size(0),DOMTree(NULL)
+				,time_evio_read(0),time_dom_tree(0),time_evio_parse(0){}
 			
 			int32_t run_number;
 			uint64_t event_number;
@@ -318,6 +323,9 @@ class JEventSource_EVIO: public jana::JEventSource{
 			uint32_t *eviobuff;       // Only holds original EVIO event buffer
 			uint32_t eviobuff_size;   // size of eviobuff in bytes
 			evioDOMTree *DOMTree;     // DOM tree which may be modified before generating output buffer from it
+			double time_evio_read;
+			double time_dom_tree;
+			double time_evio_parse;
 		};
 	
 		// EVIO events with more than one DAQ event ("blocked" or
@@ -422,6 +430,18 @@ class JEventSource_EVIO: public jana::JEventSource{
 // There are also some templates that are used to make
 // some of the code in the implmentation file cleaner.
 //======================================================================================
+
+//----------------
+// GetTime
+//----------------
+double JEventSource_EVIO::GetTime(void)
+{
+	struct timeval tval;
+	struct timezone tzone;
+	gettimeofday(&tval, &tzone);
+	double t = (double)tval.tv_sec+(double)tval.tv_usec/1.0E6;
+	return t;
+}
 
 //----------------
 // GetEVIOBuffer
