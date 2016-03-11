@@ -15,6 +15,12 @@
 //---------------------------------
 HDEVIO::HDEVIO(string filename):filename(filename)
 {
+	// These must be initialized in case we return early
+	// so they aren't deleted in the destructor if they
+	// were never allocated.
+	fbuff = NULL;
+	buff  = NULL;
+
 	is_open = false;
 	ifs.open(filename.c_str());
 	if(!ifs.is_open()){
@@ -61,7 +67,8 @@ HDEVIO::HDEVIO(string filename):filename(filename)
 HDEVIO::~HDEVIO()
 {
 	if(ifs.is_open()) ifs.close();
-	if(buff) delete[] buff;
+	if(buff ) delete[] buff;
+	if(fbuff) delete[] fbuff;
 }
 
 //---------------------------------
