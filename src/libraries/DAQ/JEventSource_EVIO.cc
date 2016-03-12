@@ -3394,8 +3394,8 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		    if(vec->size() < 102){
 		      evioout << "  TS record for SYNC event is inconsistent. Don't parse " << endl;
 		    } else {		      
-		      ParseTSSync(bankPtr, tmp_events);
-		      MergeObjLists(full_events, tmp_events);
+		      ParseTSSync(bankPtr, full_events);
+//		      MergeObjLists(full_events, tmp_events);
 		    }
 		  }
 		}		
@@ -3466,8 +3466,8 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 
 		// Check if this is a TS Bank. 
 		if(bankPtr->tag == 0xEE02){
+			if(VERBOSE>4) evioout << "      TS bank tag="<<hex<<bankPtr->tag<<dec<< endl;
 			ParseTSBank(rocid, iptr, iend, full_events);
-			//if(VERBOSE>6) evioout << "      TS bank tag="<<hex<<data_bank->tag<<dec<<" (not currently handled so skip to next bank)"<< endl;
 			continue;
 		}
 
