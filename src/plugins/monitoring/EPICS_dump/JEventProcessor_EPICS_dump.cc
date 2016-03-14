@@ -33,6 +33,7 @@
 #include <DANA/DStatusBits.h>
 #include "FCAL/DFCALGeometry.h"
 #include "DAQ/DEPICSvalue.h"
+#include "DAQ/DTSscalers.h"
 
 
 using namespace std;
@@ -50,6 +51,17 @@ using namespace jana;
      static TH1I* h1epics_AD00 = NULL;
      static TH2I* h2epics_pos_inner = NULL;
      static TH2I* h2epics_pos_outer = NULL;
+     Int_t const nscalers=32;
+     static TH1I* h1_trig_rates[nscalers]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+                                             NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+                                             NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+                                             NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
+     static TH1I* h1_trig_livetimes[nscalers]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+                                             NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+                                             NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+                                             NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
+
+     static uint64_t save_ntrig[nscalers];
 
 
 //----------------------------------------------------------------------------------
@@ -59,7 +71,7 @@ using namespace jana;
 extern "C"{
   void InitPlugin(JApplication *locApplication){
     InitJANAPlugin(locApplication);
-    locApplication->AddProcessor(new JEventProcessor_TRIG_online());
+    locApplication->AddProcessor(new JEventProcessor_EPICS_dump());
   }
 }
 
@@ -67,20 +79,20 @@ extern "C"{
 //----------------------------------------------------------------------------------
 
 
-JEventProcessor_TRIG_online::JEventProcessor_TRIG_online() {
+JEventProcessor_EPICS_dump::JEventProcessor_EPICS_dump() {
 }
 
 
 //----------------------------------------------------------------------------------
 
 
-JEventProcessor_TRIG_online::~JEventProcessor_TRIG_online() {
+JEventProcessor_EPICS_dump::~JEventProcessor_EPICS_dump() {
 }
 
 
 //----------------------------------------------------------------------------------
 
-jerror_t JEventProcessor_TRIG_online::init(void) {
+jerror_t JEventProcessor_EPICS_dump::init(void) {
 
   // lock all root operations
   japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
@@ -100,15 +112,24 @@ jerror_t JEventProcessor_TRIG_online::init(void) {
 
   // book hist
         int const nbins=100;
+        Int_t const nscalers=32;
+	char string[132];
 	
 	h1epics_trgbits = new TH1I("h1epics_trgbits", "Trig Trgbits",30,0,30);
-	h1epics_trgbits->SetXTitle("trig_mask || (10+fp_trig_mask)");
+	h1epics_trgbits->SetXTitle("trig_mask || (20+fp_trig_mask/256)");
 	h1epics_trgbits->SetYTitle("counts");
 	h1epics_trgbits = new TH1I("h1epics_trgbits", "Trig Trgbits",30,0,30);
-	h1epics_trgbits->SetXTitle("trig_mask || (10+fp_trig_mask)");
+	h1epics_trgbits->SetXTitle("trig_mask || (20+fp_trig_mask/256)");
 	h1epics_trgbits->SetYTitle("counts");
-
-
+    
+	for (Int_t j=0; j<nscalers;j++) {
+	  sprintf (string,"Rates%d(kHz)",j);
+	  h1_trig_rates[j] = new TH1I(string,string,nbins,0,100);
+	  h1_trig_rates[j]->SetTitle(string);
+	  sprintf (string,"Livetimes%d",j);
+	  h1_trig_livetimes[j] = new TH1I(string,string,nbins,0,1);
+	  h1_trig_livetimes[j]->SetTitle(string);    
+	  }
 
 	h1epics_AD00 = new TH1I("h1epics_AD00", "Current AD00",nbins,0,500);
 	h1epics_AD00->SetXTitle("Current AD00 (nA)");
@@ -124,6 +145,11 @@ jerror_t JEventProcessor_TRIG_online::init(void) {
   // back to main dir
   main->cd();
 
+  // initialize live times
+  for (Int_t j=0; j<nscalers; j++) {
+    save_ntrig[j] = 0;
+    }
+
 
   // unlock
   japp->RootUnLock(); //RELEASE ROOT LOCK!!
@@ -135,7 +161,7 @@ jerror_t JEventProcessor_TRIG_online::init(void) {
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_TRIG_online::brun(jana::JEventLoop* locEventLoop, int locRunNumber) {
+jerror_t JEventProcessor_EPICS_dump::brun(jana::JEventLoop* locEventLoop, int locRunNumber) {
   // This is called whenever the run number changes
   return NOERROR;
 }
@@ -144,7 +170,7 @@ jerror_t JEventProcessor_TRIG_online::brun(jana::JEventLoop* locEventLoop, int l
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber) {
+jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber) {
   // This is called for every event. Use of common resources like writing
   // to a file or filling a histogram should be mutex protected. Using
   // loop-Get(...) to get reconstructed objects (and thereby activating the
@@ -165,23 +191,20 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	locEventLoop->Get(locFCALClusters);
 	locEventLoop->Get(epicsvalues);	
 	DFCALGeometry fcalgeom;
+        Int_t const nscalers=32;
 
 	bool isPhysics = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_PHYSICS_EVENT);
 	bool isEPICS = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_EPICS_EVENT);
+	// bool isSynch = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_SYNCH_EVENT);
 
 	japp->RootWriteLock();
+
+	uint32_t trig_mask=0, fp_trig_mask=0;
 
 	if (isPhysics) {
 	  // first get trigger bits
 
 	  const DL1Trigger *trig_words = NULL;
-	  uint32_t trig_mask, fp_trig_mask;
-	  // uint32_t nsync; /* sync event number */
-	  // uint32_t trig_number;
-	  uint32_t livetime; /* accumulated livetime */
-	  uint32_t busytime; /* accumulated busy time */
-	  // uint32_t live_inst; /* instantaneous livetime */
-	  uint32_t timestamp;   /*unix time*/
 
 	  try {
 	    locEventLoop->GetSingle(trig_words);
@@ -189,14 +212,10 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	  if (trig_words) {
 	    trig_mask = trig_words->trig_mask;
 	    fp_trig_mask = trig_words->fp_trig_mask;
-	    livetime = trig_words->livetime;
-	    busytime = trig_words->busytime;
 	  }
 	  else {
 	    trig_mask = 0;
 	    fp_trig_mask = 0;
-	    livetime = 0;
-	    busytime = 0;
 	  }
 
 	  int trig_bits = fp_trig_mask > 0? 20 + fp_trig_mask/256: trig_mask;
@@ -207,6 +226,8 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	   trig_mask & 0x1 - cosmic trigger*/
 
 	  h1epics_trgbits->Fill(trig_bits);
+
+	  
 	}
 	else if (isEPICS) {
 	  // else if (TEST) {
@@ -259,6 +280,45 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 
 	}
 
+	  // now get scalers
+
+	  const DTSscalers *ts_scalers = NULL;
+	  uint32_t livetime; /* accumulated livetime */
+	  uint32_t busytime; /* accumulated busy time */
+	  // uint32_t live_inst; /* instantaneous livetime */
+	  // uint32_t timestamp;   /*unix time*/
+
+	  uint32_t gtp_sc[nscalers]; /* number of input triggers from GTP for 32 lanes (32 trigger bits) */
+	  // uint32_t fp_sc[nscalers1]; /* number of TS front pannel triggers for 16 fron pannel lines (16 trigger bits) */
+	  uint32_t gtp_rate[nscalers]; /* instant. rate of GTP triggers */
+	  // uint32_t fp_rate[nscalers1]; /* instant. rate of FP triggers */
+
+	  try {
+	    locEventLoop->GetSingle(ts_scalers);
+	  } catch(...) {};
+	  if (ts_scalers) {
+	    livetime = ts_scalers->live_time;
+	    busytime = ts_scalers->busy_time;
+	    printf ("Event=%d livetime=%d busytime=%d\n",(int)locEventNumber,(int)livetime,(int)busytime);
+	    for (int j=0; j<nscalers; j++) {
+	      gtp_sc[j] = ts_scalers->gtp_scalers[j];
+	      gtp_rate[j] = ts_scalers->gtp_rate[j];
+	      printf ("Event=%d j=%d gtp_sc=%d gtp_rate=%d\n",(int)locEventNumber,j,(int)gtp_sc[j],(int)gtp_rate[j]);
+	    }
+	    for (int j=0; j<nscalers; j++) {
+	      uint32_t temp_mask = trig_mask & 1<<j;
+	      if (temp_mask) save_ntrig[j] += 1;
+	      printf ("Event=%d j=%d trig_mask=%X temp_mask=%X save_ntrig=%d gtp_sc=%d\n",(int)locEventNumber,j,trig_mask,temp_mask,save_ntrig[j],(int)gtp_sc[j]);
+	      }
+	    for (int j=0; j<nscalers; j++) {
+	      h1_trig_rates[j]->Fill(gtp_rate[j]/1000);     // plot in kHz
+	      if (gtp_sc[j] >0) h1_trig_livetimes[j]->Fill(save_ntrig[j]/gtp_sc[j]);
+	      }
+	  }
+
+
+
+
         //UnlockState();	
 	japp->RootUnLock();
 
@@ -269,7 +329,7 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_TRIG_online::erun(void) {
+jerror_t JEventProcessor_EPICS_dump::erun(void) {
   // This is called whenever the run number changes, before it is
   // changed to give you a chance to clean up before processing
   // events from the next run number.
@@ -280,7 +340,7 @@ jerror_t JEventProcessor_TRIG_online::erun(void) {
 //----------------------------------------------------------------------------------
 
 
-jerror_t JEventProcessor_TRIG_online::fini(void) {
+jerror_t JEventProcessor_EPICS_dump::fini(void) {
   // Called before program exit after event processing is finished.
   return NOERROR;
 }

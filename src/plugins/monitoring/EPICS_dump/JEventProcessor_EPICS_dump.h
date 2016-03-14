@@ -1,21 +1,21 @@
 // $Id$
 //
-//    File: JEventProcessor_TRIG_online.h
+//    File: JEventProcessor_EPICS_dump.h
 // Created: Fri Nov  9 11:58:09 EST 2012
 // Creator: wolin (on Linux stan.jlab.org 2.6.32-279.11.1.el6.x86_64 x86_64)
 //
 
-#ifndef _JEventProcessor_TRIG_online_
-#define _JEventProcessor_TRIG_online_
+#ifndef _JEventProcessor_EPICS_dump_
+#define _JEventProcessor_EPICS_dump_
 
 #include <JANA/JEventProcessor.h>
 
 
-class JEventProcessor_TRIG_online:public jana::JEventProcessor{
+class JEventProcessor_EPICS_dump:public jana::JEventProcessor{
  public:
-  JEventProcessor_TRIG_online();
-  ~JEventProcessor_TRIG_online();
-  const char* className(void){return "JEventProcessor_TRIG_online";}
+  JEventProcessor_EPICS_dump();
+  ~JEventProcessor_EPICS_dump();
+  const char* className(void){return "JEventProcessor_EPICS_dump";}
 
 
  private:
@@ -26,5 +26,5 @@ class JEventProcessor_TRIG_online:public jana::JEventProcessor{
   jerror_t fini(void);						///< Called after last event of last event source has been processed.
 };
 
-#endif // _JEventProcessor_TRIG_online_
+#endif // _JEventProcessor_EPICS_dump_
 
