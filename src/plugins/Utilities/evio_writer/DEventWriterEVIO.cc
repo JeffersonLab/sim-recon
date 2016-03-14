@@ -331,15 +331,16 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 		run_type      = coda_events[0]->run_type;
 		event_number  = coda_events[0]->event_number;
 		avg_timestamp = coda_events[0]->avg_timestamp;
-	}
-	
+ 	}
+
 	buff.push_back(0xD30A0006); // 0xD3=EB id (D3 stands for hallD level 3), 0x0A=64bit segment, 0006=length of segment (in 32bit words!)
 	buff.push_back(event_number & 0xFFFFFFFF);  // low 32 bits of event number
 	buff.push_back(event_number>>32);           // high 32 bits of event number
 	buff.push_back(avg_timestamp & 0xFFFFFFFF); // low 32 bits of avg. timestamp
 	buff.push_back(avg_timestamp>>32);          // high 32 bits of avg. timestamp
-	buff.push_back(run_number);
+	//buff.push_back(run_number);
 	buff.push_back(run_type);
+    buff.push_back(run_number);   // this is swapped from what one would expect (see JEventSource_EVIO::FindRunNumber()) - sdobbs (3/13/2016)
 
 	// uint16_t segment for Event Types
 	uint16_t event_type = 1; // observed in run 2931. Not sure what it should be
@@ -368,7 +369,13 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 	
 	// Update Built trigger bank length
 	buff[built_trigger_bank_len_idx] = buff.size() - built_trigger_bank_len_idx - 1;
-	
+	/*
+    cout << "dumping trigger bank..." << endl;
+    cout << hex << setfill('0');
+    for(int i=0; i<buff.size(); i++)
+        cout << setw(8) << buff[i] << endl;
+    cout << dec;
+    */
 	// Write EventTag
 	WriteEventTagData(buff, loop->GetJEvent().GetStatus(), l3trigger);
 
