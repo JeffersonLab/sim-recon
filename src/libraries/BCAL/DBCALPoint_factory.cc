@@ -168,7 +168,7 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
     //   printf("default att length %f\n",attenuation_length);
     // }
 
-    DBCALPoint *point = new DBCALPoint(*uphit,*dnhit,m_z_target_center,attenuation_length);
+    DBCALPoint *point = new DBCALPoint(*uphit,*dnhit,m_z_target_center,attenuation_length,cEff);
 
     point->AddAssociatedObject(uphit);
     point->AddAssociatedObject(dnhit);
