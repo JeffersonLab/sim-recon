@@ -57,6 +57,8 @@ class JEventProcessor_pi0fcalskim:public jana::JEventProcessor{
   int m_nHit;
   int m_chan[kMaxHits];
   float m_e[kMaxHits];
+
+  int num_epics_events;
 };
 
 #endif // _JEventProcessor_pi0fcalskim_

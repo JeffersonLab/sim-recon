@@ -83,6 +83,8 @@ JEventProcessor_pi0fcalskim::~JEventProcessor_pi0fcalskim()
 jerror_t JEventProcessor_pi0fcalskim::init(void)
 {
   dEventWriterEVIO = NULL;
+
+  num_epics_events = 0;
 /*
   if( ! ( WRITE_ROOT || WRITE_EVIO ) ){
 
@@ -137,10 +139,23 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
 
   vector < const DFCALShower * > matchedShowers;
 
+  // always write out BOR events
+  if(loop->GetJEvent().GetStatusBit(kSTATUS_BOR_EVENT)) {
+      //jout << "Found BOR!" << endl;
+      dEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim" );
+      return NOERROR;
+  }
 
+  // write out the first few EPICS events to save run number & other meta info
+  if(loop->GetJEvent().GetStatusBit(kSTATUS_EPICS_EVENT) && (num_epics_events<5)) {
+      //jout << "Found EPICS!" << endl;
+      dEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim" );
+      num_epics_events++;
+      return NOERROR;
+  }
   
 
-	bool Candidate = false;
+  bool Candidate = false;
   
   Double_t kinfitVertexX = 0.0, kinfitVertexY = 0.0, kinfitVertexZ = 0.0;
   
