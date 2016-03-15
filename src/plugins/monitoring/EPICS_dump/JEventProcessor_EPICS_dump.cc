@@ -60,8 +60,11 @@ using namespace jana;
                                              NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
                                              NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
                                              NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
+     static TH1I* h1epics_liveinst = NULL;
 
      static uint64_t save_ntrig[nscalers];
+     static uint64_t save_ntrig0[nscalers];
+     static bool init_ntrig = false;
 
 
 //----------------------------------------------------------------------------------
@@ -131,14 +134,18 @@ jerror_t JEventProcessor_EPICS_dump::init(void) {
 	  h1_trig_livetimes[j]->SetTitle(string);    
 	  }
 
+	h1epics_liveinst = new TH1I("h1epics_liveinst", "Liveinst",nbins,0,1);
+	h1epics_liveinst->SetXTitle("Instantaneous Live time");
+	h1epics_liveinst->SetYTitle("counts");	
+
 	h1epics_AD00 = new TH1I("h1epics_AD00", "Current AD00",nbins,0,500);
 	h1epics_AD00->SetXTitle("Current AD00 (nA)");
 	h1epics_AD00->SetYTitle("counts");
 
-	h2epics_pos_inner = new TH2I("h1epics_pos_inner", "Position AC inner",nbins,-50,50,nbins,-50,50);
+	h2epics_pos_inner = new TH2I("h1epics_pos_inner", "Position AC inner",nbins,-10,10,nbins,-10,10);
 	h2epics_pos_inner->SetXTitle("Position AC inner x (mm)");
 	h2epics_pos_inner->SetYTitle("Position AC inner y (mm)");
-	h2epics_pos_outer = new TH2I("h1epics_pos_outer", "Position AC outer",nbins,-50,50,nbins,-50,50);
+	h2epics_pos_outer = new TH2I("h1epics_pos_outer", "Position AC outer",nbins,-20,20,nbins,-20,20);
 	h2epics_pos_outer->SetXTitle("Position AC outer x (mm)");
 	h2epics_pos_outer->SetYTitle("Position AC outer y (mm)");
 
@@ -148,6 +155,7 @@ jerror_t JEventProcessor_EPICS_dump::init(void) {
   // initialize live times
   for (Int_t j=0; j<nscalers; j++) {
     save_ntrig[j] = 0;
+    save_ntrig0[j] = 0;
     }
 
 
@@ -200,6 +208,7 @@ jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64
 	japp->RootWriteLock();
 
 	uint32_t trig_mask=0, fp_trig_mask=0;
+	uint32_t temp_mask=0;
 
 	if (isPhysics) {
 	  // first get trigger bits
@@ -211,7 +220,11 @@ jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64
 	  } catch(...) {};
 	  if (trig_words) {
 	    trig_mask = trig_words->trig_mask;
-	    fp_trig_mask = trig_words->fp_trig_mask;
+	    fp_trig_mask = trig_words->fp_trig_mask; 
+	    for (int j=0; j<nscalers; j++) {
+	      temp_mask = trig_mask & 1<<j;
+	      if (temp_mask && init_ntrig) save_ntrig[j] += 1;
+	    } 
 	  }
 	  else {
 	    trig_mask = 0;
@@ -227,7 +240,47 @@ jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64
 
 	  h1epics_trgbits->Fill(trig_bits);
 
-	  
+
+	  // now get scalers
+
+	  const DTSscalers *ts_scalers = NULL;
+	  uint32_t livetime; /* accumulated livetime */
+	  uint32_t busytime; /* accumulated busy time */
+	  uint32_t live_inst; /* instantaneous livetime */
+	  uint32_t timestamp;   /*unix time*/
+
+	  uint32_t gtp_sc[nscalers]; /* number of input triggers from GTP for 32 lanes (32 trigger bits) */
+	  // uint32_t fp_sc[nscalers1]; /* number of TS front pannel triggers for 16 fron pannel lines (16 trigger bits) */
+	  uint32_t gtp_rate[nscalers]; /* instant. rate of GTP triggers */
+	  // uint32_t fp_rate[nscalers1]; /* instant. rate of FP triggers */
+
+	  try {
+	    locEventLoop->GetSingle(ts_scalers);
+	  } catch(...) {};
+	  if (ts_scalers) {
+	    livetime = ts_scalers->live_time;
+	    busytime = ts_scalers->busy_time;
+	    live_inst = ts_scalers->inst_livetime;
+	    timestamp = ts_scalers->time;
+	    h1epics_liveinst->Fill((float)live_inst/1000.);
+	    printf ("Event=%d livetime=%d busytime=%d time=%d live_inst=%d\n",(int)locEventNumber,livetime,busytime,(int)timestamp,live_inst);
+	    if (! init_ntrig) {
+	      for (int j=0; j<nscalers; j++) {
+		save_ntrig0[j] = ts_scalers->gtp_scalers[j];
+		init_ntrig = true;
+	      }
+	    }
+	    for (int j=0; j<nscalers; j++) {
+	      gtp_sc[j] = ts_scalers->gtp_scalers[j] - save_ntrig0[j];
+	      gtp_rate[j] = ts_scalers->gtp_rate[j];
+	      printf ("TSscalers: Event=%d j=%d gtp_sc=%d gtp_rate=%d\n",(int)locEventNumber,j,gtp_sc[j],gtp_rate[j]);
+	      printf ("TSscalers: Event=%d trig_mask=%X temp_mask=%X save_ntrig=%d\n",(int)locEventNumber,trig_mask,temp_mask,(int)save_ntrig[j]);
+	    }
+	    for (int j=0; j<nscalers; j++) {
+	      h1_trig_rates[j]->Fill(gtp_rate[j]/1000);     // plot in kHz
+	      if (gtp_sc[j] >0) h1_trig_livetimes[j]->Fill((float)save_ntrig[j]/(float)gtp_sc[j]);
+	    }
+	  }
 	}
 	else if (isEPICS) {
 	  // else if (TEST) {
@@ -279,42 +332,6 @@ jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64
 	  }
 
 	}
-
-	  // now get scalers
-
-	  const DTSscalers *ts_scalers = NULL;
-	  uint32_t livetime; /* accumulated livetime */
-	  uint32_t busytime; /* accumulated busy time */
-	  // uint32_t live_inst; /* instantaneous livetime */
-	  // uint32_t timestamp;   /*unix time*/
-
-	  uint32_t gtp_sc[nscalers]; /* number of input triggers from GTP for 32 lanes (32 trigger bits) */
-	  // uint32_t fp_sc[nscalers1]; /* number of TS front pannel triggers for 16 fron pannel lines (16 trigger bits) */
-	  uint32_t gtp_rate[nscalers]; /* instant. rate of GTP triggers */
-	  // uint32_t fp_rate[nscalers1]; /* instant. rate of FP triggers */
-
-	  try {
-	    locEventLoop->GetSingle(ts_scalers);
-	  } catch(...) {};
-	  if (ts_scalers) {
-	    livetime = ts_scalers->live_time;
-	    busytime = ts_scalers->busy_time;
-	    printf ("Event=%d livetime=%d busytime=%d\n",(int)locEventNumber,(int)livetime,(int)busytime);
-	    for (int j=0; j<nscalers; j++) {
-	      gtp_sc[j] = ts_scalers->gtp_scalers[j];
-	      gtp_rate[j] = ts_scalers->gtp_rate[j];
-	      printf ("Event=%d j=%d gtp_sc=%d gtp_rate=%d\n",(int)locEventNumber,j,(int)gtp_sc[j],(int)gtp_rate[j]);
-	    }
-	    for (int j=0; j<nscalers; j++) {
-	      uint32_t temp_mask = trig_mask & 1<<j;
-	      if (temp_mask) save_ntrig[j] += 1;
-	      printf ("Event=%d j=%d trig_mask=%X temp_mask=%X save_ntrig=%d gtp_sc=%d\n",(int)locEventNumber,j,trig_mask,temp_mask,save_ntrig[j],(int)gtp_sc[j]);
-	      }
-	    for (int j=0; j<nscalers; j++) {
-	      h1_trig_rates[j]->Fill(gtp_rate[j]/1000);     // plot in kHz
-	      if (gtp_sc[j] >0) h1_trig_livetimes[j]->Fill(save_ntrig[j]/gtp_sc[j]);
-	      }
-	  }
 
 
 
