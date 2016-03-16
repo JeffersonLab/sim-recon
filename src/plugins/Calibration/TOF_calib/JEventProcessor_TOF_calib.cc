@@ -80,10 +80,7 @@ jerror_t JEventProcessor_TOF_calib::brun(JEventLoop *eventLoop, int32_t runnumbe
 
   // this should have already been done in init()
   // so just in case.....
-  if (first){
-    cout<<"SETUP HISTOGRAMS AND TREE FOR RUN IN brun()"<<RunNumber<<flush<<endl;
-    MakeHistograms();
-  }
+
   map<string,double> tdcshift;
   if (!eventLoop->GetCalib("/TOF/tdc_shift", tdcshift)){
     TOF_TDC_SHIFT = tdcshift["TOF_TDC_SHIFT"];
@@ -113,11 +110,6 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 
   //NOTE: we do not use WriteLock() to safe time.
 
-
-  // just in case for some wierd reason this did not happen already
-  if (first){
-    MakeHistograms();
-  }
 
   //cout<<"CALL EVENT ROUTINE!!!! "<<eventnumber<<endl;
   
@@ -508,8 +500,9 @@ jerror_t JEventProcessor_TOF_calib::fini(void)
 
 jerror_t JEventProcessor_TOF_calib::WriteRootFile(void){
 
-  sprintf(ROOTFileName,"tofdata_run%d.root",RunNumber);
-  ROOTFile = new TFile(ROOTFileName,"recreate");
+
+  //sprintf(ROOTFileName,"tofdata_run%d.root",RunNumber);
+  //ROOTFile = new TFile(ROOTFileName,"recreate");
 
   pthread_mutex_lock(&mutex);
   ROOTFile->cd();
@@ -539,10 +532,14 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
     first = 0;
 
     japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+    
+    // create root file here so the tree does not show up in hd_root.root
+    sprintf(ROOTFileName,"hd_root_tofcalib.root");
+    ROOTFile = new TFile(ROOTFileName,"recreate");
+    ROOTFile->cd();
 
     TDirectory *savedir = gDirectory;
     gDirectory->mkdir("TOF_calib")->cd();
-
 
     TOFTDCtime = new TH1F("TOFTDCtime","TOF CAEN TDC times", 8000, 0., 4000.);
     TOFADCtime = new TH1F("TOFADCtime","TOF ADC times", 800, 0., 400.);
