@@ -94,6 +94,9 @@ class DEventWriterEVIO : public JObject
 		void WriteEventTagData(vector<uint32_t> &buff,
                                uint64_t event_status,
                                const DL3Trigger* l3trigger) const;
+
+        void WriteBORData(JEventLoop *loop, 
+                          vector<uint32_t> &buff) const;
         
 		std::ofstream *ofs_debug_input;
 		std::ofstream *ofs_debug_output;

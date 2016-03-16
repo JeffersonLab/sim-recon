@@ -114,6 +114,10 @@ HDEVIOWriter::~HDEVIOWriter()
 	pthread_mutex_unlock(&buff_pool_mutex);
 
 	if(evioout){
+        // Write out just an EVIO block header to specify end-of-file
+        deque< vector<uint32_t>* > my_output_deque;  // no data, just header
+        FlushOutput(8, my_output_deque);
+
 		evioout->close();
 		delete evioout;
 	}
@@ -366,7 +370,6 @@ void HDEVIOWriter::FlushOutput(uint32_t Nwords, deque< vector<uint32_t>* > &my_o
 	/// the buffer, not counting the leading length word. Thus,
 	/// a total of (buff[0]+1)*4 bytes is taken as the total
 	/// size of the buffer.
-
 
 	// ---- Reuse the single output buffer ----
 	// Write EVIO block header

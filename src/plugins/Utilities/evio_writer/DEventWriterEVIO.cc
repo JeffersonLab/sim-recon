@@ -145,7 +145,7 @@ string DEventWriterEVIO::Get_OutputFileName(JEventLoop* locEventLoop, string loc
 
 bool DEventWriterEVIO::Open_OutputFile(JEventLoop* locEventLoop, string locOutputFileName) const
 {
-	//ASSUMES A LOCK HAS ALREADY BEEN ACQUIRED (by Write_EVIOEvent)
+	//ASSUMES A LOCK HAS ALREADY BEEN ACQUIRED (by WriteEVIOEvent)
 	// and assume that it doesn't exist
 #if !HAVE_EVIO
 	jerr << "Compiled without EVIO! Cannot open file:" << locOutputFileName << endl;
@@ -225,6 +225,13 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 {
 	/// This method will grab certain low-level objects and write them
 	/// into EVIO banks in a format compatible with the DAQ library.
+
+    // Handle BOR events separately
+    // These should only be at the beginning of a file or when the run changes
+	if( loop->GetJEvent().GetStatusBit(kSTATUS_BOR_EVENT) ){
+		WriteBORData(loop, buff);
+		return;
+	}
 	
 	// First, grab all of the low level objects
 	vector<const Df250TriggerTime*>   f250tts;
@@ -369,13 +376,7 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 	
 	// Update Built trigger bank length
 	buff[built_trigger_bank_len_idx] = buff.size() - built_trigger_bank_len_idx - 1;
-	/*
-    cout << "dumping trigger bank..." << endl;
-    cout << hex << setfill('0');
-    for(int i=0; i<buff.size(); i++)
-        cout << setw(8) << buff[i] << endl;
-    cout << dec;
-    */
+
 	// Write EventTag
 	WriteEventTagData(buff, loop->GetJEvent().GetStatus(), l3trigger);
 
@@ -1158,4 +1159,25 @@ void DEventWriterEVIO::WriteEventTagData(vector<uint32_t> &buff,
 }
 
 
+//------------------
+// WriteBORData
+//------------------
+void DEventWriterEVIO::WriteBORData(JEventLoop *loop, vector<uint32_t> &buff) const
+{
+    // The Begin-Of-Run (BOR) record is a special record that should show up
+    // at the beginning of each EVIO file and any time a new run starts during a file
+    // We want to preserve its format, so the easiest way to handle it is just to copy 
+    // it straight to the output.  It's always (so far) saved as a single event, 
+    // consisting of a bank of banks of config information
 
+    // grab buffer corresponding to this event
+    // note that we get everything after the EVIO block header
+    void *ref = loop->GetJEvent().GetRef();
+    uint32_t *in_buff = JEventSource_EVIO::GetEVIOBufferFromRef(ref);
+    uint32_t buff_size = JEventSource_EVIO::GetEVIOBufferSizeFromRef(ref);  // this is much larger than the bank size - not sure why
+
+    uint32_t Nwords = in_buff[0];   // number of words in BOR config bank
+    // copy entire bank
+    for(uint32_t i=0; i<Nwords+1; i++)  buff.push_back( in_buff[i] );
+
+}
