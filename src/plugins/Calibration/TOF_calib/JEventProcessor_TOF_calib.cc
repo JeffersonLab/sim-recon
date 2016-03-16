@@ -5,6 +5,7 @@
 // Creator: zihlmann (on Linux gluon47.jlab.org 2.6.32-358.23.2.el6.x86_64 x86_64)
 //
 
+
 #include "JEventProcessor_TOF_calib.h"
 using namespace jana;
 
@@ -17,7 +18,6 @@ extern "C"{
     app->AddProcessor(new JEventProcessor_TOF_calib());
   }
 } // "C"
-
 
 //------------------
 // JEventProcessor_TOF_calib (Constructor)
@@ -78,8 +78,8 @@ jerror_t JEventProcessor_TOF_calib::brun(JEventLoop *eventLoop, int32_t runnumbe
 
   RunNumber = runnumber;
 
-
-
+  // this should have already been done in init()
+  // so just in case.....
   if (first){
     cout<<"SETUP HISTOGRAMS AND TREE FOR RUN IN brun()"<<RunNumber<<flush<<endl;
     MakeHistograms();
@@ -111,22 +111,25 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
   //  ... fill historgrams or trees ...
   // japp->RootUnLock();
 
+  //NOTE: we do not use WriteLock() to safe time.
 
-  //cout<<"CALL EVENT ROUTINE!!!! "<<eventnumber<<endl;
+
+  // just in case for some wierd reason this did not happen already
   if (first){
     MakeHistograms();
   }
-  
 
+  //cout<<"CALL EVENT ROUTINE!!!! "<<eventnumber<<endl;
+  
   // Get First Trigger Type
-  const DL1Trigger *trig_words = NULL;
+  vector <const DL1Trigger*> trig_words;
   uint32_t trig_mask, fp_trig_mask;
   try {
-    loop->GetSingle(trig_words);
+    loop->Get(trig_words);
   } catch(...) {};
-  if (trig_words) {
-    trig_mask = trig_words->trig_mask;
-    fp_trig_mask = trig_words->fp_trig_mask;
+  if (trig_words.size()) {
+    trig_mask = trig_words[0]->trig_mask;
+    fp_trig_mask = trig_words[0]->fp_trig_mask;
   }
   else {
     trig_mask = 0;
@@ -172,16 +175,27 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
   // sort them into ADCLeft and ADCRight hits
   // only keep hits within the time-peak
   // also keep the hodoscope planes separate 
+  int th[2][44][2];
+  memset(th,0,2*44*2*4);
   for (unsigned int k=0; k<ADCHits.size(); k++){
     const DTOFDigiHit *hit = ADCHits[k];
     int plane = hit->plane;
     int end = hit->end;
+    
     float time = (float)hit->pulse_time * BINADC_2_TIME;
     int val = (hit->pulse_time & 0x3F);
-
     if (!val){
       continue;
     }
+
+    int bar = hit->bar;
+    //cout<<plane<<"  "<<bar<<"  "<<end<<endl;
+    if (th[plane][bar-1][end]){ // only take first hit
+      continue;
+    }
+
+    th[plane][bar-1][end] = 1;
+    
 
     TOFADCtime->Fill(time);
     if (fabsf(time-ADCTLOC)<ADCTimeCut){
@@ -524,6 +538,12 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
 
     first = 0;
 
+    japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+
+    TDirectory *savedir = gDirectory;
+    gDirectory->mkdir("TOF_calib")->cd();
+
+
     TOFTDCtime = new TH1F("TOFTDCtime","TOF CAEN TDC times", 8000, 0., 4000.);
     TOFADCtime = new TH1F("TOFADCtime","TOF ADC times", 800, 0., 400.);
 
@@ -561,8 +581,10 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
     t3->Branch("LRT",LRT,"LRT[NsinglesT]/I"); //LA=0,1 (left/right)
     t3->Branch("TDCST",TDCST,"TDCST[NsinglesT]/F");
 
+    savedir->cd();
+    japp->RootUnLock(); //RELEASE ROOT LOCK!!
   }
-  
+
   return NOERROR;
 }
 

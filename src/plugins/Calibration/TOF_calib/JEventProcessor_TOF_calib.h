@@ -20,6 +20,7 @@ using namespace std;
 #include <DAQ/Df250WindowRawData.h>
 #include "TRIGGER/DL1Trigger.h"
 
+#include <TDirectory.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TH1F.h>
