@@ -52,8 +52,8 @@ class JEventProcessor_ST_Tresolution:public jana::JEventProcessor{
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
-		jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
-		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
+		jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
+		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 		const DParticleID* dParticleID;
@@ -101,7 +101,7 @@ class JEventProcessor_ST_Tresolution:public jana::JEventProcessor{
 		//Define Calibration parameters variable called from CCDB
 		vector<vector<double> >propagation_time_corr;
 
-
+        string RF_BUNCH_TAG;
 };
 
 #endif // _JEventProcessor_ST_Tresolution_
