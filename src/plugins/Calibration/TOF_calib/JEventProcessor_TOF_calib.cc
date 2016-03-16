@@ -78,8 +78,8 @@ jerror_t JEventProcessor_TOF_calib::brun(JEventLoop *eventLoop, int32_t runnumbe
 
   RunNumber = runnumber;
 
-
-
+  // this should have already been done in init()
+  // so just in case.....
   if (first){
     cout<<"SETUP HISTOGRAMS AND TREE FOR RUN IN brun()"<<RunNumber<<flush<<endl;
     MakeHistograms();
@@ -111,13 +111,16 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
   //  ... fill historgrams or trees ...
   // japp->RootUnLock();
 
+  //NOTE: we do not use WriteLock() to safe time.
 
-  //cout<<"CALL EVENT ROUTINE!!!! "<<eventnumber<<endl;
+
+  // just in case for some wierd reason this did not happen already
   if (first){
     MakeHistograms();
   }
-  
 
+  //cout<<"CALL EVENT ROUTINE!!!! "<<eventnumber<<endl;
+  
   // Get First Trigger Type
   vector <const DL1Trigger*> trig_words;
   uint32_t trig_mask, fp_trig_mask;
@@ -535,6 +538,12 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
 
     first = 0;
 
+    japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+
+    TDirectory *savedir = gDirectory;
+    gDirectory->mkdir("TOF_calib")->cd();
+
+
     TOFTDCtime = new TH1F("TOFTDCtime","TOF CAEN TDC times", 8000, 0., 4000.);
     TOFADCtime = new TH1F("TOFADCtime","TOF ADC times", 800, 0., 400.);
 
@@ -572,8 +581,10 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
     t3->Branch("LRT",LRT,"LRT[NsinglesT]/I"); //LA=0,1 (left/right)
     t3->Branch("TDCST",TDCST,"TDCST[NsinglesT]/F");
 
+    savedir->cd();
+    japp->RootUnLock(); //RELEASE ROOT LOCK!!
   }
-  
+
   return NOERROR;
 }
 
