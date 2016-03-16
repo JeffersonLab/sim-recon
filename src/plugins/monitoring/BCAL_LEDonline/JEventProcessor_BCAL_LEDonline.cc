@@ -166,16 +166,23 @@ jerror_t JEventProcessor_BCAL_LEDonline::init(void) {
 	bcal_fadc_digi_nhits_evnt = new TH1I("bcal_fadc_digi_nhits_evnt","ADC hits per event;hits per event",125,-0.5,124.5);
 
 	bcal_fadc_digi_pedestal_vevent = new TProfile("bcal_fadc_digi_pedestal_vevent","Avg BCAL pedestal vs event;event num;pedestal (all chan avg)",200,0.0,10000.0);
-	bcal_fadc_digi_pedestal_vevent->SetBit(TH1::kCanRebin);
 	bcal_fadc_digi_integral_vevent = new TProfile("bcal_fadc_digi_integral_vevent","Avg BCAL integral vs event;event num;integral (all chan avg)",200,0.0,10000.0);
-	bcal_fadc_digi_integral_vevent->SetBit(TH1::kCanRebin);
 	bcal_fadc_digi_peak_vevent = new TProfile("bcal_fadc_digi_peak_vevent","Avg BCAL peak vs event;event num;peak (all chan avg)",200,0.0,10000.0);
-	bcal_fadc_digi_peak_vevent->SetBit(TH1::kCanRebin);
 	bcal_fadc_digi_pedsubint_vevent = new TProfile("bcal_fadc_digi_pedsubint_vevent","Avg BCAL ped sub integral vs event;event num;integral - pedestal (all chan avg)",200,0.0,10000.0);
-	bcal_fadc_digi_pedsubint_vevent->SetBit(TH1::kCanRebin);
 	bcal_fadc_digi_pedsubpeak_vevent = new TProfile("bcal_fadc_digi_pedsubpeak_vevent","Avg BCAL ped sub peak vs event;event num;peak - pedestal (all chan avg)",200,0.0,10000.0);
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
+	bcal_fadc_digi_pedestal_vevent->SetCanExtend(TH1::kXaxis);
+	bcal_fadc_digi_integral_vevent->SetCanExtend(TH1::kXaxis);
+	bcal_fadc_digi_peak_vevent->SetCanExtend(TH1::kXaxis);
+	bcal_fadc_digi_pedsubint_vevent->SetCanExtend(TH1::kXaxis);
+	bcal_fadc_digi_pedsubpeak_vevent->SetCanExtend(TH1::kXaxis);
+#else
+	bcal_fadc_digi_pedestal_vevent->SetBit(TH1::kCanRebin);
+	bcal_fadc_digi_integral_vevent->SetBit(TH1::kCanRebin);
+	bcal_fadc_digi_peak_vevent->SetBit(TH1::kCanRebin);
+	bcal_fadc_digi_pedsubint_vevent->SetBit(TH1::kCanRebin);
 	bcal_fadc_digi_pedsubpeak_vevent->SetBit(TH1::kCanRebin);
-
+#endif
 	bcal_tdc_digi_time = new TH1I("bcal_tdc_digi_time","TDC Time (DBCALDigiTDCHit);Time (F1TDC counts)", 500, 0, 66000);
 	bcal_tdc_digi_reltime = new TH2I("bcal_tdc_digi_reltime","Relative TDC Time (DBCALDigiTDCHit);Time (F1TDC counts); TDC trig time", 
 					 100, 0, 70000, 100, 0, 600);
