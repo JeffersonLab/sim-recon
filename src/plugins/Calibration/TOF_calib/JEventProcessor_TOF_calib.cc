@@ -187,7 +187,6 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     }
 
     th[plane][bar-1][end] = 1;
-    
 
     TOFADCtime->Fill(time);
     if (fabsf(time-ADCTLOC)<ADCTimeCut){
@@ -360,8 +359,10 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
       }
     }
   }
- 
+
+  japp->RootWriteLock(); 
   pthread_mutex_lock(&mutex);
+
   Event = eventnumber;
   TShift = TimingShift;
   Nhits = TOFTDCPaddles[0].size() + TOFTDCPaddles[1].size();
@@ -448,7 +449,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     PlaneST[k] = 0;
     PaddleST[k] = TOFTDCSingles[0][k].paddle ;
     LRT[k] = TOFTDCSingles[0][k].LR ;
-    TDCST[k] = TOFTDCSingles[0][k].time; ;
+    TDCST[k] = TOFTDCSingles[0][k].time; 
     j++;
   }
   for (unsigned int k = 0; k<TOFTDCSingles[1].size(); k++){
@@ -464,12 +465,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
   }
 
   pthread_mutex_unlock(&mutex);
-
-  /*
-  if (!(eventnumber%10000000)){
-    WriteRootFile();
-  }
-  */
+  japp->RootUnLock();
 
   return NOERROR;
 }
@@ -504,15 +500,19 @@ jerror_t JEventProcessor_TOF_calib::WriteRootFile(void){
   //sprintf(ROOTFileName,"tofdata_run%d.root",RunNumber);
   //ROOTFile = new TFile(ROOTFileName,"recreate");
 
-  pthread_mutex_lock(&mutex);
+  TDirectory *top = gDirectory;
+
   ROOTFile->cd();
+  ROOTFile->cd("TOFcalib");
+
   TOFTDCtime->Write();
   TOFADCtime->Write();
   t3->Write();
-  t3->AutoSave("SaveSelf");
+  //t3->AutoSave("SaveSelf");
 
-  ROOTFile->Close();
-  pthread_mutex_unlock(&mutex);
+  //ROOTFile->Close();
+  top->cd();
+
   return NOERROR;
  
 }
@@ -532,14 +532,17 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
     first = 0;
 
     japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-    
+
+    TDirectory *top = gDirectory;
+
     // create root file here so the tree does not show up in hd_root.root
     sprintf(ROOTFileName,"hd_root_tofcalib.root");
     ROOTFile = new TFile(ROOTFileName,"recreate");
     ROOTFile->cd();
 
-    TDirectory *savedir = gDirectory;
-    gDirectory->mkdir("TOF_calib")->cd();
+    ROOTFile->mkdir("TOFcalib");
+    ROOTFile->cd("TOFcalib");
+	
 
     TOFTDCtime = new TH1F("TOFTDCtime","TOF CAEN TDC times", 8000, 0., 4000.);
     TOFADCtime = new TH1F("TOFADCtime","TOF ADC times", 800, 0., 400.);
@@ -578,7 +581,7 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
     t3->Branch("LRT",LRT,"LRT[NsinglesT]/I"); //LA=0,1 (left/right)
     t3->Branch("TDCST",TDCST,"TDCST[NsinglesT]/F");
 
-    savedir->cd();
+    top->cd();
     japp->RootUnLock(); //RELEASE ROOT LOCK!!
   }
 
