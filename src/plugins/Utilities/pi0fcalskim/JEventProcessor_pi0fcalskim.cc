@@ -155,7 +155,7 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
   DVector3 pos,mom;
  // Double_t radius = 0;
   //japp->RootWriteLock();
-  Double_t p;
+  //Double_t p;
   for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){
     for (unsigned int j=0; j< locFCALShowers.size(); ++j){
 
@@ -182,7 +182,7 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
 	  Double_t FOM = TMath::Prob(locTrackTimeBased[i]->chisq, locTrackTimeBased[i]->Ndof);
 	 // radius = sqrt(pos.X()*pos.X() + pos.Y()*pos.Y());
 	//  Double_t Eshwr = locFCALShowers[j]->getEnergy();
-	  p = locTrackTimeBased[i]->momentum().Mag();
+	//  p = locTrackTimeBased[i]->momentum().Mag();
 	  // cout<<"p: "<<p<<endl;
 	  // Double_t dZ = TMath::Abs(pos.Z() - z);
 	  Double_t dRho = sqrt(((pos.X() - x)*(pos.X() - x)) + ((pos.Y() - y)* (pos.Y() - y)));

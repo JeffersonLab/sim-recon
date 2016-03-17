@@ -79,7 +79,7 @@ jerror_t JEventProcessor_FCAL_online::init(void) {
   m_digInt = new TH1I( "digHitE", "FCAL Raw Pulse Integral; Integral [2 V * 4 ns / 4096]; Pulses / ( 100 * 2 V * 4 ns / 4096 )", 300, 0, 30000 );
   m_digCoarseT = new TH1I( "digCoarseTime", "FCAL Raw Pulse Coarse Time; Time [4 ns]; Pulses / 4 ns", 100, 0, 100 );
   
-  m_multihit = new TProfile( "MultiHit", "Multiple Hits vs. Channel; Channel Index; Multi Hit Frequency", 2800,-0.5, 2799.5 );
+//  m_multihit = new TProfile( "MultiHit", "Multiple Hits vs. Channel; Channel Index; Multi Hit Frequency", 2800,-0.5, 2799.5 );
   
   m_digCoarseTChan = new TProfile( "digCoarseTChan", "FCAL Coarse Time vs. Channel; Channel Index; Average Time [4 ns]",
 				   2800,-0.5, 2799.5 );
@@ -291,7 +291,7 @@ jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, uint64_t event
   
   //std::cout << "Number of blocks hit: " << digiHits.size() << endl;
   
-  
+  /*
   vector < pair<int,int> > block;
   vector <int> repchan;
   std::map <int, int> multiple;
@@ -337,7 +337,7 @@ if( digiHits.size() > 0 ){
   m_multihit->Fill( mulchan, freq );
   }
   }
-  
+  */
   
   for( vector< const DFCALDigiHit* >::const_iterator dHitItr = digiHits.begin();
        dHitItr != digiHits.end(); ++dHitItr ){
