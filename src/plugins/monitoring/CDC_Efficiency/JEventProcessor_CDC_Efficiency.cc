@@ -337,9 +337,9 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                         const DCDCHit * locHit = locCDCHitVector[hitNum];
                         if(locHit->ring == ringNum && locHit->straw == wireNum){
                             const DCDCDigiHit *thisDigiHit = NULL;
-                            locHit->GetSingle(thisDigiHit);
                             const Df125CDCPulse *thisPulse = NULL;
-                            thisDigiHit->GetSingle(thisPulse);
+                            locHit->GetSingle(thisDigiHit);
+                            if (thisDigiHit != NULL) thisDigiHit->GetSingle(thisPulse);
                             if (thisPulse != NULL){
                                 ROCIDFromRingStraw[ringNum - 1][wireNum - 1] = thisPulse->rocid;
                                 SlotFromRingStraw[ringNum - 1][wireNum - 1] = thisPulse->slot;
