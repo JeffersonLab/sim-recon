@@ -107,11 +107,11 @@ jerror_t JEventProcessor_TPOL_online::init(void) {
     hHit_PeakVsSector = new TH2I("Hit_PeakVsSector","TPOL fADC pulse peak vs. sector;sector;pulse peak",Nsectors,0.5,0.5+Nsectors,410,0.0,4100.0);
     hHit_Integral = new TH1I("Hit_Integral","TPOL fADC pulse integral;pulse integral;hits",1000,0.0,30000.0);
     hHit_IntegralVsSector = new TH2I("Hit_IntegralVsSector","TPOL fADC pulse integral vs. sector;sector;pulse integral",Nsectors,0.5,0.5+Nsectors,1000,0.0,30000.0);
-    hHit_Time = new TH1I("Hit_Time","TPOL time;time [ns];hits / 800 ps",1000,-400.0,400.0);
-    hHit_TimeVsSector = new TH2I("Hit_TimeVsSector","TPOL time vs. sector;sector;time [ns]",Nsectors,0.5,0.5+Nsectors,1000,-400.0,400.0);
-    hHit_TimeVsPhi = new TH2F("Hit_TimeVsPhi","TPOL time vs. phi;#phi [degrees];time [ns]",Nsectors,0.0,360.0,1000,-400.0,400.0);
-    hHit_TimeVsIntegral = new TH2I("Hit_TimeVsIntegral","TPOL time vs. integral;pulse integral;time [ns]",500,0.0,30000.0,1000,-400.0,400.0);
-    hHit_TimeVsPeak = new TH2I("Hit_TimeVsPeak","TPOL time vs. peak;pulse peak;time [ns]",410,0.0,4100.0,1000,-400.0,400.0);
+    hHit_Time = new TH1I("Hit_Time","TPOL time;time [ns];hits / 2 ns",400,-400.0,400.0);
+    hHit_TimeVsSector = new TH2I("Hit_TimeVsSector","TPOL time vs. sector;sector;time [ns]",Nsectors,0.5,0.5+Nsectors,400,-400.0,400.0);
+    hHit_TimeVsPhi = new TH2F("Hit_TimeVsPhi","TPOL time vs. phi;#phi [degrees];time [ns]",Nsectors,0.0,360.0,400,-400.0,400.0);
+    hHit_TimeVsIntegral = new TH2I("Hit_TimeVsIntegral","TPOL time vs. integral;pulse integral;time [ns]",500,0.0,30000.0,400,-400.0,400.0);
+    hHit_TimeVsPeak = new TH2I("Hit_TimeVsPeak","TPOL time vs. peak;pulse peak;time [ns]",410,0.0,4100.0,400,-400.0,400.0);
     // digihit-level hists
     tpolDir->cd();
     gDirectory->mkdir("DigiHit")->cd();
@@ -132,10 +132,10 @@ jerror_t JEventProcessor_TPOL_online::init(void) {
     hDigiHit_IntegralVsPeak = new TH2I("DigiHit_IntegralVsPeak","TPOL fADC pulse integral vs. peak;pulse peak;pulse integral",410,0.0,4100.0,1000,0.0,30000.0);
     hDigiHit_IntegralVsSector = new TH2I("DigiHit_IntegralVsSector","TPOL fADC pulse integral vs. sector;sector;pulse integral",Nsectors,0.5,0.5+Nsectors,1000,0.0,30000.0);
     hDigiHit_PulseTime = new TH1I("DigiHit_PulseTime","TPOL fADC pulse time;pulse time [62.5 ps];raw hits",1000,0.0,6500.0);
-    hDigiHit_Time = new TH1I("DigiHit_Time","TPOL fADC pulse time;pulse time [ns];raw hits / 800 ps",500,0.0,400.0);
-    hDigiHit_TimeVsSector = new TH2I("DigiHit_TimeVsSector","TPOL fADC pulse time vs. sector;sector;pulse time [ns]",Nsectors,0.5,0.5+Nsectors,500,0.0,400.0);
-    hDigiHit_TimeVsPeak = new TH2I("DigiHit_TimeVsPeak","TPOL time vs. peak;pulse peak;time [ns]",410,0.0,4100.0,500,0.0,400.0);
-    hDigiHit_TimeVsIntegral = new TH2I("DigiHit_fadcTimeVsIntegral","TPOL fADC pulse time vs. integral;pulse integral;pulse time [ns]",500,0.0,30000.0,500,0.0,400.0);
+    hDigiHit_Time = new TH1I("DigiHit_Time","TPOL fADC pulse time;pulse time [ns];raw hits / 2 ns",200,0.0,400.0);
+    hDigiHit_TimeVsSector = new TH2I("DigiHit_TimeVsSector","TPOL fADC pulse time vs. sector;sector;pulse time [ns]",Nsectors,0.5,0.5+Nsectors,200,0.0,400.0);
+    hDigiHit_TimeVsPeak = new TH2I("DigiHit_TimeVsPeak","TPOL time vs. peak;pulse peak;time [ns]",410,0.0,4100.0,200,0.0,400.0);
+    hDigiHit_TimeVsIntegral = new TH2I("DigiHit_fadcTimeVsIntegral","TPOL fADC pulse time vs. integral;pulse integral;pulse time [ns]",500,0.0,30000.0,200,0.0,400.0);
     // back to main dir
     mainDir->cd();
 
