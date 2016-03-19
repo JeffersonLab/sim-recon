@@ -52,7 +52,7 @@ jerror_t JEventProcessor_RF_online::init(void)
 
 			locHistName = locSystemName + string("RF_FirstTimeDeltaT");
 			locHistTitle = string("RF_") + locSystemName + string("_TDC;#Deltat (Subsequent Times - First Time) (ns)");
-			dHistMap_RFFirstTimeDeltaT[locSystem] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 50000, 0.0, 1000.0);
+			dHistMap_RFFirstTimeDeltaT[locSystem] = new TH1I(locHistName.c_str(), locHistTitle.c_str(), 1000000, 0.0, 5000.0);
 		}
 
 		//# rf signals per event
