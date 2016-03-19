@@ -26,13 +26,15 @@ const int NmultBins = 25; // number of bins for multiplicity histograms
 static TH1I *tpol_num_events;
 static TH1I *hRaw_NHits;
 static TH1I *hHit_NHits;
-static TH1F *hHit_Occupancy;
+static TH1I *hHit_Occupancy;
+static TH1F *hHit_Phi;
 static TH1I *hHit_Peak;
 static TH2I *hHit_PeakVsSector;
 static TH1I *hHit_Integral;
 static TH2I *hHit_IntegralVsSector;
 static TH1I *hHit_Time;
-static TH2F *hHit_TimeVsSector;
+static TH2I *hHit_TimeVsSector;
+static TH2F *hHit_TimeVsPhi;
 static TH2I *hHit_TimeVsPeak;
 static TH2I *hHit_TimeVsIntegral;
 //
@@ -99,13 +101,15 @@ jerror_t JEventProcessor_TPOL_online::init(void) {
     // hit-level hists (after calibration)
     gDirectory->mkdir("Hit")->cd();
     hHit_NHits = new TH1I("Hit_NHits","TPOL hit multiplicity;hits;events",NmultBins,0.5,0.5+NmultBins);
-    hHit_Occupancy = new TH1F("Hit_Occupancy","TPOL occupancy;sector;hits / counter",Nsectors,0.5,0.5+Nsectors);
+    hHit_Occupancy = new TH1I("Hit_Occupancy","TPOL occupancy;sector;hits / sector",Nsectors,0.5,0.5+Nsectors);
+    hHit_Phi = new TH1F("Hit_Phi","TPOL azimuthal angle;triplet azimuthal angle [degrees];hits / sector",Nsectors,0.0,360.0);
     hHit_Peak = new TH1I("Hit_Peak","TPOL fADC pulse peak;pulse peak;hits",410,0.0,4100.0);
     hHit_PeakVsSector = new TH2I("Hit_PeakVsSector","TPOL fADC pulse peak vs. sector;sector;pulse peak",Nsectors,0.5,0.5+Nsectors,410,0.0,4100.0);
     hHit_Integral = new TH1I("Hit_Integral","TPOL fADC pulse integral;pulse integral;hits",1000,0.0,30000.0);
     hHit_IntegralVsSector = new TH2I("Hit_IntegralVsSector","TPOL fADC pulse integral vs. sector;sector;pulse integral",Nsectors,0.5,0.5+Nsectors,1000,0.0,30000.0);
     hHit_Time = new TH1I("Hit_Time","TPOL time;time [ns];hits / 800 ps",1000,-400.0,400.0);
-    hHit_TimeVsSector = new TH2F("Hit_TimeVsSector","TPOL time vs. sector;sector;time [ns]",Nsectors,0.5,0.5+Nsectors,1000,-400.0,400.0);
+    hHit_TimeVsSector = new TH2I("Hit_TimeVsSector","TPOL time vs. sector;sector;time [ns]",Nsectors,0.5,0.5+Nsectors,1000,-400.0,400.0);
+    hHit_TimeVsPhi = new TH2F("Hit_TimeVsPhi","TPOL time vs. phi;#phi [degrees];time [ns]",Nsectors,0.0,360.0,1000,-400.0,400.0);
     hHit_TimeVsIntegral = new TH2I("Hit_TimeVsIntegral","TPOL time vs. integral;pulse integral;time [ns]",500,0.0,30000.0,1000,-400.0,400.0);
     hHit_TimeVsPeak = new TH2I("Hit_TimeVsPeak","TPOL time vs. peak;pulse peak;time [ns]",410,0.0,4100.0,1000,-400.0,400.0);
     // digihit-level hists
@@ -203,9 +207,7 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, uint64_t event
                 NHits++;
         }
     }
-    if(NHits>0) {
-        hRaw_NHits->Fill(NHits);
-    }
+    hRaw_NHits->Fill(NHits);
     if(sdhits.size()>0) tpol_num_events->Fill(1);
     hDigiHit_NHits->Fill(sdhits.size());
     for(unsigned int i=0; i < sdhits.size(); i++) {
@@ -241,12 +243,14 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, uint64_t event
     hHit_NHits->Fill(hits.size());
     for(unsigned int i=0; i<hits.size(); i++) {
         hHit_Occupancy->Fill(hits[i]->sector);
+        hHit_Phi->Fill(hits[i]->phi);
         hHit_Integral->Fill(hits[i]->integral);
         hHit_IntegralVsSector->Fill(hits[i]->sector,hits[i]->integral);
         hHit_Peak->Fill(hits[i]->pulse_peak);
         hHit_PeakVsSector->Fill(hits[i]->sector,hits[i]->pulse_peak);
         hHit_Time->Fill(hits[i]->t);
         hHit_TimeVsSector->Fill(hits[i]->sector,hits[i]->t);
+        hHit_TimeVsPhi->Fill(hits[i]->phi,hits[i]->t);
         hHit_TimeVsIntegral->Fill(hits[i]->integral,hits[i]->t);
         hHit_TimeVsPeak->Fill(hits[i]->pulse_peak,hits[i]->t);
     }
