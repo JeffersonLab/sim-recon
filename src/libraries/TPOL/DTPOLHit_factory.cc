@@ -3,6 +3,7 @@
 #include <limits>
 #include <cmath>
 
+#include <TRIGGER/DL1Trigger.h>
 #include <TPOL/DTPOLSectorDigiHit.h>
 #include <TPOL/DTPOLRingDigiHit.h>
 #include <DAQ/Df250PulsePedestal.h>
@@ -33,9 +34,9 @@ bool DTPOLRingHit_fadc_cmp(const DTPOLRingDigiHit *a,const DTPOLRingDigiHit *b){
 //------------------
 jerror_t DTPOLHit_factory::init(void)
 {
-    ADC_THRESHOLD = 40.0;
+    ADC_THRESHOLD = 50.0;
     gPARMS->SetDefaultParameter("TPOL:ADC_THRESHOLD", ADC_THRESHOLD,
-    "Software pulse height threshold");
+    "ADC pulse-height threshold");
 
     /// set the base conversion scales
     a_scale    = 0.0001;
@@ -90,6 +91,8 @@ jerror_t DTPOLHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     return NOERROR;
 }
 
+
+
 //------------------
 // evnt
 //------------------
@@ -106,7 +109,7 @@ jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     /// the precalibrated values directly into the _data vector.
     //
     // Get fADC250 hits
-    vector<const DTPOLSectorDigiHit*> sectordigihits;
+    /*vector<const DTPOLSectorDigiHit*> sectordigihits;
     loop->Get(sectordigihits);
     sort(sectordigihits.begin(),sectordigihits.end(),DTPOLSectorHit_fadc_cmp);
     vector<const DTPOLRingDigiHit*> ringdigihits;
@@ -159,7 +162,7 @@ jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         hit->t = t_scale*T;
         hit->AddAssociatedObject(sectordigihit);
         _data.push_back(hit);
-    }
+    }*/
     /*
     // Apply calibration constants to convert pulse integrals to energy
     // units
@@ -168,8 +171,67 @@ jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     _data[i]->dE*=a_scale * a_gains[_data[i]->sector-1];
 }
 */
-
-return NOERROR;
+    // get trigger type
+    const DL1Trigger *trig_words = NULL;
+    uint32_t trig_mask, fp_trig_mask;
+    try {
+        loop->GetSingle(trig_words);
+    } catch(...) {};
+    if (trig_words) {
+        trig_mask = trig_words->trig_mask;
+        fp_trig_mask = trig_words->fp_trig_mask;
+    }
+    else {
+        trig_mask = 0;
+        fp_trig_mask = 0;
+    }
+    int trig_bits = fp_trig_mask > 0 ? 10 + fp_trig_mask:trig_mask;
+    // skim PS triggers
+    if (trig_bits!=8) {
+        return NOERROR;
+    }
+    // get raw samples and make TPOL hits
+    vector<const Df250WindowRawData*> windowraws;
+    loop->Get(windowraws);
+    for(unsigned int i=0; i< windowraws.size(); i++){
+        const Df250WindowRawData *windowraw = windowraws[i];
+        if (windowraw->rocid!=84) continue; // choose rocPS2
+        if (!(windowraw->slot==13||windowraw->slot==14)) continue; // azimuthal sectors: 13,14; rings: 15,16
+        int slot = windowraw->slot;
+        int channel = windowraw->channel;
+        int sector = GetSector(slot,channel);
+        // Get a vector of the samples for this channel
+        const vector<uint16_t> &samplesvector = windowraw->samples;
+        unsigned int nsamples=samplesvector.size();
+        // loop over the samples to calculate integral, min, max
+        double w_samp1 = 0.0; double w_min = 0.0; double w_max = 0.0; double w_integral = 0.0;
+        for (uint16_t c_samp=0; c_samp<nsamples; c_samp++) {
+            if (c_samp==0) {  // use first sample for initialization
+                w_integral = samplesvector[0];
+                w_min = samplesvector[0];
+                w_max = samplesvector[0];
+                w_samp1 = samplesvector[0];
+            } else {
+                w_integral += samplesvector[c_samp];
+                if (w_min > samplesvector[c_samp]) w_min = samplesvector[c_samp];
+                if (w_max < samplesvector[c_samp]) w_max = samplesvector[c_samp];
+            }
+        }
+        double pulse_height = w_max - w_min;
+        if (w_samp1 > 133.0) continue; // require first sample above readout threshold
+        if (pulse_height < ADC_THRESHOLD) continue;
+        DTPOLHit *hit = new DTPOLHit;
+        hit->sector = sector;
+        hit->phi = GetPhi(sector);
+        hit->ring = 0;
+        hit->theta = 0;
+        hit->pulse_peak = pulse_height;
+        hit->integral = w_integral - nsamples*w_samp1;
+        hit->dE = pulse_height;
+        hit->t = t_scale*GetPulseTime(samplesvector,w_min,w_max,ADC_THRESHOLD);
+        _data.push_back(hit);
+    }
+    return NOERROR;
 }
 
 //------------------
@@ -188,6 +250,47 @@ jerror_t DTPOLHit_factory::fini(void)
     return NOERROR;
 }
 
+int DTPOLHit_factory::GetSector(int slot,int channel)
+{
+    int sector = 0;
+    if (slot == 13) sector = 25 - channel;
+    if (slot == 14) {
+        if (channel <= 8) sector = 9 - channel;
+        else sector = NSECTORS + 9 - channel;
+    }
+    // fix cable swap
+    if (sector == 9) sector = 6;
+    else if (sector == 6) sector = 9;
+    if (sector == 0) cerr << "sector did not change from initial value (0)." << endl;
+    return sector;
+}
+double DTPOLHit_factory::GetPhi(int sector)
+{
+    double phi = -10.0;
+    if(sector <= 8) phi = (sector + 23)*SECTOR_DIVISION + 0.5*SECTOR_DIVISION;
+    if(sector >= 9) phi = (sector - 9)*SECTOR_DIVISION + 0.5*SECTOR_DIVISION;
+    return phi;
+}
+double DTPOLHit_factory::GetPulseTime(const vector<uint16_t> waveform,double w_min,double w_max,double minpeakheight)
+{
+    // find the time to cross half peak height
+    int lastbelowsamp=0; double peakheight = w_max-w_min;
+    double threshold = w_min + peakheight/2.0;
+    double  firstaboveheight=0, lastbelowheight=0;
+    double w_time=0;
+    if (peakheight > minpeakheight) {
+        for (uint16_t c_samp=0; c_samp<waveform.size(); c_samp++) {
+            if (waveform[c_samp]>threshold) {
+                firstaboveheight = waveform[c_samp];
+                lastbelowsamp = c_samp-1;
+                lastbelowheight = waveform[c_samp-1];
+                break;
+            }
+        }
+        w_time =  lastbelowsamp + (threshold-lastbelowheight)/(firstaboveheight-lastbelowheight);
+    }
+    return 64.0*w_time;
+}
 //------------------------------------
 // GetConstant
 //   Allow a few different interfaces

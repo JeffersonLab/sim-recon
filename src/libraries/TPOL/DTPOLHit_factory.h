@@ -36,6 +36,9 @@ public:
     double HIT_TIME_WINDOW;
     double ADC_THRESHOLD;
 
+    int GetSector(int slot,int channel);
+    double GetPhi(int sector);
+    double GetPulseTime(const vector<uint16_t> waveform,double w_min,double w_max,double minpeakheight);
     DTPOLHit* FindMatch(int sector, double T);
     const double GetConstant(const vector<double>  &the_table,const int in_sector) const;
     const double GetConstant(const vector<double>  &the_table,const DTPOLHit *the_hit) const;
