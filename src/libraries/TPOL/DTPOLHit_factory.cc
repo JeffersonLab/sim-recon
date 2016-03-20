@@ -34,8 +34,8 @@ bool DTPOLRingHit_fadc_cmp(const DTPOLRingDigiHit *a,const DTPOLRingDigiHit *b){
 //------------------
 jerror_t DTPOLHit_factory::init(void)
 {
-    ADC_THRESHOLD = 50.0;
-    gPARMS->SetDefaultParameter("TPOL:ADC_THRESHOLD", ADC_THRESHOLD,
+    ADC_THRESHOLD = 40.0;
+    gPARMS->SetDefaultParameter("TPOLHit:ADC_THRESHOLD", ADC_THRESHOLD,
     "ADC pulse-height threshold");
 
     /// set the base conversion scales
@@ -199,11 +199,12 @@ jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         if (!(windowraw->slot==13||windowraw->slot==14)) continue; // azimuthal sectors: 13,14; rings: 15,16
         int slot = windowraw->slot;
         int channel = windowraw->channel;
-        int sector = GetSector(slot,channel);
         // Get a vector of the samples for this channel
         const vector<uint16_t> &samplesvector = windowraw->samples;
         unsigned int nsamples=samplesvector.size();
         // loop over the samples to calculate integral, min, max
+        if (nsamples==0) jerr << "Raw samples vector is empty." << endl;
+        if (samplesvector[0] > 133.0) continue; // require first sample below readout threshold
         double w_samp1 = 0.0; double w_min = 0.0; double w_max = 0.0; double w_integral = 0.0;
         for (uint16_t c_samp=0; c_samp<nsamples; c_samp++) {
             if (c_samp==0) {  // use first sample for initialization
@@ -218,11 +219,10 @@ jerror_t DTPOLHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             }
         }
         double pulse_height = w_max - w_min;
-        if (w_samp1 > 133.0) continue; // require first sample above readout threshold
         if (pulse_height < ADC_THRESHOLD) continue;
         DTPOLHit *hit = new DTPOLHit;
-        hit->sector = sector;
-        hit->phi = GetPhi(sector);
+        hit->sector = GetSector(slot,channel);
+        hit->phi = GetPhi(hit->sector);
         hit->ring = 0;
         hit->theta = 0;
         hit->pulse_peak = pulse_height;
@@ -261,7 +261,7 @@ int DTPOLHit_factory::GetSector(int slot,int channel)
     // fix cable swap
     if (sector == 9) sector = 6;
     else if (sector == 6) sector = 9;
-    if (sector == 0) cerr << "sector did not change from initial value (0)." << endl;
+    if (sector == 0) jerr << "sector did not change from initial value (0)." << endl;
     return sector;
 }
 double DTPOLHit_factory::GetPhi(int sector)

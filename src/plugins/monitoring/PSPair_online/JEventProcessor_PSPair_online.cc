@@ -263,10 +263,10 @@ jerror_t JEventProcessor_PSPair_online::init(void)
     hPSTPOL_phi = new TH1F("PSTPOL_phi","TPOL azimuthal angle;triplet azimuthal angle [degrees];hits / sector",NS_TPOL,0.0,360.0);
     hPSTPOL_peak = new TH1I("PSTPOL_peak","TPOL fADC pulse peak;pulse peak;hits",410,0.0,4100.0);
     hPSTPOL_peakVsSector = new TH2I("PSTPOL_peakVsSector","TPOL fADC pulse peak vs. sector;sector;pulse peak",NS_TPOL,0.5,0.5+NS_TPOL,410,0.0,4100.0);
-    hPSTPOL_time = new TH1I("PSTPOL_time","TPOL time;time [ns];hits / 800 ps",1000,-400.0,400.0);
-    hPSTPOL_timeVsSector = new TH2I("PSTPOL_timeVsSector","TPOL time vs. sector;sector;time [ns]",NS_TPOL,0.5,0.5+NS_TPOL,1000,-400.0,400.0);
-    hPSTPOL_timeVsPhi = new TH2F("PSTPOL_timeVsPhi","TPOL time vs. phi;#phi [degrees];time [ns]",NS_TPOL,0.0,360.0,1000,-400.0,400.0);
-    hPSTPOL_timeVsPeak = new TH2I("PSTPOL_timeVsPeak","TPOL time vs. peak;pulse peak;time [ns]",410,0.0,4100.0,1000,-400.0,400.0);
+    hPSTPOL_time = new TH1I("PSTPOL_time","TPOL time;time [ns];hits / 2 ns",400,-400.0,400.0);
+    hPSTPOL_timeVsSector = new TH2I("PSTPOL_timeVsSector","TPOL time vs. sector;sector;time [ns]",NS_TPOL,0.5,0.5+NS_TPOL,400,-400.0,400.0);
+    hPSTPOL_timeVsPhi = new TH2F("PSTPOL_timeVsPhi","TPOL time vs. phi;#phi [degrees];time [ns]",NS_TPOL,0.0,360.0,400,-400.0,400.0);
+    hPSTPOL_timeVsPeak = new TH2I("PSTPOL_timeVsPeak","TPOL time vs. peak;pulse peak;time [ns]",410,0.0,4100.0,400,-400.0,400.0);
     // back to main dir
     mainDir->cd();
 
