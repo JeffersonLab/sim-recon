@@ -79,6 +79,8 @@ typedef pair<int,int> tagNum;
 #include "DF1TDCBORConfig.h"
 #include "DCAEN1290TDCBORConfig.h"
 #include "DL1Info.h"
+#include "Df125EmulatorAlgorithm.h"
+#include "Df250EmulatorAlgorithm.h"
 
 extern set<uint32_t> ROCIDS_TO_PARSE;
 
@@ -237,12 +239,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		string MODTYPE_MAP_FILENAME;
 		bool ENABLE_DISENTANGLING;
 
-		EmulationModeType F250_PI_EMULATION_MODE;  ///< F250 Pulse Integral emulation mode
-		EmulationModeType F250_PT_EMULATION_MODE;  ///< F250 Pulse Time     emulation mode
-		EmulationModeType F250_PP_EMULATION_MODE;  ///< F250 Pulse Pedestal emulation mode
-		EmulationModeType F125_PI_EMULATION_MODE;  ///< F125 Pulse Integral emulation mode
-		EmulationModeType F125_PT_EMULATION_MODE;  ///< F125 Pulse Time     emulation mode
-		EmulationModeType F125_PP_EMULATION_MODE;  ///< F125 Pulse Pedestal emulation mode
+        EmulationModeType F125_EMULATION_MODE; ///< F125 emulation mode
+        EmulationModeType F250_EMULATION_MODE; ///< F250 emulation mode
 
 		uint32_t F250_EMULATION_MIN_SWING;         ///< Minimum difference between max and min samples to do emulation
 		uint32_t F250_THRESHOLD;                   ///< Threshold to use for firmware emulation
@@ -367,10 +365,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void CopyBOR(JEventLoop *loop, map<string, vector<JObject*> > &hit_objs_by_type);
 		void AddSourceObjectsToCallStack(JEventLoop *loop, string className);
 		void AddEmulatedObjectsToCallStack(JEventLoop *loop, string caller, string callee);
-		void EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
-		void EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs, vector<JObject*> &pt_objs, vector<JObject*> &cp_objs, vector<JObject*> &fp_objs);
-		void EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);
-		void EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs, vector<JObject*> &cp_objs, vector<JObject*> &fp_objs);
+        void EmulateDf250Firmware(JEvent &event, vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs, vector<JObject*> &pi_objs);
+        void EmulateDf125Firmware(JEvent &event, vector<JObject*> &wrd_objs, vector<JObject*> &cp_objs, vector<JObject*> &fp_objs); 
 
 		jerror_t ParseEvents(ObjList *objs_ptr);
 		int32_t FindRunNumber(uint32_t *iptr);
