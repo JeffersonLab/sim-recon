@@ -28,7 +28,8 @@ class Df125EmulatorAlgorithm_factory:public jana::JFactory<Df125EmulatorAlgorith
             // v2 = firmware using the upsampling technique.
 
             vector<const Df125EmulatorAlgorithm*> emulators;
-            loop->Get(emulators, "v2");
+            Df125EmulatorAlgorithm_factory *f125EmFac = static_cast<Df125EmulatorAlgorithm_factory*>(loop->GetFactory("Df125EmulatorAlgorithm","v2"));
+            if(f125EmFac) f125EmFac->Get(emulators);
             for(unsigned int i=0; i< emulators.size(); i++){
                 _data.push_back(const_cast<Df125EmulatorAlgorithm*>(emulators[i]));
             }

@@ -27,7 +27,8 @@ class Df250EmulatorAlgorithm_factory:public jana::JFactory<Df250EmulatorAlgorith
             // v1 = f250 code used until mid 2016
 
             vector<const Df250EmulatorAlgorithm*> emulators;
-            loop->Get(emulators, "v1");
+            Df250EmulatorAlgorithm_factory *f250EmFac = static_cast<Df250EmulatorAlgorithm_factory*>(loop->GetFactory("Df250EmulatorAlgorithm","v1"));
+            if (f250EmFac) f250EmFac->Get(emulators);
             for(unsigned int i=0; i< emulators.size(); i++){
                 _data.push_back(const_cast<Df250EmulatorAlgorithm*>(emulators[i]));
             }

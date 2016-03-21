@@ -46,6 +46,8 @@ using namespace jana;
 #include <DANA/DStatusBits.h>
 #include <TTAB/DTranslationTable.h>
 #include <TTAB/DTranslationTable_factory.h>
+#include <DAQ/Df125EmulatorAlgorithm_factory.h>
+#include <DAQ/Df250EmulatorAlgorithm_factory.h>
 
 #define _DBG_DAQ(A) cerr<<__FILE__<<":"<<__LINE__<<" 0x"<<hex<<A<<"  cntrl:0x"<<(A&0xF0000000)<<dec<<" slot:"<<((A>>22)&0x1F)<<endl
 
@@ -1351,6 +1353,9 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
         }
     }
 
+    // Copy pointers to BOR objects
+    CopyBOR(loop, hit_objs_by_type);
+
     // In order for the janadot plugin to properly display the callgraph, we need to
     // make entries for each of the object types that we generated from data in the file.
     // Actually, we need to do it for all of the data objects we supply, but if any objects
@@ -1380,7 +1385,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
     if( F250_EMULATION_MODE != kEmulationNone ){
         EmulateDf250Firmware(event, f250_wrd_objs, f250_pt_objs, f250_pp_objs, f250_pi_objs);
     }
-    // Repeat for f125 Pulse Time and Pulse Pedestal
+    // Repeat for f125
     if( F125_EMULATION_MODE != kEmulationNone ){
         EmulateDf125Firmware(event, f125_wrd_objs, f125_cp_objs, f125_fp_objs);
     }
@@ -1421,18 +1426,6 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
     for(siter=event_source_data_types.begin(); siter!=event_source_data_types.end(); siter++){
         if(hit_objs_by_type.find(*siter) == hit_objs_by_type.end()){
             AddSourceObjectsToCallStack(loop, *siter);
-        }
-    }
-
-    // Associate any DDAQConfig objects with hit objects to which they should apply.
-    for(unsigned int j=0; j<config_objs.size(); j++){
-        DDAQConfig *config = config_objs[j];
-        for(unsigned int i=0; i<hit_objs.size(); i++){
-            DDAQAddress *hit = hit_objs[i];
-            if(hit->rocid != config->rocid) continue;
-            if( (1<<hit->slot) & config->slot_mask){
-                hit->AddAssociatedObject(config);
-            }
         }
     }
 
@@ -1611,7 +1604,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
     objs_ptr->own_objects = false;
 
     // Copy pointers to BOR objects
-    CopyBOR(loop, hit_objs_by_type);
+    //CopyBOR(loop, hit_objs_by_type);
 
     // Returning OBJECT_NOT_AVAILABLE tells JANA that this source cannot
     // provide the type of object requested and it should try and generate
@@ -1808,12 +1801,17 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
     if(wrd_objs.size() == 0) return;
     if(VERBOSE>3) evioout << " Entering  EmulateDf250Firmware ..." <<endl;
 
-    const Df250EmulatorAlgorithm *f250Emulator_const = NULL;
+    vector <const Df250EmulatorAlgorithm*> f250Emulator_const;
+    Df250EmulatorAlgorithm *f250Emulator = NULL;
     JEventLoop *loop = event.GetJEventLoop();
-    loop->GetSingle(f250Emulator_const);
-    // Drop const
-    Df250EmulatorAlgorithm *f250Emulator = const_cast<Df250EmulatorAlgorithm*>(f250Emulator_const);
+    Df250EmulatorAlgorithm_factory *f250EmFac = static_cast<Df250EmulatorAlgorithm_factory*>(loop->GetFactory("Df250EmulatorAlgorithm"));
+    if (f250EmFac) {
+        f250EmFac->Get(f250Emulator_const);
+        // Drop const
+        if (f250Emulator_const.size() != 0) f250Emulator = const_cast<Df250EmulatorAlgorithm*>(f250Emulator_const[0]);
+    }
 
+    if(VERBOSE>3) evioout << " Looping over raw data ..." <<endl;
     // Loop over all window raw data objects
     for(unsigned int i=0; i<wrd_objs.size(); i++){
         const Df250WindowRawData *f250WindowRawData = (Df250WindowRawData*)wrd_objs[i];
@@ -1926,6 +1924,7 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
         }
 
         // Emulate firmware
+        if(VERBOSE>3) evioout << " Calling EmulateFirmware ..." << endl;
         f250Emulator->EmulateFirmware(f250WindowRawData, f250PulseTime, f250PulsePedestal, f250PulseIntegral);
     }
 
@@ -1947,13 +1946,17 @@ void JEventSource_EVIO::EmulateDf125Firmware( JEvent &event, vector<JObject*> &w
     /// sample resolution. It is doubtful anyone will be using these in the future so nbd. 3/18/2016 MS 
 
     if(wrd_objs.size() == 0) return; // Can't do anything without the raw data
-    if(VERBOSE>3) evioout << " Entering  EmulateDf125PulseTime ..." <<endl;
+    if(VERBOSE>3) evioout << " Entering  EmulateDf125Firmware ..." <<endl;
 
-    const Df125EmulatorAlgorithm *f125Emulator_const = NULL;
+    vector <const Df125EmulatorAlgorithm*> f125Emulator_const;
+    Df125EmulatorAlgorithm *f125Emulator = NULL;
     JEventLoop *loop = event.GetJEventLoop();
-    loop->GetSingle(f125Emulator_const);
-    // Drop the const
-    Df125EmulatorAlgorithm *f125Emulator = const_cast<Df125EmulatorAlgorithm*>(f125Emulator_const);
+    Df125EmulatorAlgorithm_factory *f125EmFac = static_cast<Df125EmulatorAlgorithm_factory*>(loop->GetFactory("Df125EmulatorAlgorithm"));
+    if (f125EmFac) {
+        f125EmFac->Get(f125Emulator_const);
+        // Drop const
+        if (f125Emulator_const.size() != 0) f125Emulator = const_cast<Df125EmulatorAlgorithm*>(f125Emulator_const[0]);
+    }
 
     // Loop over all window raw data objects
     for(unsigned int i=0; i<wrd_objs.size(); i++){

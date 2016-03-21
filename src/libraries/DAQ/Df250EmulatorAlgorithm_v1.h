@@ -25,6 +25,14 @@ class Df250EmulatorAlgorithm_v1:public Df250EmulatorAlgorithm{
 
     protected:
         Df250EmulatorAlgorithm_v1(){};
+        // Enables forced use of default values
+        int FORCE_DEFAULT;
+        // Default values for the essential parameters
+        uint32_t NSA_DEF;
+        uint32_t NSB_DEF;
+        uint16_t THR_DEF;
+        // Set verbosity
+        int VERBOSE;
 
 };
 
