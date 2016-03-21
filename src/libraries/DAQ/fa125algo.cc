@@ -251,17 +251,21 @@ void cdc_integral(Long_t& integral, Int_t& overflows, Int_t timesample, Int_t ad
   integral = 0;
   overflows = 0;
 
-  Int_t lastsample = timesample + INT_END - 1;
+  if (timesample <= WINDOW_END) {
 
-  if (lastsample > WINDOW_END) lastsample = WINDOW_END;
+    Int_t lastsample = timesample + INT_END - 1;
 
-  for (i = timesample; i <= lastsample; i++ ) {
+    if (lastsample > WINDOW_END) lastsample = WINDOW_END;
 
-    integral += (Long_t)adc[i];
-    if (adc[i]==(Long_t)4095) overflows++;    // only a placeholder at present. need to test on sample's overflow bit
+    for (i = timesample; i <= lastsample; i++ ) {
+
+      integral += (Long_t)adc[i];
+      if (adc[i]==(Long_t)4095) overflows++;   
+
+    }
 
   }
-
+ 
 
 }
 
@@ -272,6 +276,11 @@ void cdc_max(Int_t& maxamp, Int_t hitsample, Int_t adc[], Int_t WINDOW_END) {
 
   int i;
   int ndec = 0;  //number of decreasing samples
+
+  //make sure we are on an up-slope
+
+  while ((adc[hitsample] <= adc[hitsample-1]) && (hitsample <= WINDOW_END)) hitsample++;
+
 
   maxamp = adc[hitsample];
 
@@ -285,6 +294,9 @@ void cdc_max(Int_t& maxamp, Int_t hitsample, Int_t adc[], Int_t WINDOW_END) {
     if (adc[i] <= adc[i-1]) ndec++;
     if (ndec==2) break;
   }
+
+
+  if (hitsample >= WINDOW_END) maxamp = adc[WINDOW_END];
 
 
 }
