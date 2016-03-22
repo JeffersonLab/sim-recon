@@ -61,7 +61,11 @@ void InitPlugin(JApplication *app){
 //------------------
 JEventProcessor_single_particle_resolution::JEventProcessor_single_particle_resolution()
 {
+	VERBOSE = 0;
 
+	if(gPARMS){
+		gPARMS->SetDefaultParameter("single_particle_resolution:VERBOSE", VERBOSE, "single_particle_resolution verbosity level");
+	}
 }
 
 //------------------
@@ -196,8 +200,8 @@ jerror_t JEventProcessor_single_particle_resolution::evnt(JEventLoop *loop, uint
 			float ang_reco = 180/PI*myhypo->momentum().Theta();
 			float ang_reco_diff = (ang_thro-ang_reco);
 
-			if (mom_reco_frac<-1||mom_reco_frac>1)
-				printf("%5i  thro %7.3f   reco %7.3f   %7.3f\n",eventnumber,mom_thro,mom_reco,mom_reco_frac);
+			if (VERBOSE>0 && (mom_reco_frac<-1||mom_reco_frac>1))
+				printf("single_particle_resolution   event %5i  thro %7.3f   reco %7.3f   frac %7.3f\n",eventnumber,mom_thro,mom_reco,mom_reco_frac);
 			mom_recon->Fill(mom_thro,mom_reco);
 			mom_recon_frac->Fill(mom_reco_frac);
 			mom_recon_frac_2D->Fill(mom_thro,ang_thro,mom_reco_frac);

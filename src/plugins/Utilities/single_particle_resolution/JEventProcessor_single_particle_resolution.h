@@ -22,6 +22,8 @@ class JEventProcessor_single_particle_resolution:public jana::JEventProcessor{
 		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+		int VERBOSE;
 };
 
 #endif // _JEventProcessor_single_particle_resolution_
