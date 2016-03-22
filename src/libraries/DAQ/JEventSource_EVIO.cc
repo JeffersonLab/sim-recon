@@ -1730,12 +1730,12 @@ void JEventSource_EVIO::CopyBOR(JEventLoop *loop, map<string, vector<JObject*> >
             LinkAssociationsModuleOnlyWithCast<Df250BORConfig,Df250WindowRawData>(bors, hit_objs_by_type["Df250WindowRawData"]);
         }
         if(bor_obj_name == "Df125BORConfig"){
-            LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125CDCPulse>(bors, hit_objs_by_type["Df250PulseIntegral"]);
-            LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125FDCPulse>(bors, hit_objs_by_type["Df250PulsePedestal"]);
-            LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125PulseIntegral>(bors, hit_objs_by_type["Df250PulseTime"]);
-            LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125PulsePedestal>(bors, hit_objs_by_type["Df250WindowRawData"]);
-            LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125PulseTime>(bors, hit_objs_by_type["Df250WindowRawData"]);
-            LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125WindowRawData>(bors, hit_objs_by_type["Df250WindowRawData"]);
+            LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125CDCPulse>(bors, hit_objs_by_type["Df125CDCPulse"]);
+            LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125FDCPulse>(bors, hit_objs_by_type["Df125FDCPulse"]);
+            LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125PulseIntegral>(bors, hit_objs_by_type["Df125PulseIntegral"]);
+            LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125PulsePedestal>(bors, hit_objs_by_type["Df125PulsePedestal"]);
+            LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125PulseTime>(bors, hit_objs_by_type["Df125PulseTime"]);
+            LinkAssociationsModuleOnlyWithCast<Df125BORConfig,Df125WindowRawData>(bors, hit_objs_by_type["Df125WindowRawData"]);
         }
         if(bor_obj_name == "DF1TDCBORConfig"){
             LinkAssociationsModuleOnlyWithCast<DF1TDCBORConfig,Df250PulseIntegral>(bors, hit_objs_by_type["DF1TDCHit"]);
@@ -1923,6 +1923,13 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
             pi_objs.push_back(f250PulseIntegral);
         }
 
+        // Flag all objects as emulated and their values will be replaced with emulated quantities
+        if (F250_EMULATION_MODE == kEmulationAlways){
+            f250PulseTime->emulated = 1;
+            f250PulsePedestal->emulated = 1;
+            f250PulseIntegral->emulated = 1;
+        }
+
         // Emulate firmware
         if(VERBOSE>3) evioout << " Calling EmulateFirmware ..." << endl;
         f250Emulator->EmulateFirmware(f250WindowRawData, f250PulseTime, f250PulsePedestal, f250PulseIntegral);
@@ -2018,6 +2025,12 @@ void JEventSource_EVIO::EmulateDf125Firmware( JEvent &event, vector<JObject*> &w
             f125FDCPulse->emulated = true;
             f125FDCPulse->AddAssociatedObject(f125WindowRawData);
             cp_objs.push_back(f125FDCPulse);
+        }
+
+        // Flag all objects as emulated and their values will be replaced with emulated quantities
+        if (F125_EMULATION_MODE == kEmulationAlways){
+            if(f125CDCPulse!=NULL) f125CDCPulse->emulated = 1;
+            if(f125FDCPulse!=NULL) f125FDCPulse->emulated = 1;
         }
 
         // Perform the emulation

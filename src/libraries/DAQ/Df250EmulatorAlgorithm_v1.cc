@@ -8,15 +8,20 @@ Df250EmulatorAlgorithm_v1::Df250EmulatorAlgorithm_v1(JEventLoop *loop){
     NSB_DEF = 5;
     THR_DEF = 120;
     // Set verbosity
-    VERBOSE = 10;
+    VERBOSE = 0;
 
     if(gPARMS){
-        //gPARMS->
+        gPARMS->SetDefaultParameter("EMULATION250:FORCE_DEFAULT", FORCE_DEFAULT,"Set to >0 to force use of default values");
+        gPARMS->SetDefaultParameter("EMULATION250:NSA", NSA_DEF,"Set NSA for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION250:NSB", NSB_DEF,"Set NSB for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION250:THR", THR_DEF,"Set threshold for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION250:VERBOSE", VERBOSE,"Set verbosity for f250 emulation");
     }
 }
 
 void Df250EmulatorAlgorithm_v1::EmulateFirmware(const Df250WindowRawData* rawData, Df250PulseTime* pulseTime, Df250PulsePedestal* pulsePedestal, Df250PulseIntegral* pulseIntegral){
 
+    // This is the main routine called by JEventSource_EVIO::GetObjects() and serves as the entry point for the code.
     if (VERBOSE > 0) {
         jout << " Df250EmulatorAlgorithm_v1::EmulateFirmware ==> Starting emulation <==" << endl;
         jout << "rocid : " << rawData->rocid << " slot: " << rawData->slot << " channel: " << rawData->channel << endl;
@@ -108,6 +113,7 @@ void Df250EmulatorAlgorithm_v1::EmulateFirmware(const Df250WindowRawData* rawDat
             }
         }
     }
+    if (VERBOSE > 1) jout << "reportTC: " << int(reportTC) << " foundPeak: " << int(foundPeak) << " TC: " << TC << " VMIN: " << VMIN << " VPEAK: " << VPEAK << endl;  
 
     // That concludes the first pass over the data, if the peak search failed, there is another special error condition
     // "A problem with the algorithm occurs if VPEAK is not found within the trigger window. In this case, the reported 
@@ -122,6 +128,7 @@ void Df250EmulatorAlgorithm_v1::EmulateFirmware(const Df250WindowRawData* rawDat
     if (foundPeak){
         VMID = (VMIN + VPEAK) >> 1;
     }
+    if (VERBOSE > 1) jout << "VMID: " << VMID << endl;
 
     // Need to determine the starting and finishing sample for the integral
     int16_t sample_integral_start, sample_integral_end;
@@ -137,7 +144,6 @@ void Df250EmulatorAlgorithm_v1::EmulateFirmware(const Df250WindowRawData* rawDat
             integral += samples[i];
         }
         if (!reportTC && foundPeak && !foundTime){
-            //if ( i > 3){
             if ( i > 3){ // only search in the region after the pedestal samples
                 if(samples[i] > VMID){ 
                     // The line below is a bug in the current firmware...
@@ -150,13 +156,13 @@ void Df250EmulatorAlgorithm_v1::EmulateFirmware(const Df250WindowRawData* rawDat
             }
         }
     }
-
+    uint32_t time = TC << 6 | TF;
+    if (VERBOSE > 1) jout << "TC: " << TC << " TF: " << TF << " time: " << time << " integral: " << integral << endl;
 
     // Now we have all of the quantities that we wanted. Set them as the emulated values in the data words
     pulseIntegral->integral_emulated = integral;
     pulseIntegral->pedestal_emulated = VMIN;
 
-    uint32_t time = TC << 6 | TF;
     pulseTime->time_emulated = time;
     pulseTime->quality_factor_emulated = reportTC;
 
@@ -164,6 +170,21 @@ void Df250EmulatorAlgorithm_v1::EmulateFirmware(const Df250WindowRawData* rawDat
     pulsePedestal->pulse_peak_emulated = VPEAK;
 
     // if emulated, copy from the emulated quantities to the real values.
+    if (pulseIntegral->emulated){
+        pulseIntegral->integral = pulseIntegral->integral_emulated;
+        pulseIntegral->pedestal = pulseIntegral->pedestal_emulated;
+        pulseIntegral->nsamples_integral = NSA + NSB;
+    }
+
+    if (pulseTime->emulated){
+        pulseTime->time = pulseTime->time_emulated;
+        pulseTime->quality_factor = pulseTime->quality_factor_emulated;
+    }
+
+    if (pulsePedestal->emulated){
+        pulsePedestal->pedestal = pulsePedestal->pedestal_emulated;
+        pulsePedestal->pulse_peak = pulsePedestal->pulse_peak_emulated;
+    }
 
     if (VERBOSE > 0) jout << " Df250EmulatorAlgorithm_v1::EmulateFirmware ==> Emulation complete <==" << endl;    
     return;

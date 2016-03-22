@@ -1,10 +1,87 @@
 #include "Df125EmulatorAlgorithm_v2.h"
 
+// Some masks that are useful for getting data from BORConfig registers
+// from fa125Lib.h
+/* 0x1058 FE nw register defintions */
+#define FA125_FE_NW_MASK          0x000003FF
+/* 0x105C FE pl register defintions */
+#define FA125_FE_PL_MASK           0x0000FFFF
+/* 0xN070 - 0xN084 threshold register defintions */
+#define FA125_FE_THRESHOLD_MASK          0x00000FFF
+/* 0xN0A0 FE ped_sf definitions */
+#define FA125_FE_PED_SF_NP_MASK       0x000000FF
+#define FA125_FE_PED_SF_NP2_MASK      0x0000FF00
+#define FA125_FE_PED_SF_IBIT_MASK     0x00070000
+#define FA125_FE_PED_SF_ABIT_MASK     0x00380000
+#define FA125_FE_PED_SF_PBIT_MASK     0x01C00000
+/* 0xN0A4 FE timing_thres definitions */
+#define FA125_FE_TIMING_THRES_HI_MASK(x) (0x1FF<<((x%3)*9))
+#define FA125_FE_TIMING_THRES_LO_MASK(x) (0xFF<<(8+((x%2)*16)))
+/* 0xN0B0 FE integration_end definitions */
+#define FA125_FE_IE_INTEGRATION_END_MASK  0x00000FFF
+#define FA125_FE_IE_PEDESTAL_GAP_MASK     0x000FF000
+
 Df125EmulatorAlgorithm_v2::Df125EmulatorAlgorithm_v2(JEventLoop *loop){
-    ;
+    // Enables forced use of default values
+    FORCE_DEFAULT_CDC = 0;
+    FORCE_DEFAULT_FDC = 0;
+    
+    // Default values for the essential parameters
+    CDC_WS_DEF  =  46;      // hit window start - must be >= F125_CDC_NP
+    CDC_WE_DEF  = 150;      // hit window end - must be at least 20 less than number of samples available
+    CDC_IE_DEF  = 200;      // end integration at the earlier of WE, or this many samples after threshold crossing of TH  
+    CDC_NP_DEF  =  16;      // # samples used for pedestal used to find hit. 2**integer
+    CDC_NP2_DEF =  16;      // # samples used for pedestal calculated just before hit. 2**integer
+    CDC_PG_DEF  =   4;      // # samples between hit threshold crossing and local pedestal sample
+    CDC_H_DEF   = 125;      // 5 sigma hit threshold
+    CDC_TH_DEF  = 100;      // 4 sigma high timing threshold
+    CDC_TL_DEF  =  25;      // 1 sigma low timing threshold
+
+    FDC_WS_DEF  =  30;      // hit window start - must be >= F125_FDC_NP
+    FDC_WE_DEF  =  52;      // hit window end - must be at least 20 less than number of samples available
+    FDC_IE_DEF  =  10;      // end integration at the earlier of WE, or this many samples after threshold crossing of TH  
+    FDC_NP_DEF  =  16;      // # samples used for pedestal used to find hit. 2**integer
+    FDC_NP2_DEF =  16;      // # samples used for pedestal calculated just before hit. 2**integer
+    FDC_PG_DEF  =   4;      // # samples between hit threshold crossing and local pedestal sample
+    FDC_H_DEF   = 125;      // 5 sigma hit threshold
+    FDC_TH_DEF  = 100;      // 4 sigma high timing threshold
+    FDC_TL_DEF  =  25;      // 1 sigma low timing threshold
+    
+    // Set verbosity
+    VERBOSE = 0;
+
+    if(gPARMS){
+        gPARMS->SetDefaultParameter("EMULATION125:FORCE_DEFAULT_CDC", FORCE_DEFAULT_CDC,"Set to >0 to force use of CDC default values");
+        gPARMS->SetDefaultParameter("EMULATION125:FORCE_DEFAULT_FDC", FORCE_DEFAULT_FDC,"Set to >0 to force use of FDC default values");
+        gPARMS->SetDefaultParameter("EMULATION125:CDC_WS",  CDC_WS_DEF,  "Set CDC_WS for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:CDC_WE",  CDC_WE_DEF,  "Set CDC_WE for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:CDC_IE",  CDC_IE_DEF,  "Set CDC_IE for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:CDC_NP",  CDC_NP_DEF,  "Set CDC_NP for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:CDC_NP2", CDC_NP2_DEF, "Set CDC_NP2 for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:CDC_PG",  CDC_PG_DEF,  "Set CDC_PG for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:CDC_H",   CDC_H_DEF,   "Set CDC_H (hit threshold) for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:CDC_TH",  CDC_TH_DEF,  "Set CDC_TH for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:CDC_TL",  CDC_TL_DEF,  "Set CDC_TL for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:FDC_WS",  FDC_WS_DEF,  "Set FDC_WS for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:FDC_WE",  FDC_WE_DEF,  "Set FDC_WE for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:FDC_IE",  FDC_IE_DEF,  "Set FDC_IE for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:FDC_NP",  FDC_NP_DEF,  "Set FDC_NP for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:FDC_NP2", FDC_NP2_DEF, "Set FDC_NP2 for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:FDC_PG",  FDC_PG_DEF,  "Set FDC_PG for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:FDC_H",   FDC_H_DEF,   "Set FDC_H (hit threshold) for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:FDC_TH",  FDC_TH_DEF,  "Set FDC_TH for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:FDC_TL",  FDC_TL_DEF,  "Set FDC_TL for firmware emulation, will be overwritten by BORConfig if present");
+        gPARMS->SetDefaultParameter("EMULATION125:VERBOSE", VERBOSE,"Set verbosity for f125 emulation");
+    }
 }
 
 void Df125EmulatorAlgorithm_v2::EmulateFirmware(const Df125WindowRawData *rawData, Df125CDCPulse *cdcPulse, Df125FDCPulse *fdcPulse){
+
+    if (VERBOSE > 0) {
+        jout << "=== Entering f125 Firmware Emulation === ROCID: " << rawData->rocid << " SLOT: " << rawData->slot << " CHANNEL: " << rawData->channel <<endl;
+    }
+
+    // This is the main routine called by JEventSource_EVIO::GetObjects() and serves as the entry point for the code.
     bool isCDC = cdcPulse != NULL ? true : false;
     bool isFDC = fdcPulse != NULL ? true : false;
 
@@ -16,11 +93,123 @@ void Df125EmulatorAlgorithm_v2::EmulateFirmware(const Df125WindowRawData *rawDat
         return;
     }
 
-    jout << "Df125EmulatorAlgorithm_v2::EmulateFirmware Performing f125 Emulation" << endl;
+    // channel is needed for the config lookup
+    uint32_t channel = rawData->channel;
+
+    // The following are the essential values needed for the emulation 
+    // (will use ROOT types since that is what the existing f125_algos code uses)
+    Int_t WS=0,WE=0,IE=0,NP=0,NP2=0,PG=0,H=0,TH=0,TL=0;
+    Int_t IBIT=0, ABIT=0, PBIT=0;
+
+    Int_t NE = 20; // This is a hardcoded constant in the firmware WE = NW - NE - 1  
+
+    // Now try to get the configuration form the BOR record, if this does not exist,
+    // or is forced, use the default values.
+    const Df125BORConfig *BORConfig = NULL;
+    rawData->GetSingle(BORConfig);
+
+    if(BORConfig != NULL){
+        if (VERBOSE > 0) jout << "--Found BORConfig" << endl; 
+        Int_t NW = BORConfig->fe[0].nw;
+        Int_t P1 = BORConfig->fe[0].ped_sf & FA125_FE_PED_SF_NP_MASK;
+        Int_t P2 = (BORConfig->fe[0].ped_sf & FA125_FE_PED_SF_NP2_MASK) >> 8;
+        if (NW != Int_t(rawData->samples.size())) jout << "WARNING Df125EmulatorAlgorithm_v2::EmulateFirmware NW != rawData->samples.size()" << endl;
+        WE  = NW - NE - 1;
+        IE  = BORConfig->fe[0].ie & FA125_FE_IE_INTEGRATION_END_MASK;
+        NP  = 1 << P1;
+        NP2 = 1 << P2;
+        PG  = (BORConfig->fe[0].ie & FA125_FE_IE_PEDESTAL_GAP_MASK) >> 12;
+        WS  = NP;
+        H   = BORConfig->fe[channel/6].threshold[channel%6] & FA125_FE_THRESHOLD_MASK;
+        TH  = (BORConfig->fe[channel/6].timing_thres_hi[(channel/3)%2] & FA125_FE_TIMING_THRES_HI_MASK(channel)) >> ((channel%3) * 9);
+        TL  = (BORConfig->fe[channel/6].timing_thres_lo[(channel/2)%3] & FA125_FE_TIMING_THRES_LO_MASK(channel)) >> ((channel%2) * 16 + 8);
+        IBIT = (BORConfig->fe[0].ped_sf & FA125_FE_PED_SF_IBIT_MASK)>>16;
+        ABIT = (BORConfig->fe[0].ped_sf & FA125_FE_PED_SF_ABIT_MASK)>>19;
+        PBIT = (BORConfig->fe[0].ped_sf & FA125_FE_PED_SF_PBIT_MASK)>>22;
+    }
+
+    // Set defaults if BORConfig missing or if forced
+    if( isCDC && ((BORConfig == NULL) || FORCE_DEFAULT_CDC) ){
+        if (VERBOSE > 0) jout << "WARNING Df125EmulatorAlgorithm_v2::EmulateFirmware Using CDC Default values" << endl;
+        WS  = CDC_WS_DEF;
+        WE  = CDC_WE_DEF;
+        IE  = CDC_IE_DEF;
+        NP  = CDC_NP_DEF;
+        NP2 = CDC_NP2_DEF;
+        PG  = CDC_PG_DEF;
+        H   = CDC_H_DEF;
+        TH  = CDC_TH_DEF;
+        TL  = CDC_TL_DEF;
+    }
+    if( isFDC && ((BORConfig == NULL) || FORCE_DEFAULT_FDC) ){
+        if (VERBOSE > 0) jout << "WARNING Df125EmulatorAlgorithm_v2::EmulateFirmware Using FDC Default values" << endl;
+        WS  = FDC_WS_DEF;
+        WE  = FDC_WE_DEF;
+        IE  = FDC_IE_DEF;
+        NP  = FDC_NP_DEF;
+        NP2 = FDC_NP2_DEF;
+        PG  = FDC_PG_DEF;
+        H   = FDC_H_DEF;
+        TH  = FDC_TH_DEF;
+        TL  = FDC_TL_DEF;
+    }
+
+    if (VERBOSE > 0) {
+        jout << "============ Parameters used for emulation ================" << endl;
+        jout << "WS: " << WS << " WE: " << WE << " IE: " << IE << " NP: " << NP << " NP2: " << NP2 << endl;
+        jout << "PG: " << PG << " H: " << H << " TH: " << TH << " TL: " << TL << endl;
+        jout << "IBIT: " << IBIT << " ABIT: " << ABIT << " PBIT: " << PBIT << endl;
+    }
+
+    // The calculated quantities are passed by reference
+    Int_t time=0, q_code=0, pedestal=0, overflows=0, maxamp=0;
+    Long_t integral=0;
+
+    // Perform the emulation
+    fa125_algos(time, q_code, pedestal, integral, overflows, maxamp, &rawData->samples[0], WS, WE, IE, NP, NP2, PG, H, TH, TL);
+
+    // Put the emulated values in the objects
+    if (isCDC){
+        cdcPulse->le_time_emulated = time;
+        cdcPulse->time_quality_bit_emulated = q_code;
+        cdcPulse->overflow_count_emulated = overflows;
+        cdcPulse->pedestal_emulated = pedestal >> PBIT;
+        cdcPulse->integral_emulated = integral >> IBIT;
+        cdcPulse->first_max_amp_emulated = maxamp >> ABIT;
+    }
+    else{
+        fdcPulse->le_time_emulated = time;
+        fdcPulse->time_quality_bit_emulated = q_code;
+        fdcPulse->overflow_count_emulated = overflows;
+        fdcPulse->pedestal_emulated = pedestal >> PBIT;
+        fdcPulse->integral_emulated = integral >> IBIT;
+        fdcPulse->peak_amp_emulated = maxamp >> ABIT;
+    }
+
+    // Copy the emulated values to the main values if needed
+    if (isCDC && cdcPulse->emulated){
+        cdcPulse->le_time = cdcPulse->le_time_emulated;
+        cdcPulse->time_quality_bit = cdcPulse->time_quality_bit_emulated;
+        cdcPulse->overflow_count = cdcPulse->overflow_count_emulated;
+        cdcPulse->pedestal = cdcPulse->pedestal_emulated;
+        cdcPulse->integral = cdcPulse->integral_emulated;
+        cdcPulse->first_max_amp = cdcPulse->first_max_amp_emulated;
+    }
+    else if (isFDC && fdcPulse->emulated){
+        fdcPulse->le_time = fdcPulse->le_time_emulated;
+        fdcPulse->time_quality_bit = fdcPulse->time_quality_bit_emulated;
+        fdcPulse->overflow_count = fdcPulse->overflow_count_emulated;
+        fdcPulse->pedestal = fdcPulse->pedestal_emulated;
+        fdcPulse->integral = fdcPulse->integral_emulated;
+        fdcPulse->peak_amp = fdcPulse->peak_amp_emulated;
+    }
+
+    if (VERBOSE > 0) jout << "=== Exiting f125 Firmware Emulation === " << endl;
+
     return;
 }
 
-void Df125EmulatorAlgorithm_v2::fa125_algos(Int_t &time, Int_t &q_code, Int_t &pedestal, Long_t &integral, Int_t &overflows, Int_t &maxamp, Int_t adc[], Int_t WINDOW_START, Int_t WINDOW_END, Int_t INT_END, Int_t NPED, Int_t NPED2, Int_t PG, Int_t HIT_THRES, Int_t HIGH_THRESHOLD, Int_t LOW_THRESHOLD) {
+void Df125EmulatorAlgorithm_v2::fa125_algos(Int_t &time, Int_t &q_code, Int_t &pedestal, Long_t &integral, Int_t &overflows, Int_t &maxamp, const uint16_t adc[], Int_t WINDOW_START, Int_t WINDOW_END, Int_t INT_END, Int_t NPED, Int_t NPED2, Int_t PG, Int_t HIT_THRES, Int_t HIGH_THRESHOLD, Int_t LOW_THRESHOLD) {
 
     const Int_t NU = 20;  //number of samples sent to time algo
     const Int_t PED = 5;  //sample to be used as pedestal for timing is in place 5
@@ -61,7 +250,7 @@ void Df125EmulatorAlgorithm_v2::fa125_algos(Int_t &time, Int_t &q_code, Int_t &p
     }
 }
 
-void Df125EmulatorAlgorithm_v2::cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t &pedestal, Int_t adc[], Int_t WINDOW_START, Int_t WINDOW_END, Int_t HIT_THRES, Int_t NPED, Int_t NPED2, Int_t PG) {
+void Df125EmulatorAlgorithm_v2::cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t &pedestal, const uint16_t adc[], Int_t WINDOW_START, Int_t WINDOW_END, Int_t HIT_THRES, Int_t NPED, Int_t NPED2, Int_t PG) {
 
     pedestal=0;  //pedestal
     Int_t threshold=0;
@@ -99,38 +288,53 @@ void Df125EmulatorAlgorithm_v2::cdc_hit(Int_t &hitfound, Int_t &hitsample, Int_t
     }
 }
 
-void Df125EmulatorAlgorithm_v2::cdc_integral(Long_t& integral, Int_t& overflows, Int_t timesample, Int_t adc[], Int_t WINDOW_END, Int_t INT_END) {
+void Df125EmulatorAlgorithm_v2::cdc_integral(Long_t& integral, Int_t& overflows, Int_t timesample, const uint16_t adc[], Int_t WINDOW_END, Int_t INT_END) {
 
     Int_t i=0;
 
     integral = 0;
     overflows = 0;
 
-    Int_t lastsample = timesample + INT_END - 1;
+    if (timesample <= WINDOW_END) {
 
-    if (lastsample > WINDOW_END) lastsample = WINDOW_END;
+        Int_t lastsample = timesample + INT_END - 1;
 
-    for (i = timesample; i <= lastsample; i++ ) {
-        integral += (Long_t)adc[i];
-        if (adc[i]==(Long_t)4095) overflows++;    // only a placeholder at present. need to test on sample's overflow bit
+        if (lastsample > WINDOW_END) lastsample = WINDOW_END;
+
+        for (i = timesample; i <= lastsample; i++ ) {
+
+            integral += (Long_t)adc[i];
+            if (adc[i]==(Long_t)4095) overflows++;   
+
+        }
+
     }
+
 }
 
-void Df125EmulatorAlgorithm_v2::cdc_max(Int_t& maxamp, Int_t hitsample, Int_t adc[], Int_t WINDOW_END) {
+void Df125EmulatorAlgorithm_v2::cdc_max(Int_t& maxamp, Int_t hitsample, const uint16_t adc[], Int_t WINDOW_END) {
 
     int i;
     int ndec = 0;  //number of decreasing samples
 
+    //make sure we are on an up-slope
+
+    while ((adc[hitsample] <= adc[hitsample-1]) && (hitsample <= WINDOW_END)) hitsample++;
+
     maxamp = adc[hitsample];
 
     for (i=hitsample; i<=WINDOW_END; i++) {
+
         if (adc[i] > adc[i-1]) {
             maxamp = adc[i];
             ndec = 0;
         }
+
         if (adc[i] <= adc[i-1]) ndec++;
         if (ndec==2) break;
     }
+
+    if (hitsample >= WINDOW_END) maxamp = adc[WINDOW_END];
 
 }
 
