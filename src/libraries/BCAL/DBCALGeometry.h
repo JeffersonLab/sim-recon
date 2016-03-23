@@ -116,7 +116,9 @@ public:
   static float rSize( int fADC_cellId );
 
   ///these are missing functions that fill in some previous gaps.
-  static int fADCcellId_rphi( float r, float phi );  ///< Method to get the fADC cell ID from an (R, phi) combination.\n  R in cm and phi in radians.
+  static int fADCcellId_rphi( float r, float phi );    ///< Method to get the fADC cell ID from an (R, phi) combination.\n  R in cm and phi in radians.
+  static int getglobalchannelnumber(int module, int layer, int sector, int end);  ///< Return a BCAL channel number, in order of significance (module, layer, sector, end).
+  static int getendchannelnumber(int module, int layer, int sector);  ///< Return a channel number for either end, in order of significance (module, layer, sector).
   static int getglobalsector(int module, int sector);
   static int getsector(int globalsector);
   static int getmodule(int globalsector);
