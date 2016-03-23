@@ -52,8 +52,8 @@ JEventProcessor_pi0bcalskim::JEventProcessor_pi0bcalskim()
   gPARMS->SetDefaultParameter("PI0BCALSKIM:MIN_SH1_E" , MIN_SH1_E );
   gPARMS->SetDefaultParameter("PI0BCALSKIM:MIN_SH2_E" , MIN_SH2_E );
 
-
-
+  num_epics_events = 0;
+  
 }
 
 //------------------
@@ -97,6 +97,21 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
   loop->Get(locTrackTimeBased);
   vector<const DVertex*> kinfitVertex;
   loop->Get(kinfitVertex);
+
+  // always write out BOR events
+  if(loop->GetJEvent().GetStatusBit(kSTATUS_BOR_EVENT)) {
+      //jout << "Found BOR!" << endl;
+      dEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim" );
+      return NOERROR;
+  }
+
+  // write out the first few EPICS events to save run number & other meta info
+  if(loop->GetJEvent().GetStatusBit(kSTATUS_EPICS_EVENT) && (num_epics_events<5)) {
+      //jout << "Found EPICS!" << endl;
+      dEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim" );
+      num_epics_events++;
+      return NOERROR;
+  }
 
   if(locBCALShowers.size() < 2 ) return NOERROR;
 
@@ -166,7 +181,8 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
   }
   	if(Candidate){
 	        if( WRITE_EVIO ) {
-		  //	cout << " inv mass = " << inv_mass << " sh1 E = " << sh1_E << " sh2 E = " << sh2_E << " event num = " << eventnumber << endl;
+                //	cout << " inv mass = " << inv_mass << " sh1 E = " << sh1_E << " sh2 E = " << sh2_E << " event num = " << eventnumber << endl;
+                cout << eventnumber << endl;
      			 dEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim" );
   		  }
 			}

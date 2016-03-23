@@ -79,11 +79,29 @@ jerror_t DTrackTimeBased_factory_Combo::init(void)
 	locPIDDeque[0] = Proton;  locPIDDeque[1] = KPlus;  locPIDDeque[2] = PiPlus;
 	dParticleIDsToTry[Deuteron] = locPIDDeque;
 
-	dAvailablePIDs.insert(Proton);
-	dAvailablePIDs.insert(KPlus);
-	dAvailablePIDs.insert(PiPlus);
-	dAvailablePIDs.insert(KMinus);
-	dAvailablePIDs.insert(PiMinus);
+	vector<int> hypotheses;
+	hypotheses.push_back(PiPlus);
+	hypotheses.push_back(KPlus);
+	hypotheses.push_back(Proton);
+	hypotheses.push_back(PiMinus);
+	hypotheses.push_back(KMinus);
+
+	ostringstream locMassStream;
+	for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
+	{
+		locMassStream << hypotheses[loc_i];
+		if(loc_i != (hypotheses.size() - 1))
+			locMassStream << ", ";
+	}
+
+	string HYPOTHESES = locMassStream.str();
+	gPARMS->SetDefaultParameter("TRKFIT:HYPOTHESES", HYPOTHESES);
+
+	// Parse MASS_HYPOTHESES strings to make list of masses to try
+	hypotheses.clear();
+	SplitString(HYPOTHESES, hypotheses, ",");
+	for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
+		dAvailablePIDs.insert(Particle_t(hypotheses[loc_i]));
 
 	return NOERROR;
 }

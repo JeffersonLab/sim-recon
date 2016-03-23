@@ -127,7 +127,7 @@ jerror_t JEventProcessor_ST_online_Tresolution::brun(JEventLoop *eventLoop, int3
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_ST_online_Tresolution::evnt(JEventLoop *loop,  uint64_t eventnumber)
+jerror_t JEventProcessor_ST_online_Tresolution::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using

@@ -85,7 +85,7 @@ jerror_t JEventProcessor_ST_Propagation_Time::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_ST_Propagation_Time::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_ST_Propagation_Time::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	// This is called whenever the run number changes
   // Get the particleID object for each run
@@ -131,7 +131,7 @@ jerror_t JEventProcessor_ST_Propagation_Time::brun(JEventLoop *eventLoop, int ru
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using

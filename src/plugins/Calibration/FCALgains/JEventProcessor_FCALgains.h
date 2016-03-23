@@ -2,7 +2,7 @@
 //
 //    File: DEventProcessor_FCAL_Shower.h
 // Created: Fri Oct 10 16:41:18 EDT 2014
-// Creator: wmcginle (on Linux ifarm1101 2.6.32-220.7.1.el6.x86_64 x86_64)
+// Creator: adesh (on Linux ifarm1101 2.6.32-220.7.1.el6.x86_64 x86_64)
 //
 
 #ifndef _DEventProcessor_FCAL_Shower_
@@ -112,7 +112,8 @@ class JEventProcessor_FCALgains : public jana::JEventProcessor
         TH1F* h1D_nhits;
         TH1F* h1D_nhits_unordered;
         TH1F* h1D_mPi0_window;
-	//TH1F* h1D_dRho;
+	TH2F* hits2D;
+	TH2F* hits2D_pi0;
 	TH1F* h1D_ebyp;
 		
 };
