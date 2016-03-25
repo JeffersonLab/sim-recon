@@ -29,13 +29,13 @@ class DTAGMHit:public jana::JObject{
       void toStrings(vector<pair<string,string> > &items) const {
         AddString(items, "row", "%d", row);
         AddString(items, "column", "%d", column);
-        AddString(items, "E(GeV)", "%f", E);
-        AddString(items, "t(ns)", "%f", t);
-	AddString(items, "time_tdc(ns)","%f",time_tdc);
-        AddString(items, "time_fadc(ns)", "%f", time_fadc);
-        AddString(items, "integral", "%f", integral);
-        AddString(items, "pulse_peak", "%f", pulse_peak);
-        AddString(items, "npix_fadc", "%f", npix_fadc);
+        AddString(items, "E(GeV)", "%f", (float)E);
+        AddString(items, "t(ns)", "%f", (float)t);
+        AddString(items, "time_tdc(ns)","%f", (float)time_tdc);
+        AddString(items, "time_fadc(ns)", "%f", (float)time_fadc);
+        AddString(items, "integral", "%f", (float)integral);
+        AddString(items, "pulse_peak", "%f", (float)pulse_peak);
+        AddString(items, "npix_fadc", "%f", (float)npix_fadc);
         AddString(items, "has_fADC", "%d", (int)has_fADC);
         AddString(items, "has_TDC", "%d", (int)has_TDC);
       }
