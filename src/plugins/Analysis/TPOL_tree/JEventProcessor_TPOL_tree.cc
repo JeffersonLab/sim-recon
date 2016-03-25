@@ -4,6 +4,7 @@
 // Created: Thu Feb  4 16:11:54 EST 2016
 // Creator: nsparks (on Linux cua2.jlab.org 3.10.0-327.4.4.el7.x86_64 x86_64)
 //
+#include <cmath>
 #include <stdint.h>
 #include "JEventProcessor_TPOL_tree.h"
 using namespace jana;
