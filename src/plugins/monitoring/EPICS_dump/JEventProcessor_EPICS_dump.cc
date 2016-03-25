@@ -61,6 +61,10 @@ using namespace jana;
                                              NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
                                              NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
      static TH1I* h1epics_liveinst = NULL;
+     static TH1F* h1epics_AD00_VSevent = NULL;
+     static TH1F* h1epics_entries1_VSevent = NULL;;
+     static TH1F* h1epics_entries2_VSevent = NULL;
+     static TH1F* h1epics_liveinst_VSevent = NULL;
 
      static uint64_t save_ntrig[nscalers];
      static uint64_t save_ntrig0[nscalers];
@@ -148,6 +152,22 @@ jerror_t JEventProcessor_EPICS_dump::init(void) {
 	h2epics_pos_outer = new TH2I("h1epics_pos_outer", "Position AC outer",nbins,-20,20,nbins,-20,20);
 	h2epics_pos_outer->SetXTitle("Position AC outer x (mm)");
 	h2epics_pos_outer->SetYTitle("Position AC outer y (mm)");
+
+
+        h1epics_AD00_VSevent = new TH1F("h1epics_AD00_VSevent", "Current AD00 (nA)",200,0,2e6);
+	h1epics_AD00_VSevent->SetXTitle("Event number");
+	h1epics_AD00_VSevent->SetYTitle("Current (nA)");
+        h1epics_entries1_VSevent = new TH1F("h1epics_entries1_VSevent", "No synch events/bin",200,0,200e6);
+	h1epics_entries1_VSevent->SetXTitle("Event number");
+	h1epics_entries1_VSevent->SetYTitle("No of synch events");
+        h1epics_entries2_VSevent = new TH1F("h1epics_entries2_VSevent", "No epics events/bin",200,0,2e6);
+	h1epics_entries2_VSevent->SetXTitle("Event number");
+	h1epics_entries2_VSevent->SetYTitle("No of synch events");
+        h1epics_liveinst_VSevent = new TH1F("h1epics_liveinst_VSevent", "",200,0,200e6);
+	h1epics_liveinst_VSevent->SetXTitle("Event number");
+	h1epics_liveinst_VSevent->SetYTitle("Live Time");
+
+
 
   // back to main dir
   main->cd();
@@ -263,7 +283,9 @@ jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64
 	    live_inst = ts_scalers->inst_livetime;
 	    timestamp = ts_scalers->time;
 	    h1epics_liveinst->Fill((float)live_inst/1000.);
-	    printf ("Event=%d livetime=%d busytime=%d time=%d live_inst=%d\n",(int)locEventNumber,livetime,busytime,(int)timestamp,live_inst);
+	    h1epics_liveinst_VSevent->Fill((float)locEventNumber,(float)live_inst/1000.);
+	    h1epics_entries1_VSevent->Fill((float)locEventNumber);
+	    // printf ("Event=%d livetime=%d busytime=%d time=%d live_inst=%d\n",(int)locEventNumber,livetime,busytime,(int)timestamp,live_inst);
 	    if (! init_ntrig) {
 	      for (int j=0; j<nscalers; j++) {
 		save_ntrig0[j] = ts_scalers->gtp_scalers[j];
@@ -273,12 +295,14 @@ jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64
 	    for (int j=0; j<nscalers; j++) {
 	      gtp_sc[j] = ts_scalers->gtp_scalers[j] - save_ntrig0[j];
 	      gtp_rate[j] = ts_scalers->gtp_rate[j];
-	      printf ("TSscalers: Event=%d j=%d gtp_sc=%d gtp_rate=%d\n",(int)locEventNumber,j,gtp_sc[j],gtp_rate[j]);
-	      printf ("TSscalers: Event=%d trig_mask=%X temp_mask=%X save_ntrig=%d\n",(int)locEventNumber,trig_mask,temp_mask,(int)save_ntrig[j]);
-	    }
-	    for (int j=0; j<nscalers; j++) {
+	      // printf ("TSscalers: Event=%d j=%d gtp_sc=%d gtp_rate=%d\n",(int)locEventNumber,j,gtp_sc[j],gtp_rate[j]);
+	      // printf ("TSscalers: Event=%d trig_mask=%X temp_mask=%X save_ntrig=%d\n",(int)locEventNumber,trig_mask,temp_mask,(int)save_ntrig[j]);
 	      h1_trig_rates[j]->Fill(gtp_rate[j]/1000);     // plot in kHz
-	      if (gtp_sc[j] >0) h1_trig_livetimes[j]->Fill((float)save_ntrig[j]/(float)gtp_sc[j]);
+	      if (gtp_sc[j] >0) {
+		h1_trig_livetimes[j]->Fill((float)save_ntrig[j]/(float)gtp_sc[j]);
+		save_ntrig0[j] = ts_scalers->gtp_scalers[j];
+		save_ntrig[j] = 0;
+	      }
 	    }
 	  }
 	}
@@ -305,10 +329,12 @@ jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64
 		// cout << "isDigit=" << isDigit << " string=" << epics_val->name << endl;
 		if ((epics_val->name.substr(0,11) == "BCAL:pulser") & isDigit) {
 		  double freq = 1.e8/fconv;  // cover to s: period is in units 10 ns
-		    cout << "BCAL:pulser=" << epics_val->name.substr(0,11) << epics_val->fval <<  " freq=" << freq <<endl;
+		  cout << "BCAL:pulser=" << epics_val->name.substr(0,11) << epics_val->fval <<  " freq=" << freq <<endl;
 		}     
 		else if (epics_val->name == "IBCAD00CRCUR6") {
 		  h1epics_AD00->Fill(fconv);
+		  h1epics_AD00_VSevent->Fill((float)locEventNumber,fconv);
+		  h1epics_entries2_VSevent->Fill((float)locEventNumber);
 	          cout << "IBCAD00CRCUR6 " << epics_val->name << " fconv=" << fconv << endl; 
 		}
 		else if (epics_val->name == "AC:inner:position:x") {
