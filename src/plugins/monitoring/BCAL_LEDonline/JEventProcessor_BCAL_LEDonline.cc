@@ -46,6 +46,11 @@ static TProfile *bcal_fadc_digi_peak_vevent = NULL;
 static TProfile *bcal_fadc_digi_pedsubint_vevent = NULL;
 static TProfile *bcal_fadc_digi_integral_vevent = NULL;
 static TProfile *bcal_fadc_digi_pedsubpeak_vevent = NULL;
+static TProfile *bcal_fadc_digi_pedestal_vchannel = NULL;
+static TProfile *bcal_fadc_digi_peak_vchannel = NULL;
+static TProfile *bcal_fadc_digi_pedsubint_vchannel = NULL;
+static TProfile *bcal_fadc_digi_integral_vchannel = NULL;
+static TProfile *bcal_fadc_digi_pedsubpeak_vchannel = NULL;
 
 static TH1I *bcal_tdc_digi_time = NULL;
 static TH2I *bcal_tdc_digi_reltime = NULL;
@@ -183,6 +188,11 @@ jerror_t JEventProcessor_BCAL_LEDonline::init(void) {
 	bcal_fadc_digi_pedsubint_vevent->SetBit(TH1::kCanRebin);
 	bcal_fadc_digi_pedsubpeak_vevent->SetBit(TH1::kCanRebin);
 #endif
+	bcal_fadc_digi_pedestal_vchannel = new TProfile("bcal_fadc_digi_pedestal_vchannel","Avg BCAL pedestal vs channel;channel num;pedestal (all chan avg)",1536,0,1536);
+	bcal_fadc_digi_integral_vchannel = new TProfile("bcal_fadc_digi_integral_vchannel","Avg BCAL integral vs channel;channel num;integral (all chan avg)",1536,0,1536);
+	bcal_fadc_digi_peak_vchannel = new TProfile("bcal_fadc_digi_peak_vchannel","Avg BCAL peak vs channel;channel num;peak (all chan avg)",1536,0,1536);
+	bcal_fadc_digi_pedsubint_vchannel = new TProfile("bcal_fadc_digi_pedsubint_vchannel","Avg BCAL ped sub integral vs channel;channel num;integral - pedestal (all chan avg)",1536,0,1536);
+	bcal_fadc_digi_pedsubpeak_vchannel = new TProfile("bcal_fadc_digi_pedsubpeak_vchannel","Avg BCAL ped sub peak vs channel;channel num;peak - pedestal (all chan avg)",1536,0,1536);
 	bcal_tdc_digi_time = new TH1I("bcal_tdc_digi_time","TDC Time (DBCALDigiTDCHit);Time (F1TDC counts)", 500, 0, 66000);
 	bcal_tdc_digi_reltime = new TH2I("bcal_tdc_digi_reltime","Relative TDC Time (DBCALDigiTDCHit);Time (F1TDC counts); TDC trig time", 
 					 100, 0, 70000, 100, 0, 600);
@@ -234,6 +244,11 @@ jerror_t JEventProcessor_BCAL_LEDonline::init(void) {
 	bcal_fadc_digi_peak_vevent->SetStats(0);
 	bcal_fadc_digi_pedsubint_vevent->SetStats(0);
 	bcal_fadc_digi_pedsubpeak_vevent->SetStats(0);
+	bcal_fadc_digi_pedestal_vchannel->SetStats(0);
+	bcal_fadc_digi_integral_vchannel->SetStats(0);
+	bcal_fadc_digi_peak_vchannel->SetStats(0);
+	bcal_fadc_digi_pedsubint_vchannel->SetStats(0);
+	bcal_fadc_digi_pedsubpeak_vchannel->SetStats(0);
 	bcal_tdc_occ->SetStats(0);
 	bcal_Uhit_tTDC_tADC->SetStats(0);
 	bcal_Uhit_tTDC_E->SetStats(0);
@@ -417,14 +432,20 @@ jerror_t JEventProcessor_BCAL_LEDonline::evnt(JEventLoop *loop, uint64_t eventnu
 			if (layer==3) bcal_fadc_digi_occ_layer3->Fill(glosect);
 			if (layer==4) bcal_fadc_digi_occ_layer4->Fill(glosect);
 
+			int channelnumber = DBCALGeometry::getglobalchannelnumber(hit->module, hit->layer, hit->sector, hit->end);
 			if ( hit->pedestal > 0 ) {
+				double pedsubint = hit->pulse_integral-((float)hit->nsamples_integral/(float)hit->nsamples_pedestal)*hit->pedestal;
+				double pedsubpeak = hit->pulse_peak-hit->pedestal;
 				bcal_fadc_digi_pedestal_vevent->Fill(eventnumber,hit->pedestal);
 				bcal_fadc_digi_integral_vevent->Fill(eventnumber,hit->pulse_integral);
 				bcal_fadc_digi_peak_vevent->Fill(eventnumber,hit->pulse_peak);
-				double pedsubint = hit->pulse_integral-((float)hit->nsamples_integral/(float)hit->nsamples_pedestal)*hit->pedestal;
 				bcal_fadc_digi_pedsubint_vevent->Fill(eventnumber,pedsubint);
-				double pedsubpeak = hit->pulse_peak-hit->pedestal;
 				bcal_fadc_digi_pedsubpeak_vevent->Fill(eventnumber,pedsubpeak);
+				bcal_fadc_digi_pedestal_vchannel->Fill(channelnumber,hit->pedestal);
+				bcal_fadc_digi_integral_vchannel->Fill(channelnumber,hit->pulse_integral);
+				bcal_fadc_digi_peak_vchannel->Fill(channelnumber,hit->pulse_peak);
+				bcal_fadc_digi_pedsubint_vchannel->Fill(channelnumber,pedsubint);
+				bcal_fadc_digi_pedsubpeak_vchannel->Fill(channelnumber,pedsubpeak);
 			}
 
 			// Occupancy histogram defined to give better aspect ratio
@@ -590,6 +611,9 @@ jerror_t JEventProcessor_BCAL_LEDonline::erun(void) {
 	bcal_fadc_digi_peak_vevent->SetMinimum(bcal_fadc_digi_peak_vevent->GetMinimum(0.1));	
 	bcal_fadc_digi_pedsubint_vevent->SetMinimum(bcal_fadc_digi_pedsubint_vevent->GetMinimum(0.1));	
 	bcal_fadc_digi_pedsubpeak_vevent->SetMinimum(bcal_fadc_digi_pedsubpeak_vevent->GetMinimum(0.1));	
+	bcal_fadc_digi_pedestal_vchannel->SetMinimum(bcal_fadc_digi_pedestal_vchannel->GetMinimum(0.1));
+	bcal_fadc_digi_integral_vchannel->SetMinimum(bcal_fadc_digi_integral_vchannel->GetMinimum(0.1));	
+	bcal_fadc_digi_peak_vchannel->SetMinimum(bcal_fadc_digi_peak_vchannel->GetMinimum(0.1));	
 
 	return NOERROR;
 }

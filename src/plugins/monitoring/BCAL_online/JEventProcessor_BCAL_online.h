@@ -17,6 +17,7 @@ class JEventProcessor_BCAL_online:public jana::JEventProcessor{
   ~JEventProcessor_BCAL_online();
   const char* className(void){return "JEventProcessor_BCAL_online";}
 
+  time_t  recentwalltime; 
 
  private:
   jerror_t init(void);						///< Called once at program start.

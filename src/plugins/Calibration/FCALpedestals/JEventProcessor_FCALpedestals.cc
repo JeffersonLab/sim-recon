@@ -14,12 +14,16 @@
 #include "PID/DParticleID.h"
 #include "GlueX.h"
 #include <vector>
+#include <map>
 #include <deque>
 #include <string>
 #include <iostream>
 #include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>
+#include <TDirectory.h>
+#include <TH1I.h>
+#include <TH2F.h>
 
 using namespace jana;
 
@@ -27,14 +31,11 @@ using namespace jana;
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
 
-// Set number of channels
+//FCAL has only 2800 active channels but and a bunch of inactive blocks. Redundancy in number of channels is to make sure there are enough histograms available to fill all active channels.
 const int nChan = 2800;
 
 // Define Histograms
-static TH1F* pedestal[nChan];
-//static TH1F* timingoffset_vert[nChan];
-
-
+static TH1I* pedestal[nChan];
 
 extern "C"{
   void InitPlugin(JApplication *app){
@@ -71,14 +72,15 @@ jerror_t JEventProcessor_FCALpedestals::init(void)
   //
   japp->RootWriteLock();
 
-  //TDirectory *main1 = gDirectory;
-  //gDirectory->mkdir("horizontal_offsets")->cd();
-  for (int i = 0; i < nChan; ++i) {
-    pedestal[i] = new TH1F(Form("pedestal_%i",i),Form("Pedestal for Channel %i",i),500,90,120);
-  }
- 
+  TDirectory *main = gDirectory;
+  gDirectory->mkdir("FCAL_pedestals")->cd();
   
- 
+  
+  for (int i = 0; i < nChan; ++i) {
+    pedestal[i] = new TH1I(Form("pedestal_%i",i),Form("Pedestal for Channel %i",i),500,90,120);
+  }
+
+  main->cd();
   japp->RootUnLock();
 
   return NOERROR;
@@ -130,25 +132,28 @@ jerror_t JEventProcessor_FCALpedestals::evnt(JEventLoop *eventLoop,
   
  
   vector< const DFCALDigiHit*  > digiHits;
-   eventLoop->Get( digiHits );
+  eventLoop->Get( digiHits );
    
   japp->RootWriteLock();
   
-   for( vector< const DFCALDigiHit* >::const_iterator dHitItr = digiHits.begin();
+  for( vector< const DFCALDigiHit* >::const_iterator dHitItr = digiHits.begin();
        dHitItr != digiHits.end(); ++dHitItr ){
-const DFCALDigiHit& dHit = (**dHitItr);
- m_chan = m_fcalGeom->channel( dHit.row, dHit.column );
- //m_r = m_fcalGeom->row( dHit.row);  
- //m_c = m_fcalGeom->column(dHit.column );   
-    
-     m_pedestal = dHit.pedestal;
-     
-     //cout << "Channel: " << m_chan << " Pedestal: " << m_pedestal << endl;
-     pedestal[m_chan]->Fill(m_pedestal);  
-   // m_tree->Fill();
-}
+    const DFCALDigiHit& dHit = (**dHitItr);
 
-japp->RootUnLock(); 
+    m_r = dHit.row ;  
+    m_c = dHit.column ;   
+    if( !m_fcalGeom->isBlockActive( m_r, m_c ) ) continue;
+    m_chan = m_fcalGeom->channel( dHit.row, dHit.column );
+    m_pedestal = dHit.pedestal;
+
+    if( m_pedestal > 0 ) {
+      pedestal[m_chan]->Fill(m_pedestal); 
+    }
+  }
+
+  japp->RootUnLock(); 
+
+
 
   return NOERROR;
 }
@@ -169,7 +174,8 @@ jerror_t JEventProcessor_FCALpedestals::erun(void)
 //------------------
 jerror_t JEventProcessor_FCALpedestals::fini(void)
 {
-  // Called before program exit after event processing is finished.
+
+  // Called before program exit after event processing is finished.   
   return NOERROR;
 }
 

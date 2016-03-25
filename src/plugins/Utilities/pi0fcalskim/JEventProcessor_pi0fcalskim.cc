@@ -83,6 +83,8 @@ JEventProcessor_pi0fcalskim::~JEventProcessor_pi0fcalskim()
 jerror_t JEventProcessor_pi0fcalskim::init(void)
 {
   dEventWriterEVIO = NULL;
+
+  num_epics_events = 0;
 /*
   if( ! ( WRITE_ROOT || WRITE_EVIO ) ){
 
@@ -137,10 +139,23 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
 
   vector < const DFCALShower * > matchedShowers;
 
+  // always write out BOR events
+  if(loop->GetJEvent().GetStatusBit(kSTATUS_BOR_EVENT)) {
+      //jout << "Found BOR!" << endl;
+      dEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcalskim" );
+      return NOERROR;
+  }
 
+  // write out the first few EPICS events to save run number & other meta info
+  if(loop->GetJEvent().GetStatusBit(kSTATUS_EPICS_EVENT) && (num_epics_events<5)) {
+      //jout << "Found EPICS!" << endl;
+      dEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcalskim" );
+      num_epics_events++;
+      return NOERROR;
+  }
   
 
-	bool Candidate = false;
+  bool Candidate = false;
   
   Double_t kinfitVertexX = 0.0, kinfitVertexY = 0.0, kinfitVertexZ = 0.0;
   
@@ -155,7 +170,7 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
   DVector3 pos,mom;
  // Double_t radius = 0;
   //japp->RootWriteLock();
-  Double_t p;
+  //Double_t p;
   for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){
     for (unsigned int j=0; j< locFCALShowers.size(); ++j){
 
@@ -182,7 +197,7 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
 	  Double_t FOM = TMath::Prob(locTrackTimeBased[i]->chisq, locTrackTimeBased[i]->Ndof);
 	 // radius = sqrt(pos.X()*pos.X() + pos.Y()*pos.Y());
 	//  Double_t Eshwr = locFCALShowers[j]->getEnergy();
-	  p = locTrackTimeBased[i]->momentum().Mag();
+	//  p = locTrackTimeBased[i]->momentum().Mag();
 	  // cout<<"p: "<<p<<endl;
 	  // Double_t dZ = TMath::Abs(pos.Z() - z);
 	  Double_t dRho = sqrt(((pos.X() - x)*(pos.X() - x)) + ((pos.Y() - y)* (pos.Y() - y)));

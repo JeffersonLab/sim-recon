@@ -49,6 +49,12 @@ class JEventProcessor_RF_online : public jana::JEventProcessor
 		map<DetectorSystem_t, TH1I*> dHistMap_RFSignalPeriod;
 		map<DetectorSystem_t, TH1I*> dHistMap_RFFirstTimeDeltaT;
 
+		map<DetectorSystem_t, TH1I*> dHistMap_RFHitsFound;
+		map<DetectorSystem_t, TH1I*> dHistMap_NumRFHitsMissing;
+		map<DetectorSystem_t, size_t> dMaxDeltaTHits;
+		map<DetectorSystem_t, double> dRFSamplingFactor;
+		map<DetectorSystem_t, map<pair<size_t, size_t>, TH1I*> > dHistMap_AdjacentRFDeltaTs;
+
 		TH1I* dHist_RFBeamBunchPeriod;
 		map<DetectorSystem_t, TH1I*> dHistMap_SelfResolution;
 

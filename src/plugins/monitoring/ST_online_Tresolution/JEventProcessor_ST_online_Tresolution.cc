@@ -51,7 +51,11 @@ jerror_t JEventProcessor_ST_online_Tresolution::init(void)
 	//
   // **************** define histograms *************************
   japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+
+  TDirectory *main = gDirectory;
+  gDirectory->mkdir("st_Tresolution")->cd();
   h2_CorrectedTime_z = new TH2I*[NCHANNELS];
+
   // All my Calculations in 2015 were using the binning below
   NoBins_time = 80;
   NoBins_z = 1300;
@@ -63,6 +67,9 @@ jerror_t JEventProcessor_ST_online_Tresolution::init(void)
     { 
       h2_CorrectedTime_z[i] = new TH2I(Form("h2_CorrectedTime_z_%i", i+1), "Corrected Time vs. Z; Z (cm); Propagation Time (ns)", NoBins_z,z_lower_limit,z_upper_limit, NoBins_time, time_lower_limit, time_upper_limit);
     }
+
+  gDirectory->cd("../");
+  main->cd();
   japp->RootUnLock();
   return NOERROR;
 }
@@ -70,7 +77,7 @@ jerror_t JEventProcessor_ST_online_Tresolution::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_ST_online_Tresolution::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t JEventProcessor_ST_online_Tresolution::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	// This is called whenever the run number changes
   // Get the particleID object for each run
@@ -120,7 +127,7 @@ jerror_t JEventProcessor_ST_online_Tresolution::brun(JEventLoop *eventLoop, int 
 //------------------
 // evnt
 //------------------
-jerror_t JEventProcessor_ST_online_Tresolution::evnt(JEventLoop *loop, int eventnumber)
+jerror_t JEventProcessor_ST_online_Tresolution::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using

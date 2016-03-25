@@ -22,10 +22,11 @@ using namespace jana;
 #include "BCAL/DBCALCluster.h"
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALGeometry.h"
-
+#include "DAQ/DEPICSvalue.h"
 #include "DAQ/DF1TDCHit.h"
 #include "DAQ/Df250PulseIntegral.h"
 #include "DAQ/Df250WindowRawData.h"
+#include "TRIGGER/DL1Trigger.h"
 
 #include <TDirectory.h>
 #include <TH2.h>
@@ -50,6 +51,8 @@ static TH1I *bcal_fadc_digi_occ_layer3 = NULL;
 static TH1I *bcal_fadc_digi_occ_layer4 = NULL;
 // static TH1I *bcal_fadc_digi_nhits_chan = NULL;
 static TH1I *bcal_fadc_digi_nhits_evnt = NULL;
+static TProfile *bcal_fadc_digi_pedestal_vtime = NULL;
+static TProfile *bcal_fadc_digi_pedestal_vevent = NULL;
 
 static TH1I *bcal_tdc_digi_time = NULL;
 static TH2I *bcal_tdc_digi_reltime = NULL;
@@ -177,6 +180,8 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 		return NOERROR;
 	}
 	
+	recentwalltime = 0;
+
 	// create root folder for bcal and cd to it, store main dir
 	TDirectory *main = gDirectory;
 	gDirectory->mkdir("bcal")->cd();
@@ -203,8 +208,15 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_num_events = new TH1I("bcal_num_events","BCAL Number of events",1, 0.5, 1.5);
 
 	bcal_fadc_digi_integral = new TH1I("bcal_fadc_digi_integral","BCAL Integral (DBCALDigiHit);Integral (fADC counts)", 500, 0, 40000);
-	bcal_fadc_digi_pedestal = new TH1I("bcal_fadc_digi_pedestal","BCAL Pedestal (DBCALDigiHit);Pedestal (fADC counts)", 150, -10, 140);
-	bcal_fadc_digi_good_pedestal = new TH1I("bcal_fadc_digi_good_pedestal","BCAL Good Pedestal (DBCALDigiHit);Pedestal (fADC counts)", 150, -10, 140);
+	bcal_fadc_digi_pedestal = new TH1I("bcal_fadc_digi_pedestal","BCAL Pedestal (DBCALDigiHit);Pedestal (fADC counts)", 110, 0, 110);
+	bcal_fadc_digi_good_pedestal = new TH1I("bcal_fadc_digi_good_pedestal","BCAL Good Pedestal (DBCALDigiHit);Pedestal (fADC counts)", 40, 80, 120);
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
+	bcal_fadc_digi_pedestal->SetCanExtend(TH1::kXaxis);
+	bcal_fadc_digi_good_pedestal->SetCanExtend(TH1::kXaxis);
+#else
+	bcal_fadc_digi_pedestal->SetBit(TH1::kCanRebin);
+	bcal_fadc_digi_good_pedestal->SetBit(TH1::kCanRebin);
+#endif
 	bcal_fadc_digi_QF = new TH1I("bcal_fadc_digi_QF","Qualtiy Factor (DBCALDigiHit);Qualtiy Factor", 20, 0, 20);
 	bcal_fadc_digi_time = new TH1I("bcal_fadc_digi_time","ADC Time (DBCALDigiHit);Time (fADC time/62.5 ps)", 550, -600, 6000);
 	bcal_fadc_digi_occ = new TH2I("bcal_fadc_digi_occ","ADC occupancy (DBCALDigiHit);Module", 48, 0.5, 48.5, 33, 0.5, 33.5);
@@ -222,6 +234,17 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	// bcal_fadc_digi_nhits_chan = new TH1I("bcal_fadc_digi_nhits_chan","ADC hits per channel;hits per channel",5,-0.5,4.5);
 	bcal_fadc_digi_nhits_evnt = new TH1I("bcal_fadc_digi_nhits_evnt","ADC hits per event;hits per event",125,-0.5,124.5);
 
+	bcal_fadc_digi_pedestal_vtime = new TProfile("bcal_fadc_digi_pedestal_vtime","Avg BCAL pedestal vs time;time;pedestal (all chan avg)",200,0.0,0.0);
+	bcal_fadc_digi_pedestal_vtime->GetXaxis()->SetTimeDisplay(1);
+	bcal_fadc_digi_pedestal_vtime->GetXaxis()->SetTimeFormat("%m/%d %H:%M %F 1970-01-01 00:00:00");
+	bcal_fadc_digi_pedestal_vevent = new TProfile("bcal_fadc_digi_pedestal_vevent","Avg BCAL pedestal vs event;event num;pedestal (all chan avg)",200,0.,0.);
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
+	bcal_fadc_digi_pedestal_vtime->SetCanExtend(TH1::kXaxis);
+	bcal_fadc_digi_pedestal_vevent->SetCanExtend(TH1::kXaxis);
+#else
+	bcal_fadc_digi_pedestal_vtime->SetBit(TH1::kCanRebin);
+	bcal_fadc_digi_pedestal_vevent->SetBit(TH1::kCanRebin);
+#endif
 
 	bcal_tdc_digi_time = new TH1I("bcal_tdc_digi_time","TDC Time (DBCALDigiTDCHit);Time (F1TDC counts)", 500, 0, 66000);
 	bcal_tdc_digi_reltime = new TH2I("bcal_tdc_digi_reltime","Relative TDC Time (DBCALDigiTDCHit);Time (F1TDC counts); TDC trig time", 
@@ -330,6 +353,8 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_fadc_occ->SetStats(0);
 	bcal_fadc_avgE->SetStats(0);
 	bcal_fadc_saturated->SetStats(0);
+	bcal_fadc_digi_pedestal_vtime->SetStats(0);
+	bcal_fadc_digi_pedestal_vevent->SetStats(0);
 	bcal_tdc_occ->SetStats(0);
 	bcal_Uhit_tTDC_tADC->SetStats(0);
 	bcal_Uhit_tTDC_E->SetStats(0);
@@ -438,6 +463,14 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 	// loop-Get(...) to get reconstructed objects (and thereby activating the
 	// reconstruction algorithm) should be done outside of any mutex lock
 	// since multiple threads may call this method at the same time.
+
+	vector<const DEPICSvalue*> depicsvalue;
+	loop->Get(depicsvalue);
+	if (depicsvalue.size()>0) {
+		recentwalltime = depicsvalue[0]->timestamp;
+		return NOERROR;
+	}
+
 	vector<const DBCALDigiHit*> dbcaldigihits;
 	vector<const DBCALTDCDigiHit*> dbcaltdcdigihits;
 	vector<const DBCALHit*> dbcalhits;
@@ -447,6 +480,25 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 	vector<const DBCALCluster*> dbcalclusters;
 	vector<const DBCALShower*> dbcalshowers;
 	
+	// First check that this is not a font panel trigger or no trigger
+	bool goodtrigger=1;
+
+	const DL1Trigger *trig = NULL;
+	try {
+		loop->GetSingle(trig);
+	} catch (...) {}
+	if (trig) {
+		if (trig->fp_trig_mask){
+			goodtrigger=0;
+		}
+	} else {
+		goodtrigger=0;
+	}
+	
+	if (!goodtrigger) {
+		return NOERROR;
+	}
+
 	loop->Get(dbcaldigihits);
 	loop->Get(dbcaltdcdigihits);
 	loop->Get(dbcalhits);
@@ -499,20 +551,28 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 		if (layer==3) bcal_fadc_digi_occ_layer3->Fill(glosect);
 		if (layer==4) bcal_fadc_digi_occ_layer4->Fill(glosect);
 
+		if ( hit->pedestal > 0 ) {
+			if (recentwalltime>0) {
+				bcal_fadc_digi_pedestal_vtime->Fill(recentwalltime,hit->pedestal);
+			}
+			bcal_fadc_digi_pedestal_vevent->Fill(eventnumber,hit->pedestal);
+		}
+
 		// Occupancy histogram defined to give better aspect ratio
 		int ix = hit->module;
 		int iy = (hit->sector-1)*4 + hit->layer;
 		if(hit->end == DBCALGeometry::kUpstream) {
-		  bcal_fadc_digi_occ->Fill(ix, iy+17);
-		  if ( hit->pedestal > 0 )
-		    bcal_fadc_digi_pedestal_ave->Fill(ix, iy+17, hit->pedestal);
+			bcal_fadc_digi_occ->Fill(ix, iy+17);
+			if ( hit->pedestal > 0 ) {
+				bcal_fadc_digi_pedestal_ave->Fill(ix, iy+17, hit->pedestal);
+			}
 		}
 		if(hit->end == DBCALGeometry::kDownstream) {
-		  bcal_fadc_digi_occ->Fill(ix, iy);
-		  if ( hit->pedestal > 0 )
-		    bcal_fadc_digi_pedestal_ave->Fill(ix, iy, hit->pedestal);
+			bcal_fadc_digi_occ->Fill(ix, iy);
+			if ( hit->pedestal > 0 ) {
+				bcal_fadc_digi_pedestal_ave->Fill(ix, iy, hit->pedestal);
+			}
 		}
-
 	}
 	
 	// Digitized TDC hits for bcal
@@ -522,8 +582,8 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 		bcal_tdc_digi_time->Fill(hit->time);
 		vector<const DF1TDCHit*> f1tdchits;
 		hit->Get(f1tdchits);
-        if(f1tdchits.size() > 0)
-            bcal_tdc_digi_reltime->Fill(f1tdchits[0]->time,f1tdchits[0]->trig_time);
+		if(f1tdchits.size() > 0)
+			bcal_tdc_digi_reltime->Fill(f1tdchits[0]->time,f1tdchits[0]->trig_time);
 
 		int layer = hit->layer;
 		int glosect = DBCALGeometry::getglobalsector(hit->module, hit->sector);
@@ -619,10 +679,10 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 			int ix = Uhit->module;
 			int iy = (Uhit->sector-1)*4 + Uhit->layer;
 			if(Uhit->end == DBCALGeometry::kUpstream) {
-			  bcal_Uhit_tdiff_ave->Fill(ix, iy+17, t_diff);
+				bcal_Uhit_tdiff_ave->Fill(ix, iy+17, t_diff);
 			}
 			if(Uhit->end == DBCALGeometry::kDownstream) {
-			  bcal_Uhit_tdiff_ave->Fill(ix, iy, t_diff);
+				bcal_Uhit_tdiff_ave->Fill(ix, iy, t_diff);
 			}
 		} else {
 			bcal_Uhit_noTDC_E->Fill(Uhit->E);
@@ -716,6 +776,10 @@ jerror_t JEventProcessor_BCAL_online::erun(void) {
 	// This is called whenever the run number changes, before it is
 	// changed to give you a chance to clean up before processing
 	// events from the next run number.
+
+	bcal_fadc_digi_pedestal_vtime->SetMinimum(bcal_fadc_digi_pedestal_vtime->GetMinimum(0.1));
+	bcal_fadc_digi_pedestal_vevent->SetMinimum(bcal_fadc_digi_pedestal_vevent->GetMinimum(0.1));
+
 	return NOERROR;
 }
 
