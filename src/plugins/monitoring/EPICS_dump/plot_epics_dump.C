@@ -1,11 +1,22 @@
-// File: plot_epics_dump.C
-// Adapt trig_fcalbcal3.C to this application
 // Include livetime histograms from synch events
+// and beam current from epics events
+
+
+// hnamepath: /EPICS_dump/h1epics_trgbits
+// hnamepath: /EPICS_dump/h1epics_AD00
+// hnamepath: /EPICS_dump/h1epics_pos_inner
+// hnamepath: /EPICS_dump/h1epics_pos_outer
+// hnamepath: /EPICS_dump/h1epics_liveinst_VSevent
+// hnamepath: /EPICS_dump/h1epics_AD00_VSevent
+// hnamepath: /EPICS_dump/h1epics_entries1_VSevent
+// hnamepath: /EPICS_dump/h1epics_entries2_VSevent
+// hnamepath: /EPICS_dump/h1epics_liveinst
+
 
 {
   gStyle->SetPalette(1,0);
   gStyle->SetOptStat(kTRUE);
-    gStyle->SetOptStat(111111);
+  gStyle->SetOptStat(111111);
   gStyle->SetPadRightMargin(0.15);
   gStyle->SetPadLeftMargin(0.15);
   gStyle->SetPadBottomMargin(0.15);
@@ -13,8 +24,8 @@
     char string[256];
     Int_t const nscalers=32;
     
-    TString filename = "outputfile_010707d";
-    TFile* f = new TFile(filename+".root");
+    // TString filename = "outputfile_010707d";
+    // TFile* f = new TFile(filename+".root");
 
 	// get histograms from trig subdirectory
 
@@ -40,6 +51,13 @@
     TH1F *h1epics_entries1_VSevent      = (TH1F*)dir->Get("h1epics_entries1_VSevent");
     TH1F *h1epics_entries2_VSevent       = (TH1F*)dir->Get("h1epics_entries2_VSevent");
     TH1F *h1epics_liveinst       = (TH1F*)dir->Get("h1epics_liveinst");
+
+   if( !h1epics_liveinst_VSevent         ) { cout << "Can't find h1epics_liveinst_VSevent!"         << endl; return; }
+   if( !h1epics_AD00_VSevent         ) { cout << " Can't find h1epics_AD00_VSevent!"   << endl; return; }
+   if( !h1epics_entries1_VSevent         ) { cout << "Can't find h1epics_entries1_VSevent"         << endl; return; }
+   if( !h1epics_entries2_VSevent         ) { cout << "Can't find h1epics_entries2_VSevent"         << endl; return; }
+   if( !h1epics_liveinst         ) { cout << "Can't find h1epics_liveinst"         << endl; return; }
+
     TH1I *h1_trig_rates[nscalers];
     TH1I *h1_trig_livetimes[nscalers];
     
@@ -177,7 +195,7 @@
     h1epics_AD00_VSevent->Draw("");
     
         
-   sprintf (string,"plot_epics_dump.pdf(");
+    /*sprintf (string,"plot_epics_dump.pdf(");
     c0->SaveAs(string);
     sprintf (string,"plot_epics_dump.pdf");
     c1->SaveAs(string);
@@ -186,7 +204,7 @@
     sprintf (string,"plot_epics_dump.pdf");
     c3->SaveAs(string);
     sprintf (string,"plot_epics_dump.pdf)");
-    c4->SaveAs(string);
+    c4->SaveAs(string);*/
     
         
         
