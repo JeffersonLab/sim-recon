@@ -468,10 +468,17 @@ DBCALGeometry::fADCcellId_rphi( float r, float phi ) {
   fADC_cellId = DBCALGeometry::fADCId(module, SiPM_layer, sector);  
   return fADC_cellId;
 }
- 
 
+int  DBCALGeometry::getglobalchannelnumber(int module, int layer, int sector, int end) {
+  if (module<=0 || layer<=0 || sector<=0) return 0;
+  else return (module-1)*32 + (layer-1)*8 + (sector-1)*2 + end + 1;
+}
+int DBCALGeometry::getendchannelnumber(int module, int layer, int sector) {
+  if (module<=0 || layer<=0 || sector<=0) return 0;
+  else return (module-1)*16 + (layer-1)*4 + sector;
+} 
 int DBCALGeometry::getglobalsector(int module, int sector) {
-  if (module==0 || sector==0) return 0;
+  if (module<=0 || sector<=0) return 0;
   else return (module-1)*4 + sector;
 }
 int DBCALGeometry::getsector(int globalsector) {

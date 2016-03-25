@@ -30,7 +30,7 @@ public:
   JOBJECT_PUBLIC(DBCALPoint);
   
   // this constructor uses two hits to obtain a local z position
-  DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, double attenutation_length);
+  DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, double attenutation_length, double c_effective);
   
   float E() const { return m_E; }
   float E_US() const { return m_E_US; }  ///< Return the attenuation corrected Energy of US Hit

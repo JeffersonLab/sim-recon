@@ -11,6 +11,14 @@ inline bool DChargedTrackHypothesis_SortByEnergy(const DChargedTrackHypothesis* 
 {
 	// truncate the track energies: in units of MeV, ignore all digits that are 10s-place and above
 	// then sort by increasing energy: pseudo-random
+
+	//guard against NaN: necessary since casting to int
+	bool locFirstIsNaN = (!(locChargedTrackHypothesis1->energy() > -1.0) && !(locChargedTrackHypothesis1->energy() < 1.0));
+	bool locSecondIsNaN = (!(locChargedTrackHypothesis2->energy() > -1.0) && !(locChargedTrackHypothesis2->energy() < 1.0));
+	if(locFirstIsNaN)
+		return false;
+	if(locSecondIsNaN)
+		return true;
 	double locE1 = locChargedTrackHypothesis1->energy() - double(int(locChargedTrackHypothesis1->energy()*100.0))/100.0;
 	double locE2 = locChargedTrackHypothesis2->energy() - double(int(locChargedTrackHypothesis2->energy()*100.0))/100.0;
 	return (locE1 < locE2);

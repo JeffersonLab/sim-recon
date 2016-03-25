@@ -50,6 +50,8 @@ class DEventProcessor_BCAL_gainmatrix : public jana::JEventProcessor
 		Float_t vertexX  ;
 		Float_t vertexY  ;
 		uint32_t Run_Number  ;
+		Int_t num_tracks ;
+		Int_t num_showers ;
 		Float_t inv_mass  ;
 		Float_t inv_mass_raw  ;
 		uint32_t logical1;
@@ -64,7 +66,7 @@ class DEventProcessor_BCAL_gainmatrix : public jana::JEventProcessor
 	private:
 		const DAnalysisUtilities* dAnalysisUtilities;
 		jerror_t init(void);						///< Called once at program start.
-		jerror_t brun(jana::JEventLoop* locEventLoop, int locRunNumber);	///< Called every time a new run number is detected.
+		jerror_t brun(jana::JEventLoop* locEventLoop, int32_t locRunNumber);	///< Called every time a new run number is detected.
 		jerror_t evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber);	///< Called every event.
 		jerror_t erun(void);						///< Called every time run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.

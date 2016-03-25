@@ -10,6 +10,7 @@ using namespace std;
 #include <sys/stat.h>
 #include <time.h>
 #include <expat.h>
+#include <string.h>
 
 #include "DClassDef.h"
 
@@ -60,6 +61,33 @@ int main(int narg, char *argv[])
 	ifs.read (buff,length);
 	ifs.close();
 	
+	// Find terminating "</HDDM>" string and shorten buffer to this
+	char *end = strstr(buff, "</HDDM>");
+	if(end){
+		end[strlen("</HDDM>")] = 0;
+		length = strlen(buff);
+	}
+	
+	// Create sub-directory for all source just to keep things a little cleaner
+	mkdir("hddm_root_generated", S_IRWXU | S_IRWXG | S_IRWXO);
+
+	// Write hddm XML definition to file
+	ofstream hddmxmlofs("hddm_root_generated/hddm_def.xml");
+	if(hddmxmlofs.is_open()){
+		hddmxmlofs << buff;
+		hddmxmlofs.close();
+		
+		// If we were able to write the XML file, then use it to
+		// generate the I/O routines in our source directory. This
+		// is preferred since it will guarantee compatibility with
+		// this file. In case we don't get here, the tool will need
+		// to compile using I/O routines from sim-recon.
+		mkdir("hddm_root_generated/HDDM", S_IRWXU | S_IRWXG | S_IRWXO);
+		system("cd hddm_root_generated/HDDM ; hddm-c ../hddm_def.xml");
+		system("cd hddm_root_generated/HDDM ; hddm-cpp ../hddm_def.xml");
+		// sed -e '/\/HDDM/,$d'
+	}
+
 	int done = 0;
 	XML_Parse(parser, buff, length, done);
 
@@ -69,9 +97,6 @@ int main(int narg, char *argv[])
 	// Create a header file for each class. This is needed to make
 	// the ROOT dictionaries (cint doesn't seem to like it when they
 	// are all in the same file).
-	
-	// Put all headers in sub-directory just to keep things a little cleaner
-	mkdir("hddm_root_generated", S_IRWXU | S_IRWXG | S_IRWXO);
 	
 	// Print class definitions
 	// Here we must print them in reverse-depth order so the classes
@@ -158,13 +183,13 @@ int main(int narg, char *argv[])
 	ofs << endl;
 	
 	ofs << "copy_routines: hddm_root_CopyRoutines.cc hddm_root_CopyRoutines.h" << endl;
-	string cmd = "	c++ `root-config --cflags` -c -I${HALLD_HOME}/include -I. hddm_root_CopyRoutines.cc" + CXXFLAGS;
+	string cmd = "	c++ `root-config --cflags` -c -I${HALLD_HOME}/${BMS_OSNAME}/include -I. hddm_root_CopyRoutines.cc" + CXXFLAGS;
 	ofs << cmd << endl;
 	ofs << "	ar -r libhddm_root.a hddm_root_CopyRoutines.o" << endl;
 	ofs << endl;
 
 	ofs << "tool: hddm2root_*.cc" << endl;
-	cmd = "	c++ `root-config --cflags --libs` -I${HALLD_HOME}/include -I. hddm2root_" + HDDM_CLASS + ".cc -o hddm2root_" + HDDM_CLASS + CXXFLAGS + " ./libhddm_root.a -lbz2 -lz -L${HALLD_HOME}/lib/${BMS_OSNAME} -lHDDM -lxstream";
+	cmd = "	c++ `root-config --cflags --libs` -I${HALLD_HOME}/${BMS_OSNAME}/include -I. hddm2root_" + HDDM_CLASS + ".cc -o hddm2root_" + HDDM_CLASS + CXXFLAGS + " ./libhddm_root.a -lbz2 -lz -L${HALLD_HOME}/${BMS_OSNAME}/lib -lHDDM -lxstream";
 	ofs << cmd << endl;
 	ofs << endl;
 	ofs << endl;
@@ -225,6 +250,7 @@ void startElement(void *data, const char *el, const char **attr)
 		}
 		
 		if(type.find("GeV")== 0 )continue; // skip Eunit and punit stuff
+		if(type == "rad")continue;
 		if(type == "ns")continue;
 		if(type == "cm")continue;
 		
@@ -515,7 +541,7 @@ void CreateHDDM2ROOT_tool(void)
 	ofs << "			cout << endl << usage << endl << endl;" << endl;
 	ofs << "			return 0;" << endl;
 	ofs << "		}else{" << endl;
-	ofs << "			fname = argv[1];" << endl;
+	ofs << "			fname = argv[i];" << endl;
 	ofs << "		}" << endl;
 	ofs << "	}" << endl;
 	ofs << endl;

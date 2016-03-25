@@ -15,6 +15,12 @@
 //---------------------------------
 HDEVIO::HDEVIO(string filename):filename(filename)
 {
+	// These must be initialized in case we return early
+	// so they aren't deleted in the destructor if they
+	// were never allocated.
+	fbuff = NULL;
+	buff  = NULL;
+
 	is_open = false;
 	ifs.open(filename.c_str());
 	if(!ifs.is_open()){
@@ -44,7 +50,25 @@ HDEVIO::HDEVIO(string filename):filename(filename)
 	Nbad_blocks = 0;
 	Nbad_events = 0;
 	
+	event_type_mask = 0xFFFF; // default to accepting all types
+	next_search_block = 0;
+	is_mapped = false;
+	
+	ifs.seekg(0, ios_base::end);
+	total_size_bytes = ifs.tellg();
+	ifs.seekg(0, ios_base::beg);
+	
 	is_open = true;
+}
+
+//---------------------------------
+// ~HDEVIO    (Destructor)
+//---------------------------------
+HDEVIO::~HDEVIO()
+{
+	if(ifs.is_open()) ifs.close();
+	if(buff ) delete[] buff;
+	if(fbuff) delete[] fbuff;
 }
 
 //---------------------------------
@@ -251,14 +275,20 @@ bool HDEVIO::ReadBlock(void)
 //---------------------------------
 // read
 //---------------------------------
-bool HDEVIO::read(uint32_t *user_buff, uint32_t user_buff_len)
+bool HDEVIO::read(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap)
 {
 	/// Read the next EVIO event into the user supplied buffer.
 	/// Return true if successful and false otherwise. Details of
 	/// the error will be in err_mess.
 	
-	err_code = HDEVIO_OK;
+	// If only certain event types are requested then
+	// defer to the sparse reader
+	if(event_type_mask != 0xFFFF){
+		return readSparse(user_buff, user_buff_len, allow_swap);
+	}
 
+	err_code = HDEVIO_OK;
+	
 	// calculate remaining valid words in buffer
 	uint32_t left = buff_len - (uint32_t)(((unsigned long)next - (unsigned long)buff)/sizeof(uint32_t));
 
@@ -302,7 +332,7 @@ bool HDEVIO::read(uint32_t *user_buff, uint32_t user_buff_len)
 	
 	// Copy entire event into user buffer, swapping if needed during copy
 	bool isgood = true;
-	if(swap_needed){
+	if(swap_needed && allow_swap){
 		uint32_t Nswapped = swap_bank(user_buff, next, event_len);
 		isgood = (Nswapped == event_len);
 	}else{
@@ -317,15 +347,291 @@ bool HDEVIO::read(uint32_t *user_buff, uint32_t user_buff_len)
 	return isgood;
 }
 
+//---------------------------------
+// readSparse
+//---------------------------------
+bool HDEVIO::readSparse(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap)
+{
+	/// This is an alternative to the read(...) method above that
+	/// is used when the user has specified that only certain
+	/// event types are desired. This really only makes sense
+	/// for EPICS and SYNC events. This method does not use the
+	/// fbuff system and instead reads directly from the file 
+	/// after seeking to the desired location determined from
+	/// a previously generated map.
+	
+	// Make sure we've mapped this file
+	if(!is_mapped) MapBlocks();
+	
+
+	// Loop through block map to find next one of interest
+	for( ; next_search_block<evio_blocks.size(); next_search_block++){
+		EVIOBlockRecord &br = evio_blocks[next_search_block];
+		uint32_t type = (1 << br.block_type);
+		if( type & event_type_mask ){
+		
+			uint32_t event_len = br.block_len-8; // -8 for EVIO block header
+			last_event_len = event_len;
+		
+			// Check if user buffer is big enough to hold block
+			if( event_len > user_buff_len ){
+				ClearErrorMessage();
+				err_mess << "user buffer too small for event (" << user_buff_len << " < " << event_len << ")";
+				err_code = HDEVIO_USER_BUFFER_TOO_SMALL;
+				return false;
+			}
+			
+			// Advance pointer past EVIO block header to EVIO bank
+			ifs.seekg(br.pos+(streampos)(8*sizeof(uint32_t)), ios_base::beg);
+			
+			// Read data directly into user buffer
+			ifs.read((char*)user_buff, event_len*sizeof(uint32_t));
+			
+			// Swap entire bank if needed
+			bool isgood = true;
+			if(br.swap_needed && allow_swap){
+				uint32_t Nswapped = swap_bank(user_buff, next, event_len);
+				isgood = (Nswapped == event_len);
+			}
+			
+			// Double check that event length matches EVIO block header
+			if( (user_buff[0]+1) != event_len ){
+				ClearErrorMessage();
+				err_mess << "WARNING: EVIO bank indicates a different size than block header (" << event_len << " != " << (user_buff[0]+1) << ")";
+				next_search_block++; // setup so subsequent call will read in another block
+				err_code = HDEVIO_EVENT_BIGGER_THAN_BLOCK;
+				Nerrors++;
+				Nbad_blocks++;
+				return false;
+			}
+
+			// Advance search pointer to block header
+			next_search_block++;
+
+			if(isgood) Nevents++;
+
+			return isgood;
+		}
+	}
+
+	// If we got here then we did not find an event of interest
+	// above. Report that there are no more events in the file.
+	SetErrorMessage("No more events");
+	err_code = HDEVIO_EOF;
+	return false; // isgood=false	
+	
+}
+
+//------------------------
+// SetEventMask
+//------------------------
+uint32_t HDEVIO::SetEventMask(uint32_t mask)
+{
+	return 0;
+}
+
+//------------------------
+// SetEventMask
+//------------------------
+uint32_t HDEVIO::SetEventMask(string types_str)
+{
+	return 0;
+}
+
+//------------------------
+// AddToEventMask
+//------------------------
+uint32_t HDEVIO::AddToEventMask(string type_str)
+{
+	return 0;
+}
+
+//------------------------
+// GetEVIOBlockRecords
+//------------------------
+vector<HDEVIO::EVIOBlockRecord>& HDEVIO::GetEVIOBlockRecords(void)
+{
+	if(!is_mapped) MapBlocks();
+	
+	return evio_blocks;
+}
+
+//------------------------
+// MapBlocks
+//------------------------
+void HDEVIO::MapBlocks(bool print_ticker)
+{
+	if(!is_open){
+		err_mess.str() = "File is not open";
+		err_code = HDEVIO_FILE_NOT_OPEN;
+		return;
+	}
+	
+	// Remember current file pos so we can restore it.
+	streampos start_pos = ifs.tellg();
+	
+	if(print_ticker) cout << "Mapping EVIO file ..." << endl;
+	
+	// Rewind to beginning of file and loop over all blocks
+	ifs.seekg(0, ios_base::beg);
+	BLOCKHEADER_t bh;
+	uint64_t Nblocks = 0;
+	while(ifs.good()){
+		ifs.read((char*)&bh, sizeof(bh));
+		if(!ifs.good()) break;
+		
+		// Check if we need to byte swap and simultaneously
+		// verify header is good by checking magic word
+		bool swap_needed = false;
+		if(bh.magic==0x0001dac0){
+			swap_needed = true;
+		}else{
+			if(bh.magic!=0xc0da0100){
+				err_mess.str() = "Bad magic word";
+				err_code = HDEVIO_BAD_BLOCK_HEADER;
+				break;
+			}
+		}
+		
+		if(swap_needed)swap_block((uint32_t*)&bh, sizeof(bh)>>2, (uint32_t*)&bh);
+		
+		Nblocks++;
+		streampos block_len_bytes = (bh.length<<2)-sizeof(bh); // <<2 is for *4
+		streampos pos = ifs.tellg() - (streampos)sizeof(bh);
+		
+		EVIOBlockRecord br;
+		br.pos = pos;
+		br.block_len = bh.length;
+		br.swap_needed = swap_needed;
+		br.first_event = 0;
+		br.last_event = 0;
+
+		// Categorize this block		
+		uint32_t tag = bh.header>>16;
+		uint32_t M   = bh.header&0xFF;
+		
+		switch(tag){
+			case 0xFFD0: br.block_type = kBT_SYNC;      break;
+			case 0xFFD1: br.block_type = kBT_PRESTART;  break;
+			case 0xFFD2: br.block_type = kBT_GO;        break;
+			case 0xFFD3: br.block_type = kBT_PAUSE;     break;
+			case 0xFFD4: br.block_type = kBT_END;       break;
+			case 0x0060: br.block_type = kBT_EPICS;     break;
+			case 0x0070: br.block_type = kBT_BOR;       break;
+			case 0xFF50:
+			case 0xFF51:
+			case 0xFF70:
+				br.block_type   = kBT_PHYSICS;
+				br.first_event  = bh.physics.first_event_lo;
+				br.first_event += ((uint64_t)bh.physics.first_event_hi)<<32;
+				br.last_event   = br.first_event + (uint64_t)M - 1;
+				break;
+			default:
+				_DBG_ << "Uknown tag: " << hex << tag << dec << endl;
+		}
+		
+		// Scan through and map all events within this block
+		MapEvents(bh, br);
+
+		// Add block to list
+		evio_blocks.push_back(br);
+		
+		// Update ticker
+		if(print_ticker){
+			if((Nblocks%500) == 0){
+				uint64_t read_MB = ifs.tellg()>>20;
+				cout << Nblocks << " blocks scanned (" << read_MB << " MB)    \r";
+				cout.flush();
+			}
+		}
+
+		// Advance file pointer to start of next EVIO block header
+		ifs.seekg(block_len_bytes, ios_base::cur);
+	}
+	
+	if(print_ticker) cout << endl;
+
+	// Restore file pos and set flag that file has been mapped
+	ifs.seekg(start_pos, ios_base::beg);
+	is_mapped = true;
+}
 
 //---------------------------------
-// ~HDEVIO    (Destructor)
+// MapEvents
 //---------------------------------
-HDEVIO::~HDEVIO()
+void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 {
-	if(ifs.is_open()) ifs.close();
-	if(buff) delete[] buff;
+	/// This is called if the EVIO  block header indicates that
+	/// it contains more than one top-level event. The position
+	/// and event length of the first top-level event are passed
+	/// in as starting parameters.
+	
+	// Record stream position upon entry so we can restore it at end
+	streampos start_pos = ifs.tellg();
+	
+	// Calculate stream position of EVIO event
+	streampos pos = start_pos -(streampos)sizeof(BLOCKHEADER_t)  + (streampos)(8<<2); // (8<<2) is 8 word EVIO block header times 4bytes/word 
+	ifs.seekg(pos, ios_base::beg);
+	
+	EVENTHEADER_t myeh;
+	for(uint32_t i=0; i<bh.eventcnt; i++){
+	
+		// For the first iteration through this loop,
+		// we use the event header that has already been
+		// read in as part of the block header.
+		EVENTHEADER_t *eh = (EVENTHEADER_t*)&bh.event_len;
+		if(i!=0){
+			// Read in first few words of event
+			eh = &myeh;
+			ifs.read((char*)eh, sizeof(EVENTHEADER_t));		
+			if(br.swap_needed)swap_block((uint32_t*)eh, sizeof(EVENTHEADER_t)>>2, (uint32_t*)eh);
+		}else{
+			ifs.seekg(sizeof(EVENTHEADER_t), ios_base::cur);
+		}
+
+		EVIOEventRecord er;
+		er.pos = pos;
+		er.event_len   = eh->event_len + 1; // +1 to include length word
+		er.event_type  = kBT_UNKNOWN;
+		er.first_event = 0;
+		er.last_event  = 0;
+
+		uint32_t tag = eh->header>>16;
+		uint32_t M   = eh->header&0xFF;
+		
+		switch(tag){
+			case 0xFFD0: er.event_type = kBT_SYNC;       break;
+			case 0xFFD1: er.event_type = kBT_PRESTART;   break;
+			case 0xFFD2: er.event_type = kBT_GO;         break;
+			case 0xFFD3: er.event_type = kBT_PAUSE;      break;
+			case 0xFFD4: er.event_type = kBT_END;        break;
+			case 0x0060: er.event_type = kBT_EPICS;      break;
+			case 0x0070: er.event_type = kBT_BOR;        break;
+			case 0xFF50:
+			case 0xFF51:
+			case 0xFF70:
+				er.event_type = kBT_PHYSICS;
+				er.first_event  = eh->physics.first_event_lo;
+				er.first_event += ((uint64_t)eh->physics.first_event_hi)<<32;
+				er.last_event   = er.first_event + (uint64_t)M - 1;
+				if(er.first_event < br.first_event) br.first_event = er.first_event;
+				if(er.last_event  > br.last_event ) br.last_event  = er.last_event;
+				break;
+			default:
+				_DBG_ << "Uknown tag: " << hex << tag << dec << endl;
+		}
+		
+		br.evio_events.push_back(er);
+		
+		// Move file position to start of next event
+		streampos delta = (streampos)((eh->event_len+1)<<2) - (streampos)sizeof(EVENTHEADER_t);
+		ifs.seekg(delta, ios_base::cur);
+		pos += delta;
+	}
+
+	ifs.seekg(start_pos, ios_base::beg);
 }
+
 
 //---------------------------------
 // swap_bank
@@ -588,6 +894,114 @@ void HDEVIO::PrintStats(void)
 	cout << "    Nerrors: " << Nerrors << endl;
 	cout << "Nbad_blocks: " << Nbad_blocks << endl;
 	cout << "Nbad_events: " << Nbad_events << endl;
+	cout << endl;
+}
+
+//------------------------
+// PrintFileSummary
+//------------------------
+void HDEVIO::PrintFileSummary(void)
+{
+	if(!is_mapped) MapBlocks();
+
+	uint32_t Nsync     = 0;
+	uint32_t Nprestart = 0;
+	uint32_t Ngo       = 0;
+	uint32_t Npause    = 0;
+	uint32_t Nend      = 0;
+	uint32_t Nepics    = 0;
+	uint32_t Nbor      = 0;
+	uint32_t Nphysics  = 0;
+
+	uint64_t first_event = 0;
+	uint64_t last_event  = 0;
+
+	uint32_t map_size = evio_blocks.size()*sizeof(EVIOBlockRecord);
+	
+	set<uint32_t> block_levels;
+	set<uint32_t> events_in_block;
+
+	// Loop over all EVIO block records
+	for(uint32_t i=0; i<evio_blocks.size(); i++){
+		EVIOBlockRecord &br = evio_blocks[i];
+		events_in_block.insert(br.evio_events.size());
+		map_size += br.evio_events.size()*sizeof(EVIOEventRecord);
+
+		for(uint32_t j=0; j<br.evio_events.size(); j++){
+			EVIOEventRecord &er = br.evio_events[j];
+			
+			uint32_t block_level;
+			switch(er.event_type){
+				case kBT_SYNC:       Nsync++;        break;
+				case kBT_PRESTART:   Nprestart++;    break;
+				case kBT_GO:         Ngo++;          break;
+				case kBT_PAUSE:      Npause++;       break;
+				case kBT_END:        Nend++;         break;
+				case kBT_EPICS:      Nepics++;       break;
+				case kBT_BOR:        Nbor++;         break;
+				case kBT_PHYSICS:
+					block_level = (uint32_t)((er.last_event - er.first_event) + 1);
+					block_levels.insert(block_level);
+					Nphysics += block_level;
+					if(er.first_event<first_event || first_event==0) first_event = er.first_event;
+					if(er.last_event>last_event) last_event = er.last_event;
+					break;
+				default:
+					break;
+			}
+			
+			//_DBG_ << "Block " << i << "  event " << j << "  " << er.last_event <<" - " << er.first_event << " = " << block_level << endl;
+		}
+	}
+	
+	// form succint string of block levels
+	stringstream ss;
+	set<uint32_t>::iterator it = block_levels.begin();
+	for(; it!=block_levels.end(); it++) ss << *it << ",";
+	string sblock_levels = ss.str();
+	if(!sblock_levels.empty()) sblock_levels.erase(sblock_levels.length()-1);
+
+	// form succint string of events per block
+	ss.str("");
+	it = events_in_block.begin();
+	for(; it!=events_in_block.end(); it++){
+		uint32_t val = *it;
+		ss << val;
+		if(++it==events_in_block.end()) break;
+		if( *it == ++val ){
+			ss << "-";
+			for(it++; it!=events_in_block.end(); it++){
+				if( *it != ++val ){
+					ss << (val-1) << ",";
+					it--;
+					break;
+				}
+			}
+		}else{
+			ss << ",";
+		}
+	}
+	string sevents_in_block = ss.str();
+	
+	// Print results
+	cout << endl;
+	cout << "EVIO file size: " << (total_size_bytes>>20) << " MB" <<endl;
+	cout << "EVIO block map size: " << (map_size>>10) << " kB" <<endl;
+	cout << "first event: " << first_event << endl;
+	cout << "last event: " << last_event << endl;
+
+	cout << endl;
+	cout << "         Nblocks = " << evio_blocks.size() << endl;
+	cout << "    block levels = " << sblock_levels << endl;
+	cout << "events per block = " << sevents_in_block << endl;
+	cout << "           Nsync = " << Nsync << endl;
+	cout << "       Nprestart = " << Nprestart << endl;
+	cout << "             Ngo = " << Ngo << endl;
+	cout << "          Npause = " << Npause << endl;
+	cout << "            Nend = " << Nend << endl;
+	cout << "          Nepics = " << Nepics << endl;
+	cout << "            Nbor = " << Nbor << endl;
+	cout << "        Nphysics = " << Nphysics << endl;
 	cout << endl;
 }
 

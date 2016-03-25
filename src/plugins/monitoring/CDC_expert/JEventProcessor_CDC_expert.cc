@@ -110,6 +110,8 @@ extern "C"{
 
 
 JEventProcessor_CDC_expert::JEventProcessor_CDC_expert() {
+
+	initialized_histograms = false;
 }
 
 
@@ -141,9 +143,13 @@ jerror_t JEventProcessor_CDC_expert::init(void) {
 jerror_t JEventProcessor_CDC_expert::brun(JEventLoop *eventLoop, int32_t runnumber) {
   // This is called whenever the run number changes
 
-
-
   japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+  
+  // Do not initialize ROOT objects twice!
+  if(initialized_histograms){
+    japp->RootUnLock();
+    return NOERROR;
+  }
 
   // max values for histogram scales, modified fa250-format readout
 
@@ -347,7 +353,10 @@ jerror_t JEventProcessor_CDC_expert::brun(JEventLoop *eventLoop, int32_t runnumb
   // back to main dir
   main->cd();
 
+  initialized_histograms = true;
+
   japp->RootUnLock(); //RELEASE ROOT LOCK!!
+  
 
   return NOERROR;
 }

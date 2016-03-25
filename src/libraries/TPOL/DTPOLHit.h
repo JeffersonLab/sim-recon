@@ -5,26 +5,28 @@
 #include <JANA/JFactory.h>
 
 class DTPOLHit:public jana::JObject{
- public:
-  JOBJECT_PUBLIC(DTPOLHit);
-		
-  int sector;   // sector number 1-32
-  int ring;     // ring number 1-24
-  float dE;     // Energy loss in keV
-  float t;      // best time (walk-corrected tdc)
-  float t_fADC; // time from fADC
-  bool has_sector; 
-  bool has_ring;
+public:
+    JOBJECT_PUBLIC(DTPOLHit);
 
-  void toStrings(vector<pair<string,string> > &items)const{
-    AddString(items, "sector", "%d", sector);
-    AddString(items, "ring", "%d", sector);
-    AddString(items, "dE", "%3.3f", dE);
-    AddString(items, "t", "%3.3f", t);
-    AddString(items, "t_fADC", "%3.3f", t_fADC);
-    AddString(items, "has_sector", "%d", (int)has_sector);
-    AddString(items, "has_ring", "%d", (int)has_ring);
-  }
+    int sector;    // sector number 1-32
+    double phi;
+    int ring;      // ring number 1-24
+    double theta;
+    double pulse_peak;
+    double integral;
+    double dE;     // Energy loss in keV
+    double t;
+
+    void toStrings(vector<pair<string,string> > &items)const{
+        AddString(items, "sector", "%d", sector);
+        AddString(items, "phi", "%3.3f", phi);
+        AddString(items, "ring", "%d", ring);
+        AddString(items, "theta", "%3.3f", theta);
+        AddString(items, "pulse_peak", "%3.3f", pulse_peak);
+        AddString(items, "integral", "%3.3f", integral);
+        AddString(items, "dE", "%3.3f", dE);
+        AddString(items, "t", "%3.3f", t);
+    }
 };
 
 #endif // _DTPOLHit_

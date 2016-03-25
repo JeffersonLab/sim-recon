@@ -19,11 +19,16 @@ class JEventProcessor_DAQ_online:public jana::JEventProcessor{
 		enum EVIOWordType{
 			kSpacerBefore,
 
-			kUnknown,			
+			kUnknown,
+			kEVIOHeader,
 			kEVIOEventNumber,
 			kEVIOTimestamp,
 			
 			kSpacer0,
+			
+			kBORData,
+			
+			kSpacer1,
 			
 			kf250BlockHeader,
 			kf250BlockTrailer,
@@ -39,7 +44,7 @@ class JEventProcessor_DAQ_online:public jana::JEventProcessor{
 			kf250DataNotValid,
 			kf250Filler,
 			
-			kSpacer1,
+			kSpacer2,
 
 			kf125BlockHeader,
 			kf125BlockTrailer,
@@ -56,7 +61,7 @@ class JEventProcessor_DAQ_online:public jana::JEventProcessor{
 			kf125DataNotValid,
 			kf125Filler,
 			
-			kSpacer2,
+			kSpacer3,
 			
 			kF1v2BlockHeader,
 			kF1v2BLockTrailer,
@@ -67,7 +72,7 @@ class JEventProcessor_DAQ_online:public jana::JEventProcessor{
 			kF1v2Filler,
 			kF1v2BreakWord,
 			
-			kSpacer3,
+			kSpacer4,
 
 			kF1v3BlockHeader,
 			kF1v3BLockTrailer,
@@ -78,7 +83,7 @@ class JEventProcessor_DAQ_online:public jana::JEventProcessor{
 			kF1v3Filler,
 			kF1v3BreakWord,
 			
-			kSpacer4,
+			kSpacer5,
 
 			kCAEN1190GlobalHeader,
 			kCAEN1190GlobalTrailer,
@@ -89,7 +94,7 @@ class JEventProcessor_DAQ_online:public jana::JEventProcessor{
 			kCAEN1190TDCTrailer,
 			kCAEN1190Filler,
 			
-			kSpacer5,
+			kSpacer6,
 			
 			kConfig,
 			kConfigf250,
@@ -97,12 +102,12 @@ class JEventProcessor_DAQ_online:public jana::JEventProcessor{
 			kConfigF1,
 			kConfigCAEN1190,
 			
-			kSpacer6,
+			kSpacer7,
 
 			kEPICSheader,
 			kEPICSdata,
 			
-			kSpacer7,
+			kSpacer8,
 
 			kF800FAFA,
 			kD00DD00D,

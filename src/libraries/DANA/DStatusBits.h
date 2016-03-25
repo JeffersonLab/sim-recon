@@ -37,6 +37,7 @@ enum StatusBitType{
 	kSTATUS_BOR_EVENT,
 	
 	kSTATUS_L3PASS = 12,
+	kSTATUS_L3FAIL,
 	
 	kSTATUS_FCAL_PI0 = 16,
 	kSTATUS_FBCAL_PI0,
@@ -66,6 +67,10 @@ class DStatusBits{
 			japp->SetStatusBitDescription( kSTATUS_EPICS_EVENT,   "EPICS event" );
 			japp->SetStatusBitDescription( kSTATUS_SYNC_EVENT,    "SYNC event" );
 			japp->SetStatusBitDescription( kSTATUS_BOR_EVENT,     "Beginning Of Run (BOR) event") ;
+
+			japp->SetStatusBitDescription( kSTATUS_L3PASS,        "L3 Pass") ;
+			japp->SetStatusBitDescription( kSTATUS_L3FAIL,        "L3 Fail") ;
+
 		}
 };
 

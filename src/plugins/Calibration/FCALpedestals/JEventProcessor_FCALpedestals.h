@@ -32,12 +32,12 @@ class JEventProcessor_FCALpedestals:public jana::JEventProcessor{
 
  
 
- const DFCALGeometry* m_fcalGeom;
+  const DFCALGeometry* m_fcalGeom;
 
-  TTree* m_tree;
+
 
   double m_FCALfront;
-
+  
  
   int m_r;
   int m_c;

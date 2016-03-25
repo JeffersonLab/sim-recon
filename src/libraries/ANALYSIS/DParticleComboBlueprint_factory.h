@@ -9,6 +9,7 @@
 
 #include <JANA/JObject.h>
 #include <particleType.h>
+#include <SplitString.h>
 #include <PID/DChargedTrack.h>
 #include <PID/DNeutralShower.h>
 #include <PID/DVertex.h>
@@ -16,6 +17,7 @@
 
 #include <deque>
 #include <map>
+#include <set>
 #include <vector>
 
 using namespace std;
