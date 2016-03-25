@@ -366,7 +366,7 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	locEventLoop->Get(bcalpoints);
 	locEventLoop->Get(fcalhits);
 	locEventLoop->Get(locFCALClusters);
-	DFCALGeometry *fcalgeom = NULL;
+	DFCALGeometry fcalgeom;
 
 	japp->RootWriteLock();
 
@@ -413,7 +413,10 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	float fcal_time = 0;
 	float rmin = 4*4*sqrt(2);    // 4 layers x 4 cm  on the diagonal.
 	for (unsigned int jj=0; jj<fcalhits.size(); jj++) {
-	  DVector2 pos = fcalgeom->positionOnFace(fcalhits[jj]->row, fcalhits[jj]->column);
+	  int rowhit = fcalhits[jj]->row;
+	  int columnhit = fcalhits[jj]->column;
+	  // printf (" Event=%d, jj=%d, rowhit=%d, columnhit=%d\n",(int)locEventNumber,jj,rowhit,columnhit);
+	  DVector2 pos = fcalgeom.positionOnFace(rowhit,columnhit);
 	  double r = sqrt(pos.X()*pos.X() + pos.Y()*pos.Y());
 	  if (r <= rmin) continue;    // keep only hits that are outside a minimum radius
 
