@@ -31,6 +31,8 @@
 #include "ANALYSIS/DAnalysisUtilities.h"
 #include "TRIGGER/DL1Trigger.h"
 #include <DANA/DStatusBits.h>
+#include "FCAL/DFCALGeometry.h"
+
 
 using namespace std;
 using namespace jana;
@@ -50,30 +52,55 @@ using namespace jana;
      static TH1I* h1trig_bcalN = NULL;
      static TH1I* h1trig_tot = NULL;
      static TH2I* h2trig_fcalVSbcal = NULL;
+     static TH1I* h1trig_fcal_time = NULL;
+     static TH1I* h1trig_bcal_time = NULL;
+     static TH2I* h2trig_tfcalVStbcal = NULL;
+     static TH2I* h2trig_tfcalVSfcal = NULL;
+     static TH2I* h2trig_tbcalVSbcal = NULL;
  
      static TH1I* h1trig1_fcal = NULL;
      static TH1I* h1trig1_fcalN = NULL;
      static TH1I* h1trig1_bcal = NULL;
      static TH1I* h1trig1_bcalN = NULL;
      static TH2I* h2trig1_fcalVSbcal = NULL;
+     static TH1I* h1trig1_fcal_time = NULL;
+     static TH1I* h1trig1_bcal_time = NULL;
+     static TH2I* h2trig1_tfcalVStbcal = NULL;
+     static TH2I* h2trig1_tfcalVSfcal = NULL;
+     static TH2I* h2trig1_tbcalVSbcal = NULL;
  
      static TH1I* h1trig3_fcal = NULL;
      static TH1I* h1trig3_fcalN = NULL;
      static TH1I* h1trig3_bcal = NULL;
      static TH1I* h1trig3_bcalN = NULL;
      static TH2I* h2trig3_fcalVSbcal = NULL;
+     static TH1I* h1trig3_fcal_time = NULL;
+     static TH1I* h1trig3_bcal_time = NULL;
+     static TH2I* h2trig3_tfcalVStbcal = NULL;
+     static TH2I* h2trig3_tfcalVSfcal = NULL;
+     static TH2I* h2trig3_tbcalVSbcal = NULL;
  
      static TH1I* h1trig5_fcal = NULL;
      static TH1I* h1trig5_fcalN = NULL;
      static TH1I* h1trig5_bcal = NULL;
      static TH1I* h1trig5_bcalN = NULL;
      static TH2I* h2trig5_fcalVSbcal = NULL;
+     static TH1I* h1trig5_fcal_time = NULL;
+     static TH1I* h1trig5_bcal_time = NULL;
+     static TH2I* h2trig5_tfcalVStbcal = NULL;
+     static TH2I* h2trig5_tfcalVSfcal = NULL;
+     static TH2I* h2trig5_tbcalVSbcal = NULL;
  
      static TH1I* h1trig7_fcal = NULL;
      static TH1I* h1trig7_fcalN = NULL;
      static TH1I* h1trig7_bcal = NULL;
      static TH1I* h1trig7_bcalN = NULL;
      static TH2I* h2trig7_fcalVSbcal = NULL;
+     static TH1I* h1trig7_fcal_time = NULL;
+     static TH1I* h1trig7_bcal_time = NULL;
+     static TH2I* h2trig7_tfcalVStbcal = NULL;
+     static TH2I* h2trig7_tfcalVSfcal = NULL;
+     static TH2I* h2trig7_tbcalVSbcal = NULL;
 
 
 //----------------------------------------------------------------------------------
@@ -148,6 +175,21 @@ jerror_t JEventProcessor_TRIG_online::init(void) {
 	h2trig_fcalVSbcal= new TH2I("h2trig_fcalVSbcal", "E fcal vs E bcal (GeV)",nbins,0,1,nbins,0,2);
 	h2trig_fcalVSbcal->SetXTitle("Bcal Energy (GeV)");
 	h2trig_fcalVSbcal->SetYTitle("Fcal Energy (GeV)");
+	h1trig_fcal_time = new TH1I("h1trig_fcal_time", "Trig Fcal_Time (ns)",nbins,-200,200);
+	h1trig_fcal_time->SetXTitle("Fcal time (ns)");
+	h1trig_fcal_time->SetYTitle("counts");
+	h1trig_bcal_time = new TH1I("h1trig_bcal_time", "Trig Bcal_Time (ns)",nbins,-200,200);
+	h1trig_bcal_time->SetXTitle("Bcal time (ns)");
+	h1trig_bcal_time->SetYTitle("counts");
+	h2trig_tfcalVStbcal= new TH2I("h2trig_tfcalVStbcal", "T fcal vs T bcal (ns)",nbins,-200,200,nbins,-200,200);
+	h2trig_tfcalVStbcal->SetXTitle("Bcal time (ns)");
+	h2trig_tfcalVStbcal->SetYTitle("Fcal time (ns)");
+	h2trig_tfcalVSfcal= new TH2I("h2trig_tfcalVSfcal", "T fcal vs E fcal",nbins,0,2,nbins,-200,200);
+	h2trig_tfcalVSfcal->SetXTitle("Fcal energ (GeV)");
+	h2trig_tfcalVSfcal->SetYTitle("Fcal time (ns)");
+	h2trig_tbcalVSbcal= new TH2I("h2trig_tbcalVSbcal", "T bcal vs E bcal",nbins,0,2,nbins,-200,200);
+	h2trig_tbcalVSbcal->SetXTitle("Bcal energ (GeV)");
+	h2trig_tbcalVSbcal->SetYTitle("Bcal time (ns)");
 
 	h1trig1_fcal = new TH1I("h1trig1_fcal", "Trig 1 Fcal energy (GeV)",nbins,0,2);
 	h1trig1_fcal->SetXTitle("Fcal sum energy (GeV)");
@@ -165,6 +207,21 @@ jerror_t JEventProcessor_TRIG_online::init(void) {
 	h2trig1_fcalVSbcal= new TH2I("h2trig1_fcalVSbcal", "Trig 1 E fcal vs E bcal (GeV)",nbins,0,1,nbins,0,2);
 	h2trig1_fcalVSbcal->SetXTitle("Bcal Energy (GeV)");
 	h2trig1_fcalVSbcal->SetYTitle("Fcal Energy (GeV)");
+	h1trig1_fcal_time = new TH1I("h1trig1_fcal_time", "Trig1 Fcal_Time (ns)",nbins,-200,200);
+	h1trig1_fcal_time->SetXTitle("Fcal time (ns)");
+	h1trig1_fcal_time->SetYTitle("counts");
+	h1trig1_bcal_time = new TH1I("h1trig1_bcal_time", "Trig1 Bcal_Time (ns)",nbins,-200,200);
+	h1trig1_bcal_time->SetXTitle("Bcal time (ns)");
+	h1trig1_bcal_time->SetYTitle("counts");
+	h2trig1_tfcalVStbcal= new TH2I("h2trig1_tfcalVStbcal", "T fcal vs T bcal (ns)",nbins,-200,200,nbins,-200,200);
+	h2trig1_tfcalVStbcal->SetXTitle("Bcal time (ns)");
+	h2trig1_tfcalVStbcal->SetYTitle("Fcal time (ns)");
+	h2trig1_tfcalVSfcal= new TH2I("h2trig1_tfcalVSfcal", "T fcal vs E fcal",nbins,0,2,nbins,-200,200);
+	h2trig1_tfcalVSfcal->SetXTitle("Fcal energ (GeV)");
+	h2trig1_tfcalVSfcal->SetYTitle("Fcal time (ns)");
+	h2trig1_tbcalVSbcal= new TH2I("h2trig1_tbcalVSbcal", "T bcal vs E bcal",nbins,0,2,nbins,-200,200);
+	h2trig1_tbcalVSbcal->SetXTitle("Bcal energ (GeV)");
+	h2trig1_tbcalVSbcal->SetYTitle("Bcal time (ns)");
 
 	h1trig3_fcal = new TH1I("h1trig3_fcal", "Trig 3 Fcal energy (GeV)",nbins,0,2);
 	h1trig3_fcal->SetXTitle("Fcal sum energy (GeV)");
@@ -182,6 +239,21 @@ jerror_t JEventProcessor_TRIG_online::init(void) {
 	h2trig3_fcalVSbcal= new TH2I("h2trig3_fcalVSbcal", "Trig 3 E fcal vs E bcal (GeV)",nbins,0,1,nbins,0,2);
 	h2trig3_fcalVSbcal->SetXTitle("Bcal Energy (GeV)");
 	h2trig3_fcalVSbcal->SetYTitle("Fcal Energy (GeV)");
+	h1trig3_fcal_time = new TH1I("h1trig3_fcal_time", "Trig3 Fcal_Time (ns)",nbins,-200,200);
+	h1trig3_fcal_time->SetXTitle("Fcal time (ns)");
+	h1trig3_fcal_time->SetYTitle("counts");
+	h1trig3_bcal_time = new TH1I("h1trig3_bcal_time", "Trig3 Bcal_Time (ns)",nbins,-200,200);
+	h1trig3_bcal_time->SetXTitle("Bcal time (ns)");
+	h1trig3_bcal_time->SetYTitle("counts");
+	h2trig3_tfcalVStbcal= new TH2I("h2trig3_tfcalVStbcal", "T fcal vs T bcal (ns)",nbins,-200,200,nbins,-200,200);
+	h2trig3_tfcalVStbcal->SetXTitle("Bcal time (ns)");
+	h2trig3_tfcalVStbcal->SetYTitle("Fcal time (ns)");
+	h2trig3_tfcalVSfcal= new TH2I("h2trig3_tfcalVSfcal", "T fcal vs E fcal",nbins,0,2,nbins,-200,200);
+	h2trig3_tfcalVSfcal->SetXTitle("Fcal energ (GeV)");
+	h2trig3_tfcalVSfcal->SetYTitle("Fcal time (ns)");
+	h2trig3_tbcalVSbcal= new TH2I("h2trig3_tbcalVSbcal", "T bcal vs E bcal",nbins,0,2,nbins,-200,200);
+	h2trig3_tbcalVSbcal->SetXTitle("Bcal energ (GeV)");
+	h2trig3_tbcalVSbcal->SetYTitle("Bcal time (ns)");
 
 	h1trig5_fcal = new TH1I("h1trig5_fcal", "Trig 5 Fcal energy (GeV)",nbins,0,2);
 	h1trig5_fcal->SetXTitle("Fcal sum energy (GeV)");
@@ -199,6 +271,21 @@ jerror_t JEventProcessor_TRIG_online::init(void) {
 	h2trig5_fcalVSbcal= new TH2I("h2trig5_fcalVSbcal", "Trig 5 E fcal vs E bcal (GeV)",nbins,0,1,nbins,0,2);
 	h2trig5_fcalVSbcal->SetXTitle("Bcal Energy (GeV)");
 	h2trig5_fcalVSbcal->SetYTitle("Fcal Energy (GeV)");
+	h1trig5_fcal_time = new TH1I("h1trig5_fcal_time", "Trig5 Fcal_Time (ns)",nbins,-200,200);
+	h1trig5_fcal_time->SetXTitle("Fcal time (ns)");
+	h1trig5_fcal_time->SetYTitle("counts");
+	h1trig5_bcal_time = new TH1I("h1trig5_bcal_time", "Trig5 Bcal_Time (ns)",nbins,-200,200);
+	h1trig5_bcal_time->SetXTitle("Bcal time (ns)");
+	h1trig5_bcal_time->SetYTitle("counts");
+	h2trig5_tfcalVStbcal= new TH2I("h2trig5_tfcalVStbcal", "T fcal vs T bcal (ns)",nbins,-200,200,nbins,-200,200);
+	h2trig5_tfcalVStbcal->SetXTitle("Bcal time (ns)");
+	h2trig5_tfcalVStbcal->SetYTitle("Fcal time (ns)");
+	h2trig5_tfcalVSfcal= new TH2I("h2trig5_tfcalVSfcal", "T fcal vs E fcal",nbins,0,2,nbins,-200,200);
+	h2trig5_tfcalVSfcal->SetXTitle("Fcal energ (GeV)");
+	h2trig5_tfcalVSfcal->SetYTitle("Fcal time (ns)");
+	h2trig5_tbcalVSbcal= new TH2I("h2trig5_tbcalVSbcal", "T bcal vs E bcal",nbins,0,2,nbins,-200,200);
+	h2trig5_tbcalVSbcal->SetXTitle("Bcal energ (GeV)");
+	h2trig5_tbcalVSbcal->SetYTitle("Bcal time (ns)");
 
 	h1trig7_fcal = new TH1I("h1trig7_fcal", "Trig 7 Fcal energy (GeV)",nbins,0,2);
 	h1trig7_fcal->SetXTitle("Fcal sum energy (GeV)");
@@ -216,6 +303,21 @@ jerror_t JEventProcessor_TRIG_online::init(void) {
 	h2trig7_fcalVSbcal= new TH2I("h2trig7_fcalVSbcal", "Trig 7 E fcal vs E bcal (GeV)",nbins,0,1,nbins,0,2);
 	h2trig7_fcalVSbcal->SetXTitle("Bcal Energy (GeV)");
 	h2trig7_fcalVSbcal->SetYTitle("Fcal Energy (GeV)");
+	h1trig7_fcal_time = new TH1I("h1trig7_fcal_time", "Trig7 Fcal_Time (ns)",nbins,-200,200);
+	h1trig7_fcal_time->SetXTitle("Fcal time (ns)");
+	h1trig7_fcal_time->SetYTitle("counts");
+	h1trig7_bcal_time = new TH1I("h1trig7_bcal_time", "Trig7 Bcal_Time (ns)",nbins,-200,200);
+	h1trig7_bcal_time->SetXTitle("Bcal time (ns)");
+	h1trig7_bcal_time->SetYTitle("counts");
+	h2trig7_tfcalVStbcal= new TH2I("h2trig7_tfcalVStbcal", "T fcal vs T bcal (ns)",nbins,-200,200,nbins,-200,200);
+	h2trig7_tfcalVStbcal->SetXTitle("Bcal time (ns)");
+	h2trig7_tfcalVStbcal->SetYTitle("Fcal time (ns)");
+	h2trig7_tfcalVSfcal= new TH2I("h2trig7_tfcalVSfcal", "T fcal vs E fcal",nbins,0,2,nbins,-200,200);
+	h2trig7_tfcalVSfcal->SetXTitle("Fcal energ (GeV)");
+	h2trig7_tfcalVSfcal->SetYTitle("Fcal time (ns)");
+	h2trig7_tbcalVSbcal= new TH2I("h2trig7_tbcalVSbcal", "T bcal vs E bcal",nbins,0,2,nbins,-200,200);
+	h2trig7_tbcalVSbcal->SetXTitle("Bcal energ (GeV)");
+	h2trig7_tbcalVSbcal->SetYTitle("Bcal time (ns)");
 
 
   // back to main dir
@@ -259,6 +361,7 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	locEventLoop->Get(bcalpoints);
 	locEventLoop->Get(fcalhits);
 	locEventLoop->Get(locFCALClusters);
+	DFCALGeometry fcalgeom;
 
 	bool isPhysics = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_PHYSICS_EVENT);
 	if(! isPhysics) {
@@ -296,16 +399,32 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	// loop over all points in FCAL
 
 	float fcal_energy = 0;
+	float fcal_time = 0;
+	float rmin = 4*4*sqrt(2);    // 4 layers x 4 cm  on the diagonal.
 	for (unsigned int jj=0; jj<fcalhits.size(); jj++) {
-	    fcal_energy += fcalhits[jj]->E;
-	    }
+	  DVector2 pos = fcalgeom.positionOnFace(jj);
+	  double r = sqrt(pos.X()*pos.X() + pos.Y()*pos.Y());
+	  if (r <= rmin) continue;    // keep only hits that are outside a minimum radius
+
+	     // require trigger threshold in sum
+	     if (fcalhits[jj]->E > 65*0.27*7.5/1000) {
+	       fcal_energy += fcalhits[jj]->E;
+	       fcal_time += fcalhits[jj]->t*fcalhits[jj]->E;    // calculate energy weighted time
+	     }
+	}
+	fcal_time = fcal_energy > 0 ? fcal_time/fcal_energy : -200; 
 
 	// loop over all points in BCAL
 
 	float bcal_energy = 0;
+	float bcal_time = 0;
 	for (unsigned int jj=0; jj<bcalpoints.size(); jj++) {
+	  if (bcalpoints[jj]->E() > (20*0.045*15/2)/1000) { 
 	    bcal_energy += bcalpoints[jj]->E();
-	    }
+	    bcal_time += bcalpoints[jj]->t()*bcalpoints[jj]->E();
+	  }
+        }
+	bcal_time = bcal_energy > 0 ? bcal_time/bcal_energy: -200; 
 
 	h1trig_trgbits->Fill(trig_bits);
         h1trig_fcal->Fill(fcal_energy);
@@ -314,6 +433,11 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
         h1trig_bcalN->Fill(bcalpoints.size());
         h2trig_fcalVSbcal->Fill(bcal_energy,fcal_energy);
         h1trig_tot->Fill(bcal_energy+fcal_energy);
+        h1trig_fcal_time->Fill(fcal_time);
+        h1trig_bcal_time->Fill(bcal_time);
+        h2trig_tfcalVStbcal->Fill(bcal_time,fcal_time);
+        h2trig_tfcalVSfcal->Fill(fcal_energy,fcal_time);
+        h2trig_tbcalVSbcal->Fill(bcal_energy,bcal_time);
 
 	if (trig_bits == 1) {
 	  h1trig1_fcal->Fill(fcal_energy);
@@ -321,6 +445,11 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	  h1trig1_bcal->Fill(bcal_energy);
 	  h1trig1_bcalN->Fill(bcalpoints.size());
 	  h2trig1_fcalVSbcal->Fill(bcal_energy,fcal_energy);
+	  h1trig1_fcal_time->Fill(fcal_time);
+	  h1trig1_bcal_time->Fill(bcal_time);
+	  h2trig1_tfcalVStbcal->Fill(bcal_time,fcal_time);
+          h2trig1_tfcalVSfcal->Fill(fcal_energy,fcal_time);
+          h2trig1_tbcalVSbcal->Fill(bcal_energy,bcal_time);
 	}
 	else if(trig_bits == 3) {
 	  h1trig3_fcal->Fill(fcal_energy);
@@ -328,6 +457,11 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	  h1trig3_bcal->Fill(bcal_energy);
 	  h1trig3_bcalN->Fill(bcalpoints.size());
 	  h2trig3_fcalVSbcal->Fill(bcal_energy,fcal_energy);
+	  h1trig3_fcal_time->Fill(fcal_time);
+	  h1trig3_bcal_time->Fill(bcal_time);
+	  h2trig3_tfcalVStbcal->Fill(bcal_time,fcal_time);
+          h2trig3_tfcalVSfcal->Fill(fcal_energy,fcal_time);
+          h2trig3_tbcalVSbcal->Fill(bcal_energy,bcal_time);
 	}
 	else if (trig_bits == 5) {
 	  h1trig5_fcal->Fill(fcal_energy);
@@ -335,6 +469,11 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	  h1trig5_bcal->Fill(bcal_energy);
 	  h1trig5_bcalN->Fill(bcalpoints.size());
 	  h2trig5_fcalVSbcal->Fill(bcal_energy,fcal_energy);
+	  h1trig5_fcal_time->Fill(fcal_time);
+	  h1trig5_bcal_time->Fill(bcal_time);
+	  h2trig5_tfcalVStbcal->Fill(bcal_time,fcal_time);
+          h2trig5_tfcalVSfcal->Fill(fcal_energy,fcal_time);
+          h2trig5_tbcalVSbcal->Fill(bcal_energy,bcal_time);
 	}
 	else if (trig_bits == 7) {
 	  h1trig7_fcal->Fill(fcal_energy);
@@ -342,6 +481,11 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	  h1trig7_bcal->Fill(bcal_energy);
 	  h1trig7_bcalN->Fill(bcalpoints.size());
 	  h2trig7_fcalVSbcal->Fill(bcal_energy,fcal_energy);
+	  h1trig7_fcal_time->Fill(fcal_time);
+	  h1trig7_bcal_time->Fill(bcal_time);
+	  h2trig7_tfcalVStbcal->Fill(bcal_time,fcal_time);
+          h2trig7_tfcalVSfcal->Fill(fcal_energy,fcal_time);
+          h2trig7_tbcalVSbcal->Fill(bcal_energy,bcal_time);
 	}
 
         
