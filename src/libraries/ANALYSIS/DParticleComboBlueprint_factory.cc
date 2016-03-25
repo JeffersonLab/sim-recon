@@ -21,11 +21,29 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 
 	dMaxExtraGoodTracks = pair<bool, size_t>(false, 4);
 
-	dAvailablePIDs.insert(Proton);
-	dAvailablePIDs.insert(KPlus);
-	dAvailablePIDs.insert(PiPlus);
-	dAvailablePIDs.insert(KMinus);
-	dAvailablePIDs.insert(PiMinus);
+	vector<int> hypotheses;
+	hypotheses.push_back(PiPlus);
+	hypotheses.push_back(KPlus);
+	hypotheses.push_back(Proton);
+	hypotheses.push_back(PiMinus);
+	hypotheses.push_back(KMinus);
+
+	ostringstream locMassStream;
+	for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
+	{
+		locMassStream << hypotheses[loc_i];
+		if(loc_i != (hypotheses.size() - 1))
+			locMassStream << ", ";
+	}
+
+	string HYPOTHESES = locMassStream.str();
+	gPARMS->SetDefaultParameter("TRKFIT:HYPOTHESES", HYPOTHESES);
+
+	// Parse MASS_HYPOTHESES strings to make list of masses to try
+	hypotheses.clear();
+	SplitString(HYPOTHESES, hypotheses, ",");
+	for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
+		dAvailablePIDs.insert(Particle_t(hypotheses[loc_i]));
 
 	return NOERROR;
 }
@@ -252,12 +270,11 @@ bool DParticleComboBlueprint_factory::Setup_ComboLoop(const DReaction* locReacti
 
 			// check to see if this particle has a decay that is represented in a future step
 			// e.g. on Lambda in g, p -> K+, Lambda; where a later step is Lambda -> p, pi-
-			int locResumeAtIndex = 0;
-			int locDecayStepIndex = Grab_DecayingParticle(locAnalysisPID, locResumeAtIndex, locReaction, loc_i, loc_j);
+			int locDecayStepIndex = locReaction->Get_DecayStepIndex(loc_i, loc_j);
 			if(locDecayStepIndex >= 0)
 			{
 				if(dDebugLevel > 10)
-					cout << "decaying particle" << endl;
+					cout << ParticleType(locAnalysisPID) << " decays later in the reaction, at step index " << locDecayStepIndex << endl;
 				locTempDeque[loc_j] = 1;
 				locFinalStateDecayStepIndexMap[pair<int, int>(loc_i, loc_j)] = locDecayStepIndex; //store step where this particle decays
 				locInitialParticleStepFromIndexMap[locDecayStepIndex] = loc_i; //store step where this particle is produced
@@ -721,59 +738,6 @@ bool DParticleComboBlueprint_factory::Check_IfStepsAreIdentical(const DParticleC
 
 	//step is a match
 	return true;
-}
-
-int DParticleComboBlueprint_factory::Grab_DecayingParticle(Particle_t locAnalysisPID, int& locResumeAtIndex, const DReaction* locReaction, int locStepIndex, int locParticleIndex)
-{
-	if(locResumeAtIndex >= 1)
-	{
-		if(dDebugLevel > 10)
-			cout << ParticleType(locAnalysisPID) << " does not decay later in the reaction." << endl;
-		return -2;
-	}
-
-	if(dDebugLevel > 10)
-		cout << "check if " << ParticleType(locAnalysisPID) << " decays later in the reaction." << endl;
-	if((locAnalysisPID == Gamma) || (locAnalysisPID == Electron) || (locAnalysisPID == Positron) || (locAnalysisPID == Proton) || (locAnalysisPID == AntiProton))
-	{
-		if(dDebugLevel > 10)
-			cout << ParticleType(locAnalysisPID) << " does not decay later in the reaction." << endl;
-		return -2; //these particles don't decay: don't search!
-	}
-
-	//check to see how many final state particles with this pid type there are before now
-	size_t locPreviousPIDCount = 0;
-	for(int loc_i = 0; loc_i <= locStepIndex; ++loc_i)
-	{
-		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
-		for(size_t loc_j = 0; loc_j < locReactionStep->Get_NumFinalParticleIDs(); ++loc_j)
-		{
-			if((loc_i == locStepIndex) && (int(loc_j) == locParticleIndex))
-				break; //at the current particle: of the search
-			if(locReactionStep->Get_FinalParticleID(loc_j) == locAnalysisPID)
-				++locPreviousPIDCount;
-		}
-	}
-
-	//now, find the (locPreviousPIDCount + 1)'th time where this pid is a decay parent
-	size_t locStepPIDCount = 0;
-	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
-	{
-		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
-		if(locReactionStep->Get_InitialParticleID() != locAnalysisPID)
-			continue;
-		++locStepPIDCount;
-		if(locStepPIDCount <= locPreviousPIDCount)
-			continue;
-		locResumeAtIndex = 1;
-		if(dDebugLevel > 10)
-			cout << ParticleType(locAnalysisPID) << " decays later in the reaction, at step index " << loc_i << endl;
-		return loc_i;
-	}
-
-	if(dDebugLevel > 10)
-		cout << ParticleType(locAnalysisPID) << " does not decay later in the reaction." << endl;
-	return -2;
 }
 
 const JObject* DParticleComboBlueprint_factory::Grab_DetectedParticle(const DReaction* locReaction, Particle_t locAnalysisPID, int& locResumeAtIndex)

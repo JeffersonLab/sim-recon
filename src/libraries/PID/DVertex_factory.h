@@ -23,7 +23,8 @@
 #include "TRACKING/DTrackTimeBased.h"
 
 #include "ANALYSIS/DAnalysisUtilities.h"
-#include "ANALYSIS/DKinFitter_GlueX.h"
+#include "KINFITTER/DKinFitter.h"
+#include "ANALYSIS/DKinFitUtils_GlueX.h"
 
 using namespace std;
 using namespace jana;
@@ -42,7 +43,8 @@ class DVertex_factory : public jana::JFactory<DVertex>
 		jerror_t Create_Vertex(DVector3 locPosition, double locRFTime, unsigned int locKinFitNDF = 0, double locKinFitChiSq = 0.0);
 
 		const DAnalysisUtilities* dAnalysisUtilities;
-		DKinFitter_GlueX dKinFitter;
+		DKinFitter* dKinFitter;
+		DKinFitUtils_GlueX* dKinFitUtils;
 
 		int dKinFitDebugLevel;
 		bool dNoKinematicFitFlag;

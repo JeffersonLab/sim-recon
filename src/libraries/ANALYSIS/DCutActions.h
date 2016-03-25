@@ -15,11 +15,13 @@
 #include "PID/DChargedTrackHypothesis.h"
 #include "PID/DNeutralParticleHypothesis.h"
 
+#include "KINFITTER/DKinFitter.h"
+
+#include "ANALYSIS/DKinFitUtils_GlueX.h"
 #include "ANALYSIS/DAnalysisAction.h"
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
 #include "ANALYSIS/DMCThrownMatching.h"
-#include "ANALYSIS/DKinFitter_GlueX.h"
 
 #include "ANALYSIS/DParticleComboBlueprint_factory.h"
 
@@ -59,6 +61,7 @@ DCutAction_BeamEnergy
 DCutAction_TrackFCALShowerEOverP
 DCutAction_PIDDeltaT
 DCutAction_PIDTimingBeta
+DCutAction_NoPIDHit
 
 DCutAction_OneVertexKinFit
 */
@@ -211,9 +214,12 @@ class DCutAction_TrueCombo : public DAnalysisAction
 		//if locExclusiveMatchFlag = false: inclusive match: require the DReaction be a subset (or the total) of the thrown
 		DCutAction_TrueCombo(const DReaction* locReaction, double locMinThrownMatchFOM, bool locExclusiveMatchFlag, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Cut_TrueCombo", false, locActionUniqueString), 
-		dMinThrownMatchFOM(locMinThrownMatchFOM), dExclusiveMatchFlag(locExclusiveMatchFlag){}
+		dMinThrownMatchFOM(locMinThrownMatchFOM), dExclusiveMatchFlag(locExclusiveMatchFlag), 
+		dCutAction_ThrownTopology(NULL), dCutAction_TrueBeamParticle(NULL){}
 
 		void Initialize(JEventLoop* locEventLoop);
+
+		~DCutAction_TrueCombo(void);
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -240,9 +246,12 @@ class DCutAction_BDTSignalCombo : public DAnalysisAction
 
 		DCutAction_BDTSignalCombo(const DReaction* locReaction, double locMinThrownMatchFOM, bool locExclusiveMatchFlag, bool locIncludeDecayingToReactionFlag, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Cut_BDTSignalCombo", false, locActionUniqueString), 
-		dMinThrownMatchFOM(locMinThrownMatchFOM), dExclusiveMatchFlag(locExclusiveMatchFlag), dIncludeDecayingToReactionFlag(locIncludeDecayingToReactionFlag){}
+		dMinThrownMatchFOM(locMinThrownMatchFOM), dExclusiveMatchFlag(locExclusiveMatchFlag), 
+		dIncludeDecayingToReactionFlag(locIncludeDecayingToReactionFlag), dCutAction_TrueBeamParticle(NULL){}
 
 		void Initialize(JEventLoop* locEventLoop);
+
+		~DCutAction_BDTSignalCombo(void);
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -250,9 +259,9 @@ class DCutAction_BDTSignalCombo : public DAnalysisAction
 		double dMinThrownMatchFOM;
 		bool dExclusiveMatchFlag;
 		bool dIncludeDecayingToReactionFlag;
-		const DAnalysisUtilities* dAnalysisUtilities;
 
 		DCutAction_TrueBeamParticle* dCutAction_TrueBeamParticle;
+		const DAnalysisUtilities* dAnalysisUtilities;
 };
 
 class DCutAction_TruePID : public DAnalysisAction
@@ -357,7 +366,7 @@ class DCutAction_MissingMass : public DAnalysisAction
 	public:
 		DCutAction_MissingMass(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locMinimumMissingMass, double locMaximumMissingMass, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Cut_MissingMass", locUseKinFitResultsFlag, locActionUniqueString), 
-		dMinimumMissingMass(locMinimumMissingMass), dMaximumMissingMass(locMaximumMissingMass), dMissingMassOffOfStepIndex(-1){}
+		dMinimumMissingMass(locMinimumMissingMass), dMaximumMissingMass(locMaximumMissingMass), dMissingMassOffOfStepIndex(0){}
 
 		//E.g. If:
 		//g, p -> K+, K+, Xi-
@@ -401,7 +410,7 @@ class DCutAction_MissingMassSquared : public DAnalysisAction
 	public:
 		DCutAction_MissingMassSquared(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locMinimumMissingMassSq, double locMaximumMissingMassSq, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Cut_MissingMassSquared", locUseKinFitResultsFlag, locActionUniqueString), 
-		dMinimumMissingMassSq(locMinimumMissingMassSq), dMaximumMissingMassSq(locMaximumMissingMassSq), dMissingMassOffOfStepIndex(-1){}
+		dMinimumMissingMassSq(locMinimumMissingMassSq), dMaximumMissingMassSq(locMaximumMissingMassSq), dMissingMassOffOfStepIndex(0){}
 
 		//E.g. If:
 		//g, p -> K+, K+, Xi-
@@ -415,7 +424,7 @@ class DCutAction_MissingMassSquared : public DAnalysisAction
 		//Then: Will cut missing-mass: g, p -> K+, K+, pi-
 		//But:
 		//locMissingMassOffOfStepIndex = 0, locMissingMassOffOfPIDs = K+
-		//Then: Will cut only missing-mass: g, p -> K+_1, (X)    and NOT K+_2!!!
+		//Then: Will cut only if BOTH missing-mass: g, p -> K+_1, (X)   AND   g, p -> K+_2, (X) fail.
 		DCutAction_MissingMassSquared(const DReaction* locReaction, int locMissingMassOffOfStepIndex, deque<Particle_t> locMissingMassOffOfPIDs, bool locUseKinFitResultsFlag, double locMinimumMissingMassSq, double locMaximumMissingMassSq, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Cut_MissingMassSquared", locUseKinFitResultsFlag, locActionUniqueString), 
 		dMinimumMissingMassSq(locMinimumMissingMassSq), dMaximumMissingMassSq(locMaximumMissingMassSq), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
@@ -443,9 +452,15 @@ class DCutAction_MissingMassSquared : public DAnalysisAction
 class DCutAction_InvariantMass : public DAnalysisAction
 {
 	public:
-		DCutAction_InvariantMass(const DReaction* locReaction, Particle_t locInitialPID, bool locUseKinFitResultsFlag, double locMinimumInvariantMass, double locMaximumInvariantMass, string locActionUniqueString = "") : 
+		DCutAction_InvariantMass(const DReaction* locReaction, Particle_t locInitialPID, bool locUseKinFitResultsFlag, double locMinMass, double locMaxMass, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Cut_InvariantMass", locUseKinFitResultsFlag, locActionUniqueString), 
-		dInitialPID(locInitialPID), dMinimumInvariantMass(locMinimumInvariantMass), dMaximumInvariantMass(locMaximumInvariantMass){}
+		dInitialPID(locInitialPID), dStepIndex(-1), dToIncludePIDs(deque<Particle_t>()), dMinMass(locMinMass), dMaxMass(locMaxMass){}
+
+		//e.g. if g, p -> pi+, pi-, p
+			//call with step = 0, PIDs = pi+, pi-, and will histogram rho mass
+		DCutAction_InvariantMass(const DReaction* locReaction, size_t locStepIndex, deque<Particle_t> locToIncludePIDs, bool locUseKinFitResultsFlag, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Cut_InvariantMass", locUseKinFitResultsFlag, locActionUniqueString),
+		dInitialPID(Unknown), dStepIndex(locStepIndex), dToIncludePIDs(locToIncludePIDs), dMinMass(locMinMass), dMaxMass(locMaxMass){}
 
 		string Get_ActionName(void) const;
 		void Initialize(JEventLoop* locEventLoop);
@@ -454,8 +469,11 @@ class DCutAction_InvariantMass : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
 		Particle_t dInitialPID;
-		double dMinimumInvariantMass;
-		double dMaximumInvariantMass;
+		int dStepIndex;
+		deque<Particle_t> dToIncludePIDs;
+
+		double dMinMass;
+		double dMaxMass;
 		const DAnalysisUtilities* dAnalysisUtilities;
 };
 
@@ -635,6 +653,26 @@ class DCutAction_PIDTimingBeta : public DAnalysisAction
 		DetectorSystem_t dSystem;
 };
 
+class DCutAction_NoPIDHit : public DAnalysisAction
+{
+	//if dPID = Unknown, apply cut to all PIDs
+
+	public:
+
+		DCutAction_NoPIDHit(const DReaction* locReaction, Particle_t locPID = Unknown, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Cut_NoPIDHit", false, locActionUniqueString),
+		dPID(locPID){}
+
+		void Initialize(JEventLoop* locEventLoop){};
+		string Get_ActionName(void) const;
+
+	private:
+
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		Particle_t dPID;
+};
+
 class DCutAction_OneVertexKinFit : public DAnalysisAction
 {
 	//does not cut vertex-z position if min > max
@@ -642,9 +680,11 @@ class DCutAction_OneVertexKinFit : public DAnalysisAction
 
 		DCutAction_OneVertexKinFit(const DReaction* locReaction, double locMinKinFitCL = -1.0, double locMinVertexZ = 1.0, double locMaxVertexZ = 0.0, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Cut_OneVertexKinFit", false, locActionUniqueString),
-		dMinKinFitCL(locMinKinFitCL), dMinVertexZ(locMinVertexZ), dMaxVertexZ(locMaxVertexZ) {}
+		dMinKinFitCL(locMinKinFitCL), dMinVertexZ(locMinVertexZ), dMaxVertexZ(locMaxVertexZ), dKinFitter(NULL), dKinFitUtils(NULL) {}
 
 		void Initialize(JEventLoop* locEventLoop);
+
+		~DCutAction_OneVertexKinFit(void);
 
 	private:
 
@@ -654,8 +694,9 @@ class DCutAction_OneVertexKinFit : public DAnalysisAction
 		double dMinVertexZ;
 		double dMaxVertexZ;
 
+		DKinFitter* dKinFitter;
+		DKinFitUtils_GlueX* dKinFitUtils;
 		const DAnalysisUtilities* dAnalysisUtilities;
-		DKinFitter_GlueX dKinFitter;
 
 		TH1I* dHist_ConfidenceLevel;
 		TH1I* dHist_VertexZ;

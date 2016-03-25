@@ -102,8 +102,11 @@ jerror_t JEventProcessor_DAQ_online::init(void)
 	daq_event_tdiff->SetXTitle("#deltat between events (ms)");
 	
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kUnknown, "unknown");
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEVIOHeader, "EVIO len. & header");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEVIOEventNumber, "Event Number Word");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kEVIOTimestamp, "Timestamp");
+
+	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kBORData, "BOR record");
 
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf250BlockHeader, "f250 Block Header");
 	daq_words_by_type->GetXaxis()->SetBinLabel(1 + kf250BlockTrailer, "f250 Block Trailer");
@@ -249,11 +252,15 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 	vector<const DF1TDCHit*> f1tdchits;
 	vector<const Df250PulseIntegral*> f250PIs;
 	vector<const Df125PulseIntegral*> f125PIs;
+	vector<const Df125CDCPulse*> f125CDCs;
+	vector<const Df125FDCPulse*> f125FDCs;
 	vector<const DCAEN1290TDCHit*> caen1290hits;
 
 	loop->Get(f1tdchits);
 	loop->Get(f250PIs);
 	loop->Get(f125PIs);
+	loop->Get(f125CDCs);
+	loop->Get(f125FDCs);
 	loop->Get(caen1290hits);
 	
 	ParseEventSize(loop->GetJEvent());
@@ -347,6 +354,8 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 		int rocid = hit->rocid;
 		int slot = hit->slot;
 		int channel = hit->channel;
+		
+		if(hit->emulated) continue; // ignore emulated hits
 
 		if(rocid>=0 && rocid<=100) {
 			Nhits_rocid[rocid]++;
@@ -355,7 +364,7 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 				printf("JEventProcessor_DAQ_online::evnt  creating occupancy histogram for crate %i\n",rocid);
 				char cratename[255],title[255];
 				sprintf(cratename,"daq_occ_crate%i",rocid);
-				sprintf(title,"Crate %i occupancy (F250);Slot;Channel",rocid);
+				sprintf(title,"Crate %i occupancy (F125);Slot;Channel",rocid);
 				daq_occ_crates[rocid] = new TH2I(cratename,title,21,0.5,21.5,16,-0.5,15.5);
 				daq_occ_crates[rocid]->SetStats(0);
 			} 
@@ -365,7 +374,7 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 				printf("JEventProcessor_DAQ_online::evnt  creating pedestal histogram for crate %i\n",rocid);
 				char cratename[255],title[255];
 				sprintf(cratename,"daq_ped_crate%i",rocid);
-				sprintf(title,"Crate %i Average Pedestal (F250);Slot;Channel",rocid);
+				sprintf(title,"Crate %i Average Pedestal (F125);Slot;Channel",rocid);
 				daq_ped_crates[rocid] = new TProfile2D(cratename,title,21,0.5,21.5,16,-0.5,15.5);
 				daq_ped_crates[rocid]->SetStats(0);
 			} 
@@ -373,7 +382,74 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 				daq_ped_crates[rocid]->Fill(slot,channel,hit->pedestal);
 			}
 		}
+	}
 
+	// Access F125 from Df125CDCPulse object
+	for(unsigned int i=0; i<f125CDCs.size(); i++) {
+		const Df125CDCPulse *hit = f125CDCs[i];
+		int rocid = hit->rocid;
+		int slot = hit->slot;
+		int channel = hit->channel;
+
+		if(rocid>=0 && rocid<=100) {
+			Nhits_rocid[rocid]++;
+			
+			if (daq_occ_crates[rocid]==NULL) {
+				printf("JEventProcessor_DAQ_online::evnt  creating occupancy histogram for crate %i\n",rocid);
+				char cratename[255],title[255];
+				sprintf(cratename,"daq_occ_crate%i",rocid);
+				sprintf(title,"Crate %i occupancy (F125);Slot;Channel",rocid);
+				daq_occ_crates[rocid] = new TH2I(cratename,title,21,0.5,21.5,16,-0.5,15.5);
+				daq_occ_crates[rocid]->SetStats(0);
+			} 
+			daq_occ_crates[rocid]->Fill(slot,channel);
+			
+			if (daq_ped_crates[rocid]==NULL) {
+				printf("JEventProcessor_DAQ_online::evnt  creating pedestal histogram for crate %i\n",rocid);
+				char cratename[255],title[255];
+				sprintf(cratename,"daq_ped_crate%i",rocid);
+				sprintf(title,"Crate %i Average Pedestal (F125);Slot;Channel",rocid);
+				daq_ped_crates[rocid] = new TProfile2D(cratename,title,21,0.5,21.5,16,-0.5,15.5);
+				daq_ped_crates[rocid]->SetStats(0);
+			} 
+			if (hit->pedestal > 0) {
+				daq_ped_crates[rocid]->Fill(slot,channel,hit->pedestal);
+			}
+		}
+	}
+
+	// Access F125 from Df125FDCPulse object
+	for(unsigned int i=0; i<f125FDCs.size(); i++) {
+		const Df125FDCPulse *hit = f125FDCs[i];
+		int rocid = hit->rocid;
+		int slot = hit->slot;
+		int channel = hit->channel;
+
+		if(rocid>=0 && rocid<=100) {
+			Nhits_rocid[rocid]++;
+			
+			if (daq_occ_crates[rocid]==NULL) {
+				printf("JEventProcessor_DAQ_online::evnt  creating occupancy histogram for crate %i\n",rocid);
+				char cratename[255],title[255];
+				sprintf(cratename,"daq_occ_crate%i",rocid);
+				sprintf(title,"Crate %i occupancy (F125);Slot;Channel",rocid);
+				daq_occ_crates[rocid] = new TH2I(cratename,title,21,0.5,21.5,16,-0.5,15.5);
+				daq_occ_crates[rocid]->SetStats(0);
+			} 
+			daq_occ_crates[rocid]->Fill(slot,channel);
+			
+			if (daq_ped_crates[rocid]==NULL) {
+				printf("JEventProcessor_DAQ_online::evnt  creating pedestal histogram for crate %i\n",rocid);
+				char cratename[255],title[255];
+				sprintf(cratename,"daq_ped_crate%i",rocid);
+				sprintf(title,"Crate %i Average Pedestal (F125);Slot;Channel",rocid);
+				daq_ped_crates[rocid] = new TProfile2D(cratename,title,21,0.5,21.5,16,-0.5,15.5);
+				daq_ped_crates[rocid]->SetStats(0);
+			} 
+			if (hit->pedestal > 0) {
+				daq_ped_crates[rocid]->Fill(slot,channel,hit->pedestal);
+			}
+		}
 	}
 
 	// Access CAEN1290 TDC hits
@@ -389,7 +465,6 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 	// Fill in hits by crate
 	for(uint32_t rocid=0; rocid<101; rocid++) daq_hits_per_event->Fill(rocid, Nhits_rocid[rocid]);
 
-	
 	maindir->cd();
 	// Unlock ROOT
 	japp->RootUnLock();
@@ -429,6 +504,18 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 		evio_buffsize -= 8*sizeof(uint32_t);
 		evio_buffwords -= 8;
 	}
+
+	// Check if this is BOR data
+	if( evio_buffwords >= 4 ){
+		uint32_t mask = (0x70<<16) | (0x01);
+		if( (istart[1]&mask) == mask ){
+				
+			japp->RootWriteLock();
+			daq_words_by_type->Fill(kBORData, istart[0]/sizeof(uint32_t));
+			japp->RootUnLock();
+			return; // no further parsing needed
+		}
+	}
 	
 	// Check if this is EPICS data
 	if( evio_buffwords >= 4 ){
@@ -444,9 +531,18 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 		}
 	}
 	
+	if( evio_buffwords < 4 ){
+		cout << "Too few words in event (" << evio_buffwords << ") skipping..." << endl;
+		return;
+	}
+	
 	// Physics event length
 	uint32_t physics_event_len = istart[0];
 	if( (istart[1] & 0xFF001000) != 0xFF001000 ) return; // not a physics event
+	if( physics_event_len+1 > evio_buffwords ){
+		cout << "Too many words in physics event: " << physics_event_len+1 << " > " << evio_buffwords << endl;
+		return;
+	}
 	
 	// Trigger bank event length
 	uint32_t trigger_bank_len = istart[2];
@@ -454,6 +550,10 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 	uint64_t tlo = istart[2+5];
 	uint64_t thi = istart[2+6];  
 	uint64_t timestamp = (thi<<32) + (tlo<<0);
+	if( trigger_bank_len+2 > evio_buffwords ){
+		cout << "Too many words in trigger bank " << trigger_bank_len << " > " << evio_buffwords-2 << endl;
+		return;
+	}
 	
 	// Allocate memory to hold stats data
 	uint32_t Nwords[100]; // total data words for each ROC (includes event length words)
@@ -464,6 +564,8 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 	word_stats[kNevents]++;
 	word_stats[kTotWords] += evio_buffwords;
 
+	word_stats[kEVIOHeader] += 4; // physics event and built trigger bank length and header words
+
 	// Loop over data banks
 	uint32_t *iptr = &istart[3+trigger_bank_len];
 	while(iptr < iend){
@@ -472,9 +574,25 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 		uint32_t rocid = (iptr[1]>>16) & 0XFF;
 		
 		if(rocid<100) Nwords[rocid] += len+1;
+		
+		word_stats[kEVIOHeader] += 2; // ROC data bank length and header words
 
 		uint32_t *imyend = &iptr[len+1];
 		if(imyend > iend) imyend = iend;
+		
+		uint64_t Nwords = ((uint64_t)imyend - (uint64_t)iptr)/sizeof(uint32_t);
+		if(Nwords<2){
+			static int Nwarnings = 0;
+			if(Nwarnings<10){
+				cout << "Nwords<2 (?)" << endl;
+				cout << "     evio_buffwords = " << evio_buffwords << endl;
+				cout << "  physics_event_len = " << physics_event_len << endl;
+				cout << "   trigger_bank_len = " << trigger_bank_len << endl;
+				event.Print();
+				if(++Nwarnings == 10) cout << "Last warning!" << endl;
+			}
+			break;
+		}
 
 		DataWordStats(iptr, imyend, word_stats);
 		
@@ -544,6 +662,11 @@ void JEventProcessor_DAQ_online::DataWordStats(uint32_t *iptr, uint32_t *iend, u
 		uint32_t data_block_bank_len = *iptr++;
 		uint32_t *iendbank = &iptr[data_block_bank_len];
 		uint32_t det_id = ((*iptr) >> 16) & 0x0FFF;
+		
+		if(iendbank > iend) iendbank = iend;
+		
+		word_stats[kEVIOHeader] += 2; // data block bank length and header words
+
 		iptr++; // advance to first raw data word
 
 		uint32_t Ntoprocess = data_block_bank_len - 1; // 1 for bank header
@@ -575,6 +698,7 @@ void JEventProcessor_DAQ_online::DataWordStats(uint32_t *iptr, uint32_t *iend, u
 			case 0x55:
 				ParseModuleConfiguration(rocid, iptr, iendbank, word_stats);
 				break;
+
 			default:
 				break;
 		}
@@ -801,6 +925,22 @@ jerror_t JEventProcessor_DAQ_online::erun(void)
 	// This is called whenever the run number changes, before it is
 	// changed to give you a chance to clean up before processing
 	// events from the next run number.
+
+	for (int i=0; i<highcratenum; i++) {
+		if (daq_occ_crates[i] != NULL) {
+			daq_occ_crates[i]->SetMinimum(daq_occ_crates[i]->GetMinimum(0.001));
+		}
+		if (daq_ped_crates[i] != NULL) {
+			daq_ped_crates[i]->SetMinimum(daq_ped_crates[i]->GetMinimum(0.001));
+		}
+		if (daq_TDClocked_crates[i] != NULL) {
+			daq_TDClocked_crates[i]->SetMinimum(daq_TDClocked_crates[i]->GetMinimum(0.001));
+		}
+		if (daq_TDCovr_crates[i] != NULL) {
+			daq_TDCovr_crates[i]->SetMinimum(daq_TDCovr_crates[i]->GetMinimum(0.001));
+		}
+	}
+
 	return NOERROR;
 }
 

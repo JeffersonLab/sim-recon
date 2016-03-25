@@ -18,9 +18,11 @@ class DBCALGeometry_factory:public JFactory<DBCALGeometry>{
 		DBCALGeometry_factory(){};
 		~DBCALGeometry_factory(){};
 
-
 	private:
-		jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);	///< Invoked via JEventProcessor virtual method
+        jerror_t brun(jana::JEventLoop*, int32_t);
+		//jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);	///< Invoked via JEventProcessor virtual method
+        jerror_t erun();
+
 };
 
 #endif // _DBCALGeometry_factory_

@@ -14,7 +14,7 @@ class DReactionStep
 {
 	public:
 		// CONSTRUCTOR
-		DReactionStep(void) : dInitialParticleID(Unknown), dTargetParticleID(Unknown), dMissingParticleIndex(-1), dApplyKinFitMassConstraintOnInitialParticleFlag(true) { };
+		DReactionStep(void) : dInitialParticleID(Unknown), dTargetParticleID(Unknown), dMissingParticleIndex(-1), dKinFitConstrainInitMassFlag(true) { };
 
 		bool Are_ParticlesIdentical(const DReactionStep* locReactionStep, bool locExceptMissingUnknownInInputFlag = false) const; //note order can be re-arranged!
 
@@ -22,14 +22,14 @@ class DReactionStep
 		void Set_InitialParticleID(Particle_t locPID, bool locIsMissingFlag = false); //TRUE IS NOT SUPPORTED YET!
 		inline void Set_TargetParticleID(Particle_t locPID){dTargetParticleID = locPID;}
 		void Add_FinalParticleID(Particle_t locPID, bool locIsMissingFlag = false);
-		inline void Set_ApplyKinFitMassConstraintOnInitialParticleFlag(bool locFlag){dApplyKinFitMassConstraintOnInitialParticleFlag = locFlag;}
+		inline void Set_KinFitConstrainInitMassFlag(bool locFlag){dKinFitConstrainInitMassFlag = locFlag;}
 		void Reset(void);
 
 		// GET INITIAL, TARGET, AND MISSING DATA:
 		inline Particle_t Get_InitialParticleID(void) const{return dInitialParticleID;}
 		inline Particle_t Get_TargetParticleID(void) const{return dTargetParticleID;}
 		inline int Get_MissingParticleIndex(void) const{return dMissingParticleIndex;}
-		inline bool Get_ApplyKinFitMassConstraintOnInitialParticleFlag(void) const{return dApplyKinFitMassConstraintOnInitialParticleFlag;}
+		inline bool Get_KinFitConstrainInitMassFlag(void) const{return dKinFitConstrainInitMassFlag;}
 
 		// GET FINAL PARTICLE PIDs:
 		Particle_t Get_FinalParticleID(size_t locFinalParticleIndex) const;
@@ -58,7 +58,7 @@ class DReactionStep
 
 		// CONTROL MEMBERS:
 		int dMissingParticleIndex; //-1 for no missing particles, -2 for missing init (beam) particle (not yet supported!), else final state particle at this index is missing (0 -> x)
-		bool dApplyKinFitMassConstraintOnInitialParticleFlag; //default true, is ignored when not applicable (e.g. init is non-decaying (beam) particle)
+		bool dKinFitConstrainInitMassFlag; //default true, is ignored when not applicable (e.g. init is non-decaying (beam) particle)
 };
 
 inline void DReactionStep::Reset(void)
@@ -66,7 +66,7 @@ inline void DReactionStep::Reset(void)
 	dInitialParticleID = Unknown;
 	dTargetParticleID = Unknown;
 	dMissingParticleIndex = -1;
-	dApplyKinFitMassConstraintOnInitialParticleFlag = true;
+	dKinFitConstrainInitMassFlag = true;
 	dFinalParticleIDs.clear();
 }
 

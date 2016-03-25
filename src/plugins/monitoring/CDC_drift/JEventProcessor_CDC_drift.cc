@@ -114,7 +114,7 @@ jerror_t JEventProcessor_CDC_drift::init(void) {
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
 	// create root folder for cdc and cd to it, store main dir
-	//TDirectory *main = gDirectory;
+	TDirectory *savedir = gDirectory;
 	gDirectory->mkdir("CDC_fits")->cd();
 
 
@@ -160,7 +160,7 @@ jerror_t JEventProcessor_CDC_drift::init(void) {
 	Double_t sigma; 
 	afit->Branch("sigma",&sigma,"sigma/D");
 
-
+	savedir->cd();
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
 	return NOERROR;
@@ -422,7 +422,6 @@ jerror_t JEventProcessor_CDC_drift::evnt(JEventLoop *eventLoop, uint64_t eventnu
 		afit->SetBranchAddress("sigma",&ampfitparams[2]);
 
 		afit->Fill();
-
 
 
 		// **** reset histograms ****

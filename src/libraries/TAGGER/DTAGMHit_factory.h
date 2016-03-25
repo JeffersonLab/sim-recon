@@ -29,6 +29,7 @@ class DTAGMHit_factory: public jana::JFactory<DTAGMHit> {
 
       // config. parameter
       double DELTA_T_ADC_TDC_MAX; 
+      int USE_ADC, PEAK_CUT;
 
       // overall scale factors
       double fadc_a_scale;  // pixels per fADC pulse integral count

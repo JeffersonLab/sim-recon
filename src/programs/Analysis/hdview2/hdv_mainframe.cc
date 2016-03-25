@@ -237,13 +237,17 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   
   TGLabel *runlab = new TGLabel(eventlabs, "Run:");
   TGLabel *eventlab = new TGLabel(eventlabs, "Event:");
-  run = new TGLabel(eventvals, "----------");
-  event = new TGLabel(eventvals, "----------");
+  TGLabel *triglab = new TGLabel(eventlabs, "GTP bits:");
+  run = new TGLabel(eventvals, "--------------");
+  event = new TGLabel(eventvals, "--------------");
+  trig = new TGLabel(eventvals, "--------------");
   eventlabs->AddFrame(runlab, rhints);
   eventlabs->AddFrame(eventlab,rhints);
+  eventlabs->AddFrame(triglab,rhints);
   eventvals->AddFrame(run, lhints);
   eventvals->AddFrame(event, lhints);
-  
+  eventvals->AddFrame(trig, lhints);
+ 
   //----------------- Inspectors
   TGTextButton *trackinspector	= new TGTextButton(inspectors,	"Track Inspector");
   //TGTextButton *tofinspector	= new TGTextButton(inspectors,	"TOF Inspector");
@@ -920,8 +924,7 @@ void hdv_mainframe::DoOpenDebugerWindow(void)
 void hdv_mainframe::DoBcalDispFrame(void)
 {
 	if(bcaldispmf==NULL){
-		bcaldispmf = new TCanvas("BCALHitCanvas", "BCAL Hit Distribution", 1000, 600);
-		bcaldispmf->Divide(1,2);
+		bcaldispmf = new TCanvas("BCALHitCanvas", "BCAL Hit Distribution", 900, 900);
 	}
 
 	DoUpdateBcalDisp();
@@ -2084,15 +2087,40 @@ void hdv_mainframe::DrawLabel(TCanvas *c, vector<TObject*> &graphics, const char
 //-------------------
 // SetEvent
 //-------------------
-void hdv_mainframe::SetEvent(int id)
+void hdv_mainframe::SetEvent(ULong64_t id)
 {
 	if(!event)return;
 
-	char str[256];
-	sprintf(str,"%5d", id);
-	event->SetTitle(str);
+	stringstream ss;
+	ss << id;
+	event->SetTitle(ss.str().c_str());
 	event->Draw();
 }
+
+//-------------------
+// SetRun
+//-------------------
+void hdv_mainframe::SetRun(Int_t id)
+{
+	if(!event)return;
+
+	stringstream ss;
+	ss << id;
+	run->SetTitle(ss.str().c_str());
+	run->Draw();
+}
+
+//-------------------
+// SetTrig
+//-------------------
+void hdv_mainframe::SetTrig(char *trigstring)
+{
+	if(!event)return;
+
+	trig->SetTitle(trigstring);
+	trig->Draw();
+}
+
 
 //-------------------
 // SetSource

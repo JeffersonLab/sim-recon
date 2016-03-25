@@ -814,6 +814,29 @@ DKinematicData::ValueType DKinematicData::measuredInvBeta_err( void ) const
   return err;
 }
 
+void DKinematicData::Reset(void)
+{
+	setPID(Unknown);
+	setMassFixed();
+	setCharge(0);
+	setMass(0.0);
+
+	setMomentum(DVector3());
+	setPosition(DVector3());
+	setTime(0.0);
+
+	setdEdx(0.0);
+	setPathLength(0.0, 0.0);
+	setTrackingStateVector(0.0, 0.0, 0.0, 0.0, 0.0);
+
+	setT0(0.0, 0.0, SYS_NULL);
+	setT1(0.0, 0.0, SYS_NULL);
+
+	clearErrorMatrix();
+	clearTrackingErrorMatrix();
+
+	ClearAssociatedObjects();
+}
 
 //
 // static member functions

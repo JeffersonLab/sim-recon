@@ -19,6 +19,10 @@
 
 static TH1F* InvMass1 = NULL;
 static TH1F* InvMass2 = NULL;
+static TH1F* InvMass3 = NULL;
+static TH1F* InvMass4 = NULL;
+static TH1F* InvMass5 = NULL;
+
 
 
 extern "C"
@@ -40,7 +44,7 @@ jerror_t JEventProcessor_FCALgains::init(void)
   // ROOT mutex like this:
   japp->RootWriteLock();
 
-  if(InvMass1 && InvMass2 != NULL){
+  if(InvMass1 && InvMass2 && InvMass3 && InvMass4 && InvMass5!= NULL){
     japp->RootUnLock();
     return NOERROR;
   }
@@ -49,14 +53,20 @@ jerror_t JEventProcessor_FCALgains::init(void)
   m_nElements = n_channels;
   MASS_CUT_LO = 0.1;
     MASS_CUT_HI = 0.17;
+    //MASS_CUT_LO = 0.07;
+    //MASS_CUT_HI = 0.17;
 
-      InvMass1 = new TH1F("InvMass1","FCAL diphoton mass (Cluster E > 500 MeV)",500,0.0,1);
-      InvMass1->GetXaxis()->SetTitle("invariant mass [GeV]");
+      InvMass1 = new TH1F("InvMass1","FCAL diphoton mass (Cluster E > 500 MeV)",500,0.0,0.5);
+      InvMass1->GetXaxis()->SetTitle("Invariant Mass [GeV]");
       InvMass1->GetYaxis()->SetTitle("counts / 1 MeV");
 
-      InvMass2 = new TH1F("InvMass2","FCAL diphoton mass (Cluster E > 1000 MeV)",500,0.0,1);
+      InvMass2 = new TH1F("InvMass2","FCAL diphoton mass (Cluster E > 1000 MeV)",500,0.0,0.5);
       InvMass2->GetXaxis()->SetTitle("invariant mass [GeV]");
-      InvMass2->GetYaxis()->SetTitle("counts / 1 MeV");
+      InvMass2->GetYaxis()->SetTitle("Counts / 1 MeV");
+      
+       InvMass3 = new TH1F("InvMass3","FCAL diphoton mass (Cluster pos > 108 cm);Invariant Mass [GeV]; Counts / 1 MeV ",500,0.0,0.5);
+    InvMass4 = new TH1F("InvMass4","FCAL diphoton mass (Cluster pos > 112 cm);Invariant Mass [GeV]; Counts / 1 MeV ",500,0.0,0.5);
+ InvMass5 = new TH1F("InvMass5","FCAL diphoton mass (Cluster pos > 116 cm);Invariant Mass [GeV]; Counts / 1 MeV ",500,0.0,0.5);
 
       h2D_mC = new TH2F( "h2D_mC", "C Matrix as TH2F",
 			 n_channels, 0., n_channels, n_channels,0.,n_channels );
@@ -87,10 +97,11 @@ jerror_t JEventProcessor_FCALgains::init(void)
 		  h1D_nhits->SetXTitle("Channel Number");
 		  h1D_nhits->SetYTitle("Number of Hits");
 				  
-		  h1D_ebyp = new TH1F("h1D_ebyp", "Shower energy / track momentum" ,100,0,5);
-		    h1D_ebyp->SetXTitle("E(shower) / p(track)");
-		      h1D_ebyp->SetYTitle("Number of Hits");
-
+		 // h1D_ebyp = new TH1F("h1D_ebyp", "Shower energy / track momentum" ,100,0,5);
+		   // h1D_ebyp->SetXTitle("E(shower) / p(track)");
+		     // h1D_ebyp->SetYTitle("Number of Hits");
+hits2D = new TH2F( "hits2D", "FCAL Hits side peak; X; Y", 61, -30, 30, 61, -30, 30 );
+hits2D_pi0 = new TH2F( "hits2D_pi0", "FCAL Hits Pi0; X; Y", 61, -30, 30, 61, -30, 30 );
 			// m_nElements should be 2800 for FCAL.
 			m_fcalgeom = new DFCALGeometry();
 			m_pi0mass = 0.1349766;
@@ -205,40 +216,32 @@ jerror_t JEventProcessor_FCALgains::evnt(jana::JEventLoop* locEventLoop, uint64_
   Double_t radius = 0;
   japp->RootWriteLock();
   Double_t p;
+  
+ 
+  
   for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){
     for (unsigned int j=0; j< locFCALShowers.size(); ++j){
 
       Double_t x = locFCALShowers[j]->getPosition().X();
       Double_t y = locFCALShowers[j]->getPosition().Y();
-      // Double_t z = locFCALShowers[j]->getPosition().Z() ;
- 
-      //DVector3 pos_FCAL(x,y,625.406);
-      DVector3 pos_FCAL(0,0,625.406);
-      // DVector3 pos_FCAL(0,0,638);
-      //std::cout<<"i: "<< i<< " j: "<< j << " z: "<<z<< endl;
-      // if (locTrackTimeBased[i]->rt->GetIntersectionWithPlane(pos_FCAL,norm,pos,mom)==NOERROR)
+      
+     
+      //at the end of the start counter; use this fall for fall '15 data
+     // DVector3 pos_FCAL(0,0,962); 
+      DVector3 pos_FCAL(0,0,638);
+
       if (locTrackTimeBased[i]->rt->GetIntersectionWithPlane(pos_FCAL,norm,pos,mom,NULL,NULL,NULL,SYS_FCAL)==NOERROR)
 	{
-	  // Double_t dX= TMath::Abs(pos.X() - x);
-	  // Double_t dY= TMath::Abs(pos.Y() - y);
-	  // Double_t dZ= TMath::Abs(pos.Z() - z);
 	  Double_t trkmass = locTrackTimeBased[i]->mass();
 	  Double_t FOM = TMath::Prob(locTrackTimeBased[i]->chisq, locTrackTimeBased[i]->Ndof);
 	  radius = sqrt(pos.X()*pos.X() + pos.Y()*pos.Y());
 	  Double_t Eshwr = locFCALShowers[j]->getEnergy();
 	  p = locTrackTimeBased[i]->momentum().Mag();
-	  // cout<<"p: "<<p<<endl;
-	  // Double_t dZ = TMath::Abs(pos.Z() - z);
 	  Double_t dRho = sqrt(((pos.X() - x)*(pos.X() - x)) + ((pos.Y() - y)* (pos.Y() - y)));
-	  // std::cout<<"i: "<< i<< " j: "<< j << " dRho " <<dRho << endl;
-	  //if(dX < 20 && dY < 20 && trkmass < 0.15 && dRho < 50 && FOM > 0.01) {  
 	  if(trkmass < 0.15 && dRho < 5 && FOM > 0.01 ) {  
 	    h1D_ebyp->Fill(Eshwr/p);
 	    matchedShowers.push_back(locFCALShowers[j]);
 	    matchedTracks.push_back(locTrackTimeBased[i]);
-	    //  printf ("Matched event=%d, i=%d, j=%d, p=%f, Ztrk=%f Zshr=%f, Xtrk=%f, Xshr=%f, Ytrk=%f, Yshr=%f\n",locEventNumber,i,j,p,
-	    //  pos.Z(),z,pos.X(),x,pos.Y(),y);
-	    //  break;
 	 
 	  }
 	}
@@ -246,6 +249,8 @@ jerror_t JEventProcessor_FCALgains::evnt(jana::JEventLoop* locEventLoop, uint64_
     }
   }
    
+    if (locFCALShowers.size() >=2) {
+    
   for(unsigned int i=0; i<locFCALShowers.size(); i++)
     {
       if (find(matchedShowers.begin(), matchedShowers.end(),locFCALShowers[i]) != matchedShowers.end()) continue;
@@ -283,13 +288,21 @@ jerror_t JEventProcessor_FCALgains::evnt(jana::JEventLoop* locEventLoop, uint64_
 	if(E1>.5&&E2>.5 && s1->getPosition().Pt() > 20*k_cm && s2->getPosition().Pt() > 20*k_cm && (fabs (t1-t2) < 10) ) InvMass1->Fill(inv_mass);
 	if(E1>1&&E2>1 && s1->getPosition().Pt() > 20*k_cm && s2->getPosition().Pt() > 20*k_cm  && (fabs (t1-t2) < 10)) InvMass2->Fill(inv_mass);
 
+	if(E1>1&&E2>1 && ((s1->getPosition().Pt() > 20*k_cm && s2->getPosition().Pt() > 108*k_cm) || (s1->getPosition().Pt() > 108*k_cm && s2->getPosition().Pt() > 20*k_cm))  && (fabs (t1-t2) < 10)) InvMass3->Fill(inv_mass);
+	
+	if(E1>1&&E2>1 && ((s1->getPosition().Pt() > 20*k_cm && s2->getPosition().Pt() > 112*k_cm) || (s1->getPosition().Pt() > 112*k_cm && s2->getPosition().Pt() > 20*k_cm))  && (fabs (t1-t2) < 10)) InvMass4->Fill(inv_mass);
+	
+	if(E1>1&&E2>1 && ((s1->getPosition().Pt() > 20*k_cm && s2->getPosition().Pt() > 116*k_cm) || (s1->getPosition().Pt() > 116*k_cm && s2->getPosition().Pt() > 20*k_cm))  && (fabs (t1-t2) < 10)) InvMass5->Fill(inv_mass);
+
+
 	h1D_mPi0->Fill(inv_mass);
         h1D_massDiff->Fill(inv_mass*inv_mass-m_pi0mass*m_pi0mass);
 	///        
-	//if(E1 < 1 || E2 < 1) continue;
-	if(E1 < 0.5 || E2 < 0.5) continue;
+	if(E1 < 1 || E2 < 1) continue;
+	//if(E1 < 0.5 || E2 < 0.5) continue;
 	  if(fabs(t1-t2) >= 10.) continue;
 	    if(s1->getPosition().Pt() <= 20. || s2->getPosition().Pt() <=20.) continue;
+	     if(s1->getPosition().Pt() >= 108. || s2->getPosition().Pt() >=108.) continue;
 	      if(inv_mass < 0.03 || inv_mass > 0.3) continue;
 		h1D_mPi0cuts->Fill(inv_mass);
 		  if(inv_mass < MASS_CUT_LO || inv_mass > MASS_CUT_HI) continue;
@@ -361,14 +374,28 @@ jerror_t JEventProcessor_FCALgains::evnt(jana::JEventLoop* locEventLoop, uint64_
 				int my_y = hits1[i].y;
 				double my_E = hits1[i].E;
 				m_nhits[XYtoAbsNum(my_x,my_y)]+=1;
+				// hits2D->Fill(my_x/4,my_y/4,1);
+				  if (inv_mass > 0.05 && inv_mass < 0.1 && E1>1&&E2>1 && s1->getPosition().Pt() > 20*k_cm && s2->getPosition().Pt() > 20*k_cm  && (fabs (t1-t2) < 10)){
+				  hits2D->Fill(my_x/4,my_y/4,1);
+				  }
+
+				  if (inv_mass > 0.095 && inv_mass < 0.16 && E1>1&&E2>1 && s1->getPosition().Pt() > 20*k_cm && s2->getPosition().Pt() > 20*k_cm  && (fabs (t1-t2) < 10)){
+				  hits2D_pi0->Fill(my_x/4,my_y/4,1);
+				  }
 				frac_en.push_back(make_pair( (my_E / e_sum1), make_pair(my_x,my_y)));
 			      }
 
 			      for(  int i = 0; i < numhits_per_cluster2; ++i ){
-				int my_x = hits2[i].x ;
+				int my_x = hits2[i].x ; 
 				int my_y = hits2[i].y ;
 				double my_E = hits2[i].E;
 				  m_nhits[XYtoAbsNum(my_x,my_y)]+=1;
+				  if (inv_mass > 0.05 && inv_mass < 0.1 && E1>1&&E2>1 && s1->getPosition().Pt() > 20*k_cm && s2->getPosition().Pt() > 20*k_cm  && (fabs (t1-t2) < 10)){
+				  hits2D->Fill(my_x/4,my_y/4,1);
+				  }
+				  if (inv_mass > 0.095 && inv_mass < 0.16 && E1>1&&E2>1 && s1->getPosition().Pt() > 20*k_cm && s2->getPosition().Pt() > 20*k_cm  && (fabs (t1-t2) < 10)){
+				  hits2D_pi0->Fill(my_x/4,my_y/4,1);
+				  }
 				  frac_en.push_back(make_pair( (my_E / e_sum2), make_pair(my_x,my_y)));
 			      }
 
@@ -406,7 +433,7 @@ jerror_t JEventProcessor_FCALgains::evnt(jana::JEventLoop* locEventLoop, uint64_
 			}
       }
     }
-
+}
   japp->RootUnLock();
   return NOERROR;
 }

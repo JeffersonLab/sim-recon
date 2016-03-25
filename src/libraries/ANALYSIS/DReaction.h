@@ -8,12 +8,21 @@
 #include "JANA/JObject.h"
 #include "particleType.h"
 #include "ANALYSIS/DReactionStep.h"
-#include "ANALYSIS/DKinFitResults.h"
 
 using namespace std;
 using namespace jana;
 
 class DAnalysisAction;
+
+enum DKinFitType
+{
+	d_NoFit = 0, 
+	d_P4Fit, //also includes invariant mass constraints
+	d_VertexFit,
+	d_SpacetimeFit,
+	d_P4AndVertexFit, //also includes invariant mass constraints
+	d_P4AndSpacetimeFit //also includes invariant mass constraints
+};
 
 class DReaction : public JObject
 {
@@ -48,9 +57,13 @@ class DReaction : public JObject
 		// ADD COMBO PRE-SELECTION ACTION
 		void Add_ComboPreSelectionAction(DAnalysisAction* locAction){dComboPreSelectionActions.push_back(locAction);}
 
-		// GET CONTROL MEMBERS:
+		// GET CONTROL INFO:
 		string Get_ReactionName(void) const{return dReactionName;}
 		DKinFitType Get_KinFitType(void) const{return dKinFitType;}
+		int Get_DecayStepIndex(int locStepIndex, int locParticleIndex) const;
+		pair<int, int> Get_InitialParticleDecayFromIndices(int locStepIndex) const; //1st is step index, 2nd is particle index
+		int Get_DefinedParticleStepIndex(void) const; //-1 if none //defined: missing or open-ended-decaying
+		bool Get_IsInclusiveChannelFlag(void) const;
 
 		// GET REACTION STEPS:
 		size_t Get_NumReactionSteps(void) const{return dReactionSteps.size();}

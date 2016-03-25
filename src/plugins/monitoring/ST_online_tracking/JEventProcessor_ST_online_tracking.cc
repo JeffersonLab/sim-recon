@@ -43,21 +43,6 @@ static TH2I *h2_dphi_sector;
 static TH2I *h2_dedx_P_mag;
 static TH2I *h2_dedx_P_mag_postv;
 static TH2I *h2_dedx_P_mag_negtv;
-// Declare 1D tracking histos
-static TH1D *h_phi_sec_hit_cntr;
-static TH1D *h_phi_sec_pred_hit_cntr;
-static TH1D *pEff;
-static TH1D *MacropEff;
-static TH1D *h_phi_sec_adc_cntr;
-static TH1D *pEff_adc;
-static TH1D *MacropEff_adc;
-// Declare detection efficency counters
-uint32_t phi_sec_cntr[NCHANNELS];
-uint32_t phi_sec_pred_hit_cntr[NCHANNELS];
-uint32_t phi_sec_adc_hit_cntr[NCHANNELS];
-uint32_t phi_sec_hit_cntr[NCHANNELS];
-double   phi_sec[NCHANNELS][2]; 
-
 
 extern "C"{
 void InitPlugin(JApplication *app){
@@ -106,32 +91,20 @@ jerror_t JEventProcessor_ST_online_tracking::init(void)
   
   h2_phi_vs_sector = new TH2I("phi_vs_sector", "Charged Track & ST Intersection; Sector Number; #phi (deg)", NCHANNELS, 0.5, NCHANNELS + 0.5, 360, 0, 360);
   h2_dphi_sector  = new TH2I("h2_dphi_sector", "#delta #phi vs Sector; Sector Number; #delta #phi (deg)", NCHANNELS, 0.5, NCHANNELS + 0.5, 600, -15, 15);
- 
   h2_dedx_P_mag      = new TH2I("h2_dedx_P_mag", "#frac{dE}{dx} vs Momentum; Momentum (Gev/c); dEdx (au)", 1000, 0, 2, 150, 0, .015);
   h2_dedx_P_mag_postv= new TH2I("h2_dedx_P_mag_postv", "#frac{dE}{dx} vs Momentum (q > 0); Momentum (Gev/c); #frac{dE}{dx} (au)", 1000, 0, 2, 150, 0, .015);
   h2_dedx_P_mag_negtv= new TH2I("h2_dedx_P_mag_negtv", "#frac{dE}{dx} vs Momentum (q < 0); Momentum (Gev/c); #frac{dE}{dx} (au)", 1000, 0, 2, 150, 0, .015);
 
-  //eff histos
-  h_phi_sec_pred_hit_cntr = new TH1D("h_phi_sec_pred_hit_cntr", "phi_sec_pred_hit_cntr; Sector; Predicted Hit Counts", 31, -0.5, 30.5);
-  h_phi_sec_hit_cntr      = new TH1D("h_phi_sec_hit_cntr", "phi_sec_hit_cntr; Sector; Hit Counts", 31, -0.5, 30.5);
-  pEff= new TH1D("pEff", "Hit Efficiency; Sector; N_{HIT}/N_{TRK}", 31, -0.5, 30.5);
-  MacropEff= new TH1D("MacropEff", "Hit Efficiency; Sector; N_{HIT}/N_{TRK}", 31, -0.5, 30.5);
-  h_phi_sec_adc_cntr = new TH1D("h_phi_sec_adc_cntr", "phi_sec_adc_cntr; Sector; adc Counts", 31, -0.5, 30.5);
-  pEff_adc = new TH1D("pEff_adc", "ADC Efficiency; Sector; N_{ADC}/N_{TRK}", 31, -0.5, 30.5);
-  MacropEff_adc = new TH1D("MacropEff_adc", "ADC Efficiency; Sector; N_{ADC}/N_{TRK}", 31, -0.5, 30.5);
-  // cd back to main directory
+   // cd back to main directory
   gDirectory->cd("../");
   main->cd();
   japp->RootUnLock(); //RELEASE ROOT LOCK!!
-  // Initialize counters
-  memset(phi_sec_pred_hit_cntr, 0, sizeof(phi_sec_pred_hit_cntr));
-  memset(phi_sec_hit_cntr, 0, sizeof(phi_sec_hit_cntr));
-  memset(phi_sec_adc_hit_cntr, 0, sizeof(phi_sec_adc_hit_cntr));
-  for (uint32_t i = 0; i < NCHANNELS; i++)
-    {
-      phi_sec[i][0] = (6.0 + 12.0*double(i)) - 4.0;
-      phi_sec[i][1] = (6.0 + 12.0*double(i)) + 4.0;
-    }
+  
+  // for (uint32_t i = 0; i < NCHANNELS; i++)
+  //   {
+  //     phi_sec[i][0] = (6.0 + 12.0*double(i)) - 4.0;
+  //     phi_sec[i][1] = (6.0 + 12.0*double(i)) + 4.0;
+  //   }
   return NOERROR;
 }
 //------------------
@@ -219,7 +192,7 @@ jerror_t JEventProcessor_ST_online_tracking::evnt(JEventLoop *eventLoop, uint64_
       // Upstream Diameter of target cell = 2.42 cm
       // ID of scattering chamber = 7.49 cm
       bool z_vertex_cut = 50.0 <= z_v && z_v <= 80.0; 
-      bool r_vertex_cut = r_v < 3.745;
+      bool r_vertex_cut = r_v < 0.5;
       // applied vertex cut
       if (!z_vertex_cut) continue;
       if (!r_vertex_cut) continue;
@@ -251,68 +224,36 @@ jerror_t JEventProcessor_ST_online_tracking::evnt(JEventLoop *eventLoop, uint64_
       double P_mag = Lor_Mom.P(); 
       double phi_mom = momentum_vec.Phi()*RAD2DEG;
       if (phi_mom < 0.0) phi_mom += 360.0;
-      for (uint32_t j = 0; j < NCHANNELS; j++)
+   
+      if (st_match_pid)  // Get the intersection point which can not be obtained from st_match
 	{
-	  if (phi_mom >= phi_sec[j][0] && phi_mom <= phi_sec[j][1])
+	  // Grab the sector
+	  Int_t sector_m = st_params[0].dSCHit->sector;
+	  //Acquire the energy loss per unit length in the ST (arbitrary units)
+	  double dEdx = st_params[0].dEdx;
+	  double dphi = st_params[0].dDeltaPhiToHit*RAD2DEG;
+	  // Fill dEdx vs Momentum 
+	  h2_dedx_P_mag->Fill(P_mag,dEdx);
+	  // Fill dEdx vs Momentum with cut on positive charges  
+	  if (q > 0)
 	    {
-	      phi_sec_cntr[j] += 1;
+	      h2_dedx_P_mag_postv->Fill(P_mag,dEdx);
 	    }
-	}
-		  // Grab the ST sector predicted to be hit by the charged time based track
-		  // 0.069 rad = 4 deg, 0.087 rad = 5 deg, 0.105 rad = 6 deg
-		  uint32_t st_pred_id = pid_algorithm[0]->PredictSCSector(timeBasedTrack->rt, 0.069);
-		  uint32_t st_pred_id_index = st_pred_id - 1;
-		  
-		  if (st_pred_id != 0) 
-		    {
-		      phi_sec_pred_hit_cntr[st_pred_id_index] += 1;
-		      //loop over the Hit object and get the real sector hit at ST
-		      for (uint32_t j = 0; j < st_hits.size(); j++)
-			{
-			  uint32_t phi_sec_hit_sector       = st_hits[j]->sector;
-			  uint32_t phi_sec_hit_sector_index = phi_sec_hit_sector - 1;
-			  if (st_pred_id == phi_sec_hit_sector)
-			    phi_sec_hit_cntr[phi_sec_hit_sector_index] += 1;
-			}
-		      //loop over the ADC object and get the real sector hit of ADC
-		      for (uint32_t j = 0; j < st_adc_digi_hits.size(); j++)
-			{
-			  uint32_t phi_sec_adc_hit_sector       = st_adc_digi_hits[j]->sector;
-			  uint32_t phi_sec_adc_hit_sector_index = phi_sec_adc_hit_sector - 1;
-			  if (st_pred_id == phi_sec_adc_hit_sector)
-			    phi_sec_adc_hit_cntr[phi_sec_adc_hit_sector_index] += 1;
-			}
-		    } // end if (st_pred_id != 0) 	
-		  
-		  if (st_match_pid)  // Get the intersection point which can not be obtained from st_match
-		    {
-		      // Grab the sector
-		      Int_t sector_m = st_params[0].dSCHit->sector;
-		      //Acquire the energy loss per unit length in the ST (arbitrary units)
-		      double dEdx = st_params[0].dEdx;
-		      double dphi = st_params[0].dDeltaPhiToHit*RAD2DEG;
-		      // Fill dEdx vs Momentum 
-		      h2_dedx_P_mag->Fill(P_mag,dEdx);
-		      // Fill dEdx vs Momentum with cut on positive charges  
-		      if (q > 0)
-			{
-			  h2_dedx_P_mag_postv->Fill(P_mag,dEdx);
-			}
-		      // Fill dEdx vs Momentum with cut on negative charges  
-		      if (q < 0)
-			{
-			  h2_dedx_P_mag_negtv->Fill(P_mag,dEdx);
-			}
-		      // Obtain the intersection point with the ST		  
-		      double phi_ip   = IntersectionPoint.Phi()*RAD2DEG;
+	  // Fill dEdx vs Momentum with cut on negative charges  
+	  if (q < 0)
+	    {
+	      h2_dedx_P_mag_negtv->Fill(P_mag,dEdx);
+	    }
+	  // Obtain the intersection point with the ST		  
+	  double phi_ip   = IntersectionPoint.Phi()*RAD2DEG;
 		      // Correct phi calculation
-		      if (phi_ip < 0.0) phi_ip += 360.0;
-		      // Acquire the intersection point
-		      sc_track_position.push_back(IntersectionPoint);
-		      //Fill 2D histos
-		      h2_phi_vs_sector->Fill(sector_m,phi_ip);
+	  if (phi_ip < 0.0) phi_ip += 360.0;
+	  // Acquire the intersection point
+	  sc_track_position.push_back(IntersectionPoint);
+	  //Fill 2D histos
+	  h2_phi_vs_sector->Fill(sector_m,phi_ip);
 		      h2_dphi_sector->Fill(sector_m,dphi);
-		    }  // PID match cut
+	}  // PID match cut
     }                  // Charged track loop
   // Fill 2D histo
   for (uint32_t i = 0; i < sc_track_position.size(); i++)
@@ -341,26 +282,6 @@ jerror_t JEventProcessor_ST_online_tracking::erun(void)
 jerror_t JEventProcessor_ST_online_tracking::fini(void)
 {
   // Called before program exit after event processing is finished.
-  for (uint32_t i = 0; i < NCHANNELS; i++)
-    {
-      //hit object
-      h_phi_sec_hit_cntr->Fill(i+1,double(phi_sec_hit_cntr[i]));
-      h_phi_sec_pred_hit_cntr->Fill(i+1,double(phi_sec_pred_hit_cntr[i]));
-
-      h_phi_sec_adc_cntr->Fill(i+1,double(phi_sec_adc_hit_cntr[i]));
-     
-
-    }
-  // //How to get Binomial errors in an efficiency plot
-  // // hit object efficiency
-  // h_phi_sec_hit_cntr->Sumw2();
-  // h_phi_sec_pred_hit_cntr->Sumw2();
-  // pEff->Sumw2();
-  // pEff->Divide(h_phi_sec_hit_cntr,h_phi_sec_pred_hit_cntr,1,1,"B");
-  // // adc efficiency
-  // h_phi_sec_adc_cntr->Sumw2();
-  // pEff_adc->Sumw2();
-  // pEff_adc->Divide(h_phi_sec_adc_cntr,h_phi_sec_pred_hit_cntr,1,1,"B");
   return NOERROR;
 }
 

@@ -187,7 +187,10 @@ public:
     
     bool operator==( const DKinematicData& rhs ) const ;
     bool operator!=( const DKinematicData& rhs ) const ;
-    
+
+    //Reset //for when stored in resource pools
+    void Reset(void);
+
     // member functions
     void setPID(Particle_t locPID){m_pid = locPID;}
     void setMass( const ValueType aMass ) ;

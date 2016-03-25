@@ -32,7 +32,7 @@
 #include "TRACKING/DMCThrown.h"
 
 #include "ANALYSIS/DReaction.h"
-#include "ANALYSIS/DKinFitParticle.h"
+#include "KINFITTER/DKinFitParticle.h"
 #include "ANALYSIS/DMCThrownMatching.h"
 #include "ANALYSIS/DMCThrownMatching_factory.h"
 #include "ANALYSIS/DParticleCombo.h"
@@ -68,6 +68,8 @@ REACTION-BASED ACTIONS:
 	DHistogramAction_InvariantMass
 	DHistogramAction_MissingMass
 	DHistogramAction_MissingMassSquared
+	DHistogramAction_2DInvariantMass
+	DHistogramAction_Dalitz
 	DHistogramAction_MissingTransverseMomentum
 */
 
@@ -83,7 +85,6 @@ class DHistogramAction_PID : public DAnalysisAction
 		dMaxBCALTheta(140.0), dMinFCALTheta(0.0), dMaxFCALTheta(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinEOverP(0.0), dMaxEOverP(4.0), dMinDeltaBeta(-1.0), 
 		dMaxDeltaBeta(1.0), dMinDeltadEdx(-30.0), dMaxDeltadEdx(30.0), dMinDeltaT(-10.0), dMaxDeltaT(10.0), dMinPull(-10.0), dMaxPull(10.0)
 		{
-			dThrownPIDs.clear();
 			dThrownPIDs.push_back(Gamma);  dThrownPIDs.push_back(Neutron);
 			dThrownPIDs.push_back(PiPlus);  dThrownPIDs.push_back(KPlus);  dThrownPIDs.push_back(Proton);
 			dThrownPIDs.push_back(PiMinus);  dThrownPIDs.push_back(KMinus);
@@ -178,18 +179,19 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		DHistogramAction_ParticleComboKinematics(const DReaction* locReaction, bool locUseKinFitResultsFlag, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_ParticleComboKinematics", locUseKinFitResultsFlag, locActionUniqueString), 
 		dNumPBins(500), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(200), dNumVertexXYBins(200), dNumBetaBins(400), dNumDeltaBetaBins(400),
-		dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumDeltaTRFBins(500),
+		dNum2DPBins(250), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumDeltaTRFBins(500), dNumPathLengthBins(750), dNumLifetimeBins(500),
 		dMinT(-5.0), dMaxT(5.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0),
-		dMinVertexXY(-5.0), dMaxVertexXY(5.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinDeltaTRF(-10.0), dMaxDeltaTRF(10.0)
+		dMinVertexXY(-5.0), dMaxVertexXY(5.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinDeltaTRF(-10.0), dMaxDeltaTRF(10.0),
+		dMaxPathLength(15), dMaxLifetime(5.0)
 		{
 			dParticleID = NULL;
 			dAnalysisUtilities = NULL;
 		}
 
 		unsigned int dNumPBins, dNumThetaBins, dNumPhiBins, dNumVertexZBins, dNumTBins, dNumVertexXYBins, dNumBetaBins, dNumDeltaBetaBins;
-		unsigned int dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins, dNumDeltaTRFBins;
+		unsigned int dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins, dNumDeltaTRFBins, dNumPathLengthBins, dNumLifetimeBins;
 		double dMinT, dMaxT, dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dMinVertexZ, dMaxVertexZ, dMinVertexXY, dMaxVertexXY;
-		double dMinBeta, dMaxBeta, dMinDeltaBeta, dMaxDeltaBeta, dMinDeltaTRF, dMaxDeltaTRF;
+		double dMinBeta, dMaxBeta, dMinDeltaBeta, dMaxDeltaBeta, dMinDeltaTRF, dMaxDeltaTRF, dMaxPathLength, dMaxLifetime;
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -231,6 +233,16 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 
 		set<const JObject*> dPreviouslyHistogrammedBeamParticles;
 		set<pair<size_t, pair<Particle_t, const JObject*> > > dPreviouslyHistogrammedParticles;
+
+		//other than first, skipped if not detached vertex
+		map<size_t, TH1I*> dHistMap_StepVertexZ;
+		map<size_t, TH2I*> dHistMap_StepVertexYVsX;
+		map<size_t, TH1I*> dHistMap_StepVertexT;
+
+		//size_t is step index where the detached-vertex particle decays
+		map<size_t, TH1I*> dHistMap_DetachedPathLength; //distance between this vertex and the previous one (if detached)
+		map<size_t, TH1I*> dHistMap_DetachedLifetime; //delta-t between this vertex and the previous one (if detached)
+		map<size_t, TH1I*> dHistMap_DetachedLifetime_RestFrame; //in rest frame
 };
 
 class DHistogramAction_InvariantMass : public DAnalysisAction
@@ -238,12 +250,15 @@ class DHistogramAction_InvariantMass : public DAnalysisAction
 	public:
 		DHistogramAction_InvariantMass(const DReaction* locReaction, Particle_t locInitialPID, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_InvariantMass", locUseKinFitResultsFlag, locActionUniqueString),
-		dEnableDoubleCounting(false), dInitialPID(locInitialPID), dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass)
-		{
-			dAnalysisUtilities = NULL;
-		}
+		dInitialPID(locInitialPID), dStepIndex(-1), dToIncludePIDs(deque<Particle_t>()),
+		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dAnalysisUtilities(NULL) {}
 
-		bool dEnableDoubleCounting;
+		//e.g. if g, p -> pi+, pi-, p
+			//call with step = 0, PIDs = pi+, pi-, and will histogram rho mass
+		DHistogramAction_InvariantMass(const DReaction* locReaction, size_t locStepIndex, deque<Particle_t> locToIncludePIDs, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Hist_InvariantMass", locUseKinFitResultsFlag, locActionUniqueString),
+		dInitialPID(Unknown), dStepIndex(locStepIndex), dToIncludePIDs(locToIncludePIDs),
+		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dAnalysisUtilities(NULL) {}
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -251,8 +266,12 @@ class DHistogramAction_InvariantMass : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
 		Particle_t dInitialPID;
+		int dStepIndex;
+		deque<Particle_t> dToIncludePIDs;
+
 		unsigned int dNumMassBins;
 		double dMinMass, dMaxMass;
+
 		const DAnalysisUtilities* dAnalysisUtilities;
 		TH1I* dHist_InvaraintMass;
 
@@ -264,7 +283,7 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 	public:
 		DHistogramAction_MissingMass(const DReaction* locReaction, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
-		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dMissingMassOffOfStepIndex(-1),
+		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dMissingMassOffOfStepIndex(0),
 		dMissingMassOffOfPIDs(deque<Particle_t>()), dNum2DMassBins(locNumMassBins/2), dNum2DBeamEBins(1200), dMinBeamE(0.0), dMaxBeamE(12.0)
 		{
 			dAnalysisUtilities = NULL;
@@ -285,7 +304,7 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 		//Then: Will histogram only missing-mass: g, p -> K+_1, (X)    and NOT K+_2!!!
 		DHistogramAction_MissingMass(const DReaction* locReaction, int locMissingMassOffOfStepIndex, deque<Particle_t> locMissingMassOffOfPIDs, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
-		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex),
+		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex),
 		dMissingMassOffOfPIDs(locMissingMassOffOfPIDs), dNum2DMassBins(locNumMassBins/2), dNum2DBeamEBins(1200), dMinBeamE(0.0), dMaxBeamE(12.0)
 		{
 			dAnalysisUtilities = NULL;
@@ -293,13 +312,11 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 
 		DHistogramAction_MissingMass(const DReaction* locReaction, int locMissingMassOffOfStepIndex, Particle_t locMissingMassOffOfPID, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
-		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
+		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
 		dMissingMassOffOfPIDs(deque<Particle_t>(1, locMissingMassOffOfPID)), dNum2DMassBins(locNumMassBins/2), dNum2DBeamEBins(1200), dMinBeamE(0.0), dMaxBeamE(12.0)
 		{
 			dAnalysisUtilities = NULL;
 		}
-
-		bool dEnableDoubleCounting;
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -328,7 +345,7 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 	public:
 		DHistogramAction_MissingMassSquared(const DReaction* locReaction, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMassSq, double locMaxMassSq, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMassSquared", locUseKinFitResultsFlag, locActionUniqueString),
-		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq), dMissingMassOffOfStepIndex(-1),
+		dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq), dMissingMassOffOfStepIndex(0),
 		dMissingMassOffOfPIDs(deque<Particle_t>()), dNum2DMassBins(locNumMassBins/2), dNum2DBeamEBins(600), dMinBeamE(0.0), dMaxBeamE(12.0)
 		{
 			dAnalysisUtilities = NULL;
@@ -349,7 +366,7 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 		//Then: Will histogram only missing-mass: g, p -> K+_1, (X)    and NOT K+_2!!!
 		DHistogramAction_MissingMassSquared(const DReaction* locReaction, int locMissingMassOffOfStepIndex, deque<Particle_t> locMissingMassOffOfPIDs, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMassSq, double locMaxMassSq, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
-		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
+		dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
 		dMissingMassOffOfPIDs(locMissingMassOffOfPIDs), dNum2DMassBins(locNumMassBins/2), dNum2DBeamEBins(600), dMinBeamE(0.0), dMaxBeamE(12.0)
 		{
 			dAnalysisUtilities = NULL;
@@ -357,13 +374,11 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 
 		DHistogramAction_MissingMassSquared(const DReaction* locReaction, int locMissingMassOffOfStepIndex, Particle_t locMissingMassOffOfPID, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMassSq, double locMaxMassSq, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
-		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
+		dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
 		dMissingMassOffOfPIDs(deque<Particle_t>(1, locMissingMassOffOfPID)), dNum2DMassBins(locNumMassBins/2), dNum2DBeamEBins(600), dMinBeamE(0.0), dMaxBeamE(12.0)
 		{
 			dAnalysisUtilities = NULL;
 		}
-
-		bool dEnableDoubleCounting;
 
 		void Initialize(JEventLoop* locEventLoop);
 
@@ -387,33 +402,88 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
 };
 
-class DHistogramAction_KinFitResults : public DAnalysisAction
+class DHistogramAction_2DInvariantMass : public DAnalysisAction
 {
 	public:
-		DHistogramAction_KinFitResults(const DReaction* locReaction, double locPullHistConfidenceLevelCut, string locActionUniqueString = "") :
-		DAnalysisAction(locReaction, "Hist_KinFitResults", true, locActionUniqueString), 
-		dNumConfidenceLevelBins(400), dNumPullBins(200), dMinPull(-4.0), dMaxPull(4.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut)
-		{
-			dAnalysisUtilities = NULL;
-		}
-
-		unsigned int dNumConfidenceLevelBins, dNumPullBins;
-		double dMinPull, dMaxPull;
+		DHistogramAction_2DInvariantMass(const DReaction* locReaction, size_t locStepIndex, deque<Particle_t> locXPIDs, deque<Particle_t> locYPIDs, bool locUseKinFitResultsFlag, unsigned int locNumXBins, double locMinX, double locMaxX, unsigned int locNumYBins, double locMinY, double locMaxY, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Hist_2DInvariantMass", locUseKinFitResultsFlag, locActionUniqueString),
+		dStepIndex(locStepIndex), dXPIDs(locXPIDs), dYPIDs(locYPIDs), dNumXBins(locNumXBins), dNumYBins(locNumYBins), 
+		dMinX(locMinX), dMaxX(locMaxX), dMinY(locMinY), dMaxY(locMaxY), dAnalysisUtilities(NULL) {}
 
 		void Initialize(JEventLoop* locEventLoop);
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
-		void Create_ParticlePulls(bool locIsBeamFlag, string locStepROOTName, Particle_t locPID, map<DKinFitPullType, TH1I*>& locParticlePulls, const string& locKinFitTypeString);
+		int dStepIndex;
+		deque<Particle_t> dXPIDs, dYPIDs;
+		unsigned int dNumXBins, dNumYBins;
+		double dMinX, dMaxX, dMinY, dMaxY;
+
+		const DAnalysisUtilities* dAnalysisUtilities;
+		TH2I* dHist_2DInvaraintMass;
+
+		set<set<set<pair<const JObject*, Particle_t> > > > dPreviousSourceObjects;
+};
+
+
+class DHistogramAction_Dalitz : public DAnalysisAction
+{
+	public:
+		DHistogramAction_Dalitz(const DReaction* locReaction, size_t locStepIndex, deque<Particle_t> locXPIDs, deque<Particle_t> locYPIDs, bool locUseKinFitResultsFlag, unsigned int locNumXBins, double locMinX, double locMaxX, unsigned int locNumYBins, double locMinY, double locMaxY, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Hist_Dalitz", locUseKinFitResultsFlag, locActionUniqueString),
+		dStepIndex(locStepIndex), dXPIDs(locXPIDs), dYPIDs(locYPIDs), dNumXBins(locNumXBins), dNumYBins(locNumYBins), 
+		dMinX(locMinX), dMaxX(locMaxX), dMinY(locMinY), dMaxY(locMaxY), dAnalysisUtilities(NULL) {}
+
+		void Initialize(JEventLoop* locEventLoop);
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		int dStepIndex;
+		deque<Particle_t> dXPIDs, dYPIDs;
+		unsigned int dNumXBins, dNumYBins;
+		double dMinX, dMaxX, dMinY, dMaxY;
+
+		const DAnalysisUtilities* dAnalysisUtilities;
+		TH2I* dHist_DalitzPlot;
+
+		set<set<set<pair<const JObject*, Particle_t> > > > dPreviousSourceObjects;
+};
+
+class DHistogramAction_KinFitResults : public DAnalysisAction
+{
+	public:
+		DHistogramAction_KinFitResults(const DReaction* locReaction, double locPullHistConfidenceLevelCut, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Hist_KinFitResults", true, locActionUniqueString), 
+		dNumConfidenceLevelBins(400), dNumPullBins(200), dNum2DPBins(200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNum2DPullBins(100),
+		dNum2DConfidenceLevelBins(100), dNum2DBeamEBins(240), dMinPull(-4.0), dMaxPull(4.0), dMinP(0.0), dMaxP(10.0), dMinTheta(0.0), dMaxTheta(140.0),
+		dMinPhi(-180.0), dMaxPhi(180.0), dMinBeamE(0.0), dMaxBeamE(12.0), dPullHistConfidenceLevelCut(locPullHistConfidenceLevelCut), dAnalysisUtilities(NULL) {}
+
+		unsigned int dNumConfidenceLevelBins, dNumPullBins, dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins, dNum2DPullBins, dNum2DConfidenceLevelBins, dNum2DBeamEBins;
+		double dMinPull, dMaxPull, dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dMinBeamE, dMaxBeamE;
+
+		void Initialize(JEventLoop* locEventLoop);
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		void Create_ParticlePulls(string locFullROOTName, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH1I*>& locParticlePulls, map<DKinFitPullType, TH2I*>& locParticlePullsVsP, map<DKinFitPullType, TH2I*>& locParticlePullsVsTheta, map<DKinFitPullType, TH2I*>& locParticlePullsVsPhi);
 
 		double dPullHistConfidenceLevelCut;
 		const DAnalysisUtilities* dAnalysisUtilities;
+		DKinFitUtils_GlueX* dKinFitUtils;
 
+		//below maps: int is step index (-1 for beam), 2nd is particle
 		TH1I* dHist_ConfidenceLevel;
-		map<pair<size_t, Particle_t>, map<DKinFitPullType, TH1I*> > dHistMap_Pulls; //size_t is step index, 2nd is particle
-		TH1I* dHist_RFTimePull;
-		map<DKinFitPullType, TH1I*> dHistMap_BeamPulls;
+		map<pair<int, Particle_t>, TH2I*> dHistMap_ConfidenceLevel_VsP;
+		map<pair<int, Particle_t>, TH2I*> dHistMap_ConfidenceLevel_VsTheta;
+		map<pair<int, Particle_t>, TH2I*> dHistMap_ConfidenceLevel_VsPhi;
+
+		map<pair<int, Particle_t>, map<DKinFitPullType, TH1I*> > dHistMap_Pulls;
+		map<pair<int, Particle_t>, map<DKinFitPullType, TH2I*> > dHistMap_PullsVsP;
+		map<pair<int, Particle_t>, map<DKinFitPullType, TH2I*> > dHistMap_PullsVsTheta;
+		map<pair<int, Particle_t>, map<DKinFitPullType, TH2I*> > dHistMap_PullsVsPhi;
 };
 
 class DHistogramAction_MissingTransverseMomentum : public DAnalysisAction
@@ -421,12 +491,10 @@ class DHistogramAction_MissingTransverseMomentum : public DAnalysisAction
 	public:
 		DHistogramAction_MissingTransverseMomentum(const DReaction* locReaction, bool locUseKinFitResultsFlag, unsigned int locNumPtBins = 0, double locMinPt = 0, double locMaxPt = 1.0, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingTransverseMomentum", locUseKinFitResultsFlag, locActionUniqueString),
-		dEnableDoubleCounting(false), dNumPtBins(locNumPtBins), dMinPt(locMinPt), dMaxPt(locMaxPt)
+		dNumPtBins(locNumPtBins), dMinPt(locMinPt), dMaxPt(locMaxPt)
 		{
 			dAnalysisUtilities = NULL;
 		}
-
-		bool dEnableDoubleCounting;
 
 		void Initialize(JEventLoop* locEventLoop);
 

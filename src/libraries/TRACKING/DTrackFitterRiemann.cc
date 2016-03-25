@@ -783,11 +783,11 @@ jerror_t DTrackFitterRiemann::ComputeCz(){
 // the formalism of Lynch and Dahl
 double DTrackFitterRiemann::GetProcessNoise(const DVector2 &XY,const double z){
   // Get the material properties for this position
-  double rho_Z_over_A,K_rho_Z_over_A,LnI;
+  double rho_Z_over_A,K_rho_Z_over_A,LnI,Z;
   double chi2c_factor,chi2a_factor,chi2a_corr;
   DVector3 pos(XY.X(),XY.Y(),z);
   unsigned int dummy=0;
-  if(geom->FindMatKalman(pos,K_rho_Z_over_A,rho_Z_over_A,LnI,
+  if(geom->FindMatKalman(pos,K_rho_Z_over_A,rho_Z_over_A,LnI,Z,
 			 chi2c_factor,chi2a_factor,chi2a_corr,
 			 dummy)!=NOERROR){
     return 0.;
