@@ -20,8 +20,8 @@ using namespace std::chrono;
 
 
 #include <DAQ/HDEVIO.h>
-#include <DEVIOWorkerThread.h>
-#include <DParsedEvent.h>
+#include <DAQ/DEVIOWorkerThread.h>
+#include <DAQ/DParsedEvent.h>
 
 
 vector<string> filenames;
@@ -31,6 +31,12 @@ uint32_t N_WORKER_THREADS = 4;
 atomic<bool> DONE;
 void Harvester(void);
 atomic<uint_fast64_t> NEVENTS_PROCESSED;
+
+uint32_t MAX_PARSED_EVENTS=100;
+mutex PARSED_EVENTS_MUTEX;
+condition_variable PARSED_EVENTS_CV;
+list<DParsedEvent*> parsed_events;
+	
 
 
 //----------------
@@ -66,7 +72,7 @@ int main(int narg, char *argv[])
 {
 
 	ParseCommandLineArguments(narg, argv);
-	
+
 	// Loop over input files
 	for(uint32_t i=0; i<filenames.size(); i++){
 		string &filename = filenames[i];
@@ -83,7 +89,10 @@ int main(int narg, char *argv[])
 		
 		// Create worker threads
 		vector<DEVIOWorkerThread*> worker_threads;
-		for(int i=0; i<N_WORKER_THREADS; i++) worker_threads.push_back(new DEVIOWorkerThread());
+		for(int i=0; i<N_WORKER_THREADS; i++){
+			DEVIOWorkerThread *w = new DEVIOWorkerThread(parsed_events, MAX_PARSED_EVENTS, PARSED_EVENTS_MUTEX, PARSED_EVENTS_CV);
+			worker_threads.push_back(w);
+		}
 	
 		// Create harvester thread
 		DONE = false;

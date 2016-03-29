@@ -51,7 +51,6 @@ HDEVIO::HDEVIO(string filename):filename(filename)
 	Nbad_events = 0;
 	
 	event_type_mask = 0xFFFF; // default to accepting all types
-	next_search_block = 0;
 	is_mapped = false;
 	
 	NB_next_pos = 0;
@@ -559,6 +558,32 @@ bool HDEVIO::readNoFileBuff(uint32_t *user_buff, uint32_t user_buff_len, bool al
 	if(isgood) Nevents++;
 
 	return isgood;
+}
+
+//------------------------
+// rewind
+//------------------------
+void HDEVIO::rewind(void)
+{
+	/// This can be used whe reading from a file to
+	/// reset the file pointer and other position holders
+	/// to the begining of the file. This is done when
+	/// the "LOOP_FOREVER" option is used in the event source
+	/// to continuously re-read a file, essesntially making
+	/// it an infinite stream of events that can be used for
+	/// testing.
+
+	ifs.seekg(0, ios_base::beg);
+	ifs.clear();
+	
+	sparse_block_iter = evio_blocks.begin();
+	sparse_event_idx  = 0;
+	
+	NB_block_record.evio_events.clear();
+	NB_next_pos = 0;
+	
+	ClearErrorMessage();
+	err_code = HDEVIO_OK;
 }
 
 //------------------------

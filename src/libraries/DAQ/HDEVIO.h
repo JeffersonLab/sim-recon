@@ -186,6 +186,7 @@ class HDEVIO{
 		bool read(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
 		bool readSparse(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
 		bool readNoFileBuff(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
+		void rewind(void);
 
 		uint32_t swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len);
 		uint32_t swap_tagsegment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len);
@@ -208,7 +209,6 @@ class HDEVIO{
 		bool is_mapped;
 		uint64_t total_size_bytes;
 		vector<EVIOBlockRecord> evio_blocks;
-		uint32_t next_search_block;
 		void MapBlocks(bool print_ticker=true);
 		void MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br);
 		vector<EVIOBlockRecord>::iterator sparse_block_iter;

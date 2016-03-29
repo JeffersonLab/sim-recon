@@ -20,15 +20,15 @@ using namespace std;
 
 #include <DAQ/HDEVIO.h>
 
-#include <DParsedEvent.h>
+#include <DAQ/DParsedEvent.h>
 
 // Parsed events are placed here and access
 // controlled by the mutex. The CV is used 
 // to send notification whenever a new event
 // is placed in the list.
-extern list<DParsedEvent*> parsed_events;
-extern mutex PARSED_EVENTS_MUTEX;
-extern condition_variable PARSED_EVENTS_CV;
+//extern list<DParsedEvent*> parsed_events;
+//extern mutex PARSED_EVENTS_MUTEX;
+//extern condition_variable PARSED_EVENTS_CV;
 
 
 class DEVIOWorkerThread{
@@ -41,8 +41,19 @@ class DEVIOWorkerThread{
 			JOB_FULL_PARSE = 0x4
 		};
 
-		DEVIOWorkerThread();
+		DEVIOWorkerThread(
+	 		list<DParsedEvent*>  &parsed_events
+	 		,uint32_t            &MAX_PARSED_EVENTS
+	 		,mutex               &PARSED_EVENTS_MUTEX
+	 		,condition_variable  &PARSED_EVENTS_CV );
 		virtual ~DEVIOWorkerThread();
+
+		// These are owned by JEventSource and
+		// are set in the constructor
+		list<DParsedEvent*> &parsed_events;
+		uint32_t            &MAX_PARSED_EVENTS;
+		mutex               &PARSED_EVENTS_MUTEX;
+		condition_variable  &PARSED_EVENTS_CV;
 	
 		atomic<bool> in_use;
 		atomic<bool> done;

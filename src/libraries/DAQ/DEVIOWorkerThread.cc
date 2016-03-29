@@ -13,16 +13,27 @@ using namespace std;
 using namespace std::chrono;
 
 
-uint32_t MAX_PARSED_EVENTS = 128;
-mutex PARSED_EVENTS_MUTEX;
-condition_variable PARSED_EVENTS_CV;
-list<DParsedEvent*> parsed_events;
+//uint32_t MAX_PARSED_EVENTS = 128;
+//mutex PARSED_EVENTS_MUTEX;
+//condition_variable PARSED_EVENTS_CV;
+//list<DParsedEvent*> parsed_events;
 
 
 //---------------------------------
 // DEVIOWorkerThread    (Constructor)
 //---------------------------------
-DEVIOWorkerThread::DEVIOWorkerThread(void):done(false),thd(&DEVIOWorkerThread::Run,this)
+DEVIOWorkerThread::DEVIOWorkerThread(
+	 list<DParsedEvent*>  &parsed_events
+	 ,uint32_t            &MAX_PARSED_EVENTS
+	 ,mutex               &PARSED_EVENTS_MUTEX
+	 ,condition_variable  &PARSED_EVENTS_CV
+	 ):
+	 parsed_events(parsed_events)
+	,MAX_PARSED_EVENTS(MAX_PARSED_EVENTS)
+	,PARSED_EVENTS_MUTEX(PARSED_EVENTS_MUTEX)
+	,PARSED_EVENTS_CV(PARSED_EVENTS_CV)
+	,done(false)
+	,thd(&DEVIOWorkerThread::Run,this)
 {
 	// n.b. in principal, the worker thread is started when the
 	// above constructor is hit and so may already be in Run()
@@ -58,7 +69,7 @@ void DEVIOWorkerThread::Run(void)
 	// Loop waiting for jobs or until told to quit	
 	while(!done){
 
-		cv.wait(lck);
+		cv.wait_for(lck, std::chrono::milliseconds(1));
 
 		if( jobtype & JOB_SWAP       ) swap_bank(buff, buff, swap32(buff[1]) );
 
@@ -125,7 +136,7 @@ void DEVIOWorkerThread::ParseBank(void)
 		
 		my_parsed_events.push_back(pe);
 		
-//this_thread::sleep_for(milliseconds(1));
+this_thread::sleep_for(milliseconds(1));
 	}
 	//-----------------------------------------------
 	
@@ -136,7 +147,7 @@ void DEVIOWorkerThread::ParseBank(void)
 	// parsed events. If the done flag is set, go ahead and add
 	// this regardless
 	while( ((my_parsed_events.size()+parsed_events.size())>=MAX_PARSED_EVENTS) && !done ){
-		PARSED_EVENTS_CV.wait(lck);	
+		PARSED_EVENTS_CV.wait_for(lck, std::chrono::milliseconds(1));
 	}
 	
 	// Loop over all elements of parsed_events and insert
