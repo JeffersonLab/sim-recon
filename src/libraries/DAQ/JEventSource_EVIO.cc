@@ -1467,8 +1467,10 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 
         Df250PulseIntegral *pi = (Df250PulseIntegral*)vpi250[i];
         const Df250Config*conf = NULL;
+        const Df250BORConfig*BORconf = NULL;
         const Df250PulsePedestal*pp = NULL;
         pi->GetSingle(conf);
+        pi->GetSingle(BORconf);
         pi->GetSingle(pp);
 
         // If a Df250PulsePedestal object is associated with this
@@ -1492,7 +1494,12 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
         // a configuration object from the data stream associated,
         // then copy the number of samples for the integral from it.
         if(!pi->emulated){
-            if(conf){
+            if (BORconf!=NULL){
+                uint16_t NSB = BORconf->adc_nsb & 0x7F;
+                uint16_t NSA = BORconf->adc_nsa & 0x7F;
+                pi->nsamples_integral = NSB + NSA;
+            }
+            else if(conf){
                 pi->nsamples_integral = conf->NSA_NSB;
             }
         }
