@@ -35,8 +35,7 @@ class DTOFPoint_factory : public JFactory<DTOFPoint>
 		double E_THRESHOLD;
 		double ATTEN_LENGTH;
 		double ONESIDED_PADDLE_MIDPOINT_MAG; //+/- this number for North/South
-		vector<double> propagation_speed;
-		
+
 		const DTOFGeometry* dTOFGeometry;
 		
 		class tof_spacetimehit_t
@@ -85,6 +84,11 @@ class DTOFPoint_factory : public JFactory<DTOFPoint>
 		size_t MAX_TOFSpacetimeHitPoolSize;
 		deque<tof_spacetimehit_t*> dTOFSpacetimeHitPool_All;
 		deque<tof_spacetimehit_t*> dTOFSpacetimeHitPool_Available;
+
+        // calibration tables
+		vector<double> propagation_speed;
+		vector<double> paddle_resolutions;
+		
 };
 
 #endif // _DTOFPoint_factory_
