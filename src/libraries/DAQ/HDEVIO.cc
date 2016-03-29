@@ -54,6 +54,8 @@ HDEVIO::HDEVIO(string filename):filename(filename)
 	next_search_block = 0;
 	is_mapped = false;
 	
+	NB_next_pos = 0;
+	
 	ifs.seekg(0, ios_base::end);
 	total_size_bytes = ifs.tellg();
 	ifs.seekg(0, ios_base::beg);
@@ -360,66 +362,203 @@ bool HDEVIO::readSparse(uint32_t *user_buff, uint32_t user_buff_len, bool allow_
 	/// after seeking to the desired location determined from
 	/// a previously generated map.
 	
+	err_code = HDEVIO_OK;
+	ClearErrorMessage();
+	
 	// Make sure we've mapped this file
 	if(!is_mapped) MapBlocks();
 	
+	// Loop over all events of all blocks looking for the next
+	// event matching the currently set type mask. 
+	for(; sparse_block_iter!=evio_blocks.end(); sparse_block_iter++, sparse_event_idx = 0){
 
-	// Loop through block map to find next one of interest
-	for( ; next_search_block<evio_blocks.size(); next_search_block++){
-		EVIOBlockRecord &br = evio_blocks[next_search_block];
+		// If we've already read all events in this block, go to next
+		if( sparse_event_idx >= sparse_block_iter->evio_events.size() ) continue;
+
+		// Filter out blocks of the wrong type
+		EVIOBlockRecord &br = *sparse_block_iter;
 		uint32_t type = (1 << br.block_type);
-		if( type & event_type_mask ){
+		if( (type & event_type_mask) == 0 ) continue;
+
+		EVIOEventRecord &er = sparse_block_iter->evio_events[sparse_event_idx];
+
+		uint32_t event_len = er.event_len;
+		last_event_len = event_len;
+	
+		// Check if user buffer is big enough to hold block
+		if( event_len > user_buff_len ){
+			ClearErrorMessage();
+			err_mess << "user buffer too small for event (" << user_buff_len << " < " << event_len << ")";
+			err_code = HDEVIO_USER_BUFFER_TOO_SMALL;
+			return false;
+		}
+
+		// At this point we're commtted to reading this event so go
+		// ahead and increment pointer to next event so no matter
+		// what happens below, we don't try reading it again.
+		sparse_event_idx++;
+
+		// Set file pointer to start of EVIO event (NOT block header!)
+		ifs.seekg(er.pos, ios_base::beg);
 		
-			uint32_t event_len = br.block_len-8; // -8 for EVIO block header
-			last_event_len = event_len;
+		// Read data directly into user buffer
+		ifs.read((char*)user_buff, event_len*sizeof(uint32_t));
+
+		// Swap entire bank if needed
+		swap_needed = br.swap_needed; // set flag in HDEVIO
+		bool isgood = true;
+		if(br.swap_needed && allow_swap){
+			uint32_t Nswapped = swap_bank(user_buff, user_buff, event_len);
+			isgood = (Nswapped == event_len);
+		}
 		
-			// Check if user buffer is big enough to hold block
-			if( event_len > user_buff_len ){
-				ClearErrorMessage();
-				err_mess << "user buffer too small for event (" << user_buff_len << " < " << event_len << ")";
-				err_code = HDEVIO_USER_BUFFER_TOO_SMALL;
-				return false;
-			}
-			
-			// Advance pointer past EVIO block header to EVIO bank
-			ifs.seekg(br.pos+(streampos)(8*sizeof(uint32_t)), ios_base::beg);
-			
-			// Read data directly into user buffer
-			ifs.read((char*)user_buff, event_len*sizeof(uint32_t));
-			
-			// Swap entire bank if needed
-			bool isgood = true;
-			if(br.swap_needed && allow_swap){
-				uint32_t Nswapped = swap_bank(user_buff, next, event_len);
-				isgood = (Nswapped == event_len);
-			}
-			
-			// Double check that event length matches EVIO block header
+		// Double check that event length matches EVIO block header
+		// but only if we either don't need to swap or need to and
+		// were allowed to (otherwise, the test will almost certainly
+		// fail!)
+		if( (!br.swap_needed) || (br.swap_needed && allow_swap) ){
 			if( (user_buff[0]+1) != event_len ){
 				ClearErrorMessage();
 				err_mess << "WARNING: EVIO bank indicates a different size than block header (" << event_len << " != " << (user_buff[0]+1) << ")";
-				next_search_block++; // setup so subsequent call will read in another block
 				err_code = HDEVIO_EVENT_BIGGER_THAN_BLOCK;
 				Nerrors++;
 				Nbad_blocks++;
 				return false;
 			}
-
-			// Advance search pointer to block header
-			next_search_block++;
-
-			if(isgood) Nevents++;
-
-			return isgood;
 		}
+
+		if(isgood) Nevents++;
+
+		return isgood;
 	}
 
 	// If we got here then we did not find an event of interest
 	// above. Report that there are no more events in the file.
 	SetErrorMessage("No more events");
 	err_code = HDEVIO_EOF;
-	return false; // isgood=false	
+	return false; // isgood=false
+}
+
+//---------------------------------
+// readNoFileBuff
+//---------------------------------
+bool HDEVIO::readNoFileBuff(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap)
+{
+	/// This is an alternative to the read(...) method above that
+	/// does not use a large primary file buffer. A single EVIO
+	/// header is read in at a time and the events within the block
+	/// mapped just like when using readSparse. The difference is
+	/// that here, only a single block is mapped at a time rather
+	/// than trying to map the entire file before starting. This
+	/// gives a faster start up. This may be quicker for most
+	/// desktop filesystems but may be slower for Lustre file systems
+	/// that are configured for large volume data transfers and show
+	/// perfomance degredation with small reads.
 	
+	err_code = HDEVIO_OK;
+	ClearErrorMessage();
+	
+	// Check if we need to read in a block header using the 
+	// current file position
+	EVIOBlockRecord &br = NB_block_record;
+	if(br.evio_events.empty()){
+
+		// read EVIO block header
+		BLOCKHEADER_t bh;
+		ifs.seekg( NB_next_pos, ios_base::beg);
+		ifs.read((char*)&bh, sizeof(bh));
+		if(!ifs.good()){
+			err_code = HDEVIO_FILE_TRUNCATED;
+			return false;
+		}
+
+		// Check if we need to byte swap and simultaneously
+		// verify header is good by checking magic word
+		bool swap_needed = false;
+		if(bh.magic==0x0001dac0){
+			swap_needed = true;
+		}else{
+			if(bh.magic!=0xc0da0100){
+				err_mess.str() = "Bad magic word";
+				err_code = HDEVIO_BAD_BLOCK_HEADER;
+				return false;
+			}
+		}
+		
+		if(swap_needed)swap_block((uint32_t*)&bh, sizeof(bh)>>2, (uint32_t*)&bh);
+		
+		Nblocks++;
+		streampos pos = ifs.tellg() - (streampos)sizeof(bh);
+		
+		br.pos = pos;
+		br.block_len = bh.length;
+		br.swap_needed = swap_needed;
+		br.first_event = 0;
+		br.last_event = 0;
+		
+		MapEvents(bh, br);
+		
+		NB_next_pos = pos + (streampos)(bh.length<<2);
+	}
+	
+	// Check if we did not find an event of interest above. 
+	// If not, report that there are no more events in the file.
+	if(br.evio_events.empty() || !ifs.good()){
+		SetErrorMessage("No more events");
+		err_code = HDEVIO_EOF;
+		return false; // isgood=false
+	}
+
+	// Grab next event record
+	EVIOEventRecord &er = br.evio_events.front();
+	
+	uint32_t event_len = er.event_len;
+	last_event_len = event_len;
+
+	// Check if user buffer is big enough to hold block
+	if( event_len > user_buff_len ){
+		ClearErrorMessage();
+		err_mess << "user buffer too small for event (" << user_buff_len << " < " << event_len << ")";
+		err_code = HDEVIO_USER_BUFFER_TOO_SMALL;
+		return false;
+	}
+
+	// Set file pointer to start of EVIO event (NOT block header!)
+	ifs.seekg(er.pos, ios_base::beg);
+	
+	// Read data directly into user buffer
+	ifs.read((char*)user_buff, event_len*sizeof(uint32_t));
+
+	// Remove EVIO Event record, effectively advancing to
+	// next event for the next time we're called
+	br.evio_events.erase(NB_block_record.evio_events.begin());
+
+	// Swap entire bank if needed
+	swap_needed = br.swap_needed; // set flag in HDEVIO
+	bool isgood = true;
+	if(br.swap_needed && allow_swap){
+		uint32_t Nswapped = swap_bank(user_buff, user_buff, event_len);
+		isgood = (Nswapped == event_len);
+	}
+	
+	// Double check that event length matches EVIO block header
+	// but only if we either don't need to swap or need to and
+	// were allowed to (otherwise, the test will almost certainly
+	// fail!)
+	if( (!br.swap_needed) || (br.swap_needed && allow_swap) ){
+		if( (user_buff[0]+1) != event_len ){
+			ClearErrorMessage();
+			err_mess << "WARNING: EVIO bank indicates a different size than block header (" << event_len << " != " << (user_buff[0]+1) << ")";
+			err_code = HDEVIO_EVENT_BIGGER_THAN_BLOCK;
+			Nerrors++;
+			Nbad_blocks++;
+			return false;
+		}
+	}
+
+	if(isgood) Nevents++;
+
+	return isgood;
 }
 
 //------------------------
@@ -550,8 +689,13 @@ void HDEVIO::MapBlocks(bool print_ticker)
 	}
 	
 	if(print_ticker) cout << endl;
+	
+	// Setup iterators for sparse reading
+	sparse_block_iter = evio_blocks.begin();
+	sparse_event_idx = 0;
 
 	// Restore file pos and set flag that file has been mapped
+	ifs.clear();
 	ifs.seekg(start_pos, ios_base::beg);
 	is_mapped = true;
 }
@@ -584,6 +728,7 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 			// Read in first few words of event
 			eh = &myeh;
 			ifs.read((char*)eh, sizeof(EVENTHEADER_t));		
+			if(!ifs.good()) break;
 			if(br.swap_needed)swap_block((uint32_t*)eh, sizeof(EVENTHEADER_t)>>2, (uint32_t*)eh);
 		}else{
 			ifs.seekg(sizeof(EVENTHEADER_t), ios_base::cur);
@@ -631,7 +776,6 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 
 	ifs.seekg(start_pos, ios_base::beg);
 }
-
 
 //---------------------------------
 // swap_bank
@@ -980,6 +1124,7 @@ void HDEVIO::PrintFileSummary(void)
 		}else{
 			ss << ",";
 		}
+		if( it==events_in_block.end() ) break;
 	}
 	string sevents_in_block = ss.str();
 	

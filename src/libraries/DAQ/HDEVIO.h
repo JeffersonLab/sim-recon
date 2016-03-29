@@ -185,6 +185,7 @@ class HDEVIO{
 		bool ReadBlock(void);
 		bool read(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
 		bool readSparse(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
+		bool readNoFileBuff(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
 
 		uint32_t swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len);
 		uint32_t swap_tagsegment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len);
@@ -210,6 +211,10 @@ class HDEVIO{
 		uint32_t next_search_block;
 		void MapBlocks(bool print_ticker=true);
 		void MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br);
+		vector<EVIOBlockRecord>::iterator sparse_block_iter;
+		uint32_t sparse_event_idx;
+		EVIOBlockRecord NB_block_record;
+		streampos NB_next_pos;
 
 		void ClearErrorMessage(void){ err_mess.str(""); err_mess.clear();}
 		void SetErrorMessage(string mess){ ClearErrorMessage(); err_mess<<mess;}
@@ -260,11 +265,7 @@ class HDEVIO{
 		inline void swap_block(uint16_t *inbuff, uint16_t len, uint16_t *outbuff)
 		{
 			for(uint32_t i=0; i<len; i++, inbuff++, outbuff++){
-				uint16_t inword = *inbuff;  // copy word to allow using same buffer for input and output
-				uint8_t *inptr  = (uint8_t*)&inword;
-				uint8_t *outptr = (uint8_t*)&outbuff[1];
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
+				*outbuff = swap16(*inbuff);
 			}
 		}
 
@@ -274,13 +275,7 @@ class HDEVIO{
 		inline void swap_block(uint32_t *inbuff, uint32_t len, uint32_t *outbuff)
 		{
 			for(uint32_t i=0; i<len; i++, inbuff++, outbuff++){
-				uint32_t inword = *inbuff;  // copy word to allow using same buffer for input and output
-				uint8_t *inptr  = (uint8_t*)&inword;
-				uint8_t *outptr = (uint8_t*)&outbuff[1];
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
+				*outbuff = swap32(*inbuff);
 			}
 		}
 
@@ -290,18 +285,7 @@ class HDEVIO{
 		inline void swap_block(uint64_t *inbuff, uint64_t len, uint64_t *outbuff)
 		{
 			for(uint32_t i=0; i<len; i++, inbuff++, outbuff++){
-				uint64_t inword = *inbuff;  // copy word to allow using same buffer for input and output
-				uint8_t *inptr  = (uint8_t*)&inword;
-				uint8_t *outptr = (uint8_t*)&outbuff[1];
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
-
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
+				*outbuff = swap64(*inbuff);
 			}
 		}
 
