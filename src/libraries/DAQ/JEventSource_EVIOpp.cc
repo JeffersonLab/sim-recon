@@ -49,13 +49,13 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 
 	// Get configuration parameters
 	VERBOSE = 0;
-	N_WORKER_THREADS = 1;
+	NTHREADS = 2;
 	MAX_PARSED_EVENTS = 128;
 	LOOP_FOREVER = false;
 	PRINT_STATS = true;
 
 	gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
-	gPARMS->SetDefaultParameter("EVIO:N_WORKER_THREADS", N_WORKER_THREADS, "Set the number of worker threads to use for parsing the EVIO data");
+	gPARMS->SetDefaultParameter("EVIO:NTHREADS", NTHREADS, "Set the number of worker threads to use for parsing the EVIO data");
 	gPARMS->SetDefaultParameter("EVIO:MAX_PARSED_EVENTS", MAX_PARSED_EVENTS, "Set maximum number of events to allow in EVIO parsed events queue");
 	gPARMS->SetDefaultParameter("EVIO:LOOP_FOREVER", LOOP_FOREVER, "If reading from EVIO file, keep re-opening file and re-reading events forever (only useful for debugging) If reading from ET, this is ignored.");
 	gPARMS->SetDefaultParameter("EVIO:PRINT_STATS", PRINT_STATS, "Print some additional stats from event source when it's finished processing events");
@@ -77,7 +77,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	dispatcher_thread = new thread(&JEventSource_EVIOpp::Dispatcher, this);
 
 	// Create worker threads
-	for(int i=0; i<N_WORKER_THREADS; i++){
+	for(int i=0; i<NTHREADS; i++){
 		DEVIOWorkerThread *w = new DEVIOWorkerThread(parsed_events, MAX_PARSED_EVENTS, PARSED_EVENTS_MUTEX, PARSED_EVENTS_CV);
 		worker_threads.push_back(w);
 	}
@@ -214,7 +214,6 @@ void JEventSource_EVIOpp::Dispatcher(void)
 //----------------
 jerror_t JEventSource_EVIOpp::GetEvent(JEvent &event)
 {
-
 	// Get next event from list, waiting if necessary
 	unique_lock<std::mutex> lck(PARSED_EVENTS_MUTEX);
 	while(parsed_events.empty()){
@@ -245,7 +244,8 @@ jerror_t JEventSource_EVIOpp::GetEvent(JEvent &event)
 void JEventSource_EVIOpp::FreeEvent(JEvent &event)
 {
 	DParsedEvent *pe = (DParsedEvent*)event.GetRef();
-	delete pe;
+	pe->in_use = false;
+//	delete pe;
 	
 	NEVENTS_PROCESSED++;
 }
@@ -270,6 +270,9 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	// Get name of data class we're trying to extract and the factory tag
 	string dataClassName = factory->GetDataClassName();
 	string tag = factory->Tag();
+	
+	DParsedEvent *pe = (DParsedEvent*)event.GetRef();
+//_DBG_ << pe->vDEPICSvalue.size() << endl;
 	
 	// Example for providing objects of type XXX
 	//

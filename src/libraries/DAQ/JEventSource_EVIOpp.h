@@ -78,7 +78,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		float TIMEOUT;
 		string MODTYPE_MAP_FILENAME;
 		bool  ENABLE_DISENTANGLING;
-		uint32_t N_WORKER_THREADS;
+		uint32_t NTHREADS;
 		bool  PRINT_STATS;
 };
 

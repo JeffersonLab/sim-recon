@@ -17,7 +17,7 @@
 #include <list>
 using namespace std;
 
-
+#include <JANA/jerror.h>
 #include <DAQ/HDEVIO.h>
 
 #include <DAQ/DParsedEvent.h>
@@ -54,6 +54,13 @@ class DEVIOWorkerThread{
 		uint32_t            &MAX_PARSED_EVENTS;
 		mutex               &PARSED_EVENTS_MUTEX;
 		condition_variable  &PARSED_EVENTS_CV;
+		
+		// reference to element in TLS_PARSED_EVENT that
+		// is unique to this thread
+		vector<DParsedEvent*> &parsed_event_pool;
+		
+		// List of parsed events we are currently filling
+		list<DParsedEvent*> current_parsed_events;
 	
 		atomic<bool> in_use;
 		atomic<bool> done;
@@ -66,11 +73,21 @@ class DEVIOWorkerThread{
 		
 		uint32_t buff_len;
 		uint32_t *buff;
+				
 		
 		void Run(void);
 		void Finish(bool wait_to_complete=true);
+		void MakeEvents(void);
 		void ParseBank(void);
+		
+		void   ParseEventTagBank(uint32_t* &iptr, uint32_t *iend);
+		void      ParseEPICSbank(uint32_t* &iptr, uint32_t *iend);
+		void        ParseBORbank(uint32_t* &iptr, uint32_t *iend);
+		void   ParseTSscalerBank(uint32_t* &iptr, uint32_t *iend);
+		void Parsef250scalerBank(uint32_t* &iptr, uint32_t *iend);
+		void    ParsePhysicsBank(uint32_t* &iptr, uint32_t *iend);
 
+		void DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords=0, const uint32_t *imark=NULL);
 		
 	protected:
 	

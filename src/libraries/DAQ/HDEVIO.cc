@@ -488,6 +488,12 @@ bool HDEVIO::readNoFileBuff(uint32_t *user_buff, uint32_t user_buff_len, bool al
 		
 		Nblocks++;
 		streampos pos = ifs.tellg() - (streampos)sizeof(bh);
+
+		if( (pos+(streampos)bh.length) >  total_size_bytes ){
+			err_mess << "EVIO block extends past end of file!";
+			err_code = HDEVIO_FILE_TRUNCATED;
+			return false;
+		}
 		
 		br.pos = pos;
 		br.block_len = bh.length;
@@ -752,7 +758,7 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 		if(i!=0){
 			// Read in first few words of event
 			eh = &myeh;
-			ifs.read((char*)eh, sizeof(EVENTHEADER_t));		
+			ifs.read((char*)eh, sizeof(EVENTHEADER_t));
 			if(!ifs.good()) break;
 			if(br.swap_needed)swap_block((uint32_t*)eh, sizeof(EVENTHEADER_t)>>2, (uint32_t*)eh);
 		}else{
@@ -796,7 +802,7 @@ void HDEVIO::MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br)
 		// Move file position to start of next event
 		streampos delta = (streampos)((eh->event_len+1)<<2) - (streampos)sizeof(EVENTHEADER_t);
 		ifs.seekg(delta, ios_base::cur);
-		pos += delta;
+		pos += (streampos)((eh->event_len+1)<<2);
 	}
 
 	ifs.seekg(start_pos, ios_base::beg);
