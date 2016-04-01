@@ -69,7 +69,7 @@ class DEventRFBunch_factory_Combo:public jana::JFactory<DEventRFBunch>
 		double dTargetCenterZ;
 		double dMinThrownMatchFOM;
 
-		bool Get_StartTime(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, double& locStartTime);
+		bool Get_StartTime(const DDetectorMatches* locDetectorMatches, const DTrackTimeBased* locTrackTimeBased, double& locStartTime);
 		double Calc_StartTime(const DNeutralShower* locNeutralShower, const DVertex* locVertex);
 		int Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes, int& locBestNumVotes);
 
