@@ -19,8 +19,8 @@ using namespace std;
 
 #include <JANA/jerror.h>
 #include <DAQ/HDEVIO.h>
-
 #include <DAQ/DParsedEvent.h>
+#include <DAQ/DModuleType.h>
 
 // Parsed events are placed here and access
 // controlled by the mutex. The CV is used 
@@ -62,6 +62,8 @@ class DEVIOWorkerThread{
 		// List of parsed events we are currently filling
 		list<DParsedEvent*> current_parsed_events;
 	
+		int VERBOSE;
+	
 		atomic<bool> in_use;
 		atomic<bool> done;
 		JOBTYPE jobtype;
@@ -73,6 +75,7 @@ class DEVIOWorkerThread{
 		
 		uint32_t buff_len;
 		uint32_t *buff;
+		streampos pos;
 				
 		
 		void Run(void);
@@ -80,12 +83,22 @@ class DEVIOWorkerThread{
 		void MakeEvents(void);
 		void ParseBank(void);
 		
-		void   ParseEventTagBank(uint32_t* &iptr, uint32_t *iend);
-		void      ParseEPICSbank(uint32_t* &iptr, uint32_t *iend);
-		void        ParseBORbank(uint32_t* &iptr, uint32_t *iend);
-		void   ParseTSscalerBank(uint32_t* &iptr, uint32_t *iend);
-		void Parsef250scalerBank(uint32_t* &iptr, uint32_t *iend);
-		void    ParsePhysicsBank(uint32_t* &iptr, uint32_t *iend);
+		void     ParseEventTagBank(uint32_t* &iptr, uint32_t *iend);
+		void        ParseEPICSbank(uint32_t* &iptr, uint32_t *iend);
+		void          ParseBORbank(uint32_t* &iptr, uint32_t *iend);
+		void     ParseTSscalerBank(uint32_t* &iptr, uint32_t *iend);
+		void   Parsef250scalerBank(uint32_t* &iptr, uint32_t *iend);
+		void     ParseControlEvent(uint32_t* &iptr, uint32_t *iend);
+		void      ParsePhysicsBank(uint32_t* &iptr, uint32_t *iend);
+		void ParseBuiltTriggerBank(uint32_t* &iptr, uint32_t *iend);
+		void         ParseDataBank(uint32_t* &iptr, uint32_t *iend);
+
+		void        ParseJLabModuleData(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
+		void              ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
+		void   ParseModuleConfiguration(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
+		void              Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
+		void              Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
+		void             ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
 
 		void DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords=0, const uint32_t *imark=NULL);
 		

@@ -41,6 +41,7 @@ HDEVIO::HDEVIO(string filename):filename(filename)
 	buff_len = 0;
 	buff = new uint32_t[buff_size];
 	next = buff; // needed so initial calculation of left is 0
+	last_event_pos = 0;
 	last_event_len = 0;
 	err_code = HDEVIO_OK;
 
@@ -398,7 +399,8 @@ bool HDEVIO::readSparse(uint32_t *user_buff, uint32_t user_buff_len, bool allow_
 		sparse_event_idx++;
 
 		// Set file pointer to start of EVIO event (NOT block header!)
-		ifs.seekg(er.pos, ios_base::beg);
+		last_event_pos = er.pos;
+		ifs.seekg(last_event_pos, ios_base::beg);
 		
 		// Read data directly into user buffer
 		ifs.read((char*)user_buff, event_len*sizeof(uint32_t));
@@ -529,10 +531,16 @@ bool HDEVIO::readNoFileBuff(uint32_t *user_buff, uint32_t user_buff_len, bool al
 	}
 
 	// Set file pointer to start of EVIO event (NOT block header!)
-	ifs.seekg(er.pos, ios_base::beg);
+	last_event_pos = er.pos;
+	ifs.seekg(last_event_pos, ios_base::beg);
 	
 	// Read data directly into user buffer
 	ifs.read((char*)user_buff, event_len*sizeof(uint32_t));
+	if(!ifs.good()){
+		SetErrorMessage("No more events");
+		err_code = HDEVIO_EOF;
+		return false; // isgood=false
+	}
 
 	// Remove EVIO Event record, effectively advancing to
 	// next event for the next time we're called

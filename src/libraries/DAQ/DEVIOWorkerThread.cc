@@ -59,6 +59,8 @@ DEVIOWorkerThread::DEVIOWorkerThread(
 		_DBG_ << "          #define for TLS_PARSED_EVENT_MAX at the top of DEVIOWorkerThread.cc" << endl;
 		exit(-1);
 	}
+	
+	VERBOSE = 1;
 
 	in_use  = false;
 	jobtype = JOB_NONE;
@@ -89,7 +91,7 @@ void DEVIOWorkerThread::Run(void)
 
 		cv.wait_for(lck, std::chrono::milliseconds(1));
 
-		if( jobtype & JOB_SWAP       ) swap_bank(buff, buff, swap32(buff[1]) );
+		if( jobtype & JOB_SWAP       ) swap_bank(buff, buff, swap32(buff[0])+1 );
 
 		if( jobtype & JOB_FULL_PARSE ) MakeEvents();
 		
@@ -167,8 +169,9 @@ void DEVIOWorkerThread::MakeEvents(void)
 		pe->istreamorder = istreamorder;
 		pe->event_number = event_num++;
 		pe->sync_flag = false;
-		pe->Clear();
+		pe->Delete(); // deletes previous events objects and clears vectors
 		pe->in_use = true;
+		pe->copied_to_factories = false;
 	}
 	
 	// Parse data in buffer to create data objects
@@ -229,12 +232,17 @@ void DEVIOWorkerThread::ParseBank(void)
 			case 0x0070:         ParseBORbank(iptr, iend);    break;
 			case 0xEE02:    ParseTSscalerBank(iptr, iend);    break;
 			case 0xEE05:  Parsef250scalerBank(iptr, iend);    break;
+
+			case 0xFFD0:
+			case 0xFFD1:
+			case 0xFFD2:
+			case 0xFFD3:    ParseControlEvent(iptr, iend);    break;
+
 			case 0xFF58:
-			case 0xFF78:
-							current_parsed_events.back()->sync_flag = true;
+			case 0xFF78: current_parsed_events.back()->sync_flag = true;
 			case 0xFF50:     
-			case 0xFF70:     
-							 ParsePhysicsBank(iptr, iend);    break;
+			case 0xFF70:     ParsePhysicsBank(iptr, iend);    break;
+
 			default:
 				_DBG_ << "Unknown outer EVIO bank tag: " << hex << tag << dec << endl;
 				iptr = &iptr[event_len+1];
@@ -290,7 +298,6 @@ void DEVIOWorkerThread::ParseEPICSbank(uint32_t* &iptr, uint32_t *iend)
 		}else if(tag == 0x62){
 			// EPICS data value
 			string nameval = (const char*)iptr;
-//_DBG_<<"Making DEPICSvalue: " << nameval << endl;
 			DEPICSvalue *epicsval = new DEPICSvalue(timestamp, nameval);
 			pe->vDEPICSvalue.push_back(epicsval);
 		}else{
@@ -330,13 +337,329 @@ void DEVIOWorkerThread::Parsef250scalerBank(uint32_t* &iptr, uint32_t *iend)
 }
 
 //---------------------------------
-// ParsePhysicsBank
+// ParseControlEvent
 //---------------------------------
-void DEVIOWorkerThread::ParsePhysicsBank(uint32_t* &iptr, uint32_t *iend)
+void DEVIOWorkerThread::ParseControlEvent(uint32_t* &iptr, uint32_t *iend)
 {
 	iptr = &iptr[(*iptr) + 1];
 }
 
+//---------------------------------
+// ParsePhysicsBank
+//---------------------------------
+void DEVIOWorkerThread::ParsePhysicsBank(uint32_t* &iptr, uint32_t *iend)
+{
+	uint32_t physics_event_len      = *iptr++;
+	uint32_t *iend_physics_event    = &iptr[physics_event_len];
+	iptr++;
+
+	// Built Trigger Bank
+	uint32_t built_trigger_bank_len  = *iptr;
+	uint32_t *iend_built_trigger_bank = &iptr[built_trigger_bank_len+1];
+	ParseBuiltTriggerBank(iptr, iend_built_trigger_bank);
+	iptr = iend_built_trigger_bank;
+	
+	// Loop over Data banks
+	while( iptr < iend_physics_event ) {
+
+		uint32_t data_bank_len = *iptr;
+		uint32_t *iend_data_bank = &iptr[data_bank_len+1];
+
+		ParseDataBank(iptr, iend_data_bank);
+
+		iptr = iend_data_bank;
+	}
+
+	iptr = iend_physics_event;
+}
+
+//---------------------------------
+// ParseBuiltTriggerBank
+//---------------------------------
+void DEVIOWorkerThread::ParseBuiltTriggerBank(uint32_t* &iptr, uint32_t *iend)
+{
+
+}
+
+//---------------------------------
+// ParseDataBank
+//---------------------------------
+void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
+{
+	uint32_t *istart = iptr;
+
+	// Physics Event's Data Bank header
+	iptr++; // advance past data bank length word
+	uint32_t rocid = ((*iptr)>>16) & 0xFFF;
+//	uint32_t M = (*iptr) & 0x0F;
+	iptr++;
+	
+	// Loop over Data Block Banks
+	while(iptr < iend){
+		
+		uint32_t data_block_bank_len     = *iptr++;
+		uint32_t *iend_data_block_bank   = &iptr[data_block_bank_len];
+		uint32_t data_block_bank_header  = *iptr++;
+		
+		// Not sure where this comes from, but it needs to be skipped if present
+		while( (*iptr==0xF800FAFA) && (iptr<iend) ) iptr++;
+		
+		uint32_t det_id = (data_block_bank_header>>16) & 0xFFF;
+        switch(det_id){
+
+            case 20:
+                ParseCAEN1190(rocid, iptr, iend_data_block_bank);
+                break;
+
+            case 0x55:
+                ParseModuleConfiguration(rocid, iptr, iend_data_block_bank);
+                break;
+
+            case 0:
+            case 1:
+            case 3:
+            case 6:  // flash 250 module, MMD 2014/2/4
+            case 16: // flash 125 module (CDC), DL 2014/6/19
+            case 26: // F1 TDC module (BCAL), MMD 2014-07-31
+                ParseJLabModuleData(rocid, iptr, iend_data_block_bank);
+                break;
+
+			case 5:
+				// old ROL Beni used had this but I don't think its
+				// been used for years. Run 10390 seems to have
+				// this though (???)
+				break;
+
+
+            default:
+                jerr<<"Unknown module type ("<<det_id<<") encountered" << endl;
+//                if(VERBOSE>5){
+                    cerr << endl;
+                    cout << "----- First few words to help with debugging -----" << endl;
+                    cout.flush(); cerr.flush();
+					DumpBinary(istart, iend, 32, &iptr[-1]);
+//                }
+		}
+
+		iptr = iend_data_block_bank;
+//		DumpBinary(&iptr[-2], &iptr[5], 32, iptr);
+	}
+	
+}
+
+//----------------
+// ParseCAEN1190
+//----------------
+void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
+{
+
+}
+
+//----------------
+// ParseModuleConfiguration
+//----------------
+void DEVIOWorkerThread::ParseModuleConfiguration(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
+{
+
+}
+
+//----------------
+// ParseJLabModuleData
+//----------------
+void DEVIOWorkerThread::ParseJLabModuleData(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
+{
+	
+	while(iptr<iend){
+	
+		// Get module type from next word (bits 18-21)
+		uint32_t mod_id = ((*iptr) >> 18) & 0x000F;
+		MODULE_TYPE type = (MODULE_TYPE)mod_id;
+//		cout << "      rocid=" << rocid << "  Encountered module type: " << type << " (=" << DModuleType::GetModule(type).GetName() << ")  word=" << hex << (*iptr) << dec << endl;
+
+        switch(type){
+            case DModuleType::FADC250:
+                Parsef250Bank(rocid, iptr, iend);
+                break;
+
+            case DModuleType::FADC125:
+                Parsef125Bank(rocid, iptr, iend);
+                break;
+
+            case DModuleType::F1TDC32:
+                ParseF1TDCBank(rocid, iptr, iend);
+                break;
+
+            case DModuleType::F1TDC48:
+                ParseF1TDCBank(rocid, iptr, iend);
+                break;
+
+           case DModuleType::TID:
+//                ParseTIBank(rocid, iptr, iend);
+                break;
+
+            case DModuleType::UNKNOWN:
+            default:
+                jerr<<"Unknown module type ("<<mod_id<<") iptr=0x" << hex << iptr << dec << endl;
+
+                while(iptr<iend && ((*iptr) & 0xF8000000) != 0x88000000) iptr++; // Skip to JLab block trailer
+                iptr++; // advance past JLab block trailer
+                while(iptr<iend && *iptr == 0xF8000000) iptr++; // skip filler words after block trailer
+                break;
+        }
+	}
+
+}
+
+//----------------
+// Parsef250Bank
+//----------------
+void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
+{
+
+	auto pe_iter = current_parsed_events.begin();
+	DParsedEvent *pe = NULL;
+	
+    // From Event header
+    uint32_t itrigger = -1;
+
+    // Loop over data words
+    for(; iptr<iend; iptr++){
+
+        // Skip all non-data-type-defining words at this
+        // level. When we do encounter one, the appropriate
+        // case block below should handle parsing all of
+        // the data continuation words and advance the iptr.
+        if(((*iptr>>31) & 0x1) == 0)continue;
+
+        // Variables used inside of switch, but cannot be declared inside
+		uint32_t slot = 0;
+        uint64_t t = 0L;
+        uint32_t channel = 0;
+        uint32_t sum = 0;
+        uint32_t pulse_number = 0;
+        uint32_t quality_factor = 0;
+        uint32_t pulse_time = 0;
+        uint32_t pedestal = 0;
+        uint32_t pulse_peak = 0;
+        uint32_t nsamples_integral = 0;
+        uint32_t nsamples_pedestal = 0;
+        bool overflow = false;
+
+        bool found_block_trailer = false;
+        uint32_t data_type = (*iptr>>27) & 0x0F;
+        switch(data_type){
+            case 0: // Block Header
+                slot = (*iptr>>22) & 0x1F;
+                if(VERBOSE>7) cout << "      FADC250 Block Header: slot="<<slot<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+                break;
+            case 1: // Block Trailer
+                found_block_trailer = true;
+                if(VERBOSE>7) cout << "      FADC250 Block Trailer"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+                break;
+            case 2: // Event Header
+                itrigger = (*iptr>>0) & 0x3FFFFF;
+				pe = *pe_iter++;
+                if(VERBOSE>7) cout << "      FADC250 Event Header: itrigger="<<itrigger<<", rocid="<<rocid<<", slot="<<slot<<")" <<" ("<<hex<<*iptr<<dec<<")" <<endl;
+                break;
+            case 3: // Trigger Time
+                t = ((*iptr)&0xFFFFFF)<<0;
+                iptr++;
+                if(((*iptr>>31) & 0x1) == 0){
+                    t += ((*iptr)&0xFFFFFF)<<24; // from word on the street: second trigger time word is optional!!??
+                    if(VERBOSE>7) cout << "       Trigger time high word="<<(((*iptr)&0xFFFFFF))<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+                }else{
+                    iptr--;
+                }
+                if(VERBOSE>7) cout << "      FADC250 Trigger Time: t="<<t<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+                if(pe) pe->vDf250TriggerTime.push_back(new Df250TriggerTime(rocid, slot, itrigger, t));
+                break;
+            case 4: // Window Raw Data
+                // iptr passed by reference and so will be updated automatically
+                if(VERBOSE>7) cout << "      FADC250 Window Raw Data"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+//                MakeDf250WindowRawData(objs, rocid, slot, itrigger, iptr);
+                break;
+            case 5: // Window Sum
+                channel = (*iptr>>23) & 0x0F;
+                sum = (*iptr>>0) & 0x3FFFFF;
+                overflow = (*iptr>>22) & 0x1;
+                if(VERBOSE>7) cout << "      FADC250 Window Sum"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+                if(pe) pe->vDf250WindowSum.push_back(new Df250WindowSum(rocid, slot, channel, itrigger, sum, overflow));
+                break;				
+            case 6: // Pulse Raw Data
+//                MakeDf250PulseRawData(objs, rocid, slot, itrigger, iptr);
+                if(VERBOSE>7) cout << "      FADC250 Pulse Raw Data"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+                break;
+            case 7: // Pulse Integral
+                channel = (*iptr>>23) & 0x0F;
+                pulse_number = (*iptr>>21) & 0x03;
+                quality_factor = (*iptr>>19) & 0x03;
+                sum = (*iptr>>0) & 0x7FFFF;
+                nsamples_integral = 0;  // must be overwritten later in GetObjects with value from Df125Config value
+                nsamples_pedestal = 1;  // The firmware returns an already divided pedestal
+                pedestal = 0;  // This will be replaced by the one from Df250PulsePedestal in GetObjects
+                if(VERBOSE>7) cout << "      FADC250 Pulse Integral: chan="<<channel<<" pulse_number="<<pulse_number<<" sum="<<sum<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+                if(pe) pe->vDf250PulseIntegral.push_back(new Df250PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum, pedestal, nsamples_integral, nsamples_pedestal));
+                break;
+            case 8: // Pulse Time
+                channel = (*iptr>>23) & 0x0F;
+                pulse_number = (*iptr>>21) & 0x03;
+                quality_factor = (*iptr>>19) & 0x03;
+                pulse_time = (*iptr>>0) & 0x7FFFF;
+                if(VERBOSE>7) cout << "      FADC250 Pulse Time: chan="<<channel<<" pulse_number="<<pulse_number<<" pulse_time="<<pulse_time<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+                if(pe) pe->vDf250PulseTime.push_back(new Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
+                break;
+            case 9: // Streaming Raw Data
+                // This is marked "reserved for future implementation" in the current manual (v2).
+                // As such, we don't try handling it here just yet.
+                if(VERBOSE>7) cout << "      FADC250 Streaming Raw Data (unsupported)"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+                break;
+            case 10: // Pulse Pedestal
+                channel = (*iptr>>23) & 0x0F;
+                pulse_number = (*iptr>>21) & 0x03;
+                pedestal = (*iptr>>12) & 0x1FF;
+                pulse_peak = (*iptr>>0) & 0xFFF;
+                if(VERBOSE>7) cout << "      FADC250 Pulse Pedestal chan="<<channel<<" pulse_number="<<pulse_number<<" pedestal="<<pedestal<<" pulse_peak="<<pulse_peak<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+                if(pe) pe->vDf250PulsePedestal.push_back(new Df250PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
+                break;
+            case 13: // Event Trailer
+                // This is marked "suppressed for normal readout – debug mode only" in the
+                // current manual (v2). It does not contain any data so the most we could do here
+                // is return early. I'm hesitant to do that though since it would mean
+                // different behavior for debug mode data as regular data.
+            case 14: // Data not valid (empty module)
+            case 15: // Filler (non-data) word
+                if(VERBOSE>7) cout << "      FADC250 Event Trailer, Data not Valid, or Filler word ("<<data_type<<")"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+                break;
+        }
+
+        // Once we find a block trailer, assume that is it for this module.
+        if(found_block_trailer){
+            iptr++; // iptr is still pointing to block trailer. Jump to next word.
+            break;
+        }
+    }
+
+    // Chop off filler words
+    for(; iptr<iend; iptr++){
+        if(((*iptr)&0xf8000000) != 0xf8000000) break;
+    }
+}
+
+//----------------
+// Parsef125Bank
+//----------------
+void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
+{
+	iptr = iend;
+}
+
+//----------------
+// ParseF1TDCBank
+//----------------
+void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
+{
+	iptr = iend;
+}
 
 //----------------
 // DumpBinary

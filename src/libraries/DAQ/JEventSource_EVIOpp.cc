@@ -153,7 +153,7 @@ void JEventSource_EVIOpp::Dispatcher(void)
 
 		// Get worker thread to handle this
 		DEVIOWorkerThread *thr = NULL;
-		while(!thr){
+		while( !thr){
 			for(uint32_t i=0; i<worker_threads.size(); i++){
 				if(worker_threads[i]->in_use) continue;
 				thr = worker_threads[i];
@@ -163,7 +163,9 @@ void JEventSource_EVIOpp::Dispatcher(void)
 				NWAITS_FOR_THREAD++;
 				this_thread::sleep_for(milliseconds(1));
 			}
+			if(DONE) break;
 		}
+		if(DONE) break;
 		
 		uint32_t* &buff     = thr->buff;
 		uint32_t  &buff_len = thr->buff_len;
@@ -171,6 +173,7 @@ void JEventSource_EVIOpp::Dispatcher(void)
 //		hdevio->readSparse(buff, buff_len, allow_swap);
 		hdevio->readNoFileBuff(buff, buff_len, allow_swap);
 //		hdevio->read(buff, buff_len, allow_swap);
+		thr->pos = hdevio->last_event_pos;
 		if(hdevio->err_code == HDEVIO::HDEVIO_USER_BUFFER_TOO_SMALL){
 			delete[] buff;
 			buff_len = hdevio->last_event_len;
@@ -243,9 +246,11 @@ jerror_t JEventSource_EVIOpp::GetEvent(JEvent &event)
 //----------------
 void JEventSource_EVIOpp::FreeEvent(JEvent &event)
 {
+	// CAUTION: This is called by the EventBufferThread in JANA which
+	// effectively serializes everything done here. (Don't delete all
+	// objects in pe which can be slow.)
 	DParsedEvent *pe = (DParsedEvent*)event.GetRef();
-	pe->in_use = false;
-//	delete pe;
+	pe->in_use = false; // return pe to pool
 	
 	NEVENTS_PROCESSED++;
 }
@@ -264,35 +269,33 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	// it should return OBJECT_NOT_AVAILABLE. Otherwise, it should return
 	// NOERROR;
 	
+	// When first called, the data objects will still be in the DParsedEvent
+	// object and not yet copied into their respective factories. This will
+	// do that copy of the pointers and set the "copied_to_factories" flag
+	// in DParsedEvent indicating this has been done. It will then check the
+	// name of the class being requested and return the appropriate value
+	// depending on whether we supply that class or not.
+	
 	// We must have a factory to hold the data
 	if(!factory)throw RESOURCE_UNAVAILABLE;
 
 	// Get name of data class we're trying to extract and the factory tag
 	string dataClassName = factory->GetDataClassName();
 	string tag = factory->Tag();
+	if(tag.length()!=0) return OBJECT_NOT_AVAILABLE; // can't provide tagged factory objects
 	
+	// Copy source objects for all classes into their respective factories
+	// if needed.
 	DParsedEvent *pe = (DParsedEvent*)event.GetRef();
-//_DBG_ << pe->vDEPICSvalue.size() << endl;
-	
-	// Example for providing objects of type XXX
-	//
-	// // Get pointer to object of type MyEvent (this is optional) 
-	// MyEvent *myevent = (MyEvent*)event.GetRef();
-	//
-	// if(dataClassName == "XXX"){
-	//
-	//	 // Make objects of type XXX storing them in a vector
-	//   vector<XXX*> xxx_objs;
-	//	 ...
-	//
-	//	 JFactory<XXX> *fac = dynamic_cast<JFactory<XXX>*>(factory);
-	//	 if(fac)fac->CopyTo(xxx_objs);
-	//	
-	//	 return NOERROR;
-	// }
-	
-	// For all other object types, just return OBJECT_NOT_AVAILABLE to indicate
-	// we can't provide this type of object
-	return OBJECT_NOT_AVAILABLE;
+	if(!pe->copied_to_factories) pe->CopyToFactories(event.GetJEventLoop());
+
+	// Check if this is a class we provide and return appropriate value
+	if( pe->IsParsedDataType(dataClassName) ){
+		// We do produce this type
+		return NOERROR;
+	}else{
+		// We do not produce this type
+		return OBJECT_NOT_AVAILABLE;
+	}	
 }
 

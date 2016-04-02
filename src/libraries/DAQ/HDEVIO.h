@@ -162,16 +162,17 @@ class HDEVIO{
 		uint64_t _gcount;
 		
 		
-		uint32_t *buff;         // buffer holding current block (if any)
-		uint32_t *next;         // Pointer to start of next EVIO event within buff
-		uint32_t *buff_end;     // Pointer to word just past end of valid buffer words
-		uint32_t buff_size;     // memory currently allocated for buff in words
-		uint32_t buff_len;      // valid words in buff
-		uint32_t buff_limit;    // maximum allowed allocation for buff_max
-		bool swap_needed;       // true if block header indicates swapping is needed
-		BLOCKHEADER_t *bh;      // =buff, but cast as a BLOCKHEADER_t*
-		uint32_t last_event_len;// used to hold last event length in words if user buffer was
-		                        // too small, this is how big is should be allocated
+		uint32_t *buff;           // buffer holding current block (if any)
+		uint32_t *next;           // Pointer to start of next EVIO event within buff
+		uint32_t *buff_end;       // Pointer to word just past end of valid buffer words
+		uint32_t buff_size;       // memory currently allocated for buff in words
+		uint32_t buff_len;        // valid words in buff
+		uint32_t buff_limit;      // maximum allowed allocation for buff_max
+		bool swap_needed;         // true if block header indicates swapping is needed
+		BLOCKHEADER_t *bh;        // =buff, but cast as a BLOCKHEADER_t*
+		streampos last_event_pos; // used to hold file position at last event read in
+		uint32_t last_event_len;  // used to hold last event length in words if user buffer was
+		                          // too small, this is how big is should be allocated
 		
 		stringstream err_mess;  // last error message
 		uint32_t err_code;    // last error code

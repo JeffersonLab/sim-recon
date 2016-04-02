@@ -8,8 +8,14 @@
 #ifndef _DParsedEvent_
 #define _DParsedEvent_
 
+#include <string>
+#include <map>
+using std::string;
+using std::map;
+
 #include <JANA/jerror.h>
 #include <JANA/JObject.h>
+#include <JANA/JEventLoop.h>
 using namespace jana;
 
 #include "daq_param_type.h"
@@ -50,12 +56,13 @@ using namespace jana;
 #include "DCAEN1290TDCBORConfig.h"
 
 // Here is some C++ macro script-fu. For each type of class the DParsedEvent
-// can hold, we want to have a vector of pointers to that type of object. We'd
-// also like to add the class name to a set that can be searched easily so we
-// can list the types of classes this supplies. This macro lists all of the
-// classes and is used below to create the desired elements. Alas, the C++ language
-// prohibits using #includes in macros so it's not possible to include the
-// headers using similar trickery so we have to do that separately above.
+// can hold, we want to have a vector of pointers to that type of object. 
+// There's also a number of other things we need to do for each of these types
+// but don't want to have to write the entire list out multiple times. The
+// "MyTypes" macro below defines all of the types and then is used multiple
+// times in the DParsedEvent class. It would be nice if we could also generate
+// the above #includes using this trick but alas, the C++ language
+// prohibits using #includes in macros so it's not possible.
 #define MyTypes(X) \
 		X(Df250Config) \
 		X(Df250PulseIntegral) \
@@ -95,31 +102,84 @@ class DParsedEvent{
 	public:		
 		
 		bool in_use;
+		bool copied_to_factories;
 		
 		uint64_t istreamorder;
 		uint64_t run_number;
 		uint64_t event_number;
 		bool     sync_flag;
-
+		
 		// For each type defined in "MyTypes" above, define a vector of
 		// pointers to it with a name made by prepending a "v" to the classname
-		// e.g.
+		// The following expands to things like e.g.
+		//
 		//       vector<Df250Config*> vDf250Config;
 		//
 		#define makevector(A) vector<A*>  v##A;
 		MyTypes(makevector)
 
-		// We also need to clear each of the vectors when recycling a DParsedEvent object
+		// Method to clear each of the vectors when recycling a DParsedEvent object
+		// (n.b. Don't use this, use Delete to avoid memory leak!)
 		#define clearvector(A) v##A.clear();
 		void Clear(void){ MyTypes(clearvector) }
 
-		// Make gset of all classnames used in DParsedEvent
-		// (commented out for now until we actually need such a thing)
-//		#define makestring(A) #A,
-//		set<string> PARSED_EVENT_CLASSNAMES = {MyTypes(makestring)};
+		// Method to delete all objects in all vectors. This will be called from
+		// FreeEvent in the case that CopyToFactories() is never called, thereby
+		// preventing a memory leak.
+		#define deletevector(A) for(auto p : v##A) delete p;
+		void Delete(void){
+			MyTypes(deletevector)
+			MyTypes(clearvector)
+		}
+		
+		// Define a class that has pointers to factories for each data type
+		#define makefactoryptr(A) JFactory<A> *fac_##A;
+		#define copyfactoryptr(A) fac_##A = (JFactory<A>*)loop->GetFactory(#A);
+		class DFactoryPointers{
+			public:
+				JEventLoop *loop;
+				MyTypes(makefactoryptr)
 
+				DFactoryPointers():loop(NULL){}
+				~DFactoryPointers(){}
+				
+				void Init(JEventLoop *loop){
+					this->loop = loop;
+					MyTypes(copyfactoryptr)
+				}
+		};
+		
+		// Copy objects to factories. For efficiency, we keep an object that
+		// holds the relevant factory pointers for each JEventLoop we encounter.
+		// This avoids having to look up the factory pointer for each data type
+		// for every event.
+		#define copytofactory(A) facptrs.fac_##A->CopyTo(v##A);
+		#define keepownership(A) facptrs.fac_##A->SetFactoryFlag(JFactory_base::NOT_OBJECT_OWNER);
+		void CopyToFactories(JEventLoop *loop){
+			// Get DFactoryPointers for this JEventLoop, creating new one if necessary
+			DFactoryPointers &facptrs = factory_pointers[loop];
+			if(facptrs.loop == NULL) facptrs.Init(loop);
+
+			// Copy all data vectors to appropriate factories
+			MyTypes(copytofactory)
+			MyTypes(keepownership)
+			copied_to_factories=true;
+		}
+		
+		// Method to check class name against each classname in MyTypes returning
+		// true if found and false if not.
+		#define checkclassname(A) if(classname==#A) return true;
+		bool IsParsedDataType(string &classname){
+			MyTypes(checkclassname)
+			return false;
+		}
+
+		// Constructor and destructor
 		DParsedEvent(uint64_t istreamorder):in_use(false),istreamorder(istreamorder){}
-		virtual ~DParsedEvent(){}
+		virtual ~DParsedEvent(){ Delete(); }
+
+	protected:
+		map<JEventLoop*, DFactoryPointers> factory_pointers;
 
 
 };
