@@ -100,6 +100,9 @@ class DEVIOWorkerThread{
 		void              Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
 		void             ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
 
+		inline uint32_t F1TDC_channel(uint32_t chip, uint32_t chan_on_chip, int modtype);
+
+
 		void DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords=0, const uint32_t *imark=NULL);
 		
 	protected:
@@ -108,6 +111,28 @@ class DEVIOWorkerThread{
 	private:
 
 };
+
+//----------------
+// F1TDC_channel
+//----------------
+inline uint32_t DEVIOWorkerThread::F1TDC_channel(uint32_t chip, uint32_t chan_on_chip, int modtype)
+{
+    /// Convert a F1TDC chip number and channel on the chip to the
+    /// front panel channel number. This is based on "Input Channel Mapping"
+    /// section at the very bottom of the document F1TDC_V2_V3_4_29_14.pdf
+
+    uint32_t channel_map[8] = {0, 0, 1, 1, 2, 2, 3, 3};
+    switch(modtype){
+        case DModuleType::F1TDC32:
+            return (4 * chip) + channel_map[ chan_on_chip&0x7 ];
+        case DModuleType::F1TDC48:
+            return (chip <<3) | chan_on_chip;
+        default:
+            _DBG_ << "Calling F1TDC_channel for module type: " << DModuleType::GetName((DModuleType::type_id_t)modtype) << endl;
+            throw JException("F1TDC_channel called for non-F1TDC module type");
+    }
+    return 1000000; // (should never get here)
+}
 
 #endif // _DEVIOWorkerThread_
 
