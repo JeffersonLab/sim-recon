@@ -221,6 +221,9 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 	const DVertex* locVertex = NULL;
 	locEventLoop->GetSingle(locVertex);
 
+	const DDetectorMatches* locDetectorMatches = NULL;
+	locEventLoop->GetSingle(locDetectorMatches, "Combo");
+
 	map<pair<int, int>, DEventRFBunch*> locComboRFBunchMap; //key pair ints are: num-rf-bunch-shifts, num-votes
 
 	//pre-sort time-based tracks
@@ -257,7 +260,7 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
 		double locStartTime = 0.0;
-		if(!Get_StartTime(locEventLoop, locTrackTimeBasedVector[loc_i], locStartTime))
+		if(!Get_StartTime(locDetectorMatches, locTrackTimeBasedVector[loc_i], locStartTime))
 			continue;
 		double locPropagatedTime = locStartTime + (dTargetCenterZ - locTrackTimeBasedVector[loc_i]->z())/29.9792458;
 		dPropagatedStartTimes_TimeBased[locTrackTimeBasedVector[loc_i]] = locPropagatedTime;
@@ -376,11 +379,8 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 	return NOERROR;
 }
 
-bool DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, double& locStartTime)
+bool DEventRFBunch_factory_Combo::Get_StartTime(const DDetectorMatches* locDetectorMatches, const DTrackTimeBased* locTrackTimeBased, double& locStartTime)
 {
-	const DDetectorMatches* locDetectorMatches = NULL;
-	locEventLoop->GetSingle(locDetectorMatches);
-
 	// Use time-based tracking time as initial guess
 	locStartTime = 0.0;
 
