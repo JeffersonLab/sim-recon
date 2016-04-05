@@ -1920,10 +1920,17 @@ void JEventSource_EVIO::EmulateDf250Firmware(JEvent &event, vector<JObject*> &wr
                         pt_hw->time_emulated = pt_em->time_emulated;
                         pt_hw->quality_factor_emulated = pt_em->quality_factor_emulated;
                     }
-                    if ((VERBOSE > 0 && pt_hw->time != pt_hw->time_emulated) || VERBOSE > 3)
-                        jout << " comparing f250 hw and emulation pulse times for ROC/slot/chan "
-                             << pt_hw->rocid << "/" << pt_hw->slot << "/" << pt_hw->channel << ": "
-                             << pt_hw->time << " vs " << pt_hw->time_emulated << endl;
+                    if ((VERBOSE > 0 && pt_hw->time != pt_hw->time_emulated) || VERBOSE > 3) {
+                        // implement special exceptions for early pulse times in mode 8 data
+                        if (VERBOSE > 3 || !(pt_hw->time == 0 && 
+                            (pt_hw->time_emulated == 64 || pt_hw->time_emulated == 128 ||
+                             pt_hw->time_emulated == 192 || pt_hw->time_emulated == 256)) )
+                        {
+                            jout << " comparing f250 hw and emulation pulse times for ROC/slot/chan "
+                                 << pt_hw->rocid << "/" << pt_hw->slot << "/" << pt_hw->channel << ": "
+                                 << pt_hw->time << " vs " << pt_hw->time_emulated << endl;
+                        }
+                    }
                     pt_objs.erase(pt_objs.begin() + i);
                     delete pt_em;
                     pt_em = 0;
