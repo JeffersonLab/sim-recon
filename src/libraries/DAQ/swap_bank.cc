@@ -1,6 +1,8 @@
 
 #include <swap_bank.h>
 
+#include <string.h>
+
 #include <iostream>
 using namespace std;
 
