@@ -106,7 +106,7 @@ class DEventWriterROOT : public JObject
 		unsigned int dInitNumThrownArraySize;
 		unsigned int dInitNumBeamArraySize;
 		unsigned int dInitNumTrackArraySize;
-		unsigned int dInitNumShowerArraySize;
+		unsigned int dInitNumNeutralArraySize;
 		unsigned int dInitNumComboArraySize;
 
 		string dTrackSelectionTag;
@@ -164,14 +164,15 @@ class DEventWriterROOT : public JObject
 		void Get_Reactions(jana::JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;
 
 		//TREE CREATION:
-		void Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag) const;
-		void Create_UserInfoMaps(TTree* locTree, const DReaction* locReaction, map<Particle_t, unsigned int>& locParticleNumberMap) const;
+		void Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag, double locTargetCenterZ) const;
+		void Create_UserInfoMaps(TTree* locTree, const DReaction* locReaction, map<Particle_t, unsigned int>& locParticleNumberMap, double locTargetCenterZ) const;
+		void Create_UserTargetInfo(TTree* locTree, Particle_t locTargetPID, double locTargetCenterZ) const;
 		void Create_Branches_Thrown(TTree* locTree, bool locIsOnlyThrownFlag) const;
 
 		//TREE CREATION: PARTICLE INFO
 		void Create_Branches_ThrownParticles(TTree* locTree, bool locIsOnlyThrownFlag) const;
 		void Create_Branches_Beam(TTree* locTree, bool locIsMCDataFlag) const;
-		void Create_Branches_NeutralShowers(TTree* locTree, bool locIsMCDataFlag) const;
+		void Create_Branches_NeutralHypotheses(TTree* locTree, bool locIsMCDataFlag) const;
 		void Create_Branches_ChargedHypotheses(TTree* locTree, bool locIsMCDataFlag) const;
 
 		//TREE CREATION: COMBO INFO
@@ -188,18 +189,18 @@ class DEventWriterROOT : public JObject
 		void Fill_ThrownParticleData(TTree* locTree, unsigned int locArrayIndex, const DMCThrown* locMCThrown, const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DMCThrownMatching* locMCThrownMatching, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
 
 		//TREE FILLING: INDEPENDENT PARTICLES
-		void Fill_BeamData(TTree* locTree, unsigned int locArrayIndex, const DBeamPhoton* locBeamPhoton, const DMCThrownMatching* locMCThrownMatching) const;
+		void Fill_BeamData(TTree* locTree, unsigned int locArrayIndex, const DBeamPhoton* locBeamPhoton, const DVertex* locVertex, const DMCThrownMatching* locMCThrownMatching) const;
 		void Fill_ChargedHypo(TTree* locTree, unsigned int locArrayIndex, const DChargedTrackHypothesis* locChargedTrackHypothesis, const DMCThrownMatching* locMCThrownMatching, const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DDetectorMatches* locDetectorMatches) const;
-		void Fill_NeutralShower(TTree* locTree, unsigned int locArrayIndex, const DNeutralParticleHypothesis* locPhotonHypothesis, const DMCThrownMatching* locMCThrownMatching, const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DDetectorMatches* locDetectorMatches) const;
+		void Fill_NeutralHypo(TTree* locTree, unsigned int locArrayIndex, const DNeutralParticleHypothesis* locPhotonHypothesis, const DMCThrownMatching* locMCThrownMatching, const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DDetectorMatches* locDetectorMatches) const;
 
 		//TREE FILLING: COMBO
 		void Fill_ComboData(TTree* locTree, const DParticleCombo* locParticleCombo, unsigned int locComboIndex, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
 		void Fill_ComboStepData(TTree* locTree, const DParticleCombo* locParticleCombo, unsigned int locStepIndex, unsigned int locComboIndex, DKinFitType locKinFitType, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
 
 		//TREE FILLING: COMBO PARTICLES
-		void Fill_ComboBeamData(TTree* locTree, unsigned int locComboIndex, const DBeamPhoton* locMeasuredBeamPhoton, const DBeamPhoton* locBeamPhoton, unsigned int locBeamIndex, DKinFitType locKinFitType) const;
+		void Fill_ComboBeamData(TTree* locTree, unsigned int locComboIndex, const DBeamPhoton* locBeamPhoton, unsigned int locBeamIndex, DKinFitType locKinFitType) const;
 		void Fill_ComboChargedData(TTree* locTree, unsigned int locComboIndex, string locParticleBranchName, const DChargedTrackHypothesis* locMeasuredChargedHypo, const DChargedTrackHypothesis* locChargedHypo, unsigned int locChargedIndex, DKinFitType locKinFitType) const;
-		void Fill_ComboNeutralData(TTree* locTree, unsigned int locComboIndex, string locParticleBranchName, const DNeutralParticleHypothesis* locMeasuredNeutralHypo, const DNeutralParticleHypothesis* locNeutralHypo, unsigned int locShowerIndex, DKinFitType locKinFitType) const;
+		void Fill_ComboNeutralData(TTree* locTree, unsigned int locComboIndex, string locParticleBranchName, const DNeutralParticleHypothesis* locMeasuredNeutralHypo, const DNeutralParticleHypothesis* locNeutralHypo, unsigned int locNeutralIndex, DKinFitType locKinFitType) const;
 
 		//For ROOT type string for fundamental data variables
 			//Defined in https://root.cern.ch/root/htmldoc/TTree.html
