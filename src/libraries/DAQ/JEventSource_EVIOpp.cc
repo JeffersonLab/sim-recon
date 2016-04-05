@@ -24,6 +24,7 @@ using namespace std;
 using namespace std::chrono;
 
 
+#include <TTAB/DTranslationTable_factory.h>
 
 #include "JEventSource_EVIOpp.h"
 using namespace jana;
@@ -287,10 +288,29 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	// Copy source objects for all classes into their respective factories
 	// if needed.
 	DParsedEvent *pe = (DParsedEvent*)event.GetRef();
-	if(!pe->copied_to_factories) pe->CopyToFactories(event.GetJEventLoop());
+	JEventLoop *loop = event.GetJEventLoop();
+	if(!pe->copied_to_factories) pe->CopyToFactories(loop);
+	
+	// Apply any translation tables that exist, writing the translated objects
+	// into their respective factories
+	bool isSuppliedType = pe->IsParsedDataType(dataClassName);
+	vector<const DTranslationTable*> translationTables;
+	DTranslationTable_factory *ttfac = static_cast<DTranslationTable_factory*>(loop->GetFactory("DTranslationTable"));
+	if(ttfac) ttfac->Get(translationTables);
+	bool isNotTaggedFactory = strlen(factory->Tag()) == 0;
+	for(unsigned int i=0; i<translationTables.size(); i++){
+		translationTables[i]->ApplyTranslationTable(loop);
+		if(!isSuppliedType){
+			if(translationTables[i]->IsSuppliedType(dataClassName)){
+				if(isNotTaggedFactory){ // Don't allow tagged factories from Translation table
+					isSuppliedType = true;
+				}
+			}
+		}
+	}
 
 	// Check if this is a class we provide and return appropriate value
-	if( pe->IsParsedDataType(dataClassName) ){
+	if( isSuppliedType ){
 		// We do produce this type
 		return NOERROR;
 	}else{

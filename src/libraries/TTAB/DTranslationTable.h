@@ -61,6 +61,30 @@ using namespace jana;
 #include <PAIR_SPECTROMETER/DPSCTDCDigiHit.h>
 #include <TPOL/DTPOLSectorDigiHit.h>
 
+// (See comments in DParsedEvent.h for enlightenment)
+#define MyTypes(X) \
+		X(DBCALDigiHit) \
+		X(DBCALTDCDigiHit) \
+		X(DCDCDigiHit) \
+		X(DFCALDigiHit) \
+		X(DFDCCathodeDigiHit) \
+		X(DFDCWireDigiHit) \
+		X(DRFDigiTime) \
+		X(DRFTDCDigiTime) \
+		X(DSCDigiHit) \
+		X(DSCTDCDigiHit) \
+		X(DTOFDigiHit) \
+		X(DTOFTDCDigiHit) \
+		X(DTAGMDigiHit) \
+		X(DTAGMTDCDigiHit) \
+		X(DTAGHDigiHit) \
+		X(DTAGHTDCDigiHit) \
+		X(DPSDigiHit) \
+		X(DPSCDigiHit) \
+		X(DPSCTDCDigiHit) \
+		X(DTPOLSectorDigiHit)
+
+
 #include "GlueX.h"
 
 class DTranslationTable:public jana::JObject{
@@ -281,12 +305,52 @@ class DTranslationTable:public jana::JObject{
 					TPOLSECTORIndex_t tpolsector;
 				};
 		};
+
+		//-----------------------------------------------------------------------
+		//
+		// Pre-processor macro monkey shines using the MyTypes define above to repeat
+		// lots of code for all types in a compact and robust way.
+		//
+		// For each type defined in "MyTypes" above, define a vector of
+		// pointers to it with a name made by prepending a "v" to the classname
+		// The following expands to things like e.g.
+		//
+		//       vector<DBCALDigiHit*> vDBCALDigiHit;
+		//
+		#define makevector(A) mutable vector<A*>  v##A;
+		MyTypes(makevector)
 		
-		// Full translation table is collection of DChannelInfo objects
-		//map<csc_t, DChannelInfo> TT;
+		// Similarly, define a pointer to the factory for each type.
+		#define makefactoryptr(A) JFactory<A> *fac_##A;
+		MyTypes(makefactoryptr)
 		
+		// Method to initialize factory pointers
+		#define copyfactoryptr(A) fac_##A = (JFactory<A>*)loop->GetFactory(#A);
+		void InitFactoryPointers(JEventLoop *loop){ MyTypes(copyfactoryptr) }
+
+		// Method to clear each of the vectors at beginning of event
+		#define clearvector(A) v##A.clear();
+		void ClearVectors(void) const { MyTypes(clearvector) }
+
+		// Method to copy all produced objects to respective factories
+		#define copytofactory(A) fac_##A->CopyTo(v##A);
+		void CopyToFactories(void) const { MyTypes(copytofactory) }
+		
+		// Method to check class name against each classname in MyTypes returning
+		// true if found and false if not.
+		#define checkclassname(A) if(classname==#A) return true;
+		bool IsSuppliedType(string &classname) const {
+			MyTypes(checkclassname)
+			return false;
+		}
+		
+		// Method to print sizes of all vectors (for debugging)
+		#define printvectorsize(A) ttout << "     v" #A ".size() = " << v##A.size() << std::endl;
+		void PrintVectorSizes(void) const { MyTypes(printvectorsize) }
+
+		//-----------------------------------------------------------------------
+
 		// Methods
-		bool IsSuppliedType(string dataClassName) const;
 		void ApplyTranslationTable(jana::JEventLoop *loop) const;
 		
 		// fADC250
@@ -331,7 +395,6 @@ class DTranslationTable:public jana::JObject{
 		void SetSystemsToParse(JEventSource *eventsource){SetSystemsToParse(SYSTEMS_TO_PARSE, eventsource);}
 		void ReadTranslationTable(JCalibration *jcalib=NULL);
 		
-		template<class T> void CopyToFactory(JEventLoop *loop, vector<T*> &v) const;
 		template<class T> void CopyDf250Info(T *h, const Df250PulseIntegral *pi, const Df250PulseTime *pt, const Df250PulsePedestal *pp) const;
 		template<class T> void CopyDf125Info(T *h, const Df125PulseIntegral *pi, const Df125PulseTime *pt, const Df125PulsePedestal *pp) const;
 		template<class T> void CopyDF1TDCInfo(T *h, const DF1TDCHit *hit) const;
@@ -380,6 +443,7 @@ class DTranslationTable:public jana::JObject{
 		int VERBOSE;
 		string SYSTEMS_TO_PARSE;
 		string ROCID_MAP_FILENAME;
+		bool CALL_STACK;
 		
 		mutable JStreamLog ttout;
 
@@ -413,25 +477,6 @@ class DTranslationTable:public jana::JObject{
 		map<uint32_t, uint32_t>& Get_ROCID_Map(void) const;
 		map<uint32_t, uint32_t>& Get_ROCID_Inv_Map(void) const;
 };
-
-//---------------------------------
-// CopyToFactory
-//---------------------------------
-template<class T>
-void DTranslationTable::CopyToFactory(JEventLoop *loop, vector<T*> &v) const
-{
-	/// Template method for copying values from local containers into
-	/// factories. This is done in a template since the type appears
-	/// in at least 3 places below. It makes the code calling this
-	/// more succinct and therefore easier to add new types.
-
-	// It would be a little safer to use a dynamic_cast here, but
-	// all documentation seems to discourage using that as it is
-	// inefficient.
-	JFactory<T> *fac = (JFactory<T> *)loop->GetFactory(T::static_className(), "", false); // false=don't allow deftags
-	if(VERBOSE>8) ttout << " Copying " << T::static_className() << " objects to factory: " << hex << fac << dec << endl;
-	if(fac) fac->CopyTo(v);
-}
 
 //---------------------------------
 // CopyDf250Info
@@ -495,6 +540,14 @@ void DTranslationTable::CopyDCAEN1290TDCInfo(T *h, const DCAEN1290TDCHit *hit) c
 	h->AddAssociatedObject(hit);
 }
 
+#undef MyTypes
+#undef makevector
+#undef makefactoryptr
+#undef copyfactoryptr
+#undef clearvector
+#undef copytofactory
+#undef checkclassname
+#undef printvectorsize
 
 #endif // _DTranslationTable_
 

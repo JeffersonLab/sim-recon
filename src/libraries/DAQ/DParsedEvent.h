@@ -184,6 +184,7 @@ class DParsedEvent{
 
 };
 
+#undef MyTypes
 
 #endif // _DParsedEvent_
 

@@ -38,7 +38,8 @@ class DEVIOWorkerThread{
 			JOB_NONE       = 0x0,
 			JOB_QUIT       = 0x1,
 			JOB_SWAP       = 0x2,
-			JOB_FULL_PARSE = 0x4
+			JOB_FULL_PARSE = 0x4,
+			JOB_TRANSLATE  = 0x8
 		};
 
 		DEVIOWorkerThread(

@@ -136,6 +136,7 @@ void DEVIOWorkerThread::MakeEvents(void)
 	
 	uint32_t M = 1;
 	uint64_t event_num = 0;
+	uint32_t run_number = 0;
 
 	iptr++;
 	uint32_t mask = 0xFF001000;
@@ -167,6 +168,7 @@ void DEVIOWorkerThread::MakeEvents(void)
 	for(auto pe : current_parsed_events){
 	
 		pe->istreamorder = istreamorder;
+		pe->run_number = run_number;
 		pe->event_number = event_num++;
 		pe->sync_flag = false;
 		pe->Delete(); // deletes previous events objects and clears vectors
