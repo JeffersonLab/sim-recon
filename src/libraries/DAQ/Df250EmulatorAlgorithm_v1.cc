@@ -109,6 +109,7 @@ void Df250EmulatorAlgorithm_v1::EmulateFirmware(const Df250WindowRawData* rawDat
 
     uint32_t VPEAK[max_pulses] = {};
     uint16_t TMID[max_pulses] = {};
+    uint16_t VMID[max_pulses] = {};
     uint16_t TFINE[max_pulses] = {};
     uint32_t pulse_time[max_pulses] = {};
     bool reportTC[max_pulses] = {};
@@ -125,25 +126,27 @@ void Df250EmulatorAlgorithm_v1::EmulateFirmware(const Df250WindowRawData* rawDat
         // both VMIN and VPEAK are reported as 0 in the pulse parameter data word (type 10) to identify the condition." 
         if ((samples[i] & 0xfff) > THR){
             if (VERBOSE > 1) jout << "WARNING Df250EmulatorAlgorithm_v1::EmulateFirmware sample above threshold in pedestal calculation " << endl;
-            VMIN = 0;
+            VMIN = 99999 << 2;
             break;
         }
     }
     VMIN = VMIN >> 2;
 
     for (int p=0; p < npulses; ++p) {
-        if (VMIN == 0) {
-           VPEAK[p] = 0;
-           reportTC[p] = true;
-           continue;
-        }
-        int ipeak;
-        for (ipeak = TC[p]; ipeak < NW; ++ipeak) {
-            if ((samples[ipeak] & 0xfff) < (samples[ipeak-1] & 0xfff)) {
-                VPEAK[p] = (samples[ipeak-1] & 0xfff);
+        while (true) {
+            if (VMIN == 99999) {
+                VPEAK[p] = 0;
+                reportTC[p] = true;
+                pulse_time[p] = (TC[p] << 6);
                 break;
             }
-        }
+            int ipeak;
+            for (ipeak = TC[p]; ipeak < NW; ++ipeak) {
+                if ((samples[ipeak] & 0xfff) < (samples[ipeak-1] & 0xfff)) {
+                    VPEAK[p] = (samples[ipeak-1] & 0xfff);
+                    break;
+                }
+            }
         // There is an error condition if the TC sample is within 5 from the end of the window
         // (and a typo in the document, the firmware is looking for (NW - TC) <= 5).
         // "In the current implementation of the algorithm, a technical difficulty arises when TC is near the 
@@ -153,48 +156,62 @@ void Df250EmulatorAlgorithm_v1::EmulateFirmware(const Df250WindowRawData* rawDat
         // Note by RTJ:
         // I believe that the algorithmic glitch is associated with (NW - TPEAK) < 5,
         // which Mike may have found often corresponds to (NW - TC) <= 5, but not always.
-        if (NW - ipeak < 5) {
-            VPEAK[p] = 0;
-            reportTC[p] = true;
-            continue;
-        }
+            if (NW - ipeak < 5) {
+                VPEAK[p] = 0;
+                pulse_time[p] = ((TC[p] - 1) << 6);
+                reportTC[p] = true;
+                break;
+            }
         // If the peak search failed, there is another special error condition
         // "A problem with the algorithm occurs if VPEAK is not found within the trigger window. In this case, the reported 
         // pulse time is TC. To identify this condition, the pulse parameter data word (type 10) reports VPEAK = 0 and VMIN as measured." 
-        if (VPEAK[p] == 0) {
-            reportTC[p] = true;
-            continue;
-        }
+            if (VPEAK[p] == 0) {
+                pulse_time[p] = (TC[p] << 6);
+                reportTC[p] = true;
+                break;
+            }
 
-        if (VERBOSE > 1) {
-            jout << " pulse " << p << ": VMIN: " << VMIN << " reportTC: " << int(reportTC[p]) 
-                 << " TC: " << TC[p] << " VPEAK: " << VPEAK[p] << endl;  
-        }
+            if (VERBOSE > 1) {
+                jout << " pulse " << p << ": VMIN: " << VMIN << " reportTC: " << int(reportTC[p]) 
+                     << " TC: " << TC[p] << " VPEAK: " << VPEAK[p] << endl;  
+            }
 
-        int VMID = (VMIN + VPEAK[p]) >> 1;
-        for (unsigned int i = ipeak; i > TMIN[p]; --i) {
-            if ((samples[i] & 0xfff) > VMID)
-                TMID[p] = ((samples[i-1] & 0xfff) <= VMID)? i : 0;
-        }
-        if (TMID[p] == 0) {
-            if (p == 0) {
-                TMID[p] = 4;
-                TFINE[p] = 62; // empirical constant
+            VMID[p] = (VMIN + VPEAK[p]) >> 1;
+            for (unsigned int i = TMIN[p] + 1; i < (uint32_t)ipeak; ++i) {
+                if ((samples[i] & 0xfff) > VMID[p]) {
+                    TMID[p] = i;
+                    break;
+                }
+            }
+            if (TMID[p] == 0) {
+#if EMULATION250_MODE_8
+                if (p == 0) {
+#else
+                if (false) {
+#endif
+                    TMID[p] = 1;
+                    TFINE[p] = 0; // empirical constant
+                }
+                else {
+                    TMID[p] = TC[p];
+                    TFINE[p] = 0;
+                }
             }
             else {
-                TMID[p] = TC[p]-1;
-                TFINE[p] = 0;
+                int Vnext = (samples[TMID[p]] & 0xfff);
+                int Vlast = (samples[TMID[p]-1] & 0xfff);
+                if (Vnext > Vlast && VMID[p] >= Vlast)
+                    TFINE[p] = 64 * (VMID[p] - Vlast) / (Vnext - Vlast);
+                else
+                    TFINE[p] = 62;
             }
+            pulse_time[p] = (TMID[p] << 6) + TFINE[p];
+            break;
         }
-        else {
-            int Vnext = (samples[TMID[p]] & 0xfff);
-            int Vlast = (samples[TMID[p]-1] & 0xfff);
-            TFINE[p] = 64 * (VMID - Vlast) / (Vnext - Vlast);
-        }
-        pulse_time[p] = (TMID[p] << 6) + TFINE[p];
+        VMIN = (VMIN < 99999)? VMIN : 0;
 
         if (VERBOSE > 1) {
-            jout << " pulse " << p << ": VMID: " << VMID << " TMID: " << TMID[p] 
+            jout << " pulse " << p << ": VMID: " << VMID[p] << " TMID: " << TMID[p] 
                  << " TFINE: " << TFINE[p] << " time: " << pulse_time[p]
                  << " integral: " << pulse_integral[p] << endl;
         }
