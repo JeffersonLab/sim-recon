@@ -232,8 +232,6 @@ void DEVIOWorkerThread::ParseBank(void)
 			case 0x0056:    ParseEventTagBank(iptr, iend);    break;
 			case 0x0060:       ParseEPICSbank(iptr, iend);    break;
 			case 0x0070:         ParseBORbank(iptr, iend);    break;
-			case 0xEE02:    ParseTSscalerBank(iptr, iend);    break;
-			case 0xEE05:  Parsef250scalerBank(iptr, iend);    break;
 
 			case 0xFFD0:
 			case 0xFFD1:
@@ -426,6 +424,18 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
                 ParseJLabModuleData(rocid, iptr, iend_data_block_bank);
                 break;
 
+			// These were implemented in the ROL for sync events
+			// as 0xEE02 and 0xEE05. However, that violates the
+			// spec. which reserves the top 4 bits as status bits
+			// (the first "E" should really be a "1". We just check
+			// other 12 bits here.
+			case 0xE02:
+					ParseTSscalerBank(iptr, iend);
+					break;
+			case 0xE05:
+					Parsef250scalerBank(iptr, iend);
+					break;
+
 			case 5:
 				// old ROL Beni used had this but I don't think its
 				// been used for years. Run 10390 seems to have
@@ -434,12 +444,11 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 
 
             default:
-                jerr<<"Unknown module type ("<<det_id<<") encountered" << endl;
+                jerr<<"Unknown module type ("<<det_id<<" = " << hex << det_id << dec << " ) encountered" << endl;
 //                if(VERBOSE>5){
-                    cerr << endl;
                     cout << "----- First few words to help with debugging -----" << endl;
                     cout.flush(); cerr.flush();
-					DumpBinary(istart, iend, 32, &iptr[-1]);
+					DumpBinary(&iptr[-2], iend, 32, &iptr[-1]);
 //                }
 		}
 
