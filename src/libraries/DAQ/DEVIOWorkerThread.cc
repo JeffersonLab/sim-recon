@@ -442,7 +442,6 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 		}
 
 		iptr = iend_data_block_bank;
-//		DumpBinary(&iptr[-2], &iptr[5], 32, iptr);
 	}
 	
 }
@@ -452,6 +451,114 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 //----------------
 void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
 {
+    /// Parse data from a CAEN 1190 or 1290 module
+    /// (See ppg. 72-74 of V1290_REV15.pdf manual)
+
+    uint32_t slot = 0;
+    uint32_t event_count = 0;
+    uint32_t word_count = 0;
+    uint32_t trigger_time_tag = 0;
+    uint32_t tdc_num = 0;
+    uint32_t event_id = 0;
+    uint32_t bunch_id = 0;
+
+    // We need to accomodate multi-event blocks where
+    // events are entangled (i.e. hits from event 1
+    // are mixed inbetween those of event 2,3,4,
+    // etc... With CAEN modules, we only know which
+    // event a hit came from by looking at the event_id
+    // in the TDC header. This value is only 12 bits
+    // and could roll over within an event block. This
+    // means we need to keep track of the order we
+    // encounter them in so it is maintained in the
+    // "events" container. The event_id order is kept
+    // in the "event_id_order" vector.
+    map<uint32_t, vector<DCAEN1290TDCHit*> > hits_by_event_id; 
+    vector<uint32_t> event_id_order; 
+
+    while(iptr<iend){
+
+        // This word appears to be appended to the data.
+        // Probably in the ROL. Ignore it if found.
+        if(*iptr == 0xd00dd00d) {
+            if(VERBOSE>7) cout << "         CAEN skipping 0xd00dd00d word" << endl;
+            iptr++;
+            continue;
+        }
+
+        uint32_t type = (*iptr) >> 27;
+        uint32_t edge = 0; // 1=trailing, 0=leading
+        uint32_t channel = 0;
+        uint32_t tdc = 0;
+        uint32_t error_flags = 0;
+        DCAEN1290TDCHit *caen1290tdchit = NULL;
+        switch(type){
+            case 0b01000:  // Global Header
+                slot = (*iptr) & 0x1f;
+                event_count = ((*iptr)>>5) & 0xffffff;
+                if(VERBOSE>7) cout << "         CAEN TDC Global Header (slot=" << slot << " , event count=" << event_count << ")" << endl;
+                break;
+            case 0b10000:  // Global Trailer
+                slot = (*iptr) & 0x1f;
+                word_count = ((*iptr)>>5) & 0x7ffff;
+                if(VERBOSE>7) cout << "         CAEN TDC Global Trailer (slot=" << slot << " , word count=" << word_count << ")" << endl;
+                slot = event_count = word_count = trigger_time_tag = tdc_num = event_id = bunch_id = 0;
+                break;
+            case 0b10001:  // Global Trigger Time Tag
+                trigger_time_tag = ((*iptr)>>5) & 0x7ffffff;
+                if(VERBOSE>7) cout << "         CAEN TDC Global Trigger Time Tag (tag=" << trigger_time_tag << ")" << endl;
+                break;
+            case 0b00001:  // TDC Header
+                tdc_num = ((*iptr)>>24) & 0x03;
+                event_id = ((*iptr)>>12) & 0x0fff;
+                bunch_id = (*iptr) & 0x0fff;
+                if( find(event_id_order.begin(), event_id_order.end(), event_id) == event_id_order.end()){
+                    event_id_order.push_back(event_id);
+                }
+                if(VERBOSE>7) cout << "         CAEN TDC TDC Header (tdc=" << tdc_num <<" , event id=" << event_id <<" , bunch id=" << bunch_id << ")" << endl;
+                break;
+            case 0b00000:  // TDC Measurement
+                edge = ((*iptr)>>26) & 0x01;
+                channel = ((*iptr)>>21) & 0x1f;
+                tdc = ((*iptr)>>0) & 0x1fffff;
+                if(VERBOSE>7) cout << "         CAEN TDC TDC Measurement (" << (edge ? "trailing":"leading") << " , channel=" << channel << " , tdc=" << tdc << ")" << endl;
+
+                // Create DCAEN1290TDCHit object
+                caen1290tdchit = new DCAEN1290TDCHit(rocid, slot, channel, 0, edge, tdc_num, event_id, bunch_id, tdc);
+                hits_by_event_id[event_id].push_back(caen1290tdchit);
+                break;
+            case 0b00100:  // TDC Error
+                error_flags = (*iptr) & 0x7fff;
+                if(VERBOSE>7) cout << "         CAEN TDC TDC Error (err flags=0x" << hex << error_flags << dec << ")" << endl;
+                break;
+            case 0b00011:  // TDC Trailer
+                tdc_num = ((*iptr)>>24) & 0x03;
+                event_id = ((*iptr)>>12) & 0x0fff;
+                word_count = ((*iptr)>>0) & 0x0fff;
+                if(VERBOSE>7) cout << "         CAEN TDC TDC Trailer (tdc=" << tdc_num <<" , event id=" << event_id <<" , word count=" << word_count << ")" << endl;
+                tdc_num = event_id = bunch_id = 0;
+                break;
+            case 0b11000:  // Filler Word
+                if(VERBOSE>7) cout << "         CAEN TDC Filler Word" << endl;
+                break;
+            default:
+                cout << "Unknown datatype: 0x" << hex << type << " full word: "<< *iptr << dec << endl;
+        }
+
+        iptr++;
+    }
+
+    // Add hits for each event to the events container, creating ObjList's as needed
+	auto pe_iter = current_parsed_events.begin();
+    for(uint32_t i=0; i<event_id_order.size(); i++){
+
+		DParsedEvent *pe = *pe_iter++;
+
+        vector<DCAEN1290TDCHit*> &hits = hits_by_event_id[event_id_order[i]];
+		pe->vDCAEN1290TDCHit.insert(pe->vDCAEN1290TDCHit.end(), hits.begin(), hits.end());
+
+        if(VERBOSE>7) cout << "        Added " << hits.size() << " hits with event_id=" << event_id_order[i] << " to event " << i << endl;
+    }
 
 }
 
