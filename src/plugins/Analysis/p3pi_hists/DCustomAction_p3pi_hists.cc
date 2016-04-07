@@ -102,7 +102,11 @@ bool DCustomAction_p3pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 		dDeltaPhi_M3pi->Fill(locOmegaP4.M(), locDeltaPhi);
 		
 		// require proton and omega are back-to-back
-		if(locDeltaPhi < 175. || locDeltaPhi > 185.) return true;
+		if(locDeltaPhi < 175. || locDeltaPhi > 185.)
+		{
+			Unlock_Action(); //RELEASE ROOT LOCK!!
+			return true;
+		}
 		dMM2_M3pi_CoplanarTag->Fill(locOmegaP4.M(), locMissingP4.M2());
 		dDeltaE_M3pi_CoplanarTag->Fill(locOmegaP4.M(),locMissingP4.E());
 		if(locOmegaP4.M() > 0.7 && locOmegaP4.M() < 0.9)
