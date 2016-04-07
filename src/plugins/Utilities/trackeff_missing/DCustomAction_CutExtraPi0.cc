@@ -9,6 +9,8 @@
 
 void DCustomAction_CutExtraPi0::Initialize(JEventLoop* locEventLoop)
 {
+	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		// Optional: Useful utility functions.
@@ -58,13 +60,15 @@ bool DCustomAction_CutExtraPi0::Perform_Action(JEventLoop* locEventLoop, const D
 		}
 	}
 
-	//Optional: Fill histograms
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		for(size_t loc_i = 0; loc_i < locInvariantMasses.size(); ++loc_i)
 			dHist_Pi0InvariantMass->Fill(locInvariantMasses[loc_i]);
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 
 	return locPassesCutFlag; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }
