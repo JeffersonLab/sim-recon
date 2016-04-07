@@ -35,7 +35,7 @@ using namespace std;
 class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 {
 	public:
-		DAnalysisResults_factory():root_hists_created(false){};
+		DAnalysisResults_factory(){};
 		~DAnalysisResults_factory(){};
 
 	private:
