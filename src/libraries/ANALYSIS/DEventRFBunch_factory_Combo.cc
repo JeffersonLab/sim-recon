@@ -19,6 +19,11 @@ jerror_t DEventRFBunch_factory_Combo::init(void)
 	dShowerSelectionTag = "PreSelect";
 	dTrackSelectionTag = "PreSelect";
 	dMinThrownMatchFOM = 5.73303E-7;
+
+	string locLockName = string(GetDataClassName()) + string("__") + string(Tag());
+	dFactoryLock = japp->ReadLock(locLockName); //will create if doesn't exist, else returns it
+	pthread_rwlock_unlock(dFactoryLock); //unlock
+
 	return NOERROR;
 }
 
@@ -87,13 +92,17 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32
 	//Create Diagnostic Histograms
 	japp->RootWriteLock();
 	{
+		//get and change to the base (file/global) directory
 		string locOutputFileName = "hd_root.root";
 		if(gPARMS->Exists("OUTPUT_FILENAME"))
 			gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
+
+		TDirectory* locCurrentDir = gDirectory;
 		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
-		if(locFile == NULL)
-			return NOERROR;
-		locFile->cd("");
+		if(locFile != NULL)
+			locFile->cd("");
+		else
+			gDirectory->cd("/");
 
 		for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 		{
@@ -151,6 +160,8 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32
 				dHistMap_DeltaRFTime_TruePID[locReaction] = loc1IHist;
 			}
 		}
+
+		locCurrentDir->cd();
 	}
 	japp->RootUnLock(); //unlock
 
@@ -337,7 +348,7 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 		if(locThrownEventRFBunch != NULL)
 			locIsAllTruePID = Is_AllTruePID(locMCThrownMatching, locParticleComboBlueprint);
 		const DReaction* locReaction = locParticleComboBlueprint->Get_Reaction();
-		japp->RootWriteLock();
+		Lock_Factory();
 		{
 			for(size_t loc_j = 0; loc_j < locPropagatedTimes.size(); ++loc_j)
 			{
@@ -353,7 +364,7 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 					dHistMap_DeltaRFTime_TruePID[locReaction]->Fill(locDeltaT); //diff between selected & true RF times (all combos)
 			}
 		}
-		japp->RootUnLock(); //unlock
+		Unlock_Factory(); //unlock
 
 		// Create new RF Bunch if doesn't already exist
 		pair<int, int> locVoteResultPair(locNumBunchShifts, locNumParticleVotes); //pair ints are: num-rf-bunch-shifts, num-votes
