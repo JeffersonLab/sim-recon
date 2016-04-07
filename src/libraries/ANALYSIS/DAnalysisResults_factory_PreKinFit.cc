@@ -345,7 +345,7 @@ jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop
 		}
 
 		//fill histograms
-		dApplication->Lock_Factory();
+		Lock_Factory();
 		{
 			dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(0); //initial: a new event
 			if(locNumParticleCombosSurvivedActions[0] > 0)
