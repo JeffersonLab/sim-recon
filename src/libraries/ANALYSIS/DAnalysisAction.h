@@ -77,6 +77,13 @@ class DAnalysisAction
 		size_t Get_NumPreviousParticleCombos(void) const{return dNumPreviousParticleCombos;}
 		size_t Get_NumParticleCombos(void) const{return dNumParticleCombos;}
 
+		// in case you need to do anything with this action that is shared amongst threads
+			// e.g. filling histograms
+			// When creating ROOT histograms, should still acquire JANA-wide ROOT lock (e.g. modifying gDirectory)
+		// this mutex is unique to this combination of: DReaction name, action name (which is base_name + unique_action_string)
+		void Lock_Action(void);
+		void Unlock_Action(void);
+
 	public:
 		//Set by constructor:
 		bool dPerformAntiCut; //if Perform_Action returned true/false, instead return false/true
@@ -98,6 +105,12 @@ class DAnalysisAction
 		template <typename DHistType> bool Check_IsValidTH2(string locHistName) const;
 		template <typename DHistType> bool Check_IsValidTH3(string locHistName) const;
 
+		// in case you need to do anything with this action that is shared amongst threads
+			// e.g. filling histograms
+			// When creating ROOT histograms, should still acquire JANA-wide ROOT lock (e.g. modifying gDirectory)
+		// this mutex is unique to this combination of: DReaction name, action name (which is base_name + unique_action_string)
+		pthread_rwlock_t* dActionLock;
+
 		DAnalysisAction(void); //to force inheriting classes to call the public constructor
 };
 
@@ -118,6 +131,15 @@ inline bool DAnalysisAction::operator()(JEventLoop* locEventLoop, const DParticl
 	return (dPerformAntiCut ? !locResult : locResult);
 }
 
+inline void DAnalysisAction::Lock_Action(void)
+{
+	pthread_rwlock_wrlock(dActionLock);
+}
+
+inline void DAnalysisAction::Unlock_Action(void)
+{
+	pthread_rwlock_unlock(dActionLock);
+}
 
 inline TDirectoryFile* DAnalysisAction::ChangeTo_BaseDirectory(void)
 {
