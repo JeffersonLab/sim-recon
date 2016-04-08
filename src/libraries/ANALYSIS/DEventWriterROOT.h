@@ -89,15 +89,15 @@ class DEventWriterROOT : public JObject
 
 		//BRANCH FILLING: //with the full branch name
 		template <typename DType> void Fill_FundamentalData(TTree* locTree, string locBranchName, DType locValue) const;
-		template <typename DType> void Fill_FundamentalData(TTree* locTree, string locBranchName, DType locValue, unsigned int locArrayIndex, DBranchMemoryMaps locMemoryMaps) const;
-		template <typename DType> void Fill_ClonesData(TTree* locTree, string locBranchName, DType& locObject, unsigned int locArrayIndex, DBranchMemoryMaps locMemoryMaps) const;
-		template <typename DType> void Fill_TObjectData(TTree* locTree, string locBranchName, DType& locObject, DBranchMemoryMaps locMemoryMaps) const;
+		template <typename DType> void Fill_FundamentalData(TTree* locTree, string locBranchName, DType locValue, unsigned int locArrayIndex) const;
+		template <typename DType> void Fill_ClonesData(TTree* locTree, string locBranchName, DType& locObject, unsigned int locArrayIndex) const;
+		template <typename DType> void Fill_TObjectData(TTree* locTree, string locBranchName, DType& locObject) const;
 
 		//BRANCH FILLING: //with separate particle & variable names (from which the branch name is made)
 		template <typename DType> void Fill_FundamentalData(TTree* locTree, string locParticleBranchName, string locVariableName, DType locValue) const;
-		template <typename DType> void Fill_FundamentalData(TTree* locTree, string locParticleBranchName, string locVariableName, DType locValue, unsigned int locArrayIndex, DBranchMemoryMaps locMemoryMaps) const;
-		template <typename DType> void Fill_ClonesData(TTree* locTree, string locParticleBranchName, string locVariableName, DType& locObject, unsigned int locArrayIndex, DBranchMemoryMaps locMemoryMaps) const;
-		template <typename DType> void Fill_TObjectData(TTree* locTree, string locParticleBranchName, string locVariableName, DType& locObject, DBranchMemoryMaps locMemoryMaps) const;
+		template <typename DType> void Fill_FundamentalData(TTree* locTree, string locParticleBranchName, string locVariableName, DType locValue, unsigned int locArrayIndex) const;
+		template <typename DType> void Fill_ClonesData(TTree* locTree, string locParticleBranchName, string locVariableName, DType& locObject, unsigned int locArrayIndex) const;
+		template <typename DType> void Fill_TObjectData(TTree* locTree, string locParticleBranchName, string locVariableName, DType& locObject) const;
 
 		const DAnalysisUtilities* dAnalysisUtilities;
 
@@ -161,25 +161,6 @@ class DEventWriterROOT : public JObject
 		//keep track of the ttrees
 		map<string, TTree*>& Get_TTreeMap(void) const;
 
-		// When creating ROOT histograms, should still acquire JANA-wide ROOT lock (e.g. modifying gDirectory)
-		// This mutex is shared by every DEventWriterROOT object. This is used to control access to these static member functions. 
-		pthread_rwlock_t* dWriterLock;
-		void Lock_Writer(void);
-		void Unlock_Writer(void);
-
-		//The above memory maps must be passed into the branch fill functions
-		//They keep track of the memory locations & array sizes for the branch memory
-		//The fill functions cannot grab them directly from the static maps because:
-			//You need a writer-lock to access the static maps, and the fill functions are already in a file-lock: deadlock
-		//However, the create functions can access the maps directly, because those are called from within the writer-lock
-		struct DBranchMemoryMaps
-		{
-			//for a given TTree //string is branch name
-			map<string, unsigned int>* dFundamentalArraySizeMap;
-			map<string, TObject*>* dTObjectMap;
-			map<string, TClonesArray*>* dClonesArrayMap;
-		};
-
 		/****************************************************************************************************************************************/
 
 		void Get_Reactions(jana::JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;
@@ -208,31 +189,31 @@ class DEventWriterROOT : public JObject
 		void Group_ThrownParticles(const vector<const DMCThrown*>& locMCThrowns_FinalState, const vector<const DMCThrown*>& locMCThrowns_Decaying,
 				vector<const DMCThrown*>& locMCThrownsToSave, map<const DMCThrown*, unsigned int>& locThrownIndexMap) const;
 		void Fill_ThrownInfo(TTree* locTree, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
-				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, ULong64_t locNumPIDThrown_FinalState, ULong64_t locPIDThrown_Decaying, DBranchMemoryMaps locMemoryMaps) const;
+				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, ULong64_t locNumPIDThrown_FinalState, ULong64_t locPIDThrown_Decaying) const;
 		void Fill_ThrownInfo(TTree* locTree, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
 				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, ULong64_t locNumPIDThrown_FinalState, ULong64_t locPIDThrown_Decaying,
-				const DMCThrownMatching* locMCThrownMatching, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap, DBranchMemoryMaps locMemoryMaps) const;
+				const DMCThrownMatching* locMCThrownMatching, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
 		void Fill_ThrownParticleData(TTree* locTree, unsigned int locArrayIndex, const DMCThrown* locMCThrown, const map<const DMCThrown*, unsigned int>& locThrownIndexMap,
-				const DMCThrownMatching* locMCThrownMatching, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap, DBranchMemoryMaps locMemoryMaps) const;
+				const DMCThrownMatching* locMCThrownMatching, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
 
 		//TREE FILLING: INDEPENDENT PARTICLES
-		void Fill_BeamData(TTree* locTree, unsigned int locArrayIndex, const DBeamPhoton* locBeamPhoton, const DVertex* locVertex, const DMCThrownMatching* locMCThrownMatching, DBranchMemoryMaps locMemoryMaps) const;
+		void Fill_BeamData(TTree* locTree, unsigned int locArrayIndex, const DBeamPhoton* locBeamPhoton, const DVertex* locVertex, const DMCThrownMatching* locMCThrownMatching) const;
 		void Fill_ChargedHypo(TTree* locTree, unsigned int locArrayIndex, const DChargedTrackHypothesis* locChargedTrackHypothesis, const DMCThrownMatching* locMCThrownMatching,
-				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DDetectorMatches* locDetectorMatches, DBranchMemoryMaps locMemoryMaps) const;
+				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DDetectorMatches* locDetectorMatches) const;
 		void Fill_NeutralHypo(TTree* locTree, unsigned int locArrayIndex, const DNeutralParticleHypothesis* locPhotonHypothesis, const DMCThrownMatching* locMCThrownMatching,
-				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DDetectorMatches* locDetectorMatches, DBranchMemoryMaps locMemoryMaps) const;
+				const map<const DMCThrown*, unsigned int>& locThrownIndexMap, const DDetectorMatches* locDetectorMatches) const;
 
 		//TREE FILLING: COMBO
-		void Fill_ComboData(TTree* locTree, const DParticleCombo* locParticleCombo, unsigned int locComboIndex, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap, DBranchMemoryMaps locMemoryMaps) const;
+		void Fill_ComboData(TTree* locTree, const DParticleCombo* locParticleCombo, unsigned int locComboIndex, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
 		void Fill_ComboStepData(TTree* locTree, const DParticleCombo* locParticleCombo, unsigned int locStepIndex, unsigned int locComboIndex,
-				DKinFitType locKinFitType, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap, DBranchMemoryMaps locMemoryMaps) const;
+				DKinFitType locKinFitType, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
 
 		//TREE FILLING: COMBO PARTICLES
-		void Fill_ComboBeamData(TTree* locTree, unsigned int locComboIndex, const DBeamPhoton* locBeamPhoton, unsigned int locBeamIndex, DKinFitType locKinFitType, DBranchMemoryMaps locMemoryMaps) const;
+		void Fill_ComboBeamData(TTree* locTree, unsigned int locComboIndex, const DBeamPhoton* locBeamPhoton, unsigned int locBeamIndex, DKinFitType locKinFitType) const;
 		void Fill_ComboChargedData(TTree* locTree, unsigned int locComboIndex, string locParticleBranchName, const DChargedTrackHypothesis* locMeasuredChargedHypo,
-				const DChargedTrackHypothesis* locChargedHypo, unsigned int locChargedIndex, DKinFitType locKinFitType, DBranchMemoryMaps locMemoryMaps) const;
+				const DChargedTrackHypothesis* locChargedHypo, unsigned int locChargedIndex, DKinFitType locKinFitType) const;
 		void Fill_ComboNeutralData(TTree* locTree, unsigned int locComboIndex, string locParticleBranchName, const DNeutralParticleHypothesis* locMeasuredNeutralHypo,
-				const DNeutralParticleHypothesis* locNeutralHypo, unsigned int locNeutralIndex, DKinFitType locKinFitType, DBranchMemoryMaps locMemoryMaps) const;
+				const DNeutralParticleHypothesis* locNeutralHypo, unsigned int locNeutralIndex, DKinFitType locKinFitType) const;
 
 		//For ROOT type string for fundamental data variables
 			//Defined in https://root.cern.ch/root/htmldoc/TTree.html
@@ -253,16 +234,6 @@ template<> struct DEventWriterROOT::DROOTTypeString<Double_t> { static const cha
 template<> struct DEventWriterROOT::DROOTTypeString<Long64_t> { static const char* GetTypeString() {return "L";} };
 template<> struct DEventWriterROOT::DROOTTypeString<ULong64_t> { static const char* GetTypeString() {return "l";} };
 template<> struct DEventWriterROOT::DROOTTypeString<Bool_t> { static const char* GetTypeString() {return "O";} };
-
-inline void DEventWriterROOT::Lock_Writer(void)
-{
-	pthread_rwlock_wrlock(dWriterLock);
-}
-
-inline void DEventWriterROOT::Unlock_Writer(void)
-{
-	pthread_rwlock_unlock(dWriterLock);
-}
 
 //BRANCH CREATION: //with separate particle & variable names (from which the branch name is made)
 template <typename DType> void DEventWriterROOT::Create_Branch_Fundamental(TTree* locTree, string locParticleBranchName, string locVariableName) const
@@ -324,24 +295,24 @@ template <typename DType> void DEventWriterROOT::Fill_FundamentalData(TTree* loc
 	Fill_FundamentalData<DType>(locTree, locBranchName, locValue);
 }
 
-template <typename DType> void DEventWriterROOT::Fill_FundamentalData(TTree* locTree, string locParticleBranchName, string locVariableName, DType locValue, unsigned int locArrayIndex, DBranchMemoryMaps locMemoryMaps) const
+template <typename DType> void DEventWriterROOT::Fill_FundamentalData(TTree* locTree, string locParticleBranchName, string locVariableName, DType locValue, unsigned int locArrayIndex) const
 {
 	string locBranchName = Build_BranchName(locParticleBranchName, locVariableName);
-	Fill_FundamentalData<DType>(locTree, locBranchName, locValue, locArrayIndex, locMemoryMaps);
+	Fill_FundamentalData<DType>(locTree, locBranchName, locValue, locArrayIndex);
 }
 
-template <typename DType> void DEventWriterROOT::Fill_ClonesData(TTree* locTree, string locParticleBranchName, string locVariableName, DType& locObject, unsigned int locArrayIndex, DBranchMemoryMaps locMemoryMaps) const
+template <typename DType> void DEventWriterROOT::Fill_ClonesData(TTree* locTree, string locParticleBranchName, string locVariableName, DType& locObject, unsigned int locArrayIndex) const
 {
 	//only call for objects inheriting from TObject*!!!
 	string locBranchName = Build_BranchName(locParticleBranchName, locVariableName);
-	Fill_ClonesData<DType>(locTree, locBranchName, locObject, locArrayIndex, locMemoryMaps);
+	Fill_ClonesData<DType>(locTree, locBranchName, locObject, locArrayIndex);
 }
 
-template <typename DType> void DEventWriterROOT::Fill_TObjectData(TTree* locTree, string locParticleBranchName, string locVariableName, DType& locObject, DBranchMemoryMaps locMemoryMaps) const
+template <typename DType> void DEventWriterROOT::Fill_TObjectData(TTree* locTree, string locParticleBranchName, string locVariableName, DType& locObject) const
 {
 	//only call for objects inheriting from TObject*!!!
 	string locBranchName = Build_BranchName(locParticleBranchName, locVariableName);
-	Fill_TObjectData<DType>(locTree, locBranchName, locObject, locMemoryMaps);
+	Fill_TObjectData<DType>(locTree, locBranchName, locObject);
 }
 
 //BRANCH FILLING: //with the full branch name
@@ -351,10 +322,10 @@ template <typename DType> void DEventWriterROOT::Fill_FundamentalData(TTree* loc
 	*locBranchPointer = locValue;
 }
 
-template <typename DType> void DEventWriterROOT::Fill_FundamentalData(TTree* locTree, string locBranchName, DType locValue, unsigned int locArrayIndex, DBranchMemoryMaps locMemoryMaps) const
+template <typename DType> void DEventWriterROOT::Fill_FundamentalData(TTree* locTree, string locBranchName, DType locValue, unsigned int locArrayIndex) const
 {
 	//create a new, larger array if the current one is too small
-	unsigned int& locCurrentArraySize = locMemoryMaps.dFundamentalArraySizeMap->find(locBranchName)->second;
+	unsigned int& locCurrentArraySize = Get_FundamentalArraySizeMap()[locTree][locBranchName];
 	DType* locBranchPointer = (DType*)locTree->GetBranch(locBranchName.c_str())->GetAddress();
 	if(locArrayIndex >= locCurrentArraySize)
 	{
@@ -371,18 +342,18 @@ template <typename DType> void DEventWriterROOT::Fill_FundamentalData(TTree* loc
 	locBranchPointer[locArrayIndex] = locValue;
 }
 
-template <typename DType> void DEventWriterROOT::Fill_ClonesData(TTree* locTree, string locBranchName, DType& locObject, unsigned int locArrayIndex, DBranchMemoryMaps locMemoryMaps) const
+template <typename DType> void DEventWriterROOT::Fill_ClonesData(TTree* locTree, string locBranchName, DType& locObject, unsigned int locArrayIndex) const
 {
 	//only call for objects inheriting from TObject*!!!
-	TClonesArray* locClonesArray = locMemoryMaps.dClonesArrayMap->find(locBranchName)->second;
+	TClonesArray* locClonesArray = Get_ClonesArrayMap()[locTree][locBranchName];
 	DType* locConstructedObject = (DType*)locClonesArray->ConstructedAt(locArrayIndex);
 	*locConstructedObject = locObject;
 }
 
-template <typename DType> void DEventWriterROOT::Fill_TObjectData(TTree* locTree, string locBranchName, DType& locObject, DBranchMemoryMaps locMemoryMaps) const
+template <typename DType> void DEventWriterROOT::Fill_TObjectData(TTree* locTree, string locBranchName, DType& locObject) const
 {
 	//only call for objects inheriting from TObject*!!!
-	DType* locDType = (DType*)locMemoryMaps.dTObjectMap->find(locBranchName)->second;
+	DType* locDType = (DType*)Get_TObjectMap()[locTree][locBranchName];
 	*locDType = locObject;
 }
 
