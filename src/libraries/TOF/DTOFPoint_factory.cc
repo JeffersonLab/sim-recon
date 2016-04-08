@@ -46,6 +46,8 @@ jerror_t DTOFPoint_factory::brun(JEventLoop *loop, int32_t runnumber)
 
 	if(eventLoop->GetCalib("TOF/propagation_speed", propagation_speed))
 		jout << "Error loading /TOF/propagation_speed !" << endl;
+	if(eventLoop->GetCalib("TOF/paddle_resolutions", paddle_resolutions))
+		jout << "Error loading /TOF/paddle_resolutions !" << endl;
 
 	loop->GetSingle(dTOFGeometry);
 
@@ -366,6 +368,12 @@ void DTOFPoint_factory::Create_MatchedTOFPoint(const tof_spacetimehit_t* locTOFS
 	const DTOFPaddleHit* locTOFHit_Horizontal = locTOFSpacetimeHit_Horizontal->TOFHit;
 	const DTOFPaddleHit* locTOFHit_Vertical = locTOFSpacetimeHit_Vertical->TOFHit;
 
+	int id_vert = locTOFHit_Vertical->bar - 1;
+	int id_horiz = 44 + locTOFHit_Horizontal->bar - 1;
+	double locVMatchTErr = paddle_resolutions[id_vert];   // paddle time resolutions
+	double locHMatchTErr = paddle_resolutions[id_horiz];
+    double locMatchTErr = 0.;    
+
 	//reconstruct TOF hit information, using information from the best bar: one or both of the bars may have a PMT signal below threshold
 	float locMatchX, locMatchY, locMatchZ, locMatchdE, locMatchT;
 	if(locTOFSpacetimeHit_Horizontal->dPositionWellDefinedFlag && locTOFSpacetimeHit_Vertical->dPositionWellDefinedFlag)
@@ -377,6 +385,7 @@ void DTOFPoint_factory::Create_MatchedTOFPoint(const tof_spacetimehit_t* locTOFS
 		locMatchZ = dTOFGeometry->CenterMPlane; //z: midpoint between tof planes
 		locMatchT = 0.5*(locTOFSpacetimeHit_Horizontal->t + locTOFSpacetimeHit_Vertical->t);
 		locMatchdE = 0.5*(locTOFHit_Horizontal->dE + locTOFHit_Vertical->dE);
+        locMatchTErr = 0.5 * sqrt(locVMatchTErr*locVMatchTErr + locHMatchTErr*locHMatchTErr);
 	}
 	else if(locTOFSpacetimeHit_Horizontal->dPositionWellDefinedFlag)
 	{
@@ -386,6 +395,7 @@ void DTOFPoint_factory::Create_MatchedTOFPoint(const tof_spacetimehit_t* locTOFS
 		locMatchT = locTOFSpacetimeHit_Horizontal->t;
 		locMatchZ = dTOFGeometry->CenterHPlane; //z: center of horizontal plane
 		locMatchdE = locTOFHit_Horizontal->dE;
+        locMatchTErr = locHMatchTErr;
 	}
 	else
 	{
@@ -395,6 +405,7 @@ void DTOFPoint_factory::Create_MatchedTOFPoint(const tof_spacetimehit_t* locTOFS
 		locMatchT = locTOFSpacetimeHit_Vertical->t;
 		locMatchZ = dTOFGeometry->CenterVPlane; //z: center of vertical plane
 		locMatchdE = locTOFHit_Vertical->dE;
+        locMatchTErr = locVMatchTErr;
 	}
 
 	DTOFPoint* locTOFPoint = new DTOFPoint;
@@ -402,7 +413,7 @@ void DTOFPoint_factory::Create_MatchedTOFPoint(const tof_spacetimehit_t* locTOFS
 	locTOFPoint->AddAssociatedObject(locTOFHit_Vertical);
 	locTOFPoint->pos.SetXYZ(locMatchX, locMatchY, locMatchZ);
 	locTOFPoint->t = locMatchT;
-	locTOFPoint->tErr = 0.0; //SET ME
+	locTOFPoint->tErr = locMatchTErr;  
 	locTOFPoint->dE = locMatchdE;
 
 	locTOFPoint->dHorizontalBar = locTOFHit_Horizontal->bar;
@@ -420,6 +431,14 @@ void DTOFPoint_factory::Create_UnMatchedTOFPoint(const tof_spacetimehit_t* locTO
 	const DTOFPaddleHit* locPaddleHit = locTOFSpacetimeHit->TOFHit;
 	bool locIsHorizontalBarFlag = (locPaddleHit->orientation == 1);
 	float locPointZ = locIsHorizontalBarFlag ? dTOFGeometry->CenterHPlane : dTOFGeometry->CenterVPlane;
+
+	int id_vert = locPaddleHit->bar - 1;
+	int id_horiz = 44 + locPaddleHit->bar - 1;
+	double locVTErr = paddle_resolutions[id_vert];   // paddle time resolutions
+	double locHTErr = paddle_resolutions[id_horiz];
+
+    double locTErr = locIsHorizontalBarFlag ? locHTErr : locVTErr;
+
 	if(locTOFSpacetimeHit->dPositionWellDefinedFlag)
 	{
 		//Position is well defined
@@ -428,7 +447,7 @@ void DTOFPoint_factory::Create_UnMatchedTOFPoint(const tof_spacetimehit_t* locTO
 
 		locTOFPoint->pos.SetXYZ(locTOFSpacetimeHit->x, locTOFSpacetimeHit->y, locPointZ);
 		locTOFPoint->t = locTOFSpacetimeHit->t;
-		locTOFPoint->tErr = 0.0; //SET ME
+		locTOFPoint->tErr = locTErr;
 		locTOFPoint->dE = locPaddleHit->dE;
 
 		locTOFPoint->dHorizontalBar = locIsHorizontalBarFlag ? locPaddleHit->bar : 0;
@@ -453,7 +472,7 @@ void DTOFPoint_factory::Create_UnMatchedTOFPoint(const tof_spacetimehit_t* locTO
 		float locPointY = locTOFSpacetimeHit->y;
 		locTOFPoint->pos.SetXYZ(locPointX, locPointY, locPointZ);
 		locTOFPoint->t = locTOFSpacetimeHit->t;
-		locTOFPoint->tErr = 0.0; //SET ME
+		locTOFPoint->tErr = locTErr; 
 
 		bool locNorthAboveThresholdFlag = (locPaddleHit->E_north > E_THRESHOLD);
 

@@ -59,6 +59,11 @@ jerror_t JEventProcessor_ST_Propagation_Time::init(void)
   Photonspeed = 29.9792458;
   // **************** define histograms *************************
   japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+
+  //Create root folder and cd to it, store main dir
+  TDirectory *main = gDirectory;
+  gDirectory->mkdir("ST_Propagation_Time")->cd();
+
   h2_PropTime_z_SS_chan = new TH2I*[NCHANNELS];
   h2_PropTime_z_BS_chan = new TH2I*[NCHANNELS];
   h2_PropTime_z_NS_chan = new TH2I*[NCHANNELS];
@@ -78,6 +83,8 @@ jerror_t JEventProcessor_ST_Propagation_Time::init(void)
       h2_CorrectedTime_z[i] = new TH2I(Form("h2_CorrectedTime_z_%i", i+1), "Corrected Time vs. Z; Z (cm); Propagation Time (ns)", NoBins_z,z_lower_limit,z_upper_limit, NoBins_time, time_lower_limit, time_upper_limit);
 
     }
+  // cd back to main directory
+  main->cd();
   japp->RootUnLock();
   return NOERROR;
 }

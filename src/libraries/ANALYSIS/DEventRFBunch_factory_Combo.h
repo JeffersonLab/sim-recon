@@ -57,6 +57,14 @@ class DEventRFBunch_factory_Combo:public jana::JFactory<DEventRFBunch>
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		// in case you need to do anything with this factory that is shared amongst threads
+			// e.g. filling histograms
+			// When creating ROOT histograms, should still acquire JANA-wide ROOT lock (e.g. modifying gDirectory)
+		// this mutex is unique to this combination of: factory name & tag
+		pthread_rwlock_t* dFactoryLock;
+		void Lock_Factory(void);
+		void Unlock_Factory(void);
+
 		DEventRFBunch_factory* dEventRFBunchFactory;
 		DRFTime_factory* dRFTimeFactory;
 
@@ -69,7 +77,7 @@ class DEventRFBunch_factory_Combo:public jana::JFactory<DEventRFBunch>
 		double dTargetCenterZ;
 		double dMinThrownMatchFOM;
 
-		bool Get_StartTime(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, double& locStartTime);
+		bool Get_StartTime(const DDetectorMatches* locDetectorMatches, const DTrackTimeBased* locTrackTimeBased, double& locStartTime);
 		double Calc_StartTime(const DNeutralShower* locNeutralShower, const DVertex* locVertex);
 		int Find_BestRFBunchShift(double locRFHitTime, const vector<double>& locTimes, int& locBestNumVotes);
 
@@ -80,6 +88,16 @@ class DEventRFBunch_factory_Combo:public jana::JFactory<DEventRFBunch>
 		map<const DReaction*, TH1I*> dHistMap_DeltaRFTime_TruePID; //given that the PIDs are all correct, diff between selected & true RF times
 		map<const DReaction*, TH1I*> dHistMap_DeltaRFTime; //diff between selected & true RF times (all combos)
 };
+
+inline void DEventRFBunch_factory_Combo::Lock_Factory(void)
+{
+	pthread_rwlock_wrlock(dFactoryLock);
+}
+
+inline void DEventRFBunch_factory_Combo::Unlock_Factory(void)
+{
+	pthread_rwlock_unlock(dFactoryLock);
+}
 
 #endif // _DEventRFBunch_factory_Combo_
 

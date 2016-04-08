@@ -17,6 +17,7 @@ subdirs = [
 'ST_online_tracking',
 'ST_online_Tresolution',
 'ST_online_efficiency',
+'ST_online_multi',
 'TAGGER_online',
 'TAGH_online',
 'TAGM_online',
@@ -30,6 +31,7 @@ subdirs = [
 'BCAL_inv_mass',
 'CDC_drift',
 'CDC_Cosmics',
+'EPICS_dump' ,
 'CDC_Efficiency']
 
 #'L3_online',

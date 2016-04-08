@@ -1,5 +1,5 @@
 
-import os
+
 import sbms
 
 # get env object and clone it
@@ -7,7 +7,6 @@ Import('*')
 env = env.Clone()
 
 sbms.AddDANA(env)
-env.AppendUnique(LIBS=['expat'])
-sbms.library(env)
+sbms.plugin(env)
 
 

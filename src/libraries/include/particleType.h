@@ -279,6 +279,152 @@ inline static char* ParticleType(Particle_t p)
   }
 }
 
+inline static char* EnumString(Particle_t p)
+{
+  //returns string that is exact match to enum name. for auto-generating code
+  p = RemapParticleID(p);
+
+  switch (p) {
+  case Unknown:
+    return (char*)"Unknown";
+  case Gamma:
+    return (char*)"Gamma";
+  case Positron:
+    return (char*)"Positron";
+  case Electron:
+    return (char*)"Electron";
+  case Neutrino:
+    return (char*)"Neutrino";
+  case MuonPlus:
+    return (char*)"MuonPlus";
+  case MuonMinus:
+    return (char*)"MuonMinus";
+  case Pi0:
+    return (char*)"Pi0";
+  case PiPlus:
+    return (char*)"PiPlus";
+  case PiMinus:
+    return (char*)"PiMinus";
+  case KLong:
+    return (char*)"KLong";
+  case KPlus:
+    return (char*)"KPlus";
+  case KMinus:
+    return (char*)"KMinus";
+  case Neutron:
+    return (char*)"Neutron";
+  case Proton:
+    return (char*)"Proton";
+  case AntiProton:
+    return (char*)"AntiProton";
+  case KShort:
+    return (char*)"KShort";
+  case Eta:
+    return (char*)"Eta";
+  case Lambda:
+    return (char*)"Lambda";
+  case SigmaPlus:
+    return (char*)"SigmaPlus";
+  case Sigma0:
+    return (char*)"Sigma0";
+  case SigmaMinus:
+    return (char*)"SigmaMinus";
+  case Xi0:
+    return (char*)"Xi0";
+  case XiMinus:
+    return (char*)"XiMinus";
+  case OmegaMinus:
+    return (char*)"OmegaMinus";
+  case AntiNeutron:
+    return (char*)"AntiNeutron";
+  case AntiLambda:
+    return (char*)"AntiLambda";
+  case AntiSigmaMinus:
+    return (char*)"AntiSigmaMinus";
+  case AntiSigma0:
+    return (char*)"AntiSigma0";
+  case AntiSigmaPlus:
+    return (char*)"AntiSigmaPlus";
+  case AntiXi0:
+    return (char*)"AntiXi0";
+  case AntiXiPlus:
+    return (char*)"AntiXiPlus";
+  case AntiOmegaPlus:
+    return (char*)"AntiOmegaPlus";
+  case Geantino:
+    return (char*)"Geantino";
+  case Rho0:
+    return (char*)"Rho0";
+  case RhoPlus:
+    return (char*)"RhoPlus";
+  case RhoMinus:
+    return (char*)"RhoMinus";
+  case omega:
+    return (char*)"omega";
+  case EtaPrime:
+    return (char*)"EtaPrime";
+  case phiMeson:
+    return (char*)"phiMeson";
+  case a0_980:
+    return (char*)"a0_980";
+  case f0_980:
+    return (char*)"f0_980";
+  case KStar_892_0:
+    return (char*)"KStar_892_0";
+  case KStar_892_Plus:
+    return (char*)"KStar_892_Plus";
+  case KStar_892_Minus:
+    return (char*)"KStar_892_Minus";
+  case AntiKStar_892_0:
+    return (char*)"AntiKStar_892_0";
+  case K1_1400_Plus:
+    return (char*)"K1_1400_Plus";
+  case K1_1400_Minus:
+    return (char*)"K1_1400_Minus";
+  case b1_1235_Plus:
+    return (char*)"b1_1235_Plus";
+  case Sigma_1385_Minus:
+    return (char*)"Sigma_1385_Minus";
+  case Sigma_1385_0:
+    return (char*)"Sigma_1385_0";
+  case Sigma_1385_Plus:
+    return (char*)"Sigma_1385_Plus";
+  case Deuteron:
+    return (char*)"Deuteron";
+  case Helium:
+    return (char*)"Helium";
+  case Triton:
+    return (char*)"Triton";
+  case Pb208:
+    return (char*)"Pb208";
+  case DeltaPlusPlus:
+    return (char*)"DeltaPlusPlus";
+  case Jpsi:
+    return (char*)"Jpsi";
+  case Eta_c:
+    return (char*)"Eta_c";
+  case Chi_c0:
+    return (char*)"Chi_c0";
+  case Chi_c1:
+    return (char*)"Chi_c1";
+  case Chi_c2:
+    return (char*)"Chi_c2";
+  case Psi2s:
+    return (char*)"Psi2s";
+  case D0:
+    return (char*)"D0";
+  case DPlus:
+    return (char*)"DPlus";
+  case Dstar0:
+    return (char*)"Dstar0";
+  case DstarPlus:
+    return (char*)"DstarPlus";
+  case Lambda_c:
+    return (char*)"Lambda_c";
+  default:
+    return (char*)"Unknown";
+  }
+}
 inline static Particle_t ParticleEnum(const char* locParticleName)
 {
   if(strcmp(locParticleName, "Unknown") == 0)
@@ -1085,6 +1231,87 @@ inline static int ParticleMultiplexPower(Particle_t locPID)
 		case DstarPlus:        return 45;
 		case Lambda_c:         return 46;
 		default: return -1;
+	}
+}
+
+inline static Particle_t DemultiplexPID(int locBit, int locIsDecayingFlag)
+{
+	//FINAL-STATE PARTICLES (+ pi0) (decimal: 10^power):
+	if(locIsDecayingFlag == 0)
+	{
+		switch(locBit)
+		{
+			case 0:   return Gamma;
+			case 1:   return Positron;
+			case 2:   return Electron;
+			case 3:   return Neutrino;
+			case 4:   return MuonPlus;
+			case 5:   return MuonMinus;
+			case 6:   return Pi0;
+			case 7:   return PiPlus;
+			case 8:   return PiMinus;
+			case 9:   return KLong;
+			case 10:  return KPlus;
+			case 11:  return KMinus;
+			case 12:  return Neutron;
+			case 13:  return Proton;
+			case 14:  return AntiProton;
+			case 15:  return AntiNeutron;
+			default:  return Unknown;
+		}
+	}
+
+	//DECAYING PARTICLES (- pi0): (binary: 2^power)
+	switch(locBit)
+	{
+		case 0:   return KShort;
+		case 1:   return Eta;
+		case 2:   return Lambda;
+		case 3:   return SigmaPlus;
+		case 4:   return Sigma0;
+		case 5:   return SigmaMinus;
+		case 6:   return Xi0;
+		case 7:   return XiMinus;
+		case 8:   return OmegaMinus;
+		case 9:   return AntiLambda;
+		case 10:  return AntiSigmaMinus;
+		case 11:  return AntiSigma0;
+		case 12:  return AntiSigmaPlus;
+		case 13:  return AntiXi0;
+		case 14:  return AntiXiPlus;
+		case 15:  return AntiOmegaPlus;
+		case 16:  return Deuteron;
+		case 17:  return Rho0;
+		case 18:  return RhoPlus;
+		case 19:  return RhoMinus;
+		case 20:  return omega;
+		case 21:  return EtaPrime;
+		case 22:  return phiMeson;
+		case 23:  return a0_980;
+		case 24:  return f0_980;
+		case 25:  return KStar_892_0;
+		case 26:  return KStar_892_Plus;
+		case 27:  return KStar_892_Minus;
+		case 28:  return AntiKStar_892_0;
+		case 29:  return K1_1400_Plus;
+		case 30:  return K1_1400_Minus;
+		case 31:  return b1_1235_Plus;
+		case 32:  return Sigma_1385_Minus;
+		case 33:  return Sigma_1385_0;
+		case 34:  return Sigma_1385_Plus;
+		case 35:  return DeltaPlusPlus;
+		case 36:  return Jpsi;
+		case 37:  return Eta_c;
+		case 38:  return Chi_c0;
+		case 39:  return Chi_c1;
+		case 40:  return Chi_c2;
+		case 41:  return Psi2s;
+		case 42:  return D0;
+		case 43:  return DPlus;
+		case 44:  return Dstar0;
+		case 45:  return DstarPlus;
+		case 46:  return Lambda_c;
+		default:  return Unknown;
 	}
 }
 
