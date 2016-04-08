@@ -63,7 +63,7 @@
 	c1->cd(5);
 	gPad->SetTicks();
 	gPad->SetGrid();
-	//gPad->SetLogy();
+	gPad->SetLogz();
 	if(h5) h5->Draw("colz");
 
 	c1->cd(6);

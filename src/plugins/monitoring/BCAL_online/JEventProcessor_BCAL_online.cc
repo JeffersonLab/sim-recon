@@ -298,7 +298,7 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_point_sigZ = new TH1I("bcal_point_sigZ","sigZ (DBCALPoint)", 100, 0, 35);
 	bcal_point_z_dist = new TProfile2D("bcal_point_z_dist","Mean Z positions per cell (DBCALPoint);Module;Sector, Layer", 
 					   48, 0.5, 48.5, 16, 0.5, 16.5);
-	bcal_point_z_sector = new TH2I("bcal_point_z_sector","Z vs global sector (DBCALPoint);global sector  (4 x module + sector)",
+	bcal_point_z_sector = new TH2I("bcal_point_z_sector","Z vs global sector (DBCALPoint);global sector  (4 x module + sector);Z wrt target center (cm)",
 				       192, 0.5, 192.5, 300, -100, 500);
 	bcal_point_E_sector = new TH2I("bcal_point_E_sector","Energy vs global sector (DBCALPoint);global sector  (4 x module + sector);Energy  (GeV)",
 				       192, 0.5, 192.5, 200, Ehit_min, Ehit_max);

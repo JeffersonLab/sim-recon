@@ -168,7 +168,12 @@ jerror_t JEventProcessor_BCAL_LEDonline::init(void) {
 	bcal_fadc_digi_occ_layer3 = new TH1I("bcal_fadc_digi_occ_layer3","Occupancy in layer 3 (DBCALDigiHit);global sector  (4 x module + sector)",192, 0.5, 192.5);
 	bcal_fadc_digi_occ_layer4 = new TH1I("bcal_fadc_digi_occ_layer4","Occupancy in layer 4 (DBCALDigiHit);global sector  (4 x module + sector)",192, 0.5, 192.5);
 	// bcal_fadc_digi_nhits_chan = new TH1I("bcal_fadc_digi_nhits_chan","ADC hits per channel;hits per channel",5,-0.5,4.5);
-	bcal_fadc_digi_nhits_evnt = new TH1I("bcal_fadc_digi_nhits_evnt","ADC hits per event;hits per event",125,-0.5,124.5);
+	bcal_fadc_digi_nhits_evnt = new TH1I("bcal_fadc_digi_nhits_evnt","ADC hits per event;hits per event",200,0,0);
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
+	bcal_fadc_digi_nhits_evnt->SetCanExtend(TH1::kXaxis);
+#else
+	bcal_fadc_digi_nhits_evnt->SetBit(TH1::kCanRebin);
+#endif
 
 	bcal_fadc_digi_pedestal_vevent = new TProfile("bcal_fadc_digi_pedestal_vevent","Avg BCAL pedestal vs event;event num;pedestal (all chan avg)",200,0.0,10000.0);
 	bcal_fadc_digi_integral_vevent = new TProfile("bcal_fadc_digi_integral_vevent","Avg BCAL integral vs event;event num;integral (all chan avg)",200,0.0,10000.0);
