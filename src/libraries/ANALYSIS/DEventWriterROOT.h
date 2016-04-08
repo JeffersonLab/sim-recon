@@ -159,6 +159,10 @@ class DEventWriterROOT : public JObject
 		//keep track of the output files
 		deque<TFile*>& Get_OutputROOTFiles(void) const;
 
+		// When creating ROOT histograms, should still acquire JANA-wide ROOT lock (e.g. modifying gDirectory)
+		// This mutex is shared by every DEventWriterROOT object. This is used to control access to these static member functions. 
+		pthread_rwlock_t* dWriterLock;
+
 		/****************************************************************************************************************************************/
 
 		void Get_Reactions(jana::JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;

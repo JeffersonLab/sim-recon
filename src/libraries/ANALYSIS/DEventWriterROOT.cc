@@ -63,12 +63,17 @@ DEventWriterROOT::~DEventWriterROOT(void)
 	japp->RootUnLock();
 }
 
+// ALL must be external locks: all read, and read value may not be accurate otherwise
+
+// must be read/used entirely within writer lock
 int& DEventWriterROOT::Get_NumEventWriterThreads(void) const
 {
 	static int locNumEventWriterThreads = 0;
 	return locNumEventWriterThreads;
 }
 
+//store ttree itself rather than string: too late to change once it's created
+//once you have it, can release writer lock and retrieve file-lock. 
 string& DEventWriterROOT::Get_ThrownTreeFileName(void) const
 {
 	//static so that it's not a member: can be changed in a call to a const function //object is const when the user gets it
@@ -76,29 +81,54 @@ string& DEventWriterROOT::Get_ThrownTreeFileName(void) const
 	return locThrownTreeFileName;
 }
 
+//use writer-lock to get map for this tree (by reference!), then use file-lock to modify
 map<TTree*, map<string, TClonesArray*> >& DEventWriterROOT::Get_ClonesArrayMap(void) const
 {
 	static map<TTree*, map<string, TClonesArray*> > locClonesArrayMap;
 	return locClonesArrayMap;
 }
 
+//use writer-lock to get map for this tree (by reference!), then use file-lock to modify
 map<TTree*, map<string, TObject*> >& DEventWriterROOT::Get_TObjectMap(void) const
 {
 	static map<TTree*, map<string, TObject*> > locTObjectMap;
 	return locTObjectMap;
 }
 
+//use writer-lock to get map for this tree (by reference!), then use file-lock to modify
 map<TTree*, map<string, unsigned int> >& DEventWriterROOT::Get_FundamentalArraySizeMap(void) const
 {
 	static map<TTree*, map<string, unsigned int> > locFundamentalArraySizeMap;
 	return locFundamentalArraySizeMap;
 }
 
+// must be read/used entirely within writer lock
+	//only release lock AFTER TTree is created AND added to new TTree map
+//convert to map<string, TFile*> instead
 deque<TFile*>& DEventWriterROOT::Get_OutputROOTFiles(void) const
 {
 	static deque<TFile*> locOutputROOTFiles;
 	return locOutputROOTFiles;
 }
+
+//add static map<string, TTree*>: use writer-lock to get tree, then grab file-lock to modify
+
+//when creating:
+	//writer lock
+	//check for file/tree existence: create, register
+	//setup tree //must do HERE, else another thread may see an incomplete tree: no gap between creation -> registration -> setup
+	//release writer lock
+
+//when filling:
+	//writer-lock
+	//pre-get everything
+	//release writer lock
+	//acquire file-lock
+	//fill everything
+	//release file lock
+
+//memory maps: must hold onto them, pass them DIRECTLY through ALL functions, and into the header file fill functions
+	//create a struct to hold them, so they're easier to pass
 
 void DEventWriterROOT::Create_ThrownTree(string locOutputFileName) const
 {
