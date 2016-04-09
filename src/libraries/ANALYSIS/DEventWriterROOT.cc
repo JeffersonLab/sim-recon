@@ -228,27 +228,8 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	TTree* locTree = new TTree(locTreeName.c_str(), locTreeName.c_str());
 	locTreeMap.insert(pair<string, TTree*>(locTreeName, locTree));
 
-	//find the # particles of each pid
-	map<Particle_t, unsigned int> locParticleNumberMap;
-	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
-	{
-		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
-		deque<Particle_t> locFinalParticleIDs;
-		locReactionStep->Get_FinalParticleIDs(locFinalParticleIDs);
-		for(size_t loc_j = 0; loc_j < locFinalParticleIDs.size(); ++loc_j)
-		{
-			if(locReactionStep->Get_MissingParticleIndex() == int(loc_j)) //missing particle
-				continue;
-			Particle_t locPID = locFinalParticleIDs[loc_j];
-			if(locParticleNumberMap.find(locPID) == locParticleNumberMap.end())
-				locParticleNumberMap[locPID] = 1;
-			else
-				++locParticleNumberMap[locPID];
-		}
-	}
-
 	//fill maps
-	Create_UserInfoMaps(locTree, locReaction, locParticleNumberMap, locTargetCenterZ);
+	TMap* locPositionToNameMap = Create_UserInfoMaps(locTree, locReaction, locTargetCenterZ);
 
 /******************************************************************** Create Branches ********************************************************************/
 
@@ -276,13 +257,13 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	Create_Branches_ChargedHypotheses(locTree, locIsMCDataFlag);
 
 	//create branches for combos
-	Create_Branches_Combo(locTree, locReaction, locIsMCDataFlag, locParticleNumberMap);
+	Create_Branches_Combo(locTree, locReaction, locIsMCDataFlag, locPositionToNameMap);
 
 	//Custom branches
 	Create_CustomBranches_DataTree(locTree, locReaction, locIsMCDataFlag);
 }
 
-void DEventWriterROOT::Create_UserInfoMaps(TTree* locTree, const DReaction* locReaction, map<Particle_t, unsigned int>& locParticleNumberMap, double locTargetCenterZ) const
+TMap* DEventWriterROOT::Create_UserInfoMaps(TTree* locTree, const DReaction* locReaction, double locTargetCenterZ) const
 {
 	//kinfit type
 	DKinFitType locKinFitType = locReaction->Get_KinFitType();
@@ -321,9 +302,44 @@ void DEventWriterROOT::Create_UserInfoMaps(TTree* locTree, const DReaction* locR
 	locKinFitTypeStream << locKinFitType;
 	locMiscInfoMap->Add(new TObjString("KinFitType"), new TObjString(locKinFitTypeStream.str().c_str()));
 
-	map<Particle_t, unsigned int> locParticleNumberMap_Current;
+	//find the # particles of each pid
+	map<Particle_t, unsigned int> locParticleNumberMap;
+	map<Particle_t, unsigned int> locDecayingParticleNumberMap;
+	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+	{
+		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
+		deque<Particle_t> locFinalParticleIDs;
+		locReactionStep->Get_FinalParticleIDs(locFinalParticleIDs);
+		for(size_t loc_j = 0; loc_j < locFinalParticleIDs.size(); ++loc_j)
+		{
+			if(locReactionStep->Get_MissingParticleIndex() == int(loc_j)) //missing particle
+				continue;
+			Particle_t locPID = locFinalParticleIDs[loc_j];
+
+			//see if decays in a future step
+			int locDecayStepIndex = locReaction->Get_DecayStepIndex(loc_i, loc_j);
+			if(locDecayStepIndex >= 0) //decaying
+			{
+				if(locDecayingParticleNumberMap.find(locPID) == locDecayingParticleNumberMap.end())
+					locDecayingParticleNumberMap[locPID] = 1;
+				else
+					++locDecayingParticleNumberMap[locPID];
+			}
+			else //detected, not decaying
+			{
+				if(locParticleNumberMap.find(locPID) == locParticleNumberMap.end())
+					locParticleNumberMap[locPID] = 1;
+				else
+					++locParticleNumberMap[locPID];
+			}
+		}
+	}
+
+	//Create map objects
+	map<Particle_t, unsigned int> locParticleNumberMap_Current, locDecayingParticleNumberMap_Current;
 	Particle_t locTargetPID = Unknown;
 	TObjString *locObjString_PID, *locObjString_Position, *locObjString_ParticleName;
+	map<int, string> locDecayingParticleNames; //key is step index where they decay
 	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 	{
 		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
@@ -348,7 +364,10 @@ void DEventWriterROOT::Create_UserInfoMaps(TTree* locTree, const DReaction* locR
 			}
 			else //decaying particle
 			{
-				locParticleNameStream << "Decaying" << Convert_ToBranchName(ParticleType(locPID));
+				if(loc_i == 0)
+					locParticleNameStream << "Decaying" << Convert_ToBranchName(ParticleType(locPID));
+				else //name already created for final particle: use it
+					locParticleNameStream << locDecayingParticleNames[loc_i];
 				locObjString_ParticleName = new TObjString(locParticleNameStream.str().c_str());
 				if(loc_i == 0) //in first step
 				{
@@ -414,27 +433,34 @@ void DEventWriterROOT::Create_UserInfoMaps(TTree* locTree, const DReaction* locR
 				continue;
 			}
 
-			if(locParticleNumberMap_Current.find(locPID) == locParticleNumberMap_Current.end())
-				locParticleNumberMap_Current[locPID] = 1;
-			else
-				++locParticleNumberMap_Current[locPID];
-
+			//build name
+			ostringstream locParticleNameStream;
 			//see if decays in a future step
-			bool locDecaysFlag = false;
-			for(size_t loc_k = loc_i + 1; loc_k < locReaction->Get_NumReactionSteps(); ++loc_k)
+			int locDecayStepIndex = locReaction->Get_DecayStepIndex(loc_i, loc_j);
+			if(locDecayStepIndex >= 0) //decays
 			{
-				if(locReaction->Get_ReactionStep(loc_k)->Get_InitialParticleID() != locPID)
-					continue;
-				locDecaysFlag = true;
-				break;
+				if(locDecayingParticleNumberMap_Current.find(locPID) == locDecayingParticleNumberMap_Current.end())
+					locDecayingParticleNumberMap_Current[locPID] = 1;
+				else
+					++locDecayingParticleNumberMap_Current[locPID];
+
+				locParticleNameStream << "Decaying" << Convert_ToBranchName(ParticleType(locPID));
+				if(locDecayingParticleNumberMap[locPID] > 1)
+					locParticleNameStream << locDecayingParticleNumberMap_Current[locPID];
+				locDecayingParticleNames[locDecayStepIndex] = locParticleNameStream.str();
+			}
+			else
+			{
+				if(locParticleNumberMap_Current.find(locPID) == locParticleNumberMap_Current.end())
+					locParticleNumberMap_Current[locPID] = 1;
+				else
+					++locParticleNumberMap_Current[locPID];
+
+				locParticleNameStream << Convert_ToBranchName(ParticleType(locPID));
+				if(locParticleNumberMap[locPID] > 1)
+					locParticleNameStream << locParticleNumberMap_Current[locPID];
 			}
 
-			ostringstream locParticleNameStream;
-			if(locDecaysFlag)
-				locParticleNameStream << "Decaying";
-			locParticleNameStream << Convert_ToBranchName(ParticleType(locPID));
-			if(locParticleNumberMap[locPID] > 1)
-				locParticleNameStream << locParticleNumberMap_Current[locPID];
 			locObjString_ParticleName = new TObjString(locParticleNameStream.str().c_str());
 			locParticleNameList->AddLast(locObjString_ParticleName);
 
@@ -442,7 +468,7 @@ void DEventWriterROOT::Create_UserInfoMaps(TTree* locTree, const DReaction* locR
 			locNameToPositionMap->Add(locObjString_ParticleName, locObjString_Position);
 			locPositionToNameMap->Add(locObjString_Position, locObjString_ParticleName);
 			locNameToPIDMap->Add(locObjString_ParticleName, locObjString_PID);
-			if(locDecaysFlag)
+			if(locDecayStepIndex >= 0)
 			{
 				ostringstream locMassStream;
 				locMassStream << ParticleMass(locPID);
@@ -480,26 +506,17 @@ void DEventWriterROOT::Create_UserInfoMaps(TTree* locTree, const DReaction* locR
 		if(locStepAlreadySavedFlag)
 			continue;
 
-		//find the name of the decay parent
-		//first need to find what instance this pid is a decay parent
-		size_t locDecayParentInstance = 1;
-		for(size_t loc_j = 0; loc_j < loc_i; ++loc_j)
-		{
-			if(locReaction->Get_ReactionStep(loc_j)->Get_InitialParticleID() == locPID)
-				++locDecayParentInstance;
-		}
 		//construct the name 
 		ostringstream locParticleNameStream;
-		locParticleNameStream << "Decaying";
-		locParticleNameStream << Convert_ToBranchName(ParticleType(locPID));
-		if(locParticleNumberMap[locPID] > 1)
-			locParticleNameStream << locDecayParentInstance;
+		locParticleNameStream << locDecayingParticleNames[loc_i];
 		locObjString_ParticleName = new TObjString(locParticleNameStream.str().c_str());
 
 		TList* locDecayProductNames = NULL;
 		Get_DecayProductNames(locReaction, loc_i, locPositionToNameMap, locDecayProductNames, locSavedSteps);
 		locDecayProductMap->Add(locObjString_ParticleName, locDecayProductNames); //parent name string -> tobjarray of decay product name strings		
 	}
+
+	return locPositionToNameMap;
 }
 
 void DEventWriterROOT::Get_DecayProductNames(const DReaction* locReaction, size_t locReactionStepIndex, TMap* locPositionToNameMap, TList*& locDecayProductNames, deque<size_t>& locSavedSteps) const
@@ -513,20 +530,9 @@ void DEventWriterROOT::Get_DecayProductNames(const DReaction* locReaction, size_
 	locReactionStep->Get_FinalParticleIDs(locFinalParticleIDs);
 	for(size_t loc_j = 0; loc_j < locFinalParticleIDs.size(); ++loc_j)
 	{
-		Particle_t locPID = locFinalParticleIDs[loc_j];
-
-		//see if decays in a future step
-		bool locDecaysFlag = false;
-		for(size_t loc_k = locReactionStepIndex + 1; loc_k < locReaction->Get_NumReactionSteps(); ++loc_k)
-		{
-			if(locReaction->Get_ReactionStep(loc_k)->Get_InitialParticleID() != locPID)
-				continue;
-			locDecaysFlag = true;
-			break;
-		}
-
-		//save and continue if doesn't decay
-		if(!locDecaysFlag)
+		//see if decays in a future step //save and continue if doesn't decay
+		int locDecayStepIndex = locReaction->Get_DecayStepIndex(locReactionStepIndex, loc_j);
+		if(locDecayStepIndex < 0)
 		{
 			ostringstream locPositionStream;
 			locPositionStream << locReactionStepIndex << "_" << loc_j;
@@ -534,39 +540,8 @@ void DEventWriterROOT::Get_DecayProductNames(const DReaction* locReaction, size_
 			continue;
 		}
 
-		//decays: find step where it decays at
-		//first find what instance in the final state this particle is
-		size_t locFinalStateInstance = 1;
-		for(size_t loc_k = 0; loc_k < locReactionStepIndex; ++loc_k)
-		{
-			const DReactionStep* locNewReactionStep = locReaction->Get_ReactionStep(loc_k);
-			deque<Particle_t> locNewFinalParticleIDs;
-			locNewReactionStep->Get_FinalParticleIDs(locNewFinalParticleIDs);
-			for(size_t loc_l = 0; loc_l < locNewFinalParticleIDs.size(); ++loc_l)
-			{
-				if((loc_k == locReactionStepIndex) && (loc_l == loc_j))
-					break;
-				if(locNewFinalParticleIDs[loc_l] == locPID)
-					++locFinalStateInstance;
-			}
-		}
-
-		//next find the step index that this particle decays at
-		size_t locNewReactionStepIndex = 0;
-		size_t locInitialStateInstance = 0;
-		for(size_t loc_k = 0; loc_k < locReaction->Get_NumReactionSteps(); ++loc_k)
-		{
-			if(locReaction->Get_ReactionStep(loc_k)->Get_InitialParticleID() != locPID)
-				continue;
-			++locInitialStateInstance;
-			if(locInitialStateInstance != locFinalStateInstance)
-				continue;
-			locNewReactionStepIndex = loc_k;
-			break;
-		}
-
 		//add decay products
-		Get_DecayProductNames(locReaction, locNewReactionStepIndex, locPositionToNameMap, locDecayProductNames, locSavedSteps);
+		Get_DecayProductNames(locReaction, locDecayStepIndex, locPositionToNameMap, locDecayProductNames, locSavedSteps);
 	}
 
 	locSavedSteps.push_back(locReactionStepIndex);
@@ -743,7 +718,7 @@ void DEventWriterROOT::Create_Branches_NeutralHypotheses(TTree* locTree, bool lo
 	Create_Branch_FundamentalArray<Float_t>(locTree, locParticleBranchName, "PhotonRFDeltaTVar", locArraySizeString, dInitNumNeutralArraySize);
 }
 
-void DEventWriterROOT::Create_Branches_Combo(TTree* locTree, const DReaction* locReaction, bool locIsMCDataFlag, const map<Particle_t, unsigned int>& locParticleNumberMap) const
+void DEventWriterROOT::Create_Branches_Combo(TTree* locTree, const DReaction* locReaction, bool locIsMCDataFlag, TMap* locPositionToNameMap) const
 {
 	string locNumComboString = "NumCombos";
 	Create_Branch_Fundamental<UInt_t>(locTree, locNumComboString);
@@ -783,12 +758,16 @@ void DEventWriterROOT::Create_Branches_Combo(TTree* locTree, const DReaction* lo
 			Create_Branches_BeamComboParticle(locTree, locInitialPID, locKinFitType);
 		else //decaying
 		{
-			ostringstream locParticleNameStream;
-			locParticleNameStream << "Decaying" << Convert_ToBranchName(ParticleType(locInitialPID));
+			//get the branch name
+			ostringstream locPositionStream;
+			locPositionStream << loc_i << "_-1";
+			TObjString* locObjString = (TObjString*)locPositionToNameMap->GetValue(locPositionStream.str().c_str());
+			string locParticleBranchName = (const char*)(locObjString->GetString());
+
 			if(IsFixedMass(locInitialPID) && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
-				Create_Branch_ClonesArray(locTree, locParticleNameStream.str(), "P4_KinFit", "TLorentzVector", dInitNumComboArraySize);
+				Create_Branch_ClonesArray(locTree, locParticleBranchName, "P4_KinFit", "TLorentzVector", dInitNumComboArraySize);
 			if((loc_i == 0) || IsDetachedVertex(locInitialPID))
-				Create_Branch_ClonesArray(locTree, locParticleNameStream.str(), "X4", "TLorentzVector", dInitNumComboArraySize);
+				Create_Branch_ClonesArray(locTree, locParticleBranchName, "X4", "TLorentzVector", dInitNumComboArraySize);
 		}
 
 		//final particles
@@ -796,37 +775,30 @@ void DEventWriterROOT::Create_Branches_Combo(TTree* locTree, const DReaction* lo
 		locReactionStep->Get_FinalParticleIDs(locFinalParticleIDs);
 		for(size_t loc_j = 0; loc_j < locFinalParticleIDs.size(); ++loc_j)
 		{
-			Particle_t locPID = locFinalParticleIDs[loc_j];
-			//decaying particle
-			if(locReaction->Check_IsDecayingParticle(locPID, loc_i + 1))
-				continue;
+			int locDecayStepIndex = locReaction->Get_DecayStepIndex(loc_i, loc_j);
+			if(locDecayStepIndex >= 0)
+				continue; //decaying particle
+
+			//get the branch name
+			ostringstream locPositionStream;
+			locPositionStream << loc_i << "_" << loc_j;
+			TObjString* locObjString = (TObjString*)locPositionToNameMap->GetValue(locPositionStream.str().c_str());
+			string locParticleBranchName = (const char*)(locObjString->GetString());
 
 			//missing particle
 			if(locReactionStep->Get_MissingParticleIndex() == int(loc_j))
 			{
 				// missing particle
-				ostringstream locParticleNameStream;
-				locParticleNameStream << "Missing" << Convert_ToBranchName(ParticleType(locPID));
 				if((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit))
-					Create_Branch_ClonesArray(locTree, locParticleNameStream.str(), "P4_KinFit", "TLorentzVector", dInitNumComboArraySize);
+					Create_Branch_ClonesArray(locTree, locParticleBranchName, "P4_KinFit", "TLorentzVector", dInitNumComboArraySize);
 				continue;
 			}
 
-			//detected
-			if(locParticleNumberMap_Current.find(locPID) == locParticleNumberMap_Current.end())
-				locParticleNumberMap_Current[locPID] = 1;
-			else
-				++locParticleNumberMap_Current[locPID];
-
-			ostringstream locParticleNameStream;
-			locParticleNameStream << Convert_ToBranchName(ParticleType(locPID));
-			if(locParticleNumberMap.find(locPID)->second > 1)
-				locParticleNameStream << locParticleNumberMap_Current[locPID];
-
+			Particle_t locPID = locFinalParticleIDs[loc_j];
 			if(ParticleCharge(locPID) == 0)
-				Create_Branches_ComboNeutral(locTree, locParticleNameStream.str(), locKinFitType);
+				Create_Branches_ComboNeutral(locTree, locParticleBranchName, locKinFitType);
 			else
-				Create_Branches_ComboTrack(locTree, locParticleNameStream.str(), locKinFitType);
+				Create_Branches_ComboTrack(locTree, locParticleBranchName, locKinFitType);
 		}
 	}
 }
@@ -1756,7 +1728,12 @@ void DEventWriterROOT::Fill_ComboStepData(TTree* locTree, const DParticleCombo* 
 	}
 	else //decaying
 	{
-		string locParticleBranchName = string("Decaying") + Convert_ToBranchName(ParticleType(locInitialPID));
+		//get the branch name
+		ostringstream locPositionStream;
+		locPositionStream << locStepIndex << "_-1";
+		TObjString* locObjString = (TObjString*)locPositionToNameMap->GetValue(locPositionStream.str().c_str());
+		string locParticleBranchName = (const char*)(locObjString->GetString());
+
 		if((locStepIndex == 0) || IsDetachedVertex(locInitialPID))
 			Fill_ClonesData<TLorentzVector>(locTree, locParticleBranchName, "X4", locStepTX4, locComboIndex);
 		if(IsFixedMass(locInitialPID) && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
@@ -1786,10 +1763,15 @@ void DEventWriterROOT::Fill_ComboStepData(TTree* locTree, const DParticleCombo* 
 		if(locParticleComboStep->Is_FinalParticleDecaying(loc_i))
 			continue;
 
+		//get the branch name
+		ostringstream locPositionStream;
+		locPositionStream << locStepIndex << "_" << loc_i;
+		TObjString* locObjString = (TObjString*)locPositionToNameMap->GetValue(locPositionStream.str().c_str());
+		string locParticleBranchName = (const char*)(locObjString->GetString());
+
 		//missing particle
 		if(locParticleComboStep->Is_FinalParticleMissing(loc_i))
 		{
-			string locParticleBranchName = string("Missing") + Convert_ToBranchName(ParticleType(locPID));
 			if((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit))
 			{
 				TLorentzVector locMissingP4;
@@ -1807,12 +1789,6 @@ void DEventWriterROOT::Fill_ComboStepData(TTree* locTree, const DParticleCombo* 
 			}
 			continue;
 		}
-
-		//get the branch name
-		ostringstream locPositionStream;
-		locPositionStream << locStepIndex << "_" << loc_i;
-		TObjString* locObjString = (TObjString*)locPositionToNameMap->GetValue(locPositionStream.str().c_str());
-		string locParticleBranchName = (const char*)(locObjString->GetString());
 
 		//fill the data
 		if(ParticleCharge(locPID) == 0)

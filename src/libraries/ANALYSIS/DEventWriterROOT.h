@@ -167,7 +167,7 @@ class DEventWriterROOT : public JObject
 
 		//TREE CREATION:
 		void Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag, double locTargetCenterZ) const;
-		void Create_UserInfoMaps(TTree* locTree, const DReaction* locReaction, map<Particle_t, unsigned int>& locParticleNumberMap, double locTargetCenterZ) const;
+		TMap* Create_UserInfoMaps(TTree* locTree, const DReaction* locReaction, double locTargetCenterZ) const;
 		void Create_UserTargetInfo(TTree* locTree, Particle_t locTargetPID, double locTargetCenterZ) const;
 		void Create_Branches_Thrown(TTree* locTree, bool locIsOnlyThrownFlag) const;
 
@@ -178,7 +178,8 @@ class DEventWriterROOT : public JObject
 		void Create_Branches_ChargedHypotheses(TTree* locTree, bool locIsMCDataFlag) const;
 
 		//TREE CREATION: COMBO INFO
-		void Create_Branches_Combo(TTree* locTree, const DReaction* locReaction, bool locIsMCDataFlag, const map<Particle_t, unsigned int>& locParticleNumberMap) const;
+			//TMap is locPositionToNameMap
+		void Create_Branches_Combo(TTree* locTree, const DReaction* locReaction, bool locIsMCDataFlag, TMap* locPositionToNameMap) const;
 		void Create_Branches_BeamComboParticle(TTree* locTree, Particle_t locBeamPID, DKinFitType locKinFitType) const;
 		void Create_Branches_ComboTrack(TTree* locTree, string locParticleBranchName, DKinFitType locKinFitType) const;
 		void Create_Branches_ComboNeutral(TTree* locTree, string locParticleBranchName, DKinFitType locKinFitType) const;
