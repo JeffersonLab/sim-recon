@@ -94,6 +94,9 @@ void Fill1DHistogram (const char * plugin, const char * directoryName, const cha
             pthread_rwlock_t *histogramLock = new pthread_rwlock_t();
             pthread_rwlock_init(histogramLock, NULL);
             // Get the ROOT lock and create the histogram
+            // WARNING: Locking inside a lock is bad practice, but sometimes not easy to avoid.
+            // there would be a problem if there was another function that tried to grab the map lock
+            // inside a root lock. In this code, this will not happen.
             japp->RootWriteLock();
             TDirectory *homedir = gDirectory;
             TDirectory *temp;
@@ -156,6 +159,9 @@ void Fill2DHistogram (const char * plugin, const char * directoryName, const cha
             pthread_rwlock_init(histogramLock, NULL);
 
             // Get the ROOT lock and create the histogram
+            // WARNING: Locking inside a lock is bad practice, but sometimes not easy to avoid.
+            // there would be a problem if there was another function that tried to grab the map lock
+            // inside a root lock. In this code, this will not happen.
             japp->RootWriteLock();
             TDirectory *homedir = gDirectory;
             TDirectory *temp;
@@ -217,6 +223,9 @@ void Fill1DProfile (const char * plugin, const char * directoryName, const char 
             pthread_rwlock_init(profileLock, NULL);
 
             // Get the ROOT lock and create the histogram
+            // WARNING: Locking inside a lock is bad practice, but sometimes not easy to avoid.
+            // there would be a problem if there was another function that tried to grab the map lock
+            // inside a root lock. In this code, this will not happen.
             japp->RootWriteLock();// Get the ROOT lock and create the histogram
             TDirectory *homedir = gDirectory;
             TDirectory *temp;
@@ -277,6 +286,9 @@ void Fill2DProfile (const char * plugin, const char * directoryName, const char 
             pthread_rwlock_init(profileLock, NULL);
 
             // Get the ROOT lock and create the histogram
+            // WARNING: Locking inside a lock is bad practice, but sometimes not easy to avoid. 
+            // there would be a problem if there was another function that tried to grab the map lock 
+            // inside a root lock. In this code, this will not happen. 
             japp->RootWriteLock();
             TDirectory *homedir = gDirectory;
             TDirectory *temp;
@@ -309,12 +321,12 @@ void Fill2DProfile (const char * plugin, const char * directoryName, const char 
 }
 
 void SortDirectories(){
+    japp->RootWriteLock();
     for (unsigned int i=0; i < GetAllDirectories().size(); i++){
         if (GetAllDirectories()[i] == 0) continue;
-        japp->RootWriteLock();
         GetAllDirectories()[i]->GetList()->Sort();
-        japp->RootUnLock();
     }
+    japp->RootUnLock();
 }
 
 #endif
