@@ -2,13 +2,6 @@
 //
 // Created June 22, 2005  David Lawrence
 
-
-// The following flag can be used to switch from the classic mode where
-// the event loop is implemented in main() to a JANA based event-loop.
-// NOTE:  for consistency, one should set the value of #define JANA_ENABLED
-// in smear.cc to the same value!
-#define USE_JANA 1
-
 #include <iostream>
 #include <iomanip>
 using namespace std;
@@ -21,7 +14,6 @@ using namespace std;
 #include <signal.h>
 #include <time.h>
 
-#if USE_JANA
 #include <DANA/DApplication.h>
 #include "MyProcessor.h"
 #include "JFactoryGenerator_ThreadCancelHandler.h"
@@ -30,7 +22,6 @@ using namespace std;
 //#include <FDC/DFDCWire.h>
 #include <HDGEOMETRY/DGeometry.h>
 
-#endif
 
 #include "units.h"
 #include "HDDM/hddm_s.hpp"
@@ -142,26 +133,11 @@ double TRIGGER_LOOKBACK_TIME = -100; // ns
 
 bool DROP_TRUTH_HITS=false;
 
-// CDC geometry parameters (for noise)
-vector<unsigned int> NCDC_STRAWS;
-vector<double> CDC_RING_RADIUS;
-
-// FDC geometry and rate parameters (for noise)
-vector<double> FDC_LAYER_Z;
-double FDC_RATE_COEFFICIENT;
-
 using namespace jana;
 
 // histogram
 pthread_mutex_t root_mutex = PTHREAD_MUTEX_INITIALIZER;
-TH2F *fdc_drift_time_smear_hist = NULL;
-TH2F *fdc_drift_dist_smear_hist = NULL;
-TH2F *fdc_drift_time = NULL;
-TH1F *fdc_cathode_charge = NULL;
-TH2F *cdc_drift_time = NULL;
-TH1F *cdc_charge = NULL;
-TH1F *fdc_anode_mult = NULL;
-TH2F *cdc_drift_smear = NULL;
+
 
 //-----------
 // main
@@ -190,7 +166,6 @@ int main(int narg,char* argv[])
 //-----------
 void ParseCommandLineArguments(int narg, char* argv[])
 {
-   bool warn_obsolete = false;
 
   for (int i=1; i<narg; i++) {
     char *ptr = argv[i];
@@ -199,7 +174,6 @@ void ParseCommandLineArguments(int narg, char* argv[])
       switch(ptr[1]) {
       case 'h': Usage();                                   break;
       case 'o': OUTFILENAME = strdup(&ptr[2]);             break;
-      case 'n': warn_obsolete=true;                        break;
       case 'N': ADD_NOISE=true;                            break;
       case 's': SMEAR_HITS=false;                          break;
       case 'i': IGNORE_SEEDS=true;                         break;
@@ -235,16 +209,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
       cout << endl << "You must enter a filename!" << endl << endl;
       Usage();
    }
-   
-   if (warn_obsolete) {
-      cout << endl;
-      cout << "WARNING: Use of the \"-n\" option is obsolete. Random noise"
-           << endl;
-      cout << "         hits are disabled by default now. To turn them back"
-           << endl;
-      cout << "         on use the \"-N\" option." << endl;
-      cout << endl;
-   }
+  
    
    // Generate output filename based on input filename
    if (OUTFILENAME == NULL) {
@@ -259,11 +224,6 @@ void ParseCommandLineArguments(int narg, char* argv[])
       free(pdup);
    }
    
-   cout << "BCAL values will " <<  (SMEAR_BCAL ? "":"not")  << " be smeared"
-
-        << endl;
-   cout << "BCAL values will " <<  (SMEAR_BCAL ? "":"not")  << " be added"
-        << endl;
 }
 
 
@@ -284,7 +244,6 @@ void Usage(void)
    cout << endl;
    cout << "  options:" << endl;
    cout << "    -ofname  Write output to a file named \"fname\" (default auto-generate name)" << endl;
-   cout << "    -N       Add random background hits to CDC and FDC (default is not to add)" << endl;
    cout << "    -s       Don't smear real hits (see -B for BCAL, default is to smear)" << endl;
    cout << "    -i       Ignore random number seeds found in input HDDM file" << endl;
    cout << "    -r\"s1 s2 s3\" Set initial random number seeds" << endl;
@@ -332,13 +291,3 @@ void Usage(void)
    exit(0);
 }
 
-#if ! USE_JANA
-//-----------------------------------------------------------------
-// ctrlCHandleMCSmear
-//-----------------------------------------------------------------
-void ctrlCHandleMCSmear(int x)
-{
-   QUIT++;
-   cerr << endl << "SIGINT received (" << QUIT << ")....." << endl;
-}
-#endif

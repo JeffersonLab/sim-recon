@@ -170,14 +170,6 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
 			//int cell_id = GetCalibIndex(module,layer,sector);
 
 			vector<double> new_params(3,0.);
-			//attenuation_parameters[cell_id][0] = in_atten_parameters[channel][0];
-			//attenuation_parameters[cell_id][1] = in_atten_parameters[channel][1];
-			//attenuation_parameters[cell_id][2] = in_atten_parameters[channel][2];
-			// hack to workaround odd CCDB behavior
-			//attenuation_parameters[cell_id][0] = in_atten_parameters[channel][1];
-			//attenuation_parameters[cell_id][1] = in_atten_parameters[channel][2];
-			//attenuation_parameters[cell_id][2] = in_atten_parameters[channel][0];
-			 
 			new_params[0] = in_atten_parameters[channel][0];
 			new_params[1] = in_atten_parameters[channel][1];
 			new_params[2] = in_atten_parameters[channel][2];
@@ -269,44 +261,6 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
 
    }
 
-   // hist file
-   fdc_drift_time_smear_hist=new TH2F("fdc_drift_time_smear_hist","Drift time smearing for FDC",
-                  300,0.0,0.6,400,-200,200);
-   fdc_drift_dist_smear_hist=new TH2F("fdc_drift_dist_smear_hist","Drift distance smearing for FDC",
-                  100,0.0,0.6,400,-0.5,0.5);
-   double tmax=TRIGGER_LOOKBACK_TIME+FDC_TIME_WINDOW;
-   int num_time_bins=int(FDC_TIME_WINDOW);
-   fdc_drift_time=new TH2F("fdc_drift_time","FDC drift distance vs. time",num_time_bins,TRIGGER_LOOKBACK_TIME,tmax,100,0,1.);
-   
-   fdc_anode_mult = new TH1F("fdc_anode_mult","wire hit multiplicity",20,-0.5,19.5);
-   fdc_cathode_charge = new TH1F("fdc_cathode_charge","charge on strips",1000,0,1000);
-
-   tmax=TRIGGER_LOOKBACK_TIME+CDC_TIME_WINDOW;
-   num_time_bins=int(CDC_TIME_WINDOW);
-   cdc_drift_time = new TH2F("cdc_drift_time","CDC drift distance vs time",num_time_bins,TRIGGER_LOOKBACK_TIME,tmax,80,0.,0.8);
-
-   cdc_drift_smear = new TH2F("cdc_drift_smear","CDC drift smearing",
-               100,0.0,800.0,100,-0.1,0.1);
-   
-   cdc_charge  = new TH1F("cdc_charge","Measured charge in straw",1000,-10e3,40e3);
-
-   // Get number of cdc wires per ring and the radii of each ring
-   vector<vector<DCDCWire *> >cdcwires;
-   dgeom->GetCDCWires(cdcwires);
-   for (unsigned int i=0;i<cdcwires.size();i++) {
-      NCDC_STRAWS.push_back(cdcwires[i].size());
-      CDC_RING_RADIUS.push_back(cdcwires[i][0]->origin.Perp());
-   }  
-   // Get the FDC z positions for the wire planes
-   dgeom->GetFDCZ(FDC_LAYER_Z);
-
-   // Coefficient used to calculate FDCsingle wire rate. We calculate
-   // it once here just to save calculating it for every wire in every event
-   FDC_RATE_COEFFICIENT = exp(-log(4.0)/23.0)/2.0/log(24.0)*FDC_TIME_WINDOW/1000.0E-9;
-   
-   // Something is a little off in my calculation above so I scale it down via
-   // an emprical factor:
-   FDC_RATE_COEFFICIENT *= 0.353;
 
 	return NOERROR;
 }

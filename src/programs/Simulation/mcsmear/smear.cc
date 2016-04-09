@@ -70,7 +70,6 @@ double CCAL_BLOCK_THRESHOLD = 20.0*k_MeV;
 
 
 
-
 // Polynomial interpolation on a grid.
 // Adapted from Numerical Recipes in C (2nd Edition), pp. 121-122.
 void polint(float *xa, float *ya,int n,float x, float *y,float *dy){
@@ -119,12 +118,11 @@ void polint(float *xa, float *ya,int n,float x, float *y,float *dy){
 //-----------
 void Smear(hddm_s::HDDM *record)
 {
-   GetAndSetSeeds(record);
+    GetAndSetSeeds(record);
 
-   if (SMEAR_HITS) {
-      SmearCDC(record);
-      SmearFDC(record);
-      SmearFCAL(record);
+	SmearCDC(record);
+    SmearFDC(record);
+    SmearFCAL(record);
       SmearCCAL(record);
       SmearTOF(record);
       SmearSTC(record);
@@ -134,12 +132,7 @@ void Smear(hddm_s::HDDM *record)
       SmearPS(record);
       SmearPSC(record);
       SmearFMWPC(record);
-   }
-   if (ADD_NOISE) {
-      AddNoiseHitsCDC(record);
-      AddNoiseHitsFDC(record);
-   }
-   if (SMEAR_BCAL)
+
       SmearBCAL(record);
 }
 
@@ -237,7 +230,7 @@ void SmearCDC(hddm_s::HDDM *record)
    /// objects will be replaced.
 
    double t_max = TRIGGER_LOOKBACK_TIME + CDC_TIME_WINDOW;
-   double threshold = CDC_THRESHOLD_FACTOR * CDC_PEDESTAL_SIGMA; // for sparcification
+   double threshold = CDC_THRESHOLD_FACTOR * CDC_PEDESTAL_SIGMA; // for sparsification
 
    // Loop over all cdcStraw tags
    hddm_s::CdcStrawList straws = record->getCdcStraws();
@@ -287,75 +280,6 @@ void SmearCDC(hddm_s::HDDM *record)
    }
 }
 
-//-----------
-// AddNoiseHitsCDC
-//-----------
-void AddNoiseHitsCDC(hddm_s::HDDM *record)
-{
-   // Calculate the number of noise hits for each straw and store
-   // them in a sparse map, then copy into the output hddm record.
-   //
-   // The straw rates are obtained using a parameterization done
-   // to calculate the event size for the August 29, 2007 online
-   // meeting. This parameterization is almost already obsolete.
-   // 10/12/2007 D. L.
-
-   vector<int> Nstraw_hits;
-   vector<int> straw_number;
-   vector<int> ring_number;
-   int Nnoise_straws = 0;
-   int Nnoise_hits = 0;
-   for(unsigned int ring=1; ring <= NCDC_STRAWS.size(); ring++){
-      double p[2] = {10.4705, -0.103046};
-      double r_prime = (double)(ring+3);
-      double N = exp(p[0] + r_prime*p[1]);
-      N *= CDC_TIME_WINDOW;
-      for (unsigned int straw=1; straw<=NCDC_STRAWS[ring-1]; straw++) {
-         // Indivdual straw rates should be way less than 1/event so
-         // we just use the rate as a probablity.
-         double Nhits = SampleRange(0.0, 1.0)<N ? 1.0:0.0;
-         if(Nhits<1.0)continue;
-         int iNhits = (int)floor(Nhits);
-         Nstraw_hits.push_back(iNhits);
-         straw_number.push_back(straw);
-         ring_number.push_back(ring);
-         Nnoise_straws++;
-         Nnoise_hits+=iNhits;
-      }
-   }
-
-   double t_max = TRIGGER_LOOKBACK_TIME + CDC_TIME_WINDOW;
-   double threshold = CDC_THRESHOLD_FACTOR * CDC_PEDESTAL_SIGMA; // for sparcification
-   
-   // Loop over straws with noise hits
-   hddm_s::CentralDCList cdc = record->getCentralDCs();
-   hddm_s::CdcStrawList straws = record->getCdcStraws();
-   for (unsigned int j=0; j < Nstraw_hits.size(); j++) {
-      hddm_s::CdcStrawList::iterator iter;
-      for (iter = straws.begin(); iter != straws.end(); ++iter) {
-         if (iter->getRing() == ring_number[j] &&
-             iter->getStraw() == straw_number[j])
-            break;
-      }
-      if (iter == straws.end()) {
-         if (cdc.size() == 0)
-            cdc = record->getHitViews().begin()->addCentralDCs();
-         iter = cdc().addCdcStraws().begin();
-         iter->setRing(ring_number[j]);
-         iter->setStraw(straw_number[j]);
-      }
-      for (int k=0; k < Nstraw_hits[j]; k++) {
-         double q = SampleGaussian(CDC_PEDESTAL_SIGMA);
-         if (q > threshold) {
-            hddm_s::CdcStrawHitList hits = iter->addCdcStrawHits();
-            hits().setQ(q);
-            hits().setT(SampleRange(TRIGGER_LOOKBACK_TIME,t_max));
-            cdc_charge->Fill(hits().getQ());   
-            cdc_drift_time->Fill(hits().getT(), 0.);
-         }
-      }
-   }
-}
 
 //-----------
 // SmearFDC
@@ -370,7 +294,7 @@ void SmearFDC(hddm_s::HDDM *record)
       FDC_PED_NOISE *= 7.0; // empirical  4/29/2009 DL
 
    double t_max = TRIGGER_LOOKBACK_TIME + FDC_TIME_WINDOW;
-   double threshold = FDC_THRESHOLD_FACTOR * FDC_PED_NOISE; // for sparcification
+   double threshold = FDC_THRESHOLD_FACTOR * FDC_PED_NOISE; // for sparsification
 
    hddm_s::FdcChamberList chambers = record->getFdcChambers();
    hddm_s::FdcChamberList::iterator iter;
@@ -436,108 +360,6 @@ void SmearFDC(hddm_s::HDDM *record)
 }
 
 //-----------
-// AddNoiseHitsFDC
-//-----------
-void AddNoiseHitsFDC(hddm_s::HDDM *record)
-{
-   // Calculate the number of noise hits for each FDC wire and store
-   // them in a sparse map.
-   //
-   // We do this using the individual wire rates to calculate the probability
-   // of the wire firing for a single event. For the FDC, we calculate the
-   // wire rates as a function of both wire number (distance from beam line)
-   // and layer (position in z). We want a roughly 1/r distribution in the
-   // radial direction and a roughly exponential rise in rate in the
-   // +z direction.
-   //
-   // The wire rates are obtained using a parameterization done
-   // to calculate the event size for the August 29, 2007 online
-   // meeting. This parameterization is almost already obsolete.
-   // In rough terms, the layer rate (integrated over all wires)
-   // is about 1 MHz. For a 24 layer chamber with a 1us time window,
-   // we should have approximately 24 background hits per event.
-   // 11/9/2007 D. L.
-   //
-   // Note by RTJ: Where are the noise hits in the FDC cathode strips??
-   // From the Ncathode_hits vector, it seems that this was originally
-   // intended to be added, once the wire noise model is validated.
-   // The FDC noise algorithm represented below is incomplete.
-  
-   vector<int> Nwire_hits;
-   vector<int> Ncathode_hits;
-   vector<int> wire_number;
-   vector<int> layer_number;
-   int Nnoise_wires = 0;
-   int Nnoise_hits = 0;
-   for (unsigned int layer=1; layer <= FDC_LAYER_Z.size(); layer++) {
-      double No = FDC_RATE_COEFFICIENT*exp((double)layer*log(4.0)/24.0);
-      for (unsigned int wire=1; wire <= 96; wire++) {
-         double rwire = fabs(96.0/2.0 - (double)wire);
-         double N = No*log((rwire+0.5)/(rwire-0.5));
-
-         // Indivdual wire rates should be way less than 1/event so
-         // we just use the rate as a probablity.
-         double Nhits = (SampleRange(0.0, 1.0) < N)? 1.0 : 0.0;
-         if (Nhits < 1.0)
-            continue;
-         int iNhits = (int)floor(Nhits);
-         Nwire_hits.push_back(iNhits);
-         wire_number.push_back(wire);
-         layer_number.push_back(layer);
-         Nnoise_wires++;
-         Nnoise_hits+=iNhits;
-      }
-   }
-
-   double t_max = TRIGGER_LOOKBACK_TIME + FDC_TIME_WINDOW;
-   //double threshold = FDC_THRESHOLD_FACTOR * FDC_PED_NOISE; // for sparcification
-
-   hddm_s::ForwardDCList fdc = record->getForwardDCs();
-   hddm_s::FdcCathodeStripList strips = record->getFdcCathodeStrips();
-
-   // Loop over wires with noise hits
-   for (unsigned int j=0; j < Nwire_hits.size(); j++) {
-      hddm_s::FdcAnodeWireList wires = record->getFdcAnodeWires();
-      hddm_s::FdcAnodeWireList::iterator witer;
-      for (witer = wires.begin(); witer != wires.end(); ++witer) {
-         int layerId = witer->getLayer() + (witer->getModule() - 1)*8;
-         if (layer_number[j] == layerId && wire_number[j] == witer->getWire())
-            break;
-      }
-      if (witer == wires.end()) {
-         if (fdc.size() == 0)
-            fdc = record->getHitViews().begin()->addForwardDCs();
-         hddm_s::FdcChamberList chambers = record->getFdcChambers();
-         hddm_s::FdcChamberList::iterator citer;
-         for (citer = chambers.begin(); citer != chambers.end(); ++citer) {
-            int layerId = witer->getLayer() + (witer->getModule() - 1)*8;
-            if (layer_number[j] == layerId)
-               break;
-         }
-         if (citer == chambers.end()) {
-            citer = fdc().addFdcChambers().begin();
-            citer->setModule((layer_number[j] - 1)/3 + 1);
-            citer->setLayer((layer_number[j] - 1)%3 + 1);
-         }
-         witer = citer->addFdcAnodeWires().begin();
-         witer->setWire(wire_number[j]);
-      }
-
-      double dEsigma=FDC_THRESH_KEV/FDC_THRESHOLD_FACTOR;
-      for (int k=0; k < Nwire_hits[j]; k++) {
-         // Simulated random hit as pedestal noise 
-         double dE = SampleGaussian(dEsigma);
-         if (dE > FDC_THRESH_KEV) {
-            hddm_s::FdcAnodeHitList hits = witer->addFdcAnodeHits();
-            hits().setDE(dE); // what should this be?
-            hits().setT(SampleRange(TRIGGER_LOOKBACK_TIME, t_max));
-            fdc_drift_time->Fill(hits().getT(), 0.);
-         }
-      }
-   }
-}
-
-//-----------
 // SmearFCAL
 //-----------
 void SmearFCAL(hddm_s::HDDM *record)
@@ -573,7 +395,7 @@ void SmearFCAL(hddm_s::HDDM *record)
          double sigma = FCAL_PHOT_STAT_COEF/sqrt(titer->getE());
          double E = titer->getE() * (1.0 + SampleGaussian(sigma));
          // Smear the time by 200 ps (fixed for now) 7/2/2009 DL
-         double t = titer->getT() + SampleGaussian(200.0e-3);
+         double t = titer->getT() + SampleGaussian(200.0e-3);  // FIX THIS
          // Apply a single block threshold. 
          if (E >= FCAL_BLOCK_THRESHOLD) {
             hddm_s::FcalHitList hits = iter->addFcalHits();
