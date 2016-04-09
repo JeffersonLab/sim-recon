@@ -67,7 +67,7 @@ class DEventWriterROOT : public JObject
 		virtual void Fill_CustomBranches_DataTree(TTree* locTree, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
 				const DMCThrownMatching* locMCThrownMatching, const DDetectorMatches* locDetectorMatches,
 				const vector<const DBeamPhoton*>& locBeamPhotons, const vector<const DChargedTrackHypothesis*>& locChargedHypos,
-				const vector<const DNeutralParticle*>& locNeutralParticles, const deque<const DParticleCombo*>& locParticleCombos) const{};
+				const vector<const DNeutralParticleHypothesis*>& locNeutralHypos, const deque<const DParticleCombo*>& locParticleCombos) const{};
 
 		//UTILITY FUNCTIONS
 		string Convert_ToBranchName(string locInputName) const;
@@ -195,6 +195,10 @@ class DEventWriterROOT : public JObject
 				const DMCThrownMatching* locMCThrownMatching, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
 		void Fill_ThrownParticleData(TTree* locTree, unsigned int locArrayIndex, const DMCThrown* locMCThrown, const map<const DMCThrown*, unsigned int>& locThrownIndexMap,
 				const DMCThrownMatching* locMCThrownMatching, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
+
+		//TREE FILLING: GET HYPOTHESES
+		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs) const;
+		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs) const;
 
 		//TREE FILLING: INDEPENDENT PARTICLES
 		void Fill_BeamData(TTree* locTree, unsigned int locArrayIndex, const DBeamPhoton* locBeamPhoton, const DVertex* locVertex, const DMCThrownMatching* locMCThrownMatching) const;
