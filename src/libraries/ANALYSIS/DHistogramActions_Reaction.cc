@@ -512,7 +512,7 @@ void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop
 	deque<deque<Particle_t> > locDetectedChargedPIDs_HasDupes;
 	Get_Reaction()->Get_DetectedFinalPIDs(locDetectedChargedPIDs_HasDupes, 1, true);
 
-	string locHistName, locHistTitle, locStepName, locStepROOTName, locParticleName, locParticleROOTName;
+	string locHistName, locHistTitle, locStepROOTName, locParticleName, locParticleROOTName;
 	Particle_t locPID, locHigherMassPID, locLowerMassPID;
 	string locHigherMassParticleName, locLowerMassParticleName, locHigherMassParticleROOTName, locLowerMassParticleROOTName;
 
@@ -540,9 +540,10 @@ void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop
 				continue;
 
 			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
-			locStepName = locReactionStep->Get_StepName();
+			ostringstream locStepName;
+			locStepName << "Step" << loc_i << "__" << locReactionStep->Get_StepName();
 			locStepROOTName = locReactionStep->Get_StepROOTName();
-			CreateAndChangeTo_Directory(locStepName, locStepName);
+			CreateAndChangeTo_Directory(locStepName.str(), locStepName.str());
 
 			// Max Track DeltaZ
 			locHistName = "MaxTrackDeltaZ";
@@ -753,7 +754,7 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 	vector<const DParticleID*> locParticleIDs;
 	locEventLoop->Get(locParticleIDs);
 
-	string locHistName, locHistTitle, locStepName, locStepROOTName, locParticleName, locParticleROOTName;
+	string locHistName, locHistTitle, locStepROOTName, locParticleName, locParticleROOTName;
 	Particle_t locPID;
 
 	size_t locNumSteps = Get_Reaction()->Get_NumReactionSteps();
@@ -853,7 +854,8 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 		for(size_t loc_i = 0; loc_i < locNumSteps; ++loc_i)
 		{
 			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
-			locStepName = locReactionStep->Get_StepName();
+			ostringstream locStepName;
+			locStepName << "Step" << loc_i << "__" << locReactionStep->Get_StepName();
 			locStepROOTName = locReactionStep->Get_StepROOTName();
 
 			Particle_t locInitialPID = locReactionStep->Get_InitialParticleID();
@@ -879,7 +881,7 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 
 				if(!locDirectoryCreatedFlag)
 				{
-					CreateAndChangeTo_Directory(locStepName, locStepName);
+					CreateAndChangeTo_Directory(locStepName.str(), locStepName.str());
 					locDirectoryCreatedFlag = true;
 				}
 
@@ -945,7 +947,7 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 			{
 				if(!locDirectoryCreatedFlag)
 				{
-					CreateAndChangeTo_Directory(locStepName, locStepName);
+					CreateAndChangeTo_Directory(locStepName.str(), locStepName.str());
 					locDirectoryCreatedFlag = true;
 				}
 
@@ -967,7 +969,7 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 			{
 				if(!locDirectoryCreatedFlag)
 				{
-					CreateAndChangeTo_Directory(locStepName, locStepName);
+					CreateAndChangeTo_Directory(locStepName.str(), locStepName.str());
 					locDirectoryCreatedFlag = true;
 				}
 
@@ -1637,7 +1639,8 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 		for(size_t loc_i = 0; loc_i < Get_Reaction()->Get_NumReactionSteps(); ++loc_i)
 		{
 			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
-			string locStepName = locReactionStep->Get_StepName();
+			ostringstream locStepName;
+			locStepName << "Step" << loc_i << "__" << locReactionStep->Get_StepName();
 			string locStepROOTName = locReactionStep->Get_StepROOTName();
 
 			deque<Particle_t> locPIDs;
@@ -1715,7 +1718,7 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 					continue; //vertex-only fit: neutral shower does not constrain: no pulls
 
 				if(locPIDSet.empty()) //first call
-					CreateAndChangeTo_Directory(locStepName, locStepName);
+					CreateAndChangeTo_Directory(locStepName.str(), locStepName.str());
 
 				string locParticleName = ParticleType(locPID);
 				CreateAndChangeTo_Directory(locParticleName, locParticleName);
