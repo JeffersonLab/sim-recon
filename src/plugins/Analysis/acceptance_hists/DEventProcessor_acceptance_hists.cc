@@ -110,102 +110,108 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, uint64_t event
 	loop->Get(mcthrowns);
 	loop->Get(mctrackhits);	
 	
-	// Count FDC anode hits
-	double Nfdc_anode = 0.0;
-	vector<const DFDCHit*> fdchits;
-	loop->Get(fdchits);
-	for(unsigned int i=0; i<fdchits.size(); i++){
-		if(fdchits[i]->type==0){
-			Nfdc_anode+=1.0;
-			
-			FDC_anode_hits_per_layer->Fill(DFDCGeometry::gLayer(fdchits[i]));
-			FDC_anode_hits_per_wire->Fill(fdchits[i]->element);
-		}
-	}
-	FDC_anode_hits_per_event->Fill(Nfdc_anode);
-	
 	// Count CDC hits
 	double Ncdc_anode = 0.0;
 	vector<const DCDCTrackHit*> cdctrackhits;
 	loop->Get(cdctrackhits);
 	Ncdc_anode = (double)cdctrackhits.size();
+
+	// Count FDC anode hits
+	double Nfdc_anode = 0.0;
+	vector<const DFDCHit*> fdchits;
+	loop->Get(fdchits);
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+	{
+		for(unsigned int i=0; i<fdchits.size(); i++){
+			if(fdchits[i]->type==0){
+				Nfdc_anode+=1.0;
+
+				FDC_anode_hits_per_layer->Fill(DFDCGeometry::gLayer(fdchits[i]));
+				FDC_anode_hits_per_wire->Fill(fdchits[i]->element);
+			}
+		}
+		FDC_anode_hits_per_event->Fill(Nfdc_anode);
+
+		// Loop over thrown tracks
+		for(unsigned int i=0;i<mcthrowns.size();i++){
+			const DMCThrown *mcthrown = mcthrowns[i];
+			
+			if(mcthrown->charge() != 0.0){
+				thrown_charged->Fill(mcthrown->momentum().Mag(), mcthrown->momentum().Theta()*57.3);
+			}else if(mcthrown->type == 1){
+				thrown_photon->Fill(mcthrown->momentum().Mag(), mcthrown->momentum().Theta()*57.3);
+			}
+		}
+
+		// Loop over track hits
+		map<int,int> cdchits;
+		map<int,int> fdchitmap;
+		map<int,int> bcalhits;
+		for(unsigned int i=0;i<mctrackhits.size();i++){
+			const DMCTrackHit *mctrackhit = mctrackhits[i];
 	
+			switch(mctrackhit->system){
+				case SYS_CDC:
+					if(mctrackhit->primary)cdchits[mctrackhit->track]++;
+					break;
+				case SYS_FDC:
+					if(mctrackhit->primary)fdchitmap[mctrackhit->track]++;
+					break;
+				case SYS_BCAL:
+					bcalhits[mctrackhit->track]++;
+					break;
+				default:
+					break;
+			}
+		}
+
+		// Simple 1-D histos for CDC and FDC as a function of thrown momentum
+		if(mcthrowns.size()==1){
+			double p = mcthrowns[0]->momentum().Mag();
+			CDC_nhits_vs_pthrown->Fill(p, Ncdc_anode);
+			FDC_nhits_vs_pthrown->Fill(p, Nfdc_anode);
+			pthrown->Fill(p);
+		}
 	
-	// Loop over thrown tracks
-	for(unsigned int i=0;i<mcthrowns.size();i++){
-		const DMCThrown *mcthrown = mcthrowns[i];
 		
-		if(mcthrown->charge() != 0.0){
-			thrown_charged->Fill(mcthrown->momentum().Mag(), mcthrown->momentum().Theta()*57.3);
-		}else if(mcthrown->type == 1){
-			thrown_photon->Fill(mcthrown->momentum().Mag(), mcthrown->momentum().Theta()*57.3);
+		// NOTE: In the sections that follow we have to assume that
+		// the track number of the hit corresponds to the position of
+		// the DMCThrown object in the list of DMCThrown objects.
+		// This should be a good assumption, but I don't know that
+		// it is (or always will be) guaranteed.
+
+		// Loop over tracks in the CDC
+		map<int,int>::iterator iter;
+		for(iter=cdchits.begin(); iter!=cdchits.end(); iter++){
+	
+			// Find thrown parameters for this track (if any)
+			if(iter->first<=0 || iter->first>(int)mcthrowns.size())continue;
+			const DMCThrown *mcthrown = mcthrowns[iter->first-1];
+
+			if(iter->second >= MIN_CDC_HITS)CDC->Fill(mcthrown->momentum().Mag(), mcthrown->momentum().Theta()*57.3);
+		}
+	
+		// Loop over tracks in the FDC
+		for(iter=fdchitmap.begin(); iter!=fdchitmap.end(); iter++){
+	
+			// Find thrown parameters for this track (if any)
+			if(iter->first<=0 || iter->first>(int)mcthrowns.size())continue;
+			const DMCThrown *mcthrown = mcthrowns[iter->first-1];
+
+			if(iter->second >= MIN_FDC_HITS)FDC->Fill(mcthrown->momentum().Mag(), mcthrown->momentum().Theta()*57.3);
+
+			// Fill CDC + FDC histo
+			if(cdchits.find(iter->first) != cdchits.end()){
+				int cdc_fdc_hits = cdchits.find(iter->first)->second + iter->second;
+				if(cdc_fdc_hits >= MIN_CDC_FDC_HITS)
+					CDC_FDC->Fill(mcthrown->momentum().Mag(), mcthrown->momentum().Theta()*57.3);
+			}
 		}
 	}
-	
-	// Loop over track hits
-	map<int,int> cdchits;
-	map<int,int> fdchitmap;
-	map<int,int> bcalhits;
-	for(unsigned int i=0;i<mctrackhits.size();i++){
-		const DMCTrackHit *mctrackhit = mctrackhits[i];
-
-		switch(mctrackhit->system){
-			case SYS_CDC:
-				if(mctrackhit->primary)cdchits[mctrackhit->track]++;
-				break;
-			case SYS_FDC:
-				if(mctrackhit->primary)fdchitmap[mctrackhit->track]++;
-				break;
-			case SYS_BCAL:
-				bcalhits[mctrackhit->track]++;
-				break;
-			default:
-				break;
-		}
-	}
-	
-	// Simple 1-D histos for CDC and FDC as a function of thrown momentum
-	if(mcthrowns.size()==1){
-		double p = mcthrowns[0]->momentum().Mag();
-		CDC_nhits_vs_pthrown->Fill(p, Ncdc_anode);
-		FDC_nhits_vs_pthrown->Fill(p, Nfdc_anode);
-		pthrown->Fill(p);
-	}
-
-	
-	// NOTE: In the sections that follow we have to assume that
-	// the track number of the hit corresponds to the position of
-	// the DMCThrown object in the list of DMCThrown objects.
-	// This should be a good assumption, but I don't know that
-	// it is (or always will be) guaranteed.
-	
-	// Loop over tracks in the CDC
-	map<int,int>::iterator iter;
-	for(iter=cdchits.begin(); iter!=cdchits.end(); iter++){
-
-		// Find thrown parameters for this track (if any)
-		if(iter->first<=0 || iter->first>(int)mcthrowns.size())continue;
-		const DMCThrown *mcthrown = mcthrowns[iter->first-1];
-		
-		if(iter->second >= MIN_CDC_HITS)CDC->Fill(mcthrown->momentum().Mag(), mcthrown->momentum().Theta()*57.3);
-	}
-
-	// Loop over tracks in the FDC
-	for(iter=fdchitmap.begin(); iter!=fdchitmap.end(); iter++){
-
-		// Find thrown parameters for this track (if any)
-		if(iter->first<=0 || iter->first>(int)mcthrowns.size())continue;
-		const DMCThrown *mcthrown = mcthrowns[iter->first-1];
-		
-		if(iter->second >= MIN_FDC_HITS)FDC->Fill(mcthrown->momentum().Mag(), mcthrown->momentum().Theta()*57.3);
-		
-		// Fill CDC + FDC histo
-		if(cdchits.find(iter->first) != cdchits.end()){
-			int cdc_fdc_hits = cdchits.find(iter->first)->second + iter->second;
-			if(cdc_fdc_hits >= MIN_CDC_FDC_HITS)
-				CDC_FDC->Fill(mcthrown->momentum().Mag(), mcthrown->momentum().Theta()*57.3);
-		}
-	}
+	RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
 }
@@ -215,9 +221,14 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, uint64_t event
 //------------------
 jerror_t DEventProcessor_acceptance_hists::erun(void)
 {
-	CDC->Divide(thrown_charged);
-	FDC->Divide(thrown_charged);
-	CDC_FDC->Divide(thrown_charged);
+	// Since we are modifying histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+	{
+		CDC->Divide(thrown_charged);
+		FDC->Divide(thrown_charged);
+		CDC_FDC->Divide(thrown_charged);
+	}
+	RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
 }
