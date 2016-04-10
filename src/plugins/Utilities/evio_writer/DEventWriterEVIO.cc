@@ -1,11 +1,25 @@
 #include "DEventWriterEVIO.h"
-#include "HDEVIOWriter.h"
 
+size_t& DEventWriterEVIO::Get_NumEVIOOutputThreads(void) const
+{
+	// must be read/used entirely in "EVIOWriter" lock
+	static size_t locEVIONumOutputThreads = 0;
+	return locEVIONumOutputThreads;
+}
 
-//file-scope so shared amongst threads; only accessed below via locks
-size_t gEVIONumOutputThreads = 0;
-map<string, HDEVIOWriter *>* gEVIOOutputters = NULL;  // we own these writers
-map<string, pthread_t>* gEVIOOutputThreads = NULL;
+map<string, HDEVIOWriter*>& DEventWriterEVIO::Get_EVIOOutputters(void) const
+{
+	// must be read/used entirely in "EVIOWriter" lock
+	static map<string, HDEVIOWriter*> locEVIOOutputters;
+	return locEVIOOutputters;
+}
+
+map<string, pthread_t>& DEventWriterEVIO::Get_EVIOOutputThreads(void) const
+{
+	// must be read/used entirely in "EVIOWriter" lock
+	static map<string, pthread_t> locEVIOOutputThreads;
+	return locEVIOOutputThreads;
+}
 
 DEventWriterEVIO::DEventWriterEVIO(JEventLoop* locEventLoop)
 {
@@ -23,11 +37,7 @@ DEventWriterEVIO::DEventWriterEVIO(JEventLoop* locEventLoop)
 	// initialize file-level variables
 	japp->WriteLock("EVIOWriter");
 	{
-		++gEVIONumOutputThreads;
-		if(gEVIOOutputters == NULL)
-			gEVIOOutputters = new map<string, HDEVIOWriter *>();
-		if(gEVIOOutputThreads == NULL)
-			gEVIOOutputThreads = new map<string, pthread_t>();
+		++Get_NumEVIOOutputThreads();
 	}
 	japp->Unlock("EVIOWriter");
 
@@ -94,7 +104,7 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 	japp->WriteLock("EVIOWriter");
 	{
 		//check to see if the EVIO file is open
-		if(gEVIOOutputters->find(locOutputFileName) == gEVIOOutputters->end())
+		if(Get_EVIOOutputters().find(locOutputFileName) == Get_EVIOOutputters().end())
 		{
 			//not open, open it
 			if(!Open_OutputFile(locEventLoop, locOutputFileName))
@@ -102,7 +112,7 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 		}
 
 		//open: get handle, write event
-		HDEVIOWriter *locEVIOWriter = (*gEVIOOutputters)[locOutputFileName];
+		HDEVIOWriter *locEVIOWriter = Get_EVIOOutputters()[locOutputFileName];
 		// Write event into buffer
 		vector<uint32_t> *buff = locEVIOWriter->GetBufferFromPool();
 		WriteEventToBuffer(locEventLoop, *buff);
@@ -165,12 +175,11 @@ bool DEventWriterEVIO::Open_OutputFile(JEventLoop* locEventLoop, string locOutpu
 	else
 	{
 		jout << "Output EVIO file " << locOutputFileName << " created." << endl;
-		(*gEVIOOutputters)[locOutputFileName] = locEVIOout; //store the handle
-		(*gEVIOOutputThreads)[locOutputFileName] = locEVIOout_thr; //store the thread
+		Get_EVIOOutputters()[locOutputFileName] = locEVIOout; //store the handle
+		Get_EVIOOutputThreads()[locOutputFileName] = locEVIOout_thr; //store the thread
 	}
 
 	return success;
-
 }
 
 DEventWriterEVIO::~DEventWriterEVIO(void)
@@ -178,26 +187,20 @@ DEventWriterEVIO::~DEventWriterEVIO(void)
 #if HAVE_EVIO
 	japp->WriteLock("EVIOWriter");
 	{
-		--gEVIONumOutputThreads;
-		if(gEVIONumOutputThreads > 0)
+		--Get_NumEVIOOutputThreads();
+		if(Get_NumEVIOOutputThreads() > 0)
 		{
 			japp->Unlock("EVIOWriter");
 			return; //not the last thread writing to EVIO files
 		}
 
-		if(gEVIOOutputters == NULL)
-		{
-			japp->Unlock("EVIOWriter");
-			return; //not the last thread writing to EVIO files
-		}
-		
 		//last thread writing to EVIO files: close all files and free all memory
-		map<string, HDEVIOWriter *>::iterator locIterator = gEVIOOutputters->begin();
-		for(; locIterator != gEVIOOutputters->end(); ++locIterator)
+		map<string, HDEVIOWriter *>::iterator locIterator = Get_EVIOOutputters().begin();
+		for(; locIterator != Get_EVIOOutputters().end(); ++locIterator)
 		{
 			string locOutputFileName = locIterator->first;
 			HDEVIOWriter *locEVIOOutputter = locIterator->second;
-			pthread_t locEVIOOutputThread = (*gEVIOOutputThreads)[locOutputFileName];
+			pthread_t locEVIOOutputThread = Get_EVIOOutputThreads()[locOutputFileName];
 			
 			// finish writing out to the event source
 			locEVIOOutputter->Quit();
@@ -209,10 +212,8 @@ DEventWriterEVIO::~DEventWriterEVIO(void)
 			delete locEVIOOutputter;
 			std::cout << "Closed EVIO file " << locOutputFileName << std::endl;
 		}
-		delete gEVIOOutputters;
-		gEVIOOutputters = NULL;
-		delete gEVIOOutputThreads;
-		gEVIOOutputThreads = NULL;
+		Get_EVIOOutputters().clear();
+		Get_EVIOOutputThreads().clear();
 	}
 	japp->Unlock("EVIOWriter");
 #endif // HAVE_EVIO
