@@ -139,8 +139,8 @@ jerror_t DEventProcessor_trackeff_hists2::evnt(JEventLoop *loop, uint64_t eventn
 	loop->Get(mctrajpoints);
 	loop->Get(mcthrowns);
 
-	// Lock mutex
-	pthread_mutex_lock(&mutex);
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 	
 	// Get hit list for all throwns
 	for(unsigned int i=0; i<mcthrowns.size(); i++){
@@ -226,8 +226,7 @@ jerror_t DEventProcessor_trackeff_hists2::evnt(JEventLoop *loop, uint64_t eventn
 		trkeff->Fill();
 	}
 
-	// Unlock mutex
-	pthread_mutex_unlock(&mutex);
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 	
 	return NOERROR;
 }

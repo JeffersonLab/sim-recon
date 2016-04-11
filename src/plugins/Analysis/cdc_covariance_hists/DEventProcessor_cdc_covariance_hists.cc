@@ -88,14 +88,16 @@ jerror_t DEventProcessor_cdc_covariance_hists::brun(JEventLoop *loop, int32_t ru
 		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program perhaps?)"<<endl;
 		return RESOURCE_UNAVAILABLE;
 	}
-	bfield=dapp->GetBfield(runnumber);
-	rt = new DReferenceTrajectory(bfield);
-	rt->SetDRootGeom(dapp->GetRootGeom());
-	
-	// Get radius of innermost CDC layer
-	//const DCDCWire *wire1=DCDCTrackHit_factory::GetCDCWire(1,1);
-	//R_cdc1 = wire1->origin.Perp();
-	R_cdc1 = 10.960;
+	LockState();
+	{
+		bfield=dapp->GetBfield(runnumber);
+
+		// Get radius of innermost CDC layer
+		//const DCDCWire *wire1=DCDCTrackHit_factory::GetCDCWire(1,1);
+		//R_cdc1 = wire1->origin.Perp();
+		R_cdc1 = 10.960;
+	}
+	UnlockState();
 
 	return NOERROR;
 }
@@ -176,10 +178,14 @@ jerror_t DEventProcessor_cdc_covariance_hists::evnt(JEventLoop *loop, uint64_t e
 	}
 	s1 = s1_min;
 
-	// Lock mutex
-	pthread_mutex_lock(&mutex);
-
+	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield);
+	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	rt->SetDRootGeom(dapp->GetRootGeom());
 	rt->Swim(pos_cdc1, mom_cdc1);
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	// Loop over CDC hits
 	vector<double> resi_by_layer(27,-1000);
@@ -250,8 +256,10 @@ jerror_t DEventProcessor_cdc_covariance_hists::evnt(JEventLoop *loop, uint64_t e
 		}
 	}
 
-	// Unlock mutex
-	pthread_mutex_unlock(&mutex);
-	
+	RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
+	delete rt;
+
 	return NOERROR;
 }
+

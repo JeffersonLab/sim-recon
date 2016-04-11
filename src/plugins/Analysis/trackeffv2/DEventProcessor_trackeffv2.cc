@@ -57,8 +57,6 @@ jerror_t DEventProcessor_trackeffv2::init(void)
 	ostringstream locHistNameStream, locHistTitleStream;
 	string locHistName, locHistTitle;
 
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!! //This function will be called only one time, so it is safe to assume that none of the hists have been created yet
-
 	locHistName = "NumCandidates";
 	locHistTitle = "# Candidates";
 	dHist_NumCandidates = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 21, -0.5, 20.5);
@@ -263,7 +261,6 @@ jerror_t DEventProcessor_trackeffv2::init(void)
 			}
 		}
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
 	return NOERROR;
 }
@@ -332,8 +329,9 @@ jerror_t DEventProcessor_trackeffv2::evnt(JEventLoop* locEventLoop, uint64_t eve
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 		locUniqueCandidateIDs_TimeBased.insert(locTrackTimeBasedVector[loc_i]->candidateid);
 
-	//Fill histograms
-	japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 	{
 		//counts
 		dHist_NumCandidates->Fill(locTrackCandidates.size());
@@ -456,7 +454,7 @@ jerror_t DEventProcessor_trackeffv2::evnt(JEventLoop* locEventLoop, uint64_t eve
 			}
 		}
 	}
-	japp->RootUnLock();
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
 }
@@ -560,6 +558,9 @@ jerror_t DEventProcessor_trackeffv2::erun(void)
 //------------------
 jerror_t DEventProcessor_trackeffv2::fini(void)
 {
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
 	// Calculate efficiencies for each particle in each theta/p bin
 	for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
 	{
@@ -603,6 +604,9 @@ jerror_t DEventProcessor_trackeffv2::fini(void)
 			dHist_CloseEfficiencies_WireBased[locPID]->SetEntries(locEntries_WireBased);
 		dHist_CloseEfficiencies_TimeBased[locPID]->SetEntries(locEntries_TimeBased);
 	}
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
 	return NOERROR;
 }
 

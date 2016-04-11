@@ -123,7 +123,7 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, uint64_t event
 
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 	{
 		for(unsigned int i=0; i<fdchits.size(); i++){
 			if(fdchits[i]->type==0){
@@ -211,7 +211,7 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, uint64_t event
 			}
 		}
 	}
-	RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
 }
@@ -222,13 +222,13 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, uint64_t event
 jerror_t DEventProcessor_acceptance_hists::erun(void)
 {
 	// Since we are modifying histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 	{
 		CDC->Divide(thrown_charged);
 		FDC->Divide(thrown_charged);
 		CDC_FDC->Divide(thrown_charged);
 	}
-	RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
 }
