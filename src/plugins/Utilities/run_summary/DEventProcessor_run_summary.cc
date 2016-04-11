@@ -79,6 +79,8 @@ jerror_t DEventProcessor_run_summary::brun(jana::JEventLoop* locEventLoop, int l
 	else //already created by another thread
 		conditions_tree = static_cast<TTree*>(gDirectory->Get("conditions"));
 
+	main_dir->cd();
+
 	japp->RootUnLock();
 
 	// reset EPICS summary info each run
@@ -86,7 +88,6 @@ jerror_t DEventProcessor_run_summary::brun(jana::JEventLoop* locEventLoop, int l
 		delete epics_info;
 	epics_info = new DEPICSstore;
 
-	main_dir->cd();
 	return NOERROR;
 }
 
