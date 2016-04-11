@@ -143,6 +143,9 @@ jerror_t DEventProcessor_run_summary::erun(void)
 	if(conditions_tree == NULL)
 		return NOERROR;
 
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+
 	// make a branch for the run number
 	TBranch *run_branch = conditions_tree->FindBranch("run_number");
 	if(run_branch == NULL)
@@ -174,6 +177,8 @@ jerror_t DEventProcessor_run_summary::erun(void)
 
 	// save the values for this run
 	conditions_tree->Fill();
+
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
 	return NOERROR;
 }
