@@ -86,9 +86,6 @@ jerror_t JEventProcessor_pedestal_online::init(void)
 {
 	if (VERBOSE>=1) printf("JEventProcessor_pedestal_online::init()\n");
 
-	// lock all root operations
-	japp->RootWriteLock();
-		
 	// create root folder for DAQ and cd to it, store main dir
 	maindir = gDirectory;
 	peddir = maindir->mkdir("pedestal");
@@ -103,9 +100,6 @@ jerror_t JEventProcessor_pedestal_online::init(void)
 	
 	// back to main dir
 	maindir->cd();
-	
-	// unlock
-	japp->RootUnLock();
 
 	return NOERROR;
 }
@@ -146,7 +140,7 @@ jerror_t JEventProcessor_pedestal_online::evnt(JEventLoop *loop, uint64_t eventn
 	loop->Get(f250PIs);
 	loop->Get(f125PIs);
 	
-	// Lock ROOT
+	// Although we are only filling objects local to this plugin, the directory changes: Global ROOT lock
 	japp->RootWriteLock();
 
 	if (peddir!=NULL) peddir->cd();

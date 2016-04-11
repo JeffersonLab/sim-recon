@@ -92,8 +92,6 @@ JEventProcessor_TOF_online::~JEventProcessor_TOF_online() {
 
 jerror_t JEventProcessor_TOF_online::init(void) {
 
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
   // create root folder for tof and cd to it, store main dir
   TDirectory *main = gDirectory;
   gDirectory->mkdir("tof")->cd();
@@ -144,8 +142,6 @@ jerror_t JEventProcessor_TOF_online::init(void) {
 
   // back to main dir
   main->cd();
-
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
   return NOERROR;
 }
@@ -227,7 +223,9 @@ jerror_t JEventProcessor_TOF_online::evnt(JEventLoop *eventLoop, uint64_t eventn
   vector<const DTOFHit*> dtofhits;
   eventLoop->Get(dtofhits);
 
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   if(dtofhits.size() > 0)
 	  tof_num_events->Fill(1);
@@ -304,7 +302,6 @@ jerror_t JEventProcessor_TOF_online::evnt(JEventLoop *eventLoop, uint64_t eventn
       
       
       //      fill hist
-      //      app->rootLock();
       
       tofe->Fill(E);
       toft->Fill(t);
@@ -313,9 +310,6 @@ jerror_t JEventProcessor_TOF_online::evnt(JEventLoop *eventLoop, uint64_t eventn
       } else {
         tofo2->Fill(end,bar);
       }
-                  
-      //    app->rootUnlock();
-      
       
     } // close if E>0
 
@@ -436,7 +430,7 @@ jerror_t JEventProcessor_TOF_online::evnt(JEventLoop *eventLoop, uint64_t eventn
 
     }
 
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }

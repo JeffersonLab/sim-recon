@@ -164,9 +164,6 @@ JEventProcessor_TAGM_online::~JEventProcessor_TAGM_online() {
 
 jerror_t JEventProcessor_TAGM_online::init(void) {
 
-  // lock all root operations
-  japp->RootWriteLock();
-
 
   // create root folder for tagm and cd to it, store main dir
   TDirectory *main = gDirectory;
@@ -559,9 +556,6 @@ jerror_t JEventProcessor_TAGM_online::init(void) {
   // back to main dir
   main->cd();
 
-  // unlock
-  japp->RootUnLock();
-
   return NOERROR;
 }
 
@@ -592,8 +586,9 @@ jerror_t JEventProcessor_TAGM_online::evnt(JEventLoop *eventLoop, uint64_t event
   eventLoop->Get(tdcdigihits);
   eventLoop->Get(hits);
 
-  // Lock ROOT mutex so other threads won't interfere 
-  japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   // Histogram the total number of events
   if( (digihits.size()>0) || (tdcdigihits.size()>0) )
@@ -866,8 +861,8 @@ jerror_t JEventProcessor_TAGM_online::evnt(JEventLoop *eventLoop, uint64_t event
     }
   }
 
-  // Lock ROOT mutex so other threads won't interfere 
-  japp->RootUnLock();
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
   return NOERROR;
 }
 
