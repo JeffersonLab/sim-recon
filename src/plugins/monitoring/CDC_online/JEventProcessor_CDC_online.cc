@@ -76,6 +76,7 @@ extern "C"{
 
 
 JEventProcessor_CDC_online::JEventProcessor_CDC_online() {
+	initialized_histograms = false;
 }
 
 
@@ -184,74 +185,43 @@ jerror_t JEventProcessor_CDC_online::brun(JEventLoop *eventLoop, int32_t runnumb
 
   japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
+  if(initialized_histograms) //don't init twice!
+  {
+	  japp->RootUnLock(); //RELEASE ROOT LOCK
+	  return NOERROR;
+  }
+
   gDirectory->cd("CDC");
 
   // book histograms
 
-   //CHECK IF HISTOGRAMS ALREADY CREATED. IF SO, GRAB THEM. IF NOT, CREATE THEM
-
-	if(gDirectory->Get("cdc_raw_amp") != NULL)
-  cdc_raw_amp = (TH1I*)gDirectory->Get("cdc_raw_amp");
-	else
   cdc_raw_amp   = new TH1I("cdc_raw_amp","CDC amplitude (ADC units, scaled); ADC units",AMAX,0,AMAX);
 
-
-	if(gDirectory->Get("cdc_raw_amp_vs_n") != NULL)
-  cdc_raw_amp_vs_n = (TH2I*)gDirectory->Get("cdc_raw_amp_vs_n");
-	else
   cdc_raw_amp_vs_n   = new TH2I("cdc_raw_amp_vs_n","CDC amplitude (ADC units, scaled) vs straw number;straw;ADC units",NSTRAWS,HALF,NSTRAWSPH,128,0,AMAX);
 
-	if(gDirectory->Get("cdc_raw_t") != NULL)
-  cdc_raw_t = (TH1I*)gDirectory->Get("cdc_raw_t");
-	else
   cdc_raw_t = new TH1I("cdc_raw_t",Form("CDC raw time (units of %s); raw time (%s)",rtunits,rtunits),200,0,RTMAX);
 
-	if(gDirectory->Get("cdc_raw_t_vs_n") != NULL)
-  cdc_raw_t_vs_n = (TH2I*)gDirectory->Get("cdc_raw_t_vs_n");
-	else
   cdc_raw_t_vs_n = new TH2I("cdc_raw_t_vs_n",Form("CDC raw time (units of %s) vs straw number;straw;time (%s)",rtunits,rtunits),NSTRAWS,HALF,NSTRAWSPH,100,0,RTMAX);
 
-	if(gDirectory->Get("cdc_raw_int") != NULL)
-  cdc_raw_int = (TH1I*)gDirectory->Get("cdc_raw_int");
-	else
   cdc_raw_int   = new TH1I("cdc_raw_int","CDC integral (ADC units, scaled), pedestal subtracted; ADC units",200,0,IMAX);
 
-	if(gDirectory->Get("cdc_raw_int_vs_n") != NULL)
-  cdc_raw_int_vs_n = (TH2I*)gDirectory->Get("cdc_raw_int_vs_n");
-	else
   cdc_raw_int_vs_n   = new TH2I("cdc_raw_int_vs_n","CDC integral (ADC units,scaled), pedestal subtracted, vs straw number;straw;ADC units",NSTRAWS,HALF,NSTRAWSPH,100,0,IMAX);
 
-	if(gDirectory->Get("cdc_raw_intpp") != NULL)
-  cdc_raw_intpp = (TH1I*)gDirectory->Get("cdc_raw_intpp");
-	else
   cdc_raw_intpp   = new TH1I("cdc_raw_intpp","CDC integral (ADC units, scaled), includes pedestal; ADC units",200,0,IMAX);
 
-	if(gDirectory->Get("cdc_raw_intpp_vs_n") != NULL)
-  cdc_raw_intpp_vs_n = (TH2I*)gDirectory->Get("cdc_raw_intpp_vs_n");
-	else
   cdc_raw_intpp_vs_n   = new TH2I("cdc_raw_intpp_vs_n","CDC integral (ADC units, scaled), including pedestal, vs straw number;straw;ADC units",NSTRAWS,HALF,NSTRAWSPH,100,0,IMAX);
 
-	if(gDirectory->Get("cdc_ped") != NULL)
-  cdc_ped = (TH1I*)gDirectory->Get("cdc_ped");
-	else
   cdc_ped   = new TH1I("cdc_ped","CDC pedestal (ADC units);pedestal (ADC units)",(Int_t)(PMAX/2),0,PMAX);
 
-	if(gDirectory->Get("cdc_ped_vs_n") != NULL)
-  cdc_ped_vs_n = (TH2I*)gDirectory->Get("cdc_ped_vs_n");
-	else
   cdc_ped_vs_n   = new TH2I("cdc_ped_vs_n","CDC pedestal (ADC units) vs straw number;straw;pedestal (ADC units)",NSTRAWS,HALF,NSTRAWSPH,(Int_t)(PMAX/4),0,PMAX);
 
-	if(gDirectory->Get("cdc_windata_ped") != NULL)
-  cdc_windata_ped = (TH1I*)gDirectory->Get("cdc_windata_ped");
-	else
   cdc_windata_ped   = new TH1I("cdc_windata_ped","CDC pedestal (ADC units) from raw window data;pedestal (ADC units)",(Int_t)(PMAX/2),0,PMAX);
 
-	if(gDirectory->Get("cdc_windata_ped_vs_n") != NULL)
-  cdc_windata_ped_vs_n = (TH2I*)gDirectory->Get("cdc_windata_ped_vs_n");
-	else
   cdc_windata_ped_vs_n   = new TH2I("cdc_windata_ped_vs_n","CDC pedestal (ADC units) from raw window data vs straw number;straw;pedestal (ADC units)",NSTRAWS,HALF,NSTRAWSPH,(Int_t)(PMAX/4),0,PMAX);
 
   gDirectory->cd(".."); //RETURN TO MAIN FOLDER
+
+  initialized_histograms = true;
 
 	japp->RootUnLock(); //RELEASE ROOT LOCK
 
