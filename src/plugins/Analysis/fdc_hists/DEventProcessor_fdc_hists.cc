@@ -123,8 +123,7 @@ jerror_t DEventProcessor_fdc_hists::brun(JEventLoop *loop, int32_t runnumber)
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
   endplate_z+=0.5*endplate_dz;
 
-  dapp->Lock();
-    
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 
   Hqratio_vs_wire= (TH2F *)gROOT->FindObject("Hqratio_vs_wire");
   if (!Hqratio_vs_wire)
@@ -239,17 +238,25 @@ jerror_t DEventProcessor_fdc_hists::brun(JEventLoop *loop, int32_t runnumber)
       HdEdx=new TH1F("HdEdx","dEdx",100,0,10e-6);
     }  
   
-  dapp->Unlock();
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
   JCalibration *jcalib = dapp->GetJCalibration(0);  // need run number here
   vector< map<string, float> > tvals;
   if (jcalib->Get("FDC/fdc_drift_Bzero", tvals)==false){
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
     for(unsigned int i=0; i<tvals.size(); i++){
       map<string, float> &row = tvals[i];   
       map<string,float>::iterator iter = row.begin();
       fdc_drift_table[i] = iter->second;
       Hdrift_integral->Fill(2.*i-20,fdc_drift_table[i]/0.5);
     }
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
   }
   else{
     jerr << " FDC time-to-distance table not available... bailing..." << endl;
@@ -311,8 +318,14 @@ jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
     }
     
     double ratio=q2/q1;
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
     Hqratio_vs_wire->Fill(wire_number,ratio-1.);
     Hdelta_z_vs_wire->Fill(wire_number,0.5336*(1.-ratio)/(1.+ratio));
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
   }
 
   if (pseudos.size()>2 && (bcalshowers.size()>0 || fcalshowers.size()>0)){
@@ -344,9 +357,15 @@ jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
       double probx=TMath::Prob(chi2x,myndf);
       double proby=TMath::Prob(chi2y,myndf);
     
+		// FILL HISTOGRAMS
+		// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
       Hxcand_prob->Fill(probx);
       Hycand_prob->Fill(proby);
       
+		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
       // Match to outer detectors
       bool got_match=false;
       // First match to FCAL 
@@ -367,7 +386,15 @@ jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 	}
 	
       }
+
+		// FILL HISTOGRAMS
+		// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
       Hfcal_match->Fill(drmin);
+
+		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
       if (drmin<4.){
 	got_match=true;
 	//	outer_time-=2.218; //empirical correction
@@ -398,12 +425,24 @@ jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 	    outer_time=bcalshowers[i]->t;
 	  }	
 	}
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
 	Hbcal_match->Fill(drmin);
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	if (drmin<4.) 
 	  got_match=true;
       }
       if (got_match){
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
 	Hcand_ty_vs_tx->Fill(S(state_tx),S(state_ty));  
 	
 	//compute tangent of dip angle and related angular quantities
@@ -444,6 +483,8 @@ jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 	Hz_target->Fill(z_target);
 		
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
 	// Estimate for t0 at the beginning of track assuming particle is 
 	// moving at the speed of light
 	mT0=outer_time-dz/(29.98*sinl);
@@ -516,6 +557,9 @@ DEventProcessor_fdc_hists::DoFilter(DMatrix4x1 &S,
   }
       
   if (iter>1){
+
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
     double reduced_chi2=chi2_old/double(ndof_old);
     double prob=TMath::Prob(chi2_old,ndof_old);
     Hprob->Fill(prob);
@@ -538,9 +582,15 @@ DEventProcessor_fdc_hists::DoFilter(DMatrix4x1 &S,
 	}
       }
     }
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
     if (DoAlign){
       FindOffsets(hits,smoothed_updates);
       
+		// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+		japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+
       for (unsigned int layer=0;layer<24;layer++){
 	// Set up to fill tree
 	double dxr=alignments[layer].A(kDx);
@@ -555,17 +605,16 @@ DEventProcessor_fdc_hists::DoFilter(DMatrix4x1 &S,
 	fdc.layer=layer;
 	fdc.N=myevt;
 	
-	// Lock mutex
-	pthread_mutex_lock(&mutex);
 	
 	fdctree->Fill();
 	
-	// Unlock mutex
-	pthread_mutex_unlock(&mutex);
       }
+
+   	japp->RootUnLock(); //RELEASE ROOT LOCK
+
     }
    
-    
+
 
     /*
     printf("-------Event %d\n",myevt);

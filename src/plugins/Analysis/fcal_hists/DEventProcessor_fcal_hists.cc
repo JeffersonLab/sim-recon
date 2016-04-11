@@ -66,9 +66,7 @@ jerror_t DEventProcessor_fcal_hists::evnt(JEventLoop *loop, uint64_t eventnumber
 
 	const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
 	if(fcalGeomVect.size()<1)return OBJECT_NOT_AVAILABLE;
-	
-	LockState();
-	
+		
 	// Create STL map of "real" hits that can be used below to match 
 	// with MC hits.
 	map<int,const DFCALHit*> hit_map;
@@ -79,6 +77,9 @@ jerror_t DEventProcessor_fcal_hists::evnt(JEventLoop *loop, uint64_t eventnumber
 		hit_map[channel] = hit;
 	}
 	
+	// Since we are modifying histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
 	// Loop over "truth" hits and match them to real hits by using assuming
 	// one hit per channel
 	for(unsigned int i=0; i<truthhits.size(); i++){
@@ -91,7 +92,7 @@ jerror_t DEventProcessor_fcal_hists::evnt(JEventLoop *loop, uint64_t eventnumber
 		dE_over_E_vs_E->Fill(truthhit->E, deltaE/truthhit->E);
 	}
 
-	UnlockState();	
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
 }

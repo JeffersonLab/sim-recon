@@ -108,11 +108,6 @@ jerror_t JEventProcessor_CDC_drift::init(void) {
 
 	*/
 
-
-
-
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
 	// create root folder for cdc and cd to it, store main dir
 	TDirectory *savedir = gDirectory;
 	gDirectory->mkdir("CDC_fits")->cd();
@@ -161,7 +156,6 @@ jerror_t JEventProcessor_CDC_drift::init(void) {
 	afit->Branch("sigma",&sigma,"sigma/D");
 
 	savedir->cd();
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
 	return NOERROR;
 }
@@ -235,8 +229,8 @@ jerror_t JEventProcessor_CDC_drift::evnt(JEventLoop *eventLoop, uint64_t eventnu
 
 
 
-
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 
 	fithisto = kFALSE;
 
@@ -434,8 +428,6 @@ jerror_t JEventProcessor_CDC_drift::evnt(JEventLoop *eventLoop, uint64_t eventnu
 
 
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
-
-	//app->RootUnLock();
 
 	return NOERROR;
 }

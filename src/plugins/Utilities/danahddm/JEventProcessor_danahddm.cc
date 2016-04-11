@@ -78,9 +78,15 @@ jerror_t JEventProcessor_danahddm::init(void)
 //-------------------------------
 jerror_t JEventProcessor_danahddm::brun(JEventLoop *loop, int32_t runnumber)
 {
+   // get write lock
+   pthread_mutex_lock(&hddmMutex);
+
    // If file is already open, don't reopen it. Just keep adding to it.
    if (file)
+	{
+	   pthread_mutex_unlock(&hddmMutex);
       return NOERROR;
+	}
 
    // We wait until here to open the output so that we can check if the 
    // input is hddm. If it's not, tell the user and exit immediately
@@ -116,6 +122,9 @@ jerror_t JEventProcessor_danahddm::brun(JEventLoop *loop, int32_t runnumber)
    else {
       jout << " HDDM integrity checks disabled" << std::endl;
    }
+
+   // unlock
+   pthread_mutex_unlock(&hddmMutex);
 
    return NOERROR;
 }
