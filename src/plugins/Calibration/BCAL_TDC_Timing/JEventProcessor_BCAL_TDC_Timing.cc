@@ -70,6 +70,9 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::init(void)
 jerror_t JEventProcessor_BCAL_TDC_Timing::brun(JEventLoop *loop, int32_t runnumber)
 {
     // This is called whenever the run number changes
+    DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
+    DGeometry* geom = app->GetDGeometry(runnumber);
+    geom->GetTargetZ(Z_TARGET);
     return NOERROR;
 }
 
@@ -80,11 +83,6 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
 {
     vector<const DBCALUnifiedHit *> bcalUnifiedHitVector;
     loop->Get(bcalUnifiedHitVector);
-
-    DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
-    DGeometry* geom = app->GetDGeometry(runnumber);
-    double Z_TARGET;
-    geom->GetTargetZ(Z_TARGET);
 
     /**********************************************
      _____ _                   __        __    _ _    

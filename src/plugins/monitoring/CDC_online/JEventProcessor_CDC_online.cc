@@ -197,7 +197,7 @@ jerror_t JEventProcessor_CDC_online::brun(JEventLoop *eventLoop, int32_t runnumb
 
 
 	if(gDirectory->Get("cdc_raw_amp_vs_n") != NULL)
-  cdc_raw_amp_vs_n = (TH1I*)gDirectory->Get("cdc_raw_amp_vs_n");
+  cdc_raw_amp_vs_n = (TH2I*)gDirectory->Get("cdc_raw_amp_vs_n");
 	else
   cdc_raw_amp_vs_n   = new TH2I("cdc_raw_amp_vs_n","CDC amplitude (ADC units, scaled) vs straw number;straw;ADC units",NSTRAWS,HALF,NSTRAWSPH,128,0,AMAX);
 
@@ -207,7 +207,7 @@ jerror_t JEventProcessor_CDC_online::brun(JEventLoop *eventLoop, int32_t runnumb
   cdc_raw_t = new TH1I("cdc_raw_t",Form("CDC raw time (units of %s); raw time (%s)",rtunits,rtunits),200,0,RTMAX);
 
 	if(gDirectory->Get("cdc_raw_t_vs_n") != NULL)
-  cdc_raw_t_vs_n = (TH1I*)gDirectory->Get("cdc_raw_t_vs_n");
+  cdc_raw_t_vs_n = (TH2I*)gDirectory->Get("cdc_raw_t_vs_n");
 	else
   cdc_raw_t_vs_n = new TH2I("cdc_raw_t_vs_n",Form("CDC raw time (units of %s) vs straw number;straw;time (%s)",rtunits,rtunits),NSTRAWS,HALF,NSTRAWSPH,100,0,RTMAX);
 
@@ -217,7 +217,7 @@ jerror_t JEventProcessor_CDC_online::brun(JEventLoop *eventLoop, int32_t runnumb
   cdc_raw_int   = new TH1I("cdc_raw_int","CDC integral (ADC units, scaled), pedestal subtracted; ADC units",200,0,IMAX);
 
 	if(gDirectory->Get("cdc_raw_int_vs_n") != NULL)
-  cdc_raw_int_vs_n = (TH1I*)gDirectory->Get("cdc_raw_int_vs_n");
+  cdc_raw_int_vs_n = (TH2I*)gDirectory->Get("cdc_raw_int_vs_n");
 	else
   cdc_raw_int_vs_n   = new TH2I("cdc_raw_int_vs_n","CDC integral (ADC units,scaled), pedestal subtracted, vs straw number;straw;ADC units",NSTRAWS,HALF,NSTRAWSPH,100,0,IMAX);
 
@@ -227,7 +227,7 @@ jerror_t JEventProcessor_CDC_online::brun(JEventLoop *eventLoop, int32_t runnumb
   cdc_raw_intpp   = new TH1I("cdc_raw_intpp","CDC integral (ADC units, scaled), includes pedestal; ADC units",200,0,IMAX);
 
 	if(gDirectory->Get("cdc_raw_intpp_vs_n") != NULL)
-  cdc_raw_intpp_vs_n = (TH1I*)gDirectory->Get("cdc_raw_intpp_vs_n");
+  cdc_raw_intpp_vs_n = (TH2I*)gDirectory->Get("cdc_raw_intpp_vs_n");
 	else
   cdc_raw_intpp_vs_n   = new TH2I("cdc_raw_intpp_vs_n","CDC integral (ADC units, scaled), including pedestal, vs straw number;straw;ADC units",NSTRAWS,HALF,NSTRAWSPH,100,0,IMAX);
 
@@ -237,7 +237,7 @@ jerror_t JEventProcessor_CDC_online::brun(JEventLoop *eventLoop, int32_t runnumb
   cdc_ped   = new TH1I("cdc_ped","CDC pedestal (ADC units);pedestal (ADC units)",(Int_t)(PMAX/2),0,PMAX);
 
 	if(gDirectory->Get("cdc_ped_vs_n") != NULL)
-  cdc_ped_vs_n = (TH1I*)gDirectory->Get("cdc_ped_vs_n");
+  cdc_ped_vs_n = (TH2I*)gDirectory->Get("cdc_ped_vs_n");
 	else
   cdc_ped_vs_n   = new TH2I("cdc_ped_vs_n","CDC pedestal (ADC units) vs straw number;straw;pedestal (ADC units)",NSTRAWS,HALF,NSTRAWSPH,(Int_t)(PMAX/4),0,PMAX);
 
@@ -247,7 +247,7 @@ jerror_t JEventProcessor_CDC_online::brun(JEventLoop *eventLoop, int32_t runnumb
   cdc_windata_ped   = new TH1I("cdc_windata_ped","CDC pedestal (ADC units) from raw window data;pedestal (ADC units)",(Int_t)(PMAX/2),0,PMAX);
 
 	if(gDirectory->Get("cdc_windata_ped_vs_n") != NULL)
-  cdc_windata_ped_vs_n = (TH1I*)gDirectory->Get("cdc_windata_ped_vs_n");
+  cdc_windata_ped_vs_n = (TH2I*)gDirectory->Get("cdc_windata_ped_vs_n");
 	else
   cdc_windata_ped_vs_n   = new TH2I("cdc_windata_ped_vs_n","CDC pedestal (ADC units) from raw window data vs straw number;straw;pedestal (ADC units)",NSTRAWS,HALF,NSTRAWSPH,(Int_t)(PMAX/4),0,PMAX);
 

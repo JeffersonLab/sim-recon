@@ -69,8 +69,6 @@ JEventProcessor_pi0bcalskim::~JEventProcessor_pi0bcalskim()
 //------------------
 jerror_t JEventProcessor_pi0bcalskim::init(void)
 {
-  dEventWriterEVIO = NULL;
-
   //if( ! WRITE_EVIO) cerr << " output isnt working " << endl;
 
   return NOERROR;
@@ -81,8 +79,6 @@ jerror_t JEventProcessor_pi0bcalskim::init(void)
 //------------------
 jerror_t JEventProcessor_pi0bcalskim::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
-  eventLoop->GetSingle(dEventWriterEVIO);
-
   return NOERROR;
 }
 
