@@ -84,15 +84,11 @@ jerror_t JEventProcessor_PSC_TW::init(void)
 	// japp->RootUnLock();
 	//
 
-   japp->RootWriteLock();
-
    // Name histograms
    for (uint32_t i = 0; i < NMODULES; ++i) {
       h_dt_vs_pp_l[i] = new TH2F(Form("h_dt_vs_pp_l_%i",i+1),Form("Time difference vs. pulse peak for left PSC module %i",i+1),1000,0,1000,100,-5,5);
       h_dt_vs_pp_r[i] = new TH2F(Form("h_dt_vs_pp_r_%i",i+1),Form("Time difference vs. pulse peak for right PSC module %i",i+1),1000,0,1000,100,-5,5);
    }
-
-   japp->RootUnLock();
 
 	return NOERROR;
 }
@@ -150,7 +146,9 @@ jerror_t JEventProcessor_PSC_TW::evnt(JEventLoop *loop, uint64_t eventnumber)
    else
       return NOERROR;
 
-   japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
    if (pairs.size() > 0) {
       psc_mod_l = pairs[0]->ee.first->module;
@@ -166,7 +164,7 @@ jerror_t JEventProcessor_PSC_TW::evnt(JEventLoop *loop, uint64_t eventnumber)
       h_dt_vs_pp_r[psc_mod_r - 1]->Fill(pp_r,tdc_r - rf_r);
    }
 
-   japp->RootUnLock();
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
    return NOERROR;
 }

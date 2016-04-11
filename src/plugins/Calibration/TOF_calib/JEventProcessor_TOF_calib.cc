@@ -360,8 +360,9 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     }
   }
 
-  japp->RootWriteLock(); 
-  pthread_mutex_lock(&mutex);
+	// FILL HISTOGRAMS
+	// Since we are filling histograms (and trees in a file) local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   Event = eventnumber;
   TShift = TimingShift;
@@ -464,8 +465,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     t3->Fill();
   }
 
-  pthread_mutex_unlock(&mutex);
-  japp->RootUnLock();
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }
@@ -519,6 +519,7 @@ jerror_t JEventProcessor_TOF_calib::WriteRootFile(void){
 
 jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
 
+	//NO LOCKS: CALLED IN init(): GUARANTEED TO BE SINGLE-THREADED
   /*
   cout<<endl;
   cout<<"CALL MakeHistograms for TOF_calib!!!! "<<endl;
@@ -530,8 +531,6 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
     //cout<<"SETUP HISTOGRAMS AND TREE FOR RUN "<<RunNumber<<flush<<endl;
 
     first = 0;
-
-    japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
     TDirectory *top = gDirectory;
 
@@ -582,7 +581,6 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
     t3->Branch("TDCST",TDCST,"TDCST[NsinglesT]/F");
 
     top->cd();
-    japp->RootUnLock(); //RELEASE ROOT LOCK!!
   }
 
   return NOERROR;

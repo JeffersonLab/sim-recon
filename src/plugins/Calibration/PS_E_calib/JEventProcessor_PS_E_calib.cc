@@ -107,8 +107,6 @@ jerror_t JEventProcessor_PS_E_calib::init(void)
 	// japp->RootUnLock();
 	//
 
-   japp->RootWriteLock();
-
    // create root folder tagm
    TDirectory *tagmDir = gDirectory->mkdir("TAGM");
    TDirectory *taghDir = gDirectory->mkdir("TAGH");
@@ -136,7 +134,6 @@ jerror_t JEventProcessor_PS_E_calib::init(void)
                                         50,0,1,NEb_PS,Ebl_PS,Ebh_PS);
    }
    
-   japp->RootUnLock();
 	return NOERROR;
 }
 
@@ -195,7 +192,9 @@ jerror_t JEventProcessor_PS_E_calib::evnt(JEventLoop *loop, uint64_t eventnumber
    loop->Get(ps_pairs);
    loop->Get(psc_pairs);
 
-   japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
    if (psc_pairs.size() > 0 ) {
       for (uint32_t i = 0; i < ps_pairs.size(); ++i) {
@@ -251,7 +250,8 @@ jerror_t JEventProcessor_PS_E_calib::evnt(JEventLoop *loop, uint64_t eventnumber
          }
       }
    }
-   japp->RootUnLock();
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
 }
