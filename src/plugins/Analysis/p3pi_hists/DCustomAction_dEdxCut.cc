@@ -13,6 +13,8 @@ void DCustomAction_dEdxCut::Initialize(JEventLoop* locEventLoop)
 	//Create any histograms/trees/etc. within a ROOT lock. 
 		//This is so that when running multithreaded, only one thread is writing to the ROOT file at a time. 
 
+	//CREATE THE FUNCTIONS
+	//Since we are creating functions, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		string locFuncName = "df_dEdxCut_SelectHeavy"; //e.g. proton

@@ -14,6 +14,7 @@
 #include <PID/DNeutralParticleHypothesis.h>
 #include "PID/DNeutralParticleHypothesis_factory.h"
 #include <PID/DNeutralShower.h>
+#include <PID/DNeutralParticle.h>
 #include <PID/DEventRFBunch.h>
 
 #include "ANALYSIS/DParticleComboBlueprint.h"
@@ -32,9 +33,12 @@ class DNeutralParticleHypothesis_factory_Combo:public jana::JFactory<DNeutralPar
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		void Build_RFPIDMap(map<Particle_t, vector<const DReaction*> >& locPIDMap, map<const DReaction*, set<const DEventRFBunch*> >& locRFBunchReactionMap, map<Particle_t, set<const DEventRFBunch*> >& locRFBunchPIDMap);
+
 		DNeutralParticleHypothesis_factory* dNeutralParticleHypothesisFactory;
 
-		set<Particle_t> dNeutralPIDs;
+		vector<const DReaction*> dReactions;
+		map<Particle_t, vector<const DReaction*> > dNeutralPIDs; //vector: reactions for which they are needed
 		string dShowerSelectionTag;
 };
 

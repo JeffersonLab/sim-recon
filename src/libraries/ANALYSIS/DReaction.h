@@ -113,7 +113,6 @@ class DReaction : public JObject
 		bool Get_EnableTTreeOutputFlag(void) const{return dEnableTTreeOutputFlag;}
 
 		// OTHER:
-		bool Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex = 1) const;
 		bool Check_AreStepsIdentical(const DReaction* locReaction) const;
 
 	private:
@@ -196,17 +195,6 @@ inline string DReaction::Get_DecayChainFinalParticlesROOTNames(Particle_t locIni
 		return Get_DecayChainFinalParticlesROOTNames(loc_i, locUpToStepIndex, locUpThroughPIDs, locKinFitResultsFlag, false);
 	}
 	return string("");
-}
-
-inline bool DReaction::Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex) const
-{
-	//see if this pid is a parent in a future step
-	for(size_t loc_k = locSearchStartIndex; loc_k < dReactionSteps.size(); ++loc_k)
-	{
-		if(dReactionSteps[loc_k]->Get_InitialParticleID() == locPID)
-			return true;
-	}
-	return false;
 }
 
 inline void DReaction::Get_ReactionSteps(Particle_t locInitialPID, deque<const DReactionStep*>& locReactionSteps) const

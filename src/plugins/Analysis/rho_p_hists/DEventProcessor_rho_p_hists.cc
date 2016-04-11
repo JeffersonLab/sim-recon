@@ -115,7 +115,8 @@ jerror_t DEventProcessor_rho_p_hists::evnt(JEventLoop *loop, uint64_t eventnumbe
 	//--------------------------------------------------------------------
 	// Fill histograms below here using values in the rec_XXX containers.
 
-	pthread_mutex_lock(&mutex);
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 	
 	evt->Clear();
 	evt->event = eventnumber;
@@ -151,8 +152,16 @@ jerror_t DEventProcessor_rho_p_hists::evnt(JEventLoop *loop, uint64_t eventnumbe
 
 	// We are only interested in single rho events so return now if there
 	// are not exactly one thrown pi+ and one thrown pi-
-	if(thrown_piplus.size()!=1)return NOERROR;
-	if(thrown_piminus.size()!=1)return NOERROR;
+	if(thrown_piplus.size()!=1)
+	{
+		japp->RootUnLock(); //RELEASE ROOT LOCK
+		return NOERROR;
+	}
+	if(thrown_piminus.size()!=1)
+	{
+		japp->RootUnLock(); //RELEASE ROOT LOCK
+		return NOERROR;
+	}
 
 	// Determine whether both thrown pions are fiducial
 	evt->rho_thrown.isfiducial = IsFiducial(thrown_piplus[0]) && IsFiducial(thrown_piminus[0]);
@@ -185,7 +194,7 @@ jerror_t DEventProcessor_rho_p_hists::evnt(JEventLoop *loop, uint64_t eventnumbe
 	evt->rho->Sort(); // sort by closeness of invariant mass to 770MeV/c^2 (uses rho_t::Compare );
 	tree->Fill();
 
-	pthread_mutex_unlock(&mutex);
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
 	return NOERROR;
 }

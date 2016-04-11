@@ -61,7 +61,6 @@ jerror_t JEventProcessor_ST_online_lowlevel::init(void)
 	//  ... fill historgrams or trees ...
 	// japp->RootUnLock();
 	//
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
   
   //Create root folder for ST and cd to it, store main dir
   TDirectory *main = gDirectory;
@@ -136,7 +135,7 @@ jerror_t JEventProcessor_ST_online_lowlevel::init(void)
     }
   // cd back to main directory
   main->cd();
-  japp->RootUnLock();
+
   return NOERROR;
 }
 
@@ -201,8 +200,10 @@ jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, uint64_t eve
   uint32_t TDC_hits       = dsctdcdigihits.size();
   uint32_t Hits           = dschits.size();
 
-  // Lock ROOT mutex so other threads won't interfere 
-  japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
   if( (dscdigihits.size()>0) || (dsctdcdigihits.size()>0) || (dschits.size()>0) )
     st_num_events->Fill(1);
   //******** Fill 2D multiplicity histos ********************************
@@ -438,7 +439,8 @@ jerror_t JEventProcessor_ST_online_lowlevel::evnt(JEventLoop *loop, uint64_t eve
       
     }// End Hit loop
   // Lock ROOT mutex so other threads won't interfere 
-  japp->RootUnLock();
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
   return NOERROR;
 }
 

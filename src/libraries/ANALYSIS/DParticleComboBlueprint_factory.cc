@@ -33,7 +33,7 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 	{
 		locMassStream << hypotheses[loc_i];
 		if(loc_i != (hypotheses.size() - 1))
-			locMassStream << ", ";
+			locMassStream << ",";
 	}
 
 	string HYPOTHESES = locMassStream.str();

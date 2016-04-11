@@ -9,7 +9,8 @@
 
 void DCustomAction_p2k_hists::Initialize(JEventLoop* locEventLoop)
 {
-
+	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
@@ -125,7 +126,10 @@ bool DCustomAction_p2k_hists::Perform_Action(JEventLoop* locEventLoop, const DPa
 
 	double dEdxCut = 2.2;
 
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		// Fill histograms here
 		dEgamma->Fill(locBeamPhotonEnergy);
@@ -177,7 +181,8 @@ bool DCustomAction_p2k_hists::Perform_Action(JEventLoop* locEventLoop, const DPa
 			dKminus_Beta_P_RhoTag->Fill(locParticles[1]->lorentzMomentum().Vect().Mag(), kminus_beta);
 		}
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 
 	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }
+

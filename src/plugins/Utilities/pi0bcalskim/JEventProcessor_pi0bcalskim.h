@@ -35,9 +35,6 @@ class JEventProcessor_pi0bcalskim:public jana::JEventProcessor{
   					///< Called after last event of last event source has been processed.
   double MIN_SH1_E;
   double MIN_SH2_E;
-
-  const DEventWriterEVIO* dEventWriterEVIO;		
-
  
   int WRITE_EVIO;
   int num_epics_events;

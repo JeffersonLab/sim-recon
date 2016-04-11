@@ -110,7 +110,7 @@ jerror_t DEventProcessor_track_skimmer::evnt(jana::JEventLoop* locEventLoop, uin
 	locEventLoop->Get(locChargedTracks, "PreSelect");
 
 	//MUST LOCK AROUND MODIFICATION OF MEMBER VARIABLES IN brun() or evnt().
-	japp->WriteLock("EventStoreWriter");
+	LockState();
 	{
 		if(locChargedTracks.size() >= 2)
 			dIDXAStream_2track << locRunNumber << " " << locEventNumber << " " << locUniqueID << endl;
@@ -140,7 +140,7 @@ jerror_t DEventProcessor_track_skimmer::evnt(jana::JEventLoop* locEventLoop, uin
 				dIDXAStream_5track1pi0 << locRunNumber << " " << locEventNumber << " " << locUniqueID << endl;
 		}
 	}
-	japp->Unlock("EventStoreWriter");
+	UnlockState();
 
 	return NOERROR;
 }

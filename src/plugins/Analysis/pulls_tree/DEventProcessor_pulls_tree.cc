@@ -47,8 +47,6 @@ DEventProcessor_pulls_tree::~DEventProcessor_pulls_tree()
 //------------------
 jerror_t DEventProcessor_pulls_tree::init(void)
 {
-	pthread_mutex_lock(&mutex);
-	
 	pullWB_ptr = &pullWB;
 	pullTB_ptr = &pullTB;
 
@@ -57,8 +55,6 @@ jerror_t DEventProcessor_pulls_tree::init(void)
 
 	pullsTB = new TTree("pullsTB","Time-based hits");
 	pullsTB->Branch("W","pull_t",&pullTB_ptr);
-
-	pthread_mutex_unlock(&mutex);
 
 	return NOERROR;
 }
@@ -91,8 +87,9 @@ jerror_t DEventProcessor_pulls_tree::evnt(JEventLoop *loop, uint64_t eventnumber
 	}catch(...){
 		//return NOERROR;
 	}
-	pthread_mutex_lock(&mutex);
-	loop->GetJApplication()->Lock();
+
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 	
 	for(unsigned int i=0; i<tracks.size(); i++){
 
@@ -169,8 +166,7 @@ jerror_t DEventProcessor_pulls_tree::evnt(JEventLoop *loop, uint64_t eventnumber
 		}
 	}
 	
-	loop->GetJApplication()->Unlock();
-	pthread_mutex_unlock(&mutex);
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
 	return NOERROR;
 }

@@ -179,7 +179,6 @@ jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, u
 	 	}
 	}
 
-	japp->RootWriteLock();
 	double vertexX = 0.0;
 	double vertexY = 0.0;
 	double vertexZ = 0.0;
@@ -191,6 +190,9 @@ jerror_t DEventProcessor_BCAL_gainmatrix::evnt(jana::JEventLoop* locEventLoop, u
 	}
 
 //OoOoOoOoOoOoOoOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO CALCULATING THE PI0 INVARIANT MASS PORTION O0O0O0O0O0O0O0O0OOooooooooooOooOoOoooooOOooooOOo
+
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock();
 
 	for(unsigned int i=0; i<locBCALShowers.size(); i++){
 	  	double pi0_mass = 0.1349766;
@@ -307,7 +309,10 @@ jerror_t DEventProcessor_BCAL_gainmatrix::erun(void)
 	// changed to give you a chance to clean up before processing
 	// events from the next run number.
 
-  japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
   int n_channels = 768;
 
   h1D_nhits = new TH1F("h1D_nhits", "Number of hits as function of channel number", n_channels,0,767);
@@ -325,7 +330,7 @@ jerror_t DEventProcessor_BCAL_gainmatrix::erun(void)
    	 }
     }
 
-    japp->RootUnLock();
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
     return NOERROR;
 }
 

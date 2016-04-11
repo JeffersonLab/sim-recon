@@ -38,197 +38,295 @@ vector <TDirectory *>& GetAllDirectories(void){
     return allDirectories;
 }
 
-map<TString, TH1I*>& Get1DMap(void){
-    static map<TString, TH1I*> TH1IMap;
+map<TString, pair<TH1I*, pthread_rwlock_t*> >& Get1DMap(void){
+    static map<TString, pair<TH1I*, pthread_rwlock_t*> > TH1IMap;
     return TH1IMap;
 }
 
-map<TString, TH2I*>& Get2DMap(void){
-    static map<TString, TH2I*> TH2IMap;
+map<TString, pair<TH2I*, pthread_rwlock_t*> >& Get2DMap(void){
+    static map<TString, pair<TH2I*, pthread_rwlock_t*> > TH2IMap;
     return TH2IMap;
 }
 
-map<TString, TProfile*>& Get1DProfileMap(void){
-    static map<TString, TProfile*> TProfile1DMap;
+map<TString, pair<TProfile*, pthread_rwlock_t*> >& Get1DProfileMap(void){
+    static map<TString, pair<TProfile*, pthread_rwlock_t*> > TProfile1DMap;
     return TProfile1DMap;
 }
 
-map<TString, TProfile2D*>& Get2DProfileMap(void){
-    static map<TString, TProfile2D*> TProfile2DMap;
+map<TString, pair<TProfile2D*, pthread_rwlock_t*> >& Get2DProfileMap(void){
+    static map<TString, pair<TProfile2D*, pthread_rwlock_t*> > TProfile2DMap;
     return TProfile2DMap;
 }
 
+pthread_rwlock_t* InitializeMapLock(){
+    pthread_rwlock_t *thisLock = new pthread_rwlock_t();
+    pthread_rwlock_init(thisLock, NULL);
+    return thisLock;
+}
+
 void Fill1DHistogram (const char * plugin, const char * directoryName, const char * name, const double value, const char * title , int nBins, double xmin, double xmax, bool print = false){
-    japp->RootWriteLock();
+    static pthread_rwlock_t *mapLock = InitializeMapLock(); 
     TH1I * histogram;
-    TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
+    pair<TH1I*, pthread_rwlock_t*> histogramPair;
+
+    char fullNameChar[500];
+    sprintf(fullNameChar, "%s/%s/%s", plugin, directoryName, name); 
+    TString fullName = TString(fullNameChar);
+
     try {
-        histogram = Get1DMap().at(fullName);
+        pthread_rwlock_rdlock(mapLock); // Grab the read lock
+        histogramPair = Get1DMap().at(fullName); // If the exception is caught, it bails immediately and will not release the lock
+        pthread_rwlock_unlock(mapLock);
     }
     catch (const std::out_of_range& oor) {
-        if (print) std::cerr << ansi_green << plugin << " ===> Making New 1D Histogram " << name << ansi_normal << endl;
-        TDirectory *homedir = gDirectory;
-        TDirectory *temp;
-        temp = gDirectory->mkdir(plugin);
-        if(temp) GetAllDirectories().push_back(temp);
-        gDirectory->cd(plugin);
-        GetAllDirectories().push_back(gDirectory->mkdir(directoryName));
-        gDirectory->cd(directoryName);
-        Get1DMap()[fullName] = new TH1I( name, title, nBins, xmin, xmax);
-        Get1DMap()[fullName]->Fill(value);
-        homedir->cd();
-        japp->RootUnLock();
-        return;
+        // Drop the read lock and grab the write lock
+        pthread_rwlock_unlock(mapLock);
+        pthread_rwlock_wrlock(mapLock);
+        // At this point, more than one thread might have made it through the try and ended up in the catch. 
+        // do a single threaded (write locked) "try" again to be sure we aren't duplicating the histogram
+        try {
+            histogramPair = Get1DMap().at(fullName); 
+        }
+        catch(const std::out_of_range& oor) {
+            // This now must be the first thread to get here, so we should make the histogram, fill and move on
+            if (print) std::cerr << ansi_green << plugin << " ===> Making New 1D Histogram " << fullName << ansi_normal << endl;
+            // Initialize the histogram lock
+            pthread_rwlock_t *histogramLock = new pthread_rwlock_t();
+            pthread_rwlock_init(histogramLock, NULL);
+            // Get the ROOT lock and create the histogram
+            // WARNING: Locking inside a lock is bad practice, but sometimes not easy to avoid.
+            // there would be a problem if there was another function that tried to grab the map lock
+            // inside a root lock. In this code, this will not happen.
+            japp->RootWriteLock();
+            TDirectory *homedir = gDirectory;
+            TDirectory *temp;
+            temp = gDirectory->mkdir(plugin);
+            if(temp) GetAllDirectories().push_back(temp);
+            gDirectory->cd(plugin);
+            GetAllDirectories().push_back(gDirectory->mkdir(directoryName));
+            gDirectory->cd(directoryName);
+            histogram = new TH1I( name, title, nBins, xmin, xmax);
+            histogram->Fill(value);
+            homedir->cd();
+            japp->RootUnLock();
+
+            Get1DMap()[fullName] = make_pair(histogram, histogramLock);
+            pthread_rwlock_unlock(mapLock);
+            return;
+        }
+        // If nothing is caught, the histogram must have been created by another thread 
+        // while we were waiting to grab the write lock. Drop the lock and carry on...
+        pthread_rwlock_unlock(mapLock);
     }
+
+    histogram = histogramPair.first;
+    pthread_rwlock_t *histogramLockPtr = histogramPair.second;
+    pthread_rwlock_wrlock(histogramLockPtr);
     histogram->Fill(value);
-    japp->RootUnLock();
+    pthread_rwlock_unlock(histogramLockPtr);
+
     return;
 }
 
 void Fill2DHistogram (const char * plugin, const char * directoryName, const char * name, const double valueX , const double valueY , const char * title , int nBinsX, double xmin, double xmax, int nBinsY, double ymin, double ymax, bool print = false){
-    japp->RootWriteLock();
+
+    static pthread_rwlock_t *mapLock = InitializeMapLock();
     TH2I * histogram;
-    TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
+    pair<TH2I*, pthread_rwlock_t*> histogramPair;
+
+    char fullNameChar[500];
+    sprintf(fullNameChar, "%s/%s/%s", plugin, directoryName, name);
+    TString fullName = TString(fullNameChar);
+
     try {
-        histogram = Get2DMap().at(fullName);
+        pthread_rwlock_rdlock(mapLock); // Grab the read lock
+        histogramPair = Get2DMap().at(fullName);
+        pthread_rwlock_unlock(mapLock); 
     }
     catch (const std::out_of_range& oor) {
-        if (print) std::cerr << ansi_green << plugin << " ===> Making New 2D Histogram " << name << ansi_normal << endl;
-        TDirectory *homedir = gDirectory;
-        TDirectory *temp;
-        temp = gDirectory->mkdir(plugin);
-        if(temp) GetAllDirectories().push_back(temp);
-        gDirectory->cd(plugin);
-        GetAllDirectories().push_back(gDirectory->mkdir(directoryName));
-        gDirectory->cd(directoryName);
-        Get2DMap()[fullName] = new TH2I( name, title, nBinsX, xmin, xmax, nBinsY, ymin, ymax);
-        Get2DMap()[fullName]->Fill(valueX, valueY);
-        homedir->cd();
-        japp->RootUnLock();
-        return;
+        // Drop the read lock and grab the write lock
+        pthread_rwlock_unlock(mapLock);
+        pthread_rwlock_wrlock(mapLock);
+        // At this point, more than one thread might have made it through the try and ended up in the catch.
+        // do a single threaded (write locked) "try" again to be sure we aren't duplicating the histogram
+        try{
+            histogramPair = Get2DMap().at(fullName);
+        }
+        catch  (const std::out_of_range& oor) {
+            if (print) std::cerr << ansi_green << plugin << " ===> Making New 2D Histogram " << name << ansi_normal << endl;
+            // Initialize the histogram lock
+            pthread_rwlock_t *histogramLock = new pthread_rwlock_t();
+            pthread_rwlock_init(histogramLock, NULL);
+
+            // Get the ROOT lock and create the histogram
+            // WARNING: Locking inside a lock is bad practice, but sometimes not easy to avoid.
+            // there would be a problem if there was another function that tried to grab the map lock
+            // inside a root lock. In this code, this will not happen.
+            japp->RootWriteLock();
+            TDirectory *homedir = gDirectory;
+            TDirectory *temp;
+            temp = gDirectory->mkdir(plugin);
+            if(temp) GetAllDirectories().push_back(temp);
+            gDirectory->cd(plugin);
+            GetAllDirectories().push_back(gDirectory->mkdir(directoryName));
+            gDirectory->cd(directoryName);
+            histogram = new TH2I( name, title, nBinsX, xmin, xmax, nBinsY, ymin, ymax);
+            histogram->Fill(valueX, valueY);
+            homedir->cd();
+            japp->RootUnLock();
+
+            Get2DMap()[fullName] = make_pair(histogram,histogramLock);
+            pthread_rwlock_unlock(mapLock);
+            return;
+        }
+        // If nothing is caught, the histogram must have been created by another thread
+        // while we were waiting to grab the write lock. Drop the lock and carry on...
+        pthread_rwlock_unlock(mapLock);
     }
+
+    histogram = histogramPair.first;
+    pthread_rwlock_t *histogramLockPtr = histogramPair.second;
+    pthread_rwlock_wrlock(histogramLockPtr);
     histogram->Fill(valueX, valueY);
-    japp->RootUnLock();
+    pthread_rwlock_unlock(histogramLockPtr);
+
     return;
 }
 
 void Fill1DProfile (const char * plugin, const char * directoryName, const char * name, const double valueX , const double valueY , const char * title , int nBinsX, double xmin, double xmax, bool print = false){
-    japp->RootWriteLock();
+
+    static pthread_rwlock_t *mapLock = InitializeMapLock();
     TProfile * profile;
-    TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
+    pair<TProfile*, pthread_rwlock_t*> profilePair;
+
+    char fullNameChar[500];
+    sprintf(fullNameChar, "%s/%s/%s", plugin, directoryName, name);
+    TString fullName = TString(fullNameChar);
     try {
-        profile = Get1DProfileMap().at(fullName);
+        pthread_rwlock_rdlock(mapLock); // Grab the read lock
+        profilePair = Get1DProfileMap().at(fullName);
+        pthread_rwlock_unlock(mapLock); 
     }
     catch (const std::out_of_range& oor) {
-        if (print) std::cerr << ansi_green << plugin << " ===> Making New 1D Profile " << name << ansi_normal << endl;
-        TDirectory *homedir = gDirectory;
-        TDirectory *temp;
-        temp = gDirectory->mkdir(plugin);
-        if(temp) GetAllDirectories().push_back(temp);
-        gDirectory->cd(plugin);
-        GetAllDirectories().push_back(gDirectory->mkdir(directoryName));
-        gDirectory->cd(directoryName);
-        Get1DProfileMap()[fullName] = new TProfile( name, title, nBinsX, xmin, xmax);
-        Get1DProfileMap()[fullName]->Fill(valueX, valueY);
-        homedir->cd();
-        japp->RootUnLock();
-        return;
+        // Drop the read lock and grab the write lock
+        pthread_rwlock_unlock(mapLock);
+        pthread_rwlock_wrlock(mapLock);
+        // At this point, more than one thread might have made it through the try and ended up in the catch.
+        // do a single threaded (write locked) "try" again to be sure we aren't duplicating the histogram
+        try{
+            profilePair = Get1DProfileMap().at(fullName);
+        }
+        catch (const std::out_of_range& oor) {
+            if (print) std::cerr << ansi_green << plugin << " ===> Making New 1D Profile " << name << ansi_normal << endl;
+            // Initialize the profile lock
+            pthread_rwlock_t *profileLock = new pthread_rwlock_t();
+            pthread_rwlock_init(profileLock, NULL);
+
+            // Get the ROOT lock and create the histogram
+            // WARNING: Locking inside a lock is bad practice, but sometimes not easy to avoid.
+            // there would be a problem if there was another function that tried to grab the map lock
+            // inside a root lock. In this code, this will not happen.
+            japp->RootWriteLock();// Get the ROOT lock and create the histogram
+            TDirectory *homedir = gDirectory;
+            TDirectory *temp;
+            temp = gDirectory->mkdir(plugin);
+            if(temp) GetAllDirectories().push_back(temp);
+            gDirectory->cd(plugin);
+            GetAllDirectories().push_back(gDirectory->mkdir(directoryName));
+            gDirectory->cd(directoryName);
+            profile = new TProfile( name, title, nBinsX, xmin, xmax);
+            profile->Fill(valueX, valueY);
+            homedir->cd();
+            japp->RootUnLock();
+
+            Get1DProfileMap()[fullName] = make_pair(profile,profileLock);
+            pthread_rwlock_unlock(mapLock);
+            return;
+        }
+        // If nothing is caught, the histogram must have been created by another thread
+        // while we were waiting to grab the write lock. Drop the lock and carry on...
+        pthread_rwlock_unlock(mapLock);
     }
+
+    profile = profilePair.first;
+    pthread_rwlock_t *profileLockPtr = profilePair.second;
+    pthread_rwlock_wrlock(profileLockPtr);
     profile->Fill(valueX, valueY);
-    japp->RootUnLock();
+    pthread_rwlock_unlock(profileLockPtr);
+
     return;
 }
 
 void Fill2DProfile (const char * plugin, const char * directoryName, const char * name, const double valueX , const double valueY , const double valueZ, const char * title , int nBinsX, double xmin, double xmax, int nBinsY, double ymin, double ymax, bool print = false){
-    japp->RootWriteLock();
+    static pthread_rwlock_t *mapLock = InitializeMapLock();
     TProfile2D * profile;
-    TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
+    pair<TProfile2D*, pthread_rwlock_t*> profilePair;
+
+    char fullNameChar[500];
+    sprintf(fullNameChar, "%s/%s/%s", plugin, directoryName, name);
+    TString fullName = TString(fullNameChar);
     try {
-        profile = Get2DProfileMap().at(fullName);
+        pthread_rwlock_rdlock(mapLock); // Grab the read lock
+        profilePair = Get2DProfileMap().at(fullName);
+        pthread_rwlock_unlock(mapLock); 
     }
     catch (const std::out_of_range& oor) {
-        if (print) std::cerr << ansi_green << plugin << " ===> Making New 2D Profile " << name << ansi_normal << endl;
-        TDirectory *homedir = gDirectory;
-        TDirectory *temp;
-        temp = gDirectory->mkdir(plugin);
-        if(temp) GetAllDirectories().push_back(temp);
-        gDirectory->cd(plugin);
-        GetAllDirectories().push_back(gDirectory->mkdir(directoryName));
-        gDirectory->cd(directoryName);
-        Get2DProfileMap()[fullName] = new TProfile2D( name, title, nBinsX, xmin, xmax, nBinsY, ymin, ymax);
-        Get2DProfileMap()[fullName]->Fill(valueX, valueY, valueZ);
-        homedir->cd();
-        japp->RootUnLock();
-        return;
+        // Drop the read lock and grab the write lock
+        pthread_rwlock_unlock(mapLock);
+        pthread_rwlock_wrlock(mapLock);
+        // At this point, more than one thread might have made it through the try and ended up in the catch.
+        // do a single threaded (write locked) "try" again to be sure we aren't duplicating the histogram
+        try{
+            profilePair = Get2DProfileMap().at(fullName);
+        }
+        catch (const std::out_of_range& oor) {
+            if (print) std::cerr << ansi_green << plugin << " ===> Making New 2D Profile " << name << ansi_normal << endl;
+            // Initialize the profile lock
+            pthread_rwlock_t *profileLock = new pthread_rwlock_t();
+            pthread_rwlock_init(profileLock, NULL);
+
+            // Get the ROOT lock and create the histogram
+            // WARNING: Locking inside a lock is bad practice, but sometimes not easy to avoid. 
+            // there would be a problem if there was another function that tried to grab the map lock 
+            // inside a root lock. In this code, this will not happen. 
+            japp->RootWriteLock();
+            TDirectory *homedir = gDirectory;
+            TDirectory *temp;
+            temp = gDirectory->mkdir(plugin);
+            if(temp) GetAllDirectories().push_back(temp);
+            gDirectory->cd(plugin);
+            GetAllDirectories().push_back(gDirectory->mkdir(directoryName));
+            gDirectory->cd(directoryName);
+            profile = new TProfile2D( name, title, nBinsX, xmin, xmax, nBinsY, ymin, ymax);
+            profile->Fill(valueX, valueY, valueZ);
+            homedir->cd();
+            japp->RootUnLock();
+
+            Get2DProfileMap()[fullName] = make_pair(profile, profileLock);
+            pthread_rwlock_unlock(mapLock);
+            return;
+        }
+        // If nothing is caught, the histogram must have been created by another thread
+        // while we were waiting to grab the write lock. Drop the lock and carry on...
+        pthread_rwlock_unlock(mapLock);
     }
+
+    profile = profilePair.first;
+    pthread_rwlock_t *profileLockPtr = profilePair.second;
+    pthread_rwlock_wrlock(profileLockPtr);
     profile->Fill(valueX, valueY, valueZ);
-    japp->RootUnLock();
+    pthread_rwlock_unlock(profileLockPtr);
+
     return;
 }
 
-TH1I * Get1DHistogram(const char * plugin, const char * directoryName, const char * name){
-    TH1I * histogram;
-    TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
-    japp->RootWriteLock(); // Lock this thread down while we search for the histogram
-    try {
-        histogram = Get1DMap().at(fullName);
-    }
-    catch (const std::out_of_range& oor) {
-        cout << ansi_red << ansi_blink << "Specified histogram " << fullName.Data() << " does not exist" << ansi_normal << endl;
-        // Let's be nice and find the closest match
-        TString matchName = "";
-        int closestMatch = 1000000; //Just initialize high
-        map<TString, TH1I*>::const_iterator iter;
-        for(iter = Get1DMap().begin(); iter != Get1DMap().end(); iter++){
-            int match = fullName.CompareTo((*iter).first);
-            if( match < closestMatch ){
-                matchName = (*iter).first;
-                closestMatch = match;
-            }
-        }
-        cout << ansi_red << "The closest match is " << matchName.Data() << ansi_normal << endl;
-        japp->RootUnLock();
-        return NULL;
-    }
-    japp->RootUnLock();
-    return histogram;
-}
-
-TH2I * Get2DHistogram(const char * plugin, const char * directoryName, const char * name){
-    TH2I * histogram;
-    TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
-    japp->RootWriteLock(); // Lock this thread down while we search for the histogram
-    try {
-        histogram = Get2DMap().at(fullName);
-    }
-    catch (const std::out_of_range& oor) {
-        cout << ansi_red << ansi_blink << "Specified histogram " << fullName.Data() << " does not exist" << ansi_normal << endl;
-        // Let's be nice and find the closest match
-        TString matchName = "";
-        int closestMatch = 1000000; //Just initialize high
-        map<TString, TH2I*>::const_iterator iter;
-        for(iter = Get2DMap().begin(); iter != Get2DMap().end(); iter++){
-            int match = fullName.CompareTo((*iter).first);
-            if( match < closestMatch ){
-                matchName = (*iter).first;
-                closestMatch = match;
-            }
-        }
-        cout << ansi_red << "The closest match is " << matchName.Data() << ansi_normal << endl;
-        japp->RootUnLock();
-        return NULL;
-    }
-    japp->RootUnLock();
-    return histogram;
-}
-
 void SortDirectories(){
+    japp->RootWriteLock();
     for (unsigned int i=0; i < GetAllDirectories().size(); i++){
         if (GetAllDirectories()[i] == 0) continue;
-        japp->RootWriteLock();
         GetAllDirectories()[i]->GetList()->Sort();
-        japp->RootUnLock();
     }
+    japp->RootUnLock();
 }
 
 #endif
