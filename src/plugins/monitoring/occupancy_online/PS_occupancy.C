@@ -25,59 +25,71 @@
 	TLegend *legend_sa = new TLegend(0.1,0.85,0.3,0.9);
 	TLegend *legend_na = new TLegend(0.3,0.85,0.5,0.9);
 
-	psc_tdc_left_occ->SetBarWidth(0.5);
-	psc_tdc_left_occ->SetBarOffset(0);
-	psc_tdc_left_occ->SetFillColor(2);
-	psc_tdc_left_occ->SetStats(0);
-	psc_tdc_left_occ->SetXTitle("Module number");
-	psc_tdc_left_occ->SetYTitle("fADC/TDC occupancy");
-	psc_tdc_left_occ->SetTitleSize(0.05,"X");
-	psc_tdc_left_occ->GetXaxis()->CenterTitle();
-	psc_tdc_left_occ->SetTitleSize(0.05,"Y");
-	psc_tdc_left_occ->GetYaxis()->CenterTitle();
+	if(psc_tdc_left_occ){
+		psc_tdc_left_occ->SetBarWidth(0.5);
+		psc_tdc_left_occ->SetBarOffset(0);
+		psc_tdc_left_occ->SetFillColor(2);
+		psc_tdc_left_occ->SetStats(0);
+		psc_tdc_left_occ->SetXTitle("Module number");
+		psc_tdc_left_occ->SetYTitle("fADC/TDC occupancy");
+		psc_tdc_left_occ->SetTitleSize(0.05,"X");
+		psc_tdc_left_occ->GetXaxis()->CenterTitle();
+		psc_tdc_left_occ->SetTitleSize(0.05,"Y");
+		psc_tdc_left_occ->GetYaxis()->CenterTitle();
+	}
+	
+	if(psc_adc_left_occ){
+		psc_adc_left_occ->SetBarWidth(0.5);
+		psc_adc_left_occ->SetBarOffset(0.5);
+		psc_adc_left_occ->SetFillColor(3);
+		psc_adc_left_occ->SetStats(0);
+	}
+	
+	if(psc_tdc_right_occ){
+		psc_tdc_right_occ->SetBarWidth(0.5);
+		psc_tdc_right_occ->SetBarOffset(0);
+		psc_tdc_right_occ->SetFillColor(2);
+		psc_tdc_right_occ->SetStats(0);
+		psc_tdc_right_occ->SetXTitle("Module number");
+		psc_tdc_right_occ->SetYTitle("fADC/TDC occupancy");
+		psc_tdc_right_occ->SetTitleSize(0.05,"X");
+		psc_tdc_right_occ->GetXaxis()->CenterTitle();
+		psc_tdc_right_occ->SetTitleSize(0.05,"Y");
+		psc_tdc_right_occ->GetYaxis()->CenterTitle();
+	}
 
-	psc_adc_left_occ->SetBarWidth(0.5);
-	psc_adc_left_occ->SetBarOffset(0.5);
-	psc_adc_left_occ->SetFillColor(3);
-	psc_adc_left_occ->SetStats(0);
+	if(psc_adc_right_occ){
+		psc_adc_right_occ->SetBarWidth(0.5);
+		psc_adc_right_occ->SetBarOffset(0.5);
+		psc_adc_right_occ->SetFillColor(3);
+		psc_adc_right_occ->SetStats(0);
+	}
 
-	psc_tdc_right_occ->SetBarWidth(0.5);
-	psc_tdc_right_occ->SetBarOffset(0);
-	psc_tdc_right_occ->SetFillColor(2);
-	psc_tdc_right_occ->SetStats(0);
-	psc_tdc_right_occ->SetXTitle("Module number");
-	psc_tdc_right_occ->SetYTitle("fADC/TDC occupancy");
-	psc_tdc_right_occ->SetTitleSize(0.05,"X");
-	psc_tdc_right_occ->GetXaxis()->CenterTitle();
-	psc_tdc_right_occ->SetTitleSize(0.05,"Y");
-	psc_tdc_right_occ->GetYaxis()->CenterTitle();
-
-	psc_adc_right_occ->SetBarWidth(0.5);
-	psc_adc_right_occ->SetBarOffset(0.5);
-	psc_adc_right_occ->SetFillColor(3);
-	psc_adc_right_occ->SetStats(0);
-
-	ps_left_occ->SetBarWidth(0.5);
-	ps_left_occ->SetBarOffset(0);
-	ps_left_occ->SetFillColor(2);
-	ps_left_occ->SetStats(0);
-	ps_left_occ->SetXTitle("Column number");
-	ps_left_occ->SetYTitle("fADC occupancy");
-	ps_left_occ->SetTitleSize(0.05,"X");
-	ps_left_occ->GetXaxis()->CenterTitle();
-	ps_left_occ->SetTitleSize(0.05,"Y");
-	ps_left_occ->GetYaxis()->CenterTitle();
-
-	ps_right_occ->SetBarWidth(0.5);
-	ps_right_occ->SetBarOffset(0);
-	ps_right_occ->SetFillColor(2);
-	ps_right_occ->SetStats(0);
-	ps_right_occ->SetXTitle("Column number");
-	ps_right_occ->SetYTitle("fADC occupancy");
-	ps_right_occ->SetTitleSize(0.05,"X");
-	ps_right_occ->GetXaxis()->CenterTitle();
-	ps_right_occ->SetTitleSize(0.05,"Y");
-	ps_right_occ->GetYaxis()->CenterTitle();
+	if(ps_left_occ){
+		ps_left_occ->SetBarWidth(0.5);
+		ps_left_occ->SetBarOffset(0);
+		ps_left_occ->SetFillColor(2);
+		ps_left_occ->SetStats(0);
+		ps_left_occ->SetXTitle("Column number");
+		ps_left_occ->SetYTitle("fADC occupancy");
+		ps_left_occ->SetTitleSize(0.05,"X");
+		ps_left_occ->GetXaxis()->CenterTitle();
+		ps_left_occ->SetTitleSize(0.05,"Y");
+		ps_left_occ->GetYaxis()->CenterTitle();
+	}
+	
+	if(ps_right_occ){
+		ps_right_occ->SetBarWidth(0.5);
+		ps_right_occ->SetBarOffset(0);
+		ps_right_occ->SetFillColor(2);
+		ps_right_occ->SetStats(0);
+		ps_right_occ->SetXTitle("Column number");
+		ps_right_occ->SetYTitle("fADC occupancy");
+		ps_right_occ->SetTitleSize(0.05,"X");
+		ps_right_occ->GetXaxis()->CenterTitle();
+		ps_right_occ->SetTitleSize(0.05,"Y");
+		ps_right_occ->GetYaxis()->CenterTitle();
+	}
 
 	legend_sa->AddEntry(psc_tdc_left_occ,"TDC","f");
 	legend_na->AddEntry(psc_adc_left_occ,"fADC","f");

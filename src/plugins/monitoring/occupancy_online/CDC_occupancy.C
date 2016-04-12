@@ -78,6 +78,14 @@
 			hh->Draw("same col pol");  // draw remaining histos without overwriting color palette
 		}
 	}
+	
+	char str[256];
+	sprintf(str,"%0.0f events", Nevents);
+	TLatex lat(0.0, 67.0, str);
+	lat.SetTextAlign(22);
+	lat.SetTextSize(0.035);
+	lat.Draw();
+
 
 	savedir->cd();
 }

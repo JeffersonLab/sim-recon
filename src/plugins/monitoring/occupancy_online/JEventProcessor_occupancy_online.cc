@@ -111,7 +111,7 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 	}
 
 	//------------------------ FCAL -----------------------
-	fcal_occ = new TH2I("fcal_occ", "FCAL Pulse Occupancy; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5);
+	fcal_occ = new TH2I("fcal_occ", "FCAL Occupancy; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5);
 	fcal_num_events = new TH1I("fcal_num_events", "FCAL number of events", 1, 0.0, 1.0);
 
 	//------------------------ FDC ------------------------

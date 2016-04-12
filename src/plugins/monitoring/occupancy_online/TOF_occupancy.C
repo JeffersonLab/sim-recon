@@ -37,57 +37,73 @@
 	TLegend *legend_u = new TLegend(0.5,0.85,0.7,0.9);
 	TLegend *legend_d = new TLegend(0.7,0.85,0.9,0.9);
 
-	ha_s->SetBarWidth(0.5);
-	ha_s->SetBarOffset(0);
-	ha_s->SetFillColor(2);
-	ha_s->SetStats(0);
-	ha_s->SetXTitle("Module number");
-	ha_s->SetYTitle("fADC occupancy");
-	ha_s->SetTitleSize(0.05,"X");
-	ha_s->GetXaxis()->CenterTitle();
-	ha_s->SetTitleSize(0.05,"Y");
-	ha_s->GetYaxis()->CenterTitle();
+	if(ha_s){
+		ha_s->SetBarWidth(0.5);
+		ha_s->SetBarOffset(0);
+		ha_s->SetFillColor(2);
+		ha_s->SetStats(0);
+		ha_s->SetXTitle("Module number");
+		ha_s->SetYTitle("fADC occupancy");
+		ha_s->SetTitleSize(0.05,"X");
+		ha_s->GetXaxis()->CenterTitle();
+		ha_s->SetTitleSize(0.05,"Y");
+		ha_s->GetYaxis()->CenterTitle();
+	}
+	
+	if(ha_n){
+		ha_n->SetBarWidth(0.5);
+		ha_n->SetBarOffset(0.5);
+		ha_n->SetFillColor(3);
+		ha_n->SetStats(0);
+	}
+	
+	if(ha_u){
+		ha_u->SetBarWidth(0.5);
+		ha_u->SetBarOffset(1.0);
+		ha_u->SetFillColor(4);
+		ha_u->SetStats(0);
+	}
 
-	ha_n->SetBarWidth(0.5);
-	ha_n->SetBarOffset(0.5);
-	ha_n->SetFillColor(3);
-	ha_n->SetStats(0);
+	if(ha_d){
+		ha_d->SetBarWidth(0.5);
+		ha_d->SetBarOffset(1.5);
+		ha_d->SetFillColor(6);
+		ha_d->SetStats(0);
+	}
 
-	ha_u->SetBarWidth(0.5);
-	ha_u->SetBarOffset(1.0);
-	ha_u->SetFillColor(4);
-	ha_u->SetStats(0);
+	if(h_s){
+		h_s->SetBarWidth(0.5);
+		h_s->SetBarOffset(0);
+		h_s->SetFillColor(2);
+		h_s->SetStats(0);
+		h_s->SetXTitle("Module number");
+		h_s->SetYTitle("TDC occupancy");
+		h_s->SetTitleSize(0.05,"X");
+		h_s->GetXaxis()->CenterTitle();
+		h_s->SetTitleSize(0.05,"Y");
+		h_s->GetYaxis()->CenterTitle();
+	}
+	
+	if(h_n){
+		h_n->SetBarWidth(0.5);
+		h_n->SetBarOffset(0.5);
+		h_n->SetFillColor(3);
+		h_n->SetStats(0);
+	}
 
-	ha_d->SetBarWidth(0.5);
-	ha_d->SetBarOffset(1.5);
-	ha_d->SetFillColor(6);
-	ha_d->SetStats(0);
+	if(h_u){
+		h_u->SetBarWidth(0.5);
+		h_u->SetBarOffset(1.0);
+		h_u->SetFillColor(4);
+		h_u->SetStats(0);
+	}
 
-	h_s->SetBarWidth(0.5);
-	h_s->SetBarOffset(0);
-	h_s->SetFillColor(2);
-	h_s->SetStats(0);
-	h_s->SetXTitle("Module number");
-	h_s->SetYTitle("TDC occupancy");
-	h_s->SetTitleSize(0.05,"X");
-	h_s->GetXaxis()->CenterTitle();
-	h_s->SetTitleSize(0.05,"Y");
-	h_s->GetYaxis()->CenterTitle();
-
-	h_n->SetBarWidth(0.5);
-	h_n->SetBarOffset(0.5);
-	h_n->SetFillColor(3);
-	h_n->SetStats(0);
-
-	h_u->SetBarWidth(0.5);
-	h_u->SetBarOffset(1.0);
-	h_u->SetFillColor(4);
-	h_u->SetStats(0);
-
-	h_d->SetBarWidth(0.5);
-	h_d->SetBarOffset(1.5);
-	h_d->SetFillColor(6);
-	h_d->SetStats(0);
+	if(h_d){
+		h_d->SetBarWidth(0.5);
+		h_d->SetBarOffset(1.5);
+		h_d->SetFillColor(6);
+		h_d->SetStats(0);
+	}
 
 	legend_sa->AddEntry(ha_s,"South","f");
 	legend_na->AddEntry(ha_n,"North","f");
