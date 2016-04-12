@@ -154,6 +154,7 @@ class DParsedEvent{
 		// This avoids having to look up the factory pointer for each data type
 		// for every event.
 		#define copytofactory(A) facptrs.fac_##A->CopyTo(v##A);
+		#define setevntcalled(A) facptrs.fac_##A->Set_evnt_called();
 		#define keepownership(A) facptrs.fac_##A->SetFactoryFlag(JFactory_base::NOT_OBJECT_OWNER);
 		void CopyToFactories(JEventLoop *loop){
 			// Get DFactoryPointers for this JEventLoop, creating new one if necessary
@@ -162,6 +163,7 @@ class DParsedEvent{
 
 			// Copy all data vectors to appropriate factories
 			MyTypes(copytofactory)
+			MyTypes(setevntcalled)
 			MyTypes(keepownership)
 			copied_to_factories=true;
 		}
