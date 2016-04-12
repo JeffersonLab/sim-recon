@@ -11,6 +11,7 @@
 #include <JANA/JEventProcessor.h>
 
 #include <GlueX.h>
+#include <PAIR_SPECTROMETER/DPSGeometry.h>
 
 
 #include <TDirectory.h>
@@ -38,6 +39,12 @@ class JEventProcessor_occupancy_online:public jana::JEventProcessor{
 		//------------------------ FDC ------------------------
 
 		//------------------------ PS/PSC ---------------------
+		TH1I *psc_adc_left_occ;
+		TH1I *psc_adc_right_occ;
+		TH1I *psc_tdc_left_occ;
+		TH1I *psc_tdc_right_occ;
+		TH1I *ps_left_occ;
+		TH1I *ps_right_occ;
 
 		//------------------------ RF -------------------------
 		TH1D* rf_occ; //TH1D ON PURPOSE!
@@ -59,15 +66,15 @@ class JEventProcessor_occupancy_online:public jana::JEventProcessor{
 		TH2F *cdc_occ_ring[28];
 
 		//------------------------ TOF ------------------------
-		TH1I *tdcOccS;
-		TH1I *tdcOccN;
-		TH1I *tdcOccU;
-		TH1I *tdcOccD;
+		TH1I *tof_tdc_S_occ;
+		TH1I *tof_tdc_N_occ;
+		TH1I *tof_tdc_U_occ;
+		TH1I *tof_tdc_D_occ;
 
-		TH1I *adcOccS;
-		TH1I *adcOccN;
-		TH1I *adcOccU;
-		TH1I *adcOccD;
+		TH1I *tof_adc_S_occ;
+		TH1I *tof_adc_N_occ;
+		TH1I *tof_adc_U_occ;
+		TH1I *tof_adc_D_occ;
 
 
 	private:

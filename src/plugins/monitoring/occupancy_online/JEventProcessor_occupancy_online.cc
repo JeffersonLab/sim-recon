@@ -14,11 +14,23 @@ using namespace jana;
 #include <BCAL/DBCALTDCDigiHit.h>
 #include <CDC/DCDCDigiHit.h>
 #include <FCAL/DFCALDigiHit.h>
+#include <PAIR_SPECTROMETER/DPSCDigiHit.h>
+#include <PAIR_SPECTROMETER/DPSCTDCDigiHit.h>
+#include <PAIR_SPECTROMETER/DPSDigiHit.h>
+#include <PAIR_SPECTROMETER/DPSGeometry.h>
+#include <TAGGER/DTAGHTDCDigiHit.h>
+#include <TAGGER/DTAGHDigiHit.h>
+#include <TAGGER/DTAGHHit.h>
+#include <TAGGER/DTAGHGeometry.h>
 #include <TOF/DTOFDigiHit.h>
 #include <TOF/DTOFTDCDigiHit.h>
+#include <TPOL/DTPOLSectorDigiHit.h>
+#include <TPOL/DTPOLHit_factory.h>
+#include <RF/DRFTDCDigiTime.h>
 #include <START_COUNTER/DSCDigiHit.h>
 #include <START_COUNTER/DSCTDCDigiHit.h>
-#include <RF/DRFTDCDigiTime.h>
+#include <TAGGER/DTAGMDigiHit.h>
+#include <TAGGER/DTAGMTDCDigiHit.h>
 
 
 // Routine used to create our JEventProcessor
@@ -56,6 +68,7 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 	// All histograms go in the "occupancy" directory
 	TDirectory *main = gDirectory;
 	gDirectory->mkdir("occupancy")->cd();
+//	TDirectory *occ_dir = gDirectory;
 
 
 
@@ -104,6 +117,12 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 	//------------------------ FDC ------------------------
 
 	//------------------------ PS/PSC ---------------------
+	psc_adc_left_occ   = new TH1I("psc_adc_left_occ",  "PSC fADC hit occupancy Left", 8, 0.5, 8.5);
+	psc_adc_right_occ  = new TH1I("psc_adc_right_occ", "PSC fADC hit occupancy Right", 8, 0.5, 8.5);
+	psc_tdc_left_occ   = new TH1I("psc_tdc_left_occ",  "PSC TDC hit occupancy Left",  8, 0.5, 8.5);
+	psc_tdc_right_occ  = new TH1I("psc_tdc_right_occ", "PSC TDC hit occupancy Right",  8, 0.5, 8.5);
+	ps_left_occ        = new TH1I("ps_left_occ",       "PS fADC hit occupancy Left", 145, 0.5, 145.5);
+	ps_right_occ       = new TH1I("ps_right_occ",      "PS fADC hit occupancy Right", 145, 0.5, 145.5);
 
 	//------------------------ RF -------------------------
 	rf_occ = new TH1D("rf_occ", "RF TDC Occupancy", 4, 0.5, 4.5);
@@ -155,15 +174,15 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 	cdc_num_events = new TH1I("cdc_num_events", "CDC number of events", 1, 0.0, 1.0);
 
 	//------------------------ TOF ------------------------
-	tdcOccS = new TH1I("tdcOccS","TOF, TDC Occupancy",86,1,44);
-	tdcOccN = new TH1I("tdcOccN","TOF, TDC Occupancy",86,1,44);
-	tdcOccU = new TH1I("tdcOccU","TOF, TDC Occupancy",86,1,44);
-	tdcOccD = new TH1I("tdcOccD","TOF, TDC Occupancy",86,1,44);
+	tof_tdc_S_occ = new TH1I("tof_tdc_S_occ","TOF, TDC Occupancy",86,1,44);
+	tof_tdc_N_occ = new TH1I("tof_tdc_N_occ","TOF, TDC Occupancy",86,1,44);
+	tof_tdc_U_occ = new TH1I("tof_tdc_U_occ","TOF, TDC Occupancy",86,1,44);
+	tof_tdc_D_occ = new TH1I("tof_tdc_D_occ","TOF, TDC Occupancy",86,1,44);
 
-	adcOccS = new TH1I("adcOccS","TOF, fADC Occupancy",86,1,44);
-	adcOccN = new TH1I("adcOccN","TOF, fADC Occupancy",86,1,44);
-	adcOccU = new TH1I("adcOccU","TOF, fADC Occupancy",86,1,44);
-	adcOccD = new TH1I("adcOccD","TOF, fADC Occupancy",86,1,44);
+	tof_adc_S_occ = new TH1I("tof_adc_S_occ","TOF, fADC Occupancy",86,1,44);
+	tof_adc_N_occ = new TH1I("tof_adc_N_occ","TOF, fADC Occupancy",86,1,44);
+	tof_adc_U_occ = new TH1I("tof_adc_U_occ","TOF, fADC Occupancy",86,1,44);
+	tof_adc_D_occ = new TH1I("tof_adc_D_occ","TOF, fADC Occupancy",86,1,44);
 
 
 	// back to main dir
@@ -192,6 +211,9 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	vector<const DBCALTDCDigiHit*>  bcaltdcdigihits;
 	vector<const DCDCDigiHit*>      cdcdigihits;
 	vector<const DFCALDigiHit*>     fcaldigihits;
+	vector<const DPSCDigiHit*>      pscdigihits;
+	vector<const DPSCTDCDigiHit*>   psctdcdigihits;
+	vector<const DPSDigiHit*>       psdigihits;
 	vector<const DTOFDigiHit*>      tofdigihits;
 	vector<const DTOFTDCDigiHit*>   toftdcdigihits;
 	vector<const DSCDigiHit*>       scdigihits;
@@ -201,6 +223,9 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	loop->Get(bcaltdcdigihits);
 	loop->Get(cdcdigihits);
 	loop->Get(fcaldigihits);
+	loop->Get(pscdigihits);
+	loop->Get(psctdcdigihits);
+	loop->Get(psdigihits);
 	loop->Get(tofdigihits);
 	loop->Get(toftdcdigihits);
 	loop->Get(scdigihits);
@@ -245,6 +270,28 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	//------------------------ FDC ------------------------
 
 	//------------------------ PS/PSC ---------------------
+	const int Nmods = 8; 
+	for(unsigned int i=0; i < pscdigihits.size(); i++) {
+		const DPSCDigiHit *hit = pscdigihits[i];
+		if( hit->counter_id <= Nmods )
+			psc_adc_left_occ->Fill(hit->counter_id);
+		else
+			psc_adc_right_occ->Fill(hit->counter_id - Nmods);
+	}
+	for(unsigned int i=0; i < psctdcdigihits.size(); i++) {
+		const DPSCTDCDigiHit *hit = psctdcdigihits[i];
+		if( hit->counter_id <= Nmods )
+			psc_tdc_left_occ->Fill(hit->counter_id);
+		else
+			psc_tdc_right_occ->Fill(hit->counter_id - Nmods);
+	}
+	for(unsigned int i=0; i < psdigihits.size(); i++) {
+		const DPSDigiHit *hit = psdigihits[i];
+		if( hit->arm == 0 )
+			ps_left_occ->Fill(hit->column);
+		else
+			ps_right_occ->Fill(hit->column);
+	}
 
 	//------------------------ RF -------------------------
 	rf_num_events->Fill(0.5);
@@ -285,10 +332,10 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 		int bar   = hit->bar;
 		int end   = hit->end;
 
-		if( plane==0 && end==0 ) adcOccU->Fill(bar);
-		if( plane==0 && end==1 ) adcOccD->Fill(bar);
-		if( plane==1 && end==0 ) adcOccN->Fill(bar);
-		if( plane==1 && end==1 ) adcOccS->Fill(bar);
+		if( plane==0 && end==0 ) tof_adc_U_occ->Fill(bar);
+		if( plane==0 && end==1 ) tof_adc_D_occ->Fill(bar);
+		if( plane==1 && end==0 ) tof_adc_N_occ->Fill(bar);
+		if( plane==1 && end==1 ) tof_adc_S_occ->Fill(bar);
 	}
 
 	// TDC Hits
@@ -299,10 +346,10 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 		int bar   = hit->bar;
 		int end   = hit->end;
 
-		if( plane==0 && end==0 ) tdcOccU->Fill(bar);
-		if( plane==0 && end==1 ) tdcOccD->Fill(bar);
-		if( plane==1 && end==0 ) tdcOccN->Fill(bar);
-		if( plane==1 && end==1 ) tdcOccS->Fill(bar);
+		if( plane==0 && end==0 ) tof_tdc_U_occ->Fill(bar);
+		if( plane==0 && end==1 ) tof_tdc_D_occ->Fill(bar);
+		if( plane==1 && end==0 ) tof_tdc_N_occ->Fill(bar);
+		if( plane==1 && end==1 ) tof_tdc_S_occ->Fill(bar);
 	}
 
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK

@@ -17,15 +17,15 @@
 	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("occupancy");
 	if(dir) dir->cd();
 
-	TH1I *ha_s = (TH1I*)gDirectory->FindObjectAny("adcOccS");
-	TH1I *ha_n = (TH1I*)gDirectory->FindObjectAny("adcOccN");
-	TH1I *ha_u = (TH1I*)gDirectory->FindObjectAny("adcOccU");
-	TH1I *ha_d = (TH1I*)gDirectory->FindObjectAny("adcOccD");
+	TH1I *ha_s = (TH1I*)gDirectory->FindObjectAny("tof_adc_S_occ");
+	TH1I *ha_n = (TH1I*)gDirectory->FindObjectAny("tof_adc_N_occ");
+	TH1I *ha_u = (TH1I*)gDirectory->FindObjectAny("tof_adc_U_occ");
+	TH1I *ha_d = (TH1I*)gDirectory->FindObjectAny("tof_adc_D_occ");
 
-	TH1I *h_s = (TH1I*)gDirectory->FindObjectAny("tdcOccS");
-	TH1I *h_n = (TH1I*)gDirectory->FindObjectAny("tdcOccN");
-	TH1I *h_u = (TH1I*)gDirectory->FindObjectAny("tdcOccU");
-	TH1I *h_d = (TH1I*)gDirectory->FindObjectAny("tdcOccD");
+	TH1I *h_s = (TH1I*)gDirectory->FindObjectAny("tof_tdc_S_occ");
+	TH1I *h_n = (TH1I*)gDirectory->FindObjectAny("tof_tdc_N_occ");
+	TH1I *h_u = (TH1I*)gDirectory->FindObjectAny("tof_tdc_U_occ");
+	TH1I *h_d = (TH1I*)gDirectory->FindObjectAny("tof_tdc_D_occ");
 
 	TLegend *legend_sa = new TLegend(0.1,0.85,0.3,0.9);
 	TLegend *legend_na = new TLegend(0.3,0.85,0.5,0.9);
