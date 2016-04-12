@@ -56,14 +56,14 @@
 	c1->cd(0);
 
 	// Draw axes
-	TH2D *axes = (TH2D *)dir->Get("axes");
-	if(!axes) axes = new TH2D("axes", "CDC Occupancy", 100, -65.0, 65.0, 100, -65.0, 65.0);
+	TH2D *cdc_axes = (TH2D *)dir->Get("cdc_axes");
+	if(!cdc_axes) cdc_axes = new TH2D("cdc_axes", "CDC Occupancy", 100, -65.0, 65.0, 100, -65.0, 65.0);
 
 	double minScale = 0.0, maxScale = 0.10;
-	axes->SetStats(0);
-	axes->Fill(100,100); // without this, the color ramp is not drawn
-	axes->GetZaxis()->SetRangeUser(minScale, maxScale);
-	axes->Draw("colz");
+	cdc_axes->SetStats(0);
+	cdc_axes->Fill(100,100); // without this, the color ramp is not drawn
+	cdc_axes->GetZaxis()->SetRangeUser(minScale, maxScale);
+	cdc_axes->Draw("colz");
 
 	for(unsigned int iring=1; iring<=28; iring++){
 		char hname[256];
