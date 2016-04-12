@@ -18,6 +18,7 @@ using namespace jana;
 #include <TOF/DTOFTDCDigiHit.h>
 #include <START_COUNTER/DSCDigiHit.h>
 #include <START_COUNTER/DSCTDCDigiHit.h>
+#include <RF/DRFTDCDigiTime.h>
 
 
 // Routine used to create our JEventProcessor
@@ -105,6 +106,16 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 	//------------------------ PS/PSC ---------------------
 
 	//------------------------ RF -------------------------
+	rf_occ = new TH1D("rf_occ", "RF TDC Occupancy", 4, 0.5, 4.5);
+	rf_occ->GetXaxis()->SetBinLabel(1, "FDC");
+	rf_occ->GetXaxis()->SetBinLabel(2, "PSC");
+	rf_occ->GetXaxis()->SetBinLabel(3, "TAGH");
+	rf_occ->GetXaxis()->SetBinLabel(4, "TOF");
+	rf_num_events = new TH1I("rf_num_events", "RF number of events", 1, 0.0, 1.0);
+	dRFBinValueMap[SYS_FDC]  = 1.0;
+	dRFBinValueMap[SYS_PSC]  = 2.0;
+	dRFBinValueMap[SYS_TAGH] = 3.0;
+	dRFBinValueMap[SYS_TOF]  = 4.0;
 
 	//------------------------ ST -------------------------
 	st_adc_occ = new TH1I("st_adc_occ", "ST fADC250 DigiHit Occupancy; Channel Number; fADC250 Counts", 30, 0.5, 30 + 0.5);
@@ -184,6 +195,7 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	vector<const DTOFDigiHit*>      tofdigihits;
 	vector<const DTOFTDCDigiHit*>   toftdcdigihits;
 	vector<const DSCDigiHit*>       scdigihits;
+	vector<const DRFTDCDigiTime*>   rfdigihits;
 	vector<const DSCTDCDigiHit*>    sctdcdigihits;
 	loop->Get(bcaldigihits);
 	loop->Get(bcaltdcdigihits);
@@ -192,6 +204,7 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	loop->Get(tofdigihits);
 	loop->Get(toftdcdigihits);
 	loop->Get(scdigihits);
+	loop->Get(rfdigihits);
 	loop->Get(sctdcdigihits);
 
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
@@ -224,6 +237,7 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	}
 
 	//------------------------ FCAL -----------------------
+	fcal_num_events->Fill(0.5);
 	for(size_t loc_i = 0; loc_i < fcaldigihits.size(); ++loc_i){
 		fcal_occ->Fill(fcaldigihits[loc_i]->column, fcaldigihits[loc_i]->row);
 	}
@@ -233,6 +247,11 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	//------------------------ PS/PSC ---------------------
 
 	//------------------------ RF -------------------------
+	rf_num_events->Fill(0.5);
+	for(size_t loc_i = 0; loc_i < rfdigihits.size(); ++loc_i){
+		DetectorSystem_t locSystem = rfdigihits[loc_i]->dSystem;
+		rf_occ->Fill(dRFBinValueMap[locSystem]);
+	}
 
 	//------------------------ ST -------------------------
 	for(uint32_t i = 0; i < scdigihits.size();    i++) st_adc_occ->Fill(scdigihits[i]->sector);

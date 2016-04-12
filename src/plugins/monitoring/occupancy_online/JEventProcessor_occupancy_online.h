@@ -10,6 +10,7 @@
 
 #include <JANA/JEventProcessor.h>
 
+#include <GlueX.h>
 
 
 #include <TDirectory.h>
@@ -39,6 +40,9 @@ class JEventProcessor_occupancy_online:public jana::JEventProcessor{
 		//------------------------ PS/PSC ---------------------
 
 		//------------------------ RF -------------------------
+		TH1D* rf_occ; //TH1D ON PURPOSE!
+		TH1I *rf_num_events;
+		map<DetectorSystem_t, double> dRFBinValueMap;
 
 		//------------------------ ST -------------------------
 		TH1I *st_adc_occ;
