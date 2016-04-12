@@ -27,6 +27,8 @@ class JEventProcessor_occupancy_online:public jana::JEventProcessor{
 
 
 		//------------------------ BCAL -----------------------
+		TH2I *bcal_adc_occ;
+		TH2I *bcal_tdc_occ;
 
 		//------------------------ FCAL -----------------------
 		TH1I *fcal_num_events;

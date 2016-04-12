@@ -10,6 +10,8 @@
 #include "JEventProcessor_occupancy_online.h"
 using namespace jana;
 
+#include <BCAL/DBCALDigiHit.h>
+#include <BCAL/DBCALTDCDigiHit.h>
 #include <CDC/DCDCDigiHit.h>
 #include <FCAL/DFCALDigiHit.h>
 #include <TOF/DTOFDigiHit.h>
@@ -57,6 +59,42 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 
 
 	//------------------------ BCAL -----------------------
+	//FADC
+	bcal_adc_occ = new TH2I("bcal_adc_occ","ADC occupancy (DBCALDigiHit);Module", 48, 0.5, 48.5, 33, 0.5, 33.5);
+	// Set y-axis labels for occupancy plots
+	for(int ibin = 1; ibin <= 16; ibin++)
+	{
+		int idy = ibin-1; // convenient to use index that starts from zero!
+		int layer  = 1 + (idy%4);
+		int sector = 1 + idy/4;
+		
+		ostringstream ss;
+		ss << "D  S" << sector << "  L" << layer;
+		bcal_adc_occ->GetYaxis()->SetBinLabel(ibin, ss.str().c_str());
+
+		ss.str("");
+		ss << "U  S" << sector << "  L" << layer;
+		bcal_adc_occ->GetYaxis()->SetBinLabel(ibin + 17, ss.str().c_str());
+	}
+
+	// TDC
+	bcal_tdc_occ = new TH2I("bcal_tdc_occ","TDC occupancy (DBCALDigiTDCHit);Module", 48, 0.5, 48.5, 25, 0.5, 25.5);
+	// Set y-axis labels for occupancy plots (without layer 4)
+	for(int ibin = 1; ibin <= 12; ibin++)
+	{
+		int idy = ibin-1; // convenient to use index that starts from zero!
+		
+		int layer  = 1 + (idy%3);
+		int sector = 1 + idy/3;
+		
+		ostringstream ss;
+		ss << "D  S" << sector << "  L" << layer;
+		bcal_tdc_occ->GetYaxis()->SetBinLabel(ibin, ss.str().c_str());
+
+		ss.str("");
+		ss << "U  S" << sector << "  L" << layer;
+		bcal_tdc_occ->GetYaxis()->SetBinLabel(ibin + 13, ss.str().c_str());
+	}
 
 	//------------------------ FCAL -----------------------
 	fcal_occ = new TH2I("fcal_occ", "FCAL Pulse Occupancy; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5);
@@ -139,12 +177,16 @@ jerror_t JEventProcessor_occupancy_online::brun(JEventLoop *eventLoop, int32_t r
 //------------------
 jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
+	vector<const DBCALDigiHit*>     bcaldigihits;
+	vector<const DBCALTDCDigiHit*>  bcaltdcdigihits;
 	vector<const DCDCDigiHit*>      cdcdigihits;
 	vector<const DFCALDigiHit*>     fcaldigihits;
 	vector<const DTOFDigiHit*>      tofdigihits;
 	vector<const DTOFTDCDigiHit*>   toftdcdigihits;
 	vector<const DSCDigiHit*>       scdigihits;
 	vector<const DSCTDCDigiHit*>    sctdcdigihits;
+	loop->Get(bcaldigihits);
+	loop->Get(bcaltdcdigihits);
 	loop->Get(cdcdigihits);
 	loop->Get(fcaldigihits);
 	loop->Get(tofdigihits);
@@ -155,6 +197,31 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	//------------------------ BCAL -----------------------
+	//ADC
+	for(unsigned int i = 0; i < bcaldigihits.size(); i++){
+		const DBCALDigiHit *hit = bcaldigihits[i];
+
+		int ix = hit->module;
+		int iy = (hit->sector-1)*4 + hit->layer;
+
+		if(hit->end == DBCALGeometry::kUpstream)
+			bcal_adc_occ->Fill(ix, iy+17);
+		else if(hit->end == DBCALGeometry::kDownstream)
+			bcal_adc_occ->Fill(ix, iy);
+	}
+
+	//TDC
+	for(unsigned int i = 0; i < bcaltdcdigihits.size(); i++){
+		const DBCALTDCDigiHit *hit = bcaltdcdigihits[i];
+
+		int ix = hit->module;
+		int iy = (hit->sector-1)*3 + hit->layer; // TDC has 3 layers per sector
+
+		if(hit->end == DBCALGeometry::kUpstream)
+			bcal_tdc_occ->Fill(ix, iy+13);
+		else if(hit->end == DBCALGeometry::kDownstream)
+			bcal_tdc_occ->Fill(ix, iy);
+	}
 
 	//------------------------ FCAL -----------------------
 	for(size_t loc_i = 0; loc_i < fcaldigihits.size(); ++loc_i){
