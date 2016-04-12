@@ -3,6 +3,7 @@
 // which histograms to fetch for the macro.
 //
 // hnamepath: /occupancy/fcal_occ
+// hnamepath: /occupancy/fcal_num_events
 
 {
 	TDirectory *savedir = gDirectory;
@@ -34,6 +35,8 @@
 
 	gPad->SetTicks();
 	gPad->SetGrid();
+	gPad->SetRightMargin(2.0);
+	gPad->SetLeftMargin(2.0);
 	if(fcal_occ){
 		fcal_occ->SetStats(0);
 		fcal_occ->Draw("colz");

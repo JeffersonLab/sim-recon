@@ -3,34 +3,34 @@
 // which histograms to fetch for the macro.
 //
 // hnamepath: /occupancy/cdc_num_events
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_01
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_02
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_03
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_04
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_05
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_06
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_07
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_08
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_09
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_10
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_11
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_12
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_13
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_14
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_15
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_16
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_17
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_18
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_19
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_20
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_21
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_22
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_23
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_24
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_25
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_26
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_27
-// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_28
+// hnamepath: /occupancy/cdc_occ_ring_01
+// hnamepath: /occupancy/cdc_occ_ring_02
+// hnamepath: /occupancy/cdc_occ_ring_03
+// hnamepath: /occupancy/cdc_occ_ring_04
+// hnamepath: /occupancy/cdc_occ_ring_05
+// hnamepath: /occupancy/cdc_occ_ring_06
+// hnamepath: /occupancy/cdc_occ_ring_07
+// hnamepath: /occupancy/cdc_occ_ring_08
+// hnamepath: /occupancy/cdc_occ_ring_09
+// hnamepath: /occupancy/cdc_occ_ring_10
+// hnamepath: /occupancy/cdc_occ_ring_11
+// hnamepath: /occupancy/cdc_occ_ring_12
+// hnamepath: /occupancy/cdc_occ_ring_13
+// hnamepath: /occupancy/cdc_occ_ring_14
+// hnamepath: /occupancy/cdc_occ_ring_15
+// hnamepath: /occupancy/cdc_occ_ring_16
+// hnamepath: /occupancy/cdc_occ_ring_17
+// hnamepath: /occupancy/cdc_occ_ring_18
+// hnamepath: /occupancy/cdc_occ_ring_19
+// hnamepath: /occupancy/cdc_occ_ring_20
+// hnamepath: /occupancy/cdc_occ_ring_21
+// hnamepath: /occupancy/cdc_occ_ring_22
+// hnamepath: /occupancy/cdc_occ_ring_23
+// hnamepath: /occupancy/cdc_occ_ring_24
+// hnamepath: /occupancy/cdc_occ_ring_25
+// hnamepath: /occupancy/cdc_occ_ring_26
+// hnamepath: /occupancy/cdc_occ_ring_27
+// hnamepath: /occupancy/cdc_occ_ring_28
 
 
 {

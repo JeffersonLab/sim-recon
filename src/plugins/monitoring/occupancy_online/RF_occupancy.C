@@ -3,6 +3,7 @@
 // which histograms to fetch for the macro.
 //
 // hnamepath: /occupancy/rf_occ
+// hnamepath: /occupancy/rf_num_events
 
 {
 	TDirectory *savedir = gDirectory;

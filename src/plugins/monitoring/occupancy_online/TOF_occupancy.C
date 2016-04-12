@@ -2,14 +2,14 @@
 // The following are special comments used by RootSpy to know
 // which histograms to fetch for the macro.
 //
-// hnamepath: /occupancy/tdcOccS
-// hnamepath: /occupancy/tdcOccN
-// hnamepath: /occupancy/tdcOccU
-// hnamepath: /occupancy/tdcOccD
-// hnamepath: /occupancy/adcOccS
-// hnamepath: /occupancy/adcOccN
-// hnamepath: /occupancy/adcOccU
-// hnamepath: /occupancy/adcOccD
+// hnamepath: /occupancy/tof_adc_S_occ
+// hnamepath: /occupancy/tof_adc_N_occ
+// hnamepath: /occupancy/tof_adc_U_occ
+// hnamepath: /occupancy/tof_adc_D_occ
+// hnamepath: /occupancy/tof_tdc_S_occ
+// hnamepath: /occupancy/tof_tdc_N_occ
+// hnamepath: /occupancy/tof_tdc_U_occ
+// hnamepath: /occupancy/tof_tdc_D_occ
 
 {
 	TDirectory *savedir = gDirectory;

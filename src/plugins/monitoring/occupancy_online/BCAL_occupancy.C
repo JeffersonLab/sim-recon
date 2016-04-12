@@ -2,8 +2,8 @@
 // The following are special comments used by RootSpy to know
 // which histograms to fetch for the macro.
 //
-// hnamepath: /bcal/bcal_adc_occ
-// hnamepath: /bcal/bcal_tdc_occ
+// hnamepath: /occupancy/bcal_adc_occ
+// hnamepath: /occupancy/bcal_tdc_occ
 
 {
 	TDirectory *savedir = gDirectory;
@@ -31,14 +31,20 @@
 	TVirtualPad *pad1 = c1->cd(1);
 	pad1->SetTicks();
 	pad1->SetLeftMargin(0.15);
-	bcal_adc_occ->SetStats(0);
-	bcal_adc_occ->Draw("colz");
+	pad1->SetRightMargin(0.15);
+	if(bcal_adc_occ){
+		bcal_adc_occ->SetStats(0);
+		bcal_adc_occ->Draw("colz");
+	}
 
 	TVirtualPad *pad2 = c1->cd(2);
 	pad2->SetTicks();
 	pad2->SetLeftMargin(0.15);
-	bcal_tdc_occ->SetStats(0);
-	bcal_tdc_occ->Draw("colz");
+	pad2->SetRightMargin(0.15);
+	if(bcal_tdc_occ){
+		bcal_tdc_occ->SetStats(0);
+		bcal_tdc_occ->Draw("colz");
+	}
 
 	savedir->cd();
 }
