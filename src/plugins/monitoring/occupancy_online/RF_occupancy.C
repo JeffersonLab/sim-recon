@@ -3,6 +3,7 @@
 // which histograms to fetch for the macro.
 //
 // hnamepath: /occupancy/rf_occ
+// hnamepath: /occupancy/tpol_occ
 // hnamepath: /occupancy/rf_num_events
 
 {
@@ -12,6 +13,7 @@
 	if(dir) dir->cd();
 
 	TH2I *rf_occ = (TH2I*)gDirectory->FindObjectAny("rf_occ");
+	TH2I *tpol_occ = (TH2I*)gDirectory->FindObjectAny("tpol_occ");
 	TH1I *rf_num_events = (TH1I*)gDirectory->FindObjectAny("rf_num_events");
 
 	double Nevents = 1.0;
@@ -33,8 +35,11 @@
 	c1->cd(0);
 	c1->Clear();
 
-	gPad->SetTicks();
-	gPad->SetGrid();
+	c1->Divide(1,2);
+	
+	TVirtualPad *pad1 = c1->cd(1);
+	pad1->SetTicks();
+	pad1->SetGrid();
 	if(rf_occ){
 		
 		// Draw axes
@@ -55,9 +60,19 @@
 		lat.SetTextAlign(22);
 		lat.SetTextSize(0.035);
 		lat.Draw();
+
+		legend_sa->Draw();
 	}
 
-	legend_sa->Draw();
+	TVirtualPad *pad2 = c1->cd(2);
+	pad2->SetTicks();
+	pad2->SetGrid();
+	if(tpol_occ){
+		tpol_occ->SetFillColor(kOrange);
+		tpol_occ->SetLineWidth(5);
+		tpol_occ->SetLineColor(kBlack);
+		tpol_occ->Draw();
+	}
 
 	savedir->cd();
 }
