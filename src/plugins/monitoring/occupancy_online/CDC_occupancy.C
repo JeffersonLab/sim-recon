@@ -2,50 +2,46 @@
 // The following are special comments used by RootSpy to know
 // which histograms to fetch for the macro.
 //
-// hnamepath: /CDC/cdc_num_events
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[1]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[2]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[3]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[4]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[5]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[6]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[7]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[8]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[9]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[10]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[11]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[12]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[13]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[14]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[15]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[16]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[17]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[18]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[19]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[20]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[21]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[22]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[23]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[24]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[25]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[26]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[27]
-// hnamepath: /CDC/rings_occupancy/cdc_occ_ring[28]
+// hnamepath: /occupancy/cdc_num_events
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_01
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_02
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_03
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_04
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_05
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_06
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_07
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_08
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_09
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_10
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_11
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_12
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_13
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_14
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_15
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_16
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_17
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_18
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_19
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_20
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_21
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_22
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_23
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_24
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_25
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_26
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_27
+// hnamepath: /occupancy/rings_occupancy/cdc_occ_ring_28
 
 
 {
-	// Get number of events
-	double Nevents = 1.0;
-	TDirectory *CDCdir = (TDirectory*)gDirectory->FindObjectAny("CDC");
-	if(CDCdir){
-		TH1I *cdc_num_events = (TH1I*)CDCdir->Get("cdc_num_events");
-		if(cdc_num_events) Nevents = (double)cdc_num_events->GetBinContent(1);
-	}
+	TDirectory *savedir = gDirectory;
 
-	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("rings_occupancy");
-	if(!dir) return;
-	
-	dir->cd();
+	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("occupancy");
+	if(dir) dir->cd();
+
+	double Nevents = 1.0;
+	TH1I *cdc_num_events = (TH1I*)gDirectory->FindObjectAny("cdc_num_events");
+	if(cdc_num_events) Nevents = (double)cdc_num_events->GetBinContent(1);
 
 	// Just for testing
 	if(gPad == NULL){
@@ -54,10 +50,10 @@
 		c1->Draw();
 		c1->Update();
 	}
-	
-	if(!gPad) return;
+	if(!gPad) {savedir->cd(); return;}
 
 	TCanvas *c1 = gPad->GetCanvas();
+	c1->cd(0);
 
 	// Draw axes
 	TH2D *axes = (TH2D *)dir->Get("axes");
@@ -71,10 +67,10 @@
 
 	for(unsigned int iring=1; iring<=28; iring++){
 		char hname[256];
-		sprintf(hname, "cdc_occ_ring[%d]", iring);
+		sprintf(hname, "cdc_occ_ring_%02d", iring);
 		TH1 *h = (TH1*)(dir->Get(hname));
 		if(h){
-			sprintf(hname, "cdc_occ_ring_norm[%d]", iring);
+			sprintf(hname, "cdc_occ_ring_norm_%02d", iring);
 			TH1 *hh = (TH1*)h->Clone(hname);
 			hh->Scale(1.0/Nevents);
 			hh->GetZaxis()->SetRangeUser(minScale, maxScale);
@@ -82,4 +78,6 @@
 			hh->Draw("same col pol");  // draw remaining histos without overwriting color palette
 		}
 	}
+
+	savedir->cd();
 }

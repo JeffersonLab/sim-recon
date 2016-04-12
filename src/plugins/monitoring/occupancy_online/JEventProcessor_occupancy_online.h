@@ -21,19 +21,33 @@ using namespace jana;
 using namespace std;
 
 class JEventProcessor_occupancy_online:public jana::JEventProcessor{
- public:
-  JEventProcessor_occupancy_online();
-  ~JEventProcessor_occupancy_online();
-  const char* className(void){return "JEventProcessor_occupancy_online";}
+	public:
+		JEventProcessor_occupancy_online();
+		~JEventProcessor_occupancy_online();
+		const char* className(void){return "JEventProcessor_occupancy_online";}
 
-  TH1D *cdc_occ_ring[28];
-  
- private:
-  jerror_t init(void);
-  jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);
-  jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);
-  jerror_t erun(void);
-  jerror_t fini(void);
+		//------------------------ CDC ------------------------
+		TH1I *cdc_num_events;
+		TH2F *cdc_occ_ring[28];
+
+		//------------------------ TOF ------------------------
+		TH1I *tdcOccS;
+		TH1I *tdcOccN;
+		TH1I *tdcOccU;
+		TH1I *tdcOccD;
+
+		TH1I *adcOccS;
+		TH1I *adcOccN;
+		TH1I *adcOccU;
+		TH1I *adcOccD;
+
+
+	private:
+		jerror_t init(void);
+		jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);
+		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);
+		jerror_t erun(void);
+		jerror_t fini(void);
 };
 
 #endif // _JEventProcessor_occupancy_online_
