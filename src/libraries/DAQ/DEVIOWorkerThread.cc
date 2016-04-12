@@ -5,6 +5,8 @@
 // Creator: davidl (on Darwin harriet.jlab.org 13.4.0 i386)
 //
 
+#include <unistd.h>
+
 #include "DEVIOWorkerThread.h"
 
 #include <swap_bank.h>
@@ -95,11 +97,15 @@ void DEVIOWorkerThread::Run(void)
 
 		if( jobtype & JOB_FULL_PARSE ) MakeEvents();
 		
-		if( jobtype & JOB_QUIT       ) break;
+		if( jobtype & JOB_ASSOCIATE  ) LinkAllAssociations();
+		
+		if( !current_parsed_events.empty() ) PublishEvents();
 		
 		// Reset and mark us as available for use
 		jobtype = JOB_NONE;
 		in_use  = false;
+
+		if( jobtype & JOB_QUIT       ) break;		
 	}
 }
 
@@ -175,12 +181,18 @@ void DEVIOWorkerThread::MakeEvents(void)
 		pe->in_use = true;
 		pe->copied_to_factories = false;
 	}
-	
+
 	// Parse data in buffer to create data objects
 	ParseBank();
-	
-	
-	//-----------------------------------------------
+}	
+
+//---------------------------------
+// PublishEvents
+//---------------------------------
+void DEVIOWorkerThread::PublishEvents(void)
+{	
+	/// Copy our "current_parsed_events" pointers into the global "parsed_events"
+	/// list making them available for consumption. 
 	
 	// Lock mutex so other threads can't modify parsed_events
 	unique_lock<mutex> lck(PARSED_EVENTS_MUTEX);
@@ -209,6 +221,9 @@ void DEVIOWorkerThread::MakeEvents(void)
 
 	lck.unlock();
 	PARSED_EVENTS_CV.notify_all();
+	
+	// Any events should now be published
+	current_parsed_events.clear();
 }
 
 //---------------------------------
@@ -216,7 +231,6 @@ void DEVIOWorkerThread::MakeEvents(void)
 //---------------------------------
 void DEVIOWorkerThread::ParseBank(void)
 {
-//this_thread::sleep_for(milliseconds(1));
 
 	uint32_t *iptr = buff;
 	uint32_t *iend = &buff[buff[0]+1];
@@ -386,8 +400,6 @@ void DEVIOWorkerThread::ParseBuiltTriggerBank(uint32_t* &iptr, uint32_t *iend)
 //---------------------------------
 void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 {
-	uint32_t *istart = iptr;
-
 	// Physics Event's Data Bank header
 	iptr++; // advance past data bank length word
 	uint32_t rocid = ((*iptr)>>16) & 0xFFF;
@@ -1290,6 +1302,246 @@ void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t
 	while(iptr<iend && (*iptr&0xF8000000)==0xF8000000)iptr++;
 }
 
+
+//----------------------------
+// LinkAssociationsModuleOnlyB
+//----------------------------
+template<class T, class U>
+void LinkAssociationsModuleOnlyB(vector<T*> &a, vector<U*> &b)
+{
+	/// Template routine to loop over two vectors of pointers to
+	/// objects derived from DDAQAddress. This will find any hits
+	/// coming from the same DAQ module (channel number is not checked)
+	/// When a match is found, the pointer from "a" will be added
+	/// to "b"'s AssociatedObjects list. This will NOT do the inverse
+	/// of adding "b" to "a"'s list. It is intended for adding a module
+	/// level trigger time object to all hits from that module. Adding
+	/// all of the hits to the trigger time object seems like it would
+	/// be a little expensive with no real use case.
+	///
+	/// Note that this assumes the input vectors have been sorted by
+	/// rocid, then slot in ascending order.
+	
+	// Bail early if nothing to link
+	if(b.empty()) return;
+	if(a.empty()) return;
+
+	// This assumes elements in both "a" and "b" are sorted in ascending
+	// order. This allows us to skip comparisons between every possible pair.
+	for(uint32_t i=0, j=0; i<b.size(); i++){
+
+		uint32_t rocid = b[i]->rocid;
+		uint32_t slot  = b[i]->slot;
+		
+		// Advance b if it's rocid is less than next a's rocid
+		if( rocid < a[i]->rocid ) continue;
+
+		// Advance a if it's rocid is less than this b's rocid
+		for(; j<a.size(); j++) if( a[j]->rocid >= rocid ) break;
+		if( j>=a.size() ) break; // exhausted all a's. we're done
+		if( a[j]->rocid > rocid ) continue; // a rocid has gone past b. continue to next b
+		
+		// Advance b if it's slot is less than next a's slot
+		if( slot < a[i]->slot ) continue;
+
+		// Advance a if it's slot is less than this b's slot
+		for(; j<a.size(); j++){
+			if( a[j]->rocid != rocid ) break; // moved to next rocid.
+			if( a[j]->slot >= slot ) break;
+		}
+		if( j>=a.size() ) break; // exhausted all a's. we're done
+		if( a[j]->rocid != rocid ) continue; // a rocid has gone past b. continue to next b
+		if( a[j]->slot  >  slot  ) continue; // a slot has gone past b. continue to next b
+		
+		// Loop over all elements until we see a new rocid or slot
+		for(; j<b.size(); j++){
+			if(rocid != b[j]->rocid) break;
+			if(slot  != b[j]->slot ) break;
+
+//			b[j]->tmp_obj = a[i];
+			b[j]->AddAssociatedObject(a[i]);
+		}
+		if( j>=b.size() ) break;
+		
+		
+		
+		
+		
+		
+		// Advance to first element in b with this slot
+		for(; j<b.size(); j++){
+			if(rocid != b[j]->rocid) break;
+			if(slot  <= b[j]->slot ) break;
+		}
+		if( j>=b.size() ) break;
+		if(rocid != b[j]->rocid) continue;
+		if( b[j]->slot > slot ) continue;
+		
+		// Loop over all elements until we see a new rocid or slot
+		for(; j<b.size(); j++){
+			if(rocid != b[j]->rocid) break;
+			if(slot  != b[j]->slot ) break;
+
+//			b[j]->tmp_obj = a[i];
+			b[j]->AddAssociatedObject(a[i]);
+		}
+		if( j>=b.size() ) break;
+	}
+
+
+
+	
+	// This assumes elements in both "a" and "b" are sorted in ascending
+	// order. This allows us to skip comparisons between every possible pair.
+	for(uint32_t i=0, j=0; i<a.size(); i++){
+
+		uint32_t rocid = a[i]->rocid;
+		uint32_t slot = a[i]->slot;
+
+		// Advance to first element in b with this rocid
+		for(; j<b.size(); j++)if(rocid <= b[j]->rocid) break;
+		if( j>=b.size() ) break;
+		if( b[j]->rocid > rocid ) continue;
+		
+		// Advance to first element in b with this slot
+		for(; j<b.size(); j++){
+			if(rocid != b[j]->rocid) break;
+			if(slot  <= b[j]->slot ) break;
+		}
+		if( j>=b.size() ) break;
+		if(rocid != b[j]->rocid) continue;
+		if( b[j]->slot > slot ) continue;
+		
+		// Loop over all elements until we see a new rocid or slot
+		for(; j<b.size(); j++){
+			if(rocid != b[j]->rocid) break;
+			if(slot  != b[j]->slot ) break;
+
+//			b[j]->tmp_obj = a[i];
+			b[j]->AddAssociatedObject(a[i]);
+		}
+		if( j>=b.size() ) break;
+	}
+}
+
+//----------------------------
+// LinkAssociationsB
+//----------------------------
+template<class T, class U>
+void LinkAssociationsB(vector<T*> &a, vector<U*> &b)
+{
+	/// Template routine to loop over two vectors of pointers to
+	/// objects derived from DDAQAddress. This will find any hits
+	/// coming from the same DAQ module (channel number is not checked)
+	/// When a match is found, the pointer from "a" will be added
+	/// to "b"'s AssociatedObjects list. This will NOT do the inverse
+	/// of adding "b" to "a"'s list. It is intended for adding a module
+	/// level trigger time object to all hits from that module. Adding
+	/// all of the hits to the trigger time object seems like it would
+	/// be a little expensive with no real use case.
+	///
+	/// Note that this assumes the input vectors have been sorted by
+	/// rocid, then slot in ascending order.
+	
+	// Bail early if nothing to link
+	if(b.empty()) return;
+	if(a.empty()) return;
+	
+	// This assumes elements in both "a" and "b" are sorted in ascending
+	// order. This allows us to skip comparisons between every possible pair.
+	for(uint32_t i=0, j=0; i<a.size(); i++){
+
+		T *aptr = a[i];
+		uint32_t rocid        = aptr->rocid;
+		uint32_t slot         = aptr->slot;
+		uint32_t pulse_number = aptr->pulse_number;
+
+		// Advance to first element in b with this rocid
+		for(; j<b.size(); j++)if(rocid <= b[j]->rocid) break;
+		if( j>=b.size() ) break;
+		if( b[j]->rocid > rocid ) continue;
+		
+		// Advance to first element in b with this slot
+		for(; j<b.size(); j++){
+			if(rocid != b[j]->rocid) break;
+			if(slot  <= b[j]->slot ) break;
+		}
+		if( j>=b.size() ) break;
+		if(rocid != b[j]->rocid) continue;
+		if( b[j]->slot > slot ) continue;
+
+		// Advance to first element with this pulse_number
+		for(; j<b.size(); j++){
+			if(rocid != b[j]->rocid) break;
+			if(slot  != b[j]->slot ) break;
+			if(pulse_number <= b[j]->pulse_number ) break;
+		}
+		if( j>=b.size() ) break;
+		if( b[j]->pulse_number > pulse_number ) continue;
+		
+		// Loop over all elements until we see a new rocid or slot
+		for(; j<b.size(); j++){
+			if(rocid != b[j]->rocid) break;
+			if(slot  != b[j]->slot ) break;
+
+			b[j]->AddAssociatedObject(aptr);
+			aptr->AddAssociatedObject(b[i]);
+		}
+		if( j>=b.size() ) break;
+	}
+}
+
+//----------------
+// SortByModule
+//----------------
+template<class T>
+inline bool SortByModule(const T* const &obj1, const T* const &obj2)
+{
+	if(obj1->rocid < obj2->rocid) return true;
+	if(obj1->rocid > obj2->rocid) return false;
+	return obj1->slot < obj2->slot;
+}
+
+//----------------
+// SortByChannel
+//----------------
+template<class T>
+inline bool SortByChannel(const T* const &obj1, const T* const &obj2)
+{
+	if(obj1->rocid < obj2->rocid) return true;
+	if(obj1->rocid > obj2->rocid) return false;
+	if(obj1->slot  < obj2->slot ) return true;
+	if(obj1->slot  > obj2->slot ) return false;
+	return obj1->channel < obj2->channel;
+}
+
+//----------------
+// LinkAllAssociations
+//----------------
+void DEVIOWorkerThread::LinkAllAssociations(void)
+{
+	/// Find objects that should be linked as "associated objects"
+	/// of one another and add to each other's list.
+	for( auto pe : current_parsed_events){
+	
+		if(pe->vDf250TriggerTime.size()>1  ) sort(pe->vDf250TriggerTime.begin(),   pe->vDf250TriggerTime.end(),   SortByModule<Df250TriggerTime>    );
+		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByChannel<Df250PulseIntegral> );
+		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByChannel<Df250PulseTime>     );
+		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByChannel<Df250PulsePedestal> );
+		
+		// Connect Df250TriggerTime to everything
+        LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250WindowRawData);
+        LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulseIntegral);
+        LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulseTime);
+        LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulsePedestal);
+
+		//
+//		LinkAssociationsB(pe->vDf250PulseIntegral, pe->vDf250PulseTime);
+//		LinkAssociationsB(pe->vDf250PulseIntegral, pe->vDf250PulsePedestal);
+//		LinkAssociationsB(pe->vDf250PulsePedestal, pe->vDf250PulseTime);
+	}
+
+}
 
 //----------------
 // DumpBinary

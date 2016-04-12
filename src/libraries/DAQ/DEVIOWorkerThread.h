@@ -39,7 +39,7 @@ class DEVIOWorkerThread{
 			JOB_QUIT       = 0x1,
 			JOB_SWAP       = 0x2,
 			JOB_FULL_PARSE = 0x4,
-			JOB_TRANSLATE  = 0x8
+			JOB_ASSOCIATE  = 0x8
 		};
 
 		DEVIOWorkerThread(
@@ -77,11 +77,11 @@ class DEVIOWorkerThread{
 		uint32_t buff_len;
 		uint32_t *buff;
 		streampos pos;
-				
 		
 		void Run(void);
 		void Finish(bool wait_to_complete=true);
 		void MakeEvents(void);
+		void PublishEvents(void);
 		void ParseBank(void);
 		
 		void     ParseEventTagBank(uint32_t* &iptr, uint32_t *iend);
@@ -100,6 +100,8 @@ class DEVIOWorkerThread{
 		void              Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
 		void              Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
 		void             ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
+
+		void LinkAllAssociations(void);
 
 		inline uint32_t F1TDC_channel(uint32_t chip, uint32_t chan_on_chip, int modtype);
 
@@ -134,6 +136,7 @@ inline uint32_t DEVIOWorkerThread::F1TDC_channel(uint32_t chip, uint32_t chan_on
     }
     return 1000000; // (should never get here)
 }
+
 
 #endif // _DEVIOWorkerThread_
 

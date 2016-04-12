@@ -146,7 +146,7 @@ void JEventSource_EVIOpp::Dispatcher(void)
 	/// available.
 	
 	bool allow_swap = false;
-	uint32_t jobtype = DEVIOWorkerThread::JOB_SWAP | DEVIOWorkerThread::JOB_FULL_PARSE;
+	uint32_t jobtype = DEVIOWorkerThread::JOB_SWAP | DEVIOWorkerThread::JOB_FULL_PARSE | DEVIOWorkerThread::JOB_ASSOCIATE;
 	uint64_t istreamorder = 0;
 	while(true){
 	
@@ -289,8 +289,9 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	// if needed.
 	DParsedEvent *pe = (DParsedEvent*)event.GetRef();
 	JEventLoop *loop = event.GetJEventLoop();
+
 	if(!pe->copied_to_factories) pe->CopyToFactories(loop);
-	
+
 	// Apply any translation tables that exist, writing the translated objects
 	// into their respective factories
 	bool isSuppliedType = pe->IsParsedDataType(dataClassName);
