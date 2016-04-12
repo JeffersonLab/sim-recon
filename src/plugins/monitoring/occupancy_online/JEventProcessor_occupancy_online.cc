@@ -11,8 +11,11 @@
 using namespace jana;
 
 #include <CDC/DCDCDigiHit.h>
+#include <FCAL/DFCALDigiHit.h>
 #include <TOF/DTOFDigiHit.h>
 #include <TOF/DTOFTDCDigiHit.h>
+#include <START_COUNTER/DSCDigiHit.h>
+#include <START_COUNTER/DSCTDCDigiHit.h>
 
 
 // Routine used to create our JEventProcessor
@@ -51,6 +54,29 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 	TDirectory *main = gDirectory;
 	gDirectory->mkdir("occupancy")->cd();
 
+
+
+	//------------------------ BCAL -----------------------
+
+	//------------------------ FCAL -----------------------
+	fcal_occ = new TH2I("fcal_occ", "FCAL Pulse Occupancy; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5);
+	fcal_num_events = new TH1I("fcal_num_events", "FCAL number of events", 1, 0.0, 1.0);
+
+	//------------------------ FDC ------------------------
+
+	//------------------------ PS/PSC ---------------------
+
+	//------------------------ RF -------------------------
+
+	//------------------------ ST -------------------------
+	st_adc_occ = new TH1I("st_adc_occ", "ST fADC250 DigiHit Occupancy; Channel Number; fADC250 Counts", 30, 0.5, 30 + 0.5);
+	st_tdc_occ = new TH1I("st_tdc_occ", "ST TDC DigiHit Occupancy; Channel Number; TDC Counts", 30, 0.5, 30 + 0.5);
+
+	//------------------------ TAGH -----------------------
+
+	//------------------------ TAGM -----------------------
+
+	//------------------------ TPOL -----------------------
 
 	//------------------------ CDC ------------------------
 	int Nstraws[28] = {42, 42, 54, 54, 66, 66, 80, 80, 93, 93, 106, 106, 123, 123, 
@@ -114,13 +140,42 @@ jerror_t JEventProcessor_occupancy_online::brun(JEventLoop *eventLoop, int32_t r
 jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 	vector<const DCDCDigiHit*>      cdcdigihits;
+	vector<const DFCALDigiHit*>     fcaldigihits;
 	vector<const DTOFDigiHit*>      tofdigihits;
 	vector<const DTOFTDCDigiHit*>   toftdcdigihits;
+	vector<const DSCDigiHit*>       scdigihits;
+	vector<const DSCTDCDigiHit*>    sctdcdigihits;
 	loop->Get(cdcdigihits);
+	loop->Get(fcaldigihits);
 	loop->Get(tofdigihits);
 	loop->Get(toftdcdigihits);
+	loop->Get(scdigihits);
+	loop->Get(sctdcdigihits);
 
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
+	//------------------------ BCAL -----------------------
+
+	//------------------------ FCAL -----------------------
+	for(size_t loc_i = 0; loc_i < fcaldigihits.size(); ++loc_i){
+		fcal_occ->Fill(fcaldigihits[loc_i]->column, fcaldigihits[loc_i]->row);
+	}
+	
+	//------------------------ FDC ------------------------
+
+	//------------------------ PS/PSC ---------------------
+
+	//------------------------ RF -------------------------
+
+	//------------------------ ST -------------------------
+	for(uint32_t i = 0; i < scdigihits.size();    i++) st_adc_occ->Fill(scdigihits[i]->sector);
+	for(uint32_t i = 0; i < sctdcdigihits.size(); i++) st_tdc_occ->Fill(sctdcdigihits[i]->sector);
+
+	//------------------------ TAGH -----------------------
+
+	//------------------------ TAGM -----------------------
+
+	//------------------------ TPOL -----------------------
 
 
 	//------------------------ CDC ------------------------

@@ -10,7 +10,6 @@
 
 #include <JANA/JEventProcessor.h>
 
-#include "CDC/DCDCDigiHit.h"
 
 
 #include <TDirectory.h>
@@ -25,6 +24,29 @@ class JEventProcessor_occupancy_online:public jana::JEventProcessor{
 		JEventProcessor_occupancy_online();
 		~JEventProcessor_occupancy_online();
 		const char* className(void){return "JEventProcessor_occupancy_online";}
+
+
+		//------------------------ BCAL -----------------------
+
+		//------------------------ FCAL -----------------------
+		TH1I *fcal_num_events;
+		TH2I* fcal_occ;
+
+		//------------------------ FDC ------------------------
+
+		//------------------------ PS/PSC ---------------------
+
+		//------------------------ RF -------------------------
+
+		//------------------------ ST -------------------------
+		TH1I *st_adc_occ;
+		TH1I *st_tdc_occ;
+
+		//------------------------ TAGH -----------------------
+
+		//------------------------ TAGM -----------------------
+
+		//------------------------ TPOL -----------------------
 
 		//------------------------ CDC ------------------------
 		TH1I *cdc_num_events;
