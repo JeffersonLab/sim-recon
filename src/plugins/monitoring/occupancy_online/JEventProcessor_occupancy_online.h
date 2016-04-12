@@ -56,10 +56,15 @@ class JEventProcessor_occupancy_online:public jana::JEventProcessor{
 		TH1I *st_tdc_occ;
 
 		//------------------------ TAGH -----------------------
+		TH1I *tagh_adc_occ;
+		TH1I *tagh_tdc_occ;
 
 		//------------------------ TAGM -----------------------
+		TH1I *tagm_adc_occ;
+		TH1I *tagm_tdc_occ;
 
 		//------------------------ TPOL -----------------------
+		TH1I *tpol_occ;
 
 		//------------------------ CDC ------------------------
 		TH1I *cdc_num_events;

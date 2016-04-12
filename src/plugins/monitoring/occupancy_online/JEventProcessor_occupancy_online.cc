@@ -141,10 +141,18 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 	st_tdc_occ = new TH1I("st_tdc_occ", "ST TDC DigiHit Occupancy; Channel Number; TDC Counts", 30, 0.5, 30 + 0.5);
 
 	//------------------------ TAGH -----------------------
+	const int Nslots = DTAGHGeometry::kCounterCount;
+	tagh_adc_occ = new TH1I("tagh_adc_occ","TAGH fADC hit occupancy;counter (slot) ID;raw hits / counter",Nslots,0.5,0.5+Nslots);
+	tagh_tdc_occ = new TH1I("tagh_tdc_occ","TAGH TDC hit occupancy;counter (slot) ID;raw hits / counter",Nslots,0.5,0.5+Nslots);
 
 	//------------------------ TAGM -----------------------
+	const uint32_t NCOLUMNS = 102;
+	tagm_adc_occ = new TH1I("tagm_adc_occ", "TAGM FADC250 column occupancy", NCOLUMNS, 0., NCOLUMNS + 1.);
+	tagm_tdc_occ = new TH1I("tagm_tdc_occ", "TAGM F1TDC column occupancy",  NCOLUMNS, 0., NCOLUMNS + 1.);
 
 	//------------------------ TPOL -----------------------
+	const int Nsectors = DTPOLHit_factory::NSECTORS;
+	tpol_occ = new TH1I("tpol_occ","TPOL fADC hit occupancy;sector;raw hits / counter",Nsectors,0.5,0.5+Nsectors);
 
 	//------------------------ CDC ------------------------
 	int Nstraws[28] = {42, 42, 54, 54, 66, 66, 80, 80, 93, 93, 106, 106, 123, 123, 
@@ -207,18 +215,23 @@ jerror_t JEventProcessor_occupancy_online::brun(JEventLoop *eventLoop, int32_t r
 //------------------
 jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
-	vector<const DBCALDigiHit*>     bcaldigihits;
-	vector<const DBCALTDCDigiHit*>  bcaltdcdigihits;
-	vector<const DCDCDigiHit*>      cdcdigihits;
-	vector<const DFCALDigiHit*>     fcaldigihits;
-	vector<const DPSCDigiHit*>      pscdigihits;
-	vector<const DPSCTDCDigiHit*>   psctdcdigihits;
-	vector<const DPSDigiHit*>       psdigihits;
-	vector<const DTOFDigiHit*>      tofdigihits;
-	vector<const DTOFTDCDigiHit*>   toftdcdigihits;
-	vector<const DSCDigiHit*>       scdigihits;
-	vector<const DRFTDCDigiTime*>   rfdigihits;
-	vector<const DSCTDCDigiHit*>    sctdcdigihits;
+	vector<const DBCALDigiHit*>        bcaldigihits;
+	vector<const DBCALTDCDigiHit*>     bcaltdcdigihits;
+	vector<const DCDCDigiHit*>         cdcdigihits;
+	vector<const DFCALDigiHit*>        fcaldigihits;
+	vector<const DPSCDigiHit*>         pscdigihits;
+	vector<const DPSCTDCDigiHit*>      psctdcdigihits;
+	vector<const DPSDigiHit*>          psdigihits;
+	vector<const DTOFDigiHit*>         tofdigihits;
+	vector<const DTOFTDCDigiHit*>      toftdcdigihits;
+	vector<const DSCDigiHit*>          scdigihits;
+	vector<const DRFTDCDigiTime*>      rfdigihits;
+	vector<const DSCTDCDigiHit*>       sctdcdigihits;
+	vector<const DTAGMDigiHit*>        tagmdigihits;
+	vector<const DTAGMTDCDigiHit*>     tagmtdcdigihits;
+	vector<const DTAGHDigiHit*>        taghdigihits;
+	vector<const DTAGHTDCDigiHit*>     taghtdcdigihits;
+	vector<const DTPOLSectorDigiHit*>  tpoldigihits;
 	loop->Get(bcaldigihits);
 	loop->Get(bcaltdcdigihits);
 	loop->Get(cdcdigihits);
@@ -231,6 +244,11 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	loop->Get(scdigihits);
 	loop->Get(rfdigihits);
 	loop->Get(sctdcdigihits);
+	loop->Get(tagmdigihits);
+	loop->Get(tagmtdcdigihits);
+	loop->Get(taghdigihits);
+	loop->Get(taghtdcdigihits);
+	loop->Get(tpoldigihits);
 
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
@@ -305,11 +323,21 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	for(uint32_t i = 0; i < sctdcdigihits.size(); i++) st_tdc_occ->Fill(sctdcdigihits[i]->sector);
 
 	//------------------------ TAGH -----------------------
+    for(unsigned int i=0; i < taghdigihits.size();    i++) tagh_adc_occ->Fill(taghdigihits[i]->counter_id);
+    for(unsigned int i=0; i < taghtdcdigihits.size(); i++) tagh_tdc_occ->Fill(taghtdcdigihits[i]->counter_id);
 
 	//------------------------ TAGM -----------------------
+	for(uint32_t i=0; i< tagmdigihits.size(); i++) {
+		const DTAGMDigiHit *hit = tagmdigihits[i];
+		if (hit->row == 0) tagm_adc_occ->Fill(hit->column);
+	}
+	for(uint32_t i=0; i< tagmtdcdigihits.size(); i++) {
+		const DTAGMTDCDigiHit *hit = tagmtdcdigihits[i];
+		if (hit->row == 0) tagm_tdc_occ->Fill(hit->column);
+	}
 
 	//------------------------ TPOL -----------------------
-
+	for(unsigned int i=0; i < tpoldigihits.size(); i++) tpol_occ->Fill(tpoldigihits[i]->sector);
 
 	//------------------------ CDC ------------------------
 	cdc_num_events->Fill(0.5);
