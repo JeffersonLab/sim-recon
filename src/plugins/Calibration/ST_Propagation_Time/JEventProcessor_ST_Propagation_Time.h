@@ -102,7 +102,8 @@ class JEventProcessor_ST_Propagation_Time:public jana::JEventProcessor{
 		TH2I **h2_PropTime_z_SS_chan;
 		TH2I **h2_PropTime_z_BS_chan;
 		TH2I **h2_PropTime_z_NS_chan;
-				
+		TH2I **h2_PpropTime_z;
+		
 		TH2I **h2_PropTimeCorr_z_SS_chan;
 		TH2I **h2_PropTimeCorr_z_BS_chan;
 		TH2I **h2_PropTimeCorr_z_NS_chan;

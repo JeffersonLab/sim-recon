@@ -51,12 +51,13 @@ jerror_t JEventProcessor_ST_Propagation_Time::init(void)
 	//
   //****** Define Some Constants*********************************
   NoBins_time = 200;
-  NoBins_z = 1300;
+  NoBins_z = 300;
   time_lower_limit = -10.0;      
   time_upper_limit =  10.0;
-  z_lower_limit = 35.0;
-  z_upper_limit = 100.0;
+  z_lower_limit = 0.0;
+  z_upper_limit = 60.0;
   Photonspeed = 29.9792458;
+  
   // **************** define histograms *************************
   japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
@@ -67,7 +68,7 @@ jerror_t JEventProcessor_ST_Propagation_Time::init(void)
   h2_PropTime_z_SS_chan = new TH2I*[NCHANNELS];
   h2_PropTime_z_BS_chan = new TH2I*[NCHANNELS];
   h2_PropTime_z_NS_chan = new TH2I*[NCHANNELS];
-    
+  h2_PpropTime_z = new TH2I*[NCHANNELS];  
   h2_PropTimeCorr_z_SS_chan = new TH2I*[NCHANNELS];
   h2_PropTimeCorr_z_BS_chan = new TH2I*[NCHANNELS];
   h2_PropTimeCorr_z_NS_chan = new TH2I*[NCHANNELS];
@@ -77,6 +78,9 @@ jerror_t JEventProcessor_ST_Propagation_Time::init(void)
       h2_PropTime_z_SS_chan[i] = new TH2I(Form("h2_PropTime_z_SS_chan_%i", i+1), "Prop Time vs. Z; Z (cm); Propagation Time (ns)", NoBins_z,z_lower_limit,z_upper_limit, NoBins_time, time_lower_limit, time_upper_limit);
       h2_PropTime_z_BS_chan[i] = new TH2I(Form("h2_PropTime_z_BS_chan_%i", i+1), "Prop Time vs. Z; Z (cm); Propagation Time (ns)", NoBins_z,z_lower_limit,z_upper_limit, NoBins_time, time_lower_limit, time_upper_limit);
       h2_PropTime_z_NS_chan[i] = new TH2I(Form("h2_PropTime_z_NS_chan_%i", i+1), "Prop Time vs. Z; Z (cm); Propagation Time (ns)", NoBins_z,z_lower_limit,z_upper_limit, NoBins_time, time_lower_limit, time_upper_limit);
+      h2_PpropTime_z[i] = new TH2I(Form("h2_PpropTime_z_%i", i+1), "Propagation Time vs. Z; Z (cm); Propagation Time (ns)", NoBins_z,z_lower_limit,z_upper_limit, NoBins_time, time_lower_limit, time_upper_limit);
+
+
       h2_PropTimeCorr_z_SS_chan[i] = new TH2I(Form("h2_PropTimeCorr_z_SS_chan_%i", i+1), "Prop Time vs. Z; Z (cm); Propagation Time (ns)", NoBins_z,z_lower_limit,z_upper_limit, NoBins_time, time_lower_limit, time_upper_limit);
       h2_PropTimeCorr_z_BS_chan[i] = new TH2I(Form("h2_PropTimeCorr_z_BS_chan_%i", i+1), "Prop Time vs. Z; Z (cm); Propagation Time (ns)", NoBins_z,z_lower_limit,z_upper_limit, NoBins_time, time_lower_limit, time_upper_limit);
       h2_PropTimeCorr_z_NS_chan[i] = new TH2I(Form("h2_PropTimeCorr_z_NS_chan_%i", i+1), "Prop Time vs. Z; Z (cm); Propagation Time (ns)", NoBins_z,z_lower_limit,z_upper_limit, NoBins_time, time_lower_limit, time_upper_limit);
@@ -153,6 +157,8 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
 	// japp->RootWriteLock();
 	//  ... fill historgrams or trees ...
 	// japp->RootUnLock();
+
+  
   // SC hits
   vector<const DSCHit *> scHitVector;
   loop->Get(scHitVector);
@@ -183,16 +189,18 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
       // Grab the charged track and declare time based track object
       const DChargedTrack   *thisChargedTrack = chargedTrackVector[i];
       const DTrackTimeBased *timeBasedTrack;
-      
-      if (thisChargedTrack->Get_Hypothesis(PiMinus) == NULL) continue;
-      thisChargedTrack->Get_Hypothesis(PiMinus)->GetSingle(timeBasedTrack);
-      pim_pmag_cut = 0.500; // GeV
-      if (timeBasedTrack->pmag() < pim_pmag_cut) continue;
+      // Grab associated time based track object by selecting charged track with best FOM
+       thisChargedTrack->Get_BestTrackingFOM()->GetSingle(timeBasedTrack);
+
+      // if (thisChargedTrack->Get_Hypothesis(PiMinus) == NULL) continue;
+      // thisChargedTrack->Get_Hypothesis(PiMinus)->GetSingle(timeBasedTrack);
+      // pim_pmag_cut = 0.500; // GeV
+      // if (timeBasedTrack->pmag() < pim_pmag_cut) continue;
 
       // Implement quality cuts for the time based tracks 
       trackingFOMCut = 0.0027;  // 3 sigma cut
       if(timeBasedTrack->FOM  < trackingFOMCut) continue;
- 
+  
       // Define vertex vector and cut on target/scattering chamber geometry
       vertex = timeBasedTrack->position();
       z_v = vertex.z();
@@ -286,18 +294,78 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
 	  locSCPropTime = locFlightTimeCorrectedSCTime - locTOFRFShiftedTime;
 	  // Z intersection of charged track and SC 
 	  locSCzIntersection = IntersectionPoint.z();
+	  // Calculate the path along the paddle
+	  //Define some parameters
+	  double Radius = 12.0;
+	  double pi = 3.14159265358979323846;
+	  double theta  = 18.5 * pi/180.0;
+	  double path_ss,path_bs,path_ns; 
+	  double SS_Length = sc_pos_eoss - sc_pos_soss;// same for along z or along the paddle
+	  double BS_Length = Radius *  theta ; // along the paddle
+	  double NS_Length = (sc_pos_eons - sc_pos_eobs)/cos(theta);// along the paddle
+	  double Paddle_Length = SS_Length + BS_Length + NS_Length; // total paddle length
+	  double SC_Length_AlongZ = sc_pos_eons - sc_pos_soss; // SC length along z which is shorter than the total paddle length
+	  //=================================================================================================
+	  // I tested the calculation of the path along the paddle between the equal signs ========= comments
+	  //from line 303 to line 339
+	  // cout <<" ========== This is event number " << eventnumber <<"==========="<<endl;
+	  // cout << "Length of straight section              = "  << SS_Length << endl;
+	  // cout << "Length of bend section along the paddle = "  << BS_Length  << endl;
+	  // cout << "Length of nose section along the paddle = "  << NS_Length << endl;
+	  // cout << "Total Paddle_Length  = "  << Paddle_Length << endl;
+	  // cout << "-----------------"<<endl;
+	  // cout << "   SC_Length_AlongZ  = "  << SC_Length_AlongZ << endl;
+	  // // cout << "Start of straight section = "  << sc_pos_soss << endl;
+	  // // cout << "End of straight section = "  << sc_pos_eoss << endl;
+	  // // cout << "End of bend section = "  << sc_pos_eobs << endl;
+	  // // cout << "End of nose section = "  << sc_pos_eons << endl;
+	  // cout << " ========================================================="<<endl;
+	  // cout << "                   next z coordiate is                    "<<endl;
+	  // cout << " ========================================================="<<endl;
+	  // cout << "Z along the beam line = "  << IntersectionPoint.z() << endl;
+	  // if (locSCzIntersection > sc_pos_soss && locSCzIntersection <= sc_pos_eoss)
+	  //   {
+	  //     // Path along the paddle for straight section the 
+	  //     path_ss = IntersectionPoint.z() - sc_pos_soss;
+	  //     //   cout << "$$$$$$$ Path along paddle for  SS  = "  << path_ss << endl;
+	  //   }
+	  // if(locSCzIntersection > sc_pos_eoss && locSCzIntersection <= sc_pos_eobs)
+	  //   {
+	  //     //  Path along the paddle for the bend section 
+	  //     path_bs = SS_Length + Radius * asin((IntersectionPoint.z()- sc_pos_eoss)/Radius);
+	  //     // cout << "$$$$$$$ Path along paddle for BS  = "  << path_bs << endl;
+	  //   }
+	  // if(locSCzIntersection > sc_pos_eobs && locSCzIntersection <= sc_pos_eons)
+	  //   { 
+	  //     //  Path along the paddle for the nose section 
+	  //     path_ns = SS_Length + BS_Length +((IntersectionPoint.z() - sc_pos_eobs)/cos(theta));
+	  //     //  cout << "$$$$$$$ Path along paddle for NS  = "  << path_ns << endl;
+	  //   }
+	  //========================================================================================================	  
 	  /////////////////////////////////////////////
 	  // Fill the histograms before corrections////
 	  ////////////////////////////////////////////
 	  // Straight Sections
 	  if (locSCzIntersection > sc_pos_soss && locSCzIntersection <= sc_pos_eoss)
-	    h2_PropTime_z_SS_chan[sc_index]->Fill(locSCzIntersection,locSCPropTime);
+	    {
+	      path_ss = IntersectionPoint.z() - sc_pos_soss;
+	      h2_PropTime_z_SS_chan[sc_index]->Fill(path_ss,locSCPropTime);
+	      h2_PpropTime_z[sc_index]->Fill(path_ss,locSCPropTime);
+	    }
 	  // Bend Sections
 	  if(locSCzIntersection > sc_pos_eoss && locSCzIntersection <= sc_pos_eobs)
-	    h2_PropTime_z_BS_chan[sc_index]->Fill(locSCzIntersection,locSCPropTime);
+	    {
+	      path_bs = SS_Length + Radius * asin((IntersectionPoint.z()- sc_pos_eoss)/Radius);
+	      h2_PropTime_z_BS_chan[sc_index]->Fill(path_bs,locSCPropTime);
+	      h2_PpropTime_z[sc_index]->Fill(path_bs,locSCPropTime);
+	    }
 	  // Nose Sections
 	  if(locSCzIntersection > sc_pos_eobs && locSCzIntersection <= sc_pos_eons) 
-	    h2_PropTime_z_NS_chan[sc_index]->Fill(locSCzIntersection,locSCPropTime);
+	    {
+	      path_ns = SS_Length + BS_Length +((IntersectionPoint.z() - sc_pos_eobs)/cos(theta));
+	      h2_PropTime_z_NS_chan[sc_index]->Fill(path_ns,locSCPropTime);
+	      h2_PpropTime_z[sc_index]->Fill(path_ns,locSCPropTime);
+	    }
 	  ///////////////////////////////////////////////////////////////////
 	  /// Fill the propagation time corrected histograms////////////////
 	  /////////////////////////////////////////////////////////////////
@@ -309,25 +377,25 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
 	  double incpt_ns   = propagation_time_corr[sc_index][4];
 	  double slope_ns   = propagation_time_corr[sc_index][5];
 	  // Straight Sections
-	  if (locSCzIntersection > sc_pos_soss && locSCzIntersection <= sc_pos_eoss)
+	  if (sc_pos_soss < locSCzIntersection  && locSCzIntersection <= sc_pos_eoss)
 	    {
-	      Corr_Time_ss = locSCPropTime - (incpt_ss + (slope_ss *  locSCzIntersection));
-	      h2_PropTimeCorr_z_SS_chan[sc_index]->Fill(locSCzIntersection,Corr_Time_ss);
-	      h2_CorrectedTime_z[sc_index]->Fill(locSCzIntersection,Corr_Time_ss);
+	      Corr_Time_ss = locSCPropTime - (incpt_ss + (slope_ss *  path_ss));
+	      h2_PropTimeCorr_z_SS_chan[sc_index]->Fill(path_ss,Corr_Time_ss);
+	      h2_CorrectedTime_z[sc_index]->Fill(path_ss,Corr_Time_ss);
 	    }
 	  // Bend Sections
-	  if(locSCzIntersection > sc_pos_eoss && locSCzIntersection <= sc_pos_eobs)
+	  if( sc_pos_eoss < locSCzIntersection  && locSCzIntersection <= sc_pos_eobs)
 	    {
-	      Corr_Time_bs = locSCPropTime - (incpt_bs + (slope_bs *  locSCzIntersection));
-	      h2_PropTimeCorr_z_BS_chan[sc_index]->Fill(locSCzIntersection,Corr_Time_bs);
-	      h2_CorrectedTime_z[sc_index]->Fill(locSCzIntersection,Corr_Time_bs);
+	      Corr_Time_bs = locSCPropTime - (incpt_bs + (slope_bs *  path_bs));
+	      h2_PropTimeCorr_z_BS_chan[sc_index]->Fill(path_bs,Corr_Time_bs);
+	      h2_CorrectedTime_z[sc_index]->Fill(path_bs,Corr_Time_bs);
 	    }
 	  // Nose Sections
-	  if(locSCzIntersection > sc_pos_eobs && locSCzIntersection <= sc_pos_eons)
+	  if(sc_pos_eobs < locSCzIntersection   && locSCzIntersection <= sc_pos_eons)
 	    { 
-	      Corr_Time_ns = locSCPropTime - (incpt_ns + (slope_ns *  locSCzIntersection));
-	      h2_PropTimeCorr_z_NS_chan[sc_index]->Fill(locSCzIntersection,Corr_Time_ns);
-	      h2_CorrectedTime_z[sc_index]->Fill(locSCzIntersection,Corr_Time_ns);
+	      Corr_Time_ns = locSCPropTime - (incpt_ns + (slope_ns *  path_ns));
+	      h2_PropTimeCorr_z_NS_chan[sc_index]->Fill(path_ns,Corr_Time_ns);
+	      h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns);
 	    }
    	} // sc charged tracks
     }// TOF reference time
