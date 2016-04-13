@@ -109,50 +109,7 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 		ss << "U  S" << sector << "  L" << layer;
 		bcal_tdc_occ->GetYaxis()->SetBinLabel(ibin + 13, ss.str().c_str());
 	}
-
-	//------------------------ FCAL -----------------------
-	fcal_occ = new TH2I("fcal_occ", "FCAL Occupancy; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5);
-	fcal_num_events = new TH1I("fcal_num_events", "FCAL number of events", 1, 0.0, 1.0);
-
-	//------------------------ FDC ------------------------
-
-	//------------------------ PS/PSC ---------------------
-	psc_adc_left_occ   = new TH1I("psc_adc_left_occ",  "PSC fADC hit occupancy Left", 8, 0.5, 8.5);
-	psc_adc_right_occ  = new TH1I("psc_adc_right_occ", "PSC fADC hit occupancy Right", 8, 0.5, 8.5);
-	psc_tdc_left_occ   = new TH1I("psc_tdc_left_occ",  "PSC TDC hit occupancy Left",  8, 0.5, 8.5);
-	psc_tdc_right_occ  = new TH1I("psc_tdc_right_occ", "PSC TDC hit occupancy Right",  8, 0.5, 8.5);
-	ps_left_occ        = new TH1I("ps_left_occ",       "PS fADC hit occupancy Left", 145, 0.5, 145.5);
-	ps_right_occ       = new TH1I("ps_right_occ",      "PS fADC hit occupancy Right", 145, 0.5, 145.5);
-
-	//------------------------ RF -------------------------
-	rf_occ = new TH1D("rf_occ", "RF TDC Occupancy", 4, 0.5, 4.5);
-	rf_occ->GetXaxis()->SetBinLabel(1, "FDC");
-	rf_occ->GetXaxis()->SetBinLabel(2, "PSC");
-	rf_occ->GetXaxis()->SetBinLabel(3, "TAGH");
-	rf_occ->GetXaxis()->SetBinLabel(4, "TOF");
-	rf_num_events = new TH1I("rf_num_events", "RF number of events", 1, 0.0, 1.0);
-	dRFBinValueMap[SYS_FDC]  = 1.0;
-	dRFBinValueMap[SYS_PSC]  = 2.0;
-	dRFBinValueMap[SYS_TAGH] = 3.0;
-	dRFBinValueMap[SYS_TOF]  = 4.0;
-
-	//------------------------ ST -------------------------
-	st_adc_occ = new TH1I("st_adc_occ", "ST fADC250 DigiHit Occupancy; Channel Number; fADC250 Counts", 30, 0.5, 30 + 0.5);
-	st_tdc_occ = new TH1I("st_tdc_occ", "ST TDC DigiHit Occupancy; Channel Number; TDC Counts", 30, 0.5, 30 + 0.5);
-
-	//------------------------ TAGH -----------------------
-	const int Nslots = DTAGHGeometry::kCounterCount;
-	tagh_adc_occ = new TH1I("tagh_adc_occ","TAGH fADC hit occupancy;counter (slot) ID;raw hits / counter",Nslots,0.5,0.5+Nslots);
-	tagh_tdc_occ = new TH1I("tagh_tdc_occ","TAGH TDC hit occupancy;counter (slot) ID;raw hits / counter",Nslots,0.5,0.5+Nslots);
-
-	//------------------------ TAGM -----------------------
-	const uint32_t NCOLUMNS = 102;
-	tagm_adc_occ = new TH1I("tagm_adc_occ", "TAGM FADC250 column occupancy", NCOLUMNS, 0., NCOLUMNS + 1.);
-	tagm_tdc_occ = new TH1I("tagm_tdc_occ", "TAGM F1TDC column occupancy",  NCOLUMNS, 0., NCOLUMNS + 1.);
-
-	//------------------------ TPOL -----------------------
-	const int Nsectors = DTPOLHit_factory::NSECTORS;
-	tpol_occ = new TH1I("tpol_occ","TPOL fADC hit occupancy;sector;raw hits / counter",Nsectors,0.5,0.5+Nsectors);
+	bcal_num_events = new TH1I("bcal_num_events", "BCAL number of events", 1, 0.0, 1.0);
 
 	//------------------------ CDC ------------------------
 	int Nstraws[28] = {42, 42, 54, 54, 66, 66, 80, 80, 93, 93, 106, 106, 123, 123, 
@@ -181,7 +138,55 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 	}
 	cdc_num_events = new TH1I("cdc_num_events", "CDC number of events", 1, 0.0, 1.0);
 
+	//------------------------ FCAL -----------------------
+	fcal_occ = new TH2I("fcal_occ", "FCAL Occupancy; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5);
+	fcal_num_events = new TH1I("fcal_num_events", "FCAL number of events", 1, 0.0, 1.0);
+
+	//------------------------ FDC ------------------------
+
+	//------------------------ PS/PSC ---------------------
+	psc_adc_left_occ   = new TH1I("psc_adc_left_occ",  "PSC fADC hit occupancy Left", 8, 0.5, 8.5);
+	psc_adc_right_occ  = new TH1I("psc_adc_right_occ", "PSC fADC hit occupancy Right", 8, 0.5, 8.5);
+	psc_tdc_left_occ   = new TH1I("psc_tdc_left_occ",  "PSC TDC hit occupancy Left",  8, 0.5, 8.5);
+	psc_tdc_right_occ  = new TH1I("psc_tdc_right_occ", "PSC TDC hit occupancy Right",  8, 0.5, 8.5);
+	ps_left_occ        = new TH1I("ps_left_occ",       "PS fADC hit occupancy Left", 145, 0.5, 145.5);
+	ps_right_occ       = new TH1I("ps_right_occ",      "PS fADC hit occupancy Right", 145, 0.5, 145.5);
+	ps_num_events = new TH1I("ps_num_events", "PS number of events", 1, 0.0, 1.0);
+
+	//------------------------ RF -------------------------
+	rf_occ = new TH1D("rf_occ", "RF TDC Occupancy", 4, 0.5, 4.5);
+	rf_occ->GetXaxis()->SetBinLabel(1, "FDC");
+	rf_occ->GetXaxis()->SetBinLabel(2, "PSC");
+	rf_occ->GetXaxis()->SetBinLabel(3, "TAGH");
+	rf_occ->GetXaxis()->SetBinLabel(4, "TOF");
+	rf_num_events = new TH1I("rf_num_events", "RF number of events", 1, 0.0, 1.0);
+	dRFBinValueMap[SYS_FDC]  = 1.0;
+	dRFBinValueMap[SYS_PSC]  = 2.0;
+	dRFBinValueMap[SYS_TAGH] = 3.0;
+	dRFBinValueMap[SYS_TOF]  = 4.0;
+
+	//------------------------ ST -------------------------
+	st_adc_occ    = new TH1I("st_adc_occ", "ST fADC250 DigiHit Occupancy; Channel Number; fADC250 Counts", 30, 0.5, 30 + 0.5);
+	st_tdc_occ    = new TH1I("st_tdc_occ", "ST TDC DigiHit Occupancy; Channel Number; TDC Counts", 30, 0.5, 30 + 0.5);
+	st_num_events = new TH1I("st_num_events", "Start Counter number of events", 1, 0.0, 1.0);
+
+	//------------------------ TAGH -----------------------
+	const int Nslots = DTAGHGeometry::kCounterCount;
+	tagh_adc_occ = new TH1I("tagh_adc_occ","TAGH fADC hit occupancy;counter (slot) ID;raw hits / counter",Nslots,0.5,0.5+Nslots);
+	tagh_tdc_occ = new TH1I("tagh_tdc_occ","TAGH TDC hit occupancy;counter (slot) ID;raw hits / counter",Nslots,0.5,0.5+Nslots);
+	tag_num_events = new TH1I("tag_num_events", "TAGGER number of events", 1, 0.0, 1.0);
+
+	//------------------------ TAGM -----------------------
+	const uint32_t NCOLUMNS = 102;
+	tagm_adc_occ = new TH1I("tagm_adc_occ", "TAGM FADC250 column occupancy", NCOLUMNS, 0., NCOLUMNS + 1.);
+	tagm_tdc_occ = new TH1I("tagm_tdc_occ", "TAGM F1TDC column occupancy",  NCOLUMNS, 0., NCOLUMNS + 1.);
+
+	//------------------------ TPOL -----------------------
+	const int Nsectors = DTPOLHit_factory::NSECTORS;
+	tpol_occ = new TH1I("tpol_occ","TPOL fADC hit occupancy;sector;raw hits / counter",Nsectors,0.5,0.5+Nsectors);
+
 	//------------------------ TOF ------------------------
+	tof_num_events = new TH1I("tof_num_events", "TOF number of events", 1, 0.0, 1.0);
 	tof_tdc_S_occ = new TH1I("tof_tdc_S_occ","TOF, TDC Occupancy",86,1,44);
 	tof_tdc_N_occ = new TH1I("tof_tdc_N_occ","TOF, TDC Occupancy",86,1,44);
 	tof_tdc_U_occ = new TH1I("tof_tdc_U_occ","TOF, TDC Occupancy",86,1,44);
@@ -253,6 +258,7 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	//------------------------ BCAL -----------------------
+	bcal_num_events->Fill(0.5);
 	//ADC
 	for(unsigned int i = 0; i < bcaldigihits.size(); i++){
 		const DBCALDigiHit *hit = bcaldigihits[i];
@@ -279,6 +285,18 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 			bcal_tdc_occ->Fill(ix, iy);
 	}
 
+	//------------------------ CDC ------------------------
+	cdc_num_events->Fill(0.5);
+	for(uint32_t i=0; i<cdcdigihits.size(); i++) {
+
+		const DCDCDigiHit *digihit = cdcdigihits[i];  
+		int ring     = digihit->ring-1; // start counting from zero! 
+		int straw    = digihit->straw;  // first bin is one
+
+		Double_t w = cdc_occ_ring[ring]->GetBinContent(straw, 1) + 1.0;
+		cdc_occ_ring[ring]->SetBinContent(straw, 1, w);
+	}
+
 	//------------------------ FCAL -----------------------
 	fcal_num_events->Fill(0.5);
 	for(size_t loc_i = 0; loc_i < fcaldigihits.size(); ++loc_i){
@@ -288,6 +306,7 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	//------------------------ FDC ------------------------
 
 	//------------------------ PS/PSC ---------------------
+	ps_num_events->Fill(0.5);
 	const int Nmods = 8; 
 	for(unsigned int i=0; i < pscdigihits.size(); i++) {
 		const DPSCDigiHit *hit = pscdigihits[i];
@@ -319,12 +338,14 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	}
 
 	//------------------------ ST -------------------------
+	st_num_events->Fill(0.5);
 	for(uint32_t i = 0; i < scdigihits.size();    i++) st_adc_occ->Fill(scdigihits[i]->sector);
 	for(uint32_t i = 0; i < sctdcdigihits.size(); i++) st_tdc_occ->Fill(sctdcdigihits[i]->sector);
 
 	//------------------------ TAGH -----------------------
-    for(unsigned int i=0; i < taghdigihits.size();    i++) tagh_adc_occ->Fill(taghdigihits[i]->counter_id);
-    for(unsigned int i=0; i < taghtdcdigihits.size(); i++) tagh_tdc_occ->Fill(taghtdcdigihits[i]->counter_id);
+ 	tag_num_events->Fill(0.5);
+   for(unsigned int i=0; i < taghdigihits.size();    i++) tagh_adc_occ->Fill(taghdigihits[i]->counter_id);
+   for(unsigned int i=0; i < taghtdcdigihits.size(); i++) tagh_tdc_occ->Fill(taghtdcdigihits[i]->counter_id);
 
 	//------------------------ TAGM -----------------------
 	for(uint32_t i=0; i< tagmdigihits.size(); i++) {
@@ -339,19 +360,8 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	//------------------------ TPOL -----------------------
 	for(unsigned int i=0; i < tpoldigihits.size(); i++) tpol_occ->Fill(tpoldigihits[i]->sector);
 
-	//------------------------ CDC ------------------------
-	cdc_num_events->Fill(0.5);
-	for(uint32_t i=0; i<cdcdigihits.size(); i++) {
-
-		const DCDCDigiHit *digihit = cdcdigihits[i];  
-		int ring     = digihit->ring-1; // start counting from zero! 
-		int straw    = digihit->straw;  // first bin is one
-
-		Double_t w = cdc_occ_ring[ring]->GetBinContent(straw, 1) + 1.0;
-		cdc_occ_ring[ring]->SetBinContent(straw, 1, w);
-	}
-
 	//------------------------ TOF ------------------------
+	tof_num_events->Fill(0.5);
 	// fADC Hits
 	for(uint32_t i=0; i<tofdigihits.size(); i++){
 

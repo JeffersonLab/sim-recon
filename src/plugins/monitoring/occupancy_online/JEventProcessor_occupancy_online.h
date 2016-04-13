@@ -29,8 +29,13 @@ class JEventProcessor_occupancy_online:public jana::JEventProcessor{
 
 
 		//------------------------ BCAL -----------------------
+		TH1I *bcal_num_events;
 		TH2I *bcal_adc_occ;
 		TH2I *bcal_tdc_occ;
+
+		//------------------------ CDC ------------------------
+		TH1I *cdc_num_events;
+		TH2F *cdc_occ_ring[28];
 
 		//------------------------ FCAL -----------------------
 		TH1I *fcal_num_events;
@@ -39,6 +44,7 @@ class JEventProcessor_occupancy_online:public jana::JEventProcessor{
 		//------------------------ FDC ------------------------
 
 		//------------------------ PS/PSC ---------------------
+		TH1I *ps_num_events;
 		TH1I *psc_adc_left_occ;
 		TH1I *psc_adc_right_occ;
 		TH1I *psc_tdc_left_occ;
@@ -47,15 +53,17 @@ class JEventProcessor_occupancy_online:public jana::JEventProcessor{
 		TH1I *ps_right_occ;
 
 		//------------------------ RF -------------------------
-		TH1D* rf_occ; //TH1D ON PURPOSE!
 		TH1I *rf_num_events;
+		TH1D* rf_occ; //TH1D ON PURPOSE!
 		map<DetectorSystem_t, double> dRFBinValueMap;
 
 		//------------------------ ST -------------------------
+		TH1I *st_num_events;
 		TH1I *st_adc_occ;
 		TH1I *st_tdc_occ;
 
 		//------------------------ TAGH -----------------------
+		TH1I *tag_num_events;
 		TH1I *tagh_adc_occ;
 		TH1I *tagh_tdc_occ;
 
@@ -66,11 +74,8 @@ class JEventProcessor_occupancy_online:public jana::JEventProcessor{
 		//------------------------ TPOL -----------------------
 		TH1I *tpol_occ;
 
-		//------------------------ CDC ------------------------
-		TH1I *cdc_num_events;
-		TH2F *cdc_occ_ring[28];
-
 		//------------------------ TOF ------------------------
+		TH1I *tof_num_events;
 		TH1I *tof_tdc_S_occ;
 		TH1I *tof_tdc_N_occ;
 		TH1I *tof_tdc_U_occ;

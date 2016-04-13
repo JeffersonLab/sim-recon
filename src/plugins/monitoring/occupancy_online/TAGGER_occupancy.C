@@ -2,6 +2,7 @@
 // The following are special comments used by RootSpy to know
 // which histograms to fetch for the macro.
 //
+// hnamepath: /occupancy/tag_num_events
 // hnamepath: /occupancy/tagh_adc_occ
 // hnamepath: /occupancy/tagh_tdc_occ
 // hnamepath: /occupancy/tagm_adc_occ
@@ -11,6 +12,13 @@
 	// RootSpy saves the current directory and style before
 	// calling the macro and restores it after so it is OK to
 	// change them and not change them back.
+
+	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("occupancy");
+	if(dir) dir->cd();
+
+	double Nevents = 1.0;
+	TH1I *tag_num_events = (TH1I*)gDirectory->FindObjectAny("tag_num_events");
+	if(tag_num_events) Nevents = (double)tag_num_events->GetBinContent(1);
 
 	TH2I *tagh_adc_occ = (TH2I*)gDirectory->FindObjectAny("tagh_adc_occ");
 	TH2I *tagh_tdc_occ = (TH2I*)gDirectory->FindObjectAny("tagh_tdc_occ");
@@ -105,6 +113,16 @@
 
 	legend_sa->Draw();
 	legend_na->Draw();
+
+	if(tagm_adc_occ){
+		c1->cd(1);		
+		char str[256];
+		sprintf(str,"%0.0f events", Nevents);
+		TLatex lat(85.0, 1.075*tagm_adc_occ->GetMaximum(), str);
+		lat.SetTextAlign(22);
+		lat.SetTextSize(0.035);
+		lat.Draw();
+	}
 
 }
 

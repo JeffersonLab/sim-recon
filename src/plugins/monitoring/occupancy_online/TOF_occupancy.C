@@ -2,6 +2,7 @@
 // The following are special comments used by RootSpy to know
 // which histograms to fetch for the macro.
 //
+// hnamepath: /occupancy/tof_num_events
 // hnamepath: /occupancy/tof_adc_S_occ
 // hnamepath: /occupancy/tof_adc_N_occ
 // hnamepath: /occupancy/tof_adc_U_occ
@@ -18,6 +19,10 @@
 
 	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("occupancy");
 	if(dir) dir->cd();
+
+	double Nevents = 1.0;
+	TH1I *tof_num_events = (TH1I*)gDirectory->FindObjectAny("tof_num_events");
+	if(tof_num_events) Nevents = (double)tof_num_events->GetBinContent(1);
 
 	TH1I *ha_s = (TH1I*)gDirectory->FindObjectAny("tof_adc_S_occ");
 	TH1I *ha_n = (TH1I*)gDirectory->FindObjectAny("tof_adc_N_occ");
@@ -158,4 +163,13 @@
 	legend_u->Draw();
 	legend_d->Draw();
 
+	if(ha_s){
+		c1->cd(1);		
+		char str[256];
+		sprintf(str,"%0.0f events", Nevents);
+		TLatex lat(24, 1.075*ha_s->GetMaximum(), str);
+		lat.SetTextAlign(22);
+		lat.SetTextSize(0.035);
+		lat.Draw();
+	}
 }

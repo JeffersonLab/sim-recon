@@ -2,6 +2,7 @@
 // The following are special comments used by RootSpy to know
 // which histograms to fetch for the macro.
 //
+// hnamepath: /occupancy/ps_num_events
 // hnamepath: /occupancy/psc_adc_left_occ
 // hnamepath: /occupancy/psc_adc_right_occ
 // hnamepath: /occupancy/psc_tdc_left_occ
@@ -16,6 +17,10 @@
 
 	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("occupancy");
 	if(dir) dir->cd();
+
+	double Nevents = 1.0;
+	TH1I *ps_num_events = (TH1I*)gDirectory->FindObjectAny("ps_num_events");
+	if(ps_num_events) Nevents = (double)ps_num_events->GetBinContent(1);
 
 	TH1I *psc_adc_left_occ  = (TH1I*)gDirectory->FindObjectAny("psc_adc_left_occ");
 	TH1I *psc_adc_right_occ = (TH1I*)gDirectory->FindObjectAny("psc_adc_right_occ");

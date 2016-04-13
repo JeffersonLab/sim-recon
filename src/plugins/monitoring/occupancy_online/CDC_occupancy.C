@@ -83,7 +83,7 @@
 	
 	char str[256];
 	sprintf(str,"%0.0f events", Nevents);
-	TLatex lat(0.0, 67.0, str);
+	TLatex lat(0.0, 68.0, str);
 	lat.SetTextAlign(22);
 	lat.SetTextSize(0.035);
 	lat.Draw();
