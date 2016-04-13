@@ -6,7 +6,9 @@
 // hnamepath: /occupancy/fcal_num_events
 
 {
-	TDirectory *savedir = gDirectory;
+	// RootSpy saves the current directory and style before
+	// calling the macro and restores it after so it is OK to
+	// change them and not change them back.
 
 	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("occupancy");
 	if(dir) dir->cd();
@@ -18,7 +20,7 @@
 	if(fcal_num_events) Nevents = (double)fcal_num_events->GetBinContent(1);
 
 	TLegend *legend_sa = new TLegend(0.1,0.85,0.3,0.9);
-	legend_sa->AddEntry(fcal_occ, "fADC","f");
+	if(fcal_occ)legend_sa->AddEntry(fcal_occ, "fADC","f");
 
 	// Just for testing
 	if(gPad == NULL){
@@ -51,5 +53,4 @@
 
 	legend_sa->Draw();
 
-	savedir->cd();
 }

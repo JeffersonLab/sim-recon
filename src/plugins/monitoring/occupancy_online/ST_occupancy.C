@@ -6,7 +6,9 @@
 // hnamepath: /occupancy/st_tdc_occ
 
 {
-	TDirectory *savedir = gDirectory;
+	// RootSpy saves the current directory and style before
+	// calling the macro and restores it after so it is OK to
+	// change them and not change them back.
 
 	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("occupancy");
 	if(dir) dir->cd();
@@ -62,5 +64,4 @@
 	legend_sa->Draw();
 	legend_na->Draw();
 
-	savedir->cd();
 }

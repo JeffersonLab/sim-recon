@@ -6,7 +6,9 @@
 // hnamepath: /occupancy/bcal_tdc_occ
 
 {
-	TDirectory *savedir = gDirectory;
+	// RootSpy saves the current directory and style before
+	// calling the macro and restores it after so it is OK to
+	// change them and not change them back.
 
 	TH2I *bcal_adc_occ = (TH2I*)gDirectory->FindObjectAny("bcal_adc_occ");
 	TH2I *bcal_tdc_occ = (TH2I*)gDirectory->FindObjectAny("bcal_tdc_occ");
@@ -46,7 +48,6 @@
 		bcal_tdc_occ->Draw("colz");
 	}
 
-	savedir->cd();
 }
 
 
