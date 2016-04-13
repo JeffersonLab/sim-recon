@@ -51,6 +51,26 @@ DBCALCluster::addPoint( const DBCALPoint* point ){
 }
 
 void
+DBCALCluster::removePoint( const DBCALPoint* point){
+
+if( phi() > point->phi() ){
+
+    if( fabs( phi() - point->phi() - 2*PI ) < PI ) point->add2Pi();
+  }
+  else{
+
+    if( fabs( point->phi() - phi() - 2*PI ) < PI ) point->sub2Pi();
+  }
+
+  if(find(m_points.begin(),m_points.end(),point) != m_points.end()) m_points.erase( find(m_points.begin(),m_points.end(),point ));
+  RemoveAssociatedObject( point );
+
+// We should only be removing points from clusters during the recycle_points routine.
+
+  makeFromPoints();
+}
+
+void
 DBCALCluster::addHit( const DBCALUnifiedHit* hit, double hit_E_unattenuated ){
  
   m_hit_E_unattenuated_sum += hit_E_unattenuated; // add the energy of all hits in a cluster
@@ -102,7 +122,7 @@ void
 DBCALCluster::makeFromPoints(){
   
   clear();
-  
+ 
   //In this function we take a weighted average of the phis/thetas/etc
   //of the individual DBCALPoint's to get the phi/theta/etc of the cluster. The
   //average of phi is weighted by the energy of the hit, while the other
@@ -159,11 +179,11 @@ DBCALCluster::makeFromPoints(){
   //to do an average of phi correctly for cases with angles near 0, we need to average cos(phi) and sin(phi) instead of phi itself
   double sum_sin_phi=0;
   double sum_cos_phi=0;
-
+  
   for( vector< const DBCALPoint* >::const_iterator pt = m_points.begin();
        pt != m_points.end();
       ++pt ){
-   
+     
     double E = (**pt).E();
 
     m_E_points += E;
