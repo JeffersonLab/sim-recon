@@ -62,7 +62,7 @@ private:
   float m_moliereRadius;
   float m_clust_hit_timecut;
   float m_timeCut;
- double m_z_target_center;
+  double m_z_target_center;
   vector<double> effective_velocities;
   vector< vector<double > > attenuation_parameters;
 
@@ -76,7 +76,7 @@ private:
 #define MAX_CLUST 50 
   
   jerror_t init();
- jerror_t fini();
+  jerror_t fini();
   
   TFile* m_rootFile;
   TTree* m_twoEndPtTr;

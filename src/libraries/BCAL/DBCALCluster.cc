@@ -65,7 +65,7 @@ if( phi() > point->phi() ){
   if(find(m_points.begin(),m_points.end(),point) != m_points.end()) m_points.erase( find(m_points.begin(),m_points.end(),point ));
   RemoveAssociatedObject( point );
 
-// We should only be removing points from clusters during the recycle_points routine.
+  // We should only be removing points from clusters during the recycle_points routine, where they are also added to a different cluster.
 
   makeFromPoints();
 }

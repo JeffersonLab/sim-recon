@@ -357,106 +357,105 @@ DBCALCluster_factory::recycle_points( vector<const DBCALPoint*> usedPoints, vect
 	
 	sort( clusters.begin(), clusters.end(), ClusterSort );
 
-		for( vector<const DBCALPoint*>::const_iterator usedpt = usedPoints.begin();
-                                usedpt != usedPoints.end();
-                                ++usedpt ){		
+	for( vector<const DBCALPoint*>::const_iterator usedpt = usedPoints.begin();
+		usedpt != usedPoints.end();
+		++usedpt ){		
 		
-				int overlap_counter = 0;				
-				sep_vector.clear();
-				deltPhi.clear();
-				double sep = 0.;
+		int overlap_counter = 0;				
+		sep_vector.clear();
+		deltPhi.clear();
+		double sep = 0.;
 		
-			for( vector<DBCALCluster*>::iterator clust = clusters.begin();
-				clust != clusters.end();
-				++clust ){
+		for( vector<DBCALCluster*>::iterator clust = clusters.begin();
+			clust != clusters.end();
+			++clust ){
 	
-				if( overlap( **clust, *usedpt ) ){
-					overlap_counter++;
-					// If a point satisfies the overlap condition with a cluster, then we want to calculate the
-					// distance along the sphere between the point and cluster centroid position.
-					float deltaTheta = fabs( (**clust).theta() - (*usedpt)->theta() );
-					float deltaPhi = (**clust).phi() - (*usedpt)->phi();
-        				float deltaPhiAlt = ( (**clust).phi() > (*usedpt)->phi() ?
-                        			(**clust).phi() - (*usedpt)->phi() - 2*PI :
-                        			(*usedpt)->phi() - (**clust).phi() - 2*PI );
-
-        				deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
-					
-					deltPhi.push_back(deltaPhi);
-
-					float rho = ( (**clust).rho() + (*usedpt)->rho() ) / 2.;
-	        			float theta = ( (**clust).theta() + (*usedpt)->theta() ) / 2.;
-	
-					sep =  sqrt( ( rho * deltaTheta ) * ( rho * deltaTheta ) + ( rho * sin( theta ) * deltaPhi ) * ( rho * sin( theta ) * deltaPhi ) );
-					sep_vector.push_back(sep);
-
-				}
-						
-			}
-	
-			if(overlap_counter==0) break;
-			
-			min_sep = min_element(sep_vector.begin(),sep_vector.end());
-			min_phi = min_element(deltPhi.begin(),deltPhi.end());
-			// Find the points closest cluster in distance along the sphere and in phi.			
-
-			for( vector<DBCALCluster*>::iterator clust = clusters.begin();
-                                clust != clusters.end();
-                                ++clust ){
-				bool sep_match;
-				bool clust_match;
-				bool clust_match2;
-				int best_clust = 0;
-				vector<const DBCALPoint*> associated_points;
-				associated_points.clear();
-				(**clust).Get(associated_points);
+			if( overlap( **clust, *usedpt ) ){
+				overlap_counter++;
+				// If a point satisfies the overlap condition with a cluster, then we want to calculate the
+				// distance along the sphere between the point and cluster centroid position.
 				float deltaTheta = fabs( (**clust).theta() - (*usedpt)->theta() );
-                                float deltaPhi = (**clust).phi() - (*usedpt)->phi();
-                                float deltaPhiAlt = ( (**clust).phi() > (*usedpt)->phi() ?
-                                         (**clust).phi() - (*usedpt)->phi() - 2*PI :
-                                         (*usedpt)->phi() - (**clust).phi() - 2*PI );
+				float deltaPhi = (**clust).phi() - (*usedpt)->phi();
+        			float deltaPhiAlt = ( (**clust).phi() > (*usedpt)->phi() ?
+                        	(**clust).phi() - (*usedpt)->phi() - 2*PI :
+                        	(*usedpt)->phi() - (**clust).phi() - 2*PI );
 
-                                deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
-
-                                float rho = ( (**clust).rho() + (*usedpt)->rho() ) / 2.;
-                                float theta = ( (**clust).theta() + (*usedpt)->theta() ) / 2.;
-
-                                sep =  sqrt( ( rho * deltaTheta ) * ( rho * deltaTheta ) + ( rho * sin( theta ) * deltaPhi ) * ( rho * sin( theta ) * deltaPhi ) );
-				
-				for(unsigned int j = 0 ; j < associated_points.size(); j++){
-					// Check to see if the point we are comparing to the cluster
-					// is already in that cluster.
-					sep_match = ((sep > *min_sep-.1) && ( sep < *min_sep+.1));
-					clust_match = ((*usedpt)->E() == associated_points[j]->E());
-					if ( (deltaPhi==*min_phi) && clust_match==1) best_clust=1;
-					if(BCALCLUSTERVERBOSE>1)cout << " clust E = " << (**clust).E() <<" assoc point E = " << associated_points[j]->E() << " points E = " << (*usedpt)->E() <<  " clust match = " << clust_match <<" sep = " << sep << " min sep = " << *min_sep << " sep match = " << sep_match <<  endl;
-				}
-				if(best_clust==1) break;
-				// if the point was originally placed in its "best" cluster then we don't want to touch it.
-				if(best_clust==0){
-					int added_point = 0;
-					int removed_point = 0;
-					for(unsigned int i = 0 ; i < associated_points.size(); i++){
-						clust_match2 = ((*usedpt)->E() == associated_points[i]->E());
-						if( clust_match2==0 && added_point==0 && deltaPhi == *min_phi){
-							(**clust).addPoint( *usedpt );
-							// if the point found a closer cluster then we add it to the closer cluster.
-							// The point is now an associated object of the closer cluster.
-							added_point=1;
-						}
-                                		if( clust_match2==1 && removed_point==0 && deltaPhi != *min_phi){
-							 (**clust).removePoint( *usedpt );
-							// Now we remove the point from its original cluster since it has been added
-							// to its closest cluster. The point is no longer an associated object of
-							// the original cluster.
-							removed_point=1;
-						}
-					}
-				}   
-			}
-		}
-}	
+        			deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
 					
+				deltPhi.push_back(deltaPhi);
+
+				float rho = ( (**clust).rho() + (*usedpt)->rho() ) / 2.;
+	        		float theta = ( (**clust).theta() + (*usedpt)->theta() ) / 2.;
+	
+				sep =  sqrt( ( rho * deltaTheta ) * ( rho * deltaTheta ) + ( rho * sin( theta ) * deltaPhi ) * ( rho * sin( theta ) * deltaPhi ) );
+				sep_vector.push_back(sep);
+
+			}
+						
+		}
+	
+		if(overlap_counter==0) break;
+			
+		min_sep = min_element(sep_vector.begin(),sep_vector.end());
+		min_phi = min_element(deltPhi.begin(),deltPhi.end());
+		// Find the points closest cluster in distance along the sphere and in phi.			
+
+		for( vector<DBCALCluster*>::iterator clust = clusters.begin();
+			clust != clusters.end();
+			++clust ){
+			bool sep_match;
+			bool clust_match;
+			bool point_match;
+			int best_clust = 0;
+			vector<const DBCALPoint*> associated_points;
+			associated_points.clear();
+			(**clust).Get(associated_points);
+			float deltaTheta = fabs( (**clust).theta() - (*usedpt)->theta() );
+			float deltaPhi = (**clust).phi() - (*usedpt)->phi();
+			float deltaPhiAlt = ( (**clust).phi() > (*usedpt)->phi() ?
+			(**clust).phi() - (*usedpt)->phi() - 2*PI :
+			(*usedpt)->phi() - (**clust).phi() - 2*PI );
+
+			deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
+
+			float rho = ( (**clust).rho() + (*usedpt)->rho() ) / 2.;
+			float theta = ( (**clust).theta() + (*usedpt)->theta() ) / 2.;
+
+			sep =  sqrt( ( rho * deltaTheta ) * ( rho * deltaTheta ) + ( rho * sin( theta ) * deltaPhi ) * ( rho * sin( theta ) * deltaPhi ) );
+				
+			for(unsigned int j = 0 ; j < associated_points.size(); j++){
+				// Check to see if the point we are comparing to the cluster
+				// is already in that cluster.
+				sep_match = ((sep > *min_sep-.1) && ( sep < *min_sep+.1));
+				clust_match = ((*usedpt)->E() == associated_points[j]->E());
+				if ( (deltaPhi==*min_phi) && clust_match==1) best_clust=1;
+				if(BCALCLUSTERVERBOSE>1)cout << " clust E = " << (**clust).E() <<" assoc point E = " << associated_points[j]->E() << " points E = " << (*usedpt)->E() <<  " clust match = " << clust_match <<" sep = " << sep << " min sep = " << *min_sep << " sep match = " << sep_match <<  endl;
+			}
+			if(best_clust==1) break;
+			// if the point was originally placed in its "best" cluster then we don't want to touch it.
+			if(best_clust==0){
+				int added_point = 0;
+				int removed_point = 0;
+				for(unsigned int i = 0 ; i < associated_points.size(); i++){
+					point_match = ((*usedpt)->E() == associated_points[i]->E());
+					if( point_match==0 && added_point==0 && deltaPhi == *min_phi){
+						(**clust).addPoint( *usedpt );
+						// if the point found a closer cluster then we add it to the closer cluster.
+						// The point is now an associated object of the closer cluster.
+						added_point=1;
+					}
+                                	if( point_match==1 && removed_point==0 && deltaPhi != *min_phi){
+						(**clust).removePoint( *usedpt );
+						// Now we remove the point from its original cluster since it has been added
+						// to its closest cluster. The point is no longer an associated object of
+						// the original cluster.
+						removed_point=1;
+					}
+				}
+			}   
+		}
+	}
+}	
 
 void
 DBCALCluster_factory::merge( vector<DBCALCluster*>& clusters ) const {
