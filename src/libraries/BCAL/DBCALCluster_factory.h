@@ -19,6 +19,7 @@ using namespace jana;
 
 #include "TTree.h"
 #include "TFile.h"
+#include "TF1.h"
 
 //#define BCAL_CLUSTER_DIAGNOSTIC
 
@@ -38,9 +39,12 @@ private:
   
   // these routines combine points and clusters together
 
-  vector<DBCALCluster*> clusterize( vector< const DBCALPoint* > points, vector< const DBCALUnifiedHit* > hits ) const;
+  vector<DBCALCluster*> clusterize( vector< const DBCALPoint* > points, vector< const DBCALPoint* > usedPoints,  vector< const DBCALUnifiedHit* > hits ) const;
   void merge( vector<DBCALCluster*>& clusters ) const;
-  
+
+  // This routine removes a point from its original cluster and adds it to its closest cluster if applicable.
+  void recycle_points( vector<const DBCALPoint*> usedPoints, vector<DBCALCluster*>& clusters ) const; 
+ 
   // these are the routines used for testing whether things should be
   // combined -- right now very basic, but can be fine tuned in the future
 
@@ -53,6 +57,7 @@ private:
   bool overlap( const DBCALCluster& clust, 
                 const DBCALUnifiedHit* hit ) const; 
   
+  uint32_t BCALCLUSTERVERBOSE;
   float m_mergeSig;
   float m_moliereRadius;
   float m_clust_hit_timecut;
@@ -60,6 +65,10 @@ private:
   double m_z_target_center;
   vector<double> effective_velocities;
   vector< vector<double > > attenuation_parameters;
+
+  TF1* sep_inclusion_curve;
+  TF1* dtheta_inclusion_curve;
+  TF1* dphi_inclusion_curve;
 
 #ifdef BCAL_CLUSTER_DIAGNOSTIC
   
