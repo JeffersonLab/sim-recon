@@ -70,8 +70,6 @@ jerror_t JEventProcessor_FDC_online::init(void) {
   strip_angle=15.*PI/180.; // strip angle now in rads
   cell_rot_step=60.*PI/180.; // cell rotation step now in rads
 
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
   // create root folder for fdc and cd to it, store main dir
   TDirectory *main = gDirectory;
   gDirectory->mkdir("FDC")->cd();
@@ -158,8 +156,6 @@ jerror_t JEventProcessor_FDC_online::init(void) {
   // back to main dir
   main->cd();
 
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
-
   return NOERROR;
 }
 
@@ -206,7 +202,9 @@ jerror_t JEventProcessor_FDC_online::evnt(JEventLoop *eventLoop, uint64_t eventn
   vector<const DFDCCathodeDigiHit *>cathodedigis;
   eventLoop->Get(cathodedigis);
 
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
   
   if( (anodedigis.size()>0) || (cathodedigis.size()>0) )
 	  fdc_num_events->Fill(1);
@@ -299,7 +297,7 @@ jerror_t JEventProcessor_FDC_online::evnt(JEventLoop *eventLoop, uint64_t eventn
      } //end cell loop
   } //end package loop
   
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }

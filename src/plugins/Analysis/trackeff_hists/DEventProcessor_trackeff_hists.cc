@@ -61,8 +61,6 @@ DEventProcessor_trackeff_hists::~DEventProcessor_trackeff_hists()
 //------------------
 jerror_t DEventProcessor_trackeff_hists::init(void)
 {
-	pthread_mutex_lock(&mutex);
-
 	// Create TRACKING directory
 	TDirectory *dir = (TDirectory*)gROOT->FindObject("TRACKING");
 	if(!dir)dir = new TDirectoryFile("TRACKING","TRACKING");
@@ -75,8 +73,6 @@ jerror_t DEventProcessor_trackeff_hists::init(void)
 	}
 
 	dir->cd("../");
-
-	pthread_mutex_unlock(&mutex);
 		
 	return NOERROR;
 }
@@ -165,8 +161,8 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, uint64_t eventnu
 		last_p[track] = p;
 	}
 	
-	// Lock mutex
-	pthread_mutex_lock(&mutex);
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 
 	// Loop over thrown tracks
 	for(unsigned int i=0; i<throwns.size(); i++){
@@ -193,9 +189,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, uint64_t eventnu
 		trkeff->Fill();
 	}
 	
-
-	// Unlock mutex
-	pthread_mutex_unlock(&mutex);
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 	
 	return NOERROR;
 }

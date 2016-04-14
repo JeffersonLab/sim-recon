@@ -128,9 +128,6 @@ JEventProcessor_CDC_expert_2::~JEventProcessor_CDC_expert_2() {
 jerror_t JEventProcessor_CDC_expert_2::init(void) {
 
 
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
-
   // raw quantities for read out (fa125 new format) are
   //   time                    field max 2047   scaled x 1, units 0.8ns
   //   time qf                 field max 1 
@@ -339,8 +336,6 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
 
   main->cd();    // back to main dir
 
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
-
   return NOERROR;
 
 
@@ -413,8 +408,9 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
   eventLoop->Get(digihits);
 
 
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 
   for (uint32_t i=0; i<hits.size(); i++) {
@@ -593,7 +589,7 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
   } //end for each digihit
 
 
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 
   return NOERROR;

@@ -170,7 +170,8 @@ jerror_t DEventProcessor_eta_ntuple::evnt(JEventLoop *loop, uint64_t eventnumber
 		return NOERROR;
 	}
 
-	pthread_mutex_lock(&mutex);
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 	
 	evt->Clear();
 	evt->event = eventnumber;
@@ -211,10 +212,11 @@ jerror_t DEventProcessor_eta_ntuple::evnt(JEventLoop *loop, uint64_t eventnumber
 	evt->fcal->Sort(); // sort by cluster energy (uses fcal_t::Compare );
 	evt->sc->Sort(); // sort by phi diff (uses sc_t::Compare );
 	evt->bcal->Sort(); // sort by cluster energy (uses bcal_t::Compare );
+
 	if(make_root)tree->Fill();
 	if(make_hbook)FillNtuple();
 	
-	pthread_mutex_unlock(&mutex);
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
 	return NOERROR;
 }

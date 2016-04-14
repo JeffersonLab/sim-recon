@@ -86,7 +86,7 @@ jerror_t JEventProcessor_CDC_Efficiency::init(void)
     double phi[28] = {0, 0.074707844, 0.038166294, 0.096247609, 0.05966371, 0.012001551, 0.040721951, 0.001334527, 0.014963808, 0.048683644, 0.002092645, 0.031681749, 0.040719354, 0.015197341, 0.006786058, 0.030005892, 0.019704045, -0.001782064, -0.001306618, 0.018592421, 0.003686784, 0.022132975, 0.019600866, 0.002343723, 0.021301449, 0.005348855, 0.005997358, 0.021018761};
 
     // Define a different 2D histogram for each ring. X-axis is phi, Y-axis is radius (to plot correctly with "pol" option)
-    japp->RootWriteLock();
+
     // create root folder for cdc and cd to it, store main dir
     TDirectory *main = gDirectory;
     gDirectory->mkdir("CDC_Efficiency")->cd();
@@ -133,9 +133,6 @@ jerror_t JEventProcessor_CDC_Efficiency::init(void)
     if(gDirectory->Get("hResVsT") == NULL)
         hResVsT = new TH2I("hResVsT","Tracking Residual (Biased) Vs Drift Time; Drift Time [ns]; Residual [cm]", 500, 0.0, 700.0, 1000, -0.5, 0.5);
     main->cd();
-
-    japp->RootUnLock();
-
 
     return NOERROR;
 }
@@ -499,59 +496,61 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                     Double_t w, v;
                     if(cdc_expected_ring[ringNum] != NULL && ringNum < 29){
                         if (distanceToWire < DOCACUT){
-                            japp->RootWriteLock();
+									// FILL HISTOGRAMS
+									// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+									japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                             w = cdc_expected_ring[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                             cdc_expected_ring[ringNum]->SetBinContent(wireNum, 1, w);
-                            japp->RootUnLock();
+									japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                         }
                         switch ( (int) (distanceToWire * 10) % 8){
                             case 0:
-                                japp->RootWriteLock();
+										japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                 w = cdc_expected_ring_DOCA0[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                 cdc_expected_ring_DOCA0[ringNum]->SetBinContent(wireNum, 1, w);
-                                japp->RootUnLock();
+										japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                 break;
                             case 1:
-                                japp->RootWriteLock();
+										japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                 w = cdc_expected_ring_DOCA1[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                 cdc_expected_ring_DOCA1[ringNum]->SetBinContent(wireNum, 1, w);
-                                japp->RootUnLock();
+										japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                 break;
                             case 2:
-                                japp->RootWriteLock();
+										japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                 w = cdc_expected_ring_DOCA2[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                 cdc_expected_ring_DOCA2[ringNum]->SetBinContent(wireNum, 1, w);
-                                japp->RootUnLock();
+										japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                 break;
                             case 3:
-                                japp->RootWriteLock();
+										japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                 w = cdc_expected_ring_DOCA3[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                 cdc_expected_ring_DOCA3[ringNum]->SetBinContent(wireNum, 1, w);
-                                japp->RootUnLock();
+										japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                 break;
                             case 4:
-                                japp->RootWriteLock();
+										japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                 w = cdc_expected_ring_DOCA4[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                 cdc_expected_ring_DOCA4[ringNum]->SetBinContent(wireNum, 1, w);
-                                japp->RootUnLock();
+										japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                 break;
                             case 5:
-                                japp->RootWriteLock();
+										japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                 w = cdc_expected_ring_DOCA5[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                 cdc_expected_ring_DOCA5[ringNum]->SetBinContent(wireNum, 1, w);
-                                japp->RootUnLock();
+										japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                 break;
                             case 6:
-                                japp->RootWriteLock();
+										japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                 w = cdc_expected_ring_DOCA6[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                 cdc_expected_ring_DOCA6[ringNum]->SetBinContent(wireNum, 1, w);
-                                japp->RootUnLock();
+										japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                 break;
                             case 7:
-                                japp->RootWriteLock();
+										japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                 w = cdc_expected_ring_DOCA7[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                 cdc_expected_ring_DOCA7[ringNum]->SetBinContent(wireNum, 1, w);
-                                japp->RootUnLock();
+										japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                 break;
                             default:
                                 cout << "Unknown DOCA Lookup?" << endl;
@@ -564,62 +563,62 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                         const DCDCHit * locHit = locCDCHitVector[hitNum];
                         if(locHit->ring == ringNum && locHit->straw == wireNum){
                             if (distanceToWire < DOCACUT){
-                                japp->RootWriteLock();
+										japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                 //printf("Matching Hit!!!!!\n");
                                 v = cdc_measured_ring[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                 cdc_measured_ring[ringNum]->SetBinContent(wireNum, 1, v);
                                 double dx = thisTimeBasedTrack->rt->Straw_dx(wire, 0.78);
                                 ChargeVsTrackLength->Fill(dx,locHit->q);
-                                japp->RootUnLock();
+										japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                             }
                             switch ( (int) (distanceToWire * 10) % 8){
                                 case 0:
-                                    japp->RootWriteLock();
+											japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                     v = cdc_measured_ring_DOCA0[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                     cdc_measured_ring_DOCA0[ringNum]->SetBinContent(wireNum, 1, v);
-                                    japp->RootUnLock();
+											japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                     break;
                                 case 1:
-                                    japp->RootWriteLock();
+											japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                     v = cdc_measured_ring_DOCA1[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                     cdc_measured_ring_DOCA1[ringNum]->SetBinContent(wireNum, 1, v);
-                                    japp->RootUnLock();
+											japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                     break;
                                 case 2:
-                                    japp->RootWriteLock();
+											japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                     v = cdc_measured_ring_DOCA2[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                     cdc_measured_ring_DOCA2[ringNum]->SetBinContent(wireNum, 1, v);
-                                    japp->RootUnLock();
+											japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                     break;
                                 case 3:
-                                    japp->RootWriteLock();
+											japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                     v = cdc_measured_ring_DOCA3[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                     cdc_measured_ring_DOCA3[ringNum]->SetBinContent(wireNum, 1, v);
-                                    japp->RootUnLock();
+											japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                     break;
                                 case 4:
-                                    japp->RootWriteLock();
+											japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                     v = cdc_measured_ring_DOCA4[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                     cdc_measured_ring_DOCA4[ringNum]->SetBinContent(wireNum, 1, v);
-                                    japp->RootUnLock();
+											japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                     break;
                                 case 5:
-                                    japp->RootWriteLock();
+											japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                     v = cdc_measured_ring_DOCA5[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                     cdc_measured_ring_DOCA5[ringNum]->SetBinContent(wireNum, 1, v);
-                                    japp->RootUnLock();
+											japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                     break;
                                 case 6:
-                                    japp->RootWriteLock();
+											japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                     v = cdc_measured_ring_DOCA6[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                     cdc_measured_ring_DOCA6[ringNum]->SetBinContent(wireNum, 1, v);
-                                    japp->RootUnLock();
+											japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                     break;
                                 case 7:
-                                    japp->RootWriteLock();
+											japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
                                     v  = cdc_measured_ring_DOCA7[ringNum]->GetBinContent(wireNum, 1) + 1.0;
                                     cdc_measured_ring_DOCA7[ringNum]->SetBinContent(wireNum, 1, v);
-                                    japp->RootUnLock();
+											japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
                                     break;
                                 default:
                                     cout << "Unknown DOCA Lookup?" << endl;

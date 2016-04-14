@@ -94,6 +94,28 @@ jerror_t DEventProcessor_bcal_calib::init(void)
   DEBUG_PLOT_LINES=false;
   gPARMS->SetDefaultParameter("BCAL_CALIB:DEBUG_PLOT_LINES",DEBUG_PLOT_LINES);
 
+  if (DEBUG_HISTS){
+    
+    Hcdc_prob = (TH1F*)gROOT->FindObject("Hcdc_prob");
+    if (!Hcdc_prob){
+      Hcdc_prob=new TH1F("Hcdc_prob","Confidence level for time-based fit",100,0.0,1.); 
+    } 
+    Hcdcmatch = (TH1F*)gROOT->FindObject("Hcdcmatch");
+    if (!Hcdcmatch){
+      Hcdcmatch=new TH1F("Hcdcmatch","CDC hit matching distance",1000,0.0,50.); 
+    }
+    Hcdcmatch_stereo = (TH1F*)gROOT->FindObject("Hcdcmatch_stereo");
+    if (!Hcdcmatch_stereo){
+      Hcdcmatch_stereo=new TH1F("Hcdcmatch_stereo","CDC stereo hit matching distance",1000,0.0,50.); 
+    }
+    
+    Hbcalmatchxy=(TH2F*)gROOT->FindObject("Hbcalmatchxy");
+    if (!Hbcalmatchxy){
+      Hbcalmatchxy=new TH2F("Hbcalmatchxy","BCAL #deltay vs #deltax",400,-50.,50.,
+			    400,-50.,50.);
+    }
+  }
+
   return NOERROR;
 }
 
@@ -123,34 +145,6 @@ jerror_t DEventProcessor_bcal_calib::brun(JEventLoop *loop, int32_t runnumber)
   jcalib->Get("CDC/cdc_resolution_parms", cdc_res_parms);
   CDC_RES_PAR1 = cdc_res_parms["res_par1"];
   CDC_RES_PAR2 = cdc_res_parms["res_par2"];
-
-  dapp->Lock();
-
-  
-
-  if (DEBUG_HISTS){
-    
-    Hcdc_prob = (TH1F*)gROOT->FindObject("Hcdc_prob");
-    if (!Hcdc_prob){
-      Hcdc_prob=new TH1F("Hcdc_prob","Confidence level for time-based fit",100,0.0,1.); 
-    } 
-    Hcdcmatch = (TH1F*)gROOT->FindObject("Hcdcmatch");
-    if (!Hcdcmatch){
-      Hcdcmatch=new TH1F("Hcdcmatch","CDC hit matching distance",1000,0.0,50.); 
-    }
-    Hcdcmatch_stereo = (TH1F*)gROOT->FindObject("Hcdcmatch_stereo");
-    if (!Hcdcmatch_stereo){
-      Hcdcmatch_stereo=new TH1F("Hcdcmatch_stereo","CDC stereo hit matching distance",1000,0.0,50.); 
-    }
-    
-    Hbcalmatchxy=(TH2F*)gROOT->FindObject("Hbcalmatchxy");
-    if (!Hbcalmatchxy){
-      Hbcalmatchxy=new TH2F("Hbcalmatchxy","BCAL #deltay vs #deltax",400,-50.,50.,
-			    400,-50.,50.);
-    }
-  }
-
-  dapp->Unlock();
 
   return NOERROR;
 }

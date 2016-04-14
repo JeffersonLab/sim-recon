@@ -50,7 +50,6 @@ jerror_t JEventProcessor_ST_Tresolution::init(void)
 	// japp->RootUnLock();
 	//
   // **************** define histograms *************************
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
   //Create root folder and cd to it, store main dir
   TDirectory *main = gDirectory;
@@ -71,7 +70,6 @@ jerror_t JEventProcessor_ST_Tresolution::init(void)
 
   // cd back to main directory
   main->cd();
-  japp->RootUnLock();
 
   RF_BUNCH_TAG = "Calibrations";
   gPARMS->SetDefaultParameter("SC_TCALIB:RF_BUNCH_TAG", RF_BUNCH_TAG, "RF bunch selection tag for SC timing resolution");
@@ -171,7 +169,10 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
   const DEventRFBunch *thisRFBunch = NULL;
   loop->GetSingle(thisRFBunch, RF_BUNCH_TAG.c_str());
 
-  japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
   for (uint32_t i = 0; i < chargedTrackVector.size(); i++)
     {   
       // Grab the charged track and declare time based track object
@@ -283,7 +284,9 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
 	  h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns - SC_RFShiftedTime);
 	}
     } // sc charged tracks
-  japp->RootUnLock();
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
   return NOERROR;
 }
 

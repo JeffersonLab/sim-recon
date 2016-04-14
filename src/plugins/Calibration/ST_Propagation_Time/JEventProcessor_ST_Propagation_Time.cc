@@ -59,7 +59,6 @@ jerror_t JEventProcessor_ST_Propagation_Time::init(void)
   Photonspeed = 29.9792458;
   
   // **************** define histograms *************************
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
   //Create root folder and cd to it, store main dir
   TDirectory *main = gDirectory;
@@ -89,7 +88,7 @@ jerror_t JEventProcessor_ST_Propagation_Time::init(void)
     }
   // cd back to main directory
   main->cd();
-  japp->RootUnLock();
+
   return NOERROR;
 }
 
@@ -181,7 +180,11 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
   // Grab the associated RF bunch object
   const DEventRFBunch *thisRFBunch = NULL;
   loop->GetSingle(thisRFBunch, "Calibrations");
-  japp->RootWriteLock();
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
   locTOFRFShiftedTime = 9.9E+9;
   // Loop over the charged tracks
   for (uint32_t i = 0; i < chargedTrackVector.size(); i++)
@@ -399,7 +402,9 @@ jerror_t JEventProcessor_ST_Propagation_Time::evnt(JEventLoop *loop, uint64_t ev
 	    }
    	} // sc charged tracks
     }// TOF reference time
-  japp->RootUnLock(); 
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
   return NOERROR;
 }
 

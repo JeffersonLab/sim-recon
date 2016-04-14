@@ -57,7 +57,6 @@ jerror_t JEventProcessor_st_tw_corr_auto::init(void)
   adc_max_mV      = 2000.0;
   adc_thresh_calc = (tdc_thresh_mV/tdc_gain_factor)*(adc_max_chan/adc_max_mV);
   // **************** define histograms *************************
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
   
   h_pp_chan = new TH1I*[NCHANNELS];
   h_stt_chan = new TH1I*[NCHANNELS];
@@ -77,7 +76,6 @@ jerror_t JEventProcessor_st_tw_corr_auto::init(void)
       
       h2_st_corr_vs_pp[i]= new TH2I(Form("h2_st_corr_vs_pp_%i", i+1), "Hit Time vs. Pulse Peak; Pulse Peak (channels); #delta_{t} (ns)", 4096,0.0,4095.0, 160, -5.0, 5.0);
     }
-  japp->RootUnLock();
  
   return NOERROR;
 }
@@ -148,8 +146,10 @@ jerror_t JEventProcessor_st_tw_corr_auto::evnt(JEventLoop *loop, uint64_t eventn
       // timewalk corrections are controlled by command line flag
       double adc_t   = st_hits[k]->t_fADC;
       int sector     = st_hits[k]->sector;
-      // Lock ROOT mutex so other threads won't interfere 
-      japp->RootWriteLock();
+
+		// FILL HISTOGRAMS
+		// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
       {
 	double	st_time = T - adc_t;
 	h_stt_chan[sector-1]->Fill(st_time);
@@ -174,7 +174,7 @@ jerror_t JEventProcessor_st_tw_corr_auto::evnt(JEventLoop *loop, uint64_t eventn
 	    h2_st_corr_vs_pp[sector-1]->Fill(adc_pp,st_time);
 	  }
       }
-      japp->RootUnLock();
+		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
     }
   return NOERROR;
 }

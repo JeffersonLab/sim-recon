@@ -111,6 +111,13 @@ jerror_t JEventProcessor_DAQTreeBCAL::evnt(JEventLoop *loop, uint64_t eventnumbe
 	vector<const DBCALDigiHit*> bcaldigihits;
 	loop->Get(bcaldigihits);
 
+	// Get the DBCALTDCDigiHit objects
+	vector<const DBCALTDCDigiHit*> bcaltdcdigihits;
+	loop->Get(bcaltdcdigihits);
+
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+
 	// Loop over DBCALDigiHit objects
 	for(unsigned int i=0; i< bcaldigihits.size(); i++){
 
@@ -162,11 +169,6 @@ jerror_t JEventProcessor_DAQTreeBCAL::evnt(JEventLoop *loop, uint64_t eventnumbe
 		} catch (...) {}
 	}
 
-
-	// Get the DBCALTDCDigiHit objects
-	vector<const DBCALTDCDigiHit*> bcaltdcdigihits;
-	loop->Get(bcaltdcdigihits);
-
 	// Loop over DBCALTDCDigiHit objects
 	for(unsigned int i=0; i< bcaltdcdigihits.size(); i++){
 
@@ -191,6 +193,7 @@ jerror_t JEventProcessor_DAQTreeBCAL::evnt(JEventLoop *loop, uint64_t eventnumbe
 		BCALTDCdigi->Fill();
 	}
 
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
 	return NOERROR;
 }

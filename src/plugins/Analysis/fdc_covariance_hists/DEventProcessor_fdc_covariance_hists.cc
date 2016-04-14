@@ -89,8 +89,6 @@ jerror_t DEventProcessor_fdc_covariance_hists::brun(JEventLoop *loop, int32_t ru
 		return RESOURCE_UNAVAILABLE;
 	}
 	bfield=dapp->GetBfield(runnumber);
-	rt = new DReferenceTrajectory(bfield);
-	rt->SetDRootGeom(dapp->GetRootGeom());
 	
 	// Get z-position of most upstream FDC layer
 	vector<double> z_wires;
@@ -176,10 +174,13 @@ jerror_t DEventProcessor_fdc_covariance_hists::evnt(JEventLoop *loop, uint64_t e
 	}
 	s1 = s1_min;
 
+	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield);
+	rt->SetDRootGeom(dapp->GetRootGeom());
+	rt->Swim(pos_fdc1, mom_fdc1);
+
 	// Lock mutex
 	pthread_mutex_lock(&mutex);
-
-	rt->Swim(pos_fdc1, mom_fdc1);
 
 	// Loop over FDC hits
 	vector<double> resi_by_layer(24,-1000);
@@ -253,6 +254,8 @@ jerror_t DEventProcessor_fdc_covariance_hists::evnt(JEventLoop *loop, uint64_t e
 	// Unlock mutex
 	pthread_mutex_unlock(&mutex);
 	
+	delete rt;
+
 	return NOERROR;
 }
 

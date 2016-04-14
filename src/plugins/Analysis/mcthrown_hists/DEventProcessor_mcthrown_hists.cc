@@ -89,6 +89,10 @@ jerror_t DEventProcessor_mcthrown_hists::evnt(JEventLoop *loop, uint64_t eventnu
 	vector<const DMCThrown*> mcthrowns;
 	loop->Get(mcthrowns);
 	
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
 	// Loop over thrown tracks
 	Nparticles_per_event->Fill(mcthrowns.size());
 	for(unsigned int i=0;i<mcthrowns.size();i++){
@@ -127,6 +131,8 @@ jerror_t DEventProcessor_mcthrown_hists::evnt(JEventLoop *loop, uint64_t eventnu
 				break;
 		}
 	}
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
 }
