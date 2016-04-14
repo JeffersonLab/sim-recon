@@ -24,8 +24,16 @@ dPerformAntiCut(false), dReaction(locReaction), dActionName(locActionBaseName), 
 	dOutputFileName = "hd_root.root";
 	if(gPARMS->Exists("OUTPUT_FILENAME"))
 		gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
+
 	dNumPreviousParticleCombos = 0;
 	dNumParticleCombos = 0;
+
+	string locLockName = dActionName;
+	if(dReaction != NULL)
+		locLockName += string("_") + dReaction->Get_ReactionName();
+
+	dActionLock = japp->ReadLock(locLockName); //will create if doesn't exist, else returns it
+	pthread_rwlock_unlock(dActionLock); //unlock
 }
 
 void DAnalysisAction::operator()(JEventLoop* locEventLoop, set<const DParticleCombo*>& locSurvivingParticleCombos)
@@ -78,3 +86,4 @@ TDirectoryFile* DAnalysisAction::CreateAndChangeTo_ActionDirectory(void)
 	locDirTitle = locActionName;
 	return CreateAndChangeTo_Directory(locDirectory, locDirName, locDirTitle);
 }
+

@@ -89,8 +89,9 @@ jerror_t DEventProcessor_cdc_hists::init(void)
 jerror_t DEventProcessor_cdc_hists::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
 	DApplication *dapp = dynamic_cast<DApplication*>(app);
+	LockState();
 	bfield = dapp->GetBfield(runnumber);
-	rt = new DReferenceTrajectory(bfield);
+	UnlockState();
 	
 	return NOERROR;
 }
@@ -132,14 +133,15 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 	int Nfdc_wire_hits = 0;
 	for(unsigned int i=0; i<fdchits.size(); i++)if(fdchits[i]->type==0)Nfdc_wire_hits++;
 	
-	// Lock mutex
-	pthread_mutex_lock(&mutex);
-	
 	// Swim reference trajectory for first thrown track
+	DReferenceTrajectory* rt = new DReferenceTrajectory(bfield);
 	const DMCThrown *mcthrown = mcthrowns.size()>0 ? mcthrowns[0]:NULL;
 	if(mcthrown){
 		rt->Swim(mcthrown->position(), mcthrown->momentum(), mcthrown->charge());
 	}
+
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 	
 	// Loop over all truth hits, ignoring all but CDC hits
 	for(unsigned int i=0; i<mctrackhits.size(); i++){
@@ -210,8 +212,9 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, uint64_t eventnumber)
 		}
 	}
 
-	// Unlock mutex
-	pthread_mutex_unlock(&mutex);
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 	
+	delete rt;
+
 	return NOERROR;
 }

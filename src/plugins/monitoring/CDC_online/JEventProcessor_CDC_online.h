@@ -17,6 +17,7 @@ class JEventProcessor_CDC_online:public jana::JEventProcessor{
   ~JEventProcessor_CDC_online();
   const char* className(void){return "JEventProcessor_CDC_online";}
 
+	bool initialized_histograms;
 
  private:
   jerror_t init(void);						///< Called once at program start.

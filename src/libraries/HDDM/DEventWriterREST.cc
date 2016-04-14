@@ -1,16 +1,25 @@
 #include "DEventWriterREST.h"
 
-//file-scope so shared amongst threads; only accessed below via locks
-size_t gRESTNumOutputThreads = 0;
-map<string, pair<ofstream*, hddm_r::ostream*> >* gRESTOutputFilePointers = NULL;
+int& DEventWriterREST::Get_NumEventWriterThreads(void) const
+{
+	// must be read/used entirely in "RESTWriter" lock
+	static int locNumEventWriterThreads = 0;
+	return locNumEventWriterThreads;
+}
+
+map<string, pair<ofstream*, hddm_r::ostream*> >& DEventWriterREST::Get_RESTOutputFilePointers(void) const
+{
+	// must be read/used entirely in "RESTWriter" lock
+	// cannot do individual file locks, because the map itself can be modified
+	static map<string, pair<ofstream*, hddm_r::ostream*> > locRESTOutputFilePointers;
+	return locRESTOutputFilePointers;
+}
 
 DEventWriterREST::DEventWriterREST(JEventLoop* locEventLoop, string locOutputFileBaseName) : dOutputFileBaseName(locOutputFileBaseName)
 {
 	japp->WriteLock("RESTWriter");
 	{
-		++gRESTNumOutputThreads;
-		if(gRESTOutputFilePointers == NULL)
-			gRESTOutputFilePointers = new map<string, pair<ofstream*, hddm_r::ostream*> >();
+		++Get_NumEventWriterThreads();
 	}
 	japp->Unlock("RESTWriter");
 	
@@ -471,10 +480,10 @@ bool DEventWriterREST::Write_RESTEvent(string locOutputFileName, hddm_r::HDDM& l
 	japp->WriteLock("RESTWriter");
 	{
 		//check to see if the REST file is open
-		if(gRESTOutputFilePointers->find(locOutputFileName) != gRESTOutputFilePointers->end())
+		if(Get_RESTOutputFilePointers().find(locOutputFileName) != Get_RESTOutputFilePointers().end())
 		{
 			//open: get pointer, write event
-			hddm_r::ostream* locOutputRESTFileStream = (*gRESTOutputFilePointers)[locOutputFileName].second;
+			hddm_r::ostream* locOutputRESTFileStream = Get_RESTOutputFilePointers()[locOutputFileName].second;
 			*(locOutputRESTFileStream) << locRecord;
 			japp->Unlock("RESTWriter");
 			return true;
@@ -522,7 +531,7 @@ bool DEventWriterREST::Write_RESTEvent(string locOutputFileName, hddm_r::HDDM& l
 		*(locRESTFilePointers.second) << locRecord;
 
 		//store the stream pointers
-		(*gRESTOutputFilePointers)[locOutputFileName] = locRESTFilePointers;
+		Get_RESTOutputFilePointers()[locOutputFileName] = locRESTFilePointers;
 	}
 	japp->Unlock("RESTWriter");
 
@@ -533,22 +542,16 @@ DEventWriterREST::~DEventWriterREST(void)
 {
 	japp->WriteLock("RESTWriter");
 	{
-		--gRESTNumOutputThreads;
-		if(gRESTNumOutputThreads > 0)
+		--Get_NumEventWriterThreads();
+		if(Get_NumEventWriterThreads() > 0)
 		{
 			japp->Unlock("RESTWriter");
 			return; //not the last thread writing to REST files
 		}
 
-		if(gRESTOutputFilePointers == NULL)
-		{
-			japp->Unlock("RESTWriter");
-			return; //not the last thread writing to REST files
-		}
-		
 		//last thread writing to REST files: close all files and free all memory
 		map<string, pair<ofstream*, hddm_r::ostream*> >::iterator locIterator;
-		for(locIterator = gRESTOutputFilePointers->begin(); locIterator != gRESTOutputFilePointers->end(); ++locIterator)
+		for(locIterator = Get_RESTOutputFilePointers().begin(); locIterator != Get_RESTOutputFilePointers().end(); ++locIterator)
 		{
 			string locOutputFileName = locIterator->first;
 			if (locIterator->second.second != NULL)
@@ -557,9 +560,7 @@ DEventWriterREST::~DEventWriterREST(void)
 				delete locIterator->second.first;
 			std::cout << "Closed REST file " << locOutputFileName << std::endl;
 		}
-		delete gRESTOutputFilePointers;
-		gRESTOutputFilePointers = NULL;
+		Get_RESTOutputFilePointers().clear();
 	}
 	japp->Unlock("RESTWriter");
 }
-

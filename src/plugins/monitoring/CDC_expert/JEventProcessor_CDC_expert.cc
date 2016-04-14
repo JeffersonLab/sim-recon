@@ -129,10 +129,6 @@ jerror_t JEventProcessor_CDC_expert::init(void) {
   // I moved all the histogram setup into the brun so that I can use different
   // scales for the later runs using the new firmware.  NSJ.
 
-  //  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-  //  japp->RootUnLock(); //RELEASE ROOT LOCK!!
-
-
   return NOERROR;
 }
 
@@ -414,8 +410,9 @@ jerror_t JEventProcessor_CDC_expert::evnt(JEventLoop *eventLoop, uint64_t eventn
   vector<const Df125WindowRawData*> wrdvector;
   eventLoop->Get(wrdvector);
 
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   for(uint32_t i=0; i<hits.size(); i++) {
 
@@ -588,8 +585,7 @@ jerror_t JEventProcessor_CDC_expert::evnt(JEventLoop *eventLoop, uint64_t eventn
   }
 
 
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
-
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }

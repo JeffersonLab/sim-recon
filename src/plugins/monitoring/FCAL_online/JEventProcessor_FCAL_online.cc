@@ -64,9 +64,6 @@ JEventProcessor_FCAL_online::~JEventProcessor_FCAL_online() {
 
 jerror_t JEventProcessor_FCAL_online::init(void) {
 
-  // lock all root operations
-  japp->RootWriteLock();
-
   // create root folder for fcal and cd to it, store main dir
   TDirectory *main = gDirectory;
   gDirectory->mkdir("fcal")->cd();
@@ -148,9 +145,6 @@ jerror_t JEventProcessor_FCAL_online::init(void) {
 
   // back to main dir
   main->cd();
-
-  // unlock
-  japp->RootUnLock();
 
   return NOERROR;
 }
@@ -281,7 +275,9 @@ jerror_t JEventProcessor_FCAL_online::evnt(JEventLoop *eventLoop, uint64_t event
 
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-  japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   if( digiHits.size() > 0 )
 	  fcal_num_events->Fill(1);
@@ -406,7 +402,7 @@ if( digiHits.size() > 0 ){
   }
   m_digNOver->Fill( nOverflow );
 
-//  japp->RootUnLock();
+//  japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   // end of raw hit filling
 
@@ -418,7 +414,7 @@ if( digiHits.size() > 0 ){
   
   // now fill histograms
 
-//  japp->RootWriteLock();
+//  japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   m_hitETot->Fill( hitETot*k_to_MeV );
   m_hitT0->Fill( hitEwtT );
@@ -443,13 +439,13 @@ if( digiHits.size() > 0 ){
     m_hitOcc2D->Fill( hit.column, hit.row );
   }
 
-//  japp->RootUnLock();
+//  japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   // end calibrated block-level filling
 
   // for events with a lot of hits -- stop now
   if( hits.size() > 500 ){
-    japp->RootUnLock();
+    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
     return NOERROR;
   }
 
@@ -462,7 +458,7 @@ if( digiHits.size() > 0 ){
 
 
 
-//  japp->RootWriteLock();
+//  japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
   
   m_clusN->Fill( clusterVec.size() );
 
@@ -538,7 +534,7 @@ if( digiHits.size() > 0 ){
       m_clus2GMass->Fill( ( gam1 + gam2 ).M() );
     }
   }
-//  japp->RootUnLock();
+//  japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   // end cluster lever filling
 
@@ -547,7 +543,7 @@ if( digiHits.size() > 0 ){
   // applied on a cluster level
 
 
-//  japp->RootWriteLock();
+//  japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   for( vector< const DFCALShower* >::const_iterator showItr = showerVec.begin();
        showItr != showerVec.end(); ++showItr ){
@@ -597,7 +593,7 @@ if( digiHits.size() > 0 ){
     
 
   }
-  japp->RootUnLock();
+  japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
   return NOERROR;
 }
 

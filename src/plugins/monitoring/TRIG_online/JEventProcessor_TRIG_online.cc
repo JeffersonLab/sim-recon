@@ -134,14 +134,10 @@ JEventProcessor_TRIG_online::~JEventProcessor_TRIG_online() {
 
 jerror_t JEventProcessor_TRIG_online::init(void) {
 
-  // lock all root operations
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
 
  // First thread to get here makes all histograms. If one pointer is
  // already not NULL, assume all histograms are defined and return now
 	if(h1trig_fcal != NULL){
-		japp->RootUnLock();
 		return NOERROR;
 	}
 
@@ -328,10 +324,6 @@ jerror_t JEventProcessor_TRIG_online::init(void) {
   // back to main dir
   main->cd();
 
-
-  // unlock
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
-
   return NOERROR;
 }
 
@@ -368,13 +360,15 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
 	locEventLoop->Get(locFCALClusters);
 	DFCALGeometry fcalgeom;
 
-	japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	bool isPhysics = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_PHYSICS_EVENT);
 	if(! isPhysics) {
 	  printf ("Non-physics Event=%d\n",(int)locEventNumber);
 	  h1trig_epics->Fill(0.);
-	  japp->RootUnLock();
+	  japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	  return NOERROR;
 	}
 	h1trig_epics->Fill(1.);
@@ -502,10 +496,7 @@ jerror_t JEventProcessor_TRIG_online::evnt(jana::JEventLoop* locEventLoop, uint6
           h2trig7_tbcalVSbcal->Fill(bcal_energy,bcal_time);
 	}
 
-        
-
-        //UnlockState();	
-	japp->RootUnLock();
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }

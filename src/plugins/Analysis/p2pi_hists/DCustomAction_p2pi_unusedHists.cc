@@ -19,6 +19,8 @@ void DCustomAction_p2pi_unusedHists::Initialize(JEventLoop* locEventLoop)
 	locEventLoop->Get(locFCALGeometry);
 	dFCALGeometry = locFCALGeometry[0];
 	
+	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
@@ -349,7 +351,10 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 			
 			double locDeltaT = locBCALShowers[loc_j]->t - locBeamPhotonTime;
 
-			japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+			//FILL HISTOGRAMS
+			//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+			//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+			Lock_Action(); //ACQUIRE ROOT LOCK!!
 			{
 				dHistMap_BCALShowerDeltaPhi_DeltaZ->Fill(dz, dphi*180./TMath::Pi());
 				dHistMap_BCALShowerDeltaPhi_P->Fill(locTrackTimeBased->momentum().Mag(), dphi*180./TMath::Pi());
@@ -357,7 +362,7 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 				dHistMap_BCALShowerDeltaPhi_DeltaT->Fill(locDeltaT, dphi*180./TMath::Pi());
 				dHistMap_BCALShowerDeltaZ_DeltaT->Fill(locDeltaT, dz);
 			}
-			japp->RootUnLock(); //RELEASE ROOT LOCK!!
+			Unlock_Action(); //RELEASE ROOT LOCK!!
 
 			DBCALShowerMatchParams locBCALShowerMatchParams;
 			bool foundBCAL = dParticleID->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams);
@@ -408,7 +413,10 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 			
 			double locDeltaT = locFCALShowers[loc_j]->getTime() - locBeamPhotonTime;
 
-			japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+			//FILL HISTOGRAMS
+			//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+			//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+			Lock_Action(); //ACQUIRE ROOT LOCK!!
 			{
 				dHistMap_FCALShowerDeltaR_P->Fill(locTrackTimeBased->momentum().Mag(), dr);
 				dHistMap_FCALShowerDeltaR_Theta->Fill(locTrackTimeBased->momentum().Theta()*180./TMath::Pi(), dr);
@@ -416,7 +424,7 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 				dHistMap_FCALShowerDeltaD_Theta->Fill(locTrackTimeBased->momentum().Theta()*180./TMath::Pi(), dd);
 				dHistMap_FCALShowerDeltaD_DeltaT->Fill(locDeltaT, dd);
 			}
-			japp->RootUnLock(); //RELEASE ROOT LOCK!!
+			Unlock_Action(); //RELEASE ROOT LOCK!!
 
 			DFCALShowerMatchParams locFCALShowerMatchParams;
 			bool foundFCAL = dParticleID->Get_BestFCALMatchParams(locTrackTimeBased, locDetectorMatches, locFCALShowerMatchParams);
@@ -455,11 +463,14 @@ bool DCustomAction_p2pi_unusedHists::Perform_Action(JEventLoop* locEventLoop, co
 		}
 	}
 	
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		dNShowerBCAL_FCAL->Fill(nUnmatchedFCAL, nUnmatchedBCAL);
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 
 	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }
@@ -491,7 +502,10 @@ void DCustomAction_p2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const D
 	  locThetaRes = (locTrackTimeBased->momentum().Theta() - locMCThrown->momentum().Theta())*180./TMath::Pi();
 	}
 
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		dHistMap_TrackNhits_Theta[locMatch][locCharge]->Fill(locTheta, nHits);
 		dHistMap_TrackNhitsCDC_Theta[locMatch][locCharge]->Fill(locTheta, locCDCRings.size());
@@ -530,7 +544,7 @@ void DCustomAction_p2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const D
 			}
 		}
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 
 	if(!locMatch) return;
 
@@ -613,7 +627,10 @@ void DCustomAction_p2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const D
 		t9 = N9>0? t9/N9 : 0;
 		t9sigma = N9>0? sqrt(t9sq/N9 - t9*t9): 0;
 		
-		japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+		//FILL HISTOGRAMS
+		//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+		//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+		Lock_Action(); //ACQUIRE ROOT LOCK!!
 		{
 			if (N9>0) {
 				h1_N9->Fill(N9);
@@ -643,7 +660,7 @@ void DCustomAction_p2pi_unusedHists::FillTrack(JEventLoop* locEventLoop, const D
 				h2_YvsXcheck->Fill(dX_E1,dY_E1);
 			  }
 		}
-		japp->RootUnLock(); //RELEASE ROOT LOCK!!
+		Unlock_Action(); //RELEASE ROOT LOCK!!
 	}
 
 	return;
@@ -693,11 +710,14 @@ void DCustomAction_p2pi_unusedHists::FillShower(const DNeutralShower* locNeutral
 		const DBCALShower* locBCALShower = NULL;
 		locNeutralShower->GetSingleT(locBCALShower);
 		
-		japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+		//FILL HISTOGRAMS
+		//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+		//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+		Lock_Action(); //ACQUIRE ROOT LOCK!!
 		{
 			dHistMap_BCALShowerNcell[locMatch]->Fill(locBCALShower->N_cell);
 		}
-		japp->RootUnLock(); //RELEASE ROOT LOCK!!
+		Unlock_Action(); //RELEASE ROOT LOCK!!
 
 		vector<const DBCALCluster*> locBCALClusters;
 		locBCALShower->Get(locBCALClusters);
@@ -723,7 +743,10 @@ void DCustomAction_p2pi_unusedHists::FillShower(const DNeutralShower* locNeutral
 		}
 	}
 
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		dHistMap_ShowerEnergy_Theta[locMatch][locSystem]->Fill(locPosition.Theta()*180./TMath::Pi(), locEnergy);
 		dHistMap_ShowerPhi_Theta[locMatch][locSystem]->Fill(locPosition.Theta()*180./TMath::Pi(), locPosition.Phi()*180./TMath::Pi());
@@ -746,7 +769,7 @@ void DCustomAction_p2pi_unusedHists::FillShower(const DNeutralShower* locNeutral
 		}
 
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 
 	return;
 }

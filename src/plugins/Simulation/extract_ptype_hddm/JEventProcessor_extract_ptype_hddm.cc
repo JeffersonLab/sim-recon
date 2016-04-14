@@ -52,9 +52,6 @@ JEventProcessor_extract_ptype_hddm::~JEventProcessor_extract_ptype_hddm()
 //------------------
 jerror_t JEventProcessor_extract_ptype_hddm::init(void)
 {
-   // Lock mutex
-   pthread_mutex_lock(&mutex);
-
    // Get type of particle to extract
    PTYPE = Neutron;
    gPARMS->SetDefaultParameter("PTYPE", PTYPE, 
@@ -102,9 +99,6 @@ jerror_t JEventProcessor_extract_ptype_hddm::init(void)
         << std::endl;
    jout << "----------------------------------------" << std::endl;
    jout << std::endl;
-
-   // Unlock mutex
-   pthread_mutex_unlock(&mutex);
 
    return NOERROR;
 }

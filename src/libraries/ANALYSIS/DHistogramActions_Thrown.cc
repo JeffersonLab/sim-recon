@@ -61,6 +61,7 @@ void DHistogramAction_ParticleComboGenReconComparison::Initialize(JEventLoop* lo
 	DGeometry *locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
 
 	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
@@ -370,11 +371,14 @@ bool DHistogramAction_ParticleComboGenReconComparison::Perform_Action(JEventLoop
 	//RF time difference
 	double locRFTime = locEventRFBunch->dTime;
 	double locRFDeltaT = locRFTime - locThrownEventRFBunch->dTime;
-	japp->RootWriteLock();
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
 	{
 		dRFBeamBunchDeltaT_Hist->Fill(locRFDeltaT);
 	}
-	japp->RootUnLock();
+	Unlock_Action();
 
 	const DKinematicData* locKinematicData;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
@@ -454,13 +458,16 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_BeamHists(const DKin
 	double locDeltaPOverP = (locMomentum.Mag() - locThrownP)/locThrownP;
 	double locDeltaT = locKinematicData->time() - locThrownKinematicData->time();
 
-	japp->RootWriteLock();
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
 	{
 		dBeamParticleHist_DeltaPOverP->Fill(locDeltaPOverP);
 		dBeamParticleHist_DeltaPOverPVsP->Fill(locThrownP, locDeltaPOverP);
 		dBeamParticleHist_DeltaT->Fill(locDeltaT);
 	}
-	japp->RootUnLock();
+	Unlock_Action();
 }
 
 void DHistogramAction_ParticleComboGenReconComparison::Fill_ChargedHists(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DMCThrown* locMCThrown, const DEventRFBunch* locThrownEventRFBunch, size_t locStepIndex)
@@ -478,7 +485,11 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_ChargedHists(const D
 	double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
 	double locTimePull = (locStartTime - locChargedTrackHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
 	double locT0Pull = (locStartTime - locChargedTrackHypothesis->t0())/locChargedTrackHypothesis->t0_err();
-	japp->RootWriteLock();
+
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
 	{
 		dHistDeque_DeltaPOverP[locStepIndex][locPID]->Fill(locDeltaPOverP);
 		dHistDeque_DeltaTheta[locStepIndex][locPID]->Fill(locDeltaTheta);
@@ -553,7 +564,7 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_ChargedHists(const D
 			(dHistDeque_PullsVsTheta[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locThrownTheta, locPull);
 		}
 	}
-	japp->RootUnLock();
+	Unlock_Action();
 }
 
 void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DMCThrown* locMCThrown, const DEventRFBunch* locThrownEventRFBunch, size_t locStepIndex)
@@ -577,7 +588,10 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const D
 	double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
 	double locTimePull = (locStartTime - locNeutralParticleHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
 
-	japp->RootWriteLock();
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
 	{
 		dHistDeque_DeltaPOverP[locStepIndex][locPID]->Fill(locDeltaPOverP);
 		dHistDeque_DeltaTheta[locStepIndex][locPID]->Fill(locDeltaTheta);
@@ -628,7 +642,7 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const D
 		}
 
 	}
-	japp->RootUnLock();
+	Unlock_Action();
 }
 
 void DHistogramAction_ThrownParticleKinematics::Initialize(JEventLoop* locEventLoop)
@@ -637,6 +651,7 @@ void DHistogramAction_ThrownParticleKinematics::Initialize(JEventLoop* locEventL
 	Particle_t locPID;
 
 	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
@@ -753,7 +768,11 @@ bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEv
 
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons, "TRUTH");
-	japp->RootWriteLock();
+
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
 	{
 		for(size_t loc_i = 0; loc_i < locMCGENBeamPhotons.size(); ++loc_i)
 		{
@@ -766,7 +785,7 @@ bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEv
 			dAllBeamParticle_Time->Fill(locBeamPhotons[loc_i]->time());
 		}
 	}
-	japp->RootUnLock();
+	Unlock_Action();
 
 	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
 	{
@@ -779,7 +798,11 @@ bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEv
 		double locPhi = locMomentum.Phi()*180.0/TMath::Pi();
 		double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
 		double locP = locMomentum.Mag();
-		japp->RootWriteLock();
+
+		//FILL HISTOGRAMS
+		//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+		//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+		Lock_Action();
 		{
 			dHistMap_P[locPID]->Fill(locP);
 			dHistMap_Phi[locPID]->Fill(locPhi);
@@ -790,7 +813,7 @@ bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEv
 			dHistMap_VertexYVsX[locPID]->Fill(locMCThrown->position().X(), locMCThrown->position().Y());
 			dHistMap_VertexT[locPID]->Fill(locMCThrown->time());
 		}
-		japp->RootUnLock();
+		Unlock_Action();
 	}
 	return true;
 }
@@ -804,6 +827,7 @@ void DHistogramAction_ReconnedThrownKinematics::Initialize(JEventLoop* locEventL
 	locEventLoop->GetSingle(locAnalysisUtilities);
 
 	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		dAnalysisUtilities = locAnalysisUtilities;
@@ -908,12 +932,16 @@ bool DHistogramAction_ReconnedThrownKinematics::Perform_Action(JEventLoop* locEv
 
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);
-	japp->RootWriteLock();
+
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
 	{
 		for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 			dBeamParticle_P->Fill(locBeamPhotons[loc_i]->energy());
 	}
-	japp->RootUnLock();
+	Unlock_Action();
 
 	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
 	{
@@ -943,7 +971,10 @@ bool DHistogramAction_ReconnedThrownKinematics::Perform_Action(JEventLoop* locEv
 		double locP = locMomentum.Mag();
 		int locCharge = ParticleCharge(locPID);
 
-		japp->RootWriteLock();
+		//FILL HISTOGRAMS
+		//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+		//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+		Lock_Action();
 		{
 			if(dHistMap_QBetaVsP.find(locCharge) != dHistMap_QBetaVsP.end())
 				dHistMap_QBetaVsP[locCharge]->Fill(locP, locBeta_Timing);
@@ -959,7 +990,7 @@ bool DHistogramAction_ReconnedThrownKinematics::Perform_Action(JEventLoop* locEv
 				dHistMap_VertexT[locPID]->Fill(locMCThrown->time());
 			}
 		}
-		japp->RootUnLock();
+		Unlock_Action();
 	}
 	return true;
 }
@@ -973,9 +1004,11 @@ void DHistogramAction_GenReconTrackComparison::Initialize(JEventLoop* locEventLo
 	DGeometry *locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
 
 	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-	CreateAndChangeTo_ActionDirectory();
 	{
+		CreateAndChangeTo_ActionDirectory();
+
 		locGeometry->GetTargetZ(dTargetZCenter);
 
 		locHistName = "DeltaT_RFBeamBunch";
@@ -1227,11 +1260,15 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 	const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
 	double locRFTime = locEventRFBunch->dTime;
 	double locRFDeltaT = locRFTime - locThrownEventRFBunch->dTime;
-	japp->RootWriteLock();
+
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
 	{
 		dRFBeamBunchDeltaT_Hist->Fill(locRFDeltaT);
 	}
-	japp->RootUnLock();
+	Unlock_Action();
 
 	//charged particles
 	map<const DMCThrown*, pair<const DChargedTrack*, double> > locThrownToChargedMap;
@@ -1265,7 +1302,11 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
 		double locTimePull = (locStartTime - locChargedTrackHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
 		double locT0Pull = (locStartTime - locChargedTrackHypothesis->t0())/locChargedTrackHypothesis->t0_err();
-		japp->RootWriteLock();
+
+		//FILL HISTOGRAMS
+		//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+		//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+		Lock_Action();
 		{
 			dHistMap_MatchFOM[locPID]->Fill(locMatchFOM);
 			dHistMap_DeltaPOverP[locPID]->Fill(locDeltaPOverP);
@@ -1343,7 +1384,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 				(dHistMap_PullsVsTheta[locPID])[dPullTypes[loc_j]]->Fill(locThrownTheta, locPull);
 			}
 		}
-		japp->RootUnLock();
+		Unlock_Action();
 	}
 
 	//neutral particles
@@ -1379,7 +1420,10 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
 		double locTimePull = (locStartTime - locNeutralParticleHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
 
-		japp->RootWriteLock();
+		//FILL HISTOGRAMS
+		//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+		//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+		Lock_Action();
 		{
 			dHistMap_MatchFOM[locPID]->Fill(locMatchFOM);
 			dHistMap_DeltaPOverP[locPID]->Fill(locDeltaPOverP);
@@ -1433,7 +1477,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 			}
 
 		}
-		japp->RootUnLock();
+		Unlock_Action();
 	}
 	return true;
 }
@@ -1444,57 +1488,60 @@ void DHistogramAction_TOFHitStudy::Initialize(JEventLoop* locEventLoop)
 	Particle_t locPID;
 
 	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-	CreateAndChangeTo_ActionDirectory();
-
-	for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
 	{
-		locPID = dFinalStatePIDs[loc_i];
-		locParticleName = ParticleType(locPID);
-		locParticleROOTName = ParticleName_ROOT(locPID);
-		CreateAndChangeTo_Directory(locParticleName, locParticleName);
+		CreateAndChangeTo_ActionDirectory();
 
-		// DeltaT
-		locHistName = string("DeltaT_") + locParticleName;
-		locHistTitle = locParticleROOTName + string(";#Deltat (ns) (Reconstructed - Thrown)");
-		dHistMap_DeltaT[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+		for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
+		{
+			locPID = dFinalStatePIDs[loc_i];
+			locParticleName = ParticleType(locPID);
+			locParticleROOTName = ParticleName_ROOT(locPID);
+			CreateAndChangeTo_Directory(locParticleName, locParticleName);
 
-		// DeltaX
-		locHistName = string("DeltaX_") + locParticleName;
-		locHistTitle = locParticleROOTName + string(";#Deltax (cm) (Reconstructed - Thrown)");
-		dHistMap_DeltaX[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
+			// DeltaT
+			locHistName = string("DeltaT_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(";#Deltat (ns) (Reconstructed - Thrown)");
+			dHistMap_DeltaT[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
 
-		// DeltaY
-		locHistName = string("DeltaY_") + locParticleName;
-		locHistTitle = locParticleROOTName + string(";#Deltay (cm) (Reconstructed - Thrown)");
-		dHistMap_DeltaY[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
+			// DeltaX
+			locHistName = string("DeltaX_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(";#Deltax (cm) (Reconstructed - Thrown)");
+			dHistMap_DeltaX[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
 
-		// dE
-		locHistName = string("dE_") + locParticleName;
-		locHistTitle = locParticleROOTName + string(";dE (MeV)");
-		dHistMap_dE[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumdEBins, dMindE, dMaxdE);
+			// DeltaY
+			locHistName = string("DeltaY_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(";#Deltay (cm) (Reconstructed - Thrown)");
+			dHistMap_DeltaY[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
 
-		// DeltaT Vs P
-		locHistName = string("DeltaTVsP_") + locParticleName;
-		locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltat (ns) (Reconstructed - Thrown)");
-		dHistMap_DeltaTVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+			// dE
+			locHistName = string("dE_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(";dE (MeV)");
+			dHistMap_dE[locPID] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumdEBins, dMindE, dMaxdE);
 
-		// DeltaX Vs P
-		locHistName = string("DeltaXVsP_") + locParticleName;
-		locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltax (cm) (Reconstructed - Thrown)");
-		dHistMap_DeltaXVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
+			// DeltaT Vs P
+			locHistName = string("DeltaTVsP_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltat (ns) (Reconstructed - Thrown)");
+			dHistMap_DeltaTVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
 
-		// DeltaY Vs P
-		locHistName = string("DeltaYVsP_") + locParticleName;
-		locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltay (cm) (Reconstructed - Thrown)");
-		dHistMap_DeltaYVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
+			// DeltaX Vs P
+			locHistName = string("DeltaXVsP_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltax (cm) (Reconstructed - Thrown)");
+			dHistMap_DeltaXVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
 
-		// dE Vs P
-		locHistName = string("dEVsP_") + locParticleName;
-		locHistTitle = locParticleROOTName + string(";p (GeV/c);dE (GeV)");
-		dHistMap_dEVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumdEBins, dMindE, dMaxdE);
+			// DeltaY Vs P
+			locHistName = string("DeltaYVsP_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltay (cm) (Reconstructed - Thrown)");
+			dHistMap_DeltaYVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumDeltaXBins, dMinDeltaX, dMaxDeltaX);
 
-		gDirectory->cd("..");
+			// dE Vs P
+			locHistName = string("dEVsP_") + locParticleName;
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);dE (GeV)");
+			dHistMap_dEVsP[locPID] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPBins, dMinP, dMaxP, dNumdEBins, dMindE, dMaxdE);
+
+			gDirectory->cd("..");
+		}
 
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
@@ -1555,7 +1602,10 @@ bool DHistogramAction_TOFHitStudy::Perform_Action(JEventLoop* locEventLoop, cons
 
 		double locdE_MeV = locTOFPoint->dE*1000.0;
 
-		japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+		//FILL HISTOGRAMS
+		//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+		//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+		Lock_Action(); //ACQUIRE ROOT LOCK!!
 		{
 			dHistMap_DeltaT[locPID]->Fill(locDeltaT);
 			dHistMap_DeltaX[locPID]->Fill(locDeltaX);
@@ -1566,7 +1616,7 @@ bool DHistogramAction_TOFHitStudy::Perform_Action(JEventLoop* locEventLoop, cons
 			dHistMap_DeltaYVsP[locPID]->Fill(locThrownPMag, locDeltaY);
 			dHistMap_dEVsP[locPID]->Fill(locThrownPMag, locdE_MeV);
 		}
-		japp->RootUnLock(); //RELEASE ROOT LOCK!!
+		Unlock_Action(); //RELEASE ROOT LOCK!!
 	}
 
 	return true;
@@ -1590,6 +1640,7 @@ void DHistogramAction_TruePID::Initialize(JEventLoop* locEventLoop)
 	locEventLoop->Get(locAnalysisUtilitiesVector);
 
 	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
@@ -1695,7 +1746,10 @@ bool DHistogramAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DP
 			locP = locParticles[loc_j]->momentum().Mag();
 			locTheta = locParticles[loc_j]->momentum().Theta()*180.0/TMath::Pi();
 
-			japp->RootWriteLock();
+			//FILL HISTOGRAMS
+			//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+			//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+			Lock_Action();
 			{
 				if(locCutResult)
 				{
@@ -1708,14 +1762,19 @@ bool DHistogramAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DP
 					dHistDeque_PVsTheta_IncorrectID[loc_i][locPID]->Fill(locTheta, locP);
 				}
 			}
-			japp->RootUnLock();
+			Unlock_Action();
 		}
 	}
-	japp->RootWriteLock();
+
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
 	{
 		dHist_TruePIDStatus->Fill(locComboTruePIDStatus);
 	}
-	japp->RootUnLock();
+	Unlock_Action();
 
 	return true;
 }
+

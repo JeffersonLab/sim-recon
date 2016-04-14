@@ -101,14 +101,9 @@ JEventProcessor_EPICS_dump::~JEventProcessor_EPICS_dump() {
 
 jerror_t JEventProcessor_EPICS_dump::init(void) {
 
-  // lock all root operations
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
-
  // First thread to get here makes all histograms. If one pointer is
  // already not NULL, assume all histograms are defined and return now
 	if(h1epics_trgbits != NULL){
-		japp->RootUnLock();
 		return NOERROR;
 	}
 
@@ -178,10 +173,6 @@ jerror_t JEventProcessor_EPICS_dump::init(void) {
     save_ntrig0[j] = 0;
     }
 
-
-  // unlock
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
-
   return NOERROR;
 }
 
@@ -225,7 +216,9 @@ jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64
 	bool isEPICS = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_EPICS_EVENT);
 	// bool isSynch = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_SYNCH_EVENT);
 
-	japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	uint32_t trig_mask=0, fp_trig_mask=0;
 	uint32_t temp_mask=0;
@@ -359,11 +352,7 @@ jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64
 
 	}
 
-
-
-
-        //UnlockState();	
-	japp->RootUnLock();
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }
