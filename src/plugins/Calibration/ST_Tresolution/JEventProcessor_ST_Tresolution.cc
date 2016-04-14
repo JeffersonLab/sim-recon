@@ -57,12 +57,12 @@ jerror_t JEventProcessor_ST_Tresolution::init(void)
 
   h2_CorrectedTime_z = new TH2I*[NCHANNELS];
   // All my Calculations in 2015 were using the binning below
-  NoBins_time = 100;
-  NoBins_z = 300;
-  time_lower_limit = -5.0;      
-  time_upper_limit = 5.0;
-  z_lower_limit = 0.0;
-  z_upper_limit = 60.0;
+  int NoBins_time = 100;
+  int NoBins_z = 300;
+  double time_lower_limit = -5.0;      
+  double time_upper_limit = 5.0;
+  double z_lower_limit = 0.0;
+  double z_upper_limit = 60.0;
   for (Int_t i = 0; i < NCHANNELS; i++)
     { 
       h2_CorrectedTime_z[i] = new TH2I(Form("h2_CorrectedTime_z_%i", i+1), "Corrected Time vs. Z; Z (cm); Propagation Time (ns)", NoBins_z,z_lower_limit,z_upper_limit, NoBins_time, time_lower_limit, time_upper_limit);
@@ -70,9 +70,6 @@ jerror_t JEventProcessor_ST_Tresolution::init(void)
 
   // cd back to main directory
   main->cd();
-
-  RF_BUNCH_TAG = "Calibrations";
-  gPARMS->SetDefaultParameter("SC_TCALIB:RF_BUNCH_TAG", RF_BUNCH_TAG, "RF bunch selection tag for SC timing resolution");
   
   return NOERROR;
 }
@@ -120,10 +117,19 @@ jerror_t JEventProcessor_ST_Tresolution::brun(JEventLoop *eventLoop, int32_t run
   if(!dapp)
     _DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl; 
   DGeometry* locGeometry = dapp->GetDGeometry(eventLoop->GetJEvent().GetRunNumber());
-  locGeometry->GetStartCounterGeom(sc_pos, sc_norm);
+  sc_angle_corr = 1.;
+  if(locGeometry->GetStartCounterGeom(sc_pos, sc_norm)) {
+      double theta = sc_norm[0][sc_norm[0].size()-2].Theta(); 
+      sc_angle_corr = 1./cos(M_PI_2 - theta);
+  }  
+
   // Propagation Time constant
   if(eventLoop->GetCalib("START_COUNTER/propagation_time_corr", propagation_time_corr))
     jout << "Error loading /START_COUNTER/propagation_time_corr !" << endl;
+
+  // set some parameters
+  trackingFOMCut = 0.0027;  // 3 sigma cut
+
   return NOERROR;
 }
 
@@ -167,11 +173,7 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
   
   // Grab the associated RF bunch object
   const DEventRFBunch *thisRFBunch = NULL;
-  loop->GetSingle(thisRFBunch, RF_BUNCH_TAG.c_str());
-
-	// FILL HISTOGRAMS
-	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+  loop->GetSingle(thisRFBunch);
 
   for (uint32_t i = 0; i < chargedTrackVector.size(); i++)
     {   
@@ -181,61 +183,64 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
       // Grab associated time based track object by selecting charged track with best FOM
       thisChargedTrack->Get_BestTrackingFOM()->GetSingle(timeBasedTrack);
       // Implement quality cuts for the time based tracks 
-      trackingFOMCut = 0.0027;  // 3 sigma cut
+      //trackingFOMCut = 0.0027;  // 3 sigma cut
       //trackingFOMCut = 0.0001;  // 5 sigma cut
       if(timeBasedTrack->FOM  < trackingFOMCut) continue;
 
       // Grab the ST hit match params object and cut on only tracks matched to the ST
       DSCHitMatchParams locSCHitMatchParams;
-      foundSC = dParticleID->Get_BestSCMatchParams(timeBasedTrack, locDetectorMatches, locSCHitMatchParams);
+      bool foundSC = dParticleID->Get_BestSCMatchParams(timeBasedTrack, locDetectorMatches, locSCHitMatchParams);
       if (!foundSC) continue;
       
       // Define vertex vector and cut on target/scattering chamber geometry
-      vertex = timeBasedTrack->position();
-      z_v = vertex.z();
-      r_v = vertex.Perp();
+      DVector3 vertex = timeBasedTrack->position();
+      double z_v = vertex.z();
+      double r_v = vertex.Perp();
       
-      z_vertex_cut = fabs(z_target_center - z_v) <= 15.0;
-      r_vertex_cut = r_v < 0.5;
+      bool z_vertex_cut = fabs(z_target_center - z_v) <= 15.0;
+      bool r_vertex_cut = r_v < 0.5;
       // Apply  vertex cut
       if (!z_vertex_cut) continue;
       if (!r_vertex_cut) continue;
+      vector<DSCHitMatchParams> st_params;
       bool st_match = locDetectorMatches->Get_SCMatchParams(timeBasedTrack, st_params); 
       // If st_match = true, there is a match between this track and the ST
       if (!st_match) continue;
-     
-      sc_match_pid = dParticleID->MatchToSC(timeBasedTrack, 
-					    timeBasedTrack->rt, 
-					    st_params[0].dSCHit, 
-					    st_params[0].dSCHit->t, 
-					    locSCHitMatchParams, 
-					    true,
-					    &IntersectionPoint, &IntersectionDir); 
+
+      DVector3 IntersectionPoint;
+      DVector3 IntersectionDir;
+      bool sc_match_pid = dParticleID->MatchToSC(timeBasedTrack, 
+                                                 timeBasedTrack->rt, 
+                                                 st_params[0].dSCHit, 
+                                                 st_params[0].dSCHit->t, 
+                                                 locSCHitMatchParams, 
+                                                 true,
+                                                 &IntersectionPoint, &IntersectionDir); 
       if(!sc_match_pid) continue; 
       // Cut on the number of particle votes to find the best RF time
       if (thisRFBunch->dNumParticleVotes < 2) continue;
       // Calculate the TOF estimate of the target time
 
       // Calculate the RF estimate of the target time
-      locCenteredRFTime       = thisRFTime->dTime;
+      double locCenteredRFTime       = thisRFTime->dTime;
       // RF time at center of target
-      locCenterToVertexRFTime = (timeBasedTrack->z() - z_target_center)*(1.0/speed_light);  // Time correction for photon from target center to vertex of track
-      locVertexRFTime         = locCenteredRFTime + locCenterToVertexRFTime;
-      sc_index= locSCHitMatchParams.dSCHit->sector - 1;
+      double locCenterToVertexRFTime = (timeBasedTrack->z() - z_target_center)*(1.0/speed_light);  // Time correction for photon from target center to vertex of track
+      double locVertexRFTime         = locCenteredRFTime + locCenterToVertexRFTime;
+      int sc_index= locSCHitMatchParams.dSCHit->sector - 1;
       // Start Counter geometry in hall coordinates 
-      sc_pos_soss = sc_pos[sc_index][0].z();   // Start of straight section
-      sc_pos_eoss = sc_pos[sc_index][1].z();   // End of straight section
-      sc_pos_eobs = sc_pos[sc_index][11].z();  // End of bend section
-      sc_pos_eons = sc_pos[sc_index][12].z();  // End of nose section
+      double sc_pos_soss = sc_pos[sc_index][0].z();   // Start of straight section
+      double sc_pos_eoss = sc_pos[sc_index][1].z();   // End of straight section
+      double sc_pos_eobs = sc_pos[sc_index][11].z();  // End of bend section
+      double sc_pos_eons = sc_pos[sc_index][12].z();  // End of nose section
       //Get the ST time walk corrected time
-      st_time = st_params[0].dSCHit->t;
+      double st_time = st_params[0].dSCHit->t;
       // Get the Flight time 
-      FlightTime = locSCHitMatchParams.dFlightTime; 
+      double FlightTime = locSCHitMatchParams.dFlightTime; 
       //St time corrected for the flight time
-      st_corr_FlightTime =  st_time - FlightTime;
+      double st_corr_FlightTime =  st_time - FlightTime;
       // SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  st_corr_FlightTime);
       // Z intersection of charged track and SC 
-      locSCzIntersection = IntersectionPoint.z();
+      double locSCzIntersection = IntersectionPoint.z();
       ////////////////////////////////////////////////////////////////////
       /// Fill the sc time histograms corrected for walk and propagation//
       ////////////////////////////////////////////////////////////////////
@@ -250,42 +255,46 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
       //Calculate the path along the paddle
       /////////////////////////////////////
       //Define some parameters
-      double Radius = 12.0;
-      double pi = 3.14159265358979323846;
-      double theta  = 18.5 * pi/180.0;
-      double path_ss,path_bs,path_ns; 
+      //double Radius = 12.0;
+      //double theta  = 18.5 * pi/180.0;
       double SS_Length = sc_pos_eoss - sc_pos_soss;// same for along z or along the paddle
-      double BS_Length = Radius *  theta ; // along the paddle
-      double NS_Length = (sc_pos_eons - sc_pos_eobs)/cos(theta);// along the paddle
+      //double BS_Length = Radius *  theta ; // along the paddle
+      //double NS_Length = (sc_pos_eons - sc_pos_eobs)/cos(theta);// along the paddle
       
+      // FILL HISTOGRAMS
+      // Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+      japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
       // Straight Sections
       if (sc_pos_soss < locSCzIntersection && locSCzIntersection <= sc_pos_eoss)
-	{
-	  path_ss = locSCzIntersection - sc_pos_soss;
-	  Corr_Time_ss = st_corr_FlightTime  - (incpt_ss + (slope_ss *  path_ss));
-	  SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ss);
-	  h2_CorrectedTime_z[sc_index]->Fill(path_ss, Corr_Time_ss -SC_RFShiftedTime);
-	}
+      {
+          double path_ss = locSCzIntersection - sc_pos_soss;
+          double Corr_Time_ss = st_corr_FlightTime  - (incpt_ss + (slope_ss *  path_ss));
+          double SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ss);
+          h2_CorrectedTime_z[sc_index]->Fill(path_ss, Corr_Time_ss -SC_RFShiftedTime);
+      }
       // Bend Sections
       if(sc_pos_eoss < locSCzIntersection && locSCzIntersection <= sc_pos_eobs)
-	{
-	  path_bs = SS_Length + Radius * asin((locSCzIntersection - sc_pos_eoss)/Radius);
-	  Corr_Time_bs =  st_corr_FlightTime  - (incpt_bs + (slope_bs *  path_bs));
-	  SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_bs);
-	  h2_CorrectedTime_z[sc_index]->Fill(path_bs,Corr_Time_bs - SC_RFShiftedTime);
-	}
+      {
+          //double path_bs = SS_Length + Radius * asin((locSCzIntersection - sc_pos_eoss)/Radius);
+          double path_bs = SS_Length +  (locSCzIntersection - sc_pos_eoss)*sc_angle_corr;
+          double Corr_Time_bs =  st_corr_FlightTime  - (incpt_bs + (slope_bs *  path_bs));
+          double SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_bs);
+          h2_CorrectedTime_z[sc_index]->Fill(path_bs,Corr_Time_bs - SC_RFShiftedTime);
+      }
       // Nose Sections
       if(sc_pos_eobs < locSCzIntersection && locSCzIntersection <= sc_pos_eons)
-	{ 
-	  path_ns = SS_Length + BS_Length +((locSCzIntersection - sc_pos_eobs)/cos(theta));
-	  Corr_Time_ns =  st_corr_FlightTime  - (incpt_ns + (slope_ns *  path_ns));
-	  SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ns);
-	  h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns - SC_RFShiftedTime);
-	}
+      { 
+          //double path_ns = SS_Length + BS_Length +((locSCzIntersection - sc_pos_eobs)/cos(theta));
+          double path_ns = SS_Length +  (locSCzIntersection - sc_pos_eoss)*sc_angle_corr;
+          double Corr_Time_ns =  st_corr_FlightTime  - (incpt_ns + (slope_ns *  path_ns));
+          double SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ns);
+          h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns - SC_RFShiftedTime);
+      }
+      japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
     } // sc charged tracks
 
-	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }
