@@ -35,7 +35,7 @@ DBCALCluster_factory::DBCALCluster_factory() :
 	m_timeCut( 8.0*k_nsec ){
 	sep_inclusion_curve = new TF1("sep_inclusion_curve","exp(-x/30.)-.1",0.,7.*m_moliereRadius); 
         dtheta_inclusion_curve = new TF1("dtheta_inclusion_curve","exp(-x/35.)-.1",m_moliereRadius,7.*m_moliereRadius);
-        dphi_inclusion_curve = new TF1("fun3","exp(-(x+2.)/10.)-.15",m_moliereRadius,7.*m_moliereRadius);
+        dphi_inclusion_curve = new TF1("dphi_inclusion_curve","exp(-(x+2.)/10.)-.15",m_moliereRadius,7.*m_moliereRadius);
 	//Use inclusion curves to determine if a point should be added to a cluster.
 	}
 
