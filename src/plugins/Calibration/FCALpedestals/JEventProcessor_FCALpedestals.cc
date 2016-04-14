@@ -77,7 +77,7 @@ jerror_t JEventProcessor_FCALpedestals::init(void)
   
   
   for (int i = 0; i < nChan; ++i) {
-    pedestal[i] = new TH1I(Form("pedestal_%i",i),Form("Pedestal for Channel %i",i),500,90,120);
+    pedestal[i] = new TH1I(Form("pedestal_%i",i),Form("Pedestal for Channel %i",i),500,10,-10);
   }
 
   main->cd();
