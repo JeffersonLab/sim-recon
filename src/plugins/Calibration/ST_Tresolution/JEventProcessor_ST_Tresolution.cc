@@ -58,12 +58,12 @@ jerror_t JEventProcessor_ST_Tresolution::init(void)
 
   h2_CorrectedTime_z = new TH2I*[NCHANNELS];
   // All my Calculations in 2015 were using the binning below
-  NoBins_time = 80;
-  NoBins_z = 1300;
-  time_lower_limit = -4.0;      
-  time_upper_limit = 4.0;
-  z_lower_limit = 35.0;
-  z_upper_limit = 100.0;
+  NoBins_time = 100;
+  NoBins_z = 300;
+  time_lower_limit = -5.0;      
+  time_upper_limit = 5.0;
+  z_lower_limit = 0.0;
+  z_upper_limit = 60.0;
   for (Int_t i = 0; i < NCHANNELS; i++)
     { 
       h2_CorrectedTime_z[i] = new TH2I(Form("h2_CorrectedTime_z_%i", i+1), "Corrected Time vs. Z; Z (cm); Propagation Time (ns)", NoBins_z,z_lower_limit,z_upper_limit, NoBins_time, time_lower_limit, time_upper_limit);
@@ -245,26 +245,42 @@ jerror_t JEventProcessor_ST_Tresolution::evnt(JEventLoop *loop, uint64_t eventnu
       double slope_bs   = propagation_time_corr[sc_index][3];
       double incpt_ns   = propagation_time_corr[sc_index][4];
       double slope_ns   = propagation_time_corr[sc_index][5];
+      ///////////////////////////////////////
+      //Calculate the path along the paddle
+      /////////////////////////////////////
+      //Define some parameters
+      double Radius = 12.0;
+      double pi = 3.14159265358979323846;
+      double theta  = 18.5 * pi/180.0;
+      double path_ss,path_bs,path_ns; 
+      double SS_Length = sc_pos_eoss - sc_pos_soss;// same for along z or along the paddle
+      double BS_Length = Radius *  theta ; // along the paddle
+      double NS_Length = (sc_pos_eons - sc_pos_eobs)/cos(theta);// along the paddle
+      
+
       // Straight Sections
-      if (locSCzIntersection > sc_pos_soss && locSCzIntersection <= sc_pos_eoss)
+      if (sc_pos_soss < locSCzIntersection && locSCzIntersection <= sc_pos_eoss)
 	{
-	  Corr_Time_ss = st_corr_FlightTime  - (incpt_ss + (slope_ss *  locSCzIntersection));
+	  path_ss = locSCzIntersection - sc_pos_soss;
+	  Corr_Time_ss = st_corr_FlightTime  - (incpt_ss + (slope_ss *  path_ss));
 	  SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ss);
-	  h2_CorrectedTime_z[sc_index]->Fill(locSCzIntersection,Corr_Time_ss -SC_RFShiftedTime);
+	  h2_CorrectedTime_z[sc_index]->Fill(path_ss, Corr_Time_ss -SC_RFShiftedTime);
 	}
       // Bend Sections
-      if(locSCzIntersection > sc_pos_eoss && locSCzIntersection <= sc_pos_eobs)
+      if(sc_pos_eoss < locSCzIntersection && locSCzIntersection <= sc_pos_eobs)
 	{
-	  Corr_Time_bs =  st_corr_FlightTime  - (incpt_bs + (slope_bs *  locSCzIntersection));
+	  path_bs = SS_Length + Radius * asin((locSCzIntersection - sc_pos_eoss)/Radius);
+	  Corr_Time_bs =  st_corr_FlightTime  - (incpt_bs + (slope_bs *  path_bs));
 	  SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_bs);
-	  h2_CorrectedTime_z[sc_index]->Fill(locSCzIntersection,Corr_Time_bs - SC_RFShiftedTime);
+	  h2_CorrectedTime_z[sc_index]->Fill(path_bs,Corr_Time_bs - SC_RFShiftedTime);
 	}
       // Nose Sections
-      if(locSCzIntersection > sc_pos_eobs && locSCzIntersection <= sc_pos_eons)
+      if(sc_pos_eobs < locSCzIntersection && locSCzIntersection <= sc_pos_eons)
 	{ 
-	  Corr_Time_ns =  st_corr_FlightTime  - (incpt_ns + (slope_ns *  locSCzIntersection));
+	  path_ns = SS_Length + BS_Length +((locSCzIntersection - sc_pos_eobs)/cos(theta));
+	  Corr_Time_ns =  st_corr_FlightTime  - (incpt_ns + (slope_ns *  path_ns));
 	  SC_RFShiftedTime = dRFTimeFactory->Step_TimeToNearInputTime(locVertexRFTime,  Corr_Time_ns);
-	  h2_CorrectedTime_z[sc_index]->Fill(locSCzIntersection,Corr_Time_ns - SC_RFShiftedTime);
+	  h2_CorrectedTime_z[sc_index]->Fill(path_ns,Corr_Time_ns - SC_RFShiftedTime);
 	}
     } // sc charged tracks
   japp->RootUnLock();
