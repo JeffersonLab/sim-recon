@@ -36,7 +36,7 @@ Double_t t_z_ns_fit_slope[NCHANNELS][3];
 Double_t t_z_ns_fit_slope_err[NCHANNELS][3];
 Double_t t_z_ns_fit_intercept[NCHANNELS][3];
 Double_t t_z_ns_fit_intercept_err[NCHANNELS][3];
-const int NOXbins = 1300;
+const int NOXbins = 300;
 const int NOYbins = 200;
 int sss[NCHANNELS][NOXbins][NOYbins];
 Double_t binsss[NCHANNELS][NOXbins][NOYbins];
@@ -59,14 +59,17 @@ void st_prop_time_v1(char*input_filename)
       //Create the canvas
       PT_can[j] = new TCanvas( Form("PT_can_%i",j+1),  Form("PT_can_%i",j+1), 800, 450);
       PT_can[j]->Divide(3, 1);
-	  
+      // The top directory 
+      TopDirectory = (TDirectory*) df->FindObjectAny("ST_Propagation_Time"); 
+      TopDirectory->cd();
       // Grab the histograms 
       char* ss = Form("h2_PropTime_z_SS_chan_%i",j+1);
-      TH1I* h2_ss = (TH1I*) df->Get(ss);
+      //  TH1I* h2_ss = (TH1I*) df->Get(ss);
+      h2_ss = (TH1I*) TopDirectory->FindObjectAny(ss);
       char* bs = Form("h2_PropTime_z_BS_chan_%i",j+1);
-      TH1I* h2_bs = (TH1I*) df->Get(bs);
+      h2_bs = (TH1I*) TopDirectory->FindObjectAny(bs);
       char* ns = Form("h2_PropTime_z_NS_chan_%i",j+1);
-      TH1I* h2_ns = (TH1I*) df->Get(ns);
+      h2_ns = (TH1I*) TopDirectory->FindObjectAny(ns);
       
       cout << "==================================================" << endl;
       cout << "Processing Channel " << j+1 << endl;
@@ -79,11 +82,12 @@ void st_prop_time_v1(char*input_filename)
       gStyle->SetErrorX(0); 
       gPad->SetTicks();
       gPad->SetGrid();
-      h2_ss->SetTitle("SS ST Time Vs Z");
+      h2_ss->SetTitle("Straight Section");
       h2_ss->GetZaxis()->SetRangeUser(0,4);
-      h2_ss->GetYaxis()->SetRangeUser(0.,4.);
-      h2_ss->GetYaxis()->SetTitle("ST Time (ns)");
-      h2_ss->GetXaxis()->SetRangeUser(50.,78.0);
+      h2_ss->GetYaxis()->SetRangeUser(0.,5.);
+      h2_ss->GetYaxis()->SetTitle("ST Propagation Time (ns)");
+      h2_ss->GetXaxis()->SetTitle("Path Length (cm)");
+      h2_ss->GetXaxis()->SetRangeUser(0.,40.0);
       h2_ss->Draw("colz");
       h2_ss->Fit("pol1");		
       t_z_ss_fit_slope[j][1] = pol1->GetParameter(1);
@@ -98,11 +102,12 @@ void st_prop_time_v1(char*input_filename)
       gPad->SetTicks();
       gPad->SetGrid();
       h2_bs->Draw("colz"); 
-      h2_bs->SetTitle("BS ST Time Vs Z");
+      h2_bs->SetTitle("Bend Section");
       h2_bs->GetZaxis()->SetRangeUser(0,4);
-      h2_bs->GetYaxis()->SetRangeUser(0.,4.);
-      h2_bs->GetYaxis()->SetTitle("ST Time (ns)");
-      h2_bs->GetXaxis()->SetRangeUser(77.,81.0);
+      h2_bs->GetYaxis()->SetRangeUser(0.,5.);
+      h2_bs->GetYaxis()->SetTitle("ST Propagation Time (ns)");
+      h2_bs->GetXaxis()->SetTitle("Path Length (cm)");
+      h2_bs->GetXaxis()->SetRangeUser(39.,43.0);
      
 
       h2_bs->Fit("pol1");
@@ -119,11 +124,12 @@ void st_prop_time_v1(char*input_filename)
       gPad->SetTicks();
       gPad->SetGrid();
       h2_ns->Draw("colz");
-      h2_ns->SetTitle("NS ST Time Vs Z");
+      h2_ns->SetTitle("Nose Section");
       h2_ns->GetZaxis()->SetRangeUser(0,4);
-      h2_ns->GetYaxis()->SetRangeUser(0.,4.);
-      h2_ns->GetYaxis()->SetTitle("ST Time (ns)");
-      h2_ns->GetXaxis()->SetRangeUser(80.,98.0);
+      h2_ns->GetYaxis()->SetRangeUser(0.,5.);
+      h2_ns->GetYaxis()->SetTitle("ST  Propagation Time (ns)");
+      h2_ns->GetXaxis()->SetTitle("Path Length (cm)");
+      h2_ns->GetXaxis()->SetRangeUser(43.,60.0);
       h2_ns->Fit("pol1");
       t_z_ns_fit_slope[j][1] = pol1->GetParameter(1);
       t_z_ns_fit_slope_err[j][1] = pol1->GetParError(1);

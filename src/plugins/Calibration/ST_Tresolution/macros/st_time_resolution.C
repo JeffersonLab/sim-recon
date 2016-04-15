@@ -92,10 +92,12 @@ void st_time_resolution(char*input_filename)
       //Create the canvas
       PT_can[j] = new TCanvas( Form("PT_can_%i",j+1), Form("PT_can_%i",j+1), 800, 450);
       PT_can[j]->Divide(2, 1);
-	  
+	 // The top directory 
+      TopDirectory = (TDirectory*) df->FindObjectAny("ST_Tresolution"); 
+      TopDirectory->cd(); 
       // Grab the histograms
       char* total = Form("h2_CorrectedTime_z_%i",j+1);
-      TH2I* h2_total = (TH2I*) df->Get(total);
+      h2_total = (TH2I*) TopDirectory->FindObjectAny(total);
       char* pj = Form("py_%i",j+1);
       TH1D* pytotal = (TH1D*)pj;
       
