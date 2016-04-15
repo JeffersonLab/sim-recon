@@ -145,8 +145,16 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 	fcal_num_events = new TH1I("fcal_num_events", "FCAL number of events", 1, 0.0, 1.0);
 
 	//------------------------ FDC ------------------------
-    fdc_cathode_occ = new TH2F("fdc_cathode_occ","FDC Cathode Occupancy; Channel;", 192, 0.5, 192.5, 48, 0.5, 48.5); 
-    fdc_wire_occ = new TH2F("fdc_wire_occ", "FDC Wire Occupancy; Channel;", 96, 0.5, 96.5, 24, 0.5, 24.5); 
+    for (unsigned int iPackage = 0; iPackage < 4; iPackage++){
+        char hname[256];
+        char htitle[256];
+        sprintf(hname, "fdc_cathode_occ_%01d", iPackage+1);
+        sprintf(htitle, "FDC Package %01d Cathode Occupancy; Channel;", iPackage + 1);
+        fdc_cathode_occ[iPackage] = new TH2F(hname,htitle, 216, 0.5, 216.5, 12, 0.5, 12.5); 
+        sprintf(hname, "fdc_wire_occ_%01d", iPackage+1);
+        sprintf(htitle, "FDC Package %01d Wire Occupancy; Channel;", iPackage + 1);
+        fdc_wire_occ[iPackage] = new TH2F(hname, htitle, 96, 0.5, 96.5, 6, 0.5, 6.5); 
+    }
     fdc_num_events = new TH1I("fdc_num_events", "FDC number of events", 1, 0.0, 1.0);
 
 	//------------------------ PS/PSC ---------------------
@@ -315,12 +323,14 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	//------------------------ FDC ------------------------
     fdc_num_events->Fill(0.5);
     for(unsigned int i = 0; i < fdccathodehits.size(); i++){
+        int strip = fdccathodehits[i]->strip;
+        if(fdccathodehits[i]->strip_type == 3) strip = strip+9*12;
         int ud = -1;
         if (fdccathodehits[i]->view == 3) ud = 0;
-        fdc_cathode_occ->Fill(fdccathodehits[i]->strip, (fdccathodehits[i]->package - 1)*12 + fdccathodehits[i]->chamber*2 + ud);
+        fdc_cathode_occ[fdccathodehits[i]->package - 1]->Fill(strip, fdccathodehits[i]->chamber*2 + ud);
     }
     for(unsigned int i = 0; i < fdcwirehits.size(); i++){
-        fdc_wire_occ->Fill(fdcwirehits[i]->wire, (fdcwirehits[i]->package - 1)*6 + fdcwirehits[i]->chamber);
+        fdc_wire_occ[fdcwirehits[i]->package - 1]->Fill(fdcwirehits[i]->wire, fdcwirehits[i]->chamber);
     }
 
 	//------------------------ PS/PSC ---------------------

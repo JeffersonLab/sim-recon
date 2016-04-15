@@ -3,8 +3,8 @@
 // which histograms to fetch for the macro.
 //
 // hnamepath: /occupancy/fdc_num_events
-// hnamepath: /occupancy/fdc_cathode_occ
-// hnamepath: /occupancy/fdc_wire__occ
+// hnamepath: /occupancy/fdc_cathode_occ_1
+// hnamepath: /occupancy/fdc_wire__occ_1
 
 {
 	// RootSpy saves the current directory and style before
@@ -14,8 +14,8 @@
 	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("occupancy");
 	if(dir) dir->cd();
 
-	TH2I *fdc_cathode_occ = (TH2I*)gDirectory->FindObjectAny("fdc_cathode_occ");
-	TH2I *fdc_wire_occ = (TH2I*)gDirectory->FindObjectAny("fdc_wire_occ");
+	TH2F *fdc_cathode_occ = (TH2F*)gDirectory->FindObjectAny("fdc_cathode_occ_1");
+	TH2F *fdc_wire_occ = (TH2F*)gDirectory->FindObjectAny("fdc_wire_occ_1");
 
 	double Nevents = 1.0;
 	TH1I *fdc_num_events = (TH1I*)gDirectory->FindObjectAny("fdc_num_events");
