@@ -107,6 +107,9 @@ jerror_t DEventProcessor_pidstudies_tree::evnt(JEventLoop *loop, uint64_t eventn
 	}
 
 	//fill information into trees
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+
 	dMCReconstructionStatuses->dMCReconstructionStatusVector.resize(0);
 	for(loc_i = 0; loc_i < locMCThrownVector.size(); loc_i++){
 		locMCThrown = locMCThrownVector[loc_i];
@@ -171,6 +174,8 @@ jerror_t DEventProcessor_pidstudies_tree::evnt(JEventLoop *loop, uint64_t eventn
 		dMCReconstructionStatuses->dMCReconstructionStatusVector.push_back(locMCReconstructionStatus);
 	}
 	dPluginTree_MCReconstructionStatuses->Fill();
+
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
 	return NOERROR;
 }

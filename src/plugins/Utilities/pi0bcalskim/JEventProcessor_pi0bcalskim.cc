@@ -69,8 +69,6 @@ JEventProcessor_pi0bcalskim::~JEventProcessor_pi0bcalskim()
 //------------------
 jerror_t JEventProcessor_pi0bcalskim::init(void)
 {
-  dEventWriterEVIO = NULL;
-
   //if( ! WRITE_EVIO) cerr << " output isnt working " << endl;
 
   return NOERROR;
@@ -81,8 +79,6 @@ jerror_t JEventProcessor_pi0bcalskim::init(void)
 //------------------
 jerror_t JEventProcessor_pi0bcalskim::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
-  eventLoop->GetSingle(dEventWriterEVIO);
-
   return NOERROR;
 }
 
@@ -98,17 +94,20 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
   vector<const DVertex*> kinfitVertex;
   loop->Get(kinfitVertex);
 
+	const DEventWriterEVIO* locEventWriterEVIO = NULL;
+	loop->GetSingle(locEventWriterEVIO);
+
   // always write out BOR events
   if(loop->GetJEvent().GetStatusBit(kSTATUS_BOR_EVENT)) {
       //jout << "Found BOR!" << endl;
-      dEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim" );
+      locEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim" );
       return NOERROR;
   }
 
   // write out the first few EPICS events to save run number & other meta info
   if(loop->GetJEvent().GetStatusBit(kSTATUS_EPICS_EVENT) && (num_epics_events<5)) {
       //jout << "Found EPICS!" << endl;
-      dEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim" );
+      locEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim" );
       num_epics_events++;
       return NOERROR;
   }
@@ -183,7 +182,7 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
 	        if( WRITE_EVIO ) {
                 //	cout << " inv mass = " << inv_mass << " sh1 E = " << sh1_E << " sh2 E = " << sh2_E << " event num = " << eventnumber << endl;
                 cout << eventnumber << endl;
-     			 dEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim" );
+     			 locEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim" );
   		  }
 			}
 

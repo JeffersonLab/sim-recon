@@ -137,8 +137,6 @@ JEventProcessor_TAGH_online::~JEventProcessor_TAGH_online() {
 
 jerror_t JEventProcessor_TAGH_online::init(void) {
 
-    japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
     // create root folder for tagh and cd to it, store main dir
     TDirectory *mainDir = gDirectory;
     TDirectory *taghDir = gDirectory->mkdir("TAGH");
@@ -218,8 +216,6 @@ jerror_t JEventProcessor_TAGH_online::init(void) {
     // back to main dir
     mainDir->cd();
 
-    japp->RootUnLock(); //RELEASE ROOT LOCK!!
-
     return NOERROR;
 }
 
@@ -251,11 +247,17 @@ jerror_t JEventProcessor_TAGH_online::brun(JEventLoop *eventLoop, int32_t runnum
         Tlows[i] = -400.0+i*0.4;
     }
     //
-    japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
     if (hHit_Energy->GetEntries()==0) hHit_Energy->SetBins(Nslots,Elows);
     if (hHit_EnergyVsSlotID->GetEntries()==0) hHit_EnergyVsSlotID->SetBins(Nslots,slots,Nslots,Elows);
     if (hHit_TimeVsEnergy->GetEntries()==0) hHit_TimeVsEnergy->SetBins(Nslots,Elows,Ntime,Tlows);
-    japp->RootUnLock(); //RELEASE ROOT LOCK!!
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
     //
     sumCurrent = 0.0;
     Ncurrent = 0;
@@ -309,8 +311,10 @@ jerror_t JEventProcessor_TAGH_online::evnt(JEventLoop *eventLoop, uint64_t event
         Ncurrent++;
         current = sumCurrent/Ncurrent;
     }
-    // fill hists
-    japp->RootWriteLock();
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
     if (current>3.0&&current<2000.0) hBeamCurrent->Fill(current);
 
@@ -450,7 +454,8 @@ jerror_t JEventProcessor_TAGH_online::evnt(JEventLoop *eventLoop, uint64_t event
     hHit_NHits->Fill(NHits_hasADC);
     hHit_NHits_us->Fill(NHits_hasADC_us);
     hHit_NHits_ds->Fill(NHits_hasADC_ds);
-    japp->RootUnLock();
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
     return NOERROR;
 }

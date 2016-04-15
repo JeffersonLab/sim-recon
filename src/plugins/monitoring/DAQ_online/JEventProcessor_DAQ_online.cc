@@ -73,9 +73,6 @@ jerror_t JEventProcessor_DAQ_online::init(void)
 {
 	printf("JEventProcessor_DAQ_online::init()\n");
 
-	// lock all root operations
-	japp->RootWriteLock();
-		
 	// create root folder for DAQ and cd to it, store main dir
 	maindir = gDirectory;
 	daqdir = maindir->mkdir("DAQ");
@@ -182,9 +179,6 @@ jerror_t JEventProcessor_DAQ_online::init(void)
 	// back to main dir
 	maindir->cd();
 	
-	// unlock
-	japp->RootUnLock();
-
 	return NOERROR;
 }
 
@@ -197,11 +191,10 @@ void JEventProcessor_DAQ_online::AddROCIDLabels(JEventLoop *loop)
 	/// of histograms whose x-axis is the rocid so that we
 	/// can label them by detector.
 
+	// NO lock: called in init()
 	const DTranslationTable *ttab = NULL;
 	loop->GetSingle(ttab);
 
-	japp->RootWriteLock();
-		
 	// Loop over all rocid values
 	for(uint32_t rocid=2; rocid<99; rocid++){
 		// We don't actually know what slot/channel combos are defined
@@ -225,8 +218,6 @@ void JEventProcessor_DAQ_online::AddROCIDLabels(JEventLoop *loop)
 			if(found_chan) break;
 		}
 	}
-
-	japp->RootUnLock();
 }
 
 //------------------
@@ -275,8 +266,8 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 	uint32_t Nhits_rocid[101];
 	for(uint32_t rocid=0; rocid<101; rocid++) Nhits_rocid[rocid] = 0;
 
-	// Lock ROOT
-	japp->RootWriteLock();
+	// Although we are only filling objects local to this plugin, The directory changes: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 
 	if (daqdir!=NULL) daqdir->cd();
 	
@@ -467,7 +458,7 @@ jerror_t JEventProcessor_DAQ_online::evnt(JEventLoop *loop, uint64_t eventnumber
 
 	maindir->cd();
 	// Unlock ROOT
-	japp->RootUnLock();
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
 	return NOERROR;
 }
@@ -510,9 +501,11 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 		uint32_t mask = (0x70<<16) | (0x01);
 		if( (istart[1]&mask) == mask ){
 				
-			japp->RootWriteLock();
+			// FILL HISTOGRAMS
+			// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+			japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 			daq_words_by_type->Fill(kBORData, istart[0]/sizeof(uint32_t));
-			japp->RootUnLock();
+			japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 			return; // no further parsing needed
 		}
 	}
@@ -522,10 +515,12 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 		if( istart[1] == (0x60<<16) + (0xD<<8) + (0x1<<0) ){
 			if( istart[2] == (0x61<<24) + (0x1<<16) + (0x1<<0) ){
 				
-				japp->RootWriteLock();
+				// FILL HISTOGRAMS
+				// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+				japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 				daq_words_by_type->Fill(kEPICSheader, 3.0); // EVIO outer and segment headers + timestamp
 				daq_words_by_type->Fill(kEPICSdata, istart[0]/sizeof(uint32_t) - 3);
-				japp->RootUnLock();
+				japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 				return; // no further parsing needed
 			}
 		}
@@ -599,8 +594,9 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 		iptr = &iptr[len +1];
 	}
 
-	// Fill histograms
-	japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 	
 	// Calculating time between events is tricky when using multiple-threads.
 	// We need the timestamp of two sequential events, but the order in which
@@ -643,8 +639,7 @@ void JEventProcessor_DAQ_online::ParseEventSize(JEvent &event)
 		daq_words_by_type->Fill(i, (double)word_stats[i]);
 	}
 	
-	japp->RootUnLock();
-
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 }
 
 //------------------
@@ -926,6 +921,10 @@ jerror_t JEventProcessor_DAQ_online::erun(void)
 	// changed to give you a chance to clean up before processing
 	// events from the next run number.
 
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
 	for (int i=0; i<highcratenum; i++) {
 		if (daq_occ_crates[i] != NULL) {
 			daq_occ_crates[i]->SetMinimum(daq_occ_crates[i]->GetMinimum(0.001));
@@ -940,6 +939,8 @@ jerror_t JEventProcessor_DAQ_online::erun(void)
 			daq_TDCovr_crates[i]->SetMinimum(daq_TDCovr_crates[i]->GetMinimum(0.001));
 		}
 	}
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
 }

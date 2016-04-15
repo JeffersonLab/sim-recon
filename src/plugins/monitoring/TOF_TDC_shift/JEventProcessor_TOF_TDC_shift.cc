@@ -39,8 +39,6 @@ JEventProcessor_TOF_TDC_shift::~JEventProcessor_TOF_TDC_shift() {
 
 jerror_t JEventProcessor_TOF_TDC_shift::init(void) {
   
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
   // Create root folder for ST and cd to it, store main dir
   TDirectory *main = gDirectory;
   gDirectory->mkdir("TOF_TDC_shift")->cd();
@@ -50,8 +48,6 @@ jerror_t JEventProcessor_TOF_TDC_shift::init(void) {
 
   // cd back to main directory
   main->cd();
-
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
   return NOERROR;
 }
@@ -93,9 +89,9 @@ jerror_t JEventProcessor_TOF_TDC_shift::evnt(JEventLoop *eventLoop, uint64_t eve
     }
   }
 
-  // Lock ROOT mutex so other threads won't interfere 
-  japp->RootWriteLock();
-
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   // Fill histogram of TI % 6 vs (ADC time - TDC time)
   for(UInt_t tof = 0;tof<dtofdigihits.size();tof++){
@@ -113,8 +109,8 @@ jerror_t JEventProcessor_TOF_TDC_shift::evnt(JEventLoop *eventLoop, uint64_t eve
       }
     }
   }
-  // Lock ROOT mutex so other threads won't interfere 
-  japp->RootUnLock();
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }

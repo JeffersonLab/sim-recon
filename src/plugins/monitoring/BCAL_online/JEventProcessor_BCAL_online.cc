@@ -170,13 +170,9 @@ JEventProcessor_BCAL_online::~JEventProcessor_BCAL_online() {
 
 jerror_t JEventProcessor_BCAL_online::init(void) {
 	
-	// lock all root operations
-	japp->RootWriteLock();
-	
 	// First thread to get here makes all histograms. If one pointer is
 	// already not NULL, assume all histograms are defined and return now
 	if(bcal_fadc_digi_integral != NULL){
-		japp->RootUnLock();
 		return NOERROR;
 	}
 	
@@ -298,7 +294,7 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	bcal_point_sigZ = new TH1I("bcal_point_sigZ","sigZ (DBCALPoint)", 100, 0, 35);
 	bcal_point_z_dist = new TProfile2D("bcal_point_z_dist","Mean Z positions per cell (DBCALPoint);Module;Sector, Layer", 
 					   48, 0.5, 48.5, 16, 0.5, 16.5);
-	bcal_point_z_sector = new TH2I("bcal_point_z_sector","Z vs global sector (DBCALPoint);global sector  (4 x module + sector)",
+	bcal_point_z_sector = new TH2I("bcal_point_z_sector","Z vs global sector (DBCALPoint);global sector  (4 x module + sector);Z wrt target center (cm)",
 				       192, 0.5, 192.5, 300, -100, 500);
 	bcal_point_E_sector = new TH2I("bcal_point_E_sector","Energy vs global sector (DBCALPoint);global sector  (4 x module + sector);Energy  (GeV)",
 				       192, 0.5, 192.5, 200, Ehit_min, Ehit_max);
@@ -437,10 +433,6 @@ jerror_t JEventProcessor_BCAL_online::init(void) {
 	// back to main dir
 	main->cd();
 	
-	// unlock
-	japp->RootUnLock();
-	
-	
 	return NOERROR;
 }
 
@@ -508,8 +500,9 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 	loop->Get(dbcalclusters);
 	loop->Get(dbcalshowers);
 	
-	// Lock ROOT
-	japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	if( (dbcaldigihits.size() > 0) || (dbcaltdcdigihits.size() > 0) )
 		bcal_num_events->Fill(1);
@@ -761,9 +754,7 @@ jerror_t JEventProcessor_BCAL_online::evnt(JEventLoop *loop, uint64_t eventnumbe
 		bcal_shower_plane->Fill(shower->x,shower->y);
 	}
 
-
-	// Unlock ROOT
-	japp->RootUnLock();
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	
 	return NOERROR;
 }

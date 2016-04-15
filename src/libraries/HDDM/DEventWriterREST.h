@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <vector>
+#include <string>
 
 #include <HDDM/hddm_r.hpp>
 
@@ -43,6 +44,10 @@ class DEventWriterREST : public JObject
 
 	private:
 		bool Write_RESTEvent(string locOutputFileName, hddm_r::HDDM& locRecord) const;
+
+		//contains static variables shared amongst threads
+		int& Get_NumEventWriterThreads(void) const; //acquire RESTWriter lock before modifying
+		map<string, pair<ofstream*, hddm_r::ostream*> >& Get_RESTOutputFilePointers(void) const;
 
 		string dOutputFileBaseName;
 		bool HDDM_USE_COMPRESSION;

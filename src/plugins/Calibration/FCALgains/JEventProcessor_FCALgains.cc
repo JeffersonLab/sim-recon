@@ -42,10 +42,8 @@ jerror_t JEventProcessor_FCALgains::init(void)
   // This is called once at program startup. If you are creating
   // and filling historgrams in this plugin, you should lock the
   // ROOT mutex like this:
-  japp->RootWriteLock();
 
   if(InvMass1 && InvMass2 && InvMass3 && InvMass4 && InvMass5!= NULL){
-    japp->RootUnLock();
     return NOERROR;
   }
 
@@ -124,8 +122,6 @@ hits2D_pi0 = new TH2F( "hits2D_pi0", "FCAL Hits Pi0; X; Y", 61, -30, 30, 61, -30
 			  m_mLt.Zero();
 			  m_event = 0;
 			  m_TotPastCuts = 0;
-
-			  japp->RootUnLock();
 
 
 			  return NOERROR;
@@ -214,11 +210,12 @@ jerror_t JEventProcessor_FCALgains::evnt(jana::JEventLoop* locEventLoop, uint64_
   DVector3 norm(0.0,0.0,-1);
   DVector3 pos,mom;
   Double_t radius = 0;
-  japp->RootWriteLock();
   Double_t p;
-  
- 
-  
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+    
   for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){
     for (unsigned int j=0; j< locFCALShowers.size(); ++j){
 
@@ -434,7 +431,7 @@ jerror_t JEventProcessor_FCALgains::evnt(jana::JEventLoop* locEventLoop, uint64_
       }
     }
 }
-  japp->RootUnLock();
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
   return NOERROR;
 }
 

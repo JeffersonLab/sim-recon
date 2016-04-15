@@ -206,9 +206,8 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, uint64_t eventnumbe
 	// outside of the mutex lock.
 	DReferenceTrajectory *rt = const_cast<DReferenceTrajectory*>(recon->rt);
 
-	// At this point we need to lock the mutex since we need exclusive use of
-	// the rt_thrown reference trajectory
-	pthread_mutex_lock(&mutex);
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 
 	// Loop over CDC hits
 	int NLRcorrect_this_track = 0;
@@ -307,9 +306,6 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, uint64_t eventnumbe
 	}
 #endif
 
-	// Unlock mutex
-	pthread_mutex_unlock(&mutex);
-
 	// Find the z vertex position of fit track using reference trajectory
 	double doca_tgt = rt->DistToRT(&target);
 	DVector3 tgt_doca = rt->GetLastDOCAPoint();
@@ -323,9 +319,6 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, uint64_t eventnumbe
 	TVector3 thrown_pos(tmp.X(), tmp.Y(), tmp.Z());
 	tmp = candidate->position();
 	TVector3 can_pos(tmp.X(), tmp.Y(), tmp.Z());
-	
-	// Lock mutex
-	pthread_mutex_lock(&mutex);
 
 	// Fill in track tree
 	trk.eventnumber = eventnumber;
@@ -340,8 +333,7 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, uint64_t eventnumbe
 	
 	ttrack->Fill();
 
-	// Unlock mutex
-	pthread_mutex_unlock(&mutex);
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 	
 	return NOERROR;
 }

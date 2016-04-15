@@ -19,7 +19,7 @@ class DBCALShower_factory:public jana::JFactory<DBCALShower>{
 			// that the default can be changed easily by simply
 			// changing the tag here or on the command line.
 			vector<const DBCALShower*> showers;
-			loop->Get(showers, "CURVATURE");
+			loop->Get(showers, "IU");
 			for(unsigned int i=0; i<showers.size(); i++){
 				_data.push_back(const_cast<DBCALShower*>(showers[i]));
 			}

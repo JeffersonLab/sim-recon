@@ -69,16 +69,18 @@ void st_prop_time_corr_v1(char*input_filename)
       //Create the canvas
       PT_can[j] = new TCanvas( Form("PT_can_%i",j+1), Form("PT_can_%i",j+1), 800, 450);
       PT_can[j]->Divide(2, 2);
+      // The top directory 
+      TopDirectory = (TDirectory*) df->FindObjectAny("ST_Propagation_Time"); 
+      TopDirectory->cd();
       // Grab the histograms 
       char* ss = Form("h2_PropTimeCorr_z_SS_chan_%i",j+1);
-      TH2I* h2_ss = (TH2I*) df->Get(ss);
+      h2_ss = (TH2I*) TopDirectory->FindObjectAny(ss);
       char* bs = Form("h2_PropTimeCorr_z_BS_chan_%i",j+1);
-      TH2I* h2_bs = (TH2I*) df->Get(bs);
+      h2_bs = (TH2I*) TopDirectory->FindObjectAny(bs);
       char* ns = Form("h2_PropTimeCorr_z_NS_chan_%i",j+1);
-      TH2I* h2_ns = (TH2I*) df->Get(ns);
+      h2_ns = (TH2I*) TopDirectory->FindObjectAny(ns);
       char* total = Form("h2_CorrectedTime_z_%i",j+1);
-      TH2I* h2_total = (TH2I*) df->Get(total);
-      
+      h2_total = (TH2I*) TopDirectory->FindObjectAny(total);      
       //*****************************************************************
       //***********  Plot stt vs z SS                  ******************
       //*****************************************************************
@@ -89,12 +91,12 @@ void st_prop_time_corr_v1(char*input_filename)
       gPad->SetTicks();
       gPad->SetGrid();
       h2_ss->Draw("colz");
-      h2_ss->SetTitle("SS Corrected Time");
+      h2_ss->SetTitle("Straight Section Corrected Time");
       h2_ss->SetXTitle("Z (cm)");
       h2_ss->SetYTitle("SC Time (ns)");
       h2_ss->GetZaxis()->SetRangeUser(0,4);
-      h2_ss->GetXaxis()->SetRangeUser(45,98);
-      h2_ss->GetYaxis()->SetRangeUser(-3.0,3.0);
+      h2_ss->GetXaxis()->SetRangeUser(0,40);
+      h2_ss->GetYaxis()->SetRangeUser(-5.0,5.0);
       gPad->Update();
       //*****************************************************************
       //***********  Plot stt vs z BS                  ******************
@@ -106,12 +108,12 @@ void st_prop_time_corr_v1(char*input_filename)
       gPad->SetGrid();
             
       h2_bs->Draw("colz");
-      h2_bs->SetTitle("BS Corrected Time");
+      h2_bs->SetTitle("Bend Section Corrected Time");
       h2_bs->SetXTitle("Z (cm)");
       h2_bs->SetYTitle("SC Time (ns)");
       h2_bs->GetZaxis()->SetRangeUser(0,4);
-      h2_bs->GetXaxis()->SetRangeUser(45,98);
-      h2_bs->GetYaxis()->SetRangeUser(-3.0,3.0);
+      h2_bs->GetXaxis()->SetRangeUser(39,43);
+      h2_bs->GetYaxis()->SetRangeUser(-5.0,5.0);
       gPad->Update();
       //*****************************************************************
       //***********  Plot stt vs z NS                  ******************
@@ -123,12 +125,12 @@ void st_prop_time_corr_v1(char*input_filename)
       gPad->SetGrid();
       
       h2_ns->Draw("colz");
-      h2_ns->SetTitle("NS Corrected Time");
+      h2_ns->SetTitle("Nose Section Corrected Time");
       h2_ns->SetXTitle("Z (cm)");
       h2_ns->SetYTitle("SC Time (ns)");
       h2_ns->GetZaxis()->SetRangeUser(0,4);
-      h2_ns->GetXaxis()->SetRangeUser(45,98);
-      h2_ns->GetYaxis()->SetRangeUser(-3.0,3.0);
+      h2_ns->GetXaxis()->SetRangeUser(43,60);
+      h2_ns->GetYaxis()->SetRangeUser(-5.0,5.0);
       gPad->Update();
       //*****************************************************************
       //***********  Plot Total corrected time from each division *******
@@ -144,8 +146,8 @@ void st_prop_time_corr_v1(char*input_filename)
       h2_total->SetXTitle("Z (cm)");
       h2_total->SetYTitle("SC Time (ns)");
       h2_total->GetZaxis()->SetRangeUser(0,4);
-      h2_total->GetXaxis()->SetRangeUser(45,98);
-      h2_total->GetYaxis()->SetRangeUser(-3.0,3.0);
+      h2_total->GetXaxis()->SetRangeUser(0,60);
+      h2_total->GetYaxis()->SetRangeUser(-5.0,5.0);
       gPad->Update();
     }
   // Close the output file

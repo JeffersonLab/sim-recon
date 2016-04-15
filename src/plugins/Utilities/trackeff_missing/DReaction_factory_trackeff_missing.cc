@@ -42,7 +42,8 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
-	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	locReaction->Set_KinFitType(d_P4Fit);
 
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
 	// locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
@@ -87,7 +88,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 
 	// Kinematic Fit: Vertex-Only Fit
-	locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7, 44.0, 85.0)); //cut +/- 5 sigma, vertex-z between 44 & 85
+	//locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7, 44.0, 85.0)); //cut +/- 5 sigma, vertex-z between 44 & 85
 
 	// Track DOCA, etc.
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
@@ -128,7 +129,8 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
-	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	locReaction->Set_KinFitType(d_P4Fit);
 
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
 	// locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
@@ -176,7 +178,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 
 	// Kinematic Fit: Vertex-Only Fit
-	locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7, 44.0, 85.0)); //cut +/- 5 sigma, vertex-z between 44 & 85
+	//locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7, 44.0, 85.0)); //cut +/- 5 sigma, vertex-z between 44 & 85
 
 	// Track DOCA, etc.
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
@@ -218,7 +220,8 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
-	locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	locReaction->Set_KinFitType(d_P4Fit);
 
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
 	// locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
@@ -263,7 +266,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 
 	// Kinematic Fit: Vertex-Only Fit
-	locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7, 44.0, 85.0)); //cut +/- 5 sigma, vertex-z between 44 & 85
+	//locReaction->Add_AnalysisAction(new DCutAction_OneVertexKinFit(locReaction, 5.73303E-7, 44.0, 85.0)); //cut +/- 5 sigma, vertex-z between 44 & 85
 
 	// Track DOCA, etc.
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
