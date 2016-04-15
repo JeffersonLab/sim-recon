@@ -13,6 +13,7 @@ using namespace jana;
 #include <BCAL/DBCALDigiHit.h>
 #include <BCAL/DBCALTDCDigiHit.h>
 #include <CDC/DCDCDigiHit.h>
+#include <FDC/DFDCPseudo.h>
 #include <FCAL/DFCALDigiHit.h>
 #include <PAIR_SPECTROMETER/DPSCDigiHit.h>
 #include <PAIR_SPECTROMETER/DPSCTDCDigiHit.h>
@@ -137,12 +138,20 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 		cdc_occ_ring[iring] = new TH2F(hname, "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
 	}
 	cdc_num_events = new TH1I("cdc_num_events", "CDC number of events", 1, 0.0, 1.0);
-
+    
 	//------------------------ FCAL -----------------------
 	fcal_occ = new TH2I("fcal_occ", "FCAL Occupancy; column; row", 61, -1.5, 59.5, 61, -1.5, 59.5);
 	fcal_num_events = new TH1I("fcal_num_events", "FCAL number of events", 1, 0.0, 1.0);
 
 	//------------------------ FDC ------------------------
+    for(int iPlane = 0; iPlane < 24; iPlane++){
+        char hname[256];
+        char htitle[256];
+        sprintf(hname, "fdc_occ_plane_%02d", iPlane);
+        sprintf(htitle, "FDC Occupancy Package %01d Cell %01d", (iPlane / 6) + 1, (iPlane % 6) + 1);
+        fdc_occ_plane[iPlane] = new TH2F(hname, htitle, 100, -50.0, 50.0, 100, -50.0, 50.0);
+    }
+    fdc_num_events = new TH1I("fdc_num_events", "FDC number of events", 1, 0.0, 1.0);
 
 	//------------------------ PS/PSC ---------------------
 	psc_adc_left_occ   = new TH1I("psc_adc_left_occ",  "PSC fADC hit occupancy Left", 8, 0.5, 8.5);
@@ -223,6 +232,7 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	vector<const DBCALDigiHit*>        bcaldigihits;
 	vector<const DBCALTDCDigiHit*>     bcaltdcdigihits;
 	vector<const DCDCDigiHit*>         cdcdigihits;
+    vector<const DFDCPseudo*>          fdcpseudohits;
 	vector<const DFCALDigiHit*>        fcaldigihits;
 	vector<const DPSCDigiHit*>         pscdigihits;
 	vector<const DPSCTDCDigiHit*>      psctdcdigihits;
@@ -240,6 +250,7 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	loop->Get(bcaldigihits);
 	loop->Get(bcaltdcdigihits);
 	loop->Get(cdcdigihits);
+    loop->Get(fdcpseudohits);
 	loop->Get(fcaldigihits);
 	loop->Get(pscdigihits);
 	loop->Get(psctdcdigihits);
@@ -304,6 +315,10 @@ jerror_t JEventProcessor_occupancy_online::evnt(JEventLoop *loop, uint64_t event
 	}
 	
 	//------------------------ FDC ------------------------
+    fdc_num_events->Fill(0.5);
+    for(unsigned int i = 0; i < fdcpseudohits.size(); i++){
+        fdc_occ_plane[fdcpseudohits[i]->wire->layer - 1]->Fill(fdcpseudohits[i]->xy.X(),fdcpseudohits[i]->xy.Y());
+    }
 
 	//------------------------ PS/PSC ---------------------
 	ps_num_events->Fill(0.5);
