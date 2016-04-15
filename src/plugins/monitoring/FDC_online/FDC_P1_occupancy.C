@@ -2,32 +2,32 @@
 // The following are special comments used by RootSpy to know
 // which histograms to fetch for the macro.
 //
-// hnamepath: /occupancy/fdc_num_events
-// hnamepath: /occupancy/fdc_occ_plane_12
-// hnamepath: /occupancy/fdc_occ_plane_13
-// hnamepath: /occupancy/fdc_occ_plane_14
-// hnamepath: /occupancy/fdc_occ_plane_15
-// hnamepath: /occupancy/fdc_occ_plane_16
-// hnamepath: /occupancy/fdc_occ_plane_17
+// hnamepath: /FDC/fdc_num_events
+// hnamepath: /FDC/fdc_occ_plane_00
+// hnamepath: /FDC/fdc_occ_plane_01
+// hnamepath: /FDC/fdc_occ_plane_02
+// hnamepath: /FDC/fdc_occ_plane_03
+// hnamepath: /FDC/fdc_occ_plane_04
+// hnamepath: /FDC/fdc_occ_plane_05
 
 {
 	// RootSpy saves the current directory and style before
 	// calling the macro and restores it after so it is OK to
 	// change them and not change them back.
 
-	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("occupancy");
+	TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("FDC");
 	if(dir) dir->cd();
 
-	TH2F *fdc_occ_cell_1 = (TH2F*)gDirectory->FindObjectAny("fdc_occ_plane_12");
-    TH2F *fdc_occ_cell_2 = (TH2F*)gDirectory->FindObjectAny("fdc_occ_plane_13");
-    TH2F *fdc_occ_cell_3 = (TH2F*)gDirectory->FindObjectAny("fdc_occ_plane_14");
-    TH2F *fdc_occ_cell_4 = (TH2F*)gDirectory->FindObjectAny("fdc_occ_plane_15");
-    TH2F *fdc_occ_cell_5 = (TH2F*)gDirectory->FindObjectAny("fdc_occ_plane_16");
-    TH2F *fdc_occ_cell_6 = (TH2F*)gDirectory->FindObjectAny("fdc_occ_plane_17");
+	TH2F *fdc_occ_cell_1 = (TH2F*)gDirectory->FindObjectAny("fdc_occ_plane_00");
+    TH2F *fdc_occ_cell_2 = (TH2F*)gDirectory->FindObjectAny("fdc_occ_plane_01");
+    TH2F *fdc_occ_cell_3 = (TH2F*)gDirectory->FindObjectAny("fdc_occ_plane_02");
+    TH2F *fdc_occ_cell_4 = (TH2F*)gDirectory->FindObjectAny("fdc_occ_plane_03");
+    TH2F *fdc_occ_cell_5 = (TH2F*)gDirectory->FindObjectAny("fdc_occ_plane_04");
+    TH2F *fdc_occ_cell_6 = (TH2F*)gDirectory->FindObjectAny("fdc_occ_plane_05");
 
 	double Nevents = 1.0;
 	TH1I *fdc_num_events = (TH1I*)gDirectory->FindObjectAny("fdc_num_events");
-	if(bcal_num_events) Nevents = (double)bcal_num_events->GetBinContent(1);
+	if(fdc_num_events) Nevents = (double)fdc_num_events->GetBinContent(1);
 
 	// Just for testing
 	if(gPad == NULL){
