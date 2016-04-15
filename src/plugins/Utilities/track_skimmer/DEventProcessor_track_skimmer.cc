@@ -327,7 +327,7 @@ jerror_t DEventProcessor_track_skimmer::fini(void)
 	//Close streams
 	map<string, ofstream*>::iterator locStreamIterator = dIDXAStreamMap.begin();
 	for(; locStreamIterator != dIDXAStreamMap.end(); ++locStreamIterator)
-		locStreamIterator->second.close();
+		locStreamIterator->second->close();
 
 	return NOERROR;
 }
