@@ -39,6 +39,9 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 	string HYPOTHESES = locMassStream.str();
 	gPARMS->SetDefaultParameter("TRKFIT:HYPOTHESES", HYPOTHESES);
 
+	dMaxNumNeutralShowers = 20;
+	gPARMS->SetDefaultParameter("COMBO:MAX_NEUTRALS", dMaxNumNeutralShowers);
+
 	// Parse MASS_HYPOTHESES strings to make list of masses to try
 	hypotheses.clear();
 	SplitString(HYPOTHESES, hypotheses, ",");
@@ -129,6 +132,9 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 
 	locEventLoop->Get(dChargedTracks, dTrackSelectionTag.c_str());
 	locEventLoop->Get(dNeutralShowers, dShowerSelectionTag.c_str());
+
+	if(dNeutralShowers.size() > dMaxNumNeutralShowers)
+		return NOERROR; //don't even try
 
 	//sort charged particles into +/-
 	//Note that a DChargedTrack object can sometimes contain both positively and negatively charged hypotheses simultaneously: sometimes the tracking flips the sign of the track
