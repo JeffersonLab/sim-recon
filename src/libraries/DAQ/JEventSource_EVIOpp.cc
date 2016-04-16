@@ -54,12 +54,41 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	MAX_PARSED_EVENTS = 128;
 	LOOP_FOREVER = false;
 	PRINT_STATS = true;
+	SWAP = true;
+	LINK = true;
+	PARSE_F250 = true;
+	PARSE_F125 = true;
+	PARSE_F1TDC = true;
+	PARSE_CAEN1290TDC = true;
+	PARSE_CONFIG = true;
+	PARSE_BOR = true;
+	PARSE_EPICS = true;
+	PARSE_EVENTTAG = true;
+	PARSE_TRIGGER = true;
+	
 
 	gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
 	gPARMS->SetDefaultParameter("EVIO:NTHREADS", NTHREADS, "Set the number of worker threads to use for parsing the EVIO data");
 	gPARMS->SetDefaultParameter("EVIO:MAX_PARSED_EVENTS", MAX_PARSED_EVENTS, "Set maximum number of events to allow in EVIO parsed events queue");
 	gPARMS->SetDefaultParameter("EVIO:LOOP_FOREVER", LOOP_FOREVER, "If reading from EVIO file, keep re-opening file and re-reading events forever (only useful for debugging) If reading from ET, this is ignored.");
 	gPARMS->SetDefaultParameter("EVIO:PRINT_STATS", PRINT_STATS, "Print some additional stats from event source when it's finished processing events");
+
+	gPARMS->SetDefaultParameter("EVIO:SWAP", SWAP, "Allow swapping automatic swapping. Turning this off should only be used for debugging.");
+	gPARMS->SetDefaultParameter("EVIO:LINK", LINK, "Link associated objects. Turning this off should only be used for debugging.");
+
+	gPARMS->SetDefaultParameter("EVIO:PARSE_F250", PARSE_F250, "Set this to 0 to disable parsing of data from F250 ADC modules (for benchmarking/debugging)");
+	gPARMS->SetDefaultParameter("EVIO:PARSE_F125", PARSE_F125, "Set this to 0 to disable parsing of data from F125 ADC modules (for benchmarking/debugging)");
+	gPARMS->SetDefaultParameter("EVIO:PARSE_F1TDC", PARSE_F1TDC, "Set this to 0 to disable parsing of data from F1TDC modules (for benchmarking/debugging)");
+	gPARMS->SetDefaultParameter("EVIO:PARSE_CAEN1290TDC", PARSE_CAEN1290TDC, "Set this to 0 to disable parsing of data from CAEN 1290 TDC modules (for benchmarking/debugging)");
+	gPARMS->SetDefaultParameter("EVIO:PARSE_CONFIG", PARSE_CONFIG, "Set this to 0 to disable parsing of ROC configuration data in the data stream (for benchmarking/debugging)");
+	gPARMS->SetDefaultParameter("EVIO:PARSE_BOR", PARSE_BOR, "Set this to 0 to disable parsing of BOR events from the data stream (for benchmarking/debugging)");
+	gPARMS->SetDefaultParameter("EVIO:PARSE_EPICS", PARSE_EPICS, "Set this to 0 to disable parsing of EPICS events from the data stream (for benchmarking/debugging)");
+	gPARMS->SetDefaultParameter("EVIO:PARSE_EVENTTAG", PARSE_EVENTTAG, "Set this to 0 to disable parsing of event tag data in the data stream (for benchmarking/debugging)");
+	gPARMS->SetDefaultParameter("EVIO:PARSE_TRIGGER", PARSE_TRIGGER, "Set this to 0 to disable parsing of the built trigger bank from CODA (for benchmarking/debugging)");
+
+	jobtype = DEVIOWorkerThread::JOB_FULL_PARSE;
+	if(SWAP) jobtype |= DEVIOWorkerThread::JOB_SWAP;
+	if(LINK) jobtype |= DEVIOWorkerThread::JOB_ASSOCIATE;
 
 	// Try to open the file.
 	if(VERBOSE>0) evioout << "Attempting to open \""<<this->source_name<<"\" as EVIO file..." <<endl;
@@ -80,6 +109,15 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	// Create worker threads
 	for(int i=0; i<NTHREADS; i++){
 		DEVIOWorkerThread *w = new DEVIOWorkerThread(parsed_events, MAX_PARSED_EVENTS, PARSED_EVENTS_MUTEX, PARSED_EVENTS_CV);
+		w->PARSE_F250        = PARSE_F250;
+		w->PARSE_F125        = PARSE_F125;
+		w->PARSE_F1TDC       = PARSE_F1TDC;
+		w->PARSE_CAEN1290TDC = PARSE_CAEN1290TDC;
+		w->PARSE_CONFIG      = PARSE_CONFIG;
+		w->PARSE_BOR         = PARSE_BOR;
+		w->PARSE_EPICS       = PARSE_EPICS;
+		w->PARSE_EVENTTAG    = PARSE_EVENTTAG;
+		w->PARSE_TRIGGER     = PARSE_TRIGGER;
 		worker_threads.push_back(w);
 	}
 
@@ -146,7 +184,6 @@ void JEventSource_EVIOpp::Dispatcher(void)
 	/// available.
 	
 	bool allow_swap = false;
-	uint32_t jobtype = DEVIOWorkerThread::JOB_SWAP | DEVIOWorkerThread::JOB_FULL_PARSE | DEVIOWorkerThread::JOB_ASSOCIATE;
 	uint64_t istreamorder = 0;
 	while(true){
 	

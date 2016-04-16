@@ -77,6 +77,16 @@ class DEVIOWorkerThread{
 		uint32_t buff_len;
 		uint32_t *buff;
 		streampos pos;
+
+		bool  PARSE_F250;
+		bool  PARSE_F125;
+		bool  PARSE_F1TDC;
+		bool  PARSE_CAEN1290TDC;
+		bool  PARSE_CONFIG;
+		bool  PARSE_BOR;
+		bool  PARSE_EPICS;
+		bool  PARSE_EVENTTAG;
+		bool  PARSE_TRIGGER;
 		
 		void Run(void);
 		void Finish(bool wait_to_complete=true);
@@ -107,7 +117,7 @@ class DEVIOWorkerThread{
 
 
 		void DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords=0, const uint32_t *imark=NULL);
-		
+
 	protected:
 	
 	

@@ -70,6 +70,16 @@ DEVIOWorkerThread::DEVIOWorkerThread(
 	buff_len = 100; // this will grow as needed
 	buff = new uint32_t[buff_len];
 
+	PARSE_F250        = true;
+	PARSE_F125        = true;
+	PARSE_F1TDC       = true;
+	PARSE_CAEN1290TDC = true;
+	PARSE_CONFIG      = true;
+	PARSE_BOR         = true;
+	PARSE_EPICS       = true;
+	PARSE_EVENTTAG    = true;
+	PARSE_TRIGGER     = true;
+
 }
 
 //---------------------------------
@@ -278,6 +288,7 @@ void DEVIOWorkerThread::ParseEventTagBank(uint32_t* &iptr, uint32_t *iend)
 //---------------------------------
 void DEVIOWorkerThread::ParseEPICSbank(uint32_t* &iptr, uint32_t *iend)
 {
+	if(!PARSE_EPICS){ iptr = iend; return; }
 
 	time_t timestamp=0;
 	
@@ -331,6 +342,8 @@ void DEVIOWorkerThread::ParseEPICSbank(uint32_t* &iptr, uint32_t *iend)
 //---------------------------------
 void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 {
+	if(!PARSE_BOR){ iptr = iptr = &iptr[(*iptr) + 1]; return; }
+
 	iptr = &iptr[(*iptr) + 1];
 }
 
@@ -474,6 +487,8 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 //----------------
 void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
 {
+	if(!PARSE_CAEN1290TDC){ iptr = iptr = &iptr[(*iptr) + 1]; return; }
+
     /// Parse data from a CAEN 1190 or 1290 module
     /// (See ppg. 72-74 of V1290_REV15.pdf manual)
 
@@ -775,6 +790,8 @@ void DEVIOWorkerThread::ParseJLabModuleData(uint32_t rocid, uint32_t* &iptr, uin
 //----------------
 void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
 {
+	if(!PARSE_F250){ iptr = iptr = &iptr[(*iptr) + 1]; return; }
+
 	auto pe_iter = current_parsed_events.begin();
 	DParsedEvent *pe = NULL;
 	
@@ -817,7 +834,7 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 						iptr--;
 					}
 					if(VERBOSE>7) cout << "      FADC250 Trigger Time: t="<<t<<" ("<<hex<<*iptr<<dec<<")"<<endl;
-					if(pe) pe->vDf250TriggerTime.push_back(new Df250TriggerTime(rocid, slot, itrigger, t));
+//					if(pe) pe->vDf250TriggerTime.push_back(new Df250TriggerTime(rocid, slot, itrigger, t));
 				}
                 break;
             case 4: // Window Raw Data
@@ -858,7 +875,7 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t quality_factor = (*iptr>>19) & 0x03;
 					uint32_t pulse_time = (*iptr>>0) & 0x7FFFF;
 					if(VERBOSE>7) cout << "      FADC250 Pulse Time: chan="<<channel<<" pulse_number="<<pulse_number<<" pulse_time="<<pulse_time<<" ("<<hex<<*iptr<<dec<<")"<<endl;
-					if(pe) pe->vDf250PulseTime.push_back(new Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
+//					if(pe) pe->vDf250PulseTime.push_back(new Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 				}
 				break;
             case 9: // Streaming Raw Data
@@ -873,7 +890,7 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t pedestal = (*iptr>>12) & 0x1FF;
 					uint32_t pulse_peak = (*iptr>>0) & 0xFFF;
 					if(VERBOSE>7) cout << "      FADC250 Pulse Pedestal chan="<<channel<<" pulse_number="<<pulse_number<<" pedestal="<<pedestal<<" pulse_peak="<<pulse_peak<<" ("<<hex<<*iptr<<dec<<")"<<endl;
-					if(pe) pe->vDf250PulsePedestal.push_back(new Df250PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
+//					if(pe) pe->vDf250PulsePedestal.push_back(new Df250PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
 				}
                 break;
             case 13: // Event Trailer
@@ -899,6 +916,8 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 //----------------
 void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
 {
+	if(!PARSE_F125){ iptr = iptr = &iptr[(*iptr) + 1]; return; }
+
 	auto pe_iter = current_parsed_events.begin();
 	DParsedEvent *pe = NULL;
 
@@ -1185,6 +1204,8 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 //----------------
 void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
 {
+	if(!PARSE_F1TDC){ iptr = iptr = &iptr[(*iptr) + 1]; return; }
+
 	uint32_t *istart = iptr;
 
 	auto pe_iter = current_parsed_events.begin();
@@ -1333,8 +1354,8 @@ void LinkAssociationsModuleOnlyB(vector<T*> &a, vector<U*> &b)
 		uint32_t rocid = b[i]->rocid;
 		uint32_t slot  = b[i]->slot;
 		
-		// Advance b if it's rocid is less than next a's rocid
-		if( rocid < a[i]->rocid ) continue;
+		// Advance b if it's rocid is less than the next a's rocid
+		if( rocid < a[j]->rocid ) continue;
 
 		// Advance a if it's rocid is less than this b's rocid
 		for(; j<a.size(); j++) if( a[j]->rocid >= rocid ) break;
@@ -1342,7 +1363,7 @@ void LinkAssociationsModuleOnlyB(vector<T*> &a, vector<U*> &b)
 		if( a[j]->rocid > rocid ) continue; // a rocid has gone past b. continue to next b
 		
 		// Advance b if it's slot is less than next a's slot
-		if( slot < a[i]->slot ) continue;
+		if( slot < a[j]->slot ) continue;
 
 		// Advance a if it's slot is less than this b's slot
 		for(; j<a.size(); j++){
@@ -1354,73 +1375,14 @@ void LinkAssociationsModuleOnlyB(vector<T*> &a, vector<U*> &b)
 		if( a[j]->slot  >  slot  ) continue; // a slot has gone past b. continue to next b
 		
 		// Loop over all elements until we see a new rocid or slot
-		for(; j<b.size(); j++){
-			if(rocid != b[j]->rocid) break;
-			if(slot  != b[j]->slot ) break;
+		for(; j<a.size(); j++){
+			if(rocid != b[i]->rocid) break;
+			if(slot  != b[i]->slot ) break;
 
 //			b[j]->tmp_obj = a[i];
-			b[j]->AddAssociatedObject(a[i]);
+			b[i]->AddAssociatedObject(a[j]);
 		}
-		if( j>=b.size() ) break;
-		
-		
-		
-		
-		
-		
-		// Advance to first element in b with this slot
-		for(; j<b.size(); j++){
-			if(rocid != b[j]->rocid) break;
-			if(slot  <= b[j]->slot ) break;
-		}
-		if( j>=b.size() ) break;
-		if(rocid != b[j]->rocid) continue;
-		if( b[j]->slot > slot ) continue;
-		
-		// Loop over all elements until we see a new rocid or slot
-		for(; j<b.size(); j++){
-			if(rocid != b[j]->rocid) break;
-			if(slot  != b[j]->slot ) break;
-
-//			b[j]->tmp_obj = a[i];
-			b[j]->AddAssociatedObject(a[i]);
-		}
-		if( j>=b.size() ) break;
-	}
-
-
-
-	
-	// This assumes elements in both "a" and "b" are sorted in ascending
-	// order. This allows us to skip comparisons between every possible pair.
-	for(uint32_t i=0, j=0; i<a.size(); i++){
-
-		uint32_t rocid = a[i]->rocid;
-		uint32_t slot = a[i]->slot;
-
-		// Advance to first element in b with this rocid
-		for(; j<b.size(); j++)if(rocid <= b[j]->rocid) break;
-		if( j>=b.size() ) break;
-		if( b[j]->rocid > rocid ) continue;
-		
-		// Advance to first element in b with this slot
-		for(; j<b.size(); j++){
-			if(rocid != b[j]->rocid) break;
-			if(slot  <= b[j]->slot ) break;
-		}
-		if( j>=b.size() ) break;
-		if(rocid != b[j]->rocid) continue;
-		if( b[j]->slot > slot ) continue;
-		
-		// Loop over all elements until we see a new rocid or slot
-		for(; j<b.size(); j++){
-			if(rocid != b[j]->rocid) break;
-			if(slot  != b[j]->slot ) break;
-
-//			b[j]->tmp_obj = a[i];
-			b[j]->AddAssociatedObject(a[i]);
-		}
-		if( j>=b.size() ) break;
+		if( j>=a.size() ) break;
 	}
 }
 

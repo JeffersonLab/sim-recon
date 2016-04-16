@@ -80,6 +80,11 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		bool  ENABLE_DISENTANGLING;
 		uint32_t NTHREADS;
 		bool  PRINT_STATS;
+		
+		bool  SWAP;
+		bool  LINK;
+		
+		uint32_t jobtype;
 };
 
 #endif // _JEventSourceGenerator_EVIOpp_
