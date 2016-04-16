@@ -33,6 +33,8 @@ class DEventSourceEventStore:public JEventSource{
 	private:
 	
 		JEventSource *event_source;    //  the source we are actually reading from
+		string esdb_connection;        //  connection string for database
+
 		int min_run, max_run;
 };
 

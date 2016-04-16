@@ -28,7 +28,8 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	// initialize data members
 	event_source = NULL;
 	min_run = 0;
-	max_run = 1000000000000;   // default to something ridiculously large
+	max_run = INT_MAX;   // default to something ridiculously large
+	esdb_connection = "mysql://eventstore@hallddb.jlab.org/esdb";    // default to main JLab ES server
 	
 	// First, parse the eventsource query
 	// For details of the query format, see: <...>
@@ -46,6 +47,13 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 		throw JException("Invalid ES query = " + es_query + "\n\n" + EventstoreQueryHelp() );
 		
 
+
+	// initialize database connection
+	if(esdb_connection.substr(0,8) == "mysql://") {
+		cout << "MySQL connection" << endl;
+	} else if(esdb_connection.substr(0,8) == "sqlite://") {
+		cout << "SQLite connection" << endl;	
+	} 
 }
 
 //---------------------------------
