@@ -292,8 +292,8 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
         Elows_PSarm[0][i] = psGeom.getElow(0,i+1);
         Elows_PSarm[1][i] = psGeom.getElow(1,i+1);
         // find smallest bin widths to use for PS pair energy binning
-        double wl = psGeom.getEhigh(0,i+1) - psGeom.getElow(0,i+1);
-        double wr = psGeom.getEhigh(1,i+1) - psGeom.getElow(1,i+1);
+        double wl = fabs(psGeom.getEhigh(0,i+1) - psGeom.getElow(0,i+1));
+        double wr = fabs(psGeom.getEhigh(1,i+1) - psGeom.getElow(1,i+1));
         if (wl<wl_min) wl_min = wl;
         if (wr<wr_min) wr_min = wr;
     }
@@ -303,8 +303,8 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
     // PS pair energy binning
     double Ebw_PS = wl_min + wr_min;
     const double Ebl_PS = psGeom.getElow(0,1) + psGeom.getElow(1,1);
-    double Ebh_PS = psGeom.getEhigh(0,NC_PS) + psGeom.getEhigh(1,NC_PS);
-    double range = Ebh_PS-Ebl_PS;
+    const double Ebh_PS = psGeom.getEhigh(0,NC_PS) + psGeom.getEhigh(1,NC_PS);
+    double range = fabs(Ebh_PS-Ebl_PS);
     int NEb_PS = range/Ebw_PS-int(range/Ebw_PS) < 0.5 ? int(range/Ebw_PS) : int(range/Ebw_PS) + 1;
     double Elows_PS[NEb_PS+1];
     for (int i=0;i<NEb_PS+1;i++) {
