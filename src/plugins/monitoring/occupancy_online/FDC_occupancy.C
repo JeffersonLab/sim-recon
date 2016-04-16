@@ -4,7 +4,7 @@
 //
 // hnamepath: /occupancy/fdc_num_events
 // hnamepath: /occupancy/fdc_cathode_occ
-// hnamepath: /occupancy/fdc_wire__occ
+// hnamepath: /occupancy/fdc_wire_occ
 
 {
 	// RootSpy saves the current directory and style before
