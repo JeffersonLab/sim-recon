@@ -64,7 +64,6 @@ DEventProcessor_candidate_tree::DEventProcessor_candidate_tree()
 	NLRfit_unknown = 0;
 	Nevents = 0;
 	
-	rt = NULL;
 	Nwarnings = 0;
 }
 
@@ -110,10 +109,11 @@ jerror_t DEventProcessor_candidate_tree::brun(JEventLoop *loop, int32_t runnumbe
 		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program perhaps?)"<<endl;
 		return RESOURCE_UNAVAILABLE;
 	}
+
+	LockState();
 	lorentz_def=dapp->GetLorentzDeflections();
-		
-	DMagneticFieldMap *bfield = dapp->GetBfield(runnumber);
-	rt = new DReferenceTrajectory(bfield);
+	bfield = dapp->GetBfield(runnumber);
+	UnlockState();
 
 	return NOERROR;
 }
@@ -208,12 +208,12 @@ jerror_t DEventProcessor_candidate_tree::evnt(JEventLoop *loop, uint64_t eventnu
 	// Here, we need to cast away the const-ness of the DReferenceTrajectory so we
 	// can use it to find DOCA points for each wire. This is OK to do here even
 	// outside of the mutex lock.
+	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield);
 	rt->Swim(recon->position(), recon->momentum(), recon->charge());
 	if(!rt)return NOERROR;
 
-	// At this point we need to lock the mutex since we need exclusive use of
-	// the rt_thrown reference trajectory
-	pthread_mutex_lock(&mutex);
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 
 	// Loop over CDC hits
 	int NLRcorrect_this_track = 0;
@@ -312,16 +312,10 @@ jerror_t DEventProcessor_candidate_tree::evnt(JEventLoop *loop, uint64_t eventnu
 	}
 #endif
 
-	// Unlock mutex
-	pthread_mutex_unlock(&mutex);
-
 	// Find the z vertex position of fit track using reference trajectory
 	double doca_tgt = rt->DistToRT(&target);
 	DVector3 tmp = rt->GetLastDOCAPoint();
 	TVector3 tgt_doca(tmp.X(), tmp.Y(), tmp.Z());
-
-	// Lock mutex
-	pthread_mutex_lock(&mutex);
 
 	// Fill in track tree
 	trk.eventnumber = eventnumber;
@@ -337,8 +331,10 @@ jerror_t DEventProcessor_candidate_tree::evnt(JEventLoop *loop, uint64_t eventnu
 	ttrack->Fill();
 
 	// Unlock mutex
-	pthread_mutex_unlock(&mutex);
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 	
+	delete rt;
+
 	return NOERROR;
 }
 

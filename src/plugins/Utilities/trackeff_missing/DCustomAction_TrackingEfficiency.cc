@@ -34,6 +34,8 @@ void DCustomAction_TrackingEfficiency::Initialize(JEventLoop* locEventLoop)
 
 	bool locIsRESTEvent = (string(locEventLoop->GetJEvent().GetJEventSource()->className()) == string("DEventSourceREST"));
 
+	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
@@ -600,7 +602,10 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 
 	double locP = locBestChargedTrackHypothesis->momentum().Mag();
 
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		//SC
 		if(locSCHitMatchParams != NULL)
@@ -665,7 +670,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 			dHistMap_DeltadEdXVsP[SYS_FDC]->Fill(locP, (locBestTrackTimeBased->ddEdx_FDC - locProbabledEdx)*1.0E6);
 		}
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 
 	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }
@@ -693,8 +698,10 @@ void DCustomAction_TrackingEfficiency::Fill_ResolutionAndTrackEff_Hists(const DK
 	if((locTrack != NULL) && (locDeltaPOverP < 0.2) && (locDeltaTheta < 10.0) && (locDeltaPhi < 15.0))
 		locTrackFoundFlag = true;
 
-	//Optional: Fill histograms
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		//Resolution
 		if(locTrack != NULL)
@@ -737,7 +744,7 @@ void DCustomAction_TrackingEfficiency::Fill_ResolutionAndTrackEff_Hists(const DK
 			dHistMap_TrackMissing_PhiVsTheta[locIsTimeBasedFlag][locVertexZBin]->Fill(locMissingTheta, locMissingPhi);
 		}
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 }
 
 void DCustomAction_TrackingEfficiency::Fill_MatchingHists(JEventLoop* locEventLoop, const DKinematicData* locTrack, bool locIsTimeBasedFlag)
@@ -806,8 +813,10 @@ void DCustomAction_TrackingEfficiency::Fill_MatchingHists(JEventLoop* locEventLo
 		dParticleID->PredictBCALWedge(locReferenceTrajectory, locBCALModule, locBCALSector, &locBCALIntersection);
 	}
 
-	//Fill Histograms
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		double locP = locTrack->momentum().Mag();
 		double locTheta = locTrack->momentum().Theta()*180.0/TMath::Pi();
@@ -976,7 +985,7 @@ void DCustomAction_TrackingEfficiency::Fill_MatchingHists(JEventLoop* locEventLo
 				dHistMap_SCPaddleVsTheta_NoHit[locIsTimeBasedFlag]->Fill(locTheta, locProjectedSCPaddle);
 		}
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 }
 
 double DCustomAction_TrackingEfficiency::Calc_MatchFOM(const DVector3& locDeltaP3, DMatrixDSym locInverse3x3Matrix) const

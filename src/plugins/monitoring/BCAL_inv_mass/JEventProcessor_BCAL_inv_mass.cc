@@ -60,10 +60,8 @@ jerror_t JEventProcessor_BCAL_inv_mass::init(void)
 	// This is called once at program startup. If you are creating
 	// and filling historgrams in this plugin, you should lock the
 	// ROOT mutex like this:
-	japp->RootWriteLock();
 
 	if(bcal_diphoton_mass_500 != NULL){
-	  japp->RootUnLock();
 	  return NOERROR;
 	}
 
@@ -110,9 +108,6 @@ jerror_t JEventProcessor_BCAL_inv_mass::init(void)
 	 //	dir->cd();
 
 	main->cd();
-
-	 japp->RootUnLock();
-
 
 	return NOERROR;
 }
@@ -217,7 +212,6 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uin
                   }
 	}                        
 
-	japp->RootWriteLock();
  	vector <const DChargedTrackHypothesis*> locParticles;
 	double kinfitVertexX = 0.0, kinfitVertexY = 0.0, kinfitVertexZ = 0.0;
 	for (unsigned int i = 0 ; i < kinfitVertex.size(); i++)
@@ -229,6 +223,10 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uin
 		//kinfitVertexT = kinfitVertex[i]->dSpacetimeVertex.T();
 	}
 	
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
 	for(unsigned int i=0; i<locBCALShowers.size(); i++)
 	{
 	     //   if(locDetectorMatches->Get_IsMatchedToTrack(locBCALShowers[i]))
@@ -281,7 +279,7 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uin
 	}   
 
 
-	japp->RootUnLock();     
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 
 	/*

@@ -150,7 +150,7 @@ jerror_t JEventProcessor_PSPair_online::init(void)
     const double Tbh_TAG = 30.0;
     const int NTb_TAG = int((Tbh_TAG-Tbl_TAG)/Tbw);
     //
-    japp->RootWriteLock();
+
     // create root folder for pspair and cd to it, store main dir
     TDirectory *mainDir = gDirectory;
     TDirectory *psPairDir = gDirectory->mkdir("PSPair");
@@ -270,8 +270,6 @@ jerror_t JEventProcessor_PSPair_online::init(void)
     // back to main dir
     mainDir->cd();
 
-    japp->RootUnLock();
-
     return NOERROR;
 }
 
@@ -353,7 +351,10 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
     for (int i=0;i<=NTb;i++) {
         Tlows[i] = -400.0+i*0.4;
     }
-    japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
     // set variable-width energy bins if histogram is empty
     // PS
     if (hPS_ElVsEr->GetEntries()==0) hPS_ElVsEr->SetBins(NC_PS,Elows_PSarm[1],NC_PS,Elows_PSarm[0]);
@@ -381,7 +382,9 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
     if (hPSTAGM_EVsEtagm->GetEntries()==0) hPSTAGM_EVsEtagm->SetBins(NC_TAGM,Elows_TAGM,NEb_PS,Elows_PS);
     if (hPSTAGM_timeVsEtagm->GetEntries()==0) hPSTAGM_timeVsEtagm->SetBins(NC_TAGM,Elows_TAGM,NTb,Tlows);
     if (hPSTAGM_EdiffVsEtagm->GetEntries()==0) hPSTAGM_EdiffVsEtagm->SetBins(NC_TAGM,Elows_TAGM,NEdiff,EdiffLows);
-    japp->RootUnLock(); //RELEASE ROOT LOCK!!
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
     //
     return NOERROR;
 }
@@ -411,7 +414,11 @@ jerror_t JEventProcessor_PSPair_online::evnt(JEventLoop *loop, uint64_t eventnum
     vector<const DTPOLHit*> tpolhits;
     loop->Get(tpolhits);
     //
-    japp->RootWriteLock();
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
     hPSC_NHitPairs->Fill(cpairs.size());
     hPS_NHitPairs->Fill(fpairs.size());
     // PSC coincidences
@@ -491,16 +498,16 @@ jerror_t JEventProcessor_PSPair_online::evnt(JEventLoop *loop, uint64_t eventnum
                 hPSTAGM_timeVsE->Fill(E_pair,clhit->t-tag->t);
             }
             // PSC,PS,TPOL coincidences
-            if (fabs(PS_Ediff) > 1.75) {japp->RootUnLock(); return NOERROR;}
-            if (fabs(PSC_tdiff) > 1.3) {japp->RootUnLock(); return NOERROR;}
-            if (E_pair < 8.4 || E_pair > 9.2) {japp->RootUnLock(); return NOERROR;}
+            if (fabs(PS_Ediff) > 1.75) {japp->RootFillUnLock(this); return NOERROR;}
+            if (fabs(PSC_tdiff) > 1.3) {japp->RootFillUnLock(this); return NOERROR;}
+            if (E_pair < 8.4 || E_pair > 9.2) {japp->RootFillUnLock(this); return NOERROR;}
             double ph_cut = 100.0;
             int N_TPOL = 0;
             for(unsigned int i=0; i<tpolhits.size(); i++) {
                 if (tpolhits[i]->pulse_peak>=ph_cut) N_TPOL++;
             }
             hPSTPOL_NHits->Fill(N_TPOL);
-            if (N_TPOL>1) {japp->RootUnLock(); return NOERROR;}
+            if (N_TPOL>1) {japp->RootFillUnLock(this); return NOERROR;}
             for(unsigned int i=0; i<tpolhits.size(); i++) {
                 const DTPOLHit* hit = tpolhits[i];
                 hPSTPOL_peak->Fill(hit->pulse_peak);
@@ -516,7 +523,7 @@ jerror_t JEventProcessor_PSPair_online::evnt(JEventLoop *loop, uint64_t eventnum
         }
     }
     //
-    japp->RootUnLock();
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
     return NOERROR;
 }

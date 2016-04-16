@@ -272,8 +272,8 @@ jerror_t DEventProcessor_mc_tree::evnt(JEventLoop *loop, uint64_t eventnumber) {
 		thr.richtruthhits.push_back(
 				MakeRichTruthHit((DRichTruthHit*) richtruthhits[j]));
 
-	// Lock mutex
-	pthread_mutex_lock(&mutex);
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 
 	// Fill in Event objects
 	evt_thrown->Clear();
@@ -291,8 +291,7 @@ jerror_t DEventProcessor_mc_tree::evnt(JEventLoop *loop, uint64_t eventnumber) {
 	evt_thrown->event = eventnumber;
 	tree_thrown->Fill();
 
-	// Unlock mutex
-	pthread_mutex_unlock(&mutex);
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
 	return NOERROR;
 }

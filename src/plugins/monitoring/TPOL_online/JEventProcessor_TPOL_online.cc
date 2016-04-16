@@ -89,8 +89,6 @@ JEventProcessor_TPOL_online::~JEventProcessor_TPOL_online() {
 
 jerror_t JEventProcessor_TPOL_online::init(void) {
 
-    japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
     // create root folder for TPOL and cd to it, store main dir
     TDirectory *mainDir = gDirectory;
     TDirectory *tpolDir = gDirectory->mkdir("TPOL");
@@ -138,8 +136,6 @@ jerror_t JEventProcessor_TPOL_online::init(void) {
     hDigiHit_TimeVsIntegral = new TH2I("DigiHit_fadcTimeVsIntegral","TPOL fADC pulse time vs. integral;pulse integral;pulse time [ns]",500,0.0,30000.0,200,0.0,400.0);
     // back to main dir
     mainDir->cd();
-
-    japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
     return NOERROR;
 }
@@ -197,8 +193,11 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, uint64_t event
         if (pulseInt) pulseInt->GetSingle(rawData);
         pp_wr_cache[sdhits[i]] = pair<const Df250PulsePedestal*, const Df250WindowRawData*>(pulsePed, rawData);
     }
-    // fill hists
-    japp->RootWriteLock();
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
     int NHits = 0;
     for(unsigned int i=0;i<windowrawdata.size();i++) {
         if(windowrawdata[i]->rocid == 84
@@ -254,7 +253,8 @@ jerror_t JEventProcessor_TPOL_online::evnt(JEventLoop *eventLoop, uint64_t event
         hHit_TimeVsIntegral->Fill(hits[i]->integral,hits[i]->t);
         hHit_TimeVsPeak->Fill(hits[i]->pulse_peak,hits[i]->t);
     }
-    japp->RootUnLock();
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
     return NOERROR;
 }

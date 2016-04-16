@@ -38,13 +38,13 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
 
 	/**************************************************** p2pi_pmiss Control Settings ****************************************************/
 
-	locReaction->Set_KinFitType(d_VertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	//locReaction->Set_KinFitType(d_VertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 2.004 ns)
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 
 	// Recommended: Enable ROOT TTree output for this DReaction
-        locReaction->Enable_TTreeOutput("tree_p2pi_hists.root"); //string is file name (must end in ".root"!!): doen't need to be unique, feel free to change
+   //locReaction->Enable_TTreeOutput("tree_p2pi_hists.root"); //string is file name (must end in ".root"!!): doen't need to be unique, feel free to change
 
 	/**************************************************** p2pi_pmiss Analysis Actions ****************************************************/
 
@@ -65,10 +65,10 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
         locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "TimingCut_Measured"));
 
 	// Kinematic Fit Results
-	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+	//locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 
 	// Require KinFit converges
-	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0)); //require kinematic fit converges
+	//locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0)); //require kinematic fit converges
 
 	// Custom histograms for p2pi (KinFit converges)
         locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "KinFitConverge_Measured"));
@@ -93,11 +93,11 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
 
 	/**************************************************** p2pi_preco Control Settings ****************************************************/
 
-	locReaction->Set_KinFitType(d_VertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	//locReaction->Set_KinFitType(d_VertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
 
 	// Recommended: Enable ROOT TTree output for this DReaction
-        locReaction->Enable_TTreeOutput("tree_p2pi_hists.root"); //string is file name (must end in ".root"!!): doen't need to be unique, feel free to change
+   //locReaction->Enable_TTreeOutput("tree_p2pi_hists.root"); //string is file name (must end in ".root"!!): doen't need to be unique, feel free to change
 
 	/**************************************************** p2pi_preco Analysis Actions ****************************************************/
 
@@ -121,10 +121,10 @@ jerror_t DReaction_factory_p2pi_hists::init(void)
 	if(unused)  locReaction->Add_AnalysisAction(new DCustomAction_p2pi_unusedHists(locReaction, false, "TimingCut_Measured"));
 
 	// Kinematic Fit Results
-	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
+	//locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 	
 	// Require KinFit converges
-	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0)); //require kinematic fit converges
+	//locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0)); //require kinematic fit converges
 	
 	// Custom histograms for p2pi (KinFit converges)
         locReaction->Add_AnalysisAction(new DCustomAction_p2pi_hists(locReaction, false, "KinFitConverge_Measured"));

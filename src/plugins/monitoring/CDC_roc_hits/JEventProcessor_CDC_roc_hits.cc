@@ -69,8 +69,6 @@ JEventProcessor_CDC_roc_hits::~JEventProcessor_CDC_roc_hits() {
 
 jerror_t JEventProcessor_CDC_roc_hits::init(void) {
 
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
   // create root folder for cdc and cd to it, store main dir
   TDirectory *main = gDirectory;
   gDirectory->mkdir("CDC_roc_hits")->cd();
@@ -88,9 +86,6 @@ jerror_t JEventProcessor_CDC_roc_hits::init(void) {
   cdc_amp_roc28   = new TH2D("cdc_amp_roc28","CDC pulse peak amplitude in ROC 28;slot*100+channel;pulse peak (ADC units)",2000,0,2000,4096,0,4096);
   
   main->cd();
-
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
-
 
   return NOERROR;
 }
@@ -121,7 +116,9 @@ jerror_t JEventProcessor_CDC_roc_hits::evnt(JEventLoop *eventLoop, uint64_t even
   vector<const DCDCDigiHit*> digihits;
   eventLoop->Get(digihits);
 
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   if(digihits.size() > 0) cdc_nevents->Fill(1);
 
@@ -152,9 +149,7 @@ jerror_t JEventProcessor_CDC_roc_hits::evnt(JEventLoop *eventLoop, uint64_t even
 
   }
 
-
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
-
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }

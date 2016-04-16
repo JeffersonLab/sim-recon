@@ -19,6 +19,11 @@ jerror_t DEventRFBunch_factory_Combo::init(void)
 	dShowerSelectionTag = "PreSelect";
 	dTrackSelectionTag = "PreSelect";
 	dMinThrownMatchFOM = 5.73303E-7;
+
+	string locLockName = string(GetDataClassName()) + string("__") + string(Tag());
+	dFactoryLock = japp->ReadLock(locLockName); //will create if doesn't exist, else returns it
+	pthread_rwlock_unlock(dFactoryLock); //unlock
+
 	return NOERROR;
 }
 
@@ -87,13 +92,17 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32
 	//Create Diagnostic Histograms
 	japp->RootWriteLock();
 	{
+		//get and change to the base (file/global) directory
 		string locOutputFileName = "hd_root.root";
 		if(gPARMS->Exists("OUTPUT_FILENAME"))
 			gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
+
+		TDirectory* locCurrentDir = gDirectory;
 		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
-		if(locFile == NULL)
-			return NOERROR;
-		locFile->cd("");
+		if(locFile != NULL)
+			locFile->cd("");
+		else
+			gDirectory->cd("/");
 
 		for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 		{
@@ -151,6 +160,8 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int32
 				dHistMap_DeltaRFTime_TruePID[locReaction] = loc1IHist;
 			}
 		}
+
+		locCurrentDir->cd();
 	}
 	japp->RootUnLock(); //unlock
 
@@ -173,15 +184,28 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 		//if its the good combo: has good tracks, will be good vertex
 		//vertex should be bad only if on the wrong combo anyway, or if all tracks are junk
 
+	map<pair<int, int>, DEventRFBunch*> locComboRFBunchMap; //key pair ints are: num-rf-bunch-shifts, num-votes
+
  	vector<const DParticleComboBlueprint*> locParticleComboBlueprints;
 	locEventLoop->Get(locParticleComboBlueprints);
 
 	const DEventRFBunch* locEventRFBunch = NULL;
 	locEventLoop->GetSingle(locEventRFBunch);
 
+	//CREATE NEW, IDENTICAL RF BUNCH
+		//Comes in handy: When making "Combo" neutral/charged hypos of PIDs that were not default-reconstructed:
+		//Will now have "default-like" objects, as if they were reconstructed directly
+		//These can then be easily saved to the output TTrees
+	DEventRFBunch* locNewPrimaryEventRFBunch = new DEventRFBunch(*locEventRFBunch);
+	locComboRFBunchMap[pair<int, int>(0, locNewPrimaryEventRFBunch->dNumParticleVotes)] = locNewPrimaryEventRFBunch;
+	//Register for all reactions: makes sure they're created-for & saved-to every TTree
+	for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
+		locNewPrimaryEventRFBunch->AddAssociatedObject(locParticleComboBlueprints[loc_i]->Get_Reaction());
+	_data.push_back(locNewPrimaryEventRFBunch);
+
 	double locRFTime, locRFVariance;
 	DetectorSystem_t locTimeSource;
-	if(locEventRFBunch->dTime == locEventRFBunch->dTime)
+	if((locEventRFBunch->dTime >= -1.0) || (locEventRFBunch->dTime <= 1.0))
 	{
 		locRFTime = locEventRFBunch->dTime;
 		locRFVariance = locEventRFBunch->dTimeVariance;
@@ -189,15 +213,9 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 	}
 	else if(!dEventRFBunchFactory->Get_RFTimeGuess(locEventLoop, locRFTime, locRFVariance, locTimeSource))
 	{
-		//no good RF time, set to NaN for all combos
-		DEventRFBunch* locNewEventRFBunch = new DEventRFBunch(*locEventRFBunch);
+		//no good RF time, register it (NaN) for all combos
 		for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
-		{
-			const DParticleComboBlueprint* locParticleComboBlueprint = locParticleComboBlueprints[loc_i];
-			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
-			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
-		}
-		_data.push_back(locNewEventRFBunch);
+			locNewPrimaryEventRFBunch->AddAssociatedObject(locParticleComboBlueprints[loc_i]);
 		return NOERROR;
 	}
 
@@ -221,7 +239,8 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 	const DVertex* locVertex = NULL;
 	locEventLoop->GetSingle(locVertex);
 
-	map<pair<int, int>, DEventRFBunch*> locComboRFBunchMap; //key pair ints are: num-rf-bunch-shifts, num-votes
+	const DDetectorMatches* locDetectorMatches = NULL;
+	locEventLoop->GetSingle(locDetectorMatches, "Combo");
 
 	//pre-sort time-based tracks
 	map<pair<const DChargedTrack*, Particle_t>, const DTrackTimeBased*> locTimeBasedSourceMap;
@@ -257,7 +276,7 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
 		double locStartTime = 0.0;
-		if(!Get_StartTime(locEventLoop, locTrackTimeBasedVector[loc_i], locStartTime))
+		if(!Get_StartTime(locDetectorMatches, locTrackTimeBasedVector[loc_i], locStartTime))
 			continue;
 		double locPropagatedTime = locStartTime + (dTargetCenterZ - locTrackTimeBasedVector[loc_i]->z())/29.9792458;
 		dPropagatedStartTimes_TimeBased[locTrackTimeBasedVector[loc_i]] = locPropagatedTime;
@@ -317,10 +336,7 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 		if(locPropagatedTimes.empty())
 		{
 			//no timing information somehow: use the pre-existing value
-			DEventRFBunch* locNewEventRFBunch = new DEventRFBunch(*locEventRFBunch);
-			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
-			locNewEventRFBunch->AddAssociatedObject(locParticleComboBlueprint->Get_Reaction());
-			_data.push_back(locNewEventRFBunch);
+			locNewPrimaryEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
 			continue;
 		}
 
@@ -334,7 +350,7 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 		if(locThrownEventRFBunch != NULL)
 			locIsAllTruePID = Is_AllTruePID(locMCThrownMatching, locParticleComboBlueprint);
 		const DReaction* locReaction = locParticleComboBlueprint->Get_Reaction();
-		japp->RootWriteLock();
+		Lock_Factory();
 		{
 			for(size_t loc_j = 0; loc_j < locPropagatedTimes.size(); ++loc_j)
 			{
@@ -350,7 +366,7 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 					dHistMap_DeltaRFTime_TruePID[locReaction]->Fill(locDeltaT); //diff between selected & true RF times (all combos)
 			}
 		}
-		japp->RootUnLock(); //unlock
+		Unlock_Factory(); //unlock
 
 		// Create new RF Bunch if doesn't already exist
 		pair<int, int> locVoteResultPair(locNumBunchShifts, locNumParticleVotes); //pair ints are: num-rf-bunch-shifts, num-votes
@@ -376,11 +392,8 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, uint6
 	return NOERROR;
 }
 
-bool DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, double& locStartTime)
+bool DEventRFBunch_factory_Combo::Get_StartTime(const DDetectorMatches* locDetectorMatches, const DTrackTimeBased* locTrackTimeBased, double& locStartTime)
 {
-	const DDetectorMatches* locDetectorMatches = NULL;
-	locEventLoop->GetSingle(locDetectorMatches);
-
 	// Use time-based tracking time as initial guess
 	locStartTime = 0.0;
 

@@ -41,7 +41,8 @@ string DReaction::Get_DetectedParticlesROOTName(void) const
 				continue; //missing particle
 
 			//see if this pid is a parent in a future step
-			if(Check_IsDecayingParticle(locPID, loc_i + 1))
+			int locDecayStepIndex = Get_DecayStepIndex(loc_i, loc_j);
+			if(locDecayStepIndex >= 0)
 				continue;
 
 			locDetectedParticlesROOTName += ParticleName_ROOT(locPID);
@@ -120,7 +121,8 @@ void DReaction::Get_DetectedFinalPIDs(deque<Particle_t>& locDetectedPIDs, int lo
 				continue; //wrong charge
 
 			//see if this pid is a parent in a future step
-			if(Check_IsDecayingParticle(locPID, loc_i + 1))
+			int locDecayStepIndex = Get_DecayStepIndex(loc_i, loc_j);
+			if(locDecayStepIndex >= 0)
 				continue;
 
 			if(!locIncludeDuplicatesFlag)
@@ -165,7 +167,8 @@ void DReaction::Get_DetectedFinalPIDs(deque<deque<Particle_t> >& locDetectedPIDs
 				continue; //wrong charge
 
 			//see if this pid is a parent in a future step
-			if(Check_IsDecayingParticle(locPID, loc_i + 1))
+			int locDecayStepIndex = Get_DecayStepIndex(loc_i, loc_j);
+			if(locDecayStepIndex >= 0)
 				continue;
 
 			if(!locIncludeDuplicatesFlag)
@@ -200,7 +203,8 @@ void DReaction::Get_FinalStatePIDs(deque<Particle_t>& locFinalStatePIDs, bool lo
 			locPID = dReactionSteps[loc_i]->Get_FinalParticleID(loc_j);
 
 			//see if this pid is a parent in a future step
-			if(Check_IsDecayingParticle(locPID, loc_i + 1))
+			int locDecayStepIndex = Get_DecayStepIndex(loc_i, loc_j);
+			if(locDecayStepIndex >= 0)
 				continue;
 
 			//see if this PID is already stored

@@ -59,7 +59,7 @@ jerror_t JEventProcessor_PS_timing::init(void)
     // This is called once at program startup. If you are creating
     // and filling historgrams in this plugin, you should lock the
     // ROOT mutex like this:
-    japp->RootWriteLock();
+
     const double Tl = -200.0;
     const double Th = 600.0;
     const int NTb = 8000;
@@ -70,7 +70,6 @@ jerror_t JEventProcessor_PS_timing::init(void)
     hPSCRF_tdcTimeDiffVsID = new TH2I("PSCRF_tdcTimeDiffVsID","PSC-RF TDC time difference vs. counter ID;counter ID;time(TDC) - time(RF) [ns]",NC_PSC,0.5,0.5+NC_PSC,NTb,Tl,Th);
     hPSRF_adcTimeDiffVsID = new TH2I("PSRF_adcTimeDiffVsID","PS-RF ADC time difference vs. counter ID;counter ID;time(ADC) - time(RF) [ns]",NC_PS,0.5,0.5+NC_PS,NTb,Tl,Th);
     mainDir->cd();
-    japp->RootUnLock();
 
     return NOERROR;
 }
@@ -105,7 +104,11 @@ jerror_t JEventProcessor_PS_timing::evnt(JEventLoop *loop, uint64_t eventnumber)
         rfTime = rfTimes[0];
     else
         return NOERROR;
-    japp->RootWriteLock();
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
     double t_RF = rfTime->dTime;
     if (cpairs.size()>=1) { // PSC
         const DPSCHit* clhit = cpairs[0]->ee.first; // left hit in coarse PS
@@ -121,7 +124,9 @@ jerror_t JEventProcessor_PS_timing::evnt(JEventLoop *loop, uint64_t eventnumber)
           hPSRF_adcTimeDiffVsID->Fill(frhit->column+145,frhit->t-t_RF);
       }
     }
-    japp->RootUnLock();
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
     return NOERROR;
 }
 

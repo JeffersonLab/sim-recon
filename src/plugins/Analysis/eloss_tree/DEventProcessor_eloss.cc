@@ -83,6 +83,9 @@ jerror_t DEventProcessor_eloss::evnt(JEventLoop *loop, uint64_t eventnumber)
 		return NOERROR;
 	}
 	
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+
 	// Fill dana tree
 	const DReferenceTrajectory::swim_step_t *step = tracks[0]->hypotheses[0]->rt->swim_steps;
 	for(int i=0; i<tracks[0]->hypotheses[0]->rt->Nswim_steps; i++, step++){
@@ -115,6 +118,8 @@ jerror_t DEventProcessor_eloss::evnt(JEventLoop *loop, uint64_t eventnumber)
 		geant_event.mech = traj->mech;
 		geant->Fill();
 	}
+
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
 	return NOERROR;
 }

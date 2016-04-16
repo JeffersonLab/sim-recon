@@ -37,7 +37,7 @@
 class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 {
 	public:
-		DParticleCombo_factory_PreKinFit():root_hists_created(false){};
+		DParticleCombo_factory_PreKinFit(){};
 		~DParticleCombo_factory_PreKinFit(){};
 		const char* Tag(void){return "PreKinFit";}
 
@@ -52,6 +52,14 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		jerror_t evnt(jana::JEventLoop *locEventLoop, uint64_t eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+		// in case you need to do anything with this factory that is shared amongst threads
+			// e.g. filling histograms
+			// When creating ROOT histograms, should still acquire JANA-wide ROOT lock (e.g. modifying gDirectory)
+		// this mutex is unique to this combination of: factory name & tag
+		pthread_rwlock_t* dFactoryLock;
+		void Lock_Factory(void);
+		void Unlock_Factory(void);
 
 		const DKinematicData* Get_DetectedParticle(const DReaction* locReaction, const DEventRFBunch* locEventRFBunch, const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex);
 		DKinematicData* Create_Target(Particle_t locPID);
@@ -95,7 +103,6 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		double dTargetCenterZ;
 		double dMinThrownMatchFOM;
 		const DAnalysisUtilities* dAnalysisUtilities;
-		bool root_hists_created;
 
 		vector<const DReaction*> dReactions;
 		map<const DReaction*, bool> dMCReactionExactMatchFlags;
@@ -119,6 +126,16 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		map<const DReaction*, TH1D*> dHistMap_NumEventsSurvivedCut_All;
 		map<const DReaction*, TH1D*> dHistMap_NumEventsSurvivedCut_True;
 };
+
+inline void DParticleCombo_factory_PreKinFit::Lock_Factory(void)
+{
+	pthread_rwlock_wrlock(dFactoryLock);
+}
+
+inline void DParticleCombo_factory_PreKinFit::Unlock_Factory(void)
+{
+	pthread_rwlock_unlock(dFactoryLock);
+}
 
 #endif // _DParticleCombo_factory_PreKinFit_
 
