@@ -135,7 +135,7 @@ jerror_t JEventProcessor_occupancy_online::init(void)
 		double phi_end = phi_start + TMath::TwoPi();
 
 		char hname[256];
-		sprintf(hname, "cdc_occ_ring_%02d", iring);
+		sprintf(hname, "cdc_occ_ring_%02d", iring+1);
 		cdc_occ_ring[iring] = new TH2F(hname, "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
 	}
 	cdc_num_events = new TH1I("cdc_num_events", "CDC number of events", 1, 0.0, 1.0);
