@@ -20,6 +20,8 @@
 
 #include "DFactoryGenerator_track_skimmer.h"
 
+#include "DANA/DStatusBits.h"
+
 using namespace jana;
 using namespace std;
 

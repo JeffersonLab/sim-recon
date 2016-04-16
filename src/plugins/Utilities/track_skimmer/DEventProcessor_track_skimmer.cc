@@ -129,6 +129,23 @@ jerror_t DEventProcessor_track_skimmer::evnt(jana::JEventLoop* locEventLoop, uin
 	// DOCUMENTATION:
 	// ANALYSIS library: https://halldweb1.jlab.org/wiki/index.php/GlueX_Analysis_Software
 
+	//See if is physics event, or is REST
+	bool locIsRESTEvent = (string(locEventLoop->GetJEvent().GetJEventSource()->className()) == string("DEventSourceREST"));
+	if(!locIsRESTEvent)
+	{
+		if(!locEventLoop->GetJEvent().GetStatusBit(kSTATUS_PHYSICS_EVENT))
+		   return NOERROR;
+
+		vector<const DL1Trigger*> trigger_info;
+		locEventLoop->Get(trigger_info);
+		if(trigger_info.empty())
+			return NOERROR;
+
+		// require event to have production FCAL+BCAL trigger
+		if((trigger_info[0]->trig_mask & 0x01) == 0)
+			return NOERROR;
+	}
+
 	// See whether this is MC data or real data
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
