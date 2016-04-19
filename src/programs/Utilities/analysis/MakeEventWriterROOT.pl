@@ -176,7 +176,7 @@ class DEventWriterROOT_${WriterName} : public DEventWriterROOT
 		virtual void Fill_CustomBranches_DataTree(TTree* locTree, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
 				const DMCThrownMatching* locMCThrownMatching, const DDetectorMatches* locDetectorMatches,
 				const vector<const DBeamPhoton*>& locBeamPhotons, const vector<const DChargedTrackHypothesis*>& locChargedHypos,
-				const vector<const DNeutralParticle*>& locNeutralParticles, const deque<const DParticleCombo*>& locParticleCombos) const;
+				const vector<const DNeutralParticleHypothesis*>& locNeutralHypos, const deque<const DParticleCombo*>& locParticleCombos) const;
 
 	private:
 		DEventWriterROOT_${WriterName}(void) : DEventWriterROOT(NULL){}; //don't allow default constructor
@@ -242,7 +242,7 @@ void DEventWriterROOT_${WriterName}::Create_CustomBranches_DataTree(TTree* locTr
 		//template <typename DType> string Create_Branch_FundamentalArray(TTree* locTree, string locParticleBranchName, string locVariableName, string locArraySizeString, unsigned int locInitArraySize) const;
 			//locParticleBranchName should match the particle branch name created for your DReaction. For particle-independent info, choose the other method
 		//locArraySizeString is the name of the branch whose variable that contains the size of the array for that tree entry
-			//To match the default TTree branches, use either: 'NumThrown', 'NumBeam', 'NumChargedHypos', 'NumNeutralShowers', or 'NumCombos', as appropriate
+			//To match the default TTree branches, use either: 'NumThrown', 'NumBeam', 'NumChargedHypos', 'NumNeutralHypos', or 'NumCombos', as appropriate
 	unsigned int locInitArraySize = 10; //if too small, will auto-increase as needed, but requires new calls //if too large, uses more memory than needed
 	Create_Branch_Fundamental<UInt_t>(locTree, \"DummyArraySize\"); //you must store the size of the fundamental array for each entry!!
 	Create_Branch_FundamentalArray<Int_t>(locTree, \"PiPlus\", \"DummyIntArray\", \"DummyArraySize\", locInitArraySize);
@@ -275,7 +275,7 @@ void DEventWriterROOT_${WriterName}::Create_CustomBranches_ThrownTree(TTree* loc
 void DEventWriterROOT_${WriterName}::Fill_CustomBranches_DataTree(TTree* locTree, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
 	const DMCThrownMatching* locMCThrownMatching, const DDetectorMatches* locDetectorMatches,
 	const vector<const DBeamPhoton*>& locBeamPhotons, const vector<const DChargedTrackHypothesis*>& locChargedHypos,
-	const vector<const DNeutralParticle*>& locNeutralParticles, const deque<const DParticleCombo*>& locParticleCombos) const
+	const vector<const DNeutralParticleHypothesis*>& locNeutralHypos, const deque<const DParticleCombo*>& locParticleCombos) const
 {
 	//DO: Use the inherited functions for creating/filling branches.  They will make your life MUCH easier: You don't need to manage the branch memory.
 	//DO NOT: Acquire/release the ROOT lock.  It is already acquired prior to entry into these functions

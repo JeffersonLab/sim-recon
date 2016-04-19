@@ -11,10 +11,5 @@ scripts = env.Glob('*')
 for script in scripts:
 	myscript = '%s' % script  # convert to simple string
 	if 'SConscript' in myscript: continue
-	
-	if os.path.isdir(myscript):
-		SConscript(dirs=[script], exports='env osname', duplicate=0)
-	else:
-		sbms.script(env, script)
-
+	env.Install(env.subst('$BINDIR'), script)
 

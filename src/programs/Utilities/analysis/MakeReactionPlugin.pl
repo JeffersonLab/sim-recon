@@ -205,12 +205,7 @@ jerror_t DReaction_factory_${ReactionFactoryTag}::init(void)
 	locReactionStep->Set_InitialParticleID(Pi0);
 	locReactionStep->Add_FinalParticleID(Gamma);
 	locReactionStep->Add_FinalParticleID(Gamma);
-
-	//optional: in a p4 kinematic fit, this will disable the constraint on the mass of the pi0
-		//default is enabled, but you don't need to worry about setting false for the beam particle step
-		//note that the omega and phi will always be false, regardless of what you set below
-	//locReactionStep->Set_ApplyKinFitMassConstraintOnInitialParticleFlag(false);
-
+	//locReactionStep->Set_KinFitConstrainInitMassFlag(false); //default: true //ignored if p4 not fit or is beam //phi, omega not constrained regardless
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 	*/
@@ -218,7 +213,7 @@ jerror_t DReaction_factory_${ReactionFactoryTag}::init(void)
 	/**************************************************** ${ReactionName} Control Settings ****************************************************/
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
-		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
+		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DReaction.h
 	// locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
@@ -339,8 +334,6 @@ sub PrintEventProcessorClass()
 \#ifndef _DEventProcessor_${PluginName}_
 \#define _DEventProcessor_${PluginName}_
 
-\#include <fstream>
-
 \#include <JANA/JEventProcessor.h>
 \#include <JANA/JApplication.h>
 
@@ -403,14 +396,7 @@ extern \"C\"
 //------------------
 jerror_t DEventProcessor_${PluginName}::init(void)
 {
-	// This is called once at program startup. 
-
-	/*
-	//OPTIONAL: Create an EventStore skim.  
-	string locSkimFileName = \"${ReactionName}.idxa\";
-	dEventStoreSkimStream.open(locSkimFileName.c_str());
-	dEventStoreSkimStream << \"IDXA\" << endl;
-	*/
+	// This is called once at program startup.
 
 	return NOERROR;
 }
@@ -599,7 +585,8 @@ jerror_t DEventProcessor_${PluginName}::erun(void)
 jerror_t DEventProcessor_${PluginName}::fini(void)
 {
 	// Called before program exit after event processing is finished.
-	dEventStoreSkimStream.close();
+	if(dEventStoreSkimStream.is_open())
+		dEventStoreSkimStream.close();
 	return NOERROR;
 }
 

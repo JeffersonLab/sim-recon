@@ -167,6 +167,8 @@ void DCustomAction_${ActionName}::Initialize(JEventLoop* locEventLoop)
 	}
 
 		$content .=	"
+	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
@@ -224,12 +226,14 @@ bool DCustomAction_${ActionName}::Perform_Action(JEventLoop* locEventLoop, const
 
 	$content .=	"
 	/*
-	//Optional: Fill histograms
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//Optional: FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		// Fill any histograms here
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 	*/
 
 	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
