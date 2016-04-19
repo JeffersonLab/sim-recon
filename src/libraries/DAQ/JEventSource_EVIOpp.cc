@@ -242,8 +242,11 @@ void JEventSource_EVIOpp::Dispatcher(void)
 	// the system is drained of events. Then set the DONE flag so
 	// GetEvent will properly return NO_MORE_EVENTS_IN_SOURCE.
 	for(uint32_t i=0; i<worker_threads.size(); i++){
-		if(japp->GetQuittingStatus()) worker_threads[i]->done = true;
-		while(worker_threads[i]->in_use) this_thread::sleep_for(milliseconds(10));
+		worker_threads[i]->done = true;
+//		if(japp->GetQuittingStatus()) worker_threads[i]->done = true;
+		while(worker_threads[i]->in_use){
+			this_thread::sleep_for(milliseconds(10));
+		}
 	}
 	
 	tend = std::chrono::high_resolution_clock::now();

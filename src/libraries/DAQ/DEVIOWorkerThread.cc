@@ -117,6 +117,8 @@ void DEVIOWorkerThread::Run(void)
 
 		if( jobtype & JOB_QUIT       ) break;		
 	}
+
+	in_use  = false;
 }
 
 //---------------------------------
@@ -183,12 +185,12 @@ void DEVIOWorkerThread::MakeEvents(void)
 	// and flag them as being in use.
 	for(auto pe : current_parsed_events){
 	
+		pe->Clear(); // return previous event's objects to pools and clear vectors
 		pe->istreamorder = istreamorder;
-		pe->run_number = run_number;
+		pe->run_number   = run_number;
 		pe->event_number = event_num++;
-		pe->sync_flag = false;
-		pe->Delete(); // deletes previous events objects and clears vectors
-		pe->in_use = true;
+		pe->sync_flag    = false;
+		pe->in_use       = true;
 		pe->copied_to_factories = false;
 	}
 
@@ -323,8 +325,7 @@ void DEVIOWorkerThread::ParseEPICSbank(uint32_t* &iptr, uint32_t *iend)
 		}else if(tag == 0x62){
 			// EPICS data value
 			string nameval = (const char*)iptr;
-			DEPICSvalue *epicsval = new DEPICSvalue(timestamp, nameval);
-			pe->vDEPICSvalue.push_back(epicsval);
+			pe->NEW_DEPICSvalue(timestamp, nameval);
 		}else{
 			// Unknown tag. Bail
 			_DBG_ << "Unknown tag 0x" << hex << tag << dec << " in EPICS event!" <<endl;
@@ -342,7 +343,7 @@ void DEVIOWorkerThread::ParseEPICSbank(uint32_t* &iptr, uint32_t *iend)
 //---------------------------------
 void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 {
-	if(!PARSE_BOR){ iptr = iptr = &iptr[(*iptr) + 1]; return; }
+	if(!PARSE_BOR){ iptr = &iptr[(*iptr) + 1]; return; }
 
 	iptr = &iptr[(*iptr) + 1];
 }
@@ -487,7 +488,7 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 //----------------
 void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
 {
-	if(!PARSE_CAEN1290TDC){ iptr = iptr = &iptr[(*iptr) + 1]; return; }
+	if(!PARSE_CAEN1290TDC){ iptr = &iptr[(*iptr) + 1]; return; }
 
     /// Parse data from a CAEN 1190 or 1290 module
     /// (See ppg. 72-74 of V1290_REV15.pdf manual)
@@ -502,7 +503,7 @@ void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t 
 
     // We need to accomodate multi-event blocks where
     // events are entangled (i.e. hits from event 1
-    // are mixed inbetween those of event 2,3,4,
+    // are mixed in between those of event 2,3,4,
     // etc... With CAEN modules, we only know which
     // event a hit came from by looking at the event_id
     // in the TDC header. This value is only 12 bits
@@ -511,8 +512,12 @@ void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t 
     // encounter them in so it is maintained in the
     // "events" container. The event_id order is kept
     // in the "event_id_order" vector.
-    map<uint32_t, vector<DCAEN1290TDCHit*> > hits_by_event_id; 
-    vector<uint32_t> event_id_order; 
+	map<uint32_t, DParsedEvent*> events_by_event_id;
+//    map<uint32_t, vector<DCAEN1290TDCHit*> > hits_by_event_id; 
+//    vector<uint32_t> event_id_order; 
+
+	auto pe_iter = current_parsed_events.begin();
+	DParsedEvent *pe = NULL;
 
     while(iptr<iend){
 
@@ -550,9 +555,22 @@ void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t 
                 tdc_num = ((*iptr)>>24) & 0x03;
                 event_id = ((*iptr)>>12) & 0x0fff;
                 bunch_id = (*iptr) & 0x0fff;
-                if( find(event_id_order.begin(), event_id_order.end(), event_id) == event_id_order.end()){
-                    event_id_order.push_back(event_id);
-                }
+				if(events_by_event_id.find(event_id) == events_by_event_id.end()){
+					if(pe_iter == current_parsed_events.end()){
+						_DBG_ << "CAEN1290TDC parser sees more events than CODA header! (>" << current_parsed_events.size() << ")" << endl;
+						for( auto p : events_by_event_id) cout << "id=" << p.first << endl;
+						iptr = iend;
+						exit(-1); // should we exit, or try and continue??
+						return;
+					}
+					pe = *pe_iter++;
+					events_by_event_id[event_id] = pe;
+				}else{
+					pe = events_by_event_id[event_id];
+				}				
+//                if( find(event_id_order.begin(), event_id_order.end(), event_id) == event_id_order.end()){
+//                    event_id_order.push_back(event_id);
+//                }
                 if(VERBOSE>7) cout << "         CAEN TDC TDC Header (tdc=" << tdc_num <<" , event id=" << event_id <<" , bunch id=" << bunch_id << ")" << endl;
                 break;
             case 0b00000:  // TDC Measurement
@@ -562,8 +580,9 @@ void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t 
                 if(VERBOSE>7) cout << "         CAEN TDC TDC Measurement (" << (edge ? "trailing":"leading") << " , channel=" << channel << " , tdc=" << tdc << ")" << endl;
 
                 // Create DCAEN1290TDCHit object
-                caen1290tdchit = new DCAEN1290TDCHit(rocid, slot, channel, 0, edge, tdc_num, event_id, bunch_id, tdc);
-                hits_by_event_id[event_id].push_back(caen1290tdchit);
+                caen1290tdchit = pe->NEW_DCAEN1290TDCHit(rocid, slot, channel, 0, edge, tdc_num, event_id, bunch_id, tdc);
+//                caen1290tdchit = new DCAEN1290TDCHit(rocid, slot, channel, 0, edge, tdc_num, event_id, bunch_id, tdc);
+//                hits_by_event_id[event_id].push_back(caen1290tdchit);
                 break;
             case 0b00100:  // TDC Error
                 error_flags = (*iptr) & 0x7fff;
@@ -586,17 +605,17 @@ void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t 
         iptr++;
     }
 
-    // Add hits for each event to the events container, creating ObjList's as needed
-	auto pe_iter = current_parsed_events.begin();
-    for(uint32_t i=0; i<event_id_order.size(); i++){
-
-		DParsedEvent *pe = *pe_iter++;
-
-        vector<DCAEN1290TDCHit*> &hits = hits_by_event_id[event_id_order[i]];
-		pe->vDCAEN1290TDCHit.insert(pe->vDCAEN1290TDCHit.end(), hits.begin(), hits.end());
-
-        if(VERBOSE>7) cout << "        Added " << hits.size() << " hits with event_id=" << event_id_order[i] << " to event " << i << endl;
-    }
+//    // Add hits for each event to the events container, creating ObjList's as needed
+//	auto pe_iter = current_parsed_events.begin();
+//    for(uint32_t i=0; i<event_id_order.size(); i++){
+//
+//		DParsedEvent *pe = *pe_iter++;
+//
+//        vector<DCAEN1290TDCHit*> &hits = hits_by_event_id[event_id_order[i]];
+//		pe->vDCAEN1290TDCHit.insert(pe->vDCAEN1290TDCHit.end(), hits.begin(), hits.end());
+//
+//        if(VERBOSE>7) cout << "        Added " << hits.size() << " hits with event_id=" << event_id_order[i] << " to event " << i << endl;
+//    }
 
 }
 
@@ -605,6 +624,8 @@ void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t 
 //----------------
 void DEVIOWorkerThread::ParseModuleConfiguration(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
 {
+	if(!PARSE_CONFIG){ iptr = &iptr[(*iptr) + 1]; return; }
+
     /// Parse a bank of module configuration data. These are configuration values
     /// programmed into the module at the beginning of the run that may be needed
     /// in the offline. For example, the number of samples to sum in a FADC pulse
@@ -616,15 +637,18 @@ void DEVIOWorkerThread::ParseModuleConfiguration(uint32_t rocid, uint32_t* &iptr
     /// This bank should appear only once per DAQ event which, if in multi-event
     /// block mode, may have multiple L1 events. The parameters here will apply
     /// to all L1 events in the block. This method will put the config objects
-    /// in the first event of "events", creating it if needed. The config objects
-    /// are duplicated for all other events in the block later, after all event
-    /// parsing is finished and the total number of events is known.
-    /// (See the end of ParseEvents() .)
+	/// into each event in current_parsed_events. The config objects are duplicated
+	/// as needed so each event has its own, indepenent set of config object.
 
     while(iptr < iend){
         uint32_t slot_mask = (*iptr) & 0xFFFFFF;
         uint32_t Nvals = ((*iptr) >> 24) & 0xFF;
         iptr++;
+
+		// Events will be created in the first event (i.e. using its pool)
+		// but pointers are saved so we can use them to construct identical
+		// objects in all other event later
+		DParsedEvent *pe = current_parsed_events.front();
 
         Df250Config *f250config = NULL;
         Df125Config *f125config = NULL;
@@ -649,7 +673,7 @@ void DEVIOWorkerThread::ParseModuleConfiguration(uint32_t rocid, uint32_t* &iptr
 
                 // f250
                 case 0x05:
-                    if( !f250config ) f250config = new Df250Config(rocid, slot_mask);
+                    if( !f250config ) f250config = pe->NEW_Df250Config(rocid, slot_mask);
                     switch(ptype){
                         case kPARAM250_NSA            : f250config->NSA              = val; break;
                         case kPARAM250_NSB            : f250config->NSB              = val; break;
@@ -661,7 +685,7 @@ void DEVIOWorkerThread::ParseModuleConfiguration(uint32_t rocid, uint32_t* &iptr
 
                     // f125
                 case 0x0F:
-                    if( !f125config ) f125config = new Df125Config(rocid, slot_mask);
+                    if( !f125config ) f125config = pe->NEW_Df125Config(rocid, slot_mask);
                     switch(ptype){
                         case kPARAM125_NSA            : f125config->NSA              = val; break;
                         case kPARAM125_NSB            : f125config->NSB              = val; break;
@@ -687,7 +711,7 @@ void DEVIOWorkerThread::ParseModuleConfiguration(uint32_t rocid, uint32_t* &iptr
 
                     // F1TDC
                 case 0x06:
-                    if( !f1tdcconfig ) f1tdcconfig = new DF1TDCConfig(rocid, slot_mask);
+                    if( !f1tdcconfig ) f1tdcconfig = pe->NEW_DF1TDCConfig(rocid, slot_mask);
                     switch(ptype){
                         case kPARAMF1_REFCNT          : f1tdcconfig->REFCNT          = val; break;
                         case kPARAMF1_TRIGWIN         : f1tdcconfig->TRIGWIN         = val; break;
@@ -701,7 +725,7 @@ void DEVIOWorkerThread::ParseModuleConfiguration(uint32_t rocid, uint32_t* &iptr
 
                     // caen1290
                 case 0x10:
-                    if( !caen1290tdcconfig ) caen1290tdcconfig = new DCAEN1290TDCConfig(rocid, slot_mask);
+                    if( !caen1290tdcconfig ) caen1290tdcconfig = pe->NEW_DCAEN1290TDCConfig(rocid, slot_mask);
                     switch(ptype){
                         case kPARAMCAEN1290_WINWIDTH  : caen1290tdcconfig->WINWIDTH  = val; break;
                         case kPARAMCAEN1290_WINOFFSET : caen1290tdcconfig->WINOFFSET = val; break;
@@ -717,24 +741,17 @@ void DEVIOWorkerThread::ParseModuleConfiguration(uint32_t rocid, uint32_t* &iptr
 
             iptr++;
         }
-		
-		// Give ownership of any config objects to first event
-		DParsedEvent *pe = current_parsed_events.front();
-		if(f250config       ) pe->vDf250Config.push_back( f250config );
-		if(f125config       ) pe->vDf125Config.push_back( f125config );
-		if(f1tdcconfig      ) pe->vDF1TDCConfig.push_back( f1tdcconfig );
-		if(caen1290tdcconfig) pe->vDCAEN1290TDCConfig.push_back( caen1290tdcconfig );
 
 		// Make copies of all config objects for all other events
 		for(auto tpe : current_parsed_events){
 		
 			if(tpe == pe) continue; // first event already owns objects so skip it
 
-        	if(f250config       ) tpe->vDf250Config.push_back( new Df250Config(f250config) );
-        	if(f125config       ) tpe->vDf125Config.push_back( new Df125Config(f125config) );
-        	if(f1tdcconfig      ) tpe->vDF1TDCConfig.push_back( new DF1TDCConfig(f1tdcconfig) );
-        	if(caen1290tdcconfig) tpe->vDCAEN1290TDCConfig.push_back( new DCAEN1290TDCConfig(caen1290tdcconfig) );
-		}		
+        	if(f250config       ) tpe->NEW_Df250Config(f250config);
+        	if(f125config       ) tpe->NEW_Df125Config(f125config);
+        	if(f1tdcconfig      ) tpe->NEW_DF1TDCConfig(f1tdcconfig);
+        	if(caen1290tdcconfig) tpe->NEW_DCAEN1290TDCConfig(caen1290tdcconfig);
+		}
     }
 }
 
@@ -790,7 +807,7 @@ void DEVIOWorkerThread::ParseJLabModuleData(uint32_t rocid, uint32_t* &iptr, uin
 //----------------
 void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
 {
-	if(!PARSE_F250){ iptr = iptr = &iptr[(*iptr) + 1]; return; }
+	if(!PARSE_F250){ iptr = &iptr[(*iptr) + 1]; return; }
 
 	auto pe_iter = current_parsed_events.begin();
 	DParsedEvent *pe = NULL;
@@ -834,6 +851,7 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 						iptr--;
 					}
 					if(VERBOSE>7) cout << "      FADC250 Trigger Time: t="<<t<<" ("<<hex<<*iptr<<dec<<")"<<endl;
+					if(pe) pe->NEW_Df250TriggerTime(rocid, slot, itrigger, t);
 //					if(pe) pe->vDf250TriggerTime.push_back(new Df250TriggerTime(rocid, slot, itrigger, t));
 				}
                 break;
@@ -848,7 +866,7 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t sum = (*iptr>>0) & 0x3FFFFF;
 					uint32_t overflow = (*iptr>>22) & 0x1;
 					if(VERBOSE>7) cout << "      FADC250 Window Sum"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
-					if(pe) pe->vDf250WindowSum.push_back(new Df250WindowSum(rocid, slot, channel, itrigger, sum, overflow));
+					if(pe) pe->NEW_Df250WindowSum(rocid, slot, channel, itrigger, sum, overflow);
 				}
                 break;				
             case 6: // Pulse Raw Data
@@ -865,7 +883,7 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t nsamples_pedestal = 1;  // The firmware returns an already divided pedestal
 					uint32_t pedestal = 0;  // This will be replaced by the one from Df250PulsePedestal in GetObjects
 					if(VERBOSE>7) cout << "      FADC250 Pulse Integral: chan="<<channel<<" pulse_number="<<pulse_number<<" sum="<<sum<<" ("<<hex<<*iptr<<dec<<")"<<endl;
-					if(pe) pe->vDf250PulseIntegral.push_back(new Df250PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum, pedestal, nsamples_integral, nsamples_pedestal));
+					if(pe) pe->NEW_Df250PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum, pedestal, nsamples_integral, nsamples_pedestal);
 				}
                 break;
             case 8: // Pulse Time
@@ -875,7 +893,7 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t quality_factor = (*iptr>>19) & 0x03;
 					uint32_t pulse_time = (*iptr>>0) & 0x7FFFF;
 					if(VERBOSE>7) cout << "      FADC250 Pulse Time: chan="<<channel<<" pulse_number="<<pulse_number<<" pulse_time="<<pulse_time<<" ("<<hex<<*iptr<<dec<<")"<<endl;
-//					if(pe) pe->vDf250PulseTime.push_back(new Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
+					if(pe) pe->NEW_Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time);
 				}
 				break;
             case 9: // Streaming Raw Data
@@ -890,7 +908,7 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t pedestal = (*iptr>>12) & 0x1FF;
 					uint32_t pulse_peak = (*iptr>>0) & 0xFFF;
 					if(VERBOSE>7) cout << "      FADC250 Pulse Pedestal chan="<<channel<<" pulse_number="<<pulse_number<<" pedestal="<<pedestal<<" pulse_peak="<<pulse_peak<<" ("<<hex<<*iptr<<dec<<")"<<endl;
-//					if(pe) pe->vDf250PulsePedestal.push_back(new Df250PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
+					if(pe) pe->NEW_Df250PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak);
 				}
                 break;
             case 13: // Event Trailer
@@ -916,7 +934,7 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 //----------------
 void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
 {
-	if(!PARSE_F125){ iptr = iptr = &iptr[(*iptr) + 1]; return; }
+	if(!PARSE_F125){ iptr = &iptr[(*iptr) + 1]; return; }
 
 	auto pe_iter = current_parsed_events.begin();
 	DParsedEvent *pe = NULL;
@@ -963,7 +981,7 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 						iptr--;
 					}
 					if(VERBOSE>7) cout << "      FADC125 Trigger Time (t="<<t<<")"<<endl;
-					if(pe) pe->vDf125TriggerTime.push_back(new Df125TriggerTime(rocid, slot, itrigger, t));
+					if(pe) pe->NEW_Df125TriggerTime(rocid, slot, itrigger, t);
 				}
                 break;
             case 4: // Window Raw Data
@@ -1010,7 +1028,7 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t nsamples_pedestal = 1;  // The firmware pedestal divided by 2^PBIT where PBIT is a config. parameter
 
 					if( pe ) {
-						pe->vDf125CDCPulse.push_back( new Df125CDCPulse(rocid, slot, channel, itrigger
+						pe->NEW_Df125CDCPulse(rocid, slot, channel, itrigger
 									, pulse_number        // NPK
 									, pulse_time          // le_time
 									, quality_factor      // time_quality_bit
@@ -1022,8 +1040,7 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 									, word2               // word2
 									, nsamples_pedestal   // nsamples_pedestal
 									, nsamples_integral   // nsamples_integral
-									, false)              // emulated
-								);
+									, false);             // emulated
 					}
 				}
                 break;
@@ -1067,7 +1084,7 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t nsamples_pedestal = 1;  // The firmware pedestal divided by 2^PBIT where PBIT is a config. parameter
 
 					if( pe ) {
-						pe->vDf125FDCPulse.push_back( new Df125FDCPulse(rocid, slot, channel, itrigger
+						pe->NEW_Df125FDCPulse(rocid, slot, channel, itrigger
 									, pulse_number        // NPK
 									, pulse_time          // le_time
 									, quality_factor      // time_quality_bit
@@ -1080,8 +1097,7 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 									, word2               // word2
 									, nsamples_pedestal   // nsamples_pedestal
 									, nsamples_integral   // nsamples_integral
-									, false)              // emulated
-								);
+									, false);             // emulated
 					}
 				}
                 break;
@@ -1099,7 +1115,7 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					if (last_slot == slot && last_channel == channel) pulse_number = 1;
 					last_slot = slot;
 					last_channel = channel;
-					if( pe ) pe->vDf125PulseIntegral.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum, pedestal, nsamples_integral, nsamples_pedestal));
+					if( pe ) pe->NEW_Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum, pedestal, nsamples_integral, nsamples_pedestal);
 				}
                 break;
             case 8: // Pulse Time
@@ -1109,7 +1125,7 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t pulse_number = (*iptr>>18) & 0x03;
 					uint32_t pulse_time = (*iptr>>0) & 0xFFFF;
 					uint32_t quality_factor = 0;
-					if( pe ) pe->vDf125PulseTime.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
+					if( pe ) pe->NEW_Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time);
 					last_pulse_time_channel = channel;
 				}
                 break;
@@ -1153,7 +1169,7 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t nsamples_pedestal = 1;  // The firmware pedestal divided by 2^PBIT where PBIT is a config. parameter
 
 					if( pe ) {
-						pe->vDf125FDCPulse.push_back( new Df125FDCPulse(rocid, slot, channel, itrigger
+						pe->NEW_Df125FDCPulse(rocid, slot, channel, itrigger
 									, pulse_number        // NPK
 									, pulse_time          // le_time
 									, quality_factor      // time_quality_bit
@@ -1166,8 +1182,7 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 									, word2               // word2
 									, nsamples_pedestal   // nsamples_pedestal
 									, nsamples_integral   // nsamples_integral
-									, false)              // emulated
-								);
+									, false);             // emulated
 					}
 				}
                 break;
@@ -1181,7 +1196,7 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					uint32_t pedestal = (*iptr>>12) & 0x1FF;
 					uint32_t pulse_peak = (*iptr>>0) & 0xFFF;
 					uint32_t nsamples_pedestal = 1;  // The firmware returns an already divided pedestal
-					if( pe ) pe->vDf125PulsePedestal.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak, nsamples_pedestal));
+					if( pe ) pe->NEW_Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak, nsamples_pedestal);
 				}
                 break;
 
@@ -1204,7 +1219,7 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 //----------------
 void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
 {
-	if(!PARSE_F1TDC){ iptr = iptr = &iptr[(*iptr) + 1]; return; }
+	if(!PARSE_F1TDC){ iptr = &iptr[(*iptr) + 1]; return; }
 
 	uint32_t *istart = iptr;
 
@@ -1263,7 +1278,7 @@ void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t
 						iptr--;
 					}
 					if(VERBOSE>7) cout << "      F1TDC Trigger Time (t="<<t<<")"<<endl;
-					if(pe) pe->vDF1TDCTriggerTime.push_back(new DF1TDCTriggerTime(rocid, slot, itrigger, t));
+					if(pe) pe->NEW_DF1TDCTriggerTime(rocid, slot, itrigger, t);
 				}
 				break;
 			
@@ -1284,7 +1299,7 @@ void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t
 					uint32_t time         = (*iptr>> 0) & 0xFFFF;
 					uint32_t channel      = F1TDC_channel(chip, chan_on_chip, modtype);
 					if(VERBOSE>7) cout << "      Found F1 data  : chip=" << chip << " chan=" << chan_on_chip  << " time=" << time << endl;
-					if(pe) pe->vDF1TDCHit.push_back( new DF1TDCHit(rocid, slot, channel, itrigger, trig_time_f1header, time, *iptr, MODULE_TYPE(modtype)) );
+					if(pe) pe->NEW_DF1TDCHit(rocid, slot, channel, itrigger, trig_time_f1header, time, *iptr, MODULE_TYPE(modtype));
 				}
 				break;
 
@@ -1373,13 +1388,12 @@ void LinkAssociationsModuleOnlyB(vector<T*> &a, vector<U*> &b)
 		if( j>=a.size() ) break; // exhausted all a's. we're done
 		if( a[j]->rocid != rocid ) continue; // a rocid has gone past b. continue to next b
 		if( a[j]->slot  >  slot  ) continue; // a slot has gone past b. continue to next b
-		
+
 		// Loop over all elements until we see a new rocid or slot
 		for(; j<a.size(); j++){
-			if(rocid != b[i]->rocid) break;
-			if(slot  != b[i]->slot ) break;
+			if(rocid != a[j]->rocid) break;
+			if(slot  != a[j]->slot ) break;
 
-//			b[j]->tmp_obj = a[i];
 			b[i]->AddAssociatedObject(a[j]);
 		}
 		if( j>=a.size() ) break;
@@ -1490,17 +1504,39 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByChannel<Df250PulseIntegral> );
 		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByChannel<Df250PulseTime>     );
 		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByChannel<Df250PulsePedestal> );
-		
+
+		if(pe->vDf125TriggerTime.size()>1  ) sort(pe->vDf125TriggerTime.begin(),   pe->vDf125TriggerTime.end(),   SortByModule<Df125TriggerTime>    );
+		if(pe->vDf125PulseIntegral.size()>1) sort(pe->vDf125PulseIntegral.begin(), pe->vDf125PulseIntegral.end(), SortByChannel<Df125PulseIntegral> );
+		if(pe->vDf125CDCPulse.size()>1     ) sort(pe->vDf125CDCPulse.begin(),      pe->vDf125CDCPulse.end(),      SortByChannel<Df125CDCPulse>      );
+		if(pe->vDf125FDCPulse.size()>1     ) sort(pe->vDf125FDCPulse.begin(),      pe->vDf125FDCPulse.end(),      SortByChannel<Df125FDCPulse>      );
+		if(pe->vDf125PulseTime.size()>1    ) sort(pe->vDf125PulseTime.begin(),     pe->vDf125PulseTime.end(),     SortByChannel<Df125PulseTime>     );
+		if(pe->vDf125PulsePedestal.size()>1) sort(pe->vDf125PulsePedestal.begin(), pe->vDf125PulsePedestal.end(), SortByChannel<Df125PulsePedestal> );
+
+		if(pe->vDF1TDCTriggerTime.size()>1 ) sort(pe->vDF1TDCTriggerTime.begin(),  pe->vDF1TDCTriggerTime.end(),  SortByModule<DF1TDCTriggerTime>   );
+		if(pe->vDF1TDCHit.size()>1         ) sort(pe->vDF1TDCHit.begin(),          pe->vDF1TDCHit.end(),          SortByModule<DF1TDCHit>           );
+
 		// Connect Df250TriggerTime to everything
         LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250WindowRawData);
         LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulseIntegral);
         LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulseTime);
         LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulsePedestal);
 
+		// Connect Df125TriggerTime to everything
+        LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125WindowRawData);
+        LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulseIntegral);
+        LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125CDCPulse);
+        LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125FDCPulse);
+        LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulseTime);
+        LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulsePedestal);
+
+		// Connect DF1TriggerTime to everything
+        LinkAssociationsModuleOnlyB(pe->vDF1TDCTriggerTime, pe->vDF1TDCHit);
+
 		//
 //		LinkAssociationsB(pe->vDf250PulseIntegral, pe->vDf250PulseTime);
 //		LinkAssociationsB(pe->vDf250PulseIntegral, pe->vDf250PulsePedestal);
 //		LinkAssociationsB(pe->vDf250PulsePedestal, pe->vDf250PulseTime);
+
 	}
 
 }

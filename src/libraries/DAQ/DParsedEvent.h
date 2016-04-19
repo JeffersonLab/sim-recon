@@ -101,7 +101,7 @@ using namespace jana;
 class DParsedEvent{
 	public:		
 		
-		bool in_use;
+		atomic<bool> in_use;
 		bool copied_to_factories;
 		
 		uint64_t istreamorder;
@@ -117,22 +117,34 @@ class DParsedEvent{
 		//
 		#define makevector(A) vector<A*>  v##A;
 		MyTypes(makevector)
+		
+		// DParsedEvent objects are recycled to save malloc/delete cycles. Do the
+		// same for the objects they provide by creating a pool vector for each
+		// object type. No need for locks here since this will only ever be accessed
+		// by the same worker thread.
+		#define makepoolvector(A) vector<A*>  v##A##_pool;
+		MyTypes(makepoolvector)
 
-		// Method to clear each of the vectors when recycling a DParsedEvent object
-		// (n.b. Don't use this, use Delete to avoid memory leak!)
-		#define clearvector(A) v##A.clear();
-		void Clear(void){ MyTypes(clearvector) }
+		// Method to return all objects in vectors to their respective pools and 
+		// clear the vectors to set up for processing the next event.
+		// This is called from DEVIOWorkerThread::MakeEvents
+		#define returntopool(A) if(!v##A.empty()){ v##A##_pool.insert(v##A##_pool.end(), v##A.begin(), v##A.end()); v##A.clear(); }
+		void Clear(void){ MyTypes(returntopool) }
 
-		// Method to delete all objects in all vectors. This will be called from
-		// FreeEvent in the case that CopyToFactories() is never called, thereby
-		// preventing a memory leak.
-		#define deletevector(A) for(auto p : v##A) delete p;
+		// Method to delete all objects in all vectors and all pools. This should
+		// usually only be called from the DParsedEvent destructor
+		#define deletevector(A) for(auto p : v##A       ) delete p;
+		#define deletepool(A)   for(auto p : v##A##_pool) delete p;
+		#define clearvectors(A) v##A.clear(); v##A##_pool.clear();
 		void Delete(void){
 			MyTypes(deletevector)
-			MyTypes(clearvector)
+			MyTypes(deletepool)
+			MyTypes(clearvectors)
 		}
 		
-		// Define a class that has pointers to factories for each data type
+		// Define a class that has pointers to factories for each data type.
+		// One of these is instantiated for each JEventLoop encountered.
+		// See comments below for CopyToFactories for details.
 		#define makefactoryptr(A) JFactory<A> *fac_##A;
 		#define copyfactoryptr(A) fac_##A = (JFactory<A>*)loop->GetFactory(#A);
 		class DFactoryPointers{
@@ -152,7 +164,9 @@ class DParsedEvent{
 		// Copy objects to factories. For efficiency, we keep an object that
 		// holds the relevant factory pointers for each JEventLoop we encounter.
 		// This avoids having to look up the factory pointer for each data type
-		// for every event.
+		// for every event. Note that only one processing thread at a time will
+		// ever call this method for this DParsedEvent object so we don't need
+		// to lock access to the factory_pointers map.
 		#define copytofactory(A) facptrs.fac_##A->CopyTo(v##A);
 		#define setevntcalled(A) facptrs.fac_##A->Set_evnt_called();
 		#define keepownership(A) facptrs.fac_##A->SetFactoryFlag(JFactory_base::NOT_OBJECT_OWNER);
@@ -175,10 +189,61 @@ class DParsedEvent{
 			MyTypes(checkclassname)
 			return false;
 		}
+		
+		// The following is pretty complicated to understand. What it does is
+		// create a templated method for each data type that is used to
+		// replace the use of "new" to allocate an object of that type.
+		// What makes it complicated is the use of C++11 variadic functions
+		// to allow passing in (and through) variable length argument lists.
+		// This is needed since each type's constructor takes a different
+		// set of arguments and we don't want to have to encode all of that
+		// here.
+		//
+		// For each data type, a method called NEW_XXX is defined that looks
+		// to see if an object already exists in the corresponding pool vector.
+		// If so, it returns a pointer to it after doing an in-place constructor
+		// call with the given arguments. If no objects are available in the
+		// pool, then a new one is created in the normal way with the given
+		// arguments.
+		//
+		// This will also automatically add the created/recycled object to
+		// the appropriate vXXX vector as part of the current event. It
+		// returns of pointer to the object so that it can be accessed by the
+		// caller of needed.
+		//
+		// This will provide a method that looks something like this:
+		//
+		//  Df250TriggerTime* NEW_Df250TriggerTime(...);
+		//
+		// where the "..." represents whatever arguments are passed into the
+		// Df250TriggerTime constructor.
+		//
+		#define makeallocator(A) template<typename... Args> \
+		A* NEW_##A(Args&&... args){ \
+			A* t = NULL; \
+			if(v##A##_pool.empty()){ \
+				t = new A(std::forward<Args>(args)...); \
+			}else{ \
+				t = v##A##_pool.back(); \
+				v##A##_pool.pop_back(); \
+				t->ClearAssociatedObjects(); \
+				new(t) A(std::forward<Args>(args)...); \
+			} \
+			v##A.push_back(t); \
+			return t; \
+		}
+		MyTypes(makeallocator);
 
 		// Constructor and destructor
 		DParsedEvent(uint64_t istreamorder):in_use(false),istreamorder(istreamorder){}
-		virtual ~DParsedEvent(){ Delete(); }
+		#define printcounts(A) if(!v##A.empty()) cout << v##A.size() << " : " << #A << endl;
+		#define printpoolcounts(A) if(!v##A##_pool.empty()) cout << v##A##_pool.size() << " : " << #A << "_pool" << endl;
+		virtual ~DParsedEvent(){
+//			cout << "----- DParsedEvent (" << this << ") -------" << endl;
+//			MyTypes(printcounts);
+//			MyTypes(printpoolcounts);
+			Delete();
+		}
 
 	protected:
 		map<JEventLoop*, DFactoryPointers> factory_pointers;
