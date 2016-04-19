@@ -216,14 +216,14 @@ jerror_t DReaction_factory_${ReactionFactoryTag}::init(void)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DReaction.h
 	// locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 
-	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
-	locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
-
-	// Highly Recommended: When generating particle combinations, reject all charged track candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
-	locReaction->Set_MinChargedPIDFOM(5.73303E-7);
-
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns (2.004 should be minimum cut value)
+
+	// Optional: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
+	//locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
+
+	// Optional: When generating particle combinations, reject all charged track candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
+	//locReaction->Set_MinChargedPIDFOM(5.73303E-7);
 
 	// Optional, use with caution: When generating particle combinations, but after the Photon/RF Delta-t cut, reject all combos with more than this # of beam photons
 		//useful for missing-particle studies when you need a very pure sample of events
@@ -397,6 +397,13 @@ extern \"C\"
 jerror_t DEventProcessor_${PluginName}::init(void)
 {
 	// This is called once at program startup.
+
+	/*
+	//OPTIONAL: Create an EventStore skim.  
+	string locSkimFileName = \"${ReactionName}.idxa\";
+	dEventStoreSkimStream.open(locSkimFileName.c_str());
+	dEventStoreSkimStream << \"IDXA\" << endl;
+	*/
 
 	return NOERROR;
 }
