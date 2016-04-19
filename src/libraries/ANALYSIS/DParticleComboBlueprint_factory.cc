@@ -512,6 +512,11 @@ bool DParticleComboBlueprint_factory::Handle_EndOfReactionStep(const DReaction* 
 
 	locParticleComboBlueprint = new DParticleComboBlueprint(*locParticleComboBlueprint); //clone so don't alter saved object
 	locParticleComboBlueprintStep = NULL;
+
+	//if true, once one is found: bail on search
+	if(locReaction->Get_AnyBlueprintFlag())
+		return false; //skip to the end
+
 	if(!Handle_Decursion(locParticleComboBlueprint, locResumeAtIndexDeque, locNumPossibilitiesDeque, locParticleIndex, locStepIndex, locParticleComboBlueprintStep))
 		return false;
 	return true;
