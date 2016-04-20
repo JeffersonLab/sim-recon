@@ -22,14 +22,18 @@
 #define FA125_FE_IE_INTEGRATION_END_MASK  0x00000FFF
 #define FA125_FE_IE_PEDESTAL_GAP_MASK     0x000FF000
 
-Df125EmulatorAlgorithm_v2::Df125EmulatorAlgorithm_v2(JEventLoop *loop){
+Df125EmulatorAlgorithm_v2::Df125EmulatorAlgorithm_v2(){
 
-
-  //Normal use - BORConfig params are used if found.  If not, default values are used
-  //FORCE_DEFAULT_CDC=1 - use default values for CDC instead of BORConfig params
-  //FORCE_DEFAULT_FDC=1 - use default values for FDC instead of BORConfig params
-  //Params in command line override both default and BORConfig
-
+  // Normal use - BORConfig params are used if found.  If not, default values are used
+  // EMULATION125:FORCE_DEFAULT_CDC=1 - use default values for CDC instead of BORConfig params
+  // EMULATION125:FORCE_DEFAULT_FDC=1 - use default values for FDC instead of BORConfig params
+  // Params in command line override both default and BORConfig
+  //
+  // eg EMULATION125:CDC_H=200 will cause the emulation to use CDC hit threshold=200, and either the BORConfig values (if present) 
+  // or the default emulation parameter values for everything else.
+  //
+  // EMULATION125:CDC_H=200 used with EVIO:F125_EMULATION_MODE=1 will replace the firmware quantities with those emulated using CDC_H=200.
+  //
 
     // Enables forced use of default values
     FORCE_DEFAULT_CDC = 0;
