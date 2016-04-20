@@ -874,7 +874,15 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			}
 
 			_data.push_back(locSurvivingParticleCombos[loc_j]);
+
+			//if true, once one is found: bail on search
+			if(locReaction->Get_AnyComboFlag())
+				break; //skip to the end
 		}
+
+		//if true, once one is found: bail on search
+		if(locReaction->Get_AnyComboFlag())
+			break; //skip to the end
 	}
 
 	//fill passed-cut histograms
