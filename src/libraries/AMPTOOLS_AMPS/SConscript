@@ -4,11 +4,14 @@ import sbms
 
 # get env object and clone it
 Import('*')
-env = env.Clone()
 
+# Verify AMPTOOLS environment variable is set
+if os.getenv('AMPTOOLS', 'nada')!='nada':
+	
+	env = env.Clone()
 
-sbms.AddAmpTools(env)
-sbms.AddROOT(env)
-sbms.library(env)
+	sbms.AddAmpTools(env)
+	sbms.AddROOT(env)
+	sbms.library(env)
 
 
