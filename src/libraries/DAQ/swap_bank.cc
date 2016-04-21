@@ -6,6 +6,9 @@
 #include <iostream>
 using namespace std;
 
+#include <JANA/JException.h>
+using namespace jana;
+
 //---------------------------------
 // swap_bank
 //---------------------------------
@@ -18,17 +21,15 @@ uint32_t swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 	/// that this method will be recursive in the cases where it is a bank
 	/// of banks.
 
-	if(len < 2){
-		cerr << "Attempt to swap bank with len<2" << endl;
-		return 0;
-	}
+	if(len < 2) throw JException("Attempt to swap bank with len<2", __FILE__, __LINE__);
 	
 	// Swap length and header words
 	swap_block(inbuff, 2, outbuff);
 	uint32_t bank_len = outbuff[0];
 	if((bank_len+1) > len){
-		cerr << "WARNING: Bank length word exceeds valid words in buffer (" << bank_len+1 << " > " << len << ")" << endl;
-		return 0;
+		stringstream ss;
+		ss << "WARNING: Bank length word exceeds valid words in buffer (" << bank_len+1 << " > " << len << ")";
+		throw JException(ss.str(), __FILE__, __LINE__);
 	}
 	
 	uint32_t type = (outbuff[1]>>8) & 0xFF;
@@ -82,8 +83,10 @@ uint32_t swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 			}
 			break;
 		default:
-			cerr << "WARNING: unknown bank type (0x" << hex << type << dec << ")" << endl;
-			return 0;
+			stringstream ss;
+			ss << "WARNING: unknown bank type (0x" << hex << type << dec << ")";
+			throw JException(ss.str(), __FILE__, __LINE__);
+
 			break;
 	}
 
@@ -97,17 +100,15 @@ uint32_t swap_tagsegment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 {
 	/// Swap an EVIO tagsegment. 
 
-	if(len < 1){
-		cerr << "Attempt to swap segment with len<1" << endl;
-		return 0;
-	}
+	if(len < 1) throw JException("Attempt to swap segment with len<1");
 	
 	// Swap header/length word
 	swap_block(inbuff, 1, outbuff);
 	uint32_t bank_len = outbuff[0] & 0xFFFF;
 	if((bank_len) > len){
-		cerr << "Segment length word exceeds valid words in buffer (" << bank_len << " > " << len << ")" << endl;
-		return 0;
+		stringstream ss;
+		ss << "Segment length word exceeds valid words in buffer (" << bank_len << " > " << len << ")";
+		throw JException(ss.str(), __FILE__, __LINE__);
 	}
 	
 	uint32_t type = (outbuff[0]>>16) & 0x0F;
@@ -149,17 +150,15 @@ uint32_t swap_segment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 {
 	/// Swap an EVIO segment. 
 
-	if(len < 1){
-		cerr << "Attempt to swap segment with len<1" << endl;
-		return 0;
-	}
+	if(len < 1) throw JException("Attempt to swap segment with len<1");
 	
 	// Swap header/length word
 	swap_block(inbuff, 1, outbuff);
 	uint32_t bank_len = outbuff[0] & 0xFFFF;
 	if((bank_len) > len){
-		cerr << "Segment length word exceeds valid words in buffer (" << bank_len << " > " << len << ")" << endl;
-		return 0;
+		stringstream ss;
+		ss << "Segment length word exceeds valid words in buffer (" << bank_len << " > " << len << ")";
+		throw JException(ss.str(), __FILE__, __LINE__);
 	}
 	
 	uint32_t type = (outbuff[0]>>16) & 0x3F;
