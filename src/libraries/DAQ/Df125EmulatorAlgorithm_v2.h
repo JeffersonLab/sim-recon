@@ -11,7 +11,7 @@
 class Df125EmulatorAlgorithm_v2:public Df125EmulatorAlgorithm{
     public:
 
-        Df125EmulatorAlgorithm_v2(JEventLoop *loop);
+        Df125EmulatorAlgorithm_v2();
         ~Df125EmulatorAlgorithm_v2(){};
 
         //Only the emulation routines need to be overwritten
@@ -26,7 +26,7 @@ class Df125EmulatorAlgorithm_v2:public Df125EmulatorAlgorithm{
 
 
     protected:
-        Df125EmulatorAlgorithm_v2(){};
+        //Df125EmulatorAlgorithm_v2(){};
 
         void upsamplei(Int_t[], Int_t, Int_t[], Int_t);   // upsample
 

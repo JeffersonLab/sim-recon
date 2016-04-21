@@ -13,22 +13,19 @@
 
 class Df125EmulatorAlgorithm_factory_v2:public jana::JFactory<Df125EmulatorAlgorithm>{
 	public:
-		Df125EmulatorAlgorithm_factory_v2(){};
-		~Df125EmulatorAlgorithm_factory_v2(){};
-		const char* Tag(void){return "v2";}
-
-	private:
-		jerror_t evnt(jana::JEventLoop *loop, uint64_t eventnumber){
-
+		Df125EmulatorAlgorithm_factory_v2(){
 			// Create single Df125EmulatorAlgorithm object and mark the factory as
 			// persistent so it doesn't get deleted every event.
-			Df125EmulatorAlgorithm *emulator = new Df125EmulatorAlgorithm_v2(loop);
+			Df125EmulatorAlgorithm *emulator = new Df125EmulatorAlgorithm_v2();
 			SetFactoryFlag(PERSISTANT);
 			ClearFactoryFlag(WRITE_TO_OUTPUT);
 			_data.push_back(emulator);
-			
-			return NOERROR;
-		}
+                };
+
+		~Df125EmulatorAlgorithm_factory_v2(){};
+
+		const char* Tag(void){return "v2";}
+
 };
 
 #endif // _Df125EmulatorAlgorithm_factory_v2_
