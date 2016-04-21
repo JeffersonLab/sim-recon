@@ -208,9 +208,9 @@ void JEventSource_EVIOpp::Dispatcher(void)
 		uint32_t* &buff     = thr->buff;
 		uint32_t  &buff_len = thr->buff_len;
 
+//		hdevio->read(buff, buff_len, allow_swap);
 //		hdevio->readSparse(buff, buff_len, allow_swap);
 		hdevio->readNoFileBuff(buff, buff_len, allow_swap);
-//		hdevio->read(buff, buff_len, allow_swap);
 		thr->pos = hdevio->last_event_pos;
 		if(hdevio->err_code == HDEVIO::HDEVIO_USER_BUFFER_TOO_SMALL){
 			delete[] buff;

@@ -102,14 +102,28 @@ void DEVIOWorkerThread::Run(void)
 	while(!done){
 
 		cv.wait_for(lck, std::chrono::milliseconds(1));
-
-		if( jobtype & JOB_SWAP       ) swap_bank(buff, buff, swap32(buff[0])+1 );
-
-		if( jobtype & JOB_FULL_PARSE ) MakeEvents();
 		
-		if( jobtype & JOB_ASSOCIATE  ) LinkAllAssociations();
-		
-		if( !current_parsed_events.empty() ) PublishEvents();
+		// In principle, in_use should never be false with a jobtype!=JOB_NONE
+		// In practice, this has happened, possibly due to compiler optimization
+		// reordering things in JEventSource_EVIOpp::Dispatcher. That led to 
+		// attempting to process a buffer that was being written to. Avoid that
+		// condition by checking the in_use flag is really set.
+		if( !in_use ) continue;
+
+		try {
+
+			if( jobtype & JOB_SWAP       ) swap_bank(buff, buff, swap32(buff[0])+1 );
+
+			if( jobtype & JOB_FULL_PARSE ) MakeEvents();
+			
+			if( jobtype & JOB_ASSOCIATE  ) LinkAllAssociations();
+			
+			if( !current_parsed_events.empty() ) PublishEvents();
+
+		} catch (exception &e) {
+			jerr << e.what() << endl;
+			exit(-1);
+		}
 		
 		// Reset and mark us as available for use
 		jobtype = JOB_NONE;
@@ -150,6 +164,8 @@ void DEVIOWorkerThread::MakeEvents(void)
 	
 	/// Make DParsedEvent objects from data currently in buff.
 	
+	if(!current_parsed_events.empty()) throw JException("Attempting call to DEVIOWorkerThread::MakeEvents when current_parsed_events not empty!!", __FILE__, __LINE__);
+	
 	uint32_t *iptr = buff;
 	
 	uint32_t M = 1;
@@ -167,7 +183,6 @@ void DEVIOWorkerThread::MakeEvents(void)
 	}
 
 	// Try and get M DParsedEvent objects from this thread's pool.
-	current_parsed_events.clear();
 	for(auto pe : parsed_event_pool){
 		if(pe->in_use) continue;
 		current_parsed_events.push_back(pe);
@@ -1329,7 +1344,7 @@ void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t
 					cerr<<endl;
 					if(iiptr > (iptr+4)) break;
 				}
-				throw JException("Unexpected word type in F1TDC block!");
+				throw JException("Unexpected word type in F1TDC block!", __FILE__, __LINE__);
 				break;
 		}
 	}	
@@ -1337,7 +1352,6 @@ void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t
 	// Skip filler words
 	while(iptr<iend && (*iptr&0xF8000000)==0xF8000000)iptr++;
 }
-
 
 //----------------------------
 // LinkAssociationsModuleOnlyB
@@ -1357,45 +1371,54 @@ void LinkAssociationsModuleOnlyB(vector<T*> &a, vector<U*> &b)
 	///
 	/// Note that this assumes the input vectors have been sorted by
 	/// rocid, then slot in ascending order.
-	
+
 	// Bail early if nothing to link
 	if(b.empty()) return;
 	if(a.empty()) return;
 
-	// This assumes elements in both "a" and "b" are sorted in ascending
-	// order. This allows us to skip comparisons between every possible pair.
-	for(uint32_t i=0, j=0; i<b.size(); i++){
+	for(uint32_t i=0, j=0; i<b.size(); ){
 
 		uint32_t rocid = b[i]->rocid;
 		uint32_t slot  = b[i]->slot;
-		
-		// Advance b if it's rocid is less than the next a's rocid
-		if( rocid < a[j]->rocid ) continue;
 
-		// Advance a if it's rocid is less than this b's rocid
-		for(; j<a.size(); j++) if( a[j]->rocid >= rocid ) break;
-		if( j>=a.size() ) break; // exhausted all a's. we're done
-		if( a[j]->rocid > rocid ) continue; // a rocid has gone past b. continue to next b
-		
-		// Advance b if it's slot is less than next a's slot
-		if( slot < a[j]->slot ) continue;
-
-		// Advance a if it's slot is less than this b's slot
-		for(; j<a.size(); j++){
-			if( a[j]->rocid != rocid ) break; // moved to next rocid.
-			if( a[j]->slot >= slot ) break;
+		// Find start and end of range in b
+		uint32_t istart = i;
+		uint32_t iend   = i+1; // index of first element outside of ROI
+		for(; iend<b.size(); iend++){
+			if(b[iend]->rocid != rocid) break;
+			if(b[iend]->slot  != slot ) break;
 		}
-		if( j>=a.size() ) break; // exhausted all a's. we're done
-		if( a[j]->rocid != rocid ) continue; // a rocid has gone past b. continue to next b
-		if( a[j]->slot  >  slot  ) continue; // a slot has gone past b. continue to next b
-
-		// Loop over all elements until we see a new rocid or slot
+		i = iend; // setup for next iteration
+		
+		// Find start of range in a
 		for(; j<a.size(); j++){
-			if(rocid != a[j]->rocid) break;
-			if(slot  != a[j]->slot ) break;
-
-			b[i]->AddAssociatedObject(a[j]);
+			if( a[j]->rocid > rocid ) break;
+			if( a[j]->rocid == rocid ){
+				if( a[j]->slot >= slot ) break;
+			}
 		}
+		if(j>=a.size()) break; // exhausted all a's. we're done
+
+		if( a[j]->rocid > rocid ) continue; // couldn't find rocid in a
+		if( a[j]->slot  > slot  ) continue; // couldn't find slot in a
+		
+		// Find end of range in a
+		uint32_t jend = j+1;
+		for(; jend<a.size(); jend++){
+			if(a[jend]->rocid != rocid) break;
+			if(a[jend]->slot  != slot ) break;
+		}
+
+		// Loop over all combos of both ranges and make associations
+		uint32_t jstart = j;
+		for(uint32_t ii=istart; ii<iend; ii++){
+			for(uint32_t jj=jstart; jj<jend; jj++){
+				b[ii]->AddAssociatedObject(a[jj]);
+			}
+		}
+		j = jend;
+
+		if( i>=b.size() ) break;
 		if( j>=a.size() ) break;
 	}
 }
@@ -1418,52 +1441,70 @@ void LinkAssociationsB(vector<T*> &a, vector<U*> &b)
 	///
 	/// Note that this assumes the input vectors have been sorted by
 	/// rocid, then slot in ascending order.
-	
+
 	// Bail early if nothing to link
 	if(b.empty()) return;
 	if(a.empty()) return;
-	
-	// This assumes elements in both "a" and "b" are sorted in ascending
-	// order. This allows us to skip comparisons between every possible pair.
-	for(uint32_t i=0, j=0; i<a.size(); i++){
 
-		T *aptr = a[i];
-		uint32_t rocid        = aptr->rocid;
-		uint32_t slot         = aptr->slot;
-		uint32_t pulse_number = aptr->pulse_number;
+	for(uint32_t i=0, j=0; i<b.size(); ){
 
-		// Advance to first element in b with this rocid
-		for(; j<b.size(); j++)if(rocid <= b[j]->rocid) break;
-		if( j>=b.size() ) break;
-		if( b[j]->rocid > rocid ) continue;
+		uint32_t rocid        = b[i]->rocid;
+		uint32_t slot         = b[i]->slot;
+		uint32_t channel      = b[i]->channel;
+		uint32_t pulse_number = b[i]->pulse_number;
+
+		// Find start and end of range in b
+		uint32_t istart = i;
+		uint32_t iend   = i+1; // index of first element outside of ROI
+		for(; iend<b.size(); iend++){
+			if(b[iend]->rocid         != rocid        ) break;
+			if(b[iend]->slot          != slot         ) break;
+			if(b[iend]->channel       != channel      ) break;
+			if(b[iend]->pulse_number  != pulse_number ) break;
+		}
+		i = iend; // setup for next iteration
 		
-		// Advance to first element in b with this slot
-		for(; j<b.size(); j++){
-			if(rocid != b[j]->rocid) break;
-			if(slot  <= b[j]->slot ) break;
+		// Find start of range in a
+		for(; j<a.size(); j++){
+			if( a[j]->rocid > rocid ) break;
+			if( a[j]->rocid == rocid ){
+				if( a[j]->slot > slot ) break;
+				if( a[j]->slot == slot ){
+					if( a[j]->channel > channel ) break;
+					if( a[j]->channel == channel ){
+						if( a[j]->pulse_number >= pulse_number ) break;
+					}
+				}
+			}
 		}
-		if( j>=b.size() ) break;
-		if(rocid != b[j]->rocid) continue;
-		if( b[j]->slot > slot ) continue;
+		if(j>=a.size()) break; // exhausted all a's. we're done
 
-		// Advance to first element with this pulse_number
-		for(; j<b.size(); j++){
-			if(rocid != b[j]->rocid) break;
-			if(slot  != b[j]->slot ) break;
-			if(pulse_number <= b[j]->pulse_number ) break;
-		}
-		if( j>=b.size() ) break;
-		if( b[j]->pulse_number > pulse_number ) continue;
+		if( a[j]->rocid        > rocid         ) continue; // couldn't find rocid in a
+		if( a[j]->slot         > slot          ) continue; // couldn't find slot in a
+		if( a[j]->channel      > channel       ) continue; // couldn't find channel in a
+		if( a[j]->pulse_number > pulse_number  ) continue; // couldn't find pulse_number in a
 		
-		// Loop over all elements until we see a new rocid or slot
-		for(; j<b.size(); j++){
-			if(rocid != b[j]->rocid) break;
-			if(slot  != b[j]->slot ) break;
-
-			b[j]->AddAssociatedObject(aptr);
-			aptr->AddAssociatedObject(b[i]);
+		// Find end of range in a
+		uint32_t jend = j+1;
+		for(; jend<a.size(); jend++){
+			if(a[jend]->rocid        != rocid        ) break;
+			if(a[jend]->slot         != slot         ) break;
+			if(a[jend]->channel      != channel      ) break;
+			if(a[jend]->pulse_number != pulse_number ) break;
 		}
-		if( j>=b.size() ) break;
+
+		// Loop over all combos of both ranges and make associations
+		uint32_t jstart = j;
+		for(uint32_t ii=istart; ii<iend; ii++){
+			for(uint32_t jj=jstart; jj<jend; jj++){
+				b[ii]->AddAssociatedObject(a[jj]);
+				a[jj]->AddAssociatedObject(b[ii]);
+			}
+		}
+		j = jend;
+
+		if( i>=b.size() ) break;
+		if( j>=a.size() ) break;
 	}
 }
 
@@ -1484,11 +1525,26 @@ inline bool SortByModule(const T* const &obj1, const T* const &obj2)
 template<class T>
 inline bool SortByChannel(const T* const &obj1, const T* const &obj2)
 {
-	if(obj1->rocid < obj2->rocid) return true;
-	if(obj1->rocid > obj2->rocid) return false;
-	if(obj1->slot  < obj2->slot ) return true;
-	if(obj1->slot  > obj2->slot ) return false;
+	if(obj1->rocid   < obj2->rocid   ) return true;
+	if(obj1->rocid   > obj2->rocid   ) return false;
+	if(obj1->slot    < obj2->slot    ) return true;
+	if(obj1->slot    > obj2->slot    ) return false;
 	return obj1->channel < obj2->channel;
+}
+
+//----------------
+// SortByPulseNumber
+//----------------
+template<class T>
+inline bool SortByPulseNumber(const T* const &obj1, const T* const &obj2)
+{
+	if(obj1->rocid   < obj2->rocid   ) return true;
+	if(obj1->rocid   > obj2->rocid   ) return false;
+	if(obj1->slot    < obj2->slot    ) return true;
+	if(obj1->slot    > obj2->slot    ) return false;
+	if(obj1->channel < obj2->channel ) return true;
+	if(obj1->channel > obj2->channel ) return false;
+	return obj1->pulse_number < obj2->pulse_number;
 }
 
 //----------------
@@ -1500,20 +1556,20 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 	/// of one another and add to each other's list.
 	for( auto pe : current_parsed_events){
 	
-		if(pe->vDf250TriggerTime.size()>1  ) sort(pe->vDf250TriggerTime.begin(),   pe->vDf250TriggerTime.end(),   SortByModule<Df250TriggerTime>    );
-		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByChannel<Df250PulseIntegral> );
-		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByChannel<Df250PulseTime>     );
-		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByChannel<Df250PulsePedestal> );
+		if(pe->vDf250TriggerTime.size()>1  ) sort(pe->vDf250TriggerTime.begin(),   pe->vDf250TriggerTime.end(),   SortByModule<Df250TriggerTime>        );
+		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByPulseNumber<Df250PulseIntegral> );
+		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByPulseNumber<Df250PulseTime>     );
+		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByPulseNumber<Df250PulsePedestal> );
 
-		if(pe->vDf125TriggerTime.size()>1  ) sort(pe->vDf125TriggerTime.begin(),   pe->vDf125TriggerTime.end(),   SortByModule<Df125TriggerTime>    );
-		if(pe->vDf125PulseIntegral.size()>1) sort(pe->vDf125PulseIntegral.begin(), pe->vDf125PulseIntegral.end(), SortByChannel<Df125PulseIntegral> );
-		if(pe->vDf125CDCPulse.size()>1     ) sort(pe->vDf125CDCPulse.begin(),      pe->vDf125CDCPulse.end(),      SortByChannel<Df125CDCPulse>      );
-		if(pe->vDf125FDCPulse.size()>1     ) sort(pe->vDf125FDCPulse.begin(),      pe->vDf125FDCPulse.end(),      SortByChannel<Df125FDCPulse>      );
-		if(pe->vDf125PulseTime.size()>1    ) sort(pe->vDf125PulseTime.begin(),     pe->vDf125PulseTime.end(),     SortByChannel<Df125PulseTime>     );
-		if(pe->vDf125PulsePedestal.size()>1) sort(pe->vDf125PulsePedestal.begin(), pe->vDf125PulsePedestal.end(), SortByChannel<Df125PulsePedestal> );
+		if(pe->vDf125TriggerTime.size()>1  ) sort(pe->vDf125TriggerTime.begin(),   pe->vDf125TriggerTime.end(),   SortByModule<Df125TriggerTime>        );
+		if(pe->vDf125PulseIntegral.size()>1) sort(pe->vDf125PulseIntegral.begin(), pe->vDf125PulseIntegral.end(), SortByPulseNumber<Df125PulseIntegral> );
+		if(pe->vDf125CDCPulse.size()>1     ) sort(pe->vDf125CDCPulse.begin(),      pe->vDf125CDCPulse.end(),      SortByChannel<Df125CDCPulse>          );
+		if(pe->vDf125FDCPulse.size()>1     ) sort(pe->vDf125FDCPulse.begin(),      pe->vDf125FDCPulse.end(),      SortByChannel<Df125FDCPulse>          );
+		if(pe->vDf125PulseTime.size()>1    ) sort(pe->vDf125PulseTime.begin(),     pe->vDf125PulseTime.end(),     SortByPulseNumber<Df125PulseTime>     );
+		if(pe->vDf125PulsePedestal.size()>1) sort(pe->vDf125PulsePedestal.begin(), pe->vDf125PulsePedestal.end(), SortByPulseNumber<Df125PulsePedestal> );
 
-		if(pe->vDF1TDCTriggerTime.size()>1 ) sort(pe->vDF1TDCTriggerTime.begin(),  pe->vDF1TDCTriggerTime.end(),  SortByModule<DF1TDCTriggerTime>   );
-		if(pe->vDF1TDCHit.size()>1         ) sort(pe->vDF1TDCHit.begin(),          pe->vDF1TDCHit.end(),          SortByModule<DF1TDCHit>           );
+		if(pe->vDF1TDCTriggerTime.size()>1 ) sort(pe->vDF1TDCTriggerTime.begin(),  pe->vDF1TDCTriggerTime.end(),  SortByModule<DF1TDCTriggerTime>       );
+		if(pe->vDF1TDCHit.size()>1         ) sort(pe->vDF1TDCHit.begin(),          pe->vDF1TDCHit.end(),          SortByModule<DF1TDCHit>               );
 
 		// Connect Df250TriggerTime to everything
         LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250WindowRawData);
@@ -1532,11 +1588,14 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 		// Connect DF1TriggerTime to everything
         LinkAssociationsModuleOnlyB(pe->vDF1TDCTriggerTime, pe->vDF1TDCHit);
 
-		//
-//		LinkAssociationsB(pe->vDf250PulseIntegral, pe->vDf250PulseTime);
-//		LinkAssociationsB(pe->vDf250PulseIntegral, pe->vDf250PulsePedestal);
-//		LinkAssociationsB(pe->vDf250PulsePedestal, pe->vDf250PulseTime);
+		// Connect pulse objects
+		LinkAssociationsB(pe->vDf250PulseIntegral, pe->vDf250PulseTime);
+		LinkAssociationsB(pe->vDf250PulseIntegral, pe->vDf250PulsePedestal);
+		LinkAssociationsB(pe->vDf250PulsePedestal, pe->vDf250PulseTime);
 
+		LinkAssociationsB(pe->vDf125PulseIntegral, pe->vDf125PulseTime);
+		LinkAssociationsB(pe->vDf125PulseIntegral, pe->vDf125PulsePedestal);
+		LinkAssociationsB(pe->vDf125PulsePedestal, pe->vDf125PulseTime);
 	}
 
 }
