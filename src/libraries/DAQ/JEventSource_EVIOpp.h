@@ -12,7 +12,6 @@
 #include <chrono>
 #include <cinttypes>
 
-
 #include <JANA/jerror.h>
 #include <JANA/JApplication.h>
 #include <JANA/JEventSource.h>
@@ -21,6 +20,7 @@
 #include <JANA/JStreamLog.h>
 
 #include <DAQ/HDEVIO.h>
+#include <DAQ/HDET.h>
 #include <DAQ/DEVIOWorkerThread.h>
 #include <DAQ/DParsedEvent.h>
 
@@ -28,16 +28,28 @@
 
 class JEventSource_EVIOpp: public jana::JEventSource{
 	public:
-		JEventSource_EVIOpp(const char* source_name);
-		virtual ~JEventSource_EVIOpp();
+
+		enum EVIOSourceType{
+			kNoSource,
+			kFileSource,
+			kETSource
+		};
+
+
+		                    JEventSource_EVIOpp(const char* source_name);
+		           virtual ~JEventSource_EVIOpp();
 		virtual const char* className(void){return static_className();}
-		static const char* static_className(void){return "JEventSource_EVIOpp";}
+		 static const char* static_className(void){return "JEventSource_EVIOpp";}
 		
-		void Dispatcher(void);
+		               void Dispatcher(void);
 		
-		jerror_t GetEvent(jana::JEvent &event);
-		void FreeEvent(jana::JEvent &event);
-		jerror_t GetObjects(jana::JEvent &event, jana::JFactory_base *factory);
+		           jerror_t GetEvent(jana::JEvent &event);
+		               void FreeEvent(jana::JEvent &event);
+		           jerror_t GetObjects(jana::JEvent &event, jana::JFactory_base *factory);
+
+		               void ConnectToET(const char* source_name);
+		               int  ReadEventFromET(uint32_t* &buff, uint32_t &buff_len);
+		               void Cleanup(void);
 		
 		bool DONE;
 		std::chrono::high_resolution_clock::time_point tstart;
@@ -51,15 +63,18 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		std::atomic<uint_fast64_t> NEVENTS_PROCESSED;
 		std::atomic<uint_fast64_t> NWAITS_FOR_THREAD;
 		std::atomic<uint_fast64_t> NWAITS_FOR_PARSED_EVENT;
-		
+
+		EVIOSourceType source_type;
 		HDEVIO *hdevio;
+		HDET   *hdet;
+		bool et_quit_next_timeout;
+
 		vector<DEVIOWorkerThread*> worker_threads;
 		thread *dispatcher_thread;
 
-
 		JStreamLog evioout;
 
-		bool  PARSE_EVIO_EVENTS;
+		bool  PARSE;
 		bool  PARSE_F250;
 		bool  PARSE_F125;
 		bool  PARSE_F1TDC;

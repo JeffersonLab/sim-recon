@@ -36,7 +36,7 @@ double JEventSourceGenerator_EVIOpp::CheckOpenable(string source)
 	// will allow the program to print an appropriate error
 	// message/
 
-	if(source.find("ET:")==0) return 0.0;
+	if(source.find("ET:")==0) return 0.6;
 
 	HDEVIO *hdevio = new HDEVIO(source);
 	bool is_good_evio = false;

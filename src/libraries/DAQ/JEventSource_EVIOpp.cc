@@ -19,6 +19,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <cmath>
 
 using namespace std;
 using namespace std::chrono;
@@ -53,9 +54,12 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	NTHREADS = 2;
 	MAX_PARSED_EVENTS = 128;
 	LOOP_FOREVER = false;
+	ET_STATION_NEVENTS = 10;
+	ET_STATION_CREATE_BLOCKING = false;
 	PRINT_STATS = true;
 	SWAP = true;
 	LINK = true;
+	PARSE = true;
 	PARSE_F250 = true;
 	PARSE_F125 = true;
 	PARSE_F1TDC = true;
@@ -71,11 +75,14 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	gPARMS->SetDefaultParameter("EVIO:NTHREADS", NTHREADS, "Set the number of worker threads to use for parsing the EVIO data");
 	gPARMS->SetDefaultParameter("EVIO:MAX_PARSED_EVENTS", MAX_PARSED_EVENTS, "Set maximum number of events to allow in EVIO parsed events queue");
 	gPARMS->SetDefaultParameter("EVIO:LOOP_FOREVER", LOOP_FOREVER, "If reading from EVIO file, keep re-opening file and re-reading events forever (only useful for debugging) If reading from ET, this is ignored.");
+	gPARMS->SetDefaultParameter("EVIO:ET_STATION_NEVENTS", ET_STATION_NEVENTS, "Number of events to use if we have to create the ET station. Ignored if station already exists.");
+	gPARMS->SetDefaultParameter("EVIO:ET_STATION_CREATE_BLOCKING", ET_STATION_CREATE_BLOCKING, "Set this to 0 to create station in non-blocking mode (default is to create it in blocking mode). Ignored if station already exists.");
 	gPARMS->SetDefaultParameter("EVIO:PRINT_STATS", PRINT_STATS, "Print some additional stats from event source when it's finished processing events");
 
 	gPARMS->SetDefaultParameter("EVIO:SWAP", SWAP, "Allow swapping automatic swapping. Turning this off should only be used for debugging.");
 	gPARMS->SetDefaultParameter("EVIO:LINK", LINK, "Link associated objects. Turning this off should only be used for debugging.");
 
+	gPARMS->SetDefaultParameter("EVIO:PARSE", PARSE, "Set this to 0 to disable parsing of event buffers and generation of any objects (for benchmarking/debugging)");
 	gPARMS->SetDefaultParameter("EVIO:PARSE_F250", PARSE_F250, "Set this to 0 to disable parsing of data from F250 ADC modules (for benchmarking/debugging)");
 	gPARMS->SetDefaultParameter("EVIO:PARSE_F125", PARSE_F125, "Set this to 0 to disable parsing of data from F125 ADC modules (for benchmarking/debugging)");
 	gPARMS->SetDefaultParameter("EVIO:PARSE_F1TDC", PARSE_F1TDC, "Set this to 0 to disable parsing of data from F1TDC modules (for benchmarking/debugging)");
@@ -86,22 +93,43 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	gPARMS->SetDefaultParameter("EVIO:PARSE_EVENTTAG", PARSE_EVENTTAG, "Set this to 0 to disable parsing of event tag data in the data stream (for benchmarking/debugging)");
 	gPARMS->SetDefaultParameter("EVIO:PARSE_TRIGGER", PARSE_TRIGGER, "Set this to 0 to disable parsing of the built trigger bank from CODA (for benchmarking/debugging)");
 
-	jobtype = DEVIOWorkerThread::JOB_FULL_PARSE;
-	if(SWAP) jobtype |= DEVIOWorkerThread::JOB_SWAP;
-	if(LINK) jobtype |= DEVIOWorkerThread::JOB_ASSOCIATE;
-
-	// Try to open the file.
-	if(VERBOSE>0) evioout << "Attempting to open \""<<this->source_name<<"\" as EVIO file..." <<endl;
-
-	hdevio = new HDEVIO(this->source_name);
+	jobtype = DEVIOWorkerThread::JOB_NONE;
+	if(PARSE) jobtype |= DEVIOWorkerThread::JOB_FULL_PARSE;
+	if(LINK ) jobtype |= DEVIOWorkerThread::JOB_ASSOCIATE;
 	
-	if( hdevio->is_open ){
-		if(VERBOSE>0) evioout << "Success opening event source \"" << this->source_name << "\"!" <<endl;
+	source_type          = kNoSource;
+	hdevio               = NULL;
+	hdet                 = NULL;
+	et_quit_next_timeout = false;
+
+	// Open either ET system or file
+	if(this->source_name.find("ET:") == 0){
+
+		// Try to open ET system
+		if(VERBOSE>0) evioout << "Attempting to open \""<<this->source_name<<"\" as ET (network) source..." <<endl;
+
+		hdet = new HDET(this->source_name, ET_STATION_NEVENTS, ET_STATION_CREATE_BLOCKING);
+		if( ! hdet->is_connected ){
+			cerr << hdet->err_mess.str() << endl;
+			throw JException("Failed to open ET system: " + this->source_name, __FILE__, __LINE__);
+		}
+		source_type = kETSource;
+
+
 	}else{
-		if(VERBOSE>0) evioout << "Unable to open event source \"" << this->source_name << "\"!" <<endl;
-		cout << hdevio->err_mess.str() << endl;
-		throw std::exception(); // throw exception indicating error
+
+		// Try to open the file.
+		if(VERBOSE>0) evioout << "Attempting to open \""<<this->source_name<<"\" as EVIO file..." <<endl;
+
+		hdevio = new HDEVIO(this->source_name);
+		if( ! hdevio->is_open ){
+			cerr << hdevio->err_mess.str() << endl;
+			throw JException("Failed to open EVIO file: " + this->source_name, __FILE__, __LINE__); // throw exception indicating error
+		}
+		source_type = kFileSource;
 	}
+
+	if(VERBOSE>0) evioout << "Success opening event source \"" << this->source_name << "\"!" <<endl;
 	
 	// Create dispatcher thread
 	dispatcher_thread = new thread(&JEventSource_EVIOpp::Dispatcher, this);
@@ -148,24 +176,28 @@ JEventSource_EVIOpp::~JEventSource_EVIOpp()
 		delete worker_threads[i];
 	}
 	
+	if(VERBOSE>0) evioout << "Closing hdevio event source \"" << this->source_name << "\"" <<endl;
+	if(PRINT_STATS){
+		auto tdiff = duration_cast<duration<double>>(tend - tstart);
+		double rate = (double)NEVENTS_PROCESSED/tdiff.count();
+
+		cout << endl;
+		cout << "   EVIO Processing rate = " << rate << " Hz" << endl;
+		cout << "      NWAITS_FOR_THREAD = " << NWAITS_FOR_THREAD << endl;
+		cout << "NWAITS_FOR_PARSED_EVENT = " << NWAITS_FOR_PARSED_EVENT << endl;
+	}
+
 	// Delete HDEVIO and print stats
 	if(hdevio){
-		if(VERBOSE>0) evioout << "Closing hdevio event source \"" << this->source_name << "\"" <<endl;
-		
-		if(PRINT_STATS){
-			auto tdiff = duration_cast<duration<double>>(tend - tstart);
-			double rate = (double)NEVENTS_PROCESSED/tdiff.count();
-
-			cout << endl;
-			cout << "   EVIO Processing rate = " << rate << " Hz" << endl;
-			cout << "      NWAITS_FOR_THREAD = " << NWAITS_FOR_THREAD << endl;
-			cout << "NWAITS_FOR_PARSED_EVENT = " << NWAITS_FOR_PARSED_EVENT << endl;
-		}
-		
 		hdevio->PrintStats();
 		delete hdevio;
 	}
 
+	// Delete HDET and print stats
+	if(hdet){
+		hdet->PrintStats();
+		delete hdet;
+	}
 }
 
 //----------------
@@ -183,7 +215,7 @@ void JEventSource_EVIOpp::Dispatcher(void)
 	/// This creates backpressure here by having no worker threads
 	/// available.
 	
-	bool allow_swap = false;
+	bool allow_swap = false; // Defer swapping to DEVIOWorkerThread
 	uint64_t istreamorder = 0;
 	while(true){
 	
@@ -207,31 +239,57 @@ void JEventSource_EVIOpp::Dispatcher(void)
 		
 		uint32_t* &buff     = thr->buff;
 		uint32_t  &buff_len = thr->buff_len;
+		
+		bool swap_needed = false;
 
-//		hdevio->read(buff, buff_len, allow_swap);
-//		hdevio->readSparse(buff, buff_len, allow_swap);
-		hdevio->readNoFileBuff(buff, buff_len, allow_swap);
-		thr->pos = hdevio->last_event_pos;
-		if(hdevio->err_code == HDEVIO::HDEVIO_USER_BUFFER_TOO_SMALL){
-			delete[] buff;
-			buff_len = hdevio->last_event_len;
-			buff = new uint32_t[buff_len];
-			continue;
-		}else if(hdevio->err_code!=HDEVIO::HDEVIO_OK){
-			if(LOOP_FOREVER && NEVENTS_PROCESSED>=1){
-				if(hdevio){
-					hdevio->rewind();
-					continue;
+		if(source_type==kFileSource){
+			// ---- Read From File ----
+//			hdevio->read(buff, buff_len, allow_swap);
+//			hdevio->readSparse(buff, buff_len, allow_swap);
+			hdevio->readNoFileBuff(buff, buff_len, allow_swap);
+			thr->pos = hdevio->last_event_pos;
+			if(hdevio->err_code == HDEVIO::HDEVIO_USER_BUFFER_TOO_SMALL){
+				delete[] buff;
+				buff_len = hdevio->last_event_len;
+				buff = new uint32_t[buff_len];
+				continue;
+			}else if(hdevio->err_code!=HDEVIO::HDEVIO_OK){
+				if(LOOP_FOREVER && NEVENTS_PROCESSED>=1){
+					if(hdevio){
+						hdevio->rewind();
+						continue;
+					}
+				}else{
+					cout << hdevio->err_mess.str() << endl;
 				}
+				break;
 			}else{
-				cout << hdevio->err_mess.str() << endl;
+				// HDEVIO_OK
+				swap_needed = hdevio->swap_needed;
 			}
-			break;
+		}else{
+			// ---- Read From ET ----
+			hdet->read(buff, buff_len, allow_swap);
+			thr->pos = 0;
+			if(hdet->err_code == HDET::HDET_TIMEOUT){
+				if(et_quit_next_timeout) break;
+				this_thread::sleep_for(milliseconds(1));
+				continue;
+			}else if(hdet->err_code != HDET::HDET_OK){
+				cout << hdet->err_mess.str() << endl;
+				break;
+			}else{
+				// HDET_OK
+				swap_needed = hdet->swap_needed;
+			}
 		}
+
+		uint32_t myjobtype = jobtype;
+		if(swap_needed && SWAP) myjobtype |= DEVIOWorkerThread::JOB_SWAP;
 		
 		// Wake up worker thread to handle event
 		thr->in_use = true;
-		thr->jobtype = (DEVIOWorkerThread::JOBTYPE)jobtype;
+		thr->jobtype = (DEVIOWorkerThread::JOBTYPE)myjobtype;
 		thr->istreamorder = istreamorder++;
 
 		thr->cv.notify_all();
@@ -243,7 +301,6 @@ void JEventSource_EVIOpp::Dispatcher(void)
 	// GetEvent will properly return NO_MORE_EVENTS_IN_SOURCE.
 	for(uint32_t i=0; i<worker_threads.size(); i++){
 		worker_threads[i]->done = true;
-//		if(japp->GetQuittingStatus()) worker_threads[i]->done = true;
 		while(worker_threads[i]->in_use){
 			this_thread::sleep_for(milliseconds(10));
 		}
@@ -358,5 +415,28 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 		// We do not produce this type
 		return OBJECT_NOT_AVAILABLE;
 	}	
+}
+
+//----------------
+// Cleanup
+//----------------
+void JEventSource_EVIOpp::Cleanup(void)
+{
+	/// This is called internally by the JEventSource_EVIO class
+	/// once all events have been read in. Its purpose is to
+	/// free the hidden memory in all of the container class
+	/// members of the JEventSource_EVIO class. This is needed
+	/// for jobs that process a lot of input files and therefore
+	/// create a lot JEventSource_EVIO objects. JANA does not delete
+	/// these objects until the end of the job so this tends to
+	/// act like a memory leak. The data used can be substantial
+	/// (nearly 1GB per JEventSource_EVIO object).
+
+	if(hdevio) delete hdevio;
+	hdevio = NULL;
+
+	if(hdet) delete hdet;
+	hdet = NULL;
+
 }
 

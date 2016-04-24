@@ -360,7 +360,108 @@ void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 {
 	if(!PARSE_BOR){ iptr = &iptr[(*iptr) + 1]; return; }
 
-	iptr = &iptr[(*iptr) + 1];
+	iptr = &iptr[(*iptr) + 1]; 
+	
+	// This needs to be revised. The original behavior is for the BOR objects
+	// to be kept globally and replaced whenever a new BOR event is encountered.
+	// Pointers to the gobal objects were copied into each event and the factories
+	// flagged as not being the object owners.
+	//
+	// The code below used the evioDOM model which needs to be replaced. Also,
+	// there needs to be some mechanism to share these with other worker thread
+	// objects.
+	
+
+//    // This really shouldn't be needed
+//    pthread_rwlock_wrlock(&BOR_lock);
+//
+//    // Delete any existing BOR config objects. BOR events should
+//    // be flagged as sequential (or barrier) events so all threads
+//    // that were using these should be done with them now.
+//    for(uint32_t i=0; i<BORobjs.size(); i++) delete BORobjs[i];
+//    BORobjs.clear();
+//
+//    evioDOMNodeListP bankList = bankPtr->getChildren();
+//    evioDOMNodeList::iterator iter = bankList->begin();
+//    if(VERBOSE>7) evioout << "     Looping over " << bankList->size() << " banks in BOR event" << endl;
+//    for(int ibank=1; iter!=bankList->end(); iter++, ibank++){ // ibank only used for debugging messages
+//        evioDOMNodeP childBank = *iter;
+//
+//        if(childBank->tag==0x71){
+//            //			uint32_t rocid = childBank->num;
+//            evioDOMNodeListP bankList = childBank->getChildren();
+//            evioDOMNodeList::iterator iter = bankList->begin();
+//            for(; iter!=bankList->end(); iter++){
+//                evioDOMNodeP dataBank = *iter;
+//                //				uint32_t slot = dataBank->tag>>5;
+//                uint32_t modType = dataBank->tag&0x1f;
+//
+//                const vector<uint32_t> *vec = dataBank->getVector<uint32_t>();
+//
+//                const uint32_t *src = &(*vec)[0];
+//                uint32_t *dest = NULL;
+//                uint32_t sizeof_dest = 0;
+//
+//                Df250BORConfig *f250conf = NULL;
+//                Df125BORConfig *f125conf = NULL;
+//                DF1TDCBORConfig *F1TDCconf = NULL;
+//                DCAEN1290TDCBORConfig *caen1190conf = NULL;
+//
+//                switch(modType){
+//                    case DModuleType::FADC250: // f250
+//                        f250conf = new Df250BORConfig;
+//                        dest = (uint32_t*)&f250conf->rocid;
+//                        sizeof_dest = sizeof(f250config);
+//                        break;
+//                    case DModuleType::FADC125: // f125
+//                        f125conf = new Df125BORConfig;
+//                        dest = (uint32_t*)&f125conf->rocid;
+//                        sizeof_dest = sizeof(f125config);
+//                        break;
+//
+//                    case DModuleType::F1TDC32: // F1TDCv2
+//                    case DModuleType::F1TDC48: // F1TDCv3
+//                        F1TDCconf = new DF1TDCBORConfig;
+//                        dest = (uint32_t*)&F1TDCconf->rocid;
+//                        sizeof_dest = sizeof(F1TDCconfig);
+//                        break;
+//
+//                    case DModuleType::CAEN1190: // CAEN 1190 TDC
+//                    case DModuleType::CAEN1290: // CAEN 1290 TDC
+//                        caen1190conf = new DCAEN1290TDCBORConfig;
+//                        dest = (uint32_t*)&caen1190conf->rocid;
+//                        sizeof_dest = sizeof(caen1190config);
+//                        break;
+//                }
+//
+//                // Check that the bank size and data structure size match.
+//                // If they do, then copy the data and add the object to 
+//                // the event. If not, then delete the object and print
+//                // a warning message.
+//                if( vec->size() == (sizeof_dest/sizeof(uint32_t)) ){
+//
+//                    // Copy bank data, assuming format is the same
+//                    for(uint32_t i=0; i<vec->size(); i++) *dest++ = *src++;
+//
+//                    // Store object for use in this and subsequent events
+//                    if(f250conf) BORobjs.push_back(f250conf);
+//                    if(f125conf) BORobjs.push_back(f125conf);
+//                    if(F1TDCconf) BORobjs.push_back(F1TDCconf);
+//                    if(caen1190conf) BORobjs.push_back(caen1190conf);
+//
+//                }else if(sizeof_dest>0){
+//                    if(f250conf) delete f250conf;
+//                    _DBG_ << "BOR bank size does not match structure! " << vec->size() <<" != " << (sizeof_dest/sizeof(uint32_t)) << endl;
+//                    _DBG_ << "sizeof(f250config)="<<sizeof(f250config)<<endl;
+//                    _DBG_ << "sizeof(f125config)="<<sizeof(f125config)<<endl;
+//                    _DBG_ << "sizeof(F1TDCconfig)="<<sizeof(F1TDCconfig)<<endl;
+//                    _DBG_ << "sizeof(caen1190config)="<<sizeof(caen1190config)<<endl;
+//                }
+//            }
+//        }
+//    }
+//
+//    pthread_rwlock_unlock(&BOR_lock);
 }
 
 //---------------------------------
@@ -432,7 +533,6 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 	// Physics Event's Data Bank header
 	iptr++; // advance past data bank length word
 	uint32_t rocid = ((*iptr)>>16) & 0xFFF;
-//	uint32_t M = (*iptr) & 0x0F;
 	iptr++;
 	
 	// Loop over Data Block Banks
@@ -528,8 +628,6 @@ void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t 
     // "events" container. The event_id order is kept
     // in the "event_id_order" vector.
 	map<uint32_t, DParsedEvent*> events_by_event_id;
-//    map<uint32_t, vector<DCAEN1290TDCHit*> > hits_by_event_id; 
-//    vector<uint32_t> event_id_order; 
 
 	auto pe_iter = current_parsed_events.begin();
 	DParsedEvent *pe = NULL;
@@ -583,9 +681,6 @@ void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t 
 				}else{
 					pe = events_by_event_id[event_id];
 				}				
-//                if( find(event_id_order.begin(), event_id_order.end(), event_id) == event_id_order.end()){
-//                    event_id_order.push_back(event_id);
-//                }
                 if(VERBOSE>7) cout << "         CAEN TDC TDC Header (tdc=" << tdc_num <<" , event id=" << event_id <<" , bunch id=" << bunch_id << ")" << endl;
                 break;
             case 0b00000:  // TDC Measurement
@@ -596,8 +691,6 @@ void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t 
 
                 // Create DCAEN1290TDCHit object
                 caen1290tdchit = pe->NEW_DCAEN1290TDCHit(rocid, slot, channel, 0, edge, tdc_num, event_id, bunch_id, tdc);
-//                caen1290tdchit = new DCAEN1290TDCHit(rocid, slot, channel, 0, edge, tdc_num, event_id, bunch_id, tdc);
-//                hits_by_event_id[event_id].push_back(caen1290tdchit);
                 break;
             case 0b00100:  // TDC Error
                 error_flags = (*iptr) & 0x7fff;
@@ -619,18 +712,6 @@ void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t 
 
         iptr++;
     }
-
-//    // Add hits for each event to the events container, creating ObjList's as needed
-//	auto pe_iter = current_parsed_events.begin();
-//    for(uint32_t i=0; i<event_id_order.size(); i++){
-//
-//		DParsedEvent *pe = *pe_iter++;
-//
-//        vector<DCAEN1290TDCHit*> &hits = hits_by_event_id[event_id_order[i]];
-//		pe->vDCAEN1290TDCHit.insert(pe->vDCAEN1290TDCHit.end(), hits.begin(), hits.end());
-//
-//        if(VERBOSE>7) cout << "        Added " << hits.size() << " hits with event_id=" << event_id_order[i] << " to event " << i << endl;
-//    }
 
 }
 
@@ -1508,6 +1589,77 @@ void LinkAssociationsB(vector<T*> &a, vector<U*> &b)
 	}
 }
 
+//----------------------------
+// LinkAssociationsConfig
+//----------------------------
+template<class T, class U>
+void LinkAssociationsConfigB(vector<T*> &a, vector<U*> &b)
+{
+	/// Template routine to loop over two vectors: The first points
+	/// to DDAQConfig objects and the second to DDAQAddress objects.
+	/// DDAQAddress objects that match the rocid and slotmask of a
+	/// DDAQConfig object will have the DDAQConfig added to their 
+	/// associated objects list. (Reverse association is not made.)
+	///
+	/// Note that this assumes the input vectors have been sorted by
+	/// rocid in ascending order.
+
+	// Bail early if nothing to link
+	if(b.empty()) return;
+	if(a.empty()) return;
+
+	for(uint32_t i=0, j=0; i<b.size(); ){
+
+		uint32_t rocid     = b[i]->rocid;
+
+		// Find start and end of range in b
+		uint32_t istart = i;
+		uint32_t iend   = i+1; // index of first element outside of ROI
+		for(; iend<b.size(); iend++){
+			if(b[iend]->rocid != rocid) break;
+		}
+		i = iend; // setup for next iteration
+		
+		// Find start of range in a
+		for(; j<a.size(); j++){
+			if( a[j]->rocid >= rocid ) break;
+		}
+		if(j>=a.size()) break; // exhausted all a's. we're done
+		if( a[j]->rocid > rocid ) continue; // couldn't find rocid in a
+		
+		// Find end of range in a
+		uint32_t jend = j+1;
+		for(; jend<a.size(); jend++){
+			if(a[jend]->rocid != rocid) break;
+		}
+
+		// Loop over all combos of both ranges and make associations
+		uint32_t jstart = j;
+		for(uint32_t ii=istart; ii<iend; ii++){
+			uint32_t slot_mask = 1 << b[ii]->slot;
+
+			for(uint32_t jj=jstart; jj<jend; jj++){
+				if(a[jj]->slot_mask & slot_mask){
+					b[ii]->AddAssociatedObject(a[jj]);
+				}
+			}
+		}
+		j = jend;
+
+		if( i>=b.size() ) break;
+		if( j>=a.size() ) break;
+	}
+}
+
+//----------------
+// SortByROCID
+//----------------
+template<class T>
+inline bool SortByROCID(const T* const &obj1, const T* const &obj2)
+{
+	return obj1->rocid < obj2->rocid;
+}
+
 //----------------
 // SortByModule
 //----------------
@@ -1556,11 +1708,17 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 	/// of one another and add to each other's list.
 	for( auto pe : current_parsed_events){
 	
+		//---------------- Sort all vectors so we can optimize linking
+
+		// fADC250
+		if(pe->vDf250Config.size()>1       ) sort(pe->vDf250Config.begin(),        pe->vDf250Config.end(),        SortByROCID<Df250Config>              );
 		if(pe->vDf250TriggerTime.size()>1  ) sort(pe->vDf250TriggerTime.begin(),   pe->vDf250TriggerTime.end(),   SortByModule<Df250TriggerTime>        );
 		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByPulseNumber<Df250PulseIntegral> );
 		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByPulseNumber<Df250PulseTime>     );
 		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByPulseNumber<Df250PulsePedestal> );
 
+		// fADC125
+		if(pe->vDf125Config.size()>1       ) sort(pe->vDf125Config.begin(),        pe->vDf125Config.end(),        SortByROCID<Df125Config>              );
 		if(pe->vDf125TriggerTime.size()>1  ) sort(pe->vDf125TriggerTime.begin(),   pe->vDf125TriggerTime.end(),   SortByModule<Df125TriggerTime>        );
 		if(pe->vDf125PulseIntegral.size()>1) sort(pe->vDf125PulseIntegral.begin(), pe->vDf125PulseIntegral.end(), SortByPulseNumber<Df125PulseIntegral> );
 		if(pe->vDf125CDCPulse.size()>1     ) sort(pe->vDf125CDCPulse.begin(),      pe->vDf125CDCPulse.end(),      SortByChannel<Df125CDCPulse>          );
@@ -1568,16 +1726,44 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 		if(pe->vDf125PulseTime.size()>1    ) sort(pe->vDf125PulseTime.begin(),     pe->vDf125PulseTime.end(),     SortByPulseNumber<Df125PulseTime>     );
 		if(pe->vDf125PulsePedestal.size()>1) sort(pe->vDf125PulsePedestal.begin(), pe->vDf125PulsePedestal.end(), SortByPulseNumber<Df125PulsePedestal> );
 
+		// F1TDC
+		if(pe->vDF1TDCConfig.size()>1      ) sort(pe->vDF1TDCConfig.begin(),       pe->vDF1TDCConfig.end(),       SortByROCID<DF1TDCConfig>             );
 		if(pe->vDF1TDCTriggerTime.size()>1 ) sort(pe->vDF1TDCTriggerTime.begin(),  pe->vDF1TDCTriggerTime.end(),  SortByModule<DF1TDCTriggerTime>       );
 		if(pe->vDF1TDCHit.size()>1         ) sort(pe->vDF1TDCHit.begin(),          pe->vDF1TDCHit.end(),          SortByModule<DF1TDCHit>               );
 
-		// Connect Df250TriggerTime to everything
+		// CAEN1290TDC
+		if(pe->vDCAEN1290TDCConfig.size()>1) sort(pe->vDCAEN1290TDCConfig.begin(), pe->vDCAEN1290TDCConfig.end(), SortByROCID<DCAEN1290TDCConfig>       );
+		if(pe->vDCAEN1290TDCHit.size()>1   ) sort(pe->vDCAEN1290TDCHit.begin(),    pe->vDCAEN1290TDCHit.end(),    SortByModule<DCAEN1290TDCHit>         );
+
+		//----------------- Link all associations
+		
+		// Connect Df250Config objects
+		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250WindowRawData);
+		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250PulseIntegral);
+		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250PulseTime);
+		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250PulsePedestal);
+
+		// Connect Df125Config objects
+        LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125WindowRawData);
+        LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125PulseIntegral);
+        LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125CDCPulse);
+        LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125FDCPulse);
+        LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125PulseTime);
+        LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125PulsePedestal);
+
+		// Connect vDF1TDCConfig objects
+        LinkAssociationsConfigB(pe->vDF1TDCConfig, pe->vDF1TDCHit);
+
+		// Connect vDCAEN1290TDCConfig objects
+        LinkAssociationsConfigB(pe->vDCAEN1290TDCConfig, pe->vDCAEN1290TDCHit);
+		
+		// Connect Df250TriggerTime objects
         LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250WindowRawData);
         LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulseIntegral);
         LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulseTime);
         LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulsePedestal);
 
-		// Connect Df125TriggerTime to everything
+		// Connect Df125TriggerTime objects
         LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125WindowRawData);
         LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulseIntegral);
         LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125CDCPulse);
@@ -1585,7 +1771,7 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
         LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulseTime);
         LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulsePedestal);
 
-		// Connect DF1TriggerTime to everything
+		// Connect DF1TriggerTime objects
         LinkAssociationsModuleOnlyB(pe->vDF1TDCTriggerTime, pe->vDF1TDCHit);
 
 		// Connect pulse objects
