@@ -25,25 +25,25 @@
 	TLegend *legend_na = new TLegend(0.3,0.85,0.5,0.9);
 
 	if(st_tdc_occ){
-		st_adc_occ->SetBarWidth(0.5);
-		st_adc_occ->SetBarOffset(0);
-		st_adc_occ->SetFillColor(kGreen);
-		st_adc_occ->SetStats(0);
-		st_adc_occ->SetXTitle("Channel number");
-		st_adc_occ->SetYTitle("fADC/TDC occupancy");
-		st_adc_occ->SetTitleSize(0.05,"X");
-		st_adc_occ->GetXaxis()->CenterTitle();
-		st_adc_occ->SetTitleSize(0.05,"Y");
-		st_adc_occ->GetYaxis()->CenterTitle();
-		st_adc_occ->GetYaxis()->SetRangeUser(0.0, st_adc_occ->GetMaximum());
+		st_tdc_occ->SetBarWidth(0.5);
+		st_tdc_occ->SetBarOffset(0);
+		st_tdc_occ->SetFillColor(kGreen);
+		st_tdc_occ->SetStats(0);
+		st_tdc_occ->SetXTitle("Channel number");
+		st_tdc_occ->SetYTitle("fADC/TDC hit count");
+		st_tdc_occ->SetTitleSize(0.05,"X");
+		st_tdc_occ->GetXaxis()->CenterTitle();
+		st_tdc_occ->SetTitleSize(0.05,"Y");
+		st_tdc_occ->GetYaxis()->CenterTitle();
+		st_tdc_occ->GetYaxis()->SetRangeUser(0.0, st_tdc_occ->GetMaximum());
 		if(st_adc_occ)st_adc_occ->GetYaxis()->SetRangeUser(0.0, 1.05*st_tdc_occ->GetMaximum());
 	}
 	
 	if(st_adc_occ){
-		st_tdc_occ->SetBarWidth(0.5);
-		st_tdc_occ->SetBarOffset(0.5);
-		st_tdc_occ->SetFillColor(kRed);
-		st_tdc_occ->SetStats(0);
+		st_adc_occ->SetBarWidth(0.5);
+		st_adc_occ->SetBarOffset(0.5);
+		st_adc_occ->SetFillColor(kRed);
+		st_adc_occ->SetStats(0);
 	}
 
 	legend_sa->AddEntry(st_adc_occ,"fADC","f");
@@ -64,8 +64,8 @@
 
 	gPad->SetTicks();
 	gPad->SetGridy();
-	if(st_adc_occ) st_adc_occ->Draw("BAR");
-	if(st_tdc_occ) st_tdc_occ->Draw("BAR sames");
+	if(st_adc_occ) st_adc_occ->DrawCopy("BAR");
+	if(st_tdc_occ) st_tdc_occ->DrawCopy("BAR same");
 
 	legend_sa->Draw();
 	legend_na->Draw();
