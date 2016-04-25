@@ -14,18 +14,6 @@
 using namespace std;
 using namespace std::chrono;
 
-// This implements an alternative to thread_local. It is
-// needed because Apple stupidly decided not to include
-// thread_local support in their default compiler. This
-// allocates a fixed size array of vectors to hold a pool
-// of pointers to DParsedEvent objects. Each DEVIOWorkerThread
-// object created (should be one per worker thread) will
-// increment the counter and claim one of the elements.
-// A check is made in the DEVIOWorkerThread constructor to
-// make sure we don't override the array size.
-#define TLS_PARSED_EVENT_MAX 512
-atomic<int> TLS_PARSED_EVENT_MAX_IDX(0);
-vector<DParsedEvent*> TLS_PARSED_EVENT[TLS_PARSED_EVENT_MAX];
 
 
 //---------------------------------
@@ -41,7 +29,6 @@ DEVIOWorkerThread::DEVIOWorkerThread(
 	,MAX_PARSED_EVENTS(MAX_PARSED_EVENTS)
 	,PARSED_EVENTS_MUTEX(PARSED_EVENTS_MUTEX)
 	,PARSED_EVENTS_CV(PARSED_EVENTS_CV)
-	,parsed_event_pool(TLS_PARSED_EVENT[TLS_PARSED_EVENT_MAX_IDX.fetch_add(1)])
 	,done(false)
 	,thd(&DEVIOWorkerThread::Run,this)
 {
@@ -53,22 +40,16 @@ DEVIOWorkerThread::DEVIOWorkerThread(
 	// for someone to notify it. That won't happen before this
 	// constructor completes so we do the remaining initializations
 	// below.
-
-	// Check that we didn't overrun the allocated space	
-	if(TLS_PARSED_EVENT_MAX_IDX >= TLS_PARSED_EVENT_MAX){
-		_DBG_ << "-- ERROR: more than TLS_PARSED_EVENT_MAX (=" << TLS_PARSED_EVENT_MAX << ") DEVIOWorkerThread objects instantiated!" << endl;
-		_DBG_ << "--        To fix this either run with fewer DEVIOWorkerThreads or modify the" << endl;
-		_DBG_ << "          #define for TLS_PARSED_EVENT_MAX at the top of DEVIOWorkerThread.cc" << endl;
-		exit(-1);
-	}
 	
-	VERBOSE = 1;
+	VERBOSE           = 1;
+	Nrecycled         = 0;       // Incremented in JEventSource_EVIOpp::Dispatcher()
+	MAX_RECYCLED      = 100;     // In EVIO events (not L1 trigger events!)
 
-	in_use  = false;
-	jobtype = JOB_NONE;
+	in_use            = false;
+	jobtype           = JOB_NONE;
 
-	buff_len = 100; // this will grow as needed
-	buff = new uint32_t[buff_len];
+	buff_len          = 100; // this will grow as needed
+	buff              = new uint32_t[buff_len];
 
 	PARSE_F250        = true;
 	PARSE_F125        = true;
@@ -123,9 +104,8 @@ void DEVIOWorkerThread::Run(void)
 		} catch (exception &e) {
 			jerr << e.what() << endl;
 			for(auto pe : parsed_event_pool) delete pe; // delete all parsed events any any objects they hold
-			for(auto pe : current_parsed_events) delete pe; // delete all parsed events any any objects they hold
 			parsed_event_pool.clear();
-			current_parsed_events.clear();
+			current_parsed_events.clear(); // (these are also in parsed_event_pool so were already deleted)
 			//exit(-1);
 		}
 		
@@ -161,12 +141,47 @@ void DEVIOWorkerThread::Finish(bool wait_to_complete)
 }
 
 //---------------------------------
+// Prune
+//---------------------------------
+void DEVIOWorkerThread::Prune(void)
+{
+	/// Delete any DParsedEvent objects not currently in use. 
+	/// If the DParsedEvent object pool and their internal
+	/// hit object pools are allowed to continuously grow, it
+	/// will appear as a though there is a memory leak. Occasional
+	/// pruning will reduce the average memory footprint. 
+	/// This is called from JEventSource_EVIOpp::Dispatcher
+	/// every MAX_RECYCLED EVIO events processed by this worker
+	/// thread. Note that this not in L1 trigger events.
+	///
+	/// NOTE: We currently do NOT reduce the size of buff
+	/// here if it is too big. We may wish to do that at some point!
+
+	// Delete extra parsed events
+	vector<DParsedEvent*> tmp_events = parsed_event_pool;
+	parsed_event_pool.clear();
+	for(auto pe : tmp_events) {
+		if(pe->in_use)
+			parsed_event_pool.push_back(pe);
+		else
+			delete pe;
+
+	}
+}
+
+//---------------------------------
 // MakeEvents
 //---------------------------------
 void DEVIOWorkerThread::MakeEvents(void)
 {
 	
 	/// Make DParsedEvent objects from data currently in buff.
+	/// This will look at the begining of the EVIO event to see
+	/// how many L1 events are in it. It will then grab that many
+	/// DParsedEvent objects from this threads pool , or create
+	/// new ones and add them all to the current_parsed_events
+	/// vector. These are then filled out later as the data is
+	/// parsed.
 	
 	if(!current_parsed_events.empty()) throw JException("Attempting call to DEVIOWorkerThread::MakeEvents when current_parsed_events not empty!!", __FILE__, __LINE__);
 	
@@ -195,7 +210,7 @@ void DEVIOWorkerThread::MakeEvents(void)
 	
 	// Create new DParsedEvent objects if needed
 	while( current_parsed_events.size() < M ){
-		DParsedEvent *pe = new DParsedEvent(0);
+		DParsedEvent *pe = new DParsedEvent();
 		current_parsed_events.push_back(pe);
 		parsed_event_pool.push_back(pe);
 	}
@@ -215,6 +230,14 @@ void DEVIOWorkerThread::MakeEvents(void)
 
 	// Parse data in buffer to create data objects
 	ParseBank();
+	
+	// Occasionally prune extra events from the pools to reduce
+	// average memory usage. We do this after parsing so that not everything is
+	// deleted (objects being used this event will be returned to the pools
+	// later.)
+	for(auto pe : current_parsed_events){
+		if( ++pe->Nrecycled%pe->MAX_RECYCLED == 0) pe->Prune();
+	}
 }	
 
 //---------------------------------

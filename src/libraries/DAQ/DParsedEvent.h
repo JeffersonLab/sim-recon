@@ -91,7 +91,9 @@ using namespace jana;
 		X(DCODAROCInfo) \
 		X(DTSscalers) \
 		X(DEPICSvalue) \
-		X(DEventTag) \
+		X(DEventTag)
+
+#define MyBORTypes(X) \
 		X(Df250BORConfig) \
 		X(Df125BORConfig) \
 		X(DF1TDCBORConfig) \
@@ -102,6 +104,8 @@ class DParsedEvent{
 	public:		
 		
 		atomic<bool> in_use;
+		uint64_t Nrecycled;     // Incremented in DEVIOWorkerThread::MakeEvents()
+		uint64_t MAX_RECYCLED;
 		bool copied_to_factories;
 		
 		uint64_t istreamorder;
@@ -117,6 +121,7 @@ class DParsedEvent{
 		//
 		#define makevector(A) vector<A*>  v##A;
 		MyTypes(makevector)
+		MyBORTypes(makevector)
 		
 		// DParsedEvent objects are recycled to save malloc/delete cycles. Do the
 		// same for the objects they provide by creating a pool vector for each
@@ -126,20 +131,35 @@ class DParsedEvent{
 		MyTypes(makepoolvector)
 
 		// Method to return all objects in vectors to their respective pools and 
-		// clear the vectors to set up for processing the next event.
+		// clear the vectors to set up for processing the next event. Vectors
+		// with BOR types are just cleared.
 		// This is called from DEVIOWorkerThread::MakeEvents
 		#define returntopool(A) if(!v##A.empty()){ v##A##_pool.insert(v##A##_pool.end(), v##A.begin(), v##A.end()); v##A.clear(); }
-		void Clear(void){ MyTypes(returntopool) }
+		#define clearvectors(A)     v##A.clear();
+		void Clear(void){ 
+			MyTypes(returntopool)
+			MyBORTypes(clearvectors)
+		}
 
 		// Method to delete all objects in all vectors and all pools. This should
 		// usually only be called from the DParsedEvent destructor
-		#define deletevector(A) for(auto p : v##A       ) delete p;
-		#define deletepool(A)   for(auto p : v##A##_pool) delete p;
-		#define clearvectors(A) v##A.clear(); v##A##_pool.clear();
+		#define deletevector(A)     for(auto p : v##A       ) delete p;
+		#define deletepool(A)       for(auto p : v##A##_pool) delete p;
+		#define clearpoolvectors(A) v##A##_pool.clear();
 		void Delete(void){
 			MyTypes(deletevector)
 			MyTypes(deletepool)
 			MyTypes(clearvectors)
+			MyTypes(clearpoolvectors)
+			MyBORTypes(clearvectors)
+		}
+		
+		// This is used to occasionally delete extra pool objects to reduce the
+		// average memory use. It is called from DEVIOWorkerThread::MakeEvents
+		// every MAX_RECYCLED events processed by this DParsedEvent object.
+		void Prune(void){
+			MyTypes(deletepool)
+			MyTypes(clearpoolvectors)
 		}
 		
 		// Define a class that has pointers to factories for each data type.
@@ -151,13 +171,15 @@ class DParsedEvent{
 			public:
 				JEventLoop *loop;
 				MyTypes(makefactoryptr)
+				MyBORTypes(makefactoryptr)
 
 				DFactoryPointers():loop(NULL){}
 				~DFactoryPointers(){}
-				
+
 				void Init(JEventLoop *loop){
 					this->loop = loop;
 					MyTypes(copyfactoryptr)
+					MyBORTypes(copyfactoryptr)
 				}
 		};
 		
@@ -179,6 +201,9 @@ class DParsedEvent{
 			MyTypes(copytofactory)
 			MyTypes(setevntcalled)
 			MyTypes(keepownership)
+			MyBORTypes(copytofactory)
+			MyBORTypes(setevntcalled)
+			MyBORTypes(keepownership)
 			copied_to_factories=true;
 		}
 		
@@ -187,6 +212,7 @@ class DParsedEvent{
 		#define checkclassname(A) if(classname==#A) return true;
 		bool IsParsedDataType(string &classname){
 			MyTypes(checkclassname)
+			MyBORTypes(checkclassname)
 			return false;
 		}
 		
@@ -209,7 +235,7 @@ class DParsedEvent{
 		// This will also automatically add the created/recycled object to
 		// the appropriate vXXX vector as part of the current event. It
 		// returns of pointer to the object so that it can be accessed by the
-		// caller of needed.
+		// caller if needed.
 		//
 		// This will provide a method that looks something like this:
 		//
@@ -235,12 +261,13 @@ class DParsedEvent{
 		MyTypes(makeallocator);
 
 		// Constructor and destructor
-		DParsedEvent(uint64_t istreamorder):in_use(false),istreamorder(istreamorder){}
+		DParsedEvent(void):in_use(false),Nrecycled(0),MAX_RECYCLED(1000){}
 		#define printcounts(A) if(!v##A.empty()) cout << v##A.size() << " : " << #A << endl;
 		#define printpoolcounts(A) if(!v##A##_pool.empty()) cout << v##A##_pool.size() << " : " << #A << "_pool" << endl;
 		virtual ~DParsedEvent(){
 //			cout << "----- DParsedEvent (" << this << ") -------" << endl;
 //			MyTypes(printcounts);
+//			MyBORTypes(printcounts);
 //			MyTypes(printpoolcounts);
 			Delete();
 		}

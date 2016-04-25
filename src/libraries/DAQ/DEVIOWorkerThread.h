@@ -22,13 +22,6 @@ using namespace std;
 #include <DAQ/DParsedEvent.h>
 #include <DAQ/DModuleType.h>
 
-// Parsed events are placed here and access
-// controlled by the mutex. The CV is used 
-// to send notification whenever a new event
-// is placed in the list.
-//extern list<DParsedEvent*> parsed_events;
-//extern mutex PARSED_EVENTS_MUTEX;
-//extern condition_variable PARSED_EVENTS_CV;
 
 
 class DEVIOWorkerThread{
@@ -56,14 +49,15 @@ class DEVIOWorkerThread{
 		mutex               &PARSED_EVENTS_MUTEX;
 		condition_variable  &PARSED_EVENTS_CV;
 		
-		// reference to element in TLS_PARSED_EVENT that
-		// is unique to this thread
-		vector<DParsedEvent*> &parsed_event_pool;
+		// Pool of parsed events
+		vector<DParsedEvent*> parsed_event_pool;
 		
 		// List of parsed events we are currently filling
 		list<DParsedEvent*> current_parsed_events;
 	
 		int VERBOSE;
+		uint64_t Nrecycled;     // Incremented in JEventSource_EVIOpp::Dispatcher()
+		uint64_t MAX_RECYCLED;
 	
 		atomic<bool> in_use;
 		atomic<bool> done;
@@ -90,6 +84,7 @@ class DEVIOWorkerThread{
 		
 		void Run(void);
 		void Finish(bool wait_to_complete=true);
+		void Prune(void);
 		void MakeEvents(void);
 		void PublishEvents(void);
 		void ParseBank(void);

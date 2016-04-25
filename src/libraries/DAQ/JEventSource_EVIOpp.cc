@@ -237,6 +237,9 @@ void JEventSource_EVIOpp::Dispatcher(void)
 		}
 		if(DONE) break;
 		
+		// Reduce average memory usage.
+		if(++thr->Nrecycled%thr->MAX_RECYCLED == 0) thr->Prune();
+		
 		uint32_t* &buff     = thr->buff;
 		uint32_t  &buff_len = thr->buff_len;
 		
