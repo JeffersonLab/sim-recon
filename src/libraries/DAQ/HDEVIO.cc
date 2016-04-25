@@ -364,7 +364,7 @@ bool HDEVIO::readSparse(uint32_t *user_buff, uint32_t user_buff_len, bool allow_
 	
 	err_code = HDEVIO_OK;
 	ClearErrorMessage();
-	
+
 	// Make sure we've mapped this file
 	if(!is_mapped) MapBlocks();
 	
@@ -372,14 +372,18 @@ bool HDEVIO::readSparse(uint32_t *user_buff, uint32_t user_buff_len, bool allow_
 	// event matching the currently set type mask. 
 	for(; sparse_block_iter!=evio_blocks.end(); sparse_block_iter++, sparse_event_idx = 0){
 
-		// If we've already read all events in this block, go to next
-		if( sparse_event_idx >= sparse_block_iter->evio_events.size() ) continue;
-
 		// Filter out blocks of the wrong type
 		EVIOBlockRecord &br = *sparse_block_iter;
 		uint32_t type = (1 << br.block_type);
-		if( (type & event_type_mask) == 0 ) continue;
 
+		for(; sparse_event_idx < br.evio_events.size(); sparse_event_idx++){
+			EVIOEventRecord &er = sparse_block_iter->evio_events[sparse_event_idx];
+
+			uint32_t etype = (1 << er.event_type);
+			if( etype & event_type_mask ) break;
+		}
+		if(sparse_event_idx >= br.evio_events.size()) continue;
+		
 		EVIOEventRecord &er = sparse_block_iter->evio_events[sparse_event_idx];
 
 		uint32_t event_len = er.event_len;
@@ -393,7 +397,7 @@ bool HDEVIO::readSparse(uint32_t *user_buff, uint32_t user_buff_len, bool allow_
 			return false;
 		}
 
-		// At this point we're commtted to reading this event so go
+		// At this point we're committed to reading this event so go
 		// ahead and increment pointer to next event so no matter
 		// what happens below, we don't try reading it again.
 		sparse_event_idx++;
@@ -491,7 +495,7 @@ bool HDEVIO::readNoFileBuff(uint32_t *user_buff, uint32_t user_buff_len, bool al
 		Nblocks++;
 		streampos pos = ifs.tellg() - (streampos)sizeof(bh);
 
-		if( (pos+(streampos)bh.length) >  total_size_bytes ){
+		if( (uint64_t)(pos+(streampos)bh.length) >  total_size_bytes ){
 			err_mess << "EVIO block extends past end of file!";
 			err_code = HDEVIO_FILE_TRUNCATED;
 			return false;
@@ -605,7 +609,10 @@ void HDEVIO::rewind(void)
 //------------------------
 uint32_t HDEVIO::SetEventMask(uint32_t mask)
 {
-	return 0;
+	uint32_t prev_mask = event_type_mask;
+	event_type_mask = mask;
+
+	return prev_mask;
 }
 
 //------------------------
@@ -613,7 +620,14 @@ uint32_t HDEVIO::SetEventMask(uint32_t mask)
 //------------------------
 uint32_t HDEVIO::SetEventMask(string types_str)
 {
-	return 0;
+	uint32_t prev_mask = event_type_mask;
+
+	event_type_mask = 0;
+	if(types_str.find("BOR"    ) != string::npos) event_type_mask |= (1<<kBT_BOR);
+	if(types_str.find("EPICS"  ) != string::npos) event_type_mask |= (1<<kBT_EPICS);
+	if(types_str.find("PHYSICS") != string::npos) event_type_mask |= (1<<kBT_PHYSICS);
+
+	return prev_mask;
 }
 
 //------------------------
@@ -717,8 +731,10 @@ void HDEVIO::MapBlocks(bool print_ticker)
 		// Update ticker
 		if(print_ticker){
 			if((Nblocks%500) == 0){
-				uint64_t read_MB = ifs.tellg()>>20;
-				cout << Nblocks << " blocks scanned (" << read_MB << " MB)    \r";
+				uint64_t total_MB = total_size_bytes>>20;
+				uint64_t read_MB  = ifs.tellg()>>20;
+				if(Nblocks==0) cout << endl;
+				cout << Nblocks << " blocks scanned (" << read_MB << "/" << total_MB << " MB " << (100*read_MB/total_MB) << "%)     \r";
 				cout.flush();
 			}
 		}

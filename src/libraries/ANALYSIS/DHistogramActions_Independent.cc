@@ -3220,8 +3220,8 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 	vector<const DNeutralParticle*> locNeutralParticles;
 	locEventLoop->Get(locNeutralParticles);
 
-	vector<const DNeutralShower*> locGoodNeutralShowers;
-	locEventLoop->Get(locGoodNeutralShowers, dShowerSelectionTag.c_str());
+	vector<const DNeutralParticle*> locGoodNeutralParticles;
+	locEventLoop->Get(locGoodNeutralParticles, dShowerSelectionTag.c_str());
 
 	// neutrals by pid
 	for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)
@@ -3238,22 +3238,9 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 	}
 
 	// good neutrals
-	size_t locNumGoodNeutrals = 0;
-	for(size_t loc_i = 0; loc_i < locGoodNeutralShowers.size(); ++loc_i)
+	for(size_t loc_i = 0; loc_i < locGoodNeutralParticles.size(); ++loc_i)
 	{
-		const DNeutralParticle* locNeutralParticle = NULL;
-		for(size_t loc_j = 0; loc_j < locNeutralParticles.size(); ++loc_j)
-		{
-			if(locNeutralParticles[loc_j]->dNeutralShower != locGoodNeutralShowers[loc_i])
-				continue;
-			locNeutralParticle = locNeutralParticles[loc_j];
-			break;
-		}
-		if(locNeutralParticle == NULL)
-			continue;
-		++locNumGoodNeutrals;
-
-		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_BestFOM();
+		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = locGoodNeutralParticles[loc_i]->Get_BestFOM();
 		if(locNeutralParticleHypothesis->dFOM < dMinPIDFOM)
 			continue;
 
@@ -3279,9 +3266,9 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 		for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
 			dHist_NumReconstructedParticles->Fill(5.0 + (Double_t)loc_i, (Double_t)locNumTracksByPID[dFinalStatePIDs[loc_i]]);
 
-		dHist_NumGoodReconstructedParticles->Fill(0.0, (Double_t)(locNumGoodTracks + locNumGoodNeutrals));
+		dHist_NumGoodReconstructedParticles->Fill(0.0, (Double_t)(locNumGoodTracks + locGoodNeutralParticles.size()));
 		dHist_NumGoodReconstructedParticles->Fill(1.0, (Double_t)locNumGoodTracks);
-		dHist_NumGoodReconstructedParticles->Fill(2.0, (Double_t)locNumGoodNeutrals);
+		dHist_NumGoodReconstructedParticles->Fill(2.0, (Double_t)locGoodNeutralParticles.size());
 		dHist_NumGoodReconstructedParticles->Fill(3.0, (Double_t)locNumGoodPositiveTracks);
 		dHist_NumGoodReconstructedParticles->Fill(4.0, (Double_t)locNumGoodNegativeTracks);
 		for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)

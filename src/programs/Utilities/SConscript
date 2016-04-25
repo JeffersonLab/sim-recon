@@ -4,9 +4,8 @@ import sbms
 Import('*')
 
 # Default targets (always built)
-subdirs = ['bfield2root', 'root_merge', 'root2email']
+subdirs = ['analysis', 'bfield2root', 'root_merge', 'root2email']
 subdirs.extend( ['hddm', 'hddm_cull_events', 'hddm_merge_events', 'hddm_merge_files'])
-subdirs.extend( ['tree_to_amptools'] )
 subdirs.extend( ['mkplugin', 'mkfactory_plugin'] )
 subdirs.extend( ['hdevio_scan'] )
 

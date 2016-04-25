@@ -130,6 +130,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	TIMEOUT = 2.0;
 	MODTYPE_MAP_FILENAME = "modtype.map";
 	ENABLE_DISENTANGLING = true;
+	EVIO_SPARSE_READ = false;
+	EVENT_MASK = "";
 
 	F125_EMULATION_MODE = kEmulationAuto;
 	F250_EMULATION_MODE = kEmulationAuto;
@@ -166,6 +168,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("ET:TIMEOUT", TIMEOUT, "Set the timeout in seconds for each attempt at reading from ET system (repeated attempts will still be made indefinitely until program quits or the quit_on_et_timeout flag is set.");
 		gPARMS->SetDefaultParameter("EVIO:MODTYPE_MAP_FILENAME", MODTYPE_MAP_FILENAME, "Optional module type conversion map for use with files generated with the non-standard module types");
 		gPARMS->SetDefaultParameter("EVIO:ENABLE_DISENTANGLING", ENABLE_DISENTANGLING, "Enable/disable disentangling of multi-block events. Enabled by default. Set to 0 to disable.");
+		gPARMS->SetDefaultParameter("EVIO:SPARSE_READ", EVIO_SPARSE_READ, "Set to true to enable sparse reading of the EVIO file. This will take some time to map out the entire file prior to event processing. It is typically only useful if the EVIO:EVENT_MASK variable is set.");
+		gPARMS->SetDefaultParameter("EVIO:EVENT_MASK", EVENT_MASK, "Commas separated list used to set the mask that selects the type of events to read in. Other types will be skipped. Valid values are EPICS,BOR and PHYSICS");
 
 		gPARMS->SetDefaultParameter("EVIO:F250_EMULATION_MODE", f250_emulation_mode, "Set f250 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
 		gPARMS->SetDefaultParameter("EVIO:F125_EMULATION_MODE", f125_emulation_mode, "Set f125 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
@@ -187,6 +191,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		//---------- HDEVIO ------------
 		hdevio = new HDEVIO(this->source_name);
 		if( ! hdevio->is_open ) throw std::exception(); // throw exception if unable to open
+		if(EVENT_MASK.length()!=0) hdevio->SetEventMask(EVENT_MASK);
+		if(EVIO_SPARSE_READ) hdevio->PrintFileSummary();
 #else	// USE_HDEVIO
 		//-------- CODA EVIO -----------
 		jerr << "You are attempting to use the CODA Channels library for reading" << endl;
@@ -1005,7 +1011,12 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 			buff = GetPoolBuffer(); // Get (or allocate) a new buffer from the pool
 			uint32_t buff_size = BUFFER_SIZE;
 			while(!done){
-				if(hdevio->read(buff, buff_size)){
+				bool isok = true; 
+				if(EVIO_SPARSE_READ)
+					isok= hdevio->readSparse(buff, buff_size);
+				else
+					isok= hdevio->read(buff, buff_size);
+				if(isok){
 					done = true;
 				}else{
 					string mess = hdevio->err_mess.str();
