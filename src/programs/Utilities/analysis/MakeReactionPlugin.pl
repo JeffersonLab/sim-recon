@@ -149,9 +149,11 @@ class DReaction_factory_${ReactionFactoryTag} : public jana::JFactory<DReaction>
 		const char* Tag(void){return \"$ReactionFactoryTag\";}
 
 	private:
-		jerror_t init(void);						///< Called once at program start.
+		jerror_t brun(JEventLoop* locEventLoop, int32_t locRunNumber);
+		jerror_t evnt(JEventLoop* locEventLoop, uint64_t locEventNumber);
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		double dBeamBunchPeriod;
 		deque<DReactionStep*> dReactionStepPool; //to prevent memory leaks
 };
 
@@ -171,19 +173,33 @@ sub PrintFactoryMethods()
 \#include \"DReaction_factory_${ReactionFactoryTag}.h\"
 
 //------------------
-// init
+// brun
 //------------------
-jerror_t DReaction_factory_${ReactionFactoryTag}::init(void)
+jerror_t DReaction_factory_${ReactionFactoryTag}::brun(JEventLoop* locEventLoop, int32_t locRunNumber)
+{
+	vector<double> locBeamPeriodVector;
+	locEventLoop->GetCalib(\"PHOTON_BEAM/RF/beam_period\", locBeamPeriodVector);
+	dBeamBunchPeriod = locBeamPeriodVector[0];
+
+	return NOERROR;
+}
+
+//------------------
+// evnt
+//------------------
+jerror_t DReaction_factory_${ReactionFactoryTag}::evnt(JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 	// Make as many DReaction objects as desired
 	DReactionStep* locReactionStep = NULL;
-	DReaction* locReaction = new DReaction(\"${ReactionName}\"); //needs to be a unique name for each DReaction object, CANNOT (!) be \"Thrown\"
+	DReaction* locReaction = NULL; //create with a unique name for each DReaction object. CANNOT (!) be \"Thrown\"
 
 	// DOCUMENTATION:
 	// ANALYSIS library: https://halldweb1.jlab.org/wiki/index.php/GlueX_Analysis_Software
 	// DReaction factory: https://halldweb1.jlab.org/wiki/index.php/Analysis_DReaction
 
-	/**************************************************** ${ReactionName} Reaction Steps ****************************************************/
+	/************************************************** ${ReactionName} Reaction Definition *************************************************/
+
+	locReaction = new DReaction(\"${ReactionName}\");
 
 	/* 
 	//Required: DReactionSteps to specify the channel and decay chain you want to study
@@ -214,21 +230,20 @@ jerror_t DReaction_factory_${ReactionFactoryTag}::init(void)
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DReaction.h
-	// locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+		//Options: d_NoFit (default), d_P4Fit, d_VertexFit, d_P4AndVertexFit
+		//P4 fits automatically constrain decaying particle masses, unless they are manually disabled
+	// locReaction->Set_KinFitType(d_P4AndVertexFit);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(0.5*4.008); //beam bunches are every 4.008 ns (2.004 should be minimum cut value)
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 
 	// Optional: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
+	// Make sure PID errors are calculated correctly before using. 
 	//locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
 
 	// Optional: When generating particle combinations, reject all charged track candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
+	// Make sure PID errors are calculated correctly before using. 
 	//locReaction->Set_MinChargedPIDFOM(5.73303E-7);
-
-	// Optional, use with caution: When generating particle combinations, but after the Photon/RF Delta-t cut, reject all combos with more than this # of beam photons
-		//useful for missing-particle studies when you need a very pure sample of events
-		//however, this can cut away a lot of signal events too
-	// locReaction->Set_MaxNumBeamPhotonsInBunch(1);
 
 	// Highly Recommended: Cut on number of extra \"good\" tracks. \"Good\" tracks are ones that survive the \"PreSelect\" (or user custom) factory.
 		// Current (09/26/2014): \"Good\" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma). 
@@ -242,34 +257,45 @@ jerror_t DReaction_factory_${ReactionFactoryTag}::init(void)
 
 	// Highly Recommended: Very loose invariant mass cuts, applied during DParticleComboBlueprint construction
 	// Example: pi0 -> g, g cut
-	// locReaction->Set_InvariantMassCut(Pi0, 0.08, 0.19);
+	// locReaction->Set_InvariantMassCut(Pi0, 0.0, 0.3);
 
 	// Highly Recommended: Very loose DAnalysisAction cuts, applied just after creating the combination (before saving it)
-	// Example: Missing mass squared of proton
-	// locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMassSquared(locReaction, false, -0.1, 2.56));
+	// Example: Missing mass of proton
+	// locReaction->Add_ComboPreSelectionAction(new DCutAction_MissingMass(locReaction, false, 0.7, 1.2));
 
 	/**************************************************** ${ReactionName} Analysis Actions ****************************************************/
 
 	/*
 	// Recommended: Analysis actions automatically performed by the DAnalysisResults factories to histogram useful quantities.
 		//These actions are executed sequentially, and are executed on each surviving (non-cut) particle combination 
-		//Pre-defined actions can be found in ANALYSIS/DHistogramActions.h and ANALYSIS/DCutActions.h
+		//Pre-defined actions can be found in ANALYSIS/DHistogramActions_*.h and ANALYSIS/DCutActions.h
+		//If a histogram action is repeated, it should be created with a unique name (string) to distinguish them
 
-	// PID & Kinematics
+	// HISTOGRAM PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-	locReaction->Add_AnalysisAction(new DHistogramAction_TruePID(locReaction)); //momentum distributions of tracks with true/false PID (if thrown data available)
 
-	// Transverse Momentum //Recommended for no-missing-particle reactions only!
-	// locReaction->Add_AnalysisAction(new DHistogramAction_MissingTransverseMomentum(locReaction, false, 1000, 0.0, 1.0)); //false: fill histograms with measured particle data
-	// locReaction->Add_AnalysisAction(new DCutAction_TransverseMomentum(locReaction, 0.4)); //Max Missing Pt of 0.4 GeV
+	// CUT PID
+	// SYS_TOF, SYS_BCAL, SYS_FCAL, ...: DetectorSystem_t: Defined in libraries/include/GlueX.h
+	// locReaction->Add_AnalysisAction(new DCutAction_EachPIDFOM(locReaction, 5.73303E-7));
+	// locReaction->Add_AnalysisAction(new DCutAction_PIDDeltaT(locReaction, false, 1.0, Proton, SYS_TOF)); //cut at delta-t +/- 1.0 //false: measured data
+	// locReaction->Add_AnalysisAction(new DCutAction_PIDTimingBeta(locReaction, 0.0, 0.9, Neutron, SYS_BCAL)); //min/max beta cut for neutrons
+	// locReaction->Add_AnalysisAction(new DCutAction_NoPIDHit(locReaction, KPlus)); //for K+ candidates, cut tracks with no PID hit
 
-	// Kinematic Fit Results
+	// HISTOGRAM MASSES //false/true: measured/kinfit data
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 600, 0.0, 0.3, \"Pi0_PreKinFit\"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 1000, 0.7, 1.2, \"PreKinFit\"));
+
+	// KINEMATIC FIT
 	// locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 	// locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.0)); //0% confidence level cut //require kinematic fit converges
 
+	// HISTOGRAM MASSES //false/true: measured/kinfit data
+	//locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 600, 0.0, 0.3, \"Pi0_PostKinFit\"));
+	//locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 1000, 0.7, 1.2, \"PostKinFit\"));
+
 	// Kinematics
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: fill histograms with measured particle data
-	// locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, \"KinFit\")); //true: fill histograms with kinematic-fit particle data //\"KinFit\": unique name since action type is repeated
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: measured data
+	// locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, \"KinFit\")); //true: kinematic-fit data
 	locReaction->Add_AnalysisAction(new DHistogramAction_TrackVertexComparison(locReaction));
 	*/
 
@@ -511,7 +537,19 @@ jerror_t DEventProcessor_${PluginName}::evnt(jana::JEventLoop* locEventLoop, uin
 	//Optional: Save event to output REST file. Use this to create physical skims.
 	const DEventWriterREST* locEventWriterREST = NULL;
 	locEventLoop->GetSingle(locEventWriterREST);
-	locEventLoop->Write_RESTEvent(locEventLoop, \"${PluginName}\"); //string is part of output file name
+	for(size_t loc_i = 0; loc_i < locAnalysisResultsVector.size(); ++loc_i)
+	{
+		const DAnalysisResults* locAnalysisResults = locAnalysisResultsVector[loc_i];
+		if(locAnalysisResults->Get_Reaction()->Get_ReactionName() != \"${ReactionName}\")
+			continue; // analysis results were for a different reaction
+
+		//get the DParticleCombo objects for this DReaction that survived all of the DAnalysisAction cuts
+		deque<const DParticleCombo*> locPassedParticleCombos;
+		locAnalysisResults->Get_PassedParticleCombos(locPassedParticleCombos);
+
+		if(!locPassedParticleCombos.empty())
+			locEventWriterREST->Write_RESTEvent(locEventLoop, \"${ReactionName}\"); //string is part of output file name
+	}
 	*/
 
 	/*
