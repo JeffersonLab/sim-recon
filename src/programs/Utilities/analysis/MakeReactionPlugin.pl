@@ -537,7 +537,19 @@ jerror_t DEventProcessor_${PluginName}::evnt(jana::JEventLoop* locEventLoop, uin
 	//Optional: Save event to output REST file. Use this to create physical skims.
 	const DEventWriterREST* locEventWriterREST = NULL;
 	locEventLoop->GetSingle(locEventWriterREST);
-	locEventLoop->Write_RESTEvent(locEventLoop, \"${PluginName}\"); //string is part of output file name
+	for(size_t loc_i = 0; loc_i < locAnalysisResultsVector.size(); ++loc_i)
+	{
+		const DAnalysisResults* locAnalysisResults = locAnalysisResultsVector[loc_i];
+		if(locAnalysisResults->Get_Reaction()->Get_ReactionName() != \"${ReactionName}\")
+			continue; // analysis results were for a different reaction
+
+		//get the DParticleCombo objects for this DReaction that survived all of the DAnalysisAction cuts
+		deque<const DParticleCombo*> locPassedParticleCombos;
+		locAnalysisResults->Get_PassedParticleCombos(locPassedParticleCombos);
+
+		if(!locPassedParticleCombos.empty())
+			locEventWriterREST->Write_RESTEvent(locEventLoop, \"${ReactionName}\"); //string is part of output file name
+	}
 	*/
 
 	/*
