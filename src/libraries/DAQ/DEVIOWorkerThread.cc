@@ -122,7 +122,11 @@ void DEVIOWorkerThread::Run(void)
 
 		} catch (exception &e) {
 			jerr << e.what() << endl;
-			exit(-1);
+			for(auto pe : parsed_event_pool) delete pe; // delete all parsed events any any objects they hold
+			for(auto pe : current_parsed_events) delete pe; // delete all parsed events any any objects they hold
+			parsed_event_pool.clear();
+			current_parsed_events.clear();
+			//exit(-1);
 		}
 		
 		// Reset and mark us as available for use
@@ -576,6 +580,9 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 			case 0xE05:
 					Parsef250scalerBank(iptr, iend);
 					break;
+			case 0xE10:  // really wish Sascha would share when he does this stuff!
+					Parsef250scalerBank(iptr, iend);
+					break;
 
 			case 5:
 				// old ROL Beni used had this but I don't think its
@@ -584,13 +591,13 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 				break;
 
 
-            default:
-                jerr<<"Unknown module type ("<<det_id<<" = " << hex << det_id << dec << " ) encountered" << endl;
-//                if(VERBOSE>5){
-                    cout << "----- First few words to help with debugging -----" << endl;
-                    cout.flush(); cerr.flush();
+			default:
+				jerr<<"Unknown module type ("<<det_id<<" = " << hex << det_id << dec << " ) encountered" << endl;
+//				if(VERBOSE>5){
+					cout << "----- First few words to help with debugging -----" << endl;
+					cout.flush(); cerr.flush();
 					DumpBinary(&iptr[-2], iend, 32, &iptr[-1]);
-//                }
+//				}
 		}
 
 		iptr = iend_data_block_bank;
