@@ -35,7 +35,7 @@
 	if(psc_tdc_left_occ){
 		psc_tdc_left_occ->SetBarWidth(0.5);
 		psc_tdc_left_occ->SetBarOffset(0);
-		psc_tdc_left_occ->SetFillColor(2);
+		psc_tdc_left_occ->SetFillColor(kGreen);
 		psc_tdc_left_occ->SetStats(0);
 		psc_tdc_left_occ->SetXTitle("Module number");
 		psc_tdc_left_occ->SetYTitle("fADC/TDC occupancy");
@@ -48,14 +48,14 @@
 	if(psc_adc_left_occ){
 		psc_adc_left_occ->SetBarWidth(0.5);
 		psc_adc_left_occ->SetBarOffset(0.5);
-		psc_adc_left_occ->SetFillColor(3);
+		psc_adc_left_occ->SetFillColor(kRed);
 		psc_adc_left_occ->SetStats(0);
 	}
 	
 	if(psc_tdc_right_occ){
 		psc_tdc_right_occ->SetBarWidth(0.5);
 		psc_tdc_right_occ->SetBarOffset(0);
-		psc_tdc_right_occ->SetFillColor(2);
+		psc_tdc_right_occ->SetFillColor(kGreen);
 		psc_tdc_right_occ->SetStats(0);
 		psc_tdc_right_occ->SetXTitle("Module number");
 		psc_tdc_right_occ->SetYTitle("fADC/TDC occupancy");
@@ -68,14 +68,14 @@
 	if(psc_adc_right_occ){
 		psc_adc_right_occ->SetBarWidth(0.5);
 		psc_adc_right_occ->SetBarOffset(0.5);
-		psc_adc_right_occ->SetFillColor(3);
+		psc_adc_right_occ->SetFillColor(kRed);
 		psc_adc_right_occ->SetStats(0);
 	}
 
 	if(ps_left_occ){
 		ps_left_occ->SetBarWidth(0.5);
 		ps_left_occ->SetBarOffset(0);
-		ps_left_occ->SetFillColor(2);
+		ps_left_occ->SetFillColor(kRed);
 		ps_left_occ->SetStats(0);
 		ps_left_occ->SetXTitle("Column number");
 		ps_left_occ->SetYTitle("fADC occupancy");
@@ -88,7 +88,7 @@
 	if(ps_right_occ){
 		ps_right_occ->SetBarWidth(0.5);
 		ps_right_occ->SetBarOffset(0);
-		ps_right_occ->SetFillColor(2);
+		ps_right_occ->SetFillColor(kRed);
 		ps_right_occ->SetStats(0);
 		ps_right_occ->SetXTitle("Column number");
 		ps_right_occ->SetYTitle("fADC occupancy");
@@ -119,8 +119,8 @@
 	TVirtualPad *pad1 = c1->cd(1);
 	pad1->SetTicks();
 	pad1->SetGridy();
-	if(psc_tdc_left_occ) psc_tdc_left_occ->Draw("BAR");
-	if(psc_adc_left_occ) psc_adc_left_occ->Draw("BAR sames");
+	if(psc_tdc_left_occ) psc_tdc_left_occ->DrawCopy("BAR");
+	if(psc_adc_left_occ) psc_adc_left_occ->DrawCopy("BAR same");
 
 	legend_sa->Draw();
 	legend_na->Draw();
@@ -128,8 +128,8 @@
 	TVirtualPad *pad2 = c1->cd(2);
 	pad2->SetTicks();
 	pad2->SetGridy();
-	if(psc_tdc_right_occ) psc_tdc_right_occ->Draw("BAR");
-	if(psc_adc_right_occ) psc_adc_right_occ->Draw("BAR sames");
+	if(psc_tdc_right_occ) psc_tdc_right_occ->DrawCopy("BAR");
+	if(psc_adc_right_occ) psc_adc_right_occ->DrawCopy("BAR same");
 
 	legend_sa->Draw();
 	legend_na->Draw();
@@ -137,7 +137,7 @@
 	TVirtualPad *pad3 = c1->cd(3);
 	pad3->SetTicks();
 	pad3->SetGridy();
-	if(ps_left_occ) ps_left_occ->Draw();
+	if(ps_left_occ) ps_left_occ->DrawCopy();
 
 	legend_na->Draw("BAR");
 
@@ -145,7 +145,7 @@
 	TVirtualPad *pad4 = c1->cd(4);
 	pad4->SetTicks();
 	pad4->SetGridy();
-	if(ps_right_occ) ps_right_occ->Draw();
+	if(ps_right_occ) ps_right_occ->DrawCopy();
 
 	legend_na->Draw("BAR");
 

@@ -238,6 +238,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		float TIMEOUT;
 		string MODTYPE_MAP_FILENAME;
 		bool ENABLE_DISENTANGLING;
+		bool EVIO_SPARSE_READ;
+		string EVENT_MASK;
 
         EmulationModeType F125_EMULATION_MODE; ///< F125 emulation mode
         EmulationModeType F250_EMULATION_MODE; ///< F250 emulation mode
