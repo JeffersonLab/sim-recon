@@ -1609,7 +1609,7 @@ void LinkAssociationsB(vector<T*> &a, vector<U*> &b)
 		for(uint32_t ii=istart; ii<iend; ii++){
 			for(uint32_t jj=jstart; jj<jend; jj++){
 				b[ii]->AddAssociatedObject(a[jj]);
-				a[jj]->AddAssociatedObject(b[ii]);
+//				a[jj]->AddAssociatedObject(b[ii]);
 			}
 		}
 		j = jend;
@@ -1770,48 +1770,52 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 		// Connect Df250Config objects
 		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250WindowRawData);
 		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250PulseIntegral);
-		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250PulseTime);
-		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250PulsePedestal);
+//		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250PulseTime);
+//		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250PulsePedestal);
 
 		// Connect Df125Config objects
-        LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125WindowRawData);
-        LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125PulseIntegral);
-        LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125CDCPulse);
-        LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125FDCPulse);
-        LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125PulseTime);
-        LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125PulsePedestal);
+		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125WindowRawData);
+		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125PulseIntegral);
+		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125CDCPulse);
+		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125FDCPulse);
+//		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125PulseTime);
+//		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125PulsePedestal);
 
 		// Connect vDF1TDCConfig objects
-        LinkAssociationsConfigB(pe->vDF1TDCConfig, pe->vDF1TDCHit);
+		LinkAssociationsConfigB(pe->vDF1TDCConfig, pe->vDF1TDCHit);
 
 		// Connect vDCAEN1290TDCConfig objects
-        LinkAssociationsConfigB(pe->vDCAEN1290TDCConfig, pe->vDCAEN1290TDCHit);
-		
+		LinkAssociationsConfigB(pe->vDCAEN1290TDCConfig, pe->vDCAEN1290TDCHit);
+
 		// Connect Df250TriggerTime objects
-        LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250WindowRawData);
-        LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulseIntegral);
-        LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulseTime);
-        LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulsePedestal);
+		LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250WindowRawData);
+		LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulseIntegral);
+//		LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulseTime);
+//		LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulsePedestal);
 
 		// Connect Df125TriggerTime objects
-        LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125WindowRawData);
-        LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulseIntegral);
-        LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125CDCPulse);
-        LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125FDCPulse);
-        LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulseTime);
-        LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulsePedestal);
+		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125WindowRawData);
+		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulseIntegral);
+		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125CDCPulse);
+		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125FDCPulse);
+//		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulseTime);
+//		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulsePedestal);
 
 		// Connect DF1TriggerTime objects
-        LinkAssociationsModuleOnlyB(pe->vDF1TDCTriggerTime, pe->vDF1TDCHit);
+		LinkAssociationsModuleOnlyB(pe->vDF1TDCTriggerTime, pe->vDF1TDCHit);
 
 		// Connect pulse objects
-		LinkAssociationsB(pe->vDf250PulseIntegral, pe->vDf250PulseTime);
-		LinkAssociationsB(pe->vDf250PulseIntegral, pe->vDf250PulsePedestal);
-		LinkAssociationsB(pe->vDf250PulsePedestal, pe->vDf250PulseTime);
+		LinkAssociationsB(pe->vDf250PulseTime,     pe->vDf250PulseIntegral);
+		LinkAssociationsB(pe->vDf250PulsePedestal, pe->vDf250PulseIntegral);
+//		LinkAssociationsB(pe->vDf250PulseIntegral, pe->vDf250PulseTime);
+//		LinkAssociationsB(pe->vDf250PulseIntegral, pe->vDf250PulsePedestal);
+//		LinkAssociationsB(pe->vDf250PulsePedestal, pe->vDf250PulseTime);
 
-		LinkAssociationsB(pe->vDf125PulseIntegral, pe->vDf125PulseTime);
-		LinkAssociationsB(pe->vDf125PulseIntegral, pe->vDf125PulsePedestal);
-		LinkAssociationsB(pe->vDf125PulsePedestal, pe->vDf125PulseTime);
+		LinkAssociationsB(pe->vDf125PulseTime,     pe->vDf125PulseIntegral);
+		LinkAssociationsB(pe->vDf125PulsePedestal, pe->vDf125PulseIntegral);
+//		LinkAssociationsB(pe->vDf125PulseIntegral, pe->vDf125PulseTime);
+//		LinkAssociationsB(pe->vDf125PulseIntegral, pe->vDf125PulsePedestal);
+//		LinkAssociationsB(pe->vDf125PulsePedestal, pe->vDf125PulseTime);
 	}
 
 }
