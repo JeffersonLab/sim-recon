@@ -54,12 +54,6 @@ open(FILE, ">$PluginName/$ccfile");
 close(FILE);
 print " - $ccfile\n";
 
-# Create Makefile
-open(FILE, ">$PluginName/Makefile");
-&PrintMakefile();
-close(FILE);
-print " - Makefile\n";
-
 # Create SConscript
 # Not really needed unless included in GlueX Build
 #open(FILE, ">$PluginName/SConscript");
@@ -644,19 +638,6 @@ $ReactionName = "__nada__";
 $ReactionFactoryTag = "__nada__";
 
 ###############
-# PrintMakefile
-###############
-sub PrintMakefile()
-{
-	# Contents of default Makefile for plugins
-	print FILE "\n";
-	print FILE "PACKAGES = ROOT:JANA\n";
-	print FILE "\n";
-	print FILE "include \$(HALLD_HOME)/src/BMS/Makefile.shlib\n";
-	print FILE "\n";
-}
-
-###############
 # PrintSConscript
 ###############
 sub PrintSConscript()
@@ -798,7 +779,7 @@ sub Usage()
 	print "a DReaction factory (complete with factory generator).\n";
 	print "\n";
 	print "This will create a directory and generate a few files in it, including\n";
-	print "a default Makefile and SConstruct so that one can use to immediately compile the new plugin.\n";
+	print "a default SConstruct so that one can use to immediately compile the new plugin.\n";
 	print "\n";
 
 	print "\n";
