@@ -240,7 +240,6 @@ jerror_t DReaction_factory_${ReactionFactoryTag}::evnt(JEventLoop* locEventLoop,
 	//locReaction->Set_MinChargedPIDFOM(5.73303E-7);
 
 	// Highly Recommended: Cut on number of extra \"good\" tracks. \"Good\" tracks are ones that survive the \"PreSelect\" (or user custom) factory.
-		// Current (09/26/2014): \"Good\" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma). 
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look \"good\"
 	locReaction->Set_MaxExtraGoodTracks(4);
 
