@@ -6,6 +6,8 @@
 #include "IUAmpTools/AmpParameter.h"
 #include "GPUManager/GPUCustomTypes.h"
 
+#include "TH1D.h"
+#include "TFile.h"
 #include <string>
 #include <complex>
 #include <vector>
@@ -55,6 +57,10 @@ private:
 
   AmpParameter rho102;
   AmpParameter rho1m12;
+
+  TH1D *totalFlux_vs_E;
+  TH1D *polFlux_vs_E;
+  TH1D *polFrac_vs_E;
 
 };
 
