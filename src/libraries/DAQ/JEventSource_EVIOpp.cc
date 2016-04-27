@@ -339,11 +339,7 @@ jerror_t JEventSource_EVIOpp::GetEvent(JEvent &event)
 	// If this is a BOR event, then take ownership of
 	// the DBORptrs object. If not, then copy a pointer
 	// to the latest DBORptrs object into the event.
-	if(pe->borptrs){
-		borptrs_list.push_front(pe->borptrs);
-	}else{
-		if(!borptrs_list.empty()) pe->borptrs = borptrs_list.front();
-	}
+	if(pe->borptrs) borptrs_list.push_front(pe->borptrs);
 
 	// Copy info for this parsed event into the JEvent
 	event.SetJEventSource(this);
@@ -358,9 +354,12 @@ jerror_t JEventSource_EVIOpp::GetEvent(JEvent &event)
 	if( source_type == kETSource   ) event.SetStatusBit(kSTATUS_FROM_ET);
 
 	// EPICS and BOR events are barrier events
-	if(event.GetStatusBit(kSTATUS_EPICS_EVENT) || event.GetStatusBit(kSTATUS_BOR_EVENT) ){
-		event.SetSequential();
-	}
+	if(event.GetStatusBit(kSTATUS_EPICS_EVENT)) event.SetSequential();
+	if(event.GetStatusBit(kSTATUS_BOR_EVENT  )) event.SetSequential();
+	
+	// Only add BOR events to physics events
+	if(pe->borptrs==NULL)
+		if(!borptrs_list.empty()) pe->borptrs = borptrs_list.front();
 	
 	return NOERROR;
 }
@@ -413,7 +412,12 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	DParsedEvent *pe = (DParsedEvent*)event.GetRef();
 	JEventLoop *loop = event.GetJEventLoop();
 
-	if(!pe->copied_to_factories) pe->CopyToFactories(loop);
+	// Copy pointers to all hits to appropriate factories.
+	// Link BORconfig objects if appropriate.
+	if(!pe->copied_to_factories){
+		pe->CopyToFactories(loop);
+		if(LINK && pe->borptrs) LinkBORassociations(pe);
+	}
 
 	// Apply any translation tables that exist, writing the translated objects
 	// into their respective factories
@@ -443,26 +447,130 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	}	
 }
 
-//----------------
-// Cleanup
-//----------------
-void JEventSource_EVIOpp::Cleanup(void)
+//----------------------------
+// LinkAssociationsBORConfigB
+//----------------------------
+template<class T, class U>
+void LinkAssociationsBORConfigB(vector<T*> &a, vector<U*> &b)
 {
-	/// This is called internally by the JEventSource_EVIO class
-	/// once all events have been read in. Its purpose is to
-	/// free the hidden memory in all of the container class
-	/// members of the JEventSource_EVIO class. This is needed
-	/// for jobs that process a lot of input files and therefore
-	/// create a lot JEventSource_EVIO objects. JANA does not delete
-	/// these objects until the end of the job so this tends to
-	/// act like a memory leak. The data used can be substantial
-	/// (nearly 1GB per JEventSource_EVIO object).
+	/// Template routine to loop over two vectors of pointers to
+	/// objects derived from DDAQAddress. This will find any hits
+	/// coming from the same DAQ module (channel number is not checked)
+	/// When a match is found, the pointer from "a" will be added
+	/// to "b"'s AssociatedObjects list. This will NOT do the inverse
+	/// of adding "b" to "a"'s list. It is intended for adding a module
+	/// level trigger time object to all hits from that module. Adding
+	/// all of the hits to the trigger time object seems like it would
+	/// be a little expensive with no real use case.
+	///
+	/// Note that this assumes the input vectors have been sorted by
+	/// rocid, then slot in ascending order.
 
-	if(hdevio) delete hdevio;
-	hdevio = NULL;
+	// Bail early if nothing to link
+	if(b.empty()) return;
+	if(a.empty()) return;
 
-	if(hdet) delete hdet;
-	hdet = NULL;
+	for(uint32_t i=0, j=0; i<b.size(); ){
+
+		uint32_t rocid = b[i]->rocid;
+		uint32_t slot  = b[i]->slot;
+
+		// Find start and end of range in b
+		uint32_t istart = i;
+		uint32_t iend   = i+1; // index of first element outside of ROI
+		for(; iend<b.size(); iend++){
+			if(b[iend]->rocid != rocid) break;
+			if(b[iend]->slot  != slot ) break;
+		}
+		i = iend; // setup for next iteration
+		
+		// Find start of range in a
+		for(; j<a.size(); j++){
+			if( a[j]->rocid > rocid ) break;
+			if( a[j]->rocid == rocid ){
+				if( a[j]->slot >= slot ) break;
+			}
+		}
+		if(j>=a.size()) break; // exhausted all a's. we're done
+
+		if( a[j]->rocid > rocid ) continue; // couldn't find rocid in a
+		if( a[j]->slot  > slot  ) continue; // couldn't find slot in a
+		
+		// Find end of range in a
+		uint32_t jend = j+1;
+		for(; jend<a.size(); jend++){
+			if(a[jend]->rocid != rocid) break;
+			if(a[jend]->slot  != slot ) break;
+		}
+
+		// Loop over all combos of both ranges and make associations
+		uint32_t jstart = j;
+		for(uint32_t ii=istart; ii<iend; ii++){
+			for(uint32_t jj=jstart; jj<jend; jj++){
+				b[ii]->AddAssociatedObject(a[jj]);
+			}
+		}
+		j = jend;
+
+		if( i>=b.size() ) break;
+		if( j>=a.size() ) break;
+	}
+}
+
+//----------------
+// LinkBORassociations
+//----------------
+void JEventSource_EVIOpp::LinkBORassociations(DParsedEvent *pe)
+{
+	/// Add BORConfig objects as associated objects
+	/// to selected hit objects. Most other object associations
+	/// are made in DEVIOWorkerThread::LinkAllAssociations. The
+	/// BORConfig objects however, are not available when that
+	/// is called.
+	/// This is called from GetObjects() which is called from
+	/// one of the processing threads.
+	
+	// n.b. all of the BORConfig object vectors will already
+	// be sorted by rocid, then slot when the data was parsed.
+	// The other hit objects are also already sorted (in
+	// DEVIOWorkerThread::LinkAllAssociations).
+
+	DBORptrs *borptrs = pe->borptrs;
+
+	LinkAssociationsBORConfigB(borptrs->vDf250BORConfig, pe->vDf250WindowRawData);
+	LinkAssociationsBORConfigB(borptrs->vDf250BORConfig, pe->vDf250PulseIntegral);
+
+	LinkAssociationsBORConfigB(borptrs->vDf125BORConfig, pe->vDf125WindowRawData);
+	LinkAssociationsBORConfigB(borptrs->vDf125BORConfig, pe->vDf125PulseIntegral);
+	LinkAssociationsBORConfigB(borptrs->vDf125BORConfig, pe->vDf125CDCPulse);
+	LinkAssociationsBORConfigB(borptrs->vDf125BORConfig, pe->vDf125FDCPulse);
+
+	LinkAssociationsBORConfigB(borptrs->vDF1TDCBORConfig, pe->vDF1TDCHit);
+
+	LinkAssociationsBORConfigB(borptrs->vDCAEN1290TDCBORConfig, pe->vDCAEN1290TDCHit);
 
 }
+
+////----------------
+//// Cleanup
+////----------------
+//void JEventSource_EVIOpp::Cleanup(void)
+//{
+//	/// This is called internally by the JEventSource_EVIO class
+//	/// once all events have been read in. Its purpose is to
+//	/// free the hidden memory in all of the container class
+//	/// members of the JEventSource_EVIO class. This is needed
+//	/// for jobs that process a lot of input files and therefore
+//	/// create a lot JEventSource_EVIO objects. JANA does not delete
+//	/// these objects until the end of the job so this tends to
+//	/// act like a memory leak. The data used can be substantial
+//	/// (nearly 1GB per JEventSource_EVIO object).
+//
+//	if(hdevio) delete hdevio;
+//	hdevio = NULL;
+//
+//	if(hdet) delete hdet;
+//	hdet = NULL;
+//
+//}
 

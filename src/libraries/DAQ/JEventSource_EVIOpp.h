@@ -93,9 +93,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		               void FreeEvent(jana::JEvent &event);
 		           jerror_t GetObjects(jana::JEvent &event, jana::JFactory_base *factory);
 
-		               void ConnectToET(const char* source_name);
-		               int  ReadEventFromET(uint32_t* &buff, uint32_t &buff_len);
-		               void Cleanup(void);
+		               void LinkBORassociations(DParsedEvent *pe);
 		
 		bool DONE;
 		std::chrono::high_resolution_clock::time_point tstart;

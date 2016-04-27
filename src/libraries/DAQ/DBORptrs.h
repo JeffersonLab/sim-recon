@@ -56,6 +56,18 @@ class DBORptrs{
 		#undef deletevector
 		#undef clearvectors
 
+		// Comparison function used to sort vectors by rocid then slot
+		template<class T>
+		static bool SortByModule(const T* const &obj1, const T* const &obj2){
+			if(obj1->rocid < obj2->rocid) return true;
+			if(obj1->rocid > obj2->rocid) return false;
+			return obj1->slot < obj2->slot;
+		}
+
+		// Sort all vectors by rocid then slot
+		#define sortvector(A) if( v##A.size()>1 ) sort(v##A.begin(), v##A.end(), SortByModule<A>);
+		void Sort(void){ MyBORTypes(sortvector) }
+		#undef sortvector
 };
 
 #endif // _DBORptrs_

@@ -538,6 +538,10 @@ void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 		
 		iptr = iend_crate; // ensure we're pointing past this crate
 	}
+	
+	// Sort the BOR config events now so we don't have to do it for every event
+	borptrs->Sort();
+
 }
 
 //---------------------------------
