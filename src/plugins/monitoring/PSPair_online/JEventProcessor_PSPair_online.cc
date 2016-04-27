@@ -146,10 +146,11 @@ jerror_t JEventProcessor_PSPair_online::init(void)
     const double Tbl_PS = -4.5;
     const double Tbh_PS = 4.5;
     const int NTb_PS = int((Tbh_PS-Tbl_PS)/Tbw);
-    const double Tbl_TAG = -30.0;
-    const double Tbh_TAG = 30.0;
-    const int NTb_TAG = int((Tbh_TAG-Tbl_TAG)/Tbw);
-    //
+    const double Tbl_TAG = -200.0;
+    const double Tbh_TAG = 200.0;
+    const int NTb_TAG = 1000;
+    // energy difference binning
+    const int NEdb = 200; const double Edbl = -1.0; const double Edbh = 1.0;
 
     // create root folder for pspair and cd to it, store main dir
     TDirectory *mainDir = gDirectory;
@@ -202,13 +203,13 @@ jerror_t JEventProcessor_PSPair_online::init(void)
     psPairDir->cd();
     //
     gDirectory->mkdir("PSC_PS_TAGH")->cd();
-    hPSTAGH_tdiffVsEdiff = new TH2F("PSTAGH_tdiffVsEdiff","PS pair - TAGH: PS-TAGH time difference vs. PS-TAGH energy difference;[E(PS) - E(TAGH)] / E(PS);PSC/TAGH time difference [ns]",80,-0.15,0.15,NTb_TAG,Tbl_TAG,Tbh_TAG);
+    hPSTAGH_tdiffVsEdiff = new TH2F("PSTAGH_tdiffVsEdiff","PS pair - TAGH: PS-TAGH time difference vs. PS-TAGH energy difference;E(PS) - E(TAGH) [GeV];PSC/TAGH time difference [ns]",NEdb,Edbl,Edbh,NTb_TAG,Tbl_TAG,Tbh_TAG);
     hPSTAGH_TAGHCounterID = new TH1F("PSTAGH_TAGHCounterID","PS pair - TAGH: TAGH counter ID;TAGH counter ID;events",NC_TAGH,0.5,0.5+NC_TAGH);
     hPSTAGH_Etagh = new TH1F("PSTAGH_Etagh","PS pair - TAGH: TAGH photon energy;TAGH photon energy [GeV];events",NEb_TAG,Ebl_TAG,Ebh_TAG);
     hPSTAGH_timeVsEtagh = new TH2F("PSTAGH_timeVsEtagh","PS pair - TAGH: TAGH time vs. photon energy;TAGH photon energy [GeV];time [ns]",NEb_TAG,Ebl_TAG,Ebh_TAG,NTb_TAG,Tbl_TAG,Tbh_TAG);
     hPSTAGH_EVsEtagh = new TH2I("PSTAGH_EVsEtagh","PS pair - TAGH: PS energy vs. TAGH energy;TAGH energy [GeV];PS energy [GeV]",NEb_PS,Ebl_PS,Ebh_PS,NEb_PS,Ebl_PS,Ebh_PS);
-    hPSTAGH_EdiffVsEtagh = new TH2I("PSTAGH_EdiffVsEtagh","PS pair - TAGH: PS-TAGH energy difference vs. TAGH energy;TAGH energy [GeV];[E(PS) - E(TAGH)] / E(PS)",NEb_TAG,Ebl_TAG,Ebh_TAG,80,-0.15,0.15);
-    hPSTAGH_EdiffVsTAGHCounterID = new TH2I("PSTAGH_EdiffVsTAGHCounterID","PS pair - TAGH: PS-TAGH energy difference vs. TAGH counter ID;TAGH counter ID;[E(PS) - E(TAGH)] / E(PS)",NC_TAGH,0.5,0.5+NC_TAGH,80,-0.15,0.15);
+    hPSTAGH_EdiffVsEtagh = new TH2I("PSTAGH_EdiffVsEtagh","PS pair - TAGH: PS-TAGH energy difference vs. TAGH energy;TAGH energy [GeV];E(PS) - E(TAGH) [GeV]",NEb_TAG,Ebl_TAG,Ebh_TAG,NEdb,Edbl,Edbh);
+    hPSTAGH_EdiffVsTAGHCounterID = new TH2I("PSTAGH_EdiffVsTAGHCounterID","PS pair - TAGH: PS-TAGH energy difference vs. TAGH counter ID;TAGH counter ID;E(PS) - E(TAGH) [GeV]",NC_TAGH,0.5,0.5+NC_TAGH,NEdb,Edbl,Edbh);
     hPSTAGH_PSCIDLeftVsIDRight = new TH2F("PSTAGH_PSCIDLeftVsIDRight","PS pair - TAGH: Coarse PS ID left arm vs. ID right arm;module(right arm);module(left arm)",NC_PSC,0.5,0.5+NC_PSC,NC_PSC,0.5,0.5+NC_PSC);
     hPSTAGH_PSIDLeftVsIDRight = new TH2F("PSTAGH_PSIDLeftVsIDRight","PS pair - TAGH: Fine PS ID left arm vs. ID right arm;column(right arm);column(left arm)",NC_PS,0.5,0.5+NC_PS,NC_PS,0.5,0.5+NC_PS);
     hPSTAGH_ElVsEr = new TH2F("PSTAGH_ElVsEr","PS pair - TAGH: left-arm energy vs. right-arm energy;energy(right arm) [GeV];energy(left arm) [GeV]",NEb_PSarm,Ebl_PSarm,Ebh_PSarm,NEb_PSarm,Ebl_PSarm,Ebh_PSarm);
@@ -230,13 +231,13 @@ jerror_t JEventProcessor_PSPair_online::init(void)
     psPairDir->cd();
     //
     gDirectory->mkdir("PSC_PS_TAGM")->cd();
-    hPSTAGM_tdiffVsEdiff = new TH2F("PSTAGM_tdiffVsEdiff","PS pair - TAGM: PS-TAGM time difference vs. PS-TAGM energy difference;[E(PS) - E(TAGM)] / E(PS);PSC/TAGM time difference [ns]",80,-0.15,0.15,NTb_TAG,Tbl_TAG,Tbh_TAG);
+    hPSTAGM_tdiffVsEdiff = new TH2F("PSTAGM_tdiffVsEdiff","PS pair - TAGM: PS-TAGM time difference vs. PS-TAGM energy difference;E(PS) - E(TAGM) [GeV];PSC/TAGM time difference [ns]",NEdb,Edbl,Edbh,NTb_TAG,Tbl_TAG,Tbh_TAG);
     hPSTAGM_TAGMColumn = new TH1F("PSTAGM_TAGMColumn","PS pair - TAGM: TAGM column;TAGM column;events",NC_TAGM,0.5,0.5+NC_TAGM);
     hPSTAGM_Etagm = new TH1F("PSTAGM_Etagm","PS pair - TAGM: TAGM photon energy;TAGM photon energy [GeV];events",NEb_PS,Ebl_PS,Ebh_PS);
     hPSTAGM_timeVsEtagm = new TH2F("PSTAGM_timeVsEtagm","PS pair - TAGM: TAGM time vs. photon energy;TAGM photon energy [GeV];time [ns]",NEb_PS,Ebl_PS,Ebh_PS,NTb_TAG,Tbl_TAG,Tbh_TAG);
     hPSTAGM_EVsEtagm = new TH2I("PSTAGM_EVsEtagm","PS pair - TAGM: PS energy vs. TAGM energy;TAGM energy [GeV];PS energy [GeV]",NEb_PS,Ebl_PS,Ebh_PS,NEb_PS,Ebl_PS,Ebh_PS);
-    hPSTAGM_EdiffVsEtagm = new TH2I("PSTAGM_EdiffVsEtagm","PS pair - TAGM: PS-TAGM energy difference vs. TAGM energy;TAGM energy [GeV];[E(PS) - E(TAGM)] / E(PS)",NEb_PS,Ebl_PS,Ebh_PS,80,-0.15,0.15);
-    hPSTAGM_EdiffVsTAGMColumn = new TH2I("PSTAGM_EdiffVsTAGMColumn","PS pair - TAGM: PS-TAGM energy difference vs. TAGM column;TAGM column;[E(PS) - E(TAGM)] / E(PS)",NC_TAGM,0.5,0.5+NC_TAGM,80,-0.15,0.15);
+    hPSTAGM_EdiffVsEtagm = new TH2I("PSTAGM_EdiffVsEtagm","PS pair - TAGM: PS-TAGM energy difference vs. TAGM energy;TAGM energy [GeV];E(PS) - E(TAGM) [GeV]",NEb_PS,Ebl_PS,Ebh_PS,NEdb,Edbl,Edbh);
+    hPSTAGM_EdiffVsTAGMColumn = new TH2I("PSTAGM_EdiffVsTAGMColumn","PS pair - TAGM: PS-TAGM energy difference vs. TAGM column;TAGM column;E(PS) - E(TAGM) [GeV]",NC_TAGM,0.5,0.5+NC_TAGM,NEdb,Edbl,Edbh);
     hPSTAGM_PSCIDLeftVsIDRight = new TH2F("PSTAGM_PSCIDLeftVsIDRight","PS pair - TAGM: Coarse PS ID left arm vs. ID right arm;module(right arm);module(left arm)",NC_PSC,0.5,0.5+NC_PSC,NC_PSC,0.5,0.5+NC_PSC);
     hPSTAGM_PSIDLeftVsIDRight = new TH2F("PSTAGM_PSIDLeftVsIDRight","PS pair - TAGM: Fine PS ID left arm vs. ID right arm;column(right arm);column(left arm)",NC_PS,0.5,0.5+NC_PS,NC_PS,0.5,0.5+NC_PS);
     hPSTAGM_ElVsEr = new TH2F("PSTAGM_ElVsEr","PS pair - TAGM: left-arm energy vs. right-arm energy;energy(right arm) [GeV];energy(left arm) [GeV]",NEb_PSarm,Ebl_PSarm,Ebh_PSarm,NEb_PSarm,Ebl_PSarm,Ebh_PSarm);
@@ -337,10 +338,10 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
     // add the upper limit
     Elows_TAGM[NC_TAGM] = tagmGeom.getEhigh(1);
     //
-    const int NEdiff = 80;
+    const int NEdiff = 200;
     double EdiffLows[NEdiff+1];
     for (int i=0;i<NEdiff+1;i++) {
-        EdiffLows[i] = -0.15 + i*0.00375;
+        EdiffLows[i] = -1.0 + i*0.01;
     }
     double modules[NC_PSC+1];
     for (int i=0;i<=NC_PSC;i++) {
@@ -352,8 +353,8 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
         Tlows[i] = -400.0+i*0.4;
     }
 
-	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+    // Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
     // set variable-width energy bins if histogram is empty
     // PS
@@ -383,7 +384,7 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
     if (hPSTAGM_timeVsEtagm->GetEntries()==0) hPSTAGM_timeVsEtagm->SetBins(NC_TAGM,Elows_TAGM,NTb,Tlows);
     if (hPSTAGM_EdiffVsEtagm->GetEntries()==0) hPSTAGM_EdiffVsEtagm->SetBins(NC_TAGM,Elows_TAGM,NEdiff,EdiffLows);
 
-	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
     //
     return NOERROR;
@@ -413,11 +414,10 @@ jerror_t JEventProcessor_PSPair_online::evnt(JEventLoop *loop, uint64_t eventnum
     // TPOL hits
     vector<const DTPOLHit*> tpolhits;
     loop->Get(tpolhits);
-    //
 
-	// FILL HISTOGRAMS
-	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+    // FILL HISTOGRAMS
+    // Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
     hPSC_NHitPairs->Fill(cpairs.size());
     hPS_NHitPairs->Fill(fpairs.size());
@@ -450,21 +450,22 @@ jerror_t JEventProcessor_PSPair_online::evnt(JEventLoop *loop, uint64_t eventnum
             hPS_ElVsPSCIDLeft->Fill(clhit->module,flhit->E);
             hPS_ErVsPSCIDRight->Fill(crhit->module,frhit->E);
             // PSC,PS,TAGH coincidences
-            double EdiffMax = 0.15; // max percent difference of tagger hit and pair energies
+            double EdiffMax = 0.3; // max difference of tagger hit and pair energies
             for (unsigned int i=0; i < taghhits.size(); i++) {
                 const DTAGHHit* tag = taghhits[i];
                 if (!tag->has_TDC||!tag->has_fADC) continue;
                 hPS_TAGHCounterID->Fill(tag->counter_id);
                 hPS_Etagh->Fill(tag->E);
                 hPS_timeVsEtagh->Fill(tag->E,tag->t);
-                hPSTAGH_tdiffVsEdiff->Fill((E_pair-tag->E)/E_pair,clhit->t-tag->t);
-                if (fabs(E_pair-tag->E)/E_pair > EdiffMax) continue; // loose cut on energy difference
+                double Ediff = E_pair-tag->E;
+                hPSTAGH_tdiffVsEdiff->Fill(Ediff,clhit->t-tag->t);
+                if (fabs(Ediff) > EdiffMax) continue; // loose cut on energy difference
                 hPSTAGH_TAGHCounterID->Fill(tag->counter_id);
                 hPSTAGH_Etagh->Fill(tag->E);
                 hPSTAGH_timeVsEtagh->Fill(tag->E,tag->t);
                 hPSTAGH_EVsEtagh->Fill(tag->E,E_pair);
-                hPSTAGH_EdiffVsEtagh->Fill(tag->E,(E_pair-tag->E)/E_pair);
-                hPSTAGH_EdiffVsTAGHCounterID->Fill(tag->counter_id,(E_pair-tag->E)/E_pair);
+                hPSTAGH_EdiffVsEtagh->Fill(tag->E,Ediff);
+                hPSTAGH_EdiffVsTAGHCounterID->Fill(tag->counter_id,Ediff);
                 hPSTAGH_tdiffVsTAGHCounterID_L[clhit->module-1]->Fill(tag->counter_id,clhit->t-tag->t);
                 hPSTAGH_tdiffVsTAGHCounterID_R[crhit->module-1]->Fill(tag->counter_id,crhit->t-tag->t);
                 hPSTAGH_PSCIDLeftVsIDRight->Fill(crhit->module,clhit->module);
@@ -481,14 +482,15 @@ jerror_t JEventProcessor_PSPair_online::evnt(JEventLoop *loop, uint64_t eventnum
                 hPS_TAGMColumn->Fill(tag->column);
                 hPS_Etagm->Fill(tag->E);
                 hPS_timeVsEtagm->Fill(tag->E,tag->t);
-                hPSTAGM_tdiffVsEdiff->Fill((E_pair-tag->E)/E_pair,clhit->t-tag->t);
-                if (fabs(E_pair-tag->E)/E_pair > EdiffMax) continue; // loose cut on energy difference
+                double Ediff = E_pair-tag->E;
+                hPSTAGM_tdiffVsEdiff->Fill(Ediff,clhit->t-tag->t);
+                if (fabs(Ediff) > EdiffMax) continue; // loose cut on energy difference
                 hPSTAGM_TAGMColumn->Fill(tag->column);
                 hPSTAGM_Etagm->Fill(tag->E);
                 hPSTAGM_timeVsEtagm->Fill(tag->E,tag->t);
                 hPSTAGM_EVsEtagm->Fill(tag->E,E_pair);
-                hPSTAGM_EdiffVsEtagm->Fill(tag->E,(E_pair-tag->E)/E_pair);
-                hPSTAGM_EdiffVsTAGMColumn->Fill(tag->column,(E_pair-tag->E)/E_pair);
+                hPSTAGM_EdiffVsEtagm->Fill(tag->E,Ediff);
+                hPSTAGM_EdiffVsTAGMColumn->Fill(tag->column,Ediff);
                 hPSTAGM_tdiffVsTAGMColumn_L[clhit->module-1]->Fill(tag->column,clhit->t-tag->t);
                 hPSTAGM_tdiffVsTAGMColumn_R[crhit->module-1]->Fill(tag->column,crhit->t-tag->t);
                 hPSTAGM_PSCIDLeftVsIDRight->Fill(crhit->module,clhit->module);
@@ -500,7 +502,7 @@ jerror_t JEventProcessor_PSPair_online::evnt(JEventLoop *loop, uint64_t eventnum
             // PSC,PS,TPOL coincidences
             if (fabs(PS_Ediff) > 1.75) {japp->RootFillUnLock(this); return NOERROR;}
             if (fabs(PSC_tdiff) > 1.3) {japp->RootFillUnLock(this); return NOERROR;}
-            if (E_pair < 8.4 || E_pair > 9.2) {japp->RootFillUnLock(this); return NOERROR;}
+            if (E_pair < 8.4 || E_pair > 9.0) {japp->RootFillUnLock(this); return NOERROR;}
             double ph_cut = 100.0;
             int N_TPOL = 0;
             for(unsigned int i=0; i<tpolhits.size(); i++) {
@@ -523,7 +525,7 @@ jerror_t JEventProcessor_PSPair_online::evnt(JEventLoop *loop, uint64_t eventnum
         }
     }
     //
-	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
     return NOERROR;
 }
