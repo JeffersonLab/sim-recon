@@ -18,42 +18,44 @@ using std::map;
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
-#include "daq_param_type.h"
-#include "DModuleType.h"
+#include <DANA/DStatusBits.h>
+#include <DAQ/daq_param_type.h>
+#include <DAQ/DModuleType.h>
 
 
-#include "Df250Config.h"
-#include "Df250PulseIntegral.h"
-#include "Df250StreamingRawData.h"
-#include "Df250WindowSum.h"
-#include "Df250PulseRawData.h"
-#include "Df250TriggerTime.h"
-#include "Df250PulseTime.h"
-#include "Df250PulsePedestal.h"
-#include "Df250WindowRawData.h"
-#include "Df125Config.h"
-#include "Df125TriggerTime.h"
-#include "Df125PulseIntegral.h"
-#include "Df125PulseTime.h"
-#include "Df125PulsePedestal.h"
-#include "Df125PulseRawData.h"
-#include "Df125WindowRawData.h"
-#include "Df125CDCPulse.h"
-#include "Df125FDCPulse.h"
-#include "DF1TDCConfig.h"
-#include "DF1TDCHit.h"
-#include "DF1TDCTriggerTime.h"
-#include "DCAEN1290TDCConfig.h"
-#include "DCAEN1290TDCHit.h"
-#include "DCODAEventInfo.h"
-#include "DCODAROCInfo.h"
-#include "DTSscalers.h"
-#include "DEPICSvalue.h"
-#include "DEventTag.h"
-#include "Df250BORConfig.h"
-#include "Df125BORConfig.h"
-#include "DF1TDCBORConfig.h"
-#include "DCAEN1290TDCBORConfig.h"
+#include <DAQ/Df250Config.h>
+#include <DAQ/Df250PulseIntegral.h>
+#include <DAQ/Df250StreamingRawData.h>
+#include <DAQ/Df250WindowSum.h>
+#include <DAQ/Df250PulseRawData.h>
+#include <DAQ/Df250TriggerTime.h>
+#include <DAQ/Df250PulseTime.h>
+#include <DAQ/Df250PulsePedestal.h>
+#include <DAQ/Df250WindowRawData.h>
+#include <DAQ/Df125Config.h>
+#include <DAQ/Df125TriggerTime.h>
+#include <DAQ/Df125PulseIntegral.h>
+#include <DAQ/Df125PulseTime.h>
+#include <DAQ/Df125PulsePedestal.h>
+#include <DAQ/Df125PulseRawData.h>
+#include <DAQ/Df125WindowRawData.h>
+#include <DAQ/Df125CDCPulse.h>
+#include <DAQ/Df125FDCPulse.h>
+#include <DAQ/DF1TDCConfig.h>
+#include <DAQ/DF1TDCHit.h>
+#include <DAQ/DF1TDCTriggerTime.h>
+#include <DAQ/DCAEN1290TDCConfig.h>
+#include <DAQ/DCAEN1290TDCHit.h>
+#include <DAQ/DCODAEventInfo.h>
+#include <DAQ/DCODAROCInfo.h>
+#include <DAQ/DTSscalers.h>
+#include <DAQ/DEPICSvalue.h>
+#include <DAQ/DEventTag.h>
+#include <DAQ/Df250BORConfig.h>
+#include <DAQ/Df125BORConfig.h>
+#include <DAQ/DF1TDCBORConfig.h>
+#include <DAQ/DCAEN1290TDCBORConfig.h>
+#include <DAQ/DBORptrs.h>
 
 // Here is some C++ macro script-fu. For each type of class the DParsedEvent
 // can hold, we want to have a vector of pointers to that type of object. 
@@ -93,12 +95,6 @@ using namespace jana;
 		X(DEPICSvalue) \
 		X(DEventTag)
 
-#define MyBORTypes(X) \
-		X(Df250BORConfig) \
-		X(Df125BORConfig) \
-		X(DF1TDCBORConfig) \
-		X(DCAEN1290TDCBORConfig)
-
 
 class DParsedEvent{
 	public:		
@@ -111,7 +107,10 @@ class DParsedEvent{
 		uint64_t istreamorder;
 		uint64_t run_number;
 		uint64_t event_number;
+		uint64_t event_status_bits;
 		bool     sync_flag;
+		
+		DBORptrs *borptrs;
 		
 		// For each type defined in "MyTypes" above, define a vector of
 		// pointers to it with a name made by prepending a "v" to the classname
@@ -189,9 +188,10 @@ class DParsedEvent{
 		// for every event. Note that only one processing thread at a time will
 		// ever call this method for this DParsedEvent object so we don't need
 		// to lock access to the factory_pointers map.
-		#define copytofactory(A) facptrs.fac_##A->CopyTo(v##A);
-		#define setevntcalled(A) facptrs.fac_##A->Set_evnt_called();
-		#define keepownership(A) facptrs.fac_##A->SetFactoryFlag(JFactory_base::NOT_OBJECT_OWNER);
+		#define copytofactory(A)    facptrs.fac_##A->CopyTo(v##A);
+		#define copybortofactory(A) facptrs.fac_##A->CopyTo(borptrs->v##A);
+		#define setevntcalled(A)    facptrs.fac_##A->Set_evnt_called();
+		#define keepownership(A)    facptrs.fac_##A->SetFactoryFlag(JFactory_base::NOT_OBJECT_OWNER);
 		void CopyToFactories(JEventLoop *loop){
 			// Get DFactoryPointers for this JEventLoop, creating new one if necessary
 			DFactoryPointers &facptrs = factory_pointers[loop];
@@ -201,9 +201,11 @@ class DParsedEvent{
 			MyTypes(copytofactory)
 			MyTypes(setevntcalled)
 			MyTypes(keepownership)
-			MyBORTypes(copytofactory)
-			MyBORTypes(setevntcalled)
-			MyBORTypes(keepownership)
+			if(borptrs){
+				MyBORTypes(copybortofactory)
+				MyBORTypes(setevntcalled)
+				MyBORTypes(keepownership)
+			}
 			copied_to_factories=true;
 		}
 		
@@ -261,7 +263,7 @@ class DParsedEvent{
 		MyTypes(makeallocator);
 
 		// Constructor and destructor
-		DParsedEvent(void):in_use(false),Nrecycled(0),MAX_RECYCLED(1000){}
+		DParsedEvent(void):in_use(false),Nrecycled(0),MAX_RECYCLED(1000),borptrs(NULL){}
 		#define printcounts(A) if(!v##A.empty()) cout << v##A.size() << " : " << #A << endl;
 		#define printpoolcounts(A) if(!v##A##_pool.empty()) cout << v##A##_pool.size() << " : " << #A << "_pool" << endl;
 		virtual ~DParsedEvent(){

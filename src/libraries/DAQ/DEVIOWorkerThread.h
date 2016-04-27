@@ -22,6 +22,7 @@ using namespace std;
 #include <DAQ/DParsedEvent.h>
 #include <DAQ/DModuleType.h>
 
+class JEventSource_EVIOpp;
 
 
 class DEVIOWorkerThread{
@@ -36,7 +37,8 @@ class DEVIOWorkerThread{
 		};
 
 		DEVIOWorkerThread(
-	 		list<DParsedEvent*>  &parsed_events
+			JEventSource_EVIOpp  *event_source
+	 		,list<DParsedEvent*> &parsed_events
 	 		,uint32_t            &MAX_PARSED_EVENTS
 	 		,mutex               &PARSED_EVENTS_MUTEX
 	 		,condition_variable  &PARSED_EVENTS_CV );
@@ -44,6 +46,7 @@ class DEVIOWorkerThread{
 
 		// These are owned by JEventSource and
 		// are set in the constructor
+		JEventSource_EVIOpp *event_source;
 		list<DParsedEvent*> &parsed_events;
 		uint32_t            &MAX_PARSED_EVENTS;
 		mutex               &PARSED_EVENTS_MUTEX;

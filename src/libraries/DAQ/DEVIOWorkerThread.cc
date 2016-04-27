@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include "DEVIOWorkerThread.h"
+#include "JEventSource_EVIOpp.h"
 
 #include <swap_bank.h>
 
@@ -20,12 +21,14 @@ using namespace std::chrono;
 // DEVIOWorkerThread    (Constructor)
 //---------------------------------
 DEVIOWorkerThread::DEVIOWorkerThread(
-	 list<DParsedEvent*>  &parsed_events
+	 JEventSource_EVIOpp  *event_source
+	 ,list<DParsedEvent*> &parsed_events
 	 ,uint32_t            &MAX_PARSED_EVENTS
 	 ,mutex               &PARSED_EVENTS_MUTEX
 	 ,condition_variable  &PARSED_EVENTS_CV
 	 ):
-	 parsed_events(parsed_events)
+	 event_source(event_source)
+	,parsed_events(parsed_events)
 	,MAX_PARSED_EVENTS(MAX_PARSED_EVENTS)
 	,PARSED_EVENTS_MUTEX(PARSED_EVENTS_MUTEX)
 	,PARSED_EVENTS_CV(PARSED_EVENTS_CV)
@@ -226,6 +229,8 @@ void DEVIOWorkerThread::MakeEvents(void)
 		pe->sync_flag    = false;
 		pe->in_use       = true;
 		pe->copied_to_factories = false;
+		pe->event_status_bits   = 0;
+		pe->borptrs      = NULL; // may be set by either ParseBORbank or JEventSource_EVIOpp::GetEvent
 	}
 
 	// Parse data in buffer to create data objects
@@ -353,6 +358,7 @@ void DEVIOWorkerThread::ParseEPICSbank(uint32_t* &iptr, uint32_t *iend)
 	
 	// Get pointer to first DParsedEvent
 	DParsedEvent *pe = current_parsed_events.front();
+	pe->event_status_bits |= (1<<kSTATUS_EPICS_EVENT);
 	
 	// Loop over daughter banks
 	while( iptr < iend_epics ){
@@ -385,110 +391,153 @@ void DEVIOWorkerThread::ParseEPICSbank(uint32_t* &iptr, uint32_t *iend)
 //---------------------------------
 void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 {
+	/// Create BOR config objects from the EVIO bank and store them in
+	/// the event (should only be one since BOR events are not entangled).
+	/// These objects will eventually be inherited by the JEventSource_EVIOpp
+	/// object and passed to all subsequent events.
+
+	// Upon entry, iptr should point to length word of a bank of banks with tag=0x70
+	// indicating BOR event. Each bank contained within will represent one crate and
+	// will be a bank with tag=0x71 and num the rocid, containing tagsegments. Each tagsegment
+	// represents a single module with the tag containing the module type (bits 0-4) and
+	// slot (bits 5-10). The data in the tagsegments is uint32_t and maps to a data
+	// structure in bor_roc.h depending on the module type. Below is a summary of
+	// how this looks in memory:
+	//
+	//	BOR event length
+	//	BOR header
+	//	crate bank length
+	//	crate header
+	//	module bank len/header
+	//	module data ...
+	//	module bank len/header
+	//	module data ...
+	//  ...
+	//	crate bank length
+	//	crate header
+	//	...
+
 	if(!PARSE_BOR){ iptr = &iptr[(*iptr) + 1]; return; }
 
-	iptr = &iptr[(*iptr) + 1]; 
+	// Make sure there is exactly 1 event in current_parsed_events
+	if(current_parsed_events.size() != 1){
+		stringstream ss;
+		ss << "DEVIOWorkerThread::ParseBORbank called for EVIO event with " << current_parsed_events.size() << " events in it. (Should be exactly 1!)";
+		throw JException(ss.str(), __FILE__, __LINE__);
+	}
 	
-	// This needs to be revised. The original behavior is for the BOR objects
-	// to be kept globally and replaced whenever a new BOR event is encountered.
-	// Pointers to the gobal objects were copied into each event and the factories
-	// flagged as not being the object owners.
-	//
-	// The code below used the evioDOM model which needs to be replaced. Also,
-	// there needs to be some mechanism to share these with other worker thread
-	// objects.
+	// Create new DBORptrs object and set pointer to it in DParsedEvent
+	// (see JEventSource_EVIOpp::GetEvent)
+	DParsedEvent *pe = current_parsed_events.front();
+	pe->event_status_bits |= (1<<kSTATUS_BOR_EVENT);
+	pe->borptrs = new DBORptrs();
+	DBORptrs* &borptrs = pe->borptrs;
 	
+	// Make sure we have full event
+	uint32_t borevent_len = *iptr++;
+	uint32_t bank_len = (uint32_t)((uint64_t)iend - (uint64_t)iptr)/sizeof(uint32_t);
+	if(borevent_len > bank_len){
+		stringstream ss;
+		ss << "BOR: Size of bank doesn't match amount of data given (" << borevent_len << " > " << bank_len << ")";
+		throw JException(ss.str(), __FILE__, __LINE__);
+	}
+	iend = &iptr[borevent_len]; // in case they give us too much data!
+	
+	// Make sure BOR header word is right
+	uint32_t bor_header = *iptr++;
+	if(bor_header != 0x700e01){
+		stringstream ss;
+		ss << "Bad BOR header: 0x" << hex << bor_header;
+		throw JException(ss.str(), __FILE__, __LINE__);
+	}
 
-//    // This really shouldn't be needed
-//    pthread_rwlock_wrlock(&BOR_lock);
-//
-//    // Delete any existing BOR config objects. BOR events should
-//    // be flagged as sequential (or barrier) events so all threads
-//    // that were using these should be done with them now.
-//    for(uint32_t i=0; i<BORobjs.size(); i++) delete BORobjs[i];
-//    BORobjs.clear();
-//
-//    evioDOMNodeListP bankList = bankPtr->getChildren();
-//    evioDOMNodeList::iterator iter = bankList->begin();
-//    if(VERBOSE>7) evioout << "     Looping over " << bankList->size() << " banks in BOR event" << endl;
-//    for(int ibank=1; iter!=bankList->end(); iter++, ibank++){ // ibank only used for debugging messages
-//        evioDOMNodeP childBank = *iter;
-//
-//        if(childBank->tag==0x71){
-//            //			uint32_t rocid = childBank->num;
-//            evioDOMNodeListP bankList = childBank->getChildren();
-//            evioDOMNodeList::iterator iter = bankList->begin();
-//            for(; iter!=bankList->end(); iter++){
-//                evioDOMNodeP dataBank = *iter;
-//                //				uint32_t slot = dataBank->tag>>5;
-//                uint32_t modType = dataBank->tag&0x1f;
-//
-//                const vector<uint32_t> *vec = dataBank->getVector<uint32_t>();
-//
-//                const uint32_t *src = &(*vec)[0];
-//                uint32_t *dest = NULL;
-//                uint32_t sizeof_dest = 0;
-//
-//                Df250BORConfig *f250conf = NULL;
-//                Df125BORConfig *f125conf = NULL;
-//                DF1TDCBORConfig *F1TDCconf = NULL;
-//                DCAEN1290TDCBORConfig *caen1190conf = NULL;
-//
-//                switch(modType){
-//                    case DModuleType::FADC250: // f250
-//                        f250conf = new Df250BORConfig;
-//                        dest = (uint32_t*)&f250conf->rocid;
-//                        sizeof_dest = sizeof(f250config);
-//                        break;
-//                    case DModuleType::FADC125: // f125
-//                        f125conf = new Df125BORConfig;
-//                        dest = (uint32_t*)&f125conf->rocid;
-//                        sizeof_dest = sizeof(f125config);
-//                        break;
-//
-//                    case DModuleType::F1TDC32: // F1TDCv2
-//                    case DModuleType::F1TDC48: // F1TDCv3
-//                        F1TDCconf = new DF1TDCBORConfig;
-//                        dest = (uint32_t*)&F1TDCconf->rocid;
-//                        sizeof_dest = sizeof(F1TDCconfig);
-//                        break;
-//
-//                    case DModuleType::CAEN1190: // CAEN 1190 TDC
-//                    case DModuleType::CAEN1290: // CAEN 1290 TDC
-//                        caen1190conf = new DCAEN1290TDCBORConfig;
-//                        dest = (uint32_t*)&caen1190conf->rocid;
-//                        sizeof_dest = sizeof(caen1190config);
-//                        break;
-//                }
-//
-//                // Check that the bank size and data structure size match.
-//                // If they do, then copy the data and add the object to 
-//                // the event. If not, then delete the object and print
-//                // a warning message.
-//                if( vec->size() == (sizeof_dest/sizeof(uint32_t)) ){
-//
-//                    // Copy bank data, assuming format is the same
-//                    for(uint32_t i=0; i<vec->size(); i++) *dest++ = *src++;
-//
-//                    // Store object for use in this and subsequent events
-//                    if(f250conf) BORobjs.push_back(f250conf);
-//                    if(f125conf) BORobjs.push_back(f125conf);
-//                    if(F1TDCconf) BORobjs.push_back(F1TDCconf);
-//                    if(caen1190conf) BORobjs.push_back(caen1190conf);
-//
-//                }else if(sizeof_dest>0){
-//                    if(f250conf) delete f250conf;
-//                    _DBG_ << "BOR bank size does not match structure! " << vec->size() <<" != " << (sizeof_dest/sizeof(uint32_t)) << endl;
-//                    _DBG_ << "sizeof(f250config)="<<sizeof(f250config)<<endl;
-//                    _DBG_ << "sizeof(f125config)="<<sizeof(f125config)<<endl;
-//                    _DBG_ << "sizeof(F1TDCconfig)="<<sizeof(F1TDCconfig)<<endl;
-//                    _DBG_ << "sizeof(caen1190config)="<<sizeof(caen1190config)<<endl;
-//                }
-//            }
-//        }
-//    }
-//
-//    pthread_rwlock_unlock(&BOR_lock);
+	// Loop over crates
+	while(iptr<iend){
+		uint32_t crate_len    = *iptr++;
+		uint32_t *iend_crate  = &iptr[crate_len]; // points to first word after this crate
+		uint32_t crate_header = *iptr++;
+//		uint32_t rocid = crate_header&0xFF;
+		
+		// Make sure crate tag is right
+		if( (crate_header>>16) != 0x71 ){
+			stringstream ss;
+			ss << "Bad BOR crate header: 0x" << hex << (crate_header>>16);
+			throw JException(ss.str(), __FILE__, __LINE__);
+		}
+
+		// Loop over modules
+		while(iptr<iend_crate){
+			uint32_t module_header = *iptr++;
+			uint32_t module_len    = module_header&0xFFFF;
+			uint32_t modType       = (module_header>>20)&0x1f;
+//			uint32_t slot          = (module_header>>25);
+//			uint32_t *iend_module  = &iptr[module_len]; // points to first word after this module
+
+			uint32_t *src          = iptr;
+			uint32_t *dest         = NULL;
+			uint32_t sizeof_dest   = 0;
+
+			Df250BORConfig *f250conf = NULL;
+			Df125BORConfig *f125conf = NULL;
+			DF1TDCBORConfig *F1TDCconf = NULL;
+			DCAEN1290TDCBORConfig *caen1190conf = NULL;
+
+			switch(modType){
+				case DModuleType::FADC250: // f250
+					f250conf = new Df250BORConfig;
+					dest = (uint32_t*)&f250conf->rocid;
+					sizeof_dest = sizeof(f250config);
+					break;
+				case DModuleType::FADC125: // f125
+					f125conf = new Df125BORConfig;
+					dest = (uint32_t*)&f125conf->rocid;
+					sizeof_dest = sizeof(f125config);
+					break;
+
+				case DModuleType::F1TDC32: // F1TDCv2
+				case DModuleType::F1TDC48: // F1TDCv3
+					F1TDCconf = new DF1TDCBORConfig;
+					dest = (uint32_t*)&F1TDCconf->rocid;
+					sizeof_dest = sizeof(F1TDCconfig);
+					break;
+
+				case DModuleType::CAEN1190: // CAEN 1190 TDC
+				case DModuleType::CAEN1290: // CAEN 1290 TDC
+					caen1190conf = new DCAEN1290TDCBORConfig;
+					dest = (uint32_t*)&caen1190conf->rocid;
+					sizeof_dest = sizeof(caen1190config);
+					break;
+				
+				default:
+					{
+					stringstream ss;
+					ss << "Unknown BOR module type: " << modType << "  (module_header=0x"<<hex<<module_header<<")";
+					jerr << ss.str() << endl;
+					throw JException(ss.str(), __FILE__, __LINE__);
+					}
+			}
+
+			// Check that the bank size and data structure size match.
+			if( module_len != (sizeof_dest/sizeof(uint32_t)) ){
+				stringstream ss;
+				ss << "BOR module bank size does not match structure! " << module_len << " != " << (sizeof_dest/sizeof(uint32_t)) << " for modType " << modType;
+				throw JException(ss.str(), __FILE__, __LINE__);
+			}
+
+			// Copy bank data, assuming format is the same
+			for(uint32_t i=0; i<module_len; i++) *dest++ = *src++;
+
+			// Store object for use in this and subsequent events
+			if(f250conf    ) borptrs->vDf250BORConfig.push_back(f250conf);
+			if(f125conf    ) borptrs->vDf125BORConfig.push_back(f125conf);
+			if(F1TDCconf   ) borptrs->vDF1TDCBORConfig.push_back(F1TDCconf);
+			if(caen1190conf) borptrs->vDCAEN1290TDCBORConfig.push_back(caen1190conf);
+
+			iptr = &iptr[module_len];
+		}
+		
+		iptr = iend_crate; // ensure we're pointing past this crate
+	}
 }
 
 //---------------------------------
@@ -512,6 +561,8 @@ void DEVIOWorkerThread::Parsef250scalerBank(uint32_t* &iptr, uint32_t *iend)
 //---------------------------------
 void DEVIOWorkerThread::ParseControlEvent(uint32_t* &iptr, uint32_t *iend)
 {
+	for(auto pe : current_parsed_events) pe->event_status_bits |= (1<<kSTATUS_CONTROL_EVENT);
+
 	iptr = &iptr[(*iptr) + 1];
 }
 
@@ -520,6 +571,9 @@ void DEVIOWorkerThread::ParseControlEvent(uint32_t* &iptr, uint32_t *iend)
 //---------------------------------
 void DEVIOWorkerThread::ParsePhysicsBank(uint32_t* &iptr, uint32_t *iend)
 {
+
+	for(auto pe : current_parsed_events) pe->event_status_bits |= (1<<kSTATUS_PHYSICS_EVENT);
+
 	uint32_t physics_event_len      = *iptr++;
 	uint32_t *iend_physics_event    = &iptr[physics_event_len];
 	iptr++;

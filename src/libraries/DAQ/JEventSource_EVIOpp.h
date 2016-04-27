@@ -23,8 +23,54 @@
 #include <DAQ/HDET.h>
 #include <DAQ/DEVIOWorkerThread.h>
 #include <DAQ/DParsedEvent.h>
+#include <DAQ/DBORptrs.h>
 
 #include <DANA/DStatusBits.h>
+
+/// How this Event Source Works
+/// ===================================================================
+///
+/// BORconfig objects
+/// --------------------
+/// Typically, BOR events only occur at the begining of a file and
+/// a given job will see only one. However, we must support the
+/// possibility of multiple BOR events in case we are reading from 
+/// an ET system or file of merged events.
+///
+/// BOR objects are applicable to all events in the stream until
+/// another BOR event is encountered. We therefore need every event
+/// to get a copy of the BOR config object pointers so they must be 
+/// kept in a place that all worker threads see. This is the borptrs_list
+/// object in the JEventSource_EVIOpp class.
+///
+/// Here's the sequence for how the BOR event is handled:
+/// 1. When a BOR event is parsed it creates a DBORptrs object which
+///    holds a complete set of BOR objects. The pointer to this 
+///    DBORptrs object is left in the DParsedEvent object which
+///    would otherwise be NULL. 
+///
+/// 2. When JEventSource_EVIOpp::GetEvent() is called, it will see the
+///    non-NULL borptrs pointer in DParsedEvent. At this point it will
+///    copy it to the front of borptrs_list, effectively giving ownership
+///    to JEventSource_EVIOpp. Note that aside from the destructor,
+///    borptrs_list is only accessed here which is only called from the
+///    event reader thread. This means we don't have to use a lock.
+///
+/// 3. If the borptrs pointer is NULL, then JEventSource_EVIOpp::GetEvent
+///    will copy the front pointer from borptrs_list into the
+///    DParsedEvent. We rely on the events being in istream order here
+///    to only apply the BORconfig objects to events after the BOR
+///    event itself. 
+///
+/// 4. When GetObjects is called, it calls DParsedEvent::CopyToFactories
+///    where the BOR objects are copied into the appropriate factories.
+///
+/// 5. Only when the JEventSource_EVIOpp object is destroyed are any
+///    BOR config. objects deleted. We don't implement a mechansim to
+///    keep track of which DBORptrs objects are still in use so we can't
+///    delete them sooner. This shouldn't be a problem though since BOR
+///    events are rare.
+///
 
 class JEventSource_EVIOpp: public jana::JEventSource{
 	public:
@@ -73,6 +119,8 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		thread *dispatcher_thread;
 
 		JStreamLog evioout;
+
+		list<DBORptrs*> borptrs_list;
 
 		bool  PARSE;
 		bool  PARSE_F250;

@@ -136,7 +136,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 
 	// Create worker threads
 	for(int i=0; i<NTHREADS; i++){
-		DEVIOWorkerThread *w = new DEVIOWorkerThread(parsed_events, MAX_PARSED_EVENTS, PARSED_EVENTS_MUTEX, PARSED_EVENTS_CV);
+		DEVIOWorkerThread *w = new DEVIOWorkerThread(this, parsed_events, MAX_PARSED_EVENTS, PARSED_EVENTS_MUTEX, PARSED_EVENTS_CV);
 		w->PARSE_F250        = PARSE_F250;
 		w->PARSE_F125        = PARSE_F125;
 		w->PARSE_F1TDC       = PARSE_F1TDC;
@@ -186,6 +186,9 @@ JEventSource_EVIOpp::~JEventSource_EVIOpp()
 		cout << "      NWAITS_FOR_THREAD = " << NWAITS_FOR_THREAD << endl;
 		cout << "NWAITS_FOR_PARSED_EVENT = " << NWAITS_FOR_PARSED_EVENT << endl;
 	}
+	
+	// Delete all BOR objects
+	for(auto p : borptrs_list) delete p;
 
 	// Delete HDEVIO and print stats
 	if(hdevio){
@@ -332,12 +335,32 @@ jerror_t JEventSource_EVIOpp::GetEvent(JEvent &event)
 	// Release mutex and notify workers they can use it again
 	lck.unlock();
 	PARSED_EVENTS_CV.notify_all();
+	
+	// If this is a BOR event, then take ownership of
+	// the DBORptrs object. If not, then copy a pointer
+	// to the latest DBORptrs object into the event.
+	if(pe->borptrs){
+		borptrs_list.push_front(pe->borptrs);
+	}else{
+		if(!borptrs_list.empty()) pe->borptrs = borptrs_list.front();
+	}
 
 	// Copy info for this parsed event into the JEvent
 	event.SetJEventSource(this);
 	event.SetEventNumber(pe->event_number);
 	event.SetRunNumber(pe->run_number);
 	event.SetRef(pe);
+
+	// Set event status bits
+	event.SetStatus(pe->event_status_bits);
+	event.SetStatusBit(kSTATUS_EVIO);
+	if( source_type == kFileSource ) event.SetStatusBit(kSTATUS_FROM_FILE);
+	if( source_type == kETSource   ) event.SetStatusBit(kSTATUS_FROM_ET);
+
+	// EPICS and BOR events are barrier events
+	if(event.GetStatusBit(kSTATUS_EPICS_EVENT) || event.GetStatusBit(kSTATUS_BOR_EVENT) ){
+		event.SetSequential();
+	}
 	
 	return NOERROR;
 }
