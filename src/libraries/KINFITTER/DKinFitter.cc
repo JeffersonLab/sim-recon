@@ -2368,15 +2368,19 @@ void DKinFitter::Update_ParticleParams(void)
 			locKinFitParticle->Set_Momentum(locMomentum);
 		}
 
+		//vertex
 		locParamIndex = locKinFitParticle->Get_VxParamIndex();
+		TVector3 locDeltaX;
 		if(locParamIndex >= 0)
 		{
 			TVector3 locPosition(locSourceMatrix(locParamIndex, 0), locSourceMatrix(locParamIndex + 1, 0), locSourceMatrix(locParamIndex + 2, 0));
+			locDeltaX = locPosition - locKinFitParticle->Get_Position();
 			locKinFitParticle->Set_Position(locPosition);
 			if(locKinFitParticle->Get_CommonVxParamIndex() < 0)
 				locKinFitParticle->Set_CommonVertex(locPosition);
 		}
 
+		//time
 		locParamIndex = locKinFitParticle->Get_TParamIndex();
 		if(locParamIndex >= 0)
 		{
@@ -2384,6 +2388,27 @@ void DKinFitter::Update_ParticleParams(void)
 			locKinFitParticle->Set_Time(locTime);
 			if(locKinFitParticle->Get_CommonTParamIndex() < 0)
 				locKinFitParticle->Set_CommonTime(locTime);
+		}
+		else if(locKinFitParticle->Get_VxParamIndex() >= 0)
+		{
+			//vertex changed, but time is not a fit parameter, so must manually change time
+			TLorentzVector locP4 = locKinFitParticle->Get_P4();
+			double locTime = locKinFitParticle->Get_Time();
+
+			if((locKinFitParticle->Get_Charge() != 0) && dKinFitUtils->Get_IsBFieldNearBeamline()) //in b-field & charged
+			{
+				TVector3 locH = Get_BField(locKinFitParticle->Get_Position()).Unit();
+				double locDeltaXDotH = locDeltaX.Dot(locH);
+				double locPDotH = locP4.Vect().Dot(locH);
+				locTime += locDeltaXDotH*locP4.E()/(29.9792458*locPDotH);
+			}
+			else //non-accelerating
+			{
+				double locDeltaXDotP = locDeltaX.Dot(locP4.Vect());
+				locTime += locDeltaXDotP*locP4.E()/(29.9792458*locP4.Vect().Mag2());
+			}
+
+			locKinFitParticle->Set_Time(locTime);
 		}
 
 		locParamIndex = locKinFitParticle->Get_EParamIndex();
@@ -2835,8 +2860,10 @@ void DKinFitter::Set_FinalTrackInfo(void)
 
 		//no need to set the covariance matrix: already updated (passed in a reference to it)
 		locKinFitParticle->Set_Momentum(locMomentum);
-		locKinFitParticle->Set_Position(locSpacetimeVertex.Vect());
-		locKinFitParticle->Set_Time(locSpacetimeVertex.T());
+		if(locKinFitParticle->Get_IsNeutralShowerFlag())
+			locKinFitParticle->Set_CommonSpacetimeVertex(locSpacetimeVertex);
+		else
+			locKinFitParticle->Set_SpacetimeVertex(locSpacetimeVertex);
 		locKinFitParticle->Set_PathLength(locPathLengthPair.first);
 		locKinFitParticle->Set_PathLengthUncertainty(locPathLengthPair.second);
 	}
