@@ -192,8 +192,8 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const 
 		const DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locThrownSteps);
 		bool locCheckResult = Check_ThrownsMatchReaction(locThrownCombo, locCurrentReaction, locExclusiveMatchFlag);
 
-		delete locThrownCombo;
-		delete locThrownReaction;
+		dThrownComboFactory->Recycle_Combo(locThrownCombo);
+		dThrownReactionFactory->Recycle_Reaction(locThrownReaction);
 		return locCheckResult;
 	}
 
@@ -226,8 +226,8 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const 
 		const DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locThrownSteps);
 		bool locCheckResult = Check_ThrownsMatchReaction(locThrownCombo, locCurrentReaction, locExclusiveMatchFlag);
 
-		delete locThrownCombo;
-		delete locThrownReaction;
+		dThrownComboFactory->Recycle_Combo(locThrownCombo);
+		dThrownReactionFactory->Recycle_Reaction(locThrownReaction);
 		return locCheckResult;
 	}
 
@@ -252,12 +252,11 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const 
 			const DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locCurrentThrownSteps);
 			bool locCheckResult = Check_ThrownsMatchReaction(locThrownCombo, locCurrentReaction, locExclusiveMatchFlag);
 
-			delete locThrownCombo;
-			delete locThrownReaction;
+			dThrownComboFactory->Recycle_Combo(locThrownCombo);
+			dThrownReactionFactory->Recycle_Reaction(locThrownReaction);
 
 			if(locCheckResult)
 				return true; //it worked!
-			locResumeAtIndex[locParticleIndex] = 0;
 			locReplacementThrownSteps.pop_back();
 			--locParticleIndex;
 			continue;

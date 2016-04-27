@@ -184,6 +184,19 @@ DParticleComboBlueprintStep* DParticleCombo_factory_Thrown::Get_ParticleComboBlu
 	return locParticleComboBlueprintStep;
 }
 
+void DParticleCombo_factory_Thrown::Recycle_Combo(DParticleCombo* locParticleCombo)
+{
+	//deletes combo, but recycles steps
+	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
+	{
+		DParticleComboStep* locParticleComboStep = const_cast<DParticleComboStep*>(locParticleCombo->Get_ParticleComboStep(loc_i));
+		DParticleComboBlueprintStep* locParticleComboBlueprintStep = const_cast<DParticleComboBlueprintStep*>(locParticleComboBlueprintStep->Get_ParticleComboBlueprintStep());
+		dParticleComboStepPool_Available.push_back(locParticleComboStep);
+		dParticleComboBlueprintStepPool_Available.push_back(locParticleComboBlueprintStep);
+	}
+	delete locParticleCombo;
+}
+
 //------------------
 // erun
 //------------------
