@@ -2397,7 +2397,7 @@ void DKinFitter::Update_ParticleParams(void)
 
 			if((locKinFitParticle->Get_Charge() != 0) && dKinFitUtils->Get_IsBFieldNearBeamline()) //in b-field & charged
 			{
-				TVector3 locH = Get_BField(locKinFitParticle->Get_Position()).Unit();
+				TVector3 locH = dKinFitUtils->Get_BField(locKinFitParticle->Get_Position()).Unit();
 				double locDeltaXDotH = locDeltaX.Dot(locH);
 				double locPDotH = locP4.Vect().Dot(locH);
 				locTime += locDeltaXDotH*locP4.E()/(29.9792458*locPDotH);
