@@ -190,7 +190,7 @@ void DParticleCombo_factory_Thrown::Recycle_Combo(DParticleCombo* locParticleCom
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
 		DParticleComboStep* locParticleComboStep = const_cast<DParticleComboStep*>(locParticleCombo->Get_ParticleComboStep(loc_i));
-		DParticleComboBlueprintStep* locParticleComboBlueprintStep = const_cast<DParticleComboBlueprintStep*>(locParticleComboBlueprintStep->Get_ParticleComboBlueprintStep());
+		DParticleComboBlueprintStep* locParticleComboBlueprintStep = const_cast<DParticleComboBlueprintStep*>(locParticleComboStep->Get_ParticleComboBlueprintStep());
 		dParticleComboStepPool_Available.push_back(locParticleComboStep);
 		dParticleComboBlueprintStepPool_Available.push_back(locParticleComboBlueprintStep);
 	}
