@@ -197,6 +197,13 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const 
 		return locCheckResult;
 	}
 
+	//at this point, #-steps are final. If exclusive, bail if they don't match
+	if(locExclusiveMatchFlag)
+	{
+		if(locReaction->Get_NumReactionSteps() != locThrownSteps.size())
+			return false;
+	}
+
 	//ok, if there are still an unequal # of parents for a given PID between thrown & DReaction (i.e. both #'s are non-zero):
 		//it's too confusing to figure out which should be replaced by their decay products and which shouldn't
 		//so, try all possibilities, and see if any of them match. 
