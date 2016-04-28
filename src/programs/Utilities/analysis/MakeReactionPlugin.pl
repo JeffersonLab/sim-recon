@@ -54,12 +54,6 @@ open(FILE, ">$PluginName/$ccfile");
 close(FILE);
 print " - $ccfile\n";
 
-# Create Makefile
-open(FILE, ">$PluginName/Makefile");
-&PrintMakefile();
-close(FILE);
-print " - Makefile\n";
-
 # Create SConscript
 # Not really needed unless included in GlueX Build
 #open(FILE, ">$PluginName/SConscript");
@@ -246,7 +240,6 @@ jerror_t DReaction_factory_${ReactionFactoryTag}::evnt(JEventLoop* locEventLoop,
 	//locReaction->Set_MinChargedPIDFOM(5.73303E-7);
 
 	// Highly Recommended: Cut on number of extra \"good\" tracks. \"Good\" tracks are ones that survive the \"PreSelect\" (or user custom) factory.
-		// Current (09/26/2014): \"Good\" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma). 
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look \"good\"
 	locReaction->Set_MaxExtraGoodTracks(4);
 
@@ -644,19 +637,6 @@ $ReactionName = "__nada__";
 $ReactionFactoryTag = "__nada__";
 
 ###############
-# PrintMakefile
-###############
-sub PrintMakefile()
-{
-	# Contents of default Makefile for plugins
-	print FILE "\n";
-	print FILE "PACKAGES = ROOT:JANA\n";
-	print FILE "\n";
-	print FILE "include \$(HALLD_HOME)/src/BMS/Makefile.shlib\n";
-	print FILE "\n";
-}
-
-###############
 # PrintSConscript
 ###############
 sub PrintSConscript()
@@ -798,7 +778,7 @@ sub Usage()
 	print "a DReaction factory (complete with factory generator).\n";
 	print "\n";
 	print "This will create a directory and generate a few files in it, including\n";
-	print "a default Makefile and SConstruct so that one can use to immediately compile the new plugin.\n";
+	print "a default SConstruct so that one can use to immediately compile the new plugin.\n";
 	print "\n";
 
 	print "\n";

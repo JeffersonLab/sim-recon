@@ -188,12 +188,12 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const 
 	if(!locIncludeDecayingToReactionFlag)
 	{
 		//don't try decaying thrown particles: compare as-is
-		const DReaction* locThrownReaction = dThrownReactionFactory->Build_ThrownReaction(locEventLoop, locThrownSteps);
-		const DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locThrownSteps);
+		DReaction* locThrownReaction = dThrownReactionFactory->Build_ThrownReaction(locEventLoop, locThrownSteps);
+		DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locThrownSteps);
 		bool locCheckResult = Check_ThrownsMatchReaction(locThrownCombo, locCurrentReaction, locExclusiveMatchFlag);
 
-		delete locThrownCombo;
-		delete locThrownReaction;
+		dThrownComboFactory->Recycle_Combo(locThrownCombo);
+		dThrownReactionFactory->Recycle_Reaction(locThrownReaction);
 		return locCheckResult;
 	}
 
@@ -222,12 +222,12 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const 
 	//if no additional replacements to make: check it
 	if(locPIDVector.empty())
 	{
-		const DReaction* locThrownReaction = dThrownReactionFactory->Build_ThrownReaction(locEventLoop, locThrownSteps);
-		const DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locThrownSteps);
+		DReaction* locThrownReaction = dThrownReactionFactory->Build_ThrownReaction(locEventLoop, locThrownSteps);
+		DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locThrownSteps);
 		bool locCheckResult = Check_ThrownsMatchReaction(locThrownCombo, locCurrentReaction, locExclusiveMatchFlag);
 
-		delete locThrownCombo;
-		delete locThrownReaction;
+		dThrownComboFactory->Recycle_Combo(locThrownCombo);
+		dThrownReactionFactory->Recycle_Reaction(locThrownReaction);
 		return locCheckResult;
 	}
 
@@ -248,16 +248,15 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const 
 		if(locParticleIndex == int(locPIDVector.size()))
 		{
 			//combo defined: try it
-			const DReaction* locThrownReaction = dThrownReactionFactory->Build_ThrownReaction(locEventLoop, locCurrentThrownSteps);
-			const DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locCurrentThrownSteps);
+			DReaction* locThrownReaction = dThrownReactionFactory->Build_ThrownReaction(locEventLoop, locCurrentThrownSteps);
+			DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locCurrentThrownSteps);
 			bool locCheckResult = Check_ThrownsMatchReaction(locThrownCombo, locCurrentReaction, locExclusiveMatchFlag);
 
-			delete locThrownCombo;
-			delete locThrownReaction;
+			dThrownComboFactory->Recycle_Combo(locThrownCombo);
+			dThrownReactionFactory->Recycle_Reaction(locThrownReaction);
 
 			if(locCheckResult)
 				return true; //it worked!
-			locResumeAtIndex[locParticleIndex] = 0;
 			locReplacementThrownSteps.pop_back();
 			--locParticleIndex;
 			continue;

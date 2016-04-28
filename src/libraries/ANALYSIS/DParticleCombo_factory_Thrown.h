@@ -29,6 +29,8 @@ class DParticleCombo_factory_Thrown : public jana::JFactory<DParticleCombo>
 
 		DParticleCombo* Build_ThrownCombo(JEventLoop* locEventLoop, const DReaction* locThrownReaction, deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps);
 
+		void Recycle_Combo(DParticleCombo* locParticleCombo); //deletes combo, but recycles steps
+
 	private:
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.

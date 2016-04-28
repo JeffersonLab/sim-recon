@@ -110,6 +110,17 @@ DReactionStep* DReaction_factory_Thrown::Get_ReactionStepResource(void)
 	return locReactionStep;
 }
 
+void DReaction_factory_Thrown::Recycle_Reaction(DReaction* locReaction)
+{
+	//deletes reaction, but recycles steps
+	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+	{
+		DReactionStep* locReactionStep = const_cast<DReactionStep*>(locReaction->Get_ReactionStep(loc_i));
+		dReactionStepPool_Available.push_back(locReactionStep);
+	}
+	delete locReaction;
+}
+
 //------------------
 // erun
 //------------------
