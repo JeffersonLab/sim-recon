@@ -135,7 +135,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	dispatcher_thread = new thread(&JEventSource_EVIOpp::Dispatcher, this);
 
 	// Create worker threads
-	for(int i=0; i<NTHREADS; i++){
+	for(uint32_t i=0; i<NTHREADS; i++){
 		DEVIOWorkerThread *w = new DEVIOWorkerThread(this, parsed_events, MAX_PARSED_EVENTS, PARSED_EVENTS_MUTEX, PARSED_EVENTS_CV);
 		w->PARSE_F250        = PARSE_F250;
 		w->PARSE_F125        = PARSE_F125;

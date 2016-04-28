@@ -735,7 +735,6 @@ void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t 
         uint32_t channel = 0;
         uint32_t tdc = 0;
         uint32_t error_flags = 0;
-        DCAEN1290TDCHit *caen1290tdchit = NULL;
         switch(type){
             case 0b01000:  // Global Header
                 slot = (*iptr) & 0x1f;
@@ -778,7 +777,7 @@ void DEVIOWorkerThread::ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t 
                 if(VERBOSE>7) cout << "         CAEN TDC TDC Measurement (" << (edge ? "trailing":"leading") << " , channel=" << channel << " , tdc=" << tdc << ")" << endl;
 
                 // Create DCAEN1290TDCHit object
-                caen1290tdchit = pe->NEW_DCAEN1290TDCHit(rocid, slot, channel, 0, edge, tdc_num, event_id, bunch_id, tdc);
+                pe->NEW_DCAEN1290TDCHit(rocid, slot, channel, 0, edge, tdc_num, event_id, bunch_id, tdc);
                 break;
             case 0b00100:  // TDC Error
                 error_flags = (*iptr) & 0x7fff;
