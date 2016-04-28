@@ -2778,6 +2778,12 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
             continue;
         }
 
+        // Check if this is additional sync data 
+        if(bankPtr->tag == 0xEE10){
+            if(VERBOSE>6) evioout << "      SYNC event - ignoring undocumented sync bank"<< endl; // only somov@jlab.org knows what this is
+            continue;
+        }
+
         // The number of events in block is stored in lower 8 bits
         // of header word (aka the "num") of Data Bank. This should
         // be at least 1.
@@ -3789,10 +3795,10 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
                 }
                 break;
             case 3: // Trigger Time
-                t = ((*iptr)&0xFFFFFF)<<0;
+                t = ((*iptr)&0xFFFFFF)<<24; // n.b. Documentation is incorrect! This is opposite of f250 (see e-mail from Naomi/Cody on 4/28/2016)
                 iptr++;
                 if(((*iptr>>31) & 0x1) == 0){
-                    t += ((*iptr)&0xFFFFFF)<<24; // from word on the street: second trigger time word is optional!!??
+                    t += ((*iptr)&0xFFFFFF)<<0; // (see above)
                 }else{
                     iptr--;
                 }
