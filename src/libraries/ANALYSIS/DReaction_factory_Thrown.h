@@ -26,6 +26,8 @@ class DReaction_factory_Thrown:public jana::JFactory<DReaction>
 
 		DReaction* Build_ThrownReaction(JEventLoop* locEventLoop, deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps);
 
+		void Recycle_Reaction(DReaction* locReaction); //deletes reaction, but recycles steps
+
 	private:
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int32_t runnumber);	///< Called everytime a new run number is detected.
