@@ -1593,6 +1593,82 @@ void LinkAssociationsModuleOnlyB(vector<T*> &a, vector<U*> &b)
 }
 
 //----------------------------
+// LinkAssociationsChannelOnlyB
+//----------------------------
+template<class T, class U>
+void LinkAssociationsChannelOnlyB(vector<T*> &a, vector<U*> &b)
+{
+	/// Template routine to loop over two vectors of pointers to
+	/// objects derived from DDAQAddress. This will find any hits
+	/// coming from the same DAQ module and channel.
+	/// When a match is found, the pointer from "a" will be added
+	/// to "b"'s AssociatedObjects list AND "b" will be added to "a"'s
+	/// associated objects list as well. It is intended for linking
+	/// Window Raw Data objects to various hit objects.
+	///
+	/// Note that this assumes the input vectors have been sorted by
+	/// rocid, then slot in ascending order.
+
+	// Bail early if nothing to link
+	if(b.empty()) return;
+	if(a.empty()) return;
+
+	for(uint32_t i=0, j=0; i<b.size(); ){
+
+		uint32_t rocid        = b[i]->rocid;
+		uint32_t slot         = b[i]->slot;
+		uint32_t channel      = b[i]->channel;
+
+		// Find start and end of range in b
+		uint32_t istart = i;
+		uint32_t iend   = i+1; // index of first element outside of ROI
+		for(; iend<b.size(); iend++){
+			if(b[iend]->rocid         != rocid        ) break;
+			if(b[iend]->slot          != slot         ) break;
+			if(b[iend]->channel       != channel      ) break;
+		}
+		i = iend; // setup for next iteration
+		
+		// Find start of range in a
+		for(; j<a.size(); j++){
+			if( a[j]->rocid > rocid ) break;
+			if( a[j]->rocid == rocid ){
+				if( a[j]->slot > slot ) break;
+				if( a[j]->slot == slot ){
+					if( a[j]->channel >= channel ) break;
+				}
+			}
+		}
+		if(j>=a.size()) break; // exhausted all a's. we're done
+
+		if( a[j]->rocid        > rocid         ) continue; // couldn't find rocid in a
+		if( a[j]->slot         > slot          ) continue; // couldn't find slot in a
+		if( a[j]->channel      > channel       ) continue; // couldn't find channel in a
+		
+		// Find end of range in a
+		uint32_t jend = j+1;
+		for(; jend<a.size(); jend++){
+			if(a[jend]->rocid        != rocid        ) break;
+			if(a[jend]->slot         != slot         ) break;
+			if(a[jend]->channel      != channel      ) break;
+		}
+
+		// Loop over all combos of both ranges and make associations
+		uint32_t jstart = j;
+		for(uint32_t ii=istart; ii<iend; ii++){
+			for(uint32_t jj=jstart; jj<jend; jj++){
+				b[ii]->AddAssociatedObject(a[jj]);
+				a[jj]->AddAssociatedObject(b[ii]);
+			}
+		}
+		j = jend;
+
+		if( i>=b.size() ) break;
+		if( j>=a.size() ) break;
+	}
+}
+
+//----------------------------
 // LinkAssociationsB
 //----------------------------
 template<class T, class U>
@@ -1600,13 +1676,11 @@ void LinkAssociationsB(vector<T*> &a, vector<U*> &b)
 {
 	/// Template routine to loop over two vectors of pointers to
 	/// objects derived from DDAQAddress. This will find any hits
-	/// coming from the same DAQ module (channel number is not checked)
-	/// When a match is found, the pointer from "a" will be added
+	/// coming from the same DAQ module, channel with the same pulse
+	/// number. When a match is found, the pointer from "a" will be added
 	/// to "b"'s AssociatedObjects list. This will NOT do the inverse
-	/// of adding "b" to "a"'s list. It is intended for adding a module
-	/// level trigger time object to all hits from that module. Adding
-	/// all of the hits to the trigger time object seems like it would
-	/// be a little expensive with no real use case.
+	/// of adding "b" to "a"'s list. It is intended for adding a things
+	/// like PulseTime and PulsePedestal objects to PulseIntegral objects.
 	///
 	/// Note that this assumes the input vectors have been sorted by
 	/// rocid, then slot in ascending order.
@@ -1667,7 +1741,6 @@ void LinkAssociationsB(vector<T*> &a, vector<U*> &b)
 		for(uint32_t ii=istart; ii<iend; ii++){
 			for(uint32_t jj=jstart; jj<jend; jj++){
 				b[ii]->AddAssociatedObject(a[jj]);
-//				a[jj]->AddAssociatedObject(b[ii]);
 			}
 		}
 		j = jend;
@@ -1828,16 +1901,12 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 		// Connect Df250Config objects
 		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250WindowRawData);
 		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250PulseIntegral);
-//		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250PulseTime);
-//		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250PulsePedestal);
 
 		// Connect Df125Config objects
 		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125WindowRawData);
 		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125PulseIntegral);
 		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125CDCPulse);
 		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125FDCPulse);
-//		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125PulseTime);
-//		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125PulsePedestal);
 
 		// Connect vDF1TDCConfig objects
 		LinkAssociationsConfigB(pe->vDF1TDCConfig, pe->vDF1TDCHit);
@@ -1848,32 +1917,35 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 		// Connect Df250TriggerTime objects
 		LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250WindowRawData);
 		LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulseIntegral);
-//		LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulseTime);
-//		LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulsePedestal);
 
 		// Connect Df125TriggerTime objects
 		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125WindowRawData);
 		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulseIntegral);
 		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125CDCPulse);
 		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125FDCPulse);
-//		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulseTime);
-//		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulsePedestal);
 
 		// Connect DF1TriggerTime objects
 		LinkAssociationsModuleOnlyB(pe->vDF1TDCTriggerTime, pe->vDF1TDCHit);
 
-		// Connect pulse objects
+		// Connect Df250 pulse objects
 		LinkAssociationsB(pe->vDf250PulseTime,     pe->vDf250PulseIntegral);
 		LinkAssociationsB(pe->vDf250PulsePedestal, pe->vDf250PulseIntegral);
-//		LinkAssociationsB(pe->vDf250PulseIntegral, pe->vDf250PulseTime);
-//		LinkAssociationsB(pe->vDf250PulseIntegral, pe->vDf250PulsePedestal);
-//		LinkAssociationsB(pe->vDf250PulsePedestal, pe->vDf250PulseTime);
+		if(!pe->vDf250WindowRawData.empty()){
+			LinkAssociationsChannelOnlyB(pe->vDf250WindowRawData, pe->vDf250PulseIntegral);
+			LinkAssociationsChannelOnlyB(pe->vDf250WindowRawData, pe->vDf250PulseTime);
+			LinkAssociationsChannelOnlyB(pe->vDf250WindowRawData, pe->vDf250PulsePedestal);
+		}
 
+		// Connect Df125 pulse objects
 		LinkAssociationsB(pe->vDf125PulseTime,     pe->vDf125PulseIntegral);
 		LinkAssociationsB(pe->vDf125PulsePedestal, pe->vDf125PulseIntegral);
-//		LinkAssociationsB(pe->vDf125PulseIntegral, pe->vDf125PulseTime);
-//		LinkAssociationsB(pe->vDf125PulseIntegral, pe->vDf125PulsePedestal);
-//		LinkAssociationsB(pe->vDf125PulsePedestal, pe->vDf125PulseTime);
+		if(!pe->vDf125WindowRawData.empty()){
+			LinkAssociationsChannelOnlyB(pe->vDf125WindowRawData, pe->vDf125PulseIntegral);
+			LinkAssociationsChannelOnlyB(pe->vDf125WindowRawData, pe->vDf125PulseTime);
+			LinkAssociationsChannelOnlyB(pe->vDf125WindowRawData, pe->vDf125PulsePedestal);
+			LinkAssociationsChannelOnlyB(pe->vDf125WindowRawData, pe->vDf125CDCPulse);
+			LinkAssociationsChannelOnlyB(pe->vDf125WindowRawData, pe->vDf125FDCPulse);
+		}
 	}
 
 }

@@ -30,6 +30,31 @@
 /// How this Event Source Works
 /// ===================================================================
 ///
+/// Overview
+/// -------------------
+/// This event source represents a complete rewrite of the original
+/// JEventSource_EVIO class. It is highly optimized and while it
+/// gets rid of some of the complexities that developed in the
+/// original over time, in some ways it replaced them with complexities
+/// of its own.
+///
+/// In a nut shell, this source launches a minimum of 2 dedicated 
+/// threads for reading in and parsing the events. These are in
+/// addition to any threads the JANA framework creates. There is
+/// a single "dispatcher" thread that reads in the events and
+/// assigns them to one of a group of "worker" threads.
+///
+/// JANA itself has a similar structure in that there is a single
+/// "EventBufferThread" that grabs fully parsed events from this
+/// class via its GetEvent method, and then hands them to one of 
+/// a group of "processing" threads where the actual analysis begins.
+///
+/// One benefit of this design is that it allows certain objects,
+/// methods, or member data to be modified by only a single thread
+/// throughout its life. This avoids the use of locks which introduce
+/// inefficiency in a multi-threaded application. 
+///
+///
 /// BORconfig objects
 /// --------------------
 /// Typically, BOR events only occur at the begining of a file and
@@ -39,7 +64,7 @@
 ///
 /// BOR objects are applicable to all events in the stream until
 /// another BOR event is encountered. We therefore need every event
-/// to get a copy of the BOR config object pointers so they must be 
+/// to get a copy of the BOR config object pointers. Thus, they must be 
 /// kept in a place that all worker threads see. This is the borptrs_list
 /// object in the JEventSource_EVIOpp class.
 ///
@@ -64,9 +89,11 @@
 ///
 /// 4. When GetObjects is called, it calls DParsedEvent::CopyToFactories
 ///    where the BOR objects are copied into the appropriate factories.
+///    It then calls JEventSource_EVIOpp::LinkBORassociations to add
+///    the BORConfig objects as associated objects to various hit objects.
 ///
 /// 5. Only when the JEventSource_EVIOpp object is destroyed are any
-///    BOR config. objects deleted. We don't implement a mechansim to
+///    BORConfig objects deleted. We don't implement a mechansim to
 ///    keep track of which DBORptrs objects are still in use so we can't
 ///    delete them sooner. This shouldn't be a problem though since BOR
 ///    events are rare.
