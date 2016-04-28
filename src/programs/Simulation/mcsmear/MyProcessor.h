@@ -6,6 +6,9 @@
 /// Processor for mcsmear
 ///
 
+#ifndef _MYPROCESSOR_H_
+#define _MYPROCESSOR_H_
+
 #include <string>
 
 #include <JANA/JEventProcessor.h>
@@ -15,7 +18,7 @@ using namespace jana;
 #include <fstream>
 #include <HDDM/hddm_s.hpp>
 
-#include "mcsmear_globals.h"
+#include "mcsmear_config.h"
 
 class MyProcessor:public JEventProcessor
 {
@@ -35,4 +38,9 @@ class MyProcessor:public JEventProcessor
    private:
       int  HDDM_USE_COMPRESSION;
       bool HDDM_USE_INTEGRITY_CHECKS;
+      
+      mcsmear_config_t *config;
 };
+
+
+#endif  // _MYPROCESSOR_H_

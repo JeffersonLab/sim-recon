@@ -18,11 +18,6 @@ using namespace std;
 #include "MyProcessor.h"
 #include "JFactoryGenerator_ThreadCancelHandler.h"
 
-#include <CDC/DCDCWire.h>
-//#include <FDC/DFDCWire.h>
-#include <HDGEOMETRY/DGeometry.h>
-
-
 #include "units.h"
 #include "HDDM/hddm_s.hpp"
 
@@ -35,103 +30,6 @@ extern void SetSeeds(const char *vals);
 char *INFILENAME = NULL;
 char *OUTFILENAME = NULL;
 int QUIT = 0;
-
-bool ADD_NOISE      = false;
-bool SMEAR_HITS     = true;
-bool SMEAR_BCAL     = true;
-bool FDC_ELOSS_OFF  = false;
-bool IGNORE_SEEDS   = false;
-
-// setup response parameters
-double BCAL_DARKRATE_GHZ         = 0.;// 0.0176 (from calibDB BCAL/bcal_parms) for 4x4 array
-double BCAL_SIGMA_SIG_RELATIVE   = 0.;// 0.105  (from calibDB BCAL/bcal_parms)
-double BCAL_SIGMA_PED_RELATIVE   = 0.;// 0.139  (from calibDB BCAL/bcal_parms)
-double BCAL_SIPM_GAIN_VARIATION  = 0.;// 0.04   (from calibDB BCAL/bcal_parms)
-double BCAL_XTALK_FRACT          = 0.;// 0.157  (from calibDB BCAL/bcal_parms)
-double BCAL_INTWINDOW_NS         = 0.;// 100    (from calibDB BCAL/bcal_parms)
-double BCAL_DEVICEPDE            = 0.;// 0.21   (from calibDB BCAL/bcal_parms)
-double BCAL_SAMPLING_FRACT       = 0.;// 0.095  (from calibDB BCAL/bcal_parms)
-double BCAL_PHOTONSPERSIDEPERMEV_INFIBER = 0.0;// 75 (from calibDB BCAL/bcal_parms)
-double BCAL_AVG_DARK_DIGI_VALS_PER_EVENT = 0.0; // 240 used to set thresholds
-double BCAL_SAMPLINGCOEFA        = 0.0; // 0.042 (from calibDB BCAL/bcal_parms)
-double BCAL_SAMPLINGCOEFB        = 0.0; // 0.013 (from calibDB BCAL/bcal_parms)
-double BCAL_TIMEDIFFCOEFA        = 0.0; // 0.07 * sqrt( 2 ) (from calibDB BCAL/bcal_parms)
-double BCAL_TIMEDIFFCOEFB        = 0.0; // 0.00 * sqrt( 2 ) (from calibDB BCAL/bcal_parms)
-double BCAL_TWO_HIT_RESOL        = 0.0; // 50. (from calibDB BCAL/bcal_parms)
-double BCAL_mevPerPE             = 0.31; // Energy corresponding to one pixel firing in MeV
-
-int BCAL_NUM_MODULES = 48;
-int BCAL_NUM_LAYERS = 4;
-int BCAL_NUM_SECTORS = 4;
-
-double BCAL_BASE_TIME_OFFSET     = 0; // -100.0 (from calibDB BCAL/base_time_offset)
-double BCAL_TDC_BASE_TIME_OFFSET = 0; // -100.0 (from calibDB BCAL/base_time_offset)
-
-vector<vector<double> > attenuation_parameters; // Avg. of 525 (from calibDB BCAL/attenuation_parameters)
-vector<double> effective_velocities; // 16.75 (from calibDB BCAL/effective_velocities)
-
-double BCAL_ADC_THRESHOLD_MEV    = 2.2;  // MeV (To be updated/improved)
-double BCAL_FADC_TIME_RESOLUTION = 0.3;  // ns (To be updated/improved)
-double BCAL_TDC_TIME_RESOLUTION  = 0.3;  // ns (To be updated/improved)
-double BCAL_MEV_PER_ADC_COUNT    = 0.029;  // MeV per integrated ADC count (based on Spring 2015 calibrations)
-double BCAL_NS_PER_ADC_COUNT     = 0.0;  // 0.0625 ns per ADC count (from calibDB BCAL/digi_scales)
-double BCAL_NS_PER_TDC_COUNT     = 0.0;  // 0.0559 ns per TDC count (from calibDB BCAL/digi_scales)
-
-// BCAL flags
-bool NO_T_SMEAR = false;
-bool NO_DARK_PULSES = false;
-bool NO_SAMPLING_FLUCTUATIONS = false;
-bool NO_SAMPLING_FLOOR_TERM = false;
-bool NO_POISSON_STATISTICS = false;
-
-double FTOF_BAR_THRESHOLD    = 0.0;
-double STC_PADDLE_THRESHOLD  = 0.0;
-double PSC_THRESHOLD         = 0.0;
-double PS_THRESHOLD          = 0.0;
-
-double TAGM_TSIGMA = 0.200;        // ns
-double TAGH_TSIGMA = 0.350;        // ns
-double TAGM_FADC_TSIGMA = 0.350;   // ns
-double TAGH_FADC_TSIGMA = 0.450;   // ns
-double TAGM_NPIX_PER_GEV = 1.e5;
-double TAGH_NPE_PER_GEV = 5.e5;
-
-// The following are place holders to be filled in with realistic numbers later
-double PS_SIGMA = 0.200; // ns
-double PSC_SIGMA = 0.200; //ns
-double PS_NPIX_PER_GEV = 1.e5;
-double PSC_PHOTONS_PERMEV = 5.e5;
-
-double FCAL_PHOT_STAT_COEF   = 0.0; //0.035;
-double FCAL_BLOCK_THRESHOLD  = 0.0; //20.0*k_MeV;
-
-double CDC_TDRIFT_SIGMA      = 0.0; // 150.0/55.0*1E-9 seconds
-double CDC_TIME_WINDOW       = 0.0; // 1000.0E-9 seconds
-double CDC_PEDESTAL_SIGMA    = 0.0; // in fC
-double CDC_THRESHOLD_FACTOR  = 0.0; // number of pedestal sigmas for determining sparcification threshold
-
-double FDC_TDRIFT_SIGMA      = 0.0; // 200.0/55.0*1.0E-9 seconds
-double FDC_CATHODE_SIGMA     = 0.0; // 150.0 microns
-double FDC_PED_NOISE         = 0.0; // in pC calculated in SmearFDC
-double FDC_THRESHOLD_FACTOR  = 0.0; // number of pedestal sigmas for determining sparcification threshold
-double FDC_HIT_DROP_FRACTION = 0.0; // 1000.0E-9
-double FDC_TIME_WINDOW       = 0.0; // 1000.0E-9 in seconds
-double FDC_THRESH_KEV        = 0.0; // fdc anode discriminator threshold
-
-double START_SIGMA           = 0.0; // 300ps
-double START_PHOTONS_PERMEV  = 0.0; // used to be 8000 should be more like 200
-
-// TOF parameters will be read from data base later
-double TOF_SIGMA = 100.*k_psec;
-double TOF_PHOTONS_PERMEV = 400.;
-
-double FMWPC_TSIGMA = 10.0;  // ns
-double FMWPC_ASIGMA = 0.5E-6;
-double FMWPC_THRESHOLD = 0.0;
-
-double TRIGGER_LOOKBACK_TIME = -100; // ns
-
-bool DROP_TRUTH_HITS=false;
 
 using namespace jana;
 
@@ -178,26 +76,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 's': SMEAR_HITS=false;                          break;
       case 'i': IGNORE_SEEDS=true;                         break;
       case 'r': SetSeeds(&ptr[2]);                         break;
-      case 'u': CDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;     break;
-      case 't': CDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;      break;
-      case 'U': FDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;     break;
-      case 'C': FDC_CATHODE_SIGMA=atof(&ptr[2])*1.0E-6;    break;
-      case 'T': FDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;      break;
-      case 'e': FDC_ELOSS_OFF = true;                      break;
-      case 'E': CDC_PEDESTAL_SIGMA = atof(&ptr[2])*k_keV;  break;
       case 'd': DROP_TRUTH_HITS=true;                      break;
-      case 'p': FCAL_PHOT_STAT_COEF = atof(&ptr[2]);       break;
-      case 'b': FCAL_BLOCK_THRESHOLD = atof(&ptr[2])*k_MeV; break;
-      case 'B': SMEAR_BCAL = false;                        break;
-      case 'V': BCAL_ADC_THRESHOLD_MEV = atof(&ptr[2]);    break;
-      case 'X': BCAL_FADC_TIME_RESOLUTION = atof(&ptr[2]); break;
-      case 'G': NO_T_SMEAR = true;                         break;
-      case 'H': NO_DARK_PULSES = true;                     break;
-      case 'K': NO_SAMPLING_FLUCTUATIONS = true;           break;
-      case 'L': NO_SAMPLING_FLOOR_TERM = true;             break;
-      case 'M': NO_POISSON_STATISTICS = true;              break;
-      case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec;           break;
-      case 'S': START_SIGMA= atof(&ptr[2])*k_psec;         break;
       }
     }
     else {
@@ -238,55 +117,54 @@ void Usage(void)
    cout << " Read the given, Geant-produced HDDM file as input and smear" << endl;
    cout << "the truth values for \"hit\" data before writing out to a" << endl;
    cout << "separate file. The truth values for the thrown particles are" << endl;
-   cout << "not changed. Noise hits can also be added using the -n option." << endl;
-   cout << "Note that all smearing is done using Gaussians, with the " << endl;
-   cout << "sigmas configurable with the options below." << endl;
+   cout << "not changed. Noise hits can also be added using the -n option (deprecated for the moment)." << endl;
+   cout << "Note that all smearing is done using Gaussians." << endl;
    cout << endl;
    cout << "  options:" << endl;
    cout << "    -ofname  Write output to a file named \"fname\" (default auto-generate name)" << endl;
-   cout << "    -s       Don't smear real hits (see -B for BCAL, default is to smear)" << endl;
+   cout << "    -s       Don't smear real hits (default is to smear)" << endl;
    cout << "    -i       Ignore random number seeds found in input HDDM file" << endl;
    cout << "    -r\"s1 s2 s3\" Set initial random number seeds" << endl;
-   cout << "    -u#      Sigma CDC anode drift time in ns (def:" << CDC_TDRIFT_SIGMA*1.0E9 << "ns)" << endl;
-   cout << "             (NOTE: this is only used if -y is also specified!)" << endl;
-   cout << "    -y       Do NOT apply drift distance dependence error to" << endl;
-   cout << "             CDC (default is to apply)" << endl;
-   cout << "    -Y       Apply constant sigma smearing for FDC drift time. "  << endl;
-   cout << "             Default is to use a drift-distance dependent parameterization."  << endl;
-   cout << "    -t#      CDC time window for background hits in ns (def:" << CDC_TIME_WINDOW*1.0E9 << "ns)" << endl;
-   cout << "    -U#      Sigma FDC anode drift time in ns (def:" << FDC_TDRIFT_SIGMA*1.0E9 << "ns)" << endl;
-   cout << "    -C#      Sigma FDC cathode strips in microns (def:" << FDC_TDRIFT_SIGMA << "ns)" << endl;
-   cout << "    -T#      FDC time window for background hits in ns (def:" << FDC_TIME_WINDOW*1.0E9 << "ns)" << endl;
-   cout << "    -e       hdgeant was run with LOSS=0 so scale the FDC cathode" << endl;
-   cout << "             pedestal noise (def:false)" << endl;
+//   cout << "    -u#      Sigma CDC anode drift time in ns (def:" << CDC_TDRIFT_SIGMA*1.0E9 << "ns)" << endl;
+//   cout << "             (NOTE: this is only used if -y is also specified!)" << endl;
+//   cout << "    -y       Do NOT apply drift distance dependence error to" << endl;
+//   cout << "             CDC (default is to apply)" << endl;
+//   cout << "    -Y       Apply constant sigma smearing for FDC drift time. "  << endl;
+//   cout << "             Default is to use a drift-distance dependent parameterization."  << endl;
+//   cout << "    -t#      CDC time window for background hits in ns (def:" << CDC_TIME_WINDOW*1.0E9 << "ns)" << endl;
+//   cout << "    -U#      Sigma FDC anode drift time in ns (def:" << FDC_TDRIFT_SIGMA*1.0E9 << "ns)" << endl;
+//   cout << "    -C#      Sigma FDC cathode strips in microns (def:" << FDC_TDRIFT_SIGMA << "ns)" << endl;
+//   cout << "    -T#      FDC time window for background hits in ns (def:" << FDC_TIME_WINDOW*1.0E9 << "ns)" << endl;
+//   cout << "    -e       hdgeant was run with LOSS=0 so scale the FDC cathode" << endl;
+//   cout << "             pedestal noise (def:false)" << endl;
    cout << "    -d       Drop truth hits (default: keep truth hits)" << endl;
-   cout << "    -p#      FCAL photo-statistics smearing factor in GeV^3/2 (def:" << FCAL_PHOT_STAT_COEF << ")" << endl;
-   cout << "    -b#      FCAL single block threshold in MeV (def:" << FCAL_BLOCK_THRESHOLD/k_MeV << ")" << endl;
-   cout << "    -B       Don't process BCAL hits at all (def. process)" << endl;
-   cout << "    -Vthresh BCAL ADC threshold (def. " << BCAL_ADC_THRESHOLD_MEV << " MeV)" << endl;
-   cout << "    -Xsigma  BCAL fADC time resolution (def. " << BCAL_FADC_TIME_RESOLUTION << " ns)" << endl;
-   cout << "    -G       Don't smear BCAL times (def. smear)" << endl;
-   cout << "    -H       Don't add BCAL dark hits (def. add)" << endl;
-   cout << "    -K       Don't apply BCAL sampling fluctuations (def. apply)" << endl;
-   cout << "    -L       Don't apply BCAL sampling floor term (def. apply)" << endl;
-   cout << "    -M       Don't apply BCAL Poisson statistics (def. apply)" << endl;
-   cout << "    -f#      TOF sigma in psec (def: " <<  TOF_SIGMA/k_psec << ")" << endl;
+//   cout << "    -p#      FCAL photo-statistics smearing factor in GeV^3/2 (def:" << FCAL_PHOT_STAT_COEF << ")" << endl;
+//   cout << "    -b#      FCAL single block threshold in MeV (def:" << FCAL_BLOCK_THRESHOLD/k_MeV << ")" << endl;
+//   cout << "    -B       Don't process BCAL hits at all (def. process)" << endl;
+ //  cout << "    -Vthresh BCAL ADC threshold (def. " << BCAL_ADC_THRESHOLD_MEV << " MeV)" << endl;
+ //  cout << "    -Xsigma  BCAL fADC time resolution (def. " << BCAL_FADC_TIME_RESOLUTION << " ns)" << endl;
+ //  cout << "    -G       Don't smear BCAL times (def. smear)" << endl;
+ //  cout << "    -H       Don't add BCAL dark hits (def. add)" << endl;
+ //  cout << "    -K       Don't apply BCAL sampling fluctuations (def. apply)" << endl;
+ //  cout << "    -L       Don't apply BCAL sampling floor term (def. apply)" << endl;
+ //  cout << "    -M       Don't apply BCAL Poisson statistics (def. apply)" << endl;
+ //  cout << "    -f#      TOF sigma in psec (def: " <<  TOF_SIGMA/k_psec << ")" << endl;
    cout << "    -h       Print this usage statement." << endl;
    cout << endl;
-   cout << " Example:" << endl;
-   cout << endl;
-   cout << "     mcsmear -u3.5 -t500 hdgeant.hddm" << endl;
-   cout << endl;
-   cout << " This will produce a file named hdgeant_nsmeared.hddm that" << endl;
-   cout << " includes the hit information from the input file hdgeant.hddm" << endl;
-   cout << " but with the FDC and CDC hits smeared out. The CDC hits will" << endl;
-   cout << " have their drift times smeared via a gaussian with a 3.5ns width" << endl;
-   cout << " while the FDC will be smeared using the default values." << endl;
-   cout << " In addition, background hits will be added, the exact number of" << endl;
-   cout << " of which are determined by the time windows specified for the" << endl;
-   cout << " CDC and FDC. In this examplem the CDC time window was explicitly" << endl;
-   cout << " set to 500 ns." << endl;
-   cout << endl;
+//   cout << " Example:" << endl;
+//   cout << endl;
+//   cout << "     mcsmear -u3.5 -t500 hdgeant.hddm" << endl;
+//   cout << endl;
+//   cout << " This will produce a file named hdgeant_nsmeared.hddm that" << endl;
+//   cout << " includes the hit information from the input file hdgeant.hddm" << endl;
+//   cout << " but with the FDC and CDC hits smeared out. The CDC hits will" << endl;
+//   cout << " have their drift times smeared via a gaussian with a 3.5ns width" << endl;
+//   cout << " while the FDC will be smeared using the default values." << endl;
+//   cout << " In addition, background hits will be added, the exact number of" << endl;
+//   cout << " of which are determined by the time windows specified for the" << endl;
+//   cout << " CDC and FDC. In this examplem the CDC time window was explicitly" << endl;
+//   cout << " set to 500 ns." << endl;
+//   cout << endl;
 
    exit(0);
 }

@@ -3,14 +3,6 @@
 #include "TH2F.h"
 
 extern vector<vector<float> >fdc_smear_parms; 
-extern TH2F *fdc_drift_time_smear_hist;
-extern TH2F *fdc_drift_dist_smear_hist;
-extern TH2F *fdc_drift_time;
-extern TH1F *fdc_cathode_charge;
-extern TH2F *cdc_drift_time;
-extern TH1F *cdc_charge;
-extern TH1F *fdc_anode_mult;
-extern TH2F *cdc_drift_smear;
 
 extern vector<unsigned int> NCDC_STRAWS;
 extern vector<double> CDC_RING_RADIUS;
@@ -128,17 +120,11 @@ extern double START_PHOTONS_PERMEV;
 extern double PS_SIGMA;
 extern double PS_PHOTONS_PERMEV;
 
-// FMWPC resolutions and threshold
-extern double FMWPC_TSIGMA;
-extern double FMWPC_ASIGMA;
-extern double FMWPC_THRESHOLD;
 
 extern bool SMEAR_BCAL;
 
 // Beginning of readout window
 extern double TRIGGER_LOOKBACK_TIME;
-
-extern bool DROP_TRUTH_HITS;
 
 // Mutex used to control accessing the ROOT global memory
 extern pthread_mutex_t root_mutex;

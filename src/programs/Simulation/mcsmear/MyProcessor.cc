@@ -53,6 +53,8 @@ void mcsmear_thread_HUP_sighandler(int sig)
 //------------------------------------------------------------------
 jerror_t MyProcessor::init(void)
 {
+   config = new mcsmear_config_t();
+
    // open HDDM file
    ofs = new ofstream(OUTFILENAME);
    if (!ofs->is_open()){
@@ -129,11 +131,6 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
    
    // get the TOF parameters
    {
-     cout<<"get TOF/tof_parms parameters from calibDB"<<endl;
-     map<string, double> tofparms;
-     jcalib->Get("TOF/tof_parms", tofparms);
-     TOF_SIGMA =  tofparms["TOF_SIGMA"];
-     TOF_PHOTONS_PERMEV =  tofparms["TOF_PHOTONS_PERMEV"];
    }
 
    // get the BCAL parameters

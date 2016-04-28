@@ -4,29 +4,9 @@
 //
 // Major revision March 6, 2012 David Lawrence
 
-
-#include <iostream>
-#include <iomanip>
-#include <vector>
-#include <map>
-#include <sstream>
-#include <queue>
-#include <cmath>
-using namespace std;
-
-#include <DHistogram.h>
-#include <BCAL/DBCALGeometry.h>
-
-#include "units.h"
-#include <HDDM/hddm_s.hpp>
-#include <TMath.h>
-#include <TH2D.h>
-#include <TSpline.h>
-#include <TDirectory.h>
+#include "smear_bcal.h"
 
 #include "DRandom2.h"
-
-#include "mcsmear_globals.h"
 
 #ifndef _DBG_
 #define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
@@ -35,197 +15,16 @@ using namespace std;
 
 TH1D *hNincident_particles = NULL;
 
-
-//..........................
-// bcal_index is a utility class that encapsulates the
-// module, layer, sector, and end in a single object that
-// can be used as a key to index an STL map. 
-//..........................
-class bcal_index{
-   public:
-      enum EndType{
-         kUp,
-         kDown
-      };
-      
-      bcal_index(unsigned int module, unsigned int layer,
-                 unsigned int sector, unsigned int incident_id,
-                 EndType end)
-       : module(module),
-         layer(layer),
-         sector(sector),
-         incident_id(incident_id),
-         end(end)
-      {}
-   
-      unsigned int module;
-      unsigned int layer;
-      unsigned int sector;
-      unsigned int incident_id;
-      EndType end;
-      
-      bool operator<(const bcal_index &idx) const {
-         if (module < idx.module)
-            return true;
-         if (module > idx.module)
-            return false;
-         if (layer < idx.layer)
-            return true;
-         if (layer > idx.layer)
-            return false;
-         if (sector < idx.sector)
-            return true;
-         if (sector > idx.sector)
-            return false;
-         if (incident_id < idx.incident_id)
-            return true;
-         if (incident_id > idx.incident_id)
-            return false;
-         if ((end==kUp) && (idx.end==kDown))
-            return true;
-         return false;
-      }
-};
-
-//..........................
-// CellHits is a utility class that holds information
-// regarding the energy and time of depostions in a cell
-//..........................
-class CellHits{
-   public:
-      enum EndType{
-         kUp,
-         kDown
-      };
-
-      CellHits() : E(0.0), t(0.0)
-      {}
-      
-      double E;
-      double t;
-      double Etruth;
-      EndType end;
-};
-
-//..........................
-// SumHits is a utility class that is used to hold info
-// from the SiPMs contributing to that readout channel.
-// This includes a list of CellHits objects, but also
-// the total number of SiPMs that should be in the sum
-// and the total up/downstream energies and times.
-//..........................
-class SumHits{
-   public:
-      SumHits()
-      {}
-      
-      vector<CellHits *> cellhits;
-      vector<double> EUP;
-      vector<double> tUP;
-      vector<double> EDN;
-      vector<double> tDN;
-};
-
-//..........................
-// fADCHit is a utility class that is used to hold info
-// for a single fADC hit. 
-//..........................
-class fADCHit{
-   public:
-      fADCHit(double E, double t) : E(E), t(t)
-      {}
-      
-      double E;
-      double t;
-};
-
-//..........................
-// fADCHitList is a utility class that is used to hold info
-// for a set of fADCHit objects. 
-//..........................
-class fADCHitList{
-   public:
-      fADCHitList()
-      {}
-      
-      int module;
-      int sumlayer;
-      int sumsector;
-      
-      vector<fADCHit> uphits;
-      vector<fADCHit> dnhits;
-};
-
-//..........................
-// TDCHitList is a utility class that is used to hold info
-// for a single F1TDC hit
-//..........................
-class TDCHitList{
-   public:
-      TDCHitList()
-      {}
-      
-      int module;
-      int sumlayer;
-      int sumsector;
-      
-      vector<double> uphits;
-      vector<double> dnhits;
-};
-
-//..........................
-// IncidentParticle_t is a utility class for holding the
-// parameters of particles recorded as incident on the 
-// BCAL (shower causing)
-//..........................
-class IncidentParticle_t{
-   public:
-      IncidentParticle_t(hddm_s::BcalTruthIncidentParticle &ipart) {
-         x = ipart.getX();
-         y = ipart.getY();
-         z = ipart.getZ();
-         px = ipart.getPx();
-         py = ipart.getPy();
-         pz = ipart.getPz();
-         ptype = ipart.getPtype();
-      }
-
-      float x,y,z;
-      float px, py, pz;
-      int ptype, track;
-};
+using namespace bcal_smearing;
 
 
 // Defined in this file
-int32_t GetRunNumber(hddm_s::HDDM *record);
-int GetCalibIndex(int module, int layer, int sector);
-void GetAttenuationParameters(int id, double &attenuation_length, double &attenuation_L1, double &attenuation_L2);
-double GetEffectiveVelocity(int id);
-void GetSiPMHits(hddm_s::HDDM *record,
-                    map<bcal_index, CellHits> &SiPMHits,
-                    vector<IncidentParticle_t> &incident_particles);
-void ApplySamplingFluctuations(map<bcal_index,
-                               CellHits> &SiPMHits,
-                               vector<IncidentParticle_t> &incident_particles);
-void MergeHits(map<bcal_index, CellHits> &SiPMHits, double Resolution);
-void ApplyPoissonStatistics(map<bcal_index, CellHits> &SiPMHits);
-void SortSiPMHits(map<bcal_index,
-                     CellHits> &SiPMHits,
-                     map<int, SumHits> &bcalfADC, double Resolution);
-void SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC);
-void ApplyTimeSmearing(double sigma_ns, double sigma_ns_TDC, map<int, fADCHitList> &fADCHits, map<int, TDCHitList> &TDCHits);
-void FindHits(double thresh_MeV,
-              map<int, SumHits> &bcalfADC,
-              map<int, fADCHitList> &fADCHits,
-              map<int, TDCHitList> &TDCHits);
-void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
-                        map<int, TDCHitList> &TDCHits,
-                        hddm_s::HDDM *record);
+//int32_t GetRunNumber(hddm_s::HDDM *record);
 
 //-----------
-// SmearBCAL
+// Smear
 //-----------
-void SmearBCAL(hddm_s::HDDM *record)
+void BCALSmearer::Smear(hddm_s::HDDM *record)
 {
 
    /// May 27, 2015: HDGeant now outputs BCAL hit data in terms of just
@@ -244,7 +43,6 @@ void SmearBCAL(hddm_s::HDDM *record)
    ///
    /// In addition to the sampling fluctuations, Poisson statistics and
    /// dark pulses are applied.
-   
    
    // n.b. This code is slightly more complex than it might otherwise be because
    // it uses sparsified lists as opposed to full data structures for every SiPM
@@ -292,21 +90,18 @@ void SmearBCAL(hddm_s::HDDM *record)
     bcalfADC.clear();
 }
 
-int GetCalibIndex(int module, int layer, int sector)
-{
+int inline BCALSmearer::GetCalibIndex(int module, int layer, int sector) {
    return BCAL_NUM_LAYERS*BCAL_NUM_SECTORS*(module-1) + BCAL_NUM_SECTORS*(layer-1) + (sector-1);
 }
 
-void GetAttenuationParameters(int id, double &attenuation_length, double &attenuation_L1, double &attenuation_L2)
-{
-   vector<double> &parms = attenuation_parameters.at(id);
-
-   attenuation_length = parms[0];
-   attenuation_L1 = parms[1];
-   attenuation_L2 = parms[2];
+void inline BCALSmearer::GetAttenuationParameters(int id, double &attenuation_length, double &attenuation_L1, double &attenuation_L2) {
+   	vector<double> &parms = attenuation_parameters.at(id);
+	attenuation_length = parms[0];
+	attenuation_L1 = parms[1];
+	attenuation_L2 = parms[2];
 }
 
-double GetEffectiveVelocity(int id)
+double inline BCALSmearer::GetEffectiveVelocity(int id)
 {
    return effective_velocities.at(id);
 }
@@ -314,9 +109,9 @@ double GetEffectiveVelocity(int id)
 //-----------
 // GetSiPMHits
 //-----------
-void GetSiPMHits(hddm_s::HDDM *record,
-                   map<bcal_index, CellHits> &SiPMHits,
-                   vector<IncidentParticle_t> &incident_particles)
+void BCALSmearer::GetSiPMHits(hddm_s::HDDM *record,
+                   			  map<bcal_index, CellHits> &SiPMHits,
+                   			  vector<IncidentParticle_t> &incident_particles)
 {
    /// Loop through input HDDM data and extract the energy and time info into
    /// CellHits objects.
@@ -337,7 +132,7 @@ void GetSiPMHits(hddm_s::HDDM *record,
    hddm_s::BcalTruthHitList hits = record->getBcalTruthHits();
    hddm_s::BcalTruthHitList::iterator iter;
    for (iter = hits.begin(); iter != hits.end(); ++iter) {
-      bcal_index idxup(iter->getModule(), iter->getLayer(),
+       bcal_index idxup(iter->getModule(), iter->getLayer(),
                      iter->getSector(), 
                      iter->getIncident_id(),
                      bcal_index::kUp);
@@ -349,26 +144,23 @@ void GetSiPMHits(hddm_s::HDDM *record,
      double Z = iter->getZLocal();
      double dist_up = 390.0/2.0 + Z;
      double dist_dn = 390.0/2.0 - Z;
-
+     
      int layer = 0;
      if (iter->getLayer() == 1){
-       layer = 1;
+     	layer = 1;
+     } else if (iter->getLayer() == 2 || iter->getLayer() == 3){
+        layer = 2;
+     } else if (iter->getLayer() == 4 || iter->getLayer() == 5 || iter->getLayer() == 6) {
+     	layer = 3;
+     } else {
+     	layer = 4;
      }
-     else if (iter->getLayer() == 2 || iter->getLayer() == 3){
-       layer = 2;
-     }
-     else if (iter->getLayer() == 4 || iter->getLayer() == 5 || iter->getLayer() == 6){
-       layer = 3;
-     }
-     else layer = 4;
-
      int table_id = GetCalibIndex( iter->getModule(), layer, iter->getSector() );  // key the cell identification off of the upstream cell
-
      double cEff = GetEffectiveVelocity(table_id);
      double attenuation_length = 0; // initialize variable
      double attenuation_L1=-1., attenuation_L2=-1.;  // these parameters are ignored for now
      GetAttenuationParameters(table_id, attenuation_length, attenuation_L1, attenuation_L2);
-
+     
      // Get reference to existing CellHits, or create one if it doesn't exist
      CellHits &cellhitsup = SiPMHits[idxup];
      cellhitsup.Etruth = iter->getE(); // Energy deposited in the cell in GeV
@@ -405,7 +197,7 @@ void GetSiPMHits(hddm_s::HDDM *record,
 //-----------
 // ApplySamplingFluctuations
 //-----------
-void ApplySamplingFluctuations(map<bcal_index, CellHits> &SiPMHits, vector<IncidentParticle_t> &incident_particles)
+void BCALSmearer::ApplySamplingFluctuations(map<bcal_index, CellHits> &SiPMHits, vector<IncidentParticle_t> &incident_particles)
 {
    /// Loop over the CellHits objects and apply sampling fluctuations.
    ///
@@ -422,7 +214,8 @@ void ApplySamplingFluctuations(map<bcal_index, CellHits> &SiPMHits, vector<Incid
    /// by it.
    
    if(NO_SAMPLING_FLUCTUATIONS)return;
-   if(NO_SAMPLING_FLOOR_TERM)BCAL_SAMPLINGCOEFB=0.0; // (redundant, yes, but located in more obvious place here)
+   if(NO_SAMPLING_FLOOR_TERM)
+   		BCAL_SAMPLINGCOEFB=0.0; // (redundant, yes, but located in more obvious place here)
 
    map<bcal_index, CellHits>::iterator iter=SiPMHits.begin();
    for(; iter!=SiPMHits.end(); iter++){
@@ -449,7 +242,7 @@ void ApplySamplingFluctuations(map<bcal_index, CellHits> &SiPMHits, vector<Incid
 //-----------
 // MergeHits
 //-----------
-void MergeHits(map<bcal_index, CellHits> &SiPMHits, double Resolution)
+void BCALSmearer::MergeHits(map<bcal_index, CellHits> &SiPMHits, double Resolution)
 {
    /// Combine all SiPM CellHits corresponding to the same
    /// cell but different incident particles into a single
@@ -518,7 +311,7 @@ void MergeHits(map<bcal_index, CellHits> &SiPMHits, double Resolution)
 //-----------
 // ApplyPoissonStatistics
 //-----------
-void ApplyPoissonStatistics(map<bcal_index, CellHits> &SiPMHits)
+void BCALSmearer::ApplyPoissonStatistics(map<bcal_index, CellHits> &SiPMHits)
 {
    /// Loop over the CellHits objects and apply Poisson Statistics.
    ///
@@ -552,7 +345,7 @@ void ApplyPoissonStatistics(map<bcal_index, CellHits> &SiPMHits)
 //-----------
 // SortSiPMHits
 //-----------
-void SortSiPMHits(map<bcal_index, CellHits> &SiPMHits, map<int, SumHits> &bcalfADC, double Resolution)
+void BCALSmearer::SortSiPMHits(map<bcal_index, CellHits> &SiPMHits, map<int, SumHits> &bcalfADC, double Resolution)
 {
    /// Loop over the CellHits objects and copy pointers to them into SumHits objects.
    ///
@@ -632,7 +425,7 @@ void SortSiPMHits(map<bcal_index, CellHits> &SiPMHits, map<int, SumHits> &bcalfA
 //-----------
 // SimpleDarkHitsSmear
 //-----------
-void SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
+void BCALSmearer::SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
 {
    /// Loop over the SumHits objects and add Electronic noise and
    /// Dark hits smearing.
@@ -646,6 +439,7 @@ void SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
    
    double Esmeared = 0;
    double sigma = 0;
+   // FIX - put in CCDB
    double sigma1 = 43.*BCAL_MEV_PER_ADC_COUNT;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
    double sigma2 = 46.*BCAL_MEV_PER_ADC_COUNT;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
    double sigma3 = 49.*BCAL_MEV_PER_ADC_COUNT;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
@@ -657,11 +451,14 @@ void SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
 
       int n_layers = DBCALGeometry::NBCALLAYSIN + DBCALGeometry::NBCALLAYSOUT;
       for(int fADC_lay=1; fADC_lay<=n_layers; fADC_lay++){
-
-         if(fADC_lay == 1) sigma = sigma1;
-         else if(fADC_lay == 2) sigma = sigma2;
-         else if(fADC_lay == 3) sigma = sigma3;
-         else if(fADC_lay == 4) sigma = sigma4;
+         if(fADC_lay == 1) 
+         	sigma = sigma1;
+         else if(fADC_lay == 2) 
+         	sigma = sigma2;
+         else if(fADC_lay == 3) 
+         	sigma = sigma3;
+         else if(fADC_lay == 4) 
+         	sigma = sigma4;
 
          int n_sectors = (fADC_lay <= DBCALGeometry::NBCALLAYSIN)? DBCALGeometry::NBCALSECSIN : DBCALGeometry::NBCALSECSOUT;
          for(int fADC_sec=1; fADC_sec<=n_sectors; fADC_sec++){
@@ -675,12 +472,12 @@ void SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
             SumHits &sumhits = bcalfADC[fADCId];
 
             for(int ii = 0; ii < (int)sumhits.EUP.size(); ii++){
-              Esmeared = gDRandom.Gaus(sumhits.EUP[ii],sigma);
-              sumhits.EUP[ii] = Esmeared;
+				Esmeared = gDRandom.Gaus(sumhits.EUP[ii],sigma);
+				sumhits.EUP[ii] = Esmeared;
             }
             for(int ii = 0; ii < (int)sumhits.EDN.size(); ii++){
-              Esmeared = gDRandom.Gaus(sumhits.EDN[ii],sigma);
-              sumhits.EDN[ii] = Esmeared;
+            	Esmeared = gDRandom.Gaus(sumhits.EDN[ii],sigma);
+            	umhits.EDN[ii] = Esmeared;
             }
          }
       }
@@ -690,7 +487,7 @@ void SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
 //-----------
 // ApplyTimeSmearing
 //-----------
-void ApplyTimeSmearing(double sigma_ns, double sigma_ns_TDC, map<int, fADCHitList> &fADCHits, map<int, TDCHitList> &TDCHits)
+void BCALSmearer::ApplyTimeSmearing(double sigma_ns, double sigma_ns_TDC, map<int, fADCHitList> &fADCHits, map<int, TDCHitList> &TDCHits)
 {
    /// The fADC250 will extract a time from the samples by applying an algorithm
    /// to a few of the samples taken every 4ns. The perfect times from HDGeant
@@ -733,7 +530,7 @@ void ApplyTimeSmearing(double sigma_ns, double sigma_ns_TDC, map<int, fADCHitLis
 //-----------
 // FindHits
 //-----------
-void FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<int, fADCHitList> &fADCHits, map<int,TDCHitList> &TDCHits)
+void BCALSmearer::FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<int, fADCHitList> &fADCHits, map<int,TDCHitList> &TDCHits)
 {
    /// Loop over Sumhits objects and find hits that cross the energy threshold (ADC)
    map<int, SumHits>::iterator iter = bcalfADC.begin();
@@ -753,9 +550,8 @@ void FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<int, fADCHitLi
       // set differently. Scale the threshold down here to accomodate this.
       double preamp_gain_tdc = 5.0;
       double thresh_MeV_TDC = thresh_MeV/preamp_gain_tdc;
-      
-      //the outermost layer of the detector is not equipped with TDCs, so don't generate any TDC hits
-      int layer = DBCALGeometry::layer(fADCId);
+	  //the outermost layer of the detector is not equipped with TDCs, so don't generate any TDC hits
+	  int layer = DBCALGeometry::layer(fADCId);
 
       for(int ii = 0; ii < (int)sumhits.EUP.size(); ii++){
         if(sumhits.EUP[ii] > thresh_MeV && sumhits.tUP[ii] < 2000) uphits.push_back(fADCHit(sumhits.EUP[ii],sumhits.tUP[ii])); // Fill uphits and dnhits with energies (in MeV)
@@ -801,8 +597,8 @@ void FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<int, fADCHitLi
 //-----------
 // CopyBCALHitsToHDDM
 //-----------
-void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
-                        map<int, TDCHitList> &TDCHits,
+void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
+						map<int, TDCHitList> &TDCHits,
                         hddm_s::HDDM *record)
 {
    /// Loop over fADCHitList objects and copy the fADC hits into the HDDM tree.
@@ -862,25 +658,25 @@ void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       // fix the offset layer in the hit factories.  Also, any hit that still has a negative time
       // will be ignored.
       for (unsigned int i = 0; i < hitlist.uphits.size(); i++) {
-         int integer_time = round((hitlist.uphits[i].t-BCAL_BASE_TIME_OFFSET)/BCAL_NS_PER_ADC_COUNT);
-         if (integer_time >= 0){
+      	int integer_time = round((hitlist.uphits[i].t-BCAL_BASE_TIME_OFFSET)/BCAL_NS_PER_ADC_COUNT);
+      	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kUp);
             fadcs().setPulse_integral(round(hitlist.uphits[i].E/BCAL_MEV_PER_ADC_COUNT));
             fadcs().setPulse_time(integer_time);
-         }
+        }
       }
       for (unsigned int i = 0; i < hitlist.dnhits.size(); i++) {
-         int integer_time = round((hitlist.dnhits[i].t-BCAL_BASE_TIME_OFFSET)/BCAL_NS_PER_ADC_COUNT);
-         if (integer_time >= 0){
+      	int integer_time = round((hitlist.dnhits[i].t-BCAL_BASE_TIME_OFFSET)/BCAL_NS_PER_ADC_COUNT);
+      	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kDown);
             fadcs().setPulse_integral(round(hitlist.dnhits[i].E/BCAL_MEV_PER_ADC_COUNT));
             fadcs().setPulse_time(integer_time);
-         } 
+        } 
       }
    }
-
+   
    // Create bcalTDCDigiHit structures to hold our F1TDC hits
    map<int, TDCHitList>::iterator ittdc;
    for (ittdc = TDCHits.begin(); ittdc != TDCHits.end(); ittdc++) {
