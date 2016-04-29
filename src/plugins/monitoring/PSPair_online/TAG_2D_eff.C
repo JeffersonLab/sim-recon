@@ -36,7 +36,7 @@
     eff_tagm_E->Divide(E_LR_N_tagm,E_LR_D);
 
     if(gPad == NULL){
-        TCanvas *c1 = new TCanvas("c1","Tagging Efficiency",150,10,990,660);
+        TCanvas *c1 = new TCanvas("c1","Tagger Efficiency",150,10,990,660);
         c1->cd(0);
         c1->Draw();
         c1->Update();
@@ -49,19 +49,19 @@
     double tsize = 0.0475;
     gStyle->SetOptStat("");
     c1->cd(4);
-    eff_tagh2d->SetTitle("TAGH Tagging Efficiency: N(TAGH,PSC,PS) / N(PSC,PS)");
+    eff_tagh2d->SetTitle("TAGH Tagger Efficiency: N(TAGH,PSC,PS) / N(PSC,PS)");
     eff_tagh2d->SetTitleSize(tsize,"xy");
     eff_tagh2d->Draw("colz");
     c1->cd(3);
-    eff_tagm2d->SetTitle("TAGM Tagging Efficiency: N(TAGM,PSC,PS) / N(PSC,PS)");
+    eff_tagm2d->SetTitle("TAGM Tagger Efficiency: N(TAGM,PSC,PS) / N(PSC,PS)");
     eff_tagm2d->SetTitleSize(tsize,"xy");
     eff_tagm2d->Draw("colz");
     c1->cd(2);
-    eff_tagh_E->SetTitle("TAGH Tagging Efficiency: N(TAGH,PSC,PS) / N(PSC,PS)");
+    eff_tagh_E->SetTitle("TAGH Tagger Efficiency: N(TAGH,PSC,PS) / N(PSC,PS)");
     eff_tagh_E->SetTitleSize(tsize,"xy");
     eff_tagh_E->Draw("colz");
     c1->cd(1);
-    eff_tagm_E->SetTitle("TAGM Tagging Efficiency: N(TAGM,PSC,PS) / N(PSC,PS)");
+    eff_tagm_E->SetTitle("TAGM Tagger Efficiency: N(TAGM,PSC,PS) / N(PSC,PS)");
     eff_tagm_E->SetTitleSize(tsize,"xy");
     eff_tagm_E->Draw("colz");
 

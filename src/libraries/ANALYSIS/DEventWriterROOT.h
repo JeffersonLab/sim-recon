@@ -198,8 +198,8 @@ class DEventWriterROOT : public JObject
 				const DMCThrownMatching* locMCThrownMatching, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const;
 
 		//TREE FILLING: GET HYPOTHESES
-		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs) const;
-		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs) const;
+		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs, map<oid_t, int>& locObjectToArrayIndexMap) const;
+		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs, map<oid_t, int>& locObjectToArrayIndexMap) const;
 
 		//TREE FILLING: INDEPENDENT PARTICLES
 		void Fill_BeamData(TTree* locTree, unsigned int locArrayIndex, const DBeamPhoton* locBeamPhoton, const DVertex* locVertex, const DMCThrownMatching* locMCThrownMatching) const;
