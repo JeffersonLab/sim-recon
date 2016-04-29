@@ -34,8 +34,12 @@ DBCALCluster_factory::DBCALCluster_factory() :
 	m_clust_hit_timecut ( 20.0*k_nsec ),
 	m_timeCut( 8.0*k_nsec ){
 	sep_inclusion_curve = new TF1("sep_inclusion_curve","exp(-x/30.)-.1",0.,7.*m_moliereRadius); 
-        dtheta_inclusion_curve = new TF1("dtheta_inclusion_curve","exp(-x/35.)-.1",m_moliereRadius,7.*m_moliereRadius);
-        dphi_inclusion_curve = new TF1("dphi_inclusion_curve","exp(-(x+2.)/10.)-.15",m_moliereRadius,7.*m_moliereRadius);
+        dtheta_inclusion_curve = new TF1("dtheta_inclusion_curve","exp(-(x-0.1)/[0])-[1]+.15",m_moliereRadius,7.*m_moliereRadius);
+	//dtheta_inclusion_curve = new TF1("dtheta_inclusion_curve","exp(-x/35.)-.1",m_moliereRadius,7.*m_moliereRadius);
+        dphi_inclusion_curve = new TF1("dphi_inclusion_curve","exp(-(x-2.)/2.5)-x*0.002+.07",m_moliereRadius,6.*m_moliereRadius);
+	C1_parm = new TF1("C1_parm","23.389+19.093*tanh(-0.0104*(x-201.722))",-50.,450.);
+	C2_parm = new TF1("C2_parm","0.151+0.149*tanh(-0.016*(x-275.194))",-50.,450.);
+	//dphi_inclusion_curve = new TF1("dphi_inclusion_curve","exp(-(x+2.)/10.)-.15",m_moliereRadius,6.*m_moliereRadius);
 	//Use inclusion curves to determine if a point should be added to a cluster.
 	}
 
@@ -610,10 +614,20 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
 	//very loose cuts to make sure the two hits are in time
 	bool time_match = fabs(clust.t() - point->t()) < m_timeCut;
 
-	float inclusion_val = sep_inclusion_curve->Eval(sep);
-	float inclusion_val1 = dtheta_inclusion_curve->Eval(sep_term1);
-	float inclusion_val2 = dphi_inclusion_curve->Eval(sep_term2);
+	double clust_z = clust.rho()*cos(clust.theta());
+
+	double c1 = C1_parm->Eval(clust_z);
+	double c2 = C2_parm->Eval(clust_z);
+
+	dtheta_inclusion_curve->SetParameter(0,c1);
+	dtheta_inclusion_curve->SetParameter(1,c2); 
 	
+	double inclusion_val = sep_inclusion_curve->Eval(sep);
+        double inclusion_val1 = dtheta_inclusion_curve->Eval(sep_term1);
+        double inclusion_val2 = dphi_inclusion_curve->Eval(sep_term2);
+
+	//cout << " c1 = " << c1 << " c2 = " << c2 << " clust z = " << clust_z << " inclusion curve 1 = " << inclusion_val1 << " sep term 1 = " << sep_term1 << endl; 
+
 	// We consider fractional energy (point.E/Clust.E) as a function of spatial separation between
 	// a point and cluster to determine if the point should be included in the cluster.
 	// These distrbutions are tigher in the phihat direction than along thetahat. For more details
