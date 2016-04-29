@@ -48,8 +48,8 @@ int main( int argc, char* argv[] ){
 	
 	double beamMaxE   = 12.0;
 	double beamPeakE  = 9.0;
-	double beamLowE   = 0.139*2;
-	double beamHighE  = 12.0;
+	double beamLowE   = 7.5;
+	double beamHighE  = 9.5;
 	
 	int runNum = 9001;
 	int seed = 0;

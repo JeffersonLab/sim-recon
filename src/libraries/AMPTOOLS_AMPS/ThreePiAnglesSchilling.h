@@ -1,5 +1,5 @@
-#if !defined(TWOPIANGLES)
-#define TWOPIANGLES
+#if !defined(THREEPIANGLESSCHILLING)
+#define THREEPIANGLESSCHILLING
 
 #include "IUAmpTools/Amplitude.h"
 #include "IUAmpTools/UserAmplitude.h"

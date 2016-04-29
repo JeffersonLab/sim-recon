@@ -1,5 +1,5 @@
-#if !defined(BREITWIGNER)
-#define BREITWIGNER
+#if !defined(BREITWIGNER3BODY)
+#define BREITWIGNER3BODY
 
 #include "IUAmpTools/Amplitude.h"
 #include "IUAmpTools/AmpParameter.h"
