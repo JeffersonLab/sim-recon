@@ -48,7 +48,9 @@ static TH2F *hPS_PSIDLeftVsIDRight;
 static TH2F *hPS_ElVsEr;
 static TH1F *hPS_E;
 static TH1F *hPS_Ediff;
-static TH2F *hPS_timeVsE;
+static TH2F *hPS_tdiffVsE;
+static TH2F *hPS_PStdiffVsE;
+static TH2F *hPS_PSCPStdiffVsE;
 static TH2I *hPS_PSIDLeftVsPSCIDLeft;
 static TH2I *hPS_PSIDRightVsPSCIDRight;
 static TH2I *hPS_ElVsPSCIDLeft;
@@ -186,7 +188,9 @@ jerror_t JEventProcessor_PSPair_online::init(void)
     hPS_ElVsEr = new TH2F("PS_ElVsEr","PS pair: left-arm energy vs. right-arm energy;energy(right arm) [GeV];energy(left arm) [GeV]",NEb_PSarm,Ebl_PSarm,Ebh_PSarm,NEb_PSarm,Ebl_PSarm,Ebh_PSarm);
     hPS_E = new TH1F("PS_E","PS pair energy;PS pair energy [GeV];events",NEb_PS,Ebl_PS,Ebh_PS);
     hPS_Ediff = new TH1F("PS_Ediff","PS pair energy difference;PS pair energy difference [GeV];events",80,-4.0,4.0);
-    hPS_timeVsE = new TH2F("PS_timeVsE","PSC TDC time, Left arm vs. PS pair energy;PS pair energy [GeV];PSC TDC time, Left arm [ns]",NEb_PS,Ebl_PS,Ebh_PS,NTb_PS,Tbl_PS,Tbh_PS);
+    hPS_tdiffVsE = new TH2F("PS_tdiffVsE","PSC pair time difference vs. PS pair energy;PS pair energy [GeV];PSC pair time difference [ns]",NEb_PS,Ebl_PS,Ebh_PS,200,-10.0,10.0);
+    hPS_PStdiffVsE = new TH2F("PS_PStdiffVsE","PS pair time difference vs. PS pair energy;PS pair energy [GeV];PS pair time difference [ns]",NEb_PS,Ebl_PS,Ebh_PS,200,-10.0,10.0);
+    hPS_PSCPStdiffVsE = new TH2F("PS_PSCPStdiffVsE","PSC/PS pair time difference of differences vs. PS pair energy;PS pair energy [GeV];PSC/PS pair time difference of differences [ns]",NEb_PS,Ebl_PS,Ebh_PS,200,-10.0,10.0);
     //
     hPS_PSIDLeftVsPSCIDLeft = new TH2I("PS_PSIDLeftVsPSCIDLeft","PS pair: Fine PS ID left arm vs. Coarse PS ID left arm;coarse PS module(left arm);fine PS column(left arm)",NC_PSC,0.5,0.5+NC_PSC,NC_PS,0.5,0.5+NC_PS);
     hPS_PSIDRightVsPSCIDRight = new TH2I("PS_PSIDRightVsPSCIDRight","PS pair: Fine PS ID right arm vs. Coarse PS ID right arm;coarse PS module(right arm);fine PS column(right arm)",NC_PSC,0.5,0.5+NC_PSC,NC_PS,0.5,0.5+NC_PS);
@@ -352,6 +356,11 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
     for (int i=0;i<=NTb;i++) {
         Tlows[i] = -400.0+i*0.4;
     }
+    const int NTb_PS = 200;
+    double Tlows_PS[NTb_PS+1];
+    for (int i=0;i<=NTb_PS;i++) {
+        Tlows_PS[i] = -10.0+i*0.1;
+    }
 
     // Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
     japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
@@ -366,7 +375,9 @@ jerror_t JEventProcessor_PSPair_online::brun(JEventLoop *eventLoop, int32_t runn
     if (hPS_E->GetEntries()==0) hPS_E->SetBins(NEb_PS,Elows_PS);
     if (hPSTAGH_E->GetEntries()==0) hPSTAGH_E->SetBins(NEb_PS,Elows_PS);
     if (hPSTAGM_E->GetEntries()==0) hPSTAGM_E->SetBins(NEb_PS,Elows_PS);
-    if (hPS_timeVsE->GetEntries()==0) hPS_timeVsE->SetBins(NEb_PS,Elows_PS,NTb,Tlows);
+    if (hPS_tdiffVsE->GetEntries()==0) hPS_tdiffVsE->SetBins(NEb_PS,Elows_PS,NTb_PS,Tlows_PS);
+    if (hPS_PStdiffVsE->GetEntries()==0) hPS_PStdiffVsE->SetBins(NEb_PS,Elows_PS,NTb_PS,Tlows_PS);
+    if (hPS_PSCPStdiffVsE->GetEntries()==0) hPS_PSCPStdiffVsE->SetBins(NEb_PS,Elows_PS,NTb_PS,Tlows_PS);
     if (hPSTAGH_timeVsE->GetEntries()==0) hPSTAGH_timeVsE->SetBins(NEb_PS,Elows_PS,NTb,Tlows);
     if (hPSTAGM_timeVsE->GetEntries()==0) hPSTAGM_timeVsE->SetBins(NEb_PS,Elows_PS,NTb,Tlows);
     // TAGH
@@ -427,8 +438,9 @@ jerror_t JEventProcessor_PSPair_online::evnt(JEventLoop *loop, uint64_t eventnum
         const DPSCHit* clhit = cpairs[0]->ee.first; // left hit in coarse PS
         const DPSCHit* crhit = cpairs[0]->ee.second;// right hit in coarse PS
         hPSC_PSCIDLeftVsIDRight->Fill(crhit->module,clhit->module);
-        hPSC_tdiffVsPSCIDRight[clhit->module-1]->Fill(crhit->module,clhit->t-crhit->t);
-        hPSC_tdiffVsPSCIDLeft[crhit->module-1]->Fill(clhit->module,clhit->t-crhit->t);
+        double PSC_tdiff = clhit->t-crhit->t;
+        hPSC_tdiffVsPSCIDRight[clhit->module-1]->Fill(crhit->module,PSC_tdiff);
+        hPSC_tdiffVsPSCIDLeft[crhit->module-1]->Fill(clhit->module,PSC_tdiff);
         // PSC,PS coincidences
         if (fpairs.size()>=1) {
             pspair_num_events->Fill(1);
@@ -439,11 +451,13 @@ jerror_t JEventProcessor_PSPair_online::evnt(JEventLoop *loop, uint64_t eventnum
             hPS_PSCIDLeftVsIDRight->Fill(crhit->module,clhit->module);
             hPS_PSIDLeftVsIDRight->Fill(frhit->column,flhit->column);
             double PS_Ediff = flhit->E-frhit->E;
-            double PSC_tdiff = clhit->t-crhit->t;
+            double PS_tdiff = flhit->t-frhit->t;
             hPS_Ediff->Fill(PS_Ediff);
             hPS_ElVsEr->Fill(frhit->E,flhit->E);
             hPS_E->Fill(E_pair);
-            hPS_timeVsE->Fill(E_pair,clhit->t);
+            hPS_tdiffVsE->Fill(E_pair,PSC_tdiff);
+            hPS_PStdiffVsE->Fill(E_pair,PS_tdiff);
+            hPS_PSCPStdiffVsE->Fill(E_pair,PSC_tdiff-PS_tdiff);
             // correlation between PSC and PS ids for each arm
             hPS_PSIDLeftVsPSCIDLeft->Fill(clhit->module,flhit->column);
             hPS_PSIDRightVsPSCIDRight->Fill(crhit->module,frhit->column);
