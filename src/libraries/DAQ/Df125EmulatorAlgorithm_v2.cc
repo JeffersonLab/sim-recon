@@ -410,6 +410,8 @@ void Df125EmulatorAlgorithm_v2::fa125_hit(Int_t &hitfound, Int_t &hitsample, Int
     pedestal = pedestal>>P1; 
     threshold = pedestal + HIT_THRES;
 
+
+
     // look for threshold crossing
     i = WINDOW_START - 1 + PG;
     hitfound = 0;
@@ -424,6 +426,7 @@ void Df125EmulatorAlgorithm_v2::fa125_hit(Int_t &hitfound, Int_t &hitsample, Int
         }
     }
 
+
     if (hitfound == 1) {
         //calculate INTEGRATED pedestal ending just before the hit (this is rightshifted by P2+PBIT later on)
         pedestal = 0;
@@ -431,6 +434,8 @@ void Df125EmulatorAlgorithm_v2::fa125_hit(Int_t &hitfound, Int_t &hitsample, Int
             pedestal += adc[hitsample-PG-i];
         }
     }
+
+
 }
 
 void Df125EmulatorAlgorithm_v2::fa125_integral(Long_t& integral, Int_t& overflows, Int_t timesample, const uint16_t adc[], Int_t WINDOW_END, Int_t INT_END) {
@@ -540,37 +545,27 @@ void Df125EmulatorAlgorithm_v2::fa125_time(Int_t &le_time, Int_t &q_code, Int_t 
     Int_t ups_adjust = 0;
     Int_t i = 0;
 
-    //check all samples are >0
-    Bool_t adczero = kFALSE;
-    i = 0;
-    while ((!adczero)&&(i<NU)) {
-        if (adc[i] == 0) {
-            adczero = kTRUE;
-        }
-        i++;
-    }
 
-    if (adczero) {
+    //check all samples are >0
+    //check all samples from 0 to pedestal are <= LIMIT_PED_MAX
+    //adc=zero and pedestal limit checks are in same fadc clock cycle
+
+    while (i<NU) {
+      if (adc[i] == 0) {
         le_time = ROUGH_TIME + 1;
         q_code = 1;
-        return;
-    }
+      }
 
-    //check all samples from 0 to pedestal are <= LIMIT_PED_MAX
-    Bool_t pedlimit = kFALSE;
-    i = 0;
-    while ((!pedlimit)&&(i<PED+1)) {
-        if (adc[i] > LIMIT_PED_MAX) {
-            pedlimit = kTRUE;
-        }
-        i++;
-    }
-
-    if (pedlimit) {
+      if ((i < PED+1) && (adc[i] > LIMIT_PED_MAX)) {
         le_time = ROUGH_TIME + 2;
         q_code = 2;
-        return;
+      }
+      i++;
     }
+
+    if (q_code>0) return; 
+
+
 
     //  add offset to move min val in subset equal to SET_ADC_MIN
     //  this is to move samples away from 0 to avoid upsampled pts going -ve (on a curve betw 2 samples)
@@ -587,6 +582,7 @@ void Df125EmulatorAlgorithm_v2::fa125_time(Int_t &le_time, Int_t &q_code, Int_t 
     i=0;
     while (i<NU) {
         adc[i] = adc[i] + adcoffset;
+        if (adc[i] > 4095) adc[i] = 4095;  //saturate
         i++;
     }
 
