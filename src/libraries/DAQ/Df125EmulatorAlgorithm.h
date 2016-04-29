@@ -25,14 +25,14 @@ class Df125EmulatorAlgorithm:public jana::JObject{
     public:
         JOBJECT_PUBLIC(Df125EmulatorAlgorithm);
 
-        Df125EmulatorAlgorithm(JEventLoop *loop){};
+        Df125EmulatorAlgorithm(){};
         ~Df125EmulatorAlgorithm(){};
 
         // The main emulation routines are overwritten in the inherited classes
         virtual void EmulateFirmware(const Df125WindowRawData*, Df125CDCPulse*, Df125FDCPulse*) = 0;
 
     protected:
-        Df125EmulatorAlgorithm(){};
+	//        Df125EmulatorAlgorithm(){};
 
 };
 

@@ -41,7 +41,9 @@
 	gPad->SetLeftMargin(2.0);
 	if(fcal_occ){
 		fcal_occ->SetStats(0);
-		fcal_occ->Draw("colz");
+		TH1* h = fcal_occ->DrawCopy("colz");
+		h->Scale(1./Nevents);
+		h->GetZaxis()->SetRangeUser(0.0001, 0.25);
 		
 		char str[256];
 		sprintf(str,"%0.0f events", Nevents);

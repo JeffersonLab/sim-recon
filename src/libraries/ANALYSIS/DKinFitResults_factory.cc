@@ -27,7 +27,7 @@ jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int32_t ru
 
 	//set pool sizes
 	size_t locExpectedNumCombos = 50;
-	dKinFitUtils->Set_MaxPoolSizes(Get_NumReactions(locEventLoop), locExpectedNumCombos);
+	dKinFitUtils->Set_MaxPoolSizes(Get_NumKinFitReactions(locEventLoop), locExpectedNumCombos);
 
 	//pre-allocate matrix memory
 	dKinFitUtils->Preallocate_MatrixMemory();
@@ -35,7 +35,7 @@ jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int32_t ru
 	return NOERROR;
 }
 
-size_t DKinFitResults_factory::Get_NumReactions(JEventLoop* locEventLoop)
+size_t DKinFitResults_factory::Get_NumKinFitReactions(JEventLoop* locEventLoop)
 {
 	// Get # of DReactions:
 	// Get list of factories and find all the ones producing
@@ -57,7 +57,11 @@ size_t DKinFitResults_factory::Get_NumReactions(JEventLoop* locEventLoop)
 		// overall list.
 		vector<const DReaction*> locReactionsSubset;
 		locFactory->Get(locReactionsSubset);
-		locNumReactions += locReactionsSubset.size();
+		for(size_t loc_j = 0; loc_j < locReactionsSubset.size(); ++loc_j)
+		{
+			if(locReactionsSubset[loc_j]->Get_KinFitType() != d_NoFit)
+				++locNumReactions;
+		}
 	}
 
 	return locNumReactions;

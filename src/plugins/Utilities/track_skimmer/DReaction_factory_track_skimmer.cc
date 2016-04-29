@@ -33,6 +33,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	dReactionStepPool.push_back(locReactionStep_Pi01); //register so will be deleted later: prevent memory leak
 
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
@@ -61,6 +62,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	dReactionStepPool.push_back(locReactionStep_Pi02); //register so will be deleted later: prevent memory leak
 
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
@@ -91,6 +93,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	dReactionStepPool.push_back(locReactionStep_Pi03); //register so will be deleted later: prevent memory leak
 
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
@@ -108,6 +111,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
 	locReaction->Set_InvariantMassCut(KShort, 0.3, 0.7);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, KShort, false, 800, 0.3, 0.7, "KShort"));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
@@ -130,6 +134,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
 	locReaction->Set_InvariantMassCut(KShort, 0.3, 0.7);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, KShort, false, 800, 0.3, 0.7, "KShort"));
 
@@ -148,6 +153,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	dReactionStepPool.push_back(locReactionStep_Eta2g); //register so will be deleted later: prevent memory leak
 
 	locReaction->Set_InvariantMassCut(Eta, 0.3, 0.8);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Eta, false, 1000, 0.3, 0.8, "Eta"));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
@@ -172,6 +178,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
 	locReaction->Set_InvariantMassCut(Eta, 0.3, 0.8);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Eta, false, 1000, 0.3, 0.8, "Eta"));
 
@@ -195,6 +202,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
 	locReaction->Set_InvariantMassCut(Eta, 0.3, 0.8);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Eta, false, 1000, 0.3, 0.8, "Eta"));
 
@@ -218,6 +226,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
 	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, false, 1600, 0.4, 1.2, "Omega"));
 
@@ -240,6 +249,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
 	locReaction->Set_InvariantMassCut(omega, 0.4, 1.2);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, false, 1600, 0.4, 1.2, "Omega"));
 
@@ -263,6 +273,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 
 	locReaction->Set_InvariantMassCut(Eta, 0.3, 0.8);
 	locReaction->Set_InvariantMassCut(EtaPrime, 0.6, 1.3);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Eta, false, 1000, 0.3, 0.8, "Eta"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, EtaPrime, false, 1400, 0.6, 1.3, "EtaPrime"));
 
@@ -282,6 +293,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
 	locReaction->Set_InvariantMassCut(Eta, 0.3, 0.8);
 	locReaction->Set_InvariantMassCut(EtaPrime, 0.6, 1.3);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Eta, false, 1000, 0.3, 0.8, "Eta"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, EtaPrime, false, 1400, 0.6, 1.3, "EtaPrime"));
@@ -300,6 +312,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
 	locReaction->Set_InvariantMassCut(Eta, 0.3, 0.8);
 	locReaction->Set_InvariantMassCut(EtaPrime, 0.6, 1.3);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Eta, false, 1000, 0.3, 0.8, "Eta"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, EtaPrime, false, 1400, 0.6, 1.3, "EtaPrime"));
@@ -320,6 +333,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
 	locReaction->Set_InvariantMassCut(EtaPrime, 0.6, 1.3);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, EtaPrime, false, 1400, 0.6, 1.3, "EtaPrime"));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
@@ -345,6 +359,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
 	locReaction->Set_InvariantMassCut(Eta, 0.3, 0.8);
 	locReaction->Set_InvariantMassCut(EtaPrime, 0.6, 1.3);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Eta, false, 1000, 0.3, 0.8, "Eta"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, EtaPrime, false, 1400, 0.6, 1.3, "EtaPrime"));
@@ -381,6 +396,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
 	locReaction->Set_InvariantMassCut(Eta, 0.3, 0.8);
 	locReaction->Set_InvariantMassCut(EtaPrime, 0.6, 1.3);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Eta, false, 1000, 0.3, 0.8, "Eta"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, EtaPrime, false, 1400, 0.6, 1.3, "EtaPrime"));
@@ -401,6 +417,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
 	locReaction->Set_InvariantMassCut(Eta, 0.3, 0.8);
 	locReaction->Set_InvariantMassCut(EtaPrime, 0.6, 1.3);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Eta, false, 1000, 0.3, 0.8, "Eta"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, EtaPrime, false, 1400, 0.6, 1.3, "EtaPrime"));
@@ -420,6 +437,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
 	locReaction->Set_InvariantMassCut(phiMeson, 0.8, 1.2);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, phiMeson, false, 800, 0.8, 1.2, "Phi"));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
@@ -442,6 +460,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
 	locReaction->Set_InvariantMassCut(phiMeson, 0.8, 1.2);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, phiMeson, false, 800, 0.8, 1.2, "Phi"));
 
@@ -460,6 +479,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	dReactionStepPool.push_back(locReactionStep_Lambda); //register so will be deleted later: prevent memory leak
 
 	locReaction->Set_InvariantMassCut(Lambda, 1.0, 1.2);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Lambda, false, 800, 1.0, 1.2, "Lambda"));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
@@ -481,6 +501,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 
 	locReaction->Set_InvariantMassCut(Lambda, 1.0, 1.2);
 	locReaction->Set_InvariantMassCut(Sigma0, 1.1, 1.3);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Lambda, false, 800, 1.0, 1.2, "Lambda"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Sigma0, false, 800, 1.1, 1.3, "Sigma0"));
 
@@ -503,6 +524,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
 	locReaction->Set_InvariantMassCut(SigmaPlus, 1.1, 1.3);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, SigmaPlus, false, 800, 1.1, 1.3, "Sigma+"));
 
@@ -525,6 +547,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 
 	locReaction->Set_InvariantMassCut(Lambda, 1.0, 1.2);
 	locReaction->Set_InvariantMassCut(XiMinus, 1.1, 1.5);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Lambda, false, 800, 1.0, 1.2, "Lambda"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, XiMinus, false, 800, 1.1, 1.5, "Xi-"));
 
@@ -549,6 +572,7 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	locReaction->Set_InvariantMassCut(Pi0, 0.05, 0.22);
 	locReaction->Set_InvariantMassCut(Lambda, 1.0, 1.2);
 	locReaction->Set_InvariantMassCut(Xi0, 1.1, 1.5);
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 510, 0.05, 0.22, "Pi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Lambda, false, 800, 1.0, 1.2, "Lambda"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Xi0, false, 800, 1.1, 1.5, "Xi0"));

@@ -39,9 +39,8 @@ const int NupstreamCounters = 131;
 //
 const int NmultBins = 300; // number of bins for multiplicity histograms
 //
+double beam_current = -1.0;
 const double counts_cut = 1000.0;
-double sumCurrent = 0.0;
-int Ncurrent = 0;
 // root hist pointers
 static TH1I *tagh_num_events;
 static TH1I *hBeamCurrent;
@@ -144,7 +143,7 @@ jerror_t JEventProcessor_TAGH_online::init(void) {
 
     // book hists
     tagh_num_events = new TH1I("tagh_num_events","TAGH number of events",1,0.5,1.5);
-    hBeamCurrent = new TH1I("BeamCurrent","Average beam current;average current [nA]",600,0.0,300.0);
+    hBeamCurrent = new TH1I("BeamCurrent","Beam current;beam current [nA]",600,0.0,300.0);
     // hit-level hists (after calibration)
     gDirectory->mkdir("Hit")->cd();
     hHit_HasTDCvsHasADC = new TH2F("Hit_HasTDCvsHasADC","TAGH has TDC? vs. has ADC?;fADC status;TDC status",2,-0.5,1.5,2,-0.5,1.5);
@@ -248,19 +247,16 @@ jerror_t JEventProcessor_TAGH_online::brun(JEventLoop *eventLoop, int32_t runnum
     }
     //
 
-	// FILL HISTOGRAMS
-	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+    // FILL HISTOGRAMS
+    // Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
     if (hHit_Energy->GetEntries()==0) hHit_Energy->SetBins(Nslots,Elows);
     if (hHit_EnergyVsSlotID->GetEntries()==0) hHit_EnergyVsSlotID->SetBins(Nslots,slots,Nslots,Elows);
     if (hHit_TimeVsEnergy->GetEntries()==0) hHit_TimeVsEnergy->SetBins(Nslots,Elows,Ntime,Tlows);
 
-	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
-    //
-    sumCurrent = 0.0;
-    Ncurrent = 0;
     return NOERROR;
 }
 
@@ -297,29 +293,20 @@ jerror_t JEventProcessor_TAGH_online::evnt(JEventLoop *eventLoop, uint64_t event
         pp_wr_cache[digihits[i]] = pair<const Df250PulsePedestal*, const Df250WindowRawData*>(pulsePed, rawData);
     }
     // get beam current
-    vector<const DEPICSvalue *> epicsVals;
+    vector<const DEPICSvalue*> epicsVals;
     eventLoop->Get(epicsVals);
-    double current = 0.0;
     for(unsigned int i = 0; i < epicsVals.size(); i++){
-        if (epicsVals[i]->name == "IBCAD00CRCUR6"){
-            current = epicsVals[i]->fval;
+        if (epicsVals[i]->name == "IBCAD00CRCUR6") {
+            beam_current = epicsVals[i]->fval;
             break;
         }
     }
-    if (current>3.0&&current<2000.0) {
-        sumCurrent += current;
-        Ncurrent++;
-        current = sumCurrent/Ncurrent;
-    }
-
-	// FILL HISTOGRAMS
-	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-
-    if (current>3.0&&current<2000.0) hBeamCurrent->Fill(current);
-
-    if((digihits.size()>0) || (tdcdigihits.size()>0))
-    tagh_num_events->Fill(1);
+    // FILL HISTOGRAMS
+    // Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+    hBeamCurrent->Fill(beam_current);
+    if (digihits.size() > 0 || tdcdigihits.size() > 0)
+        tagh_num_events->Fill(1);
 
     hHit_RawNHits->Fill(hits.size());
     hDigiHit_NfadcHits->Fill(digihits.size());
@@ -333,7 +320,7 @@ jerror_t JEventProcessor_TAGH_online::evnt(JEventLoop *eventLoop, uint64_t event
         hDigiHit_NSamplesPedestal->Fill(digihits[i]->nsamples_pedestal);
         hDigiHit_Pedestal->Fill(ped);
         const Df250PulsePedestal* pulsePed = pp_wr_cache[digihits[i]].first;
-        double peak = -999.0;
+        double peak = -1.0;
         if (pulsePed) peak = pulsePed->pulse_peak;
         hDigiHit_RawPeak->Fill(peak);
         if (ped==0.0||peak==0.0) continue;
@@ -455,7 +442,7 @@ jerror_t JEventProcessor_TAGH_online::evnt(JEventLoop *eventLoop, uint64_t event
     hHit_NHits_us->Fill(NHits_hasADC_us);
     hHit_NHits_ds->Fill(NHits_hasADC_ds);
 
-	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
     return NOERROR;
 }
