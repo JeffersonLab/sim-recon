@@ -147,30 +147,27 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 
 		list<DBORptrs*> borptrs_list;
 
-		bool  PARSE;
-		bool  PARSE_F250;
-		bool  PARSE_F125;
-		bool  PARSE_F1TDC;
-		bool  PARSE_CAEN1290TDC;
-		bool  PARSE_CONFIG;
-		bool  PARSE_BOR;
-		bool  PARSE_EPICS;
-		bool  PARSE_EVENTTAG;
-		bool  PARSE_TRIGGER;
-		bool  MAKE_DOM_TREE;
-		int   ET_STATION_NEVENTS;
-		bool  ET_STATION_CREATE_BLOCKING;
-		int   ET_DEBUG_WORDS_TO_DUMP;
-		bool  LOOP_FOREVER;
-		int   VERBOSE;
-		float TIMEOUT;
-		string MODTYPE_MAP_FILENAME;
-		bool  ENABLE_DISENTANGLING;
+		bool     PARSE;
+		bool     PARSE_F250;
+		bool     PARSE_F125;
+		bool     PARSE_F1TDC;
+		bool     PARSE_CAEN1290TDC;
+		bool     PARSE_CONFIG;
+		bool     PARSE_BOR;
+		bool     PARSE_EPICS;
+		bool     PARSE_EVENTTAG;
+		bool     PARSE_TRIGGER;
+		bool     MAKE_DOM_TREE;
+		int      ET_STATION_NEVENTS;
+		bool     ET_STATION_CREATE_BLOCKING;
+		bool     LOOP_FOREVER;
+		uint32_t USER_RUN_NUMBER;
+		int      VERBOSE;
+		float    TIMEOUT;
 		uint32_t NTHREADS;
-		bool  PRINT_STATS;
-		
-		bool  SWAP;
-		bool  LINK;
+		bool     PRINT_STATS;
+		bool     SWAP;
+		bool     LINK;
 		
 		uint32_t jobtype;
 };

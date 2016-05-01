@@ -263,7 +263,7 @@ class DParsedEvent{
 		MyTypes(makeallocator);
 
 		// Constructor and destructor
-		DParsedEvent(void):in_use(false),Nrecycled(0),MAX_RECYCLED(1000),borptrs(NULL){}
+		DParsedEvent(void):in_use(false),Nrecycled(0),MAX_RECYCLED(100),borptrs(NULL){}
 		#define printcounts(A) if(!v##A.empty()) cout << v##A.size() << " : " << #A << endl;
 		#define printpoolcounts(A) if(!v##A##_pool.empty()) cout << v##A##_pool.size() << " : " << #A << "_pool" << endl;
 		virtual ~DParsedEvent(){

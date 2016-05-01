@@ -54,6 +54,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	NTHREADS = 2;
 	MAX_PARSED_EVENTS = 128;
 	LOOP_FOREVER = false;
+	USER_RUN_NUMBER = 0;
 	ET_STATION_NEVENTS = 10;
 	ET_STATION_CREATE_BLOCKING = false;
 	PRINT_STATS = true;
@@ -75,6 +76,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	gPARMS->SetDefaultParameter("EVIO:NTHREADS", NTHREADS, "Set the number of worker threads to use for parsing the EVIO data");
 	gPARMS->SetDefaultParameter("EVIO:MAX_PARSED_EVENTS", MAX_PARSED_EVENTS, "Set maximum number of events to allow in EVIO parsed events queue");
 	gPARMS->SetDefaultParameter("EVIO:LOOP_FOREVER", LOOP_FOREVER, "If reading from EVIO file, keep re-opening file and re-reading events forever (only useful for debugging) If reading from ET, this is ignored.");
+	gPARMS->SetDefaultParameter("EVIO:RUN_NUMBER", USER_RUN_NUMBER, "User-supplied run number. Override run number from other sources with this.(will be ignored if set to zero)");
 	gPARMS->SetDefaultParameter("EVIO:ET_STATION_NEVENTS", ET_STATION_NEVENTS, "Number of events to use if we have to create the ET station. Ignored if station already exists.");
 	gPARMS->SetDefaultParameter("EVIO:ET_STATION_CREATE_BLOCKING", ET_STATION_CREATE_BLOCKING, "Set this to 0 to create station in non-blocking mode (default is to create it in blocking mode). Ignored if station already exists.");
 	gPARMS->SetDefaultParameter("EVIO:PRINT_STATS", PRINT_STATS, "Print some additional stats from event source when it's finished processing events");
@@ -344,7 +346,7 @@ jerror_t JEventSource_EVIOpp::GetEvent(JEvent &event)
 	// Copy info for this parsed event into the JEvent
 	event.SetJEventSource(this);
 	event.SetEventNumber(pe->event_number);
-	event.SetRunNumber(pe->run_number);
+	event.SetRunNumber(USER_RUN_NUMBER>0 ? USER_RUN_NUMBER:pe->run_number);
 	event.SetRef(pe);
 
 	// Set event status bits
@@ -407,34 +409,34 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	string tag = factory->Tag();
 	if(tag.length()!=0) return OBJECT_NOT_AVAILABLE; // can't provide tagged factory objects
 	
-	// Copy source objects for all classes into their respective factories
-	// if needed.
-	DParsedEvent *pe = (DParsedEvent*)event.GetRef();
+	// Get any translation tables we'll need to apply
 	JEventLoop *loop = event.GetJEventLoop();
-
-	// Copy pointers to all hits to appropriate factories.
-	// Link BORconfig objects if appropriate.
-	if(!pe->copied_to_factories){
-		pe->CopyToFactories(loop);
-		if(LINK && pe->borptrs) LinkBORassociations(pe);
-	}
-
-	// Apply any translation tables that exist, writing the translated objects
-	// into their respective factories
-	bool isSuppliedType = pe->IsParsedDataType(dataClassName);
 	vector<const DTranslationTable*> translationTables;
 	DTranslationTable_factory *ttfac = static_cast<DTranslationTable_factory*>(loop->GetFactory("DTranslationTable"));
 	if(ttfac) ttfac->Get(translationTables);
-	bool isNotTaggedFactory = strlen(factory->Tag()) == 0;
-	for(unsigned int i=0; i<translationTables.size(); i++){
-		translationTables[i]->ApplyTranslationTable(loop);
-		if(!isSuppliedType){
-			if(translationTables[i]->IsSuppliedType(dataClassName)){
-				if(isNotTaggedFactory){ // Don't allow tagged factories from Translation table
-					isSuppliedType = true;
-				}
-			}
+	
+	// Copy pointers to all hits to appropriate factories.
+	// Link BORconfig objects and apply translation tables if appropriate.
+	DParsedEvent *pe = (DParsedEvent*)event.GetRef();
+	if(!pe->copied_to_factories){
+
+		// Copy all low-level hits to appropriate factories
+		pe->CopyToFactories(loop);
+
+		// Optionally link BOR object associations
+		if(LINK && pe->borptrs) LinkBORassociations(pe);
+
+		// Apply translation tables to create DigiHit objects
+		for(auto tt : translationTables){
+			tt->ApplyTranslationTable(loop);
 		}
+	}
+
+	// Decide whether this is a data type the source supplies
+	bool isSuppliedType = pe->IsParsedDataType(dataClassName);
+	for(auto tt : translationTables){
+		if(isSuppliedType) break;  // once this is set, it's set
+		isSuppliedType = tt->IsSuppliedType(dataClassName);
 	}
 
 	// Check if this is a class we provide and return appropriate value
