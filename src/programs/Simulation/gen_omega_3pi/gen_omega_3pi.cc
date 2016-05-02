@@ -178,7 +178,7 @@ int main( int argc, char* argv[] ){
 	massW->Sumw2();
 	TH1F* intenW = new TH1F( "intenW", "True PDF / Gen. PDF", 1000, 0, 100 );
 	TH2F* intenWVsM = new TH2F( "intenWVsM", "Ratio vs. M", 100, lowMass, highMass, 1000, 0, 10 );
-    TH2F* dalitz = new TH2F( "dalitz", "Dalitz plot; M^{2} #pi^{+}#{pi}^{0}; M^{2} #pi^{-}#{pi}^{0}", 100, 0., 0.75 , 100, 0., 0.75 );
+    TH2F* dalitz = new TH2F( "dalitz", "Dalitz plot; M^{2} #pi^{+}#pi^{0}; M^{2} #pi^{-}#pi^{0}", 100, 0., 0.75 , 100, 0., 0.75 );
 	TH2F* CosTheta_psi = new TH2F( "CosTheta_psi", "cos#theta vs. #psi", 180, -3.14, 3.14, 100, -1, 1);
     TH2F* CosTheta_VsE = new TH2F( "CosTheta_VsE", "cos#theta vs. E_{#gamma}", 100, 0.0, 12.0, 100, -1, 1);
     TH2F* Psi_VsE      = new TH2F( "Psi_VsE", "#psi vs. E_{#gamma}", 100, 0.0, 12.0, 180, -3.14, 3.14);
@@ -280,7 +280,6 @@ int main( int argc, char* argv[] ){
 				}
 			}
 			else{
-			    cout << "Didn't pass cut" << endl;	
 				mass->Fill( resonance.M() );
 				massW->Fill( resonance.M(), genWeight );
 				
