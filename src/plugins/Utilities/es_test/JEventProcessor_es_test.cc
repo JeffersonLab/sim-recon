@@ -64,8 +64,9 @@ jerror_t JEventProcessor_es_test::evnt(JEventLoop *loop, uint64_t eventnumber)
   loop->Get(es_data);
 
   cout << "Event " << eventnumber << endl;
-  cout << "ES Data size = " << es_data.size() << endl;
-  es_data->Print();
+  es_data[0]->Print();
+
+  return NOERROR;
 }
 
 //------------------
