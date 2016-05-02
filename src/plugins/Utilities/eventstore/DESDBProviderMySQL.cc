@@ -134,8 +134,6 @@ bool DESDBProviderMySQL::Connect()
 		DBptr = NULL;    // to be safe?
 		return false;
 	}
-
-	jout << "WE ARE CONNECTED!" << endl;
 	
 	is_connected = true;
 	return true;

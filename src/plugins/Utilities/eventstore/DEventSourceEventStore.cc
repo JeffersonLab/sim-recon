@@ -13,8 +13,10 @@
 using namespace std;
 
 #include <DANA/DApplication.h>
+#include <DANA/DStatusBits.h>
 
 #include "DEventSourceEventStore.h"
+#include "DESSkimData.h"
 
 static string EventstoreQueryHelp() {
 	string str = "this is a help string";
@@ -31,7 +33,9 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	min_run = 0;
 	max_run = INT_MAX;   // default to something ridiculously large
 	esdb_connection = "mysql://es_user@hallddb.jlab.org/EventStoreTMP";    // default to main JLab ES server
-	
+	BASE_SKIM_INDEX = 20;
+	MAX_SKIM_INDEX = 64 - BASE_SKIM_INDEX;
+		
 	// First, parse the eventsource query
 	// For details of the query format, see: <...>
 	
@@ -40,8 +44,8 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	istringstream iss(es_query);
 	vector<string> tokens;
 	copy(istream_iterator<string>(iss),
-    	istream_iterator<string>(),
-     	back_inserter(tokens));
+    	 istream_iterator<string>(),
+     	 back_inserter(tokens));
 	
 	////////////////////////////////////////////////////////////
 
@@ -116,10 +120,34 @@ DEventSourceEventStore::~DEventSourceEventStore()
 //---------------------------------
 jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
 {
-	// skip to next event
-	if(!event_source) throw RESOURCE_UNAVAILABLE;
+	// open the next file if available
+	//if(!event_source)
+	//	event_source = OpenNextFile();
 
-	return event_source->GetEvent(event);
+	// FOR DEBUGGING
+    event.SetEventNumber(1);
+    event.SetRunNumber(10000);
+    event.SetJEventSource(this);
+    event.SetRef(NULL);
+    event.SetStatusBit(kSTATUS_FROM_FILE);
+    event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+
+	return NOERROR;
+
+	// make sure the event source is open
+	// if not, we're out of events
+	if(!event_source) //throw RESOURCE_UNAVAILABLE;
+		return EVENT_SOURCE_NOT_OPEN;
+	
+	// skip to next event
+	// MoveToNextEvent();
+
+	jerror_t retval = event_source->GetEvent(event);
+	if(retval == NOERROR) {
+		// tag event
+	}
+	
+	return retval;
 }
 
 //---------------------------------
@@ -143,8 +171,25 @@ jerror_t DEventSourceEventStore::GetObjects(JEvent &event, JFactory_base *factor
 	// We must have a factory to hold the data
 	if(!factory) throw RESOURCE_UNAVAILABLE;
 
-	if(!event_source) throw RESOURCE_UNAVAILABLE;
+	// return meta-EventStore information
+	JEventLoop* locEventLoop = event.GetJEventLoop();
+    string dataClassName = factory->GetDataClassName();
+	
+	if (dataClassName =="DESSkimData") {
+		JFactory<DESSkimData> *essd_factory = dynamic_cast<JFactory<DESSkimData>*>(factory);
+		
+		LockRead();			// LOCK class data
+		vector<DESSkimData*> skim_data_vec;
+		DESSkimData *skim_data = new DESSkimData(event, skim_list, BASE_SKIM_INDEX);
+		skim_data_vec.push_back(skim_data);
+		UnlockRead();       // UNLOCK
 
+		essd_factory->CopyTo(skim_data_vec);
+		return NOERROR;
+	}
+	
+	if(!event_source) throw RESOURCE_UNAVAILABLE;
+	
 	return event_source->GetObjects(event, factory);
 }
 

@@ -4,7 +4,7 @@ import sbms
 Import('*')
 
 # Default targets (always built)
-subdirs = ['danarest', 'DAQ', 'TTab', 'rawevent', 'evio_writer', '2trackskim', 'pi0bcalskim', 'pi0fcalskim', 'run_summary', 'track_skimmer', 'trackeff_missing','ps_skim']
+subdirs = ['danarest', 'DAQ', 'TTab', 'rawevent', 'evio_writer', '2trackskim', 'pi0bcalskim', 'pi0fcalskim', 'run_summary', 'track_skimmer', 'trackeff_missing','ps_skim','eventstore','es_test']
 subdirs.extend(['EventTagPi0'])
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 

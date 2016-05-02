@@ -6,12 +6,14 @@
 
 #include "DEventSourceEventStoreGenerator.h"
 #include "DEventSourceEventStore.h"
+#include "DFactoryGenerator_DESSkimData.h"
 
 // Make this a plugin
 extern "C" {
   void InitPlugin(JApplication *app) {
     InitJANAPlugin(app);
     app->AddEventSourceGenerator(new DEventSourceEventStoreGenerator());
+    app->AddFactoryGenerator(new DFactoryGenerator_DESSkimData());
   }
 } // "extern C"
 
