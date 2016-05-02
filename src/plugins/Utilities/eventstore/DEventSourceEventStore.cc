@@ -15,6 +15,8 @@ using namespace std;
 #include <DANA/DApplication.h>
 #include <DANA/DStatusBits.h>
 
+#include <TRandom3.h>
+
 #include "DEventSourceEventStore.h"
 #include "DESSkimData.h"
 
@@ -22,6 +24,11 @@ static string EventstoreQueryHelp() {
 	string str = "this is a help string";
 	return str;
 }
+
+
+// Various variables
+static bool TEST_MODE = false;
+
 
 //---------------------------------
 // DEventSourceEventStore    (Constructor)
@@ -36,6 +43,22 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	BASE_SKIM_INDEX = 20;
 	MAX_SKIM_INDEX = 64 - BASE_SKIM_INDEX;
 		
+	// read in configurations
+	// priority:  JANA command line -> environment variable -> default
+	if(getenv("EVENTSTORE_CONNECTION") != NULL)
+		esdb_connection = getenv("EVENTSTORE_CONNECTION");
+	gPARMS->SetDefaultParameter("ESDB:CONNECTION", esdb_connection,
+								"Specification of EventStore DB connection.");
+	
+	int test_mode_flag = 0;
+	gPARMS->SetDefaultParameter("ESDB:TEST_MODE", test_mode_flag,
+								"Toggle test mode features");
+	if(test_mode_flag != 0) {
+		TEST_MODE = true;
+		if(gRandom == NULL)
+			gRandom = new TRandom3(0);
+	}
+	
 	// First, parse the eventsource query
 	// For details of the query format, see: <...>
 	
@@ -68,6 +91,16 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 		
 	if( (tokens[1] == "in") ) {   // read data from the data base
 		;
+		
+		// debugging stuff
+		if(TEST_MODE) {
+			if(skim_list.size() == 0) {
+				skim_list.push_back("pi0");
+				skim_list.push_back("eta");
+				skim_list.push_back("rho");
+				skim_list.push_back("omega");				
+			}
+		}
 	} else if( (tokens[1] == "info") ) {   // query information from the DB
 		// runs <datestamp> [<grade> [<skim>] ] [runs <min> [<max>]] 
     	//    [<run info query>]    prints available runs in DB  that match criteria
@@ -124,16 +157,23 @@ jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
 	//if(!event_source)
 	//	event_source = OpenNextFile();
 
-	// FOR DEBUGGING
-    event.SetEventNumber(1);
-    event.SetRunNumber(10000);
-    event.SetJEventSource(this);
-    event.SetRef(NULL);
-    event.SetStatusBit(kSTATUS_FROM_FILE);
-    event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+	if(TEST_MODE) {
+		// FOR DEBUGGING 
+		// output some fake event with skim information
+    	event.SetEventNumber(1);
+    	event.SetRunNumber(10000);
+    	event.SetJEventSource(this);
+   		event.SetRef(NULL);
+    	event.SetStatusBit(kSTATUS_FROM_FILE);
+    	event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
 
-	return NOERROR;
+		for(int i=0; i<4; i++)
+			if(gRandom->Uniform() < 0.5)
+				event.SetStatusBit(BASE_SKIM_INDEX+i);
 
+		return NOERROR;
+	}
+	
 	// make sure the event source is open
 	// if not, we're out of events
 	if(!event_source) //throw RESOURCE_UNAVAILABLE;

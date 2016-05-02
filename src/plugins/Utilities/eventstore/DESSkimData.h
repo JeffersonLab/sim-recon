@@ -30,7 +30,21 @@ class DESSkimData : public JObject {
 	inline const vector<string>& GetEventSkims() const { return event_skims; } 
 	inline const vector<string>& GetAllSkims() const { return skim_list; } 
 
-	void Print() const { cout << "horse" << endl; } 
+	void Print(string mode="") const { 
+		if(mode=="all") {
+			cout << endl << "These skims are available:" << endl;
+			//cout << " N = " << skim_list.size();
+			for(vector<string>::const_iterator it = skim_list.begin();
+				it != skim_list.end(); it++) 
+			 	cout << "  " << *it << endl;
+		}
+		
+		cout << endl << "Event satisfies these skims:" << endl;
+		//cout << " N = " << event_skims.size();
+		for(vector<string>::const_iterator it = event_skims.begin();
+			it != event_skims.end(); it++) 
+			 cout << "  " << *it << endl;
+	} 
 
   protected:
 	// We tag which skims JEvents belong to using JEvent::SetStatusBit()

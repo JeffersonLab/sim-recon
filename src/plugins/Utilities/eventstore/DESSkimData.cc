@@ -8,7 +8,7 @@
 
 
 //---------------------------------
-// GetSkims
+// DESSkimData
 //---------------------------------
 DESSkimData::DESSkimData(JEvent &event, vector<string> &in_skim_list, int in_base_skim_index) 
 {
@@ -19,10 +19,15 @@ DESSkimData::DESSkimData(JEvent &event, vector<string> &in_skim_list, int in_bas
 	if(skim_list.size() < MAX_SKIM_INDEX)
 		MAX_SKIM_INDEX = BASE_SKIM_INDEX + skim_list.size();
 
+	//cout << "TEST" << endl;
+	//for(int i=0; i<skim_list.size(); i++)
+	//	cout << i << " " << skim_list[i] << endl;
+
 	// scan through the available status bits, to see if this event is
 	// a member of any skims
-	for(unsigned int i = BASE_SKIM_INDEX; i < 64; i++it) {
+	for(int i = BASE_SKIM_INDEX; i < MAX_SKIM_INDEX; i++) {
+		//cout << i << " " << skim_list[i - BASE_SKIM_INDEX] << endl;
 		if(event.GetStatusBit(i))
-			event_skims.push_back(skim_list[i]);
+			event_skims.push_back(skim_list[i - BASE_SKIM_INDEX]);
 	}
 }
