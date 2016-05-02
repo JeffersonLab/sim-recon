@@ -10,6 +10,7 @@
 #include <sstream>
 #include <algorithm>
 #include <iterator>
+#include <stdlib.h>
 using namespace std;
 
 #include <DANA/DApplication.h>
@@ -17,14 +18,18 @@ using namespace std;
 
 #include <TRandom3.h>
 
+#include <HDDM/DEventSourceREST.h>
+
 #include "DEventSourceEventStore.h"
 #include "DESSkimData.h"
 
 static string EventstoreQueryHelp() {
-	string str = "this is a help string";
+	string str = "For more information, go to https://github.com/JeffersonLab/HDEventStore/wiki";
 	return str;
 }
 
+// forward declarations
+//class DEventSourceREST;
 
 // Various variables
 static bool TEST_MODE = false;
@@ -36,18 +41,34 @@ static bool TEST_MODE = false;
 DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSource(source_name)
 {
 	// initialize data members
+	es_data_loaded = false;
 	event_source = NULL;
 	min_run = 0;
 	max_run = INT_MAX;   // default to something ridiculously large
 	esdb_connection = "mysql://es_user@hallddb.jlab.org/EventStoreTMP";    // default to main JLab ES server
 	BASE_SKIM_INDEX = 20;
 	MAX_SKIM_INDEX = 64 - BASE_SKIM_INDEX;
+	
+	// eventstore parameters
+	// for more information, see ...
+	//grade = "physics";        // REST physics data
+	//grade = "recon";        // REST physics data
+	grade = "recon-unchecked";        // DEBUG!!
+	timestamp = "21000501";   // use the latest data - this should never happen, anyway...
+	load_all_skims = true;    // default to processing all skims
+	run_period_set = false;
+	run_range_set = false;
+	
+	// load run period mapping
+	// hardcode for now, this info should move to RCDB...
+	run_period_map["RunPeriod-2015-03"] = pair<int,int>(2607,3385);
+	run_period_map["RunPeriod-2016-02"] = pair<int,int>(10000,20000);
 		
 	// read in configurations
 	// priority:  JANA command line -> environment variable -> default
 	if(getenv("EVENTSTORE_CONNECTION") != NULL)
 		esdb_connection = getenv("EVENTSTORE_CONNECTION");
-	gPARMS->SetDefaultParameter("ESDB:CONNECTION", esdb_connection,
+	gPARMS->SetDefaultParameter("ESDB:DB_CONNECTION", esdb_connection,
 								"Specification of EventStore DB connection.");
 	
 	int test_mode_flag = 0;
@@ -90,7 +111,77 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 		throw JException("Invalid ES query = " + es_query + "\n\n" + EventstoreQueryHelp() );
 		
 	if( (tokens[1] == "in") ) {   // read data from the data base
-		;
+		timestamp = tokens[2];    // require a timestamp
+		
+		if(tokens.size() > 3) {
+			// parse the rest
+			int token_ind = 3;
+			
+			// the next argument is the data grade to use
+			grade = tokens[token_ind++];
+			
+			while(token_ind < tokens.size()) {
+				if(tokens[token_ind] == "runs") {
+					if(run_period_set) 
+						throw JException("Cannot set run range and run period in the same command!");
+					
+					// make sure there's enough args
+					if(tokens.size() - token_ind < 3)
+						throw JException("Invalid ES query = " + es_query + "\n\n" + EventstoreQueryHelp() );
+						
+					min_run = atoi(tokens[token_ind+1].c_str());   // ERROR CHECK!!
+					max_run = atoi(tokens[token_ind+2].c_str());   // ERROR CHECK!!
+	
+					// sanity check
+					if(max_run < min_run) {
+						throw JException("Maximum run must be larger than minimum run!");
+					}
+					token_ind += 3;
+				} else if(tokens[token_ind] == "run_period") {
+					if(run_range_set) 
+						throw JException("Cannot set run range and run period in the same command!");
+
+					// make sure there's enough args
+					if(tokens.size() - token_ind < 2)
+						throw JException("Invalid ES query = " + es_query + "\n\n" + EventstoreQueryHelp() );
+						
+					map< string, pair<int,int> >::iterator run_period_itr = run_period_map.find(tokens[token_ind+1]);
+					if(run_period_itr == run_period_map.end()) {
+						// a bad run period was specified...
+						PrintRunPeriods();
+						throw JException("Invalid ES query = " + es_query + "\n");
+					}
+					min_run = run_period_itr->second.first;
+					max_run = run_period_itr->second.second;
+					token_ind += 2;
+				} else if(tokens[token_ind] == "skims") {
+					// for the skims command, assume the rest of the arguments are skim names
+					while(token_ind++ < tokens.size()) {
+						skim_list.push_back(tokens[token_ind]);
+					}
+					
+					// sanity check - don't allow a million skims!
+					if(MAX_SKIM_INDEX - BASE_SKIM_INDEX < skim_list.size()) {
+						throw JException("Too many skims specified!!");
+					}
+				} else {
+					// require a valid command
+					throw JException("Invalid ES query = " + es_query + "\n\n" + EventstoreQueryHelp() );
+				}
+			}
+			
+			// sanity check - make sure the grade exists!
+			vector<string> grades_in_db;
+			esdb->GetGrades(grades_in_db);
+			
+			vector<string>::iterator grade_itr = find(grades_in_db.begin(), grades_in_db.end(), grade);
+			if(grade_itr == grades_in_db.end()) {
+				jerr << "Could not find grade \'" << grade << "\' in DB!" << endl;
+				PrintGrades();
+				throw JException("Invalid ES query = " + es_query + "\n");
+			}
+		}
+		
 		
 		// debugging stuff
 		if(TEST_MODE) {
@@ -109,6 +200,10 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
   		// grades                  prints available grades in DB
 		if(tokens[2] == "grades") {
 			PrintGrades();
+                           
+  		// run_periods                  prints available run periods
+		} else if(tokens[2] == "run_periods") {
+			PrintRunPeriods();
 
   		// skims <datestamp> <grade>  print skims available for the grade
         } else if(tokens[2] == "skims") {
@@ -135,8 +230,14 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	}
 
 	////////////////////////////////////////////////////////////
-
-
+	/*
+	if(TEST_MODE)   // if we're testing, don't make any more checks 
+		return;
+		
+	// load some data here
+		
+	// make sure we've found any files
+	*/
 }
 
 //---------------------------------
@@ -153,12 +254,8 @@ DEventSourceEventStore::~DEventSourceEventStore()
 //---------------------------------
 jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
 {
-	// open the next file if available
-	//if(!event_source)
-	//	event_source = OpenNextFile();
-
+	// FOR DEBUGGING - EMIT EVENTS FOREVER
 	if(TEST_MODE) {
-		// FOR DEBUGGING 
 		// output some fake event with skim information
     	event.SetEventNumber(1);
     	event.SetRunNumber(10000);
@@ -174,20 +271,32 @@ jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
 		return NOERROR;
 	}
 	
-	// make sure the event source is open
-	// if not, we're out of events
-	if(!event_source) //throw RESOURCE_UNAVAILABLE;
-		return EVENT_SOURCE_NOT_OPEN;
+	// make sure the file is open
+	while(event_source == NULL) {
+		while(OpenNextFile() != NOERROR) {}  // keep trying to open files until none are left
+		if(event_source == NULL)
+			return NO_MORE_EVENTS_IN_SOURCE;
 	
-	// skip to next event
-	// MoveToNextEvent();
-
-	jerror_t retval = event_source->GetEvent(event);
-	if(retval == NOERROR) {
-		// tag event
+		// skip to next event
+		jerror_t retval;
+		if( (retval = MoveToNextEvent()) != NOERROR)
+			return retval;   // if we can't get to another event, then we're done
+		
+		// read the next event in
+		retval = event_source->GetEvent(event);
+		if(retval == NOERROR) {
+			// tag event
+			;
+		} else if(retval == NO_MORE_EVENTS_IN_SOURCE) {   
+			// if the source is empty, close the current one, then move to the next
+			delete event_source;
+			event_source = NULL;
+		} else {   // if there'a another error, then pass it on...
+			return retval;
+		}
 	}
 	
-	return retval;
+	return NOERROR;
 }
 
 //---------------------------------
@@ -234,6 +343,62 @@ jerror_t DEventSourceEventStore::GetObjects(JEvent &event, JFactory_base *factor
 }
 
 //---------------------------------
+// MoveToNextEvent
+//---------------------------------
+jerror_t DEventSourceEventStore::MoveToNextEvent()
+{
+	// if we're loading all of the skims, then we don't need to skip any events
+	if(load_all_skims)
+		return NOERROR;
+		
+	
+}
+
+//---------------------------------
+// OpenNextFile
+//---------------------------------
+jerror_t DEventSourceEventStore::OpenNextFile()
+{
+	if(!es_data_loaded) {
+		// LoadESData();
+		
+		// sanity check
+		if(data_files.size() == 0) {
+			jerr << "Could not load any files from EventStore!" << endl;
+			return NO_MORE_EVENT_SOURCES;
+		}
+		
+		// keep a pointer to the current file
+		current_file_itr = data_files.begin();
+		
+		es_data_loaded = true;   
+	}
+	
+	// if there's a current file open, close it so that we don't leak memory
+	if(event_source != NULL) {
+		delete event_source;
+		event_source = NULL;
+	}
+	
+	while( (event_source == NULL) && (current_file_itr != data_files.end()) ) {
+		// TO FIX: properly handle multiple data types
+		try {
+			event_source = static_cast<JEventSource*>(new DEventSourceREST(current_file_itr->c_str()));
+		} catch (...) {
+			event_source = NULL;
+		}
+		
+		current_file_itr++;
+	}
+	
+	// error check
+	if(event_source == NULL)
+		return NO_MORE_EVENT_SOURCES;
+	else
+		return NOERROR;
+}
+
+//---------------------------------
 // PrintGrades
 //---------------------------------
 void DEventSourceEventStore::PrintGrades()
@@ -246,6 +411,25 @@ void DEventSourceEventStore::PrintGrades()
 	for(vector<string>::iterator it = grades.begin();
 		it != grades.end(); it++)
 			cout << "  " << *it << endl;
+	cout << endl;
+}
+
+//---------------------------------
+// PrintRunPeriods
+//---------------------------------
+void DEventSourceEventStore::PrintRunPeriods()
+{
+	vector<string> grades;
+	esdb->GetGrades(grades);
+	
+	// print out information
+	cout << endl << "Available Run Periods:" << endl;
+	for(map< string, pair<int,int> >::iterator it = run_period_map.begin();
+		it != run_period_map.end(); it++) {
+			pair<int,int> &the_run_range = it->second;
+			cout << "  " << it->first << ":  " 
+				 << the_run_range.first << " - " << the_run_range.second << endl;
+	}
 	cout << endl;
 }
 

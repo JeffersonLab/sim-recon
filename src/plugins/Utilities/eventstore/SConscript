@@ -6,11 +6,15 @@ import sbms
 Import('*')
 env = env.Clone()
 
-env.AppendUnique(LIBS=['DAQ']);
+env.AppendUnique(LIBS=['DAQ','HDDM']);
 
 # MYSQL
 env.ParseConfig("mysql_config --cflags")
 env.ParseConfig("mysql_config --libs")
+
+
+# Needed for HDDM
+env.AppendUnique(CPPPATH=[Dir('.').abspath+"/../../../libraries/HDDM"])   # HACK!
 
 sbms.AddEVIO(env)
 sbms.AddJANA(env)

@@ -30,6 +30,8 @@ class DESSkimData : public JObject {
 	inline const vector<string>& GetEventSkims() const { return event_skims; } 
 	inline const vector<string>& GetAllSkims() const { return skim_list; } 
 
+	inline const int GetBaseSkimIndex() const { return BASE_SKIM_INDEX; }
+
 	void Print(string mode="") const { 
 		if(mode=="all") {
 			cout << endl << "These skims are available:" << endl;
