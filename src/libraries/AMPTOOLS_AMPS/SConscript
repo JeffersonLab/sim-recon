@@ -8,6 +8,7 @@ env = env.Clone()
 
 
 sbms.AddAmpTools(env)
+sbms.AddCERNLIB(env)
 sbms.AddROOT(env)
 sbms.library(env)
 
