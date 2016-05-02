@@ -10,11 +10,13 @@
 #define _DESDBProvider_
 
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include <JANA/jerror.h>
+#include <JANA/JException.h>
 
-
-//using namespace jana;
+using namespace jana;
 using namespace std;
 
 
@@ -25,6 +27,9 @@ class DESDBProvider {
 		
 		virtual bool Open() = 0;
 		
+		virtual bool GetGrades(vector<string> &grades) = 0;
+		virtual bool GetSkims(vector<string> &grades, string timestamp, string grade) = 0;
+
 	protected:
 };
 

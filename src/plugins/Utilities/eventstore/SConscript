@@ -8,6 +8,10 @@ env = env.Clone()
 
 env.AppendUnique(LIBS=['DAQ']);
 
+# MYSQL
+env.ParseConfig("mysql_config --cflags")
+env.ParseConfig("mysql_config --libs")
+
 sbms.AddEVIO(env)
 sbms.AddJANA(env)
 sbms.AddROOT(env)
