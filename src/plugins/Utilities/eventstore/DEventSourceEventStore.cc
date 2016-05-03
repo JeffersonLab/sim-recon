@@ -21,6 +21,7 @@ using namespace std;
 #include <HDDM/DEventSourceREST.h>
 
 #include "DEventSourceEventStore.h"
+#include "DEventStoreEvent.h"
 #include "DESSkimData.h"
 
 static string EventstoreQueryHelp() {
@@ -155,6 +156,7 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 					max_run = run_period_itr->second.second;
 					token_ind += 2;
 				} else if(tokens[token_ind] == "skims") {
+					load_all_skims = false;
 					// for the skims command, assume the rest of the arguments are skim names
 					while(token_ind++ < tokens.size()) {
 						skim_list.push_back(tokens[token_ind]);
@@ -230,6 +232,10 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	}
 
 	////////////////////////////////////////////////////////////
+	if(load_all_skims) {
+		// if the user didn't ask for specific skims, then load all of them
+		esdb->GetSkims(skim_list, timestamp, grade);
+	}
 	/*
 	if(TEST_MODE)   // if we're testing, don't make any more checks 
 		return;
@@ -260,13 +266,16 @@ jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
     	event.SetEventNumber(1);
     	event.SetRunNumber(10000);
     	event.SetJEventSource(this);
-   		event.SetRef(NULL);
+   		//event.SetRef(NULL);
     	event.SetStatusBit(kSTATUS_FROM_FILE);
     	event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
-
+		
+		DEventStoreEvent *the_es_event = new DEventStoreEvent();
+		the_es_event->event_source = static_cast<JEventSource*>(this);
+		event.SetRef(the_es_event);
 		for(int i=0; i<4; i++)
 			if(gRandom->Uniform() < 0.5)
-				event.SetStatusBit(BASE_SKIM_INDEX+i);
+				the_es_event->skims.insert(skim_list[i]);
 
 		return NOERROR;
 	}
@@ -285,7 +294,14 @@ jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
 		// read the next event in
 		retval = event_source->GetEvent(event);
 		if(retval == NOERROR) {
-			// tag event
+			// To store the skim and other EventStore information for the event
+			// we wrap the actual event data and store our information in the wrapper
+			DEventStoreEvent *the_es_event = new DEventStoreEvent();
+			the_es_event->event_source = static_cast<JEventSource*>(this);   // analysis library needs this?
+			the_es_event->data = event.GetRef();    // save the actual event data
+			event.SetRef(the_es_event);
+		
+			// tag event with skims
 			;
 		} else if(retval == NO_MORE_EVENTS_IN_SOURCE) {   
 			// if the source is empty, close the current one, then move to the next
@@ -329,7 +345,8 @@ jerror_t DEventSourceEventStore::GetObjects(JEvent &event, JFactory_base *factor
 		
 		LockRead();			// LOCK class data
 		vector<DESSkimData*> skim_data_vec;
-		DESSkimData *skim_data = new DESSkimData(event, skim_list, BASE_SKIM_INDEX);
+		DEventStoreEvent *the_es_event = static_cast<DEventStoreEvent *>(event.GetRef());
+		DESSkimData *skim_data = new DESSkimData(the_es_event->skims, skim_list);
 		skim_data_vec.push_back(skim_data);
 		UnlockRead();       // UNLOCK
 
@@ -339,7 +356,16 @@ jerror_t DEventSourceEventStore::GetObjects(JEvent &event, JFactory_base *factor
 	
 	if(!event_source) throw RESOURCE_UNAVAILABLE;
 	
-	return event_source->GetObjects(event, factory);
+	// See GetEvent() for the motivation for this
+	// Unwrap the event...
+	DEventStoreEvent *the_es_event = static_cast<DEventStoreEvent *>(event.GetRef());
+	event.SetRef(the_es_event->data);
+	// ..now grab the objects...
+	jerror_t retval = event_source->GetObjects(event, factory);
+	// ...and wrap it back up
+	event.SetRef(the_es_event);
+
+	return retval;
 }
 
 //---------------------------------

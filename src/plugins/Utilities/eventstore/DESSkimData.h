@@ -14,6 +14,7 @@
 using namespace jana;
 
 #include <vector>
+#include <set>
 #include <string>
 #include <iostream>
 using namespace std;
@@ -24,39 +25,36 @@ class DESSkimData : public JObject {
 	
 	JOBJECT_PUBLIC(DESSkimData);
 
-	DESSkimData(JEvent &event, vector<string> &in_skim_list, int in_base_skim_index);
+	DESSkimData(set<string> &in_event_skims, vector<string> &in_skim_list) :
+			skim_list(in_skim_list), event_skims(in_event_skims) {}
+		//skim_list = in_skim_list;
+		//event_skims = in_event_skims;
+	//}
 	~DESSkimData() {}
 
-	inline const vector<string>& GetEventSkims() const { return event_skims; } 
 	inline const vector<string>& GetAllSkims() const { return skim_list; } 
+	inline const set<string>& GetEventSkims() const { return event_skims; } 
 
-	inline const int GetBaseSkimIndex() const { return BASE_SKIM_INDEX; }
 
 	void Print(string mode="") const { 
 		if(mode=="all") {
 			cout << endl << "These skims are available:" << endl;
-			//cout << " N = " << skim_list.size();
+			//cout << " N = " << skim_list.size() << endl;
 			for(vector<string>::const_iterator it = skim_list.begin();
 				it != skim_list.end(); it++) 
 			 	cout << "  " << *it << endl;
 		}
 		
 		cout << endl << "Event satisfies these skims:" << endl;
-		//cout << " N = " << event_skims.size();
-		for(vector<string>::const_iterator it = event_skims.begin();
+		//cout << " N = " << event_skims.size() << endl;
+		for(set<string>::const_iterator it = event_skims.begin();
 			it != event_skims.end(); it++) 
 			 cout << "  " << *it << endl;
 	} 
 
   protected:
-	// We tag which skims JEvents belong to using JEvent::SetStatusBit()
-	// We can get away with this now, since no one else is using fields above 16 yet
-	// Probably the scheme needs to change or we need our own fields
-	int BASE_SKIM_INDEX;           // the first status bit that we use for EventStore
-	int MAX_SKIM_INDEX;            // we can store 64 bits in the JEvent, so 64 - MAX_SKIM_INDEX
-
 	vector<string> skim_list;
-	vector<string> event_skims;
+	set<string> event_skims;
 };
 
 #endif  // _DESSkimData_
