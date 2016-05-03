@@ -609,7 +609,12 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	// If we couldn't even open the source, then there's nothing to do
 	bool no_source = true;
 #if USE_HDEVIO
-	if(source_type==kFileSource && hdevio->is_open) no_source = false;
+	if(source_type==kFileSource){
+		if(no_more_events_in_source) 
+			no_source = false;
+		else if(hdevio->is_open) // n.b. hdevio may be NULL if no_more_events_in_source==true
+			no_source = false;
+	}
 #endif
 	if(source_type==kETSource && et_connected) no_source = false;
 	if(no_source)throw JException(string("Unable to open EVIO channel for \"") + source_name + "\"");
@@ -637,6 +642,7 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	if(!stored_events.empty()){
 		objs_ptr = stored_events.front();
 		stored_events.pop();
+_DBG_<<"+++ useing stored event " <<endl;
 				
 		// If this is a stored event then it almost certainly
 		// came from a multi-event block of physics events.
@@ -658,6 +664,7 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 		// buffers yet to be parsed, then we need to give those buffers
 		// a chance to be parsed so we can return an event it may contain.
 		if(err == NO_MORE_EVENTS_IN_SOURCE){
+			_DBG_<<endl<<"-- No more events in source. Waiting for all buffers to be parsed (" << Nunparsed<<") ..." << endl;
 			no_more_events_in_source = true;
 			while(Nunparsed>0 && !japp->GetQuittingStatus()) usleep(1000);
 			pthread_mutex_lock(&stored_events_mutex);
@@ -666,7 +673,13 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 				return NO_MORE_EVENTS_IN_SOURCE;
 			}
 
+			objs_ptr = stored_events.front();
+			stored_events.pop();
+			event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+
 			pthread_mutex_unlock(&stored_events_mutex);
+			
+			err = NOERROR;
 		}
 
 		if(err != NOERROR) return err;
