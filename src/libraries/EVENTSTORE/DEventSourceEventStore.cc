@@ -62,8 +62,8 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	
 	// load run period mapping
 	// hardcode for now, this info should move to RCDB...
-	run_period_map["RunPeriod-2015-03"] = pair<int,int>(2607,3385);
-	run_period_map["RunPeriod-2016-02"] = pair<int,int>(10000,20000);
+	run_period_map["2015-03"] = pair<int,int>(2607,3385);
+	run_period_map["2016-02"] = pair<int,int>(10000,20000);
 		
 	// read in configurations
 	// priority:  JANA command line -> environment variable -> default
