@@ -9,7 +9,7 @@ Import('env osname')
 subdirs = ['include', 'BCAL', 'FCAL', 'DANA', 'TAGGER', 'HDGEOMETRY', 'TRACKING']
 subdirs.extend(['CCAL', 'START_COUNTER', 'RF', 'TRIGGER', 'CDC', 'FDC', 'PID', 'KINFITTER', 'ANALYSIS'])
 subdirs.extend(['CERE', 'DIRC', 'HDDM', 'TOF', 'PAIR_SPECTROMETER', 'TPOL', 'FMWPC'])
-subdirs.extend(['DAQ', 'TTAB'])
+subdirs.extend(['DAQ', 'TTAB', 'EVENTSTORE'])
 sbms.OptionallyBuild(env, ['AMPTOOLS_AMPS', 'AMPTOOLS_DATAIO', 'AMPTOOLS_MCGEN'])
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 

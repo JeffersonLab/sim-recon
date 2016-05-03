@@ -6,7 +6,7 @@
 #include "JEventProcessor_es_test.h"
 using namespace jana;
 
-#include "../eventstore/DESSkimData.h"
+#include "EVENTSTORE/DESSkimData.h"
 
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>

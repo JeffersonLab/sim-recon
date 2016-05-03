@@ -502,6 +502,13 @@ def AddHDDM(env):
 	env.AppendUnique(LIBS = 'HDDM')
 	Add_xstream(env)
 
+##################################
+# MYSQL
+##################################
+def AddMySQL(env):
+	# TOFIX : heck to see if mysql_config exists
+	env.ParseConfig("mysql_config --cflags")
+	env.ParseConfig("mysql_config --libs")
 
 ##################################
 # DANA
@@ -515,11 +522,12 @@ def AddDANA(env):
 	AddXERCES(env)
 	AddEVIO(env)
 	AddET(env)
+	AddMySQL(env)   # needed for EventStore
 	#AddCODAChannels(env)
 	DANA_LIBS  = "DANA ANALYSIS KINFITTER PID TAGGER TRACKING START_COUNTER"
 	DANA_LIBS += " CERE DIRC CDC TRIGGER PAIR_SPECTROMETER RF"
 	DANA_LIBS += " FDC TOF BCAL FCAL CCAL TPOL HDGEOMETRY TTAB FMWPC"
-	DANA_LIBS += " DAQ JANA"
+	DANA_LIBS += " DAQ JANA EVENTSTORE"
 	DANA_LIBS += " expat"
 	env.PrependUnique(LIBS = DANA_LIBS.split())
 

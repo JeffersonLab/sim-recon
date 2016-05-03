@@ -14,6 +14,7 @@ using std::string;
 #include "DApplication.h"
 #include <HDDM/DEventSourceHDDMGenerator.h>
 #include <HDDM/DEventSourceRESTGenerator.h>
+#include <EVENTSTORE/DEventSourceEventStoreGenerator.h>
 #include <DAQ/JEventSourceGenerator_EVIO.h>
 #include <HDGEOMETRY/DMagneticFieldMapCalibDB.h>
 #include <HDGEOMETRY/DMagneticFieldMapFineMesh.h>
@@ -88,6 +89,7 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 		AddEventSourceGenerator(event_source_generator);
 		AddEventSourceGenerator(new DEventSourceRESTGenerator());
 		AddEventSourceGenerator(new JEventSourceGenerator_EVIO());
+		AddEventSourceGenerator(new DEventSourceEventStoreGenerator());
 	}
 	factory_generator = new DFactoryGenerator();
 	AddFactoryGenerator(factory_generator);

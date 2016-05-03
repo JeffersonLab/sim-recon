@@ -70,9 +70,14 @@ class DEventSourceEventStore : public JEventSource {
 		
 		map< string, pair<int,int> > run_period_map;
 
-		// file information
+		// file information - deprecated
 		vector<string> data_files;   // store list of file names
 		vector<string>::iterator current_file_itr;
+
+		// store list of runs - EventStore information is keyed off runs
+		vector<int> run_numbers;
+		vector<int>::iterator current_run_itr;
+		
 };
 
 

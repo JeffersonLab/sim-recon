@@ -8,6 +8,7 @@
 #include "DEventSourceEventStore.h"
 #include "DFactoryGenerator_DESSkimData.h"
 
+/*
 // Make this a plugin
 extern "C" {
   void InitPlugin(JApplication *app) {
@@ -16,7 +17,7 @@ extern "C" {
     app->AddFactoryGenerator(new DFactoryGenerator_DESSkimData());
   }
 } // "extern C"
-
+*/
 
 //---------------------------------
 // DEventSourceEventStoreGenerator    (Constructor)
