@@ -133,10 +133,11 @@ class DParsedEvent{
 		// clear the vectors to set up for processing the next event. Vectors
 		// with BOR types are just cleared.
 		// This is called from DEVIOWorkerThread::MakeEvents
-		#define returntopool(A) if(!v##A.empty()){ v##A##_pool.insert(v##A##_pool.end(), v##A.begin(), v##A.end()); v##A.clear(); }
+		#define returntopool(A) if(!v##A.empty()){ v##A##_pool.insert(v##A##_pool.end(), v##A.begin(), v##A.end()); }
 		#define clearvectors(A)     v##A.clear();
 		void Clear(void){ 
 			MyTypes(returntopool)
+			MyTypes(clearvectors)
 			MyBORTypes(clearvectors)
 		}
 
@@ -263,7 +264,7 @@ class DParsedEvent{
 		MyTypes(makeallocator);
 
 		// Constructor and destructor
-		DParsedEvent(void):in_use(false),Nrecycled(0),MAX_RECYCLED(100),borptrs(NULL){}
+		DParsedEvent(void):in_use(false),Nrecycled(0),MAX_RECYCLED(1000),borptrs(NULL){}
 		#define printcounts(A) if(!v##A.empty()) cout << v##A.size() << " : " << #A << endl;
 		#define printpoolcounts(A) if(!v##A##_pool.empty()) cout << v##A##_pool.size() << " : " << #A << "_pool" << endl;
 		virtual ~DParsedEvent(){

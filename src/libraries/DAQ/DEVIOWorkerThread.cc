@@ -46,7 +46,7 @@ DEVIOWorkerThread::DEVIOWorkerThread(
 	
 	VERBOSE           = 1;
 	Nrecycled         = 0;       // Incremented in JEventSource_EVIOpp::Dispatcher()
-	MAX_RECYCLED      = 100;     // In EVIO events (not L1 trigger events!)
+	MAX_RECYCLED      = 1000;    // In EVIO events (not L1 trigger events!)
 
 	in_use            = false;
 	jobtype           = JOB_NONE;
