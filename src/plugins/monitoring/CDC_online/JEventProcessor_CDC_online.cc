@@ -76,6 +76,7 @@ extern "C"{
 
 
 JEventProcessor_CDC_online::JEventProcessor_CDC_online() {
+	initialized_histograms = false;
 }
 
 
@@ -92,9 +93,6 @@ jerror_t JEventProcessor_CDC_online::init(void) {
 
   // I moved all the histogram setup into the brun so that I can use different
   // scales for the later runs using the new firmware
-
-
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
 
   // create root folder for cdc and cd to it, store main dir
@@ -131,7 +129,6 @@ jerror_t JEventProcessor_CDC_online::init(void) {
   // back to main dir
   main->cd();
 
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
   return NOERROR;
 }
@@ -142,8 +139,6 @@ jerror_t JEventProcessor_CDC_online::init(void) {
 
 jerror_t JEventProcessor_CDC_online::brun(JEventLoop *eventLoop, int32_t runnumber) {
   // This is called whenever the run number changes
-
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
   // max values for histogram scales, modified fa250-format readout
 
@@ -190,41 +185,45 @@ jerror_t JEventProcessor_CDC_online::brun(JEventLoop *eventLoop, int32_t runnumb
 
   japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
-
-
-  // created root folder for cdc in init; cd to it, store main dir
+  if(initialized_histograms) //don't init twice!
+  {
+	  japp->RootUnLock(); //RELEASE ROOT LOCK
+	  return NOERROR;
+  }
 
   gDirectory->cd("CDC");
 
-
   // book histograms
 
-
   cdc_raw_amp   = new TH1I("cdc_raw_amp","CDC amplitude (ADC units, scaled); ADC units",AMAX,0,AMAX);
+
   cdc_raw_amp_vs_n   = new TH2I("cdc_raw_amp_vs_n","CDC amplitude (ADC units, scaled) vs straw number;straw;ADC units",NSTRAWS,HALF,NSTRAWSPH,128,0,AMAX);
 
   cdc_raw_t = new TH1I("cdc_raw_t",Form("CDC raw time (units of %s); raw time (%s)",rtunits,rtunits),200,0,RTMAX);
+
   cdc_raw_t_vs_n = new TH2I("cdc_raw_t_vs_n",Form("CDC raw time (units of %s) vs straw number;straw;time (%s)",rtunits,rtunits),NSTRAWS,HALF,NSTRAWSPH,100,0,RTMAX);
 
-
-
   cdc_raw_int   = new TH1I("cdc_raw_int","CDC integral (ADC units, scaled), pedestal subtracted; ADC units",200,0,IMAX);
+
   cdc_raw_int_vs_n   = new TH2I("cdc_raw_int_vs_n","CDC integral (ADC units,scaled), pedestal subtracted, vs straw number;straw;ADC units",NSTRAWS,HALF,NSTRAWSPH,100,0,IMAX);
 
-
   cdc_raw_intpp   = new TH1I("cdc_raw_intpp","CDC integral (ADC units, scaled), includes pedestal; ADC units",200,0,IMAX);
+
   cdc_raw_intpp_vs_n   = new TH2I("cdc_raw_intpp_vs_n","CDC integral (ADC units, scaled), including pedestal, vs straw number;straw;ADC units",NSTRAWS,HALF,NSTRAWSPH,100,0,IMAX);
 
-
   cdc_ped   = new TH1I("cdc_ped","CDC pedestal (ADC units);pedestal (ADC units)",(Int_t)(PMAX/2),0,PMAX);
+
   cdc_ped_vs_n   = new TH2I("cdc_ped_vs_n","CDC pedestal (ADC units) vs straw number;straw;pedestal (ADC units)",NSTRAWS,HALF,NSTRAWSPH,(Int_t)(PMAX/4),0,PMAX);
 
- 
-
   cdc_windata_ped   = new TH1I("cdc_windata_ped","CDC pedestal (ADC units) from raw window data;pedestal (ADC units)",(Int_t)(PMAX/2),0,PMAX);
+
   cdc_windata_ped_vs_n   = new TH2I("cdc_windata_ped_vs_n","CDC pedestal (ADC units) from raw window data vs straw number;straw;pedestal (ADC units)",NSTRAWS,HALF,NSTRAWSPH,(Int_t)(PMAX/4),0,PMAX);
 
+  gDirectory->cd(".."); //RETURN TO MAIN FOLDER
 
+  initialized_histograms = true;
+
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
 
   return NOERROR;
@@ -274,7 +273,9 @@ jerror_t JEventProcessor_CDC_online::evnt(JEventLoop *eventLoop, uint64_t eventn
 
 
 
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   if(digihits.size() > 0)
 	  cdc_num_events->Fill(1);
@@ -406,9 +407,7 @@ jerror_t JEventProcessor_CDC_online::evnt(JEventLoop *eventLoop, uint64_t eventn
 
   } //end of loop through digihits
 
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
-
-  //app->RootUnLock();
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }

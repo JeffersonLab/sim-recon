@@ -124,9 +124,6 @@ jerror_t DEventProcessor_photoneff_hists::evnt(JEventLoop *loop, uint64_t eventn
 	loop->Get(mcthrowns);
 	loop->Get(mctrajpoints);
 
-	// Lock mutex
-	pthread_mutex_lock(&mutex);
-	
 	// Get hit list for all throwns
 	for(unsigned int i=0; i<mcthrowns.size(); i++){
 		const DMCThrown *mcthrown = mcthrowns[i];
@@ -136,8 +133,13 @@ jerror_t DEventProcessor_photoneff_hists::evnt(JEventLoop *loop, uint64_t eventn
 
 		// Momentum of thrown particle
 		DVector3 pthrown = mcthrown->momentum();
-		phtn.pthrown = pthrown;
 
+		bool locIsRecon = isReconstructable(mcthrown, loop);
+
+		// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+		japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+	
+		phtn.pthrown = pthrown;
 		// Initialize with the "not found" values
 		phtn.pfit.SetXYZ(0,0,0);
 		phtn.chisq=1.0E20;
@@ -145,7 +147,7 @@ jerror_t DEventProcessor_photoneff_hists::evnt(JEventLoop *loop, uint64_t eventn
 		phtn.delta_E_over_E=1.0E20;
 		phtn.delta_theta=1.0E20;
 		phtn.delta_phi=1.0E20;
-		phtn.isreconstructable = isReconstructable(mcthrown, loop);
+		phtn.isreconstructable = locIsRecon;
 		phtn.Nbcal = 0;
 		phtn.Nfcal = 0;
 		phtn.event = eventnumber;
@@ -183,10 +185,9 @@ jerror_t DEventProcessor_photoneff_hists::evnt(JEventLoop *loop, uint64_t eventn
 		}		
 		
 		phtneff->Fill();
-	}
 
-	// Unlock mutex
-	pthread_mutex_unlock(&mutex);
+		japp->RootUnLock(); //RELEASE ROOT LOCK
+	}
 	
 	return NOERROR;
 }

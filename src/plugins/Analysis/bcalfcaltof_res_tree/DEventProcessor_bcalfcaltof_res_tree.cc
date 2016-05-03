@@ -160,7 +160,9 @@ jerror_t DEventProcessor_bcalfcaltof_res_tree::evnt(JEventLoop *loop, uint64_t e
 			locDeltaE = locBCALShower->E - locTrueE;
 			locDeltaT = locBCALShower->t - locTrueT;
 
-			LockState();
+			// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+			japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+
 			dBCALMCComparison->dTrueR = locTrueR;
 			dBCALMCComparison->dTruePhi = locTruePhi;
 			dBCALMCComparison->dTrueZ = locTrueZ;
@@ -181,7 +183,7 @@ jerror_t DEventProcessor_bcalfcaltof_res_tree::evnt(JEventLoop *loop, uint64_t e
 
 			dPluginTree_BCALMCComparison->Fill();
 
-			UnlockState();
+			japp->RootUnLock(); //RELEASE ROOT LOCK
 		} //end DBCALShower loop
 
 	} //end BCAL
@@ -241,7 +243,8 @@ jerror_t DEventProcessor_bcalfcaltof_res_tree::evnt(JEventLoop *loop, uint64_t e
 			locDeltaE = locFCALShower->getEnergy() - locTrueE;
 			locDeltaT = locFCALShower->getTime() - locTrueT;
 
-			LockState();
+			// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+			japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 
 			dFCALMCComparison->dTrueX = locTrueX;
 			dFCALMCComparison->dTrueY = locTrueY;
@@ -264,7 +267,7 @@ jerror_t DEventProcessor_bcalfcaltof_res_tree::evnt(JEventLoop *loop, uint64_t e
 
 			dPluginTree_FCALMCComparison->Fill();
 
-			UnlockState();
+			japp->RootUnLock(); //RELEASE ROOT LOCK
 		} //end DFCALShower loop
 
 	} //end FCAL
@@ -335,7 +338,8 @@ jerror_t DEventProcessor_bcalfcaltof_res_tree::evnt(JEventLoop *loop, uint64_t e
 				else{locVerticalPlaneFlag = true;}
 			}
 
-			LockState();
+			// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+			japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 
 			dTOFMCComparison->dTrueX = locTrueX;
 			dTOFMCComparison->dTrueY = locTrueY;
@@ -352,8 +356,7 @@ jerror_t DEventProcessor_bcalfcaltof_res_tree::evnt(JEventLoop *loop, uint64_t e
 			dTOFMCComparison->dTrueBetaGamma = locTrueBetaGamma;
 			dPluginTree_TOFMCComparison->Fill();
 
-
-			UnlockState();
+			japp->RootUnLock(); //RELEASE ROOT LOCK
 		} //end DTOFPoint loop
 
 	} //end TOF

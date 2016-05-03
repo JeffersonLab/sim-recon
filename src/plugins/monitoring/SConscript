@@ -2,6 +2,7 @@
 Import('*')
 
 subdirs = [
+'occupancy_online',
 'BCAL_online',
 'BCAL_LEDonline',
 'CDC_online',

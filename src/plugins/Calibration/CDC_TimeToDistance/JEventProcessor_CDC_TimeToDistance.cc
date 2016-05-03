@@ -45,6 +45,11 @@ JEventProcessor_CDC_TimeToDistance::~JEventProcessor_CDC_TimeToDistance()
 //------------------
 jerror_t JEventProcessor_CDC_TimeToDistance::init(void)
 {
+    UNBIASED_RING=0;
+    if(gPARMS){
+        gPARMS->SetDefaultParameter("KALMAN:RING_TO_SKIP",UNBIASED_RING);
+        gPARMS->SetDefaultParameter("CDCCOSMIC:EXCLUDERING", UNBIASED_RING);
+    }
     return NOERROR;
 }
 
@@ -127,6 +132,7 @@ jerror_t JEventProcessor_CDC_TimeToDistance::evnt(JEventLoop *loop, uint64_t eve
             if (thisCDCHit == NULL) continue;
             if (predictedDistance > 1.5 || predictedDistance < 0.0) continue; // Some strange behavior in field on data?
             int ring = thisCDCHit->wire->ring;
+            if(UNBIASED_RING != 0 && (ring != UNBIASED_RING) ) continue;
             int straw = thisCDCHit->wire->straw;
             // Now just make a bunch of histograms to display all of the information
             //Time to distance relation in bins

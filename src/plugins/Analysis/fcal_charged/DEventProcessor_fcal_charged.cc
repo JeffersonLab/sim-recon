@@ -98,17 +98,10 @@ extern "C"
 //------------------
 jerror_t DEventProcessor_fcal_charged::init(void)
 {
-	// This is called once at program startup. If you are creating
-	// and filling historgrams in this plugin, you should lock the
-	// ROOT mutex like this:
-	
-	 japp->RootWriteLock();
-
 	// First thread to get here makes all histograms. If one pointer is
 	// already not NULL, assume all histograms are defined and return now
 	if(h1_deltaX != NULL){
 	  printf ("TEST>> DEventProcessor_fcal_charged::init - Other threads continue\n");
-		japp->RootUnLock();
 		return NOERROR;
 	}
 
@@ -253,9 +246,6 @@ jerror_t DEventProcessor_fcal_charged::init(void)
 	printf ("TEST>> DEventProcessor_fcal_charged::init - First thread created histograms\n");
 	main->cd();
 
-        japp->RootUnLock();
-
-
 	return NOERROR;
 }
 
@@ -350,7 +340,9 @@ jerror_t DEventProcessor_fcal_charged::evnt(jana::JEventLoop* locEventLoop, int 
 
 	if (locEventNumber%100 == 0) printf ("EventNumber=%d\n",locEventNumber);
 
-	japp->RootWriteLock();  // lock before loop so that histograms can be filled.
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	double p;
 	double dEdx;
@@ -574,9 +566,7 @@ jerror_t DEventProcessor_fcal_charged::evnt(jana::JEventLoop* locEventLoop, int 
 	  }   // end track intersection if statement
 	}
 
-
-        //UnlockState();	
-	japp->RootUnLock();
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 
 	/*
@@ -596,11 +586,6 @@ jerror_t DEventProcessor_fcal_charged::erun(void)
 	// changed to give you a chance to clean up before processing
 	// events from the next run number.
 
-  japp->RootWriteLock();
-
-
-  japp->RootUnLock();
-
 
 	return NOERROR;
 }
@@ -612,10 +597,6 @@ jerror_t DEventProcessor_fcal_charged::fini(void)
 {
 	// Called before program exit after event processing is finished.  
 
-  japp->RootWriteLock();
-
-
-  japp->RootUnLock();
 	return NOERROR;
 }
 

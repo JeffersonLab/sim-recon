@@ -22,7 +22,7 @@
     eff_tagm->Divide(E_tagm,E_ps);
 
     if(gPad == NULL){
-        TCanvas *c1 = new TCanvas("c1","Tagging Efficiency",150,10,990,660);
+        TCanvas *c1 = new TCanvas("c1","Tagger Efficiency",150,10,990,660);
         c1->cd(0);
         c1->Draw();
         c1->Update();
@@ -36,7 +36,7 @@
     tleg->SetTextSize(0.045);
     tleg->AddEntry(eff_tagm,"TAGM","l");
     tleg->AddEntry(eff_tagh,"TAGH","l");
-    eff_tagh->SetTitle("Tagging Efficiency");
+    eff_tagh->SetTitle("Tagger Efficiency");
     eff_tagh->SetTitleSize(0.045);
     eff_tagh->GetXaxis()->SetTitleSize(0.045);
     eff_tagh->GetYaxis()->SetTitleSize(0.045);

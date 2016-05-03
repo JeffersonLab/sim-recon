@@ -78,9 +78,6 @@ JEventProcessor_TAGM_TW::~JEventProcessor_TAGM_TW()
 //------------------
 jerror_t JEventProcessor_TAGM_TW::init(void)
 {
-
-   japp->RootWriteLock();
-
    // Name histograms 
    for (uint32_t i = 0; i < NCOLUMNS; ++i) {
       h_dt_vs_pp[i] = new TH2F(Form("h_dt_vs_pp_%i",i+1),
@@ -89,7 +86,6 @@ jerror_t JEventProcessor_TAGM_TW::init(void)
                                1000,0,1000,200,-37,-17);
    }
 
-   japp->RootUnLock();
    return NOERROR;
 	
 }
@@ -147,7 +143,9 @@ jerror_t JEventProcessor_TAGM_TW::evnt(JEventLoop *loop, uint64_t eventnumber)
    else
       return NOERROR;
 
-   japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
    if (psc_pairs.size() > 0 && ps_pairs.size() > 0) {
       for (uint32_t i = 0; i < hits.size(); ++i) {
@@ -181,7 +179,7 @@ jerror_t JEventProcessor_TAGM_TW::evnt(JEventLoop *loop, uint64_t eventnumber)
       }
    }
 
-   japp->RootUnLock();
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
    return NOERROR;
 }

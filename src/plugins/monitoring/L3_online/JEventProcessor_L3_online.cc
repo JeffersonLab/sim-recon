@@ -57,10 +57,6 @@ JEventProcessor_L3_online::~JEventProcessor_L3_online() {
 
 jerror_t JEventProcessor_L3_online::init(void) {
 
-  // lock all root operations
-  japp->RootWriteLock();
-
-
   // create root folder for evnt and cd to it, store main dir
   TDirectory *main = gDirectory;
   gDirectory->mkdir("l3")->cd();
@@ -72,10 +68,6 @@ jerror_t JEventProcessor_L3_online::init(void) {
 
   // back to main dir
   main->cd();
-
-
-  // unlock
-  japp->RootUnLock();
 
   return NOERROR;
 }

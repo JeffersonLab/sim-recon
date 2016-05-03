@@ -50,7 +50,6 @@ jerror_t JEventProcessor_ST_online_Tresolution::init(void)
 	// japp->RootUnLock();
 	//
   // **************** define histograms *************************
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 
   TDirectory *main = gDirectory;
   gDirectory->mkdir("st_Tresolution")->cd();
@@ -70,7 +69,7 @@ jerror_t JEventProcessor_ST_online_Tresolution::init(void)
 
   gDirectory->cd("../");
   main->cd();
-  japp->RootUnLock();
+
   return NOERROR;
 }
 
@@ -166,8 +165,10 @@ jerror_t JEventProcessor_ST_online_Tresolution::evnt(JEventLoop *loop, uint64_t 
   const DEventRFBunch *thisRFBunch = NULL;
   loop->GetSingle(thisRFBunch, "Calibrations");
   
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
-  japp->RootWriteLock();
   for (uint32_t i = 0; i < chargedTrackVector.size(); i++)
     {   
       // Grab the charged track and declare time based track object
@@ -263,7 +264,9 @@ jerror_t JEventProcessor_ST_online_Tresolution::evnt(JEventLoop *loop, uint64_t 
 	  h2_CorrectedTime_z[sc_index]->Fill(locSCzIntersection,Corr_Time_ns - SC_RFShiftedTime);
 	}
     } // sc charged tracks
-  japp->RootUnLock();
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
   return NOERROR;
 }
 

@@ -159,14 +159,7 @@ JEventProcessor_${pluginname}::~JEventProcessor_${pluginname}()
 //------------------
 jerror_t JEventProcessor_${pluginname}::init(void)
 {
-	// This is called once at program startup. If you are creating
-	// and filling historgrams in this plugin, you should lock the
-	// ROOT mutex like this:
-	//
-	// japp->RootWriteLock();
-	//  ... fill historgrams or trees ...
-	// japp->RootUnLock();
-	//
+	// This is called once at program startup. 
 
 	return NOERROR;
 }
@@ -195,9 +188,9 @@ jerror_t JEventProcessor_${pluginname}::evnt(JEventLoop *loop, uint64_t eventnum
 	// vector<const MyDataClass*> mydataclasses;
 	// loop->Get(mydataclasses);
 	//
-	// japp->RootWriteLock();
+	// japp->RootFillLock(this);
 	//  ... fill historgrams or trees ...
-	// japp->RootUnLock();
+	// japp->RootFillUnLock(this);
 
 
 	return NOERROR;

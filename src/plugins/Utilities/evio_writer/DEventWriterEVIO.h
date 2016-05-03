@@ -1,6 +1,7 @@
 #ifndef _DEventWriterEVIO_
 #define _DEventWriterEVIO_
 
+#include <map>
 #include <vector>
 #include <string>
 
@@ -38,6 +39,8 @@
 #include <DAQ/DEventTag.h>
 
 #include <DANA/DStatusBits.h>
+
+#include "HDEVIOWriter.h"
 
 using namespace std;
 using namespace jana;
@@ -100,6 +103,13 @@ class DEventWriterEVIO : public JObject
         
 		std::ofstream *ofs_debug_input;
 		std::ofstream *ofs_debug_output;
+
+	private:
+
+		//contain static variables shared amongst threads: acquire "EVIOWriter" write lock before calling
+		size_t& Get_NumEVIOOutputThreads(void) const;
+		map<string, HDEVIOWriter*>& Get_EVIOOutputters(void) const;
+		map<string, pthread_t>& Get_EVIOOutputThreads(void) const;
 
 };
 

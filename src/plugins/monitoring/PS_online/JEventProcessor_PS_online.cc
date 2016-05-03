@@ -102,8 +102,6 @@ JEventProcessor_PS_online::~JEventProcessor_PS_online() {
 
 jerror_t JEventProcessor_PS_online::init(void) {
 
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
   // create root folder for ps and cd to it, store main dir
   TDirectory *mainDir = gDirectory;
   TDirectory *psDir = gDirectory->mkdir("PS");
@@ -171,8 +169,6 @@ jerror_t JEventProcessor_PS_online::init(void) {
   // back to main dir
   mainDir->cd();
 
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
-
   return NOERROR;
 }
 
@@ -201,13 +197,17 @@ jerror_t JEventProcessor_PS_online::brun(JEventLoop *eventLoop, int32_t runnumbe
   Elows[1][Ncols] = psGeom.getEhigh(1,Ncols);
   cols[Ncols] = 0.5+Ncols;
   //  
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
   // set variable-width energy bins if histogram is empty
   for (int i=0;i<Narms;i++) {
     if (hHit_Energy[i]->GetEntries()==0) hHit_Energy[i]->SetBins(Ncols,Elows[i]);
     if (hHit_EnergyVsColumn[i]->GetEntries()==0) hHit_EnergyVsColumn[i]->SetBins(Ncols,cols,Ncols,Elows[i]);
   }
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
   //
   return NOERROR;
 }
@@ -236,7 +236,9 @@ jerror_t JEventProcessor_PS_online::evnt(JEventLoop *eventLoop, uint64_t eventnu
     pp_cache[digihits[i]] = pulsePed;
   }
 
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   if(digihits.size()>0) ps_num_events->Fill(1);
   
@@ -301,7 +303,8 @@ jerror_t JEventProcessor_PS_online::evnt(JEventLoop *eventLoop, uint64_t eventnu
     hHit_TimeVsColumn[arm]->Fill(hits[i]->column,hits[i]->t);
   }
   hHit_NHitsVsArm->Fill(0.,NHits[0]); hHit_NHitsVsArm->Fill(1.,NHits[1]);
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }
