@@ -208,6 +208,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		int32_t last_run_number;
 		int32_t filename_run_number;
 		
+		uint32_t Nunparsed;
+		bool no_more_events_in_source;
 		bool et_connected;
 		//evioChannel *chan;
 		HDEVIO *hdevio;
