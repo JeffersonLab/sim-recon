@@ -93,6 +93,8 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buf){return NOERROR;}
 JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(source_name)
 {
 	// Initialize connection objects and flags to NULL
+	Nunparsed = 0;
+	no_more_events_in_source = false;
 	et_connected = false;
 	//chan = NULL;
 	hdevio = NULL;
@@ -646,10 +648,27 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	// If no events are currently stored in the buffer, then
 	// read in another event block.
 	if(objs_ptr == NULL){
+	
 		uint32_t *buff = NULL; // ReadEVIOEvent will allocate memory from pool for this
 		double t1 = GetTime();
-		jerror_t err = ReadEVIOEvent(buff);
+		jerror_t err = no_more_events_in_source ? NO_MORE_EVENTS_IN_SOURCE:ReadEVIOEvent(buff);
 		double t2 = GetTime();
+		
+		// If there are no more events to read from the source but there are
+		// buffers yet to be parsed, then we need to give those buffers
+		// a chance to be parsed so we can return an event it may contain.
+		if(err == NO_MORE_EVENTS_IN_SOURCE){
+			no_more_events_in_source = true;
+			while(Nunparsed>0 && !japp->GetQuittingStatus()) usleep(1000);
+			pthread_mutex_lock(&stored_events_mutex);
+			if(stored_events.empty()){
+				pthread_mutex_unlock(&stored_events_mutex);
+				return NO_MORE_EVENTS_IN_SOURCE;
+			}
+
+			pthread_mutex_unlock(&stored_events_mutex);
+		}
+
 		if(err != NOERROR) return err;
 		if(buff == NULL) return MEMORY_ALLOCATION_ERROR;
 		uint32_t buff_size = ((*buff) + 1)*4; // first word in EVIO buffer is total bank size in words
@@ -661,8 +680,14 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 		objs_ptr->run_number = FindRunNumber(buff);
 		objs_ptr->event_number = FindEventNumber(buff);
 
+		// Increment counter that keeps track of how many buffers still
+		// need to be parsed (decremented in ParseEvents)
+		pthread_mutex_lock(&stored_events_mutex);
+		Nunparsed++;
+		pthread_mutex_unlock(&stored_events_mutex);
+
 		// Increment counter that keeps track of how many events
-		// are currently being processed.
+		// are currently being processed (decremented in FreeEvent)
 		pthread_mutex_lock(&current_event_count_mutex);
 		current_event_count++;
 		pthread_mutex_unlock(&current_event_count_mutex);
@@ -953,6 +978,10 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 		// Copy run number from first event
 		objs->run_number = objs_ptr->run_number;
 	}
+	
+	// Decrement counter of how many event buffers are unparsed
+	Nunparsed--;
+	
 	pthread_mutex_unlock(&stored_events_mutex);
 
 	if(VERBOSE>2) evioout << "   Leaving ParseEvents()" << endl;
