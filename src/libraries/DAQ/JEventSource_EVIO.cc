@@ -642,7 +642,6 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	if(!stored_events.empty()){
 		objs_ptr = stored_events.front();
 		stored_events.pop();
-_DBG_<<"+++ useing stored event " <<endl;
 				
 		// If this is a stored event then it almost certainly
 		// came from a multi-event block of physics events.
@@ -681,29 +680,30 @@ _DBG_<<"+++ useing stored event " <<endl;
 			
 			err = NOERROR;
 		}
-
 		if(err != NOERROR) return err;
-		if(buff == NULL) return MEMORY_ALLOCATION_ERROR;
-		uint32_t buff_size = ((*buff) + 1)*4; // first word in EVIO buffer is total bank size in words
+		if(objs_ptr == NULL){
+			if(buff == NULL) return MEMORY_ALLOCATION_ERROR;
+			uint32_t buff_size = ((*buff) + 1)*4; // first word in EVIO buffer is total bank size in words
 
-		objs_ptr = new ObjList();
-		objs_ptr->time_evio_read = t2 - t1;
-		objs_ptr->eviobuff = buff;
-		objs_ptr->eviobuff_size = buff_size;
-		objs_ptr->run_number = FindRunNumber(buff);
-		objs_ptr->event_number = FindEventNumber(buff);
+			objs_ptr = new ObjList();
+			objs_ptr->time_evio_read = t2 - t1;
+			objs_ptr->eviobuff = buff;
+			objs_ptr->eviobuff_size = buff_size;
+			objs_ptr->run_number = FindRunNumber(buff);
+			objs_ptr->event_number = FindEventNumber(buff);
 
-		// Increment counter that keeps track of how many buffers still
-		// need to be parsed (decremented in ParseEvents)
-		pthread_mutex_lock(&stored_events_mutex);
-		Nunparsed++;
-		pthread_mutex_unlock(&stored_events_mutex);
+			// Increment counter that keeps track of how many buffers still
+			// need to be parsed (decremented in ParseEvents)
+			pthread_mutex_lock(&stored_events_mutex);
+			Nunparsed++;
+			pthread_mutex_unlock(&stored_events_mutex);
 
-		// Increment counter that keeps track of how many events
-		// are currently being processed (decremented in FreeEvent)
-		pthread_mutex_lock(&current_event_count_mutex);
-		current_event_count++;
-		pthread_mutex_unlock(&current_event_count_mutex);
+			// Increment counter that keeps track of how many events
+			// are currently being processed (decremented in FreeEvent)
+			pthread_mutex_lock(&current_event_count_mutex);
+			current_event_count++;
+			pthread_mutex_unlock(&current_event_count_mutex);
+		}
 	}
 
 	// Store a pointer to the ObjList object for this event in the
