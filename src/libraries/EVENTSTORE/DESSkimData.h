@@ -25,7 +25,7 @@ class DESSkimData : public JObject {
 	
 	JOBJECT_PUBLIC(DESSkimData);
 
-	DESSkimData(set<string> &in_event_skims, vector<string> &in_skim_list) :
+	DESSkimData(const set<string> &in_event_skims, const vector<string> &in_skim_list) :
 			skim_list(in_skim_list), event_skims(in_event_skims) {}
 		//skim_list = in_skim_list;
 		//event_skims = in_event_skims;

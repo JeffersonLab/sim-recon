@@ -19,6 +19,11 @@
 #include "DESDBProvider.h"
 #include "DESDBProviderMySQL.h"
 
+//ORIGINAL SOURCE GENERATORS
+#include <DAQ/JEventSourceGenerator_EVIO.h>
+#include <HDDM/DEventSourceHDDMGenerator.h>
+#include <HDDM/DEventSourceRESTGenerator.h>
+
 using namespace jana;
 using namespace std;
 
