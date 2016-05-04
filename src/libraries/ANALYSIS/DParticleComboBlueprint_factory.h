@@ -6,6 +6,7 @@
 #include <ANALYSIS/DParticleComboBlueprint.h>
 #include <ANALYSIS/DReaction.h>
 #include "ANALYSIS/DTrackTimeBased_factory_Combo.h"
+#include <EVENTSTORE/DESSkimData.h>
 
 #include <JANA/JObject.h>
 #include <particleType.h>

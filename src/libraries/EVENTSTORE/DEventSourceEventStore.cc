@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <iterator>
 #include <stdlib.h>
+#include <limits>
+
 using namespace std;
 
 #include <DANA/DApplication.h>
@@ -45,7 +47,7 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	es_data_loaded = false;
 	event_source = NULL;
 	min_run = 0;
-	max_run = INT_MAX;   // default to something ridiculously large
+	max_run = numeric_limits<int>::max();   // default to something ridiculously large
 	esdb_connection = "mysql://es_user@hallddb.jlab.org/EventStoreTMP";    // default to main JLab ES server
 	BASE_SKIM_INDEX = 20;
 	MAX_SKIM_INDEX = 64 - BASE_SKIM_INDEX;
@@ -116,7 +118,7 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 		
 		if(tokens.size() > 3) {
 			// parse the rest
-			int token_ind = 3;
+			size_t token_ind = 3;
 			
 			// the next argument is the data grade to use
 			grade = tokens[token_ind++];
@@ -163,7 +165,7 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 					}
 					
 					// sanity check - don't allow a million skims!
-					if(MAX_SKIM_INDEX - BASE_SKIM_INDEX < skim_list.size()) {
+					if(MAX_SKIM_INDEX - BASE_SKIM_INDEX < int(skim_list.size())) {
 						throw JException("Too many skims specified!!");
 					}
 				} else {
@@ -336,7 +338,6 @@ jerror_t DEventSourceEventStore::GetObjects(JEvent &event, JFactory_base *factor
 	if(!factory) throw RESOURCE_UNAVAILABLE;
 
 	// return meta-EventStore information
-	JEventLoop* locEventLoop = event.GetJEventLoop();
     string dataClassName = factory->GetDataClassName();
 	
 	if (dataClassName =="DESSkimData") {

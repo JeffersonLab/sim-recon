@@ -193,6 +193,7 @@ bool DESDBProviderMySQL::GetGrades(vector<string> &grades)
 	// clean up
 	mysql_free_result(DBresult);	
 	DBresult = NULL;
+	return true;
 }
 
 //---------------------------------
@@ -270,4 +271,7 @@ bool DESDBProviderMySQL::GetSkims(vector<string> &skims, string timestamp, strin
 	// clean up
 	mysql_free_result(DBresult);	
 	DBresult = NULL;
+
+	return true;
 }
+

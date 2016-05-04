@@ -130,6 +130,9 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 	locEventLoop->GetSingle(dVertex);
 	locEventLoop->GetSingle(dDetectorMatches);
 
+	DESSkimData* locESSkimData = NULL;
+	locEventLoop->GetSingle(locESSkimData);
+
 	locEventLoop->Get(dChargedTracks, dTrackSelectionTag.c_str());
 	locEventLoop->Get(dNeutralShowers, dShowerSelectionTag.c_str());
 
