@@ -272,13 +272,6 @@ jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
    		//event.SetRef(NULL);
     	event.SetStatusBit(kSTATUS_FROM_FILE);
     	event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
-	    string locSourceClassName = event_source->className();
-		if(locSourceClassName == string("DEventSourceREST"))
-			event.SetStatusBit(kSTATUS_REST);
-		else if(locSourceClassName == string("DEventSourceHDDM"))
-			event.SetStatusBit(kSTATUS_HDDM);
-		else if(locSourceClassName == string("JEventSource_EVIO"))
-			event.SetStatusBit(kSTATUS_EVIO);
 
 		DEventStoreEvent *the_es_event = new DEventStoreEvent();
 		event.SetRef(the_es_event);
@@ -310,14 +303,7 @@ jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
 			the_es_event->Set_SourceRef(event.GetRef());    // save the actual event data
 			event.SetRef(the_es_event);
 		    event.SetStatusBit(kSTATUS_FROM_FILE);
-			//event.SetStatusBit(kSTATUS_PHYSICS_EVENT); //?
-		    string locSourceClassName = event_source->className();
-			if(locSourceClassName == string("DEventSourceREST"))
-				event.SetStatusBit(kSTATUS_REST);
-			else if(locSourceClassName == string("DEventSourceHDDM"))
-				event.SetStatusBit(kSTATUS_HDDM);
-			else if(locSourceClassName == string("JEventSource_EVIO"))
-				event.SetStatusBit(kSTATUS_EVIO);
+		    event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
 
 			// tag event with skims
 			;
