@@ -20,6 +20,7 @@
 #include "JANA/JEventLoop.h"
 #include "particleType.h"
 
+#include <DANA/DStatusBits.h>
 #include "RF/DRFTime.h"
 #include "RF/DRFTime_factory.h"
 #include "RF/DRFDigiTime.h"

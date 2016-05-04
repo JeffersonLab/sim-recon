@@ -262,6 +262,7 @@ DEventSourceEventStore::~DEventSourceEventStore()
 //---------------------------------
 jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
 {
+
 	// FOR DEBUGGING - EMIT EVENTS FOREVER
 	if(TEST_MODE) {
 		// output some fake event with skim information
@@ -271,7 +272,14 @@ jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
    		//event.SetRef(NULL);
     	event.SetStatusBit(kSTATUS_FROM_FILE);
     	event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
-		
+	    string locSourceClassName = event_source->className();
+		if(locSourceClassName == string("DEventSourceREST"))
+			event.SetStatusBit(kSTATUS_REST);
+		else if(locSourceClassName == string("DEventSourceHDDM"))
+			event.SetStatusBit(kSTATUS_HDDM);
+		else if(locSourceClassName == string("JEventSource_EVIO"))
+			event.SetStatusBit(kSTATUS_EVIO);
+
 		DEventStoreEvent *the_es_event = new DEventStoreEvent();
 		event.SetRef(the_es_event);
 		for(int i=0; i<4; i++)
@@ -301,7 +309,16 @@ jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
 			the_es_event->Set_EventSource(event_source);
 			the_es_event->Set_SourceRef(event.GetRef());    // save the actual event data
 			event.SetRef(the_es_event);
-		
+		    event.SetStatusBit(kSTATUS_FROM_FILE);
+			//event.SetStatusBit(kSTATUS_PHYSICS_EVENT); //?
+		    string locSourceClassName = event_source->className();
+			if(locSourceClassName == string("DEventSourceREST"))
+				event.SetStatusBit(kSTATUS_REST);
+			else if(locSourceClassName == string("DEventSourceHDDM"))
+				event.SetStatusBit(kSTATUS_HDDM);
+			else if(locSourceClassName == string("JEventSource_EVIO"))
+				event.SetStatusBit(kSTATUS_EVIO);
+
 			// tag event with skims
 			;
 		} else if(retval == NO_MORE_EVENTS_IN_SOURCE) {   
