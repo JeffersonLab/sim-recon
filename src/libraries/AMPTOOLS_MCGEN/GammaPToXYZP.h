@@ -14,6 +14,8 @@
 
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
 
+#include "TH1D.h"
+
 class Kinematics;
 class AmpVecs;
 
@@ -23,7 +25,8 @@ public:
   
   GammaPToXYZP( float lowMassXYZ, float highMassXYZ, 
                 float massX, float massY, float massZ,
-                ProductionMechanism::Type type );
+                ProductionMechanism::Type type, 
+                float beamMaxE, float beamPeakE, float beamLowE, float beamHighE );
   
   Kinematics* generate();
 //  AmpVecs* generateMany( int nEvents );
@@ -38,6 +41,8 @@ private:
   TLorentzVector m_target;
   
   vector< double > m_childMass;
+
+  TH1D *cobrem_vs_E;
   
 };
 
