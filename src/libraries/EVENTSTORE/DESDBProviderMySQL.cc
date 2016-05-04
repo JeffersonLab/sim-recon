@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <cstdlib>
 
 #include "DESDBProviderMySQL.h"
 
