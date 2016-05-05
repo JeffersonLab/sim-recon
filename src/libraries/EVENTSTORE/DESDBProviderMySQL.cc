@@ -156,8 +156,10 @@ void DESDBProviderMySQL::Disconnect()
 //---------------------------------
 // GetGrades
 //---------------------------------
-bool DESDBProviderMySQL::GetGrades(vector<string> &grades)
+vector<string> DESDBProviderMySQL::GetGrades()
 {
+	vector<string> out_grades;
+
 	string query_str = "SELECT DISTINCT grade FROM Version WHERE state='active'";
 
 	// clear out any lingering data
@@ -170,7 +172,7 @@ bool DESDBProviderMySQL::GetGrades(vector<string> &grades)
 	if(mysql_query(DBptr, query_str.c_str())) {
 		jerr << FormatMySQLError("mysql_query()") << endl
 			 << "Query: " << query_str << endl;
-		return false;
+		throw JException("MySQL error in DESDBProviderMySQL:GetGrades()!");
 	}
 
 	//get results
@@ -179,7 +181,7 @@ bool DESDBProviderMySQL::GetGrades(vector<string> &grades)
 	if(!DBresult) {
 		jerr << FormatMySQLError("mysql_query()") << endl
 			 << "Query: " << query_str << endl;
-		return false;
+		throw JException("MySQL error in DESDBProviderMySQL:GetGrades()!");
 	}
 
 	//int num_returned_rows = mysql_num_rows(DBresult);
@@ -187,20 +189,22 @@ bool DESDBProviderMySQL::GetGrades(vector<string> &grades)
 
 	MYSQL_ROW row;
 	while((row = mysql_fetch_row(DBresult))) {
-  		grades.push_back(row[0]);
+  		out_grades.push_back(row[0]);
 	}
 	
 	// clean up
 	mysql_free_result(DBresult);	
 	DBresult = NULL;
-	return true;
+	return out_grades;
 }
 
 //---------------------------------
 // GetSkims
 //---------------------------------
-bool DESDBProviderMySQL::GetSkims(vector<string> &skims, string timestamp, string grade)
+vector<string> DESDBProviderMySQL::GetSkims(string timestamp, string grade)
 {
+	vector<string> out_skims;
+
 	stringstream query_ss;
 	// first figure out the closest timestamp to the one requested
 	query_ss << "SELECT MAX(timeStamp) FROM Version WHERE timeStamp<='"
@@ -216,7 +220,7 @@ bool DESDBProviderMySQL::GetSkims(vector<string> &skims, string timestamp, strin
 	if(mysql_query(DBptr, query_ss.str().c_str())) {
 		jerr << FormatMySQLError("mysql_query()") << endl
 			 << "Query: " << query_ss.str() << endl;
-		return false;
+		throw JException("MySQL error in DESDBProviderMySQL:GetSkims()!");
 	}
 
 	//get results
@@ -225,13 +229,13 @@ bool DESDBProviderMySQL::GetSkims(vector<string> &skims, string timestamp, strin
 	if(!DBresult) {
 		jerr << FormatMySQLError("mysql_query()") << endl
 			 << "Query: " << query_ss.str() << endl;
-		return false;
+		throw JException("MySQL error in DESDBProviderMySQL:GetSkims()!");
 	}
 
 	int num_returned_rows = mysql_num_rows(DBresult);
 	if(num_returned_rows == 0) {
 		jerr << "Invalid timestamp: " + timestamp << endl;
-		return false;
+		throw JException("MySQL error in DESDBProviderMySQL:GetSkims()!");
 	} 
 
 	MYSQL_ROW row;
@@ -251,7 +255,7 @@ bool DESDBProviderMySQL::GetSkims(vector<string> &skims, string timestamp, strin
 	if(mysql_query(DBptr, query_ss.str().c_str())) {
 		jerr << FormatMySQLError("mysql_query()") << endl
 			 << "Query: " << query_ss.str() << endl;
-		return false;
+		throw JException("MySQL error in DESDBProviderMySQL:GetSkims!");
 	}
 
 	//get results
@@ -260,18 +264,460 @@ bool DESDBProviderMySQL::GetSkims(vector<string> &skims, string timestamp, strin
 	if(!DBresult) {
 		jerr << FormatMySQLError("mysql_query()") << endl
 			 << "Query: " << query_ss.str() << endl;
-		return false;
+		throw JException("MySQL error in DESDBProviderMySQL:GetSkims!");
 	}
 
 	// get results
 	while((row = mysql_fetch_row(DBresult))) {
-  		skims.push_back(row[0]);
+  		out_skims.push_back(row[0]);
 	}
 	
 	// clean up
 	mysql_free_result(DBresult);	
 	DBresult = NULL;
 
-	return true;
+	return out_skims;
 }
 
+//---------------------------------
+// 
+//---------------------------------
+vector<string> DESDBProviderMySQL::GetTimestamps(string grade)
+{
+
+	vector<string> out_timestamps;
+
+	stringstream query_ss;
+	// first figure out the closest timestamp to the one requested
+	query_ss << "SELECT DISTINCT timeStamp FROM Version WHERE grade='" 
+			 << grade << "' AND state='active'";
+					
+	// clear out any lingering data
+	if(DBresult != NULL) {	
+		mysql_free_result(DBresult);	
+		DBresult = NULL;
+	}
+
+	// execute the query
+	if(mysql_query(DBptr, query_ss.str().c_str())) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetSkims()!");
+	}
+
+	//get results
+	DBresult = mysql_store_result(DBptr);
+
+	if(!DBresult) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetSkims()!");
+	}
+
+	int num_returned_rows = mysql_num_rows(DBresult);
+	if(num_returned_rows == 0) {
+		jerr << "Invalid grade: " + grade << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetSkims()!");
+	} 
+
+	MYSQL_ROW row;
+	// get results
+	while((row = mysql_fetch_row(DBresult))) {
+  		out_timestamps.push_back(row[0]);
+	}
+	
+	// clear results
+	mysql_free_result(DBresult);	
+	DBresult = NULL;
+
+	return out_timestamps;
+
+}
+
+//---------------------------------
+// 
+//---------------------------------
+vector< pair<EventStore::RunRange,int> > DESDBProviderMySQL::GetRunVersions(string timestamp, string grade)
+{
+	vector< pair<EventStore::RunRange,int> > out_runversions;
+
+	stringstream query_ss;
+	query_ss << "SELECT timeStamp,minRunNumber,maxRunNumber,graphid FROM Version WHERE timeStamp<='"
+			 << timestamp << "' AND grade='" << grade 
+			 << " AND state='active' ORDER BY timeStamp DESC, minRunNumber ASC";;
+
+	// clear out any lingering data
+	if(DBresult != NULL) {	
+		mysql_free_result(DBresult);	
+		DBresult = NULL;
+	}
+
+	// execute the query
+	if(mysql_query(DBptr, query_ss.str().c_str())) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
+	}
+
+	//get results
+	DBresult = mysql_store_result(DBptr);
+
+	if(!DBresult) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
+	}
+
+	//int num_returned_rows = mysql_num_rows(DBresult);
+	//int num_returned_cols = mysql_num_fields(DBresult);
+
+	MYSQL_ROW row;
+	bool first_time = false;
+	string closest_timestamp = "";
+	while((row = mysql_fetch_row(DBresult))) {
+		string the_timestamp = row[0];
+		// only pick runs corresponding to the most recent timestamp
+		// ignore older data
+		if(first_time)
+			closest_timestamp = the_timestamp;
+		else if(the_timestamp != closest_timestamp)
+			break;
+		
+		EventStore::RunRange range(atoi(row[1]),atoi(row[2]));
+  		out_runversions.push_back( pair<EventStore::RunRange,int>(range,atoi(row[3])) );
+	}
+	
+	// clean up
+	mysql_free_result(DBresult);	
+	DBresult = NULL;
+	return out_runversions;
+}
+
+//---------------------------------
+// 
+//---------------------------------
+vector<int32_t> DESDBProviderMySQL::GetRunList(EventStore::RunRange run_range,
+												int graphid, string & view)
+{
+	vector<int32_t> out_runs;
+
+	stringstream query_ss;
+	query_ss << "SELECT DISTINCT run FROM KeyFile WHERE run>='"
+			 << run_range.first << "' AND run<='" << run_range.second 
+			 << "' AND graphid='" << graphid << "' AND view='"
+			 << view << "' ORDER BY run ASC";
+
+	// clear out any lingering data
+	if(DBresult != NULL) {	
+		mysql_free_result(DBresult);	
+		DBresult = NULL;
+	}
+
+	// execute the query
+	if(mysql_query(DBptr, query_ss.str().c_str())) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
+	}
+
+	//get results
+	DBresult = mysql_store_result(DBptr);
+
+	if(!DBresult) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
+	}
+
+	//int num_returned_rows = mysql_num_rows(DBresult);
+	//int num_returned_cols = mysql_num_fields(DBresult);
+
+	MYSQL_ROW row;
+	while((row = mysql_fetch_row(DBresult))) {
+  		out_runs.push_back(atoi(row[0]));
+	}
+	
+	// clean up
+	mysql_free_result(DBresult);	
+	DBresult = NULL;
+	return out_runs;
+}
+
+//---------------------------------
+// 
+//---------------------------------
+vector< pair<int32_t,int32_t> > DESDBProviderMySQL::GetRunUidList(EventStore::RunRange run_range,
+											  			  int graphid, string &view)
+{
+	vector< pair<int32_t,int32_t> > out_runuids;
+
+	stringstream query_ss;
+	query_ss << "SELECT DISTINCT run FROM KeyFile WHERE run>='"
+			 << run_range.first << "' AND run<='" << run_range.second 
+			 << "' AND graphid='" << graphid << "' AND view='"
+			 << view << "' ORDER BY run ASC";
+
+	// clear out any lingering data
+	if(DBresult != NULL) {	
+		mysql_free_result(DBresult);	
+		DBresult = NULL;
+	}
+
+	// execute the query
+	if(mysql_query(DBptr, query_ss.str().c_str())) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
+	}
+
+	//get results
+	DBresult = mysql_store_result(DBptr);
+
+	if(!DBresult) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
+	}
+
+	//int num_returned_rows = mysql_num_rows(DBresult);
+	//int num_returned_cols = mysql_num_fields(DBresult);
+
+	MYSQL_ROW row;
+	while((row = mysql_fetch_row(DBresult))) {
+  		out_runuids.push_back( pair<int32_t,int32_t>(atoi(row[0]),atoi(row[1])) );
+	}
+	
+	// clean up
+	mysql_free_result(DBresult);	
+	DBresult = NULL;
+	return out_runuids;
+}
+
+//---------------------------------
+// 
+//---------------------------------
+string DESDBProviderMySQL::GetKeyFileName(int graphid, string &view, int32_t run, int32_t uid)
+{
+	string out_filename;
+
+	stringstream query_ss;
+	query_ss << "SELECT fileName FROM FileID,KeyFile WHERE graphid='" << graphid 
+			 << "' AND view='" << view << "' AND run='" << run 
+			 << "' AND FileID.fileId=KeyFile.keyFileID";
+
+	// clear out any lingering data
+	if(DBresult != NULL) {	
+		mysql_free_result(DBresult);	
+		DBresult = NULL;
+	}
+
+	// execute the query
+	if(mysql_query(DBptr, query_ss.str().c_str())) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
+	}
+
+	//get results
+	DBresult = mysql_store_result(DBptr);
+
+	if(!DBresult) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
+	}
+
+	//int num_returned_rows = mysql_num_rows(DBresult);
+	//int num_returned_cols = mysql_num_fields(DBresult);
+
+	MYSQL_ROW row;
+	row = mysql_fetch_row(DBresult);
+	out_filename = row[0];
+
+	// clean up
+	mysql_free_result(DBresult);	
+	DBresult = NULL;
+	return out_filename;
+}
+
+
+//---------------------------------
+// 
+//---------------------------------
+vector< pair<string,string> > DESDBProviderMySQL::GetDataFileNameTypePairs(int graphid, string &view, 
+									  				 			 int32_t run, int32_t uid)
+{
+	vector< pair<string,string> > out_filetypes;
+
+	stringstream query_ss;
+	query_ss << "SELECT fileName,typeId FROM FileID,DataFile WHERE graphId='"
+			 << graphid << "' AND run='" << run << "'AND uid='" << uid
+			 << "' AND FileID.fileId=DataFile.fileId ORDER BY id ASC";
+
+	// clear out any lingering data
+	if(DBresult != NULL) {	
+		mysql_free_result(DBresult);	
+		DBresult = NULL;
+	}
+
+	// execute the query
+	if(mysql_query(DBptr, query_ss.str().c_str())) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
+	}
+
+	//get results
+	DBresult = mysql_store_result(DBptr);
+
+	if(!DBresult) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
+	}
+
+	//int num_returned_rows = mysql_num_rows(DBresult);
+	//int num_returned_cols = mysql_num_fields(DBresult);
+
+	MYSQL_ROW row;
+	while((row = mysql_fetch_row(DBresult))) {
+  		out_filetypes.push_back( pair<string,string>(row[0],row[1]) );
+	}
+	
+	// clean up
+	mysql_free_result(DBresult);	
+	DBresult = NULL;
+	return out_filetypes;
+}
+
+
+//---------------------------------
+// GetFileName
+//---------------------------------
+string DESDBProviderMySQL::GetFileName(int32_t fid)
+{
+	stringstream query_ss;
+	query_ss << "SELECT fileName FROM FileID WHERE fileID='" << fid <<"'";
+
+	// clear out any lingering data
+	if(DBresult != NULL) {	
+		mysql_free_result(DBresult);	
+		DBresult = NULL;
+	}
+
+	// execute the query
+	if(mysql_query(DBptr, query_ss.str().c_str())) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetFileName()!");
+	}
+
+	//get results
+	DBresult = mysql_store_result(DBptr);
+
+	if(!DBresult) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetFileName()!");
+	}
+
+	//int num_returned_rows = mysql_num_rows(DBresult);
+	//int num_returned_cols = mysql_num_fields(DBresult);
+
+	MYSQL_ROW row;
+	row = mysql_fetch_row(DBresult);  // error check?
+	string result = row[0];
+	
+	// clean up
+	mysql_free_result(DBresult);	
+	DBresult = NULL;
+	return result;
+}
+
+//---------------------------------
+// GetFID
+//---------------------------------
+int DESDBProviderMySQL::GetFID(string &filename)
+{
+	stringstream query_ss;
+	query_ss << "SELECT DISTINCT fileId FROM FileID WHERE fileName='" << filename <<"'";
+
+	// clear out any lingering data
+	if(DBresult != NULL) {	
+		mysql_free_result(DBresult);	
+		DBresult = NULL;
+	}
+
+	// execute the query
+	if(mysql_query(DBptr, query_ss.str().c_str())) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetFileName()!");
+	}
+
+	//get results
+	DBresult = mysql_store_result(DBptr);
+
+	if(!DBresult) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetFileName()!");
+	}
+
+	//int num_returned_rows = mysql_num_rows(DBresult);
+	//int num_returned_cols = mysql_num_fields(DBresult);
+
+	MYSQL_ROW row;
+	row = mysql_fetch_row(DBresult);   // error check?
+	int result = atoi(row[0]);
+	
+	// clean up
+	mysql_free_result(DBresult);	
+	DBresult = NULL;
+	return result;
+}
+
+//---------------------------------
+// GetFileNameAndType
+//---------------------------------
+pair<string,string> DESDBProviderMySQL::GetFileNameAndType(int fid)
+{
+	stringstream query_ss;
+	query_ss << "SELECT FileID.fileName, FileType.type FROM FileID,FileType"
+			 << " WHERE FileID.typeID=FileType.id AND FileID.fileId='" << fid << "'"; 
+
+	// clear out any lingering data
+	if(DBresult != NULL) {	
+		mysql_free_result(DBresult);	
+		DBresult = NULL;
+	}
+
+	// execute the query
+	if(mysql_query(DBptr, query_ss.str().c_str())) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetFileName()!");
+	}
+
+	//get results
+	DBresult = mysql_store_result(DBptr);
+
+	if(!DBresult) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_ss.str() << endl;
+		throw JException("MySQL error in DESDBProviderMySQL:GetFileName()!");
+	}
+
+	//int num_returned_rows = mysql_num_rows(DBresult);
+	//int num_returned_cols = mysql_num_fields(DBresult);
+
+	MYSQL_ROW row;
+	row = mysql_fetch_row(DBresult);   // error check?
+	pair<string,string> result(row[0],row[1]);
+	
+	// clean up
+	mysql_free_result(DBresult);	
+	DBresult = NULL;
+	return result;
+
+}

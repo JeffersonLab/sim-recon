@@ -32,9 +32,23 @@ class DESDBProviderMySQL : public DESDBProvider {
 		bool Open();
 		
 		// accessors
-		bool GetGrades(vector<string> &grades);
-		bool GetSkims(vector<string> &grades, string timestamp, string grade);
-		
+		vector<string> GetGrades();
+		vector<string> GetSkims(string timestamp, string grade);
+		vector<string> GetTimestamps(string grade);
+
+		vector< pair<EventStore::RunRange,int> > GetRunVersions(string timestamp, string grade);	
+		vector<int32_t> GetRunList(EventStore::RunRange run_range,
+									int graphid, string & view);
+		vector< pair<int32_t,int32_t> > GetRunUidList(EventStore::RunRange run_range,
+											  			int graphid, string &view);
+		string GetKeyFileName(int graphid, string &view, int32_t run, int32_t uid=0);
+		vector< pair<string,string> > GetDataFileNameTypePairs(int graphid, string &view, 
+									  				 int32_t run, int32_t uid=0);
+
+		string GetFileName(int32_t fid);
+		int32_t GetFID(string &filename);
+		pair<string,string> GetFileNameAndType(int fid);
+
 	protected:
 		// MySQL connection information
 		string user_name;

@@ -18,6 +18,7 @@
 
 #include "DESDBProvider.h"
 #include "DESDBProviderMySQL.h"
+#include "DEventStoreDefs.h"
 
 using namespace jana;
 using namespace std;
@@ -53,12 +54,6 @@ class DEventSourceEventStore : public JEventSource {
 		DESDBProvider *esdb;           //  the database connection
 		bool es_data_loaded;
 		
-		// We tag which skims JEvents belong to using JEvent::SetStatusBit()
-		// We can get away with this now, since no one else is using fields above 16 yet
-		// Probably the scheme needs to change or we need our own fields
-		int BASE_SKIM_INDEX;           // the first status bit that we use for EventStore
-		int MAX_SKIM_INDEX;            // we can store 64 bits in the JEvent, so 64 - MAX_SKIM_INDEX
-
 		bool load_all_skims;
 		vector<string> skim_list;
 
@@ -68,16 +63,24 @@ class DEventSourceEventStore : public JEventSource {
 		bool run_range_set;
 		bool run_period_set;
 		
-		map< string, pair<int,int> > run_period_map;
 
 		// file information - deprecated
 		vector<string> data_files;   // store list of file names
 		vector<string>::iterator current_file_itr;
 
-		// store list of runs - EventStore information is keyed off runs
-		vector<int> run_numbers;
-		vector<int>::iterator current_run_itr;
+		// Store lists of runs - EventStore information is keyed off runs
+		// The master DB query returns a list of run ranges that satisfies
+		// some given requirements
+		vector<EventStore::RunRange> run_ranges;              
+		vector<EventStore::RunRange>::const_iterator current_run_range;
+		// the list of actual run numbers to process in the current run range
+		vector<int32_t> current_run_numbers;
+		vector<int32_t>::const_iterator current_run_itr;
 		
+		
+		// some more metadata
+		map< string, pair<int,int> > run_period_map;
+
 };
 
 

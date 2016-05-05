@@ -49,8 +49,6 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	min_run = 0;
 	max_run = numeric_limits<int>::max();   // default to something ridiculously large
 	esdb_connection = "mysql://es_user@hallddb.jlab.org/EventStoreTMP";    // default to main JLab ES server
-	BASE_SKIM_INDEX = 20;
-	MAX_SKIM_INDEX = 64 - BASE_SKIM_INDEX;
 	
 	// eventstore parameters
 	// for more information, see ...
@@ -164,10 +162,6 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 						skim_list.push_back(tokens[token_ind]);
 					}
 					
-					// sanity check - don't allow a million skims!
-					if(MAX_SKIM_INDEX - BASE_SKIM_INDEX < int(skim_list.size())) {
-						throw JException("Too many skims specified!!");
-					}
 				} else {
 					// require a valid command
 					throw JException("Invalid ES query = " + es_query + "\n\n" + EventstoreQueryHelp() );
@@ -175,8 +169,7 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 			}
 			
 			// sanity check - make sure the grade exists!
-			vector<string> grades_in_db;
-			esdb->GetGrades(grades_in_db);
+			vector<string> grades_in_db = esdb->GetGrades();
 			
 			vector<string>::iterator grade_itr = find(grades_in_db.begin(), grades_in_db.end(), grade);
 			if(grade_itr == grades_in_db.end()) {
@@ -236,8 +229,10 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	////////////////////////////////////////////////////////////
 	if(load_all_skims) {
 		// if the user didn't ask for specific skims, then load all of them
-		esdb->GetSkims(skim_list, timestamp, grade);
+		skim_list = esdb->GetSkims(timestamp, grade);
 	}
+	
+		
 	/*
 	if(TEST_MODE)   // if we're testing, don't make any more checks 
 		return;
@@ -460,8 +455,7 @@ jerror_t DEventSourceEventStore::OpenNextFile()
 //---------------------------------
 void DEventSourceEventStore::PrintGrades()
 {
-	vector<string> grades;
-	esdb->GetGrades(grades);
+	vector<string> grades = esdb->GetGrades();
 	
 	// print out information
 	cout << endl << "Available grades:" << endl;
@@ -476,8 +470,7 @@ void DEventSourceEventStore::PrintGrades()
 //---------------------------------
 void DEventSourceEventStore::PrintRunPeriods()
 {
-	vector<string> grades;
-	esdb->GetGrades(grades);
+	vector<string> grades = esdb->GetGrades();
 	
 	// print out information
 	cout << endl << "Available Run Periods:" << endl;
@@ -495,8 +488,7 @@ void DEventSourceEventStore::PrintRunPeriods()
 //---------------------------------
 void DEventSourceEventStore::PrintSkims(string datestamp, string grade)
 {
-	vector<string> skims;
-	esdb->GetSkims(skims, datestamp, grade);
+	vector<string> skims = esdb->GetSkims(datestamp, grade);
 	
 	// print out information
 	cout << endl << "Available skims for grade " << grade << ":" << endl;
