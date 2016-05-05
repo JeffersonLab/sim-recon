@@ -82,8 +82,6 @@ JEventProcessor_pi0fcalskim::~JEventProcessor_pi0fcalskim()
 //------------------
 jerror_t JEventProcessor_pi0fcalskim::init(void)
 {
-  dEventWriterEVIO = NULL;
-
   num_epics_events = 0;
 /*
   if( ! ( WRITE_ROOT || WRITE_EVIO ) ){
@@ -118,8 +116,6 @@ jerror_t JEventProcessor_pi0fcalskim::init(void)
 //------------------
 jerror_t JEventProcessor_pi0fcalskim::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
-  eventLoop->GetSingle(dEventWriterEVIO);
-
   return NOERROR;
 }
 
@@ -139,17 +135,20 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
 
   vector < const DFCALShower * > matchedShowers;
 
+	const DEventWriterEVIO* locEventWriterEVIO = NULL;
+	loop->GetSingle(locEventWriterEVIO);
+
   // always write out BOR events
   if(loop->GetJEvent().GetStatusBit(kSTATUS_BOR_EVENT)) {
       //jout << "Found BOR!" << endl;
-      dEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcalskim" );
+      locEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcalskim" );
       return NOERROR;
   }
 
   // write out the first few EPICS events to save run number & other meta info
   if(loop->GetJEvent().GetStatusBit(kSTATUS_EPICS_EVENT) && (num_epics_events<5)) {
       //jout << "Found EPICS!" << endl;
-      dEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcalskim" );
+      locEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcalskim" );
       num_epics_events++;
       return NOERROR;
   }
@@ -259,7 +258,7 @@ jerror_t JEventProcessor_pi0fcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
 
     if( WRITE_EVIO ){
 
-      dEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcalskim" );
+      locEventWriterEVIO->Write_EVIOEvent( loop, "pi0fcalskim" );
     }
  }
  

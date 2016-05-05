@@ -47,6 +47,7 @@ class DEventProcessor_candidate_tree:public JEventProcessor{
 		
 		DCoordinateSystem target;
 		const DLorentzDeflections *lorentz_def;//< Correction to FDC cathodes due to Lorentz force
+		DMagneticFieldMap *bfield;
 
 		class hit_info_t{
 			public:
@@ -82,7 +83,6 @@ class DEventProcessor_candidate_tree:public JEventProcessor{
 		
 		int NLRbad, NLRgood, NLRfit_unknown;
 		int Nevents;
-		DReferenceTrajectory *rt;
 		
 		int Nwarnings;
 };

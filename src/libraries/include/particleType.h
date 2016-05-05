@@ -213,11 +213,11 @@ inline static char* ParticleType(Particle_t p)
   case RhoMinus:
     return (char*)"Rho-";
   case omega:
-    return (char*)"omega";
+    return (char*)"Omega";
   case EtaPrime:
     return (char*)"EtaPrime";
   case phiMeson:
-    return (char*)"phiMeson";
+    return (char*)"Phi";
   case a0_980:
     return (char*)"a0(980)";
   case f0_980:
@@ -501,11 +501,11 @@ inline static Particle_t ParticleEnum(const char* locParticleName)
     return RhoPlus;
   else if(strcmp(locParticleName, "Rho-") == 0)
     return RhoMinus;
-  else if(strcmp(locParticleName, "omega") == 0)
+  else if(strcmp(locParticleName, "Omega") == 0)
     return omega;
   else if(strcmp(locParticleName, "EtaPrime") == 0)
     return EtaPrime;
-  else if(strcmp(locParticleName, "phiMeson") == 0)
+  else if(strcmp(locParticleName, "Phi") == 0)
     return phiMeson;
   else if(strcmp(locParticleName, "a0(980)") == 0)
     return a0_980;

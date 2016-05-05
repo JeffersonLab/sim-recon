@@ -3,8 +3,7 @@ import sbms
 
 Import('*')
 
-subdirs = []
+subdirs = ['fit', 'twopi_plotter']
 
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
-sbms.OptionallyBuild(env, ['fit', 'twopi_plotter'])

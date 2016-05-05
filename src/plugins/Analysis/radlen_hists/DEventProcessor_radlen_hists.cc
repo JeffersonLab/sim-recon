@@ -57,8 +57,6 @@ jerror_t DEventProcessor_radlen_hists::init(void)
 	// open ROOT file (if needed)
 	//if(ROOTfile != NULL) ROOTfile->cd();
 
-	pthread_mutex_lock(&mutex);
-
 	// Create THROWN directory
 	TDirectory *dir = new TDirectoryFile("RADLEN","RADLEN");
 	dir->cd();
@@ -110,8 +108,6 @@ jerror_t DEventProcessor_radlen_hists::init(void)
 
 	// Go back up to the parent directory
 	dir->cd("../");
-
-	pthread_mutex_unlock(&mutex);
 	
 	bfield = NULL;
 
@@ -148,8 +144,9 @@ jerror_t DEventProcessor_radlen_hists::evnt(JEventLoop *loop, uint64_t eventnumb
 	theta = throwns[0]->momentum().Theta()*57.3;
 	theta_nevents->Fill(theta);
 	
-	// Loop over trajectory points
-	pthread_mutex_lock(&mutex);
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+
 	rstep.stot = 0.0;
 	rstep.ix_over_Xo = 0.0;
 	rstep.iB_cross_p_dl = 0.0;
@@ -196,7 +193,8 @@ jerror_t DEventProcessor_radlen_hists::evnt(JEventLoop *loop, uint64_t eventnumb
 //------------------
 jerror_t DEventProcessor_radlen_hists::erun(void)
 {
-	pthread_mutex_lock(&mutex);
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	// Scale the nXo_vs_r_vs_theta and nXo_vs_z_vs_theta histos by the
 	// number of events for each theta bin. At the same time, integrate
@@ -241,7 +239,7 @@ _DBG_<<"N="<<N<<endl;
 		inXo_vs_z->SetBinContent(j, nXo_vs_z->GetBinContent(j)+inXo_vs_z->GetBinContent(j-1));
 	}
 
-	pthread_mutex_unlock(&mutex);
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	
 	return NOERROR;
 }

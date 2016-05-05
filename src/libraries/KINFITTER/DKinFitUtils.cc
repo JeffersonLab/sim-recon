@@ -158,7 +158,7 @@ void DKinFitUtils::Preallocate_MatrixMemory(void)
 		for(size_t loc_i = 0; loc_i < dMaxLargeMatrixDSymPoolSize; ++loc_i)
 		{
 			TMatrixDSym* locMatrix = Get_LargeMatrixDSymResource();	
-			locMatrix->ResizeTo(100, 100);
+			locMatrix->ResizeTo(50, 50);
 		}
 		dLargeMatrixDSymPool_Available = dLargeMatrixDSymPool_All;
 	}

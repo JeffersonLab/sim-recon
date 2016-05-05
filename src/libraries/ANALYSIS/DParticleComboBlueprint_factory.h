@@ -97,6 +97,8 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		map<DParticleComboBlueprintStep, DParticleComboBlueprintStep*> dBlueprintStepMap;
 
 		DTrackTimeBased_factory_Combo* dTrackTimeBasedFactory_Combo;
+
+		size_t dMaxNumNeutralShowers;
 };
 
 #endif // _DParticleComboBlueprint_factory_

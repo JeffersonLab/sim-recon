@@ -264,9 +264,9 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, uint64_t eventnumber)
 	loop->Get(f250TriggerTime_vec);
 	sort(f250TriggerTime_vec.begin(), f250TriggerTime_vec.end(), Df250TriggerTime_cmp);
 
-	/// Trees are filled with data
-	japp->RootWriteLock();
-
+	// Trees are filled with data
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 
 	/// Df125WindowRawData
 	const uint32_t numDf125WRDpedsamps = 10;
@@ -962,7 +962,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, uint64_t eventnumber)
 		Df250TriggerTime_tree->Fill();
 	}
 
-	japp->RootUnLock();
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 	
 	return NOERROR;
 }

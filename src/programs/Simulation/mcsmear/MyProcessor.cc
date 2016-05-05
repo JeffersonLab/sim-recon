@@ -156,6 +156,12 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
      BCAL_TIMEDIFFCOEFA = bcalparms["BCAL_TIMEDIFFCOEFA"];
      BCAL_TIMEDIFFCOEFB = bcalparms["BCAL_TIMEDIFFCOEFB"];
      BCAL_TWO_HIT_RESOL = bcalparms["BCAL_TWO_HIT_RESOL"];
+
+     cout<<"get BCAL/mc_parms parameters from calibDB"<<endl;
+     map<string, double> bcalmcparms;
+     jcalib->Get("BCAL/mc_parms", bcalmcparms);
+     BCAL_C_EFFECTIVE = bcalmcparms["C_EFFECTIVE"];
+
    }
 
    {

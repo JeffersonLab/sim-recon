@@ -353,42 +353,40 @@ jerror_t JEventProcessor_bcal_calib_cosmic_cdc::evnt(JEventLoop *loop, uint64_t 
 		printf("BCCC >> found %ld upstream and %ld downstream hits for map.\n",upstream.size(),downstream.size());
 	//cout << "found " << upstream.size() << " upstream and " << downstream.size() << " downstream hits for map.\n";
 
-	/// Trees are filled with data
-	japp->RootWriteLock();
-	
-	eventnum = eventnumber;
-	/// Loop over the intersected cells
-	unsigned int num_CellId = CellId_vec.size();
-	for (unsigned int cellnum=0; cellnum<num_CellId; cellnum++) {
-		cell = CellId_vec[cellnum];
-		tdist = distance_vec[cellnum];
-		tmodule = DBCALGeometry::module( cell );
-		tlayer = DBCALGeometry::layer( cell );
-		tsector = DBCALGeometry::sector( cell );
-		tglobalsect = DBCALGeometry::getglobalsector(tmodule,tsector);
-		numcells = num_CellId;
-		use=0; 
-		dse=0;
-		myiter = upstream.find(cell);
-		if (myiter!=upstream.end()) {
-			const DBCALHit* US = myiter->second;
-			use = US->E;
-		} 
-		myiter = downstream.find(cell);
-		if (myiter!=downstream.end()) {
-			const DBCALHit* DS = myiter->second;
-			dse = DS->E;
-		} 
-		if (VERBOSE>=2) 
-			printf("BCCC >>  eventnum %4i  cellnum %2i  0x%4x  (mod,lay,sec) = (%2i,%2i,%2i)  %3i   %6.2f %6.2f %6.2f \n",
-				   eventnum, cellnum, cell,  tmodule, tlayer, tsector, tglobalsect, tdist, use, dse);
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+	{
+		eventnum = eventnumber;
+		/// Loop over the intersected cells
+		unsigned int num_CellId = CellId_vec.size();
+		for (unsigned int cellnum=0; cellnum<num_CellId; cellnum++) {
+			cell = CellId_vec[cellnum];
+			tdist = distance_vec[cellnum];
+			tmodule = DBCALGeometry::module( cell );
+			tlayer = DBCALGeometry::layer( cell );
+			tsector = DBCALGeometry::sector( cell );
+			tglobalsect = DBCALGeometry::getglobalsector(tmodule,tsector);
+			numcells = num_CellId;
+			use=0; 
+			dse=0;
+			myiter = upstream.find(cell);
+			if (myiter!=upstream.end()) {
+				const DBCALHit* US = myiter->second;
+				use = US->E;
+			} 
+			myiter = downstream.find(cell);
+			if (myiter!=downstream.end()) {
+				const DBCALHit* DS = myiter->second;
+				dse = DS->E;
+			} 
+			if (VERBOSE>=2) 
+				printf("BCCC >>  eventnum %4i  cellnum %2i  0x%4x  (mod,lay,sec) = (%2i,%2i,%2i)  %3i   %6.2f %6.2f %6.2f \n",
+						eventnum, cellnum, cell,  tmodule, tlayer, tsector, tglobalsect, tdist, use, dse);
 
-
-		bcal_calib_cosmic_cdc_tree->Fill();
+			bcal_calib_cosmic_cdc_tree->Fill();
+		}
 	}
-
-
-	japp->RootUnLock();
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
 	return NOERROR;
 }

@@ -57,7 +57,7 @@ jerror_t JEventProcessor_TPOL_tree::init(void)
     //
     bool SAVE_WAVEFORMS = true;
     gPARMS->SetDefaultParameter("TPOL_tree:SAVE_WAVEFORMS",SAVE_WAVEFORMS);
-    japp->RootWriteLock();
+
     TPOL = new TTree("TPOL_tree","TPOL tree");
     TPOL->Branch("nadc",&nadc,"nadc/i");
     TPOL->Branch("eventnum",&eventnum,"eventnum/i");
@@ -86,7 +86,6 @@ jerror_t JEventProcessor_TPOL_tree::init(void)
     TPOL->Branch("t_tag",&t_tag,"t_tag/D");
     TPOL->Branch("E_diff",&E_diff,"E_diff/D");
     eventnum = 0;
-    japp->RootUnLock();
     //
     return NOERROR;
 }
@@ -143,6 +142,7 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
     loop->Get(taghhits);
     vector<const DTAGMHit*> tagmhits;
     loop->Get(tagmhits);
+
     japp->RootWriteLock();
     // PSC coincidences
     if (cpairs.size()>=1) {

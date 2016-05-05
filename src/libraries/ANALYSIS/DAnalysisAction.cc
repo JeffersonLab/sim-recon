@@ -24,6 +24,7 @@ dPerformAntiCut(false), dReaction(locReaction), dActionName(locActionBaseName), 
 	dOutputFileName = "hd_root.root";
 	if(gPARMS->Exists("OUTPUT_FILENAME"))
 		gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
+
 	dNumPreviousParticleCombos = 0;
 	dNumParticleCombos = 0;
 
