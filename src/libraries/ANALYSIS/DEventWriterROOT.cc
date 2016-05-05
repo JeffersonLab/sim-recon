@@ -376,6 +376,7 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(TTree* locTree, const DReaction* loc
 				}
 			}
 			locPositionToNameMap->Add(locObjString_Position, locObjString_ParticleName);
+			locNameToPositionMap->Add(locObjString_ParticleName, locObjString_Position);
 		}
 
 		//target particle
