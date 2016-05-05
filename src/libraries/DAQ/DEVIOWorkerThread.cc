@@ -607,7 +607,96 @@ void DEVIOWorkerThread::ParsePhysicsBank(uint32_t* &iptr, uint32_t *iend)
 //---------------------------------
 void DEVIOWorkerThread::ParseBuiltTriggerBank(uint32_t* &iptr, uint32_t *iend)
 {
+	if(!PARSE_TRIGGER) return;
 
+	iptr++; // advance past length word
+	uint32_t mask = 0xFF202000;
+	if( ((*iptr) & mask) != mask ){
+		stringstream ss;
+		ss << "Bad header word in Built Trigger Bank: " << hex << *iptr;
+		throw JException(ss.str(), __FILE__, __LINE__);
+	}
+	
+	uint32_t tag     = (*iptr)>>16; // 0xFF2X
+	uint32_t Nrocs   = (*iptr++) & 0xFF;
+	uint32_t Mevents = current_parsed_events.size();
+	
+	//-------- Common data (64bit)
+	uint32_t common_header64 = *iptr++;
+	uint32_t common_header64_len = common_header64 & 0xFFFF;
+	uint64_t *iptr64 = (uint64_t*)iptr;
+	iptr = &iptr[common_header64_len];
+
+	// First event number
+   uint64_t first_event_num = *iptr64++;
+
+   // Hi and lo 32bit words in 64bit numbers seem to be
+   // switched for events read from ET, but not read from
+   // file. Not sure if this is in the swapping routine
+//   if(source_type==kETSource) first_event_num = (first_event_num>>32) | (first_event_num<<32);
+
+	// Average timestamps
+   uint32_t Ntimestamps = (common_header64_len/2)-1;
+   if(tag & 0x2) Ntimestamps--; // subtract 1 for run number/type word if present
+	vector<uint64_t> avg_timestamps;
+   for(uint32_t i=0; i<Ntimestamps; i++) avg_timestamps.push_back(*iptr64++);
+
+   // run number and run type
+	uint32_t run_number = 0;
+	uint32_t run_type   = 0;
+   if(tag & 0x02){
+       run_number = (*iptr64) >> 32;
+       run_type   = (*iptr64) & 0xFFFFFFFF;
+		 iptr64++;
+   }
+
+	//-------- Common data (16bit)
+	uint32_t common_header16 = *iptr++;
+	uint32_t common_header16_len = common_header16 & 0xFFFF;
+	uint16_t *iptr16 = (uint16_t*)iptr;
+	iptr = &iptr[common_header16_len];
+
+	vector<uint16_t> event_types;
+   for(uint32_t i=0; i<Mevents; i++) event_types.push_back(*iptr16++);
+	
+	//-------- ROC data (32bit)
+	for(uint32_t iroc=0; iroc<Nrocs; iroc++){
+		uint32_t common_header32 = *iptr++;
+		uint32_t common_header32_len = common_header32 & 0xFFFF;
+		uint32_t rocid = common_header32 >> 24;
+
+		uint32_t Nwords_per_event = common_header32_len/Mevents;
+		for(auto pe : current_parsed_events){
+
+			DCODAROCInfo *codarocinfo = pe->NEW_DCODAROCInfo();
+			codarocinfo->rocid = rocid;
+
+			uint64_t ts_low  = *iptr++;
+			uint64_t ts_high = *iptr++;
+			codarocinfo->timestamp = (ts_high<<32) + ts_low;
+			codarocinfo->misc.clear(); // could be recycled from previous event
+			for(uint32_t i=2; i<Nwords_per_event; i++) codarocinfo->misc.push_back(*iptr++);
+			
+			if(iptr > iend){
+				throw JException("Bad data format in ParseBuiltTriggerBank!", __FILE__, __LINE__);
+			}
+		}
+	}
+	
+	//-------- Make DCODAEventInfo objects
+	uint64_t ievent = 0;
+	for(auto pe : current_parsed_events){
+
+		pe->run_number = run_number; // may be overwritten in JEventSource_EVIOpp::GetEvent()
+
+		DCODAEventInfo *codaeventinfo = pe->NEW_DCODAEventInfo();
+		codaeventinfo->run_number     = run_number;
+		codaeventinfo->run_type       = run_type;
+		codaeventinfo->event_number   = first_event_num + ievent;
+		codaeventinfo->event_type     = event_types.empty() ? 0:event_types[ievent];
+		codaeventinfo->avg_timestamp  = avg_timestamps.empty() ? 0:avg_timestamps[ievent];
+		ievent++;
+	}
 }
 
 //---------------------------------
@@ -1521,6 +1610,76 @@ void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t
 	while(iptr<iend && (*iptr&0xF8000000)==0xF8000000)iptr++;
 }
 
+#if 1
+//----------------------------
+// LinkAssociationsModuleOnlyB
+//----------------------------
+template<class T, class U>
+void LinkAssociationsModuleOnlyB(vector<T*> &a, vector<U*> &b)
+{
+	for(uint32_t i=0; i<b.size(); i++){
+		for(uint32_t j=0; j<a.size(); j++){
+			if(a[j]->rocid!=b[i]->rocid) continue;
+			if(a[j]->slot!=b[i]->slot) continue;
+			b[i]->AddAssociatedObject(a[j]);
+		}
+	}
+}
+
+//----------------------------
+// LinkAssociationsChannelOnlyB
+//----------------------------
+template<class T, class U>
+void LinkAssociationsChannelOnlyB(vector<T*> &a, vector<U*> &b)
+{
+	for(uint32_t i=0; i<b.size(); i++){
+		for(uint32_t j=0; j<a.size(); j++){
+			if(a[j]->rocid!=b[i]->rocid) continue;
+			if(a[j]->slot!=b[i]->slot) continue;
+			if(a[j]->channel!=b[i]->channel) continue;
+			b[i]->AddAssociatedObject(a[j]);
+			a[j]->AddAssociatedObject(b[i]);
+		}
+	}
+}
+
+//----------------------------
+// LinkAssociationsB
+//----------------------------
+template<class T, class U>
+void LinkAssociationsB(vector<T*> &a, vector<U*> &b)
+{
+	for(uint32_t i=0; i<b.size(); i++){
+		for(uint32_t j=0; j<a.size(); j++){
+			if(a[j]->rocid!=b[i]->rocid) continue;
+			if(a[j]->slot!=b[i]->slot) continue;
+			if(a[j]->channel!=b[i]->channel) continue;
+			if(a[j]->pulse_number!=b[i]->pulse_number) continue;
+			b[i]->AddAssociatedObject(a[j]);
+		}
+	}
+}
+
+//----------------------------
+// LinkAssociationsConfig
+//----------------------------
+template<class T, class U>
+void LinkAssociationsConfigB(vector<T*> &a, vector<U*> &b)
+{
+	for(uint32_t i=0; i<b.size(); i++){
+		uint32_t slot_mask = 1 << b[i]->slot;
+		for(uint32_t j=0; j<a.size(); j++){
+			if(a[j]->rocid!=b[i]->rocid) continue;
+			
+			if(a[j]->slot_mask & slot_mask){
+				b[i]->AddAssociatedObject(a[j]);
+			}
+		}
+	}
+}
+
+#else
+
 //----------------------------
 // LinkAssociationsModuleOnlyB
 //----------------------------
@@ -1811,6 +1970,8 @@ void LinkAssociationsConfigB(vector<T*> &a, vector<U*> &b)
 	}
 }
 
+#endif
+
 //----------------
 // SortByROCID
 //----------------
@@ -1870,30 +2031,36 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 	
 		//---------------- Sort all vectors so we can optimize linking
 
-		// fADC250
-		if(pe->vDf250Config.size()>1       ) sort(pe->vDf250Config.begin(),        pe->vDf250Config.end(),        SortByROCID<Df250Config>              );
-		if(pe->vDf250TriggerTime.size()>1  ) sort(pe->vDf250TriggerTime.begin(),   pe->vDf250TriggerTime.end(),   SortByModule<Df250TriggerTime>        );
-		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByPulseNumber<Df250PulseIntegral> );
-		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByPulseNumber<Df250PulseTime>     );
-		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByPulseNumber<Df250PulsePedestal> );
+// vector<Df250PulseIntegral*> vDf250PulseIntegral = pe->vDf250PulseIntegral;
+// vector<DF1TDCHit*> vDF1TDCHit = pe->vDF1TDCHit;
+// vector<Df125CDCPulse*> vDf125CDCPulse = pe->vDf125CDCPulse;
+// vector<Df125FDCPulse*> vDf125FDCPulse = pe->vDf125FDCPulse;
+// vector<DCAEN1290TDCHit*> vDCAEN1290TDCHit = pe->vDCAEN1290TDCHit;
 
-		// fADC125
-		if(pe->vDf125Config.size()>1       ) sort(pe->vDf125Config.begin(),        pe->vDf125Config.end(),        SortByROCID<Df125Config>              );
-		if(pe->vDf125TriggerTime.size()>1  ) sort(pe->vDf125TriggerTime.begin(),   pe->vDf125TriggerTime.end(),   SortByModule<Df125TriggerTime>        );
-		if(pe->vDf125PulseIntegral.size()>1) sort(pe->vDf125PulseIntegral.begin(), pe->vDf125PulseIntegral.end(), SortByPulseNumber<Df125PulseIntegral> );
-		if(pe->vDf125CDCPulse.size()>1     ) sort(pe->vDf125CDCPulse.begin(),      pe->vDf125CDCPulse.end(),      SortByChannel<Df125CDCPulse>          );
-		if(pe->vDf125FDCPulse.size()>1     ) sort(pe->vDf125FDCPulse.begin(),      pe->vDf125FDCPulse.end(),      SortByChannel<Df125FDCPulse>          );
-		if(pe->vDf125PulseTime.size()>1    ) sort(pe->vDf125PulseTime.begin(),     pe->vDf125PulseTime.end(),     SortByPulseNumber<Df125PulseTime>     );
-		if(pe->vDf125PulsePedestal.size()>1) sort(pe->vDf125PulsePedestal.begin(), pe->vDf125PulsePedestal.end(), SortByPulseNumber<Df125PulsePedestal> );
-
-		// F1TDC
-		if(pe->vDF1TDCConfig.size()>1      ) sort(pe->vDF1TDCConfig.begin(),       pe->vDF1TDCConfig.end(),       SortByROCID<DF1TDCConfig>             );
-		if(pe->vDF1TDCTriggerTime.size()>1 ) sort(pe->vDF1TDCTriggerTime.begin(),  pe->vDF1TDCTriggerTime.end(),  SortByModule<DF1TDCTriggerTime>       );
-		if(pe->vDF1TDCHit.size()>1         ) sort(pe->vDF1TDCHit.begin(),          pe->vDF1TDCHit.end(),          SortByModule<DF1TDCHit>               );
-
-		// CAEN1290TDC
-		if(pe->vDCAEN1290TDCConfig.size()>1) sort(pe->vDCAEN1290TDCConfig.begin(), pe->vDCAEN1290TDCConfig.end(), SortByROCID<DCAEN1290TDCConfig>       );
-		if(pe->vDCAEN1290TDCHit.size()>1   ) sort(pe->vDCAEN1290TDCHit.begin(),    pe->vDCAEN1290TDCHit.end(),    SortByModule<DCAEN1290TDCHit>         );
+// 		// fADC250
+// 		if(pe->vDf250Config.size()>1       ) sort(pe->vDf250Config.begin(),        pe->vDf250Config.end(),        SortByROCID<Df250Config>              );
+// 		if(pe->vDf250TriggerTime.size()>1  ) sort(pe->vDf250TriggerTime.begin(),   pe->vDf250TriggerTime.end(),   SortByModule<Df250TriggerTime>        );
+// 		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByPulseNumber<Df250PulseIntegral> );
+// 		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByPulseNumber<Df250PulseTime>     );
+// 		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByPulseNumber<Df250PulsePedestal> );
+// 
+// 		// fADC125
+// 		if(pe->vDf125Config.size()>1       ) sort(pe->vDf125Config.begin(),        pe->vDf125Config.end(),        SortByROCID<Df125Config>              );
+// 		if(pe->vDf125TriggerTime.size()>1  ) sort(pe->vDf125TriggerTime.begin(),   pe->vDf125TriggerTime.end(),   SortByModule<Df125TriggerTime>        );
+// 		if(pe->vDf125PulseIntegral.size()>1) sort(pe->vDf125PulseIntegral.begin(), pe->vDf125PulseIntegral.end(), SortByPulseNumber<Df125PulseIntegral> );
+// 		if(pe->vDf125CDCPulse.size()>1     ) sort(pe->vDf125CDCPulse.begin(),      pe->vDf125CDCPulse.end(),      SortByChannel<Df125CDCPulse>          );
+// 		if(pe->vDf125FDCPulse.size()>1     ) sort(pe->vDf125FDCPulse.begin(),      pe->vDf125FDCPulse.end(),      SortByChannel<Df125FDCPulse>          );
+// 		if(pe->vDf125PulseTime.size()>1    ) sort(pe->vDf125PulseTime.begin(),     pe->vDf125PulseTime.end(),     SortByPulseNumber<Df125PulseTime>     );
+// 		if(pe->vDf125PulsePedestal.size()>1) sort(pe->vDf125PulsePedestal.begin(), pe->vDf125PulsePedestal.end(), SortByPulseNumber<Df125PulsePedestal> );
+// 
+// 		// F1TDC
+// 		if(pe->vDF1TDCConfig.size()>1      ) sort(pe->vDF1TDCConfig.begin(),       pe->vDF1TDCConfig.end(),       SortByROCID<DF1TDCConfig>             );
+// 		if(pe->vDF1TDCTriggerTime.size()>1 ) sort(pe->vDF1TDCTriggerTime.begin(),  pe->vDF1TDCTriggerTime.end(),  SortByModule<DF1TDCTriggerTime>       );
+// 		if(pe->vDF1TDCHit.size()>1         ) sort(pe->vDF1TDCHit.begin(),          pe->vDF1TDCHit.end(),          SortByModule<DF1TDCHit>               );
+// 
+// 		// CAEN1290TDC
+// 		if(pe->vDCAEN1290TDCConfig.size()>1) sort(pe->vDCAEN1290TDCConfig.begin(), pe->vDCAEN1290TDCConfig.end(), SortByROCID<DCAEN1290TDCConfig>       );
+// 		if(pe->vDCAEN1290TDCHit.size()>1   ) sort(pe->vDCAEN1290TDCHit.begin(),    pe->vDCAEN1290TDCHit.end(),    SortByModule<DCAEN1290TDCHit>         );
 
 		//----------------- Link all associations
 		
@@ -1945,6 +2112,12 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 			LinkAssociationsChannelOnlyB(pe->vDf125WindowRawData, pe->vDf125CDCPulse);
 			LinkAssociationsChannelOnlyB(pe->vDf125WindowRawData, pe->vDf125FDCPulse);
 		}
+
+// pe->vDf250PulseIntegral = vDf250PulseIntegral;
+// pe->vDF1TDCHit = vDF1TDCHit;
+// pe->vDf125CDCPulse = vDf125CDCPulse;
+// pe->vDf125FDCPulse = vDf125FDCPulse;
+// pe->vDCAEN1290TDCHit = vDCAEN1290TDCHit;
 	}
 
 }
