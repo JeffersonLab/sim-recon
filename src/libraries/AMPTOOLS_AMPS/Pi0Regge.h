@@ -6,6 +6,7 @@
 #include "IUAmpTools/AmpParameter.h"
 #include "GPUManager/GPUCustomTypes.h"
 
+#include "TH1D.h"
 #include <string>
 #include <complex>
 #include <vector>
@@ -31,7 +32,11 @@ public:
 	
 private:
 
-	GDouble Pgamma, PolPlane;
+	GDouble PolPlane;
+
+	TH1D *totalFlux_vs_E;
+	TH1D *polFlux_vs_E;
+	TH1D *polFrac_vs_E;
 };
 
 #endif
