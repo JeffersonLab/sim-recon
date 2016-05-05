@@ -182,6 +182,8 @@ extern double BCAL_TDC_BASE_TIME_OFFSET;        // -100.0 (from calibDB BCAL/bas
 
 extern double BCAL_XTALK_FRACT;
 
+extern double BCAL_C_EFFECTIVE;
+
 // The following are not currently in use
 extern double BCAL_DARKRATE_GHZ;                // 0.0176 (from calibDB BCAL/bcal_parms) for 4x4 array
 extern double BCAL_DEVICEPDE;                   // 0.21   (from calibDB BCAL/bcal_parms)
