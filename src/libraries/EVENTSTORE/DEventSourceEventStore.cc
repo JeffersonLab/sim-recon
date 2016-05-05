@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <iterator>
 #include <stdlib.h>
+#include <limits>
+
 using namespace std;
 
 #include <DANA/DApplication.h>
@@ -45,7 +47,7 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	es_data_loaded = false;
 	event_source = NULL;
 	min_run = 0;
-	max_run = INT_MAX;   // default to something ridiculously large
+	max_run = numeric_limits<int>::max();   // default to something ridiculously large
 	esdb_connection = "mysql://es_user@hallddb.jlab.org/EventStoreTMP";    // default to main JLab ES server
 	BASE_SKIM_INDEX = 20;
 	MAX_SKIM_INDEX = 64 - BASE_SKIM_INDEX;
@@ -116,7 +118,7 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 		
 		if(tokens.size() > 3) {
 			// parse the rest
-			int token_ind = 3;
+			size_t token_ind = 3;
 			
 			// the next argument is the data grade to use
 			grade = tokens[token_ind++];
@@ -163,7 +165,7 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 					}
 					
 					// sanity check - don't allow a million skims!
-					if(MAX_SKIM_INDEX - BASE_SKIM_INDEX < skim_list.size()) {
+					if(MAX_SKIM_INDEX - BASE_SKIM_INDEX < int(skim_list.size())) {
 						throw JException("Too many skims specified!!");
 					}
 				} else {
@@ -260,6 +262,7 @@ DEventSourceEventStore::~DEventSourceEventStore()
 //---------------------------------
 jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
 {
+
 	// FOR DEBUGGING - EMIT EVENTS FOREVER
 	if(TEST_MODE) {
 		// output some fake event with skim information
@@ -269,13 +272,12 @@ jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
    		//event.SetRef(NULL);
     	event.SetStatusBit(kSTATUS_FROM_FILE);
     	event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
-		
+
 		DEventStoreEvent *the_es_event = new DEventStoreEvent();
-		the_es_event->event_source = static_cast<JEventSource*>(this);
 		event.SetRef(the_es_event);
 		for(int i=0; i<4; i++)
 			if(gRandom->Uniform() < 0.5)
-				the_es_event->skims.insert(skim_list[i]);
+				the_es_event->Add_Skim(skim_list[i]);
 
 		return NOERROR;
 	}
@@ -297,10 +299,12 @@ jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
 			// To store the skim and other EventStore information for the event
 			// we wrap the actual event data and store our information in the wrapper
 			DEventStoreEvent *the_es_event = new DEventStoreEvent();
-			the_es_event->event_source = static_cast<JEventSource*>(this);   // analysis library needs this?
-			the_es_event->data = event.GetRef();    // save the actual event data
+			the_es_event->Set_EventSource(event_source);
+			the_es_event->Set_SourceRef(event.GetRef());    // save the actual event data
 			event.SetRef(the_es_event);
-		
+		    event.SetStatusBit(kSTATUS_FROM_FILE);
+		    event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+
 			// tag event with skims
 			;
 		} else if(retval == NO_MORE_EVENTS_IN_SOURCE) {   
@@ -337,20 +341,17 @@ jerror_t DEventSourceEventStore::GetObjects(JEvent &event, JFactory_base *factor
 	if(!factory) throw RESOURCE_UNAVAILABLE;
 
 	// return meta-EventStore information
-	JEventLoop* locEventLoop = event.GetJEventLoop();
     string dataClassName = factory->GetDataClassName();
 	
 	if (dataClassName =="DESSkimData") {
 		JFactory<DESSkimData> *essd_factory = dynamic_cast<JFactory<DESSkimData>*>(factory);
 		
-		LockRead();			// LOCK class data
-		vector<DESSkimData*> skim_data_vec;
 		DEventStoreEvent *the_es_event = static_cast<DEventStoreEvent *>(event.GetRef());
-		DESSkimData *skim_data = new DESSkimData(the_es_event->skims, skim_list);
-		skim_data_vec.push_back(skim_data);
-		UnlockRead();       // UNLOCK
+		DESSkimData *skim_data = new DESSkimData(the_es_event->Get_Skims(), skim_list);
 
+		vector<DESSkimData*> skim_data_vec(1, skim_data);
 		essd_factory->CopyTo(skim_data_vec);
+
 		return NOERROR;
 	}
 	
@@ -359,7 +360,7 @@ jerror_t DEventSourceEventStore::GetObjects(JEvent &event, JFactory_base *factor
 	// See GetEvent() for the motivation for this
 	// Unwrap the event...
 	DEventStoreEvent *the_es_event = static_cast<DEventStoreEvent *>(event.GetRef());
-	event.SetRef(the_es_event->data);
+	event.SetRef(the_es_event->Get_SourceRef());
 	// ..now grab the objects...
 	jerror_t retval = event_source->GetObjects(event, factory);
 	// ...and wrap it back up
@@ -377,7 +378,7 @@ jerror_t DEventSourceEventStore::MoveToNextEvent()
 	if(load_all_skims)
 		return NOERROR;
 		
-	
+	return NOERROR;
 }
 
 //---------------------------------
@@ -405,15 +406,45 @@ jerror_t DEventSourceEventStore::OpenNextFile()
 		delete event_source;
 		event_source = NULL;
 	}
+
+	//Get generators
+	vector<JEventSourceGenerator*> locEventSourceGenerators = japp->GetEventSourceGenerators();
 	
+	//Get event source
 	while( (event_source == NULL) && (current_file_itr != data_files.end()) ) {
-		// TO FIX: properly handle multiple data types
-		try {
-			event_source = static_cast<JEventSource*>(new DEventSourceREST(current_file_itr->c_str()));
-		} catch (...) {
-			event_source = NULL;
+
+		// Loop over JEventSourceGenerator objects and find the one
+		// (if any) that has the highest chance of being able to read
+		// this source. The return value of 
+		// JEventSourceGenerator::CheckOpenable(source) is a liklihood that
+		// the named source can be read by the JEventSource objects
+		// created by the generator. In most cases, the liklihood will
+		// be either 0.0 or 1.0. In the case that 2 or more generators return
+		// equal liklihoods, the first one in the list will be used.
+		JEventSourceGenerator* locEventSourceGenerator = NULL;
+		double liklihood = 0.0;
+		string locFileName = current_file_itr->c_str();
+		for(unsigned int i=0; i<locEventSourceGenerators.size(); i++)
+		{
+			double my_liklihood = locEventSourceGenerators[i]->CheckOpenable(locFileName);
+			if(my_liklihood > liklihood)
+			{
+				liklihood = my_liklihood;
+				locEventSourceGenerator = locEventSourceGenerators[i];
+			}
 		}
-		
+
+		if(locEventSourceGenerator != NULL)
+		{
+			jout<<"Opening source \""<<locFileName<<"\" of type: "<<locEventSourceGenerator->Description()<<endl;
+			event_source = locEventSourceGenerator->MakeJEventSource(locFileName);
+		}
+
+		if(event_source == NULL){
+			jerr<<endl;
+			jerr<<"  xxxxxxxxxxxx  Unable to open event source \""<<locFileName<<"\"!  xxxxxxxxxxxx"<<endl;
+		}
+
 		current_file_itr++;
 	}
 	

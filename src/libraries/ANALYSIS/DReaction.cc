@@ -15,7 +15,7 @@ DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 	dTTreeOutputFileName = "";
 	dEnableTTreeOutputFlag = false;
 
-	dEventStoreQuery = pair<string, string>("all", "");
+	dEventStoreSkims = "";
 
 	dAnyBlueprintFlag = false;
 	dAnyComboFlag = false;

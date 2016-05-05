@@ -25,15 +25,13 @@ class DESSkimData : public JObject {
 	
 	JOBJECT_PUBLIC(DESSkimData);
 
-	DESSkimData(set<string> &in_event_skims, vector<string> &in_skim_list) :
+	DESSkimData(const set<string> &in_event_skims, const vector<string> &in_skim_list) :
 			skim_list(in_skim_list), event_skims(in_event_skims) {}
-		//skim_list = in_skim_list;
-		//event_skims = in_event_skims;
-	//}
 	~DESSkimData() {}
 
 	inline const vector<string>& GetAllSkims() const { return skim_list; } 
 	inline const set<string>& GetEventSkims() const { return event_skims; } 
+	bool Get_IsEventSkim(string locSkim) const{return (event_skims.find(locSkim) != event_skims.end());}
 
 
 	void Print(string mode="") const { 
