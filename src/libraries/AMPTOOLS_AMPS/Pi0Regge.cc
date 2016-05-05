@@ -11,13 +11,82 @@
 #include "IUAmpTools/Kinematics.h"
 #include "AMPTOOLS_AMPS/Pi0Regge.h"
 
+// We will use cobrems to get the polarization fraction as a function on photon energy
+// FORTRAN routines
+
+extern "C"{
+void cobrems_(float* Emax, float* Epeak, float* emitmr, float* radt, float* Dist, float* collDiam, int* doPolFluxfloat);
+float dntdx_(float* x);
+float dnidx_(float* x);
+float dncdx_(float* x);
+};
+
+// Wrapper function for total
+static double dNtdx(double x)
+{
+    float xx = x;
+    return (double)dntdx_(&xx);
+}
+
+static double dNidx(double x)
+{
+    float xx = x;
+    return (double)dnidx_(&xx);
+}
+
+static double dNcdx(double x)
+{
+    float xx = x;
+    return (double)dncdx_(&xx);
+}
+
 Pi0Regge::Pi0Regge( const vector< string >& args ) :
 UserAmplitude< Pi0Regge >( args )
 {
-	assert( args.size() == 2 );
-	Pgamma = atof( args[0].c_str() );
+	assert( args.size() == 1 );
 	// Polarization plane angle (PARA = 0 and PERP = PI/2)
-	PolPlane = atof( args[1].c_str() );
+	PolPlane = atof( args[0].c_str() );
+
+	// Initialize coherent brem table
+	// Do this over the full range since we will be using this as a lookup
+	float Emax  = 12.0;
+	float Epeak = 9.0;
+	float Elow  = 0.139*2;
+	float Ehigh = 12.0;
+	
+	int doPolFlux=0;  // want total flux (1 for polarized flux)
+	float emitmr=10.e-9; // electron beam emittance
+	float radt=20.e-6; // radiator thickness in m
+	float collDiam=0.0034; // meters
+	float Dist = 76.0; // meters
+	cobrems_(&Emax, &Epeak, &emitmr, &radt, &Dist, &collDiam, &doPolFlux);
+	
+	// Create histogram
+	totalFlux_vs_E = new TH1D("totalFlux_vs_E", "Total Flux vs. E_{#gamma}", 1000, Elow, Ehigh);
+	polFlux_vs_E   = new TH1D("polFlux_vs_E", "Polarized Flux vs. E_{#gamma}", 1000, Elow, Ehigh);
+	polFrac_vs_E   = new TH1D("polFrac_vs_E", "Polarization Fraction vs. E_{#gamma}", 1000, Elow, Ehigh);
+
+	// Fill totalFlux
+	for(int i=1;i<=totalFlux_vs_E->GetNbinsX(); i++){
+		double x = totalFlux_vs_E->GetBinCenter(i)/Emax;
+		double y = 0;
+		//if(Epeak<Elow) y = dNidx(x);
+		y = dNtdx(x);
+		totalFlux_vs_E->SetBinContent(i, y);
+	}
+
+	doPolFlux=1;
+	cobrems_(&Emax, &Epeak, &emitmr, &radt, &Dist, &collDiam, &doPolFlux);
+	// Fill totalFlux
+	for(int i=1;i<=polFlux_vs_E->GetNbinsX(); i++){
+		double x = polFlux_vs_E->GetBinCenter(i)/Emax;
+		double y = 0;
+		//if(Epeak<Elow) y = dNidx(x);
+		y = dNcdx(x);
+		polFlux_vs_E->SetBinContent(i, y);
+	}
+	
+	polFrac_vs_E->Divide(polFlux_vs_E, totalFlux_vs_E);
 }
 
 
@@ -38,8 +107,16 @@ Pi0Regge::calcAmplitude( GDouble** pKin ) const {
 	
 	// phi dependence needed for polarized distribution
 	TLorentzVector p1_cm = cmBoost * p1;
-	GDouble phi = p1_cm.Phi() + PolPlane*TMath::Pi()/180. + TMath::Pi()/2.;
+	GDouble phi = p1_cm.Phi() + PolPlane*TMath::Pi()/180.;
 	GDouble cos2Phi = cos(2.*phi);
+	
+	// polarization from cobrem.F
+	int bin = polFrac_vs_E->GetXaxis()->FindBin(beam.E());
+	GDouble Pgamma;
+	if (bin == 0 || bin > polFrac_vs_E->GetXaxis()->GetNbins()){
+		Pgamma = 0.;
+	}
+	else Pgamma = polFrac_vs_E->GetBinContent(bin);
 
 	// factors needed to calculate amplitude in c++ code
 	GDouble Ecom = cm.M();
