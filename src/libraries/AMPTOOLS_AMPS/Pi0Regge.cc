@@ -14,8 +14,10 @@
 Pi0Regge::Pi0Regge( const vector< string >& args ) :
 UserAmplitude< Pi0Regge >( args )
 {
-	assert( args.size() == 1 );
+	assert( args.size() == 2 );
 	Pgamma = atof( args[0].c_str() );
+	// Polarization plane angle (PARA = 0 and PERP = PI/2)
+	PolPlane = atof( args[1].c_str() );
 }
 
 
@@ -36,7 +38,7 @@ Pi0Regge::calcAmplitude( GDouble** pKin ) const {
 	
 	// phi dependence needed for polarized distribution
 	TLorentzVector p1_cm = cmBoost * p1;
-	GDouble phi = p1_cm.Phi();
+	GDouble phi = p1_cm.Phi() + PolPlane*TMath::Pi()/180. + TMath::Pi()/2.;
 	GDouble cos2Phi = cos(2.*phi);
 
 	// factors needed to calculate amplitude in c++ code

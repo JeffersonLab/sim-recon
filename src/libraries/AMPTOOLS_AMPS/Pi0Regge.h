@@ -31,7 +31,7 @@ public:
 	
 private:
 
-	GDouble Pgamma;
+	GDouble Pgamma, PolPlane;
 };
 
 #endif
