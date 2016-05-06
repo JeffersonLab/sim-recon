@@ -1661,6 +1661,24 @@ void LinkAssociationsB(vector<T*> &a, vector<U*> &b)
 }
 
 //----------------------------
+// LinkAssociationsWithPedCopyB
+//----------------------------
+template<class T, class U>
+void LinkAssociationsWithPedCopyB(vector<T*> &a, vector<U*> &b)
+{
+	for(uint32_t i=0; i<b.size(); i++){
+		for(uint32_t j=0; j<a.size(); j++){
+			if(a[j]->rocid!=b[i]->rocid) continue;
+			if(a[j]->slot!=b[i]->slot) continue;
+			if(a[j]->channel!=b[i]->channel) continue;
+			if(a[j]->pulse_number!=b[i]->pulse_number) continue;
+			b[i]->AddAssociatedObject(a[j]);
+			b[i]->pedestal = a[j]->pedestal;
+		}
+	}
+}
+
+//----------------------------
 // LinkAssociationsConfig
 //----------------------------
 template<class T, class U>
@@ -2095,7 +2113,8 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 
 		// Connect Df250 pulse objects
 		LinkAssociationsB(pe->vDf250PulseTime,     pe->vDf250PulseIntegral);
-		LinkAssociationsB(pe->vDf250PulsePedestal, pe->vDf250PulseIntegral);
+//		LinkAssociationsB(pe->vDf250PulsePedestal, pe->vDf250PulseIntegral);
+		LinkAssociationsWithPedCopyB(pe->vDf250PulsePedestal, pe->vDf250PulseIntegral);
 		if(!pe->vDf250WindowRawData.empty()){
 			LinkAssociationsChannelOnlyB(pe->vDf250WindowRawData, pe->vDf250PulseIntegral);
 			LinkAssociationsChannelOnlyB(pe->vDf250WindowRawData, pe->vDf250PulseTime);
