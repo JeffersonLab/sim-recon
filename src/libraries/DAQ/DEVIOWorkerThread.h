@@ -66,6 +66,7 @@ class DEVIOWorkerThread{
 		atomic<bool> done;
 		JOBTYPE jobtype;
 		uint64_t istreamorder;
+		uint64_t run_number_seed;
 		
 		mutex mtx;
 		condition_variable cv;

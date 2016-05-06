@@ -104,6 +104,8 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	hdet                 = NULL;
 	et_quit_next_timeout = false;
 
+	uint64_t run_number_seed = 0;
+
 	// Open either ET system or file
 	if(this->source_name.find("ET:") == 0){
 
@@ -117,7 +119,6 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 		}
 		source_type = kETSource;
 
-
 	}else{
 
 		// Try to open the file.
@@ -129,6 +130,8 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 			throw JException("Failed to open EVIO file: " + this->source_name, __FILE__, __LINE__); // throw exception indicating error
 		}
 		source_type = kFileSource;
+		
+		run_number_seed = SearchFileForRunNumber(); // try and dig out run number from file
 	}
 
 	if(VERBOSE>0) evioout << "Success opening event source \"" << this->source_name << "\"!" <<endl;
@@ -148,6 +151,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 		w->PARSE_EPICS       = PARSE_EPICS;
 		w->PARSE_EVENTTAG    = PARSE_EVENTTAG;
 		w->PARSE_TRIGGER     = PARSE_TRIGGER;
+		w->run_number_seed   = run_number_seed;
 		worker_threads.push_back(w);
 	}
 
@@ -576,3 +580,116 @@ void JEventSource_EVIOpp::LinkBORassociations(DParsedEvent *pe)
 //
 //}
 
+//----------------
+// SearchFileForRunNumber
+//----------------
+uint64_t JEventSource_EVIOpp::SearchFileForRunNumber(void)
+{
+	/// This is called from the constructor when reading
+	/// from a file to seed the default run number. This
+	/// is needed because the first event is probably a BOR
+	/// event which does not contain the run number. The run
+	/// number would then be reported as "0" and incorrect 
+	/// calibrations and field maps would be read in. This 
+	/// will try searching past the first (BOR) event for 
+	/// either a physics event, or an EPICS event that has
+	/// the run number defined in it.
+	///
+	/// The value returned from this will be copied into each
+	/// DEVIOWorkerThread object when it is created. It will
+	/// be used to initialize the run number for each event
+	/// the worker thread processes. If the worker thread 
+	/// processes a physics event containing a run number,
+	/// then that will overwrite the run number in the
+	/// DParsedEvent. Finally, if the user specified a run
+	/// number, then that will be reported to JANA in lieu of
+	/// the one in DParsedEvent.
+
+	uint32_t buff_len = 4000000;
+	uint32_t *buff = new uint32_t[buff_len];
+	HDEVIO *hdevio = new HDEVIO(source_name);
+	while(hdevio->read(buff, buff_len)){
+
+		// Assume first word is number of words in bank
+		uint32_t *iptr = buff;
+		uint32_t *iend = &iptr[*iptr - 1];
+		if(*iptr > 2048) iend = &iptr[2048];
+		bool has_timestamps = false;
+		while(iptr<iend){
+			iptr++;
+
+			// EPICS event
+			if( (*iptr & 0xff000f) ==  0x600001){
+				if(VERBOSE>2) evioout << "     Found EPICS header. Looking for HD:coda:daq:run_number ..." << endl;
+				const char *cptr = (const char*)&iptr[1];
+				const char *cend = (const char*)iend;
+				const char *needle = "HD:coda:daq:run_number=";
+				while(cptr<cend){
+					if(VERBOSE>4) evioout << "       \""<<cptr<<"\"" << endl;
+					if(!strncmp(cptr, needle, strlen(needle))){
+					if(VERBOSE>2) evioout << "     Found it!" << endl;
+					uint64_t run_number_seed = atoi(&cptr[strlen(needle)]);
+					if(hdevio) delete hdevio;
+					if(buff) delete[] buff;
+					return run_number_seed;
+				}
+				cptr+=4; // should only start on 4-byte boundary!
+			}
+		}
+
+		// BOR event
+		if( (*iptr & 0xffffffff) ==  0x00700E01) continue;
+
+		// PHYSICS event
+		bool not_in_this_buffer = false;
+		switch((*iptr)>>16){
+			case 0xFF10:
+			case 0xFF11:
+			case 0xFF20:
+			case 0xFF21:
+			case 0xFF24:
+			case 0xFF25:
+			case 0xFF30:
+				not_in_this_buffer = true;
+				break;
+			case 0xFF23:
+			case 0xFF27:
+				has_timestamps = true;
+			case 0xFF22:
+			case 0xFF26:
+				break;
+			default:
+				continue;
+		}
+
+		if(not_in_this_buffer) break; // go to next EVIO buffer
+
+		iptr++;
+		if( ((*iptr)&0x00FF0000) != 0x000A0000) { iptr--; continue; }
+		uint32_t M = iptr[-3] & 0x000000FF; // Number of events from Physics Event header
+		if(VERBOSE>2) evioout << " ...(epic quest) Trigger bank " << (has_timestamps ? "does":"doesn't") << " have timestamps. Nevents in block M=" << M <<endl;
+		iptr++;
+		uint64_t *iptr64 = (uint64_t*)iptr;
+
+		uint64_t event_num = *iptr64;
+		if(VERBOSE>3) evioout << " ....(epic quest) Event num: " << event_num <<endl;
+		iptr64++;
+		if(has_timestamps) iptr64 = &iptr64[M]; // advance past timestamps
+
+		uint64_t run_number_seed = (*iptr64)>>32;
+		if(VERBOSE>1) evioout << " .. (epic quest) Found run number: " << run_number_seed <<endl;
+
+		if(hdevio) delete hdevio;
+		if(buff) delete[] buff;
+		return run_number_seed;
+
+	} // while(iptr<iend)
+
+	if(hdevio->Nevents > 500) break;
+	} // while(hdevio->read(buff, buff_len))
+
+	if(hdevio) delete hdevio;
+	if(buff) delete[] buff;
+
+	return 0;
+}

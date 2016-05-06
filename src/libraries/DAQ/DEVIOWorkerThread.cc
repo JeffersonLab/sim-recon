@@ -47,6 +47,7 @@ DEVIOWorkerThread::DEVIOWorkerThread(
 	VERBOSE           = 1;
 	Nrecycled         = 0;       // Incremented in JEventSource_EVIOpp::Dispatcher()
 	MAX_RECYCLED      = 1000;    // In EVIO events (not L1 trigger events!)
+	run_number_seed   = 0;       // Set in JEventSource_EVIOpp constructor
 
 	in_use            = false;
 	jobtype           = JOB_NONE;
@@ -192,7 +193,6 @@ void DEVIOWorkerThread::MakeEvents(void)
 	
 	uint32_t M = 1;
 	uint64_t event_num = 0;
-	uint32_t run_number = 0;
 
 	iptr++;
 	uint32_t mask = 0xFF001000;
@@ -224,7 +224,7 @@ void DEVIOWorkerThread::MakeEvents(void)
 	
 		pe->Clear(); // return previous event's objects to pools and clear vectors
 		pe->istreamorder = istreamorder;
-		pe->run_number   = run_number;
+		pe->run_number   = run_number_seed;
 		pe->event_number = event_num++;
 		pe->sync_flag    = false;
 		pe->in_use       = true;

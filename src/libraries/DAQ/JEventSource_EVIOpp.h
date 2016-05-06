@@ -121,6 +121,7 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		           jerror_t GetObjects(jana::JEvent &event, jana::JFactory_base *factory);
 
 		               void LinkBORassociations(DParsedEvent *pe);
+		           uint64_t SearchFileForRunNumber(void);
 		
 		bool DONE;
 		std::chrono::high_resolution_clock::time_point tstart;
