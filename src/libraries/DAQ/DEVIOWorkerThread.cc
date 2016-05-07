@@ -1679,7 +1679,7 @@ void LinkAssociationsWithPedCopyB(vector<T*> &a, vector<U*> &b)
 }
 
 //----------------------------
-// LinkAssociationsConfig
+// LinkAssociationsConfigB
 //----------------------------
 template<class T, class U>
 void LinkAssociationsConfigB(vector<T*> &a, vector<U*> &b)
@@ -1691,6 +1691,25 @@ void LinkAssociationsConfigB(vector<T*> &a, vector<U*> &b)
 			
 			if(a[j]->slot_mask & slot_mask){
 				b[i]->AddAssociatedObject(a[j]);
+			}
+		}
+	}
+}
+
+//----------------------------
+// LinkAssociationsConfigWithNsamplesCopyB
+//----------------------------
+template<class T, class U>
+void LinkAssociationsConfigWithNsamplesCopyB(vector<T*> &a, vector<U*> &b)
+{
+	for(uint32_t i=0; i<b.size(); i++){
+		uint32_t slot_mask = 1 << b[i]->slot;
+		for(uint32_t j=0; j<a.size(); j++){
+			if(a[j]->rocid!=b[i]->rocid) continue;
+			
+			if(a[j]->slot_mask & slot_mask){
+				b[i]->AddAssociatedObject(a[j]);
+				b[i]->nsamples_integral = a[j]->NSA_NSB;
 			}
 		}
 	}
@@ -2084,7 +2103,8 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 		
 		// Connect Df250Config objects
 		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250WindowRawData);
-		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250PulseIntegral);
+//		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250PulseIntegral);
+		LinkAssociationsConfigWithNsamplesCopyB(pe->vDf250Config, pe->vDf250PulseIntegral);
 
 		// Connect Df125Config objects
 		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125WindowRawData);
