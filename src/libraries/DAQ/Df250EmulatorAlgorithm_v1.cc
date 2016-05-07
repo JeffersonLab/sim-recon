@@ -254,7 +254,7 @@ void Df250EmulatorAlgorithm_v1::EmulateFirmware(const Df250WindowRawData* rawDat
         f250PulseIntegral->integral = pulse_integral[p];
         f250PulseIntegral->pedestal = VMIN;
         f250PulseIntegral->nsamples_integral = NSA + NSB;
-        f250PulseIntegral->nsamples_pedestal = 4;
+        f250PulseIntegral->nsamples_pedestal = 1;
         f250PulseIntegral->emulated = true;
         f250PulseIntegral->integral_emulated = pulse_integral[p];
         f250PulseIntegral->pedestal_emulated = VMIN;

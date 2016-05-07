@@ -16,6 +16,9 @@ DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 	dEnableTTreeOutputFlag = false;
 
 	dEventStoreQuery = pair<string, string>("all", "");
+
+	dAnyBlueprintFlag = false;
+	dAnyComboFlag = false;
 }
 
 DReaction::~DReaction(void)
