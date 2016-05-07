@@ -1611,11 +1611,128 @@ void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t
 }
 
 #if 1
+
+//==================== Associated Object Linking ===================
+
+// The following are used to add objects to other objects' associated
+// objects list. This is actually split into 2 parts. One part
+// loops through vectors of objects and finds matches. The second part
+// provides for what should be done with the matched objects. This
+// may be as simple as adding one to the others associated objects
+// list. There are also a few cases where we need to do some additional
+// copying such as the pedestal from a PulsePedestal object into the
+// pedestal member of a PulseIntegral object.
+//
+// The first set of templated routines below provides what is described
+// as the "second part" above. Specifically, they call the appropriate
+// matching routine and provide it with a lambda function that does the
+// appropriate action on the objects once a match is found.
+
+// LinkConfig
+template<class T, class U>
+inline void LinkConfig(vector<T*> &a, vector<U*> &b)
+{ LinkAssociationsConfig(a, b, [](T *a, U *b){b->AddAssociatedObject(a);}); }
+
+// LinkConfigSamplesCopy
+template<class T, class U>
+inline void LinkConfigSamplesCopy(vector<T*> &a, vector<U*> &b)
+{ LinkAssociationsConfig(a, b, [](T *a, U *b){b->AddAssociatedObject(a); b->nsamples_integral = a->NSA_NSB;}); }
+
+// LinkModule
+template<class T, class U>
+inline void LinkModule(vector<T*> &a, vector<U*> &b)
+{ LinkAssociationsModule(a, b, [](T *a, U *b){b->AddAssociatedObject(a);}); }
+
+// LinkChannel
+template<class T, class U>
+inline void LinkChannel(vector<T*> &a, vector<U*> &b)
+{ LinkAssociationsChannel(a, b, [](T *a, U *b){b->AddAssociatedObject(a); a->AddAssociatedObject(b);}); }
+
+// LinkPulse
+template<class T, class U>
+inline void LinkPulse(vector<T*> &a, vector<U*> &b)
+{ LinkAssociationsPulse(a, b, [](T *a, U *b){b->AddAssociatedObject(a);}); }
+
+// LinkPulsePedCopy
+template<class T, class U>
+inline void LinkPulsePedCopy(vector<T*> &a, vector<U*> &b)
+{ LinkAssociationsPulse(a, b, [](T *a, U *b){b->AddAssociatedObject(a); b->pedestal = a->pedestal;}); }
+
+
+//----------------------------
+// LinkAssociationsConfig
+//----------------------------
+template<class T, class U, typename F>
+void LinkAssociationsConfig(vector<T*> &a, vector<U*> &b, F func)
+{
+	for(uint32_t i=0; i<b.size(); i++){
+		uint32_t slot_mask = 1 << b[i]->slot;
+		for(uint32_t j=0; j<a.size(); j++){
+			if(a[j]->rocid!=b[i]->rocid) continue;
+			if(a[j]->slot_mask & slot_mask){
+				func(a[j], b[i]);
+			}
+		}
+	}
+}
+
+//----------------------------
+// LinkAssociationsModule
+//----------------------------
+template<class T, class U, typename F>
+void LinkAssociationsModule(vector<T*> &a, vector<U*> &b, F func)
+{
+	for(uint32_t i=0; i<b.size(); i++){
+		for(uint32_t j=0; j<a.size(); j++){
+			if(a[j]->rocid!=b[i]->rocid) continue;
+			if(a[j]->slot!=b[i]->slot) continue;
+			func(a[j], b[i]);
+		}
+	}
+}
+
+//----------------------------
+// LinkAssociationsChannel
+//----------------------------
+template<class T, class U, typename F>
+void LinkAssociationsChannel(vector<T*> &a, vector<U*> &b, F func)
+{
+	for(uint32_t i=0; i<b.size(); i++){
+		for(uint32_t j=0; j<a.size(); j++){
+			if(a[j]->rocid!=b[i]->rocid) continue;
+			if(a[j]->slot!=b[i]->slot) continue;
+			if(a[j]->channel!=b[i]->channel) continue;
+			func( a[j], b[i]);
+		}
+	}
+}
+
+//----------------------------
+// LinkAssociationsPulse
+//----------------------------
+template<class T, class U, typename F>
+void LinkAssociationsPulse(vector<T*> &a, vector<U*> &b, F func)
+{
+	for(uint32_t i=0; i<b.size(); i++){
+		for(uint32_t j=0; j<a.size(); j++){
+			if(a[j]->rocid!=b[i]->rocid) continue;
+			if(a[j]->slot!=b[i]->slot) continue;
+			if(a[j]->channel!=b[i]->channel) continue;
+			if(a[j]->pulse_number!=b[i]->pulse_number) continue;
+			func(a[j], b[i]);
+		}
+	}
+}
+
+#endif
+
+#if 0
+
 //----------------------------
 // LinkAssociationsModuleOnlyB
 //----------------------------
-template<class T, class U>
-void LinkAssociationsModuleOnlyB(vector<T*> &a, vector<U*> &b)
+template<class T, class U, typename F>
+void LinkAssociationsModuleOnlyB(vector<T*> &a, vector<U*> &b, F func)
 {
 	for(uint32_t i=0; i<b.size(); i++){
 		for(uint32_t j=0; j<a.size(); j++){
@@ -1715,7 +1832,7 @@ void LinkAssociationsConfigWithNsamplesCopyB(vector<T*> &a, vector<U*> &b)
 	}
 }
 
-#else
+//#else
 
 //----------------------------
 // LinkAssociationsModuleOnlyB
@@ -2100,56 +2217,59 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 // 		if(pe->vDCAEN1290TDCHit.size()>1   ) sort(pe->vDCAEN1290TDCHit.begin(),    pe->vDCAEN1290TDCHit.end(),    SortByModule<DCAEN1290TDCHit>         );
 
 		//----------------- Link all associations
+
 		
 		// Connect Df250Config objects
-		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250WindowRawData);
-//		LinkAssociationsConfigB(pe->vDf250Config, pe->vDf250PulseIntegral);
-		LinkAssociationsConfigWithNsamplesCopyB(pe->vDf250Config, pe->vDf250PulseIntegral);
+		LinkConfigSamplesCopy(pe->vDf250Config, pe->vDf250PulseIntegral);
 
 		// Connect Df125Config objects
-		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125WindowRawData);
-		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125PulseIntegral);
-		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125CDCPulse);
-		LinkAssociationsConfigB(pe->vDf125Config, pe->vDf125FDCPulse);
+		LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125PulseIntegral);
+		LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125CDCPulse);
+		LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125FDCPulse);
 
-		// Connect vDF1TDCConfig objects
-		LinkAssociationsConfigB(pe->vDF1TDCConfig, pe->vDF1TDCHit);
+		// Connect DF1TDCConfig objects
+		LinkConfig(pe->vDF1TDCConfig, pe->vDF1TDCHit);
 
-		// Connect vDCAEN1290TDCConfig objects
-		LinkAssociationsConfigB(pe->vDCAEN1290TDCConfig, pe->vDCAEN1290TDCHit);
+		// Connect DCAEN1290TDCConfig objects
+		LinkConfig(pe->vDCAEN1290TDCConfig, pe->vDCAEN1290TDCHit);
 
 		// Connect Df250TriggerTime objects
-		LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250WindowRawData);
-		LinkAssociationsModuleOnlyB(pe->vDf250TriggerTime, pe->vDf250PulseIntegral);
+		LinkModule(pe->vDf250TriggerTime, pe->vDf250PulseIntegral);
 
 		// Connect Df125TriggerTime objects
-		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125WindowRawData);
-		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125PulseIntegral);
-		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125CDCPulse);
-		LinkAssociationsModuleOnlyB(pe->vDf125TriggerTime, pe->vDf125FDCPulse);
+		LinkModule(pe->vDf125TriggerTime, pe->vDf125PulseIntegral);
+		LinkModule(pe->vDf125TriggerTime, pe->vDf125CDCPulse);
+		LinkModule(pe->vDf125TriggerTime, pe->vDf125FDCPulse);
 
-		// Connect DF1TriggerTime objects
-		LinkAssociationsModuleOnlyB(pe->vDF1TDCTriggerTime, pe->vDF1TDCHit);
+		// Connect DF1TDCTriggerTime objects
+		LinkModule(pe->vDF1TDCTriggerTime, pe->vDF1TDCHit);
 
 		// Connect Df250 pulse objects
-		LinkAssociationsB(pe->vDf250PulseTime,     pe->vDf250PulseIntegral);
-//		LinkAssociationsB(pe->vDf250PulsePedestal, pe->vDf250PulseIntegral);
-		LinkAssociationsWithPedCopyB(pe->vDf250PulsePedestal, pe->vDf250PulseIntegral);
-		if(!pe->vDf250WindowRawData.empty()){
-			LinkAssociationsChannelOnlyB(pe->vDf250WindowRawData, pe->vDf250PulseIntegral);
-			LinkAssociationsChannelOnlyB(pe->vDf250WindowRawData, pe->vDf250PulseTime);
-			LinkAssociationsChannelOnlyB(pe->vDf250WindowRawData, pe->vDf250PulsePedestal);
-		}
+		LinkPulse(pe->vDf250PulseTime,     pe->vDf250PulseIntegral);
+		LinkPulsePedCopy(pe->vDf250PulsePedestal, pe->vDf250PulseIntegral);
 
 		// Connect Df125 pulse objects
-		LinkAssociationsB(pe->vDf125PulseTime,     pe->vDf125PulseIntegral);
-		LinkAssociationsB(pe->vDf125PulsePedestal, pe->vDf125PulseIntegral);
+		LinkPulse(pe->vDf125PulseTime,     pe->vDf125PulseIntegral);
+		LinkPulsePedCopy(pe->vDf125PulsePedestal, pe->vDf125PulseIntegral);
+
+		// Connect Df250 window raw data objects
+		if(!pe->vDf250WindowRawData.empty()){
+			LinkConfig(pe->vDf250Config, pe->vDf250WindowRawData);
+			LinkModule(pe->vDf250TriggerTime, pe->vDf250WindowRawData);
+			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulseIntegral);
+			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulseTime);
+			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulsePedestal);
+		}
+
+		// Connect Df125 window raw data objects
 		if(!pe->vDf125WindowRawData.empty()){
-			LinkAssociationsChannelOnlyB(pe->vDf125WindowRawData, pe->vDf125PulseIntegral);
-			LinkAssociationsChannelOnlyB(pe->vDf125WindowRawData, pe->vDf125PulseTime);
-			LinkAssociationsChannelOnlyB(pe->vDf125WindowRawData, pe->vDf125PulsePedestal);
-			LinkAssociationsChannelOnlyB(pe->vDf125WindowRawData, pe->vDf125CDCPulse);
-			LinkAssociationsChannelOnlyB(pe->vDf125WindowRawData, pe->vDf125FDCPulse);
+			LinkConfig(pe->vDf125Config, pe->vDf125WindowRawData);
+			LinkModule(pe->vDf125TriggerTime, pe->vDf125WindowRawData);
+			LinkChannel(pe->vDf125WindowRawData, pe->vDf125PulseIntegral);
+			LinkChannel(pe->vDf125WindowRawData, pe->vDf125PulseTime);
+			LinkChannel(pe->vDf125WindowRawData, pe->vDf125PulsePedestal);
+			LinkChannel(pe->vDf125WindowRawData, pe->vDf125CDCPulse);
+			LinkChannel(pe->vDf125WindowRawData, pe->vDf125FDCPulse);
 		}
 
 // pe->vDf250PulseIntegral = vDf250PulseIntegral;
