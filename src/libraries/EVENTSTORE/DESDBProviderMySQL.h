@@ -49,6 +49,8 @@ class DESDBProviderMySQL : public DESDBProvider {
 		int32_t GetFID(string &filename);
 		pair<string,string> GetFileNameAndType(int fid);
 
+		void PerformQuery(string query_str, string function_name);
+
 	protected:
 		// MySQL connection information
 		string user_name;

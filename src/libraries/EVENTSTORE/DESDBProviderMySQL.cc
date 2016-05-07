@@ -151,6 +151,7 @@ void DESDBProviderMySQL::Disconnect()
 
 	mysql_close(DBptr);
 	DBptr = NULL;
+	is_connected = false;
 }
 
 //---------------------------------
@@ -162,30 +163,7 @@ vector<string> DESDBProviderMySQL::GetGrades()
 
 	string query_str = "SELECT DISTINCT grade FROM Version WHERE state='active'";
 
-	// clear out any lingering data
-	if(DBresult != NULL) {	
-		mysql_free_result(DBresult);	
-		DBresult = NULL;
-	}
-
-	// execute the query
-	if(mysql_query(DBptr, query_str.c_str())) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_str << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetGrades()!");
-	}
-
-	//get results
-	DBresult = mysql_store_result(DBptr);
-
-	if(!DBresult) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_str << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetGrades()!");
-	}
-
-	//int num_returned_rows = mysql_num_rows(DBresult);
-	//int num_returned_cols = mysql_num_fields(DBresult);
+	PerformQuery(query_str, "GetGrades");
 
 	MYSQL_ROW row;
 	while((row = mysql_fetch_row(DBresult))) {
@@ -210,27 +188,7 @@ vector<string> DESDBProviderMySQL::GetSkims(string timestamp, string grade)
 	query_ss << "SELECT MAX(timeStamp) FROM Version WHERE timeStamp<='"
 			 << timestamp <<"' AND grade='" << grade << "' AND state='active'";
 					
-	// clear out any lingering data
-	if(DBresult != NULL) {	
-		mysql_free_result(DBresult);	
-		DBresult = NULL;
-	}
-
-	// execute the query
-	if(mysql_query(DBptr, query_ss.str().c_str())) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetSkims()!");
-	}
-
-	//get results
-	DBresult = mysql_store_result(DBptr);
-
-	if(!DBresult) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetSkims()!");
-	}
+	PerformQuery(query_ss.str(), "GetSkims");
 
 	int num_returned_rows = mysql_num_rows(DBresult);
 	if(num_returned_rows == 0) {
@@ -242,30 +200,12 @@ vector<string> DESDBProviderMySQL::GetSkims(string timestamp, string grade)
 	row = mysql_fetch_row(DBresult);
 	string real_timestamp(row[0]);
 	
-	// clear results
-	mysql_free_result(DBresult);	
-	DBresult = NULL;
-	
 	query_ss.str("");   // clear stringstream
 	query_ss << "SELECT DISTINCT view FROM Version,KeyFile WHERE timeStamp='"
 			 << real_timestamp <<"' AND Version.grade='" << grade 
 			 << "' AND Version.state='active' AND Version.graphid=KeyFile.graphid GROUP BY view";
 
-	// execute the query
-	if(mysql_query(DBptr, query_ss.str().c_str())) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetSkims!");
-	}
-
-	//get results
-	DBresult = mysql_store_result(DBptr);
-
-	if(!DBresult) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetSkims!");
-	}
+	PerformQuery(query_ss.str(), "GetSkims");
 
 	// get results
 	while((row = mysql_fetch_row(DBresult))) {
@@ -280,7 +220,7 @@ vector<string> DESDBProviderMySQL::GetSkims(string timestamp, string grade)
 }
 
 //---------------------------------
-// 
+// GetTimestamps
 //---------------------------------
 vector<string> DESDBProviderMySQL::GetTimestamps(string grade)
 {
@@ -292,32 +232,13 @@ vector<string> DESDBProviderMySQL::GetTimestamps(string grade)
 	query_ss << "SELECT DISTINCT timeStamp FROM Version WHERE grade='" 
 			 << grade << "' AND state='active'";
 					
-	// clear out any lingering data
-	if(DBresult != NULL) {	
-		mysql_free_result(DBresult);	
-		DBresult = NULL;
-	}
-
-	// execute the query
-	if(mysql_query(DBptr, query_ss.str().c_str())) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetSkims()!");
-	}
-
-	//get results
-	DBresult = mysql_store_result(DBptr);
-
-	if(!DBresult) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetSkims()!");
-	}
+	PerformQuery(query_ss.str(), "GetTimestamps");
 
 	int num_returned_rows = mysql_num_rows(DBresult);
 	if(num_returned_rows == 0) {
 		jerr << "Invalid grade: " + grade << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetSkims()!");
+		//throw JException("MySQL error in DESDBProviderMySQL:GetSkims()!");
+		return out_timestamps;
 	} 
 
 	MYSQL_ROW row;
@@ -335,7 +256,7 @@ vector<string> DESDBProviderMySQL::GetTimestamps(string grade)
 }
 
 //---------------------------------
-// 
+// GetRunVersions
 //---------------------------------
 vector< pair<EventStore::RunRange,int> > DESDBProviderMySQL::GetRunVersions(string timestamp, string grade)
 {
@@ -346,30 +267,7 @@ vector< pair<EventStore::RunRange,int> > DESDBProviderMySQL::GetRunVersions(stri
 			 << timestamp << "' AND grade='" << grade 
 			 << " AND state='active' ORDER BY timeStamp DESC, minRunNumber ASC";;
 
-	// clear out any lingering data
-	if(DBresult != NULL) {	
-		mysql_free_result(DBresult);	
-		DBresult = NULL;
-	}
-
-	// execute the query
-	if(mysql_query(DBptr, query_ss.str().c_str())) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
-	}
-
-	//get results
-	DBresult = mysql_store_result(DBptr);
-
-	if(!DBresult) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
-	}
-
-	//int num_returned_rows = mysql_num_rows(DBresult);
-	//int num_returned_cols = mysql_num_fields(DBresult);
+	PerformQuery(query_ss.str(), "GetRunVersions");
 
 	MYSQL_ROW row;
 	bool first_time = false;
@@ -394,7 +292,7 @@ vector< pair<EventStore::RunRange,int> > DESDBProviderMySQL::GetRunVersions(stri
 }
 
 //---------------------------------
-// 
+// GetRunList
 //---------------------------------
 vector<int32_t> DESDBProviderMySQL::GetRunList(EventStore::RunRange run_range,
 												int graphid, string & view)
@@ -407,30 +305,7 @@ vector<int32_t> DESDBProviderMySQL::GetRunList(EventStore::RunRange run_range,
 			 << "' AND graphid='" << graphid << "' AND view='"
 			 << view << "' ORDER BY run ASC";
 
-	// clear out any lingering data
-	if(DBresult != NULL) {	
-		mysql_free_result(DBresult);	
-		DBresult = NULL;
-	}
-
-	// execute the query
-	if(mysql_query(DBptr, query_ss.str().c_str())) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
-	}
-
-	//get results
-	DBresult = mysql_store_result(DBptr);
-
-	if(!DBresult) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
-	}
-
-	//int num_returned_rows = mysql_num_rows(DBresult);
-	//int num_returned_cols = mysql_num_fields(DBresult);
+	PerformQuery(query_ss.str(), "GetRunList");
 
 	MYSQL_ROW row;
 	while((row = mysql_fetch_row(DBresult))) {
@@ -444,7 +319,7 @@ vector<int32_t> DESDBProviderMySQL::GetRunList(EventStore::RunRange run_range,
 }
 
 //---------------------------------
-// 
+// GetRunUidList
 //---------------------------------
 vector< pair<int32_t,int32_t> > DESDBProviderMySQL::GetRunUidList(EventStore::RunRange run_range,
 											  			  int graphid, string &view)
@@ -452,35 +327,12 @@ vector< pair<int32_t,int32_t> > DESDBProviderMySQL::GetRunUidList(EventStore::Ru
 	vector< pair<int32_t,int32_t> > out_runuids;
 
 	stringstream query_ss;
-	query_ss << "SELECT DISTINCT run FROM KeyFile WHERE run>='"
+	query_ss << "SELECT DISTINCT run,uid FROM KeyFile WHERE run>='"
 			 << run_range.first << "' AND run<='" << run_range.second 
 			 << "' AND graphid='" << graphid << "' AND view='"
 			 << view << "' ORDER BY run ASC";
 
-	// clear out any lingering data
-	if(DBresult != NULL) {	
-		mysql_free_result(DBresult);	
-		DBresult = NULL;
-	}
-
-	// execute the query
-	if(mysql_query(DBptr, query_ss.str().c_str())) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
-	}
-
-	//get results
-	DBresult = mysql_store_result(DBptr);
-
-	if(!DBresult) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
-	}
-
-	//int num_returned_rows = mysql_num_rows(DBresult);
-	//int num_returned_cols = mysql_num_fields(DBresult);
+	PerformQuery(query_ss.str(), "GetRunUidList");
 
 	MYSQL_ROW row;
 	while((row = mysql_fetch_row(DBresult))) {
@@ -494,7 +346,7 @@ vector< pair<int32_t,int32_t> > DESDBProviderMySQL::GetRunUidList(EventStore::Ru
 }
 
 //---------------------------------
-// 
+// GetKeyFileName
 //---------------------------------
 string DESDBProviderMySQL::GetKeyFileName(int graphid, string &view, int32_t run, int32_t uid)
 {
@@ -503,32 +355,9 @@ string DESDBProviderMySQL::GetKeyFileName(int graphid, string &view, int32_t run
 	stringstream query_ss;
 	query_ss << "SELECT fileName FROM FileID,KeyFile WHERE graphid='" << graphid 
 			 << "' AND view='" << view << "' AND run='" << run 
-			 << "' AND FileID.fileId=KeyFile.keyFileID";
+			 << "' AND uid='" << uid << "' AND FileID.fileId=KeyFile.keyFileID";
 
-	// clear out any lingering data
-	if(DBresult != NULL) {	
-		mysql_free_result(DBresult);	
-		DBresult = NULL;
-	}
-
-	// execute the query
-	if(mysql_query(DBptr, query_ss.str().c_str())) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
-	}
-
-	//get results
-	DBresult = mysql_store_result(DBptr);
-
-	if(!DBresult) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
-	}
-
-	//int num_returned_rows = mysql_num_rows(DBresult);
-	//int num_returned_cols = mysql_num_fields(DBresult);
+	PerformQuery(query_ss.str(), "GetKeyFileName");
 
 	MYSQL_ROW row;
 	row = mysql_fetch_row(DBresult);
@@ -542,7 +371,7 @@ string DESDBProviderMySQL::GetKeyFileName(int graphid, string &view, int32_t run
 
 
 //---------------------------------
-// 
+// GetDataFileNameTypePairs
 //---------------------------------
 vector< pair<string,string> > DESDBProviderMySQL::GetDataFileNameTypePairs(int graphid, string &view, 
 									  				 			 int32_t run, int32_t uid)
@@ -551,33 +380,10 @@ vector< pair<string,string> > DESDBProviderMySQL::GetDataFileNameTypePairs(int g
 
 	stringstream query_ss;
 	query_ss << "SELECT fileName,typeId FROM FileID,DataFile WHERE graphId='"
-			 << graphid << "' AND run='" << run << "'AND uid='" << uid
-			 << "' AND FileID.fileId=DataFile.fileId ORDER BY id ASC";
+			 << graphid << "' AND run='" << run << "' AND uid='" << uid
+			 << "' AND view='" << view << "' AND FileID.fileId=DataFile.fileId ORDER BY id ASC";
 
-	// clear out any lingering data
-	if(DBresult != NULL) {	
-		mysql_free_result(DBresult);	
-		DBresult = NULL;
-	}
-
-	// execute the query
-	if(mysql_query(DBptr, query_ss.str().c_str())) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
-	}
-
-	//get results
-	DBresult = mysql_store_result(DBptr);
-
-	if(!DBresult) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetRunList()!");
-	}
-
-	//int num_returned_rows = mysql_num_rows(DBresult);
-	//int num_returned_cols = mysql_num_fields(DBresult);
+	PerformQuery(query_ss.str(), "GetDataFileNameTypePairs");
 
 	MYSQL_ROW row;
 	while((row = mysql_fetch_row(DBresult))) {
@@ -599,30 +405,7 @@ string DESDBProviderMySQL::GetFileName(int32_t fid)
 	stringstream query_ss;
 	query_ss << "SELECT fileName FROM FileID WHERE fileID='" << fid <<"'";
 
-	// clear out any lingering data
-	if(DBresult != NULL) {	
-		mysql_free_result(DBresult);	
-		DBresult = NULL;
-	}
-
-	// execute the query
-	if(mysql_query(DBptr, query_ss.str().c_str())) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetFileName()!");
-	}
-
-	//get results
-	DBresult = mysql_store_result(DBptr);
-
-	if(!DBresult) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetFileName()!");
-	}
-
-	//int num_returned_rows = mysql_num_rows(DBresult);
-	//int num_returned_cols = mysql_num_fields(DBresult);
+	PerformQuery(query_ss.str(), "GetFileName");
 
 	MYSQL_ROW row;
 	row = mysql_fetch_row(DBresult);  // error check?
@@ -642,30 +425,7 @@ int DESDBProviderMySQL::GetFID(string &filename)
 	stringstream query_ss;
 	query_ss << "SELECT DISTINCT fileId FROM FileID WHERE fileName='" << filename <<"'";
 
-	// clear out any lingering data
-	if(DBresult != NULL) {	
-		mysql_free_result(DBresult);	
-		DBresult = NULL;
-	}
-
-	// execute the query
-	if(mysql_query(DBptr, query_ss.str().c_str())) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetFileName()!");
-	}
-
-	//get results
-	DBresult = mysql_store_result(DBptr);
-
-	if(!DBresult) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetFileName()!");
-	}
-
-	//int num_returned_rows = mysql_num_rows(DBresult);
-	//int num_returned_cols = mysql_num_fields(DBresult);
+	PerformQuery(query_ss.str(), "GetFID");
 
 	MYSQL_ROW row;
 	row = mysql_fetch_row(DBresult);   // error check?
@@ -686,30 +446,7 @@ pair<string,string> DESDBProviderMySQL::GetFileNameAndType(int fid)
 	query_ss << "SELECT FileID.fileName, FileType.type FROM FileID,FileType"
 			 << " WHERE FileID.typeID=FileType.id AND FileID.fileId='" << fid << "'"; 
 
-	// clear out any lingering data
-	if(DBresult != NULL) {	
-		mysql_free_result(DBresult);	
-		DBresult = NULL;
-	}
-
-	// execute the query
-	if(mysql_query(DBptr, query_ss.str().c_str())) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetFileName()!");
-	}
-
-	//get results
-	DBresult = mysql_store_result(DBptr);
-
-	if(!DBresult) {
-		jerr << FormatMySQLError("mysql_query()") << endl
-			 << "Query: " << query_ss.str() << endl;
-		throw JException("MySQL error in DESDBProviderMySQL:GetFileName()!");
-	}
-
-	//int num_returned_rows = mysql_num_rows(DBresult);
-	//int num_returned_cols = mysql_num_fields(DBresult);
+	PerformQuery(query_ss.str(), "GetFileNameAndType");
 
 	MYSQL_ROW row;
 	row = mysql_fetch_row(DBresult);   // error check?
@@ -719,5 +456,38 @@ pair<string,string> DESDBProviderMySQL::GetFileNameAndType(int fid)
 	mysql_free_result(DBresult);	
 	DBresult = NULL;
 	return result;
+
+}
+
+
+//---------------------------------
+// PerformQuery
+//---------------------------------
+void DESDBProviderMySQL::PerformQuery(string query_str, string function_name)
+{
+	// clear out any lingering data
+	if(DBresult != NULL) {	
+		mysql_free_result(DBresult);	
+		DBresult = NULL;
+	}
+
+	// execute the query
+	if(mysql_query(DBptr, query_str.c_str())) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_str << endl;
+		throw JException("MySQL error in DESDBProviderMySQL::"+function_name+"()!");
+	}
+
+	//get results
+	DBresult = mysql_store_result(DBptr);
+
+	if(!DBresult) {
+		jerr << FormatMySQLError("mysql_query()") << endl
+			 << "Query: " << query_str << endl;
+		throw JException("MySQL error in DESDBProviderMySQL::"+function_name+"()!");
+	}
+	
+	//int num_returned_rows = mysql_num_rows(DBresult);
+	//int num_returned_cols = mysql_num_fields(DBresult);
 
 }
