@@ -96,10 +96,11 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 
 	// initialize database connection
 	if(esdb_connection.substr(0,8) == "mysql://") {
-		cout << "MySQL connection" << endl;
+		cout << "Connecting to MySQL..." << endl;
 		esdb = static_cast<DESDBProvider *>(new DESDBProviderMySQL(esdb_connection));
 	} else if(esdb_connection.substr(0,8) == "sqlite://") {
-		cout << "SQLite connection" << endl;	
+		cout << "Connecting to SQLite..." << endl;	
+		esdb = static_cast<DESDBProvider *>(new DESDBProviderSQLite(esdb_connection));
 	} 
 	
 	// Connect to database

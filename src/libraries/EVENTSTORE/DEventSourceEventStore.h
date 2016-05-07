@@ -18,6 +18,7 @@
 
 #include "DESDBProvider.h"
 #include "DESDBProviderMySQL.h"
+#include "DESDBProviderSQLite.h"
 #include "DEventStoreDefs.h"
 
 using namespace jana;
