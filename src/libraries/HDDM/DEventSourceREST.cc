@@ -130,6 +130,18 @@ void DEventSourceREST::FreeEvent(JEvent &event)
 }
 
 //----------------
+// SkipEvents
+//----------------
+jerror_t DEventSourceREST::SkipEvents(int nevents_to_skip)
+{
+	if(fin != NULL) {
+		fin->skip(nevents_to_skip);
+	}
+	
+	return NOERROR;
+}
+
+//----------------
 // GetObjects
 //----------------
 jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)

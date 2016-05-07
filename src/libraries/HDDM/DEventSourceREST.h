@@ -53,6 +53,8 @@ class DEventSourceREST:public JEventSource
    void FreeEvent(JEvent &event);
    jerror_t GetObjects(JEvent &event, JFactory_base *factory);
 		
+   jerror_t SkipEvents(int nevents_to_skip);
+		
    jerror_t Extract_DMCReaction(hddm_r::HDDM *record,
                     JFactory<DMCReaction> *factory, JEventLoop* locEventLoop);
    jerror_t Extract_DRFTime(hddm_r::HDDM *record,

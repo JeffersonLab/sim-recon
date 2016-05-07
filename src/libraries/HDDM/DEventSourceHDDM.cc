@@ -153,6 +153,18 @@ void DEventSourceHDDM::FreeEvent(JEvent &event)
 }
 
 //----------------
+// SkipEvents
+//----------------
+jerror_t DEventSourceHDDM::SkipEvents(int nevents_to_skip)
+{
+	if(fin != NULL) {
+		fin->skip(nevents_to_skip);
+	}
+	
+	return NOERROR;
+}
+
+//----------------
 // GetObjects
 //----------------
 jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)

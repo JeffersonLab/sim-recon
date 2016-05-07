@@ -79,6 +79,8 @@ class DEventSourceHDDM:public JEventSource
       void FreeEvent(JEvent &event);
       jerror_t GetObjects(JEvent &event, JFactory_base *factory);
       
+      jerror_t SkipEvents(int nevents_to_skip);
+
       jerror_t Extract_DMCTrackHit(hddm_s::HDDM *record, JFactory<DMCTrackHit> *factory, string tag);
       jerror_t GetCDCTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
       jerror_t GetFDCTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
