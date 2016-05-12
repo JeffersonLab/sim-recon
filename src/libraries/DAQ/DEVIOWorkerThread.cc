@@ -1610,15 +1610,13 @@ void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t
 	while(iptr<iend && (*iptr&0xF8000000)==0xF8000000)iptr++;
 }
 
-#if 1
-
 //==================== Associated Object Linking ===================
 
 // The following are used to add objects to other objects' associated
-// objects list. This is actually split into 2 parts. One part
-// loops through vectors of objects and finds matches. The second part
+// objects list. This is actually split into 2 parts. One part loops
+// through two vectors of objects and finds matches. The second part
 // provides for what should be done with the matched objects. This
-// may be as simple as adding one to the others associated objects
+// may be as simple as adding one to the other's associated objects
 // list. There are also a few cases where we need to do some additional
 // copying such as the pedestal from a PulsePedestal object into the
 // pedestal member of a PulseIntegral object.
@@ -1657,6 +1655,11 @@ inline void LinkPulse(vector<T*> &a, vector<U*> &b)
 template<class T, class U>
 inline void LinkPulsePedCopy(vector<T*> &a, vector<U*> &b)
 { LinkAssociationsPulse(a, b, [](T *a, U *b){b->AddAssociatedObject(a); b->pedestal = a->pedestal;}); }
+
+// PulsePedCopy
+template<class T, class U>
+inline void PulsePedCopy(vector<T*> &a, vector<U*> &b)
+{ LinkAssociationsPulse(a, b, [](T *a, U *b){b->pedestal = a->pedestal;}); }
 
 
 //----------------------------
@@ -1724,9 +1727,168 @@ void LinkAssociationsPulse(vector<T*> &a, vector<U*> &b, F func)
 	}
 }
 
-#endif
+//----------------
+// LinkAllAssociations
+//----------------
+void DEVIOWorkerThread::LinkAllAssociations(void)
+{
+	/// Find objects that should be linked as "associated objects"
+	/// of one another and add to each other's list.
+	for( auto pe : current_parsed_events){
+	
+
+		//----------------- Link all associations
+
+		
+		// Connect Df250Config objects
+		LinkConfigSamplesCopy(pe->vDf250Config, pe->vDf250PulseIntegral);
+
+		// Connect Df125Config objects
+		LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125PulseIntegral);
+		LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125CDCPulse);
+		LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125FDCPulse);
+
+		// Connect DF1TDCConfig objects
+		LinkConfig(pe->vDF1TDCConfig, pe->vDF1TDCHit);
+
+		// Connect DCAEN1290TDCConfig objects
+		LinkConfig(pe->vDCAEN1290TDCConfig, pe->vDCAEN1290TDCHit);
+
+		// Connect Df250TriggerTime objects
+		LinkModule(pe->vDf250TriggerTime, pe->vDf250PulseIntegral);
+
+		// Connect Df125TriggerTime objects
+		LinkModule(pe->vDf125TriggerTime, pe->vDf125PulseIntegral);
+		LinkModule(pe->vDf125TriggerTime, pe->vDf125CDCPulse);
+		LinkModule(pe->vDf125TriggerTime, pe->vDf125FDCPulse);
+
+		// Connect DF1TDCTriggerTime objects
+		LinkModule(pe->vDF1TDCTriggerTime, pe->vDF1TDCHit);
+
+		// Connect Df250 pulse objects
+		LinkPulse(pe->vDf250PulseTime,     pe->vDf250PulseIntegral);
+		LinkPulsePedCopy(pe->vDf250PulsePedestal, pe->vDf250PulseIntegral);
+
+		// Connect Df125 pulse objects
+		LinkPulse(pe->vDf125PulseTime,     pe->vDf125PulseIntegral);
+		LinkPulsePedCopy(pe->vDf125PulsePedestal, pe->vDf125PulseIntegral);
+
+		// Connect Df250 window raw data objects
+		if(!pe->vDf250WindowRawData.empty()){
+			LinkConfig(pe->vDf250Config, pe->vDf250WindowRawData);
+			LinkModule(pe->vDf250TriggerTime, pe->vDf250WindowRawData);
+			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulseIntegral);
+			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulseTime);
+			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulsePedestal);
+		}
+
+		// Connect Df125 window raw data objects
+		if(!pe->vDf125WindowRawData.empty()){
+			LinkConfig(pe->vDf125Config, pe->vDf125WindowRawData);
+			LinkModule(pe->vDf125TriggerTime, pe->vDf125WindowRawData);
+			LinkChannel(pe->vDf125WindowRawData, pe->vDf125PulseIntegral);
+			LinkChannel(pe->vDf125WindowRawData, pe->vDf125PulseTime);
+			LinkChannel(pe->vDf125WindowRawData, pe->vDf125PulsePedestal);
+			LinkChannel(pe->vDf125WindowRawData, pe->vDf125CDCPulse);
+			LinkChannel(pe->vDf125WindowRawData, pe->vDf125FDCPulse);
+		}
+
+	}
+
+}
+
+//----------------
+// DumpBinary
+//----------------
+void DEVIOWorkerThread::DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords, const uint32_t *imark)
+{
+    /// This is used for debugging. It will print to the screen the words
+    /// starting at the address given by iptr and ending just before iend
+    /// or for MaxWords words, whichever comes first. If iend is NULL,
+    /// then MaxWords will be printed. If MaxWords is zero then it is ignored
+    /// and only iend is checked. If both iend==NULL and MaxWords==0, then
+    /// only the word at iptr is printed.
+
+    cout << "Dumping binary: istart=" << hex << iptr << " iend=" << iend << " MaxWords=" << dec << MaxWords << endl;
+
+    if(iend==NULL && MaxWords==0) MaxWords=1;
+    if(MaxWords==0) MaxWords = (uint32_t)0xffffffff;
+
+    uint32_t Nwords=0;
+    while(iptr!=iend && Nwords<MaxWords){
+
+        // line1 is hex and line2 is decimal
+        stringstream line1, line2;
+
+        // print words in columns 8 words wide. First part is
+        // reserved for word number
+        uint32_t Ncols = 8;
+        line1 << setw(5) << Nwords;
+        line2 << string(5, ' ');
+
+        // Loop over columns
+        for(uint32_t i=0; i<Ncols; i++, iptr++, Nwords++){
+
+            if(iptr == iend) break;
+            if(Nwords>=MaxWords) break;
+
+            stringstream iptr_hex;
+            iptr_hex << hex << "0x" << *iptr;
+
+            string mark = (iptr==imark ? "*":" ");
+
+            line1 << setw(12) << iptr_hex.str() << mark;
+            line2 << setw(12) << *iptr << mark;
+        }
+
+        cout << line1.str() << endl;
+        cout << line2.str() << endl;
+        cout << endl;
+    }
+}
+
 
 #if 0
+
+		//---------------- Sort all vectors so we can optimize linking
+
+// vector<Df250PulseIntegral*> vDf250PulseIntegral = pe->vDf250PulseIntegral;
+// vector<DF1TDCHit*> vDF1TDCHit = pe->vDF1TDCHit;
+// vector<Df125CDCPulse*> vDf125CDCPulse = pe->vDf125CDCPulse;
+// vector<Df125FDCPulse*> vDf125FDCPulse = pe->vDf125FDCPulse;
+// vector<DCAEN1290TDCHit*> vDCAEN1290TDCHit = pe->vDCAEN1290TDCHit;
+
+// 		// fADC250
+// 		if(pe->vDf250Config.size()>1       ) sort(pe->vDf250Config.begin(),        pe->vDf250Config.end(),        SortByROCID<Df250Config>              );
+// 		if(pe->vDf250TriggerTime.size()>1  ) sort(pe->vDf250TriggerTime.begin(),   pe->vDf250TriggerTime.end(),   SortByModule<Df250TriggerTime>        );
+// 		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByPulseNumber<Df250PulseIntegral> );
+// 		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByPulseNumber<Df250PulseTime>     );
+// 		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByPulseNumber<Df250PulsePedestal> );
+// 
+// 		// fADC125
+// 		if(pe->vDf125Config.size()>1       ) sort(pe->vDf125Config.begin(),        pe->vDf125Config.end(),        SortByROCID<Df125Config>              );
+// 		if(pe->vDf125TriggerTime.size()>1  ) sort(pe->vDf125TriggerTime.begin(),   pe->vDf125TriggerTime.end(),   SortByModule<Df125TriggerTime>        );
+// 		if(pe->vDf125PulseIntegral.size()>1) sort(pe->vDf125PulseIntegral.begin(), pe->vDf125PulseIntegral.end(), SortByPulseNumber<Df125PulseIntegral> );
+// 		if(pe->vDf125CDCPulse.size()>1     ) sort(pe->vDf125CDCPulse.begin(),      pe->vDf125CDCPulse.end(),      SortByChannel<Df125CDCPulse>          );
+// 		if(pe->vDf125FDCPulse.size()>1     ) sort(pe->vDf125FDCPulse.begin(),      pe->vDf125FDCPulse.end(),      SortByChannel<Df125FDCPulse>          );
+// 		if(pe->vDf125PulseTime.size()>1    ) sort(pe->vDf125PulseTime.begin(),     pe->vDf125PulseTime.end(),     SortByPulseNumber<Df125PulseTime>     );
+// 		if(pe->vDf125PulsePedestal.size()>1) sort(pe->vDf125PulsePedestal.begin(), pe->vDf125PulsePedestal.end(), SortByPulseNumber<Df125PulsePedestal> );
+// 
+// 		// F1TDC
+// 		if(pe->vDF1TDCConfig.size()>1      ) sort(pe->vDF1TDCConfig.begin(),       pe->vDF1TDCConfig.end(),       SortByROCID<DF1TDCConfig>             );
+// 		if(pe->vDF1TDCTriggerTime.size()>1 ) sort(pe->vDF1TDCTriggerTime.begin(),  pe->vDF1TDCTriggerTime.end(),  SortByModule<DF1TDCTriggerTime>       );
+// 		if(pe->vDF1TDCHit.size()>1         ) sort(pe->vDF1TDCHit.begin(),          pe->vDF1TDCHit.end(),          SortByModule<DF1TDCHit>               );
+// 
+// 		// CAEN1290TDC
+// 		if(pe->vDCAEN1290TDCConfig.size()>1) sort(pe->vDCAEN1290TDCConfig.begin(), pe->vDCAEN1290TDCConfig.end(), SortByROCID<DCAEN1290TDCConfig>       );
+// 		if(pe->vDCAEN1290TDCHit.size()>1   ) sort(pe->vDCAEN1290TDCHit.begin(),    pe->vDCAEN1290TDCHit.end(),    SortByModule<DCAEN1290TDCHit>         );
+//
+// pe->vDf250PulseIntegral = vDf250PulseIntegral;
+// pe->vDF1TDCHit = vDF1TDCHit;
+// pe->vDf125CDCPulse = vDf125CDCPulse;
+// pe->vDf125FDCPulse = vDf125FDCPulse;
+// pe->vDCAEN1290TDCHit = vDCAEN1290TDCHit;
+
 
 //----------------------------
 // LinkAssociationsModuleOnlyB
@@ -2124,8 +2286,6 @@ void LinkAssociationsConfigB(vector<T*> &a, vector<U*> &b)
 	}
 }
 
-#endif
-
 //----------------
 // SortByROCID
 //----------------
@@ -2174,160 +2334,4 @@ inline bool SortByPulseNumber(const T* const &obj1, const T* const &obj2)
 	return obj1->pulse_number < obj2->pulse_number;
 }
 
-//----------------
-// LinkAllAssociations
-//----------------
-void DEVIOWorkerThread::LinkAllAssociations(void)
-{
-	/// Find objects that should be linked as "associated objects"
-	/// of one another and add to each other's list.
-	for( auto pe : current_parsed_events){
-	
-		//---------------- Sort all vectors so we can optimize linking
-
-// vector<Df250PulseIntegral*> vDf250PulseIntegral = pe->vDf250PulseIntegral;
-// vector<DF1TDCHit*> vDF1TDCHit = pe->vDF1TDCHit;
-// vector<Df125CDCPulse*> vDf125CDCPulse = pe->vDf125CDCPulse;
-// vector<Df125FDCPulse*> vDf125FDCPulse = pe->vDf125FDCPulse;
-// vector<DCAEN1290TDCHit*> vDCAEN1290TDCHit = pe->vDCAEN1290TDCHit;
-
-// 		// fADC250
-// 		if(pe->vDf250Config.size()>1       ) sort(pe->vDf250Config.begin(),        pe->vDf250Config.end(),        SortByROCID<Df250Config>              );
-// 		if(pe->vDf250TriggerTime.size()>1  ) sort(pe->vDf250TriggerTime.begin(),   pe->vDf250TriggerTime.end(),   SortByModule<Df250TriggerTime>        );
-// 		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByPulseNumber<Df250PulseIntegral> );
-// 		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByPulseNumber<Df250PulseTime>     );
-// 		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByPulseNumber<Df250PulsePedestal> );
-// 
-// 		// fADC125
-// 		if(pe->vDf125Config.size()>1       ) sort(pe->vDf125Config.begin(),        pe->vDf125Config.end(),        SortByROCID<Df125Config>              );
-// 		if(pe->vDf125TriggerTime.size()>1  ) sort(pe->vDf125TriggerTime.begin(),   pe->vDf125TriggerTime.end(),   SortByModule<Df125TriggerTime>        );
-// 		if(pe->vDf125PulseIntegral.size()>1) sort(pe->vDf125PulseIntegral.begin(), pe->vDf125PulseIntegral.end(), SortByPulseNumber<Df125PulseIntegral> );
-// 		if(pe->vDf125CDCPulse.size()>1     ) sort(pe->vDf125CDCPulse.begin(),      pe->vDf125CDCPulse.end(),      SortByChannel<Df125CDCPulse>          );
-// 		if(pe->vDf125FDCPulse.size()>1     ) sort(pe->vDf125FDCPulse.begin(),      pe->vDf125FDCPulse.end(),      SortByChannel<Df125FDCPulse>          );
-// 		if(pe->vDf125PulseTime.size()>1    ) sort(pe->vDf125PulseTime.begin(),     pe->vDf125PulseTime.end(),     SortByPulseNumber<Df125PulseTime>     );
-// 		if(pe->vDf125PulsePedestal.size()>1) sort(pe->vDf125PulsePedestal.begin(), pe->vDf125PulsePedestal.end(), SortByPulseNumber<Df125PulsePedestal> );
-// 
-// 		// F1TDC
-// 		if(pe->vDF1TDCConfig.size()>1      ) sort(pe->vDF1TDCConfig.begin(),       pe->vDF1TDCConfig.end(),       SortByROCID<DF1TDCConfig>             );
-// 		if(pe->vDF1TDCTriggerTime.size()>1 ) sort(pe->vDF1TDCTriggerTime.begin(),  pe->vDF1TDCTriggerTime.end(),  SortByModule<DF1TDCTriggerTime>       );
-// 		if(pe->vDF1TDCHit.size()>1         ) sort(pe->vDF1TDCHit.begin(),          pe->vDF1TDCHit.end(),          SortByModule<DF1TDCHit>               );
-// 
-// 		// CAEN1290TDC
-// 		if(pe->vDCAEN1290TDCConfig.size()>1) sort(pe->vDCAEN1290TDCConfig.begin(), pe->vDCAEN1290TDCConfig.end(), SortByROCID<DCAEN1290TDCConfig>       );
-// 		if(pe->vDCAEN1290TDCHit.size()>1   ) sort(pe->vDCAEN1290TDCHit.begin(),    pe->vDCAEN1290TDCHit.end(),    SortByModule<DCAEN1290TDCHit>         );
-
-		//----------------- Link all associations
-
-		
-		// Connect Df250Config objects
-		LinkConfigSamplesCopy(pe->vDf250Config, pe->vDf250PulseIntegral);
-
-		// Connect Df125Config objects
-		LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125PulseIntegral);
-		LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125CDCPulse);
-		LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125FDCPulse);
-
-		// Connect DF1TDCConfig objects
-		LinkConfig(pe->vDF1TDCConfig, pe->vDF1TDCHit);
-
-		// Connect DCAEN1290TDCConfig objects
-		LinkConfig(pe->vDCAEN1290TDCConfig, pe->vDCAEN1290TDCHit);
-
-		// Connect Df250TriggerTime objects
-		LinkModule(pe->vDf250TriggerTime, pe->vDf250PulseIntegral);
-
-		// Connect Df125TriggerTime objects
-		LinkModule(pe->vDf125TriggerTime, pe->vDf125PulseIntegral);
-		LinkModule(pe->vDf125TriggerTime, pe->vDf125CDCPulse);
-		LinkModule(pe->vDf125TriggerTime, pe->vDf125FDCPulse);
-
-		// Connect DF1TDCTriggerTime objects
-		LinkModule(pe->vDF1TDCTriggerTime, pe->vDF1TDCHit);
-
-		// Connect Df250 pulse objects
-		LinkPulse(pe->vDf250PulseTime,     pe->vDf250PulseIntegral);
-		LinkPulsePedCopy(pe->vDf250PulsePedestal, pe->vDf250PulseIntegral);
-
-		// Connect Df125 pulse objects
-		LinkPulse(pe->vDf125PulseTime,     pe->vDf125PulseIntegral);
-		LinkPulsePedCopy(pe->vDf125PulsePedestal, pe->vDf125PulseIntegral);
-
-		// Connect Df250 window raw data objects
-		if(!pe->vDf250WindowRawData.empty()){
-			LinkConfig(pe->vDf250Config, pe->vDf250WindowRawData);
-			LinkModule(pe->vDf250TriggerTime, pe->vDf250WindowRawData);
-			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulseIntegral);
-			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulseTime);
-			LinkChannel(pe->vDf250WindowRawData, pe->vDf250PulsePedestal);
-		}
-
-		// Connect Df125 window raw data objects
-		if(!pe->vDf125WindowRawData.empty()){
-			LinkConfig(pe->vDf125Config, pe->vDf125WindowRawData);
-			LinkModule(pe->vDf125TriggerTime, pe->vDf125WindowRawData);
-			LinkChannel(pe->vDf125WindowRawData, pe->vDf125PulseIntegral);
-			LinkChannel(pe->vDf125WindowRawData, pe->vDf125PulseTime);
-			LinkChannel(pe->vDf125WindowRawData, pe->vDf125PulsePedestal);
-			LinkChannel(pe->vDf125WindowRawData, pe->vDf125CDCPulse);
-			LinkChannel(pe->vDf125WindowRawData, pe->vDf125FDCPulse);
-		}
-
-// pe->vDf250PulseIntegral = vDf250PulseIntegral;
-// pe->vDF1TDCHit = vDF1TDCHit;
-// pe->vDf125CDCPulse = vDf125CDCPulse;
-// pe->vDf125FDCPulse = vDf125FDCPulse;
-// pe->vDCAEN1290TDCHit = vDCAEN1290TDCHit;
-	}
-
-}
-
-//----------------
-// DumpBinary
-//----------------
-void DEVIOWorkerThread::DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords, const uint32_t *imark)
-{
-    /// This is used for debugging. It will print to the screen the words
-    /// starting at the address given by iptr and ending just before iend
-    /// or for MaxWords words, whichever comes first. If iend is NULL,
-    /// then MaxWords will be printed. If MaxWords is zero then it is ignored
-    /// and only iend is checked. If both iend==NULL and MaxWords==0, then
-    /// only the word at iptr is printed.
-
-    cout << "Dumping binary: istart=" << hex << iptr << " iend=" << iend << " MaxWords=" << dec << MaxWords << endl;
-
-    if(iend==NULL && MaxWords==0) MaxWords=1;
-    if(MaxWords==0) MaxWords = (uint32_t)0xffffffff;
-
-    uint32_t Nwords=0;
-    while(iptr!=iend && Nwords<MaxWords){
-
-        // line1 is hex and line2 is decimal
-        stringstream line1, line2;
-
-        // print words in columns 8 words wide. First part is
-        // reserved for word number
-        uint32_t Ncols = 8;
-        line1 << setw(5) << Nwords;
-        line2 << string(5, ' ');
-
-        // Loop over columns
-        for(uint32_t i=0; i<Ncols; i++, iptr++, Nwords++){
-
-            if(iptr == iend) break;
-            if(Nwords>=MaxWords) break;
-
-            stringstream iptr_hex;
-            iptr_hex << hex << "0x" << *iptr;
-
-            string mark = (iptr==imark ? "*":" ");
-
-            line1 << setw(12) << iptr_hex.str() << mark;
-            line2 << setw(12) << *iptr << mark;
-        }
-
-        cout << line1.str() << endl;
-        cout << line2.str() << endl;
-        cout << endl;
-    }
-}
-
+#endif
