@@ -18,7 +18,7 @@
 #include "JANA/JEventLoop.h"
 #include "DTOFPaddleHit.h"
 #include "DTOFGeometry.h"
-
+#include "TMath.h"
 using namespace jana;
 
 /// \htmlonly
@@ -44,6 +44,8 @@ class DTOFPaddleHit_factory:public JFactory<DTOFPaddleHit>{
   double ENERGY_ATTEN_FACTOR;
   double TIME_COINCIDENCE_CUT;
   vector<double>propagation_speed;
+
+  vector < vector <float> > AttenuationLengths;
 
   vector <const DTOFGeometry*> TOFGeom;
 
