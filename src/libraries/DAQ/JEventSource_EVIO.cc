@@ -1557,17 +1557,16 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
         // then copy the number of samples for the integral from it.
         if(!cdcp->emulated){
             if(conf){
-                //cdcp->nsamples_integral = conf->NSA_NSB;
-                int TC = (int)cdcp->le_time/10+1;
-                //int PG = conf->PG; does not yet work
-                int PG = 4;
-                int END = ( (TC-PG+conf->IE) > (conf->NW - 20) ) ? (conf->NW - 20) : (TC-PG + conf->IE) ;
-                int nsamp = END - (TC-PG);
+
+                int timesample = (int)cdcp->le_time/10;
+                int END = ( (timesample + conf->IE) > (conf->NW - 20) ) ? (conf->NW - 20) : (timesample + conf->IE) ;
+                int nsamp = END - timesample;
                 if (nsamp>0){
                     cdcp->nsamples_integral = nsamp;
                 } else {
-                    cdcp->nsamples_integral = 1;
+                    cdcp->nsamples_integral = 0;  //integral is 0 if timesample >= NW-20
                 }
+
             }
         }
     }
@@ -1584,17 +1583,17 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
         // then copy the number of samples for the integral from it.
         if(!fdcp->emulated){
             if(conf){
-                //fdcp->nsamples_integral = conf->NSA_NSB;
-                int TC = (int)fdcp->le_time/10+1;
-                //int PG = conf->PG; does not yet work
-                int PG = 4;
-                int END = ( (TC-PG+conf->IE) > (conf->NW - 20) ) ? (conf->NW - 20) : (TC-PG + conf->IE) ;
-                int nsamp = END - (TC-PG);
+
+                int timesample = (int)fdcp->le_time/10;
+                int END = ( (timesample + conf->IE) > (conf->NW - 20) ) ? (conf->NW - 20) : (timesample + conf->IE) ;
+                int nsamp = END - timesample;
+
                 if (nsamp>0){
                     fdcp->nsamples_integral = nsamp;
                 } else {
-                    fdcp->nsamples_integral = 1;
+                    fdcp->nsamples_integral = 0;  //integral is 0 if timesample >= NW-20
                 }
+
             }
         }
     }

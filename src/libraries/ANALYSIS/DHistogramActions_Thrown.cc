@@ -578,15 +578,35 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const D
 
 	double locThrownP = locMCThrown->momentum().Mag();
 	double locThrownTheta = locMCThrown->momentum().Theta()*180.0/TMath::Pi();
-	double locDeltaPOverP = (locNeutralParticleHypothesis->momentum().Mag() - locThrownP)/locThrownP;
-	double locDeltaTheta = locNeutralParticleHypothesis->momentum().Theta()*180.0/TMath::Pi() - locThrownTheta;
-	double locDeltaPhi = locNeutralParticleHypothesis->momentum().Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
+	DVector3 locNeutralP3 = locNeutralParticleHypothesis->momentum();
+	double locPMag = locNeutralP3.Mag();
+	double locDeltaPOverP = (locPMag - locThrownP)/locThrownP;
+	double locDeltaTheta = locNeutralP3.Theta()*180.0/TMath::Pi() - locThrownTheta;
+	double locDeltaPhi = locNeutralP3.Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
 	double locDeltaT = locNeutralParticleHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
 	double locDeltaVertexZ = locNeutralParticleHypothesis->position().Z() - locMCThrown->position().Z();
 	const TMatrixDSym& locCovarianceMatrix = locNeutralParticleHypothesis->errorMatrix();
 
 	double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
 	double locTimePull = (locStartTime - locNeutralParticleHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
+
+	double locEPull = 0.0;
+	if(Get_UseKinFitResultsFlag())
+	{
+		DMatrix locJacobian(1, 7);
+		locJacobian(0, 0) = locNeutralP3.Px()/locPMag;
+		locJacobian(0, 1) = locNeutralP3.Py()/locPMag;
+		locJacobian(0, 2) = locNeutralP3.Pz()/locPMag;
+		for(unsigned int loc_i = 0; loc_i < 4; ++loc_i)
+			locJacobian(0, 3 + loc_i) = 0.0;
+
+		TMatrixDSym locCovCopy = locCovarianceMatrix;
+		locCovCopy.Similarity(locJacobian);
+		double locEUncertainty = sqrt(locCovCopy(0, 0));
+		locEPull = (locNeutralParticleHypothesis->energy() - locMCThrown->energy())/locEUncertainty;
+	}
+	else
+		locEPull = (locNeutralShower->dEnergy - locMCThrown->energy())/sqrt(locNeutralShower->dCovarianceMatrix(0, 0));
 
 	//FILL HISTOGRAMS
 	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
@@ -628,7 +648,7 @@ void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const D
 				continue;
 			double locPull = 0.0;
 			if(dPullTypes[loc_j] == d_EPull)
-				locPull = (locNeutralShower->dEnergy - locMCThrown->energy())/sqrt(locNeutralShower->dCovarianceMatrix(0, 0));
+				locPull = locEPull;
 			else if((dPullTypes[loc_j] >= d_XxPull) && (dPullTypes[loc_j] <= d_XzPull))
 			{
 				int locIndex = int(dPullTypes[loc_j] - d_XxPull);

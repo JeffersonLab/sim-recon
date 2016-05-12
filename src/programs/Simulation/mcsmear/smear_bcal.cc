@@ -308,7 +308,8 @@ void GetAttenuationParameters(int id, double &attenuation_length, double &attenu
 
 double GetEffectiveVelocity(int id)
 {
-   return effective_velocities.at(id);
+    return BCAL_C_EFFECTIVE;
+    //return effective_velocities.at(id);
 }
 
 //-----------
