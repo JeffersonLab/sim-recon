@@ -107,7 +107,9 @@ class DEVIOWorkerThread{
 		void              ParseCAEN1190(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
 		void   ParseModuleConfiguration(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
 		void              Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
+		void     MakeDf250WindowRawData(DParsedEvent *pe, uint32_t rocid, uint32_t slot, uint32_t itrigger, uint32_t* &iptr);
 		void              Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
+		void     MakeDf125WindowRawData(DParsedEvent *pe, uint32_t rocid, uint32_t slot, uint32_t itrigger, uint32_t* &iptr);
 		void             ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend);
 
 		void LinkAllAssociations(void);

@@ -26,6 +26,9 @@ using namespace std::chrono;
 
 
 #include <TTAB/DTranslationTable_factory.h>
+#include <DAQ/Df250EmulatorAlgorithm_v1.h>
+#include <DAQ/Df125EmulatorAlgorithm_v2.h>
+
 
 #include "JEventSource_EVIOpp.h"
 using namespace jana;
@@ -70,7 +73,9 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	PARSE_EPICS = true;
 	PARSE_EVENTTAG = true;
 	PARSE_TRIGGER = true;
-	
+	F250_EMULATION_MODE = kEmulationAuto;
+	F125_EMULATION_MODE = kEmulationAuto;
+
 
 	gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
 	gPARMS->SetDefaultParameter("EVIO:NTHREADS", NTHREADS, "Set the number of worker threads to use for parsing the EVIO data");
@@ -94,6 +99,9 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	gPARMS->SetDefaultParameter("EVIO:PARSE_EPICS", PARSE_EPICS, "Set this to 0 to disable parsing of EPICS events from the data stream (for benchmarking/debugging)");
 	gPARMS->SetDefaultParameter("EVIO:PARSE_EVENTTAG", PARSE_EVENTTAG, "Set this to 0 to disable parsing of event tag data in the data stream (for benchmarking/debugging)");
 	gPARMS->SetDefaultParameter("EVIO:PARSE_TRIGGER", PARSE_TRIGGER, "Set this to 0 to disable parsing of the built trigger bank from CODA (for benchmarking/debugging)");
+
+	gPARMS->SetDefaultParameter("EVIO:F250_EMULATION_MODE", F250_EMULATION_MODE, "Set f250 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
+	gPARMS->SetDefaultParameter("EVIO:F125_EMULATION_MODE", F125_EMULATION_MODE, "Set f125 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
 
 	jobtype = DEVIOWorkerThread::JOB_NONE;
 	if(PARSE) jobtype |= DEVIOWorkerThread::JOB_FULL_PARSE;
@@ -154,6 +162,10 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 		w->run_number_seed   = run_number_seed;
 		worker_threads.push_back(w);
 	}
+	
+	// Create emulator objects
+	f250Emulator = new Df250EmulatorAlgorithm_v1(NULL);
+	f125Emulator = new Df125EmulatorAlgorithm_v2();
 
 	// Record start time
 	tstart = high_resolution_clock::now();
@@ -181,6 +193,10 @@ JEventSource_EVIOpp::~JEventSource_EVIOpp()
 		worker_threads[i]->Finish();
 		delete worker_threads[i];
 	}
+	
+	// Delete emulator objects
+	if(f250Emulator) delete f250Emulator;
+	if(f125Emulator) delete f125Emulator;
 	
 	if(VERBOSE>0) evioout << "Closing hdevio event source \"" << this->source_name << "\"" <<endl;
 	if(PRINT_STATS){
@@ -424,11 +440,15 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	DParsedEvent *pe = (DParsedEvent*)event.GetRef();
 	if(!pe->copied_to_factories){
 
-		// Copy all low-level hits to appropriate factories
-		pe->CopyToFactories(loop);
-
 		// Optionally link BOR object associations
 		if(LINK && pe->borptrs) LinkBORassociations(pe);
+		
+		// Optionally emulate flash firmware
+		if(!pe->vDf250WindowRawData.empty()) EmulateDf250Firmware(pe);
+		if(!pe->vDf125WindowRawData.empty()) EmulateDf125Firmware(pe);
+
+		// Copy all low-level hits to appropriate factories
+		pe->CopyToFactories(loop);
 
 		// Apply translation tables to create DigiHit objects
 		for(auto tt : translationTables){
@@ -453,6 +473,23 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	}	
 }
 
+
+//----------------------------
+// LinkAssociationsBORConfigB
+//----------------------------
+template<class T, class U>
+void LinkAssociationsBORConfigB(vector<T*> &a, vector<U*> &b)
+{
+	for(auto aptr : a){
+		for(auto bptr : b){
+			if(aptr->rocid != bptr->rocid) continue;
+			if(aptr->slot  != bptr->slot ) continue;
+			bptr->AddAssociatedObject(aptr);
+		}
+	}
+}
+
+#if 0
 //----------------------------
 // LinkAssociationsBORConfigB
 //----------------------------
@@ -522,6 +559,7 @@ void LinkAssociationsBORConfigB(vector<T*> &a, vector<U*> &b)
 		if( j>=a.size() ) break;
 	}
 }
+#endif
 
 //----------------
 // LinkBORassociations
@@ -692,4 +730,106 @@ uint64_t JEventSource_EVIOpp::SearchFileForRunNumber(void)
 	if(buff) delete[] buff;
 
 	return 0;
+}
+
+//----------------
+// EmulateDf250Firmware
+//----------------
+void JEventSource_EVIOpp::EmulateDf250Firmware(DParsedEvent *pe)
+{
+	/// This is called from GetObjects, but only if window raw
+	/// data objects exist. It will emulate the firmware, producing
+	/// hit objects from the sample data.
+	///
+	/// There are some complications here worth noting regarding the
+	/// behavior of the firmware used for Spring 2016 and earlier
+	/// data. The firmware will actually look for a pulse in the
+	/// window and if found, emit pulse time and pulse pedestal
+	/// words for it. It will NOT emit a pulse integral word. Further,
+	/// it will produce those words for at most one pulse. If running
+	/// in mode 7 however, (i.e. no window raw data) it will produce
+	/// multiple pulses. Thus, to mimic the behavior of mode 7, the
+	/// emulator will produce multiple pulses. 
+	///
+	/// The exact behavior of this is determined by the F250_EMULATION_MODE
+	/// parameter which may be one of 3 values. The default is
+	/// kEmulationAuto which does the following:
+	/// 1. Produce hit objects for all pulses found in window
+	/// 2. If pulse time and pedestal objects exist from firmware
+	///    then copy the first found hit into the "*_emulated"
+	///    fields of those existing objects and discard the emulated
+	///    hit.
+	/// 3. Add the remaining emulated hits to the event.
+	///
+	/// The end result is that the first pulse time and pulse pedestal
+	/// objects may contain some combination of emulated and firmware
+	/// generated information. All pulse integral objects will be
+	/// emulated. It may also be worth noting that this is done in such
+	/// a way that the data may contain a mixture of mode 8 data 
+	/// from some boards and mode 7 from others. It will not affect
+	/// those boards producing mode 7 (e.g. won't delete their hits
+	/// even if F250_EMULATION_MODE is set to kEmulationAlways).
+
+	if(F250_EMULATION_MODE == kEmulationNone) return;
+
+	for(auto wrd : pe->vDf250WindowRawData){
+		const Df250PulseTime     *cf250PulseTime     = NULL;
+		const Df250PulsePedestal *cf250PulsePedestal = NULL;
+
+		try{ wrd->GetSingle(cf250PulseTime);     }catch(...){}
+		try{ wrd->GetSingle(cf250PulsePedestal); }catch(...){}
+
+		Df250PulseTime     *f250PulseTime     = (Df250PulseTime*    )cf250PulseTime;
+		Df250PulsePedestal *f250PulsePedestal = (Df250PulsePedestal*)cf250PulsePedestal;
+
+		// Emulate firmware
+		vector<Df250PulseTime*>     em_pts;
+		vector<Df250PulsePedestal*> em_pps;
+		vector<Df250PulseIntegral*> em_pis;
+		f250Emulator->EmulateFirmware(wrd, em_pts, em_pps, em_pis);
+		
+		// Spring 2016 and earlier data may have one pulse time and
+		// one pedestal object in mode 8 data. Emulation mimics mode
+		// 7 which may have more. If there are firmware generated 
+		// pulse time/pedestal objects, copy the first emulated hit's
+		// info into them and then the rest of the emulated hits into
+		// appropriate lists.
+		if(!em_pts.empty() && f250PulseTime){
+			Df250PulseTime *em_pt = em_pts[0];
+			f250PulseTime->time_emulated = em_pt->time_emulated;
+			f250PulseTime->quality_factor_emulated = em_pt->quality_factor_emulated;
+			if(F250_EMULATION_MODE == kEmulationAlways){
+				f250PulseTime->time = em_pt->time;
+				f250PulseTime->quality_factor = em_pt->quality_factor;
+				f250PulseTime->emulated = true;
+			}
+			delete em_pt;
+			em_pts.erase(em_pts.begin());
+		}
+
+		if(!em_pps.empty() && f250PulsePedestal){
+			Df250PulsePedestal *em_pp = em_pps[0];
+			f250PulsePedestal->pedestal_emulated   = em_pp->pedestal_emulated;
+			f250PulsePedestal->pulse_peak_emulated = em_pp->pulse_peak_emulated;
+			if(F250_EMULATION_MODE == kEmulationAlways){
+				f250PulsePedestal->pedestal   = em_pp->pedestal_emulated;
+				f250PulsePedestal->pulse_peak = em_pp->pulse_peak_emulated;
+				f250PulsePedestal->emulated = true;
+			}
+			delete em_pp;
+			em_pps.erase(em_pps.begin());
+		}
+
+		pe->vDf250PulseTime.insert(pe->vDf250PulseTime.end(),         em_pts.begin(), em_pts.end());
+		pe->vDf250PulsePedestal.insert(pe->vDf250PulsePedestal.end(), em_pps.begin(), em_pps.end());
+		pe->vDf250PulseIntegral.insert(pe->vDf250PulseIntegral.end(), em_pis.begin(), em_pis.end());
+	}	
+}
+
+//----------------
+// EmulateDf125Firmware
+//----------------
+void JEventSource_EVIOpp::EmulateDf125Firmware(DParsedEvent *pe)
+{
+
 }

@@ -24,6 +24,8 @@
 #include <DAQ/DEVIOWorkerThread.h>
 #include <DAQ/DParsedEvent.h>
 #include <DAQ/DBORptrs.h>
+#include <DAQ/Df250EmulatorAlgorithm.h>
+#include <DAQ/Df125EmulatorAlgorithm.h>
 
 #include <DANA/DStatusBits.h>
 
@@ -108,6 +110,12 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 			kETSource
 		};
 
+		enum EmulationModeType{
+			kEmulationNone,
+			kEmulationAlways,
+			kEmulationAuto
+		};
+
 
 		                    JEventSource_EVIOpp(const char* source_name);
 		           virtual ~JEventSource_EVIOpp();
@@ -122,6 +130,8 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 
 		               void LinkBORassociations(DParsedEvent *pe);
 		           uint64_t SearchFileForRunNumber(void);
+		               void EmulateDf250Firmware(DParsedEvent *pe);
+		               void EmulateDf125Firmware(DParsedEvent *pe);
 		
 		bool DONE;
 		std::chrono::high_resolution_clock::time_point tstart;
@@ -145,6 +155,11 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		thread *dispatcher_thread;
 
 		JStreamLog evioout;
+		
+		uint32_t F250_EMULATION_MODE; // (EmulationModeType)
+		uint32_t F125_EMULATION_MODE; // (EmulationModeType)
+		Df250EmulatorAlgorithm *f250Emulator;
+		Df125EmulatorAlgorithm *f125Emulator;
 
 		list<DBORptrs*> borptrs_list;
 

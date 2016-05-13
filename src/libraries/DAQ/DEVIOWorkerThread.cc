@@ -1124,13 +1124,12 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 					}
 					if(VERBOSE>7) cout << "      FADC250 Trigger Time: t="<<t<<" ("<<hex<<*iptr<<dec<<")"<<endl;
 					if(pe) pe->NEW_Df250TriggerTime(rocid, slot, itrigger, t);
-//					if(pe) pe->vDf250TriggerTime.push_back(new Df250TriggerTime(rocid, slot, itrigger, t));
 				}
                 break;
             case 4: // Window Raw Data
                 // iptr passed by reference and so will be updated automatically
                 if(VERBOSE>7) cout << "      FADC250 Window Raw Data"<<" ("<<hex<<*iptr<<dec<<")"<<endl;
-//                MakeDf250WindowRawData(objs, rocid, slot, itrigger, iptr);
+                MakeDf250WindowRawData(pe, rocid, slot, itrigger, iptr);
                 break;
             case 5: // Window Sum
 				{
@@ -1202,6 +1201,48 @@ void DEVIOWorkerThread::Parsef250Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 }
 
 //----------------
+// MakeDf250WindowRawData
+//----------------
+void DEVIOWorkerThread::MakeDf250WindowRawData(DParsedEvent *pe, uint32_t rocid, uint32_t slot, uint32_t itrigger, uint32_t* &iptr)
+{
+    uint32_t channel = (*iptr>>23) & 0x0F;
+    uint32_t window_width = (*iptr>>0) & 0x0FFF;
+
+    Df250WindowRawData *wrd = pe->NEW_Df250WindowRawData(rocid, slot, channel, itrigger);
+
+    for(uint32_t isample=0; isample<window_width; isample +=2){
+
+        // Advance to next word
+        iptr++;
+
+        // Make sure this is a data continuation word, if not, stop here
+        if(((*iptr>>31) & 0x1) != 0x0){
+            iptr--; // calling method expects us to point to last word in block
+            break;
+        }
+
+        bool invalid_1 = (*iptr>>29) & 0x1;
+        bool invalid_2 = (*iptr>>13) & 0x1;
+        uint16_t sample_1 = 0;
+        uint16_t sample_2 = 0;
+        if(!invalid_1)sample_1 = (*iptr>>16) & 0x1FFF;
+        if(!invalid_2)sample_2 = (*iptr>>0) & 0x1FFF;
+
+        // Sample 1
+        wrd->samples.push_back(sample_1);
+        wrd->invalid_samples |= invalid_1;
+        wrd->overflow |= (sample_1>>12) & 0x1;
+
+        if(((isample+2) == window_width) && invalid_2)break; // skip last sample if flagged as invalid
+
+        // Sample 2
+        wrd->samples.push_back(sample_2);
+        wrd->invalid_samples |= invalid_2;
+        wrd->overflow |= (sample_2>>12) & 0x1;
+    }
+}
+
+//----------------
 // Parsef125Bank
 //----------------
 void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t *iend)
@@ -1257,10 +1298,10 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
 				}
                 break;
             case 4: // Window Raw Data
-                // iptr passed by reference and so will be updated automatically
-                if(VERBOSE>7) cout << "      FADC125 Window Raw Data"<<endl;
-//				MakeDf125WindowRawData(objs, rocid, slot, itrigger, iptr);
-                break;
+					// iptr passed by reference and so will be updated automatically
+					if(VERBOSE>7) cout << "      FADC125 Window Raw Data"<<endl;
+					MakeDf125WindowRawData(pe, rocid, slot, itrigger, iptr);
+					break;
 
             case 5: // CDC pulse data (new)  (GlueX-doc-2274-v8)
 				{
@@ -1483,6 +1524,45 @@ void DEVIOWorkerThread::Parsef125Bank(uint32_t rocid, uint32_t* &iptr, uint32_t 
     // Chop off filler words
     for(; iptr<iend; iptr++){
         if(((*iptr)&0xf8000000) != 0xf8000000) break;
+    }
+}
+
+//----------------
+// MakeDf125WindowRawData
+//----------------
+void DEVIOWorkerThread::MakeDf125WindowRawData(DParsedEvent *pe, uint32_t rocid, uint32_t slot, uint32_t itrigger, uint32_t* &iptr)
+{
+    uint32_t channel = (*iptr>>20) & 0x7F;
+    uint32_t window_width = (*iptr>>0) & 0x0FFF;
+
+    Df125WindowRawData *wrd = pe->NEW_Df125WindowRawData(rocid, slot, channel, itrigger);
+
+    for(uint32_t isample=0; isample<window_width; isample +=2){
+
+        // Advance to next word
+        iptr++;
+
+        // Make sure this is a data continuation word, if not, stop here
+        if(((*iptr>>31) & 0x1) != 0x0)break;
+
+        bool invalid_1 = (*iptr>>29) & 0x1;
+        bool invalid_2 = (*iptr>>13) & 0x1;
+        uint16_t sample_1 = 0;
+        uint16_t sample_2 = 0;
+        if(!invalid_1)sample_1 = (*iptr>>16) & 0x1FFF;
+        if(!invalid_2)sample_2 = (*iptr>>0) & 0x1FFF;
+
+        // Sample 1
+        wrd->samples.push_back(sample_1);
+        wrd->invalid_samples |= invalid_1;
+        wrd->overflow |= (sample_1>>12) & 0x1;
+
+        if((isample+2) == window_width && invalid_2)break; // skip last sample if flagged as invalid
+
+        // Sample 2
+        wrd->samples.push_back(sample_2);
+        wrd->invalid_samples |= invalid_2;
+        wrd->overflow |= (sample_2>>12) & 0x1;
     }
 }
 
