@@ -831,5 +831,55 @@ void JEventSource_EVIOpp::EmulateDf250Firmware(DParsedEvent *pe)
 //----------------
 void JEventSource_EVIOpp::EmulateDf125Firmware(DParsedEvent *pe)
 {
+	/// This is called from GetObjects, but only if window raw
+	/// data objects exist. It will emulate the firmware, producing
+	/// hit objects from the sample data.
 
+	if(F125_EMULATION_MODE == kEmulationNone) return;
+
+	for(auto wrd : pe->vDf125WindowRawData){
+		const Df125CDCPulse *cf125CDCPulse = NULL;
+		const Df125FDCPulse *cf125FDCPulse = NULL;
+
+		try{ wrd->GetSingle(cf125CDCPulse); }catch(...){}
+		try{ wrd->GetSingle(cf125FDCPulse); }catch(...){}
+
+		Df125CDCPulse *f125CDCPulse = (Df125CDCPulse*)cf125CDCPulse;
+		Df125FDCPulse *f125FDCPulse = (Df125FDCPulse*)cf125FDCPulse;
+
+		// If the the pulse objects do not exist, create new ones to go with our raw data
+		// This should rarely happen since CDC_long and FDC_long have the raw data
+		// along with the calculated quantities in a pulse word. Pure raw mode would be the only time
+		// when this would not be the case. Since this is so infrequently used (if ever), 
+		// the ROCID check for CDC/FDC determination is hard coded...
+		// ROCID CDC: 25-28
+		// ROCID FDC Cathode: 52,53,55-62
+
+		if(f125CDCPulse == NULL && ( wrd->rocid < 30 ) ){
+			f125CDCPulse           = pe->NEW_Df125CDCPulse();
+			f125CDCPulse->rocid    = wrd->rocid;
+			f125CDCPulse->slot     = wrd->slot;
+			f125CDCPulse->channel  = wrd->channel;
+			f125CDCPulse->emulated = true;
+			f125CDCPulse->AddAssociatedObject(wrd);
+		}
+
+		else if(f125FDCPulse == NULL && ( wrd->rocid > 30 ) ){
+			f125FDCPulse           = pe->NEW_Df125FDCPulse();
+			f125FDCPulse->rocid    = wrd->rocid;
+			f125FDCPulse->slot     = wrd->slot;
+			f125FDCPulse->channel  = wrd->channel;
+			f125FDCPulse->emulated = true;
+			f125FDCPulse->AddAssociatedObject(wrd);
+		}
+
+		// Flag all objects as emulated and their values will be replaced with emulated quantities
+		if (F125_EMULATION_MODE == kEmulationAlways){
+			if(f125CDCPulse!=NULL) f125CDCPulse->emulated = 1;
+			if(f125FDCPulse!=NULL) f125FDCPulse->emulated = 1;
+		}
+
+		// Perform the emulation
+		f125Emulator->EmulateFirmware(wrd, f125CDCPulse, f125FDCPulse);
+	}
 }
