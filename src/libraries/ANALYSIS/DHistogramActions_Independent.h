@@ -640,21 +640,22 @@ class DHistogramAction_NumReconstructedObjects : public DAnalysisAction
 	public:
 		DHistogramAction_NumReconstructedObjects(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_NumReconstructedObjects", false, locActionUniqueString),
-		dMaxNumObjects(40), dMaxNumMatchObjects(20), dMaxNumCDCHits(400), dMaxNumFDCHits(1000), dMaxNumTOFCalorimeterHits(400){}
+		dMaxNumObjects(40), dMaxNumMatchObjects(20), dMaxNumCDCHits(400), dMaxNumFDCHits(1000), dMaxNumTOFCalorimeterHits(400), dMaxNumBeamPhotons(100){}
 
 		DHistogramAction_NumReconstructedObjects(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_NumReconstructedObjects", false, ""),
-		dMaxNumObjects(40), dMaxNumMatchObjects(20), dMaxNumCDCHits(400), dMaxNumFDCHits(1000), dMaxNumTOFCalorimeterHits(400){}
+		dMaxNumObjects(40), dMaxNumMatchObjects(20), dMaxNumCDCHits(400), dMaxNumFDCHits(1000), dMaxNumTOFCalorimeterHits(400), dMaxNumBeamPhotons(100){}
 
 		DHistogramAction_NumReconstructedObjects(void) : 
 		DAnalysisAction(NULL, "Hist_NumReconstructedObjects", false, ""),
-		dMaxNumObjects(40), dMaxNumMatchObjects(20), dMaxNumCDCHits(400), dMaxNumFDCHits(1000), dMaxNumTOFCalorimeterHits(400){}
+		dMaxNumObjects(40), dMaxNumMatchObjects(20), dMaxNumCDCHits(400), dMaxNumFDCHits(1000), dMaxNumTOFCalorimeterHits(400), dMaxNumBeamPhotons(100){}
 
 		unsigned int dMaxNumObjects;
 		unsigned int dMaxNumMatchObjects;
 		unsigned int dMaxNumCDCHits;
 		unsigned int dMaxNumFDCHits;
 		unsigned int dMaxNumTOFCalorimeterHits;
+		unsigned int dMaxNumBeamPhotons;
 
 		void Initialize(JEventLoop* locEventLoop);
 
