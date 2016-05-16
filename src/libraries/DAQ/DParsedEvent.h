@@ -101,7 +101,7 @@ class DParsedEvent{
 		
 		atomic<bool> in_use;
 		uint64_t Nrecycled;     // Incremented in DEVIOWorkerThread::MakeEvents()
-		uint64_t MAX_RECYCLED;
+		uint64_t MAX_RECYCLES;
 		bool copied_to_factories;
 		
 		uint64_t istreamorder;
@@ -156,7 +156,7 @@ class DParsedEvent{
 		
 		// This is used to occasionally delete extra pool objects to reduce the
 		// average memory use. It is called from DEVIOWorkerThread::MakeEvents
-		// every MAX_RECYCLED events processed by this DParsedEvent object.
+		// every MAX_RECYCLES events processed by this DParsedEvent object.
 		void Prune(void){
 			MyTypes(deletepool)
 			MyTypes(clearpoolvectors)
@@ -264,7 +264,7 @@ class DParsedEvent{
 		MyTypes(makeallocator);
 
 		// Constructor and destructor
-		DParsedEvent(void):in_use(false),Nrecycled(0),MAX_RECYCLED(1000),borptrs(NULL){}
+		DParsedEvent(uint64_t MAX_OBJECT_RECYCLES=1000):in_use(false),Nrecycled(0),MAX_RECYCLES(MAX_OBJECT_RECYCLES),borptrs(NULL){}
 		#define printcounts(A) if(!v##A.empty()) cout << v##A.size() << " : " << #A << endl;
 		#define printpoolcounts(A) if(!v##A##_pool.empty()) cout << v##A##_pool.size() << " : " << #A << "_pool" << endl;
 		virtual ~DParsedEvent(){

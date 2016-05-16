@@ -145,6 +145,9 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		std::atomic<uint_fast64_t> NEVENTS_PROCESSED;
 		std::atomic<uint_fast64_t> NWAITS_FOR_THREAD;
 		std::atomic<uint_fast64_t> NWAITS_FOR_PARSED_EVENT;
+		
+		uint64_t MAX_EVENT_RECYCLES;
+		uint64_t MAX_OBJECT_RECYCLES;
 
 		EVIOSourceType source_type;
 		HDEVIO *hdevio;

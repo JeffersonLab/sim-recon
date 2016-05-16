@@ -44,26 +44,27 @@ DEVIOWorkerThread::DEVIOWorkerThread(
 	// constructor completes so we do the remaining initializations
 	// below.
 	
-	VERBOSE           = 1;
-	Nrecycled         = 0;       // Incremented in JEventSource_EVIOpp::Dispatcher()
-	MAX_RECYCLED      = 1000;    // In EVIO events (not L1 trigger events!)
-	run_number_seed   = 0;       // Set in JEventSource_EVIOpp constructor
+	VERBOSE             = 1;
+	Nrecycled           = 0;     // Incremented in JEventSource_EVIOpp::Dispatcher()
+	MAX_EVENT_RECYCLES  = 1000;  // In EVIO events (not L1 trigger events!) overwritten in JEventSource_EVIOpp constructor
+	MAX_OBJECT_RECYCLES = 1000;  // overwritten in JEventSource_EVIOpp constructor
+	run_number_seed     = 0;     // Set in JEventSource_EVIOpp constructor
 
-	in_use            = false;
-	jobtype           = JOB_NONE;
+	in_use              = false;
+	jobtype             = JOB_NONE;
 
-	buff_len          = 100; // this will grow as needed
-	buff              = new uint32_t[buff_len];
+	buff_len            = 100;   // this will grow as needed
+	buff                = new uint32_t[buff_len];
 
-	PARSE_F250        = true;
-	PARSE_F125        = true;
-	PARSE_F1TDC       = true;
-	PARSE_CAEN1290TDC = true;
-	PARSE_CONFIG      = true;
-	PARSE_BOR         = true;
-	PARSE_EPICS       = true;
-	PARSE_EVENTTAG    = true;
-	PARSE_TRIGGER     = true;
+	PARSE_F250          = true;
+	PARSE_F125          = true;
+	PARSE_F1TDC         = true;
+	PARSE_CAEN1290TDC   = true;
+	PARSE_CONFIG        = true;
+	PARSE_BOR           = true;
+	PARSE_EPICS         = true;
+	PARSE_EVENTTAG      = true;
+	PARSE_TRIGGER       = true;
 
 }
 
@@ -155,7 +156,7 @@ void DEVIOWorkerThread::Prune(void)
 	/// will appear as a though there is a memory leak. Occasional
 	/// pruning will reduce the average memory footprint. 
 	/// This is called from JEventSource_EVIOpp::Dispatcher
-	/// every MAX_RECYCLED EVIO events processed by this worker
+	/// every MAX_EVENT_RECYCLES EVIO events processed by this worker
 	/// thread. Note that this not in L1 trigger events.
 	///
 	/// NOTE: We currently do NOT reduce the size of buff
@@ -213,7 +214,7 @@ void DEVIOWorkerThread::MakeEvents(void)
 	
 	// Create new DParsedEvent objects if needed
 	while( current_parsed_events.size() < M ){
-		DParsedEvent *pe = new DParsedEvent();
+		DParsedEvent *pe = new DParsedEvent(MAX_OBJECT_RECYCLES);
 		current_parsed_events.push_back(pe);
 		parsed_event_pool.push_back(pe);
 	}
@@ -241,7 +242,7 @@ void DEVIOWorkerThread::MakeEvents(void)
 	// deleted (objects being used this event will be returned to the pools
 	// later.)
 	for(auto pe : current_parsed_events){
-		if( ++pe->Nrecycled%pe->MAX_RECYCLED == 0) pe->Prune();
+		if( ++pe->Nrecycled%pe->MAX_RECYCLES == 0) pe->Prune();
 	}
 }	
 
@@ -1807,6 +1808,124 @@ void LinkAssociationsPulse(vector<T*> &a, vector<U*> &b, F func)
 	}
 }
 
+//----------------------------
+// LinkAssociationsModule
+//----------------------------
+template<class T, class U, typename F>
+void LinkAssociationsModule(vector<T*> &a, vector<U*> &b, F func)
+{
+	/// Template routine to loop over two vectors of pointers to
+	/// objects derived from DDAQAddress. This will find any hits
+	/// coming from the same DAQ module (channel number is not checked)
+	/// When a match is found, the pointer from "a" will be added
+	/// to "b"'s AssociatedObjects list. This will NOT do the inverse
+	/// of adding "b" to "a"'s list. It is intended for adding a module
+	/// level trigger time object to all hits from that module. Adding
+	/// all of the hits to the trigger time object seems like it would
+	/// be a little expensive with no real use case.
+	///
+	/// Note that this assumes the input vectors have been sorted by
+	/// rocid, then slot in ascending order.
+
+	// Bail early if nothing to link
+	if(b.empty()) return;
+	if(a.empty()) return;
+
+	for(uint32_t i=0, j=0; i<b.size(); ){
+
+		uint32_t rocid = b[i]->rocid;
+		uint32_t slot  = b[i]->slot;
+
+		// Find start and end of range in b
+		uint32_t istart = i;
+		uint32_t iend   = i+1; // index of first element outside of ROI
+		for(; iend<b.size(); iend++){
+			if(b[iend]->rocid != rocid) break;
+			if(b[iend]->slot  != slot ) break;
+		}
+		i = iend; // setup for next iteration
+		
+		// Find start of range in a
+		for(; j<a.size(); j++){
+			if( a[j]->rocid > rocid ) break;
+			if( a[j]->rocid == rocid ){
+				if( a[j]->slot >= slot ) break;
+			}
+		}
+		if(j>=a.size()) break; // exhausted all a's. we're done
+
+		if( a[j]->rocid > rocid ) continue; // couldn't find rocid in a
+		if( a[j]->slot  > slot  ) continue; // couldn't find slot in a
+		
+		// Find end of range in a
+		uint32_t jend = j+1;
+		for(; jend<a.size(); jend++){
+			if(a[jend]->rocid != rocid) break;
+			if(a[jend]->slot  != slot ) break;
+		}
+
+		// Loop over all combos of both ranges and make associations
+		uint32_t jstart = j;
+		for(uint32_t ii=istart; ii<iend; ii++){
+			for(uint32_t jj=jstart; jj<jend; jj++){
+				func(a[jj], b[ii]);
+			}
+		}
+		j = jend;
+
+		if( i>=b.size() ) break;
+		if( j>=a.size() ) break;
+	}
+}
+
+//----------------
+// SortByROCID
+//----------------
+template<class T>
+inline bool SortByROCID(const T* const &obj1, const T* const &obj2)
+{
+	return obj1->rocid < obj2->rocid;
+}
+
+//----------------
+// SortByModule
+//----------------
+template<class T>
+inline bool SortByModule(const T* const &obj1, const T* const &obj2)
+{
+	if(obj1->rocid < obj2->rocid) return true;
+	if(obj1->rocid > obj2->rocid) return false;
+	return obj1->slot < obj2->slot;
+}
+
+//----------------
+// SortByChannel
+//----------------
+template<class T>
+inline bool SortByChannel(const T* const &obj1, const T* const &obj2)
+{
+	if(obj1->rocid   < obj2->rocid   ) return true;
+	if(obj1->rocid   > obj2->rocid   ) return false;
+	if(obj1->slot    < obj2->slot    ) return true;
+	if(obj1->slot    > obj2->slot    ) return false;
+	return obj1->channel < obj2->channel;
+}
+
+//----------------
+// SortByPulseNumber
+//----------------
+template<class T>
+inline bool SortByPulseNumber(const T* const &obj1, const T* const &obj2)
+{
+	if(obj1->rocid   < obj2->rocid   ) return true;
+	if(obj1->rocid   > obj2->rocid   ) return false;
+	if(obj1->slot    < obj2->slot    ) return true;
+	if(obj1->slot    > obj2->slot    ) return false;
+	if(obj1->channel < obj2->channel ) return true;
+	if(obj1->channel > obj2->channel ) return false;
+	return obj1->pulse_number < obj2->pulse_number;
+}
+
 //----------------
 // LinkAllAssociations
 //----------------
@@ -1816,6 +1935,31 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 	/// of one another and add to each other's list.
 	for( auto pe : current_parsed_events){
 	
+
+		// fADC250
+		if(pe->vDf250Config.size()>1       ) sort(pe->vDf250Config.begin(),        pe->vDf250Config.end(),        SortByROCID<Df250Config>              );
+		if(pe->vDf250TriggerTime.size()>1  ) sort(pe->vDf250TriggerTime.begin(),   pe->vDf250TriggerTime.end(),   SortByModule<Df250TriggerTime>        );
+		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByPulseNumber<Df250PulseIntegral> );
+		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByPulseNumber<Df250PulseTime>     );
+		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByPulseNumber<Df250PulsePedestal> );
+
+		// fADC125
+		if(pe->vDf125Config.size()>1       ) sort(pe->vDf125Config.begin(),        pe->vDf125Config.end(),        SortByROCID<Df125Config>              );
+		if(pe->vDf125TriggerTime.size()>1  ) sort(pe->vDf125TriggerTime.begin(),   pe->vDf125TriggerTime.end(),   SortByModule<Df125TriggerTime>        );
+		if(pe->vDf125PulseIntegral.size()>1) sort(pe->vDf125PulseIntegral.begin(), pe->vDf125PulseIntegral.end(), SortByPulseNumber<Df125PulseIntegral> );
+		if(pe->vDf125CDCPulse.size()>1     ) sort(pe->vDf125CDCPulse.begin(),      pe->vDf125CDCPulse.end(),      SortByChannel<Df125CDCPulse>          );
+		if(pe->vDf125FDCPulse.size()>1     ) sort(pe->vDf125FDCPulse.begin(),      pe->vDf125FDCPulse.end(),      SortByChannel<Df125FDCPulse>          );
+		if(pe->vDf125PulseTime.size()>1    ) sort(pe->vDf125PulseTime.begin(),     pe->vDf125PulseTime.end(),     SortByPulseNumber<Df125PulseTime>     );
+		if(pe->vDf125PulsePedestal.size()>1) sort(pe->vDf125PulsePedestal.begin(), pe->vDf125PulsePedestal.end(), SortByPulseNumber<Df125PulsePedestal> );
+
+		// F1TDC
+		if(pe->vDF1TDCConfig.size()>1      ) sort(pe->vDF1TDCConfig.begin(),       pe->vDF1TDCConfig.end(),       SortByROCID<DF1TDCConfig>             );
+		if(pe->vDF1TDCTriggerTime.size()>1 ) sort(pe->vDF1TDCTriggerTime.begin(),  pe->vDF1TDCTriggerTime.end(),  SortByModule<DF1TDCTriggerTime>       );
+		if(pe->vDF1TDCHit.size()>1         ) sort(pe->vDF1TDCHit.begin(),          pe->vDF1TDCHit.end(),          SortByModule<DF1TDCHit>               );
+
+		// CAEN1290TDC
+		if(pe->vDCAEN1290TDCConfig.size()>1) sort(pe->vDCAEN1290TDCConfig.begin(), pe->vDCAEN1290TDCConfig.end(), SortByROCID<DCAEN1290TDCConfig>       );
+		if(pe->vDCAEN1290TDCHit.size()>1   ) sort(pe->vDCAEN1290TDCHit.begin(),    pe->vDCAEN1290TDCHit.end(),    SortByModule<DCAEN1290TDCHit>         );
 
 		//----------------- Link all associations
 

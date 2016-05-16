@@ -60,7 +60,8 @@ class DEVIOWorkerThread{
 	
 		int VERBOSE;
 		uint64_t Nrecycled;     // Incremented in JEventSource_EVIOpp::Dispatcher()
-		uint64_t MAX_RECYCLED;
+		uint64_t MAX_EVENT_RECYCLES;
+		uint64_t MAX_OBJECT_RECYCLES;
 	
 		atomic<bool> in_use;
 		atomic<bool> done;

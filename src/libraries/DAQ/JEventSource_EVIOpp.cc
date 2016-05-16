@@ -56,6 +56,8 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	VERBOSE = 0;
 	NTHREADS = 2;
 	MAX_PARSED_EVENTS = 128;
+	MAX_EVENT_RECYCLES = 1000;
+	MAX_OBJECT_RECYCLES = 1000;
 	LOOP_FOREVER = false;
 	USER_RUN_NUMBER = 0;
 	ET_STATION_NEVENTS = 10;
@@ -80,6 +82,8 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
 	gPARMS->SetDefaultParameter("EVIO:NTHREADS", NTHREADS, "Set the number of worker threads to use for parsing the EVIO data");
 	gPARMS->SetDefaultParameter("EVIO:MAX_PARSED_EVENTS", MAX_PARSED_EVENTS, "Set maximum number of events to allow in EVIO parsed events queue");
+	gPARMS->SetDefaultParameter("EVIO:MAX_EVENT_RECYCLES", MAX_EVENT_RECYCLES, "Set maximum number of EVIO (i.e. block of) events  a worker thread should process before pruning excess DParsedEvent objects from its pool");
+	gPARMS->SetDefaultParameter("EVIO:MAX_OBJECT_RECYCLES", MAX_OBJECT_RECYCLES, "Set maximum number of events a DParsedEvent should be used for before pruning excess hit objects from its pools");
 	gPARMS->SetDefaultParameter("EVIO:LOOP_FOREVER", LOOP_FOREVER, "If reading from EVIO file, keep re-opening file and re-reading events forever (only useful for debugging) If reading from ET, this is ignored.");
 	gPARMS->SetDefaultParameter("EVIO:RUN_NUMBER", USER_RUN_NUMBER, "User-supplied run number. Override run number from other sources with this.(will be ignored if set to zero)");
 	gPARMS->SetDefaultParameter("EVIO:ET_STATION_NEVENTS", ET_STATION_NEVENTS, "Number of events to use if we have to create the ET station. Ignored if station already exists.");
@@ -150,16 +154,18 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	// Create worker threads
 	for(uint32_t i=0; i<NTHREADS; i++){
 		DEVIOWorkerThread *w = new DEVIOWorkerThread(this, parsed_events, MAX_PARSED_EVENTS, PARSED_EVENTS_MUTEX, PARSED_EVENTS_CV);
-		w->PARSE_F250        = PARSE_F250;
-		w->PARSE_F125        = PARSE_F125;
-		w->PARSE_F1TDC       = PARSE_F1TDC;
-		w->PARSE_CAEN1290TDC = PARSE_CAEN1290TDC;
-		w->PARSE_CONFIG      = PARSE_CONFIG;
-		w->PARSE_BOR         = PARSE_BOR;
-		w->PARSE_EPICS       = PARSE_EPICS;
-		w->PARSE_EVENTTAG    = PARSE_EVENTTAG;
-		w->PARSE_TRIGGER     = PARSE_TRIGGER;
-		w->run_number_seed   = run_number_seed;
+		w->MAX_EVENT_RECYCLES  = MAX_EVENT_RECYCLES;
+		w->MAX_OBJECT_RECYCLES = MAX_OBJECT_RECYCLES;
+		w->PARSE_F250          = PARSE_F250;
+		w->PARSE_F125          = PARSE_F125;
+		w->PARSE_F1TDC         = PARSE_F1TDC;
+		w->PARSE_CAEN1290TDC   = PARSE_CAEN1290TDC;
+		w->PARSE_CONFIG        = PARSE_CONFIG;
+		w->PARSE_BOR           = PARSE_BOR;
+		w->PARSE_EPICS         = PARSE_EPICS;
+		w->PARSE_EVENTTAG      = PARSE_EVENTTAG;
+		w->PARSE_TRIGGER       = PARSE_TRIGGER;
+		w->run_number_seed     = run_number_seed;
 		worker_threads.push_back(w);
 	}
 	
@@ -263,7 +269,7 @@ void JEventSource_EVIOpp::Dispatcher(void)
 		if(DONE) break;
 		
 		// Reduce average memory usage.
-		if(++thr->Nrecycled%thr->MAX_RECYCLED == 0) thr->Prune();
+		if(++thr->Nrecycled%thr->MAX_EVENT_RECYCLES == 0) thr->Prune();
 		
 		uint32_t* &buff     = thr->buff;
 		uint32_t  &buff_len = thr->buff_len;
@@ -473,6 +479,7 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	}	
 }
 
+#if 1
 
 //----------------------------
 // LinkAssociationsBORConfigB
@@ -489,7 +496,8 @@ void LinkAssociationsBORConfigB(vector<T*> &a, vector<U*> &b)
 	}
 }
 
-#if 0
+#else
+
 //----------------------------
 // LinkAssociationsBORConfigB
 //----------------------------
@@ -823,7 +831,20 @@ void JEventSource_EVIOpp::EmulateDf250Firmware(DParsedEvent *pe)
 		pe->vDf250PulseTime.insert(pe->vDf250PulseTime.end(),         em_pts.begin(), em_pts.end());
 		pe->vDf250PulsePedestal.insert(pe->vDf250PulsePedestal.end(), em_pps.begin(), em_pps.end());
 		pe->vDf250PulseIntegral.insert(pe->vDf250PulseIntegral.end(), em_pis.begin(), em_pis.end());
-	}	
+	}
+	
+	// One last bit of nastiness here. Because the emulator creates
+	// new objects rather than pulling them from the DParsedEvent pools,
+	// the pools will tend to get filled with them. Delete any pool
+	// objects for the types the emulator creates to prevent memory
+	// leak like behavior.
+	for(auto p : pe->vDf250PulseTime_pool    ) delete p;
+	for(auto p : pe->vDf250PulsePedestal_pool) delete p;
+	for(auto p : pe->vDf250PulseIntegral_pool) delete p;
+	pe->vDf250PulseTime_pool.clear();
+	pe->vDf250PulsePedestal_pool.clear();
+	pe->vDf250PulseIntegral_pool.clear();
+	
 }
 
 //----------------
