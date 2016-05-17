@@ -31,6 +31,7 @@ using namespace std::chrono;
 
 
 #include "JEventSource_EVIOpp.h"
+#include "LinkAssociations.h"
 using namespace jana;
 
 //----------------
@@ -479,96 +480,6 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	}	
 }
 
-#if 1
-
-//----------------------------
-// LinkAssociationsBORConfigB
-//----------------------------
-template<class T, class U>
-void LinkAssociationsBORConfigB(vector<T*> &a, vector<U*> &b)
-{
-	for(auto aptr : a){
-		for(auto bptr : b){
-			if(aptr->rocid != bptr->rocid) continue;
-			if(aptr->slot  != bptr->slot ) continue;
-			bptr->AddAssociatedObject(aptr);
-		}
-	}
-}
-
-#else
-
-//----------------------------
-// LinkAssociationsBORConfigB
-//----------------------------
-template<class T, class U>
-void LinkAssociationsBORConfigB(vector<T*> &a, vector<U*> &b)
-{
-	/// Template routine to loop over two vectors of pointers to
-	/// objects derived from DDAQAddress. This will find any hits
-	/// coming from the same DAQ module (channel number is not checked)
-	/// When a match is found, the pointer from "a" will be added
-	/// to "b"'s AssociatedObjects list. This will NOT do the inverse
-	/// of adding "b" to "a"'s list. It is intended for adding a module
-	/// level trigger time object to all hits from that module. Adding
-	/// all of the hits to the trigger time object seems like it would
-	/// be a little expensive with no real use case.
-	///
-	/// Note that this assumes the input vectors have been sorted by
-	/// rocid, then slot in ascending order.
-
-	// Bail early if nothing to link
-	if(b.empty()) return;
-	if(a.empty()) return;
-
-	for(uint32_t i=0, j=0; i<b.size(); ){
-
-		uint32_t rocid = b[i]->rocid;
-		uint32_t slot  = b[i]->slot;
-
-		// Find start and end of range in b
-		uint32_t istart = i;
-		uint32_t iend   = i+1; // index of first element outside of ROI
-		for(; iend<b.size(); iend++){
-			if(b[iend]->rocid != rocid) break;
-			if(b[iend]->slot  != slot ) break;
-		}
-		i = iend; // setup for next iteration
-		
-		// Find start of range in a
-		for(; j<a.size(); j++){
-			if( a[j]->rocid > rocid ) break;
-			if( a[j]->rocid == rocid ){
-				if( a[j]->slot >= slot ) break;
-			}
-		}
-		if(j>=a.size()) break; // exhausted all a's. we're done
-
-		if( a[j]->rocid > rocid ) continue; // couldn't find rocid in a
-		if( a[j]->slot  > slot  ) continue; // couldn't find slot in a
-		
-		// Find end of range in a
-		uint32_t jend = j+1;
-		for(; jend<a.size(); jend++){
-			if(a[jend]->rocid != rocid) break;
-			if(a[jend]->slot  != slot ) break;
-		}
-
-		// Loop over all combos of both ranges and make associations
-		uint32_t jstart = j;
-		for(uint32_t ii=istart; ii<iend; ii++){
-			for(uint32_t jj=jstart; jj<jend; jj++){
-				b[ii]->AddAssociatedObject(a[jj]);
-			}
-		}
-		j = jend;
-
-		if( i>=b.size() ) break;
-		if( j>=a.size() ) break;
-	}
-}
-#endif
-
 //----------------
 // LinkBORassociations
 //----------------
@@ -589,17 +500,17 @@ void JEventSource_EVIOpp::LinkBORassociations(DParsedEvent *pe)
 
 	DBORptrs *borptrs = pe->borptrs;
 
-	LinkAssociationsBORConfigB(borptrs->vDf250BORConfig, pe->vDf250WindowRawData);
-	LinkAssociationsBORConfigB(borptrs->vDf250BORConfig, pe->vDf250PulseIntegral);
+	LinkModule(borptrs->vDf250BORConfig, pe->vDf250WindowRawData);
+	LinkModule(borptrs->vDf250BORConfig, pe->vDf250PulseIntegral);
 
-	LinkAssociationsBORConfigB(borptrs->vDf125BORConfig, pe->vDf125WindowRawData);
-	LinkAssociationsBORConfigB(borptrs->vDf125BORConfig, pe->vDf125PulseIntegral);
-	LinkAssociationsBORConfigB(borptrs->vDf125BORConfig, pe->vDf125CDCPulse);
-	LinkAssociationsBORConfigB(borptrs->vDf125BORConfig, pe->vDf125FDCPulse);
+	LinkModule(borptrs->vDf125BORConfig, pe->vDf125WindowRawData);
+	LinkModule(borptrs->vDf125BORConfig, pe->vDf125PulseIntegral);
+	LinkModule(borptrs->vDf125BORConfig, pe->vDf125CDCPulse);
+	LinkModule(borptrs->vDf125BORConfig, pe->vDf125FDCPulse);
 
-	LinkAssociationsBORConfigB(borptrs->vDF1TDCBORConfig, pe->vDF1TDCHit);
+	LinkModule(borptrs->vDF1TDCBORConfig, pe->vDF1TDCHit);
 
-	LinkAssociationsBORConfigB(borptrs->vDCAEN1290TDCBORConfig, pe->vDCAEN1290TDCHit);
+	LinkModule(borptrs->vDCAEN1290TDCBORConfig, pe->vDCAEN1290TDCHit);
 
 }
 
@@ -836,8 +747,8 @@ void JEventSource_EVIOpp::EmulateDf250Firmware(DParsedEvent *pe)
 	// One last bit of nastiness here. Because the emulator creates
 	// new objects rather than pulling them from the DParsedEvent pools,
 	// the pools will tend to get filled with them. Delete any pool
-	// objects for the types the emulator creates to prevent memory
-	// leak like behavior.
+	// objects for the types the emulator creates to prevent memory-
+	// leak-like behavior.
 	for(auto p : pe->vDf250PulseTime_pool    ) delete p;
 	for(auto p : pe->vDf250PulsePedestal_pool) delete p;
 	for(auto p : pe->vDf250PulseIntegral_pool) delete p;
