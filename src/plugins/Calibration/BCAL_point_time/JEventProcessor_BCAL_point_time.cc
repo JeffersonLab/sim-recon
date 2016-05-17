@@ -318,7 +318,7 @@ jerror_t JEventProcessor_BCAL_point_time::evnt(JEventLoop *loop, uint64_t eventn
 
 	} else {
 		printf("Event %6lu numthrown %2i   \n",eventnumber,numthrown);
-		japp->RootUnLock();
+        japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 		return NOERROR;
 	}
 
