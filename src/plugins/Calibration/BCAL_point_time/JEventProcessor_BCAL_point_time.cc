@@ -295,8 +295,10 @@ jerror_t JEventProcessor_BCAL_point_time::evnt(JEventLoop *loop, uint64_t eventn
 	loop->Get(thrown);
 
 	
-	// Lock ROOT
-	japp->RootWriteLock();
+    // FILL HISTOGRAMS
+    // Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
 	if (peddir!=NULL) peddir->cd();
 
 	float z_coord = 0;
@@ -387,8 +389,10 @@ jerror_t JEventProcessor_BCAL_point_time::evnt(JEventLoop *loop, uint64_t eventn
 
 
 	maindir->cd();
-	// Unlock ROOT
-	japp->RootUnLock();
+
+    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
+
 	return NOERROR;
 }
 
@@ -401,6 +405,8 @@ jerror_t JEventProcessor_BCAL_point_time::erun(void)
 	// changed to give you a chance to clean up before processing
 	// events from the next run number.
 
+    // Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 	
 	int nbins = thrown_NVsZ->GetXaxis()->GetNbins();
 	for (int j=0; j<numlayer; j++) {
@@ -421,6 +427,7 @@ jerror_t JEventProcessor_BCAL_point_time::erun(void)
 		}
 	}
 
+    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
 }

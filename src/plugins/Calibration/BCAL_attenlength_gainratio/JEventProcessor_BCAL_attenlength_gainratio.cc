@@ -167,6 +167,16 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 	vector<const DBCALPoint*> dbcalpoints;
 	loop->Get(dbcalpoints);
 
+    // pull out the associated digihits
+    vector< vector<const DBCALDigiHit*> > digihits_vec;
+	for(unsigned int i=0; i<dbcalpoints.size(); i++) {
+        const DBCALPoint *point = dbcalpoints[i];
+        vector<const DBCALDigiHit*> digihits;
+        point->Get(digihits);
+        
+        digihits_vec.push_back(digihits);
+    }
+
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
@@ -179,8 +189,8 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 		float Energy = point->E();
 
 		// get the associated digi hits
-		vector<const DBCALDigiHit*> digihits;
-		point->Get(digihits);
+		vector<const DBCALDigiHit*> &digihits = digihits_vec[i];
+		//point->Get(digihits);
 		if (digihits.size()!=2) {
 			printf("Warning: BCAL_attenlength_gainratio: event %llu: wrong number of BCALDigiHit objects found %i\n",
 				   (long long unsigned int)eventnumber,(int)digihits.size());
