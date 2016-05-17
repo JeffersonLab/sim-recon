@@ -2821,7 +2821,7 @@ void DHistogramAction_NumReconstructedObjects::Initialize(JEventLoop* locEventLo
 
 		//Beam Photons
 		locHistName = "NumBeamPhotons";
-		dHist_NumBeamPhotons = GetOrCreate_Histogram<TH1D>(locHistName, ";# DBeamPhoton", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+		dHist_NumBeamPhotons = GetOrCreate_Histogram<TH1D>(locHistName, ";# DBeamPhoton", dMaxNumBeamPhotons + 1, -0.5, (float)dMaxNumBeamPhotons + 0.5);
 
 		//Showers / Neutrals / TOF / SC
 		locHistName = "NumFCALShowers";
