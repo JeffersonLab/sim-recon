@@ -19,7 +19,7 @@ c process the following 100 input events and stop.  If the end of the file is
 c reached before the event count specified in card TRIG is exhausted then the
 c processing will stop at the end of file.
 cINFILE 'bggen.hddm'
-TRIG 10000
+TRIG 1000
 
 c The BEAM card configures the built-in coherent bremsstralung photon
 c beam generator in HDGeant.  If the INFILE card is not present and BEAM
@@ -55,8 +55,8 @@ c
 c POSTSMEAR  - set this 1 to auto-invoke the mcsmear program and 0 to not
 c DELETEUNSMEARED - set this to 1 to delete the OUTFILE after running mcsmear
 c MCSMEAROPTS - String to specify additional arguments to pass to mcsmear
-POSTSMEAR 1
-DELETEUNSMEARED 1
+POSTSMEAR 0
+DELETEUNSMEARED 0
 c MCSMEAROPTS '-t1000 -d0'
 
 c The following card enables single-track generation (for testing).
