@@ -39,6 +39,7 @@
 #include <DAQ/DEventTag.h>
 
 #include <DANA/DStatusBits.h>
+#include <TTAB/DTranslationTable.h>
 
 #include "HDEVIOWriter.h"
 
@@ -56,6 +57,8 @@ class DEventWriterEVIO : public JObject
 		bool Write_EVIOEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString) const;
 
 		string Get_OutputFileName(JEventLoop* locEventLoop, string locOutputFileNameSubString) const;
+
+        void SetDetectorsToWriteOut(string detector_list);
 
 		bool COMPACT;
 		bool PREFER_EMULATED;
@@ -103,6 +106,10 @@ class DEventWriterEVIO : public JObject
         
 		std::ofstream *ofs_debug_input;
 		std::ofstream *ofs_debug_output;
+
+        const DTranslationTable *ttab;
+        bool write_out_all_rocs;
+        set<uint32_t> rocs_to_write_out;
 
 	private:
 

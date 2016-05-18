@@ -26,6 +26,7 @@ DEventWriterEVIO::DEventWriterEVIO(JEventLoop* locEventLoop)
 	COMPACT = true;
 	PREFER_EMULATED = false;
 	DEBUG_FILES = false; // n.b. also defined in HDEVIOWriter
+    write_out_all_rocs = true;  // default to writing out all the data
 
 	ofs_debug_input = NULL;
 	ofs_debug_output = NULL;
@@ -33,6 +34,10 @@ DEventWriterEVIO::DEventWriterEVIO(JEventLoop* locEventLoop)
 	gPARMS->SetDefaultParameter("EVIOOUT:COMPACT" , COMPACT,  "Drop words where we can to reduce output file size. This shouldn't loose any vital information, but can be turned off to help with debugging.");
 	gPARMS->SetDefaultParameter("EVIOOUT:PREFER_EMULATED" , PREFER_EMULATED,  "If true, then sample data will not be written to output, but emulated hits will. Otherwise, do exactly the opposite.");
 	gPARMS->SetDefaultParameter("EVIOOUT:DEBUG_FILES" , DEBUG_FILES,  "Write input and output debug files in addition to the standard output.");
+
+    // save a pointer to the translation table
+    ttab = NULL;
+    locEventLoop->GetSingle(ttab);
 
 	// initialize file-level variables
 	japp->WriteLock("EVIOWriter");
@@ -61,6 +66,56 @@ DEventWriterEVIO::DEventWriterEVIO(JEventLoop* locEventLoop)
 		}
 	}	
 }
+
+void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list) 
+{
+    // Allow 
+
+    if(ttab == NULL) {
+        jerr << "Tried to set values in DEventWriterEVIO::SetDetectorsToWriteOut() but translation table not loaded!" << endl;
+        return;
+    }
+    
+    // if given a blank list, assume we should write everything out
+    if(detector_list == "") {
+        write_out_all_rocs = true;
+        rocs_to_write_out.clear();
+    }
+
+    // set up some information
+    map<string, DTranslationTable::Detector_t> name_to_id;
+    for(uint32_t dettype=DTranslationTable::UNKNOWN_DETECTOR; dettype<DTranslationTable::NUM_DETECTOR_TYPES; dettype++){
+        name_to_id[ttab->DetectorName((DTranslationTable::Detector_t)dettype)] = (DTranslationTable::Detector_t)dettype;
+    }
+
+    // Parse string of system names
+    std::istringstream ss(detector_list);
+    std::string token;
+    while(std::getline(ss, token, ',')) {
+                
+        // Get initial list of rocids based on token
+        set<uint32_t> rocids = ttab->Get_ROCID_By_System()[name_to_id[token]];
+                
+        // Let "FDC" be an alias for both cathode strips and wires
+        if(token == "FDC"){
+            set<uint32_t> rocids1 = ttab->Get_ROCID_By_System()[name_to_id["FDC_CATHODES"]];
+            set<uint32_t> rocids2 = ttab->Get_ROCID_By_System()[name_to_id["FDC_WIRES"]];
+            rocids.insert(rocids1.begin(), rocids1.end());
+            rocids.insert(rocids2.begin(), rocids2.end());
+        }
+
+        // More likely than not, someone specifying "PS" will also want "PSC" 
+        if(token == "PS"){
+            set<uint32_t> rocids1 = ttab->Get_ROCID_By_System()[name_to_id["PSC"]];
+            rocids.insert(rocids1.begin(), rocids1.end());
+        }
+
+        // Finally, add the ROCs to the list
+        rocs_to_write_out.insert( rocids.begin(), rocids.end() );
+    }
+
+}
+
 
 bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString) const
 {
@@ -410,15 +465,17 @@ void DEventWriterEVIO::WriteCAEN1290Data(vector<uint32_t> &buff,
 	map<uint32_t, map<uint32_t, vector<const DCAEN1290TDCHit*> > > modules; // outer map index is rocid, inner map index is slot
 	map<uint32_t, set<const DCAEN1290TDCConfig*> > configs;
 	for(uint32_t i=0; i<caen1290hits.size(); i++){
-		const DCAEN1290TDCHit *hit = caen1290hits[i];
-		modules[hit->rocid][hit->slot].push_back(hit);
-	}
+        const DCAEN1290TDCHit *hit = caen1290hits[i];
+        if(write_out_all_rocs || (rocs_to_write_out.find(hit->rocid) != rocs_to_write_out.end()) ) {
+            modules[hit->rocid][hit->slot].push_back(hit);
+        }
+    }
 
 	// Copy config pointers into map indexed by rocid
 	for(uint32_t i=0; i<caen1290configs.size(); i++){
 		const DCAEN1290TDCConfig *config = caen1290configs[i];
-		configs[config->rocid].insert(config);
-	}
+        configs[config->rocid].insert(config);
+    }
 
 	// Loop over rocids
 	map<uint32_t, map<uint32_t, vector<const DCAEN1290TDCHit*> > >::iterator it;
@@ -514,10 +571,12 @@ void DEventWriterEVIO::WriteF1Data(vector<uint32_t> &buff,
 	map<uint32_t, map<uint32_t, vector<const DF1TDCHit*> > > modules; // outer map index is rocid, inner map index is slot
 	map<uint32_t, map<uint32_t, MODULE_TYPE> > mod_types;
 	for(uint32_t i=0; i<F1hits.size(); i++){
-		const DF1TDCHit *hit = F1hits[i];
-		modules[hit->rocid][hit->slot].push_back(hit);
-		mod_types[hit->rocid][hit->slot] = hit->modtype;
-	}
+        const DF1TDCHit *hit = F1hits[i];
+        if(write_out_all_rocs || (rocs_to_write_out.find(hit->rocid) != rocs_to_write_out.end()) ) {
+            modules[hit->rocid][hit->slot].push_back(hit);
+            mod_types[hit->rocid][hit->slot] = hit->modtype;
+        }
+    }
 
 	// Copy F1 config pointers into map indexed by rocid
 	map<uint32_t, set<const DF1TDCConfig*> > configs;
@@ -666,13 +725,15 @@ void DEventWriterEVIO::Writef250Data(vector<uint32_t> &buff,
 	map<uint32_t, map<uint32_t, vector<const Df250PulseIntegral*> > > modules; // outer map index is rocid, inner map index is slot
 	map<uint32_t, set<const Df250Config*> > configs;
 	for(uint32_t i=0; i<f250pis.size(); i++){
-		const Df250PulseIntegral *pi = f250pis[i];
-		modules[pi->rocid][pi->slot].push_back(pi);
-		
-		const Df250Config *config = NULL;
-		pi->GetSingle(config);
-		if(config) configs[pi->rocid].insert(config);
-	}
+        const Df250PulseIntegral *pi = f250pis[i];
+        if(write_out_all_rocs || (rocs_to_write_out.find(pi->rocid) != rocs_to_write_out.end()) ) {
+            modules[pi->rocid][pi->slot].push_back(pi);
+            
+            const Df250Config *config = NULL;
+            pi->GetSingle(config);
+            if(config) configs[pi->rocid].insert(config);
+        }
+    }
 	
 	// Make sure entries exist for all Df250WindowRawData objects as well
 	// so when we loop over rocid,slot below we can write those out under
@@ -843,24 +904,32 @@ void DEventWriterEVIO::Writef125Data(vector<uint32_t> &buff,
 	map<uint32_t, map<uint32_t, vector<const Df125WindowRawData*> > > wrd_hits; // outer map index is rocid, inner map index is slot
 	for(uint32_t i=0; i<f125pis.size(); i++){
 		const Df125PulseIntegral *hit = f125pis[i];
-		modules[hit->rocid].insert(hit->slot);
-		pi_hits[hit->rocid][hit->slot].push_back( hit );
-	}
+        if(write_out_all_rocs || (rocs_to_write_out.find(hit->rocid) != rocs_to_write_out.end()) ) {
+            modules[hit->rocid].insert(hit->slot);
+            pi_hits[hit->rocid][hit->slot].push_back( hit );
+        }
+    }
 	for(uint32_t i=0; i<f125cdcpulses.size(); i++){
 		const Df125CDCPulse *hit = f125cdcpulses[i];
-		modules[hit->rocid].insert(hit->slot);
-		cdc_hits[hit->rocid][hit->slot].push_back( hit );
+        if(write_out_all_rocs || (rocs_to_write_out.find(hit->rocid) != rocs_to_write_out.end()) ) {
+            modules[hit->rocid].insert(hit->slot);
+            cdc_hits[hit->rocid][hit->slot].push_back( hit );
+        }
 	}
 	for(uint32_t i=0; i<f125fdcpulses.size(); i++){
 		const Df125FDCPulse *hit = f125fdcpulses[i];
-		modules[hit->rocid].insert(hit->slot);
-		fdc_hits[hit->rocid][hit->slot].push_back( hit );
-	}
+        if(write_out_all_rocs || (rocs_to_write_out.find(hit->rocid) != rocs_to_write_out.end()) ) {
+            modules[hit->rocid].insert(hit->slot);
+            fdc_hits[hit->rocid][hit->slot].push_back( hit );
+        }
+    }
 	for(uint32_t i=0; i<f125wrds.size(); i++){
 		const Df125WindowRawData *hit = f125wrds[i];
-		modules[hit->rocid].insert(hit->slot);
-		wrd_hits[hit->rocid][hit->slot].push_back( hit );
-	}
+        if(write_out_all_rocs || (rocs_to_write_out.find(hit->rocid) != rocs_to_write_out.end()) ) {
+            modules[hit->rocid].insert(hit->slot);
+            wrd_hits[hit->rocid][hit->slot].push_back( hit );
+        }
+    }
 
 	// Copy f125 config pointers into map indexed by just rocid
 	map<uint32_t, set<const Df125Config*> > configs;
