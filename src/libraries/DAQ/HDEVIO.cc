@@ -374,7 +374,7 @@ bool HDEVIO::readSparse(uint32_t *user_buff, uint32_t user_buff_len, bool allow_
 
 		// Filter out blocks of the wrong type
 		EVIOBlockRecord &br = *sparse_block_iter;
-		uint32_t type = (1 << br.block_type);
+		//		uint32_t type = (1 << br.block_type);
 
 		for(; sparse_event_idx < br.evio_events.size(); sparse_event_idx++){
 			EVIOEventRecord &er = sparse_block_iter->evio_events[sparse_event_idx];
