@@ -103,7 +103,8 @@ jerror_t DTAGMHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     load_ccdb_constants("tdc_timewalk_corrections", "c0", tw_c0) &&
     load_ccdb_constants("tdc_timewalk_corrections", "c1", tw_c1) &&
     load_ccdb_constants("tdc_timewalk_corrections", "c2", tw_c2) &&
-    load_ccdb_constants("tdc_timewalk_corrections", "threshold", thresh) &&
+    //load_ccdb_constants("tdc_timewalk_corrections", "threshold", thresh) &&
+    load_ccdb_constants("tdc_timewalk_corrections", "threshold", tw_c3) &&
     load_ccdb_constants("tdc_timewalk_corrections", "reference", ref))
     {
         return NOERROR;
@@ -249,11 +250,13 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         double c0 = tw_c0[row][column];
         double c1 = tw_c1[row][column];
         double c2 = tw_c2[row][column];
-        double TH = thresh[row][column];
-        double pp_0 = ref[row][column];
-        pp_0 = TH*pow((pp_0-c0)/c1,1/c2);
+        //double TH = thresh[row][column];
+        double c3 = tw_c3[row][column];
+        double t0 = ref[row][column];
+        //pp_0 = TH*pow((pp_0-c0)/c1,1/c2);
         if (P > 0) {
-           T -= c1*(pow(P/TH,c2)-pow(pp_0/TH,c2));
+           //T -= c1*(pow(P/TH,c2)-pow(pp_0/TH,c2));
+           T -= c1*pow(1/(P+c3),c2) - (t0 - c0);
         }
 
         // Optionally only use ADC times
