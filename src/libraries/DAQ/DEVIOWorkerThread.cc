@@ -1703,12 +1703,12 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 	/// of one another and add to each other's list.
 	for( auto pe : current_parsed_events){
 
-auto svDf250PulseIntegral = pe->vDf250PulseIntegral;
-auto svDf125PulseIntegral = pe->vDf125PulseIntegral;
-auto svDf125CDCPulse      = pe->vDf125CDCPulse;
-auto svDf125FDCPulse      = pe->vDf125FDCPulse;
-auto svDF1TDCHit          = pe->vDF1TDCHit;
-auto svDCAEN1290TDCHit    = pe->vDCAEN1290TDCHit;
+// auto svDf250PulseIntegral = pe->vDf250PulseIntegral;
+// auto svDf125PulseIntegral = pe->vDf125PulseIntegral;
+// auto svDf125CDCPulse      = pe->vDf125CDCPulse;
+// auto svDf125FDCPulse      = pe->vDf125FDCPulse;
+// auto svDF1TDCHit          = pe->vDF1TDCHit;
+// auto svDCAEN1290TDCHit    = pe->vDCAEN1290TDCHit;
 
 		//----------------- Sort all associations
 		// fADC250
@@ -1792,12 +1792,12 @@ auto svDCAEN1290TDCHit    = pe->vDCAEN1290TDCHit;
 			LinkChannel(pe->vDf125WindowRawData, pe->vDf125FDCPulse);
 		}
 
-pe->vDf250PulseIntegral = svDf250PulseIntegral;
-pe->vDf125PulseIntegral = svDf125PulseIntegral;
-pe->vDf125CDCPulse      = svDf125CDCPulse;
-pe->vDf125FDCPulse      = svDf125FDCPulse;
-pe->vDF1TDCHit          = svDF1TDCHit;
-pe->vDCAEN1290TDCHit    = svDCAEN1290TDCHit;
+// pe->vDf250PulseIntegral = svDf250PulseIntegral;
+// pe->vDf125PulseIntegral = svDf125PulseIntegral;
+// pe->vDf125CDCPulse      = svDf125CDCPulse;
+// pe->vDf125FDCPulse      = svDf125FDCPulse;
+// pe->vDF1TDCHit          = svDF1TDCHit;
+// pe->vDCAEN1290TDCHit    = svDCAEN1290TDCHit;
 
 	}
 
