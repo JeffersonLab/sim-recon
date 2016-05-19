@@ -187,8 +187,10 @@ jerror_t JEventProcessor_FCALgains::evnt(jana::JEventLoop* locEventLoop, uint64_
   // ANALYSIS library: https://halldweb1.jlab.org/wiki/index.php/GlueX_Analysis_Software
 
   vector< const DFCALShower* > locFCALShowers;
+  vector< const DFCALCluster* > locFCALClusters;
   vector< const DVertex* > kinfitVertex;
   locEventLoop->Get(locFCALShowers);
+  locEventLoop->Get(locFCALClusters);
   locEventLoop->Get(kinfitVertex);
 
   vector< const DTrackTimeBased* > locTrackTimeBased;
@@ -212,10 +214,7 @@ jerror_t JEventProcessor_FCALgains::evnt(jana::JEventLoop* locEventLoop, uint64_
   Double_t radius = 0;
   Double_t p;
 
-	// FILL HISTOGRAMS
-	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-    
+
   for (unsigned int i=0; i < locTrackTimeBased.size() ; ++i){
     for (unsigned int j=0; j< locFCALShowers.size(); ++j){
 
@@ -245,7 +244,11 @@ jerror_t JEventProcessor_FCALgains::evnt(jana::JEventLoop* locEventLoop, uint64_
 
     }
   }
-   
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+    
     if (locFCALShowers.size() >=2) {
     
   for(unsigned int i=0; i<locFCALShowers.size(); i++)
