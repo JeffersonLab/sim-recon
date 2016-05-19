@@ -156,9 +156,10 @@ void DEVIOWorkerThread::Prune(void)
 	/// hit object pools are allowed to continuously grow, it
 	/// will appear as a though there is a memory leak. Occasional
 	/// pruning will reduce the average memory footprint. 
-	/// This is called from JEventSource_EVIOpp::Dispatcher
-	/// every MAX_EVENT_RECYCLES EVIO events processed by this worker
-	/// thread. Note that this not in L1 trigger events.
+	/// This is called from MakeEvents() every MAX_EVENT_RECYCLES
+	/// EVIO events processed by this worker thread.
+	/// Note that this is in EVIO events (i.e. possibly a block
+	/// of events) not in L1 trigger events.
 	///
 	/// NOTE: We currently do NOT reduce the size of buff
 	/// here if it is too big. We may wish to do that at some point!
@@ -238,10 +239,11 @@ void DEVIOWorkerThread::MakeEvents(void)
 	// Parse data in buffer to create data objects
 	ParseBank();
 	
-	// Occasionally prune extra events from the pools to reduce
-	// average memory usage. We do this after parsing so that not everything is
-	// deleted (objects being used this event will be returned to the pools
-	// later.)
+	// Occasionally prune extra DParsedEvent objects as well as objects
+	// from the existing pools to reduce average memory usage. We do
+	// this after parsing so that not everything is deleted (objects
+	// being used this event will be returned to the pools later.)
+	if(++Nrecycled%MAX_EVENT_RECYCLES == 0) Prune();
 	for(auto pe : current_parsed_events){
 		if( ++pe->Nrecycled%pe->MAX_RECYCLES == 0) pe->Prune();
 	}
@@ -1700,7 +1702,13 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 	/// Find objects that should be linked as "associated objects"
 	/// of one another and add to each other's list.
 	for( auto pe : current_parsed_events){
-	
+
+auto svDf250PulseIntegral = pe->vDf250PulseIntegral;
+auto svDf125PulseIntegral = pe->vDf125PulseIntegral;
+auto svDf125CDCPulse      = pe->vDf125CDCPulse;
+auto svDf125FDCPulse      = pe->vDf125FDCPulse;
+auto svDF1TDCHit          = pe->vDF1TDCHit;
+auto svDCAEN1290TDCHit    = pe->vDCAEN1290TDCHit;
 
 		//----------------- Sort all associations
 		// fADC250
@@ -1783,6 +1791,13 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 			LinkChannel(pe->vDf125WindowRawData, pe->vDf125CDCPulse);
 			LinkChannel(pe->vDf125WindowRawData, pe->vDf125FDCPulse);
 		}
+
+pe->vDf250PulseIntegral = svDf250PulseIntegral;
+pe->vDf125PulseIntegral = svDf125PulseIntegral;
+pe->vDf125CDCPulse      = svDf125CDCPulse;
+pe->vDf125FDCPulse      = svDf125FDCPulse;
+pe->vDF1TDCHit          = svDF1TDCHit;
+pe->vDCAEN1290TDCHit    = svDCAEN1290TDCHit;
 
 	}
 

@@ -256,9 +256,9 @@ void JEventSource_EVIOpp::Dispatcher(void)
 		// Get worker thread to handle this
 		DEVIOWorkerThread *thr = NULL;
 		while( !thr){
-			for(uint32_t i=0; i<worker_threads.size(); i++){
-				if(worker_threads[i]->in_use) continue;
-				thr = worker_threads[i];
+			for(auto t : worker_threads){
+				if(t->in_use) continue;
+				thr = t;
 				break;
 			}
 			if(!thr) {
@@ -268,9 +268,6 @@ void JEventSource_EVIOpp::Dispatcher(void)
 			if(DONE) break;
 		}
 		if(DONE) break;
-		
-		// Reduce average memory usage.
-		if(++thr->Nrecycled%thr->MAX_EVENT_RECYCLES == 0) thr->Prune();
 		
 		uint32_t* &buff     = thr->buff;
 		uint32_t  &buff_len = thr->buff_len;
