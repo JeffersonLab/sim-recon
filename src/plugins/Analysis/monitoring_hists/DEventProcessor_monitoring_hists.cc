@@ -93,15 +93,16 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, uint64
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
 
-  const DL1Trigger*  Trig;
-  locEventLoop->GetSingle(Trig);
+  vector <const DL1Trigger*>  Trig;
+  locEventLoop->Get(Trig);
 
-  if (Trig->fp_trig_mask>0){ // Ignore front pannel trigger
+  if (Trig.size()<1){
     return NOERROR;
   }
- 
-  
-  
+
+  if (Trig[0]->fp_trig_mask>0){ // Ignore front pannel trigger
+    return NOERROR;
+  }
   
   japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
   {
