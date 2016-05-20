@@ -96,12 +96,10 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, uint64
   vector <const DL1Trigger*>  Trig;
   locEventLoop->Get(Trig);
 
-  if (Trig.size()<1){
-    return NOERROR;
-  }
-
-  if (Trig[0]->fp_trig_mask>0){ // Ignore front pannel trigger
-    return NOERROR;
+  if (!Trig.empty()){
+    if (Trig[0]->fp_trig_mask>0){ // Ignore front pannel trigger
+      return NOERROR;
+    }
   }
   
   japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
