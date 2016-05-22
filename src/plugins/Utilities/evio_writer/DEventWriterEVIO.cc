@@ -26,7 +26,6 @@ DEventWriterEVIO::DEventWriterEVIO(JEventLoop* locEventLoop)
 	COMPACT = true;
 	PREFER_EMULATED = false;
 	DEBUG_FILES = false; // n.b. also defined in HDEVIOWriter
-    write_out_all_rocs = true;  // default to writing out all the data
 
 	ofs_debug_input = NULL;
 	ofs_debug_output = NULL;
@@ -67,19 +66,28 @@ DEventWriterEVIO::DEventWriterEVIO(JEventLoop* locEventLoop)
 	}	
 }
 
-void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list) 
+void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list, string locOutputFileNameSubString) 
 {
-    // Allow 
+    // Allow users to set only some detectors to be written out
+    // The list of detectors is set on a per-file basis
+    // and the list is the same as given in DTranslationTable
 
     if(ttab == NULL) {
         jerr << "Tried to set values in DEventWriterEVIO::SetDetectorsToWriteOut() but translation table not loaded!" << endl;
         return;
     }
     
+    // make sure that the ROC map for this file exists
+    if(rocs_to_write_out_map.find(locOutputFileNameSubString) == rocs_to_write_out_map.end())
+        rocs_to_write_out_map[locOutputFileNameSubString] = set<uint32_t>();
+
+    // reset the roc output list
+    rocs_to_write_out_map[locOutputFileNameSubString].clear();
+
     // if given a blank list, assume we should write everything out
     if(detector_list == "") {
-        write_out_all_rocs = true;
-        rocs_to_write_out.clear();
+        write_out_all_rocs_map[locOutputFileNameSubString] = true;
+        return;
     }
 
     // set up some information
@@ -111,7 +119,7 @@ void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list)
         }
 
         // Finally, add the ROCs to the list
-        rocs_to_write_out.insert( rocids.begin(), rocids.end() );
+        rocs_to_write_out_map[locOutputFileNameSubString].insert( rocids.begin(), rocids.end() );
     }
 
 }
@@ -170,7 +178,8 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 		HDEVIOWriter *locEVIOWriter = Get_EVIOOutputters()[locOutputFileName];
 		// Write event into buffer
 		vector<uint32_t> *buff = locEVIOWriter->GetBufferFromPool();
-		WriteEventToBuffer(locEventLoop, *buff);
+		WriteEventToBuffer(locEventLoop, *buff, write_out_all_rocs_map[locOutputFileNameSubString],
+                           rocs_to_write_out_map[locOutputFileNameSubString]);
 
 		// Optionally write buffer to output file
 		if(ofs_debug_output) ofs_debug_output->write((const char*)&(*buff)[0], buff->size()*sizeof(uint32_t));
@@ -232,6 +241,7 @@ bool DEventWriterEVIO::Open_OutputFile(JEventLoop* locEventLoop, string locOutpu
 		jout << "Output EVIO file " << locOutputFileName << " created." << endl;
 		Get_EVIOOutputters()[locOutputFileName] = locEVIOout; //store the handle
 		Get_EVIOOutputThreads()[locOutputFileName] = locEVIOout_thr; //store the thread
+        write_out_all_rocs_map[locOutputFileName] = true;  // default to writing out all the data
 	}
 
 	return success;
@@ -277,7 +287,8 @@ DEventWriterEVIO::~DEventWriterEVIO(void)
 //------------------
 // WriteEventToBuffer
 //------------------
-void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &buff) const
+void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &buff,
+                                          bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const
 {
 	/// This method will grab certain low-level objects and write them
 	/// into EVIO banks in a format compatible with the DAQ library.
@@ -437,16 +448,16 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 	WriteEventTagData(buff, loop->GetJEvent().GetStatus(), l3trigger);
 
 	// Write CAEN1290TDC hits
-	WriteCAEN1290Data(buff, caen1290hits, caen1290configs, Nevents);
+	WriteCAEN1290Data(buff, caen1290hits, caen1290configs, Nevents, write_out_all_rocs, rocs_to_write_out);
 
 	// Write F1TDC hits
-	WriteF1Data(buff, F1hits, F1tts, F1configs, Nevents);
+	WriteF1Data(buff, F1hits, F1tts, F1configs, Nevents, write_out_all_rocs, rocs_to_write_out);
 	
 	// Write f250 hits
-	Writef250Data(buff, f250pis, f250tts, f250wrds, Nevents);
+	Writef250Data(buff, f250pis, f250tts, f250wrds, Nevents, write_out_all_rocs, rocs_to_write_out);
 	
 	// Write f125 hits
-	Writef125Data(buff, f125pis, f125cdcpulses, f125fdcpulses, f125tts, f125wrds, f125configs, Nevents);
+	Writef125Data(buff, f125pis, f125cdcpulses, f125fdcpulses, f125tts, f125wrds, f125configs, Nevents, write_out_all_rocs, rocs_to_write_out);
 	
 	// Update global header length
 	if(!buff.empty()) buff[0] = buff.size()-1;
@@ -458,7 +469,8 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 void DEventWriterEVIO::WriteCAEN1290Data(vector<uint32_t> &buff,
                                          vector<const DCAEN1290TDCHit*>    &caen1290hits,
                                          vector<const DCAEN1290TDCConfig*> &caen1290configs,
-                                         unsigned int Nevents) const
+                                         unsigned int Nevents,
+                                         bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const
 {
 	// Create lists of F1 hit objects indexed by rocid,slot
 	// At same time, make map of module types (32channel or 48 channel)
@@ -564,7 +576,8 @@ void DEventWriterEVIO::WriteF1Data(vector<uint32_t> &buff,
                                    vector<const DF1TDCHit*>         &F1hits,
                                    vector<const DF1TDCTriggerTime*> &F1tts,
                                    vector<const DF1TDCConfig*>      &F1configs,
-                                   unsigned int Nevents) const
+                                   unsigned int Nevents,
+                                   bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const
 {
 	// Create lists of F1 hit objects indexed by rocid,slot
 	// At same time, make map of module types (32channel or 48 channel)
@@ -718,7 +731,8 @@ void DEventWriterEVIO::Writef250Data(vector<uint32_t> &buff,
                                      vector<const Df250PulseIntegral*> &f250pis,
                                      vector<const Df250TriggerTime*>   &f250tts,
                                      vector<const Df250WindowRawData*> &f250wrds,
-                                     unsigned int Nevents) const
+                                     unsigned int Nevents,
+                                     bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const
 {
 	// Create lists of Pulse Integral objects indexed by rocid,slot
 	// At same time, make list of config objects to write
@@ -893,7 +907,8 @@ void DEventWriterEVIO::Writef125Data(vector<uint32_t> &buff,
                                      vector<const Df125TriggerTime*>   &f125tts,
                                      vector<const Df125WindowRawData*> &f125wrds,
                                      vector<const Df125Config*>        &f125configs,
-                                     unsigned int Nevents) const
+                                     unsigned int Nevents,
+                                     bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const
 {
 	// Make map of rocid,slot values that have some hit data.
 	// Simultaneously make map for each flavor of hit indexed by rocid,slot
@@ -1244,7 +1259,7 @@ void DEventWriterEVIO::WriteBORData(JEventLoop *loop, vector<uint32_t> &buff) co
     // note that we get everything after the EVIO block header
     void *ref = loop->GetJEvent().GetRef();
     uint32_t *in_buff = JEventSource_EVIO::GetEVIOBufferFromRef(ref);
-    uint32_t buff_size = JEventSource_EVIO::GetEVIOBufferSizeFromRef(ref);  // this is much larger than the bank size - not sure why
+    //uint32_t buff_size = JEventSource_EVIO::GetEVIOBufferSizeFromRef(ref);  // this is much larger than the bank size - not sure why
 
     uint32_t Nwords = in_buff[0];   // number of words in BOR config bank
     // copy entire bank

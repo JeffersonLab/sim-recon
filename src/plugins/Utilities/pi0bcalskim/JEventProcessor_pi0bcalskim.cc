@@ -79,7 +79,15 @@ jerror_t JEventProcessor_pi0bcalskim::init(void)
 //------------------
 jerror_t JEventProcessor_pi0bcalskim::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
-  return NOERROR;
+    // only write out BCAL data for these events
+	const DEventWriterEVIO* locEventWriterEVIO = NULL;
+	loop->GetSingle(locEventWriterEVIO);
+
+    if(locEventWriterEVIO) {
+        locEventWriterEVIO->SetDetectorsToWriteOut("BCAL","pi0bcalskim");
+    }
+
+    return NOERROR;
 }
 
 //------------------

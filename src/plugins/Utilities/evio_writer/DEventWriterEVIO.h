@@ -58,32 +58,36 @@ class DEventWriterEVIO : public JObject
 
 		string Get_OutputFileName(JEventLoop* locEventLoop, string locOutputFileNameSubString) const;
 
-        void SetDetectorsToWriteOut(string detector_list);
+        void SetDetectorsToWriteOut(string detector_list, string locOutputFileNameSubString);
 
 		bool COMPACT;
 		bool PREFER_EMULATED;
 		bool DEBUG_FILES;
 
 	protected:
-		void WriteEventToBuffer(JEventLoop *locEventLoop, vector<uint32_t> &buff) const;
+		void WriteEventToBuffer(JEventLoop *locEventLoop, vector<uint32_t> &buff,
+                                bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const;
 		bool Open_OutputFile(JEventLoop* locEventLoop, string locOutputFileName) const;
 		
 		void WriteCAEN1290Data(vector<uint32_t> &buff,
                                vector<const DCAEN1290TDCHit*>    &caen1290hits,
                                vector<const DCAEN1290TDCConfig*> &caen1290configs, 
-                               unsigned int Nevents) const;
+                               unsigned int Nevents,
+                               bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const;
 
 		void WriteF1Data(vector<uint32_t> &buff,
                          vector<const DF1TDCHit*>          &F1hits,
                          vector<const DF1TDCTriggerTime*>  &F1tts,
                          vector<const DF1TDCConfig*>       &F1configs, 
-                         unsigned int Nevents) const;
+                         unsigned int Nevents,
+                         bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const;
 
 		void Writef250Data(vector<uint32_t> &buff,
                            vector<const Df250PulseIntegral*> &f250pis,
                            vector<const Df250TriggerTime*>   &f250tts,
                            vector<const Df250WindowRawData*> &f250wrds,
-                           unsigned int Nevents) const;
+                           unsigned int Nevents,
+                           bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const;
         
 		void Writef125Data(vector<uint32_t> &buff,
                            vector<const Df125PulseIntegral*> &f125pis,
@@ -92,7 +96,8 @@ class DEventWriterEVIO : public JObject
                            vector<const Df125TriggerTime*>   &f125tts,
                            vector<const Df125WindowRawData*> &f125wrds,
                            vector<const Df125Config*>        &f125configs,
-                           unsigned int Nevents) const;
+                           unsigned int Nevents,
+                           bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const;
         
 		void WriteEPICSData(vector<uint32_t> &buff,
                             vector<const DEPICSvalue*> epicsValues) const;
@@ -108,8 +113,8 @@ class DEventWriterEVIO : public JObject
 		std::ofstream *ofs_debug_output;
 
         const DTranslationTable *ttab;
-        bool write_out_all_rocs;
-        set<uint32_t> rocs_to_write_out;
+        map<string, bool> write_out_all_rocs_map;
+        map<string, set<uint32_t> > rocs_to_write_out_map;
 
 	private:
 
