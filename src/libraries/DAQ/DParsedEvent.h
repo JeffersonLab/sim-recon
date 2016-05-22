@@ -213,10 +213,18 @@ class DParsedEvent{
 		// Method to check class name against each classname in MyTypes returning
 		// true if found and false if not.
 		#define checkclassname(A) if(classname==#A) return true;
-		bool IsParsedDataType(string &classname){
+		bool IsParsedDataType(string &classname)const {
 			MyTypes(checkclassname)
 			MyBORTypes(checkclassname)
 			return false;
+		}
+		
+		// Get name of all classes we provide. Default is to provide only
+		// those with non-empty vector unless "include_all" is set true
+		#define addclassname(A) if(include_all || !v##A.empty())classnames.push_back(#A);
+		void GetParsedDataTypes(vector<string> &classnames, bool include_all=false) const {
+			MyTypes(addclassname)
+			MyBORTypes(addclassname)
 		}
 		
 		// The following is pretty complicated to understand. What it does is

@@ -385,7 +385,8 @@ class DTranslationTable:public jana::JObject{
 		DRFTDCDigiTime*  MakeRFTDCDigiTime(const RFIndex_t &idx,         const DCAEN1290TDCHit *hit) const;
 
 		void Addf250ObjectsToCallStack(JEventLoop *loop, string caller) const;
-		void Addf125ObjectsToCallStack(JEventLoop *loop, string caller) const;
+		void Addf125CDCObjectsToCallStack(JEventLoop *loop, string caller, bool addpulseobjs) const;
+		void Addf125FDCObjectsToCallStack(JEventLoop *loop, string caller, bool addpulseobjs) const;
 		void AddF1TDCObjectsToCallStack(JEventLoop *loop, string caller) const;
 		void AddCAEN1290TDCObjectsToCallStack(JEventLoop *loop, string caller) const;
 		void AddToCallStack(JEventLoop *loop, string caller, string callee) const;

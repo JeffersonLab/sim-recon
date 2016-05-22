@@ -78,6 +78,7 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	PARSE_TRIGGER = true;
 	F250_EMULATION_MODE = kEmulationAuto;
 	F125_EMULATION_MODE = kEmulationAuto;
+	RECORD_CALL_STACK = false;
 
 
 	gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
@@ -107,6 +108,8 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 
 	gPARMS->SetDefaultParameter("EVIO:F250_EMULATION_MODE", F250_EMULATION_MODE, "Set f250 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
 	gPARMS->SetDefaultParameter("EVIO:F125_EMULATION_MODE", F125_EMULATION_MODE, "Set f125 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
+
+	if(gPARMS->Exists("RECORD_CALL_STACK")) gPARMS->GetParameter("RECORD_CALL_STACK", RECORD_CALL_STACK);
 
 	jobtype = DEVIOWorkerThread::JOB_NONE;
 	if(PARSE) jobtype |= DEVIOWorkerThread::JOB_FULL_PARSE;
@@ -459,6 +462,9 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 			tt->ApplyTranslationTable(loop);
 		}
 	}
+	
+	// Optionally record call stack
+	if(RECORD_CALL_STACK) AddToCallStack(pe, loop);
 
 	// Decide whether this is a data type the source supplies
 	bool isSuppliedType = pe->IsParsedDataType(dataClassName);
@@ -474,7 +480,7 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	}else{
 		// We do not produce this type
 		return OBJECT_NOT_AVAILABLE;
-	}	
+	}
 }
 
 //----------------
@@ -811,4 +817,65 @@ void JEventSource_EVIOpp::EmulateDf125Firmware(DParsedEvent *pe)
 		// Perform the emulation
 		f125Emulator->EmulateFirmware(wrd, f125CDCPulse, f125FDCPulse);
 	}
+}
+
+//----------------
+// AddToCallStack
+//----------------
+void JEventSource_EVIOpp::AddToCallStack(DParsedEvent *pe, JEventLoop *loop)
+{
+	/// Add information to JANA's call stack so that the janadot
+	/// plugin can better display the actual relationship of the
+	/// the data objects. This only gets called if the RECORD_CALL_STACK
+	/// config. parameter is set (which is done automatically by 
+	/// the janadot plugin)
+
+	// Add all source object types as defined in DParsedEvent
+	vector<string> sourcetypes;
+	pe->GetParsedDataTypes(sourcetypes);
+	for(auto t:sourcetypes) AddSourceObjectsToCallStack(loop, t);
+}
+
+//----------------
+// AddSourceObjectsToCallStack
+//----------------
+void JEventSource_EVIOpp::AddSourceObjectsToCallStack(JEventLoop *loop, string className)
+{
+	/// This is used to give information to JANA regarding the origin of objects
+	/// that *should* come from the source. We add them in explicitly because
+	/// the file may not have any, but factories may ask for them. We want those
+	/// links to indicate that the "0" objects in the factory came from the source
+	/// so that janadot draws these objects correctly.
+
+	JEventLoop::call_stack_t cs;
+	cs.caller_name = "<ignore>"; // tells janadot this object wasn't actually requested by anybody
+	cs.caller_tag = "";
+	cs.callee_name = className;
+	cs.callee_tag = "";
+	cs.start_time = 0.0;
+	cs.end_time = 0.0;
+	cs.data_source = JEventLoop::DATA_FROM_SOURCE;
+	loop->AddToCallStack(cs);
+}
+
+//----------------
+// AddEmulatedObjectsToCallStack
+//----------------
+void JEventSource_EVIOpp::AddEmulatedObjectsToCallStack(JEventLoop *loop, string caller, string callee)
+{
+	/// This is used to give information to JANA regarding the relationship and
+	/// origin of some of these data objects. This is really just needed so that
+	/// the janadot program can be used to produce the correct callgraph. Because
+	/// of how this plugin works, JANA can't record the correct call stack (at
+	/// least not easily!) Therefore, we have to give it a little help here.
+
+	JEventLoop::call_stack_t cs;
+	cs.caller_name = caller;
+	cs.callee_name = callee;
+	cs.data_source = JEventLoop::DATA_FROM_SOURCE;
+	loop->AddToCallStack(cs);
+	cs.callee_name = cs.caller_name;
+	cs.caller_name = "<ignore>";
+	cs.data_source = JEventLoop::DATA_FROM_FACTORY;
+	loop->AddToCallStack(cs);
 }

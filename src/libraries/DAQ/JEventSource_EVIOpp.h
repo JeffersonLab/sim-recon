@@ -132,6 +132,10 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		           uint64_t SearchFileForRunNumber(void);
 		               void EmulateDf250Firmware(DParsedEvent *pe);
 		               void EmulateDf125Firmware(DParsedEvent *pe);
+		               void AddToCallStack(DParsedEvent *pe, JEventLoop *loop);
+		               void AddSourceObjectsToCallStack(JEventLoop *loop, string className);
+		               void AddEmulatedObjectsToCallStack(JEventLoop *loop, string caller, string callee);
+
 		
 		bool DONE;
 		std::chrono::high_resolution_clock::time_point tstart;
@@ -163,6 +167,8 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		uint32_t F125_EMULATION_MODE; // (EmulationModeType)
 		Df250EmulatorAlgorithm *f250Emulator;
 		Df125EmulatorAlgorithm *f125Emulator;
+		
+		bool RECORD_CALL_STACK;
 
 		list<DBORptrs*> borptrs_list;
 

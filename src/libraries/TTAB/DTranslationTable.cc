@@ -589,22 +589,24 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    // Unfortunately, this is just us telling JANA the relationship as defined here.
    // It is not derived from the above code which would guarantee the declared relationsips
    // are correct. That would just be too complicated given how that code works.
-   if (CALL_STACK && record_call_stack) {
+   if (record_call_stack) {
       // re-enable call stack recording
       loop->EnableCallStackRecording();
 
-      Addf250ObjectsToCallStack(loop, "DBCALDigiHit");
-      Addf250ObjectsToCallStack(loop, "DFCALDigiHit");
-      Addf250ObjectsToCallStack(loop, "DSCDigiHit");
-      Addf250ObjectsToCallStack(loop, "DTOFDigiHit");
-      Addf125ObjectsToCallStack(loop, "DCDCDigiHit");
-      Addf125ObjectsToCallStack(loop, "DFDCCathodeDigiHit");
-      AddF1TDCObjectsToCallStack(loop, "DBCALTDCDigiHit");
-      AddF1TDCObjectsToCallStack(loop, "DFDCWireDigiHit");
-      AddF1TDCObjectsToCallStack(loop, "DRFDigiTime");
-      AddF1TDCObjectsToCallStack(loop, "DRFTDCDigiTime");
-      AddF1TDCObjectsToCallStack(loop, "DSCTDCDigiHit");
-      AddCAEN1290TDCObjectsToCallStack(loop, "DTOFTDCDigiHit");
+		if(CALL_STACK){
+      	Addf250ObjectsToCallStack(loop, "DBCALDigiHit");
+      	Addf250ObjectsToCallStack(loop, "DFCALDigiHit");
+      	Addf250ObjectsToCallStack(loop, "DSCDigiHit");
+      	Addf250ObjectsToCallStack(loop, "DTOFDigiHit");
+      	Addf125CDCObjectsToCallStack(loop, "DCDCDigiHit", cdcpulses.size()>0);
+      	Addf125FDCObjectsToCallStack(loop, "DFDCCathodeDigiHit", fdcpulses.size()>0);
+      	AddF1TDCObjectsToCallStack(loop, "DBCALTDCDigiHit");
+      	AddF1TDCObjectsToCallStack(loop, "DFDCWireDigiHit");
+      	AddF1TDCObjectsToCallStack(loop, "DRFDigiTime");
+      	AddF1TDCObjectsToCallStack(loop, "DRFTDCDigiTime");
+      	AddF1TDCObjectsToCallStack(loop, "DSCTDCDigiHit");
+      	AddCAEN1290TDCObjectsToCallStack(loop, "DTOFTDCDigiHit");
+		}
    }
 }
 
@@ -1239,14 +1241,37 @@ void DTranslationTable::Addf250ObjectsToCallStack(JEventLoop *loop, string calle
 }
 
 //----------------
-// Addf125ObjectsToCallStack
+// Addf125CDCObjectsToCallStack
 //----------------
-void DTranslationTable::Addf125ObjectsToCallStack(JEventLoop *loop, string caller) const
+void DTranslationTable::Addf125CDCObjectsToCallStack(JEventLoop *loop, string caller, bool addpulseobjs) const
 {
 	AddToCallStack(loop, caller, "Df125Config");
-	AddToCallStack(loop, caller, "Df125PulseIntegral");
-	AddToCallStack(loop, caller, "Df125PulsePedestal");
-	AddToCallStack(loop, caller, "Df125PulseTime");
+	if(addpulseobjs){
+		// new style
+		AddToCallStack(loop, caller, "Df125CDCPulse");
+	}else{
+		// old style
+		AddToCallStack(loop, caller, "Df125PulseIntegral");
+		AddToCallStack(loop, caller, "Df125PulsePedestal");
+		AddToCallStack(loop, caller, "Df125PulseTime");
+	}
+}
+
+//----------------
+// Addf125FDCObjectsToCallStack
+//----------------
+void DTranslationTable::Addf125FDCObjectsToCallStack(JEventLoop *loop, string caller, bool addpulseobjs) const
+{
+	AddToCallStack(loop, caller, "Df125Config");
+	if(addpulseobjs){
+		// new style
+		AddToCallStack(loop, caller, "Df125FDCPulse");
+	}else{
+		// old style
+		AddToCallStack(loop, caller, "Df125PulseIntegral");
+		AddToCallStack(loop, caller, "Df125PulsePedestal");
+		AddToCallStack(loop, caller, "Df125PulseTime");
+	}
 }
 
 //----------------
