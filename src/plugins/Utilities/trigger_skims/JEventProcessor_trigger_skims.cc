@@ -70,9 +70,12 @@ jerror_t JEventProcessor_trigger_skims::evnt(JEventLoop *locEventLoop, uint64_t 
 	vector<const DEPICSvalue*> locEPICSValues;
 	locEventLoop->Get(locEPICSValues);
 	if(!locEPICSValues.empty()) {
-		locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "BCAL_LED");
-		locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "FCAL_LED");
-		locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "random");
+        if (write_out_bcal_led)
+            locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "BCAL_LED");
+        if (write_out_fcal_led)
+            locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "FCAL_LED");
+        if (write_out_random)
+            locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "random");
 		return NOERROR;
 	}
 
