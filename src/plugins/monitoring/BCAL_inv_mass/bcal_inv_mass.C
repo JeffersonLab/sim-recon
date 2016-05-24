@@ -19,7 +19,7 @@
   float par_500[15];
   float par_700[15];
   float par_900[15];
-  if(gPad == NULL){
+	if(gPad == NULL){
 
     TCanvas *c1 = new TCanvas( "c1", "BCAL_inv_mass_plot", 800, 800 );
     c1->cd(0);
@@ -149,6 +149,5 @@
     pt_900->AddText(Form("#sigma/M = %.3f %%",(par_900[2]/par_900[1])*100));
     pt_900->Draw();
   }
-
 
 }
