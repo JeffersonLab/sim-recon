@@ -17,6 +17,11 @@
 using namespace jana;
 using namespace std;
 
+bool static fdctdchit_cmp(const DF1TDCHit *a, const DF1TDCHit *b){
+  if (a->rocid != b->rocid) return (a->rocid < b->rocid);
+  if (a->slot != b->slot) return (a->slot < b->slot);
+  return (a->channel < b->channel);
+}
 
 // Use one translation table for all threads
 pthread_mutex_t& DTranslationTable::Get_TT_Mutex(void) const
@@ -492,6 +497,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    // DF1TDCHit
    vector<const DF1TDCHit*> f1tdchits;
    loop->Get(f1tdchits);
+sort(f1tdchits.begin(), f1tdchits.end(), fdctdchit_cmp);
    if (VERBOSE > 2) ttout << "  Number DF1TDCHit objects: " << f1tdchits.size() << std::endl;
    for (uint32_t i=0; i<f1tdchits.size(); i++) {
       const DF1TDCHit *hit = f1tdchits[i];

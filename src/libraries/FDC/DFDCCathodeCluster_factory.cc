@@ -32,7 +32,9 @@ bool DFDCHit_gLayer_cmp(const DFDCHit* a, const DFDCHit* b) {
 /// of hits.
 ///
 bool DFDCHit_element_cmp(const DFDCHit* a, const DFDCHit* b) {
-	return a->element < b->element;
+	if(a->element != b->element) return a->element < b->element;
+	if(a->t       != b->t      ) return a->t < b->t;
+	return a->q < b->q;
 }
 
 ///
@@ -96,7 +98,7 @@ jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, uint64_t eventN
   
   try {
     eventLoop->Get(allHits);
-      
+
     if (allHits.size()>0) {
       // Sort hits by layer number and by time
       sort(allHits.begin(),allHits.end(),DFDCHit_cmp);
@@ -216,8 +218,14 @@ void DFDCCathodeCluster_factory::pique(vector<const DFDCHit*>& H) {
     // If we're not at the end of the array, and the strip number of the 
     // next hit is equal to the strip number + 1 of this hit, then we 
     // continue our cluster.
-     if ((i+1 != H.end()) && ((*i)->element + 1 == (*(i+1))->element)
-	) {
+     bool cond1 = i+1 != H.end();
+     bool cond2 = false;
+     bool cond3 = false;
+     if(cond1){
+     	cond2 = (*i)->element + 0 == (*(i+1))->element;
+     	cond3 = (*i)->element + 1 == (*(i+1))->element;
+     }
+     if( cond1 && (cond2 || cond3) ) {
       width++;
       q_tot += (*i)->q;
     }
