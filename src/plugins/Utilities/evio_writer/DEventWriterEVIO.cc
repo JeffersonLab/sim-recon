@@ -1175,7 +1175,7 @@ void DEventWriterEVIO::WriteBORData(JEventLoop *loop, vector<uint32_t> &buff) co
     // note that we get everything after the EVIO block header
     void *ref = loop->GetJEvent().GetRef();
     uint32_t *in_buff = JEventSource_EVIO::GetEVIOBufferFromRef(ref);
-    uint32_t buff_size = JEventSource_EVIO::GetEVIOBufferSizeFromRef(ref);  // this is much larger than the bank size - not sure why
+    // uint32_t buff_size = JEventSource_EVIO::GetEVIOBufferSizeFromRef(ref);  // this is much larger than the bank size - not sure why
 
     uint32_t Nwords = in_buff[0];   // number of words in BOR config bank
     // copy entire bank

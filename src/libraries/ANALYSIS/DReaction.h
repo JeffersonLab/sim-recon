@@ -112,6 +112,13 @@ class DReaction : public JObject
 		string Get_TTreeOutputFileName(void) const{return dTTreeOutputFileName;}
 		bool Get_EnableTTreeOutputFlag(void) const{return dEnableTTreeOutputFlag;}
 
+		// BUILD ANY FLAGS
+		//Default false. If true: Once one is built, don't bother making others. 
+		bool Get_AnyBlueprintFlag(void) const{return dAnyBlueprintFlag;} //If true, no need to change dAnyComboFlag
+		bool Get_AnyComboFlag(void) const{return dAnyComboFlag;}
+		void Set_AnyBlueprintFlag(bool locAnyBlueprintFlag){dAnyBlueprintFlag = locAnyBlueprintFlag;} //If true, no need to change dAnyComboFlag
+		void Set_AnyComboFlag(bool locAnyComboFlag){dAnyComboFlag = locAnyComboFlag;}
+
 		// OTHER:
 		bool Check_AreStepsIdentical(const DReaction* locReaction) const;
 
@@ -151,6 +158,11 @@ class DReaction : public JObject
 
 		// EVENT STORE QUERY
 		pair<string, string> dEventStoreQuery; // First is skim name (default = "all"), second is additional query (default = "")
+
+		// BUILD ANY FLAGS
+		//Default false. If true: Once one is built, don't bother making others. 
+		bool dAnyBlueprintFlag; //If true, don't need to bother changing dAnyComboFlag
+		bool dAnyComboFlag;
 };
 
 inline void DReaction::Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass)

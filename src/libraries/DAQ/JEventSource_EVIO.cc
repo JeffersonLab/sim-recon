@@ -130,6 +130,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	TIMEOUT = 2.0;
 	MODTYPE_MAP_FILENAME = "modtype.map";
 	ENABLE_DISENTANGLING = true;
+	EVIO_SPARSE_READ = false;
+	EVENT_MASK = "";
 
 	F125_EMULATION_MODE = kEmulationAuto;
 	F250_EMULATION_MODE = kEmulationAuto;
@@ -166,6 +168,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("ET:TIMEOUT", TIMEOUT, "Set the timeout in seconds for each attempt at reading from ET system (repeated attempts will still be made indefinitely until program quits or the quit_on_et_timeout flag is set.");
 		gPARMS->SetDefaultParameter("EVIO:MODTYPE_MAP_FILENAME", MODTYPE_MAP_FILENAME, "Optional module type conversion map for use with files generated with the non-standard module types");
 		gPARMS->SetDefaultParameter("EVIO:ENABLE_DISENTANGLING", ENABLE_DISENTANGLING, "Enable/disable disentangling of multi-block events. Enabled by default. Set to 0 to disable.");
+		gPARMS->SetDefaultParameter("EVIO:SPARSE_READ", EVIO_SPARSE_READ, "Set to true to enable sparse reading of the EVIO file. This will take some time to map out the entire file prior to event processing. It is typically only useful if the EVIO:EVENT_MASK variable is set.");
+		gPARMS->SetDefaultParameter("EVIO:EVENT_MASK", EVENT_MASK, "Commas separated list used to set the mask that selects the type of events to read in. Other types will be skipped. Valid values are EPICS,BOR and PHYSICS");
 
 		gPARMS->SetDefaultParameter("EVIO:F250_EMULATION_MODE", f250_emulation_mode, "Set f250 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
 		gPARMS->SetDefaultParameter("EVIO:F125_EMULATION_MODE", f125_emulation_mode, "Set f125 emulation mode. 0=no emulation, 1=always, 2=auto. Default is 2 (auto).");
@@ -187,6 +191,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		//---------- HDEVIO ------------
 		hdevio = new HDEVIO(this->source_name);
 		if( ! hdevio->is_open ) throw std::exception(); // throw exception if unable to open
+		if(EVENT_MASK.length()!=0) hdevio->SetEventMask(EVENT_MASK);
+		if(EVIO_SPARSE_READ) hdevio->PrintFileSummary();
 #else	// USE_HDEVIO
 		//-------- CODA EVIO -----------
 		jerr << "You are attempting to use the CODA Channels library for reading" << endl;
@@ -1005,7 +1011,12 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 			buff = GetPoolBuffer(); // Get (or allocate) a new buffer from the pool
 			uint32_t buff_size = BUFFER_SIZE;
 			while(!done){
-				if(hdevio->read(buff, buff_size)){
+				bool isok = true; 
+				if(EVIO_SPARSE_READ)
+					isok= hdevio->readSparse(buff, buff_size);
+				else
+					isok= hdevio->read(buff, buff_size);
+				if(isok){
 					done = true;
 				}else{
 					string mess = hdevio->err_mess.str();
@@ -1546,17 +1557,16 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
         // then copy the number of samples for the integral from it.
         if(!cdcp->emulated){
             if(conf){
-                //cdcp->nsamples_integral = conf->NSA_NSB;
-                int TC = (int)cdcp->le_time/10+1;
-                //int PG = conf->PG; does not yet work
-                int PG = 4;
-                int END = ( (TC-PG+conf->IE) > (conf->NW - 20) ) ? (conf->NW - 20) : (TC-PG + conf->IE) ;
-                int nsamp = END - (TC-PG);
+
+                int timesample = (int)cdcp->le_time/10;
+                int END = ( (timesample + conf->IE) > (conf->NW - 20) ) ? (conf->NW - 20) : (timesample + conf->IE) ;
+                int nsamp = END - timesample;
                 if (nsamp>0){
                     cdcp->nsamples_integral = nsamp;
                 } else {
-                    cdcp->nsamples_integral = 1;
+                    cdcp->nsamples_integral = 0;  //integral is 0 if timesample >= NW-20
                 }
+
             }
         }
     }
@@ -1573,17 +1583,17 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
         // then copy the number of samples for the integral from it.
         if(!fdcp->emulated){
             if(conf){
-                //fdcp->nsamples_integral = conf->NSA_NSB;
-                int TC = (int)fdcp->le_time/10+1;
-                //int PG = conf->PG; does not yet work
-                int PG = 4;
-                int END = ( (TC-PG+conf->IE) > (conf->NW - 20) ) ? (conf->NW - 20) : (TC-PG + conf->IE) ;
-                int nsamp = END - (TC-PG);
+
+                int timesample = (int)fdcp->le_time/10;
+                int END = ( (timesample + conf->IE) > (conf->NW - 20) ) ? (conf->NW - 20) : (timesample + conf->IE) ;
+                int nsamp = END - timesample;
+
                 if (nsamp>0){
                     fdcp->nsamples_integral = nsamp;
                 } else {
-                    fdcp->nsamples_integral = 1;
+                    fdcp->nsamples_integral = 0;  //integral is 0 if timesample >= NW-20
                 }
+
             }
         }
     }
@@ -2767,6 +2777,12 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
             continue;
         }
 
+        // Check if this is additional sync data 
+        if(bankPtr->tag == 0xEE10){
+            if(VERBOSE>6) evioout << "      SYNC event - ignoring undocumented sync bank"<< endl; // only somov@jlab.org knows what this is
+            continue;
+        }
+
         // The number of events in block is stored in lower 8 bits
         // of header word (aka the "num") of Data Bank. This should
         // be at least 1.
@@ -3778,10 +3794,10 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
                 }
                 break;
             case 3: // Trigger Time
-                t = ((*iptr)&0xFFFFFF)<<0;
+                t = ((*iptr)&0xFFFFFF)<<24; // n.b. Documentation is incorrect! This is opposite of f250 (see e-mail from Naomi/Cody on 4/28/2016)
                 iptr++;
                 if(((*iptr>>31) & 0x1) == 0){
-                    t += ((*iptr)&0xFFFFFF)<<24; // from word on the street: second trigger time word is optional!!??
+                    t += ((*iptr)&0xFFFFFF)<<0; // (see above)
                 }else{
                     iptr--;
                 }

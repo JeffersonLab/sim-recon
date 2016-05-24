@@ -92,37 +92,47 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, uint64
 {
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
-	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-	{
-		dHist_IsEvent->Fill(1);
-	}
-	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
-	vector<const DMCThrown*> locMCThrowns;
-	locEventLoop->Get(locMCThrowns);
+  vector <const DL1Trigger*>  Trig;
+  locEventLoop->Get(Trig);
 
-	//Fill reaction-independent histograms.
-	dHistogramAction_NumReconstructedObjects(locEventLoop);
-	dHistogramAction_Reconstruction(locEventLoop);
-	dHistogramAction_EventVertex(locEventLoop);
-
-	dHistogramAction_DetectorMatching(locEventLoop);
-	dHistogramAction_DetectorMatchParams(locEventLoop);
-	dHistogramAction_Neutrals(locEventLoop);
-	dHistogramAction_DetectorPID(locEventLoop);
-
-	dHistogramAction_TrackMultiplicity(locEventLoop);
-	dHistogramAction_DetectedParticleKinematics(locEventLoop);
-//	dHistogramAction_ObjectMemory(locEventLoop);
-
-	if(!locMCThrowns.empty())
-	{
-		dHistogramAction_ThrownParticleKinematics(locEventLoop);
-		dHistogramAction_ReconnedThrownKinematics(locEventLoop);
-		dHistogramAction_GenReconTrackComparison(locEventLoop);
-	}
-
-	return NOERROR;
+  if (!Trig.empty()){
+    if (Trig[0]->fp_trig_mask>0){ // Ignore front pannel trigger
+      return NOERROR;
+    }
+  }
+  
+  japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+  {
+    dHist_IsEvent->Fill(1);
+  }
+  japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+  
+  vector<const DMCThrown*> locMCThrowns;
+  locEventLoop->Get(locMCThrowns);
+  
+  //Fill reaction-independent histograms.
+  dHistogramAction_NumReconstructedObjects(locEventLoop);
+  dHistogramAction_Reconstruction(locEventLoop);
+  dHistogramAction_EventVertex(locEventLoop);
+  
+  dHistogramAction_DetectorMatching(locEventLoop);
+  dHistogramAction_DetectorMatchParams(locEventLoop);
+  dHistogramAction_Neutrals(locEventLoop);
+  dHistogramAction_DetectorPID(locEventLoop);
+  
+  dHistogramAction_TrackMultiplicity(locEventLoop);
+  dHistogramAction_DetectedParticleKinematics(locEventLoop);
+  //	dHistogramAction_ObjectMemory(locEventLoop);
+  
+  if(!locMCThrowns.empty())
+    {
+      dHistogramAction_ThrownParticleKinematics(locEventLoop);
+      dHistogramAction_ReconnedThrownKinematics(locEventLoop);
+      dHistogramAction_GenReconTrackComparison(locEventLoop);
+    }
+  
+  return NOERROR;
 }
 
 //------------------

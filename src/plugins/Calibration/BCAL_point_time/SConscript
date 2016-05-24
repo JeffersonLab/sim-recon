@@ -6,8 +6,10 @@ import sbms
 Import('*')
 env = env.Clone()
 
+sbms.AddROOTSpyMacros(env)
+sbms.AddJANA(env)
 sbms.AddDANA(env)
 sbms.AddROOT(env)
-sbms.executable(env)
+sbms.plugin(env)
 
 
