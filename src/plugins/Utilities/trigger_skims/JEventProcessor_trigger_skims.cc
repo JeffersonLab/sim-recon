@@ -66,14 +66,22 @@ jerror_t JEventProcessor_trigger_skims::evnt(JEventLoop *locEventLoop, uint64_t 
 	const DEventWriterEVIO* locEventWriterEVIO = NULL;
 	locEventLoop->GetSingle(locEventWriterEVIO);
 
+    // Save BOR events
+    if(locEventLoop->GetJEvent().GetStatusBit(kSTATUS_BOR_EVENT)) {
+        locEventWriterEVIO->Write_EVIOEvent( locEventLoop, "BCAL-LED" );
+        locEventWriterEVIO->Write_EVIOEvent( locEventLoop, "FCAL-LED" );
+        locEventWriterEVIO->Write_EVIOEvent( locEventLoop, "random" );
+        return NOERROR;
+    }
+
 	// Save EPICS events
 	vector<const DEPICSvalue*> locEPICSValues;
 	locEventLoop->Get(locEPICSValues);
 	if(!locEPICSValues.empty()) {
         if (write_out_bcal_led)
-            locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "BCAL_LED");
+            locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "BCAL-LED");
         if (write_out_fcal_led)
-            locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "FCAL_LED");
+            locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "FCAL-LED");
         if (write_out_random)
             locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "random");
 		return NOERROR;
@@ -112,13 +120,13 @@ jerror_t JEventProcessor_trigger_skims::evnt(JEventLoop *locEventLoop, uint64_t 
 			// Downstream BCAL LED trigger fired
 			BCAL_LED_DS_trigger = true;
 		}
-		if (trig->fp_trig_mask & 0x1000) {  // Trigger front-panel bit 12
-			// FCAL LED trigger fired
-			FCAL_LED_trigger = true;
-		}
-		if (trig->fp_trig_mask & 0x008) {   // Trigger front-panel bit 3
+		if (trig->fp_trig_mask & 0x800) {  // Trigger front-panel bit 11
 			// Periodic pulser trigger fired
 			random_trigger = true;
+		}
+		if (trig->fp_trig_mask & 0x004) {   // Trigger front-panel bit 2
+			// FCAL LED trigger fired
+			FCAL_LED_trigger = true;
 		}
 	} 
 
@@ -139,13 +147,13 @@ jerror_t JEventProcessor_trigger_skims::evnt(JEventLoop *locEventLoop, uint64_t 
     // 3. Number of hits in BCAL > 200
     bool save_BCAL_LED_event = BCAL_LED_US_trigger || BCAL_LED_DS_trigger
         || (bcal_hits.size() >= 200) || (total_bcal_energy > 12.);
-	if (write_out_bcal_led || save_BCAL_LED_event) {
-        locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "BCAL_LED");
+	if (write_out_bcal_led && save_BCAL_LED_event) {
+        locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "BCAL-LED");
     }
-	if (write_out_fcal_led || FCAL_LED_trigger) {
-        locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "FCAL_LED");
+	if (write_out_fcal_led && FCAL_LED_trigger) {
+        locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "FCAL-LED");
     }
-	if (write_out_random || random_trigger) {
+	if (write_out_random && random_trigger) {
         locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "random");
     }
 
