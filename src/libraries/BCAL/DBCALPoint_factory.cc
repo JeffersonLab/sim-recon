@@ -181,9 +181,9 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
 
     // pass track parameters to the DBCALPoint constructor, since
     // many of the calculations are implemented there. This should change promptly
-    double track_p0 = 210.0; // random "average" value (dimensions: cm)
-    double track_p1 = 8.4; // random "average" value (dimensions: cm/ns)
-    double track_p2 = 0.004; // random "average" value (dimensions: cm/ns^2)
+    double track_p0 = -1.0; // will be updated from GetTrackParameters (dimensions: cm)
+    double track_p1 = -1.0; // will be updated from GetTrackParameters (dimensions: cm/ns)
+    double track_p2 = -100.0; // will be updated from GetTrackParameters (dimensions: cm/ns^2)
     GetTrackParameters(table_id, track_p0, track_p1, track_p2);
 
     DBCALPoint *point = new DBCALPoint(*uphit,*dnhit,m_z_target_center,attenuation_length,cEff,track_p0,track_p1,track_p2);
@@ -223,9 +223,14 @@ bool DBCALPoint_factory::GetTrackParameters(int id, double &track_p0,
 {
 	vector<double> &z_parms = track_parameters.at(id);
 
-	track_p0 = z_parms[0];
-	track_p1 = z_parms[1];
-	track_p2 = z_parms[2];
-
-	return true;
+	if(!z_parms.empty()){
+		track_p0 = z_parms[0];
+		track_p1 = z_parms[1];
+		track_p2 = z_parms[2];
+		return true;
+	}
+  	else{
+  		jerr<<"Failed to retrieve the z_track parameters from CCDB!!!" << endl;
+  		exit(-1);
+  	}
 }
