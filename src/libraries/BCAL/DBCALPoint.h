@@ -30,7 +30,7 @@ public:
   JOBJECT_PUBLIC(DBCALPoint);
   
   // this constructor uses two hits to obtain a local z position
-  DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, double attenutation_length, double c_effective);
+  DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, double attenutation_length, double c_effective, double track_p0, double track_p1, double track_p2);
   
   float E() const { return m_E; }
   float E_US() const { return m_E_US; }  ///< Return the attenuation corrected Energy of US Hit
@@ -88,6 +88,7 @@ private:
   int m_module, m_layer, m_sector;
 
   // cylindrical coordinate locations
+  float m_zGlobal;                ///< z-coordinate relative to the beginning of the BCAL
   float m_zLocal;                ///< z-coordinate relative to the center of BCAL
   float m_z, m_sig_z;            ///< z-coordinate relative to the center of the target
   float m_r, m_sig_r;            ///< distance from beam axis
