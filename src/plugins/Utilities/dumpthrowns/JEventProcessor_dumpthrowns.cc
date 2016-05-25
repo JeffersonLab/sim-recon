@@ -92,8 +92,10 @@ jerror_t JEventProcessor_dumpthrowns::evnt(JEventLoop *loop, uint64_t eventnumbe
 		ss << " " << thrown->px() << " " << thrown->py() << " " << thrown->pz();
 		
 		// Write thrown parameters string to file
+		LockState();
 		(*ofs) << ss.str() << endl;
 		events_written++;
+		UnlockState();
 		
 		// Sometimes, generated particles are added to the thrown
 		// particles list. We want only the first MAX_CANDIDATE_FILTER

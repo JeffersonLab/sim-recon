@@ -33,11 +33,14 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 	{
 		locMassStream << hypotheses[loc_i];
 		if(loc_i != (hypotheses.size() - 1))
-			locMassStream << ", ";
+			locMassStream << ",";
 	}
 
 	string HYPOTHESES = locMassStream.str();
 	gPARMS->SetDefaultParameter("TRKFIT:HYPOTHESES", HYPOTHESES);
+
+	dMaxNumNeutralShowers = 20;
+	gPARMS->SetDefaultParameter("COMBO:MAX_NEUTRALS", dMaxNumNeutralShowers);
 
 	// Parse MASS_HYPOTHESES strings to make list of masses to try
 	hypotheses.clear();
@@ -129,6 +132,9 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 
 	locEventLoop->Get(dChargedTracks, dTrackSelectionTag.c_str());
 	locEventLoop->Get(dNeutralShowers, dShowerSelectionTag.c_str());
+
+	if(dNeutralShowers.size() > dMaxNumNeutralShowers)
+		return NOERROR; //don't even try
 
 	//sort charged particles into +/-
 	//Note that a DChargedTrack object can sometimes contain both positively and negatively charged hypotheses simultaneously: sometimes the tracking flips the sign of the track
@@ -506,6 +512,11 @@ bool DParticleComboBlueprint_factory::Handle_EndOfReactionStep(const DReaction* 
 
 	locParticleComboBlueprint = new DParticleComboBlueprint(*locParticleComboBlueprint); //clone so don't alter saved object
 	locParticleComboBlueprintStep = NULL;
+
+	//if true, once one is found: bail on search
+	if(locReaction->Get_AnyBlueprintFlag())
+		return false; //skip to the end
+
 	if(!Handle_Decursion(locParticleComboBlueprint, locResumeAtIndexDeque, locNumPossibilitiesDeque, locParticleIndex, locStepIndex, locParticleComboBlueprintStep))
 		return false;
 	return true;

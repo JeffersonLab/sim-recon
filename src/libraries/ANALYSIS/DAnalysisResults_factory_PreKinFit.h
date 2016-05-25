@@ -35,7 +35,7 @@ using namespace std;
 class DAnalysisResults_factory_PreKinFit : public jana::JFactory<DAnalysisResults>
 {
 	public:
-		DAnalysisResults_factory_PreKinFit():root_hists_created(false){};
+		DAnalysisResults_factory_PreKinFit(){};
 		~DAnalysisResults_factory_PreKinFit(){};
 		const char* Tag(void){return "PreKinFit";}
 
@@ -48,11 +48,18 @@ class DAnalysisResults_factory_PreKinFit : public jana::JFactory<DAnalysisResult
 
 		void Get_Reactions(jana::JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;
 
+		// in case you need to do anything with this factory that is shared amongst threads
+			// e.g. filling histograms
+			// When creating ROOT histograms, should still acquire JANA-wide ROOT lock (e.g. modifying gDirectory)
+		// this mutex is unique to this combination of: factory name & tag
+		pthread_rwlock_t* dFactoryLock;
+		void Lock_Factory(void);
+		void Unlock_Factory(void);
+
 		unsigned int dDebugLevel;
 		DApplication* dApplication;
 		double dMinThrownMatchFOM;
 		const DAnalysisUtilities* dAnalysisUtilities;
-		bool root_hists_created;
 
 		map<const DReaction*, bool> dMCReactionExactMatchFlags;
 		map<const DReaction*, DCutAction_TrueCombo*> dTrueComboCuts;
@@ -63,6 +70,16 @@ class DAnalysisResults_factory_PreKinFit : public jana::JFactory<DAnalysisResult
 		map<const DReaction*, TH2D*> dHistMap_NumCombosSurvivedAction;
 		map<const DReaction*, TH1D*> dHistMap_NumCombosSurvivedAction1D;
 };
+
+inline void DAnalysisResults_factory_PreKinFit::Lock_Factory(void)
+{
+	pthread_rwlock_wrlock(dFactoryLock);
+}
+
+inline void DAnalysisResults_factory_PreKinFit::Unlock_Factory(void)
+{
+	pthread_rwlock_unlock(dFactoryLock);
+}
 
 #endif // _DAnalysisResults_factory_PreKinFit_
 

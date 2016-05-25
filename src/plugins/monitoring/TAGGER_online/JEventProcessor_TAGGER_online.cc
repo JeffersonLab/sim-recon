@@ -41,7 +41,6 @@ JEventProcessor_TAGGER_online::~JEventProcessor_TAGGER_online()
 //------------------
 jerror_t JEventProcessor_TAGGER_online::init(void)
 {
-        japp->RootWriteLock();
 	gDirectory->Cd("/");
 	new TDirectoryFile("TAGGER", "TAGGER");
 	gDirectory->cd("TAGGER");
@@ -51,7 +50,6 @@ jerror_t JEventProcessor_TAGGER_online::init(void)
 	dTaggerEnergy_DeltaTSC = new TH2D("TaggerEnergy_DeltaTSC", "Tagger Energy vs. #Delta t (TAG-SC); #Delta t (TAG-SC); Tagger Energy", 200, -100, 100, 240, 0., 12.); 
 
 	gDirectory->cd("..");
-        japp->RootUnLock();
 
 	return NOERROR;
 }
@@ -80,10 +78,12 @@ jerror_t JEventProcessor_TAGGER_online::evnt(JEventLoop *loop, uint64_t eventnum
 	  const DTAGMHit* locTAGMHit;	  
 	  locBeamPhotons[loc_i]->GetSingle(locTAGMHit);
 	  if(locTAGMHit != NULL) { 
-		japp->RootWriteLock();
+		// FILL HISTOGRAMS
+		// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 		dTAGMPulsePeak_Column->Fill(locTAGMHit->column, locTAGMHit->pulse_peak);
 		dTAGMIntegral_Column->Fill(locTAGMHit->column, locTAGMHit->integral);
-		japp->RootUnLock();	
+		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 		
 		// add threshold on TAGM hits
 		if(locTAGMHit->integral < 500.) continue;
@@ -91,9 +91,11 @@ jerror_t JEventProcessor_TAGGER_online::evnt(JEventLoop *loop, uint64_t eventnum
 
 	  for(size_t loc_j = 0; loc_j < locSCHits.size(); loc_j++) {
 	    Double_t locDeltaT = locBeamPhotons[loc_i]->time() - locSCHits[loc_j]->t;
-	    japp->RootWriteLock();
+		// FILL HISTOGRAMS
+		// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 	    dTaggerEnergy_DeltaTSC->Fill(locDeltaT, locBeamPhotons[loc_i]->momentum().Mag());
-	    japp->RootUnLock();
+		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	  }
 	}

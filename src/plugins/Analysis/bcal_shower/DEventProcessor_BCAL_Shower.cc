@@ -43,13 +43,6 @@ extern "C"
 //------------------
 jerror_t DEventProcessor_BCAL_Shower::init(void)
 {
-	// This is called once at program startup. If you are creating
-	// and filling historgrams in this plugin, you should lock the
-	// ROOT mutex like this:
-	//
-	 japp->RootWriteLock();
-	//  ... create historgrams or trees ...
-
 	TDirectory *dir = new TDirectoryFile("BCAL","BCAL");
 	dir->cd();
 	
@@ -341,10 +334,6 @@ jerror_t DEventProcessor_BCAL_Shower::init(void)
 	Split_Gamma_Neutrals_raw->Branch("vertexX",&vertexX);
 	Split_Gamma_Neutrals_raw->Branch("vertexY",&vertexY);
 	
-
-	 japp->RootUnLock();
-	
-
 	dEventWriterROOT = NULL;
 	dEventWriterREST = NULL;
 
@@ -410,6 +399,8 @@ jerror_t DEventProcessor_BCAL_Shower::evnt(jana::JEventLoop* locEventLoop, uint6
 
 
 
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
 
 	vector<const DBCALShower*> locBCALShowers;
 	vector<const DFCALShower*> locFCALShowers;
@@ -434,6 +425,37 @@ jerror_t DEventProcessor_BCAL_Shower::evnt(jana::JEventLoop* locEventLoop, uint6
 
 	vector<const DTrackTimeBased*> locTrackTimeBased;
 	locEventLoop->Get(locTrackTimeBased);
+
+	const DKinematicData* locKinematicData;
+	//locEventLoop->Get(locKinematicData);
+
+
+	DVector3 crude_vertex;
+	vector <const DChargedTrackHypothesis*> locChargedTrackHypothesis;
+	locEventLoop->Get(locChargedTrackHypothesis);
+
+//	vector <const DTrackCandidate *> locTrackCandidate;
+//	locEventLoop->Get(locTrackCandidate,"StraightLine");
+
+// = static_cast<const DChargedTrackHypothesis* (locKinematicData);
+	//DChargedTrackHypothesis * locChargedTrack = const_cast<const DChargedTrackHypothesis *> (locChargedTrackHypothesis);
+	//const DChargedTrackHypothesis* locChargedTrack = static_cast<const DChargedTrackHypothesis* (locKinematicData);
+	//deque <const DChargedTrackHypothesis *> locChargedTrack = static_cast <const DChargedTrackHypothesis*>(locKinematicData);
+
+/*	vector <const DNeutralParticleHypothesis *> locNeutralParticleHypothesis;
+	locEventLoop->Get(locNeutralParticleHypothesis);
+	double locTheta;
+	locTheta = locNeutralParticleHypothesis->momentum().Theta*180.0/TMath::Pi();
+	Theta->Fill(locTheta);*/
+
+
+ 	vector <const DChargedTrackHypothesis*> locParticles;
+	locEventLoop->Get(locParticles);
+	//vector <const DKinematicData*> locParticles;
+	//locEventLoop->Get(locParticles);
+
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 
 	vector <const DBCALShower *> matchedShowers;
 	vector < const DBCALShower *> matchedShowersneg;
@@ -561,35 +583,7 @@ jerror_t DEventProcessor_BCAL_Shower::evnt(jana::JEventLoop* locEventLoop, uint6
 	//What to do later
 	// if (matchedShowes.find( <<< cost BCALShower * >>> ) != matchedShower.end()) continue;
 
-	const DKinematicData* locKinematicData;
-	//locEventLoop->Get(locKinematicData);
 
-
-	DVector3 crude_vertex;
-	vector <const DChargedTrackHypothesis*> locChargedTrackHypothesis;
-	locEventLoop->Get(locChargedTrackHypothesis);
-
-//	vector <const DTrackCandidate *> locTrackCandidate;
-//	locEventLoop->Get(locTrackCandidate,"StraightLine");
-
-
-	       japp->RootWriteLock();
-// = static_cast<const DChargedTrackHypothesis* (locKinematicData);
-	//DChargedTrackHypothesis * locChargedTrack = const_cast<const DChargedTrackHypothesis *> (locChargedTrackHypothesis);
-	//const DChargedTrackHypothesis* locChargedTrack = static_cast<const DChargedTrackHypothesis* (locKinematicData);
-	//deque <const DChargedTrackHypothesis *> locChargedTrack = static_cast <const DChargedTrackHypothesis*>(locKinematicData);
-
-/*	vector <const DNeutralParticleHypothesis *> locNeutralParticleHypothesis;
-	locEventLoop->Get(locNeutralParticleHypothesis);
-	double locTheta;
-	locTheta = locNeutralParticleHypothesis->momentum().Theta*180.0/TMath::Pi();
-	Theta->Fill(locTheta);*/
-
-
- 	vector <const DChargedTrackHypothesis*> locParticles;
-	locEventLoop->Get(locParticles);
-	//vector <const DKinematicData*> locParticles;
-	//locEventLoop->Get(locParticles);
   // DVector3 Calc_CrudeVertex(const deque<const DKinematicData*>& locParticles) const
    //{
 	DVector3 locVertex(0.0,0.0,dTargetZCenter);
@@ -597,11 +591,8 @@ jerror_t DEventProcessor_BCAL_Shower::evnt(jana::JEventLoop* locEventLoop, uint6
 	//cout << " vertex before = " << locVertexZ << " dTargetZcenter = " << dTargetZCenter << endl;
 	//locVertexZ = locVertex.Z();
 
-	if(locParticles.size() == 0) {
-	        // Always unlock before returning
-	        japp->RootUnLock();
+	if(locParticles.size() == 0)
 		return NOERROR;
-	}
 
 	double locDOCA, locDOCA2, locSmallestDOCA, locTime0;
 	double locAverageTime = 0.0;
@@ -612,26 +603,23 @@ jerror_t DEventProcessor_BCAL_Shower::evnt(jana::JEventLoop* locEventLoop, uint6
 
 	locSmallestDOCA = 9.9E9;
 	if(locParticles.size()>1){
-	//cout << " locParticles.size() = " << locParticles.size() << endl;
-	for(int j = 0; j < (int(locParticles.size())-1); ++j) 
-	{
-			//cout << " please be this far lol " << endl;
-		for(size_t k= j+1; k < locParticles.size(); ++k)
+		//cout << " locParticles.size() = " << locParticles.size() << endl;
+		for(int j = 0; j < (int(locParticles.size())-1); ++j) 
 		{
-			locDOCA = dAnalysisUtilities->Calc_DOCAVertex(locParticles[j],locParticles[k], locTempVertex);
+				//cout << " please be this far lol " << endl;
+			for(size_t k= j+1; k < locParticles.size(); ++k)
+			{
+				locDOCA = dAnalysisUtilities->Calc_DOCAVertex(locParticles[j],locParticles[k], locTempVertex);
 
-				locSmallestDOCA = locDOCA;
-				locVertex = locTempVertex;
-				locVertexZ = locVertex.Z();
-				locVertexY = locVertex.Y();
-				locVertexX = locVertex.X();
+					locSmallestDOCA = locDOCA;
+					locVertex = locTempVertex;
+					locVertexZ = locVertex.Z();
+					locVertexY = locVertex.Y();
+					locVertexX = locVertex.X();
 			
+			}
 		}
 	}
-	
-
-
-        }
 
 	double kinfitVertexX, kinfitVertexY, kinfitVertexZ, kinfitVertexT;
 	for (int i = 0 ; i < kinfitVertex.size(); i++)
@@ -642,7 +630,7 @@ jerror_t DEventProcessor_BCAL_Shower::evnt(jana::JEventLoop* locEventLoop, uint6
 		kinfitVertexT = kinfitVertex[i]->dSpacetimeVertex.T();
 		goodVertexZ->Fill(kinfitVertexZ);
 	}
-	
+
 
 	//DVector3 poca;
 	//double d = finder->FindDoca(position1,momentum1,position2,momentum2, &poca);
@@ -2615,8 +2603,6 @@ for(size_t i = 0 ; i < locChargedTracks.size(); ++i)
 
 
 
-	vector<const DMCThrown*> locMCThrowns;
-	locEventLoop->Get(locMCThrowns);
 	//const DMCThrown* locMCThrown;
 	//const DMCThrown* locMCThrown2
 
@@ -2756,9 +2742,7 @@ for(size_t i = 0 ; i < locChargedTracks.size(); ++i)
 		}
 	}
 
-        //UnlockState();	
-	japp->RootUnLock();
-
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
 	/*
 	//Optional: Save event to output REST file. Use this to create skims.

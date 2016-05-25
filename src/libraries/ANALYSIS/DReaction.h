@@ -112,8 +112,14 @@ class DReaction : public JObject
 		string Get_TTreeOutputFileName(void) const{return dTTreeOutputFileName;}
 		bool Get_EnableTTreeOutputFlag(void) const{return dEnableTTreeOutputFlag;}
 
+		// BUILD ANY FLAGS
+		//Default false. If true: Once one is built, don't bother making others. 
+		bool Get_AnyBlueprintFlag(void) const{return dAnyBlueprintFlag;} //If true, no need to change dAnyComboFlag
+		bool Get_AnyComboFlag(void) const{return dAnyComboFlag;}
+		void Set_AnyBlueprintFlag(bool locAnyBlueprintFlag){dAnyBlueprintFlag = locAnyBlueprintFlag;} //If true, no need to change dAnyComboFlag
+		void Set_AnyComboFlag(bool locAnyComboFlag){dAnyComboFlag = locAnyComboFlag;}
+
 		// OTHER:
-		bool Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex = 1) const;
 		bool Check_AreStepsIdentical(const DReaction* locReaction) const;
 
 	private:
@@ -152,6 +158,11 @@ class DReaction : public JObject
 
 		// EVENT STORE QUERY
 		pair<string, string> dEventStoreQuery; // First is skim name (default = "all"), second is additional query (default = "")
+
+		// BUILD ANY FLAGS
+		//Default false. If true: Once one is built, don't bother making others. 
+		bool dAnyBlueprintFlag; //If true, don't need to bother changing dAnyComboFlag
+		bool dAnyComboFlag;
 };
 
 inline void DReaction::Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass)
@@ -196,17 +207,6 @@ inline string DReaction::Get_DecayChainFinalParticlesROOTNames(Particle_t locIni
 		return Get_DecayChainFinalParticlesROOTNames(loc_i, locUpToStepIndex, locUpThroughPIDs, locKinFitResultsFlag, false);
 	}
 	return string("");
-}
-
-inline bool DReaction::Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex) const
-{
-	//see if this pid is a parent in a future step
-	for(size_t loc_k = locSearchStartIndex; loc_k < dReactionSteps.size(); ++loc_k)
-	{
-		if(dReactionSteps[loc_k]->Get_InitialParticleID() == locPID)
-			return true;
-	}
-	return false;
 }
 
 inline void DReaction::Get_ReactionSteps(Particle_t locInitialPID, deque<const DReactionStep*>& locReactionSteps) const

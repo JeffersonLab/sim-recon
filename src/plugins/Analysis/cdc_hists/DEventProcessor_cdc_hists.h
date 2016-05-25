@@ -57,7 +57,6 @@ class DEventProcessor_cdc_hists:public JEventProcessor{
 		pthread_mutex_t mutex;
 		
 		const DMagneticFieldMap *bfield;
-		DReferenceTrajectory *rt;
 };
 
 #endif // _DEventProcessor_cdc_hists_

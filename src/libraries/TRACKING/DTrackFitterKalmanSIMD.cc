@@ -724,6 +724,23 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
             << " vertex=(" << x_ << "," << y_ << "," << z_<<")"
             << " chi2=" << chisq_
             <<endl;
+        if(DEBUG_LEVEL>1){
+            //Dump pulls
+            for (unsigned int iPull = 0; iPull < pulls.size(); iPull++){
+                if (pulls[iPull].cdc_hit != NULL){
+                _DBG_ << " ring: " <<  pulls[iPull].cdc_hit->wire->ring
+                    << " straw: " << pulls[iPull].cdc_hit->wire->straw  
+                    << " Residual: " << pulls[iPull].resi
+                    << " Err: " << pulls[iPull].err
+                    << " tdrift: " << pulls[iPull].tdrift
+                    << " doca: " << pulls[iPull].d
+                    << " docaphi: " << pulls[iPull].docaphi
+                    << " z: " << pulls[iPull].z
+                    << " tcorr: " << pulls[iPull].tcorr 
+                    << endl;
+                }
+            }
+        }
     }
 
     DMatrixDSym errMatrix(5);

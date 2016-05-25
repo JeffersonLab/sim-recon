@@ -33,14 +33,14 @@
 // Routine used to create our DEventProcessor
 
 
-static TH1F* bcal_diphoton_mass_300 = NULL;
-static TH1F* bcal_diphoton_mass_500 = NULL;
-static TH1F* bcal_diphoton_mass_700 = NULL;
-static TH1F* bcal_diphoton_mass_900 = NULL;
-static TH1F* bcal_fcal_diphoton_mass_300 = NULL;
-static TH1F* bcal_fcal_diphoton_mass_500 = NULL;
-static TH1F* bcal_fcal_diphoton_mass_700 = NULL;
-static TH1F* bcal_fcal_diphoton_mass_900 = NULL;
+static TH1I* bcal_diphoton_mass_300 = NULL;
+static TH1I* bcal_diphoton_mass_500 = NULL;
+static TH1I* bcal_diphoton_mass_700 = NULL;
+static TH1I* bcal_diphoton_mass_900 = NULL;
+static TH1I* bcal_fcal_diphoton_mass_300 = NULL;
+static TH1I* bcal_fcal_diphoton_mass_500 = NULL;
+static TH1I* bcal_fcal_diphoton_mass_700 = NULL;
+static TH1I* bcal_fcal_diphoton_mass_900 = NULL;
 
 
 extern "C"
@@ -60,45 +60,43 @@ jerror_t JEventProcessor_BCAL_inv_mass::init(void)
 	// This is called once at program startup. If you are creating
 	// and filling historgrams in this plugin, you should lock the
 	// ROOT mutex like this:
-	japp->RootWriteLock();
 
 	if(bcal_diphoton_mass_500 != NULL){
-	  japp->RootUnLock();
 	  return NOERROR;
 	}
 
 	TDirectory *main = gDirectory;
 	gDirectory->mkdir("bcal_inv_mass")->cd();
 
-        bcal_diphoton_mass_300 = new TH1F("bcal_diphoton_mass_300","bcal diphoton mass (Cluster E > 300 MeV)",100,0.0,1.0);
+        bcal_diphoton_mass_300 = new TH1I("bcal_diphoton_mass_300","bcal diphoton mass (Cluster E > 300 MeV)",100,0.0,1.0);
         bcal_diphoton_mass_300->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_diphoton_mass_300->GetYaxis()->SetTitle("counts / 10 MeV");
 
-	bcal_diphoton_mass_500 = new TH1F("bcal_diphoton_mass_500","bcal diphoton mass (Cluster E > 500 MeV)",100,0.0,1.0);
+	bcal_diphoton_mass_500 = new TH1I("bcal_diphoton_mass_500","bcal diphoton mass (Cluster E > 500 MeV)",100,0.0,1.0);
 	bcal_diphoton_mass_500->GetXaxis()->SetTitle("invariant mass [GeV]");
 	bcal_diphoton_mass_500->GetYaxis()->SetTitle("counts / 10 MeV");	
 
-        bcal_diphoton_mass_700 = new TH1F("bcal_diphoton_mass_700","bcal diphoton mass (Cluster E > 700 MeV)",100,0.0,1.0);
+        bcal_diphoton_mass_700 = new TH1I("bcal_diphoton_mass_700","bcal diphoton mass (Cluster E > 700 MeV)",100,0.0,1.0);
         bcal_diphoton_mass_700->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_diphoton_mass_700->GetYaxis()->SetTitle("counts / 10 MeV");
 
-        bcal_diphoton_mass_900 = new TH1F("bcal_diphoton_mass_900","bcal diphoton mass (Cluster E > 900 MeV)",100,0.0,1.0);
+        bcal_diphoton_mass_900 = new TH1I("bcal_diphoton_mass_900","bcal diphoton mass (Cluster E > 900 MeV)",100,0.0,1.0);
         bcal_diphoton_mass_900->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_diphoton_mass_900->GetYaxis()->SetTitle("counts / 10 MeV");
 
-        bcal_fcal_diphoton_mass_300 = new TH1F("bcal_fcal_diphoton_mass_300","bcal and fcal diphoton mass (Cluster E > 300 MeV)",100,0.0,1.0);
+        bcal_fcal_diphoton_mass_300 = new TH1I("bcal_fcal_diphoton_mass_300","bcal and fcal diphoton mass (Cluster E > 300 MeV)",100,0.0,1.0);
         bcal_fcal_diphoton_mass_300->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_fcal_diphoton_mass_300->GetYaxis()->SetTitle("counts / 10 MeV");
 	
-        bcal_fcal_diphoton_mass_500 = new TH1F("bcal_fcal_diphoton_mass_500","bcal and fcal diphoton mass (Cluster E > 500 MeV)",100,0.0,1.0);
+        bcal_fcal_diphoton_mass_500 = new TH1I("bcal_fcal_diphoton_mass_500","bcal and fcal diphoton mass (Cluster E > 500 MeV)",100,0.0,1.0);
         bcal_fcal_diphoton_mass_500->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_fcal_diphoton_mass_500->GetYaxis()->SetTitle("counts / 10 MeV");
 
-        bcal_fcal_diphoton_mass_700 = new TH1F("bcal_fcal_diphoton_mass_700","bcal and fcal diphoton mass (Cluster E > 700 MeV)",100,0.0,1.0);
+        bcal_fcal_diphoton_mass_700 = new TH1I("bcal_fcal_diphoton_mass_700","bcal and fcal diphoton mass (Cluster E > 700 MeV)",100,0.0,1.0);
         bcal_fcal_diphoton_mass_700->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_fcal_diphoton_mass_700->GetYaxis()->SetTitle("counts / 10 MeV");
 
-        bcal_fcal_diphoton_mass_900 = new TH1F("bcal_fcal_diphoton_mass_900","bcal and fcal diphoton mass (Cluster E > 900 MeV)",100,0.0,1.0);
+        bcal_fcal_diphoton_mass_900 = new TH1I("bcal_fcal_diphoton_mass_900","bcal and fcal diphoton mass (Cluster E > 900 MeV)",100,0.0,1.0);
         bcal_fcal_diphoton_mass_900->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_fcal_diphoton_mass_900->GetYaxis()->SetTitle("counts / 10 MeV");
 
@@ -110,9 +108,6 @@ jerror_t JEventProcessor_BCAL_inv_mass::init(void)
 	 //	dir->cd();
 
 	main->cd();
-
-	 japp->RootUnLock();
-
 
 	return NOERROR;
 }
@@ -194,7 +189,6 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uin
 	  }
 	}
 
-
    for(unsigned int i = 0 ; i < locTrackTimeBased.size(); ++i)
         {
                 for(unsigned int j = 0 ; j < locFCALClusters.size(); ++j)
@@ -217,7 +211,6 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uin
                   }
 	}                        
 
-	japp->RootWriteLock();
  	vector <const DChargedTrackHypothesis*> locParticles;
 	double kinfitVertexX = 0.0, kinfitVertexY = 0.0, kinfitVertexZ = 0.0;
 	for (unsigned int i = 0 ; i < kinfitVertex.size(); i++)
@@ -229,6 +222,10 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uin
 		//kinfitVertexT = kinfitVertex[i]->dSpacetimeVertex.T();
 	}
 	
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
 	for(unsigned int i=0; i<locBCALShowers.size(); i++)
 	{
 	     //   if(locDetectorMatches->Get_IsMatchedToTrack(locBCALShowers[i]))
@@ -281,7 +278,7 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uin
 	}   
 
 
-	japp->RootUnLock();     
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 
 	/*

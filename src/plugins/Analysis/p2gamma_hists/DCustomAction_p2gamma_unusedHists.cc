@@ -15,6 +15,8 @@ void DCustomAction_p2gamma_unusedHists::Initialize(JEventLoop* locEventLoop)
         locEventLoop->GetSingle(locParticleID);
 	dParticleID = locParticleID;
 
+	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
@@ -232,11 +234,14 @@ bool DCustomAction_p2gamma_unusedHists::Perform_Action(JEventLoop* locEventLoop,
 		}	
 	}
 	
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		dNShowerBCAL_FCAL->Fill(nUnmatchedFCAL, nUnmatchedBCAL);
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 
 	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }
@@ -260,7 +265,10 @@ void DCustomAction_p2gamma_unusedHists::FillTrack(const DChargedTrack* locCharge
 	  else cout<<nPoss<<" "<<nHits<<endl;
 	*/
 
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		dHistMap_TrackNhits_Theta[locMatch][locCharge]->Fill(locTrackTimeBased->momentum().Theta()*180/TMath::Pi(), nHits);
 		dHistMap_TrackChiSq_Theta[locMatch][locCharge]->Fill(locTrackTimeBased->momentum().Theta()*180/TMath::Pi(), locTrackTimeBased->chisq);
@@ -272,7 +280,7 @@ void DCustomAction_p2gamma_unusedHists::FillTrack(const DChargedTrack* locCharge
 		//dHistMap_TrackNposs_Theta[locMatch][locCharge]->Fill(locTrackTimeBased->momentum().Theta()*180/TMath::Pi(), nPoss);
 		//dHistMap_TrackHitFrac_Theta[locMatch][locCharge]->Fill(locTrackTimeBased->momentum().Theta()*180/TMath::Pi(), fitFrac);
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 
 	return;
 }
@@ -320,12 +328,15 @@ void DCustomAction_p2gamma_unusedHists::FillShower(const DNeutralShower* locNeut
 
 		const DBCALShower* locBCALShower = NULL;
 		locNeutralShower->GetSingleT(locBCALShower);
-		
-		japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+
+		//FILL HISTOGRAMS
+		//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+		//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+		Lock_Action(); //ACQUIRE ROOT LOCK!!
 		{
 			dHistMap_BCALShowerNcell[locMatch]->Fill(locBCALShower->N_cell);
 		}
-		japp->RootUnLock(); //RELEASE ROOT LOCK!!
+		Unlock_Action(); //RELEASE ROOT LOCK!!
 
 		vector<const DBCALCluster*> locBCALClusters;
 		locBCALShower->Get(locBCALClusters);
@@ -351,7 +362,10 @@ void DCustomAction_p2gamma_unusedHists::FillShower(const DNeutralShower* locNeut
 		}
 	}
 
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		dHistMap_ShowerEnergy_Theta[locMatch][locSystem]->Fill(locPosition.Theta()*180./TMath::Pi(), locEnergy);
 		dHistMap_ShowerPhi_Theta[locMatch][locSystem]->Fill(locPosition.Theta()*180./TMath::Pi(), locPosition.Phi()*180./TMath::Pi());
@@ -374,7 +388,7 @@ void DCustomAction_p2gamma_unusedHists::FillShower(const DNeutralShower* locNeut
 		}
 
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 
 	return;
 }

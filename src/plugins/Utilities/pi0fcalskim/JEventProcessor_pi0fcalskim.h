@@ -34,8 +34,6 @@ class JEventProcessor_pi0fcalskim:public jana::JEventProcessor{
 
   void writeClustersToRoot( const vector< const DFCALCluster* > clusVec );
 
-  const DEventWriterEVIO* dEventWriterEVIO;		
-
   double MIN_MASS;
   double MAX_MASS;
   double MIN_E;

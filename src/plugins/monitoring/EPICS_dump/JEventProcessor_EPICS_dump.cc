@@ -101,14 +101,9 @@ JEventProcessor_EPICS_dump::~JEventProcessor_EPICS_dump() {
 
 jerror_t JEventProcessor_EPICS_dump::init(void) {
 
-  // lock all root operations
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
-
  // First thread to get here makes all histograms. If one pointer is
  // already not NULL, assume all histograms are defined and return now
 	if(h1epics_trgbits != NULL){
-		japp->RootUnLock();
 		return NOERROR;
 	}
 
@@ -178,10 +173,6 @@ jerror_t JEventProcessor_EPICS_dump::init(void) {
     save_ntrig0[j] = 0;
     }
 
-
-  // unlock
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
-
   return NOERROR;
 }
 
@@ -225,31 +216,41 @@ jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64
 	bool isEPICS = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_EPICS_EVENT);
 	// bool isSynch = locEventLoop->GetJEvent().GetStatusBit(kSTATUS_SYNCH_EVENT);
 
-	japp->RootWriteLock();
+    // get trigger information, if it exists
+    const DL1Trigger *trig_words = NULL;
+    
+    try {
+        locEventLoop->GetSingle(trig_words);
+    } catch(...) {};
+
+    // get information about scalars, if it exists
+    const DTSscalers *ts_scalers = NULL;
+    try {
+	    locEventLoop->GetSingle(ts_scalers);
+    } catch(...) {};
+    
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	uint32_t trig_mask=0, fp_trig_mask=0;
 	uint32_t temp_mask=0;
 
 	if (isPhysics) {
-	  // first get trigger bits
 
-	  const DL1Trigger *trig_words = NULL;
-
-	  try {
-	    locEventLoop->GetSingle(trig_words);
-	  } catch(...) {};
-	  if (trig_words) {
-	    trig_mask = trig_words->trig_mask;
-	    fp_trig_mask = trig_words->fp_trig_mask; 
-	    for (int j=0; j<nscalers; j++) {
-	      temp_mask = trig_mask & 1<<j;
-	      if (temp_mask && init_ntrig) save_ntrig[j] += 1;
-	    } 
-	  }
-	  else {
-	    trig_mask = 0;
-	    fp_trig_mask = 0;
-	  }
+      // fill trigger histograms 
+      if (trig_words) {
+          trig_mask = trig_words->trig_mask;
+          fp_trig_mask = trig_words->fp_trig_mask; 
+          for (int j=0; j<nscalers; j++) {
+              temp_mask = trig_mask & 1<<j;
+              if (temp_mask && init_ntrig) save_ntrig[j] += 1;
+          } 
+      }
+      else {
+          trig_mask = 0;
+          fp_trig_mask = 0;
+      }
 
 	  int trig_bits = fp_trig_mask > 0? 70 + fp_trig_mask/256: trig_mask;
 	  if (fp_trig_mask>0) printf (" Event=%d trig_bits=%d trig_mask=%X fp_trig_mask=%X\n",(int)locEventNumber,trig_bits,trig_mask,fp_trig_mask);
@@ -261,9 +262,8 @@ jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64
 	  h1epics_trgbits->Fill(trig_bits);
 
 
-	  // now get scalers
+	  // now fill scalers
 
-	  const DTSscalers *ts_scalers = NULL;
 	  uint32_t livetime; /* accumulated livetime */
 	  uint32_t busytime; /* accumulated busy time */
 	  uint32_t live_inst; /* instantaneous livetime */
@@ -274,9 +274,6 @@ jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64
 	  uint32_t gtp_rate[nscalers]; /* instant. rate of GTP triggers */
 	  // uint32_t fp_rate[nscalers1]; /* instant. rate of FP triggers */
 
-	  try {
-	    locEventLoop->GetSingle(ts_scalers);
-	  } catch(...) {};
 	  if (ts_scalers) {
 	    livetime = ts_scalers->live_time;
 	    busytime = ts_scalers->busy_time;
@@ -372,11 +369,7 @@ jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64
 
 	}
 
-
-
-
-        //UnlockState();	
-	japp->RootUnLock();
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }

@@ -476,7 +476,7 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int32_t runnumber)
     short_drift_func[2][2]=row["c3"];
   }
 
-  dapp->Lock();
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 
   for (int i=0;i<28;i++){
     char title[40];
@@ -617,7 +617,7 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int32_t runnumber)
 
 
   
-  dapp->Unlock();
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
    // Get pointer to TrackFinder object 
   vector<const DTrackFinder *> finders;
@@ -964,13 +964,12 @@ DEventProcessor_dc_alignment::DoFilter(double t0,double OuterZ,DMatrix4x1 &S,
 		    cdc.N=myevt;
 		    
 		    
-		    // Lock mutex
-		    pthread_mutex_lock(&mutex);
+			// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+			japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 		    
 		    cdctree->Fill();
 		    
-		    // Unlock mutex
-		    pthread_mutex_unlock(&mutex);
+			japp->RootUnLock(); //RELEASE ROOT LOCK
 		    
 		  }
 		}
@@ -1081,13 +1080,12 @@ DEventProcessor_dc_alignment::DoFilterCathodePlanes(double t0,double start_z,
 	    fdc_c.layer=layer+1;
 	    fdc_c.N=myevt;
 	    
-	    // Lock mutex
-	    pthread_mutex_lock(&mutex);
+		// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+		japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 	    
 	    fdcCtree->Fill();
 	  
-	    // Unlock mutex
-	    pthread_mutex_unlock(&mutex);
+		japp->RootUnLock(); //RELEASE ROOT LOCK
 	  }
 	}
       }
@@ -1195,13 +1193,12 @@ DEventProcessor_dc_alignment::DoFilterAnodePlanes(double t0,double start_z,
 	    fdc.layer=layer+1;
 	    fdc.N=myevt;
 	    
-	    // Lock mutex
-	    pthread_mutex_lock(&mutex);
+		// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+		japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 	    
 	    fdctree->Fill();
 	    
-	    // Unlock mutex
-	    pthread_mutex_unlock(&mutex);
+		japp->RootUnLock(); //RELEASE ROOT LOCK
 	  }
 	}
       }

@@ -77,24 +77,24 @@ jerror_t DEventProcessor_trkres_tree::init(void)
 //------------------
 jerror_t DEventProcessor_trkres_tree::brun(JEventLoop *loop, int32_t runnumber)
 {
-	pthread_mutex_lock(&mutex);
-	
-	DApplication *dapp =  dynamic_cast<DApplication*>(loop->GetJApplication());
-	if(dapp){
-		bfield = dapp->GetBfield(runnumber);
-	}else{
-		_DBG_<<"Unable to get DApplication pointer! (JApplication* = "<<loop->GetJApplication()<<")"<<endl;
-		exit(-1);
-	}
-	
 	// These are copied from DTrackFitterALT1.cc
-	SIGMA_CDC = 0.0150;
-	SIGMA_FDC_ANODE = 0.0200;
-	SIGMA_FDC_CATHODE = 0.0200;
+	double locSIGMA_CDC = 0.0150;
+	double locSIGMA_FDC_ANODE = 0.0200;
+	double locSIGMA_FDC_CATHODE = 0.0200;
 
-	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_CDC",						SIGMA_CDC);
-	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_ANODE",				SIGMA_FDC_ANODE);
-	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_CATHODE",			SIGMA_FDC_CATHODE);
+	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_CDC",						locSIGMA_CDC);
+	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_ANODE",				locSIGMA_FDC_ANODE);
+	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_CATHODE",			locSIGMA_FDC_CATHODE);
+
+	DApplication *dapp =  dynamic_cast<DApplication*>(loop->GetJApplication());
+
+	pthread_mutex_lock(&mutex);
+
+	bfield = dapp->GetBfield(runnumber);
+	
+	SIGMA_CDC = locSIGMA_CDC;
+	SIGMA_FDC_ANODE = locSIGMA_FDC_ANODE;
+	SIGMA_FDC_CATHODE = locSIGMA_FDC_CATHODE;
 
 	pthread_mutex_unlock(&mutex);
 
@@ -170,8 +170,8 @@ jerror_t DEventProcessor_trkres_tree::evnt(JEventLoop *loop, uint64_t eventnumbe
 	
 	DVector3 dthrown = mcthrown->momentum();
 
-	// Lock mutex
-	pthread_mutex_lock(&mutex);
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 	
 	trkres.event = eventnumber;
 	trkres.recon.SetXYZ(meas[0].traj->px, meas[0].traj->py, meas[0].traj->pz);
@@ -184,8 +184,7 @@ jerror_t DEventProcessor_trkres_tree::evnt(JEventLoop *loop, uint64_t eventnumbe
 
 	ttrkres->Fill();
 
-	// Unlock mutex
-	pthread_mutex_unlock(&mutex);
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
 	return NOERROR;
 }
