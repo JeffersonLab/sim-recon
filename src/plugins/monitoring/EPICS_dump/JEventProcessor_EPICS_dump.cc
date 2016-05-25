@@ -120,9 +120,6 @@ jerror_t JEventProcessor_EPICS_dump::init(void) {
 	h1epics_trgbits = new TH1I("h1epics_trgbits", "Trig Trgbits",80,0,80);
 	h1epics_trgbits->SetXTitle("trig_mask || (70+fp_trig_mask/256)");
 	h1epics_trgbits->SetYTitle("counts");
-	h1epics_trgbits = new TH1I("h1epics_trgbits", "Trig Trgbits",80,0,80);
-	h1epics_trgbits->SetXTitle("trig_mask || (70+fp_trig_mask/256)");
-	h1epics_trgbits->SetYTitle("counts");
     
 	for (Int_t j=0; j<nscalers;j++) {
 	  sprintf (string,"Rates%d(kHz)",j);
