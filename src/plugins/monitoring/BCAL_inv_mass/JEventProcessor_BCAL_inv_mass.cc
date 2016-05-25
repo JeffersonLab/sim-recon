@@ -33,14 +33,14 @@
 // Routine used to create our DEventProcessor
 
 
-static TH1F* bcal_diphoton_mass_300 = NULL;
-static TH1F* bcal_diphoton_mass_500 = NULL;
-static TH1F* bcal_diphoton_mass_700 = NULL;
-static TH1F* bcal_diphoton_mass_900 = NULL;
-static TH1F* bcal_fcal_diphoton_mass_300 = NULL;
-static TH1F* bcal_fcal_diphoton_mass_500 = NULL;
-static TH1F* bcal_fcal_diphoton_mass_700 = NULL;
-static TH1F* bcal_fcal_diphoton_mass_900 = NULL;
+static TH1I* bcal_diphoton_mass_300 = NULL;
+static TH1I* bcal_diphoton_mass_500 = NULL;
+static TH1I* bcal_diphoton_mass_700 = NULL;
+static TH1I* bcal_diphoton_mass_900 = NULL;
+static TH1I* bcal_fcal_diphoton_mass_300 = NULL;
+static TH1I* bcal_fcal_diphoton_mass_500 = NULL;
+static TH1I* bcal_fcal_diphoton_mass_700 = NULL;
+static TH1I* bcal_fcal_diphoton_mass_900 = NULL;
 
 
 extern "C"
@@ -68,35 +68,35 @@ jerror_t JEventProcessor_BCAL_inv_mass::init(void)
 	TDirectory *main = gDirectory;
 	gDirectory->mkdir("bcal_inv_mass")->cd();
 
-        bcal_diphoton_mass_300 = new TH1F("bcal_diphoton_mass_300","bcal diphoton mass (Cluster E > 300 MeV)",100,0.0,1.0);
+        bcal_diphoton_mass_300 = new TH1I("bcal_diphoton_mass_300","bcal diphoton mass (Cluster E > 300 MeV)",100,0.0,1.0);
         bcal_diphoton_mass_300->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_diphoton_mass_300->GetYaxis()->SetTitle("counts / 10 MeV");
 
-	bcal_diphoton_mass_500 = new TH1F("bcal_diphoton_mass_500","bcal diphoton mass (Cluster E > 500 MeV)",100,0.0,1.0);
+	bcal_diphoton_mass_500 = new TH1I("bcal_diphoton_mass_500","bcal diphoton mass (Cluster E > 500 MeV)",100,0.0,1.0);
 	bcal_diphoton_mass_500->GetXaxis()->SetTitle("invariant mass [GeV]");
 	bcal_diphoton_mass_500->GetYaxis()->SetTitle("counts / 10 MeV");	
 
-        bcal_diphoton_mass_700 = new TH1F("bcal_diphoton_mass_700","bcal diphoton mass (Cluster E > 700 MeV)",100,0.0,1.0);
+        bcal_diphoton_mass_700 = new TH1I("bcal_diphoton_mass_700","bcal diphoton mass (Cluster E > 700 MeV)",100,0.0,1.0);
         bcal_diphoton_mass_700->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_diphoton_mass_700->GetYaxis()->SetTitle("counts / 10 MeV");
 
-        bcal_diphoton_mass_900 = new TH1F("bcal_diphoton_mass_900","bcal diphoton mass (Cluster E > 900 MeV)",100,0.0,1.0);
+        bcal_diphoton_mass_900 = new TH1I("bcal_diphoton_mass_900","bcal diphoton mass (Cluster E > 900 MeV)",100,0.0,1.0);
         bcal_diphoton_mass_900->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_diphoton_mass_900->GetYaxis()->SetTitle("counts / 10 MeV");
 
-        bcal_fcal_diphoton_mass_300 = new TH1F("bcal_fcal_diphoton_mass_300","bcal and fcal diphoton mass (Cluster E > 300 MeV)",100,0.0,1.0);
+        bcal_fcal_diphoton_mass_300 = new TH1I("bcal_fcal_diphoton_mass_300","bcal and fcal diphoton mass (Cluster E > 300 MeV)",100,0.0,1.0);
         bcal_fcal_diphoton_mass_300->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_fcal_diphoton_mass_300->GetYaxis()->SetTitle("counts / 10 MeV");
 	
-        bcal_fcal_diphoton_mass_500 = new TH1F("bcal_fcal_diphoton_mass_500","bcal and fcal diphoton mass (Cluster E > 500 MeV)",100,0.0,1.0);
+        bcal_fcal_diphoton_mass_500 = new TH1I("bcal_fcal_diphoton_mass_500","bcal and fcal diphoton mass (Cluster E > 500 MeV)",100,0.0,1.0);
         bcal_fcal_diphoton_mass_500->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_fcal_diphoton_mass_500->GetYaxis()->SetTitle("counts / 10 MeV");
 
-        bcal_fcal_diphoton_mass_700 = new TH1F("bcal_fcal_diphoton_mass_700","bcal and fcal diphoton mass (Cluster E > 700 MeV)",100,0.0,1.0);
+        bcal_fcal_diphoton_mass_700 = new TH1I("bcal_fcal_diphoton_mass_700","bcal and fcal diphoton mass (Cluster E > 700 MeV)",100,0.0,1.0);
         bcal_fcal_diphoton_mass_700->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_fcal_diphoton_mass_700->GetYaxis()->SetTitle("counts / 10 MeV");
 
-        bcal_fcal_diphoton_mass_900 = new TH1F("bcal_fcal_diphoton_mass_900","bcal and fcal diphoton mass (Cluster E > 900 MeV)",100,0.0,1.0);
+        bcal_fcal_diphoton_mass_900 = new TH1I("bcal_fcal_diphoton_mass_900","bcal and fcal diphoton mass (Cluster E > 900 MeV)",100,0.0,1.0);
         bcal_fcal_diphoton_mass_900->GetXaxis()->SetTitle("invariant mass [GeV]");
         bcal_fcal_diphoton_mass_900->GetYaxis()->SetTitle("counts / 10 MeV");
 
@@ -188,7 +188,6 @@ jerror_t JEventProcessor_BCAL_inv_mass::evnt(jana::JEventLoop* locEventLoop, uin
 
 	  }
 	}
-
 
    for(unsigned int i = 0 ; i < locTrackTimeBased.size(); ++i)
         {
