@@ -1270,6 +1270,12 @@ void DHistogramAction_MissingMass::Initialize(JEventLoop* locEventLoop)
 		locHistTitle = string(";Beam Energy (GeV);") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass (GeV/c^{2})");
 		dHist_MissingMassVsBeamE = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DBeamEBins, dMinBeamE, dMaxBeamE, dNum2DMassBins, dMinMass, dMaxMass);
 
+		locHistName = "MissingMassVsMissingP";
+		locStream.str("");
+		locStream << locMassPerBin;
+		locHistTitle = string(";Missing P (GeV/c);") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass (GeV/c^{2})");
+		dHist_MissingMassVsMissingP = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DMissPBins, dMinMissP, dMaxMissP, dNum2DMassBins, dMinMass, dMaxMass);
+
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
@@ -1287,7 +1293,7 @@ bool DHistogramAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, cons
 	set<set<size_t> > locIndexCombos = dAnalysisUtilities->Build_IndexCombos(Get_Reaction()->Get_ReactionStep(dMissingMassOffOfStepIndex), dMissingMassOffOfPIDs);
 
 	//loop over them
-	vector<double> locMassesToFill;
+	vector<pair<double, double> > locMassesToFill; //first is missing mass, second is missing p
 	set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
 	for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
 	{
@@ -1298,7 +1304,7 @@ bool DHistogramAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, cons
 			continue; //dupe: already histed!
 		dPreviousSourceObjects.insert(locSourceObjects);
 
-		locMassesToFill.push_back(locMissingP4.M());
+		locMassesToFill.push_back(pair<double, double>(locMissingP4.M(), locMissingP4.P()));
 	}
 
 	//FILL HISTOGRAMS
@@ -1308,8 +1314,9 @@ bool DHistogramAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, cons
 	{
 		for(size_t loc_i = 0; loc_i < locMassesToFill.size(); ++loc_i)
 		{
-			dHist_MissingMass->Fill(locMassesToFill[loc_i]);
-			dHist_MissingMassVsBeamE->Fill(locBeamEnergy, locMassesToFill[loc_i]);
+			dHist_MissingMass->Fill(locMassesToFill[loc_i].first);
+			dHist_MissingMassVsBeamE->Fill(locBeamEnergy, locMassesToFill[loc_i].first);
+			dHist_MissingMassVsMissingP->Fill(locMassesToFill[loc_i].second, locMassesToFill[loc_i].first);
 		}
 	}
 	Unlock_Action();
@@ -1344,6 +1351,12 @@ void DHistogramAction_MissingMassSquared::Initialize(JEventLoop* locEventLoop)
 		locHistTitle = string(";Beam Energy (GeV);") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass Squared (GeV/c^{2})^{2};");
 		dHist_MissingMassSquaredVsBeamE = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DBeamEBins, dMinBeamE, dMaxBeamE, dNum2DMassBins, dMinMassSq, dMaxMassSq);
 
+		locHistName = "MissingMassSquaredVsMissingP";
+		locStream.str("");
+		locStream << locMassSqPerBin;
+		locHistTitle = string(";Missing P (GeV/c);") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass Squared (GeV/c^{2})^{2}");
+		dHist_MissingMassSquaredVsMissingP = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DMissPBins, dMinMissP, dMaxMissP, dNum2DMassBins, dMinMassSq, dMaxMassSq);
+
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
@@ -1361,7 +1374,7 @@ bool DHistogramAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoo
 	set<set<size_t> > locIndexCombos = dAnalysisUtilities->Build_IndexCombos(Get_Reaction()->Get_ReactionStep(dMissingMassOffOfStepIndex), dMissingMassOffOfPIDs);
 
 	//loop over them
-	vector<double> locMassesToFill;
+	vector<pair<double, double> > locMassesToFill; //first is missing mass, second is missing p
 	set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
 	for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
 	{
@@ -1372,7 +1385,7 @@ bool DHistogramAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoo
 			continue; //dupe: already histed!
 		dPreviousSourceObjects.insert(locSourceObjects);
 
-		locMassesToFill.push_back(locMissingP4.M2());
+		locMassesToFill.push_back(pair<double, double>(locMissingP4.M2(), locMissingP4.P()));
 	}
 
 	//FILL HISTOGRAMS
@@ -1382,8 +1395,9 @@ bool DHistogramAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoo
 	{
 		for(size_t loc_i = 0; loc_i < locMassesToFill.size(); ++loc_i)
 		{
-			dHist_MissingMassSquared->Fill(locMassesToFill[loc_i]);
-			dHist_MissingMassSquaredVsBeamE->Fill(locBeamEnergy, locMassesToFill[loc_i]);
+			dHist_MissingMassSquared->Fill(locMassesToFill[loc_i].first);
+			dHist_MissingMassSquaredVsBeamE->Fill(locBeamEnergy, locMassesToFill[loc_i].first);
+			dHist_MissingMassSquaredVsMissingP->Fill(locMassesToFill[loc_i].second, locMassesToFill[loc_i].first);
 		}
 	}
 	Unlock_Action();

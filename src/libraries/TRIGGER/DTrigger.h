@@ -6,8 +6,8 @@
 
 class DTrigger : public jana::JObject
 {
-	JOBJECT_PUBLIC(DTrigger);
 	public:
+		JOBJECT_PUBLIC(DTrigger);
 
 		//GETTERS
 		uint32_t Get_L1TriggerBits(void) const{return dL1TriggerBits;}

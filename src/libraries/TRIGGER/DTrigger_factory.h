@@ -3,11 +3,15 @@
 
 #include <JANA/JFactory.h>
 #include "DTrigger.h"
+#include "DL1Trigger.h"
+#include "DL3Trigger.h"
+#include "DMCTrigger.h"
+#include "DANA/DStatusBits.h"
 
 using namespace std;
 using namespace jana;
 
-class DTrigger_factory : public jana::JFactory<DL1Trigger>
+class DTrigger_factory : public jana::JFactory<DTrigger>
 {
 	public:
 		DTrigger_factory(){};
