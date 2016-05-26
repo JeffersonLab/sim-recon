@@ -19,7 +19,7 @@
   float par_500[15];
   float par_700[15];
   float par_900[15];
-	if(gPad == NULL){
+  if(gPad == NULL){
 
     TCanvas *c1 = new TCanvas( "c1", "BCAL_inv_mass_plot", 800, 800 );
     c1->cd(0);
