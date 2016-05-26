@@ -219,6 +219,10 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
       return Extract_DTrackTimeBased(record,
                      dynamic_cast<JFactory<DTrackTimeBased>*>(factory));
    }
+   if (dataClassName =="DTrigger") {
+      return Extract_DTrigger(record,
+                     dynamic_cast<JFactory<DTrigger>*>(factory));
+   }
    if (dataClassName =="DDetectorMatches") {
       return Extract_DDetectorMatches(locEventLoop, record,
                      dynamic_cast<JFactory<DDetectorMatches>*>(factory));
@@ -659,6 +663,40 @@ jerror_t DEventSourceREST::Extract_DSCHit(hddm_r::HDDM *record,
    return NOERROR;
 }
 
+//-----------------------
+// Extract_DTrigger
+//-----------------------
+jerror_t DEventSourceREST::Extract_DTrigger(hddm_r::HDDM *record, JFactory<DTrigger>* factory)
+{
+	/// Copies the data from the trigger hddm record. This is
+	/// call from JEventSourceREST::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+
+	if (factory==NULL)
+		return OBJECT_NOT_AVAILABLE;
+	string tag = (factory->Tag())? factory->Tag() : "";
+
+	vector<DTrigger*> data;
+
+	// loop over trigger records
+	const hddm_r::TriggerList &triggers = record->getTriggers();
+	hddm_r::TriggerList::iterator iter;
+	for (iter = triggers.begin(); iter != triggers.end(); ++iter)
+	{
+		if (iter->getJtag() != tag)
+			continue;
+
+		DTrigger *locTrigger = new DTrigger();
+		locTrigger->Set_L1TriggerBits(Convert_SignedIntToUnsigned(iter->getL1_trig_bits()));
+		locTrigger->Set_L1FrontPanelTriggerBits(Convert_SignedIntToUnsigned(iter->getL1_fp_trig_bits()));
+		data.push_back(locTrigger);
+	}
+
+	// Copy into factory
+	factory->CopyTo(data);
+
+	return NOERROR;
+}
 
 //-----------------------
 // Extract_DFCALShower
@@ -1117,3 +1155,16 @@ DMatrixDSym DEventSourceREST::Get7x7ErrorMatrix(double mass, const double vec[5]
   return C7x7;
 }
 
+uint32_t DEventSourceREST::Convert_SignedIntToUnsigned(int32_t locSignedInt) const
+{
+	//Convert uint32_t to int32_t
+	//Reverse scheme (from DEventWriterREST):
+		//If is >= 0, then the int32_t is the same as the uint32_t (last bit not set)
+		//If is the minimum int: bit 32 is 1, and all of the other bits are zero
+		//Else, bit 32 is 1, then the uint32_t is -1 * int32_t, + add the last bit
+	if(locSignedInt >= 0)
+		return uint32_t(locSignedInt); //bit 32 is zero
+	else if(locSignedInt == numeric_limits<int32_t>::min())
+		return uint32_t(0x80000000); //bit 32 is 1, all others are 0
+	return uint32_t(-1*locSignedInt) + uint32_t(0x80000000); //bit 32 is 1, all others are negative of signed int (which was negative)
+}

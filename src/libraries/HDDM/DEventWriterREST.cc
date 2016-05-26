@@ -66,7 +66,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 
 	//Check to see if there are any objects to write out.  If so, don't write out an empty event
 	bool locOutputDataPresentFlag = false;
-	if((!reactions.empty()) || (!rftimes.empty()) || (!locBeamPhotons.empty()) || (!tracks.empty()))
+	if((!reactions.empty()) || (!locBeamPhotons.empty()) || (!tracks.empty()))
 		locOutputDataPresentFlag = true;
 	else if((!fcalshowers.empty()) || (!bcalshowers.empty()) || (!tofpoints.empty()) || (!starthits.empty()))
 		locOutputDataPresentFlag = true;
@@ -82,6 +82,8 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	// load the run and event numbers
 	JEvent& event = locEventLoop->GetJEvent();
 	res().setRunNo(event.GetRunNumber());
+	//I think the type for this is a signed-64 bit, whereas the event # is unsigned
+		//However, we should never take 2^63 events in a run anyway ...
 	res().setEventNo(event.GetEventNumber());
 
 	// push any DMCReaction objects to the output record
@@ -199,8 +201,8 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		bcal().setTzcorr(0);
 
 		//N_cell
-                hddm_r::BcalClusterList bcalcluster = bcal().addBcalClusters(1);
-                bcalcluster().setNcell(bcalshowers[i]->N_cell);
+		hddm_r::BcalClusterList bcalcluster = bcal().addBcalClusters(1);
+		bcalcluster().setNcell(bcalshowers[i]->N_cell);
 	}
 
 	// push any DTOFPoint objects to the output record
@@ -290,8 +292,8 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	for (size_t i=0; i < locTriggers.size(); ++i)
 	{
 		hddm_r::TriggerList trigger = res().addTriggers(1);
-		trigger().setL1_trig_bits(locTriggers[i]->Get_L1TriggerBits());
-		trigger().setL1_fp_trig_bits(locTriggers[i]->Get_L1FrontPanelTriggerBits());
+		trigger().setL1_trig_bits(Convert_UnsignedIntToSigned(locTriggers[i]->Get_L1TriggerBits()));
+		trigger().setL1_fp_trig_bits(Convert_UnsignedIntToSigned(locTriggers[i]->Get_L1FrontPanelTriggerBits()));
 	}
 
 	// push any DDetectorMatches objects to the output record
@@ -557,4 +559,20 @@ DEventWriterREST::~DEventWriterREST(void)
 		Get_RESTOutputFilePointers().clear();
 	}
 	japp->Unlock("RESTWriter");
+}
+
+int32_t DEventWriterREST::Convert_UnsignedIntToSigned(uint32_t locUnsignedInt) const
+{
+	//Convert uint32_t to int32_t
+	//Scheme:
+		//If bit 32 is zero, then the int32_t is the same as the uint32_t: Positive or zero
+		//If bit 32 is one, and at least one other bit is 1, then the int32_t is -1 * uint32_t (after stripping the top bit)
+		//If bit 32 is one, and all other bits are zero, then the int32_t is the minimum int: -(2^31)
+	if((locUnsignedInt & 0x80000000) == 0)
+		return int32_t(locUnsignedInt); //bit 32 is zero: positive or zero
+
+	//bit 32 is 1. see if there is another bit set
+	if((locUnsignedInt & 0x7FFFFFFF) == 0)
+		return numeric_limits<int32_t>::min(); //no other bit is set: minimum int
+	return -1*int32_t(locUnsignedInt & uint32_t(0x7FFFFFFF)); //strip top bit, then return the negative
 }

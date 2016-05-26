@@ -86,6 +86,8 @@ class DEventSourceREST:public JEventSource
    // Warning: Class JEventSource methods must be re-entrant, so do not
    // store any data here that might change from event to event.
 
+	uint32_t Convert_SignedIntToUnsigned(int32_t locSignedInt) const;
+
 	map<unsigned int, double> dTargetCenterZMap; //unsigned int is run number
 	map<unsigned int, double> dBeamBunchPeriodMap; //unsigned int is run number
 
