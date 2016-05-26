@@ -61,9 +61,6 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	std::vector<const DDetectorMatches*> locDetectorMatches;
 	locEventLoop->Get(locDetectorMatches);
 
-	std::vector<const DMCTrigger*> mctriggers;
-	locEventLoop->Get(mctriggers);
-
 	std::vector<const DTrigger*> locTriggers;
 	locEventLoop->Get(locTriggers);
 
@@ -289,36 +286,14 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		}
 	}
 
-	// push any DMCTrigger objects to the output record
-	for (size_t i=0; i < mctriggers.size(); i++)
-	{
-		hddm_r::TriggerList trigger = res().addTriggers(1);
-		trigger().setL1a(mctriggers[i]->L1a_fired);
-		trigger().setL1b(mctriggers[i]->L1b_fired);
-		trigger().setL1c(mctriggers[i]->L1c_fired);
-
-        hddm_r::TriggerDataList data = trigger().addTriggerDatas(1);
-	    data().setEbcal(mctriggers[i]->Ebcal);
-		data().setEfcal(mctriggers[i]->Efcal);
-		data().setNschits(mctriggers[i]->Nschits);
-		data().setNtofhits(mctriggers[i]->Ntofhits);
-	}
-/*
 	// push any DTrigger objects to the output record
 	for (size_t i=0; i < locTriggers.size(); ++i)
 	{
 		hddm_r::TriggerList trigger = res().addTriggers(1);
-		trigger().setL1a(mctriggers[i]->L1a_fired);
-		trigger().setL1b(mctriggers[i]->L1b_fired);
-		trigger().setL1c(mctriggers[i]->L1c_fired);
-
-        hddm_r::TriggerDataList data = trigger().addTriggerDatas(1);
-	    data().setEbcal(mctriggers[i]->Ebcal);
-		data().setEfcal(mctriggers[i]->Efcal);
-		data().setNschits(mctriggers[i]->Nschits);
-		data().setNtofhits(mctriggers[i]->Ntofhits);
+		trigger().setL1_trig_bits(locTriggers[i]->Get_L1TriggerBits());
+		trigger().setL1_fp_trig_bits(locTriggers[i]->Get_L1FrontPanelTriggerBits());
 	}
-*/
+
 	// push any DDetectorMatches objects to the output record
 	for(size_t loc_i = 0; loc_i < locDetectorMatches.size(); ++loc_i)
 	{
@@ -329,7 +304,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 			locDetectorMatches[loc_i]->Get_BCALMatchParams(tracks[loc_j], locBCALShowerMatchParamsVector);
 			for(size_t loc_k = 0; loc_k < locBCALShowerMatchParamsVector.size(); ++loc_k)
 			{
-				hddm_r::BcalMatchParams_v2List bcalList = matches().addBcalMatchParams_v2s(1);
+				hddm_r::BcalMatchParamsList bcalList = matches().addBcalMatchParamses(1);
 				bcalList().setTrack(loc_j);
 
 				const DBCALShower* locBCALShower = locBCALShowerMatchParamsVector[loc_k].dBCALShower;
@@ -376,7 +351,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 			locDetectorMatches[loc_i]->Get_TOFMatchParams(tracks[loc_j], locTOFHitMatchParamsVector);
 			for(size_t loc_k = 0; loc_k < locTOFHitMatchParamsVector.size(); ++loc_k)
 			{
-				hddm_r::TofMatchParams_v2List tofList = matches().addTofMatchParams_v2s(1);
+				hddm_r::TofMatchParamsList tofList = matches().addTofMatchParamses(1);
 				tofList().setTrack(loc_j);
 
 				size_t locTOFindex = 0;
@@ -462,7 +437,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 			if(!locDetectorMatches[loc_i]->Get_DistanceToNearestTrack(bcalshowers[loc_j], locDeltaPhi, locDeltaZ))
 				continue;
 
-			hddm_r::BcalDOCAtoTrack_v2List bcalDocaList = matches().addBcalDOCAtoTrack_v2s(1);
+			hddm_r::BcalDOCAtoTrackList bcalDocaList = matches().addBcalDOCAtoTracks(1);
 			bcalDocaList().setShower(loc_j);
 			bcalDocaList().setDeltaphi(locDeltaPhi);
 			bcalDocaList().setDeltaz(locDeltaZ);

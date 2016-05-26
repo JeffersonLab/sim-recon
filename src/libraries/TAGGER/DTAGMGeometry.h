@@ -24,7 +24,7 @@ class DTAGMGeometry : public JObject {
    
    JOBJECT_PUBLIC(DTAGMGeometry);
 
-   DTAGMGeometry(JEventLoop *loop, int32_t runnumber);
+   DTAGMGeometry(JEventLoop *loop);
    ~DTAGMGeometry();
 
    static const unsigned int kRowCount;

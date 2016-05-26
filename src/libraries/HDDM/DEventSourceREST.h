@@ -28,7 +28,7 @@
 #include <BCAL/DBCALShower.h>
 #include <START_COUNTER/DSCHit.h>
 #include <TOF/DTOFPoint.h>
-#include <TRIGGER/DMCTrigger.h>
+#include <TRIGGER/DTrigger.h>
 #include <DANA/DApplication.h>
 #include <RF/DRFTime.h>
 #include <TAGGER/DTAGMGeometry.h>
@@ -72,8 +72,8 @@ class DEventSourceREST:public JEventSource
                     JFactory<DBCALShower>* factory);
    jerror_t Extract_DTrackTimeBased(hddm_r::HDDM *record,
                     JFactory<DTrackTimeBased>* factory);
-   jerror_t Extract_DMCTrigger(hddm_r::HDDM *record,
-                    JFactory<DMCTrigger>* factory);
+   jerror_t Extract_DTrigger(hddm_r::HDDM *record,
+                    JFactory<DTrigger>* factory);
    jerror_t Extract_DDetectorMatches(JEventLoop* locEventLoop, hddm_r::HDDM *record,
                     JFactory<DDetectorMatches>* factory);
 #if 0

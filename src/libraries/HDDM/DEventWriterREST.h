@@ -25,7 +25,6 @@
 #include "TOF/DTOFPoint.h"
 #include "START_COUNTER/DSCHit.h"
 #include "TRACKING/DTrackTimeBased.h"
-#include "TRIGGER/DMCTrigger.h"
 #include "TRIGGER/DTrigger.h"
 #include "RF/DRFTime.h"
 
@@ -56,5 +55,3 @@ class DEventWriterREST : public JObject
 };
 
 #endif //_DEventWriterREST_
-
-
