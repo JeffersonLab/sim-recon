@@ -133,7 +133,7 @@ class DEventWriterROOT : public JObject
 			//Supposedly(?) they are linked together during runtime when loading, so there is (supposedly) no undefined behavior.
 			//However, this causes a double free (double-deletion) when these libraries are closed at the end of the program, crashing it.
 		//Thus the variables must be in a single source file that is compiled into a single library
-		//However, you (somehow?) cannot make them global/extern variables in the cpp function
+		//However, you (somehow?) cannot make them global/extern variables in the source file
 			//This also (somehow?) causes the double-free problem above for (at least) stl containers
 			//It works for pointers-to-stl-containers and fundamental types, but I dunno why.
 			//It's not good encapsulation anyway though.

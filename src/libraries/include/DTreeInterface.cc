@@ -1,30 +1,28 @@
 #include "DTreeInterface.h"
 
+/************************************************* STATIC-VARIABLE-ACCESSING PRIVATE MEMBER FUNCTIONS *************************************************/
 
-//Need one period: shared amongst threads
-	//In plugin: class member
-	//In action: static global? (map of unique-string to interface)
-		//constructor of action would have to register threads. doable, but ugh.
-	//In action: class member?
-		//if branches already created, 
-		//array sizes must be static global
-		//num-threads-register must also be static global
-		//static-global: 
-
-int& DEventWriterROOT::Get_NumEventWriterThreads(void) const
+map<string, int>& DTreeInterface::Get_NumWritersByFileMap(void) const
 {
-	// must be read/used entirely in global root lock: when 0, close all files, modifying files needs global root lock
-	static int locNumEventWriterThreads = 0;
-	return locNumEventWriterThreads;
+	// string is file name
+	// must be read/used entirely in global root lock: when 0, close the file (modifying files needs global root lock)
+	static map<string, int> locNumWritersByFileMap;
+	return locNumWritersByFileMap;
 }
 
-map<TTree*, map<string, unsigned int> >& DEventWriterROOT::Get_FundamentalArraySizeMap(void) const
+map<string, size_t>& DTreeInterface::Get_FundamentalArraySizeMap(TTree* locTree) const
 {
-	// all the trees (and thus these maps) are all created at once, within a global root lock
-	// thus, don't need a lock when reading EITHER the inner or outer maps
-	// however, when filling the tree the value will change, so modify within a file-lock
-	static map<TTree*, map<string, unsigned int> > locFundamentalArraySizeMap;
-	return locFundamentalArraySizeMap;
+	//A "global" lock (shared across all threads & DTreeInterface objects) is necessary to read the outer map
+		//This lock is acquired locally: DO NOT CALL THIS FUNCTION WHILE WITHIN A LOCK!!
+	//However, only a file-lock is necessary to read the inner map once it is acquired:
+		//Only the given tree is viewing/modifying it
+
+	japp->WriteLock("DTreeInterface_SizeMap"); //LOCK MAP
+	static map<TTree*, map<string, size_t> > locFundamentalArraySizeMap;
+	map<string, size_t>& locTreeSpecificMap = locFundamentalArraySizeMap[locTree];
+	japp->Unlock("DTreeInterface_SizeMap"); //UNLOCK MAP
+
+	return locTreeSpecificMap;
 }
 
 /********************************************************************* INITIALIZE *********************************************************************/
@@ -34,9 +32,14 @@ DTreeInterface::DTreeInterface(string locTreeName, string locFileName) : dFileNa
 {
 	japp->RootWriteLock();
 	{
-		++Get_NumEventWriterThreads();
+		map<string, int>& locNumWritersByFileMap = Get_NumWritersByFileMap();
+		if(locFileIterator == locNumWritersByFileMap.end())
+			locNumWritersByFileMap[dFileName] = 1;
+		else
+			++locNumWritersByFileMap[dFileName];
 	}
 	japp->RootUnLock();
+
 	GetOrCreate_FileAndTree(locTreeName);
 }
 
@@ -44,8 +47,9 @@ DTreeInterface::~DTreeInterface(void)
 {
 	japp->RootWriteLock();
 	{
-		--Get_NumEventWriterThreads();
-		if(Get_NumEventWriterThreads() != 0)
+		map<string, int>& locNumWritersByFileMap = Get_NumWritersByFileMap();
+		--locNumWritersByFileMap[dFileName];
+		if(locNumWritersByFileMap[dFileName] != 0)
 		{
 			japp->RootUnLock();
 			return;
@@ -60,34 +64,36 @@ DTreeInterface::~DTreeInterface(void)
 	japp->RootUnLock();
 }
 
-void DEventWriterROOT::GetOrCreate_FileAndTree(string locTreeName) const
+void DTreeInterface::GetOrCreate_FileAndTree(string locTreeName) const
 {
 	japp->RootWriteLock();
 	{
+		TDirectory* locCurrentDir = gDirectory;
+
 		//see if root file exists already
 		TFile* locOutputFile = (TFile*)gROOT->GetListOfFiles()->FindObject(dFileName.c_str());
-		if(locOutputFile == NULL)
+		if(locOutputFile == nullptr)
 			locOutputFile = new TFile(dFileName.c_str(), "RECREATE");
 		else
 			locOutputFile->cd();
 
-		//see if ttree exists already
-		TTree* locTree = (TTree*)gDirectory->Get(locTreeName.c_str());
-		if(locTree != NULL)
-		{
-			dTree = locTree;
-			japp->RootUnLock();
-			return; //already created
-		}
+		//see if ttree exists already. if not, create it
+		dTree = (TTree*)gDirectory->Get(locTreeName.c_str());
+		if(dTree == nullptr)
+			dTree = new TTree(locTreeName.c_str(), locTreeName.c_str());
 
-		//create tree
-		dTree = new TTree(locTreeName.c_str(), locTreeName.c_str());
+		locCurrentDir->cd();
 	}
 	japp->RootUnLock();
 }
 
-void Create_Branches(const DTreeBranchRegister& locTreeBranchRegister)
+/****************************************************************** CREATE BRANCHES *******************************************************************/
+
+void DTreeInterface::Create_Branches(const DTreeBranchRegister& locTreeBranchRegister)
 {
+	//MUST CARRY AROUND A REFERENCE TO THIS.  ONLY READ/MODIFY THE MAP WITHIN A FILE LOCK. 
+	map<string, size_t>& locFundamentalArraySizeMap = Get_FundamentalArraySizeMap(dTree);
+
 	japp->WriteLock(dFileName); //LOCK FILE
 	{
 		//if there are branches already, don't do anything
@@ -119,15 +125,57 @@ void Create_Branches(const DTreeBranchRegister& locTreeBranchRegister)
 				Create_Branch(locBranchName, locTypeIndex, locArraySize, ""); //clones array
 			else
 				Create_Branch(locBranchName, locTypeIndex, locArraySize, locSizeNameIterator->second); //fundamental array
+
+			locFundamentalArraySizeMap[locBranchName] = locArraySize;
 		}
 	}
 	japp->Unlock(dFileName); //UNLOCK FILE
 }
 
+void DTreeInterface::Create_Branch(string locBranchName, type_index locTypeIndex, size_t locArraySize, string locArraySizeName)
+{
+	//Fundamental types
+	if(locTypeIndex == type_index(typeid(const char*)))
+		Create_Branch<const char*>(locBranchName, locArraySize, locArraySizeName);
+	else if(locTypeIndex == type_index(typeid(Char_t)))
+		Create_Branch<Char_t>(locBranchName, locArraySize, locArraySizeName);
+	else if(locTypeIndex == type_index(typeid(UChar_t)))
+		Create_Branch<UChar_t>(locBranchName, locArraySize, locArraySizeName);
+	else if(locTypeIndex == type_index(typeid(Short_t)))
+		Create_Branch<Short_t>(locBranchName, locArraySize, locArraySizeName);
+	else if(locTypeIndex == type_index(typeid(UShort_t)))
+		Create_Branch<UShort_t>(locBranchName, locArraySize, locArraySizeName);
+	else if(locTypeIndex == type_index(typeid(Int_t)))
+		Create_Branch<Int_t>(locBranchName, locArraySize, locArraySizeName);
+	else if(locTypeIndex == type_index(typeid(UInt_t)))
+		Create_Branch<UInt_t>(locBranchName, locArraySize, locArraySizeName);
+	else if(locTypeIndex == type_index(typeid(Float_t)))
+		Create_Branch<Float_t>(locBranchName, locArraySize, locArraySizeName);
+	else if(locTypeIndex == type_index(typeid(Double_t)))
+		Create_Branch<Double_t>(locBranchName, locArraySize, locArraySizeName);
+	else if(locTypeIndex == type_index(typeid(Long64_t)))
+		Create_Branch<Long64_t>(locBranchName, locArraySize, locArraySizeName);
+	else if(locTypeIndex == type_index(typeid(ULong64_t)))
+		Create_Branch<ULong64_t>(locBranchName, locArraySize, locArraySizeName);
+	else if(locTypeIndex == type_index(typeid(Bool_t)))
+		Create_Branch<Bool_t>(locBranchName, locArraySize, locArraySizeName);
+
+	//TObject
+	else if(locTypeIndex == type_index(typeid(TVector2)))
+		Create_Branch<TVector2>(locBranchName, locArraySize, locArraySizeName);
+	else if(locTypeIndex == type_index(typeid(TVector3)))
+		Create_Branch<TVector3>(locBranchName, locArraySize, locArraySizeName);
+	else if(locTypeIndex == type_index(typeid(TLorentzVector)))
+		Create_Branch<TLorentzVector>(locBranchName, locArraySize, locArraySizeName);
+}
+
 /**************************************************************** FILL BRANCHES & TREE ****************************************************************/
 
-void Fill(const DTreeFillData* locTreeFillData)
+void DTreeInterface::Fill(const DTreeFillData* locTreeFillData)
 {
+	//MUST CARRY AROUND A REFERENCE TO THIS.  ONLY READ/MODIFY THE MAP WITHIN A FILE LOCK. 
+	map<string, size_t>& locFundamentalArraySizeMap = Get_FundamentalArraySizeMap(dTree);
+
 	japp->WriteLock(dFileName); //LOCK FILE
 	{
 		//loop over branches
@@ -150,10 +198,12 @@ void Fill(const DTreeFillData* locTreeFillData)
 			if(locIsArrayFlag) //true: is array
 			{
 				//increase size if necessary
-				unsigned int locCurrentArraySize = dFundamentalArraySizeMap[locBranchName]; //may not be in map! (tobj)
 				size_t locNumFilled = locNumFilledIterator->second;
+
+				size_t locCurrentArraySize = locFundamentalArraySizeMap[locBranchName]; //may not be in map! (tobj)
 				if(locNumFilled >= locCurrentArraySize)
 					Increase_ArraySize(locBranchName, locTypeIndex, locNumFilled)
+				locFundamentalArraySizeMap[locBranchName] = locNumFilled;
 
 				for(size_t locArrayIndex = 0; locArrayIndex <= locNumFilledIterator->second; ++locArrayIndex)
 					Fill(locBranchName, locTypeIndex, locVoidPointer, locIsArrayFlag, locArrayIndex);
@@ -168,7 +218,7 @@ void Fill(const DTreeFillData* locTreeFillData)
 	japp->Unlock(dFileName); //UNLOCK FILE
 }
 
-void Increase_ArraySize(string locBranchName, type_index locTypeIndex, size_t locNewArraySize)
+void DTreeInterface::Increase_ArraySize(string locBranchName, type_index locTypeIndex, size_t locNewArraySize)
 {
 	//Fundamental types
 	if(locTypeIndex == type_index(typeid(const char*)))
@@ -197,7 +247,7 @@ void Increase_ArraySize(string locBranchName, type_index locTypeIndex, size_t lo
 		Increase_ArraySize<Bool_t>(locBranchName, locNewArraySize);
 }
 
-void Fill(string locBranchName, type_index locTypeIndex, void* locVoidPointer, bool locIsArrayFlag, size_t locArrayIndex)
+void DTreeInterface::Fill(string locBranchName, type_index locTypeIndex, void* locVoidPointer, bool locIsArrayFlag, size_t locArrayIndex)
 {
 	//Fundamental types
 	if(locTypeIndex == type_index(typeid(const char*)))
@@ -242,50 +292,4 @@ void Fill(string locBranchName, type_index locTypeIndex, void* locVoidPointer, b
 		Fill_TObject<TLorentzVector>(locBranchName, locObject, locIsArrayFlag, locArrayIndex);
 	}
 }
-
-void Create_Branch(string locBranchName, type_index locTypeIndex, size_t locArraySize, string locArraySizeName)
-{
-	//Fundamental types
-	if(locTypeIndex == type_index(typeid(const char*)))
-		Create_Branch<const char*>(locBranchName, locTypeIndex, locArraySize, locArraySizeName);
-	else if(locTypeIndex == type_index(typeid(Char_t)))
-		Create_Branch<Char_t>(locBranchName, locTypeIndex, locArraySize, locArraySizeName);
-	else if(locTypeIndex == type_index(typeid(UChar_t)))
-		Create_Branch<UChar_t>(locBranchName, locTypeIndex, locArraySize, locArraySizeName);
-	else if(locTypeIndex == type_index(typeid(Short_t)))
-		Create_Branch<Short_t>(locBranchName, locTypeIndex, locArraySize, locArraySizeName);
-	else if(locTypeIndex == type_index(typeid(UShort_t)))
-		Create_Branch<UShort_t>(locBranchName, locTypeIndex, locArraySize, locArraySizeName);
-	else if(locTypeIndex == type_index(typeid(Int_t)))
-		Create_Branch<Int_t>(locBranchName, locTypeIndex, locArraySize, locArraySizeName);
-	else if(locTypeIndex == type_index(typeid(UInt_t)))
-		Create_Branch<UInt_t>(locBranchName, locTypeIndex, locArraySize, locArraySizeName);
-	else if(locTypeIndex == type_index(typeid(Float_t)))
-		Create_Branch<Float_t>(locBranchName, locTypeIndex, locArraySize, locArraySizeName);
-	else if(locTypeIndex == type_index(typeid(Double_t)))
-		Create_Branch<Double_t>(locBranchName, locTypeIndex, locArraySize, locArraySizeName);
-	else if(locTypeIndex == type_index(typeid(Long64_t)))
-		Create_Branch<Long64_t>(locBranchName, locTypeIndex, locArraySize, locArraySizeName);
-	else if(locTypeIndex == type_index(typeid(ULong64_t)))
-		Create_Branch<ULong64_t>(locBranchName, locTypeIndex, locArraySize, locArraySizeName);
-	else if(locTypeIndex == type_index(typeid(Bool_t)))
-		Create_Branch<Bool_t>(locBranchName, locTypeIndex, locArraySize, locArraySizeName);
-
-	//TObject
-	else if(locTypeIndex == type_index(typeid(TVector2)))
-		Create_Branch<TVector2>(locBranchName, locTypeIndex, locArraySize, locArraySizeName);
-	else if(locTypeIndex == type_index(typeid(TVector3)))
-		Create_Branch<TVector3>(locBranchName, locTypeIndex, locArraySize, locArraySizeName);
-	else if(locTypeIndex == type_index(typeid(TLorentzVector)))
-		Create_Branch<TLorentzVector>(locBranchName, locTypeIndex, locArraySize, locArraySizeName);
-}
-
-
-
-
-		template <typename DType> void Create_Branch_Fundamental(string locBranchName);
-		template <typename DType> void Create_Branch_TObject(string locBranchName);
-		template <typename DType> void Create_Branch_FundamentalArray(string locBranchName, string locArraySizeString, unsigned int locInitialSize);
-		template <typename DType> void Create_Branch_ClonesArray(string locBranchName, unsigned int locSize);
-
 
