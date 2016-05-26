@@ -402,6 +402,20 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 
 	vector<DBeamPhoton*> dbeam_photons;
 
+	// extract the TAGH geometry
+   vector<const DTAGHGeometry*> taghGeomVect;
+   eventLoop->Get(taghGeomVect);
+   if (taghGeomVect.empty())
+      return OBJECT_NOT_AVAILABLE;
+   const DTAGHGeometry* taghGeom = taghGeomVect[0];
+
+   // extract the TAGM geometry
+   vector<const DTAGMGeometry*> tagmGeomVect;
+   eventLoop->Get(tagmGeomVect);
+   if (tagmGeomVect.empty())
+      return OBJECT_NOT_AVAILABLE;
+   const DTAGMGeometry* tagmGeom = tagmGeomVect[0];
+
    if(tag == "MCGEN")
 	{
 		vector<const DMCReaction*> dmcreactions;
@@ -411,6 +425,8 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		{
 		   DBeamPhoton *beamphoton = new DBeamPhoton;
 		   *(DKinematicData*)beamphoton = dmcreactions[loc_i]->beam;
+		   if(!tagmGeom->E_to_column(beamphoton->energy(), beamphoton->dCounter))
+		   	  taghGeom->E_to_counter(beamphoton->energy(), beamphoton->dCounter);
 		   dbeam_photons.push_back(beamphoton);
 		}
 
@@ -419,20 +435,6 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 
 	   return NOERROR;
 	}
-
-	// extract the TAGH geometry
-   vector<const DTAGHGeometry*> taghGeomVect;
-   eventLoop->Get(taghGeomVect, "mc");
-   if (taghGeomVect.size() < 1)
-      return OBJECT_NOT_AVAILABLE;
-   const DTAGHGeometry* taghGeom = taghGeomVect[0];
- 
-   // extract the TAGM geometry
-   vector<const DTAGMGeometry*> tagmGeomVect;
-   eventLoop->Get(tagmGeomVect, "mc");
-   if (tagmGeomVect.size() < 1)
-      return OBJECT_NOT_AVAILABLE;
-   const DTAGMGeometry* tagmGeom = tagmGeomVect[0];
 
 	double locTargetCenterZ = 0.0;
 	int locRunNumber = eventLoop->GetJEvent().GetRunNumber();
@@ -492,9 +494,7 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		gamma->setTime(locTAGMiter->getT());
 		gamma->setT0(locTAGMiter->getT(), 0.200, SYS_TAGM);
 
-      unsigned int locCounter = 0;
-      tagmGeom->E_to_column(locTAGMiter->getE(), locCounter);
-
+        tagmGeom->E_to_column(locTAGMiter->getE(), gamma->dCounter);
 		dbeam_photons.push_back(gamma);
    }
 
@@ -517,9 +517,7 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
 		gamma->setTime(locTAGHiter->getT());
 		gamma->setT0(locTAGHiter->getT(), 0.350, SYS_TAGH);
 
-      unsigned int locCounter = 0;
-		taghGeom->E_to_counter(locTAGHiter->getE(), locCounter);
-
+		taghGeom->E_to_counter(locTAGHiter->getE(), gamma->dCounter);
 		dbeam_photons.push_back(gamma);
    }
 

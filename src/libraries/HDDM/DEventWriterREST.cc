@@ -61,6 +61,12 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	std::vector<const DDetectorMatches*> locDetectorMatches;
 	locEventLoop->Get(locDetectorMatches);
 
+	std::vector<const DMCTrigger*> mctriggers;
+	locEventLoop->Get(mctriggers);
+
+	std::vector<const DTrigger*> locTriggers;
+	locEventLoop->Get(locTriggers);
+
 	//Check to see if there are any objects to write out.  If so, don't write out an empty event
 	bool locOutputDataPresentFlag = false;
 	if((!reactions.empty()) || (!rftimes.empty()) || (!locBeamPhotons.empty()) || (!tracks.empty()))
@@ -284,22 +290,35 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	}
 
 	// push any DMCTrigger objects to the output record
-	std::vector<const DMCTrigger*> triggers;
-	locEventLoop->Get(triggers);
-	for (size_t i=0; i < triggers.size(); i++)
+	for (size_t i=0; i < mctriggers.size(); i++)
 	{
 		hddm_r::TriggerList trigger = res().addTriggers(1);
-		trigger().setL1a(triggers[i]->L1a_fired);
-		trigger().setL1b(triggers[i]->L1b_fired);
-		trigger().setL1c(triggers[i]->L1c_fired);
+		trigger().setL1a(mctriggers[i]->L1a_fired);
+		trigger().setL1b(mctriggers[i]->L1b_fired);
+		trigger().setL1c(mctriggers[i]->L1c_fired);
 
         hddm_r::TriggerDataList data = trigger().addTriggerDatas(1);
-	    data().setEbcal(triggers[i]->Ebcal);
-		data().setEfcal(triggers[i]->Efcal);
-		data().setNschits(triggers[i]->Nschits);
-		data().setNtofhits(triggers[i]->Ntofhits);
+	    data().setEbcal(mctriggers[i]->Ebcal);
+		data().setEfcal(mctriggers[i]->Efcal);
+		data().setNschits(mctriggers[i]->Nschits);
+		data().setNtofhits(mctriggers[i]->Ntofhits);
 	}
+/*
+	// push any DTrigger objects to the output record
+	for (size_t i=0; i < locTriggers.size(); ++i)
+	{
+		hddm_r::TriggerList trigger = res().addTriggers(1);
+		trigger().setL1a(mctriggers[i]->L1a_fired);
+		trigger().setL1b(mctriggers[i]->L1b_fired);
+		trigger().setL1c(mctriggers[i]->L1c_fired);
 
+        hddm_r::TriggerDataList data = trigger().addTriggerDatas(1);
+	    data().setEbcal(mctriggers[i]->Ebcal);
+		data().setEfcal(mctriggers[i]->Efcal);
+		data().setNschits(mctriggers[i]->Nschits);
+		data().setNtofhits(mctriggers[i]->Ntofhits);
+	}
+*/
 	// push any DDetectorMatches objects to the output record
 	for(size_t loc_i = 0; loc_i < locDetectorMatches.size(); ++loc_i)
 	{

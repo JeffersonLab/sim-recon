@@ -15,7 +15,7 @@
         </product>
       </vertex>
     </reaction>
-    <!-- taggerHit for backwards compatibility only (replaced by tagmHit and taghHit) -->
+    <!-- taggerHit for backwards compatibility only (replaced by tagmBeamPhoton and taghBeamPhoton) -->
     <taggerHit maxOccurs="unbounded" minOccurs="0" jtag="string"
                 t="float" E="float" tunit="ns" Eunit="GeV"/>
     <tagmBeamPhoton maxOccurs="unbounded" minOccurs="0" jtag="string"
@@ -71,10 +71,14 @@
     </tofPoint>
     <RFtime minOccurs="0" jtag="string"
             tsync="float" tunit="ns"/>
+    <!-- "trigger" corresponds to DMCTrigger. "datatrigger" corresponds to "DTrigger" -->
     <trigger minOccurs="0" jtag="string"
 			 L1a="boolean" L1b="boolean" L1c="boolean">
       <triggerData  Ebcal="float" Efcal="float" Nschits="int" Ntofhits="int" />
     </trigger>
+    <datatrigger minOccurs="0" jtag="string"
+			 l1_trig_bits="int" l1_fp_trig_bits="int">
+    </datatrigger>
 
     <detectorMatches minOccurs="1" maxOccurs="1" jtag="string">
       <!-- 

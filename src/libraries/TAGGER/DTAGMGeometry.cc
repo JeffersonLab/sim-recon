@@ -21,22 +21,15 @@ const double DTAGMGeometry::kFiberLength = 2.0; // cm
 //---------------------------------
 // DTAGMGeometry    (Constructor)
 //---------------------------------
-DTAGMGeometry::DTAGMGeometry(JEventLoop *loop, std::string tag, int32_t runnumber)
+DTAGMGeometry::DTAGMGeometry(JEventLoop *loop)
 {
    /* read tagger set endpoint energy from calibdb */
-   char dbname1[80];
-   if (tag == "")
-      sprintf(dbname1, "/PHOTON_BEAM/endpoint_energy:%d", runnumber);
-   else
-      sprintf(dbname1, "/PHOTON_BEAM/endpoint_energy:%d:%s", runnumber,
-                                                         tag.c_str());
    std::map<string,double> result1;
-   loop->GetCalib(dbname1, result1);
+   loop->GetCalib("/PHOTON_BEAM/endpoint_energy", result1);
    if (result1.find("PHOTON_BEAM_ENDPOINT_ENERGY") == result1.end()) {
       std::cerr << "Error in DTAGMGeometry constructor: "
                 << "failed to read photon beam endpoint energy "
-                << "from calibdb at " << dbname1
-                << std::endl;
+                << "from calibdb at /PHOTON_BEAM/endpoint_energy" << std::endl;
       m_endpoint_energy_GeV = 0;
    }
    else {
@@ -44,20 +37,12 @@ DTAGMGeometry::DTAGMGeometry(JEventLoop *loop, std::string tag, int32_t runnumbe
    }
 
    /* read microscope channel energy bounds from calibdb */
-   char dbname2[80];
-   if (tag == "") 
-      sprintf(dbname2, "/PHOTON_BEAM/microscope/scaled_energy_range:%d",
-                                                runnumber);
-   else
-      sprintf(dbname2, "/PHOTON_BEAM/microscope/scaled_energy_range:%d:%s",
-                                                runnumber, tag.c_str());
    std::vector<std::map<string,double> > result2;
-   loop->GetCalib(dbname2, result2);
+   loop->GetCalib("/PHOTON_BEAM/microscope/scaled_energy_range", result2);
    if (result2.size() != kColumnCount) {
       std::cerr << "Error in DTAGMGeometry constructor: "
                 << "failed to read photon beam scaled_energy_range table "
-                << "from calibdb at " << dbname2
-                << std::endl;
+                << "from calibdb at /PHOTON_BEAM/microscope/scaled_energy_range" << std::endl;
       for (unsigned int i=0; i <= TAGM_MAX_COLUMN; ++i) {
          m_column_xlow[i] = 0;
          m_column_xhigh[i] = 0;

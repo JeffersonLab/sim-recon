@@ -32,7 +32,7 @@ jerror_t DTrigger_factory::evnt(JEventLoop* locEventLoop, uint64_t locEventNumbe
 		//NOTHING AVAILABLE: PROBABLY EARLY DATA/MC. OR EPICS/SYNC/etc. EVENTS
 		locTrigger->Set_L1FrontPanelTriggerBits(0);
 		if(locEventLoop->GetJEvent().GetStatusBit(kSTATUS_PHYSICS_EVENT))
-			locTrigger->Set_L1TriggerBits(1); //SET TRIG BIT TO ONE SO IS_PHYSICS WILL BE TRUE
+			locTrigger->Set_L1TriggerBits(1); //OLD DATA: SET TRIG BIT TO ONE SO IS_PHYSICS WILL BE TRUE
 		else
 			locTrigger->Set_L1TriggerBits(0); //e.g. EPICS event
 	}
