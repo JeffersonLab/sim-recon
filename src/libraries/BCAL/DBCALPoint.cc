@@ -15,7 +15,7 @@ using namespace std;
 
 #include "units.h"
 
-DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, double attenuation_length, double c_effective)
+DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center, double attenuation_length, double c_effective, double track_p0, double track_p1, double track_p2)
 {
   
   // this is a problem -- both hits are on the same end...
@@ -43,13 +43,30 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   
   double tUp = upHit.t;
   double tDown = downHit.t;
+
+  // get the position with respect to the beginning of the module
+  // the parameters were extracted from quadratic fits in histograms of z_track = f(tUp - tDown) 
+  // we are thus defining z_point so that it matches the z-coordinate of the track (at the middle of each layer)
+  // the p0, p1 and p2 tags are the usual names for the parameters of a quadratic fit in ROOT
+  m_zGlobal = track_p0 + track_p1 * ( tUp - tDown ) + track_p2 * ( tUp - tDown ) * ( tUp - tDown ); 
   
+  // get the position with respect to the center of the module -- positive
+  // z in the downstream direction
+  m_zLocal = m_zGlobal - DBCALGeometry::GetBCAL_center(); 
+
+  // set the z position relative to the center of the target
+  m_z = m_zGlobal - z_target_center;
+
+/* the old method -- kept now for reference. Will be deleted
+ *
   // get the position with respect to the center of the module -- positive
   // z in the downstream direction
   m_zLocal = 0.5 * c_effective * ( tUp - tDown ); 
 
   // set the z position relative to the center of the target
   m_z = m_zLocal + DBCALGeometry::GetBCAL_center() - z_target_center;
+*/
+
   //At this point m_z may be unphysical, i.e. it may be outside the BCAL.
   //For the time being, this is okay. Forcing the z-position inside the
   //BCAL at this point will bias the clustering procedure:
