@@ -572,7 +572,8 @@ int32_t DEventWriterREST::Convert_UnsignedIntToSigned(uint32_t locUnsignedInt) c
 		return int32_t(locUnsignedInt); //bit 32 is zero: positive or zero
 
 	//bit 32 is 1. see if there is another bit set
-	if((locUnsignedInt & 0x7FFFFFFF) == 0)
+	int32_t locTopBitStripped = int32_t(locUnsignedInt & uint32_t(0x7FFFFFFF)); //strip the top bit
+	if(locTopBitStripped == 0)
 		return numeric_limits<int32_t>::min(); //no other bit is set: minimum int
-	return -1*int32_t(locUnsignedInt & uint32_t(0x7FFFFFFF)); //strip top bit, then return the negative
+	return -1*locTopBitStripped; //return the negative
 }

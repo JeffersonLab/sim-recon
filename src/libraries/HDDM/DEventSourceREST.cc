@@ -1164,7 +1164,7 @@ uint32_t DEventSourceREST::Convert_SignedIntToUnsigned(int32_t locSignedInt) con
 		//Else, bit 32 is 1, then the uint32_t is -1 * int32_t, + add the last bit
 	if(locSignedInt >= 0)
 		return uint32_t(locSignedInt); //bit 32 is zero
-	else if(locSignedInt == numeric_limits<int32_t>::min())
+	else if(locSignedInt == numeric_limits<int32_t>::min()) // -(2^31)
 		return uint32_t(0x80000000); //bit 32 is 1, all others are 0
 	return uint32_t(-1*locSignedInt) + uint32_t(0x80000000); //bit 32 is 1, all others are negative of signed int (which was negative)
 }
