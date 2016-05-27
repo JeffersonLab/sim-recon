@@ -2,6 +2,7 @@
 #define DTreeInterface_h
 
 #include <map>
+#include <typeindex>
 #include <string>
 #include <iostream>
 #include <sstream>

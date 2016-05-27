@@ -1,6 +1,11 @@
+#ifndef DTreeInterfaceObjects_h
+#define DTreeInterfaceObjects_h
+
 #include <typeindex>
 #include <map>
 #include <string>
+
+#include "DTreeInterfaceObjects.h"
 
 using namespace std;
 
@@ -243,3 +248,4 @@ template <typename DType> inline void DTreeFillData::Delete(DType* locObject, bo
 		delete locObject;		
 }
 
+#endif //DTreeInterfaceObjects
