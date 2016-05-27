@@ -117,6 +117,12 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 	VT_TRACER("DParticleComboBlueprint_factory::evnt()");
 #endif
 
+	//CHECK TRIGGER TYPE
+	const DTrigger* locTrigger = NULL;
+	locEventLoop->GetSingle(locTrigger);
+	if(!locTrigger->Get_IsPhysicsEvent())
+		return NOERROR;
+
 	Reset_Pools();
 
 	dBlueprintStepMap.clear();

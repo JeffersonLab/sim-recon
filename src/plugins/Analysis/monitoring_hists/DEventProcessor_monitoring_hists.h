@@ -15,7 +15,7 @@
 
 #include "DANA/DApplication.h"
 #include "ANALYSIS/DHistogramActions.h"
-#include <TRIGGER/DL1Trigger.h>
+#include <TRIGGER/DTrigger.h>
 
 using namespace jana;
 

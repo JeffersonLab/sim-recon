@@ -25,7 +25,7 @@
 #include "TOF/DTOFPoint.h"
 #include "START_COUNTER/DSCHit.h"
 #include "TRACKING/DTrackTimeBased.h"
-#include "TRIGGER/DMCTrigger.h"
+#include "TRIGGER/DTrigger.h"
 #include "RF/DRFTime.h"
 
 using namespace std;
@@ -49,11 +49,11 @@ class DEventWriterREST : public JObject
 		int& Get_NumEventWriterThreads(void) const; //acquire RESTWriter lock before modifying
 		map<string, pair<ofstream*, hddm_r::ostream*> >& Get_RESTOutputFilePointers(void) const;
 
+		int32_t Convert_UnsignedIntToSigned(uint32_t locUnsignedInt) const;
+
 		string dOutputFileBaseName;
 		bool HDDM_USE_COMPRESSION;
 		bool HDDM_USE_INTEGRITY_CHECKS;
 };
 
 #endif //_DEventWriterREST_
-
-

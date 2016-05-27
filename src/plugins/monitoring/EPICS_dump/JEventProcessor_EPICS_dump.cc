@@ -117,11 +117,8 @@ jerror_t JEventProcessor_EPICS_dump::init(void) {
         Int_t const nscalers=32;
 	char string[132];
 	
-	h1epics_trgbits = new TH1I("h1epics_trgbits", "Trig Trgbits",30,0,30);
-	h1epics_trgbits->SetXTitle("trig_mask || (20+fp_trig_mask/256)");
-	h1epics_trgbits->SetYTitle("counts");
-	h1epics_trgbits = new TH1I("h1epics_trgbits", "Trig Trgbits",30,0,30);
-	h1epics_trgbits->SetXTitle("trig_mask || (20+fp_trig_mask/256)");
+	h1epics_trgbits = new TH1I("h1epics_trgbits", "Trig Trgbits",80,0,80);
+	h1epics_trgbits->SetXTitle("trig_mask || (70+fp_trig_mask/256)");
 	h1epics_trgbits->SetYTitle("counts");
     
 	for (Int_t j=0; j<nscalers;j++) {
@@ -252,7 +249,7 @@ jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64
           fp_trig_mask = 0;
       }
 
-	  int trig_bits = fp_trig_mask > 0? 20 + fp_trig_mask/256: trig_mask;
+	  int trig_bits = fp_trig_mask > 0? 70 + fp_trig_mask/256: trig_mask;
 	  if (fp_trig_mask>0) printf (" Event=%d trig_bits=%d trig_mask=%X fp_trig_mask=%X\n",(int)locEventNumber,trig_bits,trig_mask,fp_trig_mask);
 
 	  /* fp_trig_mask & 0x100 - upstream LED
@@ -322,12 +319,25 @@ jerror_t JEventProcessor_EPICS_dump::evnt(jana::JEventLoop* locEventLoop, uint64
 		const DEPICSvalue* epics_val = *val_itr;
 		cout << "EPICS:  " << epics_val->name << " = " << epics_val->sval << endl;
 		float fconv = atof(epics_val->sval.c_str());
+		unsigned int iconv = atoi(epics_val->sval.c_str());
 		bool isDigit = epics_val->name.length()> 12 && isdigit(epics_val->name[12]);
 		// cout << "isDigit=" << isDigit << " string=" << epics_val->name << endl;
-		if ((epics_val->name.substr(0,11) == "BCAL:pulser") & isDigit) {
+		if ((epics_val->name.substr(0,11) == "BCAL:pulser") & isdigit(epics_val->name[11])) {
+		  val_itr++;   // increment counter and get low order word
+		  epics_val = *val_itr;
+		  cout << "EPICS:  " << epics_val->name << " = " << epics_val->sval << endl;
+		  unsigned int iconv_low = atoi(epics_val->sval.c_str());
+		  // cout << "BCAL:pulser status=" << epics_val->name.substr(0,11) << endl;
+		  // printf ("BCAL:pulser iconv=%d, %0X, iconv_low=%d %0X\n",iconv,iconv,iconv_low,iconv_low);
+		  iconv_low = iconv_low >> 31;
+		  iconv  = ((iconv <<1) & 0XFFFF) + iconv_low;
+		  // cout << "BCAL:pulser status=" << epics_val->name.substr(0,11) << endl;
+		  printf ("BCAL:pulser status=%d, %0X, iconv_low=%0X\n",iconv,iconv,iconv_low);
+		}     
+		else if ((epics_val->name.substr(0,11) == "BCAL:pulser") & isDigit) {
 		  double freq = 1.e8/fconv;  // cover to s: period is in units 10 ns
 		  cout << "BCAL:pulser=" << epics_val->name.substr(0,11) << epics_val->fval <<  " freq=" << freq <<endl;
-		}     
+		  }
 		else if (epics_val->name == "IBCAD00CRCUR6") {
 		  h1epics_AD00->Fill(fconv);
 		  h1epics_AD00_VSevent->Fill((float)locEventNumber,fconv);
