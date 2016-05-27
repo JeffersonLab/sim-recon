@@ -18,14 +18,27 @@ map<string, size_t>& DTreeInterface::Get_FundamentalArraySizeMap(TTree* locTree)
 		//Only the given tree is viewing/modifying it
 
 	japp->WriteLock("DTreeInterface_SizeMap"); //LOCK MAP
+
 	static map<TTree*, map<string, size_t> > locFundamentalArraySizeMap;
 	map<string, size_t>& locTreeSpecificMap = locFundamentalArraySizeMap[locTree];
+
 	japp->Unlock("DTreeInterface_SizeMap"); //UNLOCK MAP
 
 	return locTreeSpecificMap;
 }
 
 /********************************************************************* INITIALIZE *********************************************************************/
+
+static DTreeInterface* DTreeInterface::Create_DTreeInterface(string locTreeName, string locFileName) const
+{
+	if(locFileName == "hd_root.root")
+	{
+		cout << "WARNING: SAVING TREES TO hd_root.root IS NOT SUPPORTED (or wise). ";
+		cout << "RETURNING NULL FROM DTreeInterface::Create_DTreeInterface()" << endl;
+		return NULL;
+	}
+	return new DTreeInterface(locTreeName, locFileName);
+}
 
 //Constructor
 DTreeInterface::DTreeInterface(string locTreeName, string locFileName) : dFileName(locFileName)
@@ -43,6 +56,7 @@ DTreeInterface::DTreeInterface(string locTreeName, string locFileName) : dFileNa
 	GetOrCreate_FileAndTree(locTreeName);
 }
 
+//Destructor
 DTreeInterface::~DTreeInterface(void)
 {
 	japp->RootWriteLock();
@@ -59,6 +73,7 @@ DTreeInterface::~DTreeInterface(void)
 		TFile* locOutputFile = (TFile*)gROOT->GetListOfFiles()->FindObject(dFileName.c_str());
 		locOutputFile->Write(0, TObject::kOverwrite);
 		locOutputFile->Close();
+		delete dTree;
 		delete locOutputFile;
 	}
 	japp->RootUnLock();

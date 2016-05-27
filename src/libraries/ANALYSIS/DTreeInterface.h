@@ -16,12 +16,19 @@
 
 #include <particleType.h>
 
-#include "DTreeInterfaceObjects.h"
-
 using namespace std;
 
 class DTreeInterface
 {
+	//WARNING: This class ASSUMES that the only things you are saving to the given output files are trees managed by DTreeInterface objects.  
+		//Saving anything else to these files will probably not work!  And would be unwise anyway ...
+
+	//Usage: Create anywhere, as long as it will live for the life of the time you want to fill the tree. 
+		//Regardless of how many threads act in that part of the code. 
+		//Just delete it whenever you're done. TTree is saved and TFile is closed when all interfaces to a given file are deleted. 
+		//E.g. Create in plugin/factory init(), delete in plugin/factory fini()
+		//E.g. Create in analysis action Initialize(), delete in analysis action destructor
+
 	//ASSUME: One leaf per branch: No splitting
 	//ASSUME: Tree only stores: Fundamental type objects (not const char*!!), Fundamental type arrays, TObject's, TClonesArray's
 	//ASSUME: TObject's are of type TVector3 & TLorentzVector: Need to expand template type calls if more are used
@@ -30,8 +37,10 @@ class DTreeInterface
 
 		/**************************************************************** INITIALIZE ****************************************************************/
 
-		//Constructor
-		DTreeInterface(string locTreeName, string locFileName);
+		//Only public way to construct a DTreeInterface //Forces allocation on the heap
+		static DTreeInterface* Create_DTreeInterface(string locTreeName, string locFileName) const;
+
+		//Destructor
 		~DTreeInterface(void);
 
 		// Is optional. If needed array size is not specified, it will be set to a default value.
@@ -47,11 +56,14 @@ class DTreeInterface
 
 		/**************************************************************** INITIALIZE ****************************************************************/
 
+		//Constructors
+		DTreeInterface(string locTreeName, string locFileName);
+		DTreeInterface(void); //private default constructor: cannot call
+
+		//Init
 		void GetOrCreate_FileAndTree(string locTreeName) const;
 
 		/*************************************************************** MISCELLANEOUS **************************************************************/
-
-		DTreeInterface(void); //private default constructor: cannot call
 
 		//For ROOT type string for fundamental data variables
 			//Defined in https://root.cern.ch/root/htmldoc/TTree.html
