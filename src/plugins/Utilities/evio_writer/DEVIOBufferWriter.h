@@ -44,7 +44,7 @@ class DEVIOBufferWriter
         COMPACT = compact_flag;
         PREFER_EMULATED = prefer_emulated_flag;
 
-        Reset();
+        write_out_all_rocs = true;   // default to writing all data
     }
     ~DEVIOBufferWriter(void);
 
@@ -52,34 +52,31 @@ class DEVIOBufferWriter
     
     void SetROCsToWriteOut(set<uint32_t> &new_rocs_to_write_out) {
         rocs_to_write_out = new_rocs_to_write_out;
+        
+        if(rocs_to_write_out.size() == 0)
+            write_out_all_rocs = true;
     }
 
-    // Reset all file-dependent data
-    void Reset() {
-        write_out_all_rocs = true;   // default to writing all data
-    }
 
   protected:
    
 		void WriteCAEN1290Data(vector<uint32_t> &buff,
                                vector<const DCAEN1290TDCHit*>    &caen1290hits,
                                vector<const DCAEN1290TDCConfig*> &caen1290configs, 
-                               unsigned int Nevents,
-                               bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const;
+                               unsigned int Nevents) const;
+
 
 		void WriteF1Data(vector<uint32_t> &buff,
                          vector<const DF1TDCHit*>          &F1hits,
                          vector<const DF1TDCTriggerTime*>  &F1tts,
                          vector<const DF1TDCConfig*>       &F1configs, 
-                         unsigned int Nevents,
-                         bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const;
+                         unsigned int Nevents) const;
 
 		void Writef250Data(vector<uint32_t> &buff,
                            vector<const Df250PulseIntegral*> &f250pis,
                            vector<const Df250TriggerTime*>   &f250tts,
                            vector<const Df250WindowRawData*> &f250wrds,
-                           unsigned int Nevents,
-                           bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const;
+                           unsigned int Nevents) const;
         
 		void Writef125Data(vector<uint32_t> &buff,
                            vector<const Df125PulseIntegral*> &f125pis,
@@ -88,8 +85,7 @@ class DEVIOBufferWriter
                            vector<const Df125TriggerTime*>   &f125tts,
                            vector<const Df125WindowRawData*> &f125wrds,
                            vector<const Df125Config*>        &f125configs,
-                           unsigned int Nevents,
-                           bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const;
+                           unsigned int Nevents) const;
         
 		void WriteEPICSData(vector<uint32_t> &buff,
                             vector<const DEPICSvalue*> epicsValues) const;
