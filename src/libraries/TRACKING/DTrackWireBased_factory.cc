@@ -205,6 +205,9 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
   
   if (candidates.size()==0) return NOERROR;
   
+  // Reset the number of used reference trajectories from the pool
+  num_used_rts=0;
+
   if (dIsNoFieldFlag){
     // Copy results over from the StraightLine or CDCCOSMIC candidate and add reference
     // trajectory
@@ -263,8 +266,6 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 
 
-  // Reset the number of used reference trajectories from the pool
-  num_used_rts=0;
 
   // Loop over candidates
   for(unsigned int i=0; i<candidates.size(); i++){
