@@ -41,7 +41,7 @@ using namespace jana;
 #include "DEPICSvalue.h"
 #include "DL1Info.h"
 #include "Df250Scaler.h"
-#include "Df250AsyncPedestal"
+#include "Df250AsyncPedestal.h"
 
 class JFactoryGenerator_DAQ: public jana::JFactoryGenerator{
 	public:
