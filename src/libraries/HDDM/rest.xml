@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="iso-8859-1" standalone="no" ?>
-<HDDM xmlns="http://www.gluex.org/hddm" class="r" version="1.0.1">
+<HDDM xmlns="http://www.gluex.org/hddm" class="r" version="1.1.0">
 
-  <reconstructedPhysicsEvent eventNo="int" runNo="int">
+  <reconstructedPhysicsEvent eventNo="long" runNo="int">
     <comment minOccurs="0" maxOccurs="unbounded" text="string"/>
     <reaction maxOccurs="unbounded" minOccurs="0" jtag="string"
                                     type="int" weight="float"
@@ -15,9 +15,6 @@
         </product>
       </vertex>
     </reaction>
-    <!-- taggerHit for backwards compatibility only (replaced by tagmHit and taghHit) -->
-    <taggerHit maxOccurs="unbounded" minOccurs="0" jtag="string"
-                t="float" E="float" tunit="ns" Eunit="GeV"/>
     <tagmBeamPhoton maxOccurs="unbounded" minOccurs="0" jtag="string"
                 t="float" E="float" tunit="ns" Eunit="GeV"/>
     <taghBeamPhoton maxOccurs="unbounded" minOccurs="0" jtag="string"
@@ -71,9 +68,8 @@
     </tofPoint>
     <RFtime minOccurs="0" jtag="string"
             tsync="float" tunit="ns"/>
-    <trigger minOccurs="0" jtag="string"
-			 L1a="boolean" L1b="boolean" L1c="boolean">
-      <triggerData  Ebcal="float" Efcal="float" Nschits="int" Ntofhits="int" />
+    <trigger minOccurs="0" maxOccurs="1" jtag="string"
+			 l1_trig_bits="int" l1_fp_trig_bits="int">
     </trigger>
 
     <detectorMatches minOccurs="1" maxOccurs="1" jtag="string">
@@ -88,12 +84,7 @@
           3) shower = "bcalShower"/"fcalShower" object index in file (starting at 0). 
           4) tflightPCorrelations::system = DetectorSystem_t
       -->
-      <!-- bcalMatchParams for backwards compatibility only (replaced by bcalMatchParams_v2) -->
       <bcalMatchParams maxOccurs="unbounded" minOccurs="0"
-                track="int" shower="int"
-                dx="float" doca="float" pathlength="float" tflight="float" tflightvar="float"
-                tunit="ns" lunit="cm"/>
-      <bcalMatchParams_v2 maxOccurs="unbounded" minOccurs="0"
                 track="int" shower="int"
                 dx="float" deltaphi="float" deltaz="float" pathlength="float" tflight="float" tflightvar="float"
                 tunit="ns" lunit="cm"/>
@@ -101,12 +92,7 @@
                 track="int" shower="int"
                 dx="float" doca="float" pathlength="float" tflight="float" tflightvar="float"
                 tunit="ns" lunit="cm"/>
-      <!-- tofMatchParams for backwards compatibility only (replaced by tofMatchParams_v2) -->
       <tofMatchParams maxOccurs="unbounded" minOccurs="0"
-                track="int" hit="int"
-                dEdx="float" doca="float" pathlength="float" tflight="float" tflightvar="float"
-                tunit="ns" lunit="cm" dEdx_unit="GeV/cm"/>
-      <tofMatchParams_v2 maxOccurs="unbounded" minOccurs="0"
                 track="int" hit="int"
                 dEdx="float" thit="float" thitvar="float" ehit="float"
                 deltax="float" deltay="float" pathlength="float" tflight="float" tflightvar="float"
@@ -116,11 +102,7 @@
                 dEdx="float" thit="float" thitvar="float" ehit="float"
                 pathlength="float" tflight="float" tflightvar="float" deltaphi="float"
                 tunit="ns" lunit="cm" aunit="rad" Eunit="GeV" dEdx_unit="GeV/cm"/>
-      <!-- bcalDOCAtoTrack for backwards compatibility only (replaced by bcalDOCAtoTrack_v2) -->
       <bcalDOCAtoTrack maxOccurs="unbounded" minOccurs="0"
-                shower="int" doca="float"
-                lunit="cm"/>
-      <bcalDOCAtoTrack_v2 maxOccurs="unbounded" minOccurs="0"
                 shower="int" deltaphi="float" deltaz="float"
                 lunit="cm"/>
       <fcalDOCAtoTrack maxOccurs="unbounded" minOccurs="0"
@@ -134,4 +116,3 @@
 
   </reconstructedPhysicsEvent>
 </HDDM>
-
