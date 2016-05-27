@@ -16,6 +16,8 @@
 
 #include <particleType.h>
 
+#include "DTreeInterfaceObjects.h"
+
 using namespace std;
 
 class DTreeInterface
