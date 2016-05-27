@@ -69,6 +69,8 @@ private:
   TF1* sep_inclusion_curve;
   TF1* dtheta_inclusion_curve;
   TF1* dphi_inclusion_curve;
+  TF1* C1_parm;
+  TF1* C2_parm;
 
 #ifdef BCAL_CLUSTER_DIAGNOSTIC
   
