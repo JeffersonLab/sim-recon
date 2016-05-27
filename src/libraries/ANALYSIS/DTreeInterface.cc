@@ -150,9 +150,7 @@ void DTreeInterface::Create_Branches(const DTreeBranchRegister& locTreeBranchReg
 void DTreeInterface::Create_Branch(string locBranchName, type_index locTypeIndex, size_t locArraySize, string locArraySizeName)
 {
 	//Fundamental types
-	if(locTypeIndex == type_index(typeid(const char*)))
-		Create_Branch<const char*>(locBranchName, locArraySize, locArraySizeName);
-	else if(locTypeIndex == type_index(typeid(Char_t)))
+	if(locTypeIndex == type_index(typeid(Char_t)))
 		Create_Branch<Char_t>(locBranchName, locArraySize, locArraySizeName);
 	else if(locTypeIndex == type_index(typeid(UChar_t)))
 		Create_Branch<UChar_t>(locBranchName, locArraySize, locArraySizeName);
@@ -236,9 +234,7 @@ void DTreeInterface::Fill(const DTreeFillData* locTreeFillData)
 void DTreeInterface::Increase_ArraySize(string locBranchName, type_index locTypeIndex, size_t locNewArraySize)
 {
 	//Fundamental types
-	if(locTypeIndex == type_index(typeid(const char*)))
-		Increase_ArraySize<const char*>(locBranchName, locNewArraySize);
-	else if(locTypeIndex == type_index(typeid(Char_t)))
+	if(locTypeIndex == type_index(typeid(Char_t)))
 		Increase_ArraySize<Char_t>(locBranchName, locNewArraySize);
 	else if(locTypeIndex == type_index(typeid(UChar_t)))
 		Increase_ArraySize<UChar_t>(locBranchName, locNewArraySize);
@@ -265,30 +261,28 @@ void DTreeInterface::Increase_ArraySize(string locBranchName, type_index locType
 void DTreeInterface::Fill(string locBranchName, type_index locTypeIndex, void* locVoidPointer, bool locIsArrayFlag, size_t locArrayIndex)
 {
 	//Fundamental types
-	if(locTypeIndex == type_index(typeid(const char*)))
-		Get_Pointer_Fundamental<const char*>(locBranchName)[locArrayIndex] = *(static_cast<const char*>(locVoidPointer));
-	else if(locTypeIndex == type_index(typeid(Char_t)))
-		Get_Pointer_Fundamental<Char_t>(locBranchName)[locArrayIndex] = *(static_cast<Char_t>(locVoidPointer));
+	if(locTypeIndex == type_index(typeid(Char_t)))
+		Get_Pointer_Fundamental<Char_t>(locBranchName)[locArrayIndex] = *(static_cast<Char_t*>(locVoidPointer));
 	else if(locTypeIndex == type_index(typeid(UChar_t)))
-		Get_Pointer_Fundamental<UChar_t>(locBranchName)[locArrayIndex] = *(static_cast<UChar_t>(locVoidPointer));
+		Get_Pointer_Fundamental<UChar_t>(locBranchName)[locArrayIndex] = *(static_cast<UChar_t*>(locVoidPointer));
 	else if(locTypeIndex == type_index(typeid(Short_t)))
-		Get_Pointer_Fundamental<Short_t>(locBranchName)[locArrayIndex] = *(static_cast<Short_t>(locVoidPointer));
+		Get_Pointer_Fundamental<Short_t>(locBranchName)[locArrayIndex] = *(static_cast<Short_t*>(locVoidPointer));
 	else if(locTypeIndex == type_index(typeid(UShort_t)))
-		Get_Pointer_Fundamental<UShort_t>(locBranchName)[locArrayIndex] = *(static_cast<UShort_t>(locVoidPointer));
+		Get_Pointer_Fundamental<UShort_t>(locBranchName)[locArrayIndex] = *(static_cast<UShort_t*>(locVoidPointer));
 	else if(locTypeIndex == type_index(typeid(Int_t)))
-		Get_Pointer_Fundamental<Int_t>(locBranchName)[locArrayIndex] = *(static_cast<Int_t>(locVoidPointer));
+		Get_Pointer_Fundamental<Int_t>(locBranchName)[locArrayIndex] = *(static_cast<Int_t*>(locVoidPointer));
 	else if(locTypeIndex == type_index(typeid(UInt_t)))
-		Get_Pointer_Fundamental<UInt_t>(locBranchName)[locArrayIndex] = *(static_cast<UInt_t>(locVoidPointer));
+		Get_Pointer_Fundamental<UInt_t>(locBranchName)[locArrayIndex] = *(static_cast<UInt_t*>(locVoidPointer));
 	else if(locTypeIndex == type_index(typeid(Float_t)))
-		Get_Pointer_Fundamental<Float_t>(locBranchName)[locArrayIndex] = *(static_cast<Float_t>(locVoidPointer));
+		Get_Pointer_Fundamental<Float_t>(locBranchName)[locArrayIndex] = *(static_cast<Float_t*>(locVoidPointer));
 	else if(locTypeIndex == type_index(typeid(Double_t)))
-		Get_Pointer_Fundamental<Double_t>(locBranchName)[locArrayIndex] = *(static_cast<Double_t>(locVoidPointer));
+		Get_Pointer_Fundamental<Double_t>(locBranchName)[locArrayIndex] = *(static_cast<Double_t*>(locVoidPointer));
 	else if(locTypeIndex == type_index(typeid(Long64_t)))
-		Get_Pointer_Fundamental<Long64_t>(locBranchName)[locArrayIndex] = *(static_cast<Long64_t>(locVoidPointer));
+		Get_Pointer_Fundamental<Long64_t>(locBranchName)[locArrayIndex] = *(static_cast<Long64_t*>(locVoidPointer));
 	else if(locTypeIndex == type_index(typeid(ULong64_t)))
-		Get_Pointer_Fundamental<ULong64_t>(locBranchName)[locArrayIndex] = *(static_cast<ULong64_t>(locVoidPointer));
+		Get_Pointer_Fundamental<ULong64_t>(locBranchName)[locArrayIndex] = *(static_cast<ULong64_t*>(locVoidPointer));
 	else if(locTypeIndex == type_index(typeid(Bool_t)))
-		Get_Pointer_Fundamental<Bool_t>(locBranchName)[locArrayIndex] = *(static_cast<Bool_t>(locVoidPointer));
+		Get_Pointer_Fundamental<Bool_t>(locBranchName)[locArrayIndex] = *(static_cast<Bool_t*>(locVoidPointer));
 
 	//TObject
 	else if(locTypeIndex == type_index(typeid(TVector3)))

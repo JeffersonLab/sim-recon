@@ -5,8 +5,6 @@
 #include <map>
 #include <string>
 
-#include "DTreeInterfaceObjects.h"
-
 using namespace std;
 
 class DTreeInterface;
@@ -17,7 +15,7 @@ class DTreeTypeChecker
 {
 	template <typename DType> static void Is_Supported(void)
 	{
-		static_assert(std::is_same<const char*, DType>::value || std::is_same<Char_t, DType>::value || std::is_same<UChar_t, DType>::value ||
+		static_assert(std::is_same<Char_t, DType>::value || std::is_same<UChar_t, DType>::value ||
 			std::is_same<Short_t, DType>::value || std::is_same<UShort_t, DType>::value || std::is_same<Int_t, DType>::value ||
 			std::is_same<UInt_t, DType>::value || std::is_same<Float_t, DType>::value || std::is_same<Double_t, DType>::value ||
 			std::is_same<Long64_t, DType>::value || std::is_same<ULong64_t, DType>::value || std::is_same<Bool_t, DType>::value ||
@@ -26,7 +24,7 @@ class DTreeTypeChecker
 
 	template <typename DType> static void Is_Fundamental(void)
 	{
-		static_assert(std::is_same<const char*, DType>::value || std::is_same<Char_t, DType>::value || std::is_same<UChar_t, DType>::value ||
+		static_assert(std::is_same<Char_t, DType>::value || std::is_same<UChar_t, DType>::value ||
 			std::is_same<Short_t, DType>::value || std::is_same<UShort_t, DType>::value || std::is_same<Int_t, DType>::value ||
 			std::is_same<UInt_t, DType>::value || std::is_same<Float_t, DType>::value || std::is_same<Double_t, DType>::value ||
 			std::is_same<Long64_t, DType>::value || std::is_same<ULong64_t, DType>::value || std::is_same<Bool_t, DType>::value);
@@ -206,9 +204,7 @@ inline DTreeFillData::~DTreeFillData(void)
 inline void DTreeFillData::Delete(type_index locTypeIndex, void* locVoidPointer, bool locIsArrayFlag)
 {
 	//Fundamental types
-	if(locTypeIndex == type_index(typeid(const char*)))
-		Delete(static_cast<const char*>(locVoidPointer), locIsArrayFlag);
-	else if(locTypeIndex == type_index(typeid(Char_t)))
+	if(locTypeIndex == type_index(typeid(Char_t)))
 		Delete(static_cast<Char_t>(locVoidPointer), locIsArrayFlag);
 	else if(locTypeIndex == type_index(typeid(UChar_t)))
 		Delete(static_cast<UChar_t>(locVoidPointer), locIsArrayFlag);

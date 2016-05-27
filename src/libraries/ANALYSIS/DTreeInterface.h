@@ -9,13 +9,18 @@
 
 #include <TROOT.h>
 #include <TTree.h>
+#include <TFile.h>
+#include <TDirectory.h>
 #include <TObject.h>
 #include <TClonesArray.h>
 #include <TVector2.h>
 #include <TVector3.h>
 #include <TLorentzVector.h>
 
+#include <JANA/JApplication.h>
 #include <particleType.h>
+
+#include "DTreeInterfaceObjects.h"
 
 using namespace std;
 
@@ -73,6 +78,7 @@ class DTreeInterface
 		/************************************************************** CREATE BRANCHES *************************************************************/
 
 		void Create_Branch(string locBranchName, type_index locTypeIndex, size_t locArraySize, string locArraySizeName);
+		template <typename DType> void Create_Branch(string locBranchName, size_t locArraySize, string locArraySizeName);
 		template <typename DType> void Create_Branch_Fundamental(string locBranchName);
 		template <typename DType> void Create_Branch_TObject(string locBranchName);
 		template <typename DType> void Create_Branch_FundamentalArray(string locBranchName, string locArraySizeString, unsigned int locInitialSize);
@@ -81,6 +87,7 @@ class DTreeInterface
 		/******************************************************************* FILL *******************************************************************/
 
 		void Increase_ArraySize(string locBranchName, type_index locTypeIndex, size_t locNewArraySize);
+		template <typename DType> void Increase_ArraySize(string locBranchName, int locNewArraySize);
 		void Fill(string locBranchName, type_index locTypeIndex, void* locVoidPointer, bool locIsArrayFlag, size_t locArrayIndex);
 		template <typename DType> void Fill_TObject(string locBranchName, DType& locObject, bool locIsArrayFlag, size_t locArrayIndex);
 
@@ -208,7 +215,7 @@ template <typename DType> inline void DTreeInterface::Create_Branch_ClonesArray(
 
 /************************************************************** TEMPLATE SPECIALIZATIONS **************************************************************/
 
-template<> struct DTreeInterface::DROOTTypeString<const char*> { static const char* GetTypeString() {return "C";} };
+//template<> struct DTreeInterface::DROOTTypeString<const char*> { static const char* GetTypeString() {return "C";} };
 template<> struct DTreeInterface::DROOTTypeString<Char_t> { static const char* GetTypeString() {return "B";} };
 template<> struct DTreeInterface::DROOTTypeString<UChar_t> { static const char* GetTypeString() {return "b";} };
 template<> struct DTreeInterface::DROOTTypeString<Short_t> { static const char* GetTypeString() {return "S";} };
