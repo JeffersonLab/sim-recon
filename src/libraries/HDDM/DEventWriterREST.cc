@@ -82,8 +82,8 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	// load the run and event numbers
 	JEvent& event = locEventLoop->GetJEvent();
 	res().setRunNo(event.GetRunNumber());
-	//I think the type for this is a signed-64 bit, whereas the event # is unsigned
-		//However, we should never take 2^63 events in a run anyway ...
+	//The REST type for this is int64_t, whereas the event type is uint64_t
+	//This copy is lazy: the last bit is lost.  However, we should never need the last bit.
 	res().setEventNo(event.GetEventNumber());
 
 	// push any DMCReaction objects to the output record
