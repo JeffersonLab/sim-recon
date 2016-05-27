@@ -206,8 +206,10 @@ HDET::HDET(string source_name, int ET_STATION_NEVENTS, bool ET_STATION_CREATE_BL
 //---------------------------------
 HDET::~HDET()
 {
+#ifdef HAVE_ET
 	if(is_connected) et_close(sys_id);
 	is_connected = false;
+#endif
 	
 	for(auto p : et_buff_pool) delete[] p.first;
 	et_buff_pool.clear();
