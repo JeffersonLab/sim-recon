@@ -4,6 +4,11 @@
 #include <typeindex>
 #include <map>
 #include <string>
+#include <deque>
+
+#include "TVector2.h"
+#include "TVector3.h"
+#include "TLorentzVector.h"
 
 using namespace std;
 
@@ -20,7 +25,7 @@ class DTreeTypeChecker
 			std::is_same<UInt_t, DType>::value || std::is_same<Float_t, DType>::value || std::is_same<Double_t, DType>::value ||
 			std::is_same<Long64_t, DType>::value || std::is_same<ULong64_t, DType>::value || std::is_same<Bool_t, DType>::value ||
 			std::is_same<TVector2, DType>::value || std::is_same<TVector3, DType>::value || std::is_same<TLorentzVector, DType>::value, 
-			"DTreeTypeChecker ERROR: TYPE " type_index(DType).name() " IS NOT SUPPORTED.");
+			"DTreeTypeChecker ERROR: TYPE IS NOT SUPPORTED.");
 	}
 
 	template <typename DType> static void Is_Fundamental(void)
@@ -29,13 +34,13 @@ class DTreeTypeChecker
 			std::is_same<Short_t, DType>::value || std::is_same<UShort_t, DType>::value || std::is_same<Int_t, DType>::value ||
 			std::is_same<UInt_t, DType>::value || std::is_same<Float_t, DType>::value || std::is_same<Double_t, DType>::value ||
 			std::is_same<Long64_t, DType>::value || std::is_same<ULong64_t, DType>::value || std::is_same<Bool_t, DType>::value, 
-			"DTreeTypeChecker ERROR: TYPE " type_index(DType).name() " IS NOT A SUPPORTED FUNDAMENTAL TYPE.");
+			"DTreeTypeChecker ERROR: TYPE IS NOT A SUPPORTED FUNDAMENTAL TYPE.");
 	}
 
 	template <typename DType> static void Is_TObject(void)
 	{
 		static_assert(std::is_same<TVector2, DType>::value || std::is_same<TVector3, DType>::value || std::is_same<TLorentzVector, DType>::value, 
-			"DTreeTypeChecker ERROR: TYPE " type_index(DType).name() " IS NOT A SUPPORTED TOBJECT TYPE.");
+				"DTreeTypeChecker ERROR: TYPE IS NOT A SUPPORTED TOBJECT TYPE.");
 	}
 };
 
@@ -93,16 +98,10 @@ class DTreeFillData
 		template <typename DType> void Fill_Array(string locBranchName, const DType& locData, unsigned int locArrayIndex);
 
 	private:
-		template <typename DType> void Fill_FundamentalArray(string locBranchName, const DType& locValue, unsigned int locArrayIndex);
-		template <typename DType> void Fill_ClonesArray(string locBranchName, const DType& locObject, unsigned int locArrayIndex);
+		void Delete(type_index& locTypeIndex, deque<void*>& locVoidDeque);
 
-		void Delete(type_index locTypeIndex, void* locVoidPointer, bool locIsArrayFlag);
-		template <typename DType> inline void Delete(DType* locObject, bool locIsArrayFlag);
-
-		map<string, pair<type_index, void*> > dFillData;
-
-		map<string, size_t> dArraySizeMap;
-		map<string, size_t> dArrayNumFilledMap; //can be lest than the size (e.g. size of 10, but only first 3 filled)
+		map<string, pair<type_index, deque<void*> > > dFillData;
+		map<string, size_t> dArrayLargestIndexFilledMap; //can be less than the size //reset by DTreeInterface after fill
 };
 
 /*********************************************************** DTreeFillData: FILL BRANCHES *************************************************************/
@@ -112,10 +111,12 @@ template <typename DType> inline void DTreeFillData::Fill_Single(string locBranc
 	DTreeTypeChecker::Is_Supported<DType>();
 	type_index locTypeIndex(typeid(DType));
 
-	map<string, pair<type_index, void*> >::iterator locIterator = dFillData.find(locBranchName);
+	auto locIterator = dFillData.find(locBranchName);
 	if(locIterator == dFillData.end())
 	{
-		dFillData[locBranchName] = pair<type_index, void*>(locTypeIndex, new DType(locData));
+		void* locVoidData = static_cast<void*>(new DType(locData));
+		deque<void*> locVoidDeque(1, locVoidData);
+		dFillData[locBranchName] = pair<type_index, deque<void*> >(locTypeIndex, locVoidDeque);
 		return;
 	}
 
@@ -125,85 +126,44 @@ template <typename DType> inline void DTreeFillData::Fill_Single(string locBranc
 		return;
 	}
 
-	void* locVoid = locIterator->second.second;
-	*(static_cast<DType*>(locVoid)) = locData;
+	deque<void*>& locVoidDeque = locIterator->second.second;
+	*(static_cast<DType*>(locVoidDeque[0])) = locData;
 }
 
 template <typename DType> inline void DTreeFillData::Fill_Array(string locBranchName, const DType& locData, unsigned int locArrayIndex)
 {
 	DTreeTypeChecker::Is_Supported<DType>();
-	if(std::is_base_of<TObject, DType>::value)
-		Fill_FundamentalArray<DType>(locBranchName, locData, locArrayIndex);
-	else
-		Fill_ClonesArray<DType>(locBranchName, locData, locArrayIndex);
-}
-
-template <typename DType> inline void DTreeFillData::Fill_FundamentalArray(string locBranchName, const DType& locData, unsigned int locArrayIndex)
-{
 	type_index locTypeIndex(typeid(DType));
 
-	map<string, pair<type_index, void*> >::iterator locIterator = dFillData.find(locBranchName);
-	void* locVoid = NULL;
-
+	auto locIterator = dFillData.find(locBranchName);
 	if(locIterator == dFillData.end())
 	{
-		locVoid = new DType[10];
-		dFillData[locBranchName] = pair<type_index, void*>(locTypeIndex, locVoid);
-		dArraySizeMap[locBranchName] = 10;
+		void* locVoidData = static_cast<void*>(new DType(locData));
+		deque<void*> locVoidDeque(locArrayIndex + 1, nullptr);
+		locVoidDeque[locArrayIndex] = locVoidData;
+		dFillData[locBranchName] = pair<type_index, deque<void*> >(locTypeIndex, locVoidDeque);
+		dArrayLargestIndexFilledMap[locBranchName] = locArrayIndex;
+		return;
 	}
 	else if(locTypeIndex != locIterator->second.first)
 	{
 		cout << "WARNING: CANNOT FILL: IS WRONG TYPE FOR BRANCH " << locBranchName << endl;
 		return;
 	}
-	else
-		locVoid = locIterator->second.second;
 
-	DType* locArray = static_cast<DType*>(locVoid);
+	deque<void*>& locVoidDeque = locIterator->second.second;
 
-	//create a new, larger array if the current one is too small
-	unsigned int locCurrentArraySize = dArraySizeMap[locBranchName];
-	if(locArrayIndex >= locCurrentArraySize)
-	{
-		DType* locOldArray = locArray;
-		locArray = new DType[locArrayIndex + 1];
-		dFillData[locBranchName].second = locArray;
-
-		//copy the old contents into the new array
-		for(unsigned int loc_i = 0; loc_i < locCurrentArraySize; ++loc_i)
-			locArray[loc_i] = locOldArray[loc_i];
-
-		delete[] locOldArray;
-		dArraySizeMap[locBranchName] = locArrayIndex + 1;
-	}
+	//expand deque if needed
+	for(size_t loc_i = locVoidDeque.size(); loc_i < locArrayIndex; ++loc_i)
+		locVoidDeque.push_back(static_cast<void*>(new DType));
 
 	//set the data
-	locArray[locArrayIndex] = locData;
-}
+	*(static_cast<DType*>(locVoidDeque[locArrayIndex])) = locData;
 
-//FIX ME!!!
-template <typename DType> inline void DTreeFillData::Fill_ClonesArray(string locBranchName, const DType& locObject, unsigned int locArrayIndex)
-{
-	type_index locTypeIndex(typeid(DType));
-
-	map<string, pair<type_index, void*> >::iterator locIterator = dFillData.find(locBranchName);
-	if(locIterator == dFillData.end())
-	{
-		dFillData[locBranchName] = pair<type_index, void*>(locTypeIndex, /* CREATE NEW */);
-		return;
-	}
-
-	if(locTypeIndex != locIterator->second.first)
-	{
-		cout << "WARNING: CANNOT FILL: IS WRONG TYPE FOR BRANCH " << locBranchName << endl;
-		return;
-	}
-
-	void* locVoid = locIterator->second.second;
-//	*(static_cast<DType*>(locVoid)) = locData;
-
-	TClonesArray* locClonesArray = Get_Pointer_TClonesArray(locBranchName);
-	*(DType*)locClonesArray->ConstructedAt(locArrayIndex) = locObject;
+	//register largest index filled
+	auto& locLargestIndexFilled = dArrayLargestIndexFilledMap[locBranchName];
+	if(locArrayIndex > locLargestIndexFilled)
+		locLargestIndexFilled = locArrayIndex;
 }
 
 /************************************************************* DTreeFillData: DESTRUCTOR **************************************************************/
@@ -214,56 +174,49 @@ inline DTreeFillData::~DTreeFillData(void)
 	//loop over branches
 	for(auto locBranchIterator : dFillData)
 	{
-		string locBranchName = locBranchIterator->first;
-		type_index locTypeIndex = locBranchIterator->second.first;
-		void* locVoidPointer = locBranchIterator->second.second;
-		bool locIsArrayFlag = (dArrayNumFilledMap.find(locBranchName) != locTreeFillData->dArrayNumFilledMap.end());
-
-		Delete(locTypeIndex, locVoidPointer, locIsArrayFlag);
+		string locBranchName = locBranchIterator.first;
+		type_index& locTypeIndex = locBranchIterator.second.first;
+		deque<void*>& locVoidDeque = locBranchIterator.second.second;
+		Delete(locTypeIndex, locVoidDeque);
 	}
 }
 
-inline void DTreeFillData::Delete(type_index locTypeIndex, void* locVoidPointer, bool locIsArrayFlag)
+inline void DTreeFillData::Delete(type_index& locTypeIndex, deque<void*>& locVoidDeque)
 {
-	//Fundamental types
-	if(locTypeIndex == type_index(typeid(Char_t)))
-		Delete(static_cast<Char_t*>(locVoidPointer), locIsArrayFlag);
-	else if(locTypeIndex == type_index(typeid(UChar_t)))
-		Delete(static_cast<UChar_t*>(locVoidPointer), locIsArrayFlag);
-	else if(locTypeIndex == type_index(typeid(Short_t)))
-		Delete(static_cast<Short_t*>(locVoidPointer), locIsArrayFlag);
-	else if(locTypeIndex == type_index(typeid(UShort_t)))
-		Delete(static_cast<UShort_t*>(locVoidPointer), locIsArrayFlag);
-	else if(locTypeIndex == type_index(typeid(Int_t)))
-		Delete(static_cast<Int_t*>(locVoidPointer), locIsArrayFlag);
-	else if(locTypeIndex == type_index(typeid(UInt_t)))
-		Delete(static_cast<UInt_t*>(locVoidPointer), locIsArrayFlag);
-	else if(locTypeIndex == type_index(typeid(Float_t)))
-		Delete(static_cast<Float_t*>(locVoidPointer), locIsArrayFlag);
-	else if(locTypeIndex == type_index(typeid(Double_t)))
-		Delete(static_cast<Double_t*>(locVoidPointer), locIsArrayFlag);
-	else if(locTypeIndex == type_index(typeid(Long64_t)))
-		Delete(static_cast<Long64_t*>(locVoidPointer), locIsArrayFlag);
-	else if(locTypeIndex == type_index(typeid(ULong64_t)))
-		Delete(static_cast<ULong64_t*>(locVoidPointer), locIsArrayFlag);
-	else if(locTypeIndex == type_index(typeid(Bool_t)))
-		Delete(static_cast<Bool_t*>(locVoidPointer), locIsArrayFlag);
+	for(size_t loc_i = 0; loc_i < locVoidDeque.size(); ++loc_i)
+	{
+		//Fundamental types
+		if(locTypeIndex == type_index(typeid(Char_t)))
+			delete (static_cast<Char_t*>(locVoidDeque[loc_i]));
+		else if(locTypeIndex == type_index(typeid(UChar_t)))
+			delete (static_cast<UChar_t*>(locVoidDeque[loc_i]));
+		else if(locTypeIndex == type_index(typeid(Short_t)))
+			delete (static_cast<Short_t*>(locVoidDeque[loc_i]));
+		else if(locTypeIndex == type_index(typeid(UShort_t)))
+			delete (static_cast<UShort_t*>(locVoidDeque[loc_i]));
+		else if(locTypeIndex == type_index(typeid(Int_t)))
+			delete (static_cast<Int_t*>(locVoidDeque[loc_i]));
+		else if(locTypeIndex == type_index(typeid(UInt_t)))
+			delete (static_cast<UInt_t*>(locVoidDeque[loc_i]));
+		else if(locTypeIndex == type_index(typeid(Float_t)))
+			delete (static_cast<Float_t*>(locVoidDeque[loc_i]));
+		else if(locTypeIndex == type_index(typeid(Double_t)))
+			delete (static_cast<Double_t*>(locVoidDeque[loc_i]));
+		else if(locTypeIndex == type_index(typeid(Long64_t)))
+			delete (static_cast<Long64_t*>(locVoidDeque[loc_i]));
+		else if(locTypeIndex == type_index(typeid(ULong64_t)))
+			delete (static_cast<ULong64_t*>(locVoidDeque[loc_i]));
+		else if(locTypeIndex == type_index(typeid(Bool_t)))
+			delete (static_cast<Bool_t*>(locVoidDeque[loc_i]));
 
-	//TObject
-	else if(locTypeIndex == type_index(typeid(TVector3)))
-		Delete(static_cast<TVector3*>(locVoidPointer), locIsArrayFlag);
-	else if(locTypeIndex == type_index(typeid(TVector2)))
-		Delete(static_cast<TVector2*>(locVoidPointer), locIsArrayFlag);
-	else if(locTypeIndex == type_index(typeid(TLorentzVector)))
-		Delete(static_cast<TLorentzVector*>(locVoidPointer), locIsArrayFlag);
-}
-
-template <typename DType> inline void DTreeFillData::Delete(DType* locObject, bool locIsArrayFlag)
-{
-	if(locIsArrayFlag)
-		delete[] locObject;
-	else
-		delete locObject;		
+		//TObject
+		else if(locTypeIndex == type_index(typeid(TVector3)))
+			delete (static_cast<TVector3*>(locVoidDeque[loc_i]));
+		else if(locTypeIndex == type_index(typeid(TVector2)))
+			delete (static_cast<TVector2*>(locVoidDeque[loc_i]));
+		else if(locTypeIndex == type_index(typeid(TLorentzVector)))
+			delete (static_cast<TLorentzVector*>(locVoidDeque[loc_i]));
+	}
 }
 
 #endif //DTreeInterfaceObjects

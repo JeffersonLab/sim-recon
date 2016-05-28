@@ -29,7 +29,7 @@ map<string, size_t>& DTreeInterface::Get_FundamentalArraySizeMap(TTree* locTree)
 
 /********************************************************************* INITIALIZE *********************************************************************/
 
-static DTreeInterface* DTreeInterface::Create_DTreeInterface(string locTreeName, string locFileName) const
+DTreeInterface* DTreeInterface::Create_DTreeInterface(string locTreeName, string locFileName)
 {
 	if(locFileName == "hd_root.root")
 	{
@@ -46,7 +46,7 @@ DTreeInterface::DTreeInterface(string locTreeName, string locFileName) : dFileNa
 	japp->RootWriteLock();
 	{
 		map<string, int>& locNumWritersByFileMap = Get_NumWritersByFileMap();
-		if(locFileIterator == locNumWritersByFileMap.end())
+		if(locNumWritersByFileMap.find(dFileName) == locNumWritersByFileMap.end())
 			locNumWritersByFileMap[dFileName] = 1;
 		else
 			++locNumWritersByFileMap[dFileName];
@@ -79,7 +79,7 @@ DTreeInterface::~DTreeInterface(void)
 	japp->RootUnLock();
 }
 
-void DTreeInterface::GetOrCreate_FileAndTree(string locTreeName) const
+void DTreeInterface::GetOrCreate_FileAndTree(string locTreeName)
 {
 	japp->RootWriteLock();
 	{
@@ -119,14 +119,14 @@ void DTreeInterface::Create_Branches(const DTreeBranchRegister& locTreeBranchReg
 		}
 
 		//loop over branches
-		for(auto locBranchIterator : locTreeFillData->dBranchTypeMap)
+		for(auto locBranchIterator : locTreeBranchRegister.dBranchTypeMap)
 		{
-			string locBranchName = locBranchIterator->first;
-			type_index locTypeIndex = locBranchIterator->second;
+			string locBranchName = locBranchIterator.first;
+			type_index locTypeIndex = locBranchIterator.second;
 
 			//array size
-			auto locSizeIterator = locTreeFillData->dInitialArraySizeMap.find(locBranchName);
-			if(locSizeIterator == locTreeFillData->dInitialArraySizeMap.end())
+			auto locSizeIterator = locTreeBranchRegister.dInitialArraySizeMap.find(locBranchName);
+			if(locSizeIterator == locTreeBranchRegister.dInitialArraySizeMap.end())
 			{
 				//not an array
 				Create_Branch(locBranchName, locTypeIndex, 0, "");
@@ -135,13 +135,14 @@ void DTreeInterface::Create_Branches(const DTreeBranchRegister& locTreeBranchReg
 			size_t locArraySize = locSizeIterator->second;
 
 			//array size name
-			auto locSizeNameIterator = locTreeFillData->dArraySizeNameMap.find(locBranchName);
-			if(locSizeNameIterator == locTreeFillData->dArraySizeNameMap.end())
+			auto locSizeNameIterator = locTreeBranchRegister.dArraySizeNameMap.find(locBranchName);
+			if(locSizeNameIterator == locTreeBranchRegister.dArraySizeNameMap.end())
 				Create_Branch(locBranchName, locTypeIndex, locArraySize, ""); //clones array
-			else
-				Create_Branch(locBranchName, locTypeIndex, locArraySize, locSizeNameIterator->second); //fundamental array
-
-			locFundamentalArraySizeMap[locBranchName] = locArraySize;
+			else //fundamental array
+			{
+				Create_Branch(locBranchName, locTypeIndex, locArraySize, locSizeNameIterator->second);
+				locFundamentalArraySizeMap[locBranchName] = locArraySize;
+			}
 		}
 	}
 	japp->Unlock(dFileName); //UNLOCK FILE
@@ -184,7 +185,7 @@ void DTreeInterface::Create_Branch(string locBranchName, type_index locTypeIndex
 
 /**************************************************************** FILL BRANCHES & TREE ****************************************************************/
 
-void DTreeInterface::Fill(const DTreeFillData* locTreeFillData)
+void DTreeInterface::Fill(DTreeFillData* locTreeFillData)
 {
 	//MUST CARRY AROUND A REFERENCE TO THIS.  ONLY READ/MODIFY THE MAP WITHIN A FILE LOCK. 
 	map<string, size_t>& locFundamentalArraySizeMap = Get_FundamentalArraySizeMap(dTree);
@@ -195,9 +196,9 @@ void DTreeInterface::Fill(const DTreeFillData* locTreeFillData)
 		for(auto locBranchIterator : locTreeFillData->dFillData)
 		{
 			//type
-			string locBranchName = locBranchIterator->first;
-			type_index locTypeIndex = locBranchIterator->second.first;
-			void* locVoidPointer = locBranchIterator->second.second;
+			string locBranchName = locBranchIterator.first;
+			type_index locTypeIndex = locBranchIterator.second.first;
+			deque<void*> locVoidDeque = locBranchIterator.second.second;
 
 			if(dTree->GetBranch(locBranchName.c_str()) == NULL)
 			{
@@ -205,24 +206,34 @@ void DTreeInterface::Fill(const DTreeFillData* locTreeFillData)
 				continue;
 			}
 
-			//fill
-			auto locNumFilledIterator = locTreeFillData->dArrayNumFilledMap.find(locBranchName);
-			bool locIsArrayFlag = (locNumFilledIterator != locTreeFillData->dArrayNumFilledMap.end());
-			if(locIsArrayFlag) //true: is array
+			//check if is array. if not, fill
+			auto locLargestIndexFilledIterator = locTreeFillData->dArrayLargestIndexFilledMap.find(locBranchName);
+			bool locIsArrayFlag = (locLargestIndexFilledIterator != locTreeFillData->dArrayLargestIndexFilledMap.end());
+			if(!locIsArrayFlag)
 			{
-				//increase size if necessary
-				size_t locNumFilled = locNumFilledIterator->second;
-
-				size_t locCurrentArraySize = locFundamentalArraySizeMap[locBranchName]; //may not be in map! (tobj)
-				if(locNumFilled >= locCurrentArraySize)
-					Increase_ArraySize(locBranchName, locTypeIndex, locNumFilled)
-				locFundamentalArraySizeMap[locBranchName] = locNumFilled;
-
-				for(size_t locArrayIndex = 0; locArrayIndex <= locNumFilledIterator->second; ++locArrayIndex)
-					Fill(locBranchName, locTypeIndex, locVoidPointer, locIsArrayFlag, locArrayIndex);
+				Fill(locBranchName, locTypeIndex, locVoidDeque[0], false);
+				continue;
 			}
-			else // is not an array
-				Fill(locBranchName, locTypeIndex, locVoidPointer, false);
+
+			//is array, get how many to fill
+			size_t& locLargestIndexFilled = locLargestIndexFilledIterator->second;
+
+			//increase array size if necessary
+			auto locFundamentalArraySizeIterator = locFundamentalArraySizeMap.find(locBranchName);
+			if(locFundamentalArraySizeIterator != locFundamentalArraySizeMap.end())
+			{
+				size_t locCurrentArraySize = locFundamentalArraySizeMap[locBranchName]; //may not be in map! (tobj)
+				if((locLargestIndexFilled + 1) >= locCurrentArraySize)
+					Increase_ArraySize(locBranchName, locTypeIndex, locLargestIndexFilled + 1);
+				locFundamentalArraySizeMap[locBranchName] = locLargestIndexFilled + 1;
+			}
+
+			//fill array
+			for(size_t locArrayIndex = 0; locArrayIndex <= locLargestIndexFilled; ++locArrayIndex)
+				Fill(locBranchName, locTypeIndex, locVoidDeque[locArrayIndex], true, locArrayIndex);
+
+			//reset DTreeFillData for next event!
+			locLargestIndexFilled = 0;
 		}
 
 		//fill tree
@@ -301,4 +312,3 @@ void DTreeInterface::Fill(string locBranchName, type_index locTypeIndex, void* l
 		Fill_TObject<TLorentzVector>(locBranchName, locObject, locIsArrayFlag, locArrayIndex);
 	}
 }
-

@@ -3,6 +3,7 @@
 
 #include <map>
 #include <typeindex>
+#include <type_traits>
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -44,7 +45,7 @@ class DTreeInterface
 		/**************************************************************** INITIALIZE ****************************************************************/
 
 		//Only public way to construct a DTreeInterface //Forces allocation on the heap
-		static DTreeInterface* Create_DTreeInterface(string locTreeName, string locFileName) const;
+		static DTreeInterface* Create_DTreeInterface(string locTreeName, string locFileName);
 
 		//Destructor
 		~DTreeInterface(void);
@@ -56,7 +57,7 @@ class DTreeInterface
 
 		/******************************************************************* FILL *******************************************************************/
 
-		void Fill(const DTreeFillData* locTreeFillData);
+		void Fill(DTreeFillData* locTreeFillData);
 
 	private:
 
@@ -67,7 +68,7 @@ class DTreeInterface
 		DTreeInterface(void); //private default constructor: cannot call
 
 		//Init
-		void GetOrCreate_FileAndTree(string locTreeName) const;
+		void GetOrCreate_FileAndTree(string locTreeName);
 
 		/*************************************************************** MISCELLANEOUS **************************************************************/
 
@@ -78,7 +79,15 @@ class DTreeInterface
 		/************************************************************** CREATE BRANCHES *************************************************************/
 
 		void Create_Branch(string locBranchName, type_index locTypeIndex, size_t locArraySize, string locArraySizeName);
-		template <typename DType> void Create_Branch(string locBranchName, size_t locArraySize, string locArraySizeName);
+
+		//Enable this version if type inherits from TObject //void: is return type
+		template <typename DType> typename enable_if<std::is_base_of<TObject, DType>::value, void>::type
+				Create_Branch(string locBranchName, size_t locArraySize, string locArraySizeName);
+
+		//Enable this version if type does NOT inherit from TObject //void: is return type
+		template <typename DType> typename enable_if<!std::is_base_of<TObject, DType>::value, void>::type
+				Create_Branch(string locBranchName, size_t locArraySize, string locArraySizeName);
+
 		template <typename DType> void Create_Branch_Fundamental(string locBranchName);
 		template <typename DType> void Create_Branch_TObject(string locBranchName);
 		template <typename DType> void Create_Branch_FundamentalArray(string locBranchName, string locArraySizeString, unsigned int locInitialSize);
@@ -88,7 +97,7 @@ class DTreeInterface
 
 		void Increase_ArraySize(string locBranchName, type_index locTypeIndex, size_t locNewArraySize);
 		template <typename DType> void Increase_ArraySize(string locBranchName, int locNewArraySize);
-		void Fill(string locBranchName, type_index locTypeIndex, void* locVoidPointer, bool locIsArrayFlag, size_t locArrayIndex);
+		void Fill(string locBranchName, type_index locTypeIndex, void* locVoidPointer, bool locIsArrayFlag, size_t locArrayIndex = 0);
 		template <typename DType> void Fill_TObject(string locBranchName, DType& locObject, bool locIsArrayFlag, size_t locArrayIndex);
 
 		/*************************************************************** GET POINTERS ***************************************************************/
@@ -157,22 +166,22 @@ inline TClonesArray* DTreeInterface::Get_Pointer_TClonesArray(string locBranchNa
 
 /******************************************************************* CREATE BRANCHES ******************************************************************/
 
-template <typename DType> inline void DTreeInterface::Create_Branch(string locBranchName, size_t locArraySize, string locArraySizeName)
+template <typename DType> inline typename enable_if<std::is_base_of<TObject, DType>::value, void>::type
+DTreeInterface::Create_Branch(string locBranchName, size_t locArraySize, string locArraySizeName)
 {
-	if(std::is_base_of<TObject, DType>::value)
-	{
-		if(locArraySize == 0)
-			Create_Branch_TObject<DType>(locBranchName);
-		else
-			Create_Branch_ClonesArray<DType>(locBranchName, locArraySize);
-	}
+	if(locArraySize == 0)
+		Create_Branch_TObject<DType>(locBranchName);
 	else
-	{
-		if(locArraySize == 0)
-			Create_Branch_Fundamental<DType>(locBranchName);
-		else
-			Create_Branch_FundamentalArray<DType>(locBranchName, locArraySizeName, locArraySize);
-	}
+		Create_Branch_ClonesArray<DType>(locBranchName, locArraySize);
+}
+
+template <typename DType> inline typename enable_if<!std::is_base_of<TObject, DType>::value, void>::type
+DTreeInterface::Create_Branch(string locBranchName, size_t locArraySize, string locArraySizeName)
+{
+	if(locArraySize == 0)
+		Create_Branch_Fundamental<DType>(locBranchName);
+	else
+		Create_Branch_FundamentalArray<DType>(locBranchName, locArraySizeName, locArraySize);
 }
 
 template <typename DType> inline void DTreeInterface::Create_Branch_Fundamental(string locBranchName)
