@@ -790,29 +790,27 @@ string DCutAction_TrackHitPattern::Get_ActionName(void) const
 	return locStream.str();
 }
 
-void DCutAction_TrackHitPattern::Initialize(JEventLoop* locEventLoop)
-{
-	locEventLoop->GetSingle(dParticleID);
-}
-
 bool DCutAction_TrackHitPattern::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	deque<const DKinematicData*> locParticles;
 	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
+
+	const DParticleID* locParticleID = NULL;
+	locEventLoop->GetSingle(locParticleID);
 
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
 		const DTrackTimeBased* locTrackTimeBased = NULL;
 		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-		if(!Cut_TrackHitPattern(locTrackTimeBased))
+		if(!Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
 			return false;
 	}
 
 	return true;
 }
 
-bool DCutAction_TrackHitPattern::Cut_TrackHitPattern(const DKinematicData* locTrack) const
+bool DCutAction_TrackHitPattern::Cut_TrackHitPattern(const DParticleID* locParticleID, const DKinematicData* locTrack) const
 {
 	const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
 	const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
