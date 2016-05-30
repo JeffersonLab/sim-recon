@@ -53,23 +53,29 @@ class DTreeBranchRegister
 	friend class DTreeInterface;
 
 	public:
-		template <typename DType> void Register_Branch_Single(string locBranchName);
-		template <typename DType> void Register_Branch_FundamentalArray(string locBranchName, string locArraySizeName, size_t locInitialArraySize = 10);
-		template <typename DType> void Register_Branch_ClonesArray(string locBranchName, size_t locInitialArraySize = 10);
+		DTreeBranchRegister(void) : dUserInfo(new TList()){}
+		~DTreeBranchRegister(void){delete dUserInfo;}
+
+		TList* Get_UserInfo(void) const{return dUserInfo;}
+
+		template <typename DType> void Register_Single(string locBranchName);
+		template <typename DType> void Register_FundamentalArray(string locBranchName, string locArraySizeName, size_t locInitialArraySize = 10);
+		template <typename DType> void Register_ClonesArray(string locBranchName, size_t locInitialArraySize = 10);
 
 	private:
+		TList* dUserInfo;
 		map<string, type_index> dBranchTypeMap;
 		map<string, size_t> dInitialArraySizeMap;
 		map<string, string> dArraySizeNameMap; //for fundamental
 };
 
-template <typename DType> inline void DTreeBranchRegister::Register_Branch_Single(string locBranchName)
+template <typename DType> inline void DTreeBranchRegister::Register_Single(string locBranchName)
 {
 	DTreeTypeChecker::Is_Supported<DType>();
 	dBranchTypeMap.insert(pair<string, type_index>(locBranchName, type_index(typeid(DType))));
 }
 
-template <typename DType> inline void DTreeBranchRegister::Register_Branch_FundamentalArray(string locBranchName, string locArraySizeName, size_t locInitialArraySize)
+template <typename DType> inline void DTreeBranchRegister::Register_FundamentalArray(string locBranchName, string locArraySizeName, size_t locInitialArraySize)
 {
 	DTreeTypeChecker::Is_Fundamental<DType>();
 	dBranchTypeMap.insert(pair<string, type_index>(locBranchName, type_index(typeid(DType))));
@@ -77,7 +83,7 @@ template <typename DType> inline void DTreeBranchRegister::Register_Branch_Funda
 	dArraySizeNameMap[locBranchName] = locArraySizeName;
 }
 
-template <typename DType> inline void DTreeBranchRegister::Register_Branch_ClonesArray(string locBranchName, size_t locInitialArraySize)
+template <typename DType> inline void DTreeBranchRegister::Register_ClonesArray(string locBranchName, size_t locInitialArraySize)
 {
 	DTreeTypeChecker::Is_TObject<DType>();
 	dBranchTypeMap.insert(pair<string, type_index>(locBranchName, type_index(typeid(DType))));

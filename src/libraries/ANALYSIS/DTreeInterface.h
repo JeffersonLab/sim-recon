@@ -57,6 +57,10 @@ class DTreeInterface
 
 		void Create_Branches(const DTreeBranchRegister& locTreeBranchRegister);
 
+		//Check/read info
+		bool Get_BranchesCreatedFlag(void) const;
+		const TList* Get_UserInfo(void) const;
+
 		/******************************************************************* FILL *******************************************************************/
 
 		void Fill(DTreeFillData& locTreeFillData); //not const: needs to reset arrays
@@ -256,8 +260,6 @@ template <typename DType> inline void DTreeInterface::Fill_TObject(string locBra
 	if(locIsArrayFlag)
 	{
 		TClonesArray* locClonesArray = Get_Pointer_TClonesArray(locBranchName);
-		if(locArrayIndex == 0)
-			locClonesArray->Clear(); //empties array
 		*(DType*)locClonesArray->ConstructedAt(locArrayIndex) = locObject;
 	}
 	else

@@ -103,6 +103,23 @@ void DTreeInterface::GetOrCreate_FileAndTree(string locTreeName)
 
 /****************************************************************** CREATE BRANCHES *******************************************************************/
 
+bool DTreeInterface::Get_BranchesCreatedFlag(void) const
+{
+	japp->WriteLock(dFileName); //LOCK FILE
+	bool locBranchesCreatedFlag = (dTree->GetNbranches() > 0);
+	japp->Unlock(dFileName); //UNLOCK FILE
+	return locBranchesCreatedFlag;
+}
+
+const TList* DTreeInterface::Get_UserInfo(void) const
+{
+	if(Get_BranchesCreatedFlag())
+		return dTree->GetUserInfo();
+
+	cout << "WARNING: CANNOT GET USER INFO BEFORE BRANCHES CREATED. RETURNING NULL IN DTreeInterface::Get_UserInfo()" << endl;
+	return NULL; //NOT SUPPORTED! //Unsafe otherwise. This guarantees that the user info is setup first, and won't be modified while reading it
+}
+
 void DTreeInterface::Create_Branches(const DTreeBranchRegister& locTreeBranchRegister)
 {
 	//MUST CARRY AROUND A REFERENCE TO THIS.  ONLY READ/MODIFY THE MAP WITHIN A FILE LOCK. 
@@ -111,7 +128,7 @@ void DTreeInterface::Create_Branches(const DTreeBranchRegister& locTreeBranchReg
 	japp->WriteLock(dFileName); //LOCK FILE
 	{
 		//if there are branches already, don't do anything
-		if(!dTree->GetListOfBranches()->IsEmpty())
+		if(dTree->GetNbranches() > 0)
 		{
 			japp->Unlock(dFileName); //UNLOCK FILE
 			return;
@@ -226,6 +243,8 @@ void DTreeInterface::Fill(DTreeFillData& locTreeFillData)
 					Increase_ArraySize(locBranchName, locTypeIndex, locLargestIndexFilled + 1);
 				locFundamentalArraySizeMap[locBranchName] = locLargestIndexFilled + 1;
 			}
+			else //is clones array: clear it
+				Get_Pointer_TClonesArray(locBranchName)->Clear(); //empties array
 
 			//fill array
 			for(size_t locArrayIndex = 0; locArrayIndex <= locLargestIndexFilled; ++locArrayIndex)

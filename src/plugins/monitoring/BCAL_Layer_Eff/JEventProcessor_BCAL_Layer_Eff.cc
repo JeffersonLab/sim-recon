@@ -77,34 +77,34 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::init(void)
 	DTreeBranchRegister locTreeBranchRegister;
 
 	//TRACK
-	locTreeBranchRegister.Register_Branch_Single<Int_t>("PID_PDG"); //gives charge, mass, beta
-	locTreeBranchRegister.Register_Branch_Single<Float_t>("TrackVertexZ");
-	locTreeBranchRegister.Register_Branch_Single<TVector3>("TrackP3");
-	locTreeBranchRegister.Register_Branch_Single<Float_t>("TrackDeltaPhiToShower"); //is signed: BCAL - Track
-	locTreeBranchRegister.Register_Branch_Single<Float_t>("TrackDeltaZToShower"); //is signed: BCAL - Track
-	locTreeBranchRegister.Register_Branch_Single<Float_t>("ProjectedBCALHitPhi"); //degrees
-	locTreeBranchRegister.Register_Branch_Single<Float_t>("ProjectedBCALHitZ");
+	locTreeBranchRegister.Register_Single<Int_t>("PID_PDG"); //gives charge, mass, beta
+	locTreeBranchRegister.Register_Single<Float_t>("TrackVertexZ");
+	locTreeBranchRegister.Register_Single<TVector3>("TrackP3");
+	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaPhiToShower"); //is signed: BCAL - Track
+	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaZToShower"); //is signed: BCAL - Track
+	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitPhi"); //degrees
+	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitZ");
 
 	//HIT SEARCH
 	//BCALClusterLayers: first 4 bits: point layers, next 4: unmatched-unified-hit layers
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("BCALClusterLayers");
+	locTreeBranchRegister.Register_Single<UChar_t>("BCALClusterLayers");
 	//LAYER 1:
 	//"Sector:" 4*(module - 1) + sector //sector: 1 -> 192
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("ProjectedBCALSectors_Layer1"); //0 if biased or indeterminate
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer1_Downstream"); //0 if not found
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer1_Upstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedBCALSectors_Layer1"); //0 if biased or indeterminate
+	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer1_Downstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer1_Upstream"); //0 if not found
 	//LAYER 2:
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("ProjectedBCALSectors_Layer2"); //0 if biased or indeterminate
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer2_Downstream"); //0 if not found
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer2_Upstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedBCALSectors_Layer2"); //0 if biased or indeterminate
+	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer2_Downstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer2_Upstream"); //0 if not found
 	//LAYER 3:
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("ProjectedBCALSectors_Layer3"); //0 if biased or indeterminate
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer3_Downstream"); //0 if not found
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer3_Upstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedBCALSectors_Layer3"); //0 if biased or indeterminate
+	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer3_Downstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer3_Upstream"); //0 if not found
 	//LAYER 4:
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("ProjectedBCALSectors_Layer4"); //0 if biased or indeterminate
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer4_Downstream"); //0 if not found
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer4_Upstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedBCALSectors_Layer4"); //0 if biased or indeterminate
+	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer4_Downstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<UChar_t>("NearestBCALSectors_Layer4_Upstream"); //0 if not found
 
 	//REGISTER BRANCHES
 	dTreeInterface->Create_Branches(locTreeBranchRegister);
