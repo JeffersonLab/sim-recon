@@ -60,7 +60,9 @@ class JEventProcessor_BCAL_Layer_Eff : public jana::JEventProcessor
 
 		//TREE
 		DTreeInterface* dTreeInterface;
-		static thread_local DTreeFillData dTreeFillData;
+		//thread_local: Each thread has its own object: no lock needed
+			//important: manages it's own data internally: don't want to call new/delete every event!
+		thread_local DTreeFillData dTreeFillData; //thread_local is implied to be static
 };
 
 #endif // _JEventProcessor_BCAL_Layer_Eff_
