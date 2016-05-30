@@ -34,6 +34,7 @@
 #include <ANALYSIS/DAnalysisUtilities.h>
 #include <ANALYSIS/DMCThrownMatching.h>
 #include <ANALYSIS/DCutActions.h>
+#include <ANALYSIS/DTreeInterface.h>
 
 using namespace std;
 using namespace jana;
