@@ -1,5 +1,13 @@
 #include "DEventWriterROOT.h"
 
+//TREE INTERFACES, FILL OBJECTS
+//Ugh.  Why are these thread_local? Because the user gets this object from JANA as const, so the class cannot be modified
+//So, these are not class members: they are static. To make sure that the threads don't need to lock on them, they are thread_local
+thread_local DTreeInterface* DEventWriterROOT::dThrownTreeInterface = NULL;
+thread_local DTreeFillData DEventWriterROOT::dThrownTreeFillData;
+thread_local map<const DReaction*, DTreeInterface*> DEventWriterROOT::dTreeInterfaceMap;
+thread_local map<const DReaction*, DTreeFillData*> DEventWriterROOT::dTreeFillDataMap;
+
 DEventWriterROOT::DEventWriterROOT(JEventLoop* locEventLoop)
 {
 	dInitNumThrownArraySize = 20;
@@ -7,7 +15,6 @@ DEventWriterROOT::DEventWriterROOT(JEventLoop* locEventLoop)
 	dInitNumTrackArraySize = 50;
 	dInitNumNeutralArraySize = 15;
 	dInitNumComboArraySize = 100;
-	dThrownTreeInterface = NULL;
 
 	//BEWARE: IF THIS IS CHANGED, CHANGE IN THE BLUEPRINT FACTORY AND THE ANALYSIS UTILITIES ALSO!!
 	dTrackSelectionTag = "PreSelect";
@@ -39,9 +46,19 @@ DEventWriterROOT::DEventWriterROOT(JEventLoop* locEventLoop)
 
 DEventWriterROOT::~DEventWriterROOT(void)
 {
-	//delete actions ...
-	map<const DReaction*, DTreeInterface*> dTreeInterfaceMap; //delete when done! //no locking needed!
-	map<const DReaction*, DTreeFillData*> dTreeFillDataMap; //delete when done! //no locking needed!
+	//Delete tree interface objects
+	for(auto& locMapPair : dTreeInterfaceMap)
+		delete locMapPair.second;
+	for(auto& locMapPair : dTreeFillDataMap)
+		delete locMapPair.second;
+
+	//Delete actions
+	for(auto& locMapPair : dCutActionMap_ThrownTopology)
+		delete locMapPair.second;
+	for(auto& locMapPair : dCutActionMap_TrueCombo)
+		delete locMapPair.second;
+	for(auto& locMapPair : dCutActionMap_BDTSignalCombo)
+		delete locMapPair.second;
 }
 
 void DEventWriterROOT::Create_ThrownTree(JEventLoop* locEventLoop, string locOutputFileName) const
@@ -108,8 +125,9 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	string locTreeName = locReactionName + string("_Tree");
 
 	//create tree interface
-	dTreeInterfaceMap[locReaction] = DTreeInterface::Create_DTreeInterface(locTreeName, locOutputFileName);
-	if(Get_BranchesCreatedFlag())
+	DTreeInterface* locTreeInterface = DTreeInterface::Create_DTreeInterface(locTreeName, locOutputFileName);
+	dTreeInterfaceMap[locReaction] = locTreeInterface;
+	if(locTreeInterface->Get_BranchesCreatedFlag())
 		return; //branches already created, then return
 
 	//Branch register
@@ -149,7 +167,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	Create_CustomBranches_DataTree(locBranchRegister, locReaction, locIsMCDataFlag);
 
 	//Create branches
-	dThrownTreeInterface->Create_Branches(locBranchRegister);
+	locTreeInterface->Create_Branches(locBranchRegister);
 
 	//create fill object
 	dTreeFillDataMap[locReaction] = new DTreeFillData();
@@ -161,7 +179,7 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 	DKinFitType locKinFitType = locReaction->Get_KinFitType();
 
 	//create & add reaction identification maps
-	TList* locUserInfo = locBranchRegister.GetUserInfo();
+	TList* locUserInfo = locBranchRegister.Get_UserInfo();
 	TMap* locNameToPIDMap = new TMap();
 	locNameToPIDMap->SetName("NameToPIDMap");
 	locUserInfo->Add(locNameToPIDMap);
@@ -443,7 +461,7 @@ void DEventWriterROOT::Get_DecayProductNames(const DReaction* locReaction, size_
 
 void DEventWriterROOT::Create_UserTargetInfo(DTreeBranchRegister& locBranchRegister, Particle_t locTargetPID, double locTargetCenterZ) const
 {
-	TList* locUserInfo = locBranchRegister.GetUserInfo();
+	TList* locUserInfo = locBranchRegister.Get_UserInfo();
 	TMap* locMiscInfoMap = (TMap*)locUserInfo->FindObject("MiscInfoMap");
 	if(locMiscInfoMap == NULL)
 	{
@@ -1024,7 +1042,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 
 	//FILL
 	DTreeInterface* locTreeInterface = dTreeInterfaceMap[locReaction];
-	locTreeInterface->Fill(locTreeFillData);
+	locTreeInterface->Fill(*locTreeFillData);
 }
 
 vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs, map<oid_t, int>& locObjectToArrayIndexMap) const

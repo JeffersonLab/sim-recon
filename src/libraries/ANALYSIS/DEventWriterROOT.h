@@ -102,10 +102,12 @@ class DEventWriterROOT : public JObject
 		/****************************************************************************************************************************************/
 
 		//TREE INTERFACES, FILL OBJECTS
-		DTreeInterface* dThrownTreeInterface;
-		DTreeFillData dThrownTreeFillData;
-		map<const DReaction*, DTreeInterface*> dTreeInterfaceMap; //delete when done! //no locking needed!
-		map<const DReaction*, DTreeFillData*> dTreeFillDataMap; //delete when done! //no locking needed!
+		//Ugh.  Why are these thread_local? Because the user gets this object from JANA as const, so the class cannot be modified
+		//So, these are not class members: they are static. To make sure that the threads don't need to lock on them, they are thread_local
+		static thread_local DTreeInterface* dThrownTreeInterface;
+		static thread_local DTreeFillData dThrownTreeFillData;
+		static thread_local map<const DReaction*, DTreeInterface*> dTreeInterfaceMap; //delete when done! //no locking needed!
+		static thread_local map<const DReaction*, DTreeFillData*> dTreeFillDataMap; //delete when done! //no locking needed!
 
 		void Get_Reactions(jana::JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;
 
