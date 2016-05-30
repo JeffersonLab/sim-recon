@@ -659,7 +659,7 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::evnt(JEventLoop *loop, uint64_t even
                 //cout << " The error is as follows, measurment error = " << measurementError << " Tracking Error " << trackError << " Total " << error << endl;
                 double docaphi, docaz;
                 GetDOCAPhiandZ(hits[j]->wire, can->position(), can->momentum(), docaphi, docaz);
-                can->pulls.push_back(DTrackFitter::pull_t(residual, error, 0.0, time , measurement, hits[j], NULL,docaphi,docaz));
+                can->pulls.push_back(DTrackFitter::pull_t(residual, error, 0.0, time , DOCA, hits[j], NULL,docaphi,docaz));
 
             }
             _data.push_back(can);
