@@ -24,6 +24,7 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <thread>
 
 using namespace jana;
 using namespace std;
@@ -52,10 +53,14 @@ class JEventProcessor_BCAL_Layer_Eff : public jana::JEventProcessor
 		double dMinTrackingFOM, dMinPIDFOM;
 		int dMinNumTrackHits;
 		int dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage;
-		DCutAction_TrackHitPattern* locCutAction_TrackHitPattern;
+		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
 
 		//HISTOGRAMS
 		map<int, map<bool, TH1I*> > dHistMap_HitFound, dHistMap_HitTotal; //int = layer, bool = isUpstream
+
+		//TREE
+		DTreeInterface* dTreeInterface;
+		static thread_local DTreeFillData dTreeFillData;
 };
 
 #endif // _JEventProcessor_BCAL_Layer_Eff_

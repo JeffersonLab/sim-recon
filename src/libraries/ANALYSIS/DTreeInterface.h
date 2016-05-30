@@ -45,6 +45,7 @@ class DTreeInterface
 		/**************************************************************** INITIALIZE ****************************************************************/
 
 		//Only public way to construct a DTreeInterface //Forces allocation on the heap
+		//MUST DELETE WHEN FINISHED: OR ELSE DATA WON'T BE SAVED!!!
 		static DTreeInterface* Create_DTreeInterface(string locTreeName, string locFileName);
 
 		//Destructor
@@ -57,7 +58,7 @@ class DTreeInterface
 
 		/******************************************************************* FILL *******************************************************************/
 
-		void Fill(DTreeFillData* locTreeFillData);
+		void Fill(DTreeFillData& locTreeFillData); //not const: needs to reset arrays
 
 	private:
 

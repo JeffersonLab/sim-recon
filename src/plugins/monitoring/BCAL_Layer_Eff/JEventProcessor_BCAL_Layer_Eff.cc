@@ -26,7 +26,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::init(void)
 	dMinNumTrackHits = 14; //e.g. 6 in CDC, 8 in 
 	dMinHitRingsPerCDCSuperlayer = 3;
 	dMinHitPlanesPerFDCPackage = 4;
-	locCutAction_TrackHitPattern = new DCutAction_TrackHitPattern(NULL, dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage);
+	dCutAction_TrackHitPattern = new DCutAction_TrackHitPattern(NULL, dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage);
 	//action initialize not necessary: is empty
 
 	TDirectory* locOriginalDir = gDirectory;
@@ -66,24 +66,32 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::init(void)
 	// back to original dir
 	locOriginalDir->cd();
 
-//Tree format: Save:
-	//uint locProjectedSectors: (rounded from search)
-		//8bits per layer: 4*(module - 1) + sector //sector: 1 -> 192, 0 if biased or indeterminate
-	//uint locDownstreamSectors:
-		//8bits per layer: 4*(module - 1) + sector //sector: 1 -> 192, 0 if not found
-	//uint locUpstreamSectors:
-		//8bits per layer: 4*(module - 1) + sector //sector: 1 -> 192, 0 if not found
-	//UChar_t locClusterLayers: //which layers are in the cluster (both by points & by hits): 4bits each: 8total
+	//TTREE INTERFACE
+	//MUST DELETE WHEN FINISHED: OR ELSE DATA WON'T BE SAVED!!!
+	dTreeInterface = DTreeInterface::Create_DTreeInterface("bcal_layer_eff", "tree_bcal_layer_eff.root");
 
-//TRACK:
-	//int locPID //gives charge, mass, beta
-//RE-THINK HOW TO PICK TRACKS!!!!
-	//TVector3 locTrackP3
-	//float locTrackVertexZ
-	//projected bcal hit position: z, phi
-	//delta-phi to shower
-	//delta-z to shower
+	//TTREE BRANCHES
+	DTreeBranchRegister locTreeBranchRegister;
 
+	//TRACK
+	locTreeBranchRegister.Register_Branch_Single<Int_t>("PID_PDG"); //gives charge, mass, beta
+	locTreeBranchRegister.Register_Branch_Single<Float_t>("TrackVertexZ");
+	locTreeBranchRegister.Register_Branch_Single<TVector3>("TrackP3");
+	locTreeBranchRegister.Register_Branch_Single<Float_t>("TrackDeltaPhiToShower"); //is signed: BCAL - Track
+	locTreeBranchRegister.Register_Branch_Single<Float_t>("TrackDeltaZToShower"); //is signed: BCAL - Track
+	locTreeBranchRegister.Register_Branch_Single<Float_t>("ProjectedBCALHitPhi"); //degrees
+	locTreeBranchRegister.Register_Branch_Single<Float_t>("ProjectedBCALHitZ");
+
+	//HIT SEARCH
+	//BCALClusterLayers: first 4 bits: point layers, next 4: unmatched-unified-hit layers
+	locTreeBranchRegister.Register_Branch_Single<UChar_t>("BCALClusterLayers");
+	//Sector Branches: 8bits per layer: 4*(module - 1) + sector //sector: 1 -> 192
+	locTreeBranchRegister.Register_Branch_Single<UInt_t>("ProjectedBCALSectors"); //0 if biased or indeterminate
+	locTreeBranchRegister.Register_Branch_Single<UInt_t>("FoundBCALSectors_Downstream"); //0 if not found
+	locTreeBranchRegister.Register_Branch_Single<UInt_t>("FoundBCALSectors_Upstream"); //0 if not found
+
+	//REGISTER BRANCHES
+	dTreeInterface->Create_Branches(locTreeBranchRegister);
 
 	return NOERROR;
 }
@@ -102,7 +110,6 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::brun(jana::JEventLoop* locEventLoop, in
 //------------------
 // evnt
 //------------------
-
 
 jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
@@ -146,7 +153,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 		if(!locDetectorMatches->Get_IsMatchedToDetector(locTrackTimeBased, SYS_START))
 			continue; //not matched to SC
 
-		if(!locCutAction_TrackHitPattern.Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
+		if(!dCutAction_TrackHitPattern.Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
 			continue;
 
 		unsigned int locNumTrackHits = locTrackTimeBased->Ndof + 5;
@@ -295,16 +302,34 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 			}
 		}
 
-		//ok, now save everything to TTree
-
 		//Predict BCAL Surface Hit Location
 		unsigned int locPredictedSurfaceModule = 0, locPredictedSurfaceSector = 0;
 		DVector3 locPredictedSurfacePosition;
 		locParticleID->PredictBCALWedge(locTrackTimeBased->rt, locPredictedSurfaceModule, locPredictedSurfaceSector, &locPredictedSurfacePosition);
 
+		//STAGE DATA FOR TREE FILL
 
-//		double locBCALShowerMatchParams->dDeltaPhiToShower; //between track and shower //is signed: BCAL - Track
-//		double locBCALShowerMatchParams->dDeltaZToShower; //between track and shower //is signed: BCAL - Track
+		//TRACK
+		dTreeFillData.Fill_Single<Int_t>("PID_PDG", PDGtype(locChargedTrackHypothesis->PID()));
+		dTreeFillData.Fill_Single<Float_t>("TrackVertexZ", locChargedTrackHypothesis->position().Z());
+		DVector3 locDP3 = locChargedTrackHypothesis->momentum();
+		TVector3 locP3(locDP3.X(), locDP3.Y(), locDP3.Z());
+		dTreeFillData.Fill_Single<TVector3>("TrackP3", locP3);
+		dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", locBCALShowerMatchParams->dDeltaPhiToShower); //is signed: BCAL - Track
+		dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", locBCALShowerMatchParams->dDeltaZToShower); //is signed: BCAL - Track
+		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());
+		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitZ", locPredictedSurfacePosition.Z());
+
+		//HIT SEARCH
+		//BCALClusterLayers: first 4 bits: point layers, next 4: unmatched-unified-hit layers
+		dTreeFillData.Fill_Single<UChar_t>("BCALClusterLayers", locClusterLayers);
+		//Sector Branches: 8bits per layer: 4*(module - 1) + sector //sector: 1 -> 192
+		dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors", locProjectedSectors); //0 if biased or indeterminate
+		dTreeFillData.Fill_Single<UInt_t>("FoundBCALSectors_Downstream", locFoundSectors_Downstream); //0 if not found
+		dTreeFillData.Fill_Single<UInt_t>("FoundBCALSectors_Upstream", locFoundSectors_Upstream); //0 if not found
+
+		//FILL TTREE
+		dTreeInterface->Fill(dTreeFillData);
 	}
 
 	// FILL HISTOGRAMS
@@ -480,6 +505,9 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::erun(void)
 jerror_t JEventProcessor_BCAL_Layer_Eff::fini(void)
 {
 	// Called before program exit after event processing is finished.  
+
+	delete dCutAction_TrackHitPattern;
+	delete dTreeInterface; //saves trees to file, closes file
 
 	return NOERROR;
 }
