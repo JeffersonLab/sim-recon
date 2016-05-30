@@ -819,18 +819,18 @@ bool DCutAction_TrackHitPattern::Cut_TrackHitPattern(const DParticleID* locParti
 	map<int, int> locNumHitRingsPerSuperlayer, locNumHitPlanesPerPackage;
 	if(locTrackTimeBased != NULL)
 	{
-		dParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackTimeBased->dCDCRings, locNumHitRingsPerSuperlayer);
-		dParticleID->Get_FDCNumHitPlanesPerPackage(locTrackTimeBased->dFDCPlanes, locNumHitPlanesPerPackage);
+		locParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackTimeBased->dCDCRings, locNumHitRingsPerSuperlayer);
+		locParticleID->Get_FDCNumHitPlanesPerPackage(locTrackTimeBased->dFDCPlanes, locNumHitPlanesPerPackage);
 	}
 	else if(locTrackWireBased != NULL)
 	{
-		dParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackWireBased->dCDCRings, locNumHitRingsPerSuperlayer);
-		dParticleID->Get_FDCNumHitPlanesPerPackage(locTrackWireBased->dFDCPlanes, locNumHitPlanesPerPackage);
+		locParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackWireBased->dCDCRings, locNumHitRingsPerSuperlayer);
+		locParticleID->Get_FDCNumHitPlanesPerPackage(locTrackWireBased->dFDCPlanes, locNumHitPlanesPerPackage);
 	}
 	else if(locTrackCandidate != NULL)
 	{
-		dParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackCandidate->dCDCRings, locNumHitRingsPerSuperlayer);
-		dParticleID->Get_FDCNumHitPlanesPerPackage(locTrackCandidate->dFDCPlanes, locNumHitPlanesPerPackage);
+		locParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackCandidate->dCDCRings, locNumHitRingsPerSuperlayer);
+		locParticleID->Get_FDCNumHitPlanesPerPackage(locTrackCandidate->dFDCPlanes, locNumHitPlanesPerPackage);
 	}
 	else
 		return false;
