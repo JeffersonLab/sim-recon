@@ -152,7 +152,6 @@ inline double DTrackCandidate_factory_CDCCOSMIC::CDCDriftVariance(double t){
     //if (t<0.) t=0.;
     //cout << "Entering Variance lookup for time " << t << endl;
 
-    double cutoffTime = 5.0;
     double V = 0.0507;
     if (t>0){
         //cout << "The resolution parameters are {" << CDC_RES_PAR1 <<","<< CDC_RES_PAR2 << "}" << endl;
@@ -167,14 +166,11 @@ inline double DTrackCandidate_factory_CDCCOSMIC::CDCDriftVariance(double t){
         //}
 
         V=sigma*sigma;
-        return V;
     }
     else { // Time is negative, or exactly zero, choose position at wire, with error of t=0 hit
-        double slope = -1.0 * CDC_RES_PAR1 / (( cutoffTime + 1) * (cutoffTime + 1));
-        double sigma = (CDC_RES_PAR1/(cutoffTime+1.)+CDC_RES_PAR2) + slope * (0.0 - cutoffTime);
+        double sigma = CDC_RES_PAR1+CDC_RES_PAR2;
         //cout << "Time is negative...sigma = " << sigma << endl;
         V=sigma*sigma; //Should include T0 variance...
-        return V;
         //V=0.0507; // straw radius^2 / 12
     }
     //cout << "Somehow we got here...returning Variance = " << V << endl;

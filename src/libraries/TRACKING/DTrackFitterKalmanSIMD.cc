@@ -143,20 +143,12 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
 					     double &d, double &V, double &tcorr){
     //d=0.39; // initialize at half-cell
     //V=0.0507; // initialize with (cell size)/12.
-    double cutoffTime = 40.0;
     tcorr = t; // Need this value even when t is negative for calibration
     if (t>0){
       //double dtc =(CDC_DRIFT_BSCALE_PAR1 + CDC_DRIFT_BSCALE_PAR2 * B)* t;
         //tcorr=t-dtc;
 	 
 	double sigma=CDC_RES_PAR1/(tcorr+1.)+CDC_RES_PAR2;
-        // This function is very poorly behaved at low drift times
-        // For times less than cutoffTime assume a linear behavior of our function.
-        if( tcorr < cutoffTime ){
-            double slope = -1.0 * CDC_RES_PAR1 / (( cutoffTime + 1) * (cutoffTime + 1));
-            sigma = (CDC_RES_PAR1/(cutoffTime+1.)+CDC_RES_PAR2) + slope * (tcorr - cutoffTime);
-        }
-
 
 	// Variables to store values for time-to-distance functions for delta=0
 	// and delta!=0
@@ -239,9 +231,8 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
     }
     else { // Time is negative, or exactly zero, choose position at wire, with error of t=0 hit
         d=0.;
-        double slope = -1.0 * CDC_RES_PAR1 / (( cutoffTime + 1) * (cutoffTime + 1));
-        double sigma = (CDC_RES_PAR1/(cutoffTime+1.)+CDC_RES_PAR2) + slope * (0.0 - cutoffTime);
-	double dt=cdc_drift_table[1]-cdc_drift_table[0];
+        double sigma = CDC_RES_PAR1+CDC_RES_PAR2;
+	    double dt=cdc_drift_table[1]-cdc_drift_table[0];
         V=sigma*sigma+mVarT0*0.0001/(dt*dt);
         //V=0.0507; // straw radius^2 / 12
     }
