@@ -3987,6 +3987,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 
                     tdrift=my_cdchits[cdc_index]->tdrift-mT0
                         -central_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
+                    if (tdrift < 0.) continue;
                     double B=central_traj[k_minus_1].B;
                     ComputeCDCDrift(dphi,delta,tdrift,B,measurement,V,tcorr);
 		 
@@ -5217,6 +5218,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
                     tdrift=my_cdchits[cdc_index]->tdrift-mT0
                         -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
+                    if (tdrift < 0.) continue;
                     double B=forward_traj[k_minus_1].B;
                     ComputeCDCDrift(dphi,delta,tdrift,B,dm,V,tcorr);
 		  
