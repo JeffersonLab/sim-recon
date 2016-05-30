@@ -14,7 +14,10 @@ extern "C"
 		locApplication->AddProcessor(new JEventProcessor_BCAL_Layer_Eff()); //register this plugin
 	}
 } // "C"
-   
+
+//define static local variable //declared in header file
+thread_local DTreeFillData JEventProcessor_BCAL_Layer_Eff::dTreeFillData;
+
 //------------------
 // init
 //------------------
@@ -135,10 +138,11 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 	// This plugin is used to determine the reconstruction efficiency of hits in the BCAL
 		// Note, this is hit-level, not shower-level.  Hits: By sector/layer/module/end
 
+/*
+	//CUT ON TRIGGER TYPE
 	const DTrigger* locTrigger = NULL;
 	locEventLoop->GetSingle(locTrigger);
-
-//CUT ON TRIGGER TYPE
+*/
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks);
 
@@ -166,12 +170,12 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 		if(!locDetectorMatches->Get_IsMatchedToDetector(locTrackTimeBased, SYS_START))
 			continue; //not matched to SC
 
-		if(!dCutAction_TrackHitPattern.Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
+		if(!dCutAction_TrackHitPattern->Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
 			continue;
 
 		unsigned int locNumTrackHits = locTrackTimeBased->Ndof + 5;
-		if(locNumTrackHits < dMinTrackHits)
-			return false;
+		if(locNumTrackHits < dMinNumTrackHits)
+			continue;
 
 		locBestTracks.insert(locChargedTrackHypothesis);
 	}
@@ -228,10 +232,10 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 
 		//register layers
 		UChar_t locClusterLayers = 0; //which layers are in the cluster (both by points & by hits): 4bits each: 8total
-		for(auto locLayerPair : locSortedPoints)
-			locClusterLayers != (1 << (locLayerPair.first - 1));
-		for(auto locLayerPair : locSortedHits)
-			locClusterLayers != (1 << (locLayerPair.first + 4 - 1));
+		for(auto& locLayerPair : locSortedPoints)
+			locClusterLayers |= (1 << (locLayerPair.first - 1));
+		for(auto& locLayerPair : locSortedHits)
+			locClusterLayers |= (1 << (locLayerPair.first + 4 - 1));
 
 		//loop over layers
 		for(int locLayer = 1; locLayer <= 4; ++locLayer)
@@ -273,7 +277,9 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 
 			//now, see if can find a matching hit in the layer
 			//first, search the cluster points //returned double: signed distance (point sector - search sector)
-			pair<const DBCALPoint*, double> locNearestClusterPoint = Find_NearestClusterPoint(locProjectedSector, locPointsIterator->second);
+			pair<const DBCALPoint*, double> locNearestClusterPoint(NULL, 999.0);
+			if(locPointsIterator != locSortedPoints.end())
+				locNearestClusterPoint = Find_NearestClusterPoint(locProjectedSector, locPointsIterator->second);
 
 			//next, search the unmatched cluster hits
 			pair<const DBCALUnifiedHit*, double> locNearestClusterHit(NULL, 999.0);
@@ -305,7 +311,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 			{
 				//register hit: one end
 				int locSector = (locNearestClusterHit.first->module - 1)*4 + locNearestClusterHit.first->sector;
-				if(locNearestClusterHit.first->end == kUpstream)
+				if(locNearestClusterHit.first->end == DBCALGeometry::kUpstream)
 				{
 					locNearestSectorsMap_Upstream[locLayer] = UChar_t(locSector);
 					locHitMap_HitFound[locLayer][true].push_back(locProjectedSectorInt); //hist
@@ -342,20 +348,20 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 		//Sector Branches: 4*(module - 1) + sector //sector: 1 -> 192
 		//LAYER 1:
 		dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer1", locProjectedSectorsMap[1]);
-		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer1_Downstream", locNearestSectors_Downstream[1]);
-		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer1_Upstream", locNearestSectors_Upstream[1]);
+		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer1_Downstream", locNearestSectorsMap_Downstream[1]);
+		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer1_Upstream", locNearestSectorsMap_Upstream[1]);
 		//LAYER 2:
 		dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer2", locProjectedSectorsMap[2]);
-		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer2_Downstream", locNearestSectors_Downstream[2]);
-		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer2_Upstream", locNearestSectors_Upstream[2]);
+		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer2_Downstream", locNearestSectorsMap_Downstream[2]);
+		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer2_Upstream", locNearestSectorsMap_Upstream[2]);
 		//LAYER 3:
 		dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer3", locProjectedSectorsMap[3]);
-		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer3_Downstream", locNearestSectors_Downstream[3]);
-		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer3_Upstream", locNearestSectors_Upstream[3]);
+		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer3_Downstream", locNearestSectorsMap_Downstream[3]);
+		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer3_Upstream", locNearestSectorsMap_Upstream[3]);
 		//LAYER 4:
 		dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer4", locProjectedSectorsMap[4]);
-		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer4_Downstream", locNearestSectors_Downstream[4]);
-		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer4_Upstream", locNearestSectors_Upstream[4]);
+		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer4_Downstream", locNearestSectorsMap_Downstream[4]);
+		dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer4_Upstream", locNearestSectorsMap_Upstream[4]);
 
 		//FILL TTREE
 		dTreeInterface->Fill(dTreeFillData);
@@ -426,15 +432,15 @@ double JEventProcessor_BCAL_Layer_Eff::Calc_ProjectedSector(int locLayer, const 
 		if(locLayerIterator != locSortedPoints.end())
 			return Calc_AverageSector(locLayerIterator->second);
 		else
-			return Calc_AverageSector(locSortedPoints[3]);
+			return Calc_AverageSector(locSortedPoints.at(3));
 	}
-	else if(locLayer == 4)
+	else //layer 4
 	{
 		auto locLayerIterator = locSortedPoints.find(3);
 		if(locLayerIterator != locSortedPoints.end())
 			return Calc_AverageSector(locLayerIterator->second);
 		else
-			return Calc_AverageSector(locSortedPoints[2]);
+			return Calc_AverageSector(locSortedPoints.at(2));
 	}
 }
 
@@ -449,7 +455,7 @@ double JEventProcessor_BCAL_Layer_Eff::Calc_AverageSector(const set<const DBCALP
 	for(auto& locBCALPoint : locBCALPoints)
 	{
 		int locSector = (locBCALPoint->module() - 1)*4 + locBCALPoint->sector(); //1 -> 192
-		locSectors.insert(pair<double, double>(double(locSector), locBCALPoint->E()));
+		locSectors.push_back(pair<double, double>(double(locSector), locBCALPoint->E()));
 		if(locSector <= 8) //first 2 modules
 			locHasLowPhiHits = true;
 		else if(locSector >= 183) //last 2 modules
@@ -463,7 +469,7 @@ double JEventProcessor_BCAL_Layer_Eff::Calc_AverageSector(const set<const DBCALP
 		double locWeight = 1.0/(locSectorPair.second*locSectorPair.second);
 
 		double locSector = locSectorPair.first;
-		if(locWrapAroundFlag && (locSector < 96.0)) //96: half-way point
+		if(locHasLowPhiHits && locHasHighPhiHits && (locSector < 96.0)) //96: half-way point
 			locSector += 192.0; //add 2pi
 		locNumerator += locSector*locWeight;
 
@@ -504,15 +510,17 @@ pair<const DBCALPoint*, double> JEventProcessor_BCAL_Layer_Eff::Find_NearestClus
 	//no time cut: was already placed when forming the cluster
 	const DBCALPoint* locBestBCALPoint = NULL;
 	double locBestDeltaSector = 16.0; //if you are >= 4 modules away, don't bother reporting
+
 	for(auto& locBCALPoint : locClusterLayerBCALPoints)
 	{
-		double locSector = (locBCALPoint->module() - 1)*4 + locBCALPoint->sector();
+		double locSector = double((locBCALPoint->module() - 1)*4 + locBCALPoint->sector());
 		double locDeltaSector = locSector - locProjectedSector;
 		if(fabs(locDeltaSector) >= fabs(locBestDeltaSector))
 			continue;
 		locBestDeltaSector = locDeltaSector;
 		locBestBCALPoint = locBCALPoint;
 	}
+
 	return pair<const DBCALPoint*, double>(locBestBCALPoint, locBestDeltaSector);
 }
 

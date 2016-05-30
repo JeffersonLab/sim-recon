@@ -163,7 +163,8 @@ class DEventWriterROOT : public JObject
 
 		/****************************************************************************************************************************************/
 
-//map<const DReaction*, DTreeInterface*> dInterfaceMap; //delete when done! //no locking needed!
+		map<const DReaction*, DTreeInterface*> dInterfaceMap; //delete when done! //no locking needed!
+		DTreeInterface* dThrownTreeInterface;
 
 		void Get_Reactions(jana::JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;
 

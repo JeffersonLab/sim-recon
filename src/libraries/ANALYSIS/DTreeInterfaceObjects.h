@@ -2,6 +2,7 @@
 #define DTreeInterfaceObjects_h
 
 #include <typeindex>
+#include <typeinfo>
 #include <map>
 #include <string>
 #include <deque>
@@ -18,30 +19,31 @@ class DTreeInterface;
 
 class DTreeTypeChecker
 {
-	template <typename DType> static void Is_Supported(void)
-	{
-		static_assert(std::is_same<Char_t, DType>::value || std::is_same<UChar_t, DType>::value ||
-			std::is_same<Short_t, DType>::value || std::is_same<UShort_t, DType>::value || std::is_same<Int_t, DType>::value ||
-			std::is_same<UInt_t, DType>::value || std::is_same<Float_t, DType>::value || std::is_same<Double_t, DType>::value ||
-			std::is_same<Long64_t, DType>::value || std::is_same<ULong64_t, DType>::value || std::is_same<Bool_t, DType>::value ||
-			std::is_same<TVector2, DType>::value || std::is_same<TVector3, DType>::value || std::is_same<TLorentzVector, DType>::value, 
-			"DTreeTypeChecker ERROR: TYPE IS NOT SUPPORTED.");
-	}
+	public:
+		template <typename DType> static void Is_Supported(void)
+		{
+			static_assert(std::is_same<Char_t, DType>::value || std::is_same<UChar_t, DType>::value ||
+				std::is_same<Short_t, DType>::value || std::is_same<UShort_t, DType>::value || std::is_same<Int_t, DType>::value ||
+				std::is_same<UInt_t, DType>::value || std::is_same<Float_t, DType>::value || std::is_same<Double_t, DType>::value ||
+				std::is_same<Long64_t, DType>::value || std::is_same<ULong64_t, DType>::value || std::is_same<Bool_t, DType>::value ||
+				std::is_same<TVector2, DType>::value || std::is_same<TVector3, DType>::value || std::is_same<TLorentzVector, DType>::value,
+				"DTreeTypeChecker ERROR: TYPE IS NOT SUPPORTED.");
+		}
 
-	template <typename DType> static void Is_Fundamental(void)
-	{
-		static_assert(std::is_same<Char_t, DType>::value || std::is_same<UChar_t, DType>::value ||
-			std::is_same<Short_t, DType>::value || std::is_same<UShort_t, DType>::value || std::is_same<Int_t, DType>::value ||
-			std::is_same<UInt_t, DType>::value || std::is_same<Float_t, DType>::value || std::is_same<Double_t, DType>::value ||
-			std::is_same<Long64_t, DType>::value || std::is_same<ULong64_t, DType>::value || std::is_same<Bool_t, DType>::value, 
-			"DTreeTypeChecker ERROR: TYPE IS NOT A SUPPORTED FUNDAMENTAL TYPE.");
-	}
+		template <typename DType> static void Is_Fundamental(void)
+		{
+			static_assert(std::is_same<Char_t, DType>::value || std::is_same<UChar_t, DType>::value ||
+				std::is_same<Short_t, DType>::value || std::is_same<UShort_t, DType>::value || std::is_same<Int_t, DType>::value ||
+				std::is_same<UInt_t, DType>::value || std::is_same<Float_t, DType>::value || std::is_same<Double_t, DType>::value ||
+				std::is_same<Long64_t, DType>::value || std::is_same<ULong64_t, DType>::value || std::is_same<Bool_t, DType>::value,
+				"DTreeTypeChecker ERROR: TYPE IS NOT A SUPPORTED FUNDAMENTAL TYPE.");
+		}
 
-	template <typename DType> static void Is_TObject(void)
-	{
-		static_assert(std::is_same<TVector2, DType>::value || std::is_same<TVector3, DType>::value || std::is_same<TLorentzVector, DType>::value, 
-				"DTreeTypeChecker ERROR: TYPE IS NOT A SUPPORTED TOBJECT TYPE.");
-	}
+		template <typename DType> static void Is_TObject(void)
+		{
+			static_assert(std::is_same<TVector2, DType>::value || std::is_same<TVector3, DType>::value || std::is_same<TLorentzVector, DType>::value,
+					"DTreeTypeChecker ERROR: TYPE IS NOT A SUPPORTED TOBJECT TYPE.");
+		}
 };
 
 /**************************************************************** DTreeBranchRegister *****************************************************************/
@@ -64,13 +66,13 @@ class DTreeBranchRegister
 template <typename DType> inline void DTreeBranchRegister::Register_Branch_Single(string locBranchName)
 {
 	DTreeTypeChecker::Is_Supported<DType>();
-	dBranchTypeMap[locBranchName] = type_index(typeid(DType));
+	dBranchTypeMap.insert(pair<string, type_index>(locBranchName, type_index(typeid(DType))));
 }
 
 template <typename DType> inline void DTreeBranchRegister::Register_Branch_FundamentalArray(string locBranchName, string locArraySizeName, size_t locInitialArraySize)
 {
 	DTreeTypeChecker::Is_Fundamental<DType>();
-	dBranchTypeMap[locBranchName] = type_index(typeid(DType));
+	dBranchTypeMap.insert(pair<string, type_index>(locBranchName, type_index(typeid(DType))));
 	dInitialArraySizeMap[locBranchName] = locInitialArraySize;
 	dArraySizeNameMap[locBranchName] = locArraySizeName;
 }
@@ -78,7 +80,7 @@ template <typename DType> inline void DTreeBranchRegister::Register_Branch_Funda
 template <typename DType> inline void DTreeBranchRegister::Register_Branch_ClonesArray(string locBranchName, size_t locInitialArraySize)
 {
 	DTreeTypeChecker::Is_TObject<DType>();
-	dBranchTypeMap[locBranchName] = type_index(typeid(DType));
+	dBranchTypeMap.insert(pair<string, type_index>(locBranchName, type_index(typeid(DType))));
 	dInitialArraySizeMap[locBranchName] = locInitialArraySize;
 }
 
@@ -116,7 +118,9 @@ template <typename DType> inline void DTreeFillData::Fill_Single(string locBranc
 	{
 		void* locVoidData = static_cast<void*>(new DType(locData));
 		deque<void*> locVoidDeque(1, locVoidData);
-		dFillData[locBranchName] = pair<type_index, deque<void*> >(locTypeIndex, locVoidDeque);
+		pair<type_index, deque<void*> > locTypePair(locTypeIndex, locVoidDeque);
+		pair<string, pair<type_index, deque<void*> > > locMapPair(locBranchName, locTypePair);
+		dFillData.insert(locMapPair);
 		return;
 	}
 
@@ -141,7 +145,9 @@ template <typename DType> inline void DTreeFillData::Fill_Array(string locBranch
 		void* locVoidData = static_cast<void*>(new DType(locData));
 		deque<void*> locVoidDeque(locArrayIndex + 1, nullptr);
 		locVoidDeque[locArrayIndex] = locVoidData;
-		dFillData[locBranchName] = pair<type_index, deque<void*> >(locTypeIndex, locVoidDeque);
+		pair<type_index, deque<void*> > locTypePair(locTypeIndex, locVoidDeque);
+		pair<string, pair<type_index, deque<void*> > > locMapPair(locBranchName, locTypePair);
+		dFillData.insert(locMapPair);
 		dArrayLargestIndexFilledMap[locBranchName] = locArrayIndex;
 		return;
 	}

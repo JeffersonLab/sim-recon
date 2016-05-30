@@ -73,7 +73,6 @@ DTreeInterface::~DTreeInterface(void)
 		TFile* locOutputFile = (TFile*)gROOT->GetListOfFiles()->FindObject(dFileName.c_str());
 		locOutputFile->Write(0, TObject::kOverwrite);
 		locOutputFile->Close();
-		delete dTree;
 		delete locOutputFile;
 	}
 	japp->RootUnLock();

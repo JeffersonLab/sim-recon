@@ -3,6 +3,7 @@
 
 #include <map>
 #include <typeindex>
+#include <typeinfo>
 #include <type_traits>
 #include <string>
 #include <iostream>

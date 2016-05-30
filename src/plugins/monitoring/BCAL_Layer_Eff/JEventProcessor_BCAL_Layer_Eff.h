@@ -15,7 +15,13 @@
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALPoint.h"
 #include "BCAL/DBCALUnifiedHit.h"
+//#include "TRIGGER/DTrigger.h"
+#include "TRACKING/DTrackTimeBased.h"
 
+#include "PID/DChargedTrack.h"
+#include "PID/DChargedTrackHypothesis.h"
+#include "PID/DParticleID.h"
+#include "PID/DDetectorMatches.h"
 #include "ANALYSIS/DCutActions.h"
 #include "ANALYSIS/DTreeInterface.h"
 
@@ -51,7 +57,7 @@ class JEventProcessor_BCAL_Layer_Eff : public jana::JEventProcessor
 
 		//TRACK REQUIREMENTS
 		double dMinTrackingFOM, dMinPIDFOM;
-		int dMinNumTrackHits;
+		unsigned int dMinNumTrackHits;
 		int dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage;
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
 
@@ -62,7 +68,7 @@ class JEventProcessor_BCAL_Layer_Eff : public jana::JEventProcessor
 		DTreeInterface* dTreeInterface;
 		//thread_local: Each thread has its own object: no lock needed
 			//important: manages it's own data internally: don't want to call new/delete every event!
-		thread_local DTreeFillData dTreeFillData; //thread_local is implied to be static
+		static thread_local DTreeFillData dTreeFillData;
 };
 
 #endif // _JEventProcessor_BCAL_Layer_Eff_
