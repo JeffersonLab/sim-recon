@@ -1,4 +1,5 @@
 #include "DEventWriterEVIO.h"
+#include "DAQ/DL1Info.h"
 
 size_t& DEventWriterEVIO::Get_NumEVIOOutputThreads(void) const
 {
@@ -233,7 +234,28 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 		WriteBORData(loop, buff);
 		return;
 	}
-	
+
+    // Handle sync events separately
+    // Assume this is a sync event if there is a DL1Info object
+    vector<const DL1Info*> l1_info;
+    loop->Get(l1_info);
+    if(l1_info.size() > 0) {
+        // DEBUG OUTPUT
+        cout << " I WROTE A SYNC EVENT" << endl;
+        uint32_t run_number = loop->GetJEvent().GetRunNumber();
+        uint64_t event_number = loop->GetJEvent().GetEventNumber();
+        cout << " RUN = " << run_number << "  EVENT = " << event_number << endl;
+        vector<pair<string,string> > items;
+        l1_info[0]->toStrings(items);
+
+        for(vector<pair<string,string> >::iterator it=items.begin();
+            it!=items.end(); it++)
+            cout << it->first << ": " << it->second << endl;
+
+        WriteTSSyncData(loop, buff, l1_info[0]);
+        return;
+    }
+
 	// First, grab all of the low level objects
 	vector<const Df250TriggerTime*>   f250tts;
 	vector<const Df250PulseIntegral*> f250pis;
@@ -291,7 +313,8 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 		WriteEPICSData(buff, epicsValues);
 		return;
 	}
-	
+
+    
 	// Get list of rocids with hits
 	set<uint32_t> rocids;
 	rocids.insert(1); // This *may* be from TS (don't know). There is such a id in run 2391 
@@ -1181,4 +1204,58 @@ void DEventWriterEVIO::WriteBORData(JEventLoop *loop, vector<uint32_t> &buff) co
     // copy entire bank
     for(uint32_t i=0; i<Nwords+1; i++)  buff.push_back( in_buff[i] );
 
+}
+
+//------------------
+// WriteTSSyncData
+//------------------
+void DEventWriterEVIO::WriteTSSyncData(JEventLoop *loop, vector<uint32_t> &buff, const DL1Info *l1info) const
+{
+    // The Trigger Supervisor (TS) inserts information into the data stream
+    // during periodic "sync events".  The data is stored in one bank
+    // of a particular form, and for now it's easiest to copy the entire event
+    // to the output stream as well
+    // CHECK THIS
+
+    // Physics Bank Header
+    buff.clear();
+    buff.push_back(0); // Physics Event Length (must be updated at the end)
+    buff.push_back(0xFF701001);// 0xFF70=SEB in single event mode, 0x10=bank of banks, 0x01=1event
+        
+    // TS data bank
+    uint32_t trigger_bank_len_idx = buff.size();
+    buff.push_back(0); // Length
+    //buff.push_back(0xFF202000); // 0xFF02=Trigger Bank Tag, 0x20=Segments
+    buff.push_back(0xEE020100); // 0xEE02=TS Bank Tag, 0x01=u32int
+
+    // Save header information
+    buff.push_back(l1info->nsync);
+    buff.push_back(l1info->trig_number);
+    buff.push_back(l1info->live_time);
+    buff.push_back(l1info->busy_time);
+    buff.push_back(l1info->live_inst);
+    buff.push_back(l1info->unix_time);
+
+    // save GTP scalars
+    for(uint32_t i=0; i<l1info->gtp_sc.size(); i++)
+        buff.push_back(l1info->gtp_sc[i]);
+
+    // save FP scalars
+    for(uint32_t i=0; i<l1info->fp_sc.size(); i++)
+        buff.push_back(l1info->fp_sc[i]);
+
+    // Save GTP rates
+    for(uint32_t i=0; i<l1info->gtp_rate.size(); i++)
+        buff.push_back(l1info->gtp_rate[i]);
+
+    // save FP rates
+    for(uint32_t i=0; i<l1info->fp_rate.size(); i++)
+        buff.push_back(l1info->fp_rate[i]);
+
+
+    // Update bank length
+    buff[trigger_bank_len_idx] = buff.size() - trigger_bank_len_idx - 1;
+
+	// Update global header length
+	buff[0] = buff.size()-1;   
 }
