@@ -24,7 +24,7 @@ using namespace bcal_smearing;
 //-----------
 // Smear
 //-----------
-void BCALSmearer::Smear(hddm_s::HDDM *record)
+void BCALSmearer::SmearEvent(hddm_s::HDDM *record)
 {
 
    /// May 27, 2015: HDGeant now outputs BCAL hit data in terms of just

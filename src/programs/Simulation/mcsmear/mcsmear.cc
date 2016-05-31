@@ -17,12 +17,13 @@ using namespace std;
 #include <DANA/DApplication.h>
 #include "MyProcessor.h"
 #include "JFactoryGenerator_ThreadCancelHandler.h"
+#include "mcsmear_config.h" 
 
 #include "units.h"
 #include "HDDM/hddm_s.hpp"
 
 void Smear(hddm_s::HDDM *record);
-void ParseCommandLineArguments(int narg, char* argv[]);
+void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *in_config);
 void Usage(void);
 
 extern void SetSeeds(const char *vals);
@@ -33,8 +34,8 @@ int QUIT = 0;
 
 using namespace jana;
 
-// histogram
-pthread_mutex_t root_mutex = PTHREAD_MUTEX_INITIALIZER;
+// for histogramming
+//pthread_mutex_t root_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 //-----------
@@ -42,7 +43,8 @@ pthread_mutex_t root_mutex = PTHREAD_MUTEX_INITIALIZER;
 //-----------
 int main(int narg,char* argv[])
 {
-   ParseCommandLineArguments(narg, argv);
+   mcsmear_config_t *config = new mcsmear_config_t();
+   ParseCommandLineArguments(narg, argv, config);
 
    // Create DApplication object
    DApplication dapp(narg, argv);
@@ -50,7 +52,7 @@ int main(int narg,char* argv[])
    
    TFile *hfile = new TFile("smear.root","RECREATE","smearing histograms");
 
-   MyProcessor myproc;   
+   MyProcessor myproc(config);   
    dapp.Run(&myproc);
    
    hfile->Write();
@@ -62,7 +64,7 @@ int main(int narg,char* argv[])
 //-----------
 // ParseCommandLineArguments
 //-----------
-void ParseCommandLineArguments(int narg, char* argv[])
+void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
 {
 
   for (int i=1; i<narg; i++) {
@@ -72,11 +74,11 @@ void ParseCommandLineArguments(int narg, char* argv[])
       switch(ptr[1]) {
       case 'h': Usage();                                   break;
       case 'o': OUTFILENAME = strdup(&ptr[2]);             break;
-      case 'N': ADD_NOISE=true;                            break;
-      case 's': SMEAR_HITS=false;                          break;
-      case 'i': IGNORE_SEEDS=true;                         break;
+      case 'N': config->ADD_NOISE=true;                    break;
+      case 's': config->SMEAR_HITS=false;                  break;
+      case 'i': config->IGNORE_SEEDS=true;                 break;
       case 'r': SetSeeds(&ptr[2]);                         break;
-      case 'd': DROP_TRUTH_HITS=true;                      break;
+      case 'd': config->DROP_TRUTH_HITS=true;              break;
       }
     }
     else {
@@ -98,7 +100,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
       ptr = strstr(path_stripped, ".hddm");
       if(ptr)*ptr=0;
       char str[256];
-      sprintf(str, "%s_%ssmeared.hddm", path_stripped, ADD_NOISE ? "n":"");
+      sprintf(str, "%s_smeared.hddm", path_stripped);
       OUTFILENAME = strdup(str);
       free(pdup);
    }

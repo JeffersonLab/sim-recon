@@ -18,11 +18,17 @@ using namespace jana;
 #include <fstream>
 #include <HDDM/hddm_s.hpp>
 
+#include "smear.h"
 #include "mcsmear_config.h"
 
 class MyProcessor:public JEventProcessor
 {
    public:
+   	  MyProcessor(mcsmear_config_t *in_config) {
+   	  	 config = in_config;
+   	  	 smearer = NULL;
+   	  }
+   
       jerror_t init(void);                              ///< Called once at program start.
       jerror_t brun(JEventLoop *loop, int32_t runnumber);  ///< Called everytime a new run number is detected.
       jerror_t evnt(JEventLoop *loop, uint64_t eventnumber); ///< Called every event.
@@ -40,6 +46,7 @@ class MyProcessor:public JEventProcessor
       bool HDDM_USE_INTEGRITY_CHECKS;
       
       mcsmear_config_t *config;
+      Smear *smearer;
 };
 
 

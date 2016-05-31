@@ -91,7 +91,7 @@ static void polint(float *xa, float *ya,int n,float x, float *y,float *dy){
 //-----------
 // Smear
 //-----------
-void Smear::Smear(hddm_s::HDDM *record)
+void Smear::SmearEvent(hddm_s::HDDM *record)
 {
     GetAndSetSeeds(record);
 
@@ -100,7 +100,7 @@ void Smear::Smear(hddm_s::HDDM *record)
     SmearFCAL(record);
     SmearCCAL(record);
     //SmearBCAL(record);
-    dBCALSmearer->Smear(record);
+    dBCALSmearer->SmearEvent(record);
     SmearTOF(record);
     SmearSTC(record);
     SmearCherenkov(record);

@@ -24,50 +24,6 @@ using namespace std;
 
 namespace bcal_smearing {
 
-class BCALSmearer
-{
-    public:
-		BCALSmearer(mcsmear_config_t *in_mcsmear_config, bcal_config_t *in_bcal_config) {   // constructor
-			mcsmear_config = in_mcsmear_config;
-			bcal_config = in_bcal_config;
-		}
-		~BCALSmearer();  // destructor 
-
-		Smear(hddm_s::HDDM *record);  // main smearing function
-
-	protected:
-		mcsmear_config_t *mcsmear_config;
-		bcal_config_t *bcal_config;
-		
-		int inline GetCalibIndex(int module, int layer, int sector);
-		void inline GetAttenuationParameters(int id, double &attenuation_length, double &attenuation_L1, double &attenuation_L2);
-		double inline GetEffectiveVelocity(int id);
-
-		void GetSiPMHits(hddm_s::HDDM *record,
-        	             map<bcal_index, CellHits> &SiPMHits,
-              	         vector<IncidentParticle_t> &incident_particles);
-		void ApplySamplingFluctuations(map<bcal_index,
-           		                       CellHits> &SiPMHits,
-                   		               vector<IncidentParticle_t> &incident_particles);
-		void MergeHits(map<bcal_index, CellHits> &SiPMHits, double Resolution);
-		void ApplyPoissonStatistics(map<bcal_index, CellHits> &SiPMHits);
-		void SortSiPMHits(map<bcal_index,
-        	              CellHits> &SiPMHits,
-             	          map<int, SumHits> &bcalfADC, double Resolution);
-		void SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC);
-		void ApplyTimeSmearing(double sigma_ns, double sigma_ns_TDC, map<int, fADCHitList> &fADCHits, 
-							   map<int, TDCHitList> &TDCHits);
-		void FindHits(double thresh_MeV,
-              		  map<int, SumHits> &bcalfADC,
-              		  map<int, fADCHitList> &fADCHits,
-              		  map<int, TDCHitList> &TDCHits);
-		void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
-                        		map<int, TDCHitList> &TDCHits,
-                        		hddm_s::HDDM *record);
-
-};
-
-
 // utility classes
 
 //..........................
@@ -228,6 +184,52 @@ class IncidentParticle_t{
       float px, py, pz;
       int ptype, track;
 };
+
+// MAIN CLASS
+class BCALSmearer
+{
+    public:
+		BCALSmearer(mcsmear_config_t *in_mcsmear_config, bcal_config_t *in_bcal_config) {   // constructor
+			mcsmear_config = in_mcsmear_config;
+			bcal_config = in_bcal_config;
+		}
+		~BCALSmearer();  // destructor 
+
+		void SmearEvent(hddm_s::HDDM *record);  // main smearing function
+
+	protected:
+		mcsmear_config_t *mcsmear_config;
+		bcal_config_t *bcal_config;
+		
+		int inline GetCalibIndex(int module, int layer, int sector);
+		void inline GetAttenuationParameters(int id, double &attenuation_length, double &attenuation_L1, double &attenuation_L2);
+		double inline GetEffectiveVelocity(int id);
+
+		void GetSiPMHits(hddm_s::HDDM *record,
+        	             map<bcal_index, CellHits> &SiPMHits,
+              	         vector<IncidentParticle_t> &incident_particles);
+		void ApplySamplingFluctuations(map<bcal_index,
+           		                       CellHits> &SiPMHits,
+                   		               vector<IncidentParticle_t> &incident_particles);
+		void MergeHits(map<bcal_index, CellHits> &SiPMHits, double Resolution);
+		void ApplyPoissonStatistics(map<bcal_index, CellHits> &SiPMHits);
+		void SortSiPMHits(map<bcal_index,
+        	              CellHits> &SiPMHits,
+             	          map<int, SumHits> &bcalfADC, double Resolution);
+		void SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC);
+		void ApplyTimeSmearing(double sigma_ns, double sigma_ns_TDC, map<int, fADCHitList> &fADCHits, 
+							   map<int, TDCHitList> &TDCHits);
+		void FindHits(double thresh_MeV,
+              		  map<int, SumHits> &bcalfADC,
+              		  map<int, fADCHitList> &fADCHits,
+              		  map<int, TDCHitList> &TDCHits);
+		void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
+                        		map<int, TDCHitList> &TDCHits,
+                        		hddm_s::HDDM *record);
+
+};
+
+
 
 };
 

@@ -126,8 +126,6 @@ extern bool SMEAR_BCAL;
 // Beginning of readout window
 extern double TRIGGER_LOOKBACK_TIME;
 
-// Mutex used to control accessing the ROOT global memory
-extern pthread_mutex_t root_mutex;
 
 // Flag used specifically for BCAL
 extern bool SMEAR_BCAL;
