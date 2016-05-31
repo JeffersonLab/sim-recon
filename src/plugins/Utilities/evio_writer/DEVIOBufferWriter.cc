@@ -163,16 +163,16 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
 	WriteEventTagData(buff, loop->GetJEvent().GetStatus(), l3trigger);
 
 	// Write CAEN1290TDC hits
-	WriteCAEN1290Data(buff, caen1290hits, caen1290configs, Nevents, write_out_all_rocs, rocs_to_write_out);
+	WriteCAEN1290Data(buff, caen1290hits, caen1290configs, Nevents);
 
 	// Write F1TDC hits
-	WriteF1Data(buff, F1hits, F1tts, F1configs, Nevents, write_out_all_rocs, rocs_to_write_out);
+	WriteF1Data(buff, F1hits, F1tts, F1configs, Nevents);
 	
 	// Write f250 hits
-	Writef250Data(buff, f250pis, f250tts, f250wrds, Nevents, write_out_all_rocs, rocs_to_write_out);
+	Writef250Data(buff, f250pis, f250tts, f250wrds, Nevents);
 	
 	// Write f125 hits
-	Writef125Data(buff, f125pis, f125cdcpulses, f125fdcpulses, f125tts, f125wrds, f125configs, Nevents, write_out_all_rocs, rocs_to_write_out);
+	Writef125Data(buff, f125pis, f125cdcpulses, f125fdcpulses, f125tts, f125wrds, f125configs, Nevents);
 	
 	// Update global header length
 	if(!buff.empty()) buff[0] = buff.size()-1;
@@ -182,10 +182,9 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
 // WriteCAEN1290Data
 //------------------
 void DEVIOBufferWriter::WriteCAEN1290Data(vector<uint32_t> &buff,
-                                         vector<const DCAEN1290TDCHit*>    &caen1290hits,
-                                         vector<const DCAEN1290TDCConfig*> &caen1290configs,
-                                         unsigned int Nevents,
-                                         bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const
+                                          vector<const DCAEN1290TDCHit*>    &caen1290hits,
+                                          vector<const DCAEN1290TDCConfig*> &caen1290configs,
+                                          unsigned int Nevents) const
 {
 	// Create lists of F1 hit objects indexed by rocid,slot
 	// At same time, make map of module types (32channel or 48 channel)
@@ -288,11 +287,10 @@ void DEVIOBufferWriter::WriteCAEN1290Data(vector<uint32_t> &buff,
 // WriteF1Data
 //------------------
 void DEVIOBufferWriter::WriteF1Data(vector<uint32_t> &buff,
-                                   vector<const DF1TDCHit*>         &F1hits,
-                                   vector<const DF1TDCTriggerTime*> &F1tts,
-                                   vector<const DF1TDCConfig*>      &F1configs,
-                                   unsigned int Nevents,
-                                   bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const
+                                    vector<const DF1TDCHit*>         &F1hits,
+                                    vector<const DF1TDCTriggerTime*> &F1tts,
+                                    vector<const DF1TDCConfig*>      &F1configs,
+                                    unsigned int Nevents) const
 {
 	// Create lists of F1 hit objects indexed by rocid,slot
 	// At same time, make map of module types (32channel or 48 channel)
@@ -443,11 +441,10 @@ void DEVIOBufferWriter::WriteF1Data(vector<uint32_t> &buff,
 // Writef250Data
 //------------------
 void DEVIOBufferWriter::Writef250Data(vector<uint32_t> &buff,
-                                     vector<const Df250PulseIntegral*> &f250pis,
-                                     vector<const Df250TriggerTime*>   &f250tts,
-                                     vector<const Df250WindowRawData*> &f250wrds,
-                                     unsigned int Nevents,
-                                     bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const
+                                      vector<const Df250PulseIntegral*> &f250pis,
+                                      vector<const Df250TriggerTime*>   &f250tts,
+                                      vector<const Df250WindowRawData*> &f250wrds,
+                                      unsigned int Nevents) const
 {
 	// Create lists of Pulse Integral objects indexed by rocid,slot
 	// At same time, make list of config objects to write
@@ -616,14 +613,13 @@ void DEVIOBufferWriter::Writef250Data(vector<uint32_t> &buff,
 // Writef125Data
 //------------------
 void DEVIOBufferWriter::Writef125Data(vector<uint32_t> &buff,
-                                     vector<const Df125PulseIntegral*> &f125pis,
-                                     vector<const Df125CDCPulse*>      &f125cdcpulses,
-                                     vector<const Df125FDCPulse*>      &f125fdcpulses,
-                                     vector<const Df125TriggerTime*>   &f125tts,
-                                     vector<const Df125WindowRawData*> &f125wrds,
-                                     vector<const Df125Config*>        &f125configs,
-                                     unsigned int Nevents,
-                                     bool write_out_all_rocs, set<uint32_t> rocs_to_write_out) const
+                                      vector<const Df125PulseIntegral*> &f125pis,
+                                      vector<const Df125CDCPulse*>      &f125cdcpulses,
+                                      vector<const Df125FDCPulse*>      &f125fdcpulses,
+                                      vector<const Df125TriggerTime*>   &f125tts,
+                                      vector<const Df125WindowRawData*> &f125wrds,
+                                      vector<const Df125Config*>        &f125configs,
+                                      unsigned int Nevents) const
 {
 	// Make map of rocid,slot values that have some hit data.
 	// Simultaneously make map for each flavor of hit indexed by rocid,slot
@@ -853,7 +849,7 @@ void DEVIOBufferWriter::Writef125Data(vector<uint32_t> &buff,
 // WriteEPICSData
 //------------------
 void DEVIOBufferWriter::WriteEPICSData(vector<uint32_t> &buff,
-                                      vector<const DEPICSvalue*> epicsValues) const
+                                       vector<const DEPICSvalue*> epicsValues) const
 {
 	// Store the EPICS event in EVIO as a bank of SEGMENTs
 	// The first segment is a 32-bit unsigned int for the current
@@ -907,8 +903,8 @@ void DEVIOBufferWriter::WriteEPICSData(vector<uint32_t> &buff,
 // WriteEventTagData
 //------------------
 void DEVIOBufferWriter::WriteEventTagData(vector<uint32_t> &buff,
-                                         uint64_t event_status,
-                                         const DL3Trigger* l3trigger) const
+                                          uint64_t event_status,
+                                          const DL3Trigger* l3trigger) const
 {
 	// Here we purposefully write the DEventTag data into a bank
 	// based only on data extracted from other data objects, but

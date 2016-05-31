@@ -1,3 +1,4 @@
+
 #ifndef _DEventWriterEVIO_
 #define _DEventWriterEVIO_
 
@@ -73,9 +74,6 @@ class DEventWriterEVIO : public JObject
 
         // the Translation Table is needed to get the mapping of detector type to ROC number
         const DTranslationTable *ttab;
-        map<string, set<uint32_t> > rocs_to_write_out_map;
-
-        DEVIOBufferWriter *buffer_writer;   // a seperate class is used for filling the output buffer
 
 	private:
 
@@ -83,7 +81,7 @@ class DEventWriterEVIO : public JObject
 		size_t& Get_NumEVIOOutputThreads(void) const;
 		map<string, HDEVIOWriter*>& Get_EVIOOutputters(void) const;
 		map<string, pthread_t>& Get_EVIOOutputThreads(void) const;
-
+        map<string, DEVIOBufferWriter*>& Get_EVIOBufferWriters(void) const;
 };
 
 #endif //_DEventWriterEVIO_

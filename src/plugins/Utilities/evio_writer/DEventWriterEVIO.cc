@@ -14,6 +14,13 @@ map<string, HDEVIOWriter*>& DEventWriterEVIO::Get_EVIOOutputters(void) const
 	return locEVIOOutputters;
 }
 
+map<string, DEVIOBufferWriter*>& DEventWriterEVIO::Get_EVIOBufferWriters(void) const
+{
+	// must be read/used entirely in "EVIOWriter" lock
+	static map<string, DEVIOBufferWriter*> locEVIOBufferWriters;
+	return locEVIOBufferWriters;
+}
+
 map<string, pthread_t>& DEventWriterEVIO::Get_EVIOOutputThreads(void) const
 {
 	// must be read/used entirely in "EVIOWriter" lock
@@ -34,7 +41,7 @@ DEventWriterEVIO::DEventWriterEVIO(JEventLoop* locEventLoop)
 	gPARMS->SetDefaultParameter("EVIOOUT:PREFER_EMULATED" , PREFER_EMULATED,  "If true, then sample data will not be written to output, but emulated hits will. Otherwise, do exactly the opposite.");
 	gPARMS->SetDefaultParameter("EVIOOUT:DEBUG_FILES" , DEBUG_FILES,  "Write input and output debug files in addition to the standard output.");
 
-    buffer_writer = new DEVIOBufferWriter(COMPACT, PREFER_EMULATED);
+    //buffer_writer = new DEVIOBufferWriter(COMPACT, PREFER_EMULATED);
 
     // save a pointer to the translation table
     ttab = NULL;
@@ -79,16 +86,19 @@ void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list, string locOu
         jerr << "Tried to set values in DEventWriterEVIO::SetDetectorsToWriteOut() but translation table not loaded!" << endl;
         return;
     }
-    
-    // make sure that the ROC map for this file exists
-    if(rocs_to_write_out_map.find(locOutputFileNameSubString) == rocs_to_write_out_map.end())
-        rocs_to_write_out_map[locOutputFileNameSubString] = set<uint32_t>();
 
-    // reset the roc output list
-    rocs_to_write_out_map[locOutputFileNameSubString].clear();
+    // sanity check
+    if(Get_EVIOBufferWriters().find(locOutputFileNameSubString) == Get_EVIOBufferWriters().end()) {
+        // file must not have been created?
+        return;
+    }
+    
+    // create new roc output list
+    set<uint32_t> rocs_to_write_out;
 
     // if given a blank list, assume we should write everything out
     if(detector_list == "") {
+        Get_EVIOBufferWriters()[locOutputFileNameSubString]->SetROCsToWriteOut(rocs_to_write_out);
         return;
     }
 
@@ -121,9 +131,11 @@ void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list, string locOu
         }
 
         // Finally, add the ROCs to the list
-        rocs_to_write_out_map[locOutputFileNameSubString].insert( rocids.begin(), rocids.end() );
+        rocs_to_write_out.insert( rocids.begin(), rocids.end() );
     }
 
+    // save results
+    Get_EVIOBufferWriters()[locOutputFileNameSubString]->SetROCsToWriteOut(rocs_to_write_out);
 }
 
 
@@ -178,18 +190,10 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
 
 		//open: get handle, write event
 		HDEVIOWriter *locEVIOWriter = Get_EVIOOutputters()[locOutputFileName];
+        DEVIOBufferWriter *locBufferWriter = Get_EVIOBufferWriters()[locOutputFileName];
 		// Write event into buffer
 		vector<uint32_t> *buff = locEVIOWriter->GetBufferFromPool();
-
-        // We use a single instance of the class to generate the EVIO output buffer
-        // corresponding to the event, so we have to reset it before outputting each event
-        buffer_writer->Reset();
-        // Allow us to optionally only write out certain parts of the detector
-        if(rocs_to_write_out_map.find(locOutputFileNameSubString) != rocs_to_write_out_map.end()) {
-            if(rocs_to_write_out_map[locOutputFileNameSubString].size() > 0)
-                buffer_writer->SetROCsToWriteOut(rocs_to_write_out_map[locOutputFileNameSubString]);
-        }
-		buffer_writer->WriteEventToBuffer(locEventLoop, *buff);
+		locBufferWriter->WriteEventToBuffer(locEventLoop, *buff);
 
 		// Optionally write buffer to output file
 		if(ofs_debug_output) ofs_debug_output->write((const char*)&(*buff)[0], buff->size()*sizeof(uint32_t));
@@ -239,6 +243,7 @@ bool DEventWriterEVIO::Open_OutputFile(JEventLoop* locEventLoop, string locOutpu
 	// Create object to write the selected events to a file or ET system
 	// Run each connection in their own thread
 	HDEVIOWriter *locEVIOout = new HDEVIOWriter(locOutputFileName);
+    DEVIOBufferWriter *locEVIOwriter = new DEVIOBufferWriter(COMPACT, PREFER_EMULATED);
 	pthread_t locEVIOout_thr;
 	int result = pthread_create(&locEVIOout_thr, NULL, HDEVIOOutputThread, locEVIOout);
 	bool success = (result == 0);
@@ -251,6 +256,7 @@ bool DEventWriterEVIO::Open_OutputFile(JEventLoop* locEventLoop, string locOutpu
 		jout << "Output EVIO file " << locOutputFileName << " created." << endl;
 		Get_EVIOOutputters()[locOutputFileName] = locEVIOout; //store the handle
 		Get_EVIOOutputThreads()[locOutputFileName] = locEVIOout_thr; //store the thread
+        Get_EVIOBufferWriters()[locOutputFileName] = locEVIOwriter; //store the buffer creator
 	}
 
 	return success;
