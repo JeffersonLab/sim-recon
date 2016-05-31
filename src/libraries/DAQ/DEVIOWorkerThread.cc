@@ -553,7 +553,30 @@ void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 //---------------------------------
 void DEVIOWorkerThread::ParseTSscalerBank(uint32_t* &iptr, uint32_t *iend)
 {
-	iptr = &iptr[(*iptr) + 1];
+    uint32_t Nwords = ((uint64_t)iend - (uint64_t)iptr)/sizeof(uint32_t);
+    uint32_t Nwords_expected = (6+32+16+32+16);
+    if(Nwords != Nwords_expected){
+        _DBG_ << "TS bank size does not match expected!!" << endl;
+        _DBG_ << "Found " << Nwords << " words. Expected " << Nwords_expected << endl;
+
+    }else{
+	 	// n.b. Get the last event here since if this is a block
+		// of events, the last should be the actual sync event.
+		DParsedEvent *pe = current_parsed_events.back();
+		DL1Info *s = pe->NEW_DL1Info();
+		s->nsync = *iptr++;
+		s->trig_number = *iptr++;
+		s->live_time = *iptr++;
+		s->busy_time = *iptr++;
+		s->live_inst = *iptr++;
+		s->unix_time = *iptr++;
+		for(uint32_t i=0; i<32; i++) s->gtp_sc.push_back  ( *iptr++ );
+		for(uint32_t i=0; i<16; i++) s->fp_sc.push_back   ( *iptr++ );
+		for(uint32_t i=0; i<32; i++) s->gtp_rate.push_back( *iptr++ );
+		for(uint32_t i=0; i<16; i++) s->fp_rate.push_back ( *iptr++ );
+    }
+
+    iptr = iend;
 }
 
 //---------------------------------
@@ -724,24 +747,24 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 		while( (*iptr==0xF800FAFA) && (iptr<iend) ) iptr++;
 		
 		uint32_t det_id = (data_block_bank_header>>16) & 0xFFF;
-        switch(det_id){
+		switch(det_id){
 
-            case 20:
-                ParseCAEN1190(rocid, iptr, iend_data_block_bank);
-                break;
+			case 20:
+				ParseCAEN1190(rocid, iptr, iend_data_block_bank);
+				break;
 
-            case 0x55:
-                ParseModuleConfiguration(rocid, iptr, iend_data_block_bank);
-                break;
+			case 0x55:
+				ParseModuleConfiguration(rocid, iptr, iend_data_block_bank);
+				break;
 
-            case 0:
-            case 1:
-            case 3:
-            case 6:  // flash 250 module, MMD 2014/2/4
-            case 16: // flash 125 module (CDC), DL 2014/6/19
-            case 26: // F1 TDC module (BCAL), MMD 2014-07-31
-                ParseJLabModuleData(rocid, iptr, iend_data_block_bank);
-                break;
+			case 0:
+			case 1:
+			case 3:
+			case 6:  // flash 250 module, MMD 2014/2/4
+			case 16: // flash 125 module (CDC), DL 2014/6/19
+			case 26: // F1 TDC module (BCAL), MMD 2014-07-31
+				ParseJLabModuleData(rocid, iptr, iend_data_block_bank);
+				break;
 
 			// These were implemented in the ROL for sync events
 			// as 0xEE02 and 0xEE05. However, that violates the
@@ -749,14 +772,14 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 			// (the first "E" should really be a "1". We just check
 			// other 12 bits here.
 			case 0xE02:
-					ParseTSscalerBank(iptr, iend);
-					break;
+				ParseTSscalerBank(iptr, iend);
+				break;
 			case 0xE05:
-					Parsef250scalerBank(iptr, iend);
-					break;
+				Parsef250scalerBank(iptr, iend);
+				break;
 			case 0xE10:  // really wish Sascha would share when he does this stuff!
-					Parsef250scalerBank(iptr, iend);
-					break;
+				Parsef250scalerBank(iptr, iend);
+				break;
 
 			case 5:
 				// old ROL Beni used had this but I don't think its
