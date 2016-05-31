@@ -45,8 +45,12 @@ class DEventSourceEventStore : public JEventSource {
 				 
 		// utility functions
 		jerror_t MoveToNextEvent();
-		jerror_t OpenNextFile();
+		jerror_t LoadNextRunData();
+		//jerror_t OpenNextFile();
+		jerror_t LoadESData();
 
+	protected:
+		jerror_t LoadNextVersionRunRange();
 		
 	private:
 	
@@ -64,20 +68,28 @@ class DEventSourceEventStore : public JEventSource {
 		bool run_range_set;
 		bool run_period_set;
 		
-
-		// file information - deprecated
-		vector<string> data_files;   // store list of file names
-		vector<string>::iterator current_file_itr;
-
 		// Store lists of runs - EventStore information is keyed off runs
 		// The master DB query returns a list of run ranges that satisfies
 		// some given requirements
-		vector<EventStore::RunRange> run_ranges;              
-		vector<EventStore::RunRange>::const_iterator current_run_range;
+		//vector<EventStore::RunRange> run_ranges;              
+		//vector<EventStore::RunRange>::const_iterator current_run_range;
+		EventStore::DataVersionList data_versions;              
+		EventStore::DataVersionList::iterator current_data_version_itr;
+		bool first_data_version;
 		// the list of actual run numbers to process in the current run range
 		vector<int32_t> current_run_numbers;
 		vector<int32_t>::const_iterator current_run_itr;
+		int current_graphid;
+		bool first_run_in_range;
+
+		// data file information
+		map<int,string> data_file_map;   // store map of fid -> file name
+		map<int,string> data_type_map;   // store map of fid -> data type
+		int current_fid;
 		
+		// index data
+		vector<EventStore::DESEventIndexData> event_index;
+		int event_index_pos;
 		
 		// some more metadata
 		map< string, pair<int,int> > run_period_map;

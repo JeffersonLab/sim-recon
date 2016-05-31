@@ -258,9 +258,9 @@ vector<string> DESDBProviderMySQL::GetTimestamps(string grade)
 //---------------------------------
 // GetRunVersions
 //---------------------------------
-vector< pair<EventStore::RunRange,int> > DESDBProviderMySQL::GetRunVersions(string timestamp, string grade)
+DataVersionList DESDBProviderMySQL::GetDataVersions(string timestamp, string grade)
 {
-	vector< pair<EventStore::RunRange,int> > out_runversions;
+	EventStore::DataVersionList out_runversions;
 
 	stringstream query_ss;
 	query_ss << "SELECT timeStamp,minRunNumber,maxRunNumber,graphid FROM Version WHERE timeStamp<='"

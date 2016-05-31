@@ -21,6 +21,7 @@ using namespace std;
 #include <TRandom3.h>
 
 #include <HDDM/DEventSourceREST.h>
+#include <HDDM/DEventSourceHDDM.h>
 
 #include "DEventSourceEventStore.h"
 #include "DEventStoreEvent.h"
@@ -34,8 +35,32 @@ static string EventstoreQueryHelp() {
 // forward declarations
 //class DEventSourceREST;
 
-// Various variables
+// File-scope variables
 static bool TEST_MODE = false;
+
+//---------------------------------
+// AcceptRunRange
+//---------------------------------
+static bool AcceptRunRange(EventStore::RunRange &the_run_range, int min_run, int max_run)
+{
+	// reject the run range if it's not in the range we're interested in
+	// otherwise, modify it if needed to make sure the range is within what we're interested in
+	if(the_run_range.second < min_run || the_run_range.first > max_run) {
+		// if the run range lies outside of what we want, reject it
+		return false;
+	} else if(the_run_range.first > min_run && the_run_range.second < max_run) {
+		// if the run range is completely contained in our range, keep it
+		return true;
+	} else {
+		// otherwise trim as needed
+		if(the_run_range.first < min_run) {
+			the_run_range.first = min_run;
+		}
+		if(the_run_range.second > max_run) {
+			the_run_range.second = max_run;
+		}
+	} 
+}
 
 
 //---------------------------------
@@ -59,6 +84,8 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	load_all_skims = true;    // default to processing all skims
 	run_period_set = false;
 	run_range_set = false;
+	current_graphid = -1;
+	current_fid = -1;
 	
 	// load run period mapping
 	// hardcode for now, this info should move to RCDB...
@@ -228,11 +255,8 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	}
 
 	////////////////////////////////////////////////////////////
-	if(load_all_skims) {
-		// if the user didn't ask for specific skims, then load all of them
-		skim_list = esdb->GetSkims(timestamp, grade);
-	}
-	
+	LoadESData();
+	es_data_loaded = true;
 		
 	/*
 	if(TEST_MODE)   // if we're testing, don't make any more checks 
@@ -254,11 +278,122 @@ DEventSourceEventStore::~DEventSourceEventStore()
 }
 
 //---------------------------------
+// LoadESData
+//---------------------------------
+jerror_t DEventSourceEventStore::LoadESData()
+{
+	if(load_all_skims) {
+		// if the user didn't ask for specific skims, then load all of them
+		skim_list = esdb->GetSkims(timestamp, grade);
+	}
+	
+	// Now, load the data versions and corresponding run ranges
+	//EventStore::RunVersionList in_run_ranges = esdb->RunVersionList(timestamp, grade);
+	data_versions = esdb->GetDataVersions(timestamp, grade);
+	if(data_versions.size() == 0) {
+		jerr << "No runs exist for grade = " << grade 
+			 << " and timestamp = " << timestamp << endl;
+		throw JException("Problems loading EventStore data!");
+	}
+	current_data_version_itr = data_versions.begin();
+	first_data_version = true;
+
+	// Set everything up, and we should be ready to go
+	if(LoadNextVersionRunRange() != NOERROR) {
+		throw JException("Problems loading EventStore data!");
+	}
+}
+
+//---------------------------------
+// LoadNextVersionRunRange
+//---------------------------------
+jerror_t DEventSourceEventStore::LoadNextVersionRunRange()
+{
+	// generally, we want to move to the next data version, but we need
+	// to make we analyze the first
+	if(!first_data_version)
+		current_data_version_itr++;
+	else
+		first_data_version = false;
+
+	// unpack the data version info
+	EventStore::RunRange the_run_range = current_data_version_itr->first;
+	int the_graphid = current_data_version_itr->second;
+
+	// make sure this run range is within the range of runs we are interested
+	while(!AcceptRunRange(the_run_range, min_run, max_run)) {
+		current_data_version_itr++;
+		if(current_data_version_itr == data_versions.end())
+			break;
+	}
+	
+	if(current_data_version_itr == data_versions.end())
+		return NO_MORE_EVENTS_IN_SOURCE;
+		
+	// load run number list for this range
+	string all_skim("all");
+	current_run_numbers = esdb->GetRunList(the_run_range, the_graphid, all_skim);
+	
+	if(current_run_numbers.size() ==  0) // sanity check
+		return LoadNextVersionRunRange();
+	
+	current_graphid = the_graphid;
+	current_run_itr = current_run_numbers.begin();
+	first_run_in_range = true;
+	return LoadNextRunData();
+}
+
+//---------------------------------
+// LoadNextRunData
+//---------------------------------
+jerror_t DEventSourceEventStore::LoadNextRunData()
+{
+	// generally, we want to move to the next run in the range, but we need
+	// to make we analyze the first
+	if(!first_run_in_range)
+		current_run_itr++;
+	else
+		first_run_in_range = false;
+
+	// first load the primary index for the run
+	string all_skim("all");
+	string index_file_name = esdb->GetKeyFileName(current_graphid, all_skim, *current_run_itr);
+
+	// LOAD INDEX
+	
+	// then load the indices for the skims
+	for(vector<string>::iterator skim_list_itr = skim_list.begin();
+		skim_list_itr != skim_list.end(); skim_list_itr++) {
+		string skim_index_file_name = esdb->GetKeyFileName(current_graphid, *skim_list_itr, *current_run_itr);
+
+		// LOAD INDEX
+	}
+	
+	// then load information on the data files for this run
+	vector< pair<string,string> > data_file_type_vec = esdb->GetDataFileNameTypePairs(current_graphid, all_skim, *current_run_itr);
+	// index information by database file id
+	for(vector<pair<string,string> >::iterator data_file_type_vec_itr = data_file_type_vec.begin();
+		data_file_type_vec_itr != data_file_type_vec.end(); data_file_type_vec_itr++) {
+			int the_fid = esdb->GetFID(data_file_type_vec_itr->first);
+			data_file_map[the_fid] = data_file_type_vec_itr->first;
+			data_type_map[the_fid] = data_file_type_vec_itr->second;
+		}
+		
+	// start from the beginning of the run
+	event_index_pos = 0;
+}
+
+//---------------------------------
 // GetEvent
 //---------------------------------
 jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
 {
-
+	// make sure that all of the EventStore metadata has been loaded
+	if(!es_data_loaded) {
+		LoadESData();
+		es_data_loaded = true;   
+	}
+	
 	// FOR DEBUGGING - EMIT EVENTS FOREVER
 	if(TEST_MODE) {
 		// output some fake event with skim information
@@ -277,39 +412,36 @@ jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
 
 		return NOERROR;
 	}
-	
-	// make sure the file is open
-	while(event_source == NULL) {
-		while(OpenNextFile() != NOERROR) {}  // keep trying to open files until none are left
-		if(event_source == NULL)
-			return NO_MORE_EVENTS_IN_SOURCE;
-	
-		// skip to next event
-		jerror_t retval;
-		if( (retval = MoveToNextEvent()) != NOERROR)
-			return retval;   // if we can't get to another event, then we're done
 		
-		// read the next event in
-		retval = event_source->GetEvent(event);
-		if(retval == NOERROR) {
-			// To store the skim and other EventStore information for the event
-			// we wrap the actual event data and store our information in the wrapper
-			DEventStoreEvent *the_es_event = new DEventStoreEvent();
-			the_es_event->Set_EventSource(event_source);
-			the_es_event->Set_SourceRef(event.GetRef());    // save the actual event data
-			event.SetRef(the_es_event);
-		    event.SetStatusBit(kSTATUS_FROM_FILE);
-		    event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+	// skip to next event
+	jerror_t retval;
+	if( (retval = MoveToNextEvent()) != NOERROR)
+		return retval;   // if we can't get to another event, then we're done
+		
+	// make sure the file is open
+	if(event_source == NULL)
+		return NO_MORE_EVENTS_IN_SOURCE;
 
-			// tag event with skims
-			;
-		} else if(retval == NO_MORE_EVENTS_IN_SOURCE) {   
-			// if the source is empty, close the current one, then move to the next
-			delete event_source;
-			event_source = NULL;
-		} else {   // if there'a another error, then pass it on...
-			return retval;
-		}
+	// read the next event in
+	retval = event_source->GetEvent(event);
+	if(retval == NOERROR) {
+		// To store the skim and other EventStore information for the event
+		// we wrap the actual event data and store our information in the wrapper
+		DEventStoreEvent *the_es_event = new DEventStoreEvent();
+		the_es_event->Set_EventSource(event_source);
+		the_es_event->Set_SourceRef(event.GetRef());    // save the actual event data
+		event.SetRef(the_es_event);
+	    event.SetStatusBit(kSTATUS_FROM_FILE);
+	    event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+
+		// tag event with skims
+		;
+	} else if(retval == NO_MORE_EVENTS_IN_SOURCE) {   
+		// if the source is empty, close the current one, then move to the next
+		delete event_source;
+		event_source = NULL;
+	} else {   // if there'a another error, then pass it on...
+		return retval;
 	}
 	
 	return NOERROR;
@@ -370,9 +502,30 @@ jerror_t DEventSourceEventStore::GetObjects(JEvent &event, JFactory_base *factor
 //---------------------------------
 jerror_t DEventSourceEventStore::MoveToNextEvent()
 {
+	//
+	
+	
+	// move to next event
+	event_index_pos++;
+
 	// if we're loading all of the skims, then we don't need to skip any events
 	if(load_all_skims)
 		return NOERROR;
+		
+	// see if we need to change files
+	if(current_fid != event_index[event_index_pos].fid) {
+		delete event_source;
+		current_fid = event_index[event_index_pos].fid;
+		// create new file
+		if(data_type_map[current_fid] == "rest") {
+			event_source = static_cast<JEventSource*>(new DEventSourceREST(data_file_map[current_fid].c_str()));
+		} else if(data_type_map[current_fid] == "sim") {
+			event_source = static_cast<JEventSource*>(new DEventSourceHDDM(data_file_map[current_fid].c_str()));
+		} 
+		//else if(data_type_map[fid] == "evio") {   // FUTURE
+		//event_source = JEventSourceEVIO(data_file_map[fid]);
+		//}
+	}
 		
 	return NOERROR;
 }
@@ -380,22 +533,10 @@ jerror_t DEventSourceEventStore::MoveToNextEvent()
 //---------------------------------
 // OpenNextFile
 //---------------------------------
+/*
 jerror_t DEventSourceEventStore::OpenNextFile()
 {
-	if(!es_data_loaded) {
-		// LoadESData();
-		
-		// sanity check
-		if(data_files.size() == 0) {
-			jerr << "Could not load any files from EventStore!" << endl;
-			return NO_MORE_EVENT_SOURCES;
-		}
-		
-		// keep a pointer to the current file
-		current_file_itr = data_files.begin();
-		
-		es_data_loaded = true;   
-	}
+
 	
 	// if there's a current file open, close it so that we don't leak memory
 	if(event_source != NULL) {
@@ -450,6 +591,8 @@ jerror_t DEventSourceEventStore::OpenNextFile()
 	else
 		return NOERROR;
 }
+*/
+
 
 //---------------------------------
 // PrintGrades

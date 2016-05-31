@@ -344,10 +344,10 @@ vector<string> DESDBProviderSQLite::GetTimestamps(string grade)
 //---------------------------------
 // GetRunVersions
 //---------------------------------
-vector< pair<EventStore::RunRange,int> > DESDBProviderSQLite::GetRunVersions(string timestamp, string grade)
+DataVersionList DESDBProviderSQLite::GetDataVersions(string timestamp, string grade)
 {
 
-	vector< pair<EventStore::RunRange,int> > out_runversions;
+	EventStore::DataVersionList out_runversions;
 
 	stringstream query_ss;
 	query_ss << "SELECT timeStamp,minRunNumber,maxRunNumber,graphid FROM Version WHERE timeStamp<=`?1`"

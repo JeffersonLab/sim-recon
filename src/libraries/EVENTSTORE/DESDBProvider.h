@@ -33,7 +33,7 @@ class DESDBProvider {
 		virtual vector<string> GetSkims(string timestamp, string grade) = 0;
 		virtual vector<string> GetTimestamps(string grade) = 0;
 
-		virtual vector< pair<EventStore::RunRange,int> > GetRunVersions(string timestamp, string grade);	
+		virtual EventStore::DataVersionList GetDataVersions(string timestamp, string grade);	
 		virtual vector<int32_t> GetRunList(EventStore::RunRange run_range,
 											int graphid, string & view) = 0;
 		virtual vector< pair<int32_t,int32_t> > GetRunUidList(EventStore::RunRange run_range,

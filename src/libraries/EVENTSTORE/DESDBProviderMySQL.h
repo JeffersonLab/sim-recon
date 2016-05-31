@@ -36,7 +36,7 @@ class DESDBProviderMySQL : public DESDBProvider {
 		vector<string> GetSkims(string timestamp, string grade);
 		vector<string> GetTimestamps(string grade);
 
-		vector< pair<EventStore::RunRange,int> > GetRunVersions(string timestamp, string grade);	
+		EventStore::DataVersionList GetDataVersions(string timestamp, string grade);	
 		vector<int32_t> GetRunList(EventStore::RunRange run_range,
 									int graphid, string & view);
 		vector< pair<int32_t,int32_t> > GetRunUidList(EventStore::RunRange run_range,
