@@ -102,7 +102,7 @@ jerror_t JEventProcessor_CDC_Efficiency::init(void)
         char hname_expected[256];
         sprintf(hname_measured, "cdc_measured_ring[%d]", iring+1);
         sprintf(hname_expected, "cdc_expected_ring[%d]", iring+1);
-        if(gDirectory->Get(hname_measured) == NULL)
+        if(gDirectory->Get(hname_measured) == NULL){
             cdc_measured_ring[iring+1] = new TH2D(hname_measured, "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
             cdc_measured_ring_DOCA0[iring+1] = new TH2D((TString)hname_measured +"DOCA0", "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
             cdc_measured_ring_DOCA1[iring+1] = new TH2D((TString)hname_measured +"DOCA1", "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
@@ -112,7 +112,8 @@ jerror_t JEventProcessor_CDC_Efficiency::init(void)
             cdc_measured_ring_DOCA5[iring+1] = new TH2D((TString)hname_measured +"DOCA5", "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
             cdc_measured_ring_DOCA6[iring+1] = new TH2D((TString)hname_measured +"DOCA6", "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
             cdc_measured_ring_DOCA7[iring+1] = new TH2D((TString)hname_measured +"DOCA7", "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
-        if(gDirectory->Get(hname_expected) == NULL)
+	}
+        if(gDirectory->Get(hname_expected) == NULL){
             cdc_expected_ring[iring+1] = new TH2D(hname_expected, "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
             cdc_expected_ring_DOCA0[iring+1] = new TH2D((TString)hname_expected + "DOCA0", "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
             cdc_expected_ring_DOCA1[iring+1] = new TH2D((TString)hname_expected + "DOCA1", "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
@@ -122,6 +123,7 @@ jerror_t JEventProcessor_CDC_Efficiency::init(void)
             cdc_expected_ring_DOCA5[iring+1] = new TH2D((TString)hname_expected + "DOCA5", "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
             cdc_expected_ring_DOCA6[iring+1] = new TH2D((TString)hname_expected + "DOCA6", "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
             cdc_expected_ring_DOCA7[iring+1] = new TH2D((TString)hname_expected + "DOCA7", "", Nstraws[iring], phi_start, phi_end, 1, r_start, r_end);
+	}
     }	
 
     gDirectory->cd("/CDC_Efficiency");
@@ -212,7 +214,11 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
         // Cut very loosely on the track quality
         const DTrackTimeBased *thisTimeBasedTrack;
         bestHypothesis->GetSingle(thisTimeBasedTrack);
+
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
         hChi2OverNDF->Fill(thisTimeBasedTrack->FOM);
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
         if (thisTimeBasedTrack->FOM < 1E-20) return NOERROR;
         //The cuts used for track quality
         if(!dIsNoFieldFlag){ // Quality cuts for Field on runs.
@@ -313,10 +319,6 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                             thisTimeBasedTrack->pmag(),
                             "Expected Hits",
                             100, 0 , 4.0);
-                    Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs delta",
-                            delta,
-                            "Expected Hits",
-                            100, -0.3 , 0.3);
                     Fill1DHistogram("CDC_Efficiency", "Offline", "Expected Hits Vs delta",
                             delta,
                             "Expected Hits",
