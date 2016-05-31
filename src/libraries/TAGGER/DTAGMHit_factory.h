@@ -29,7 +29,8 @@ class DTAGMHit_factory: public jana::JFactory<DTAGMHit> {
 
       // config. parameter
       double DELTA_T_ADC_TDC_MAX; 
-      int USE_ADC, PEAK_CUT;
+      //int USE_ADC, PEAK_CUT;
+      int USE_ADC, CUT_FACTOR;
 
       // overall scale factors
       double fadc_a_scale;  // pixels per fADC pulse integral count
@@ -48,6 +49,7 @@ class DTAGMHit_factory: public jana::JFactory<DTAGMHit> {
       double tw_c2[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
       double tw_c3[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
       double ref[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
+      double int_cuts[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
 
       bool load_ccdb_constants(std::string table_name,
                                std::string column_name,
