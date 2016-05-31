@@ -3,7 +3,8 @@ import sbms
 
 Import('*')
 
-subdirs = ['genr8', 'genr8_2_hddm', 'HDGeant', 'mcsmear', 'gamp2hddm', 'bggen']
+#subdirs = ['genr8', 'genr8_2_hddm', 'HDGeant', 'mcsmear', 'gamp2hddm', 'bggen']
+subdirs = ['mcsmear']
 
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
