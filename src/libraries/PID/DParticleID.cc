@@ -1191,7 +1191,7 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, const 
     return 0;
 
   unsigned int best_sc_index=0;
-  min_dphi=1e6;
+  double min_dphi=1e6;
   // loop over geometry for all SC paddles looking for track intersections
   for (unsigned int sc_index=0;sc_index<30;sc_index++){
     // Find intersection with the leg region of the start counter
