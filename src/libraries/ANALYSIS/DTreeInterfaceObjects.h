@@ -106,6 +106,7 @@ class DTreeFillData
 	friend class DTreeInterface;
 
 	public:
+		DTreeFillData(void) : dFillData(new map<string, pair<type_index, deque<void*>* > >())
 		~DTreeFillData(void);
 		template <typename DType> void Fill_Single(string locBranchName, const DType& locData);
 		template <typename DType> void Fill_Array(string locBranchName, const DType& locData, unsigned int locArrayIndex);
@@ -113,7 +114,7 @@ class DTreeFillData
 	private:
 		void Delete(type_index& locTypeIndex, deque<void*>& locVoidDeque);
 
-		map<string, pair<type_index, deque<void*>* > > dFillData;
+		map<string, pair<type_index, deque<void*>* > >* dFillData;
 		map<string, size_t> dArrayLargestIndexFilledMap; //can be less than the size //reset by DTreeInterface after fill
 };
 
@@ -126,14 +127,14 @@ template <typename DType> inline void DTreeFillData::Fill_Single(string locBranc
 	DTreeTypeChecker::Is_Supported<DType>();
 	type_index locTypeIndex(typeid(DType));
 
-	auto locIterator = dFillData.find(locBranchName);
-	if(locIterator == dFillData.end())
+	auto locIterator = dFillData->find(locBranchName);
+	if(locIterator == dFillData->end())
 	{
 		void* locVoidData = static_cast<void*>(new DType(locData));
 		deque<void*>* locVoidDeque = new deque<void*>(1, locVoidData);
 		pair<type_index, deque<void*>* > locTypePair(locTypeIndex, locVoidDeque);
 		pair<string, pair<type_index, deque<void*>* > > locMapPair(locBranchName, locTypePair);
-		dFillData.insert(locMapPair);
+		dFillData->insert(locMapPair);
 		return;
 	}
 
@@ -152,15 +153,15 @@ template <typename DType> inline void DTreeFillData::Fill_Array(string locBranch
 	DTreeTypeChecker::Is_Supported<DType>();
 	type_index locTypeIndex(typeid(DType));
 
-	auto locIterator = dFillData.find(locBranchName);
-	if(locIterator == dFillData.end())
+	auto locIterator = dFillData->find(locBranchName);
+	if(locIterator == dFillData->end())
 	{
 		void* locVoidData = static_cast<void*>(new DType(locData));
 		deque<void*>* locVoidDeque = new deque<void*>(locArrayIndex + 1, nullptr);
 		(*locVoidDeque)[locArrayIndex] = locVoidData;
 		pair<type_index, deque<void*>* > locTypePair(locTypeIndex, locVoidDeque);
 		pair<string, pair<type_index, deque<void*>* > > locMapPair(locBranchName, locTypePair);
-		dFillData.insert(locMapPair);
+		dFillData->insert(locMapPair);
 		dArrayLargestIndexFilledMap[locBranchName] = locArrayIndex;
 		return;
 	}
@@ -191,7 +192,7 @@ inline DTreeFillData::~DTreeFillData(void)
 {
 	//delete all memory (void*'s)
 	//loop over branches
-	for(auto locBranchIterator : dFillData)
+	for(auto locBranchIterator : *dFillData)
 	{
 		string locBranchName = locBranchIterator.first;
 		type_index& locTypeIndex = locBranchIterator.second.first;
@@ -199,6 +200,8 @@ inline DTreeFillData::~DTreeFillData(void)
 		Delete(locTypeIndex, *locVoidDeque);
 		delete locVoidDeque;
 	}
+
+	delete dFillData;
 }
 
 inline void DTreeFillData::Delete(type_index& locTypeIndex, deque<void*>& locVoidDeque)
