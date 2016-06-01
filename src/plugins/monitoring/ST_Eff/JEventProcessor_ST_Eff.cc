@@ -36,7 +36,7 @@ jerror_t JEventProcessor_ST_Eff::init(void)
 	gDirectory->mkdir("ST_Eff")->cd();
 
 		ostringstream locHistName, locHistTitle;
-
+/*
 		//Upstream, Found
 		locHistName << "HitFound_Layer" << locLayer << "_Upstream";
 		locHistTitle << "Hit Found, Layer " << locLayer << ", Upstream;Sector";
@@ -63,6 +63,7 @@ jerror_t JEventProcessor_ST_Eff::init(void)
 		locHistTitle << "Hit Total, Layer " << locLayer << ", Downstream;Sector";
 		dHistMap_HitTotal[locLayer][false] = new TH1I(locHistName.str().c_str(), locHistTitle.str().c_str(), 192, 0.5, 192.5);
 	}
+*/
 	
 	// back to original dir
 	locOriginalDir->cd();
