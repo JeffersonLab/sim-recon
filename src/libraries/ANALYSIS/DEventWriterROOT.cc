@@ -121,6 +121,7 @@ void DEventWriterROOT::Create_DataTrees(JEventLoop* locEventLoop) const
 
 void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag, double locTargetCenterZ)
 {
+dTreeFillData = new DTreeFillData;
 	string locReactionName = locReaction->Get_ReactionName();
 	string locOutputFileName = locReaction->Get_TTreeOutputFileName();
 	string locTreeName = locReactionName + string("_Tree");
@@ -988,7 +989,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 
 	//Get tree fill data
 //	DTreeFillData* locTreeFillData = dTreeFillDataMap.find(locReaction)->second;
-DTreeFillData* locTreeFillData = &dTreeFillData;
+DTreeFillData* locTreeFillData = dTreeFillData;
 
 	/***************************************************** FILL TTREE DATA *****************************************************/
 

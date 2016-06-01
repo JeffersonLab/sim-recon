@@ -122,8 +122,6 @@ class DTreeFillData
 
 template <typename DType> inline void DTreeFillData::Fill_Single(string locBranchName, const DType& locData)
 {
-	if(locBranchName != "NumCombos")
-		return;
 	DTreeTypeChecker::Is_Supported<DType>();
 	type_index locTypeIndex(typeid(DType));
 
