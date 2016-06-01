@@ -76,34 +76,13 @@ jerror_t JEventProcessor_ST_Eff::init(void)
 	DTreeBranchRegister locTreeBranchRegister;
 
 	//TRACK
-	locTreeBranchRegister.Register_Branch_Single<Int_t>("PID_PDG"); //gives charge, mass, beta
-	locTreeBranchRegister.Register_Branch_Single<Float_t>("TrackVertexZ");
-	locTreeBranchRegister.Register_Branch_Single<TVector3>("TrackP3");
-	locTreeBranchRegister.Register_Branch_Single<Float_t>("TrackDeltaPhiToShower"); //is signed: BCAL - Track
-	locTreeBranchRegister.Register_Branch_Single<Float_t>("TrackDeltaZToShower"); //is signed: BCAL - Track
-	locTreeBranchRegister.Register_Branch_Single<Float_t>("ProjectedBCALHitPhi"); //degrees
-	locTreeBranchRegister.Register_Branch_Single<Float_t>("ProjectedBCALHitZ");
-
-	//HIT SEARCH
-	//BCALClusterLayers: first 4 bits: point layers, next 4: unmatched-unified-hit layers
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("BCALClusterLayers");
-	//LAYER 1:
-	//"Sector:" 4*(module - 1) + sector //sector: 1 -> 192
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("ProjectedBCALSectors_Layer1"); //0 if biased or indeterminate
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer1_Downstream"); //0 if not found
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer1_Upstream"); //0 if not found
-	//LAYER 2:
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("ProjectedBCALSectors_Layer2"); //0 if biased or indeterminate
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer2_Downstream"); //0 if not found
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer2_Upstream"); //0 if not found
-	//LAYER 3:
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("ProjectedBCALSectors_Layer3"); //0 if biased or indeterminate
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer3_Downstream"); //0 if not found
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer3_Upstream"); //0 if not found
-	//LAYER 4:
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("ProjectedBCALSectors_Layer4"); //0 if biased or indeterminate
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer4_Downstream"); //0 if not found
-	locTreeBranchRegister.Register_Branch_Single<UChar_t>("NearestBCALSectors_Layer4_Upstream"); //0 if not found
+	locTreeBranchRegister.Register_Single<Int_t>("PID_PDG"); //gives charge, mass, beta
+	locTreeBranchRegister.Register_Single<Float_t>("TrackVertexZ");
+	locTreeBranchRegister.Register_Single<TVector3>("TrackP3");
+	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaPhiToShower"); //is signed: BCAL - Track
+	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaZToShower"); //is signed: BCAL - Track
+	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitPhi"); //degrees
+	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitZ");
 
 	//REGISTER BRANCHES
 	dTreeInterface->Create_Branches(locTreeBranchRegister);
@@ -137,10 +116,12 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 	// This plugin is used to determine the reconstruction efficiency of hits in the BCAL
 		// Note, this is hit-level, not shower-level.  Hits: By sector/layer/module/end
 
+/*
+//CUT ON TRIGGER TYPE
 	const DTrigger* locTrigger = NULL;
 	locEventLoop->GetSingle(locTrigger);
+*/
 
-//CUT ON TRIGGER TYPE
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks);
 
@@ -171,11 +152,11 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		if(!locDetectorMatches->Get_IsMatchedToDetector(locTrackTimeBased, SYS_TOF) && !locDetectorMatches->Get_IsMatchedToDetector(locTrackTimeBased, SYS_BCAL))
 			continue; //not matched to either TOF or BCAL
 
-		if(!dCutAction_TrackHitPattern.Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
+		if(!dCutAction_TrackHitPattern->Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
 			continue;
 
 		unsigned int locNumTrackHits = locTrackTimeBased->Ndof + 5;
-		if(locNumTrackHits < dMinTrackHits)
+		if(locNumTrackHits < dMinNumTrackHits)
 			return false;
 
 		locBestTracks.insert(locChargedTrackHypothesis);
@@ -210,9 +191,6 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		DVector3 locDP3 = locChargedTrackHypothesis->momentum();
 		TVector3 locP3(locDP3.X(), locDP3.Y(), locDP3.Z());
 		dTreeFillData.Fill_Single<TVector3>("TrackP3", locP3);
-
-		dTreeFillData.Fill_Single<UInt_t>("PredictedSector", locPredictedSCSector);
-		dTreeFillData.Fill_Single<UInt_t>("NearestSector", );
 
 		//FILL TTREE
 		dTreeInterface->Fill(dTreeFillData);
