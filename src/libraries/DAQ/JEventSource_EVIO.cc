@@ -2776,7 +2776,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 
         // Check if this is a f250 Pedestal Bank. Read out at SYNC events.
         if(bankPtr->tag == 0xEE05){
-	  if(VERBOSE>6) evioout << "      SYNC event - f250 pedestals not currently handled"<< endl;
+	  if(VERBOSE>6) evioout << "      SYNC event - f250 pedestals found " << endl;
 	  ParseFA250AsyncPedestals(bankPtr, full_events, rocid);
 	  continue;
         }	
