@@ -85,7 +85,7 @@ jerror_t DL1Trigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	  l1trigger->unix_time   = l1_sc->unix_time;
 	  
 	  l1trigger->gtp_sc    =  l1_sc->gtp_sc;
-	  l1trigger->fp_sc     =  l1_sc->gtp_sc;
+	  l1trigger->fp_sc     =  l1_sc->fp_sc;
 	  l1trigger->gtp_rate  =  l1_sc->gtp_rate;
 	  l1trigger->fp_rate   =  l1_sc->fp_rate;
 
