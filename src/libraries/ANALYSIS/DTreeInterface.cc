@@ -238,7 +238,7 @@ void DTreeInterface::Fill(DTreeFillData& locTreeFillData)
 	japp->WriteLock(dFileName); //LOCK FILE
 	{
 		//loop over branches
-		for(auto locBranchPair : locTreeFillData->dFillData)
+		for(auto locBranchPair : *(locTreeFillData.dFillData))
 		{
 			//type
 			string locBranchName = locBranchPair.first;
