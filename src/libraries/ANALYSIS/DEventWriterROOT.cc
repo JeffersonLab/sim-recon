@@ -171,7 +171,8 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	locTreeInterface->Create_Branches(locBranchRegister);
 
 	//create fill object
-	dTreeFillDataMap[locReaction] = new DTreeFillData();
+	DTreeFillData* locTreeFillData = new DTreeFillData();
+	dTreeFillDataMap.insert(pair<const DReaction*, DTreeFillData*>(locReaction, locTreeFillData);
 }
 
 TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegister, const DReaction* locReaction, double locTargetCenterZ) const
