@@ -238,7 +238,7 @@ void DTreeInterface::Fill(DTreeFillData& locTreeFillData)
 	japp->WriteLock(dFileName); //LOCK FILE
 	{
 		//loop over branches
-		for(auto locBranchPair : *(locTreeFillData.dFillData))
+		for(auto locBranchPair : locTreeFillData.dFillData)
 		{
 			//type
 			string locBranchName = locBranchPair.first;
@@ -252,8 +252,8 @@ void DTreeInterface::Fill(DTreeFillData& locTreeFillData)
 			}
 
 			//check if is array. if not, fill
-			auto locLargestIndexFilledIterator = locTreeFillData.dArrayLargestIndexFilledMap->find(locBranchName);
-			bool locIsArrayFlag = (locLargestIndexFilledIterator != locTreeFillData.dArrayLargestIndexFilledMap->end());
+			auto locLargestIndexFilledIterator = locTreeFillData.dArrayLargestIndexFilledMap.find(locBranchName);
+			bool locIsArrayFlag = (locLargestIndexFilledIterator != locTreeFillData.dArrayLargestIndexFilledMap.end());
 			if(!locIsArrayFlag)
 			{
 				Fill(locBranchName, locTypeIndex, locVoidDeque[0], false);

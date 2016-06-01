@@ -53,7 +53,6 @@ DEventWriterROOT::DEventWriterROOT(JEventLoop* locEventLoop)
 	locGeometry->GetTargetZ(locTargetCenterZ);
 
 	//CREATE TTREES
-	dTreeFillDataMap = new map<string, DTreeFillData*>();
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 	{
 		if(locReactions[loc_i]->Get_EnableTTreeOutputFlag())
@@ -69,9 +68,8 @@ DEventWriterROOT::~DEventWriterROOT(void)
 	if(dThrownTreeInterface != NULL)
 		delete dThrownTreeInterface;
 
-	for(auto& locMapPair : *dTreeFillDataMap)
+	for(auto& locMapPair : dTreeFillDataMap)
 		delete locMapPair.second;
-	delete dTreeFillDataMap;
 
 	//Delete actions
 	for(auto& locMapPair : dCutActionMap_ThrownTopology)
@@ -129,11 +127,11 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 
 	//create fill object
 	DTreeFillData* locTreeFillData = new DTreeFillData();
-	dTreeFillDataMap->insert(pair<string, DTreeFillData*>(locReaction->Get_ReactionName(), locTreeFillData));
+	dTreeFillDataMap.insert(pair<string, DTreeFillData*>(locReaction, locTreeFillData));
 
 	//create tree interface
 	DTreeInterface* locTreeInterface = DTreeInterface::Create_DTreeInterface(locTreeName, locOutputFileName);
-	dTreeInterfaceMap[locReaction->Get_ReactionName()] = locTreeInterface;
+	dTreeInterfaceMap[locReaction] = locTreeInterface;
 	if(locTreeInterface->Get_BranchesCreatedFlag())
 		return; //branches already created, then return
 
@@ -990,7 +988,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	}
 
 	//Get tree fill data
-	DTreeFillData* locTreeFillData = dTreeFillDataMap->find(locReaction->Get_ReactionName())->second;
+	DTreeFillData* locTreeFillData = dTreeFillDataMap.find(locReaction)->second;
 
 	/***************************************************** FILL TTREE DATA *****************************************************/
 
@@ -1045,7 +1043,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	Fill_CustomBranches_DataTree(locTreeFillData, locMCReaction, locMCThrownsToSave, locMCThrownMatching, locDetectorMatches, locBeamPhotons, locChargedTrackHypotheses, locNeutralParticleHypotheses, locParticleCombos);
 
 	//FILL
-	DTreeInterface* locTreeInterface = dTreeInterfaceMap.find(locReaction->Get_ReactionName())->second;
+	DTreeInterface* locTreeInterface = dTreeInterfaceMap.find(locReaction)->second;
 	locTreeInterface->Fill(*locTreeFillData);
 }
 
@@ -1622,7 +1620,7 @@ void DEventWriterROOT::Fill_ComboData(DTreeFillData* locTreeFillData, const DPar
 void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const DParticleCombo* locParticleCombo, unsigned int locStepIndex, unsigned int locComboIndex, DKinFitType locKinFitType, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const
 {
 	const DReaction* locReaction = locParticleCombo->Get_Reaction();
-	const TList* locUserInfo = dTreeInterfaceMap.find(locReaction->Get_ReactionName())->second->Get_UserInfo();
+	const TList* locUserInfo = dTreeInterfaceMap.find(locReaction)->second->Get_UserInfo();
 	const TMap* locPositionToNameMap = (TMap*)locUserInfo->FindObject("PositionToNameMap");
 
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
