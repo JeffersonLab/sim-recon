@@ -147,8 +147,9 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		list<DParsedEvent*> parsed_events;
 
 		std::atomic<uint_fast64_t> NEVENTS_PROCESSED;
-		std::atomic<uint_fast64_t> NWAITS_FOR_THREAD;
-		std::atomic<uint_fast64_t> NWAITS_FOR_PARSED_EVENT;
+		std::atomic<uint_fast64_t> NDISPATCHER_IDLE;
+		std::atomic<uint_fast64_t> NPROCESSOR_IDLE;
+		std::atomic<uint_fast64_t> NPARSER_IDLE;
 		
 		uint64_t MAX_EVENT_RECYCLES;
 		uint64_t MAX_OBJECT_RECYCLES;

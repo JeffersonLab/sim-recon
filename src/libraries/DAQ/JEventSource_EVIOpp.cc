@@ -41,9 +41,9 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 {
 	DONE = false;
 	NEVENTS_PROCESSED = 0;
-	NWAITS_FOR_THREAD = 0;
-	NWAITS_FOR_PARSED_EVENT = 0;
-	
+	NDISPATCHER_IDLE  = 0;
+	NPROCESSOR_IDLE   = 0;
+	NPARSER_IDLE      = 0;
 
 	// Initialize dedicated JStreamLog used for debugging messages
 	evioout.SetTag("--- EVIO ---: ");
@@ -214,9 +214,10 @@ JEventSource_EVIOpp::~JEventSource_EVIOpp()
 		double rate = (double)NEVENTS_PROCESSED/tdiff.count();
 
 		cout << endl;
-		cout << "   EVIO Processing rate = " << rate << " Hz" << endl;
-		cout << "      NWAITS_FOR_THREAD = " << NWAITS_FOR_THREAD << endl;
-		cout << "NWAITS_FOR_PARSED_EVENT = " << NWAITS_FOR_PARSED_EVENT << endl;
+		cout << " EVIO Processing rate = " << rate << " Hz" << endl;
+		cout << "     NDISPATCHER_IDLE = " << NDISPATCHER_IDLE <<endl;
+		cout << "         NPARSER_IDLE = " << NPARSER_IDLE <<endl;
+		cout << "      NPROCESSOR_IDLE = " << NPROCESSOR_IDLE << endl;
 	}
 	
 	// Delete all BOR objects
@@ -265,7 +266,7 @@ void JEventSource_EVIOpp::Dispatcher(void)
 				break;
 			}
 			if(!thr) {
-				NWAITS_FOR_THREAD++;
+				NDISPATCHER_IDLE++;
 				this_thread::sleep_for(milliseconds(1));
 			}
 			if(DONE) break;
@@ -354,7 +355,7 @@ jerror_t JEventSource_EVIOpp::GetEvent(JEvent &event)
 	unique_lock<std::mutex> lck(PARSED_EVENTS_MUTEX);
 	while(parsed_events.empty()){
 		if(DONE) return NO_MORE_EVENTS_IN_SOURCE;
-		NWAITS_FOR_PARSED_EVENT++;
+		NPROCESSOR_IDLE++;
 		PARSED_EVENTS_CV.wait_for(lck,std::chrono::milliseconds(1));
 	}
 

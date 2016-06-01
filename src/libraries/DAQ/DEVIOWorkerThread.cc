@@ -264,6 +264,7 @@ void DEVIOWorkerThread::PublishEvents(void)
 	// parsed events. If the done flag is set, go ahead and add
 	// this regardless
 	while( ((current_parsed_events.size()+parsed_events.size())>=MAX_PARSED_EVENTS) && !done ){
+		event_source->NPARSER_IDLE++;
 		PARSED_EVENTS_CV.wait_for(lck, std::chrono::milliseconds(1));
 	}
 	
