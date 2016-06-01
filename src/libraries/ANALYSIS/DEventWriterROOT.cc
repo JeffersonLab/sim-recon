@@ -127,6 +127,10 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	string locOutputFileName = locReaction->Get_TTreeOutputFileName();
 	string locTreeName = locReactionName + string("_Tree");
 
+	//create fill object
+	DTreeFillData* locTreeFillData = new DTreeFillData();
+	dTreeFillDataMap->insert(pair<string, DTreeFillData*>(locReaction->Get_ReactionName(), locTreeFillData));
+
 	//create tree interface
 	DTreeInterface* locTreeInterface = DTreeInterface::Create_DTreeInterface(locTreeName, locOutputFileName);
 	dTreeInterfaceMap[locReaction->Get_ReactionName()] = locTreeInterface;
@@ -171,10 +175,6 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 
 	//Create branches
 	locTreeInterface->Create_Branches(locBranchRegister);
-
-	//create fill object
-	DTreeFillData* locTreeFillData = new DTreeFillData();
-	dTreeFillDataMap->insert(pair<string, DTreeFillData*>(locReaction->Get_ReactionName(), locTreeFillData));
 }
 
 TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegister, const DReaction* locReaction, double locTargetCenterZ) const
