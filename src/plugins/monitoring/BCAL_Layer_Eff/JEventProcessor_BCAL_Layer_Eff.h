@@ -15,7 +15,8 @@
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALPoint.h"
 #include "BCAL/DBCALUnifiedHit.h"
-//#include "TRIGGER/DTrigger.h"
+#include "DBCAL/DBCALGeometry.h"
+#include "TRIGGER/DTrigger.h"
 #include "TRACKING/DTrackTimeBased.h"
 
 #include "PID/DChargedTrack.h"
@@ -49,11 +50,16 @@ class JEventProcessor_BCAL_Layer_Eff : public jana::JEventProcessor
 		jerror_t erun(void);						///< Called every time run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		pair<const DBCALPoint*, double> Find_NearestClusterPoint(double locProjectedSector, const set<const DBCALPoint*>& locClusterLayerBCALPoints);
-		pair<const DBCALUnifiedHit*, double> Find_NearestClusterHit(double locProjectedSector, const set<const DBCALUnifiedHit*>& locBCALUnifiedHits);
+		double Calc_AverageSector(const map<int, set<const DBCALPoint*> >& locBCALPoints);
+		double Calc_ProjectedSector(int locLayer, const map<int, map<int, set<const DBCALPoint*> > >& locSortedPoints);
 
-		double Calc_AverageSector(const set<const DBCALPoint*>& locBCALPoints);
-		double Calc_ProjectedSector(int locLayer, const map<int, set<const DBCALPoint*> >& locSortedPoints);
+		pair<const DBCALPoint*, double> Find_NearestPoint(double locProjectedSector, const map<int, set<const DBCALPoint*> >& locLayerBCALPoints, const DBCALCluster* locBCALCluster, double locTimeCut = -1.0);
+		pair<const DBCALUnifiedHit*, double> Find_NearestHit(double locProjectedSector, const map<int, set<const DBCALUnifiedHit*> >& locLayerUnifiedHits, const DBCALCluster* locBCALCluster, double locTimeCut = -1.0);
+
+		const DBCALPoint* Find_ClosestTimePoint(const set<const DBCALPoint*>& locPoints, const DBCALCluster* locBCALCluster, double locTimeCut);
+		const DBCALUnifiedHit* Find_ClosestTimeHit(const set<const DBCALUnifiedHit*>& locHits, const DBCALCluster* locBCALCluster, double locTimeCut);
+
+		template <typename DType> DType Calc_DeltaSector(DType locHitSector, DType locProjectedSector) const
 
 		//TRACK REQUIREMENTS
 		double dMinTrackingFOM, dMinPIDFOM;
@@ -62,6 +68,7 @@ class JEventProcessor_BCAL_Layer_Eff : public jana::JEventProcessor
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
 
 		//HISTOGRAMS
+		int dHistFoundDeltaSector; //for histograms ONLY!!!
 		map<int, map<bool, TH1I*> > dHistMap_HitFound, dHistMap_HitTotal; //int = layer, bool = isUpstream
 
 		//TREE
@@ -69,7 +76,23 @@ class JEventProcessor_BCAL_Layer_Eff : public jana::JEventProcessor
 		//thread_local: Each thread has its own object: no lock needed
 			//important: manages it's own data internally: don't want to call new/delete every event!
 		static thread_local DTreeFillData dTreeFillData;
+
+		//VERTEX-Z
+		static thread_local double dTargetCenterZ;
+
+		//EFFECTIVE VELOCITIES
+		static thread_local vector<double> effective_velocities;
 };
 
-#endif // _JEventProcessor_BCAL_Layer_Eff_
+template <typename DType> inline DType Calc_DeltaSector(DType locHitSector, DType locProjectedSector) const
+{
+	//beware 2pi wrap-around!
+	double locDeltaSector = double(locHitPair.first) - locProjectedSector;
+	if(locDeltaSector > DType(96))
+		locDeltaSector -= DType(192);
+	if(locDeltaSector < -DType(96))
+		locDeltaSector += DType(192);
+	return locDeltaSector;
+}
 
+#endif // _JEventProcessor_BCAL_Layer_Eff_
