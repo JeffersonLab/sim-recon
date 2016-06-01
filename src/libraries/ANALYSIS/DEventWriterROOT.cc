@@ -56,7 +56,7 @@ DEventWriterROOT::DEventWriterROOT(JEventLoop* locEventLoop)
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 	{
 		if(locReactions[loc_i]->Get_EnableTTreeOutputFlag())
-			Create_DataTree(locReactions[loc_i], !locMCThrowns.empty());
+			Create_DataTree(locReactions[loc_i], locEventLoop, !locMCThrowns.empty());
 	}
 }
 
@@ -103,13 +103,13 @@ void DEventWriterROOT::Create_ThrownTree(JEventLoop* locEventLoop, string locOut
 	Create_Branches_Thrown(locBranchRegister, true);
 
 	//CUSTOM
-	Create_CustomBranches_ThrownTree(locBranchRegister);
+	Create_CustomBranches_ThrownTree(locBranchRegister, locEventLoop);
 
 	//CREATE BRANCHES
 	dThrownTreeInterface->Create_Branches(locBranchRegister);
 }
 
-void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag)
+void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, JEventLoop* locEventLoop, bool locIsMCDataFlag)
 {
 	string locReactionName = locReaction->Get_ReactionName();
 	string locOutputFileName = locReaction->Get_TTreeOutputFileName();
@@ -158,7 +158,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	Create_Branches_Combo(locBranchRegister, locReaction, locIsMCDataFlag, locPositionToNameMap);
 
 	//Custom branches
-	Create_CustomBranches_DataTree(locBranchRegister, locReaction, locIsMCDataFlag);
+	Create_CustomBranches_DataTree(locBranchRegister, locEventLoop, locReaction, locIsMCDataFlag);
 
 	//Create branches
 	locTreeInterface->Create_Branches(locBranchRegister);
@@ -828,7 +828,7 @@ void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
 	Fill_ThrownInfo(&dThrownTreeFillData, locMCReaction, locMCThrownsToSave, locThrownIndexMap, locNumPIDThrown_FinalState, locPIDThrown_Decaying);
 
 	//Custom Branches
-	Fill_CustomBranches_ThrownTree(&dThrownTreeFillData, locMCReaction, locMCThrownsToSave);
+	Fill_CustomBranches_ThrownTree(&dThrownTreeFillData, locEventLoop, locMCReaction, locMCThrownsToSave);
 
 	//FILL TTREE
 	dThrownTreeInterface->Fill(dThrownTreeFillData);
@@ -1029,7 +1029,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	}
 
 	//CUSTOM
-	Fill_CustomBranches_DataTree(locTreeFillData, locMCReaction, locMCThrownsToSave, locMCThrownMatching, locDetectorMatches, locBeamPhotons, locChargedTrackHypotheses, locNeutralParticleHypotheses, locParticleCombos);
+	Fill_CustomBranches_DataTree(locTreeFillData, locEventLoop, locMCReaction, locMCThrownsToSave, locMCThrownMatching, locDetectorMatches, locBeamPhotons, locChargedTrackHypotheses, locNeutralParticleHypotheses, locParticleCombos);
 
 	//FILL
 	DTreeInterface* locTreeInterface = dTreeInterfaceMap.find(locReaction)->second;

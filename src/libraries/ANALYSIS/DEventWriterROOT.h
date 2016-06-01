@@ -61,10 +61,10 @@ class DEventWriterROOT : public JObject
 			//DO NOT: Write any code that requires a lock of ANY KIND. No reading calibration constants, accessing gParams, etc. This can cause deadlock.
 				//Note that the JEventLoop is unavailable.  This is to prevent calls to other factories that may cause deadlock.
 			//DO NOT: Call TTree::Fill().  This will be called after calling the custom fill functions.
-		virtual void Create_CustomBranches_ThrownTree(DTreeBranchRegister& locTreeBranchRegister) const{};
-		virtual void Fill_CustomBranches_ThrownTree(DTreeFillData* locTreeFillData, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns) const{};
-		virtual void Create_CustomBranches_DataTree(DTreeBranchRegister& locTreeBranchRegister, const DReaction* locReaction, bool locIsMCDataFlag) const{};
-		virtual void Fill_CustomBranches_DataTree(DTreeFillData* locTreeFillData, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
+		virtual void Create_CustomBranches_ThrownTree(DTreeBranchRegister& locTreeBranchRegister, JEventLoop* locEventLoop) const{};
+		virtual void Fill_CustomBranches_ThrownTree(DTreeFillData* locTreeFillData, JEventLoop* locEventLoop, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns) const{};
+		virtual void Create_CustomBranches_DataTree(DTreeBranchRegister& locTreeBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction, bool locIsMCDataFlag) const{};
+		virtual void Fill_CustomBranches_DataTree(DTreeFillData* locTreeFillData, JEventLoop* locEventLoop, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
 				const DMCThrownMatching* locMCThrownMatching, const DDetectorMatches* locDetectorMatches,
 				const vector<const DBeamPhoton*>& locBeamPhotons, const vector<const DChargedTrackHypothesis*>& locChargedHypos,
 				const vector<const DNeutralParticleHypothesis*>& locNeutralHypos, const deque<const DParticleCombo*>& locParticleCombos) const{};
@@ -112,7 +112,7 @@ class DEventWriterROOT : public JObject
 		void Get_Reactions(jana::JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;
 
 		//TREE CREATION:
-		void Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag);
+		void Create_DataTree(const DReaction* locReaction, JEventLoop* locEventLoop, bool locIsMCDataFlag);
 		TMap* Create_UserInfoMaps(DTreeBranchRegister& locTreeBranchRegister, const DReaction* locReaction) const;
 		void Create_UserTargetInfo(DTreeBranchRegister& locTreeBranchRegister, Particle_t locTargetPID) const;
 		void Create_Branches_Thrown(DTreeBranchRegister& locTreeBranchRegister, bool locIsOnlyThrownFlag) const;
