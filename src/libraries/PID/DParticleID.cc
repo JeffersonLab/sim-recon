@@ -1274,7 +1274,7 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, const 
   }
 
   if(locMinDPhi != NULL)
-    locMinDPhi = min_dphi;
+    *locMinDPhi = min_dphi;
 
   if (min_dphi<dphi_cut) return best_sc_index+1;
 
