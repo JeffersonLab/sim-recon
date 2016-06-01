@@ -21,6 +21,14 @@ class DEventWriterROOT_factory : public jana::JFactory<DEventWriterROOT>
 			_data.push_back(new DEventWriterROOT(locEventLoop));
 			return NOERROR;
 		}
+
+		jerror_t fini(void)
+		{
+			// Delete object: Must be "this" thread so that interfaces deleted properly
+			delete _data[0];
+			_data.resize(0);
+			return NOERROR;
+		}
 };
 
 #endif // _DEventWriterROOT_factory_
