@@ -1056,7 +1056,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		{
 			if(locTrackTimeBasedVector[loc_i]->FOM < dMinTrackingFOM)
 				continue;
-			if(!locCutAction_TrackHitPattern.Cut_TrackHitPattern(locTrackTimeBasedVector[loc_i]))
+			if(!locCutAction_TrackHitPattern.Cut_TrackHitPattern(locParticleID, locTrackTimeBasedVector[loc_i]))
 				continue;
 			JObject::oid_t locCandidateID = locTrackTimeBasedVector[loc_i]->candidateid;
 			if(locBestTrackMap.find(locCandidateID) == locBestTrackMap.end())
@@ -1075,7 +1075,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		{
 			if(locTrackWireBasedVector[loc_i]->FOM < dMinTrackingFOM)
 				continue;
-			if(!locCutAction_TrackHitPattern.Cut_TrackHitPattern(locTrackWireBasedVector[loc_i]))
+			if(!locCutAction_TrackHitPattern.Cut_TrackHitPattern(locParticleID, locTrackWireBasedVector[loc_i]))
 				continue;
 			JObject::oid_t locCandidateID = locTrackWireBasedVector[loc_i]->candidateid;
 			if(locBestTrackMap.find(locCandidateID) == locBestTrackMap.end())

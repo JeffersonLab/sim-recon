@@ -59,7 +59,8 @@ include = "%s/include" % (installdir)
 bin = "%s/bin" % (installdir)
 lib = "%s/lib" % (installdir)
 plugins = "%s/plugins" % (installdir)
-env = Environment(    CPPPATH = [include],
+env = Environment(        ENV = os.environ,  # Bring in full environment, including PATH
+                      CPPPATH = [include],
                       LIBPATH = ["%s/%s/lib" %(halld_home, osname)],  # n.b. add HALLD_HOME here and prepend HALLD_MY below
                   variant_dir = ".%s" % (osname))
 
@@ -110,6 +111,8 @@ env.PrependUnique(CPPPATH = ['%s/%s/include' % (halld_home,osname)])
 env.PrependUnique(      CFLAGS = ['-g', '-fPIC', '-Wall'])
 env.PrependUnique(    CXXFLAGS = ['-g', '-fPIC', '-Wall'])
 env.PrependUnique(FORTRANFLAGS = ['-g', '-fPIC', '-Wall'])
+
+env.PrependUnique(    CXXFLAGS = ['-std=c++11'])
 
 # Apply any platform/architecture specific settings
 sbms.ApplyPlatformSpecificSettings(env, arch)

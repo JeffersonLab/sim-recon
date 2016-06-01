@@ -790,29 +790,27 @@ string DCutAction_TrackHitPattern::Get_ActionName(void) const
 	return locStream.str();
 }
 
-void DCutAction_TrackHitPattern::Initialize(JEventLoop* locEventLoop)
-{
-	locEventLoop->GetSingle(dParticleID);
-}
-
 bool DCutAction_TrackHitPattern::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	deque<const DKinematicData*> locParticles;
 	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
+
+	const DParticleID* locParticleID = NULL;
+	locEventLoop->GetSingle(locParticleID);
 
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
 		const DTrackTimeBased* locTrackTimeBased = NULL;
 		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-		if(!Cut_TrackHitPattern(locTrackTimeBased))
+		if(!Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
 			return false;
 	}
 
 	return true;
 }
 
-bool DCutAction_TrackHitPattern::Cut_TrackHitPattern(const DKinematicData* locTrack) const
+bool DCutAction_TrackHitPattern::Cut_TrackHitPattern(const DParticleID* locParticleID, const DKinematicData* locTrack) const
 {
 	const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
 	const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
@@ -821,18 +819,18 @@ bool DCutAction_TrackHitPattern::Cut_TrackHitPattern(const DKinematicData* locTr
 	map<int, int> locNumHitRingsPerSuperlayer, locNumHitPlanesPerPackage;
 	if(locTrackTimeBased != NULL)
 	{
-		dParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackTimeBased->dCDCRings, locNumHitRingsPerSuperlayer);
-		dParticleID->Get_FDCNumHitPlanesPerPackage(locTrackTimeBased->dFDCPlanes, locNumHitPlanesPerPackage);
+		locParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackTimeBased->dCDCRings, locNumHitRingsPerSuperlayer);
+		locParticleID->Get_FDCNumHitPlanesPerPackage(locTrackTimeBased->dFDCPlanes, locNumHitPlanesPerPackage);
 	}
 	else if(locTrackWireBased != NULL)
 	{
-		dParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackWireBased->dCDCRings, locNumHitRingsPerSuperlayer);
-		dParticleID->Get_FDCNumHitPlanesPerPackage(locTrackWireBased->dFDCPlanes, locNumHitPlanesPerPackage);
+		locParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackWireBased->dCDCRings, locNumHitRingsPerSuperlayer);
+		locParticleID->Get_FDCNumHitPlanesPerPackage(locTrackWireBased->dFDCPlanes, locNumHitPlanesPerPackage);
 	}
 	else if(locTrackCandidate != NULL)
 	{
-		dParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackCandidate->dCDCRings, locNumHitRingsPerSuperlayer);
-		dParticleID->Get_FDCNumHitPlanesPerPackage(locTrackCandidate->dFDCPlanes, locNumHitPlanesPerPackage);
+		locParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackCandidate->dCDCRings, locNumHitRingsPerSuperlayer);
+		locParticleID->Get_FDCNumHitPlanesPerPackage(locTrackCandidate->dFDCPlanes, locNumHitPlanesPerPackage);
 	}
 	else
 		return false;
