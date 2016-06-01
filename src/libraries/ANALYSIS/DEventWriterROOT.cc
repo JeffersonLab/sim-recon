@@ -126,8 +126,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	string locTreeName = locReactionName + string("_Tree");
 
 	//create fill object
-	DTreeFillData* locTreeFillData = new DTreeFillData();
-	dTreeFillDataMap.insert(pair<string, DTreeFillData*>(locReaction, locTreeFillData));
+	dTreeFillDataMap[locReaction] = new DTreeFillData();
 
 	//create tree interface
 	DTreeInterface* locTreeInterface = DTreeInterface::Create_DTreeInterface(locTreeName, locOutputFileName);
