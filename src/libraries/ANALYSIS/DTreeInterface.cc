@@ -281,7 +281,6 @@ void DTreeInterface::Fill(DTreeFillData& locTreeFillData)
 
 			//reset DTreeFillData for next event!
 			locLargestIndexFilled = 0;
-cout << "value = " << (*locTreeFillData.dArrayLargestIndexFilledMap)[locBranchName] << endl;
 		}
 
 		//fill tree
