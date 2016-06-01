@@ -106,8 +106,8 @@ class DEventWriterROOT : public JObject
 		//So, these are not class members: they are static. To make sure that the threads don't need to lock on them, they are thread_local
 		static thread_local DTreeInterface* dThrownTreeInterface;
 		static thread_local DTreeFillData dThrownTreeFillData;
-		map<const DReaction*, DTreeInterface*> dTreeInterfaceMap;
-		map<const DReaction*, DTreeFillData*>* dTreeFillDataMap;
+		map<string, DTreeInterface*> dTreeInterfaceMap;
+		map<string, DTreeFillData*>* dTreeFillDataMap;
 
 		void Get_Reactions(jana::JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;
 
