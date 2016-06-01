@@ -49,14 +49,14 @@ DEventWriterROOT::DEventWriterROOT(JEventLoop* locEventLoop)
 	//Get Target Center Z
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
-	double locTargetCenterZ = 65.0;
-	locGeometry->GetTargetZ(locTargetCenterZ);
+	dTargetCenterZ = 65.0;
+	locGeometry->GetTargetZ(dTargetCenterZ);
 
 	//CREATE TTREES
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 	{
 		if(locReactions[loc_i]->Get_EnableTTreeOutputFlag())
-			Create_DataTree(locReactions[loc_i], !locMCThrowns.empty(), locTargetCenterZ);
+			Create_DataTree(locReactions[loc_i], !locMCThrowns.empty());
 	}
 }
 
@@ -87,19 +87,13 @@ void DEventWriterROOT::Create_ThrownTree(JEventLoop* locEventLoop, string locOut
 	//TTREE BRANCHES
 	DTreeBranchRegister locBranchRegister;
 
-	//Get Target Center Z
-	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
-	double locTargetCenterZ = 65.0;
-	locGeometry->GetTargetZ(locTargetCenterZ);
-
 	//Get target PID
 	const DMCReaction* locMCReaction = NULL;
 	locEventLoop->GetSingle(locMCReaction);
 	Particle_t locTargetPID = locMCReaction->target.PID();
 
 	//setup target info
-	Create_UserTargetInfo(locBranchRegister, locTargetPID, locTargetCenterZ);
+	Create_UserTargetInfo(locBranchRegister, locTargetPID);
 
 	//create basic/misc. tree branches (run#, event#, etc.)
 	locBranchRegister.Register_Single<UInt_t>("RunNumber");
@@ -115,11 +109,7 @@ void DEventWriterROOT::Create_ThrownTree(JEventLoop* locEventLoop, string locOut
 	dThrownTreeInterface->Create_Branches(locBranchRegister);
 }
 
-void DEventWriterROOT::Create_DataTrees(JEventLoop* locEventLoop) const
-{
-}
-
-void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag, double locTargetCenterZ)
+void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag)
 {
 	string locReactionName = locReaction->Get_ReactionName();
 	string locOutputFileName = locReaction->Get_TTreeOutputFileName();
@@ -138,7 +128,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	DTreeBranchRegister locBranchRegister;
 
 	//fill maps
-	TMap* locPositionToNameMap = Create_UserInfoMaps(locBranchRegister, locReaction, locTargetCenterZ);
+	TMap* locPositionToNameMap = Create_UserInfoMaps(locBranchRegister, locReaction);
 
 /******************************************************************** Create Branches ********************************************************************/
 
@@ -174,7 +164,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	locTreeInterface->Create_Branches(locBranchRegister);
 }
 
-TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegister, const DReaction* locReaction, double locTargetCenterZ) const
+TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegister, const DReaction* locReaction) const
 {
 	//kinfit type
 	DKinFitType locKinFitType = locReaction->Get_KinFitType();
@@ -392,7 +382,7 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 	}
 
 	//setup target info
-	Create_UserTargetInfo(locBranchRegister, locTargetPID, locTargetCenterZ);
+	Create_UserTargetInfo(locBranchRegister, locTargetPID);
 
 	//fill decay product map
 	deque<size_t> locSavedSteps;
@@ -460,7 +450,7 @@ void DEventWriterROOT::Get_DecayProductNames(const DReaction* locReaction, size_
 	locSavedSteps.push_back(locReactionStepIndex);
 }
 
-void DEventWriterROOT::Create_UserTargetInfo(DTreeBranchRegister& locBranchRegister, Particle_t locTargetPID, double locTargetCenterZ) const
+void DEventWriterROOT::Create_UserTargetInfo(DTreeBranchRegister& locBranchRegister, Particle_t locTargetPID) const
 {
 	TList* locUserInfo = locBranchRegister.Get_UserInfo();
 	TMap* locMiscInfoMap = (TMap*)locUserInfo->FindObject("MiscInfoMap");
@@ -490,7 +480,7 @@ void DEventWriterROOT::Create_UserTargetInfo(DTreeBranchRegister& locBranchRegis
 
 	//Z
 	ostringstream locPositionStream;
-	locPositionStream << locTargetCenterZ;
+	locPositionStream << dTargetCenterZ;
 	TObjString* locObjString_Position = new TObjString(locPositionStream.str().c_str());
 	locMiscInfoMap->Add(new TObjString("Target__CenterZ"), locObjString_Position);
 }

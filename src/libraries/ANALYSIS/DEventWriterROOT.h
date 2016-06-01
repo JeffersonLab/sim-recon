@@ -47,7 +47,6 @@ class DEventWriterROOT : public JObject
 		DEventWriterROOT(JEventLoop* locEventLoop);
 		virtual ~DEventWriterROOT(void);
 
-		void Create_DataTrees(JEventLoop* locEventLoop) const;
 		void Create_ThrownTree(JEventLoop* locEventLoop, string locOutputFileName) const;
 
 		void Fill_DataTrees(JEventLoop* locEventLoop, string locDReactionTag) const; //fills all from this factory tag
@@ -86,6 +85,7 @@ class DEventWriterROOT : public JObject
 		unsigned int dInitNumNeutralArraySize;
 		unsigned int dInitNumComboArraySize;
 
+		double dTargetCenterZ;
 		string dTrackSelectionTag;
 		string dShowerSelectionTag;
 
@@ -112,9 +112,9 @@ class DEventWriterROOT : public JObject
 		void Get_Reactions(jana::JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;
 
 		//TREE CREATION:
-		void Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag, double locTargetCenterZ);
-		TMap* Create_UserInfoMaps(DTreeBranchRegister& locTreeBranchRegister, const DReaction* locReaction, double locTargetCenterZ) const;
-		void Create_UserTargetInfo(DTreeBranchRegister& locTreeBranchRegister, Particle_t locTargetPID, double locTargetCenterZ) const;
+		void Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag);
+		TMap* Create_UserInfoMaps(DTreeBranchRegister& locTreeBranchRegister, const DReaction* locReaction) const;
+		void Create_UserTargetInfo(DTreeBranchRegister& locTreeBranchRegister, Particle_t locTargetPID) const;
 		void Create_Branches_Thrown(DTreeBranchRegister& locTreeBranchRegister, bool locIsOnlyThrownFlag) const;
 
 		//TREE CREATION: PARTICLE INFO
