@@ -235,27 +235,6 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 		return;
 	}
 
-    // Handle sync events separately
-    // Assume this is a sync event if there is a DL1Info object
-    vector<const DL1Info*> l1_info;
-    loop->Get(l1_info);
-    if(l1_info.size() > 0) {
-        // DEBUG OUTPUT
-        cout << " I WROTE A SYNC EVENT" << endl;
-        uint32_t run_number = loop->GetJEvent().GetRunNumber();
-        uint64_t event_number = loop->GetJEvent().GetEventNumber();
-        cout << " RUN = " << run_number << "  EVENT = " << event_number << endl;
-        vector<pair<string,string> > items;
-        l1_info[0]->toStrings(items);
-
-        for(vector<pair<string,string> >::iterator it=items.begin();
-            it!=items.end(); it++)
-            cout << it->first << ": " << it->second << endl;
-
-        WriteTSSyncData(loop, buff, l1_info[0]);
-        return;
-    }
-
 	// First, grab all of the low level objects
 	vector<const Df250TriggerTime*>   f250tts;
 	vector<const Df250PulseIntegral*> f250pis;
@@ -415,6 +394,27 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 	
 	// Write f125 hits
 	Writef125Data(buff, f125pis, f125cdcpulses, f125fdcpulses, f125tts, f125wrds, f125configs, Nevents);
+
+    // Write out TS sync data if it exists ("sync event")
+    vector<const DL1Info*> l1_info;
+    loop->Get(l1_info);
+    if(l1_info.size() > 0) {
+        // DEBUG OUTPUT
+        cout << " I WROTE A SYNC EVENT" << endl;
+        uint32_t run_number = loop->GetJEvent().GetRunNumber();
+        uint64_t event_number = loop->GetJEvent().GetEventNumber();
+        cout << " RUN = " << run_number << "  EVENT = " << event_number << endl;
+        vector<pair<string,string> > items;
+        l1_info[0]->toStrings(items);
+
+        for(vector<pair<string,string> >::iterator it=items.begin();
+            it!=items.end(); it++)
+            cout << it->first << ": " << it->second << endl;
+
+        WriteTSSyncData(loop, buff, l1_info[0]);
+    }
+
+
 	
 	// Update global header length
 	if(!buff.empty()) buff[0] = buff.size()-1;
@@ -1213,15 +1213,8 @@ void DEventWriterEVIO::WriteTSSyncData(JEventLoop *loop, vector<uint32_t> &buff,
 {
     // The Trigger Supervisor (TS) inserts information into the data stream
     // during periodic "sync events".  The data is stored in one bank
-    // of a particular form, and for now it's easiest to copy the entire event
-    // to the output stream as well
-    // CHECK THIS
-
-    // Physics Bank Header
-    buff.clear();
-    buff.push_back(0); // Physics Event Length (must be updated at the end)
-    buff.push_back(0xFF701001);// 0xFF70=SEB in single event mode, 0x10=bank of banks, 0x01=1event
-        
+    // so we build it here
+    
     // TS data bank
     uint32_t trigger_bank_len_idx = buff.size();
     buff.push_back(0); // Length
@@ -1252,10 +1245,7 @@ void DEventWriterEVIO::WriteTSSyncData(JEventLoop *loop, vector<uint32_t> &buff,
     for(uint32_t i=0; i<l1info->fp_rate.size(); i++)
         buff.push_back(l1info->fp_rate[i]);
 
-
     // Update bank length
     buff[trigger_bank_len_idx] = buff.size() - trigger_bank_len_idx - 1;
 
-	// Update global header length
-	buff[0] = buff.size()-1;   
 }

@@ -164,10 +164,8 @@ jerror_t JEventProcessor_trigger_skims::evnt(JEventLoop *locEventLoop, uint64_t 
     }
     // store the sync events, which contain extra trigger and scalar info,
     // in the random trigger stream as well
-	//if (write_out_random && ( is_random_trigger || is_sync_event ) ) {
-	if ( is_sync_event )  {
-        if(locEventLoop->GetJEvent().SetStatusBit(kSTATUS_SYNC_EVENT))
-            cout << "this is a Sync event?" << endl;
+	if (write_out_random && ( is_random_trigger || is_sync_event ) ) {
+        //if ( is_sync_event )  {
         locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "random");
     }
 
