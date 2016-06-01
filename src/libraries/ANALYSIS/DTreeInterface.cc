@@ -243,7 +243,7 @@ void DTreeInterface::Fill(DTreeFillData& locTreeFillData)
 			//type
 			string locBranchName = locBranchPair.first;
 			type_index locTypeIndex = locBranchPair.second.first;
-			deque<void*>& locVoidDeque = *(locBranchPair.second.second);
+			deque<void*>& locVoidDeque = locBranchPair.second.second;
 
 			if(dTree->GetBranch(locBranchName.c_str()) == NULL)
 			{
