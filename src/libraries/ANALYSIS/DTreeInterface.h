@@ -84,6 +84,7 @@ class DTreeInterface
 
 		/************************************************************** CREATE BRANCHES *************************************************************/
 
+		void Create_Branch(const DTreeBranchRegister& locTreeBranchRegister, string locBranchName, map<string, size_t>& locFundamentalArraySizeMap);
 		void Create_Branch(string locBranchName, type_index locTypeIndex, size_t locArraySize, string locArraySizeName);
 
 		//Enable this version if type inherits from TObject //void: is return type
@@ -267,4 +268,3 @@ template <typename DType> inline void DTreeInterface::Fill_TObject(string locBra
 }
 
 #endif //DTreeInterface_h
-

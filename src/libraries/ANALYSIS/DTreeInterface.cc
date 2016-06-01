@@ -88,8 +88,7 @@ void DTreeInterface::GetOrCreate_FileAndTree(string locTreeName)
 		TFile* locOutputFile = (TFile*)gROOT->GetListOfFiles()->FindObject(dFileName.c_str());
 		if(locOutputFile == nullptr)
 			locOutputFile = new TFile(dFileName.c_str(), "RECREATE");
-		else
-			locOutputFile->cd();
+		locOutputFile->cd();
 
 		//see if ttree exists already. if not, create it
 		dTree = (TTree*)gDirectory->Get(locTreeName.c_str());
@@ -134,34 +133,64 @@ void DTreeInterface::Create_Branches(const DTreeBranchRegister& locTreeBranchReg
 			return;
 		}
 
+		//set user info
+		TList* locInputUserInfo = locTreeBranchRegister.Get_UserInfo();
+		TList* locTreeUserInfo = dTree->GetUserInfo();
+		for(Int_t loc_i = 0; loc_i < locInputUserInfo->GetSize(); ++loc_i)
+			locTreeUserInfo->Add(locInputUserInfo->At(loc_i));
+
 		//loop over branches
-		for(auto locBranchIterator : locTreeBranchRegister.dBranchTypeMap)
+			//branches that are arrays, for which the branch with the size was not created it yet
+			//save them, and create them at the end
+		vector<string> locPostponedBranchNames;
+		for(const auto& locBranchName : locTreeBranchRegister.dBranchNames)
 		{
-			string locBranchName = locBranchIterator.first;
-			type_index locTypeIndex = locBranchIterator.second;
-
-			//array size
-			auto locSizeIterator = locTreeBranchRegister.dInitialArraySizeMap.find(locBranchName);
-			if(locSizeIterator == locTreeBranchRegister.dInitialArraySizeMap.end())
-			{
-				//not an array
-				Create_Branch(locBranchName, locTypeIndex, 0, "");
-				continue;
-			}
-			size_t locArraySize = locSizeIterator->second;
-
-			//array size name
+			//check if need to postpone this branch
 			auto locSizeNameIterator = locTreeBranchRegister.dArraySizeNameMap.find(locBranchName);
-			if(locSizeNameIterator == locTreeBranchRegister.dArraySizeNameMap.end())
-				Create_Branch(locBranchName, locTypeIndex, locArraySize, ""); //clones array
-			else //fundamental array
+			if(locSizeNameIterator != locTreeBranchRegister.dArraySizeNameMap.end())
 			{
-				Create_Branch(locBranchName, locTypeIndex, locArraySize, locSizeNameIterator->second);
-				locFundamentalArraySizeMap[locBranchName] = locArraySize;
+				//fundamental array: make sure array size branch has been created first. if not, postpone it
+				if(dTree->GetBranch(locSizeNameIterator->second.c_str()) == nullptr)
+				{
+					locPostponedBranchNames.push_back(locBranchName);
+					continue;
+				}
 			}
+
+			//it's ok: create it
+			Create_Branch(locTreeBranchRegister, locBranchName, locFundamentalArraySizeMap);
 		}
+
+		//create postponed branches
+		for(string& locBranchName : locPostponedBranchNames)
+			Create_Branch(locTreeBranchRegister, locBranchName, locFundamentalArraySizeMap);
 	}
 	japp->Unlock(dFileName); //UNLOCK FILE
+}
+
+void DTreeInterface::Create_Branch(const DTreeBranchRegister& locTreeBranchRegister, string locBranchName, map<string, size_t>& locFundamentalArraySizeMap)
+{
+	const type_index& locTypeIndex = locTreeBranchRegister.dBranchTypeMap.find(locBranchName)->second;
+
+	//array size
+	auto locSizeIterator = locTreeBranchRegister.dInitialArraySizeMap.find(locBranchName);
+	if(locSizeIterator == locTreeBranchRegister.dInitialArraySizeMap.end())
+	{
+		//not an array
+		Create_Branch(locBranchName, locTypeIndex, 0, "");
+		return;
+	}
+	size_t locArraySize = locSizeIterator->second;
+
+	//array size name
+	auto locSizeNameIterator = locTreeBranchRegister.dArraySizeNameMap.find(locBranchName);
+	if(locSizeNameIterator == locTreeBranchRegister.dArraySizeNameMap.end())
+		Create_Branch(locBranchName, locTypeIndex, locArraySize, ""); //clones array
+	else //fundamental array
+	{
+		Create_Branch(locBranchName, locTypeIndex, locArraySize, locSizeNameIterator->second);
+		locFundamentalArraySizeMap[locBranchName] = locArraySize;
+	}
 }
 
 void DTreeInterface::Create_Branch(string locBranchName, type_index locTypeIndex, size_t locArraySize, string locArraySizeName)
@@ -209,12 +238,12 @@ void DTreeInterface::Fill(DTreeFillData& locTreeFillData)
 	japp->WriteLock(dFileName); //LOCK FILE
 	{
 		//loop over branches
-		for(auto locBranchIterator : locTreeFillData.dFillData)
+		for(auto locBranchPair : locTreeFillData.dFillData)
 		{
 			//type
-			string locBranchName = locBranchIterator.first;
-			type_index locTypeIndex = locBranchIterator.second.first;
-			deque<void*> locVoidDeque = locBranchIterator.second.second;
+			string locBranchName = locBranchPair.first;
+			type_index locTypeIndex = locBranchPair.second.first;
+			deque<void*>& locVoidDeque = *(locBranchPair.second.second);
 
 			if(dTree->GetBranch(locBranchName.c_str()) == NULL)
 			{

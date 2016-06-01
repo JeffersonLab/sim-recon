@@ -106,13 +106,13 @@ class DEventWriterROOT : public JObject
 		//So, these are not class members: they are static. To make sure that the threads don't need to lock on them, they are thread_local
 		static thread_local DTreeInterface* dThrownTreeInterface;
 		static thread_local DTreeFillData dThrownTreeFillData;
-		static thread_local map<const DReaction*, DTreeInterface*> dTreeInterfaceMap; //delete when done! //no locking needed!
-		static thread_local map<const DReaction*, DTreeFillData*> dTreeFillDataMap; //delete when done! //no locking needed!
+		map<const DReaction*, DTreeInterface*> dTreeInterfaceMap;
+		map<const DReaction*, DTreeFillData*> dTreeFillDataMap;
 
 		void Get_Reactions(jana::JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;
 
 		//TREE CREATION:
-		void Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag, double locTargetCenterZ) const;
+		void Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag, double locTargetCenterZ);
 		TMap* Create_UserInfoMaps(DTreeBranchRegister& locTreeBranchRegister, const DReaction* locReaction, double locTargetCenterZ) const;
 		void Create_UserTargetInfo(DTreeBranchRegister& locTreeBranchRegister, Particle_t locTargetPID, double locTargetCenterZ) const;
 		void Create_Branches_Thrown(DTreeBranchRegister& locTreeBranchRegister, bool locIsOnlyThrownFlag) const;

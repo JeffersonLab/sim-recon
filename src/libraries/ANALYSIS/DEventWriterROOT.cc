@@ -3,10 +3,9 @@
 //TREE INTERFACES, FILL OBJECTS
 //Ugh.  Why are these thread_local? Because the user gets this object from JANA as const, so the class cannot be modified
 //So, these are not class members: they are static. To make sure that the threads don't need to lock on them, they are thread_local
+
 thread_local DTreeInterface* DEventWriterROOT::dThrownTreeInterface = NULL;
 thread_local DTreeFillData DEventWriterROOT::dThrownTreeFillData;
-thread_local map<const DReaction*, DTreeInterface*> DEventWriterROOT::dTreeInterfaceMap;
-thread_local map<const DReaction*, DTreeFillData*> DEventWriterROOT::dTreeFillDataMap;
 
 DEventWriterROOT::DEventWriterROOT(JEventLoop* locEventLoop)
 {
@@ -42,6 +41,23 @@ DEventWriterROOT::DEventWriterROOT(JEventLoop* locEventLoop)
 		dCutActionMap_BDTSignalCombo[locReactions[loc_i]] = new DCutAction_BDTSignalCombo(locReactions[loc_i], 5.73303E-7, true, true); //+/- 5sigma
 		dCutActionMap_BDTSignalCombo[locReactions[loc_i]]->Initialize(locEventLoop);
 	}
+
+	//CREATE TREES
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+
+	//Get Target Center Z
+	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
+	double locTargetCenterZ = 65.0;
+	locGeometry->GetTargetZ(locTargetCenterZ);
+
+	//CREATE TTREES
+	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
+	{
+		if(locReactions[loc_i]->Get_EnableTTreeOutputFlag())
+			Create_DataTree(locReactions[loc_i], !locMCThrowns.empty(), locTargetCenterZ);
+	}
 }
 
 DEventWriterROOT::~DEventWriterROOT(void)
@@ -49,6 +65,9 @@ DEventWriterROOT::~DEventWriterROOT(void)
 	//Delete tree interface objects
 	for(auto& locMapPair : dTreeInterfaceMap)
 		delete locMapPair.second;
+	if(dThrownTreeInterface != NULL)
+		delete dThrownTreeInterface;
+
 	for(auto& locMapPair : dTreeFillDataMap)
 		delete locMapPair.second;
 
@@ -98,27 +117,9 @@ void DEventWriterROOT::Create_ThrownTree(JEventLoop* locEventLoop, string locOut
 
 void DEventWriterROOT::Create_DataTrees(JEventLoop* locEventLoop) const
 {
-	vector<const DMCThrown*> locMCThrowns;
-	locEventLoop->Get(locMCThrowns);
-
-	vector<const DReaction*> locReactions;
-	Get_Reactions(locEventLoop, locReactions);
-
-	//Get Target Center Z
-	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
-	double locTargetCenterZ = 65.0;
-	locGeometry->GetTargetZ(locTargetCenterZ);
-
-	//CREATE TTREES
-	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
-	{
-		if(locReactions[loc_i]->Get_EnableTTreeOutputFlag())
-			Create_DataTree(locReactions[loc_i], !locMCThrowns.empty(), locTargetCenterZ);
-	}
 }
 
-void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag, double locTargetCenterZ) const
+void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag, double locTargetCenterZ)
 {
 	string locReactionName = locReaction->Get_ReactionName();
 	string locOutputFileName = locReaction->Get_TTreeOutputFileName();
@@ -927,7 +928,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	locEventLoop->GetSingle(locVertex);
 
 	//Check whether beam is used in the combo
-	bool locBeamUsedFlag = (locReaction->Get_ReactionStep(0)->Get_TargetParticleID() == Unknown);
+	bool locBeamUsedFlag = (locReaction->Get_ReactionStep(0)->Get_TargetParticleID() != Unknown);
 
 	//GET BEAM PHOTONS
 		//however, only fill with beam particles that are in the combos
@@ -986,7 +987,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	}
 
 	//Get tree fill data
-	DTreeFillData* locTreeFillData = dTreeFillDataMap[locReaction];
+	DTreeFillData* locTreeFillData = dTreeFillDataMap.find(locReaction)->second;
 
 	/***************************************************** FILL TTREE DATA *****************************************************/
 
@@ -1010,23 +1011,23 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	if(locBeamUsedFlag)
 	{
 		//however, only fill with beam particles that are in the combos
-		locTreeFillData->Fill_Single<UInt_t>("NumBeam", locBeamPhotons.size());
+		locTreeFillData->Fill_Single<UInt_t>("NumBeam", UInt_t(locBeamPhotons.size()));
 		for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 			Fill_BeamData(locTreeFillData, loc_i, locBeamPhotons[loc_i], locVertex, locMCThrownMatching);
 	}
 
 	//INDEPENDENT CHARGED TRACKS
-	locTreeFillData->Fill_Single<UInt_t>("NumChargedHypos", locChargedTrackHypotheses.size());
+	locTreeFillData->Fill_Single<UInt_t>("NumChargedHypos", UInt_t(locChargedTrackHypotheses.size()));
 	for(size_t loc_i = 0; loc_i < locChargedTrackHypotheses.size(); ++loc_i)
 		Fill_ChargedHypo(locTreeFillData, loc_i, locChargedTrackHypotheses[loc_i], locMCThrownMatching, locThrownIndexMap, locDetectorMatches);
 
 	//INDEPENDENT NEUTRAL PARTICLES
-	locTreeFillData->Fill_Single<UInt_t>("NumNeutralHypos", locNeutralParticleHypotheses.size());
+	locTreeFillData->Fill_Single<UInt_t>("NumNeutralHypos", UInt_t(locNeutralParticleHypotheses.size()));
 	for(size_t loc_i = 0; loc_i < locNeutralParticleHypotheses.size(); ++loc_i)
 		Fill_NeutralHypo(locTreeFillData, loc_i, locNeutralParticleHypotheses[loc_i], locMCThrownMatching, locThrownIndexMap, locDetectorMatches);
 
 	//COMBOS
-	locTreeFillData->Fill_Single<UInt_t>("NumCombos", locParticleCombos.size());
+	locTreeFillData->Fill_Single<UInt_t>("NumCombos", UInt_t(locParticleCombos.size()));
 	for(size_t loc_i = 0; loc_i < locParticleCombos.size(); ++loc_i)
 	{
 		Fill_ComboData(locTreeFillData, locParticleCombos[loc_i], loc_i, locObjectToArrayIndexMap);
@@ -1041,7 +1042,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	Fill_CustomBranches_DataTree(locTreeFillData, locMCReaction, locMCThrownsToSave, locMCThrownMatching, locDetectorMatches, locBeamPhotons, locChargedTrackHypotheses, locNeutralParticleHypotheses, locParticleCombos);
 
 	//FILL
-	DTreeInterface* locTreeInterface = dTreeInterfaceMap[locReaction];
+	DTreeInterface* locTreeInterface = dTreeInterfaceMap.find(locReaction)->second;
 	locTreeInterface->Fill(*locTreeFillData);
 }
 
@@ -1618,7 +1619,7 @@ void DEventWriterROOT::Fill_ComboData(DTreeFillData* locTreeFillData, const DPar
 void DEventWriterROOT::Fill_ComboStepData(DTreeFillData* locTreeFillData, const DParticleCombo* locParticleCombo, unsigned int locStepIndex, unsigned int locComboIndex, DKinFitType locKinFitType, const map<string, map<oid_t, int> >& locObjectToArrayIndexMap) const
 {
 	const DReaction* locReaction = locParticleCombo->Get_Reaction();
-	const TList* locUserInfo = dTreeInterfaceMap[locReaction]->Get_UserInfo();
+	const TList* locUserInfo = dTreeInterfaceMap.find(locReaction)->second->Get_UserInfo();
 	const TMap* locPositionToNameMap = (TMap*)locUserInfo->FindObject("PositionToNameMap");
 
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);

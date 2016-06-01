@@ -6,6 +6,7 @@
 #include <map>
 #include <string>
 #include <deque>
+#include <vector>
 
 #include "TVector2.h"
 #include "TVector3.h"
@@ -64,6 +65,7 @@ class DTreeBranchRegister
 
 	private:
 		TList* dUserInfo;
+		vector<string> dBranchNames; //keep the order in which they were added
 		map<string, type_index> dBranchTypeMap;
 		map<string, size_t> dInitialArraySizeMap;
 		map<string, string> dArraySizeNameMap; //for fundamental
@@ -72,12 +74,14 @@ class DTreeBranchRegister
 template <typename DType> inline void DTreeBranchRegister::Register_Single(string locBranchName)
 {
 	DTreeTypeChecker::Is_Supported<DType>();
+	dBranchNames.push_back(locBranchName);
 	dBranchTypeMap.insert(pair<string, type_index>(locBranchName, type_index(typeid(DType))));
 }
 
 template <typename DType> inline void DTreeBranchRegister::Register_FundamentalArray(string locBranchName, string locArraySizeName, size_t locInitialArraySize)
 {
 	DTreeTypeChecker::Is_Fundamental<DType>();
+	dBranchNames.push_back(locBranchName);
 	dBranchTypeMap.insert(pair<string, type_index>(locBranchName, type_index(typeid(DType))));
 	dInitialArraySizeMap[locBranchName] = locInitialArraySize;
 	dArraySizeNameMap[locBranchName] = locArraySizeName;
@@ -86,6 +90,7 @@ template <typename DType> inline void DTreeBranchRegister::Register_FundamentalA
 template <typename DType> inline void DTreeBranchRegister::Register_ClonesArray(string locBranchName, size_t locInitialArraySize)
 {
 	DTreeTypeChecker::Is_TObject<DType>();
+	dBranchNames.push_back(locBranchName);
 	dBranchTypeMap.insert(pair<string, type_index>(locBranchName, type_index(typeid(DType))));
 	dInitialArraySizeMap[locBranchName] = locInitialArraySize;
 }
@@ -108,7 +113,7 @@ class DTreeFillData
 	private:
 		void Delete(type_index& locTypeIndex, deque<void*>& locVoidDeque);
 
-		map<string, pair<type_index, deque<void*> > > dFillData;
+		map<string, pair<type_index, deque<void*>* > > dFillData;
 		map<string, size_t> dArrayLargestIndexFilledMap; //can be less than the size //reset by DTreeInterface after fill
 };
 
@@ -116,6 +121,8 @@ class DTreeFillData
 
 template <typename DType> inline void DTreeFillData::Fill_Single(string locBranchName, const DType& locData)
 {
+	if(locBranchName != "NumCombos")
+		return;
 	DTreeTypeChecker::Is_Supported<DType>();
 	type_index locTypeIndex(typeid(DType));
 
@@ -123,9 +130,9 @@ template <typename DType> inline void DTreeFillData::Fill_Single(string locBranc
 	if(locIterator == dFillData.end())
 	{
 		void* locVoidData = static_cast<void*>(new DType(locData));
-		deque<void*> locVoidDeque(1, locVoidData);
-		pair<type_index, deque<void*> > locTypePair(locTypeIndex, locVoidDeque);
-		pair<string, pair<type_index, deque<void*> > > locMapPair(locBranchName, locTypePair);
+		deque<void*>* locVoidDeque = new deque<void*>(1, locVoidData);
+		pair<type_index, deque<void*>* > locTypePair(locTypeIndex, locVoidDeque);
+		pair<string, pair<type_index, deque<void*>* > > locMapPair(locBranchName, locTypePair);
 		dFillData.insert(locMapPair);
 		return;
 	}
@@ -136,7 +143,7 @@ template <typename DType> inline void DTreeFillData::Fill_Single(string locBranc
 		return;
 	}
 
-	deque<void*>& locVoidDeque = locIterator->second.second;
+	deque<void*>& locVoidDeque = *(locIterator->second.second);
 	*(static_cast<DType*>(locVoidDeque[0])) = locData;
 }
 
@@ -149,10 +156,10 @@ template <typename DType> inline void DTreeFillData::Fill_Array(string locBranch
 	if(locIterator == dFillData.end())
 	{
 		void* locVoidData = static_cast<void*>(new DType(locData));
-		deque<void*> locVoidDeque(locArrayIndex + 1, nullptr);
-		locVoidDeque[locArrayIndex] = locVoidData;
-		pair<type_index, deque<void*> > locTypePair(locTypeIndex, locVoidDeque);
-		pair<string, pair<type_index, deque<void*> > > locMapPair(locBranchName, locTypePair);
+		deque<void*>* locVoidDeque = new deque<void*>(locArrayIndex + 1, nullptr);
+		(*locVoidDeque)[locArrayIndex] = locVoidData;
+		pair<type_index, deque<void*>* > locTypePair(locTypeIndex, locVoidDeque);
+		pair<string, pair<type_index, deque<void*>* > > locMapPair(locBranchName, locTypePair);
 		dFillData.insert(locMapPair);
 		dArrayLargestIndexFilledMap[locBranchName] = locArrayIndex;
 		return;
@@ -163,10 +170,10 @@ template <typename DType> inline void DTreeFillData::Fill_Array(string locBranch
 		return;
 	}
 
-	deque<void*>& locVoidDeque = locIterator->second.second;
+	deque<void*>& locVoidDeque = *(locIterator->second.second);
 
 	//expand deque if needed
-	for(size_t loc_i = locVoidDeque.size(); loc_i < locArrayIndex; ++loc_i)
+	for(size_t loc_i = locVoidDeque.size(); loc_i <= locArrayIndex; ++loc_i)
 		locVoidDeque.push_back(static_cast<void*>(new DType));
 
 	//set the data
@@ -188,8 +195,9 @@ inline DTreeFillData::~DTreeFillData(void)
 	{
 		string locBranchName = locBranchIterator.first;
 		type_index& locTypeIndex = locBranchIterator.second.first;
-		deque<void*>& locVoidDeque = locBranchIterator.second.second;
-		Delete(locTypeIndex, locVoidDeque);
+		deque<void*>* locVoidDeque = locBranchIterator.second.second;
+		Delete(locTypeIndex, *locVoidDeque);
+		delete locVoidDeque;
 	}
 }
 
