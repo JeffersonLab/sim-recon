@@ -155,7 +155,10 @@ template <typename DType> inline void DTreeFillData::Fill_Array(string locBranch
 	if(locIterator == dFillData->end())
 	{
 		void* locVoidData = static_cast<void*>(new DType(locData));
-		deque<void*>* locVoidDeque = new deque<void*>(locArrayIndex + 1, nullptr);
+		size_t locSize = (20 > locArrayIndex) ? 20 : locArrayIndex + 1;
+		deque<void*>* locVoidDeque = new deque<void*>(locSize);
+		for(size_t loc_i = 0; loc_i < locSize; ++loc_i)
+			(*locVoidDeque)[loc_i] = static_cast<void*>(new DType(locData));
 		(*locVoidDeque)[locArrayIndex] = locVoidData;
 		pair<type_index, deque<void*>* > locTypePair(locTypeIndex, locVoidDeque);
 		pair<string, pair<type_index, deque<void*>* > > locMapPair(locBranchName, locTypePair);
