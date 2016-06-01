@@ -107,7 +107,7 @@ class DEventWriterROOT : public JObject
 		static thread_local DTreeInterface* dThrownTreeInterface;
 		static thread_local DTreeFillData dThrownTreeFillData;
 		map<const DReaction*, DTreeInterface*> dTreeInterfaceMap;
-		map<string, DTreeFillData*> dTreeFillDataMap;
+		vector<DTreeFillData*> dTreeFillDataMap;
 
 		void Get_Reactions(jana::JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;
 

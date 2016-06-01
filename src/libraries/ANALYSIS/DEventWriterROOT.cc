@@ -68,8 +68,10 @@ DEventWriterROOT::~DEventWriterROOT(void)
 	if(dThrownTreeInterface != NULL)
 		delete dThrownTreeInterface;
 
-	for(auto& locMapPair : dTreeFillDataMap)
-		delete locMapPair.second;
+	for(auto& locFillData : dTreeFillDataMap)
+		delete locFillData;
+//	for(auto& locMapPair : dTreeFillDataMap)
+//		delete locMapPair.second;
 
 	//Delete actions
 	for(auto& locMapPair : dCutActionMap_ThrownTopology)
@@ -172,7 +174,8 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 
 	//create fill object
 	DTreeFillData* locTreeFillData = new DTreeFillData();
-	dTreeFillDataMap.insert(pair<string, DTreeFillData*>(locReaction->Get_ReactionName(), locTreeFillData));
+//	dTreeFillDataMap.insert(pair<string, DTreeFillData*>(locReaction->Get_ReactionName(), locTreeFillData));
+dTreeFillDataMap.push_back(locTreeFillData);
 }
 
 TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegister, const DReaction* locReaction, double locTargetCenterZ) const
@@ -988,7 +991,8 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	}
 
 	//Get tree fill data
-	DTreeFillData* locTreeFillData = dTreeFillDataMap.find(locReaction->Get_ReactionName())->second;
+//	DTreeFillData* locTreeFillData = dTreeFillDataMap.find(locReaction->Get_ReactionName())->second;
+	DTreeFillData* locTreeFillData = dTreeFillDataMap[0];
 
 	/***************************************************** FILL TTREE DATA *****************************************************/
 
