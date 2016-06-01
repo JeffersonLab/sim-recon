@@ -106,7 +106,7 @@ class DTreeFillData
 	friend class DTreeInterface;
 
 	public:
-		DTreeFillData(void) : dFillData(new map<string, pair<type_index, deque<void*>* > >())
+		DTreeFillData(void) : dFillData(new map<string, pair<type_index, deque<void*>* > >()){}
 		~DTreeFillData(void);
 		template <typename DType> void Fill_Single(string locBranchName, const DType& locData);
 		template <typename DType> void Fill_Array(string locBranchName, const DType& locData, unsigned int locArrayIndex);
