@@ -987,7 +987,8 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	}
 
 	//Get tree fill data
-	DTreeFillData* locTreeFillData = dTreeFillDataMap.find(locReaction)->second;
+//	DTreeFillData* locTreeFillData = dTreeFillDataMap.find(locReaction)->second;
+DTreeFillData* locTreeFillData = &dTreeFillData;
 
 	/***************************************************** FILL TTREE DATA *****************************************************/
 
