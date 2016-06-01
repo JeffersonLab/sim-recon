@@ -157,7 +157,7 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 
 		unsigned int locNumTrackHits = locTrackTimeBased->Ndof + 5;
 		if(locNumTrackHits < dMinNumTrackHits)
-			return false;
+			continue;
 
 		locBestTracks.insert(locChargedTrackHypothesis);
 	}
@@ -177,7 +177,7 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
 
 		//Predict ST Surface Hit Location
-		unsigned int locPredictedSurfaceModule = 0, locPredictedSurfaceSector = 0;
+//		unsigned int locPredictedSurfaceModule = 0, locPredictedSurfaceSector = 0;
 		DVector3 locPredictedSurfacePosition;
 		bool locProjBarrelRegion;
 		double locMinDeltaPhi;
@@ -195,7 +195,7 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		//FILL TTREE
 		dTreeInterface->Fill(dTreeFillData);
 	}
-
+/*
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
@@ -221,7 +221,7 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		}
 	}
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
-
+*/
 	return NOERROR;
 }
 

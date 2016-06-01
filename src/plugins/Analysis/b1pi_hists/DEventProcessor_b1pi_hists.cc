@@ -35,11 +35,6 @@ jerror_t DEventProcessor_b1pi_hists::init(void)
 //------------------
 jerror_t DEventProcessor_b1pi_hists::brun(JEventLoop *locEventLoop, int32_t runnumber)
 {
-	//Create Trees
-	const DEventWriterROOT* locEventWriterROOT = NULL;
-	locEventLoop->GetSingle(locEventWriterROOT);
-	locEventWriterROOT->Create_DataTrees(locEventLoop);
-
 	return NOERROR;
 }
 
