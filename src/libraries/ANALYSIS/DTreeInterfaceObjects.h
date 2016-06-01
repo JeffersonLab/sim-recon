@@ -106,7 +106,7 @@ class DTreeFillData
 	friend class DTreeInterface;
 
 	public:
-		DTreeFillData(void) : dFillData(new map<string, pair<type_index, deque<void*>* > >()){}
+		DTreeFillData(void) : dFillData(new map<string, pair<type_index, deque<void*>* > >()), dArrayLargestIndexFilledMap(new map<string, size_t>()){}
 		~DTreeFillData(void);
 		template <typename DType> void Fill_Single(string locBranchName, const DType& locData);
 		template <typename DType> void Fill_Array(string locBranchName, const DType& locData, unsigned int locArrayIndex);
@@ -115,7 +115,7 @@ class DTreeFillData
 		void Delete(type_index& locTypeIndex, deque<void*>& locVoidDeque);
 
 		map<string, pair<type_index, deque<void*>* > >* dFillData;
-		map<string, size_t> dArrayLargestIndexFilledMap; //can be less than the size //reset by DTreeInterface after fill
+		map<string, size_t>* dArrayLargestIndexFilledMap; //can be less than the size //reset by DTreeInterface after fill
 };
 
 /*********************************************************** DTreeFillData: FILL BRANCHES *************************************************************/
@@ -160,7 +160,7 @@ template <typename DType> inline void DTreeFillData::Fill_Array(string locBranch
 		pair<type_index, deque<void*>* > locTypePair(locTypeIndex, locVoidDeque);
 		pair<string, pair<type_index, deque<void*>* > > locMapPair(locBranchName, locTypePair);
 		dFillData->insert(locMapPair);
-		dArrayLargestIndexFilledMap[locBranchName] = locArrayIndex;
+		(*dArrayLargestIndexFilledMap)[locBranchName] = locArrayIndex;
 		return;
 	}
 	else if(locTypeIndex != locIterator->second.first)
@@ -179,7 +179,7 @@ template <typename DType> inline void DTreeFillData::Fill_Array(string locBranch
 	*(static_cast<DType*>(locVoidDeque[locArrayIndex])) = locData;
 
 	//register largest index filled
-	auto& locLargestIndexFilled = dArrayLargestIndexFilledMap[locBranchName];
+	auto& locLargestIndexFilled = (*dArrayLargestIndexFilledMap)[locBranchName];
 	if(locArrayIndex > locLargestIndexFilled)
 		locLargestIndexFilled = locArrayIndex;
 }
@@ -200,6 +200,7 @@ inline DTreeFillData::~DTreeFillData(void)
 	}
 
 	delete dFillData;
+	delete dArrayLargestIndexFilledMap;
 }
 
 inline void DTreeFillData::Delete(type_index& locTypeIndex, deque<void*>& locVoidDeque)

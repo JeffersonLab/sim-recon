@@ -252,8 +252,8 @@ void DTreeInterface::Fill(DTreeFillData& locTreeFillData)
 			}
 
 			//check if is array. if not, fill
-			auto locLargestIndexFilledIterator = locTreeFillData.dArrayLargestIndexFilledMap.find(locBranchName);
-			bool locIsArrayFlag = (locLargestIndexFilledIterator != locTreeFillData.dArrayLargestIndexFilledMap.end());
+			auto locLargestIndexFilledIterator = locTreeFillData.dArrayLargestIndexFilledMap->find(locBranchName);
+			bool locIsArrayFlag = (locLargestIndexFilledIterator != locTreeFillData.dArrayLargestIndexFilledMap->end());
 			if(!locIsArrayFlag)
 			{
 				Fill(locBranchName, locTypeIndex, locVoidDeque[0], false);
@@ -281,6 +281,7 @@ void DTreeInterface::Fill(DTreeFillData& locTreeFillData)
 
 			//reset DTreeFillData for next event!
 			locLargestIndexFilled = 0;
+cout << "value = " << locTreeFillData.dArrayLargestIndexFilledMap[locBranchName] << endl;
 		}
 
 		//fill tree
