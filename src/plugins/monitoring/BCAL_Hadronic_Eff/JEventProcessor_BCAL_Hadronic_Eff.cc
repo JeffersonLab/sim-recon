@@ -1,9 +1,9 @@
 // $Id$
 //
-//    File: JEventProcessor_BCAL_Layer_Eff.cc
+//    File: JEventProcessor_BCAL_Hadronic_Eff.cc
 //
 
-#include "JEventProcessor_BCAL_Layer_Eff.h"
+#include "JEventProcessor_BCAL_Hadronic_Eff.h"
 
 // Routine used to create our JEventProcessor
 extern "C"
@@ -11,17 +11,17 @@ extern "C"
 	void InitPlugin(JApplication *locApplication)
 	{
 		InitJANAPlugin(locApplication);
-		locApplication->AddProcessor(new JEventProcessor_BCAL_Layer_Eff()); //register this plugin
+		locApplication->AddProcessor(new JEventProcessor_BCAL_Hadronic_Eff()); //register this plugin
 	}
 } // "C"
 
 //define static local variable //declared in header file
-thread_local DTreeFillData JEventProcessor_BCAL_Layer_Eff::dTreeFillData;
+thread_local DTreeFillData JEventProcessor_BCAL_Hadronic_Eff::dTreeFillData;
 
 //------------------
 // init
 //------------------
-jerror_t JEventProcessor_BCAL_Layer_Eff::init(void)
+jerror_t JEventProcessor_BCAL_Hadronic_Eff::init(void)
 {
 	//TRACK REQUIREMENTS
 	dMinPIDFOM = 5.73303E-7; //+/- 5 sigma
@@ -72,7 +72,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::init(void)
 
 	//TTREE INTERFACE
 	//MUST DELETE WHEN FINISHED: OR ELSE DATA WON'T BE SAVED!!!
-	dTreeInterface = DTreeInterface::Create_DTreeInterface("bcal_layer_eff", "tree_bcal_layer_eff.root");
+	dTreeInterface = DTreeInterface::Create_DTreeInterface("bcal_hadronic_eff", "tree_bcal_hadronic_eff.root");
 
 	//TTREE BRANCHES
 	DTreeBranchRegister locTreeBranchRegister;
@@ -86,7 +86,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::init(void)
 	locTreeBranchRegister.Register_Single<UInt_t>("TrackFDCPlanes"); //planes correspond to bits (1 -> 24)
 
 	//SHOWER
-	locTreeBranchRegister.Register_Single<Float_t>("ShowerEnergy");
+	locTreeBranchRegister.Register_Single<Float_t>("NearestShowerEnergy"); //is zero if none
 	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaPhiToShower"); //is signed: BCAL - Track
 	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaZToShower"); //is signed: BCAL - Track
 	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitPhi"); //degrees
@@ -94,7 +94,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::init(void)
 
 	//HIT SEARCH
 	//BCALClusterLayers: first 4 bits: point layers, next 4: unmatched-unified-hit layers
-	locTreeBranchRegister.Register_Single<UChar_t>("BCALClusterLayers");
+	locTreeBranchRegister.Register_Single<UChar_t>("BCALClusterLayers"); //is 0 if track not matched to shower: ignore hit efficiencies
 	//IsHitInCluster: bits 1 -> 8 correspond to Upstream layer 1 -> 4, then Downstream layer 1 -> 4
 	locTreeBranchRegister.Register_Single<UChar_t>("IsHitInCluster"); //1 if true, 0 if false or no hit
 	//LAYER 1:
@@ -124,7 +124,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_BCAL_Layer_Eff::brun(jana::JEventLoop* locEventLoop, int locRunNumber)
+jerror_t JEventProcessor_BCAL_Hadronic_Eff::brun(jana::JEventLoop* locEventLoop, int locRunNumber)
 {
 	// This is called whenever the run number changes
 
@@ -146,7 +146,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::brun(jana::JEventLoop* locEventLoop, in
 // evnt
 //------------------
 
-jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
+jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using
@@ -195,6 +195,9 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 
 	vector<const DBCALPoint*> locBCALPoints;
 	locEventLoop->Get(locBCALPoints);
+
+	vector<const DBCALShower*> locBCALShowers;
+	locEventLoop->Get(locBCALShowers);
 
 	//sort bcal points by layer, total sector //first int: layer. second int: sector
 	map<int, map<int, set<const DBCALPoint*> > > locSortedPoints;
@@ -250,25 +253,80 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 	// Loop over the good tracks, using the best DTrackTimeBased object for each
 	for(auto& locChargedTrackHypothesis : locBestTracks)
 	{
+		const DTrackTimeBased* locTrackTimeBased = NULL;
+		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+
+		//Predict BCAL Surface Hit Location
+		unsigned int locPredictedSurfaceModule = 0, locPredictedSurfaceSector = 0;
+		DVector3 locPredictedSurfacePosition;
+		locParticleID->PredictBCALWedge(locTrackTimeBased->rt, locPredictedSurfaceModule, locPredictedSurfaceSector, &locPredictedSurfacePosition);
+
+		//Find closest shower match for BCAL
+		double locBestMatchDeltaPhi = 0.0, locBestMatchDeltaZ = 0.0;
+		const DBCALShower* locClosestBCALShower = locParticleID->Get_ClosestToTrack_BCAL(locTrackTimeBased, locBCALShowers, locBestMatchDeltaPhi, locBestMatchDeltaZ);
+
+		/************************************************ CHECK SHOWER MATCH EFFICIENCY ************************************************/
+
 		//get the best-matched DBCALShower for this track (if any)
 		const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
 		if(locBCALShowerMatchParams == NULL)
+		{
+			//NO MATCH. FILL ANYWAY FOR SHOWER EFFICIENCY STUDY, BUT THEN DON'T DO HIT EFFICIENCY STUDY.
+
+			//TRACK
+			dTreeFillData.Fill_Single<Int_t>("PID_PDG", PDGtype(locChargedTrackHypothesis->PID()));
+			dTreeFillData.Fill_Single<Float_t>("TimingBeta", locChargedTrackHypothesis->measuredBeta());
+			dTreeFillData.Fill_Single<Float_t>("TrackVertexZ", locChargedTrackHypothesis->position().Z());
+			DVector3 locDP3 = locChargedTrackHypothesis->momentum();
+			TVector3 locP3(locDP3.X(), locDP3.Y(), locDP3.Z());
+			dTreeFillData.Fill_Single<TVector3>("TrackP3", locP3);
+			dTreeFillData.Fill_Single<UInt_t>("TrackCDCRings", locTrackTimeBased->dCDCRings);
+			dTreeFillData.Fill_Single<UInt_t>("TrackFDCPlanes", locTrackTimeBased->dFDCPlanes);
+
+			//SHOWER
+			double locShowerEnergy = (locClosestBCALShower =! nullptr) ? locClosestBCALShower->E : 0.0;
+			dTreeFillData.Fill_Single<Float_t>("NearestShowerEnergy", locShowerEnergy);
+			dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", locBestMatchDeltaPhi); //is signed: BCAL - Track
+			dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", locBestMatchDeltaZ); //is signed: BCAL - Track
+			dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());
+			dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitZ", locPredictedSurfacePosition.Z());
+
+			//HIT SEARCH
+			dTreeFillData.Fill_Single<UChar_t>("BCALClusterLayers", 0);
+			dTreeFillData.Fill_Single<UChar_t>("IsHitInCluster", 0);
+			dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer1", 0);
+			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer1_Downstream", 0);
+			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer1_Upstream", 0);
+			//LAYER 2:
+			dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer2", 0);
+			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer2_Downstream", 0);
+			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer2_Upstream", 0);
+			//LAYER 3:
+			dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer3", 0);
+			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer3_Downstream", 0);
+			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer3_Upstream", 0);
+			//LAYER 4:
+			dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer4", 0);
+			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer4_Downstream", 0);
+			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer4_Upstream", 0);
+
+			//FILL TTREE
+			dTreeInterface->Fill(dTreeFillData);
+
 			continue; //nope
+		}
+
+		/*************************************************** GET & SORT CLUSTER HITS ***************************************************/
 
 		//use the DBCALPoints in this DBCALShower to help define where DBCALUnifiedHits are expected to be
 		//The DBCALShower reconstruction does not care which BCAL layers fired
 			//Therefore, given a DBCALShower hit layer, whether or not there are hits in the other layers is an unbiased check
-
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
 
 		//get the clusters in the shower, reject if > 1
 		vector<const DBCALCluster*> locClusters;
 		locBCALShowerMatchParams->dBCALShower->Get(locClusters);
 		if(locClusters.size() > 1)
 			continue; //likely a messy shower, will probably mess up efficiency calculation. 
-
-		/*************************************************** GET & SORT CLUSTER HITS ***************************************************/
 
 		//get cluster, points, unmatched hits
 		const DBCALCluster* locCluster = locClusters[0];
@@ -440,11 +498,6 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 			}
 		}
 
-		//Predict BCAL Surface Hit Location
-		unsigned int locPredictedSurfaceModule = 0, locPredictedSurfaceSector = 0;
-		DVector3 locPredictedSurfacePosition;
-		locParticleID->PredictBCALWedge(locTrackTimeBased->rt, locPredictedSurfaceModule, locPredictedSurfaceSector, &locPredictedSurfacePosition);
-
 		//STAGE DATA FOR TREE FILL
 
 		//TRACK
@@ -458,7 +511,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 		dTreeFillData.Fill_Single<UInt_t>("TrackFDCPlanes", locTrackTimeBased->dFDCPlanes);
 
 		//SHOWER
-		dTreeFillData.Fill_Single<Float_t>("ShowerEnergy", locBCALShowerMatchParams->dBCALShower->E);
+		dTreeFillData.Fill_Single<Float_t>("NearestShowerEnergy", locBCALShowerMatchParams->dBCALShower->E);
 		dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", locBCALShowerMatchParams->dDeltaPhiToShower); //is signed: BCAL - Track
 		dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", locBCALShowerMatchParams->dDeltaZToShower); //is signed: BCAL - Track
 		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());
@@ -519,7 +572,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 	return NOERROR;
 }
 
-double JEventProcessor_BCAL_Layer_Eff::Calc_ProjectedSector(int locLayer, const map<int, map<int, set<const DBCALPoint*> > >& locSortedPoints)
+double JEventProcessor_BCAL_Hadronic_Eff::Calc_ProjectedSector(int locLayer, const map<int, map<int, set<const DBCALPoint*> > >& locSortedPoints)
 {
 	//in the nearest layer of the cluster, find the average hit-sector
 		//if two layers are adjacent: average them
@@ -567,7 +620,7 @@ double JEventProcessor_BCAL_Layer_Eff::Calc_ProjectedSector(int locLayer, const 
 	}
 }
 
-double JEventProcessor_BCAL_Layer_Eff::Calc_AverageSector(const map<int, set<const DBCALPoint*> >& locBCALPoints)
+double JEventProcessor_BCAL_Hadronic_Eff::Calc_AverageSector(const map<int, set<const DBCALPoint*> >& locBCALPoints)
 {
 	//int: full sector
 	if(locBCALPoints.empty())
@@ -613,7 +666,7 @@ double JEventProcessor_BCAL_Layer_Eff::Calc_AverageSector(const map<int, set<con
 	return locAverageSector;
 }
 
-pair<const DBCALPoint*, double> JEventProcessor_BCAL_Layer_Eff::Find_NearestPoint(double locProjectedSector, const map<int, set<const DBCALPoint*> >& locLayerBCALPoints, const DBCALCluster* locBCALCluster, double locTimeCut)
+pair<const DBCALPoint*, double> JEventProcessor_BCAL_Hadronic_Eff::Find_NearestPoint(double locProjectedSector, const map<int, set<const DBCALPoint*> >& locLayerBCALPoints, const DBCALCluster* locBCALCluster, double locTimeCut)
 {
 	//input map int: full_sector
 	//returned double: delta-sector
@@ -637,7 +690,7 @@ pair<const DBCALPoint*, double> JEventProcessor_BCAL_Layer_Eff::Find_NearestPoin
 	return pair<const DBCALPoint*, double>(locBestBCALPoint, locBestDeltaSector);
 }
 
-pair<const DBCALUnifiedHit*, double> JEventProcessor_BCAL_Layer_Eff::Find_NearestHit(double locProjectedSector, const map<int, set<const DBCALUnifiedHit*> >& locLayerUnifiedHits, const DBCALCluster* locBCALCluster, double locTimeCut)
+pair<const DBCALUnifiedHit*, double> JEventProcessor_BCAL_Hadronic_Eff::Find_NearestHit(double locProjectedSector, const map<int, set<const DBCALUnifiedHit*> >& locLayerUnifiedHits, const DBCALCluster* locBCALCluster, double locTimeCut)
 {
 	//input map int: full_sector
 	//returned double: delta-sector
@@ -660,7 +713,7 @@ pair<const DBCALUnifiedHit*, double> JEventProcessor_BCAL_Layer_Eff::Find_Neares
 	return pair<const DBCALUnifiedHit*, double>(locBestBCALHit, locBestDeltaSector);
 }
 
-const DBCALPoint* JEventProcessor_BCAL_Layer_Eff::Find_ClosestTimePoint(const set<const DBCALPoint*>& locPoints, const DBCALCluster* locBCALCluster, double locTimeCut)
+const DBCALPoint* JEventProcessor_BCAL_Hadronic_Eff::Find_ClosestTimePoint(const set<const DBCALPoint*>& locPoints, const DBCALCluster* locBCALCluster, double locTimeCut)
 {
 	if(locPoints.empty())
 		return nullptr;
@@ -682,7 +735,7 @@ const DBCALPoint* JEventProcessor_BCAL_Layer_Eff::Find_ClosestTimePoint(const se
 	return locBestPoint;
 }
 
-const DBCALUnifiedHit* JEventProcessor_BCAL_Layer_Eff::Find_ClosestTimeHit(const set<const DBCALUnifiedHit*>& locHits, const DBCALCluster* locBCALCluster, double locTimeCut)
+const DBCALUnifiedHit* JEventProcessor_BCAL_Hadronic_Eff::Find_ClosestTimeHit(const set<const DBCALUnifiedHit*>& locHits, const DBCALCluster* locBCALCluster, double locTimeCut)
 {
 	if(locHits.empty())
 		return nullptr;
@@ -721,7 +774,7 @@ const DBCALUnifiedHit* JEventProcessor_BCAL_Layer_Eff::Find_ClosestTimeHit(const
 //------------------
 // erun
 //------------------
-jerror_t JEventProcessor_BCAL_Layer_Eff::erun(void)
+jerror_t JEventProcessor_BCAL_Hadronic_Eff::erun(void)
 {
 	// This is called whenever the run number changes, before it is
 	// changed to give you a chance to clean up before processing
@@ -733,7 +786,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::erun(void)
 //------------------
 // fini
 //------------------
-jerror_t JEventProcessor_BCAL_Layer_Eff::fini(void)
+jerror_t JEventProcessor_BCAL_Hadronic_Eff::fini(void)
 {
 	// Called before program exit after event processing is finished.  
 

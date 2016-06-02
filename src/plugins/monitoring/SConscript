@@ -5,7 +5,7 @@ subdirs = [
 'occupancy_online',
 'BCAL_online',
 'BCAL_LEDonline',
-'BCAL_Layer_Eff',
+'BCAL_Hadronic_Eff',
 'CDC_online',
 'DAQ_online',
 'FCAL_online',

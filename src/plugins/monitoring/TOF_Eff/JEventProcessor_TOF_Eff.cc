@@ -119,7 +119,7 @@ jerror_t JEventProcessor_TOF_Eff::init(void)
 	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedTOFBarVertical");
 
 	//SEARCH TOF PADDLE
-			//Nearest hit: //0 for none, 1 - 44 for both ends //101 - 144 for North/Top only, 201 - 244 for South/Bottom only (only = above threshold)
+		//Nearest hit: //0 for none, 1 - 44 for both ends //101 - 144 for North/Top only, 201 - 244 for South/Bottom only (only = above threshold)
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestTOFHitHorizontal");
 	locTreeBranchRegister.Register_Single<Float_t>("HorizontalTOFHitDeltaY");
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestTOFHitVertical");

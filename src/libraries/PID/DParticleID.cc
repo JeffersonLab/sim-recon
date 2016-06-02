@@ -1304,9 +1304,9 @@ bool DParticleID::Distance_ToTrack(const DBCALShower* locBCALShower, const DRefe
 	if(proj_pos.Perp() < 65.0)
 		return false;  // not inside BCAL!
 
-	locDeltaZ = proj_pos.z() - bcal_pos.z();
-	locDeltaPhi = proj_pos.Phi() - bcal_pos.Phi();
-	while(locDeltaPhi >	M_PI)
+	locDeltaZ = bcal_pos.z() - proj_pos.z();
+	locDeltaPhi = bcal_pos.Phi() - proj_pos.Phi();
+	while(locDeltaPhi > M_PI)
 		locDeltaPhi -= M_TWO_PI;
 	while(locDeltaPhi < -M_PI)
 		locDeltaPhi += M_TWO_PI;

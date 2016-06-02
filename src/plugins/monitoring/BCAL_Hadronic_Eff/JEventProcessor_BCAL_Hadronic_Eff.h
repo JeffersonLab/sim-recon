@@ -1,10 +1,10 @@
 // $Id$
 //
-// File: JEventProcessor_BCAL_Layer_Eff.h
+// File: JEventProcessor_BCAL_Hadronic_Eff.h
 //
 
-#ifndef _JEventProcessor_BCAL_Layer_Eff_
-#define _JEventProcessor_BCAL_Layer_Eff_
+#ifndef _JEventProcessor_BCAL_Hadronic_Eff_
+#define _JEventProcessor_BCAL_Hadronic_Eff_
 
 #include <JANA/JEventProcessor.h>
 #include <JANA/JApplication.h>
@@ -36,12 +36,12 @@
 using namespace jana;
 using namespace std;
 
-class JEventProcessor_BCAL_Layer_Eff : public jana::JEventProcessor
+class JEventProcessor_BCAL_Hadronic_Eff : public jana::JEventProcessor
 {
 	public:
-		JEventProcessor_BCAL_Layer_Eff(){};
-		~JEventProcessor_BCAL_Layer_Eff(){};
-		const char* className(void){return "JEventProcessor_BCAL_Layer_Eff";}
+		JEventProcessor_BCAL_Hadronic_Eff(){};
+		~JEventProcessor_BCAL_Hadronic_Eff(){};
+		const char* className(void){return "JEventProcessor_BCAL_Hadronic_Eff";}
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -84,7 +84,7 @@ class JEventProcessor_BCAL_Layer_Eff : public jana::JEventProcessor
 		vector<double> effective_velocities;
 };
 
-template <typename DType> inline DType JEventProcessor_BCAL_Layer_Eff::Calc_DeltaSector(DType locHitSector, DType locProjectedSector) const
+template <typename DType> inline DType JEventProcessor_BCAL_Hadronic_Eff::Calc_DeltaSector(DType locHitSector, DType locProjectedSector) const
 {
 	//beware 2pi wrap-around!
 	double locDeltaSector = double(locHitSector) - locProjectedSector;
@@ -95,4 +95,4 @@ template <typename DType> inline DType JEventProcessor_BCAL_Layer_Eff::Calc_Delt
 	return locDeltaSector;
 }
 
-#endif // _JEventProcessor_BCAL_Layer_Eff_
+#endif // _JEventProcessor_BCAL_Hadronic_Eff_
