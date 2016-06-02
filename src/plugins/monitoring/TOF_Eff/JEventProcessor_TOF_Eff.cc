@@ -40,7 +40,7 @@ jerror_t JEventProcessor_TOF_Eff::init(void)
 	dMinTOFPaddleMatchDistance = 9.0; //1.5*BARWIDTH //What DTOFPoint factory uses as of this writing
 
 	//TOFPaddle
-	CreateAndChangeTo_Directory("TOFPaddle", "TOFPaddle");
+	gDirectory->mkdir("TOFPaddle")->cd();
 	locHistName = "TrackYVsVerticalPaddle_HasHit_Top";
 	locHistTitle = "TOF Paddle Has Top Hit;Projected Vertical Paddle;Projected TOF Hit Y (cm)";
 	dHist_TOFPaddleTrackYVsVerticalPaddle_HasHit_Top = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 44, 0.5, 44.5, 130, -130.0, 130.0);
@@ -75,7 +75,7 @@ jerror_t JEventProcessor_TOF_Eff::init(void)
 	gDirectory->cd("..");
 
 	//TOFPoint
-	CreateAndChangeTo_Directory("TOFPoint", "TOFPoint");
+	gDirectory->mkdir("TOFPoint")->cd();
 	locHistName = "TrackTOFYVsX_HasHit";
 	locHistTitle = "TOF Has Hit;Projected TOF Hit X (cm);Projected TOF Hit Y (cm)";
 	dHist_TrackTOFYVsX_HasHit = new TH2I(locHistName.c_str(), locHistTitle.c_str(), 130, -130.0, 130.0, 130, -130.0, 130.0);
@@ -227,11 +227,8 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 		//Predict TOF Surface Hit Location
 		DVector3 locProjectedTOFIntersection;
 		unsigned int locProjectedHorizontalBar = 0, locProjectedVerticalBar = 0;
-		if(!locParticleID->PredictTOFPaddles(locReferenceTrajectory, locProjectedHorizontalBar, locProjectedVerticalBar, &locProjectedTOFIntersection))
+		if(!locParticleID->PredictTOFPaddles(locTrackTimeBased->rt, locProjectedHorizontalBar, locProjectedVerticalBar, &locProjectedTOFIntersection))
 			continue; //not predicted to hit TOF
-
-		pair<int, double> locHitPair(locPredictedSCSector, locPredictedSurfacePosition.Z());
-		locHitMap_HitTotal.push_back(locHitPair);
 
 		//Find closest TOF point
 		double locBestPointDeltaX = 999.9, locBestPointDeltaY = 999.9;
@@ -335,11 +332,11 @@ int JEventProcessor_TOF_Eff::Calc_NearestHit(const DTOFPaddleHit* locPaddleHit) 
 	if(locPaddleHit == nullptr)
 		return 0;
 
-	int locNearestHit = locPaddleHit->bar : 0;
+	int locNearestHit = locPaddleHit->bar;
 	if((locPaddleHit->E_north > 0.00001) && !(locPaddleHit->E_south > 0.00001)) //0.00001: tolerance
-		locNearestTOFHitHorizontal += 100.0;
+		locNearestHit += 100.0;
 	else if(!(locPaddleHit->E_north > 0.00001) && (locPaddleHit->E_south > 0.00001))
-		locNearestTOFHitHorizontal += 200.0;
+		locNearestHit += 200.0;
 
 	return locNearestHit;
 }
