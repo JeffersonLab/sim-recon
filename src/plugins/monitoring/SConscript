@@ -33,7 +33,8 @@ subdirs = [
 'CDC_drift',
 'CDC_Cosmics',
 'EPICS_dump' ,
-'CDC_Efficiency']
+'CDC_Efficiency',
+'L1_online']
 
 #'L3_online',
 #'CODA_online',
