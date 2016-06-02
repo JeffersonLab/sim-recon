@@ -1,10 +1,10 @@
 // $Id$
 //
-// File: JEventProcessor_ST_Eff.h
+// File: JEventProcessor_SC_Eff.h
 //
 
-#ifndef _JEventProcessor_ST_Eff_
-#define _JEventProcessor_ST_Eff_
+#ifndef _JEventProcessor_SC_Eff_
+#define _JEventProcessor_SC_Eff_
 
 #include <JANA/JEventProcessor.h>
 #include <JANA/JApplication.h>
@@ -33,12 +33,12 @@
 using namespace jana;
 using namespace std;
 
-class JEventProcessor_ST_Eff : public jana::JEventProcessor
+class JEventProcessor_SC_Eff : public jana::JEventProcessor
 {
 	public:
-		JEventProcessor_ST_Eff(){};
-		~JEventProcessor_ST_Eff(){};
-		const char* className(void){return "JEventProcessor_ST_Eff";}
+		JEventProcessor_SC_Eff(){};
+		~JEventProcessor_SC_Eff(){};
+		const char* className(void){return "JEventProcessor_SC_Eff";}
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -64,5 +64,5 @@ class JEventProcessor_ST_Eff : public jana::JEventProcessor
 		static thread_local DTreeFillData dTreeFillData;
 };
 
-#endif // _JEventProcessor_ST_Eff_
+#endif // _JEventProcessor_SC_Eff_
 

@@ -1,9 +1,9 @@
 // $Id$
 //
-//    File: JEventProcessor_ST_Eff.cc
+//    File: JEventProcessor_SC_Eff.cc
 //
 
-#include "JEventProcessor_ST_Eff.h"
+#include "JEventProcessor_SC_Eff.h"
 
 // Routine used to create our JEventProcessor
 extern "C"
@@ -11,17 +11,17 @@ extern "C"
 	void InitPlugin(JApplication *locApplication)
 	{
 		InitJANAPlugin(locApplication);
-		locApplication->AddProcessor(new JEventProcessor_ST_Eff()); //register this plugin
+		locApplication->AddProcessor(new JEventProcessor_SC_Eff()); //register this plugin
 	}
 } // "C"
 
 //define static local variable //declared in header file
-thread_local DTreeFillData JEventProcessor_ST_Eff::dTreeFillData;
+thread_local DTreeFillData JEventProcessor_SC_Eff::dTreeFillData;
 
 //------------------
 // init
 //------------------
-jerror_t JEventProcessor_ST_Eff::init(void)
+jerror_t JEventProcessor_SC_Eff::init(void)
 {
 	//TRACK REQUIREMENTS
 	dMinPIDFOM = 5.73303E-7; //+/- 5 sigma
@@ -33,18 +33,18 @@ jerror_t JEventProcessor_ST_Eff::init(void)
 	//action initialize not necessary: is empty
 
 	TDirectory* locOriginalDir = gDirectory;
-	gDirectory->mkdir("ST_Eff")->cd();
+	gDirectory->mkdir("SC_Eff")->cd();
 
 	//Histograms
-	dHist_HitFound = new TH2I("HitFound", "Hit Found;Projected Hit-Z (cm);Sector", 140, 30.0, 100.0, 30, 0.5, 30.5);
-	dHist_HitTotal = new TH2I("HitTotal", "Hit Total;Projected Hit-Z (cm);Sector", 140, 30.0, 100.0, 30, 0.5, 30.5);
+	dHist_HitFound = new TH2I("HitFound", "Hit Found;Projected Hit-Z (cm);Sector", 120, 40.0, 100.0, 30, 0.5, 30.5);
+	dHist_HitTotal = new TH2I("HitTotal", "Hit Total;Projected Hit-Z (cm);Sector", 120, 40.0, 100.0, 30, 0.5, 30.5);
 	
 	// back to original dir
 	locOriginalDir->cd();
 
 	//TTREE INTERFACE
 	//MUST DELETE WHEN FINISHED: OR ELSE DATA WON'T BE SAVED!!!
-	dTreeInterface = DTreeInterface::Create_DTreeInterface("ST_Eff", "tree_ST_Eff.root");
+	dTreeInterface = DTreeInterface::Create_DTreeInterface("sc_eff", "tree_sc_eff.root");
 
 	//TTREE BRANCHES
 	DTreeBranchRegister locTreeBranchRegister;
@@ -78,7 +78,7 @@ jerror_t JEventProcessor_ST_Eff::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_ST_Eff::brun(jana::JEventLoop* locEventLoop, int locRunNumber)
+jerror_t JEventProcessor_SC_Eff::brun(jana::JEventLoop* locEventLoop, int locRunNumber)
 {
 	// This is called whenever the run number changes
 
@@ -89,7 +89,7 @@ jerror_t JEventProcessor_ST_Eff::brun(jana::JEventLoop* locEventLoop, int locRun
 // evnt
 //------------------
 
-jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
+jerror_t JEventProcessor_SC_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using
@@ -227,7 +227,7 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 //------------------
 // erun
 //------------------
-jerror_t JEventProcessor_ST_Eff::erun(void)
+jerror_t JEventProcessor_SC_Eff::erun(void)
 {
 	// This is called whenever the run number changes, before it is
 	// changed to give you a chance to clean up before processing
@@ -239,7 +239,7 @@ jerror_t JEventProcessor_ST_Eff::erun(void)
 //------------------
 // fini
 //------------------
-jerror_t JEventProcessor_ST_Eff::fini(void)
+jerror_t JEventProcessor_SC_Eff::fini(void)
 {
 	// Called before program exit after event processing is finished.  
 

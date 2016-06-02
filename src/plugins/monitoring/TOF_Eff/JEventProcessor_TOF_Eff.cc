@@ -98,7 +98,7 @@ jerror_t JEventProcessor_TOF_Eff::init(void)
 
 	//TTREE INTERFACE
 	//MUST DELETE WHEN FINISHED: OR ELSE DATA WON'T BE SAVED!!!
-	dTreeInterface = DTreeInterface::Create_DTreeInterface("TOF_Eff", "tree_TOF_Eff.root");
+	dTreeInterface = DTreeInterface::Create_DTreeInterface("tof_eff", "tree_tof_eff.root");
 
 	//TTREE BRANCHES
 	DTreeBranchRegister locTreeBranchRegister;
