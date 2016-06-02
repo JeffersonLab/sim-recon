@@ -6,6 +6,7 @@
 //
 
 #include "DReaction_factory_track_skimmer.h"
+#include "DCustomAction_ee_ShowerEoverP_cut.h"
 
 //------------------
 // init
@@ -578,6 +579,45 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Xi0, false, 800, 1.1, 1.5, "Xi0"));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
+
+	/**************************************************** skim_ee ****************************************************/
+
+	locReaction = new DReaction("skim_ee");
+
+	//X -> e+ e-
+	DReactionStep* locReactionStep_ee = new DReactionStep();
+	locReactionStep_ee->Set_InitialParticleID(Unknown);
+	locReactionStep_ee->Add_FinalParticleID(Electron);
+	locReactionStep_ee->Add_FinalParticleID(Positron);
+	locReaction->Add_ReactionStep(locReactionStep_ee);
+	dReactionStepPool.push_back(locReactionStep_ee); //register so will be deleted later: prevent memory leak
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
+
+    // loose E/p cuts - require both tracks to be matched to showers
+	locReaction->Add_AnalysisAction(new DCustomAction_ee_ShowerEoverP_cut(locReaction, false, 0.65, 1.4, 0.65, 1.4));
+
+	_data.push_back(locReaction); //Register the DReaction with the factory
+
+	/**************************************************** skim_jpsi_ee ****************************************************/
+
+	locReaction = new DReaction("skim_jpsi_ee");
+
+	//J/psi -> e+ e-   
+	DReactionStep* locReactionStep_jpsi_ee = new DReactionStep();
+	locReactionStep_jpsi_ee->Set_InitialParticleID(Jpsi);
+	locReactionStep_jpsi_ee->Add_FinalParticleID(Electron);
+	locReactionStep_jpsi_ee->Add_FinalParticleID(Positron);
+	locReaction->Add_ReactionStep(locReactionStep_jpsi_ee);
+	dReactionStepPool.push_back(locReactionStep_jpsi_ee); //register so will be deleted later: prevent memory leak
+	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
+
+    // Select high-mass pairs
+	locReaction->Set_InvariantMassCut(Jpsi, 1.5, 4.);
+    // loose E/p cuts - require both tracks to be matched to showers
+	locReaction->Add_AnalysisAction(new DCustomAction_ee_ShowerEoverP_cut(locReaction, false, 0.65, 1.4, 0.65, 1.4));
+
+	_data.push_back(locReaction); //Register the DReaction with the factory
+
 
 	return NOERROR;
 }
