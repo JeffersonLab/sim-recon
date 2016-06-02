@@ -275,7 +275,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
 		if(locBCALShowerMatchParams == NULL)
 		{
-			Fill_NoClusterStudy(locChargedTrackHypothesis, locParticleID, false); //no match: fill for shower efficiency
+			Fill_NoClusterStudy(locChargedTrackHypothesis, locBCALShowers, locParticleID, false); //no match: fill for shower efficiency
 			continue; //don't compute hit efficiencies
 		}
 
@@ -293,7 +293,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		if(locClusters.size() > 1)
 		{
 			//likely a messy shower, will probably mess up efficiency calculation. 
-			Fill_NoClusterStudy(locChargedTrackHypothesis, locParticleID, true); //can't use for hits: fill for shower efficiency
+			Fill_NoClusterStudy(locChargedTrackHypothesis, locBCALShowers, locParticleID, true); //can't use for hits: fill for shower efficiency
 			continue; //don't compute hit efficiencies
 		}
 
@@ -317,7 +317,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		//Note: This can introduce bias into the study. To avoid bias, only evaluate layer efficiency if at least 2 OTHER layers have hits
 		if(locSortedClusterPoints.size() < 2)
 		{
-			Fill_NoClusterStudy(locChargedTrackHypothesis, locParticleID, true); //can't use for hits: fill for shower efficiency
+			Fill_NoClusterStudy(locChargedTrackHypothesis, locBCALShowers, locParticleID, true); //can't use for hits: fill for shower efficiency
 			continue; //don't compute hit efficiencies
 		}
 
@@ -551,7 +551,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 	return NOERROR;
 }
 
-void JEventProcessor_BCAL_Hadronic_Eff::Fill_NoClusterStudy(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DParticleID* locParticleID, bool locIsMatchedToTrackFlag)
+void JEventProcessor_BCAL_Hadronic_Eff::Fill_NoClusterStudy(const DChargedTrackHypothesis* locChargedTrackHypothesis, vector<const DBCALShower*>& locBCALShowers, const DParticleID* locParticleID, bool locIsMatchedToTrackFlag)
 {
 	const DTrackTimeBased* locTrackTimeBased = NULL;
 	locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
