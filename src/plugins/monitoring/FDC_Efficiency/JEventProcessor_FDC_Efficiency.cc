@@ -91,9 +91,9 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
     sprintf(hname_measured, "fdc_pseudo_measured_cell[%d]", icell+1);
     sprintf(hname_expected, "fdc_pseudo_expected_cell[%d]", icell+1);
     if(gDirectory->Get(hname_measured) == NULL)
-      fdc_pseudo_measured_cell[icell+1] = new TH2D(hname_measured, "", 20, -50, 50, 20, -50, 50);
+      fdc_pseudo_measured_cell[icell+1] = new TH2D(hname_measured, "", 100, -50, 50, 100, -50, 50);
     if(gDirectory->Get(hname_expected) == NULL)
-      fdc_pseudo_expected_cell[icell+1] = new TH2D(hname_expected, "", 20, -50, 50, 20, -50, 50);
+      fdc_pseudo_expected_cell[icell+1] = new TH2D(hname_expected, "", 100, -50, 50, 100, -50, 50);
   }	
 
   gDirectory->cd("/FDC_Efficiency");
@@ -253,14 +253,14 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     for (unsigned int i = 0; i < cells; i++)
       packageHit[(cellsHit[i] - 1) / 6]++;
     
-    unsigned int minCells = 5; //At least 4 cells hit in any package for relatively "unbiased" efficiencies
+    unsigned int minCells = 4; //At least 4 cells hit in any package for relatively "unbiased" efficiencies
     if (packageHit[0] < minCells && packageHit[1] < minCells && packageHit[2] < minCells && packageHit[3] < minCells) continue;
 
     // Fill Histograms for accepted Tracks
     japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
     hCellsHit_accepted->Fill(cells);
-    //if (thisTimeBasedTrack->pmag() < 2)
-    hRingsHit_accepted->Fill(rings);
+    if (thisTimeBasedTrack->pmag() < 2)
+      hRingsHit_accepted->Fill(rings);
     hChi2OverNDF_accepted->Fill(thisTimeBasedTrack->FOM);
     hMom_accepted->Fill(thisTimeBasedTrack->pmag());
     japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
