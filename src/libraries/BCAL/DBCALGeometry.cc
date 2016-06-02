@@ -45,13 +45,18 @@ int DBCALGeometry::NSUMLAYSOUT[] = {1,1,1,1};
 
 int DBCALGeometry::NBCALSECSIN = 4/DBCALGeometry::NSUMSECSIN;
 int DBCALGeometry::NBCALSECSOUT = 4/DBCALGeometry::NSUMSECSOUT;
-float DBCALGeometry::BCAL_PHI_SHIFT = 0.0; // will be overwritten in constructor
+thread_local float DBCALGeometry::BCAL_PHI_SHIFT = 0.0; // will be overwritten in constructor
 
+<<<<<<< HEAD
 bool DBCALGeometry::initialized = false;
 float DBCALGeometry::BCALINNERRAD = 0.0;
+=======
+thread_local bool DBCALGeometry::initialized = false;
+thread_local float DBCALGeometry::BCALINNERRAD = 0.0;
+>>>>>>> 0dc4767a73a032611e6979f47c1a93a4cfe8d895
 float DBCALGeometry::BCALOUTERRAD = 86.17;
-float DBCALGeometry::BCALFIBERLENGTH = 0.0;
-float DBCALGeometry::GLOBAL_CENTER = 0.0;
+thread_local float DBCALGeometry::BCALFIBERLENGTH = 0.0;
+thread_local float DBCALGeometry::GLOBAL_CENTER = 0.0;
   
 float DBCALGeometry::ATTEN_LENGTH = 520.;
 float DBCALGeometry::C_EFFECTIVE  = 16.75;
@@ -68,7 +73,11 @@ float DBCALGeometry::m_radius[] = { 64.3,
 				  83.70,
 				  86.17};
 
+<<<<<<< HEAD
 float DBCALGeometry::fADC_radius[] = { 0,
+=======
+thread_local float DBCALGeometry::fADC_radius[] = { 0,
+>>>>>>> 0dc4767a73a032611e6979f47c1a93a4cfe8d895
 				  0,
 				  0,
 				  0,
