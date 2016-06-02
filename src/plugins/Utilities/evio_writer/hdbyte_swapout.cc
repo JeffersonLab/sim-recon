@@ -11,14 +11,14 @@
 #include <iostream>
 using namespace std;
 
-#include <hdbyte_swap.h>
+#include <hdbyte_swapout.h>
 
 
 
 //---------------------------------
 // swap_block
 //---------------------------------
-void swap_block(uint16_t *inbuff, uint16_t len, uint16_t *outbuff)
+void swap_block_out(uint16_t *inbuff, uint16_t len, uint16_t *outbuff)
 {
 	for(uint32_t i=0; i<len; i++, inbuff++, outbuff++){
 		uint16_t inword = *inbuff;  // copy word to allow using same buffer for input and output
@@ -32,7 +32,7 @@ void swap_block(uint16_t *inbuff, uint16_t len, uint16_t *outbuff)
 //---------------------------------
 // swap_block
 //---------------------------------
-void swap_block(uint32_t *inbuff, uint32_t len, uint32_t *outbuff)
+void swap_block_out(uint32_t *inbuff, uint32_t len, uint32_t *outbuff)
 {
 	for(uint32_t i=0; i<len; i++, inbuff++, outbuff++){
 		uint32_t inword = *inbuff;  // copy word to allow using same buffer for input and output
@@ -48,7 +48,7 @@ void swap_block(uint32_t *inbuff, uint32_t len, uint32_t *outbuff)
 //---------------------------------
 // swap_block
 //---------------------------------
-void swap_block(uint64_t *inbuff, uint64_t len, uint64_t *outbuff)
+void swap_block_out(uint64_t *inbuff, uint64_t len, uint64_t *outbuff)
 {
 	for(uint32_t i=0; i<len; i++, inbuff++, outbuff++){
 		uint64_t inword = *inbuff;  // copy word to allow using same buffer for input and output
@@ -69,7 +69,7 @@ void swap_block(uint64_t *inbuff, uint64_t len, uint64_t *outbuff)
 //---------------------------------
 // swap_bank
 //---------------------------------
-uint32_t swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
+uint32_t swap_bank_out(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 {
 	/// n.b. This was modified from the original which assumed we were 
 	/// swapping from wrong endianess for the process to the right one.
@@ -88,7 +88,7 @@ uint32_t swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 	}
 	
 	// Swap length and header words
-	swap_block(inbuff, 2, outbuff);
+	swap_block_out(inbuff, 2, outbuff);
 	uint32_t bank_len = inbuff[0];
 	if((bank_len+1) > len){
 		cerr << "WARNING: Bank length word exceeds valid words in buffer (" << bank_len+1 << " > " << len << ")" << endl;
@@ -102,18 +102,18 @@ uint32_t swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 		case 0x0a:  // 64 bit unsigned int
 		case 0x08:  // 64 bit double
 		case 0x09:  // 64 bit signed int
-			swap_block((uint64_t*)&inbuff[2], Nwords/2, (uint64_t*)&outbuff[2]);
+			swap_block_out((uint64_t*)&inbuff[2], Nwords/2, (uint64_t*)&outbuff[2]);
 			Nswapped += Nwords;
 			break;
 		case 0x01:  // 32 bit unsigned int
 		case 0x02:  // 32 bit float
 		case 0x0b:  // 32 bit signed int
-			swap_block(&inbuff[2], Nwords, &outbuff[2]);
+			swap_block_out(&inbuff[2], Nwords, &outbuff[2]);
 			Nswapped += Nwords;
 			break;
 		case 0x05:  // 16 bit unsigned int
 		case 0x04:  // 16 bit signed int
-			swap_block((uint16_t*)&inbuff[2], Nwords*2, (uint16_t*)&outbuff[2]);
+			swap_block_out((uint16_t*)&inbuff[2], Nwords*2, (uint16_t*)&outbuff[2]);
 			Nswapped += Nwords;
 			break;
 		case 0x00:  // 32 bit unknown (not swapped)
@@ -124,7 +124,7 @@ uint32_t swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 			break;
 		case 0x0c:
 			while(Nswapped < (Nwords+2)){
-				uint32_t N = swap_tagsegment(&outbuff[Nswapped], &inbuff[Nswapped], (Nwords+2)-Nswapped);
+				uint32_t N = swap_tagsegment_out(&outbuff[Nswapped], &inbuff[Nswapped], (Nwords+2)-Nswapped);
 				if(N == 0) return Nswapped;
 				Nswapped += N;
 			}
@@ -132,7 +132,7 @@ uint32_t swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 		case 0x0d:
 		case 0x20:
 			while(Nswapped < (Nwords+2)){
-				uint32_t N = swap_segment(&outbuff[Nswapped], &inbuff[Nswapped], (Nwords+2)-Nswapped);
+				uint32_t N = swap_segment_out(&outbuff[Nswapped], &inbuff[Nswapped], (Nwords+2)-Nswapped);
 				if(N == 0) return Nswapped;
 				Nswapped += N;
 			}
@@ -140,7 +140,7 @@ uint32_t swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 		case 0x0e:
 		case 0x10:
 			while(Nswapped < (Nwords+2)){
-				uint32_t N = swap_bank(&outbuff[Nswapped], &inbuff[Nswapped], (Nwords+2)-Nswapped);
+				uint32_t N = swap_bank_out(&outbuff[Nswapped], &inbuff[Nswapped], (Nwords+2)-Nswapped);
 				if(N == 0) return Nswapped;
 				Nswapped += N;
 			}
@@ -157,7 +157,7 @@ uint32_t swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 //---------------------------------
 // swap_tagsegment
 //---------------------------------
-uint32_t swap_tagsegment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
+uint32_t swap_tagsegment_out(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 {
 	/// Swap an EVIO tagsegment. 
 
@@ -167,7 +167,7 @@ uint32_t swap_tagsegment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 	}
 	
 	// Swap header/length word
-	swap_block(inbuff, 1, outbuff);
+	swap_block_out(inbuff, 1, outbuff);
 	uint32_t bank_len = inbuff[0] & 0xFFFF;
 	if((bank_len) > len){
 		cerr << "Tag Segment length word exceeds valid words in buffer (" << bank_len << " > " << len << ")" << endl;
@@ -181,18 +181,18 @@ uint32_t swap_tagsegment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 		case 0x0a:  // 64 bit unsigned int
 		case 0x08:  // 64 bit double
 		case 0x09:  // 64 bit signed int
-			swap_block((uint64_t*)&inbuff[1], Nwords/2, (uint64_t*)&outbuff[1]);
+			swap_block_out((uint64_t*)&inbuff[1], Nwords/2, (uint64_t*)&outbuff[1]);
 			Nswapped += Nwords;
 			break;
 		case 0x01:  // 32 bit unsigned int
 		case 0x02:  // 32 bit float
 		case 0x0b:  // 32 bit signed int
-			swap_block(&inbuff[1], Nwords, &outbuff[1]);
+			swap_block_out(&inbuff[1], Nwords, &outbuff[1]);
 			Nswapped += Nwords;
 			break;
 		case 0x05:  // 16 bit unsigned int
 		case 0x04:  // 16 bit signed int
-			swap_block((uint16_t*)&inbuff[1], Nwords*2, (uint16_t*)&outbuff[1]);
+			swap_block_out((uint16_t*)&inbuff[1], Nwords*2, (uint16_t*)&outbuff[1]);
 			Nswapped += Nwords;
 			break;
 		case 0x00:  // 32 bit unknown (not swapped)
@@ -209,7 +209,7 @@ uint32_t swap_tagsegment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 //---------------------------------
 // swap_segment
 //---------------------------------
-uint32_t swap_segment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
+uint32_t swap_segment_out(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 {
 	/// Swap an EVIO segment. 
 	///
@@ -223,7 +223,7 @@ uint32_t swap_segment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 	}
 	
 	// Swap header/length word
-	swap_block(inbuff, 1, outbuff);
+	swap_block_out(inbuff, 1, outbuff);
 	uint32_t bank_len = inbuff[0] & 0xFFFF;
 	if((bank_len) > len){
 		cerr << "Segment length word exceeds valid words in buffer (" << bank_len << " > " << len << ")" << endl;
@@ -237,18 +237,18 @@ uint32_t swap_segment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 		case 0x0a:  // 64 bit unsigned int
 		case 0x08:  // 64 bit double
 		case 0x09:  // 64 bit signed int
-			swap_block((uint64_t*)&inbuff[1], Nwords/2, (uint64_t*)&outbuff[1]);
+			swap_block_out((uint64_t*)&inbuff[1], Nwords/2, (uint64_t*)&outbuff[1]);
 			Nswapped += Nwords;
 			break;
 		case 0x01:  // 32 bit unsigned int
 		case 0x02:  // 32 bit float
 		case 0x0b:  // 32 bit signed int
-			swap_block(&inbuff[1], Nwords, &outbuff[1]);
+			swap_block_out(&inbuff[1], Nwords, &outbuff[1]);
 			Nswapped += Nwords;
 			break;
 		case 0x05:  // 16 bit unsigned int
 		case 0x04:  // 16 bit signed int
-			swap_block((uint16_t*)&inbuff[1], Nwords*2, (uint16_t*)&outbuff[1]);
+			swap_block_out((uint16_t*)&inbuff[1], Nwords*2, (uint16_t*)&outbuff[1]);
 			Nswapped += Nwords;
 			break;
 		case 0x00:  // 32 bit unknown (not swapped)
