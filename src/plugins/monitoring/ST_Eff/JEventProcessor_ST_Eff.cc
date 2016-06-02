@@ -38,8 +38,8 @@ jerror_t JEventProcessor_ST_Eff::init(void)
 	gDirectory->mkdir("ST_Eff")->cd();
 
 	//Histograms
-	dHist_HitFound = new TH2I("HitFound", "Hit Found;Projected Hit-Z (cm);Sector", 280, 0.0, 140.0, 30, 0.5, 30.5);
-	dHist_HitTotal = new TH2I("HitTotal", "Hit Total;Projected Hit-Z (cm);Sector", 280, 0.0, 140.0, 30, 0.5, 30.5);
+	dHist_HitFound = new TH2I("HitFound", "Hit Found;Projected Hit-Z (cm);Sector", 140, 30.0, 100.0, 30, 0.5, 30.5);
+	dHist_HitTotal = new TH2I("HitTotal", "Hit Total;Projected Hit-Z (cm);Sector", 140, 30.0, 100.0, 30, 0.5, 30.5);
 	
 	// back to original dir
 	locOriginalDir->cd();
@@ -174,7 +174,7 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 
 		//Find closest SC hit
 		const DSCHit* locBestSCHit = NULL;
-		double locBestDeltaPhi = 999.0;
+		double locBestDeltaPhi = 7.0;
 		for(auto& locSCHit : locSCHits)
 		{
 			double locDeltaPhi = 0.0;
@@ -189,7 +189,7 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 
 		//Fill hit hist
 		if(fabs(locBestDeltaPhi) <= locHistMaxDeltaPhi)
-			locHitMap_HitTotal.push_back(locHitPair);
+			locHitMap_HitFound.push_back(locHitPair);
 
 		//TRACK
 		dTreeFillData.Fill_Single<Int_t>("PID_PDG", PDGtype(locChargedTrackHypothesis->PID()));
