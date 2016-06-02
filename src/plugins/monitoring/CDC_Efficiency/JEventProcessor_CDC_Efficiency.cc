@@ -197,7 +197,7 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     if(!dIsNoFieldFlag)
         loop->GetSingle(detMatches);
 
-    const DDetectorMatches *locParticleID = nullptr;
+    const DParticleID *locParticleID = nullptr;
     loop->GetSingle(locParticleID);
 
     vector <const DChargedTrack *> chargedTrackVector;
@@ -207,9 +207,6 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 
         const DChargedTrackHypothesis* bestHypothesis = chargedTrackVector[iTrack]->Get_BestTrackingFOM();
 
-        // Require Single track events
-        //if (trackCandidateVector.size() != 1) return NOERROR;
-        //const DTrackCandidate* thisTrackCandidate = trackCandidateVector[0];
         // Cut very loosely on the track quality
         const DTrackTimeBased *thisTimeBasedTrack = nullptr;
         bestHypothesis->GetSingle(thisTimeBasedTrack);
@@ -240,8 +237,6 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
                 //cout << " Cut on vertex " << endl;
                 continue; // Cut on reconstructed vertex location
             }
-            //Let's try a cut on the angle of the track here
-            //if (TMath::Abs(((*trackIter)->momentum().Theta() * TMath::RadToDeg() ) - 90 ) > 5) continue;
         }
 
         // Require hits on at least 2 axial layers and at least 2 stereo layers:
@@ -340,7 +335,8 @@ void JEventProcessor_CDC_Efficiency::GitRDone(unsigned int ringNum, const DTrack
 		// We need a backwards map from ring/straw to flash channel. Unfortunately there is no easy way
 		// Will construct the map manually
 		const DCDCHit* locHit = Find_Hit(ringNum, wireNum, locSortedCDCHits[ringNum]);
-		if(locHit != nullptr)
+		bool foundHit = (locHit != nullptr);
+		if(foundHit)
 		{
 			const DCDCDigiHit *thisDigiHit = NULL;
 			const Df125CDCPulse *thisPulse = NULL;
@@ -386,14 +382,14 @@ void JEventProcessor_CDC_Efficiency::GitRDone(unsigned int ringNum, const DTrack
 		//FILL AS FUNCTION OF DOCA
 		if (distanceToWire < 0.78)
 		{
-			Fill_ExpectedHit(ringNum, distanceToWire);
-			if(locHit != nullptr)
-				Fill_MeasuredHit(ringNum, distanceToWire, thisTimeBasedTrack, wire, locHit);
+			Fill_ExpectedHit(ringNum, wireNum, distanceToWire);
+			if(foundHit)
+				Fill_MeasuredHit(ringNum, wireNum, distanceToWire, thisTimeBasedTrack, wire, locHit);
 		}
 	}
 }
 
-bool Expect_Hit(const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, double distanceToWire, double& delta, double& dz)
+bool JEventProcessor_CDC_Efficiency::Expect_Hit(const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, double distanceToWire, double& delta, double& dz)
 {
 	delta = 0.0;
 	dz = 0.0;
@@ -418,7 +414,7 @@ bool Expect_Hit(const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, doubl
 	return (distanceToWire < (0.78 + delta) && fabs(dz) < 65.0);
 }
 
-void Fill_MeasuredHit(int ringNum, double distanceToWire, const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, const DCDCHit* locHit)
+void JEventProcessor_CDC_Efficiency::Fill_MeasuredHit(int ringNum, int wireNum, double distanceToWire, const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, const DCDCHit* locHit)
 {
 	//Double_t w = cdc_occ_ring[ring]->GetBinContent(straw, 1) + 1.0;
 	//cdc_occ_ring[ring]->SetBinContent(straw, 1, w);
@@ -449,7 +445,7 @@ void Fill_MeasuredHit(int ringNum, double distanceToWire, const DTrackTimeBased*
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 }
 
-void Fill_ExpectedHit(int ringNum, double distanceToWire)
+void JEventProcessor_CDC_Efficiency::Fill_ExpectedHit(int ringNum, int wireNum, double distanceToWire)
 {
 	//Double_t w = cdc_occ_ring[ring]->GetBinContent(straw, 1) + 1.0;
 	//cdc_occ_ring[ring]->SetBinContent(straw, 1, w);
@@ -474,10 +470,10 @@ void Fill_ExpectedHit(int ringNum, double distanceToWire)
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 }
 
-const DCDCHit* Find_Hit(int locRing, int locProjectedStraw, map<int, set<const DCDCHit*> >& locSortedCDCHits)
+const DCDCHit* JEventProcessor_CDC_Efficiency::Find_Hit(int locRing, int locProjectedStraw, map<int, set<const DCDCHit*> >& locSortedCDCHits)
 {
 	if(!locSortedCDCHits[locProjectedStraw].empty())
-		*(locSortedCDCHits[locProjectedStraw].begin());
+		return *(locSortedCDCHits[locProjectedStraw].begin());
 
 	int locNumStraws = cdcwires[locRing - 1].size();
 
@@ -486,14 +482,14 @@ const DCDCHit* Find_Hit(int locRing, int locProjectedStraw, map<int, set<const D
 	if(locSearchStraw <= 0)
 		locSearchStraw += locNumStraws;
 	if(!locSortedCDCHits[locSearchStraw].empty())
-		*(locSortedCDCHits[locProjectedStraw].begin());
+		return *(locSortedCDCHits[locProjectedStraw].begin());
 
 	//next straw
 	locSearchStraw = locProjectedStraw + 1;
 	if(locSearchStraw > locNumStraws)
 		locSearchStraw -= locNumStraws;
 	if(!locSortedCDCHits[locSearchStraw].empty())
-		*(locSortedCDCHits[locProjectedStraw].begin());
+		return *(locSortedCDCHits[locProjectedStraw].begin());
 
 	return nullptr;
 }

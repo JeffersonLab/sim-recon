@@ -8,7 +8,7 @@
 #ifndef _JEventProcessor_CDC_Efficiency_
 #define _JEventProcessor_CDC_Efficiency_
 
-//#include <pthread.h>
+#include <set>
 #include <map>
 #include <vector>
 #include <deque>
@@ -31,6 +31,7 @@ using namespace std;
 #include <TRACKING/DReferenceTrajectory.h>
 #include <TRACKING/DTrackWireBased.h>
 #include <PID/DChargedTrack.h>
+#include <PID/DParticleID.h>
 #include <PID/DDetectorMatches.h>
 #include <CDC/DCDCHit.h>
 
@@ -46,6 +47,13 @@ class JEventProcessor_CDC_Efficiency:public jana::JEventProcessor{
 		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+		void GitRDone(unsigned int ringNum, const DTrackTimeBased *thisTimeBasedTrack, map<int, map<int, set<const DCDCHit*> > >& locSortedCDCHits);
+		bool Expect_Hit(const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, double distanceToWire, double& delta, double& dz);
+		void Fill_MeasuredHit(int ringNum, int wireNum, double distanceToWire, const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, const DCDCHit* locHit);
+		void Fill_ExpectedHit(int ringNum, int wireNum, double distanceToWire);
+		const DCDCHit* Find_Hit(int locRing, int locProjectedStraw, map<int, set<const DCDCHit*> >& locSortedCDCHits);
+
 
 		DGeometry * dgeom;
         bool dIsNoFieldFlag;
