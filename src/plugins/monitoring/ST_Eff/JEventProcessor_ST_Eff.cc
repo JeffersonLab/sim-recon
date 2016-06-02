@@ -35,35 +35,13 @@ jerror_t JEventProcessor_ST_Eff::init(void)
 	TDirectory* locOriginalDir = gDirectory;
 	gDirectory->mkdir("ST_Eff")->cd();
 
-		ostringstream locHistName, locHistTitle;
-/*
-		//Upstream, Found
-		locHistName << "HitFound_Layer" << locLayer << "_Upstream";
-		locHistTitle << "Hit Found, Layer " << locLayer << ", Upstream;Sector";
-		dHistMap_HitFound[locLayer][true] = new TH1I(locHistName.str().c_str(), locHistTitle.str().c_str(), 192, 0.5, 192.5);
+	ostringstream locHistName, locHistTitle;
 
-		//Upstream, Total
-		locHistName.str("");
-		locHistName << "HitTotal_Layer" << locLayer << "_Upstream";
-		locHistTitle.str("");
-		locHistTitle << "Hit Total, Layer " << locLayer << ", Upstream;Sector";
-		dHistMap_HitTotal[locLayer][true] = new TH1I(locHistName.str().c_str(), locHistTitle.str().c_str(), 192, 0.5, 192.5);
+	//Found
+	dHist_HitFound = new TH1I("HitFound", "Hit Found;Sector", 30, 0.5, 30.5);
 
-		//Downstream, Found
-		locHistName.str("");
-		locHistName << "HitFound_Layer" << locLayer << "_Downstream";
-		locHistTitle.str("");
-		locHistTitle << "Hit Found, Layer " << locLayer << ", Downstream;Sector";
-		dHistMap_HitFound[locLayer][false] = new TH1I(locHistName.str().c_str(), locHistTitle.str().c_str(), 192, 0.5, 192.5);
-
-		//Downstream, Total
-		locHistName.str("");
-		locHistName << "HitTotal_Layer" << locLayer << "_Downstream";
-		locHistTitle.str("");
-		locHistTitle << "Hit Total, Layer " << locLayer << ", Downstream;Sector";
-		dHistMap_HitTotal[locLayer][false] = new TH1I(locHistName.str().c_str(), locHistTitle.str().c_str(), 192, 0.5, 192.5);
-	}
-*/
+	//Total
+	dHist_HitTotal = new TH1I("HitTotal", "Hit Total;Sector", 30, 0.5, 30.5);
 	
 	// back to original dir
 	locOriginalDir->cd();

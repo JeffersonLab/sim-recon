@@ -45,13 +45,13 @@ int DBCALGeometry::NSUMLAYSOUT[] = {1,1,1,1};
 
 int DBCALGeometry::NBCALSECSIN = 4/DBCALGeometry::NSUMSECSIN;
 int DBCALGeometry::NBCALSECSOUT = 4/DBCALGeometry::NSUMSECSOUT;
-thread_local float DBCALGeometry::BCAL_PHI_SHIFT = 0.0; // will be overwritten in constructor
+float DBCALGeometry::BCAL_PHI_SHIFT = 0.0; // will be overwritten in constructor
 
 bool DBCALGeometry::initialized = false;
 float DBCALGeometry::BCALINNERRAD = 0.0;
 float DBCALGeometry::BCALOUTERRAD = 86.17;
-thread_local float DBCALGeometry::BCALFIBERLENGTH = 0.0;
-thread_local float DBCALGeometry::GLOBAL_CENTER = 0.0;
+float DBCALGeometry::BCALFIBERLENGTH = 0.0;
+float DBCALGeometry::GLOBAL_CENTER = 0.0;
   
 float DBCALGeometry::ATTEN_LENGTH = 520.;
 float DBCALGeometry::C_EFFECTIVE  = 16.75;

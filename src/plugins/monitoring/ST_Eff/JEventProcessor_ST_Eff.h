@@ -54,7 +54,8 @@ class JEventProcessor_ST_Eff : public jana::JEventProcessor
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
 
 		//HISTOGRAMS
-		map<int, map<bool, TH1I*> > dHistMap_HitFound, dHistMap_HitTotal; //int = layer, bool = isUpstream
+		TH1I* dHist_HitFound;
+		TH1I* dHist_HitTotal;
 
 		//TREE
 		DTreeInterface* dTreeInterface;
