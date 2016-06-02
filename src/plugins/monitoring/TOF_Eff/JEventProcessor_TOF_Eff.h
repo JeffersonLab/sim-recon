@@ -1,10 +1,10 @@
 // $Id$
 //
-// File: JEventProcessor_ST_Eff.h
+// File: JEventProcessor_TOF_Eff.h
 //
 
-#ifndef _JEventProcessor_ST_Eff_
-#define _JEventProcessor_ST_Eff_
+#ifndef _JEventProcessor_TOF_Eff_
+#define _JEventProcessor_TOF_Eff_
 
 #include <JANA/JEventProcessor.h>
 #include <JANA/JApplication.h>
@@ -12,7 +12,6 @@
 #include "TH1I.h"
 #include "TH2I.h"
 
-#include "START_COUNTER/DSCHit.h"
 #include "TRIGGER/DTrigger.h"
 #include "TRACKING/DTrackTimeBased.h"
 
@@ -33,12 +32,12 @@
 using namespace jana;
 using namespace std;
 
-class JEventProcessor_ST_Eff : public jana::JEventProcessor
+class JEventProcessor_TOF_Eff : public jana::JEventProcessor
 {
 	public:
-		JEventProcessor_ST_Eff(){};
-		~JEventProcessor_ST_Eff(){};
-		const char* className(void){return "JEventProcessor_ST_Eff";}
+		JEventProcessor_TOF_Eff(){};
+		~JEventProcessor_TOF_Eff(){};
+		const char* className(void){return "JEventProcessor_TOF_Eff";}
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -47,6 +46,8 @@ class JEventProcessor_ST_Eff : public jana::JEventProcessor
 		jerror_t erun(void);						///< Called every time run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		int Calc_NearestHit(const DTOFPaddleHit* locPaddleHit) const;
+
 		//TRACK REQUIREMENTS
 		double dMinTrackingFOM, dMinPIDFOM;
 		unsigned int dMinNumTrackHits;
@@ -54,8 +55,25 @@ class JEventProcessor_ST_Eff : public jana::JEventProcessor
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
 
 		//HISTOGRAMS
-		TH2I* dHist_HitFound;
-		TH2I* dHist_HitTotal;
+		//DTOFPaddle
+		double dMinTOFPaddleMatchDistance;
+		TH2I* dHist_TOFPaddleTrackYVsVerticalPaddle_HasHit_Top;
+		TH2I* dHist_TOFPaddleTrackYVsVerticalPaddle_TotalHit_Top;
+		TH2I* dHist_TOFPaddleHorizontalPaddleVsTrackX_HasHit_North;
+		TH2I* dHist_TOFPaddleHorizontalPaddleVsTrackX_TotalHit_North;
+
+		TH2I* dHist_TOFPaddleTrackYVsVerticalPaddle_HasHit_Bottom;
+		TH2I* dHist_TOFPaddleTrackYVsVerticalPaddle_TotalHit_Bottom;
+		TH2I* dHist_TOFPaddleHorizontalPaddleVsTrackX_HasHit_South;
+		TH2I* dHist_TOFPaddleHorizontalPaddleVsTrackX_TotalHit_South;
+
+		//TOFPoint
+		TH2I* dHist_TrackTOFYVsX_HasHit;
+		TH2I* dHist_TrackTOFYVsX_TotalHit;
+		TH2I* dHist_TrackTOF2DPaddles_HasHit;
+		TH2I* dHist_TrackTOF2DPaddles_TotalHit;
+
+
 
 		//TREE
 		DTreeInterface* dTreeInterface;
@@ -64,5 +82,5 @@ class JEventProcessor_ST_Eff : public jana::JEventProcessor
 		static thread_local DTreeFillData dTreeFillData;
 };
 
-#endif // _JEventProcessor_ST_Eff_
+#endif // _JEventProcessor_TOF_Eff_
 

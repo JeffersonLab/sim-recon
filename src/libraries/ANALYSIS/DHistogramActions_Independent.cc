@@ -1263,7 +1263,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			double locDeltaY = locTOFPointIterator->second.second.second;
 
 			double locDistance = sqrt(locDeltaX*locDeltaX + locDeltaY*locDeltaY);
-			if((locDeltaX < 500.0) && (locDeltaY < 500.0)) //else position not well-defined
+			if((fabs(locDeltaX) < 500.0) && (fabs(locDeltaY) < 500.0)) //else position not well-defined
 			{
 				dHistMap_TOFPointTrackDistanceVsP[locIsTimeBased]->Fill(locTrack->momentum().Mag(), locDistance);
 				dHistMap_TOFPointTrackDistanceVsTheta[locIsTimeBased]->Fill(locTrack->momentum().Theta()*180.0/TMath::Pi(), locDistance);

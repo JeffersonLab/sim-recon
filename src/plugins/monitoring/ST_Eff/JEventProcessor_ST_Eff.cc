@@ -32,8 +32,6 @@ jerror_t JEventProcessor_ST_Eff::init(void)
 	dCutAction_TrackHitPattern = new DCutAction_TrackHitPattern(NULL, dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage);
 	//action initialize not necessary: is empty
 
-	locHistMaxDeltaPhi = 12.0; //width of a paddle
-
 	TDirectory* locOriginalDir = gDirectory;
 	gDirectory->mkdir("ST_Eff")->cd();
 
@@ -67,6 +65,7 @@ jerror_t JEventProcessor_ST_Eff::init(void)
 	//SEARCH
 	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedSCHitSector");
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestSCHitSector"); //0 if none
+	locTreeBranchRegister.Register_Single<Bool_t>("IsMatchedToTrack"); //false if not registered in DDetectorMatches
 	locTreeBranchRegister.Register_Single<Float_t>("TrackHitDeltaPhi"); //is signed: SC - Track
 
 	//REGISTER BRANCHES
@@ -126,7 +125,7 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 
 	//Try to select the most-pure sample of tracks possible
 	//select the best DTrackTimeBased for each track: of tracks with good hit pattern, use best PID confidence level (need accurate beta)
-		//also, must have min tracking FOM, min PID confidence level, min #-hits on track, and matching hit in SC
+		//also, must have min tracking FOM, min PID confidence level, min #-hits on track, and matching hit in TOF or BCAL
 	set<const DChargedTrackHypothesis*> locBestTracks; //lowest tracking FOM for each candidate id
 	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
 	{
@@ -173,22 +172,14 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		locHitMap_HitTotal.push_back(locHitPair);
 
 		//Find closest SC hit
-		const DSCHit* locBestSCHit = NULL;
 		double locBestDeltaPhi = 7.0;
-		for(auto& locSCHit : locSCHits)
-		{
-			double locDeltaPhi = 0.0;
-			if(!locParticleID->Distance_ToTrack(locSCHit, locTrackTimeBased->rt, locTrackTimeBased->t0(), locDeltaPhi))
-				continue;
-			if(fabs(locDeltaPhi) >= fabs(locBestDeltaPhi))
-				continue;
-			locBestDeltaPhi = locDeltaPhi;
-			locBestSCHit = locSCHit;
-		}
+		const DSCHit* locBestSCHit = locParticleID->Get_ClosestToTrack_SC(locTrackTimeBased, locSCHits, locBestDeltaPhi);
 		int locBestSCHitSector = (locBestSCHit != NULL) ? locBestSCHit->sector : 0;
 
+		bool locIsMatchedToTrack = locDetectorMatches->Get_IsMatchedToDetector(locTrackTimeBased, SYS_START);
+
 		//Fill hit hist
-		if(fabs(locBestDeltaPhi) <= locHistMaxDeltaPhi)
+		if(locIsMatchedToTrack)
 			locHitMap_HitFound.push_back(locHitPair);
 
 		//TRACK
@@ -209,6 +200,7 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		//SEARCH
 		dTreeFillData.Fill_Single<UChar_t>("ProjectedSCHitSector", locPredictedSCSector);
 		dTreeFillData.Fill_Single<UChar_t>("NearestSCHitSector", locBestSCHitSector);
+		dTreeFillData.Fill_Single<Bool_t>("IsMatchedToTrack", locIsMatchedToTrack);
 		dTreeFillData.Fill_Single<Float_t>("TrackHitDeltaPhi", locBestDeltaPhi); //is signed: SC - Track
 
 		//FILL TTREE

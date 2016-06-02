@@ -1603,16 +1603,16 @@ pair<const DTOFPaddleHit*, const DTOFPaddleHit*> DParticleID::Get_ClosestToTrack
 	{
 		if(locTOFPaddleHits[loc_i]->orientation == 0) //vertical
 		{
-			double locDistance = fabs(dTOFGeometry->bar2y(locTOFPaddleHits[loc_i]->bar) - locIntersection.X());
-			if(locDistance > locBestDeltaX)
+			double locDistance = dTOFGeometry->bar2y(locTOFPaddleHits[loc_i]->bar) - locIntersection.X();
+			if(fabs(locDistance) > fabs(locBestDeltaX))
 				continue;
 			locBestDeltaX = locDistance;
 			locClosestPaddleHit_Vertical = locTOFPaddleHits[loc_i];
 		}
 		else //horizontal
 		{
-			double locDistance = fabs(dTOFGeometry->bar2y(locTOFPaddleHits[loc_i]->bar) - locIntersection.Y());
-			if(locDistance > locBestDeltaY)
+			double locDistance = dTOFGeometry->bar2y(locTOFPaddleHits[loc_i]->bar) - locIntersection.Y();
+			if(fabs(locDistance) > fabs(locBestDeltaY))
 				continue;
 			locBestDeltaY = locDistance;
 			locClosestPaddleHit_Horzontal = locTOFPaddleHits[loc_i];
@@ -1641,7 +1641,7 @@ const DSCHit* DParticleID::Get_ClosestToTrack_SC(const DKinematicData* locTrack,
 		double locDeltaPhi = 0.0;
 		if(!Distance_ToTrack(locSCHits[loc_i], locReferenceTrajectory, locInputStartTime, locDeltaPhi))
 			continue;
-		if(locDeltaPhi > locBestDeltaPhi)
+		if(fabs(locDeltaPhi) > fabs(locBestDeltaPhi))
 			continue;
 		locBestDeltaPhi = locDeltaPhi;
 		locBestSCHit = locSCHits[loc_i];
