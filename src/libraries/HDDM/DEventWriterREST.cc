@@ -1,5 +1,8 @@
 #include "DEventWriterREST.h"
 
+#include <DANA/DApplication.h>
+#include <JANA/JCalibration.h>
+
 int& DEventWriterREST::Get_NumEventWriterThreads(void) const
 {
 	// must be read/used entirely in "RESTWriter" lock
@@ -30,6 +33,21 @@ DEventWriterREST::DEventWriterREST(JEventLoop* locEventLoop, string locOutputFil
 	HDDM_USE_INTEGRITY_CHECKS = true;
 	string locIntegrityString = "Turn on/off automatic integrity checking on the output HDDM stream. Set to \"0\" to turn off (it's on by default)";
 	gPARMS->SetDefaultParameter("HDDM:USE_INTEGRITY_CHECKS", HDDM_USE_INTEGRITY_CHECKS, locIntegrityString);
+
+    HDDM_DATA_VERSION_STRING = "";
+    gPARMS->SetDefaultParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING, "");
+
+    CCDB_CONTEXT_STRING = "";
+    // if we can get the calibration context from the DANA interface, then save this as well
+    DApplication *dapp = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+    if (dapp) {
+        JEvent& event = locEventLoop->GetJEvent();
+        JCalibration *jcalib = dapp->GetJCalibration(event.GetRunNumber());
+        if (jcalib) {
+            CCDB_CONTEXT_STRING = jcalib->GetContext();
+        }
+    }
+
 }
 
 bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString) const
@@ -519,7 +537,16 @@ bool DEventWriterREST::Write_RESTEvent(string locOutputFileName, hddm_r::HDDM& l
 		hddm_r::HDDM locCommentRecord;
 		hddm_r::ReconstructedPhysicsEventList res = locCommentRecord.addReconstructedPhysicsEvents(1);
 		hddm_r::CommentList comment = res().addComments();
-		comment().setText("this is a REST event stream, yadda yadda");
+		comment().setText("This is a REST event stream...");
+        // write out any metadata if it's been set
+        if(HDDM_DATA_VERSION_STRING != "") {
+            hddm_r::DataVersionStringList dataVersionString = res().addDataVersionStrings();
+            dataVersionString().setText(HDDM_DATA_VERSION_STRING);
+        }
+        if(CCDB_CONTEXT_STRING != "") {
+            hddm_r::CcdbContextList ccdbContextString = res().addCcdbContexts();
+            ccdbContextString().setText(CCDB_CONTEXT_STRING);
+        }
 		*(locRESTFilePointers.second) << locCommentRecord;
 		locCommentRecord.clear();
 

@@ -3,6 +3,8 @@
 
   <reconstructedPhysicsEvent eventNo="long" runNo="int">
     <comment minOccurs="0" maxOccurs="unbounded" text="string"/>
+    <dataVersionString minOccurs="0" maxOccurs="unbounded" text="string"/>
+    <ccdbContext minOccurs="0" maxOccurs="unbounded" text="string"/>
     <reaction maxOccurs="unbounded" minOccurs="0" jtag="string"
                                     type="int" weight="float"
                                     targetType="Particle_t"

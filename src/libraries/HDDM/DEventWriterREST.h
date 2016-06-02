@@ -54,6 +54,11 @@ class DEventWriterREST : public JObject
 		string dOutputFileBaseName;
 		bool HDDM_USE_COMPRESSION;
 		bool HDDM_USE_INTEGRITY_CHECKS;
+
+        // metadata to save in the REST file
+        // these should be consistent during program execution
+        string HDDM_DATA_VERSION_STRING;
+        string CCDB_CONTEXT_STRING;
 };
 
 #endif //_DEventWriterREST_
