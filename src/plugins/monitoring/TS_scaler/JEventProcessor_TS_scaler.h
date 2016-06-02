@@ -34,6 +34,7 @@ class JEventProcessor_TS_scaler:public jana::JEventProcessor{
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		float dCurrent;
 		uint64_t dEventNumber;
 		uint32_t dEventUnixTime;
 		uint32_t dScalerTriggerBitPrevious[kScalers];
@@ -41,13 +42,20 @@ class JEventProcessor_TS_scaler:public jana::JEventProcessor{
 		uint32_t dFPScalerTriggerBitPrevious[kFPScalers];
 		uint32_t dFPTrigCount[kFPScalers];
 
+		//TREE
+                DTreeInterface* dTreeInterface;
+		//thread_local: Each thread has its own object: no lock needed
+                        //important: manages it's own data internally: don't want to call new/delete every event!
+                static thread_local DTreeFillData dTreeFillData;
+
 		TFile *dFile;
 		TTree *dTS_scaler_Tree;
 
 		// variables to fill tree
 		bool dIsFirstInterval; // first SYNC event in file
 		bool dIsLastInterval;  // interval after last SYNC event in file (need to combine with first SYNC event in next file)
-		ULong64_t dSyncEventNumber;                      // SYNC event number
+		ULong64_t dTotalEventNumber;                     // Total event number at sync event
+		uint32_t dSyncEventNumber;                       // SYNC event number
 		uint32_t dSyncEventLiveTime;                     // Live time: in clock counts (integrated)
 		uint32_t dSyncEventBusyTime;                     // Busy time: in clock counts (integrated)
 		uint32_t dSyncEventInstLiveTime;                 // Live time: in percent x10 (instantaneous)
@@ -67,6 +75,8 @@ class JEventProcessor_TS_scaler:public jana::JEventProcessor{
 		map<uint32_t, TH1I*> dHistTS_livetime, dHistTS_FPlivetime;
 		map<uint32_t, TH1I*> dHistTS_Recorded, dHistTS_FPRecorded;
 		map<uint32_t, TH1I*> dHistTS_Scaler, dHistTS_FPScaler;
+		map<uint32_t, TH1I*> dHistTS_RecordedSyncEvent, dHistTS_FPRecordedSyncEvent;
+		map<uint32_t, TH1I*> dHistTS_ScalerSyncEvent, dHistTS_FPScalerSyncEvent;
 		
 };
 
