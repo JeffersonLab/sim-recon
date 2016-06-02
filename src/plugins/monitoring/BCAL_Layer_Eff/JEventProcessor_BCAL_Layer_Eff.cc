@@ -82,9 +82,11 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::init(void)
 	locTreeBranchRegister.Register_Single<Float_t>("TimingBeta");
 	locTreeBranchRegister.Register_Single<Float_t>("TrackVertexZ");
 	locTreeBranchRegister.Register_Single<TVector3>("TrackP3");
-	locTreeBranchRegister.Register_Single<Float_t>("ShowerEnergy");
 	locTreeBranchRegister.Register_Single<UInt_t>("TrackCDCRings"); //rings correspond to bits (1 -> 28)
 	locTreeBranchRegister.Register_Single<UInt_t>("TrackFDCPlanes"); //planes correspond to bits (1 -> 24)
+
+	//SHOWER
+	locTreeBranchRegister.Register_Single<Float_t>("ShowerEnergy");
 	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaPhiToShower"); //is signed: BCAL - Track
 	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaZToShower"); //is signed: BCAL - Track
 	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitPhi"); //degrees
@@ -452,9 +454,11 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 		DVector3 locDP3 = locChargedTrackHypothesis->momentum();
 		TVector3 locP3(locDP3.X(), locDP3.Y(), locDP3.Z());
 		dTreeFillData.Fill_Single<TVector3>("TrackP3", locP3);
-		dTreeFillData.Fill_Single<Float_t>("ShowerEnergy", locBCALShowerMatchParams->dBCALShower->E);
 		dTreeFillData.Fill_Single<UInt_t>("TrackCDCRings", locTrackTimeBased->dCDCRings);
 		dTreeFillData.Fill_Single<UInt_t>("TrackFDCPlanes", locTrackTimeBased->dFDCPlanes);
+
+		//SHOWER
+		dTreeFillData.Fill_Single<Float_t>("ShowerEnergy", locBCALShowerMatchParams->dBCALShower->E);
 		dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", locBCALShowerMatchParams->dDeltaPhiToShower); //is signed: BCAL - Track
 		dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", locBCALShowerMatchParams->dDeltaZToShower); //is signed: BCAL - Track
 		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());

@@ -32,6 +32,8 @@ jerror_t JEventProcessor_ST_Eff::init(void)
 	dCutAction_TrackHitPattern = new DCutAction_TrackHitPattern(NULL, dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage);
 	//action initialize not necessary: is empty
 
+	locHistMaxDeltaPhi = 12.0; //width of a paddle
+
 	TDirectory* locOriginalDir = gDirectory;
 	gDirectory->mkdir("ST_Eff")->cd();
 
@@ -51,12 +53,21 @@ jerror_t JEventProcessor_ST_Eff::init(void)
 
 	//TRACK
 	locTreeBranchRegister.Register_Single<Int_t>("PID_PDG"); //gives charge, mass, beta
+	locTreeBranchRegister.Register_Single<Float_t>("TimingBeta");
 	locTreeBranchRegister.Register_Single<Float_t>("TrackVertexZ");
 	locTreeBranchRegister.Register_Single<TVector3>("TrackP3");
-	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaPhiToShower"); //is signed: BCAL - Track
-	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaZToShower"); //is signed: BCAL - Track
-	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitPhi"); //degrees
-	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitZ");
+	locTreeBranchRegister.Register_Single<UInt_t>("TrackCDCRings"); //rings correspond to bits (1 -> 28)
+	locTreeBranchRegister.Register_Single<UInt_t>("TrackFDCPlanes"); //planes correspond to bits (1 -> 24)
+
+	//SC
+	locTreeBranchRegister.Register_Single<UChar_t>("NumSCHits"); //may want to ignore event if too many (especially for tracks in nose)
+	locTreeBranchRegister.Register_Single<Float_t>("ProjectedSCHitPhi"); //degrees
+	locTreeBranchRegister.Register_Single<Float_t>("ProjectedSCHitZ");
+
+	//SEARCH
+	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedSCHitSector");
+	locTreeBranchRegister.Register_Single<UChar_t>("NearestSCHitSector"); //0 if none
+	locTreeBranchRegister.Register_Single<Float_t>("TrackHitDeltaPhi"); //is signed: SC - Track
 
 	//REGISTER BRANCHES
 	dTreeInterface->Create_Branches(locTreeBranchRegister);
@@ -152,23 +163,53 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
 
 		//Predict ST Surface Hit Location
-//		unsigned int locPredictedSurfaceModule = 0, locPredictedSurfaceSector = 0;
 		DVector3 locPredictedSurfacePosition;
-		bool locProjBarrelRegion;
-		double locMinDeltaPhi;
-		unsigned int locPredictedSCSector = locParticleID->PredictSCSector(locTrackTimeBased->rt, 999.0, &locPredictedSurfacePosition, &locProjBarrelRegion, &locMinDeltaPhi);
+		bool locProjBarrelRegion = false;
+		unsigned int locPredictedSCSector = locParticleID->PredictSCSector(locTrackTimeBased->rt, 999.0, &locPredictedSurfacePosition, &locProjBarrelRegion);
 		if(locPredictedSCSector == 0)
 			continue; //don't expect it to hit at all 
 
 		pair<int, double> locHitPair(locPredictedSCSector, locPredictedSurfacePosition.Z());
 		locHitMap_HitTotal.push_back(locHitPair);
 
+		//Find closest SC hit
+		const DSCHit* locBestSCHit = NULL;
+		double locBestDeltaPhi = 999.0;
+		for(auto& locSCHit : locSCHits)
+		{
+			double locDeltaPhi = 0.0;
+			if(!locParticleID->Distance_ToTrack(locSCHit, locTrackTimeBased->rt, locTrackTimeBased->t0(), locDeltaPhi))
+				continue;
+			if(fabs(locDeltaPhi) >= fabs(locBestDeltaPhi))
+				continue;
+			locBestDeltaPhi = locDeltaPhi;
+			locBestSCHit = locSCHit;
+		}
+		int locBestSCHitSector = (locBestSCHit != NULL) ? locBestSCHit->sector : 0;
+
+		//Fill hit hist
+		if(fabs(locBestDeltaPhi) <= locHistMaxDeltaPhi)
+			locHitMap_HitTotal.push_back(locHitPair);
+
 		//TRACK
 		dTreeFillData.Fill_Single<Int_t>("PID_PDG", PDGtype(locChargedTrackHypothesis->PID()));
+		dTreeFillData.Fill_Single<Float_t>("TimingBeta", locChargedTrackHypothesis->measuredBeta());
 		dTreeFillData.Fill_Single<Float_t>("TrackVertexZ", locChargedTrackHypothesis->position().Z());
+		dTreeFillData.Fill_Single<UInt_t>("TrackCDCRings", locTrackTimeBased->dCDCRings);
+		dTreeFillData.Fill_Single<UInt_t>("TrackFDCPlanes", locTrackTimeBased->dFDCPlanes);
 		DVector3 locDP3 = locChargedTrackHypothesis->momentum();
 		TVector3 locP3(locDP3.X(), locDP3.Y(), locDP3.Z());
 		dTreeFillData.Fill_Single<TVector3>("TrackP3", locP3);
+
+		//SC
+		dTreeFillData.Fill_Single<UChar_t>("NumSCHits", locSCHits.size());
+		dTreeFillData.Fill_Single<Float_t>("ProjectedSCHitPhi", locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());
+		dTreeFillData.Fill_Single<Float_t>("ProjectedSCHitZ", locPredictedSurfacePosition.Z());
+
+		//SEARCH
+		dTreeFillData.Fill_Single<UChar_t>("ProjectedSCHitSector", locPredictedSCSector);
+		dTreeFillData.Fill_Single<UChar_t>("NearestSCHitSector", locBestSCHitSector);
+		dTreeFillData.Fill_Single<Float_t>("TrackHitDeltaPhi", locBestDeltaPhi); //is signed: SC - Track
 
 		//FILL TTREE
 		dTreeInterface->Fill(dTreeFillData);
@@ -180,11 +221,11 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 	{
 		//Fill Found
 		for(auto& locHitPair : locHitMap_HitFound)
-			dHistMap_HitFound->Fill(locHitPair.second, locHitPair.first);
+			dHist_HitFound->Fill(locHitPair.second, locHitPair.first);
 
 		//Fill Total
 		for(auto& locHitPair : locHitMap_HitTotal)
-			dHistMap_HitTotal->Fill(locHitPair.second, locHitPair.first);
+			dHist_HitTotal->Fill(locHitPair.second, locHitPair.first);
 	}
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 

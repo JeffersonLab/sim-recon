@@ -1222,13 +1222,13 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, const 
     DVector3 norm=sc_norm[sc_index][0];
     double sc_pos1 = sc_pos[sc_index][1].z();
     if(myz <= sc_pos1){
-      if (fabs(dphi)<min_dphi){
+      if (fabs(dphi)<fabs(min_dphi)){
 	best_sc_index=sc_index;
    if(locProjBarrelRegion != NULL)
      *locProjBarrelRegion = true;
    if(locProjPos != NULL)
      *locProjPos = proj_pos;
-	min_dphi=fabs(dphi);
+	min_dphi=dphi;
       }
     }
     else{
@@ -1262,13 +1262,13 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, const 
 
       	
 
-      if (fabs(dphi)<min_dphi){
+      if (fabs(dphi)<fabs(min_dphi)){
 	best_sc_index=sc_index;
    if(locProjBarrelRegion != NULL)
      *locProjBarrelRegion = false;
    if(locProjPos != NULL)
      *locProjPos = proj_pos;
-	min_dphi=fabs(dphi);
+	min_dphi=dphi;
       }
     }
   }
@@ -1276,7 +1276,7 @@ unsigned int DParticleID::PredictSCSector(const DReferenceTrajectory* rt, const 
   if(locMinDPhi != NULL)
     *locMinDPhi = min_dphi;
 
-  if (min_dphi<dphi_cut) return best_sc_index+1;
+  if (fabs(min_dphi)<dphi_cut) return best_sc_index+1;
 
   return 0;
 }

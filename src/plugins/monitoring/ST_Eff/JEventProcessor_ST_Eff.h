@@ -54,6 +54,7 @@ class JEventProcessor_ST_Eff : public jana::JEventProcessor
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
 
 		//HISTOGRAMS
+		double locHistMaxDeltaPhi;
 		TH2I* dHist_HitFound;
 		TH2I* dHist_HitTotal;
 
