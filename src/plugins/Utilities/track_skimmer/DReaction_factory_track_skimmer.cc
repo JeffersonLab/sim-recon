@@ -591,10 +591,10 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	locReactionStep_ee->Add_FinalParticleID(Positron);
 	locReaction->Add_ReactionStep(locReactionStep_ee);
 	dReactionStepPool.push_back(locReactionStep_ee); //register so will be deleted later: prevent memory leak
-	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
+	locReaction->Set_AnyComboFlag(true); //stops searching/building after first good one found that passes pre-selects
 
     // loose E/p cuts - require both tracks to be matched to showers
-	locReaction->Add_AnalysisAction(new DCustomAction_ee_ShowerEoverP_cut(locReaction, false, 0.65, 1.4, 0.65, 1.4));
+	locReaction->Add_ComboPreSelectionAction(new DCustomAction_ee_ShowerEoverP_cut(locReaction, false, 0.65, 1.4, 0.65, 1.4));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
@@ -609,12 +609,12 @@ jerror_t DReaction_factory_track_skimmer::init(void)
 	locReactionStep_jpsi_ee->Add_FinalParticleID(Positron);
 	locReaction->Add_ReactionStep(locReactionStep_jpsi_ee);
 	dReactionStepPool.push_back(locReactionStep_jpsi_ee); //register so will be deleted later: prevent memory leak
-	locReaction->Set_AnyBlueprintFlag(true); //stops searching/building after first good one found
+	locReaction->Set_AnyComboFlag(true); //stops searching/building after first good one found that passes pre-selects
 
     // Select high-mass pairs
 	locReaction->Set_InvariantMassCut(Jpsi, 1.5, 4.);
     // loose E/p cuts - require both tracks to be matched to showers
-	locReaction->Add_AnalysisAction(new DCustomAction_ee_ShowerEoverP_cut(locReaction, false, 0.65, 1.4, 0.65, 1.4));
+	locReaction->Add_ComboPreSelectionAction(new DCustomAction_ee_ShowerEoverP_cut(locReaction, false, 0.65, 1.4, 0.65, 1.4));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
