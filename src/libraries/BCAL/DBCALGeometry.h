@@ -35,6 +35,12 @@ using namespace jana;
 
 #define BCAL_SUM_CELL
 
+//THIS WHOLE CLASS NEEDS TO BE ENTIRELY REFACTORED.
+//THIS IS ALL HORRIBLY DANGEROUS
+//THIS IS NOT EVEN !!!REMOTELY!!! THREAD-SAFE.
+//NOTHING HERE SHOULD BE STATIC
+//INITIALIZE WITH NO RUN NUMBER SHOULD NOT BE SUPPORTED.
+
 class DBCALGeometry : public JObject {
   
 public:
@@ -74,9 +80,9 @@ public:
   static float C_EFFECTIVE;      ///< speed of light in fibers 
 
   // Methods to access and initialize the private variables
-  static bool initialized;
+  static thread_local bool initialized;
 
-  static void Initialize(int runnumber=9999);
+  static void Initialize(int runnumber=11000); //This is TERRIBLE.  //Just AWFUL
 
   static float GetBCAL_inner_rad();
 
@@ -125,11 +131,11 @@ public:
 
 private:
 
-  static float BCALINNERRAD;     ///< innner radius of BCAL in cm
-  static float fADC_radius[5];   ///< BCAL layer radii (4 layers total)
-  static float GLOBAL_CENTER;    ///< center of BCAL in gloobal coordinate system
-  static float BCALFIBERLENGTH;  ///< BCAL Scintilator fiber lenth in cm
-  static float BCAL_PHI_SHIFT;     ///< overall phi roation of BCAL in radians
+  static thread_local float BCALINNERRAD;     ///< innner radius of BCAL in cm
+  static thread_local float fADC_radius[5];   ///< BCAL layer radii (4 layers total)
+  static thread_local float GLOBAL_CENTER;    ///< center of BCAL in gloobal coordinate system
+  static thread_local float BCALFIBERLENGTH;  ///< BCAL Scintilator fiber lenth in cm
+  static thread_local float BCAL_PHI_SHIFT;     ///< overall phi roation of BCAL in radians
 
 };
 
