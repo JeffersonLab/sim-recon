@@ -395,22 +395,10 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 	// Write f125 hits
 	Writef125Data(buff, f125pis, f125cdcpulses, f125fdcpulses, f125tts, f125wrds, f125configs, Nevents);
 
-    // Write out TS sync data if it exists ("sync event")
+    // Write out extra TS data if it exists ("sync event")
     vector<const DL1Info*> l1_info;
     loop->Get(l1_info);
     if(l1_info.size() > 0) {
-        // DEBUG OUTPUT
-        cout << " I WROTE A SYNC EVENT" << endl;
-        uint32_t run_number = loop->GetJEvent().GetRunNumber();
-        uint64_t event_number = loop->GetJEvent().GetEventNumber();
-        cout << " RUN = " << run_number << "  EVENT = " << event_number << endl;
-        vector<pair<string,string> > items;
-        l1_info[0]->toStrings(items);
-
-        for(vector<pair<string,string> >::iterator it=items.begin();
-            it!=items.end(); it++)
-            cout << it->first << ": " << it->second << endl;
-
         WriteTSSyncData(loop, buff, l1_info[0]);
     }
 
