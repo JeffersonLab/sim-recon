@@ -1599,12 +1599,12 @@ bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
     
     // Get rotation angles
     vector<double>sc_rot_angles;
-    //Get("//posXYZ[@volume='startCntr']/@rot", sc_rot_angles);
-    //double ThetaX=sc_rot_angles[0]*M_PI/180.;
-    //double ThetaY=sc_rot_angles[1]*M_PI/180.;
-    Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
+    Get("//posXYZ[@volume='startCntr']/@rot", sc_rot_angles);
     double ThetaX=sc_rot_angles[0]*M_PI/180.;
     double ThetaY=sc_rot_angles[1]*M_PI/180.;
+    Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
+    //double ThetaX=sc_rot_angles[0]*M_PI/180.;
+    //double ThetaY=sc_rot_angles[1]*M_PI/180.;
     double ThetaZ=sc_rot_angles[2]*M_PI/180.;
 
     double num_paddles;
