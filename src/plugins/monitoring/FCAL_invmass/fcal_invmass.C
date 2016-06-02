@@ -1,10 +1,15 @@
-// hnamepath:  /bcal_inv_mass/InvMass1
-// hnamepath:  /bcal_inv_mass/bcal_diphoton_mass_500
-// hnamepath:  /bcal_inv_mass/bcal_diphoton_mass_700
-// hnamepath:  /bcal_inv_mass/bcal_diphoton_mass_900
+// hnamepath:  /FCAL_invmass/InvMass1
+// hnamepath:  /FCAL_invmass/InvMass2
+// hnamepath:  /FCAL_invmass/InvMass3
+// hnamepath:  /FCAL_invmass/InvMass4
+// hnamepath:  /FCAL_invmass/InvMass5
+// hnamepath:  /FCAL_invmass/InvMass6
+// hnamepath:  /FCAL_invmass/InvMass7
+// hnamepath:  /FCAL_invmass/InvMass8
+// hnamepath:  /FCAL_invmass/InvMass9
 
 {
-  
+    
   TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("FCAL_invmass");
   if(dir) dir->cd();
 
@@ -19,9 +24,6 @@
   TH1I* InvMass9 = (TH1I*)gDirectory->FindObjectAny("InvMass9");
   
   
-  int polnumber = 9;
-  float fit_low = 0.07;
-  float fit_high = 0.20;
   float par_1[12]; 
   float par_2[12]; 
   float par_3[12]; 
@@ -124,7 +126,7 @@
     pt_300->SetFillColor(0);
     pt_300->AddText(Form("M_{#pi^{0}} = %.3f MeV",par_2[4]*1000));
     pt_300->AddText(Form("#sigma_{#pi^{0}} = %.3f MeV",par_2[5]*1000));
-    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_1[5]/par_2[4])*100));
+    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_2[5]/par_2[4])*100));
     pt_300->Draw();
   }
   
@@ -166,7 +168,7 @@
     pt_300->SetFillColor(0);
     pt_300->AddText(Form("M_{#pi^{0}} = %.3f MeV",par_3[4]*1000));
     pt_300->AddText(Form("#sigma_{#pi^{0}} = %.3f MeV",par_3[5]*1000));
-    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_1[5]/par_3[4])*100));
+    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_3[5]/par_3[4])*100));
     pt_300->Draw();
   }
   
@@ -208,7 +210,7 @@
     pt_300->SetFillColor(0);
     pt_300->AddText(Form("M_{#pi^{0}} = %.3f MeV",par_4[4]*1000));
     pt_300->AddText(Form("#sigma_{#pi^{0}} = %.3f MeV",par_4[5]*1000));
-    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_1[5]/par_4[4])*100));
+    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_4[5]/par_4[4])*100));
     pt_300->Draw();
   }
   
@@ -250,7 +252,7 @@
     pt_300->SetFillColor(0);
     pt_300->AddText(Form("M_{#pi^{0}} = %.3f MeV",par_5[4]*1000));
     pt_300->AddText(Form("#sigma_{#pi^{0}} = %.3f MeV",par_5[5]*1000));
-    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_1[5]/par_5[4])*100));
+    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_5[5]/par_5[4])*100));
     pt_300->Draw();
   }
   
@@ -292,7 +294,7 @@
     pt_300->SetFillColor(0);
     pt_300->AddText(Form("M_{#pi^{0}} = %.3f MeV",par_6[4]*1000));
     pt_300->AddText(Form("#sigma_{#pi^{0}} = %.3f MeV",par_6[5]*1000));
-    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_1[5]/par_6[4])*100));
+    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_6[5]/par_6[4])*100));
     pt_300->Draw();
   }
   
@@ -334,7 +336,7 @@ if( InvMass7 ){
     pt_300->SetFillColor(0);
     pt_300->AddText(Form("M_{#pi^{0}} = %.3f MeV",par_7[4]*1000));
     pt_300->AddText(Form("#sigma_{#pi^{0}} = %.3f MeV",par_7[5]*1000));
-    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_1[5]/par_7[4])*100));
+    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_7[5]/par_7[4])*100));
     pt_300->Draw();
   }
   
@@ -376,7 +378,7 @@ if( InvMass7 ){
     pt_300->SetFillColor(0);
     pt_300->AddText(Form("M_{#pi^{0}} = %.3f MeV",par_8[4]*1000));
     pt_300->AddText(Form("#sigma_{#pi^{0}} = %.3f MeV",par_8[5]*1000));
-    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_1[5]/par_8[4])*100));
+    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_8[5]/par_8[4])*100));
     pt_300->Draw();
   } 
   
@@ -418,7 +420,7 @@ if( InvMass7 ){
     pt_300->SetFillColor(0);
     pt_300->AddText(Form("M_{#pi^{0}} = %.3f MeV",par_9[4]*1000));
     pt_300->AddText(Form("#sigma_{#pi^{0}} = %.3f MeV",par_9[5]*1000));
-    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_1[5]/par_9[4])*100));
+    pt_300->AddText(Form("#sigma/M = %.3f %%",(par_9[5]/par_9[4])*100));
     pt_300->Draw();
   }
 }

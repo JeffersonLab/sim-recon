@@ -166,7 +166,7 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, uint64_t eventnumber)
 void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* cluster, double &Ecorrected, DVector3 &pos_corrected, double &errZ, const DVector3 *vertex)
 {
   // Non-linear energy correction are done here
-  int MAXITER = 1000;
+  //int MAXITER = 1000;
 
   DVector3  posInCal = cluster->getCentroid();
   float x0 = posInCal.Px();
@@ -177,10 +177,28 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
   double A  = NON_LIN_COEF_A;
   double B  = NON_LIN_COEF_B;
   double C  = NON_LIN_COEF_C;
-  double alfa  = NON_LIN_COEF_alfa;
+ //double alfa  = NON_LIN_COEF_alfa;
 	 
   double Egamma = 0.;
   
+  // 06/02/2016 Shower Non-linearity Correction by Adesh. Update shower_calib table in ccdb to include constants from linear fit.
+  
+  if ( Eclust <= 1.5 ) { 
+  
+  Egamma = Eclust/(0.9538+0.02604*Eclust); // Linear part
+  
+  }
+  
+  if ( Eclust > 1.5 ) { 
+  
+  Egamma = Eclust/(A - exp(-B*Eclust+ C)); // Non-linear part
+  
+  }
+  
+  // End Adesh's Correction  
+  
+ /*
+ // Original Correction
   if ( A > 0 ) { 
     
     Egamma = Eclust/A;
@@ -210,6 +228,7 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
     cout  << "Warning: DFCALShower : parameter A=" <<  NON_LIN_COEF_A 
 	  << " is not valid!" << endl; 
   }
+  */
 
   // then depth corrections 
   if ( Egamma > 0 ) { 
