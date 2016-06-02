@@ -210,7 +210,7 @@ class DParticleID:public jana::JObject{
 	double ONESIDED_PADDLE_MIDPOINT_MAG; //+/- this number for North/South
 
   double dTargetZCenter;
-  double SC_DPHI_CUT,SC_DPHI_CUT_WB;
+  double SC_DPHI_CUT,SC_DPHI_CUT_WB,SC_DPHI_CUT_SLOPE;
 
   const DTrackFinder *finder;
 };

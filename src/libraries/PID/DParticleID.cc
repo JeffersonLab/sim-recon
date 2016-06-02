@@ -118,6 +118,9 @@ DParticleID::DParticleID(JEventLoop *loop)
 	SC_DPHI_CUT=0.125;
 	gPARMS->SetDefaultParameter("SC:DPHI_CUT",SC_DPHI_CUT);
 	
+	SC_DPHI_CUT_SLOPE=0.004;
+	gPARMS->SetDefaultParameter("SC:DPHI_CUT_SLOPE",SC_DPHI_CUT_SLOPE);
+
 	SC_DPHI_CUT_WB=0.21;
 	gPARMS->SetDefaultParameter("SC:DPHI_CUT_WB",SC_DPHI_CUT_WB);
 
@@ -1024,10 +1027,11 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 		dphi -= M_TWO_PI;
 	while(dphi < -1.0*TMath::Pi())
 		dphi += M_TWO_PI;
-	if(fabs(dphi) >= sc_dphi_cut)
-		return false; //no match
+	// reject match if not consistent with this paddle or the one adjacent
+	if(fabs(dphi) >= 0.21)
+	  return false; //no match
 	
-	// Match in phi successful, refine match in nose region were applicable
+	// Rough match in phi successful, refine match in nose region were applicable
 
 	// Length along scintillator
 	double L = 0.;
@@ -1057,6 +1061,10 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 	{
 	  //L=myz;
 	  //locCorrectedHitTime -= L/C_EFFECTIVE;
+
+	  // Apply a user-specified matching cut in the leg region
+	  if(fabs(dphi) >= sc_dphi_cut)
+	    return false; //no match
 	  
 	  // Calculate hit distance along scintillator relative to upstream end
 	  L = myz - sc_pos_soss;
@@ -1089,6 +1097,10 @@ bool DParticleID::MatchToSC(const DKinematicData* locTrack, const DReferenceTraj
 		  dphi -= M_TWO_PI;
 		while(dphi < -1.0*TMath::Pi())
 		  dphi += M_TWO_PI;
+		
+		// Open up the phi cut in the nose region
+		sc_dphi_cut+=SC_DPHI_CUT_SLOPE*(myz-sc_pos_eoss);
+		
 		if (fabs(dphi)>sc_dphi_cut) return false;
 		break;
 	      }
