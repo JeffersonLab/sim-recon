@@ -1787,15 +1787,14 @@ void DParticleID::Get_CDCNumHitRingsPerSuperlayer(int locBitPattern, map<int, in
 void DParticleID::Get_CDCNumHitRingsPerSuperlayer(const set<int>& locCDCRings, map<int, int>& locNumHitRingsPerSuperlayer) const
 {
 	locNumHitRingsPerSuperlayer.clear();
+	for(int locCDCSuperlayer = 1; locCDCSuperlayer <= 7; ++locCDCSuperlayer)
+		locNumHitRingsPerSuperlayer[locCDCSuperlayer] = 0;
+
 	set<int>::const_iterator locIterator = locCDCRings.begin();
 	for(; locIterator != locCDCRings.end(); ++locIterator)
 	{
 		int locCDCSuperlayer = ((*locIterator) - 1)/4 + 1;
-		map<int, int>::iterator locMapIterator = locNumHitRingsPerSuperlayer.find(locCDCSuperlayer);
-		if(locMapIterator == locNumHitRingsPerSuperlayer.end())
-			locNumHitRingsPerSuperlayer.insert(pair<int, int>(locCDCSuperlayer, 1));
-		else
-			++(locMapIterator->second);
+		++locNumHitRingsPerSuperlayer[locCDCSuperlayer];
 	}
 }
 
@@ -1809,15 +1808,15 @@ void DParticleID::Get_FDCNumHitPlanesPerPackage(int locBitPattern, map<int, int>
 void DParticleID::Get_FDCNumHitPlanesPerPackage(const set<int>& locFDCPlanes, map<int, int>& locNumHitPlanesPerPackage) const
 {
 	locNumHitPlanesPerPackage.clear();
+	for(int locFDCPackage = 1; locFDCPackage <= 4; ++locFDCPackage)
+		locNumHitPlanesPerPackage[locFDCPackage] = 0;
+
 	set<int>::const_iterator locIterator = locFDCPlanes.begin();
 	for(; locIterator != locFDCPlanes.end(); ++locIterator)
 	{
 		int locFDCPackage = ((*locIterator) - 1)/6 + 1;
 		map<int, int>::iterator locMapIterator = locNumHitPlanesPerPackage.find(locFDCPackage);
-		if(locMapIterator == locNumHitPlanesPerPackage.end())
-			locNumHitPlanesPerPackage.insert(pair<int, int>(locFDCPackage, 1));
-		else
-			++(locMapIterator->second);
+		++locNumHitPlanesPerPackage[locFDCPackage];
 	}
 }
 

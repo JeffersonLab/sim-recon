@@ -135,7 +135,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::brun(jana::JEventLoop* locEventLoop,
 	//Get Target Center Z
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
-	locGeometry->GetTargetZ(dTargetCenterZ); //thread_local: each thread has own copy!
+	locGeometry->GetTargetZ(dTargetCenterZ);
 
 	//Effective velocities
 	locEventLoop->GetCalib("/BCAL/effective_velocities", effective_velocities);
