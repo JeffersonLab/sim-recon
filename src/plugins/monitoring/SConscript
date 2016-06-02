@@ -34,7 +34,8 @@ subdirs = [
 'BCAL_inv_mass',
 'CDC_drift',
 'CDC_Cosmics',
-'EPICS_dump' ,
+'EPICS_dump',
+'TS_scaler',
 'CDC_Efficiency']
 
 #'L3_online',
