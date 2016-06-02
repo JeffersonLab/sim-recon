@@ -264,7 +264,8 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		//Predict BCAL Surface Hit Location
 		unsigned int locPredictedSurfaceModule = 0, locPredictedSurfaceSector = 0;
 		DVector3 locPredictedSurfacePosition;
-		locParticleID->PredictBCALWedge(locTrackTimeBased->rt, locPredictedSurfaceModule, locPredictedSurfaceSector, &locPredictedSurfacePosition);
+		if(!locParticleID->PredictBCALWedge(locTrackTimeBased->rt, locPredictedSurfaceModule, locPredictedSurfaceSector, &locPredictedSurfacePosition))
+			continue; //no expectation of hitting BCAL
 
 		pair<double, double> locShowerPair(locPredictedSurfacePosition.Z(), locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());
 		locShowerVector_ShowerTotal.push_back(locShowerPair);
