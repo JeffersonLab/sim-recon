@@ -415,7 +415,6 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
     }
 
 
-	
 	// Update global header length
 	if(!buff.empty()) buff[0] = buff.size()-1;
 }
@@ -1214,11 +1213,15 @@ void DEventWriterEVIO::WriteTSSyncData(JEventLoop *loop, vector<uint32_t> &buff,
     // The Trigger Supervisor (TS) inserts information into the data stream
     // during periodic "sync events".  The data is stored in one bank
     // so we build it here
+
+    // TS data block bank
+    uint32_t data_bank_len_idx = buff.size();
+    buff.push_back(0); // will be updated later
+    buff.push_back(0x00011001); // Data bank header: 0001=TS rocid , 10=Bank of Banks, 01=1 event
     
     // TS data bank
     uint32_t trigger_bank_len_idx = buff.size();
     buff.push_back(0); // Length
-    //buff.push_back(0xFF202000); // 0xFF02=Trigger Bank Tag, 0x20=Segments
     buff.push_back(0xEE020100); // 0xEE02=TS Bank Tag, 0x01=u32int
 
     // Save header information
@@ -1247,5 +1250,6 @@ void DEventWriterEVIO::WriteTSSyncData(JEventLoop *loop, vector<uint32_t> &buff,
 
     // Update bank length
     buff[trigger_bank_len_idx] = buff.size() - trigger_bank_len_idx - 1;
+    buff[data_bank_len_idx] = buff.size() - data_bank_len_idx - 1;
 
 }
