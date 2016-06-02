@@ -8,38 +8,53 @@ void FDC_Efficiency(bool save = 0){
   dir->cd();
 
   gDirectory->cd("Track_Quality");
-  TCanvas *cTrackQuality = new TCanvas("cTrackQuality", "Track Quality Histograms", 900, 600);
-  cTrackQuality->Divide(2,2);
+  TCanvas *cTrackQuality = new TCanvas("cTrackQuality", "Track Quality Histograms", 900, 800);
+  cTrackQuality->Divide(3,2);
 
   cTrackQuality->cd(1);
-  TH1 *tchi = (TH1*) gDirectory->Get("hChi2OverNDF");
-  TH1 *tchi_acc = (TH1*) gDirectory->Get("hChi2OverNDF_accepted");
-  tchi->Draw();
-  tchi_acc->SetLineColor(2);
-  tchi_acc->Draw("same");
-
-  cTrackQuality->cd(2);
   TH1 *tmom = (TH1*) gDirectory->Get("hMom");
   TH1 *tmom_acc = (TH1*) gDirectory->Get("hMom_accepted");
   tmom->Draw();
   tmom_acc->SetLineColor(2);
   tmom_acc->Draw("same");
 
+  cTrackQuality->cd(2);
+  TH1 *ttheta = (TH1*) gDirectory->Get("hTheta");
+  TH1 *ttheta_acc = (TH1*) gDirectory->Get("hTheta_accepted");
+  ttheta->Draw();
+  ttheta_acc->SetLineColor(2);
+  ttheta_acc->Draw("same");
+
   cTrackQuality->cd(3);
+  TH1 *tphi = (TH1*) gDirectory->Get("hPhi");
+  TH1 *tphi_acc = (TH1*) gDirectory->Get("hPhi_accepted");
+  tphi->SetMinimum(0.0);
+  tphi->Draw();
+  tphi_acc->SetLineColor(2);
+  tphi_acc->Draw("same");
+
+  cTrackQuality->cd(4);
+  TH1 *tchi = (TH1*) gDirectory->Get("hChi2OverNDF");
+  TH1 *tchi_acc = (TH1*) gDirectory->Get("hChi2OverNDF_accepted");
+  tchi->Draw();
+  tchi_acc->SetLineColor(2);
+  tchi_acc->Draw("same");
+
+  cTrackQuality->cd(5);
   TH1 *tcells = (TH1*) gDirectory->Get("hCellsHit");
   TH1 *tcells_acc = (TH1*) gDirectory->Get("hCellsHit_accepted");
   tcells->Draw();
   tcells_acc->SetLineColor(2);
   tcells_acc->Draw("same");
 
-  cTrackQuality->cd(4);
+  cTrackQuality->cd(6);
   TH1 *trings = (TH1*) gDirectory->Get("hRingsHit");
   TH1 *trings_acc = (TH1*) gDirectory->Get("hRingsHit_accepted");
   trings->Draw();
   trings_acc->SetLineColor(2);
   trings_acc->Draw("same");
 
-  Float_t minScale = 0.5;
+  Float_t minScale = 0.0;
   Float_t maxScale = 1.0;    
 
   gDirectory->cd("../FDC_View");
@@ -50,15 +65,15 @@ void FDC_Efficiency(bool save = 0){
 
   for(unsigned int icell=1; icell<=24; icell++){
     cEfficiency_Wire->cd(icell);
-    char hname[256];
-    sprintf(hname, "fdc_wire_measured_cell[%d]", icell);
-    TH1 *h = (TH1*)(gDirectory->Get(hname));
+    char hname1[256];
+    sprintf(hname1, "fdc_wire_measured_cell[%d]", icell);
+    TH1 *h1 = (TH1*)(gDirectory->Get(hname1));
     char hname2[256];
     sprintf(hname2, "fdc_wire_expected_cell[%d]", icell);
     TH1 *h2 = (TH1*)(gDirectory->Get(hname2));
       
-    if(h && h2){
-      EffWire[icell-1] = new  TGraphAsymmErrors(h, h2, "ac");
+    if(h1 && h2){
+      EffWire[icell-1] = new  TGraphAsymmErrors(h1, h2, "ac");
       EffWire[icell-1]->Draw("ap");
       EffWire[icell-1]->SetMinimum(0.0);
       EffWire[icell-1]->SetMaximum(1.0);
@@ -76,21 +91,21 @@ void FDC_Efficiency(bool save = 0){
     
   for(unsigned int icell=1; icell<=24; icell++){
     cEfficiency_Pseudo->cd(icell);
-    char hname[256];
-    sprintf(hname, "fdc_pseudo_measured_cell[%d]", icell);
-    TH1 *h = (TH1*)(gDirectory->Get(hname));
-    char hname2[256];
-    sprintf(hname2, "fdc_pseudo_expected_cell[%d]", icell);
-    TH1 *h2 = (TH1*)(gDirectory->Get(hname2));
+    char hname3[256];
+    sprintf(hname3, "fdc_pseudo_measured_cell[%d]", icell);
+    TH2 *h3 = (TH2*)(gDirectory->Get(hname3));
+    char hname4[256];
+    sprintf(hname4, "fdc_pseudo_expected_cell[%d]", icell);
+    TH2 *h4 = (TH2*)(gDirectory->Get(hname4));
       
-    if(h && h2){
-      h->Divide(h2);
-      h->SetMinimum(minScale);
-      h->SetMaximum(maxScale);
-      h->GetXaxis()->SetTitle("X Position (cm)");
-      h->GetYaxis()->SetTitle("Y Position (cm)");
-      h->SetStats(0);
-      h->Draw("colz");
+    if(h3 && h4){
+      h3->Divide(h4);
+      // h3->SetMinimum(minScale);
+      // h3->SetMaximum(maxScale);
+      h3->GetXaxis()->SetTitle("X Position (cm)");
+      h3->GetYaxis()->SetTitle("Y Position (cm)");
+      h3->SetStats(0);
+      h3->Draw("colz");
     }
   }
 
