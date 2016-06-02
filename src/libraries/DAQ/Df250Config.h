@@ -16,6 +16,7 @@ class Df250Config:public DDAQConfig{
 		JOBJECT_PUBLIC(Df250Config);
 
 		Df250Config(uint32_t rocid, uint32_t slot_mask):DDAQConfig(rocid,slot_mask),NSA(0xFFFF),NSB(0xFFFF),NSA_NSB(0xFFFF),NPED(0xFFFF){}
+		Df250Config(const Df250Config *c):DDAQConfig(c->rocid,c->slot_mask),NSA(c->NSA),NSB(c->NSB),NSA_NSB(c->NSA_NSB),NPED(c->NPED){}
 		
 		uint16_t NSA;      // Num. samples before threshold crossing sample
 		uint16_t NSB;      // Num. samples after  threshold crossing sample

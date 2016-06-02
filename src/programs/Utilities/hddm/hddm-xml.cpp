@@ -232,7 +232,7 @@ int main(int argC, char* argV[])
    if (! ofs.is_open())
    {
       std::cerr
-           << "hddm-xml: Error opening temp file " << tmpFileStr << std::endl;
+           << "hddm-xml: Error opening temp file " << tmpFileStr.str() << std::endl;
       exit(2);
    }
 

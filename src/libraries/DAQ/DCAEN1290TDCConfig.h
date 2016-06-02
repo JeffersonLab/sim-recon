@@ -16,6 +16,7 @@ class DCAEN1290TDCConfig:public DDAQConfig{
 		JOBJECT_PUBLIC(DCAEN1290TDCConfig);
 		
 		DCAEN1290TDCConfig(uint32_t rocid, uint32_t slot_mask):DDAQConfig(rocid,slot_mask),WINWIDTH(0xFFFF),WINOFFSET(0xFFFF){}
+		DCAEN1290TDCConfig(const DCAEN1290TDCConfig *c):DDAQConfig(c->rocid,c->slot_mask),WINWIDTH(c->WINWIDTH),WINOFFSET(c->WINOFFSET){}
 		
 		uint16_t WINWIDTH;
 		uint16_t WINOFFSET;

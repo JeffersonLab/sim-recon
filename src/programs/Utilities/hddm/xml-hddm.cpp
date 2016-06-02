@@ -251,7 +251,7 @@ int main(int argC, char* argV[])
       {
          std::cerr
               << "xml-hddm: Error opening temp file "
-              << tmpFileStr << std::endl;
+              << tmpFileStr.str() << std::endl;
          exit(2);
       }
       ofs << xmlHeader << std::endl;

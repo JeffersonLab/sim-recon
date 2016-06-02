@@ -104,13 +104,16 @@ void DEventRFBunch_factory_Calibrations::Select_GoodTracks(JEventLoop* locEventL
 	vector<const DTrackWireBased*> locTrackWireBasedVector;
 	locEventLoop->Get(locTrackWireBasedVector);
 
+	const DParticleID* locParticleID = NULL;
+	locEventLoop->GetSingle(locParticleID);
+
 	//select the best DTrackWireBased for each track: of tracks with good hit pattern, use best tracking FOM
 	map<JObject::oid_t, const DTrackWireBased*> locBestTrackWireBasedMap; //lowest tracking chisq/ndf for each candidate id
 	for(size_t loc_i = 0; loc_i < locTrackWireBasedVector.size(); ++loc_i)
 	{
 		if(locTrackWireBasedVector[loc_i]->FOM < dMinTrackingFOM)
 			continue;
-		if(!dCutAction_TrackHitPattern->Cut_TrackHitPattern(locTrackWireBasedVector[loc_i]))
+		if(!dCutAction_TrackHitPattern->Cut_TrackHitPattern(locParticleID, locTrackWireBasedVector[loc_i]))
 			continue;
 		JObject::oid_t locCandidateID = locTrackWireBasedVector[loc_i]->candidateid;
 		if(locBestTrackWireBasedMap.find(locCandidateID) == locBestTrackWireBasedMap.end())
