@@ -94,6 +94,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::init(void)
 	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaZToShower"); //is signed: BCAL - Track
 	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitPhi"); //degrees
 	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitZ");
+	locTreeBranchRegister.Register_Single<Bool_t>("IsMatchedToTrack"); //false if not registered in DDetectorMatches
 
 	//HIT SEARCH
 	//BCALClusterLayers: first 4 bits: point layers, next 4: unmatched-unified-hit layers
@@ -278,49 +279,8 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		const DBCALShowerMatchParams* locBCALShowerMatchParams = locChargedTrackHypothesis->Get_BCALShowerMatchParams();
 		if(locBCALShowerMatchParams == NULL)
 		{
-			//NO MATCH. FILL ANYWAY FOR SHOWER EFFICIENCY STUDY, BUT THEN DON'T DO HIT EFFICIENCY STUDY.
-
-			//TRACK
-			dTreeFillData.Fill_Single<Int_t>("PID_PDG", PDGtype(locChargedTrackHypothesis->PID()));
-			dTreeFillData.Fill_Single<Float_t>("TimingBeta", locChargedTrackHypothesis->measuredBeta());
-			dTreeFillData.Fill_Single<Float_t>("TrackVertexZ", locChargedTrackHypothesis->position().Z());
-			DVector3 locDP3 = locChargedTrackHypothesis->momentum();
-			TVector3 locP3(locDP3.X(), locDP3.Y(), locDP3.Z());
-			dTreeFillData.Fill_Single<TVector3>("TrackP3", locP3);
-			dTreeFillData.Fill_Single<UInt_t>("TrackCDCRings", locTrackTimeBased->dCDCRings);
-			dTreeFillData.Fill_Single<UInt_t>("TrackFDCPlanes", locTrackTimeBased->dFDCPlanes);
-
-			//SHOWER
-			double locShowerEnergy = (locClosestBCALShower != nullptr) ? locClosestBCALShower->E : 0.0;
-			dTreeFillData.Fill_Single<Float_t>("NearestShowerEnergy", locShowerEnergy);
-			dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", locBestMatchDeltaPhi); //is signed: BCAL - Track
-			dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", locBestMatchDeltaZ); //is signed: BCAL - Track
-			dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());
-			dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitZ", locPredictedSurfacePosition.Z());
-
-			//HIT SEARCH
-			dTreeFillData.Fill_Single<UChar_t>("BCALClusterLayers", 0);
-			dTreeFillData.Fill_Single<UChar_t>("IsHitInCluster", 0);
-			dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer1", 0);
-			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer1_Downstream", 0);
-			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer1_Upstream", 0);
-			//LAYER 2:
-			dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer2", 0);
-			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer2_Downstream", 0);
-			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer2_Upstream", 0);
-			//LAYER 3:
-			dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer3", 0);
-			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer3_Downstream", 0);
-			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer3_Upstream", 0);
-			//LAYER 4:
-			dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer4", 0);
-			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer4_Downstream", 0);
-			dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer4_Upstream", 0);
-
-			//FILL TTREE
-			dTreeInterface->Fill(dTreeFillData);
-
-			continue; //nope
+			Fill_NoClusterStudy(locChargedTrackHypothesis, false); //no match: fill for shower efficiency
+			continue; //don't compute hit efficiencies
 		}
 
 		locShowerVector_ShowerFound.push_back(locShowerPair);
@@ -335,7 +295,11 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		vector<const DBCALCluster*> locClusters;
 		locBCALShowerMatchParams->dBCALShower->Get(locClusters);
 		if(locClusters.size() > 1)
-			continue; //likely a messy shower, will probably mess up efficiency calculation. 
+		{
+			//likely a messy shower, will probably mess up efficiency calculation. 
+			Fill_NoClusterStudy(locChargedTrackHypothesis, true); //can't use for hits: fill for shower efficiency
+			continue; //don't compute hit efficiencies
+		}
 
 		//get cluster, points, unmatched hits
 		const DBCALCluster* locCluster = locClusters[0];
@@ -356,7 +320,10 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		//require points in at least 2 layers: make sure it's not a noise cluster
 		//Note: This can introduce bias into the study. To avoid bias, only evaluate layer efficiency if at least 2 OTHER layers have hits
 		if(locSortedClusterPoints.size() < 2)
-			continue;
+		{
+			Fill_NoClusterStudy(locChargedTrackHypothesis, true); //can't use for hits: fill for shower efficiency
+			continue; //don't compute hit efficiencies
+		}
 
 		//sort cluster unified hits by layer, total sector //first int: layer. second int: sector
 		//also, build set of all cluster unmatched unified hits
@@ -525,6 +492,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", locBCALShowerMatchParams->dDeltaZToShower); //is signed: BCAL - Track
 		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());
 		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitZ", locPredictedSurfacePosition.Z());
+		dTreeFillData.Fill_Single<Bool_t>("IsMatchedToTrack", true);
 
 		//HIT SEARCH
 		//BCALClusterLayers: first 4 bits: point layers, next 4: unmatched-unified-hit layers
@@ -585,6 +553,62 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
+}
+
+void JEventProcessor_BCAL_Hadronic_Eff::Fill_NoClusterStudy(const DChargedTrackHypothesis* locChargedTrackHypothesis, bool locIsMatchedToTrackFlag)
+{
+	const DTrackTimeBased* locTrackTimeBased = NULL;
+	locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+
+	//Predict BCAL Surface Hit Location
+	unsigned int locPredictedSurfaceModule = 0, locPredictedSurfaceSector = 0;
+	DVector3 locPredictedSurfacePosition;
+	locParticleID->PredictBCALWedge(locTrackTimeBased->rt, locPredictedSurfaceModule, locPredictedSurfaceSector, &locPredictedSurfacePosition);
+
+	//Find closest shower match for BCAL
+	double locBestMatchDeltaPhi = 0.0, locBestMatchDeltaZ = 0.0;
+	const DBCALShower* locClosestBCALShower = locParticleID->Get_ClosestToTrack_BCAL(locTrackTimeBased, locBCALShowers, locBestMatchDeltaPhi, locBestMatchDeltaZ);
+
+	//TRACK
+	dTreeFillData.Fill_Single<Int_t>("PID_PDG", PDGtype(locChargedTrackHypothesis->PID()));
+	dTreeFillData.Fill_Single<Float_t>("TimingBeta", locChargedTrackHypothesis->measuredBeta());
+	dTreeFillData.Fill_Single<Float_t>("TrackVertexZ", locChargedTrackHypothesis->position().Z());
+	DVector3 locDP3 = locChargedTrackHypothesis->momentum();
+	TVector3 locP3(locDP3.X(), locDP3.Y(), locDP3.Z());
+	dTreeFillData.Fill_Single<TVector3>("TrackP3", locP3);
+	dTreeFillData.Fill_Single<UInt_t>("TrackCDCRings", locTrackTimeBased->dCDCRings);
+	dTreeFillData.Fill_Single<UInt_t>("TrackFDCPlanes", locTrackTimeBased->dFDCPlanes);
+
+	//SHOWER
+	double locShowerEnergy = (locClosestBCALShower != nullptr) ? locClosestBCALShower->E : 0.0;
+	dTreeFillData.Fill_Single<Float_t>("NearestShowerEnergy", locShowerEnergy);
+	dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", locBestMatchDeltaPhi); //is signed: BCAL - Track
+	dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", locBestMatchDeltaZ); //is signed: BCAL - Track
+	dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());
+	dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitZ", locPredictedSurfacePosition.Z());
+	dTreeFillData.Fill_Single<Bool_t>("IsMatchedToTrack", locIsMatchedToTrackFlag);
+
+	//HIT SEARCH
+	dTreeFillData.Fill_Single<UChar_t>("BCALClusterLayers", 0);
+	dTreeFillData.Fill_Single<UChar_t>("IsHitInCluster", 0);
+	dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer1", 0);
+	dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer1_Downstream", 0);
+	dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer1_Upstream", 0);
+	//LAYER 2:
+	dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer2", 0);
+	dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer2_Downstream", 0);
+	dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer2_Upstream", 0);
+	//LAYER 3:
+	dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer3", 0);
+	dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer3_Downstream", 0);
+	dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer3_Upstream", 0);
+	//LAYER 4:
+	dTreeFillData.Fill_Single<UInt_t>("ProjectedBCALSectors_Layer4", 0);
+	dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer4_Downstream", 0);
+	dTreeFillData.Fill_Single<UInt_t>("NearestBCALSectors_Layer4_Upstream", 0);
+
+	//FILL TTREE
+	dTreeInterface->Fill(dTreeFillData);
 }
 
 double JEventProcessor_BCAL_Hadronic_Eff::Calc_ProjectedSector(int locLayer, const map<int, map<int, set<const DBCALPoint*> > >& locSortedPoints)
