@@ -75,13 +75,13 @@ jerror_t DEventProcessor_p2pi_hists::evnt(jana::JEventLoop* locEventLoop, uint64
         // string is DReaction factory tag: will fill trees for all DReactions that are defined in the specified factory
         const DEventWriterROOT* locEventWriterROOT = NULL;
         locEventLoop->GetSingle(locEventWriterROOT);
-        //locEventWriterROOT->Fill_DataTrees(locEventLoop, "p2pi_hists");
+        locEventWriterROOT->Fill_DataTrees(locEventLoop, "p2pi_hists");
 
 	// Get the analysis results for all DReactions. 
 		//Getting these objects triggers the analysis, if it wasn't performed already. 
 		//These objects contain the DParticleCombo objects that survived the DAnalysisAction cuts that were added to the DReactions
-	vector<const DAnalysisResults*> locAnalysisResultsVector;
-	locEventLoop->Get(locAnalysisResultsVector);
+	//vector<const DAnalysisResults*> locAnalysisResultsVector;
+	//locEventLoop->Get(locAnalysisResultsVector);
 
 	return NOERROR;
 }
