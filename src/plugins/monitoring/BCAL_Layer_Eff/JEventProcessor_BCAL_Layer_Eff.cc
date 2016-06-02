@@ -17,8 +17,6 @@ extern "C"
 
 //define static local variable //declared in header file
 thread_local DTreeFillData JEventProcessor_BCAL_Layer_Eff::dTreeFillData;
-thread_local double JEventProcessor_BCAL_Layer_Eff::dTargetCenterZ = 65.0;
-thread_local vector<double> JEventProcessor_BCAL_Layer_Eff::effective_velocities;
 
 //------------------
 // init
@@ -136,6 +134,9 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::brun(jana::JEventLoop* locEventLoop, in
 	//Effective velocities
 	locEventLoop->GetCalib("/BCAL/effective_velocities", effective_velocities);
 
+	//THE WORST THING EVER.  FIX THIS GEOMETRY CLASS.  NOTHING IN IT SHOULD BE STATIC.
+	DBCALGeometry::Initialize(locRunNumber);
+
 	return NOERROR;
 }
 
@@ -168,11 +169,11 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
 
-	const DBCALUnifiedHit* locBCALUnifiedHits = NULL;
-	locEventLoop->GetSingle(locBCALUnifiedHits);
+	vector<const DBCALUnifiedHit*> locBCALUnifiedHits;
+	locEventLoop->Get(locBCALUnifiedHits);
 
-	const DBCALPoint* locBCALPoints = NULL;
-	locEventLoop->GetSingle(locBCALPoints);
+	vector<const DBCALPoint*> locBCALPoints;
+	locEventLoop->Get(locBCALPoints);
 
 	//sort bcal points by layer, total sector //first int: layer. second int: sector
 	map<int, map<int, set<const DBCALPoint*> > > locSortedPoints;
@@ -261,7 +262,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 		{
 			locClusterPointSet.insert(locPoint);
 			int locSector = (locPoint->module() - 1)*4 + locPoint->sector(); //1 -> 192
-			locSortedPoints[locPoint->layer()][locSector].insert(locPoint);
+			locSortedClusterPoints[locPoint->layer()][locSector].insert(locPoint);
 		}
 
 		//require points in at least 2 layers: make sure it's not a noise cluster
@@ -273,7 +274,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 		//also, build set of all cluster unmatched unified hits
 		set<const DBCALUnifiedHit*> locClusterUnifiedHitSet;
 		map<int, map<int, set<const DBCALUnifiedHit*> > > locSortedClusterHits_Upstream, locSortedClusterHits_Downstream;
-		for(const auto& locUnifiedHitPair : locBCALUnifiedHits)
+		for(const auto& locUnifiedHitPair : locClusterBCALHits)
 		{
 			const DBCALUnifiedHit* locUnifiedHit = locUnifiedHitPair.first;
 			locClusterUnifiedHitSet.insert(locUnifiedHit);
@@ -289,7 +290,9 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 		UChar_t locClusterLayers = 0; //which layers are in the cluster (both by points & by hits): 4bits each: 8total
 		for(auto& locLayerPair : locSortedClusterPoints)
 			locClusterLayers |= (1 << (locLayerPair.first - 1));
-		for(auto& locLayerPair : locSortedClusterHits)
+		for(auto& locLayerPair : locSortedClusterHits_Upstream)
+			locClusterLayers |= (1 << (locLayerPair.first + 4 - 1));
+		for(auto& locLayerPair : locSortedClusterHits_Downstream)
 			locClusterLayers |= (1 << (locLayerPair.first + 4 - 1));
 
 		/**************************************************** LOOP OVER BCAL LAYERS ****************************************************/
@@ -349,7 +352,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 
 			//next, search ALL hits: Upstream
 			pair<const DBCALUnifiedHit*, double> locNearestHit_Upstream(NULL, 999.0);
-			locHitsIterator = locSortedHits_Upstream.find(locLayer);
+			auto locHitsIterator = locSortedHits_Upstream.find(locLayer);
 			if(locHitsIterator != locSortedHits_Upstream.end())
 				locNearestHit_Upstream = Find_NearestHit(locProjectedSector, locHitsIterator->second, locCluster, 20.0);
 
@@ -379,7 +382,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 					locIsInClusterFlag = (locClusterUnifiedHitSet.find(locNearestHit_Upstream.first) != locClusterUnifiedHitSet.end());
 				}
 
-				locNearestSectorsMap_Upstream[locLayer] = UChar_t(locSector);
+				locNearestSectorsMap_Upstream[locLayer] = UChar_t(locFoundSector);
 				if(locIsInClusterFlag)
 					locIsHitInClusterBits |= (1 << (locLayer - 1)); //Upstream bits: 1 -> 4
 
@@ -406,7 +409,7 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 					locIsInClusterFlag = (locClusterUnifiedHitSet.find(locNearestHit_Downstream.first) != locClusterUnifiedHitSet.end());
 				}
 
-				locNearestSectorsMap_Downstream[locLayer] = UChar_t(locSector);
+				locNearestSectorsMap_Downstream[locLayer] = UChar_t(locFoundSector);
 				if(locIsInClusterFlag)
 					locIsHitInClusterBits |= (1 << (locLayer - 1 + 4)); //Downstream bits: 5 -> 8
 
@@ -558,9 +561,9 @@ double JEventProcessor_BCAL_Layer_Eff::Calc_AverageSector(const map<int, set<con
 			locEnergySum += locPoint->E();
 
 		locSectors.push_back(pair<double, double>(double(locPointPair.first), locEnergySum));
-		if(locSector <= 12.0) //first 3 modules
+		if(locPointPair.first <= 12.0) //first 3 modules
 			locHasLowPhiHits = true;
-		else if(locSector >= 179) //last 3 modules
+		else if(locPointPair.first >= 179) //last 3 modules
 			locHasHighPhiHits = true;
 	}
 
@@ -628,7 +631,7 @@ pair<const DBCALUnifiedHit*, double> JEventProcessor_BCAL_Layer_Eff::Find_Neares
 		if(fabs(locDeltaSector) >= fabs(locBestDeltaSector))
 			continue;
 		locBestDeltaSector = locDeltaSector;
-		locBestBCALPoint = locHit;
+		locBestBCALHit = locHit;
 	}
 
 	return pair<const DBCALUnifiedHit*, double>(locBestBCALHit, locBestDeltaSector);

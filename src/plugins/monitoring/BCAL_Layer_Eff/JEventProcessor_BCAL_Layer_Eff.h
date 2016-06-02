@@ -15,8 +15,8 @@
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALPoint.h"
 #include "BCAL/DBCALUnifiedHit.h"
-#include "DBCAL/DBCALGeometry.h"
-#include "TRIGGER/DTrigger.h"
+#include "BCAL/DBCALGeometry.h"
+//#include "TRIGGER/DTrigger.h"
 #include "TRACKING/DTrackTimeBased.h"
 
 #include "PID/DChargedTrack.h"
@@ -59,7 +59,7 @@ class JEventProcessor_BCAL_Layer_Eff : public jana::JEventProcessor
 		const DBCALPoint* Find_ClosestTimePoint(const set<const DBCALPoint*>& locPoints, const DBCALCluster* locBCALCluster, double locTimeCut);
 		const DBCALUnifiedHit* Find_ClosestTimeHit(const set<const DBCALUnifiedHit*>& locHits, const DBCALCluster* locBCALCluster, double locTimeCut);
 
-		template <typename DType> DType Calc_DeltaSector(DType locHitSector, DType locProjectedSector) const
+		template <typename DType> DType Calc_DeltaSector(DType locHitSector, DType locProjectedSector) const;
 
 		//TRACK REQUIREMENTS
 		double dMinTrackingFOM, dMinPIDFOM;
@@ -78,16 +78,16 @@ class JEventProcessor_BCAL_Layer_Eff : public jana::JEventProcessor
 		static thread_local DTreeFillData dTreeFillData;
 
 		//VERTEX-Z
-		static thread_local double dTargetCenterZ;
+		double dTargetCenterZ;
 
 		//EFFECTIVE VELOCITIES
-		static thread_local vector<double> effective_velocities;
+		vector<double> effective_velocities;
 };
 
-template <typename DType> inline DType Calc_DeltaSector(DType locHitSector, DType locProjectedSector) const
+template <typename DType> inline DType JEventProcessor_BCAL_Layer_Eff::Calc_DeltaSector(DType locHitSector, DType locProjectedSector) const
 {
 	//beware 2pi wrap-around!
-	double locDeltaSector = double(locHitPair.first) - locProjectedSector;
+	double locDeltaSector = double(locHitSector) - locProjectedSector;
 	if(locDeltaSector > DType(96))
 		locDeltaSector -= DType(192);
 	if(locDeltaSector < -DType(96))
