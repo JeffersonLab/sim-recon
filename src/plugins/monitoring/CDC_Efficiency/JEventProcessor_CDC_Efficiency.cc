@@ -194,9 +194,8 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     	locSortedCDCHits[locHit->ring][locHit->straw].insert(locHit);
 
     const DDetectorMatches *detMatches = nullptr;
-    if(!dIsNoFieldFlag){
+    if(!dIsNoFieldFlag)
         loop->GetSingle(detMatches);
-    }
 
     const DDetectorMatches *locParticleID = nullptr;
     loop->GetSingle(locParticleID);
@@ -269,16 +268,33 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
         	continue; //don't trust the track projections
 
         // Alright now we truly have the tracks we are interested in for calculating the efficiency
-    	for (unsigned int ringNum = 1; ringNum <= 28; ++ringNum)
-    	{
-            // git-r-dun
-    		GitRDone(ringNum, locSortedCDCHits);
+        //BUT, we need to make sure that we aren't biased by the fact that the track was reconstructed in the first place
+        	//AND by our requirement above that there be at least 2 hits in a few superlayers
+        for(int locCDCSuperlayer = 1; locCDCSuperlayer <= 7; ++locCDCSuperlayer)
+        {
+			if(locNumHitRingsPerSuperlayer[locCDCSuperlayer] < dMinNumRingsToEvalSuperlayer)
+				continue;
 
+        	int locFirstRing = 4*(locCDCSuperlayer - 1) + 1;
+        	if(locNumHitRingsPerSuperlayer[locCDCSuperlayer] == dMinNumRingsToEvalSuperlayer)
+			{
+				//All hits required: Can only evaluate the rings that do NOT have hits
+	        	for (int locRing = locFirstRing; locRing < locFirstRing + 4; ++locRing)
+	        	{
+	        		if(locCDCRings.find(locRing) == locCDCRings.end())
+	        			GitRDone(locRing, thisTimeBasedTrack, locSortedCDCHits); // git-r-dun
+	        	}
+	        	continue;
+			}
+        	//so many hits that no individual ring was required: evaluate for all
+        	for (int locRing = locFirstRing; locRing < locFirstRing + 4; ++locRing)
+       			GitRDone(locRing, thisTimeBasedTrack, locSortedCDCHits); // git-r-dun
+    	}
     }
     return NOERROR;
 }
 
-void GitRDone(unsigned int ringNum, const DTrackTimeBased *thisTimeBasedTrack, map<int, map<int, set<const DCDCHit*> > >& locSortedCDCHits)
+void JEventProcessor_CDC_Efficiency::GitRDone(unsigned int ringNum, const DTrackTimeBased *thisTimeBasedTrack, map<int, map<int, set<const DCDCHit*> > >& locSortedCDCHits)
 {
 	vector< DCDCWire * > wireByNumber = cdcwires[ringNum - 1];
 	for (unsigned int wireIndex = 0; wireIndex < wireByNumber.size(); wireIndex++)
@@ -323,12 +339,9 @@ void GitRDone(unsigned int ringNum, const DTrackTimeBased *thisTimeBasedTrack, m
 		// look for a CDC hit match
 		// We need a backwards map from ring/straw to flash channel. Unfortunately there is no easy way
 		// Will construct the map manually
-		bool foundHit = false;
-		if(!locSortedCDCHits[ringNum][wireNum].empty())
+		const DCDCHit* locHit = Find_Hit(ringNum, wireNum, locSortedCDCHits[ringNum]);
+		if(locHit != nullptr)
 		{
-			const DCDCHit* locHit = *(locSortedCDCHits[ringNum][wireNum].begin());
-			foundHit = true;
-
 			const DCDCDigiHit *thisDigiHit = NULL;
 			const Df125CDCPulse *thisPulse = NULL;
 			locHit->GetSingle(thisDigiHit);
@@ -374,11 +387,8 @@ void GitRDone(unsigned int ringNum, const DTrackTimeBased *thisTimeBasedTrack, m
 		if (distanceToWire < 0.78)
 		{
 			Fill_ExpectedHit(ringNum, distanceToWire);
-			if(foundHit)
-			{
-				const DCDCHit* locHit = *(locSortedCDCHits[ringNum][wireNum].begin());
+			if(locHit != nullptr)
 				Fill_MeasuredHit(ringNum, distanceToWire, thisTimeBasedTrack, wire, locHit);
-			}
 		}
 	}
 }
@@ -462,6 +472,30 @@ void Fill_ExpectedHit(int ringNum, double distanceToWire)
 		locHistToFill->SetBinContent(wireNum, 1, w);
 	}
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+}
+
+const DCDCHit* Find_Hit(int locRing, int locProjectedStraw, map<int, set<const DCDCHit*> >& locSortedCDCHits)
+{
+	if(!locSortedCDCHits[locProjectedStraw].empty())
+		*(locSortedCDCHits[locProjectedStraw].begin());
+
+	int locNumStraws = cdcwires[locRing - 1].size();
+
+	//previous straw
+	int locSearchStraw = locProjectedStraw - 1;
+	if(locSearchStraw <= 0)
+		locSearchStraw += locNumStraws;
+	if(!locSortedCDCHits[locSearchStraw].empty())
+		*(locSortedCDCHits[locProjectedStraw].begin());
+
+	//next straw
+	locSearchStraw = locProjectedStraw + 1;
+	if(locSearchStraw > locNumStraws)
+		locSearchStraw -= locNumStraws;
+	if(!locSortedCDCHits[locSearchStraw].empty())
+		*(locSortedCDCHits[locProjectedStraw].begin());
+
+	return nullptr;
 }
 
 //------------------
