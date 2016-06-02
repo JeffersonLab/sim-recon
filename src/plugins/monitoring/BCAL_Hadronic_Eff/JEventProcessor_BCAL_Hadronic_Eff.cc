@@ -291,7 +291,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 			dTreeFillData.Fill_Single<UInt_t>("TrackFDCPlanes", locTrackTimeBased->dFDCPlanes);
 
 			//SHOWER
-			double locShowerEnergy = (locClosestBCALShower =! nullptr) ? locClosestBCALShower->E : 0.0;
+			double locShowerEnergy = (locClosestBCALShower != nullptr) ? locClosestBCALShower->E : 0.0;
 			dTreeFillData.Fill_Single<Float_t>("NearestShowerEnergy", locShowerEnergy);
 			dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", locBestMatchDeltaPhi); //is signed: BCAL - Track
 			dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", locBestMatchDeltaZ); //is signed: BCAL - Track
