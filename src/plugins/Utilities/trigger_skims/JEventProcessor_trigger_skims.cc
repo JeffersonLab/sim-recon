@@ -22,9 +22,10 @@ extern "C" {
 
 
 // variables to control which triggers get read out
-bool write_out_bcal_led = true;
-bool write_out_fcal_led = true;
-bool write_out_random = true;
+static bool write_out_bcal_led = true;
+static bool write_out_fcal_led = true;
+static bool write_out_random = true;
+static bool write_out_sync = true;
 
 
 //-------------------------------
@@ -35,10 +36,12 @@ jerror_t JEventProcessor_trigger_skims::init(void)
     int bcal_led_writeout_toggle = 1;
     int fcal_led_writeout_toggle = 1;
     int random_writeout_toggle = 1;
+    int sync_writeout_toggle = 1;
 
     gPARMS->SetDefaultParameter("TRIGSKIM:WRITEBCALLED", bcal_led_writeout_toggle, "Write out BCAL LED events");
     gPARMS->SetDefaultParameter("TRIGSKIM:WRITEFCALLED", fcal_led_writeout_toggle, "Write out FCAL LED events");
     gPARMS->SetDefaultParameter("TRIGSKIM:WRITERANDOM", random_writeout_toggle, "Write out random pulser events");
+    gPARMS->SetDefaultParameter("TRIGSKIM:WRITESYNC", sync_writeout_toggle, "Write out TS sync events");
 
     if(bcal_led_writeout_toggle == 0)
         write_out_bcal_led = false;
@@ -46,6 +49,8 @@ jerror_t JEventProcessor_trigger_skims::init(void)
         write_out_fcal_led = false;
     if(random_writeout_toggle == 0)
         write_out_random = false;
+    if(sync_writeout_toggle == 0)
+        write_out_sync = false;
 
     return NOERROR;
 }
@@ -72,6 +77,7 @@ jerror_t JEventProcessor_trigger_skims::evnt(JEventLoop *locEventLoop, uint64_t 
         locEventWriterEVIO->Write_EVIOEvent( locEventLoop, "BCAL-LED" );
         locEventWriterEVIO->Write_EVIOEvent( locEventLoop, "FCAL-LED" );
         locEventWriterEVIO->Write_EVIOEvent( locEventLoop, "random" );
+        locEventWriterEVIO->Write_EVIOEvent( locEventLoop, "sync" );
         return NOERROR;
     }
 
@@ -88,7 +94,7 @@ jerror_t JEventProcessor_trigger_skims::evnt(JEventLoop *locEventLoop, uint64_t 
 		return NOERROR;
 	}
 
-    bool is_cosmic_trigger = false;
+    //bool is_cosmic_trigger = false;
 	bool is_BCAL_LED_US_trigger = false;
     bool is_BCAL_LED_DS_trigger = false;
     bool is_FCAL_LED_trigger = false;
@@ -107,10 +113,12 @@ jerror_t JEventProcessor_trigger_skims::evnt(JEventLoop *locEventLoop, uint64_t 
 		//	   trig->fp_trig_mask, trig->fp_trig_mask & 0x100,trig->fp_trig_mask & 0x200,
 		//	   trig->trig_mask && trig->fp_trig_mask);
 
+        /* -- commented out to remove warning
 		if (trig->trig_mask & 0x1) {
 			// Cosmic trigger fired
 			is_cosmic_trigger = true;
 		}
+        */
         
         // Select triggers based on front panel inputs
         // Trigger bits start counting from 0
@@ -141,7 +149,7 @@ jerror_t JEventProcessor_trigger_skims::evnt(JEventLoop *locEventLoop, uint64_t 
         }
     }
 
-    // if there's a DL1Info object, this extra L1 info means that it's a sync event
+    // if there's a DL1Info object, this extra L1 info means that it's a "sync event"
     vector<const DL1Info*> l1_info;
     locEventLoop->Get(l1_info);
     if(l1_info.size() == 1) {
@@ -156,17 +164,17 @@ jerror_t JEventProcessor_trigger_skims::evnt(JEventLoop *locEventLoop, uint64_t 
     // 3. Number of hits in BCAL > 200
     bool save_BCAL_LED_event = is_BCAL_LED_US_trigger || is_BCAL_LED_DS_trigger
         || (bcal_hits.size() >= 200) || (total_bcal_energy > 12.);
-	if (write_out_bcal_led && save_BCAL_LED_event) {
+	if ( write_out_bcal_led && save_BCAL_LED_event ) {
         locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "BCAL-LED");
     }
-	if (write_out_fcal_led && is_FCAL_LED_trigger) {
+	if ( write_out_fcal_led && is_FCAL_LED_trigger ) {
         locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "FCAL-LED");
     }
-    // store the sync events, which contain extra trigger and scalar info,
-    // in the random trigger stream as well
-	if (write_out_random && ( is_random_trigger || is_sync_event ) ) {
-        //if ( is_sync_event )  {
+    if ( write_out_random && is_random_trigger ) {
         locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "random");
+    }
+    if ( write_out_sync && is_sync_event )  {
+        locEventWriterEVIO->Write_EVIOEvent(locEventLoop, "sync");
     }
 
    return NOERROR;
