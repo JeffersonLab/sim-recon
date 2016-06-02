@@ -36,9 +36,10 @@ class JEventProcessor_TS_scaler:public jana::JEventProcessor{
 
 		float dCurrent;
 		uint64_t dEventNumber;
-		uint32_t dEventUnixTime;
 		uint32_t dScalerTriggerBitPrevious[kScalers];
+		uint32_t dRecordedTriggerBitPrevious[kScalers];
 		uint32_t dTrigCount[kScalers];
+		uint32_t dFPRecordedTriggerBitPrevious[kFPScalers];
 		uint32_t dFPScalerTriggerBitPrevious[kFPScalers];
 		uint32_t dFPTrigCount[kFPScalers];
 
@@ -48,10 +49,6 @@ class JEventProcessor_TS_scaler:public jana::JEventProcessor{
                         //important: manages it's own data internally: don't want to call new/delete every event!
                 static thread_local DTreeFillData dTreeFillData;
 
-		TFile *dFile;
-		TTree *dTS_scaler_Tree;
-
-		// variables to fill tree
 		bool dIsFirstInterval; // first SYNC event in file
 		bool dIsLastInterval;  // interval after last SYNC event in file (need to combine with first SYNC event in next file)
 		ULong64_t dTotalEventNumber;                     // Total event number at sync event
@@ -68,15 +65,14 @@ class JEventProcessor_TS_scaler:public jana::JEventProcessor{
 		uint32_t dRecordedTriggerBit[kScalers];      // Recoreded GTP triggers by bit over current interval between SYNC events
 		uint32_t dFPRecordedTriggerBit[kFPScalers];  // Recoreded FP triggers by bit over current interval between SYNC events
 
-		vector<uint32_t> dTrigBits, dFPTrigBits;
+		vector<uint32_t> dTrigBits;
+		vector<uint32_t> dFPTrigBits;
 		TH1I *dHistTS_trgbits, *dHistTS_livetime_tot, *dHistTS_liveinst_tot;
 		TH1I *dHistTS_SyncEvents, *dHistTS_livetimeEvents, *dHistTS_Current;
 		map<uint32_t, TH1I*> dHistTS_trigrate, dHistTS_FPtrigrate;
 		map<uint32_t, TH1I*> dHistTS_livetime, dHistTS_FPlivetime;
 		map<uint32_t, TH1I*> dHistTS_Recorded, dHistTS_FPRecorded;
 		map<uint32_t, TH1I*> dHistTS_Scaler, dHistTS_FPScaler;
-		map<uint32_t, TH1I*> dHistTS_RecordedSyncEvent, dHistTS_FPRecordedSyncEvent;
-		map<uint32_t, TH1I*> dHistTS_ScalerSyncEvent, dHistTS_FPScalerSyncEvent;
 		
 };
 

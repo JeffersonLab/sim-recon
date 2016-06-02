@@ -74,16 +74,14 @@ jerror_t JEventProcessor_TS_scaler::init(void)
 	TDirectory *mainDir = gDirectory;
 	new TDirectoryFile("TS_scaler", "TS_scaler");
 	gDirectory->cd("TS_scaler");
-	dHistTS_trgbits = new TH1I("HistTS_trgbits", "Trigger Bits",120,0,120);
-	dHistTS_trgbits->SetXTitle("trig_mask || (100+fp_trig_mask/256)");
+	dHistTS_trgbits = new TH1I("HistTS_trgbits", "Trigger Bits",150,0,150);
+	dHistTS_trgbits->SetXTitle("trig_mask || (128+fp_trig_mask/256)");
 	dHistTS_trgbits->SetYTitle("counts");
 	dHistTS_livetime_tot = new TH1I("HistTS_livetime", "Total Livetime", 100, 0., 1.);
 	dHistTS_liveinst_tot = new TH1I("HistTS_liveinst_tot", "Total Livetime Instantaneous", 100, 0., 1.);
 
 	double locMaxEvents = 300e6;
 	double locNeventsBins = 300;
-	double locMaxSyncEvents = 3000;
-	double locSyncNeventsBins = 3000;
 	dHistTS_SyncEvents = new TH1I("HistTS_SyncEvents", "Sync events counter in interval; Event Number", locNeventsBins, 0, locMaxEvents);
 	dHistTS_livetimeEvents = new TH1I("HistTS_livetimeEvents", "Livetime in interval; Event Number", locNeventsBins, 0, locMaxEvents);
 	dHistTS_Current = new TH1I("HistTS_Current", "Beam current vs Event Number; Event Number", locNeventsBins, 0, locMaxEvents);
@@ -94,45 +92,21 @@ jerror_t JEventProcessor_TS_scaler::init(void)
 
 		dHistTS_Recorded[dTrigBits[loc_i]] = new TH1I(Form("HistTS%d_Recorded", dTrigBits[loc_i]), Form("Trigger %d: Recorded events in interval; Event Number", dTrigBits[loc_i]), locNeventsBins, 0, locMaxEvents);
 		dHistTS_Scaler[dTrigBits[loc_i]] = new TH1I(Form("HistTS%d_Scaler", dTrigBits[loc_i]), Form("Trigger %d: Scaler events in interval; Event Number", dTrigBits[loc_i]), locNeventsBins, 0, locMaxEvents);
-		dHistTS_RecordedSyncEvent[dTrigBits[loc_i]] = new TH1I(Form("HistTS%d_RecordedSyncEvent", dTrigBits[loc_i]), Form("Trigger %d: Recorded events; Sync Event Number", dTrigBits[loc_i]), locSyncNeventsBins, 0, locMaxSyncEvents);
-		dHistTS_ScalerSyncEvent[dTrigBits[loc_i]] = new TH1I(Form("HistTS%d_ScalerSyncEvent", dTrigBits[loc_i]), Form("Trigger %d: Scaler events; Sync Event Number", dTrigBits[loc_i]), locSyncNeventsBins, 0, locMaxSyncEvents);
 	}
 
 	for(size_t loc_i = 0; loc_i < dFPTrigBits.size(); loc_i++) {
 		dHistTS_FPtrigrate[dFPTrigBits[loc_i]] = new TH1I(Form("HistTS%d_FPtrigrate", dFPTrigBits[loc_i]), Form("Trigger %d rate; rate (Hz)", dFPTrigBits[loc_i]), 100, 0., 50.);
 		dHistTS_FPlivetime[dFPTrigBits[loc_i]] = new TH1I(Form("HistTS%d_FPlivetime", dFPTrigBits[loc_i]), Form("Trigger %d livetime; livetime", dFPTrigBits[loc_i]), 100, 0., 1.);
 
-		dHistTS_FPRecorded[dFPTrigBits[loc_i]] = new TH1I(Form("HistTS%d_FPRecorded", dTrigBits[loc_i]), Form("Trigger %d: Recorded events in interval; Event Number", dTrigBits[loc_i]), locNeventsBins, 0, locMaxEvents);
-		dHistTS_FPScaler[dFPTrigBits[loc_i]] = new TH1I(Form("HistTS%d_FPScaler", dTrigBits[loc_i]), Form("Trigger %d: Scaler events in interval; Event Number", dTrigBits[loc_i]), locNeventsBins, 0, locMaxEvents);
-		dHistTS_FPRecordedSyncEvent[dFPTrigBits[loc_i]] = new TH1I(Form("HistTS%d_FPRecordedSyncEvent", dFPTrigBits[loc_i]), Form("Trigger %d: Recorded events; Sync Event Number", dFPTrigBits[loc_i]), locSyncNeventsBins, 0, locMaxSyncEvents);
-		dHistTS_FPScalerSyncEvent[dFPTrigBits[loc_i]] = new TH1I(Form("HistTS%d_FPScalerSyncEvent", dFPTrigBits[loc_i]), Form("Trigger %d: Scaler events; Sync Event Number", dFPTrigBits[loc_i]), locSyncNeventsBins, 0, locMaxSyncEvents);
+		dHistTS_FPRecorded[dFPTrigBits[loc_i]] = new TH1I(Form("HistTS%d_FPRecorded", dFPTrigBits[loc_i]), Form("Trigger %d: Recorded events in interval; Event Number", dFPTrigBits[loc_i]), locNeventsBins, 0, locMaxEvents);
+		dHistTS_FPScaler[dFPTrigBits[loc_i]] = new TH1I(Form("HistTS%d_FPScaler", dFPTrigBits[loc_i]), Form("Trigger %d: Scaler events in interval; Event Number", dFPTrigBits[loc_i]), locNeventsBins, 0, locMaxEvents);
 	}
-
-	mainDir->cd();
-
-	// create new file and TTree
-	dFile = new TFile("tree_TS_scaler.root", "RECREATE");
-	dTS_scaler_Tree = new TTree("dTS_scaler_Tree", "TS_scaler_Tree");
-	dTS_scaler_Tree->Branch("IsFirstInterval", &dIsFirstInterval);
-	dTS_scaler_Tree->Branch("IsLastInterval", &dIsLastInterval);
-	dTS_scaler_Tree->Branch("TotalEventNumber", &dTotalEventNumber);
-	dTS_scaler_Tree->Branch("SyncEventNumber", &dSyncEventNumber);
-	dTS_scaler_Tree->Branch("SyncEventLiveTime", &dSyncEventLiveTime);
-	dTS_scaler_Tree->Branch("SyncEventBusyTime", &dSyncEventBusyTime);
-	dTS_scaler_Tree->Branch("SyncEventInstLiveTime", &dSyncEventInstLiveTime);
-	dTS_scaler_Tree->Branch("SyncEventUnixTime", &dSyncEventUnixTime);
-	dTS_scaler_Tree->Branch("ScalerTriggerBit", dScalerTriggerBit, Form("ScalerTriggerBit[%d]/I", kScalers));
-	dTS_scaler_Tree->Branch("FPScalerTriggerBit", dFPScalerTriggerBit, Form("FPScalerTriggerBit[%d]/I", kFPScalers));
-	dTS_scaler_Tree->Branch("ScalerRateTriggerBit", dScalerRateTriggerBit, Form("ScalerRateTriggerBit[%d]/I", kScalers));
-	dTS_scaler_Tree->Branch("FPScalerRateTriggerBit", dFPScalerRateTriggerBit, Form("FPScalerRateTriggerBit[%d]/I", kFPScalers));
-	dTS_scaler_Tree->Branch("RecordedTriggerBit", dRecordedTriggerBit, Form("RecordedTriggerBit[%d]/I", kScalers));
-	dTS_scaler_Tree->Branch("FPRecordedTriggerBit", dFPRecordedTriggerBit, Form("FPRecordedTriggerBit[%d]/I", kFPScalers));
 
 	mainDir->cd();
 
 	//TTREE INTERFACE
         //MUST DELETE WHEN FINISHED: OR ELSE DATA WON'T BE SAVED!!!
-        dTreeInterface = DTreeInterface::Create_DTreeInterface("TS_scaler_Tree_new", "tree_TS_scaler_new.root");
+        dTreeInterface = DTreeInterface::Create_DTreeInterface("TS_scaler_Tree", "tree_TS_scaler.root");
 
 	//TTREE BRANCHES
         DTreeBranchRegister locTreeBranchRegister;
@@ -165,7 +139,6 @@ jerror_t JEventProcessor_TS_scaler::init(void)
 	dIsLastInterval = false;
 	dCurrent = 0;
 	dEventNumber = 0;
-	dEventUnixTime = 0;
 	dTotalEventNumber = 0;
 	dSyncEventNumber = 0;
 	dSyncEventUnixTime = 0;
@@ -175,10 +148,12 @@ jerror_t JEventProcessor_TS_scaler::init(void)
 	for (int j=0; j<kScalers; j++) {
 		dTrigCount[j] = 0;
 		dScalerTriggerBitPrevious[j] = 0;
+		dRecordedTriggerBitPrevious[j] = 0;
 	}
 	for (int j=0; j<kFPScalers; j++) {
 		dFPTrigCount[j] = 0;
 		dFPScalerTriggerBitPrevious[j] = 0;
+		dFPRecordedTriggerBitPrevious[j] = 0;
 	}
 
 	return NOERROR;
@@ -236,7 +211,7 @@ jerror_t JEventProcessor_TS_scaler::evnt(JEventLoop *locEventLoop, uint64_t locE
 		if (temp_mask) dFPTrigCount[j] += 1;
 	}
 		
-	int trig_bits = fp_trig_mask > 0? 100 + fp_trig_mask/256: trig_mask;
+	int trig_bits = fp_trig_mask > 0? 128 + fp_trig_mask/256: trig_mask;
 	japp->RootFillLock(this);
 	dHistTS_trgbits->Fill(trig_bits);
 	japp->RootFillUnLock(this);
@@ -251,29 +226,30 @@ jerror_t JEventProcessor_TS_scaler::evnt(JEventLoop *locEventLoop, uint64_t locE
 		return NOERROR;
 
 	uint32_t nsync_event;  /* sync event number */
-	uint32_t int_count;   /* integrated trigger counter */
 	uint32_t livetime;    /* accumulated livetime */
 	uint32_t busytime;    /* accumulated busy time */
 	uint32_t live_inst;   /* instantaneous livetime */
 	uint32_t timestamp;   /* unix time */
 	
+	uint32_t gtp_rec[kScalers];   /* number of recorded triggers from */
 	uint32_t gtp_sc[kScalers];    /* number of input triggers from GTP for 32 lanes (32 trigger bits) */
 	uint32_t gtp_rate[kScalers];  /* instant. rate of GTP triggers */
+	uint32_t fp_rec[kFPScalers];  /* number of recorded FP triggers from */
 	uint32_t fp_sc[kFPScalers];   /* number of TS front pannel triggers for 16 fron pannel lines (16 trigger bits) */
 	uint32_t fp_rate[kFPScalers]; /* instant. rate of FP triggers */
 	
 	nsync_event = locTSscaler->nsync_event;
-	int_count = locTSscaler->int_count;
 	livetime = locTSscaler->live_time;
 	busytime = locTSscaler->busy_time;
 	live_inst = locTSscaler->inst_livetime;
 	timestamp = locTSscaler->time;
-	printf ("Event=%d int_count=%d livetime=%d busytime=%d time=%d live_inst=%d\n",(int)locEventNumber,int_count,livetime,busytime,(int)timestamp,live_inst);
+	//printf ("Event=%d int_count=%d livetime=%d busytime=%d time=%d live_inst=%d\n",(int)locEventNumber,int_count,livetime,busytime,(int)timestamp,live_inst);
 	
+	double livetime_integrated = (double)livetime/double(livetime+busytime);
 	japp->RootFillLock(this);
-	dHistTS_livetime_tot->Fill(int_count/livetime);
+	dHistTS_livetime_tot->Fill(livetime_integrated);
 	dHistTS_liveinst_tot->Fill((float)live_inst/1000.);
-	dHistTS_livetimeEvents->Fill(locEventNumber, livetime);
+	dHistTS_livetimeEvents->Fill(locEventNumber, livetime_integrated);
 	dHistTS_SyncEvents->Fill(locEventNumber);
 	dHistTS_Current->Fill(dEventNumber, dCurrent);
 	japp->RootFillUnLock(this);
@@ -290,82 +266,61 @@ jerror_t JEventProcessor_TS_scaler::evnt(JEventLoop *locEventLoop, uint64_t locE
 	dTreeFillData.Fill_Single<uint32_t>("NumScalers", kScalers);
 	dTreeFillData.Fill_Single<uint32_t>("NumFPScalers", kFPScalers);
 
-	// set tree variables and fill
-	japp->WriteLock("tree_TS_scaler.root");
-
 	dSyncEventNumber = locEventNumber;
 	dSyncEventLiveTime = livetime;
 	dSyncEventBusyTime = busytime;
 	dSyncEventInstLiveTime = live_inst;
 	dSyncEventUnixTime = timestamp;
-	dEventUnixTime = timestamp;
 
-	// set info for each trigger bit
+	// set info for each trigger bit and fill histograms
+	japp->RootFillLock(this);
 	for (int j=0; j<kScalers; j++) {
+		gtp_rec[j] = dTrigCount[j] - dRecordedTriggerBitPrevious[j];
 		gtp_sc[j] = locTSscaler->gtp_scalers[j] - dScalerTriggerBitPrevious[j];
 		gtp_rate[j] = locTSscaler->gtp_rate[j];
 
-		dRecordedTriggerBit[j] = dTrigCount[j];
-		dScalerTriggerBit[j] = gtp_sc[j];
-		dScalerRateTriggerBit[j] = gtp_rate[j];
-
 		dTreeFillData.Fill_Array<uint32_t>("RecordedTriggerBit", dTrigCount[j], j);
-		dTreeFillData.Fill_Array<uint32_t>("ScalerTriggerBit", gtp_sc[j], j);
+		dTreeFillData.Fill_Array<uint32_t>("ScalerTriggerBit", locTSscaler->gtp_scalers[j], j);
 		dTreeFillData.Fill_Array<uint32_t>("ScalerRateTriggerBit", gtp_rate[j], j);
 
 		dScalerTriggerBitPrevious[j] = locTSscaler->gtp_scalers[j];
-		dTrigCount[j] = 0;
-	}
-	for (int j=0; j<kFPScalers; j++) {
-		fp_sc[j] = locTSscaler->fp_scalers[j] - dFPScalerTriggerBitPrevious[j];
-		fp_rate[j] = locTSscaler->fp_rate[j];
+		dRecordedTriggerBitPrevious[j] = dTrigCount[j];
 
-		dFPRecordedTriggerBit[j] = dFPTrigCount[j];
-		dFPScalerTriggerBit[j] = fp_sc[j];
-		dFPScalerRateTriggerBit[j] = fp_rate[j];
-
-		dTreeFillData.Fill_Array<uint32_t>("FPRecordedTriggerBit", dFPTrigCount[j], j);
-		dTreeFillData.Fill_Array<uint32_t>("FPScalerTriggerBit", fp_sc[j], j);
-		dTreeFillData.Fill_Array<uint32_t>("FPScalerRateTriggerBit", fp_rate[j], j);
-
-		dFPScalerTriggerBitPrevious[j] = locTSscaler->fp_scalers[j];
-		dFPTrigCount[j] = 0;
-	}
-
-	dTS_scaler_Tree->Fill();
-	japp->Unlock("tree_TS_scaler.root");
-	
-	//FILL TTREE
-	dTreeInterface->Fill(dTreeFillData);
-	
-	// fill trigger bit histograms
-	japp->RootFillLock(this);
-	for (size_t j=0; j<dTrigBits.size(); j++) {
-		if(pow(2,j) == (int)dTrigBits[j]){ 
-			dHistTS_trigrate[dTrigBits[j]]->Fill(dScalerRateTriggerBit[j]/1000.);
-			dHistTS_Recorded[dTrigBits[j]]->Fill(locEventNumber, dRecordedTriggerBit[j]);
-			dHistTS_Scaler[dTrigBits[j]]->Fill(locEventNumber, dScalerTriggerBit[j]);
-			dHistTS_RecordedSyncEvent[dTrigBits[j]]->Fill(nsync_event, dRecordedTriggerBit[j]);
-			dHistTS_ScalerSyncEvent[dTrigBits[j]]->Fill(nsync_event, dScalerTriggerBit[j]);
-			if(!dIsFirstInterval && dScalerTriggerBit[j]>0){
-				dHistTS_livetime[dTrigBits[j]]->Fill(dRecordedTriggerBit[j]/dScalerTriggerBit[j]);
+		if(j < (int)dTrigBits.size()) {
+			dHistTS_trigrate[dTrigBits[j]]->Fill(gtp_rate[j]/1000.);
+			dHistTS_Recorded[dTrigBits[j]]->Fill(locEventNumber, gtp_rec[j]);
+			dHistTS_Scaler[dTrigBits[j]]->Fill(locEventNumber, gtp_sc[j]);
+			if(!dIsFirstInterval && gtp_sc[j]>0){
+				dHistTS_livetime[dTrigBits[j]]->Fill(gtp_rec[j]/gtp_sc[j]);
 			}
 		}
 	}
 	for (int j=0; j<kFPScalers; j++) {
-		if(pow(2,j) == (int)dFPTrigBits[j]){ 
-			dHistTS_FPtrigrate[dFPTrigBits[j]]->Fill(dFPScalerRateTriggerBit[j]);
-			dHistTS_FPRecorded[dFPTrigBits[j]]->Fill(locEventNumber, dFPRecordedTriggerBit[j]);
-			dHistTS_FPScaler[dFPTrigBits[j]]->Fill(locEventNumber, dFPScalerTriggerBit[j]);
-			dHistTS_FPRecordedSyncEvent[dTrigBits[j]]->Fill(nsync_event, dRecordedTriggerBit[j]);
-			dHistTS_FPScalerSyncEvent[dTrigBits[j]]->Fill(nsync_event, dScalerTriggerBit[j]);
-			if(!dIsFirstInterval && dFPScalerTriggerBit[j]>0){
-				dHistTS_FPlivetime[dFPTrigBits[j]]->Fill(dFPRecordedTriggerBit[j]/dFPScalerTriggerBit[j]);
+		fp_rec[j] = dFPTrigCount[j] - dFPRecordedTriggerBitPrevious[j];
+		fp_sc[j] = locTSscaler->fp_scalers[j] - dFPScalerTriggerBitPrevious[j];
+		fp_rate[j] = locTSscaler->fp_rate[j];
+
+		dTreeFillData.Fill_Array<uint32_t>("FPRecordedTriggerBit", dFPTrigCount[j], j);
+		dTreeFillData.Fill_Array<uint32_t>("FPScalerTriggerBit", locTSscaler->fp_scalers[j], j);
+		dTreeFillData.Fill_Array<uint32_t>("FPScalerRateTriggerBit", fp_rate[j], j);
+
+		dFPScalerTriggerBitPrevious[j] = locTSscaler->fp_scalers[j];
+		dFPRecordedTriggerBitPrevious[j] = dFPTrigCount[j];
+
+		if(j < (int)dFPTrigBits.size()) {
+			dHistTS_FPtrigrate[dFPTrigBits[j]]->Fill(fp_rate[j]);
+			dHistTS_FPRecorded[dFPTrigBits[j]]->Fill(locEventNumber, fp_rec[j]);
+			dHistTS_FPScaler[dFPTrigBits[j]]->Fill(locEventNumber, fp_sc[j]);
+			if(!dIsFirstInterval && fp_sc[j]>0){
+				dHistTS_FPlivetime[dFPTrigBits[j]]->Fill(fp_rec[j]/fp_sc[j]);
 			}
 		}
 	}
 	japp->RootFillUnLock(this);
-	
+
+	//FILL TTREE
+	dTreeInterface->Fill(dTreeFillData);
+
 	// once you're here it's never the first interval
 	dIsFirstInterval = false;
 
@@ -390,36 +345,11 @@ jerror_t JEventProcessor_TS_scaler::fini(void)
 {
 	// Called before program exit after event processing is finished.
 
-	// Fill tree with trigger yield for each bit to be combined with data before sync event from the next file
-	dSyncEventNumber = dEventNumber;
-	dSyncEventLiveTime = 0;
-	dSyncEventBusyTime = 0;
-	dSyncEventInstLiveTime =0;
-	dIsLastInterval = true;
-	
-	// set info for each trigger bit
-	for (int j=0; j<kScalers; j++) {
-		dRecordedTriggerBit[j] = dTrigCount[j];
-		dScalerTriggerBit[j] = 0;
-		dScalerRateTriggerBit[j] = 0;
-	}	
-	for (int j=0; j<kFPScalers; j++) {
-		dFPRecordedTriggerBit[j] = dFPTrigCount[j];
-		dFPScalerTriggerBit[j] = 0;
-		dFPScalerRateTriggerBit[j] = 0;
-	}
-	
-	dTS_scaler_Tree->Fill();
-	
-	dFile->Write(0, TObject::kOverwrite);
-	dFile->Close();
-	delete dFile;
-
 	//STAGE DATA FOR TREE FILL
 	dTreeFillData.Fill_Single<bool>("IsFirstInterval", false);
 	dTreeFillData.Fill_Single<bool>("IsLastInterval", true);
 	dTreeFillData.Fill_Single<ULong64_t>("TotalEventNumber", dEventNumber);
-	dTreeFillData.Fill_Single<ULong64_t>("SyncEventNumber", 0);
+	dTreeFillData.Fill_Single<uint32_t>("SyncEventNumber", 0);
 	dTreeFillData.Fill_Single<uint32_t>("SyncEventLiveTime", 0);
 	dTreeFillData.Fill_Single<uint32_t>("SyncEventBusyTime", 0);
 	dTreeFillData.Fill_Single<uint32_t>("SyncEventInstLiveTime", 0);
@@ -440,7 +370,6 @@ jerror_t JEventProcessor_TS_scaler::fini(void)
 
 	//FILL TTREE
 	dTreeInterface->Fill(dTreeFillData);
-
 	delete dTreeInterface; //saves trees to file, closes file
 
 	return NOERROR;
