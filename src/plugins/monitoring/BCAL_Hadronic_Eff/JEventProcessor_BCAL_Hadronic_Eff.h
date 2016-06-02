@@ -50,6 +50,8 @@ class JEventProcessor_BCAL_Hadronic_Eff : public jana::JEventProcessor
 		jerror_t erun(void);						///< Called every time run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		void Fill_NoClusterStudy(const DChargedTrackHypothesis* locChargedTrackHypothesis, bool locIsMatchedToTrackFlag);
+
 		double Calc_AverageSector(const map<int, set<const DBCALPoint*> >& locBCALPoints);
 		double Calc_ProjectedSector(int locLayer, const map<int, map<int, set<const DBCALPoint*> > >& locSortedPoints);
 
