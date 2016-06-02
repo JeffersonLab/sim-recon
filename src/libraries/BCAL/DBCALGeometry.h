@@ -80,7 +80,7 @@ public:
   static float C_EFFECTIVE;      ///< speed of light in fibers 
 
   // Methods to access and initialize the private variables
-  static thread_local bool initialized;
+  static bool initialized;
 
   static void Initialize(int runnumber=11000); //This is TERRIBLE.  //Just AWFUL
 
@@ -131,11 +131,11 @@ public:
 
 private:
 
-  static thread_local float BCALINNERRAD;     ///< innner radius of BCAL in cm
-  static thread_local float fADC_radius[5];   ///< BCAL layer radii (4 layers total)
-  static thread_local float GLOBAL_CENTER;    ///< center of BCAL in gloobal coordinate system
-  static thread_local float BCALFIBERLENGTH;  ///< BCAL Scintilator fiber lenth in cm
-  static thread_local float BCAL_PHI_SHIFT;     ///< overall phi roation of BCAL in radians
+  static float BCALINNERRAD;     ///< innner radius of BCAL in cm
+  static float fADC_radius[5];   ///< BCAL layer radii (4 layers total)
+  static float GLOBAL_CENTER;    ///< center of BCAL in gloobal coordinate system
+  static float BCALFIBERLENGTH;  ///< BCAL Scintilator fiber lenth in cm
+  static float BCAL_PHI_SHIFT;     ///< overall phi roation of BCAL in radians
 
 };
 

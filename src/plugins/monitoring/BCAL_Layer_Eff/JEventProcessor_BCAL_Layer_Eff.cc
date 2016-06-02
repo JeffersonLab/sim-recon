@@ -155,11 +155,30 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 	// This plugin is used to determine the reconstruction efficiency of hits in the BCAL
 		// Note, this is hit-level, not shower-level.  Hits: By sector/layer/module/end
 
-/*
 	//CUT ON TRIGGER TYPE
 	const DTrigger* locTrigger = NULL;
 	locEventLoop->GetSingle(locTrigger);
-*/
+	if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+		return NOERROR;
+
+	//COMPUTE TOTAL FCAL ENERGY
+	vector<const DFCALShower*> locFCALShowers;
+	locEventLoop->Get(locFCALShowers);
+
+	double locTotalFCALEnergy = 0.0;
+	for(auto& locShower : locFCALShowers)
+		locTotalFCALEnergy += locShower->getEnergy();
+
+	//SEE IF BCAL REQUIRED TO TRIGGER
+	uint32_t locTriggerBits = locTrigger->Get_L1TriggerBits();
+	bool locBCALRequiredForTriggerFlag = true;
+	if(((locTriggerBits & 2) == 2) || ((locTriggerBits & 32) == 32) || ((locTriggerBits & 64) == 64))
+		locBCALRequiredForTriggerFlag = false;
+	if(((locTriggerBits & 1) == 1) && (locTotalFCALEnergy > 1.0))
+		locBCALRequiredForTriggerFlag = false;
+	if(locBCALRequiredForTriggerFlag)
+		return NOERROR;
+
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks);
 
