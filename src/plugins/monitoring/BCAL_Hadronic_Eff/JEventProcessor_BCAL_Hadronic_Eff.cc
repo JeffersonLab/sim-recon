@@ -90,7 +90,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::init(void)
 
 	//SHOWER
 	locTreeBranchRegister.Register_Single<Float_t>("NearestShowerEnergy"); //is zero if none
-	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaPhiToShower"); //is signed: BCAL - Track
+	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaPhiToShower"); //is signed: BCAL - Track //degrees
 	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaZToShower"); //is signed: BCAL - Track
 	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitPhi"); //degrees
 	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitZ");
@@ -485,7 +485,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 
 		//SHOWER
 		dTreeFillData.Fill_Single<Float_t>("NearestShowerEnergy", locBCALShowerMatchParams->dBCALShower->E);
-		dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", locBCALShowerMatchParams->dDeltaPhiToShower); //is signed: BCAL - Track
+		dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", 180.0*locBCALShowerMatchParams->dDeltaPhiToShower/TMath::Pi()); //is signed: BCAL - Track
 		dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", locBCALShowerMatchParams->dDeltaZToShower); //is signed: BCAL - Track
 		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());
 		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitZ", locPredictedSurfacePosition.Z());
@@ -579,7 +579,7 @@ void JEventProcessor_BCAL_Hadronic_Eff::Fill_NoClusterStudy(const DChargedTrackH
 	//SHOWER
 	double locShowerEnergy = (locClosestBCALShower != nullptr) ? locClosestBCALShower->E : 0.0;
 	dTreeFillData.Fill_Single<Float_t>("NearestShowerEnergy", locShowerEnergy);
-	dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", locBestMatchDeltaPhi); //is signed: BCAL - Track
+	dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", locBestMatchDeltaPhi*180.0/TMath::Pi()); //is signed: BCAL - Track
 	dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", locBestMatchDeltaZ); //is signed: BCAL - Track
 	dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());
 	dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitZ", locPredictedSurfacePosition.Z());
