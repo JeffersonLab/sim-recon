@@ -70,6 +70,8 @@ class JEventProcessor_BCAL_Hadronic_Eff : public jana::JEventProcessor
 		//HISTOGRAMS
 		int dHistFoundDeltaSector; //for histograms ONLY!!!
 		map<int, map<bool, TH1I*> > dHistMap_HitFound, dHistMap_HitTotal; //int = layer, bool = isUpstream
+		TH2I* dHist_HadronicShowerMatched;
+		TH2I* dHist_HadronicShowerTotal;
 
 		//TREE
 		DTreeInterface* dTreeInterface;

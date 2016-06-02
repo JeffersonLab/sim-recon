@@ -33,7 +33,10 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::init(void)
 	//action initialize not necessary: is empty
 
 	TDirectory* locOriginalDir = gDirectory;
-	gDirectory->mkdir("bcal_layer_eff")->cd();
+	gDirectory->mkdir("bcal_hadronic_eff")->cd();
+
+	dHist_HadronicShowerMatched = new TH2I("HadronicShowerMatched", "Hadronic Shower Matched;Projected BCAL Hit Z (cm);Projected BCAL Hit #phi#circ;", 225, 0.0, 450.0, 180, -180.0, 180.0);
+	dHist_HadronicShowerTotal = new TH2I("HadronicShowerTotal", "Hadronic Shower Total;Projected BCAL Hit Z (cm);Projected BCAL Hit #phi#circ;", 225, 0.0, 450.0, 180, -180.0, 180.0);
 
 	dHistFoundDeltaSector = 4;
 	for(int locLayer = 1; locLayer <= 4; ++locLayer)
@@ -249,6 +252,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 	//for histograms, keep running total of what to fill //int = layer, bool = isUpstream
 	//will fill at end: only one lock
 	map<int, map<bool, vector<int> > > locHitMap_HitFound, locHitMap_HitTotal;
+	vector<pair<double, double> > locShowerVector_ShowerFound, locShowerVector_ShowerTotal; //first is proj-z, second is proj-phi
 
 	// Loop over the good tracks, using the best DTrackTimeBased object for each
 	for(auto& locChargedTrackHypothesis : locBestTracks)
@@ -260,6 +264,9 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		unsigned int locPredictedSurfaceModule = 0, locPredictedSurfaceSector = 0;
 		DVector3 locPredictedSurfacePosition;
 		locParticleID->PredictBCALWedge(locTrackTimeBased->rt, locPredictedSurfaceModule, locPredictedSurfaceSector, &locPredictedSurfacePosition);
+
+		pair<double, double> locShowerPair(locPredictedSurfacePosition.Z(), locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());
+		locShowerVector_ShowerTotal.push_back(locShowerPair);
 
 		//Find closest shower match for BCAL
 		double locBestMatchDeltaPhi = 0.0, locBestMatchDeltaZ = 0.0;
@@ -315,6 +322,8 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 
 			continue; //nope
 		}
+
+		locShowerVector_ShowerFound.push_back(locShowerPair);
 
 		/*************************************************** GET & SORT CLUSTER HITS ***************************************************/
 
@@ -547,7 +556,13 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 	{
-		//Fill Found
+		//Fill Shower
+		for(auto& locShowerPair : locShowerVector_ShowerFound)
+			dHist_HadronicShowerMatched->Fill(locShowerPair.first, locShowerPair.second);
+		for(auto& locShowerPair : locShowerVector_ShowerTotal)
+			dHist_HadronicShowerTotal->Fill(locShowerPair.first, locShowerPair.second);
+
+		//Fill Hit Found
 		for(auto& locLayerPair : locHitMap_HitFound)
 		{
 			for(auto& locEndPair : locLayerPair.second)
@@ -557,7 +572,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 			}
 		}
 
-		//Fill Total
+		//Fill Hit Total
 		for(auto& locLayerPair : locHitMap_HitTotal)
 		{
 			for(auto& locEndPair : locLayerPair.second)
