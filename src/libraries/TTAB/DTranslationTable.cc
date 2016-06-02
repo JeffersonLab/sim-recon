@@ -345,7 +345,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 	  pi->GetSingle(pp);
 
       // Avoid f250 Error with extra PulseIntegral word
-//      if( pt == NULL || pp == NULL) continue;
+      if( pt == NULL || pp == NULL) continue;
 
       // Create the appropriate hit type based on detector type
       switch (chaninfo.det_sys) {
