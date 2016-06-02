@@ -13,7 +13,7 @@
 #include "TH2I.h"
 
 #include "START_COUNTER/DSCHit.h"
-//#include "TRIGGER/DTrigger.h"
+#include "TRIGGER/DTrigger.h"
 #include "TRACKING/DTrackTimeBased.h"
 
 #include "PID/DChargedTrack.h"
@@ -54,8 +54,8 @@ class JEventProcessor_ST_Eff : public jana::JEventProcessor
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
 
 		//HISTOGRAMS
-		TH1I* dHist_HitFound;
-		TH1I* dHist_HitTotal;
+		TH2I* dHist_HitFound;
+		TH2I* dHist_HitTotal;
 
 		//TREE
 		DTreeInterface* dTreeInterface;

@@ -35,13 +35,9 @@ jerror_t JEventProcessor_ST_Eff::init(void)
 	TDirectory* locOriginalDir = gDirectory;
 	gDirectory->mkdir("ST_Eff")->cd();
 
-	ostringstream locHistName, locHistTitle;
-
-	//Found
-	dHist_HitFound = new TH1I("HitFound", "Hit Found;Sector", 30, 0.5, 30.5);
-
-	//Total
-	dHist_HitTotal = new TH1I("HitTotal", "Hit Total;Sector", 30, 0.5, 30.5);
+	//Histograms
+	dHist_HitFound = new TH2I("HitFound", "Hit Found;Projected Hit-Z (cm);Sector", 280, 0.0, 140.0, 30, 0.5, 30.5);
+	dHist_HitTotal = new TH2I("HitTotal", "Hit Total;Projected Hit-Z (cm);Sector", 280, 0.0, 140.0, 30, 0.5, 30.5);
 	
 	// back to original dir
 	locOriginalDir->cd();
@@ -94,11 +90,16 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 	// This plugin is used to determine the reconstruction efficiency of hits in the BCAL
 		// Note, this is hit-level, not shower-level.  Hits: By sector/layer/module/end
 
-/*
-//CUT ON TRIGGER TYPE
+	//CUT ON TRIGGER TYPE
 	const DTrigger* locTrigger = NULL;
 	locEventLoop->GetSingle(locTrigger);
-*/
+	if(locTrigger->Get_L1FrontPanelTriggerBits() != 0)
+		return NOERROR;
+
+	//SEE IF SC REQUIRED TO TRIGGER
+	uint32_t locTriggerBits = locTrigger->Get_L1TriggerBits();
+	if(locTriggerBits >= 32)
+		return NOERROR;
 
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks);
@@ -140,17 +141,13 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		locBestTracks.insert(locChargedTrackHypothesis);
 	}
 
-	//for histograms, keep running total of what to fill //int = layer, bool = isUpstream
+	//for histograms, keep running total of what to fill
 	//will fill at end: only one lock
-//	map<int, map<bool, vector<int> > > locHitMap_HitFound, locHitMap_HitTotal;
+	vector<pair<int, double> > locHitMap_HitFound, locHitMap_HitTotal; //int: sector, double: projected-z
 
 	// Loop over the good tracks, using the best DTrackTimeBased object for each
 	for(auto& locChargedTrackHypothesis : locBestTracks)
 	{
-		//use the DBCALPoints in this DBCALShower to help define where DBCALUnifiedHits are expected to be
-		//The DBCALShower reconstruction does not care which BCAL layers fired
-			//Therefore, given a DBCALShower hit layer, whether or not there are hits in the other layers is an unbiased check
-
 		const DTrackTimeBased* locTrackTimeBased = NULL;
 		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
 
@@ -163,6 +160,9 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		if(locPredictedSCSector == 0)
 			continue; //don't expect it to hit at all 
 
+		pair<int, double> locHitPair(locPredictedSCSector, locPredictedSurfacePosition.Z());
+		locHitMap_HitTotal.push_back(locHitPair);
+
 		//TRACK
 		dTreeFillData.Fill_Single<Int_t>("PID_PDG", PDGtype(locChargedTrackHypothesis->PID()));
 		dTreeFillData.Fill_Single<Float_t>("TrackVertexZ", locChargedTrackHypothesis->position().Z());
@@ -173,33 +173,21 @@ jerror_t JEventProcessor_ST_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 		//FILL TTREE
 		dTreeInterface->Fill(dTreeFillData);
 	}
-/*
+
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 	{
 		//Fill Found
-		for(auto& locLayerPair : locHitMap_HitFound)
-		{
-			for(auto& locEndPair : locLayerPair.second)
-			{
-				for(int& locSector : locEndPair.second)
-					dHistMap_HitFound[locLayerPair.first][locEndPair.first]->Fill(locSector);
-			}
-		}
+		for(auto& locHitPair : locHitMap_HitFound)
+			dHistMap_HitFound->Fill(locHitPair.second, locHitPair.first);
 
 		//Fill Total
-		for(auto& locLayerPair : locHitMap_HitTotal)
-		{
-			for(auto& locEndPair : locLayerPair.second)
-			{
-				for(int& locSector : locEndPair.second)
-					dHistMap_HitTotal[locLayerPair.first][locEndPair.first]->Fill(locSector);
-			}
-		}
+		for(auto& locHitPair : locHitMap_HitTotal)
+			dHistMap_HitTotal->Fill(locHitPair.second, locHitPair.first);
 	}
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
-*/
+
 	return NOERROR;
 }
 

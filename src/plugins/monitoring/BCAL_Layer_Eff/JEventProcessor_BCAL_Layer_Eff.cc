@@ -322,14 +322,6 @@ jerror_t JEventProcessor_BCAL_Layer_Eff::evnt(jana::JEventLoop* locEventLoop, ui
 		//locNearestSectors_Downstream & locNearestSectors_Upstream: 4*(module - 1) + sector //sector: 1 -> 192, 0 if not found
 		UChar_t locIsHitInClusterBits = 0; //bits 1 -> 8 correspond to Upstream layer 1 -> 4, then Downstream layer 1 -> 4
 
-		/**************************************************** LOOP OVER BCAL LAYERS ****************************************************/
-
-		//Tree-save variables
-		map<int, UChar_t> locProjectedSectorsMap, locNearestSectorsMap_Downstream, locNearestSectorsMap_Upstream;
-		//locProjectedSectors: (rounded from search): 4*(module - 1) + sector //sector: 1 -> 192, 0 if biased or indeterminate
-		//locNearestSectors_Downstream & locNearestSectors_Upstream: 4*(module - 1) + sector //sector: 1 -> 192, 0 if not found
-		UChar_t locIsHitInClusterBits = 0; //bits 1 -> 8 correspond to Upstream layer 1 -> 4, then Downstream layer 1 -> 4
-
 		//loop over layers
 		for(int locLayer = 1; locLayer <= 4; ++locLayer)
 		{
