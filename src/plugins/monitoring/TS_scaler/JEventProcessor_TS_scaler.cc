@@ -245,7 +245,7 @@ jerror_t JEventProcessor_TS_scaler::evnt(JEventLoop *locEventLoop, uint64_t locE
 	timestamp = locTSscaler->time;
 	//printf ("Event=%d int_count=%d livetime=%d busytime=%d time=%d live_inst=%d\n",(int)locEventNumber,int_count,livetime,busytime,(int)timestamp,live_inst);
 	
-	double livetime_integrated = (double)livetime/double(livetime+busytime);
+	double livetime_integrated = (double)livetime/(livetime+busytime);
 	japp->RootFillLock(this);
 	dHistTS_livetime_tot->Fill(livetime_integrated);
 	dHistTS_liveinst_tot->Fill((float)live_inst/1000.);
@@ -291,7 +291,7 @@ jerror_t JEventProcessor_TS_scaler::evnt(JEventLoop *locEventLoop, uint64_t locE
 			dHistTS_Recorded[dTrigBits[j]]->Fill(locEventNumber, gtp_rec[j]);
 			dHistTS_Scaler[dTrigBits[j]]->Fill(locEventNumber, gtp_sc[j]);
 			if(!dIsFirstInterval && gtp_sc[j]>0){
-				dHistTS_livetime[dTrigBits[j]]->Fill(gtp_rec[j]/gtp_sc[j]);
+				dHistTS_livetime[dTrigBits[j]]->Fill(gtp_rec[j]/(double)gtp_sc[j]);
 			}
 		}
 	}
@@ -312,7 +312,7 @@ jerror_t JEventProcessor_TS_scaler::evnt(JEventLoop *locEventLoop, uint64_t locE
 			dHistTS_FPRecorded[dFPTrigBits[j]]->Fill(locEventNumber, fp_rec[j]);
 			dHistTS_FPScaler[dFPTrigBits[j]]->Fill(locEventNumber, fp_sc[j]);
 			if(!dIsFirstInterval && fp_sc[j]>0){
-				dHistTS_FPlivetime[dFPTrigBits[j]]->Fill(fp_rec[j]/fp_sc[j]);
+				dHistTS_FPlivetime[dFPTrigBits[j]]->Fill(fp_rec[j]/(double)fp_sc[j]);
 			}
 		}
 	}
