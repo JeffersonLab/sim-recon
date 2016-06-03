@@ -499,10 +499,10 @@ jerror_t DEventProcessor_fcal_charged::evnt(jana::JEventLoop* locEventLoop, int 
 		  N9 += 1;
 
 		  //save for later
-		  row_E1 = row;
-		  col_E1 = col;
-		  drow_E1 = drow;
-		  dcol_E1 = dcol;
+		  //row_E1 = row;
+		  //col_E1 = col;
+		  //drow_E1 = drow;
+		  //dcol_E1 = dcol;
 		  dX_E1 = x - trkposX;    
 		  dY_E1 = y - trkposY;
 		  printf ("Event=%d, trkposX=%f, trkposY=%f, dX_E1=%f, dY_E1=%f\n",locEventNumber,trkposX,trkposY,dX_E1,dY_E1);
