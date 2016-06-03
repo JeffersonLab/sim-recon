@@ -785,6 +785,8 @@ bool DParticleID::PredictFCALHit(const DReferenceTrajectory *rt,
    // Initialize output variables
   row=0;
   col=0;
+  if(rt == NULL)
+    return false;
   // Find intersection with FCAL plane given by fcal_pos
   DVector3 fcal_pos(0,0,dFCALz);
   DVector3 norm(0.0, 0.0, 1.0); //normal vector to FCAL plane
@@ -810,6 +812,8 @@ bool DParticleID::PredictBCALWedge(const DReferenceTrajectory *rt,
   //initialize output variables 
   sector=0;
   module=0;
+  if(rt == NULL)
+    return false;
   // Find intersection of track with inner radius of BCAL
   DVector3 proj_pos;
   if (rt->GetIntersectionWithRadius(65.0,proj_pos)==NOERROR){
@@ -838,6 +842,8 @@ bool DParticleID::PredictTOFPaddles(const DReferenceTrajectory *rt,
   // Initialize output variables
   vbar=0;
   hbar=0;
+  if(rt == NULL)
+    return false;
   // Find intersection with TOF plane given by tof_pos
   DVector3 tof_pos(0,0,dTOFGeometry->CenterMPlane);
   DVector3 norm(0.0, 0.0, 1.0); //normal vector to TOF plane
