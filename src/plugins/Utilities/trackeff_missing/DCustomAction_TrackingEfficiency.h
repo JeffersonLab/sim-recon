@@ -33,9 +33,18 @@ class DCustomAction_TrackingEfficiency : public DAnalysisAction
 	public:
 
 		DCustomAction_TrackingEfficiency(const DReaction* locReaction, bool locUseKinFitResultsFlag, string locActionUniqueString = "") :
-		DAnalysisAction(locReaction, "Custom_TrackingEfficiency", locUseKinFitResultsFlag, locActionUniqueString) {}
+		DAnalysisAction(locReaction, "Custom_TrackingEfficiency", locUseKinFitResultsFlag, locActionUniqueString)
+		{
+			dTreeInterface = NULL;
+		}
 
 		void Initialize(JEventLoop* locEventLoop);
+
+		~DCustomAction_TrackingEfficiency(void)
+		{
+			if(dTreeInterface != NULL)
+				delete dTreeInterface; //SAVES FILES, TREES
+		}
 
 	private:
 
