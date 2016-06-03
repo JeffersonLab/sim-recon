@@ -4766,11 +4766,10 @@ void JEventSource_EVIO::ParseBORevent(evioDOMNodeP bankPtr)
 // The data format: slot + 16 scalers
 void JEventSource_EVIO::ParseFA250Scalers(evioDOMNodeP bankPtr, list<ObjList*> &events, uint32_t rocid){
 
-    Df250Scaler *sc = new Df250Scaler;
-
     const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
 
-    if(vec->size() > 0){
+    if(vec->size() > 0){      
+      Df250Scaler *sc = new Df250Scaler;
 	
       sc->nsync        = (*vec)[0];
       sc->trig_number  = (*vec)[1];
@@ -4803,11 +4802,12 @@ void JEventSource_EVIO::ParseFA250Scalers(evioDOMNodeP bankPtr, list<ObjList*> &
 // The data format: slot + 8 32-bit words (ped1, ped2)
 void JEventSource_EVIO::ParseFA250AsyncPedestals(evioDOMNodeP bankPtr, list<ObjList*> &events, uint32_t rocid){
 
-    Df250AsyncPedestal *ped = new Df250AsyncPedestal;
 
     const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
 
     if(vec->size() > 0){
+      
+      Df250AsyncPedestal *ped = new Df250AsyncPedestal;
 	
       ped->nsync        = (*vec)[0];
       ped->trig_number  = (*vec)[1];
@@ -4844,6 +4844,8 @@ void JEventSource_EVIO::ParseTSSync(evioDOMNodeP bankPtr, list<ObjList*> &events
 
     if((bankPtr->tag & 0xFFFF) == 0xEE02){
         const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+
+
 
         trig_info->nsync        = (*vec)[0];
         trig_info->trig_number  = (*vec)[1];
