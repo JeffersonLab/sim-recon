@@ -342,13 +342,13 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	  }
 	  
 	  
-	  bool foundHit = false;
+	  //bool foundHit = false;
 	  // look in the presorted FDC WireDigiHits for a match
 	  if(!locSortedFDCWireDigiHits[cellNum][wireNum].empty() || !locSortedFDCWireDigiHits[cellNum][wireNum-1].empty() || !locSortedFDCWireDigiHits[cellNum][wireNum+1].empty()){
 	    // Look not only in one wire, but also in adjacent ones (?)
 	    // This can remove the dependence on the track error
 	    
-	    foundHit = true;
+	    //foundHit = true;
 	    Fill1DHistogram("FDC_Efficiency", "Offline", "Measured Hits Vs DOCA", distanceToWire, "Measured Hits", 100, 0 , 0.5);
 	    Fill1DHistogram("FDC_Efficiency", "Offline", "Measured Hits Vs Tracking FOM", thisTimeBasedTrack->FOM, "Measured Hits", 100, 0 , 1.0);
 	    Fill1DHistogram("FDC_Efficiency", "Offline", "Measured Hits Vs theta", theta_deg, "Measured Hits", 100, 0, 180);
