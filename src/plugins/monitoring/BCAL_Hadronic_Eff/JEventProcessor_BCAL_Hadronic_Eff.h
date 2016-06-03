@@ -50,8 +50,6 @@ class JEventProcessor_BCAL_Hadronic_Eff : public jana::JEventProcessor
 		jerror_t erun(void);						///< Called every time run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		void Fill_NoClusterStudy(const DChargedTrackHypothesis* locChargedTrackHypothesis, vector<const DBCALShower*>& locBCALShowers, const DParticleID* locParticleID, bool locIsMatchedToTrackFlag);
-
 		double Calc_AverageSector(const map<int, set<const DBCALPoint*> >& locBCALPoints);
 		double Calc_ProjectedSector(int locLayer, const map<int, map<int, set<const DBCALPoint*> > >& locSortedPoints);
 
@@ -74,8 +72,6 @@ class JEventProcessor_BCAL_Hadronic_Eff : public jana::JEventProcessor
 		//HISTOGRAMS
 		int dHistFoundDeltaSector; //for histograms ONLY!!!
 		map<int, map<bool, TH1I*> > dHistMap_HitFound, dHistMap_HitTotal; //int = layer, bool = isUpstream
-		TH2I* dHist_HadronicShowerMatched;
-		TH2I* dHist_HadronicShowerTotal;
 
 		//TREE
 		DTreeInterface* dTreeInterface;

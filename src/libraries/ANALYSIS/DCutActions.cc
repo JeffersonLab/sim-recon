@@ -854,7 +854,7 @@ bool DCutAction_TrackHitPattern::Cut_TrackHitPattern(const DParticleID* locParti
 			break; //don't check the last one: track could be leaving
 		if(locSuperlayerPair.first < locInnermostCDCSuperlayer)
 			continue; //don't check before the first one: could be detached vertex
-		if(locIterator->second < int(dMinHitRingsPerCDCSuperlayer))
+		if(locSuperlayerPair.second < int(dMinHitRingsPerCDCSuperlayer))
 			return false;
 	}
 
@@ -875,7 +875,7 @@ bool DCutAction_TrackHitPattern::Cut_TrackHitPattern(const DParticleID* locParti
 			break; //don't check the last one: track could be leaving
 		if(locPackagePair.second == 0)
 			continue; //0 hits: is ok: could be curling through beamline
-		if(locIterator->second < int(dMinHitPlanesPerFDCPackage))
+		if(locPackagePair.second < int(dMinHitPlanesPerFDCPackage))
 			return false;
 	}
 
