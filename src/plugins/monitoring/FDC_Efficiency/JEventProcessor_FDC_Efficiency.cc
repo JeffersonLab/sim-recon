@@ -21,6 +21,7 @@ static TH1I *hChi2OverNDF_accepted;
 static TH1I *hPseudoRes;
 static TH1I *hPseudoResX;
 static TH1I *hPseudoResY;
+static TH2I *hPseudoResVsT;
 static TH2I *hResVsT;
 static TH1I *hMom;
 static TH1I *hMom_accepted;
@@ -117,7 +118,8 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
 
   gDirectory->cd("/FDC_Efficiency");
   gDirectory->mkdir("Residuals")->cd();
-  hResVsT = new TH2I("hResVsT","Tracking Residual (Biased) Vs Wire Drift Time; Drift Time [ns]; Residual [cm]", 100, 0, 0.5, 300, -250, 50);
+  hResVsT = new TH2I("hResVsT","Tracking Residual (Biased) Vs Wire Drift Time; Residual (cm); Drift Time (ns)", 100, 0, 0.5, 300, -250, 50);
+  hPseudoResVsT = new TH2I("hPseudoResVsT","Tracking Residual (Biased) Vs Pseudo Time; Residual (cm); Drift Time (ns)", 100, 0, 0.5, 300, -10, 200);
   hPseudoRes = new TH1I("hPseudoRes","Pseudo Residual", 100, 0, 10);
   hPseudoResX = new TH1I("hPseudoResX","Pseudo Residual in X", 100, -5, 5);
   hPseudoResY = new TH1I("hPseudoResY","Pseudo Residual in Y", 100, -5, 5);
@@ -171,7 +173,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     if (locHit->plane != 2) continue; // only wires!
 
     // cut on timing of hits
-    // at the moment shifted by ~200ns
+    // at the moment shifted to -200ns
     if (-300 > locHit->t || locHit->t > 100) continue;
     
     locSortedFDCHits[locHit->gLayer][locHit->element].insert(locHit);
@@ -440,6 +442,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	    double residualX = pseudoPosition.X() - interPosition2D.X();
 	    double residualY = pseudoPosition.Y() - interPosition2D.Y();
 	    
+	    // these can be used for background studies/correction
 	    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 	    hPseudoRes->Fill(residual2D);
 	    hPseudoResX->Fill(residualX);
@@ -449,7 +452,8 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	    if (foundPseudo) continue; 
 	    // to avoid double conting
 	    	    
-	    if (residual2D < 1.6){ // = 5 sigma in x and in y
+	    //if (residual2D < 1.6){ // = 5 sigma in x and in y
+	    if (residual2D < 2){ // = to account for non-gaussian tails and tracking/extrapolation errors
 	      foundPseudo = true;
 	      
 	      if(fdc_pseudo_measured_cell[cellNum] != NULL && cellNum < 25){
@@ -457,6 +461,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 		fdc_pseudo_measured_cell[cellNum]->Fill(interPosition.X(), interPosition.Y());
 		hPseudoTime_accepted->Fill(locPseudo->time);
+		hPseudoResVsT->Fill(residual2D, locPseudo->time);
 		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	      }
 	    }
