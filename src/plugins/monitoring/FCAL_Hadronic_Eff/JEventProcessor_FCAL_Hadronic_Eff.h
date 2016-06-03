@@ -1,10 +1,10 @@
 // $Id$
 //
-// File: JEventProcessor_FCAL_Eff.h
+// File: JEventProcessor_FCAL_Hadronic_Eff.h
 //
 
-#ifndef _JEventProcessor_FCAL_Eff_
-#define _JEventProcessor_FCAL_Eff_
+#ifndef _JEventProcessor_FCAL_Hadronic_Eff_
+#define _JEventProcessor_FCAL_Hadronic_Eff_
 
 #include <JANA/JEventProcessor.h>
 #include <JANA/JApplication.h>
@@ -33,12 +33,12 @@
 using namespace jana;
 using namespace std;
 
-class JEventProcessor_FCAL_Eff : public jana::JEventProcessor
+class JEventProcessor_FCAL_Hadronic_Eff : public jana::JEventProcessor
 {
 	public:
-		JEventProcessor_FCAL_Eff(){};
-		~JEventProcessor_FCAL_Eff(){};
-		const char* className(void){return "JEventProcessor_FCAL_Eff";}
+		JEventProcessor_FCAL_Hadronic_Eff(){};
+		~JEventProcessor_FCAL_Hadronic_Eff(){};
+		const char* className(void){return "JEventProcessor_FCAL_Hadronic_Eff";}
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -70,5 +70,5 @@ class JEventProcessor_FCAL_Eff : public jana::JEventProcessor
 		static thread_local DTreeFillData dTreeFillData;
 };
 
-#endif // _JEventProcessor_FCAL_Eff_
+#endif // _JEventProcessor_FCAL_Hadronic_Eff_
 

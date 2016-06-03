@@ -1,9 +1,9 @@
 // $Id$
 //
-//    File: JEventProcessor_FCAL_Eff.cc
+//    File: JEventProcessor_FCAL_Hadronic_Eff.cc
 //
 
-#include "JEventProcessor_FCAL_Eff.h"
+#include "JEventProcessor_FCAL_Hadronic_Eff.h"
 
 // Routine used to create our JEventProcessor
 extern "C"
@@ -11,17 +11,17 @@ extern "C"
 	void InitPlugin(JApplication *locApplication)
 	{
 		InitJANAPlugin(locApplication);
-		locApplication->AddProcessor(new JEventProcessor_FCAL_Eff()); //register this plugin
+		locApplication->AddProcessor(new JEventProcessor_FCAL_Hadronic_Eff()); //register this plugin
 	}
 } // "C"
 
 //define static local variable //declared in header file
-thread_local DTreeFillData JEventProcessor_FCAL_Eff::dTreeFillData;
+thread_local DTreeFillData JEventProcessor_FCAL_Hadronic_Eff::dTreeFillData;
 
 //------------------
 // init
 //------------------
-jerror_t JEventProcessor_FCAL_Eff::init(void)
+jerror_t JEventProcessor_FCAL_Hadronic_Eff::init(void)
 {
 	//TRACK REQUIREMENTS
 	dMaxTOFDeltaT = 1.0;
@@ -33,7 +33,7 @@ jerror_t JEventProcessor_FCAL_Eff::init(void)
 	//action initialize not necessary: is empty
 
 	TDirectory* locOriginalDir = gDirectory;
-	gDirectory->mkdir("FCAL_Eff")->cd();
+	gDirectory->mkdir("FCAL_Hadronic_Eff")->cd();
 
 	//Histograms
 	string locHistName, locHistTitle;
@@ -78,9 +78,9 @@ jerror_t JEventProcessor_FCAL_Eff::init(void)
 	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedFCALColumn");
 
 	//NEAREST FCAL SHOWER
-	locTreeBranchRegister.Register_Single<Float_t>("NearestFCALEnergy");
-	locTreeBranchRegister.Register_Single<Float_t>("NearestFCALX");
-	locTreeBranchRegister.Register_Single<Float_t>("NearestFCALY");
+	locTreeBranchRegister.Register_Single<Float_t>("NearestFCALEnergy"); //if < 0: nothing anywhere
+	locTreeBranchRegister.Register_Single<Float_t>("NearestFCALX"); //ignore if E < 0
+	locTreeBranchRegister.Register_Single<Float_t>("NearestFCALY"); //ignore if E < 0
 	locTreeBranchRegister.Register_Single<Bool_t>("IsMatchedToTrack"); //false if not registered in DDetectorMatches
 
 	//FOUND FCAL //only if matched: for evaluating PID quality
@@ -96,7 +96,7 @@ jerror_t JEventProcessor_FCAL_Eff::init(void)
 //------------------
 // brun
 //------------------
-jerror_t JEventProcessor_FCAL_Eff::brun(jana::JEventLoop* locEventLoop, int locRunNumber)
+jerror_t JEventProcessor_FCAL_Hadronic_Eff::brun(jana::JEventLoop* locEventLoop, int locRunNumber)
 {
 	// This is called whenever the run number changes
 
@@ -107,7 +107,7 @@ jerror_t JEventProcessor_FCAL_Eff::brun(jana::JEventLoop* locEventLoop, int locR
 // evnt
 //------------------
 
-jerror_t JEventProcessor_FCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
+jerror_t JEventProcessor_FCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 	// This is called for every event. Use of common resources like writing
 	// to a file or filling a histogram should be mutex protected. Using
@@ -248,7 +248,7 @@ jerror_t JEventProcessor_FCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
 		}
 		else
 		{
-			dTreeFillData.Fill_Single<Float_t>("NearestFCALEnergy", 0.0);
+			dTreeFillData.Fill_Single<Float_t>("NearestFCALEnergy", -1.0);
 			dTreeFillData.Fill_Single<Float_t>("NearestFCALX", 0.0);
 			dTreeFillData.Fill_Single<Float_t>("NearestFCALY", 0.0);
 		}
@@ -265,7 +265,7 @@ jerror_t JEventProcessor_FCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
 	return NOERROR;
 }
 
-double JEventProcessor_FCAL_Eff::Calc_FCALTiming(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DParticleID* locParticleID, const DEventRFBunch* locEventRFBunch, double& locDeltaT)
+double JEventProcessor_FCAL_Hadronic_Eff::Calc_FCALTiming(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DParticleID* locParticleID, const DEventRFBunch* locEventRFBunch, double& locDeltaT)
 {
 	const DFCALShowerMatchParams* locFCALShowerMatchParams = locChargedTrackHypothesis->Get_FCALShowerMatchParams();
 	if(locFCALShowerMatchParams == NULL)
@@ -279,7 +279,7 @@ double JEventProcessor_FCAL_Eff::Calc_FCALTiming(const DChargedTrackHypothesis* 
 	return locPIDFOM;
 }
 
-bool JEventProcessor_FCAL_Eff::Cut_TOFTiming(const DChargedTrackHypothesis* locChargedTrackHypothesis)
+bool JEventProcessor_FCAL_Hadronic_Eff::Cut_TOFTiming(const DChargedTrackHypothesis* locChargedTrackHypothesis)
 {
 	if(locChargedTrackHypothesis->t1_detector() != SYS_TOF)
 		return false;
@@ -291,7 +291,7 @@ bool JEventProcessor_FCAL_Eff::Cut_TOFTiming(const DChargedTrackHypothesis* locC
 //------------------
 // erun
 //------------------
-jerror_t JEventProcessor_FCAL_Eff::erun(void)
+jerror_t JEventProcessor_FCAL_Hadronic_Eff::erun(void)
 {
 	// This is called whenever the run number changes, before it is
 	// changed to give you a chance to clean up before processing
@@ -303,7 +303,7 @@ jerror_t JEventProcessor_FCAL_Eff::erun(void)
 //------------------
 // fini
 //------------------
-jerror_t JEventProcessor_FCAL_Eff::fini(void)
+jerror_t JEventProcessor_FCAL_Hadronic_Eff::fini(void)
 {
 	// Called before program exit after event processing is finished.  
 

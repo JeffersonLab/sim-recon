@@ -9,7 +9,7 @@ subdirs = [
 'CDC_online',
 'DAQ_online',
 'FCAL_online',
-'FCAL_Eff', 
+'FCAL_Hadronic_Eff', 
 'FDC_online',
 'PSC_online',
 'RF_online',
