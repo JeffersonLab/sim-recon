@@ -119,12 +119,13 @@ jerror_t JEventProcessor_TOF_Eff::init(void)
 
 	//SEARCH TOF PADDLE
 		//Nearest hit: //0 for none, 1 - 44 for both ends //101 - 144 for North/Top only, 201 - 244 for South/Bottom only (only = above threshold)
+		//Nearest: No time cut (yet?)
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestTOFHit_Horizontal");
 	locTreeBranchRegister.Register_Single<Float_t>("HorizontalTOFHitDeltaY");
 	locTreeBranchRegister.Register_Single<UChar_t>("NearestTOFHit_Vertical");
 	locTreeBranchRegister.Register_Single<Float_t>("VerticalTOFHitDeltaX");
 
-	//SEARCH TOF POINT
+	//SEARCH TOF POINT //nearest: must be in time: PID:OUT_OF_TIME_CUT
 	locTreeBranchRegister.Register_Single<Float_t>("NearestTOFPointDeltaX");
 	locTreeBranchRegister.Register_Single<Float_t>("NearestTOFPointDeltaY");
 	locTreeBranchRegister.Register_Single<UShort_t>("NearestTOFPointStatus");
@@ -255,8 +256,9 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 		//Find closest TOF paddles
 		double locBestPaddleDeltaX = 999.9, locBestPaddleDeltaY = 999.9;
 		//first in pair is vertical, second is horizontal // NULL If none / doesn't hit TOF
-		pair<const DTOFPaddleHit*, const DTOFPaddleHit*> locClosestTOFPaddleHits = 
-					locParticleID->Get_ClosestToTrack_TOFPaddles(locTrackTimeBased, locTOFPaddleHits, locBestPaddleDeltaX, locBestPaddleDeltaY);
+		double locStartTime = locParticleID->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Vertical = Get_ClosestTOFPaddleHit_Vertical(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestPaddleDeltaX);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Horizontal = Get_ClosestTOFPaddleHit_Horizontal(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestPaddleDeltaY);
 
 		//Is match to TOF point?
 		const DTOFHitMatchParams* locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
@@ -275,8 +277,8 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 			locNearestTOFPointStatus += 45*45*locClosestTOFPoint->dHorizontalBarStatus + 45*45*4*locClosestTOFPoint->dVerticalBarStatus;
 		}
 
-		int locNearestTOFHitHorizontal = Calc_NearestHit(locClosestTOFPaddleHits.second);
-		int locNearestTOFHitVertical = Calc_NearestHit(locClosestTOFPaddleHits.first);
+		int locNearestTOFHitHorizontal = Calc_NearestHit(locClosestTOFPaddleHit_Horizontal);
+		int locNearestTOFHitVertical = Calc_NearestHit(locClosestTOFPaddleHit_Vertical);
 
 
 		// FILL HISTOGRAMS

@@ -88,6 +88,8 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::init(void)
 	locTreeBranchRegister.Register_Single<Float_t>("ShowerEnergy");
 	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaPhiToShower"); //is signed: BCAL - Track //degrees
 	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaZToShower"); //is signed: BCAL - Track
+	//"Sector:" 4*(module - 1) + sector //sector: 1 -> 192
+	locTreeBranchRegister.Register_Single<UChar_t>("TrackProjectedBCALSector"); //from track extrapolation //0 if proj to miss
 	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitPhi"); //degrees
 	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitZ");
 
@@ -271,12 +273,6 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 	{
 		const DTrackTimeBased* locTrackTimeBased = NULL;
 		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-
-		//Predict BCAL Surface Hit Location
-		unsigned int locPredictedSurfaceModule = 0, locPredictedSurfaceSector = 0;
-		DVector3 locPredictedSurfacePosition;
-		if(!locParticleID->PredictBCALWedge(locTrackTimeBased->rt, locPredictedSurfaceModule, locPredictedSurfaceSector, &locPredictedSurfacePosition))
-			continue; //no expectation of hitting BCAL
 
 		/************************************************ CHECK SHOWER MATCH EFFICIENCY ************************************************/
 
@@ -467,6 +463,12 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 			}
 		}
 
+		//Predict BCAL Surface Hit Location
+		unsigned int locPredictedSurfaceModule = 0, locPredictedSurfaceSector = 0;
+		DVector3 locPredictedSurfacePosition;
+		locParticleID->PredictBCALWedge(locTrackTimeBased->rt, locPredictedSurfaceModule, locPredictedSurfaceSector, &locPredictedSurfacePosition);
+		unsigned int locTrackProjectedBCALSector = 4*(locPredictedSurfaceModule - 1) + locPredictedSurfaceSector;
+
 		//STAGE DATA FOR TREE FILL
 
 		//TRACK
@@ -482,6 +484,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		dTreeFillData.Fill_Single<Float_t>("ShowerEnergy", locBCALShowerMatchParams->dBCALShower->E);
 		dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", 180.0*locBCALShowerMatchParams->dDeltaPhiToShower/TMath::Pi()); //is signed: BCAL - Track
 		dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", locBCALShowerMatchParams->dDeltaZToShower); //is signed: BCAL - Track
+		dTreeFillData.Fill_Single<UChar_t>("TrackProjectedBCALSector", locTrackProjectedBCALSector);
 		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());
 		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitZ", locPredictedSurfacePosition.Z());
 

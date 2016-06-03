@@ -1142,11 +1142,13 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
 		double locBestDeltaX = 999.9, locBestDeltaY = 999.9;
-		pair<const DTOFPaddleHit*, const DTOFPaddleHit*> locClosestTOFPaddleHits = locParticleID->Get_ClosestToTrack_TOFPaddles(locTrackIterator->second, locTOFPaddleHits, locBestDeltaX, locBestDeltaY);
-		if(locClosestTOFPaddleHits.first != NULL)
-			locVerticalTOFPaddleTrackDistanceMap[locTrackIterator->second] = pair<const DTOFPaddleHit*, double>(locClosestTOFPaddleHits.first, locBestDeltaX);
-		if(locClosestTOFPaddleHits.second != NULL)
-			locHorizontalTOFPaddleTrackDistanceMap[locTrackIterator->second] = pair<const DTOFPaddleHit*, double>(locClosestTOFPaddleHits.first, locBestDeltaY);
+		double locStartTime = locParticleID->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Vertical = Get_ClosestTOFPaddleHit_Vertical(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestDeltaX);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Horizontal = Get_ClosestTOFPaddleHit_Horizontal(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestDeltaY);
+		if(locClosestTOFPaddleHit_Vertical != NULL)
+			locVerticalTOFPaddleTrackDistanceMap[locTrackIterator->second] = pair<const DTOFPaddleHit*, double>(locClosestTOFPaddleHit_Vertical, locBestDeltaX);
+		if(locClosestTOFPaddleHit_Horizontal != NULL)
+			locHorizontalTOFPaddleTrackDistanceMap[locTrackIterator->second] = pair<const DTOFPaddleHit*, double>(locClosestTOFPaddleHit_Horizontal, locBestDeltaY);
 	}
 
 	//TRACK / SC CLOSEST MATCHES

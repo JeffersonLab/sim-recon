@@ -78,7 +78,7 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::init(void)
 	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedFCALColumn");
 
 	//NEAREST FCAL SHOWER
-	locTreeBranchRegister.Register_Single<Float_t>("NearestFCALEnergy"); //if < 0: nothing anywhere
+	locTreeBranchRegister.Register_Single<Float_t>("NearestFCALEnergy"); //if < 0: nothing in time: PID:OUT_OF_TIME_CUT
 	locTreeBranchRegister.Register_Single<Float_t>("NearestFCALX"); //ignore if E < 0
 	locTreeBranchRegister.Register_Single<Float_t>("NearestFCALY"); //ignore if E < 0
 	locTreeBranchRegister.Register_Single<Bool_t>("IsMatchedToTrack"); //false if not registered in DDetectorMatches

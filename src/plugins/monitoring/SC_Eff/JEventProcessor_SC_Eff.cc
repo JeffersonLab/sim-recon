@@ -64,7 +64,7 @@ jerror_t JEventProcessor_SC_Eff::init(void)
 
 	//SEARCH
 	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedSCHitSector");
-	locTreeBranchRegister.Register_Single<UChar_t>("NearestSCHitSector"); //0 if none
+	locTreeBranchRegister.Register_Single<UChar_t>("NearestSCHitSector"); //0 if none in time: PID:OUT_OF_TIME_CUT
 	locTreeBranchRegister.Register_Single<Bool_t>("IsMatchedToTrack"); //false if not registered in DDetectorMatches
 	locTreeBranchRegister.Register_Single<Float_t>("TrackHitDeltaPhi"); //is signed: SC - Track
 

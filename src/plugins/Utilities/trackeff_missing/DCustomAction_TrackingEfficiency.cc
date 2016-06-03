@@ -40,7 +40,8 @@ void DCustomAction_TrackingEfficiency::Initialize(JEventLoop* locEventLoop)
 
 	//CHANNEL INFO
 	locBranchRegister.Register_Single<Float_t>("BeamEnergy");
-	locBranchRegister.Register_Single<TLorentzVector>("MissingP4");
+	locBranchRegister.Register_Single<Float_t>("MissingMassSquared"); //is measured
+	locBranchRegister.Register_Single<TVector3>("MissingP3"); //is kinfit if kinfit
 	locBranchRegister.Register_Single<Float_t>("ComboVertexZ");
 
 	//TRACKING INFO: //"Recon:" Time-based track
@@ -51,9 +52,10 @@ void DCustomAction_TrackingEfficiency::Initialize(JEventLoop* locEventLoop)
 	locBranchRegister.Register_Single<UInt_t>("TrackFDCPlanes"); //planes correspond to bits (1 -> 24)
 
 	//HADRONIC BCAL SHOWER EFFICIENCY: TIMING, MATCHING //cannot get accurate PID without missing-track study
-	locBranchRegister.Register_Single<Float_t>("ProjectedBCALHitPhi"); //degrees //if >= 500, then not projected to hit BCAL
+	locBranchRegister.Register_Single<UChar_t>("ProjectedBCALSector"); //4*(module - 1) + sector: 1 -> 192 //0 if proj to miss
+	locBranchRegister.Register_Single<Float_t>("ProjectedBCALHitPhi"); //degrees
 	locBranchRegister.Register_Single<Float_t>("ProjectedBCALHitZ");
-	locBranchRegister.Register_Single<Float_t>("NearestShowerEnergy");
+	locBranchRegister.Register_Single<Float_t>("NearestShowerEnergy"); // < 0 if none in time: PID:OUT_OF_TIME_CUT
 	locBranchRegister.Register_Single<Float_t>("TrackDeltaPhiToShower"); //is signed: BCAL - Track //degrees
 	locBranchRegister.Register_Single<Float_t>("TrackDeltaZToShower"); //is signed: BCAL - Track
 	locBranchRegister.Register_Single<Bool_t>("IsMatchedToBCALShower");
@@ -69,8 +71,6 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	//Write custom code to perform an action on the INPUT DParticleCombo (DParticleCombo)
 	//NEVER: Grab DParticleCombo or DAnalysisResults objects (of any tag!) from the JEventLoop within this function
 	//NEVER: Grab objects that are created post-kinfit (e.g. DKinFitResults, etc.) from the JEventLoop if Get_UseKinFitResultsFlag() == false: CAN CAUSE INFINITE DEPENDENCY LOOP
-
-	bool locUseKinFitResultsFlag = Get_UseKinFitResultsFlag();
 
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
@@ -91,18 +91,18 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
 
 	// Get missing particle p4 & covariance
-	DLorentzVector locMissingP4;
+	DLorentzVector locMeasuredMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, false);
+	DVector3 locMissingP3 = locMeasuredMissingP4.Vect();
 	DMatrixDSym locMissingCovarianceMatrix(3);
 	const DKinematicData* locBeamParticle = NULL;
 	if(locMissingParticle == NULL) //measured, or kinfit failed
 	{
-		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, locUseKinFitResultsFlag);
 		locMissingCovarianceMatrix = dAnalysisUtilities->Calc_MissingP3Covariance(locParticleCombo);
 		locBeamParticle = locParticleComboStep->Get_InitialParticle_Measured();
 	}
 	else //kinfit succeeded
 	{
-		locMissingP4 = locMissingParticle->lorentzMomentum();
+		locMissingP3 = locMissingParticle->momentum();
 		DMatrixDSym locKinFitCovarianceMatrix = locMissingParticle->errorMatrix();
 		locKinFitCovarianceMatrix.ResizeTo(3, 3);
 		locMissingCovarianceMatrix = locKinFitCovarianceMatrix;
@@ -113,7 +113,9 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 
 	//FILL CHANNEL INFO
 	dTreeFillData.Fill_Single<Float_t>("BeamEnergy", locBeamParticle->energy());
-	dTreeFillData.Fill_Single<TLorentzVector>("MissingP4", locMissingP4);
+	dTreeFillData.Fill_Single<Float_t>("MissingMassSquared", locMeasuredMissingP4.M2());
+	TVector3 locTMissingP3(locMissingP3.Px(), locMissingP3.Py(), locMissingP3.Pz());
+	dTreeFillData.Fill_Single<TVector3>("MissingP3", locTMissingP3); //is kinfit if kinfit
 	dTreeFillData.Fill_Single<Float_t>("ComboVertexZ", locVertexZ);
 
 	/************************************************* TIME-BASED TRACKS *************************************************/
@@ -141,7 +143,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 			continue; // matrix is not invertible
 		locCovarianceMatrix.Invert();
 
-		DVector3 locDeltaP3 = locUnusedTimeBasedTracks[loc_i]->momentum() - locMissingP4.Vect();
+		DVector3 locDeltaP3 = locUnusedTimeBasedTracks[loc_i]->momentum() - locMissingP3;
 		double locMatchFOM = Calc_MatchFOM(locDeltaP3, locCovarianceMatrix);
 
 		if(locMatchFOM > locBestTimeBasedMatchFOM)
@@ -161,8 +163,9 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 		dTreeFillData.Fill_Single<UInt_t>("TrackFDCPlanes", 0);
 
 		//HADRONIC BCAL SHOWER EFFICIENCY: TIMING, MATCHING
-		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", 501.0);
+		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", 0.0);
 		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitZ", 0.0);
+		dTreeFillData.Fill_Single<UChar_t>("ProjectedBCALSector", 0);
 		dTreeFillData.Fill_Single<Float_t>("NearestShowerEnergy", 0.0);
 		dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", 0.0);
 		dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", 0.0);
@@ -188,25 +191,11 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	//Predict BCAL Surface Hit Location
 	unsigned int locPredictedSurfaceModule = 0, locPredictedSurfaceSector = 0;
 	DVector3 locPredictedSurfacePosition;
-	if(!dParticleID->PredictBCALWedge(locBestTrackTimeBased->rt, locPredictedSurfaceModule, locPredictedSurfaceSector, &locPredictedSurfacePosition))
-	{
-		//HADRONIC BCAL SHOWER EFFICIENCY
-		//no expectation of hitting BCAL
-		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", 501.0);
-		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitZ", 0.0);
-		dTreeFillData.Fill_Single<Float_t>("NearestShowerEnergy", 0.0);
-		dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", 0.0);
-		dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", 0.0);
-		dTreeFillData.Fill_Single<Bool_t>("IsMatchedToBCALShower", false);
-		dTreeFillData.Fill_Single<Float_t>("BCALDeltaT", 0.0);
-		dTreeFillData.Fill_Single<Float_t>("BCALTimeFOM", -1.0);
-
-		//FILL TTREE
-		dTreeInterface->Fill(dTreeFillData);
-		return true;
-	}
+	dParticleID->PredictBCALWedge(locBestTrackTimeBased->rt, locPredictedSurfaceModule, locPredictedSurfaceSector, &locPredictedSurfacePosition);
+	unsigned int locTrackProjectedBCALSector = 4*(locPredictedSurfaceModule - 1) + locPredictedSurfaceSector; //0 if misses
 
 	//FILL PROJECTED HIT POSITION
+	dTreeFillData.Fill_Single<UChar_t>("ProjectedBCALSector", locTrackProjectedBCALSector);
 	dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());
 	dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitZ", locPredictedSurfacePosition.Z());
 
@@ -218,7 +207,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	if(locBestBCALShower == NULL)
 	{
 		//HADRONIC BCAL SHOWER EFFICIENCY
-		dTreeFillData.Fill_Single<Float_t>("NearestShowerEnergy", 0.0);
+		dTreeFillData.Fill_Single<Float_t>("NearestShowerEnergy", -1.0);
 		dTreeFillData.Fill_Single<Float_t>("TrackDeltaPhiToShower", 0.0);
 		dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", 0.0);
 		dTreeFillData.Fill_Single<Bool_t>("IsMatchedToBCALShower", false);

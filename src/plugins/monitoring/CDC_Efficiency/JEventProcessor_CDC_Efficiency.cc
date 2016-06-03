@@ -177,6 +177,12 @@ jerror_t JEventProcessor_CDC_Efficiency::brun(JEventLoop *eventLoop, int32_t run
         }
     }
 
+	MAX_DRIFT_TIME = 1000.0; //ns: from TRKFIND:MAX_DRIFT_TIME in DTrackCandidate_factory_CDC
+	//Make sure it gets initialize first, in case we want to change it:
+	vector<const DTrackCandidate*> locTrackCandidates;
+	eventLoop->Get(locTrackCandidates);
+	gPARMS->GetParameter("TRKFIND:MAX_DRIFT_TIME", MAX_DRIFT_TIME);
+
     return NOERROR;
 }
 
@@ -190,8 +196,11 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 
     //Pre-sort hits by ring to save time //only need to search within the given ring, straw
     map<int, map<int, set<const DCDCHit*> > > locSortedCDCHits; //first int: ring //second int: straw
-    for(auto& locHit : locCDCHitVector)
-    	locSortedCDCHits[locHit->ring][locHit->straw].insert(locHit);
+	for(auto& locHit : locCDCHitVector)
+    {
+    	if(locHit->tdrift <= MAX_DRIFT_TIME)
+    		locSortedCDCHits[locHit->ring][locHit->straw].insert(locHit);
+    }
 
     const DDetectorMatches *detMatches = nullptr;
     if(!dIsNoFieldFlag)
@@ -277,19 +286,19 @@ jerror_t JEventProcessor_CDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	        	for (int locRing = locFirstRing; locRing < locFirstRing + 4; ++locRing)
 	        	{
 	        		if(locCDCRings.find(locRing) == locCDCRings.end())
-	        			GitRDone(locRing, thisTimeBasedTrack, locSortedCDCHits); // git-r-dun
+	        			GitRDun(locRing, thisTimeBasedTrack, locSortedCDCHits); // git-r-dun
 	        	}
 	        	continue;
 			}
         	//so many hits that no individual ring was required: evaluate for all
         	for (int locRing = locFirstRing; locRing < locFirstRing + 4; ++locRing)
-       			GitRDone(locRing, thisTimeBasedTrack, locSortedCDCHits); // git-r-dun
+       			GitRDun(locRing, thisTimeBasedTrack, locSortedCDCHits); // git-r-dun
     	}
     }
     return NOERROR;
 }
 
-void JEventProcessor_CDC_Efficiency::GitRDone(unsigned int ringNum, const DTrackTimeBased *thisTimeBasedTrack, map<int, map<int, set<const DCDCHit*> > >& locSortedCDCHits)
+void JEventProcessor_CDC_Efficiency::GitRDun(unsigned int ringNum, const DTrackTimeBased *thisTimeBasedTrack, map<int, map<int, set<const DCDCHit*> > >& locSortedCDCHits)
 {
 	vector< DCDCWire * > wireByNumber = cdcwires[ringNum - 1];
 	for (unsigned int wireIndex = 0; wireIndex < wireByNumber.size(); wireIndex++)
