@@ -8,10 +8,6 @@
 #include "JEventProcessor_FDC_Efficiency.h"
 using namespace jana;
 #include "HDGEOMETRY/DMagneticFieldMapNoField.h"
-//#include "CDC/DCDCDigiHit.h"
-#include "FDC/DFDCWireDigiHit.h"
-//#include "FDC/DFDCCathodeDigiHit.h"
-//#include "DAQ/Df125CDCPulse.h"
 #include "HistogramTools.h"
 
 static TH1D *fdc_wire_measured_cell[25]; //Filled with total actually detected before division at end
@@ -25,7 +21,7 @@ static TH1I *hChi2OverNDF_accepted;
 static TH1I *hPseudoRes;
 static TH1I *hPseudoResX;
 static TH1I *hPseudoResY;
-//static TH2I *hResVsT;
+static TH2I *hResVsT;
 static TH1I *hMom;
 static TH1I *hMom_accepted;
 static TH1I *hTheta;
@@ -37,6 +33,11 @@ static TH1I *hCellsHit_accepted;
 static TH1I *hRingsHit;
 static TH1I *hRingsHit_accepted;
 static TH2I *hRingsHit_vs_P;
+
+static TH1I *hWireTime;
+static TH1I *hWireTime_accepted;
+static TH1I *hPseudoTime;
+static TH1I *hPseudoTime_accepted;
 
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
@@ -104,12 +105,19 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
   hCellsHit_accepted = new TH1I("hCellsHit_accepted", "Cells of FDC Contributing to Track (accepted)", 25, -0.5, 24.5);
   hRingsHit = new TH1I("hRingsHit", "Rings of CDC Contributing to Track", 29, -0.5, 28.5);
   hRingsHit_accepted = new TH1I("hRingsHit_accepted", "Rings of CDC Contributing to Track (accepted)", 25, -0.5, 24.5);
-  
+
   hRingsHit_vs_P = new TH2I("hRingsHit_vs_P", "Rings of CDC Contributing to Track vs P (accepted)", 25, -0.5, 24.5, 34, 0.6, 4);
+
+  hWireTime = new TH1I("hWireTime", "Timing of Hits", 150, -500, 1000);
+  hWireTime_accepted = new TH1I("hWireTime_accepted", "Timing of Hits (accepted)", 150, -500, 1000);
+
+  hPseudoTime = new TH1I("hPseudoTime", "Timing of Pseudos", 150, -500, 1000);
+  hPseudoTime_accepted = new TH1I("hPseudoTime_accepted", "Timing of Pseudos (accepted)", 150, -500, 1000);
+
 
   gDirectory->cd("/FDC_Efficiency");
   gDirectory->mkdir("Residuals")->cd();
-  //   hResVsT = new TH2I("hResVsT","Tracking Residual (Biased) Vs Wire Drift Time; Drift Time [ns]; Residual [cm]", 700, 0, 70000, 100, 0, 0.5);
+  hResVsT = new TH2I("hResVsT","Tracking Residual (Biased) Vs Wire Drift Time; Drift Time [ns]; Residual [cm]", 100, 0, 0.5, 300, -250, 50);
   hPseudoRes = new TH1I("hPseudoRes","Pseudo Residual", 100, 0, 10);
   hPseudoResX = new TH1I("hPseudoResX","Pseudo Residual in X", 100, -5, 5);
   hPseudoResY = new TH1I("hPseudoResY","Pseudo Residual in Y", 100, -5, 5);
@@ -152,25 +160,38 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 
   vector< const DFDCHit *> locFDCHitVector;
   loop->Get(locFDCHitVector);
-  vector< const DFDCWireDigiHit *> locFDCWireDigiHitVector;
-  loop->Get(locFDCWireDigiHitVector);
   vector< const DFDCPseudo *> locFDCPseudoVector;
   loop->Get(locFDCPseudoVector);
 
-  //Pre-sort WireDigiHits by ring to save time
+  //Pre-sort Hits to save time
   //only need to search within the given cell, wire
-  map<int, map<int, set<const DFDCWireDigiHit*> > > locSortedFDCWireDigiHits; //first int: cell //second int: wire
-  for( unsigned int hitNum = 0; hitNum < locFDCWireDigiHitVector.size(); hitNum++){
-    const DFDCWireDigiHit * locHit = locFDCWireDigiHitVector[hitNum];
-    locSortedFDCWireDigiHits[((locHit->package - 1 ) * 6) + locHit->chamber][locHit->wire].insert(locHit);
+  map<int, map<int, set<const DFDCHit*> > > locSortedFDCHits; //first int: cell //second int: wire
+  for( unsigned int hitNum = 0; hitNum < locFDCHitVector.size(); hitNum++){
+    const DFDCHit * locHit = locFDCHitVector[hitNum];
+    if (locHit->plane != 2) continue; // only wires!
+
+    // cut on timing of hits
+    // at the moment shifted by ~200ns
+    if (-300 > locHit->t || locHit->t > 100) continue;
+    
+    locSortedFDCHits[locHit->gLayer][locHit->element].insert(locHit);
+    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+    hWireTime->Fill(locHit->t);
+    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
   }
 
-  //Pre-sort PseudoHits by ring to save time
+  //Pre-sort PseudoHits to save time
   //only need to search within the given cell
   map<int, set<const DFDCPseudo*> > locSortedFDCPseudos; // int: cell
   for( unsigned int hitNum = 0; hitNum < locFDCPseudoVector.size(); hitNum++){
     const DFDCPseudo * locPseudo = locFDCPseudoVector[hitNum];
     locSortedFDCPseudos[locPseudo->wire->layer].insert(locPseudo);
+
+    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+    hPseudoTime->Fill(locPseudo->time);
+    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
   }
   
   const DDetectorMatches *detMatches;
@@ -236,25 +257,31 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     // All Cuts on Track Quality:
     
     if (thisTimeBasedTrack->FOM < 1E-20)
-      continue;  // cut from Mike, works better due to the general bad quality of FDC tracks
+      continue;  // cut from Mike, works better probably due to the general bad quality of FDC tracks
     // if (thisTimeBasedTrack->FOM < 5.73303E-7) 
     //   continue; // 5 sigma cut from Paul
     if(!dIsNoFieldFlag){ // Quality cuts for Field on runs.
-      if(tmom < 1)
-      	continue; // Cut on the reconstructed momentum below 800MeV, no curlers
-      if (tmom < 1.2 && rings < 12)
-       	continue; // for Low-Momentum Tracks < 2 GeV, check number of hits in CDC
-      if (tmom < 1.4 && rings < 10)
-       	continue; // for Low-Momentum Tracks < 2 GeV, check number of hits in CDC
-      if (tmom < 1.6 && rings < 8)
-       	continue; // for Low-Momentum Tracks < 2 GeV, check number of hits in CDC
-      if (tmom < 1.8 && rings < 6)
-       	continue; // for Low-Momentum Tracks < 2 GeV, check number of hits in CDC
-      if (tmom < 2 && rings < 4)
-       	continue; // for Low-Momentum Tracks < 2 GeV, check number of hits in CDC
+      if(tmom < 0.6)
+       	continue; // Cut on the reconstructed momentum below 600MeV, no curlers
+      
+      // TRY TO IMPROVE RECONSTUCTION FOR LOW MOMENTA WITH CDC INFO, DISABLED
+      // Tuned on 1345A data, not tuned for 1200A
+      // if (tmom < 1.2 && rings < 12)
+      //  	continue; // for Low-Momentum Tracks < 2 GeV, check number of hits in CDC
+      // if (tmom < 1.4 && rings < 10)
+      //  	continue; // for Low-Momentum Tracks < 2 GeV, check number of hits in CDC
+      // if (tmom < 1.6 && rings < 8)
+      //  	continue; // for Low-Momentum Tracks < 2 GeV, check number of hits in CDC
+      // if (tmom < 1.8 && rings < 6)
+      //  	continue; // for Low-Momentum Tracks < 2 GeV, check number of hits in CDC
+      // if (tmom < 2 && rings < 4)
+      //  	continue; // for Low-Momentum Tracks < 2 GeV, check number of hits in CDC
+      
+      
       // if(!detMatches->Get_SCMatchParams(thisTimeBasedTrack, SCMatches)) {
-      //  	continue; // At least one match to the Start Counter
+      //  	continue; // At least one match to the Start Counter DISABLED
       // }
+      
       if(!detMatches->Get_TOFMatchParams(thisTimeBasedTrack, TOFMatches) && !detMatches->Get_BCALMatchParams(thisTimeBasedTrack,BCALMatches)) {
 	continue; // At least one match either to the Time-Of-Flight (forward) OR the BCAL (large angles)
       }
@@ -289,8 +316,18 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
       vector< DFDCWire * > wireByNumber = fdcwires[cellIndex];
 
       // Use only tracks that have at least 4 (or other # of) hits in the package this cell is in
-      // OR 12 hits in total !!
+      // OR 12 hits in total
       if (packageHit[cellIndex / 6] < minCells && cells < 12) continue;
+
+      // Interpolate track to layer
+      DVector3 plane_origin(0.0, 0.0, fdcz[cellIndex]);
+      DVector3 plane_normal(0.0, 0.0, 1.0);
+      DVector3 interPosition;
+      thisTimeBasedTrack->rt->GetIntersectionWithPlane(plane_origin, plane_normal, interPosition);
+      
+      // cut out central hole and intersections at too large radii
+      int packageIndex = (cellNum - 1) / 6;
+      if (interPosition.Perp() < fdcrmin[packageIndex] || interPosition.Perp() > fdcrmax) continue;
       
 
       /////////////////// WIRE ANALYSIS /////////////////////////////////
@@ -342,13 +379,20 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	  }
 	  
 	  
-	  bool foundHit = false;
-	  // look in the presorted FDC WireDigiHits for a match
-	  if(!locSortedFDCWireDigiHits[cellNum][wireNum].empty() || !locSortedFDCWireDigiHits[cellNum][wireNum-1].empty() || !locSortedFDCWireDigiHits[cellNum][wireNum+1].empty()){
+	  // look in the presorted FDC Hits for a match
+	  if(!locSortedFDCHits[cellNum][wireNum].empty() || !locSortedFDCHits[cellNum][wireNum-1].empty() || !locSortedFDCHits[cellNum][wireNum+1].empty()){
 	    // Look not only in one wire, but also in adjacent ones (?)
 	    // This can remove the dependence on the track error
-	    
-	    foundHit = true;
+
+	    if(!locSortedFDCHits[cellNum][wireNum].empty()){
+	      const DFDCHit* locHit = *(locSortedFDCHits[cellNum][wireNum].begin());
+	      // Fill the histograms only for the cell in the center
+	      japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+	      hWireTime_accepted->Fill(locHit->t);
+	      hResVsT->Fill(distanceToWire, locHit->t);
+	      japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+	    }
+	    	    
 	    Fill1DHistogram("FDC_Efficiency", "Offline", "Measured Hits Vs DOCA", distanceToWire, "Measured Hits", 100, 0 , 0.5);
 	    Fill1DHistogram("FDC_Efficiency", "Offline", "Measured Hits Vs Tracking FOM", thisTimeBasedTrack->FOM, "Measured Hits", 100, 0 , 1.0);
 	    Fill1DHistogram("FDC_Efficiency", "Offline", "Measured Hits Vs theta", theta_deg, "Measured Hits", 100, 0, 180);
@@ -359,7 +403,6 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 	    v = fdc_wire_measured_cell[cellNum]->GetBinContent(wireNum, 1) + 1.0;
 	    fdc_wire_measured_cell[cellNum]->SetBinContent(wireNum, 1, v);
-	    //hResVsT->Fill(locHit->time, distanceToWire);
 	    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	  }
 	  
@@ -373,16 +416,6 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	///////////// START PSEUDO ANALYSIS /////////////////////////////////////////
       
       
-      // Different approach: start from tracks intersecting with wire planes
-      DVector3 plane_origin(0.0, 0.0, fdcz[cellIndex]);
-      DVector3 plane_normal(0.0, 0.0, 1.0);
-            
-      DVector3 interPosition;
-      thisTimeBasedTrack->rt->GetIntersectionWithPlane(plane_origin, plane_normal, interPosition);
-
-      int packageIndex = (cellNum - 1) / 6;
-      if (interPosition.Perp() < fdcrmin[packageIndex] || interPosition.Perp() > fdcrmax) continue;
-
       if(fdc_pseudo_expected_cell[cellNum] != NULL && cellNum < 25){
 	// FILL HISTOGRAMS
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
@@ -423,6 +456,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 		// fill histogramms with the predicted, not with the measured position
 		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 		fdc_pseudo_measured_cell[cellNum]->Fill(interPosition.X(), interPosition.Y());
+		hPseudoTime_accepted->Fill(locPseudo->time);
 		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	      }
 	    }

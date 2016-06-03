@@ -33,8 +33,6 @@ using namespace std;
 #include <PID/DChargedTrack.h>
 #include <PID/DDetectorMatches.h>
 #include <FDC/DFDCHit.h>
-#include <FDC/DFDCWireDigiHit.h>
-//#include <FDC/DFDCCathodeDigiHit.h>
 
 class JEventProcessor_FDC_Efficiency:public jana::JEventProcessor{
  public:
