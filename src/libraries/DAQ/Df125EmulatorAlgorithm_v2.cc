@@ -82,34 +82,34 @@ Df125EmulatorAlgorithm_v2::Df125EmulatorAlgorithm_v2(){
     
     // Override values set in command line - set in command line, override default and BORConfig if found
 
-    CDC_WS = NULL;          // hit window start - must be >= F125_CDC_NP
-    CDC_WE = NULL;          // hit window end - must be at least 20 less than number of samples available, eg WE=179 for 200 samples
-    CDC_IE = NULL;          // end integration at the earlier of WE, or this many samples after threshold crossing of TH  
-    CDC_P1 = NULL;          // 2**P1 = # samples used for initial pedestal, used to find hit
-    CDC_P2 = NULL;          // 2**P2 = # samples used for pedestal calculated just before hit, and returned 
-    CDC_PG = NULL;          // # samples between hit threshold crossing and local pedestal sample 'pedestal gap'
-    CDC_H  = NULL;          // 5 sigma hit threshold
-    CDC_TH = NULL;          // 4 sigma high timing threshold
-    CDC_TL = NULL;          // 1 sigma low timing threshold
+    CDC_WS = 0;          // hit window start - must be >= F125_CDC_NP
+    CDC_WE = 0;          // hit window end - must be at least 20 less than number of samples available, eg WE=179 for 200 samples
+    CDC_IE = 0;          // end integration at the earlier of WE, or this many samples after threshold crossing of TH  
+    CDC_P1 = 0;          // 2**P1 = # samples used for initial pedestal, used to find hit
+    CDC_P2 = 0;          // 2**P2 = # samples used for pedestal calculated just before hit, and returned 
+    CDC_PG = 0;          // # samples between hit threshold crossing and local pedestal sample 'pedestal gap'
+    CDC_H  = 0;          // 5 sigma hit threshold
+    CDC_TH = 0;          // 4 sigma high timing threshold
+    CDC_TL = 0;          // 1 sigma low timing threshold
 
-    CDC_IBIT = NULL;        // Scaling factor for integral
-    CDC_ABIT = NULL;        // Scaling factor for amplitude 
-    CDC_PBIT = NULL;        // Scaling factor for pedestal
+    CDC_IBIT = 0;        // Scaling factor for integral
+    CDC_ABIT = 0;        // Scaling factor for amplitude 
+    CDC_PBIT = 0;        // Scaling factor for pedestal
 
 
-    FDC_WS = NULL;          // hit window start - must be >= F125_FDC_NP
-    FDC_WE = NULL;          // hit window end - must be at least 20 less than number of samples available, eg WE=179 for 200 samples
-    FDC_IE = NULL;          // end integration at the earlier of WE, or this many samples after threshold crossing of TH  
-    FDC_P1 = NULL;          // 2**P1 = # samples used for initial pedestal, used to find hit
-    FDC_P2 = NULL;          // 2**P2 = # samples used for pedestal calculated just before hit, and returned 
-    FDC_PG = NULL;          // # samples between hit threshold crossing and local pedestal sample 'pedestal gap'
-    FDC_H  = NULL;          // 5 sigma hit threshold
-    FDC_TH = NULL;          // 4 sigma high timing threshold
-    FDC_TL = NULL;          // 1 sigma low timing threshold
+    FDC_WS = 0;          // hit window start - must be >= F125_FDC_NP
+    FDC_WE = 0;          // hit window end - must be at least 20 less than number of samples available, eg WE=179 for 200 samples
+    FDC_IE = 0;          // end integration at the earlier of WE, or this many samples after threshold crossing of TH  
+    FDC_P1 = 0;          // 2**P1 = # samples used for initial pedestal, used to find hit
+    FDC_P2 = 0;          // 2**P2 = # samples used for pedestal calculated just before hit, and returned 
+    FDC_PG = 0;          // # samples between hit threshold crossing and local pedestal sample 'pedestal gap'
+    FDC_H  = 0;          // 5 sigma hit threshold
+    FDC_TH = 0;          // 4 sigma high timing threshold
+    FDC_TL = 0;          // 1 sigma low timing threshold
 
-    FDC_IBIT = NULL;        // Scaling factor for integral
-    FDC_ABIT = NULL;        // Scaling factor for amplitude 
-    FDC_PBIT = NULL;        // Scaling factor for pedestal
+    FDC_IBIT = 0;        // Scaling factor for integral
+    FDC_ABIT = 0;        // Scaling factor for amplitude 
+    FDC_PBIT = 0;        // Scaling factor for pedestal
 
 
     
