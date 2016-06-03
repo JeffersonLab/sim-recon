@@ -111,7 +111,7 @@ jerror_t JEventProcessor_TOF_Eff::init(void)
 	locTreeBranchRegister.Register_Single<UInt_t>("TrackFDCPlanes"); //planes correspond to bits (1 -> 24)
 
 	//TOF
-	locTreeBranchRegister.Register_Single<UChar_t>("NumTOFPoints"); //may want to ignore event if too many
+	locTreeBranchRegister.Register_Single<UChar_t>("NumTOFPoints");
 	locTreeBranchRegister.Register_Single<Float_t>("ProjectedTOFX");
 	locTreeBranchRegister.Register_Single<Float_t>("ProjectedTOFY");
 	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedTOFBar_Horizontal");

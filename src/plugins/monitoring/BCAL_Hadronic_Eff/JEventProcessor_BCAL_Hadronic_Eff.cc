@@ -180,6 +180,11 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 	if(locBCALRequiredForTriggerFlag)
 		return NOERROR;
 
+	const DEventRFBunch* locEventRFBunch = NULL;
+	locEventLoop->GetSingle(locEventRFBunch);
+	if(locEventRFBunch->dNumParticleVotes <= 1)
+		return NOERROR; //don't trust PID: beta-dependence
+
 	vector<const DChargedTrack*> locChargedTracks;
 	locEventLoop->Get(locChargedTracks);
 
