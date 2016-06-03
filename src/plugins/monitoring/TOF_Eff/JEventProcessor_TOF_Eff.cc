@@ -212,6 +212,9 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 			if(!Cut_FCALTiming(locChargedTrackHypothesis, locParticleID, locEventRFBunch))
 				continue; //also requires match to FCAL: no need for separate check
 
+			const DTrackTimeBased* locTrackTimeBased = NULL;
+			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+
 			if(!dCutAction_TrackHitPattern->Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
 				continue; //don't trust tracking results: not many grouped hits
 

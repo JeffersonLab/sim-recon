@@ -137,6 +137,9 @@ jerror_t JEventProcessor_SC_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 			if(!Cut_PIDDeltaT(locChargedTrackHypothesis))
 				continue; //also requires match to BCAL or TOF: no need for separate check
 
+			const DTrackTimeBased* locTrackTimeBased = NULL;
+			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+
 			if(!dCutAction_TrackHitPattern->Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
 				continue; //don't trust tracking results: not many grouped hits
 
