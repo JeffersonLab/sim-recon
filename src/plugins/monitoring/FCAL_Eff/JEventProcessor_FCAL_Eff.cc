@@ -140,7 +140,7 @@ jerror_t JEventProcessor_FCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
 	const DParticleID* locParticleID = NULL;
 	locEventLoop->GetSingle(locParticleID);
 
-	vector<const DFCALShowers*> locFCALShowers;
+	vector<const DFCALShower*> locFCALShowers;
 	locEventLoop->Get(locFCALShowers);
 
 	const DDetectorMatches* locDetectorMatches = NULL;
@@ -156,7 +156,7 @@ jerror_t JEventProcessor_FCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
 		for(auto& locChargedTrackHypothesis : locChargedTrack->dChargedTrackHypotheses)
 		{
 			//Need PID for beta-dependence, but cannot use FCAL info: would bias
-			if(!Cut_TOFTiming(locChargedTrackHypothesis, locParticleID, locEventRFBunch))
+			if(!Cut_TOFTiming(locChargedTrackHypothesis))
 				continue; //also requires match to TOF: no need for separate check
 
 			const DTrackTimeBased* locTrackTimeBased = NULL;
