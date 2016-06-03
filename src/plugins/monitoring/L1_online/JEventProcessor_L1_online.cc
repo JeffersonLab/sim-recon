@@ -335,9 +335,9 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 	pulse_int = fcal_hit->pulse_integral - fcal_hit->nsamples_integral*100;
 	
 
-	Int_t fcal_raw_int  =  0;
-	Int_t fcal_peak = -10;
-	Int_t fcal_raw_time = -10;
+	//Int_t fcal_raw_int  =  0;
+	//Int_t fcal_peak = -10;
+	//Int_t fcal_raw_time = -10;
 	
 	fcal_hit->GetSingle(pulsepedestal); 
 	
@@ -411,9 +411,9 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 	pulse_int = bcal_hit->pulse_integral - bcal_hit->nsamples_integral*100;
 
-	Int_t bcal_raw_int   =   0;
-	Int_t bcal_peak      =  -10;
-	Int_t bcal_raw_time  =  -10;
+	//Int_t bcal_raw_int   =   0;
+	//Int_t bcal_peak      =  -10;
+	//Int_t bcal_raw_time  =  -10;
 
 	bcal_hit->GetSingle(pulsepedestal); 
 	  

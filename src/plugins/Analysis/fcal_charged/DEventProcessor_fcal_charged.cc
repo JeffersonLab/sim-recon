@@ -454,10 +454,10 @@ jerror_t DEventProcessor_fcal_charged::evnt(jana::JEventLoop* locEventLoop, int 
 	    double t9sigma=0;
 	    int N9=0;
 	    int Delta_block=2;   // =1 for 3x3, =2 for 5x5
-	    int row_E1=-1000;
-	    int col_E1=-1000;
-	    int drow_E1=1000;
-	    int dcol_E1=1000;
+	    //int row_E1=-1000;
+	    //int col_E1=-1000;
+	    //int drow_E1=1000;
+	    //int dcol_E1=1000;
 	    double dX_E1=-1000;
 	    double dY_E1=-1000;
 
