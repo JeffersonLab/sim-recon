@@ -139,6 +139,8 @@ jerror_t JEventProcessor_SC_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 
 			const DTrackTimeBased* locTrackTimeBased = NULL;
 			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+			if(locTrackTimeBased->FOM < dMinTrackingFOM)
+				continue; //don't trust tracking results: bad tracking FOM
 
 			if(!dCutAction_TrackHitPattern->Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
 				continue; //don't trust tracking results: not many grouped hits
@@ -147,14 +149,10 @@ jerror_t JEventProcessor_SC_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 			if(locNumTrackHits < dMinNumTrackHits)
 				continue; //don't trust tracking results: not many hits
 
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-			if(locTrackTimeBased->FOM < dMinTrackingFOM)
-				continue; //don't trust tracking results: bad tracking FOM
-
 			if(locTrackTimeBased->FOM < locBestTrackingFOM)
 				continue; //not the best mass hypothesis
 
+			locBestTrackingFOM = locTrackTimeBased->FOM;
 			locBestChargedTrackHypothesis = locChargedTrackHypothesis;
 		}
 

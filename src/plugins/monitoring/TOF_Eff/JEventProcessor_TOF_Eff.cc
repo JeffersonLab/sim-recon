@@ -214,6 +214,8 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 
 			const DTrackTimeBased* locTrackTimeBased = NULL;
 			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+			if(locTrackTimeBased->FOM < dMinTrackingFOM)
+				continue; //don't trust tracking results: bad tracking FOM
 
 			if(!dCutAction_TrackHitPattern->Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
 				continue; //don't trust tracking results: not many grouped hits
@@ -222,14 +224,10 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 			if(locNumTrackHits < dMinNumTrackHits)
 				continue; //don't trust tracking results: not many hits
 
-			const DTrackTimeBased* locTrackTimeBased = NULL;
-			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-			if(locTrackTimeBased->FOM < dMinTrackingFOM)
-				continue; //don't trust tracking results: bad tracking FOM
-
 			if(locTrackTimeBased->FOM < locBestTrackingFOM)
 				continue; //not the best mass hypothesis
 
+			locBestTrackingFOM = locTrackTimeBased->FOM;
 			locBestChargedTrackHypothesis = locChargedTrackHypothesis;
 		}
 
@@ -261,7 +259,7 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 					locParticleID->Get_ClosestToTrack_TOFPaddles(locTrackTimeBased, locTOFPaddleHits, locBestPaddleDeltaX, locBestPaddleDeltaY);
 
 		//Is match to TOF point?
-		const DTOFHitMatchParams* locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams(void);
+		const DTOFHitMatchParams* locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();
 		bool locIsMatchedToTrack = (locTOFHitMatchParams != nullptr);
 
 		//If so, calc PID info: timing, dE/dx
