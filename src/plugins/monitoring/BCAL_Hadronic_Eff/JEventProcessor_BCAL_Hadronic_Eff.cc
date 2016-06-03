@@ -24,7 +24,7 @@ thread_local DTreeFillData JEventProcessor_BCAL_Hadronic_Eff::dTreeFillData;
 jerror_t JEventProcessor_BCAL_Hadronic_Eff::init(void)
 {
 	//TRACK REQUIREMENTS
-	dMinPIDFOM = 5.73303E-7; //+/- 5 sigma
+	dMaxBCALDeltaT = 1.0;;
 	dMinTrackingFOM = 5.73303E-7; // +/- 5 sigma
 	dMinNumTrackHits = 14; //e.g. 6 in CDC, 8 in 
 	dMinHitRingsPerCDCSuperlayer = 3;

@@ -64,7 +64,7 @@ class JEventProcessor_BCAL_Hadronic_Eff : public jana::JEventProcessor
 		template <typename DType> DType Calc_DeltaSector(DType locHitSector, DType locProjectedSector) const;
 
 		//TRACK REQUIREMENTS
-		double dMinTrackingFOM, dMinPIDFOM;
+		double dMinTrackingFOM, dMaxBCALDeltaT;
 		unsigned int dMinNumTrackHits;
 		int dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage;
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
