@@ -104,9 +104,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2));
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
-
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2, "PostPi0"));
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMass(locReaction, false, 0.88, 1.0));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -200,9 +198,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4));
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
-
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4, "PostPi0"));
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.06, 0.1));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -297,9 +293,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4));
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
-
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4, "PostPi0"));
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.06, 0.1));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -332,12 +326,12 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
 	//pi0 -> g, g
-        locReactionStep = new DReactionStep();
-        locReactionStep->Set_InitialParticleID(Pi0);
-        locReactionStep->Add_FinalParticleID(Gamma);
-        locReactionStep->Add_FinalParticleID(Gamma);
-        locReaction->Add_ReactionStep(locReactionStep);
-        dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+	locReactionStep = new DReactionStep();
+	locReactionStep->Set_InitialParticleID(Pi0);
+	locReactionStep->Add_FinalParticleID(Gamma);
+	locReactionStep->Add_FinalParticleID(Gamma);
+	locReaction->Add_ReactionStep(locReactionStep);
+	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
 	/**************************************************** TrackEff_MissingProton_3pi Control Settings ****************************************************/
 
@@ -408,8 +402,6 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	//locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, 0, locToIncludePIDs, true, 1.2, 1.7));
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2, "Post3piMass"));
 
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMass(locReaction, false, 0.88, 1.0));
-
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 
@@ -434,12 +426,12 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
 	//pi0 -> g, g
-        locReactionStep = new DReactionStep();
-        locReactionStep->Set_InitialParticleID(Pi0);
-        locReactionStep->Add_FinalParticleID(Gamma);
-        locReactionStep->Add_FinalParticleID(Gamma);
-        locReaction->Add_ReactionStep(locReactionStep);
-        dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+	locReactionStep = new DReactionStep();
+	locReactionStep->Set_InitialParticleID(Pi0);
+	locReactionStep->Add_FinalParticleID(Gamma);
+	locReactionStep->Add_FinalParticleID(Gamma);
+	locReaction->Add_ReactionStep(locReactionStep);
+	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
 	/**************************************************** TrackEff_MissingPiPlus_3pi Control Settings ****************************************************/
 
@@ -504,8 +496,6 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, locToIncludePIDs, true, 300, 0.5, 1.1, "3pi_PostPi0Mass"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 500, -0.3, 0.4, "Post3piMass"));
 
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.03, 0.07));
-
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 
@@ -530,12 +520,12 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
 	//pi0 -> g, g
-        locReactionStep = new DReactionStep();
-        locReactionStep->Set_InitialParticleID(Pi0);
-        locReactionStep->Add_FinalParticleID(Gamma);
-        locReactionStep->Add_FinalParticleID(Gamma);
-        locReaction->Add_ReactionStep(locReactionStep);
-        dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+	locReactionStep = new DReactionStep();
+	locReactionStep->Set_InitialParticleID(Pi0);
+	locReactionStep->Add_FinalParticleID(Gamma);
+	locReactionStep->Add_FinalParticleID(Gamma);
+	locReaction->Add_ReactionStep(locReactionStep);
+	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
 	/**************************************************** TrackEff_MissingPiMinus_3pi Control Settings ****************************************************/
 
@@ -599,8 +589,6 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.115, 0.155));
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, 0, locToIncludePIDs, true, 300, 0.5, 1.1, "3pi_PostPi0Mass"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 500, -0.3, 0.4, "Post3piMass"));
-
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.03, 0.07));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -687,7 +675,6 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
 
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2, "PostExtraPi0"));
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMass(locReaction, false, 0.9, 1.02));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -705,7 +692,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	//Required: DReactionSteps to specify the channel and decay chain you want to study
 		//Particles are of type Particle_t, an enum defined in sim-recon/src/libraries/include/particleType.h
 
-	//Example: g, p -> pi+, (pi+), 2pi-, (p)
+	//Example: g, p -> pi+, (pi+), 2pi-, p
 	locReactionStep = new DReactionStep();
 	locReactionStep->Set_InitialParticleID(Gamma);
 	locReactionStep->Set_TargetParticleID(Proton);
@@ -767,9 +754,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4));
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
-
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4, "PostExtraPi0"));
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.03, 0.07));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -849,9 +834,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4));
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));
 	locReaction->Add_AnalysisAction(new DCutAction_MinTrackHits(locReaction, 10));
-
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMassSquared(locReaction, false, 700, -0.3, 0.4, "PostExtraPi0"));
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMassSquared(locReaction, false, -0.03, 0.07));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
@@ -879,20 +862,20 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
 	//omega -> pi0, gamma
-        locReactionStep = new DReactionStep();
-        locReactionStep->Set_InitialParticleID(omega);
-        locReactionStep->Add_FinalParticleID(Pi0);
-        locReactionStep->Add_FinalParticleID(Gamma);
-        locReaction->Add_ReactionStep(locReactionStep);
-        dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+	locReactionStep = new DReactionStep();
+	locReactionStep->Set_InitialParticleID(omega);
+	locReactionStep->Add_FinalParticleID(Pi0);
+	locReactionStep->Add_FinalParticleID(Gamma);
+	locReaction->Add_ReactionStep(locReactionStep);
+	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
-        //pi0 -> g, g
-        locReactionStep = new DReactionStep();
-        locReactionStep->Set_InitialParticleID(Pi0);
-        locReactionStep->Add_FinalParticleID(Gamma);
-        locReactionStep->Add_FinalParticleID(Gamma);
-        locReaction->Add_ReactionStep(locReactionStep);
-        dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
+	//pi0 -> g, g
+	locReactionStep = new DReactionStep();
+	locReactionStep->Set_InitialParticleID(Pi0);
+	locReactionStep->Add_FinalParticleID(Gamma);
+	locReactionStep->Add_FinalParticleID(Gamma);
+	locReaction->Add_ReactionStep(locReactionStep);
+	dReactionStepPool.push_back(locReactionStep); //register so will be deleted later: prevent memory leak
 
 	/**************************************************** TrackEff_MissingProton_Omega Control Settings ****************************************************/
 
@@ -930,21 +913,19 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Missing Mass Squared
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 400, 0.05, 0.22, "Pi0"));
-        locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 300, 0.5, 1.1, "Omega"));
-        locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2));
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 300, 0.5, 1.1, "Omega"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2));
 
 	locReaction->Add_AnalysisAction(new DCustomAction_CutExtraPi0(locReaction, 0.0775209, 0.188047));	
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 400, 0.05, 0.22, "Pi0_PostExtraPi0"));
-        locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 300, 0.5, 1.1, "Omega_PostExtraPi0"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 300, 0.5, 1.1, "Omega_PostExtraPi0"));
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2, "PostExtraPi0"));
 
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.115, 0.155));
-        locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 300, 0.5, 1.1, "Omega_PostPi0Mass"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 300, 0.5, 1.1, "Omega_PostPi0Mass"));
 
-        locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.757, 0.807));
-        locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2, "PostOmegaMass"));
-
-	locReaction->Add_AnalysisAction(new DCutAction_MissingMass(locReaction, false, 0.88, 1.0));
+	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.757, 0.807));
+	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 500, 0.7, 1.2, "PostOmegaMass"));
 
 	// Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data

@@ -47,9 +47,12 @@ class JEventProcessor_TOF_Eff : public jana::JEventProcessor
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		int Calc_NearestHit(const DTOFPaddleHit* locPaddleHit) const;
+		bool Cut_FCALTiming(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DParticleID* locParticleID, const DEventRFBunch* locEventRFBunch);
+		double Calc_TOFTiming(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DParticleID* locParticleID, const DEventRFBunch* locEventRFBunch, double& locDeltaT);
 
 		//TRACK REQUIREMENTS
-		double dMinTrackingFOM, dMinPIDFOM;
+		double dMaxFCALDeltaT;
+		double dMinTrackingFOM;
 		unsigned int dMinNumTrackHits;
 		int dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage;
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;

@@ -24,13 +24,14 @@ thread_local DTreeFillData JEventProcessor_SC_Eff::dTreeFillData;
 jerror_t JEventProcessor_SC_Eff::init(void)
 {
 	//TRACK REQUIREMENTS
-	dMinPIDFOM = 5.73303E-7; //+/- 5 sigma
 	dMinTrackingFOM = 5.73303E-7; // +/- 5 sigma
 	dMinNumTrackHits = 14; //e.g. 6 in CDC, 8 in 
 	dMinHitRingsPerCDCSuperlayer = 3;
 	dMinHitPlanesPerFDCPackage = 4;
 	dCutAction_TrackHitPattern = new DCutAction_TrackHitPattern(NULL, dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage);
 	//action initialize not necessary: is empty
+	dMaxPIDDeltaTMap[SYS_BCAL] = 1.0;
+	dMaxPIDDeltaTMap[SYS_TOF] = 1.0;
 
 	TDirectory* locOriginalDir = gDirectory;
 	gDirectory->mkdir("SC_Eff")->cd();
@@ -124,31 +125,39 @@ jerror_t JEventProcessor_SC_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 	locEventLoop->GetSingle(locDetectorMatches);
 
 	//Try to select the most-pure sample of tracks possible
-	//select the best DTrackTimeBased for each track: of tracks with good hit pattern, use best PID confidence level (need accurate beta)
-		//also, must have min tracking FOM, min PID confidence level, min #-hits on track, and matching hit in TOF or BCAL
-	set<const DChargedTrackHypothesis*> locBestTracks; //lowest tracking FOM for each candidate id
-	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
+	set<const DChargedTrackHypothesis*> locBestTracks;
+	for(auto& locChargedTrack : locChargedTracks)
 	{
-		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
-		if(locChargedTrackHypothesis->dFOM < dMinPIDFOM)
-			continue; //don't trust PID
+		//loop over PID hypotheses and find the best (if any good enough)
+		const DChargedTrackHypothesis* locBestChargedTrackHypothesis = nullptr;
+		double locBestTrackingFOM = -1.0;
+		for(auto& locChargedTrackHypothesis : locChargedTrack->dChargedTrackHypotheses)
+		{
+			//Need PID for beta-dependence
+			if(!Cut_PIDDeltaT(locChargedTrackHypothesis))
+				continue; //also requires match to BCAL or TOF: no need for separate check
 
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-		if(locTrackTimeBased->FOM < dMinTrackingFOM)
-			continue;
+			if(!dCutAction_TrackHitPattern->Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
+				continue; //don't trust tracking results: not many grouped hits
 
-		if(!locDetectorMatches->Get_IsMatchedToDetector(locTrackTimeBased, SYS_TOF) && !locDetectorMatches->Get_IsMatchedToDetector(locTrackTimeBased, SYS_BCAL))
-			continue; //not matched to either TOF or BCAL
+			unsigned int locNumTrackHits = locTrackTimeBased->Ndof + 5;
+			if(locNumTrackHits < dMinNumTrackHits)
+				continue; //don't trust tracking results: not many hits
 
-		if(!dCutAction_TrackHitPattern->Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
-			continue;
+			const DTrackTimeBased* locTrackTimeBased = NULL;
+			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+			if(locTrackTimeBased->FOM < dMinTrackingFOM)
+				continue; //don't trust tracking results: bad tracking FOM
 
-		unsigned int locNumTrackHits = locTrackTimeBased->Ndof + 5;
-		if(locNumTrackHits < dMinNumTrackHits)
-			continue;
+			if(locTrackTimeBased->FOM < locBestTrackingFOM)
+				continue; //not the best mass hypothesis
 
-		locBestTracks.insert(locChargedTrackHypothesis);
+			locBestChargedTrackHypothesis = locChargedTrackHypothesis;
+		}
+
+		//if passed all cuts, save the best
+		if(locBestChargedTrackHypothesis != nullptr)
+			locBestTracks.insert(locBestChargedTrackHypothesis);
 	}
 
 	//for histograms, keep running total of what to fill
@@ -222,6 +231,16 @@ jerror_t JEventProcessor_SC_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t l
 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
+}
+
+bool JEventProcessor_SC_Eff::Cut_PIDDeltaT(const DChargedTrackHypothesis* locChargedTrackHypothesis)
+{
+	DetectorSystem_t locSystem = locChargedTrackHypothesis->t1_detector();
+	if(dMaxPIDDeltaTMap.find(locSystem) == dMaxPIDDeltaTMap.end())
+		return false;
+
+	double locDeltaT = locChargedTrackHypothesis->time() - locChargedTrackHypothesis->t0();
+	return (fabs(locDeltaT) <= dMaxPIDDeltaTMap[locSystem]);
 }
 
 //------------------

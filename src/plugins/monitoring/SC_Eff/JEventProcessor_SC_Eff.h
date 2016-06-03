@@ -47,11 +47,14 @@ class JEventProcessor_SC_Eff : public jana::JEventProcessor
 		jerror_t erun(void);						///< Called every time run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		bool Cut_PIDDeltaT(const DChargedTrackHypothesis* locChargedTrackHypothesis);
+
 		//TRACK REQUIREMENTS
-		double dMinTrackingFOM, dMinPIDFOM;
+		double dMinTrackingFOM;
 		unsigned int dMinNumTrackHits;
 		int dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage;
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
+		map<DetectorSystem_t, double> dMaxPIDDeltaTMap;
 
 		//HISTOGRAMS
 		TH2I* dHist_HitFound;
