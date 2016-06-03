@@ -82,7 +82,6 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::init(void)
 
 	//TRACK
 	locTreeBranchRegister.Register_Single<Int_t>("PID_PDG"); //gives charge, mass, beta
-	locTreeBranchRegister.Register_Single<Float_t>("TimingBeta");
 	locTreeBranchRegister.Register_Single<Float_t>("TrackVertexZ");
 	locTreeBranchRegister.Register_Single<TVector3>("TrackP3");
 	locTreeBranchRegister.Register_Single<UInt_t>("TrackCDCRings"); //rings correspond to bits (1 -> 28)
@@ -222,30 +221,45 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 			locSortedHits_Downstream[locUnifiedHit->layer][locSector].insert(locUnifiedHit);
 	}
 
+
 	//Try to select the most-pure sample of tracks possible
-	//select the best DTrackTimeBased for each track: of tracks with good hit pattern, use best PID confidence level (need accurate beta)
-		//also, must have min tracking FOM, min PID confidence level, min #-hits on track, and matching hit in SC
-	set<const DChargedTrackHypothesis*> locBestTracks; //lowest tracking FOM for each candidate id
-	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
+	set<const DChargedTrackHypothesis*> locBestTracks;
+	for(auto& locChargedTrack : locChargedTracks)
 	{
-		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
+		//loop over PID hypotheses and find the best (if any good enough)
+		const DChargedTrackHypothesis* locBestChargedTrackHypothesis = nullptr;
+		double locBestTrackingFOM = -1.0;
+		for(auto& locChargedTrackHypothesis : locChargedTrack->dChargedTrackHypotheses)
+		{
+			//Need PID for beta-dependence
+			if(!Cut_BCALTiming(locChargedTrackHypothesis))
+				continue; //also requires match to BCAL: no need for separate check
 
-		const DTrackTimeBased* locTrackTimeBased = NULL;
-		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-		if(locTrackTimeBased->FOM < dMinTrackingFOM)
-			continue;
+			const DTrackTimeBased* locTrackTimeBased = NULL;
+			locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
+			if(locTrackTimeBased->FOM < dMinTrackingFOM)
+				continue; //don't trust tracking results: bad tracking FOM
 
-		if(!locDetectorMatches->Get_IsMatchedToDetector(locTrackTimeBased, SYS_START))
-			continue; //not matched to SC
+			if(!locDetectorMatches->Get_IsMatchedToDetector(locTrackTimeBased, SYS_START))
+				continue; //not matched to SC
 
-		if(!dCutAction_TrackHitPattern->Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
-			continue;
+			if(!dCutAction_TrackHitPattern->Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
+				continue; //don't trust tracking results: not many grouped hits
 
-		unsigned int locNumTrackHits = locTrackTimeBased->Ndof + 5;
-		if(locNumTrackHits < dMinNumTrackHits)
-			continue;
+			unsigned int locNumTrackHits = locTrackTimeBased->Ndof + 5;
+			if(locNumTrackHits < dMinNumTrackHits)
+				continue; //don't trust tracking results: not many hits
 
-		locBestTracks.insert(locChargedTrackHypothesis);
+			if(locTrackTimeBased->FOM < locBestTrackingFOM)
+				continue; //not the best mass hypothesis
+
+			locBestTrackingFOM = locTrackTimeBased->FOM;
+			locBestChargedTrackHypothesis = locChargedTrackHypothesis;
+		}
+
+		//if passed all cuts, save the best
+		if(locBestChargedTrackHypothesis != nullptr)
+			locBestTracks.insert(locBestChargedTrackHypothesis);
 	}
 
 	//for histograms, keep running total of what to fill //int = layer, bool = isUpstream
@@ -473,7 +487,6 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 
 		//TRACK
 		dTreeFillData.Fill_Single<Int_t>("PID_PDG", PDGtype(locChargedTrackHypothesis->PID()));
-		dTreeFillData.Fill_Single<Float_t>("TimingBeta", locChargedTrackHypothesis->measuredBeta());
 		dTreeFillData.Fill_Single<Float_t>("TrackVertexZ", locChargedTrackHypothesis->position().Z());
 		DVector3 locDP3 = locChargedTrackHypothesis->momentum();
 		TVector3 locP3(locDP3.X(), locDP3.Y(), locDP3.Z());
@@ -803,6 +816,15 @@ const DBCALUnifiedHit* JEventProcessor_BCAL_Hadronic_Eff::Find_ClosestTimeHit(co
 	}
 
 	return locBestHit;
+}
+
+bool JEventProcessor_BCAL_Hadronic_Eff::Cut_BCALTiming(const DChargedTrackHypothesis* locChargedTrackHypothesis)
+{
+	if(locChargedTrackHypothesis->t1_detector() != SYS_BCAL)
+		return false;
+
+	double locDeltaT = locChargedTrackHypothesis->time() - locChargedTrackHypothesis->t0();
+	return (fabs(locDeltaT) <= dMaxBCALDeltaT);
 }
 
 //------------------

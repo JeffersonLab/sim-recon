@@ -63,6 +63,8 @@ class JEventProcessor_BCAL_Hadronic_Eff : public jana::JEventProcessor
 
 		template <typename DType> DType Calc_DeltaSector(DType locHitSector, DType locProjectedSector) const;
 
+		bool Cut_BCALTiming(const DChargedTrackHypothesis* locChargedTrackHypothesis);
+
 		//TRACK REQUIREMENTS
 		double dMinTrackingFOM, dMaxBCALDeltaT;
 		unsigned int dMinNumTrackHits;

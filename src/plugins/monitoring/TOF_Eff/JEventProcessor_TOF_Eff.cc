@@ -137,7 +137,7 @@ jerror_t JEventProcessor_TOF_Eff::init(void)
 	locTreeBranchRegister.Register_Single<Bool_t>("IsMatchedToTrack"); //false if not registered in DDetectorMatches
 
 	//FOUND TOF POINT //only if matched: for evaluating PID quality
-	locTreeBranchRegister.Register_Single<Float_t>("TOFPointDeltaT");
+	locTreeBranchRegister.Register_Single<Float_t>("TOFPointDeltaT"); //TOF - RF
 	locTreeBranchRegister.Register_Single<Float_t>("TOFPointTimeFOM");
 	locTreeBranchRegister.Register_Single<Float_t>("TOFPointdEdX");
 
