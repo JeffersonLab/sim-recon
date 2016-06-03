@@ -111,24 +111,11 @@ JEventProcessor_L1_online::~JEventProcessor_L1_online()
 //------------------
 jerror_t JEventProcessor_L1_online::init(void)
 {
-
-    
-  // FCAL constants - will be retrieved from the RCDB
-
-    fcal_cell_thr  =  64;
-    bcal_cell_thr  =  20;
-
-  // Default trigger masks corresponding to 2 rings masked 
-    fcal_row_mask_min = 26;
-    fcal_row_mask_max = 32;
-    fcal_col_mask_min = 26;
-    fcal_col_mask_max = 32;
-
+   
     const int bin_time = 100;
     const int bin_fcal = 100;
     const int bin_bcal = 200;
     
-
 
     // create root folder for pspair and cd to it, store main dir
     TDirectory *mainDir = gDirectory;
@@ -158,7 +145,7 @@ jerror_t JEventProcessor_L1_online::init(void)
 
       char title2[30];
       sprintf(title2,"rate_time_%d",ii);
-      hrate_bit[ii] =  new TProfile(title2,title2, 501 ,0.,501,"s");
+      hrate_bit[ii] =  new TProfile(title2,title2, 502 ,-0.5,501.5,"s");
 
     }
 
@@ -211,8 +198,27 @@ jerror_t JEventProcessor_L1_online::init(void)
 //------------------
 jerror_t JEventProcessor_L1_online::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
+
   
-    run_number = runnumber;
+  // FCAL constants - will be retrieved from the RCDB
+  
+  fcal_cell_thr  =  64;
+  bcal_cell_thr  =  20;
+    
+  fcal_row_mask_min = 26;
+  fcal_row_mask_max = 32;
+  fcal_col_mask_min = 26;
+  fcal_col_mask_max = 32;
+  
+
+  if( runnumber < 11127 ){
+    fcal_row_mask_min = 24;
+    fcal_row_mask_max = 34;
+    fcal_col_mask_min = 24;
+    fcal_col_mask_max = 34;
+  }
+  
+  run_number = runnumber;
   
     return NOERROR;
 }
@@ -227,18 +233,28 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
   // reconstruction algorithm) should be done outside of any mutex lock
   // since multiple threads may call this method at the same time.
   
-     
-  
-      cout << " Run_number = " << run_number << endl;
-      
-      if( run_number < 11127 ){
-	fcal_row_mask_min = 24;
-	fcal_row_mask_max = 34;
-	fcal_col_mask_min = 24;
-	fcal_col_mask_max = 34;
-      }
+      unsigned int trig_bit[33], trig_bit_fp[33]; 
 
- 
+      uint32_t  fcal_adc_time[33], bcal_adc_time[33];
+
+
+      memset(trig_bit,0,sizeof(trig_bit));
+      memset(trig_bit_fp,0,sizeof(trig_bit_fp));
+
+      memset(fcal_adc_time,0,sizeof(fcal_adc_time));
+      memset(bcal_adc_time,0,sizeof(bcal_adc_time));
+
+
+      vector<uint16_t> fcal_adc_time1;
+      vector<uint16_t> fcal_adc_time6;
+      vector<uint16_t> fcal_adc_time7;
+
+      vector<uint16_t> bcal_adc_time1;
+      vector<uint16_t> bcal_adc_time3;
+      vector<uint16_t> bcal_adc_time6;
+
+      vector<uint16_t> tagh_adc_time2;
+      vector<int>      tagh_counter2;
 
 
       vector<const DL1Trigger*>   l1trig; 
@@ -259,47 +275,17 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       loop->Get(tagh_hits);
 
-      memset(trig_bit,0,sizeof(trig_bit));
-      memset(trig_bit_fp,0,sizeof(trig_bit_fp));
 
-
-      // FILL HISTOGRAMS
-      japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-
+     
       if( l1trig.size() > 0 ){
 	for(unsigned int bit = 0; bit < 32; bit++){
 	  trig_bit[bit + 1] = (l1trig[0]->trig_mask & (1 << bit)) ? 1 : 0;       
-	  if(trig_bit[bit + 1] == 1){
-	    htrig_bit->Fill(Float_t(bit+1)); 
-	  }
 	} 
-
-	htrig_type->Fill(Float_t(l1trig[0]->trig_mask));
-      
+	
 	for(unsigned int bit = 0; bit < 32; bit++){
 	  trig_bit_fp[bit + 1] = (l1trig[0]->fp_trig_mask & (1 << bit)) ? 1 : 0;         
-	  if(trig_bit_fp[bit + 1] == 1) htrig_bit_fp->Fill(Float_t(bit+1)); 
 	} 
-     
-	// Sync Events
-	if( l1trig[0]->gtp_rate.size() > 0 ){
-
-	  for(unsigned int ii = 0; ii < 8; ii++){
-	    hrate_gtp[ii]->Fill(Float_t(l1trig[0]->gtp_rate[ii]/1000.));
-	    if( (l1trig[0]->nsync) > 0 && (l1trig[0]->nsync) < 500){
-	      hrate_bit[ii]->Fill(Float_t(l1trig[0]->nsync),Float_t(l1trig[0]->gtp_rate[ii]/1000.));
-	    }
-	  }
-
-	  //	  for(unsigned int ii = 0; ii < 16; ii++){
-	  //	    hrate_fp[ii]->Fill(Float_t(l1trig[0]->fp_rate[ii]));
-	  //	  }
-	  
-
-	}
-
-      }      
-
+      }	
 
 
       //-------------------   FCAL  ----------------------------
@@ -334,11 +320,6 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 	pulse_int = fcal_hit->pulse_integral - fcal_hit->nsamples_integral*100;
 	
-
-	//Int_t fcal_raw_int  =  0;
-	//Int_t fcal_peak = -10;
-	//Int_t fcal_raw_time = -10;
-	
 	fcal_hit->GetSingle(pulsepedestal); 
 	
 	if(pulsepedestal){
@@ -371,13 +352,13 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 	if(pulse_peak > fcal_cell_thr){
 	  fcal_tot_en += pulse_int;
 
-	  if(trig_bit[1] == 1) hfcal_time1->Fill(Float_t(adc_time));
-	  if(trig_bit[6] == 1) hfcal_time6->Fill(Float_t(adc_time));
-	  if(trig_bit[7] == 1) hfcal_time7->Fill(Float_t(adc_time));
+	  if(trig_bit[1] == 1) fcal_adc_time1.push_back(adc_time);
+	  if(trig_bit[6] == 1) fcal_adc_time6.push_back(adc_time);
+	  if(trig_bit[7] == 1) fcal_adc_time7.push_back(adc_time);
 	  
 	}	
 
-      }
+      }   // Loop over FCAL hits 
 
 
 
@@ -411,9 +392,6 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 	pulse_int = bcal_hit->pulse_integral - bcal_hit->nsamples_integral*100;
 
-	//Int_t bcal_raw_int   =   0;
-	//Int_t bcal_peak      =  -10;
-	//Int_t bcal_raw_time  =  -10;
 
 	bcal_hit->GetSingle(pulsepedestal); 
 	  
@@ -428,13 +406,79 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 	}
 	
 	if(pulse_peak > bcal_cell_thr){
-	  if(trig_bit[1] == 1) hbcal_time1->Fill(Float_t(adc_time));
-	  if(trig_bit[3] == 1) hbcal_time3->Fill(Float_t(adc_time));
-	  if(trig_bit[6] == 1) hbcal_time6->Fill(Float_t(adc_time));
+	  
+	  if(trig_bit[1] == 1) bcal_adc_time1.push_back(adc_time);
+	  if(trig_bit[3] == 1) bcal_adc_time3.push_back(adc_time);
+	  if(trig_bit[6] == 1) bcal_adc_time6.push_back(adc_time);
 
 	  bcal_tot_en += pulse_int;
 	}
-      }
+      }  // Loop over BCAL hits
+
+
+
+      //-------------------  TAGH & ST  ----------------------------
+
+      for(unsigned int kk = 0; kk < tagh_hits.size(); kk++){
+	const DTAGHDigiHit *tagh_hit = tagh_hits[kk];   
+	const Df250PulseIntegral *pulseintegral;
+        
+	tagh_hit->GetSingle(pulseintegral);
+	const Df250WindowRawData *windorawdata;
+	pulseintegral->GetSingle(windorawdata);
+        
+	int counter_id = tagh_hit->counter_id;
+	
+	
+	uint32_t adc_time = (tagh_hit->pulse_time & 0x7FC0) >> 6;
+	
+	if(trig_bit[2] == 1){
+	  
+	  if(counter_id < 100)
+	    tagh_adc_time2.push_back(adc_time);
+	  
+	  if( (adc_time > 5) && (adc_time < 15))
+	    tagh_counter2.push_back(counter_id);
+	}
+	
+      }  
+      
+
+
+      // FILL HISTOGRAMS
+      japp->RootFillLock(this);    //ACQUIRE ROOT FILL LOCK
+
+
+      if( l1trig.size() > 0 ){
+
+	for(unsigned int bit = 0; bit < 32; bit++){
+	  if(trig_bit[bit + 1] == 1) htrig_bit->Fill(Float_t(bit+1)); 	  
+	} 
+
+	for(unsigned int bit = 0; bit < 32; bit++){
+	  if(trig_bit_fp[bit + 1] == 1) htrig_bit_fp->Fill(Float_t(bit+1)); 
+	} 
+
+	htrig_type->Fill(Float_t(l1trig[0]->trig_mask));
+	
+
+	// Sync Events
+	if( l1trig[0]->gtp_rate.size() > 0 ){
+	  
+	  for(unsigned int ii = 0; ii < 8; ii++){
+	    hrate_gtp[ii]->Fill(Float_t(l1trig[0]->gtp_rate[ii]/1000.));
+	    if( (l1trig[0]->nsync) > 0 && (l1trig[0]->nsync) < 500){
+	      hrate_bit[ii]->Fill(Float_t(l1trig[0]->nsync),Float_t(l1trig[0]->gtp_rate[ii]/1000.));
+	    }
+	  }
+	  
+	  //	  for(unsigned int ii = 0; ii < 16; ii++){
+	  //	    hrate_fp[ii]->Fill(Float_t(l1trig[0]->fp_rate[ii]));
+	  //	  }	  
+	  
+	}	
+      }      
+
 
 
       if(trig_bit[1] == 1){
@@ -475,36 +519,34 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
       }
 
 
-      // TAGH & ST
+      // FADC time
+      if(trig_bit[1] == 1)
+	for(unsigned int ii = 0; ii < fcal_adc_time1.size(); ii++) hfcal_time1->Fill(Float_t(fcal_adc_time1[ii]));
+      if(trig_bit[6] == 1)
+	for(unsigned int ii = 0; ii < fcal_adc_time6.size(); ii++) hfcal_time6->Fill(Float_t(fcal_adc_time6[ii]));
+      if(trig_bit[7] == 1)
+	for(unsigned int ii = 0; ii < fcal_adc_time7.size(); ii++) hfcal_time7->Fill(Float_t(fcal_adc_time7[ii]));
 
-      for(unsigned int kk = 0; kk < tagh_hits.size(); kk++){
-	const DTAGHDigiHit *tagh_hit = tagh_hits[kk];   
-	const Df250PulseIntegral *pulseintegral;
-        
-	tagh_hit->GetSingle(pulseintegral);
-	const Df250WindowRawData *windorawdata;
-	pulseintegral->GetSingle(windorawdata);
-        
-	int counter_id = tagh_hit->counter_id;
-	
+      if(trig_bit[1] == 1)
+	for(unsigned int ii = 0; ii < bcal_adc_time1.size(); ii++) hbcal_time1->Fill(Float_t(bcal_adc_time1[ii]));
+      if(trig_bit[3] == 1)
+	for(unsigned int ii = 0; ii < bcal_adc_time3.size(); ii++) hbcal_time3->Fill(Float_t(bcal_adc_time3[ii]));
+      if(trig_bit[6] == 1)
+	for(unsigned int ii = 0; ii < bcal_adc_time6.size(); ii++) hbcal_time6->Fill(Float_t(bcal_adc_time6[ii]));
 
-	
-	uint32_t adc_time = (tagh_hit->pulse_time & 0x7FC0) >> 6;
-	
-	if(trig_bit[2] == 1){
-	  
-	  if(counter_id < 100)
-	    htagh_time2->Fill(Float_t(adc_time));
 
-	  if( (adc_time > 5) && (adc_time < 15))
-	    htagh_occup2->Fill(Float_t(counter_id));
-	}
-	
-      }
+
       
+
       if(trig_bit[2] == 1){
 	hst_hit2->Fill(Float_t(st_hits.size()));
+
+	for(unsigned int ii = 0; ii < tagh_adc_time2.size(); ii++)  htagh_time2->Fill(Float_t(tagh_adc_time2[ii]));
+	for(unsigned int ii = 0; ii < tagh_counter2.size();  ii++)  htagh_occup2->Fill(Float_t(tagh_counter2[ii]));
       }
+
+
+
 
 
 

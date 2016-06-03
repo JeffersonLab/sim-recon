@@ -22,15 +22,14 @@ private:
     jerror_t erun(void); ///< Called everytime run number changes, provided brun has been called.
     jerror_t fini(void); ///< Called after last event of last event source has been processed.
 
-    unsigned int trig_bit[33], trig_bit_fp[33];
+    int fcal_cell_thr;
+
+    int bcal_cell_thr;
 
     int fcal_row_mask_min, fcal_row_mask_max, fcal_col_mask_min, fcal_col_mask_max;
 
     int run_number;
 
-    int fcal_cell_thr;
-
-    int bcal_cell_thr;
 
 
 };
