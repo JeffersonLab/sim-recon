@@ -90,7 +90,6 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::init(void)
 	locTreeBranchRegister.Register_Single<Float_t>("TrackDeltaZToShower"); //is signed: BCAL - Track
 	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitPhi"); //degrees
 	locTreeBranchRegister.Register_Single<Float_t>("ProjectedBCALHitZ");
-	locTreeBranchRegister.Register_Single<Bool_t>("IsMatchedToTrack"); //false if not registered in DDetectorMatches
 
 	//HIT SEARCH
 	//BCALClusterLayers: first 4 bits: point layers, next 4: unmatched-unified-hit layers
@@ -480,7 +479,6 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		dTreeFillData.Fill_Single<Float_t>("TrackDeltaZToShower", locBCALShowerMatchParams->dDeltaZToShower); //is signed: BCAL - Track
 		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitPhi", locPredictedSurfacePosition.Phi()*180.0/TMath::Pi());
 		dTreeFillData.Fill_Single<Float_t>("ProjectedBCALHitZ", locPredictedSurfacePosition.Z());
-		dTreeFillData.Fill_Single<Bool_t>("IsMatchedToTrack", true);
 
 		//HIT SEARCH
 		//BCALClusterLayers: first 4 bits: point layers, next 4: unmatched-unified-hit layers

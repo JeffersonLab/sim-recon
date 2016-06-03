@@ -110,7 +110,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
-	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
+	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true));
 
 	//_data.push_back(locReaction); //Register the DReaction with the factory
 
@@ -204,7 +204,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
-	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
+	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
@@ -299,7 +299,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
-	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
+	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
@@ -406,7 +406,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
-	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
+	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true));
 
 	//_data.push_back(locReaction); //Register the DReaction with the factory
 
@@ -500,7 +500,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
-	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
+	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true));
 
 	//_data.push_back(locReaction); //Register the DReaction with the factory
 
@@ -594,7 +594,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
-	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
+	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true));
 
 	//_data.push_back(locReaction); //Register the DReaction with the factory
 
@@ -680,7 +680,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
-	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
+	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
@@ -760,7 +760,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
-	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
+	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
@@ -840,7 +840,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
-	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
+	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true));
 
 	_data.push_back(locReaction); //Register the DReaction with the factory
 
@@ -931,7 +931,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true)); //true: fill histograms with kinematic-fit particle data
 
 	// Tracking Efficiency
-	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true, 1)); //1: 1 vertex-z bin
+	locReaction->Add_AnalysisAction(new DCustomAction_TrackingEfficiency(locReaction, true));
 
 	//_data.push_back(locReaction); //Register the DReaction with the factory
 
