@@ -114,7 +114,7 @@ bool DCustomAction_TrackingEfficiency::Perform_Action(JEventLoop* locEventLoop, 
 	//FILL CHANNEL INFO
 	dTreeFillData.Fill_Single<Float_t>("BeamEnergy", locBeamParticle->energy());
 	dTreeFillData.Fill_Single<TLorentzVector>("MissingP4", locMissingP4);
-	dTreeFillData.Fill_Single<Float_t>("ComboVertexZ", locParticleComboStep->Get_SpacetimeVertex().Z());
+	dTreeFillData.Fill_Single<Float_t>("ComboVertexZ", locVertexZ);
 
 	/************************************************* TIME-BASED TRACKS *************************************************/
 

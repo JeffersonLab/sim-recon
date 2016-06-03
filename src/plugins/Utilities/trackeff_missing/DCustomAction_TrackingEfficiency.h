@@ -14,10 +14,16 @@
 #include "JANA/JEventLoop.h"
 #include "JANA/JApplication.h"
 
+#include "BCAL/DBCALShower.h"
+#include "TRACKING/DTrackTimeBased.h"
+#include "PID/DParticleID.h"
+#include "PID/DDetectorMatches.h"
+
 #include "ANALYSIS/DAnalysisAction.h"
 #include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
+#include "ANALYSIS/DTreeInterface.h"
 
 using namespace std;
 using namespace jana;
