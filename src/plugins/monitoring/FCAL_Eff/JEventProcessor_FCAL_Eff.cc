@@ -24,7 +24,7 @@ thread_local DTreeFillData JEventProcessor_FCAL_Eff::dTreeFillData;
 jerror_t JEventProcessor_FCAL_Eff::init(void)
 {
 	//TRACK REQUIREMENTS
-	dMaxFCALDeltaT = 2.0;
+	dMaxTOFDeltaT = 1.0;
 	dMinTrackingFOM = 5.73303E-7; // +/- 5 sigma
 	dMinNumTrackHits = 16; //e.g. 4 in each FDC plane
 	dMinHitRingsPerCDCSuperlayer = 0;

@@ -51,7 +51,7 @@ class JEventProcessor_FCAL_Eff : public jana::JEventProcessor
 		bool Cut_TOFTiming(const DChargedTrackHypothesis* locChargedTrackHypothesis);
 
 		//TRACK REQUIREMENTS
-		double dMaxFCALDeltaT;
+		double dMaxTOFDeltaT;
 		double dMinTrackingFOM;
 		unsigned int dMinNumTrackHits;
 		int dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage;
