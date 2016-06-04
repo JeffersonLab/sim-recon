@@ -28,6 +28,7 @@
 #include <TOF/DTOFPoint.h>
 #include <TOF/DTOFPaddleHit.h>
 #include <TOF/DTOFGeometry_factory.h>
+#include <TOF/DTOFPoint_factory.h>
 #include <START_COUNTER/DSCHit.h>
 #include <TRACKING/DTrackFitter.h>
 #include <TRACKING/DTrackFinder.h>
@@ -119,10 +120,13 @@ class DParticleID:public jana::JObject{
 	//select closest shower/hit to track //track MUST be either DTrackTimeBased or DTrackWireBased //NULL if no possibly-valid matches
 	const DBCALShower* Get_ClosestToTrack_BCAL(const DKinematicData* locTrack, vector<const DBCALShower*>& locBCALShowers, double& locBestMatchDeltaPhi, double& locBestMatchDeltaZ) const;
 	const DFCALShower* Get_ClosestToTrack_FCAL(const DKinematicData* locTrack, vector<const DFCALShower*>& locFCALShowers, double& locBestDistance) const;
-	const DTOFPoint* Get_ClosestToTrack_TOFPoint(const DKinematicData* locTrack, vector<const DTOFPoint*>& locTOFPoints, double& locBestDeltaX, double& locBestDeltaY) const;
-	//first in pair is vertical, second is horizontal // NULL If none / doesn't hit TOF
-	pair<const DTOFPaddleHit*, const DTOFPaddleHit*> Get_ClosestToTrack_TOFPaddles(const DKinematicData* locTrack, vector<const DTOFPaddleHit*>& locTOFPaddleHits, double& locBestDeltaX, double& locBestDeltaY) const;
 	const DSCHit* Get_ClosestToTrack_SC(const DKinematicData* locTrack, vector<const DSCHit*>& locSCHits, double& locBestDeltaPhi) const;
+	const DTOFPoint* Get_ClosestToTrack_TOFPoint(const DKinematicData* locTrack, vector<const DTOFPoint*>& locTOFPoints, double& locBestDeltaX, double& locBestDeltaY) const;
+
+	//first in pair is vertical, second is horizontal // NULL If none / doesn't hit TOF
+	pair<const DTOFPaddleHit*, const DTOFPaddleHit*> Get_ClosestToTrack_TOFPaddles(const DKinematicData* locTrack, vector<const DTOFPaddleHit*>& locTOFPaddleHits, double& locBestDeltaX, double& locBestDeltaY, double locMaxDeltaT = -1.0) const;
+	const DTOFPaddleHit* Get_ClosestTOFPaddleHit_Horizontal(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaY) const;
+	const DTOFPaddleHit* Get_ClosestTOFPaddleHit_Vertical(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaX) const;
 
 	double Calc_BCALFlightTimePCorrelation(const DKinematicData* locTrack, DDetectorMatches* locDetectorMatches) const;
 	double Calc_FCALFlightTimePCorrelation(const DKinematicData* locTrack, DDetectorMatches* locDetectorMatches) const;
@@ -206,13 +210,17 @@ class DParticleID:public jana::JObject{
 		// used to update hit energy & time when matching to un-matched, position-ill-defined bars
 	const DTOFGeometry* dTOFGeometry;
 	vector<double> propagation_speed;
+	double TOF_HALFPADDLE;
+	double dHalfPaddle_OneSided;
 	double TOF_ATTEN_LENGTH;
+	double TOF_E_THRESHOLD;
 	double ONESIDED_PADDLE_MIDPOINT_MAG; //+/- this number for North/South
 
   double dTargetZCenter;
   double SC_DPHI_CUT,SC_DPHI_CUT_WB,SC_DPHI_CUT_SLOPE;
 
   const DTrackFinder *finder;
+  DTOFPoint_factory* dTOFPointFactory;
 };
 
 #endif // _DParticleID_

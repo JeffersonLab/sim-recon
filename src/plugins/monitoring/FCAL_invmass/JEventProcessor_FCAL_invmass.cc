@@ -184,8 +184,10 @@ jerror_t JEventProcessor_FCAL_invmass::evnt(jana::JEventLoop* locEventLoop, uint
       s1->Get(associated_clusters1);
       Double_t dx1 = s1->getPosition().X() - kinfitVertexX;
       Double_t dy1 = s1->getPosition().Y() - kinfitVertexY;
-      //Double_t dz1 = s1->getPosition().Z() - kinfitVertexZ;
-      Double_t dz1 = z_diff; // center of the target	     
+      Double_t dz1 = s1->getPosition().Z() - kinfitVertexZ;
+      //Double_t dx1 = s1->getPosition().X();
+      //Double_t dy1 = s1->getPosition().Y();
+      //Double_t dz1 = z_diff; // center of the target	     
      
       Double_t R1 = sqrt(dx1*dx1 + dy1*dy1 + dz1*dz1);
       Double_t  E1 = s1->getEnergy();
@@ -200,8 +202,10 @@ jerror_t JEventProcessor_FCAL_invmass::evnt(jana::JEventLoop* locEventLoop, uint
 	s2->Get(associated_clusters2);
 	Double_t dx2 = s2->getPosition().X() - kinfitVertexX;
 	Double_t dy2 = s2->getPosition().Y() - kinfitVertexY;
-	//Double_t dz2 = s2->getPosition().Z() - kinfitVertexZ;
-	Double_t dz2 = z_diff; // center of the target	
+	Double_t dz2 = s2->getPosition().Z() - kinfitVertexZ;
+	//Double_t dx2 = s2->getPosition().X();
+	//Double_t dy2 = s2->getPosition().Y();
+	//Double_t dz2 = z_diff; // center of the target	
 	
 	Double_t R2 = sqrt(dx2*dx2 + dy2*dy2 + dz2*dz2);
 	Double_t E2 = s2->getEnergy();
