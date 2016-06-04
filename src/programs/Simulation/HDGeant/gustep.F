@@ -164,7 +164,7 @@
 *
 #include "geant321/pilot.h"
 
-//#define BACKGROUND_PROFILING 1
+c#define BACKGROUND_PROFILING 1
 
 *CMZ :  3.21/02 29/03/94  15.41.35  by  S.Giani
 *-- Author :
