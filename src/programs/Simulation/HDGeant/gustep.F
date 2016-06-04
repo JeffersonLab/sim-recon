@@ -163,6 +163,9 @@
 *
 *
 #include "geant321/pilot.h"
+
+//#define BACKGROUND_PROFILING 1
+
 *CMZ :  3.21/02 29/03/94  15.41.35  by  S.Giani
 *-- Author :
       SUBROUTINE GUSTEP
@@ -354,7 +357,7 @@ c
 ********************************************************************************
 *   The following defines an ntuple containing information on particle type  
 *   energy, position, polarization, and at what virtual detector the 
-*   particle passes through. the last colume entry is defined by a integer 
+*   particle passes through. the last column entry is defined by a integer 
 *   'det' whose value is the number of the detector the particle passes 
 *   through.  The xint(icomp,iint) array records the vertex history of the
 *   interaction sequence leading to the detected particle, iint=1...mint.
