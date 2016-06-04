@@ -1,5 +1,8 @@
 #include "DEventWriterREST.h"
 
+#include <DANA/DApplication.h>
+#include <JANA/JCalibration.h>
+
 int& DEventWriterREST::Get_NumEventWriterThreads(void) const
 {
 	// must be read/used entirely in "RESTWriter" lock
@@ -30,6 +33,21 @@ DEventWriterREST::DEventWriterREST(JEventLoop* locEventLoop, string locOutputFil
 	HDDM_USE_INTEGRITY_CHECKS = true;
 	string locIntegrityString = "Turn on/off automatic integrity checking on the output HDDM stream. Set to \"0\" to turn off (it's on by default)";
 	gPARMS->SetDefaultParameter("HDDM:USE_INTEGRITY_CHECKS", HDDM_USE_INTEGRITY_CHECKS, locIntegrityString);
+
+    HDDM_DATA_VERSION_STRING = "";
+    gPARMS->SetDefaultParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING, "");
+
+    CCDB_CONTEXT_STRING = "";
+    // if we can get the calibration context from the DANA interface, then save this as well
+    DApplication *dapp = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+    if (dapp) {
+        JEvent& event = locEventLoop->GetJEvent();
+        JCalibration *jcalib = dapp->GetJCalibration(event.GetRunNumber());
+        if (jcalib) {
+            CCDB_CONTEXT_STRING = jcalib->GetContext();
+        }
+    }
+
 }
 
 bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString) const
@@ -61,9 +79,12 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	std::vector<const DDetectorMatches*> locDetectorMatches;
 	locEventLoop->Get(locDetectorMatches);
 
+	std::vector<const DTrigger*> locTriggers;
+	locEventLoop->Get(locTriggers);
+
 	//Check to see if there are any objects to write out.  If so, don't write out an empty event
 	bool locOutputDataPresentFlag = false;
-	if((!reactions.empty()) || (!rftimes.empty()) || (!locBeamPhotons.empty()) || (!tracks.empty()))
+	if((!reactions.empty()) || (!locBeamPhotons.empty()) || (!tracks.empty()))
 		locOutputDataPresentFlag = true;
 	else if((!fcalshowers.empty()) || (!bcalshowers.empty()) || (!tofpoints.empty()) || (!starthits.empty()))
 		locOutputDataPresentFlag = true;
@@ -79,6 +100,8 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	// load the run and event numbers
 	JEvent& event = locEventLoop->GetJEvent();
 	res().setRunNo(event.GetRunNumber());
+	//The REST type for this is int64_t, whereas the event type is uint64_t
+	//This copy is lazy: the last bit is lost.  However, we should never need the last bit.
 	res().setEventNo(event.GetEventNumber());
 
 	// push any DMCReaction objects to the output record
@@ -196,8 +219,8 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		bcal().setTzcorr(0);
 
 		//N_cell
-                hddm_r::BcalClusterList bcalcluster = bcal().addBcalClusters(1);
-                bcalcluster().setNcell(bcalshowers[i]->N_cell);
+		hddm_r::BcalClusterList bcalcluster = bcal().addBcalClusters(1);
+		bcalcluster().setNcell(bcalshowers[i]->N_cell);
 	}
 
 	// push any DTOFPoint objects to the output record
@@ -283,21 +306,12 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		}
 	}
 
-	// push any DMCTrigger objects to the output record
-	std::vector<const DMCTrigger*> triggers;
-	locEventLoop->Get(triggers);
-	for (size_t i=0; i < triggers.size(); i++)
+	// push any DTrigger objects to the output record
+	for (size_t i=0; i < locTriggers.size(); ++i)
 	{
 		hddm_r::TriggerList trigger = res().addTriggers(1);
-		trigger().setL1a(triggers[i]->L1a_fired);
-		trigger().setL1b(triggers[i]->L1b_fired);
-		trigger().setL1c(triggers[i]->L1c_fired);
-
-        hddm_r::TriggerDataList data = trigger().addTriggerDatas(1);
-	    data().setEbcal(triggers[i]->Ebcal);
-		data().setEfcal(triggers[i]->Efcal);
-		data().setNschits(triggers[i]->Nschits);
-		data().setNtofhits(triggers[i]->Ntofhits);
+		trigger().setL1_trig_bits(Convert_UnsignedIntToSigned(locTriggers[i]->Get_L1TriggerBits()));
+		trigger().setL1_fp_trig_bits(Convert_UnsignedIntToSigned(locTriggers[i]->Get_L1FrontPanelTriggerBits()));
 	}
 
 	// push any DDetectorMatches objects to the output record
@@ -310,7 +324,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 			locDetectorMatches[loc_i]->Get_BCALMatchParams(tracks[loc_j], locBCALShowerMatchParamsVector);
 			for(size_t loc_k = 0; loc_k < locBCALShowerMatchParamsVector.size(); ++loc_k)
 			{
-				hddm_r::BcalMatchParams_v2List bcalList = matches().addBcalMatchParams_v2s(1);
+				hddm_r::BcalMatchParamsList bcalList = matches().addBcalMatchParamses(1);
 				bcalList().setTrack(loc_j);
 
 				const DBCALShower* locBCALShower = locBCALShowerMatchParamsVector[loc_k].dBCALShower;
@@ -357,7 +371,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 			locDetectorMatches[loc_i]->Get_TOFMatchParams(tracks[loc_j], locTOFHitMatchParamsVector);
 			for(size_t loc_k = 0; loc_k < locTOFHitMatchParamsVector.size(); ++loc_k)
 			{
-				hddm_r::TofMatchParams_v2List tofList = matches().addTofMatchParams_v2s(1);
+				hddm_r::TofMatchParamsList tofList = matches().addTofMatchParamses(1);
 				tofList().setTrack(loc_j);
 
 				size_t locTOFindex = 0;
@@ -443,7 +457,7 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 			if(!locDetectorMatches[loc_i]->Get_DistanceToNearestTrack(bcalshowers[loc_j], locDeltaPhi, locDeltaZ))
 				continue;
 
-			hddm_r::BcalDOCAtoTrack_v2List bcalDocaList = matches().addBcalDOCAtoTrack_v2s(1);
+			hddm_r::BcalDOCAtoTrackList bcalDocaList = matches().addBcalDOCAtoTracks(1);
 			bcalDocaList().setShower(loc_j);
 			bcalDocaList().setDeltaphi(locDeltaPhi);
 			bcalDocaList().setDeltaz(locDeltaZ);
@@ -523,7 +537,16 @@ bool DEventWriterREST::Write_RESTEvent(string locOutputFileName, hddm_r::HDDM& l
 		hddm_r::HDDM locCommentRecord;
 		hddm_r::ReconstructedPhysicsEventList res = locCommentRecord.addReconstructedPhysicsEvents(1);
 		hddm_r::CommentList comment = res().addComments();
-		comment().setText("this is a REST event stream, yadda yadda");
+		comment().setText("This is a REST event stream...");
+        // write out any metadata if it's been set
+        if(HDDM_DATA_VERSION_STRING != "") {
+            hddm_r::DataVersionStringList dataVersionString = res().addDataVersionStrings();
+            dataVersionString().setText(HDDM_DATA_VERSION_STRING);
+        }
+        if(CCDB_CONTEXT_STRING != "") {
+            hddm_r::CcdbContextList ccdbContextString = res().addCcdbContexts();
+            ccdbContextString().setText(CCDB_CONTEXT_STRING);
+        }
 		*(locRESTFilePointers.second) << locCommentRecord;
 		locCommentRecord.clear();
 
@@ -563,4 +586,21 @@ DEventWriterREST::~DEventWriterREST(void)
 		Get_RESTOutputFilePointers().clear();
 	}
 	japp->Unlock("RESTWriter");
+}
+
+int32_t DEventWriterREST::Convert_UnsignedIntToSigned(uint32_t locUnsignedInt) const
+{
+	//Convert uint32_t to int32_t
+	//Scheme:
+		//If bit 32 is zero, then the int32_t is the same as the uint32_t: Positive or zero
+		//If bit 32 is one, and at least one other bit is 1, then the int32_t is -1 * uint32_t (after stripping the top bit)
+		//If bit 32 is one, and all other bits are zero, then the int32_t is the minimum int: -(2^31)
+	if((locUnsignedInt & 0x80000000) == 0)
+		return int32_t(locUnsignedInt); //bit 32 is zero: positive or zero
+
+	//bit 32 is 1. see if there is another bit set
+	int32_t locTopBitStripped = int32_t(locUnsignedInt & uint32_t(0x7FFFFFFF)); //strip the top bit
+	if(locTopBitStripped == 0)
+		return numeric_limits<int32_t>::min(); //no other bit is set: minimum int
+	return -1*locTopBitStripped; //return the negative
 }

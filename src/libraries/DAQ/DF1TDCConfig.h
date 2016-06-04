@@ -16,6 +16,7 @@ class DF1TDCConfig:public DDAQConfig{
 		JOBJECT_PUBLIC(DF1TDCConfig);
 		
 		DF1TDCConfig(uint32_t rocid, uint32_t slot_mask):DDAQConfig(rocid,slot_mask),REFCNT(0xFFFF),TRIGWIN(0xFFFF),TRIGLAT(0xFFFF),HSDIV(0xFFFF),BINSIZE(0xFFFF),REFCLKDIV(0xFFFF){}
+		DF1TDCConfig(const DF1TDCConfig *c):DDAQConfig(c->rocid,c->slot_mask),REFCNT(c->REFCNT),TRIGWIN(c->TRIGWIN),TRIGLAT(c->TRIGLAT),HSDIV(c->HSDIV),BINSIZE(c->BINSIZE),REFCLKDIV(c->REFCLKDIV){}
 
 		uint16_t REFCNT;
 		uint16_t TRIGWIN;

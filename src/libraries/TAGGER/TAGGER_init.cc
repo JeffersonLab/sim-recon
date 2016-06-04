@@ -30,8 +30,6 @@ jerror_t TAGGER_init(JEventLoop *loop)
   loop->AddFactory(new JFactory<DTAGHHit>("TRUTH"));
   loop->AddFactory(new DTAGMGeometry_factory());
   loop->AddFactory(new DTAGHGeometry_factory());
-  loop->AddFactory(new DTAGMGeometry_factory("mc"));
-  loop->AddFactory(new DTAGHGeometry_factory("mc"));
   
   return NOERROR;
 }

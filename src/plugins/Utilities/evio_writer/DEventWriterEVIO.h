@@ -100,6 +100,10 @@ class DEventWriterEVIO : public JObject
 
         void WriteBORData(JEventLoop *loop, 
                           vector<uint32_t> &buff) const;
+
+        void WriteTSSyncData(JEventLoop *loop, 
+                             vector<uint32_t> &buff,
+                             const DL1Info *l1info) const;
         
 		std::ofstream *ofs_debug_input;
 		std::ofstream *ofs_debug_output;

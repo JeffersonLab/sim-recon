@@ -14,7 +14,7 @@ using namespace std;
 #include <JANA/JEventLoop.h>
 
 #include <HDDM/DEventWriterREST.h>
-#include "DAQ/DEPICSvalue.h"
+#include <TRIGGER/DTrigger.h>
 
 class JEventProcessor_danarest : public jana::JEventProcessor
 {

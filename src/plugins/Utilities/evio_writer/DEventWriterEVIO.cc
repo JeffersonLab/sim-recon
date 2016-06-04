@@ -1,4 +1,5 @@
 #include "DEventWriterEVIO.h"
+#include "DAQ/DL1Info.h"
 
 size_t& DEventWriterEVIO::Get_NumEVIOOutputThreads(void) const
 {
@@ -233,7 +234,7 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 		WriteBORData(loop, buff);
 		return;
 	}
-	
+
 	// First, grab all of the low level objects
 	vector<const Df250TriggerTime*>   f250tts;
 	vector<const Df250PulseIntegral*> f250pis;
@@ -291,7 +292,8 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 		WriteEPICSData(buff, epicsValues);
 		return;
 	}
-	
+
+    
 	// Get list of rocids with hits
 	set<uint32_t> rocids;
 	rocids.insert(1); // This *may* be from TS (don't know). There is such a id in run 2391 
@@ -392,7 +394,15 @@ void DEventWriterEVIO::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &bu
 	
 	// Write f125 hits
 	Writef125Data(buff, f125pis, f125cdcpulses, f125fdcpulses, f125tts, f125wrds, f125configs, Nevents);
-	
+
+    // Write out extra TS data if it exists ("sync event")
+    vector<const DL1Info*> l1_info;
+    loop->Get(l1_info);
+    if(l1_info.size() > 0) {
+        WriteTSSyncData(loop, buff, l1_info[0]);
+    }
+
+
 	// Update global header length
 	if(!buff.empty()) buff[0] = buff.size()-1;
 }
@@ -1175,10 +1185,59 @@ void DEventWriterEVIO::WriteBORData(JEventLoop *loop, vector<uint32_t> &buff) co
     // note that we get everything after the EVIO block header
     void *ref = loop->GetJEvent().GetRef();
     uint32_t *in_buff = JEventSource_EVIO::GetEVIOBufferFromRef(ref);
-    uint32_t buff_size = JEventSource_EVIO::GetEVIOBufferSizeFromRef(ref);  // this is much larger than the bank size - not sure why
+    // uint32_t buff_size = JEventSource_EVIO::GetEVIOBufferSizeFromRef(ref);  // this is much larger than the bank size - not sure why
 
     uint32_t Nwords = in_buff[0];   // number of words in BOR config bank
     // copy entire bank
     for(uint32_t i=0; i<Nwords+1; i++)  buff.push_back( in_buff[i] );
+
+}
+
+//------------------
+// WriteTSSyncData
+//------------------
+void DEventWriterEVIO::WriteTSSyncData(JEventLoop *loop, vector<uint32_t> &buff, const DL1Info *l1info) const
+{
+    // The Trigger Supervisor (TS) inserts information into the data stream
+    // during periodic "sync events".  The data is stored in one bank
+    // so we build it here
+
+    // TS data block bank
+    uint32_t data_bank_len_idx = buff.size();
+    buff.push_back(0); // will be updated later
+    buff.push_back(0x00011001); // Data bank header: 0001=TS rocid , 10=Bank of Banks, 01=1 event
+    
+    // TS data bank
+    uint32_t trigger_bank_len_idx = buff.size();
+    buff.push_back(0); // Length
+    buff.push_back(0xEE020100); // 0xEE02=TS Bank Tag, 0x01=u32int
+
+    // Save header information
+    buff.push_back(l1info->nsync);
+    buff.push_back(l1info->trig_number);
+    buff.push_back(l1info->live_time);
+    buff.push_back(l1info->busy_time);
+    buff.push_back(l1info->live_inst);
+    buff.push_back(l1info->unix_time);
+
+    // save GTP scalars
+    for(uint32_t i=0; i<l1info->gtp_sc.size(); i++)
+        buff.push_back(l1info->gtp_sc[i]);
+
+    // save FP scalars
+    for(uint32_t i=0; i<l1info->fp_sc.size(); i++)
+        buff.push_back(l1info->fp_sc[i]);
+
+    // Save GTP rates
+    for(uint32_t i=0; i<l1info->gtp_rate.size(); i++)
+        buff.push_back(l1info->gtp_rate[i]);
+
+    // save FP rates
+    for(uint32_t i=0; i<l1info->fp_rate.size(); i++)
+        buff.push_back(l1info->fp_rate[i]);
+
+    // Update bank length
+    buff[trigger_bank_len_idx] = buff.size() - trigger_bank_len_idx - 1;
+    buff[data_bank_len_idx] = buff.size() - data_bank_len_idx - 1;
 
 }

@@ -10,14 +10,17 @@
 
 #include <PID/DKinematicData.h>
 
-class DBeamPhoton: public DKinematicData{
+class DBeamPhoton: public DKinematicData
+{
 	public:
 		JOBJECT_PUBLIC(DBeamPhoton);
 		
+		unsigned int dCounter; //is TAGM/TAGH if t0_detector is SYS_TAGM/TAGH
+
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "E(GeV)", "%3.3f", momentum().Mag());
-			AddString(items, "theta(deg)", "%3.3f", momentum().Theta()*180.0/M_PI);
-			AddString(items, "phi(deg)", "%3.1f", momentum().Phi()*180.0/M_PI);
+			AddString(items, "System", "%s", SystemName(t0_detector()));
+			AddString(items, "Counter", "%d", dCounter);
 			AddString(items, "t(ns)", "%3.1f", time());
 		}
 };

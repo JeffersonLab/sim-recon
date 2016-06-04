@@ -54,6 +54,7 @@ jerror_t DBeamPhoton_factory_TRUTH::evnt(jana::JEventLoop *locEventLoop, uint64_
 		gamma->setTime(tagm_hits[ih]->t);
 		gamma->setT0(tagm_hits[ih]->t, 0.200, SYS_TAGM);
 		gamma->setT1(0.0, 0.0, SYS_NULL);
+        gamma->dCounter = tagm_hits[ih]->column;
 		gamma->AddAssociatedObject(tagm_hits[ih]);
 		_data.push_back(gamma);
 	}
@@ -72,6 +73,7 @@ jerror_t DBeamPhoton_factory_TRUTH::evnt(jana::JEventLoop *locEventLoop, uint64_
 		gamma->setTime(tagh_hits[ih]->t);
 		gamma->setT0(tagh_hits[ih]->t, 0.350, SYS_TAGH);
 		gamma->setT1(0.0, 0.0, SYS_NULL);
+        gamma->dCounter = tagh_hits[ih]->counter_id;
 		gamma->AddAssociatedObject(tagh_hits[ih]);
 		_data.push_back(gamma);
 	}

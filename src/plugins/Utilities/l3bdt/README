@@ -1,0 +1,25 @@
+
+5/12/2016  D. Lawrence
+
+This directory contains code to train a BDT
+for use in the L3 trigger. A this point only
+a single BDT is created. Eventually we may 
+use multiple layers of BDT to improve efficiency.
+
+The initial version of this is based on work
+presented by Justin Stevens at the Oct. 4, 2013
+collaboration meeting.
+
+Here is a quick start guide to training a tree
+and viewing the results:
+
+> hd_root -o l3bdt.root -PPLUGINS=L3BDTtree -PNTHREADS=32 hd_rawdata_011667_135.evio
+> root -l -b -q trainBDT.C
+> ln -s $ROOTSYS/tmva/test/TMVAGui.C
+> ln -s $ROOTSYS/tmva/test/tmvaglob.C
+> root -l '$ROOTSYS/tmva/test/TMVAGui.C("l3BDT_out.root")'
+
+The three most interesting things to look at are
+probably buttons (4b) (5a), and (5b). The correlation
+matrices (button (3)) are also interesting.
+
