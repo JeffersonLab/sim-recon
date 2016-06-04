@@ -429,7 +429,7 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl,
       {
          continue;
       }
-      else if (valueS == "")
+      else if (valueS == "" and typeS != "string")
       {
          std::cerr
               << "xml-hddm: Inconsistency in input xml document" << std::endl
