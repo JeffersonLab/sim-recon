@@ -3,6 +3,7 @@
 #if HAVE_LIBBZ2
 
 #include <stdint.h>
+#include <string.h>
 #include <algorithm>
 #include <cassert>
 
@@ -10,12 +11,61 @@
 #include <xstream/except/bz.h>
 
 #include <bzlib.h>
-
+#include <arpa/inet.h>
 
 #include "debug.h"
 
 namespace xstream {
 namespace bz {
+
+// define a set of compressed stream headers that can be used
+// to remove arbitrary bit-alignment offsets in an input stream
+
+    static const int bz_header_length[8] = {35,36,34,44,40,38,40,43};
+    static const char bz_header[8][48] = {
+           { 0x42, 0x5a, 0x68, 0x39, 0x31, 0x41, 0x59, 0x26,
+             0x53, 0x59, 0x86, 0xad, 0x3f, 0xf0, 0x00, 0x00,
+             0x02, 0x48, 0x00, 0x04, 0x00, 0x20, 0x00, 0x20,
+             0x00, 0x21, 0x00, 0x82, 0x0b, 0x31, 0x41, 0x59,
+             0x26, 0x53, 0x59 },
+           { 0x42, 0x5a, 0x68, 0x39, 0x31, 0x41, 0x59, 0x26,
+             0x53, 0x59, 0x7b, 0x68, 0x3e, 0x4a, 0x00, 0x00,
+             0x01, 0x88, 0x00, 0x0f, 0xc0, 0x20, 0x00, 0x21,
+             0x80, 0x0c, 0x01, 0x37, 0xa4, 0xbb, 0x98, 0xa0,
+             0xac, 0x93, 0x29, 0xac },
+           { 0x42, 0x5a, 0x68, 0x39, 0x31, 0x41, 0x59, 0x26,
+             0x53, 0x59, 0x83, 0x69, 0xfc, 0x04, 0x00, 0x00,
+             0x01, 0x88, 0x00, 0x30, 0x00, 0x20, 0x00, 0x30,
+             0x80, 0x2a, 0x69, 0x11, 0xcc, 0x50, 0x56, 0x49,
+             0x94, 0xd6 },
+           { 0x42, 0x5a, 0x68, 0x39, 0x31, 0x41, 0x59, 0x26,
+             0x53, 0x59, 0xd5, 0x0d, 0x1c, 0x28, 0x00, 0x00,
+             0x01, 0x51, 0x80, 0x00, 0x10, 0x01, 0x01, 0x80,
+             0x02, 0x01, 0x80, 0x20, 0x00, 0x31, 0x0c, 0x01,
+             0x06, 0x9b, 0x47, 0xe7, 0x38, 0x04, 0xa6, 0x28,
+             0x2b, 0x24, 0xca, 0x6b },
+           { 0x42, 0x5a, 0x68, 0x39, 0x31, 0x41, 0x59, 0x26,
+             0x53, 0x59, 0x44, 0x1f, 0x23, 0x2f, 0x00, 0x00,
+             0x02, 0x11, 0x00, 0x00, 0x00, 0xa5, 0xa2, 0xa0,
+             0x00, 0x22, 0x06, 0x9a, 0x7a, 0x10, 0xc0, 0x8e,
+             0x10, 0xd8, 0x43, 0x14, 0x15, 0x92, 0x65, 0x35 },
+           { 0x42, 0x5a, 0x68, 0x39, 0x31, 0x41, 0x59, 0x26,
+             0x53, 0x59, 0x83, 0x90, 0x27, 0xae, 0x00, 0x00,
+             0x01, 0x81, 0x80, 0x0c, 0x00, 0x14, 0x20, 0x20,
+             0x00, 0x21, 0x86, 0x81, 0x9a, 0x09, 0x4d, 0xa8,
+             0xb9, 0x8a, 0x0a, 0xc9, 0x32, 0x9a },
+           { 0x42, 0x5a, 0x68, 0x39, 0x31, 0x41, 0x59, 0x26,
+             0x53, 0x59, 0x8d, 0x4f, 0x1e, 0x72, 0x00, 0x00,
+             0x04, 0x41, 0x80, 0x40, 0x00, 0x00, 0x20, 0x14,
+             0x60, 0x20, 0x00, 0x30, 0xc0, 0x08, 0x63, 0x45,
+             0x84, 0x0f, 0xb8, 0xc5, 0x05, 0x64, 0x99, 0x4d },
+           { 0x42, 0x5a, 0x68, 0x39, 0x31, 0x41, 0x59, 0x26,
+             0x53, 0x59, 0x64, 0xf2, 0x3a, 0xdc, 0x00, 0x00,
+             0x00, 0x9e, 0x00, 0x04, 0x00, 0x30, 0x00, 0x02,
+             0x08, 0x08, 0x80, 0x20, 0x00, 0x31, 0x0c, 0x01,
+             0x06, 0x99, 0xa4, 0xe4, 0x4c, 0x0a, 0x62, 0x82,
+             0xb2, 0x4c, 0xa6 }
+    };
 
     static const int eof = std::streambuf::traits_type::eof();
 
@@ -36,7 +86,8 @@ namespace bz {
     }
 
     common::common(std::streambuf *sb)
-    : xstream::common_buffer(sb), z_strm(0) {
+    : xstream::common_buffer(sb), z_strm(0), block_offset(0)
+    {
         LOG("bz::common");    
 
         z_strm = new pimpl;
@@ -207,6 +258,10 @@ namespace bz {
             z_strm->avail_in = 0;
             written = 0;
         }
+        block_offset += written;
+        if (block_offset > (std::streamoff)level * 100000) {
+            f = full_sync;
+        }
 
         bool redo = false;
 
@@ -215,29 +270,14 @@ namespace bz {
             redo = false;
             bool error = false;
 
-            //reset output
-            z_strm->next_out = out.buf;
-            z_strm->avail_out = out.size;
-
-            /*
-             LOG("\tpre_deflate: [" << z_strm->next_in << "]\tavail_in=" << z_strm->avail_in <<
-                    "\tavail_out=" << z_strm->avail_out);
-            */
-
             cret = ::BZ2_bzCompress(z_strm, flush_macro(f));
-
-            /*
-             LOG("\tpost_deflate: [" << z_strm->next_in << "]\tavail_in=" << z_strm->avail_in <<
-                    "\tavail_out=" << z_strm->avail_out << "\tcret=" << cret);
-            */
 
             //error handling
             if (finish_sync == f) {
                 if (BZ_STREAM_END == cret) {
                     redo = false;
-                //XXX manual mentions BZ_FINISHING but this macro isn't defined anywhere in the source code of the library
-                // so I use BZ_FINISH_OK but I'm not sure
-                } else if (BZ_FINISH_OK == cret) {
+                }
+                else if (BZ_FINISH_OK == cret) {
                     redo = true;
                 } else {
                     //serious error, throw exception
@@ -270,15 +310,22 @@ namespace bz {
                 raise_error(cret);
             }
 
-            LOG("\twriting " << (out.size - z_strm->avail_out) << " bytes");
-
-            const std::streamsize count = out.size - z_strm->avail_out;
-            if (count > 0) {
-                const std::streamsize wrote = _sb->sputn (out.buf, count);
-                if (count != wrote) {
-                    LOG("\terror writting, only wrote " << wrote << " but asked for " << count);
+            if (f != no_sync) {
+                std::streamsize count = out.size - z_strm->avail_out;
+                LOG("\twriting " << count << " bytes");
+                int size = htonl(count);
+                const std::streamsize wrote = _sb->sputn((char*)&size, 4) +
+                                              _sb->sputn(out.buf, count);
+                if (wrote != count + 4) {
+                    LOG("\terror writting, only wrote " << wrote 
+                        << " but asked for " << count);
                     raise_error(BZ_IO_ERROR);
                 }
+
+                //reset output
+                z_strm->next_out = out.buf;
+                z_strm->avail_out = out.size;
+                block_offset = 0;
             }
 
             if ((0 == z_strm->avail_out) && (0 != z_strm->avail_in)) {
@@ -306,7 +353,7 @@ namespace bz {
     /////////////////////
 
     istreambuf::istreambuf(std::streambuf * sb)
-    : common(sb), end(false) {
+    : common(sb), end(false), block_size(0), block_pending(0) {
         LOG("bz::istreambuf");
 
         int cret =::BZ2_bzDecompressInit(z_strm,
@@ -351,7 +398,7 @@ namespace bz {
             LOG("\tdata in queue, inflating");
             decompress();
         }
-        while (!(end || 0 == z_strm->avail_out)) {
+        while (!end && z_strm->avail_out > 0) {
             read_decompress();
         }
             
@@ -371,6 +418,7 @@ namespace bz {
         if (read) {
             std::copy(gptr(), gptr() + read, buffer);
             gbump(read);
+            block_offset += read;
         }
 
         //inflate the rest directly into the user's buffer
@@ -387,41 +435,122 @@ namespace bz {
             if (0 < z_strm->avail_in) {
                 decompress();
             }
-            while (!(end || 0 == z_strm->avail_out)) {
+            while (!end && z_strm->avail_out > 0) {
                 read_decompress();
             }
-
-            underflow();
+            block_offset += n - read;
         }
         return n;
     }
 
     void istreambuf::read_decompress() {
-        LOG("bz::istreambuf::read_inflate ");
-        int read = _sb->sgetn(in.buf, in.size);
+        LOG("bz::istreambuf::read_decompress ");
+        int read;
+        if (block_size < 0) { // stream has no blocksize markers
+            read = _sb->sgetn(in.buf, in.size);
+        }
+        else { // look for prefixed blocksize: leading byte = 0
+            block_size = block_pending;
+            read = _sb->sgetn(in.buf, 4);
+            if (in.buf[0] == 0) { // bz2 blocks have prefixed blocksize
+                int *size = (int*)in.buf;
+                block_pending = ntohl(*size);
+                read = _sb->sgetn(in.buf, block_pending);
+            }
+            else { // bz2 blocks are jammed together, no blocksize available
+                read += _sb->sgetn(in.buf + 4, in.size - 4);
+                block_size = -1;
+            }
+        }
         LOG("\tread " << read << " bytes");
+        block_offset = 0;
 
         if (0 == read) {
             LOG("\tpremature end of stream");
             raise_error(BZ_UNEXPECTED_EOF);
         }
 
-        z_strm->next_in = in.buf;
-        z_strm->avail_in = read;
-        decompress();
+        // We want to be able to start decompression at an arbitrary position
+        // in the input stream. This is possible with bzip2 streams, but there
+        // is a problem that the compressed blocks are arbitrary numbers of 
+        // bits long and they are catenated one after another in a bit stream
+        // without any reference to byte boundaries. This makes it difficult 
+        // to jump into the middle of a stream and start the decompressor 
+        // since it expects a stream header followed by the first block that
+        // happens to start on a byte boundary. To make this work, I splice
+        // an artificial stream header followed by a dummy compressed block
+        // onto the beginning of the input stream, where the length of the
+        // dummy block in bits is chosen so that it abutts without padding 
+        // the next block in the input stream. I have prepared 8 dummy blocks
+        // so there should be one to match the alignment of any input block.
+        // To match them, I look for the first place in the input stream
+        // with a byte string that matches the last 5 bytes in one of my
+        // dummy headers, and then I inject the dummy header into the 
+        // decompressor ahead of the actual data. The dummy blocks are all
+        // contrived to decompress to an 8-byte string, so throwing away the
+        // first 8 bytes out of the decompressor, it is primed to decompress
+        // the remaining stream without any need for bit-shifting the input.
+
+        if (block_size == 0 && strncmp(bz_header[0], in.buf, 4) != 0) {
+            int hdr;
+            int splice;
+            int match = 10;
+            for (hdr = 0; hdr < 8; ++hdr) {
+                splice = bz_header_length[hdr] - 5;
+                for (match = 1; match < 10; ++match) {
+                    if (strncmp(&in.buf[match], 
+                        &bz_header[hdr][splice], 5) == 0)
+                        break;
+                }
+                if (match < 10)
+                    break;
+            }
+            if (hdr > 7) {
+                LOG("\tbz2 stream format error on input");
+                raise_error(BZ_DATA_ERROR_MAGIC);
+            }
+            int saved_buflen = z_strm->avail_out;
+            char *saved_buffer = z_strm->next_out;
+            char dummy_buffer[8];
+            z_strm->avail_out = 8;
+            z_strm->next_out = dummy_buffer;
+            while (match > 0)
+                in.buf[--match] = bz_header[hdr][--splice];
+            z_strm->avail_in = splice;
+            z_strm->next_in = (char*)bz_header[hdr];
+            decompress(); // waste the first 8 bytes
+            z_strm->next_in = in.buf;
+            z_strm->avail_in = read;
+            decompress();
+            z_strm->avail_out = saved_buflen;
+            z_strm->next_out = saved_buffer;
+            decompress();
+        }
+        else {
+            z_strm->next_in = in.buf;
+            z_strm->avail_in = read;
+            decompress();
+        }
     }
 
     void istreambuf::decompress() {
-        LOG("bz::istreambuf::inflate ");
+        LOG("bz::istreambuf::decompress ");
 
         int cret = ::BZ2_bzDecompress(z_strm);
 
         if (BZ_STREAM_END == cret) {
             end = true;
-        } else if (BZ_OK != cret) {
-            LOG("\terror inflating: " << cret);
+        }
+        else if (cret == BZ_DATA_ERROR && z_strm->avail_in == 0) {
+            // Ignore CRC errors at the end of stream because we may not have
+            // started decompressing at the beginning. We can rely on the CRC
+            // checks that are present within each compressed block anyway.
+            cret = BZ_OK;
+            end = true;
+        }
+        else if (BZ_OK != cret) {
+            LOG("\terror decompressing: " << cret);
             raise_error(cret);
-            //can try to salvage some more data with inflateSync (in some cases)
         }
     }
 
