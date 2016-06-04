@@ -62,15 +62,15 @@ class DTOFPoint_factory : public JFactory<DTOFPoint>
 				bool dBothPositionsWellDefinedFlag;
 		};
 
+		tof_spacetimehit_t* Build_TOFSpacetimeHit_Horizontal(const DTOFPaddleHit* locTOFHit);
+		tof_spacetimehit_t* Build_TOFSpacetimeHit_Vertical(const DTOFPaddleHit* locTOFHit);
+
 	private:
 		jerror_t brun(JEventLoop *loop, int32_t runnumber);
 		jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);
 		jerror_t fini(void);
 
 		tof_spacetimehit_t* Get_TOFSpacetimeHitResource(void);
-
-		tof_spacetimehit_t* Build_TOFSpacetimeHit_Horizontal(const DTOFPaddleHit* locTOFHit);
-		tof_spacetimehit_t* Build_TOFSpacetimeHit_Vertical(const DTOFPaddleHit* locTOFHit);
 
 		bool Match_Hits(tof_spacetimehit_t* locTOFSpacetimeHit_Horizontal, tof_spacetimehit_t* locTOFSpacetimeHit_Vertical, tof_spacetimehitmatch_t& locTOFSpacetimeHitMatch);
 

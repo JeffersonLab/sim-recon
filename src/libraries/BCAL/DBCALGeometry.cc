@@ -48,7 +48,7 @@ int DBCALGeometry::NBCALSECSOUT = 4/DBCALGeometry::NSUMSECSOUT;
 float DBCALGeometry::BCAL_PHI_SHIFT = 0.0; // will be overwritten in constructor
 
 bool DBCALGeometry::initialized = false;
-float DBCALGeometry::BCALINNERRAD = 0.0;   
+float DBCALGeometry::BCALINNERRAD = 0.0;
 float DBCALGeometry::BCALOUTERRAD = 86.17;
 float DBCALGeometry::BCALFIBERLENGTH = 0.0;
 float DBCALGeometry::GLOBAL_CENTER = 0.0;
@@ -68,7 +68,7 @@ float DBCALGeometry::m_radius[] = { 64.3,
 				  83.70,
 				  86.17};
 
-float DBCALGeometry::fADC_radius[] = { 0, 
+float DBCALGeometry::fADC_radius[] = { 0,
 				  0,
 				  0,
 				  0,
