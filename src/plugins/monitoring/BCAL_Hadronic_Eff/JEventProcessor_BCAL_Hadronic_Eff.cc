@@ -29,6 +29,7 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::init(void)
 	dMinNumTrackHits = 14; //e.g. 6 in CDC, 8 in 
 	dMinHitRingsPerCDCSuperlayer = 3;
 	dMinHitPlanesPerFDCPackage = 4;
+	dMaxVertexR = 1.0;
 	dCutAction_TrackHitPattern = new DCutAction_TrackHitPattern(NULL, dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage);
 	//action initialize not necessary: is empty
 
@@ -233,6 +234,9 @@ jerror_t JEventProcessor_BCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		double locBestTrackingFOM = -1.0;
 		for(auto& locChargedTrackHypothesis : locChargedTrack->dChargedTrackHypotheses)
 		{
+			if(locChargedTrackHypothesis->position().Perp() > dMaxVertexR)
+				continue; //don't trust reconstruction if not close to target
+
 			//Need PID for beta-dependence
 			if(!Cut_BCALTiming(locChargedTrackHypothesis))
 				continue; //also requires match to BCAL: no need for separate check

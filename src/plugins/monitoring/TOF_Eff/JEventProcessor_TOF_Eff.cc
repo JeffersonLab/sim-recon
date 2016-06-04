@@ -29,6 +29,8 @@ jerror_t JEventProcessor_TOF_Eff::init(void)
 	dMinNumTrackHits = 16; //e.g. 4 in each FDC plane
 	dMinHitRingsPerCDCSuperlayer = 0;
 	dMinHitPlanesPerFDCPackage = 4;
+	dMaxVertexR = 1.0;
+	dMaxTOFThetaCut = 15.0; //it could be projected to miss, but still hit it
 	dCutAction_TrackHitPattern = new DCutAction_TrackHitPattern(NULL, dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage);
 	//action initialize not necessary: is empty
 
@@ -209,6 +211,9 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 		double locBestTrackingFOM = -1.0;
 		for(auto& locChargedTrackHypothesis : locChargedTrack->dChargedTrackHypotheses)
 		{
+			if(locChargedTrackHypothesis->position().Perp() > dMaxVertexR)
+				continue; //don't trust reconstruction if not close to target
+
 			//Need PID for beta-dependence, but cannot use TOF info: would bias
 			if(!Cut_FCALTiming(locChargedTrackHypothesis, locParticleID, locEventRFBunch))
 				continue; //also requires match to FCAL: no need for separate check
@@ -247,7 +252,10 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 		DVector3 locProjectedTOFIntersection;
 		unsigned int locProjectedHorizontalBar = 0, locProjectedVerticalBar = 0;
 		if(!locParticleID->PredictTOFPaddles(locTrackTimeBased->rt, locProjectedHorizontalBar, locProjectedVerticalBar, &locProjectedTOFIntersection))
-			continue; //not predicted to hit TOF
+		{
+			if(locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi() > dMaxTOFThetaCut)
+				continue; //not predicted to hit TOF
+		}
 
 		//Find closest TOF point
 		double locBestPointDeltaX = 999.9, locBestPointDeltaY = 999.9;
@@ -257,8 +265,8 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 		double locBestPaddleDeltaX = 999.9, locBestPaddleDeltaY = 999.9;
 		//first in pair is vertical, second is horizontal // NULL If none / doesn't hit TOF
 		double locStartTime = locParticleID->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
-		const DTOFPaddleHit* locClosestTOFPaddleHit_Vertical = Get_ClosestTOFPaddleHit_Vertical(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestPaddleDeltaX);
-		const DTOFPaddleHit* locClosestTOFPaddleHit_Horizontal = Get_ClosestTOFPaddleHit_Horizontal(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestPaddleDeltaY);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Vertical = locParticleID->Get_ClosestTOFPaddleHit_Vertical(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestPaddleDeltaX);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Horizontal = locParticleID->Get_ClosestTOFPaddleHit_Horizontal(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestPaddleDeltaY);
 
 		//Is match to TOF point?
 		const DTOFHitMatchParams* locTOFHitMatchParams = locChargedTrackHypothesis->Get_TOFHitMatchParams();

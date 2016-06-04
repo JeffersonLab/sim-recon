@@ -152,7 +152,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 	loop->GetSingle(dTOFGeometry);
 	dHalfPaddle_OneSided = dTOFGeometry->SHORTBARLENGTH/2.0; //GET FROM GEOMETRY??
 	double locBeamHoleWidth = dTOFGeometry->LONGBARLENGTH - 2.0*dTOFGeometry->SHORTBARLENGTH;
-	ONESIDED_PADDLE_MIDPOINT_MAG = locHalfPaddle_OneSided + locBeamHoleWidth/2.0;
+	ONESIDED_PADDLE_MIDPOINT_MAG = dHalfPaddle_OneSided + locBeamHoleWidth/2.0;
 
 	// Start counter calibration constants
 	// vector<map<string,double> > tvals;
@@ -221,9 +221,9 @@ DParticleID::DParticleID(JEventLoop *loop)
 
 	//be sure that DRFTime_factory::init() and brun() are called
 	vector<const DTOFPoint*> locTOFPoints;
-	locEventLoop->Get(locTOFPoints);
+	loop->Get(locTOFPoints);
 
-	dTOFPointFactory = static_cast<DTOFPoint_factory*>(locEventLoop->GetFactory("DTOFPoint"));
+	dTOFPointFactory = static_cast<DTOFPoint_factory*>(loop->GetFactory("DTOFPoint"));
 }
 
 // Group fitted tracks according to candidate id
@@ -544,7 +544,6 @@ bool DParticleID::MatchToBCAL(const DKinematicData* locTrack, const DReferenceTr
 	double d = rt->DistToRTwithTime(bcal_pos, &locPathLength,
 					&locFlightTime, &locFlightTimeVariance,
 					SYS_BCAL);
-
 
 	if(!isfinite(d))
 		return false;
@@ -1517,7 +1516,7 @@ void DParticleID::Get_BestFCALMatchParams(vector<DFCALShowerMatchParams>& locSho
 	}
 }
 
-const DBCALShower* DParticleID::Get_ClosestToTrack_BCAL(const DKinematicData* locTrack, vector<const DBCALShower*>& locBCALShowers, double& locBestMatchDeltaPhi, double& locBestMatchDeltaZ, double locMaxDeltaT) const
+const DBCALShower* DParticleID::Get_ClosestToTrack_BCAL(const DKinematicData* locTrack, vector<const DBCALShower*>& locBCALShowers, double& locBestMatchDeltaPhi, double& locBestMatchDeltaZ) const
 {
 	const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
 	const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
@@ -1535,7 +1534,6 @@ const DBCALShower* DParticleID::Get_ClosestToTrack_BCAL(const DKinematicData* lo
 		double locDistance = 0.0, locDeltaPhi = 0.0, locDeltaZ = 0.0;
 		if(!Distance_ToTrack(locBCALShowers[loc_i], locReferenceTrajectory, locInputStartTime, locDistance, locDeltaPhi, locDeltaZ))
 			continue;
-//		locMaxDeltaT
 		if(locDistance > locMinDistance)
 			continue;
 		locBestBCALShower = locBCALShowers[loc_i];
@@ -1546,7 +1544,7 @@ const DBCALShower* DParticleID::Get_ClosestToTrack_BCAL(const DKinematicData* lo
 	return locBestBCALShower;
 }
 
-const DFCALShower* DParticleID::Get_ClosestToTrack_FCAL(const DKinematicData* locTrack, vector<const DFCALShower*>& locFCALShowers, double& locBestDistance, double locMaxDeltaT) const
+const DFCALShower* DParticleID::Get_ClosestToTrack_FCAL(const DKinematicData* locTrack, vector<const DFCALShower*>& locFCALShowers, double& locBestDistance) const
 {
 	const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
 	const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
@@ -1572,7 +1570,7 @@ const DFCALShower* DParticleID::Get_ClosestToTrack_FCAL(const DKinematicData* lo
 	return locBestFCALShower;
 }
 
-const DTOFPoint* DParticleID::Get_ClosestToTrack_TOFPoint(const DKinematicData* locTrack, vector<const DTOFPoint*>& locTOFPoints, double& locBestDeltaX, double& locBestDeltaY, double locMaxDeltaT) const
+const DTOFPoint* DParticleID::Get_ClosestToTrack_TOFPoint(const DKinematicData* locTrack, vector<const DTOFPoint*>& locTOFPoints, double& locBestDeltaX, double& locBestDeltaY) const
 {
 	const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
 	const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
@@ -1602,8 +1600,11 @@ const DTOFPoint* DParticleID::Get_ClosestToTrack_TOFPoint(const DKinematicData* 
 	return locClosestTOFPoint;
 }
 
-const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaY)
+const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaY) const
 {
+	if(locReferenceTrajectory == nullptr)
+		return nullptr;
+
 	// Evaluate matching solely by physical geometry of the paddle: NOT the distance along the paddle of the hit
 	DVector3 tof_pos(0.0, 0.0, dTOFGeometry->CenterHPlane); //a point on the TOF plane
 	DVector3 norm(0.0, 0.0, 1.0); //normal vector to TOF plane
@@ -1613,7 +1614,7 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const DRefe
 		return nullptr;
 
 	const DTOFPaddleHit* locClosestPaddleHit = nullptr;
-	locBestDeltaY = 9.9E9;
+	locBestDeltaY = 999.0;
 	for(auto& locTOFPaddleHit : locTOFPaddleHits)
 	{
 		if(locTOFPaddleHit->orientation != 1)
@@ -1645,7 +1646,7 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const DRefe
 
 			//correct the time
 			double locDistanceToMidPoint = locNorthIsGoodHitFlag ? locPaddleMidPoint - proj_pos.X() : proj_pos.X() - locPaddleMidPoint;
-			int id = 44 + locTOFPaddleHit->locBar - 1; //for propation speed
+			int id = 44 + locTOFPaddleHit->bar - 1; //for propation speed
 			locHitTime -= locDistanceToMidPoint/propagation_speed[id];
 		}
 
@@ -1661,8 +1662,11 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Horizontal(const DRefe
 	return locClosestPaddleHit;
 }
 
-const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Vertical(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaX)
+const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Vertical(const DReferenceTrajectory* locReferenceTrajectory, const vector<const DTOFPaddleHit*>& locTOFPaddleHits, double locInputStartTime, double& locBestDeltaX) const
 {
+	if(locReferenceTrajectory == nullptr)
+		return nullptr;
+
 	// Evaluate matching solely by physical geometry of the paddle: NOT the distance along the paddle of the hit
 	DVector3 tof_pos(0.0, 0.0, dTOFGeometry->CenterVPlane); //a point on the TOF plane
 	DVector3 norm(0.0, 0.0, 1.0); //normal vector to TOF plane
@@ -1672,7 +1676,7 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Vertical(const DRefere
 		return nullptr;
 
 	const DTOFPaddleHit* locClosestPaddleHit = nullptr;
-	locBestDeltaX = 9.9E9;
+	locBestDeltaX = 999.0;
 	for(auto& locTOFPaddleHit : locTOFPaddleHits)
 	{
 		if(locTOFPaddleHit->orientation != 0)
@@ -1704,7 +1708,7 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Vertical(const DRefere
 
 			//correct the time
 			double locDistanceToMidPoint = locNorthIsGoodHitFlag ? locPaddleMidPoint - proj_pos.Y() : proj_pos.Y() - locPaddleMidPoint;
-			int id = locTOFPaddleHit->locBar - 1; //for propation speed
+			int id = locTOFPaddleHit->bar - 1; //for propation speed
 			locHitTime -= locDistanceToMidPoint/propagation_speed[id];
 		}
 
@@ -1720,7 +1724,7 @@ const DTOFPaddleHit* DParticleID::Get_ClosestTOFPaddleHit_Vertical(const DRefere
 	return locClosestPaddleHit;
 }
 
-const DSCHit* DParticleID::Get_ClosestToTrack_SC(const DKinematicData* locTrack, vector<const DSCHit*>& locSCHits, double& locBestDeltaPhi, double locMaxDeltaT) const
+const DSCHit* DParticleID::Get_ClosestToTrack_SC(const DKinematicData* locTrack, vector<const DSCHit*>& locSCHits, double& locBestDeltaPhi) const
 {
 	const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
 	const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);

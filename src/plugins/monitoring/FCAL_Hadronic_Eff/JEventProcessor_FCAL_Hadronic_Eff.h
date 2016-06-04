@@ -55,6 +55,8 @@ class JEventProcessor_FCAL_Hadronic_Eff : public jana::JEventProcessor
 		double dMinTrackingFOM;
 		unsigned int dMinNumTrackHits;
 		int dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage;
+		double dMaxFCALThetaCut;
+		double dMaxVertexR;
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
 
 		//HISTOGRAMS

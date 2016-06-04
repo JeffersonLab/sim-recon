@@ -29,6 +29,8 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::init(void)
 	dMinNumTrackHits = 16; //e.g. 4 in each FDC plane
 	dMinHitRingsPerCDCSuperlayer = 0;
 	dMinHitPlanesPerFDCPackage = 4;
+	dMaxFCALThetaCut = 15.0;
+	dMaxVertexR = 1.0;
 	dCutAction_TrackHitPattern = new DCutAction_TrackHitPattern(NULL, dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage);
 	//action initialize not necessary: is empty
 
@@ -74,8 +76,8 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::init(void)
 	//PROJECTED FCAL
 	locTreeBranchRegister.Register_Single<Float_t>("ProjectedFCALX");
 	locTreeBranchRegister.Register_Single<Float_t>("ProjectedFCALY");
-	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedFCALRow");
-	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedFCALColumn");
+	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedFCALRow"); //0 if projected to miss
+	locTreeBranchRegister.Register_Single<UChar_t>("ProjectedFCALColumn"); //0 if projected to miss
 
 	//NEAREST FCAL SHOWER
 	locTreeBranchRegister.Register_Single<Float_t>("NearestFCALEnergy"); //if < 0: nothing in time: PID:OUT_OF_TIME_CUT
@@ -155,6 +157,9 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		double locBestTrackingFOM = -1.0;
 		for(auto& locChargedTrackHypothesis : locChargedTrack->dChargedTrackHypotheses)
 		{
+			if(locChargedTrackHypothesis->position().Perp() > dMaxVertexR)
+				continue; //don't trust reconstruction if not close to target
+
 			//Need PID for beta-dependence, but cannot use FCAL info: would bias
 			if(!Cut_TOFTiming(locChargedTrackHypothesis))
 				continue; //also requires match to TOF: no need for separate check
@@ -193,7 +198,10 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		DVector3 locProjectedFCALIntersection;
 		unsigned int locProjectedFCALRow = 0, locProjectedFCALColumn = 0;
 		if(!locParticleID->PredictFCALHit(locTrackTimeBased->rt, locProjectedFCALRow, locProjectedFCALColumn, &locProjectedFCALIntersection))
-			continue; //not predicted to hit FCAL
+		{
+			if(locTrackTimeBased->momentum().Theta()*180.0/TMath::Pi() > dMaxFCALThetaCut)
+				continue; //not predicted to hit FCAL
+		}
 
 		//Find closest FCAL Shower
 		double locBestDistance = 999.0;

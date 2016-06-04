@@ -54,6 +54,8 @@ class JEventProcessor_TOF_Eff : public jana::JEventProcessor
 		double dMaxFCALDeltaT;
 		double dMinTrackingFOM;
 		unsigned int dMinNumTrackHits;
+		double dMaxTOFThetaCut;
+		double dMaxVertexR;
 		int dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage;
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
 

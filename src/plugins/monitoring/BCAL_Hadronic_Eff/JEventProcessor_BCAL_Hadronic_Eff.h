@@ -16,7 +16,7 @@
 #include "BCAL/DBCALPoint.h"
 #include "BCAL/DBCALUnifiedHit.h"
 #include "BCAL/DBCALGeometry.h"
-//#include "TRIGGER/DTrigger.h"
+#include "TRIGGER/DTrigger.h"
 #include "TRACKING/DTrackTimeBased.h"
 
 #include "PID/DChargedTrack.h"
@@ -67,6 +67,7 @@ class JEventProcessor_BCAL_Hadronic_Eff : public jana::JEventProcessor
 		double dMinTrackingFOM, dMaxBCALDeltaT;
 		unsigned int dMinNumTrackHits;
 		int dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage;
+		double dMaxVertexR;
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
 
 		//HISTOGRAMS

@@ -52,6 +52,7 @@ class JEventProcessor_SC_Eff : public jana::JEventProcessor
 		//TRACK REQUIREMENTS
 		double dMinTrackingFOM;
 		unsigned int dMinNumTrackHits;
+		double dMaxVertexR;
 		int dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage;
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
 		map<DetectorSystem_t, double> dMaxPIDDeltaTMap;

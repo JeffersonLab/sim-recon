@@ -1100,6 +1100,9 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	vector<const DSCHit*> locSCHits;
 	locEventLoop->Get(locSCHits);
 
+	const DEventRFBunch* locEventRFBunch = nullptr;
+	locEventLoop->GetSingle(locEventRFBunch);
+
 	string locDetectorMatchesTag = locIsTimeBased ? "" : "WireBased";
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches, locDetectorMatchesTag.c_str());
@@ -1141,10 +1144,21 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	map<const DKinematicData*, pair<const DTOFPaddleHit*, double> > locVerticalTOFPaddleTrackDistanceMap; //double: delta-x
 	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
+		const DKinematicData* locKinematicData = locTrackIterator->second;
+		const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locKinematicData);
+		const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locKinematicData);
+		const DReferenceTrajectory* locReferenceTrajectory = nullptr;
+		if(locTrackTimeBased != nullptr)
+			locReferenceTrajectory = locTrackTimeBased->rt;
+		else if(locTrackWireBased != nullptr)
+			locReferenceTrajectory = locTrackWireBased->rt;
+		else
+			break;
+
 		double locBestDeltaX = 999.9, locBestDeltaY = 999.9;
-		double locStartTime = locParticleID->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
-		const DTOFPaddleHit* locClosestTOFPaddleHit_Vertical = Get_ClosestTOFPaddleHit_Vertical(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestDeltaX);
-		const DTOFPaddleHit* locClosestTOFPaddleHit_Horizontal = Get_ClosestTOFPaddleHit_Horizontal(locTrackTimeBased->rt, locTOFPaddleHits, locStartTime, locBestDeltaY);
+		double locStartTime = locParticleID->Calc_PropagatedRFTime(locKinematicData, locEventRFBunch);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Vertical = locParticleID->Get_ClosestTOFPaddleHit_Vertical(locReferenceTrajectory, locTOFPaddleHits, locStartTime, locBestDeltaX);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Horizontal = locParticleID->Get_ClosestTOFPaddleHit_Horizontal(locReferenceTrajectory, locTOFPaddleHits, locStartTime, locBestDeltaY);
 		if(locClosestTOFPaddleHit_Vertical != NULL)
 			locVerticalTOFPaddleTrackDistanceMap[locTrackIterator->second] = pair<const DTOFPaddleHit*, double>(locClosestTOFPaddleHit_Vertical, locBestDeltaX);
 		if(locClosestTOFPaddleHit_Horizontal != NULL)
