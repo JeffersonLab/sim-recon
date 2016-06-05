@@ -11,10 +11,13 @@
 
 #include <stdio.h>
 #include <zlib.h>
+#include <arpa/inet.h>
 
 #include <cassert>
 
 #include "debug.h"
+
+#define COMPRESSION_BLOCK_SIZE 32000
 
 namespace xstream {
 namespace z {
@@ -67,7 +70,8 @@ namespace z {
     
 
     common::common(std::streambuf * sb)
-    : xstream::common_buffer (sb), z_strm (0) {
+    : xstream::common_buffer(sb), z_strm(0), block_offset(0)
+    {
         LOG("z::common");    
 
         z_strm = new pimpl;
@@ -206,7 +210,7 @@ namespace z {
         return flush(no_sync, buffer, n);
     }
 
-    int ostreambuf::flush(const flush_kind f, const char *appendbuf, int appendsize) {
+    int ostreambuf::flush(flush_kind f, const char *appendbuf, int appendsize) {
         LOG ("z::ostreambuf::flush(" << f << ")");
         std::streamsize in_s = taken ();
         LOG ("\tinput_size=" << in_s);
@@ -227,16 +231,16 @@ namespace z {
            z_strm->avail_in = 0;
            written = 0;
         }
+        block_offset += written;
+        if (block_offset > (std::streamoff)COMPRESSION_BLOCK_SIZE) {
+            f = full_sync;
+        }
 
         bool redo = false;
 
         do {
             int cret;
             redo = false;
-
-            //reset output
-            z_strm->next_out = reinterpret_cast < Bytef* >(out.buf);
-            z_strm->avail_out = out.size;
 
             do {
                 cret = ::deflate(z_strm, flush_macro(f));
@@ -261,9 +265,23 @@ namespace z {
                 raise_error(cret);
             }
 
-            LOG ("\twriting " << (out.size - z_strm->avail_out) << " bytes");
-            //XXX need to check return value and wrap this
-            _sb->sputn (out.buf, out.size - z_strm->avail_out);
+            if (f != no_sync) {
+                std::streamsize count = out.size - z_strm->avail_out;
+                LOG ("\twriting " << count << " bytes");
+                int size = htonl(count);
+                const std::streamsize wrote = _sb->sputn((char*)&size, 4) +
+                                              _sb->sputn(out.buf, count);
+                if (wrote != count + 4) {
+                    LOG("\terror writting, only wrote " << wrote 
+                        << " but asked for " << count);
+                    raise_error(Z_STREAM_ERROR);
+                }
+
+                // reset output
+                z_strm->next_out = reinterpret_cast < Bytef* >(out.buf);
+                z_strm->avail_out = out.size;
+                block_offset = 0;
+            }
 
             if (0 == z_strm->avail_out) { // && 0 != z_strm->avail_in)
                 LOG("\tavail_out=0 => redo");
@@ -290,7 +308,7 @@ namespace z {
     /////////////////////
 
     istreambuf::istreambuf (std::streambuf * sb)
-    : common(sb), end(false) {
+    : common(sb), end(false), block_size(0) {
         LOG ("z::istreambuf");
 
         int cret = ::inflateInit(z_strm);
@@ -334,8 +352,7 @@ namespace z {
             LOG("\tdata in queue, inflating");
             inflate();
         }
-
-        while (!(end || 0 == z_strm->avail_out)) {
+        while (!end && z_strm->avail_out > 0) {
             read_inflate();
         }
             
@@ -355,6 +372,7 @@ namespace z {
         if (read) {
             std::copy(gptr(), gptr() + read, buffer);
             gbump(read);
+            block_offset += read;
         }
 
         //inflate the rest directly into the user's buffer
@@ -371,22 +389,34 @@ namespace z {
             if (0 < z_strm->avail_in) {
                 inflate();
             }
-            while (!(end || 0 == z_strm->avail_out)) {
+            while (!end && z_strm->avail_out > 0) {
                 read_inflate();
             }
-
-            underflow();
+            block_offset += n - read;
         }
         return n;
     }
 
     void istreambuf::read_inflate( const flush_kind f) {
         LOG("z::istreambuf::read_inflate " << f);
-
-        z_strm->next_in = reinterpret_cast < Bytef* >(in.buf);
-        
-        int read = _sb->sgetn(in.buf, in.size);
+        int read;
+        if (block_size < 0) { // stream has no blocksize markers
+            read = _sb->sgetn(in.buf, in.size);
+        }
+        else { // look for prefixed blocksize: leading byte = 0
+            read = _sb->sgetn(in.buf, 4);
+            if (in.buf[0] == 0) { // z blocks have prefixed blocksize
+                int *size = (int*)in.buf;
+                block_size = ntohl(*size);
+                read = _sb->sgetn(in.buf, block_size);
+            }
+            else { // z blocks are jammed together, no blocksize available
+                read += _sb->sgetn(in.buf + 4, in.size - 4);
+                block_size = -1;
+            }
+        }
         LOG("\tread " << read << " bytes");
+        block_offset = 0;
 
         if (0 == read) {
             LOG("\tpremature end of stream");
@@ -394,8 +424,8 @@ namespace z {
             raise_error(Z_DATA_ERROR);
         }
 
+        z_strm->next_in = reinterpret_cast < Bytef* >(in.buf);
         z_strm->avail_in = read;
-
         inflate(f);
     }
 
