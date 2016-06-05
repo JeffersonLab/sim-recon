@@ -376,16 +376,10 @@ const DChargedTrackHypothesis* DParticleCombo_factory::Get_ChargedHypothesis(con
 {
 	for(size_t loc_l = 0; loc_l < locChargedTrackHypotheses.size(); ++loc_l)
 	{
-		vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses_Associated;
-		locChargedTrackHypotheses[loc_l]->Get(locChargedTrackHypotheses_Associated);
-		for(size_t loc_m = 0; loc_m < locChargedTrackHypotheses_Associated.size(); ++loc_m)
-		{
-			if(locChargedTrackHypotheses_Associated[loc_m] != locKinematicData_Measured)
-				continue; //wrong track hypothesis
-			if(!locChargedTrackHypotheses[loc_l]->IsAssociated(locParticleCombo))
-				continue; // track created for a different particle combo
+		if(!locChargedTrackHypotheses[loc_l]->IsAssociated(locParticleCombo))
+			continue; // track created for a different particle combo
+		if(locChargedTrackHypotheses[loc_l]->IsAssociated(locKinematicData_Measured))
 			return locChargedTrackHypotheses[loc_l];
-		}
 	}
 	return dynamic_cast<const DChargedTrackHypothesis*>(locKinematicData_Measured); //not used in fit: re-set the measured
 }
@@ -394,16 +388,10 @@ const DNeutralParticleHypothesis* DParticleCombo_factory::Get_NeutralHypothesis(
 {
 	for(size_t loc_l = 0; loc_l < locNeutralParticleHypotheses.size(); ++loc_l)
 	{
-		vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses_Associated;
-		locNeutralParticleHypotheses[loc_l]->Get(locNeutralParticleHypotheses_Associated);
-		for(size_t loc_m = 0; loc_m < locNeutralParticleHypotheses_Associated.size(); ++loc_m)
-		{
-			if(locNeutralParticleHypotheses_Associated[loc_m] != locKinematicData_Measured)
-				continue; //wrong track hypothesis
-			if(!locNeutralParticleHypotheses[loc_l]->IsAssociated(locParticleCombo))
-				continue; // track created for a different particle combo
+		if(!locNeutralParticleHypotheses[loc_l]->IsAssociated(locParticleCombo))
+			continue; // track created for a different particle combo
+		if(locNeutralParticleHypotheses[loc_l]->IsAssociated(locKinematicData_Measured))
 			return locNeutralParticleHypotheses[loc_l];
-		}
 	}
 	return dynamic_cast<const DNeutralParticleHypothesis*>(locKinematicData_Measured); //not used in fit: re-set the measured
 }
