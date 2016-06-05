@@ -491,15 +491,16 @@ namespace bz {
         // first 8 bytes out of the decompressor, it is primed to decompress
         // the remaining stream without any need for bit-shifting the input.
 
-        if (block_size == 0 && strncmp(bz_header[0], in.buf, 4) != 0) {
+        const char* head = (const char*)bz_header[0];
+        if (block_size == 0 && strncmp(head, in.buf, 4) != 0) {
             int hdr;
             int splice;
             int match = 10;
             for (hdr = 0; hdr < 8; ++hdr) {
                 splice = bz_header_length[hdr] - 5;
+                const char* shead = (const char*)bz_header[hdr];
                 for (match = 1; match < 10; ++match) {
-                    if (strncmp(&in.buf[match], 
-                        &bz_header[hdr][splice], 5) == 0)
+                    if (strncmp(&in.buf[match], &shead[splice], 5) == 0)
                         break;
                 }
                 if (match < 10)
