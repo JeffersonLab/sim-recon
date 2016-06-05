@@ -193,9 +193,22 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 	locParticleNameList->SetName("ParticleNameList");
 	locUserInfo->Add(locParticleNameList);
 
+	//Set some misc info
 	ostringstream locKinFitTypeStream;
 	locKinFitTypeStream << locKinFitType;
 	locMiscInfoMap->Add(new TObjString("KinFitType"), new TObjString(locKinFitTypeStream.str().c_str()));
+
+	string HDDM_DATA_VERSION_STRING = "";
+	gPARMS->GetParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING);
+	if(HDDM_DATA_VERSION_STRING != "")
+		locMiscInfoMap->Add(new TObjString("REST:DATAVERSIONSTRING"), new TObjString(HDDM_DATA_VERSION_STRING.c_str()));
+
+	string REST_JANA_CALIB_CONTEXT = "";
+	gPARMS->GetParameter("REST:JANACALIBCONTEXT", REST_JANA_CALIB_CONTEXT);
+	if(REST_JANA_CALIB_CONTEXT == "")
+		gPARMS->GetParameter("JANA_CALIB_CONTEXT", REST_JANA_CALIB_CONTEXT);
+	if(REST_JANA_CALIB_CONTEXT != "")
+		locMiscInfoMap->Add(new TObjString("REST:JANACALIBCONTEXT"), new TObjString(REST_JANA_CALIB_CONTEXT.c_str()));
 
 	//find the # particles of each pid
 	map<Particle_t, unsigned int> locParticleNumberMap;
