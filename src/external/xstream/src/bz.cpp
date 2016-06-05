@@ -516,7 +516,7 @@ namespace bz {
             z_strm->avail_out = 8;
             z_strm->next_out = dummy_buffer;
             while (match > 0)
-                in.buf[--match] = bz_header[hdr][--splice];
+                in.buf[--match] = (const char)bz_header[hdr][--splice];
             z_strm->avail_in = splice;
             z_strm->next_in = (char*)bz_header[hdr];
             decompress(); // waste the first 8 bytes
