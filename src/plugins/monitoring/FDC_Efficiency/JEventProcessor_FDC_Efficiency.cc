@@ -258,10 +258,11 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 
     // All Cuts on Track Quality:
     
-    if (thisTimeBasedTrack->FOM < 1E-20)
-      continue;  // cut from Mike, works better probably due to the general bad quality of FDC tracks
     // if (thisTimeBasedTrack->FOM < 5.73303E-7) 
     //   continue; // 5 sigma cut from Paul
+    if (thisTimeBasedTrack->FOM < 1E-20)
+      continue;  // from CDC analysis
+
     if(!dIsNoFieldFlag){ // Quality cuts for Field on runs.
       if(tmom < 0.6)
        	continue; // Cut on the reconstructed momentum below 600MeV, no curlers
