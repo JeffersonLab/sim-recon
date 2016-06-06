@@ -260,7 +260,7 @@ namespace bz {
         }
         block_offset += written;
         if (block_offset > (std::streamoff)level * 100000) {
-            f = full_sync;
+            f = (f == no_sync)? full_sync : f;
         }
 
         bool redo = false;
@@ -401,6 +401,11 @@ namespace bz {
         while (!end && z_strm->avail_out > 0) {
             read_decompress();
         }
+        if (end && z_strm->avail_out > 0) {
+            LOG("\tend of stream (EOF)");
+            //signal the stream has reached it's end
+            return eof;
+        }
             
         //set streambuf pointers
         setg(out.buf, out.buf, z_strm->next_out);
@@ -437,6 +442,11 @@ namespace bz {
             }
             while (!end && z_strm->avail_out > 0) {
                 read_decompress();
+            }
+            if (end && z_strm->avail_out > 0) {
+                LOG("\tend of stream (EOF)");
+                //signal the stream has reached it's end
+                return eof;
             }
             block_offset += n - read;
         }
