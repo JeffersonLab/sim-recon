@@ -157,6 +157,9 @@ jerror_t JEventProcessor_FCAL_Hadronic_Eff::evnt(jana::JEventLoop* locEventLoop,
 		double locBestTrackingFOM = -1.0;
 		for(auto& locChargedTrackHypothesis : locChargedTrack->dChargedTrackHypotheses)
 		{
+			if((locChargedTrackHypothesis->PID() == Electron) || (locChargedTrackHypothesis->PID() == Positron))
+				continue; //don't evaluate for these
+
 			if(locChargedTrackHypothesis->position().Perp() > dMaxVertexR)
 				continue; //don't trust reconstruction if not close to target
 
