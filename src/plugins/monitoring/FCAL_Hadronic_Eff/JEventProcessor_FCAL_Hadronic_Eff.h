@@ -1,10 +1,10 @@
 // $Id$
 //
-// File: JEventProcessor_ST_Eff.h
+// File: JEventProcessor_FCAL_Hadronic_Eff.h
 //
 
-#ifndef _JEventProcessor_ST_Eff_
-#define _JEventProcessor_ST_Eff_
+#ifndef _JEventProcessor_FCAL_Hadronic_Eff_
+#define _JEventProcessor_FCAL_Hadronic_Eff_
 
 #include <JANA/JEventProcessor.h>
 #include <JANA/JApplication.h>
@@ -12,10 +12,10 @@
 #include "TH1I.h"
 #include "TH2I.h"
 
-#include "START_COUNTER/DSCHit.h"
-//#include "TRIGGER/DTrigger.h"
+#include "TRIGGER/DTrigger.h"
 #include "TRACKING/DTrackTimeBased.h"
 
+#include "FCAL/DFCALShower.h"
 #include "PID/DChargedTrack.h"
 #include "PID/DChargedTrackHypothesis.h"
 #include "PID/DParticleID.h"
@@ -33,12 +33,12 @@
 using namespace jana;
 using namespace std;
 
-class JEventProcessor_ST_Eff : public jana::JEventProcessor
+class JEventProcessor_FCAL_Hadronic_Eff : public jana::JEventProcessor
 {
 	public:
-		JEventProcessor_ST_Eff(){};
-		~JEventProcessor_ST_Eff(){};
-		const char* className(void){return "JEventProcessor_ST_Eff";}
+		JEventProcessor_FCAL_Hadronic_Eff(){};
+		~JEventProcessor_FCAL_Hadronic_Eff(){};
+		const char* className(void){return "JEventProcessor_FCAL_Hadronic_Eff";}
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -47,14 +47,23 @@ class JEventProcessor_ST_Eff : public jana::JEventProcessor
 		jerror_t erun(void);						///< Called every time run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		double Calc_FCALTiming(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DParticleID* locParticleID, const DEventRFBunch* locEventRFBunch, double& locDeltaT);
+		bool Cut_TOFTiming(const DChargedTrackHypothesis* locChargedTrackHypothesis);
+
 		//TRACK REQUIREMENTS
-		double dMinTrackingFOM, dMinPIDFOM;
+		double dMaxTOFDeltaT;
+		double dMinTrackingFOM;
 		unsigned int dMinNumTrackHits;
 		int dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage;
+		double dMaxFCALThetaCut;
+		double dMaxVertexR;
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
 
 		//HISTOGRAMS
-		map<int, map<bool, TH1I*> > dHistMap_HitFound, dHistMap_HitTotal; //int = layer, bool = isUpstream
+		TH2I* dHist_TrackFCALYVsX_HasHit;
+		TH2I* dHist_TrackFCALYVsX_TotalHit;
+		TH2I* dHist_TrackFCALRowVsColumn_HasHit;
+		TH2I* dHist_TrackFCALRowVsColumn_TotalHit;
 
 		//TREE
 		DTreeInterface* dTreeInterface;
@@ -63,5 +72,5 @@ class JEventProcessor_ST_Eff : public jana::JEventProcessor
 		static thread_local DTreeFillData dTreeFillData;
 };
 
-#endif // _JEventProcessor_ST_Eff_
+#endif // _JEventProcessor_FCAL_Hadronic_Eff_
 

@@ -55,7 +55,17 @@ class DTreeBranchRegister
 
 	public:
 		DTreeBranchRegister(void) : dUserInfo(new TList()){}
-		~DTreeBranchRegister(void){delete dUserInfo;}
+		~DTreeBranchRegister(void)
+		{
+			//If multiple threads, objects in the list may be created by multiple threads on the heap, each with the same name
+			//The TList destructor tries to do something I don't quite understand ...
+			//It looks like it's trying to delete objects on the heap, which it shouldn't try to do by default
+			//Anyway, it looks like things are being double-freed somehow
+			//Instead: Avoid this by removing the list entries
+			while(dUserInfo->GetEntries() > 0)
+				dUserInfo->RemoveLast();
+			delete dUserInfo;
+		}
 
 		TList* Get_UserInfo(void) const{return dUserInfo;}
 

@@ -5,10 +5,10 @@ subdirs = [
 'occupancy_online',
 'BCAL_online',
 'BCAL_LEDonline',
-'BCAL_Layer_Eff',
 'CDC_online',
 'DAQ_online',
 'FCAL_online',
+'FCAL_invmass',
 'FDC_online',
 'FDC_Efficiency',
 'PSC_online',
@@ -16,7 +16,6 @@ subdirs = [
 'pedestal_online',
 'PS_online',
 'PSPair_online',
-'ST_Eff', 
 'ST_online_lowlevel',
 'ST_online_tracking',
 'ST_online_Tresolution',
@@ -36,13 +35,20 @@ subdirs = [
 'CDC_drift',
 'CDC_Cosmics',
 'EPICS_dump',
-'TS_scaler',
-'CDC_Efficiency']
+'CDC_Efficiency',
+'L1_online']
 
 #'L3_online',
 #'CODA_online',
 #'EVNT_online',
 
+# Apple LLVM/Clang does not support thread_local at this time
+# Skip plugins that require thread_local if Apple LLVM is detected
+require_thread_local = ['BCAL_Hadronic_Eff','FCAL_Hadronic_Eff','SC_Eff','TOF_Eff','TS_scaler']
+if "llvm" not in env["OSNAME"]:
+	for directory in require_thread_local:
+		subdirs.append(directory)
+else: print "Apple Clang does not support thread_local at this time. Skipping\n", require_thread_local
+
 
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
-

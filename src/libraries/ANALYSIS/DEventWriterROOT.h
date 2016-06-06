@@ -102,10 +102,10 @@ class DEventWriterROOT : public JObject
 		/****************************************************************************************************************************************/
 
 		//TREE INTERFACES, FILL OBJECTS
-		//Ugh.  Why are these thread_local? Because the user gets this object from JANA as const, so the class cannot be modified
-		//So, these are not class members: they are static. To make sure that the threads don't need to lock on them, they are thread_local
-		static thread_local DTreeInterface* dThrownTreeInterface;
-		static thread_local DTreeFillData dThrownTreeFillData;
+		//The non-thrown objects are created during the constructor, and thus the maps can remain const
+		//The thrown objects are created later by the user (so they can specify file name), when the object is const, so they are declared mutable
+		mutable DTreeInterface* dThrownTreeInterface;
+		mutable DTreeFillData dThrownTreeFillData;
 		map<const DReaction*, DTreeInterface*> dTreeInterfaceMap;
 		map<const DReaction*, DTreeFillData*> dTreeFillDataMap;
 

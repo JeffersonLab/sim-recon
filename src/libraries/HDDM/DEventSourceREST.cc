@@ -103,6 +103,23 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
          for (iter = comments.begin(); iter != comments.end(); ++iter) {
             std::cout << "   | " << iter->getText() << std::endl;
          }
+
+         //set version string
+         const hddm_r::DataVersionStringList& locVersionStrings = re.getDataVersionStrings();
+         hddm_r::DataVersionStringList::iterator Versioniter;
+         for (Versioniter = locVersionStrings.begin(); Versioniter != locVersionStrings.end(); ++Versioniter) {
+        	 string HDDM_DATA_VERSION_STRING = Versioniter->getText();
+             gPARMS->SetDefaultParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING);
+         }
+
+         //set REST calib context
+         const hddm_r::CcdbContextList& locContextStrings = re.getCcdbContexts();
+         hddm_r::CcdbContextList::iterator Contextiter;
+         for (Contextiter = locContextStrings.begin(); Contextiter != locContextStrings.end(); ++Contextiter) {
+        	 string REST_JANA_CALIB_CONTEXT = Contextiter->getText();
+             gPARMS->SetDefaultParameter("REST:JANACALIBCONTEXT", REST_JANA_CALIB_CONTEXT);
+         }
+
          *fin >> *record;
          continue;
       }
@@ -113,7 +130,8 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
       event.SetStatusBit(kSTATUS_REST);
       event.SetStatusBit(kSTATUS_FROM_FILE);
 	  event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
-      ++Nevents_read;
+
+	  ++Nevents_read;
       break;
    }
  

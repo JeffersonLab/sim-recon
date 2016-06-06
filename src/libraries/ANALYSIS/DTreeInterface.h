@@ -55,7 +55,7 @@ class DTreeInterface
 		// Is optional. If needed array size is not specified, it will be set to a default value.
 		void Set_InitialArraySize(string locArraySizeBranchName, UInt_t locInitialSize);
 
-		void Create_Branches(const DTreeBranchRegister& locTreeBranchRegister);
+		bool Create_Branches(const DTreeBranchRegister& locTreeBranchRegister);
 
 		//Check/read info
 		bool Get_BranchesCreatedFlag(void) const;

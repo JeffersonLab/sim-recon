@@ -1,10 +1,10 @@
 // $Id$
 //
-// File: JEventProcessor_BCAL_Layer_Eff.h
+// File: JEventProcessor_SC_Eff.h
 //
 
-#ifndef _JEventProcessor_BCAL_Layer_Eff_
-#define _JEventProcessor_BCAL_Layer_Eff_
+#ifndef _JEventProcessor_SC_Eff_
+#define _JEventProcessor_SC_Eff_
 
 #include <JANA/JEventProcessor.h>
 #include <JANA/JApplication.h>
@@ -12,10 +12,8 @@
 #include "TH1I.h"
 #include "TH2I.h"
 
-#include "BCAL/DBCALShower.h"
-#include "BCAL/DBCALPoint.h"
-#include "BCAL/DBCALUnifiedHit.h"
-//#include "TRIGGER/DTrigger.h"
+#include "START_COUNTER/DSCHit.h"
+#include "TRIGGER/DTrigger.h"
 #include "TRACKING/DTrackTimeBased.h"
 
 #include "PID/DChargedTrack.h"
@@ -35,12 +33,12 @@
 using namespace jana;
 using namespace std;
 
-class JEventProcessor_BCAL_Layer_Eff : public jana::JEventProcessor
+class JEventProcessor_SC_Eff : public jana::JEventProcessor
 {
 	public:
-		JEventProcessor_BCAL_Layer_Eff(){};
-		~JEventProcessor_BCAL_Layer_Eff(){};
-		const char* className(void){return "JEventProcessor_BCAL_Layer_Eff";}
+		JEventProcessor_SC_Eff(){};
+		~JEventProcessor_SC_Eff(){};
+		const char* className(void){return "JEventProcessor_SC_Eff";}
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -49,20 +47,19 @@ class JEventProcessor_BCAL_Layer_Eff : public jana::JEventProcessor
 		jerror_t erun(void);						///< Called every time run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		pair<const DBCALPoint*, double> Find_NearestClusterPoint(double locProjectedSector, const set<const DBCALPoint*>& locClusterLayerBCALPoints);
-		pair<const DBCALUnifiedHit*, double> Find_NearestClusterHit(double locProjectedSector, const set<const DBCALUnifiedHit*>& locBCALUnifiedHits);
-
-		double Calc_AverageSector(const set<const DBCALPoint*>& locBCALPoints);
-		double Calc_ProjectedSector(int locLayer, const map<int, set<const DBCALPoint*> >& locSortedPoints);
+		bool Cut_PIDDeltaT(const DChargedTrackHypothesis* locChargedTrackHypothesis);
 
 		//TRACK REQUIREMENTS
-		double dMinTrackingFOM, dMinPIDFOM;
+		double dMinTrackingFOM;
 		unsigned int dMinNumTrackHits;
+		double dMaxVertexR;
 		int dMinHitRingsPerCDCSuperlayer, dMinHitPlanesPerFDCPackage;
 		DCutAction_TrackHitPattern* dCutAction_TrackHitPattern;
+		map<DetectorSystem_t, double> dMaxPIDDeltaTMap;
 
 		//HISTOGRAMS
-		map<int, map<bool, TH1I*> > dHistMap_HitFound, dHistMap_HitTotal; //int = layer, bool = isUpstream
+		TH2I* dHist_HitFound;
+		TH2I* dHist_HitTotal;
 
 		//TREE
 		DTreeInterface* dTreeInterface;
@@ -71,5 +68,5 @@ class JEventProcessor_BCAL_Layer_Eff : public jana::JEventProcessor
 		static thread_local DTreeFillData dTreeFillData;
 };
 
-#endif // _JEventProcessor_BCAL_Layer_Eff_
+#endif // _JEventProcessor_SC_Eff_
 

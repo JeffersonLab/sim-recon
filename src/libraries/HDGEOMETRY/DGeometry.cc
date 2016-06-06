@@ -1559,9 +1559,11 @@ bool DGeometry::GetTargetZ(double &z_target) const
 
 	if(!Get("//composition[@name='targetVessel']/posXYZ[@volume='targetTube']/@X_Y_Z", xyz_vessel)) return false;
 	if(!Get("//composition[@name='Target']/posXYZ[@volume='targetVessel']/@X_Y_Z", xyz_target)) return false;
-	if(!Get("//composition[@name='GlueXdetector']/posXYZ[@volume='Target']/@X_Y_Z", xyz_detector)) return false;
+	if(!Get("//posXYZ[@volume='Target']/@X_Y_Z", xyz_detector)) return false;
 
 	z_target = xyz_vessel[2] + xyz_target[2] + xyz_detector[2];
+
+	//_DBG_ << "Target z position: " << z_target <<endl;
 
 	return true;
 }
@@ -1599,12 +1601,12 @@ bool DGeometry::GetStartCounterGeom(vector<vector<DVector3> >&pos,
     
     // Get rotation angles
     vector<double>sc_rot_angles;
-    //Get("//posXYZ[@volume='startCntr']/@rot", sc_rot_angles);
-    //double ThetaX=sc_rot_angles[0]*M_PI/180.;
-    //double ThetaY=sc_rot_angles[1]*M_PI/180.;
-    Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
+    Get("//posXYZ[@volume='startCntr']/@rot", sc_rot_angles);
     double ThetaX=sc_rot_angles[0]*M_PI/180.;
     double ThetaY=sc_rot_angles[1]*M_PI/180.;
+    Get("//posXYZ[@volume='StartCntr']/@rot", sc_rot_angles);
+    //double ThetaX=sc_rot_angles[0]*M_PI/180.;
+    //double ThetaY=sc_rot_angles[1]*M_PI/180.;
     double ThetaZ=sc_rot_angles[2]*M_PI/180.;
 
     double num_paddles;

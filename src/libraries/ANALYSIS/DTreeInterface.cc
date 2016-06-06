@@ -119,8 +119,11 @@ const TList* DTreeInterface::Get_UserInfo(void) const
 	return NULL; //NOT SUPPORTED! //Unsafe otherwise. This guarantees that the user info is setup first, and won't be modified while reading it
 }
 
-void DTreeInterface::Create_Branches(const DTreeBranchRegister& locTreeBranchRegister)
+bool DTreeInterface::Create_Branches(const DTreeBranchRegister& locTreeBranchRegister)
 {
+	//return value: true if created, false if previously created (nothing done here)
+		//if false, user can safely delete memory in the branch register UserInfo TList
+
 	//MUST CARRY AROUND A REFERENCE TO THIS.  ONLY READ/MODIFY THE MAP WITHIN A FILE LOCK. 
 	map<string, size_t>& locFundamentalArraySizeMap = Get_FundamentalArraySizeMap(dTree);
 
@@ -130,7 +133,7 @@ void DTreeInterface::Create_Branches(const DTreeBranchRegister& locTreeBranchReg
 		if(dTree->GetNbranches() > 0)
 		{
 			japp->Unlock(dFileName); //UNLOCK FILE
-			return;
+			return false;
 		}
 
 		//set user info
@@ -166,6 +169,8 @@ void DTreeInterface::Create_Branches(const DTreeBranchRegister& locTreeBranchReg
 			Create_Branch(locTreeBranchRegister, locBranchName, locFundamentalArraySizeMap);
 	}
 	japp->Unlock(dFileName); //UNLOCK FILE
+
+	return true;
 }
 
 void DTreeInterface::Create_Branch(const DTreeBranchRegister& locTreeBranchRegister, string locBranchName, map<string, size_t>& locFundamentalArraySizeMap)
