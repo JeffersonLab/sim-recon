@@ -54,11 +54,11 @@ void FDC_Efficiency(bool save = 0){
   trings_acc->SetLineColor(2);
   trings_acc->Draw("same");
 
-  Float_t minScale = 0.0;
+  Float_t minScale = 0.5;
   Float_t maxScale = 1.0;    
 
   gDirectory->cd("../FDC_View");
-  TCanvas *cEfficiency_Wire = new TCanvas("cEfficiency_Wire", "Wire Efficiency", 900, 800);
+  TCanvas *cEfficiency_Wire = new TCanvas("cEfficiency_Wire", "Wire Efficiency", 1000, 800);
   cEfficiency_Wire->Divide(6,4);
 
   TGraphAsymmErrors *EffWire[24];
@@ -75,8 +75,8 @@ void FDC_Efficiency(bool save = 0){
     if(h1 && h2){
       EffWire[icell-1] = new  TGraphAsymmErrors(h1, h2, "ac");
       EffWire[icell-1]->Draw("ap");
-      EffWire[icell-1]->SetMinimum(0.0);
-      EffWire[icell-1]->SetMaximum(1.0);
+      EffWire[icell-1]->SetMinimum(minScale);
+      EffWire[icell-1]->SetMaximum(maxScale);
       EffWire[icell-1]->SetTitle("");
       EffWire[icell-1]->GetXaxis()->SetTitle("Wire Number");
       EffWire[icell-1]->GetYaxis()->SetTitle("Efficiency");
@@ -86,7 +86,7 @@ void FDC_Efficiency(bool save = 0){
   }
   if (save) cEfficiency_Wire->SaveAs("cEfficiencyWire.pdf");
 
-  TCanvas *cEfficiency_Pseudo = new TCanvas("cEfficiency_Pseudo", "Pseudo Hit Efficiency", 900, 800);
+  TCanvas *cEfficiency_Pseudo = new TCanvas("cEfficiency_Pseudo", "Pseudo Hit Efficiency", 1000, 800);
   cEfficiency_Pseudo->Divide(6,4);
     
   for(unsigned int icell=1; icell<=24; icell++){
@@ -100,8 +100,9 @@ void FDC_Efficiency(bool save = 0){
       
     if(h3 && h4){
       h3->Divide(h4);
-      // h3->SetMinimum(minScale);
-      // h3->SetMaximum(maxScale);
+      //h3->SetMinimum(minScale);
+      h3->SetMinimum(0);
+      h3->SetMaximum(maxScale);
       h3->GetXaxis()->SetTitle("X Position (cm)");
       h3->GetYaxis()->SetTitle("Y Position (cm)");
       h3->SetStats(0);
