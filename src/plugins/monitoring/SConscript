@@ -9,7 +9,6 @@ subdirs = [
 'DAQ_online',
 'FCAL_online',
 'FCAL_invmass',
-'FCAL_Hadronic_Eff', 
 'FDC_online',
 'FDC_Efficiency',
 'PSC_online',
