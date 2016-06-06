@@ -6,11 +6,14 @@ import sbms
 Import('*')
 
 # Verify AMPTOOLS environment variable is set
-if os.getenv('AMPTOOLS', 'nada')!='nada' and os.getenv('CERN', 'nada')!='nada':
+if os.getenv('AMPTOOLS') != None:
 
 	env = env.Clone()
-	
-	sbms.AddCERNLIB(env)
+
+	env.PrependUnique(FORTRANFLAGS = ['-ffixed-line-length-0', '-fno-second-underscore', '-fno-automatic'])
+	env.AppendUnique(LINKFLAGS = ['-rdynamic', '-Wl,--no-as-needed'])
+	env.SetOption('warn', 'no-fortran-cxx-mix')  # supress warnings about linking fortran with c++
+
 	sbms.AddAmpTools(env)
 	sbms.AddROOT(env)
 	sbms.library(env)
