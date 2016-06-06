@@ -211,6 +211,9 @@ jerror_t JEventProcessor_TOF_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t 
 		double locBestTrackingFOM = -1.0;
 		for(auto& locChargedTrackHypothesis : locChargedTrack->dChargedTrackHypotheses)
 		{
+			if((locChargedTrackHypothesis->PID() == Electron) || (locChargedTrackHypothesis->PID() == Positron))
+				continue; //don't evaluate for these
+
 			if(locChargedTrackHypothesis->position().Perp() > dMaxVertexR)
 				continue; //don't trust reconstruction if not close to target
 
