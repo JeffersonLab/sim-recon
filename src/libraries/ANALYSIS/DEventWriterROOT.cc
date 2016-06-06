@@ -1,12 +1,5 @@
 #include "DEventWriterROOT.h"
 
-//TREE INTERFACES, FILL OBJECTS
-//Ugh.  Why are these thread_local? Because the user gets this object from JANA as const, so the class cannot be modified
-//So, these are not class members: they are static. To make sure that the threads don't need to lock on them, they are thread_local
-
-thread_local DTreeInterface* DEventWriterROOT::dThrownTreeInterface = NULL;
-thread_local DTreeFillData DEventWriterROOT::dThrownTreeFillData;
-
 DEventWriterROOT::DEventWriterROOT(JEventLoop* locEventLoop)
 {
 	dInitNumThrownArraySize = 20;
@@ -14,6 +7,7 @@ DEventWriterROOT::DEventWriterROOT(JEventLoop* locEventLoop)
 	dInitNumTrackArraySize = 50;
 	dInitNumNeutralArraySize = 15;
 	dInitNumComboArraySize = 100;
+	dThrownTreeInterface = NULL;
 
 	//BEWARE: IF THIS IS CHANGED, CHANGE IN THE BLUEPRINT FACTORY AND THE ANALYSIS UTILITIES ALSO!!
 	dTrackSelectionTag = "PreSelect";
@@ -199,9 +193,22 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 	locParticleNameList->SetName("ParticleNameList");
 	locUserInfo->Add(locParticleNameList);
 
+	//Set some misc info
 	ostringstream locKinFitTypeStream;
 	locKinFitTypeStream << locKinFitType;
 	locMiscInfoMap->Add(new TObjString("KinFitType"), new TObjString(locKinFitTypeStream.str().c_str()));
+
+	string HDDM_DATA_VERSION_STRING = "";
+	gPARMS->GetParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING);
+	if(HDDM_DATA_VERSION_STRING != "")
+		locMiscInfoMap->Add(new TObjString("REST:DATAVERSIONSTRING"), new TObjString(HDDM_DATA_VERSION_STRING.c_str()));
+
+	string REST_JANA_CALIB_CONTEXT = "";
+	gPARMS->GetParameter("REST:JANACALIBCONTEXT", REST_JANA_CALIB_CONTEXT);
+	if(REST_JANA_CALIB_CONTEXT == "")
+		gPARMS->GetParameter("JANA_CALIB_CONTEXT", REST_JANA_CALIB_CONTEXT);
+	if(REST_JANA_CALIB_CONTEXT != "")
+		locMiscInfoMap->Add(new TObjString("REST:JANACALIBCONTEXT"), new TObjString(REST_JANA_CALIB_CONTEXT.c_str()));
 
 	//find the # particles of each pid
 	map<Particle_t, unsigned int> locParticleNumberMap;

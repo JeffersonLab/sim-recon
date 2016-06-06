@@ -178,21 +178,21 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         // Skip digihit if pulse peak is lower than cut value
         double P = PPobj->pulse_peak - PPobj->pedestal;
 
-        DTAGMHit *hit = new DTAGMHit;
-        int row = digihit->row;
+        // Apply calibration constants
+        double A = digihit->pulse_integral;
+        double T = digihit->pulse_time;
+        A -= pedestal;
+	int row = digihit->row;
         int column = digihit->column;
+        if (A < CUT_FACTOR*int_cuts[row][column]) continue;
+
+	DTAGMHit *hit = new DTAGMHit;    
         hit->row = row;
         hit->column = column;
         double Elow = tagmGeom.getElow(column);
         double Ehigh = tagmGeom.getEhigh(column);
         hit->E = (Elow + Ehigh)/2;
-        hit->t = 0;
 
-        // Apply calibration constants
-        double A = digihit->pulse_integral;
-        double T = digihit->pulse_time;
-        A -= pedestal;
-        if (A < CUT_FACTOR*int_cuts[row][column]) continue;
         hit->integral = A;
         hit->pulse_peak = P;
         hit->npix_fadc = A * fadc_a_scale * fadc_gains[row][column];
