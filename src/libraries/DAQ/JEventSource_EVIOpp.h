@@ -147,9 +147,9 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		list<DParsedEvent*> parsed_events;
 
 		std::atomic<uint_fast64_t> NEVENTS_PROCESSED;
-		std::atomic<uint_fast64_t> NDISPATCHER_IDLE;
-		std::atomic<uint_fast64_t> NPROCESSOR_IDLE;
-		std::atomic<uint_fast64_t> NPARSER_IDLE;
+		std::atomic<uint_fast64_t> NDISPATCHER_STALLED;
+		std::atomic<uint_fast64_t> NPARSER_STALLED;
+		std::atomic<uint_fast64_t> NEVENTBUFF_STALLED;
 		
 		uint64_t MAX_EVENT_RECYCLES;
 		uint64_t MAX_OBJECT_RECYCLES;
@@ -183,7 +183,6 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		bool     PARSE_EPICS;
 		bool     PARSE_EVENTTAG;
 		bool     PARSE_TRIGGER;
-		bool     MAKE_DOM_TREE;
 		int      ET_STATION_NEVENTS;
 		bool     ET_STATION_CREATE_BLOCKING;
 		bool     LOOP_FOREVER;

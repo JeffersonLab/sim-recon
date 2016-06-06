@@ -41,9 +41,9 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 {
 	DONE = false;
 	NEVENTS_PROCESSED = 0;
-	NDISPATCHER_IDLE  = 0;
-	NPROCESSOR_IDLE   = 0;
-	NPARSER_IDLE      = 0;
+	NDISPATCHER_STALLED  = 0;
+	NEVENTBUFF_STALLED   = 0;
+	NPARSER_STALLED      = 0;
 
 	// Initialize dedicated JStreamLog used for debugging messages
 	evioout.SetTag("--- EVIO ---: ");
@@ -212,12 +212,28 @@ JEventSource_EVIOpp::~JEventSource_EVIOpp()
 	if(PRINT_STATS){
 		auto tdiff = duration_cast<duration<double>>(tend - tstart);
 		double rate = (double)NEVENTS_PROCESSED/tdiff.count();
+		
+		uint32_t NTHREADS_PROC = 1;
+		if(gPARMS->Exists("NTHREADS")) gPARMS->GetParameter("NTHREADS", NTHREADS_PROC);
+
+		// Calculate fraction of total time each stage spent
+		// idle. There was a 1ms sleep for each one of these
+		double tfrac_dis   = (double)NDISPATCHER_STALLED/1000.0/tdiff.count()*100.0;
+		double tfrac_parse = (double)NPARSER_STALLED/1000.0/(double)NTHREADS/tdiff.count()*100.0;
+		double tfrac_proc  = (double)NEVENTBUFF_STALLED/1000.0/tdiff.count()*100.0;
+		
+		char sdispatcher[256];
+		char sparser[256];
+		char sprocessor[256];
+		sprintf(sdispatcher, "  NDISPATCHER_STALLED = %10ld (%4.1f%%)", (unsigned long)NDISPATCHER_STALLED, tfrac_dis  );
+		sprintf(sparser    , "      NPARSER_STALLED = %10ld (%4.1f%%)", (unsigned long)NPARSER_STALLED    , tfrac_parse);
+		sprintf(sprocessor , "   NEVENTBUFF_STALLED = %10ld (%4.1f%%)", (unsigned long)NEVENTBUFF_STALLED , tfrac_proc );
 
 		cout << endl;
 		cout << " EVIO Processing rate = " << rate << " Hz" << endl;
-		cout << "     NDISPATCHER_IDLE = " << NDISPATCHER_IDLE <<endl;
-		cout << "         NPARSER_IDLE = " << NPARSER_IDLE <<endl;
-		cout << "      NPROCESSOR_IDLE = " << NPROCESSOR_IDLE << endl;
+		cout << sdispatcher << endl;
+		cout << sparser     << endl;
+		cout << sprocessor  << endl;
 	}
 	
 	// Delete all BOR objects
@@ -266,7 +282,7 @@ void JEventSource_EVIOpp::Dispatcher(void)
 				break;
 			}
 			if(!thr) {
-				NDISPATCHER_IDLE++;
+				NDISPATCHER_STALLED++;
 				this_thread::sleep_for(milliseconds(1));
 			}
 			if(DONE) break;
@@ -355,7 +371,7 @@ jerror_t JEventSource_EVIOpp::GetEvent(JEvent &event)
 	unique_lock<std::mutex> lck(PARSED_EVENTS_MUTEX);
 	while(parsed_events.empty()){
 		if(DONE) return NO_MORE_EVENTS_IN_SOURCE;
-		NPROCESSOR_IDLE++;
+		NEVENTBUFF_STALLED++;
 		PARSED_EVENTS_CV.wait_for(lck,std::chrono::milliseconds(1));
 	}
 
