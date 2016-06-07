@@ -127,7 +127,7 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
 }
 
 //------------------------------------------------------------------
-// evnt   -Fill histograms here
+// evnt - Do processin for each event here
 //------------------------------------------------------------------
 jerror_t MyProcessor::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
@@ -142,7 +142,7 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, uint64_t eventnumber)
    if (!record)
       return NOERROR;
    
-   // Smear values and add noise hits
+   // Smear values
    smearer->SmearEvent(record);
    
    // Write event to output file

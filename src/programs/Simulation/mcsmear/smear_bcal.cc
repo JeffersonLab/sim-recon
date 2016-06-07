@@ -13,7 +13,7 @@
 #define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
 #endif
 
-TH1D *hNincident_particles = NULL;
+//TH1D *hNincident_particles = NULL;
 
 using namespace bcal_smearing;
 
@@ -180,8 +180,8 @@ void BCALSmearer::GetSiPMHits(hddm_s::HDDM *record,
       }
    }
    
-   if (hNincident_particles)
-      hNincident_particles->Fill(incident_particles.size());
+   //if (hNincident_particles)
+   //   hNincident_particles->Fill(incident_particles.size());
 }
 
 //-----------
@@ -312,7 +312,7 @@ void BCALSmearer::ApplyPoissonStatistics(map<bcal_index, CellHits> &SiPMHits)
    /// We do this by converting the cell's attenuated energy into
    /// photo-electrons and then sampling from a Poisson distribution with that
    /// mean. The ratio of the quantized, sampled value to the unquantized
-   // integral (in PE) is used to scale the energy.
+   /// integral (in PE) is used to scale the energy.
 
    if(bcal_config->NO_POISSON_STATISTICS) return;
 
@@ -535,7 +535,7 @@ void BCALSmearer::FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<i
       vector<double> uphitsTDC;
       vector<double> dnhitsTDC;
 
-      // The histogram should have the signal size for the ADC, but the TADC
+      // The histogram should have the signal size for the ADC, but the TDC
       // leg will actually have a larger size since the pre-amp gain will be
       // set differently. Scale the threshold down here to accomodate this.
       double preamp_gain_tdc = 5.0;
