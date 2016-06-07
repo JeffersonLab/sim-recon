@@ -698,7 +698,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	      bool skip_ring
 		=(my_cdchits[cdc_index]->hit->wire->ring==RING_TO_SKIP);
 	      // update covariance matrix and state vector
-	      if (my_cdchits[cdc_index]->hit->wire->ring!=RING_TO_SKIP && tdrift > 0.){
+	      if (my_cdchits[cdc_index]->hit->wire->ring!=RING_TO_SKIP && tdrift >= 0.){
 		C=Ctest;
 		S+=res*K;
 	      }
@@ -717,7 +717,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
           if(tdrift < 0.) cdc_updates[cdc_index].used_in_fit=false;
 	    
 	      // Update chi2 and number of degrees of freedom for this hit
-	      if (skip_ring==false && tdrift > 0.){
+	      if (skip_ring==false && tdrift >= 0.){
 		chisq+=scale*res*res/Vc;
 		numdof++;
 	      }
