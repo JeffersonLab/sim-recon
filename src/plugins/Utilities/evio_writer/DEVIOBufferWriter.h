@@ -61,6 +61,11 @@ class DEVIOBufferWriter
 
   protected:
    
+        void WriteBuiltTriggerBank(vector<uint32_t> &buff, 
+                                   JEventLoop *loop, 
+                                   vector<const DCODAROCInfo*> &coda_rocinfos, 
+                                   vector<const DCODAEventInfo*> &coda_events) const;
+
 		void WriteCAEN1290Data(vector<uint32_t> &buff,
                                vector<const DCAEN1290TDCHit*>    &caen1290hits,
                                vector<const DCAEN1290TDCConfig*> &caen1290configs, 

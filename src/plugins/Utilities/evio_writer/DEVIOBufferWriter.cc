@@ -1,3 +1,6 @@
+// This class is responsible for taking a single event and writing it 
+// into a buffer in EVIO format
+
 #include "DEVIOBufferWriter.h"
 
 
@@ -43,9 +46,11 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
 	vector<const DEPICSvalue*>        epicsValues;
 	vector<const DCODAEventInfo*>     coda_events;
 	vector<const DCODAROCInfo*>       coda_rocinfos;
+    vector<const DL1Info*>            l1_info;
 
-    // comment
+    // Optionally, allow the user to only save hits from specific objects
     if(objects_to_save.size()==0) {
+        // If no special object list is passed, assume we should save everything
         loop->Get(f250tts);
         loop->Get(f250pis);
         loop->Get(f250wrds);
@@ -63,52 +68,89 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
         loop->Get(epicsValues);
         loop->Get(coda_events);
         loop->Get(coda_rocinfos);
+        loop->Get(l1_info);
     } else {
-        loop->Get(epicsValues);
+        // only save hits that correspond to certain reconstructed objects
+        loop->Get(epicsValues);   // always read EPICS data
+        loop->Get(l1_info);       // always read extra trigger data
         loop->Get(coda_events);
         loop->Get(coda_rocinfos);
         loop->Get(f125configs);
         loop->Get(F1configs);
         loop->Get(caen1290configs);
+
+        // For ease-of-use, the list of reconstructed objects is passed as a vector<const JObject *>
+        // to handle the storage of the many different types of objects: showers, tracks, TOF hits, etc.
+        // The only downside is that we then don't know the actual type of the object.
+        // Therefore, we have to do some gymnastics:
+        // 1) see if the object pointed to is a base hit type
+        // 2) for any reconstructed object, just blindly grab all of the associated low-level hits and add them
+        // This technique only works assuming that all of the object associations have been properly formed
         for(vector<const JObject *>::iterator obj_itr = objects_to_save.begin();
             obj_itr != objects_to_save.end(); obj_itr++) {
             const JObject *obj_ptr = *obj_itr;
 
-            vector<const Df250TriggerTime*>   obj_f250tts;
-            vector<const Df250PulseIntegral*> obj_f250pis;
-            vector<const Df250WindowRawData*> obj_f250wrds;
-            vector<const Df125TriggerTime*>   obj_f125tts;
-            vector<const Df125PulseIntegral*> obj_f125pis;
-            vector<const Df125CDCPulse*>      obj_f125cdcpulses;
-            vector<const Df125FDCPulse*>      obj_f125fdcpulses;
-            vector<const Df125WindowRawData*> obj_f125wrds;
-            vector<const DCAEN1290TDCHit*>    obj_caen1290hits;
-            vector<const DF1TDCHit*>          obj_F1hits;
-            vector<const DF1TDCTriggerTime*>  obj_F1tts;
-
-            obj_ptr->Get(obj_f250tts);
-            obj_ptr->Get(obj_f250pis);
-            obj_ptr->Get(obj_f250wrds);
-            obj_ptr->Get(obj_f125tts);
-            obj_ptr->Get(obj_f125pis);
-            obj_ptr->Get(obj_f125cdcpulses);
-            obj_ptr->Get(obj_f125fdcpulses);
-            obj_ptr->Get(obj_f125wrds);
-            obj_ptr->Get(obj_caen1290hits);
-            obj_ptr->Get(obj_F1hits);
-            obj_ptr->Get(obj_F1tts);
-
-            f250tts.insert(f250tts.end(), obj_f250tts.begin(), obj_f250tts.end());
-            f250pis.insert(f250pis.end(), obj_f250pis.begin(), obj_f250pis.end());
-            f250wrds.insert(f250wrds.end(), obj_f250wrds.begin(), obj_f250wrds.end());
-            f125tts.insert(f125tts.end(), obj_f125tts.begin(), obj_f125tts.end());
-            f125pis.insert(f125pis.end(), obj_f125pis.begin(), obj_f125pis.end());
-            f125cdcpulses.insert(f125cdcpulses.end(), obj_f125cdcpulses.begin(), obj_f125cdcpulses.end());
-            f125fdcpulses.insert(f125fdcpulses.end(), obj_f125fdcpulses.begin(), obj_f125fdcpulses.end());
-            f125wrds.insert(f125wrds.end(), obj_f125wrds.begin(), obj_f125wrds.end());
-            caen1290hits.insert(caen1290hits.end(), obj_caen1290hits.begin(), obj_caen1290hits.end());
-            F1hits.insert(F1hits.end(), obj_F1hits.begin(), obj_F1hits.end());
-            F1tts.insert(F1tts.end(), obj_F1tts.begin(), obj_F1tts.end());
+            // first, see if these are low-level hit objects
+            if(auto *llobj_ptr = dynamic_cast<const Df250TriggerTime *>(obj_ptr)) {
+                f250tts.push_back(llobj_ptr);
+            } else if(auto *llobj_ptr = dynamic_cast<const Df250PulseIntegral *>(obj_ptr)) {
+                f250pis.push_back(llobj_ptr);
+            } else if(auto *llobj_ptr = dynamic_cast<const Df250WindowRawData *>(obj_ptr)) {
+                f250wrds.push_back(llobj_ptr);
+            } else if(auto *llobj_ptr = dynamic_cast<const Df125TriggerTime *>(obj_ptr)) {
+                f125tts.push_back(llobj_ptr);
+            } else if(auto *llobj_ptr = dynamic_cast<const Df125PulseIntegral *>(obj_ptr)) {
+                f125pis.push_back(llobj_ptr);
+            } else if(auto *llobj_ptr = dynamic_cast<const Df125CDCPulse *>(obj_ptr)) {
+                f125cdcpulses.push_back(llobj_ptr);
+            } else if(auto *llobj_ptr = dynamic_cast<const Df125FDCPulse *>(obj_ptr)) {
+                f125fdcpulses.push_back(llobj_ptr);
+            } else if(auto *llobj_ptr = dynamic_cast<const Df125WindowRawData *>(obj_ptr)) {
+                f125wrds.push_back(llobj_ptr);
+            } else if(auto *llobj_ptr = dynamic_cast<const DCAEN1290TDCHit *>(obj_ptr)) {
+                caen1290hits.push_back(llobj_ptr);
+            } else if(auto *llobj_ptr = dynamic_cast<const DF1TDCHit *>(obj_ptr)) {
+                F1hits.push_back(llobj_ptr);
+            } else if(auto *llobj_ptr = dynamic_cast<const DF1TDCTriggerTime *>(obj_ptr)) {
+                F1tts.push_back(llobj_ptr);
+            } else {
+                // if not, for a reconstructed object, just get all of the possible hits
+                vector<const Df250TriggerTime*>   obj_f250tts;
+                vector<const Df250PulseIntegral*> obj_f250pis;
+                vector<const Df250WindowRawData*> obj_f250wrds;
+                vector<const Df125TriggerTime*>   obj_f125tts;
+                vector<const Df125PulseIntegral*> obj_f125pis;
+                vector<const Df125CDCPulse*>      obj_f125cdcpulses;
+                vector<const Df125FDCPulse*>      obj_f125fdcpulses;
+                vector<const Df125WindowRawData*> obj_f125wrds;
+                vector<const DCAEN1290TDCHit*>    obj_caen1290hits;
+                vector<const DF1TDCHit*>          obj_F1hits;
+                vector<const DF1TDCTriggerTime*>  obj_F1tts;
+                
+                obj_ptr->Get(obj_f250tts);
+                obj_ptr->Get(obj_f250pis);
+                obj_ptr->Get(obj_f250wrds);
+                obj_ptr->Get(obj_f125tts);
+                obj_ptr->Get(obj_f125pis);
+                obj_ptr->Get(obj_f125cdcpulses);
+                obj_ptr->Get(obj_f125fdcpulses);
+                obj_ptr->Get(obj_f125wrds);
+                obj_ptr->Get(obj_caen1290hits);
+                obj_ptr->Get(obj_F1hits);
+                obj_ptr->Get(obj_F1tts);
+                
+                f250tts.insert(f250tts.end(), obj_f250tts.begin(), obj_f250tts.end());
+                f250pis.insert(f250pis.end(), obj_f250pis.begin(), obj_f250pis.end());
+                f250wrds.insert(f250wrds.end(), obj_f250wrds.begin(), obj_f250wrds.end());
+                f125tts.insert(f125tts.end(), obj_f125tts.begin(), obj_f125tts.end());
+                f125pis.insert(f125pis.end(), obj_f125pis.begin(), obj_f125pis.end());
+                f125cdcpulses.insert(f125cdcpulses.end(), obj_f125cdcpulses.begin(), obj_f125cdcpulses.end());
+                f125fdcpulses.insert(f125fdcpulses.end(), obj_f125fdcpulses.begin(), obj_f125fdcpulses.end());
+                f125wrds.insert(f125wrds.end(), obj_f125wrds.begin(), obj_f125wrds.end());
+                caen1290hits.insert(caen1290hits.end(), obj_caen1290hits.begin(), obj_caen1290hits.end());
+                F1hits.insert(F1hits.end(), obj_F1hits.begin(), obj_F1hits.end());
+                F1tts.insert(F1tts.end(), obj_F1tts.begin(), obj_F1tts.end());
+            }
         }
     }
 	
@@ -158,12 +200,51 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
 		// Replace coda_rocinfos with filtered list
 		coda_rocinfos = my_coda_rocinfos;
 	}
-	
+
+    unsigned int Nevents = loop->GetNevents();
+		
 	// Physics Bank Header
 	buff.clear();
 	buff.push_back(0); // Physics Event Length (must be updated at the end)
 	buff.push_back( 0xFF701001);// 0xFF70=SEB in single event mode, 0x10=bank of banks, 0x01=1event
 	
+	// Write Built Trigger Bank
+	WriteBuiltTriggerBank(buff, loop, coda_rocinfos, coda_events);
+
+	// Write EventTag
+	WriteEventTagData(buff, loop->GetJEvent().GetStatus(), l3trigger);
+
+	// Write CAEN1290TDC hits
+	WriteCAEN1290Data(buff, caen1290hits, caen1290configs, Nevents);
+
+	// Write F1TDC hits
+	WriteF1Data(buff, F1hits, F1tts, F1configs, Nevents);
+	
+	// Write f250 hits
+	Writef250Data(buff, f250pis, f250tts, f250wrds, Nevents);
+	
+	// Write f125 hits
+	Writef125Data(buff, f125pis, f125cdcpulses, f125fdcpulses, f125tts, f125wrds, f125configs, Nevents);
+	
+    // Write out extra TS data if it exists ("sync event")
+    if(l1_info.size() > 0) {
+        WriteTSSyncData(loop, buff, l1_info[0]);
+    }
+
+
+	// Update global header length
+	if(!buff.empty()) buff[0] = buff.size()-1;
+}
+
+
+//------------------
+// WriteBuiltTriggerBank
+//------------------
+void DEVIOBufferWriter::WriteBuiltTriggerBank(vector<uint32_t> &buff, 
+                                              JEventLoop *loop, 
+                                              vector<const DCODAROCInfo*> &coda_rocinfos, 
+                                              vector<const DCODAEventInfo*> &coda_events) const
+{
 	// Built Trigger Bank
 	uint32_t built_trigger_bank_len_idx = buff.size();
 	buff.push_back(0); // Length
@@ -199,8 +280,6 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
 	buff.push_back(0xD3850001); // 0xD3=EB id (D3 stands for hallD level 3), 0x85=16bit segment(8 is for padding), 0001=length of segment
 	buff.push_back((uint32_t)event_type); 
 
-    unsigned int Nevents = loop->GetNevents();
-	
 	//--- ROC Data ---
 	// uint32_t segments for ROC timestamp and misc. data
 	for(uint32_t i=0; i<coda_rocinfos.size(); i++){
@@ -218,32 +297,6 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
 	
 	// Update Built trigger bank length
 	buff[built_trigger_bank_len_idx] = buff.size() - built_trigger_bank_len_idx - 1;
-
-	// Write EventTag
-	WriteEventTagData(buff, loop->GetJEvent().GetStatus(), l3trigger);
-
-	// Write CAEN1290TDC hits
-	WriteCAEN1290Data(buff, caen1290hits, caen1290configs, Nevents);
-
-	// Write F1TDC hits
-	WriteF1Data(buff, F1hits, F1tts, F1configs, Nevents);
-	
-	// Write f250 hits
-	Writef250Data(buff, f250pis, f250tts, f250wrds, Nevents);
-	
-	// Write f125 hits
-	Writef125Data(buff, f125pis, f125cdcpulses, f125fdcpulses, f125tts, f125wrds, f125configs, Nevents);
-	
-    // Write out extra TS data if it exists ("sync event")
-    vector<const DL1Info*> l1_info;
-    loop->Get(l1_info);
-    if(l1_info.size() > 0) {
-        WriteTSSyncData(loop, buff, l1_info[0]);
-    }
-
-
-	// Update global header length
-	if(!buff.empty()) buff[0] = buff.size()-1;
 }
 
 //------------------
