@@ -73,6 +73,27 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
       return NO_MORE_EVENTS_IN_SOURCE;
    }
 
+#if HDDM_SETPOSITION_EXAMPLE
+   static std::ifstream fevlist("events.list");
+   static int events_to_go = 0;
+   if (events_to_go-- == 0 && fevlist.good()) {
+      uint64_t start;
+      uint32_t offset, status;
+      fevlist >> start >> offset >> status >> events_to_go;
+      if (fevlist.good())
+         fin->setPosition(hddm_r::streamposition(start, offset, status));
+   }
+#endif
+
+#if HDDM_GETPOSITION_EXAMPLE
+   hddm_r::streamposition pos(fin->getPosition());
+   // Later on below, if this event passes all of your selection cuts
+   // then you might want to write the event position to output, as in
+   // std::cout << "interesting event found at " 
+   //           << pos.start << "," << pos.offset << "," << pos.status
+   //           << std::endl;
+#endif
+
    hddm_r::HDDM *record = new hddm_r::HDDM();
    try{
       *fin >> *record;
