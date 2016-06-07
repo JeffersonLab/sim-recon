@@ -77,7 +77,7 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
       case 'N': config->ADD_NOISE=true;                    break;
       case 's': config->SMEAR_HITS=false;                  break;
       case 'i': config->IGNORE_SEEDS=true;                 break;
-      case 'r': SetSeeds(&ptr[2]);                         break;
+      case 'r': config->SetSeeds(&ptr[2]);                         break;
       case 'd': config->DROP_TRUTH_HITS=true;              break;
       }
     }

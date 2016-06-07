@@ -64,14 +64,14 @@ void BCALSmearer::SmearEvent(hddm_s::HDDM *record)
     ApplySamplingFluctuations(SiPMHits, incident_particles);
 
     // Merge hits associated with different incident particles
-    MergeHits(SiPMHits, BCAL_TWO_HIT_RESOL);
+    MergeHits(SiPMHits, bcal_config->BCAL_TWO_HIT_RESOL);
 
     // Poisson Statistics
     ApplyPoissonStatistics(SiPMHits);
    
     // Place all hit cells into list indexed by fADC ID
     map<int, SumHits> bcalfADC;
-    SortSiPMHits(SiPMHits, bcalfADC, BCAL_TWO_HIT_RESOL);
+    SortSiPMHits(SiPMHits, bcalfADC, bcal_config->BCAL_TWO_HIT_RESOL);
 
     // Electronic noise/Dark hits Smearing
     SimpleDarkHitsSmear(bcalfADC);
@@ -79,10 +79,10 @@ void BCALSmearer::SmearEvent(hddm_s::HDDM *record)
     // Apply energy threshold to dismiss low-energy hits
     map<int, fADCHitList> fADCHits;
     map<int, TDCHitList> TDCHits;
-    FindHits(BCAL_ADC_THRESHOLD_MEV, bcalfADC, fADCHits, TDCHits);
+    FindHits(bcal_config->BCAL_ADC_THRESHOLD_MEV, bcalfADC, fADCHits, TDCHits);
 
     // Apply time smearing to emulate the fADC resolution
-    ApplyTimeSmearing(BCAL_FADC_TIME_RESOLUTION, BCAL_TDC_TIME_RESOLUTION, fADCHits, TDCHits);
+    ApplyTimeSmearing(bcal_config->BCAL_FADC_TIME_RESOLUTION, bcal_config->BCAL_TDC_TIME_RESOLUTION, fADCHits, TDCHits);
    
     // Copy hits into HDDM tree
     CopyBCALHitsToHDDM(fADCHits, TDCHits, record);
@@ -91,20 +91,10 @@ void BCALSmearer::SmearEvent(hddm_s::HDDM *record)
 }
 
 int inline BCALSmearer::GetCalibIndex(int module, int layer, int sector) {
-   return BCAL_NUM_LAYERS*BCAL_NUM_SECTORS*(module-1) + BCAL_NUM_SECTORS*(layer-1) + (sector-1);
+   return bcal_config->BCAL_NUM_LAYERS*bcal_config->BCAL_NUM_SECTORS*(module-1) 
+   		+ bcal_config->BCAL_NUM_SECTORS*(layer-1) + (sector-1);
 }
 
-void inline BCALSmearer::GetAttenuationParameters(int id, double &attenuation_length, double &attenuation_L1, double &attenuation_L2) {
-   	vector<double> &parms = attenuation_parameters.at(id);
-	attenuation_length = parms[0];
-	attenuation_L1 = parms[1];
-	attenuation_L2 = parms[2];
-}
-
-double inline BCALSmearer::GetEffectiveVelocity(int id)
-{
-   return effective_velocities.at(id);
-}
 
 //-----------
 // GetSiPMHits
@@ -156,10 +146,10 @@ void BCALSmearer::GetSiPMHits(hddm_s::HDDM *record,
      	layer = 4;
      }
      int table_id = GetCalibIndex( iter->getModule(), layer, iter->getSector() );  // key the cell identification off of the upstream cell
-     double cEff = GetEffectiveVelocity(table_id);
+     double cEff = bcal_config->GetEffectiveVelocity(table_id);
      double attenuation_length = 0; // initialize variable
      double attenuation_L1=-1., attenuation_L2=-1.;  // these parameters are ignored for now
-     GetAttenuationParameters(table_id, attenuation_length, attenuation_L1, attenuation_L2);
+     bcal_config->GetAttenuationParameters(table_id, attenuation_length, attenuation_L1, attenuation_L2);
      
      // Get reference to existing CellHits, or create one if it doesn't exist
      CellHits &cellhitsup = SiPMHits[idxup];
@@ -213,9 +203,9 @@ void BCALSmearer::ApplySamplingFluctuations(map<bcal_index, CellHits> &SiPMHits,
    /// cell energy to unsmeared cell energy and scaling the energy
    /// by it.
    
-   if(NO_SAMPLING_FLUCTUATIONS)return;
-   if(NO_SAMPLING_FLOOR_TERM)
-   		BCAL_SAMPLINGCOEFB=0.0; // (redundant, yes, but located in more obvious place here)
+   if(bcal_config->NO_SAMPLING_FLUCTUATIONS)return;
+   if(bcal_config->NO_SAMPLING_FLOOR_TERM)
+   		bcal_config->BCAL_SAMPLINGCOEFB=0.0; // (redundant, yes, but located in more obvious place here)
 
    map<bcal_index, CellHits>::iterator iter=SiPMHits.begin();
    for(; iter!=SiPMHits.end(); iter++){
@@ -223,7 +213,7 @@ void BCALSmearer::ApplySamplingFluctuations(map<bcal_index, CellHits> &SiPMHits,
       
       // Find fractional sampling sigma based on deposited energy (whole colorimeter, not just fibers)
       double Etruth = cellhits.Etruth;
-      double sigmaSamp = BCAL_SAMPLINGCOEFA / sqrt( Etruth ) + BCAL_SAMPLINGCOEFB;
+      double sigmaSamp = bcal_config->BCAL_SAMPLINGCOEFA / sqrt( Etruth ) + bcal_config->BCAL_SAMPLINGCOEFB;
 
       // Convert sigma into GeV
       sigmaSamp *= Etruth;
@@ -324,7 +314,7 @@ void BCALSmearer::ApplyPoissonStatistics(map<bcal_index, CellHits> &SiPMHits)
    /// mean. The ratio of the quantized, sampled value to the unquantized
    // integral (in PE) is used to scale the energy.
 
-   if(NO_POISSON_STATISTICS)return;
+   if(bcal_config->NO_POISSON_STATISTICS) return;
 
    map<bcal_index, CellHits>::iterator iter=SiPMHits.begin();
    for(; iter!=SiPMHits.end(); iter++){
@@ -332,7 +322,7 @@ void BCALSmearer::ApplyPoissonStatistics(map<bcal_index, CellHits> &SiPMHits)
 
       if(cellhits.E>0.0){
          // Convert to number of PE
-         double mean_pe = cellhits.E/BCAL_mevPerPE;
+         double mean_pe = cellhits.E/bcal_config->BCAL_mevPerPE;
          
          int Npe = gDRandom.Poisson(mean_pe);
          double ratio = (double)Npe/mean_pe;
@@ -435,15 +425,15 @@ void BCALSmearer::SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
    /// BCAL layer is based on data taken in May of 2015.
    /// In future, data on a channel-by-channel basis will be implemented.
 
-   if(NO_DARK_PULSES)return;
+   if(bcal_config->NO_DARK_PULSES) return;
    
    double Esmeared = 0;
    double sigma = 0;
    // FIX - put in CCDB
-   double sigma1 = 43.*BCAL_MEV_PER_ADC_COUNT;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
-   double sigma2 = 46.*BCAL_MEV_PER_ADC_COUNT;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
-   double sigma3 = 49.*BCAL_MEV_PER_ADC_COUNT;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
-   double sigma4 = 52.*BCAL_MEV_PER_ADC_COUNT;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
+   double sigma1 = 43.*bcal_config->BCAL_MEV_PER_ADC_COUNT;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
+   double sigma2 = 46.*bcal_config->BCAL_MEV_PER_ADC_COUNT;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
+   double sigma3 = 49.*bcal_config->BCAL_MEV_PER_ADC_COUNT;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
+   double sigma4 = 52.*bcal_config->BCAL_MEV_PER_ADC_COUNT;  // Approximated from https://logbooks.jlab.org/entry/3339692 (10 degree, 1.4 V OB pedestal data)
    // Values from logbook entry are in units of integrated ADC counts.  Average SiPM gain ~ 0.029 MeV per integrated ADC count.
 
    // Loop over all fADC readout cells
@@ -477,7 +467,7 @@ void BCALSmearer::SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
             }
             for(int ii = 0; ii < (int)sumhits.EDN.size(); ii++){
             	Esmeared = gDRandom.Gaus(sumhits.EDN[ii],sigma);
-            	umhits.EDN[ii] = Esmeared;
+            	sumhits.EDN[ii] = Esmeared;
             }
          }
       }
@@ -494,7 +484,7 @@ void BCALSmearer::ApplyTimeSmearing(double sigma_ns, double sigma_ns_TDC, map<in
    /// must be smeared to reflect the timing resolution of the fADC250.
    /// The F1TDC250 does something similar, but with ???ns samples.
 
-   if(NO_T_SMEAR) return;
+   if(bcal_config->NO_T_SMEAR) return;
 
    map<int, fADCHitList>::iterator it = fADCHits.begin();
    for(; it!=fADCHits.end(); it++){
@@ -658,20 +648,20 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       // fix the offset layer in the hit factories.  Also, any hit that still has a negative time
       // will be ignored.
       for (unsigned int i = 0; i < hitlist.uphits.size(); i++) {
-      	int integer_time = round((hitlist.uphits[i].t-BCAL_BASE_TIME_OFFSET)/BCAL_NS_PER_ADC_COUNT);
+      	int integer_time = round((hitlist.uphits[i].t-bcal_config->BCAL_BASE_TIME_OFFSET)/bcal_config->BCAL_NS_PER_ADC_COUNT);
       	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kUp);
-            fadcs().setPulse_integral(round(hitlist.uphits[i].E/BCAL_MEV_PER_ADC_COUNT));
+            fadcs().setPulse_integral(round(hitlist.uphits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT));
             fadcs().setPulse_time(integer_time);
         }
       }
       for (unsigned int i = 0; i < hitlist.dnhits.size(); i++) {
-      	int integer_time = round((hitlist.dnhits[i].t-BCAL_BASE_TIME_OFFSET)/BCAL_NS_PER_ADC_COUNT);
+      	int integer_time = round((hitlist.dnhits[i].t-bcal_config->BCAL_BASE_TIME_OFFSET)/bcal_config->BCAL_NS_PER_ADC_COUNT);
       	if (integer_time >= 0){
             hddm_s::BcalfADCDigiHitList fadcs = iter->addBcalfADCDigiHits();
             fadcs().setEnd(bcal_index::kDown);
-            fadcs().setPulse_integral(round(hitlist.dnhits[i].E/BCAL_MEV_PER_ADC_COUNT));
+            fadcs().setPulse_integral(round(hitlist.dnhits[i].E/bcal_config->BCAL_MEV_PER_ADC_COUNT));
             fadcs().setPulse_time(integer_time);
         } 
       }
@@ -702,7 +692,7 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       // Copy hits into BcalTDCDigiHit HDDM structure.
       // Times must be converted to units of TDC counts.
       for (unsigned int i = 0; i < hitlist.uphits.size(); ++i) {
-         int integer_time = round((hitlist.uphits[i]-BCAL_TDC_BASE_TIME_OFFSET)/BCAL_NS_PER_TDC_COUNT);
+         int integer_time = round((hitlist.uphits[i]-bcal_config->BCAL_TDC_BASE_TIME_OFFSET)/bcal_config->BCAL_NS_PER_TDC_COUNT);
          if (integer_time >= 0){
             hddm_s::BcalTDCDigiHitList tdcs = iter->addBcalTDCDigiHits();
             tdcs().setEnd(bcal_index::kUp);
@@ -710,11 +700,11 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
          }
       }
       for (unsigned int i = 0; i < hitlist.dnhits.size(); i++) {
-         int integer_time = round((hitlist.dnhits[i]-BCAL_TDC_BASE_TIME_OFFSET)/BCAL_NS_PER_TDC_COUNT);
+         int integer_time = round((hitlist.dnhits[i]-bcal_config->BCAL_TDC_BASE_TIME_OFFSET)/bcal_config->BCAL_NS_PER_TDC_COUNT);
          if (integer_time >= 0){
             hddm_s::BcalTDCDigiHitList tdcs = iter->addBcalTDCDigiHits();
             tdcs().setEnd(bcal_index::kDown);
-            tdcs().setTime(round((hitlist.dnhits[i]-BCAL_TDC_BASE_TIME_OFFSET)/BCAL_NS_PER_TDC_COUNT));
+            tdcs().setTime(round((hitlist.dnhits[i]-bcal_config->BCAL_TDC_BASE_TIME_OFFSET)/bcal_config->BCAL_NS_PER_TDC_COUNT));
          }
       }
    }

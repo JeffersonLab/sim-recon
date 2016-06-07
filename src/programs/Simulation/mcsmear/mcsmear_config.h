@@ -7,6 +7,7 @@
 
 #include <DANA/DApplication.h>
 #include <JANA/JEventLoop.h>
+#include "DRandom2.h"
 
 using namespace jana;
 
@@ -26,6 +27,28 @@ class mcsmear_config_t
 	}
 	~mcsmear_config_t() {}
 
+	//-----------
+	// SetSeeds
+	//-----------
+	void SetSeeds(const char *vals) {
+   		/// This is called from the command line parser to
+   		/// set the initial seeds based on user input from
+   		/// the command line.
+   		//
+   		stringstream ss(vals);
+   		Int_t seed1, seed2, seed3;
+   		ss >> seed1 >> seed2 >> seed3;
+   		UInt_t *useed1 = reinterpret_cast<UInt_t*>(&seed1);
+   		UInt_t *useed2 = reinterpret_cast<UInt_t*>(&seed2);
+   		UInt_t *useed3 = reinterpret_cast<UInt_t*>(&seed3);
+   		gDRandom.SetSeeds(*useed1, *useed2, *useed3);
+
+   		cout << "Seeds set from command line. Any random number" << endl;
+   		cout << "seeds found in the input file will be ignored!" << endl;
+   		IGNORE_SEEDS = true;
+	}
+
+	// member variables
 	bool ADD_NOISE;
 	bool DROP_TRUTH_HITS;
 	bool SMEAR_HITS;
@@ -147,7 +170,19 @@ class bcal_config_t
 
 	}
 	~bcal_config_t() {}
+	
+	void inline GetAttenuationParameters(int id, double &attenuation_length, double &attenuation_L1, double &attenuation_L2) {
+   		vector<double> &parms = attenuation_parameters.at(id);
+		attenuation_length = parms[0];
+		attenuation_L1 = parms[1];
+		attenuation_L2 = parms[2];
+	}
 
+	double inline GetEffectiveVelocity(int id) {
+   		return effective_velocities.at(id);
+	}
+	
+	// member variables
 	double BCAL_DARKRATE_GHZ;
 	double BCAL_SIGMA_SIG_RELATIVE;
 	double BCAL_SIGMA_PED_RELATIVE;
@@ -212,7 +247,7 @@ class fcal_config_t
 		}
 		
 	}
-	~fcal_config_t();
+	~fcal_config_t() {}
 
 	double FCAL_PHOT_STAT_COEF;
 	double FCAL_BLOCK_THRESHOLD;
@@ -242,7 +277,7 @@ class cdc_config_t
 		}
 
 	}
-	~cdc_config_t();
+	~cdc_config_t() {}
 
 	double CDC_TDRIFT_SIGMA;
 	double CDC_TIME_WINDOW;
@@ -283,7 +318,7 @@ class fdc_config_t
        		FDC_THRESH_KEV 		  = fdcparms["FDC_THRESH_KEV"]; 
 		}
 	}
-	~fdc_config_t();
+	~fdc_config_t() {}
 
 	double FDC_TDRIFT_SIGMA;
 	double FDC_CATHODE_SIGMA;
@@ -305,7 +340,7 @@ class ccal_config_t
 		CCAL_BLOCK_THRESHOLD = 20.0*k_MeV;
 		CCAL_SIGMA = 200.0e-3;
 	}
-	~ccal_config_t();
+	~ccal_config_t() {}
 
 	// Time smearing factor
 	double CCAL_SIGMA;
@@ -339,7 +374,7 @@ class ftof_config_t
      	TOF_PHOTONS_PERMEV =  tofparms["TOF_PHOTONS_PERMEV"];
 	
 	}
-	~ftof_config_t();
+	~ftof_config_t() {}
 
 	double TOF_SIGMA;
 	double TOF_PHOTONS_PERMEV;
@@ -367,7 +402,7 @@ class sc_config_t
 		}
 		
 	}
-	~sc_config_t();
+	~sc_config_t() {}
 
 	double START_SIGMA;
 	double START_PHOTONS_PERMEV;
@@ -384,7 +419,7 @@ class tagm_config_t
 		TAGM_FADC_TSIGMA = 0.350;   // ns
 		TAGM_NPIX_PER_GEV = 1.e5;
 	}
-	~tagm_config_t();
+	~tagm_config_t() {}
 
 	double TAGM_TSIGMA;
 	double TAGM_FADC_TSIGMA;
@@ -402,7 +437,7 @@ class tagh_config_t
 		TAGH_NPE_PER_GEV = 5.e5;
 
 	}
-	~tagh_config_t();
+	~tagh_config_t() {}
 
 	double TAGH_TSIGMA;
 	double TAGH_FADC_TSIGMA;
@@ -419,7 +454,7 @@ class ps_config_t
 		PS_NPIX_PER_GEV = 1.e5;
 		PS_THRESHOLD          = 0.0;
 	}
-	~ps_config_t();
+	~ps_config_t() {}
 
 	double PS_SIGMA;
 	double PS_NPIX_PER_GEV;
@@ -436,7 +471,7 @@ class psc_config_t
 		PSC_PHOTONS_PERMEV = 5.e5;
 		PSC_THRESHOLD         = 0.0;
 	}
-	~psc_config_t();
+	~psc_config_t() {}
 
 	double PSC_SIGMA;
 	double PSC_PHOTONS_PERMEV;
@@ -453,7 +488,7 @@ class fmwpc_config_t
  		FMWPC_ASIGMA = 0.5E-6;
  		FMWPC_THRESHOLD = 0.0;
 	}
-	~fmwpc_config_t();
+	~fmwpc_config_t() {}
 
 	// FMWPC resolutions and threshold
 	double FMWPC_TSIGMA;

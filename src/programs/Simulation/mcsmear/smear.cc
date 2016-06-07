@@ -45,48 +45,6 @@ double SamplePoisson(double lambda);
 double SampleRange(double x1, double x2);
 
 
-// Polynomial interpolation on a grid.
-// Adapted from Numerical Recipes in C (2nd Edition), pp. 121-122.
-static void polint(float *xa, float *ya,int n,float x, float *y,float *dy){
-  int i,m,ns=0;
-  float den,dif,dift,ho,hp,w;
-
-  float *c=(float *)calloc(n,sizeof(float));
-  float *d=(float *)calloc(n,sizeof(float));
-
-  dif=fabs(x-xa[0]);
-  for (i=0;i<n;i++){
-    if ((dift=fabs(x-xa[i]))<dif){
-      ns=i;
-      dif=dift;
-    }
-    c[i]=ya[i];
-    d[i]=ya[i];
-  }
-  *y=ya[ns--];
-
-  for (m=1;m<n;m++){
-    for (i=1;i<=n-m;i++){
-      ho=xa[i-1]-x;
-      hp=xa[i+m-1]-x;
-      w=c[i+1-1]-d[i-1];
-      if ((den=ho-hp)==0.0){
-   free(c);
-   free(d);
-   return;
-      }
-  
-      den=w/den;
-      d[i-1]=hp*den;
-      c[i-1]=ho*den;
-      
-    }
-    
-    *y+=(*dy=(2*ns<(n-m) ?c[ns+1]:d[ns--]));
-  }
-  free(c);
-  free(d);
-}
 
 //-----------
 // Smear
@@ -131,7 +89,7 @@ void Smear::SetSeeds(const char *vals)
 
    cout << "Seeds set from command line. Any random number" << endl;
    cout << "seeds found in the input file will be ignored!" << endl;
-   IGNORE_SEEDS = true;
+   config->IGNORE_SEEDS = true;
 }
 
 //-----------
@@ -162,7 +120,7 @@ void Smear::GetAndSetSeeds(hddm_s::HDDM *record)
    UInt_t seed1, seed2, seed3;
    hddm_s::Random my_rand = reiter->getRandom();
 
-   if (!IGNORE_SEEDS) {
+   if (!config->IGNORE_SEEDS) {
       // Copy seeds from event record to local variables
       seed1 = my_rand.getSeed1();
       seed2 = my_rand.getSeed2();
@@ -279,7 +237,6 @@ void Smear::SmearFDC(hddm_s::HDDM *record)
                hits().setQ(q);
                hits().setT(t);
             }
-            fdc_cathode_charge->Fill(q);
          }
 
          if (config->DROP_TRUTH_HITS)
@@ -302,7 +259,6 @@ void Smear::SmearFDC(hddm_s::HDDM *record)
                hits().setDE(titer->getDE());
             }
          }
-         fdc_anode_mult->Fill(witer->getFdcAnodeHits().size());
 
          if (config->DROP_TRUTH_HITS)
             witer->deleteFdcAnodeTruthHits();
@@ -355,7 +311,7 @@ void Smear::SmearFCAL(hddm_s::HDDM *record)
          }
       }
 
-      if (DROP_TRUTH_HITS)
+      if (config->DROP_TRUTH_HITS)
          iter->deleteFcalTruthHits();
    }
 }
@@ -406,7 +362,7 @@ void Smear::SmearCCAL(hddm_s::HDDM *record)
 //-----------
 // SmearTOF
 //-----------
-void SmearTOF(hddm_s::HDDM *record)
+void Smear::SmearTOF(hddm_s::HDDM *record)
 {
    hddm_s::FtofCounterList tofs = record->getFtofCounters();
    hddm_s::FtofCounterList::iterator iter;

@@ -202,8 +202,6 @@ class BCALSmearer
 		bcal_config_t *bcal_config;
 		
 		int inline GetCalibIndex(int module, int layer, int sector);
-		void inline GetAttenuationParameters(int id, double &attenuation_length, double &attenuation_L1, double &attenuation_L2);
-		double inline GetEffectiveVelocity(int id);
 
 		void GetSiPMHits(hddm_s::HDDM *record,
         	             map<bcal_index, CellHits> &SiPMHits,

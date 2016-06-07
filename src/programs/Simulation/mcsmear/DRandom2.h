@@ -14,6 +14,8 @@
 // a new class, DRandom2 from TRandom2. This allows us access
 // to the numbers for easy recording/retrieving. 
 
+#ifndef _DRANDOM2_H_
+#define _DRANDOM2_H_
 
 #include <TRandom2.h>
 #include <iostream>
@@ -57,6 +59,8 @@ class DRandom2:public TRandom2{
 			this->fSeed2 = seed2;		
 		}
 };
+
+#endif  // _DRANDOM2_H_
 
 extern DRandom2 gDRandom;
 
