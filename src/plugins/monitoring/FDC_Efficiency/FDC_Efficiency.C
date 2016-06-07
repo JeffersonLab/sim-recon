@@ -200,6 +200,31 @@ void FDC_Efficiency(bool save = 0){
 
   if (save) cEfficiency_vs->SaveAs("cEfficiency_vs.pdf");
 
+  dir->cd();
+  gDirectory->cd("Residuals");
+
+
+  TCanvas *cResidual_Pseudo = new TCanvas("cResidual_Pseudo", "Pseudo Hit Resolution", 1000, 800);
+  cResidual_Pseudo->Divide(6,4);
+    
+  for(unsigned int icell=1; icell<=24; icell++){
+    cResidual_Pseudo->cd(icell);
+    char hname5[256];
+    sprintf(hname5, "hPseudoResV_cell[%d]", icell);
+    TH1 *h5 = (TH1*)(gDirectory->Get(hname5));
+    char hname6[256];
+    sprintf(hname6, "hPseudoResU_cell[%d]", icell);
+    TH1 *h6 = (TH1*)(gDirectory->Get(hname6));
+      
+    h5->GetXaxis()->SetTitle("Position Resolution (cm)");
+    h5->Draw("colz");
+    h6->SetLineColor(2);
+    h6->Draw("same");
+    
+  }
+
+
+
     
 
 }
