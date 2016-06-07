@@ -193,7 +193,7 @@ class BCALSmearer
 			mcsmear_config = in_mcsmear_config;
 			bcal_config = in_bcal_config;
 		}
-		~BCALSmearer();  // destructor 
+		~BCALSmearer() {}  // destructor 
 
 		void SmearEvent(hddm_s::HDDM *record);  // main smearing function
 

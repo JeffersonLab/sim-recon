@@ -50,7 +50,7 @@ int main(int narg,char* argv[])
    DApplication dapp(narg, argv);
    dapp.AddFactoryGenerator(new JFactoryGenerator_ThreadCancelHandler());
    
-   TFile *hfile = new TFile("smear.root","RECREATE","smearing histograms");
+   TFile *hfile = new TFile("smear.root","RECREATE","smearing histograms");  // note: not used for anything right now
 
    MyProcessor myproc(config);   
    dapp.Run(&myproc);
@@ -77,7 +77,7 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
       case 'N': config->ADD_NOISE=true;                    break;
       case 's': config->SMEAR_HITS=false;                  break;
       case 'i': config->IGNORE_SEEDS=true;                 break;
-      case 'r': config->SetSeeds(&ptr[2]);                         break;
+      case 'r': config->SetSeeds(&ptr[2]);                 break;
       case 'd': config->DROP_TRUTH_HITS=true;              break;
       }
     }

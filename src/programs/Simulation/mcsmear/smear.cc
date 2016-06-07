@@ -20,30 +20,18 @@ using namespace std;
 
 #include "DRandom2.h"
 
-#include "mcsmear_globals.h"
-
 #ifndef _DBG_
 #define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
 #define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
 #endif
 
-void InitCDCGeometry(void);
-void InitFDCGeometry(void);
-
-pthread_mutex_t mutex_fdc_smear_function = PTHREAD_MUTEX_INITIALIZER;
-
-bool CDC_GEOMETRY_INITIALIZED = false;
-int CDC_MAX_RINGS=0;
 
 DFCALGeometry *fcalGeom = NULL;
 DCCALGeometry *ccalGeom = NULL;
-bool FDC_GEOMETRY_INITIALIZED = false;
-unsigned int NFDC_WIRES_PER_PLANE;
 
 double SampleGaussian(double sigma);
 double SamplePoisson(double lambda);
 double SampleRange(double x1, double x2);
-
 
 
 //-----------

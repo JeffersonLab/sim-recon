@@ -35,6 +35,8 @@ class Smear
 			dBCALSmearer = new BCALSmearer(config, bcal_config);
 		}
 		~Smear() {  // destructor 
+			delete dBCALSmearer;
+		
 			delete bcal_config;
 			delete fcal_config;
 			delete cdc_config;
