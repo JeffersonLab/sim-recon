@@ -76,12 +76,12 @@ DEventWriterEVIO::DEventWriterEVIO(JEventLoop* locEventLoop)
 	}	
 }
 
-void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list, string locOutputFileNameSubString) 
+
+void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list, string locOutputFileNameSubString) const
 {
     // Allow users to set only some detectors to be written out
     // The list of detectors is set on a per-file basis
     // and the list is the same as given in DTranslationTable
-	// must be read/used entirely in "EVIOWriter" lock
 
     if(ttab == NULL) {
         jerr << "Tried to set values in DEventWriterEVIO::SetDetectorsToWriteOut() but translation table not loaded!" << endl;
@@ -89,17 +89,23 @@ void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list, string locOu
     }
 
     // sanity check
+	japp->WriteLock("EVIOWriter");
     if(Get_EVIOBufferWriters().find(locOutputFileNameSubString) == Get_EVIOBufferWriters().end()) {
+        japp->Unlock("EVIOWriter");
         // file must not have been created?
         return;
     }
+	japp->Unlock("EVIOWriter");
+
     
     // create new roc output list
     set<uint32_t> rocs_to_write_out;
 
     // if given a blank list, assume we should write everything out
     if(detector_list == "") {
+        japp->WriteLock("EVIOWriter");
         Get_EVIOBufferWriters()[locOutputFileNameSubString]->SetROCsToWriteOut(rocs_to_write_out);
+        japp->Unlock("EVIOWriter");
         return;
     }
 
@@ -136,11 +142,21 @@ void DEventWriterEVIO::SetDetectorsToWriteOut(string detector_list, string locOu
     }
 
     // save results
+	japp->WriteLock("EVIOWriter");
     Get_EVIOBufferWriters()[locOutputFileNameSubString]->SetROCsToWriteOut(rocs_to_write_out);
+	japp->Unlock("EVIOWriter");
 }
 
 
 bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString) const
+{
+    vector<const JObject *> locObjectsToSaveNull;
+    return Write_EVIOEvent(locEventLoop, locOutputFileNameSubString, locObjectsToSaveNull);
+}
+
+
+bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString,
+                                       vector<const JObject *> locObjectsToSave) const
 {
 	JEvent& locEvent = locEventLoop->GetJEvent();
 
@@ -194,7 +210,10 @@ bool DEventWriterEVIO::Write_EVIOEvent(JEventLoop* locEventLoop, string locOutpu
         DEVIOBufferWriter *locBufferWriter = Get_EVIOBufferWriters()[locOutputFileName];
 		// Write event into buffer
 		vector<uint32_t> *buff = locEVIOWriter->GetBufferFromPool();
-		locBufferWriter->WriteEventToBuffer(locEventLoop, *buff);
+        if(locObjectsToSave.size() == 0)
+            locBufferWriter->WriteEventToBuffer(locEventLoop, *buff);
+        else
+            locBufferWriter->WriteEventToBuffer(locEventLoop, *buff, locObjectsToSave);
 
 		// Optionally write buffer to output file
 		if(ofs_debug_output) ofs_debug_output->write((const char*)&(*buff)[0], buff->size()*sizeof(uint32_t));

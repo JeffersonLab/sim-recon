@@ -48,6 +48,7 @@ class DEVIOBufferWriter
     }
     ~DEVIOBufferWriter(void);
 
+    void WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &buff, vector<const JObject *> objects_to_save) const;
     void WriteEventToBuffer(JEventLoop *locEventLoop, vector<uint32_t> &buff) const;
 
     void SetROCsToWriteOut(set<uint32_t> &new_rocs_to_write_out) {

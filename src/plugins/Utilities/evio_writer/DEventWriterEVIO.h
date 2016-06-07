@@ -57,10 +57,11 @@ class DEventWriterEVIO : public JObject
 		~DEventWriterEVIO(void);
 
 		bool Write_EVIOEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString) const;
-
+		bool Write_EVIOEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString,
+                             vector<const JObject *> locObjectsToSave) const;
 		string Get_OutputFileName(JEventLoop* locEventLoop, string locOutputFileNameSubString) const;
 
-        void SetDetectorsToWriteOut(string detector_list, string locOutputFileNameSubString);
+        void SetDetectorsToWriteOut(string detector_list, string locOutputFileNameSubString) const;
 
 		bool COMPACT;
 		bool PREFER_EMULATED;

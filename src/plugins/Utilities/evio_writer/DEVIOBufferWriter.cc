@@ -1,9 +1,19 @@
 #include "DEVIOBufferWriter.h"
 
+
 //------------------
 // WriteEventToBuffer
 //------------------
 void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &buff) const
+{
+    vector<const JObject *> objects_to_save_null;
+    WriteEventToBuffer(loop, buff, objects_to_save_null);
+}
+
+//------------------
+// WriteEventToBuffer
+//------------------
+void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &buff, vector<const JObject *> objects_to_save) const
 {
 	/// This method will grab certain low-level objects and write them
 	/// into EVIO banks in a format compatible with the DAQ library.
@@ -34,23 +44,73 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
 	vector<const DCODAEventInfo*>     coda_events;
 	vector<const DCODAROCInfo*>       coda_rocinfos;
 
-	loop->Get(f250tts);
-	loop->Get(f250pis);
-	loop->Get(f250wrds);
-	loop->Get(f125tts);
-	loop->Get(f125pis);
-	loop->Get(f125cdcpulses);
-	loop->Get(f125fdcpulses);
-	loop->Get(f125wrds);
-	loop->Get(f125configs);
-	loop->Get(caen1290hits);
-	loop->Get(caen1290configs);
-	loop->Get(F1hits);
-	loop->Get(F1tts);
-	loop->Get(F1configs);
-	loop->Get(epicsValues);
-	loop->Get(coda_events);
-	loop->Get(coda_rocinfos);
+    // comment
+    if(objects_to_save.size()==0) {
+        loop->Get(f250tts);
+        loop->Get(f250pis);
+        loop->Get(f250wrds);
+        loop->Get(f125tts);
+        loop->Get(f125pis);
+        loop->Get(f125cdcpulses);
+        loop->Get(f125fdcpulses);
+        loop->Get(f125wrds);
+        loop->Get(f125configs);
+        loop->Get(caen1290hits);
+        loop->Get(caen1290configs);
+        loop->Get(F1hits);
+        loop->Get(F1tts);
+        loop->Get(F1configs);
+        loop->Get(epicsValues);
+        loop->Get(coda_events);
+        loop->Get(coda_rocinfos);
+    } else {
+        loop->Get(epicsValues);
+        loop->Get(coda_events);
+        loop->Get(coda_rocinfos);
+        loop->Get(f125configs);
+        loop->Get(F1configs);
+        loop->Get(caen1290configs);
+        for(vector<const JObject *>::iterator obj_itr = objects_to_save.begin();
+            obj_itr != objects_to_save.end(); obj_itr++) {
+            const JObject *obj_ptr = *obj_itr;
+
+            vector<const Df250TriggerTime*>   obj_f250tts;
+            vector<const Df250PulseIntegral*> obj_f250pis;
+            vector<const Df250WindowRawData*> obj_f250wrds;
+            vector<const Df125TriggerTime*>   obj_f125tts;
+            vector<const Df125PulseIntegral*> obj_f125pis;
+            vector<const Df125CDCPulse*>      obj_f125cdcpulses;
+            vector<const Df125FDCPulse*>      obj_f125fdcpulses;
+            vector<const Df125WindowRawData*> obj_f125wrds;
+            vector<const DCAEN1290TDCHit*>    obj_caen1290hits;
+            vector<const DF1TDCHit*>          obj_F1hits;
+            vector<const DF1TDCTriggerTime*>  obj_F1tts;
+
+            obj_ptr->Get(obj_f250tts);
+            obj_ptr->Get(obj_f250pis);
+            obj_ptr->Get(obj_f250wrds);
+            obj_ptr->Get(obj_f125tts);
+            obj_ptr->Get(obj_f125pis);
+            obj_ptr->Get(obj_f125cdcpulses);
+            obj_ptr->Get(obj_f125fdcpulses);
+            obj_ptr->Get(obj_f125wrds);
+            obj_ptr->Get(obj_caen1290hits);
+            obj_ptr->Get(obj_F1hits);
+            obj_ptr->Get(obj_F1tts);
+
+            f250tts.insert(f250tts.end(), obj_f250tts.begin(), obj_f250tts.end());
+            f250pis.insert(f250pis.end(), obj_f250pis.begin(), obj_f250pis.end());
+            f250wrds.insert(f250wrds.end(), obj_f250wrds.begin(), obj_f250wrds.end());
+            f125tts.insert(f125tts.end(), obj_f125tts.begin(), obj_f125tts.end());
+            f125pis.insert(f125pis.end(), obj_f125pis.begin(), obj_f125pis.end());
+            f125cdcpulses.insert(f125cdcpulses.end(), obj_f125cdcpulses.begin(), obj_f125cdcpulses.end());
+            f125fdcpulses.insert(f125fdcpulses.end(), obj_f125fdcpulses.begin(), obj_f125fdcpulses.end());
+            f125wrds.insert(f125wrds.end(), obj_f125wrds.begin(), obj_f125wrds.end());
+            caen1290hits.insert(caen1290hits.end(), obj_caen1290hits.begin(), obj_caen1290hits.end());
+            F1hits.insert(F1hits.end(), obj_F1hits.begin(), obj_F1hits.end());
+            F1tts.insert(F1tts.end(), obj_F1tts.begin(), obj_F1tts.end());
+        }
+    }
 	
 	// Get the DL3Trigger object for the event. We go to some trouble
 	// here not to activate the factory ourselves and only check if the
