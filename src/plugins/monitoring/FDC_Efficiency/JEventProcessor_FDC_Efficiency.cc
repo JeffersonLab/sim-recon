@@ -19,8 +19,10 @@ static TH2D *fdc_pseudo_expected_cell[25]; // Contains total number of expected 
 static TH1I *hChi2OverNDF;
 static TH1I *hChi2OverNDF_accepted;
 static TH1I *hPseudoRes;
-static TH1I *hPseudoResX;
-static TH1I *hPseudoResY;
+static TH1I *hPseudoResX[25];
+static TH1I *hPseudoResY[25];
+static TH1I *hPseudoResU[25];
+static TH1I *hPseudoResV[25];
 static TH2I *hPseudoResVsT;
 static TH2I *hResVsT;
 static TH1I *hMom;
@@ -90,6 +92,7 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
     sprintf(hname_expected, "fdc_pseudo_expected_cell[%d]", icell+1);
     fdc_pseudo_measured_cell[icell+1] = new TH2D(hname_measured, "", 100, -50, 50, 100, -50, 50);
     fdc_pseudo_expected_cell[icell+1] = new TH2D(hname_expected, "", 100, -50, 50, 100, -50, 50);
+
   }	
 
   gDirectory->cd("/FDC_Efficiency");
@@ -109,20 +112,36 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
 
   hRingsHit_vs_P = new TH2I("hRingsHit_vs_P", "Rings of CDC Contributing to Track vs P (accepted)", 25, -0.5, 24.5, 34, 0.6, 4);
 
-  hWireTime = new TH1I("hWireTime", "Timing of Hits", 150, -500, 1000);
-  hWireTime_accepted = new TH1I("hWireTime_accepted", "Timing of Hits (accepted)", 150, -500, 1000);
+  hWireTime = new TH1I("hWireTime", "Timing of Hits", 500, -500, 1000);
+  hWireTime_accepted = new TH1I("hWireTime_accepted", "Timing of Hits (accepted)", 500, -500, 1000);
 
-  hPseudoTime = new TH1I("hPseudoTime", "Timing of Pseudos", 150, -500, 1000);
-  hPseudoTime_accepted = new TH1I("hPseudoTime_accepted", "Timing of Pseudos (accepted)", 150, -500, 1000);
+  hPseudoTime = new TH1I("hPseudoTime", "Timing of Pseudos", 500, -500, 1000);
+  hPseudoTime_accepted = new TH1I("hPseudoTime_accepted", "Timing of Pseudos (accepted)", 500, -500, 1000);
 
 
   gDirectory->cd("/FDC_Efficiency");
   gDirectory->mkdir("Residuals")->cd();
-  hResVsT = new TH2I("hResVsT","Tracking Residual (Biased) Vs Wire Drift Time; Residual (cm); Drift Time (ns)", 100, 0, 0.5, 300, -250, 50);
-  hPseudoResVsT = new TH2I("hPseudoResVsT","Tracking Residual (Biased) Vs Pseudo Time; Residual (cm); Drift Time (ns)", 100, 0, 0.5, 300, -10, 200);
-  hPseudoRes = new TH1I("hPseudoRes","Pseudo Residual", 100, 0, 10);
-  hPseudoResX = new TH1I("hPseudoResX","Pseudo Residual in X", 100, -5, 5);
-  hPseudoResY = new TH1I("hPseudoResY","Pseudo Residual in Y", 100, -5, 5);
+  hResVsT = new TH2I("hResVsT","Tracking Residual (Biased) Vs Wire Drift Time; Residual (cm); Drift Time (ns)", 100, 0, 0.5, 500, -250, 250);
+  hPseudoResVsT = new TH2I("hPseudoResVsT","Tracking Residual (Biased) Vs Pseudo Time; Residual (cm); Drift Time (ns)", 100, 0, 0.5, 500, -250, 250);
+  hPseudoRes = new TH1I("hPseudoRes","Pseudo Residual in R", 500, 0, 5);
+
+  for(int icell=0; icell<24; icell++){
+
+    char hname_X[256];
+    char hname_Y[256];
+   
+    sprintf(hname_X, "hPseudoResX_cell[%d]", icell+1);
+    sprintf(hname_Y, "hPseudoResY_cell[%d]", icell+1);
+    hPseudoResX[icell+1] = new TH1I(hname_X,"Pseudo Residual in X", 600, -3, 3);
+    hPseudoResY[icell+1] = new TH1I(hname_Y,"Pseudo Residual in Y", 600, -3, 3);
+
+    sprintf(hname_X, "hPseudoResU_cell[%d]", icell+1);
+    sprintf(hname_Y, "hPseudoResV_cell[%d]", icell+1);
+    hPseudoResU[icell+1] = new TH1I(hname_X,"Pseudo Residual along Wire", 600, -3, 3);
+    hPseudoResV[icell+1] = new TH1I(hname_Y,"Pseudo Residual perp. to Wire", 600, -3, 3);
+
+  }
+
   main->cd();
 
   return NOERROR;
@@ -172,14 +191,15 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     const DFDCHit * locHit = locFDCHitVector[hitNum];
     if (locHit->plane != 2) continue; // only wires!
 
+    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+    hWireTime->Fill(locHit->t);
+    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
     // cut on timing of hits
     // at the moment shifted to -200ns
     if (-300 > locHit->t || locHit->t > 100) continue;
     
     locSortedFDCHits[locHit->gLayer][locHit->element].insert(locHit);
-    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-    hWireTime->Fill(locHit->t);
-    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   }
 
@@ -435,26 +455,34 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	  {
 	    const DFDCPseudo * locPseudo = * locIterator;
 	    if (locPseudo == NULL) continue;
-	    
+
 	    DVector2 pseudoPosition = locPseudo->xy;
 	    DVector2 interPosition2D(interPosition.X(), interPosition.Y());
-	    
-	    double residual2D = (pseudoPosition - interPosition2D).Mod();
+
+	    DVector2 residual2D = (pseudoPosition - interPosition2D);
+	    double residualR = residual2D.Mod();
 	    double residualX = pseudoPosition.X() - interPosition2D.X();
 	    double residualY = pseudoPosition.Y() - interPosition2D.Y();
-	    
+
+	    // rotate to wire coordinate system
+	    const DFDCWire * wire = locPseudo->wire;
+	    double residualU = -1*(residual2D.Rotate(wire->angle)).X();
+	    double residualV = -1*(residual2D.Rotate(wire->angle)).Y();
+
 	    // these can be used for background studies/correction
 	    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
-	    hPseudoRes->Fill(residual2D);
-	    hPseudoResX->Fill(residualX);
-	    hPseudoResY->Fill(residualY);
+	    hPseudoRes->Fill(residualR);
+	    hPseudoResX[cellNum]->Fill(residualX);
+	    hPseudoResY[cellNum]->Fill(residualY);
+	    hPseudoResU[cellNum]->Fill(residualU);
+	    hPseudoResV[cellNum]->Fill(residualV);
 	    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	    
 	    if (foundPseudo) continue; 
 	    // to avoid double conting
 	    	    
-	    //if (residual2D < 1.6){ // = 5 sigma in x and in y
-	    if (residual2D < 2){ // = to account for non-gaussian tails and tracking/extrapolation errors
+	    //if (residualR < 1.6){ // = 5 sigma in x and in y
+	    if (residualR < 2){ // = to account for non-gaussian tails and tracking/extrapolation errors
 	      foundPseudo = true;
 	      
 	      if(fdc_pseudo_measured_cell[cellNum] != NULL && cellNum < 25){
@@ -462,7 +490,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 		japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 		fdc_pseudo_measured_cell[cellNum]->Fill(interPosition.X(), interPosition.Y());
 		hPseudoTime_accepted->Fill(locPseudo->time);
-		hPseudoResVsT->Fill(residual2D, locPseudo->time);
+		hPseudoResVsT->Fill(residualR, locPseudo->time);
 		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	      }
 	    }
