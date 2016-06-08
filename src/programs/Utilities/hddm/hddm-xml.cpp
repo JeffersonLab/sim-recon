@@ -350,47 +350,47 @@ int main(int argC, char* argV[])
          *ifx >> format >> flags;
          int compression_flags = flags & 0xf0;
          int integrity_flags = flags & 0x0f;
-         if (size == 8 && format == 0 && compression_flags == 0x00) {
-            if (compression_mode != 0) {
-               std::cerr << "hddm-xml error: compression disabled in"
-                            " mid-stream, this stream is no longer readable."
-                         << std::endl;
-               break;
-            }
+         std::streambuf *fin_sb = 0;
+         xstream::z::istreambuf *zin_sb = 0;
+         xstream::bz::istreambuf *bzin_sb = 0;
+         if (compression_flags == compression_mode) {
+            fin_sb = ifs->rdbuf();
          }
          else if (size == 8 && format == 0 && compression_flags == 0x10) {
-            if (compression_mode == 0) {
-               compression_mode = compression_flags;
-               xstream::z::istreambuf *zin_sb;
-               zin_sb = new xstream::z::istreambuf(ifs->rdbuf());
-               ifs->rdbuf(zin_sb);
+            if (compression_mode == 0x20) {
+               bzin_sb = (xstream::bz::istreambuf*)ifs->rdbuf();
             }
-            else if (compression_mode != compression_flags) {
-               std::cerr << "hddm-xml error: compression mode changed in"
-                            " mid-stream, this stream is no longer readable."
-                         << std::endl;
-               break;
-            }
+            compression_mode = compression_flags;
+            zin_sb = new xstream::z::istreambuf(ifs->rdbuf());
+            ifs->rdbuf(zin_sb);
+            if (bzin_sb != 0)
+               delete bzin_sb;
          }
          else if (size == 8 && format == 0 && compression_flags == 0x20) {
-            if (compression_mode == 0) {
-               compression_mode = compression_flags;
-               xstream::bz::istreambuf *bzin_sb;
-               bzin_sb = new xstream::bz::istreambuf(ifs->rdbuf());
-               ifs->rdbuf(bzin_sb);
+            if (compression_mode == 0x10) {
+               zin_sb = (xstream::z::istreambuf*)ifs->rdbuf();
             }
-            else if (compression_mode != compression_flags) {
-               std::cerr << "hddm-xml error: compression mode changed in"
-                            " mid-stream, this stream is no longer readable."
-                         << std::endl;
-               break;
-            }
+            compression_mode = compression_flags;
+            bzin_sb = new xstream::bz::istreambuf(ifs->rdbuf());
+            ifs->rdbuf(bzin_sb);
+            if (zin_sb != 0)
+               delete zin_sb;
          }
          else {
-            std::cerr << "hddm-xml error: unrecognized stream compression"
-                         " encountered, this stream is no longer readable."
-                      << std::endl;
-            break;
+            if (compression_mode == 0x20) {
+               bzin_sb = (xstream::bz::istreambuf*)ifs->rdbuf();
+               fin_sb = bzin_sb->get_streambuf();
+            }
+            else if (compression_mode == 0x10) {
+               zin_sb = (xstream::z::istreambuf*)ifs->rdbuf();
+               fin_sb = zin_sb->get_streambuf();
+            }
+            compression_mode = compression_flags;
+            ifs->rdbuf(fin_sb);
+            if (zin_sb != 0)
+               delete zin_sb;
+            if (bzin_sb != 0)
+               delete bzin_sb;
          }
          if (size == 8 && format == 0 && integrity_flags == 0x0) {
             integrity_check_mode = 0;
