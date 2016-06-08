@@ -127,8 +127,8 @@ jerror_t JEventProcessor_CDC_Cosmics::evnt(JEventLoop *loop, uint64_t eventnumbe
             double dz = docaz - 92.0;
             //if (docaz < 70.0 || docaz > 110.0) continue; // Only focus on the center of the chamber
             //if (docaz < 140.0) continue; // Only focus on downstream end of chamber
-            double distance = thisPull.d; // This is the distance from the lookup table
-            double predictedDistance = distance - residual; // This is the distance predicted by the fit
+            double predictedDistance = thisPull.d; // This is the DOCA from the track
+            double distance = residual + predictedDistance; // This is the distance from the T-D lookup
             const DCDCTrackHit* thisCDCHit = thisPull.cdc_hit;
 
             if (thisCDCHit == NULL) continue;

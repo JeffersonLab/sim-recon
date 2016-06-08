@@ -237,11 +237,12 @@ jerror_t JEventProcessor_RF_online::init(void)
 jerror_t JEventProcessor_RF_online::brun(JEventLoop* locEventLoop, int32_t runnumber)
 {
 	// This is called whenever the run number changes
-	dRFTimeFactory = static_cast<DRFTime_factory*>(locEventLoop->GetFactory("DRFTime"));
 
 	//be sure that DRFTime_factory::init() and brun() are called
 	vector<const DRFTime*> locRFTimes;
 	locEventLoop->Get(locRFTimes);
+
+	dRFTimeFactory = static_cast<DRFTime_factory*>(locEventLoop->GetFactory("DRFTime"));
 
 	return NOERROR;
 }

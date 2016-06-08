@@ -88,6 +88,10 @@ jerror_t DEventProcessor_track_skimmer::init(void)
 	dIDXAStreamMap["xi-"] = new ofstream("xi-.idxa");
 	dIDXAStreamMap["xi0"] = new ofstream("xi0.idxa");
 
+    // e+e-
+	dIDXAStreamMap["ee"] = new ofstream("ee.idxa");
+	dIDXAStreamMap["jpsi_ee"] = new ofstream("jpsi_ee.idxa");
+
 	//First line
 	map<string, ofstream*>::iterator locStreamIterator = dIDXAStreamMap.begin();
 	for(; locStreamIterator != dIDXAStreamMap.end(); ++locStreamIterator)
@@ -245,6 +249,13 @@ jerror_t DEventProcessor_track_skimmer::evnt(jana::JEventLoop* locEventLoop, uin
 			locSaveSkimStreams.insert(dIDXAStreamMap["xi-"]);
 		else if(locReactionName == "skim_xi0")
 			locSaveSkimStreams.insert(dIDXAStreamMap["xi0"]);
+
+        // e+e- reactions
+		else if(locReactionName == "skim_ee")
+			locSaveSkimStreams.insert(dIDXAStreamMap["ee"]);
+		else if(locReactionName == "skim_jpsi_ee")
+			locSaveSkimStreams.insert(dIDXAStreamMap["jpsi_ee"]);
+
 	}
 
 	//BUILD TO-PRINT STRING

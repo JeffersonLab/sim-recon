@@ -37,6 +37,11 @@ class DCustomAction_p2k_hists : public DAnalysisAction
 
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
+		// Parameters for event selection to fill histograms
+		int endpoint_energy_bins;
+		double cohmin_energy, cohedge_energy, endpoint_energy;
+		double dEdxCut, minMM2Cut, maxMM2Cut, maxPhiMassCut;
+
 		// Optional: Useful utility functions.
 		const DAnalysisUtilities* dAnalysisUtilities;
 

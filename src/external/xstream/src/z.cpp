@@ -3,6 +3,7 @@
 #if HAVE_LIBZ
 
 #include <algorithm>
+#include <string.h>
 #include <string>
 
 #include <xstream/z.h>
@@ -11,13 +12,23 @@
 
 #include <stdio.h>
 #include <zlib.h>
+#include <arpa/inet.h>
 
 #include <cassert>
 
 #include "debug.h"
 
+#define COMPRESSION_BLOCK_SIZE 32000
+
 namespace xstream {
 namespace z {
+
+// define the standard header for a zlib stream that can be used
+// to prime the inflate engine to start at an arbitrary block in
+// an input stream
+
+    static int z_header_length = 2;
+    static unsigned char z_header[2] = {0x78, 0x9c};
 
     struct pimpl: public z_stream {};
     
@@ -67,7 +78,8 @@ namespace z {
     
 
     common::common(std::streambuf * sb)
-    : xstream::common_buffer (sb), z_strm (0) {
+    : xstream::common_buffer(sb), z_strm(0), block_offset(0)
+    {
         LOG("z::common");    
 
         z_strm = new pimpl;
@@ -206,7 +218,7 @@ namespace z {
         return flush(no_sync, buffer, n);
     }
 
-    int ostreambuf::flush(const flush_kind f, const char *appendbuf, int appendsize) {
+    int ostreambuf::flush(flush_kind f, const char *appendbuf, int appendsize) {
         LOG ("z::ostreambuf::flush(" << f << ")");
         std::streamsize in_s = taken ();
         LOG ("\tinput_size=" << in_s);
@@ -227,16 +239,16 @@ namespace z {
            z_strm->avail_in = 0;
            written = 0;
         }
+        block_offset += written;
+        if (block_offset > (std::streamoff)COMPRESSION_BLOCK_SIZE) {
+            f = (f == no_sync)? full_sync : f;
+        }
 
         bool redo = false;
 
         do {
             int cret;
             redo = false;
-
-            //reset output
-            z_strm->next_out = reinterpret_cast < Bytef* >(out.buf);
-            z_strm->avail_out = out.size;
 
             do {
                 cret = ::deflate(z_strm, flush_macro(f));
@@ -261,9 +273,23 @@ namespace z {
                 raise_error(cret);
             }
 
-            LOG ("\twriting " << (out.size - z_strm->avail_out) << " bytes");
-            //XXX need to check return value and wrap this
-            _sb->sputn (out.buf, out.size - z_strm->avail_out);
+            if (f != no_sync) {
+                std::streamsize count = out.size - z_strm->avail_out;
+                LOG ("\twriting " << count << " bytes");
+                int size = htonl(count);
+                const std::streamsize wrote = _sb->sputn((char*)&size, 4) +
+                                              _sb->sputn(out.buf, count);
+                if (wrote != count + 4) {
+                    LOG("\terror writting, only wrote " << wrote 
+                        << " but asked for " << count);
+                    raise_error(Z_STREAM_ERROR);
+                }
+
+                // reset output
+                z_strm->next_out = reinterpret_cast < Bytef* >(out.buf);
+                z_strm->avail_out = out.size;
+                block_offset = 0;
+            }
 
             if (0 == z_strm->avail_out) { // && 0 != z_strm->avail_in)
                 LOG("\tavail_out=0 => redo");
@@ -290,7 +316,7 @@ namespace z {
     /////////////////////
 
     istreambuf::istreambuf (std::streambuf * sb)
-    : common(sb), end(false) {
+    : common(sb), end(false), block_size(0) {
         LOG ("z::istreambuf");
 
         int cret = ::inflateInit(z_strm);
@@ -334,9 +360,13 @@ namespace z {
             LOG("\tdata in queue, inflating");
             inflate();
         }
-
-        while (!(end || 0 == z_strm->avail_out)) {
+        while (!end && z_strm->avail_out > 0) {
             read_inflate();
+        }
+        if (end && z_strm->avail_out > 0) {
+            LOG("\tend of stream (EOF)");
+            //signal the stream has reached it's end
+            return eof;
         }
             
         //set streambuf pointers
@@ -355,6 +385,7 @@ namespace z {
         if (read) {
             std::copy(gptr(), gptr() + read, buffer);
             gbump(read);
+            block_offset += read;
         }
 
         //inflate the rest directly into the user's buffer
@@ -371,31 +402,80 @@ namespace z {
             if (0 < z_strm->avail_in) {
                 inflate();
             }
-            while (!(end || 0 == z_strm->avail_out)) {
+            while (!end && z_strm->avail_out > 0) {
                 read_inflate();
             }
-
-            underflow();
+            if (end && z_strm->avail_out > 0) {
+                LOG("\tend of stream (EOF)");
+                //signal the stream has reached it's end
+                return eof;
+            }
+            block_offset += n - read;
         }
         return n;
     }
 
     void istreambuf::read_inflate( const flush_kind f) {
         LOG("z::istreambuf::read_inflate " << f);
-
-        z_strm->next_in = reinterpret_cast < Bytef* >(in.buf);
-        
-        int read = _sb->sgetn(in.buf, in.size);
+        int read;
+        int block_pending = 0;
+        if (block_size < 0) { // stream has no blocksize markers
+            read = _sb->sgetn(in.buf, in.size);
+        }
+        else { // look for prefixed blocksize: leading byte = 0
+            read = _sb->sgetn(in.buf, 4);
+            if (read < 4) {
+                end = true;
+                return;
+            }
+            if (in.buf[0] == 0) { // z blocks have prefixed blocksize
+                int *size = (int*)in.buf;
+                block_pending = ntohl(*size);
+                read = _sb->sgetn(in.buf, block_pending);
+            }
+            else { // z blocks are jammed together, no blocksize available
+                read += _sb->sgetn(in.buf + 4, in.size - 4);
+                block_size = -1;
+            }
+        }
         LOG("\tread " << read << " bytes");
+        block_offset = 0;
 
         if (0 == read) {
-            LOG("\tpremature end of stream");
-            //XXX throw exception
-            raise_error(Z_DATA_ERROR);
+            end = true;
+            return;
         }
 
-        z_strm->avail_in = read;
+        // We want to be able to start decompression at an arbitrary position
+        // in the input stream. This is possible with bzip2 streams, but there
+        // is a problem that the compressed blocks are arbitrary numbers of 
+        // bits long and they are catenated one after another in a bit stream
+        // without any reference to byte boundaries. This makes it difficult 
+        // to jump into the middle of a stream and start the decompressor 
+        // since it expects a stream header followed by the first block that
+        // happens to start on a byte boundary. To make this work, I splice
+        // an artificial stream header followed by a dummy compressed block
+        // onto the beginning of the input stream, where the length of the
+        // dummy block in bits is chosen so that it abutts without padding 
+        // the next block in the input stream. I have prepared 8 dummy blocks
+        // so there should be one to match the alignment of any input block.
+        // To match them, I look for the first place in the input stream
+        // with a byte string that matches the last 5 bytes in one of my
+        // dummy headers, and then I inject the dummy header into the 
+        // decompressor ahead of the actual data. The dummy blocks are all
+        // contrived to decompress to an 8-byte string, so throwing away the
+        // first 8 bytes out of the decompressor, it is primed to decompress
+        // the remaining stream without any need for bit-shifting the input.
 
+        const char* head = (const char*)z_header;
+        if (block_size == 0 && strncmp(head, in.buf, z_header_length) != 0) {
+            z_strm->avail_in = z_header_length;
+            z_strm->next_in = reinterpret_cast < Bytef* >(z_header);
+            inflate(f); // inject the z stream header
+        }
+        block_size = read;
+        z_strm->next_in = reinterpret_cast < Bytef* >(in.buf);
+        z_strm->avail_in = read;
         inflate(f);
     }
 
@@ -406,7 +486,15 @@ namespace z {
 
         if (Z_STREAM_END == cret) {
             end = true;
-        } else if (Z_OK != cret) {
+        }
+        else if (cret == Z_DATA_ERROR && z_strm->avail_in == 0) {
+            // Ignore CRC errors at the end of stream because we may not have
+            // started decompressing at the beginning. We can rely on the CRC
+            // checks that are present within each compressed block anyway.
+            cret = Z_OK;
+            end = true;
+        }
+        else if (Z_OK != cret) {
             LOG("\terror inflating: " << cret);
             //XXX throw exception
             raise_error(cret);

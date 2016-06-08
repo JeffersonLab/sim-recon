@@ -276,6 +276,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	event_source_data_types.insert("DEPICSvalue");
 	event_source_data_types.insert("DEventTag");
 	event_source_data_types.insert("DL1Info");
+	event_source_data_types.insert("Df250Scaler");
+	event_source_data_types.insert("Df250AsyncPedestal");
 
 	// Read in optional module type translation map if it exists	
 	ReadOptionalModuleTypeTranslation();
@@ -2813,17 +2815,23 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
             continue;
         }
 
-        // Check if this is a f250 Pedestal Bank. 
+
+        // Check if this is a f250 Pedestal Bank. Read out at SYNC events.
         if(bankPtr->tag == 0xEE05){
-            if(VERBOSE>6) evioout << "      SYNC event - f250 pedestals not currently handled"<< endl;
-            continue;
+	  if(VERBOSE>6) evioout << "      SYNC event - f250 pedestals found " << endl;
+	  ParseFA250AsyncPedestals(bankPtr, full_events, rocid);
+	  continue;
+        }	
+
+
+	// FADC 250 scalers. Read out at SYNC events
+        if(bankPtr->tag == 0xEE10){
+	  if(VERBOSE>6) evioout << "      SYNC event - f250 scalers found "<< endl;
+	    ParseFA250Scalers(bankPtr, full_events, rocid);
+	    continue;
         }
 
-        // Check if this is additional sync data 
-        if(bankPtr->tag == 0xEE10){
-            if(VERBOSE>6) evioout << "      SYNC event - ignoring undocumented sync bank"<< endl; // only somov@jlab.org knows what this is
-            continue;
-        }
+
 
         // The number of events in block is stored in lower 8 bits
         // of header word (aka the "num") of Data Bank. This should
@@ -4749,8 +4757,83 @@ void JEventSource_EVIO::ParseBORevent(evioDOMNodeP bankPtr)
 }
 
 
+
+//------------------
+// ParseFA250Scalers
+//------------------
+// Read out fadc250 scalers at sync events
+// for all boards in the crate.
+// The data format: slot + 16 scalers
+void JEventSource_EVIO::ParseFA250Scalers(evioDOMNodeP bankPtr, list<ObjList*> &events, uint32_t rocid){
+
+    const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+
+    if(vec->size() > 0){      
+      Df250Scaler *sc = new Df250Scaler;
+	
+      sc->nsync        = (*vec)[0];
+      sc->trig_number  = (*vec)[1];
+      sc->version      = (*vec)[2];
+
+      sc->crate  = rocid;
+
+      for(uint32_t ii = 3; ii < vec->size(); ii++){
+	sc->fa250_sc.push_back((*vec)[ii]);
+      }       
+        
+      if(events.empty()){				
+	events.push_back(new ObjList());
+      }
+      
+      ObjList *objs = *(events.begin());
+      
+      objs->misc_objs.push_back(sc);
+    } else {
+      evioout << "  SYNC event: inconsistent format for FA250Scalers. Don't parse " << endl;
+    }
+
+}
+
+//-------------------------
+// ParseFA250AsyncPedestals
+//-------------------------
+// Read out fadc250 asynchronous pedestals at sync events
+// for all boards in the crate.
+// The data format: slot + 8 32-bit words (ped1, ped2)
+void JEventSource_EVIO::ParseFA250AsyncPedestals(evioDOMNodeP bankPtr, list<ObjList*> &events, uint32_t rocid){
+
+
+    const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+
+    if(vec->size() > 0){
+      
+      Df250AsyncPedestal *ped = new Df250AsyncPedestal;
+	
+      ped->nsync        = (*vec)[0];
+      ped->trig_number  = (*vec)[1];
+
+      ped->crate  = rocid;
+
+      for(uint32_t ii = 2; ii < vec->size(); ii++){
+	ped->fa250_ped.push_back((*vec)[ii]);
+      }       
+        
+      if(events.empty()){				
+	events.push_back(new ObjList());
+      }
+      
+      ObjList *objs = *(events.begin());
+      
+      objs->misc_objs.push_back(ped);
+    } else {
+      evioout << "  SYNC event: inconsistent format for FA250AsyncPedestals. Don't parse " << endl;
+    }
+
+}
+
+
 //----------------
-// ParseTSSyncevent
+// ParseTSSync event
 //----------------
 void JEventSource_EVIO::ParseTSSync(evioDOMNodeP bankPtr, list<ObjList*> &events)
 {
@@ -4761,6 +4844,8 @@ void JEventSource_EVIO::ParseTSSync(evioDOMNodeP bankPtr, list<ObjList*> &events
 
     if((bankPtr->tag & 0xFFFF) == 0xEE02){
         const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+
+
 
         trig_info->nsync        = (*vec)[0];
         trig_info->trig_number  = (*vec)[1];

@@ -140,14 +140,28 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     return NOERROR;    
   }
   
-  vector<const DCODAEventInfo*> locCODAEventInfo;
-  loop->Get(locCODAEventInfo);
+  vector< const DCAEN1290TDCHit*> CAENHits;
+  loop->Get(CAENHits);
+  if (CAENHits.size()<=0){
+    return NOERROR;    
+  }
+  uint32_t locROCID = CAENHits[0]->rocid;
   
-  if (locCODAEventInfo.size() == 0){
-    return NOERROR;
+  vector <const DCODAROCInfo*> ROCS;
+  loop->Get(ROCS);
+  int indx = -1;
+  for ( unsigned int n=0; n<ROCS.size(); n++) {
+    if (locROCID == ROCS[n]->rocid){
+      indx = n;
+      break;
+    }
   }
 
-  uint64_t TriggerTime = locCODAEventInfo[0]->avg_timestamp;
+  if (indx<0){
+    return NOERROR;    
+  }
+
+  uint64_t TriggerTime = ROCS[indx]->timestamp;
   int TriggerBIT = TriggerTime%6;
   float TimingShift = TOF_TDC_SHIFT - (float)TriggerBIT;
   if(TimingShift <= 0) { 
@@ -181,14 +195,23 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     }
 
     int bar = hit->bar;
+    float indx = bar-1 + plane *88 + end*44;
     //cout<<plane<<"  "<<bar<<"  "<<end<<endl;
+
+    if (hit->pedestal){
+      TOFPedestal->Fill(indx, (float)hit->pedestal);
+      TOFEnergy->Fill(indx, (float)hit->pulse_integral);
+      const Df250PulsePedestal* phit;
+      hit->GetSingle(phit);
+      TOFPeak->Fill(indx, (float)phit->pulse_peak);
+    }
+
     if (th[plane][bar-1][end]){ // only take first hit
       continue;
     }
 
     th[plane][bar-1][end] = 1;
-
-    TOFADCtime->Fill(time);
+    TOFADCtime->Fill(time,indx);
     if (fabsf(time-ADCTLOC)<ADCTimeCut){
       // test for overflow if raw data available
       vector <const Df250PulseIntegral*> PulseIntegral;
@@ -230,7 +253,8 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     int plane = hit->plane;
     int end = hit->end;
     float time = (float)hit->time * BINTDC_2_TIME;
-    TOFTDCtime->Fill(time);
+    float indx = plane*88 + end*44 + hit->bar-1;
+    TOFTDCtime->Fill(time, indx);
     if (fabsf(time-TDCTLOC)<TDCTimeCut){
       if (end){
 	TDCHitsRight[plane].push_back(hit);
@@ -262,6 +286,11 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 	newsingle.time = (float)hitR->pulse_time*BINADC_2_TIME ;
 	newsingle.adc = (float)hitR->pulse_integral -  
 	  (float)hitR->pedestal/(float)hitR->nsamples_pedestal*(float)hitR->nsamples_integral;
+
+	const Df250PulsePedestal* phit;
+	hitR->GetSingle(phit);
+	newsingle.Peak = phit->pulse_peak;
+
 	newsingle.OverFlow = ADCRightOverFlow[plane][i];
 	TOFADCSingles[plane].push_back(newsingle);	
       }
@@ -280,6 +309,11 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 	newsingle.LR = 0;
 	newsingle.adc = (float)hit->pulse_integral -  
 	  (float)hit->pedestal/(float)hit->nsamples_pedestal*(float)hit->nsamples_integral;
+
+	const Df250PulsePedestal* phit;
+	hit->GetSingle(phit);
+	newsingle.Peak = phit->pulse_peak;
+
 	newsingle.time = (float)hit->pulse_time*BINADC_2_TIME ;
 	newsingle.OverFlow = ADCLeftOverFlow[plane][j];
 	TOFADCSingles[plane].push_back(newsingle);
@@ -299,6 +333,14 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 	      (float)hit->pedestal/(float)hit->nsamples_pedestal*(float)hit->nsamples_integral;
 	    newpaddle.adcR = (float)hitR->pulse_integral -  
 	      (float)hitR->pedestal/(float)hitR->nsamples_pedestal*(float)hitR->nsamples_integral;
+
+	    const Df250PulsePedestal* phit;
+	    hitR->GetSingle(phit);
+	    newpaddle.PeakR = phit->pulse_peak;
+	    
+	    hit->GetSingle(phit);
+	    newpaddle.PeakL = phit->pulse_peak;
+
 	    newpaddle.OverFlowL =  ADCLeftOverFlow[plane][j];
 	    newpaddle.OverFlowR =  ADCRightOverFlow[plane][i];
 	    if ((paddle != 22) && (paddle !=23)) {
@@ -404,6 +446,9 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
       ADCR[cnt] = TOFADCPaddles[0][k].adcR;
       OFL[cnt] = TOFADCPaddles[0][k].OverFlowL;
       OFR[cnt] = TOFADCPaddles[0][k].OverFlowR;
+      PEAKL[cnt] = TOFADCPaddles[0][k].PeakL;
+      PEAKR[cnt] = TOFADCPaddles[0][k].PeakR;
+
       cnt++;
       AllHits[2]++;
     }
@@ -417,6 +462,9 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
       ADCR[cnt] = TOFADCPaddles[1][k].adcR;
       OFL[cnt] = TOFADCPaddles[1][k].OverFlowL;
       OFR[cnt] = TOFADCPaddles[1][k].OverFlowR;
+      PEAKL[cnt] = TOFADCPaddles[1][k].PeakL;
+      PEAKR[cnt] = TOFADCPaddles[1][k].PeakR;
+
       cnt++;
       AllHits[3]++;
     }
@@ -435,6 +483,8 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     ADCS[k] = TOFADCSingles[0][k].adc;
     TADCS[k] = TOFADCSingles[0][k].time; 
     OF[k] = TOFADCSingles[0][k].OverFlow;
+    PEAK[k] = TOFADCSingles[0][k].Peak;
+
     j++;
   }
   for (unsigned int k = 0; k<TOFADCSingles[1].size(); k++){
@@ -444,7 +494,8 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     ADCS[k+j] = TOFADCSingles[1][k].adc;
     TADCS[k+j] = TOFADCSingles[1][k].time; ;
     OF[k+j] = TOFADCSingles[1][k].OverFlow;
-  }
+    PEAK[k+j] = TOFADCSingles[1][k].Peak;
+ }
   j = 0;
   for (unsigned int k = 0; k<TOFTDCSingles[0].size(); k++){
     PlaneST[k] = 0;
@@ -507,6 +558,10 @@ jerror_t JEventProcessor_TOF_calib::WriteRootFile(void){
 
   TOFTDCtime->Write();
   TOFADCtime->Write();
+  TOFEnergy->Write();
+  TOFPeak->Write();
+  TOFPedestal->Write();
+
   t3->Write();
   //t3->AutoSave("SaveSelf");
 
@@ -543,8 +598,14 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
     ROOTFile->cd("TOFcalib");
 	
 
-    TOFTDCtime = new TH1F("TOFTDCtime","TOF CAEN TDC times", 8000, 0., 4000.);
-    TOFADCtime = new TH1F("TOFADCtime","TOF ADC times", 800, 0., 400.);
+    TOFTDCtime = new TH2F("TOFTDCtime","TOF CAEN TDC times", 8000, 0., 4000., 176, 0., 176.);
+    TOFADCtime = new TH2F("TOFADCtime","TOF ADC times", 800, 0., 400., 176, 0., 176.);
+
+    TOFEnergy = new TH2F("TOFEnergy","TOF Energy Integral (no ped subraction)", 
+			 176, 0., 176., 100, 0., 20000.);
+    TOFPeak = new TH2F("TOFPeak","TOF Peak Amplitude",176, 0., 176., 100, 0., 4100.);
+    TOFPedestal = new TH2F("TOFPedestal","TOF Pedestal",176, 0., 176., 100, 0., 200.);
+        
 
     t3 = new TTree("t3","TOF Hits");
     t3->Branch("Event", &Event,"Event/I");
@@ -565,6 +626,8 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
     t3->Branch("ADCR",ADCR,"ADCR[NhitsA]/F");
     t3->Branch("OFL",OFL,"OFL[NhitsA]/I");
     t3->Branch("OFR",OFR,"OFR[NhitsA]/I");
+    t3->Branch("PEAKL",PEAKL,"PEAKL[NhitsA]/F");
+    t3->Branch("PEAKR",PEAKR,"PEAKR[NhitsA]/F");
     
     t3->Branch("NsinglesA", &NsinglesA,"NsinglesA/I");
     t3->Branch("PlaneSA",PlaneSA,"PlaneSA[NsinglesA]/I");
@@ -573,6 +636,7 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
     t3->Branch("ADCS",ADCS,"ADCS[NsinglesA]/F");
     t3->Branch("OF",OF,"OF[NsinglesA]/I");
     t3->Branch("TADCS",TADCS,"TADCS[NsinglesA]/F");
+    t3->Branch("PEAK",PEAK,"PEAK[NsinglesA]/F");
 
     t3->Branch("NsinglesT", &NsinglesT,"NsinglesT/I");
     t3->Branch("PlaneST",PlaneST,"PlaneSA[NsinglesT]/I");

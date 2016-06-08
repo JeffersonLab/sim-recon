@@ -73,6 +73,27 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
       return NO_MORE_EVENTS_IN_SOURCE;
    }
 
+#if HDDM_SETPOSITION_EXAMPLE
+   static std::ifstream fevlist("events.list");
+   static int events_to_go = 0;
+   if (events_to_go-- == 0 && fevlist.good()) {
+      uint64_t start;
+      uint32_t offset, status;
+      fevlist >> start >> offset >> status >> events_to_go;
+      if (fevlist.good())
+         fin->setPosition(hddm_r::streamposition(start, offset, status));
+   }
+#endif
+
+#if HDDM_GETPOSITION_EXAMPLE
+   hddm_r::streamposition pos(fin->getPosition());
+   // Later on below, if this event passes all of your selection cuts
+   // then you might want to write the event position to output, as in
+   // std::cout << "interesting event found at " 
+   //           << pos.start << "," << pos.offset << "," << pos.status
+   //           << std::endl;
+#endif
+
    hddm_r::HDDM *record = new hddm_r::HDDM();
    try{
       *fin >> *record;
@@ -103,6 +124,23 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
          for (iter = comments.begin(); iter != comments.end(); ++iter) {
             std::cout << "   | " << iter->getText() << std::endl;
          }
+
+         //set version string
+         const hddm_r::DataVersionStringList& locVersionStrings = re.getDataVersionStrings();
+         hddm_r::DataVersionStringList::iterator Versioniter;
+         for (Versioniter = locVersionStrings.begin(); Versioniter != locVersionStrings.end(); ++Versioniter) {
+        	 string HDDM_DATA_VERSION_STRING = Versioniter->getText();
+             gPARMS->SetDefaultParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING);
+         }
+
+         //set REST calib context
+         const hddm_r::CcdbContextList& locContextStrings = re.getCcdbContexts();
+         hddm_r::CcdbContextList::iterator Contextiter;
+         for (Contextiter = locContextStrings.begin(); Contextiter != locContextStrings.end(); ++Contextiter) {
+        	 string REST_JANA_CALIB_CONTEXT = Contextiter->getText();
+             gPARMS->SetDefaultParameter("REST:JANACALIBCONTEXT", REST_JANA_CALIB_CONTEXT);
+         }
+
          *fin >> *record;
          continue;
       }
@@ -113,7 +151,8 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
       event.SetStatusBit(kSTATUS_REST);
       event.SetStatusBit(kSTATUS_FROM_FILE);
 	  event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
-      ++Nevents_read;
+
+	  ++Nevents_read;
       break;
    }
  
