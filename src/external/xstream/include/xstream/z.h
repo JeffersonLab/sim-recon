@@ -159,6 +159,9 @@ class ostreambuf: public common, public xstream::ostreambuf {
          */
         ~ostreambuf();
 
+        std::streambuf *get_streambuf() {
+            return _sb;
+        }
         std::streamoff get_block_offset() {
             return block_offset;
         }
@@ -221,6 +224,9 @@ class istreambuf: public common, public std::streambuf{
          */
         ~istreambuf();
 
+        std::streambuf *get_streambuf() {
+            return _sb;
+        }
         std::streamoff get_block_offset() {
             return block_offset;
         }
