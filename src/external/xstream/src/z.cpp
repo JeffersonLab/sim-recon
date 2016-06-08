@@ -424,6 +424,10 @@ namespace z {
         }
         else { // look for prefixed blocksize: leading byte = 0
             read = _sb->sgetn(in.buf, 4);
+            if (read < 4) {
+                end = true;
+                return;
+            }
             if (in.buf[0] == 0) { // z blocks have prefixed blocksize
                 int *size = (int*)in.buf;
                 block_pending = ntohl(*size);
@@ -438,9 +442,8 @@ namespace z {
         block_offset = 0;
 
         if (0 == read) {
-            LOG("\tpremature end of stream");
-            //XXX throw exception
-            raise_error(Z_DATA_ERROR);
+            end = true;
+            return;
         }
 
         // We want to be able to start decompression at an arbitrary position
