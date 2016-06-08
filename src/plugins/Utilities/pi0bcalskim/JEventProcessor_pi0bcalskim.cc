@@ -79,7 +79,16 @@ jerror_t JEventProcessor_pi0bcalskim::init(void)
 //------------------
 jerror_t JEventProcessor_pi0bcalskim::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
-  return NOERROR;
+    /* Example
+    // only write out BCAL data for these events
+	const DEventWriterEVIO* locEventWriterEVIO = NULL;
+	eventLoop->GetSingle(locEventWriterEVIO);
+    
+    if(locEventWriterEVIO) {
+        locEventWriterEVIO->SetDetectorsToWriteOut("BCAL","pi0bcalskim");
+    }
+    */
+    return NOERROR;
 }
 
 //------------------
@@ -94,8 +103,10 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
   vector<const DVertex*> kinfitVertex;
   loop->Get(kinfitVertex);
 
-	const DEventWriterEVIO* locEventWriterEVIO = NULL;
-	loop->GetSingle(locEventWriterEVIO);
+  const DEventWriterEVIO* locEventWriterEVIO = NULL;
+  loop->GetSingle(locEventWriterEVIO);
+
+  vector< const JObject* > locBCALShowersToSave;
 
   // always write out BOR events
   if(loop->GetJEvent().GetStatusBit(kSTATUS_BOR_EVENT)) {
@@ -176,13 +187,19 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
 		TLorentzVector ptot = sh1_p+sh2_p;
 		inv_mass = ptot.M();
 		Candidate |= ( (sh2_E>0.67) && (inv_mass<0.30) );
+        if((sh2_E>0.67) && (inv_mass<0.30)) {
+            if(find(locBCALShowersToSave.begin(), locBCALShowersToSave.end(), locBCALShowers[i]) == locBCALShowersToSave.end())
+                locBCALShowersToSave.push_back(static_cast<const JObject *>(locBCALShowers[i]));
+            if(find(locBCALShowersToSave.begin(), locBCALShowersToSave.end(), locBCALShowers[j]) == locBCALShowersToSave.end())
+                locBCALShowersToSave.push_back(static_cast<const JObject *>(locBCALShowers[j]));
+        }
 	}
   }
   	if(Candidate){
 	        if( WRITE_EVIO ) {
                 //	cout << " inv mass = " << inv_mass << " sh1 E = " << sh1_E << " sh2 E = " << sh2_E << " event num = " << eventnumber << endl;
-                cout << eventnumber << endl;
-     			 locEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim" );
+                //cout << "writing out " << eventnumber << endl;
+                locEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim", locBCALShowersToSave );
   		  }
 			}
 
