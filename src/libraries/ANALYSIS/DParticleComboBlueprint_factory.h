@@ -9,13 +9,16 @@
 
 #include <JANA/JObject.h>
 #include <particleType.h>
+#include <SplitString.h>
 #include <PID/DChargedTrack.h>
 #include <PID/DNeutralShower.h>
 #include <PID/DVertex.h>
 #include <PID/DDetectorMatches.h>
+#include <TRIGGER/DTrigger.h>
 
 #include <deque>
 #include <map>
+#include <set>
 #include <vector>
 
 using namespace std;
@@ -95,6 +98,8 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		map<DParticleComboBlueprintStep, DParticleComboBlueprintStep*> dBlueprintStepMap;
 
 		DTrackTimeBased_factory_Combo* dTrackTimeBasedFactory_Combo;
+
+		size_t dMaxNumNeutralShowers;
 };
 
 #endif // _DParticleComboBlueprint_factory_

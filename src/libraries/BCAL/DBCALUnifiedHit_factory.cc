@@ -30,12 +30,19 @@ jerror_t DBCALUnifiedHit_factory::init(void)
         gPARMS->SetDefaultParameter("BCAL:USE_TDC", USE_TDC, "Set to 1 to use TDC times");
     }
 
-    if (USE_TDC){
-        jout << "DBCALUnifiedHit_factory: Using TDC times when available." << endl;
+    static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
+    static bool printMessage = true;
+    pthread_mutex_lock(&print_mutex);
+    if (printMessage){
+        if (USE_TDC){
+            jout << "DBCALUnifiedHit_factory: Using TDC times when available." << endl;
+        }
+        else{
+            jout << "DBCALUnifiedHit_factory: Using ADC times only." << endl;
+        }
     }
-    else{
-        jout << "DBCALUnifiedHit_factory: Using ADC times only." << endl;
-    }
+    printMessage = false;
+    pthread_mutex_unlock(&print_mutex);
 
     return NOERROR;
 }
@@ -149,11 +156,13 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
         const vector<const DBCALTDCHit*> &tdc_hits = mapItr->second.tdc_hits;
 
         //if we have no ADC hits in the cell, there is nothing to do with the TDC hits either
-        if (hits.size()==0) {
-            static uint64_t Nwarnings = 0;
-            if(++Nwarnings <= 10) cout << "DBCALUnifiedHit_factory (event " << eventnumber << "): TDC hits without ADC hits" << endl;
-            if(  Nwarnings == 10) cout << "DBCALUnifiedHit_factory: LAST WARNING (others will be suppressed)" <<endl;
-            continue;
+        if (VERBOSE>5) {
+            if (hits.size()==0) {
+                static uint64_t Nwarnings = 0;
+                if(++Nwarnings <= 10) cout << "DBCALUnifiedHit_factory (event " << eventnumber << "): TDC hits without ADC hits" << endl;
+                if(  Nwarnings == 10) cout << "DBCALUnifiedHit_factory: LAST WARNING (others will be suppressed)" <<endl;
+                continue;
+            }
         }
 
         // At the moment we only allow 1 ADC hit in the firmware.
@@ -169,7 +178,7 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
         bool haveTDChit = false;
         if (tdc_hits.size() > 0) haveTDChit = true;
 
-        // For each ADC hit (of which there will only be 1 for the moment
+        // For each ADC hit 
         for (unsigned int i=0; i<hits.size(); i++) {
             const DBCALHit* hit=hits[i];
 

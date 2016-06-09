@@ -80,6 +80,17 @@ jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int32_t runnumber) {
     effective_velocities.push_back(effective_velocities_temp.at(i));
   }
 
+  // load track parameters (the parameters of the quadratic fit in histograms of z_track = f(tUp - tDown)  )
+  track_parameters.clear();
+
+  vector< vector<double> > track_parameters_temp;
+  loop->GetCalib("/BCAL/z_track_parms", track_parameters_temp);
+
+  // Passing in the member vector directly was sometimes causing a crash...
+  for (unsigned int i = 0; i < track_parameters_temp.size(); i++){
+      track_parameters.push_back(track_parameters_temp.at(i));
+  }
+
   return NOERROR;
 }
 
@@ -168,7 +179,14 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, uint64_t eventnumber) {
     //   printf("default att length %f\n",attenuation_length);
     // }
 
-    DBCALPoint *point = new DBCALPoint(*uphit,*dnhit,m_z_target_center,attenuation_length);
+    // pass track parameters to the DBCALPoint constructor, since
+    // many of the calculations are implemented there. This should change promptly
+    double track_p0 = -1.0; // will be updated from GetTrackParameters (dimensions: cm)
+    double track_p1 = -1.0; // will be updated from GetTrackParameters (dimensions: cm/ns)
+    double track_p2 = -100.0; // will be updated from GetTrackParameters (dimensions: cm/ns^2)
+    GetTrackParameters(table_id, track_p0, track_p1, track_p2);
+
+    DBCALPoint *point = new DBCALPoint(*uphit,*dnhit,m_z_target_center,attenuation_length,cEff,track_p0,track_p1,track_p2);
 
     point->AddAssociatedObject(uphit);
     point->AddAssociatedObject(dnhit);
@@ -198,4 +216,21 @@ bool DBCALPoint_factory::GetAttenuationParameters(int id, double &attenuation_le
 double DBCALPoint_factory::GetEffectiveVelocity(int id)
 {
 	return effective_velocities.at(id);
+}
+
+bool DBCALPoint_factory::GetTrackParameters(int id, double &track_p0, 
+						    double &track_p1, double &track_p2)
+{
+	vector<double> &z_parms = track_parameters.at(id);
+
+	if(!z_parms.empty()){
+		track_p0 = z_parms[0];
+		track_p1 = z_parms[1];
+		track_p2 = z_parms[2];
+		return true;
+	}
+  	else{
+  		jerr<<"Failed to retrieve the z_track parameters from CCDB!!!" << endl;
+  		exit(-1);
+  	}
 }

@@ -45,6 +45,11 @@ JEventProcessor_CDC_TimeToDistance::~JEventProcessor_CDC_TimeToDistance()
 //------------------
 jerror_t JEventProcessor_CDC_TimeToDistance::init(void)
 {
+    UNBIASED_RING=0;
+    if(gPARMS){
+        gPARMS->SetDefaultParameter("KALMAN:RING_TO_SKIP",UNBIASED_RING);
+        gPARMS->SetDefaultParameter("CDCCOSMIC:EXCLUDERING", UNBIASED_RING);
+    }
     return NOERROR;
 }
 
@@ -112,7 +117,7 @@ jerror_t JEventProcessor_CDC_TimeToDistance::evnt(JEventLoop *loop, uint64_t eve
         // Loop over the pulls to get the appropriate information for our ring
         for (unsigned int i = 0; i < pulls.size(); i++){
             DTrackFitter::pull_t thisPull = pulls[i];
-            double residual = thisPull.resi;
+            //double residual = thisPull.resi;
             //double error = thisPull.err;
             double time = thisPull.tdrift;
             double docaphi = thisPull.docaphi;
@@ -120,13 +125,14 @@ jerror_t JEventProcessor_CDC_TimeToDistance::evnt(JEventLoop *loop, uint64_t eve
             double docaz = thisPull.z;
             if (docaz < 70.0 || docaz > 110.0) continue; // Only focus on the center of the chamber
             //if (docaz < 140.0) continue; // Only focus on downstream end of chamber
-            double distance = thisPull.d; // This is the distance from the lookup table
-            double predictedDistance = distance - residual; // This is the distance predicted by the fit
+            double predictedDistance = thisPull.d; // This is the DOCA of the track
+            //double distance = residual + predictedDistance; // This is the distance from the T-D lookup
             const DCDCTrackHit* thisCDCHit = thisPull.cdc_hit;
 
             if (thisCDCHit == NULL) continue;
             if (predictedDistance > 1.5 || predictedDistance < 0.0) continue; // Some strange behavior in field on data?
             int ring = thisCDCHit->wire->ring;
+            if(UNBIASED_RING != 0 && (ring != UNBIASED_RING) ) continue;
             int straw = thisCDCHit->wire->straw;
             // Now just make a bunch of histograms to display all of the information
             //Time to distance relation in bins

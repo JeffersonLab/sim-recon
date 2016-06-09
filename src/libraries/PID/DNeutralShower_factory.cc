@@ -11,6 +11,14 @@ inline bool DNeutralShower_SortByEnergy(const DNeutralShower* locNeutralShower1,
 {
 	// truncate the shower energies: in units of MeV, ignore all digits that are 10s-place and above
 	// then sort by increasing energy: pseudo-random
+
+	//guard against NaN: necessary since casting to int
+	bool locFirstIsNaN = (!(locNeutralShower1->dEnergy > -1.0) && !(locNeutralShower1->dEnergy < 1.0));
+	bool locSecondIsNaN = (!(locNeutralShower2->dEnergy > -1.0) && !(locNeutralShower2->dEnergy < 1.0));
+	if(locFirstIsNaN)
+		return false;
+	if(locSecondIsNaN)
+		return true;
 	double locE1 = locNeutralShower1->dEnergy - double(int(locNeutralShower1->dEnergy*100.0))/100.0;
 	double locE2 = locNeutralShower2->dEnergy - double(int(locNeutralShower2->dEnergy*100.0))/100.0;
 	return (locE1 < locE2);

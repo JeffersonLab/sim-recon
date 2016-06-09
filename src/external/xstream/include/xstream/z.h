@@ -45,6 +45,8 @@ class common: public xstream::common_buffer
     protected:
         pimpl* z_strm; /*!< zlib stream "object" */
 
+        std::streamoff block_offset;
+
         /*!
          *    \brief grows the output buffer
          *
@@ -134,7 +136,7 @@ class ostreambuf: public common, public xstream::ostreambuf {
          * \param f kind of flush to do see flush_kind
          *
          */
-        int flush(const flush_kind f, const char *appendbuf=0, int appendsize=0);
+        int flush(flush_kind f, const char *appendbuf=0, int appendsize=0);
 
     public:
         /*!
@@ -157,6 +159,12 @@ class ostreambuf: public common, public xstream::ostreambuf {
          */
         ~ostreambuf();
 
+        std::streambuf *get_streambuf() {
+            return _sb;
+        }
+        std::streamoff get_block_offset() {
+            return block_offset;
+        }
 };
 
 /*!
@@ -178,6 +186,8 @@ class istreambuf: public common, public std::streambuf{
 
         
         bool end; /*!<signals if stream has reached the end */
+
+        std::streamsize block_size;
 
         /*!
          * \brief requests that input buffer be reloaded (overloaded from streambuf)
@@ -213,6 +223,22 @@ class istreambuf: public common, public std::streambuf{
          *
          */
         ~istreambuf();
+
+        std::streambuf *get_streambuf() {
+            return _sb;
+        }
+        std::streamoff get_block_offset() {
+            return block_offset;
+        }
+        std::streamsize get_block_size() {
+            return block_size;
+        }
+        std::streamsize get_block_buffered() {
+            if (block_size > 0)
+                return block_size + 4;
+            else
+                return 0;
+        }
 };
 
 

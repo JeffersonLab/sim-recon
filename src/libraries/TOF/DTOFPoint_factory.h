@@ -35,8 +35,7 @@ class DTOFPoint_factory : public JFactory<DTOFPoint>
 		double E_THRESHOLD;
 		double ATTEN_LENGTH;
 		double ONESIDED_PADDLE_MIDPOINT_MAG; //+/- this number for North/South
-		vector<double> propagation_speed;
-		
+
 		const DTOFGeometry* dTOFGeometry;
 		
 		class tof_spacetimehit_t
@@ -63,15 +62,15 @@ class DTOFPoint_factory : public JFactory<DTOFPoint>
 				bool dBothPositionsWellDefinedFlag;
 		};
 
+		tof_spacetimehit_t* Build_TOFSpacetimeHit_Horizontal(const DTOFPaddleHit* locTOFHit);
+		tof_spacetimehit_t* Build_TOFSpacetimeHit_Vertical(const DTOFPaddleHit* locTOFHit);
+
 	private:
 		jerror_t brun(JEventLoop *loop, int32_t runnumber);
 		jerror_t evnt(JEventLoop *loop, uint64_t eventnumber);
 		jerror_t fini(void);
 
 		tof_spacetimehit_t* Get_TOFSpacetimeHitResource(void);
-
-		tof_spacetimehit_t* Build_TOFSpacetimeHit_Horizontal(const DTOFPaddleHit* locTOFHit);
-		tof_spacetimehit_t* Build_TOFSpacetimeHit_Vertical(const DTOFPaddleHit* locTOFHit);
 
 		bool Match_Hits(tof_spacetimehit_t* locTOFSpacetimeHit_Horizontal, tof_spacetimehit_t* locTOFSpacetimeHit_Vertical, tof_spacetimehitmatch_t& locTOFSpacetimeHitMatch);
 
@@ -85,6 +84,11 @@ class DTOFPoint_factory : public JFactory<DTOFPoint>
 		size_t MAX_TOFSpacetimeHitPoolSize;
 		deque<tof_spacetimehit_t*> dTOFSpacetimeHitPool_All;
 		deque<tof_spacetimehit_t*> dTOFSpacetimeHitPool_Available;
+
+        // calibration tables
+		vector<double> propagation_speed;
+		vector<double> paddle_resolutions;
+		
 };
 
 #endif // _DTOFPoint_factory_

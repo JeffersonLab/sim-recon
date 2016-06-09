@@ -21,11 +21,32 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 
 	dMaxExtraGoodTracks = pair<bool, size_t>(false, 4);
 
-	dAvailablePIDs.insert(Proton);
-	dAvailablePIDs.insert(KPlus);
-	dAvailablePIDs.insert(PiPlus);
-	dAvailablePIDs.insert(KMinus);
-	dAvailablePIDs.insert(PiMinus);
+	vector<int> hypotheses;
+	hypotheses.push_back(PiPlus);
+	hypotheses.push_back(KPlus);
+	hypotheses.push_back(Proton);
+	hypotheses.push_back(PiMinus);
+	hypotheses.push_back(KMinus);
+
+	ostringstream locMassStream;
+	for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
+	{
+		locMassStream << hypotheses[loc_i];
+		if(loc_i != (hypotheses.size() - 1))
+			locMassStream << ",";
+	}
+
+	string HYPOTHESES = locMassStream.str();
+	gPARMS->SetDefaultParameter("TRKFIT:HYPOTHESES", HYPOTHESES);
+
+	dMaxNumNeutralShowers = 20;
+	gPARMS->SetDefaultParameter("COMBO:MAX_NEUTRALS", dMaxNumNeutralShowers);
+
+	// Parse MASS_HYPOTHESES strings to make list of masses to try
+	hypotheses.clear();
+	SplitString(HYPOTHESES, hypotheses, ",");
+	for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
+		dAvailablePIDs.insert(Particle_t(hypotheses[loc_i]));
 
 	return NOERROR;
 }
@@ -96,6 +117,12 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 	VT_TRACER("DParticleComboBlueprint_factory::evnt()");
 #endif
 
+	//CHECK TRIGGER TYPE
+	const DTrigger* locTrigger = NULL;
+	locEventLoop->GetSingle(locTrigger);
+	if(!locTrigger->Get_IsPhysicsEvent())
+		return NOERROR;
+
 	Reset_Pools();
 
 	dBlueprintStepMap.clear();
@@ -111,6 +138,9 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 
 	locEventLoop->Get(dChargedTracks, dTrackSelectionTag.c_str());
 	locEventLoop->Get(dNeutralShowers, dShowerSelectionTag.c_str());
+
+	if(dNeutralShowers.size() > dMaxNumNeutralShowers)
+		return NOERROR; //don't even try
 
 	//sort charged particles into +/-
 	//Note that a DChargedTrack object can sometimes contain both positively and negatively charged hypotheses simultaneously: sometimes the tracking flips the sign of the track
@@ -488,6 +518,11 @@ bool DParticleComboBlueprint_factory::Handle_EndOfReactionStep(const DReaction* 
 
 	locParticleComboBlueprint = new DParticleComboBlueprint(*locParticleComboBlueprint); //clone so don't alter saved object
 	locParticleComboBlueprintStep = NULL;
+
+	//if true, once one is found: bail on search
+	if(locReaction->Get_AnyBlueprintFlag())
+		return false; //skip to the end
+
 	if(!Handle_Decursion(locParticleComboBlueprint, locResumeAtIndexDeque, locNumPossibilitiesDeque, locParticleIndex, locStepIndex, locParticleComboBlueprintStep))
 		return false;
 	return true;

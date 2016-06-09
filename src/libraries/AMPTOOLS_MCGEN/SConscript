@@ -4,11 +4,18 @@ import sbms
 
 # get env object and clone it
 Import('*')
-env = env.Clone()
 
-sbms.AddCERNLIB(env)
-sbms.AddAmpTools(env)
-sbms.AddROOT(env)
-sbms.library(env)
+# Verify AMPTOOLS environment variable is set
+if os.getenv('AMPTOOLS') != None:
+
+	env = env.Clone()
+
+	env.PrependUnique(FORTRANFLAGS = ['-ffixed-line-length-0', '-fno-second-underscore', '-fno-automatic'])
+	env.AppendUnique(LINKFLAGS = ['-rdynamic', '-Wl,--no-as-needed'])
+	env.SetOption('warn', 'no-fortran-cxx-mix')  # supress warnings about linking fortran with c++
+
+	sbms.AddAmpTools(env)
+	sbms.AddROOT(env)
+	sbms.library(env)
 
 

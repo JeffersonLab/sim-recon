@@ -42,7 +42,7 @@ void WriteGaussianFitResults(ofstream &fout,TH1 *h,int counter,int ph_bin) {
     // f1: fraction of entries in first gaussian
     RooRealVar f1("f1","f1",0.75,0.01,1.);
     RooAddPdf doubleGauss("doubleGauss","doubleGauss",RooArgList(gauss1,gauss2),RooArgList(f1));
-    doubleGauss.fitTo(data);
+    doubleGauss.fitTo(data,PrintLevel(-1));
     // make plot
     TCanvas *canvas = new TCanvas("c","c",800,500);
     RooPlot *plot = x.frame();

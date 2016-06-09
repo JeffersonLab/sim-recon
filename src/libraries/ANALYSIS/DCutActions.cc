@@ -790,29 +790,27 @@ string DCutAction_TrackHitPattern::Get_ActionName(void) const
 	return locStream.str();
 }
 
-void DCutAction_TrackHitPattern::Initialize(JEventLoop* locEventLoop)
-{
-	locEventLoop->GetSingle(dParticleID);
-}
-
 bool DCutAction_TrackHitPattern::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	deque<const DKinematicData*> locParticles;
 	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
+
+	const DParticleID* locParticleID = NULL;
+	locEventLoop->GetSingle(locParticleID);
 
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
 		const DTrackTimeBased* locTrackTimeBased = NULL;
 		locChargedTrackHypothesis->GetSingle(locTrackTimeBased);
-		if(!Cut_TrackHitPattern(locTrackTimeBased))
+		if(!Cut_TrackHitPattern(locParticleID, locTrackTimeBased))
 			return false;
 	}
 
 	return true;
 }
 
-bool DCutAction_TrackHitPattern::Cut_TrackHitPattern(const DKinematicData* locTrack) const
+bool DCutAction_TrackHitPattern::Cut_TrackHitPattern(const DParticleID* locParticleID, const DKinematicData* locTrack) const
 {
 	const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locTrack);
 	const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locTrack);
@@ -821,53 +819,67 @@ bool DCutAction_TrackHitPattern::Cut_TrackHitPattern(const DKinematicData* locTr
 	map<int, int> locNumHitRingsPerSuperlayer, locNumHitPlanesPerPackage;
 	if(locTrackTimeBased != NULL)
 	{
-		dParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackTimeBased->dCDCRings, locNumHitRingsPerSuperlayer);
-		dParticleID->Get_FDCNumHitPlanesPerPackage(locTrackTimeBased->dFDCPlanes, locNumHitPlanesPerPackage);
+		locParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackTimeBased->dCDCRings, locNumHitRingsPerSuperlayer);
+		locParticleID->Get_FDCNumHitPlanesPerPackage(locTrackTimeBased->dFDCPlanes, locNumHitPlanesPerPackage);
 	}
 	else if(locTrackWireBased != NULL)
 	{
-		dParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackWireBased->dCDCRings, locNumHitRingsPerSuperlayer);
-		dParticleID->Get_FDCNumHitPlanesPerPackage(locTrackWireBased->dFDCPlanes, locNumHitPlanesPerPackage);
+		locParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackWireBased->dCDCRings, locNumHitRingsPerSuperlayer);
+		locParticleID->Get_FDCNumHitPlanesPerPackage(locTrackWireBased->dFDCPlanes, locNumHitPlanesPerPackage);
 	}
 	else if(locTrackCandidate != NULL)
 	{
-		dParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackCandidate->dCDCRings, locNumHitRingsPerSuperlayer);
-		dParticleID->Get_FDCNumHitPlanesPerPackage(locTrackCandidate->dFDCPlanes, locNumHitPlanesPerPackage);
+		locParticleID->Get_CDCNumHitRingsPerSuperlayer(locTrackCandidate->dCDCRings, locNumHitRingsPerSuperlayer);
+		locParticleID->Get_FDCNumHitPlanesPerPackage(locTrackCandidate->dFDCPlanes, locNumHitPlanesPerPackage);
 	}
 	else
 		return false;
 
-	//CDC
-	int locInnermostCDCSuperlayer = 0, locOutermostCDCSuperlayer = 0;
-	if(locNumHitRingsPerSuperlayer.size() > 1)
+	//CDC: find inner-most & outer-most superlayers
+	int locInnermostCDCSuperlayer = 10, locOutermostCDCSuperlayer = 0;
+	for(auto& locSuperlayerPair : locNumHitRingsPerSuperlayer)
 	{
-		locInnermostCDCSuperlayer = locNumHitRingsPerSuperlayer.begin()->first;
-		locOutermostCDCSuperlayer = (--locNumHitRingsPerSuperlayer.end())->first;
-		for(int locSuperlayer = locInnermostCDCSuperlayer + 1; locSuperlayer < locOutermostCDCSuperlayer; ++locSuperlayer)
-		{
-			map<int, int>::iterator locIterator = locNumHitRingsPerSuperlayer.find(locSuperlayer);
-			if(locIterator == locNumHitRingsPerSuperlayer.end())
-				return false; //superlayer is missing!
-			if(locIterator->second < int(dMinHitRingsPerCDCSuperlayer))
-				return false;
-		}
+		if(locSuperlayerPair.second == 0)
+			continue; //0 hits
+		if(locSuperlayerPair.first < locInnermostCDCSuperlayer)
+			locInnermostCDCSuperlayer = locSuperlayerPair.first;
+		if(locSuperlayerPair.first > locOutermostCDCSuperlayer)
+			locOutermostCDCSuperlayer = locSuperlayerPair.first;
 	}
 
-	//FDC
-	if(!locNumHitPlanesPerPackage.empty())
+	//CDC: loop again, cutting
+	for(auto& locSuperlayerPair : locNumHitRingsPerSuperlayer)
 	{
-		int locOutermostFDCPlane = (--locNumHitPlanesPerPackage.end())->first;
-		for(int locPackage = 1; locPackage < locOutermostFDCPlane; ++locPackage)
-		{
-			map<int, int>::iterator locIterator = locNumHitPlanesPerPackage.find(locPackage);
-			if(locIterator == locNumHitPlanesPerPackage.end())
-				return false; //superlayer is missing!
-			if(locIterator->second < int(dMinHitPlanesPerFDCPackage))
-				return false;
-		}
+		if(locSuperlayerPair.first == locOutermostCDCSuperlayer)
+			break; //don't check the last one: track could be leaving
+		if(locSuperlayerPair.first < locInnermostCDCSuperlayer)
+			continue; //don't check before the first one: could be detached vertex
+		if(locSuperlayerPair.second < int(dMinHitRingsPerCDCSuperlayer))
+			return false;
 	}
 
-	if((locOutermostCDCSuperlayer <= 3) && locNumHitPlanesPerPackage.empty())
+	//FDC: find inner-most & outer-most superlayers
+	int locOutermostFDCPlane = 0;
+	for(auto& locPackagePair : locNumHitPlanesPerPackage)
+	{
+		if(locPackagePair.second == 0)
+			continue; //0 hits
+		if(locPackagePair.first > locOutermostFDCPlane)
+			locOutermostFDCPlane = locPackagePair.first;
+	}
+
+	//FDC: loop again, cutting
+	for(auto& locPackagePair : locNumHitPlanesPerPackage)
+	{
+		if(locPackagePair.first == locOutermostFDCPlane)
+			break; //don't check the last one: track could be leaving
+		if(locPackagePair.second == 0)
+			continue; //0 hits: is ok: could be curling through beamline
+		if(locPackagePair.second < int(dMinHitPlanesPerFDCPackage))
+			return false;
+	}
+
+	if((locOutermostCDCSuperlayer <= 2) && locNumHitPlanesPerPackage.empty())
 		return false; //would have at least expected it to hit the first FDC package //is likely spurious
 
 	return true;
@@ -1074,6 +1086,8 @@ void DCutAction_OneVertexKinFit::Initialize(JEventLoop* locEventLoop)
 	// Optional: Useful utility functions.
 	locEventLoop->GetSingle(dAnalysisUtilities);
 
+	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
@@ -1125,14 +1139,16 @@ bool DCutAction_OneVertexKinFit::Perform_Action(JEventLoop* locEventLoop, const 
 	DKinFitConstraint_Vertex* locResultVertexConstraint = dynamic_cast<DKinFitConstraint_Vertex*>(*dKinFitter->Get_KinFitConstraints().begin());
 	TVector3 locFitVertex = locResultVertexConstraint->Get_CommonVertex();
 
-	//Optional: Fill histograms
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		dHist_ConfidenceLevel->Fill(locConfidenceLevel);
 		dHist_VertexZ->Fill(locFitVertex.Z());
 		dHist_VertexYVsX->Fill(locFitVertex.X(), locFitVertex.Y());
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 
 	if(locConfidenceLevel < dMinKinFitCL)
 		return false;

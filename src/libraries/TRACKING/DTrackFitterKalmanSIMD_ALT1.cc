@@ -171,11 +171,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	double Mdiff=v-(vpred_uncorrected+doca*(nz_sinalpha_plus_nr_cosalpha
 						-tv*sinalpha
 						));
-
-	if (DEBUG_HISTS && fit_type==kTimeBased){
-	  fdc_dy_vs_d->Fill(doca,v-vpred_uncorrected);
-	}
-	
        	// To transform from (x,y) to (u,v), need to do a rotation:
 	//   u = x*cosa-y*sina
 	//   v = y*cosa+x*sina
@@ -414,7 +409,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    dedx=GetdEdx(S(state_q_over_p), 
 			 forward_traj[k].K_rho_Z_over_A,
 			 forward_traj[k].rho_Z_over_A,
-			 forward_traj[k].LnI);
+			 forward_traj[k].LnI,forward_traj[k].Z);
 	  }
 	  
 	  // track direction variables
@@ -703,7 +698,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	      bool skip_ring
 		=(my_cdchits[cdc_index]->hit->wire->ring==RING_TO_SKIP);
 	      // update covariance matrix and state vector
-	      if (my_cdchits[cdc_index]->hit->wire->ring!=RING_TO_SKIP){
+	      if (my_cdchits[cdc_index]->hit->wire->ring!=RING_TO_SKIP && tdrift >= 0.){
 		C=Ctest;
 		S+=res*K;
 	      }
@@ -719,9 +714,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	      cdc_updates[cdc_index].variance=Vc;
 	      cdc_updates[cdc_index].doca=dm;
 	      cdc_updates[cdc_index].used_in_fit=true;
+          if(tdrift < 0.) cdc_updates[cdc_index].used_in_fit=false;
 	    
 	      // Update chi2 and number of degrees of freedom for this hit
-	      if (skip_ring==false){
+	      if (skip_ring==false && tdrift >= 0.){
 		chisq+=scale*res*res/Vc;
 		numdof++;
 	      }
@@ -986,7 +982,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
   unsigned int max=forward_traj.size()-1;
   DMatrix5x1 S=(forward_traj[max].Skk);
   DMatrix5x5 C=(forward_traj[max].Ckk);
-  DMatrix5x5 JT=(forward_traj[max].JT);
+  DMatrix5x5 JT=forward_traj[max].J.Transpose();
   DMatrix5x1 Ss=S;
   DMatrix5x5 Cs=C;
   DMatrix5x5 A,dC;
@@ -1100,7 +1096,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
     
     S=forward_traj[m].Skk;
     C=forward_traj[m].Ckk;
-    JT=forward_traj[m].JT;
+    JT=forward_traj[m].J.Transpose();
   }
 
   return NOERROR;

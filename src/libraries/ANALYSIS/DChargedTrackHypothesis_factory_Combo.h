@@ -35,20 +35,19 @@ class DChargedTrackHypothesis_factory_Combo : public jana::JFactory<DChargedTrac
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		void Create_PIDsAsNeeded(JEventLoop* locEventLoop, const DReaction* locReaction, const DEventRFBunch* locEventRFBunch, const DChargedTrack* locChargedTrack, set<Particle_t>& locPIDs);
+		void Build_RFPIDMap(map<Particle_t, vector<const DReaction*> >& locPIDMap, map<const DReaction*, set<const DEventRFBunch*> >& locRFBunchReactionMap, map<Particle_t, set<const DEventRFBunch*> >& locRFBunchPIDMap);
+		void Create_TrackHypos(JEventLoop* locEventLoop, const DChargedTrack* locChargedTrack, map<Particle_t, vector<const DReaction*> >& locPIDMap, map<Particle_t, set<const DEventRFBunch*> >& locRFBunchPIDMap);
+		DChargedTrackHypothesis* Create_TrackHypo(JEventLoop* locEventLoop, const DEventRFBunch* locEventRFBunch, const DChargedTrack* locChargedTrack, Particle_t locPID);
 
 		DChargedTrackHypothesis_factory* dChargedTrackHypothesisFactory;
-
 		const DDetectorMatches* dDetectorMatches;
 		vector<const DReaction*> dReactions;
-		map<const DReaction*, set<Particle_t> > dPositivelyChargedPIDs;
-		map<const DReaction*, set<Particle_t> > dNegativelyChargedPIDs;
-
-		map<const DEventRFBunch*, map<const DChargedTrack*, set<Particle_t> > > dCreatedParticleMap;
 		map<pair<const DChargedTrack*, Particle_t>, const DTrackTimeBased*> dTimeBasedSourceMap;
+
+		map<Particle_t, vector<const DReaction*> > dPositivelyChargedPIDs; //vector: reactions for which they are needed
+		map<Particle_t, vector<const DReaction*> > dNegativelyChargedPIDs; //vector: reactions for which they are needed
 
 		string dTrackSelectionTag;
 };
 
 #endif // _DChargedTrackHypothesis_factory_Combo_
-

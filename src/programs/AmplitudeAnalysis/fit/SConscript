@@ -1,17 +1,22 @@
 
-
+import os
 import sbms
 
 # get env object and clone it
 Import('*')
-env = env.Clone()
 
-AMPTOOLS_LIBS = "AMPTOOLS_AMPS AMPTOOLS_DATAIO AMPTOOLS_MCGEN"
-env.AppendUnique(LIBS = AMPTOOLS_LIBS.split())
+# Verify AMPTOOLS environment variable is set
+if os.getenv('AMPTOOLS', 'nada')!='nada' and os.getenv('CERN', 'nada')!='nada':
 
-sbms.AddHDDM(env)
-sbms.AddROOT(env)
-sbms.AddAmpTools(env)
-
-sbms.executable(env)
+   env = env.Clone()
+   
+   AMPTOOLS_LIBS = "AMPTOOLS_AMPS AMPTOOLS_DATAIO AMPTOOLS_MCGEN"
+   env.AppendUnique(LIBS = AMPTOOLS_LIBS.split())
+   
+   sbms.AddHDDM(env)
+   sbms.AddROOT(env)
+   sbms.AddAmpTools(env)
+   sbms.AddCERNLIB(env)
+   
+   sbms.executable(env)
 

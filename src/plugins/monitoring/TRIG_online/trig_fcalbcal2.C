@@ -20,7 +20,7 @@
 
   char string[256];
     
-  TString filename = "hd_rawdata_004400_000";
+  TString filename = "hd_rawdata_010270_000";
   TFile* f = new TFile(filename+".root");
 
 	// get histograms from trig subdirectory

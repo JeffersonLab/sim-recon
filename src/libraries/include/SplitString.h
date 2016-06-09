@@ -1,3 +1,5 @@
+#ifndef _SplitString_
+#define _SplitString_
 
 #include <sstream>
 
@@ -23,3 +25,4 @@ void SplitString(string str, vector<T> &vec, const string &delim=" ")
 	}
 }
 
+#endif

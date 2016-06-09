@@ -52,8 +52,8 @@ JEventProcessor_pi0bcalskim::JEventProcessor_pi0bcalskim()
   gPARMS->SetDefaultParameter("PI0BCALSKIM:MIN_SH1_E" , MIN_SH1_E );
   gPARMS->SetDefaultParameter("PI0BCALSKIM:MIN_SH2_E" , MIN_SH2_E );
 
-
-
+  num_epics_events = 0;
+  
 }
 
 //------------------
@@ -69,8 +69,6 @@ JEventProcessor_pi0bcalskim::~JEventProcessor_pi0bcalskim()
 //------------------
 jerror_t JEventProcessor_pi0bcalskim::init(void)
 {
-  dEventWriterEVIO = NULL;
-
   //if( ! WRITE_EVIO) cerr << " output isnt working " << endl;
 
   return NOERROR;
@@ -81,9 +79,16 @@ jerror_t JEventProcessor_pi0bcalskim::init(void)
 //------------------
 jerror_t JEventProcessor_pi0bcalskim::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
-  eventLoop->GetSingle(dEventWriterEVIO);
-
-  return NOERROR;
+    /* Example
+    // only write out BCAL data for these events
+	const DEventWriterEVIO* locEventWriterEVIO = NULL;
+	eventLoop->GetSingle(locEventWriterEVIO);
+    
+    if(locEventWriterEVIO) {
+        locEventWriterEVIO->SetDetectorsToWriteOut("BCAL","pi0bcalskim");
+    }
+    */
+    return NOERROR;
 }
 
 //------------------
@@ -97,6 +102,26 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
   loop->Get(locTrackTimeBased);
   vector<const DVertex*> kinfitVertex;
   loop->Get(kinfitVertex);
+
+  const DEventWriterEVIO* locEventWriterEVIO = NULL;
+  loop->GetSingle(locEventWriterEVIO);
+
+  vector< const JObject* > locBCALShowersToSave;
+
+  // always write out BOR events
+  if(loop->GetJEvent().GetStatusBit(kSTATUS_BOR_EVENT)) {
+      //jout << "Found BOR!" << endl;
+      locEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim" );
+      return NOERROR;
+  }
+
+  // write out the first few EPICS events to save run number & other meta info
+  if(loop->GetJEvent().GetStatusBit(kSTATUS_EPICS_EVENT) && (num_epics_events<5)) {
+      //jout << "Found EPICS!" << endl;
+      locEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim" );
+      num_epics_events++;
+      return NOERROR;
+  }
 
   if(locBCALShowers.size() < 2 ) return NOERROR;
 
@@ -161,13 +186,20 @@ jerror_t JEventProcessor_pi0bcalskim::evnt(JEventLoop *loop, uint64_t eventnumbe
 		TLorentzVector sh2_p(sh2_E*sh2_x/sh2_R,sh2_E*sh2_y/sh2_R,sh2_E*sh2_z/sh2_R,sh2_E);
 		TLorentzVector ptot = sh1_p+sh2_p;
 		inv_mass = ptot.M();
-		Candidate |= ( (sh2_E>0.67) && (kinfitVertexZ<68.0) &&(kinfitVertexZ>62.0)  && (inv_mass<0.30) );
+		Candidate |= ( (sh2_E>0.67) && (inv_mass<0.30) );
+        if((sh2_E>0.67) && (inv_mass<0.30)) {
+            if(find(locBCALShowersToSave.begin(), locBCALShowersToSave.end(), locBCALShowers[i]) == locBCALShowersToSave.end())
+                locBCALShowersToSave.push_back(static_cast<const JObject *>(locBCALShowers[i]));
+            if(find(locBCALShowersToSave.begin(), locBCALShowersToSave.end(), locBCALShowers[j]) == locBCALShowersToSave.end())
+                locBCALShowersToSave.push_back(static_cast<const JObject *>(locBCALShowers[j]));
+        }
 	}
   }
   	if(Candidate){
 	        if( WRITE_EVIO ) {
-		  //	cout << " inv mass = " << inv_mass << " sh1 E = " << sh1_E << " sh2 E = " << sh2_E << " event num = " << eventnumber << endl;
-     			 dEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim" );
+                //	cout << " inv mass = " << inv_mass << " sh1 E = " << sh1_E << " sh2 E = " << sh2_E << " event num = " << eventnumber << endl;
+                //cout << "writing out " << eventnumber << endl;
+                locEventWriterEVIO->Write_EVIOEvent( loop, "pi0bcalskim", locBCALShowersToSave );
   		  }
 			}
 

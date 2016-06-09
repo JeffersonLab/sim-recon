@@ -26,6 +26,7 @@ class JEventProcessor_CDC_TimeToDistance:public jana::JEventProcessor{
         vector<vector<double> >max_sag;
         vector<vector<double> >sag_phi_offset;
         const DMagneticFieldMap* dMagneticField;
+        int UNBIASED_RING;
 };
 
 #endif // _JEventProcessor_CDC_TimeToDistance_

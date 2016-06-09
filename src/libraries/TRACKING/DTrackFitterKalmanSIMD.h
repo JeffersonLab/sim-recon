@@ -73,8 +73,8 @@
 
 // Functions of Moliere fraction F
 #define MOLIERE_RATIO1 5.0   // = 0.5/(1-F)
-#define MOLIERE_RATIO2 11.0e-7 // = (scale factor)*1e-6/(1+F*F)
-#define MOLIERE_RATIO3 11.0e-7 // = (scale factor)*1e-6/(1+F*F)
+#define MOLIERE_RATIO2 5.5e-7 // = (scale factor)*1e-6/(1+F*F)
+#define MOLIERE_RATIO3 5.5e-7 // = (scale factor)*1e-6/(1+F*F)
 //#define DE_PER_STEP_WIRE_BASED 0.0005 // in GeV
 //#define DE_PER_STEP_TIME_BASED 0.0005 // in GeV
 #define DE_PER_STEP 0.0005 // in GeV
@@ -122,20 +122,20 @@ typedef struct{
 }DKalmanSIMDFDCHit_t;
 
 typedef struct{
-  DMatrix5x5 J,JT,Q,Ckk;
+  DMatrix5x5 J,Q,Ckk;
   DMatrix5x1 S,Skk;
   DVector2 xy;  
   double s,t,B;
-  double rho_Z_over_A,K_rho_Z_over_A,LnI;
+  double rho_Z_over_A,K_rho_Z_over_A,LnI,Z;
   double chi2c_factor,chi2a_factor,chi2a_corr; 
   unsigned int h_id;
 }DKalmanCentralTrajectory_t;
 
 typedef struct{
- DMatrix5x5 J,JT,Q,Ckk;
+ DMatrix5x5 J,Q,Ckk;
  DMatrix5x1 S,Skk;
  double z,s,t,B;
- double rho_Z_over_A,K_rho_Z_over_A,LnI;
+ double rho_Z_over_A,K_rho_Z_over_A,LnI,Z;
  double chi2c_factor,chi2a_factor,chi2a_corr;
  unsigned int h_id;
  unsigned int num_hits;
@@ -222,7 +222,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double GetChiSq(void){return chisq_;}
   unsigned int GetNDF(void){return ndf_;};
   double GetdEdx(double q_over_p,double K_rho_Z_over_A,double rho_Z_over_A,
-		 double rho_Z_over_A_LnI); 
+		 double rho_Z_over_A_LnI,double Z); 
   double GetEnergyVariance(double ds,double beta2,double K_rho_Z_over_A);
 
  protected:
@@ -428,6 +428,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double m_ratio; // electron mass/MASS
   double m_ratio_sq; // .. and its square
   double two_m_e; // twice the electron mass
+  double m_e_sq; // square of electron mass
 
   // minimum drift time 
   double mMinDriftTime;
@@ -472,6 +473,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double THETA_CUT;
   bool USE_PASS1_TIME_MODE;
   int RING_TO_SKIP,PLANE_TO_SKIP;
+  double PHOTON_ENERGY_CUTOFF;
 
   // Maximum number of sigma's away from the predicted position to include hit
   double NUM_CDC_SIGMA_CUT,NUM_FDC_SIGMA_CUT;
@@ -501,15 +503,12 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // Matrices with zeroes in them
   DMatrix5x5 Zero5x5;
   DMatrix5x1 Zero5x1;
-
-  TH2F *fdc_dy_vs_d;
-  TH2F *fdc_time_vs_d;
-  TH2F *fdc_dy_vs_dE;
+  
+  bool IsHadron,IsElectron,IsPositron;
 
  private:
   unsigned int last_material_map;
 
-  TH2F *Hstepsize,*HstepsizeDenom;
 };
 
 // Smearing function derived from fitting residuals

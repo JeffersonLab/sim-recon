@@ -4,15 +4,15 @@ import sbms
 Import('*')
 
 # Default targets (always built)
-subdirs = ['bfield2root', 'root_merge', 'root2email']
+subdirs = ['analysis', 'bfield2root', 'root_merge', 'root2email']
 subdirs.extend( ['hddm', 'hddm_cull_events', 'hddm_merge_events', 'hddm_merge_files'])
-subdirs.extend( ['tree_to_amptools'] )
 subdirs.extend( ['mkplugin', 'mkfactory_plugin'] )
+subdirs.extend( ['hdevio_scan'] )
 
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
 # Optional targets (can only be built from inside
 # source directory or if specified on command line)
-sbms.OptionallyBuild(env, ['hddm2root', 'dumpwires', 'evio_merge_events', 'evio_merge_files', 'evio_cull_events', 'evio_check', 'mkMaterialMap','material2root','hddm_select_events'])
+sbms.OptionallyBuild(env, ['hdfast_parse', 'hddm2root', 'dumpwires', 'evio_merge_events', 'evio_merge_files', 'evio_cull_events', 'evio_check', 'mkMaterialMap','material2root','hddm_select_events'])
 
 

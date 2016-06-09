@@ -4,6 +4,8 @@
   <geometry minOccurs="0" maxOccurs="1" md5simulation="string" md5smear="string" md5reconstruction="string"/>
 
   <physicsEvent eventNo="int" maxOccurs="unbounded" runNo="int">
+    <dataVersionString minOccurs="0" maxOccurs="unbounded" text="string"/>
+    <ccdbContext minOccurs="0" maxOccurs="unbounded" text="string"/>
     <reaction maxOccurs="unbounded" minOccurs="0" type="int" weight="float">
       <beam minOccurs="0" type="Particle_t">
         <momentum E="float" px="float" py="float" pz="float"/>

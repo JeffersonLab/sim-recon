@@ -10,9 +10,12 @@
 
 #include <iostream>
 #include <deque>
+#include <vector>
+#include <set>
 
 #include "JANA/JFactory.h"
 #include "particleType.h"
+#include "SplitString.h"
 
 #include "TRACKING/DTrackTimeBased.h"
 

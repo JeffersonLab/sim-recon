@@ -39,8 +39,10 @@ jerror_t DEventProcessor_DCdEdxStudy_tree::brun(JEventLoop *eventLoop, int32_t r
 		return RESOURCE_UNAVAILABLE;
 	}
 	// Drop the const qualifier from the DParticleID pointer (I'm surely going to hell for this!)
+	LockState();
 	dPIDAlgorithm = const_cast<DParticleID*>(locPIDAlgorithms[0]);
-  
+	UnlockState();
+
 	// Warn user if something happened that caused us NOT to get a dPIDAlgorithm object pointer
 	if(!dPIDAlgorithm){
 		_DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
@@ -92,7 +94,8 @@ jerror_t DEventProcessor_DCdEdxStudy_tree::evnt(JEventLoop *loop, uint64_t event
 	locMomentum = locTrackTimeBased->momentum().Mag();
 	locBeta = locMomentum/sqrt(locThrownMass*locThrownMass + locMomentum*locMomentum);
 
-	LockState();
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
 
 	//low-momentum & beta protons are reconstructed as low-momentum but high-beta pions
 	dDCdEdxInformation->dBeta = locBeta;
@@ -111,7 +114,8 @@ jerror_t DEventProcessor_DCdEdxStudy_tree::evnt(JEventLoop *loop, uint64_t event
 	dDCdEdxInformation->dNDF_DCdEdx = locChargedTrackHypothesis->dNDF_DCdEdx;
 	dDCdEdxInformation->dFOM = TMath::Prob(dDCdEdxInformation->dChiSq_DCdEdx, dDCdEdxInformation->dNDF_DCdEdx);
 	dPluginTree_DCdEdxInformation->Fill();
-	UnlockState();
+
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 
 	return NOERROR;
 }

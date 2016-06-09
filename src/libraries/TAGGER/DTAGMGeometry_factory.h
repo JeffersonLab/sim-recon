@@ -14,15 +14,12 @@
 
 class DTAGMGeometry_factory : public JFactory<DTAGMGeometry> {
  public:
-   DTAGMGeometry_factory(const char *tag="") :
-      JFactory<DTAGMGeometry>(tag), factory_tag(tag) {}
+   DTAGMGeometry_factory(){}
    ~DTAGMGeometry_factory(){}
 
  private:
    jerror_t brun(JEventLoop *loop, int32_t runnumber);   
    jerror_t erun(void);   
-
-   std::string factory_tag;
 };
 
 #endif // _DTAGMGeometry_factory_

@@ -28,12 +28,20 @@ using namespace jana;
 #include "DCAEN1290TDCHit.h"
 #include "DCODAEventInfo.h"
 #include "DCODAROCInfo.h"
+#include "DTSscalers.h"
 #include "DEPICSvalue.h"
 #include "DEventTag.h"
 #include "Df250BORConfig.h"
 #include "Df125BORConfig.h"
 #include "DF1TDCBORConfig.h"
 #include "DCAEN1290TDCBORConfig.h"
+#include "DL1Info.h"
+#include "Df250Scaler.h"
+#include "Df250AsyncPedestal.h"
+#include "Df125EmulatorAlgorithm_factory.h"
+#include "Df125EmulatorAlgorithm_factory_v2.h"
+#include "Df250EmulatorAlgorithm_factory.h"
+#include "Df250EmulatorAlgorithm_factory_v1.h"
 
 jerror_t DAQ_init(JEventLoop *loop)
 {
@@ -63,12 +71,19 @@ jerror_t DAQ_init(JEventLoop *loop)
 	loop->AddFactory(new JFactory<DCAEN1290TDCHit>());
 	loop->AddFactory(new JFactory<DCODAEventInfo>());
 	loop->AddFactory(new JFactory<DCODAROCInfo>());
+	loop->AddFactory(new JFactory<DTSscalers>());
 	loop->AddFactory(new JFactory<DEPICSvalue>());
 	loop->AddFactory(new JFactory<DEventTag>());
 	loop->AddFactory(new JFactory<Df250BORConfig>());
 	loop->AddFactory(new JFactory<Df125BORConfig>());
 	loop->AddFactory(new JFactory<DF1TDCBORConfig>());
 	loop->AddFactory(new JFactory<DCAEN1290TDCBORConfig>());
-  
-  return NOERROR;
+	loop->AddFactory(new JFactory<DL1Info>());
+	loop->AddFactory(new JFactory<Df250Scaler>());
+	loop->AddFactory(new JFactory<Df250AsyncPedestal>());
+    loop->AddFactory(new Df125EmulatorAlgorithm_factory());
+    loop->AddFactory(new Df125EmulatorAlgorithm_factory_v2());
+    loop->AddFactory(new Df250EmulatorAlgorithm_factory());
+    loop->AddFactory(new Df250EmulatorAlgorithm_factory_v1()); 
+    return NOERROR;
 }

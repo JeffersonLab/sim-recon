@@ -4,6 +4,8 @@ using namespace std;
 
 #include <JANA/JApplication.h>
 #include <DAQ/DCODAROCInfo.h>
+#include <DAQ/DL1Info.h>
+
 using namespace jana;
 
 #include "DL1Trigger_factory.h"
@@ -36,16 +38,24 @@ jerror_t DL1Trigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	// Trigger Supervisor. The TS has rocid of "1" (which will hopefully
 	// never change!)
 
+
+        int l1_found = 0;  
+
 	vector<const DCODAROCInfo*> codarocinfos;
 	loop->Get(codarocinfos);
 	
-	for(uint32_t i=0; i<codarocinfos.size(); i++){
+	vector<const DL1Info*> l1_info;
+	loop->Get(l1_info);
+
+	DL1Trigger *l1trigger = new DL1Trigger;
+
+
+	for(uint32_t i = 0; i < codarocinfos.size(); i++){
 		const DCODAROCInfo *cri = codarocinfos[i];
 		
 		// Only interested in Trigger Supervisor 
 		if(cri->rocid != 1) continue;
 		
-		DL1Trigger *l1trigger = new DL1Trigger;
 		if(cri->misc.size()==2){
 			// Potentially, the TS can be configured to only 
 			// add the GTP latch word or only the FP latch
@@ -55,12 +65,39 @@ jerror_t DL1Trigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 			// e-mail sent by Bryan Moffit Dec. 15, 2015).
 			l1trigger->trig_mask     = cri->misc[0]; // Global Trigger Processor latch word
 			l1trigger->fp_trig_mask  = cri->misc[1]; // Front Panel latch word
+			l1_found++;
 		}
+
+		l1trigger->timestamp =  cri->timestamp;
+
 		l1trigger->AddAssociatedObject(cri);
-		
-		_data.push_back(l1trigger);
+			
 		break; // Should only be 1 with rocid=1
 	}
+
+	if(l1_info.size() == 1){
+	  const DL1Info *l1_sc   = l1_info[0];
+	  l1trigger->nsync       = l1_sc->nsync;
+	  l1trigger->trig_number = l1_sc->trig_number;
+	  l1trigger->live        = l1_sc->live_time;
+	  l1trigger->busy        = l1_sc->busy_time;
+	  l1trigger->live_inst   = l1_sc->live_inst;
+	  l1trigger->unix_time   = l1_sc->unix_time;
+	  
+	  l1trigger->gtp_sc    =  l1_sc->gtp_sc;
+	  l1trigger->fp_sc     =  l1_sc->fp_sc;
+	  l1trigger->gtp_rate  =  l1_sc->gtp_rate;
+	  l1trigger->fp_rate   =  l1_sc->fp_rate;
+
+	  l1_found++;	  
+	}
+
+
+	if(l1_found){
+	  _data.push_back(l1trigger);	 
+	}
+
+
 
 	return NOERROR;
 }

@@ -34,7 +34,7 @@ class DKinFitResults_factory : public jana::JFactory<DKinFitResults>
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		size_t Get_NumReactions(JEventLoop* locEventLoop);
+		size_t Get_NumKinFitReactions(JEventLoop* locEventLoop);
 		DKinFitResults* Build_KinFitResults(const DParticleCombo* locParticleCombo, const DKinFitChain* locKinFitChain);
 
 		DKinFitter* dKinFitter;

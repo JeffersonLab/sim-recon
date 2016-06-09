@@ -30,9 +30,14 @@ const int DTAGMHit_factory::k_fiber_noisy;
 jerror_t DTAGMHit_factory::init(void)
 {
     DELTA_T_ADC_TDC_MAX = 10.0; // ns
+    USE_ADC = 0;
+    CUT_FACTOR = 1;
     gPARMS->SetDefaultParameter("TAGMHit:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX,
                 "Maximum difference in ns between a (calibrated) fADC time and"
                 " F1TDC time for them to be matched in a single hit");
+    gPARMS->SetDefaultParameter("TAGMHit:CUT_FACTOR", CUT_FACTOR, "TAGM pulse integral cut factor, 0 = no cut");
+    gPARMS->SetDefaultParameter("TAGMHit:USE_ADC", USE_ADC, "Use ADC times in TAGM");
+
     // initialize calibration constants
     fadc_a_scale = 0;
     fadc_t_scale = 0;
@@ -98,8 +103,9 @@ jerror_t DTAGMHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
     load_ccdb_constants("tdc_timewalk_corrections", "c0", tw_c0) &&
     load_ccdb_constants("tdc_timewalk_corrections", "c1", tw_c1) &&
     load_ccdb_constants("tdc_timewalk_corrections", "c2", tw_c2) &&
-    load_ccdb_constants("tdc_timewalk_corrections", "threshold", thresh) &&
-    load_ccdb_constants("tdc_timewalk_corrections", "reference", ref))
+    load_ccdb_constants("tdc_timewalk_corrections", "threshold", tw_c3) &&
+    load_ccdb_constants("tdc_timewalk_corrections", "reference", ref) &&
+    load_ccdb_constants("integral_cuts", "integral", int_cuts))
     {
         return NOERROR;
     }
@@ -169,21 +175,24 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         // Skip events where fADC algorithm fails
         //if (digihit->pulse_time == 0) continue; // Should already be caught above
 
-        DTAGMHit *hit = new DTAGMHit;
-        int row = digihit->row;
+        // Skip digihit if pulse peak is lower than cut value
+        double P = PPobj->pulse_peak - PPobj->pedestal;
+
+        // Apply calibration constants
+        double A = digihit->pulse_integral;
+        double T = digihit->pulse_time;
+        A -= pedestal;
+	int row = digihit->row;
         int column = digihit->column;
+        if (A < CUT_FACTOR*int_cuts[row][column]) continue;
+
+	DTAGMHit *hit = new DTAGMHit;    
         hit->row = row;
         hit->column = column;
         double Elow = tagmGeom.getElow(column);
         double Ehigh = tagmGeom.getEhigh(column);
         hit->E = (Elow + Ehigh)/2;
-        hit->t = 0;
 
-        // Apply calibration constants
-        double P = PPobj->pulse_peak - PPobj->pedestal;
-        double A = digihit->pulse_integral;
-        double T = digihit->pulse_time;
-        A -= pedestal;
         hit->integral = A;
         hit->pulse_peak = P;
         hit->npix_fadc = A * fadc_a_scale * fadc_gains[row][column];
@@ -241,14 +250,18 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         double c0 = tw_c0[row][column];
         double c1 = tw_c1[row][column];
         double c2 = tw_c2[row][column];
-        double TH = thresh[row][column];
-        double pp_0 = ref[row][column];
-        pp_0 = TH*pow((pp_0-c0)/c1,1/c2);
+        //double TH = thresh[row][column];
+        double c3 = tw_c3[row][column];
+        double t0 = ref[row][column];
+        //pp_0 = TH*pow((pp_0-c0)/c1,1/c2);
         if (P > 0) {
-           T -= c1*(pow(P/TH,c2)-pow(pp_0/TH,c2));
+           //T -= c1*(pow(P/TH,c2)-pow(pp_0/TH,c2));
+           T -= c1*pow(1/(P+c3),c2) - (t0 - c0);
         }
-        
-        hit->t = T;
+
+        // Optionally only use ADC times
+        if (USE_ADC && hit->has_fADC) hit->t = hit->time_fadc;
+        else  hit->t = T;
         
         hit->AddAssociatedObject(digihit);
     }

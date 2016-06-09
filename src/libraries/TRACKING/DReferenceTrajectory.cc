@@ -908,7 +908,7 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 	default:	
 	  break;
 	}
-	swim_step_t *step=FindPlaneCrossing(origin,norm,first_i);
+	swim_step_t *step=FindPlaneCrossing(origin,norm,first_i,detector);
 	if(!step){
 		_DBG_<<"Could not find closest swim step!"<<endl;
 		return RESOURCE_UNAVAILABLE;
@@ -1557,27 +1557,24 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 //---------------------------------
 // FindPlaneCrossing
 //---------------------------------
-DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const DVector3 &origin, DVector3 norm,int first_i,int *istep_ptr) const
+DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const DVector3 &origin, DVector3 norm,int first_i,DetectorSystem_t detector) const
 {
   /// Find the closest swim step to the position where the track crosses
   /// the plane specified by origin
   /// and norm. origin should indicate any point in the plane and
   /// norm a vector normal to the plane.
-  if(istep_ptr)*istep_ptr=-1;
 	
 	if(Nswim_steps<1){
 		_DBG_<<"No swim steps! You must \"Swim\" the track before calling FindPlaneCrossing(...)"<<endl;
 		raise(SIGSEGV);// force seg. fault
 	}
 
-	// Make sure normal vector is unit lenght
+	// Make sure normal vector is unit length
 	norm.SetMag(1.0);
 
 	// Loop over swim steps and find the one closest to the plane
 	swim_step_t *swim_step = &swim_steps[first_i];
 	swim_step_t *step=NULL;
-	//double min_dist = 1.0E6;
-	int istep=-1;
 	double old_dist=1.0e6;
 
 	// Check if we should start from the beginning of the reference 
@@ -1585,7 +1582,7 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const
 	int last_index=Nswim_steps-1;
 	double forward_dist= norm.Dot(swim_step->origin-origin);
 	double backward_dist= norm.Dot(swim_steps[last_index].origin-origin);
-	if (fabs(forward_dist)<fabs(backward_dist)){ // start at beginning
+	if (detector==SYS_START || fabs(forward_dist)<fabs(backward_dist)){ // start at beginning
 	  for(int i=first_i; i<Nswim_steps; i++, swim_step++){
 	      
 	    // Distance to plane is dot product of normal vector with any
@@ -1597,12 +1594,10 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const
 	    if (dist*old_dist<0 && i>0) {
 	      if (fabs(dist)<fabs(old_dist)){
 		step=swim_step;
-		istep=i;
 	      }
 	      break;
 	    }
 	    step = swim_step;
-	    istep=i;
 	    old_dist=dist;
 	  }
 	}
@@ -1614,18 +1609,14 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const
 	    if (dist*old_dist<0 && i<last_index) {
 	      if (fabs(dist)<fabs(old_dist)){
 		step=swim_step;
-		istep=i;
 	      }
 	      break;
 	    }
 	    step = swim_step;
-	    istep=i;
 	    old_dist=dist;
 	  }
 
 	}
-	    
-	if(istep_ptr)*istep_ptr=istep;
 
 	return step;	
 }

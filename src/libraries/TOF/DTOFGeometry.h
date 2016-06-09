@@ -50,26 +50,34 @@ class DTOFGeometry : public JObject {
   }
   
   
-  int y2bar(double y) const   ///> convert local position y to bar number
-  {
-    int jm=1;
-    if (y>YPOS[44]) jm=44;
-    else if (y>YPOS[1]){
-      int jl=-1;
-      int ju=44;
-      while(ju-jl>1){
-	jm=(ju+jl)>>1;
-        if (y>=YPOS[jm])
-	  jl=jm;
-        else
-	  ju=jm;
-      }     
-      if (fabs(y-YPOS[jm-1])<fabs(y-YPOS[jm])) return jm-1;
-      if (fabs(y-YPOS[jm+1])<fabs(y-YPOS[jm])) return jm+1;
-    }
+	int y2bar(double y) const   ///> convert local position y to bar number
+	{
+		if(y < (YPOS[1] - BARWIDTH/2.0))
+			return 0;
+		if(y > (YPOS[44] + BARWIDTH/2.0))
+			return 0;
 
-    return jm;
-  }
+		int jm=1;
+		if (y>YPOS[1])
+		{
+			int jl=-1;
+			int ju=44;
+			while(ju - jl > 1)
+			{
+				jm = (ju + jl) >> 1;
+				if (y >= YPOS[jm])
+					jl = jm;
+				else
+					ju = jm;
+			}
+			if (fabs(y - YPOS[jm - 1]) < fabs(y - YPOS[jm]))
+				return jm - 1;
+			if (fabs(y - YPOS[jm + 1]) < fabs(y - YPOS[jm]))
+				return jm + 1;
+		}
+
+		return jm;
+	}
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "NBARS", "%d", NBARS);

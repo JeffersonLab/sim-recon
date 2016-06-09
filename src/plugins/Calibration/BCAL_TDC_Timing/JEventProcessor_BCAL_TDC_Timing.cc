@@ -213,48 +213,43 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::evnt(JEventLoop *loop, uint64_t eventn
         // Get the shower from the match
         const DBCALShower *thisShower = bcalMatch->dBCALShower;
 
-        // Get the clusters from the showers
-        vector <const DBCALCluster *> clusterVector;
-        thisShower->Get(clusterVector);
+        // Get the points
+        vector <const DBCALPoint*> pointVector;
+        thisShower->Get(pointVector);
 
-        // Loop over clusters within the shower
-        for (unsigned int iCluster = 0; iCluster < clusterVector.size(); iCluster++){
-            // Get the points
-            vector <const DBCALPoint*> pointVector = clusterVector[iCluster]->points();
-            // Loop over the points within the cluster
-            for (unsigned int iPoint = 0; iPoint < pointVector.size(); iPoint++){
-                const DBCALPoint *thisPoint = pointVector[iPoint];
-                if (thisPoint->E() < 0.05) continue; // The timing is known not to be great for very low energy, so only use our best info 
-                DVector3 proj_pos = rt->GetLastDOCAPoint();
-                double pathLength, flightTime;
-                double rpoint = thisPoint->r();
-                if (rt->GetIntersectionWithRadius(rpoint,proj_pos, &pathLength, &flightTime)==NOERROR){
-                    // Now proj_pos contains the projected position of the track at this particular point within the BCAL
-                    // We can plot the difference of the projected position and the BCAL position as a function of the channel
-                    char name[200];
-                    sprintf(name , "Module %.2i Layer %.2i Sector %.2i", thisPoint->module(), thisPoint->layer(), thisPoint->sector());
-                    // These results are in slightly different coordinate systems. We want one where the center of the BCAL is z=0
-                    double localTrackHitZ = proj_pos.z() - DBCALGeometry::GetBCAL_center();
-                    double localBCALHitZ = thisPoint->z() - DBCALGeometry::GetBCAL_center() + Z_TARGET;
-                    Fill2DHistogram ("BCAL_TDC_Offsets", "Z Position", name,
-                            localTrackHitZ, localBCALHitZ,
-                            "Z_{point} Vs. Z_{Track}; Z_{Track} [cm]; Z_{Point} [cm]",
-                            500, -250, 250, 500, -250, 250); 
+        // Loop over the points within the cluster
+        for (unsigned int iPoint = 0; iPoint < pointVector.size(); iPoint++){
+            const DBCALPoint *thisPoint = pointVector[iPoint];
+            if (thisPoint->E() < 0.05) continue; // The timing is known not to be great for very low energy, so only use our best info 
+            DVector3 proj_pos = rt->GetLastDOCAPoint();
+            double pathLength, flightTime;
+            double rpoint = thisPoint->r();
+            if (rt->GetIntersectionWithRadius(rpoint,proj_pos, &pathLength, &flightTime)==NOERROR){
+                // Now proj_pos contains the projected position of the track at this particular point within the BCAL
+                // We can plot the difference of the projected position and the BCAL position as a function of the channel
+                char name[200];
+                sprintf(name , "Module %.2i Layer %.2i Sector %.2i", thisPoint->module(), thisPoint->layer(), thisPoint->sector());
+                // These results are in slightly different coordinate systems. We want one where the center of the BCAL is z=0
+                double localTrackHitZ = proj_pos.z() - DBCALGeometry::GetBCAL_center();
+                double localBCALHitZ = thisPoint->z() - DBCALGeometry::GetBCAL_center() + Z_TARGET;
+                Fill2DHistogram ("BCAL_TDC_Offsets", "Z Position", name,
+                        localTrackHitZ, localBCALHitZ,
+                        "Z_{point} Vs. Z_{Track}; Z_{Track} [cm]; Z_{Point} [cm]",
+                        500, -250, 250, 500, -250, 250); 
 
-                    // Now fill some histograms that are useful for aligning the BCAL with the rest of the detector systems
-                    if (thisRFBunch->dNumParticleVotes >= 2 && scMatch != NULL){ // Require good RF bunch and this track match the SC
-                        // Get the time of the BCAL point
-                        double pointTime = thisPoint->t();
-                        // We have the flight time to our BCAL point, so we can get the target time
-                        double targetCenterTime = pointTime - flightTime - ((timeBasedTrack->position()).Z() - Z_TARGET) / SPEED_OF_LIGHT;
+                // Now fill some histograms that are useful for aligning the BCAL with the rest of the detector systems
+                if (thisRFBunch->dNumParticleVotes >= 2 && scMatch != NULL){ // Require good RF bunch and this track match the SC
+                    // Get the time of the BCAL point
+                    double pointTime = thisPoint->t();
+                    // We have the flight time to our BCAL point, so we can get the target time
+                    double targetCenterTime = pointTime - flightTime - ((timeBasedTrack->position()).Z() - Z_TARGET) / SPEED_OF_LIGHT;
 
-                        // Now we just plot the difference in from the RF Time to get out the correction
-                        int the_cell = (thisPoint->module() - 1) * 16 + (thisPoint->layer() - 1) * 4 + thisPoint->sector();
-                        Fill2DHistogram("BCAL_Global_Offsets", "Target Time", "Target Time Minus RF Time Vs. Cell Number",
-                                the_cell, targetCenterTime - thisRFBunch->dTime,
-                                "Target Time Minus RF Time Vs. Cell Number; CCDB Index; t_{Target} - t_{RF} [ns]",
-                                768, 0.5, 768.5, 200, -10, 10);
-                    }
+                    // Now we just plot the difference in from the RF Time to get out the correction
+                    int the_cell = (thisPoint->module() - 1) * 16 + (thisPoint->layer() - 1) * 4 + thisPoint->sector();
+                    Fill2DHistogram("BCAL_Global_Offsets", "Target Time", "Target Time Minus RF Time Vs. Cell Number",
+                            the_cell, targetCenterTime - thisRFBunch->dTime,
+                            "Target Time Minus RF Time Vs. Cell Number; CCDB Index; t_{Target} - t_{RF} [ns]",
+                            768, 0.5, 768.5, 200, -10, 10);
                 }
             }
         }
@@ -280,7 +275,7 @@ jerror_t JEventProcessor_BCAL_TDC_Timing::erun(void)
 jerror_t JEventProcessor_BCAL_TDC_Timing::fini(void)
 {
     // Called before program exit after event processing is finished.
-  //SortDirectories(); // Sort the histogram directories by name
+    //SortDirectories(); // Sort the histogram directories by name
     return NOERROR;
 }
 

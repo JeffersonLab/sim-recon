@@ -256,8 +256,8 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 
     // Get the trigger time from the f1 TDC
-    vector<const DF1TDCHit*> tdchit;
-    eventLoop->Get(tdchit);
+//     vector<const DF1TDCHit*> tdchit;
+//     eventLoop->Get(tdchit);
 
 	// Next, loop over TDC hits, matching them to the
 	// existing fADC hits where possible and updating

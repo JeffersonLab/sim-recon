@@ -9,18 +9,16 @@
 using namespace jana;
 
 #include "evio_writer/DEventWriterEVIO.h"
-#include "DAQ/DEPICSvalue.h"
-#include <PAIR_SPECTROMETER/DPSCPair.h>
-#include <PAIR_SPECTROMETER/DPSPair.h>
+#include <TRIGGER/DL1Trigger.h>
 
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
 extern "C"{
-  void InitPlugin(JApplication *app){
-    InitJANAPlugin(app);
-    app->AddProcessor(new JEventProcessor_ps_skim());
-  }
+    void InitPlugin(JApplication *app){
+        InitJANAPlugin(app);
+        app->AddProcessor(new JEventProcessor_ps_skim());
+    }
 } // "C"
 
 
@@ -46,7 +44,7 @@ JEventProcessor_ps_skim::~JEventProcessor_ps_skim()
 jerror_t JEventProcessor_ps_skim::init(void)
 {
 
-  return NOERROR;
+    return NOERROR;
 }
 
 //------------------
@@ -54,8 +52,8 @@ jerror_t JEventProcessor_ps_skim::init(void)
 //------------------
 jerror_t JEventProcessor_ps_skim::brun(JEventLoop *eventLoop, int32_t runnumber)
 {
-  // This is called whenever the run number changes
-  return NOERROR;
+    // This is called whenever the run number changes
+    return NOERROR;
 }
 
 //------------------
@@ -63,31 +61,39 @@ jerror_t JEventProcessor_ps_skim::brun(JEventLoop *eventLoop, int32_t runnumber)
 //------------------
 jerror_t JEventProcessor_ps_skim::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
-
-  const DEventWriterEVIO* locEventWriterEVIO = NULL;
-  loop->GetSingle(locEventWriterEVIO);
-
-  //Save EPICS events
-  vector<const DEPICSvalue*> locEPICSValues;
-  loop->Get(locEPICSValues);
-  if(!locEPICSValues.empty()) {
-    locEventWriterEVIO->Write_EVIOEvent(loop, "ps");
+    const DEventWriterEVIO* locEventWriterEVIO = NULL;
+    loop->GetSingle(locEventWriterEVIO);
+    // write out BOR events
+    if(loop->GetJEvent().GetStatusBit(kSTATUS_BOR_EVENT)) {
+        locEventWriterEVIO->Write_EVIOEvent(loop, "ps");
+        return NOERROR;
+    }
+    // write out EPICS events
+    if(loop->GetJEvent().GetStatusBit(kSTATUS_EPICS_EVENT)) {
+        locEventWriterEVIO->Write_EVIOEvent(loop, "ps");
+        return NOERROR;
+    }
+    // get trigger types
+    const DL1Trigger *trig_words = NULL;
+    uint32_t trig_mask, fp_trig_mask;
+    try {
+        loop->GetSingle(trig_words);
+    } catch(...) {};
+    if (trig_words) {
+        trig_mask = trig_words->trig_mask;
+        fp_trig_mask = trig_words->fp_trig_mask;
+    }
+    else {
+        trig_mask = 0;
+        fp_trig_mask = 0;
+    }
+    int trig_bits = fp_trig_mask > 0 ? 10 + fp_trig_mask:trig_mask;
+    // skim PS triggers
+    if (trig_bits==8) {
+        locEventWriterEVIO->Write_EVIOEvent(loop, "ps");
+        return NOERROR;
+    }
     return NOERROR;
-  }
-
-  // coarse PS pairs
-  vector<const DPSCPair*> cpairs;
-  loop->Get(cpairs);
-  // fine PS pairs
-  vector<const DPSPair*> fpairs;
-  loop->Get(fpairs);
-  // skim events with at least 1 PSC or PS left-right coincidence
-  if (cpairs.size()>=1||fpairs.size()>=1) {
-    locEventWriterEVIO->Write_EVIOEvent(loop, "ps");
-    return NOERROR;
-  }
-  
-  return NOERROR;
 }
 
 //------------------
@@ -95,10 +101,10 @@ jerror_t JEventProcessor_ps_skim::evnt(JEventLoop *loop, uint64_t eventnumber)
 //------------------
 jerror_t JEventProcessor_ps_skim::erun(void)
 {
-  // This is called whenever the run number changes, before it is
-  // changed to give you a chance to clean up before processing
-  // events from the next run number.
-  return NOERROR;
+    // This is called whenever the run number changes, before it is
+    // changed to give you a chance to clean up before processing
+    // events from the next run number.
+    return NOERROR;
 }
 
 //------------------
@@ -106,7 +112,7 @@ jerror_t JEventProcessor_ps_skim::erun(void)
 //------------------
 jerror_t JEventProcessor_ps_skim::fini(void)
 {
-  // Called before program exit after event processing is finished.
-  return NOERROR;
+    // Called before program exit after event processing is finished.
+    return NOERROR;
 }
 

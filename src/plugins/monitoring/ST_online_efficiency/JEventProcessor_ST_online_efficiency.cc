@@ -52,7 +52,6 @@ jerror_t JEventProcessor_ST_online_efficiency::init(void)
   // USE_SC_TIME = 0 in order to Not reconstruct tracks with start counter time
   gPARMS->SetParameter("TRKFIT:USE_SC_TIME",false);
   
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
   // Create root folder for ST and cd to it, store main dir
   TDirectory *main = gDirectory;
   gDirectory->mkdir("st_efficiency")->cd();
@@ -76,7 +75,7 @@ jerror_t JEventProcessor_ST_online_efficiency::init(void)
  
   gDirectory->cd("../");
   main->cd();
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
+
   // Initialize counters
   memset(N_trck_prd_All, 0, sizeof(N_trck_prd_All));
   memset(N_recd_hit_All, 0, sizeof(N_recd_hit_All));
@@ -143,8 +142,9 @@ jerror_t JEventProcessor_ST_online_efficiency::evnt(JEventLoop *eventLoop, uint6
   const DDetectorMatches* locDetectorMatches = NULL;
   eventLoop->GetSingle(locDetectorMatches);
   
-  // Lock ROOT mutex so other threads won't interfere 
-  japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
   
   // Loop over charged tracks
   for (uint32_t i = 0; i < chargedTrackVector.size(); i++)
@@ -261,7 +261,9 @@ jerror_t JEventProcessor_ST_online_efficiency::evnt(JEventLoop *eventLoop, uint6
 	    }// end of nose section loop
 	} // end if (st_pred_id != 0) 
     }// end of charged track loop
-  japp->RootUnLock();	
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
   return NOERROR;
 }
 

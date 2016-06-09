@@ -54,9 +54,11 @@ jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int32_t runnumber)
   ENERGY_ATTEN_FACTOR=exp(HALFPADDLE/ATTEN_LENGTH);
   TIME_COINCIDENCE_CUT=2.*HALFPADDLE/C_EFFECTIVE;
 
-  if(eventLoop->GetCalib("TOF/propagation_speed", propagation_speed))
+  if(loop->GetCalib("TOF/propagation_speed", propagation_speed))
     jout << "Error loading /TOF/propagation_speed !" << endl;
 
+  if (loop->GetCalib("TOF/attenuation_lengths",AttenuationLengths))
+    jout << "Error loading /TOF/attenuation_lengths !" <<endl;
 
 
   loop->Get(TOFGeom);
@@ -298,7 +300,22 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
       
       // mean energy deposition at the location of the hit position
       // use geometrical mean
-      hit->dE = ENERGY_ATTEN_FACTOR*sqrt(hit->E_north*hit->E_south);
+      //hit->dE = ENERGY_ATTEN_FACTOR*sqrt(hit->E_north*hit->E_south);
+
+      float xl = 126. - pos; // distance to left PMT 
+      float xr = 126. + pos; // distance to right PMT
+      int idl = hit->orientation*88 + hit->bar-1;
+      int idr = idl+44;
+      float d1 = AttenuationLengths[idl][0];
+      float d2 = AttenuationLengths[idl][1];
+      // reference distance is 144cm from PMT
+      float att_left = ( TMath::Exp(-144./d1) +  TMath::Exp(-144./d2)) / 
+	( TMath::Exp(-xl/d1) +  TMath::Exp(-xl/d2));
+      d1 = AttenuationLengths[idr][0];
+      d2 = AttenuationLengths[idr][1];
+      float att_right = ( TMath::Exp(-144./d1) +  TMath::Exp(-144./d2)) / 
+	( TMath::Exp(-xr/d1) +  TMath::Exp(-xr/d2));
+      hit->dE = (hit->E_north*att_left + hit->E_south*att_right)/2.;
     } else {
       hit->meantime = NaN;
       hit->timediff = NaN;
