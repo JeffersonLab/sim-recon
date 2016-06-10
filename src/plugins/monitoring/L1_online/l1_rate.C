@@ -1,3 +1,9 @@
+// hnamepath:  /L1/rate_gtp_0
+// hnamepath:  /L1/rate_gtp_1
+// hnamepath:  /L1/rate_gtp_2
+// hnamepath:  /L1/rate_gtp_3
+// hnamepath:  /L1/rate_gtp_5
+// hnamepath:  /L1/rate_gtp_6
 
 {
  
