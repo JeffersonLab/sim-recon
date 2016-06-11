@@ -1,5 +1,5 @@
 #ifndef _DEVIOBufferWriter_
-#define _DEVIOBufferWriter__
+#define _DEVIOBufferWriter_
 
 #include <map>
 #include <vector>
@@ -37,10 +37,10 @@
 using namespace std;
 using namespace jana;
 
-class DEVIOBufferWriter 
+class DEVIOBufferWriter
 {
   public:
-    DEVIOBufferWriter(bool compact_flag = false, bool prefer_emulated_flag = false) { 
+    DEVIOBufferWriter(bool compact_flag = false, bool prefer_emulated_flag = false) {
         COMPACT = compact_flag;
         PREFER_EMULATED = prefer_emulated_flag;
 
@@ -53,29 +53,29 @@ class DEVIOBufferWriter
 
     void SetROCsToWriteOut(set<uint32_t> &new_rocs_to_write_out) {
         rocs_to_write_out = new_rocs_to_write_out;
-        
+
         if(rocs_to_write_out.size() == 0)
             write_out_all_rocs = true;
     }
 
 
   protected:
-   
-        void WriteBuiltTriggerBank(vector<uint32_t> &buff, 
-                                   JEventLoop *loop, 
-                                   vector<const DCODAROCInfo*> &coda_rocinfos, 
+
+        void WriteBuiltTriggerBank(vector<uint32_t> &buff,
+                                   JEventLoop *loop,
+                                   vector<const DCODAROCInfo*> &coda_rocinfos,
                                    vector<const DCODAEventInfo*> &coda_events) const;
 
 		void WriteCAEN1290Data(vector<uint32_t> &buff,
                                vector<const DCAEN1290TDCHit*>    &caen1290hits,
-                               vector<const DCAEN1290TDCConfig*> &caen1290configs, 
+                               vector<const DCAEN1290TDCConfig*> &caen1290configs,
                                unsigned int Nevents) const;
 
 
 		void WriteF1Data(vector<uint32_t> &buff,
                          vector<const DF1TDCHit*>          &F1hits,
                          vector<const DF1TDCTriggerTime*>  &F1tts,
-                         vector<const DF1TDCConfig*>       &F1configs, 
+                         vector<const DF1TDCConfig*>       &F1configs,
                          unsigned int Nevents) const;
 
 		void Writef250Data(vector<uint32_t> &buff,
@@ -83,7 +83,7 @@ class DEVIOBufferWriter
                            vector<const Df250TriggerTime*>   &f250tts,
                            vector<const Df250WindowRawData*> &f250wrds,
                            unsigned int Nevents) const;
-        
+
 		void Writef125Data(vector<uint32_t> &buff,
                            vector<const Df125PulseIntegral*> &f125pis,
                            vector<const Df125CDCPulse*>      &f125cdcpulses,
@@ -92,19 +92,19 @@ class DEVIOBufferWriter
                            vector<const Df125WindowRawData*> &f125wrds,
                            vector<const Df125Config*>        &f125configs,
                            unsigned int Nevents) const;
-        
+
 		void WriteEPICSData(vector<uint32_t> &buff,
                             vector<const DEPICSvalue*> epicsValues) const;
-        
+
 		void WriteEventTagData(vector<uint32_t> &buff,
                                uint64_t event_status,
                                const DL3Trigger* l3trigger) const;
 
-        void WriteBORData(JEventLoop *loop, 
+        void WriteBORData(JEventLoop *loop,
                           vector<uint32_t> &buff) const;
-        
-        void WriteTSSyncData(JEventLoop *loop, 
-                             vector<uint32_t> &buff, 
+
+        void WriteTSSyncData(JEventLoop *loop,
+                             vector<uint32_t> &buff,
                              const DL1Info *l1info) const;
 
         bool write_out_all_rocs;

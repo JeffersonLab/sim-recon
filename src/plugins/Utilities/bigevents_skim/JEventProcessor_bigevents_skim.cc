@@ -49,7 +49,7 @@ jerror_t JEventProcessor_bigevents_skim::init(void)
   //  ... fill historgrams or trees ...
   // japp->RootUnLock();
   //
-  
+
   return NOERROR;
 }
 
@@ -80,7 +80,7 @@ jerror_t JEventProcessor_bigevents_skim::evnt(JEventLoop *loop, uint64_t eventnu
   // japp->RootWriteLock();
   //  ... fill historgrams or trees ...
   // japp->RootUnLock();
-  
+
   const DEventWriterEVIO* locEventWriterEVIO = NULL;
   loop->GetSingle(locEventWriterEVIO);
   // write out BOR events
@@ -93,29 +93,30 @@ jerror_t JEventProcessor_bigevents_skim::evnt(JEventLoop *loop, uint64_t eventnu
     locEventWriterEVIO->Write_EVIOEvent(loop, "bigevents");
     return NOERROR;
   }
-  
+
   // get trigger types
   const DL1Trigger *trig_words = NULL;
-  uint32_t trig_mask, fp_trig_mask;
+  uint32_t trig_mask;
+  //uint32_t fp_trig_mask;
   try {
     loop->GetSingle(trig_words);
   } catch(...) {};
   if (trig_words) {
     trig_mask = trig_words->trig_mask;
-    fp_trig_mask = trig_words->fp_trig_mask;
+    //fp_trig_mask = trig_words->fp_trig_mask;
   }
   else {
     trig_mask = 0;
-    fp_trig_mask = 0;
+    //fp_trig_mask = 0;
   }
-  
+
   if (!(trig_mask & 0x4)){
     return NOERROR;
   }
 
   vector <const DCDCDigiHit*> CDCHits;
   loop->Get(CDCHits);
-  
+
   if (CDCHits.size() > 2000) { // huge event lets keep it!
 
     locEventWriterEVIO->Write_EVIOEvent(loop, "bigevents");
@@ -146,4 +147,3 @@ jerror_t JEventProcessor_bigevents_skim::fini(void)
   // Called before program exit after event processing is finished.
   return NOERROR;
 }
-
