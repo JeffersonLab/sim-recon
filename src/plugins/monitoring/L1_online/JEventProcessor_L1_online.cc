@@ -112,9 +112,10 @@ JEventProcessor_L1_online::~JEventProcessor_L1_online()
 jerror_t JEventProcessor_L1_online::init(void)
 {
    
-    const int bin_time = 100;
-    const int bin_fcal = 100;
-    const int bin_bcal = 200;
+    const int bin_time    = 100;
+    const int bin_fcal_1d = 500;
+    const int bin_fcal    = 200;
+    const int bin_bcal    = 200;
     
 
     // create root folder for pspair and cd to it, store main dir
@@ -136,7 +137,7 @@ jerror_t JEventProcessor_L1_online::init(void)
       
       char title[30];
       sprintf(title,"rate_gtp_%d",ii);
-      hrate_gtp[ii] = new TH1F(title,title,500,0.,50.);      
+      hrate_gtp[ii] = new TH1F(title,title,1000,0.,100.);      
       
       //      char title1[30];
       //      sprintf(title1,"rate_fp_%d",ii);
@@ -163,25 +164,25 @@ jerror_t JEventProcessor_L1_online::init(void)
 
     htagh_occup2 = new TH1I("tagh_occup2","tagh_occup2", 250, -0.5, 249.5); 
 
-    hfcal_en1   =  new TH1I("fcal_en1", "fcal_en1", bin_fcal,  0., 20000.);
-    hfcal_en2   =  new TH1I("fcal_en2", "fcal_en2", bin_fcal,  0., 20000.);
+    hfcal_en1   =  new TH1I("fcal_en1", "fcal_en1", bin_fcal_1d,  0., 20000.);
+    hfcal_en2   =  new TH1I("fcal_en2", "fcal_en2", bin_fcal_1d,  0., 20000.);
 
-    hfcal_en6   =  new TH1I("fcal_en6", "fcal_en6", bin_fcal,  0., 20000.); 
-    hfcal_en7   =  new TH1I("fcal_en7", "fcal_en7", bin_fcal,  0., 20000.); 
+    hfcal_en6   =  new TH1I("fcal_en6", "fcal_en6", bin_fcal_1d,  0., 20000.); 
+    hfcal_en7   =  new TH1I("fcal_en7", "fcal_en7", bin_fcal_1d,  0., 20000.); 
 
     hbcal_en1   =  new TH1I("bcal_en1", "bcal_en1", bin_bcal,  0., 50000.);
     hbcal_en3   =  new TH1I("bcal_en3", "bcal_en3", bin_bcal,  0., 50000.); 
     hbcal_en6   =  new TH1I("bcal_en6", "bcal_en6", bin_bcal,  0., 50000.); 
 
-    hfcal_bcal_en1  = new TH2I("fcal_bcal_en1","fcal_bcal_en1", bin_fcal, 0., 20000, bin_bcal, 0., 50000);
-    hfcal_bcal_en6  = new TH2I("fcal_bcal_en6","fcal_bcal_en6", bin_fcal, 0., 20000, bin_bcal, 0., 50000);
+    hfcal_bcal_en1  = new TH2I("fcal_bcal_en1","fcal_bcal_en1", bin_fcal, 0., 10000, bin_bcal, 0., 50000);
+    hfcal_bcal_en6  = new TH2I("fcal_bcal_en6","fcal_bcal_en6", bin_fcal, 0., 10000, bin_bcal, 0., 50000);
 
-    hfcal_bcal_en1_3 = new TH2I("fcal_bcal_en_type1_3","fcal_bcal_en1_3", 100, 0., 20000, 200, 0., 50000);
+    hfcal_bcal_en1_3 = new TH2I("fcal_bcal_en_type1_3","fcal_bcal_en1_3", 100, 0., 10000, 200, 0., 50000);
 
-    hfcal_bcal_type1 = new TH2I("fcal_bcal_type1","fcal_bcal_type1", bin_fcal, 0., 20000, bin_bcal, 0., 50000);
-    hfcal_bcal_type3 = new TH2I("fcal_bcal_type3","fcal_bcal_type3", bin_fcal, 0., 20000, bin_bcal, 0., 50000);
-    hfcal_bcal_type5 = new TH2I("fcal_bcal_type5","fcal_bcal_type5", bin_fcal, 0., 20000, bin_bcal, 0., 50000);
-    hfcal_bcal_type7 = new TH2I("fcal_bcal_type7","fcal_bcal_type7", bin_fcal, 0., 20000, bin_bcal, 0., 50000);
+    hfcal_bcal_type1 = new TH2I("fcal_bcal_type1","fcal_bcal_type1", bin_fcal, 0., 10000, bin_bcal, 0., 50000);
+    hfcal_bcal_type3 = new TH2I("fcal_bcal_type3","fcal_bcal_type3", bin_fcal, 0., 10000, bin_bcal, 0., 50000);
+    hfcal_bcal_type5 = new TH2I("fcal_bcal_type5","fcal_bcal_type5", bin_fcal, 0., 10000, bin_bcal, 0., 50000);
+    hfcal_bcal_type7 = new TH2I("fcal_bcal_type7","fcal_bcal_type7", bin_fcal, 0., 10000, bin_bcal, 0., 50000);
 
     hst_hit7    =  new TH1I("st_hit7", "st_hit7", 100, -0.5, 99.5); 
     hst_hit2    =  new TH1I("st_hit2", "st_hit2", 100, -0.5, 99.5); 
@@ -322,6 +323,7 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 	
 	fcal_hit->GetSingle(pulsepedestal); 
 	
+
 	if(pulsepedestal){
 	  
 	  pulse_peak = pulsepedestal->pulse_peak - 100;
@@ -350,7 +352,11 @@ jerror_t JEventProcessor_L1_online::evnt(JEventLoop *loop, uint64_t eventnumber)
 	
 
 	if(pulse_peak > fcal_cell_thr){
-	  fcal_tot_en += pulse_int;
+
+	  if( (adc_time > 20) && (adc_time < 70)){
+	    if(pulse_int < 0) pulse_int = 0;
+	    fcal_tot_en += pulse_int;
+	  }
 
 	  if(trig_bit[1] == 1) fcal_adc_time1.push_back(adc_time);
 	  if(trig_bit[6] == 1) fcal_adc_time6.push_back(adc_time);

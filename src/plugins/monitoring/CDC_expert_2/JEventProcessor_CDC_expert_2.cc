@@ -142,7 +142,7 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
   const Int_t IMAX = 100000;   //max for raw integral
   const Int_t IPPMAX = 150000; //max for raw integral + pedestal
   const Int_t PMAX = 256;      //max for pedestal, fa125-format, 8 bits
-  const Int_t AMAX = 4096;    //max for amplitude, fa125-format, 9 bits  * scale factor
+  const Int_t AMAX = 4096;      //max for amplitude, fa125-format, 9 bits  * scale factor
   const Int_t RTMAX = 1800;    //max for raw time
   const Int_t RTMIN = 160;
   const Int_t RTBINS = 164;       //bins
@@ -199,7 +199,7 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
 
 
   cdc_amp = new TH1D("cdc_amp","CDC amplitude;amplitude",256,0,AMAX);
-  cdc_amp_vs_n = new TH2D("cdc_amp_vs_n",Form("CDC time (ns) vs straw number;straw %s;time (ns)",deadstraws),NSTRAWS,HALF,NSTRAWSPH,256,0,AMAX);
+  cdc_amp_vs_n = new TH2D("cdc_amp_vs_n",Form("CDC amplitude vs straw number;straw %s;amplitude",deadstraws),NSTRAWS,HALF,NSTRAWSPH,256,0,AMAX);
 
 
 
@@ -234,9 +234,9 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
   //cdc_intpp_badt   = new TH1I("cdc_intpp_badt","CDC integral (ADC units), including pedestal, events with bad time flagged;ADC units",128,0,IPPMAX);
 
   cdc_qf = new TH1D("cdc_qf","CDC time quality factor;time quality factor (0:good, 1:zero, 2:hi ped, 3: below TH, 4:late TCL, 5: neg ups, 9:hi ups)",10,0,10);
-  cdc_qf_vs_n = new TH2D("cdc_qf_vs_n","CDC time quality factor vs straw number;straw;time quality factor",NSTRAWS,HALF,NSTRAWSPH,10,0,10);
-  cdc_qf_vs_a = new TH2D("cdc_qf_vs_a","CDC time quality factor vs amplitude;amplitude;time quality factor",128,0,AMAX,10,0,10);
-  cdc_qf_vs_rt = new TH2D("cdc_qf_vs_raw_t","CDC time quality factor vs raw time;time;time quality factor",RTBINS,RTMIN,RTMAX,10,0,10);
+  cdc_qf_vs_n = new TH2D("cdc_qf_vs_n","CDC time quality factor vs straw number;straw;time quality factor",NSTRAWS,HALF,NSTRAWSPH,9,1,10);
+  cdc_qf_vs_a = new TH2D("cdc_qf_vs_a","CDC time quality factor vs amplitude;amplitude;time quality factor",128,0,AMAX,9,1,10);
+  cdc_qf_vs_rt = new TH2D("cdc_qf_vs_raw_t","CDC time quality factor vs raw time;time;time quality factor",RTBINS,RTMIN,RTMAX,9,1,10);
 
   xd->cd();
 
@@ -312,7 +312,7 @@ jerror_t JEventProcessor_CDC_expert_2::init(void) {
 
   gDirectory->mkdir("rings_amp","CDC rings: amplitude")->cd();
   for (i=1; i<29; i++) {
-    cdc_amp_ring[i]   = new TH2I(Form("cdc_amp_ring[%i]",i),Form("CDC amplitude (ADC units), ring %i",i),straws[i],HALF,straws[i]+HALF,256,0,AMAX);
+    cdc_amp_ring[i]   = new TH2I(Form("cdc_amp_ring[%i]",i),Form("CDC amplitude (ADC units), ring %i;straw",i),straws[i],HALF,straws[i]+HALF,256,0,AMAX);
   }
   cdc_amp_ring[11]->GetXaxis()->SetTitle(Form("Straw number, %s",deadrow11));
   cdc_amp_ring[23]->GetXaxis()->SetTitle(Form("Straw number, %s",deadrow23));
@@ -379,7 +379,6 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
 
   uint16_t originalq; //last digit of le_time if qf=1
 
-  uint32_t total_ped;  //total pedestal during integration period
   uint32_t initped; //pedestal calculated from WRD at start of window
 
   // default scaling factors will be overridden by Df125Config if present
@@ -459,7 +458,6 @@ jerror_t JEventProcessor_CDC_expert_2::evnt(JEventLoop *eventLoop, uint64_t even
     n = straw_offset[ring] + straw;
   
 
-    total_ped = 0;
     originalq = 0;
 
 
