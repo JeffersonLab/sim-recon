@@ -158,7 +158,7 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
             t_lhit = clhit->t; t_rhit = crhit->t;
             double E_pair = flhit->E+frhit->E;
             // PSC,PS,TAGX coincidences
-            int htag = 0;
+            unsigned int htag = 0;
             double EdiffMax = 0.3; double tdiffMax = 15.0;
             for (unsigned int i=0; i < taghhits.size(); i++) {
                 const DTAGHHit* tag = taghhits[i];
@@ -183,7 +183,7 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
             }
             ntag = htag;
             if (ntag>ntag_max) jerr << "TPOL_tree plugin error: ntag exceeds ntag_max(" << ntag_max << ")." << endl;
-            int hit = 0;
+            unsigned int hit = 0;
             for(unsigned int i=0; i< windowraws.size(); i++) {
                 const Df250WindowRawData *windowraw = windowraws[i];
                 if (windowraw->rocid!=84) continue;
