@@ -71,6 +71,8 @@ class JEventProcessor_TOF_calib:public jana::JEventProcessor{
     int OverFlowR;
     float PeakL;
     float PeakR;
+    float PedL;
+    float PedR;
   };
 
   struct SingleP{
@@ -80,6 +82,7 @@ class JEventProcessor_TOF_calib:public jana::JEventProcessor{
     float adc;
     int OverFlow;
     float Peak;
+    float Ped;
   };
 
 
@@ -105,6 +108,8 @@ class JEventProcessor_TOF_calib:public jana::JEventProcessor{
   int OFR[MaxHits];
   float PEAKL[MaxHits];
   float PEAKR[MaxHits];
+  float PEDL[MaxHits];
+  float PEDR[MaxHits];
 
   int NsinglesA;
   int PlaneSA[MaxHits];
@@ -114,6 +119,7 @@ class JEventProcessor_TOF_calib:public jana::JEventProcessor{
   float TADCS[MaxHits];
   int OF[MaxHits];
   float PEAK[MaxHits];
+  float PED[MaxHits];
 
   int NsinglesT;
   int PlaneST[MaxHits];
