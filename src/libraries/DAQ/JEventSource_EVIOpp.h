@@ -193,6 +193,9 @@ class JEventSource_EVIOpp: public jana::JEventSource{
 		bool     PRINT_STATS;
 		bool     SWAP;
 		bool     LINK;
+		bool     LINK_TRIGGERTIME;
+		bool     LINK_BORCONFIG;
+		bool     LINK_CONFIG;
 		
 		uint32_t jobtype;
 };

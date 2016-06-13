@@ -66,7 +66,8 @@ DEVIOWorkerThread::DEVIOWorkerThread(
 	PARSE_EPICS         = true;
 	PARSE_EVENTTAG      = true;
 	PARSE_TRIGGER       = true;
-
+	
+	LINK_TRIGGERTIME    = false;
 }
 
 //---------------------------------
@@ -1723,21 +1724,19 @@ void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t
 //----------------
 void DEVIOWorkerThread::LinkAllAssociations(void)
 {
+
 	/// Find objects that should be linked as "associated objects"
 	/// of one another and add to each other's list.
 	for( auto pe : current_parsed_events){
 
-		//----------------- Sort all associations
+		//----------------- Sort hit objects
+
 		// fADC250
-		if(pe->vDf250Config.size()>1       ) sort(pe->vDf250Config.begin(),        pe->vDf250Config.end(),        SortByROCID<Df250Config>              );
-		if(pe->vDf250TriggerTime.size()>1  ) sort(pe->vDf250TriggerTime.begin(),   pe->vDf250TriggerTime.end(),   SortByModule<Df250TriggerTime>        );
 		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByPulseNumber<Df250PulseIntegral> );
 		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByPulseNumber<Df250PulseTime>     );
 		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByPulseNumber<Df250PulsePedestal> );
 
 		// fADC125
-		if(pe->vDf125Config.size()>1       ) sort(pe->vDf125Config.begin(),        pe->vDf125Config.end(),        SortByROCID<Df125Config>              );
-		if(pe->vDf125TriggerTime.size()>1  ) sort(pe->vDf125TriggerTime.begin(),   pe->vDf125TriggerTime.end(),   SortByModule<Df125TriggerTime>        );
 		if(pe->vDf125PulseIntegral.size()>1) sort(pe->vDf125PulseIntegral.begin(), pe->vDf125PulseIntegral.end(), SortByPulseNumber<Df125PulseIntegral> );
 		if(pe->vDf125CDCPulse.size()>1     ) sort(pe->vDf125CDCPulse.begin(),      pe->vDf125CDCPulse.end(),      SortByChannel<Df125CDCPulse>          );
 		if(pe->vDf125FDCPulse.size()>1     ) sort(pe->vDf125FDCPulse.begin(),      pe->vDf125FDCPulse.end(),      SortByChannel<Df125FDCPulse>          );
@@ -1745,41 +1744,13 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 		if(pe->vDf125PulsePedestal.size()>1) sort(pe->vDf125PulsePedestal.begin(), pe->vDf125PulsePedestal.end(), SortByPulseNumber<Df125PulsePedestal> );
 
 		// F1TDC
-		if(pe->vDF1TDCConfig.size()>1      ) sort(pe->vDF1TDCConfig.begin(),       pe->vDF1TDCConfig.end(),       SortByROCID<DF1TDCConfig>             );
-		if(pe->vDF1TDCTriggerTime.size()>1 ) sort(pe->vDF1TDCTriggerTime.begin(),  pe->vDF1TDCTriggerTime.end(),  SortByModule<DF1TDCTriggerTime>       );
 		if(pe->vDF1TDCHit.size()>1         ) sort(pe->vDF1TDCHit.begin(),          pe->vDF1TDCHit.end(),          SortByModule<DF1TDCHit>               );
 
 		// CAEN1290TDC
-		if(pe->vDCAEN1290TDCConfig.size()>1) sort(pe->vDCAEN1290TDCConfig.begin(), pe->vDCAEN1290TDCConfig.end(), SortByROCID<DCAEN1290TDCConfig>       );
 		if(pe->vDCAEN1290TDCHit.size()>1   ) sort(pe->vDCAEN1290TDCHit.begin(),    pe->vDCAEN1290TDCHit.end(),    SortByModule<DCAEN1290TDCHit>         );
 
 
-		//----------------- Link all associations
-	
-		// Connect Df250Config objects
-		LinkConfigSamplesCopy(pe->vDf250Config, pe->vDf250PulseIntegral);
-
-		// Connect Df125Config objects
-		LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125PulseIntegral);
-		LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125CDCPulse);
-		LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125FDCPulse);
-
-		// Connect DF1TDCConfig objects
-		LinkConfig(pe->vDF1TDCConfig, pe->vDF1TDCHit);
-
-		// Connect DCAEN1290TDCConfig objects
-		LinkConfig(pe->vDCAEN1290TDCConfig, pe->vDCAEN1290TDCHit);
-
-		// Connect Df250TriggerTime objects
-		LinkModule(pe->vDf250TriggerTime, pe->vDf250PulseIntegral);
-
-		// Connect Df125TriggerTime objects
-		LinkModule(pe->vDf125TriggerTime, pe->vDf125PulseIntegral);
-		LinkModule(pe->vDf125TriggerTime, pe->vDf125CDCPulse);
-		LinkModule(pe->vDf125TriggerTime, pe->vDf125FDCPulse);
-
-		// Connect DF1TDCTriggerTime objects
-		LinkModule(pe->vDF1TDCTriggerTime, pe->vDF1TDCHit);
+		//----------------- Link hit objects
 
 		// Connect Df250 pulse objects
 		LinkPulse(pe->vDf250PulseTime,     pe->vDf250PulseIntegral);
@@ -1808,7 +1779,34 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 			LinkChannel(pe->vDf125WindowRawData, pe->vDf125CDCPulse);
 			LinkChannel(pe->vDf125WindowRawData, pe->vDf125FDCPulse);
 		}
+		
+		//----------------- Optionally link config objects (on by default)
+		if(LINK_CONFIG){
+			if(pe->vDf250Config.size()>1       ) sort(pe->vDf250Config.begin(),        pe->vDf250Config.end(),        SortByROCID<Df250Config>              );
+			if(pe->vDf125Config.size()>1       ) sort(pe->vDf125Config.begin(),        pe->vDf125Config.end(),        SortByROCID<Df125Config>              );
+			if(pe->vDF1TDCConfig.size()>1      ) sort(pe->vDF1TDCConfig.begin(),       pe->vDF1TDCConfig.end(),       SortByROCID<DF1TDCConfig>             );
+			if(pe->vDCAEN1290TDCConfig.size()>1) sort(pe->vDCAEN1290TDCConfig.begin(), pe->vDCAEN1290TDCConfig.end(), SortByROCID<DCAEN1290TDCConfig>       );
 
+			LinkConfigSamplesCopy(pe->vDf250Config, pe->vDf250PulseIntegral);
+			LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125PulseIntegral);
+			LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125CDCPulse);
+			LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125FDCPulse);
+			LinkConfig(pe->vDF1TDCConfig,           pe->vDF1TDCHit);
+			LinkConfig(pe->vDCAEN1290TDCConfig,     pe->vDCAEN1290TDCHit);
+		}
+
+		//----------------- Optionally link trigger time objects (off by default)
+		if(LINK_TRIGGERTIME){
+			if(pe->vDf250TriggerTime.size()>1  ) sort(pe->vDf250TriggerTime.begin(),   pe->vDf250TriggerTime.end(),   SortByModule<Df250TriggerTime>        );
+			if(pe->vDf125TriggerTime.size()>1  ) sort(pe->vDf125TriggerTime.begin(),   pe->vDf125TriggerTime.end(),   SortByModule<Df125TriggerTime>        );
+			if(pe->vDF1TDCTriggerTime.size()>1 ) sort(pe->vDF1TDCTriggerTime.begin(),  pe->vDF1TDCTriggerTime.end(),  SortByModule<DF1TDCTriggerTime>       );
+
+			LinkModule(pe->vDf250TriggerTime,  pe->vDf250PulseIntegral);
+			LinkModule(pe->vDf125TriggerTime,  pe->vDf125PulseIntegral);
+			LinkModule(pe->vDf125TriggerTime,  pe->vDf125CDCPulse);
+			LinkModule(pe->vDf125TriggerTime,  pe->vDf125FDCPulse);
+			LinkModule(pe->vDF1TDCTriggerTime, pe->vDF1TDCHit);
+		}
 	}
 
 }

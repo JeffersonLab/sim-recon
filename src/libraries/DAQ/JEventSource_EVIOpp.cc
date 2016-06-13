@@ -66,6 +66,9 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	PRINT_STATS = true;
 	SWAP = true;
 	LINK = true;
+	LINK_TRIGGERTIME = true;
+	LINK_BORCONFIG = true;
+	LINK_CONFIG = true;
 	PARSE = true;
 	PARSE_F250 = true;
 	PARSE_F125 = true;
@@ -94,6 +97,9 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 
 	gPARMS->SetDefaultParameter("EVIO:SWAP", SWAP, "Allow swapping automatic swapping. Turning this off should only be used for debugging.");
 	gPARMS->SetDefaultParameter("EVIO:LINK", LINK, "Link associated objects. Turning this off should only be used for debugging.");
+	gPARMS->SetDefaultParameter("EVIO:LINK_TRIGGERTIME", LINK_TRIGGERTIME, "Link D*TriggerTime associated objects. This is on by default and may be OK to turn off (but please check output if you do!)");
+	gPARMS->SetDefaultParameter("EVIO:LINK_BORCONFIG", LINK_BORCONFIG, "Link BORConfig associated objects. This is on by default. If turned off, it will break emulation (and possibly other things in the future).");
+	gPARMS->SetDefaultParameter("EVIO:LINK_CONFIG", LINK_CONFIG, "Link Config associated objects. This is on by default.");
 
 	gPARMS->SetDefaultParameter("EVIO:PARSE", PARSE, "Set this to 0 to disable parsing of event buffers and generation of any objects (for benchmarking/debugging)");
 	gPARMS->SetDefaultParameter("EVIO:PARSE_F250", PARSE_F250, "Set this to 0 to disable parsing of data from F250 ADC modules (for benchmarking/debugging)");
@@ -112,8 +118,9 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 	if(gPARMS->Exists("RECORD_CALL_STACK")) gPARMS->GetParameter("RECORD_CALL_STACK", RECORD_CALL_STACK);
 
 	jobtype = DEVIOWorkerThread::JOB_NONE;
-	if(PARSE) jobtype |= DEVIOWorkerThread::JOB_FULL_PARSE;
-	if(LINK ) jobtype |= DEVIOWorkerThread::JOB_ASSOCIATE;
+	if( PARSE ) jobtype |= DEVIOWorkerThread::JOB_FULL_PARSE;
+	if( LINK  ) jobtype |= DEVIOWorkerThread::JOB_ASSOCIATE;
+	if(!LINK  ) LINK_BORCONFIG = false;
 	
 	source_type          = kNoSource;
 	hdevio               = NULL;
@@ -169,6 +176,8 @@ JEventSource_EVIOpp::JEventSource_EVIOpp(const char* source_name):JEventSource(s
 		w->PARSE_EPICS         = PARSE_EPICS;
 		w->PARSE_EVENTTAG      = PARSE_EVENTTAG;
 		w->PARSE_TRIGGER       = PARSE_TRIGGER;
+		w->LINK_TRIGGERTIME    = LINK_TRIGGERTIME;
+		w->LINK_CONFIG         = LINK_CONFIG;
 		w->run_number_seed     = run_number_seed;
 		worker_threads.push_back(w);
 	}
@@ -465,7 +474,7 @@ jerror_t JEventSource_EVIOpp::GetObjects(JEvent &event, JFactory_base *factory)
 	if(!pe->copied_to_factories){
 
 		// Optionally link BOR object associations
-		if(LINK && pe->borptrs) LinkBORassociations(pe);
+		if(LINK_BORCONFIG && pe->borptrs) LinkBORassociations(pe);
 		
 		// Optionally emulate flash firmware
 		if(!pe->vDf250WindowRawData.empty()) EmulateDf250Firmware(pe);
