@@ -32,14 +32,14 @@
 		c1->Update();
 	}
 	if(!gPad){
-		cout << "gPad is NULL ??!!" << endl;
+		cout << "gPad is NULL!" << endl;
 		return;
 	}
 
 	TCanvas *c1 = gPad->GetCanvas();
 	c1->cd(0);
 	c1->Clear();
-	
+
 	TPad *fdcpad1 = (TPad*)gDirectory->FindObjectAny("fdcpad1");
 	if(!fdcpad1) fdcpad1 = new TPad("fdcpad1", "", 0.0, 0.0, 0.66, 1.0);
 	fdcpad1->SetTicks();
@@ -76,5 +76,3 @@
 	}
 
 }
-
-

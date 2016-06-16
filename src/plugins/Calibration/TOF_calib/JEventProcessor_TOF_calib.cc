@@ -24,7 +24,7 @@ extern "C"{
 //------------------
 JEventProcessor_TOF_calib::JEventProcessor_TOF_calib()
 {
-  
+
 }
 
 //------------------
@@ -48,7 +48,7 @@ jerror_t JEventProcessor_TOF_calib::init(void)
   //  ... fill historgrams or trees ...
   // japp->RootUnLock();
   //
-  
+
   cout<<"INITIALIZE VARIABLES "<<flush<<endl;
 
   pthread_mutex_init(&mutex, NULL);
@@ -112,7 +112,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 
   //cout<<"CALL EVENT ROUTINE!!!! "<<eventnumber<<endl;
-  
+
   // Get First Trigger Type
   vector <const DL1Trigger*> trig_words;
   uint32_t trig_mask, fp_trig_mask;
@@ -127,26 +127,26 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     trig_mask = 0;
     fp_trig_mask = 0;
   }
-  
-  
+
+
   /* fp_trig_mask & 0x100 - upstream LED
      fp_trig_mask & 0x200 - downstream LED
      trig_mask & 0x1 - cosmic trigger*/
-  
+
   if (fp_trig_mask){ // this is a front pannel trigger like LED
-    return NOERROR;    
+    return NOERROR;
   }
   if (trig_mask>7){ // this is not a BCAL/FCAL trigger
-    return NOERROR;    
+    return NOERROR;
   }
-  
+
   vector< const DCAEN1290TDCHit*> CAENHits;
   loop->Get(CAENHits);
   if (CAENHits.size()<=0){
-    return NOERROR;    
+    return NOERROR;
   }
   uint32_t locROCID = CAENHits[0]->rocid;
-  
+
   vector <const DCODAROCInfo*> ROCS;
   loop->Get(ROCS);
   int indx = -1;
@@ -158,16 +158,16 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
   }
 
   if (indx<0){
-    return NOERROR;    
+    return NOERROR;
   }
 
   uint64_t TriggerTime = ROCS[indx]->timestamp;
   int TriggerBIT = TriggerTime%6;
   float TimingShift = TOF_TDC_SHIFT - (float)TriggerBIT;
-  if(TimingShift <= 0) { 
+  if(TimingShift <= 0) {
     TimingShift += 6.;
-  } 
-  
+  }
+
   TimingShift *= 4. ;
 
   vector<const DTOFDigiHit*> ADCHits, ADCHitsLeft[2],ADCHitsRight[2];
@@ -177,17 +177,17 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
   loop->Get(ADCHits);
   loop->Get(TDCHits);
 
-  // loop over DTOFDigiHit: this are ADC hits 
+  // loop over DTOFDigiHit: this are ADC hits
   // sort them into ADCLeft and ADCRight hits
   // only keep hits within the time-peak
-  // also keep the hodoscope planes separate 
+  // also keep the hodoscope planes separate
   int th[2][44][2];
   memset(th,0,2*44*2*4);
   for (unsigned int k=0; k<ADCHits.size(); k++){
     const DTOFDigiHit *hit = ADCHits[k];
     int plane = hit->plane;
     int end = hit->end;
-    
+
     float time = (float)hit->pulse_time * BINADC_2_TIME;
     int val = (hit->pulse_time & 0x3F);
     if (!val){
@@ -228,7 +228,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
       } else {
 	//overflow = PulseIntegral[0]->quality_factor;
       }
-      
+
       if (end){
 	ADCHitsRight[plane].push_back(hit);
 	ADCRightOverFlow[plane].push_back(overflow);
@@ -247,7 +247,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
   // loop over DTOFTDCDigiHits : these are the TDC hits
   // sort them into left and right hits
   // only keep hits within the time peak
-  // also keep the hodoscope planes separate 
+  // also keep the hodoscope planes separate
   for (unsigned int k=0; k<TDCHits.size(); k++){
     const DTOFTDCDigiHit *hit = TDCHits[k];
     int plane = hit->plane;
@@ -267,7 +267,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
   float Signum = -1.;
   vector <paddle> TOFADCPaddles[2];
   vector <SingleP> TOFADCSingles[2];
-  int firsttime = 1;
+  //int firsttime = 1;
 
   // for each hodoscope plane find matches between
   // ADC left and right data or find single hits for
@@ -278,13 +278,13 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     // these are paddle 22 and paddle 23
     for (unsigned int i = 0; i<ADCHitsRight[plane].size(); i++) {
       const DTOFDigiHit *hitR = ADCHitsRight[plane][i];
-      int paddle = hitR->bar; 
+      int paddle = hitR->bar;
       if ((paddle == 22) || (paddle == 23)){
 	struct SingleP newsingle;
 	newsingle.paddle = paddle;
 	newsingle.LR = 1;
 	newsingle.time = (float)hitR->pulse_time*BINADC_2_TIME ;
-	newsingle.adc = (float)hitR->pulse_integral -  
+	newsingle.adc = (float)hitR->pulse_integral -
 	  (float)hitR->pedestal/(float)hitR->nsamples_pedestal*(float)hitR->nsamples_integral;
 
 	const Df250PulsePedestal* phit;
@@ -292,14 +292,14 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 	newsingle.Peak = phit->pulse_peak;
 
 	newsingle.OverFlow = ADCRightOverFlow[plane][i];
-	TOFADCSingles[plane].push_back(newsingle);	
+	TOFADCSingles[plane].push_back(newsingle);
       }
     }
-    
+
     // loop over left pmts to find single ended paddle hits
-    // these are paddle 22 and paddle 23    
+    // these are paddle 22 and paddle 23
     // for the other paddle loop over the right ones and find match
-    
+
     for (unsigned int j = 0; j<ADCHitsLeft[plane].size(); j++) {
       const DTOFDigiHit *hit = ADCHitsLeft[plane][j];
       int paddle = hit->bar;
@@ -307,7 +307,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 	struct SingleP newsingle;
 	newsingle.paddle = paddle;
 	newsingle.LR = 0;
-	newsingle.adc = (float)hit->pulse_integral -  
+	newsingle.adc = (float)hit->pulse_integral -
 	  (float)hit->pedestal/(float)hit->nsamples_pedestal*(float)hit->nsamples_integral;
 
 	const Df250PulsePedestal* phit;
@@ -318,7 +318,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 	newsingle.OverFlow = ADCLeftOverFlow[plane][j];
 	TOFADCSingles[plane].push_back(newsingle);
       } else {
-	
+
 	// loop over Right adc hits find match with the left and prepare paddle hits
 	for (unsigned int i = 0; i<ADCHitsRight[plane].size(); i++) {
 	  const DTOFDigiHit *hitR = ADCHitsRight[plane][i];
@@ -329,15 +329,15 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 	    newpaddle.timeR = (float)hitR->pulse_time*BINADC_2_TIME ;
 	    newpaddle.mt = (newpaddle.timeL + newpaddle.timeR)/2.;
 	    newpaddle.td = Signum*(newpaddle.timeL - newpaddle.timeR)/2.;
-	    newpaddle.adcL = (float)hit->pulse_integral -  
+	    newpaddle.adcL = (float)hit->pulse_integral -
 	      (float)hit->pedestal/(float)hit->nsamples_pedestal*(float)hit->nsamples_integral;
-	    newpaddle.adcR = (float)hitR->pulse_integral -  
+	    newpaddle.adcR = (float)hitR->pulse_integral -
 	      (float)hitR->pedestal/(float)hitR->nsamples_pedestal*(float)hitR->nsamples_integral;
 
 	    const Df250PulsePedestal* phit;
 	    hitR->GetSingle(phit);
 	    newpaddle.PeakR = phit->pulse_peak;
-	    
+
 	    hit->GetSingle(phit);
 	    newpaddle.PeakL = phit->pulse_peak;
 
@@ -355,7 +355,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 
   vector <paddle> TOFTDCPaddles[2];
   vector <SingleP> TOFTDCSingles[2];
-  firsttime = 1;
+  //firsttime = 1;
 
   // now do the same thing for TDC hits
   // find matches between left and right and treat the single ended paddles separately
@@ -481,7 +481,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     PaddleSA[k] = TOFADCSingles[0][k].paddle ;
     LRA[k] = TOFADCSingles[0][k].LR ;
     ADCS[k] = TOFADCSingles[0][k].adc;
-    TADCS[k] = TOFADCSingles[0][k].time; 
+    TADCS[k] = TOFADCSingles[0][k].time;
     OF[k] = TOFADCSingles[0][k].OverFlow;
     PEAK[k] = TOFADCSingles[0][k].Peak;
 
@@ -501,7 +501,7 @@ jerror_t JEventProcessor_TOF_calib::evnt(JEventLoop *loop, uint64_t eventnumber)
     PlaneST[k] = 0;
     PaddleST[k] = TOFTDCSingles[0][k].paddle ;
     LRT[k] = TOFTDCSingles[0][k].LR ;
-    TDCST[k] = TOFTDCSingles[0][k].time; 
+    TDCST[k] = TOFTDCSingles[0][k].time;
     j++;
   }
   for (unsigned int k = 0; k<TOFTDCSingles[1].size(); k++){
@@ -569,7 +569,7 @@ jerror_t JEventProcessor_TOF_calib::WriteRootFile(void){
   top->cd();
 
   return NOERROR;
- 
+
 }
 
 jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
@@ -596,16 +596,16 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
 
     ROOTFile->mkdir("TOFcalib");
     ROOTFile->cd("TOFcalib");
-	
+
 
     TOFTDCtime = new TH2F("TOFTDCtime","TOF CAEN TDC times", 8000, 0., 4000., 176, 0., 176.);
     TOFADCtime = new TH2F("TOFADCtime","TOF ADC times", 800, 0., 400., 176, 0., 176.);
 
-    TOFEnergy = new TH2F("TOFEnergy","TOF Energy Integral (no ped subraction)", 
+    TOFEnergy = new TH2F("TOFEnergy","TOF Energy Integral (no ped subraction)",
 			 176, 0., 176., 100, 0., 20000.);
     TOFPeak = new TH2F("TOFPeak","TOF Peak Amplitude",176, 0., 176., 100, 0., 4100.);
     TOFPedestal = new TH2F("TOFPedestal","TOF Pedestal",176, 0., 176., 100, 0., 200.);
-        
+
 
     t3 = new TTree("t3","TOF Hits");
     t3->Branch("Event", &Event,"Event/I");
@@ -616,7 +616,7 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
     t3->Branch("Paddle",Paddle,"Paddle[Nhits]/I");
     t3->Branch("MeanTime",MeanTime,"MeanTime[Nhits]/F");
     t3->Branch("TimeDiff",TimeDiff,"TimeDiff[Nhits]/F");
-  
+
     t3->Branch("NhitsA", &NhitsA,"NhitsA/I");
     t3->Branch("PlaneA",PlaneA,"PlaneA[NhitsA]/I");
     t3->Branch("PaddleA",PaddleA,"PaddleA[NhitsA]/I");
@@ -628,7 +628,7 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
     t3->Branch("OFR",OFR,"OFR[NhitsA]/I");
     t3->Branch("PEAKL",PEAKL,"PEAKL[NhitsA]/F");
     t3->Branch("PEAKR",PEAKR,"PEAKR[NhitsA]/F");
-    
+
     t3->Branch("NsinglesA", &NsinglesA,"NsinglesA/I");
     t3->Branch("PlaneSA",PlaneSA,"PlaneSA[NsinglesA]/I");
     t3->Branch("PaddleSA",PaddleSA,"PaddleSA[NsinglesA]/I");
@@ -649,4 +649,3 @@ jerror_t JEventProcessor_TOF_calib::MakeHistograms(void){
 
   return NOERROR;
 }
-

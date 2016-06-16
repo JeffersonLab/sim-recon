@@ -199,12 +199,15 @@ TMap* DEventWriterROOT::Create_UserInfoMaps(DTreeBranchRegister& locBranchRegist
 	locMiscInfoMap->Add(new TObjString("KinFitType"), new TObjString(locKinFitTypeStream.str().c_str()));
 
 	string HDDM_DATA_VERSION_STRING = "";
-	gPARMS->GetParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING);
+	if(gPARMS->Exists("REST:DATAVERSIONSTRING"))
+		gPARMS->GetParameter("REST:DATAVERSIONSTRING", HDDM_DATA_VERSION_STRING);
+
 	if(HDDM_DATA_VERSION_STRING != "")
 		locMiscInfoMap->Add(new TObjString("REST:DATAVERSIONSTRING"), new TObjString(HDDM_DATA_VERSION_STRING.c_str()));
 
 	string REST_JANA_CALIB_CONTEXT = "";
-	gPARMS->GetParameter("REST:JANACALIBCONTEXT", REST_JANA_CALIB_CONTEXT);
+	if(gPARMS->Exists("REST:JANACALIBCONTEXT"))
+		gPARMS->GetParameter("REST:JANACALIBCONTEXT", REST_JANA_CALIB_CONTEXT);
 	if(REST_JANA_CALIB_CONTEXT == "")
 		gPARMS->GetParameter("JANA_CALIB_CONTEXT", REST_JANA_CALIB_CONTEXT);
 	if(REST_JANA_CALIB_CONTEXT != "")
