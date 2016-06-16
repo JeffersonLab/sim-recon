@@ -67,7 +67,7 @@ DEVIOWorkerThread::DEVIOWorkerThread(
 	PARSE_EVENTTAG      = true;
 	PARSE_TRIGGER       = true;
 	
-	LINK_TRIGGERTIME    = false;
+	LINK_TRIGGERTIME    = true;
 }
 
 //---------------------------------
