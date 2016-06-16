@@ -34,12 +34,30 @@ DFCALShower_factory::DFCALShower_factory()
   NON_LIN_COEF_A = 0; 
   NON_LIN_COEF_B = 0;
   NON_LIN_COEF_C = 0;
-  NON_LIN_COEF_alfa = 0;
+  NON_LIN_COEF_D = 0;
+  NON_LIN_COEF_E = 0;
 
+  linfit_slope = 0;
+  linfit_intercept = 0;
+  expfit_param1 = 0;
+  expfit_param2 = 0;
+  expfit_param3 = 0;
+
+
+/*
   gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_A", NON_LIN_COEF_A);
   gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_B", NON_LIN_COEF_B);
   gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_C", NON_LIN_COEF_C);
-  gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_alfa", NON_LIN_COEF_alfa);
+  gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_D", NON_LIN_COEF_D);
+  gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_E", NON_LIN_COEF_E);
+*/
+
+  gPARMS->SetDefaultParameter("FCAL:linfit_slope", linfit_slope);
+  gPARMS->SetDefaultParameter("FCAL:linfit_intercept", linfit_intercept);
+  gPARMS->SetDefaultParameter("FCAL:expfit_param1", expfit_param1);
+  gPARMS->SetDefaultParameter("FCAL:expfit_param2", expfit_param2);
+  gPARMS->SetDefaultParameter("FCAL:expfit_param3", expfit_param3);
+
 
   // Parameters to make shower-depth correction taken from Radphi, 
   // slightly modifed to match photon-polar angle
@@ -85,17 +103,21 @@ jerror_t DFCALShower_factory::brun(JEventLoop *loop, int32_t runnumber)
     // by default, load non-linear shower corrections from the CCDB
     // but allow these to be overridden by command line parameters
     if(LOAD_CCDB_CONSTANTS > 0.1) {
-	map<string, double> shower_calib;
-	loop->GetCalib("FCAL/shower_calib", shower_calib);
-	NON_LIN_COEF_A = shower_calib["FCAL_SHOWER_CALIB_A"];
-	NON_LIN_COEF_B = shower_calib["FCAL_SHOWER_CALIB_B"];
-	NON_LIN_COEF_C = shower_calib["FCAL_SHOWER_CALIB_C"];
-	NON_LIN_COEF_alfa = shower_calib["FCAL_SHOWER_CALIB_D"];
+	map<string, double> shower_calib_piecewise;
+	loop->GetCalib("FCAL/shower_calib_piecewise", shower_calib_piecewise);
+	linfit_slope = shower_calib_piecewise["linfit_slope"];
+	linfit_intercept = shower_calib_piecewise["linfit_intercept"];
+	expfit_param1 = shower_calib_piecewise["expfit_param1"];
+	expfit_param2 = shower_calib_piecewise["expfit_param2"];
+	expfit_param3 = shower_calib_piecewise["expfit_param3"];
+
 	if(debug_level>0) {
-	    jout << "NON_LIN_COEF_A = " << NON_LIN_COEF_A << endl;
-	    jout << "NON_LIN_COEF_B = " << NON_LIN_COEF_B << endl;
-	    jout << "NON_LIN_COEF_C = " << NON_LIN_COEF_C << endl;
-	    jout << "NON_LIN_COEF_alfa = " << NON_LIN_COEF_alfa << endl;
+	    jout << "linfit_slope = " << linfit_slope << endl;
+	    jout << "linfit_intercept = " << linfit_intercept << endl;
+	    jout << "expfit_param1 = " << expfit_param1 << endl;
+	    jout << "expfit_param2 = " << expfit_param2<< endl;
+	    jout << "expfit_param3 = " << expfit_param3 << endl;
+
 	}
     }
     
@@ -174,24 +196,28 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
 
   double Eclust = cluster->getEnergy();
   
-  double A  = NON_LIN_COEF_A;
-  double B  = NON_LIN_COEF_B;
-  double C  = NON_LIN_COEF_C;
+  double A  = linfit_slope;
+  double B  = linfit_intercept;
+  double C  = expfit_param1;
+  double D  = expfit_param2;
+  double E  = expfit_param3;
+
+
  //double alfa  = NON_LIN_COEF_alfa;
 	 
   double Egamma = 0.;
   
-  // 06/02/2016 Shower Non-linearity Correction by Adesh. Update shower_calib table in ccdb to include constants from linear fit.
+  // 06/02/2016 Shower Non-linearity Correction by Adesh. Uses new shower_calib_piecewise table in ccdb to include constants from linear fit.
   
   if ( Eclust <= 1.5 ) { 
   
-  Egamma = Eclust/(0.9538+0.02604*Eclust); // Linear part
+  Egamma = Eclust/(A*Eclust + B); // Linear part
   
   }
   
   if ( Eclust > 1.5 ) { 
   
-  Egamma = Eclust/(A - exp(-B*Eclust+ C)); // Non-linear part
+  Egamma = Eclust/(C - exp(-D*Eclust+ E)); // Non-linear part
   
   }
   
