@@ -324,6 +324,11 @@ void* HDEVIOWriter::HDEVIOOutputThread(void)
 			continue;
 		}
 
+        // Make sure we're writing out at least one event
+        // This should never happen, unless we're being passed some huge events...
+        if(flush_event && (Nbuffs==0))
+            Nbuffs = 1;
+
 		// Make copy of first Nbuffs buffer pointers so we can do the
 		// expensive copying of their contents into the single output
 		// buffer outside of the output_deque_mutex lock.
@@ -332,7 +337,7 @@ void* HDEVIOWriter::HDEVIOOutputThread(void)
 
 		// Unlock mutex so other threads can access output_deque
 		pthread_mutex_unlock(&output_deque_mutex);
-		
+
 		// Write the buffers to the output 
 		FlushOutput(Nwords, my_output_deque);
 		
