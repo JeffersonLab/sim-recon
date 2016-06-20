@@ -9,4 +9,4 @@ subdirs.extend(['EventTagPi0'])
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
 # Optional targets
-sbms.OptionallyBuild(env, ['danahddm', 'dumpcandidates', 'dumpthrowns', 'l3bdt'])
+sbms.OptionallyBuild(env, ['danahddm', 'dumpcandidates', 'dumpthrowns', 'l3bdt', 'merge_rawevents'])
