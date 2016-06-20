@@ -142,7 +142,7 @@ jerror_t JEventProcessor_CDC_Cosmics::evnt(JEventLoop *loop, uint64_t eventnumbe
             char folder[100];
             sprintf(folder, "Ring %.2i", ring);
 
-            Fill1DHistogram("CDC_Cosmic", folder, "Residuals", residual, "Residuals; Residual [cm]; Entries", 100, -0.05, 0.05);
+            Fill1DHistogram("CDC_Cosmic", folder, "Residuals", residual, "Residuals; Residual [cm]; Entries", 200, -0.05, 0.05);
             Fill2DHistogram("CDC_Cosmic", folder, "Residual Vs. Momentum", 
                     thisTimeBasedTrack->pmag(), residual,
                     "Residual Vs. Momentum; Momentum [GeV/c]; Residual [cm]",
@@ -160,8 +160,8 @@ jerror_t JEventProcessor_CDC_Cosmics::evnt(JEventLoop *loop, uint64_t eventnumbe
                     "Residual Vs. Tracking FOM; Tracking FOM; Residual [cm]",
                     100, 0.0, 1.0, 100, -0.05, 0.05);
             Fill1DHistogram("CDC_Cosmic", folder, "Drift Time", time, "Drift Time; Drift Time [ns]; Entries", 500, -10, 1500);
-            Fill1DHistogram("CDC_Cosmic", folder, "Drift Distance", distance, "Drift Distance; Drift Distance [cm]; Entries", 50, 0.0, 1.2);
-            Fill1DHistogram("CDC_Cosmic", folder, "Predicted Drift Distance", predictedDistance, "Predicted Drift Distance; Drift Distance [cm]; Entries", 50, 0.0, 1.2);
+            Fill1DHistogram("CDC_Cosmic", folder, "Drift Distance", distance, "Drift Distance; Drift Distance [cm]; Entries", 250, 0.0, 1.2);
+            Fill1DHistogram("CDC_Cosmic", folder, "Predicted Drift Distance", predictedDistance, "Predicted Drift Distance; Drift Distance [cm]; Entries", 250, 0.0, 1.2);
 
             char strawname[100];
             char strawtitle[256];
