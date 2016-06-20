@@ -7244,6 +7244,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
 
 		
 		// Fill in pulls information for cdc hits
+        if (cdc_updates[id].used_in_fit == false) continue;
 		FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[id],
 				     cdc_updates[id]);
             }
@@ -7342,7 +7343,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(void){
 	    H_T(state_z)=-cosstereo_over_doca*(dx*dir.X()+dy*dir.Y());
 	    double V=cdc_updates[id].variance;
 	    V+=Cs.SandwichMultiply(Jc*H_T);
-
+        if(cdc_updates[id].used_in_fit == false) continue;
 	    pulls.push_back(pull_t(cdc_updates[id].doca-d,sqrt(V),
 				   central_traj[m].s,cdc_updates[id].tdrift,
 				   d,my_cdchits[id]->hit,NULL,
@@ -7398,7 +7399,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(void){
 	    }
 
             Cs=cdc_updates[cdc_index].C+A*(Cs-C)*A.Transpose();
-	    
+	    if(cdc_updates[id].used_in_fit == false) continue; 
 	    FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[cdc_index],
 				 cdc_updates[cdc_index]);
 	    
