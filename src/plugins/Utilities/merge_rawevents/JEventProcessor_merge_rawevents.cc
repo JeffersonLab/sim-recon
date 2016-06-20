@@ -41,7 +41,6 @@ JEventProcessor_merge_rawevents::JEventProcessor_merge_rawevents() : dEventWrite
 //------------------
 JEventProcessor_merge_rawevents::~JEventProcessor_merge_rawevents()
 {
-
 }
 
 //------------------
@@ -77,6 +76,8 @@ jerror_t JEventProcessor_merge_rawevents::evnt(JEventLoop *loop, uint64_t eventn
     uint32_t* output_buffer = JEventSource_EVIO::GetEVIOBufferFromRef(the_event_ref);
     uint32_t  output_buffer_size = JEventSource_EVIO::GetEVIOBufferSizeFromRef(the_event_ref);
 
+    //cout << "Writing out event " << eventnumber << " buffer size = " << (output_buffer_size/4) << " words"  << endl;
+
     // write the buffer out
     // WARNING: this will work for non-entangled events, but hasn't been tested for entagled EVIO events
     dEventWriterEVIO->Write_EVIOBuffer( loop, output_buffer, output_buffer_size, "merged" );
@@ -100,8 +101,9 @@ jerror_t JEventProcessor_merge_rawevents::erun(void)
 //------------------
 jerror_t JEventProcessor_merge_rawevents::fini(void)
 {
-  // Called before program exit after event processing is finished.
-  return NOERROR;
+    // Called before program exit after event processing is finished.
+    delete dEventWriterEVIO;
+    return NOERROR;
 }
 
 
