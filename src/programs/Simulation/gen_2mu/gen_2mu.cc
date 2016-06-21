@@ -42,7 +42,8 @@ double Emin = 1.0;
 double CollimatorDiameter = 0.0034; // in meters
 bool   ONLY_COHERENT = false;
 bool   ONLY_INCOHERENT = false;
-
+Particle_t PlusType  = MuonPlus;
+Particle_t MinusType = MuonMinus;
 
 static ofstream *OFS = NULL;
 static hddm_s::ostream *FOUT = NULL;
@@ -190,7 +191,8 @@ void Usage(string message)
 	cout << " -e           let electron direction define z (def." << endl;
 	cout << "              is for photon beam to define z)" << endl;
 	cout << " -pol phi     set photon beam polarization direction" << endl;
-	cout << "              relative to x-axis (def. is " << POLARIZATION_ANGLE << " degrees)" << endl; 
+	cout << "              relative to x-axis (def. is " << POLARIZATION_ANGLE << " degrees)" << endl;
+	cout << " -pions       Make particles pions instead of muons (carfeul!)" << endl;
 	cout << " -debug       create and fill debug histograms in ROOT file" << endl;
 	cout << endl;
 	if(message!=""){
@@ -268,6 +270,10 @@ void ParseCommandLineArguments(int narg, char *argv[])
 			}
 		}else if(arg=="-debug"){
 			ROOT_DEBUG_FILE = true;
+		}else if(arg=="-pions"){
+			PlusType  = PiPlus;
+			MinusType = PiMinus;
+			if(OUTPUT_FILENAME=="gen_2mu.hddm") OUTPUT_FILENAME = "gen_2pi.hddm";
 		}else{
 			stringstream ss;
 			ss << "Unknown argument \""<<arg<<"\"!" << endl;
@@ -293,6 +299,7 @@ void ParseCommandLineArguments(int narg, char *argv[])
 	cout << "    Electron beam energy: " << Eelectron_beam << " GeV" << endl;
 	cout << "           Coherent peak: " << Ecoherent_peak << " GeV" << endl;
 	cout << "   Minimum photon energy: " << Emin << " GeV" << endl;
+	cout << "           Particle type: " << (PlusType==MuonPlus ? "mu+,mu-":"pi+,pi-") << endl;
 	cout << "     Collimator diameter: " << (CollimatorDiameter*1000.0) << " mm" << endl;
 	cout << "  z-direction defined by: " << (USE_ELECTRON_BEAM_DIRECTION ? "electron":"photon") << " beam" << endl;
 	cout <<"   Coherent photons only?: " << (ONLY_COHERENT ? "yes":"no") << endl;
@@ -325,6 +332,7 @@ void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TL
 //	G4ParticleMomentum GammaDirection = aDynamicGamma->GetMomentumDirection();
 	
 	double Mmuon = 0.1056583715;
+	if(PlusType == PiPlus) Mmuon = 0.139570;
 	double electron_mass_c2 = 0.000511;
 	double sqrte = 1.648721270700128;
 	double pi = 3.141592653589793;
@@ -605,7 +613,7 @@ void AddEventToHDDM(TVector3 &pgamma, TLorentzVector &pmuplus, TLorentzVector &p
 	ProductList::iterator it_product = products.begin();
 
 	// Product Mu+
-	Particle_t geanttype = MuonPlus;
+	Particle_t geanttype = PlusType;
 	TVector3 mom = pmuplus.Vect(); // convert back to units of GeV
 	double mass = ParticleMass(geanttype);
 	it_product->setDecayVertex(0);
@@ -632,7 +640,7 @@ void AddEventToHDDM(TVector3 &pgamma, TLorentzVector &pmuplus, TLorentzVector &p
 	
 
 	// Product Mu-
-	geanttype = MuonMinus;
+	geanttype = MinusType;
 	mom = pmuminus.Vect(); // convert back to units of GeV
 	mass = ParticleMass(geanttype);
 	it_product->setDecayVertex(0);
