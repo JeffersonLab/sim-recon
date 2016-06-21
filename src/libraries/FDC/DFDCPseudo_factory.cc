@@ -337,12 +337,17 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
   for (unsigned int i=0;i<u.size();i++){
     //printf("Cluster %d\n",i);
     if (DEBUG_HISTS) u_cl_size->Fill(u[i]->members.size());
-    if (u[i]->members.size()>2)
-      {
-      for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin()+1;
-	   strip+1!=u[i]->members.end();strip++){  
+    if (u[i]->members.size()>2){
+      for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin()+1;strip+1!=u[i]->members.end();strip++){  
 	//printf("  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	if (FindCentroid(u[i]->members,strip,upeaks)==NOERROR){
+	  upeaks[upeaks.size()-1].cluster=i;
+	}
+      }
+    }
+    else if (u[i]->members.size()==2){
+      for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin()+1;strip+1!=u[i]->members.end();strip++){  
+	if (TwoStripCluster(u[i]->members,strip,upeaks)==NOERROR){
 	  upeaks[upeaks.size()-1].cluster=i;
 	}
       }
@@ -352,12 +357,17 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
   for (unsigned int i=0;i<v.size();i++){
     //printf("Cluster %d\n",i);
     if (DEBUG_HISTS) v_cl_size->Fill(v[i]->members.size());
-    if (v[i]->members.size()>2)
-      {
-      for (vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin()+1;
-	   strip+1!=v[i]->members.end();strip++){		
+    if (v[i]->members.size()>2){
+      for (vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin()+1;strip+1!=v[i]->members.end();strip++){		
 	//printf("  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	if (FindCentroid(v[i]->members,strip,vpeaks)==NOERROR){
+	  vpeaks[vpeaks.size()-1].cluster=i;
+	}
+      }
+    }
+    else if (v[i]->members.size()==2){
+      for (vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin()+1;strip+1!=v[i]->members.end();strip++){  
+	if (TwoStripCluster(v[i]->members,strip,vpeaks)==NOERROR){
 	  vpeaks[vpeaks.size()-1].cluster=i;
 	}
       }
@@ -683,7 +693,6 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
   }
   return INFINITE_RECURSION; // error placeholder
 }
-     
 
 
 ///
@@ -772,5 +781,52 @@ jerror_t DFDCPseudo_factory::FindNewParmVec(const DMatrix3x1 &N,
     // Make sure that new version of lambda is not too small
     lambda=(lambda_temp>0.1*lambda ? lambda_temp : 0.1*lambda);
   } 
+}
+
+   
+//
+/// DFDCPseudo_factory::TwoStripCluster()
+/// Almost 10% of all clusters have only two strips
+/// But FindCentroid does not work
+/// Attempt to recover them with simple center-of-gravity
+/// Updates list of centroids. 
+///
+jerror_t DFDCPseudo_factory::TwoStripCluster(const vector<const DFDCHit*>& H,
+                       vector<const DFDCHit *>::const_iterator peak,
+                       vector<centroid_t>&centroids){
+  centroid_t temp;
+  
+  if ((*peak)->pulse_height<MIDDLE_STRIP_THRESHOLD) {
+    return VALUE_OUT_OF_RANGE;
+  }
+  
+  unsigned int index=2*((*peak)->gLayer-1)+(*peak)->plane/2;
+  double pos=0;
+  double amp=0;
+  double sum=0;
+  double t=0;
+  for (vector<const DFDCHit*>::const_iterator j=peak;j<=peak+1;j++){
+    pos = fdccathodes[index][(*j)->element-1]->u;
+    
+    // time from large amplitude
+    if (double((*j)->pulse_height)>=amp)
+      t=double((*j)->t);
+    
+    // weight
+    amp=double((*j)->pulse_height);
+    pos*=amp;
+    sum+=amp;
+  }
+  
+  temp.pos=pos/sum;
+  temp.q_from_pulse_height=sum;
+  temp.numstrips=2;  
+  temp.t=t;
+  temp.t_rms=0.;
+  
+  //CalcMeanTime(peak,temp.t,temp.t_rms);
+  centroids.push_back(temp);
+  
+  return NOERROR;
 }
 
