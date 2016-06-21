@@ -147,6 +147,8 @@ typedef struct{
   double doca;
   double tcorr,tdrift;
   double residual,variance;
+  DMatrix2x1 R;
+  DMatrix2x2 V;
   bool used_in_fit;
 }DKalmanUpdate_t;
 
@@ -474,6 +476,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   bool USE_PASS1_TIME_MODE;
   int RING_TO_SKIP,PLANE_TO_SKIP;
   double PHOTON_ENERGY_CUTOFF;
+  bool USE_FDC_DRIFT_TIMES;
 
   // Maximum number of sigma's away from the predicted position to include hit
   double NUM_CDC_SIGMA_CUT,NUM_FDC_SIGMA_CUT;
