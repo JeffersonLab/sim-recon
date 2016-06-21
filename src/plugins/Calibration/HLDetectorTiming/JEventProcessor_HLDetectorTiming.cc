@@ -186,7 +186,6 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
     vector<const DFCALHit *> fcalHitVector;
     vector<const DTAGMHit *> tagmHitVector;
     vector<const DTAGHHit *> taghHitVector;
-    vector<const DRFTime*> RFTimeVector;
 
     loop->Get(cdcHitVector);
     loop->Get(fdcHitVector);
