@@ -195,6 +195,11 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int32_t runnumber)
     if (!dx_vs_dE) dx_vs_dE=new TH2F("dx_vs_dE","dx vs dE",100,0,25.0,
 				     100,-0.2,0.2);
 
+    u_cl_size=(TH1F*)gROOT->FindObject("u_cl_size");
+    if (!u_cl_size) u_cl_size=new TH1F("u_cl_size","u_cl_size",20,.5,20.5);
+    v_cl_size=(TH1F*)gROOT->FindObject("v_cl_size");
+    if (!v_cl_size) v_cl_size=new TH1F("v_cl_size","v_cl_size",20,.5,20.5);
+
 
     for (unsigned int i=0;i<24;i++){
       char hname[80];
@@ -331,6 +336,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
   // Loop over all U and V clusters looking for peaks
   for (unsigned int i=0;i<u.size();i++){
     //printf("Cluster %d\n",i);
+    if (DEBUG_HISTS) u_cl_size->Fill(u[i]->members.size());
     if (u[i]->members.size()>2)
       {
       for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin()+1;
@@ -345,6 +351,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
   //  printf("---------v cluster --------\n");	
   for (unsigned int i=0;i<v.size();i++){
     //printf("Cluster %d\n",i);
+    if (DEBUG_HISTS) v_cl_size->Fill(v[i]->members.size());
     if (v[i]->members.size()>2)
       {
       for (vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin()+1;
