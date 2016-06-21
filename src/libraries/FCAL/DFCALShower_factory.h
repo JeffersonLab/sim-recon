@@ -29,13 +29,6 @@ class DFCALShower_factory:public JFactory<DFCALShower>{
 
 		double LOAD_CCDB_CONSTANTS;
 		double SHOWER_ENERGY_THRESHOLD;
-/*
-		double NON_LIN_COEF_A;
-		double NON_LIN_COEF_B;
-		double NON_LIN_COEF_C;
-		double NON_LIN_COEF_D;
-		double NON_LIN_COEF_E;
-*/
 		double energy_cutoff;
 		double linfit_slope;
 		double linfit_intercept;

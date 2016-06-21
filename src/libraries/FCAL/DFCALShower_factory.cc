@@ -31,13 +31,6 @@ DFCALShower_factory::DFCALShower_factory()
   // remove default value which might be close to the right solution,
   // but not quite correct -- allow command line tuning
 
-/*
-  NON_LIN_COEF_A = 0; 
-  NON_LIN_COEF_B = 0;
-  NON_LIN_COEF_C = 0;
-  NON_LIN_COEF_D = 0;
-  NON_LIN_COEF_E = 0;
-*/
   cutoff_energy= 0;
   linfit_slope = 0;
   linfit_intercept = 0;
@@ -46,13 +39,6 @@ DFCALShower_factory::DFCALShower_factory()
   expfit_param3 = 0;
 
 
-/*
-  gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_A", NON_LIN_COEF_A);
-  gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_B", NON_LIN_COEF_B);
-  gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_C", NON_LIN_COEF_C);
-  gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_D", NON_LIN_COEF_D);
-  gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_E", NON_LIN_COEF_E);
-*/
 
   gPARMS->SetDefaultParameter("FCAL:cutoff_enegry", cutoff_energy);
   gPARMS->SetDefaultParameter("FCAL:linfit_slope", linfit_slope);
@@ -208,8 +194,6 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
   double D  = expfit_param2;
   double E  = expfit_param3;
 
-
- //double alfa  = NON_LIN_COEF_alfa;
 	 
   double Egamma = 0.;
   
@@ -227,40 +211,9 @@ void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
   
   }
   
-  // End Adesh's Correction  
+  // End Correction  
   
- /*
- // Original Correction
-  if ( A > 0 ) { 
-    
-    Egamma = Eclust/A;
 
-    for ( int niter=0; 1; niter++) {
-
-      double energy = Egamma;
-      double non_lin_part = pow(Egamma,1+alfa)/(B+C*Egamma);
-      Egamma = Eclust/A - non_lin_part;
-      if ( fabs( (Egamma-energy)/energy ) < 0.001 ) {
-	break;
-	
-      }
-      else if ( niter > MAXITER ) {
-	
-	cout << " Iteration failed for cluster energy " << Eclust << endl;
-	Egamma  = 0;
-        
-	break;
-	
-      }
-      
-    }
-    
-  }
-  else {
-    cout  << "Warning: DFCALShower : parameter A=" <<  NON_LIN_COEF_A 
-	  << " is not valid!" << endl; 
-  }
-  */
 
   // then depth corrections 
   if ( Egamma > 0 ) { 
