@@ -200,6 +200,12 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int32_t runnumber)
     v_cl_size=(TH1F*)gROOT->FindObject("v_cl_size");
     if (!v_cl_size) v_cl_size=new TH1F("v_cl_size","v_cl_size",20,.5,20.5);
 
+    x_dist_2=(TH1F*)gROOT->FindObject("x_dist_2");
+    if (!x_dist_2) x_dist_2=new TH1F("x_dist_2","x_dist_2",200,-5,5);
+
+    x_dist_3=(TH1F*)gROOT->FindObject("x_dist_3");
+    if (!x_dist_3) x_dist_3=new TH1F("x_dist_3","x_dist_3",200,-5,5);
+
 
     for (unsigned int i=0;i<24;i++){
       char hname[80];
@@ -376,7 +382,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       }
     }
   }
-  cout << endl;
+  //cout << endl;
   if (upeaks.size()*vpeaks.size()>0){
     // Rotation angles for strips
     unsigned int ilay=layer-1;
@@ -405,6 +411,12 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	    // the fiducial region of the detector
 	    double r2test=x_from_wire*x_from_wire+y_from_strips*y_from_strips;
 	    double delta_x=x_from_wire-x_from_strips;
+	    
+	    if (DEBUG_HISTS){
+	      if (upeaks[i].numstrips == 3 && vpeaks[j].numstrips == 3) x_dist_3->Fill(delta_x);
+	      if (upeaks[i].numstrips == 2 && vpeaks[j].numstrips == 3) x_dist_2->Fill(delta_x);
+	      else if (upeaks[i].numstrips == 3 && vpeaks[j].numstrips == 2) x_dist_2->Fill(delta_x);
+	    }
 	 
 	    if (old_wire_num==(*xIt)->element) continue;
 	    old_wire_num=(*xIt)->element;
@@ -800,33 +812,43 @@ jerror_t DFDCPseudo_factory::TwoStripCluster(const vector<const DFDCHit*>& H,
                        vector<centroid_t>&centroids){
   centroid_t temp;
   
-  if ((*peak)->pulse_height<MIDDLE_STRIP_THRESHOLD) {
+  if ((*peak)->pulse_height<MIDDLE_STRIP_THRESHOLD && (*peak+1)->pulse_height<MIDDLE_STRIP_THRESHOLD) {
     return VALUE_OUT_OF_RANGE;
   }
   
-  unsigned int index=2*((*peak)->gLayer-1)+(*peak)->plane/2;
+  unsigned int index1=2*((*peak)->gLayer-1)+(*peak)->plane/2;
   double pos=0;
   double amp=0;
+  double strip=0;
   double sum=0;
   double t=0;
   for (vector<const DFDCHit*>::const_iterator j=peak;j<=peak+1;j++){
     pos = fdccathodes[index][(*j)->element-1]->u;
-    
+ 
     // time from larger amplitude
     if (double((*j)->pulse_height)>=amp)
       t=double((*j)->t);
     
     // weight
     amp=double((*j)->pulse_height);
-    pos*=amp;
+
+    //cout << pos << " " << amp << " " << double((*j)->t) << endl;
+
+    strip+=amp*pos;
     sum+=amp;
+
+
+
   }
   
-  temp.pos=pos/sum;
+  temp.pos=strip/sum;
   temp.q_from_pulse_height=sum;
   temp.numstrips=2;  
   temp.t=t;
   temp.t_rms=0.;
+
+  // cout <<  temp.pos << " " << temp.q_from_pulse_height << " " << temp.t << endl;
+  // cout << endl;
   
   //CalcMeanTime(peak,temp.t,temp.t_rms);
   centroids.push_back(temp);
