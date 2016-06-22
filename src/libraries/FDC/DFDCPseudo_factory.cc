@@ -812,44 +812,36 @@ jerror_t DFDCPseudo_factory::TwoStripCluster(const vector<const DFDCHit*>& H,
                        vector<centroid_t>&centroids){
   centroid_t temp;
   
-  if ((*peak)->pulse_height<MIDDLE_STRIP_THRESHOLD && (*peak+1)->pulse_height<MIDDLE_STRIP_THRESHOLD) {
+  if ((*peak)->pulse_height<MIDDLE_STRIP_THRESHOLD && (*(peak+1))->pulse_height<MIDDLE_STRIP_THRESHOLD) {
     return VALUE_OUT_OF_RANGE;
   }
   
   unsigned int index1=2*((*peak)->gLayer-1)+(*peak)->plane/2;
-  double pos=0;
-  double amp=0;
-  double strip=0;
-  double sum=0;
-  double t=0;
-  for (vector<const DFDCHit*>::const_iterator j=peak;j<=peak+1;j++){
-    pos = fdccathodes[index][(*j)->element-1]->u;
- 
-    // time from larger amplitude
-    if (double((*j)->pulse_height)>=amp)
-      t=double((*j)->t);
-    
-    // weight
-    amp=double((*j)->pulse_height);
+  unsigned int index2=2*((*(peak+1))->gLayer-1)+(*(peak+1))->plane/2;
 
-    //cout << pos << " " << amp << " " << double((*j)->t) << endl;
+  // this should never happen
+  if (index1 != index2) return NOERROR;
 
-    strip+=amp*pos;
-    sum+=amp;
-
-
-
-  }
+  double pos1=fdccathodes[index1][(*peak)->element-1]->u;
+  double pos2=fdccathodes[index2][(*(peak+1))->element-1]->u;
   
-  temp.pos=strip/sum;
+  double amp1=double((*peak)->pulse_height);
+  double amp2=double((*(peak+1))->pulse_height);
+  double sum=amp1+amp2;
+
+  double t1=double((*peak)->t);
+  double t2=double((*(peak+1))->t);
+
+  // weighted sum
+  temp.pos=(pos1*amp1+pos2*amp2)/sum;
   temp.q_from_pulse_height=sum;
-  temp.numstrips=2;  
-  temp.t=t;
+  temp.numstrips=2;
+
+  // time from greater amplitude
+  if (amp1 > amp2) temp.t=t1;
+  else  temp.t=t2;
   temp.t_rms=0.;
 
-  // cout <<  temp.pos << " " << temp.q_from_pulse_height << " " << temp.t << endl;
-  // cout << endl;
-  
   //CalcMeanTime(peak,temp.t,temp.t_rms);
   centroids.push_back(temp);
   
