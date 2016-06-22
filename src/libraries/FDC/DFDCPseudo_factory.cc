@@ -166,17 +166,17 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int32_t runnumber)
     if (!qv_vs_qu) qv_vs_qu=new TH2F("qv_vs_qu","Anode charge from each cathode",100,0,20000,100,0,20000);
 
     tv_vs_tu= (TH2F*) gROOT->FindObject("tv_vs_tu");
-    if (!tv_vs_tu) tv_vs_tu=new TH2F("tv_vs_tu","t(v) vs t(u)",100,-50,250,100,-50,250);
+    if (!tv_vs_tu) tv_vs_tu=new TH2F("tv_vs_tu","t(v) vs t(u)",100,-100,250,100,-100,250);
 
-     dtv_vs_dtu= (TH2F*) gROOT->FindObject("dtv_vs_dtu");
-    if (!dtv_vs_dtu) dtv_vs_dtu=new TH2F("dtv_vs_dtu","t(wire)-t(v) vs t(wire)-t(u)",100,-50,25000,100,-50,25000);
+    dtv_vs_dtu= (TH2F*) gROOT->FindObject("dtv_vs_dtu");
+    if (!dtv_vs_dtu) dtv_vs_dtu=new TH2F("dtv_vs_dtu","t(wire)-t(v) vs t(wire)-t(u)",100,-500,500,100,-500,500);
 
     u_wire_dt_vs_wire=(TH2F *) gROOT->FindObject("u_wire_dt_vs_wire");
     if (!u_wire_dt_vs_wire) u_wire_dt_vs_wire=new TH2F("u_wire_dt_vs_wire","wire/u cathode time difference vs wire number",
-			   96,0.5,96.5,100,-50,50);
+						       96,0.5,96.5,100,-500,500);
     v_wire_dt_vs_wire=(TH2F *) gROOT->FindObject("v_wire_dt_vs_wire");
     if (!v_wire_dt_vs_wire) v_wire_dt_vs_wire=new TH2F("v_wire_dt_vs_wire","wire/v cathode time difference vs wire number",
-						       96,0.5,96.5,100,-50,50);
+						       96,0.5,96.5,100,-500,500);
     uv_dt_vs_u=(TH2F *) gROOT->FindObject("uv_dt_vs_u");
     if (!uv_dt_vs_u) uv_dt_vs_u=new TH2F("uv_dt_vs_u","uv time difference vs u",
 					 192,0.5,192.5,100,-50,50); 
@@ -820,7 +820,7 @@ jerror_t DFDCPseudo_factory::TwoStripCluster(const vector<const DFDCHit*>& H,
   unsigned int index2=2*((*(peak+1))->gLayer-1)+(*(peak+1))->plane/2;
 
   // this should never happen
-  if (index1 != index2) return NOERROR;
+  if (index1 != index2) return VALUE_OUT_OF_RANGE;
 
   double pos1=fdccathodes[index1][(*peak)->element-1]->u;
   double pos2=fdccathodes[index2][(*(peak+1))->element-1]->u;
