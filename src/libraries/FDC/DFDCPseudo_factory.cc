@@ -341,13 +341,15 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin()+1;strip+1!=u[i]->members.end();strip++){  
 	//printf("  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	if (FindCentroid(u[i]->members,strip,upeaks)==NOERROR){
+	  //printf("3u:  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	  upeaks[upeaks.size()-1].cluster=i;
 	}
       }
     }
     else if (u[i]->members.size()==2){
-      for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin()+1;strip+1!=u[i]->members.end();strip++){  
+      for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin();strip+1!=u[i]->members.end();strip++){  
 	if (TwoStripCluster(u[i]->members,strip,upeaks)==NOERROR){
+	  //printf("2u:  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	  upeaks[upeaks.size()-1].cluster=i;
 	}
       }
@@ -359,20 +361,22 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
     if (DEBUG_HISTS) v_cl_size->Fill(v[i]->members.size());
     if (v[i]->members.size()>2){
       for (vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin()+1;strip+1!=v[i]->members.end();strip++){		
-	//printf("  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	if (FindCentroid(v[i]->members,strip,vpeaks)==NOERROR){
+	  //printf("3v:  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	  vpeaks[vpeaks.size()-1].cluster=i;
 	}
       }
     }
     else if (v[i]->members.size()==2){
-      for (vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin()+1;strip+1!=v[i]->members.end();strip++){  
+      for (vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin();strip+1!=v[i]->members.end();strip++){  
 	if (TwoStripCluster(v[i]->members,strip,vpeaks)==NOERROR){
+	  //printf("2v:  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	  vpeaks[vpeaks.size()-1].cluster=i;
 	}
       }
     }
   }
+  cout << endl;
   if (upeaks.size()*vpeaks.size()>0){
     // Rotation angles for strips
     unsigned int ilay=layer-1;
@@ -808,7 +812,7 @@ jerror_t DFDCPseudo_factory::TwoStripCluster(const vector<const DFDCHit*>& H,
   for (vector<const DFDCHit*>::const_iterator j=peak;j<=peak+1;j++){
     pos = fdccathodes[index][(*j)->element-1]->u;
     
-    // time from large amplitude
+    // time from larger amplitude
     if (double((*j)->pulse_height)>=amp)
       t=double((*j)->t);
     
