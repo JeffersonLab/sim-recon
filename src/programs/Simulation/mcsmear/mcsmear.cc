@@ -114,6 +114,8 @@ double PSC_PHOTONS_PERMEV = 5.e5;
 
 double FCAL_PHOT_STAT_COEF   = 0.0; //0.035;
 double FCAL_BLOCK_THRESHOLD  = 0.0; //20.0*k_MeV;
+double FCAL_MC_ESCALE  = 1.54; 
+
 
 double CDC_TDRIFT_SIGMA      = 0.0; // 150.0/55.0*1E-9 seconds
 double CDC_TIME_WINDOW       = 0.0; // 1000.0E-9 seconds
@@ -150,6 +152,9 @@ vector<double> CDC_RING_RADIUS;
 // FDC geometry and rate parameters (for noise)
 vector<double> FDC_LAYER_Z;
 double FDC_RATE_COEFFICIENT;
+
+// FCAL gain constants
+vector <double> FCAL_GAINS;
 
 using namespace jana;
 
