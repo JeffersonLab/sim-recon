@@ -28,6 +28,8 @@
 #define GAS_GAIN 8e4
 #define ELECTRON_CHARGE 1.6022e-4 // fC
 
+#define WIRE_CATHODE_OFFSET 164
+#define WIRE_TIME_OFFSET 18
 
 ///
 /// DFDCAnode_gLayer_cmp(): 
@@ -95,7 +97,7 @@ jerror_t DFDCPseudo_factory::init(void)
   RIN_FIDUCIAL = 1.5;
   ROUT_FIDUCIAL=48.0;
   MAX_ALLOWED_FDC_HITS=20000;
-  STRIP_ANODE_TIME_CUT=10.;
+  STRIP_ANODE_TIME_CUT=25.;
   MIDDLE_STRIP_THRESHOLD=0.;
 
   r2_out=ROUT_FIDUCIAL*ROUT_FIDUCIAL;
@@ -186,10 +188,10 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int32_t runnumber)
  
     ut_vs_u=(TH2F *) gROOT->FindObject("ut_vs_u");
     if (!ut_vs_u) ut_vs_u=new TH2F("ut_vs_u","u time  vs u",
-				   192,0.5,192.5,100,0,6000); 
+				   192,0.5,192.5,100,0,1000); 
     vt_vs_v=(TH2F *) gROOT->FindObject("vt_vs_v");
     if (!vt_vs_v) vt_vs_v=new TH2F("vt_vs_v","v time  vs v",
-				   192,0.5,192.5,100,0,6000); 
+				   192,0.5,192.5,100,0,1000); 
     
     dx_vs_dE=(TH2F*)gROOT->FindObject("dx_vs_dE");
     if (!dx_vs_dE) dx_vs_dE=new TH2F("dx_vs_dE","dx vs dE",100,0,25.0,
@@ -200,11 +202,19 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int32_t runnumber)
     v_cl_size=(TH1F*)gROOT->FindObject("v_cl_size");
     if (!v_cl_size) v_cl_size=new TH1F("v_cl_size","v_cl_size",20,.5,20.5);
 
+    u_cl_n=(TH1F*)gROOT->FindObject("u_cl_n");
+    if (!u_cl_n) u_cl_n=new TH1F("u_cl_n","u_cl_n",20,.5,20.5);
+    v_cl_n=(TH1F*)gROOT->FindObject("v_cl_n");
+    if (!v_cl_n) v_cl_n=new TH1F("v_cl_n","v_cl_n",20,.5,20.5);
+
     x_dist_2=(TH1F*)gROOT->FindObject("x_dist_2");
     if (!x_dist_2) x_dist_2=new TH1F("x_dist_2","x_dist_2",200,-5,5);
 
     x_dist_3=(TH1F*)gROOT->FindObject("x_dist_3");
     if (!x_dist_3) x_dist_3=new TH1F("x_dist_3","x_dist_3",200,-5,5);
+
+    x_dist_23=(TH1F*)gROOT->FindObject("x_dist_23");
+    if (!x_dist_23) x_dist_23=new TH1F("x_dist_23","x_dist_23",200,-5,5);
 
 
     for (unsigned int i=0;i<24;i++){
@@ -347,15 +357,13 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin()+1;strip+1!=u[i]->members.end();strip++){  
 	//printf("  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	if (FindCentroid(u[i]->members,strip,upeaks)==NOERROR){
-	  //printf("3u:  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	  upeaks[upeaks.size()-1].cluster=i;
 	}
       }
     }
     else if (u[i]->members.size()==2){
       for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin();strip+1!=u[i]->members.end();strip++){  
-	if (TwoStripCluster(u[i]->members,strip,upeaks)==NOERROR){
-	  //printf("2u:  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
+    	if (TwoStripCluster(u[i]->members,strip,upeaks)==NOERROR){
 	  upeaks[upeaks.size()-1].cluster=i;
 	}
       }
@@ -367,22 +375,20 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
     if (DEBUG_HISTS) v_cl_size->Fill(v[i]->members.size());
     if (v[i]->members.size()>2){
       for (vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin()+1;strip+1!=v[i]->members.end();strip++){		
+	//printf("  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	if (FindCentroid(v[i]->members,strip,vpeaks)==NOERROR){
-	  //printf("3v:  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	  vpeaks[vpeaks.size()-1].cluster=i;
 	}
       }
     }
     else if (v[i]->members.size()==2){
       for (vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin();strip+1!=v[i]->members.end();strip++){  
-	if (TwoStripCluster(v[i]->members,strip,vpeaks)==NOERROR){
-	  //printf("2v:  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
+    	if (TwoStripCluster(v[i]->members,strip,vpeaks)==NOERROR){
 	  vpeaks[vpeaks.size()-1].cluster=i;
-	}
+  	}
       }
     }
   }
-  //cout << endl;
   if (upeaks.size()*vpeaks.size()>0){
     // Rotation angles for strips
     unsigned int ilay=layer-1;
@@ -414,8 +420,9 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	    
 	    if (DEBUG_HISTS){
 	      if (upeaks[i].numstrips == 3 && vpeaks[j].numstrips == 3) x_dist_3->Fill(delta_x);
-	      if (upeaks[i].numstrips == 2 && vpeaks[j].numstrips == 3) x_dist_2->Fill(delta_x);
-	      else if (upeaks[i].numstrips == 3 && vpeaks[j].numstrips == 2) x_dist_2->Fill(delta_x);
+	      if (upeaks[i].numstrips == 2 && vpeaks[j].numstrips == 2) x_dist_2->Fill(delta_x);
+	      if (upeaks[i].numstrips == 2 && vpeaks[j].numstrips == 3) x_dist_23->Fill(delta_x);
+	      else if (upeaks[i].numstrips == 3 && vpeaks[j].numstrips == 2) x_dist_23->Fill(delta_x);
 	    }
 	 
 	    if (old_wire_num==(*xIt)->element) continue;
@@ -423,13 +430,13 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 
 	    if (fabs(delta_x)<0.5*WIRE_SPACING && r2test<r2_out
 		&& r2test>r2_in){
-	      double dt1 = (*xIt)->t - upeaks[i].t;
-	      double dt2 = (*xIt)->t - vpeaks[j].t;
+	      double dt1 = (*xIt)->t - upeaks[i].t + WIRE_CATHODE_OFFSET;
+	      double dt2 = (*xIt)->t - vpeaks[j].t + WIRE_CATHODE_OFFSET;
 
 	      //printf("dt1 %f dt2 %f\n",dt1,dt2);
 
 	      if (DEBUG_HISTS){
-		if (layer==1){
+		//if (layer==1){
 		  dtv_vs_dtu->Fill(dt1,dt2);
 		  tv_vs_tu->Fill(upeaks[i].t, vpeaks[j].t);
 		  u_wire_dt_vs_wire->Fill((*xIt)->element,(*xIt)->t-upeaks[i].t);
@@ -454,12 +461,18 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 		    vt_vs_v->Fill(vid,udigihit->pulse_time);
 		  }
 		  //  Hxy->Fill(x_from_strips,y_from_strips);
-		}
+		  //}
 	      }
-	      //	      if (sqrt(dt1*dt1+dt2*dt2)>STRIP_ANODE_TIME_CUT) continue;
+	      if (sqrt(dt1*dt1+dt2*dt2)>STRIP_ANODE_TIME_CUT) continue;
 
 	      // Temporary cut until TDC timing is worked out
-	      if (fabs(vpeaks[j].t-upeaks[i].t)>STRIP_ANODE_TIME_CUT) continue;
+	      //if (fabs(vpeaks[j].t-upeaks[i].t)>STRIP_ANODE_TIME_CUT) continue;
+
+	      if (DEBUG_HISTS){
+		// number of clusters of each type
+		u_cl_n->Fill(upeaks[j].numstrips);
+		v_cl_n->Fill(vpeaks[j].numstrips);
+	      }
 
 	      // Charge and energy loss
 	      double q_cathodes=0.5*(upeaks[i].q+vpeaks[j].q);
@@ -487,8 +500,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->ds = FDC_RES_PAR1/q_from_pulse_height+FDC_RES_PAR2;
 	      //newPseu->ds=0.011/q_from_pulse_height+5e-3+2.14e-10*pow(q_from_pulse_height,6);
 	      newPseu->wire   = wire;
-	      //newPseu->time   = (*xIt)->t;
-	      newPseu->time=0.5*(upeaks[i].t+vpeaks[j].t);
+	      newPseu->time   = (*xIt)->t + WIRE_CATHODE_OFFSET + WIRE_TIME_OFFSET;
+	      //newPseu->time=0.5*(upeaks[i].t+vpeaks[j].t);
 	      newPseu->status = status;
 	      newPseu->itrack = (*xIt)->itrack;
 
