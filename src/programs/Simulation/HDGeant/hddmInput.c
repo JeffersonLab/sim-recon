@@ -172,7 +172,7 @@ int loadInput (int override_run_number, int myInputRunNo)
          beam_momentum[3] = 0;
       }
 
-      if (target)
+      if ( (target!=NULL) && (target!=&hddm_s_nullTarget))
       {
          target_momentum[0] = target->momentum->E;
          target_momentum[1] = target->momentum->px;
