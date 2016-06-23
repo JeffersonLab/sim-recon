@@ -58,7 +58,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
   jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
   jerror_t fini(void);						///< Called after last event of last event source has been processed.
   
-  
+  double fdc_drift_distance(double time);
   jerror_t DoFilter(double t0,double start_z,DMatrix4x1 &S,
 		    vector<const DFDCPseudo *>&hits);
   jerror_t DoFilter(double t0,double OuterZ,DMatrix4x1 &S,
@@ -89,7 +89,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
   double CDCDriftVariance(double t);
   unsigned int Locate(vector<double>&xx,double x);
 
-  bool COSMICS,DEBUG_HISTS;
+  bool COSMICS,DEBUG_HISTS,USE_FDC_DRIFT_TIMES;
   float CHI2CUT;
   int DO_PRUNING;
 

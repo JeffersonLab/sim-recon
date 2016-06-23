@@ -346,7 +346,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     gPARMS->SetDefaultParameter("KALMAN:USE_PASS1_TIME_MODE",USE_PASS1_TIME_MODE); 
 
     USE_FDC_DRIFT_TIMES=false;
-    gPARMS->SetDefaultParameter("KALMAN:USE_FDC_DRIFT_TIMES",
+    gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_DRIFT_TIMES",
 				USE_FDC_DRIFT_TIMES);
 
     RECOVER_BROKEN_TRACKS=true;
@@ -4228,6 +4228,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
   DMatrix2x2 InvV; // Inverse of error matrix
   
   double Vc=0.0507*1.15;
+  if (fit_type==kWireBased) V(0,0)*=1.15; // empirical scale...
 
   // Vectors for cdc wires
   DVector2 origin,dir,wirepos;
