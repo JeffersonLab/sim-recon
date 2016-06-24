@@ -42,7 +42,8 @@ double Emin = 1.0;
 double CollimatorDiameter = 0.0034; // in meters
 bool   ONLY_COHERENT = false;
 bool   ONLY_INCOHERENT = false;
-
+Particle_t PlusType  = MuonPlus;
+Particle_t MinusType = MuonMinus;
 
 static ofstream *OFS = NULL;
 static hddm_s::ostream *FOUT = NULL;
@@ -181,6 +182,9 @@ void Usage(string message)
 	//cout << " --help       print the long form help message" << endl;
 	cout << " -N events    number of events to generate" << endl;
 	cout << " -o filename  set output filename (def. is gen_2mu.hddm)" << endl;
+	cout << " -T target    set target by name (Pb208, Sn116, C12, H)" << endl;
+	cout << " -A A         set target A (def. " << A << ")" << endl;
+	cout << " -Z Z         set target Z (def. " << Z << ")" << endl;
 	cout << " -p Epeak     coherent peak energy (def="<<Ecoherent_peak<<")" << endl;
 	cout << " -b Ebeam     electron beam energy (def="<<Eelectron_beam<<")" << endl;
 	cout << " -min Emin    minimum photon energy to generate (def="<<Emin<<")" << endl;
@@ -190,9 +194,17 @@ void Usage(string message)
 	cout << " -e           let electron direction define z (def." << endl;
 	cout << "              is for photon beam to define z)" << endl;
 	cout << " -pol phi     set photon beam polarization direction" << endl;
-	cout << "              relative to x-axis (def. is " << POLARIZATION_ANGLE << " degrees)" << endl; 
+	cout << "              relative to x-axis (def. is " << POLARIZATION_ANGLE << " degrees)" << endl;
+	cout << " -pions       Make particles pions instead of muons (carfeul!)" << endl;
 	cout << " -debug       create and fill debug histograms in ROOT file" << endl;
 	cout << endl;
+	cout << "Generate mu+mu- pair events. This combines the muon pair production code" << endl;
+	cout << "from GEANT4, the coherent bremstrahlung photon spectrum from HDGeant4, " << endl;
+	cout << "and some angle adjustments to account for beam polarization." <<endl;
+	cout << endl;
+	cout << "One may specify the target type either by name (-T option) or by" << endl;
+	cout << "A and Z explicitly. Valid target names are Pb208, Sn116, C12, and H." << endl;
+	cout << endl; 
 	if(message!=""){
 		cout << message << endl;
 		cout << endl;
@@ -228,6 +240,43 @@ void ParseCommandLineArguments(int narg, char *argv[])
 		}else if(arg=="-o"){
 			if(has_arg){
 				OUTPUT_FILENAME = next;
+				i++;
+			}else{
+				missing_arg = true;
+			}
+		}else if(arg=="-A"){
+			if(has_arg){
+				A = atof(next.c_str());
+				i++;
+			}else{
+				missing_arg = true;
+			}
+		}else if(arg=="-Z"){
+			if(has_arg){
+				Z = atof(next.c_str());
+				i++;
+			}else{
+				missing_arg = true;
+			}
+		}else if(arg=="-T"){
+			if(has_arg){
+				if(next=="Pb208"){
+					A = 208.0;
+					Z = 82.0;
+				}else if(next=="Sn116"){
+					A = 116.0;
+					Z = 50.0;
+				}else if(next=="C12"){
+					A = 12.0;
+					Z = 6.0;
+				}else if(next=="H"){
+					A = 1.0;
+					Z = 1.0;
+				}else{
+					cerr << endl << "Unown target type \""<<next<<"\"!!" << endl;
+					cerr << "(run gen_2mu -h for valid options)" << endl;
+					exit(-1);
+				}
 				i++;
 			}else{
 				missing_arg = true;
@@ -268,6 +317,10 @@ void ParseCommandLineArguments(int narg, char *argv[])
 			}
 		}else if(arg=="-debug"){
 			ROOT_DEBUG_FILE = true;
+		}else if(arg=="-pions"){
+			PlusType  = PiPlus;
+			MinusType = PiMinus;
+			if(OUTPUT_FILENAME=="gen_2mu.hddm") OUTPUT_FILENAME = "gen_2pi.hddm";
 		}else{
 			stringstream ss;
 			ss << "Unknown argument \""<<arg<<"\"!" << endl;
@@ -286,6 +339,22 @@ void ParseCommandLineArguments(int narg, char *argv[])
 		Usage("Cannot specify both -c and -i !");
 	}
 	
+	if(PlusType==PiPlus){
+		cout << endl;
+		cout << "################# WARNING! #################"    << endl;
+		cout << "The pi+pi- pair created will not be produced"    << endl;
+		cout << "with the correct physical distribution. Most"    << endl;
+		cout << "notably, no hadronic physics is included here."  << endl;
+		cout << "The exact same code that is used for generating" << endl;
+		cout << "mu+mu- is used except the mass and particle"     << endl;
+		cout << "type are changed to pion. The main use is to"    << endl;
+		cout << "provide events that overlap significantly with"  << endl;
+		cout << "the mu events in phase space to allow testing"   << endl;
+		cout << "classification algorithms."                      << endl;
+		cout << "############################################"    << endl;
+		cout << endl;
+	}
+	
 	cout << endl;
 	cout << "---------------------------------------------" << endl;
 	cout << "             Output file: " << OUTPUT_FILENAME << endl;
@@ -293,6 +362,8 @@ void ParseCommandLineArguments(int narg, char *argv[])
 	cout << "    Electron beam energy: " << Eelectron_beam << " GeV" << endl;
 	cout << "           Coherent peak: " << Ecoherent_peak << " GeV" << endl;
 	cout << "   Minimum photon energy: " << Emin << " GeV" << endl;
+	cout << "           Particle type: " << (PlusType==MuonPlus ? "mu+,mu-":"pi+,pi-") << endl;
+	cout << "                  Target: A=" << A << ", Z=" << Z << endl;
 	cout << "     Collimator diameter: " << (CollimatorDiameter*1000.0) << " mm" << endl;
 	cout << "  z-direction defined by: " << (USE_ELECTRON_BEAM_DIRECTION ? "electron":"photon") << " beam" << endl;
 	cout <<"   Coherent photons only?: " << (ONLY_COHERENT ? "yes":"no") << endl;
@@ -325,6 +396,7 @@ void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TL
 //	G4ParticleMomentum GammaDirection = aDynamicGamma->GetMomentumDirection();
 	
 	double Mmuon = 0.1056583715;
+	if(PlusType == PiPlus) Mmuon = 0.139570;
 	double electron_mass_c2 = 0.000511;
 	double sqrte = 1.648721270700128;
 	double pi = 3.141592653589793;
@@ -605,7 +677,7 @@ void AddEventToHDDM(TVector3 &pgamma, TLorentzVector &pmuplus, TLorentzVector &p
 	ProductList::iterator it_product = products.begin();
 
 	// Product Mu+
-	Particle_t geanttype = MuonPlus;
+	Particle_t geanttype = PlusType;
 	TVector3 mom = pmuplus.Vect(); // convert back to units of GeV
 	double mass = ParticleMass(geanttype);
 	it_product->setDecayVertex(0);
@@ -632,7 +704,7 @@ void AddEventToHDDM(TVector3 &pgamma, TLorentzVector &pmuplus, TLorentzVector &p
 	
 
 	// Product Mu-
-	geanttype = MuonMinus;
+	geanttype = MinusType;
 	mom = pmuminus.Vect(); // convert back to units of GeV
 	mass = ParticleMass(geanttype);
 	it_product->setDecayVertex(0);

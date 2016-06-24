@@ -7747,7 +7747,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
 	  //V-=dC.SandwichMultiply(H_T);
 	  V=V-H*dC*H_T;
 	}
-
+	
 	pulls.push_back(pull_t(resi,sqrt(V(1,1)),
 			       forward_traj[m].s,
 			       fdc_updates[id].tdrift,
@@ -7757,20 +7757,37 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
       }
       else{
 	unsigned int id=forward_traj[m].h_id-1000;
-	A=cdc_updates[id].C*JT*C.InvertSym();
-	Ss=cdc_updates[id].S+A*(Ss-S);
-
-	if (!isfinite(Ss(state_q_over_p))){
-	  if (DEBUG_LEVEL>5) _DBG_ << "Invalid values for smoothed parameters..." << endl;
-	  return VALUE_OUT_OF_RANGE;
+	if (cdc_used_in_fit[id]){
+	  A=cdc_updates[id].C*JT*C.InvertSym();
+	  Ss=cdc_updates[id].S+A*(Ss-S);
+	  
+	  if (!isfinite(Ss(state_q_over_p))){
+	    if (DEBUG_LEVEL>5) _DBG_ << "Invalid values for smoothed parameters..." << endl;
+	    return VALUE_OUT_OF_RANGE;
+	  }
+	  
+	  // Fill in pulls information for cdc hits
+	  FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[id],
+			       cdc_updates[id]);
 	}
-
-	Cs=cdc_updates[id].C+A*(Cs-C)*A.Transpose();
-	
-	// Fill in pulls information for cdc hits
-	FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[id],
-			     cdc_updates[id]);
+	else{
+	  A=forward_traj[m].Ckk*JT*C.InvertSym();
+	  Ss=forward_traj[m].Skk+A*(Ss-S);
+	  Cs=forward_traj[m].Ckk+A*(Cs-C)*A.Transpose();
+	}
       }
+      else{
+	A=forward_traj[m].Ckk*JT*C.InvertSym();
+	Ss=forward_traj[m].Skk+A*(Ss-S);
+	Cs=forward_traj[m].Ckk+A*(Cs-C)*A.Transpose();
+      }
+      
+      Cs=cdc_updates[id].C+A*(Cs-C)*A.Transpose();
+      
+      // Fill in pulls information for cdc hits
+      FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[id],
+			   cdc_updates[id]);
+    }
     }
     else{
       A=forward_traj[m].Ckk*JT*C.InvertSym();
@@ -7805,74 +7822,80 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(void){
     for (unsigned int m=max-1;m>0;m--){
         if (central_traj[m].h_id>0){
             unsigned int id=central_traj[m].h_id-1;
-            A=cdc_updates[id].C*JT*C.InvertSym();
-	    AT=A.Transpose();
-            Ss=cdc_updates[id].S+A*(Ss-S);
-	    if ((!isfinite(Ss(0)))|| (!isfinite(Ss(1))) 
-		|| (!isfinite(Ss(2))) || (!isfinite(Ss(3)))
-		|| (!isfinite(Ss(4)))
-		){
-	      if (DEBUG_LEVEL>5) 
-		_DBG_ << "Invalid values for smoothed parameters..." << endl;
-	      return VALUE_OUT_OF_RANGE;
+	    if (cdc_used_in_fit[id]){
+	      A=cdc_updates[id].C*JT*C.InvertSym();
+	      AT=A.Transpose();
+	      Ss=cdc_updates[id].S+A*(Ss-S);
+	      if ((!isfinite(Ss(0)))|| (!isfinite(Ss(1))) 
+		  || (!isfinite(Ss(2))) || (!isfinite(Ss(3)))
+		  || (!isfinite(Ss(4)))
+		  ){
+		if (DEBUG_LEVEL>5) 
+		  _DBG_ << "Invalid values for smoothed parameters..." << endl;
+		return VALUE_OUT_OF_RANGE;
+	      }
+	      
+	      dC=Cs-C;
+	      Cs=cdc_updates[id].C+dC.SandwichMultiply(AT);
+	      
+	      // Get estimate for energy loss 
+	      double q_over_p=Ss(state_q_over_pt)*cos(atan(Ss(state_tanl)));
+	      double dEdx=GetdEdx(q_over_p,central_traj[m].K_rho_Z_over_A,
+				  central_traj[m].rho_Z_over_A,
+				  central_traj[m].LnI,central_traj[m].Z);
+	      
+	      // Use Brent's algorithm to find doca to the wire
+	      DVector2 xy(central_traj[m].xy.X()-Ss(state_D)*sin(Ss(state_phi)),
+			  central_traj[m].xy.Y()+Ss(state_D)*cos(Ss(state_phi)));
+	      DVector2 old_xy=xy;
+	      DMatrix5x1 myS=Ss;
+	      double myds;  
+	      DVector2 origin=my_cdchits[id]->origin;
+	      DVector2 dir=my_cdchits[id]->dir;
+	      double z0wire=my_cdchits[id]->z0wire;
+	      BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dEdx,xy,z0wire,origin,dir,myS,myds);
+	      DVector2 wirepos=origin+(myS(state_z)-z0wire)*dir;
+	      double cosstereo=my_cdchits[id]->cosstereo;
+	      DVector2 diff=xy-wirepos;
+	      double d=cosstereo*diff.Mod()+EPS; 
+	      // here we add a small number to avoid division by zero errors
+	      
+	      // Find the field and gradient at (old_x,old_y,old_z)
+	      bfield->GetFieldAndGradient(old_xy.X(),old_xy.Y(),Ss(state_z),
+					  Bx,By,Bz,
+					  dBxdx,dBxdy,dBxdz,dBydx,
+					  dBydy,dBydz,dBzdx,dBzdy,dBzdz);
+	      DMatrix5x5 Jc;
+	      StepJacobian(old_xy,xy-old_xy,myds,Ss,dEdx,Jc);
+	      
+	      dC=dC.SandwichMultiply(Jc*AT);
+	      // Compute the Jacobian matrix
+	      // Projection matrix        
+	      DMatrix5x1 H_T;
+	      double sinphi=sin(myS(state_phi));
+	      double cosphi=cos(myS(state_phi));
+	      double dx=diff.X();
+	      double dy=diff.Y();
+	      double cosstereo_over_doca=cosstereo*cosstereo/d;
+	      H_T(state_D)=(dy*cosphi-dx*sinphi)*cosstereo_over_doca;
+	      H_T(state_phi)
+		=-myS(state_D)*cosstereo_over_doca*(dx*cosphi+dy*sinphi);
+	      H_T(state_z)=-cosstereo_over_doca*(dx*dir.X()+dy*dir.Y());
+	      double V=cdc_updates[id].variance;
+	      V+=Cs.SandwichMultiply(Jc*H_T);
+
+	      pulls.push_back(pull_t(cdc_updates[id].doca-d,sqrt(V),
+				     central_traj[m].s,cdc_updates[id].tdrift,
+				     d,my_cdchits[id]->hit,NULL,
+				     diff.Phi(),myS(state_z),
+				     cdc_updates[id].tcorr));
 	    }
-
-	    dC=Cs-C;
-            Cs=cdc_updates[id].C+dC.SandwichMultiply(AT);
-	    
-	    // Get estimate for energy loss 
-	    double q_over_p=Ss(state_q_over_pt)*cos(atan(Ss(state_tanl)));
-	    double dEdx=GetdEdx(q_over_p,central_traj[m].K_rho_Z_over_A,
-				central_traj[m].rho_Z_over_A,
-				central_traj[m].LnI,central_traj[m].Z);
-
-	    // Use Brent's algorithm to find doca to the wire
-	    DVector2 xy(central_traj[m].xy.X()-Ss(state_D)*sin(Ss(state_phi)),
-		        central_traj[m].xy.Y()+Ss(state_D)*cos(Ss(state_phi)));
-	    DVector2 old_xy=xy;
-	    DMatrix5x1 myS=Ss;
-	    double myds;  
-	    DVector2 origin=my_cdchits[id]->origin;
-	    DVector2 dir=my_cdchits[id]->dir;
-	    double z0wire=my_cdchits[id]->z0wire;
-	    BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dEdx,xy,z0wire,origin,dir,myS,myds);
-	    DVector2 wirepos=origin+(myS(state_z)-z0wire)*dir;
-	    double cosstereo=my_cdchits[id]->cosstereo;
-	    DVector2 diff=xy-wirepos;
-	    double d=cosstereo*diff.Mod()+EPS; 
-	    // here we add a small number to avoid division by zero errors
-
-	    // Find the field and gradient at (old_x,old_y,old_z)
-            bfield->GetFieldAndGradient(old_xy.X(),old_xy.Y(),Ss(state_z),
-					Bx,By,Bz,
-					dBxdx,dBxdy,dBxdz,dBydx,
-					dBydy,dBydz,dBzdx,dBzdy,dBzdz);
-	    DMatrix5x5 Jc;
-	    StepJacobian(old_xy,xy-old_xy,myds,Ss,dEdx,Jc);
-
-	    dC=dC.SandwichMultiply(Jc*AT);
-	    // Compute the Jacobian matrix
-	    // Projection matrix        
-	    DMatrix5x1 H_T;
-	    double sinphi=sin(myS(state_phi));
-            double cosphi=cos(myS(state_phi));
-	    double dx=diff.X();
-	    double dy=diff.Y();
-	    double cosstereo_over_doca=cosstereo*cosstereo/d;
-	    H_T(state_D)=(dy*cosphi-dx*sinphi)*cosstereo_over_doca;
-	    H_T(state_phi)
-	      =-myS(state_D)*cosstereo_over_doca*(dx*cosphi+dy*sinphi);
-	    H_T(state_z)=-cosstereo_over_doca*(dx*dir.X()+dy*dir.Y());
-	    double V=cdc_updates[id].variance;
-	    V+=Cs.SandwichMultiply(Jc*H_T);
-
-	    pulls.push_back(pull_t(cdc_updates[id].doca-d,sqrt(V),
-				   central_traj[m].s,cdc_updates[id].tdrift,
-				   d,my_cdchits[id]->hit,NULL,
-				   diff.Phi(),myS(state_z),
-				   cdc_updates[id].tcorr));
-
-        }
+	    else{
+	       A=central_traj[m].Ckk*JT*C.InvertSym();
+	       Ss=central_traj[m].Skk+A*(Ss-S);
+	       Cs=central_traj[m].Ckk+A*(Cs-C)*A.Transpose();      
+	    }
+	}
         else{
             A=central_traj[m].Ckk*JT*C.InvertSym();
             Ss=central_traj[m].Skk+A*(Ss-S);
@@ -7921,7 +7944,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(void){
 	    }
 
             Cs=cdc_updates[cdc_index].C+A*(Cs-C)*A.Transpose();
-	    
+	    if(cdc_updates[cdc_index].used_in_fit == false) continue; 
 	    FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[cdc_index],
 				 cdc_updates[cdc_index]);
 	    

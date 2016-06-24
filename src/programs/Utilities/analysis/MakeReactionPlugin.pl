@@ -434,13 +434,6 @@ jerror_t DEventProcessor_${PluginName}::brun(jana::JEventLoop* locEventLoop, int
 {
 	// This is called whenever the run number changes
 
-	/*
-	//Recommended: Create output ROOT TTrees (nothing is done if already created)
-	const DEventWriterROOT* locEventWriterROOT = NULL;
-	locEventLoop->GetSingle(locEventWriterROOT);
-	locEventWriterROOT->Create_DataTrees(locEventLoop);
-	*/
-
 	return NOERROR;
 }
 

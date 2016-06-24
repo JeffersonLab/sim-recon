@@ -1090,6 +1090,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
 	Cs=cdc_updates[id].C+A*(Cs-C)*A.Transpose();
 	
 	// Fill in pulls information for cdc hits
+    if(cdc_updates[id].used_in_fit == false) continue;
 	FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[id],
 			     cdc_updates[id]);
       }
