@@ -167,6 +167,10 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
   gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_DRIFT_TIMES",
 			      USE_FDC_DRIFT_TIMES);
 
+  PLANE_TO_SKIP=0;
+  gPARMS->SetDefaultParameter("TRKFIT:PLANE_TO_SKIP",PLANE_TO_SKIP);
+
+
   // Get pointer to TrackFinder object 
   vector<const DTrackFinder *> finders;
   eventLoop->Get(finders);
@@ -340,8 +344,8 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
   vector<int> used_cdc_hits_best_fit(numhits);
 
   // vectors of residual information 
-  vector<update_t>pulls(numhits);
-  vector<update_t>best_pulls(numhits);
+  vector<update_t>updates(numhits);
+  vector<update_t>best_updates(numhits);
 
   // deque to store reference trajectory
   deque<trajectory_t>trajectory;
@@ -368,7 +372,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
 	!=NOERROR) break;
     
     C=C0;
-    if (KalmanFilter(S,C,hits,used_cdc_hits,trajectory,pulls,chi2,ndof)!=NOERROR) break;
+    if (KalmanFilter(S,C,hits,used_cdc_hits,trajectory,updates,chi2,ndof)!=NOERROR) break;
    
     if (fabs(chi2_old-chi2)<0.1 || chi2>chi2_old) break;  
     
@@ -390,7 +394,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
       if (SetReferenceTrajectory(t0,OuterZ,S,trajectory,hits[maxindex],dzsign)
 	  ==NOERROR){
 	C=C0;
-	if (KalmanFilter(S,C,hits,used_cdc_hits,trajectory,pulls,chi2,ndof,true)!=NOERROR) break;
+	if (KalmanFilter(S,C,hits,used_cdc_hits,trajectory,updates,chi2,ndof,true)!=NOERROR) break;
 	 
 	//printf("chi2 %f %f\n",chi2_old,chi2);
 	  
@@ -401,7 +405,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
 	Cbest=C;
 	 
 	used_cdc_hits_best_fit=used_cdc_hits;
-	best_pulls=pulls;
+	best_updates=updates;
       }
       else break;
     }
@@ -441,10 +445,10 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
       for (unsigned int k=0;k<used_cdc_hits_best_fit.size();k++){
 	if (used_cdc_hits_best_fit[k]==1){
 	  cand->AddAssociatedObject(hits[k]);
-	  cand->pulls.push_back(DTrackFitter::pull_t(best_pulls[k].resi,
-						     best_pulls[k].err,
-				       best_pulls[k].s,best_pulls[k].tdrift,
-				       best_pulls[k].d,hits[k],NULL));
+	  cand->pulls.push_back(DTrackFitter::pull_t(best_updates[k].resi,
+						     best_updates[k].err,
+				       best_updates[k].s,best_updates[k].tdrift,
+				       best_updates[k].d,hits[k],NULL));
 	}
       }
       
@@ -484,7 +488,7 @@ jerror_t DTrackCandidate_factory_StraightLine
     //propagate the state to the next z position
     S(state_x)+=S(state_tx)*dz;
     S(state_y)+=S(state_ty)*dz;
-    trajectory.push_front(trajectory_t(z,t,S,J));
+    trajectory.push_front(trajectory_t(z,t,S,J,DMatrix4x1(),DMatrix4x4()));
 
     if (COSMICS) done=(S(state_y)<last_y);
     else{
@@ -513,7 +517,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 					   vector<const DCDCTrackHit *>&hits,
 						   vector<int>&used_hits,
 					   deque<trajectory_t>&trajectory,
-						   vector<update_t>&pulls,
+						   vector<update_t>&updates,
 					   double &chi2,unsigned int &ndof,
 					   bool timebased){
   DMatrix1x4 H;  // Track projection matrix
@@ -693,11 +697,11 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 	  used_hits[cdc_index]=1;
 
 	  // fill pull vector
-	  pulls[cdc_index].resi=res;
-	  pulls[cdc_index].d=d;
-	  pulls[cdc_index].err=sqrt(fit_V);
-	  pulls[cdc_index].tdrift=tdrift;
-	  pulls[cdc_index].s=29.98*trajectory[k].t; // assume beta=1
+	  updates[cdc_index].resi=res;
+	  updates[cdc_index].d=d;
+	  updates[cdc_index].err=sqrt(fit_V);
+	  updates[cdc_index].tdrift=tdrift;
+	  updates[cdc_index].s=29.98*trajectory[k].t; // assume beta=1
 	}
 	else{
 	  //	_DBG_ << "Bad C!" << endl;
@@ -875,8 +879,8 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
   deque<trajectory_t>trajectory;
 
   // vectors of residual information 
-  vector<update_t>pulls(numhits);
-  vector<update_t>best_pulls(numhits);
+  vector<fdc_update_t>updates(numhits);
+  vector<fdc_update_t>best_updates(numhits);
       
   // Intial guess for covariance matrix
   DMatrix4x4 C,C0,Cbest;
@@ -896,7 +900,7 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
     if (SetReferenceTrajectory(t0,start_z,S,trajectory,hits)!=NOERROR) break;
 
     C=C0;
-    if (KalmanFilter(S,C,hits,used_fdc_hits,trajectory,pulls,chi2,ndof
+    if (KalmanFilter(S,C,hits,used_fdc_hits,trajectory,updates,chi2,ndof
 		     )!=NOERROR) break;
 
     // printf(" == iter %d =====chi2 %f ndof %d \n",iter,chi2,ndof);
@@ -907,11 +911,11 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
     Sbest=S;
 
     used_fdc_hits_best_fit=used_fdc_hits;
-    best_pulls=pulls;
+    best_updates=updates;
   }
 
       
-  if (iter>0){
+  if (iter>0){  
     // Create new track candidate
     DTrackCandidate *cand = new DTrackCandidate;
 
@@ -927,15 +931,20 @@ DTrackCandidate_factory_StraightLine::DoFilter(double t0,double start_z,
     finder->FindDoca(z,Sbest,dir,origin,&pos);
     cand->setPosition(pos);
 
+     // Run the smoother
+    Smooth(trajectory,updates,hits,cand);
+
     for (unsigned int k=0;k<used_fdc_hits_best_fit.size();k++){
       if (used_fdc_hits_best_fit[k]==1){
 	cand->AddAssociatedObject(hits[k]);
-	cand->pulls.push_back(DTrackFitter::pull_t(best_pulls[k].resi,
-						   best_pulls[k].err,
-						   best_pulls[k].s,
-						   best_pulls[k].tdrift,
-						   best_pulls[k].d,NULL,
-						   hits[k]));
+	/*
+	cand->pulls.push_back(DTrackFitter::pull_t(best_updates[k].resi,
+						   best_updates[k].err,
+						   best_updates[k].s,
+						   best_updates[k].tdrift,
+						   best_updates[k].d,NULL,
+						   					   hits[k]));
+	*/
       }
     }
 
@@ -985,7 +994,7 @@ DTrackCandidate_factory_StraightLine::SetReferenceTrajectory(double t0,double z,
 
   double dz=1.1;
   double t=t0;
-  trajectory.push_front(trajectory_t(z,t,S,J));
+  trajectory.push_front(trajectory_t(z,t,S,J,DMatrix4x1(),DMatrix4x4()));
 
   double zhit=z;
   double old_zhit=z;
@@ -1015,7 +1024,9 @@ DTrackCandidate_factory_StraightLine::SetReferenceTrajectory(double t0,double z,
       S(state_x)+=S(state_tx)*dz;
       S(state_y)+=S(state_ty)*dz;
       
-      trajectory.push_front(trajectory_t(new_z,t,S,J)); 
+      
+      trajectory.push_front(trajectory_t(new_z,t,S,J,DMatrix4x1(),
+					 DMatrix4x4())); 
       if (done){
 	trajectory[0].id=i+1;
 	trajectory[0].numhits=1;
@@ -1036,7 +1047,7 @@ DTrackCandidate_factory_StraightLine::SetReferenceTrajectory(double t0,double z,
   //propagate the state to the next z position
   S(state_x)+=S(state_tx)*dz;
   S(state_y)+=S(state_ty)*dz;
-  trajectory.push_front(trajectory_t(z+dz,t,S,J));
+  trajectory.push_front(trajectory_t(z+dz,t,S,J,DMatrix4x1(),DMatrix4x4()));
   
   if (false)
     {
@@ -1057,7 +1068,7 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 					      vector<const DFDCPseudo *>&hits,
 						   vector<int>&used_hits,
 					      deque<trajectory_t>&trajectory,
-						   vector<update_t>&pulls,
+						   vector<fdc_update_t>&updates,
 			       double &chi2,unsigned int &ndof){
   DMatrix2x4 H;  // Track projection matrix
   DMatrix4x2 H_T; // Transpose of track projection matrix 
@@ -1076,6 +1087,10 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
   chi2=0.;
   ndof=0;
 
+   // Save the starting values for C and S in the deque
+  trajectory[0].Skk=S;
+  trajectory[0].Ckk=C;
+  
   // Loop over all steps in the trajectory
   S0=trajectory[0].S;
   J=trajectory[0].J;
@@ -1086,6 +1101,10 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
     // Propagate the state and covariance matrix forward in z
     S=trajectory[k].S+J*(S-S0);
     C=J*C*J.Transpose();
+
+    // Save the current state and covariance matrix in the deque
+    trajectory[k].Skk=S;
+    trajectory[k].Ckk=C;
         
     // Save S and J for the next step
     S0=trajectory[k].S;
@@ -1143,6 +1162,8 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 	if (USE_FDC_DRIFT_TIMES){
 	  double drift_time=hits[my_id]->time-trajectory[k].t; 
 	  drift=(du>0.0?1.:-1.)*fdc_drift_distance(drift_time);
+
+	  V(0,0)=0.0009;
 	}
 	Mdiff(0)=drift-doca;
 	Mdiff(1)=v-vpred;
@@ -1176,29 +1197,35 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 	
 	// Compute Kalman gain matrix
 	K=(C*H_T)*InvV;
-	
-	// Update the state vector 
-	S+=K*Mdiff;
 
-	// Update state vector covariance matrix
-	C=C-K*(H*C);    
+	if (hits[my_id]->wire->layer!=PLANE_TO_SKIP){        	
+	  // Update the state vector 
+	  S+=K*Mdiff;
 
-	// Update the filtered measurement covariane matrix and put results in 
-	// update vector
-	DMatrix2x2 RC=V-H*C*H_T;
-	DMatrix2x1 res=Mdiff-H*K*Mdiff;
+	  // Update state vector covariance matrix
+	  C=C-K*(H*C);    
+	  
+	  // Update the filtered measurement covariane matrix and put results in 
+	  // update vector
+	  DMatrix2x2 RC=V-H*C*H_T;
+	  DMatrix2x1 res=Mdiff-H*K*Mdiff;
+	  
+	  chi2+=RC.Chi2(res);
+	  ndof+=2;
 
-	chi2+=RC.Chi2(res);
-	ndof+=2;
-
+	  // fill pull vector entries
+	  updates[my_id].V=RC;
+	}
+	else{
+	  updates[my_id].V=V;
+	}
+	  
 	used_hits[my_id]=1;
 
 	// fill pull vector
-	pulls[my_id].resi=res(0);
-	pulls[my_id].d=doca;
-	pulls[my_id].err=sqrt(RC(0,0));
-	pulls[my_id].tdrift=hits[my_id]->time-trajectory[k].t;
-	pulls[my_id].s=29.98*trajectory[k].t; // assume beta=1
+	updates[my_id].d=doca;
+	updates[my_id].tdrift=hits[my_id]->time-trajectory[k].t;
+	updates[my_id].s=29.98*trajectory[k].t; // assume beta=1
 
       }
 
@@ -1210,3 +1237,129 @@ DTrackCandidate_factory_StraightLine::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 
   return NOERROR;
 }
+
+
+// Smoothing algorithm for the forward trajectory.  Updates the state vector
+// at each step (going in the reverse direction to the filter) based on the 
+// information from all the steps and outputs the state vector at the
+// outermost step.
+
+jerror_t 
+DTrackCandidate_factory_StraightLine::Smooth(deque<trajectory_t>&trajectory,
+					     vector<fdc_update_t>&fdc_updates,
+					     vector<const DFDCPseudo *>&hits,
+					     DTrackCandidate *cand){ 
+  unsigned int max=trajectory.size()-1;
+  DMatrix4x1 S=(trajectory[max].Skk);
+  DMatrix4x4 C=(trajectory[max].Ckk);
+  DMatrix4x4 JT=trajectory[max].J.Transpose();
+  DMatrix4x1 Ss=S;
+  DMatrix4x4 Cs=C;
+  DMatrix4x4 A,dC;
+
+  for (unsigned int m=max-1;m>0;m--){
+    if (trajectory[m].id>0){
+      unsigned int id=trajectory[m].id-1;
+      A=fdc_updates[id].C*JT*C.Invert();
+      Ss=fdc_updates[id].S+A*(Ss-S);
+
+      dC=A*(Cs-C)*A.Transpose();
+      Cs=fdc_updates[id].C+dC;
+	
+      double cosa=hits[id]->wire->udir.y();
+      double sina=hits[id]->wire->udir.x();
+      double u=hits[id]->wire->u;
+      double v=hits[id]->s;
+	
+      // Position and direction from state vector
+      double x=Ss(state_x);
+      double y=Ss(state_y);
+      double tx=Ss(state_tx);
+      double ty=Ss(state_ty);
+	
+      // Projected position along the wire without doca-dependent corrections
+      double vpred_uncorrected=x*sina+y*cosa;
+      
+      // Projected position in the plane of the wires transverse to the wires
+      double upred=x*cosa-y*sina;
+	
+      // Direction tangent in the u-z plane
+      double tu=tx*cosa-ty*sina;
+      double alpha=atan(tu);
+      double cosalpha=cos(alpha);
+      //double cosalpha2=cosalpha*cosalpha;
+      double sinalpha=sin(alpha);
+      
+      // (signed) distance of closest approach to wire
+      double du=upred-u;
+      double doca=du*cosalpha;
+ 
+      // Difference between measurement and projection
+      double tv=tx*sina+ty*cosa;
+      double resi=v-(vpred_uncorrected+doca*(-tv*sinalpha));
+	
+      // Variance from filter step
+      DMatrix2x2 V=fdc_updates[id].V;
+      // Compute projection matrix and find the variance for the residual
+      DMatrix4x2 H_T;
+      double temp2=-tv*sinalpha;
+      H_T(state_x,1)=sina+cosa*cosalpha*temp2;	
+      H_T(state_y,1)=cosa-sina*cosalpha*temp2;	
+      
+      double cos2_minus_sin2=cosalpha*cosalpha-sinalpha*sinalpha;
+      double doca_cosalpha=doca*cosalpha;
+      H_T(state_tx,1)=-doca_cosalpha*(tu*sina+tv*cosa*cos2_minus_sin2);
+      H_T(state_ty,1)=-doca_cosalpha*(tu*cosa-tv*sina*cos2_minus_sin2);
+      
+      H_T(state_x,0)=cosa*cosalpha;
+      H_T(state_y,0)=-sina*cosalpha;
+      double one_plus_tu2=1.+tu*tu;
+      double factor=du*tu/sqrt(one_plus_tu2)/one_plus_tu2;
+      H_T(state_ty,0)=sina*factor;
+      H_T(state_tx,0)=-cosa*factor;
+      
+      // Matrix transpose H_T -> H
+      DMatrix2x4 H;
+      H(0,state_x)=H_T(state_x,0);
+      H(0,state_y)=H_T(state_y,0);
+      H(0,state_tx)=H_T(state_tx,0);
+      H(0,state_ty)=H_T(state_ty,0);
+      H(1,state_x)=H_T(state_x,1);
+      H(1,state_y)=H_T(state_y,1);
+      H(1,state_tx)=H_T(state_tx,1);
+      H(1,state_ty)=H_T(state_ty,1);
+      
+      if (hits[id]->wire->layer==PLANE_TO_SKIP){
+	//V+=Cs.SandwichMultiply(H_T);
+	V=V+H*Cs*H_T;
+      }
+      else{
+	//V-=dC.SandwichMultiply(H_T);
+	V=V-H*dC*H_T;
+      }
+      
+      cand->pulls.push_back(DTrackFitter::pull_t(resi,sqrt(V(1,1)),
+					     trajectory[m].t*SPEED_OF_LIGHT,
+				     fdc_updates[id].tdrift,
+				     fdc_updates[id].d,
+				     NULL,hits[id],
+				     trajectory[m].z));
+
+    }
+    else{
+      A=trajectory[m].Ckk*JT*C.Invert();
+      Ss=trajectory[m].Skk+A*(Ss-S);
+      Cs=trajectory[m].Ckk+A*(Cs-C)*A.Transpose();
+    }
+    
+    S=trajectory[m].Skk;
+    C=trajectory[m].Ckk;
+    JT=trajectory[m].J.Transpose();
+  }
+
+  return NOERROR;
+
+
+
+}
+
