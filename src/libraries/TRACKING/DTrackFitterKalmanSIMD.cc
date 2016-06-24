@@ -7776,18 +7776,6 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
 	  Cs=forward_traj[m].Ckk+A*(Cs-C)*A.Transpose();
 	}
       }
-      else{
-	A=forward_traj[m].Ckk*JT*C.InvertSym();
-	Ss=forward_traj[m].Skk+A*(Ss-S);
-	Cs=forward_traj[m].Ckk+A*(Cs-C)*A.Transpose();
-      }
-      
-      Cs=cdc_updates[id].C+A*(Cs-C)*A.Transpose();
-      
-      // Fill in pulls information for cdc hits
-      FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[id],
-			   cdc_updates[id]);
-    }
     }
     else{
       A=forward_traj[m].Ckk*JT*C.InvertSym();
