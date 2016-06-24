@@ -29,19 +29,20 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
   double z0w=0.; // origin in z for wire
 
   // Set used_in_fit flags to false for fdc and cdc hits
-  unsigned int num_cdc=cdc_updates.size();
-  unsigned int num_fdc=fdc_updates.size();
-  for (unsigned int i=0;i<num_cdc;i++) cdc_updates[i].used_in_fit=false;
-  for (unsigned int i=0;i<num_fdc;i++) fdc_updates[i].used_in_fit=false;
+  unsigned int num_cdc=cdc_used_in_fit.size();
+  unsigned int num_fdc=fdc_used_in_fit.size();
+  for (unsigned int i=0;i<num_cdc;i++) cdc_used_in_fit[i]=false;
+  for (unsigned int i=0;i<num_fdc;i++) fdc_used_in_fit[i]=false;
   for (unsigned int i=0;i<forward_traj.size();i++){
     if (forward_traj[i].h_id>999)
       forward_traj[i].h_id=0;
   }
   
   // Save the starting values for C and S in the deque
-  forward_traj[break_point_step_index].Skk=S;
-  forward_traj[break_point_step_index].Ckk=C;
-
+  if (fit_type==kTimeBased){
+    forward_traj[break_point_step_index].Skk=S;
+    forward_traj[break_point_step_index].Ckk=C;
+  }
   // Initialize chi squared
   chisq=0;
 
@@ -117,8 +118,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
     C=Q.AddSym(C.SandwichMultiply(J));
 
     // Save the current state and covariance matrix in the deque
-    forward_traj[k].Skk=S;
-    forward_traj[k].Ckk=C;
+    if (fit_type==kTimeBased){
+      forward_traj[k].Skk=S;
+      forward_traj[k].Ckk=C;
+    }
     
     // Save the current state of the reference trajectory
     S0_=S0;
@@ -228,7 +231,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    Klist.push_back(InvV*(C*H_T)); // Kalman gain
 
 	    used_ids.push_back(id);
-	    fdc_updates[id].used_in_fit=true;
+	    fdc_used_in_fit[id]=true;
 	  }
 	  
 	  // loop over the remaining hits
@@ -281,7 +284,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 		Klist.push_back(InvV*(C*H_T));	  
 		
 		used_ids.push_back(my_id);
-		fdc_updates[my_id].used_in_fit=true;
+		fdc_used_in_fit[my_id]=true;
 		
 	      }
 	    }
@@ -307,16 +310,17 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  }
 	  
 	  for (unsigned int m=0;m<Hlist.size();m++){
-	    unsigned int my_id=used_ids[m];
-	    double scale=(skip_plane)?1.:(1.-Hlist[m]*Klist[m]);    
-	    fdc_updates[my_id].S=S;
-	    fdc_updates[my_id].C=C; 
-	    fdc_updates[my_id].tdrift
-	      =my_fdchits[my_id]->t-forward_traj[k].t*TIME_UNIT_CONVERSION-mT0;
-	    fdc_updates[my_id].tcorr=fdc_updates[my_id].tdrift; // temporary!
-	    fdc_updates[my_id].residual=scale*Mlist[m];
-	    fdc_updates[my_id].variance=scale*Vlist[m];
-	    fdc_updates[my_id].doca=doca;
+	    if (fit_type==kTimeBased){
+	      unsigned int my_id=used_ids[m];
+	      double scale=(skip_plane)?1.:(1.-Hlist[m]*Klist[m]); 	    
+	      fdc_updates[my_id].S=S;
+	      fdc_updates[my_id].C=C; 
+	      fdc_updates[my_id].tdrift
+		=my_fdchits[my_id]->t-forward_traj[k].t*TIME_UNIT_CONVERSION-mT0;
+	      fdc_updates[my_id].tcorr=fdc_updates[my_id].tdrift; // temporary!
+	      fdc_updates[my_id].variance=scale*Vlist[m];
+	      fdc_updates[my_id].doca=doca;
+	    }
 	    
 	    // update chi2
 	    if (skip_plane==false){
@@ -354,16 +358,15 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 
 	    // Store the "improved" values for the state vector and covariance
 	    double scale=(skip_plane)?1.:(1.-H*K);
-	    fdc_updates[id].S=S;
-	    fdc_updates[id].C=C;
-	    fdc_updates[id].tdrift
-	      =my_fdchits[id]->t-forward_traj[k].t*TIME_UNIT_CONVERSION-mT0;
-	    fdc_updates[id].tcorr=fdc_updates[id].tdrift; // temporary!
-	    fdc_updates[id].residual=scale*Mdiff;
-	    fdc_updates[id].variance=scale*V;
-	    fdc_updates[id].doca=doca;
-	    fdc_updates[id].used_in_fit=true;
-	    
+	    if (fit_type==kTimeBased){
+	      fdc_updates[id].S=S;
+	      fdc_updates[id].C=C;
+	      fdc_updates[id].tdrift
+		=my_fdchits[id]->t-forward_traj[k].t*TIME_UNIT_CONVERSION-mT0;
+	      fdc_updates[id].tcorr=fdc_updates[id].tdrift; // temporary!
+	      fdc_updates[id].variance=scale*V;
+	      fdc_updates[id].doca=doca;
+	    }
 	    if (skip_plane==false){
 	      // Update chi2 for this segment
 	      chisq+=scale*Mdiff*Mdiff/V;
@@ -372,9 +375,11 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	    }
 		    
 	    if (DEBUG_LEVEL>10){
-	      printf("hit %d p %5.2f t %f dm %5.2f sig %f chi2 %5.2f z %5.2f\n",
+	      if (fit_type==kTimeBased){
+		printf("hit %d p %5.2f t %f dm %5.2f sig %f chi2 %5.2f z %5.2f\n",
 		     id,1./S(state_q_over_p),fdc_updates[id].tdrift,Mdiff,sqrt(V),(1.-H*K)*Mdiff*Mdiff/V,
 		     forward_traj[k].z);
+	      }
 	    
 	    }
 	      
@@ -708,13 +713,14 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 
 	      // Store updated info related to this hit
 	      double scale=(skip_ring)?1.:(1.-H*K); 
-	      cdc_updates[cdc_index].tdrift=tdrift;
-	      cdc_updates[cdc_index].tcorr=tcorr;
-	      cdc_updates[cdc_index].residual=res*scale;
-	      cdc_updates[cdc_index].variance=Vc;
-	      cdc_updates[cdc_index].doca=dm;
-	      cdc_updates[cdc_index].used_in_fit=true;
-          if(tdrift < 0.) cdc_updates[cdc_index].used_in_fit=false;
+	      if (fit_type==kTimeBased){
+		cdc_updates[cdc_index].tdrift=tdrift;
+		cdc_updates[cdc_index].tcorr=tcorr;
+		cdc_updates[cdc_index].variance=scale*Vc;
+		cdc_updates[cdc_index].doca=dm;
+	      }
+	      cdc_used_in_fit[cdc_index]=true;
+	      if(tdrift < 0.) cdc_used_in_fit[cdc_index]=false;
 	    
 	      // Update chi2 and number of degrees of freedom for this hit
 	      if (skip_ring==false && tdrift >= 0.){
@@ -946,10 +952,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
   unsigned int num_good=0; 
   unsigned int num_hits=num_cdc+max_num_fdc_used_in_fit;
   for (unsigned int j=0;j<num_cdc;j++){
-    if (cdc_updates[j].used_in_fit) num_good++;
+    if (cdc_used_in_fit[j]) num_good++;
   }
   for (unsigned int j=0;j<num_fdc;j++){
-    if (fdc_updates[j].used_in_fit) num_good++;
+    if (fdc_used_in_fit[j]) num_good++;
   }
   if (double(num_good)/double(num_hits)<MINIMUM_HIT_FRACTION){
     //_DBG_ <<endl;

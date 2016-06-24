@@ -106,7 +106,7 @@ enum kalman_error_t{
 typedef struct{
   DVector2 dir,origin;
   double z0wire;
-  double residual,sigma,tdrift,cosstereo;
+  double tdrift,cosstereo;
   const DCDCTrackHit *hit;
   int status;
 }DKalmanSIMDCDCHit_t;
@@ -114,9 +114,7 @@ typedef struct{
 typedef struct{ 
   double t,cosa,sina;
   double uwire,vstrip,vvar,z,dE;
-  double xres,yres,xsig,ysig;
   double nr,nz;
-  int package;
   int status;
   const DFDCPseudo *hit;
 }DKalmanSIMDFDCHit_t;
@@ -146,8 +144,7 @@ typedef struct{
   DMatrix5x1 S;
   double doca;
   double tcorr,tdrift;
-  double residual,variance;
-  DMatrix2x1 R;
+  double variance;
   DMatrix2x2 V;
   bool used_in_fit;
 }DKalmanUpdate_t;
@@ -410,6 +407,10 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // lists containing updated state vector and covariance at measurement point
   vector<DKalmanUpdate_t>fdc_updates;
   vector<DKalmanUpdate_t>cdc_updates;
+
+  // Keep track of which hits were used in the fit
+  vector<bool>cdc_used_in_fit;
+  vector<bool>fdc_used_in_fit;
 
   // flight time and path length
   double ftime, len, var_ftime;
