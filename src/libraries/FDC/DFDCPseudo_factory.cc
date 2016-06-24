@@ -486,7 +486,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 
 	      if (DEBUG_HISTS){
 		// number of clusters of each type
-		u_cl_n->Fill(upeaks[j].numstrips);
+		u_cl_n->Fill(upeaks[i].numstrips);
 		v_cl_n->Fill(vpeaks[j].numstrips);
 	      }
 
@@ -894,32 +894,32 @@ jerror_t DFDCPseudo_factory::ThreeStripCluster(const vector<const DFDCHit*>& H,
     return VALUE_OUT_OF_RANGE;
   }
   
-  unsigned int index1=2*((*(peak-1))->gLayer-1)+(*(peak-1))->plane/2;
-  unsigned int index2=2*((*peak)->gLayer-1)+(*peak)->plane/2;
-  unsigned int index3=2*((*(peak+1))->gLayer-1)+(*(peak+1))->plane/2;
-  
-  double pos1=fdccathodes[index1][(*(peak-1))->element-1]->u;
-  double pos2=fdccathodes[index2][(*peak)->element-1]->u;
-  double pos3=fdccathodes[index3][(*(peak+1))->element-1]->u;
-  
-  double amp1=double((*(peak-1))->pulse_height);
-  double amp2=double((*peak)->pulse_height);
-  double amp3=double((*(peak+1))->pulse_height);
-  double sum=amp1+amp2+amp3;
-  
-  double t1=double((*(peak-1))->t);
-  double t2=double((*peak)->t);
-  double t3=double((*(peak+1))->t);
+  double sum=0;
+  double wsum=0;
+  double t=0;
+  double o_amp=0;
+  for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
+    unsigned int index=2*((*j)->gLayer-1)+(*j)->plane/2;
+    
+    double pos=fdccathodes[index][(*j)->element-1]->u;
+    double amp=double((*j)->pulse_height);
+
+    sum+=amp;
+    wsum+=amp*pos;
+    
+    // time from largest amplitude
+    if (amp > o_amp){
+      t=double((*j)->t);
+      o_amp = amp;
+    }
+  }
 
   // weighted sum
-  temp.pos=(pos1*amp1+pos2*amp2+pos3*amp3)/sum;
+  temp.pos=wsum/sum;
+  
   temp.q_from_pulse_height=sum;
   temp.numstrips=10;
-
-  // time from greater amplitude
-  if (amp1 > amp2 && amp1 > amp3) temp.t=t1;
-  else  if (amp2 > amp1 && amp2 > amp3) temp.t=t2;
-  else  if (amp3 > amp1 && amp3 > amp2) temp.t=t3;
+  temp.t=t;
   temp.t_rms=0.;
 
   //CalcMeanTime(peak,temp.t,temp.t_rms);
