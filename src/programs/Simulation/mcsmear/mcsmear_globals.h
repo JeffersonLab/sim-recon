@@ -122,6 +122,11 @@ extern double FCAL_MC_ESCALE;
 // FCAL gain constants
 extern vector<double> FCAL_GAINS;
 
+// FCAL digi scales
+extern double FCAL_MC_ESCALE;            
+
+
+
 // Forward TOF resolution
 extern double TOF_SIGMA;
 extern double TOF_PHOTONS_PERMEV;

@@ -577,6 +577,7 @@ void SmearFCAL(hddm_s::HDDM *record)
          // Smear the energy and timing of the hit
          double sigma = FCAL_PHOT_STAT_COEF/sqrt(titer->getE());
          
+              
          // Apply constant scale factor to MC eneregy. 06/22/2016 A. Subedi
          double E = FCAL_MC_ESCALE * titer->getE() * (1.0 + SampleGaussian(sigma)); 
          

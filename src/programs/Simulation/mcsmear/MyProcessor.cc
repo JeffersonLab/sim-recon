@@ -232,13 +232,20 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
       
 
    {
-     cout<<"get FCAL gains from calibDB"<<endl;
+     cout<<"get FCAL/gains from calibDB"<<endl;
      vector <double> FCAL_GAINS_TEMP;
      jcalib->Get("FCAL/gains", FCAL_GAINS_TEMP);
      for (unsigned int i = 0; i < FCAL_GAINS_TEMP.size(); i++){
        FCAL_GAINS.push_back(FCAL_GAINS_TEMP.at(i));
      }
    }  
+   
+   {
+     cout<<"get FCAL/digi_scales parameters from calibDB"<<endl;
+     map<string, double> fcaldigiscales;
+     jcalib->Get("FCAL/digi_scales", fcaldigiscales);
+     FCAL_MC_ESCALE = fcaldigiscales["FCAL_ADC_ASCALE"];
+   }
 
    {
      cout<<"get CDC/cdc_parms parameters from calibDB"<<endl;

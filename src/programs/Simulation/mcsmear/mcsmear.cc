@@ -114,7 +114,7 @@ double PSC_PHOTONS_PERMEV = 5.e5;
 
 double FCAL_PHOT_STAT_COEF   = 0.0; //0.035;
 double FCAL_BLOCK_THRESHOLD  = 0.0; //20.0*k_MeV;
-double FCAL_MC_ESCALE  = 1.54; 
+double FCAL_MC_ESCALE  = 0.0; 
 
 
 double CDC_TDRIFT_SIGMA      = 0.0; // 150.0/55.0*1E-9 seconds
