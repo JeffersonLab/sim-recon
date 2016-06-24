@@ -116,8 +116,6 @@ extern double FCAL_PHOT_STAT_COEF;
 // Single block energy threshold (applied after smearing)
 extern double FCAL_BLOCK_THRESHOLD;
 
-// Energy scale factor before smearing 6/22/2016 A. Subedi
-extern double FCAL_MC_ESCALE;
 
 // FCAL gain constants
 extern vector<double> FCAL_GAINS;
