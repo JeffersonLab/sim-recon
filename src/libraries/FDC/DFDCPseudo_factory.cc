@@ -898,6 +898,7 @@ jerror_t DFDCPseudo_factory::ThreeStripCluster(const vector<const DFDCHit*>& H,
   double wsum=0;
   double t=0;
   double o_amp=0;
+  int i_corr=-2;
   for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
     unsigned int index=2*((*j)->gLayer-1)+(*j)->plane/2;
     
@@ -907,16 +908,23 @@ jerror_t DFDCPseudo_factory::ThreeStripCluster(const vector<const DFDCHit*>& H,
     sum+=amp;
     wsum+=amp*pos;
     
-    // time from largest amplitude
+    // time and correction from largest amplitude
     if (amp > o_amp){
       t=double((*j)->t);
       o_amp = amp;
+      i_corr++;
     }
   }
 
-  // weighted sum
-  temp.pos=wsum/sum;
+  //correct for 'missing' signals on the other side
+  //largest amp on the left: -
+  //largest amp on the right: +
+  //minimum in the centre: 0
+  double pos_corr = 0.1;
   
+  // weighted sum
+  temp.pos=wsum/sum + i_corr*pos_corr;
+
   temp.q_from_pulse_height=sum;
   temp.numstrips=10;
   temp.t=t;
