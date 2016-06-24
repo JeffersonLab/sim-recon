@@ -34,6 +34,8 @@
 #include <DANA/DStatusBits.h>
 #include <TTAB/DTranslationTable.h>
 
+#include <PID/DVertex.h>
+
 using namespace std;
 using namespace jana;
 
@@ -46,7 +48,7 @@ class DEVIOBufferWriter
 
         write_out_all_rocs = true;   // default to writing all data
     }
-    ~DEVIOBufferWriter(void);
+    ~DEVIOBufferWriter(void) {}
 
     void WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &buff, vector<const JObject *> objects_to_save) const;
     void WriteEventToBuffer(JEventLoop *locEventLoop, vector<uint32_t> &buff) const;
@@ -106,6 +108,10 @@ class DEVIOBufferWriter
         void WriteTSSyncData(JEventLoop *loop,
                              vector<uint32_t> &buff,
                              const DL1Info *l1info) const;
+
+        void WriteDVertexData(JEventLoop *loop,
+                              vector<uint32_t> &buff,
+                              const DVertex *vertex) const;
 
         bool write_out_all_rocs;
         set<uint32_t> rocs_to_write_out;

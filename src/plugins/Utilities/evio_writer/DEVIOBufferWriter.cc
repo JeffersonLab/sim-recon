@@ -114,7 +114,7 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
             } else if(auto *llobj_ptr = dynamic_cast<const DF1TDCTriggerTime *>(obj_ptr)) {
                 F1tts.push_back(llobj_ptr);
             } else {
-                // if not, for a reconstructed object, just get all of the possible hits
+                // if not, assume this is a reconstructed object, and just get all of the possible hits
                 vector<const Df250TriggerTime*>   obj_f250tts;
                 vector<const Df250PulseIntegral*> obj_f250pis;
                 vector<const Df250WindowRawData*> obj_f250wrds;
@@ -231,6 +231,16 @@ void DEVIOBufferWriter::WriteEventToBuffer(JEventLoop *loop, vector<uint32_t> &b
         WriteTSSyncData(loop, buff, l1_info[0]);
     }
 
+    // save any extra objects 
+    for(vector<const JObject *>::iterator obj_itr = objects_to_save.begin();
+        obj_itr != objects_to_save.end(); obj_itr++) {
+        const JObject *obj_ptr = *obj_itr;
+        
+        // first, see if these are low-level hit objects
+        if(auto *vertex_ptr = dynamic_cast<const DVertex *>(obj_ptr)) {
+            WriteDVertexData(loop, buff, vertex_ptr);
+        }
+    }
 
 	// Update global header length
 	if(!buff.empty()) buff[0] = buff.size()-1;
@@ -1144,6 +1154,52 @@ void DEVIOBufferWriter::WriteTSSyncData(JEventLoop *loop, vector<uint32_t> &buff
 
     // Update bank length
     buff[trigger_bank_len_idx] = buff.size() - trigger_bank_len_idx - 1;
+    buff[data_bank_len_idx] = buff.size() - data_bank_len_idx - 1;
+
+}
+
+//------------------
+// WriteDVertexData
+//------------------
+void DEVIOBufferWriter::WriteDVertexData(JEventLoop *loop, vector<uint32_t> &buff, const DVertex *vertex) const
+{
+    // Physics Event's Data Bank
+    uint32_t data_bank_len_idx = buff.size();
+    buff.push_back(0); // will be updated later
+    buff.push_back(0x00011001); // Data bank header: 0001=TS rocid , 10=Bank of Banks, 01=1 event
+                                //   Use TS rocid for event-level data
+
+    // DVertex data block bank
+    uint32_t vertex_bank_len_idx = buff.size();
+    buff.push_back(0); // Length
+    buff.push_back(0x0D010100); // 0x0D01=DVertexTag, 0x01=u32int
+
+
+    // Save 4-vector information - assume doubles are stored in 64-bits
+    // This is usually a good assumption, but is not 100% portable...
+    uint64_t vertex_x = static_cast<uint64_t>(vertex->dSpacetimeVertex.X());
+	buff.push_back( (vertex_x>> 0)&0xFFFFFFFF ); // low order word
+	buff.push_back( (vertex_x>>32)&0xFFFFFFFF ); // high order word
+    uint64_t vertex_y = static_cast<uint64_t>(vertex->dSpacetimeVertex.Y());
+	buff.push_back( (vertex_y>> 0)&0xFFFFFFFF ); // low order word
+	buff.push_back( (vertex_y>>32)&0xFFFFFFFF ); // high order word
+    uint64_t vertex_z = static_cast<uint64_t>(vertex->dSpacetimeVertex.Z());
+	buff.push_back( (vertex_z>> 0)&0xFFFFFFFF ); // low order word
+	buff.push_back( (vertex_z>>32)&0xFFFFFFFF ); // high order word
+    uint64_t vertex_t = static_cast<uint64_t>(vertex->dSpacetimeVertex.T());
+	buff.push_back( (vertex_t>> 0)&0xFFFFFFFF ); // low order word
+	buff.push_back( (vertex_t>>32)&0xFFFFFFFF ); // high order word
+    
+
+    // Save other information
+    buff.push_back( vertex->dKinFitNDF );
+    uint64_t vertex_chi_sq = static_cast<uint64_t>(vertex->dKinFitChiSq);
+    buff.push_back( (vertex_chi_sq>> 0)&0xFFFFFFFF ); // low order word
+	buff.push_back( (vertex_chi_sq>>32)&0xFFFFFFFF ); // high order word
+
+
+    // Update bank length
+    buff[vertex_bank_len_idx] = buff.size() - vertex_bank_len_idx - 1;
     buff[data_bank_len_idx] = buff.size() - data_bank_len_idx - 1;
 
 }

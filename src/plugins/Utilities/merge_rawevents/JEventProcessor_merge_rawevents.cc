@@ -76,7 +76,7 @@ jerror_t JEventProcessor_merge_rawevents::evnt(JEventLoop *loop, uint64_t eventn
     uint32_t* output_buffer = JEventSource_EVIO::GetEVIOBufferFromRef(the_event_ref);
     uint32_t  output_buffer_size = JEventSource_EVIO::GetEVIOBufferSizeFromRef(the_event_ref);
 
-    //cout << "Writing out event " << eventnumber << " buffer size = " << (output_buffer_size/4) << " words"  << endl;
+    cout << "Writing out event " << eventnumber << " buffer size = " << (output_buffer_size/4) << " words"  << endl;
 
     // write the buffer out
     // WARNING: this will work for non-entangled events, but hasn't been tested for entagled EVIO events

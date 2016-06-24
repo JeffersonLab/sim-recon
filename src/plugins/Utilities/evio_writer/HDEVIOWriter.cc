@@ -107,6 +107,18 @@ HDEVIOWriter::HDEVIOWriter(string sink_name)
 //---------------------------------
 HDEVIOWriter::~HDEVIOWriter()
 {
+    jerr << "DESTRUCTOR" << endl;
+/*
+    // Write out any events that are still enqueued
+	if( !output_deque.empty() ){
+		uint32_t Nwords = 8; // include 8 header words for EVIO block
+		deque< vector<uint32_t>* >::iterator it;
+		for(it=output_deque.begin(); it!=output_deque.end(); it++){
+			Nwords += (*it)->size();
+		}
+		FlushOutput(Nwords, output_deque);
+	}
+*/
 	// Free up any memory used in the buffer pool
 	pthread_mutex_lock(&buff_pool_mutex);
 	for(uint32_t i=0; i<buff_pool.size(); i++) delete buff_pool[i];
@@ -284,6 +296,8 @@ void* HDEVIOWriter::HDEVIOOutputThread(void)
 		// Lock output_deque_mutex
 		pthread_mutex_lock(&output_deque_mutex);
 		
+        //cout << "output time " << endl;
+
 		// Count how many events will bring us up to
 		// MAX_OUTPUT_BUFFER_SIZE without going over. We'll
 		// need this to help decide if we're going to write
@@ -296,7 +310,9 @@ void* HDEVIOWriter::HDEVIOOutputThread(void)
 			if( (Nwords+N) > MAX_OUTPUT_BUFFER_SIZE) break;
 			Nbuffs++;
 			Nwords += N;
-			
+
+            //cout << " buff " << Nbuffs << " words = " << N << "   total words = " << Nwords << endl;
+            
 			// If we've reached NEVENTS_PER_BLOCK then stop counting
 			if( Nbuffs >= NEVENTS_PER_BLOCK ) break;
 		}
@@ -401,6 +417,8 @@ void HDEVIOWriter::FlushOutput(uint32_t Nwords, deque< vector<uint32_t>* > &my_o
 	output_block[5] = (bitinfo<<8) + 0x4; //  0x4=EVIO version 4 
 	output_block[6] = 0; // Reserved 2
 	output_block[7] = 0xc0da0100; // Magic number
+
+    jout << "Writing out " << my_output_deque.size() << " events with " << Nwords << " words " << endl;
 
 	// Write all event buffers into output buffer
 	deque< vector<uint32_t>* >::iterator it;
@@ -568,6 +586,7 @@ void HDEVIOWriter::AddBufferToOutput(vector<uint32_t> *buff)
 //---------------------------------
 void HDEVIOWriter::Quit(void)
 {
+    jerr << "QUITTING" << endl;
 	quit=true;
 }
 
