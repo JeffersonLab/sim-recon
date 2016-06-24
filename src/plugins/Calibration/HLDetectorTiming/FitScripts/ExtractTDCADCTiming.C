@@ -108,7 +108,7 @@ Double_t FitFunctionRight(Double_t *x, Double_t *par)
     return f;
 }
 
-void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 2931, TString variation = "default", TString prefix = ""){
+void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 10390, TString variation = "default", TString prefix = ""){
 
     // set "prefix" in case you want to think about thowing the text files into another directory
     cout << "Performing TDC/ADC timing fits for File: " << fileName.Data() << " Run: " << runNumber << " Variation: " << variation.Data() << endl;
@@ -197,7 +197,7 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 2931
     outFile.close();
 
     float FDC_ADC_Offset = 0.0, FDC_TDC_Offset = 0.0;
-    this1DHist = Get1DHistogram("HLDetectorTiming", "FDC", "FDCHit time");
+    this1DHist = Get1DHistogram("HLDetectorTiming", "FDC", "FDCHit Cathode time");
     if(this1DHist != NULL){
         Int_t firstBin = this1DHist->FindLastBinAbove( 1 , 1); // Find first bin with content above 1 in the histogram
         for (int i = 0; i <= 25; i++){
@@ -211,11 +211,28 @@ void ExtractTDCADCTiming(TString fileName = "hd_root.root", int runNumber = 2931
         TFitResultPtr fr = this1DHist->Fit(f, "S", "", maximum - 30, maximum + 20); // Cant fix value at end of range
         double mean = fr->Parameter(1);
         float sigma = fr->Parameter(2);
-        FDC_ADC_Offset = mean - sigma;
+        FDC_ADC_Offset = mean;
+        delete f;
+    }
+    this1DHist = Get1DHistogram("HLDetectorTiming", "FDC", "FDCHit Wire time");
+    if(this1DHist != NULL){
+        Int_t firstBin = this1DHist->FindLastBinAbove( 1 , 1); // Find first bin with content above 1 in the histogram
+        for (int i = 0; i <= 25; i++){
+            if ((firstBin + i) > 0) this1DHist->SetBinContent((firstBin + i), 0);
+        }
+        //Fit a gaussian to the left of the main peak
+        Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
+        TF1 *f = new TF1("f", "gaus");
+        f->SetParameters(100, maximum, 20);
+        f->FixParameter(1 , maximum);
+        TFitResultPtr fr = this1DHist->Fit(f, "S", "", maximum - 30, maximum + 20); // Cant fix value at end of range
+        double mean = fr->Parameter(1);
+        float sigma = fr->Parameter(2);
+        FDC_TDC_Offset = mean;
         delete f;
     }
 
-    FDC_ADC_Offset *= -1;
+    FDC_ADC_Offset *= -1; FDC_TDC_Offset *= -1;
     outFile.open(prefix + "fdc_base_time.txt");
     outFile << fdc_base_time_adc + FDC_ADC_Offset << " " << fdc_base_time_tdc + FDC_TDC_Offset << endl;
     outFile.close();
