@@ -208,13 +208,16 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int32_t runnumber)
     if (!v_cl_n) v_cl_n=new TH1F("v_cl_n","v_cl_n",20,.5,20.5);
 
     x_dist_2=(TH1F*)gROOT->FindObject("x_dist_2");
-    if (!x_dist_2) x_dist_2=new TH1F("x_dist_2","x_dist_2",200,-5,5);
+    if (!x_dist_2) x_dist_2=new TH1F("x_dist_2","x_dist_2",200,-2,2);
 
     x_dist_3=(TH1F*)gROOT->FindObject("x_dist_3");
-    if (!x_dist_3) x_dist_3=new TH1F("x_dist_3","x_dist_3",200,-5,5);
+    if (!x_dist_3) x_dist_3=new TH1F("x_dist_3","x_dist_3",200,-2,2);
 
     x_dist_23=(TH1F*)gROOT->FindObject("x_dist_23");
-    if (!x_dist_23) x_dist_23=new TH1F("x_dist_23","x_dist_23",200,-5,5);
+    if (!x_dist_23) x_dist_23=new TH1F("x_dist_23","x_dist_23",200,-2,2);
+
+    x_dist_33=(TH1F*)gROOT->FindObject("x_dist_33");
+    if (!x_dist_33) x_dist_33=new TH1F("x_dist_33","x_dist_33",200,-2,2);
 
 
     for (unsigned int i=0;i<24;i++){
@@ -359,6 +362,11 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	if (FindCentroid(u[i]->members,strip,upeaks)==NOERROR){
 	  upeaks[upeaks.size()-1].cluster=i;
 	}
+	else if (u[i]->members.size()==3){
+	  if (ThreeStripCluster(u[i]->members,strip,upeaks)==NOERROR){
+	    upeaks[upeaks.size()-1].cluster=i;
+	  }
+	}
       }
     }
     else if (u[i]->members.size()==2){
@@ -378,6 +386,11 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	//printf("  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	if (FindCentroid(v[i]->members,strip,vpeaks)==NOERROR){
 	  vpeaks[vpeaks.size()-1].cluster=i;
+	}
+	else if (v[i]->members.size()==3){
+	  if (ThreeStripCluster(v[i]->members,strip,vpeaks)==NOERROR){
+	    vpeaks[vpeaks.size()-1].cluster=i;
+	  }
 	}
       }
     }
@@ -423,6 +436,9 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      if (upeaks[i].numstrips == 2 && vpeaks[j].numstrips == 2) x_dist_2->Fill(delta_x);
 	      if (upeaks[i].numstrips == 2 && vpeaks[j].numstrips == 3) x_dist_23->Fill(delta_x);
 	      else if (upeaks[i].numstrips == 3 && vpeaks[j].numstrips == 2) x_dist_23->Fill(delta_x);
+
+	      if (upeaks[i].numstrips == 3 && vpeaks[j].numstrips == 10) x_dist_33->Fill(delta_x);
+	      else if (upeaks[i].numstrips == 10 && vpeaks[j].numstrips == 3) x_dist_33->Fill(delta_x);
 	    }
 	 
 	    if (old_wire_num==(*xIt)->element) continue;
@@ -858,6 +874,57 @@ jerror_t DFDCPseudo_factory::TwoStripCluster(const vector<const DFDCHit*>& H,
   //CalcMeanTime(peak,temp.t,temp.t_rms);
   centroids.push_back(temp);
   
+  return NOERROR;
+}
+
+//
+/// DFDCPseudo_factory::ThreeStripCluster()
+/// But FindCentroid does not work for Clusters without peak
+/// Attempt to recover them with simple center-of-gravity
+/// Updates list of centroids. 
+///
+jerror_t DFDCPseudo_factory::ThreeStripCluster(const vector<const DFDCHit*>& H,
+                       vector<const DFDCHit *>::const_iterator peak,
+                       vector<centroid_t>&centroids){
+  centroid_t temp;
+  
+  if ((*(peak-1))->pulse_height<MIDDLE_STRIP_THRESHOLD &&
+      (*peak)->pulse_height<MIDDLE_STRIP_THRESHOLD &&
+      (*(peak+1))->pulse_height<MIDDLE_STRIP_THRESHOLD) {
+    return VALUE_OUT_OF_RANGE;
+  }
+  
+  unsigned int index1=2*((*(peak-1))->gLayer-1)+(*(peak-1))->plane/2;
+  unsigned int index2=2*((*peak)->gLayer-1)+(*peak)->plane/2;
+  unsigned int index3=2*((*(peak+1))->gLayer-1)+(*(peak+1))->plane/2;
+  
+  double pos1=fdccathodes[index1][(*(peak-1))->element-1]->u;
+  double pos2=fdccathodes[index2][(*peak)->element-1]->u;
+  double pos3=fdccathodes[index3][(*(peak+1))->element-1]->u;
+  
+  double amp1=double((*(peak-1))->pulse_height);
+  double amp2=double((*peak)->pulse_height);
+  double amp3=double((*(peak+1))->pulse_height);
+  double sum=amp1+amp2+amp3;
+  
+  double t1=double((*(peak-1))->t);
+  double t2=double((*peak)->t);
+  double t3=double((*(peak+1))->t);
+
+  // weighted sum
+  temp.pos=(pos1*amp1+pos2*amp2+pos3*amp3)/sum;
+  temp.q_from_pulse_height=sum;
+  temp.numstrips=10;
+
+  // time from greater amplitude
+  if (amp1 > amp2 && amp1 > amp3) temp.t=t1;
+  else  if (amp2 > amp1 && amp2 > amp3) temp.t=t2;
+  else  if (amp3 > amp1 && amp3 > amp2) temp.t=t3;
+  temp.t_rms=0.;
+
+  //CalcMeanTime(peak,temp.t,temp.t_rms);
+  centroids.push_back(temp);
+
   return NOERROR;
 }
 

@@ -115,6 +115,14 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 					 vector<const DFDCHit *>::const_iterator peak,
 					 vector<centroid_t> &centroids);
 		
+		///
+		/// DFDCPseudo_factory::ThreeStripCluster()
+		/// Calculates the center-of-gravity of Three adjacent strips
+		///
+		jerror_t ThreeStripCluster(const vector<const DFDCHit*>& H,
+					 vector<const DFDCHit *>::const_iterator peak,
+					 vector<centroid_t> &centroids);
+		
  		
 	private:		
 		vector<vector<DFDCWire*> >fdcwires;
@@ -136,7 +144,7 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		TH2F *tv_vs_tu,*u_wire_dt_vs_wire;
 		TH2F *Hxy[24],*ut_vs_u,*vt_vs_v;
 		TH2F *v_vs_u,*dx_vs_dE;
-		TH1F *u_cl_size, *v_cl_size, *u_cl_n, *v_cl_n, *x_dist_2, *x_dist_3, *x_dist_23;
+		TH1F *u_cl_size, *v_cl_size, *u_cl_n, *v_cl_n, *x_dist_2, *x_dist_3, *x_dist_23, *x_dist_33;
 
 //		JStreamLog* _log;
 };
