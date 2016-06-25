@@ -41,6 +41,8 @@ class common: public xstream::common_buffer {
     protected:
         pimpl* z_strm; /*!< bzlib stream "object" */
 
+        std::streamoff block_offset;
+
         /*!
          * \brief construct using a streambuf
          */
@@ -130,6 +132,12 @@ class ostreambuf: private common, public xstream::ostreambuf {
          */
         ~ostreambuf();
 
+        std::streambuf *get_streambuf() {
+            return _sb;
+        }
+        std::streamoff get_block_offset() {
+            return block_offset;
+        }
 };
 
 /*!
@@ -144,6 +152,9 @@ class istreambuf: private common, public std::streambuf {
     private:
         
         bool end; /*!<signals if stream has reached the end */
+
+        std::streamsize block_size;
+        std::streamsize block_pending;
 
         /*!
          * \brief inspect bzlib error status and raise exception in case of error
@@ -184,6 +195,24 @@ class istreambuf: private common, public std::streambuf {
          *
          */
         ~istreambuf();
+
+        std::streambuf *get_streambuf() {
+            return _sb;
+        }
+        std::streamoff get_block_offset() {
+            return block_offset;
+        }
+        std::streamsize get_block_size() {
+            return block_size;
+        }
+        std::streamsize get_block_buffered() {
+            if (block_size > 0)
+                return block_size + block_pending + 8;
+            else if (block_pending > 0)
+                return block_pending + 4;
+            else
+                return 0;
+        }
 };
 
 }//namespace bz

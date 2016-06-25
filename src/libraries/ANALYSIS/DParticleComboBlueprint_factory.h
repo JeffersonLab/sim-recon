@@ -14,6 +14,7 @@
 #include <PID/DNeutralShower.h>
 #include <PID/DVertex.h>
 #include <PID/DDetectorMatches.h>
+#include <TRIGGER/DTrigger.h>
 
 #include <deque>
 #include <map>
@@ -97,6 +98,8 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		map<DParticleComboBlueprintStep, DParticleComboBlueprintStep*> dBlueprintStepMap;
 
 		DTrackTimeBased_factory_Combo* dTrackTimeBasedFactory_Combo;
+
+		size_t dMaxNumNeutralShowers;
 };
 
 #endif // _DParticleComboBlueprint_factory_

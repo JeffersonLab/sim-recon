@@ -17,8 +17,11 @@ using namespace std;
 
 #include <TOF/DTOFTDCDigiHit.h>
 #include <DAQ/Df250PulseIntegral.h>
+#include <DAQ/Df250PulsePedestal.h>
 #include <DAQ/Df250WindowRawData.h>
-#include "TRIGGER/DL1Trigger.h"
+#include <TRIGGER/DL1Trigger.h>
+#include <DAQ/DCAEN1290TDCHit.h>
+#include <DAQ/DCODAROCInfo.h>
 
 #include <TDirectory.h>
 #include <TFile.h>
@@ -44,8 +47,13 @@ class JEventProcessor_TOF_calib:public jana::JEventProcessor{
 
   float TOF_TDC_SHIFT;
   
-  TH1F *TOFTDCtime;
-  TH1F *TOFADCtime;
+  TH2F *TOFTDCtime;
+  TH2F *TOFADCtime;
+  TH2F *TOFEnergy;
+  TH2F *TOFPeak;
+  TH2F *TOFPedestal;
+
+
   float ADCTimeCut;
   float TDCTimeCut;
 
@@ -61,6 +69,8 @@ class JEventProcessor_TOF_calib:public jana::JEventProcessor{
     float adcR;
     int OverFlowL;
     int OverFlowR;
+    float PeakL;
+    float PeakR;
   };
 
   struct SingleP{
@@ -69,6 +79,7 @@ class JEventProcessor_TOF_calib:public jana::JEventProcessor{
     float time;
     float adc;
     int OverFlow;
+    float Peak;
   };
 
 
@@ -92,6 +103,8 @@ class JEventProcessor_TOF_calib:public jana::JEventProcessor{
   float ADCR[MaxHits];
   int OFL[MaxHits];
   int OFR[MaxHits];
+  float PEAKL[MaxHits];
+  float PEAKR[MaxHits];
 
   int NsinglesA;
   int PlaneSA[MaxHits];
@@ -100,6 +113,7 @@ class JEventProcessor_TOF_calib:public jana::JEventProcessor{
   float ADCS[MaxHits];
   float TADCS[MaxHits];
   int OF[MaxHits];
+  float PEAK[MaxHits];
 
   int NsinglesT;
   int PlaneST[MaxHits];

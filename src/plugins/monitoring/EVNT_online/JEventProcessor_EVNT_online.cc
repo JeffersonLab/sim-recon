@@ -65,10 +65,6 @@ JEventProcessor_EVNT_online::~JEventProcessor_EVNT_online() {
 
 jerror_t JEventProcessor_EVNT_online::init(void) {
 
-  // lock all root operations
-  japp->RootWriteLock();
-
-
   // create root folder for evnt and cd to it, store main dir
   TDirectory *main = gDirectory;
   gDirectory->mkdir("evnt")->cd();
@@ -81,10 +77,6 @@ jerror_t JEventProcessor_EVNT_online::init(void) {
 
   // back to main dir
   main->cd();
-
-
-  // unlock
-  japp->RootUnLock();
 
   return NOERROR;
 }
@@ -130,7 +122,9 @@ jerror_t JEventProcessor_EVNT_online::evnt(JEventLoop *eventLoop, uint64_t event
       });
 
     // loop over data banks and hist bank sizes, etc.
-    japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
     ntot=0;
     for(auto bank : *bankList.get()) {
       nword=bank->getSize();
@@ -138,12 +132,12 @@ jerror_t JEventProcessor_EVNT_online::evnt(JEventLoop *eventLoop, uint64_t event
       ntot+=nword;
     }
     evntdata->Fill(ntot);
-    japp->RootUnLock(); 
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
   }
   
   
   // fake data for the moment...
-  // japp->RootWriteLock();
+  // japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
   // ntot=0;
   // for(auto roc=1; roc<=60; roc++) {
   //   nword = 25+normal_dist(generator);
@@ -151,7 +145,7 @@ jerror_t JEventProcessor_EVNT_online::evnt(JEventLoop *eventLoop, uint64_t event
   //   ntot+=nword;
   // }
   // evntsize->Fill(ntot);
-  // japp->RootUnLock(); 
+  // japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }

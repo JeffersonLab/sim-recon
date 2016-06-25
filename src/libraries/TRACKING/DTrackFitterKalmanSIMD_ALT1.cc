@@ -698,7 +698,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	      bool skip_ring
 		=(my_cdchits[cdc_index]->hit->wire->ring==RING_TO_SKIP);
 	      // update covariance matrix and state vector
-	      if (my_cdchits[cdc_index]->hit->wire->ring!=RING_TO_SKIP){
+	      if (my_cdchits[cdc_index]->hit->wire->ring!=RING_TO_SKIP && tdrift >= 0.){
 		C=Ctest;
 		S+=res*K;
 	      }
@@ -714,9 +714,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	      cdc_updates[cdc_index].variance=Vc;
 	      cdc_updates[cdc_index].doca=dm;
 	      cdc_updates[cdc_index].used_in_fit=true;
+          if(tdrift < 0.) cdc_updates[cdc_index].used_in_fit=false;
 	    
 	      // Update chi2 and number of degrees of freedom for this hit
-	      if (skip_ring==false){
+	      if (skip_ring==false && tdrift >= 0.){
 		chisq+=scale*res*res/Vc;
 		numdof++;
 	      }
@@ -1083,6 +1084,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
 	Cs=cdc_updates[id].C+A*(Cs-C)*A.Transpose();
 	
 	// Fill in pulls information for cdc hits
+    if(cdc_updates[id].used_in_fit == false) continue;
 	FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[id],
 			     cdc_updates[id]);
       }

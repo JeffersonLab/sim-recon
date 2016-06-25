@@ -105,7 +105,7 @@ jerror_t DTrackTimeBased_factory::init(void)
 	{
 		locMassStream << hypotheses[loc_i];
 		if(loc_i != (hypotheses.size() - 1))
-			locMassStream << ", ";
+			locMassStream << ",";
 	}
 
 	string HYPOTHESES = locMassStream.str();
@@ -886,6 +886,10 @@ bool DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       timebased_track->candidateid=track->candidateid;
       timebased_track->FOM=track->FOM;
       timebased_track->rt=track->rt;
+      
+      // add the list of start times
+      timebased_track->start_times.assign(start_times.begin(),
+					  start_times.end());
 
       for(unsigned int m=0; m<myfdchits.size(); m++)
 	timebased_track->AddAssociatedObject(myfdchits[m]); 

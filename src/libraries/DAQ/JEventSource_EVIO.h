@@ -79,6 +79,9 @@ typedef pair<int,int> tagNum;
 #include "DF1TDCBORConfig.h"
 #include "DCAEN1290TDCBORConfig.h"
 #include "DL1Info.h"
+#include "Df250Scaler.h"
+#include "Df250AsyncPedestal.h"
+
 #include "Df125EmulatorAlgorithm.h"
 #include "Df250EmulatorAlgorithm.h"
 
@@ -208,6 +211,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		int32_t last_run_number;
 		int32_t filename_run_number;
 		
+		uint32_t Nunparsed;
+		bool no_more_events_in_source;
 		bool et_connected;
 		//evioChannel *chan;
 		HDEVIO *hdevio;
@@ -238,6 +243,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		float TIMEOUT;
 		string MODTYPE_MAP_FILENAME;
 		bool ENABLE_DISENTANGLING;
+		bool EVIO_SPARSE_READ;
+		string EVENT_MASK;
 
         EmulationModeType F125_EMULATION_MODE; ///< F125 emulation mode
         EmulationModeType F250_EMULATION_MODE; ///< F250 emulation mode
@@ -407,6 +414,9 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void MakeDf125PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 
 		void ParseTSSync(evioDOMNodeP bankPtr, list<ObjList*> &events);
+
+		void ParseFA250Scalers(evioDOMNodeP bankPtr, list<ObjList*> &events, uint32_t rocid);
+		void ParseFA250AsyncPedestals(evioDOMNodeP bankPtr, list<ObjList*> &events, uint32_t rocid);
 
 
 #ifdef HAVE_ET

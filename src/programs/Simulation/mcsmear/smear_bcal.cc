@@ -90,9 +90,16 @@ void BCALSmearer::SmearEvent(hddm_s::HDDM *record)
     bcalfADC.clear();
 }
 
+<<<<<<< HEAD
 int inline BCALSmearer::GetCalibIndex(int module, int layer, int sector) {
    return bcal_config->BCAL_NUM_LAYERS*bcal_config->BCAL_NUM_SECTORS*(module-1) 
    		+ bcal_config->BCAL_NUM_SECTORS*(layer-1) + (sector-1);
+=======
+double GetEffectiveVelocity(int id)
+{
+    return BCAL_C_EFFECTIVE;
+    //return effective_velocities.at(id);
+>>>>>>> a3bc860fd7e657d52aa2fc5be6a4b0cd722fd405
 }
 
 

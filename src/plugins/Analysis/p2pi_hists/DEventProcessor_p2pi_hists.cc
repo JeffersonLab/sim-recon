@@ -43,11 +43,6 @@ jerror_t DEventProcessor_p2pi_hists::brun(jana::JEventLoop* locEventLoop, int lo
 {
 	// This is called whenever the run number changes
 
-	//Recommended: Create output ROOT TTrees (nothing is done if already created)
-        const DEventWriterROOT* locEventWriterROOT = NULL;
-        locEventLoop->GetSingle(locEventWriterROOT);
-        locEventWriterROOT->Create_DataTrees(locEventLoop);
-
 	return NOERROR;
 }
 
@@ -82,13 +77,11 @@ jerror_t DEventProcessor_p2pi_hists::evnt(jana::JEventLoop* locEventLoop, uint64
         locEventLoop->GetSingle(locEventWriterROOT);
         locEventWriterROOT->Fill_DataTrees(locEventLoop, "p2pi_hists");
 
-	/*
 	// Get the analysis results for all DReactions. 
 		//Getting these objects triggers the analysis, if it wasn't performed already. 
 		//These objects contain the DParticleCombo objects that survived the DAnalysisAction cuts that were added to the DReactions
-	vector<const DAnalysisResults*> locAnalysisResultsVector;
-	locEventLoop->Get(locAnalysisResultsVector);
-	*/
+	//vector<const DAnalysisResults*> locAnalysisResultsVector;
+	//locEventLoop->Get(locAnalysisResultsVector);
 
 	return NOERROR;
 }

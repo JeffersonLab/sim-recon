@@ -106,16 +106,9 @@ extern "C"
 //------------------
 jerror_t JEventProcessor_BCAL_Eff::init(void)
 {
-	// This is called once at program startup. If you are creating
-	// and filling historgrams in this plugin, you should lock the
-	// ROOT mutex like this:
-	
-	 japp->RootWriteLock();
-
 	// First thread to get here makes all histograms. If one pointer is
 	// already not NULL, assume all histograms are defined and return now
 	if(h1_Num_matched_showers != NULL){
-		japp->RootUnLock();
 		return NOERROR;
 	}
 	
@@ -291,9 +284,6 @@ jerror_t JEventProcessor_BCAL_Eff::init(void)
 	// back to main dir
 	main->cd();
 
-        japp->RootUnLock();
-
-
 	return NOERROR;
 }
 
@@ -403,7 +393,10 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
 	  }
 	}
 
-	japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
 	event_count++;
 //	if (event_count%100 == 0) printf ("Event count=%d, EventNumber=%d\n",event_count,locEventNumber);
 
@@ -638,9 +631,7 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
 
 	}   // end loop over matched showers
 
-        //UnlockState();	
-	japp->RootUnLock();
-
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	/*
 	//Optional: Save event to output REST file. Use this to create skims.
@@ -659,12 +650,11 @@ jerror_t JEventProcessor_BCAL_Eff::erun(void)
 	// changed to give you a chance to clean up before processing
 	// events from the next run number.
 
-  japp->RootWriteLock();
-
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	//japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
   // h1eff_eff->Divide(h1eff_layer,h1eff_layertot);
-
-  japp->RootUnLock();
-
+	//japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
 }
@@ -676,16 +666,12 @@ jerror_t JEventProcessor_BCAL_Eff::fini(void)
 {
 	// Called before program exit after event processing is finished.  
 
-  japp->RootWriteLock();
-
   h1eff_eff->Divide(h1eff_layer,h1eff_layertot,1,1,"B");
   h1eff2_eff2->Divide(h1eff2_layer,h1eff2_layertot,1,1,"B");
 
   h1eff_cellideff->Divide(h1eff_cellid,h1eff_cellidtot,1,1,"B");
   h1eff2_cellideff2->Divide(h1eff2_cellid,h1eff2_cellidtot,1,1,"B");
 
-
-  japp->RootUnLock();
 	return NOERROR;
 }
 

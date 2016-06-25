@@ -78,6 +78,7 @@ class JEventProcessor_HLDetectorTiming:public jana::JEventProcessor{
         double tagh_fadc_time_offsets[275], tagh_tdc_time_offsets[275];
         vector<double> sc_tdc_time_offsets;
         vector<double> tof_tdc_time_offsets;
+
 };
 
 #endif // _JEventProcessor_HLDetectorTiming_

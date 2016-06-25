@@ -54,9 +54,6 @@ JEventProcessor_BCAL_attenlength_gainratio::~JEventProcessor_BCAL_attenlength_ga
 //------------------
 jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 {
-	// lock all root operations
-	japp->RootWriteLock();
-
 	// Set style
 	gStyle->SetTitleOffset(1, "Y");
 	gStyle->SetTitleOffset(1.3, "z");
@@ -143,7 +140,6 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::init(void)
 	// back to main dir
 	main->cd();
 
-	japp->RootUnLock();
 	return NOERROR;
 }
 
@@ -171,7 +167,19 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 	vector<const DBCALPoint*> dbcalpoints;
 	loop->Get(dbcalpoints);
 
-	japp->RootWriteLock();
+    // pull out the associated digihits
+    vector< vector<const DBCALDigiHit*> > digihits_vec;
+	for(unsigned int i=0; i<dbcalpoints.size(); i++) {
+        const DBCALPoint *point = dbcalpoints[i];
+        vector<const DBCALDigiHit*> digihits;
+        point->Get(digihits);
+        
+        digihits_vec.push_back(digihits);
+    }
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
 	for(unsigned int i=0; i<dbcalpoints.size(); i++) {
 		const DBCALPoint *point = dbcalpoints[i];
@@ -181,8 +189,8 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 		float Energy = point->E();
 
 		// get the associated digi hits
-		vector<const DBCALDigiHit*> digihits;
-		point->Get(digihits);
+		vector<const DBCALDigiHit*> &digihits = digihits_vec[i];
+		//point->Get(digihits);
 		if (digihits.size()!=2) {
 			printf("Warning: BCAL_attenlength_gainratio: event %llu: wrong number of BCALDigiHit objects found %i\n",
 				   (long long unsigned int)eventnumber,(int)digihits.size());
@@ -236,7 +244,8 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::evnt(JEventLoop *loop, uint
 		EvsZ_all->Fill(zpos, Energy);
 		EvsZ_layer[layer-1]->Fill(zpos, Energy);
 	}
-	japp->RootUnLock();
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 
 	return NOERROR;
@@ -261,7 +270,10 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::fini(void)
 	// Called before program exit after event processing is finished.
 
 
-	
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
 	// for (int module=0; module<nummodule; module++) {
 	// 	if (VERBOSE>0) printf("M%i ",module);
 	// 	for (int layer=0; layer<numlayer; layer++) {
@@ -326,6 +338,9 @@ jerror_t JEventProcessor_BCAL_attenlength_gainratio::fini(void)
 	hist2D_peakgainratio->SetBinContent(0,0,1);
 	hist2D_intattenlength->SetBinContent(0,0,1);
 	hist2D_intgainratio->SetBinContent(0,0,1);
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
 	return NOERROR;
 }
 

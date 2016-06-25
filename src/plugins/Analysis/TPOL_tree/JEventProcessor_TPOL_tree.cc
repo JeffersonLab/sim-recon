@@ -4,6 +4,7 @@
 // Created: Thu Feb  4 16:11:54 EST 2016
 // Creator: nsparks (on Linux cua2.jlab.org 3.10.0-327.4.4.el7.x86_64 x86_64)
 //
+#include <cmath>
 #include <stdint.h>
 #include "JEventProcessor_TPOL_tree.h"
 using namespace jana;
@@ -56,7 +57,7 @@ jerror_t JEventProcessor_TPOL_tree::init(void)
     //
     bool SAVE_WAVEFORMS = true;
     gPARMS->SetDefaultParameter("TPOL_tree:SAVE_WAVEFORMS",SAVE_WAVEFORMS);
-    japp->RootWriteLock();
+
     TPOL = new TTree("TPOL_tree","TPOL tree");
     TPOL->Branch("nadc",&nadc,"nadc/i");
     TPOL->Branch("eventnum",&eventnum,"eventnum/i");
@@ -75,17 +76,15 @@ jerror_t JEventProcessor_TPOL_tree::init(void)
     TPOL->Branch("w_time",w_time,"w_time[nadc]/D");
     TPOL->Branch("sector",sector,"sector[nadc]/i");
     TPOL->Branch("phi",phi,"phi[nadc]/D");
-    TPOL->Branch("E_pair",&E_pair,"E_pair/D");
     TPOL->Branch("E_lhit",&E_lhit,"E_lhit/D");
     TPOL->Branch("E_rhit",&E_rhit,"E_rhit/D");
     TPOL->Branch("t_lhit",&t_lhit,"t_lhit/D");
     TPOL->Branch("t_rhit",&t_rhit,"t_rhit/D");
-    TPOL->Branch("t_diff_pair",&t_diff_pair,"t_diff_pair/D");
-    TPOL->Branch("E_tag",&E_tag,"E_tag/D");
-    TPOL->Branch("t_tag",&t_tag,"t_tag/D");
-    TPOL->Branch("E_diff",&E_diff,"E_diff/D");
+    TPOL->Branch("ntag",&ntag,"ntag/i");
+    TPOL->Branch("E_tag",E_tag,"E_tag[ntag]/D");
+    TPOL->Branch("t_tag",t_tag,"t_tag[ntag]/D");
+    TPOL->Branch("is_tagm",is_tagm,"is_tagm[ntag]/O");
     eventnum = 0;
-    japp->RootUnLock();
     //
     return NOERROR;
 }
@@ -142,6 +141,7 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
     loop->Get(taghhits);
     vector<const DTAGMHit*> tagmhits;
     loop->Get(tagmhits);
+
     japp->RootWriteLock();
     // PSC coincidences
     if (cpairs.size()>=1) {
@@ -155,35 +155,35 @@ jerror_t JEventProcessor_TPOL_tree::evnt(JEventLoop *loop, uint64_t eventnumber)
             const DPSHit* flhit = fpairs[0]->ee.first;  // left hit in fine PS
             const DPSHit* frhit = fpairs[0]->ee.second; // right hit in fine PS
             E_lhit = flhit->E; E_rhit = frhit->E;
-            t_lhit = clhit->time_tdc; t_rhit = crhit->time_tdc;
-            t_diff_pair = t_lhit - t_rhit;
-            E_pair = flhit->E+frhit->E;
-            // PSC,PS,TAGH coincidences
-            double EdiffBest = 12.0;
-            E_tag = 0.0;
-            t_tag = 999.0;
+            t_lhit = clhit->t; t_rhit = crhit->t;
+            double E_pair = flhit->E+frhit->E;
+            // PSC,PS,TAGX coincidences
+            unsigned int htag = 0;
+            double EdiffMax = 0.3; double tdiffMax = 15.0;
             for (unsigned int i=0; i < taghhits.size(); i++) {
                 const DTAGHHit* tag = taghhits[i];
                 if (!tag->has_TDC||!tag->has_fADC) continue;
-                if (fabs(E_pair-tag->E) < EdiffBest) {
-                    EdiffBest = fabs(E_pair-tag->E);
-                    E_tag = tag->E;
-                    t_tag = tag->t;
+                if (fabs(E_pair-tag->E) < EdiffMax && fabs(t_lhit-tag->t) < tdiffMax && htag < ntag_max) {
+                    E_tag[htag] = tag->E;
+                    t_tag[htag] = tag->t;
+                    is_tagm[htag] = false;
+                    htag++;
                 }
             }
-            // PSC,PS,TAGM coincidences
             for (unsigned int i=0; i < tagmhits.size(); i++) {
                 const DTAGMHit* tag = tagmhits[i];
                 if (!tag->has_TDC||!tag->has_fADC) continue;
                 if (tag->row!=0) continue;
-                if (fabs(E_pair-tag->E) < EdiffBest) {
-                    EdiffBest = fabs(E_pair-tag->E);
-                    E_tag = tag->E;
-                    t_tag = tag->t;
+                if (fabs(E_pair-tag->E) < EdiffMax && fabs(t_lhit-tag->t) < tdiffMax && htag < ntag_max) {
+                    E_tag[htag] = tag->E;
+                    t_tag[htag] = tag->t;
+                    is_tagm[htag] = true;
+                    htag++;
                 }
             }
-            E_diff = E_pair-E_tag;
-            int hit = 0;
+            ntag = htag;
+            if (ntag>ntag_max) jerr << "TPOL_tree plugin error: ntag exceeds ntag_max(" << ntag_max << ")." << endl;
+            unsigned int hit = 0;
             for(unsigned int i=0; i< windowraws.size(); i++) {
                 const Df250WindowRawData *windowraw = windowraws[i];
                 if (windowraw->rocid!=84) continue;
@@ -290,4 +290,3 @@ jerror_t JEventProcessor_TPOL_tree::fini(void)
     // Called before program exit after event processing is finished.
     return NOERROR;
 }
-

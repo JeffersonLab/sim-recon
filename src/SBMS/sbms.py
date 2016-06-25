@@ -511,6 +511,7 @@ def AddDANA(env):
 	AddROOT(env)
 	AddJANA(env)
 	AddCCDB(env)
+	AddRCDB(env)
 	AddHDDS(env)
 	AddXERCES(env)
 	AddEVIO(env)
@@ -559,6 +560,26 @@ def AddRCDB(env):
 		env.AppendUnique(CPPPATH = RCDB_CPPPATH)
 		env.AppendUnique(LIBPATH = RCDB_LIBPATH)
 		env.AppendUnique(LIBS    = RCDB_LIBS)
+
+
+##################################
+# RCDB
+##################################
+def AddRCDB(env):
+	rcdb_home = os.getenv('RCDB_HOME')
+	if(rcdb_home != None) :
+		env.AppendUnique(CXXFLAGS = ['-DHAVE_RCDB'])
+		RCDB_CPPPATH = ["%s/cpp/include" % (rcdb_home), "%s/cpp/include/SQLite" % (rcdb_home)]
+		RCDB_LIBPATH = "%s/cpp/lib" % (rcdb_home)
+		RCDB_LIBS = ["rcdb"]
+		env.AppendUnique(CPPPATH = RCDB_CPPPATH)
+		env.AppendUnique(LIBPATH = RCDB_LIBPATH)
+		env.AppendUnique(LIBS    = RCDB_LIBS)
+
+		MYSQL_CFLAGS = subprocess.Popen(["mysql_config", "--cflags"], stdout=subprocess.PIPE).communicate()[0]
+		AddCompileFlags(env, MYSQL_CFLAGS)
+#		MYSQL_LINKFLAGS = subprocess.Popen(["mysql_config", "--libs"], stdout=subprocess.PIPE).communicate()[0]
+#		AddLinkFlags(env, MYSQL_LINKFLAGS)
 
 
 ##################################

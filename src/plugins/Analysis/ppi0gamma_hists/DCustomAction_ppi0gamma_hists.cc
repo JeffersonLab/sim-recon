@@ -9,6 +9,8 @@
 
 void DCustomAction_ppi0gamma_hists::Initialize(JEventLoop* locEventLoop)
 {
+	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
@@ -73,59 +75,62 @@ bool DCustomAction_ppi0gamma_hists::Perform_Action(JEventLoop* locEventLoop, con
 
 	double dEdxCut = 2.2;
 	
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		// Fill histograms here
 		dEgamma->Fill(locBeamPhotonEnergy);
 		dMM2_MPi0->Fill(locPi0P4.M(), locMissingP4.M2());
 		
 		// cut on pi0 mass
-		if(locPi0P4.M() < 0.12 || locPi0P4.M() > 0.15) return true;
-		
-		dMM2_MOmega->Fill(locOmegaP4.M(), locMissingP4.M2());
-		dDeltaE_MOmega->Fill(locOmegaP4.M(),locMissingP4.E());
-
-		double locDeltaPhi = (locProtonP4.Phi() - locOmegaP4.Phi())*180./TMath::Pi();
-		if(locDeltaPhi > 360.) locDeltaPhi -= 360.;
-		if(locDeltaPhi < 0.) locDeltaPhi += 360.;
-		dPhiOmega_PhiP->Fill(locProtonP4.Phi()*180./TMath::Pi(), locOmegaP4.Phi()*180./TMath::Pi());
-		dDeltaPhi_MOmega->Fill(locOmegaP4.M(), locDeltaPhi);
-
-		// require proton and omega are back-to-back
-		if(locDeltaPhi < 170. || locDeltaPhi > 190.) return true;
-		dMM2_MOmegaCoplanarTag->Fill(locOmegaP4.M(), locMissingP4.M2());
-		dDeltaE_MOmegaCoplanarTag->Fill(locOmegaP4.M(), locMissingP4.E());
-		if(locOmegaP4.M() > 0.7 && locOmegaP4.M() < 0.9)
-			dMM2_DeltaE_CoplanarTag->Fill(locMissingP4.E(), locMissingP4.M2());
-
-		// tag proton with dE/dx
-		if(dEdx > dEdxCut) {
-			dMM2_MOmegaProtonTag->Fill(locOmegaP4.M(), locMissingP4.M2());
-			dDeltaE_MOmegaProtonTag->Fill(locOmegaP4.M(), locMissingP4.E());
-			if(locOmegaP4.M() > 0.7 && locOmegaP4.M() < 0.9)
-				dMM2_DeltaE_ProtonTag->Fill(locMissingP4.E(), locMissingP4.M2());
-
-			// invariant mass for exclusive g+p -> p + omega
-			if(fabs(locMissingP4.M2()) < 0.01 && fabs(locMissingP4.E()) < 0.1) {
-				dEgamma_MOmegaProtonTag->Fill(locOmegaP4.M(),locBeamPhotonEnergy);
-			}
-		}
-
-		// for pi0gamma candidates require recoil proton
-		if(fabs(locMissingP4.M2()) < 0.01 && fabs(locMissingP4.E()) < 0.1) {
-			dProton_dEdx_P->Fill(locProtonP4.Vect().Mag(), dEdx);
-			dProton_P_Theta->Fill(locProtonP4.Vect().Theta()*180/TMath::Pi(), locProtonP4.Vect().Mag());			
-			dEgamma_MOmegaKinTag->Fill(locOmegaP4.M(),locBeamPhotonEnergy);
-
-			if(locBeamPhotonEnergy > 2.5 && locBeamPhotonEnergy < 3.0){ // coherent peak
+		if(locPi0P4.M() > 0.12 && locPi0P4.M() > 0.15) {
 			
-			}
+			dMM2_MOmega->Fill(locOmegaP4.M(), locMissingP4.M2());
+			dDeltaE_MOmega->Fill(locOmegaP4.M(),locMissingP4.E());
 			
-			japp->RootUnLock();
-			return true;
+			double locDeltaPhi = (locProtonP4.Phi() - locOmegaP4.Phi())*180./TMath::Pi();
+			if(locDeltaPhi > 360.) locDeltaPhi -= 360.;
+			if(locDeltaPhi < 0.) locDeltaPhi += 360.;
+			dPhiOmega_PhiP->Fill(locProtonP4.Phi()*180./TMath::Pi(), locOmegaP4.Phi()*180./TMath::Pi());
+			dDeltaPhi_MOmega->Fill(locOmegaP4.M(), locDeltaPhi);
+			
+			// require proton and omega are back-to-back
+			if(locDeltaPhi > 170. && locDeltaPhi < 190.) {
+				dMM2_MOmegaCoplanarTag->Fill(locOmegaP4.M(), locMissingP4.M2());
+				dDeltaE_MOmegaCoplanarTag->Fill(locOmegaP4.M(), locMissingP4.E());
+				if(locOmegaP4.M() > 0.7 && locOmegaP4.M() < 0.9)
+					dMM2_DeltaE_CoplanarTag->Fill(locMissingP4.E(), locMissingP4.M2());
+				
+				// tag proton with dE/dx
+				if(dEdx > dEdxCut) {
+					dMM2_MOmegaProtonTag->Fill(locOmegaP4.M(), locMissingP4.M2());
+					dDeltaE_MOmegaProtonTag->Fill(locOmegaP4.M(), locMissingP4.E());
+					if(locOmegaP4.M() > 0.7 && locOmegaP4.M() < 0.9)
+						dMM2_DeltaE_ProtonTag->Fill(locMissingP4.E(), locMissingP4.M2());
+					
+					// invariant mass for exclusive g+p -> p + omega
+					if(fabs(locMissingP4.M2()) < 0.01 && fabs(locMissingP4.E()) < 0.1) {
+						dEgamma_MOmegaProtonTag->Fill(locOmegaP4.M(),locBeamPhotonEnergy);
+					}
+				}
+				
+				// for pi0gamma candidates require recoil proton
+				if(fabs(locMissingP4.M2()) < 0.01 && fabs(locMissingP4.E()) < 0.1) {
+					dProton_dEdx_P->Fill(locProtonP4.Vect().Mag(), dEdx);
+					dProton_P_Theta->Fill(locProtonP4.Vect().Theta()*180/TMath::Pi(), locProtonP4.Vect().Mag());			
+					dEgamma_MOmegaKinTag->Fill(locOmegaP4.M(),locBeamPhotonEnergy);
+					
+					if(locBeamPhotonEnergy > 2.5 && locBeamPhotonEnergy < 3.0){ // coherent peak
+						
+					}
+					
+				}
+			}
 		}
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 
 	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }

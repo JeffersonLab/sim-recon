@@ -1,0 +1,17 @@
+
+
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+env.AppendUnique(LIBS=['expat','dl','pthread'])
+
+env.AppendUnique(CXXFLAGS=['-std=c++11'])
+
+sbms.AddEVIO(env)
+sbms.AddDANA(env)
+sbms.executable(env)
+
+

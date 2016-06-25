@@ -26,8 +26,25 @@ class Df250EmulatorAlgorithm:public jana::JObject{
         ~Df250EmulatorAlgorithm(){};
 
         // The main emulation routines are overwritten in the inherited classes
-        virtual void EmulateFirmware(const Df250WindowRawData*, Df250PulseTime*, Df250PulsePedestal*, Df250PulseIntegral*) = 0;
+        virtual void EmulateFirmware(const Df250WindowRawData* wrd,
+                                     std::vector<Df250PulseTime*> &pt_objs,
+                                     std::vector<Df250PulsePedestal*> &pp_objs,
+                                     std::vector<Df250PulseIntegral*> &pi_objs)=0;
 
+        virtual void EmulateFirmware(const Df250WindowRawData* rawData,
+                                     std::vector<JObject*> &pt_objs,
+                                     std::vector<JObject*> &pp_objs,
+                                     std::vector<JObject*> &pi_objs)
+			{
+				std::vector<Df250PulseTime*> mypt_objs;
+				std::vector<Df250PulsePedestal*> mypp_objs;
+				std::vector<Df250PulseIntegral*> mypi_objs;
+				EmulateFirmware(rawData, mypt_objs, mypp_objs, mypi_objs);
+				for(auto p : mypt_objs) pt_objs.push_back(p);
+				for(auto p : mypp_objs) pp_objs.push_back(p);
+				for(auto p : mypi_objs) pi_objs.push_back(p);
+
+			}
     protected:
         // Suppress default constructor
         Df250EmulatorAlgorithm(){};

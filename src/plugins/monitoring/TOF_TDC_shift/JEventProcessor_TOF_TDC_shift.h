@@ -48,6 +48,7 @@ class JEventProcessor_TOF_TDC_shift:public jana::JEventProcessor{
   jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
   TH2I *hrocTimeRemainder_AdcTdcTimeDiff;
+  TH2I *hrocTimeRemainder_AdcTdcTimeDiff_corrected;
 
   ofstream OUTPUT;
 };

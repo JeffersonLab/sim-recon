@@ -18,6 +18,7 @@ void Usage(void);
 
 bool LIST_FACTORIES = false;
 bool SPARSIFY_SUMMARY = true;
+bool ALLOW_SPARSIFIED_EVIO = true;
 
 //-----------
 // main
@@ -50,6 +51,22 @@ int main(int narg, char *argv[])
 	//t.c_cc[VMIN] = 1;
 	tcsetattr(fileno(stdin), TCSANOW, &t);
 
+	// If only DEPICSvalue is specified to print, then automatically
+	// turn on sparsified reading unless user specifically requests
+	// that we don't.
+	if(toprint.size()==1 && ALLOW_SPARSIFIED_EVIO){
+		if( (toprint[0]=="DEPICSvalue") || (toprint[0]=="EPICSvalue")){
+			cout << endl;
+			cout << "-- Only DEPICSvalue objects requested" << endl;
+			cout << "-- * Enabling EVIO file mapping and sparse readout" << endl;
+			cout << "-- * Automatically invoking -f and -s options" << endl;
+			cout << endl;
+			gPARMS->SetParameter("EVIO:SPARSE_READ", true);
+			gPARMS->SetParameter("EVIO:EVENT_MASK", string("EPICS"));
+			PRINT_SUMMARY_HEADER = false;
+			SKIP_BORING_EVENTS = 1;
+		}
+	}
 
 	// Run though all events, calling our event processor's methods
 	app->SetShowTicker(0);
@@ -144,6 +161,9 @@ void ParseCommandLineArguments(int &narg, char *argv[])
 			case 'b':
 				PRINT_STATUS_BITS = true;
 				break;
+			case 'e':
+				ALLOW_SPARSIFIED_EVIO = false;
+				break;
 		}
 	}
 }
@@ -175,6 +195,7 @@ void Usage(void)
 	cout<<"   -f        Skip printing summary header lisiting all factories"<<endl;
 	cout<<"             (This disables auto-activating every single factory)"<<endl;
 	cout<<"   -b        Print event status bits"<<endl;
+	cout<<"   -e        Don't allow automatic EVIO sparse readout for EPICS data"<<endl;
 	cout<<endl;
 
 	dapp.Usage();

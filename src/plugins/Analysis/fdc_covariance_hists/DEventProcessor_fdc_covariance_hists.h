@@ -35,7 +35,6 @@ class DEventProcessor_fdc_covariance_hists:public jana::JEventProcessor{
 		TProfile2D *fdc_cov_calc;
 		
 		const DMagneticFieldMap *bfield;
-		DReferenceTrajectory *rt;		
 		
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method

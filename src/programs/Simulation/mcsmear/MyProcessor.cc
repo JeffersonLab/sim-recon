@@ -118,10 +118,224 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
 	//DApplication* locDApp = dynamic_cast<DApplication*>(japp);
     //DGeometry *dgeom=locDApp->GetDGeometry(locRunNumber);
 
+<<<<<<< HEAD
 	// load configuration parameters for all the detectors
 	if(smearer != NULL)
 		delete smearer;
 	smearer = new Smear(config, loop);
+=======
+   // Make sure jcalib is set
+   if(!jcalib){
+     _DBG_<<"ERROR - jcalib not set!"<<endl;
+     _DBG_<<"ERROR - Exiting ..."<<endl;
+     abort();
+   }
+   
+   // get the TOF parameters
+   {
+     cout<<"get TOF/tof_parms parameters from calibDB"<<endl;
+     map<string, double> tofparms;
+     jcalib->Get("TOF/tof_parms", tofparms);
+     TOF_SIGMA =  tofparms["TOF_SIGMA"];
+     TOF_PHOTONS_PERMEV =  tofparms["TOF_PHOTONS_PERMEV"];
+   }
+
+   // get the BCAL parameters
+   {
+     cout<<"get BCAL/bcal_parms parameters from calibDB"<<endl;
+     map<string, double> bcalparms;
+     jcalib->Get("BCAL/bcal_parms", bcalparms);
+     BCAL_DARKRATE_GHZ         =  bcalparms["BCAL_DARKRATE_GHZ"];
+     BCAL_SIGMA_SIG_RELATIVE   = bcalparms["BCAL_SIGMA_SIG_RELATIVE"];
+     BCAL_SIGMA_PED_RELATIVE   = bcalparms["BCAL_SIGMA_PED_RELATIVE"];
+     BCAL_SIPM_GAIN_VARIATION   = bcalparms["BCAL_SIPM_GAIN_VARIATION"];
+     BCAL_XTALK_FRACT         = bcalparms["BCAL_XTALK_FRACT"];
+     BCAL_INTWINDOW_NS         = bcalparms["BCAL_INTWINDOW_NS"];
+     BCAL_DEVICEPDE         = bcalparms["BCAL_DEVICEPDE"];
+     BCAL_SAMPLING_FRACT      = bcalparms["BCAL_SAMPLING_FRACT"];
+     BCAL_AVG_DARK_DIGI_VALS_PER_EVENT      = bcalparms["BCAL_AVG_DARK_DIGI_VALS_PER_EVENT"];
+     BCAL_PHOTONSPERSIDEPERMEV_INFIBER = bcalparms["BCAL_PHOTONSPERSIDEPERMEV_INFIBER"];
+     BCAL_SAMPLINGCOEFA = bcalparms["BCAL_SAMPLINGCOEFA"];
+     BCAL_SAMPLINGCOEFB = bcalparms["BCAL_SAMPLINGCOEFB"];
+     BCAL_TIMEDIFFCOEFA = bcalparms["BCAL_TIMEDIFFCOEFA"];
+     BCAL_TIMEDIFFCOEFB = bcalparms["BCAL_TIMEDIFFCOEFB"];
+     BCAL_TWO_HIT_RESOL = bcalparms["BCAL_TWO_HIT_RESOL"];
+
+     cout<<"get BCAL/mc_parms parameters from calibDB"<<endl;
+     map<string, double> bcalmcparms;
+     jcalib->Get("BCAL/mc_parms", bcalmcparms);
+     BCAL_C_EFFECTIVE = bcalmcparms["C_EFFECTIVE"];
+
+   }
+
+   {
+     cout<<"get BCAL/attenuation_parameters from calibDB"<<endl;
+     vector< vector<double> > in_atten_parameters;
+     jcalib->Get("BCAL/attenuation_parameters", in_atten_parameters);
+     attenuation_parameters.clear();
+     int channel = 0;
+     for (int module=1; module<=BCAL_NUM_MODULES; module++) {
+   	  for (int layer=1; layer<=BCAL_NUM_LAYERS; layer++) {
+   		for (int sector=1; sector<=BCAL_NUM_SECTORS; sector++) {
+			//int cell_id = GetCalibIndex(module,layer,sector);
+
+			vector<double> new_params(3,0.);
+			//attenuation_parameters[cell_id][0] = in_atten_parameters[channel][0];
+			//attenuation_parameters[cell_id][1] = in_atten_parameters[channel][1];
+			//attenuation_parameters[cell_id][2] = in_atten_parameters[channel][2];
+			// hack to workaround odd CCDB behavior
+			//attenuation_parameters[cell_id][0] = in_atten_parameters[channel][1];
+			//attenuation_parameters[cell_id][1] = in_atten_parameters[channel][2];
+			//attenuation_parameters[cell_id][2] = in_atten_parameters[channel][0];
+			 
+			new_params[0] = in_atten_parameters[channel][0];
+			new_params[1] = in_atten_parameters[channel][1];
+			new_params[2] = in_atten_parameters[channel][2];
+			attenuation_parameters.push_back( new_params );
+
+			channel++;
+		}
+	  }
+     }
+   }
+
+   {
+     cout<<"get BCAL/effective_velocities parameters from calibDB"<<endl;
+     vector <double> effective_velocities_temp;
+     jcalib->Get("BCAL/effective_velocities", effective_velocities_temp);
+     for (unsigned int i = 0; i < effective_velocities_temp.size(); i++){
+       effective_velocities.push_back(effective_velocities_temp.at(i));
+     }
+   }
+
+   {
+     cout<<"get BCAL/digi_scales parameters from calibDB"<<endl;
+     map<string, double> bcaldigiscales;
+     jcalib->Get("BCAL/digi_scales", bcaldigiscales);
+     BCAL_NS_PER_ADC_COUNT = bcaldigiscales["BCAL_ADC_TSCALE"];
+     BCAL_NS_PER_TDC_COUNT = bcaldigiscales["BCAL_TDC_SCALE"];
+   }
+
+   {
+     cout<<"get BCAL/base_time_offset parameters from calibDB"<<endl;
+     map<string, double> bcaltimeoffsets;
+     jcalib->Get("BCAL/base_time_offset", bcaltimeoffsets);
+     BCAL_BASE_TIME_OFFSET = bcaltimeoffsets["BCAL_BASE_TIME_OFFSET"];
+     BCAL_TDC_BASE_TIME_OFFSET = bcaltimeoffsets["BCAL_TDC_BASE_TIME_OFFSET"];
+   }
+
+   {
+     cout<<"get FCAL/fcal_parms parameters from calibDB"<<endl;
+     map<string, double> fcalparms;
+     jcalib->Get("FCAL/fcal_parms", fcalparms);
+     if (FCAL_PHOT_STAT_COEF == 0.0)
+       FCAL_PHOT_STAT_COEF   = fcalparms["FCAL_PHOT_STAT_COEF"]; 
+     if (FCAL_BLOCK_THRESHOLD == 0.0)
+       FCAL_BLOCK_THRESHOLD  = fcalparms["FCAL_BLOCK_THRESHOLD"];
+   }
+      
+
+   {
+     cout<<"get FCAL/gains from calibDB"<<endl;
+     vector <double> FCAL_GAINS_TEMP;
+     jcalib->Get("FCAL/gains", FCAL_GAINS_TEMP);
+     for (unsigned int i = 0; i < FCAL_GAINS_TEMP.size(); i++){
+       FCAL_GAINS.push_back(FCAL_GAINS_TEMP.at(i));
+     }
+   }  
+   
+   {
+     cout<<"get FCAL/digi_scales parameters from calibDB"<<endl;
+     map<string, double> fcaldigiscales;
+     jcalib->Get("FCAL/digi_scales", fcaldigiscales);
+     FCAL_MC_ESCALE = fcaldigiscales["FCAL_ADC_ASCALE"];
+   }
+
+   {
+     cout<<"get CDC/cdc_parms parameters from calibDB"<<endl;
+     map<string, double> cdcparms;
+     jcalib->Get("CDC/cdc_parms", cdcparms);
+     if (CDC_TDRIFT_SIGMA == 0.0)
+       CDC_TDRIFT_SIGMA   = cdcparms["CDC_TDRIFT_SIGMA"]; 
+     if (CDC_TIME_WINDOW == 0.0)
+       CDC_TIME_WINDOW    = cdcparms["CDC_TIME_WINDOW"];
+     if (CDC_PEDESTAL_SIGMA == 0.0)
+       CDC_PEDESTAL_SIGMA = cdcparms["CDC_PEDESTAL_SIGMA"]; 
+     if (CDC_THRESHOLD_FACTOR == 0.0)
+       CDC_THRESHOLD_FACTOR = cdcparms["CDC_THRESHOLD_FACTOR"];
+   }
+
+   {
+     cout<<"get FDC/fdc_parms parameters from calibDB"<<endl;
+     map<string, double> fdcparms;
+     jcalib->Get("FDC/fdc_parms", fdcparms);
+
+     if (FDC_TDRIFT_SIGMA == 0.0)
+       FDC_TDRIFT_SIGMA      = fdcparms["FDC_TDRIFT_SIGMA"];
+     if (FDC_CATHODE_SIGMA ==0.0)
+       FDC_CATHODE_SIGMA     = fdcparms["FDC_CATHODE_SIGMA"];
+     if (FDC_THRESHOLD_FACTOR == 0.0)
+       FDC_THRESHOLD_FACTOR = fdcparms["FDC_THRESHOLD_FACTOR"];
+     FDC_PED_NOISE         = fdcparms["FDC_PED_NOISE"];
+
+     if (FDC_TIME_WINDOW == 0.0)
+       FDC_TIME_WINDOW       = fdcparms["FDC_TIME_WINDOW"];
+
+     if (FDC_HIT_DROP_FRACTION == 0.0)
+       FDC_HIT_DROP_FRACTION = fdcparms["FDC_HIT_DROP_FRACTION"];  
+     if (FDC_THRESH_KEV == 0.0)
+       FDC_THRESH_KEV = fdcparms["FDC_THRESH_KEV"]; 
+   }
+
+   {
+     cout<<"get START_COUNTER/start_parms parameters from calibDB"<<endl;
+     map<string, double> startparms;
+     jcalib->Get("START_COUNTER/start_parms", startparms);
+
+     START_SIGMA = startparms["START_SIGMA"] ;
+     START_PHOTONS_PERMEV = startparms["START_PHOTONS_PERMEV"];
+
+   }
+
+   // hist file
+   fdc_drift_time_smear_hist=new TH2F("fdc_drift_time_smear_hist","Drift time smearing for FDC",
+                  300,0.0,0.6,400,-200,200);
+   fdc_drift_dist_smear_hist=new TH2F("fdc_drift_dist_smear_hist","Drift distance smearing for FDC",
+                  100,0.0,0.6,400,-0.5,0.5);
+   double tmax=TRIGGER_LOOKBACK_TIME+FDC_TIME_WINDOW;
+   int num_time_bins=int(FDC_TIME_WINDOW);
+   fdc_drift_time=new TH2F("fdc_drift_time","FDC drift distance vs. time",num_time_bins,TRIGGER_LOOKBACK_TIME,tmax,100,0,1.);
+   
+   fdc_anode_mult = new TH1F("fdc_anode_mult","wire hit multiplicity",20,-0.5,19.5);
+   fdc_cathode_charge = new TH1F("fdc_cathode_charge","charge on strips",1000,0,1000);
+
+   tmax=TRIGGER_LOOKBACK_TIME+CDC_TIME_WINDOW;
+   num_time_bins=int(CDC_TIME_WINDOW);
+   cdc_drift_time = new TH2F("cdc_drift_time","CDC drift distance vs time",num_time_bins,TRIGGER_LOOKBACK_TIME,tmax,80,0.,0.8);
+
+   cdc_drift_smear = new TH2F("cdc_drift_smear","CDC drift smearing",
+               100,0.0,800.0,100,-0.1,0.1);
+   
+   cdc_charge  = new TH1F("cdc_charge","Measured charge in straw",1000,-10e3,40e3);
+
+   // Get number of cdc wires per ring and the radii of each ring
+   vector<vector<DCDCWire *> >cdcwires;
+   dgeom->GetCDCWires(cdcwires);
+   for (unsigned int i=0;i<cdcwires.size();i++) {
+      NCDC_STRAWS.push_back(cdcwires[i].size());
+      CDC_RING_RADIUS.push_back(cdcwires[i][0]->origin.Perp());
+   }  
+   // Get the FDC z positions for the wire planes
+   dgeom->GetFDCZ(FDC_LAYER_Z);
+
+   // Coefficient used to calculate FDCsingle wire rate. We calculate
+   // it once here just to save calculating it for every wire in every event
+   FDC_RATE_COEFFICIENT = exp(-log(4.0)/23.0)/2.0/log(24.0)*FDC_TIME_WINDOW/1000.0E-9;
+   
+   // Something is a little off in my calculation above so I scale it down via
+   // an emprical factor:
+   FDC_RATE_COEFFICIENT *= 0.353;
+>>>>>>> a3bc860fd7e657d52aa2fc5be6a4b0cd722fd405
 
 	return NOERROR;
 }

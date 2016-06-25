@@ -21,8 +21,10 @@ class Df250EmulatorAlgorithm_v1:public Df250EmulatorAlgorithm{
         ~Df250EmulatorAlgorithm_v1(){};
 
         //Only the emulation routines need to be overwritten
-        void EmulateFirmware(const Df250WindowRawData*, Df250PulseTime*, Df250PulsePedestal*, Df250PulseIntegral*);
-
+        void EmulateFirmware(const Df250WindowRawData* rawData,
+                             std::vector<Df250PulseTime*> &pt_objs,
+                             std::vector<Df250PulsePedestal*> &pp_objs,
+                             std::vector<Df250PulseIntegral*> &pi_objs);
     protected:
         Df250EmulatorAlgorithm_v1(){};
         // Enables forced use of default values

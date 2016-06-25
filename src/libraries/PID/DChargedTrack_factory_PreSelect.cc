@@ -16,7 +16,7 @@ jerror_t DChargedTrack_factory_PreSelect::init(void)
 		//This is because some/all of these pointers are just copied from earlier objects, and should not be deleted.  
 	SetFactoryFlag(NOT_OBJECT_OWNER);
 
-	dMinTrackingFOM = 0.0027; // +/- 3 sigma
+	dMinTrackingFOM = -1.0;
 	dHasDetectorMatchFlag = true; //require tracks to have a detector match
 
 	return NOERROR;

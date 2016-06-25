@@ -13,6 +13,8 @@ void DCustomAction_HistOmegaVsMissProton::Initialize(JEventLoop* locEventLoop)
 	//Create any histograms/trees/etc. within a ROOT lock. 
 		//This is so that when running multithreaded, only one thread is writing to the ROOT file at a time. 
 
+	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		// Optional: Useful utility functions.
@@ -38,12 +40,14 @@ bool DCustomAction_HistOmegaVsMissProton::Perform_Action(JEventLoop* locEventLoo
 	DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, false);
 	DLorentzVector locOmegaP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, 1, false);
 
-	//Optional: Fill histograms
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		dHist_OmegaVsMissProton->Fill(locMissingP4.M(), locOmegaP4.M());
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 
 	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }

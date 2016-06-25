@@ -36,8 +36,11 @@ public:
     Double_t w_time[nmax];               ///< Half-pulse-height time in ns
     UInt_t sector[nmax];
     Double_t phi[nmax];
-    Double_t E_pair,E_lhit,E_rhit,t_lhit,t_rhit,t_diff_pair;
-    Double_t E_tag,t_tag,E_diff;
+    Double_t E_lhit,E_rhit,t_lhit,t_rhit;
+    UInt_t ntag;
+    static const UInt_t ntag_max = 12;
+    Double_t E_tag[ntag_max],t_tag[ntag_max];
+    Bool_t is_tagm[ntag_max];
 
     int GetSector(int slot,int channel);
     double GetPhi(int sector);
@@ -52,4 +55,3 @@ private:
 };
 
 #endif // _JEventProcessor_TPOL_tree_
-

@@ -38,6 +38,9 @@ class DDetectorMatches_factory_Combo : public jana::JFactory<DDetectorMatches>
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		pair<double, double> Calc_EnergyRatio(const DTrackTimeBased* locTrackTimeBased, const DTrackTimeBased* locOriginalTrackTimeBased) const;
+		double Calc_PVariance(const DTrackTimeBased* locTrack) const;
+
 		DDetectorMatches_factory* dDetectorMatchesFactory;
 };
 

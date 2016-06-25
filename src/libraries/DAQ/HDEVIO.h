@@ -162,16 +162,17 @@ class HDEVIO{
 		uint64_t _gcount;
 		
 		
-		uint32_t *buff;         // buffer holding current block (if any)
-		uint32_t *next;         // Pointer to start of next EVIO event within buff
-		uint32_t *buff_end;     // Pointer to word just past end of valid buffer words
-		uint32_t buff_size;     // memory currently allocated for buff in words
-		uint32_t buff_len;      // valid words in buff
-		uint32_t buff_limit;    // maximum allowed allocation for buff_max
-		bool swap_needed;       // true if block header indicates swapping is needed
-		BLOCKHEADER_t *bh;      // =buff, but cast as a BLOCKHEADER_t*
-		uint32_t last_event_len;// used to hold last event length in words if user buffer was
-		                        // too small, this is how big is should be allocated
+		uint32_t *buff;           // buffer holding current block (if any)
+		uint32_t *next;           // Pointer to start of next EVIO event within buff
+		uint32_t *buff_end;       // Pointer to word just past end of valid buffer words
+		uint32_t buff_size;       // memory currently allocated for buff in words
+		uint32_t buff_len;        // valid words in buff
+		uint32_t buff_limit;      // maximum allowed allocation for buff_max
+		bool swap_needed;         // true if block header indicates swapping is needed
+		BLOCKHEADER_t *bh;        // =buff, but cast as a BLOCKHEADER_t*
+		streampos last_event_pos; // used to hold file position at last event read in
+		uint32_t last_event_len;  // used to hold last event length in words if user buffer was
+		                          // too small, this is how big is should be allocated
 		
 		stringstream err_mess;  // last error message
 		uint32_t err_code;    // last error code
@@ -185,6 +186,8 @@ class HDEVIO{
 		bool ReadBlock(void);
 		bool read(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
 		bool readSparse(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
+		bool readNoFileBuff(uint32_t *user_buff, uint32_t user_buff_len, bool allow_swap=true);
+		void rewind(void);
 
 		uint32_t swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len);
 		uint32_t swap_tagsegment(uint32_t *outbuff, uint32_t *inbuff, uint32_t len);
@@ -207,9 +210,12 @@ class HDEVIO{
 		bool is_mapped;
 		uint64_t total_size_bytes;
 		vector<EVIOBlockRecord> evio_blocks;
-		uint32_t next_search_block;
 		void MapBlocks(bool print_ticker=true);
 		void MapEvents(BLOCKHEADER_t &bh, EVIOBlockRecord &br);
+		vector<EVIOBlockRecord>::iterator sparse_block_iter;
+		uint32_t sparse_event_idx;
+		EVIOBlockRecord NB_block_record;
+		streampos NB_next_pos;
 
 		void ClearErrorMessage(void){ err_mess.str(""); err_mess.clear();}
 		void SetErrorMessage(string mess){ ClearErrorMessage(); err_mess<<mess;}
@@ -260,11 +266,7 @@ class HDEVIO{
 		inline void swap_block(uint16_t *inbuff, uint16_t len, uint16_t *outbuff)
 		{
 			for(uint32_t i=0; i<len; i++, inbuff++, outbuff++){
-				uint16_t inword = *inbuff;  // copy word to allow using same buffer for input and output
-				uint8_t *inptr  = (uint8_t*)&inword;
-				uint8_t *outptr = (uint8_t*)&outbuff[1];
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
+				*outbuff = swap16(*inbuff);
 			}
 		}
 
@@ -274,13 +276,7 @@ class HDEVIO{
 		inline void swap_block(uint32_t *inbuff, uint32_t len, uint32_t *outbuff)
 		{
 			for(uint32_t i=0; i<len; i++, inbuff++, outbuff++){
-				uint32_t inword = *inbuff;  // copy word to allow using same buffer for input and output
-				uint8_t *inptr  = (uint8_t*)&inword;
-				uint8_t *outptr = (uint8_t*)&outbuff[1];
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
+				*outbuff = swap32(*inbuff);
 			}
 		}
 
@@ -289,19 +285,8 @@ class HDEVIO{
 		//---------------------------------
 		inline void swap_block(uint64_t *inbuff, uint64_t len, uint64_t *outbuff)
 		{
-			for(uint32_t i=0; i<len; i++, inbuff++, outbuff++){
-				uint64_t inword = *inbuff;  // copy word to allow using same buffer for input and output
-				uint8_t *inptr  = (uint8_t*)&inword;
-				uint8_t *outptr = (uint8_t*)&outbuff[1];
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
-
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
-				*(--outptr) = *inptr++;
+			for(uint64_t i=0; i<len; i++, inbuff++, outbuff++){
+				*outbuff = swap64(*inbuff);
 			}
 		}
 

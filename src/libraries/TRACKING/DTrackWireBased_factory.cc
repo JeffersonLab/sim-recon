@@ -80,6 +80,11 @@ jerror_t DTrackWireBased_factory::init(void)
     COSMICS=false;
     gPARMS->SetDefaultParameter("TRKFIND:COSMICS",COSMICS);
 
+    SKIP_MASS_HYPOTHESES_WIRE_BASED=false; 
+    gPARMS->SetDefaultParameter("TRKFIT:SKIP_MASS_HYPOTHESES_WIRE_BASED",
+				SKIP_MASS_HYPOTHESES_WIRE_BASED);
+
+
 	if(!SKIP_MASS_HYPOTHESES_WIRE_BASED)
 	{
 		vector<int> hypotheses;
@@ -94,7 +99,7 @@ jerror_t DTrackWireBased_factory::init(void)
 		{
 			locMassStream << hypotheses[loc_i];
 			if(loc_i != (hypotheses.size() - 1))
-				locMassStream << ", ";
+				locMassStream << ",";
 		}
 
 		string HYPOTHESES = locMassStream.str();
@@ -146,10 +151,7 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int32_t runnumber
     _DBG_<<"Unable to get a DTrackFitter object! NO Charged track fitting will be done!"<<endl;
     return RESOURCE_UNAVAILABLE;
   }
-  SKIP_MASS_HYPOTHESES_WIRE_BASED=false; 
-  gPARMS->SetDefaultParameter("TRKFIT:SKIP_MASS_HYPOTHESES_WIRE_BASED",
-				    SKIP_MASS_HYPOTHESES_WIRE_BASED);
-
+ 
   USE_HITS_FROM_CANDIDATE=false;
   gPARMS->SetDefaultParameter("TRKFIT:USE_HITS_FROM_CANDIDATE",
 			      USE_HITS_FROM_CANDIDATE);
@@ -200,8 +202,12 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
   else{
     loop->Get(candidates);
   }
+  
   if (candidates.size()==0) return NOERROR;
   
+  // Reset the number of used reference trajectories from the pool
+  num_used_rts=0;
+
   if (dIsNoFieldFlag){
     // Copy results over from the StraightLine or CDCCOSMIC candidate and add reference
     // trajectory
@@ -260,8 +266,6 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 
 
-  // Reset the number of used reference trajectories from the pool
-  num_used_rts=0;
 
   // Loop over candidates
   for(unsigned int i=0; i<candidates.size(); i++){

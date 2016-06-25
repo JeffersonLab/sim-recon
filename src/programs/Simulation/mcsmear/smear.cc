@@ -269,7 +269,7 @@ void Smear::SmearFCAL(hddm_s::HDDM *record)
    ///
    /// To access the "truth" values in DANA, get the DFCALHit objects using the
    /// "TRUTH" tag.
-   
+
    if (!fcalGeom)
       fcalGeom = new DFCALGeometry();
 
@@ -286,17 +286,29 @@ void Smear::SmearFCAL(hddm_s::HDDM *record)
          // anyway.
          if (!fcalGeom->isBlockActive(iter->getRow(), iter->getColumn()))
             continue;
+         
+         // Get gain constant per block
+         int channelnum = fcalGeom->channel(iter->getRow(), iter->getColumn()); 
+         double FCAL_gain = FCAL_GAINS.at(channelnum);
+
          // Smear the energy and timing of the hit
          double sigma = fcal_config->FCAL_PHOT_STAT_COEF/sqrt(titer->getE());
-         double E = titer->getE() * (1.0 + SampleGaussian(sigma));
+              
+         // Apply constant scale factor to MC eneregy. 06/22/2016 A. Subedi
+         double E = fcal_config->FCAL_MC_ESCALE * titer->getE() * (1.0 + SampleGaussian(sigma)); 
+         
+         
          // Smear the time by 200 ps (fixed for now) 7/2/2009 DL
          double t = titer->getT() + SampleGaussian(fcal_config->FCAL_TSIGMA); 
          // Apply a single block threshold. 
-         if (E >= fcal_config->FCAL_BLOCK_THRESHOLD) {
-            hddm_s::FcalHitList hits = iter->addFcalHits();
-            hits().setE(E);
-            hits().setT(t);
+         
+         // Scale threshold by gains         
+         if (E >= FCAL_BLOCK_THRESHOLD * FCAL_gain ){
+               hddm_s::FcalHitList hits = iter->addFcalHits();
+               hits().setE(E);
+               hits().setT(t);
          }
+        
       }
 
       if (config->DROP_TRUTH_HITS)

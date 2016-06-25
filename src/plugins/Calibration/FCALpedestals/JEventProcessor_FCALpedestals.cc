@@ -70,8 +70,6 @@ jerror_t JEventProcessor_FCALpedestals::init(void)
   // and filling historgrams in this plugin, you should lock the
   // ROOT mutex like this:
   //
-  japp->RootWriteLock();
-
   TDirectory *main = gDirectory;
   gDirectory->mkdir("FCAL_pedestals")->cd();
   
@@ -81,7 +79,6 @@ jerror_t JEventProcessor_FCALpedestals::init(void)
   }
 
   main->cd();
-  japp->RootUnLock();
 
   return NOERROR;
 }
@@ -134,7 +131,9 @@ jerror_t JEventProcessor_FCALpedestals::evnt(JEventLoop *eventLoop,
   vector< const DFCALDigiHit*  > digiHits;
   eventLoop->Get( digiHits );
    
-  japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
   
   for( vector< const DFCALDigiHit* >::const_iterator dHitItr = digiHits.begin();
        dHitItr != digiHits.end(); ++dHitItr ){
@@ -151,9 +150,7 @@ jerror_t JEventProcessor_FCALpedestals::evnt(JEventLoop *eventLoop,
     }
   }
 
-  japp->RootUnLock(); 
-
-
+ 	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }

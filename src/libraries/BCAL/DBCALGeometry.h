@@ -35,6 +35,12 @@ using namespace jana;
 
 #define BCAL_SUM_CELL
 
+//THIS WHOLE CLASS NEEDS TO BE ENTIRELY REFACTORED.
+//THIS IS ALL HORRIBLY DANGEROUS
+//THIS IS NOT EVEN !!!REMOTELY!!! THREAD-SAFE.
+//NOTHING HERE SHOULD BE STATIC
+//INITIALIZE WITH NO RUN NUMBER SHOULD NOT BE SUPPORTED.
+
 class DBCALGeometry : public JObject {
   
 public:
@@ -76,7 +82,7 @@ public:
   // Methods to access and initialize the private variables
   static bool initialized;
 
-  static void Initialize(int runnumber=9999);
+  static void Initialize(int runnumber=11000); //This is TERRIBLE.  //Just AWFUL
 
   static float GetBCAL_inner_rad();
 

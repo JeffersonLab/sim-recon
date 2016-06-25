@@ -198,9 +198,11 @@ jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, uint64_t eventnumber
 		}
 	}
 	
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+
 	// Count FCAL hits
 	unsigned int Nfcalhits = 0;
-	pthread_mutex_lock(&fcal_mutex);
 	for(unsigned int i=0; i<fcalhits.size(); i++){
 		// Apply time window
 		if(fcalhits[i]->t < tmin_fcal)continue;
@@ -214,7 +216,6 @@ jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, uint64_t eventnumber
 
 		Nfcalhits++;
 	}
-	pthread_mutex_unlock(&fcal_mutex);
 	
 	// Count CCAL hits
 	unsigned int Nccalhits = 0;
@@ -228,7 +229,6 @@ jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, uint64_t eventnumber
 	
 	// Count CDC hits
 	unsigned int Ncdchits = 0;
-	pthread_mutex_lock(&cdc_mutex);
 	for(unsigned int i=0; i<cdchits.size(); i++){
 		// Apply time window
 		if(cdchits[i]->t < tmin_cdc)continue;
@@ -242,12 +242,10 @@ jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, uint64_t eventnumber
 
 		Ncdchits++;
 	}
-	pthread_mutex_unlock(&cdc_mutex);
 	
 	// Count FDC wire and FDC strip hits
 	unsigned int Nfdchits_anode = 0;
 	unsigned int Nfdchits_cathode = 0;
-	pthread_mutex_lock(&fdc_mutex);
 	for(unsigned int i=0; i<fdchits.size(); i++){
 	
 		// Apply time window
@@ -271,11 +269,9 @@ jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, uint64_t eventnumber
 			Nfdchits_anode++;
 		}
 	}
-	pthread_mutex_unlock(&fdc_mutex);
 	
 	// Count TOF hits
 	unsigned int Ntofhits = 0;
-	pthread_mutex_lock(&tof_mutex);
 	for(unsigned int i=0; i<tofhits.size(); i++){
 		// Apply time window
 		if(tofhits[i]->t < tmin_tof)continue;
@@ -288,7 +284,6 @@ jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, uint64_t eventnumber
 
 		Ntofhits++;
 	}
-	pthread_mutex_unlock(&tof_mutex);
 	
 	// Count Start Counter hits
 	unsigned int Nschits = 0;
@@ -318,9 +313,6 @@ jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, uint64_t eventnumber
 		Ntaghhits++;
 	}
 
-	// Lock mutex while we fill in Event tree
-	pthread_mutex_lock(&evt_mutex);
-	
 	evt->event = eventnumber;
 	evt->Egamma = beamphotons.size()>0 ? beamphotons[0]->momentum().Mag():0.0;
 	evt->L1a_fired = trig->L1a_fired;
@@ -357,8 +349,7 @@ jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, uint64_t eventnumber
 	// Fill event tree
 	evt_tree->Fill();
 	
-	// Unlock mutex
-	pthread_mutex_unlock(&evt_mutex);
+	japp->RootUnLock(); //RELEASE ROOT LOCK
 	
 	return NOERROR;
 }

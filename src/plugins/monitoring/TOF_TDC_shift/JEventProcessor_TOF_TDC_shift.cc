@@ -39,19 +39,16 @@ JEventProcessor_TOF_TDC_shift::~JEventProcessor_TOF_TDC_shift() {
 
 jerror_t JEventProcessor_TOF_TDC_shift::init(void) {
   
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
   // Create root folder for ST and cd to it, store main dir
   TDirectory *main = gDirectory;
   gDirectory->mkdir("TOF_TDC_shift")->cd();
 
   // TI remainder vs (ADC time - TDC time)
   hrocTimeRemainder_AdcTdcTimeDiff = new TH2I("hrocTimeRemainder_AdcTdcTimeDiff",";t_{ADC} - t_{TDC};TI % 6",4000,-1500,500,6,-0.5,5.5);
+  hrocTimeRemainder_AdcTdcTimeDiff_corrected = new TH2I("hrocTimeRemainder_AdcTdcTimeDiff_corrected",";t_{ADC} - t_{TDC};TI % 6",600,-30,30,6,-0.5,5.5);
 
   // cd back to main directory
   main->cd();
-
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
   return NOERROR;
 }
@@ -72,11 +69,13 @@ jerror_t JEventProcessor_TOF_TDC_shift::evnt(JEventLoop *eventLoop, uint64_t eve
   // Get all data objects first so we minimize the time we hold the ROOT mutex lock
 
   // Each detector's hits
+  vector<const DTOFHit*>            dtofhits;            // TOF Hits
   vector<const DTOFDigiHit*>        dtofdigihits;        // TOF DigiHits
   vector<const DTOFTDCDigiHit*>     dtoftdcdigihits;     // TOF TDC DigiHits
   vector<const DCODAROCInfo*>       dcodarocinfo;        // DCODAROCInfo
 
   // TOF
+  eventLoop->Get(dtofhits);
   eventLoop->Get(dtofdigihits);
   eventLoop->Get(dtoftdcdigihits);
   eventLoop->Get(dcodarocinfo);
@@ -93,9 +92,9 @@ jerror_t JEventProcessor_TOF_TDC_shift::evnt(JEventLoop *eventLoop, uint64_t eve
     }
   }
 
-  // Lock ROOT mutex so other threads won't interfere 
-  japp->RootWriteLock();
-
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   // Fill histogram of TI % 6 vs (ADC time - TDC time)
   for(UInt_t tof = 0;tof<dtofdigihits.size();tof++){
@@ -113,8 +112,13 @@ jerror_t JEventProcessor_TOF_TDC_shift::evnt(JEventLoop *eventLoop, uint64_t eve
       }
     }
   }
-  // Lock ROOT mutex so other threads won't interfere 
-  japp->RootUnLock();
+
+  for(UInt_t tof = 0;tof<dtofhits.size();tof++){
+      double diff = dtofhits[tof]->t_fADC - dtofhits[tof]->t_TDC;
+      hrocTimeRemainder_AdcTdcTimeDiff_corrected->Fill(diff, TriggerBIT);
+  }
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }

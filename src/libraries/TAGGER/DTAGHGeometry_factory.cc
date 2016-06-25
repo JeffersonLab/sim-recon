@@ -20,7 +20,7 @@ jerror_t DTAGHGeometry_factory::brun(JEventLoop *loop, int32_t runnumber)
 	}
 
    flags = PERSISTANT;
-   _data.push_back( new DTAGHGeometry(loop, factory_tag, runnumber) );
+   _data.push_back( new DTAGHGeometry(loop) );
    
    return NOERROR;
 }
