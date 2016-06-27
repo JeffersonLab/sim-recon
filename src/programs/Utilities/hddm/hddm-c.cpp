@@ -94,7 +94,7 @@ void usage()
         << "    hddm-c [-v | -o <filename>] {HDDM file}\n\n"
         << "Options:\n"
         <<  "    -v			validate only\n"
-        <<  "    -o <filename>	write to <filename>.h"
+        <<  "    -o <filename>	write to <filename>.h, <filename>.c"
         << std::endl;
 }
 
