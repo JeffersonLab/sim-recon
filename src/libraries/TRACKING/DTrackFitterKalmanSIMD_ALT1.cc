@@ -22,7 +22,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
   DMatrix5x1 S0,S0_; //State vector
   DMatrix5x5 Ctest; // Covariance matrix
   //  double Vc=0.2028; // covariance for cdc wires =1.56*1.56/12.;
-  double Vc=0.0507*1.15;
+  double Vc=0.0507;
 
   // Vectors for cdc wires
   DVector2 origin,dir,wirepos;
