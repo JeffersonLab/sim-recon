@@ -251,7 +251,7 @@ c      =  3 nuclear fission with ineleastic scattering
 c      =  4 neutron capture
 c
 c --- intact code ---
-      kk=int(abs(q(jma+11))) !number of material components
+      kk=integer(abs(q(jma+11))) !number of material components
       alam1=0.0
       call grndm(rndm,1)
       rat=rndm(1)*alam
@@ -704,12 +704,12 @@ c
 c --- one or more secondaries have been generated ---
       do 61 l=1,ntot
       index=(l-1)*12
-      jnd=int(eve(index+12))
+      jnd=integer(eve(index+12))
 c
 c --- make choice between k0 long / k0 short ---
       if ((jnd .ne. 11) .and. (jnd .ne. 12)) go to 63
       call grndm(rndm,1)
-      jnd=int(11.5+rndm(1))
+      jnd=integer(11.5+rndm(1))
 c
 c --- forget about neutrinos ---
  63   continue
