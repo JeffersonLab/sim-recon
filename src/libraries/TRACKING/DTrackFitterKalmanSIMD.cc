@@ -148,6 +148,7 @@ void DTrackFitterKalmanSIMD::ComputeCDCDrift(double dphi,double delta,double t,
       //double dtc =(CDC_DRIFT_BSCALE_PAR1 + CDC_DRIFT_BSCALE_PAR2 * B)* t;
         //tcorr=t-dtc;
 	 
+      //      CDC_RES_PAR2=0.005;
 	double sigma=CDC_RES_PAR1/(tcorr+1.)+CDC_RES_PAR2;
 
 	// Variables to store values for time-to-distance functions for delta=0
@@ -3676,8 +3677,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
     DMatrix5x5 Q;  // Process noise covariance matrix
     DMatrix5x1 K;  // KalmanSIMD gain matrix
     DMatrix5x5 Ctest; // covariance matrix
-    double V=0.2028; //1.56*1.56/12.;  // Measurement variance
-    //double V=0.0507*1.15;
+    // double V=0.2028; //1.56*1.56/12.;  // Measurement variance
+    double V=0.0507;
     double InvV; // inverse of variance
     //DMatrix5x1 dS;  // perturbation in state vector
     DMatrix5x1 S0,S0_; // state vector
@@ -4003,7 +4004,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
                 double prediction=doca*cosstereo;
 
                 // Measurement
-                double measurement=0.,tdrift=0.,tcorr=0.;
+                double measurement=0.39,tdrift=0.,tcorr=0.;
                 if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){	
 		  // Find offset of wire with respect to the center of the
 		  // straw at this z position
@@ -4239,8 +4240,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
   DMatrix5x5 Ctest; // Covariance matrix
   DMatrix2x2 InvV; // Inverse of error matrix
   
-  double Vc=0.2083;
-  if (fit_type==kWireBased) V(0,0)*=1.15; // empirical scale...
+  double Vc=0.0507;
 
   // Vectors for cdc wires
   DVector2 origin,dir,wirepos;
@@ -4924,7 +4924,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	  //H.Print();
 	  
 	  // The next measurement
-	  double dm=0.,tdrift=0.,tcorr=0.;
+	  double dm=0.39,tdrift=0.,tcorr=0.;
 	  if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){
 	    // Find offset of wire with respect to the center of the
 	    // straw at this z position
@@ -5274,7 +5274,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
     DMatrix5x1 S0,S0_,Stest; //State vector
     DMatrix5x5 Ctest; // covariance matrix
     //DMatrix5x1 dS;  // perturbation in state vector
-    double V=0.2028;
+    double V=0.0507;
 
     // set used_in_fit flags to false for cdc hits
     unsigned int num_cdc=cdc_used_in_fit.size();
@@ -5622,7 +5622,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                 //H.Print();
 
                 // The next measurement
-                double dm=0.,tdrift=0.,tcorr=0.;
+                double dm=0.39,tdrift=0.,tcorr=0.;
                 if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){
 		  // Find offset of wire with respect to the center of the
 		  // straw at this z position
