@@ -23,10 +23,12 @@ fcal_config_t::fcal_config_t(JEventLoop *loop)
 		
 	cout<<"get FCAL/gains from calibDB"<<endl;
     vector <double> FCAL_GAINS_TEMP;
-
-    loop->GetCalib("FCAL/gains", FCAL_GAINS_TEMP);
-    for (unsigned int i = 0; i < FCAL_GAINS_TEMP.size(); i++) {
-       	FCAL_GAINS.push_back(FCAL_GAINS_TEMP.at(i));
+    if(loop->GetCalib("FCAL/gains", FCAL_GAINS_TEMP)) {
+    	jerr << "Problem loading FCAL/gains from CCDB!" << endl;
+    } else {
+    	for (unsigned int i = 0; i < FCAL_GAINS_TEMP.size(); i++) {
+       		FCAL_GAINS.push_back(FCAL_GAINS_TEMP.at(i));
+    	}
     }
      
     cout<<"get FCAL/digi_scales parameters from calibDB"<<endl;
