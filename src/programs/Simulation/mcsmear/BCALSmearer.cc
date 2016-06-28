@@ -4,7 +4,7 @@
 //
 // Major revision March 6, 2012 David Lawrence
 
-#include "smear_bcal.h"
+#include "BCALSmearer.h"
 
 #include "DRandom2.h"
 
@@ -14,8 +14,6 @@
 #endif
 
 //TH1D *hNincident_particles = NULL;
-
-using namespace bcal_smearing;
 
 
 // Defined in this file
@@ -90,16 +88,9 @@ void BCALSmearer::SmearEvent(hddm_s::HDDM *record)
     bcalfADC.clear();
 }
 
-<<<<<<< HEAD
 int inline BCALSmearer::GetCalibIndex(int module, int layer, int sector) {
    return bcal_config->BCAL_NUM_LAYERS*bcal_config->BCAL_NUM_SECTORS*(module-1) 
    		+ bcal_config->BCAL_NUM_SECTORS*(layer-1) + (sector-1);
-=======
-double GetEffectiveVelocity(int id)
-{
-    return BCAL_C_EFFECTIVE;
-    //return effective_velocities.at(id);
->>>>>>> a3bc860fd7e657d52aa2fc5be6a4b0cd722fd405
 }
 
 
@@ -716,3 +707,126 @@ void BCALSmearer::CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits,
       }
    }
 }
+
+
+//-----------
+// bcal_config_t  (constructor)
+//-----------
+bcal_config_t::bcal_config_t(JEventLoop *loop) 
+{
+	// default values
+ 	BCAL_DARKRATE_GHZ         = 0.;// 0.0176 (from calibDB BCAL/bcal_parms) for 4x4 array
+ 	BCAL_SIGMA_SIG_RELATIVE   = 0.;// 0.105  (from calibDB BCAL/bcal_parms)
+ 	BCAL_SIGMA_PED_RELATIVE   = 0.;// 0.139  (from calibDB BCAL/bcal_parms)
+ 	BCAL_SIPM_GAIN_VARIATION  = 0.;// 0.04   (from calibDB BCAL/bcal_parms)
+ 	BCAL_XTALK_FRACT          = 0.;// 0.157  (from calibDB BCAL/bcal_parms)
+ 	BCAL_INTWINDOW_NS         = 0.;// 100    (from calibDB BCAL/bcal_parms)
+ 	BCAL_DEVICEPDE            = 0.;// 0.21   (from calibDB BCAL/bcal_parms)
+ 	BCAL_SAMPLING_FRACT       = 0.;// 0.095  (from calibDB BCAL/bcal_parms)
+ 	BCAL_PHOTONSPERSIDEPERMEV_INFIBER = 0.0;// 75 (from calibDB BCAL/bcal_parms)
+ 	BCAL_AVG_DARK_DIGI_VALS_PER_EVENT = 0.0; // 240 used to set thresholds
+ 	BCAL_SAMPLINGCOEFA        = 0.0; // 0.042 (from calibDB BCAL/bcal_parms)
+ 	BCAL_SAMPLINGCOEFB        = 0.0; // 0.013 (from calibDB BCAL/bcal_parms)
+ 	BCAL_TIMEDIFFCOEFA        = 0.0; // 0.07 * sqrt( 2 ) (from calibDB BCAL/bcal_parms)
+ 	BCAL_TIMEDIFFCOEFB        = 0.0; // 0.00 * sqrt( 2 ) (from calibDB BCAL/bcal_parms)
+ 	BCAL_TWO_HIT_RESOL        = 0.0; // 50. (from calibDB BCAL/bcal_parms)
+ 	BCAL_mevPerPE             = 0.31; // Energy corresponding to one pixel firing in MeV - FIX - in CCDB??
+	BCAL_C_EFFECTIVE          = 16.75;  // constant effective velocity, assumed to be property of fibers
+
+	// FIX - Pull from geometry?
+ 	BCAL_NUM_MODULES = 48;
+ 	BCAL_NUM_LAYERS = 4;
+ 	BCAL_NUM_SECTORS = 4;
+
+ 	BCAL_BASE_TIME_OFFSET     = 0; // -100.0 (from calibDB BCAL/base_time_offset)
+ 	BCAL_TDC_BASE_TIME_OFFSET = 0; // -100.0 (from calibDB BCAL/base_time_offset)
+
+	// FIX - put in CCDB?
+ 	BCAL_ADC_THRESHOLD_MEV    = 2.2;  // MeV (To be updated/improved)
+ 	BCAL_FADC_TIME_RESOLUTION = 0.3;  // ns (To be updated/improved)
+ 	BCAL_TDC_TIME_RESOLUTION  = 0.3;  // ns (To be updated/improved)
+ 	BCAL_MEV_PER_ADC_COUNT    = 0.029;  // MeV per integrated ADC count (based on Spring 2015 calibrations)
+ 	BCAL_NS_PER_ADC_COUNT     = 0.0;  // 0.0625 ns per ADC count (from calibDB BCAL/digi_scales)
+ 	BCAL_NS_PER_TDC_COUNT     = 0.0;  // 0.0559 ns per TDC count (from calibDB BCAL/digi_scales)
+
+	// BCAL flags
+ 	NO_T_SMEAR = false;
+ 	NO_DARK_PULSES = false;
+ 	NO_SAMPLING_FLUCTUATIONS = false;
+ 	NO_SAMPLING_FLOOR_TERM = false;
+ 	NO_POISSON_STATISTICS = false;
+
+	// Load parameters from CCDB
+    cout << "get BCAL/bcal_parms parameters from CCDB..." << endl;
+    map<string, double> bcalparms;
+    if(loop->GetCalib("BCAL/bcal_parms", bcalparms)) {
+     	jerr << "Problem loading BCAL/bcal_parms from CCDB!" << endl;
+     } else {
+     	BCAL_DARKRATE_GHZ         = bcalparms["BCAL_DARKRATE_GHZ"];
+     	BCAL_SIGMA_SIG_RELATIVE   = bcalparms["BCAL_SIGMA_SIG_RELATIVE"];
+     	BCAL_SIGMA_PED_RELATIVE   = bcalparms["BCAL_SIGMA_PED_RELATIVE"];
+     	BCAL_SIPM_GAIN_VARIATION  = bcalparms["BCAL_SIPM_GAIN_VARIATION"];
+     	BCAL_XTALK_FRACT          = bcalparms["BCAL_XTALK_FRACT"];
+     	BCAL_INTWINDOW_NS         = bcalparms["BCAL_INTWINDOW_NS"];
+     	BCAL_DEVICEPDE         	  = bcalparms["BCAL_DEVICEPDE"];
+     	BCAL_SAMPLING_FRACT       = bcalparms["BCAL_SAMPLING_FRACT"];
+     	BCAL_AVG_DARK_DIGI_VALS_PER_EVENT   = bcalparms["BCAL_AVG_DARK_DIGI_VALS_PER_EVENT"];
+     	BCAL_PHOTONSPERSIDEPERMEV_INFIBER   = bcalparms["BCAL_PHOTONSPERSIDEPERMEV_INFIBER"];
+     	BCAL_SAMPLINGCOEFA 		  = bcalparms["BCAL_SAMPLINGCOEFA"];
+     	BCAL_SAMPLINGCOEFB 		  = bcalparms["BCAL_SAMPLINGCOEFB"];
+     	BCAL_TIMEDIFFCOEFA 		  = bcalparms["BCAL_TIMEDIFFCOEFA"];
+     	BCAL_TIMEDIFFCOEFB 		  = bcalparms["BCAL_TIMEDIFFCOEFB"];
+     	BCAL_TWO_HIT_RESOL 		  = bcalparms["BCAL_TWO_HIT_RESOL"];
+	}
+	
+	cout << "get BCAL/mc_parms parameters from CCDB..." << endl;
+    map<string, double> bcalmcparms;
+    if(loop->GetCalib("BCAL/mc_parms", bcalmcparms)) {
+     	jerr << "Problem loading BCAL/mc_parms from CCDB!" << endl;
+    } else {
+    	BCAL_C_EFFECTIVE   = bcalmcparms["C_EFFECTIVE"]; 
+    }
+
+		
+    cout << "Get BCAL/attenuation_parameters from CCDB..." <<endl;
+    vector< vector<double> > in_atten_parameters;
+    if(loop->GetCalib("BCAL/attenuation_parameters", in_atten_parameters)) {
+     	jerr << "Problem loading BCAL/bcal_parms from CCDB!" << endl;
+	} else {
+     	attenuation_parameters.clear();
+
+     	for (unsigned int i = 0; i < in_atten_parameters.size(); i++) {
+     		attenuation_parameters.push_back( in_atten_parameters.at(i) );
+     	}
+	}
+		
+    //cout << "Get BCAL/effective_velocities parameters from CCDB..." << endl;
+    //vector <double> in_effective_velocities;
+    //if(loop->GetCalib("BCAL/effective_velocities", in_effective_velocities)) {
+    // 	jerr << "Problem loading BCAL/effective_velocities from CCDB!" << endl;
+    //} else {
+    // 	for (unsigned int i = 0; i < in_effective_velocities.size(); i++) {
+    //   		effective_velocities.push_back( in_effective_velocities.at(i) );
+    // 	}
+    //}
+   
+     cout << "Get BCAL/digi_scales parameters from CCDB..." << endl;
+     map<string, double> bcaldigiscales;
+     if(loop->GetCalib("BCAL/digi_scales", bcaldigiscales)) {
+     	jerr << "Problem loading BCAL/digi_scales from CCDB!" << endl;
+     } else {
+     	BCAL_NS_PER_ADC_COUNT = bcaldigiscales["BCAL_ADC_TSCALE"];
+     	BCAL_NS_PER_TDC_COUNT = bcaldigiscales["BCAL_TDC_SCALE"];
+   	}
+
+    cout << "Get BCAL/base_time_offset parameters from CCDB..." << endl;
+    map<string, double> bcaltimeoffsets;
+    if(loop->GetCalib("BCAL/base_time_offset", bcaltimeoffsets)) {
+     	jerr << "Problem loading BCAL/base_time_offset from CCDB!" << endl;
+ 	} else {
+     	BCAL_BASE_TIME_OFFSET = bcaltimeoffsets["BCAL_BASE_TIME_OFFSET"];
+    	BCAL_TDC_BASE_TIME_OFFSET = bcaltimeoffsets["BCAL_TDC_BASE_TIME_OFFSET"];
+   	}
+
+}
+

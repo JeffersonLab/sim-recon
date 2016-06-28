@@ -1,5 +1,5 @@
-#ifndef _SMEAR_BCAL_H_
-#define _SMEAR_BCAL_H_
+#ifndef _BCALSMEARER_H_
+#define _BCALSMEARER_H_
 
 #include "mcsmear_config.h"
 #include "HDDM/hddm_s.hpp"
@@ -22,7 +22,72 @@ using namespace std;
 #include <TSpline.h>
 #include <TDirectory.h>
 
-namespace bcal_smearing {
+#include "Smearer.h"
+
+class bcal_config_t 
+{
+  public:
+	bcal_config_t(JEventLoop *loop);
+	
+	void inline GetAttenuationParameters(int id, double &attenuation_length, double &attenuation_L1, double &attenuation_L2) {
+   		vector<double> &parms = attenuation_parameters.at(id);
+		attenuation_length = parms[0];
+		attenuation_L1 = parms[1];
+		attenuation_L2 = parms[2];
+	}
+
+	double inline GetEffectiveVelocity(int id) {
+		return BCAL_C_EFFECTIVE;
+   		//return effective_velocities.at(id);
+	}
+	
+	// member variables
+	double BCAL_DARKRATE_GHZ;
+	double BCAL_SIGMA_SIG_RELATIVE;
+	double BCAL_SIGMA_PED_RELATIVE;
+	double BCAL_SIPM_GAIN_VARIATION;
+	double BCAL_XTALK_FRACT;
+	double BCAL_INTWINDOW_NS;
+	double BCAL_DEVICEPDE;
+	double BCAL_SAMPLING_FRACT;
+	double BCAL_PHOTONSPERSIDEPERMEV_INFIBER;
+	double BCAL_AVG_DARK_DIGI_VALS_PER_EVENT;
+	double BCAL_SAMPLINGCOEFA;
+	double BCAL_SAMPLINGCOEFB;
+	double BCAL_TIMEDIFFCOEFA;
+	double BCAL_TIMEDIFFCOEFB;
+	double BCAL_TWO_HIT_RESOL;
+	double BCAL_mevPerPE;
+	double BCAL_C_EFFECTIVE;
+
+	int BCAL_NUM_MODULES;
+	int BCAL_NUM_LAYERS;
+	int BCAL_NUM_SECTORS;
+
+	double BCAL_BASE_TIME_OFFSET;
+	double BCAL_TDC_BASE_TIME_OFFSET;
+
+	double BCAL_ADC_THRESHOLD_MEV;
+	double BCAL_FADC_TIME_RESOLUTION;
+	double BCAL_TDC_TIME_RESOLUTION;
+	double BCAL_MEV_PER_ADC_COUNT;
+	double BCAL_NS_PER_ADC_COUNT;
+	double BCAL_NS_PER_TDC_COUNT;
+
+	// BCAL flags
+	bool NO_T_SMEAR;
+	bool NO_DARK_PULSES;
+	bool NO_SAMPLING_FLUCTUATIONS;
+	bool NO_SAMPLING_FLOOR_TERM;
+	bool NO_POISSON_STATISTICS;
+
+	vector<vector<double> > attenuation_parameters; // Avg. of 525 (from calibDB BCAL/attenuation_parameters)
+	// Assume constant effective velocity instead of channel-dependent one
+	//vector<double> effective_velocities; // 16.75 (from calibDB BCAL/effective_velocities)
+
+};
+
+
 
 // utility classes
 
@@ -186,19 +251,19 @@ class IncidentParticle_t{
 };
 
 // MAIN CLASS
-class BCALSmearer
+class BCALSmearer : public Smearer
 {
     public:
-		BCALSmearer(mcsmear_config_t *in_mcsmear_config, bcal_config_t *in_bcal_config) {   // constructor
-			mcsmear_config = in_mcsmear_config;
-			bcal_config = in_bcal_config;
+		BCALSmearer(JEventLoop *loop, mcsmear_config_t *in_config) : Smearer(loop, in_config) {
+			bcal_config = new bcal_config_t(loop);
 		}
-		~BCALSmearer() {}  // destructor 
+		~BCALSmearer() {
+			delete bcal_config;
+		}
 
 		void SmearEvent(hddm_s::HDDM *record);  // main smearing function
 
 	protected:
-		mcsmear_config_t *mcsmear_config;
 		bcal_config_t *bcal_config;
 		
 		int inline GetCalibIndex(int module, int layer, int sector);
@@ -228,7 +293,5 @@ class BCALSmearer
 };
 
 
-
-};
 
 #endif  // _SMEAR_BCAL_H_
