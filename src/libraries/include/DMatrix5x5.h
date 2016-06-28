@@ -588,7 +588,7 @@ public:
     for (unsigned int i=0;i<5;i++){
       cout <<"   "<< i << " |";
       for (unsigned int j=0;j<5;j++){
-	cout << setw(11)<<setprecision(4)<<mA[i][j] <<" "; 
+	cout << setw(11)<<setprecision(6)<<mA[i][j] <<" "; 
       } 
       cout << endl;
     }      
