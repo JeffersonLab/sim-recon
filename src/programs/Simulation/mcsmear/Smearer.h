@@ -15,6 +15,7 @@ class Smearer
 	Smearer(JEventLoop *loop, mcsmear_config_t *in_config) {
 		config = in_config;
 	};
+    virtual ~Smearer() {}
 	
 	virtual void SmearEvent(hddm_s::HDDM *record) = 0;
 	
