@@ -5,15 +5,27 @@
 
 #include "Smearer.h"
 
+#include <TMath.h>
 
 class tof_config_t 
 {
   public:
 	tof_config_t(JEventLoop *loop);
 	
+	inline double GetPaddleTimeResolution(int plane, int bar)  { 
+		int paddle = plane*44 + bar;   // hardcode for now
+		return TOF_PADDLE_TIME_RESOLUTIONS.at(paddle); 
+	}
+	inline double GetHitTimeResolution(int plane, int bar)  { 
+		// assume that the paddle resolution is given by: paddle resol = (hit resol)^2
+		return GetPaddleTimeResolution(plane, bar)/TMath::Sqrt2(); 
+	}
+
 	double TOF_SIGMA;
 	double TOF_PHOTONS_PERMEV;
 	double TOF_BAR_THRESHOLD;
+
+  	vector<double> TOF_PADDLE_TIME_RESOLUTIONS;
 
 };
 
@@ -32,6 +44,7 @@ class TOFSmearer : public Smearer
 	
   private:
   	tof_config_t  *tof_config;
+  	
 };
 
 
