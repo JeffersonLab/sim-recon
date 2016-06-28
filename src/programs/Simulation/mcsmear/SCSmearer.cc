@@ -19,7 +19,17 @@ sc_config_t::sc_config_t(JEventLoop *loop)
      	START_SIGMA = startparms["START_SIGMA"] ;
      	START_PHOTONS_PERMEV = startparms["START_PHOTONS_PERMEV"];
 	}
-		
+	
+	cout<<"get START_COUNTER/time_resol_paddle from calibDB"<<endl;
+    vector <double> START_TIME_RESOLUTIONS_TEMP;
+    if(loop->GetCalib("START_COUNTER/time_resol_paddle", START_TIME_RESOLUTIONS_TEMP)) {
+    	jerr << "Problem loading START_COUNTER/time_resol_paddle from CCDB!" << endl;
+    } else {
+    	for (unsigned int i = 0; i < START_TIME_RESOLUTIONS_TEMP.size(); i++) {
+       		START_TIME_RESOLUTIONS.push_back(START_TIME_RESOLUTIONS_TEMP.at(i));
+    	}
+    }
+     
 }
 
 
@@ -37,6 +47,7 @@ void SCSmearer::SmearEvent(hddm_s::HDDM *record)
       for (titer = thits.begin(); titer != thits.end(); ++titer) {
          // smear the time
          double t = titer->getT() + SampleGaussian(sc_config->START_SIGMA);
+         //double t = titer->getT() + SampleGaussian(sc_config->GetPaddleTimeResolution(iter->getSector()));
          // smear the energy
          double npe = titer->getDE() * 1000. *  sc_config->START_PHOTONS_PERMEV;
          npe = npe +  SampleGaussian(sqrt(npe));
