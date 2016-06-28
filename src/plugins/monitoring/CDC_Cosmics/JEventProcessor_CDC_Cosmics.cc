@@ -204,6 +204,11 @@ jerror_t JEventProcessor_CDC_Cosmics::evnt(JEventLoop *loop, uint64_t eventnumbe
             Fill2DHistogram("CDC_Cosmic_Per_Straw",folder,binname, time, predictedDistance,
                     bintitle, 250, -50, 200, 250, 0.0, 0.4);
 
+            sprintf(binname,"Straw %.3i Predicted Drift Distance Vs. delta", straw);
+            sprintf(bintitle,"Ring %.2i Straw %.3i Predicted Drift Distance Vs. #delta;#delta [cm]; Predicted Drift Distance - Nominal Radius [cm]", ring, straw);
+            Fill2DHistogram("CDC_Cosmic_Per_Straw",folder,binname, delta, predictedDistance - 0.78,
+                    bintitle, 20, -0.25, 0.25, 250, -0.25, 0.25);
+
             if (delta > 0){ // Long side of straw
                 sprintf(binname,"Straw %.3i Predicted Drift Distance Vs. Drift Time Positive Delta", straw);
                 sprintf(bintitle,"Ring %.2i Straw %.3i Predicted Drift Distance Vs. Drift Time (Positive Delta)", ring, straw);
