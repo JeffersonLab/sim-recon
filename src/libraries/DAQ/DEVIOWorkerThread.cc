@@ -66,7 +66,8 @@ DEVIOWorkerThread::DEVIOWorkerThread(
 	PARSE_EPICS         = true;
 	PARSE_EVENTTAG      = true;
 	PARSE_TRIGGER       = true;
-
+	
+	LINK_TRIGGERTIME    = true;
 }
 
 //---------------------------------
@@ -264,6 +265,7 @@ void DEVIOWorkerThread::PublishEvents(void)
 	// parsed events. If the done flag is set, go ahead and add
 	// this regardless
 	while( ((current_parsed_events.size()+parsed_events.size())>=MAX_PARSED_EVENTS) && !done ){
+		event_source->NPARSER_STALLED++;
 		PARSED_EVENTS_CV.wait_for(lck, std::chrono::milliseconds(1));
 	}
 	
@@ -553,7 +555,30 @@ void DEVIOWorkerThread::ParseBORbank(uint32_t* &iptr, uint32_t *iend)
 //---------------------------------
 void DEVIOWorkerThread::ParseTSscalerBank(uint32_t* &iptr, uint32_t *iend)
 {
-	iptr = &iptr[(*iptr) + 1];
+    uint32_t Nwords = ((uint64_t)iend - (uint64_t)iptr)/sizeof(uint32_t);
+    uint32_t Nwords_expected = (6+32+16+32+16);
+    if(Nwords != Nwords_expected){
+        _DBG_ << "TS bank size does not match expected!!" << endl;
+        _DBG_ << "Found " << Nwords << " words. Expected " << Nwords_expected << endl;
+
+    }else{
+	 	// n.b. Get the last event here since if this is a block
+		// of events, the last should be the actual sync event.
+		DParsedEvent *pe = current_parsed_events.back();
+		DL1Info *s = pe->NEW_DL1Info();
+		s->nsync = *iptr++;
+		s->trig_number = *iptr++;
+		s->live_time = *iptr++;
+		s->busy_time = *iptr++;
+		s->live_inst = *iptr++;
+		s->unix_time = *iptr++;
+		for(uint32_t i=0; i<32; i++) s->gtp_sc.push_back  ( *iptr++ );
+		for(uint32_t i=0; i<16; i++) s->fp_sc.push_back   ( *iptr++ );
+		for(uint32_t i=0; i<32; i++) s->gtp_rate.push_back( *iptr++ );
+		for(uint32_t i=0; i<16; i++) s->fp_rate.push_back ( *iptr++ );
+    }
+
+    iptr = iend;
 }
 
 //---------------------------------
@@ -724,24 +749,24 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 		while( (*iptr==0xF800FAFA) && (iptr<iend) ) iptr++;
 		
 		uint32_t det_id = (data_block_bank_header>>16) & 0xFFF;
-        switch(det_id){
+		switch(det_id){
 
-            case 20:
-                ParseCAEN1190(rocid, iptr, iend_data_block_bank);
-                break;
+			case 20:
+				ParseCAEN1190(rocid, iptr, iend_data_block_bank);
+				break;
 
-            case 0x55:
-                ParseModuleConfiguration(rocid, iptr, iend_data_block_bank);
-                break;
+			case 0x55:
+				ParseModuleConfiguration(rocid, iptr, iend_data_block_bank);
+				break;
 
-            case 0:
-            case 1:
-            case 3:
-            case 6:  // flash 250 module, MMD 2014/2/4
-            case 16: // flash 125 module (CDC), DL 2014/6/19
-            case 26: // F1 TDC module (BCAL), MMD 2014-07-31
-                ParseJLabModuleData(rocid, iptr, iend_data_block_bank);
-                break;
+			case 0:
+			case 1:
+			case 3:
+			case 6:  // flash 250 module, MMD 2014/2/4
+			case 16: // flash 125 module (CDC), DL 2014/6/19
+			case 26: // F1 TDC module (BCAL), MMD 2014-07-31
+				ParseJLabModuleData(rocid, iptr, iend_data_block_bank);
+				break;
 
 			// These were implemented in the ROL for sync events
 			// as 0xEE02 and 0xEE05. However, that violates the
@@ -749,14 +774,14 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 			// (the first "E" should really be a "1". We just check
 			// other 12 bits here.
 			case 0xE02:
-					ParseTSscalerBank(iptr, iend);
-					break;
+				ParseTSscalerBank(iptr, iend);
+				break;
 			case 0xE05:
-					Parsef250scalerBank(iptr, iend);
-					break;
+				Parsef250scalerBank(iptr, iend);
+				break;
 			case 0xE10:  // really wish Sascha would share when he does this stuff!
-					Parsef250scalerBank(iptr, iend);
-					break;
+				Parsef250scalerBank(iptr, iend);
+				break;
 
 			case 5:
 				// old ROL Beni used had this but I don't think its
@@ -1699,21 +1724,19 @@ void DEVIOWorkerThread::ParseF1TDCBank(uint32_t rocid, uint32_t* &iptr, uint32_t
 //----------------
 void DEVIOWorkerThread::LinkAllAssociations(void)
 {
+
 	/// Find objects that should be linked as "associated objects"
 	/// of one another and add to each other's list.
 	for( auto pe : current_parsed_events){
 
-		//----------------- Sort all associations
+		//----------------- Sort hit objects
+
 		// fADC250
-		if(pe->vDf250Config.size()>1       ) sort(pe->vDf250Config.begin(),        pe->vDf250Config.end(),        SortByROCID<Df250Config>              );
-		if(pe->vDf250TriggerTime.size()>1  ) sort(pe->vDf250TriggerTime.begin(),   pe->vDf250TriggerTime.end(),   SortByModule<Df250TriggerTime>        );
 		if(pe->vDf250PulseIntegral.size()>1) sort(pe->vDf250PulseIntegral.begin(), pe->vDf250PulseIntegral.end(), SortByPulseNumber<Df250PulseIntegral> );
 		if(pe->vDf250PulseTime.size()>1    ) sort(pe->vDf250PulseTime.begin(),     pe->vDf250PulseTime.end(),     SortByPulseNumber<Df250PulseTime>     );
 		if(pe->vDf250PulsePedestal.size()>1) sort(pe->vDf250PulsePedestal.begin(), pe->vDf250PulsePedestal.end(), SortByPulseNumber<Df250PulsePedestal> );
 
 		// fADC125
-		if(pe->vDf125Config.size()>1       ) sort(pe->vDf125Config.begin(),        pe->vDf125Config.end(),        SortByROCID<Df125Config>              );
-		if(pe->vDf125TriggerTime.size()>1  ) sort(pe->vDf125TriggerTime.begin(),   pe->vDf125TriggerTime.end(),   SortByModule<Df125TriggerTime>        );
 		if(pe->vDf125PulseIntegral.size()>1) sort(pe->vDf125PulseIntegral.begin(), pe->vDf125PulseIntegral.end(), SortByPulseNumber<Df125PulseIntegral> );
 		if(pe->vDf125CDCPulse.size()>1     ) sort(pe->vDf125CDCPulse.begin(),      pe->vDf125CDCPulse.end(),      SortByChannel<Df125CDCPulse>          );
 		if(pe->vDf125FDCPulse.size()>1     ) sort(pe->vDf125FDCPulse.begin(),      pe->vDf125FDCPulse.end(),      SortByChannel<Df125FDCPulse>          );
@@ -1721,41 +1744,13 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 		if(pe->vDf125PulsePedestal.size()>1) sort(pe->vDf125PulsePedestal.begin(), pe->vDf125PulsePedestal.end(), SortByPulseNumber<Df125PulsePedestal> );
 
 		// F1TDC
-		if(pe->vDF1TDCConfig.size()>1      ) sort(pe->vDF1TDCConfig.begin(),       pe->vDF1TDCConfig.end(),       SortByROCID<DF1TDCConfig>             );
-		if(pe->vDF1TDCTriggerTime.size()>1 ) sort(pe->vDF1TDCTriggerTime.begin(),  pe->vDF1TDCTriggerTime.end(),  SortByModule<DF1TDCTriggerTime>       );
 		if(pe->vDF1TDCHit.size()>1         ) sort(pe->vDF1TDCHit.begin(),          pe->vDF1TDCHit.end(),          SortByModule<DF1TDCHit>               );
 
 		// CAEN1290TDC
-		if(pe->vDCAEN1290TDCConfig.size()>1) sort(pe->vDCAEN1290TDCConfig.begin(), pe->vDCAEN1290TDCConfig.end(), SortByROCID<DCAEN1290TDCConfig>       );
 		if(pe->vDCAEN1290TDCHit.size()>1   ) sort(pe->vDCAEN1290TDCHit.begin(),    pe->vDCAEN1290TDCHit.end(),    SortByModule<DCAEN1290TDCHit>         );
 
 
-		//----------------- Link all associations
-	
-		// Connect Df250Config objects
-		LinkConfigSamplesCopy(pe->vDf250Config, pe->vDf250PulseIntegral);
-
-		// Connect Df125Config objects
-		LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125PulseIntegral);
-		LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125CDCPulse);
-		LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125FDCPulse);
-
-		// Connect DF1TDCConfig objects
-		LinkConfig(pe->vDF1TDCConfig, pe->vDF1TDCHit);
-
-		// Connect DCAEN1290TDCConfig objects
-		LinkConfig(pe->vDCAEN1290TDCConfig, pe->vDCAEN1290TDCHit);
-
-		// Connect Df250TriggerTime objects
-		LinkModule(pe->vDf250TriggerTime, pe->vDf250PulseIntegral);
-
-		// Connect Df125TriggerTime objects
-		LinkModule(pe->vDf125TriggerTime, pe->vDf125PulseIntegral);
-		LinkModule(pe->vDf125TriggerTime, pe->vDf125CDCPulse);
-		LinkModule(pe->vDf125TriggerTime, pe->vDf125FDCPulse);
-
-		// Connect DF1TDCTriggerTime objects
-		LinkModule(pe->vDF1TDCTriggerTime, pe->vDF1TDCHit);
+		//----------------- Link hit objects
 
 		// Connect Df250 pulse objects
 		LinkPulse(pe->vDf250PulseTime,     pe->vDf250PulseIntegral);
@@ -1784,7 +1779,34 @@ void DEVIOWorkerThread::LinkAllAssociations(void)
 			LinkChannel(pe->vDf125WindowRawData, pe->vDf125CDCPulse);
 			LinkChannel(pe->vDf125WindowRawData, pe->vDf125FDCPulse);
 		}
+		
+		//----------------- Optionally link config objects (on by default)
+		if(LINK_CONFIG){
+			if(pe->vDf250Config.size()>1       ) sort(pe->vDf250Config.begin(),        pe->vDf250Config.end(),        SortByROCID<Df250Config>              );
+			if(pe->vDf125Config.size()>1       ) sort(pe->vDf125Config.begin(),        pe->vDf125Config.end(),        SortByROCID<Df125Config>              );
+			if(pe->vDF1TDCConfig.size()>1      ) sort(pe->vDF1TDCConfig.begin(),       pe->vDF1TDCConfig.end(),       SortByROCID<DF1TDCConfig>             );
+			if(pe->vDCAEN1290TDCConfig.size()>1) sort(pe->vDCAEN1290TDCConfig.begin(), pe->vDCAEN1290TDCConfig.end(), SortByROCID<DCAEN1290TDCConfig>       );
 
+			LinkConfigSamplesCopy(pe->vDf250Config, pe->vDf250PulseIntegral);
+			LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125PulseIntegral);
+			LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125CDCPulse);
+			LinkConfigSamplesCopy(pe->vDf125Config, pe->vDf125FDCPulse);
+			LinkConfig(pe->vDF1TDCConfig,           pe->vDF1TDCHit);
+			LinkConfig(pe->vDCAEN1290TDCConfig,     pe->vDCAEN1290TDCHit);
+		}
+
+		//----------------- Optionally link trigger time objects (off by default)
+		if(LINK_TRIGGERTIME){
+			if(pe->vDf250TriggerTime.size()>1  ) sort(pe->vDf250TriggerTime.begin(),   pe->vDf250TriggerTime.end(),   SortByModule<Df250TriggerTime>        );
+			if(pe->vDf125TriggerTime.size()>1  ) sort(pe->vDf125TriggerTime.begin(),   pe->vDf125TriggerTime.end(),   SortByModule<Df125TriggerTime>        );
+			if(pe->vDF1TDCTriggerTime.size()>1 ) sort(pe->vDF1TDCTriggerTime.begin(),  pe->vDF1TDCTriggerTime.end(),  SortByModule<DF1TDCTriggerTime>       );
+
+			LinkModule(pe->vDf250TriggerTime,  pe->vDf250PulseIntegral);
+			LinkModule(pe->vDf125TriggerTime,  pe->vDf125PulseIntegral);
+			LinkModule(pe->vDf125TriggerTime,  pe->vDf125CDCPulse);
+			LinkModule(pe->vDf125TriggerTime,  pe->vDf125FDCPulse);
+			LinkModule(pe->vDF1TDCTriggerTime, pe->vDF1TDCHit);
+		}
 	}
 
 }

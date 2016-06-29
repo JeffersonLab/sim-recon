@@ -31,6 +31,9 @@ uint32_t swap_bank(uint32_t *outbuff, uint32_t *inbuff, uint32_t len)
 		ss << "WARNING: Bank length word exceeds valid words in buffer (" << bank_len+1 << " > " << len << ")";
 		throw JException(ss.str(), __FILE__, __LINE__);
 	}
+	if( bank_len < 1 ){
+		throw JException("EVIO bank length word is zero in swap_bank!", __FILE__, __LINE__);
+	}
 	
 	uint32_t type = (outbuff[1]>>8) & 0xFF;
 	uint32_t Nwords = bank_len - 1;

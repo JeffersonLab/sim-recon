@@ -39,6 +39,7 @@ TH1D *expint_z = NULL;
 double Ecoherent_peak = 6.0;
 double Eelectron_beam = 12.0;
 double Emin = 1.0;
+double Efixed = 0.0;
 double CollimatorDiameter = 0.0034; // in meters
 bool   ONLY_COHERENT = false;
 bool   ONLY_INCOHERENT = false;
@@ -126,8 +127,14 @@ int main( int narg, char* argv[] )
 	
 		// Generate beam photon
 		TVector3 pgamma, pol;
-		photon_generator->GenerateBeamPhoton(pgamma, pol);
-		
+		if(Efixed!=0.0){
+			pgamma.SetXYZ(0.0, 0.0, Efixed);
+			double phi_rad = POLARIZATION_ANGLE*TMath::DegToRad();
+			pol.SetXYZ( cos(phi_rad), sin(phi_rad), 0.0 );
+		}else{
+			photon_generator->GenerateBeamPhoton(pgamma, pol);
+		}
+
 		// Generate mu+mu- pair
 		TLorentzVector pmuplus, pmuminus;
 		GenerateMuPair(pgamma, pol, pmuplus, pmuminus);
@@ -187,6 +194,7 @@ void Usage(string message)
 	cout << " -Z Z         set target Z (def. " << Z << ")" << endl;
 	cout << " -p Epeak     coherent peak energy (def="<<Ecoherent_peak<<")" << endl;
 	cout << " -b Ebeam     electron beam energy (def="<<Eelectron_beam<<")" << endl;
+	cout << " -Efixed E    fixed photon beam energy (don't sample coherent)" << endl;
 	cout << " -min Emin    minimum photon energy to generate (def="<<Emin<<")" << endl;
 	cout << " -c           only generate coherent photons" << endl;
 	cout << " -i           only generate incoherent photons" << endl;
@@ -291,6 +299,13 @@ void ParseCommandLineArguments(int narg, char *argv[])
 		}else if(arg=="-b"){
 			if(has_arg){
 				Eelectron_beam = atof(next.c_str());
+				i++;
+			}else{
+				missing_arg = true;
+			}
+		}else if(arg=="-Efixed"){
+			if(has_arg){
+				Efixed = atof(next.c_str());
 				i++;
 			}else{
 				missing_arg = true;
