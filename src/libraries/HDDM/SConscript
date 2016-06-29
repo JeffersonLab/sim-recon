@@ -49,6 +49,7 @@
 # to hddm_s++.cpp.
 
 
+import os
 import re
 import subprocess
 import SCons
@@ -104,6 +105,22 @@ def HDDM_CPP(target, source, env):
 	if( int(env['SHOWBUILD']) > 0): print ' '.join(cmd)
 	cmdout = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()
 
+#---------------
+# HDDM_PY
+#---------------
+def HDDM_PY(target, source, env):
+
+	# Get full path to tool
+	hddmpy = str(env.File("#.%s/programs/Utilities/hddm/hddm-py" % osname))
+
+    # separate the target directory and basename
+	target_base = re.sub('\.cpy$', '', str(target[1]))
+
+	# Form command to be executed and execute it
+	cmd = [hddmpy, '-o', target_base, str(source[0])]
+	if( int(env['SHOWBUILD']) > 0): print ' '.join(cmd)
+	cmdout = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()
+    
 
 # end of Python functions. Global-level scons continues below
 #========================================================================
@@ -113,15 +130,19 @@ def HDDM_CPP(target, source, env):
 if env['SHOWBUILD']==0:
 	hddmcaction   = SCons.Script.Action(HDDM_C  , 'HDDM-C     [$SOURCE]')
 	hddmcppaction = SCons.Script.Action(HDDM_CPP, 'HDDM-CPP   [$SOURCE]')
+	hddmpyaction  = SCons.Script.Action(HDDM_PY,  'HDDM-PY    [$SOURCE]')
 else:
 	hddmcaction   = SCons.Script.Action(HDDM_C)
 	hddmcppaction = SCons.Script.Action(HDDM_CPP)
+	hddmpyaction  = SCons.Script.Action(HDDM_PY)
 
 # Create the actual scons builders from the actions defined above
 bldc   = SCons.Script.Builder(action = hddmcaction)
 bldcpp = SCons.Script.Builder(action = hddmcppaction)
+bldpy  = SCons.Script.Builder(action = hddmpyaction)
 env.Append(BUILDERS = {'HDDMC'   : bldc})
 env.Append(BUILDERS = {'HDDMCPP' : bldcpp})
+env.Append(BUILDERS = {'HDDMPY'  : bldpy})
 
 
 # Add the C/C++ HDDM (de)serializer source dependencies
@@ -130,12 +151,23 @@ env.Append(BUILDERS = {'HDDMCPP' : bldcpp})
 # inputs and outputs explicitly here is just easier.
 # The HDDMC_SRC and HDDMCPP_SRC variables are used by
 # the SConscript in src/programs/Utilities/hddm.
-env.AppendUnique(HDDMC_SRC   = env.HDDMC(['hddm_s.h', 'hddm_s.c'], 'event.xml'))
-env.AppendUnique(HDDMC_SRC   = env.HDDMC(['hddm_mc_s.h', 'hddm_mc_s.c'], 'mc.xml'))
-env.AppendUnique(HDDMC_SRC   = env.HDDMC(['hddm_r.h', 'hddm_r.c'], 'rest.xml'))
-env.AppendUnique(HDDMCPP_SRC = env.HDDMCPP(['hddm_s.hpp', 'hddm_s++.cpp'], 'event.xml'))
-env.AppendUnique(HDDMCPP_SRC = env.HDDMCPP(['hddm_mc_s.hpp', 'hddm_mc_s++.cpp'], 'mc.xml'))
-env.AppendUnique(HDDMCPP_SRC = env.HDDMCPP(['hddm_r.hpp', 'hddm_r++.cpp'], 'rest.xml'))
+hddmc = str(env.File("#.%s/programs/Utilities/hddm/hddm-c" % osname))
+hddmcpp = str(env.File("#.%s/programs/Utilities/hddm/hddm-cpp" % osname))
+hddmpy = str(env.File("#.%s/programs/Utilities/hddm/hddm-py" % osname))
+env.AppendUnique(HDDMC_SRC   = env.HDDMC(['hddm_s.h', 'hddm_s.c'], ['event.xml', hddmc]))
+env.AppendUnique(HDDMC_SRC   = env.HDDMC(['hddm_mc_s.h', 'hddm_mc_s.c'], ['mc.xml',hddmc]))
+env.AppendUnique(HDDMC_SRC   = env.HDDMC(['hddm_r.h', 'hddm_r.c'], ['rest.xml', hddmc]))
+env.AppendUnique(HDDMCPP_SRC = env.HDDMCPP(['hddm_s.hpp', 'hddm_s++.cpp'], ['event.xml', hddmcpp]))
+env.AppendUnique(HDDMCPP_SRC = env.HDDMCPP(['hddm_mc_s.hpp', 'hddm_mc_s++.cpp'], ['mc.xml', hddmcpp]))
+env.AppendUnique(HDDMCPP_SRC = env.HDDMCPP(['hddm_r.hpp', 'hddm_r++.cpp'], ['rest.xml', hddmcpp]))
+env.AppendUnique(HDDMPY_SRC  = env.HDDMPY(['setup_hddm_s.py', 'pyhddm_s.cpy'], ['event.xml', hddmpy]))
+env.AppendUnique(HDDMPY_SRC  = env.HDDMPY(['setup_hddm_mc_s.py', 'pyhddm_mc_s.cpy'], ['mc.xml', hddmpy]))
+env.AppendUnique(HDDMPY_SRC  = env.HDDMPY(['setup_hddm_r.py', 'pyhddm_r.cpy'], ['rest.xml', hddmpy]))
+
+# Additional dependencies in the generated module source files
+env.Depends(['setup_hddm_s.py', 'pyhddm_s.cpy'], ['hddm_s.hpp'])
+env.Depends(['setup_hddm_mc_s.py', 'pyhddm_mc_s.cpy'], ['hddm_mc_s.hpp'])
+env.Depends(['setup_hddm_r.py', 'pyhddm_r.cpy'], ['hddm_r.hpp'])
 
 # Finally, clone the build environment and make a library
 # out of all source. This should include the generated
@@ -145,15 +177,27 @@ env = env.Clone()
 sbms.AddDANA(env)
 sbms.library(env)
 
-#========================================================================
+# Add dependencies for the python modules as well
+sbms.python_so_module(env, 'hddm_s')
+sbms.python_so_module(env, 'hddm_mc_s')
+sbms.python_so_module(env, 'hddm_r')
 
+
+#========================================================================
+# comment by RTJ, June 27, 2016
+# With the introduction of a full implementation of a new python
+# API for hddm classes, the swig wrapping of hddm is now deprecated.
+# The original swig build instructions below are kept as comments for
+# documentation purposes.
+#
+# end of comment by RTJ
+#========================================================================
 # now we try to build wrapper libraries - these are only built if the swig
 # executable exists and that building these executables is enabled
 # these are needed for other systems that work with HDDM files, e.g. EventStore
-sbms.AddSWIG(env)
-swig_env = env.Clone()
-swig_env.AppendUnique(SWIGFLAGS = ["-c++","-python"])
-swig_env.AppendUnique(LIBS = ["z","bz2"])
-sbms.swig_library(swig_env, "pyhddm_r", ["pyhddm_r.i"])
-sbms.swig_library(swig_env, "pyhddm_s", ["pyhddm_s.i"])
-
+#sbms.AddSWIG(env)
+#swig_env = env.Clone()
+#swig_env.AppendUnique(SWIGFLAGS = ["-c++","-python"])
+#swig_env.AppendUnique(LIBS = ["z","bz2"])
+#sbms.swig_library(swig_env, "pyhddm_r", ["pyhddm_r.i"])
+#sbms.swig_library(swig_env, "pyhddm_s", ["pyhddm_s.i"])
