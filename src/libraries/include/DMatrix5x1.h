@@ -63,7 +63,7 @@ public:
       cout << "     |      0    |" <<endl;
       cout << "----------------------" <<endl;
       for (unsigned int i=0;i<5;i++){
-	cout <<"   "<<i<<" |" <<  setw(11)<<setprecision(4) << mA[i] << endl;
+	cout <<"   "<<i<<" |" <<  setw(11)<<setprecision(6) << mA[i] << endl;
       }      
     }
 

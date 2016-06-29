@@ -141,8 +141,19 @@ jerror_t JEventProcessor_L3BDTtree::evnt(JEventLoop *loop, uint64_t eventnumber)
 	double Ptot_candidates = 0.0;
 	for(auto tc : trackcandidates) Ptot_candidates += tc->momentum().Mag();
 
+	// PS
 	bool has_ps = (pshits.size() + pschits.size()) > 1;
+
+	// Tagged Photon
 	bool has_tagged_photon = false; // in coherent region
+	for(auto ph : photons){
+		double Etagged = ph->energy();
+		if( Etagged>8.0 ) {
+			has_tagged_photon=true;
+			break;
+		}
+	}
+
 	bool is_good = has_ps || ((Evisible>=4.0) && has_tagged_photon);
 
 	japp->RootWriteLock();
