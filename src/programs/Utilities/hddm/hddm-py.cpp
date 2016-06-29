@@ -1450,13 +1450,13 @@ int main(int argC, char* argV[])
    "       ext_modules = [module1])\n"
    "\n"
    "os.remove(source_file)\n"
-   "for dname in os.listdir('build'):\n"
-   "    for soname in os.listdir('build/' + dname):\n"
+   "for dname in os.listdir('build_hddm_" << classPrefix << "'):\n"
+   "    for soname in os.listdir('build_hddm_" << classPrefix << "/' + dname):\n"
    "        if re.match(r'.*\\.so', soname):\n"
-   "            src = 'build/' + dname + '/' + soname\n"
+   "            src = 'build_hddm_" << classPrefix << "/' + dname + '/' + soname\n"
    "            dest = source_dir + '/' + soname\n"
    "            copyfile(src, dest)\n"
-   "rmtree('build')\n"
+   "rmtree('build_hddm_" + classPrefix << "')\n"
    ;
 
    XMLPlatformUtils::Terminate();

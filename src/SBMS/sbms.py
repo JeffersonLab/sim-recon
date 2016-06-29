@@ -130,10 +130,13 @@ def python_so_module(env, modname):
 	# Build the module as a shared library
 	# using the distutils setup.py mechanism.
 	if env['SHOWBUILD']==0:
-		setup_py_action = SCons.Script.Action('python $SOURCE build > /dev/null',
+		setup_py_action = SCons.Script.Action('python $SOURCE build -b ' +
+											  'build_' +  modname + 
+											  ' > /dev/null',
 											  'PYMODBUILD [$SOURCE]')
 	else:
-		setup_py_action = SCons.Script.Action('python $SOURCE build')
+		setup_py_action = SCons.Script.Action('python $SOURCE build -b ' +
+											  'build_' +  modname)
 	setup_py_builder = SCons.Script.Builder(action = setup_py_action)
 	env.Append(BUILDERS = {'PYMODBUILD' : setup_py_builder})
 
