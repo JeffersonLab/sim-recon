@@ -4300,6 +4300,24 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
   }
 
   S0_=(forward_traj[break_point_step_index].S);
+
+  if (DEBUG_LEVEL > 25){
+    jout << "Entering DTrackFitterKalmanSIMD::KalmanForward ================================" << endl;
+    jout << " We have the following starting parameters for our fit. S = State vector, C = Covariance matrix" << endl;
+    S.Print();
+    C.Print();
+    jout << setprecision(6); 
+    jout << " There are " << num_cdc <<  " CDC Updates and " << num_fdc << " FDC Updates on this track" << endl;
+    jout << " There are " << num_cdc_hits << " CDC Hits and " << num_fdc_hits << " FDC Hits on this track" << endl;
+    jout << " With NUM_FDC_SIGMA_CUT = " << NUM_FDC_SIGMA_CUT << " and NUM_CDC_SIGMA_CUT = " << NUM_CDC_SIGMA_CUT << endl;
+    jout << "      fdc_anneal_factor = " << fdc_anneal_factor << "     cdc_anneal_factor = " << cdc_anneal_factor << endl;
+    jout << " yields     fdc_chi2cut = " << fdc_chi2cut       << "           cdc_chi2cut = " << cdc_chi2cut       << endl; 
+    jout << " Starting from break_point_step_index " << break_point_step_index << endl;
+    jout << " S0_ which is the state vector of the reference trajectory at the break point step:" << endl;
+    S0_.Print();
+    jout << " ===== Beginning pass over reference trajectory ======== " << endl;
+  }
+
   for (unsigned int k=break_point_step_index+1;k<forward_traj.size();k++){
     unsigned int k_minus_1=k-1;
 
@@ -4347,6 +4365,20 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
     // Z position along the trajectory 
     double z=forward_traj[k].z;
 
+    if (DEBUG_LEVEL > 25){
+      jout << " At reference trajectory index " << k << " at z=" << z << endl;
+      jout << " The State vector from the reference trajectory" << endl;
+      S0.Print();
+      jout << " The Jacobian matrix " << endl;
+      J.Print();
+      jout << " The Q matrix "<< endl;
+      Q.Print();
+      jout << " The updated State vector S=S0+J*(S-S0_)" << endl;
+      S.Print();
+      jout << " The updated Covariance matrix C=J*(C*J_T)+Q;" << endl;
+      C.Print();
+    }
+    
     // Add the hit
     if (num_fdc_hits>0){
       if (forward_traj[k].h_id>0 && forward_traj[k].h_id<1000){
@@ -4459,6 +4491,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	  double prob_hit=exp(-0.5*chi2_hit)
 	    /(M_TWO_PI*sqrt(Vtemp.Determinant()));
 
+	  if (DEBUG_LEVEL > 25) jout << " == There are multiple (" << forward_traj[k].num_hits << ") FDC hits" << endl;
+
 	  // Cut out outliers
 	  if (chi2_hit<fdc_chi2cut && my_fdchits[id]->status==good_hit){
 	    probs.push_back(prob_hit);
@@ -4564,8 +4598,15 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	      S+=my_prob*(Klist[m]*Mlist[m]);
 	      sum+=my_prob*(Klist[m]*Hlist[m]);
 	      sum2+=(my_prob*my_prob)*(Klist[m]*Vlist[m]*Transpose(Klist[m]));
+
+	      if (DEBUG_LEVEL > 25) {
+		jout << " Adjusting state vector for FDC hit " << m << " with prob " << my_prob << " S:" << endl;
+		S.Print();
+	      }
 	    }
-	    C=C.SandwichMultiply(sum)+sum2;
+	    C=C.SandwichMultiply(sum)+sum2;  
+
+	    if (DEBUG_LEVEL > 25) { jout << " C: " << endl; C.Print();}
 	  }
 	  
 	  for (unsigned int m=0;m<Hlist.size();m++){
@@ -4605,6 +4646,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	  }
 	}
 	else{
+	  if (DEBUG_LEVEL > 25) jout << " == There is a single FDC hit on this plane" << endl;
+
 	  // Variance for this hit
 	  DMatrix2x2 Vtemp=V+H*C*H_T;
 	  InvV=Vtemp.Invert();
@@ -4623,6 +4666,11 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	      // Update state vector covariance matrix
 	      //C=C-K*(H*C);    
 	      C=C.SubSym(K*(H*C));
+
+	      if (DEBUG_LEVEL > 25) {
+		jout << "S Update: " << endl; S.Print();
+		jout << "C Uodate: " << endl; C.Print();
+	      }
 	    }
 
 	    // Store the "improved" values for the state vector and covariance
@@ -4985,6 +5033,12 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	      if (my_cdchits[cdc_index]->hit->wire->ring!=RING_TO_SKIP && tdrift >= 0.){
 		C=Ctest;
 		S+=res*Kc;
+
+		if (DEBUG_LEVEL > 25) {
+		  jout << " == Adding CDC Hit in Ring " << my_cdchits[cdc_index]->hit->wire->ring << endl;
+		  jout << " New S: " << endl; S.Print();
+		  jout << " New C: " << endl; C.Print();
+		}
 	      }
 
 	      // Flag the place along the reference trajectory with hit id
@@ -5008,7 +5062,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	      }
 
 	      if (DEBUG_LEVEL>10)
-		cout << "Ring " <<  my_cdchits[cdc_index]->hit->wire->ring
+		jout << "Ring " <<  my_cdchits[cdc_index]->hit->wire->ring
 		     << " Straw " <<  my_cdchits[cdc_index]->hit->wire->straw
 		     << " Pred " << d << " Meas " << dm
 		     << " Sigma meas " << sqrt(Vc)
