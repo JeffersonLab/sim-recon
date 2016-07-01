@@ -46,6 +46,7 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t even
     for (unsigned int ih=0; ih < tagm_hits.size(); ++ih)
     {
         if (!tagm_hits[ih]->has_fADC) continue; // Skip TDC-only hits (i.e. hits with no ADC info.)		
+	if (tagm_hits[ih]->row > 0) continue; // Skip individual fiber readouts
         DVector3 mom(0.0, 0.0, tagm_hits[ih]->E);
         DBeamPhoton *gamma = new DBeamPhoton;
         gamma->setPID(Gamma);
