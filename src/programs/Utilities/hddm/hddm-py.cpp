@@ -675,10 +675,12 @@ int main(int argC, char* argV[])
    "      PyErr_SetString(PyExc_TypeError, \"unexpected null argument\");\n"
    "      return -1;\n"
    "   }\n"
-   "   self->streampos->block_start = PyLong_AsUnsignedLongMask(value);\n"
-   "   if (PyErr_Occurred()) {\n"
+   "   uint64_t start;\n"
+   "   PyObject *args = Py_BuildValue(\"(O)\", value);\n"
+   "   if (! PyArg_ParseTuple(args, \"k\", &start)) {\n"
    "      return -1;\n"
    "   }\n"
+   "   self->streampos->block_start = start;\n"
    "   return 0;\n"
    "}\n"
    "\n"
@@ -697,10 +699,12 @@ int main(int argC, char* argV[])
    "      PyErr_SetString(PyExc_TypeError, \"unexpected null argument\");\n"
    "      return -1;\n"
    "   }\n"
-   "   self->streampos->block_offset = (uint32_t)PyLong_AsUnsignedLongMask(value);\n"
-   "   if (PyErr_Occurred()) {\n"
+   "   uint32_t offset;\n"
+   "   PyObject *args = Py_BuildValue(\"(O)\", value);\n"
+   "   if (! PyArg_ParseTuple(args, \"I\", &offset)) {\n"
    "      return -1;\n"
    "   }\n"
+   "   self->streampos->block_offset = offset;\n"
    "   return 0;\n"
    "}\n"
    "\n"
@@ -719,10 +723,12 @@ int main(int argC, char* argV[])
    "      PyErr_SetString(PyExc_TypeError, \"unexpected null argument\");\n"
    "      return -1;\n"
    "   }\n"
-   "   self->streampos->block_status = (uint32_t)PyLong_AsUnsignedLongMask(value);\n"
-   "   if (PyErr_Occurred()) {\n"
+   "   uint32_t status;\n"
+   "   PyObject *args = Py_BuildValue(\"(O)\", value);\n"
+   "   if (! PyArg_ParseTuple(args, \"I\", &status)) {\n"
    "      return -1;\n"
    "   }\n"
+   "   self->streampos->block_status = status;\n"
    "   return 0;\n"
    "}\n"
    "\n"
@@ -873,9 +879,11 @@ int main(int argC, char* argV[])
    "      PyErr_SetString(PyExc_TypeError, \"unexpected null argument\");\n"
    "      return -1;\n"
    "   }\n"
-   "   int flags = PyLong_AsLong(value);\n"
-   "   if (PyErr_Occurred())\n"
+   "   int flags;\n"
+   "   PyObject *args = Py_BuildValue(\"(O)\", value);\n"
+   "   if (! PyArg_ParseTuple(args, \"I\", &flags)) {\n"
    "      return -1;\n"
+   "   }\n"
    "   try {\n"
    "      self->ostr->setCompression(flags);\n"
    "   }\n"
@@ -901,9 +909,11 @@ int main(int argC, char* argV[])
    "      PyErr_SetString(PyExc_TypeError, \"unexpected null argument\");\n"
    "      return -1;\n"
    "   }\n"
-   "   int flags = PyLong_AsLong(value);\n"
-   "   if (PyErr_Occurred())\n"
+   "   int flags;\n"
+   "   PyObject *args = Py_BuildValue(\"(O)\", value);\n"
+   "   if (! PyArg_ParseTuple(args, \"I\", &flags)) {\n"
    "      return -1;\n"
+   "   }\n"
    "   try {\n"
    "      self->ostr->setIntegrityChecks(flags);\n"
    "   }\n"
@@ -1433,6 +1443,7 @@ int main(int argC, char* argV[])
    "else:\n"
    "   source_dir = '.'\n"
    "source_file = 'pyhddm_" + classPrefix + ".cxx'\n"
+   "source_files = [source_file, 'hddm_" + classPrefix + ".cpp']\n"
    "copyfile(source_dir + '/pyhddm_" + classPrefix + ".cpy', source_file)\n"
    "\n"
    "module1 = Extension('hddm_" + classPrefix + "',\n"
@@ -1442,7 +1453,7 @@ int main(int argC, char* argV[])
    "                    libraries = ['HDDM', 'xstream', 'bz2', 'z'],\n"
    "                    library_dirs = [os.environ['HALLD_HOME'] + '/' +\n"
    "                                    os.environ['BMS_OSNAME'] + '/lib'],\n"
-   "                    sources = [source_file])\n"
+   "                    sources = source_files)\n"
    "\n"
    "setup (name = 'hddm_" << classPrefix << "',\n"
    "       version = '1.0',\n"
@@ -1686,15 +1697,37 @@ void CodeBuilder::writeClassdef(DOMElement* el)
    "   return (PyObject*)self;\n"
    "}\n"
    "\n"
-   "static int\n"
-   "_" << tagS.simpleType() << "_init(_" << tagS.simpleType() << 
-   " *self, PyObject *args, PyObject *kwds)\n"
-   "{\n"
-   "   PyErr_SetString(PyExc_RuntimeError, \"illegal constructor\");\n"
-   "   return -1;\n"
-   "}\n"
-   "\n"
    ;
+
+   if (tagS == "HDDM")
+   {
+      pyFile << 
+      "static int\n"
+      "_HDDM_init(_HDDM *self, PyObject *args, PyObject *kwds)\n"
+      "{\n"
+      "   self->elem = new HDDM();\n"
+      "   if (self->elem == 0) {\n"
+      "      PyErr_SetString(PyExc_RuntimeError, \"HDDM new constructor failed\");\n"
+      "      return -1;\n"
+      "   }\n"
+      "   return 0;\n"
+      "}\n"
+      "\n"
+      ;
+   }
+   else
+   {
+      pyFile << 
+      "static int\n"
+      "_" << tagS.simpleType() << "_init(_" << tagS.simpleType() << 
+      " *self, PyObject *args, PyObject *kwds)\n"
+      "{\n"
+      "   PyErr_SetString(PyExc_RuntimeError, \"illegal constructor\");\n"
+      "   return -1;\n"
+      "}\n"
+      "\n"
+      ;
+   }
 
    std::map<XtString,XtString> attrList;
    DOMNamedNodeMap *myAttr = el->getAttributes();
@@ -1916,12 +1949,13 @@ void CodeBuilder::writeClassdef(DOMElement* el)
                    "(_" << tagS.simpleType() << 
                    " *self, PyObject *value, void *closure)\n"
                    "{\n"
-                   "   self->elem->" << setS <<
-                   "(PyLong_AsLong(value));\n"
-                   "   if (PyErr_Occurred())\n"
+                   "   int var;\n"
+                   "   PyObject *args = Py_BuildValue(\"(O)\", value);\n"
+                   "   if (! PyArg_ParseTuple(args, \"i\", &var)) {\n"
                    "      return -1;\n"
-                   "   else\n"
-                   "      return 0;\n"
+                   "   }\n"
+                   "   self->elem->" << setS << "(var);\n"
+                   "   return 0;\n"
                    "}\n\n";
          setters[attrS] = 1;
       }
@@ -1932,12 +1966,13 @@ void CodeBuilder::writeClassdef(DOMElement* el)
                    "(_" << tagS.simpleType() << 
                    " *self, PyObject *value, void *closure)\n"
                    "{\n"
-                   "   self->elem->" << setS <<
-                   "(PyLong_AsLong(value));\n"
-                   "   if (PyErr_Occurred())\n"
+                   "   long var;\n"
+                   "   PyObject *args = Py_BuildValue(\"(O)\", value);\n"
+                   "   if (! PyArg_ParseTuple(args, \"l\", &var)) {\n"
                    "      return -1;\n"
-                   "   else\n"
-                   "      return 0;\n"
+                   "   }\n"
+                   "   self->elem->" << setS << "(var);\n"
+                   "   return 0;\n"
                    "}\n\n";
          setters[attrS] = 1;
       }
@@ -1948,12 +1983,13 @@ void CodeBuilder::writeClassdef(DOMElement* el)
                    "(_" << tagS.simpleType() << 
                    " *self, PyObject *value, void *closure)\n"
                    "{\n"
-                   "   self->elem->" << setS <<
-                   "(PyFloat_AsDouble(value));\n"
-                   "   if (PyErr_Occurred())\n"
-                   "      return -1;\n"
-                   "   else\n"
-                   "      return 0;\n"
+                   "   float var;\n"
+                   "   PyObject *args = Py_BuildValue(\"(O)\", value);\n"
+                   "   if (! PyArg_ParseTuple(args, \"f\", &var)) {\n"
+                   "      return 1;\n"
+                   "   }\n"
+                   "   self->elem->" << setS << "(var);\n"
+                   "   return 0;\n"
                    "}\n\n";
          setters[attrS] = 1;
       }
@@ -1964,12 +2000,13 @@ void CodeBuilder::writeClassdef(DOMElement* el)
                    "(_" << tagS.simpleType() << 
                    " *self, PyObject *value, void *closure)\n"
                    "{\n"
-                   "   self->elem->" << setS <<
-                   "(PyFloat_AsDouble(value));\n"
-                   "   if (PyErr_Occurred())\n"
+                   "   double var;\n"
+                   "   PyObject *args = Py_BuildValue(\"(O)\", value);\n"
+                   "   if (! PyArg_ParseTuple(args, \"d\", &var)) {\n"
                    "      return -1;\n"
-                   "   else\n"
-                   "      return 0;\n"
+                   "   }\n"
+                   "   self->elem->" << setS << "(var);\n"
+                   "   return 0;\n"
                    "}\n\n";
          setters[attrS] = 1;
       }
@@ -1980,12 +2017,13 @@ void CodeBuilder::writeClassdef(DOMElement* el)
                    "(_" << tagS.simpleType() << 
                    " *self, PyObject *value, void *closure)\n"
                    "{\n"
-                   "   self->elem->" << setS <<
-                   "((PyLong_AsLong(value)==0)? false : true);\n"
-                   "   if (PyErr_Occurred())\n"
+                   "   int var;\n"
+                   "   PyObject *args = Py_BuildValue(\"(O)\", value);\n"
+                   "   if (! PyArg_ParseTuple(args, \"i\", &var)) {\n"
                    "      return -1;\n"
-                   "   else\n"
-                   "      return 0;\n"
+                   "   }\n"
+                   "   self->elem->" << setS << "((var==0)? false : true);\n"
+                   "   return 0;\n"
                    "}\n\n";
          setters[attrS] = 1;
       }
@@ -1996,14 +2034,13 @@ void CodeBuilder::writeClassdef(DOMElement* el)
                    "(_" << tagS.simpleType() << 
                    " *self, PyObject *value, void *closure)\n"
                    "{\n"
-                   "   PyObject *u = PyUnicode_AsUTF8String(value);\n"
-                   "   self->elem->" << setS <<
-                   "(std::string(PyBytes_AsString(u)));\n"
-                   "   Py_DECREF(u);\n"
-                   "   if (PyErr_Occurred())\n"
+                   "   char *var;\n"
+                   "   PyObject *args = Py_BuildValue(\"(O)\", value);\n"
+                   "   if (! PyArg_ParseTuple(args, \"s\", &var)) {\n"
                    "      return -1;\n"
-                   "   else\n"
-                   "      return 0;\n"
+                   "   }\n"
+                   "   self->elem->" << setS << "(std::string(var));\n"
+                   "   return 0;\n"
                    "}\n\n";
          setters[attrS] = 1;
       }
@@ -2014,14 +2051,13 @@ void CodeBuilder::writeClassdef(DOMElement* el)
                    "(_" << tagS.simpleType() << 
                    " *self, PyObject *value, void *closure)\n"
                    "{\n"
-                   "   PyObject *u = PyUnicode_AsUTF8String(value);\n"
-                   "   self->elem->" << setS <<
-                   "(std::string(PyBytes_AsString(u)));\n"
-                   "   Py_DECREF(u);\n"
-                   "   if (PyErr_Occurred())\n"
+                   "   char *var;\n"
+                   "   PyObject *args = Py_BuildValue(\"(O)\", value);\n"
+                   "   if (! PyArg_ParseTuple(args, \"s\", &var)) {\n"
                    "      return -1;\n"
-                   "   else\n"
-                   "      return 0;\n"
+                   "   }\n"
+                   "   self->elem->" << setS << "(std::string(var));\n"
+                   "   return 0;\n"
                    "}\n\n";
          setters[attrS] = 1;
       }
@@ -2032,12 +2068,13 @@ void CodeBuilder::writeClassdef(DOMElement* el)
                    "(_" << tagS.simpleType() << 
                    " *self, PyObject *value, void *closure)\n"
                    "{\n"
-                   "   self->elem->" << setS <<
-                   "((Particle_t)PyLong_AsLong(value));\n"
-                   "   if (PyErr_Occurred())\n"
+                   "   int var;\n"
+                   "   PyObject *args = Py_BuildValue(\"(O)\", value);\n"
+                   "   if (! PyArg_ParseTuple(args, \"i\", var)) {\n"
                    "      return -1;\n"
-                   "   else\n"
-                   "      return 0;\n"
+                   "   }\n"
+                   "   self->elem->" << setS << "((Particle_t)var)\n"
+                   "   return 0;\n"
                    "}\n\n";
          setters[attrS] = 1;
       }
