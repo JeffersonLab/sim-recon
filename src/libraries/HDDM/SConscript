@@ -165,9 +165,9 @@ env.AppendUnique(HDDMPY_SRC  = env.HDDMPY(['setup_hddm_mc_s.py', 'pyhddm_mc_s.cp
 env.AppendUnique(HDDMPY_SRC  = env.HDDMPY(['setup_hddm_r.py', 'pyhddm_r.cpy'], ['rest.xml', hddmpy]))
 
 # Additional dependencies in the generated module source files
-env.Depends(['setup_hddm_s.py', 'pyhddm_s.cpy'], ['hddm_s.hpp'])
-env.Depends(['setup_hddm_mc_s.py', 'pyhddm_mc_s.cpy'], ['hddm_mc_s.hpp'])
-env.Depends(['setup_hddm_r.py', 'pyhddm_r.cpy'], ['hddm_r.hpp'])
+env.Depends(['setup_hddm_s.py', 'pyhddm_s.cpy'], ['hddm_s.hpp', 'hddm_s++.cpp'])
+env.Depends(['setup_hddm_mc_s.py', 'pyhddm_mc_s.cpy'], ['hddm_mc_s.hpp', 'hddm_mc_s++.cpp'])
+env.Depends(['setup_hddm_r.py', 'pyhddm_r.cpy'], ['hddm_r.hpp', 'hddm_r++.cpp'])
 
 # Finally, clone the build environment and make a library
 # out of all source. This should include the generated
