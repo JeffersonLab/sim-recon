@@ -165,7 +165,7 @@ def python_so_module(env, modname):
 	CurrentDir = env.Dir('.').srcnode().abspath
 	if not CurrentDir.startswith(env.GetLaunchDir()):
 		# Not in launch directory. Tell scons not to clean these targets
-		env.NoClean([mylib])
+		env.NoClean([modlib])
 	else:
 		# We're in launch directory (or descendent) schedule installation
 
