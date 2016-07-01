@@ -2073,7 +2073,7 @@ void CodeBuilder::writeClassdef(DOMElement* el)
                    "   if (! PyArg_ParseTuple(args, \"i\", var)) {\n"
                    "      return -1;\n"
                    "   }\n"
-                   "   self->elem->" << setS << "((Particle_t)var)\n"
+                   "   self->elem->" << setS << "((Particle_t)var);\n"
                    "   return 0;\n"
                    "}\n\n";
          setters[attrS] = 1;
