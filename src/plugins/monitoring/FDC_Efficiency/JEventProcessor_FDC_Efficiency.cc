@@ -23,7 +23,7 @@ static TH1I *hPseudoResX[25];
 static TH1I *hPseudoResY[25];
 static TH1I *hPseudoResU[25];
 static TH1I *hPseudoResV[25];
-static TH2I *hPseudoResUvsV[25];
+static TH2I *hPseudoResUvsV[25][9];
 static TH2I *hPseudoResVsT;
 static TH2I *hResVsT;
 static TH1I *hMom;
@@ -139,10 +139,12 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
 
     sprintf(hname_X, "hPseudoResU_cell[%d]", icell+1);
     sprintf(hname_Y, "hPseudoResV_cell[%d]", icell+1);
-    sprintf(hname_XY, "hPseudoResUvsV_cell[%d]", icell+1);
     hPseudoResU[icell+1] = new TH1I(hname_X,"Pseudo Residual along Wire", 600, -3, 3);
     hPseudoResV[icell+1] = new TH1I(hname_Y,"Pseudo Residual perp. to Wire", 600, -3, 3);
-    hPseudoResUvsV[icell+1] = new TH2I(hname_XY,"Pseudo Residual 2D", 200, -1, 1, 200, -1, 1);
+    for (int r=0; r<9; r++){
+      sprintf(hname_XY, "hPseudoResUvsV_cell[%d]_radius[%d]", icell+1, (r+1)*5);
+      hPseudoResUvsV[icell+1][r] = new TH2I(hname_XY,"Pseudo Residual 2D", 200, -1, 1, 200, -1, 1);
+    }
 
   }
 
@@ -482,7 +484,9 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	    hPseudoResY[cellNum]->Fill(residualY);
 	    hPseudoResU[cellNum]->Fill(residualU);
 	    hPseudoResV[cellNum]->Fill(residualV);
-	    hPseudoResUvsV[cellNum]->Fill(residualU, residualV);
+	    int radius = interPosition2D.Mod()/5;
+	    if (radius<9)
+	      hPseudoResUvsV[cellNum][radius]->Fill(residualU, residualV);
 	    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	    
 	    if (foundPseudo) continue; 

@@ -218,8 +218,6 @@ void FDC_Efficiency(bool save = 0){
   TCanvas *cResidual_Pseudo = new TCanvas("cResidual_Pseudo", "Pseudo Hit Resolution", 1000, 800);
   cResidual_Pseudo->Divide(6,4);
 
-  double cell[24];
-  double cell_err[24];
   double meanV[24];
   double meanV_err[24];
   double meanU[24];
@@ -239,8 +237,6 @@ void FDC_Efficiency(bool save = 0){
     h5->Draw();
     h5->Fit("gaus","q0");
     TF1 *fgaus5 = h5->GetFunction("gaus");
-    cell[icell-1] = icell;
-    cell_err[icell-1] = 0;
     meanV[icell-1] = fgaus5->GetParameter(1);
     //mean_err[icell-1] = fgaus5->GetParError(1) * fgaus->GetChisquare()/(fgaus->GetNDF()-1);
     meanV_err[icell-1] = fgaus5->GetParameter(2);
@@ -260,52 +256,64 @@ void FDC_Efficiency(bool save = 0){
 
   for(unsigned int icell=1; icell<=24; icell++){
     cResidual_Pseudo2->cd(icell);
-    char hname7[256];
-    sprintf(hname7, "hPseudoResUvsV_cell[%d]", icell);
-    TH2 *h7 = (TH2*)(gDirectory->Get(hname7));
+    for (unsigned int r=0; r<9; r++){
+      char hname7[256];
+      sprintf(hname7, "hPseudoResUvsV_cell[%d]_radius[%d]", icell, (r+1)*5);
+      TH2 *h7 = (TH2*)(gDirectory->Get(hname7));
       
-    h7->GetYaxis()->SetTitle("Position reconstructed along Wire (cm)");
-    h7->GetYaxis()->SetRangeUser(-0.5,0.5);
-    h7->GetXaxis()->SetTitle("Position perp. to Wire (cm)");
-    h7->GetXaxis()->SetRangeUser(-0.5,0.5);
-    h7->Draw("col");
-
-    h7->ProfileY();
-    
+      h7->GetYaxis()->SetTitle("Position reconstructed along Wire (cm)");
+      h7->GetYaxis()->SetRangeUser(-0.5,0.5);
+      h7->GetXaxis()->SetTitle("Position perp. to Wire (cm)");
+      h7->GetXaxis()->SetRangeUser(-0.5,0.5);
+      h7->Draw("col");
+      
+      h7->ProfileY();
+    }
   }
 
-  double slope[24];
-  double slope_err[24];
+  double slope[9][24];
+  double slope_err[9][24];
+  double cell[9][24];
+  double cell_err[9][24];
   TCanvas *cResidual_Profile = new TCanvas("cResidual_Profile", "Pseudo Resolution Profile", 1000, 800);
   cResidual_Profile->Divide(6,4);
   
   for(unsigned int icell=1; icell<=24; icell++){
     cResidual_Profile->cd(icell);
-    char hname8[256];
-    sprintf(hname8, "hPseudoResUvsV_cell[%d]_pfy", icell);
-    TH1 *h8 = (TH1*)(gDirectory->Get(hname8));
+    for (unsigned int r=0; r<9; r++){
+      cell[r][icell] = icell + 0.1*r;
+      cell_err[r][icell] = 0;
+      char hname8[256];
+      sprintf(hname8, "hPseudoResUvsV_cell[%d]_radius[%d]_pfy", icell, (r+1)*5);
+      TH1 *h8 = (TH1*)(gDirectory->Get(hname8));
       
-    h8->GetXaxis()->SetTitle("Position reconstructed along Wire (cm)");
-    h8->GetXaxis()->SetRangeUser(-0.15,0.15);
-    h8->GetYaxis()->SetTitle("Position perp. to Wire (cm)");
-    h8->GetYaxis()->SetRangeUser(-0.5,0.5);
-    h8->GetYaxis()->SetTitleFont(42);
-    h8->GetYaxis()->SetTitleSize(0.035);
-    h8->GetYaxis()->SetLabelFont(42);
-    h8->GetYaxis()->SetLabelSize(0.035);
-    h8->Draw();
-
-    TF1 *fp1 = new TF1("fp1","[0]+x*[1]",-0.08,0.08);
-    h8->Fit("fp1","qr");
-    slope[icell-1] = fp1->GetParameter(1);
-    slope_err[icell-1] = fp1->GetParError(1);
+      h8->GetXaxis()->SetTitle("Position reconstructed along Wire (cm)");
+      h8->GetXaxis()->SetRangeUser(-0.15,0.15);
+      h8->GetYaxis()->SetTitle("Position perp. to Wire (cm)");
+      h8->GetYaxis()->SetRangeUser(-0.5,0.5);
+      h8->GetYaxis()->SetTitleFont(42);
+      h8->GetYaxis()->SetTitleSize(0.035);
+      h8->GetYaxis()->SetLabelFont(42);
+      h8->GetYaxis()->SetLabelSize(0.035);
+      h8->SetLineColor(r+1);
+      if (r == 0)
+	h8->Draw();
+      else 
+	h8->Draw("same");
+      
+      TF1 *fp1 = new TF1("fp1","[0]+x*[1]",-0.08,0.08);
+      fp1->SetLineColor(r+1);
+      h8->Fit("fp1","qr");
+      slope[r][icell-1] = fp1->GetParameter(1);
+      slope_err[r][icell-1] = fp1->GetParError(1);
+    }
   }
 
   TCanvas *cAlignment = new TCanvas("cAlignment", "Alignment", 1200, 1000);
   cAlignment->Divide(2,2);
   
   cAlignment->cd(1);
-  TGraphErrors *galignV = new TGraphErrors(24, cell, meanV, cell_err, meanV_err);
+  TGraphErrors *galignV = new TGraphErrors(24, cell[0], meanV, cell_err[0], meanV_err);
   galignV->SetTitle("Alignment along Wire (Error Bars: Sigma); Cell \# ; V_{Hit} - V_{Track} (cm)");
   galignV->SetMarkerColor(1);
   galignV->SetMarkerStyle(2);
@@ -328,7 +336,7 @@ void FDC_Efficiency(bool save = 0){
   lpack34->Draw();
 
   cAlignment->cd(2);
-  TGraphErrors *galignU = new TGraphErrors(24, cell, meanU, cell_err, meanU_err);
+  TGraphErrors *galignU = new TGraphErrors(24, cell[0], meanU, cell_err[0], meanU_err);
   galignU->SetTitle("Alignment perp. to Wire (Error Bars: Sigma); Cell \# ; U_{Hit} - U_{Track} (cm)");
   galignU->SetMarkerColor(1);
   galignU->SetMarkerStyle(2);
@@ -339,10 +347,16 @@ void FDC_Efficiency(bool save = 0){
   lpack34->Draw();
 
   cAlignment->cd(3);
-  TGraphErrors *gmagnet = new TGraphErrors(24, cell, slope, cell_err, slope_err);
-  gmagnet->SetTitle("Value for slope of magnetic deflection; Cell \# ; Slope (cm^{-1})");
-  gmagnet->SetMarkerColor(1);
-  gmagnet->SetMarkerStyle(2);
-  gmagnet->Draw("AP");
-
+  TGraphErrors *gmagnet[9];
+  for (unsigned int r=0; r<9; r++){
+    gmagnet[r] = new TGraphErrors(24, cell[r], slope[r], cell_err[r], slope_err[r]);
+    gmagnet[r]->SetTitle("Value for slope of magnetic deflection; Cell \# ; Slope (cm^{-1})");
+    gmagnet[r]->SetMarkerColor(r+1);
+    gmagnet[r]->SetMarkerStyle(2);
+    if (r==0)
+      gmagnet[r]->Draw("AP");
+    else 
+      gmagnet[r]->Draw("Psame");
+  }
+  
 }
