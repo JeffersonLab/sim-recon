@@ -1850,7 +1850,7 @@ void CodeBuilder::constructOpenFunc(DOMElement* el)
 	 << "malloc(sizeof(" << classPrefix << "_iostream_t));"	<< std::endl
 	 << "   char* p;"					<< std::endl
 	 << "   char* head;"					<< std::endl
-	 << "   char* nullfilename=\"\";"			<< std::endl
+	 << "   char* nullfilename=(char*)\"\";"		<< std::endl
          << "   if (filename)"					<< std::endl
          << "   {"						<< std::endl
 	 << "      fp->fd = fopen(filename,\"r\");"		<< std::endl
@@ -1940,7 +1940,7 @@ void CodeBuilder::constructInitFunc(DOMElement* el)
 	 << "{"							<< std::endl
 	 << "   int len;"					<< std::endl	
 	 << "   char* head;"					<< std::endl
-	 << "   char* nullfilename=\"\";"			<< std::endl
+	 << "   char* nullfilename=(char*)\"\";"		<< std::endl
 	 << "   " << classPrefix << "_iostream_t* fp = "
 	 << "(" << classPrefix << "_iostream_t*)"
 	 << "malloc(sizeof(" << classPrefix << "_iostream_t));"	<< std::endl
