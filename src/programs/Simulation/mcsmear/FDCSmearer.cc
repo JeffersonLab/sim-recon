@@ -13,11 +13,6 @@ fdc_config_t::fdc_config_t(JEventLoop *loop)
  	FDC_TIME_WINDOW       = 0.0;
  	FDC_THRESH_KEV        = 0.0;
 
-   	// Calculate ped noise level based on position resolution
-   	//   FDC_PED_NOISE = -0.004594 + 0.008711*FDC_CATHODE_SIGMA +
-   	//                    0.000010*FDC_CATHODE_SIGMA*FDC_CATHODE_SIGMA; //pC
-   	FDC_PED_NOISE = -0.0938 + 0.0485*FDC_CATHODE_SIGMA;
-
 	// load data from CCDB
 	cout << "Get FDC/fdc_parms parameters from CCDB..." << endl;
     map<string, double> fdcparms;
@@ -32,6 +27,12 @@ fdc_config_t::fdc_config_t(JEventLoop *loop)
        	//FDC_HIT_DROP_FRACTION = fdcparms["FDC_HIT_DROP_FRACTION"];   // ???
        	FDC_THRESH_KEV 		  = fdcparms["FDC_THRESH_KEV"]; 
 	}
+
+   	// Calculate ped noise level based on position resolution
+   	//   FDC_PED_NOISE = -0.004594 + 0.008711*FDC_CATHODE_SIGMA +
+   	//                    0.000010*FDC_CATHODE_SIGMA*FDC_CATHODE_SIGMA; //pC
+   	FDC_PED_NOISE = -0.0938 + 0.0485*FDC_CATHODE_SIGMA;
+
 }
 
 
