@@ -9,6 +9,8 @@
 #include <JANA/JEventLoop.h>
 #include "DRandom2.h"
 
+#include <RCDB/Connection.h>
+
 using namespace jana;
 
 //  std::numeric_limits::epsilon();
@@ -32,6 +34,20 @@ class mcsmear_config_t
 		IGNORE_SEEDS   = false;
 		
 		TRIGGER_LOOKBACK_TIME = -100; // ns
+		
+#ifdef RCDB_HOME
+		// RCDB configuration
+		// first determine which database to connect to
+		if( getenv("RCDB_CONNECTION")!= NULL )
+			RCDB_CONNECTION = getenv("RCDB_CONNECTION");
+		else
+			RCDB_CONNECTION = "mysql://rcdb@hallddb/rcdb";   // default to outward-facing MySQL DB
+			
+		gPARMS->SetDefaultParameters("RCDB_CONNECTION", RCDB_CONNECTION, "URL used to access RCDB.");
+			
+		// load connection to RCDB
+		rcdb_connection = new rcdb::Connection(RCDB_CONNECTION);
+#endif //RCDB_HOME
 	}
 	~mcsmear_config_t() {}
 
@@ -64,6 +80,13 @@ class mcsmear_config_t
 	//bool FDC_ELOSS_OFF;
 	bool IGNORE_SEEDS;
 	double TRIGGER_LOOKBACK_TIME;
+	
+#ifdef RCDB_HOME
+	// RCDB information
+	string RCDB_CONNECTION;
+	rcdb::Connection *rcdb_connection;
+#endif  // RCDB_HOME
+
 };
 
 
