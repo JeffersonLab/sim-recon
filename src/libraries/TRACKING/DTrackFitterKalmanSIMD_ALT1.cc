@@ -332,7 +332,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
                   for (unsigned int m=0;m<Klist.size();m++){
                      double my_prob=probs[m]/prob_tot;
                      S+=my_prob*(Mlist[m]*Klist[m]);
-                     sum+=my_prob*(Klist[m]*Hlist[m]);
+                     sum-=my_prob*(Klist[m]*Hlist[m]);
                      sum2+=(my_prob*my_prob*Vlist[m])*MultiplyTranspose(Klist[m]);
                      if (DEBUG_LEVEL > 25) {
                         jout << " Adjusting state vector for FDC hit " << m << " with prob " << my_prob << " S:" << endl;
@@ -1032,6 +1032,12 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
    DMatrix5x5 Cs=C;
    DMatrix5x5 A,dC;
 
+
+   if (DEBUG_LEVEL>19){
+     jout << "---- Smoothed residuals ----" <<endl;
+     jout << setprecision(4); 
+   }
+
    for (unsigned int m=max-1;m>0;m--){
       if (forward_traj[m].h_id>0){
          if (forward_traj[m].h_id<1000){
@@ -1082,6 +1088,16 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
             double tv=tx*sina+ty*cosa;
             double resi=v-(vpred_uncorrected+doca*(nz_sinalpha_plus_nr_cosalpha
                      -tv*sinalpha));
+	    
+	    if (DEBUG_LEVEL>19){
+	      jout << "Layer " << my_fdchits[id]->hit->wire->layer
+		   <<":  x "<< x  << " " <<  u*cosa+v*sina << " y " << y 
+		   << " " << v*cosa-u*sina 
+		   << " coordinate along wire " << v << " resi_c " <<resi
+		   << " wire position " << u
+		   <<endl;
+	    }
+	    
 
             // Variance from filter step
             double V=fdc_updates[id].variance;
@@ -1110,11 +1126,12 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
             }
 
             pulls.push_back(pull_t(resi,sqrt(V),
-                     forward_traj[m].s,
-                     fdc_updates[id].tdrift,
-                     fdc_updates[id].doca,
-                     NULL,my_fdchits[id]->hit,
-                     forward_traj[m].z));
+				   forward_traj[m].s,
+				   fdc_updates[id].tdrift,
+				   fdc_updates[id].doca,
+				   NULL,my_fdchits[id]->hit,0.,
+				   forward_traj[m].z   			   
+				   ));
          }
          else{
             unsigned int id=forward_traj[m].h_id-1000;

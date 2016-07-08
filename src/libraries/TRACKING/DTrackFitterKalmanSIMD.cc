@@ -99,6 +99,10 @@ double fdc_drift_variance(double t){
     for (int i=0;i<4;i++) sigma+=par[i]*pow(t,i);
     sigma*=1.1;
 
+
+    sigma=0.1;
+
+
     return sigma*sigma;
 }
 
@@ -266,7 +270,7 @@ double DTrackFitterKalmanSIMD::fdc_drift_distance(double time,double Bz){
   if (time<0.) return 0.;
   if (time>150.) return 0.5;
   double d=0.;
-  
+  /*
   double p[10]={0.0140545,0.2021   ,-0.0141173 , 0.000696696,-2.12726e-05, 4.06174e-07,-4.85407e-09,3.52305e-11 ,  -1.41865e-13,2.42958e-16};
   
   for (int l=0;l<10;l++) {
@@ -275,8 +279,12 @@ double DTrackFitterKalmanSIMD::fdc_drift_distance(double time,double Bz){
   if (d<0){
     return 0.;
   }
+  */
   
-  return 0.1*d;
+  d=0.05*sqrt(time)-0.0026*time+8.18e-6*time*time;
+  
+  
+  return d;
 }
 
 
@@ -322,7 +330,12 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     PHOTON_ENERGY_CUTOFF=0.125; 
     gPARMS->SetDefaultParameter("KALMAN:PHOTON_ENERGY_CUTOFF",
 				PHOTON_ENERGY_CUTOFF); 
-
+    
+    USE_FDC_HITS=true;
+    gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_HITS",USE_FDC_HITS);
+    USE_CDC_HITS=true;
+    gPARMS->SetDefaultParameter("TRKFIT:USE_CDC_HITS",USE_CDC_HITS);
+    
     DEBUG_HISTS=false; 
     gPARMS->SetDefaultParameter("KALMAN:DEBUG_HISTS", DEBUG_HISTS);
 
@@ -590,9 +603,9 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
     if (cdchits.size()+fdchits.size()<6) return kFitNotDone;
 
     // Copy hits from base class into structures specific to DTrackFitterKalmanSIMD  
-    if (cdchits.size()>=MIN_CDC_HITS) 
+    if (USE_CDC_HITS && cdchits.size()>=MIN_CDC_HITS) 
       for(unsigned int i=0; i<cdchits.size(); i++)AddCDCHit(cdchits[i]);
-    if (fdchits.size()>=MIN_FDC_HITS)
+    if (USE_FDC_HITS && fdchits.size()>=MIN_FDC_HITS)
       for(unsigned int i=0; i<fdchits.size(); i++)AddFDCHit(fdchits[i]);
 
     unsigned int num_good_cdchits=my_cdchits.size();
@@ -4596,9 +4609,20 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	    for (unsigned int m=0;m<Klist.size();m++){
 	      double my_prob=probs[m]/prob_tot;
 	      S+=my_prob*(Klist[m]*Mlist[m]);
-	      sum+=my_prob*(Klist[m]*Hlist[m]);
+	      sum-=my_prob*(Klist[m]*Hlist[m]);
 	      sum2+=(my_prob*my_prob)*(Klist[m]*Vlist[m]*Transpose(Klist[m]));
 
+	      // Update chi2
+	      DMatrix2x2 HK=Hlist[m]*Klist[m];
+	      R=Mlist[m]-HK*Mlist[m];
+	      RC=Vlist[m]-HK*Vlist[m];
+	      chisq+=my_prob*RC.Chi2(R);
+	      
+	      unsigned int my_id=used_ids[m];  
+	      if (fit_type==kTimeBased){
+		fdc_updates[my_id].V=RC;
+	      }
+	     
 	      if (DEBUG_LEVEL > 25) {
 		jout << " Adjusting state vector for FDC hit " << m << " with prob " << my_prob << " S:" << endl;
 		S.Print();
@@ -4618,24 +4642,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 		=my_fdchits[my_id]->t-forward_traj[k].t*TIME_UNIT_CONVERSION-mT0;
 	      fdc_updates[my_id].tcorr=fdc_updates[my_id].tdrift; // temporary!
 	      fdc_updates[my_id].doca=doca;
-	    }
 
-	    // update chi2
-	    if (skip_plane==false){
-	      // Filtered residual and covariance of filtered residual
-	      R=Mdiff-H*K*Mdiff;   
-	      RC=V-H*(C*H_T);
-	      
-	      if (fit_type==kTimeBased){
-		fdc_updates[my_id].V=RC;
-	      }
-
-	      // Update chi2 for this segment
-	      chisq+=(probs[m]/prob_tot)*RC.Chi2(R);
-	    }
-	    else{
-	      if (fit_type==kTimeBased){
-		fdc_updates[my_id].V=V;
+	      if (skip_plane){
+	      	fdc_updates[my_id].V=Vlist[m];
 	      }
 	    }
 	  }
@@ -4698,7 +4707,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	      numdof+=2;
 	    
 		    
-	      if (DEBUG_LEVEL>10)
+	      if (DEBUG_LEVEL>20)
 		{
 		printf("hit %d p %5.2f t %f dm %5.2f sig %f chi2 %5.2f z %5.2f\n",
 		       id,1./S(state_q_over_p),fdc_updates[id].tdrift,Mdiff(1),
@@ -4997,7 +5006,6 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	    //_DBG_ << "t " << tdrift << " d " << d << " delta " << delta << " dphi " << atan2(dy,dx)-mywire->origin.Phi() << endl;
 	    
 	    //_DBG_ << tcorr << " " << dphi << " " << dm << endl;
-	    
 	  }
 
 	  // Residual
@@ -7710,104 +7718,132 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(void){
   DMatrix5x1 Ss=S;
   DMatrix5x5 Cs=C;
   DMatrix5x5 A,dC;
+  
+  if (DEBUG_LEVEL>19){
+    jout << "---- Smoothed residuals ----" <<endl;
+    jout << setprecision(4); 
+  }
 
   for (unsigned int m=max-1;m>0;m--){
     if (forward_traj[m].h_id>0){
       if (forward_traj[m].h_id<1000){
 	unsigned int id=forward_traj[m].h_id-1;
-	A=fdc_updates[id].C*JT*C.InvertSym();
-	Ss=fdc_updates[id].S+A*(Ss-S);
+	if (fdc_used_in_fit[id]){
+	  A=fdc_updates[id].C*JT*C.InvertSym();
+	  Ss=fdc_updates[id].S+A*(Ss-S);
+	  
+	  if (!isfinite(Ss(state_q_over_p))){ 
+	    if (DEBUG_LEVEL>5) _DBG_ << "Invalid values for smoothed parameters..." << endl;
+	    return VALUE_OUT_OF_RANGE;
+	  }
+	  dC=A*(Cs-C)*A.Transpose();
+	  Cs=fdc_updates[id].C+dC;
+	  
+	  double cosa=my_fdchits[id]->cosa;
+	  double sina=my_fdchits[id]->sina;
+	  double u=my_fdchits[id]->uwire;
+	  double v=my_fdchits[id]->vstrip;
+	  
+	  // Position and direction from state vector
+	  double x=Ss(state_x);
+	  double y=Ss(state_y);
+	  double tx=Ss(state_tx);
+	  double ty=Ss(state_ty);
+	  
+	  // Projected position along the wire without doca-dependent corrections
+	  double vpred_uncorrected=x*sina+y*cosa;
+	  
+	  // Projected position in the plane of the wires transverse to the wires
+	  double upred=x*cosa-y*sina;
+	  
+	  // Direction tangent in the u-z plane
+	  double tu=tx*cosa-ty*sina;
+	  double alpha=atan(tu);
+	  double cosalpha=cos(alpha);
+	  //double cosalpha2=cosalpha*cosalpha;
+	  double sinalpha=sin(alpha);
+	  
+	  // (signed) distance of closest approach to wire
+	  double du=upred-u;
+	  double doca=du*cosalpha;
+	  
+	  // Correction for lorentz effect
+	  double nz=my_fdchits[id]->nz;
+	  double nr=my_fdchits[id]->nr;
+	  double nz_sinalpha_plus_nr_cosalpha=nz*sinalpha+nr*cosalpha;
+	  
+	  // Difference between measurement and projection
+	  double tv=tx*sina+ty*cosa;
+	  double resi=v-(vpred_uncorrected+doca*(nz_sinalpha_plus_nr_cosalpha
+					       -tv*sinalpha));	
+	  double drift_time=my_fdchits[id]->t-mT0
+	    -forward_traj[m].t*TIME_UNIT_CONVERSION;
+	  double drift=(du>0.0?1.:-1.)*fdc_drift_distance(drift_time,forward_traj[m].B);
+	  
+	  double resi_a=drift-doca;
 	
-	if (!isfinite(Ss(state_q_over_p))){ 
-	  if (DEBUG_LEVEL>5) _DBG_ << "Invalid values for smoothed parameters..." << endl;
-	  return VALUE_OUT_OF_RANGE;
-	}
-	dC=A*(Cs-C)*A.Transpose();
-	Cs=fdc_updates[id].C+dC;
-	
-	double cosa=my_fdchits[id]->cosa;
-	double sina=my_fdchits[id]->sina;
-	double u=my_fdchits[id]->uwire;
-	double v=my_fdchits[id]->vstrip;
-	
-	// Position and direction from state vector
-	double x=Ss(state_x);
-	double y=Ss(state_y);
-	double tx=Ss(state_tx);
-	double ty=Ss(state_ty);
-	
-	// Projected position along the wire without doca-dependent corrections
-	double vpred_uncorrected=x*sina+y*cosa;
-	
-	// Projected position in the plane of the wires transverse to the wires
-	double upred=x*cosa-y*sina;
-	
-	// Direction tangent in the u-z plane
-	double tu=tx*cosa-ty*sina;
-	double alpha=atan(tu);
-	double cosalpha=cos(alpha);
-	//double cosalpha2=cosalpha*cosalpha;
-	double sinalpha=sin(alpha);
-	
-	// (signed) distance of closest approach to wire
-	double du=upred-u;
-	double doca=du*cosalpha;
-
-	// Correction for lorentz effect
-	double nz=my_fdchits[id]->nz;
-	double nr=my_fdchits[id]->nr;
-	double nz_sinalpha_plus_nr_cosalpha=nz*sinalpha+nr*cosalpha;
-	
-	// Difference between measurement and projection
-	double tv=tx*sina+ty*cosa;
-	double resi=v-(vpred_uncorrected+doca*(nz_sinalpha_plus_nr_cosalpha
-					       -tv*sinalpha));
-	
-	// Variance from filter step
-	DMatrix2x2 V=fdc_updates[id].V;
+	  if (DEBUG_LEVEL>19){
+	    jout << "Layer " << my_fdchits[id]->hit->wire->layer
+		 <<":   t " << drift_time << " x "<< x << " y " << y 
+		 << " coordinate along wire " << v << " resi_c " <<resi
+		 << " coordinate transverse to wire " << drift 
+		 <<" resi_a " << resi_a
+		 <<endl;
+	  }
+	  
+	  // Variance from filter step
+	  DMatrix2x2 V=fdc_updates[id].V;
 	// Compute projection matrix and find the variance for the residual
-	DMatrix5x2 H_T;
-	double temp2=nz_sinalpha_plus_nr_cosalpha-tv*sinalpha;
-	H_T(state_x,1)=sina+cosa*cosalpha*temp2;	
-	H_T(state_y,1)=cosa-sina*cosalpha*temp2;	
-       
-	double cos2_minus_sin2=cosalpha*cosalpha-sinalpha*sinalpha;
-	double fac=nz*cos2_minus_sin2-2.*nr*cosalpha*sinalpha;
-	double doca_cosalpha=doca*cosalpha;
-	double temp=doca_cosalpha*fac;	
-	H_T(state_tx,1)=cosa*temp
-	  -doca_cosalpha*(tu*sina+tv*cosa*cos2_minus_sin2)
-	  ;
-	H_T(state_ty,1)=-sina*temp
-	  -doca_cosalpha*(tu*cosa-tv*sina*cos2_minus_sin2)
-	  ;
-
-	H_T(state_x,0)=cosa*cosalpha;
-	H_T(state_y,0)=-sina*cosalpha;
-	double one_plus_tu2=1.+tu*tu;
-	double factor=du*tu/sqrt(one_plus_tu2)/one_plus_tu2;
-	H_T(state_ty,0)=sina*factor;
-	H_T(state_tx,0)=-cosa*factor;
-
-	// Matrix transpose H_T -> H
-	DMatrix2x5 H=Transpose(H_T);
+	  DMatrix5x2 H_T;
+	  double temp2=nz_sinalpha_plus_nr_cosalpha-tv*sinalpha;
+	  H_T(state_x,1)=sina+cosa*cosalpha*temp2;	
+	  H_T(state_y,1)=cosa-sina*cosalpha*temp2;	
+	  
+	  double cos2_minus_sin2=cosalpha*cosalpha-sinalpha*sinalpha;
+	  double fac=nz*cos2_minus_sin2-2.*nr*cosalpha*sinalpha;
+	  double doca_cosalpha=doca*cosalpha;
+	  double temp=doca_cosalpha*fac;	
+	  H_T(state_tx,1)=cosa*temp
+	    -doca_cosalpha*(tu*sina+tv*cosa*cos2_minus_sin2)
+	    ;
+	  H_T(state_ty,1)=-sina*temp
+	    -doca_cosalpha*(tu*cosa-tv*sina*cos2_minus_sin2)
+	    ;
+	  
+	  H_T(state_x,0)=cosa*cosalpha;
+	  H_T(state_y,0)=-sina*cosalpha;
+	  double one_plus_tu2=1.+tu*tu;
+	  double factor=du*tu/sqrt(one_plus_tu2)/one_plus_tu2;
+	  H_T(state_ty,0)=sina*factor;
+	  H_T(state_tx,0)=-cosa*factor;
+	  
+	  // Matrix transpose H_T -> H
+	  DMatrix2x5 H=Transpose(H_T);
+	  
+	  
+	  if (my_fdchits[id]->hit->wire->layer==PLANE_TO_SKIP){
+	    //V+=Cs.SandwichMultiply(H_T);
+	    V=V+H*Cs*H_T;
+	  }
+	  else{
+	    //V-=dC.SandwichMultiply(H_T);
+	    V=V-H*dC*H_T;
+	  }
 	
-
-	if (my_fdchits[id]->hit->wire->layer==PLANE_TO_SKIP){
-	  //V+=Cs.SandwichMultiply(H_T);
-	  V=V+H*Cs*H_T;
+	  pulls.push_back(pull_t(resi_a,sqrt(V(0,0)),
+				 forward_traj[m].s,
+				 fdc_updates[id].tdrift,
+				 fdc_updates[id].doca,
+				 NULL,my_fdchits[id]->hit,0.,
+				 forward_traj[m].z,0.,
+				 resi,sqrt(V(1,1))));
 	}
 	else{
-	  //V-=dC.SandwichMultiply(H_T);
-	  V=V-H*dC*H_T;
+	  A=forward_traj[m].Ckk*JT*C.InvertSym();
+	  Ss=forward_traj[m].Skk+A*(Ss-S);
+	  Cs=forward_traj[m].Ckk+A*(Cs-C)*A.Transpose();
 	}
-	
-	pulls.push_back(pull_t(resi,sqrt(V(1,1)),
-			       forward_traj[m].s,
-			       fdc_updates[id].tdrift,
-			       fdc_updates[id].doca,
-			       NULL,my_fdchits[id]->hit,
-			       forward_traj[m].z));
+
       }
       else{
 	unsigned int id=forward_traj[m].h_id-1000;
