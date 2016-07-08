@@ -123,6 +123,11 @@ jerror_t MyProcessor::brun(JEventLoop *loop, int locRunNumber)
 		delete smearer;
 	smearer = new Smear(config, loop);
 
+#ifdef HAVE_RCDB
+	// Pull configuration parameters from RCDB
+	config->ParseRCDBConfigFile(locRunNumber);
+#endif  // HAVE_RCDB
+
 	return NOERROR;
 }
 
