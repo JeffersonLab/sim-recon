@@ -5,6 +5,7 @@
 
 #include "mcsmear_config.h"
 #include "HDDM/hddm_s.hpp"
+#include "DRandom2.h"
 
 #include <JANA/JEventLoop.h>
 using namespace jana;

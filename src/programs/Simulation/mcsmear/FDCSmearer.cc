@@ -58,9 +58,9 @@ void FDCSmearer::SmearEvent(hddm_s::HDDM *record)
                                          siter->getFdcCathodeTruthHits();
           hddm_s::FdcCathodeTruthHitList::iterator titer;
           for (titer = thits.begin(); titer != thits.end(); ++titer) {
-            double q = titer->getQ() + SampleGaussian(fdc_config->FDC_PED_NOISE);
+            double q = titer->getQ() + gDRandom.SampleGaussian(fdc_config->FDC_PED_NOISE);
             double t = titer->getT() +
-                       SampleGaussian(fdc_config->FDC_TDRIFT_SIGMA)*1.0e9;
+                       gDRandom.SampleGaussian(fdc_config->FDC_TDRIFT_SIGMA)*1.0e9;
             if (q > threshold && t > config->TRIGGER_LOOKBACK_TIME && t < t_max) {
                hddm_s::FdcCathodeHitList hits = siter->addFdcCathodeHits();
                hits().setQ(q);
@@ -81,7 +81,7 @@ void FDCSmearer::SmearEvent(hddm_s::HDDM *record)
          hddm_s::FdcAnodeTruthHitList thits = witer->getFdcAnodeTruthHits();
          hddm_s::FdcAnodeTruthHitList::iterator titer;
          for (titer = thits.begin(); titer != thits.end(); ++titer) {
-            double t = titer->getT() + SampleGaussian(fdc_config->FDC_TDRIFT_SIGMA)*1.0e9;
+            double t = titer->getT() + gDRandom.SampleGaussian(fdc_config->FDC_TDRIFT_SIGMA)*1.0e9;
             if (t > config->TRIGGER_LOOKBACK_TIME && t < t_max) {
                hddm_s::FdcAnodeHitList hits = witer->addFdcAnodeHits();
                hits().setT(t);

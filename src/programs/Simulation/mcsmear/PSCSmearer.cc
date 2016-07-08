@@ -25,10 +25,10 @@ void PSCSmearer::SmearEvent(hddm_s::HDDM *record)
       hddm_s::PscTruthHitList::iterator titer;
       for (titer = thits.begin(); titer != thits.end(); ++titer) {
          // smear the time
-         double t = titer->getT() + SampleGaussian(psc_config->PSC_SIGMA);
+         double t = titer->getT() + gDRandom.SampleGaussian(psc_config->PSC_SIGMA);
          // smear the energy
          double npe = titer->getDE() * 1000. *  psc_config->PSC_PHOTONS_PERMEV;
-         npe = npe +  SampleGaussian(sqrt(npe));
+         npe = npe +  gDRandom.SampleGaussian(sqrt(npe));
          double NewE = npe/psc_config->PSC_PHOTONS_PERMEV/1000.;
          if (NewE > psc_config->PSC_THRESHOLD) {
             hddm_s::PscHitList hits = iter->addPscHits();

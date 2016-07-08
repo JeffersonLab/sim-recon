@@ -79,11 +79,11 @@ void FCALSmearer::SmearEvent(hddm_s::HDDM *record)
          double sigma = fcal_config->FCAL_PHOT_STAT_COEF/sqrt(titer->getE());
               
          // Apply constant scale factor to MC eneregy. 06/22/2016 A. Subedi
-         double E = fcal_config->FCAL_MC_ESCALE * titer->getE() * (1.0 + SampleGaussian(sigma)); 
+         double E = fcal_config->FCAL_MC_ESCALE * titer->getE() * (1.0 + gDRandom.SampleGaussian(sigma)); 
          
          
          // Smear the time by 200 ps (fixed for now) 7/2/2009 DL
-         double t = titer->getT() + SampleGaussian(fcal_config->FCAL_TSIGMA); 
+         double t = titer->getT() + gDRandom.SampleGaussian(fcal_config->FCAL_TSIGMA); 
          // Apply a single block threshold. 
          
          // Scale threshold by gains         

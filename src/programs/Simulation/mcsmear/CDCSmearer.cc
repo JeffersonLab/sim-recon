@@ -60,11 +60,11 @@ void CDCSmearer::SmearEvent(hddm_s::HDDM *record)
       hddm_s::CdcStrawTruthHitList::iterator titer;
       for (titer = thits.begin(); titer != thits.end(); ++ titer) {
          // Pedestal-smeared charge
-         double q = titer->getQ() + SampleGaussian(cdc_config->CDC_PEDESTAL_SIGMA);
+         double q = titer->getQ() + gDRandom.SampleGaussian(cdc_config->CDC_PEDESTAL_SIGMA);
          // Smear out the CDC drift time using the specified sigma.
          // This is for timing resolution from the electronics;
          // diffusion is handled in hdgeant.
-         double t = titer->getT() + SampleGaussian(cdc_config->CDC_TDRIFT_SIGMA)*1.0e9;
+         double t = titer->getT() + gDRandom.SampleGaussian(cdc_config->CDC_TDRIFT_SIGMA)*1.0e9;
          if (t > config->TRIGGER_LOOKBACK_TIME && t < t_max && q > threshold) {
             hits = iter->addCdcStrawHits();
             hits().setT(t);

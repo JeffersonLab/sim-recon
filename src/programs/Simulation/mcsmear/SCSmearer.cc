@@ -46,11 +46,11 @@ void SCSmearer::SmearEvent(hddm_s::HDDM *record)
       hddm_s::StcTruthHitList::iterator titer;
       for (titer = thits.begin(); titer != thits.end(); ++titer) {
          // smear the time
-         double t = titer->getT() + SampleGaussian(sc_config->START_SIGMA);
-         //double t = titer->getT() + SampleGaussian(sc_config->GetPaddleTimeResolution(iter->getSector()));
+         //double t = titer->getT() + gDRandom.SampleGaussian(sc_config->START_SIGMA);
+         double t = titer->getT() + gDRandom.SampleGaussian(sc_config->GetPaddleTimeResolution(iter->getSector()));
          // smear the energy
          double npe = titer->getDE() * 1000. *  sc_config->START_PHOTONS_PERMEV;
-         npe = npe +  SampleGaussian(sqrt(npe));
+         npe = npe +  gDRandom.SampleGaussian(sqrt(npe));
          double NewE = npe/sc_config->START_PHOTONS_PERMEV/1000.;
          if (NewE > sc_config->START_PADDLE_THRESHOLD) {
             hddm_s::StcHitList hits = iter->addStcHits();

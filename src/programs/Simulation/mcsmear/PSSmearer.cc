@@ -25,9 +25,9 @@ void PSSmearer::SmearEvent(hddm_s::HDDM *record)
       hddm_s::PsTruthHitList::iterator titer;
       for (titer = thits.begin(); titer != thits.end(); ++titer) {
          // smear the time
-         double t = titer->getT() + SampleGaussian(ps_config->PS_SIGMA);
+         double t = titer->getT() + gDRandom.SampleGaussian(ps_config->PS_SIGMA);
          // convert energy deposition in number of fired pixels
-         double npe = SamplePoisson(titer->getDE() * ps_config->PS_NPIX_PER_GEV);
+         double npe = gDRandom.SamplePoisson(titer->getDE() * ps_config->PS_NPIX_PER_GEV);
 	 hddm_s::PsHitList hits = iter->addPsHits();
 	 hits().setT(t);
 	 hits().setDE(npe/ps_config->PS_NPIX_PER_GEV);

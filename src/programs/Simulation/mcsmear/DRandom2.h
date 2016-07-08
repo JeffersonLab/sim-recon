@@ -58,6 +58,35 @@ class DRandom2:public TRandom2{
 			this->fSeed1 = seed1;		
 			this->fSeed2 = seed2;		
 		}
+		
+		// legacy mcsmear interface
+		inline double SampleGaussian(double sigma) {
+			return Gaus(0.0, sigma);
+		}
+
+		inline double SamplePoisson(double lambda) {	
+			return Poisson(lambda);
+		}
+
+		inline double SampleRange(double x1, double x2) {
+			double s, f;
+			double xlo, xhi;
+	
+			if(x1<x2){
+				xlo = x1;
+				xhi = x2;
+			}else{
+				xlo = x2;
+				xhi = x1;
+			}
+
+			s  = Rndm();
+			f  = xlo + s*(xhi-xlo);
+	
+			return f;
+		}
+
+
 };
 
 #endif  // _DRANDOM2_H_

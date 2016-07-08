@@ -40,9 +40,9 @@ void CCALSmearer::SmearEvent(hddm_s::HDDM *record)
             continue;
          // Smear the energy and timing of the hit
          double sigma = ccal_config->CCAL_PHOT_STAT_COEF/sqrt(titer->getE()) ;
-         double E = titer->getE() * (1.0 + SampleGaussian(sigma));
+         double E = titer->getE() * (1.0 + gDRandom.SampleGaussian(sigma));
          // Smear the time by 200 ps (fixed for now) 7/2/2009 DL
-         double t = titer->getT() + SampleGaussian(ccal_config->CCAL_SIGMA);
+         double t = titer->getT() + gDRandom.SampleGaussian(ccal_config->CCAL_SIGMA);
          // Apply a single block threshold. If the (smeared) energy is below this,
          // then set the energy and time to zero. 
          if (E > ccal_config->CCAL_BLOCK_THRESHOLD) {
