@@ -45,6 +45,30 @@ using namespace jana;
 // being set every time mcsmear is run.
 DRandom2 gDRandom(0); // declared extern in DRandom2.h
 
+
+//-----------
+// PrintCCDBWarning
+//-----------
+void PrintCCDBWarning(string context)
+{
+	jout << endl;
+	jout << "===============================================================================" << endl;
+	jout << "                            !!!!! WARNING !!!!!" << endl;
+	jout << "You have either not specified a CCDB variation, or specified a variation" << endl;
+	jout << "that appears inconsistent with processing simulated data." << endl;
+	jout << "Be sure that this is what you want to do!" << endl;
+	jout << endl;
+	jout << "  JANA_CALIB_CONTEXT = " << context << endl;
+	jout << endl;
+	jout << "For a more detailed list of CCDB variations used for simulations" << endl;
+	jout << "see the following wiki page:" << endl;
+	jout << endl;
+	jout << "   https://halldweb.jlab.org/wiki/index.php/Simulations#Simulation_Conditions" << endl;
+	jout << "===============================================================================" << endl;
+	jout << endl;
+}
+
+
 //-----------
 // main
 //-----------
@@ -52,6 +76,27 @@ int main(int narg,char* argv[])
 {
    mcsmear_config_t *config = new mcsmear_config_t();
    ParseCommandLineArguments(narg, argv, config);
+
+   // Generally, simulations should be generated and analyzed with a non-default
+   // set of calibrations, since the calibrations needed for simulations are
+   // different than those needed for data.  
+   // Conventionally, the CCDB variations needed for simulations start with the 
+   // string "mc".  To guard against accidentally not setting the variation correctly
+   // we check to see if the variation is set and if it contains the string "mc".
+   // Note that for now, we only print a warning and do not exit immediately.
+   // It might be advisable to apply some tougher love.
+   if( getenv("JANA_CALIB_CONTEXT")!= NULL ) {
+      string context = getenv("JANA_CALIB_CONTEXT");
+      
+      // Really we should parse the context string, but since "mc" shouldn't show up
+      // outside of the context, we just search the whole string.
+      // Also make sure that the variation is being set
+      if( (!context.find("variation") == string::npos) || (!context.find("mc") == string::npos) ) {
+         PrintCCDBWarning(context);
+      }
+   } else {
+      PrintCCDBWarning("");
+   }
 
    // Create DApplication object
    DApplication dapp(narg, argv);
@@ -152,11 +197,11 @@ void Usage(void)
 //   cout << "    -B       Don't process BCAL hits at all (def. process)" << endl;
  //  cout << "    -Vthresh BCAL ADC threshold (def. " << BCAL_ADC_THRESHOLD_MEV << " MeV)" << endl;
  //  cout << "    -Xsigma  BCAL fADC time resolution (def. " << BCAL_FADC_TIME_RESOLUTION << " ns)" << endl;
- //  cout << "    -G       Don't smear BCAL times (def. smear)" << endl;
- //  cout << "    -H       Don't add BCAL dark hits (def. add)" << endl;
- //  cout << "    -K       Don't apply BCAL sampling fluctuations (def. apply)" << endl;
- //  cout << "    -L       Don't apply BCAL sampling floor term (def. apply)" << endl;
- //  cout << "    -M       Don't apply BCAL Poisson statistics (def. apply)" << endl;
+   cout << "    -G       Don't smear BCAL times (def. smear)" << endl;
+   cout << "    -H       Don't add BCAL dark hits (def. add)" << endl;
+   cout << "    -K       Don't apply BCAL sampling fluctuations (def. apply)" << endl;
+   cout << "    -L       Don't apply BCAL sampling floor term (def. apply)" << endl;
+   cout << "    -M       Don't apply BCAL Poisson statistics (def. apply)" << endl;
  //  cout << "    -f#      TOF sigma in psec (def: " <<  TOF_SIGMA/k_psec << ")" << endl;
    cout << "    -h       Print this usage statement." << endl;
    cout << endl;
