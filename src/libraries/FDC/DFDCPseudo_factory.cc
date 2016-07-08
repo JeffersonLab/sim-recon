@@ -28,8 +28,6 @@
 #define GAS_GAIN 8e4
 #define ELECTRON_CHARGE 1.6022e-4 // fC
 
-#define WIRE_CATHODE_OFFSET 164
-#define WIRE_TIME_OFFSET 18
 
 ///
 /// DFDCAnode_gLayer_cmp(): 
@@ -106,8 +104,7 @@ jerror_t DFDCPseudo_factory::init(void)
   gPARMS->SetDefaultParameter("FDC:ROUT_FIDUCIAL",ROUT_FIDUCIAL, "Outer fiducial radius of FDC in cm"); 
   gPARMS->SetDefaultParameter("FDC:RIN_FIDUCIAL",RIN_FIDUCIAL, "Inner fiducial radius of FDC in cm");
   gPARMS->SetDefaultParameter("FDC:MAX_ALLOWED_FDC_HITS",MAX_ALLOWED_FDC_HITS, "Max. number of FDC hits (includes both cathode strips and wires hits) to allow before considering event too busy to attempt FDC tracking");
-  gPARMS->SetDefaultParameter("FDC:STRIP_ANODE_TIME_CUT",STRIP_ANODE_TIME_CUT,
-			      "maximum time difference between strips and wires (in ns)"); 
+  gPARMS->SetDefaultParameter("FDC:STRIP_ANODE_TIME_CUT",STRIP_ANODE_TIME_CUT, "maximum time difference between strips and wires (in ns)"); 
 
   DEBUG_HISTS = false;
   gPARMS->SetDefaultParameter("FDC:DEBUG_HISTS",DEBUG_HISTS);
@@ -218,6 +215,9 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int32_t runnumber)
 
     x_dist_33=(TH1F*)gROOT->FindObject("x_dist_33");
     if (!x_dist_33) x_dist_33=new TH1F("x_dist_33","x_dist_33",200,-2,2);
+
+    d_uv=(TH1F*)gROOT->FindObject("d_uv");
+    if (!d_uv) d_uv=new TH1F("d_uv","d_uv",160,-40,40);
 
 
     for (unsigned int i=0;i<24;i++){
@@ -446,9 +446,9 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 
 	    if (fabs(delta_x)<0.5*WIRE_SPACING && r2test<r2_out
 		&& r2test>r2_in){
-	      double dt1 = (*xIt)->t - upeaks[i].t + WIRE_CATHODE_OFFSET;
-	      double dt2 = (*xIt)->t - vpeaks[j].t + WIRE_CATHODE_OFFSET;
-
+	      double dt1 = (*xIt)->t - upeaks[i].t;
+	      double dt2 = (*xIt)->t - vpeaks[j].t;
+	      
 	      //printf("dt1 %f dt2 %f\n",dt1,dt2);
 
 	      if (DEBUG_HISTS){
@@ -479,6 +479,11 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 		  //  Hxy->Fill(x_from_strips,y_from_strips);
 		  //}
 	      }
+	      
+	      if (DEBUG_HISTS){
+		d_uv->Fill(sqrt(dt1*dt1+dt2*dt2));
+	      }
+	      
 	      if (sqrt(dt1*dt1+dt2*dt2)>STRIP_ANODE_TIME_CUT) continue;
 
 	      // Temporary cut until TDC timing is worked out
@@ -516,7 +521,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->ds = FDC_RES_PAR1/q_from_pulse_height+FDC_RES_PAR2;
 	      //newPseu->ds=0.011/q_from_pulse_height+5e-3+2.14e-10*pow(q_from_pulse_height,6);
 	      newPseu->wire   = wire;
-	      newPseu->time   = (*xIt)->t + WIRE_CATHODE_OFFSET + WIRE_TIME_OFFSET;
+	      newPseu->time   = (*xIt)->t;
 	      //newPseu->time=0.5*(upeaks[i].t+vpeaks[j].t);
 	      newPseu->status = status;
 	      newPseu->itrack = (*xIt)->itrack;

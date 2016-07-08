@@ -122,8 +122,8 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
 
   gDirectory->cd("/FDC_Efficiency");
   gDirectory->mkdir("Residuals")->cd();
-  hResVsT = new TH2I("hResVsT","Tracking Residual (Biased) Vs Wire Drift Time; DOCA (cm); Drift Time (ns)", 100, 0, 0.5, 500, -250, 250);
-  hPseudoResVsT = new TH2I("hPseudoResVsT","Tracking Residual (Biased) Vs Pseudo Time; Residual (cm); Drift Time (ns)", 100, 0, 0.5, 500, -250, 250);
+  hResVsT = new TH2I("hResVsT","Tracking Residual (Biased) Vs Wire Drift Time; DOCA (cm); Drift Time (ns)", 100, 0, 0.5, 600, -100, 500);
+  hPseudoResVsT = new TH2I("hPseudoResVsT","Tracking Residual (Biased) Vs Pseudo Time; Residual (cm); Drift Time (ns)", 100, 0, 0.5, 400, -100, 300);
   hPseudoRes = new TH1I("hPseudoRes","Pseudo Residual in R", 500, 0, 5);
 
   for(int icell=0; icell<24; icell++){
@@ -202,8 +202,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
     // cut on timing of hits
-    // at the moment shifted to -200ns
-    if (-300 > locHit->t || locHit->t > 100) continue;
+    //if (-100 > locHit->t || locHit->t > 300) continue;
     
     locSortedFDCHits[locHit->gLayer][locHit->element].insert(locHit);
 
