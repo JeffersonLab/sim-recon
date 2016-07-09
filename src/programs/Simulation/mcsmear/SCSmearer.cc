@@ -49,7 +49,9 @@ void SCSmearer::SmearEvent(hddm_s::HDDM *record)
       hddm_s::StcTruthHitList thits = iter->getStcTruthHits();
       hddm_s::StcTruthHitList::iterator titer;
       for (titer = thits.begin(); titer != thits.end(); ++titer) {
-		 if(!gDRandom.DecideToAcceptHit(sc_config->GetMCEfficiency(iter->getSector())))
+      	 // correct simulation efficiencies 
+		 if(config->APPLY_EFFICIENCY_CORRECTIONS
+		 	&& !gDRandom.DecideToAcceptHit(sc_config->GetEfficiencyCorrectionFactor(iter->getSector())))
 		 	continue;
 
          // smear the time

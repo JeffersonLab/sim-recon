@@ -124,13 +124,14 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
     
     if (ptr[0] == '-') {
       switch(ptr[1]) {
-      case 'h': Usage();                                   break;
-      case 'o': OUTFILENAME = strdup(&ptr[2]);             break;
-      case 'N': config->ADD_NOISE=true;                    break;
-      case 's': config->SMEAR_HITS=false;                  break;
-      case 'i': config->IGNORE_SEEDS=true;                 break;
-      case 'r': config->SetSeeds(&ptr[2]);                 break;
-      case 'd': config->DROP_TRUTH_HITS=true;              break;
+      case 'h': Usage();                                     break;
+      case 'o': OUTFILENAME = strdup(&ptr[2]);               break;
+      case 'N': config->ADD_NOISE=true;                      break;
+      case 's': config->SMEAR_HITS=false;                    break;
+      case 'i': config->IGNORE_SEEDS=true;                   break;
+      case 'r': config->SetSeeds(&ptr[2]);                   break;
+      case 'd': config->DROP_TRUTH_HITS=true;                break;
+      case 'e': config->APPLY_EFFICIENCY_CORRECTIONS=false;  break;
 
 	  // BCAL parameters
       case 'G': config->BCAL_NO_T_SMEAR = true;                         break;
@@ -186,6 +187,7 @@ void Usage(void)
    cout << "    -s       Don't smear real hits (default is to smear)" << endl;
    cout << "    -i       Ignore random number seeds found in input HDDM file" << endl;
    cout << "    -r\"s1 s2 s3\" Set initial random number seeds" << endl;
+   cout << "    -e       Don't apply channel dependent efficiency corrections" << endl;
 //   cout << "    -u#      Sigma CDC anode drift time in ns (def:" << CDC_TDRIFT_SIGMA*1.0E9 << "ns)" << endl;
 //   cout << "             (NOTE: this is only used if -y is also specified!)" << endl;
 //   cout << "    -y       Do NOT apply drift distance dependence error to" << endl;

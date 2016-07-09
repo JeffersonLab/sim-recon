@@ -40,6 +40,7 @@ class mcsmear_config_t
 	//bool FDC_ELOSS_OFF;
 	bool IGNORE_SEEDS;
 	double TRIGGER_LOOKBACK_TIME;
+	bool APPLY_EFFICIENCY_CORRECTIONS;
 	
 	// flags to pass command line info to subdetector classes
 	double BCAL_NO_T_SMEAR;

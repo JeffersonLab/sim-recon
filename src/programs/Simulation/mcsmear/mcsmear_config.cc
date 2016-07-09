@@ -14,6 +14,7 @@ mcsmear_config_t::mcsmear_config_t()
 	SMEAR_HITS     = true;
 	//SMEAR_BCAL     = true;
 	IGNORE_SEEDS   = false;
+	APPLY_EFFICIENCY_CORRECTIONS = true;
 		
 	TRIGGER_LOOKBACK_TIME = -100; // ns
 		

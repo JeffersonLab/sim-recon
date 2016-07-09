@@ -14,7 +14,7 @@ class sc_config_t
 	inline double GetPaddleTimeResolution(int sector)  { 
 		return START_TIME_RESOLUTIONS.at(sector); 
 	}
-	double GetMCEfficiency(int sector) {
+	double GetEfficiencyCorrectionFactor(int sector) {
 		return paddle_efficiencies.at(sector);
 	}
 	

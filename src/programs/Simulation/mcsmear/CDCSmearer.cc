@@ -22,7 +22,72 @@ cdc_config_t::cdc_config_t(JEventLoop *loop)
  		CDC_PEDESTAL_SIGMA = cdcparms["CDC_PEDESTAL_SIGMA"]; 
  		CDC_THRESHOLD_FACTOR = cdcparms["CDC_THRESHOLD_FACTOR"];
 	}
+	
+	
+	// LOAD efficiency correction factors
+
+	// first load some geometry information
+	vector<unsigned int> Nstraws;
+	int32_t runnumber = loop->GetJEvent().GetRunNumber();
+    CalcNstraws(loop, runnumber, Nstraws);
+    unsigned int Nrings = Nstraws.size();
+
+	// then load the CCDB table
+	vector<double> raw_table;
+	if(loop->GetCalib("CDC/wire_mc_efficiency", raw_table)) {
+    	jerr << "Problem loading CDC/wire_mc_efficiency from CCDB!" << endl;
+    } else {
+		// now fill the table
+    	wire_efficiencies.resize( Nstraws.size() );
+
+    	int ring = 0;
+    	int straw = 0;
+
+    	for (unsigned int channel=0; channel<raw_table.size(); channel++,straw++) {
+        	// if we've hit the end of the ring, move on to the next
+        	if (straw == (int)Nstraws[ring]) {
+            	ring++;
+            	straw = 0;
+        	}
+
+        	wire_efficiencies[ring].push_back( raw_table[channel] );
+    	}
+    }
+
 }
+
+//------------------
+// CalcNstraws
+//------------------
+void cdc_config_t::CalcNstraws(jana::JEventLoop *eventLoop, int32_t runnumber, vector<unsigned int> &Nstraws)
+{
+    DGeometry *dgeom;
+    vector<vector<DCDCWire *> >cdcwires;
+
+    // Get pointer to DGeometry object
+    DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+    dgeom  = dapp->GetDGeometry(runnumber);
+
+    // Get the CDC wire table from the XML
+    dgeom->GetCDCWires(cdcwires);
+
+    // Fill array with the number of straws for each layer
+    // Also keep track of the total number of straws, i.e., the total number of detector channels
+    //maxChannels = 0;
+    Nstraws.clear();
+    for (unsigned int i=0; i<cdcwires.size(); i++) {
+        Nstraws.push_back( cdcwires[i].size() );
+        //maxChannels += cdcwires[i].size();
+    }
+
+    // clear up all of the wire information
+    for (unsigned int i=0; i<cdcwires.size(); i++) {
+        for (unsigned int j=0; j<cdcwires[i].size(); j++) {
+            delete cdcwires[i][j];
+        }
+    }    
+}
+
 
 //-----------
 // SmearEvent
@@ -59,8 +124,14 @@ void CDCSmearer::SmearEvent(hddm_s::HDDM *record)
       hddm_s::CdcStrawTruthHitList thits = iter->getCdcStrawTruthHits();
       hddm_s::CdcStrawTruthHitList::iterator titer;
       for (titer = thits.begin(); titer != thits.end(); ++ titer) {
+         // correct simulation efficiencies 
+		 if (config->APPLY_EFFICIENCY_CORRECTIONS
+		 		&& !gDRandom.DecideToAcceptHit(cdc_config->GetEfficiencyCorrectionFactor(iter->getRing(), iter->getStraw())))
+		 	continue;
+
          // Pedestal-smeared charge
          double q = titer->getQ() + gDRandom.SampleGaussian(cdc_config->CDC_PEDESTAL_SIGMA);
+
          // Smear out the CDC drift time using the specified sigma.
          // This is for timing resolution from the electronics;
          // diffusion is handled in hdgeant.

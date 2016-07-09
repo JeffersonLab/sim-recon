@@ -16,6 +16,12 @@ class cdc_config_t
 	double CDC_PEDESTAL_SIGMA;
 	double CDC_THRESHOLD_FACTOR; // number of pedestal sigmas for determining sparsification threshold
 
+	vector< vector<double> > wire_efficiencies;
+
+	void CalcNstraws(JEventLoop *loop, int32_t runnumber, vector<unsigned int> &Nstraws);
+	double GetEfficiencyCorrectionFactor(int ring, int straw) {
+		wire_efficiencies.at(ring).at(straw);
+	}
 };
 
 

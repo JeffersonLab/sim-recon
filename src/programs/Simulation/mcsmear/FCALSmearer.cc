@@ -3,7 +3,7 @@
 //-----------
 // fcal_config_t  (constructor)
 //-----------
-fcal_config_t::fcal_config_t(JEventLoop *loop) 
+fcal_config_t::fcal_config_t(JEventLoop *loop, DFCALGeometry *fcalGeom) 
 {
 	// default values
 	FCAL_PHOT_STAT_COEF   = 0.0; //0.035;
@@ -35,6 +35,38 @@ fcal_config_t::fcal_config_t(JEventLoop *loop)
     map<string, double> fcaldigiscales;
     loop->GetCalib("FCAL/digi_scales", fcaldigiscales);
     FCAL_MC_ESCALE = fcaldigiscales["FCAL_ADC_ASCALE"];
+
+	// initialize 2D matrix of efficiencies, indexed by (row,column)
+	vector< vector<double > > new_block_efficiencies(DFCALGeometry::kBlocksTall, 
+            vector<double>(DFCALGeometry::kBlocksWide));
+	block_efficiencies = new_block_efficiencies;
+	
+	// load efficiencies from CCDB and fill 
+	vector<double> raw_table;
+	if(loop->GetCalib("FCAL/block_mc_efficiency", raw_table)) {
+    	jerr << "Problem loading FCAL/block_mc_efficiency from CCDB!" << endl;
+    } else {
+		for (int channel=0; channel < static_cast<int>(raw_table.size()); channel++) {
+    
+        	// make sure that we don't try to load info for channels that don't exist
+        	if (channel == fcalGeom->numActiveBlocks())
+            	break;
+
+        	int row = fcalGeom->row(channel);
+        	int col = fcalGeom->column(channel);
+
+        	// results from DFCALGeometry should be self consistent, but add in some
+        	// sanity checking just to be sure
+        	if (fcalGeom->isBlockActive(row,col) == false) {
+        		char str[200];
+            	sprintf(str, "Loading FCAL constant for inactive channel!  "
+                	    "row=%d, col=%d", row, col);
+            	throw JException(str);
+        	}
+
+	        block_efficiencies[row][col] = raw_table[channel];
+    	}
+    }
 
 }
 	
@@ -70,6 +102,11 @@ void FCALSmearer::SmearEvent(hddm_s::HDDM *record)
          // anyway.
          if (!fcalGeom->isBlockActive(iter->getRow(), iter->getColumn()))
             continue;
+            
+         // correct simulation efficiencies 
+		 if (config->APPLY_EFFICIENCY_CORRECTIONS
+		 		&& !gDRandom.DecideToAcceptHit(fcal_config->GetEfficiencyCorrectionFactor(iter->getRow(), iter->getColumn())))
+		 	continue;
          
          // Get gain constant per block
          int channelnum = fcalGeom->channel(iter->getRow(), iter->getColumn()); 
