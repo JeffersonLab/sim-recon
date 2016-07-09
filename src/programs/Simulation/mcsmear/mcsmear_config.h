@@ -13,7 +13,6 @@
 
 using namespace jana;
 
-//  std::numeric_limits::epsilon();
 
 // external function definitions from SampleGaussian.cc
 double SampleGaussian(double sigma);
@@ -41,6 +40,14 @@ class mcsmear_config_t
 	//bool FDC_ELOSS_OFF;
 	bool IGNORE_SEEDS;
 	double TRIGGER_LOOKBACK_TIME;
+	
+	// flags to pass command line info to subdetector classes
+	double BCAL_NO_T_SMEAR;
+	double BCAL_NO_DARK_PULSES;
+	double BCAL_NO_SAMPLING_FLUCTUATIONS;
+	double BCAL_NO_SAMPLING_FLOOR_TERM;
+	double BCAL_NO_POISSON_STATISTICS;
+	
 	
 #ifdef HAVE_RCDB
 	// RCDB information

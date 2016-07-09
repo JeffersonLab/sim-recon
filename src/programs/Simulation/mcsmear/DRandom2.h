@@ -86,6 +86,60 @@ class DRandom2:public TRandom2{
 			return f;
 		}
 
+		inline bool DecideToAcceptHit(double prob) {
+			// This function is used for sculpting simulation efficiencies to match those
+			// in the data.  With the data/sim matching efficiency as an input parameter,
+			// this function decides if we should keep the hit or not
+			
+			// Tolerance for seeing if a number is near zero
+			// Could use std::numeric_limits::epsilon(), but that's probably too restrictive
+			const double maxAbsDiff = 1.e-8;
+			
+			// If the hit efficiency is zero, then always reject it
+			// For floating point numbers, using the absolute difference to see if a 
+			// number is consistent with zero is preferred.
+			// Reference: https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
+			if( fabs(prob - 0.0) < maxAbsDiff )
+				return false;
+			
+			// If the effiency is less than 0, then we always reject it
+			// This really shouldn't happen, though
+			if( prob < 0.0 )
+				return false;
+			
+			// If the efficiency is greater than 1, then always accept it
+			// (though why would it be larger?)
+			if( prob > 1.0 )
+				return true;
+			
+			// If the efficiency is equal to one, then always accept it
+			if(AlmostEqual(prob, 1.0))
+				return true;
+				
+			// Otherwise, our efficiency should be some number in (0,1)
+			// Throw a random number in that range, and reject if the random
+			// number is larger than our efficiency
+			if(Uniform() > prob)
+				return false;
+			return true;
+		}
+
+	private:
+		bool AlmostEqual(double a, double b) {
+			// Comparing floating point numbers is tough!
+			// This should work for numbers not near zero.
+			// Reference: https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
+			const double maxRelDiff = 1.e-8;
+
+			double diff = fabs(a-b);
+			a = fabs(a);
+			b = fabs(b);
+			double largest = (b > a) ? b : a;
+			
+			if(diff <= largest*maxRelDiff)
+				return true;
+			return false;
+		}
 
 };
 

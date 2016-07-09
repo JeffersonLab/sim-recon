@@ -256,6 +256,13 @@ class BCALSmearer : public Smearer
     public:
 		BCALSmearer(JEventLoop *loop, mcsmear_config_t *in_config) : Smearer(loop, in_config) {
 			bcal_config = new bcal_config_t(loop);
+			
+			// pass configuration parameters
+			bcal_config->NO_T_SMEAR = in_config->BCAL_NO_T_SMEAR;
+			bcal_config->NO_DARK_PULSES = in_config->BCAL_NO_DARK_PULSES;
+			bcal_config->NO_SAMPLING_FLUCTUATIONS = in_config->BCAL_NO_SAMPLING_FLUCTUATIONS;
+			bcal_config->NO_SAMPLING_FLOOR_TERM = in_config->BCAL_NO_SAMPLING_FLOOR_TERM;
+			bcal_config->NO_POISSON_STATISTICS = in_config->BCAL_NO_POISSON_STATISTICS;
 		}
 		~BCALSmearer() {
 			delete bcal_config;

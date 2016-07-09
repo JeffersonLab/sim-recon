@@ -25,7 +25,7 @@ mcsmear_config_t::mcsmear_config_t()
 	else
 		RCDB_CONNECTION = "mysql://rcdb@hallddb/rcdb";   // default to outward-facing MySQL DB
 			
-	gPARMS->SetDefaultParameters("RCDB_CONNECTION", RCDB_CONNECTION, "URL used to access RCDB.");
+	gPARMS->SetDefaultParameter("RCDB_CONNECTION", RCDB_CONNECTION, "URL used to access RCDB.");
 			
 	// load connection to RCDB
 	rcdb_connection = new rcdb::Connection(RCDB_CONNECTION);
@@ -35,7 +35,7 @@ mcsmear_config_t::mcsmear_config_t()
 //-----------
 // mcsmear_config_t (Destructor)
 //-----------
-~mcsmear_config_t() {
+mcsmear_config_t::~mcsmear_config_t() {
 	delete rcdb_connection;
 }
 
@@ -68,7 +68,7 @@ void mcsmear_config_t::SetSeeds(const char *vals)
 //-----------
 // ParseRCDBConfigFile
 //-----------
-bool ParseRCDBConfigFile(int runNumber)
+bool mcsmear_config_t::ParseRCDBConfigFile(int runNumber)
 {
 	// This is just for testing (right now)
 	// To get a lot of the configuration parameters we need, we need to parse the CODA configuration files
@@ -95,6 +95,8 @@ bool ParseRCDBConfigFile(int runNumber)
     }
 
     // Parse CODA config file 
+    vector<string> SectionNames = {"TRIGGER", "GLOBAL", "FCAL", "BCAL", "TOF", "ST", "TAGH",
+                                         "TAGM", "PS", "PSC", "TPOL", "CDC", "FDC"};
     string fileContent = file->GetContent();                               // Get file content
     auto result = rcdb::ConfigParser::Parse(fileContent, SectionNames);    // Parse it!
 

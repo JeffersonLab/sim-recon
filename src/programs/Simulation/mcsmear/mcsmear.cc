@@ -131,6 +131,13 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
       case 'i': config->IGNORE_SEEDS=true;                 break;
       case 'r': config->SetSeeds(&ptr[2]);                 break;
       case 'd': config->DROP_TRUTH_HITS=true;              break;
+
+	  // BCAL parameters
+      case 'G': config->BCAL_NO_T_SMEAR = true;                         break;
+      case 'H': config->BCAL_NO_DARK_PULSES = true;                     break;
+      case 'K': config->BCAL_NO_SAMPLING_FLUCTUATIONS = true;           break;
+      case 'L': config->BCAL_NO_SAMPLING_FLOOR_TERM = true;             break;
+      case 'M': config->BCAL_NO_POISSON_STATISTICS = true;              break;
       }
     }
     else {
