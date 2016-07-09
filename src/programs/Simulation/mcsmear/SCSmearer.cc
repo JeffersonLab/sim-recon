@@ -29,7 +29,11 @@ sc_config_t::sc_config_t(JEventLoop *loop)
        		START_TIME_RESOLUTIONS.push_back(START_TIME_RESOLUTIONS_TEMP.at(i));
     	}
     }
-     
+    
+	cout<<"get START_COUNTER/paddle_mc_efficiency from calibDB"<<endl;
+    if(loop->GetCalib("START_COUNTER/paddle_mc_efficiency", paddle_efficiencies)) {
+    	jerr << "Problem loading START_COUNTER/paddle_mc_efficiency from CCDB!" << endl;
+    }
 }
 
 
@@ -45,8 +49,11 @@ void SCSmearer::SmearEvent(hddm_s::HDDM *record)
       hddm_s::StcTruthHitList thits = iter->getStcTruthHits();
       hddm_s::StcTruthHitList::iterator titer;
       for (titer = thits.begin(); titer != thits.end(); ++titer) {
+		 if(!gDRandom.DecideToAcceptHit(sc_config->GetMCEfficiency(iter->getSector())))
+		 	continue;
+
          // smear the time
-         //double t = titer->getT() + gDRandom.SampleGaussian(sc_config->START_SIGMA);
+         //double t = titer->getT() + gDRandom.SampleGaussian(sc_config->START_SIGMA);   // constant smearing
          double t = titer->getT() + gDRandom.SampleGaussian(sc_config->GetPaddleTimeResolution(iter->getSector()));
          // smear the energy
          double npe = titer->getDE() * 1000. *  sc_config->START_PHOTONS_PERMEV;
