@@ -621,10 +621,11 @@ def AddRCDB(env):
 		env.AppendUnique(LIBPATH = RCDB_LIBPATH)
 		env.AppendUnique(LIBS    = RCDB_LIBS)
 
-		MYSQL_CFLAGS = subprocess.Popen(["mysql_config", "--cflags"], stdout=subprocess.PIPE).communicate()[0]
-		AddCompileFlags(env, MYSQL_CFLAGS)
-#		MYSQL_LINKFLAGS = subprocess.Popen(["mysql_config", "--libs"], stdout=subprocess.PIPE).communicate()[0]
-#		AddLinkFlags(env, MYSQL_LINKFLAGS)
+		if env.WhereIs("mysql_config") is not None:
+			MYSQL_CFLAGS = subprocess.Popen(["mysql_config", "--cflags"], stdout=subprocess.PIPE).communicate()[0]
+			AddCompileFlags(env, MYSQL_CFLAGS)
+#			MYSQL_LINKFLAGS = subprocess.Popen(["mysql_config", "--libs"], stdout=subprocess.PIPE).communicate()[0]
+#			AddLinkFlags(env, MYSQL_LINKFLAGS)
 
 
 ##################################
