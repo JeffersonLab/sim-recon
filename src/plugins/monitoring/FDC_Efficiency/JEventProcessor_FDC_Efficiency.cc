@@ -23,6 +23,7 @@ static TH1I *hPseudoResX[25];
 static TH1I *hPseudoResY[25];
 static TH1I *hPseudoResU[25];
 static TH1I *hPseudoResV[25];
+static TH2I *hPseudoResUvsV[25][9];
 static TH2I *hPseudoResVsT;
 static TH2I *hResVsT;
 static TH1I *hMom;
@@ -121,14 +122,15 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
 
   gDirectory->cd("/FDC_Efficiency");
   gDirectory->mkdir("Residuals")->cd();
-  hResVsT = new TH2I("hResVsT","Tracking Residual (Biased) Vs Wire Drift Time; Residual (cm); Drift Time (ns)", 100, 0, 0.5, 500, -250, 250);
-  hPseudoResVsT = new TH2I("hPseudoResVsT","Tracking Residual (Biased) Vs Pseudo Time; Residual (cm); Drift Time (ns)", 100, 0, 0.5, 500, -250, 250);
+  hResVsT = new TH2I("hResVsT","Tracking Residual (Biased) Vs Wire Drift Time; DOCA (cm); Drift Time (ns)", 100, 0, 0.5, 600, -100, 500);
+  hPseudoResVsT = new TH2I("hPseudoResVsT","Tracking Residual (Biased) Vs Pseudo Time; Residual (cm); Drift Time (ns)", 100, 0, 0.5, 400, -100, 300);
   hPseudoRes = new TH1I("hPseudoRes","Pseudo Residual in R", 500, 0, 5);
 
   for(int icell=0; icell<24; icell++){
 
     char hname_X[256];
     char hname_Y[256];
+    char hname_XY[256];
    
     sprintf(hname_X, "hPseudoResX_cell[%d]", icell+1);
     sprintf(hname_Y, "hPseudoResY_cell[%d]", icell+1);
@@ -139,6 +141,10 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
     sprintf(hname_Y, "hPseudoResV_cell[%d]", icell+1);
     hPseudoResU[icell+1] = new TH1I(hname_X,"Pseudo Residual along Wire", 600, -3, 3);
     hPseudoResV[icell+1] = new TH1I(hname_Y,"Pseudo Residual perp. to Wire", 600, -3, 3);
+    for (int r=0; r<9; r++){
+      sprintf(hname_XY, "hPseudoResUvsV_cell[%d]_radius[%d]", icell+1, (r+1)*5);
+      hPseudoResUvsV[icell+1][r] = new TH2I(hname_XY,"Pseudo Residual 2D", 200, -1, 1, 200, -1, 1);
+    }
 
   }
 
@@ -196,8 +202,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
     // cut on timing of hits
-    // at the moment shifted to -200ns
-    if (-300 > locHit->t || locHit->t > 100) continue;
+    //if (-100 > locHit->t || locHit->t > 300) continue;
     
     locSortedFDCHits[locHit->gLayer][locHit->element].insert(locHit);
 
@@ -428,6 +433,8 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	    fdc_wire_measured_cell[cellNum]->SetBinContent(wireNum, 1, v);
 	    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	  }
+
+	  break; // break if 1 expected hit was found, 2 are geometrically not possible (speedup!)
 	  
 	} // End expected
       } // End wire loop
@@ -476,6 +483,9 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	    hPseudoResY[cellNum]->Fill(residualY);
 	    hPseudoResU[cellNum]->Fill(residualU);
 	    hPseudoResV[cellNum]->Fill(residualV);
+	    int radius = interPosition2D.Mod()/5;
+	    if (radius<9)
+	      hPseudoResUvsV[cellNum][radius]->Fill(residualU, residualV);
 	    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	    
 	    if (foundPseudo) continue; 
