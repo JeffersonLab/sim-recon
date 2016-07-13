@@ -168,8 +168,8 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 			locSkimMissingFlag = true;
 			break;
 		}
-		if(locSkimMissingFlag)
-			continue; //no blueprints for this reaction!
+//		if(locSkimMissingFlag)
+//			continue; //no blueprints for this reaction!
 
 		Build_ParticleComboBlueprints(locReactions[loc_i]);
 	}
