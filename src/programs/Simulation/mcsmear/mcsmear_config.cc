@@ -2,6 +2,8 @@
 #include "mcsmear_config.h"
 #include "RCDB/ConfigParser.h"
 
+#include <iostream>
+#include <fstream>
 
 //-----------
 // mcsmear_config_t (Constructor)
@@ -14,6 +16,7 @@ mcsmear_config_t::mcsmear_config_t()
 	SMEAR_HITS     = true;
 	//SMEAR_BCAL     = true;
 	IGNORE_SEEDS   = false;
+    DUMP_RCDB_CONFIG = false;
 	APPLY_EFFICIENCY_CORRECTIONS = true;
 		
 	TRIGGER_LOOKBACK_TIME = -100; // ns
@@ -101,9 +104,13 @@ bool mcsmear_config_t::ParseRCDBConfigFile(int runNumber)
     string fileContent = file->GetContent();                               // Get file content
     auto result = rcdb::ConfigParser::Parse(fileContent, SectionNames);    // Parse it!
 
-	//// DEBUG ////
-	cout << "CODA config file contents:" << endl;
-	cout << fileContent << endl;
+    if(DUMP_RCDB_CONFIG) {
+        //// DEBUG ////
+        //cout << "CODA config file contents:" << endl;
+        ofstream coda_ofile("rcdb_coda.config");
+        coda_ofile << fileContent << endl;
+        coda_ofile.close();
+    }
 
 	// then we get stuff out of it
 

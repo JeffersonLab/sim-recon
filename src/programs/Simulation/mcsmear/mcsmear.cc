@@ -131,6 +131,7 @@ void ParseCommandLineArguments(int narg, char* argv[], mcsmear_config_t *config)
       case 'i': config->IGNORE_SEEDS=true;                   break;
       case 'r': config->SetSeeds(&ptr[2]);                   break;
       case 'd': config->DROP_TRUTH_HITS=true;                break;
+      case 'D': config->DUMP_RCDB_CONFIG=true;               break;
       case 'e': config->APPLY_EFFICIENCY_CORRECTIONS=false;  break;
 
 	  // BCAL parameters
@@ -206,6 +207,7 @@ void Usage(void)
 //   cout << "    -B       Don't process BCAL hits at all (def. process)" << endl;
  //  cout << "    -Vthresh BCAL ADC threshold (def. " << BCAL_ADC_THRESHOLD_MEV << " MeV)" << endl;
  //  cout << "    -Xsigma  BCAL fADC time resolution (def. " << BCAL_FADC_TIME_RESOLUTION << " ns)" << endl;
+   cout << "    -D       Dump configuration debug information" << endl;
    cout << "    -G       Don't smear BCAL times (def. smear)" << endl;
    cout << "    -H       Don't add BCAL dark hits (def. add)" << endl;
    cout << "    -K       Don't apply BCAL sampling fluctuations (def. apply)" << endl;

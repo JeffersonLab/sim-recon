@@ -36,6 +36,8 @@ class mcsmear_config_t
 	bool ADD_NOISE;
 	bool DROP_TRUTH_HITS;
 	bool SMEAR_HITS;
+    bool DUMP_RCDB_CONFIG;
+
 	//bool SMEAR_BCAL;
 	//bool FDC_ELOSS_OFF;
 	bool IGNORE_SEEDS;
