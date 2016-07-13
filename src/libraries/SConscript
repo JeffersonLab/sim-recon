@@ -13,6 +13,5 @@ subdirs.extend(['DAQ', 'TTAB', 'EVENTSTORE'])
 subdirs.extend(['AMPTOOLS_AMPS', 'AMPTOOLS_DATAIO', 'AMPTOOLS_MCGEN'])
 
 
->>>>>>> 8b6d4e689f649e05fd5bfea5cc659315e0dec165
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
