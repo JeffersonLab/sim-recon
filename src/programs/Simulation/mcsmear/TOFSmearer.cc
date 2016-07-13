@@ -10,6 +10,10 @@ tof_config_t::tof_config_t(JEventLoop *loop)
  	TOF_PHOTONS_PERMEV = 400.;
  	TOF_BAR_THRESHOLD    = 0.0;
 
+	// geometry
+	const int TOF_NUM_PLANES = 2;
+    const int TOF_NUM_BARS = 44;
+
 	// Load data from CCDB
     cout<<"Get TOF/tof_parms parameters from CCDB..."<<endl;
     map<string, double> tofparms;
@@ -31,6 +35,25 @@ tof_config_t::tof_config_t(JEventLoop *loop)
     	}
     }
 
+	// load per-channel efficiencies
+	vector<double> raw_table;
+	if(loop->GetCalib("TOF/channel_mc_efficiency", raw_table)) {
+    	jerr << "Problem loading TOF/channel_mc_efficiency from CCDB!" << endl;
+    } else {
+    	int channel = 0;
+
+    	for(int plane=0; plane<TOF_NUM_PLANES; plane++) {
+        	int plane_index=2*TOF_NUM_BARS*plane;
+        	channel_efficiencies.push_back( vector< pair<double,double> >(TOF_NUM_BARS) );
+        	for(int bar=0; bar<TOF_NUM_BARS; bar++) {
+            	channel_efficiencies[plane][bar] 
+                	= pair<double,double>(raw_table[plane_index+bar],
+                    	    raw_table[plane_index+TOF_NUM_BARS+bar]);
+            	channel+=2;
+            }	      
+        }
+    }
+    
 }
 
 
@@ -47,6 +70,11 @@ void TOFSmearer::SmearEvent(hddm_s::HDDM *record)
       hddm_s::FtofTruthHitList thits = iter->getFtofTruthHits();
       hddm_s::FtofTruthHitList::iterator titer;
       for (titer = thits.begin(); titer != thits.end(); ++titer) {
+         // correct simulation efficiencies 
+		 if (config->APPLY_EFFICIENCY_CORRECTIONS
+		 		&& !gDRandom.DecideToAcceptHit(tof_config->GetEfficiencyCorrectionFactor(titer)))
+		 			continue;
+		 			
          // Smear the time
          //double t = titer->getT() + gDRandom.SampleGaussian(tof_config->TOF_SIGMA);
          double t = titer->getT() + gDRandom.SampleGaussian(tof_config->GetHitTimeResolution(iter->getPlane(),iter->getBar()));

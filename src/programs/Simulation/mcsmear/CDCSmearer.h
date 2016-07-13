@@ -20,7 +20,7 @@ class cdc_config_t
 
 	void CalcNstraws(JEventLoop *loop, int32_t runnumber, vector<unsigned int> &Nstraws);
 	double GetEfficiencyCorrectionFactor(int ring, int straw) {
-		wire_efficiencies.at(ring).at(straw);
+		wire_efficiencies.at(ring-1).at(straw-1);
 	}
 };
 

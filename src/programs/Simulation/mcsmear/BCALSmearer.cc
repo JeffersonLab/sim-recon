@@ -120,7 +120,7 @@ void BCALSmearer::GetSiPMHits(hddm_s::HDDM *record,
    hddm_s::BcalTruthHitList hits = record->getBcalTruthHits();
    hddm_s::BcalTruthHitList::iterator iter;
    for (iter = hits.begin(); iter != hits.end(); ++iter) {
-       bcal_index idxup(iter->getModule(), iter->getLayer(),
+      bcal_index idxup(iter->getModule(), iter->getLayer(),
                      iter->getSector(), 
                      iter->getIncident_id(),
                      bcal_index::kUp);
@@ -542,10 +542,26 @@ void BCALSmearer::FindHits(double thresh_MeV, map<int, SumHits> &bcalfADC, map<i
 	  int layer = DBCALGeometry::layer(fADCId);
 
       for(int ii = 0; ii < (int)sumhits.EUP.size(); ii++){
+        // correct simulation efficiencies 
+		if (config->APPLY_EFFICIENCY_CORRECTIONS
+		 		&& !gDRandom.DecideToAcceptHit(bcal_config->GetEfficiencyCorrectionFactor(GetCalibIndex(DBCALGeometry::module(fADCId),
+		 																				  DBCALGeometry::layer(fADCId),
+		 																				  DBCALGeometry::sector(fADCId)),
+		 																				  DBCALGeometry::End::kUpstream)))
+		 			continue;
+		 			
         if(sumhits.EUP[ii] > thresh_MeV && sumhits.tUP[ii] < 2000) uphits.push_back(fADCHit(sumhits.EUP[ii],sumhits.tUP[ii])); // Fill uphits and dnhits with energies (in MeV)
         if(layer != 4 && sumhits.EUP[ii] > thresh_MeV_TDC && sumhits.tUP[ii] < 2000) uphitsTDC.push_back(sumhits.tUP[ii]);     // and times when they cross an energy threshold.
       }                                                                                                                        // Also fill TDC uphits and dnhits with times if
       for(int ii = 0; ii < (int)sumhits.EDN.size(); ii++){                                                                     // they are not layer 4 hits and cross threshold.
+        // correct simulation efficiencies 
+		if (config->APPLY_EFFICIENCY_CORRECTIONS
+		 		&& !gDRandom.DecideToAcceptHit(bcal_config->GetEfficiencyCorrectionFactor(GetCalibIndex(DBCALGeometry::module(fADCId),
+		 																				  DBCALGeometry::layer(fADCId),
+		 																				  DBCALGeometry::sector(fADCId)),
+		 																				  DBCALGeometry::End::kDownstream)))
+		 			continue;
+
         if(sumhits.EDN[ii] > thresh_MeV && sumhits.tDN[ii] < 2000) dnhits.push_back(fADCHit(sumhits.EDN[ii],sumhits.tDN[ii]));
         if(layer != 4 && sumhits.EDN[ii] > thresh_MeV_TDC && sumhits.tDN[ii] < 2000) dnhitsTDC.push_back(sumhits.tDN[ii]);
       }
@@ -755,7 +771,7 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
  	NO_SAMPLING_FLUCTUATIONS = false;
  	NO_SAMPLING_FLOOR_TERM = false;
  	NO_POISSON_STATISTICS = false;
-
+		
 	// Load parameters from CCDB
     cout << "get BCAL/bcal_parms parameters from CCDB..." << endl;
     map<string, double> bcalparms;
@@ -827,6 +843,26 @@ bcal_config_t::bcal_config_t(JEventLoop *loop)
      	BCAL_BASE_TIME_OFFSET = bcaltimeoffsets["BCAL_BASE_TIME_OFFSET"];
     	BCAL_TDC_BASE_TIME_OFFSET = bcaltimeoffsets["BCAL_TDC_BASE_TIME_OFFSET"];
    	}
+   	
+   	// load per-channel efficiencies
+	vector<double> raw_table;
+	if(loop->GetCalib("BCAL/channel_mc_efficiency", raw_table)) {
+    	jerr << "Problem loading BCAL/channel_mc_efficiency from CCDB!" << endl;
+    } else {
+   	    int channel = 0;
+
+    	for (int module=1; module<=BCAL_NUM_MODULES; module++) {
+        	for (int layer=1; layer<=BCAL_NUM_LAYERS; layer++) {
+            	for (int sector=1; sector<=BCAL_NUM_SECTORS; sector++) {
+	                channel_efficiencies.push_back( pair<double,double>(raw_table[channel],raw_table[channel+1]) );
+
+                	channel += 2;
+                }
+            }
+        }
+        
+    }
+
 
 }
 

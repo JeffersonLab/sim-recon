@@ -1,5 +1,11 @@
 #include "FDCSmearer.h"
 
+#include <FDC/DFDCGeometry.h>
+#include <JANA/JException.h>
+using namespace jana;
+
+#include <sstream>
+
 //-----------
 // fdc_config_t  (constructor)
 //-----------
@@ -33,6 +39,33 @@ fdc_config_t::fdc_config_t(JEventLoop *loop)
    	//                    0.000010*FDC_CATHODE_SIGMA*FDC_CATHODE_SIGMA; //pC
    	FDC_PED_NOISE = -0.0938 + 0.0485*FDC_CATHODE_SIGMA;
 
+
+	// load efficiency correction factors
+	for(int package=0; package<4; package++) {
+		vector< vector<double> > new_strip_efficiencies;
+		vector< vector<double> > new_wire_efficiencies;
+
+		char ccdb_str[100];
+		sprintf(ccdb_str, "/FDC/package%d/strip_mc_quality", package);
+    	if(loop->GetCalib(ccdb_str, new_strip_efficiencies)) {
+        	stringstream err_ss;
+        	err_ss << "Error loading " << ccdb_str << " !";
+        	throw JException(err_ss.str());
+        }
+		sprintf(ccdb_str,"/FDC/package%d/wire_mc_quality", package);
+    	if(loop->GetCalib(ccdb_str, new_wire_efficiencies)) {
+        	stringstream err_ss;
+        	err_ss << "Error loading " << ccdb_str << " !";
+        	throw JException(err_ss.str());
+        }
+
+		for(int chamber=0; chamber<6; chamber++) {
+        	channel_efficiencies.push_back( new_strip_efficiencies[2*chamber] );
+        	channel_efficiencies.push_back( new_wire_efficiencies[chamber] );
+        	channel_efficiencies.push_back( new_strip_efficiencies[2*chamber+1] );
+		}
+	}
+	
 }
 
 
@@ -58,6 +91,11 @@ void FDCSmearer::SmearEvent(hddm_s::HDDM *record)
                                          siter->getFdcCathodeTruthHits();
           hddm_s::FdcCathodeTruthHitList::iterator titer;
           for (titer = thits.begin(); titer != thits.end(); ++titer) {
+             // correct simulation efficiencies 
+		     if (config->APPLY_EFFICIENCY_CORRECTIONS
+		 			&& !gDRandom.DecideToAcceptHit(fdc_config->GetEfficiencyCorrectionFactor(siter)))
+		 			continue;
+          
             double q = titer->getQ() + gDRandom.SampleGaussian(fdc_config->FDC_PED_NOISE);
             double t = titer->getT() +
                        gDRandom.SampleGaussian(fdc_config->FDC_TDRIFT_SIGMA)*1.0e9;
@@ -81,6 +119,11 @@ void FDCSmearer::SmearEvent(hddm_s::HDDM *record)
          hddm_s::FdcAnodeTruthHitList thits = witer->getFdcAnodeTruthHits();
          hddm_s::FdcAnodeTruthHitList::iterator titer;
          for (titer = thits.begin(); titer != thits.end(); ++titer) {
+             // correct simulation efficiencies 
+		     if (config->APPLY_EFFICIENCY_CORRECTIONS
+		 			&& !gDRandom.DecideToAcceptHit(fdc_config->GetEfficiencyCorrectionFactor(witer)))
+		 			continue;
+
             double t = titer->getT() + gDRandom.SampleGaussian(fdc_config->FDC_TDRIFT_SIGMA)*1.0e9;
             if (t > config->TRIGGER_LOOKBACK_TIME && t < t_max) {
                hddm_s::FdcAnodeHitList hits = witer->addFdcAnodeHits();

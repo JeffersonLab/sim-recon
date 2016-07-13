@@ -85,6 +85,14 @@ class bcal_config_t
 	// Assume constant effective velocity instead of channel-dependent one
 	//vector<double> effective_velocities; // 16.75 (from calibDB BCAL/effective_velocities)
 
+	vector< pair<double,double> > channel_efficiencies;
+	
+	double GetEfficiencyCorrectionFactor(int index, DBCALGeometry::End the_end) {
+		if(the_end == DBCALGeometry::End::kUpstream)
+			return channel_efficiencies.at(index).first;
+		else 
+			return channel_efficiencies.at(index).second;
+	}
 };
 
 

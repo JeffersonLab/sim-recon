@@ -26,7 +26,15 @@ class tof_config_t
 	double TOF_BAR_THRESHOLD;
 
   	vector<double> TOF_PADDLE_TIME_RESOLUTIONS;
+	
+	vector< vector< pair<double,double> > > channel_efficiencies;
 
+	double GetEfficiencyCorrectionFactor(hddm_s::FtofTruthHitList::iterator &siter) {
+		if(siter->getEnd() == 0)
+			return channel_efficiencies.at(siter->getPlane()).at(siter->getBar()-1).first;
+		else 
+			return channel_efficiencies.at(siter->getPlane()).at(siter->getBar()-1).second;
+	}
 };
 
 
