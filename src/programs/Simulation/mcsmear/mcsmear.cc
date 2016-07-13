@@ -68,6 +68,7 @@ double BCAL_TIMEDIFFCOEFA        = 0.0; // 0.07 * sqrt( 2 ) (from calibDB BCAL/b
 double BCAL_TIMEDIFFCOEFB        = 0.0; // 0.00 * sqrt( 2 ) (from calibDB BCAL/bcal_parms)
 double BCAL_TWO_HIT_RESOL        = 0.0; // 50. (from calibDB BCAL/bcal_parms)
 double BCAL_mevPerPE             = 0.31; // Energy corresponding to one pixel firing in MeV
+double BCAL_C_EFFECTIVE          = 16.75;  // constant effective velocity, assumed to be property of fibers
 
 int BCAL_NUM_MODULES = 48;
 int BCAL_NUM_LAYERS = 4;
@@ -113,6 +114,8 @@ double PSC_PHOTONS_PERMEV = 5.e5;
 
 double FCAL_PHOT_STAT_COEF   = 0.0; //0.035;
 double FCAL_BLOCK_THRESHOLD  = 0.0; //20.0*k_MeV;
+double FCAL_MC_ESCALE  = 0.0; 
+
 
 double CDC_TDRIFT_SIGMA      = 0.0; // 150.0/55.0*1E-9 seconds
 double CDC_TIME_WINDOW       = 0.0; // 1000.0E-9 seconds
@@ -149,6 +152,9 @@ vector<double> CDC_RING_RADIUS;
 // FDC geometry and rate parameters (for noise)
 vector<double> FDC_LAYER_Z;
 double FDC_RATE_COEFFICIENT;
+
+// FCAL gain constants
+vector <double> FCAL_GAINS;
 
 using namespace jana;
 

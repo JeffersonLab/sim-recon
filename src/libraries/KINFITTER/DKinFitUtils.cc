@@ -984,7 +984,7 @@ TLorentzVector DKinFitUtils::Calc_DecayingP4(DKinFitParticle* locKinFitParticle,
 	if(dDebugLevel > 30)
 		cout << "PID, sign, pxyzE = " << locKinFitParticle->Get_PID() << ", " << locStateSignMultiplier << ", " << locP4.Px() << ", " << locP4.Py() << ", " << locP4.Pz() << ", " << locP4.E() << endl;
 
-	if(!locDontPropagateAtAllFlag && locCommonVertexFitFlag && locChargedBFieldFlag && ((locKinFitParticleType != d_DecayingParticle) || !locDontPropagateDecayingP3Flag))
+	if(!locDontPropagateAtAllFlag && (locKinFitParticleType != d_MissingParticle) && (locKinFitParticleType != d_TargetParticle) && locCommonVertexFitFlag && locChargedBFieldFlag && ((locKinFitParticleType != d_DecayingParticle) || !locDontPropagateDecayingP3Flag))
 	{
 		//fitting vertex of charged track in magnetic field: momentum changes as function of vertex
 		//decaying particles: p4 not directly used, deriving particles are: so must propagate if charged

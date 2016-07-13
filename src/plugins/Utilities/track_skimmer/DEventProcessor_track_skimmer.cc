@@ -88,6 +88,10 @@ jerror_t DEventProcessor_track_skimmer::init(void)
 	dIDXAStreamMap["xi-"] = new ofstream("xi-.idxa");
 	dIDXAStreamMap["xi0"] = new ofstream("xi0.idxa");
 
+    // e+e-
+	dIDXAStreamMap["ee"] = new ofstream("ee.idxa");
+	dIDXAStreamMap["jpsi_ee"] = new ofstream("jpsi_ee.idxa");
+
 	//First line
 	map<string, ofstream*>::iterator locStreamIterator = dIDXAStreamMap.begin();
 	for(; locStreamIterator != dIDXAStreamMap.end(); ++locStreamIterator)
@@ -111,40 +115,11 @@ jerror_t DEventProcessor_track_skimmer::brun(jana::JEventLoop* locEventLoop, int
 //------------------
 jerror_t DEventProcessor_track_skimmer::evnt(jana::JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
-	// This is called for every event. Use of common resources like writing
-	// to a file or filling a histogram should be mutex protected. Using
-	// locEventLoop->Get(...) to get reconstructed objects (and thereby activating the
-	// reconstruction algorithm) should be done outside of any mutex lock
-	// since multiple threads may call this method at the same time.
-	//
-	// Here's an example:
-	//
-	// vector<const MyDataClass*> mydataclasses;
-	// locEventLoop->Get(mydataclasses);
-	//
-	// japp->RootWriteLock();
-	//  ... fill historgrams or trees ...
-	// japp->RootUnLock();
-
-	// DOCUMENTATION:
-	// ANALYSIS library: https://halldweb1.jlab.org/wiki/index.php/GlueX_Analysis_Software
-
-	//See if is physics event, or is REST
-	bool locIsRESTEvent = (string(locEventLoop->GetJEvent().GetJEventSource()->className()) == string("DEventSourceREST"));
-	if(!locIsRESTEvent)
-	{
-		if(!locEventLoop->GetJEvent().GetStatusBit(kSTATUS_PHYSICS_EVENT))
-		   return NOERROR;
-
-		vector<const DL1Trigger*> trigger_info;
-		locEventLoop->Get(trigger_info);
-		if(trigger_info.empty())
-			return NOERROR;
-
-		// require event to have production FCAL+BCAL trigger
-		if((trigger_info[0]->trig_mask & 0x01) == 0)
-			return NOERROR;
-	}
+	//CHECK TRIGGER TYPE
+	const DTrigger* locTrigger = NULL;
+	locEventLoop->GetSingle(locTrigger);
+	if(!locTrigger->Get_IsPhysicsEvent())
+		return NOERROR;
 
 	// See whether this is MC data or real data
 	vector<const DMCThrown*> locMCThrowns;
@@ -274,6 +249,13 @@ jerror_t DEventProcessor_track_skimmer::evnt(jana::JEventLoop* locEventLoop, uin
 			locSaveSkimStreams.insert(dIDXAStreamMap["xi-"]);
 		else if(locReactionName == "skim_xi0")
 			locSaveSkimStreams.insert(dIDXAStreamMap["xi0"]);
+
+        // e+e- reactions
+		else if(locReactionName == "skim_ee")
+			locSaveSkimStreams.insert(dIDXAStreamMap["ee"]);
+		else if(locReactionName == "skim_jpsi_ee")
+			locSaveSkimStreams.insert(dIDXAStreamMap["jpsi_ee"]);
+
 	}
 
 	//BUILD TO-PRINT STRING

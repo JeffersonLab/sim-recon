@@ -22,6 +22,7 @@ Particle_t beamType = Gamma;
 bool FIXED_BEAM_MOMENTUM = false;
 float BEAM_MOMENTUM = 8.5;
 float BEAM_MOMENTUM_SIGMA = 0.005;
+int USER_RUNNUMBER = 0;
 
 #include <TRandom.h>
 TRandom *rnd;
@@ -69,6 +70,8 @@ int main(int narg, char *argv[])
       *infile >> runNumber >> eventNumber >> nParticles;
       if (runNumber == 0 && eventNumber == 0 && nParticles == 0)
          break;
+
+      if(USER_RUNNUMBER != 0) runNumber = USER_RUNNUMBER;
    
       // Start a new event
       hddm_s::HDDM record;
@@ -212,6 +215,9 @@ void ParseCommandLineArguments(int narg,char *argv[])
             case 's':
                BEAM_MOMENTUM_SIGMA = atof(&ptr[1])/1000.0;
                break;
+            case 'r':
+               USER_RUNNUMBER = atof(&ptr[1]);
+               break;
             default:
               std::cerr << "Unknown option \"" << argv[i] << "\"" << std::endl;
               Usage();
@@ -253,6 +259,8 @@ void Usage(void)
   std::cout << std::endl;
   std::cout << " options:" << std::endl;
   std::cout << std::endl;
+  std::cout << "  -r#                       "
+               "Set the run number (overiding what's in input file)" << std::endl;
   std::cout << "  -V\"x  y  z_min  z_max\"    set the vertex "
                "for the interaction." << std::endl;
   std::cout << "                            (default: x=" << vertex[0]

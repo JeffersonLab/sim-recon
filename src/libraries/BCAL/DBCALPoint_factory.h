@@ -17,6 +17,7 @@ using namespace jana;
 
 typedef vector< vector<double> >  attenuation_parms_t;
 typedef vector< double >          effective_vel_t;
+typedef vector< vector<double> >  track_parms_t;
 
 class DBCALHit;
 
@@ -41,6 +42,7 @@ class DBCALPoint_factory : public JFactory<DBCALPoint> {
   double m_z_target_center;
   attenuation_parms_t attenuation_parameters;
   effective_vel_t effective_velocities;
+  track_parms_t track_parameters;
  
   static const int BCAL_NUM_MODULES  = 48;
   static const int BCAL_NUM_LAYERS   =  4;
@@ -58,6 +60,8 @@ class DBCALPoint_factory : public JFactory<DBCALPoint> {
   bool GetAttenuationParameters(int id, double &attenuation_length,
 				double &attenuation_L1, double &attenuation_L2);
   double GetEffectiveVelocity(int id);
+  bool GetTrackParameters(int id, double &track_p0,
+		  	  double &track_p1, double &track_p2);
 };
 
 #endif //_DBCALPoint_factory_

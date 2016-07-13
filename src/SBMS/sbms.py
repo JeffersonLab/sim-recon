@@ -6,6 +6,8 @@ import glob
 import re
 import sys
 
+EXT_SUFFIX = 0
+
 #===========================================================
 # The first 4 functions provide for building a library,
 # program, multiple-programs, or plugin from all the source
@@ -112,6 +114,63 @@ def executable(env, exename=''):
 
 		# Install targets 
 		env.Install(bindir, myexe)
+
+
+##################################
+# python_so_module
+##################################
+def python_so_module(env, modname):
+
+	# This will build a single python extension module 
+	# from c/c++ sources as a shared library (.so) and
+	# install it either in $INSTALLDIR/python2 or else
+	# $INSTALLDIR/python3 depending on which version of
+	# python the user environment has installed.
+
+	# Build the module as a shared library
+	# using the distutils setup.py mechanism.
+	if env['SHOWBUILD']==0:
+		setup_py_action = SCons.Script.Action('python $SOURCE build -b ' +
+											  'build_' +  modname + 
+											  ' > /dev/null',
+											  'PYMODBUILD [$SOURCE]')
+	else:
+		setup_py_action = SCons.Script.Action('python $SOURCE build -b ' +
+											  'build_' +  modname)
+	setup_py_builder = SCons.Script.Builder(action = setup_py_action)
+	env.Append(BUILDERS = {'PYMODBUILD' : setup_py_builder})
+
+	# Look up EXT_SUFFIX in the distutils config variables. 
+	# Unfortunately scons erases the system-set python path, 
+	# so I cannot import distutils directly here.
+	# Spawn another python shell for that.
+	global EXT_SUFFIX
+	if EXT_SUFFIX == 0:
+		req = subprocess.Popen(['python', '-c', 
+						'from distutils import sysconfig;' +
+						'print(sysconfig.get_config_var("EXT_SUFFIX"))'],
+						stdout=subprocess.PIPE)
+		EXT_SUFFIX = req.communicate()[0].rstrip()
+	if EXT_SUFFIX == "None":
+		mymod = modname + '.so'
+		moduledir = env.subst('$PYTHON2DIR')
+	else:
+		mymod = modname + EXT_SUFFIX
+		moduledir = env.subst('$PYTHON3DIR')
+	modsource = 'setup_' + modname + '.py'
+	modlib = env.PYMODBUILD(mymod, modsource)
+
+	# Cleaning and installation are restricted to the directory
+	# scons was launched from or its descendents
+	CurrentDir = env.Dir('.').srcnode().abspath
+	if not CurrentDir.startswith(env.GetLaunchDir()):
+		# Not in launch directory. Tell scons not to clean these targets
+		env.NoClean([modlib])
+	else:
+		# We're in launch directory (or descendent) schedule installation
+
+		# Install targets 
+		env.Install(moduledir, modlib)
 
 
 ##################################
@@ -518,6 +577,7 @@ def AddDANA(env):
 	AddROOT(env)
 	AddJANA(env)
 	AddCCDB(env)
+	AddRCDB(env)
 	AddHDDS(env)
 	AddXERCES(env)
 	AddEVIO(env)
@@ -553,6 +613,27 @@ def AddCCDB(env):
 		env.AppendUnique(CPPPATH = CCDB_CPPPATH)
 		env.AppendUnique(LIBPATH = CCDB_LIBPATH)
 		env.AppendUnique(LIBS    = CCDB_LIBS)
+
+
+##################################
+# RCDB
+##################################
+def AddRCDB(env):
+	rcdb_home = os.getenv('RCDB_HOME')
+	if(rcdb_home != None) :
+		env.AppendUnique(CXXFLAGS = ['-DHAVE_RCDB'])
+		RCDB_CPPPATH = ["%s/cpp/include" % (rcdb_home), "%s/cpp/include/SQLite" % (rcdb_home)]
+		RCDB_LIBPATH = "%s/cpp/lib" % (rcdb_home)
+		RCDB_LIBS = ["rcdb"]
+		env.AppendUnique(CPPPATH = RCDB_CPPPATH)
+		env.AppendUnique(LIBPATH = RCDB_LIBPATH)
+		env.AppendUnique(LIBS    = RCDB_LIBS)
+
+		if env.WhereIs("mysql_config") is not None:
+			MYSQL_CFLAGS = subprocess.Popen(["mysql_config", "--cflags"], stdout=subprocess.PIPE).communicate()[0]
+			AddCompileFlags(env, MYSQL_CFLAGS)
+#			MYSQL_LINKFLAGS = subprocess.Popen(["mysql_config", "--libs"], stdout=subprocess.PIPE).communicate()[0]
+#			AddLinkFlags(env, MYSQL_LINKFLAGS)
 
 
 ##################################

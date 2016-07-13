@@ -96,7 +96,7 @@ int GetCCDBIndexTAGM(unsigned int column, unsigned int row){
     return CCDBIndex;
 }
 
-void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 2931, TString variation = "default", bool verbose = false,TString prefix = ""){
+void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 10390, TString variation = "default", bool verbose = false,TString prefix = ""){
 
     // set "prefix" in case you want to ship the txt files elsewhere...
     cout << "Performing TDC/ADC timing fits for File: " << fileName.Data() << " Run: " << runNumber << " Variation: " << variation.Data() << endl;
@@ -437,7 +437,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
         outFile.close();
     }
 
-    TH1I *this1DHist = Get1DHistogram("HLDetectorTiming", "TRACKING", "TOF - SC Target Time");
+    TH1I *this1DHist = Get1DHistogram("HLDetectorTiming", "TRACKING", "TOF - RF Time");
     if(this1DHist != NULL){
         //Gaussian
         Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
@@ -452,7 +452,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
         outFile.close();
     }
 
-    this1DHist = Get1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - SC Target Time");
+    this1DHist = Get1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - RF Time");
     if(this1DHist != NULL){
         //Gaussian
         Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
@@ -467,7 +467,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
         outFile.close();
     }
 
-    this1DHist = Get1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - SC Target Time");
+    this1DHist = Get1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - RF Time");
     if(this1DHist != NULL){
         //Gaussian
         Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());

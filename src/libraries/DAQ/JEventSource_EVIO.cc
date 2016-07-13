@@ -93,6 +93,8 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buf){return NOERROR;}
 JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(source_name)
 {
 	// Initialize connection objects and flags to NULL
+	Nunparsed = 0;
+	no_more_events_in_source = false;
 	et_connected = false;
 	//chan = NULL;
 	hdevio = NULL;
@@ -274,6 +276,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	event_source_data_types.insert("DEPICSvalue");
 	event_source_data_types.insert("DEventTag");
 	event_source_data_types.insert("DL1Info");
+	event_source_data_types.insert("Df250Scaler");
+	event_source_data_types.insert("Df250AsyncPedestal");
 
 	// Read in optional module type translation map if it exists	
 	ReadOptionalModuleTypeTranslation();
@@ -607,7 +611,12 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	// If we couldn't even open the source, then there's nothing to do
 	bool no_source = true;
 #if USE_HDEVIO
-	if(source_type==kFileSource && hdevio->is_open) no_source = false;
+	if(source_type==kFileSource){
+		if(no_more_events_in_source) 
+			no_source = false;
+		else if(hdevio->is_open) // n.b. hdevio may be NULL if no_more_events_in_source==true
+			no_source = false;
+	}
 #endif
 	if(source_type==kETSource && et_connected) no_source = false;
 	if(no_source)throw JException(string("Unable to open EVIO channel for \"") + source_name + "\"");
@@ -646,26 +655,57 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	// If no events are currently stored in the buffer, then
 	// read in another event block.
 	if(objs_ptr == NULL){
+	
 		uint32_t *buff = NULL; // ReadEVIOEvent will allocate memory from pool for this
 		double t1 = GetTime();
-		jerror_t err = ReadEVIOEvent(buff);
+		jerror_t err = no_more_events_in_source ? NO_MORE_EVENTS_IN_SOURCE:ReadEVIOEvent(buff);
 		double t2 = GetTime();
+		
+		// If there are no more events to read from the source but there are
+		// buffers yet to be parsed, then we need to give those buffers
+		// a chance to be parsed so we can return an event it may contain.
+		if(err == NO_MORE_EVENTS_IN_SOURCE){
+			_DBG_<<endl<<"-- No more events in source. Waiting for all buffers to be parsed (" << Nunparsed<<") ..." << endl;
+			no_more_events_in_source = true;
+			while(Nunparsed>0 && !japp->GetQuittingStatus()) usleep(1000);
+			pthread_mutex_lock(&stored_events_mutex);
+			if(stored_events.empty()){
+				pthread_mutex_unlock(&stored_events_mutex);
+				return NO_MORE_EVENTS_IN_SOURCE;
+			}
+
+			objs_ptr = stored_events.front();
+			stored_events.pop();
+			event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+
+			pthread_mutex_unlock(&stored_events_mutex);
+			
+			err = NOERROR;
+		}
 		if(err != NOERROR) return err;
-		if(buff == NULL) return MEMORY_ALLOCATION_ERROR;
-		uint32_t buff_size = ((*buff) + 1)*4; // first word in EVIO buffer is total bank size in words
+		if(objs_ptr == NULL){
+			if(buff == NULL) return MEMORY_ALLOCATION_ERROR;
+			uint32_t buff_size = ((*buff) + 1)*4; // first word in EVIO buffer is total bank size in words
 
-		objs_ptr = new ObjList();
-		objs_ptr->time_evio_read = t2 - t1;
-		objs_ptr->eviobuff = buff;
-		objs_ptr->eviobuff_size = buff_size;
-		objs_ptr->run_number = FindRunNumber(buff);
-		objs_ptr->event_number = FindEventNumber(buff);
+			objs_ptr = new ObjList();
+			objs_ptr->time_evio_read = t2 - t1;
+			objs_ptr->eviobuff = buff;
+			objs_ptr->eviobuff_size = buff_size;
+			objs_ptr->run_number = FindRunNumber(buff);
+			objs_ptr->event_number = FindEventNumber(buff);
 
-		// Increment counter that keeps track of how many events
-		// are currently being processed.
-		pthread_mutex_lock(&current_event_count_mutex);
-		current_event_count++;
-		pthread_mutex_unlock(&current_event_count_mutex);
+			// Increment counter that keeps track of how many buffers still
+			// need to be parsed (decremented in ParseEvents)
+			pthread_mutex_lock(&stored_events_mutex);
+			Nunparsed++;
+			pthread_mutex_unlock(&stored_events_mutex);
+
+			// Increment counter that keeps track of how many events
+			// are currently being processed (decremented in FreeEvent)
+			pthread_mutex_lock(&current_event_count_mutex);
+			current_event_count++;
+			pthread_mutex_unlock(&current_event_count_mutex);
+		}
 	}
 
 	// Store a pointer to the ObjList object for this event in the
@@ -953,6 +993,10 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 		// Copy run number from first event
 		objs->run_number = objs_ptr->run_number;
 	}
+	
+	// Decrement counter of how many event buffers are unparsed
+	Nunparsed--;
+	
 	pthread_mutex_unlock(&stored_events_mutex);
 
 	if(VERBOSE>2) evioout << "   Leaving ParseEvents()" << endl;
@@ -1051,6 +1095,7 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 						default:
 							cout << endl << "err_code=" << hdevio->err_code << endl;
 							cout << endl << mess << endl;
+							japp->SetExitCode(hdevio->err_code);
 							if(hdevio) delete hdevio;
 							hdevio = NULL;
 							return NO_MORE_EVENTS_IN_SOURCE;
@@ -2771,17 +2816,23 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
             continue;
         }
 
-        // Check if this is a f250 Pedestal Bank. 
+
+        // Check if this is a f250 Pedestal Bank. Read out at SYNC events.
         if(bankPtr->tag == 0xEE05){
-            if(VERBOSE>6) evioout << "      SYNC event - f250 pedestals not currently handled"<< endl;
-            continue;
+	  if(VERBOSE>6) evioout << "      SYNC event - f250 pedestals found " << endl;
+	  ParseFA250AsyncPedestals(bankPtr, full_events, rocid);
+	  continue;
+        }	
+
+
+	// FADC 250 scalers. Read out at SYNC events
+        if(bankPtr->tag == 0xEE10){
+	  if(VERBOSE>6) evioout << "      SYNC event - f250 scalers found "<< endl;
+	    ParseFA250Scalers(bankPtr, full_events, rocid);
+	    continue;
         }
 
-        // Check if this is additional sync data 
-        if(bankPtr->tag == 0xEE10){
-            if(VERBOSE>6) evioout << "      SYNC event - ignoring undocumented sync bank"<< endl; // only somov@jlab.org knows what this is
-            continue;
-        }
+
 
         // The number of events in block is stored in lower 8 bits
         // of header word (aka the "num") of Data Bank. This should
@@ -4707,8 +4758,83 @@ void JEventSource_EVIO::ParseBORevent(evioDOMNodeP bankPtr)
 }
 
 
+
+//------------------
+// ParseFA250Scalers
+//------------------
+// Read out fadc250 scalers at sync events
+// for all boards in the crate.
+// The data format: slot + 16 scalers
+void JEventSource_EVIO::ParseFA250Scalers(evioDOMNodeP bankPtr, list<ObjList*> &events, uint32_t rocid){
+
+    const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+
+    if(vec->size() > 0){      
+      Df250Scaler *sc = new Df250Scaler;
+	
+      sc->nsync        = (*vec)[0];
+      sc->trig_number  = (*vec)[1];
+      sc->version      = (*vec)[2];
+
+      sc->crate  = rocid;
+
+      for(uint32_t ii = 3; ii < vec->size(); ii++){
+	sc->fa250_sc.push_back((*vec)[ii]);
+      }       
+        
+      if(events.empty()){				
+	events.push_back(new ObjList());
+      }
+      
+      ObjList *objs = *(events.begin());
+      
+      objs->misc_objs.push_back(sc);
+    } else {
+      evioout << "  SYNC event: inconsistent format for FA250Scalers. Don't parse " << endl;
+    }
+
+}
+
+//-------------------------
+// ParseFA250AsyncPedestals
+//-------------------------
+// Read out fadc250 asynchronous pedestals at sync events
+// for all boards in the crate.
+// The data format: slot + 8 32-bit words (ped1, ped2)
+void JEventSource_EVIO::ParseFA250AsyncPedestals(evioDOMNodeP bankPtr, list<ObjList*> &events, uint32_t rocid){
+
+
+    const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+
+    if(vec->size() > 0){
+      
+      Df250AsyncPedestal *ped = new Df250AsyncPedestal;
+	
+      ped->nsync        = (*vec)[0];
+      ped->trig_number  = (*vec)[1];
+
+      ped->crate  = rocid;
+
+      for(uint32_t ii = 2; ii < vec->size(); ii++){
+	ped->fa250_ped.push_back((*vec)[ii]);
+      }       
+        
+      if(events.empty()){				
+	events.push_back(new ObjList());
+      }
+      
+      ObjList *objs = *(events.begin());
+      
+      objs->misc_objs.push_back(ped);
+    } else {
+      evioout << "  SYNC event: inconsistent format for FA250AsyncPedestals. Don't parse " << endl;
+    }
+
+}
+
+
 //----------------
-// ParseTSSyncevent
+// ParseTSSync event
 //----------------
 void JEventSource_EVIO::ParseTSSync(evioDOMNodeP bankPtr, list<ObjList*> &events)
 {
@@ -4719,6 +4845,8 @@ void JEventSource_EVIO::ParseTSSync(evioDOMNodeP bankPtr, list<ObjList*> &events
 
     if((bankPtr->tag & 0xFFFF) == 0xEE02){
         const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+
+
 
         trig_info->nsync        = (*vec)[0];
         trig_info->trig_number  = (*vec)[1];

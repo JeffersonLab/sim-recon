@@ -285,7 +285,7 @@ class HDEVIO{
 		//---------------------------------
 		inline void swap_block(uint64_t *inbuff, uint64_t len, uint64_t *outbuff)
 		{
-			for(uint32_t i=0; i<len; i++, inbuff++, outbuff++){
+			for(uint64_t i=0; i<len; i++, inbuff++, outbuff++){
 				*outbuff = swap64(*inbuff);
 			}
 		}

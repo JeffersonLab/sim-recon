@@ -97,19 +97,19 @@ jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
    // Verify that the right number of layers were loaded
    char str[256];
    if(a_gains.size() != FDC_NUM_PLANES) {
-      sprintf(str, "Bad # of planes for FDC gains from CCDB! CCDB=%zu , should be %d", 
+      sprintf(str, "Bad # of planes for FDC gains from CCDB! CCDB=%zu , should be %d",
          a_gains.size(), FDC_NUM_PLANES);
       cerr << str << endl;
       throw JException(str);
    }
    if(a_pedestals.size() != FDC_NUM_PLANES) {
-      sprintf(str, "Bad # of planes for FDC pedestals from CCDB! CCDB=%zu , should be %d", 
+      sprintf(str, "Bad # of planes for FDC pedestals from CCDB! CCDB=%zu , should be %d",
          a_pedestals.size(), FDC_NUM_PLANES);
       cerr << str << endl;
       throw JException(str);
    }
    if(timing_offsets.size() != FDC_NUM_PLANES) {
-      sprintf(str, "Bad # of planes for FDC timing offsets from CCDB! CCDB=%zu , should be %d", 
+      sprintf(str, "Bad # of planes for FDC timing offsets from CCDB! CCDB=%zu , should be %d",
          timing_offsets.size(), FDC_NUM_PLANES);
       cerr << str << endl;
       throw JException(str);
@@ -142,7 +142,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	loop->Get(cathodedigihits);
 	for(unsigned int i=0; i<cathodedigihits.size(); i++){
 		const DFDCCathodeDigiHit *digihit = cathodedigihits[i];
-		
+
 		// The translation table has:
 		// ---------------------------------------------------
 		// package : 1-4
@@ -157,10 +157,10 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 		// layer   : 1(V), 2(X), or 3(U)
 		// module  : 1 through 8, 1 module = 3 detection layers
 		// element : wire or strip number
-		// plane   : for cathodes only: u(3) or v(1) plane, u@+45,v@-45 
+		// plane   : for cathodes only: u(3) or v(1) plane, u@+45,v@-45
 		// gPlane  : 1 through 72
 		// gLayer  : 1 through 24
-		
+
 		int layer=digihit->view;
 		int gLayer=digihit->chamber + 6*(digihit->package - 1);
 		int gPlane=layer + 3*(gLayer - 1);
@@ -182,14 +182,14 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 		//if (T<=0.) continue;
 
         // Default pedestal from CCDB
-        double pedestal = a_pedestals[plane_index][strip_index];
+        //double pedestal = a_pedestals[plane_index][strip_index];
 
         // Grab the pedestal from the digihit since this should be consistent between the old and new formats
         uint32_t raw_ped           = digihit->pedestal;
         uint32_t nsamples_integral = digihit->nsamples_integral;
 
         // There are a few values from the new data type that are critical for the interpretation of the data
-        uint16_t IBIT = 0; // 2^{IBIT} Scale factor for integral
+        //uint16_t IBIT = 0; // 2^{IBIT} Scale factor for integral
         uint16_t ABIT = 0; // 2^{ABIT} Scale factor for amplitude
         uint16_t PBIT = 0; // 2^{PBIT} Scale factor for pedestal
 		  uint16_t NW   = 0;
@@ -208,7 +208,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
             // Set some constants to defaults until they appear correctly in the config words in the future
             // The defaults are taken from Run 4607
 				if(config){
-            	IBIT = config->IBIT == 0xffff ? 4 : config->IBIT;
+            	//IBIT = config->IBIT == 0xffff ? 4 : config->IBIT;
             	ABIT = config->ABIT == 0xffff ? 3 : config->ABIT;
             	PBIT = config->PBIT == 0xffff ? 0 : config->PBIT;
             	NW   = config->NW   == 0xffff ? 80 : config->NW;
@@ -223,7 +223,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 				}
             if ((NW - (digihit->pulse_time / 10)) < IE){
                 nsamples_integral = (NW - (digihit->pulse_time / 10));
-            } 
+            }
             else{
                 nsamples_integral = IE;
             }
@@ -249,9 +249,9 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         // Complete the pedestal subtracion here since we should know the correct number of samples.
         uint32_t scaled_ped = raw_ped << PBIT;
-        pedestal = double(scaled_ped * nsamples_integral);
+        //pedestal = double(scaled_ped * nsamples_integral);
 
-        //double integral = double(digihit->pulse_integral << IBIT); 
+        //double integral = double(digihit->pulse_integral << IBIT);
         // Comment this line out temporarily until config words are behaving nicely
         //if (A-pedestal<0.) continue;
 
@@ -304,7 +304,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         // layer   : 1 (phi=0), 2 (phi=+60), 3 (phi=-60)
         // module  : 1 through 8, 1 module = 3 detection layers
         // element : wire or strip number
-        // plane   : for cathodes only: u(3) or v(1) plane, u@+45,v@-45 
+        // plane   : for cathodes only: u(3) or v(1) plane, u@+45,v@-45
         // gPlane  : 1 through 72
         // gLayer  : 1 through 24
 
@@ -536,7 +536,7 @@ const double DFDCHit_factory::GetConstant(const fdc_digi_constants_t &the_table,
    DTranslationTable::csc_t daq_index = { in_rocid, in_slot, in_channel };
    DTranslationTable::DChannelInfo channel_info = ttab->GetDetectorIndex(daq_index);
 
-   if( channel_info.det_sys == DTranslationTable::FDC_CATHODES ) {  
+   if( channel_info.det_sys == DTranslationTable::FDC_CATHODES ) {
 // FDC Cathodes
 int gLayer = channel_info.fdc_cathodes.chamber + 6*(channel_info.fdc_cathodes.package - 1);
 int gPlane = channel_info.fdc_cathodes.view + 3*(gLayer - 1);
@@ -547,7 +547,7 @@ cerr << str << endl;
 throw JException(str);
 }
 // strip and wire planes have different numbers of elements
-if( (channel_info.fdc_cathodes.strip <= 0) 
+if( (channel_info.fdc_cathodes.strip <= 0)
 || (channel_info.fdc_cathodes.strip > STRIPS_PER_PLANE)) {
 sprintf(str, "Bad strip # requested in DFDCHit_factory::GetConstant()! requested=%d , should be %ud", channel_info.fdc_cathodes.strip, STRIPS_PER_PLANE);
 cerr << str << endl;
@@ -555,7 +555,7 @@ throw JException(str);
 }
 
 return the_table[gPlane-1][channel_info.fdc_cathodes.strip-1];
-} else if( channel_info.det_sys == DTranslationTable::FDC_WIRES ) {  
+} else if( channel_info.det_sys == DTranslationTable::FDC_WIRES ) {
 // FDC Wirees
 int gLayer = channel_info.fdc_wires.chamber + 6*(channel_info.fdc_wires.package - 1);
 int gPlane = 2 + 3*(gLayer - 1);  // wire planes are always layer 2
@@ -566,7 +566,7 @@ cerr << str << endl;
 throw JException(str);
 }
 // strip and wire planes have different numbers of elements
-if( (channel_info.fdc_wires.wire <= 0) 
+if( (channel_info.fdc_wires.wire <= 0)
 || (channel_info.fdc_wires.wire > WIRES_PER_PLANE)) {
 sprintf(str, "Bad strip # requested in DFDCHit_factory::GetConstant()! requested=%d , should be %ud", channel_info.fdc_wires.wire, WIRES_PER_PLANE);
 cerr << str << endl;
@@ -580,6 +580,6 @@ cerr << str << endl;
 throw JException(str);
 
 return -1.;  // should never reach here!
-}   
+}
 }
 */

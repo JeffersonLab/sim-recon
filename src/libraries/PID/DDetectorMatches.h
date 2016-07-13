@@ -35,7 +35,7 @@ class DBCALShowerMatchParams
 		double dFlightTime; //flight time from DKinematicData::position() to the shower
 		double dFlightTimeVariance;
 		double dPathLength; //path length from DKinematicData::position() to the shower
-		double dDeltaPhiToShower; //between track and shower //is signed: BCAL - Track
+		double dDeltaPhiToShower; //between track and shower //is signed: BCAL - Track //in radians
 		double dDeltaZToShower; //between track and shower //is signed: BCAL - Track
 
 		double Get_DistanceToTrack(void) const

@@ -4,9 +4,9 @@ import sbms
 Import('*')
 
 # Default targets (always built)
-subdirs = ['danarest', 'DAQ', 'TTab', 'rawevent', 'evio_writer', '2trackskim', 'pi0bcalskim', 'pi0fcalskim', 'run_summary', 'track_skimmer', 'trackeff_missing','ps_skim','es_test']
-subdirs.extend(['EventTagPi0'])
+subdirs = ['danarest', 'DAQ', 'TTab', 'rawevent', 'evio_writer', '2trackskim', 'pi0bcalskim', 'pi0fcalskim', 'run_summary', 'track_skimmer', 'trackeff_missing','ps_skim', 'trigger_skims', 'bigevents_skim']
+subdirs.extend(['EventTagPi0','es_test'])
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
 # Optional targets
-sbms.OptionallyBuild(env, ['danahddm', 'dumpcandidates', 'dumpthrowns'])
+sbms.OptionallyBuild(env, ['danahddm', 'dumpcandidates', 'dumpthrowns', 'l3bdt'])

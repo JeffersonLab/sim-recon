@@ -38,6 +38,10 @@ bool DFDCAnode_gLayer_cmp(const DFDCHit* a, const DFDCHit* b) {
 	return a->gLayer < b->gLayer;
 }
 
+bool static fdcxhit_cmp(const DFDCHit *a, const DFDCHit *b){
+  if (a->element != b->element) return (a->element < b->element);
+  return (a->t < b->t);
+}
 
 
 bool DFDCPseudo_cmp(const DFDCPseudo* a, const DFDCPseudo *b){
@@ -321,6 +325,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
   vector<centroid_t>upeaks;
   vector<centroid_t>vpeaks;
 
+  sort(x.begin(), x.end(), fdcxhit_cmp);
 
   //printf("---------u clusters --------\n");
   // Loop over all U and V clusters looking for peaks

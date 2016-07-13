@@ -32,7 +32,9 @@ bool DFDCHit_gLayer_cmp(const DFDCHit* a, const DFDCHit* b) {
 /// of hits.
 ///
 bool DFDCHit_element_cmp(const DFDCHit* a, const DFDCHit* b) {
-	return a->element < b->element;
+	if(a->element != b->element) return a->element < b->element;
+	if(a->t       != b->t      ) return a->t < b->t;
+	return a->q < b->q;
 }
 
 ///
@@ -96,7 +98,7 @@ jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, uint64_t eventN
   
   try {
     eventLoop->Get(allHits);
-      
+
     if (allHits.size()>0) {
       // Sort hits by layer number and by time
       sort(allHits.begin(),allHits.end(),DFDCHit_cmp);
@@ -200,47 +202,44 @@ jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, uint64_t eventN
   return NOERROR;	
 }			
 
-///
-/// DFDCCathodeCluster_factory::pique():
-/// takes a single layer's worth of cathode hits and attempts to create 
-/// DFDCCathodeClusters by grouping together hits with consecutive strip 
-/// numbers.
-///
-void DFDCCathodeCluster_factory::pique(vector<const DFDCHit*>& H) {
-  int width(1);
-  float q_tot(0.0);
- 
-  // For all hits in this layer, associate consecutively-numbered strips 
-  // into a DFDCCathodeCluster object. 
-  for (vector<const DFDCHit*>::iterator i = H.begin(); i != H.end(); i++) {
-    // If we're not at the end of the array, and the strip number of the 
-    // next hit is equal to the strip number + 1 of this hit, then we 
-    // continue our cluster.
-     if ((i+1 != H.end()) && ((*i)->element + 1 == (*(i+1))->element)
-	) {
-      width++;
-      q_tot += (*i)->q;
-    }
-    
-    // If not, our cluster must have ended, so we record the information 
-    // into a new DFDCCathodeCluster object and reset for the next 
-    // cluster.
-    else {
-      if (width>1){
-	DFDCCathodeCluster* newCluster = new DFDCCathodeCluster();
-	newCluster->q_tot 		= q_tot;
-	newCluster->gLayer		= (*i)->gLayer;
-	newCluster->gPlane = (*i)->gPlane;
-	newCluster->plane		= (*i)->plane;
-	for (vector<const DFDCHit*>::iterator j = i-width+1; 
-	     j <=i ; ++j){
-	  newCluster->members.push_back(*j);
+//-----------------------------
+// pique
+//-----------------------------
+void DFDCCathodeCluster_factory::pique(vector<const DFDCHit*>& H)
+{
+	/// Find clusters within cathode plane.
+	///
+	/// Upon entry, the vector "H" should already be sorted
+	/// by strip number and should only contains hits from
+	/// the same plane that are in time with each other.
+	/// This will form clusters from all contiguous strips.
+
+	// Loop over hits
+	for(uint32_t istart=0; istart<H.size(); istart++){
+		const DFDCHit *first_hit = H[istart];
+		
+		// Find end of contiguous section
+		uint32_t iend=istart+1;
+		for(; iend<H.size(); iend++){
+			if(iend>=H.size()) break;
+			if( (H[iend]->element - H[iend-1]->element) > 1 ) break;
+		}
+		if( (iend-istart)<2 ) continue; // don't allow single strip clusters
+		
+		// istart should now point to beginning of cluster 
+		// and iend to one past end of cluster
+		DFDCCathodeCluster* newCluster = new DFDCCathodeCluster();
+		newCluster->q_tot   = 0.0;
+		newCluster->gLayer  = first_hit->gLayer;
+		newCluster->gPlane  = first_hit->gPlane;
+		newCluster->plane   = first_hit->plane;
+		for(uint32_t i=istart; i<iend; i++){
+			newCluster->q_tot += H[i]->q;
+			newCluster->members.push_back(H[i]);
+		}
+		_data.push_back(newCluster);
+		
+		istart = iend-1;
 	}
-	_data.push_back(newCluster);
-      }
-      width 		= 1;
-      q_tot 		= 0.0;
-    }
-  }
 }
 

@@ -116,6 +116,15 @@ extern double FCAL_PHOT_STAT_COEF;
 // Single block energy threshold (applied after smearing)
 extern double FCAL_BLOCK_THRESHOLD;
 
+
+// FCAL gain constants
+extern vector<double> FCAL_GAINS;
+
+// FCAL digi scales
+extern double FCAL_MC_ESCALE;            
+
+
+
 // Forward TOF resolution
 extern double TOF_SIGMA;
 extern double TOF_PHOTONS_PERMEV;
@@ -181,6 +190,8 @@ extern double BCAL_BASE_TIME_OFFSET;            // -100.0 (from calibDB BCAL/bas
 extern double BCAL_TDC_BASE_TIME_OFFSET;        // -100.0 (from calibDB BCAL/base_time_offset)
 
 extern double BCAL_XTALK_FRACT;
+
+extern double BCAL_C_EFFECTIVE;
 
 // The following are not currently in use
 extern double BCAL_DARKRATE_GHZ;                // 0.0176 (from calibDB BCAL/bcal_parms) for 4x4 array

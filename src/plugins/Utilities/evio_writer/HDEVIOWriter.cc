@@ -9,7 +9,7 @@
 using namespace std;
 
 #include "HDEVIOWriter.h"
-#include "hdbyte_swap.h"
+#include "hdbyte_swapout.h"
 
 #include <JANA/JApplication.h>
 #include <JANA/JParameterManager.h>
@@ -417,8 +417,8 @@ void HDEVIOWriter::FlushOutput(uint32_t Nwords, deque< vector<uint32_t>* > &my_o
 		uint32_t *inbuff  = &(*buff)[0];
 		uint32_t *outbuff = &output_block[istart];
 
-		// copy and swap at same time (defined in hdbyte_swap.cc)
-		swap_bank(outbuff, inbuff, len); 
+		// copy and swap at same time
+		swap_bank_out(outbuff, inbuff, len); 
 
 //		output_block.insert(output_block.end(), buff->begin(), buff->end());
 		
@@ -440,7 +440,7 @@ void HDEVIOWriter::FlushOutput(uint32_t Nwords, deque< vector<uint32_t>* > &my_o
 	// Byte swap EVIO block header (we wait to do it here so that
 	// the above integrity check can be performed)
 	uint32_t tmpbuff[8];
-	swap_block(buff, 8, tmpbuff);
+	swap_block_out(buff, 8, tmpbuff);
 	for(uint32_t i=0; i<8; i++) buff[i] = tmpbuff[i];
 	
 	// Write event to either ET buffer or EVIO file.

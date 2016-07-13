@@ -20,9 +20,9 @@ Df250EmulatorAlgorithm_v1::Df250EmulatorAlgorithm_v1(JEventLoop *loop){
 }
 
 void Df250EmulatorAlgorithm_v1::EmulateFirmware(const Df250WindowRawData* rawData,
-                                                std::vector<JObject*> &pt_objs,
-                                                std::vector<JObject*> &pp_objs,
-                                                std::vector<JObject*> &pi_objs)
+                                                std::vector<Df250PulseTime*> &pt_objs,
+                                                std::vector<Df250PulsePedestal*> &pp_objs,
+                                                std::vector<Df250PulseIntegral*> &pi_objs)
 {
     // This is the main routine called by JEventSource_EVIO::GetObjects() and serves as the entry point for the code.
     if (VERBOSE > 0) {

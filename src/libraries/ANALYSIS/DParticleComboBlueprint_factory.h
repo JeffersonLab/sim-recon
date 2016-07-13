@@ -15,6 +15,7 @@
 #include <PID/DNeutralShower.h>
 #include <PID/DVertex.h>
 #include <PID/DDetectorMatches.h>
+#include <TRIGGER/DTrigger.h>
 
 #include <deque>
 #include <map>
