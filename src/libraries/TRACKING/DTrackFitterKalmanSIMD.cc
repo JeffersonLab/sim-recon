@@ -94,13 +94,14 @@ unsigned int DTrackFitterKalmanSIMD::locate(vector<double>&xx,double x){
 double fdc_drift_variance(double t){
     //return FDC_ANODE_VARIANCE;
     if (t<1) t=1;
-    double par[4]={6.051e-3,-1.118e-5,-1.658e-6,2.036e-8};
-    double sigma=8.993e-3/(t+0.001);
-    for (int i=0;i<4;i++) sigma+=par[i]*pow(t,i);
-    sigma*=1.1;
+    double par[5]={0.041,-0.0011,2.06e-5,-1.75e-7,5.81e-10};
+    double sigma=par[0];
+    for (int i=1;i<5;i++) sigma+=par[i]*pow(t,i);
+    // sigma*=1.1;
 
 
-    sigma=0.1;
+    //sigma=0.1;
+    //sigma=0.041-0.000484*t+2.86e-6*t*t;
 
 
     return sigma*sigma;
@@ -268,20 +269,8 @@ double DTrackFitterKalmanSIMD::fdc_drift_distance(double t,double Bz){
 // parametrization of time-to-distance for FDC
 double DTrackFitterKalmanSIMD::fdc_drift_distance(double time,double Bz){
   if (time<0.) return 0.;
-  if (time>150.) return 0.5;
-  double d=0.;
-  /*
-  double p[10]={0.0140545,0.2021   ,-0.0141173 , 0.000696696,-2.12726e-05, 4.06174e-07,-4.85407e-09,3.52305e-11 ,  -1.41865e-13,2.42958e-16};
-  
-  for (int l=0;l<10;l++) {
-    d+=p[l]*pow(time,l);
-  }
-  if (d<0){
-    return 0.;
-  }
-  */
-  
-  d=0.05*sqrt(time)-0.0026*time+8.18e-6*time*time;
+  double tsq=time*time;
+  double d=0.03755*sqrt(time)-8.017e-4*time+3.672e-6*tsq;
   
   
   return d;
