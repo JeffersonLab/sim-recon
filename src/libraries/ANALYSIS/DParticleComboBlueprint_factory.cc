@@ -136,8 +136,9 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 	locEventLoop->GetSingle(dVertex);
 	locEventLoop->GetSingle(dDetectorMatches);
 
-	const DESSkimData* locESSkimData = NULL;
-	locEventLoop->GetSingle(locESSkimData);
+    vector<const DESSkimData*> locESSkimDataVector;
+    locEventLoop->Get(locESSkimDataVector);
+    const DESSkimData* locESSkimData = locESSkimDataVector.empty() ? NULL : locESSkimDataVector[0];
 
 	locEventLoop->Get(dChargedTracks, dTrackSelectionTag.c_str());
 	locEventLoop->Get(dNeutralShowers, dShowerSelectionTag.c_str());
@@ -169,7 +170,7 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 		bool locSkimMissingFlag = false;
 		for(size_t loc_j = 0; loc_j < locReactionSkimVector.size(); ++loc_j)
 		{
-			if(locESSkimData->Get_IsEventSkim(locReactionSkimVector[loc_j]))
+			if(locESSkimData && locESSkimData->Get_IsEventSkim(locReactionSkimVector[loc_j]))
 				continue; //ok so far
 			locSkimMissingFlag = true;
 			break;
