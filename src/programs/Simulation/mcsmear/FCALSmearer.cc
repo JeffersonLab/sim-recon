@@ -129,8 +129,7 @@ void FCALSmearer::SmearEvent(hddm_s::HDDM *record)
                hddm_s::FcalHitList hits = iter->addFcalHits();
                hits().setE(E);
                hits().setT(t);
-               cout << "PASS" << endl;
-         } else cout << "FAIL" << endl;
+         }
         
       }
 
