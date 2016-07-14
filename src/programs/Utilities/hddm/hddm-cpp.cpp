@@ -2013,12 +2013,6 @@ void CodeBuilder::writeClassdef(DOMElement* el)
       {
          hFile << "   int m_" << attrS << ";" << std::endl;
       }
-      else
-      {
-         hFile << "   static const std::string m_" << attrS << ";" << std::endl;
-         cFile << "const std::string " << tagS.simpleType() << "::m_" << attrS
-               << "(\"" << typeS << "\");" << std::endl;
-      }
    }
 
    if (tagS == "HDDM") {
@@ -2550,20 +2544,84 @@ void CodeBuilder::writeClassimp(DOMElement* el)
    {
       XtString attrS(myAttr->item(n)->getNodeName());
       XtString typeS(el->getAttribute(X(attrS)));
-      XtString atypeS = (typeS == "int")? "k_hddm_int" :
-                        (typeS == "long")? "k_hddm_long" :
-                        (typeS == "float")? "k_hddm_float" :
-                        (typeS == "double")? "k_hddm_double" :
-                        (typeS == "boolean")? "k_hddm_boolean" :
-                        (typeS == "string")? "k_hddm_string" :
-                        (typeS == "anyURI")? "k_hddm_anyURI" :
-                        (typeS == "Particle_t")? "k_hddm_Particle_t" :
-                        "k_hddm_unknown";
       hFile << "   if (name == \"" << attrS << "\") {\n"
-               "      if (atype != 0)\n"
-               "         *atype = " << atypeS << ";\n"
-               "      return &m_" << attrS << ";\n"
-               "   }\n";
+            << "      if (atype != 0)\n";
+      if (typeS == "int")
+      {
+         hFile << "         *atype = k_hddm_int;\n";
+      }
+      else if (typeS == "long")
+      {
+         hFile << "         *atype = k_hddm_long;\n";
+      }
+      else if (typeS == "float")
+      {
+         hFile << "         *atype = k_hddm_float;\n";
+      }
+      else if (typeS == "double")
+      {
+         hFile << "         *atype = k_hddm_double;\n";
+      }
+      else if (typeS == "boolean")
+      {
+         hFile << "         *atype = k_hddm_boolean;\n";
+      }
+      else if (typeS == "string")
+      {
+         hFile << "         *atype = k_hddm_string;\n";
+      }
+      else if (typeS == "anyURI")
+      {
+         hFile << "         *atype = k_hddm_anyURI;\n";
+      }
+      else if (typeS == "Particle_t")
+      {
+         hFile << "         *atype = k_hddm_Particle_t;\n";
+      }
+      else if (guessType(typeS) == "int")
+      {
+         hFile << "         *atype = k_hddm_int;\n"
+               << "      static int m_" << attrS
+               << " = get" << attrS.simpleType() << "();\n";
+      }
+      else if (guessType(typeS) == "long")
+      {
+         hFile << "         *atype = k_hddm_long;\n"
+               << "      static long m_" << attrS
+               << " = get" << attrS.simpleType() << "();\n";
+      }
+      else if (guessType(typeS) == "float")
+      {
+         hFile << "         *atype = k_hddm_float;\n"
+               << "      static float m_" << attrS
+               << " = get" << attrS.simpleType() << "();\n";
+      }
+      else if (guessType(typeS) == "double")
+      {
+         hFile << "         *atype = k_hddm_double;\n"
+               << "      static double m_" << attrS
+               << " = get" << attrS.simpleType() << "();\n";
+      }
+      else if (guessType(typeS) == "boolean")
+      {
+         hFile << "         *atype = k_hddm_boolean;\n"
+               << "      static int m_" << attrS
+               << " = get" << attrS.simpleType() << "();\n";
+      }
+      else if (guessType(typeS) == "Particle_t")
+      {
+         hFile << "         *atype = k_hddm_Particle_t;\n"
+               << "      static Particle_t m_" << attrS
+               << " = get" << attrS.simpleType() << "();\n";
+      }
+      else
+      {
+         hFile << "         *atype = k_hddm_unknown;\n"
+               << "      static std::string m_" << attrS
+               << " = get" << attrS.simpleType() << "();\n";
+      }
+      hFile << "      return &m_" << attrS << ";\n"
+            << "   }\n";
    }
    if (tagS != "HDDM")
    {
@@ -2665,7 +2723,8 @@ void CodeBuilder::writeClassimp(DOMElement* el)
       else
       {
 	     hFile << "        << \" " << attrS << "=\" << "
-               << "\"\\\"\" << m_" << attrS << " << \"\\\"\"" << std::endl;
+               << "\"\\\"\" << get" << attrS.simpleType() 
+               << "() << \"\\\"\"" << std::endl;
       }
    }
    if (children[tagS].size() > 0)
