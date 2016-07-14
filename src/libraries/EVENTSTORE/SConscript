@@ -1,0 +1,22 @@
+
+import os
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+# MYSQL
+env.ParseConfig("mysql_config --cflags")
+env.ParseConfig("mysql_config --libs")
+
+# Needed for HDDM
+#env.AppendUnique(CPPPATH=[Dir('.').abspath+"/../../../libraries/HDDM"])   # HACK!
+env.AppendUnique(CPPPATH=["../HDDM"])   # HACK!
+
+sbms.AddDANA(env)
+sbms.AddROOT(env)
+sbms.AddCCDB(env)
+sbms.library(env)
+
+

@@ -136,6 +136,10 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 	locEventLoop->GetSingle(dVertex);
 	locEventLoop->GetSingle(dDetectorMatches);
 
+    vector<const DESSkimData*> locESSkimDataVector;
+    locEventLoop->Get(locESSkimDataVector);
+    const DESSkimData* locESSkimData = locESSkimDataVector.empty() ? NULL : locESSkimDataVector[0];
+
 	locEventLoop->Get(dChargedTracks, dTrackSelectionTag.c_str());
 	locEventLoop->Get(dNeutralShowers, dShowerSelectionTag.c_str());
 
@@ -157,8 +161,25 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 	if(dDebugLevel > 0)
 		cout << "#+, #-, #0 particles = " << dPositiveChargedTracks.size() << ", " << dNegativeChargedTracks.size() << ", " << dNeutralShowers.size() << endl;
 
+	//build the combos for each DReaction, IF the event satisfies the DReaction skim requirements
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
+	{
+		string locReactionSkimString = locReactions[loc_i]->Get_EventStoreSkims();
+		vector<string> locReactionSkimVector;
+		SplitString(locReactionSkimString, locReactionSkimVector, ",");
+		bool locSkimMissingFlag = false;
+		for(size_t loc_j = 0; loc_j < locReactionSkimVector.size(); ++loc_j)
+		{
+			if(locESSkimData && locESSkimData->Get_IsEventSkim(locReactionSkimVector[loc_j]))
+				continue; //ok so far
+			locSkimMissingFlag = true;
+			break;
+		}
+//		if(locSkimMissingFlag)
+//			continue; //no blueprints for this reaction!
+
 		Build_ParticleComboBlueprints(locReactions[loc_i]);
+	}
 
 	return NOERROR;
 }

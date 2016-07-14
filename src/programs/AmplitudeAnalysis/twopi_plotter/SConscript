@@ -16,6 +16,7 @@ if os.getenv('AMPTOOLS', 'nada')!='nada' and os.getenv('AMPPLOTTER', 'nada')!='n
    sbms.AddHDDM(env)
    sbms.AddAmpTools(env)
    sbms.AddAmpPlotter(env)
+   sbms.AddCERNLIB(env)
    sbms.AddROOT(env)
 
    sbms.executable(env)

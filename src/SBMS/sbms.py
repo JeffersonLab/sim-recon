@@ -6,6 +6,8 @@ import glob
 import re
 import sys
 
+EXT_SUFFIX = 0
+
 #===========================================================
 # The first 4 functions provide for building a library,
 # program, multiple-programs, or plugin from all the source
@@ -112,6 +114,63 @@ def executable(env, exename=''):
 
 		# Install targets 
 		env.Install(bindir, myexe)
+
+
+##################################
+# python_so_module
+##################################
+def python_so_module(env, modname):
+
+	# This will build a single python extension module 
+	# from c/c++ sources as a shared library (.so) and
+	# install it either in $INSTALLDIR/python2 or else
+	# $INSTALLDIR/python3 depending on which version of
+	# python the user environment has installed.
+
+	# Build the module as a shared library
+	# using the distutils setup.py mechanism.
+	if env['SHOWBUILD']==0:
+		setup_py_action = SCons.Script.Action('python $SOURCE build -b ' +
+											  'build_' +  modname + 
+											  ' > /dev/null',
+											  'PYMODBUILD [$SOURCE]')
+	else:
+		setup_py_action = SCons.Script.Action('python $SOURCE build -b ' +
+											  'build_' +  modname)
+	setup_py_builder = SCons.Script.Builder(action = setup_py_action)
+	env.Append(BUILDERS = {'PYMODBUILD' : setup_py_builder})
+
+	# Look up EXT_SUFFIX in the distutils config variables. 
+	# Unfortunately scons erases the system-set python path, 
+	# so I cannot import distutils directly here.
+	# Spawn another python shell for that.
+	global EXT_SUFFIX
+	if EXT_SUFFIX == 0:
+		req = subprocess.Popen(['python', '-c', 
+						'from distutils import sysconfig;' +
+						'print(sysconfig.get_config_var("EXT_SUFFIX"))'],
+						stdout=subprocess.PIPE)
+		EXT_SUFFIX = req.communicate()[0].rstrip()
+	if EXT_SUFFIX == "None":
+		mymod = modname + '.so'
+		moduledir = env.subst('$PYTHON2DIR')
+	else:
+		mymod = modname + EXT_SUFFIX
+		moduledir = env.subst('$PYTHON3DIR')
+	modsource = 'setup_' + modname + '.py'
+	modlib = env.PYMODBUILD(mymod, modsource)
+
+	# Cleaning and installation are restricted to the directory
+	# scons was launched from or its descendents
+	CurrentDir = env.Dir('.').srcnode().abspath
+	if not CurrentDir.startswith(env.GetLaunchDir()):
+		# Not in launch directory. Tell scons not to clean these targets
+		env.NoClean([modlib])
+	else:
+		# We're in launch directory (or descendent) schedule installation
+
+		# Install targets 
+		env.Install(moduledir, modlib)
 
 
 ##################################
@@ -502,6 +561,13 @@ def AddHDDM(env):
 	env.AppendUnique(LIBS = 'HDDM')
 	Add_xstream(env)
 
+##################################
+# MYSQL
+##################################
+def AddMySQL(env):
+	# TOFIX : heck to see if mysql_config exists
+	env.ParseConfig("mysql_config --cflags")
+	env.ParseConfig("mysql_config --libs")
 
 ##################################
 # DANA
@@ -516,11 +582,12 @@ def AddDANA(env):
 	AddXERCES(env)
 	AddEVIO(env)
 	AddET(env)
+	AddMySQL(env)   # needed for EventStore
 	#AddCODAChannels(env)
 	DANA_LIBS  = "DANA ANALYSIS KINFITTER PID TAGGER TRACKING START_COUNTER"
 	DANA_LIBS += " CERE DIRC CDC TRIGGER PAIR_SPECTROMETER RF"
 	DANA_LIBS += " FDC TOF BCAL FCAL CCAL TPOL HDGEOMETRY TTAB FMWPC"
-	DANA_LIBS += " DAQ JANA"
+	DANA_LIBS += " DAQ JANA EVENTSTORE"
 	DANA_LIBS += " expat"
 	env.PrependUnique(LIBS = DANA_LIBS.split())
 
@@ -562,10 +629,11 @@ def AddRCDB(env):
 		env.AppendUnique(LIBPATH = RCDB_LIBPATH)
 		env.AppendUnique(LIBS    = RCDB_LIBS)
 
-		MYSQL_CFLAGS = subprocess.Popen(["mysql_config", "--cflags"], stdout=subprocess.PIPE).communicate()[0]
-		AddCompileFlags(env, MYSQL_CFLAGS)
-#		MYSQL_LINKFLAGS = subprocess.Popen(["mysql_config", "--libs"], stdout=subprocess.PIPE).communicate()[0]
-#		AddLinkFlags(env, MYSQL_LINKFLAGS)
+		if env.WhereIs("mysql_config") is not None:
+			MYSQL_CFLAGS = subprocess.Popen(["mysql_config", "--cflags"], stdout=subprocess.PIPE).communicate()[0]
+			AddCompileFlags(env, MYSQL_CFLAGS)
+#			MYSQL_LINKFLAGS = subprocess.Popen(["mysql_config", "--libs"], stdout=subprocess.PIPE).communicate()[0]
+#			AddLinkFlags(env, MYSQL_LINKFLAGS)
 
 
 ##################################
