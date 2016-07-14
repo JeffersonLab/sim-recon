@@ -30,6 +30,7 @@ extern jerror_t TRIGGER_init(JEventLoop *loop);
 extern jerror_t PAIR_SPECTROMETER_init(JEventLoop *loop);
 extern jerror_t TPOL_init(JEventLoop *loop);
 extern jerror_t FMWPC_init(JEventLoop *loop);
+extern jerror_t EVENTSTORE_init(JEventLoop *loop);
 
 //---------------------------------
 // DFactoryGenerator    (Constructor)
@@ -73,6 +74,7 @@ jerror_t DFactoryGenerator::GenerateFactories(JEventLoop *loop)
 	PAIR_SPECTROMETER_init(loop);
 	TPOL_init(loop);
 	FMWPC_init(loop);
+	EVENTSTORE_init(loop);
 	
 	return NOERROR;
 }
