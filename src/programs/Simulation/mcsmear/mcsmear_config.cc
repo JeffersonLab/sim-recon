@@ -28,11 +28,9 @@ mcsmear_config_t::mcsmear_config_t()
 		RCDB_CONNECTION = getenv("RCDB_CONNECTION");
 	else
 		RCDB_CONNECTION = "mysql://rcdb@hallddb/rcdb";   // default to outward-facing MySQL DB
-			
-	gPARMS->SetDefaultParameter("RCDB_CONNECTION", RCDB_CONNECTION, "URL used to access RCDB.");
-			
-	// load connection to RCDB
-	rcdb_connection = new rcdb::Connection(RCDB_CONNECTION);
+
+    // load RCDB later, so that the DApplication interface is initialized
+    rcdb_connection = NULL;
 #endif //HAVE_RCDB
 }
 	
@@ -68,6 +66,27 @@ void mcsmear_config_t::SetSeeds(const char *vals)
 
 #ifdef HAVE_RCDB
 
+//-----------
+// LoadRCDBConnection
+//-----------
+void  mcsmear_config_t::LoadRCDBConnection() 
+{
+    // We want to connect to RCDB as late as possible for two reasons:
+    //  1) No need to connect to the database unless we are actually using this information,
+    //     which should speed things up
+    //  2) To use the JANA command line parameter interface, we need to make sure that the
+    //     DApplication is initialized, and it might not be when the mcsmear_config_t
+    //     constructor is called
+
+    // if we're already connected, then stop now
+    if(rcdb_connection != NULL)
+        return;
+
+	gPARMS->SetDefaultParameter("RCDB_CONNECTION", RCDB_CONNECTION, "URL used to access RCDB.");
+    
+	// load connection to RCDB
+	rcdb_connection = new rcdb::Connection(RCDB_CONNECTION);
+}
 
 //-----------
 // ParseRCDBConfigFile
@@ -78,6 +97,9 @@ bool mcsmear_config_t::ParseRCDBConfigFile(int runNumber)
 	// To get a lot of the configuration parameters we need, we need to parse the CODA configuration files
 	// which are saved in RCDB in the JSON format
 
+    // Lazily connect to RCDB
+    LoadRCDBConnection();
+    
     // The "rtvs" condition contains the file name of the CODA configuration file
     // What else does this contain??
     auto rtvsCondition = rcdb_connection->GetCondition(runNumber, "rtvs");    // Get condition by run and name
@@ -104,11 +126,34 @@ bool mcsmear_config_t::ParseRCDBConfigFile(int runNumber)
     string fileContent = file->GetContent();                               // Get file content
     auto result = rcdb::ConfigParser::Parse(fileContent, SectionNames);    // Parse it!
 
+    // EXAMPLE
+    double CDC_FADC125_DAC = stod(result.Sections["CDC"].NameValues["FADC125_DAC"]);
+    double CDC_FADC125_THR = stod(result.Sections["CDC"].NameValues["FADC125_THR"]);
+
     if(DUMP_RCDB_CONFIG) {
         //// DEBUG ////
         //cout << "CODA config file contents:" << endl;
         ofstream coda_ofile("rcdb_coda.config");
+        coda_ofile << "Full file: " << endl;
         coda_ofile << fileContent << endl;
+
+
+        coda_ofile << endl << "Parsed:" << endl;
+        for(auto sectionName: SectionNames) {
+            coda_ofile << "Section: " << sectionName << endl;
+            auto sectionData = result.Sections[sectionName];
+            
+            for(auto value : sectionData.NameValues)
+                coda_ofile << value.first << " = " << value.second << endl;
+            for(auto data_vec : sectionData.NameVectors) {
+                coda_ofile << data_vec.first << " = ";
+                for(auto value: data_vec.second) 
+                    coda_ofile << value << " ";
+                coda_ofile << endl;
+            } 
+
+            coda_ofile << endl;
+        }
         coda_ofile.close();
     }
 

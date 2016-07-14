@@ -41,18 +41,18 @@ fdc_config_t::fdc_config_t(JEventLoop *loop)
 
 
 	// load efficiency correction factors
-	for(int package=0; package<4; package++) {
+	for(int package=1; package<=4; package++) {
 		vector< vector<double> > new_strip_efficiencies;
 		vector< vector<double> > new_wire_efficiencies;
 
 		char ccdb_str[100];
-		sprintf(ccdb_str, "/FDC/package%d/strip_mc_quality", package);
+		sprintf(ccdb_str, "/FDC/package%d/strip_mc_efficiency", package);
     	if(loop->GetCalib(ccdb_str, new_strip_efficiencies)) {
         	stringstream err_ss;
         	err_ss << "Error loading " << ccdb_str << " !";
         	throw JException(err_ss.str());
         }
-		sprintf(ccdb_str,"/FDC/package%d/wire_mc_quality", package);
+		sprintf(ccdb_str,"/FDC/package%d/wire_mc_efficiency", package);
     	if(loop->GetCalib(ccdb_str, new_wire_efficiencies)) {
         	stringstream err_ss;
         	err_ss << "Error loading " << ccdb_str << " !";
@@ -91,10 +91,10 @@ void FDCSmearer::SmearEvent(hddm_s::HDDM *record)
                                          siter->getFdcCathodeTruthHits();
           hddm_s::FdcCathodeTruthHitList::iterator titer;
           for (titer = thits.begin(); titer != thits.end(); ++titer) {
-             // correct simulation efficiencies 
-		     if (config->APPLY_EFFICIENCY_CORRECTIONS
-		 			&& !gDRandom.DecideToAcceptHit(fdc_config->GetEfficiencyCorrectionFactor(siter)))
-		 			continue;
+            // correct simulation efficiencies 
+            if (config->APPLY_EFFICIENCY_CORRECTIONS
+                  && !gDRandom.DecideToAcceptHit(fdc_config->GetEfficiencyCorrectionFactor(siter)))
+              	continue;
           
             double q = titer->getQ() + gDRandom.SampleGaussian(fdc_config->FDC_PED_NOISE);
             double t = titer->getT() +
@@ -121,8 +121,8 @@ void FDCSmearer::SmearEvent(hddm_s::HDDM *record)
          for (titer = thits.begin(); titer != thits.end(); ++titer) {
              // correct simulation efficiencies 
 		     if (config->APPLY_EFFICIENCY_CORRECTIONS
-		 			&& !gDRandom.DecideToAcceptHit(fdc_config->GetEfficiencyCorrectionFactor(witer)))
-		 			continue;
+             		&& !gDRandom.DecideToAcceptHit(fdc_config->GetEfficiencyCorrectionFactor(witer)))
+             		continue;
 
             double t = titer->getT() + gDRandom.SampleGaussian(fdc_config->FDC_TDRIFT_SIGMA)*1.0e9;
             if (t > config->TRIGGER_LOOKBACK_TIME && t < t_max) {

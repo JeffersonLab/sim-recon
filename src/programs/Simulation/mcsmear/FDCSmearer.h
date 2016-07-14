@@ -24,18 +24,27 @@ class fdc_config_t
 	double GetEfficiencyCorrectionFactor(hddm_s::FdcCathodeStripList::iterator &siter) {
 		// cathode strips
 		int gPlane = 9*(siter->getModule()-1) + 3*(siter->getLayer()-1) 
-             		+ (siter->getPlane()-1);
+             		+ (siter->getPlane()-1);               // starts counting at 0
         int element = siter->getStrip();
 
-		return channel_efficiencies.at(gPlane-1).at(element-1);
+        //cout << "module = " << siter->getModule() << " layer = " << siter->getLayer()
+        //   << " plane = " << siter->getPlane() << " gPlane = " << gPlane 
+        //   << " strip = " << siter->getStrip() << endl;
+
+		return channel_efficiencies.at(gPlane).at(element-1);
 	}
 
 	double GetEfficiencyCorrectionFactor(hddm_s::FdcAnodeWireList::iterator &witer) {
 		// anode wires
-		int gPlane = 9*(witer->getModule()-1) + 3*(witer->getLayer()-1) + 1; 
+		int gPlane = 9*(witer->getModule()-1) + 3*(witer->getLayer()-1) + 1;  // starts counting at 0
         int element = witer->getWire();
 
-		return channel_efficiencies.at(gPlane-1).at(element-1);
+        //cout << "module = " << witer->getModule() << " layer = " << witer->getLayer()
+        //  //<< " plane = " << witer->getPlane() 
+        //   << " gPlane = " << gPlane 
+        //   << " wire = " << witer->getWire() << endl;
+
+		return channel_efficiencies.at(gPlane).at(element-1);
 	}
 
 };

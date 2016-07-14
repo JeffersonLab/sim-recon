@@ -105,9 +105,10 @@ void FCALSmearer::SmearEvent(hddm_s::HDDM *record)
             
          // correct simulation efficiencies 
 		 if (config->APPLY_EFFICIENCY_CORRECTIONS
-		 		&& !gDRandom.DecideToAcceptHit(fcal_config->GetEfficiencyCorrectionFactor(iter->getRow(), iter->getColumn())))
-		 	continue;
-         
+             && !gDRandom.DecideToAcceptHit(fcal_config->GetEfficiencyCorrectionFactor(iter->getRow(), iter->getColumn()))) {
+             continue;
+         } 
+
          // Get gain constant per block
          int channelnum = fcalGeom->channel(iter->getRow(), iter->getColumn()); 
          double FCAL_gain = fcal_config->FCAL_GAINS.at(channelnum);
@@ -122,13 +123,14 @@ void FCALSmearer::SmearEvent(hddm_s::HDDM *record)
          // Smear the time by 200 ps (fixed for now) 7/2/2009 DL
          double t = titer->getT() + gDRandom.SampleGaussian(fcal_config->FCAL_TSIGMA); 
          // Apply a single block threshold. 
-         
+
          // Scale threshold by gains         
          if (E >= fcal_config->FCAL_BLOCK_THRESHOLD * FCAL_gain ){
                hddm_s::FcalHitList hits = iter->addFcalHits();
                hits().setE(E);
                hits().setT(t);
-         }
+               cout << "PASS" << endl;
+         } else cout << "FAIL" << endl;
         
       }
 

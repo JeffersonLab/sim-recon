@@ -13,7 +13,7 @@ class tof_config_t
 	tof_config_t(JEventLoop *loop);
 	
 	inline double GetPaddleTimeResolution(int plane, int bar)  { 
-		int paddle = plane*44 + bar;   // hardcode for now
+		int paddle = plane*44 + bar - 1;   // hardcode for now
 		return TOF_PADDLE_TIME_RESOLUTIONS.at(paddle); 
 	}
 	inline double GetHitTimeResolution(int plane, int bar)  { 

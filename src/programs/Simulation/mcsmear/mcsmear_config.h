@@ -57,6 +57,7 @@ class mcsmear_config_t
 	string RCDB_CONNECTION;
 	rcdb::Connection *rcdb_connection;
 
+    void LoadRCDBConnection();
 	bool ParseRCDBConfigFile(int runNumber);
 #endif  // HAVE_RCDB
 

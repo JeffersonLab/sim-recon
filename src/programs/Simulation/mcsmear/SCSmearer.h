@@ -12,10 +12,10 @@ class sc_config_t
 	sc_config_t(JEventLoop *loop);
 
 	inline double GetPaddleTimeResolution(int sector)  { 
-		return START_TIME_RESOLUTIONS.at(sector); 
+		return START_TIME_RESOLUTIONS.at(sector-1); 
 	}
 	double GetEfficiencyCorrectionFactor(int sector) {
-		return paddle_efficiencies.at(sector);
+		return paddle_efficiencies.at(sector-1);
 	}
 	
 	double START_SIGMA;

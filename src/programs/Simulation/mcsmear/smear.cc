@@ -93,8 +93,10 @@ void Smear::SmearEvent(hddm_s::HDDM *record)
 
 	// Smear each detector system
 	for(map<DetectorSystem_t, Smearer *>::iterator smearer_it = smearers.begin();
-		smearer_it != smearers.end(); smearer_it++)
+		smearer_it != smearers.end(); smearer_it++) {
+        //cerr << "smearing " << SystemName(smearer_it->first) << endl;
 		smearer_it->second->SmearEvent(record);
+    }
 
 }
 

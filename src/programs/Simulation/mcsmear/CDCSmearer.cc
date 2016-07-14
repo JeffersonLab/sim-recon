@@ -12,7 +12,7 @@ cdc_config_t::cdc_config_t(JEventLoop *loop)
 	CDC_THRESHOLD_FACTOR  = 0.0;
  		
  	// load data from CCDB
- 	jerr << "get CDC/cdc_parms parameters from CCDB..." << endl;
+ 	jout << "get CDC/cdc_parms parameters from CCDB..." << endl;
     map<string, double> cdcparms;
     if(loop->GetCalib("CDC/cdc_parms", cdcparms)) {
     	jerr << "Problem loading CDC/cdc_parms from CCDB!" << endl;
@@ -30,7 +30,7 @@ cdc_config_t::cdc_config_t(JEventLoop *loop)
 	vector<unsigned int> Nstraws;
 	int32_t runnumber = loop->GetJEvent().GetRunNumber();
     CalcNstraws(loop, runnumber, Nstraws);
-    unsigned int Nrings = Nstraws.size();
+    //unsigned int Nrings = Nstraws.size();
 
 	// then load the CCDB table
 	vector<double> raw_table;
