@@ -57,6 +57,7 @@ import sbms
 
 # get env object and clone it
 Import('*')
+env.Decider('MD5-timestamp')
 
 #========================================================================
 # Python functions used by the hddm-c and hddm-cpp builders
