@@ -97,22 +97,27 @@ void FDC_Efficiency(bool save = 0){
     char hname3[256];
     sprintf(hname3, "fdc_pseudo_measured_cell[%d]", icell);
     TH2 *h3 = (TH2*)(gDirectory->Get(hname3));
+    TH2 *h3c = h3->Clone();
+    char hname3c[256];
+    sprintf(hname3c, "fdc_pseudo_efficiency_cell[%d]", icell);
+    h3c->SetName(hname3c);
+
     char hname4[256];
     sprintf(hname4, "fdc_pseudo_expected_cell[%d]", icell);
     TH2 *h4 = (TH2*)(gDirectory->Get(hname4));
-      
-    if(h3 && h4){
-      eff[icell-1] = (double) h3->GetEntries();
+
+    if(h3c && h4){
+      eff[icell-1] = (double) h3c->GetEntries();
       eff[icell-1] /= (double) h4->GetEntries();
       
-      h3->Divide(h4);
+      h3c->Divide(h4);
       //h3->SetMinimum(minScale);
-      h3->SetMinimum(0);
-      h3->SetMaximum(maxScale);
-      h3->GetXaxis()->SetTitle("X Position (cm)");
-      h3->GetYaxis()->SetTitle("Y Position (cm)");
-      h3->SetStats(0);
-      h3->Draw("colz");
+      h3c->SetMinimum(0);
+      h3c->SetMaximum(maxScale);
+      h3c->GetXaxis()->SetTitle("X Position (cm)");
+      h3c->GetYaxis()->SetTitle("Y Position (cm)");
+      h3c->SetStats(0);
+      h3c->Draw("colz");
 
       cout << "Pseudo-Efficiency of cell " << icell << " : " << eff[icell-1] << endl;
       tot += eff[icell-1];
@@ -358,5 +363,48 @@ void FDC_Efficiency(bool save = 0){
     else 
       gmagnet[r]->Draw("Psame");
   }
+
+  TCanvas *cResidual_Map_U = new TCanvas("cResidual_Map_U", "U Residual Map", 1200, 800);
+  cResidual_Map_U->Divide(6,4);
+  for(unsigned int icell=1; icell<=24; icell++){
+    cResidual_Map_U->cd(icell);
+    char hname9[256];
+    sprintf(hname9, "fdc_pseudo_residualU_cell[%d]", icell);
+    TH2 *h9 = (TH2*)(gDirectory->Get(hname9));
+      
+    if(h9 && h3){
+      
+      h9->Divide(h3);
+      h9->SetMinimum(-.2);
+      h9->SetMaximum(.2);
+      
+      h9->GetXaxis()->SetTitle("X Position (cm)");
+      h9->GetYaxis()->SetTitle("Y Position (cm)");
+      h9->SetStats(0);
+      h9->Draw("colz");
+    }
+  }
+
+  TCanvas *cResidual_Map_V = new TCanvas("cResidual_Map_V", "V Residual Map", 1200, 800);
+  cResidual_Map_V->Divide(6,4);
+  for(unsigned int icell=1; icell<=24; icell++){
+    cResidual_Map_V->cd(icell);
+    char hname10[256];
+    sprintf(hname10, "fdc_pseudo_residualV_cell[%d]", icell);
+    TH2 *h10 = (TH2*)(gDirectory->Get(hname10));
+      
+    if(h10 && h3){
+      
+      h10->Divide(h3);
+      h10->SetMinimum(-.2);
+      h10->SetMaximum(.2);
+      
+      h10->GetXaxis()->SetTitle("X Position (cm)");
+      h10->GetYaxis()->SetTitle("Y Position (cm)");
+      h10->SetStats(0);
+      h10->Draw("colz");
+    }
+  }
+
   
 }
