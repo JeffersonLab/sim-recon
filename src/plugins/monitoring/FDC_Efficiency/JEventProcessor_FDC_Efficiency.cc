@@ -16,6 +16,9 @@ static TH1D *fdc_wire_expected_cell[25]; // Contains total number of expected hi
 static TH2D *fdc_pseudo_measured_cell[25]; //Filled with total actually detected before division at end
 static TH2D *fdc_pseudo_expected_cell[25]; // Contains total number of expected hits by DOCA
 
+static TH2D *fdc_pseudo_residualU_cell[25]; //Filled with residual mean perp to Wire
+static TH2D *fdc_pseudo_residualV_cell[25]; //Filled with residual mean along Wire
+
 static TH1I *hChi2OverNDF;
 static TH1I *hChi2OverNDF_accepted;
 static TH1I *hPseudoRes;
@@ -145,6 +148,11 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
       sprintf(hname_XY, "hPseudoResUvsV_cell[%d]_radius[%d]", icell+1, (r+1)*5);
       hPseudoResUvsV[icell+1][r] = new TH2I(hname_XY,"Pseudo Residual 2D", 200, -1, 1, 200, -1, 1);
     }
+
+    sprintf(hname_X, "fdc_pseudo_residualU_cell[%d]", icell+1);
+    sprintf(hname_Y, "fdc_pseudo_residualV_cell[%d]", icell+1);
+    fdc_pseudo_residualU_cell[icell+1] = new TH2D(hname_X, "", 100, -50, 50, 100, -50, 50);
+    fdc_pseudo_residualV_cell[icell+1] = new TH2D(hname_Y, "", 100, -50, 50, 100, -50, 50);
 
   }
 
@@ -289,7 +297,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
       continue;  // from CDC analysis
 
     if(!dIsNoFieldFlag){ // Quality cuts for Field on runs.
-      if(tmom < 0.6)
+      if(tmom < 5)
        	continue; // Cut on the reconstructed momentum below 600MeV, no curlers
       
       // TRY TO IMPROVE RECONSTUCTION FOR LOW MOMENTA WITH CDC INFO, DISABLED
@@ -320,6 +328,9 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
     unsigned int packageHit[4] = {0,0,0,0};
     for (unsigned int i = 0; i < cells; i++)
       packageHit[(cellsHit[i] - 1) / 6]++;
+
+    // for alignment studies (Lubomir)
+    if (cells < 17) continue;
     
     unsigned int minCells = 4; //At least 4 cells hit in any package for relatively "unbiased" efficiencies
     if (packageHit[0] < minCells && packageHit[1] < minCells && packageHit[2] < minCells && packageHit[3] < minCells) continue;
@@ -501,6 +512,9 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 		fdc_pseudo_measured_cell[cellNum]->Fill(interPosition.X(), interPosition.Y());
 		hPseudoTime_accepted->Fill(locPseudo->time);
 		hPseudoResVsT->Fill(residualR, locPseudo->time);
+
+		fdc_pseudo_residualU_cell[cellNum]->Fill(interPosition.X(), interPosition.Y(), residualU);
+		fdc_pseudo_residualV_cell[cellNum]->Fill(interPosition.X(), interPosition.Y(), residualV);
 		japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	      }
 	    }
