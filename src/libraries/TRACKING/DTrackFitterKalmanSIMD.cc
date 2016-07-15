@@ -348,7 +348,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     USE_PASS1_TIME_MODE=false;
     gPARMS->SetDefaultParameter("KALMAN:USE_PASS1_TIME_MODE",USE_PASS1_TIME_MODE); 
 
-    USE_FDC_DRIFT_TIMES=false;
+    USE_FDC_DRIFT_TIMES=true;
     gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_DRIFT_TIMES",
 				USE_FDC_DRIFT_TIMES);
 
