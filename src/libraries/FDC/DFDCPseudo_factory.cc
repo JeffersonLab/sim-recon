@@ -517,7 +517,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->w      = x_from_wire-xshifts[ilay];
 	      newPseu->dw     = 0.; // place holder
 	      newPseu->w_c    = x_from_strips-xshifts[ilay];
-	      newPseu->s      = y_from_strips-yshifts[ilay];
+	      newPseu->s      = y_from_strips+yshifts[ilay];
 	      newPseu->ds = FDC_RES_PAR1/q_from_pulse_height+FDC_RES_PAR2;
 	      //newPseu->ds=0.011/q_from_pulse_height+5e-3+2.14e-10*pow(q_from_pulse_height,6);
 	      newPseu->wire   = wire;
