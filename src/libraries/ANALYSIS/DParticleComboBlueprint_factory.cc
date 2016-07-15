@@ -108,6 +108,30 @@ void DParticleComboBlueprint_factory::Get_Reactions(JEventLoop *locEventLoop, ve
 	}
 }
 
+void DParticleComboBlueprint_factory::Check_ReactionNames(vector<const DReaction*>& locReactions) const
+{
+	set<string> locReactionNames;
+	set<string> locDuplicateReactionNames;
+	for(auto locReaction : locReactions)
+	{
+		string locReactionName = locReaction->Get_ReactionName();
+		if(locReactionNames.find(locReactionName) == locReactionNames.end())
+			locReactionNames.insert(locReactionName);
+		else
+			locDuplicateReactionNames.insert(locReactionName);
+	}
+
+	if(locDuplicateReactionNames.empty())
+		return;
+
+	cout << "ERROR: MULTIPLE DREACTIONS WITH THE SAME NAME(S): " << endl;
+	for(auto locReactionName : locDuplicateReactionNames)
+		cout << locReactionName << ", ";
+	cout << endl;
+	cout << "ABORTING" << endl;
+	abort();
+}
+
 //------------------
 // evnt
 //------------------
@@ -132,6 +156,7 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 
 	vector<const DReaction*> locReactions;
 	Get_Reactions(locEventLoop, locReactions);
+	Check_ReactionNames(locReactions);
 
 	locEventLoop->GetSingle(dVertex);
 	locEventLoop->GetSingle(dDetectorMatches);
@@ -164,19 +189,22 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 	//build the combos for each DReaction, IF the event satisfies the DReaction skim requirements
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 	{
-		string locReactionSkimString = locReactions[loc_i]->Get_EventStoreSkims();
-		vector<string> locReactionSkimVector;
-		SplitString(locReactionSkimString, locReactionSkimVector, ",");
-		bool locSkimMissingFlag = false;
-		for(size_t loc_j = 0; loc_j < locReactionSkimVector.size(); ++loc_j)
+		if(locESSkimData != NULL)
 		{
-			if(locESSkimData && locESSkimData->Get_IsEventSkim(locReactionSkimVector[loc_j]))
-				continue; //ok so far
-			locSkimMissingFlag = true;
-			break;
+			string locReactionSkimString = locReactions[loc_i]->Get_EventStoreSkims();
+			vector<string> locReactionSkimVector;
+			SplitString(locReactionSkimString, locReactionSkimVector, ",");
+			bool locSkimMissingFlag = false;
+			for(size_t loc_j = 0; loc_j < locReactionSkimVector.size(); ++loc_j)
+			{
+				if(locESSkimData && locESSkimData->Get_IsEventSkim(locReactionSkimVector[loc_j]))
+					continue; //ok so far
+				locSkimMissingFlag = true;
+				break;
+			}
+	//		if(locSkimMissingFlag)
+	//			continue; //no blueprints for this reaction!
 		}
-//		if(locSkimMissingFlag)
-//			continue; //no blueprints for this reaction!
 
 		Build_ParticleComboBlueprints(locReactions[loc_i]);
 	}
