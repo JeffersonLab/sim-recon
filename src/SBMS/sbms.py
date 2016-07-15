@@ -160,6 +160,9 @@ def python_so_module(env, modname):
 	modsource = 'setup_' + modname + '.py'
 	modlib = env.PYMODBUILD(mymod, modsource)
 
+	# Add dependencies of the shared module on the setup.py and c++ sources
+	env.Depends([mymod], [modsource, "py" + modname + ".cpy"])
+
 	# Cleaning and installation are restricted to the directory
 	# scons was launched from or its descendents
 	CurrentDir = env.Dir('.').srcnode().abspath
