@@ -1,9 +1,13 @@
 
 #include "mcsmear_config.h"
-#include "RCDB/ConfigParser.h"
 
 #include <iostream>
 #include <fstream>
+
+#ifdef HAVE_RCDB
+#include "RCDB/ConfigParser.h"
+#endif // HAVE_RCDB
+
 
 //-----------
 // mcsmear_config_t (Constructor)
