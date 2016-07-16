@@ -9,7 +9,9 @@
 #include <JANA/JEventLoop.h>
 #include "DRandom2.h"
 
+#ifdef HAVE_RCDB
 #include <RCDB/Connection.h>
+#endif // HAVE_RCDB
 
 using namespace jana;
 
