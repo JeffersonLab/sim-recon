@@ -42,7 +42,9 @@ mcsmear_config_t::mcsmear_config_t()
 // mcsmear_config_t (Destructor)
 //-----------
 mcsmear_config_t::~mcsmear_config_t() {
+#ifdef HAVE_RCDB
 	delete rcdb_connection;
+#endif //HAVE_RCDB
 }
 
 //-----------
