@@ -19,6 +19,8 @@ static TH2D *fdc_pseudo_expected_cell[25]; // Contains total number of expected 
 static TH2D *fdc_pseudo_residualU_cell[25]; //Filled with residual mean perp to Wire
 static TH2D *fdc_pseudo_residualV_cell[25]; //Filled with residual mean along Wire
 
+const unsigned int rad=1; // 1, 5 or 9
+
 static TH1I *hChi2OverNDF;
 static TH1I *hChi2OverNDF_accepted;
 static TH1I *hPseudoRes;
@@ -26,7 +28,7 @@ static TH1I *hPseudoResX[25];
 static TH1I *hPseudoResY[25];
 static TH1I *hPseudoResU[25];
 static TH1I *hPseudoResV[25];
-static TH2I *hPseudoResUvsV[25][9];
+static TH2I *hPseudoResUvsV[25][rad];
 static TH2I *hPseudoResVsT;
 static TH2I *hResVsT;
 static TH1I *hMom;
@@ -144,8 +146,8 @@ jerror_t JEventProcessor_FDC_Efficiency::init(void)
     sprintf(hname_Y, "hPseudoResV_cell[%d]", icell+1);
     hPseudoResU[icell+1] = new TH1I(hname_X,"Pseudo Residual along Wire", 600, -3, 3);
     hPseudoResV[icell+1] = new TH1I(hname_Y,"Pseudo Residual perp. to Wire", 600, -3, 3);
-    for (int r=0; r<9; r++){
-      sprintf(hname_XY, "hPseudoResUvsV_cell[%d]_radius[%d]", icell+1, (r+1)*5);
+    for (int r=0; r<rad; r++){
+      sprintf(hname_XY, "hPseudoResUvsV_cell[%d]_radius[%d]", icell+1, (r+1)*45/rad);
       hPseudoResUvsV[icell+1][r] = new TH2I(hname_XY,"Pseudo Residual 2D", 200, -1, 1, 200, -1, 1);
     }
 
@@ -297,7 +299,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
       continue;  // from CDC analysis
 
     if(!dIsNoFieldFlag){ // Quality cuts for Field on runs.
-      if(tmom < 5)
+      if(tmom < .6)
        	continue; // Cut on the reconstructed momentum below 600MeV, no curlers
       
       // TRY TO IMPROVE RECONSTUCTION FOR LOW MOMENTA WITH CDC INFO, DISABLED
@@ -330,7 +332,7 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
       packageHit[(cellsHit[i] - 1) / 6]++;
 
     // for alignment studies (Lubomir)
-    if (cells < 17) continue;
+    // if (cells < 17) continue;
     
     unsigned int minCells = 4; //At least 4 cells hit in any package for relatively "unbiased" efficiencies
     if (packageHit[0] < minCells && packageHit[1] < minCells && packageHit[2] < minCells && packageHit[3] < minCells) continue;
@@ -484,8 +486,8 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 
 	    // rotate to wire coordinate system
 	    const DFDCWire * wire = locPseudo->wire;
-	    double residualU = -1*(residual2D.Rotate(wire->angle)).X();
-	    double residualV = -1*(residual2D.Rotate(wire->angle)).Y();
+	    double residualU = -1*(residual2D.Rotate(wire->angle - 0.0)).X();
+	    double residualV = -1*(residual2D.Rotate(wire->angle - 0.0)).Y();
 
 	    // these can be used for background studies/correction
 	    japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
@@ -494,8 +496,8 @@ jerror_t JEventProcessor_FDC_Efficiency::evnt(JEventLoop *loop, uint64_t eventnu
 	    hPseudoResY[cellNum]->Fill(residualY);
 	    hPseudoResU[cellNum]->Fill(residualU);
 	    hPseudoResV[cellNum]->Fill(residualV);
-	    int radius = interPosition2D.Mod()/5;
-	    if (radius<9)
+	    unsigned int radius = interPosition2D.Mod()/(45/rad);
+	    if (radius<rad)
 	      hPseudoResUvsV[cellNum][radius]->Fill(residualU, residualV);
 	    japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 	    
