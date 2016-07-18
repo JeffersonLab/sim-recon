@@ -464,7 +464,7 @@ void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* l
 	Particle_t locPID = locNeutralParticleHypothesis->PID();
 
 	double locBeta_Timing = locNeutralParticleHypothesis->measuredBeta();
-	double locDeltaT = (locNeutralParticleHypothesis->t0() - locNeutralParticleHypothesis->time());
+	double locDeltaT = locNeutralParticleHypothesis->time() - locNeutralParticleHypothesis->t0();
 
 	double locP = locNeutralParticleHypothesis->momentum().Mag();
 	double locMatchFOM = 0.0;
