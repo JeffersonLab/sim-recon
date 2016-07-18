@@ -30,8 +30,14 @@ class JEventProcessor_L3BDTtree:public jana::JEventProcessor{
 				Float_t Efcal_clusters;
 				Int_t   Ntrack_candidates;
 				Float_t Ptot_candidates;
+				Int_t   Npshits;
+				Int_t   Npschits;
 				
 				Int_t   is_good;
+				
+				Float_t Evisible;
+				Float_t FCAL_rmax;
+				Float_t FCAL_rmin;
 				
 		};
 		

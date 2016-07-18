@@ -1,9 +1,13 @@
 
 #include "mcsmear_config.h"
-#include "RCDB/ConfigParser.h"
 
 #include <iostream>
 #include <fstream>
+
+#ifdef HAVE_RCDB
+#include "RCDB/ConfigParser.h"
+#endif // HAVE_RCDB
+
 
 //-----------
 // mcsmear_config_t (Constructor)
@@ -38,7 +42,9 @@ mcsmear_config_t::mcsmear_config_t()
 // mcsmear_config_t (Destructor)
 //-----------
 mcsmear_config_t::~mcsmear_config_t() {
+#ifdef HAVE_RCDB
 	delete rcdb_connection;
+#endif //HAVE_RCDB
 }
 
 //-----------
