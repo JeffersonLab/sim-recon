@@ -555,7 +555,7 @@ void DMagneticFieldMapFineMesh::GetFieldAndGradient(double x,double y,double z,
     int index_z = static_cast<int>((z-zmin)*one_over_dz);	
   int index_y = 0;
   
-  if(index_x<Nx && index_z>=0 && index_z<Nz){
+  if(index_x>=0 && index_x<Nx && index_z>=0 && index_z<Nz){
     const DBfieldPoint_t *B = &Btable[index_x][index_y][index_z];
     
     // Fractional distance between map points.
