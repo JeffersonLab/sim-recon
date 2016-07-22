@@ -163,17 +163,12 @@ class DEventWriterROOT_${WriterName} : public DEventWriterROOT
 	protected:
 
 		//CUSTOM FUNCTIONS: //Inherit from this class and write custom code in these functions
-			//DO: Use the inherited functions for creating/filling branches.  They will make your life MUCH easier: You don't need to manage the branch memory.
-			//DO NOT: Acquire/release the ROOT lock.  It is already acquired prior to entry into these functions
-			//DO NOT: Write any code that requires a lock of ANY KIND. No reading calibration constants, accessing gParams, etc. This can cause deadlock.
-				//Note that the JEventLoop is unavailable.  This is to prevent calls to other factories that may cause deadlock.
-			//DO NOT: Call TTree::Fill().  This will be called after calling the custom fill functions.
 
-		virtual void Create_CustomBranches_ThrownTree(TTree* locTree) const;
-		virtual void Fill_CustomBranches_ThrownTree(TTree* locTree, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns) const;
+		virtual void Create_CustomBranches_ThrownTree(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop) const;
+		virtual void Fill_CustomBranches_ThrownTree(DTreeFillData* locTreeFillData, JEventLoop* locEventLoop, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns) const;
 
-		virtual void Create_CustomBranches_DataTree(TTree* locTree, const DReaction* locReaction, bool locIsMCDataFlag) const;
-		virtual void Fill_CustomBranches_DataTree(TTree* locTree, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
+		virtual void Create_CustomBranches_DataTree(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction, bool locIsMCDataFlag) const;
+		virtual void Fill_CustomBranches_DataTree(DTreeFillData* locTreeFillData, JEventLoop* locEventLoop, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
 				const DMCThrownMatching* locMCThrownMatching, const DDetectorMatches* locDetectorMatches,
 				const vector<const DBeamPhoton*>& locBeamPhotons, const vector<const DChargedTrackHypothesis*>& locChargedHypos,
 				const vector<const DNeutralParticleHypothesis*>& locNeutralHypos, const deque<const DParticleCombo*>& locParticleCombos) const;
@@ -207,151 +202,95 @@ DEventWriterROOT_${WriterName}::~DEventWriterROOT_${WriterName}(void)
 	//DO NOT TOUCH THE ROOT TREES OR FILES IN THIS FUNCTION!!!!
 }
 
-void DEventWriterROOT_${WriterName}::Create_CustomBranches_DataTree(TTree* locTree, const DReaction* locReaction, bool locIsMCDataFlag) const
+void DEventWriterROOT_${WriterName}::Create_CustomBranches_DataTree(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop, const DReaction* locReaction, bool locIsMCDataFlag) const
 {
-	//DO: Use the inherited functions for creating/filling branches.  They will make your life MUCH easier: You don't need to manage the branch memory.
-	//DO NOT: Acquire/release the ROOT lock.  It is already acquired prior to entry into these functions
-	//DO NOT: Write any code that requires a lock of ANY KIND. No reading calibration constants, accessing gParams, etc. This can cause deadlock.
-		//Note that the JEventLoop is unavailable.  This is to prevent calls to other factories that may cause deadlock.
-	//DO NOT: Call TTree::Fill().  This will be called after calling the custom fill functions.
-
 /*
-	//EXAMPLES: Create a branch for a fundamental data type (e.g. Int_t, Float_t):
-	//Either:
-		//template <typename DType> string Create_Branch_Fundamental(TTree* locTree, string locBranchName) const;
-		//template <typename DType> string Create_Branch_Fundamental(TTree* locTree, string locParticleBranchName, string locVariableName) const;
-			//locParticleBranchName should match the particle branch name created for your DReaction. For particle-independent info, choose the other method
-	Create_Branch_Fundamental<UInt_t>(locTree, \"DummyUInt\");
-	Create_Branch_Fundamental<Float_t>(locTree, \"PiPlus\", \"DummyFloat\");
-*/
-
-/*
-	//EXAMPLES: Create a branch for a TObject data type (e.g. TVector3, TLorentzVector):
-	//Either:
-		//template <typename DType> string Create_Branch_NoSplitTObject(TTree* locTree, string locBranchName) const;
-		//template <typename DType> string Create_Branch_NoSplitTObject(TTree* locTree, string locParticleBranchName, string locVariableName) const;
-			//locParticleBranchName should match the particle branch name created for your DReaction. For particle-independent info, choose the other method
-	Create_Branch_NoSplitTObject<TVector3>(locTree, \"Dummy3Vector\");
-	Create_Branch_NoSplitTObject<TLorentzVector>(locTree, \"PiPlus\", \"Dummy4Vector\");
+	//EXAMPLES: Create a branch for a single object (e.g. Int_t, Float_t, TVector3):
+	//If filling for a specific particle, the branch name should match the particle branch name
+	locBranchRegister.Register_Single<UInt_t>(locTree, \"DummyUInt\");
+	locBranchRegister.Register_Single<Float_t>(locTree, \"PiPlus__DummyFloat\");
+	locBranchRegister.Register_Single<TVector3>(locTree, \"Dummy3Vector\");
+	locBranchRegister.Register_Single<TLorentzVector>(locTree, \"PiPlus__Dummy4Vector\");
 */
 
 /*
 	//EXAMPLES: Create a branch to hold an array of fundamental type:
-	//Either:
-		//template <typename DType> string Create_Branch_FundamentalArray(TTree* locTree, string locBranchName, string locArraySizeString, unsigned int locInitArraySize) const;
-		//template <typename DType> string Create_Branch_FundamentalArray(TTree* locTree, string locParticleBranchName, string locVariableName, string locArraySizeString, unsigned int locInitArraySize) const;
-			//locParticleBranchName should match the particle branch name created for your DReaction. For particle-independent info, choose the other method
-		//locArraySizeString is the name of the branch whose variable that contains the size of the array for that tree entry
-			//To match the default TTree branches, use either: 'NumThrown', 'NumBeam', 'NumChargedHypos', 'NumNeutralHypos', or 'NumCombos', as appropriate
+	//If filling for a specific particle, the branch name should match the particle branch name
+	//locArraySizeString is the name of the branch whose variable that contains the size of the array for that tree entry
+		//To match the default TTree branches, use either: 'NumThrown', 'NumBeam', 'NumChargedHypos', 'NumNeutralHypos', or 'NumCombos', as appropriate
 	unsigned int locInitArraySize = 10; //if too small, will auto-increase as needed, but requires new calls //if too large, uses more memory than needed
-	Create_Branch_Fundamental<UInt_t>(locTree, \"DummyArraySize\"); //you must store the size of the fundamental array for each entry!!
-	Create_Branch_FundamentalArray<Int_t>(locTree, \"PiPlus\", \"DummyIntArray\", \"DummyArraySize\", locInitArraySize);
-	Create_Branch_FundamentalArray<Float_t>(locTree, \"DummyFloatArray\", \"DummyArraySize\", locInitArraySize);
+	locBranchRegister.Register_Single<UInt_t>(locTree, \"DummyArraySize\"); //you must store the size of the fundamental array for each entry!!
+	locBranchRegister.Register_FundamentalArray<UInt_t>(\"PiPlus__DummyIntArray\", \"DummyArraySize\", locInitArraySize);
+	locBranchRegister.Register_FundamentalArray<Float_t>(\"DummyFloatArray\", \"DummyArraySize\", locInitArraySize);
+
 */
 
 /*
 	//EXAMPLES: Create a branch to hold a TClonesArray of TObject type:
-	//Either:
-		//string Create_Branch_ClonesArray(TTree* locTree, string locBranchName, string locClassName, unsigned int locSize) const;
-		//string Create_Branch_ClonesArray(TTree* locTree, string locParticleBranchName, string locVariableName, string locClassName, unsigned int locSize) const;
-			//locParticleBranchName should match the particle branch name created for your DReaction. For particle-independent info, choose the other method
+	//If filling for a specific particle, the branch name should match the particle branch name
 	unsigned int locInitObjectArraySize = 10; //if too small, will auto-increase as needed, but requires new calls //if too large, uses more memory than needed
-	Create_Branch_ClonesArray(locTree, \"PiPlus\", \"Dummy4VectorArray\", \"TLorentzVector\", locInitObjectArraySize);
-	Create_Branch_ClonesArray(locTree, \"Dummy3VectorArray\", \"TVector3\", locInitObjectArraySize);
+	locBranchRegister.Register_ClonesArray<TLorentzVector>(\"PiPlus__Dummy4VectorArray\", locInitObjectArraySize);
+	locBranchRegister.Register_ClonesArray<TVector3>(\"Dummy3VectorArray\", locInitObjectArraySize);
 */
 }
 
-void DEventWriterROOT_${WriterName}::Create_CustomBranches_ThrownTree(TTree* locTree) const
+void DEventWriterROOT_${WriterName}::Create_CustomBranches_ThrownTree(DTreeBranchRegister& locBranchRegister, JEventLoop* locEventLoop) const
 {
-	//DO: Use the inherited functions for creating/filling branches.  They will make your life MUCH easier: You don't need to manage the branch memory.
-	//DO NOT: Acquire/release the ROOT lock.  It is already acquired prior to entry into these functions
-	//DO NOT: Write any code that requires a lock of ANY KIND. No reading calibration constants, accessing gParams, etc. This can cause deadlock.
-		//Note that the JEventLoop is unavailable.  This is to prevent calls to other factories that may cause deadlock.
-	//DO NOT: Call TTree::Fill().  This will be called after calling the custom fill functions.
-
 	//EXAMPLES: See Create_CustomBranches_DataTree
 }
 
-void DEventWriterROOT_${WriterName}::Fill_CustomBranches_DataTree(TTree* locTree, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
+void DEventWriterROOT_${WriterName}::Fill_CustomBranches_DataTree(DTreeFillData* locTreeFillData, JEventLoop* locEventLoop, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns,
 	const DMCThrownMatching* locMCThrownMatching, const DDetectorMatches* locDetectorMatches,
 	const vector<const DBeamPhoton*>& locBeamPhotons, const vector<const DChargedTrackHypothesis*>& locChargedHypos,
 	const vector<const DNeutralParticleHypothesis*>& locNeutralHypos, const deque<const DParticleCombo*>& locParticleCombos) const
 {
-	//DO: Use the inherited functions for creating/filling branches.  They will make your life MUCH easier: You don't need to manage the branch memory.
-	//DO NOT: Acquire/release the ROOT lock.  It is already acquired prior to entry into these functions
-	//DO NOT: Write any code that requires a lock of ANY KIND. No reading calibration constants, accessing gParams, etc. This can cause deadlock.
-		//Note that the JEventLoop is unavailable.  This is to prevent calls to other factories that may cause deadlock.
-	//DO NOT: Call TTree::Fill().  This will be called after calling the custom fill functions.
-
 	//The array indices of the particles/combos in the main TTree branches match the vectors of objects passed into this function
 		//So if you want to add custom data for each (e.g.) charged track, the correspondence to the main arrays is 1 <--> 1
 
 /*
 	//EXAMPLES: Fill a branch for a fundamental data type (e.g. Int_t, Float_t):
-	//Either:
-		//template <typename DType> void Fill_FundamentalData(TTree* locTree, string locBranchName, DType locValue) const;
-		//template <typename DType> void Fill_FundamentalData(TTree* locTree, string locParticleBranchName, string locVariableName, DType locValue) const;
-			//locParticleBranchName should match the particle branch name created for your DReaction. For particle-independent info, choose the other method
-	//!!!!! YOU MUST BE SURE THAT THE DType matches the type you used to create the branch
-	Fill_FundamentalData<UInt_t>(locTree, \"DummyUInt\", 14); //14: dummy value
-	Fill_FundamentalData<Float_t>(locTree, \"PiPlus\", \"DummyFloat\", TMath::Pi()); //pi: dummy value
+	//!!!!! YOU MUST BE SURE THAT template type matches the type you used to create the branch
+	locTreeFillData->Fill_Single<UInt_t>(\"DummyUInt\", 14); //14: dummy value
+	locTreeFillData->Fill_Single<Float_t>(\"PiPlus__DummyFloat\", TMath::Pi()); //pi: dummy value
 */
 
 /*
 	//EXAMPLES: Fill a branch for a TObject data type (e.g. TVector3, TLorentzVector):
-	//Either:
-		//template <typename DType> void Fill_TObjectData(TTree* locTree, string locBranchName, DType& locObject) const;
-		//template <typename DType> void Fill_TObjectData(TTree* locTree, string locParticleBranchName, string locVariableName, DType& locObject) const;
-			//locParticleBranchName should match the particle branch name created for your DReaction. For particle-independent info, choose the other method
-	//!!!!! YOU MUST BE SURE THAT THE DType matches the type you used to create the branch
+	//!!!!! YOU MUST BE SURE THAT template type matches the type you used to create the branch
 	TVector3 locPosition(0.0, 0.0, 65.0);
-	Fill_TObjectData<TVector3>(locTree, \"Dummy3Vector\", locPosition);
+	locTreeFillData->Fill_Single<TVector3>(\"Dummy3Vector\", locPosition);
 	TLorentzVector locP4(1.0, 2.0, 3.0, 4.0);
-	Fill_TObjectData<TLorentzVector>(locTree, \"PiPlus\", \"Dummy4Vector\", locP4);
+	locTreeFillData->Fill_Single<TLorentzVector>(\"PiPlus__Dummy4Vector\", locP4);
 */
 
 /*
 	//EXAMPLES: Fill a branch with an array of fundamental type:
-	//Either:
-		//template <typename DType> void Fill_FundamentalData(TTree* locTree, string locBranchName, DType locValue, unsigned int locArrayIndex) const;
-		//template <typename DType> void Fill_FundamentalData(TTree* locTree, string locParticleBranchName, string locVariableName, DType locValue, unsigned int locArrayIndex) const;
-			//locParticleBranchName should match the particle branch name created for your DReaction. For particle-independent info, choose the other method
-	//!!!!! YOU MUST BE SURE THAT THE DType matches the type you used to create the branch
+	//!!!!! YOU MUST BE SURE THAT template type matches the type you used to create the branch
 	Int_t locOutputArraySize = 7;
 	Fill_FundamentalData<UInt_t>(locTree, \"DummyArraySize\", locOutputArraySize);
 	for(Int_t loc_i = 0; loc_i < locOutputArraySize; ++loc_i)
 	{
 		Int_t locValue = loc_i - 14; //dummy number
-		Fill_FundamentalData<Int_t>(locTree, \"PiPlus\", \"DummyIntArray\", locValue, loc_i);
-		Fill_FundamentalData<Float_t>(locTree, \"DummyFloatArray\", locValue + 9999, loc_i);
+		locTreeFillData->Fill_Array<Int_t>(\"PiPlus__DummyIntArray\", locValue, loc_i);
+		locTreeFillData->Fill_Array<Float_t>(\"DummyFloatArray\", locValue + 9999, loc_i);
 	}
 */
 
 /*
 	//EXAMPLES: Fill a branch with a TClonesArray of TObject type:
-	//Either:
-		//template <typename DType> void Fill_ClonesData(TTree* locTree, string locParticleBranchName, string locVariableName, DType& locObject, unsigned int locArrayIndex) const;
-		//template <typename DType> void Fill_ClonesData(TTree* locTree, string locBranchName, DType& locObject, unsigned int locArrayIndex) const;
-			//locParticleBranchName should match the particle branch name created for your DReaction. For particle-independent info, choose the other method
-	//!!!!! YOU MUST BE SURE THAT THE DType matches the type you used to create the branch
+	//!!!!! YOU MUST BE SURE THAT template type matches the type you used to create the branch
 	for(Int_t loc_i = 0; loc_i < 15; ++loc_i)
 	{
 		TLorentzVector locNewP4(99.0, 2.0, 3.0, 4.0);
-		Fill_ClonesData<TLorentzVector>(locTree, \"PiPlus\", \"Dummy4VectorArray\", locNewP4, loc_i);
+		locTreeFillData->Fill_Array<TLorentzVector>(\"PiPlus__Dummy4VectorArray\", locNewP4, loc_i);
 		TVector3 locNewPosition(100.0, 0.0, 65.0);
-		Fill_ClonesData<TVector3>(locTree, \"Dummy3VectorArray\", locNewPosition, loc_i);
+		locTreeFillData->Fill_Array<TVector3>(\"Dummy3VectorArray\", locNewPosition, loc_i);
 	}
 */
 }
 
-void DEventWriterROOT_${WriterName}::Fill_CustomBranches_ThrownTree(TTree* locTree, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns) const
+void DEventWriterROOT_${WriterName}::Fill_CustomBranches_ThrownTree(DTreeFillData* locTreeFillData, JEventLoop* locEventLoop, const DMCReaction* locMCReaction, const vector<const DMCThrown*>& locMCThrowns) const
 {
-	//DO: Use the inherited functions for creating/filling branches.  They will make your life MUCH easier: You don't need to manage the branch memory.
-	//DO NOT: Acquire/release the ROOT lock.  It is already acquired prior to entry into these functions
-	//DO NOT: Write any code that requires a lock of ANY KIND. No reading calibration constants, accessing gParams, etc. This can cause deadlock.
-		//Note that the JEventLoop is unavailable.  This is to prevent calls to other factories that may cause deadlock.
-	//DO NOT: Call TTree::Fill().  This will be called after calling the custom fill functions.
-
 	//EXAMPLES: See Fill_CustomBranches_DataTree
 }
 

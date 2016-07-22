@@ -92,6 +92,13 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, uint64
 {
 	// FILL HISTOGRAMS
 	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+
+	//CHECK TRIGGER TYPE
+	const DTrigger* locTrigger = NULL;
+	locEventLoop->GetSingle(locTrigger);
+	if(!locTrigger->Get_IsPhysicsEvent())
+		return NOERROR;
+
 	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 	{
 		dHist_IsEvent->Fill(1);
@@ -113,7 +120,7 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, uint64
 
 	dHistogramAction_TrackMultiplicity(locEventLoop);
 	dHistogramAction_DetectedParticleKinematics(locEventLoop);
-//	dHistogramAction_ObjectMemory(locEventLoop);
+	//	dHistogramAction_ObjectMemory(locEventLoop);
 
 	if(!locMCThrowns.empty())
 	{
@@ -122,7 +129,7 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, uint64
 		dHistogramAction_GenReconTrackComparison(locEventLoop);
 	}
 
-	return NOERROR;
+  return NOERROR;
 }
 
 //------------------

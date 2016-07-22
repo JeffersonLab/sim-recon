@@ -15,6 +15,7 @@
 #include <PID/DNeutralShower.h>
 #include <PID/DVertex.h>
 #include <PID/DDetectorMatches.h>
+#include <TRIGGER/DTrigger.h>
 
 #include <deque>
 #include <map>
@@ -41,6 +42,7 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		void Get_Reactions(JEventLoop *locEventLoop, vector<const DReaction*>& locReactions) const;
+		void Check_ReactionNames(vector<const DReaction*>& locReactions) const;
 
 		void Build_ParticleComboBlueprints(const DReaction* locReaction);
 		bool Setup_ComboLoop(const DReaction* locReaction, deque<deque<int> >& locResumeAtIndexDeque, deque<deque<int> >& locNumPossibilitiesDeque, map<int, int>& locInitialParticleStepFromIndexMap, map<pair<int, int>, int>& locFinalStateDecayStepIndexMap);

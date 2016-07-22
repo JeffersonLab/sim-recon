@@ -38,6 +38,10 @@ bool DFDCAnode_gLayer_cmp(const DFDCHit* a, const DFDCHit* b) {
 	return a->gLayer < b->gLayer;
 }
 
+bool static fdcxhit_cmp(const DFDCHit *a, const DFDCHit *b){
+  if (a->element != b->element) return (a->element < b->element);
+  return (a->t < b->t);
+}
 
 
 bool DFDCPseudo_cmp(const DFDCPseudo* a, const DFDCPseudo *b){
@@ -91,7 +95,7 @@ jerror_t DFDCPseudo_factory::init(void)
   RIN_FIDUCIAL = 1.5;
   ROUT_FIDUCIAL=48.0;
   MAX_ALLOWED_FDC_HITS=20000;
-  STRIP_ANODE_TIME_CUT=10.;
+  STRIP_ANODE_TIME_CUT=25.;
   MIDDLE_STRIP_THRESHOLD=0.;
 
   r2_out=ROUT_FIDUCIAL*ROUT_FIDUCIAL;
@@ -100,8 +104,7 @@ jerror_t DFDCPseudo_factory::init(void)
   gPARMS->SetDefaultParameter("FDC:ROUT_FIDUCIAL",ROUT_FIDUCIAL, "Outer fiducial radius of FDC in cm"); 
   gPARMS->SetDefaultParameter("FDC:RIN_FIDUCIAL",RIN_FIDUCIAL, "Inner fiducial radius of FDC in cm");
   gPARMS->SetDefaultParameter("FDC:MAX_ALLOWED_FDC_HITS",MAX_ALLOWED_FDC_HITS, "Max. number of FDC hits (includes both cathode strips and wires hits) to allow before considering event too busy to attempt FDC tracking");
-  gPARMS->SetDefaultParameter("FDC:STRIP_ANODE_TIME_CUT",STRIP_ANODE_TIME_CUT,
-			      "maximum time difference between strips and wires (in ns)"); 
+  gPARMS->SetDefaultParameter("FDC:STRIP_ANODE_TIME_CUT",STRIP_ANODE_TIME_CUT, "maximum time difference between strips and wires (in ns)"); 
 
   DEBUG_HISTS = false;
   gPARMS->SetDefaultParameter("FDC:DEBUG_HISTS",DEBUG_HISTS);
@@ -162,17 +165,17 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int32_t runnumber)
     if (!qv_vs_qu) qv_vs_qu=new TH2F("qv_vs_qu","Anode charge from each cathode",100,0,20000,100,0,20000);
 
     tv_vs_tu= (TH2F*) gROOT->FindObject("tv_vs_tu");
-    if (!tv_vs_tu) tv_vs_tu=new TH2F("tv_vs_tu","t(v) vs t(u)",100,-50,250,100,-50,250);
+    if (!tv_vs_tu) tv_vs_tu=new TH2F("tv_vs_tu","t(v) vs t(u)",100,-100,250,100,-100,250);
 
-     dtv_vs_dtu= (TH2F*) gROOT->FindObject("dtv_vs_dtu");
-    if (!dtv_vs_dtu) dtv_vs_dtu=new TH2F("dtv_vs_dtu","t(wire)-t(v) vs t(wire)-t(u)",100,-50,25000,100,-50,25000);
+    dtv_vs_dtu= (TH2F*) gROOT->FindObject("dtv_vs_dtu");
+    if (!dtv_vs_dtu) dtv_vs_dtu=new TH2F("dtv_vs_dtu","t(wire)-t(v) vs t(wire)-t(u)",100,-500,500,100,-500,500);
 
     u_wire_dt_vs_wire=(TH2F *) gROOT->FindObject("u_wire_dt_vs_wire");
     if (!u_wire_dt_vs_wire) u_wire_dt_vs_wire=new TH2F("u_wire_dt_vs_wire","wire/u cathode time difference vs wire number",
-			   96,0.5,96.5,100,-50,50);
+						       96,0.5,96.5,100,-500,500);
     v_wire_dt_vs_wire=(TH2F *) gROOT->FindObject("v_wire_dt_vs_wire");
     if (!v_wire_dt_vs_wire) v_wire_dt_vs_wire=new TH2F("v_wire_dt_vs_wire","wire/v cathode time difference vs wire number",
-						       96,0.5,96.5,100,-50,50);
+						       96,0.5,96.5,100,-500,500);
     uv_dt_vs_u=(TH2F *) gROOT->FindObject("uv_dt_vs_u");
     if (!uv_dt_vs_u) uv_dt_vs_u=new TH2F("uv_dt_vs_u","uv time difference vs u",
 					 192,0.5,192.5,100,-50,50); 
@@ -182,14 +185,39 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int32_t runnumber)
  
     ut_vs_u=(TH2F *) gROOT->FindObject("ut_vs_u");
     if (!ut_vs_u) ut_vs_u=new TH2F("ut_vs_u","u time  vs u",
-				   192,0.5,192.5,100,0,6000); 
+				   192,0.5,192.5,100,0,1000); 
     vt_vs_v=(TH2F *) gROOT->FindObject("vt_vs_v");
     if (!vt_vs_v) vt_vs_v=new TH2F("vt_vs_v","v time  vs v",
-				   192,0.5,192.5,100,0,6000); 
+				   192,0.5,192.5,100,0,1000); 
     
     dx_vs_dE=(TH2F*)gROOT->FindObject("dx_vs_dE");
     if (!dx_vs_dE) dx_vs_dE=new TH2F("dx_vs_dE","dx vs dE",100,0,25.0,
 				     100,-0.2,0.2);
+
+    u_cl_size=(TH1F*)gROOT->FindObject("u_cl_size");
+    if (!u_cl_size) u_cl_size=new TH1F("u_cl_size","u_cl_size",20,.5,20.5);
+    v_cl_size=(TH1F*)gROOT->FindObject("v_cl_size");
+    if (!v_cl_size) v_cl_size=new TH1F("v_cl_size","v_cl_size",20,.5,20.5);
+
+    u_cl_n=(TH1F*)gROOT->FindObject("u_cl_n");
+    if (!u_cl_n) u_cl_n=new TH1F("u_cl_n","u_cl_n",20,.5,20.5);
+    v_cl_n=(TH1F*)gROOT->FindObject("v_cl_n");
+    if (!v_cl_n) v_cl_n=new TH1F("v_cl_n","v_cl_n",20,.5,20.5);
+
+    x_dist_2=(TH1F*)gROOT->FindObject("x_dist_2");
+    if (!x_dist_2) x_dist_2=new TH1F("x_dist_2","x_dist_2",200,-2,2);
+
+    x_dist_3=(TH1F*)gROOT->FindObject("x_dist_3");
+    if (!x_dist_3) x_dist_3=new TH1F("x_dist_3","x_dist_3",200,-2,2);
+
+    x_dist_23=(TH1F*)gROOT->FindObject("x_dist_23");
+    if (!x_dist_23) x_dist_23=new TH1F("x_dist_23","x_dist_23",200,-2,2);
+
+    x_dist_33=(TH1F*)gROOT->FindObject("x_dist_33");
+    if (!x_dist_33) x_dist_33=new TH1F("x_dist_33","x_dist_33",200,-2,2);
+
+    d_uv=(TH1F*)gROOT->FindObject("d_uv");
+    if (!d_uv) d_uv=new TH1F("d_uv","d_uv",160,-40,40);
 
 
     for (unsigned int i=0;i<24;i++){
@@ -321,17 +349,29 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
   vector<centroid_t>upeaks;
   vector<centroid_t>vpeaks;
 
+  sort(x.begin(), x.end(), fdcxhit_cmp);
 
   //printf("---------u clusters --------\n");
   // Loop over all U and V clusters looking for peaks
   for (unsigned int i=0;i<u.size();i++){
     //printf("Cluster %d\n",i);
-    if (u[i]->members.size()>2)
-      {
-      for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin()+1;
-	   strip+1!=u[i]->members.end();strip++){  
+    if (DEBUG_HISTS) u_cl_size->Fill(u[i]->members.size());
+    if (u[i]->members.size()>2){
+      for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin()+1;strip+1!=u[i]->members.end();strip++){  
 	//printf("  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	if (FindCentroid(u[i]->members,strip,upeaks)==NOERROR){
+	  upeaks[upeaks.size()-1].cluster=i;
+	}
+	else if (u[i]->members.size()==3){
+	  if (ThreeStripCluster(u[i]->members,strip,upeaks)==NOERROR){
+	    upeaks[upeaks.size()-1].cluster=i;
+	  }
+	}
+      }
+    }
+    else if (u[i]->members.size()==2){
+      for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin();strip+1!=u[i]->members.end();strip++){  
+    	if (TwoStripCluster(u[i]->members,strip,upeaks)==NOERROR){
 	  upeaks[upeaks.size()-1].cluster=i;
 	}
       }
@@ -340,14 +380,25 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
   //  printf("---------v cluster --------\n");	
   for (unsigned int i=0;i<v.size();i++){
     //printf("Cluster %d\n",i);
-    if (v[i]->members.size()>2)
-      {
-      for (vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin()+1;
-	   strip+1!=v[i]->members.end();strip++){		
+    if (DEBUG_HISTS) v_cl_size->Fill(v[i]->members.size());
+    if (v[i]->members.size()>2){
+      for (vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin()+1;strip+1!=v[i]->members.end();strip++){		
 	//printf("  %d %f %f\n",(*strip)->element,(*strip)->pulse_height,(*strip)->t);
 	if (FindCentroid(v[i]->members,strip,vpeaks)==NOERROR){
 	  vpeaks[vpeaks.size()-1].cluster=i;
 	}
+	else if (v[i]->members.size()==3){
+	  if (ThreeStripCluster(v[i]->members,strip,vpeaks)==NOERROR){
+	    vpeaks[vpeaks.size()-1].cluster=i;
+	  }
+	}
+      }
+    }
+    else if (v[i]->members.size()==2){
+      for (vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin();strip+1!=v[i]->members.end();strip++){  
+    	if (TwoStripCluster(v[i]->members,strip,vpeaks)==NOERROR){
+	  vpeaks[vpeaks.size()-1].cluster=i;
+  	}
       }
     }
   }
@@ -379,6 +430,16 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	    // the fiducial region of the detector
 	    double r2test=x_from_wire*x_from_wire+y_from_strips*y_from_strips;
 	    double delta_x=x_from_wire-x_from_strips;
+	    
+	    if (DEBUG_HISTS){
+	      if (upeaks[i].numstrips == 3 && vpeaks[j].numstrips == 3) x_dist_3->Fill(delta_x);
+	      if (upeaks[i].numstrips == 2 && vpeaks[j].numstrips == 2) x_dist_2->Fill(delta_x);
+	      if (upeaks[i].numstrips == 2 && vpeaks[j].numstrips == 3) x_dist_23->Fill(delta_x);
+	      else if (upeaks[i].numstrips == 3 && vpeaks[j].numstrips == 2) x_dist_23->Fill(delta_x);
+
+	      if (upeaks[i].numstrips == 3 && vpeaks[j].numstrips == 10) x_dist_33->Fill(delta_x);
+	      else if (upeaks[i].numstrips == 10 && vpeaks[j].numstrips == 3) x_dist_33->Fill(delta_x);
+	    }
 	 
 	    if (old_wire_num==(*xIt)->element) continue;
 	    old_wire_num=(*xIt)->element;
@@ -387,11 +448,11 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 		&& r2test>r2_in){
 	      double dt1 = (*xIt)->t - upeaks[i].t;
 	      double dt2 = (*xIt)->t - vpeaks[j].t;
-
+	      
 	      //printf("dt1 %f dt2 %f\n",dt1,dt2);
 
 	      if (DEBUG_HISTS){
-		if (layer==1){
+		//if (layer==1){
 		  dtv_vs_dtu->Fill(dt1,dt2);
 		  tv_vs_tu->Fill(upeaks[i].t, vpeaks[j].t);
 		  u_wire_dt_vs_wire->Fill((*xIt)->element,(*xIt)->t-upeaks[i].t);
@@ -416,12 +477,23 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 		    vt_vs_v->Fill(vid,udigihit->pulse_time);
 		  }
 		  //  Hxy->Fill(x_from_strips,y_from_strips);
-		}
+		  //}
 	      }
-	      //	      if (sqrt(dt1*dt1+dt2*dt2)>STRIP_ANODE_TIME_CUT) continue;
+	      
+	      if (DEBUG_HISTS){
+		d_uv->Fill(sqrt(dt1*dt1+dt2*dt2));
+	      }
+	      
+	      if (sqrt(dt1*dt1+dt2*dt2)>STRIP_ANODE_TIME_CUT) continue;
 
 	      // Temporary cut until TDC timing is worked out
-	      if (fabs(vpeaks[j].t-upeaks[i].t)>STRIP_ANODE_TIME_CUT) continue;
+	      //if (fabs(vpeaks[j].t-upeaks[i].t)>STRIP_ANODE_TIME_CUT) continue;
+
+	      if (DEBUG_HISTS){
+		// number of clusters of each type
+		u_cl_n->Fill(upeaks[i].numstrips);
+		v_cl_n->Fill(vpeaks[j].numstrips);
+	      }
 
 	      // Charge and energy loss
 	      double q_cathodes=0.5*(upeaks[i].q+vpeaks[j].q);
@@ -449,8 +521,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->ds = FDC_RES_PAR1/q_from_pulse_height+FDC_RES_PAR2;
 	      //newPseu->ds=0.011/q_from_pulse_height+5e-3+2.14e-10*pow(q_from_pulse_height,6);
 	      newPseu->wire   = wire;
-	      //newPseu->time   = (*xIt)->t;
-	      newPseu->time=0.5*(upeaks[i].t+vpeaks[j].t);
+	      newPseu->time   = (*xIt)->t;
+	      //newPseu->time=0.5*(upeaks[i].t+vpeaks[j].t);
 	      newPseu->status = status;
 	      newPseu->itrack = (*xIt)->itrack;
 
@@ -671,7 +743,6 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
   }
   return INFINITE_RECURSION; // error placeholder
 }
-     
 
 
 ///
@@ -760,5 +831,113 @@ jerror_t DFDCPseudo_factory::FindNewParmVec(const DMatrix3x1 &N,
     // Make sure that new version of lambda is not too small
     lambda=(lambda_temp>0.1*lambda ? lambda_temp : 0.1*lambda);
   } 
+}
+
+   
+//
+/// DFDCPseudo_factory::TwoStripCluster()
+/// Almost 10% of all clusters have only two strips
+/// But FindCentroid does not work
+/// Attempt to recover them with simple center-of-gravity
+/// Updates list of centroids. 
+///
+jerror_t DFDCPseudo_factory::TwoStripCluster(const vector<const DFDCHit*>& H,
+                       vector<const DFDCHit *>::const_iterator peak,
+                       vector<centroid_t>&centroids){
+  centroid_t temp;
+  
+  if ((*peak)->pulse_height<MIDDLE_STRIP_THRESHOLD && (*(peak+1))->pulse_height<MIDDLE_STRIP_THRESHOLD) {
+    return VALUE_OUT_OF_RANGE;
+  }
+  
+  unsigned int index1=2*((*peak)->gLayer-1)+(*peak)->plane/2;
+  unsigned int index2=2*((*(peak+1))->gLayer-1)+(*(peak+1))->plane/2;
+
+  // this should never happen
+  if (index1 != index2) return VALUE_OUT_OF_RANGE;
+
+  double pos1=fdccathodes[index1][(*peak)->element-1]->u;
+  double pos2=fdccathodes[index2][(*(peak+1))->element-1]->u;
+  
+  double amp1=double((*peak)->pulse_height);
+  double amp2=double((*(peak+1))->pulse_height);
+  double sum=amp1+amp2;
+
+  double t1=double((*peak)->t);
+  double t2=double((*(peak+1))->t);
+
+  // weighted sum
+  temp.pos=(pos1*amp1+pos2*amp2)/sum;
+  temp.q_from_pulse_height=sum;
+  temp.numstrips=2;
+
+  // time from greater amplitude
+  if (amp1 > amp2) temp.t=t1;
+  else  temp.t=t2;
+  temp.t_rms=0.;
+
+  //CalcMeanTime(peak,temp.t,temp.t_rms);
+  centroids.push_back(temp);
+  
+  return NOERROR;
+}
+
+//
+/// DFDCPseudo_factory::ThreeStripCluster()
+/// But FindCentroid does not work for Clusters without peak
+/// Attempt to recover them with simple center-of-gravity
+/// Updates list of centroids. 
+///
+jerror_t DFDCPseudo_factory::ThreeStripCluster(const vector<const DFDCHit*>& H,
+                       vector<const DFDCHit *>::const_iterator peak,
+                       vector<centroid_t>&centroids){
+  centroid_t temp;
+  
+  if ((*(peak-1))->pulse_height<MIDDLE_STRIP_THRESHOLD &&
+      (*peak)->pulse_height<MIDDLE_STRIP_THRESHOLD &&
+      (*(peak+1))->pulse_height<MIDDLE_STRIP_THRESHOLD) {
+    return VALUE_OUT_OF_RANGE;
+  }
+  
+  double sum=0;
+  double wsum=0;
+  double t=0;
+  double o_amp=0;
+  int i_corr=-2;
+  for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
+    unsigned int index=2*((*j)->gLayer-1)+(*j)->plane/2;
+    
+    double pos=fdccathodes[index][(*j)->element-1]->u;
+    double amp=double((*j)->pulse_height);
+
+    sum+=amp;
+    wsum+=amp*pos;
+    
+    // time and correction from largest amplitude
+    if (amp > o_amp){
+      t=double((*j)->t);
+      o_amp = amp;
+      i_corr++;
+    }
+  }
+
+  //correct for 'missing' signals on the other side
+  //largest amp on the left: -
+  //largest amp on the right: +
+  //minimum in the centre: 0
+  double pos_corr = 0.1;
+  
+  // weighted sum
+  temp.pos=wsum/sum + i_corr*pos_corr;
+
+  temp.q_from_pulse_height=sum;
+  temp.numstrips=10;
+  temp.t=t;
+  temp.t_rms=0.;
+
+  //CalcMeanTime(peak,temp.t,temp.t_rms);
+  centroids.push_back(temp);
+
+  return NOERROR;
 }
 

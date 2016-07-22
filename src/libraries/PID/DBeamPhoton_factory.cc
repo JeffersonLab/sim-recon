@@ -46,6 +46,7 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t even
     for (unsigned int ih=0; ih < tagm_hits.size(); ++ih)
     {
         if (!tagm_hits[ih]->has_fADC) continue; // Skip TDC-only hits (i.e. hits with no ADC info.)		
+	if (tagm_hits[ih]->row > 0) continue; // Skip individual fiber readouts
         DVector3 mom(0.0, 0.0, tagm_hits[ih]->E);
         DBeamPhoton *gamma = new DBeamPhoton;
         gamma->setPID(Gamma);
@@ -55,6 +56,7 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t even
         gamma->setMass(0);
         gamma->setTime(tagm_hits[ih]->t);
         gamma->setT0(tagm_hits[ih]->t, 0.200, SYS_TAGM);
+        gamma->dCounter = tagm_hits[ih]->column;
         gamma->AddAssociatedObject(tagm_hits[ih]);
         _data.push_back(gamma);
     }
@@ -74,6 +76,7 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, uint64_t even
         gamma->setMass(0);
         gamma->setTime(tagh_hits[ih]->t);
         gamma->setT0(tagh_hits[ih]->t, 0.350, SYS_TAGH);
+        gamma->dCounter = tagh_hits[ih]->counter_id;
         gamma->AddAssociatedObject(tagh_hits[ih]);
         _data.push_back(gamma);
     }

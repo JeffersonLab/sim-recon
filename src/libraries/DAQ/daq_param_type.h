@@ -19,6 +19,9 @@
 //  https://halldweb1.jlab.org/wiki/images/2/21/20140910_config_in_datastream.pdf
 //
 
+#ifndef _daq_param_type_
+#define _daq_param_type_
+
 enum daq_param_type{
 
 	kPARAM250_NSA             = 0x0501,
@@ -57,3 +60,5 @@ enum daq_param_type{
 
 	kPARAM_NONE               = 0x0000
 };
+
+#endif // _daq_param_type_

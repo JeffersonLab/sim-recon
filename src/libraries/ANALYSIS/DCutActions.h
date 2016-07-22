@@ -527,17 +527,15 @@ class DCutAction_TrackHitPattern : public DAnalysisAction
 		dMinHitRingsPerCDCSuperlayer(locMinHitRingsPerCDCSuperlayer), dMinHitPlanesPerFDCPackage(locMinHitPlanesPerFDCPackage){}
 
 		string Get_ActionName(void) const;
-		void Initialize(JEventLoop* locEventLoop);
+		void Initialize(JEventLoop* locEventLoop){}
 
-		bool Cut_TrackHitPattern(const DKinematicData* locTrack) const;
+		bool Cut_TrackHitPattern(const DParticleID* locParticleID, const DKinematicData* locTrack) const;
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
 		unsigned int dMinHitRingsPerCDCSuperlayer;
 		unsigned int dMinHitPlanesPerFDCPackage;
-
-		const DParticleID* dParticleID;
 };
 
 class DCutAction_ProtonPiPlusdEdx : public DAnalysisAction

@@ -3,6 +3,7 @@
 // which histograms to fetch for the macro.
 //
 // hnamepath: /occupancy/cdc_num_events
+// hnamepath: /occupancy/cdc_occ_ring_00
 // hnamepath: /occupancy/cdc_occ_ring_01
 // hnamepath: /occupancy/cdc_occ_ring_02
 // hnamepath: /occupancy/cdc_occ_ring_03
@@ -30,7 +31,7 @@
 // hnamepath: /occupancy/cdc_occ_ring_25
 // hnamepath: /occupancy/cdc_occ_ring_26
 // hnamepath: /occupancy/cdc_occ_ring_27
-// hnamepath: /occupancy/cdc_occ_ring_28
+
 
 
 {
@@ -67,7 +68,7 @@
 	cdc_axes->GetZaxis()->SetRangeUser(minScale, maxScale);
 	cdc_axes->Draw("colz");
 
-	for(unsigned int iring=1; iring<=28; iring++){
+	for(unsigned int iring=0; iring<28; iring++){
 		char hname[256];
 		sprintf(hname, "cdc_occ_ring_%02d", iring);
 		TH1 *h = (TH1*)(dir->Get(hname));

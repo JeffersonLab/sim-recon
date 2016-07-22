@@ -8,7 +8,7 @@
 #ifndef _JEventProcessor_CDC_Efficiency_
 #define _JEventProcessor_CDC_Efficiency_
 
-//#include <pthread.h>
+#include <set>
 #include <map>
 #include <vector>
 #include <deque>
@@ -31,8 +31,9 @@ using namespace std;
 #include <TRACKING/DReferenceTrajectory.h>
 #include <TRACKING/DTrackWireBased.h>
 #include <PID/DChargedTrack.h>
+#include <PID/DParticleID.h>
 #include <PID/DDetectorMatches.h>
-#include <CDC/DCDCHit.h>
+#include <CDC/DCDCTrackHit.h>
 
 class JEventProcessor_CDC_Efficiency:public jana::JEventProcessor{
 	public:
@@ -46,8 +47,22 @@ class JEventProcessor_CDC_Efficiency:public jana::JEventProcessor{
 		jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
-        DGeometry * dgeom;
+
+		void GitRDun(unsigned int ringNum, const DTrackTimeBased *thisTimeBasedTrack, map<int, map<int, set<const DCDCTrackHit*> > >& locSorteDCDCTrackHits);
+		bool Expect_Hit(const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, double distanceToWire, double& delta, double& dz);
+		void Fill_MeasuredHit(int ringNum, int wireNum, double distanceToWire, const DTrackTimeBased* thisTimeBasedTrack, DCDCWire* wire, const DCDCHit* locHit);
+		void Fill_ExpectedHit(int ringNum, int wireNum, double distanceToWire);
+		const DCDCTrackHit* Find_Hit(int locRing, int locProjectedStraw, map<int, set<const DCDCTrackHit*> >& locSorteDCDCTrackHits);
+
+		DGeometry * dgeom;
         bool dIsNoFieldFlag;
+        double dTargetCenterZ;
+        double dTargetLength;
+
+		double MAX_DRIFT_TIME;
+        double dMinTrackingFOM;
+        int dMinNumRingsToEvalSuperlayer;
+
 		vector< vector< DCDCWire * > > cdcwires; // CDC Wires Referenced by [ring][straw]
         vector<vector<double> >max_sag;
         vector<vector<double> >sag_phi_offset;
@@ -55,6 +70,15 @@ class JEventProcessor_CDC_Efficiency:public jana::JEventProcessor{
         int ROCIDFromRingStraw[28][209];
         int SlotFromRingStraw[28][209];
         double DOCACUT;
+
+        vector<TH2D*> cdc_measured_ring; //Filled with total actually detected before division at end
+        vector<TH2D*> cdc_expected_ring; // Contains total number of expected hits by DOCA
+        map<int, vector<TH2D*> > cdc_measured_ringmap; //int: DOCA bin //vector: total + rings
+        map<int, vector<TH2D*> > cdc_expected_ringmap; //int: DOCA bin
+
+		TH2I *ChargeVsTrackLength;
+		TH1I * hChi2OverNDF;
+		TH2I *hResVsT;
 };
 
 #endif // _JEventProcessor_CDC_Efficiency_

@@ -127,8 +127,8 @@ jerror_t JEventProcessor_CDC_Cosmics::evnt(JEventLoop *loop, uint64_t eventnumbe
             double dz = docaz - 92.0;
             //if (docaz < 70.0 || docaz > 110.0) continue; // Only focus on the center of the chamber
             //if (docaz < 140.0) continue; // Only focus on downstream end of chamber
-            double distance = thisPull.d; // This is the distance from the lookup table
-            double predictedDistance = distance - residual; // This is the distance predicted by the fit
+            double predictedDistance = thisPull.d; // This is the DOCA from the track
+            double distance = residual + predictedDistance; // This is the distance from the T-D lookup
             const DCDCTrackHit* thisCDCHit = thisPull.cdc_hit;
 
             if (thisCDCHit == NULL) continue;
@@ -142,7 +142,7 @@ jerror_t JEventProcessor_CDC_Cosmics::evnt(JEventLoop *loop, uint64_t eventnumbe
             char folder[100];
             sprintf(folder, "Ring %.2i", ring);
 
-            Fill1DHistogram("CDC_Cosmic", folder, "Residuals", residual, "Residuals; Residual [cm]; Entries", 100, -0.05, 0.05);
+            Fill1DHistogram("CDC_Cosmic", folder, "Residuals", residual, "Residuals; Residual [cm]; Entries", 200, -0.05, 0.05);
             Fill2DHistogram("CDC_Cosmic", folder, "Residual Vs. Momentum", 
                     thisTimeBasedTrack->pmag(), residual,
                     "Residual Vs. Momentum; Momentum [GeV/c]; Residual [cm]",
@@ -160,8 +160,8 @@ jerror_t JEventProcessor_CDC_Cosmics::evnt(JEventLoop *loop, uint64_t eventnumbe
                     "Residual Vs. Tracking FOM; Tracking FOM; Residual [cm]",
                     100, 0.0, 1.0, 100, -0.05, 0.05);
             Fill1DHistogram("CDC_Cosmic", folder, "Drift Time", time, "Drift Time; Drift Time [ns]; Entries", 500, -10, 1500);
-            Fill1DHistogram("CDC_Cosmic", folder, "Drift Distance", distance, "Drift Distance; Drift Distance [cm]; Entries", 50, 0.0, 1.2);
-            Fill1DHistogram("CDC_Cosmic", folder, "Predicted Drift Distance", predictedDistance, "Predicted Drift Distance; Drift Distance [cm]; Entries", 50, 0.0, 1.2);
+            Fill1DHistogram("CDC_Cosmic", folder, "Drift Distance", distance, "Drift Distance; Drift Distance [cm]; Entries", 250, 0.0, 1.2);
+            Fill1DHistogram("CDC_Cosmic", folder, "Predicted Drift Distance", predictedDistance, "Predicted Drift Distance; Drift Distance [cm]; Entries", 250, 0.0, 1.2);
 
             char strawname[100];
             char strawtitle[256];
@@ -203,6 +203,11 @@ jerror_t JEventProcessor_CDC_Cosmics::evnt(JEventLoop *loop, uint64_t eventnumbe
             sprintf(bintitle,"Ring %.2i Straw %.3i Predicted Drift Distance Vs. Drift Time", ring, straw);
             Fill2DHistogram("CDC_Cosmic_Per_Straw",folder,binname, time, predictedDistance,
                     bintitle, 250, -50, 200, 250, 0.0, 0.4);
+
+            sprintf(binname,"Straw %.3i Predicted Drift Distance Vs. delta", straw);
+            sprintf(bintitle,"Ring %.2i Straw %.3i Predicted Drift Distance Vs. #delta;#delta [cm]; Predicted Drift Distance - Nominal Radius [cm]", ring, straw);
+            Fill2DHistogram("CDC_Cosmic_Per_Straw",folder,binname, delta, predictedDistance - 0.78,
+                    bintitle, 20, -0.25, 0.25, 250, -0.25, 0.25);
 
             if (delta > 0){ // Long side of straw
                 sprintf(binname,"Straw %.3i Predicted Drift Distance Vs. Drift Time Positive Delta", straw);

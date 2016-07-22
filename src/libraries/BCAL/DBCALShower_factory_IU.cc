@@ -148,7 +148,7 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     // for slices of z.  These fit parameters (scale and nonlin) are then plotted 
     // as a function of z and fit.
     
-    float r = sqrt( shower->x * shower->x + shower->y * shower->y );
+/*  float r = sqrt( shower->x * shower->x + shower->y * shower->y );
     
     float zEntry = ( shower->z - m_zTarget ) * ( DBCALGeometry::GetBCAL_inner_rad() / r );
     
@@ -156,8 +156,14 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, uint64_t eventnumber ){
     m_scaleZ_p2*(zEntry*zEntry) + m_scaleZ_p3*(zEntry*zEntry*zEntry);
     float nonlin = m_nonlinZ_p0  + m_nonlinZ_p1*zEntry + 
     m_nonlinZ_p2*(zEntry*zEntry) + m_nonlinZ_p3*(zEntry*zEntry*zEntry);
-    
-    shower->E = pow( (shower->E_raw ) / scale, 1 / ( 1 + nonlin ) );
+*/    
+    // shower->E = pow( (shower->E_raw ) / scale, 1 / ( 1 + nonlin ) );  shower level energy correction was
+    // produced from old MC studies around early 2010s? This correction gives us a wider inclusive pi0
+    // width than using the raw energy produced in the cluster factory. For the time being we will make 
+    // members E and E_raw the same so people and DNeutralShower are always grabbing the most correct
+    // energy, but shower level corrections will need to be made.
+   
+    shower->E = shower->E_raw;
 
     shower->AddAssociatedObject(*clItr);
     

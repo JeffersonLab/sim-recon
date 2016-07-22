@@ -80,36 +80,39 @@ Df125EmulatorAlgorithm_v2::Df125EmulatorAlgorithm_v2(){
     FDC_PBIT_DEF =  0;      // Scaling factor for pedestal
 
     
-    // Override values set in command line - set in command line, override default and BORConfig if found
+    // Default values for parameters which can be set in the command line
+    // The parameters are ignored if their value is negative or for IBIT, below -7.
+    // If set in the command line, they override both BORConfig and the default parameter values above
+    // The default parameters above are used if BORConfig is not found and there are no command line parameter overrides
 
-    CDC_WS = NULL;          // hit window start - must be >= F125_CDC_NP
-    CDC_WE = NULL;          // hit window end - must be at least 20 less than number of samples available, eg WE=179 for 200 samples
-    CDC_IE = NULL;          // end integration at the earlier of WE, or this many samples after threshold crossing of TH  
-    CDC_P1 = NULL;          // 2**P1 = # samples used for initial pedestal, used to find hit
-    CDC_P2 = NULL;          // 2**P2 = # samples used for pedestal calculated just before hit, and returned 
-    CDC_PG = NULL;          // # samples between hit threshold crossing and local pedestal sample 'pedestal gap'
-    CDC_H  = NULL;          // 5 sigma hit threshold
-    CDC_TH = NULL;          // 4 sigma high timing threshold
-    CDC_TL = NULL;          // 1 sigma low timing threshold
+    CDC_WS = -9;         // hit window start - must be >= F125_CDC_NP
+    CDC_WE = -9;         // hit window end - must be at least 20 less than number of samples available, eg WE=179 for 200 samples
+    CDC_IE = -9;         // end integration at the earlier of WE, or this many samples after threshold crossing of TH  
+    CDC_P1 = -9;         // 2**P1 = # samples used for initial pedestal, used to find hit
+    CDC_P2 = -9;         // 2**P2 = # samples used for pedestal calculated just before hit, and returned 
+    CDC_PG = -9;         // # samples between hit threshold crossing and local pedestal sample 'pedestal gap'
+    CDC_H  = -9;         // 5 sigma hit threshold
+    CDC_TH = -9;         // 4 sigma high timing threshold
+    CDC_TL = -9;         // 1 sigma low timing threshold
 
-    CDC_IBIT = NULL;        // Scaling factor for integral
-    CDC_ABIT = NULL;        // Scaling factor for amplitude 
-    CDC_PBIT = NULL;        // Scaling factor for pedestal
+    CDC_IBIT = -9;       // Scaling factor for integral
+    CDC_ABIT = -9;       // Scaling factor for amplitude 
+    CDC_PBIT = -9;       // Scaling factor for pedestal
 
 
-    FDC_WS = NULL;          // hit window start - must be >= F125_FDC_NP
-    FDC_WE = NULL;          // hit window end - must be at least 20 less than number of samples available, eg WE=179 for 200 samples
-    FDC_IE = NULL;          // end integration at the earlier of WE, or this many samples after threshold crossing of TH  
-    FDC_P1 = NULL;          // 2**P1 = # samples used for initial pedestal, used to find hit
-    FDC_P2 = NULL;          // 2**P2 = # samples used for pedestal calculated just before hit, and returned 
-    FDC_PG = NULL;          // # samples between hit threshold crossing and local pedestal sample 'pedestal gap'
-    FDC_H  = NULL;          // 5 sigma hit threshold
-    FDC_TH = NULL;          // 4 sigma high timing threshold
-    FDC_TL = NULL;          // 1 sigma low timing threshold
+    FDC_WS = -9;         // hit window start - must be >= F125_FDC_NP
+    FDC_WE = -9;         // hit window end - must be at least 20 less than number of samples available, eg WE=179 for 200 samples
+    FDC_IE = -9;         // end integration at the earlier of WE, or this many samples after threshold crossing of TH  
+    FDC_P1 = -9;         // 2**P1 = # samples used for initial pedestal, used to find hit
+    FDC_P2 = -9;         // 2**P2 = # samples used for pedestal calculated just before hit, and returned 
+    FDC_PG = -9;         // # samples between hit threshold crossing and local pedestal sample 'pedestal gap'
+    FDC_H  = -9;         // 5 sigma hit threshold
+    FDC_TH = -9;         // 4 sigma high timing threshold
+    FDC_TL = -9;         // 1 sigma low timing threshold
 
-    FDC_IBIT = NULL;        // Scaling factor for integral
-    FDC_ABIT = NULL;        // Scaling factor for amplitude 
-    FDC_PBIT = NULL;        // Scaling factor for pedestal
+    FDC_IBIT = -9;       // Scaling factor for integral
+    FDC_ABIT = -9;       // Scaling factor for amplitude 
+    FDC_PBIT = -9;       // Scaling factor for pedestal
 
 
     
@@ -231,21 +234,21 @@ void Df125EmulatorAlgorithm_v2::EmulateFirmware(const Df125WindowRawData *rawDat
 
 
 
-    //Set override params if given in command line
+    //Set override params if given in command line  PBIT can be negative
     if ( isCDC ) {
       if (VERBOSE > 0) jout << "WARNING Df125EmulatorAlgorithm_v2::EmulateFirmware Using CDC override values" << endl;
-      if (CDC_WS) WS  = CDC_WS;
-      if (CDC_WE) WE  = CDC_WE;
-      if (CDC_IE) IE  = CDC_IE;
-      if (CDC_P1) P1  = CDC_P1;
-      if (CDC_P2) P2  = CDC_P2;
-      if (CDC_PG) PG  = CDC_PG;
-      if (CDC_H)  H   = CDC_H;
-      if (CDC_TH) TH  = CDC_TH;
-      if (CDC_TL) TL  = CDC_TL;
-      if (CDC_IBIT) IBIT = CDC_IBIT;
-      if (CDC_ABIT) ABIT = CDC_ABIT;
-      if (CDC_PBIT) PBIT = CDC_PBIT;
+      if (CDC_WS >= 0) WS  = CDC_WS;
+      if (CDC_WE >= 0) WE  = CDC_WE;
+      if (CDC_IE >= 0) IE  = CDC_IE;
+      if (CDC_P1 >= 0) P1  = CDC_P1;
+      if (CDC_P2 >= 0) P2  = CDC_P2;
+      if (CDC_PG >= 0) PG  = CDC_PG;
+      if (CDC_H >= 0)  H   = CDC_H;
+      if (CDC_TH >= 0) TH  = CDC_TH;
+      if (CDC_TL >= 0) TL  = CDC_TL;
+      if (CDC_IBIT >= 0) IBIT = CDC_IBIT;
+      if (CDC_ABIT >= 0) ABIT = CDC_ABIT;
+      if (CDC_PBIT >= -7) PBIT = CDC_PBIT;
     }
 
 
@@ -266,21 +269,21 @@ void Df125EmulatorAlgorithm_v2::EmulateFirmware(const Df125WindowRawData *rawDat
     }
 
 
-    //Set override params if given in command line
+    //Set override params if given in command line  PBIT can be -ve
     if ( isFDC ) {
       if (VERBOSE > 0) jout << "WARNING Df125EmulatorAlgorithm_v2::EmulateFirmware Using FDC override values" << endl;
-      if (FDC_WS) WS  = FDC_WS;
-      if (FDC_WE) WE  = FDC_WE;
-      if (FDC_IE) IE  = FDC_IE;
-      if (FDC_P1) P1  = FDC_P1;
-      if (FDC_P2) P2  = FDC_P2;
-      if (FDC_PG) PG  = FDC_PG;
-      if (FDC_H)  H   = FDC_H;
-      if (FDC_TH) TH  = FDC_TH;
-      if (FDC_TL) TL  = FDC_TL;
-      if (FDC_IBIT) IBIT = FDC_IBIT;
-      if (FDC_ABIT) ABIT = FDC_ABIT;
-      if (FDC_PBIT) PBIT = FDC_PBIT;
+      if (FDC_WS >= 0) WS  = FDC_WS;
+      if (FDC_WE >= 0) WE  = FDC_WE;
+      if (FDC_IE >= 0) IE  = FDC_IE;
+      if (FDC_P1 >= 0) P1  = FDC_P1;
+      if (FDC_P2 >= 0) P2  = FDC_P2;
+      if (FDC_PG >= 0) PG  = FDC_PG;
+      if (FDC_H >= 0)  H   = FDC_H;
+      if (FDC_TH >= 0) TH  = FDC_TH;
+      if (FDC_TL >= 0) TL  = FDC_TL;
+      if (FDC_IBIT >= 0) IBIT = FDC_IBIT;
+      if (FDC_ABIT >= 0) ABIT = FDC_ABIT;
+      if (FDC_PBIT >= -7) PBIT = FDC_PBIT;
     }
 
 

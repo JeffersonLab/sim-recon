@@ -40,6 +40,16 @@ bool static DTrackHitSelector_fdchit_cmp(pair<double,const DFDCPseudo *>a,
   return (a.first>b.first);
 }
 
+bool static DTrackHitSelector_cdchit_in_cmp(const DCDCTrackHit *a, const DCDCTrackHit *b){
+  if (a->wire->ring != b->wire->ring) return (a->wire->ring < b->wire->ring);
+  return (a->wire->straw < b->wire->straw);
+}
+
+bool static DTrackHitSelector_fdchit_in_cmp(const DFDCPseudo *a, const DFDCPseudo *b){
+  if (a->wire->layer != b->wire->layer) return (a->wire->layer < b->wire->layer);
+  return (a->wire->wire < b->wire->wire);
+}
+
 
 //---------------------------------
 // DTrackHitSelectorALT2    (Constructor)
@@ -136,6 +146,10 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
   /// of the trajectory to the wire and the drift time for
   /// time-based tracks and the distance to the wire for
   /// wire-based tracks.
+
+  // Sort so innermost ring is first and outermost is last
+  vector<const DCDCTrackHit*> cdchits_in_sorted = cdchits_in;
+  sort(cdchits_in_sorted.begin(),cdchits_in_sorted.end(),DTrackHitSelector_cdchit_in_cmp);
   
   // Calculate beta of particle.
   //double my_mass=rt->GetMass();
@@ -177,7 +191,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
   // Loop over hits
   bool outermost_hit=true;
   vector<const DCDCTrackHit*>::const_reverse_iterator iter;
-  for(iter=cdchits_in.rbegin(); iter!=cdchits_in.rend(); iter++){
+  for(iter=cdchits_in_sorted.rbegin(); iter!=cdchits_in_sorted.rend(); iter++){
     const DCDCTrackHit *hit = *iter;
     
     // Skip hit if it is on the same wire as the previous hit
@@ -357,7 +371,11 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
   /// the residual between the distance of closest approach
   /// of the trajectory to the wire and the drift distance
   /// and the distance along the wire.
-  
+
+  // Sort so innermost ring is first and outermost is last
+  vector<const DFDCPseudo*> fdchits_in_sorted = fdchits_in;
+  sort(fdchits_in_sorted.begin(),fdchits_in_sorted.end(),DTrackHitSelector_fdchit_in_cmp);
+
   // The variance on the residual due to measurement error.
   double var_anode = 0.25*ONE_OVER_12; // scale factor reflects field-sense wire separation
   const double VAR_CATHODE_STRIPS=0.000225;
@@ -393,7 +411,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
   // Loop over hits
   bool most_downstream_hit=true;
   vector<const DFDCPseudo*>::const_reverse_iterator iter;
-  for(iter=fdchits_in.rbegin(); iter!=fdchits_in.rend(); iter++){
+  for(iter=fdchits_in_sorted.rbegin(); iter!=fdchits_in_sorted.rend(); iter++){
     const DFDCPseudo *hit = *iter;
     
     // Find the DOCA to this wire

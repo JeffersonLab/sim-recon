@@ -303,10 +303,18 @@ void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
 
+	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
+	double locTargetZCenter = 0.0;
+	locGeometry->GetTargetZ(locTargetZCenter);
+
 	//CREATE THE HISTOGRAMS
 	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
+		if(dTargetCenter.Z() < -9.8E9)
+			dTargetCenter.SetXYZ(0.0, 0.0, locTargetZCenter);
+
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
 			//If another thread has already created the folder, it just changes to it.
 		CreateAndChangeTo_ActionDirectory();
@@ -338,6 +346,14 @@ void DHistogramAction_Reconstruction::Initialize(JEventLoop* locEventLoop)
 		dHist_SCHitEnergy = GetOrCreate_Histogram<TH1I>(locHistName, ";SC Hit Energy (MeV)", dNumHitEnergyBins, dMinHitEnergy, dMaxHitEnergy);
 		locHistName = "SCHitEnergyVsSector";
 		dHist_SCHitEnergyVsSector = GetOrCreate_Histogram<TH2I>(locHistName, ";SC Hit Sector;SC Hit Energy (MeV)", 30, 0.5, 30.5, dNum2DHitEnergyBins, dMinHitEnergy, dMaxHitEnergy);
+		locHistName = "SCRFDeltaTVsSector";
+		dHist_SCRFDeltaTVsSector = GetOrCreate_Histogram<TH2I>(locHistName, ";SC Hit Sector;SC - RF #Deltat (ns)", 30, 0.5, 30.5, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+
+		//TAGH, TAGM
+		locHistName = "TAGMRFDeltaTVsColumn";
+		dHist_TAGMRFDeltaTVsColumn = GetOrCreate_Histogram<TH2I>(locHistName, ";TAGM Column;TAGM - RF #Deltat (ns)", 102, 0.5, 102.5, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+		locHistName = "TAGHRFDeltaTVsCounter";
+		dHist_TAGHRFDeltaTVsCounter = GetOrCreate_Histogram<TH2I>(locHistName, ";TAGH Counter;TAGH - RF #Deltat (ns)", 274, 0.5, 274.5, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
 
 		//TRACKING
 		CreateAndChangeTo_Directory("Tracking", "Tracking");
@@ -474,6 +490,9 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 	vector<const DSCHit*> locSCHits;
 	locEventLoop->Get(locSCHits);
 
+	vector<const DBeamPhoton*> locBeamPhotons;
+	locEventLoop->Get(locBeamPhotons);
+
 	const DDetectorMatches* locDetectorMatches = NULL;
 	locEventLoop->GetSingle(locDetectorMatches);
 
@@ -488,6 +507,9 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 
 	const DParticleID* locParticleID = NULL;
 	locEventLoop->GetSingle(locParticleID);
+
+	const DEventRFBunch* locEventRFBunch = NULL;
+	locEventLoop->GetSingle(locEventRFBunch);
 
 	const DDetectorMatches* locDetectorMatches_WireBased = NULL;
 	vector<const DTrackCandidate*> locTrackCandidates;
@@ -515,10 +537,17 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 
 	//select the best DTrackTimeBased for each track: use best tracking FOM
 		//also, make map from WBT -> TBT (if not rest)
+		//also, select best sc matches for each track
 	map<JObject::oid_t, const DTrackTimeBased*> locBestTrackTimeBasedMap; //lowest tracking FOM for each candidate id
 	map<const DTrackWireBased*, const DTrackTimeBased*> locWireToTimeBasedTrackMap;
+	map<const DTrackTimeBased*, DSCHitMatchParams> locTimeBasedToBestSCMatchMap;
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
+		//Best SC Match Params
+		DSCHitMatchParams locSCHitMatchParams;
+		if(locParticleID->Get_BestSCMatchParams(locTrackTimeBasedVector[loc_i], locDetectorMatches, locSCHitMatchParams))
+			locTimeBasedToBestSCMatchMap[locTrackTimeBasedVector[loc_i]] = locSCHitMatchParams;
+
 		JObject::oid_t locCandidateID = locTrackTimeBasedVector[loc_i]->candidateid;
 		if(locBestTrackTimeBasedMap.find(locCandidateID) == locBestTrackTimeBasedMap.end())
 			locBestTrackTimeBasedMap[locCandidateID] = locTrackTimeBasedVector[loc_i];
@@ -536,12 +565,14 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
 	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
+		//FCAL
 		for(size_t loc_i = 0; loc_i < locFCALShowers.size(); ++loc_i)
 		{
 			dHist_FCALShowerEnergy->Fill(locFCALShowers[loc_i]->getEnergy());
 			dHist_FCALShowerYVsX->Fill(locFCALShowers[loc_i]->getPosition().X(), locFCALShowers[loc_i]->getPosition().Y());
 		}
 
+		//BCAL
 		for(size_t loc_i = 0; loc_i < locBCALShowers.size(); ++loc_i)
 		{
 			dHist_BCALShowerEnergy->Fill(locBCALShowers[loc_i]->E);
@@ -552,12 +583,14 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 			dHist_BCALShowerPhiVsZ->Fill(locBCALPosition.Z(), locBCALPhi);
 		}
 
+		//TOF
 		for(size_t loc_i = 0; loc_i < locTOFPoints.size(); ++loc_i)
 		{
 			dHist_TOFPointEnergy->Fill(locTOFPoints[loc_i]->dE*1.0E3);
 			dHist_TOFPointYVsX->Fill(locTOFPoints[loc_i]->pos.X(), locTOFPoints[loc_i]->pos.Y());
 		}
 
+		//SC
 		for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
 		{
 			dHist_SCHitSector->Fill(locSCHits[loc_i]->sector);
@@ -565,6 +598,17 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 			dHist_SCHitEnergyVsSector->Fill(locSCHits[loc_i]->sector, locSCHits[loc_i]->dE*1.0E3);
 		}
 
+		//TAGM, TAGH
+		for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
+		{
+			double locDeltaT = locBeamPhotons[loc_i]->time() - locEventRFBunch->dTime;
+			if(locBeamPhotons[loc_i]->t0_detector() == SYS_TAGM)
+				dHist_TAGMRFDeltaTVsColumn->Fill(locBeamPhotons[loc_i]->dCounter, locDeltaT);
+			else
+				dHist_TAGHRFDeltaTVsCounter->Fill(locBeamPhotons[loc_i]->dCounter, locDeltaT);
+		}
+
+		//TRACK CANDIDATES
 		for(size_t loc_i = 0; loc_i < locTrackCandidates.size(); ++loc_i)
 		{
 			int locCharge = (locTrackCandidates[loc_i]->charge() > 0.0) ? 1 : -1;
@@ -583,6 +627,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 				dHist_FDCPlaneVsTheta_Candidates->Fill(locTheta, *locIterator);
 		}
 
+		//WIRE-BASED TRACKS
 		map<JObject::oid_t, const DTrackWireBased*>::iterator locWireBasedIterator = locBestTrackWireBasedMap.begin();
 		for(; locWireBasedIterator != locBestTrackWireBasedMap.end(); ++locWireBasedIterator)
 		{
@@ -605,6 +650,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 			dHist_TrackingFOM_WireBased->Fill(locTrackWireBased->FOM);
 		}
 
+		//TIME-BASED TRACKS
 		map<JObject::oid_t, const DTrackTimeBased*>::iterator locTimeBasedIterator = locBestTrackTimeBasedMap.begin();
 		for(; locTimeBasedIterator != locBestTrackTimeBasedMap.end(); ++locTimeBasedIterator)
 		{
@@ -622,6 +668,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 			dHist_TrackingFOMVsP->Fill(locP, locTrackTimeBased->FOM);
 			dHist_TrackingFOMVsNumHits->Fill(locTrackTimeBased->Ndof + 5, locTrackTimeBased->FOM);
 
+			//CDC
 			set<int> locCDCRings;
 			locParticleID->Get_CDCRings(locTrackTimeBased->dCDCRings, locCDCRings);
 			for(set<int>::iterator locIterator = locCDCRings.begin(); locIterator != locCDCRings.end(); ++locIterator)
@@ -631,6 +678,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 					dHist_CDCRingVsTheta_TimeBased_GoodTrackFOM->Fill(locTheta, *locIterator);
 			}
 
+			//FDC
 			set<int> locFDCPlanes;
 			locParticleID->Get_FDCPlanes(locTrackTimeBased->dFDCPlanes, locFDCPlanes);
 			for(set<int>::iterator locIterator = locFDCPlanes.begin(); locIterator != locFDCPlanes.end(); ++locIterator)
@@ -640,12 +688,23 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 					dHist_FDCPlaneVsTheta_TimeBased_GoodTrackFOM->Fill(locTheta, *locIterator);
 			}
 
+			//FOM
 			if(locTrackTimeBased->FOM > dGoodTrackFOM)
 				dHistMap_PVsTheta_TimeBased_GoodTrackFOM[locCharge]->Fill(locTheta, locP);
 			else
 				dHistMap_PVsTheta_TimeBased_LowTrackFOM[locCharge]->Fill(locTheta, locP);
 			if(locTrackTimeBased->FOM > dHighTrackFOM)
 				dHistMap_PVsTheta_TimeBased_HighTrackFOM[locCharge]->Fill(locTheta, locP);
+
+			//SC/RF DELTA-T
+			map<const DTrackTimeBased*, DSCHitMatchParams>::iterator locSCIterator = locTimeBasedToBestSCMatchMap.find(locTrackTimeBased);
+			if(locSCIterator != locTimeBasedToBestSCMatchMap.end())
+			{
+				DSCHitMatchParams& locSCHitMatchParams = locSCIterator->second;
+				double locPropagatedSCTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
+				double locDeltaT = locPropagatedSCTime - locEventRFBunch->dTime;
+				dHist_SCRFDeltaTVsSector->Fill(locSCHitMatchParams.dSCHit->sector, locDeltaT);
+			}
 		}
 
 		// If "Good" WBT, see if TBT is good
@@ -678,6 +737,7 @@ bool DHistogramAction_Reconstruction::Perform_Action(JEventLoop* locEventLoop, c
 				dHistMap_PVsTheta_GoodWireBased_GoodTimeBased[locCharge]->Fill(locTheta, locP);
 		}
 
+		//THROWN
 		for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
 		{
 			if(fabs(locMCThrowns[loc_i]->charge()) < 0.9)
@@ -997,7 +1057,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		{
 			if(locTrackTimeBasedVector[loc_i]->FOM < dMinTrackingFOM)
 				continue;
-			if(!locCutAction_TrackHitPattern.Cut_TrackHitPattern(locTrackTimeBasedVector[loc_i]))
+			if(!locCutAction_TrackHitPattern.Cut_TrackHitPattern(locParticleID, locTrackTimeBasedVector[loc_i]))
 				continue;
 			JObject::oid_t locCandidateID = locTrackTimeBasedVector[loc_i]->candidateid;
 			if(locBestTrackMap.find(locCandidateID) == locBestTrackMap.end())
@@ -1016,7 +1076,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 		{
 			if(locTrackWireBasedVector[loc_i]->FOM < dMinTrackingFOM)
 				continue;
-			if(!locCutAction_TrackHitPattern.Cut_TrackHitPattern(locTrackWireBasedVector[loc_i]))
+			if(!locCutAction_TrackHitPattern.Cut_TrackHitPattern(locParticleID, locTrackWireBasedVector[loc_i]))
 				continue;
 			JObject::oid_t locCandidateID = locTrackWireBasedVector[loc_i]->candidateid;
 			if(locBestTrackMap.find(locCandidateID) == locBestTrackMap.end())
@@ -1040,6 +1100,9 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 
 	vector<const DSCHit*> locSCHits;
 	locEventLoop->Get(locSCHits);
+
+	const DEventRFBunch* locEventRFBunch = nullptr;
+	locEventLoop->GetSingle(locEventRFBunch);
 
 	string locDetectorMatchesTag = locIsTimeBased ? "" : "WireBased";
 	const DDetectorMatches* locDetectorMatches = NULL;
@@ -1082,12 +1145,25 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 	map<const DKinematicData*, pair<const DTOFPaddleHit*, double> > locVerticalTOFPaddleTrackDistanceMap; //double: delta-x
 	for(locTrackIterator = locBestTrackMap.begin(); locTrackIterator != locBestTrackMap.end(); ++locTrackIterator)
 	{
+		const DKinematicData* locKinematicData = locTrackIterator->second;
+		const DTrackTimeBased* locTrackTimeBased = dynamic_cast<const DTrackTimeBased*>(locKinematicData);
+		const DTrackWireBased* locTrackWireBased = dynamic_cast<const DTrackWireBased*>(locKinematicData);
+		const DReferenceTrajectory* locReferenceTrajectory = nullptr;
+		if(locTrackTimeBased != nullptr)
+			locReferenceTrajectory = locTrackTimeBased->rt;
+		else if(locTrackWireBased != nullptr)
+			locReferenceTrajectory = locTrackWireBased->rt;
+		else
+			break;
+
 		double locBestDeltaX = 999.9, locBestDeltaY = 999.9;
-		pair<const DTOFPaddleHit*, const DTOFPaddleHit*> locClosestTOFPaddleHits = locParticleID->Get_ClosestToTrack_TOFPaddles(locTrackIterator->second, locTOFPaddleHits, locBestDeltaX, locBestDeltaY);
-		if(locClosestTOFPaddleHits.first != NULL)
-			locVerticalTOFPaddleTrackDistanceMap[locTrackIterator->second] = pair<const DTOFPaddleHit*, double>(locClosestTOFPaddleHits.first, locBestDeltaX);
-		if(locClosestTOFPaddleHits.second != NULL)
-			locHorizontalTOFPaddleTrackDistanceMap[locTrackIterator->second] = pair<const DTOFPaddleHit*, double>(locClosestTOFPaddleHits.first, locBestDeltaY);
+		double locStartTime = locParticleID->Calc_PropagatedRFTime(locKinematicData, locEventRFBunch);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Vertical = locParticleID->Get_ClosestTOFPaddleHit_Vertical(locReferenceTrajectory, locTOFPaddleHits, locStartTime, locBestDeltaX);
+		const DTOFPaddleHit* locClosestTOFPaddleHit_Horizontal = locParticleID->Get_ClosestTOFPaddleHit_Horizontal(locReferenceTrajectory, locTOFPaddleHits, locStartTime, locBestDeltaY);
+		if(locClosestTOFPaddleHit_Vertical != NULL)
+			locVerticalTOFPaddleTrackDistanceMap[locTrackIterator->second] = pair<const DTOFPaddleHit*, double>(locClosestTOFPaddleHit_Vertical, locBestDeltaX);
+		if(locClosestTOFPaddleHit_Horizontal != NULL)
+			locHorizontalTOFPaddleTrackDistanceMap[locTrackIterator->second] = pair<const DTOFPaddleHit*, double>(locClosestTOFPaddleHit_Horizontal, locBestDeltaY);
 	}
 
 	//TRACK / SC CLOSEST MATCHES
@@ -1204,7 +1280,7 @@ void DHistogramAction_DetectorMatching::Fill_MatchingHists(JEventLoop* locEventL
 			double locDeltaY = locTOFPointIterator->second.second.second;
 
 			double locDistance = sqrt(locDeltaX*locDeltaX + locDeltaY*locDeltaY);
-			if((locDeltaX < 500.0) && (locDeltaY < 500.0)) //else position not well-defined
+			if((fabs(locDeltaX) < 500.0) && (fabs(locDeltaY) < 500.0)) //else position not well-defined
 			{
 				dHistMap_TOFPointTrackDistanceVsP[locIsTimeBased]->Fill(locTrack->momentum().Mag(), locDistance);
 				dHistMap_TOFPointTrackDistanceVsTheta[locIsTimeBased]->Fill(locTrack->momentum().Theta()*180.0/TMath::Pi(), locDistance);
@@ -2822,7 +2898,7 @@ void DHistogramAction_NumReconstructedObjects::Initialize(JEventLoop* locEventLo
 
 		//Beam Photons
 		locHistName = "NumBeamPhotons";
-		dHist_NumBeamPhotons = GetOrCreate_Histogram<TH1D>(locHistName, ";# DBeamPhoton", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+		dHist_NumBeamPhotons = GetOrCreate_Histogram<TH1D>(locHistName, ";# DBeamPhoton", dMaxNumBeamPhotons + 1, -0.5, (float)dMaxNumBeamPhotons + 0.5);
 
 		//Showers / Neutrals / TOF / SC
 		locHistName = "NumFCALShowers";

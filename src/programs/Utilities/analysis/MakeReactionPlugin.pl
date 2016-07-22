@@ -439,13 +439,6 @@ jerror_t DEventProcessor_${PluginName}::brun(jana::JEventLoop* locEventLoop, int
 {
 	// This is called whenever the run number changes
 
-	/*
-	//Recommended: Create output ROOT TTrees (nothing is done if already created)
-	const DEventWriterROOT* locEventWriterROOT = NULL;
-	locEventLoop->GetSingle(locEventWriterROOT);
-	locEventWriterROOT->Create_DataTrees(locEventLoop);
-	*/
-
 	return NOERROR;
 }
 
@@ -705,7 +698,8 @@ include = \"%s/include\" % (gluexinstalldir)
 bin = \"%s/bin\" % (plugininstalldir)
 lib = \"%s/lib\" % (plugininstalldir)
 plugins = \"%s/%s/plugins\" % (plugininstalldir,osname)
-env = Environment(    CPPPATH = [include],
+env = Environment(        ENV = os.environ,  # Bring in full environement, including PATH
+                      CPPPATH = [include],
                       LIBPATH = [\"%s/%s/lib\" %(halld_home, osname)],  # n.b. add HALLD_HOME here and prepend HALLD_MY below
                   variant_dir = \".%s\" % (osname))
 
@@ -736,10 +730,14 @@ if SHOWBUILD==0:
                                   INSTALLSTR      = \"Installing [\$TARGET]\",
                                   ARCOMSTR        = \"Archiving  [\$TARGET]\",
                                   RANLIBCOMSTR    = \"Ranlib     [\$TARGET]\")
+
 # Get compiler from environment variables (if set)
 env.Replace( CXX = os.getenv('CXX', 'g++'),
              CC  = os.getenv('CC' , 'gcc'),
              FC  = os.getenv('FC' , 'gfortran') )
+
+# Use C++11
+env.PrependUnique(    CXXFLAGS = ['-std=c++11'])
 
 # Add local directory, directories from HALLD_MY and HALLD_HOME to include search path
 #env.PrependUnique(CPPPATH = ['#'])

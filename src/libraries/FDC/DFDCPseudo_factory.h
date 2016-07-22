@@ -99,13 +99,30 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		/// containing a peak.
 		///
 		jerror_t FindCentroid(const vector<const DFDCHit*>& H, 
-				 vector<const DFDCHit *>::const_iterator peak,
-				 vector<centroid_t> &centroids);
+				      vector<const DFDCHit *>::const_iterator peak,
+				      vector<centroid_t> &centroids);
 		// Backtracking routine needed by FindCentroid 
 		jerror_t FindNewParmVec(const DMatrix3x1 &N,const DMatrix3x1 &X,
 					const DMatrix3x1 &F,const DMatrix3x3 &J,
 					const DMatrix3x1 &par,
 					DMatrix3x1 &newpar);
+		
+		///
+		/// DFDCPseudo_factory::TwoStripCluster()
+		/// Calculates the center-of-gravity of two adjacent strips
+		///
+		jerror_t TwoStripCluster(const vector<const DFDCHit*>& H,
+					 vector<const DFDCHit *>::const_iterator peak,
+					 vector<centroid_t> &centroids);
+		
+		///
+		/// DFDCPseudo_factory::ThreeStripCluster()
+		/// Calculates the center-of-gravity of Three adjacent strips
+		///
+		jerror_t ThreeStripCluster(const vector<const DFDCHit*>& H,
+					 vector<const DFDCHit *>::const_iterator peak,
+					 vector<centroid_t> &centroids);
+		
  		
 	private:		
 		vector<vector<DFDCWire*> >fdcwires;
@@ -127,6 +144,8 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		TH2F *tv_vs_tu,*u_wire_dt_vs_wire;
 		TH2F *Hxy[24],*ut_vs_u,*vt_vs_v;
 		TH2F *v_vs_u,*dx_vs_dE;
+		TH1F *u_cl_size, *v_cl_size, *u_cl_n, *v_cl_n, *x_dist_2, *x_dist_3, *x_dist_23, *x_dist_33;
+		TH1F *d_uv;
 
 //		JStreamLog* _log;
 };

@@ -52,6 +52,8 @@ using namespace std;
 #include <TRACKING/DTrackTimeBased.h>
 #include <TAGGER/DTAGMHit.h>
 #include <TAGGER/DTAGHHit.h>
+#include <TAGGER/DTAGMGeometry.h>
+#include <TAGGER/DTAGHGeometry.h>
 // load CERE headers, yqiang Oct 3, 2012
 // modified by yqiang, Oct 10 2012
 // added RichTruthHit object, yqiang, Oct 7, 2013

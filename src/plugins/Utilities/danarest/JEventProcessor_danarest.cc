@@ -37,10 +37,10 @@ jerror_t JEventProcessor_danarest::brun(JEventLoop *locEventLoop, int32_t runnum
 //-------------------------------
 jerror_t JEventProcessor_danarest::evnt(JEventLoop *locEventLoop, uint64_t eventnumber)
 {
-	//Ignore EPICS events
-	vector<const DEPICSvalue*> locEPICSValues;
-	locEventLoop->Get(locEPICSValues);
-	if(!locEPICSValues.empty())
+	//CHECK TRIGGER TYPE
+	const DTrigger* locTrigger = NULL;
+	locEventLoop->GetSingle(locTrigger);
+	if(!locTrigger->Get_IsPhysicsEvent())
 		return NOERROR;
 
 	// Write this event to the rest output stream.

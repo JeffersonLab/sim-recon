@@ -3,7 +3,7 @@
   <student name="string" minOccurs="0">
     <enrolled year="int" semester="int" maxOccurs="unbounded">
       <course credits="int" title="string" maxOccurs="unbounded">
-        <result grade="string" pass="boolean" />
+        <result grade="string" Pass="boolean" />
       </course>
     </enrolled>
   </student>
