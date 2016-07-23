@@ -262,11 +262,8 @@ double DTrackFitterKalmanSIMD::fdc_drift_distance(double t,double Bz){
 double DTrackFitterKalmanSIMD::fdc_drift_distance(double time,double Bz){
   if (time<0.) return 0.;
   double tsq=time*time;
-  double d=0.035*sqrt(time)-8e-4*time+4e-6*tsq;
-  
-  d=0.0309*sqrt(time)-4.64e-5*time+3.74e-6*time*time;
-  
-  d=0.029*sqrt(time)+3.0e-4*time-6.6e-7*time*time;
+  double d=DRIFT_FUNC_PARMS[0]*sqrt(time)+DRIFT_FUNC_PARMS[1]*time
+    +DRIFT_FUNC_PARMS[2]*tsq+DRIFT_FUNC_PARMS[3]*tsq*time;
 
   return d;
 }
@@ -465,12 +462,20 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     LORENTZ_NZ_PAR1=lorentz_parms["nz_par1"];
     LORENTZ_NZ_PAR2=lorentz_parms["nz_par2"];
 
-
+    // Parameters for accounting for variation in drift distance from FDC
     map<string,double>drift_res_parms;
     jcalib->Get("FDC/drift_resolution_parms",drift_res_parms); 
     DRIFT_RES_PARMS[0]=drift_res_parms["p0"];   
     DRIFT_RES_PARMS[1]=drift_res_parms["p1"];
-    DRIFT_RES_PARMS[2]=drift_res_parms["p2"];
+    DRIFT_RES_PARMS[2]=drift_res_parms["p2"]; 
+
+    // Time-to-distance function parameters for FDC
+    map<string,double>drift_func_parms;
+    jcalib->Get("FDC/drift_function_parms",drift_func_parms); 
+    DRIFT_FUNC_PARMS[0]=drift_func_parms["p0"];   
+    DRIFT_FUNC_PARMS[1]=drift_func_parms["p1"];
+    DRIFT_FUNC_PARMS[2]=drift_func_parms["p2"]; 
+    DRIFT_FUNC_PARMS[3]=drift_func_parms["p3"];
 
 
     /*
