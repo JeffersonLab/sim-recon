@@ -72,9 +72,9 @@
 #define MIN_CDC_HITS 2 
 
 // Functions of Moliere fraction F
-#define MOLIERE_RATIO1 200.0   // = 0.5/(1-F)
-#define MOLIERE_RATIO2 5.025e-7 // = (scale factor)*1e-6/(1+F*F)
-#define MOLIERE_RATIO3 5.025e-7 // = (scale factor)*1e-6/(1+F*F)
+#define MOLIERE_RATIO1 5.0   // = 0.5/(1-F)
+#define MOLIERE_RATIO2 2.*5.525e-7 // = (scale factor)*1e-6/(1+F*F)
+#define MOLIERE_RATIO3 2.*5.525e-7 // = (scale factor)*1e-6/(1+F*F)
 //#define DE_PER_STEP_WIRE_BASED 0.0005 // in GeV
 //#define DE_PER_STEP_TIME_BASED 0.0005 // in GeV
 #define DE_PER_STEP 0.0005 // in GeV
@@ -263,12 +263,14 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   void locate(const double *xx,int n,double x,int *j);
   unsigned int locate(vector<double>&xx,double x);
   double fdc_y_variance(double dE);
+  double fdc_drift_variance(double t);
   double cdc_variance(double B,double t);   
   double cdc_drift_distance(double t,double Bz);  
   double fdc_drift_distance(double t,double Bz);
 
   void ResetKalmanSIMD(void);
-  jerror_t GetProcessNoise(double ds,double chi2c_factor,double chi2a_factor,
+  jerror_t GetProcessNoise(double z,double ds,double chi2c_factor,
+			   double chi2a_factor,
 			   double chi2a_corr,
 			   const DMatrix5x1 &S,DMatrix5x5 &Q);
 
@@ -503,6 +505,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   // Parameters for dealing with FDC drift B dependence
   double FDC_DRIFT_BSCALE_PAR1,FDC_DRIFT_BSCALE_PAR2;
+
+  // Parameters for drift resolution
+  double DRIFT_RES_PARMS[3];
 
   // Identity matrix
   DMatrix5x5 I5x5;

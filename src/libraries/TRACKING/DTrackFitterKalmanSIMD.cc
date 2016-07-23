@@ -91,18 +91,10 @@ unsigned int DTrackFitterKalmanSIMD::locate(vector<double>&xx,double x){
 }
 
 // Crude approximation for the variance in drift distance due to smearing
-double fdc_drift_variance(double t){
+double DTrackFitterKalmanSIMD::fdc_drift_variance(double t){
     //return FDC_ANODE_VARIANCE;
-    if (t<1) t=1;
-    double par[5]={0.041,-0.0011,2.06e-5,-1.75e-7,5.81e-10};
-    double sigma=par[0];
-    for (int i=1;i<5;i++) sigma+=par[i]*pow(t,i);
-    // sigma*=1.1;
-
-
-    //sigma=0.1;
-    //sigma=0.041-0.000484*t+2.86e-6*t*t;
-
+    if (t<0) t=0;
+    double sigma=DRIFT_RES_PARMS[0]/(t+1.)+DRIFT_RES_PARMS[1]+DRIFT_RES_PARMS[2]*t*t;
 
     return sigma*sigma;
 }
@@ -270,9 +262,12 @@ double DTrackFitterKalmanSIMD::fdc_drift_distance(double t,double Bz){
 double DTrackFitterKalmanSIMD::fdc_drift_distance(double time,double Bz){
   if (time<0.) return 0.;
   double tsq=time*time;
-  double d=0.03755*sqrt(time)-8.017e-4*time+3.672e-6*tsq;
+  double d=0.035*sqrt(time)-8e-4*time+4e-6*tsq;
   
+  d=0.0309*sqrt(time)-4.64e-5*time+3.74e-6*time*time;
   
+  d=0.029*sqrt(time)+3.0e-4*time-6.6e-7*time*time;
+
   return d;
 }
 
@@ -469,6 +464,14 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     LORENTZ_NR_PAR2=lorentz_parms["nr_par2"];
     LORENTZ_NZ_PAR1=lorentz_parms["nz_par1"];
     LORENTZ_NZ_PAR2=lorentz_parms["nz_par2"];
+
+
+    map<string,double>drift_res_parms;
+    jcalib->Get("FDC/drift_resolution_parms",drift_res_parms); 
+    DRIFT_RES_PARMS[0]=drift_res_parms["p0"];   
+    DRIFT_RES_PARMS[1]=drift_res_parms["p1"];
+    DRIFT_RES_PARMS[2]=drift_res_parms["p2"];
+
 
     /*
        if (jcalib->Get("FDC/fdc_drift2", tvals)==false){
@@ -1206,7 +1209,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
 
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
-    GetProcessNoise(ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,
+    GetProcessNoise(z,ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,
             temp.S,Q);
 
     // Energy loss straggling
@@ -1654,7 +1657,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
 
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
-    GetProcessNoise(ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,
+    GetProcessNoise(z,ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,
             temp.S,Q);
 
     // Energy loss straggling  
@@ -2883,7 +2886,7 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoiseCentral(double ds,
 
 // Compute contributions to the covariance matrix due to multiple scattering
 // using the Lynch/Dahl empirical formulas
-jerror_t DTrackFitterKalmanSIMD::GetProcessNoise(double ds,
+jerror_t DTrackFitterKalmanSIMD::GetProcessNoise(double z, double ds,
         double chi2c_factor,
         double chi2a_factor,
         double chi2a_corr,
@@ -2916,7 +2919,7 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoise(double ds,
             = my_ds_2*sqrt(one_plus_tsquare*one_plus_tx2);
 
         double one_over_beta2=1.+one_over_p_sq*mass2;
-        double chi2c_p_sq=chi2c_factor*my_ds*one_over_beta2;   
+        double chi2c_p_sq=chi2c_factor*my_ds*one_over_beta2;  
         double chi2a_p_sq=chi2a_factor*(1.+chi2a_corr*one_over_beta2);
         // F=MOLIERE_FRACTION =Fraction of Moliere distribution to be taken into account
         // nu=0.5*chi2c/(chi2a*(1.-F));
@@ -2924,10 +2927,10 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoise(double ds,
         double one_plus_nu=1.+nu;
         double sig2_ms=chi2c_p_sq*one_over_p_sq*MOLIERE_RATIO2
             *(one_plus_nu/nu*log(one_plus_nu)-1.);
+	
 
-
-        //   printf("fac %f %f %f\n",chi2c_factor,chi2a_factor,chi2a_corr);
-        //printf("omega %f\n",chi2c/chi2a);
+	//   printf("fac %f %f %f\n",chi2c_factor,chi2a_factor,chi2a_corr);
+	//printf("omega %f\n",chi2c/chi2a);
 
 
         Q*=sig2_ms;
@@ -6119,7 +6122,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 
         // Get the contribution to the covariance matrix due to multiple 
         // scattering
-        GetProcessNoise(ds,chi2c_factor,chi2a_factor,chi2a_corr,S,Q);
+        GetProcessNoise(z,ds,chi2c_factor,chi2a_factor,chi2a_corr,S,Q);
 
         if (CORRECT_FOR_ELOSS){
             double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
