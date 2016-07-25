@@ -27,7 +27,7 @@ using namespace std;
 class DESDBProviderMySQL : public DESDBProvider {
 	public:
 		DESDBProviderMySQL(string connection_str);
-		virtual ~DESDBProviderMySQL();
+		~DESDBProviderMySQL();
 		
 		bool Open();
 		

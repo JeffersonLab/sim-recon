@@ -32,11 +32,8 @@ static string EventstoreQueryHelp() {
 	return str;
 }
 
-// forward declarations
-//class DEventSourceREST;
-
 // File-scope variables
-static bool TEST_MODE = false;
+static bool ES_TEST_MODE = false;
 
 //---------------------------------
 // AcceptRunRange
@@ -69,6 +66,7 @@ static bool AcceptRunRange(EventStore::RunRange &the_run_range, int min_run, int
 DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSource(source_name)
 {
 	// initialize data members
+	VERBOSE = 0;
 	es_data_loaded = false;
 	event_source = NULL;
 	min_run = 0;
@@ -98,12 +96,14 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 		esdb_connection = getenv("EVENTSTORE_CONNECTION");
 	gPARMS->SetDefaultParameter("ESDB:DB_CONNECTION", esdb_connection,
 								"Specification of EventStore DB connection.");
-	
+	gPARMS->SetDefaultParameter("ESDB:VERBOSE", VERBOSE,
+								"Level of verbose output.");
+
 	int test_mode_flag = 0;
 	gPARMS->SetDefaultParameter("ESDB:TEST_MODE", test_mode_flag,
 								"Toggle test mode features");
 	if(test_mode_flag != 0) {
-		TEST_MODE = true;
+		ES_TEST_MODE = true;
 		if(gRandom == NULL)
 			gRandom = new TRandom3(0);
 	}
@@ -135,6 +135,7 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	
 	////////////////////////////////////////////////////////////
 	// parse the ES command
+	//   format: eventstore in YYYYMMDD <grade> [more optional args]
 	// Check query header
 	if( (tokens[0] != "eventstore") || tokens.size() < 3)
 		throw JException("Invalid ES query = " + es_query + "\n\n" + EventstoreQueryHelp() );
@@ -151,6 +152,7 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 			
 			while(token_ind < tokens.size()) {
 				if(tokens[token_ind] == "runs") {
+					// format: runs [MAX RUN] [MIN RUN]
 					if(run_period_set) 
 						throw JException("Cannot set run range and run period in the same command!");
 					
@@ -166,7 +168,38 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 						throw JException("Maximum run must be larger than minimum run!");
 					}
 					token_ind += 3;
+				} else if(tokens[token_ind] == "files") {
+					// format: files [MAX FILES] [MIN FILES]
+					// make sure there's enough args
+					if(tokens.size() - token_ind < 3)
+						throw JException("Invalid ES query = " + es_query + "\n\n" + EventstoreQueryHelp() );
+						
+					min_file = atoi(tokens[token_ind+1].c_str());   // ERROR CHECK!!
+					max_file = atoi(tokens[token_ind+2].c_str());   // ERROR CHECK!!
+	
+					// sanity check
+					if(max_run < min_run) {
+						throw JException("Maximum run must be larger than minimum run!");
+					}
+					token_ind += 3;
+				} else if(tokens[token_ind] == "run_File") {
+					// run_File [RUN] [FILE]
+					// make sure there's enough args
+					if(tokens.size() - token_ind < 3)
+						throw JException("Invalid ES query = " + es_query + "\n\n" + EventstoreQueryHelp() );
+						
+					min_run = atoi(tokens[token_ind+1].c_str());   // ERROR CHECK!!
+					min_file = atoi(tokens[token_ind+2].c_str());   // ERROR CHECK!!
+					max_run = min_run;
+					max_file = min_file;
+	
+					// sanity check
+					if(max_run < min_run) {
+						throw JException("Maximum run must be larger than minimum run!");
+					}
+					token_ind += 3;
 				} else if(tokens[token_ind] == "run_period") {
+					// format: run_periods [RUN PERIOD STRING]
 					if(run_range_set) 
 						throw JException("Cannot set run range and run period in the same command!");
 
@@ -209,7 +242,7 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 		
 		
 		// debugging stuff
-		if(TEST_MODE) {
+		if(ES_TEST_MODE) {
 			if(skim_list.size() == 0) {
 				skim_list.push_back("pi0");
 				skim_list.push_back("eta");
@@ -259,7 +292,7 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	es_data_loaded = true;
 		
 	/*
-	if(TEST_MODE)   // if we're testing, don't make any more checks 
+	if(ES_TEST_MODE)   // if we're testing, don't make any more checks 
 		return;
 		
 	// load some data here
@@ -279,9 +312,20 @@ DEventSourceEventStore::~DEventSourceEventStore()
 
 //---------------------------------
 // LoadESData
+// 
+// Load EventStore data from database
+// This should generally only be called once during program execution
 //---------------------------------
 jerror_t DEventSourceEventStore::LoadESData()
 {
+	if(es_data_loaded) {
+		throw JException("Tried to load EventStore data twice! This should not happen! Exiting...");
+	}
+
+	if(VERBOSE>0) {
+		jout << "EventStore: Loading data versions..." << endl;
+	}
+
 	if(load_all_skims) {
 		// if the user didn't ask for specific skims, then load all of them
 		skim_list = esdb->GetSkims(timestamp, grade);
@@ -298,6 +342,14 @@ jerror_t DEventSourceEventStore::LoadESData()
 	current_data_version_itr = data_versions.begin();
 	first_data_version = true;
 
+	if(VERBOSE>1) {
+		jout << "EventStore: Loaded versions:" << endl;
+		for (auto the_data_version : data_versions) {
+			jout << "    " << the_data_version.second << "  runs = ( "
+				 << the_data_version.first.first << ", " << the_data_version.first.second << ")" << endl;
+		}
+	}
+
 	// Set everything up, and we should be ready to go
 	if(LoadNextVersionRunRange() != NOERROR) {
 		throw JException("Problems loading EventStore data!");
@@ -309,6 +361,10 @@ jerror_t DEventSourceEventStore::LoadESData()
 //---------------------------------
 jerror_t DEventSourceEventStore::LoadNextVersionRunRange()
 {
+	if(VERBOSE>0) {
+		jout << "EventStore: Loading next run range..." << endl;
+	}
+
 	// generally, we want to move to the next data version, but we need
 	// to make we analyze the first
 	if(!first_data_version)
@@ -334,6 +390,14 @@ jerror_t DEventSourceEventStore::LoadNextVersionRunRange()
 	string all_skim("all");
 	current_run_numbers = esdb->GetRunList(the_run_range, the_graphid, all_skim);
 	
+	if(VERBOSE>1) {
+		jout << "EventStore: Loaded runs:  ";
+		for (auto run_number : current_run_numbers) {
+			cout << " " << run_number;
+		}
+		cout << endl;
+	}
+
 	if(current_run_numbers.size() ==  0) // sanity check
 		return LoadNextVersionRunRange();
 	
@@ -355,30 +419,49 @@ jerror_t DEventSourceEventStore::LoadNextRunData()
 	else
 		first_run_in_range = false;
 
+	if(VERBOSE>0) {
+		jout << "EventStore: Loading data for run " << (*current_run_itr) << "..." << endl;
+	}
+
 	// first load the primary index for the run
 	string all_skim("all");
 	string index_file_name = esdb->GetKeyFileName(current_graphid, all_skim, *current_run_itr);
 
 	// LOAD INDEX
+
+	if(VERBOSE>1) {
+		jout << "EventStore: Loaded master index" << endl;
+	}
 	
 	// then load the indices for the skims
-	for(vector<string>::iterator skim_list_itr = skim_list.begin();
-		skim_list_itr != skim_list.end(); skim_list_itr++) {
-		string skim_index_file_name = esdb->GetKeyFileName(current_graphid, *skim_list_itr, *current_run_itr);
+	for(auto skim_name : skim_list) {
+		string skim_index_file_name = esdb->GetKeyFileName(current_graphid, skim_name, *current_run_itr);
 
 		// LOAD INDEX
+		
+		if(VERBOSE>1) {
+			jout << "EventStore: Loaded skim " << skim_name << endl;
+		}
+
 	}
 	
 	// then load information on the data files for this run
 	vector< pair<string,string> > data_file_type_vec = esdb->GetDataFileNameTypePairs(current_graphid, all_skim, *current_run_itr);
 	// index information by database file id
-	for(vector<pair<string,string> >::iterator data_file_type_vec_itr = data_file_type_vec.begin();
-		data_file_type_vec_itr != data_file_type_vec.end(); data_file_type_vec_itr++) {
-			int the_fid = esdb->GetFID(data_file_type_vec_itr->first);
-			data_file_map[the_fid] = data_file_type_vec_itr->first;
-			data_type_map[the_fid] = data_file_type_vec_itr->second;
-		}
-		
+	data_file_map.clear();
+	for(auto data_file_type : data_file_type_vec) {
+		int the_fid = esdb->GetFID(data_file_type.first);
+		data_file_map[the_fid] = data_file_type.first;
+		data_type_map[the_fid] = data_file_type.second;
+	}
+
+	if(VERBOSE>1) {
+		jout << "EventStore: Data files = ";
+		for(auto data_file_type : data_file_type_vec) 
+			cout << data_file_type.first << " ";
+		cout << endl;
+	}
+	
 	// start from the beginning of the run
 	event_index_pos = 0;
 }
@@ -395,11 +478,11 @@ jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
 	}
 	
 	// FOR DEBUGGING - EMIT EVENTS FOREVER
-	if(TEST_MODE) {
+	if(ES_TEST_MODE) {
 		// output some fake event with skim information
     	event.SetEventNumber(1);
     	event.SetRunNumber(10000);
-    	event.SetJEventSource(this);
+    	event.SetJEventSource(static_cast<JEventSource *>(this));
    		//event.SetRef(NULL);
     	event.SetStatusBit(kSTATUS_FROM_FILE);
     	event.SetStatusBit(kSTATUS_PHYSICS_EVENT);

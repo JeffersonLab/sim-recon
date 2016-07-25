@@ -58,6 +58,7 @@ class DEventSourceEventStore : public JEventSource {
 		string esdb_connection;        //  connection string for database
 		DESDBProvider *esdb;           //  the database connection
 		bool es_data_loaded;
+		int VERBOSE;
 		
 		bool load_all_skims;
 		vector<string> skim_list;
@@ -65,6 +66,7 @@ class DEventSourceEventStore : public JEventSource {
 		string timestamp;
 		string grade;
 		int min_run, max_run;
+		int min_file, max_file;   // optionally specify file ranges
 		bool run_range_set;
 		bool run_period_set;
 		

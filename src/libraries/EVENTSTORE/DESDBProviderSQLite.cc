@@ -344,7 +344,7 @@ vector<string> DESDBProviderSQLite::GetTimestamps(string grade)
 //---------------------------------
 // GetRunVersions
 //---------------------------------
-DataVersionList DESDBProviderSQLite::GetDataVersions(string timestamp, string grade)
+EventStore::DataVersionList DESDBProviderSQLite::GetDataVersions(string timestamp, string grade)
 {
 
 	EventStore::DataVersionList out_runversions;

@@ -258,7 +258,7 @@ vector<string> DESDBProviderMySQL::GetTimestamps(string grade)
 //---------------------------------
 // GetRunVersions
 //---------------------------------
-DataVersionList DESDBProviderMySQL::GetDataVersions(string timestamp, string grade)
+EventStore::DataVersionList DESDBProviderMySQL::GetDataVersions(string timestamp, string grade)
 {
 	EventStore::DataVersionList out_runversions;
 

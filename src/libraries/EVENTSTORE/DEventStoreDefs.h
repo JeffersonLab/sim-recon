@@ -15,21 +15,30 @@ namespace EventStore {
 	typedef pair<RunRange,int> DataVersion;
 	typedef vector< DataVersion > DataVersionList;
 
+	// key file types
+	enum {
+		kESKeyFileHDDM  = 1,
+		kESKeyFileEVIO  = 2,
+		kESKeyFileMax   = 3
+	};
 
-	struct DESEventIndexData {
-	  public:
-		DESEventIndexData() {}
-		~DESEventIndexData() {}
+// base class
+struct DESEventIndexData {
+	public:
+		//DESEventIndexData() {}
+		//~DESEventIndexData() {}
+
 		
 		// data members
 		//int32_t run;
 		//int32_t event;
 		int32_t fid;
 		//int32_t event_type;
-		uint64_t index_into_file;
+		//uint64_t index_into_file;
 		
 		bitset<64> skim_flags;
-	};
+};
+
 };
 
 #endif // _DEventStoreDefs_

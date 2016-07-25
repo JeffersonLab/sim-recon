@@ -27,7 +27,7 @@ using namespace std;
 class DESDBProviderSQLite : public DESDBProvider {
 	public:
 		DESDBProviderSQLite(string connection_str);
-		virtual ~DESDBProviderSQLite();
+		~DESDBProviderSQLite();
 		
 		bool Open();
 		
