@@ -27,6 +27,7 @@ class DEventStoreEvent
 
 		//SKIMS
 		void Add_Skim(string locSkim){dSkims.insert(locSkim);}
+		void Add_Skims(set<string> locSkim){dSkims = locSkim;}
 		bool Is_Skim(string locSkim) const{return (dSkims.find(locSkim) != dSkims.end());}
 		const set<string>& Get_Skims(void) const{return dSkims;}
 

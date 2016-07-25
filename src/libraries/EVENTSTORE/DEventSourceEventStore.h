@@ -20,6 +20,7 @@
 #include "DESDBProviderMySQL.h"
 #include "DESDBProviderSQLite.h"
 #include "DEventStoreDefs.h"
+#include "DESEventIndex.h"
 
 using namespace jana;
 using namespace std;
@@ -90,8 +91,9 @@ class DEventSourceEventStore : public JEventSource {
 		int current_fid;
 		
 		// index data
-		vector<EventStore::DESEventIndexData> event_index;
-		int event_index_pos;
+		//vector<EventStore::DESEventIndexData> event_index;
+		//int event_index_pos;
+		DESEventIndex *event_index;
 		
 		// some more metadata
 		map< string, pair<int,int> > run_period_map;

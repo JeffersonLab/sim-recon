@@ -69,6 +69,7 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	VERBOSE = 0;
 	es_data_loaded = false;
 	event_source = NULL;
+	event_index = NULL;
 	min_run = 0;
 	max_run = numeric_limits<int>::max();   // default to something ridiculously large
 	esdb_connection = "mysql://es_user@hallddb.jlab.org/EventStoreTMP";    // default to main JLab ES server
@@ -427,7 +428,11 @@ jerror_t DEventSourceEventStore::LoadNextRunData()
 	string all_skim("all");
 	string index_file_name = esdb->GetKeyFileName(current_graphid, all_skim, *current_run_itr);
 
-	// LOAD INDEX
+	if(event_index != NULL)  // clear any data that already exists
+		delete event_index;
+		
+	event_index = new DESEventIndex(&skim_list);
+	event_index->LoadMasterIndex(index_file_name);
 
 	if(VERBOSE>1) {
 		jout << "EventStore: Loaded master index" << endl;
@@ -436,8 +441,7 @@ jerror_t DEventSourceEventStore::LoadNextRunData()
 	// then load the indices for the skims
 	for(auto skim_name : skim_list) {
 		string skim_index_file_name = esdb->GetKeyFileName(current_graphid, skim_name, *current_run_itr);
-
-		// LOAD INDEX
+		event_index->LoadSkimIndex(index_file_name, skim_name);
 		
 		if(VERBOSE>1) {
 			jout << "EventStore: Loaded skim " << skim_name << endl;
@@ -445,7 +449,7 @@ jerror_t DEventSourceEventStore::LoadNextRunData()
 
 	}
 	
-	// then load information on the data files for this run
+	// finally, load information on the data files for this run
 	vector< pair<string,string> > data_file_type_vec = esdb->GetDataFileNameTypePairs(current_graphid, all_skim, *current_run_itr);
 	// index information by database file id
 	data_file_map.clear();
@@ -463,7 +467,7 @@ jerror_t DEventSourceEventStore::LoadNextRunData()
 	}
 	
 	// start from the beginning of the run
-	event_index_pos = 0;
+	//event_index_pos = 0;
 }
 
 //---------------------------------
@@ -515,10 +519,10 @@ jerror_t DEventSourceEventStore::GetEvent(JEvent &event)
 		the_es_event->Set_SourceRef(event.GetRef());    // save the actual event data
 		event.SetRef(the_es_event);
 	    event.SetStatusBit(kSTATUS_FROM_FILE);
-	    event.SetStatusBit(kSTATUS_PHYSICS_EVENT);
+	    event.SetStatusBit(kSTATUS_PHYSICS_EVENT); // shouldn't need these?
 
 		// tag event with skims
-		;
+		the_es_event->Add_Skims(event_index->GetCurrentSkimList());
 	} else if(retval == NO_MORE_EVENTS_IN_SOURCE) {   
 		// if the source is empty, close the current one, then move to the next
 		delete event_source;
@@ -585,30 +589,40 @@ jerror_t DEventSourceEventStore::GetObjects(JEvent &event, JFactory_base *factor
 //---------------------------------
 jerror_t DEventSourceEventStore::MoveToNextEvent()
 {
-	//
+	// are we out of events in the current run?
+	if(event_index->IsEndOfIndex()) {
+		;
+	}
 	
-	
-	// move to next event
-	event_index_pos++;
-
-	// if we're loading all of the skims, then we don't need to skip any events
-	if(load_all_skims)
-		return NOERROR;
+	// move the index to the next event
+	event_index->MoveToNextEvent();
 		
 	// see if we need to change files
-	if(current_fid != event_index[event_index_pos].fid) {
+	if(current_fid != event_index->GetCurrentFID()) {
 		delete event_source;
-		current_fid = event_index[event_index_pos].fid;
+		current_fid = event_index->GetCurrentFID();
+		
 		// create new file
 		if(data_type_map[current_fid] == "rest") {
 			event_source = static_cast<JEventSource*>(new DEventSourceREST(data_file_map[current_fid].c_str()));
 		} else if(data_type_map[current_fid] == "sim") {
 			event_source = static_cast<JEventSource*>(new DEventSourceHDDM(data_file_map[current_fid].c_str()));
-		} 
-		//else if(data_type_map[fid] == "evio") {   // FUTURE
-		//event_source = JEventSourceEVIO(data_file_map[fid]);
-		//}
+		} else if(data_type_map[current_fid] == "evio") {
+			throw JException("EventStore does not support EVIO files yet!");
+			//event_source = JEventSourceEVIO(data_file_map[fid]);  // FUTURE
+		}
 	}
+	
+	/*
+	// load next event from event source 
+	//event_source->SetPosition();
+	// this is kinda hacky
+	if(data_type_map[current_fid] == "rest") {
+		event_source->SetPosition(event_index->GetCurrentRESTPosition());
+	} else if(data_type_map[current_fid] == "sim") {
+		event_source->SetPosition(event_index->GetCurrentSIMPosition());
+	}
+	*/
 		
 	return NOERROR;
 }
