@@ -1187,15 +1187,6 @@ vector<const DChargedTrackHypothesis*> DEventWriterROOT::Get_ChargedHypotheses_U
 			continue;
 		}
 
-		//Of these, choose the ones with the RF bunch time identical to the "main" one
-		const DEventRFBunch* locComboEventRFBunch = NULL;
-		locChargedHypo->GetSingle(locComboEventRFBunch);
-		if(fabs(locComboEventRFBunch->dTime - locEventRFBunch->dTime) > 0.01)
-		{
-			locUnsavedNonPreselectHypotheses.insert(locChargedHypo);
-			continue; //not the same one!
-		}
-
 		//Get original DChargedTrack
 		const DChargedTrack* locOrigChargedTrack = NULL;
 		locChargedHypo->GetSingle(locOrigChargedTrack);
@@ -1353,15 +1344,6 @@ vector<const DNeutralParticleHypothesis*> DEventWriterROOT::Get_NeutralHypothese
 			locSavedHypos.insert(locOrigNeutralParticleHypothesis);
 			locObjectToArrayIndexMap[locOrigNeutralParticleHypothesis->id] = locIndependentNeutralParticleHypotheses.size() - 1;
 			continue;
-		}
-
-		//Of these, choose the ones with the RF bunch time identical to the "main" one
-		const DEventRFBunch* locComboEventRFBunch = NULL;
-		locNeutralHypo->GetSingle(locComboEventRFBunch);
-		if(fabs(locComboEventRFBunch->dTime - locEventRFBunch->dTime) > 0.01)
-		{
-			locUnsavedNonPreselectHypotheses.insert(locNeutralHypo);
-			continue; //not the same one!
 		}
 
 		//Get original DNeutralParticle
