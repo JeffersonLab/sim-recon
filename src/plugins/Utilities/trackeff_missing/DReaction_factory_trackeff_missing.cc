@@ -55,8 +55,8 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
-	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	locReaction->Set_KinFitType(d_P4AndVertexFit);
+	//locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	locReaction->Set_KinFitType(d_P4Fit);
 
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
 	// locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
@@ -147,8 +147,8 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
-	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	locReaction->Set_KinFitType(d_P4AndVertexFit);
+	//locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	locReaction->Set_KinFitType(d_P4Fit);
 
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
 	// locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
@@ -242,8 +242,8 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
-	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
-	locReaction->Set_KinFitType(d_P4AndVertexFit);
+	//locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	locReaction->Set_KinFitType(d_P4Fit);
 
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
 	// locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
@@ -347,7 +347,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 
 	/**************************************************** TrackEff_MissingProton_3pi Control Settings ****************************************************/
 
-	locReaction->Set_KinFitType(d_P4AndVertexFit);
+	locReaction->Set_KinFitType(d_P4Fit);
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
@@ -447,7 +447,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 
 	/**************************************************** TrackEff_MissingPiPlus_3pi Control Settings ****************************************************/
 
-	locReaction->Set_KinFitType(d_P4AndVertexFit);
+	locReaction->Set_KinFitType(d_P4Fit);
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
@@ -541,7 +541,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 
 	/**************************************************** TrackEff_MissingPiMinus_3pi Control Settings ****************************************************/
 
-	locReaction->Set_KinFitType(d_P4AndVertexFit);
+	locReaction->Set_KinFitType(d_P4Fit);
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
@@ -635,7 +635,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 
 	/**************************************************** TrackEff_MissingProton_4pi Control Settings ****************************************************/
 
-	locReaction->Set_KinFitType(d_P4AndVertexFit);
+	locReaction->Set_KinFitType(d_P4Fit);
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
@@ -718,7 +718,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 
 	/**************************************************** TrackEff_MissingPiPlus_4pi Control Settings ****************************************************/
 
-	locReaction->Set_KinFitType(d_P4AndVertexFit);
+	locReaction->Set_KinFitType(d_P4Fit);
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
@@ -798,7 +798,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 
 	/**************************************************** TrackEff_MissingPiMinus_4pi Control Settings ****************************************************/
 
-	locReaction->Set_KinFitType(d_P4AndVertexFit);
+	locReaction->Set_KinFitType(d_P4Fit);
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
@@ -891,7 +891,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 
 	/**************************************************** TrackEff_MissingProton_Omega Control Settings ****************************************************/
 
-	locReaction->Set_KinFitType(d_P4AndVertexFit);
+	locReaction->Set_KinFitType(d_P4Fit);
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
