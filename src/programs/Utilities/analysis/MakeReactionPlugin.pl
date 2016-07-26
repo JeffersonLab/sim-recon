@@ -249,7 +249,8 @@ jerror_t DReaction_factory_${ReactionFactoryTag}::evnt(JEventLoop* locEventLoop,
 	locReaction->Set_MaxExtraGoodTracks(4);
 
 	// Highly Recommended: Enable ROOT TTree output for this DReaction
-	// locReaction->Enable_TTreeOutput(\"tree_${ReactionName}.root\"); //string is file name (must end in \".root\"!!): doen't need to be unique, feel free to change
+	// string is file name (must end in \".root\"!!): doen't need to be unique, feel free to change
+	// locReaction->Enable_TTreeOutput(\"tree_${ReactionName}.root\", false); //true/false: do/don't save unused hypotheses
 
 	/************************************************** ${ReactionName} Pre-Combo Custom Cuts *************************************************/
 

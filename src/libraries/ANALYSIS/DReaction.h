@@ -108,8 +108,9 @@ class DReaction : public JObject
 		string Get_EventStoreSkims(void) const{return dEventStoreSkims;}
 
 		// ROOT OUTPUT:
-		void Enable_TTreeOutput(string locTTreeOutputFileName);
+		void Enable_TTreeOutput(string locTTreeOutputFileName, bool locSaveUnusedFlag = false);
 		string Get_TTreeOutputFileName(void) const{return dTTreeOutputFileName;}
+		bool Get_SaveUnusedFlag(void) const{return dSaveUnusedFlag;}
 		bool Get_EnableTTreeOutputFlag(void) const{return dEnableTTreeOutputFlag;}
 
 		// BUILD ANY FLAGS
@@ -132,6 +133,7 @@ class DReaction : public JObject
 
 		// ROOT TTREE OUTPUT:
 		bool dEnableTTreeOutputFlag; //default is false
+		bool dSaveUnusedFlag; //default is false
 		string dTTreeOutputFileName;
 
 		// REACTION AND ANALYSIS MEMBERS:
@@ -257,9 +259,10 @@ inline bool DReaction::Check_AreStepsIdentical(const DReaction* locReaction) con
 	return true;
 }
 
-inline void DReaction::Enable_TTreeOutput(string locTTreeOutputFileName)
+inline void DReaction::Enable_TTreeOutput(string locTTreeOutputFileName, bool locSaveUnusedFlag)
 {
 	dEnableTTreeOutputFlag = true;
+	dSaveUnusedFlag = locSaveUnusedFlag;
 	dTTreeOutputFileName = locTTreeOutputFileName;
 }
 
