@@ -72,7 +72,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
-//	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingProton Pre-Combo Custom Cuts *************************************************/
 
@@ -164,7 +164,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
-//	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingPiMinus Pre-Combo Custom Cuts *************************************************/
 
@@ -259,7 +259,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
-//	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingPiPlus Pre-Combo Custom Cuts *************************************************/
 
@@ -351,7 +351,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
-//	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingProton_3pi Pre-Combo Custom Cuts *************************************************/
 
@@ -451,7 +451,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
-//	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingPiPlus_3pi Pre-Combo Custom Cuts *************************************************/
 
@@ -545,7 +545,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
-//	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingPiMinus_3pi Pre-Combo Custom Cuts *************************************************/
 
@@ -639,7 +639,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
-//	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingProton_4pi Pre-Combo Custom Cuts *************************************************/
 
@@ -722,7 +722,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
-//	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingPiPlus_4pi Pre-Combo Custom Cuts *************************************************/
 
@@ -802,7 +802,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
-//	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingPiMinus_4pi Pre-Combo Custom Cuts *************************************************/
 
@@ -895,7 +895,7 @@ jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint
 	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 //	locReaction->Set_MaxExtraGoodTracks(1);
 
-//	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingProton_Omega Pre-Combo Custom Cuts *************************************************/
 
