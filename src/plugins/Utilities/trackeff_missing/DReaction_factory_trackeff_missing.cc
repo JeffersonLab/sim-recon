@@ -12,9 +12,21 @@
 #include "DCustomAction_dEdxCut.h"
 
 //------------------
-// init
+// brun
 //------------------
-jerror_t DReaction_factory_trackeff_missing::init(void)
+jerror_t DReaction_factory_trackeff_missing::brun(JEventLoop* locEventLoop, int32_t locRunNumber)
+{
+	vector<double> locBeamPeriodVector;
+	locEventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+	dBeamBunchPeriod = locBeamPeriodVector[0];
+
+	return NOERROR;
+}
+
+//------------------
+// evnt
+//------------------
+jerror_t DReaction_factory_trackeff_missing::evnt(JEventLoop* locEventLoop, uint64_t locEventNumber)
 {
 	// Make as many DReaction objects as desired
 	DReactionStep* locReactionStep = NULL;
@@ -43,7 +55,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
-	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	//locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 	locReaction->Set_KinFitType(d_P4Fit);
 
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
@@ -53,14 +65,14 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// locReaction->Set_MinChargedPIDFOM(5.73303E-7);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Current (09/26/2014): "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma). 
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
-	locReaction->Set_MaxExtraGoodTracks(1);
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingProton Pre-Combo Custom Cuts *************************************************/
 
@@ -135,7 +147,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
-	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	//locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 	locReaction->Set_KinFitType(d_P4Fit);
 
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
@@ -145,14 +157,14 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// locReaction->Set_MinChargedPIDFOM(5.73303E-7);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Current (09/26/2014): "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma).
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
-	locReaction->Set_MaxExtraGoodTracks(1);
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingPiMinus Pre-Combo Custom Cuts *************************************************/
 
@@ -230,7 +242,7 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 
 	// Recommended: Type of kinematic fit to perform (default is d_NoFit)
 		//fit types are of type DKinFitType, an enum defined in sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
-	//locReaction->Set_KinFitType(d_P4AndVertexFit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
+	//locReaction->Set_KinFitType(d_P4Fit); //simultaneously constrain apply four-momentum conservation, invariant masses, and common-vertex constraints
 	locReaction->Set_KinFitType(d_P4Fit);
 
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
@@ -240,14 +252,14 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	// locReaction->Set_MinChargedPIDFOM(5.73303E-7);
 
 	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
 
 	// Highly Recommended: Cut on number of extra "good" tracks. "Good" tracks are ones that survive the "PreSelect" (or user custom) factory.
 		// Current (09/26/2014): "Good" tracks have a detector-hit match, and tracking FOM > 0.0027 (+/- 3 sigma).
 		// Important: Keep cut large: Can have many ghost and accidental tracks that look "good"
-	locReaction->Set_MaxExtraGoodTracks(1);
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingPiPlus Pre-Combo Custom Cuts *************************************************/
 
@@ -336,10 +348,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	/**************************************************** TrackEff_MissingProton_3pi Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4Fit);
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-	locReaction->Set_MaxExtraGoodTracks(1);
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingProton_3pi Pre-Combo Custom Cuts *************************************************/
 
@@ -436,10 +448,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	/**************************************************** TrackEff_MissingPiPlus_3pi Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4Fit);
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-	locReaction->Set_MaxExtraGoodTracks(1);
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingPiPlus_3pi Pre-Combo Custom Cuts *************************************************/
 
@@ -530,10 +542,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	/**************************************************** TrackEff_MissingPiMinus_3pi Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4Fit);
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-	locReaction->Set_MaxExtraGoodTracks(1);
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingPiMinus_3pi Pre-Combo Custom Cuts *************************************************/
 
@@ -624,10 +636,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	/**************************************************** TrackEff_MissingProton_4pi Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4Fit);
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-	locReaction->Set_MaxExtraGoodTracks(1);
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingProton_4pi Pre-Combo Custom Cuts *************************************************/
 
@@ -707,10 +719,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	/**************************************************** TrackEff_MissingPiPlus_4pi Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4Fit);
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-	locReaction->Set_MaxExtraGoodTracks(1);
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingPiPlus_4pi Pre-Combo Custom Cuts *************************************************/
 
@@ -787,10 +799,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	/**************************************************** TrackEff_MissingPiMinus_4pi Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4Fit);
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-	locReaction->Set_MaxExtraGoodTracks(1);
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingPiMinus_4pi Pre-Combo Custom Cuts *************************************************/
 
@@ -880,10 +892,10 @@ jerror_t DReaction_factory_trackeff_missing::init(void)
 	/**************************************************** TrackEff_MissingProton_Omega Control Settings ****************************************************/
 
 	locReaction->Set_KinFitType(d_P4Fit);
-	locReaction->Set_MaxPhotonRFDeltaT(2.004); //beam bunches are every 4.008 ns, (2.004 should be minimum cut value)
-	locReaction->Set_MaxExtraGoodTracks(1);
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*dBeamBunchPeriod); //should be minimum cut value
+//	locReaction->Set_MaxExtraGoodTracks(1);
 
-	locReaction->Set_MaxNumBeamPhotonsInBunch(1); //not ideal: throws away a lot of signal
+	locReaction->Set_MaxNumBeamPhotonsInBunch(2); //not ideal: throws away a lot of signal
 
 	/************************************************** TrackEff_MissingProton_Omega Pre-Combo Custom Cuts *************************************************/
 

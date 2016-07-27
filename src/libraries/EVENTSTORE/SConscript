@@ -6,10 +6,6 @@ import sbms
 Import('*')
 env = env.Clone()
 
-# MYSQL
-env.ParseConfig("mysql_config --cflags")
-env.ParseConfig("mysql_config --libs")
-
 # Needed for HDDM
 #env.AppendUnique(CPPPATH=[Dir('.').abspath+"/../../../libraries/HDDM"])   # HACK!
 env.AppendUnique(CPPPATH=["../HDDM"])   # HACK!

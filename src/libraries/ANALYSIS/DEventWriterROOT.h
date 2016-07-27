@@ -145,7 +145,9 @@ class DEventWriterROOT : public JObject
 
 		//TREE FILLING: GET HYPOTHESES
 		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs, map<oid_t, int>& locObjectToArrayIndexMap) const;
+		vector<const DChargedTrackHypothesis*> Get_ChargedHypotheses_Used(JEventLoop* locEventLoop, deque<const DParticleCombo*>& locParticleCombos, map<oid_t, int>& locObjectToArrayIndexMap) const;
 		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses(JEventLoop* locEventLoop, set<Particle_t> locReactionPIDs, map<oid_t, int>& locObjectToArrayIndexMap) const;
+		vector<const DNeutralParticleHypothesis*> Get_NeutralHypotheses_Used(JEventLoop* locEventLoop, deque<const DParticleCombo*>& locParticleCombos, map<oid_t, int>& locObjectToArrayIndexMap) const;
 
 		//TREE FILLING: INDEPENDENT PARTICLES
 		void Fill_BeamData(DTreeFillData* locTreeFillData, unsigned int locArrayIndex, const DBeamPhoton* locBeamPhoton, const DVertex* locVertex, const DMCThrownMatching* locMCThrownMatching) const;
