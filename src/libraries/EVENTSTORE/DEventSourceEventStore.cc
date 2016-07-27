@@ -57,6 +57,9 @@ static bool AcceptRunRange(EventStore::RunRange &the_run_range, int min_run, int
 			the_run_range.second = max_run;
 		}
 	} 
+
+    // if we haven't rejected it yet, then it's fine
+    return true;
 }
 
 
@@ -126,10 +129,12 @@ DEventSourceEventStore::DEventSourceEventStore(const char* source_name):JEventSo
 	if(esdb_connection.substr(0,8) == "mysql://") {
 		cout << "Connecting to MySQL..." << endl;
 		esdb = static_cast<DESDBProvider *>(new DESDBProviderMySQL(esdb_connection));
-	} else if(esdb_connection.substr(0,8) == "sqlite://") {
+	} else if(esdb_connection.substr(0,9) == "sqlite://") {
 		cout << "Connecting to SQLite..." << endl;	
 		esdb = static_cast<DESDBProvider *>(new DESDBProviderSQLite(esdb_connection));
-	} 
+	} else {
+        throw JException("Inavalid EventStore connection string:" + esdb_connection);
+    } 
 	
 	// Connect to database
 	esdb->Open();
@@ -355,6 +360,8 @@ jerror_t DEventSourceEventStore::LoadESData()
 	if(LoadNextVersionRunRange() != NOERROR) {
 		throw JException("Problems loading EventStore data!");
 	}
+
+    return NOERROR;
 }
 
 //---------------------------------
@@ -479,6 +486,8 @@ jerror_t DEventSourceEventStore::LoadNextRunData()
 	
 	// start from the beginning of the run
 	//event_index_pos = 0;
+
+    return NOERROR;
 }
 
 //---------------------------------

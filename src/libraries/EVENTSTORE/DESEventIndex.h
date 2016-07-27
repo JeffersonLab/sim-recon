@@ -80,6 +80,7 @@ class DESEventIndex {
 				if(event_index_itr->second.skim_flags[index++])
 					skims_for_current_event.insert(skim);
 			}
+            return skims_for_current_event;
 		}
 		
 		// Need to implement this in a more elegant way - brute force this for now

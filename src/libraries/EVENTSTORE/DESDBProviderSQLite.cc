@@ -154,7 +154,8 @@ vector<string> DESDBProviderSQLite::GetSkims(string timestamp, string grade)
 
 	stringstream query_ss;
 	// first figure out the closest timestamp to the one requested
-	query_ss << "SELECT MAX(timeStamp) FROM Version WHERE timeStamp<=`?1` AND grade=`?2` AND state='active'";
+	//query_ss << "SELECT MAX(timeStamp) FROM Version WHERE timeStamp<=`?1` AND grade=`?2` AND state='active'";
+	query_ss << "SELECT MAX(timeStamp) FROM Version WHERE timeStamp<=?1 AND grade=?2 AND state='active'";
 					
 	// clear out any lingering data
 	if(DBresult != NULL) {	
@@ -165,7 +166,7 @@ vector<string> DESDBProviderSQLite::GetSkims(string timestamp, string grade)
 	// build the query
 	if(sqlite3_prepare_v2(DBptr, query_ss.str().c_str(), -1, &DBresult, 0)) {
 		sqlite3_finalize(DBresult);
-		jerr << FormatSQLiteError("mysql_query()") << endl
+		jerr << FormatSQLiteError("sqlite3_prepare_v2()") << endl
 			 << "Query: " << query_ss.str() << endl;
 		throw JException("SQLite error in DESDBProviderSQLite::GetSkims()!");
 	}
@@ -173,13 +174,13 @@ vector<string> DESDBProviderSQLite::GetSkims(string timestamp, string grade)
 	if(sqlite3_bind_text(DBresult, 1, timestamp.c_str(), 
 		timestamp.length(), SQLITE_STATIC)) {
 		sqlite3_finalize(DBresult);
-		jerr << FormatSQLiteError("mysql_query()") << endl
+		jerr << FormatSQLiteError("sqlite3_bind_text(), argument 1") << endl
 			 << "Query: " << query_ss.str() << endl;
 		throw JException("SQLite error in DESDBProviderSQLite::GetSkims()!");	
 	}
 	if(sqlite3_bind_text(DBresult, 2, grade.c_str(), grade.length(), SQLITE_STATIC)) {
 		sqlite3_finalize(DBresult);
-		jerr << FormatSQLiteError("mysql_query()") << endl
+		jerr << FormatSQLiteError("sqlite3_bind_text(), argument 2") << endl
 			 << "Query: " << query_ss.str() << endl;
 		throw JException("SQLite error in DESDBProviderSQLite::GetSkims()!");	
 	}
@@ -218,7 +219,7 @@ vector<string> DESDBProviderSQLite::GetSkims(string timestamp, string grade)
 	sqlite3_finalize(DBresult);
 	DBresult = NULL;
 	query_ss.str("");   // clear stringstream
-	query_ss << "SELECT DISTINCT view FROM Version,KeyFile WHERE timeStamp=`?1` AND Version.grade=`?2` " 
+	query_ss << "SELECT DISTINCT view FROM Version,KeyFile WHERE timeStamp=?1 AND Version.grade=?2 " 
 			 << " AND Version.state='active' AND Version.graphid=KeyFile.graphid GROUP BY view";
 
 	// build the query
@@ -281,7 +282,7 @@ vector<string> DESDBProviderSQLite::GetTimestamps(string grade)
 
 	stringstream query_ss;
 	// first figure out the closest timestamp to the one requested
-	query_ss << "SELECT DISTINCT timeStamp FROM Version WHERE grade=`?1` AND state='active'";
+	query_ss << "SELECT DISTINCT timeStamp FROM Version WHERE grade=?1 AND state='active'";
 					
 	// clear out any lingering data
 	if(DBresult != NULL) {	
@@ -350,8 +351,8 @@ EventStore::DataVersionList DESDBProviderSQLite::GetDataVersions(string timestam
 	EventStore::DataVersionList out_runversions;
 
 	stringstream query_ss;
-	query_ss << "SELECT timeStamp,minRunNumber,maxRunNumber,graphid FROM Version WHERE timeStamp<=`?1`"
-			 << "' AND grade=`?2` AND state='active' ORDER BY timeStamp DESC, minRunNumber ASC";;
+	query_ss << "SELECT timeStamp,minRunNumber,maxRunNumber,graphid FROM Version WHERE timeStamp<=?1"
+			 << " AND grade=?2 AND state='active' ORDER BY timeStamp DESC, minRunNumber ASC";;
 
 	// clear out any lingering data
 	if(DBresult != NULL) {	
@@ -433,8 +434,8 @@ vector<int32_t> DESDBProviderSQLite::GetRunList(EventStore::RunRange run_range,
 	vector<int32_t> out_runs;
 
 	stringstream query_ss;
-	query_ss << "SELECT DISTINCT run FROM KeyFile WHERE run>=`?1` AND run<=`?2`" 
-			 << " AND graphid=`?3` AND view=`?4` ORDER BY run ASC";
+	query_ss << "SELECT DISTINCT run FROM KeyFile WHERE run>=?1 AND run<=?2" 
+			 << " AND graphid=?3 AND view=?4 ORDER BY run ASC";
 
 	// clear out any lingering data
 	if(DBresult != NULL) {	
@@ -515,8 +516,8 @@ vector< pair<int32_t,int32_t> > DESDBProviderSQLite::GetRunUidList(EventStore::R
 	vector< pair<int32_t,int32_t> > out_runuids;
 
 	stringstream query_ss;
-	query_ss << "SELECT DISTINCT run,uid FROM KeyFile WHERE run>=`?1` AND run<=`?2`" 
-			 << " AND graphid=`?3` AND view=`?4` ORDER BY run ASC";
+	query_ss << "SELECT DISTINCT run,uid FROM KeyFile WHERE run>=?1 AND run<=?2" 
+			 << " AND graphid=?3 AND view=?4 ORDER BY run ASC";
 
 	// clear out any lingering data
 	if(DBresult != NULL) {	
@@ -597,8 +598,8 @@ string DESDBProviderSQLite::GetKeyFileName(int graphid, string &view, int32_t ru
 	string out_filename;
 
 	stringstream query_ss;
-	query_ss << "SELECT fileName FROM FileID,KeyFile WHERE graphid=`?1` AND view=`?2` "
-			<< " AND run=`?3` AND uid='?' AND FileID.fileId=KeyFile.keyFileID";
+	query_ss << "SELECT fileName FROM FileID,KeyFile WHERE graphid=?1 AND view=?2 "
+			<< " AND run=?3 AND uid=?4 AND FileID.fileId=KeyFile.keyFileID";
 
 	// clear out any lingering data
 	if(DBresult != NULL) {	
@@ -680,8 +681,8 @@ vector< pair<string,string> > DESDBProviderSQLite::GetDataFileNameTypePairs(int 
 	vector< pair<string,string> > out_filetypes;
 
 	stringstream query_ss;
-	query_ss << "SELECT fileName,typeId FROM FileID,DataFile WHERE graphId='?1' AND view='?2'"
-			 << " AND run='?3' AND uid='?4' AND FileID.fileId=DataFile.fileId ORDER BY id ASC";
+	query_ss << "SELECT fileName,typeId FROM FileID,DataFile WHERE graphId=?1 AND view=?2"
+			 << " AND run=?3 AND uid=?4 AND FileID.fileId=DataFile.fileId ORDER BY id ASC";
 
 	// clear out any lingering data
 	if(DBresult != NULL) {	
@@ -761,7 +762,7 @@ string DESDBProviderSQLite::GetFileName(int32_t fid)
 {
 	string out_filename;
 	stringstream query_ss;
-	query_ss << "SELECT fileName FROM FileID WHERE fileID='?1'";
+	query_ss << "SELECT fileName FROM FileID WHERE fileID=?1";
 
 	// clear out any lingering data
 	if(DBresult != NULL) {	
@@ -821,7 +822,7 @@ int DESDBProviderSQLite::GetFID(string &filename)
 	int out_fid = -1;
 
 	stringstream query_ss;
-	query_ss << "SELECT DISTINCT fileId FROM FileID WHERE fileName='?1'";
+	query_ss << "SELECT DISTINCT fileId FROM FileID WHERE fileName=?1";
 
 	// clear out any lingering data
 	if(DBresult != NULL) {	
@@ -883,7 +884,7 @@ pair<string,string> DESDBProviderSQLite::GetFileNameAndType(int fid)
 
 	stringstream query_ss;
 	query_ss << "SELECT FileID.fileName, FileType.type FROM FileID,FileType"
-			 << " WHERE FileID.typeID=FileType.id AND FileID.fileId='?1'"; 
+			 << " WHERE FileID.typeID=FileType.id AND FileID.fileId=?1"; 
 
 	// clear out any lingering data
 	if(DBresult != NULL) {	

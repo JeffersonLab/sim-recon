@@ -68,9 +68,9 @@ class DESDBProviderSQLite : public DESDBProvider {
 
 			
 		// misc functions
-		inline string FormatSQLiteError(string mysql_func_name) {
+		inline string FormatSQLiteError(string sqlite_func_name) {
 			stringstream ss;
-			ss << mysql_func_name << " failed: " << sqlite3_errmsg(DBptr) << endl;
+			ss << sqlite_func_name << " failed: " << sqlite3_errmsg(DBptr) << endl;
 			return ss.str();
 		}
 	
