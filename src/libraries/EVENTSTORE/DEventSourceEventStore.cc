@@ -399,8 +399,11 @@ jerror_t DEventSourceEventStore::LoadNextVersionRunRange()
 		cout << endl;
 	}
 
-	if(current_run_numbers.size() ==  0) // sanity check
-		return LoadNextVersionRunRange();
+	while(current_run_numbers.size() ==  0) { // sanity check
+		jerror_t retval = LoadNextVersionRunRange();
+		if(retval == NO_MORE_EVENTS_IN_SOURCE)
+			return NO_MORE_EVENTS_IN_SOURCE;
+	}
 	
 	current_graphid = the_graphid;
 	current_run_itr = current_run_numbers.begin();
@@ -422,6 +425,14 @@ jerror_t DEventSourceEventStore::LoadNextRunData()
 
 	if(VERBOSE>0) {
 		jout << "EventStore: Loading data for run " << (*current_run_itr) << "..." << endl;
+	}
+
+	// stop if we've hit the end of this run range
+	if(current_run_itr == current_run_numbers.end()) {
+		if(VERBOSE>0) {
+			jout << "EventStore: Hit end of run range..." << endl;
+		}
+		return NO_MORE_EVENTS_IN_SOURCE;
 	}
 
 	// first load the primary index for the run
@@ -591,7 +602,14 @@ jerror_t DEventSourceEventStore::MoveToNextEvent()
 {
 	// are we out of events in the current run?
 	if(event_index->IsEndOfIndex()) {
-		;
+		// if so, we need to get more data - time to move to the next run
+		if(LoadNextRunData() == NO_MORE_EVENTS_IN_SOURCE) {
+			// If we're out of runs, get the next run range
+			if(LoadNextVersionRunRange() == NO_MORE_EVENTS_IN_SOURCE) {
+				// If there's no more run ranges, we are done!
+				return NO_MORE_EVENTS_IN_SOURCE;
+			}
+		}
 	}
 	
 	// move the index to the next event
@@ -613,82 +631,26 @@ jerror_t DEventSourceEventStore::MoveToNextEvent()
 		}
 	}
 	
-	/*
+	
 	// load next event from event source 
 	//event_source->SetPosition();
-	// this is kinda hacky
+	// this is kinda hacky - will do better
 	if(data_type_map[current_fid] == "rest") {
-		event_source->SetPosition(event_index->GetCurrentRESTPosition());
-	} else if(data_type_map[current_fid] == "sim") {
+		hddm_r::streamposition pos = event_index->GetCurrentRESTPosition();
+		static_cast<DEventSourceREST*>(event_source)->SetPosition(pos);
+	} 
+	/*
+	else if(data_type_map[current_fid] == "sim") {
 		event_source->SetPosition(event_index->GetCurrentSIMPosition());
+	} else if(data_type_map[current_fid] == "evio") {
+		throw JException("EventStore does not support EVIO files yet!");
 	}
 	*/
+	
 		
 	return NOERROR;
 }
 
-//---------------------------------
-// OpenNextFile
-//---------------------------------
-/*
-jerror_t DEventSourceEventStore::OpenNextFile()
-{
-
-	
-	// if there's a current file open, close it so that we don't leak memory
-	if(event_source != NULL) {
-		delete event_source;
-		event_source = NULL;
-	}
-
-	//Get generators
-	vector<JEventSourceGenerator*> locEventSourceGenerators = japp->GetEventSourceGenerators();
-	
-	//Get event source
-	while( (event_source == NULL) && (current_file_itr != data_files.end()) ) {
-
-		// Loop over JEventSourceGenerator objects and find the one
-		// (if any) that has the highest chance of being able to read
-		// this source. The return value of 
-		// JEventSourceGenerator::CheckOpenable(source) is a liklihood that
-		// the named source can be read by the JEventSource objects
-		// created by the generator. In most cases, the liklihood will
-		// be either 0.0 or 1.0. In the case that 2 or more generators return
-		// equal liklihoods, the first one in the list will be used.
-		JEventSourceGenerator* locEventSourceGenerator = NULL;
-		double liklihood = 0.0;
-		string locFileName = current_file_itr->c_str();
-		for(unsigned int i=0; i<locEventSourceGenerators.size(); i++)
-		{
-			double my_liklihood = locEventSourceGenerators[i]->CheckOpenable(locFileName);
-			if(my_liklihood > liklihood)
-			{
-				liklihood = my_liklihood;
-				locEventSourceGenerator = locEventSourceGenerators[i];
-			}
-		}
-
-		if(locEventSourceGenerator != NULL)
-		{
-			jout<<"Opening source \""<<locFileName<<"\" of type: "<<locEventSourceGenerator->Description()<<endl;
-			event_source = locEventSourceGenerator->MakeJEventSource(locFileName);
-		}
-
-		if(event_source == NULL){
-			jerr<<endl;
-			jerr<<"  xxxxxxxxxxxx  Unable to open event source \""<<locFileName<<"\"!  xxxxxxxxxxxx"<<endl;
-		}
-
-		current_file_itr++;
-	}
-	
-	// error check
-	if(event_source == NULL)
-		return NO_MORE_EVENT_SOURCES;
-	else
-		return NOERROR;
-}
-*/
 
 
 //---------------------------------

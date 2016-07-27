@@ -54,6 +54,8 @@ class DEventSourceREST:public JEventSource
    jerror_t GetObjects(JEvent &event, JFactory_base *factory);
 		
    jerror_t SkipEvents(int nevents_to_skip);
+   jerror_t SetPosition(hddm_r::streamposition &pos);
+   hddm_r::streamposition GetPosition();
 		
    jerror_t Extract_DMCReaction(hddm_r::HDDM *record,
                     JFactory<DMCReaction> *factory, JEventLoop* locEventLoop);

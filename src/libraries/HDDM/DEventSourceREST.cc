@@ -181,6 +181,30 @@ jerror_t DEventSourceREST::SkipEvents(int nevents_to_skip)
 }
 
 //----------------
+// SetPosition
+//----------------
+jerror_t DEventSourceREST::SetPosition(hddm_r::streamposition &pos)
+{
+	if(fin != NULL) {
+		fin->setPosition(pos);
+	}
+	
+	return NOERROR;
+}
+
+//----------------
+// GetPosition
+//----------------
+hddm_r::streamposition DEventSourceREST::GetPosition()
+{
+	if(fin != NULL) {
+		return fin->getPosition();
+	}
+	
+	throw JException("Trying to call hddm_r::getPosition() before opening file!");
+}
+
+//----------------
 // GetObjects
 //----------------
 jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
