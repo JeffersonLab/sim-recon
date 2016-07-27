@@ -3853,10 +3853,13 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
                 // wire direction variables
                 double ux=dir.X();
                 double uy=dir.Y();
+		double cosstereo=my_cdchits[cdc_index]->cosstereo;
                 // Variables relating wire direction and track direction
                 double my_ux=ux*sinl-cosl*cosphi;
                 double my_uy=uy*sinl-cosl*sinphi;
                 double denom=my_ux*my_ux+my_uy*my_uy;
+		// distance variables
+		DVector2 diff,dxy1;
 
                 // if the step size is small relative to the radius of curvature,
                 // use a linear approximation to find ds2
@@ -3869,7 +3872,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
                 }
                 //printf("step1 %f step 2 %f \n",step1,step2);
                 double two_step=step1+step2;
-                if (two_step*cosl/fabs(qrc_old)<0.01 && denom>EPS){
+                if (two_step*cosl/fabs(qrc_old)<0.05 && denom>EPS){
                     double z=Sc(state_z);
                     double dzw=z-z0w;
                     ds2=((xy.X()-origin.X()-ux*dzw)*my_ux
@@ -3887,17 +3890,6 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
                             else if (my_z>endplate_z){
                                 ds2=(endplate_z-z)/sinl;
                             }
-                            // Bail if the transverse momentum has dropped below some minimum
-                            if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
-                                if (DEBUG_LEVEL>2)
-                                {
-                                    _DBG_ << "Bailing: PT = " << 1./fabs(Sc(state_q_over_pt))
-                                        << " at step " << k 
-                                        << endl;
-                                }
-                                return MOMENTUM_OUT_OF_RANGE;
-                            }
-                            Step(xy,ds2,Sc,dedx);
                         }
                         else{
                             do_brent=true;
@@ -3995,27 +3987,34 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
                         }
                         ds2=my_ds+ds3;
                     }
-                }
+                
+		    
+		    //Step along the reference trajectory and compute the new covariance matrix
+		    StepStateAndCovariance(xy0,ds2,dedx,S0,J,Cc);
 
-                //Step along the reference trajectory and compute the new covariance matrix
-                StepStateAndCovariance(xy0,ds2,dedx,S0,J,Cc);
-
-                // Compute the value of D (signed distance to the reference trajectory)
-                // at the doca to the wire
-                DVector2 dxy1=xy0-central_traj[k].xy;
-                double rc=sqrt(dxy1.Mod2()
-                        +2.*qrc_plus_D*(dxy1.X()*sinphi-dxy1.Y()*cosphi)
+		    // Compute the value of D (signed distance to the reference trajectory)
+		    // at the doca to the wire
+		    dxy1=xy0-central_traj[k].xy;
+		    double rc=sqrt(dxy1.Mod2()
+				   +2.*qrc_plus_D*(dxy1.X()*sinphi-dxy1.Y()*cosphi)
                         +qrc_plus_D*qrc_plus_D);
-                Sc(state_D)=q*rc-qrc_old;
+		    Sc(state_D)=q*rc-qrc_old;
 
-                // wire position
-		wirexy=origin;
-		wirexy+=(Sc(state_z)-z0w)*dir;
+		    // wire position
+		    wirexy=origin;
+		    wirexy+=(Sc(state_z)-z0w)*dir;
+		    diff=xy-wirexy;
+		}
+		else{
+		  // wire position
+		  wirexy=origin;
+		  wirexy+=(Sc(state_z)+ds2*sinl-z0w)*dir;
+		  DVector2 dxy(ds2*cosl*cosphi,ds2*cosl*sinphi);
+		  diff=xy+dxy-wirexy;
+		}
 
                 // prediction for measurement  
-                DVector2 diff=xy-wirexy;
-                double doca=diff.Mod()+EPS;
-                double cosstereo=my_cdchits[cdc_index]->cosstereo;
+		double doca=diff.Mod()+EPS;
                 double prediction=doca*cosstereo;
 
                 // Measurement
@@ -4051,10 +4050,25 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
                 double dx=diff.X();
                 double dy=diff.Y();
                 double cosstereo_over_doca=cosstereo/doca;
-                H(state_D)=H_T(state_D)=(dy*cosphi-dx*sinphi)*cosstereo_over_doca;
-                H(state_phi)=H_T(state_phi)
-                    =-Sc(state_D)*cosstereo_over_doca*(dx*cosphi+dy*sinphi);
-                H(state_z)=H_T(state_z)=-cosstereo_over_doca*(dx*ux+dy*uy);
+                H_T(state_D)=(dy*cosphi-dx*sinphi)*cosstereo_over_doca;
+                H_T(state_phi)
+		  =-Sc(state_D)*cosstereo_over_doca*(dx*cosphi+dy*sinphi);
+                H_T(state_z)=-cosstereo_over_doca*(dx*ux+dy*uy);
+		if (do_brent==false){
+		  H_T(state_phi)+=ds2*cosl*cosstereo_over_doca
+		    *(dy*cosphi-dx*sinphi);
+		  H_T(state_tanl)-=cosl*cosl*ds2*cosstereo_over_doca
+		    *(dx*(ux*cosl+sinl*cosphi)+dy*(uy*cosl+sinl*sinphi));
+		  H(state_tanl)=H_T(state_tanl);
+		}
+		else{
+		  H(state_tanl)=0.;
+		  H_T(state_tanl)=0.;
+		}
+		H(state_D)=H_T(state_D);
+		H(state_z)=H_T(state_z);
+		H(state_phi)=H_T(state_phi);
+
 
                 // Difference and inverse of variance
                 //InvV=1./(V+H*(Cc*H_T));
@@ -4145,20 +4159,25 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 
                 }
 
-                // Get the field and gradient at the point (x0,y0,z0) on the reference
-                // trajectory
-                bfield->GetFieldAndGradient(xy0.X(),xy0.Y(),S0(state_z),Bx,By,Bz,
-                        dBxdx,dBxdy,dBxdz,dBydx,
-                        dBydy,dBydz,dBzdx,dBzdy,dBzdz);
-                // Compute the Jacobian matrix
-                StepJacobian(xy0,(-1.)*dxy1,-ds2,S0,dedx,J);
-
-                // Update covariance matrix
-                //Cc=J*Cc*J.Transpose();
-                Cc=Cc.SandwichMultiply(J);
-
-                // Step to the next point on the trajectory
-                Sc=S0_+J*(Sc-S0); 
+		// If we used Brent's algorithm to find the doca, we need to 
+		// move back to the right step along the reference trajectory.
+		if (do_brent){
+		  // Get the field and gradient at the point (x0,y0,z0) on the reference
+		  // trajectory
+		  bfield->GetFieldAndGradient(xy0.X(),xy0.Y(),S0(state_z),Bx,By,Bz,
+					      dBxdx,dBxdy,dBxdz,dBydx,
+					      dBydy,dBydz,dBzdx,dBzdy,dBzdz);
+		  // Compute the Jacobian matrix
+		  StepJacobian(xy0,(-1.)*dxy1,-ds2,S0,dedx,J);
+		  
+		  // Update covariance matrix
+		  //Cc=J*Cc*J.Transpose();
+		  Cc=Cc.SandwichMultiply(J);
+		  
+		  // Step to the next point on the trajectory
+		  Sc=S0_+J*(Sc-S0);
+		}
+		
 		//  Save state and covariance matrix to update vector
 		cdc_updates[cdc_index].S=Sc;
 		cdc_updates[cdc_index].C=Cc;
@@ -4770,6 +4789,13 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	  double denom=my_ux*my_ux+my_uy*my_uy;
 	  double dz=0.;
 	  
+	  
+	  // variables for dealing with propagation of S and C if we 
+	  // need to use Brent's algorithm to find the doca to the wire
+	  int num_steps=0;
+	  double dz3=0.;
+	  double my_dz=0.;
+
 	  // if the path length increment is small relative to the radius 
 	  // of curvature, use a linear approximation to find dz	
 	  bool do_brent=false;
@@ -4855,22 +4881,45 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	      dz=newz-z;
 	    }
 	    
-	  }
-
-	  // Step the state and covariance through the field
-	  int num_steps=0;
-	  double dz3=0.;
-	  double my_dz=0.;
-	  if (fabs(dz)>mStepSizeZ){
-	    my_dz=(dz>0?1.0:-1.)*mStepSizeZ;
-	    num_steps=int(fabs(dz/my_dz));
-	    dz3=dz-num_steps*my_dz;
-	    
-	    double my_z=z;
-	    for (int m=0;m<num_steps;m++){
-	      newz=my_z+my_dz;
+	    // Step the state and covariance through the field
+	    if (fabs(dz)>mStepSizeZ){
+	      my_dz=(dz>0?1.0:-1.)*mStepSizeZ;
+	      num_steps=int(fabs(dz/my_dz));
+	      dz3=dz-num_steps*my_dz;
 	      
-	      // Step current state by my_dz
+	      double my_z=z;
+	      for (int m=0;m<num_steps;m++){
+		newz=my_z+my_dz;
+		
+		// Step current state by my_dz
+		//Step(z,newz,dedx,S);
+		
+		// propagate error matrix to z-position of hit
+		StepJacobian(z,newz,S0,dedx,J);
+		//C=J*C*J.Transpose();
+		C=C.SandwichMultiply(J);
+		
+		// Step reference trajectory by my_dz
+		Step(z,newz,dedx,S0); 
+		
+		my_z=newz;
+	      }
+	      
+	      newz=my_z+dz3;
+	    
+	      // Step current state by dz3
+	      //Step(my_z,newz,dedx,S);	  
+	      
+	      // propagate error matrix to z-position of hit
+	      StepJacobian(my_z,newz,S0,dedx,J);
+	      //C=J*C*J.Transpose();
+	      C=C.SandwichMultiply(J);
+	      
+	      // Step reference trajectory by dz3
+	      Step(my_z,newz,dedx,S0); 	    
+	    }
+	    else{
+	      // Step current state by dz
 	      //Step(z,newz,dedx,S);
 	      
 	      // propagate error matrix to z-position of hit
@@ -4878,36 +4927,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	      //C=J*C*J.Transpose();
 	      C=C.SandwichMultiply(J);
 	      
-	      // Step reference trajectory by my_dz
+	      // Step reference trajectory by dz
 	      Step(z,newz,dedx,S0); 
-	      
-	      my_z=newz;
 	    }
-	    
-	    newz=my_z+dz3;
-	    
-	    // Step current state by dz3
-	    //Step(my_z,newz,dedx,S);	  
-	    
-	    // propagate error matrix to z-position of hit
-	    StepJacobian(my_z,newz,S0,dedx,J);
-	    //C=J*C*J.Transpose();
-	    C=C.SandwichMultiply(J);
-
-	    // Step reference trajectory by dz3
-	    Step(my_z,newz,dedx,S0); 	    
-	  }
-	  else{
-	    // Step current state by dz
-	    //Step(z,newz,dedx,S);
-	    
-	    // propagate error matrix to z-position of hit
-	    StepJacobian(z,newz,S0,dedx,J);
-	    //C=J*C*J.Transpose();
-	    C=C.SandwichMultiply(J);
-
-	    // Step reference trajectory by dz
-	    Step(z,newz,dedx,S0); 
 	  }
 	  
 	  // Wire position at current z
@@ -4945,6 +4967,12 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	    Hc(state_ty)=Hc_T(state_ty);	  
 	    Hc_T(state_tx)=Hc_T(state_x)*dz;
 	    Hc(state_tx)=Hc_T(state_tx);
+	  }
+	  else{
+	    Hc_T(state_ty)=0.;
+	    Hc(state_ty)=0.;
+	    Hc_T(state_tx)=0.;
+	    Hc(state_tx)=0.;
 	  }
       
 	  //H.Print();
@@ -5453,6 +5481,12 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                 double my_uy=ty-uy;
                 double denom=my_ux*my_ux+my_uy*my_uy;
 
+		// variables for dealing with propagation of S and C if we 
+		// need to use Brent's algorithm to find the doca to the wire
+		int num_steps=0;
+		double dz3=0.;
+		double my_dz=0.;
+		
                 // if the path length increment is small relative to the radius 
                 // of curvature, use a linear approximation to find dz	
                 bool do_brent=false;
@@ -5535,61 +5569,58 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                         // Change in z relative to where we started for this wire
                         dz=newz-z;
                     }
-                }
-
-                // Step the state and covariance through the field
-                int num_steps=0;
-                double dz3=0.;
-                double my_dz=0.;
-                if (fabs(dz)>mStepSizeZ){
-                    my_dz=(dz>0.0?1.0:-1.)*mStepSizeZ;
-                    num_steps=int(fabs(dz/my_dz));
-                    dz3=dz-num_steps*my_dz;
-
-                    double my_z=z;
-                    for (int m=0;m<num_steps;m++){
+		
+		    // Step the state and covariance through the field	  
+		    if (fabs(dz)>mStepSizeZ){
+		      my_dz=(dz>0.0?1.0:-1.)*mStepSizeZ;
+		      num_steps=int(fabs(dz/my_dz));
+		      dz3=dz-num_steps*my_dz;
+		      
+		      double my_z=z;
+		      for (int m=0;m<num_steps;m++){
                         newz=my_z+my_dz;
-
+			
                         // Step current state by my_dz
                         //Step(z,newz,dedx,S);
-
+			
                         // propagate error matrix to z-position of hit
                         StepJacobian(z,newz,S0,dedx,J);
                         //C=J*C*J.Transpose();
                         C=C.SandwichMultiply(J);
-
+			
                         // Step reference trajectory by my_dz
                         Step(z,newz,dedx,S0); 
 
                         my_z=newz;
-                    }
-
-                    newz=my_z+dz3;
-
-                    // Step current state by dz3
-                    //	  Step(my_z,newz,dedx,S);
-
-                    // propagate error matrix to z-position of hit
-                    StepJacobian(my_z,newz,S0,dedx,J);
+		      }
+		      
+		      newz=my_z+dz3;
+		      
+		      // Step current state by dz3
+		      //	  Step(my_z,newz,dedx,S);
+		      
+		      // propagate error matrix to z-position of hit
+		      StepJacobian(my_z,newz,S0,dedx,J);
+		      //C=J*C*J.Transpose();
+		      C=C.SandwichMultiply(J);	  
+		      
+		      // Step reference trajectory by dz3
+		      Step(my_z,newz,dedx,S0); 
+		    }
+		    else{
+		      // Step current state by dz
+		      //Step(z,newz,dedx,S);
+		      
+		      // propagate error matrix to z-position of hit
+		      StepJacobian(z,newz,S0,dedx,J);
                     //C=J*C*J.Transpose();
-                    C=C.SandwichMultiply(J);	  
-
-                    // Step reference trajectory by dz3
-                    Step(my_z,newz,dedx,S0); 
-                }
-                else{
-                    // Step current state by dz
-                    //Step(z,newz,dedx,S);
-
-                    // propagate error matrix to z-position of hit
-                    StepJacobian(z,newz,S0,dedx,J);
-                    //C=J*C*J.Transpose();
-                    C=C.SandwichMultiply(J);  
-
-                    // Step reference trajectory by dz
-                    Step(z,newz,dedx,S0); 
-                }
-
+		      C=C.SandwichMultiply(J);  
+		      
+		      // Step reference trajectory by dz
+		      Step(z,newz,dedx,S0); 
+		    }
+		}
+		    
                 // Wire position at current z
 		wirepos=origin;
 		wirepos+=(newz-z0w)*dir;
@@ -5627,6 +5658,12 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 		  H(state_ty)=H_T(state_ty);	  
 		  H_T(state_tx)=H_T(state_x)*dz;
 		  H(state_tx)=H_T(state_tx);
+		}
+		else{
+		  H_T(state_ty)=0.;
+		  H(state_ty)=0.;
+		  H_T(state_tx)=0.;
+		  H(state_tx)=0.;
 		}
 
                 //H.Print();
