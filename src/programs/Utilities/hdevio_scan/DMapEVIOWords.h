@@ -120,7 +120,7 @@ class DMapEVIOWords{
 
 		DMapEVIOWords();
 		~DMapEVIOWords();
-		
+		void AddROCIDLabels(void);
 		void ParseEvent(uint32_t *buff);
 		void DataWordStats(uint32_t *iptr, uint32_t *iend, uint32_t *word_stats);
 

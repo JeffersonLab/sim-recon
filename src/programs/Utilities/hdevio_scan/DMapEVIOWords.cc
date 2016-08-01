@@ -11,10 +11,12 @@
 #include "DMapEVIOWords.h"
 #include <JANA/JApplication.h>
 #include <JANA/JFactory.h>
+#include <JANA/JEventLoop.h>
 
 using namespace std;
 using namespace jana;
 
+#include <DANA/DApplication.h>
 #include <TTAB/DTranslationTable.h>
 
 #include <TDirectory.h>
@@ -48,6 +50,7 @@ DMapEVIOWords::DMapEVIOWords()
 	
 	daq_words_per_event->GetXaxis()->SetBinLabel(1 ,"Trigger Bank");
 	daq_words_per_event->GetXaxis()->SetBinLabel(99 ,"Residual");
+	AddROCIDLabels();
 	
 	daq_event_size->SetXTitle("Total event size (kB)");
 	daq_event_tdiff->SetXTitle("#deltat between events (ms)");
@@ -139,6 +142,45 @@ DMapEVIOWords::~DMapEVIOWords()
 {
 
 }
+
+//------------------
+// AddROCIDLabels
+//------------------
+void DMapEVIOWords::AddROCIDLabels(void)
+{
+	/// This is called just once to set the x-axis labels
+	/// of histograms whose x-axis is the rocid so that we
+	/// can label them by detector.
+	
+	DApplication dapp(0, NULL);
+	JEventLoop loop(&dapp);
+	DTranslationTable ttab(&loop);
+
+	// Loop over all rocid values
+	for(uint32_t rocid=2; rocid<99; rocid++){
+		// We don't actually know what slot/channel combos are defined
+		// for this so we loop until we find one.
+		bool found_chan = false;
+		daq_hits_per_event->GetXaxis()->SetBinLabel(rocid, "");
+		daq_words_per_event->GetXaxis()->SetBinLabel(rocid, "");
+		for(uint32_t slot=2; slot<24; slot++){
+			for(uint32_t channel=0; channel<3; channel++){
+				try{
+					DTranslationTable::csc_t csc = {rocid, slot, channel};
+					const DTranslationTable::DChannelInfo &chinfo = ttab.GetDetectorIndex(csc);
+					daq_hits_per_event->GetXaxis()->SetBinLabel(rocid, ttab.DetectorName(chinfo.det_sys).c_str());
+					daq_words_per_event->GetXaxis()->SetBinLabel(rocid, ttab.DetectorName(chinfo.det_sys).c_str());
+					found_chan = true;
+					break;
+				}catch(JException &e){
+					// Do nothing
+				}
+			}
+			if(found_chan) break;
+		}
+	}
+}
+
 
 //------------------
 // ParseEvent
