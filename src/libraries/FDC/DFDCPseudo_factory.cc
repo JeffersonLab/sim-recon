@@ -530,7 +530,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->AddAssociatedObject(u[upeaks[i].cluster]);
 	      
 	      newPseu->dE = dE;
-	      newPseu->q = q_cathodes;
+	      newPseu->q = q_from_pulse_height;
 	    
 	      // It can occur (although rarely) that newPseu->wire is NULL
 	      // which causes us to crash below. In these cases, we can't really
