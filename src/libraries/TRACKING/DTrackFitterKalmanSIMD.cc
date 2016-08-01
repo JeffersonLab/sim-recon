@@ -373,7 +373,10 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
             "Annealing parameter");
 
     FORWARD_PARMS_COV=false;
-    gPARMS->SetDefaultParameter("KALMAN:FORWARD_PARMS_COV",FORWARD_PARMS_COV);
+    gPARMS->SetDefaultParameter("KALMAN:FORWARD_PARMS_COV",FORWARD_PARMS_COV); 
+
+    CDC_VAR_SCALE_FACTOR=36.;
+    gPARMS->SetDefaultParameter("KALMAN:CDC_VAR_SCALE_FACTOR",CDC_VAR_SCALE_FACTOR);
 
     DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
     JCalibration *jcalib = dapp->GetJCalibration((loop->GetJEvent()).GetRunNumber());
@@ -1190,7 +1193,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
             }  
 	    if (ds>max_step_size) ds=max_step_size;  
             if (s_to_boundary<ds){
-                ds=s_to_boundary;
+                ds=s_to_boundary+EPS3;
                 stepped_to_boundary=true;
             }
             if(ds<MIN_STEP_SIZE)ds=MIN_STEP_SIZE; 	   
@@ -1339,7 +1342,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateCentral(int length, int &index,
         } 
         if(step_size>mStepSizeS) step_size=mStepSizeS; 
         if (s_to_boundary<step_size){
-            step_size=s_to_boundary;
+            step_size=s_to_boundary+EPS3;
             stepped_to_boundary=true;
         }
         if(step_size<MIN_STEP_SIZE)step_size=MIN_STEP_SIZE;
@@ -1615,7 +1618,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
     // Determine the step size based on energy loss 
     //  step=mStepSizeS*dz_ds;
     double max_step_size
-      =(z<endplate_z&& S(state_x)*S(state_x)+S(state_y)*S(state_y)>endplate_r2min)?mCDCInternalStepSize:mStepSizeS;
+      =(z<endplate_z&& S(state_x)*S(state_x)+S(state_y)*S(state_y)>endplate_r2min)?mCentralStepSize:mStepSizeS;
     double ds=mStepSizeS;
     if (z>cdc_origin[2]){
         if (!stepped_to_boundary){
@@ -1625,7 +1628,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
             } 
 	    if (ds>max_step_size) ds=max_step_size;
             if (s_to_boundary<ds){
-                ds=s_to_boundary;
+                ds=s_to_boundary+EPS3;
                 stepped_to_boundary=true;
             }
             if(ds<MIN_STEP_SIZE)ds=MIN_STEP_SIZE;
@@ -2885,7 +2888,7 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoiseCentral(double ds,
         double nu=MOLIERE_RATIO1*chi2c_p_sq/chi2a_p_sq;
         double one_plus_nu=1.+nu;
         // sig2_ms=chi2c*1e-6/(1.+F*F)*((one_plus_nu)/nu*log(one_plus_nu)-1.);
-        double sig2_ms=chi2c_p_sq*one_over_p_sq*MOLIERE_RATIO3
+        double sig2_ms=chi2c_p_sq*one_over_p_sq*MOLIERE_RATIO2
             *(one_plus_nu/nu*log(one_plus_nu)-1.);
 
         Q*=sig2_ms;
@@ -2938,7 +2941,6 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoise(double z, double ds,
         double sig2_ms=chi2c_p_sq*one_over_p_sq*MOLIERE_RATIO2
             *(one_plus_nu/nu*log(one_plus_nu)-1.);
 	
-
 	//   printf("fac %f %f %f\n",chi2c_factor,chi2a_factor,chi2a_corr);
 	//printf("omega %f\n",chi2c/chi2a);
 
@@ -4979,7 +4981,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	  
 	  // The next measurement
 	  double dm=0.39,tdrift=0.,tcorr=0.;
-	  if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){
+	  if (fit_type==kTimeBased || USE_PASS1_TIME_MODE)
+	    {
 	    // Find offset of wire with respect to the center of the
 	    // straw at this z position
 	    const DCDCWire *mywire=my_cdchits[cdc_index]->hit->wire;
@@ -4999,6 +5002,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double fdc_anneal_factor,
 	      -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
 	    double B=forward_traj[k_minus_1].B;
 	    ComputeCDCDrift(dphi,delta,tdrift,B,dm,Vc,tcorr);
+	
+	    Vc*=CDC_VAR_SCALE_FACTOR;  //de-weight CDC hits 
 
 	    //_DBG_ << "t " << tdrift << " d " << d << " delta " << delta << " dphi " << atan2(dy,dx)-mywire->origin.Phi() << endl;
 	    
@@ -5690,7 +5695,6 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
                         -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
                     double B=forward_traj[k_minus_1].B;
                     ComputeCDCDrift(dphi,delta,tdrift,B,dm,V,tcorr);
-		  
 		    //_DBG_ << tcorr << " " << dphi << " " << dm << endl;
                 }
                 // residual

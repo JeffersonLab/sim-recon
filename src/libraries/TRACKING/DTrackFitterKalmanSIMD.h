@@ -72,12 +72,13 @@
 #define MIN_CDC_HITS 2 
 
 // Functions of Moliere fraction F
-#define MOLIERE_RATIO1 50.0   // = 0.5/(1-F)
-#define MOLIERE_RATIO2 1.*5.05e-7 // = (scale factor)*1e-6/(1+F*F)
-#define MOLIERE_RATIO3 1.*5.05e-7 // = (scale factor)*1e-6/(1+F*F)
+#define MOLIERE_FRACTION 0.995
+#define MOLIERE_RATIO1 (0.5/(1.-MOLIERE_FRACTION)) // = 0.5/(1-F)
+#define MOLIERE_RATIO2 (1.e-6/(1.+MOLIERE_FRACTION*MOLIERE_FRACTION)) //scale_factor/(1+F*F)
+
 //#define DE_PER_STEP_WIRE_BASED 0.0005 // in GeV
 //#define DE_PER_STEP_TIME_BASED 0.0005 // in GeV
-#define DE_PER_STEP 0.0005 // in GeV
+#define DE_PER_STEP 0.001 // in GeV
 #define BFIELD_FRAC 0.0001
 #define MIN_STEP_SIZE 0.1 // in cm
 #define CDC_INTERNAL_STEP_SIZE 0.15 // in cm
@@ -499,6 +500,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double CDC_DRIFT_BSCALE_PAR1,CDC_DRIFT_BSCALE_PAR2;
   // parameters for CDC resolution function
   double CDC_RES_PAR1,CDC_RES_PAR2;
+  // parameter for scaling CDC hit variance for fits involving FDC hits.
+  double CDC_VAR_SCALE_FACTOR;
 
   vector<vector<double> >max_sag;
   vector<vector<double> >sag_phi_offset;
