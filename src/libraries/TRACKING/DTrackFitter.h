@@ -88,7 +88,8 @@ class DTrackFitter:public jana::JObject{
 		       double tdrift=0.0, double d=0.0,
 		       const DCDCTrackHit *cdc_hit=NULL,
 		       const DFDCPseudo *fdc_hit=NULL, double docaphi=0.0,
-		       double z=0.0, double tcorr=0.0):resi(resi),err(err),s(s),tdrift(tdrift),d(d),cdc_hit(cdc_hit),fdc_hit(fdc_hit),docaphi(docaphi),z(z),tcorr(tcorr){}
+		       double z=0.0, double tcorr=0.0,double resic=0.0,
+		       double errc=0.0):resi(resi),err(err),s(s),tdrift(tdrift),d(d),cdc_hit(cdc_hit),fdc_hit(fdc_hit),docaphi(docaphi),z(z),tcorr(tcorr),resic(resic),errc(errc){}
 		    double resi;	// residual of measurement
 		    double err;		// estimated error of measurement
 		    double s;
@@ -99,6 +100,8 @@ class DTrackFitter:public jana::JObject{
 		    double docaphi; // phi of doca in CDC straws
 		    double z;// z position at doca
 		    double tcorr; // drift time with correction for B
+		    double resic; // residual for FDC cathode measuremtns
+		    double errc;
 		};
 		
 		// Constructor and destructor

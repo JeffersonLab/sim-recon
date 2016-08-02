@@ -129,7 +129,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
          return MOMENTUM_OUT_OF_RANGE;
       }
 
-
       //C=J*(C*J_T)+Q;   
       C=Q.AddSym(C.SandwichMultiply(J));
 
@@ -261,7 +260,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
                   Klist.push_back(InvV*(C*H_T)); // Kalman gain
 
                   used_ids.push_back(id);
-                  fdc_updates[id].used_in_fit=true;
+                  fdc_used_in_fit[id]=true;
                }
 
                // loop over the remaining hits
@@ -314,7 +313,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
                         Klist.push_back(InvV*(C*H_T));     
 
                         used_ids.push_back(my_id);
-                        fdc_updates[my_id].used_in_fit=true;
+                        fdc_used_in_fit[my_id]=true;
 
                      }
                   }
@@ -333,7 +332,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
                   for (unsigned int m=0;m<Klist.size();m++){
                      double my_prob=probs[m]/prob_tot;
                      S+=my_prob*(Mlist[m]*Klist[m]);
-                     sum+=my_prob*(Klist[m]*Hlist[m]);
+                     sum-=my_prob*(Klist[m]*Hlist[m]);
                      sum2+=(my_prob*my_prob*Vlist[m])*MultiplyTranspose(Klist[m]);
                      if (DEBUG_LEVEL > 25) {
                         jout << " Adjusting state vector for FDC hit " << m << " with prob " << my_prob << " S:" << endl;
@@ -352,7 +351,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
                   fdc_updates[my_id].tdrift
                      =my_fdchits[my_id]->t-forward_traj[k].t*TIME_UNIT_CONVERSION-mT0;
                   fdc_updates[my_id].tcorr=fdc_updates[my_id].tdrift; // temporary!
-                  fdc_updates[my_id].residual=scale*Mlist[m];
                   fdc_updates[my_id].variance=scale*Vlist[m];
                   fdc_updates[my_id].doca=doca;
 
@@ -403,10 +401,9 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
                   fdc_updates[id].tdrift
                      =my_fdchits[id]->t-forward_traj[k].t*TIME_UNIT_CONVERSION-mT0;
                   fdc_updates[id].tcorr=fdc_updates[id].tdrift; // temporary!
-                  fdc_updates[id].residual=scale*Mdiff;
-                  fdc_updates[id].variance=scale*V;
+		  fdc_updates[id].variance=scale*V;
                   fdc_updates[id].doca=doca;
-                  fdc_updates[id].used_in_fit=true;
+                  fdc_used_in_fit[id]=true;
 
                   if (skip_plane==false){
                      // Update chi2 for this segment
@@ -759,11 +756,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
                      double scale=(skip_ring)?1.:(1.-H*K); 
                      cdc_updates[cdc_index].tdrift=tdrift;
                      cdc_updates[cdc_index].tcorr=tcorr;
-                     cdc_updates[cdc_index].residual=res*scale;
-                     cdc_updates[cdc_index].variance=Vc;
+		     cdc_updates[cdc_index].variance=Vc;
                      cdc_updates[cdc_index].doca=dm;
-                     cdc_updates[cdc_index].used_in_fit=true;
-                     if(tdrift < 0.) cdc_updates[cdc_index].used_in_fit=false;
+                     cdc_used_in_fit[cdc_index]=true;
+                     if(tdrift < 0.) cdc_used_in_fit[cdc_index]=false;
 
                      // Update chi2 and number of degrees of freedom for this hit
                      if (skip_ring==false && tdrift >= 0.){
@@ -995,10 +991,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
    unsigned int num_good=0; 
    unsigned int num_hits=num_cdc+max_num_fdc_used_in_fit;
    for (unsigned int j=0;j<num_cdc;j++){
-      if (cdc_updates[j].used_in_fit) num_good++;
+      if (cdc_used_in_fit[j]) num_good++;
    }
    for (unsigned int j=0;j<num_fdc;j++){
-      if (fdc_updates[j].used_in_fit) num_good++;
+      if (fdc_used_in_fit[j]) num_good++;
    }
    if (double(num_good)/double(num_hits)<MINIMUM_HIT_FRACTION){
       //_DBG_ <<endl;
@@ -1035,6 +1031,12 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
    DMatrix5x1 Ss=S;
    DMatrix5x5 Cs=C;
    DMatrix5x5 A,dC;
+
+
+   if (DEBUG_LEVEL>19){
+     jout << "---- Smoothed residuals ----" <<endl;
+     jout << setprecision(4); 
+   }
 
    for (unsigned int m=max-1;m>0;m--){
       if (forward_traj[m].h_id>0){
@@ -1086,6 +1088,16 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
             double tv=tx*sina+ty*cosa;
             double resi=v-(vpred_uncorrected+doca*(nz_sinalpha_plus_nr_cosalpha
                      -tv*sinalpha));
+	    
+	    if (DEBUG_LEVEL>19){
+	      jout << "Layer " << my_fdchits[id]->hit->wire->layer
+		   <<":  x "<< x  << " " <<  u*cosa+v*sina << " y " << y 
+		   << " " << v*cosa-u*sina 
+		   << " coordinate along wire " << v << " resi_c " <<resi
+		   << " wire position " << u
+		   <<endl;
+	    }
+	    
 
             // Variance from filter step
             double V=fdc_updates[id].variance;
@@ -1114,11 +1126,12 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
             }
 
             pulls.push_back(pull_t(resi,sqrt(V),
-                     forward_traj[m].s,
-                     fdc_updates[id].tdrift,
-                     fdc_updates[id].doca,
-                     NULL,my_fdchits[id]->hit,
-                     forward_traj[m].z));
+				   forward_traj[m].s,
+				   fdc_updates[id].tdrift,
+				   fdc_updates[id].doca,
+				   NULL,my_fdchits[id]->hit,0.,
+				   forward_traj[m].z   			   
+				   ));
          }
          else{
             unsigned int id=forward_traj[m].h_id-1000;
@@ -1133,7 +1146,8 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::SmoothForward(void){
             Cs=cdc_updates[id].C+A*(Cs-C)*A.Transpose();
 
             // Fill in pulls information for cdc hits
-            if(cdc_updates[id].used_in_fit == false) continue;
+            if(cdc_used_in_fit[id] == false) continue;
+
             FillPullsVectorEntry(Ss,Cs,forward_traj[m],my_cdchits[id],
                   cdc_updates[id]);
          }
