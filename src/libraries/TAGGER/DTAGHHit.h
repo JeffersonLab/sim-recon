@@ -23,7 +23,7 @@ class DTAGHHit:public jana::JObject{
       double time_tdc;
       double time_fadc;
       double npe_fadc;
-      bool has_fADC,has_TDC;
+      bool has_fADC, has_TDC, is_double;
 
       void toStrings(vector<pair<string,string> > &items)const{
         AddString(items, "counter_id", "%d", counter_id);
@@ -36,6 +36,7 @@ class DTAGHHit:public jana::JObject{
         AddString(items, "npe_fadc", "%f", npe_fadc);
         AddString(items, "has_fADC", "%d", (int)has_fADC);
         AddString(items, "has_TDC", "%d", (int)has_TDC);
+        AddString(items, "is_double", "%d", (int)is_double);
       }
 };
 

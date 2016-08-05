@@ -4,56 +4,36 @@
 // Created: Sat Aug  2 12:23:43 EDT 2014
 // Creator: jonesrt (on Linux gluex.phys.uconn.edu)
 //
-
+// nsparks moved original factory to DTAGHHit_factory_Calib.cc on Aug 3 2016.
 
 #include <iostream>
 #include <iomanip>
-#include <limits>
 using namespace std;
 
-#include "DTAGHDigiHit.h"
-#include "DTAGHTDCDigiHit.h"
-#include "DTAGHGeometry.h"
 #include "DTAGHHit_factory.h"
-#include <DAQ/Df250PulseIntegral.h>
-#include <DAQ/Df250PulsePedestal.h>
-
 using namespace jana;
-
-const int DTAGHHit_factory::k_counter_dead;
-const int DTAGHHit_factory::k_counter_good;
-const int DTAGHHit_factory::k_counter_bad;
-const int DTAGHHit_factory::k_counter_noisy;
 
 //------------------
 // init
 //------------------
 jerror_t DTAGHHit_factory::init(void)
 {
-   DELTA_T_ADC_TDC_MAX = 10.0; // ns
-   gPARMS->SetDefaultParameter("TAGHHit:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX,
-   "Maximum difference in ns between a (calibrated) fADC time and"
-   " F1TDC time for them to be matched in a single hit");
-   ADC_THRESHOLD = 1000.0; // ADC integral counts
-   gPARMS->SetDefaultParameter("TAGHHit:ADC_THRESHOLD",ADC_THRESHOLD,
-   "pedestal-subtracted pulse integral threshold");
+    // Set default config. parameters
+    MERGE_DOUBLES = true; // Merge in-time hits of adjacent counters?
+    gPARMS->SetDefaultParameter("TAGHHit:MERGE_DOUBLES", MERGE_DOUBLES,
+    "Merge in-time hits of adjacent counters?");
+    DELTA_T_DOUBLES_MAX = 0.5; // ns
+    gPARMS->SetDefaultParameter("TAGHHit:DELTA_T_DOUBLES_MAX", DELTA_T_DOUBLES_MAX,
+    "Maximum time difference in ns between hits in adjacent counters"
+    " for them to be merged into a single hit");
+    COUNTER_ID_DOUBLES_MAX = 192;
+    gPARMS->SetDefaultParameter("TAGHHit:COUNTER_ID_DOUBLES_MAX", COUNTER_ID_DOUBLES_MAX,
+    "Maximum counter id of a double hit");
+    USE_SIDEBAND_DOUBLES = false;
+    gPARMS->SetDefaultParameter("TAGHHit:USE_SIDEBAND_DOUBLES", USE_SIDEBAND_DOUBLES,
+    "Use sideband to estimate accidental coincidences between neighbors");
 
-   // initialize calibration constants
-   fadc_a_scale = 0;
-   fadc_t_scale = 0;
-   t_base = 0;
-   t_tdc_base=0;
-
-   // calibration constants stored by counter index
-   for (int counter = 0; counter <= TAGH_MAX_COUNTER; ++counter) {
-      fadc_gains[counter] = 0;
-      fadc_pedestals[counter] = 0;
-      fadc_time_offsets[counter] = 0;
-      tdc_time_offsets[counter] = 0;
-      counter_quality[counter] = 0;
-   }
-
-   return NOERROR;
+    return NOERROR;
 }
 
 //------------------
@@ -61,51 +41,11 @@ jerror_t DTAGHHit_factory::init(void)
 //------------------
 jerror_t DTAGHHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 {
-    // Only print messages for one thread whenever run number change
-    static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
-    static set<int> runs_announced;
-    pthread_mutex_lock(&print_mutex);
-    bool print_messages = false;
-    if(runs_announced.find(runnumber) == runs_announced.end()){
-        print_messages = true;
-        runs_announced.insert(runnumber);
-    }
-    pthread_mutex_unlock(&print_mutex);
-
-   /// set the base conversion scales
-   fadc_a_scale    = 1.1;        // pixels per count
-   fadc_t_scale    = 0.0625;     // ns per count
-   t_base           = 0.;      // ns
-
-   if(print_messages) jout << "In DTAGHHit_factory, loading constants..." << std::endl;
-
-   // load base time offset
-   map<string,double> base_time_offset;
-   if (eventLoop->GetCalib("/PHOTON_BEAM/hodoscope/base_time_offset",base_time_offset))
-       jout << "Error loading /PHOTON_BEAM/hodoscope/base_time_offset !" << endl;
-   if (base_time_offset.find("TAGH_BASE_TIME_OFFSET") != base_time_offset.end())
-       t_base = base_time_offset["TAGH_BASE_TIME_OFFSET"];
-   else
-       jerr << "Unable to get TAGH_BASE_TIME_OFFSET from /PHOTON_BEAM/hodoscope/base_time_offset !" << endl;
-
-    if (base_time_offset.find("TAGH_TDC_BASE_TIME_OFFSET") != base_time_offset.end())
-       t_tdc_base = base_time_offset["TAGH_TDC_BASE_TIME_OFFSET"];
-   else
-       jerr << "Unable to get TAGH_TDC_BASE_TIME_OFFSET from /PHOTON_BEAM/hodoscope/base_time_offset !" << endl;
-
-   if (load_ccdb_constants("fadc_gains", "gain", fadc_gains) &&
-       load_ccdb_constants("fadc_pedestals", "pedestal", fadc_pedestals) &&
-       load_ccdb_constants("fadc_time_offsets", "offset", fadc_time_offsets) &&
-       load_ccdb_constants("tdc_time_offsets", "offset", tdc_time_offsets) &&
-       load_ccdb_constants("counter_quality", "code", counter_quality) &&
-       load_ccdb_constants("tdc_timewalk", "c0", tdc_twalk_c0) &&
-       load_ccdb_constants("tdc_timewalk", "c1", tdc_twalk_c1) &&
-       load_ccdb_constants("tdc_timewalk", "c2", tdc_twalk_c2) &&
-       load_ccdb_constants("tdc_timewalk", "c3", tdc_twalk_c3))
-   {
-      return NOERROR;
-   }
-   return UNRECOVERABLE_ERROR;
+    //RF Period
+    vector<double> locBeamPeriodVector;
+    eventLoop->GetCalib("PHOTON_BEAM/RF/beam_period", locBeamPeriodVector);
+    dBeamBunchPeriod = locBeamPeriodVector[0];
+    return NOERROR;
 }
 
 //------------------
@@ -113,139 +53,87 @@ jerror_t DTAGHHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 //------------------
 jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
-   /// Generate DTAGHHit object for each DTAGHDigiHit object.
-   /// This is where the first set of calibration constants
-   /// is applied to convert from digitzed units into natural
-   /// units.
-   ///
-   /// Note that this code does NOT get called for simulated
-   /// data in HDDM format. The HDDM event source will copy
-   /// the precalibrated values directly into the _data vector.
+    // A scattered (brems.) electron can hit two adjacent TAGH counters, due
+    // to multiple scattering and small geometric overlap between some counters.
+    // These neighboring, coincident hits should be merged to avoid double counting.
+    // This factory outputs hits after merging double hits (doubles).
 
-   // extract the TAGH geometry
-   vector<const DTAGHGeometry*> taghGeomVect;
-   eventLoop->Get( taghGeomVect );
-   if (taghGeomVect.size() < 1)
-      return OBJECT_NOT_AVAILABLE;
-   const DTAGHGeometry& taghGeom = *(taghGeomVect[0]);
+    // Get (calibrated) TAGH hits
+    vector<const DTAGHHit*> hits;
+    loop->Get(hits, "Calib");
+    // Copy data, skip hits with no ADC info.
+    for (const auto& hit : hits) {
+        if (!hit->has_fADC) continue;
+        DTAGHHit *h = new DTAGHHit;
+        *h = *hit;
+        _data.push_back(h);
+    }
+    // Merge any double hits
+    if (MERGE_DOUBLES && _data.size() > 1)
+        MergeDoubles();
 
-   const DTTabUtilities* locTTabUtilities = NULL;
-   loop->GetSingle(locTTabUtilities);
+    return NOERROR;
+}
 
-   // First loop over all TAGHDigiHits and make DTAGHHits out of them
-   vector<const DTAGHDigiHit*> digihits;
-   loop->Get(digihits);
-   for (unsigned int i=0; i < digihits.size(); i++) {
-      const DTAGHDigiHit *digihit = digihits[i];
-      int counter = digihit->counter_id;
+// Is the hit combo a double hit?
+bool DTAGHHit_factory::IsDoubleHit(int counter_id_diff, double tdiff) {
+    if (!USE_SIDEBAND_DOUBLES) {
+        return (abs(counter_id_diff) == 1) && (fabs(tdiff) < DELTA_T_DOUBLES_MAX);
+    } else {
+        return (abs(counter_id_diff) == 1) && (tdiff > -DELTA_T_DOUBLES_MAX - dBeamBunchPeriod)
+        && (tdiff < DELTA_T_DOUBLES_MAX - dBeamBunchPeriod);
+    }
+}
 
-      // throw away hits from bad or noisy counters
-      int quality = counter_quality[counter];
-      if (quality == k_counter_bad || quality == k_counter_noisy)
-          continue;
+// Find indices of adjacent, in-time hits
+pair<vector<size_t>, vector<size_t> > DTAGHHit_factory::FindDoubles() {
+    pair<vector<size_t>, vector<size_t> > indices;
+    for (size_t i = 0; i < _data.size()-1; i++) {
+        const DTAGHHit* hit1 = _data[i];
+        if (hit1->counter_id > COUNTER_ID_DOUBLES_MAX) continue;
+        for (size_t j = i+1; j < _data.size(); j++) {
+            const DTAGHHit* hit2 = _data[j];
+            int counter_id_diff = hit1->counter_id-hit2->counter_id;
+            double tdiff = hit1->t-hit2->t;
+            if (IsDoubleHit(counter_id_diff,tdiff)) {
+                if (counter_id_diff == -1) {
+                    indices.first.push_back(i); indices.second.push_back(j);
+                } else {
+                    indices.first.push_back(j); indices.second.push_back(i);
+                }
+            }
+        }
+    }
+    return indices;
+}
 
-      // Throw away hits where the fADC timing algorithm failed
-      //if (digihit->pulse_time == 0) continue;
-      // The following condition signals an error state in the flash algorithm
-      // Do not make hits out of these
-      const Df250PulsePedestal* PPobj = NULL;
-      digihit->GetSingle(PPobj);
-      double pulse_peak = 0.0;
-      if (PPobj != NULL){
-          if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
-          pulse_peak = PPobj->pulse_peak - PPobj->pedestal;
-      }
+// Is index in list?
+bool DTAGHHit_factory::In(vector<size_t> &indices, size_t index) {
+    for (const auto& val : indices) {
+        if (index == val) return true;
+    }
+    return false;
+}
 
-      // Get pedestal, prefer associated event pedestal if it exists,
-      // otherwise, use the average pedestal from CCDB
-      double pedestal = fadc_pedestals[counter];
-      const Df250PulseIntegral* PIobj = NULL;
-      digihit->GetSingle(PIobj);
-      if (PIobj != NULL) {
-          // the measured pedestal must be scaled by the ratio of the number
-          // of samples used to calculate the integral and the pedestal
-          // Changed to conform to D. Lawrence changes Dec. 4 2014
-          double ped_sum = (double)PIobj->pedestal;
-          double nsamples_integral = (double)PIobj->nsamples_integral;
-          double nsamples_pedestal = (double)PIobj->nsamples_pedestal;
-          pedestal          = ped_sum * nsamples_integral/nsamples_pedestal;
-      }
-
-      // Subtract pedestal from pulse integral
-      double A = digihit->pulse_integral;
-      A -= pedestal;
-      // Throw away hits with small pedestal-subtracted integrals
-      if (A < ADC_THRESHOLD) continue;
-
-      DTAGHHit *hit = new DTAGHHit;
-      hit->counter_id = counter;
-      double Elow = taghGeom.getElow(counter);
-      double Ehigh = taghGeom.getEhigh(counter);
-      hit->E = (Elow + Ehigh)/2;
-
-      // Apply calibration constants
-      double T = digihit->pulse_time;
-      hit->integral = A;
-      hit->pulse_peak = pulse_peak;
-      hit->npe_fadc = A * fadc_a_scale * fadc_gains[counter];
-      hit->time_fadc = T * fadc_t_scale - fadc_time_offsets[counter] + t_base;
-      hit->time_tdc = numeric_limits<double>::quiet_NaN();
-      hit->t = hit->time_fadc;
-      hit->has_fADC = true;
-      hit->has_TDC = false;
-
-      hit->AddAssociatedObject(digihit);
-      _data.push_back(hit);
-   }
-
-   // Next, loop over TDC hits, matching them to the existing fADC hits
-   // where possible and updating their time information. If no match is
-   // found, then create a new hit with just the TDC info.
-   vector<const DTAGHTDCDigiHit*> tdcdigihits;
-   loop->Get(tdcdigihits);
-   for (unsigned int i=0; i < tdcdigihits.size(); i++) {
-      const DTAGHTDCDigiHit *digihit = tdcdigihits[i];
-
-      // Apply calibration constants here
-      int counter = digihit->counter_id;
-      double T = locTTabUtilities->Convert_DigiTimeToNs_F1TDC(digihit) - tdc_time_offsets[counter] + t_tdc_base;
-
-      // Look for existing hits to see if there is a match
-      // or create new one if there is no match
-      DTAGHHit *hit = 0;
-      for (unsigned int j=0; j < _data.size(); ++j) {
-          if (_data[j]->counter_id == counter &&
-              fabs(T - _data[j]->time_fadc) < DELTA_T_ADC_TDC_MAX)
-              {
-                  hit = _data[j];
-              }
-          }
-          if (hit == 0) {
-              hit = new DTAGHHit;
-              hit->counter_id = counter;
-              double Elow = taghGeom.getElow(counter);
-              double Ehigh = taghGeom.getEhigh(counter);
-              hit->E = (Elow + Ehigh)/2;
-              hit->time_fadc = numeric_limits<double>::quiet_NaN();
-              hit->integral = numeric_limits<double>::quiet_NaN();
-              hit->pulse_peak = numeric_limits<double>::quiet_NaN();
-              hit->npe_fadc = numeric_limits<double>::quiet_NaN();
-              hit->has_fADC = false;
-              _data.push_back(hit);
-          }
-          hit->time_tdc = T;
-          hit->has_TDC = true;
-          // apply time-walk corrections
-          double c0 = tdc_twalk_c0[counter]; double c1 = tdc_twalk_c1[counter];
-          double c2 = tdc_twalk_c2[counter]; double c3 = tdc_twalk_c3[counter];
-          double P = hit->pulse_peak;
-          if (P > 0.0) {
-              T -= (P <= c3 || c3 <= 0.0) ? c0 + c1/pow(P,c2) : c0 +  c1*(1.0+c2)/pow(c3,c2) - c1*c2*P/pow(c3,1.0+c2);
-          }
-          hit->t = T;
-          hit->AddAssociatedObject(digihit);
-   }
-   return NOERROR;
+// Merge adjacent, in-time hits
+void DTAGHHit_factory::MergeDoubles() {
+    pair<vector<size_t>, vector<size_t> > indices = FindDoubles();
+    if (indices.first.size() == 0) return; // Nothing to merge
+    vector<DTAGHHit*> new_data;
+    for (size_t i = 0; i < _data.size(); i++) {
+        if (!In(indices.first,i) && !In(indices.second,i)) new_data.push_back(_data[i]);
+    }
+    vector<DTAGHHit*> merged_data;
+    for (size_t i = 0; i < indices.first.size(); i++) {
+        DTAGHHit* hit1 = _data[indices.first[i]];
+        const DTAGHHit* hit2 = _data[indices.second[i]];
+        hit1->t = 0.5*(hit1->t + hit2->t); hit1->E = 0.5*(hit1->E + hit2->E);
+        hit1->is_double = true;
+        merged_data.push_back(hit1);
+    }
+    for (const auto& d : merged_data) new_data.push_back(d);
+    _data = new_data;
+    if (_data.size() > 1) MergeDoubles(); // Merge any new doubles
 }
 
 //------------------
@@ -262,26 +150,4 @@ jerror_t DTAGHHit_factory::erun(void)
 jerror_t DTAGHHit_factory::fini(void)
 {
     return NOERROR;
-}
-
-//---------------------
-// load_ccdb_constants
-//---------------------
-bool DTAGHHit_factory::load_ccdb_constants(
-   std::string table_name,
-   std::string column_name,
-   double result[TAGH_MAX_COUNTER+1])
-{
-   std::vector< std::map<std::string, double> > table;
-   std::string ccdb_key = "/PHOTON_BEAM/hodoscope/" + table_name;
-   if (eventLoop->GetCalib(ccdb_key, table))
-     {
-       jout << "Error loading " << ccdb_key << " from ccdb!" << std::endl;
-       return false;
-     }
-   for (unsigned int i=0; i < table.size(); ++i) {
-      int counter = (table[i])["id"];
-      result[counter] = (table[i])[column_name];
-   }
-   return true;
 }
