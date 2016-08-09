@@ -81,4 +81,6 @@ int RFMacro_SignalPeriod(void)
 		locHist->GetYaxis()->SetLabelSize(0.05);
 		locHist->Draw();
 	}
+
+    return 1;
 }
