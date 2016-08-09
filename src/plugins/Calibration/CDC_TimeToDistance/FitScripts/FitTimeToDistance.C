@@ -247,15 +247,13 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
     gSystem->ClosePipe(locInputFile);
 
     sprintf(command, "ccdb dump /CDC/cdc_drift_table:%i:NoBField", run);
-    FILE* locInputFile = gSystem->OpenPipe(command, "r");
+    locInputFile = gSystem->OpenPipe(command, "r");
     if(locInputFile == NULL)
         return 0;
     //get the first (comment) line
-    char buff[1024];
     if(fgets(buff, sizeof(buff), locInputFile) == NULL)
         return 0;
     //get the remaining lines
-    double value;
     while(fgets(buff, sizeof(buff), locInputFile) != NULL){
         istringstream locConstantsStream(buff);
         while (locConstantsStream >> value){
