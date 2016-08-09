@@ -1,6 +1,5 @@
 
-
-plot_results(char filename[255]="/home/dalton/work/BCAL/rootfiles/analysis_highlevel/bcal_atten_gain_003182.root", int module=1)
+void plot_results(char filename[255], int module=1)
 {
 
 	gStyle->SetPadRightMargin(0.15);
@@ -10,8 +9,27 @@ plot_results(char filename[255]="/home/dalton/work/BCAL/rootfiles/analysis_highl
 	TFile *_file0 = TFile::Open(filename);
 
 	//	TDirectory *main = gDirectory;  // save current directory
-	bcalgainratio->cd();
+    //Goto Path
+    TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("bcalgainratio");
+    if(!locDirectory)
+        return;
+    locDirectory->cd();
 
+    // load directories
+    TH1I *hist_attenlength  = (TH1I *)gDirectory->Get("hist_attenlength");
+    TH1I *hist_gainratio  = (TH1I *)gDirectory->Get("hist_gainratio");
+    TH1I *hist_attenlength_err  = (TH1I *)gDirectory->Get("hist_attenlength_err");
+    TH1I *hist_gainratio_err  = (TH1I *)gDirectory->Get("hist_gainratio_err");
+    TH1I *hist_attenlength_relerr  = (TH1I *)gDirectory->Get("hist_attenlength_relerr");
+    TH1I *hist_gainratio_relerr  = (TH1I *)gDirectory->Get("hist_gainratio_relerr");
+
+    TH2I *hist2D_attenlength  = (TH2I *)gDirectory->Get("hist2D_attenlength");
+    TH2I *hist2D_gainratio  = (TH2I *)gDirectory->Get("hist2D_gainratio");
+    TH2I *EvsZ_layer1  = (TH2I *)gDirectory->Get("EvsZ_layer1");
+    TH2I *EvsZ_layer2  = (TH2I *)gDirectory->Get("EvsZ_layer2");
+    TH2I *EvsZ_layer3  = (TH2I *)gDirectory->Get("EvsZ_layer3");
+    TH2I *EvsZ_layer4  = (TH2I *)gDirectory->Get("EvsZ_layer4");
+    
 
 	TCanvas *results = new TCanvas("results","Results of fit",800,800);
 	results->Divide(2,2,0.001,0.001);
