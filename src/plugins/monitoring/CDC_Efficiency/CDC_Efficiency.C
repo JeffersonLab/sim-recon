@@ -45,7 +45,7 @@
     TH2D *axesDOCA0 = (TH2D *)gDirectory->Get("axesDOCA0");
     if(!axesDOCA0) axesDOCA0 = new TH2D("axesDOCA0", "CDC Efficiency for DOCA #in [0.0, 0.1 cm]", 100, -65.0, 65.0, 100, -65.0, 65.0);
 
-    Float_t minScale = 0.5; Float_t maxScale = 1.0;
+    minScale = 0.5;   maxScale = 1.0;
     axesDOCA0->SetStats(0);
     axesDOCA0->Fill(100,100); // without this, the color ramp is not drawn
     axesDOCA0->GetZaxis()->SetRangeUser(minScale, maxScale);
@@ -77,7 +77,7 @@
     TH2D *axesDOCA1 = (TH2D *)gDirectory->Get("axesDOCA1");
     if(!axesDOCA1) axesDOCA1 = new TH2D("axesDOCA1", "CDC Efficiency for DOCA #in [0.1, 0.2 cm]", 100, -65.0, 65.0, 100, -65.0, 65.0);
 
-    Float_t minScale = 0.5; Float_t maxScale = 1.0;
+    minScale = 0.5;  maxScale = 1.0;
     axesDOCA1->SetStats(0);
     axesDOCA1->Fill(100,100); // without this, the color ramp is not drawn
     axesDOCA1->GetZaxis()->SetRangeUser(minScale, maxScale);
@@ -109,7 +109,7 @@
     TH2D *axesDOCA2 = (TH2D *)gDirectory->Get("axesDOCA2");
     if(!axesDOCA2) axesDOCA2 = new TH2D("axesDOCA2", "CDC Efficiency for DOCA #in [0.2, 0.3 cm]", 100, -65.0, 65.0, 100, -65.0, 65.0);
 
-    Float_t minScale = 0.5; Float_t maxScale = 1.0;
+    minScale = 0.5;  maxScale = 1.0;
     axesDOCA2->SetStats(0);
     axesDOCA2->Fill(100,100); // without this, the color ramp is not drawn
     axesDOCA2->GetZaxis()->SetRangeUser(minScale, maxScale);
@@ -141,7 +141,7 @@
     TH2D *axesDOCA3 = (TH2D *)gDirectory->Get("axesDOCA3");
     if(!axesDOCA3) axesDOCA3 = new TH2D("axesDOCA3", "CDC Efficiency for DOCA #in [0.3, 0.4 cm]", 100, -65.0, 65.0, 100, -65.0, 65.0);
 
-    Float_t minScale = 0.5; Float_t maxScale = 1.0;
+    minScale = 0.5;  maxScale = 1.0;
     axesDOCA3->SetStats(0);
     axesDOCA3->Fill(100,100); // without this, the color ramp is not drawn
     axesDOCA3->GetZaxis()->SetRangeUser(minScale, maxScale);
@@ -173,7 +173,7 @@
     TH2D *axesDOCA4 = (TH2D *)gDirectory->Get("axesDOCA4");
     if(!axesDOCA4) axesDOCA4 = new TH2D("axesDOCA4", "CDC Efficiency for DOCA #in [0.4, 0.5 cm]", 100, -65.0, 65.0, 100, -65.0, 65.0);
 
-    Float_t minScale = 0.5; Float_t maxScale = 1.0;
+    minScale = 0.5;  maxScale = 1.0;
     axesDOCA4->SetStats(0);
     axesDOCA4->Fill(100,100); // without this, the color ramp is not drawn
     axesDOCA4->GetZaxis()->SetRangeUser(minScale, maxScale);
@@ -205,7 +205,7 @@
     TH2D *axesDOCA5 = (TH2D *)gDirectory->Get("axesDOCA5");
     if(!axesDOCA5) axesDOCA5 = new TH2D("axesDOCA5", "CDC Efficiency for DOCA #in [0.5, 0.6 cm]", 100, -65.0, 65.0, 100, -65.0, 65.0);
 
-    Float_t minScale = 0.5; Float_t maxScale = 1.0;
+    minScale = 0.5;  maxScale = 1.0;
     axesDOCA5->SetStats(0);
     axesDOCA5->Fill(100,100); // without this, the color ramp is not drawn
     axesDOCA5->GetZaxis()->SetRangeUser(minScale, maxScale);
@@ -237,7 +237,7 @@
     TH2D *axesDOCA6 = (TH2D *)gDirectory->Get("axesDOCA6");
     if(!axesDOCA6) axesDOCA6 = new TH2D("axesDOCA6", "CDC Efficiency for DOCA #in [0.6, 0.7 cm]", 100, -65.0, 65.0, 100, -65.0, 65.0);
 
-    Float_t minScale = 0.5; Float_t maxScale = 1.0;
+    minScale = 0.5;  maxScale = 1.0;
     axesDOCA6->SetStats(0);
     axesDOCA6->Fill(100,100); // without this, the color ramp is not drawn
     axesDOCA6->GetZaxis()->SetRangeUser(minScale, maxScale);
@@ -268,8 +268,8 @@
     // Draw axes
     TH2D *axesDOCA7 = (TH2D *)gDirectory->Get("axesDOCA7");
     if(!axesDOCA7) axesDOCA7 = new TH2D("axesDOCA7", "CDC Efficiency for DOCA #in [0.7, 0.78 cm]", 100, -65.0, 65.0, 100, -65.0, 65.0);
-
-    Float_t minScale = 0.5; Float_t maxScale = 1.0;
+    
+    minScale = 0.5;  maxScale = 1.0;
     axesDOCA7->SetStats(0);
     axesDOCA7->Fill(100,100); // without this, the color ramp is not drawn
     axesDOCA7->GetZaxis()->SetRangeUser(minScale, maxScale);
