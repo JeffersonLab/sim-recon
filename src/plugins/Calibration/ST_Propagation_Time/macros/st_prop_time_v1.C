@@ -90,6 +90,7 @@ void st_prop_time_v1(char*input_filename)
       h2_ss->GetXaxis()->SetRangeUser(0.,40.0);
       h2_ss->Draw("colz");
       h2_ss->Fit("pol1");		
+      TF1 *pol1 = h2_ss->GetFunction("pol1");
       t_z_ss_fit_slope[j][1] = pol1->GetParameter(1);
       t_z_ss_fit_slope_err[j][1] = pol1->GetParError(1);
       t_z_ss_fit_intercept[j][0] = pol1->GetParameter(0);
@@ -111,6 +112,7 @@ void st_prop_time_v1(char*input_filename)
      
 
       h2_bs->Fit("pol1");
+      pol1 = h2_bs->GetFunction("pol1");
       t_z_bs_fit_slope[j][1] = pol1->GetParameter(1);
       t_z_bs_fit_slope_err[j][1] = pol1->GetParError(1);
       t_z_bs_fit_intercept[j][0] = pol1->GetParameter(0);
@@ -131,6 +133,7 @@ void st_prop_time_v1(char*input_filename)
       h2_ns->GetXaxis()->SetTitle("Path Length (cm)");
       h2_ns->GetXaxis()->SetRangeUser(43.,60.0);
       h2_ns->Fit("pol1");
+      pol1 = h2_ns->GetFunction("pol1");
       t_z_ns_fit_slope[j][1] = pol1->GetParameter(1);
       t_z_ns_fit_slope_err[j][1] = pol1->GetParError(1);
       t_z_ns_fit_intercept[j][0] = pol1->GetParameter(0);
