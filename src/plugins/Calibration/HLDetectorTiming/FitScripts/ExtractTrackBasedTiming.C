@@ -1,6 +1,7 @@
+namespace ExtractTrackBasedTimingNS {
 TFile * thisFile;
 
-TH1I * Get1DHistogram(const char * plugin, const char * directoryName, const char * name){
+TH1I * ExtractTrackBasedTimingNS::Get1DHistogram(const char * plugin, const char * directoryName, const char * name){
     TH1I * histogram;
     TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
     thisFile->GetObject(fullName, histogram);
@@ -14,13 +15,14 @@ TH1I * Get1DHistogram(const char * plugin, const char * directoryName, const cha
 TH2I * Get2DHistogram(const char * plugin, const char * directoryName, const char * name){
     TH2I * histogram;
     TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
-    histogram = thisFile->GetObject(fullName, histogram);
+    thisFile->GetObject(fullName, histogram);
     if (histogram == 0){
         cout << "Unable to find histogram " << fullName.Data() << endl;
         return NULL;
     }
     return histogram;
 }
+};
 
 void GetCCDBConstants(TString path, Int_t run, TString variation, vector<double>& container, Int_t column = 1){
     char command[256];
@@ -101,8 +103,8 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
     // set "prefix" in case you want to ship the txt files elsewhere...
     cout << "Performing TDC/ADC timing fits for File: " << fileName.Data() << " Run: " << runNumber << " Variation: " << variation.Data() << endl;
 
-    thisFile = TFile::Open( fileName , "UPDATE");
-    if (thisFile == 0) {
+    ExtractTrackBasedTimingNS::thisFile = TFile::Open( fileName , "UPDATE");
+    if (ExtractTrackBasedTimingNS::thisFile == 0) {
         cout << "Unable to open file " << fileName.Data() << "...Exiting" << endl;
         return;
     }
@@ -165,15 +167,15 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
     //First just a simple check to see if we have the appropriate data
     bool useRF = false;
     double RF_Period = 4.0080161;
-    TH1I *testHist = Get1DHistogram("HLDetectorTiming", "TAGH_TDC_RF_Compare","Counter ID 001");
+    TH1I *testHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TAGH_TDC_RF_Compare","Counter ID 001");
     if (testHist != NULL){ // Not great since we rely on channel 1 working, but can be craftier later.
         cout << "Using RF Times for Calibration" << endl;
         useRF = true;
     }
     ofstream outFile;
     TH2I *thisHist; 
-    thisHist = Get2DHistogram("HLDetectorTiming", "TRACKING", "TAGM - SC Target Time");
-    if (useRF) thisHist = Get2DHistogram("HLDetectorTiming", "TRACKING", "TAGM - RFBunch Time");
+    thisHist = ExtractTrackBasedTimingNS::Get2DHistogram("HLDetectorTiming", "TRACKING", "TAGM - SC Target Time");
+    if (useRF) thisHist = ExtractTrackBasedTimingNS::Get2DHistogram("HLDetectorTiming", "TRACKING", "TAGM - RFBunch Time");
     if (thisHist != NULL){
         //Statistics on these histograms are really quite low we will have to rebin and do some interpolation
         outFile.open(prefix + "tagm_tdc_timing_offsets.txt", ios::out | ios::trunc);
@@ -293,8 +295,8 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
 
     }
 
-    thisHist = Get2DHistogram("HLDetectorTiming", "TRACKING", "TAGH - SC Target Time");
-    if (useRF) thisHist = Get2DHistogram("HLDetectorTiming", "TRACKING", "TAGH - RFBunch Time");
+    thisHist = ExtractTrackBasedTimingNS::Get2DHistogram("HLDetectorTiming", "TRACKING", "TAGH - SC Target Time");
+    if (useRF) thisHist = ExtractTrackBasedTimingNS::Get2DHistogram("HLDetectorTiming", "TRACKING", "TAGH - RFBunch Time");
     if(thisHist != NULL){
         outFile.open(prefix + "tagh_tdc_timing_offsets.txt", ios::out | ios::trunc);
         outFile.close(); // clear file
@@ -352,7 +354,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
             cout << "Type\tChannel\tvalueToUse\toldValue\tmeanOffset\tTotal" << endl;
         }
         for (int i = 1 ; i <= nBinsX; i++){
-            valueToUse = selectedTAGHOffset->GetBinContent(i);
+            double valueToUse = selectedTAGHOffset->GetBinContent(i);
             if (useRF) valueToUse *= RF_Period;
             //if (valueToUse == 0) valueToUse = meanOffset;
             outFile.open(prefix + "tagh_tdc_timing_offsets.txt", ios::out | ios::app);
@@ -383,7 +385,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
         TH1F * selectedSCSectorOffsetDistribution = new TH1F("selectedSCSectorOffsetDistribution", "Selected TDC-RF offset;Time;Entries", 100, -3.0, 3.0);
         TF1* f = new TF1("f","pol0(0)+gaus(1)", -3.0, 3.0);
         for (int sector = 1; sector <= 30; sector++){
-            TH1I *scRFHist = Get1DHistogram("HLDetectorTiming", "SC_Target_RF_Compare", Form("Sector %.2i", sector));
+            TH1I *scRFHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "SC_Target_RF_Compare", Form("Sector %.2i", sector));
             if (scRFHist == NULL) continue;
             //Do the fit
             TFitResultPtr fr = scRFHist->Fit("pol0", "SQ", "", -2, 2);
@@ -437,7 +439,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
         outFile.close();
     }
 
-    TH1I *this1DHist = Get1DHistogram("HLDetectorTiming", "TRACKING", "TOF - RF Time");
+    TH1I *this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "TOF - RF Time");
     if(this1DHist != NULL){
         //Gaussian
         Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
@@ -452,7 +454,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
         outFile.close();
     }
 
-    this1DHist = Get1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - RF Time");
+    this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "BCAL - RF Time");
     if(this1DHist != NULL){
         //Gaussian
         Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
@@ -467,7 +469,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
         outFile.close();
     }
 
-    this1DHist = Get1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - RF Time");
+    this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "FCAL - RF Time");
     if(this1DHist != NULL){
         //Gaussian
         Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
@@ -481,7 +483,7 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
         outFile.close();
     }
 
-    this1DHist = Get1DHistogram("HLDetectorTiming", "TRACKING", "Earliest CDC Time Minus Matched SC Time");
+    this1DHist = ExtractTrackBasedTimingNS::Get1DHistogram("HLDetectorTiming", "TRACKING", "Earliest CDC Time Minus Matched SC Time");
     if(this1DHist != NULL){
         //Gaussian
         Double_t maximum = this1DHist->GetBinCenter(this1DHist->GetMaximumBin());
@@ -494,6 +496,6 @@ void ExtractTrackBasedTiming(TString fileName = "hd_root.root", int runNumber = 
         outFile << cdc_t_base - mean - meanSCOffset << endl;
         outFile.close();
     }
-    thisFile->Write();
+    ExtractTrackBasedTimingNS::thisFile->Write();
     return;
     }

@@ -249,4 +249,6 @@ int RFMacro_FineTimeOffsets(int locRunNumber, string locVariation = "default")
 	locOutputFileStream2.open("rf_time_offset_vars.txt");
 	locOutputFileStream2 << "0.0 " << std::setprecision(8) << locTimeOffsetVariance_TAGH << " " << locTimeOffsetVariance_PSC << " " << locTimeOffsetVariance_FDC << endl;
 	locOutputFileStream2.close();
+
+    return 1;
 }

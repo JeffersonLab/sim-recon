@@ -85,7 +85,7 @@
   c2->Draw();
   c2->Update();
   if(!gPad) return;
-  TCanvas *c2 = gPad->GetCanvas();
+  c2 = gPad->GetCanvas();
   c2->Divide(3,1);
   
   // Occupancy Histos 

@@ -1,6 +1,6 @@
 // Script to extract time-walk constants for the BCAL
 
-namespace ExtractTimeOffsetsAndCEff {
+namespace ExtractTimeOffsetsAndCEffNS {
   //Leave this global so the accesors don't need the pointer as an argument
   TFile *thisFile;
 
@@ -20,7 +20,7 @@ namespace ExtractTimeOffsetsAndCEff {
   TH2I * Get2DHistogram(const char * plugin, const char * directoryName, const char * name){
     TH2I * histogram;
     TString fullName = TString(plugin) + "/" + TString(directoryName) + "/" + TString(name);
-    histogram = thisFile->GetObject(fullName, histogram);
+    thisFile->GetObject(fullName, histogram);
     if (histogram == 0){
         cout << "Unable to find histogram " << fullName.Data() << endl;
         return NULL;
@@ -33,14 +33,14 @@ namespace ExtractTimeOffsetsAndCEff {
 void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"){
 
     // Open our input and output file
-    ExtractTimeOffsetsAndCEff::thisFile = TFile::Open(filename);
+    ExtractTimeOffsetsAndCEffNS::thisFile = TFile::Open(filename);
     TFile *outputFile = TFile::Open("BCALTimeOffsetAndCEff_Results.root", "RECREATE");
     outputFile->mkdir("Fits");
     outputFile->mkdir("ResultOverview");
 
     // Check to make sure it is open
-    if (ExtractTimeOffsetsAndCEff::thisFile == 0) {
-        cout << "Unable to open file " << fileName.Data() << "...Exiting" << endl;
+    if (ExtractTimeOffsetsAndCEffNS::thisFile == 0) {
+        cout << "Unable to open file " << filename.Data() << "...Exiting" << endl;
         return;
     }
 
@@ -82,7 +82,7 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
     if(locInputFile == NULL)
         return 0;
     //get the first (comment) line
-    char buff[1024];
+    //char buff[1024];
     if(fgets(buff, sizeof(buff), locInputFile) == NULL)
         return 0;
     //get the remaining lines
@@ -120,7 +120,7 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
     TH1D * selectedBCALOffset = new TH1D("selectedBCALOffset", "Selected Global BCAL Offset; CCDB Index; Offset [ns]", 768, 0.5, 768 + 0.5);
     TH1I * BCALOffsetDistribution = new TH1I("BCALOffsetDistribution", "Global BCAL Offset; Global Offset [ns]; Entries", 100, -10, 10);
 
-    thisHist = ExtractTimeOffsetsAndCEff::Get2DHistogram("BCAL_Global_Offsets", "Target Time", "Target Time Minus RF Time Vs. Cell Number");
+    auto thisHist = ExtractTimeOffsetsAndCEffNS::Get2DHistogram("BCAL_Global_Offsets", "Target Time", "Target Time Minus RF Time Vs. Cell Number");
     if(thisHist != NULL){
         int nBinsX = thisHist->GetNbinsX();
         int nBinsY = thisHist->GetNbinsY();
@@ -166,7 +166,7 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
 
                 // These histograms are created on the fly in the plugin, so there is a chance that they do not exist, in which case the pointer will be NULL
 
-                TH2I *h_offsets   = ExtractTimeOffsetsAndCEff::Get2DHistogram ("BCAL_TDC_Offsets", "Z Position", name);
+                TH2I *h_offsets   = ExtractTimeOffsetsAndCEffNS::Get2DHistogram ("BCAL_TDC_Offsets", "Z Position", name);
 
                 // Use FitSlicesY routine to extract the mean of each x bin
                 TObjArray ySlices;
@@ -204,7 +204,7 @@ void ExtractTimeOffsetsAndCEff(int run = 2931, TString filename = "hd_root.root"
     channel_global_offset_File.close();
     tdiff_u_d_File.close();
     outputFile->Write();
-    ExtractTimeOffsetsAndCEff::thisFile->Close();
+    ExtractTimeOffsetsAndCEffNS::thisFile->Close();
     return;
 }
 

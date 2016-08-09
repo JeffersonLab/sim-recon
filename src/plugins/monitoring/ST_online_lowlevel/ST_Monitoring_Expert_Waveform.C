@@ -21,26 +21,27 @@
   for(unsigned int i = 0; i < NCHANNELS; i++)
     {
       // Grab 1D histograms for root file 
-      TH1I *h_amp_vs_sampl_chan[i]       = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan_%i", i+1));
-      TH1I *h_amp_vs_sampl_chan150[i]    = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan150_%i", i+1));
-      TH1I *h_amp_vs_sampl_chan1000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan1000_%i", i+1));
-      TH1I *h_amp_vs_sampl_chan2000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan2000_%i", i+1));
-      TH1I *h_amp_vs_sampl_chan3000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan3000_%i", i+1));
-      TH1I *h_amp_vs_sampl_chan4000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan4000_%i", i+1));
+      h_amp_vs_sampl_chan[i]       = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan_%i", i+1));
+      h_amp_vs_sampl_chan150[i]    = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan150_%i", i+1));
+      h_amp_vs_sampl_chan1000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan1000_%i", i+1));
+      h_amp_vs_sampl_chan2000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan2000_%i", i+1));
+      h_amp_vs_sampl_chan3000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan3000_%i", i+1));
+      h_amp_vs_sampl_chan4000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan4000_%i", i+1));
     }
 
 
   // Create the canvas c1
+  TCanvas *c1 = NULL;
   if(gPad == NULL)
     {
-      TCanvas *c1 = new TCanvas("c1","Start Counter Expert Waveform Histograms( 100 < Pulse height <= 150)", 200, 10, 600, 480);
+      c1 = new TCanvas("c1","Start Counter Expert Waveform Histograms( 100 < Pulse height <= 150)", 200, 10, 600, 480);
       c1->cd(0);
       c1->Draw();
       c1->Update();
     }
   
   if(!gPad) return;
-  TCanvas *c1 = gPad->GetCanvas();
+  c1 = gPad->GetCanvas();
   c1->Divide(5,6);
 
   for(unsigned int i = 0; i < NCHANNELS; i++)
@@ -78,7 +79,7 @@
   c2->Draw();
   c2->Update();  
   if(!gPad) return;
-  TCanvas *c2 = gPad->GetCanvas();
+  c2 = gPad->GetCanvas();
   c2->Divide(5,6);
 
   for(unsigned int i = 0; i < NCHANNELS; i++)
@@ -116,7 +117,7 @@
       c3->Draw();
       c3->Update();
       if(!gPad) return;
-      TCanvas *c3 = gPad->GetCanvas();
+      c3 = gPad->GetCanvas();
       c3->Divide(5,6);
       
       for(unsigned int i = 0; i < NCHANNELS; i++)
@@ -151,7 +152,7 @@
       c4->Draw();
       c4->Update();
       if(!gPad) return;
-      TCanvas *c4 = gPad->GetCanvas();
+      c4 = gPad->GetCanvas();
       c4->Divide(5,6);
       
       for(unsigned int i = 0; i < NCHANNELS; i++)
@@ -186,7 +187,7 @@
       c5->Draw();
       c5->Update();
       if(!gPad) return;
-      TCanvas *c5 = gPad->GetCanvas();
+      c5 = gPad->GetCanvas();
       c5->Divide(5,6);
       
       for(unsigned int i = 0; i < NCHANNELS; i++)
@@ -221,7 +222,7 @@
       c6->Draw();
       c6->Update();
       if(!gPad) return;
-      TCanvas *c6 = gPad->GetCanvas();
+      c6 = gPad->GetCanvas();
       c6->Divide(5,6);
       
       for(unsigned int i = 0; i < NCHANNELS; i++)

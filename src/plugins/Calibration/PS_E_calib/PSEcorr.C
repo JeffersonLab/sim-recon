@@ -24,17 +24,17 @@
 #if TAGM
 const int MAX_COLUMNS			= 100;	// Number of TAGM channels
 int bad_channels_tm			= 0;	// Number of channels excluded in fit
-double fitResults_tm[MAX_COLUMNS][3]	= {},{};// fit parameters, 3 pol2 params
-double max_E_tm[MAX_COLUMNS]		= {};	// maximum of fit
-double fit_tm[3]			= {};	// average fit parameters
+double fitResults_tm[MAX_COLUMNS][3]	= {0}; // fit parameters, 3 pol2 params
+double max_E_tm[MAX_COLUMNS]		= {0};	// maximum of fit
+double fit_tm[3]			= {0};	// average fit parameters
 #endif
 
 #if TAGH
 const int MAX_COUNTERS			= 274;	// Number of TAGH channels
 int bad_channels_th			= 0;	// Number of channels excluded in fit
-double fitResults_th[MAX_COUNTERS][3]	= {},{};// fit parameters, 3 pol2 params
-double max_E_th[MAX_COUNTERS]		= {};	// maximum of fit
-double fit_th[3]			= {};	// average fit parameters
+double fitResults_th[MAX_COUNTERS][3]	= {0};// fit parameters, 3 pol2 params
+double max_E_th[MAX_COUNTERS]		= {0};	// maximum of fit
+double fit_th[3]			= {0};	// average fit parameters
 #endif
 
 double Ebw_PS = 0.013;				// PS energy bin width

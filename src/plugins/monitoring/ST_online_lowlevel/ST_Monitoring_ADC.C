@@ -92,7 +92,7 @@
   c2->Draw();
   c2->Update();
   if(!gPad) return;
-  TCanvas *c2 = gPad->GetCanvas();
+  c2 = gPad->GetCanvas();
   c2->Divide(3,2);
   // t_adc from hit object
   c2->cd(1);
@@ -152,7 +152,7 @@
   c3->Draw();
   c3->Update();
   if(!gPad) return;
-  TCanvas *c3 = gPad->GetCanvas();
+  c3 = gPad->GetCanvas();
   c3->Divide(3,2);
   // t_adc from hit object
   c3->cd(1);

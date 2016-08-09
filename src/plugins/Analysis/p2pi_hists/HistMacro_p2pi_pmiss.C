@@ -11,14 +11,14 @@
 	  return;
 
 	//Go to NoCut directory
-	TDirectory *locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p2pi_hists_NoCut_Measured");
+	locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p2pi_hists_NoCut_Measured");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
 	TH2I* locHist_NoCut_MM_M2pi = (TH2I*)gDirectory->Get("MM_M2pi");
 
 	//Go to KinFitConverge directory
-	TDirectory *locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p2pi_hists_KinFitConverge_Measured");
+	locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p2pi_hists_KinFitConverge_Measured");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();

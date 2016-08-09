@@ -26,18 +26,21 @@
   float par_500[15];
   float par_700[15];
   float par_900[15];
-  if(gPad == NULL){
 
-    TCanvas *c1 = new TCanvas( "c1", "BCAL_inv_mass_plot", 800, 800 );
+  TCanvas *c1 = NULL;
+  if(gPad == NULL){
+    c1 = new TCanvas( "c1", "BCAL_inv_mass_plot", 800, 800 );
     c1->cd(0);
     c1->Draw();
     c1->Update();
-
-    TCanvas *c2 = new TCanvas( "c2", "BCAL_inv_mass_dependencies", 800, 800 );
-    c2->cd(0);
-    c2->Draw();
-    c2->Update();
+  } else {
+      c1 = gPad->GetCanvas();
   }
+
+  TCanvas *c2 = new TCanvas( "c2", "BCAL_inv_mass_dependencies", 800, 800 );
+  c2->cd(0);
+  c2->Draw();
+  c2->Update();
 
   if( !gPad ) return;
   c1->Divide(2,2);
