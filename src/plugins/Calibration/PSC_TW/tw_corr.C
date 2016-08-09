@@ -60,14 +60,14 @@ const Int_t PROF_MIN = 180;		// minimum TProfile axis value
 const Int_t PROF_MAX = 1000;		// maximum TProfile axis value
 
 // Declare variables
-Double_t dtMeanL[NMODULES] = {};	// used to center the time dist. for the left modules
-Double_t dtMeanR[NMODULES] = {};	// used to center the time dist. for the right modules
-Double_t mpv[2][NMODULES] = {},{};	// used to find the most probable value for the pulse peaks
+Double_t dtMeanL[NMODULES] = {0};	// used to center the time dist. for the left modules
+Double_t dtMeanR[NMODULES] = {0};	// used to center the time dist. for the right modules
+Double_t mpv[2][NMODULES] = { {0},{0} };	// used to find the most probable value for the pulse peaks
 
 // Individual time walk fit parameters
-Double_t c0[2][NMODULES] = {},{};	// constant paramter for each module
-Double_t c1[2][NMODULES] = {},{};	// linear parameter for each module
-Double_t c2[2][NMODULES] = {},{};	// exponent parameter for each module
+Double_t c0[2][NMODULES] = { {0},{0} };	// constant paramter for each module
+Double_t c1[2][NMODULES] = { {0},{0} };	// linear parameter for each module
+Double_t c2[2][NMODULES] = { {0},{0} };	// exponent parameter for each module
 
 // Declare 1D histograms
 TH1D *h_dt_l[NMODULES];			// timing dist for each left module against the RF
@@ -86,6 +86,45 @@ TH2F *h_dt_vs_pp_r_corr[NMODULES];	// dt vs pp for each right module after corre
 //TGraphErrors *g_dt_vs_pp;		
 TProfile *g_dt_vs_pp_l[NMODULES];	// dt vs pp plot converted into TProfile
 TProfile *g_dt_vs_pp_r[NMODULES];	// dt vs pp plot converted into TProfile
+
+// Define the fit function, fitf
+Double_t fitf(Double_t *x, Double_t *par) {
+   Float_t xx = x[0];
+   Double_t f = par[0] + par[1]*pow((xx/THRESHOLD),par[2]);
+   return f;
+}
+
+// Individual tw_fit()
+void tw_fit(TProfile *h_tw, int arm, int module) {
+
+   // fitf defined at the bottom of the file
+   TF1 *ftw = new TF1("ftw",fitf,100.,1000.,3);
+#if DEBUG
+   std::cout << "Defined time-walk fit function" << std::endl;
+#endif
+
+   ftw->SetParameter(0,-1.9);
+   ftw->SetParameter(1,4.8);
+   ftw->SetParameter(2,-0.4);
+   ftw->SetParName(0,"c0");
+   ftw->SetParName(1,"c1");
+   ftw->SetParName(2,"c2");
+
+   h_tw->Fit("ftw","RWq");
+#if DEBUG
+   std::cout << "Fit histogram" << std::endl;
+#endif
+
+   c0[arm][module] = ftw->GetParameter("c0");
+   c1[arm][module] = ftw->GetParameter("c1");
+   c2[arm][module] = ftw->GetParameter("c2");
+#if OUTPUT
+   std::cout << "c0: " << c0[arm][module] << std::endl;
+   std::cout << "c1: " << c1[arm][module] << std::endl;
+   std::cout << "c2: " << c2[arm][module] << std::endl;
+#endif
+}
+
 
 void tw_plot(char* inputFile) {
 
@@ -271,37 +310,6 @@ void tw_plot(char* inputFile) {
    }
 }
 
-// Individual tw_fit()
-void tw_fit(TProfile *h_tw, int arm, int module) {
-
-   // fitf defined at the bottom of the file
-   TF1 *ftw = new TF1("ftw",fitf,100.,1000.,3);
-#if DEBUG
-   std::cout << "Defined time-walk fit function" << std::endl;
-#endif
-
-   ftw->SetParameter(0,-1.9);
-   ftw->SetParameter(1,4.8);
-   ftw->SetParameter(2,-0.4);
-   ftw->SetParName(0,"c0");
-   ftw->SetParName(1,"c1");
-   ftw->SetParName(2,"c2");
-
-   h_tw->Fit("ftw","RWq");
-#if DEBUG
-   std::cout << "Fit histogram" << std::endl;
-#endif
-
-   c0[arm][module] = ftw->GetParameter("c0");
-   c1[arm][module] = ftw->GetParameter("c1");
-   c2[arm][module] = ftw->GetParameter("c2");
-#if OUTPUT
-   std::cout << "c0: " << c0[arm][module] << std::endl;
-   std::cout << "c1: " << c1[arm][module] << std::endl;
-   std::cout << "c2: " << c2[arm][module] << std::endl;
-#endif
-}
-
 void tw_corr(char* inputFile) {
 
    std::cout << "Input file: " << inputFile << std::endl;
@@ -337,7 +345,8 @@ void tw_corr(char* inputFile) {
             if (content_l > 0 && t_shift_l > 2)
                t_shift_l -= 4;
             else if (content_l > 0 && t_shift_l < -2)
-               t_shift_r += 4;
+                //t_shift_r += 4;
+                t_shift_l += 4;   // CHECK THAT THIS FIX IS CORRECT - sdobbs 8/9/2016
             t_shift_l -= c1[0][i]*pow((j/THRESHOLD),c2[0][i]) - c1[0][i]*pow(mpv[0][i]/THRESHOLD,c2[0][i]);
             h_dt_vs_pp_l_corr[i]->Fill(j,t_shift_l,content_l);
 
@@ -369,8 +378,8 @@ void tw_corr(char* inputFile) {
    double avgL = 0;
    double avgR = 0;
 
-   std::ofstream flog("sigmas.out");
-   flog << "Arm\t" << "Module\t" << "Sigma (ps)" << std::endl;
+   std::ofstream flogsig("sigmas.out");
+   flogsig << "Arm\t" << "Module\t" << "Sigma (ps)" << std::endl;
 
    for (Int_t i = 0; i < NMODULES; ++i) {
       // left module
@@ -380,7 +389,7 @@ void tw_corr(char* inputFile) {
       std::cout << "Sigma for left module " << i+1 << ": " << (ptrL->Parameter(2))*1000 << std::endl;
 #endif
       avgL += (ptrL->Parameter(2))*1000;
-      flog << "0\t" << i+1 << "\t" << (ptrL->Parameter(2))*1000 << std::endl;
+      flogsig << "0\t" << i+1 << "\t" << (ptrL->Parameter(2))*1000 << std::endl;
 
       // right module
       h_dt_r_corr[i] = h_dt_vs_pp_r_corr[i]->ProjectionY();
@@ -389,7 +398,7 @@ void tw_corr(char* inputFile) {
       std::cout << "Sigma for right module " << i+1 << ": " << (ptrR->Parameter(2))*1000 << std::endl;
 #endif
       avgR += (ptrR->Parameter(2))*1000;
-      flog << "1\t" << i+1 << "\t" << (ptrR->Parameter(2))*1000 << std::endl;
+      flogsig << "1\t" << i+1 << "\t" << (ptrR->Parameter(2))*1000 << std::endl;
 
       avg += (ptrL->Parameter(2) + ptrR->Parameter(2))*1000;
    }
@@ -403,12 +412,5 @@ void tw_corr(char* inputFile) {
    std::cout << "avg: "  << avg  << std::endl;
 #endif
 
-   delete c;
 }
 
-// Define the fit function, fitf
-Double_t fitf(Double_t *x, Double_t *par) {
-   Float_t xx = x[0];
-   Double_t f = par[0] + par[1]*pow((xx/THRESHOLD),par[2]);
-   return f;
-}
