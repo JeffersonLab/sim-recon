@@ -4,7 +4,6 @@
 
 {
 	TDirectory *locTopDirectory = gDirectory;
-	TDirectory *locTopDirectory = gDirectory;
 	TDirectory *locReactionDirectory;
 	if((TDirectory*)locTopDirectory->FindObjectAny("p3pi_pmiss_FCAL-BCAL") != 0)
 	  locReactionDirectory = (TDirectory*)locTopDirectory->FindObjectAny("p3pi_pmiss_FCAL-BCAL");
@@ -19,14 +18,14 @@
 	TH1I* locHist_NoKinFit_MPi0 = (TH1I*)gDirectory->Get("InvariantMass");
 
 	//Go to NoKinFit directory
-	TDirectory *locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p3pi_hists_NoKinFit_Measured");
+	locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p3pi_hists_NoKinFit_Measured");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
 	TH2I* locHist_NoKinFit_MM_M3pi = (TH2I*)gDirectory->Get("MM_M3pi");
 
 	//Go to KinFitCut10 directory
-	TDirectory *locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p3pi_hists_KinFitCut10_Measured");
+	locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p3pi_hists_KinFitCut10_Measured");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
