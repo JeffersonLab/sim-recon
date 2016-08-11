@@ -1,4 +1,4 @@
-
+import sbms
 Import('*')
 
 subdirs = [
@@ -50,5 +50,5 @@ if "llvm" not in env["OSNAME"]:
 		subdirs.append(directory)
 else: print "Apple Clang does not support thread_local at this time. Skipping\n", require_thread_local
 
-
+sbms.OptionallyBuild(env, ['TAGH_doubles'])
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)

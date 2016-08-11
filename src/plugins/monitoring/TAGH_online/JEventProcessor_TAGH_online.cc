@@ -273,7 +273,7 @@ jerror_t JEventProcessor_TAGH_online::evnt(JEventLoop *eventLoop, uint64_t event
 
     // get TAGH hits and digihits
     vector<const DTAGHHit*> hits;
-    eventLoop->Get(hits);
+    eventLoop->Get(hits, "Calib");
     vector<const DTAGHDigiHit*> digihits;
     eventLoop->Get(digihits);
     vector<const DTAGHTDCDigiHit*> tdcdigihits;

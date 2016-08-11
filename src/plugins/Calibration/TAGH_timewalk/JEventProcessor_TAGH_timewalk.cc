@@ -102,7 +102,7 @@ jerror_t JEventProcessor_TAGH_timewalk::evnt(JEventLoop *loop, uint64_t eventnum
     // reconstruction algorithm) should be done outside of any mutex lock
     // since multiple threads may call this method at the same time.
     vector<const DTAGHHit*> taghhits;
-    loop->Get(taghhits);
+    loop->Get(taghhits, "Calib");
     const DRFTime* rfTime = NULL;
     vector <const DRFTime*> rfTimes;
     loop->Get(rfTimes,"TAGH");
