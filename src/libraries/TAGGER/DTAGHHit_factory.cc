@@ -19,19 +19,22 @@ using namespace jana;
 jerror_t DTAGHHit_factory::init(void)
 {
     // Set default config. parameters
-    MERGE_DOUBLES = true; // Merge in-time hits of adjacent counters?
+    MERGE_DOUBLES = true; // Merge double hits?
     gPARMS->SetDefaultParameter("TAGHHit:MERGE_DOUBLES", MERGE_DOUBLES,
-    "Merge in-time hits of adjacent counters?");
-    DELTA_T_DOUBLES_MAX = 0.5; // ns
+    "Merge double hits?");
+    DELTA_T_DOUBLES_MAX = 0.8; // ns
     gPARMS->SetDefaultParameter("TAGHHit:DELTA_T_DOUBLES_MAX", DELTA_T_DOUBLES_MAX,
     "Maximum time difference in ns between hits in adjacent counters"
     " for them to be merged into a single hit");
-    COUNTER_ID_DOUBLES_MAX = 192;
-    gPARMS->SetDefaultParameter("TAGHHit:COUNTER_ID_DOUBLES_MAX", COUNTER_ID_DOUBLES_MAX,
+    ID_DOUBLES_MAX = 274; // 192 is last counter with an overlap in energy-boundary table
+    gPARMS->SetDefaultParameter("TAGHHit:ID_DOUBLES_MAX", ID_DOUBLES_MAX,
     "Maximum counter id of a double hit");
     USE_SIDEBAND_DOUBLES = false;
     gPARMS->SetDefaultParameter("TAGHHit:USE_SIDEBAND_DOUBLES", USE_SIDEBAND_DOUBLES,
-    "Use sideband to estimate accidental coincidences between neighbors");
+    "Use sideband to estimate accidental coincidences between neighbors?");
+
+    //Setting this flag makes it so that JANA does not delete the objects in _data. This factory will manage this memory.
+    SetFactoryFlag(NOT_OBJECT_OWNER);
 
     return NOERROR;
 }
@@ -53,87 +56,107 @@ jerror_t DTAGHHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 //------------------
 jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
-    // A scattered (brems.) electron can hit two adjacent TAGH counters, due
-    // to multiple scattering and small geometric overlap between some counters.
-    // These neighboring, coincident hits should be merged to avoid double counting.
+    // A scattered (brems.) electron can hit multiple TAGH counters, due
+    // to multiple scattering and small geometric overlap between certain counters.
+    // These time-coincident hits should be merged to avoid double counting.
     // This factory outputs hits after merging double hits (doubles).
+
+    // Free memory allocated for DTAGHHit pointers in previous event
+    Reset_Data();
 
     // Get (calibrated) TAGH hits
     vector<const DTAGHHit*> hits;
     loop->Get(hits, "Calib");
-    // Copy data, skip hits with no ADC info.
-    for (const auto& hit : hits) {
-        if (!hit->has_fADC) continue;
-        DTAGHHit *h = new DTAGHHit;
-        *h = *hit;
-        _data.push_back(h);
+
+    // Sort TAGH hits by counter id by putting them in a map
+    map<int, vector<DTAGHHit*> > hitsById;
+    for (auto& hit : hits) {
+        if (!hit->has_fADC) continue; // Skip hits that have no ADC info.
+        hitsById[hit->counter_id].push_back(const_cast<DTAGHHit*>(hit));
     }
-    // Merge any double hits
-    if (MERGE_DOUBLES && _data.size() > 1)
-        MergeDoubles();
+
+    // Merge double hits
+    map<int, vector<DTAGHHit*> > doublesById;
+    if (MERGE_DOUBLES && hits.size() > 1)
+        MergeDoubles(hitsById, doublesById);
+
+    // Add double hits to _data
+    for (auto& p : doublesById) {
+        for (auto& h : p.second) {
+            DTAGHHit *hit = new DTAGHHit;
+            dCreatedTAGHHits.push_back(hit);
+            *hit = *h;
+            _data.push_back(hit);
+        }
+    }
+    // Add single-counter hits to _data
+    for (auto& p : hitsById) {
+        for (auto& h : p.second) {
+            if (!h->is_double) _data.push_back(h);
+        }
+    }
 
     return NOERROR;
 }
 
-// Is the hit combo a double hit?
-bool DTAGHHit_factory::IsDoubleHit(int counter_id_diff, double tdiff) {
+bool DTAGHHit_factory::IsDoubleHit(double tdiff) {
     if (!USE_SIDEBAND_DOUBLES) {
-        return (abs(counter_id_diff) == 1) && (fabs(tdiff) < DELTA_T_DOUBLES_MAX);
+        return fabs(tdiff) < DELTA_T_DOUBLES_MAX;
     } else {
-        return (abs(counter_id_diff) == 1) && (tdiff > -DELTA_T_DOUBLES_MAX - dBeamBunchPeriod)
+        return (tdiff > -DELTA_T_DOUBLES_MAX - dBeamBunchPeriod)
         && (tdiff < DELTA_T_DOUBLES_MAX - dBeamBunchPeriod);
     }
 }
 
-// Find indices of adjacent, in-time hits
-pair<vector<size_t>, vector<size_t> > DTAGHHit_factory::FindDoubles() {
-    pair<vector<size_t>, vector<size_t> > indices;
-    for (size_t i = 0; i < _data.size()-1; i++) {
-        const DTAGHHit* hit1 = _data[i];
-        if (hit1->counter_id > COUNTER_ID_DOUBLES_MAX) continue;
-        for (size_t j = i+1; j < _data.size(); j++) {
-            const DTAGHHit* hit2 = _data[j];
-            int counter_id_diff = hit1->counter_id-hit2->counter_id;
-            double tdiff = hit1->t-hit2->t;
-            if (IsDoubleHit(counter_id_diff,tdiff)) {
-                if (counter_id_diff == -1) {
-                    indices.first.push_back(i); indices.second.push_back(j);
-                } else {
-                    indices.first.push_back(j); indices.second.push_back(i);
+void DTAGHHit_factory::MergeDoubles(map<int, vector<DTAGHHit*> > hitsById, map<int, vector<DTAGHHit*> > &doublesById) {
+    int prev_id = -1; bool has_doubles = false;
+    vector<DTAGHHit*> prev_hits;
+    for (auto& p : hitsById) {
+        int id = p.first;
+        if (id > ID_DOUBLES_MAX) continue;
+        if (id - prev_id == 1) {
+            for (auto& h1 : prev_hits) {
+                for (auto& h2 : p.second) {
+                    if (IsDoubleHit(h1->t-h2->t)) {
+                        has_doubles = true;
+                        if (h1->is_double && h2->is_double) {
+                            EraseHit(doublesById[h1->counter_id], h1);
+                            EraseHit(doublesById[h2->counter_id], h2);
+                        }
+                        h1->is_double = true; h2->is_double = true;
+                        DTAGHHit *h = new DTAGHHit;
+                        dCreatedTAGHHits.push_back(h);
+                        *h = *h1;
+                        h->t = 0.5*(h1->t + h2->t); h->E = 0.5*(h1->E + h2->E);
+                        doublesById[h->counter_id].push_back(h);
+                    }
                 }
             }
         }
-    }
-    return indices;
+        prev_id = id;
+        prev_hits = p.second;
+    } // Merge any new double hits
+    if (has_doubles) MergeDoubles(doublesById, doublesById);
 }
 
-// Is index in list?
-bool DTAGHHit_factory::In(vector<size_t> &indices, size_t index) {
-    for (const auto& val : indices) {
-        if (index == val) return true;
+void DTAGHHit_factory::EraseHit(vector<DTAGHHit*> &v, DTAGHHit* hit) {
+    int index = -1; bool flag = false; double eps = 1e-5;
+    for (auto& i : v) {
+        index++;
+        if (fabs(i->t-hit->t) < eps && fabs(i->E-hit->E) < eps) {
+            flag = true; break;
+        }
     }
-    return false;
+    if (index >= 0 && flag) v.erase(v.begin() + index);
 }
 
-// Merge adjacent, in-time hits
-void DTAGHHit_factory::MergeDoubles() {
-    pair<vector<size_t>, vector<size_t> > indices = FindDoubles();
-    if (indices.first.size() == 0) return; // Nothing to merge
-    vector<DTAGHHit*> new_data;
-    for (size_t i = 0; i < _data.size(); i++) {
-        if (!In(indices.first,i) && !In(indices.second,i)) new_data.push_back(_data[i]);
-    }
-    vector<DTAGHHit*> merged_data;
-    for (size_t i = 0; i < indices.first.size(); i++) {
-        DTAGHHit* hit1 = _data[indices.first[i]];
-        const DTAGHHit* hit2 = _data[indices.second[i]];
-        hit1->t = 0.5*(hit1->t + hit2->t); hit1->E = 0.5*(hit1->E + hit2->E);
-        hit1->is_double = true;
-        merged_data.push_back(hit1);
-    }
-    for (const auto& d : merged_data) new_data.push_back(d);
-    _data = new_data;
-    if (_data.size() > 1) MergeDoubles(); // Merge any new doubles
+void DTAGHHit_factory::Reset_Data(void)
+{
+    //delete objects that this factory created (since the NOT_OBJECT_OWNER flag is set)
+    for(size_t loc_i = 0; loc_i < dCreatedTAGHHits.size(); ++loc_i)
+        delete dCreatedTAGHHits[loc_i];
+    _data.clear();
+    dCreatedTAGHHits.clear();
 }
 
 //------------------

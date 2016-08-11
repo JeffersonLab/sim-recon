@@ -194,7 +194,7 @@ jerror_t JEventProcessor_HLDetectorTiming::evnt(JEventLoop *loop, uint64_t event
     loop->Get(tofHitVector);
     loop->Get(fcalHitVector);
     loop->Get(tagmHitVector);
-    loop->Get(taghHitVector);
+    loop->Get(taghHitVector, "Calib");
 
     // TTabUtilities object used for RF time conversion
     const DTTabUtilities* locTTabUtilities = NULL;

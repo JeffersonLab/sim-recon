@@ -19,13 +19,12 @@ class DTAGHHit_factory: public jana::JFactory<DTAGHHit> {
         // config. parameters
         bool MERGE_DOUBLES;
         double DELTA_T_DOUBLES_MAX;
-        int COUNTER_ID_DOUBLES_MAX;
+        int ID_DOUBLES_MAX;
         bool USE_SIDEBAND_DOUBLES;
 
-        bool IsDoubleHit(int counter_id_diff, double tdiff);
-        pair<vector<size_t>, vector<size_t> > FindDoubles();
-        bool In(vector<size_t> &indices, size_t index);
-        void MergeDoubles();
+        bool IsDoubleHit(double tdiff);
+        void EraseHit(vector<DTAGHHit*> &v, DTAGHHit* hit);
+        void MergeDoubles(map<int, vector<DTAGHHit*> > hitsById, map<int, vector<DTAGHHit*> > &doublesById);
 
     private:
         jerror_t init(void);                                          ///< Called once at program start
@@ -35,6 +34,8 @@ class DTAGHHit_factory: public jana::JFactory<DTAGHHit> {
         jerror_t fini(void);                                          ///< Called after last event of last event source has been processed
 
         double dBeamBunchPeriod;
+        void Reset_Data(void);
+        vector<DTAGHHit*> dCreatedTAGHHits;
 };
 
 #endif // _DTAGHHit_factory_
