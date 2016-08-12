@@ -70,7 +70,7 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
     // Sort TAGH hits by counter id by putting them in a map
     map<int, vector<DTAGHHit*> > hitsById;
-    for (auto& hit : hits) {
+    for (auto&& hit : hits) {
         if (!hit->has_fADC) continue; // Skip hits that have no ADC info.
         hitsById[hit->counter_id].push_back(const_cast<DTAGHHit*>(hit));
     }
@@ -81,17 +81,15 @@ jerror_t DTAGHHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
         MergeDoubles(hitsById, doublesById);
 
     // Add double hits to _data
-    for (auto& p : doublesById) {
-        for (auto& h : p.second) {
-            DTAGHHit *hit = new DTAGHHit;
-            dCreatedTAGHHits.push_back(hit);
-            *hit = *h;
-            _data.push_back(hit);
+    for (auto&& p : doublesById) {
+        for (auto&& h : p.second) {
+            _data.push_back(h);
         }
     }
+
     // Add single-counter hits to _data
-    for (auto& p : hitsById) {
-        for (auto& h : p.second) {
+    for (auto&& p : hitsById) {
+        for (auto&& h : p.second) {
             if (!h->is_double) _data.push_back(h);
         }
     }
@@ -111,12 +109,12 @@ bool DTAGHHit_factory::IsDoubleHit(double tdiff) {
 void DTAGHHit_factory::MergeDoubles(map<int, vector<DTAGHHit*> > hitsById, map<int, vector<DTAGHHit*> > &doublesById) {
     int prev_id = -1; bool has_doubles = false;
     vector<DTAGHHit*> prev_hits;
-    for (auto& p : hitsById) {
+    for (auto&& p : hitsById) {
         int id = p.first;
         if (id > ID_DOUBLES_MAX) continue;
         if (id - prev_id == 1) {
-            for (auto& h1 : prev_hits) {
-                for (auto& h2 : p.second) {
+            for (auto&& h1 : prev_hits) {
+                for (auto&& h2 : p.second) {
                     if (IsDoubleHit(h1->t-h2->t)) {
                         has_doubles = true;
                         if (h1->is_double && h2->is_double) {
@@ -141,7 +139,7 @@ void DTAGHHit_factory::MergeDoubles(map<int, vector<DTAGHHit*> > hitsById, map<i
 
 void DTAGHHit_factory::EraseHit(vector<DTAGHHit*> &v, DTAGHHit* hit) {
     int index = -1; bool flag = false; double eps = 1e-5;
-    for (auto& i : v) {
+    for (auto&& i : v) {
         index++;
         if (fabs(i->t-hit->t) < eps && fabs(i->E-hit->E) < eps) {
             flag = true; break;
@@ -153,8 +151,8 @@ void DTAGHHit_factory::EraseHit(vector<DTAGHHit*> &v, DTAGHHit* hit) {
 void DTAGHHit_factory::Reset_Data(void)
 {
     //delete objects that this factory created (since the NOT_OBJECT_OWNER flag is set)
-    for(size_t loc_i = 0; loc_i < dCreatedTAGHHits.size(); ++loc_i)
-        delete dCreatedTAGHHits[loc_i];
+    for (auto&& hit : dCreatedTAGHHits)
+        delete hit;
     _data.clear();
     dCreatedTAGHHits.clear();
 }
