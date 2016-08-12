@@ -36,6 +36,8 @@ static TH1F *hAM2_Energy;
 static TH1F *hAM3_Energy;
 static TH1I *hBM_NHits;
 static TH1I *hAM_NHits;
+static TH2I *hBM1_PulseHeightVsID;
+static TH2I *hBM2_PulseHeightVsID;
 
 extern "C"{
     void InitPlugin(JApplication *app){
@@ -77,6 +79,8 @@ jerror_t JEventProcessor_TAGH_doubles::init(void)
     hBM2_Occupancy = new TH1F("BM2_Occupancy","TAGH occ.: Doubles only, before merging doubles;counter (slot) ID;hits / counter",Nslots,0.5,0.5+Nslots);
     hBM1_Energy    = new TH1F("BM1_Energy","TAGH energy: All hits, before merging doubles;photon energy [GeV];hits / counter",180,3.0,12.0);
     hBM2_Energy    = new TH1F("BM2_Energy","TAGH energy: Doubles only, before merging doubles;photon energy [GeV];hits / counter",180,3.0,12.0);
+    hBM1_PulseHeightVsID = new TH2I("BM1_PulseHeightVsID","TAGH ADC pulse height vs. ID: All hits;counter (slot) ID;pulse height",Nslots,0.5,0.5+Nslots,410,0.0,4100.0);
+    hBM2_PulseHeightVsID = new TH2I("BM2_PulseHeightVsID","TAGH ADC pulse height vs. ID: Doubles only;counter (slot) ID;pulse height",Nslots,0.5,0.5+Nslots,410,0.0,4100.0);
     taghDir->cd();
     gDirectory->mkdir("AfterMergingDoubles")->cd();
     hAM_tdiffVsIDdiff = new TH2I("AM_tdiffVsIDdiff","TAGH 2-hit time difference vs. counter ID difference;counter ID difference;time difference [ns]",15,0.5,15.5,200,-5.0,5.0);
@@ -137,8 +141,10 @@ jerror_t JEventProcessor_TAGH_doubles::evnt(JEventLoop *loop, uint64_t eventnumb
         BM_NHits++;
         hBM1_Occupancy->Fill(hit->counter_id);
         hBM1_Energy->Fill(hit->E);
+        hBM1_PulseHeightVsID->Fill(hit->counter_id,hit->pulse_peak);
         if (hit->is_double) hBM2_Occupancy->Fill(hit->counter_id);
         if (hit->is_double) hBM2_Energy->Fill(hit->E);
+        if (hit->is_double) hBM2_PulseHeightVsID->Fill(hit->counter_id,hit->pulse_peak);
     }
     hBM_NHits->Fill(BM_NHits);
     if (hits_c.size() > 1) {
