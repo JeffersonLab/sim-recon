@@ -89,7 +89,7 @@ jerror_t JEventProcessor_TAGM_TW::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
 
    vector<const DTAGMHit*>      hits;
-   loop->Get(hits);
+   loop->Get(hits, "Calib");
 
    // FILL HISTOGRAMS
    // Since we are filling histograms local to this plugin, it will not interfere
