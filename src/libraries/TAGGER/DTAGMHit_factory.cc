@@ -33,6 +33,10 @@ jerror_t DTAGMHit_factory::init(void)
                                 "Maximum time difference in ns between hits in adjacent"
                                 " columns to be merged");
 
+    MERGE_HITS = true;
+    gPARMS->SetDefaultParameter("TAGMHit:MERGE_HITS",MERGE_HITS,
+                                "Merge neighboring hits when true");
+
     // Setting this flag makes it so that JANA does not delete the objects in _data.
     // This factory will manage this memory.
     SetFactoryFlag(NOT_OBJECT_OWNER);
@@ -53,7 +57,7 @@ jerror_t DTAGMHit_factory::brun(jana::JEventLoop *eventLoop, int32_t runnumber)
 //------------------
 jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 {
-	// Free memory allocated for DTAGMHit pointers in previous event
+	// Clear _data vector
 	Reset_Data();
 
 	// Get (calibrated) TAGM hits
@@ -64,9 +68,8 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 	sort(hits.begin(), hits.end(), SortByCol);
 
-	set<uint32_t> locColUsedSoFar;
+	set<uint32_t> locHitIndexUsedSoFar;
 
-	//for(uint32_t i = 0; i < hits.size() - 1; ++i)
 	for(uint32_t i = 0; i < hits.size(); ++i)
 	{
 		const DTAGMHit *hit_i = hits[i];
@@ -79,7 +82,7 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 		}
 
 		// check if column has been paired
-		if (locColUsedSoFar.find(hit_i->column) != locColUsedSoFar.end()) continue;
+		if (locHitIndexUsedSoFar.find(i) != locHitIndexUsedSoFar.end()) continue;
 
 		for (uint32_t j = i+1; j < hits.size(); ++j)
 		{
@@ -91,9 +94,9 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 			int colDiff = hit_i->column - hit_j->column;
 			double deltaT = hit_i->t - hit_j->t;
 
-			if (fabs(colDiff) == 1 && fabs(deltaT) <= DELTA_T_CLUSTER_MAX)
+			if (abs(colDiff) == 1 && fabs(deltaT) <= DELTA_T_CLUSTER_MAX)
 			{
-				locColUsedSoFar.insert(hit_j->column);
+				locHitIndexUsedSoFar.insert(j);
 				break;
 			}
 		}
@@ -109,7 +112,7 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 //------------------
 void DTAGMHit_factory::Reset_Data(void)
 {
-	// delete objects that this factory created (since the NOT_OBJECT_OWNER flag is set)
+	// Clear _data vector
 	_data.clear();
 }
 
