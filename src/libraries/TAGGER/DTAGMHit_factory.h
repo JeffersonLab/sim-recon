@@ -24,6 +24,7 @@ class DTAGMHit_factory: public jana::JFactory<DTAGMHit> {
 
       // config. parameter
       double DELTA_T_CLUSTER_MAX;
+      bool MERGE_HITS;
 
    private:
       jerror_t init(void);                                          ///< Called once at program start
