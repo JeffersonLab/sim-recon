@@ -74,12 +74,12 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	{
 		const DTAGMHit *hit_i = hits[i];
 
-		if (!hit_i->has_fADC) continue;
 		if (hit_i->row > 0 || !MERGE_HITS)
 		{
 			_data.push_back(const_cast<DTAGMHit*>(hit_i));
 			continue;
 		}
+		if (!hit_i->has_fADC) continue;
 
 		// check if column has been paired
 		if (locHitIndexUsedSoFar.find(i) != locHitIndexUsedSoFar.end()) continue;
