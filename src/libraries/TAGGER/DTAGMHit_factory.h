@@ -22,44 +22,17 @@ class DTAGMHit_factory: public jana::JFactory<DTAGMHit> {
       DTAGMHit_factory() {};
       ~DTAGMHit_factory() {};
 
-      static const int k_fiber_dead = 0;
-      static const int k_fiber_good = 1;
-      static const int k_fiber_bad = 2;
-      static const int k_fiber_noisy = 3;
-
       // config. parameter
-      double DELTA_T_ADC_TDC_MAX; 
-      //int USE_ADC, PEAK_CUT;
-      int USE_ADC, CUT_FACTOR;
+      double DELTA_T_CLUSTER_MAX;
 
-      // overall scale factors
-      double fadc_a_scale;  // pixels per fADC pulse integral count
-      double fadc_t_scale;  // ns per fADC time count
-      double t_base;
-      double t_tdc_base;
-
-      // calibration constants stored in row, column format
-      double fadc_gains[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
-      double fadc_pedestals[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
-      double fadc_time_offsets[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
-      double tdc_time_offsets[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
-      double fiber_quality[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
-      double tw_c0[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
-      double tw_c1[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
-      double tw_c2[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
-      double tw_c3[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
-      double ref[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
-      double int_cuts[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1];
-
-      bool load_ccdb_constants(std::string table_name,
-                               std::string column_name,
-                               double table[TAGM_MAX_ROW+1][TAGM_MAX_COLUMN+1]);
    private:
       jerror_t init(void);                                          ///< Called once at program start
       jerror_t brun(jana::JEventLoop *eventLoop, int32_t runnumber);    ///< Called everytime a new run number is detected
       jerror_t evnt(jana::JEventLoop *eventLoop, uint64_t eventnumber);  ///< Called every event
       jerror_t erun(void);                                          ///< Called everytime run number changes, if brun has been called
       jerror_t fini(void);                                          ///< Called after last event of last event source has been processed
+
+      void Reset_Data(void);
 };
 
 #endif // _DTAGMHit_factory_

@@ -24,6 +24,7 @@ subdirs = [
 'TAGGER_online',
 'TAGH_online',
 'TAGM_online',
+'TAGM_clusters',
 'TOF_online',
 'TRIG_online',
 'TPOL_online',
