@@ -14,7 +14,7 @@ TFile *f;
 TH1I *hEb;
 TH1I *hEa;
 
-void TAGM_clusters_E(char* inputFile) {
+void TAGM_clusters_E(char const *inputFile) {
    
    TCanvas *c1;
    c1 = new TCanvas("c1","c1",600,500);
