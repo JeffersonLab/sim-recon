@@ -495,7 +495,7 @@ DBCALCluster_factory::merge( vector<DBCALCluster*>& clusters ) const {
 			}
 			if( stillMerging ) break;
 		}
-	}
+	} 
 }
 
 bool
@@ -555,7 +555,7 @@ DBCALCluster_factory::overlap( const DBCALCluster& highEClust,
 
 	if(BCALCLUSTERVERBOSE>1) cout << " clust merge: " << " theta match success = " << theta_match << " phi match = " << phi_match << " time match = " << time_match << " high E = " << highEClust.E() << " low E = " << lowEClust.E() << " highE z = " << z1 << " lowE z = " << z2 << " deltaTheta = " << fabs(highEClust.theta()-lowEClust.theta()) << " sigTheta = " << sigTheta << " highE sigTheta = " << highEClust.sigTheta() << " lowE sigTheta = " << lowEClust.sigTheta() << endl;
 
-	return theta_match && phi_match && time_match;
+	return theta_match && phi_match && time_match; 
 
 }
 
@@ -673,5 +673,7 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
 	double time_diff = TMath::Abs(clust.t() - time_corr); // time cut between cluster time and hit time - 20 ns is a very loose time cut.
 
 	return( sigPhi < m_mergeSig && time_diff < m_clust_hit_timecut ); 
+
+//	return( .5 > .2 );
 
 }

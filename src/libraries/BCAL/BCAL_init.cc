@@ -21,7 +21,7 @@
 #include "DBCALClump.h"
 #include "DBCALClump_factory.h"
 #include "DBCALShower_factory_JLAB.h"
-
+#include "DBCALTruthHit_factory.h"
 #include "DBCALTruthShower.h"
 
 
@@ -49,6 +49,7 @@ jerror_t BCAL_init(JEventLoop *loop)
 	loop->AddFactory(new DBCALUnifiedHit_factory());
 	loop->AddFactory(new DBCALClump_factory());
 	loop->AddFactory(new DBCALShower_factory_JLAB());
+	loop->AddFactory(new DBCALTruthHit_factory());
 
 	return NOERROR;
 }

@@ -26,7 +26,7 @@ class DBCALHit:public JObject{
 		int layer;
 		int sector;
 		DBCALGeometry::End end;
-        int pulse_peak; // Pedestal subtracted pulse peak (per event)
+	        int pulse_peak; // Pedestal subtracted pulse peak (per event)
 		float E;
 		float t;
 		

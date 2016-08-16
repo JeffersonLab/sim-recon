@@ -284,7 +284,7 @@ void SmearBCAL(hddm_s::HDDM *record)
     FindHits(BCAL_ADC_THRESHOLD_MEV, bcalfADC, fADCHits, TDCHits);
 
     // Apply time smearing to emulate the fADC resolution
-    ApplyTimeSmearing(BCAL_FADC_TIME_RESOLUTION, BCAL_TDC_TIME_RESOLUTION, fADCHits, TDCHits);
+//    ApplyTimeSmearing(BCAL_FADC_TIME_RESOLUTION, BCAL_TDC_TIME_RESOLUTION, fADCHits, TDCHits);
    
     // Copy hits into HDDM tree
     CopyBCALHitsToHDDM(fADCHits, TDCHits, record);
@@ -691,7 +691,7 @@ void SimpleDarkHitsSmear(map<int, SumHits> &bcalfADC)
 //-----------
 // ApplyTimeSmearing
 //-----------
-void ApplyTimeSmearing(double sigma_ns, double sigma_ns_TDC, map<int, fADCHitList> &fADCHits, map<int, TDCHitList> &TDCHits)
+void ApplyTimeSmearing(double sigma_ns , double sigma_ns_TDC , map<int, fADCHitList> &fADCHits, map<int, TDCHitList> &TDCHits)
 {
    /// The fADC250 will extract a time from the samples by applying an algorithm
    /// to a few of the samples taken every 4ns. The perfect times from HDGeant
@@ -706,13 +706,13 @@ void ApplyTimeSmearing(double sigma_ns, double sigma_ns_TDC, map<int, fADCHitLis
       
       // upstream
       for(unsigned int i=0; i<hitlist.uphits.size(); i++){
-         hitlist.uphits[i].t += gDRandom.Gaus(sigma_ns);
-      }
+         hitlist.uphits[i].t += gDRandom.Gaus(.05);
+	 }
 
       // downstream
       for(unsigned int i=0; i<hitlist.dnhits.size(); i++){
-         hitlist.dnhits[i].t += gDRandom.Gaus(sigma_ns);
-      }
+         hitlist.dnhits[i].t += gDRandom.Gaus(.05);
+	}
    }
 
    map<int, TDCHitList>::iterator itTDC = TDCHits.begin();
@@ -721,12 +721,12 @@ void ApplyTimeSmearing(double sigma_ns, double sigma_ns_TDC, map<int, fADCHitLis
       
       // upstream
       for(unsigned int i=0; i<TDChitlist.uphits.size(); i++){
-         TDChitlist.uphits[i] += gDRandom.Gaus(sigma_ns_TDC);
-      }
+         TDChitlist.uphits[i] += gDRandom.Gaus(.05);
+	 }
 
       // downstream
       for(unsigned int i=0; i<TDChitlist.dnhits.size(); i++){
-         TDChitlist.dnhits[i] += gDRandom.Gaus(sigma_ns_TDC);
+         TDChitlist.dnhits[i] += gDRandom.Gaus(.05);
       }
    }
 }

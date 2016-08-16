@@ -49,7 +49,7 @@ C        HDDM  simple  ntuple
 WROUT      1      1     1   
 
 NPRIEV   100            number of events to print
-EPHLIM   0.15 12.       energy range in GeV
+EPHLIM  3. 12.       energy range in GeV
 
 RNDMSEQ    0            random number sequence     integer values
 
