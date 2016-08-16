@@ -42,7 +42,7 @@ double Ebl_PS = 2.3;				// PS low energy
 double Ebh_PS = 4.9;				// PS high energy
 double NEb_PS = (Ebh_PS - Ebl_PS)/Ebw_PS;	// Number of bins for PS energy
 
-void PSEcorr(char* inputFile) {
+void PSEcorr(char const *inputFile) {
    TCanvas *c1 = (TCanvas*)gROOT->FindObject("c1");
    if (c1 == 0)
       c1 = new TCanvas("c1","c1",0,20,600,500);
