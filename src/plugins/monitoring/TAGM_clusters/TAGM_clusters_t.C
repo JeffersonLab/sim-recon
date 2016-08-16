@@ -13,7 +13,7 @@
 TFile *f;
 TH1I *h_t[10];
 
-void TAGM_clusters_t(char* inputFile) {
+void TAGM_clusters_t(char *inputFile) {
    
    TCanvas *c1;
    c1 = new TCanvas("c1","c1",1200,800);

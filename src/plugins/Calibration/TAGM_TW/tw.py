@@ -19,9 +19,9 @@ def main():
 
 	# Check if the run used the old or new bias voltage scheme
 	if (run < 11572):
-		newV = false
+		newV = False
 	else:
-		newV = true
+		newV = True
 
 	# Open input and output ROOT files
 	rootfile = TFile.Open(str(filename))

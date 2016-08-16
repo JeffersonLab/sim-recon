@@ -126,7 +126,7 @@ void tw_fit(TProfile *h_tw, int arm, int module) {
 }
 
 
-void tw_plot(char* inputFile) {
+void tw_plot(char const *inputFile) {
 
    // Get input file, make output file
    infile = new TFile(inputFile);
@@ -310,7 +310,7 @@ void tw_plot(char* inputFile) {
    }
 }
 
-void tw_corr(char* inputFile) {
+void tw_corr(char const *inputFile) {
 
    std::cout << "Input file: " << inputFile << std::endl;
 
