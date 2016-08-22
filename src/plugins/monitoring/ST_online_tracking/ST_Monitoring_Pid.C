@@ -3,7 +3,7 @@
 // Creator: Mahmoud Kamel, mkame006@fiu.edu
 // Purpose: Displaying histograms for online monitoring purposes
 //void ST_Monitoring_2D()
-{
+void ST_Monitoring_Pid() {
   // Define the directory that contains the histograms
   TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("st_tracking");
   //gDirectory->ls();
