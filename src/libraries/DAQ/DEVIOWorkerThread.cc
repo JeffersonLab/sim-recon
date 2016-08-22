@@ -308,7 +308,6 @@ void DEVIOWorkerThread::ParseBank(void)
 //_DBG_ << "tag=" << hex << tag << dec << endl;
 
 		switch(tag){
-			case 0x0056:    ParseEventTagBank(iptr, iend);    break;
 			case 0x0060:       ParseEPICSbank(iptr, iend);    break;
 			case 0x0070:         ParseBORbank(iptr, iend);    break;
 
@@ -757,6 +756,10 @@ void DEVIOWorkerThread::ParseDataBank(uint32_t* &iptr, uint32_t *iend)
 
 			case 0x55:
 				ParseModuleConfiguration(rocid, iptr, iend_data_block_bank);
+				break;
+
+			case 0x56:
+				ParseEventTagBank(iptr, iend_data_block_bank);
 				break;
 
 			case 0:
