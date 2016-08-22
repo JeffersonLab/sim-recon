@@ -15,6 +15,7 @@ using namespace jana;
 
 #include <TRACKING/DTrackWireBased.h>
 #include <BCAL/DBCALCluster.h>
+#include <TRIGGER/DL1Trigger.h>
 
 //------------------
 // init
@@ -24,10 +25,14 @@ jerror_t DL3Trigger_factory::init(void)
 	FRACTION_TO_KEEP = 1.0;
 	DO_WIRE_BASED_TRACKING = false;
 	DO_BCAL_CLUSTER = false;
+	L1_TRIG_MASK    = 0xffffffff;
+	L1_FP_TRIG_MASK = 0xffffffff;
 
 	gPARMS->SetDefaultParameter("L3:FRACTION_TO_KEEP", FRACTION_TO_KEEP ,"Random Fraction of event L3 should keep. (Only used for debugging).");
 	gPARMS->SetDefaultParameter("L3:DO_WIRE_BASED_TRACKING", DO_WIRE_BASED_TRACKING ,"Activate wire-based tracking for every event");
 	gPARMS->SetDefaultParameter("L3:DO_BCAL_CLUSTER", DO_BCAL_CLUSTER ,"Activate BCAL clusters for every event");
+	gPARMS->SetDefaultParameter("L3:L1_TRIG_MASK", L1_TRIG_MASK ,"Discard events that don't have one of these bits set in DL1Trigger::trig_mask (or in L1_FP_TRIG_MASK)");
+	gPARMS->SetDefaultParameter("L3:L1_FP_TRIG_MASK", L1_FP_TRIG_MASK ,"Discard events that don't have one of these bits set in DL1Trigger::fp_trig_mask (or in L1_TRIG_MASK)");
 
 	return NOERROR;
 }
@@ -54,6 +59,19 @@ jerror_t DL3Trigger_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	if(FRACTION_TO_KEEP!=1.0){
 		double r = (double)random()/(double)RAND_MAX;
 		if(r > FRACTION_TO_KEEP) l3trig->L3_decision = DL3Trigger::kDISCARD_EVENT;
+	}
+	
+	// If L1 trigger filter is being applied, do that here
+	if( (L1_TRIG_MASK!=0xffffffff) || (L1_FP_TRIG_MASK!=0xffffffff) ){
+
+		vector<const DL1Trigger*> l1triggers;
+		loop->Get(l1triggers);
+		bool trig_bit_is_set = false;
+		for(auto t : l1triggers){
+			if( t->trig_mask&L1_TRIG_MASK       ) trig_bit_is_set = true;
+			if( t->fp_trig_mask&L1_FP_TRIG_MASK ) trig_bit_is_set = true;
+		}
+		if(!trig_bit_is_set) l3trig->L3_decision = DL3Trigger::kDISCARD_EVENT;
 	}
 	
 	if(DO_WIRE_BASED_TRACKING){
