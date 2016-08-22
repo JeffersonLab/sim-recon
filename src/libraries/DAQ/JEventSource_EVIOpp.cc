@@ -322,7 +322,7 @@ void JEventSource_EVIOpp::Dispatcher(void)
 					}
 				}else{
 					cout << hdevio->err_mess.str() << endl;
-					japp->SetExitCode(hdevio->err_code);
+					if(hdevio->err_code != HDEVIO::HDEVIO_EOF) japp->SetExitCode(hdevio->err_code);
 				}
 				break;
 			}else{

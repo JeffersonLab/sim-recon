@@ -971,8 +971,7 @@ bool DGeometry::GetFDCCathodes(vector<vector<DFDCCathode *> >&fdccathodes) const
       c->layer = i+1;
       c->strip = j+1;
       c->angle = angle;
-      c->u=fdc_cathode_pitches[i]*((float)j+STRIP_ZERO_OFFSET)-fdc_cathode_offsets[i].du;
-      //c->u=0.5005*((float)j+STRIP_ZERO_OFFSET);
+      c->u=fdc_cathode_pitches[i]*((float)j+STRIP_ZERO_OFFSET)+fdc_cathode_offsets[i].du;
       temp.push_back(c);
     }
     fdccathodes.push_back(temp);
