@@ -2,7 +2,7 @@
 // Last Modified: 05/27/2015
 // Creator: Mahmoud Kamel mkame006@fiu.edu
 // Purpose: Displaying histograms for online monitoring purposes
-{
+void ST_Monitoring_Eff () {
   // Define the directory that contains the histograms
   TDirectory *dir = (TDirectory*)gDirectory->FindObjectAny("st_tracking");
   if(dir) dir->cd();
@@ -52,14 +52,18 @@
    Double_t TWA_adc=0;
    Double_t sumE_adc=0;
    Double_t Final_adc=0;
+   Double_t error_adc=0.;
+   Double_t BC_adc=0.;
+   Double_t WA_adc=0.;
+   //Double_t Final_adc=0.;
    for (int i = 0; i < 30; i++)
      {
-       Double_t error_adc =   MacropEff_adc->GetBinError(i+2);
+       error_adc =   MacropEff_adc->GetBinError(i+2);
        sumE_adc = sumE_adc + error_adc;
-       Double_t BC_adc =   MacropEff_adc->GetBinContent(i+2);
-       Double_t WA_adc = BC_adc*error_adc;
+       BC_adc =   MacropEff_adc->GetBinContent(i+2);
+       WA_adc = BC_adc*error_adc;
        TWA_adc = TWA_adc + WA_adc ;
-       Double_t Final_adc = TWA_adc/sumE_adc;
+       Final_adc = TWA_adc/sumE_adc;
        // cout << "error_adc =  "<< error_adc << endl;
        // cout << "BC_adc =  "<< BC_adc << endl;
        // cout << "Final_adc =  "<< Final_adc << endl;
@@ -70,8 +74,8 @@
    //Write the eff value on the histogram 
    char tFinal_adc[40];
    char terror_adc[40];
-   sprintf(tFinal_adc,"ADC Efficiency (%) = %g",Final_adc*100);
-   sprintf(terror_adc,"ADC Efficiency error (%) = %g",error_adc*100);
+   sprintf(tFinal_adc,"ADC Efficiency (%%) = %g",Final_adc*100);
+   sprintf(terror_adc,"ADC Efficiency error (%%) = %g",error_adc*100);
    line->Draw();
    TPaveLabel *p = new TPaveLabel(0.3,0.6,0.7,0.7,tFinal_adc,"brNDC");
    p->Draw();
@@ -92,14 +96,18 @@
     Double_t TWA=0;
     Double_t sumE=0;
     Double_t Final=0; 
+    Double_t error=0.;
+    Double_t BC=0.;
+    Double_t WA=0.;
+    //Double_t Final=0.;
     for (int i = 0; i < 30; i++)
       {
-	Double_t error =   MacropEff->GetBinError(i+2);
+	error =   MacropEff->GetBinError(i+2);
 	sumE = sumE+error;
-	Double_t BC =   MacropEff->GetBinContent(i+2);
-	Double_t WA = BC*error;
+	BC =   MacropEff->GetBinContent(i+2);
+	WA = BC*error;
 	TWA = TWA + WA ;
-	Double_t Final = TWA/sumE;
+	Final = TWA/sumE;
 	//	cout << "error =  "<< error << endl;
 	//	cout << "BC =  "<< BC << endl;
 	//	cout << "Final =  "<< Final << endl;
@@ -110,8 +118,8 @@
     //Write the eff value on the histogram 
    char tFinal[40];
    char terror[40];
-   sprintf(tFinal,"Hit Efficiency (%) = %g",Final*100);
-   sprintf(terror,"Hit Efficiency error (%) = %g",error*100);
+   sprintf(tFinal,"Hit Efficiency (%%) = %g",Final*100);
+   sprintf(terror,"Hit Efficiency error (%%) = %g",error*100);
    line->Draw();
    TPaveLabel *p = new TPaveLabel(0.3,0.6,0.7,0.7,tFinal,"brNDC");
    p->Draw();
