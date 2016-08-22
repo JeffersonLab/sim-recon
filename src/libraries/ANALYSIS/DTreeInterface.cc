@@ -112,11 +112,7 @@ bool DTreeInterface::Get_BranchesCreatedFlag(void) const
 
 const TList* DTreeInterface::Get_UserInfo(void) const
 {
-	if(Get_BranchesCreatedFlag())
-		return dTree->GetUserInfo();
-
-	cout << "WARNING: CANNOT GET USER INFO BEFORE BRANCHES CREATED. RETURNING NULL IN DTreeInterface::Get_UserInfo()" << endl;
-	return NULL; //NOT SUPPORTED! //Unsafe otherwise. This guarantees that the user info is setup first, and won't be modified while reading it
+	return dTree->GetUserInfo();
 }
 
 bool DTreeInterface::Create_Branches(const DTreeBranchRegister& locTreeBranchRegister)
