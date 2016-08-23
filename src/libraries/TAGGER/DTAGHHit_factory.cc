@@ -138,10 +138,10 @@ void DTAGHHit_factory::MergeDoubles(map<int, vector<DTAGHHit*> > hitsById, map<i
 }
 
 void DTAGHHit_factory::EraseHit(vector<DTAGHHit*> &v, DTAGHHit* hit) {
-    int index = -1; bool flag = false; double eps = 1e-5;
+    int index = -1; bool flag = false;
     for (auto&& i : v) {
         index++;
-        if (fabs(i->t-hit->t) < eps && fabs(i->E-hit->E) < eps) {
+        if ((i->t == hit->t) && (i->E == hit->E)) {
             flag = true; break;
         }
     }

@@ -130,7 +130,7 @@ jerror_t DTAGHHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         return OBJECT_NOT_AVAILABLE;
     const DTAGHGeometry& taghGeom = *(taghGeomVect[0]);
 
-    const DTTabUtilities* locTTabUtilities = NULL;
+    const DTTabUtilities* locTTabUtilities = nullptr;
     loop->GetSingle(locTTabUtilities);
 
     // First loop over all TAGHDigiHits and make DTAGHHits out of them
@@ -149,10 +149,10 @@ jerror_t DTAGHHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         //if (digihit->pulse_time == 0) continue;
         // The following condition signals an error state in the flash algorithm
         // Do not make hits out of these
-        const Df250PulsePedestal* PPobj = NULL;
+        const Df250PulsePedestal* PPobj = nullptr;
         digihit->GetSingle(PPobj);
         double pulse_peak = 0.0;
-        if (PPobj != NULL){
+        if (PPobj != nullptr){
             if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
             pulse_peak = PPobj->pulse_peak - PPobj->pedestal;
         }
@@ -160,9 +160,9 @@ jerror_t DTAGHHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         // Get pedestal, prefer associated event pedestal if it exists,
         // otherwise, use the average pedestal from CCDB
         double pedestal = fadc_pedestals[counter];
-        const Df250PulseIntegral* PIobj = NULL;
+        const Df250PulseIntegral* PIobj = nullptr;
         digihit->GetSingle(PIobj);
-        if (PIobj != NULL) {
+        if (PIobj != nullptr) {
             // the measured pedestal must be scaled by the ratio of the number
             // of samples used to calculate the integral and the pedestal
             // Changed to conform to D. Lawrence changes Dec. 4 2014
@@ -214,7 +214,7 @@ jerror_t DTAGHHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         // Look for existing hits to see if there is a match
         // or create new one if there is no match
-        DTAGHHit *hit = 0;
+        DTAGHHit *hit = nullptr;
         for (unsigned int j=0; j < _data.size(); ++j) {
             if (_data[j]->counter_id == counter &&
                 fabs(T - _data[j]->time_fadc) < DELTA_T_ADC_TDC_MAX)
@@ -222,7 +222,7 @@ jerror_t DTAGHHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
                     hit = _data[j];
                 }
         }
-        if (hit == 0) {
+        if (hit == nullptr) {
             hit = new DTAGHHit;
             hit->counter_id = counter;
             double Elow = taghGeom.getElow(counter);

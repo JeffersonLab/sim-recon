@@ -58,10 +58,10 @@ jerror_t JEventProcessor_TAGM_clusters::init(void)
 	// This is called once at program startup. 
 
    TDirectory *mainDir = gDirectory;
-
+   TDirectory *tagmDir = gDirectory->mkdir("TAGM_clusters");
+   tagmDir->cd();
    // Before
-   TDirectory *bDir = gDirectory->mkdir("Before");
-   bDir->cd();
+   gDirectory->mkdir("Before")->cd();
    h_occupancy_b = new TH1D("occupancy_b","Histogram of occupancy",100,1,101);
    h_mult_b = new TH1I("mult_b","Multiplicity before",40,0.,40.);
    h_E_b = new TH1I("E_b","Energy before merging",110,8.2,9.3);
@@ -72,18 +72,19 @@ jerror_t JEventProcessor_TAGM_clusters::init(void)
                              100,-10.,10.);
    }
 
-   mainDir->cd();
+   tagmDir->cd();
 
    // After
-   TDirectory *aDir = gDirectory->mkdir("After");
-   aDir->cd();
+   gDirectory->mkdir("After")->cd();
    h_occupancy_a = new TH1D("occupancy_a","Histogram of occupancy",100,1,101);
    h_mult_a = new TH1I("mult_a","Multiplicity after",40,0.,40.);
    h_E_a = new TH1I("E_a","Energy after merging",110,8.2,9.3);
 
-   mainDir->cd();
+   tagmDir->cd();
 
    h_occupancy_ind = new TH1D("occupancy_ind","Histogram of occupancy",20,1,21);
+   // back to main dir
+   mainDir->cd();
 
 	return NOERROR;
 }

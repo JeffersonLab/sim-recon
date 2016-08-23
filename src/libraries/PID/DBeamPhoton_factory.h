@@ -27,6 +27,13 @@ class DBeamPhoton_factory:public jana::JFactory<DBeamPhoton>{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		double dTargetCenterZ;
+
+		// config. parameters
+		double DELTA_T_DOUBLES_MAX;
+		double DELTA_E_DOUBLES_MAX;
+
+		void Set_BeamPhoton(DBeamPhoton* gamma, const DTAGHHit* hit);
+		void Set_BeamPhoton(DBeamPhoton* gamma, const DTAGMHit* hit);
 };
 
 #endif // _DBeamPhoton_factory_

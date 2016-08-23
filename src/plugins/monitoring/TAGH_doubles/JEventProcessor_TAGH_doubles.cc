@@ -124,8 +124,6 @@ jerror_t JEventProcessor_TAGH_doubles::evnt(JEventLoop *loop, uint64_t eventnumb
     vector<const DTAGHHit*> hits;
     loop->Get(hits);
 
-    if (hits.size() == 0) return NOERROR;
-
     // Extract the TAGH geometry
     vector<const DTAGHGeometry*> taghGeomVect;
     loop->Get(taghGeomVect);
@@ -147,15 +145,13 @@ jerror_t JEventProcessor_TAGH_doubles::evnt(JEventLoop *loop, uint64_t eventnumb
         if (hit->is_double) hBM2_PulseHeightVsID->Fill(hit->counter_id,hit->pulse_peak);
     }
     hBM_NHits->Fill(BM_NHits);
-    if (hits_c.size() > 1) {
-        for (size_t i = 0; i < hits_c.size()-1; i++) {
-            const DTAGHHit* hit1 = hits_c[i];
-            if (!hit1->has_TDC||!hit1->has_fADC) continue;
-            for (size_t j = i+1; j < hits_c.size(); j++) {
-                const DTAGHHit* hit2 = hits_c[j];
-                if (!hit2->has_TDC||!hit2->has_fADC) continue;
-                hBM_tdiffVsIDdiff->Fill(abs(hit1->counter_id-hit2->counter_id),hit1->t-hit2->t);
-            }
+    for (size_t i = 0; i < hits_c.size(); i++) {
+        const DTAGHHit* hit1 = hits_c[i];
+        if (!hit1->has_TDC||!hit1->has_fADC) continue;
+        for (size_t j = i+1; j < hits_c.size(); j++) {
+            const DTAGHHit* hit2 = hits_c[j];
+            if (!hit2->has_TDC||!hit2->has_fADC) continue;
+            hBM_tdiffVsIDdiff->Fill(abs(hit1->counter_id-hit2->counter_id),hit1->t-hit2->t);
         }
     }
     // After merging doubles
@@ -176,15 +172,13 @@ jerror_t JEventProcessor_TAGH_doubles::evnt(JEventLoop *loop, uint64_t eventnumb
         if (hit->is_double && has_overlap) hAM3_Energy->Fill(hit->E);
     }
     hAM_NHits->Fill(AM_NHits);
-    if (hits.size() > 1) {
-        for (size_t i = 0; i < hits.size()-1; i++) {
-            const DTAGHHit* hit1 = hits[i];
-            if (!hit1->has_TDC||!hit1->has_fADC) continue;
-            for (size_t j = i+1; j < hits.size(); j++) {
-                const DTAGHHit* hit2 = hits[j];
-                if (!hit2->has_TDC||!hit2->has_fADC) continue;
-                hAM_tdiffVsIDdiff->Fill(abs(hit1->counter_id-hit2->counter_id),hit1->t-hit2->t);
-            }
+    for (size_t i = 0; i < hits.size(); i++) {
+        const DTAGHHit* hit1 = hits[i];
+        if (!hit1->has_TDC||!hit1->has_fADC) continue;
+        for (size_t j = i+1; j < hits.size(); j++) {
+            const DTAGHHit* hit2 = hits[j];
+            if (!hit2->has_TDC||!hit2->has_fADC) continue;
+            hAM_tdiffVsIDdiff->Fill(abs(hit1->counter_id-hit2->counter_id),hit1->t-hit2->t);
         }
     }
     japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
