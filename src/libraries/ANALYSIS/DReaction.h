@@ -8,12 +8,21 @@
 #include "JANA/JObject.h"
 #include "particleType.h"
 #include "ANALYSIS/DReactionStep.h"
-#include "ANALYSIS/DKinFitResults.h"
 
 using namespace std;
 using namespace jana;
 
 class DAnalysisAction;
+
+enum DKinFitType
+{
+	d_NoFit = 0, 
+	d_P4Fit, //also includes invariant mass constraints
+	d_VertexFit,
+	d_SpacetimeFit,
+	d_P4AndVertexFit, //also includes invariant mass constraints
+	d_P4AndSpacetimeFit //also includes invariant mass constraints
+};
 
 class DReaction : public JObject
 {
@@ -42,15 +51,19 @@ class DReaction : public JObject
 		// SET PRE-COMBO-BLUEPRINT INVARIANT MASS CUTS
 		void Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass);
 
-		// SET EventStore QUERY
-		void Set_EventStoreQuery(string locSkimName, string locAdditionalQuery = "");
+		// SET EventStore SKIMS //comma-separated list expected
+		void Set_EventStoreSkims(string locEventStoreSkims){dEventStoreSkims = locEventStoreSkims;}
 
 		// ADD COMBO PRE-SELECTION ACTION
 		void Add_ComboPreSelectionAction(DAnalysisAction* locAction){dComboPreSelectionActions.push_back(locAction);}
 
-		// GET CONTROL MEMBERS:
+		// GET CONTROL INFO:
 		string Get_ReactionName(void) const{return dReactionName;}
 		DKinFitType Get_KinFitType(void) const{return dKinFitType;}
+		int Get_DecayStepIndex(int locStepIndex, int locParticleIndex) const;
+		pair<int, int> Get_InitialParticleDecayFromIndices(int locStepIndex) const; //1st is step index, 2nd is particle index
+		int Get_DefinedParticleStepIndex(void) const; //-1 if none //defined: missing or open-ended-decaying
+		bool Get_IsInclusiveChannelFlag(void) const;
 
 		// GET REACTION STEPS:
 		size_t Get_NumReactionSteps(void) const{return dReactionSteps.size();}
@@ -91,16 +104,23 @@ class DReaction : public JObject
 		// GET PRE-COMBO-BLUEPRINT MASS CUTS
 		bool Get_InvariantMassCut(Particle_t locStepInitialPID, double& locMinInvariantMass, double& locMaxInvariantMass) const;
 
-		// GET EventStore QUERY
-		pair<string, string> Get_EventStoreQuery(void) const{return dEventStoreQuery;}
+		// GET EventStore SKIMS //comma-separated list expected
+		string Get_EventStoreSkims(void) const{return dEventStoreSkims;}
 
 		// ROOT OUTPUT:
-		void Enable_TTreeOutput(string locTTreeOutputFileName);
+		void Enable_TTreeOutput(string locTTreeOutputFileName, bool locSaveUnusedFlag = false);
 		string Get_TTreeOutputFileName(void) const{return dTTreeOutputFileName;}
+		bool Get_SaveUnusedFlag(void) const{return dSaveUnusedFlag;}
 		bool Get_EnableTTreeOutputFlag(void) const{return dEnableTTreeOutputFlag;}
 
+		// BUILD ANY FLAGS
+		//Default false. If true: Once one is built, don't bother making others. 
+		bool Get_AnyBlueprintFlag(void) const{return dAnyBlueprintFlag;} //If true, no need to change dAnyComboFlag
+		bool Get_AnyComboFlag(void) const{return dAnyComboFlag;}
+		void Set_AnyBlueprintFlag(bool locAnyBlueprintFlag){dAnyBlueprintFlag = locAnyBlueprintFlag;} //If true, no need to change dAnyComboFlag
+		void Set_AnyComboFlag(bool locAnyComboFlag){dAnyComboFlag = locAnyComboFlag;}
+
 		// OTHER:
-		bool Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex = 1) const;
 		bool Check_AreStepsIdentical(const DReaction* locReaction) const;
 
 	private:
@@ -113,6 +133,7 @@ class DReaction : public JObject
 
 		// ROOT TTREE OUTPUT:
 		bool dEnableTTreeOutputFlag; //default is false
+		bool dSaveUnusedFlag; //default is false
 		string dTTreeOutputFileName;
 
 		// REACTION AND ANALYSIS MEMBERS:
@@ -138,17 +159,17 @@ class DReaction : public JObject
 		deque<DAnalysisAction*> dComboPreSelectionActions;
 
 		// EVENT STORE QUERY
-		pair<string, string> dEventStoreQuery; // First is skim name (default = "all"), second is additional query (default = "")
+		string dEventStoreSkims; // First is skim name (default = "all"), second is additional query (default = "")
+
+		// BUILD ANY FLAGS
+		//Default false. If true: Once one is built, don't bother making others. 
+		bool dAnyBlueprintFlag; //If true, don't need to bother changing dAnyComboFlag
+		bool dAnyComboFlag;
 };
 
 inline void DReaction::Set_InvariantMassCut(Particle_t locStepInitialPID, double locMinInvariantMass, double locMaxInvariantMass)
 {
 	dInvariantMassCuts[locStepInitialPID] = pair<double, double>(locMinInvariantMass, locMaxInvariantMass);
-}
-
-inline void DReaction::Set_EventStoreQuery(string locSkimName, string locAdditionalQuery)
-{
-	dEventStoreQuery = pair<string, string>(locSkimName, locAdditionalQuery);
 }
 
 inline const DReactionStep* DReaction::Get_ReactionStep(size_t locStepIndex) const
@@ -183,17 +204,6 @@ inline string DReaction::Get_DecayChainFinalParticlesROOTNames(Particle_t locIni
 		return Get_DecayChainFinalParticlesROOTNames(loc_i, locUpToStepIndex, locUpThroughPIDs, locKinFitResultsFlag, false);
 	}
 	return string("");
-}
-
-inline bool DReaction::Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex) const
-{
-	//see if this pid is a parent in a future step
-	for(size_t loc_k = locSearchStartIndex; loc_k < dReactionSteps.size(); ++loc_k)
-	{
-		if(dReactionSteps[loc_k]->Get_InitialParticleID() == locPID)
-			return true;
-	}
-	return false;
 }
 
 inline void DReaction::Get_ReactionSteps(Particle_t locInitialPID, deque<const DReactionStep*>& locReactionSteps) const
@@ -249,9 +259,10 @@ inline bool DReaction::Check_AreStepsIdentical(const DReaction* locReaction) con
 	return true;
 }
 
-inline void DReaction::Enable_TTreeOutput(string locTTreeOutputFileName)
+inline void DReaction::Enable_TTreeOutput(string locTTreeOutputFileName, bool locSaveUnusedFlag)
 {
 	dEnableTTreeOutputFlag = true;
+	dSaveUnusedFlag = locSaveUnusedFlag;
 	dTTreeOutputFileName = locTTreeOutputFileName;
 }
 

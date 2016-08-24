@@ -49,4 +49,6 @@ int RFMacro_ROCTITimes(void)
 		TCanvas* locCanvas = new TCanvas(locCanvasName.c_str(), locCanvasName.c_str(), 1200, 800);
 		locHist->Draw();
 	}
+
+    return 1;
 }

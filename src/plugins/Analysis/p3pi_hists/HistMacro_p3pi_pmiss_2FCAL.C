@@ -11,21 +11,21 @@
 	  return;
 
 	//Go to Pi0 mass directory
-	TDirectory *locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Hist_InvariantMass_NoKinFit_Measured");
+	locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Hist_InvariantMass_NoKinFit_Measured");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
 	TH1I* locHist_NoKinFit_MPi0 = (TH1I*)gDirectory->Get("InvariantMass");
 
 	//Go to NoKinFit directory
-	TDirectory *locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p3pi_hists_NoKinFit_Measured");
+	locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p3pi_hists_NoKinFit_Measured");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();
 	TH2I* locHist_NoKinFit_MM_M3pi = (TH2I*)gDirectory->Get("MM_M3pi");
 
 	//Go to KinFitCut10 directory
-	TDirectory *locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p3pi_hists_KinFitCut10_Measured");
+	locDirectory = (TDirectory*)locReactionDirectory->FindObjectAny("Custom_p3pi_hists_KinFitCut10_Measured");
 	if(!locDirectory)
 		return;
 	locDirectory->cd();

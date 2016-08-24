@@ -6,16 +6,20 @@
 #include <ANALYSIS/DParticleComboBlueprint.h>
 #include <ANALYSIS/DReaction.h>
 #include "ANALYSIS/DTrackTimeBased_factory_Combo.h"
+#include <EVENTSTORE/DESSkimData.h>
 
 #include <JANA/JObject.h>
 #include <particleType.h>
+#include <SplitString.h>
 #include <PID/DChargedTrack.h>
 #include <PID/DNeutralShower.h>
 #include <PID/DVertex.h>
 #include <PID/DDetectorMatches.h>
+#include <TRIGGER/DTrigger.h>
 
 #include <deque>
 #include <map>
+#include <set>
 #include <vector>
 
 using namespace std;
@@ -38,6 +42,7 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		void Get_Reactions(JEventLoop *locEventLoop, vector<const DReaction*>& locReactions) const;
+		void Check_ReactionNames(vector<const DReaction*>& locReactions) const;
 
 		void Build_ParticleComboBlueprints(const DReaction* locReaction);
 		bool Setup_ComboLoop(const DReaction* locReaction, deque<deque<int> >& locResumeAtIndexDeque, deque<deque<int> >& locNumPossibilitiesDeque, map<int, int>& locInitialParticleStepFromIndexMap, map<pair<int, int>, int>& locFinalStateDecayStepIndexMap);
@@ -48,7 +53,6 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 
 		bool Check_IfDuplicateStepCombo(const DParticleComboBlueprint* locParticleComboBlueprint, const DParticleComboBlueprintStep* locCurrentStep, int locStepIndex, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque) const;
 		bool Check_IfStepsAreIdentical(const DParticleComboBlueprint* locParticleComboBlueprint, const DParticleComboBlueprintStep* locCurrentStep, const DParticleComboBlueprintStep* locPreviousStep) const;
-		int Grab_DecayingParticle(Particle_t locAnalysisPID, int& locResumeAtIndex, const DReaction* locReaction, int locStepIndex, int locParticleIndex);
 
 		const JObject* Grab_DetectedParticle(const DReaction* locReaction, Particle_t locAnalysisPID, int& locResumeAtIndex);
 		const JObject* Grab_NeutralShower(vector<const DNeutralShower*>& locNeutralShowers, int& locResumeAtIndex);
@@ -96,6 +100,8 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		map<DParticleComboBlueprintStep, DParticleComboBlueprintStep*> dBlueprintStepMap;
 
 		DTrackTimeBased_factory_Combo* dTrackTimeBasedFactory_Combo;
+
+		size_t dMaxNumNeutralShowers;
 };
 
 #endif // _DParticleComboBlueprint_factory_

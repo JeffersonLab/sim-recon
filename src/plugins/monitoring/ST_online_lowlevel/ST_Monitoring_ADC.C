@@ -41,7 +41,7 @@
   h2_raw_pi_sector->GetYaxis()->CenterTitle();
   //t_tdc from hit object
   h2_raw_pi_sector->GetYaxis()->SetTitleOffset(1.5);
-  
+  gPad->SetLogz();
   c1->cd(2);
   gStyle->SetOptStat(10);
   gPad->SetTicks();
@@ -50,6 +50,7 @@
   h2_adc_ped_sector->GetXaxis()->CenterTitle();
   h2_adc_ped_sector->GetYaxis()->CenterTitle();
   h2_adc_ped_sector->GetYaxis()->SetTitleOffset(1.6);
+  gPad->SetLogz();
   // t from hit object (tdc time walk corrected)
   c1->cd(3);
   gPad->SetTicks();
@@ -58,6 +59,7 @@
   h2_raw_pt_sector->GetXaxis()->CenterTitle();
   h2_raw_pt_sector->GetYaxis()->CenterTitle();
   h2_raw_pt_sector->GetYaxis()->SetTitleOffset(1.55);
+  gPad->SetLogz();
   c1->cd(4);
   gStyle->SetOptStat(10);
   gPad->SetTicks();
@@ -90,7 +92,7 @@
   c2->Draw();
   c2->Update();
   if(!gPad) return;
-  TCanvas *c2 = gPad->GetCanvas();
+  c2 = gPad->GetCanvas();
   c2->Divide(3,2);
   // t_adc from hit object
   c2->cd(1);
@@ -102,6 +104,7 @@
   h2_adc_pcpi_sector->GetYaxis()->CenterTitle(); 
   h2_adc_pcpi_sector->GetYaxis()->SetTitleOffset(1.5);
   h2_adc_pcpi_sector->SetLabelSize(0.03,"Y");
+  gPad->SetLogz();
   // Energy loss from hit object
   c2->cd(2);
   gPad->SetTicks();
@@ -110,6 +113,7 @@
   h2_raw_ped_sector->GetYaxis()->SetTitleOffset(1.5);
   h2_raw_ped_sector->GetXaxis()->CenterTitle();
   h2_raw_ped_sector->GetYaxis()->CenterTitle();
+  gPad->SetLogz();
   c2->cd(3);
   gStyle->SetOptStat(10);
   gPad->SetTicks();
@@ -117,6 +121,7 @@
   if (h2_adc_pt_sector) h2_adc_pt_sector->Draw("colz");
   h2_adc_pt_sector->GetXaxis()->CenterTitle();
   h2_adc_pt_sector->GetYaxis()->CenterTitle();
+  gPad->SetLogz();
   c2->cd(4);
   gStyle->SetOptStat(10);
   gPad->SetTicks();
@@ -147,7 +152,7 @@
   c3->Draw();
   c3->Update();
   if(!gPad) return;
-  TCanvas *c3 = gPad->GetCanvas();
+  c3 = gPad->GetCanvas();
   c3->Divide(3,2);
   // t_adc from hit object
   c3->cd(1);
@@ -158,6 +163,7 @@
   h2_adc_pp_sector->GetXaxis()->CenterTitle();
   h2_adc_pp_sector->GetYaxis()->CenterTitle();
   h2_adc_pp_sector->GetYaxis()->SetTitleOffset(1.5);
+   gPad->SetLogz();
   c3->cd(2);
   gStyle->SetOptStat(10);
   gPad->SetTicks();
@@ -166,6 +172,7 @@
   h2_st_time_vs_pp->GetXaxis()->CenterTitle();
   h2_st_time_vs_pp->GetYaxis()->CenterTitle();
   h2_st_time_vs_pp->GetYaxis()->SetTitleOffset(1.4);
+  gPad->SetLogz();
   c3->cd(3);
   gStyle->SetOptStat(10);
   gPad->SetTicks();
@@ -173,6 +180,7 @@
   if (h2_st_time_vs_pcpi) h2_st_time_vs_pcpi->Draw("colz");
   h2_st_time_vs_pcpi->GetXaxis()->CenterTitle();
   h2_st_time_vs_pcpi->GetYaxis()->CenterTitle();
+  gPad->SetLogz();
   c3->cd(4);
   gStyle->SetOptStat(10);
   gPad->SetTicks();
@@ -193,7 +201,7 @@
   gStyle->SetOptStat(10);
   gPad->SetTicks();
   gPad->SetGrid();
-  TH1D *h_pcpi = h2_st_time_vs_pcpi->ProjectionY();
+  TH1D *h_pcpi = h2_st_time_vs_pcpi->ProjectionX();
   h_pcpi->Draw();
   h_pcpi->GetXaxis()->CenterTitle();
   h_pcpi->GetYaxis()->CenterTitle();

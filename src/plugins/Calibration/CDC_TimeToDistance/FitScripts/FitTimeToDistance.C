@@ -5,6 +5,9 @@ double magnet_correction[2][2];
 vector<double> cdc_drift_table;
 double Bz_avg;
 
+// Set values for the region cut
+float deltaMin = -0.12, deltaMax = 0.12, tMin = 400, tMax = 1100;
+
 unsigned int Locate(vector<double>&xx, double x){
     int n=xx.size();
     if (x==xx[0]) return 0;
@@ -101,6 +104,10 @@ Double_t TimeToDistanceFieldOn( Double_t *x, Double_t *par){
     Double_t d=0.0;
     double delta = x[1]; // yAxis
     double t = x[0]; // xAxis
+
+    // Cut out region in  fit. 
+    if (delta > deltaMax || delta < deltaMin) return 0.0;
+    if (delta < (((deltaMax - deltaMin) / (tMax - tMin))*(t - tMin) + deltaMin)) return 0.0;
     // Variables to store values for time-to-distance functions for delta=0
     // and delta!=0
     double f_0=0.;
@@ -182,14 +189,20 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
     // Script for fitting the time to distance relation from data
     TFile *thisFile = TFile::Open(inputROOTFile);
     TH1I *Bz_hist = (TH1I *) thisFile->Get("/CDC_TimeToDistance/Bz");
-    TF2 *f2; const Int_t npar = 18;
+    TF2 *f1,*f2; const Int_t npar = 18;
     bool isFieldOff = false;
     if (Bz_hist == 0){
-        f2 = new TF2("f2",TimeToDistanceFieldOff, 0, 1000, -0.3, 0.3, npar);
+        //f1 = new TF2("f1",TimeToDistanceFieldOff, 0, 1500, -0.3, 0.3, npar);
+        //f2 = new TF2("f2",TimeToDistanceFieldOff, 0, 1500, -0.3, 0.3, npar);
+        f1 = new TF2("f1",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
+        f2 = new TF2("f2",TimeToDistanceFieldOff, 0, 200, -0.18, 0.18, npar);
         isFieldOff = true;
     }
     else{
-        f2 = new TF2("f2",TimeToDistanceFieldOn, 0, 1000, -0.3, 0.3, npar);
+        f1 = new TF2("f1",TimeToDistanceFieldOn, 0, 1500, -0.18, 0.18, npar);
+        f2 = new TF2("f2",TimeToDistanceFieldOn, 0, 1500, -0.18, 0.18, npar);
+        //f1 = new TF2("f1",TimeToDistanceFieldOn, 0, 200, -0.18, 0.18, npar);
+        //f2 = new TF2("f2",TimeToDistanceFieldOn, 0, 200, -0.18, 0.18, npar);
         Bz_avg = Bz_hist->GetMean();
     }
 
@@ -234,15 +247,13 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
     gSystem->ClosePipe(locInputFile);
 
     sprintf(command, "ccdb dump /CDC/cdc_drift_table:%i:NoBField", run);
-    FILE* locInputFile = gSystem->OpenPipe(command, "r");
+    locInputFile = gSystem->OpenPipe(command, "r");
     if(locInputFile == NULL)
         return 0;
     //get the first (comment) line
-    char buff[1024];
     if(fgets(buff, sizeof(buff), locInputFile) == NULL)
         return 0;
     //get the remaining lines
-    double value;
     while(fgets(buff, sizeof(buff), locInputFile) != NULL){
         istringstream locConstantsStream(buff);
         while (locConstantsStream >> value){
@@ -263,6 +274,7 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
         short_drift_func[2][0], short_drift_func[2][1], short_drift_func[2][2]};
 
 
+    f1->SetParameters(parameters);
     f2->SetParameters(parameters);
     TProfile2D *profile = (TProfile2D *) thisFile->Get("/CDC_TimeToDistance/Predicted Drift Distance Vs Delta Vs t_drift");
 
@@ -276,11 +288,11 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
 
     profile->SetContour(21, contours);
     profile->Draw("colz");
-    f2->SetContour(21, contours);
+    f1->SetContour(21, contours);
     profile->Draw("cont2 list same");
-    f2->Draw("cont2 list same");
+    f1->Draw("cont2 list same");
     c1->Update();
-    c1->SaveAs("Before.png");
+    c1->SaveAs(Form("Before_Run%i.png", run));
 
     TProfile2D *profileRebin = profile->Rebin2D(4,4, "Rebin");
     TFitResultPtr fr = profileRebin->Fit("f2", "S");
@@ -291,7 +303,13 @@ void FitTimeToDistance(TString inputROOTFile = "hd_root.root", int run = 3650)
     profile->Draw("cont2 list same");
     f2->Draw("cont2 list same");
     c2->Update();
-    c2->SaveAs("After.png");
+    c2->SaveAs(Form("After_Run%i.png", run));
+
+    TCanvas *c3 = new TCanvas ("c3", "c3", 800, 600);
+    f1->Draw("cont2 list");
+    f1->SetLineColor(3);
+    f2->Draw("cont2 list same");
+    c3->Update();
 
     ofstream outputTextFile;
     outputTextFile.open("ccdb_Format.txt"); 

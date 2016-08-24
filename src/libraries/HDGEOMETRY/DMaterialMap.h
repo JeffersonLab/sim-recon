@@ -40,8 +40,10 @@ class DMaterialMap{
 		jerror_t FindMat(DVector3 &pos, double &density, double &A, double &Z, double &RadLen) const;
 		jerror_t FindMatKalman(const DVector3 &pos,
 				       double &K_rho_Z_over_A,
-				       double &rho_Z_over_A,double &LogI,double &chi2c_factor,
-				       double &chi2a_factor,double &chi2a_corr) const;
+				       double &rho_Z_over_A,double &LogI,
+				       double &chi2c_factor,
+				       double &chi2a_factor,double &chi2a_corr,
+				       double &Z) const;
 		bool IsInMap(const DVector3 &pos) const;
 		double EstimatedDistanceToBoundary(const DVector3 &pos, const DVector3 &mom);
 		double EstimatedDistanceToBoundarySearch(double r, double z, double p_hatR, double p_hatZ, double &s_to_boundary);

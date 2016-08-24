@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <vector>
+#include <string>
 
 #include <HDDM/hddm_r.hpp>
 
@@ -24,7 +25,7 @@
 #include "TOF/DTOFPoint.h"
 #include "START_COUNTER/DSCHit.h"
 #include "TRACKING/DTrackTimeBased.h"
-#include "TRIGGER/DMCTrigger.h"
+#include "TRIGGER/DTrigger.h"
 #include "RF/DRFTime.h"
 
 using namespace std;
@@ -44,11 +45,20 @@ class DEventWriterREST : public JObject
 	private:
 		bool Write_RESTEvent(string locOutputFileName, hddm_r::HDDM& locRecord) const;
 
+		//contains static variables shared amongst threads
+		int& Get_NumEventWriterThreads(void) const; //acquire RESTWriter lock before modifying
+		map<string, pair<ofstream*, hddm_r::ostream*> >& Get_RESTOutputFilePointers(void) const;
+
+		int32_t Convert_UnsignedIntToSigned(uint32_t locUnsignedInt) const;
+
 		string dOutputFileBaseName;
 		bool HDDM_USE_COMPRESSION;
 		bool HDDM_USE_INTEGRITY_CHECKS;
+
+        // metadata to save in the REST file
+        // these should be consistent during program execution
+        string HDDM_DATA_VERSION_STRING;
+        string CCDB_CONTEXT_STRING;
 };
 
 #endif //_DEventWriterREST_
-
-

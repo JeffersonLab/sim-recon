@@ -188,13 +188,20 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const 
 	if(!locIncludeDecayingToReactionFlag)
 	{
 		//don't try decaying thrown particles: compare as-is
-		const DReaction* locThrownReaction = dThrownReactionFactory->Build_ThrownReaction(locEventLoop, locThrownSteps);
-		const DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locThrownSteps);
+		DReaction* locThrownReaction = dThrownReactionFactory->Build_ThrownReaction(locEventLoop, locThrownSteps);
+		DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locThrownSteps);
 		bool locCheckResult = Check_ThrownsMatchReaction(locThrownCombo, locCurrentReaction, locExclusiveMatchFlag);
 
-		delete locThrownCombo;
-		delete locThrownReaction;
+		dThrownComboFactory->Recycle_Combo(locThrownCombo);
+		dThrownReactionFactory->Recycle_Reaction(locThrownReaction);
 		return locCheckResult;
+	}
+
+	//at this point, #-steps are final. If exclusive, bail if they don't match
+	if(locExclusiveMatchFlag)
+	{
+		if(locReaction->Get_NumReactionSteps() != locThrownSteps.size())
+			return false;
 	}
 
 	//ok, if there are still an unequal # of parents for a given PID between thrown & DReaction (i.e. both #'s are non-zero):
@@ -222,12 +229,12 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const 
 	//if no additional replacements to make: check it
 	if(locPIDVector.empty())
 	{
-		const DReaction* locThrownReaction = dThrownReactionFactory->Build_ThrownReaction(locEventLoop, locThrownSteps);
-		const DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locThrownSteps);
+		DReaction* locThrownReaction = dThrownReactionFactory->Build_ThrownReaction(locEventLoop, locThrownSteps);
+		DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locThrownSteps);
 		bool locCheckResult = Check_ThrownsMatchReaction(locThrownCombo, locCurrentReaction, locExclusiveMatchFlag);
 
-		delete locThrownCombo;
-		delete locThrownReaction;
+		dThrownComboFactory->Recycle_Combo(locThrownCombo);
+		dThrownReactionFactory->Recycle_Reaction(locThrownReaction);
 		return locCheckResult;
 	}
 
@@ -248,16 +255,15 @@ bool DAnalysisUtilities::Check_IsBDTSignalEvent(JEventLoop* locEventLoop, const 
 		if(locParticleIndex == int(locPIDVector.size()))
 		{
 			//combo defined: try it
-			const DReaction* locThrownReaction = dThrownReactionFactory->Build_ThrownReaction(locEventLoop, locCurrentThrownSteps);
-			const DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locCurrentThrownSteps);
+			DReaction* locThrownReaction = dThrownReactionFactory->Build_ThrownReaction(locEventLoop, locCurrentThrownSteps);
+			DParticleCombo* locThrownCombo = dThrownComboFactory->Build_ThrownCombo(locEventLoop, locThrownReaction, locCurrentThrownSteps);
 			bool locCheckResult = Check_ThrownsMatchReaction(locThrownCombo, locCurrentReaction, locExclusiveMatchFlag);
 
-			delete locThrownCombo;
-			delete locThrownReaction;
+			dThrownComboFactory->Recycle_Combo(locThrownCombo);
+			dThrownReactionFactory->Recycle_Reaction(locThrownReaction);
 
 			if(locCheckResult)
 				return true; //it worked!
-			locResumeAtIndex[locParticleIndex] = 0;
 			locReplacementThrownSteps.pop_back();
 			--locParticleIndex;
 			continue;
@@ -751,26 +757,26 @@ bool DAnalysisUtilities::Are_ThrownPIDsSameAsDesired(JEventLoop* locEventLoop, c
 DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, bool locUseKinFitDataFlag) const
 {
 	set<pair<const JObject*, Particle_t> > locSourceObjects;
-	return Calc_MissingP4(locParticleCombo, 0, -1, deque<Particle_t>(), locSourceObjects, locUseKinFitDataFlag);
+	return Calc_MissingP4(locParticleCombo, 0, -1, set<size_t>(), locSourceObjects, locUseKinFitDataFlag);
 }
 
 DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
 {
-	return Calc_MissingP4(locParticleCombo, 0, -1, deque<Particle_t>(), locSourceObjects, locUseKinFitDataFlag);
+	return Calc_MissingP4(locParticleCombo, 0, -1, set<size_t>(), locSourceObjects, locUseKinFitDataFlag);
 }
 
-DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, bool locUseKinFitDataFlag) const
+DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices, bool locUseKinFitDataFlag) const
 {
 	set<pair<const JObject*, Particle_t> > locSourceObjects;
-	return Calc_MissingP4(locParticleCombo, locStepIndex, locUpToStepIndex, locUpThroughPIDs, locSourceObjects, locUseKinFitDataFlag);
+	return Calc_MissingP4(locParticleCombo, locStepIndex, locUpToStepIndex, locUpThroughIndices, locSourceObjects, locUseKinFitDataFlag);
 }
 
-DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
+DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
 {
 	//NOTE: this routine assumes that the p4 of a charged decaying particle with a detached vertex is the same at both vertices!
 	//assumes missing particle is not the beam particle
 	if(locUseKinFitDataFlag && (locParticleCombo->Get_KinFitResults() == NULL))
-		return Calc_MissingP4(locParticleCombo, locStepIndex, locUpToStepIndex, locUpThroughPIDs, locSourceObjects, false); //kinematic fit failed
+		return Calc_MissingP4(locParticleCombo, locStepIndex, locUpToStepIndex, locUpThroughIndices, locSourceObjects, false); //kinematic fit failed
 
 	DLorentzVector locMissingP4;
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
@@ -807,29 +813,17 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 		if((locDecayStepIndex == -1) || (locDecayStepIndex == -3))
 			continue; //missing particle or no blueprint
 
-		Particle_t locPID = locParticleComboStep->Get_FinalParticleID(loc_j);
-		if(int(locStepIndex) == locUpToStepIndex)
-		{
-			bool locPIDFoundFlag = false;
-			for(deque<Particle_t>::iterator locIterator = locUpThroughPIDs.begin(); locIterator != locUpThroughPIDs.end(); ++locIterator)
-			{
-				if((*locIterator) != locPID)
-					continue;
-				locUpThroughPIDs.erase(locIterator);
-				locPIDFoundFlag = true;
-				break;
-			}
-			if(!locPIDFoundFlag)
-				continue; //skip it: don't want to include it
-		}
+		if((int(locStepIndex) == locUpToStepIndex) && (locUpThroughIndices.find(loc_j) == locUpThroughIndices.end()))
+			continue; //skip it: don't want to include it
 
+		Particle_t locPID = locParticleComboStep->Get_FinalParticleID(loc_j);
 		if(locDecayStepIndex == -2) //detected
 		{
 			locMissingP4 -= locParticles[loc_j]->lorentzMomentum();
 			locSourceObjects.insert(pair<const JObject*, Particle_t>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_j), locPID));
 		}
 		else //decaying-particle
-			locMissingP4 += Calc_MissingP4(locParticleCombo, locDecayStepIndex, locUpToStepIndex, locUpThroughPIDs, locSourceObjects, locUseKinFitDataFlag); //p4 returned is already < 0
+			locMissingP4 += Calc_MissingP4(locParticleCombo, locDecayStepIndex, locUpToStepIndex, locUpThroughIndices, locSourceObjects, locUseKinFitDataFlag); //p4 returned is already < 0
 	}
 
 	return locMissingP4;
@@ -838,10 +832,10 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 DMatrixDSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo) const
 {
 	//uses measured data!
-	return Calc_MissingP3Covariance(locParticleCombo, 0, -1, deque<Particle_t>());
+	return Calc_MissingP3Covariance(locParticleCombo, 0, -1, set<size_t>());
 }
 
-DMatrixDSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs) const
+DMatrixDSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, set<size_t> locUpThroughIndices) const
 {
 	//uses measured data!
 
@@ -874,21 +868,8 @@ DMatrixDSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* l
 		if((locDecayStepIndex == -1) || (locDecayStepIndex == -3))
 			continue; //missing particle or no blueprint
 
-		Particle_t locPID = locParticleComboStep->Get_FinalParticleID(loc_j);
-		if(int(locStepIndex) == locUpToStepIndex)
-		{
-			bool locPIDFoundFlag = false;
-			for(deque<Particle_t>::iterator locIterator = locUpThroughPIDs.begin(); locIterator != locUpThroughPIDs.end(); ++locIterator)
-			{
-				if((*locIterator) != locPID)
-					continue;
-				locUpThroughPIDs.erase(locIterator);
-				locPIDFoundFlag = true;
-				break;
-			}
-			if(!locPIDFoundFlag)
-				continue; //skip it: don't want to include it
-		}
+		if((int(locStepIndex) == locUpToStepIndex) && (locUpThroughIndices.find(loc_j) == locUpThroughIndices.end()))
+			continue; //skip it: don't want to include it
 
 		if(locDecayStepIndex == -2) //detected
 		{
@@ -897,7 +878,7 @@ DMatrixDSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* l
 			locMissingCovarianceMatrix += locParticleCovarianceMatrix;
 		}
 		else //decaying-particle
-			locMissingCovarianceMatrix += Calc_MissingP3Covariance(locParticleCombo, locDecayStepIndex, locUpToStepIndex, locUpThroughPIDs);
+			locMissingCovarianceMatrix += Calc_MissingP3Covariance(locParticleCombo, locDecayStepIndex, locUpToStepIndex, locUpThroughIndices);
 	}
 
 	return locMissingCovarianceMatrix;
@@ -906,13 +887,24 @@ DMatrixDSym DAnalysisUtilities::Calc_MissingP3Covariance(const DParticleCombo* l
 DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, bool locUseKinFitDataFlag) const
 {
 	set<pair<const JObject*, Particle_t> > locSourceObjects;
-	return Calc_FinalStateP4(locParticleCombo, locStepIndex, locSourceObjects, locUseKinFitDataFlag);
+	return Calc_FinalStateP4(locParticleCombo, locStepIndex, set<size_t>(), locSourceObjects, locUseKinFitDataFlag);
 }
 
 DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
 {
+	return Calc_FinalStateP4(locParticleCombo, locStepIndex, set<size_t>(), locSourceObjects, locUseKinFitDataFlag);
+}
+
+DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<size_t> locToIncludeIndices, bool locUseKinFitDataFlag) const
+{
+	set<pair<const JObject*, Particle_t> > locSourceObjects;
+	return Calc_FinalStateP4(locParticleCombo, locStepIndex, locToIncludeIndices, locSourceObjects, locUseKinFitDataFlag);
+}
+
+DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<size_t> locToIncludeIndices, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
+{
 	if(locUseKinFitDataFlag && (locParticleCombo->Get_KinFitResults() == NULL))
-		return Calc_FinalStateP4(locParticleCombo, locStepIndex, locSourceObjects, false); //kinematic fit failed
+		return Calc_FinalStateP4(locParticleCombo, locStepIndex, locToIncludeIndices, locSourceObjects, false); //kinematic fit failed
 
 	DLorentzVector locFinalStateP4;
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
@@ -925,20 +917,25 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locPa
 	else //kinfit
 		locParticleComboStep->Get_FinalParticles(locParticles);
 
+	bool locDoSubsetFlag = !locToIncludeIndices.empty();
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
+		if(locDoSubsetFlag && (locToIncludeIndices.find(loc_i) == locToIncludeIndices.end()))
+			continue; //skip it: don't want to include it
+
 		if(locParticleComboStep->Is_FinalParticleMissing(loc_i))
 			return (DLorentzVector()); //bad!
+
 		if(locParticleComboStep->Is_FinalParticleDecaying(loc_i))
 		{
 			//measured results, or not constrained by kinfit (either non-fixed mass or excluded from kinfit)
 			if((!locUseKinFitDataFlag) || (!IsFixedMass(locParticleComboStep->Get_FinalParticleID(loc_i))))
-				locFinalStateP4 += Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), locSourceObjects, locUseKinFitDataFlag);
+				locFinalStateP4 += Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), set<size_t>(), locSourceObjects, locUseKinFitDataFlag);
 			else //want kinfit results, and decaying particle p4 is constrained by kinfit
 			{
 				locFinalStateP4 += locParticles[loc_i]->lorentzMomentum();
 				//still need source objects of decay products! dive down anyway, but ignore p4 result
-				Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), locSourceObjects, locUseKinFitDataFlag);
+				Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), set<size_t>(), locSourceObjects, locUseKinFitDataFlag);
 			}
 		}
 		else
@@ -1090,7 +1087,7 @@ double DAnalysisUtilities::Calc_CrudeTime(const deque<const DKinematicData*>& lo
 	return locAverageTime/(double(locParticles.size()));
 }
 
-double DAnalysisUtilities::Calc_CrudeTime(const deque<const DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const
+double DAnalysisUtilities::Calc_CrudeTime(const deque<DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const
 {
 	//crudely propagate the track times to the common vertex and return the average track time
 	DVector3 locPOCA;
@@ -1211,7 +1208,7 @@ DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DKinematicData*>
 	return locVertex;
 }
 
-DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DKinFitParticle*>& locParticles) const
+DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<DKinFitParticle*>& locParticles) const
 {
 	//assumes tracks are straight lines
 	//uses the midpoint of the smallest DOCA line
@@ -1240,5 +1237,112 @@ DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DKinFitParticle*
 		}
 	}
 	return locVertex;
+}
+
+set<set<size_t> > DAnalysisUtilities::Build_IndexCombos(const DReactionStep* locReactionStep, deque<Particle_t> locToIncludePIDs) const
+{
+	//if locToIncludePIDs is empty, will return one set with all (except missing)
+	set<set<size_t> > locCombos;
+
+	deque<Particle_t> locReactionStepPIDs;
+	locReactionStep->Get_FinalParticleIDs(locReactionStepPIDs);
+	int locMissingParticleIndex = locReactionStep->Get_MissingParticleIndex();
+
+	if(locToIncludePIDs.empty())
+	{
+		set<size_t> locCombo;
+		for(size_t loc_i = 0; loc_i < locReactionStepPIDs.size(); ++loc_i)
+		{
+			if(int(loc_i) == locMissingParticleIndex)
+				continue;
+			locCombo.insert(loc_i);
+		}
+		locCombos.insert(locCombo);
+		return locCombos;
+	}
+
+	//deque indices corresponds to locToIncludePIDs, and each set is what could pass for it
+	deque<deque<size_t> > locPossibilities(locToIncludePIDs.size(), deque<size_t>());
+	deque<int> locResumeAtIndices(locToIncludePIDs.size(), 0);
+
+	//build possibilities: loop over reaction PIDs
+	for(size_t loc_i = 0; loc_i < locReactionStepPIDs.size(); ++loc_i)
+	{
+		if(int(loc_i) == locMissingParticleIndex)
+			continue;
+		Particle_t locPID = locReactionStepPIDs[loc_i];
+
+		//register where this is a valid option: loop over to-include PIDs
+		for(size_t loc_j = 0; loc_j < locToIncludePIDs.size(); ++loc_j)
+		{
+			if(locToIncludePIDs[loc_j] == locPID)
+				locPossibilities[loc_j].push_back(loc_i);
+		}
+	}
+
+	//build combos
+	int locParticleIndex = 0;
+	deque<size_t> locComboDeque;
+	while(true)
+	{
+		if(locParticleIndex == int(locPossibilities.size())) //end of combo: save it
+		{
+			set<size_t> locComboSet; //convert set to deque
+			for(size_t loc_i = 0; loc_i < locComboDeque.size(); ++loc_i)
+				locComboSet.insert(locComboDeque[loc_i]);
+			locCombos.insert(locComboSet); //saved
+
+			if(!Handle_Decursion(locParticleIndex, locComboDeque, locResumeAtIndices, locPossibilities))
+				break;
+			continue;
+		}
+
+		int& locResumeAtIndex = locResumeAtIndices[locParticleIndex];
+
+		//if two identical pids: locResumeAtIndex must always be >= the previous locResumeAtIndex (prevents duplicates) e.g. g, p -> p, pi0, pi0
+		//search for same pid previously in this step
+		Particle_t locToIncludePID = locToIncludePIDs[locParticleIndex];
+		for(int loc_i = locParticleIndex - 1; loc_i >= 0; --loc_i)
+		{
+			if(locToIncludePIDs[loc_i] == locToIncludePID)
+			{
+				if(locResumeAtIndex < locResumeAtIndices[loc_i])
+					locResumeAtIndex = locResumeAtIndices[loc_i];
+				break; //dupe type in step: resume-at advanced to next
+			}
+		}
+
+		if(locResumeAtIndex >= int(locPossibilities[locParticleIndex].size()))
+		{
+			if(!Handle_Decursion(locParticleIndex, locComboDeque, locResumeAtIndices, locPossibilities))
+				break;
+			continue;
+		}
+
+		// pid found
+		locComboDeque.push_back(locPossibilities[locParticleIndex][locResumeAtIndex]);
+		++locResumeAtIndex;
+		++locParticleIndex;
+	}
+
+	return locCombos;
+}
+
+bool DAnalysisUtilities::Handle_Decursion(int& locParticleIndex, deque<size_t>& locComboDeque, deque<int>& locResumeAtIndices, deque<deque<size_t> >& locPossibilities) const
+{
+	do
+	{
+		if(locParticleIndex < int(locResumeAtIndices.size())) //else just saved a combo
+			locResumeAtIndices[locParticleIndex] = 0; //finding this particle failed: reset
+
+		--locParticleIndex; //go to previous particle
+		if(locParticleIndex < 0)
+			return false; //end of particles: end of finding all combos
+
+		locComboDeque.pop_back(); //reset this index
+	}
+	while(locResumeAtIndices[locParticleIndex] == int(locPossibilities[locParticleIndex].size()));
+
+	return true;
 }
 

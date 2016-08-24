@@ -10,7 +10,7 @@
 
 #include <JANA/JFactory.h>
 #include <PID/DBeamPhoton.h>
-#include <ANALYSIS/DKinFitParticle.h>
+#include <KINFITTER/DKinFitParticle.h>
 #include <ANALYSIS/DParticleCombo.h>
 
 using namespace jana;
@@ -30,7 +30,7 @@ class DBeamPhoton_factory_KinFit : public jana::JFactory<DBeamPhoton>
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		DBeamPhoton* Build_BeamPhoton(const DBeamPhoton* locBeamPhoton, const DKinFitParticle* locKinFitParticle, const DParticleCombo* locParticleCombo);
+		DBeamPhoton* Build_BeamPhoton(const DBeamPhoton* locBeamPhoton, DKinFitParticle* locKinFitParticle, const DParticleCombo* locParticleCombo);
 };
 
 #endif // _DBeamPhoton_factory_KinFit_

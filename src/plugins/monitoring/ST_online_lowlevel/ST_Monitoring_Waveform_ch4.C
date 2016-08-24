@@ -20,13 +20,13 @@
   TH1I** h_amp_vs_sampl_chan4000 = new TH1I*[NCHANNELS];
   for(unsigned int i = 0; i < NCHANNELS; i++)
     {
-      // Grab 1D histograms for root file 
-      TH1I *h_amp_vs_sampl_chan[i]       = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan_%i", i+1));
-      TH1I *h_amp_vs_sampl_chan150[i]    = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan150_%i", i+1));
-      TH1I *h_amp_vs_sampl_chan1000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan1000_%i", i+1));
-      TH1I *h_amp_vs_sampl_chan2000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan2000_%i", i+1));
-      TH1I *h_amp_vs_sampl_chan3000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan3000_%i", i+1));
-      TH1I *h_amp_vs_sampl_chan4000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan4000_%i", i+1));
+        // Grab 1D histograms for root file 
+        h_amp_vs_sampl_chan[i]       = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan_%i", i+1));
+        h_amp_vs_sampl_chan150[i]    = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan150_%i", i+1));
+        h_amp_vs_sampl_chan1000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan1000_%i", i+1));
+        h_amp_vs_sampl_chan2000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan2000_%i", i+1));
+        h_amp_vs_sampl_chan3000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan3000_%i", i+1));
+        h_amp_vs_sampl_chan4000[i]   = (TH1I*)gDirectory->FindObjectAny(Form("amp_vs_sampl_chan4000_%i", i+1));
     }
 
 

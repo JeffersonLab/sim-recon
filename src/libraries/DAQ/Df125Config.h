@@ -15,7 +15,14 @@ class Df125Config:public DDAQConfig{
 	public:
 		JOBJECT_PUBLIC(Df125Config);
 
-		Df125Config(uint32_t rocid, uint32_t slot_mask):DDAQConfig(rocid,slot_mask),NSA(0xFFFF),NSB(0xFFFF),NSA_NSB(0xFFFF),NPED(0xFFFF),WINWIDTH(0xFFFF){}
+		Df125Config(uint32_t rocid, uint32_t slot_mask):DDAQConfig(rocid,slot_mask)
+			,NSA(0xFFFF),NSB(0xFFFF),NSA_NSB(0xFFFF),NPED(0xFFFF),WINWIDTH(0xFFFF)
+			,PL(0xFFFF),NW(0xFFFF),NPK(0xFFFF),P1(0xFFFF),P2(0xFFFF),PG(0xFFFF)
+			,IE(0xFFFF),H(0xFFFF),TH(0xFFFF),TL(0xFFFF),IBIT(0xFFFF),ABIT(0xFFFF),PBIT(0xFFFF){}
+		Df125Config(const Df125Config *c):DDAQConfig(c->rocid,c->slot_mask)
+			,NSA(c->NSA),NSB(c->NSB),NSA_NSB(c->NSA_NSB),NPED(c->NPED),WINWIDTH(c->WINWIDTH)
+			,PL(c->PL),NW(c->NW),NPK(c->NPK),P1(c->P1),P2(c->P2),PG(c->PG)
+			,IE(c->IE),H(c->H),TH(c->TH),TL(c->TL),IBIT(c->IBIT),ABIT(c->ABIT),PBIT(c->PBIT){}
 		
 		uint16_t NSA;      // Num. samples before threshold crossing sample
 		uint16_t NSB;      // Num. samples after  threshold crossing sample

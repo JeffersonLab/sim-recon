@@ -1,0 +1,15 @@
+
+import os
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+# Install all files except 'SConscript'
+scripts = env.Glob('*')
+for script in scripts:
+	myscript = '%s' % script  # convert to simple string
+	if 'SConscript' in myscript: continue
+	env.Install(env.subst('$BINDIR'), script)
+

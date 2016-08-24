@@ -95,7 +95,7 @@ void DEventRFBunch_factory::Select_GoodTracks(JEventLoop* locEventLoop, vector<c
 jerror_t DEventRFBunch_factory::Select_RFBunch(JEventLoop* locEventLoop, vector<const DTrackTimeBased*>& locTrackTimeBasedVector, const DRFTime* locRFTime)
 {
 	//If RF Time present:
-		//Use tracks with matching SC hits, if any
+		//Use tracks with matching TOF hits. For those without, use SC hits instead.  If any.
 		//If none, use tracks with matching hits in any detector, if any
 		//If none: Let neutral showers vote (assume PID = photon) on RF bunch
 		//If None: set DEventRFBunch::dTime to NaN
@@ -118,16 +118,16 @@ jerror_t DEventRFBunch_factory::Select_RFBunch(JEventLoop* locEventLoop, vector<
 	int locBestRFBunchShift = 0, locHighestNumVotes = 0;
 
 	//Use tracks with matching SC hits, if any
-	if(Find_TrackTimes_SC(locDetectorMatches, locTrackTimeBasedVector, locTimes))
+	if(Find_TrackTimes_SCTOF(locDetectorMatches, locTrackTimeBasedVector, locTimes))
 		locBestRFBunchShift = Conduct_Vote(locEventLoop, locRFTime->dTime, locTimes, true, locHighestNumVotes);
-	else if(Find_TrackTimes_NonSC(locDetectorMatches, locTrackTimeBasedVector, locTimes))
+	else if(Find_TrackTimes_All(locDetectorMatches, locTrackTimeBasedVector, locTimes))
 		locBestRFBunchShift = Conduct_Vote(locEventLoop, locRFTime->dTime, locTimes, true, locHighestNumVotes);
 	else if(Find_NeutralTimes(locEventLoop, locTimes))
 		locBestRFBunchShift = Conduct_Vote(locEventLoop, locRFTime->dTime, locTimes, false, locHighestNumVotes);
 	else //SET NaN
 		return Create_NaNRFBunch();
 
-	DEventRFBunch* locEventRFBunch = new DEventRFBunch;
+	DEventRFBunch* locEventRFBunch = new DEventRFBunch();
 	locEventRFBunch->dTime = locRFTime->dTime + dBeamBunchPeriod*double(locBestRFBunchShift);
 	locEventRFBunch->dTimeVariance = locRFTime->dTimeVariance;
 	locEventRFBunch->dNumParticleVotes = locHighestNumVotes;
@@ -165,13 +165,26 @@ int DEventRFBunch_factory::Conduct_Vote(JEventLoop* locEventLoop, double locRFTi
 	}
 }
 
-bool DEventRFBunch_factory::Find_TrackTimes_SC(const DDetectorMatches* locDetectorMatches, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, const JObject*> >& locTimes) const
+bool DEventRFBunch_factory::Find_TrackTimes_SCTOF(const DDetectorMatches* locDetectorMatches, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, const JObject*> >& locTimes) const
 {
 	locTimes.clear();
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
 		const DTrackTimeBased* locTrackTimeBased = locTrackTimeBasedVector[loc_i];
 
+		//TOF resolution = 80ps, 3sigma = 240ps
+			//max PID delta-t = 762ps (assuming 499 MHz and no buffer)
+			//for pion-proton: delta-t is ~750ps at ~170 MeV/c or lower: cannot have proton this slow anyway
+			//for pion-kaon delta-t is ~750ps at ~80 MeV/c or lower: won't reconstruct these anyway, and not likely to be forward-going anyway
+		DTOFHitMatchParams locTOFHitMatchParams;
+		if(dParticleID->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
+		{
+			double locPropagatedTime = locTOFHitMatchParams.dHitTime - locTOFHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
+			locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
+			continue;
+		}
+
+		//Prefer TOF over SC in nose region because hard to tell which SC counter should have been hit
 		DSCHitMatchParams locSCHitMatchParams;
 		if(!dParticleID->Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams))
 			continue;
@@ -183,7 +196,7 @@ bool DEventRFBunch_factory::Find_TrackTimes_SC(const DDetectorMatches* locDetect
 	return (!locTimes.empty());
 }
 
-bool DEventRFBunch_factory::Find_TrackTimes_NonSC(const DDetectorMatches* locDetectorMatches, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, const JObject*> >& locTimes)
+bool DEventRFBunch_factory::Find_TrackTimes_All(const DDetectorMatches* locDetectorMatches, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, const JObject*> >& locTimes)
 {
 	locTimes.clear();
 
@@ -197,13 +210,23 @@ bool DEventRFBunch_factory::Find_TrackTimes_NonSC(const DDetectorMatches* locDet
 		//TOF resolution = 80ps, 3sigma = 240ps
 			//max PID delta-t = 762ps (assuming 499 MHz and no buffer)
 			//for pion-proton: delta-t is ~750ps at ~170 MeV/c or lower: cannot have proton this slow anyway
-			//for pion-kaon delta-t is ~750ps at ~80 MeV/c or lower: won't reconstruct these anyway, and not likely to be foreward-going anyway
+			//for pion-kaon delta-t is ~750ps at ~80 MeV/c or lower: won't reconstruct these anyway, and not likely to be forward-going anyway
 		DTOFHitMatchParams locTOFHitMatchParams;
 		if(dParticleID->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
 		{
 			double locPropagatedTime = locTOFHitMatchParams.dHitTime - locTOFHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
 			locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
 			continue;
+		}
+
+		//Prefer TOF over SC in nose region because hard to tell which SC counter should have been hit
+		DSCHitMatchParams locSCHitMatchParams;
+		if(dParticleID->Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams))
+		{
+			double locPropagatedTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime + (dTargetCenter.Z() - locTrackTimeBased->z())/29.9792458;
+			locTimes.push_back(pair<double, const JObject*>(locPropagatedTime, locTrackTimeBased));
+			continue;
+
 		}
 
 		// Else match to BCAL if fast enough (low time resolution for slow particles)
@@ -391,7 +414,7 @@ jerror_t DEventRFBunch_factory::Select_RFBunch_NoRFTime(JEventLoop* locEventLoop
 	locEventLoop->GetSingle(locDetectorMatches);
 
 	vector<pair<double, const JObject*> > locTimes;
-	if(!Find_TrackTimes_SC(locDetectorMatches, locTrackTimeBasedVector, locTimes))
+	if(!Find_TrackTimes_SCTOF(locDetectorMatches, locTrackTimeBasedVector, locTimes))
 		return Create_NaNRFBunch();
 	DetectorSystem_t locTimeSource = SYS_START;
 
@@ -428,7 +451,7 @@ bool DEventRFBunch_factory::Get_RFTimeGuess(JEventLoop* locEventLoop, double& lo
 
 	locTimeSource = SYS_NULL;
 	vector<pair<double, const JObject*> > locTimes;
-	if(!Find_TrackTimes_SC(locDetectorMatches, locTrackTimeBasedVector, locTimes))
+	if(!Find_TrackTimes_SCTOF(locDetectorMatches, locTrackTimeBasedVector, locTimes))
 		return false;
 	locTimeSource = SYS_START;
 

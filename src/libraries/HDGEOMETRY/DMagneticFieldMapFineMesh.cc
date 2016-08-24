@@ -555,7 +555,7 @@ void DMagneticFieldMapFineMesh::GetFieldAndGradient(double x,double y,double z,
     int index_z = static_cast<int>((z-zmin)*one_over_dz);	
   int index_y = 0;
   
-  if(index_x<Nx && index_z>=0 && index_z<Nz){
+  if(index_x>=0 && index_x<Nx && index_z>=0 && index_z<Nz){
     const DBfieldPoint_t *B = &Btable[index_x][index_y][index_z];
     
     // Fractional distance between map points.
@@ -755,6 +755,7 @@ void DMagneticFieldMapFineMesh::GetField(const DVector3 &pos,DVector3 &Bout) con
 	double r = pos.Perp();
 	double z = pos.z();
 	if (r>xmax || z>zmax || z<zmin){
+	  Bout.SetXYZ(0.0, 0.0, 0.0);
 	  return;
 	}
 
@@ -771,10 +772,10 @@ void DMagneticFieldMapFineMesh::GetField(const DVector3 &pos,DVector3 &Bout) con
 	  // Get closest indices for this point
 	  int index_x = static_cast<int>(r*one_over_dx);
 	  //if(index_x<0 || index_x>=Nx)return;
-	  if (index_x>=Nx) return;
+	  if (index_x>=Nx) {Bout.SetXYZ(0.0, 0.0, 0.0); return;}
        
 	  int index_z = static_cast<int>((z-zmin)*one_over_dz);	
-	  if(index_z<0 || index_z>=Nz)return;
+	  if(index_z<0 || index_z>=Nz){Bout.SetXYZ(0.0, 0.0, 0.0); return;}
 	  
 	  int index_y = 0;
 	  

@@ -18,21 +18,27 @@ void DCustomAction_p2pi_hists::Initialize(JEventLoop* locEventLoop)
 	if(jcalib->Get("/PHOTON_BEAM/endpoint_energy", photon_endpoint_energy) == false) {
 		endpoint_energy = photon_endpoint_energy["PHOTON_BEAM_ENDPOINT_ENERGY"];
 	}
+	else {
+		jout<<"No /PHOTON_BEAM/endpoint_energy for this run number: using default of 12 GeV"<<endl;
+	}
 	endpoint_energy_bins = (int)(20*endpoint_energy);
 
 	cohmin_energy = 0.;
 	cohedge_energy = 12.;
 	map<string, double> photon_beam_param;
-	if(jcalib->Get("test/PHOTON_BEAM/coherent_energy", photon_beam_param) == false) {
+	if(jcalib->Get("/ANALYSIS/beam_asymmetry/coherent_energy", photon_beam_param) == false) {
 		cohmin_energy = photon_beam_param["cohmin_energy"];
 		cohedge_energy = photon_beam_param["cohedge_energy"];
+	}
+	else {
+		jout<<"No /ANALYSIS/beam_asymmetry/coherent_energy for this run number: using default range of 0-12 GeV"<<endl;
 	}
 
 	dEdxCut = 2.2;
 	minMMCut = 0.8;
 	maxMMCut = 1.05;
-	minMM2Cut = -0.005;
-	maxMM2Cut = 0.005;
+	minMM2Cut = -0.006;
+	maxMM2Cut = 0.004;
 	missingEnergyCut = 1.0;
 	minRhoMassCut = 0.6;
 	maxRhoMassCut = 0.88;
@@ -47,6 +53,8 @@ void DCustomAction_p2pi_hists::Initialize(JEventLoop* locEventLoop)
 	// check if a particle is missing
 	Get_Reaction()->Get_MissingPID(dMissingPID);
 
+	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
@@ -62,7 +70,7 @@ void DCustomAction_p2pi_hists::Initialize(JEventLoop* locEventLoop)
 			dPiPlusPsi_t = GetOrCreate_Histogram<TH2I>("PiPlusPsi_t","#psi vs |t|; |t|; #pi^{+} #psi",1000,0.,5.,360,-180,180);
 		}
 		else {
-			dMM2_M2pi = GetOrCreate_Histogram<TH2I>("MM2_M2pi", "MM^{2} off #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; MM^{2}", 200, 0.0, 2.0, 200, -1., 1.);
+			dMM2_M2pi = GetOrCreate_Histogram<TH2I>("MM2_M2pi", "MM^{2} off #pi^{+}#pi^{-} vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; MM^{2}", 200, 0.0, 2.0, 200, -0.1, 0.1);
 			dProton_dEdx_P = GetOrCreate_Histogram<TH2I>("Proton_dEdx_P","dE/dx vs p; p; dE/dx",200,0,2,500,0,25);
 			dProton_P_Theta = GetOrCreate_Histogram<TH2I>("Proton_P_Theta","p vs #theta; #theta; p (GeV/c)",180,0,180,120,0,12);
 			dDeltaE_M2pi = GetOrCreate_Histogram<TH2I>("DeltaE_M2pi", "#DeltaE vs M_{#pi^{+}#pi^{-}}; M_{#pi^{+}#pi^{-}}; #DeltaE (tagger - tracks)", 200, 0.0, 2.0, 200, -5., 5.);
@@ -81,7 +89,6 @@ void DCustomAction_p2pi_hists::Initialize(JEventLoop* locEventLoop)
 			dBaryonM_CosTheta_Egamma1 = GetOrCreate_Histogram<TH2I>("BaryonM_CosTheta_Egamma1", "Baryon M_{p#pi^{+}} vs cos#theta: E_{#gamma} < 2.5; cos#theta; M_{p#pi^{+}}", 100, -1, 1, 100, 1.0, 2.5);
 			dBaryonM_CosTheta_Egamma2 = GetOrCreate_Histogram<TH2I>("BaryonM_CosTheta_Egamma2", "Baryon M_{p#pi^{+}} vs cos#theta: 2.5 < E_{#gamma} < 3.0; cos#theta; M_{p#pi^{+}}", 100, -1, 1, 100, 1.0, 2.5);
 			dBaryonM_CosTheta_Egamma3 = GetOrCreate_Histogram<TH2I>("BaryonM_CosTheta_Egamma3", "Baryon M_{p#pi^{+}} vs cos#theta: E_{#gamma} > 3.0; cos#theta; M_{p#pi^{+}}", 100, -1, 1, 100, 1.0, 2.5);
-			
 		}
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
@@ -141,30 +148,35 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 
 	TLorentzVector locPiPlus_P4 = locParticles[1]->lorentzMomentum();
 
-	// copied from TwoPiAngles
+	// boost to resonance frame for angular distributions 	
 	TLorentzRotation resonanceBoost( -locP4_2pi.BoostVector() );
-	
-	TLorentzVector beam_res = resonanceBoost * locBeamPhoton->lorentzMomentum();
 	TLorentzVector recoil_res = resonanceBoost * locProtonP4;
 	TLorentzVector p1_res = resonanceBoost * locPiPlus_P4;
 	
-	TVector3 z = -recoil_res.Vect().Unit();
-	TVector3 y = beam_res.Vect().Cross(z).Unit();
-	TVector3 x = y.Cross(z).Unit();
+	// normal to the production plane
+	TVector3 y = (locBeamPhoton->lorentzMomentum().Vect().Unit().Cross(-locProtonP4.Vect().Unit())).Unit();
 	
-	TVector3 angles(   (p1_res.Vect()).Dot(x),
-			   (p1_res.Vect()).Dot(y),
-			   (p1_res.Vect()).Dot(z) );
-
+	// choose helicity frame: z-axis opposite recoil proton in rho rest frame
+	TVector3 z = -1. * recoil_res.Vect().Unit();
+	TVector3 x = y.Cross(z).Unit();
+	TVector3 angles( (p1_res.Vect()).Dot(x),
+			 (p1_res.Vect()).Dot(y),
+			 (p1_res.Vect()).Dot(z) );
+	
 	double cosTheta = angles.CosTheta();
-
 	double phi = angles.Phi();
-        double Phi = locProtonP4.Vect().Phi();
+	
+	TVector3 eps(1.0, 0.0, 0.0); // beam polarization vector
+	double Phi = atan2(y.Dot(eps), locBeamPhoton->lorentzMomentum().Vect().Unit().Dot(eps.Cross(y)));
+
 	double locPsi = phi - Phi;
 	if(locPsi < -1*TMath::Pi()) locPsi += 2*TMath::Pi();
         if(locPsi > TMath::Pi()) locPsi -= 2*TMath::Pi();
 
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		// Fill histograms here
 		dEgamma->Fill(locBeamPhotonEnergy);
@@ -230,7 +242,7 @@ bool DCustomAction_p2pi_hists::Perform_Action(JEventLoop* locEventLoop, const DP
 			}
 		}
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 
 	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }

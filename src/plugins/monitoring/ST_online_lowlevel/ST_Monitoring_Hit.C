@@ -37,6 +37,8 @@
   h2_tdcTime_sec->GetXaxis()->CenterTitle();
   h2_tdcTime_sec->GetYaxis()->CenterTitle();
   h2_tdcTime_sec->GetYaxis()->SetTitleOffset(1.5);
+  h2_tdcTime_sec->SetAxisRange(0., 800.,"Y");
+  gPad->SetLogz();
   //t_tdc from hit object
   c1->cd(2);
   gPad->SetTicks();
@@ -44,6 +46,8 @@
   if (h2_tTDC_sec) h2_tTDC_sec->Draw("colz");
   h2_tTDC_sec->GetXaxis()->CenterTitle();
   h2_tTDC_sec->GetYaxis()->CenterTitle();
+  h2_tTDC_sec->SetAxisRange(-50., 50.,"Y");
+  gPad->SetLogz();
   // t from hit object (tdc time walk corrected)
   c1->cd(3);
   gPad->SetTicks();
@@ -51,6 +55,8 @@
   if (h2_t_sec) h2_t_sec->Draw("colz");
   h2_t_sec->GetXaxis()->CenterTitle();
   h2_t_sec->GetYaxis()->CenterTitle();
+  h2_t_sec->SetAxisRange(-50., 50.,"Y");
+  gPad->SetLogz();
   c1->cd(4);
   gStyle->SetOptStat(10);
   gPad->SetTicks();
@@ -81,7 +87,7 @@
   c2->Draw();
   c2->Update();
   if(!gPad) return;
-  TCanvas *c2 = gPad->GetCanvas();
+  c2 = gPad->GetCanvas();
   c2->Divide(2,2);
   // t_adc from hit object
   c2->cd(1);
@@ -91,6 +97,8 @@
   if (h2_tfADC_sec) h2_tfADC_sec->Draw("colz");
   h2_tfADC_sec->GetXaxis()->CenterTitle();
   h2_tfADC_sec->GetYaxis()->CenterTitle();
+  h2_tfADC_sec->SetAxisRange(-50., 50.,"Y");
+  gPad->SetLogz();
   // Energy loss from hit object
   c2->cd(2);
   gStyle->SetOptStat(10);
@@ -99,6 +107,8 @@
   if (h2_dE_sec) h2_dE_sec->Draw("colz");
   h2_dE_sec->GetXaxis()->CenterTitle();
   h2_dE_sec->GetYaxis()->CenterTitle();
+  h2_dE_sec->SetAxisRange(0., 0.003,"Y");
+  gPad->SetLogz();
   c2->cd(3);
   gStyle->SetOptStat(10);
   gPad->SetTicks();

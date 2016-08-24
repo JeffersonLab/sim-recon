@@ -83,6 +83,7 @@ jerror_t JEventProcessor_dumpcandidates::brun(JEventLoop *eventLoop, int32_t run
 	vector<vector<DFDCWire *> > fdcwires;
 	dgeom->GetFDCWires(fdcwires);
 	
+	LockState();
 	// Generate map keyed by wire object's address
 	// (in the form of an unsigned long) and whose
 	// value is the index of the wire (i.e. position
@@ -105,6 +106,7 @@ jerror_t JEventProcessor_dumpcandidates::brun(JEventLoop *eventLoop, int32_t run
 			wireID[ GetFDCWireID(w) ] = index++;
 		}
 	}
+	UnlockState();
 
 	return NOERROR;
 }

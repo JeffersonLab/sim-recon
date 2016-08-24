@@ -80,7 +80,48 @@ jerror_t DTrackWireBased_factory::init(void)
     COSMICS=false;
     gPARMS->SetDefaultParameter("TRKFIND:COSMICS",COSMICS);
 
-	return NOERROR;
+    SKIP_MASS_HYPOTHESES_WIRE_BASED=false; 
+    gPARMS->SetDefaultParameter("TRKFIT:SKIP_MASS_HYPOTHESES_WIRE_BASED",
+				SKIP_MASS_HYPOTHESES_WIRE_BASED);
+
+
+	if(!SKIP_MASS_HYPOTHESES_WIRE_BASED)
+	{
+		vector<int> hypotheses;
+		hypotheses.push_back(PiPlus);
+		hypotheses.push_back(KPlus);
+		hypotheses.push_back(Proton);
+		hypotheses.push_back(PiMinus);
+		hypotheses.push_back(KMinus);
+
+		ostringstream locMassStream;
+		for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
+		{
+			locMassStream << hypotheses[loc_i];
+			if(loc_i != (hypotheses.size() - 1))
+				locMassStream << ",";
+		}
+
+		string HYPOTHESES = locMassStream.str();
+		gPARMS->SetDefaultParameter("TRKFIT:HYPOTHESES", HYPOTHESES);
+
+		// Parse MASS_HYPOTHESES strings to make list of masses to try
+		hypotheses.clear();
+		SplitString(HYPOTHESES, hypotheses, ",");
+		for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
+		{
+			if(ParticleCharge(Particle_t(hypotheses[loc_i])) > 0)
+				mass_hypotheses_positive.push_back(hypotheses[loc_i]);
+			else if(ParticleCharge(Particle_t(hypotheses[loc_i])) < 0)
+				mass_hypotheses_negative.push_back(hypotheses[loc_i]);
+		}
+		if(mass_hypotheses_positive.empty())
+			mass_hypotheses_positive.push_back(Unknown); // If empty string is specified, assume they want massless particle
+		if(mass_hypotheses_negative.empty())
+			mass_hypotheses_negative.push_back(Unknown); // If empty string is specified, assume they want massless particle
+	}
+
+    return NOERROR;
 }
 
 //------------------
@@ -110,10 +151,7 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int32_t runnumber
     _DBG_<<"Unable to get a DTrackFitter object! NO Charged track fitting will be done!"<<endl;
     return RESOURCE_UNAVAILABLE;
   }
-  SKIP_MASS_HYPOTHESES_WIRE_BASED=false; 
-  gPARMS->SetDefaultParameter("TRKFIT:SKIP_MASS_HYPOTHESES_WIRE_BASED",
-				    SKIP_MASS_HYPOTHESES_WIRE_BASED);
-
+ 
   USE_HITS_FROM_CANDIDATE=false;
   gPARMS->SetDefaultParameter("TRKFIT:USE_HITS_FROM_CANDIDATE",
 			      USE_HITS_FROM_CANDIDATE);
@@ -121,24 +159,6 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int32_t runnumber
   MIN_FIT_P = 0.050; // GeV
   gPARMS->SetDefaultParameter("TRKFIT:MIN_FIT_P", MIN_FIT_P, "Minimum fit momentum in GeV/c for fit to be considered successful");
   
-  if (SKIP_MASS_HYPOTHESES_WIRE_BASED==false){
-
-	ostringstream locMassStream_Positive, locMassStream_Negative;
-	locMassStream_Positive << ParticleMass(PiPlus) << "," << ParticleMass(KPlus) << "," << ParticleMass(Proton);
-	locMassStream_Negative << ParticleMass(PiMinus) << "," << ParticleMass(KMinus);
-	string MASS_HYPOTHESES_POSITIVE = locMassStream_Positive.str();
-	string MASS_HYPOTHESES_NEGATIVE = locMassStream_Negative.str();
-	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES_POSITIVE", MASS_HYPOTHESES_POSITIVE);
-	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES_NEGATIVE", MASS_HYPOTHESES_NEGATIVE);
-
-	// Parse MASS_HYPOTHESES strings to make list of masses to try
-	SplitString(MASS_HYPOTHESES_POSITIVE, mass_hypotheses_positive, ",");
-	SplitString(MASS_HYPOTHESES_NEGATIVE, mass_hypotheses_negative, ",");
-	if(mass_hypotheses_positive.size()==0)mass_hypotheses_positive.push_back(0.0); // If empty string is specified, assume they want massless particle
-	if(mass_hypotheses_negative.size()==0)mass_hypotheses_negative.push_back(0.0); // If empty string is specified, assume they want massless particle
-
-	
-  }
 	if(DEBUG_HISTS){
 	  dapp->Lock();
 	  
@@ -182,8 +202,12 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
   else{
     loop->Get(candidates);
   }
+  
   if (candidates.size()==0) return NOERROR;
   
+  // Reset the number of used reference trajectories from the pool
+  num_used_rts=0;
+
   if (dIsNoFieldFlag){
     // Copy results over from the StraightLine or CDCCOSMIC candidate and add reference
     // trajectory
@@ -242,8 +266,6 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
 
 
-  // Reset the number of used reference trajectories from the pool
-  num_used_rts=0;
 
   // Loop over candidates
   for(unsigned int i=0; i<candidates.size(); i++){
@@ -274,7 +296,7 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
     }
     else{
       // Choose list of mass hypotheses based on charge of candidate
-      vector<double> mass_hypotheses;
+      vector<int> mass_hypotheses;
       if(candidate->charge()<0.0){
 	mass_hypotheses = mass_hypotheses_negative;
       }else{
@@ -286,7 +308,7 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 
       // Loop over potential particle masses
       for(unsigned int j=0; j<mass_hypotheses.size(); j++){
-        if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting wire based fit with mass: "<<mass_hypotheses[j]<<endl;}
+        if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting wire based fit with id: "<<mass_hypotheses[j]<<endl;}
 	// Make sure there are enough DReferenceTrajectory objects
 	unsigned int locNumInitialReferenceTrajectories = rtv.size();
 	while(rtv.size()<=num_used_rts){
@@ -302,7 +324,7 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	// Increment the number of used reference trajectories
 	num_used_rts++;
 
-        DoFit(i,candidate,rt,loop,mass_hypotheses[j]);
+        DoFit(i,candidate,rt,loop,ParticleMass(Particle_t(mass_hypotheses[j])));
       }
    
     }

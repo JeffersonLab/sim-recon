@@ -35,13 +35,19 @@ using namespace jana;
 
 #define BCAL_SUM_CELL
 
+//THIS WHOLE CLASS NEEDS TO BE ENTIRELY REFACTORED.
+//THIS IS ALL HORRIBLY DANGEROUS
+//THIS IS NOT EVEN !!!REMOTELY!!! THREAD-SAFE.
+//NOTHING HERE SHOULD BE STATIC
+//INITIALIZE WITH NO RUN NUMBER SHOULD NOT BE SUPPORTED.
+
 class DBCALGeometry : public JObject {
   
 public:
   
   JOBJECT_PUBLIC( DBCALGeometry );
   
-  DBCALGeometry();
+  DBCALGeometry(int runnumber);
   
   enum End { kUpstream, kDownstream };
   
@@ -76,7 +82,7 @@ public:
   // Methods to access and initialize the private variables
   static bool initialized;
 
-  static void Initialize();
+  static void Initialize(int runnumber=11000); //This is TERRIBLE.  //Just AWFUL
 
   static float GetBCAL_inner_rad();
 
@@ -116,7 +122,9 @@ public:
   static float rSize( int fADC_cellId );
 
   ///these are missing functions that fill in some previous gaps.
-  static int fADCcellId_rphi( float r, float phi );  ///< Method to get the fADC cell ID from an (R, phi) combination.\n  R in cm and phi in radians.
+  static int fADCcellId_rphi( float r, float phi );    ///< Method to get the fADC cell ID from an (R, phi) combination.\n  R in cm and phi in radians.
+  static int getglobalchannelnumber(int module, int layer, int sector, int end);  ///< Return a BCAL channel number, in order of significance (module, layer, sector, end).
+  static int getendchannelnumber(int module, int layer, int sector);  ///< Return a channel number for either end, in order of significance (module, layer, sector).
   static int getglobalsector(int module, int sector);
   static int getsector(int globalsector);
   static int getmodule(int globalsector);

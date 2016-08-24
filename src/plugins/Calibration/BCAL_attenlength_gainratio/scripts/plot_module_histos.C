@@ -1,14 +1,19 @@
 
 
-plot_module_histos(int module=1, char filename[255]="/home/dalton/work/BCAL/rootfiles/analysis_highlevel/bcal_atten_gain_003182.root")
+void plot_module_histos(int module, char filename[255])
 {
 	gStyle->SetPadRightMargin(0.15);
 	gStyle->SetPadLeftMargin(0.15);
 	gStyle->SetPadBottomMargin(0.15);
 
 	TFile *_file0 = TFile::Open(filename);
-	bcalgainratio->cd();
-	channels->cd();
+
+	//	TDirectory *main = gDirectory;  // save current directory
+    //Goto Path
+    TDirectory *locDirectory = (TDirectory*)gDirectory->FindObjectAny("bcalgainratio");
+    if(!locDirectory)
+        return;
+    locDirectory->cd("channels");
 
 	char name[255];
 	int pad=0;

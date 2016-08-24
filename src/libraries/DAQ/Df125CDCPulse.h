@@ -32,7 +32,13 @@ class Df125CDCPulse:public DDAQAddress{
 						, uint32_t word2=0
 						, uint32_t nsamples_pedestal=1
 						, uint32_t nsamples_integral=1
-						, bool emulated=false )
+						, bool emulated=false 
+                        , uint32_t le_time_emulated = 0xffff
+                        , uint32_t time_quality_bit_emulated = 0xffff
+                        , uint32_t overflow_count_emulated = 0xffff
+                        , uint32_t pedestal_emulated = 0xffff
+                        , uint32_t integral_emulated = 0xffff
+                        , uint32_t first_max_amp_emulated = 0xffff )
 						  :DDAQAddress(rocid, slot, channel, itrigger)
 						  , NPK(NPK)
 						  , le_time(le_time)
@@ -45,27 +51,41 @@ class Df125CDCPulse:public DDAQAddress{
 						  , word2(word2)
 						  , nsamples_pedestal(nsamples_pedestal)
 						  , nsamples_integral(nsamples_integral)
-						  , emulated(emulated){}
+						  , emulated(emulated)
+                          , le_time_emulated(le_time_emulated)
+                          , time_quality_bit_emulated(time_quality_bit_emulated)
+                          , overflow_count_emulated(overflow_count_emulated)
+                          , pedestal_emulated(pedestal_emulated)
+                          , integral_emulated(integral_emulated)
+                          , first_max_amp_emulated(first_max_amp_emulated){}
 
-		uint32_t NPK;                  ///< from first word
-		uint32_t le_time;              ///< from first word
-		uint32_t time_quality_bit;     ///< from first word
-		uint32_t overflow_count;       ///< from first word
-		uint32_t pedestal;             ///< from second word 
-		uint32_t integral;             ///< from second word
-		uint32_t first_max_amp;        ///< from second word
-		uint32_t word1;                ///< first word
-		uint32_t word2;                ///< second word
-		uint32_t nsamples_pedestal;    ///< number of samples used in integral 
-		uint32_t nsamples_integral;    ///< number of samples used in pedestal
-		bool     emulated;             ///< true if made from Window Raw Data
+		uint32_t NPK;                       ///< from first word
+		uint32_t le_time;                   ///< from first word
+		uint32_t time_quality_bit;          ///< from first word
+		uint32_t overflow_count;            ///< from first word
+		uint32_t pedestal;                  ///< from second word
+		uint32_t integral;                  ///< from second word
+		uint32_t first_max_amp;             ///< from second word
+		uint32_t word1;                     ///< first word
+		uint32_t word2;                     ///< second word
+		uint32_t nsamples_pedestal;         ///< number of samples used in integral 
+		uint32_t nsamples_integral;         ///< number of samples used in pedestal
+		bool     emulated;                  ///< true if emulated values are copied to the main input 
+        uint32_t le_time_emulated;          ///< emulated from raw data when available
+        uint32_t time_quality_bit_emulated; ///< emulated from raw data when available
+        uint32_t overflow_count_emulated;   ///< emulated from raw data when available
+        uint32_t pedestal_emulated;         ///< emulated from raw data when available
+        uint32_t integral_emulated;         ///< emulated from raw data when available
+        uint32_t first_max_amp_emulated;    ///< emulated from raw data when available
 		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
 		void toStrings(vector<pair<string,string> > &items)const{
 			DDAQAddress::toStrings(items);
 			AddString(items, "le_time",           "%d", le_time);
+            AddString(items, "le_time_em",        "%d", le_time_emulated);
 			AddString(items, "integral",          "%d", integral);
+            AddString(items, "integral_em",       "%d", integral_emulated);
 			AddString(items, "pedestal",          "%d", pedestal);
 			AddString(items, "NPK",               "%d", NPK);
 			AddString(items, "time_quality_bit",  "%d", time_quality_bit);

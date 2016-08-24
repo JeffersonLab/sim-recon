@@ -9,14 +9,39 @@
 
 void DCustomAction_p2k_hists::Initialize(JEventLoop* locEventLoop)
 {
+	DApplication* dapp=dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+        JCalibration *jcalib = dapp->GetJCalibration((locEventLoop->GetJEvent()).GetRunNumber());
 
+        // Parameters for event selection to fill histograms
+        endpoint_energy = 12.;
+        map<string, double> photon_endpoint_energy;
+        if(jcalib->Get("/PHOTON_BEAM/endpoint_energy", photon_endpoint_energy) == false) {
+                endpoint_energy = photon_endpoint_energy["PHOTON_BEAM_ENDPOINT_ENERGY"];
+        }
+        endpoint_energy_bins = (int)(20*endpoint_energy);
+
+        cohmin_energy = 0.;
+        cohedge_energy = 12.;
+        map<string, double> photon_beam_param;
+        if(jcalib->Get("/ANALYSIS/beam_asymmetry/coherent_energy", photon_beam_param) == false) {
+                cohmin_energy = photon_beam_param["cohmin_energy"];
+                cohedge_energy = photon_beam_param["cohedge_energy"];
+        }
+
+        dEdxCut = 2.2;
+        minMM2Cut = -0.01;
+        maxMM2Cut = 0.01;
+        maxPhiMassCut = 1.05;
+
+	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
 			//If another thread has already created the folder, it just changes to it. 
 		CreateAndChangeTo_ActionDirectory();
 		
-		dEgamma = GetOrCreate_Histogram<TH1I>("Egamma", "TAGGER photon energy; E_{#gamma}", 400, 0., 12.);
+		dEgamma = GetOrCreate_Histogram<TH1I>("Egamma", "TAGGER photon energy; E_{#gamma}", endpoint_energy_bins, 0., endpoint_energy);
 		dKplus_deltaInvBeta_P = GetOrCreate_Histogram<TH2I>("Kplus_deltaInvBeta_P","K+ Inverse #Delta#beta vs p; p; 1/#beta_{exp} - 1/#beta_{meas}",200,0,10,500,-0.5,0.5);
 		dKminus_deltaInvBeta_P = GetOrCreate_Histogram<TH2I>("Kminus_deltaInvBeta_P","K- Inverse #Delta#beta vs p; p; 1/#beta_{exp} - 1/#beta_{meas}",200,0,10,500,-0.5,0.5);
 
@@ -123,9 +148,10 @@ bool DCustomAction_p2k_hists::Perform_Action(JEventLoop* locEventLoop, const DPa
 	dEdx = locChargedTrackHypothesis->dEdx()*1e6;
 	locProtonP4 = locChargedTrackHypothesis->lorentzMomentum();	
 
-	double dEdxCut = 2.2;
-
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action(); //ACQUIRE ROOT LOCK!!
 	{
 		// Fill histograms here
 		dEgamma->Fill(locBeamPhotonEnergy);
@@ -137,47 +163,50 @@ bool DCustomAction_p2k_hists::Perform_Action(JEventLoop* locEventLoop, const DPa
 		dDeltaE_M2k->Fill(locP4_2k.M(),locMissingP4.E());
 		dM2pi_M2k->Fill(locP4_2k.M(), locP4_2pi.M());
 		
-		if(fabs(locMissingP4.M2()) > 0.01) return true;
+		if(locMissingP4.M2() > minMM2Cut && locMissingP4.M2() < maxMM2Cut) {
 		
-		dProton_dEdx_P->Fill(locProtonP4.Vect().Mag(), dEdx);
-		dProton_P_Theta->Fill(locProtonP4.Vect().Theta()*180/TMath::Pi(), locProtonP4.Vect().Mag());
-		
-		// plots for proton tagged events
-		if(dEdx < dEdxCut) return true; 
-		
-		dMM2_M2k_ProtonTag->Fill(locP4_2k.M(), locMissingP4.M2());
-		dDeltaE_M2k_ProtonTag->Fill(locP4_2k.M(),locMissingP4.E());
-		dM2pi_M2k_ProtonTag->Fill(locP4_2k.M(), locP4_2pi.M());
-		
-		dKplus_deltaInvBeta_P_ProtonTag->Fill(locParticles[0]->lorentzMomentum().Vect().Mag(), kplus_deltaInvBeta);
-		dKminus_deltaInvBeta_P_ProtonTag->Fill(locParticles[1]->lorentzMomentum().Vect().Mag(), kminus_deltaInvBeta);
-		
-		// plots vs phi mass
-		dEgamma_M2k_ProtonTag->Fill(locP4_2k.M(),locBeamPhotonEnergy);
-		
-		// correlations for rho vs phi mass regions
-		if(locP4_2k.M() < 1.05){
-			dKplus_deltaInvBeta_P_PhiTag->Fill(locParticles[0]->lorentzMomentum().Vect().Mag(), kplus_deltaInvBeta);
-			dKminus_deltaInvBeta_P_PhiTag->Fill(locParticles[1]->lorentzMomentum().Vect().Mag(), kminus_deltaInvBeta);
+			dProton_dEdx_P->Fill(locProtonP4.Vect().Mag(), dEdx);
+			dProton_P_Theta->Fill(locProtonP4.Vect().Theta()*180/TMath::Pi(), locProtonP4.Vect().Mag());
 			
-			dKplus_P_Theta_PhiTag->Fill(locParticles[0]->lorentzMomentum().Theta()*180./TMath::Pi(),locParticles[0]->lorentzMomentum().Vect().Mag());
-			dKminus_P_Theta_PhiTag->Fill(locParticles[1]->lorentzMomentum().Theta()*180./TMath::Pi(),locParticles[1]->lorentzMomentum().Vect().Mag());
-			
-			dKplus_Beta_P_PhiTag->Fill(locParticles[0]->lorentzMomentum().Vect().Mag(), kplus_beta);
-			dKminus_Beta_P_PhiTag->Fill(locParticles[1]->lorentzMomentum().Vect().Mag(), kminus_beta);
-		}
-		else {
-			dKplus_deltaInvBeta_P_RhoTag->Fill(locParticles[0]->lorentzMomentum().Vect().Mag(), kplus_deltaInvBeta);
-			dKminus_deltaInvBeta_P_RhoTag->Fill(locParticles[1]->lorentzMomentum().Vect().Mag(), kminus_deltaInvBeta);
-			
-			dKplus_P_Theta_RhoTag->Fill(locParticles[0]->lorentzMomentum().Theta()*180./TMath::Pi(),locParticles[0]->lorentzMomentum().Vect().Mag());
-			dKminus_P_Theta_RhoTag->Fill(locParticles[1]->lorentzMomentum().Theta()*180./TMath::Pi(),locParticles[1]->lorentzMomentum().Vect().Mag());
-			
-			dKplus_Beta_P_RhoTag->Fill(locParticles[0]->lorentzMomentum().Vect().Mag(), kplus_beta);
-			dKminus_Beta_P_RhoTag->Fill(locParticles[1]->lorentzMomentum().Vect().Mag(), kminus_beta);
+			// plots for proton tagged events
+			if(dEdx > dEdxCut) {
+				
+				dMM2_M2k_ProtonTag->Fill(locP4_2k.M(), locMissingP4.M2());
+				dDeltaE_M2k_ProtonTag->Fill(locP4_2k.M(),locMissingP4.E());
+				dM2pi_M2k_ProtonTag->Fill(locP4_2k.M(), locP4_2pi.M());
+				
+				dKplus_deltaInvBeta_P_ProtonTag->Fill(locParticles[0]->lorentzMomentum().Vect().Mag(), kplus_deltaInvBeta);
+				dKminus_deltaInvBeta_P_ProtonTag->Fill(locParticles[1]->lorentzMomentum().Vect().Mag(), kminus_deltaInvBeta);
+				
+				// plots vs phi mass
+				dEgamma_M2k_ProtonTag->Fill(locP4_2k.M(),locBeamPhotonEnergy);
+				
+				// correlations for rho vs phi mass regions
+				if(locP4_2k.M() < maxPhiMassCut){
+					dKplus_deltaInvBeta_P_PhiTag->Fill(locParticles[0]->lorentzMomentum().Vect().Mag(), kplus_deltaInvBeta);
+					dKminus_deltaInvBeta_P_PhiTag->Fill(locParticles[1]->lorentzMomentum().Vect().Mag(), kminus_deltaInvBeta);
+					
+					dKplus_P_Theta_PhiTag->Fill(locParticles[0]->lorentzMomentum().Theta()*180./TMath::Pi(),locParticles[0]->lorentzMomentum().Vect().Mag());
+					dKminus_P_Theta_PhiTag->Fill(locParticles[1]->lorentzMomentum().Theta()*180./TMath::Pi(),locParticles[1]->lorentzMomentum().Vect().Mag());
+					
+					dKplus_Beta_P_PhiTag->Fill(locParticles[0]->lorentzMomentum().Vect().Mag(), kplus_beta);
+					dKminus_Beta_P_PhiTag->Fill(locParticles[1]->lorentzMomentum().Vect().Mag(), kminus_beta);
+				}
+				else {
+					dKplus_deltaInvBeta_P_RhoTag->Fill(locParticles[0]->lorentzMomentum().Vect().Mag(), kplus_deltaInvBeta);
+					dKminus_deltaInvBeta_P_RhoTag->Fill(locParticles[1]->lorentzMomentum().Vect().Mag(), kminus_deltaInvBeta);
+					
+					dKplus_P_Theta_RhoTag->Fill(locParticles[0]->lorentzMomentum().Theta()*180./TMath::Pi(),locParticles[0]->lorentzMomentum().Vect().Mag());
+					dKminus_P_Theta_RhoTag->Fill(locParticles[1]->lorentzMomentum().Theta()*180./TMath::Pi(),locParticles[1]->lorentzMomentum().Vect().Mag());
+					
+					dKplus_Beta_P_RhoTag->Fill(locParticles[0]->lorentzMomentum().Vect().Mag(), kplus_beta);
+					dKminus_Beta_P_RhoTag->Fill(locParticles[1]->lorentzMomentum().Vect().Mag(), kminus_beta);
+				}
+			}
 		}
 	}
-	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+	Unlock_Action(); //RELEASE ROOT LOCK!!
 
 	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }
+

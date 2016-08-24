@@ -79,6 +79,8 @@ jerror_t DEventProcessor_run_summary::brun(jana::JEventLoop* locEventLoop, int l
 	else //already created by another thread
 		conditions_tree = static_cast<TTree*>(gDirectory->Get("conditions"));
 
+	main_dir->cd();
+
 	japp->RootUnLock();
 
 	// reset EPICS summary info each run
@@ -86,7 +88,6 @@ jerror_t DEventProcessor_run_summary::brun(jana::JEventLoop* locEventLoop, int l
 		delete epics_info;
 	epics_info = new DEPICSstore;
 
-	main_dir->cd();
 	return NOERROR;
 }
 
@@ -143,6 +144,9 @@ jerror_t DEventProcessor_run_summary::erun(void)
 	if(conditions_tree == NULL)
 		return NOERROR;
 
+	// Although we are only filling objects local to this plugin, TTree::Fill() periodically writes to file: Global ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK
+
 	// make a branch for the run number
 	TBranch *run_branch = conditions_tree->FindBranch("run_number");
 	if(run_branch == NULL)
@@ -155,6 +159,14 @@ jerror_t DEventProcessor_run_summary::erun(void)
 	for(map<string, DEPICSvalue_data_t>::const_iterator epics_val_itr = epics_store.begin();
 	    epics_val_itr != epics_store.end(); epics_val_itr++) {
 		string branch_name = epics_val_itr->first;
+		// ROOT branches assume that colons define the different leaves in a branch
+		// so replace them in the name with underscores
+		std::replace( branch_name.begin(), branch_name.end(), ':', '_');
+		// also clean numerical expressions
+		std::replace( branch_name.begin(), branch_name.end(), '-', '_');  
+		std::replace( branch_name.begin(), branch_name.end(), '+', '_');  
+		std::replace( branch_name.begin(), branch_name.end(), '*', '_');  
+		std::replace( branch_name.begin(), branch_name.end(), '/', '_');  
 		TBranch *the_branch = conditions_tree->FindBranch(branch_name.c_str());
 		if(the_branch == NULL) {
 			string branch_def = branch_name + "/D";
@@ -167,6 +179,8 @@ jerror_t DEventProcessor_run_summary::erun(void)
 	// save the values for this run
 	conditions_tree->Fill();
 
+	japp->RootUnLock(); //RELEASE ROOT LOCK
+
 	return NOERROR;
 }
 
@@ -176,6 +190,10 @@ jerror_t DEventProcessor_run_summary::erun(void)
 jerror_t DEventProcessor_run_summary::fini(void)
 {
 	// Called before program exit after event processing is finished.
+	//cout << "=================================================" << endl;
+	//cout << "Summary of processed runs:" << endl;
+	//cout << "=================================================" << endl;
+
 	return NOERROR;
 }
 

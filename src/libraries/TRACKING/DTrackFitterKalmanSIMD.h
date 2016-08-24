@@ -72,12 +72,13 @@
 #define MIN_CDC_HITS 2 
 
 // Functions of Moliere fraction F
-#define MOLIERE_RATIO1 5.0   // = 0.5/(1-F)
-#define MOLIERE_RATIO2 11.0e-7 // = (scale factor)*1e-6/(1+F*F)
-#define MOLIERE_RATIO3 11.0e-7 // = (scale factor)*1e-6/(1+F*F)
+#define MOLIERE_FRACTION 0.995
+#define MOLIERE_RATIO1 (0.5/(1.-MOLIERE_FRACTION)) // = 0.5/(1-F)
+#define MOLIERE_RATIO2 (1.e-6/(1.+MOLIERE_FRACTION*MOLIERE_FRACTION)) //scale_factor/(1+F*F)
+
 //#define DE_PER_STEP_WIRE_BASED 0.0005 // in GeV
 //#define DE_PER_STEP_TIME_BASED 0.0005 // in GeV
-#define DE_PER_STEP 0.0005 // in GeV
+#define DE_PER_STEP 0.001 // in GeV
 #define BFIELD_FRAC 0.0001
 #define MIN_STEP_SIZE 0.1 // in cm
 #define CDC_INTERNAL_STEP_SIZE 0.15 // in cm
@@ -106,7 +107,7 @@ enum kalman_error_t{
 typedef struct{
   DVector2 dir,origin;
   double z0wire;
-  double residual,sigma,tdrift,cosstereo;
+  double tdrift,cosstereo;
   const DCDCTrackHit *hit;
   int status;
 }DKalmanSIMDCDCHit_t;
@@ -114,28 +115,26 @@ typedef struct{
 typedef struct{ 
   double t,cosa,sina;
   double uwire,vstrip,vvar,z,dE;
-  double xres,yres,xsig,ysig;
   double nr,nz;
-  int package;
   int status;
   const DFDCPseudo *hit;
 }DKalmanSIMDFDCHit_t;
 
 typedef struct{
-  DMatrix5x5 J,JT,Q,Ckk;
+  DMatrix5x5 J,Q,Ckk;
   DMatrix5x1 S,Skk;
   DVector2 xy;  
   double s,t,B;
-  double rho_Z_over_A,K_rho_Z_over_A,LnI;
+  double rho_Z_over_A,K_rho_Z_over_A,LnI,Z;
   double chi2c_factor,chi2a_factor,chi2a_corr; 
   unsigned int h_id;
 }DKalmanCentralTrajectory_t;
 
 typedef struct{
- DMatrix5x5 J,JT,Q,Ckk;
+ DMatrix5x5 J,Q,Ckk;
  DMatrix5x1 S,Skk;
  double z,s,t,B;
- double rho_Z_over_A,K_rho_Z_over_A,LnI;
+ double rho_Z_over_A,K_rho_Z_over_A,LnI,Z;
  double chi2c_factor,chi2a_factor,chi2a_corr;
  unsigned int h_id;
  unsigned int num_hits;
@@ -146,7 +145,8 @@ typedef struct{
   DMatrix5x1 S;
   double doca;
   double tcorr,tdrift;
-  double residual,variance;
+  double variance;
+  DMatrix2x2 V;
   bool used_in_fit;
 }DKalmanUpdate_t;
 
@@ -222,7 +222,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double GetChiSq(void){return chisq_;}
   unsigned int GetNDF(void){return ndf_;};
   double GetdEdx(double q_over_p,double K_rho_Z_over_A,double rho_Z_over_A,
-		 double rho_Z_over_A_LnI); 
+		 double rho_Z_over_A_LnI,double Z); 
   double GetEnergyVariance(double ds,double beta2,double K_rho_Z_over_A);
 
  protected:
@@ -264,12 +264,14 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   void locate(const double *xx,int n,double x,int *j);
   unsigned int locate(vector<double>&xx,double x);
   double fdc_y_variance(double dE);
+  double fdc_drift_variance(double t);
   double cdc_variance(double B,double t);   
   double cdc_drift_distance(double t,double Bz);  
   double fdc_drift_distance(double t,double Bz);
 
   void ResetKalmanSIMD(void);
-  jerror_t GetProcessNoise(double ds,double chi2c_factor,double chi2a_factor,
+  jerror_t GetProcessNoise(double z,double ds,double chi2c_factor,
+			   double chi2a_factor,
 			   double chi2a_corr,
 			   const DMatrix5x1 &S,DMatrix5x5 &Q);
 
@@ -409,6 +411,10 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   vector<DKalmanUpdate_t>fdc_updates;
   vector<DKalmanUpdate_t>cdc_updates;
 
+  // Keep track of which hits were used in the fit
+  vector<bool>cdc_used_in_fit;
+  vector<bool>fdc_used_in_fit;
+
   // flight time and path length
   double ftime, len, var_ftime;
 
@@ -428,6 +434,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double m_ratio; // electron mass/MASS
   double m_ratio_sq; // .. and its square
   double two_m_e; // twice the electron mass
+  double m_e_sq; // square of electron mass
 
   // minimum drift time 
   double mMinDriftTime;
@@ -472,6 +479,10 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double THETA_CUT;
   bool USE_PASS1_TIME_MODE;
   int RING_TO_SKIP,PLANE_TO_SKIP;
+  double PHOTON_ENERGY_CUTOFF;
+  bool USE_FDC_DRIFT_TIMES;
+
+  bool USE_CDC_HITS,USE_FDC_HITS;
 
   // Maximum number of sigma's away from the predicted position to include hit
   double NUM_CDC_SIGMA_CUT,NUM_FDC_SIGMA_CUT;
@@ -489,6 +500,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double CDC_DRIFT_BSCALE_PAR1,CDC_DRIFT_BSCALE_PAR2;
   // parameters for CDC resolution function
   double CDC_RES_PAR1,CDC_RES_PAR2;
+  // parameter for scaling CDC hit variance for fits involving FDC hits.
+  double CDC_VAR_SCALE_FACTOR;
 
   vector<vector<double> >max_sag;
   vector<vector<double> >sag_phi_offset;
@@ -496,20 +509,22 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // Parameters for dealing with FDC drift B dependence
   double FDC_DRIFT_BSCALE_PAR1,FDC_DRIFT_BSCALE_PAR2;
 
+  // Parameters for drift resolution
+  double DRIFT_RES_PARMS[3];
+  // parameters for time-to-distance function for FDC
+  double DRIFT_FUNC_PARMS[4];
+
   // Identity matrix
   DMatrix5x5 I5x5;
   // Matrices with zeroes in them
   DMatrix5x5 Zero5x5;
   DMatrix5x1 Zero5x1;
-
-  TH2F *fdc_dy_vs_d;
-  TH2F *fdc_time_vs_d;
-  TH2F *fdc_dy_vs_dE;
+  
+  bool IsHadron,IsElectron,IsPositron;
 
  private:
   unsigned int last_material_map;
 
-  TH2F *Hstepsize,*HstepsizeDenom;
 };
 
 // Smearing function derived from fitting residuals

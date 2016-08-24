@@ -16,8 +16,8 @@ jerror_t DNeutralShower_factory_PreSelect::init(void)
 		//This is because some/all of these pointers are just copied from earlier objects, and should not be deleted.  
 	SetFactoryFlag(NOT_OBJECT_OWNER);
 
-	dMinFCALE = 0.4;
-	dMinBCALE = 0.2;
+	dMinFCALE = 0.1;
+	dMinBCALE = 0.1;
 	dMinBCALNcell = 2;
 
 	return NOERROR;

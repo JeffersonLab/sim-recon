@@ -38,6 +38,7 @@ class JEventProcessor_FCAL_online:public jana::JEventProcessor{
   TH1I* m_digInt;
   TH1I* m_digCoarseT;
   TProfile* m_digCoarseTChan;
+  TProfile* m_multihit;
   TH1I* m_digPreciseT;
   TProfile* m_digPreciseTChan;
   TH1I* m_digT;

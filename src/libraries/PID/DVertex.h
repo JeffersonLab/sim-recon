@@ -15,7 +15,7 @@
 #include <DLorentzVector.h>
 
 #include "PID/DKinematicData.h"
-#include "ANALYSIS/DKinFitParticle.h"
+#include "KINFITTER/DKinFitParticle.h"
 
 using namespace std;
 using namespace jana;
@@ -29,7 +29,7 @@ class DVertex: public jana::JObject
 
 		unsigned int dKinFitNDF;
 		double dKinFitChiSq;
-		map<const DKinematicData*, map<DKinFitPullType, double> > dKinFitPulls;
+		map<const JObject*, map<DKinFitPullType, double> > dKinFitPulls;
 
 		// Objects used to calculate this added as Associated Objects
 		void toStrings(vector<pair<string,string> > &items) const

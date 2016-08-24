@@ -2,6 +2,9 @@
 #include <iomanip>
 #include <vector>
 #include <TMath.h>
+#include <TCutG.h>
+#include <TFitResult.h>
+#include <TFitResultPtr.h>
 #include "JEventProcessor_TOF_TDC_shift.h"
 #include <JANA/JApplication.h>
 using namespace std;
@@ -36,19 +39,16 @@ JEventProcessor_TOF_TDC_shift::~JEventProcessor_TOF_TDC_shift() {
 
 jerror_t JEventProcessor_TOF_TDC_shift::init(void) {
   
-  japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-
   // Create root folder for ST and cd to it, store main dir
   TDirectory *main = gDirectory;
   gDirectory->mkdir("TOF_TDC_shift")->cd();
 
   // TI remainder vs (ADC time - TDC time)
   hrocTimeRemainder_AdcTdcTimeDiff = new TH2I("hrocTimeRemainder_AdcTdcTimeDiff",";t_{ADC} - t_{TDC};TI % 6",4000,-1500,500,6,-0.5,5.5);
+  hrocTimeRemainder_AdcTdcTimeDiff_corrected = new TH2I("hrocTimeRemainder_AdcTdcTimeDiff_corrected",";t_{ADC} - t_{TDC};TI % 6",600,-30,30,6,-0.5,5.5);
 
   // cd back to main directory
   main->cd();
-
-  japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
   return NOERROR;
 }
@@ -69,11 +69,13 @@ jerror_t JEventProcessor_TOF_TDC_shift::evnt(JEventLoop *eventLoop, uint64_t eve
   // Get all data objects first so we minimize the time we hold the ROOT mutex lock
 
   // Each detector's hits
+  vector<const DTOFHit*>            dtofhits;            // TOF Hits
   vector<const DTOFDigiHit*>        dtofdigihits;        // TOF DigiHits
   vector<const DTOFTDCDigiHit*>     dtoftdcdigihits;     // TOF TDC DigiHits
   vector<const DCODAROCInfo*>       dcodarocinfo;        // DCODAROCInfo
 
   // TOF
+  eventLoop->Get(dtofhits);
   eventLoop->Get(dtofdigihits);
   eventLoop->Get(dtoftdcdigihits);
   eventLoop->Get(dcodarocinfo);
@@ -90,9 +92,9 @@ jerror_t JEventProcessor_TOF_TDC_shift::evnt(JEventLoop *eventLoop, uint64_t eve
     }
   }
 
-  // Lock ROOT mutex so other threads won't interfere 
-  japp->RootWriteLock();
-
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
 
   // Fill histogram of TI % 6 vs (ADC time - TDC time)
   for(UInt_t tof = 0;tof<dtofdigihits.size();tof++){
@@ -110,8 +112,13 @@ jerror_t JEventProcessor_TOF_TDC_shift::evnt(JEventLoop *eventLoop, uint64_t eve
       }
     }
   }
-  // Lock ROOT mutex so other threads won't interfere 
-  japp->RootUnLock();
+
+  for(UInt_t tof = 0;tof<dtofhits.size();tof++){
+      double diff = dtofhits[tof]->t_fADC - dtofhits[tof]->t_TDC;
+      hrocTimeRemainder_AdcTdcTimeDiff_corrected->Fill(diff, TriggerBIT);
+  }
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
   return NOERROR;
 }
@@ -134,20 +141,44 @@ jerror_t JEventProcessor_TOF_TDC_shift::fini(void) {
   Double_t min = +99999;
   Int_t shift = -1;
   gDirectory->cd("TOF_TDC_shift");
+
+  /*
+  // multiple ADC hits skew the rough mean, so make a broad cut around the main peak
+  // use TCutG to cut +- 60 ns (arbitrary) around the peak in X
+  const double twindow = 60.;  // (ns)
+  TCutG time_cut("time_cut",5);
+  //time_cut.SetVarX("x");
+  //time_cut.SetVarY("y");
+  time_cut.SetPoint(0,mean_time-twindow,0.);
+  time_cut.SetPoint(1,mean_time-twindow,6.);
+  time_cut.SetPoint(2,mean_time+twindow,6.);
+  time_cut.SetPoint(3,mean_time+twindow,0.);
+  time_cut.SetPoint(4,mean_time-twindow,0.);
+  */
+
+  const double fit_window = 20.;
   for(Int_t i=0;i<6;i++){
     // Get projection of (ADC time - TDC time) for each value of TI remainder
     sprintf(hname,"TOF_TDC_shift/h%d",i);
     hproj = (TH1I*)hrocTimeRemainder_AdcTdcTimeDiff->ProjectionX(hname,i+1,i+1);
-    mean[i] = hproj->GetMean();
+    //hproj = (TH1I*)hrocTimeRemainder_AdcTdcTimeDiff->ProjectionX(hname,i+1,i+1,"[time_cut]");
+    //mean[i] = hproj->GetMean();
+    double maximum = hproj->GetBinCenter(hproj->GetMaximumBin());
+    TFitResultPtr fr = hproj->Fit("gaus", "S", "", maximum - fit_window, maximum + fit_window);
+    if(fr == 0) {   // fit succeeds 
+        mean[i] = fr->Parameter(1);;
+    } else {
+        mean[i] = hproj->GetMean();
+    }
     cout << "TI remainder = " << i << " mean = " << mean[i] << endl;
-    if(mean[i] < min){
+    if(fabs(mean[i]) < fabs(min)){
       min = mean[i];
       shift = i;
     }
   }
 
-  // shift value can only be 1, 3, or 5.
-  if(!(shift == 1 || shift == 3 || shift == 5)) shift = -1;
+  // shift value can only be 1, 3, or 5.  (not true anymore due to TI updates? - sdobbs 3 Mar. 2016)
+  //if(!(shift == 1 || shift == 3 || shift == 5)) shift = -1;
 
   OUTPUT << shift << endl;
 

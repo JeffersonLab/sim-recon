@@ -48,7 +48,7 @@ int DBCALGeometry::NBCALSECSOUT = 4/DBCALGeometry::NSUMSECSOUT;
 float DBCALGeometry::BCAL_PHI_SHIFT = 0.0; // will be overwritten in constructor
 
 bool DBCALGeometry::initialized = false;
-float DBCALGeometry::BCALINNERRAD = 0.0;   
+float DBCALGeometry::BCALINNERRAD = 0.0;
 float DBCALGeometry::BCALOUTERRAD = 86.17;
 float DBCALGeometry::BCALFIBERLENGTH = 0.0;
 float DBCALGeometry::GLOBAL_CENTER = 0.0;
@@ -68,7 +68,7 @@ float DBCALGeometry::m_radius[] = { 64.3,
 				  83.70,
 				  86.17};
 
-float DBCALGeometry::fADC_radius[] = { 0, 
+float DBCALGeometry::fADC_radius[] = { 0,
 				  0,
 				  0,
 				  0,
@@ -76,7 +76,7 @@ float DBCALGeometry::fADC_radius[] = { 0,
 
 float DBCALGeometry::BCALMIDRAD = DBCALGeometry::m_radius[DBCALGeometry::BCALMID-1];
 
-DBCALGeometry::DBCALGeometry()  
+DBCALGeometry::DBCALGeometry(int runnumber)  
 {
   /// End if groupings do not evenly divide SiPM cells
   bool goodGeometry=true;
@@ -107,15 +107,15 @@ DBCALGeometry::DBCALGeometry()
   }
 
   // Initialize DBCALGeometry variables
-  if(!initialized) Initialize();
+  if(!initialized) Initialize(runnumber);
 
 }
 
 void
-DBCALGeometry::Initialize() {
+DBCALGeometry::Initialize(int runnumber) {
   //Get pointer to DGeometry object
   DApplication* dapp=dynamic_cast<DApplication*>(japp);
-  const DGeometry *dgeom  = dapp->GetDGeometry(9999);
+  const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
 
   // Get inner rad of BCAL (including the support plate)
   float my_BCALINNERRAD;
@@ -468,10 +468,17 @@ DBCALGeometry::fADCcellId_rphi( float r, float phi ) {
   fADC_cellId = DBCALGeometry::fADCId(module, SiPM_layer, sector);  
   return fADC_cellId;
 }
- 
 
+int  DBCALGeometry::getglobalchannelnumber(int module, int layer, int sector, int end) {
+  if (module<=0 || layer<=0 || sector<=0) return 0;
+  else return (module-1)*32 + (layer-1)*8 + (sector-1)*2 + end + 1;
+}
+int DBCALGeometry::getendchannelnumber(int module, int layer, int sector) {
+  if (module<=0 || layer<=0 || sector<=0) return 0;
+  else return (module-1)*16 + (layer-1)*4 + sector;
+} 
 int DBCALGeometry::getglobalsector(int module, int sector) {
-  if (module==0 || sector==0) return 0;
+  if (module<=0 || sector<=0) return 0;
   else return (module-1)*4 + sector;
 }
 int DBCALGeometry::getsector(int globalsector) {

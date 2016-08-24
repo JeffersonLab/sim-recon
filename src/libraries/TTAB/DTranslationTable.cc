@@ -17,6 +17,7 @@
 using namespace jana;
 using namespace std;
 
+
 // Use one translation table for all threads
 pthread_mutex_t& DTranslationTable::Get_TT_Mutex(void) const
 {
@@ -96,6 +97,7 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
    XML_FILENAME = "tt.xml";
    VERBOSE = 0;
    SYSTEMS_TO_PARSE = "";
+   CALL_STACK = false;
    gPARMS->SetDefaultParameter("TT:NO_CCDB", NO_CCDB, 
            "Don't try getting translation table from CCDB and just look"
            " for file. Only useful if you want to force reading tt.xml."
@@ -120,44 +122,27 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
 			"Default is empty string which means to parse all. System "
 			"names should be what is returned by DTranslationTable::DetectorName() .");
 
-   // Initialize dedicated JStreamLog used for debugging messages
-   ttout.SetTag("--- TT ---: ");
-   ttout.SetTimestampFlag();
-   ttout.SetThreadstampFlag();
+	gPARMS->SetDefaultParameter("TT:CALL_STACK", CALL_STACK,
+			"Set this to one to try and force correct recording of the"
+			"JANA call stack. You will want this if using the janadot"
+			"plugin, but otherwise, it will just give a slight performance"
+			"hit.");
 
-   // Look for and read in an optional rocid <-> rocid translation table
-   ReadOptionalROCidTranslation();
+	// Initialize dedicated JStreamLog used for debugging messages
+	ttout.SetTag("--- TT ---: ");
+	ttout.SetTimestampFlag();
+	ttout.SetThreadstampFlag();
 
-   // Read in Translation table. This will create DChannelInfo objects
-   // and store them in the "TT" map, indexed by csc_t objects
-   ReadTranslationTable(loop->GetJCalibration());
+	// Look for and read in an optional rocid <-> rocid translation table
+	ReadOptionalROCidTranslation();
+
+	// Read in Translation table. This will create DChannelInfo objects
+	// and store them in the "TT" map, indexed by csc_t objects
+	ReadTranslationTable(loop->GetJCalibration());
    
-   // These are used to help the event source report which
-   // types of data it is capable of providing. For practical
-   // purposes, these types are "provided" by the source
-   // because they are generated and placed into their
-   // respective JANA factories during a call to GetObjects().
-   // The source is responsible for reporting the types it is
-   // directly responsible for (e.g. Df250PulseIntegral)
-   supplied_data_types.insert("DBCALDigiHit");
-   supplied_data_types.insert("DBCALTDCDigiHit");
-   supplied_data_types.insert("DCDCDigiHit");
-   supplied_data_types.insert("DFCALDigiHit");
-   supplied_data_types.insert("DFDCCathodeDigiHit");
-   supplied_data_types.insert("DFDCWireDigiHit");
-   supplied_data_types.insert("DRFDigiTime");
-   supplied_data_types.insert("DSCDigiHit");
-   supplied_data_types.insert("DSCTDCDigiHit");
-   supplied_data_types.insert("DTOFDigiHit");
-   supplied_data_types.insert("DTOFTDCDigiHit");
-   supplied_data_types.insert("DTAGMDigiHit");
-   supplied_data_types.insert("DTAGMTDCDigiHit");
-   supplied_data_types.insert("DTAGHDigiHit");
-   supplied_data_types.insert("DTAGHTDCDigiHit");
-   supplied_data_types.insert("DPSDigiHit");
-   supplied_data_types.insert("DPSCDigiHit");
-   supplied_data_types.insert("DPSCTDCDigiHit");
-   supplied_data_types.insert("DTPOLSectorDigiHit");
+	// Set up pointers to the factories for this JEventLoop.
+	// (n.b. each JEventLoop will have it's own DTranslationTable object)
+	InitFactoryPointers(loop);
 }
 
 //---------------------------------
@@ -166,14 +151,6 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
 DTranslationTable::~DTranslationTable()
 {
 
-}
-
-//---------------------------------
-// IsSuppliedType
-//---------------------------------
-bool DTranslationTable::IsSuppliedType(string dataClassName) const
-{
-   return (supplied_data_types.find(dataClassName) != supplied_data_types.end());
 }
 
 //---------------------------------
@@ -318,8 +295,10 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    /// generate detector hit objects from them, placing
    /// them in the appropriate DANA factories.
 
-   if (VERBOSE > 0)
-      ttout << "Entering ApplyTranslationTable:" << std::endl;
+   if (VERBOSE > 2) ttout << "Entering ApplyTranslationTable:" << std::endl;
+   
+   // Clear our internal vectors of pointers from previous event
+   ClearVectors();
    
    // If the JANA call stack is being recorded, then temporarily disable it
    // so calls we make to loop->Get() here are ignored. The reason we do this
@@ -329,36 +308,10 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    bool record_call_stack = loop->GetCallStackRecordingStatus();
    if (record_call_stack) loop->DisableCallStackRecording();
    
-   // Containers to hold all of the detector-specific "Digi"
-   // objects. Once filled, these will be copied to the
-   // respective factories at the end of this method.
-   vector<DBCALDigiHit*> vbcal;
-   vector<DBCALTDCDigiHit*> vbcaltdc;
-   vector<DCDCDigiHit*> vcdc;
-   vector<DFCALDigiHit*> vfcal;
-   vector<DFDCCathodeDigiHit*> vfdccathode;
-   vector<DFDCWireDigiHit*> vfdcwire;
-   vector<DRFDigiTime*> vrf;
-   vector<DRFTDCDigiTime*> vrftdc;
-   vector<DSCDigiHit*> vsc;
-   vector<DSCTDCDigiHit*> vsctdc;
-   vector<DTOFDigiHit*> vtof;
-   vector<DTOFTDCDigiHit*> vtoftdc;
-   vector<DTAGMDigiHit*> vtagm;
-   vector<DTAGMTDCDigiHit*> vtagmtdc;
-   vector<DTAGHDigiHit*> vtagh;
-   vector<DTAGHTDCDigiHit*> vtaghtdc;
-   vector<DPSDigiHit*> vps;
-   vector<DPSCDigiHit*> vpsc;
-   vector<DPSCTDCDigiHit*> vpsctdc;
-   vector<DTPOLSectorDigiHit*> vtpolsector;
-
    // Df250PulseIntegral (will apply Df250PulseTime via associated objects)
    vector<const Df250PulseIntegral*> pulseintegrals250;
    loop->Get(pulseintegrals250);
-   if (VERBOSE > 2)
-      ttout << "  Number Df250PulseIntegral objects: " 
-            << pulseintegrals250.size() << std::endl;
+   if (VERBOSE > 2) ttout << "  Number Df250PulseIntegral objects: "  << pulseintegrals250.size() << std::endl;
    for (uint32_t i=0; i<pulseintegrals250.size(); i++) {
       const Df250PulseIntegral *pi = pulseintegrals250[i];
       
@@ -390,43 +343,24 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       const Df250PulsePedestal *pp = NULL;
 	  pi->GetSingle(pt);
 	  pi->GetSingle(pp);
-      
+
+      // Avoid f250 Error with extra PulseIntegral word
+      if( pt == NULL || pp == NULL) continue;
+
       // Create the appropriate hit type based on detector type
       switch (chaninfo.det_sys) {
-         case BCAL:
-            vbcal.push_back( MakeBCALDigiHit(chaninfo.bcal, pi, pt, pp) );
-            break;
-         case FCAL:
-            vfcal.push_back( MakeFCALDigiHit(chaninfo.fcal, pi, pt, pp) );
-            break;
-         case SC:
-            vsc.push_back  ( MakeSCDigiHit(  chaninfo.sc, pi, pt, pp) );
-            break;
-         case TOF:
-            vtof.push_back ( MakeTOFDigiHit( chaninfo.tof, pi, pt, pp) );
-            break;
-         case TAGM:
-            vtagm.push_back( MakeTAGMDigiHit(chaninfo.tagm, pi, pt, pp) );
-            break;
-         case TAGH:
-            vtagh.push_back( MakeTAGHDigiHit(chaninfo.tagh, pi, pt, pp) );
-            break;
-         case PS:
-            vps.push_back  ( MakePSDigiHit(chaninfo.ps, pi, pt, pp) );
-            break;
-         case PSC:
-            vpsc.push_back ( MakePSCDigiHit(chaninfo.psc, pi, pt, pp) );
-            break;
-         case RF:
-        	vrf.push_back( MakeRFDigiTime(chaninfo.rf, pt) );
-            break;
-         case TPOLSECTOR:
-            vtpolsector.push_back( MakeTPOLSectorDigiHit(chaninfo.tpolsector, pi, pt, pp) );
-            break;
+         case BCAL:       MakeBCALDigiHit(chaninfo.bcal, pi, pt, pp);              break;
+         case FCAL:       MakeFCALDigiHit(chaninfo.fcal, pi, pt, pp);              break;
+         case SC:         MakeSCDigiHit(  chaninfo.sc, pi, pt, pp);                break;
+         case TOF:        MakeTOFDigiHit( chaninfo.tof, pi, pt, pp);               break;
+         case TAGM:       MakeTAGMDigiHit(chaninfo.tagm, pi, pt, pp);              break;
+         case TAGH:       MakeTAGHDigiHit(chaninfo.tagh, pi, pt, pp);              break;
+         case PS:         MakePSDigiHit(chaninfo.ps, pi, pt, pp);                  break;
+         case PSC:        MakePSCDigiHit(chaninfo.psc, pi, pt, pp);                break;
+         case RF:         MakeRFDigiTime(chaninfo.rf, pt);                         break;
+         case TPOLSECTOR: MakeTPOLSectorDigiHit(chaninfo.tpolsector, pi, pt, pp);  break;
          default:
-            if (VERBOSE > 4)
-               ttout << "       - Don't know how to make DigiHit objects"
-                     << " for this detector type!" << std::endl;
+            if (VERBOSE > 4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << std::endl;
             break;
       }
    }
@@ -434,9 +368,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    // Df125PulseIntegral (will apply Df125PulseTime via associated objects)
    vector<const Df125PulseIntegral*> pulseintegrals125;
    loop->Get(pulseintegrals125);
-   if (VERBOSE > 2)
-      ttout << "  Number Df125PulseIntegral objects: "
-            << pulseintegrals125.size() << std::endl;
+   if (VERBOSE > 2) ttout << "  Number Df125PulseIntegral objects: " << pulseintegrals125.size() << std::endl;
    for (uint32_t i=0; i<pulseintegrals125.size(); i++) {
       const Df125PulseIntegral *pi = pulseintegrals125[i];
 
@@ -471,16 +403,10 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
       // Create the appropriate hit type based on detector type
       switch (chaninfo.det_sys) {
-         case CDC:
-            vcdc.push_back( MakeCDCDigiHit(chaninfo.cdc, pi, pt, pp) );
-            break;
-         case FDC_CATHODES:
-            vfdccathode.push_back( MakeFDCCathodeDigiHit(chaninfo.fdc_cathodes, pi, pt, pp) );
-            break;
+         case CDC:           MakeCDCDigiHit(chaninfo.cdc, pi, pt, pp);                 break;
+         case FDC_CATHODES:  MakeFDCCathodeDigiHit(chaninfo.fdc_cathodes, pi, pt, pp); break;
          default: 
-             if (VERBOSE > 4)
-                ttout << "       - Don't know how to make DigiHit"
-                      << " objects for this detector type!" << std::endl; 
+             if (VERBOSE > 4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << std::endl; 
              break;
       }
    }
@@ -488,9 +414,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    // Df125CDCPulse
    vector<const Df125CDCPulse*> cdcpulses;
    loop->Get(cdcpulses);
-   if (VERBOSE > 2)
-      ttout << "  Number Df125CDCPulse objects: "
-            << cdcpulses.size() << std::endl;
+   if (VERBOSE > 2) ttout << "  Number Df125CDCPulse objects: " << cdcpulses.size() << std::endl;
    for (uint32_t i=0; i<cdcpulses.size(); i++) {
       const Df125CDCPulse *p = cdcpulses[i];
 
@@ -519,13 +443,9 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
       // Create the appropriate hit type based on detector type
       switch (chaninfo.det_sys) {
-         case CDC:
-            vcdc.push_back( MakeCDCDigiHit(chaninfo.cdc, p) );
-            break;
+         case CDC:  MakeCDCDigiHit(chaninfo.cdc, p); break;
          default: 
-             if (VERBOSE > 4)
-                ttout << "       - Don't know how to make DigiHit"
-                      << " objects for this detector type!" << std::endl; 
+             if (VERBOSE > 4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << std::endl;
              break;
       }
    }
@@ -533,9 +453,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    // Df125FDCPulse
    vector<const Df125FDCPulse*> fdcpulses;
    loop->Get(fdcpulses);
-   if (VERBOSE > 2)
-      ttout << "  Number Df125FDCPulse objects: "
-            << fdcpulses.size() << std::endl;
+   if (VERBOSE > 2) ttout << "  Number Df125FDCPulse objects: " << fdcpulses.size() << std::endl;
    for (uint32_t i=0; i<fdcpulses.size(); i++) {
       const Df125FDCPulse *p = fdcpulses[i];
 
@@ -564,13 +482,9 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
       // Create the appropriate hit type based on detector type
       switch (chaninfo.det_sys) {
-		case FDC_CATHODES:
-            vfdccathode.push_back( MakeFDCCathodeDigiHit(chaninfo.fdc_cathodes, p) );
-            break;
+		case FDC_CATHODES:  MakeFDCCathodeDigiHit(chaninfo.fdc_cathodes, p); break;
          default: 
-             if (VERBOSE > 4)
-                ttout << "       - Don't know how to make DigiHit"
-                      << " objects for this detector type!" << std::endl; 
+             if (VERBOSE > 4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << std::endl;
              break;
       }
    }
@@ -578,8 +492,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    // DF1TDCHit
    vector<const DF1TDCHit*> f1tdchits;
    loop->Get(f1tdchits);
-   if (VERBOSE > 2)
-      ttout << "  Number DF1TDCHit objects: " << f1tdchits.size() << std::endl;
+   if (VERBOSE > 2) ttout << "  Number DF1TDCHit objects: " << f1tdchits.size() << std::endl;
    for (uint32_t i=0; i<f1tdchits.size(); i++) {
       const DF1TDCHit *hit = f1tdchits[i];
 
@@ -608,31 +521,15 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       
       // Create the appropriate hit type based on detector type
       switch (chaninfo.det_sys) {
-         case BCAL:
-            vbcaltdc.push_back( MakeBCALTDCDigiHit(chaninfo.bcal, hit) );
-            break;
-         case FDC_WIRES:
-            vfdcwire.push_back( MakeFDCWireDigiHit(chaninfo.fdc_wires, hit) );
-            break;
-         case RF:
-        	vrftdc.push_back( MakeRFTDCDigiTime(chaninfo.rf, hit) );
-            break;
-         case SC:
-            vsctdc.push_back( MakeSCTDCDigiHit(chaninfo.sc, hit) );
-            break;
-         case TAGM:
-            vtagmtdc.push_back( MakeTAGMTDCDigiHit(chaninfo.tagm, hit) );
-            break;
-         case TAGH:
-            vtaghtdc.push_back( MakeTAGHTDCDigiHit(chaninfo.tagh, hit) );
-            break;
-         case PSC:
-            vpsctdc.push_back( MakePSCTDCDigiHit(chaninfo.psc, hit) );
-            break;
+         case BCAL:        MakeBCALTDCDigiHit(chaninfo.bcal, hit);      break;
+         case FDC_WIRES:   MakeFDCWireDigiHit(chaninfo.fdc_wires, hit); break;
+         case RF:          MakeRFTDCDigiTime(chaninfo.rf, hit);         break;
+         case SC:          MakeSCTDCDigiHit(chaninfo.sc, hit);          break;
+         case TAGM:        MakeTAGMTDCDigiHit(chaninfo.tagm, hit);      break;
+         case TAGH:        MakeTAGHTDCDigiHit(chaninfo.tagh, hit);      break;
+         case PSC:         MakePSCTDCDigiHit(chaninfo.psc, hit);        break;
          default:     
-             if (VERBOSE > 4)
-                ttout << "       - Don't know how to make DigiHit objects"
-                      << " for this detector type!" << std::endl;
+             if (VERBOSE > 4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << std::endl;
              break;
       }
    }
@@ -640,9 +537,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
    // DCAEN1290TDCHit
    vector<const DCAEN1290TDCHit*> caen1290tdchits;
    loop->Get(caen1290tdchits);
-   if (VERBOSE > 2)
-      ttout << "  Number DCAEN1290TDCHit objects: " 
-            << caen1290tdchits.size() << std::endl;
+   if (VERBOSE > 2) ttout << "  Number DCAEN1290TDCHit objects: " << caen1290tdchits.size() << std::endl;
    for (uint32_t i=0; i<caen1290tdchits.size(); i++) {
       const DCAEN1290TDCHit *hit = caen1290tdchits[i];
 
@@ -671,68 +566,24 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       
       // Create the appropriate hit type based on detector type
       switch (chaninfo.det_sys) {
-         case TOF:
-            vtoftdc.push_back( MakeTOFTDCDigiHit(chaninfo.tof, hit) );
-            break;
-         case RF:
-        	vrftdc.push_back( MakeRFTDCDigiTime(chaninfo.rf, hit) );
-            break;
+         case TOF:    MakeTOFTDCDigiHit(chaninfo.tof, hit); break;
+         case RF:     MakeRFTDCDigiTime(chaninfo.rf, hit);  break;
          default:     
-             if (VERBOSE > 4)
-                ttout << "       - Don't know how to make DigiHit objects"
-                      << " for this detector type!" << std::endl;
+             if (VERBOSE > 4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << std::endl;
              break;
       }
    }
 
-   // Sort object order (this makes it easier to browse with hd_dump)
-   sort(vbcal.begin(), vbcal.end(), SortBCALDigiHit);
+	// Sort object order (this makes it easier to browse with hd_dump)
+	sort(vDBCALDigiHit.begin(), vDBCALDigiHit.end(), SortBCALDigiHit);
    
-   if (VERBOSE > 3) {
-      ttout << "        vbcal.size() = " << vbcal.size() << std::endl;
-      ttout << "     vbcaltdc.size() = " << vbcaltdc.size() << std::endl;
-      ttout << "         vcdc.size() = " << vcdc.size() << std::endl;
-      ttout << "        vfcal.size() = " << vfcal.size() << std::endl;
-      ttout << "  vfdccathode.size() = " << vfdccathode.size() << std::endl;
-      ttout << "     vfdcwire.size() = " << vfdcwire.size() << std::endl;
-      ttout << "          vrf.size() = " << vrf.size() << std::endl;
-      ttout << "       vrftdc.size() = " << vrftdc.size() << std::endl;
-      ttout << "          vsc.size() = " << vsc.size() << std::endl;
-      ttout << "       vsctdc.size() = " << vsctdc.size() << std::endl;
-      ttout << "         vtof.size() = " << vtof.size() << std::endl;
-      ttout << "      vtoftdc.size() = " << vtoftdc.size() << std::endl;
-      ttout << "        vtagm.size() = " << vtagm.size() << std::endl;
-      ttout << "     vtagmtdc.size() = " << vtagmtdc.size() << std::endl;
-      ttout << "        vtagh.size() = " << vtagh.size() << std::endl;
-      ttout << "     vtaghtdc.size() = " << vtaghtdc.size() << std::endl;
-      ttout << "          vps.size() = " << vps.size() << std::endl;
-      ttout << "         vpsc.size() = " << vpsc.size() << std::endl;
-      ttout << "      vpsctdc.size() = " << vpsctdc.size() << std::endl;
-      ttout << "  vtpolsector.size() = " << vtpolsector.size() << std::endl;
-   }
+   // Copy pointers to all objects produced to their appropriate
+   // factories. This hands ownership of them over to the factories
+   // so JANA will delete them.
+   CopyToFactories();
    
-   // Find factory for each container and copy the object pointers into it
-   // (n.b. do this even if container is empty since it sets the evnt_called flag)
-   CopyToFactory(loop, vbcal);
-   CopyToFactory(loop, vbcaltdc);
-   CopyToFactory(loop, vcdc);
-   CopyToFactory(loop, vfcal);
-   CopyToFactory(loop, vfdccathode);
-   CopyToFactory(loop, vfdcwire);
-   CopyToFactory(loop, vrf);
-   CopyToFactory(loop, vrftdc);
-   CopyToFactory(loop, vsc);
-   CopyToFactory(loop, vsctdc);
-   CopyToFactory(loop, vtof);
-   CopyToFactory(loop, vtoftdc);
-   CopyToFactory(loop, vtagm);
-   CopyToFactory(loop, vtagmtdc);
-   CopyToFactory(loop, vtagh);
-   CopyToFactory(loop, vtaghtdc);
-   CopyToFactory(loop, vps);
-   CopyToFactory(loop, vpsc);
-   CopyToFactory(loop, vpsctdc);
-   CopyToFactory(loop, vtpolsector);
+   
+	if (VERBOSE > 3) PrintVectorSizes();
 
    // Add to JANA's call stack some entries to make janadot draw something reasonable
    // Unfortunately, this is just us telling JANA the relationship as defined here.
@@ -742,18 +593,20 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
       // re-enable call stack recording
       loop->EnableCallStackRecording();
 
-      Addf250ObjectsToCallStack(loop, "DBCALDigiHit");
-      Addf250ObjectsToCallStack(loop, "DFCALDigiHit");
-      Addf250ObjectsToCallStack(loop, "DSCDigiHit");
-      Addf250ObjectsToCallStack(loop, "DTOFDigiHit");
-      Addf125ObjectsToCallStack(loop, "DCDCDigiHit");
-      Addf125ObjectsToCallStack(loop, "DFDCCathodeDigiHit");
-      AddF1TDCObjectsToCallStack(loop, "DBCALTDCDigiHit");
-      AddF1TDCObjectsToCallStack(loop, "DFDCWireDigiHit");
-      AddF1TDCObjectsToCallStack(loop, "DRFDigiTime");
-      AddF1TDCObjectsToCallStack(loop, "DRFTDCDigiTime");
-      AddF1TDCObjectsToCallStack(loop, "DSCTDCDigiHit");
-      AddCAEN1290TDCObjectsToCallStack(loop, "DTOFTDCDigiHit");
+		if(CALL_STACK){
+      	Addf250ObjectsToCallStack(loop, "DBCALDigiHit");
+      	Addf250ObjectsToCallStack(loop, "DFCALDigiHit");
+      	Addf250ObjectsToCallStack(loop, "DSCDigiHit");
+      	Addf250ObjectsToCallStack(loop, "DTOFDigiHit");
+      	Addf125CDCObjectsToCallStack(loop, "DCDCDigiHit", cdcpulses.size()>0);
+      	Addf125FDCObjectsToCallStack(loop, "DFDCCathodeDigiHit", fdcpulses.size()>0);
+      	AddF1TDCObjectsToCallStack(loop, "DBCALTDCDigiHit");
+      	AddF1TDCObjectsToCallStack(loop, "DFDCWireDigiHit");
+      	AddF1TDCObjectsToCallStack(loop, "DRFDigiTime");
+      	AddF1TDCObjectsToCallStack(loop, "DRFTDCDigiTime");
+      	AddF1TDCObjectsToCallStack(loop, "DSCTDCDigiHit");
+      	AddCAEN1290TDCObjectsToCallStack(loop, "DTOFTDCDigiHit");
+		}
    }
 }
 
@@ -780,6 +633,8 @@ DBCALDigiHit* DTranslationTable::MakeBCALDigiHit(const BCALIndex_t &idx,
    h->sector = idx.sector;
    h->end    = (DBCALGeometry::End)idx.end;
 
+   vDBCALDigiHit.push_back(h);
+
    return h;
 }
 
@@ -796,6 +651,8 @@ DFCALDigiHit* DTranslationTable::MakeFCALDigiHit(const FCALIndex_t &idx,
 
    h->row    = idx.row;
    h->column = idx.col;
+
+   vDFCALDigiHit.push_back(h);
    
    return h;
 }
@@ -815,6 +672,8 @@ DTOFDigiHit* DTranslationTable::MakeTOFDigiHit(const TOFIndex_t &idx,
    h->bar   = idx.bar;
    h->end   = idx.end;
 
+   vDTOFDigiHit.push_back(h);
+   
    return h;
 }
 
@@ -831,6 +690,8 @@ DSCDigiHit* DTranslationTable::MakeSCDigiHit(const SCIndex_t &idx,
 
    h->sector = idx.sector;
 
+   vDSCDigiHit.push_back(h);
+   
    return h;
 }
 
@@ -848,6 +709,8 @@ DTAGMDigiHit* DTranslationTable::MakeTAGMDigiHit(const TAGMIndex_t &idx,
    h->row = idx.row;
    h->column = idx.col;
 
+   vDTAGMDigiHit.push_back(h);
+   
    return h;
 }
 
@@ -864,6 +727,8 @@ DTAGHDigiHit* DTranslationTable::MakeTAGHDigiHit(const TAGHIndex_t &idx,
 
    h->counter_id = idx.id;
 
+   vDTAGHDigiHit.push_back(h);
+   
    return h;
 }
 
@@ -880,6 +745,8 @@ DPSCDigiHit* DTranslationTable::MakePSCDigiHit(const PSCIndex_t &idx,
 
    h->counter_id = idx.id;
 
+   vDPSCDigiHit.push_back(h);
+   
    return h;
 }
 
@@ -897,6 +764,8 @@ DPSDigiHit* DTranslationTable::MakePSDigiHit(const PSIndex_t &idx,
    h->arm = (DPSGeometry::Arm)idx.side;
    h->column = idx.id;
 
+   vDPSDigiHit.push_back(h);
+   
    return h;
 }
 
@@ -913,6 +782,8 @@ DCDCDigiHit* DTranslationTable::MakeCDCDigiHit(const CDCIndex_t &idx,
 
    h->ring = idx.ring;
    h->straw = idx.straw;
+   
+   vDCDCDigiHit.push_back(h);
    
    return h;
 }
@@ -935,6 +806,8 @@ DCDCDigiHit* DTranslationTable::MakeCDCDigiHit(const CDCIndex_t &idx,
 
 	h->AddAssociatedObject(p);
 
+	vDCDCDigiHit.push_back(h);
+   
 	return h;
 }
 
@@ -956,6 +829,8 @@ DFDCCathodeDigiHit* DTranslationTable::MakeFDCCathodeDigiHit(
    h->strip      = idx.strip;
    h->strip_type = idx.strip_type;
 
+   vDFDCCathodeDigiHit.push_back(h);
+   
    return h;
 }
 
@@ -982,6 +857,8 @@ DFDCCathodeDigiHit* DTranslationTable::MakeFDCCathodeDigiHit(
 
 	h->AddAssociatedObject(p);
 
+	vDFDCCathodeDigiHit.push_back(h);
+   
 	return h;
 }
 
@@ -1000,6 +877,8 @@ DBCALTDCDigiHit* DTranslationTable::MakeBCALTDCDigiHit(
    h->sector = idx.sector;
    h->end    = (DBCALGeometry::End)idx.end;
 
+   vDBCALTDCDigiHit.push_back(h);
+   
    return h;
 }
 
@@ -1017,6 +896,8 @@ DFDCWireDigiHit* DTranslationTable::MakeFDCWireDigiHit(
    h->chamber = idx.chamber;
    h->wire    = idx.wire;
 
+   vDFDCWireDigiHit.push_back(h);
+   
    return h;
 }
 
@@ -1033,6 +914,8 @@ DRFTDCDigiTime*  DTranslationTable::MakeRFTDCDigiTime(
    h->dSystem = idx.dSystem;
    h->dIsCAENTDCFlag = false;
 
+   vDRFTDCDigiTime.push_back(h);
+   
    return h;
 }
 
@@ -1049,6 +932,8 @@ DRFTDCDigiTime*  DTranslationTable::MakeRFTDCDigiTime(
    h->dSystem = idx.dSystem;
    h->dIsCAENTDCFlag = true;
 
+   vDRFTDCDigiTime.push_back(h);
+   
    return h;
 }
 
@@ -1064,6 +949,8 @@ DRFDigiTime*  DTranslationTable::MakeRFDigiTime(
 
    h->dSystem = idx.dSystem;
 
+   vDRFDigiTime.push_back(h);
+   
    return h;
 }
 
@@ -1079,6 +966,8 @@ DSCTDCDigiHit*  DTranslationTable::MakeSCTDCDigiHit(
 
    h->sector = idx.sector;
 
+   vDSCTDCDigiHit.push_back(h);
+   
    return h;
 }
 
@@ -1095,6 +984,8 @@ DTAGMTDCDigiHit*  DTranslationTable::MakeTAGMTDCDigiHit(
    h->row = idx.row;
    h->column = idx.col;
 
+   vDTAGMTDCDigiHit.push_back(h);
+   
    return h;
 }
 
@@ -1110,6 +1001,8 @@ DTAGHTDCDigiHit*  DTranslationTable::MakeTAGHTDCDigiHit(
 
    h->counter_id = idx.id;
 
+   vDTAGHTDCDigiHit.push_back(h);
+   
    return h;
 }
 
@@ -1125,6 +1018,8 @@ DPSCTDCDigiHit*  DTranslationTable::MakePSCTDCDigiHit(
 
    h->counter_id = idx.id;
 
+   vDPSCTDCDigiHit.push_back(h);
+   
    return h;
 }
 
@@ -1142,6 +1037,8 @@ DTOFTDCDigiHit*  DTranslationTable::MakeTOFTDCDigiHit(
    h->bar   = idx.bar;
    h->end   = idx.end;
 
+   vDTOFTDCDigiHit.push_back(h);
+   
    return h;
 }
 
@@ -1157,6 +1054,9 @@ DTPOLSectorDigiHit* DTranslationTable::MakeTPOLSectorDigiHit(const TPOLSECTORInd
    CopyDf250Info(h, pi, pt, pp);
 
    h->sector = idx.sector;
+
+   vDTPOLSectorDigiHit.push_back(h);
+   
    return h;
 }
 
@@ -1341,14 +1241,37 @@ void DTranslationTable::Addf250ObjectsToCallStack(JEventLoop *loop, string calle
 }
 
 //----------------
-// Addf125ObjectsToCallStack
+// Addf125CDCObjectsToCallStack
 //----------------
-void DTranslationTable::Addf125ObjectsToCallStack(JEventLoop *loop, string caller) const
+void DTranslationTable::Addf125CDCObjectsToCallStack(JEventLoop *loop, string caller, bool addpulseobjs) const
 {
 	AddToCallStack(loop, caller, "Df125Config");
-	AddToCallStack(loop, caller, "Df125PulseIntegral");
-	AddToCallStack(loop, caller, "Df125PulsePedestal");
-	AddToCallStack(loop, caller, "Df125PulseTime");
+	if(addpulseobjs){
+		// new style
+		AddToCallStack(loop, caller, "Df125CDCPulse");
+	}else{
+		// old style
+		AddToCallStack(loop, caller, "Df125PulseIntegral");
+		AddToCallStack(loop, caller, "Df125PulsePedestal");
+		AddToCallStack(loop, caller, "Df125PulseTime");
+	}
+}
+
+//----------------
+// Addf125FDCObjectsToCallStack
+//----------------
+void DTranslationTable::Addf125FDCObjectsToCallStack(JEventLoop *loop, string caller, bool addpulseobjs) const
+{
+	AddToCallStack(loop, caller, "Df125Config");
+	if(addpulseobjs){
+		// new style
+		AddToCallStack(loop, caller, "Df125FDCPulse");
+	}else{
+		// old style
+		AddToCallStack(loop, caller, "Df125PulseIntegral");
+		AddToCallStack(loop, caller, "Df125PulsePedestal");
+		AddToCallStack(loop, caller, "Df125PulseTime");
+	}
 }
 
 //----------------

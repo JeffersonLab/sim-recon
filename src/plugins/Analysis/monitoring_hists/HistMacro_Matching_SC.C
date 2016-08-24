@@ -160,11 +160,11 @@
 		locAcceptanceHist->GetYaxis()->SetLabelSize(0.05);
 		locAcceptanceHist->Draw("COLZ");
 	}
-
-	TH1I* locHist_SCPaddle_BarrelRegion_HasHit = (TH1I*)gDirectory->Get("SCPaddle_BarrelRegion_HasHit");
-	TH1I* locHist_SCPaddle_BarrelRegion_NoHit = (TH1I*)gDirectory->Get("SCPaddle_BarrelRegion_NoHit");
-	TH1I* locHist_SCPaddle_NoseRegion_HasHit = (TH1I*)gDirectory->Get("SCPaddle_NoseRegion_HasHit");
-	TH1I* locHist_SCPaddle_NoseRegion_NoHit = (TH1I*)gDirectory->Get("SCPaddle_NoseRegion_NoHit");
+    
+	locHist_SCPaddle_BarrelRegion_HasHit = (TH1I*)gDirectory->Get("SCPaddle_BarrelRegion_HasHit");
+	locHist_SCPaddle_BarrelRegion_NoHit = (TH1I*)gDirectory->Get("SCPaddle_BarrelRegion_NoHit");
+	locHist_SCPaddle_NoseRegion_HasHit = (TH1I*)gDirectory->Get("SCPaddle_NoseRegion_HasHit");
+	locHist_SCPaddle_NoseRegion_NoHit = (TH1I*)gDirectory->Get("SCPaddle_NoseRegion_NoHit");
 	locCanvas->cd(5);
 	gPad->SetTicks();
 	gPad->SetGrid();
@@ -184,9 +184,9 @@
 			{
 				double locAcceptance = locNumFound_Barrel/locTotal_Barrel;
 				locBarrelEffVector.push_back(locAcceptance);
-				double locNumFoundError = sqrt(locNumFound*(1.0 - locAcceptance));
+				double locNumFoundError = sqrt(locNumFound_Barrel*(1.0 - locAcceptance));
 
-				double locAcceptanceError = locNumFoundError/locTotal;
+				double locAcceptanceError = locNumFoundError/locTotal_Barrel;
 				locBarrelEffUncertaintyVector.push_back(locAcceptanceError);
 
 				locBarrelXAxisVector.push_back(loc_i + 1);
@@ -200,9 +200,9 @@
 			{
 				double locAcceptance = locNumFound_Nose/locTotal_Nose;
 				locNoseEffVector.push_back(locAcceptance);
-				double locNumFoundError = sqrt(locNumFound*(1.0 - locAcceptance));
+				double locNumFoundError = sqrt(locNumFound_Nose*(1.0 - locAcceptance));
 
-				double locAcceptanceError = locNumFoundError/locTotal;
+				double locAcceptanceError = locNumFoundError/locTotal_Nose;
 				locNoseEffUncertaintyVector.push_back(locAcceptanceError);
 
 				locNoseXAxisVector.push_back(loc_i + 1);

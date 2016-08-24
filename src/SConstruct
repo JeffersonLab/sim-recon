@@ -29,6 +29,8 @@ include = "%s/include" % (installdir)
 bin = "%s/bin" % (installdir)
 lib = "%s/lib" % (installdir)
 plugins = "%s/plugins" % (installdir)
+python2 = "%s/python2" % (installdir)
+python3 = "%s/python3" % (installdir)
 env = Environment(        ENV = os.environ,  # Bring in full environement, including PATH
                       CPPPATH = [include],
                       LIBPATH = [lib],
@@ -41,6 +43,8 @@ env.Replace(INSTALLDIR    = installdir,
 				BINDIR        = bin,
 				LIBDIR        = lib,
 				PLUGINSDIR    = plugins,
+				PYTHON2DIR    = python2,
+				PYTHON3DIR    = python3,
 				ALL_SOURCES   = [],        # used so we can add generated sources
 				MISC_OBJECTS  = [],        # used so we can add custom built objects
 				SHOWBUILD     = SHOWBUILD,
@@ -80,6 +84,9 @@ env.Replace(COMPILER = compiler)
 
 # Add libraries and libraries/include to include search path
 env.PrependUnique(CPPPATH = ['#', '#libraries', '#libraries/include'])
+
+# Use C++11
+env.PrependUnique(    CXXFLAGS = ['-std=c++11'])
 
 # Standard flags (optimization level and warnings)
 env.PrependUnique(      CFLAGS = ['-O%s' % OPTIMIZATION, '-fPIC', '-Wall'])

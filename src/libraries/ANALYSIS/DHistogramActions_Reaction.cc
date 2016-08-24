@@ -19,6 +19,7 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 	locEventLoop->Get(locAnalysisUtilitiesVector);
 
 	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
@@ -359,7 +360,10 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 	dParticleID->Calc_TimingChiSq(locChargedTrackHypothesis, locTimeNDF, locTimePull);
 	DetectorSystem_t locTimeDetector = locChargedTrackHypothesis->t1_detector();
 
-	japp->RootWriteLock();
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
 	{
 		dHistMap_PIDFOM[locPID]->Fill(locChargedTrackHypothesis->dFOM);
 
@@ -452,7 +456,7 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 		if(locChargedTrackHypothesis->dNDF == 0) //NaN
 			dHistMap_PVsTheta_NaNPIDFOM[locPID]->Fill(locTheta, locP);
 	}
-	japp->RootUnLock();
+	Unlock_Action();
 }
 
 void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DMCThrownMatching* locMCThrownMatching, const DEventRFBunch* locEventRFBunch)
@@ -460,7 +464,7 @@ void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* l
 	Particle_t locPID = locNeutralParticleHypothesis->PID();
 
 	double locBeta_Timing = locNeutralParticleHypothesis->measuredBeta();
-	double locDeltaT = (locNeutralParticleHypothesis->t0() - locNeutralParticleHypothesis->time());
+	double locDeltaT = locNeutralParticleHypothesis->time() - locNeutralParticleHypothesis->t0();
 
 	double locP = locNeutralParticleHypothesis->momentum().Mag();
 	double locMatchFOM = 0.0;
@@ -471,13 +475,17 @@ void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* l
 	dParticleID->Calc_TimingChiSq(locNeutralParticleHypothesis, locTimeNDF, locTimePull);
 
 	DetectorSystem_t locSystem = locNeutralParticleHypothesis->t1_detector();
-	japp->RootWriteLock();
+
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
 	{
 		//Beta (good for all PIDs)
 		dHistMap_Beta[locPID][locSystem]->Fill(locBeta_Timing);
 		if(locPID != Gamma)
 		{
-			japp->RootUnLock();
+			Unlock_Action();
 			return;
 		}
 
@@ -493,7 +501,7 @@ void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* l
 		if(dHistMap_PIDFOMForTruePID.find(locPIDPair) != dHistMap_PIDFOMForTruePID.end()) //else hist not created or PID is weird
 			dHistMap_PIDFOMForTruePID[locPIDPair]->Fill(locNeutralParticleHypothesis->dFOM);
 	}
-	japp->RootUnLock();
+	Unlock_Action();
 }
 
 void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop)
@@ -504,7 +512,7 @@ void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop
 	deque<deque<Particle_t> > locDetectedChargedPIDs_HasDupes;
 	Get_Reaction()->Get_DetectedFinalPIDs(locDetectedChargedPIDs_HasDupes, 1, true);
 
-	string locHistName, locHistTitle, locStepName, locStepROOTName, locParticleName, locParticleROOTName;
+	string locHistName, locHistTitle, locStepROOTName, locParticleName, locParticleROOTName;
 	Particle_t locPID, locHigherMassPID, locLowerMassPID;
 	string locHigherMassParticleName, locLowerMassParticleName, locHigherMassParticleROOTName, locLowerMassParticleROOTName;
 
@@ -521,6 +529,7 @@ void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop
 	dHistDeque_TrackDeltaTVsP.resize(locNumSteps);
 
 	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		dAnalysisUtilities = locAnalysisUtilitiesVector[0];
@@ -531,9 +540,10 @@ void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop
 				continue;
 
 			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
-			locStepName = locReactionStep->Get_StepName();
+			ostringstream locStepName;
+			locStepName << "Step" << loc_i << "__" << locReactionStep->Get_StepName();
 			locStepROOTName = locReactionStep->Get_StepROOTName();
-			CreateAndChangeTo_Directory(locStepName, locStepName);
+			CreateAndChangeTo_Directory(locStepName.str(), locStepName.str());
 
 			// Max Track DeltaZ
 			locHistName = "MaxTrackDeltaZ";
@@ -695,8 +705,11 @@ bool DHistogramAction_TrackVertexComparison::Perform_Action(JEventLoop* locEvent
 			double locBeamDeltaT = (locBeamParticle != NULL) ? locParticles[loc_j]->time() - locBeamParticle->time() : numeric_limits<double>::quiet_NaN();
 			locDOCA = dAnalysisUtilities->Calc_DOCAToVertex(locParticles[loc_j], locVertex);
 
-			//HISTOGRAM //do all at once to reduce #locks & amount of time within the lock
-			japp->RootWriteLock();
+			//do all at once to reduce #locks & amount of time within the lock
+			//FILL HISTOGRAMS
+			//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+			//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+			Lock_Action();
 			{
 				//comparison to common vertex/time
 				dHistDeque_TrackZToCommon[loc_i][locPID]->Fill(locParticles[loc_j]->position().Z() - locVertex.Z());
@@ -724,7 +737,7 @@ bool DHistogramAction_TrackVertexComparison::Perform_Action(JEventLoop* locEvent
 					dHistDeque_TrackDeltaTVsP[loc_i][locPIDPairs[loc_k]]->Fill(locPs[loc_k], locDeltaTs[loc_k]);
 				}
 			}
-			japp->RootUnLock();
+			Unlock_Action();
 		} //end of particle loop
 	} //end of step loop
 	return true;
@@ -734,14 +747,14 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 {
 	if(Get_UseKinFitResultsFlag() && (Get_Reaction()->Get_KinFitType() == d_NoFit))
 	{
-		cout << "WARNING: REQUESTED HISTOGRAM OF KINEMAITIC FIT RESULTS WHEN NO KINEMATIC FIT!!!" << endl;
+		cout << "WARNING: REQUESTED HISTOGRAM OF KINEMATIC FIT RESULTS WHEN NO KINEMATIC FIT!!!" << endl;
 		return; //no fit performed, but kinfit data requested!!
 	}
 
 	vector<const DParticleID*> locParticleIDs;
 	locEventLoop->Get(locParticleIDs);
 
-	string locHistName, locHistTitle, locStepName, locStepROOTName, locParticleName, locParticleROOTName;
+	string locHistName, locHistTitle, locStepROOTName, locParticleName, locParticleROOTName;
 	Particle_t locPID;
 
 	size_t locNumSteps = Get_Reaction()->Get_NumReactionSteps();
@@ -765,6 +778,7 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 	locEventLoop->Get(locAnalysisUtilitiesVector);
 
 	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
@@ -840,7 +854,8 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 		for(size_t loc_i = 0; loc_i < locNumSteps; ++loc_i)
 		{
 			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
-			locStepName = locReactionStep->Get_StepName();
+			ostringstream locStepName;
+			locStepName << "Step" << loc_i << "__" << locReactionStep->Get_StepName();
 			locStepROOTName = locReactionStep->Get_StepROOTName();
 
 			Particle_t locInitialPID = locReactionStep->Get_InitialParticleID();
@@ -855,10 +870,7 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 					locPIDs.insert(locPIDs.begin(), locInitialPID);
 			}
 
-			if(locPIDs.empty())
-				continue;
-
-			CreateAndChangeTo_Directory(locStepName, locStepName);
+			bool locDirectoryCreatedFlag = false;
 			for(size_t loc_j = 0; loc_j < locPIDs.size(); ++loc_j)
 			{
 				locPID = locPIDs[loc_j];
@@ -866,6 +878,12 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 				locParticleROOTName = ParticleName_ROOT(locPID);
 				if(dHistDeque_P[loc_i].find(locPID) != dHistDeque_P[loc_i].end())
 					continue; //pid already done
+
+				if(!locDirectoryCreatedFlag)
+				{
+					CreateAndChangeTo_Directory(locStepName.str(), locStepName.str());
+					locDirectoryCreatedFlag = true;
+				}
 
 				CreateAndChangeTo_Directory(locParticleName, locParticleName);
 
@@ -921,7 +939,55 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 
 				gDirectory->cd("..");
 			} //end of particle loop
-			gDirectory->cd("..");
+
+			// Vertex
+			string locInitParticleROOTName = ParticleName_ROOT(locInitialPID);
+			string locInitParticleName = ParticleType(locInitialPID);
+			if((loc_i == 0) || IsDetachedVertex(locInitialPID))
+			{
+				if(!locDirectoryCreatedFlag)
+				{
+					CreateAndChangeTo_Directory(locStepName.str(), locStepName.str());
+					locDirectoryCreatedFlag = true;
+				}
+
+				locHistName = "StepVertexZ";
+				locHistTitle = (loc_i == 0) ? ";Production Vertex-Z (cm)" : string(";") + locInitParticleROOTName + string(" Decay Vertex-Z (cm)");
+				dHistMap_StepVertexZ[loc_i] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumVertexZBins, dMinVertexZ, dMaxVertexZ);
+
+				locHistName = "StepVertexYVsX";
+				locHistTitle = (loc_i == 0) ? "Production Vertex" : locInitParticleROOTName + string(" Decay Vertex");
+				locHistTitle += string(";Vertex-X (cm);Vertex-Y (cm)");
+				dHistMap_StepVertexYVsX[loc_i] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY);
+
+				locHistName = "StepVertexT";
+				locHistTitle = (loc_i == 0) ? ";Production Vertex-T (ns)" : string(";") + locInitParticleROOTName + string(" Decay Vertex-T (ns)");
+				dHistMap_StepVertexT[loc_i] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumTBins, dMinT, dMaxT);
+			}
+
+			if((loc_i != 0) && IsDetachedVertex(locInitialPID))
+			{
+				if(!locDirectoryCreatedFlag)
+				{
+					CreateAndChangeTo_Directory(locStepName.str(), locStepName.str());
+					locDirectoryCreatedFlag = true;
+				}
+
+				locHistName = locInitParticleName + string("PathLength");
+				locHistTitle = string(";") + locInitParticleROOTName + string(" Path Length (cm)");
+				dHistMap_DetachedPathLength[loc_i] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPathLengthBins, 0.0, dMaxPathLength);
+
+				locHistName = locInitParticleName + string("Lifetime");
+				locHistTitle = string(";") + locInitParticleROOTName + string(" Lifetime (ns)");
+				dHistMap_DetachedLifetime[loc_i] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumLifetimeBins, 0.0, dMaxLifetime);
+
+				locHistName = locInitParticleName + string("Lifetime_RestFrame");
+				locHistTitle = string(";") + locInitParticleROOTName + string(" Rest Frame Lifetime (ns)");
+				dHistMap_DetachedLifetime_RestFrame[loc_i] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumLifetimeBins, 0.0, dMaxLifetime);
+			}
+
+			if(locDirectoryCreatedFlag)
+				gDirectory->cd("..");
 		} //end of step loop
 
 		//Return to the base directory
@@ -934,7 +1000,7 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 {
 	if(Get_UseKinFitResultsFlag() && (Get_Reaction()->Get_KinFitType() == d_NoFit))
 	{
-		cout << "WARNING: REQUESTED HISTOGRAM OF KINEMAITIC FIT RESULTS WHEN NO KINEMATIC FIT!!! Skipping histogram." << endl;
+		cout << "WARNING: REQUESTED HISTOGRAM OF KINEMATIC FIT RESULTS WHEN NO KINEMATIC FIT!!! Skipping histogram." << endl;
 		return true; //no fit performed, but kinfit data requested!!
 	}
 
@@ -952,13 +1018,14 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
 
 		//initial particle
+		Particle_t locInitialPID = locParticleComboStep->Get_InitialParticleID();
 		if(Get_UseKinFitResultsFlag())
 			locKinematicData = locParticleComboStep->Get_InitialParticle();
 		else
 			locKinematicData = locParticleComboStep->Get_InitialParticle_Measured();
 		if(locKinematicData != NULL)
 		{
-			if(locKinematicData->PID() == Gamma)
+			if(locInitialPID == Gamma)
 			{
 				//check if will be duplicate
 				const JObject* locSourceObject = locParticleComboStep->Get_InitialParticle_Measured();
@@ -970,6 +1037,44 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 			}
 			else if(Get_UseKinFitResultsFlag()) //decaying particle, but kinfit so can hist
 				Fill_Hists(locEventLoop, locKinematicData, locEventRFBunch, loc_i); //has many source object, and is unique to this combo: no dupes to check against: let it ride
+		}
+
+		//VERTEX INFORMATION
+		//other than first, skipped if not detached vertex
+		DLorentzVector locStepSpacetimeVertex = locParticleComboStep->Get_SpacetimeVertex();
+		if((loc_i == 0) || IsDetachedVertex(locInitialPID))
+		{
+			dHistMap_StepVertexZ[loc_i]->Fill(locStepSpacetimeVertex.Z());
+			dHistMap_StepVertexYVsX[loc_i]->Fill(locStepSpacetimeVertex.X(), locStepSpacetimeVertex.Y());
+			dHistMap_StepVertexT[loc_i]->Fill(locStepSpacetimeVertex.T());
+		}
+
+		//DETACHED VERTEX INFORMATION
+		if((loc_i != 0) && IsDetachedVertex(locInitialPID))
+		{
+			int locFromStepIndex = locParticleComboStep->Get_InitialParticleDecayFromStepIndex();
+			DLorentzVector locFromSpacetimeVertex = locParticleCombo->Get_ParticleComboStep(locFromStepIndex)->Get_SpacetimeVertex();
+			DLorentzVector locDeltaSpacetime = locStepSpacetimeVertex - locFromSpacetimeVertex;
+
+			double locPathLength = locDeltaSpacetime.Vect().Mag();
+			dHistMap_DetachedPathLength[loc_i]->Fill(locPathLength);
+			dHistMap_DetachedLifetime[loc_i]->Fill(locDeltaSpacetime.T());
+
+			if(locKinematicData != NULL)
+			{
+				DLorentzVector locInitialP4 = locKinematicData->lorentzMomentum();
+				//below, t, x, and tau are really delta-t, delta-x, and delta-tau
+				//tau = gamma*(t - beta*x/c)  //plug in: t = x/(beta*c), gamma = 1/sqrt(1 - beta^2)
+				//tau = (x/(beta*c) - beta*x/c)/sqrt(1 - beta^2)  //plug in beta = p*c/E
+				//tau = (x*E/(p*c^2) - p*x/E)/sqrt(1 - p^2*c^2/E^2)  //multiply num & denom by E*P, factor x/c^2 out of num
+				//tau = (x/c^2)*(E^2 - p^2*c^2)/(p*sqrt(E^2 - p^2*c^2))  //plug in m^2*c^4 = E^2 - p^2*c^2
+				//tau = (x/c^2)*m^2*c^4/(p*m*c^2)  //cancel c's & m's
+				//tau = x*m/p
+				//however, in data, p & m are in units with c = 1, so need an extra 1/c
+				double locRestFrameLifetime = locPathLength*ParticleMass(locInitialPID)/(29.9792458*locInitialP4.P()); //tau
+				dHistMap_DetachedLifetime_RestFrame[loc_i]->Fill(locRestFrameLifetime);
+				//note that tau = hbar / Gamma, hbar = 6.582119E-22 MeV*s, Gamma = Resonance FWHM
+			}
 		}
 
 		//final particles
@@ -1012,7 +1117,10 @@ void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLo
 	double locBeta_Timing = locKinematicData->measuredBeta();
 	double locDeltaBeta = locKinematicData->deltaBeta();
 
-	japp->RootWriteLock();
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
 	{
 		dHistDeque_P[locStepIndex][locPID]->Fill(locP);
 		dHistDeque_Phi[locStepIndex][locPID]->Fill(locPhi);
@@ -1025,7 +1133,7 @@ void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLo
 		dHistDeque_VertexYVsX[locStepIndex][locPID]->Fill(locKinematicData->position().X(), locKinematicData->position().Y());
 		dHistDeque_VertexT[locStepIndex][locPID]->Fill(locKinematicData->time());
 	}
-	japp->RootUnLock();
+	Unlock_Action();
 }
 
 void DHistogramAction_ParticleComboKinematics::Fill_BeamHists(const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch)
@@ -1036,7 +1144,10 @@ void DHistogramAction_ParticleComboKinematics::Fill_BeamHists(const DKinematicDa
 	double locP = locMomentum.Mag();
 	double locDeltaTRF = locKinematicData->time() - (locEventRFBunch->dTime + (locKinematicData->z() - dTargetZCenter)/29.9792458);
 
-	japp->RootWriteLock();
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
 	{
 		dBeamParticleHist_P->Fill(locP);
 		dBeamParticleHist_Phi->Fill(locPhi);
@@ -1049,19 +1160,26 @@ void DHistogramAction_ParticleComboKinematics::Fill_BeamHists(const DKinematicDa
 		dBeamParticleHist_DeltaTRF->Fill(locDeltaTRF);
 		dBeamParticleHist_DeltaTRFVsBeamE->Fill(locKinematicData->energy(), locDeltaTRF);
 	}
-	japp->RootUnLock();
+	Unlock_Action();
 }
 
 void DHistogramAction_InvariantMass::Initialize(JEventLoop* locEventLoop)
 {
 	string locHistName, locHistTitle;
 	double locMassPerBin = 1000.0*(dMaxMass - dMinMass)/((double)dNumMassBins);
-
-	string locParticleNamesForHist = Get_Reaction()->Get_DecayChainFinalParticlesROOTNames(dInitialPID, Get_UseKinFitResultsFlag());
-
 	locEventLoop->GetSingle(dAnalysisUtilities);
 
+	string locParticleNamesForHist = "";
+	if(dInitialPID != Unknown)
+		locParticleNamesForHist = Get_Reaction()->Get_DecayChainFinalParticlesROOTNames(dInitialPID, Get_UseKinFitResultsFlag());
+	else
+	{
+		for(size_t loc_i = 0; loc_i < dToIncludePIDs.size(); ++loc_i)
+			locParticleNamesForHist += ParticleName_ROOT(dToIncludePIDs[loc_i]);
+	}
+
 	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
@@ -1083,31 +1201,45 @@ bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, co
 	if(Get_NumPreviousParticleCombos() == 0)
 		dPreviousSourceObjects.clear();
 
+	vector<double> locMassesToFill;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
 		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
-		if(locParticleComboStep->Get_InitialParticleID() != dInitialPID)
+		const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
+		if((dInitialPID != Unknown) && (locParticleComboStep->Get_InitialParticleID() != dInitialPID))
+			continue;
+		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
 			continue;
 
-		set<pair<const JObject*, Particle_t> > locSourceObjects;
-		DLorentzVector locFinalStateP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, locSourceObjects, Get_UseKinFitResultsFlag());
+		//build all possible combinations of the included pids
+		set<set<size_t> > locIndexCombos = dAnalysisUtilities->Build_IndexCombos(locReactionStep, dToIncludePIDs);
 
-		if(!dEnableDoubleCounting)
+		//loop over them
+		set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
+		for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
 		{
+			set<pair<const JObject*, Particle_t> > locSourceObjects;
+			DLorentzVector locFinalStateP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, *locComboIterator, locSourceObjects, Get_UseKinFitResultsFlag());
+
 			if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())
-				return true; //dupe: already histed!
+				continue; //dupe: already histed!
 			dPreviousSourceObjects.insert(locSourceObjects);
-		}
 
-		//get particle names so can select the correct histogram
-		double locInvariantMass = locFinalStateP4.M();
-		japp->RootWriteLock();
-		{
-			dHist_InvaraintMass->Fill(locInvariantMass);
+			locMassesToFill.push_back(locFinalStateP4.M());
 		}
-		japp->RootUnLock();
 		//don't break: e.g. if multiple pi0's, histogram invariant mass of each one
 	}
+
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
+	{
+		for(size_t loc_i = 0; loc_i < locMassesToFill.size(); ++loc_i)
+			dHist_InvaraintMass->Fill(locMassesToFill[loc_i]);
+	}
+	Unlock_Action();
+
 	return true;
 }
 
@@ -1120,6 +1252,7 @@ void DHistogramAction_MissingMass::Initialize(JEventLoop* locEventLoop)
 	locEventLoop->GetSingle(dAnalysisUtilities);
 
 	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
@@ -1137,6 +1270,12 @@ void DHistogramAction_MissingMass::Initialize(JEventLoop* locEventLoop)
 		locHistTitle = string(";Beam Energy (GeV);") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass (GeV/c^{2})");
 		dHist_MissingMassVsBeamE = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DBeamEBins, dMinBeamE, dMaxBeamE, dNum2DMassBins, dMinMass, dMaxMass);
 
+		locHistName = "MissingMassVsMissingP";
+		locStream.str("");
+		locStream << locMassPerBin;
+		locHistTitle = string(";Missing P (GeV/c);") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass (GeV/c^{2})");
+		dHist_MissingMassVsMissingP = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DMissPBins, dMinMissP, dMaxMissP, dNum2DMassBins, dMinMass, dMaxMass);
+
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
@@ -1148,29 +1287,39 @@ bool DHistogramAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, cons
 	if(Get_NumPreviousParticleCombos() == 0)
 		dPreviousSourceObjects.clear();
 
-	set<pair<const JObject*, Particle_t> > locSourceObjects;
-	DLorentzVector locMissingP4;
-
-	if(dMissingMassOffOfStepIndex == -1)
-		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, locSourceObjects, Get_UseKinFitResultsFlag());
-	else
-		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, dMissingMassOffOfPIDs, locSourceObjects, Get_UseKinFitResultsFlag());
-
-	if(!dEnableDoubleCounting)
-	{
-		if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())
-			return true; //dupe: already histed!
-		dPreviousSourceObjects.insert(locSourceObjects);
-	}
-
-	double locMissingMass = locMissingP4.M();
 	double locBeamEnergy = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle()->energy();
-	japp->RootWriteLock();
+
+	//build all possible combinations of the included pids
+	set<set<size_t> > locIndexCombos = dAnalysisUtilities->Build_IndexCombos(Get_Reaction()->Get_ReactionStep(dMissingMassOffOfStepIndex), dMissingMassOffOfPIDs);
+
+	//loop over them
+	vector<pair<double, double> > locMassesToFill; //first is missing mass, second is missing p
+	set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
+	for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
 	{
-		dHist_MissingMass->Fill(locMissingMass);
-		dHist_MissingMassVsBeamE->Fill(locBeamEnergy, locMissingMass);
+		set<pair<const JObject*, Particle_t> > locSourceObjects;
+		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, *locComboIterator, locSourceObjects, Get_UseKinFitResultsFlag());
+
+		if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())
+			continue; //dupe: already histed!
+		dPreviousSourceObjects.insert(locSourceObjects);
+
+		locMassesToFill.push_back(pair<double, double>(locMissingP4.M(), locMissingP4.P()));
 	}
-	japp->RootUnLock();
+
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
+	{
+		for(size_t loc_i = 0; loc_i < locMassesToFill.size(); ++loc_i)
+		{
+			dHist_MissingMass->Fill(locMassesToFill[loc_i].first);
+			dHist_MissingMassVsBeamE->Fill(locBeamEnergy, locMassesToFill[loc_i].first);
+			dHist_MissingMassVsMissingP->Fill(locMassesToFill[loc_i].second, locMassesToFill[loc_i].first);
+		}
+	}
+	Unlock_Action();
 
 	return true;
 }
@@ -1184,6 +1333,7 @@ void DHistogramAction_MissingMassSquared::Initialize(JEventLoop* locEventLoop)
 	locEventLoop->GetSingle(dAnalysisUtilities);
 
 	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		CreateAndChangeTo_ActionDirectory();
@@ -1201,6 +1351,12 @@ void DHistogramAction_MissingMassSquared::Initialize(JEventLoop* locEventLoop)
 		locHistTitle = string(";Beam Energy (GeV);") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass Squared (GeV/c^{2})^{2};");
 		dHist_MissingMassSquaredVsBeamE = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DBeamEBins, dMinBeamE, dMaxBeamE, dNum2DMassBins, dMinMassSq, dMaxMassSq);
 
+		locHistName = "MissingMassSquaredVsMissingP";
+		locStream.str("");
+		locStream << locMassSqPerBin;
+		locHistTitle = string(";Missing P (GeV/c);") + locInitialParticlesROOTName + string("#rightarrow") + locFinalParticlesROOTName + string(" Missing Mass Squared (GeV/c^{2})^{2}");
+		dHist_MissingMassSquaredVsMissingP = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DMissPBins, dMinMissP, dMaxMissP, dNum2DMassBins, dMinMassSq, dMaxMassSq);
+
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
 	}
@@ -1212,120 +1368,67 @@ bool DHistogramAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoo
 	if(Get_NumPreviousParticleCombos() == 0)
 		dPreviousSourceObjects.clear();
 
-	set<pair<const JObject*, Particle_t> > locSourceObjects;
-	DLorentzVector locMissingP4;
-
-	if(dMissingMassOffOfStepIndex == -1)
-		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, locSourceObjects, Get_UseKinFitResultsFlag());
-	else
-		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, dMissingMassOffOfPIDs, locSourceObjects, Get_UseKinFitResultsFlag());
-
-	if(!dEnableDoubleCounting)
-	{
-		if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())
-			return true; //dupe: already histed!
-		dPreviousSourceObjects.insert(locSourceObjects);
-	}
-
-	double locMissingMassSquared = locMissingP4.M2();
 	double locBeamEnergy = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle()->energy();
-	japp->RootWriteLock();
+
+	//build all possible combinations of the included pids
+	set<set<size_t> > locIndexCombos = dAnalysisUtilities->Build_IndexCombos(Get_Reaction()->Get_ReactionStep(dMissingMassOffOfStepIndex), dMissingMassOffOfPIDs);
+
+	//loop over them
+	vector<pair<double, double> > locMassesToFill; //first is missing mass, second is missing p
+	set<set<size_t> >::iterator locComboIterator = locIndexCombos.begin();
+	for(; locComboIterator != locIndexCombos.end(); ++locComboIterator)
 	{
-		dHist_MissingMassSquared->Fill(locMissingMassSquared);
-		dHist_MissingMassSquaredVsBeamE->Fill(locBeamEnergy, locMissingMassSquared);
+		set<pair<const JObject*, Particle_t> > locSourceObjects;
+		DLorentzVector locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, *locComboIterator, locSourceObjects, Get_UseKinFitResultsFlag());
+
+		if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())
+			continue; //dupe: already histed!
+		dPreviousSourceObjects.insert(locSourceObjects);
+
+		locMassesToFill.push_back(pair<double, double>(locMissingP4.M2(), locMissingP4.P()));
 	}
-	japp->RootUnLock();
+
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
+	{
+		for(size_t loc_i = 0; loc_i < locMassesToFill.size(); ++loc_i)
+		{
+			dHist_MissingMassSquared->Fill(locMassesToFill[loc_i].first);
+			dHist_MissingMassSquaredVsBeamE->Fill(locBeamEnergy, locMassesToFill[loc_i].first);
+			dHist_MissingMassSquaredVsMissingP->Fill(locMassesToFill[loc_i].second, locMassesToFill[loc_i].first);
+		}
+	}
+	Unlock_Action();
 
 	return true;
 }
 
-void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
+void DHistogramAction_2DInvariantMass::Initialize(JEventLoop* locEventLoop)
 {
-	string locHistName, locHistTitle, locParticleName, locParticleROOTName, locStepName, locStepROOTName;
-	Particle_t locPID;
+	string locHistName, locHistTitle;
+	locEventLoop->GetSingle(dAnalysisUtilities);
 
-	DKinFitType locKinFitType = Get_Reaction()->Get_KinFitType();
-	if(locKinFitType == d_NoFit)
-		return;
+	string locParticleNamesForHistX = "";
+	for(size_t loc_i = 0; loc_i < dXPIDs.size(); ++loc_i)
+		locParticleNamesForHistX += ParticleName_ROOT(dXPIDs[loc_i]);
 
-	deque<deque<Particle_t> > locDetectedPIDs;
-	Get_Reaction()->Get_DetectedFinalPIDs(locDetectedPIDs);
+	string locParticleNamesForHistY = "";
+	for(size_t loc_i = 0; loc_i < dYPIDs.size(); ++loc_i)
+		locParticleNamesForHistY += ParticleName_ROOT(dYPIDs[loc_i]);
 
-	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
-	locEventLoop->Get(locAnalysisUtilitiesVector);
+	string locMassString = " Invariant Mass (GeV/c^{2});";
 
 	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
-		dAnalysisUtilities = locAnalysisUtilitiesVector[0];
 		CreateAndChangeTo_ActionDirectory();
 
-		string locKinFitTypeString;
-		if(locKinFitType == d_P4Fit)
-			locKinFitTypeString = "P4";
-		else if(locKinFitType == d_VertexFit)
-			locKinFitTypeString = "Vertex";
-		else if(locKinFitType == d_SpacetimeFit)
-			locKinFitTypeString = "Spacetime";
-		else if(locKinFitType == d_P4AndVertexFit)
-			locKinFitTypeString = "P4 & Vertex";
-		else if(locKinFitType == d_P4AndSpacetimeFit)
-			locKinFitTypeString = "P4 & Spacetime";
-
-		// Confidence Level
-		locHistName = "ConfidenceLevel";
-		locHistTitle = locKinFitTypeString + string(" Kinematic Fit;Confidence Level;# Combos");
-		dHist_ConfidenceLevel = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumConfidenceLevelBins, 0.0, 1.0);
-
-		// Pulls
-		map<DKinFitPullType, TH1I*> locParticlePulls;
-
-		//beam pulls
-		bool locBeamFlag = (Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID() == Gamma);
-		if(locBeamFlag)
-		{
-			CreateAndChangeTo_Directory("Beam", "Beam");
-			Create_ParticlePulls(true, "Beam", Gamma, dHistMap_BeamPulls, locKinFitTypeString);
-			gDirectory->cd("..");
-		}
-
-		//final particle pulls
-		for(size_t loc_i = 0; loc_i < Get_Reaction()->Get_NumReactionSteps(); ++loc_i)
-		{
-			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
-			locStepName = locReactionStep->Get_StepName();
-			locStepROOTName = locReactionStep->Get_StepROOTName();
-			if(locDetectedPIDs[loc_i].empty())
-				continue;
-
-			CreateAndChangeTo_Directory(locStepName, locStepName);
-
-			for(size_t loc_j = 0; loc_j < locDetectedPIDs[loc_i].size(); ++loc_j)
-			{
-				locPID = locDetectedPIDs[loc_i][loc_j];
-				locParticleName = ParticleType(locPID);
-				CreateAndChangeTo_Directory(locParticleName, locParticleName);
-
-				Create_ParticlePulls(false, locStepROOTName, locPID, locParticlePulls, locKinFitTypeString);
-				dHistMap_Pulls[pair<size_t, Particle_t>(loc_i, locPID)] = locParticlePulls;
-
-				gDirectory->cd("..");
-			} //end of particle loop
-			gDirectory->cd("..");
-		} //end of step loop
-
-		//RF Time Pull
-		if(locBeamFlag && ((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit)))
-		{
-			CreateAndChangeTo_Directory("RF", "RF");
-
-			//T Pull
-			locHistName = "Pull_RF_T";
-			locHistTitle = string("RF Bunch, ") + locKinFitTypeString + string(" Fit;t Pull;# Combos");
-			dHist_RFTimePull = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
-
-			gDirectory->cd("..");
-		}
+		locHistName = "2DInvariantMass";
+		locHistTitle = string(";") + locParticleNamesForHistX + locMassString + locParticleNamesForHistY + locMassString;
+		dHist_2DInvaraintMass = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumXBins, dMinX, dMaxX, dNumYBins, dMinY, dMaxY);
 
 		//Return to the base directory
 		ChangeTo_BaseDirectory();
@@ -1333,70 +1436,400 @@ void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
-void DHistogramAction_KinFitResults::Create_ParticlePulls(bool locIsBeamFlag, string locStepROOTName, Particle_t locPID, map<DKinFitPullType, TH1I*>& locParticlePulls, const string& locKinFitTypeString)
+bool DHistogramAction_2DInvariantMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	string locHistName, locHistTitle, locParticleName, locParticleROOTName;
-	locParticleName = ParticleType(locPID);
-	locParticleROOTName = ParticleName_ROOT(locPID);
+	if(Get_NumPreviousParticleCombos() == 0)
+		dPreviousSourceObjects.clear();
 
+	vector<pair<double, double> > locMassesToFill;
+	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
+	{
+		const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
+		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
+			continue;
+
+		//build all possible combinations of the included pids
+		set<set<size_t> > locXIndexCombos = dAnalysisUtilities->Build_IndexCombos(locReactionStep, dXPIDs);
+		set<set<size_t> > locYIndexCombos = dAnalysisUtilities->Build_IndexCombos(locReactionStep, dYPIDs);
+
+		//(double) loop over them
+		set<set<size_t> >::iterator locXComboIterator = locXIndexCombos.begin();
+		for(; locXComboIterator != locXIndexCombos.end(); ++locXComboIterator)
+		{
+			set<pair<const JObject*, Particle_t> > locXSourceObjects;
+			DLorentzVector locXP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, *locXComboIterator, locXSourceObjects, Get_UseKinFitResultsFlag());
+
+			set<set<size_t> >::iterator locYComboIterator = locYIndexCombos.begin();
+			for(; locYComboIterator != locYIndexCombos.end(); ++locYComboIterator)
+			{
+				set<pair<const JObject*, Particle_t> > locYSourceObjects;
+				DLorentzVector locYP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, *locYComboIterator, locYSourceObjects, Get_UseKinFitResultsFlag());
+
+				if(locXSourceObjects == locYSourceObjects)
+					continue; //the same!
+
+				set<set<pair<const JObject*, Particle_t> > > locAllSourceObjects;
+				locAllSourceObjects.insert(locXSourceObjects);
+				locAllSourceObjects.insert(locYSourceObjects);
+				if(dPreviousSourceObjects.find(locAllSourceObjects) != dPreviousSourceObjects.end())
+					continue; //dupe: already histed! (also, could be that the X/Y swapped combo has already been histed: don't double-count!
+				dPreviousSourceObjects.insert(locAllSourceObjects);
+
+				locMassesToFill.push_back(pair<double, double>(locXP4.M(), locYP4.M()));
+			}
+		}
+	}
+
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
+	{
+		for(size_t loc_i = 0; loc_i < locMassesToFill.size(); ++loc_i)
+			dHist_2DInvaraintMass->Fill(locMassesToFill[loc_i].first, locMassesToFill[loc_i].second);
+	}
+	Unlock_Action();
+
+	return true;
+}
+
+void DHistogramAction_Dalitz::Initialize(JEventLoop* locEventLoop)
+{
+	string locHistName, locHistTitle;
+	locEventLoop->GetSingle(dAnalysisUtilities);
+
+	string locParticleNamesForHistX = "";
+	for(size_t loc_i = 0; loc_i < dXPIDs.size(); ++loc_i)
+		locParticleNamesForHistX += ParticleName_ROOT(dXPIDs[loc_i]);
+
+	string locParticleNamesForHistY = "";
+	for(size_t loc_i = 0; loc_i < dYPIDs.size(); ++loc_i)
+		locParticleNamesForHistY += ParticleName_ROOT(dYPIDs[loc_i]);
+
+	string locMassString = " Invariant Mass Squared (GeV/c^{2})^{2};";
+
+	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		CreateAndChangeTo_ActionDirectory();
+
+		locHistName = "DalitzPlot";
+		locHistTitle = string(";") + locParticleNamesForHistX + locMassString + locParticleNamesForHistY + locMassString;
+		dHist_DalitzPlot = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNumXBins, dMinX, dMaxX, dNumYBins, dMinY, dMaxY);
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+bool DHistogramAction_Dalitz::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	if(Get_NumPreviousParticleCombos() == 0)
+		dPreviousSourceObjects.clear();
+
+	vector<pair<double, double> > locMassesToFill;
+	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
+	{
+		const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
+		if((dStepIndex != -1) && (int(loc_i) != dStepIndex))
+			continue;
+
+		//build all possible combinations of the included pids
+		set<set<size_t> > locXIndexCombos = dAnalysisUtilities->Build_IndexCombos(locReactionStep, dXPIDs);
+		set<set<size_t> > locYIndexCombos = dAnalysisUtilities->Build_IndexCombos(locReactionStep, dYPIDs);
+
+		//(double) loop over them
+		set<set<size_t> >::iterator locXComboIterator = locXIndexCombos.begin();
+		for(; locXComboIterator != locXIndexCombos.end(); ++locXComboIterator)
+		{
+			set<pair<const JObject*, Particle_t> > locXSourceObjects;
+			DLorentzVector locXP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, *locXComboIterator, locXSourceObjects, Get_UseKinFitResultsFlag());
+
+			set<set<size_t> >::iterator locYComboIterator = locYIndexCombos.begin();
+			for(; locYComboIterator != locYIndexCombos.end(); ++locYComboIterator)
+			{
+				set<pair<const JObject*, Particle_t> > locYSourceObjects;
+				DLorentzVector locYP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, *locYComboIterator, locYSourceObjects, Get_UseKinFitResultsFlag());
+
+				if(locXSourceObjects == locYSourceObjects)
+					continue; //the same!
+
+				set<set<pair<const JObject*, Particle_t> > > locAllSourceObjects;
+				locAllSourceObjects.insert(locXSourceObjects);
+				locAllSourceObjects.insert(locYSourceObjects);
+				if(dPreviousSourceObjects.find(locAllSourceObjects) != dPreviousSourceObjects.end())
+					continue; //dupe: already histed! (also, could be that the X/Y swapped combo has already been histed: don't double-count!
+				dPreviousSourceObjects.insert(locAllSourceObjects);
+
+				locMassesToFill.push_back(pair<double, double>(locXP4.M2(), locYP4.M2()));
+			}
+		}
+	}
+
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
+	{
+		for(size_t loc_i = 0; loc_i < locMassesToFill.size(); ++loc_i)
+			dHist_DalitzPlot->Fill(locMassesToFill[loc_i].first, locMassesToFill[loc_i].second);
+	}
+	Unlock_Action();
+
+	return true;
+}
+
+void DHistogramAction_KinFitResults::Initialize(JEventLoop* locEventLoop)
+{
 	DKinFitType locKinFitType = Get_Reaction()->Get_KinFitType();
+	if(locKinFitType == d_NoFit)
+		return;
 
+	locEventLoop->GetSingle(dAnalysisUtilities);
+	dKinFitUtils = new DKinFitUtils_GlueX(locEventLoop);
+
+	set<pair<int, int> > locVertexParticles = dKinFitUtils->Get_KinFitVertexParticles(Get_Reaction());
+
+	size_t locNumConstraints = 0, locNumUnknowns = 0;
+	string locConstraintString = dKinFitUtils->Get_ConstraintInfo(Get_Reaction(), locKinFitType, locNumConstraints, locNumUnknowns);
+
+	size_t locNDF = locNumConstraints - locNumUnknowns;
+	bool locIncludeBeamlineInVertexFitFlag = dKinFitUtils->Get_IncludeBeamlineInVertexFitFlag();
+
+	bool locP4IsFit = ((locKinFitType != d_VertexFit) && (locKinFitType != d_SpacetimeFit));
+	//bool locIsInclusiveChannelFlag = Get_Reaction()->Get_IsInclusiveChannelFlag();
+	//Below, should in theory check on whether to create pxyz pull histograms in the inclusive channel case
+		//But, this is tricky: can have inclusive (no p4) but still have mass constraints (p4)
+
+	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		CreateAndChangeTo_ActionDirectory();
+
+		// Confidence Level
+		string locHistName = "ConfidenceLevel";
+		ostringstream locHistTitle;
+		locHistTitle << "Kinematic Fit Constraints: " << locConstraintString << ";Confidence Level (" << locNumConstraints;
+		locHistTitle << " Constraints, " << locNumUnknowns << " Unknowns: " << locNDF << "-C Fit);# Combos";
+		dHist_ConfidenceLevel = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle.str(), dNumConfidenceLevelBins, 0.0, 1.0);
+
+		//beam (pulls & conlev)
+		Particle_t locInitialPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID();
+		bool locBeamFlag = (locInitialPID == Gamma);
+		if(locBeamFlag)
+		{
+			pair<int, int> locParticlePair(0, -2);
+			bool locIsInVertexFitFlag = (locVertexParticles.find(locParticlePair) != locVertexParticles.end());
+			if(!locIncludeBeamlineInVertexFitFlag)
+				locIsInVertexFitFlag = false;
+
+			if(locP4IsFit || locIsInVertexFitFlag)
+			{
+				string locFullROOTName = string("Beam ") + ParticleName_ROOT(locInitialPID);
+
+				//Conlev
+				locHistName = "ConfidenceLevel_VsBeamEnergy";
+				locHistTitle.str("");
+				locHistTitle << "Kinematic Fit Constraints: " << locConstraintString << ";Beam Energy (GeV);Confidence Level (" << locNumConstraints;
+				locHistTitle << " Constraints, " << locNumUnknowns << " Unknowns: " << locNDF << "-C Fit)";
+				dHistMap_ConfidenceLevel_VsP[pair<int, Particle_t>(-1, locInitialPID)] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle.str(), dNum2DBeamEBins, dMinBeamE, dMaxBeamE, dNum2DConfidenceLevelBins, 0.0, 1.0);
+
+				//Pulls
+				CreateAndChangeTo_Directory("Beam", "Beam");
+				map<DKinFitPullType, TH1I*> locParticlePulls;
+				map<DKinFitPullType, TH2I*> locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi;
+				Create_ParticlePulls(locFullROOTName, locIsInVertexFitFlag, false, locParticlePulls, locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi);
+				dHistMap_Pulls[pair<int, Particle_t>(-1, locInitialPID)] = locParticlePulls;
+				dHistMap_PullsVsP[pair<int, Particle_t>(-1, locInitialPID)] = locParticlePullsVsP;
+
+				gDirectory->cd("..");
+			}
+		}
+
+		//final particles (pulls & conlev)
+		for(size_t loc_i = 0; loc_i < Get_Reaction()->Get_NumReactionSteps(); ++loc_i)
+		{
+			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
+			ostringstream locStepName;
+			locStepName << "Step" << loc_i << "__" << locReactionStep->Get_StepName();
+			string locStepROOTName = locReactionStep->Get_StepROOTName();
+
+			deque<Particle_t> locPIDs;
+			locReactionStep->Get_FinalParticleIDs(locPIDs);
+			set<Particle_t> locPIDSet;
+
+			//Conlev
+			for(size_t loc_j = 0; loc_j < locPIDs.size(); ++loc_j)
+			{
+				if(Get_Reaction()->Get_DecayStepIndex(loc_i, loc_j) >= 0)
+					continue; //decaying particle
+				if(locReactionStep->Get_MissingParticleIndex() == int(loc_j))
+					continue; //missing particle
+
+				Particle_t locPID = locPIDs[loc_j];
+				if(locPIDSet.find(locPID) != locPIDSet.end())
+					continue; //histograms already created for this pid
+
+				pair<int, int> locParticlePair(loc_i, loc_j);
+				bool locIsInVertexFitFlag = (locVertexParticles.find(locParticlePair) != locVertexParticles.end());
+
+				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));
+				if(!locP4IsFit && !locIsInVertexFitFlag)
+					continue; //p4 is not fit, and this is not in a vertex fit: no pulls
+				if(locIsNeutralShowerFlag && !locP4IsFit)
+					continue; //vertex-only fit: neutral shower does not constrain: no pulls
+
+				string locParticleName = ParticleType(locPID);
+				string locParticleROOTName = ParticleName_ROOT(locPID);
+
+				//vs p
+				locHistName = string("ConfidenceLevel_Vs") + locParticleName + string("P");
+				locHistTitle.str("");
+				locHistTitle << "Kinematic Fit Constraints: " << locConstraintString << ";" << locParticleROOTName << " p (GeV/c);Confidence Level (" << locNumConstraints;
+				locHistTitle << " Constraints, " << locNumUnknowns << " Unknowns: " << locNDF << "-C Fit)";
+				dHistMap_ConfidenceLevel_VsP[pair<int, Particle_t>(loc_i, locPID)] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle.str(), dNum2DPBins, dMinP, dMaxP, dNum2DConfidenceLevelBins, 0.0, 1.0);
+
+				//vs theta
+				locHistName = string("ConfidenceLevel_Vs") + locParticleName + string("Theta");
+				locHistTitle.str("");
+				locHistTitle << "Kinematic Fit Constraints: " << locConstraintString << ";" << locParticleROOTName << " #theta#circ;Confidence Level (" << locNumConstraints;
+				locHistTitle << " Constraints, " << locNumUnknowns << " Unknowns: " << locNDF << "-C Fit)";
+				dHistMap_ConfidenceLevel_VsTheta[pair<int, Particle_t>(loc_i, locPID)] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle.str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DConfidenceLevelBins, 0.0, 1.0);
+
+				//vs phi
+				locHistName = string("ConfidenceLevel_Vs") + locParticleName + string("Phi");
+				locHistTitle.str("");
+				locHistTitle << "Kinematic Fit Constraints: " << locConstraintString << ";" << locParticleROOTName << " #phi#circ;Confidence Level (" << locNumConstraints;
+				locHistTitle << " Constraints, " << locNumUnknowns << " Unknowns: " << locNDF << "-C Fit)";
+				dHistMap_ConfidenceLevel_VsPhi[pair<int, Particle_t>(loc_i, locPID)] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle.str(), dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DConfidenceLevelBins, 0.0, 1.0);
+
+				locPIDSet.insert(locPID);
+			}
+
+			//pulls
+			locPIDSet.clear();
+			for(size_t loc_j = 0; loc_j < locPIDs.size(); ++loc_j)
+			{
+				if(Get_Reaction()->Get_DecayStepIndex(loc_i, loc_j) >= 0)
+					continue; //decaying particle
+				if(locReactionStep->Get_MissingParticleIndex() == int(loc_j))
+					continue; //missing particle
+
+				Particle_t locPID = locPIDs[loc_j];
+				if(locPIDSet.find(locPID) != locPIDSet.end())
+					continue; //histograms already created for this pid
+
+				pair<int, int> locParticlePair(loc_i, loc_j);
+				bool locIsInVertexFitFlag = (locVertexParticles.find(locParticlePair) != locVertexParticles.end());
+
+				bool locIsNeutralShowerFlag = (locIsInVertexFitFlag && (ParticleCharge(locPID) == 0));
+				if(!locP4IsFit && !locIsInVertexFitFlag)
+					continue; //p4 is not fit, and this is not in a vertex fit: no pulls
+				if(locIsNeutralShowerFlag && !locP4IsFit)
+					continue; //vertex-only fit: neutral shower does not constrain: no pulls
+
+				if(locPIDSet.empty()) //first call
+					CreateAndChangeTo_Directory(locStepName.str(), locStepName.str());
+
+				string locParticleName = ParticleType(locPID);
+				CreateAndChangeTo_Directory(locParticleName, locParticleName);
+
+				string locParticleROOTName = ParticleName_ROOT(locPID);
+				string locFullROOTName = locParticleROOTName + string(", ") + locStepROOTName;
+
+				map<DKinFitPullType, TH1I*> locParticlePulls;
+				map<DKinFitPullType, TH2I*> locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi;
+				Create_ParticlePulls(locFullROOTName, locIsInVertexFitFlag, locIsNeutralShowerFlag, locParticlePulls, locParticlePullsVsP, locParticlePullsVsTheta, locParticlePullsVsPhi);
+				dHistMap_Pulls[pair<int, Particle_t>(loc_i, locPID)] = locParticlePulls;
+				dHistMap_PullsVsP[pair<int, Particle_t>(loc_i, locPID)] = locParticlePullsVsP;
+				dHistMap_PullsVsTheta[pair<int, Particle_t>(loc_i, locPID)] = locParticlePullsVsTheta;
+				dHistMap_PullsVsPhi[pair<int, Particle_t>(loc_i, locPID)] = locParticlePullsVsPhi;
+				locPIDSet.insert(locPID);
+
+				gDirectory->cd("..");
+			} //end of particle loop
+
+			if(!locPIDSet.empty())
+				gDirectory->cd("..");
+		} //end of step loop
+
+		//Return to the base directory
+		ChangeTo_BaseDirectory();
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+void DHistogramAction_KinFitResults::Create_ParticlePulls(string locFullROOTName, bool locIsInVertexFitFlag, bool locIsNeutralShowerFlag, map<DKinFitPullType, TH1I*>& locParticlePulls, map<DKinFitPullType, TH2I*>& locParticlePullsVsP, map<DKinFitPullType, TH2I*>& locParticlePullsVsTheta, map<DKinFitPullType, TH2I*>& locParticlePullsVsPhi)
+{
 	locParticlePulls.clear();
 
-	bool locNeutralShowerFlag = ((ParticleCharge(locPID) == 0) && (!locIsBeamFlag) && (locKinFitType != d_P4Fit));
+	DKinFitType locKinFitType = Get_Reaction()->Get_KinFitType();
+	bool locP4IsFit = ((locKinFitType != d_VertexFit) && (locKinFitType != d_SpacetimeFit));
+
+	//Determine pull types
+	set<pair<DKinFitPullType, pair<string, string> > > locPullTypes;
+
 	//p4 pulls:
-	if(locNeutralShowerFlag)
+	string locHistName, locHistTitle;
+	if(locIsNeutralShowerFlag && locP4IsFit) //neutral shower not in a p4-only fit
+		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_EPull, pair<string, string>("Pull_E", "E Pull")));
+	else if(!locIsNeutralShowerFlag && (locP4IsFit || locIsInVertexFitFlag))
 	{
-		//neutral shower not in a p4-only fit
-		//E Pull
-		locHistName = "Pull_E";
-		locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(", ") + locKinFitTypeString + string(" Fit;E Pull;# Combos");
-		locParticlePulls[d_EPull] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
-	}
-	else
-	{
-		//Px Pull
-		locHistName = "Pull_Px";
-		locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(", ") + locKinFitTypeString + string(" Fit;p_{x} Pull;# Combos");
-		locParticlePulls[d_PxPull] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
-
-		//Py Pull
-		locHistName = "Pull_Py";
-		locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(", ") + locKinFitTypeString + string(" Fit;p_{y} Pull;# Combos");
-		locParticlePulls[d_PyPull] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
-
-		//Pz Pull
-		locHistName = "Pull_Pz";
-		locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(", ") + locKinFitTypeString + string(" Fit;p_{z} Pull;# Combos");
-		locParticlePulls[d_PzPull] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
+		//all detected particles (except neutral showers) have p3 used in p4 fits and vertex fits
+		//however, don't include if the particles aren't actually in the fit (vertex-only, and too few particles at that vertex to constrain)
+		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_PxPull, pair<string, string>("Pull_Px", "p_{x} Pull")));
+		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_PyPull, pair<string, string>("Pull_Py", "p_{y} Pull")));
+		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_PzPull, pair<string, string>("Pull_Pz", "p_{z} Pull")));
 	}
 
 	//vertex pulls:
-	if(locNeutralShowerFlag || (locKinFitType == d_VertexFit) || (locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit))
+	if((locIsNeutralShowerFlag && locP4IsFit) || (!locIsNeutralShowerFlag && locIsInVertexFitFlag))
 	{
-		//Xx Pull
-		locHistName = "Pull_Xx";
-		locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(", ") + locKinFitTypeString + string(" Fit;x_{x} Pull;# Combos");
-		locParticlePulls[d_XxPull] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
-
-		//Xy Pull
-		locHistName = "Pull_Xy";
-		locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(", ") + locKinFitTypeString + string(" Fit;x_{y} Pull;# Combos");
-		locParticlePulls[d_XyPull] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
-
-		//Xz Pull
-		locHistName = "Pull_Xz";
-		locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(", ") + locKinFitTypeString + string(" Fit;x_{z} Pull;# Combos");
-		locParticlePulls[d_XzPull] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
+		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_XxPull, pair<string, string>("Pull_Xx", "x_{x} Pull")));
+		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_XyPull, pair<string, string>("Pull_Xy", "x_{y} Pull")));
+		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_XzPull, pair<string, string>("Pull_Xz", "x_{z} Pull")));
 	}
 
 	//time pulls:
-	if((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit))
+	if(locIsInVertexFitFlag && ((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit)))
+		locPullTypes.insert(pair<DKinFitPullType, pair<string, string> >(d_TPull, pair<string, string>("Pull_T", "t Pull")));
+
+	bool locIsBeamFlag = (locFullROOTName.substr(0, 4) == "Beam");
+	int locNum2DPBins = locIsBeamFlag ? dNum2DBeamEBins : dNum2DPBins;
+	double locMinP = locIsBeamFlag ? dMinBeamE : dMinP;
+	double locMaxP = locIsBeamFlag ? dMaxBeamE : dMaxP;
+
+	//Create histograms
+	set<pair<DKinFitPullType, pair<string, string> > >::iterator locIterator = locPullTypes.begin();
+	for(; locIterator != locPullTypes.end(); ++locIterator)
 	{
-		//T Pull
-		locHistName = "Pull_T";
-		locHistTitle = locParticleROOTName + string(", ") + locStepROOTName + string(", ") + locKinFitTypeString + string(" Fit;t Pull;# Combos");
-		locParticlePulls[d_TPull] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
+		pair<string, string> locStrings = (*locIterator).second;
+
+		//1D
+		locHistName = locStrings.first;
+		locHistTitle = locFullROOTName + string(";") + locStrings.second + string(";# Combos");
+		locParticlePulls[(*locIterator).first] = GetOrCreate_Histogram<TH1I>(locHistName, locHistTitle, dNumPullBins, dMinPull, dMaxPull);
+
+		//vs p
+		locHistName = locStrings.first + string("_VsP");
+		locHistTitle = locFullROOTName + string(";p (GeV/c);") + locStrings.second;
+		locParticlePullsVsP[(*locIterator).first] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, locNum2DPBins, locMinP, locMaxP, dNumPullBins, dMinPull, dMaxPull);
+
+		if(locIsBeamFlag)
+			continue;
+
+		//vs theta
+		locHistName = locStrings.first + string("_VsTheta");
+		locHistTitle = locFullROOTName + string(";#theta#circ;") + locStrings.second;
+		locParticlePullsVsTheta[(*locIterator).first] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DThetaBins, dMinTheta, dMaxTheta, dNumPullBins, dMinPull, dMaxPull);
+
+		//vs phi
+		locHistName = locStrings.first + string("_VsPhi");
+		locHistTitle = locFullROOTName + string(";#phi#circ;") + locStrings.second;
+		locParticlePullsVsPhi[(*locIterator).first] = GetOrCreate_Histogram<TH2I>(locHistName, locHistTitle, dNum2DPhiBins, dMinPhi, dMaxPhi, dNumPullBins, dMinPull, dMaxPull);
 	}
 }
 
@@ -1407,91 +1840,99 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 	if(locKinFitResults == NULL)
 		return true;
 
-	// Confidence Level
+	// Get Confidence Level
 	double locConfidenceLevel = locKinFitResults->Get_ConfidenceLevel();
-	japp->RootWriteLock();
-	{
-		if(string(dHist_ConfidenceLevel->GetXaxis()->GetTitle()) == string("Confidence Level"))
-		{
 
-			deque<const DKinFitConstraint*> locKinFitConstraints;
-			locKinFitResults->Get_KinFitConstraints(locKinFitConstraints);
-
-			string locHistTitle = "Kinematic Fit Constraints: ";
-			bool locFirstConstraintFlag = true;
-			for(size_t loc_i = 0; loc_i < locKinFitConstraints.size(); ++loc_i)
-			{
-				string locConstraintString = locKinFitConstraints[loc_i]->Get_ConstraintString();
-				if(locConstraintString == "")
-					continue;
-				if(!locFirstConstraintFlag)
-					locHistTitle += ", ";
-				locFirstConstraintFlag = false;
-				locHistTitle += locConstraintString;
-			}
-			dHist_ConfidenceLevel->SetTitle(locHistTitle.c_str());
-			ostringstream locAxisTitle;
-			locAxisTitle << "Confidence Level (" << locKinFitResults->Get_NumConstraints() << " Constraints, " << locKinFitResults->Get_NumUnknowns();
-			locAxisTitle << " Unknowns: " << locKinFitResults->Get_NDF() << "-C Fit)";
-			dHist_ConfidenceLevel->GetXaxis()->SetTitle(locAxisTitle.str().c_str());
-		}
-		dHist_ConfidenceLevel->Fill(locConfidenceLevel);
-	}
-	japp->RootUnLock();
-	if(locConfidenceLevel < dPullHistConfidenceLevelCut)
-		return true; //don't histogram pulls
-
-	// Pulls
-	map<const DKinematicData*, map<DKinFitPullType, double> > locPulls; //DKinematicData is the MEASURED particle
+	// Get Pulls
+	map<const JObject*, map<DKinFitPullType, double> > locPulls; //DKinematicData is the MEASURED particle
 	locKinFitResults->Get_Pulls(locPulls);
-	deque<const DKinematicData*> locParticles;
-	map<DKinFitPullType, double> locParticlePulls;
-	map<DKinFitPullType, double>::iterator locIterator;
-	const DKinematicData* locKinematicData;
 
-	// beam pulls
-	bool locBeamFlag = (Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID() == Gamma);
-	if(locBeamFlag)
-	{
-		locKinematicData = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured();
-		locParticlePulls = locPulls[locKinematicData];
-		japp->RootWriteLock();
-		{
-			for(locIterator = locParticlePulls.begin(); locIterator != locParticlePulls.end(); ++locIterator)
-				dHistMap_BeamPulls[locIterator->first]->Fill(locIterator->second);
-		}
-		japp->RootUnLock();
-	}
+	Particle_t locInitPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID();
+	bool locBeamFlag = (locInitPID == Gamma);
 
-	// final particle pulls
-	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
 	{
-		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
-		locParticleComboStep->Get_DetectedFinalParticles_Measured(locParticles);
-		for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
+		dHist_ConfidenceLevel->Fill(locConfidenceLevel);
+
+		// beam
+		if(locBeamFlag)
 		{
-			locParticlePulls = locPulls[locParticles[loc_j]];
-			pair<size_t, Particle_t> locParticlePair(loc_i, locParticles[loc_j]->PID());
-			japp->RootWriteLock();
+			const DKinematicData* locKinematicData = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured();
+			map<DKinFitPullType, double> locParticlePulls = locPulls[locKinematicData];
+			if(!locParticlePulls.empty())
 			{
-				for(locIterator = locParticlePulls.begin(); locIterator != locParticlePulls.end(); ++locIterator)
-					(dHistMap_Pulls[locParticlePair])[locIterator->first]->Fill(locIterator->second);
-			}
-			japp->RootUnLock();
-		}
-	}
+				pair<int, Particle_t> locParticlePair(-1, locInitPID);
+				DVector3 locMomentum = locKinematicData->momentum();
+				double locP = locMomentum.Mag();
 
-	//rf time pull
-	DKinFitType locKinFitType = Get_Reaction()->Get_KinFitType();
-	if(locBeamFlag && ((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit)))
-	{
-		locParticlePulls = locPulls[NULL];
-		japp->RootWriteLock();
-		{
-			dHist_RFTimePull->Fill(locParticlePulls[d_TPull]);
+				//con lev
+				dHistMap_ConfidenceLevel_VsP[locParticlePair]->Fill(locP, locConfidenceLevel);
+
+				//pulls
+				if(locConfidenceLevel >= dPullHistConfidenceLevelCut)
+				{
+					map<DKinFitPullType, double>::iterator locIterator = locParticlePulls.begin();
+					for(; locIterator != locParticlePulls.end(); ++locIterator)
+					{
+						dHistMap_Pulls[locParticlePair][locIterator->first]->Fill(locIterator->second);
+						dHistMap_PullsVsP[locParticlePair][locIterator->first]->Fill(locP, locIterator->second);
+					}
+				}
+			}
 		}
-		japp->RootUnLock();
+
+		// final particle pulls
+		for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
+		{
+			const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
+
+			deque<const DKinematicData*> locParticles;
+			locParticleComboStep->Get_FinalParticles_Measured(locParticles);
+			for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
+			{
+				if(!locParticleComboStep->Is_FinalParticleDetected(loc_j))
+					continue;
+
+				//get pulls for this particle
+				map<DKinFitPullType, double> locParticlePulls;
+				map<const JObject*, map<DKinFitPullType, double> >::iterator locParticleIterator = locPulls.find(locParticles[loc_j]);
+				if(locParticleIterator != locPulls.end())
+					locParticlePulls = locParticleIterator->second;
+				else //is neutral shower
+					locParticlePulls = locPulls[locParticleComboStep->Get_FinalParticle_SourceObject(loc_j)];
+
+				if(locParticlePulls.empty())
+					continue;
+
+				pair<int, Particle_t> locParticlePair(loc_i, locParticles[loc_j]->PID());
+				DVector3 locMomentum = locParticles[loc_j]->momentum();
+				double locP = locMomentum.Mag();
+				double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
+				double locPhi = locMomentum.Phi()*180.0/TMath::Pi();
+
+				//con lev
+				dHistMap_ConfidenceLevel_VsP[locParticlePair]->Fill(locP, locConfidenceLevel);
+				dHistMap_ConfidenceLevel_VsTheta[locParticlePair]->Fill(locTheta, locConfidenceLevel);
+				dHistMap_ConfidenceLevel_VsPhi[locParticlePair]->Fill(locPhi, locConfidenceLevel);
+				if(locConfidenceLevel < dPullHistConfidenceLevelCut)
+					continue;
+
+				//fill histograms
+				map<DKinFitPullType, double>::iterator locIterator = locParticlePulls.begin();
+				for(; locIterator != locParticlePulls.end(); ++locIterator)
+				{
+					dHistMap_Pulls[locParticlePair][locIterator->first]->Fill(locIterator->second);
+					dHistMap_PullsVsP[locParticlePair][locIterator->first]->Fill(locP, locIterator->second);
+					dHistMap_PullsVsTheta[locParticlePair][locIterator->first]->Fill(locTheta, locIterator->second);
+					dHistMap_PullsVsPhi[locParticlePair][locIterator->first]->Fill(locPhi, locIterator->second);
+				}
+			}
+		}
 	}
+	Unlock_Action();
 
 	return true;
 }
@@ -1505,6 +1946,7 @@ void DHistogramAction_MissingTransverseMomentum::Initialize(JEventLoop* locEvent
 	locEventLoop->Get(locAnalysisUtilitiesVector);
 
 	//CREATE THE HISTOGRAMS
+	//Since we are creating histograms, the contents of gDirectory will be modified: must use JANA-wide ROOT lock
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	{
 		dAnalysisUtilities = locAnalysisUtilitiesVector[0];
@@ -1530,20 +1972,21 @@ bool DHistogramAction_MissingTransverseMomentum::Perform_Action(JEventLoop* locE
 	set<pair<const JObject*, Particle_t> > locSourceObjects;
 	DLorentzVector locFinalStateP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, 0, locSourceObjects, Get_UseKinFitResultsFlag()); // Use step '0'
 
-	if(!dEnableDoubleCounting)
-	{
-		if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())
-			return true; //dupe: already histed!
-		dPreviousSourceObjects.insert(locSourceObjects);
-	}
+	if(dPreviousSourceObjects.find(locSourceObjects) != dPreviousSourceObjects.end())
+		return true; //dupe: already histed!
+	dPreviousSourceObjects.insert(locSourceObjects);
 
 	double locMissingTransverseMomentum = locFinalStateP4.Pt();
 
-	japp->RootWriteLock();
+	//FILL HISTOGRAMS
+	//Since we are filling histograms local to this action, it will not interfere with other ROOT operations: can use action-wide ROOT lock
+	//Note, the mutex is unique to this DReaction + action_string combo: actions of same class with different hists will have a different mutex
+	Lock_Action();
 	{
 		dHist_MissingTransverseMomentum->Fill(locMissingTransverseMomentum);
 	}
-	japp->RootUnLock();
+	Unlock_Action();
 
 	return true;
 }
+

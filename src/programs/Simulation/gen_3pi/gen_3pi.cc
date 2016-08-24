@@ -26,6 +26,7 @@
 #include "TH1F.h"
 #include "TH2F.h"
 #include "TFile.h"
+#include "TRandom3.h"
 
 using std::complex;
 using namespace std;
@@ -47,7 +48,15 @@ int main( int argc, char* argv[] ){
   // default upper and lower bounds 
   double lowMass = 0.7;
   double highMass = 2.0;
-  
+
+  double beamMaxE   = 12.0;
+  double beamPeakE  = 9.0;
+  double beamLowE   = 7.5;
+  double beamHighE  = 9.5;
+
+  int runNum = 9001;
+  int seed = 0;
+
   int nEvents = 100000;
   int batchSize = 100000;
     
@@ -74,6 +83,24 @@ int main( int argc, char* argv[] ){
     if (arg == "-n"){  
       if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
       else  nEvents = atoi( argv[++i] ); }
+    if (arg == "-m"){
+      if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
+      else  beamMaxE = atof( argv[++i] ); }
+    if (arg == "-p"){
+      if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
+      else  beamPeakE = atof( argv[++i] ); }
+    if (arg == "-a"){
+      if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
+      else  beamLowE = atof( argv[++i] ); }
+    if (arg == "-b"){
+      if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
+      else  beamHighE = atof( argv[++i] ); }
+    if (arg == "-r"){
+      if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
+      else  runNum = atoi( argv[++i] ); }
+    if (arg == "-s"){
+      if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
+      else  seed = atoi( argv[++i] ); }
     if (arg == "-d"){
       diag = true; }
     if (arg == "-f"){
@@ -86,6 +113,12 @@ int main( int argc, char* argv[] ){
       cout << "\t -l  <value>\t Low edge of mass range (GeV) [optional]" << endl;
       cout << "\t -u  <value>\t Upper edge of mass range (GeV) [optional]" << endl;
       cout << "\t -n  <value>\t Minimum number of events to generate [optional]" << endl;
+      cout << "\t -m  <value>\t Electron beam energy (or photon energy endpoint) [optional]" << endl;
+      cout << "\t -p  <value>\t Coherent peak photon energy [optional]" << endl;
+      cout << "\t -a  <value>\t Minimum photon energy to simulate events [optional]" << endl;
+      cout << "\t -b  <value>\t Maximum photon energy to simulate events [optional]" << endl;
+      cout << "\t -r  <value>\t Run number assigned to generated events [optional]" << endl;
+      cout << "\t -s  <value>\t Random number seed initialization [optional]" << endl;
       cout << "\t -f \t\t Generate flat in M(X) (no physics) [optional]" << endl;
       cout << "\t -d \t\t Plot only diagnostic histograms [optional]" << endl << endl;
       exit(1);
@@ -103,6 +136,9 @@ int main( int argc, char* argv[] ){
   assert( cfgInfo->reactionList().size() == 1 );
   ReactionInfo* reaction = cfgInfo->reactionList()[0];
   
+  // random number initialization (set to 0 by default)
+  gRandom->SetSeed(seed);
+
   // setup AmpToolsInterface
   AmpToolsInterface::registerAmplitude( ThreePiAngles() );
   AmpToolsInterface::registerAmplitude( BreitWigner() );
@@ -112,7 +148,7 @@ int main( int argc, char* argv[] ){
     ( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
    
   // generate over a range of mass -- the daughters are three charged pions
-  GammaPToXYZP resProd( lowMass, highMass, 0.140, 0.140, 0.140, type );
+  GammaPToXYZP resProd( lowMass, highMass, 0.140, 0.140, 0.140, type, beamMaxE, beamPeakE, beamLowE, beamHighE );
   
   // seed the distribution with a sum of noninterfering Breit-Wigners
   // we can easily compute the PDF for this and divide by that when
@@ -138,7 +174,7 @@ int main( int argc, char* argv[] ){
   pTypes.push_back( PiPlus );
   
   HDDMDataWriter* hddmOut = NULL;
-  if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname );
+  if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname, runNum );
   ROOTDataWriter rootOut( outname );
   
   TFile* diagOut = new TFile( "gen_3pi_diagnostic.root", "recreate" );

@@ -21,11 +21,32 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 
 	dMaxExtraGoodTracks = pair<bool, size_t>(false, 4);
 
-	dAvailablePIDs.insert(Proton);
-	dAvailablePIDs.insert(KPlus);
-	dAvailablePIDs.insert(PiPlus);
-	dAvailablePIDs.insert(KMinus);
-	dAvailablePIDs.insert(PiMinus);
+	vector<int> hypotheses;
+	hypotheses.push_back(PiPlus);
+	hypotheses.push_back(KPlus);
+	hypotheses.push_back(Proton);
+	hypotheses.push_back(PiMinus);
+	hypotheses.push_back(KMinus);
+
+	ostringstream locMassStream;
+	for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
+	{
+		locMassStream << hypotheses[loc_i];
+		if(loc_i != (hypotheses.size() - 1))
+			locMassStream << ",";
+	}
+
+	string HYPOTHESES = locMassStream.str();
+	gPARMS->SetDefaultParameter("TRKFIT:HYPOTHESES", HYPOTHESES);
+
+	dMaxNumNeutralShowers = 20;
+	gPARMS->SetDefaultParameter("COMBO:MAX_NEUTRALS", dMaxNumNeutralShowers);
+
+	// Parse MASS_HYPOTHESES strings to make list of masses to try
+	hypotheses.clear();
+	SplitString(HYPOTHESES, hypotheses, ",");
+	for(size_t loc_i = 0; loc_i < hypotheses.size(); ++loc_i)
+		dAvailablePIDs.insert(Particle_t(hypotheses[loc_i]));
 
 	return NOERROR;
 }
@@ -87,6 +108,30 @@ void DParticleComboBlueprint_factory::Get_Reactions(JEventLoop *locEventLoop, ve
 	}
 }
 
+void DParticleComboBlueprint_factory::Check_ReactionNames(vector<const DReaction*>& locReactions) const
+{
+	set<string> locReactionNames;
+	set<string> locDuplicateReactionNames;
+	for(auto locReaction : locReactions)
+	{
+		string locReactionName = locReaction->Get_ReactionName();
+		if(locReactionNames.find(locReactionName) == locReactionNames.end())
+			locReactionNames.insert(locReactionName);
+		else
+			locDuplicateReactionNames.insert(locReactionName);
+	}
+
+	if(locDuplicateReactionNames.empty())
+		return;
+
+	cout << "ERROR: MULTIPLE DREACTIONS WITH THE SAME NAME(S): " << endl;
+	for(auto locReactionName : locDuplicateReactionNames)
+		cout << locReactionName << ", ";
+	cout << endl;
+	cout << "ABORTING" << endl;
+	abort();
+}
+
 //------------------
 // evnt
 //------------------
@@ -95,6 +140,12 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 #ifdef VTRACE
 	VT_TRACER("DParticleComboBlueprint_factory::evnt()");
 #endif
+
+	//CHECK TRIGGER TYPE
+	const DTrigger* locTrigger = NULL;
+	locEventLoop->GetSingle(locTrigger);
+	if(!locTrigger->Get_IsPhysicsEvent())
+		return NOERROR;
 
 	Reset_Pools();
 
@@ -105,12 +156,20 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 
 	vector<const DReaction*> locReactions;
 	Get_Reactions(locEventLoop, locReactions);
+	Check_ReactionNames(locReactions);
 
 	locEventLoop->GetSingle(dVertex);
 	locEventLoop->GetSingle(dDetectorMatches);
 
+    vector<const DESSkimData*> locESSkimDataVector;
+    locEventLoop->Get(locESSkimDataVector);
+    const DESSkimData* locESSkimData = locESSkimDataVector.empty() ? NULL : locESSkimDataVector[0];
+
 	locEventLoop->Get(dChargedTracks, dTrackSelectionTag.c_str());
 	locEventLoop->Get(dNeutralShowers, dShowerSelectionTag.c_str());
+
+	if(dNeutralShowers.size() > dMaxNumNeutralShowers)
+		return NOERROR; //don't even try
 
 	//sort charged particles into +/-
 	//Note that a DChargedTrack object can sometimes contain both positively and negatively charged hypotheses simultaneously: sometimes the tracking flips the sign of the track
@@ -127,8 +186,28 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, uint64_
 	if(dDebugLevel > 0)
 		cout << "#+, #-, #0 particles = " << dPositiveChargedTracks.size() << ", " << dNegativeChargedTracks.size() << ", " << dNeutralShowers.size() << endl;
 
+	//build the combos for each DReaction, IF the event satisfies the DReaction skim requirements
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
+	{
+		if(locESSkimData != NULL)
+		{
+			string locReactionSkimString = locReactions[loc_i]->Get_EventStoreSkims();
+			vector<string> locReactionSkimVector;
+			SplitString(locReactionSkimString, locReactionSkimVector, ",");
+			bool locSkimMissingFlag = false;
+			for(size_t loc_j = 0; loc_j < locReactionSkimVector.size(); ++loc_j)
+			{
+				if(locESSkimData && locESSkimData->Get_IsEventSkim(locReactionSkimVector[loc_j]))
+					continue; //ok so far
+				locSkimMissingFlag = true;
+				break;
+			}
+	//		if(locSkimMissingFlag)
+	//			continue; //no blueprints for this reaction!
+		}
+
 		Build_ParticleComboBlueprints(locReactions[loc_i]);
+	}
 
 	return NOERROR;
 }
@@ -252,12 +331,11 @@ bool DParticleComboBlueprint_factory::Setup_ComboLoop(const DReaction* locReacti
 
 			// check to see if this particle has a decay that is represented in a future step
 			// e.g. on Lambda in g, p -> K+, Lambda; where a later step is Lambda -> p, pi-
-			int locResumeAtIndex = 0;
-			int locDecayStepIndex = Grab_DecayingParticle(locAnalysisPID, locResumeAtIndex, locReaction, loc_i, loc_j);
+			int locDecayStepIndex = locReaction->Get_DecayStepIndex(loc_i, loc_j);
 			if(locDecayStepIndex >= 0)
 			{
 				if(dDebugLevel > 10)
-					cout << "decaying particle" << endl;
+					cout << ParticleType(locAnalysisPID) << " decays later in the reaction, at step index " << locDecayStepIndex << endl;
 				locTempDeque[loc_j] = 1;
 				locFinalStateDecayStepIndexMap[pair<int, int>(loc_i, loc_j)] = locDecayStepIndex; //store step where this particle decays
 				locInitialParticleStepFromIndexMap[locDecayStepIndex] = loc_i; //store step where this particle is produced
@@ -489,6 +567,11 @@ bool DParticleComboBlueprint_factory::Handle_EndOfReactionStep(const DReaction* 
 
 	locParticleComboBlueprint = new DParticleComboBlueprint(*locParticleComboBlueprint); //clone so don't alter saved object
 	locParticleComboBlueprintStep = NULL;
+
+	//if true, once one is found: bail on search
+	if(locReaction->Get_AnyBlueprintFlag())
+		return false; //skip to the end
+
 	if(!Handle_Decursion(locParticleComboBlueprint, locResumeAtIndexDeque, locNumPossibilitiesDeque, locParticleIndex, locStepIndex, locParticleComboBlueprintStep))
 		return false;
 	return true;
@@ -721,59 +804,6 @@ bool DParticleComboBlueprint_factory::Check_IfStepsAreIdentical(const DParticleC
 
 	//step is a match
 	return true;
-}
-
-int DParticleComboBlueprint_factory::Grab_DecayingParticle(Particle_t locAnalysisPID, int& locResumeAtIndex, const DReaction* locReaction, int locStepIndex, int locParticleIndex)
-{
-	if(locResumeAtIndex >= 1)
-	{
-		if(dDebugLevel > 10)
-			cout << ParticleType(locAnalysisPID) << " does not decay later in the reaction." << endl;
-		return -2;
-	}
-
-	if(dDebugLevel > 10)
-		cout << "check if " << ParticleType(locAnalysisPID) << " decays later in the reaction." << endl;
-	if((locAnalysisPID == Gamma) || (locAnalysisPID == Electron) || (locAnalysisPID == Positron) || (locAnalysisPID == Proton) || (locAnalysisPID == AntiProton))
-	{
-		if(dDebugLevel > 10)
-			cout << ParticleType(locAnalysisPID) << " does not decay later in the reaction." << endl;
-		return -2; //these particles don't decay: don't search!
-	}
-
-	//check to see how many final state particles with this pid type there are before now
-	size_t locPreviousPIDCount = 0;
-	for(int loc_i = 0; loc_i <= locStepIndex; ++loc_i)
-	{
-		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
-		for(size_t loc_j = 0; loc_j < locReactionStep->Get_NumFinalParticleIDs(); ++loc_j)
-		{
-			if((loc_i == locStepIndex) && (int(loc_j) == locParticleIndex))
-				break; //at the current particle: of the search
-			if(locReactionStep->Get_FinalParticleID(loc_j) == locAnalysisPID)
-				++locPreviousPIDCount;
-		}
-	}
-
-	//now, find the (locPreviousPIDCount + 1)'th time where this pid is a decay parent
-	size_t locStepPIDCount = 0;
-	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
-	{
-		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
-		if(locReactionStep->Get_InitialParticleID() != locAnalysisPID)
-			continue;
-		++locStepPIDCount;
-		if(locStepPIDCount <= locPreviousPIDCount)
-			continue;
-		locResumeAtIndex = 1;
-		if(dDebugLevel > 10)
-			cout << ParticleType(locAnalysisPID) << " decays later in the reaction, at step index " << loc_i << endl;
-		return loc_i;
-	}
-
-	if(dDebugLevel > 10)
-		cout << ParticleType(locAnalysisPID) << " does not decay later in the reaction." << endl;
-	return -2;
 }
 
 const JObject* DParticleComboBlueprint_factory::Grab_DetectedParticle(const DReaction* locReaction, Particle_t locAnalysisPID, int& locResumeAtIndex)

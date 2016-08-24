@@ -15,7 +15,10 @@ DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 	dTTreeOutputFileName = "";
 	dEnableTTreeOutputFlag = false;
 
-	dEventStoreQuery = pair<string, string>("all", "");
+	dEventStoreSkims = "";
+
+	dAnyBlueprintFlag = false;
+	dAnyComboFlag = false;
 }
 
 DReaction::~DReaction(void)
@@ -41,7 +44,8 @@ string DReaction::Get_DetectedParticlesROOTName(void) const
 				continue; //missing particle
 
 			//see if this pid is a parent in a future step
-			if(Check_IsDecayingParticle(locPID, loc_i + 1))
+			int locDecayStepIndex = Get_DecayStepIndex(loc_i, loc_j);
+			if(locDecayStepIndex >= 0)
 				continue;
 
 			locDetectedParticlesROOTName += ParticleName_ROOT(locPID);
@@ -57,12 +61,13 @@ string DReaction::Get_DecayChainFinalParticlesROOTNames(size_t locStepIndex, int
 	deque<Particle_t> locPIDs;
 	dReactionSteps[locStepIndex]->Get_FinalParticleIDs(locPIDs);
 	int locMissingParticleIndex = dReactionSteps[locStepIndex]->Get_MissingParticleIndex();
+	bool locSearchPIDsFlag = !locUpThroughPIDs.empty();
 	for(size_t loc_j = 0; loc_j < locPIDs.size(); ++loc_j)
 	{
 		if(int(loc_j) == locMissingParticleIndex)
 			continue; //exclude missing!
 
-		if(int(locStepIndex) == locUpToStepIndex)
+		if(locSearchPIDsFlag && (int(locStepIndex) == locUpToStepIndex))
 		{
 			bool locPIDFoundFlag = false;
 			for(deque<Particle_t>::iterator locIterator = locUpThroughPIDs.begin(); locIterator != locUpThroughPIDs.end(); ++locIterator)
@@ -119,7 +124,8 @@ void DReaction::Get_DetectedFinalPIDs(deque<Particle_t>& locDetectedPIDs, int lo
 				continue; //wrong charge
 
 			//see if this pid is a parent in a future step
-			if(Check_IsDecayingParticle(locPID, loc_i + 1))
+			int locDecayStepIndex = Get_DecayStepIndex(loc_i, loc_j);
+			if(locDecayStepIndex >= 0)
 				continue;
 
 			if(!locIncludeDuplicatesFlag)
@@ -164,7 +170,8 @@ void DReaction::Get_DetectedFinalPIDs(deque<deque<Particle_t> >& locDetectedPIDs
 				continue; //wrong charge
 
 			//see if this pid is a parent in a future step
-			if(Check_IsDecayingParticle(locPID, loc_i + 1))
+			int locDecayStepIndex = Get_DecayStepIndex(loc_i, loc_j);
+			if(locDecayStepIndex >= 0)
 				continue;
 
 			if(!locIncludeDuplicatesFlag)
@@ -199,7 +206,8 @@ void DReaction::Get_FinalStatePIDs(deque<Particle_t>& locFinalStatePIDs, bool lo
 			locPID = dReactionSteps[loc_i]->Get_FinalParticleID(loc_j);
 
 			//see if this pid is a parent in a future step
-			if(Check_IsDecayingParticle(locPID, loc_i + 1))
+			int locDecayStepIndex = Get_DecayStepIndex(loc_i, loc_j);
+			if(locDecayStepIndex >= 0)
 				continue;
 
 			//see if this PID is already stored
@@ -221,5 +229,107 @@ void DReaction::Get_FinalStatePIDs(deque<Particle_t>& locFinalStatePIDs, bool lo
 			locFinalStatePIDs.push_back(locPID);
 		}
 	}
+}
+
+pair<int, int> DReaction::Get_InitialParticleDecayFromIndices(int locStepIndex) const
+{
+	//check to see how many initial-state particles with this PID type there are before now
+	Particle_t locDecayingPID = Get_ReactionStep(locStepIndex)->Get_InitialParticleID();
+	size_t locPreviousPIDCount = 0;
+	for(int loc_i = 0; loc_i < locStepIndex; ++loc_i)
+	{
+		if(Get_ReactionStep(loc_i)->Get_InitialParticleID() == locDecayingPID)
+			++locPreviousPIDCount;
+	}
+
+	//now, search through final-state PIDs until finding the (locPreviousPIDCount + 1)'th instance of this PID
+	size_t locSearchPIDCount = 0;
+	for(int loc_i = 0; loc_i < locStepIndex; ++loc_i)
+	{
+		const DReactionStep* locReactionStep = Get_ReactionStep(loc_i);
+		for(size_t loc_j = 0; loc_j < locReactionStep->Get_NumFinalParticleIDs(); ++loc_j)
+		{
+			if(locReactionStep->Get_FinalParticleID(loc_j) != locDecayingPID)
+				continue;
+			++locSearchPIDCount;
+			if(locSearchPIDCount <= locPreviousPIDCount)
+				continue;
+			return pair<int, int>(loc_i, loc_j);
+		}
+	}
+	return pair<int, int>(-1, -1);
+}
+
+int DReaction::Get_DecayStepIndex(int locStepIndex, int locParticleIndex) const
+{
+	//check if the input particle decays later in the reaction
+	Particle_t locDecayingPID = Get_ReactionStep(locStepIndex)->Get_FinalParticleID(locParticleIndex);
+
+	if((locDecayingPID == Gamma) || (locDecayingPID == Electron) || (locDecayingPID == Positron) || (locDecayingPID == Proton) || (locDecayingPID == AntiProton))
+		return -1; //these particles don't decay: don't search!
+
+	//check to see how many final state particles with this pid type there are before now
+	size_t locPreviousPIDCount = 0;
+	for(int loc_i = 0; loc_i <= locStepIndex; ++loc_i)
+	{
+		const DReactionStep* locReactionStep = Get_ReactionStep(loc_i);
+		for(size_t loc_j = 0; loc_j < locReactionStep->Get_NumFinalParticleIDs(); ++loc_j)
+		{
+			if((loc_i == locStepIndex) && (int(loc_j) == locParticleIndex))
+				break; //at the current particle: of the search
+			if(locReactionStep->Get_FinalParticleID(loc_j) == locDecayingPID)
+				++locPreviousPIDCount;
+		}
+	}
+
+	//now, find the (locPreviousPIDCount + 1)'th time where this pid is a decay parent
+	size_t locStepPIDCount = 0;
+	for(size_t loc_i = 0; loc_i < Get_NumReactionSteps(); ++loc_i)
+	{
+		if(Get_ReactionStep(loc_i)->Get_InitialParticleID() != locDecayingPID)
+			continue;
+		++locStepPIDCount;
+		if(locStepPIDCount <= locPreviousPIDCount)
+			continue;
+		//decays later in the reaction, at step index loc_i
+		return loc_i;
+	}
+
+	// does not decay later in the reaction
+	return -1;
+}
+
+int DReaction::Get_DefinedParticleStepIndex(void) const
+{
+	//-1 if none //defined: missing or open-ended-decaying
+	for(size_t loc_i = 0; loc_i < Get_NumReactionSteps(); ++loc_i)
+	{
+		const DReactionStep* locReactionStep = Get_ReactionStep(loc_i);
+
+		//check for open-ended-decaying particle
+		Particle_t locTargetPID = locReactionStep->Get_TargetParticleID();
+		if((loc_i == 0) && (locTargetPID == Unknown))
+			return loc_i;
+
+		//check for missing particle
+		Particle_t locMissingPID = Unknown;
+		if(locReactionStep->Get_MissingPID(locMissingPID))
+			return loc_i;
+	}
+
+	return -1;
+}
+
+bool DReaction::Get_IsInclusiveChannelFlag(void) const
+{
+	for(size_t loc_i = 0; loc_i < Get_NumReactionSteps(); ++loc_i)
+	{
+		const DReactionStep* locReactionStep = Get_ReactionStep(loc_i);
+		Particle_t locMissingPID = Unknown;
+		if(!locReactionStep->Get_MissingPID(locMissingPID))
+			continue;
+		return (locMissingPID == Unknown);
+	}
+	return false;
 }
 

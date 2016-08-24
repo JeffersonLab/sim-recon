@@ -39,7 +39,9 @@ using namespace jana;
 #include "DCODAEventInfo.h"
 #include "DCODAROCInfo.h"
 #include "DEPICSvalue.h"
-
+#include "DL1Info.h"
+#include "Df250Scaler.h"
+#include "Df250AsyncPedestal.h"
 
 class JFactoryGenerator_DAQ: public jana::JFactoryGenerator{
 	public:
@@ -73,6 +75,9 @@ class JFactoryGenerator_DAQ: public jana::JFactoryGenerator{
 			loop->AddFactory(new JFactory<DCODAEventInfo>());
 			loop->AddFactory(new JFactory<DCODAROCInfo>());
 			loop->AddFactory(new JFactory<DEPICSvalue>());
+			loop->AddFactory(new JFactory<DL1Info>());
+			loop->AddFactory(new JFactory<Df250Scaler>());
+			loop->AddFactory(new JFactory<Df250AsyncPedestal>());
 			return NOERROR;
 		}
 

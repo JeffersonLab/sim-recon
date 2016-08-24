@@ -7,6 +7,7 @@ Import('*')
 env = env.Clone()
 
 sbms.AddROOT(env)
+sbms.AddRCDB(env)
 sbms.AddDANA(env)
 sbms.executable(env)
 

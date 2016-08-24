@@ -56,7 +56,7 @@ jerror_t JEventProcessor_TAGH_timewalk::init(void)
     // This is called once at program startup. If you are creating
     // and filling historgrams in this plugin, you should lock the
     // ROOT mutex like this:
-    japp->RootWriteLock();
+
     const double Tl = -200.0;
     const double Th = 600.0;
     const int NTb = 8000;
@@ -75,7 +75,6 @@ jerror_t JEventProcessor_TAGH_timewalk::init(void)
         hTAGHRF_tdcTimeDiffVsPulseHeight[i] = new TH2I(name,title+";pulse height [fADC counts];time(TDC) - time(RF) [ns]",41,0,4100,50,-2.5,2.5);
     }
     mainDir->cd();
-    japp->RootUnLock();
 
     return NOERROR;
 }
@@ -103,7 +102,7 @@ jerror_t JEventProcessor_TAGH_timewalk::evnt(JEventLoop *loop, uint64_t eventnum
     // reconstruction algorithm) should be done outside of any mutex lock
     // since multiple threads may call this method at the same time.
     vector<const DTAGHHit*> taghhits;
-    loop->Get(taghhits);
+    loop->Get(taghhits, "Calib");
     const DRFTime* rfTime = NULL;
     vector <const DRFTime*> rfTimes;
     loop->Get(rfTimes,"TAGH");
@@ -111,7 +110,11 @@ jerror_t JEventProcessor_TAGH_timewalk::evnt(JEventLoop *loop, uint64_t eventnum
         rfTime = rfTimes[0];
     else
         return NOERROR;
-    japp->RootWriteLock();
+
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
     double t_RF = rfTime->dTime;
     for(unsigned int i=0; i<taghhits.size(); i++) {
         const DTAGHHit *hit = taghhits[i];
@@ -126,7 +129,9 @@ jerror_t JEventProcessor_TAGH_timewalk::evnt(JEventLoop *loop, uint64_t eventnum
         hTAGHRF_tdcTimeDiffVsPulseHeight[0]->Fill(pulse_height,t_tdc-t_RF);
         hTAGHRF_tdcTimeDiffVsPulseHeight[id]->Fill(pulse_height,t_tdc-t_RF);
     }
-    japp->RootUnLock();
+
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
+
     return NOERROR;
 }
 

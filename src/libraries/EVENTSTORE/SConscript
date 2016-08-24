@@ -1,0 +1,18 @@
+
+import os
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+# Needed for HDDM
+#env.AppendUnique(CPPPATH=[Dir('.').abspath+"/../../../libraries/HDDM"])   # HACK!
+env.AppendUnique(CPPPATH=["../HDDM"])   # HACK!
+
+sbms.AddDANA(env)
+sbms.AddROOT(env)
+sbms.AddCCDB(env)
+sbms.library(env)
+
+

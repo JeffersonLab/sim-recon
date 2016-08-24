@@ -14,7 +14,7 @@ class DPSGeometry : public JObject {
   
   JOBJECT_PUBLIC(DPSGeometry);
   
-  DPSGeometry(JEventLoop *loop, std::string tag, int32_t runnumber);
+  DPSGeometry(JEventLoop *loop);
   ~DPSGeometry();
 
   enum Arm { kNorth, kSouth };

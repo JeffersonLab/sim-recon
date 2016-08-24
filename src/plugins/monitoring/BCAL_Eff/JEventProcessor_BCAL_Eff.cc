@@ -13,7 +13,7 @@
 #include "DANA/DApplication.h"
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALTruthShower.h"
-#include "BCAL/DBCALCluster.h"
+//#include "BCAL/DBCALCluster.h"
 #include "BCAL/DBCALPoint.h"
 #include "BCAL/DBCALHit.h"
 #include "FCAL/DFCALShower.h"
@@ -55,8 +55,8 @@
 		static TH2I* h2_Evsenergy = NULL;
 		static TH2I* h2_pmagvsenergy = NULL;
 
-		static TH1I* h1clust_Num_matched_clusters = NULL;
-		static TH1I* h1clust_nCells = NULL;
+		//static TH1I* h1shower_Num_matched_showers = NULL;
+		
 
 		static TH1I* h1pt_Num_points = NULL;
 		static TH1I* h1pt_module = NULL;
@@ -106,16 +106,9 @@ extern "C"
 //------------------
 jerror_t JEventProcessor_BCAL_Eff::init(void)
 {
-	// This is called once at program startup. If you are creating
-	// and filling historgrams in this plugin, you should lock the
-	// ROOT mutex like this:
-	
-	 japp->RootWriteLock();
-
 	// First thread to get here makes all histograms. If one pointer is
 	// already not NULL, assume all histograms are defined and return now
 	if(h1_Num_matched_showers != NULL){
-		japp->RootUnLock();
 		return NOERROR;
 	}
 	
@@ -198,15 +191,9 @@ jerror_t JEventProcessor_BCAL_Eff::init(void)
 	h2_pmagvsenergy->SetXTitle("track energy (GeV)");
 	h2_pmagvsenergy->SetYTitle("track pmag (GeV)");
 
-	h1clust_Num_matched_clusters = new TH1I("h1_Num_matched_clusters", "Number of matched clusters per event", 20,0,20);
-	h1clust_Num_matched_clusters->SetXTitle("Number of clusters");
-	h1clust_Num_matched_clusters->SetYTitle("counts");
-	h1clust_nCells = new TH1I("h1clust_nCells", "Cluster nCells",20,0,20);
-	h1clust_nCells->SetXTitle("Cluster nCells");
-	h1clust_nCells->SetYTitle("counts");
 
-	h1pt_Num_points = new TH1I("h1pt_Num_points", "pt points per cluster",20,0,20);
-	h1pt_Num_points->SetXTitle("Points per cluster");
+	h1pt_Num_points = new TH1I("h1pt_Num_points", "pt points per Shower",20,0,20);
+	h1pt_Num_points->SetXTitle("Points per Shower");
 	h1pt_Num_points->SetYTitle("counts");
 	h1pt_module = new TH1I("h1pt_module", "pt module number",50,0,50);
 	h1pt_module->SetXTitle("Module");
@@ -297,9 +284,6 @@ jerror_t JEventProcessor_BCAL_Eff::init(void)
 	// back to main dir
 	main->cd();
 
-        japp->RootUnLock();
-
-
 	return NOERROR;
 }
 
@@ -359,14 +343,12 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
 
 	vector<const DBCALShower*> locBCALShowers;
 	vector<const DBCALHit*> bcalhits;
-	vector<const DBCALCluster*> locBCALClusters;
 	vector<const DBCALPoint*> locBCALPoints;
 	vector<const DVertex*> kinfitVertex;
 	//const DDetectorMatches* locDetectorMatches = NULL;
 	//locEventLoop->GetSingle(locDetectorMatches);
 	locEventLoop->Get(locBCALShowers);
 	locEventLoop->Get(bcalhits);
-	locEventLoop->Get(locBCALClusters);
 	locEventLoop->Get(locBCALPoints);
 	locEventLoop->Get(kinfitVertex);
 
@@ -411,7 +393,10 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
 	  }
 	}
 
-	japp->RootWriteLock();
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
+
 	event_count++;
 //	if (event_count%100 == 0) printf ("Event count=%d, EventNumber=%d\n",event_count,locEventNumber);
 
@@ -483,38 +468,27 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
           h2_Evsenergy->Fill(energy,E);
           h2_pmagvsenergy->Fill(energy,pmag);
 
-	  // get associated information in the shower
 
-	  vector<const DBCALCluster*> clusters;
-	  matchedShowers[i]->Get(clusters);
+	  vector <int> matchedShowers_modules;  // vector with list of modules  in Showers
 
-	  vector <int> cluster_modules;  // vector with list of modules  in cluster
-
-	  // loop over associated clusters in shower
-	  Int_t numclusters_per_event = clusters.size();
-	  h1clust_Num_matched_clusters->Fill(numclusters_per_event);
-	  for(int j=0; j<numclusters_per_event; j++) {
-
-	    Int_t clusters_nCells = clusters[j]->nCells();
-	    h1clust_nCells->Fill(clusters_nCells);
 
 	    // get associated information in the shower
 
 	    vector<const DBCALPoint*> points;
-	    clusters[j]->Get(points);
-            cluster_modules.clear();
+	    matchedShowers[i]->Get(points);
+            matchedShowers_modules.clear();
 
-	    // loop over points in cluster
-	    Int_t numpoints_per_cluster = points.size();
-	    h1pt_Num_points->Fill(numpoints_per_cluster);
+	    // loop over points in shower
+	    Int_t numpoints_per_shower = points.size();
+	    h1pt_Num_points->Fill(numpoints_per_shower);
 
 	    // initialize hit variables
-	    Int_t hitlayer1=0;
-	    Int_t hitlayer2=0;
-	    Int_t hitlayer3=0;
-	    Int_t hitlayer4=0;
-	    Int_t module_ndx=0;    // use one of the modules in cluster as index
-	    for (int jj=0; jj<numpoints_per_cluster; jj++) {
+	    Int_t pointlayer1=0;
+	    Int_t pointlayer2=0;
+	    Int_t pointlayer3=0;
+	    Int_t pointlayer4=0;
+	    Int_t module_ndx=0;    // use one of the modules in shower as index
+	    for (int jj=0; jj<numpoints_per_shower; jj++) {
 
 	       int module = points[jj]->module(); 
 	       int layer = points[jj]->layer();
@@ -535,62 +509,62 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
 	       h1pt_energy_US->Fill(energy_US);
 	       h1pt_energy_DS->Fill(energy_DS);
 
-	       if (layer == 1) hitlayer1 = 1;
-	       if (layer == 2) hitlayer2 = 2;
-	       if (layer == 3) hitlayer3 = 3;
-	       if (layer == 4) hitlayer4 = 4;
-	       // printf ("event=%d, pt jj=%d, module=%d, layer=%d, sector=%d, cell_id=%d, hitlayer1=%d, hitlayer2=%d, hitlayer3=%d, hitlayer4=%d\n",locEventNumber,jj,module,layer, sector,cell_id,hitlayer1,hitlayer2,hitlayer3,hitlayer4);
+	       if (layer == 1) pointlayer1 = 1;
+	       if (layer == 2) pointlayer2 = 2;
+	       if (layer == 3) pointlayer3 = 3;
+	       if (layer == 4) pointlayer4 = 4;
+	       // printf ("event=%d, pt jj=%d, module=%d, layer=%d, sector=%d, cell_id=%d, pointlayer1=%d, pointlayer2=%d, pointlayer3=%d, pointlayer4=%d\n",locEventNumber,jj,module,layer, sector,cell_id,pointlayer1,pointlayer2,pointlayer3,pointlayer4);
 
                // fill vector with module number if not yet in list
 	       bool module_in_list = false;
-	       for (unsigned int jjj=0; jjj<cluster_modules.size(); jjj++) {
-	         if (module == cluster_modules[jjj]) module_in_list = true; 
+	       for (unsigned int jjj=0; jjj<matchedShowers_modules.size(); jjj++) {
+	         if (module == matchedShowers_modules[jjj]) module_in_list = true; 
 	       }
-	       if (!module_in_list) cluster_modules.push_back(module);
+	       if (!module_in_list) matchedShowers_modules.push_back(module);
 	       module_ndx = module;
 
             }
 
-	    // fill efficiency histograms, once per cluster
+	    // fill efficiency histograms, once per shower
 
-	    if (hitlayer2 + hitlayer3 + hitlayer4 > 0) {
+	    if (pointlayer2 + pointlayer3 + pointlayer4 > 0) {
 	      h1eff_layertot->Fill(1);
-	      h1eff_layer->Fill(hitlayer1);
+	      h1eff_layer->Fill(pointlayer1);
 	      int cellid = (module_ndx-1)*4 + 1;
 	      h1eff_cellidtot->Fill(cellid);
-	      if (hitlayer1>0) h1eff_cellid->Fill(cellid);
+	      if (pointlayer1>0) h1eff_cellid->Fill(cellid);
 	    }
 
-	    if (hitlayer3 + hitlayer4 > 0) {
+	    if (pointlayer3 + pointlayer4 > 0) {
 	      h1eff_layertot->Fill(2);
-	      h1eff_layer->Fill(hitlayer2);
+	      h1eff_layer->Fill(pointlayer2);
 	      int cellid = (module_ndx-1)*4 + 2;
 	      h1eff_cellidtot->Fill(cellid);
-	      if (hitlayer2>0) h1eff_cellid->Fill(cellid);
+	      if (pointlayer2>0) h1eff_cellid->Fill(cellid);
 	    }
-	    if (hitlayer4 > 0) {
+	    if (pointlayer4 > 0) {
 	      h1eff_layertot->Fill(3);
-	      h1eff_layer->Fill(hitlayer3);
+	      h1eff_layer->Fill(pointlayer3);
 	      int cellid = (module_ndx-1)*4 + 3;
 	      h1eff_cellidtot->Fill(cellid);
-	      if (hitlayer3>0) h1eff_cellid->Fill(cellid);
+	      if (pointlayer3>0) h1eff_cellid->Fill(cellid);
 	    }
 
-	    if (hitlayer1 + hitlayer2 + hitlayer3 > 3) {
+	    if (pointlayer1 + pointlayer2 + pointlayer3 > 3) {
 	      h1eff_layertot->Fill(4);
-	      h1eff_layer->Fill(hitlayer4);
+	      h1eff_layer->Fill(pointlayer4);
 	      int cellid = (module_ndx-1)*4 + 4;
 	      h1eff_cellidtot->Fill(cellid);
-	    if (hitlayer4>0) h1eff_cellid->Fill(cellid);
+	    if (pointlayer4>0) h1eff_cellid->Fill(cellid);
 	    }
 	    
-	  }
+
 
 	    int hitlayer1=0;
 	    int hitlayer2=0;
 	    int hitlayer3=0;
 	    int hitlayer4=0;
-	    Int_t module_ndx=0;    // use one of the modules in cluster as index
+	    Int_t hitmodule_ndx=0;    // use one of the modules in shower as index
 	    // loop over all points in BCAL
 	    for (unsigned int jjj=0; jjj<bcalhits.size(); jjj++) {
 	       int module = bcalhits[jjj]->module; 
@@ -602,8 +576,8 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
 
 	       // check to see if module is in cluster list
 	       bool module_in_list = false;
-	       for (unsigned int k=0; k<cluster_modules.size(); k++) {
-	         if (module == cluster_modules[k]) module_in_list = true; 
+	       for (unsigned int k=0; k<matchedShowers_modules.size(); k++) {
+	         if (module == matchedShowers_modules[k]) module_in_list = true; 
 	       }
 	       if (!module_in_list) continue;
 
@@ -616,16 +590,16 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
 	       if (layer == 2) hitlayer2 = 2;
 	       if (layer == 3) hitlayer3 = 3;
 	       if (layer == 4) hitlayer4 = 4;
-               module_ndx = module;
+               hitmodule_ndx = module;
 
 	    }
 
-	    // fill efficiency histograms, once per cluster
+	    // fill efficiency histograms, once per shower
 
 	    if (hitlayer2 + hitlayer3 + hitlayer4 > 0) {
 	      h1eff2_layertot->Fill(1);
 	      h1eff2_layer->Fill(hitlayer1);;
-	      int cellid = (module_ndx-1)*4 + 1;
+	      int cellid = (hitmodule_ndx-1)*4 + 1;
 	      h1eff2_cellidtot->Fill(cellid);
 	      if (hitlayer1>0) h1eff2_cellid->Fill(cellid);
 	    }
@@ -633,14 +607,14 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
 	    if (hitlayer3 + hitlayer4 > 0) {
 	      h1eff2_layertot->Fill(2);
 	      h1eff2_layer->Fill(hitlayer2);;
-	      int cellid = (module_ndx-1)*4 + 2;
+	      int cellid = (hitmodule_ndx-1)*4 + 2;
 	      h1eff2_cellidtot->Fill(cellid);
 	      if (hitlayer2>0) h1eff2_cellid->Fill(cellid);
 	    }
 	    if (hitlayer4 > 0) {
 	      h1eff2_layertot->Fill(3);
 	      h1eff2_layer->Fill(hitlayer3);;
-	      int cellid = (module_ndx-1)*4 + 3;
+	      int cellid = (hitmodule_ndx-1)*4 + 3;
 	      h1eff2_cellidtot->Fill(cellid);
 	      if (hitlayer3>0) h1eff2_cellid->Fill(cellid);
 	    }
@@ -648,7 +622,7 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
 	    if (hitlayer1 + hitlayer2 + hitlayer3 > 3) {
 	      h1eff2_layertot->Fill(4);
 	      h1eff2_layer->Fill(hitlayer4);;
-	      int cellid = (module_ndx-1)*4 + 4;
+	      int cellid = (hitmodule_ndx-1)*4 + 4;
 	      h1eff2_cellidtot->Fill(cellid);
 	      if (hitlayer4>0) h1eff2_cellid->Fill(cellid);
 	    }
@@ -657,9 +631,7 @@ jerror_t JEventProcessor_BCAL_Eff::evnt(jana::JEventLoop* locEventLoop, uint64_t
 
 	}   // end loop over matched showers
 
-        //UnlockState();	
-	japp->RootUnLock();
-
+	japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	/*
 	//Optional: Save event to output REST file. Use this to create skims.
@@ -678,12 +650,11 @@ jerror_t JEventProcessor_BCAL_Eff::erun(void)
 	// changed to give you a chance to clean up before processing
 	// events from the next run number.
 
-  japp->RootWriteLock();
-
+	// FILL HISTOGRAMS
+	// Since we are filling histograms local to this plugin, it will not interfere with other ROOT operations: can use plugin-wide ROOT fill lock
+	//japp->RootFillLock(this); //ACQUIRE ROOT FILL LOCK
   // h1eff_eff->Divide(h1eff_layer,h1eff_layertot);
-
-  japp->RootUnLock();
-
+	//japp->RootFillUnLock(this); //RELEASE ROOT FILL LOCK
 
 	return NOERROR;
 }
@@ -695,16 +666,12 @@ jerror_t JEventProcessor_BCAL_Eff::fini(void)
 {
 	// Called before program exit after event processing is finished.  
 
-  japp->RootWriteLock();
-
   h1eff_eff->Divide(h1eff_layer,h1eff_layertot,1,1,"B");
   h1eff2_eff2->Divide(h1eff2_layer,h1eff2_layertot,1,1,"B");
 
   h1eff_cellideff->Divide(h1eff_cellid,h1eff_cellidtot,1,1,"B");
   h1eff2_cellideff2->Divide(h1eff2_cellid,h1eff2_cellidtot,1,1,"B");
 
-
-  japp->RootUnLock();
 	return NOERROR;
 }
 

@@ -251,7 +251,7 @@ c      =  3 nuclear fission with ineleastic scattering
 c      =  4 neutron capture
 c
 c --- intact code ---
-      kk=abs(q(jma+11)) !number of material components
+      kk=int_intrinsic(abs(q(jma+11))) !number of material components
       alam1=0.0
       call grndm(rndm,1)
       rat=rndm(1)*alam
@@ -704,12 +704,12 @@ c
 c --- one or more secondaries have been generated ---
       do 61 l=1,ntot
       index=(l-1)*12
-      jnd=eve(index+12)
+      jnd=int_intrinsic(eve(index+12))
 c
 c --- make choice between k0 long / k0 short ---
       if ((jnd .ne. 11) .and. (jnd .ne. 12)) go to 63
       call grndm(rndm,1)
-      jnd=11.5+rndm(1)
+      jnd=int_intrinsic(11.5+rndm(1))
 c
 c --- forget about neutrinos ---
  63   continue
@@ -759,4 +759,12 @@ c
       else if(todo.eq.'intforce') then
        intforce=ivalue
       endif !todo.eq.'ihadr'
+      end
+c
+c The standard Fortran intrinsic "int" was hidden by the author's choice
+c of "int" as the name of a variable in the above code.
+c Define its surrogate here.
+c
+      integer function int_intrinsic(realarg)
+      int_intrinsic = int(realarg)
       end

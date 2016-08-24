@@ -8,6 +8,9 @@
 #ifndef _DEventProcessor_track_skimmer_
 #define _DEventProcessor_track_skimmer_
 
+#include <map>
+#include <fstream>
+
 #include <JANA/JEventProcessor.h>
 #include <JANA/JApplication.h>
 
@@ -16,6 +19,8 @@
 #include <ANALYSIS/DHistogramActions.h>
 
 #include "DFactoryGenerator_track_skimmer.h"
+
+#include <TRIGGER/DTrigger.h>
 
 using namespace jana;
 using namespace std;
@@ -34,17 +39,7 @@ class DEventProcessor_track_skimmer : public jana::JEventProcessor
 
 		int Get_FileNumber(JEventLoop* locEventLoop) const;
 
-		ofstream dIDXAStream_2track;
-		ofstream dIDXAStream_2track1pi0;
-
-		ofstream dIDXAStream_3track;
-		ofstream dIDXAStream_3track1pi0;
-
-		ofstream dIDXAStream_4track;
-		ofstream dIDXAStream_4track1pi0;
-
-		ofstream dIDXAStream_5track;
-		ofstream dIDXAStream_5track1pi0;
+		map<string, ofstream*> dIDXAStreamMap;
 };
 
 #endif // _DEventProcessor_track_skimmer_

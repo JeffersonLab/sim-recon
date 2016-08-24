@@ -28,6 +28,41 @@ jerror_t DDetectorMatches_factory_Combo::brun(jana::JEventLoop *locEventLoop, in
 	return NOERROR;
 }
 
+double DDetectorMatches_factory_Combo::Calc_PVariance(const DTrackTimeBased* locTrack) const
+{
+	DMatrixDSym locTrackingMatrix = locTrack->errorMatrix();
+	TMatrixDSym locP3CovarianceMatrix(3);
+	for(int loc_i = 0; loc_i < 3; ++loc_i)
+	{
+		for(int loc_j = 0; loc_j < 3; ++loc_j)
+			locP3CovarianceMatrix(loc_i, loc_j) = locTrackingMatrix(loc_i, loc_j);
+	}
+	TMatrixD locJacobian(1, 3);
+	DVector3 locUnitP = locTrack->momentum().Unit();
+	locJacobian(0, 0) = locUnitP.X();
+	locJacobian(0, 1) = locUnitP.Y();
+	locJacobian(0, 2) = locUnitP.Z();
+	TMatrixDSym locPVariance = locP3CovarianceMatrix.Similarity(locJacobian);
+	return locPVariance(0, 0);
+}
+
+pair<double, double> DDetectorMatches_factory_Combo::Calc_EnergyRatio(const DTrackTimeBased* locTrackTimeBased, const DTrackTimeBased* locOriginalTrackTimeBased) const
+{
+	double locMass1 = locTrackTimeBased->mass();
+	double locMass2 = locOriginalTrackTimeBased->mass();
+	double locEnergy1 = locTrackTimeBased->energy();
+	double locEnergy2 = locOriginalTrackTimeBased->energy();
+	double locPSq = locTrackTimeBased->momentum().Mag2();
+	double locPVariance = Calc_PVariance(locTrackTimeBased);
+
+	double locEnergyRatio = locEnergy1/locEnergy2;
+	double locDeltaMassSq = locMass1*locMass1 - locMass2*locMass2;
+	double locDenominator = locEnergy1*locEnergy1*locEnergy1*locEnergy1*locEnergy2*locEnergy2*locEnergy2*locEnergy2;
+	double locRatioVariance = locPVariance*locPSq*locDeltaMassSq*locDeltaMassSq/locDenominator;
+
+	return pair<double, double>(locEnergyRatio, locRatioVariance);
+}
+
 //------------------
 // evnt
 //------------------
@@ -54,29 +89,59 @@ jerror_t DDetectorMatches_factory_Combo::evnt(jana::JEventLoop* locEventLoop, ui
 		const DTrackTimeBased* locOriginalTrackTimeBased = NULL;
 		locTrackTimeBased->GetSingleT(locOriginalTrackTimeBased);
 
+		pair<double, double> locEnergyRatio = Calc_EnergyRatio(locTrackTimeBased, locOriginalTrackTimeBased); //2nd is variance, not error!
+
 		//BCAL
 		vector<DBCALShowerMatchParams> locBCALShowerMatchParamsVector;
 		locDetectorMatches->Get_BCALMatchParams(locOriginalTrackTimeBased, locBCALShowerMatchParamsVector);
 		for(size_t loc_j = 0; loc_j < locBCALShowerMatchParamsVector.size(); ++loc_j)
+		{
+			double locDeltaT = locBCALShowerMatchParamsVector[loc_j].dFlightTime;
+			double locDeltaTVar = locBCALShowerMatchParamsVector[loc_j].dFlightTimeVariance;
+			locBCALShowerMatchParamsVector[loc_j].dFlightTime *= locEnergyRatio.first;
+			//assumes correlation between delta-t and E-ratio is negligible
+			locBCALShowerMatchParamsVector[loc_j].dFlightTimeVariance = locDeltaTVar*locEnergyRatio.first*locEnergyRatio.first + locEnergyRatio.second*locDeltaT*locDeltaT;
 			locDetectorMatches->Add_Match(locTrackTimeBased, locBCALShowerMatchParamsVector[loc_j].dBCALShower, locBCALShowerMatchParamsVector[loc_j]);
+		}
 
 		//FCAL
 		vector<DFCALShowerMatchParams> locFCALShowerMatchParamsVector;
 		locDetectorMatches->Get_FCALMatchParams(locOriginalTrackTimeBased, locFCALShowerMatchParamsVector);
 		for(size_t loc_j = 0; loc_j < locFCALShowerMatchParamsVector.size(); ++loc_j)
+		{
+			double locDeltaT = locFCALShowerMatchParamsVector[loc_j].dFlightTime;
+			double locDeltaTVar = locFCALShowerMatchParamsVector[loc_j].dFlightTimeVariance;
+			locFCALShowerMatchParamsVector[loc_j].dFlightTime *= locEnergyRatio.first;
+			//assumes correlation between delta-t and E-ratio is negligible
+			locFCALShowerMatchParamsVector[loc_j].dFlightTimeVariance = locDeltaTVar*locEnergyRatio.first*locEnergyRatio.first + locEnergyRatio.second*locDeltaT*locDeltaT;
 			locDetectorMatches->Add_Match(locTrackTimeBased, locFCALShowerMatchParamsVector[loc_j].dFCALShower, locFCALShowerMatchParamsVector[loc_j]);
+		}
 
 		//TOF
 		vector<DTOFHitMatchParams> locTOFHitMatchParamsVector;
 		locDetectorMatches->Get_TOFMatchParams(locOriginalTrackTimeBased, locTOFHitMatchParamsVector);
 		for(size_t loc_j = 0; loc_j < locTOFHitMatchParamsVector.size(); ++loc_j)
+		{
+			double locDeltaT = locTOFHitMatchParamsVector[loc_j].dFlightTime;
+			double locDeltaTVar = locTOFHitMatchParamsVector[loc_j].dFlightTimeVariance;
+			locTOFHitMatchParamsVector[loc_j].dFlightTime *= locEnergyRatio.first;
+			//assumes correlation between delta-t and E-ratio is negligible
+			locTOFHitMatchParamsVector[loc_j].dFlightTimeVariance = locDeltaTVar*locEnergyRatio.first*locEnergyRatio.first + locEnergyRatio.second*locDeltaT*locDeltaT;
 			locDetectorMatches->Add_Match(locTrackTimeBased, locTOFHitMatchParamsVector[loc_j].dTOFPoint, locTOFHitMatchParamsVector[loc_j]);
+		}
 
 		//SC
 		vector<DSCHitMatchParams> locSCHitMatchParamsVector;
 		locDetectorMatches->Get_SCMatchParams(locOriginalTrackTimeBased, locSCHitMatchParamsVector);
 		for(size_t loc_j = 0; loc_j < locSCHitMatchParamsVector.size(); ++loc_j)
+		{
+			double locDeltaT = locSCHitMatchParamsVector[loc_j].dFlightTime;
+			double locDeltaTVar = locSCHitMatchParamsVector[loc_j].dFlightTimeVariance;
+			locSCHitMatchParamsVector[loc_j].dFlightTime *= locEnergyRatio.first;
+			//assumes correlation between delta-t and E-ratio is negligible
+			locSCHitMatchParamsVector[loc_j].dFlightTimeVariance = locDeltaTVar*locEnergyRatio.first*locEnergyRatio.first + locEnergyRatio.second*locDeltaT*locDeltaT;
 			locDetectorMatches->Add_Match(locTrackTimeBased, locSCHitMatchParamsVector[loc_j].dSCHit, locSCHitMatchParamsVector[loc_j]);
+		}
 
 		//Flight-Time/P Correlations
 		double locFlightTimePCorrelation = 0.0;
