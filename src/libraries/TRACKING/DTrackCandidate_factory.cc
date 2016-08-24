@@ -1056,6 +1056,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
     if (DoRefit(fit,segments,cdchits,Bz_avg)==NOERROR){
       // Determine the polar angle
       double theta=fdccan->momentum().Theta();
+      if (segments.size()==1) theta=cdccan->momentum().Theta();
       fit.tanl=tan(M_PI_2-theta);
       
       if (GetPositionAndMomentum(fit,Bz_avg,cdchits[0]->wire->origin,
@@ -1200,7 +1201,8 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
        DHelicalFit fit;
        if (DoRefit(fit,segments,cdchits,Bz_avg)==NOERROR){
 	 // Determine the polar angle
-	 double theta=fdccan->momentum().Theta();	      
+	 double theta=fdccan->momentum().Theta();
+	 if (segments.size()==1) theta=cdccan->momentum().Theta();
 	 fit.tanl=tan(M_PI_2-theta);
 	 
 	 if (GetPositionAndMomentum(fit,Bz_avg,cdchits[0]->wire->origin,
@@ -1348,6 +1350,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	     if (DoRefit(fit,segments,cdchits,Bz_avg)==NOERROR){
 	       // Determine the polar angle
 	       double theta=fdccan->momentum().Theta();
+	       if (segments.size()==1) theta=cdccan->momentum().Theta();
 	       fit.tanl=tan(M_PI_2-theta);
 	       
 	       // Redo the line fit
@@ -2079,6 +2082,7 @@ bool DTrackCandidate_factory::MatchMethod8(const DTrackCandidate *cdccan,
 	    if (fit.FitCircleRiemann(segments[0]->rc)==NOERROR){
 	      // Use the fdc track candidate to get tanl
 	      double theta=fdccan->momentum().Theta();
+	      if (segments.size()==1) theta=cdccan->momentum().Theta();
 	      fit.tanl=tan(M_PI_2-theta);
 	      
 	      Bz=0.5*(Bz+fabs(Bz_fdc)/num_hits_fdc);
