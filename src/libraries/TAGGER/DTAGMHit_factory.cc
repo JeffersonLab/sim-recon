@@ -64,8 +64,6 @@ jerror_t DTAGMHit_factory::evnt(JEventLoop *loop, uint64_t eventnumber)
 	vector<const DTAGMHit*> hits;
 	loop->Get(hits, "Calib");
 
-	if (!hits.size() > 0) return NOERROR;
-
 	sort(hits.begin(), hits.end(), SortByCol);
 
 	set<uint32_t> locHitIndexUsedSoFar;

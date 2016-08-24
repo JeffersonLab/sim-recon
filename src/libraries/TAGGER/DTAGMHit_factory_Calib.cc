@@ -133,7 +133,7 @@ jerror_t DTAGMHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         return OBJECT_NOT_AVAILABLE;
     const DTAGMGeometry& tagmGeom = *(tagmGeomVect[0]);
 
-    const DTTabUtilities* locTTabUtilities = NULL;
+    const DTTabUtilities* locTTabUtilities = nullptr;
     loop->GetSingle(locTTabUtilities);
 
     // First loop over all TAGMDigiHits and make DTAGMHits out of them
@@ -144,9 +144,9 @@ jerror_t DTAGMHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         // The following condition signals an error state in the flash algorithm
         // Do not make hits out of these
-        const Df250PulsePedestal* PPobj = NULL;
+        const Df250PulsePedestal* PPobj = nullptr;
         digihit->GetSingle(PPobj);
-        if (PPobj != NULL){
+        if (PPobj != nullptr){
             if (PPobj->pedestal == 0 || PPobj->pulse_peak == 0) continue;
         }
         else continue;
@@ -155,9 +155,9 @@ jerror_t DTAGMHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         // otherwise, use the average pedestal from CCDB
         double pedestal = fadc_pedestals[digihit->row][digihit->column];
 
-        const Df250PulseIntegral* PIobj = NULL;
+        const Df250PulseIntegral* PIobj = nullptr;
         digihit->GetSingle(PIobj);
-        if (PIobj != NULL) {
+        if (PIobj != nullptr) {
             // the measured pedestal must be scaled by the ratio of the number
             // of samples used to calculate the pedestal and the actual pulse
             // Changed to match D. Lawrence Dec 4 2014 changes
@@ -182,11 +182,11 @@ jerror_t DTAGMHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
         double A = digihit->pulse_integral;
         double T = digihit->pulse_time;
         A -= pedestal;
-	int row = digihit->row;
+        int row = digihit->row;
         int column = digihit->column;
         if (A < CUT_FACTOR*int_cuts[row][column]) continue;
 
-	DTAGMHit *hit = new DTAGMHit;    
+        DTAGMHit *hit = new DTAGMHit;    
         hit->row = row;
         hit->column = column;
         double Elow = tagmGeom.getElow(column);
@@ -220,7 +220,7 @@ jerror_t DTAGMHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
 
         // Look for existing hits to see if there is a match
         // or create new one if there is no match
-        DTAGMHit *hit = 0;
+        DTAGMHit *hit = nullptr;
         for (unsigned int j=0; j < _data.size(); ++j) {
             if (_data[j]->row == row && _data[j]->column == column &&
             fabs(T - _data[j]->time_fadc) < DELTA_T_ADC_TDC_MAX)
@@ -228,19 +228,19 @@ jerror_t DTAGMHit_factory_Calib::evnt(JEventLoop *loop, uint64_t eventnumber)
             hit = _data[j];
           }
         }
-        if (hit == 0) {
+        if (hit == nullptr) {
             hit = new DTAGMHit;
-        hit->row = row;
-        hit->column = column;
-        double Elow = tagmGeom.getElow(column);
-        double Ehigh = tagmGeom.getEhigh(column);
-        hit->E = (Elow + Ehigh)/2;
-        hit->time_fadc = 0;
-        hit->npix_fadc = 0;
-        hit->integral = 0;
-        hit->pulse_peak = 0;
-        hit->has_fADC=false;
-        _data.push_back(hit);
+            hit->row = row;
+            hit->column = column;
+            double Elow = tagmGeom.getElow(column);
+            double Ehigh = tagmGeom.getEhigh(column);
+            hit->E = (Elow + Ehigh)/2;
+            hit->time_fadc = 0;
+            hit->npix_fadc = 0;
+            hit->integral = 0;
+            hit->pulse_peak = 0;
+            hit->has_fADC=false;
+            _data.push_back(hit);
         }
         hit->time_tdc=T;
         hit->has_TDC=true;

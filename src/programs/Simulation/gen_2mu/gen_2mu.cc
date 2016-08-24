@@ -39,8 +39,12 @@ TH1D *expint_z = NULL;
 double Ecoherent_peak = 6.0;
 double Eelectron_beam = 12.0;
 double Emin = 1.0;
+double EnergyMax = 6.5;
 double Efixed = 0.0;
 double CollimatorDiameter = 0.0034; // in meters
+double TMin = 5; // minimum theta angle, in degrees
+double TMax = 87; // maximum theta angle, in degrees
+double Ntheta =0;
 bool   ONLY_COHERENT = false;
 bool   ONLY_INCOHERENT = false;
 Particle_t PlusType  = MuonPlus;
@@ -195,7 +199,10 @@ void Usage(string message)
 	cout << " -p Epeak     coherent peak energy (def="<<Ecoherent_peak<<")" << endl;
 	cout << " -b Ebeam     electron beam energy (def="<<Eelectron_beam<<")" << endl;
 	cout << " -Efixed E    fixed photon beam energy (don't sample coherent)" << endl;
-	cout << " -min Emin    minimum photon energy to generate (def="<<Emin<<")" << endl;
+	cout << " -Emin Emin    minimum photon energy to generate (def="<<Emin<<")" << endl;
+	cout << " -Emax Emax    minimum photon energy to generate (def="<<EnergyMax<<")" << endl;
+	cout << " -tmin TMin    minimum angle of events generated (def="<<TMin<<" degrees)" << endl;
+	cout << " -tmax TMax    maximum angle of events generated (def="<<TMax<<" degrees)" << endl;
 	cout << " -c           only generate coherent photons" << endl;
 	cout << " -i           only generate incoherent photons" << endl;
 	cout << " -d diameter  collimator diameter in mm (def." << (CollimatorDiameter*1000.0) << " mm)" << endl;
@@ -310,9 +317,30 @@ void ParseCommandLineArguments(int narg, char *argv[])
 			}else{
 				missing_arg = true;
 			}
-		}else if(arg=="-min"){
+		}else if(arg=="-Emin"){
 			if(has_arg){
 				Emin = atof(next.c_str());
+				i++;
+			}else{
+				missing_arg = true;
+			}
+		}else if(arg=="-Emax"){
+			if(has_arg){
+				EnergyMax = atof(next.c_str());
+				i++;
+			}else{
+				missing_arg = true;
+			}
+		}else if(arg=="-tmin"){
+			if(has_arg){
+				TMin = atof(next.c_str());
+				i++;
+			}else{
+				missing_arg = true;
+			}
+		}else if(arg=="-tmax"){
+			if(has_arg){
+				TMax = atof(next.c_str());
 				i++;
 			}else{
 				missing_arg = true;
@@ -377,6 +405,10 @@ void ParseCommandLineArguments(int narg, char *argv[])
 	cout << "    Electron beam energy: " << Eelectron_beam << " GeV" << endl;
 	cout << "           Coherent peak: " << Ecoherent_peak << " GeV" << endl;
 	cout << "   Minimum photon energy: " << Emin << " GeV" << endl;
+	cout << "   Maximum photon energy: " << EnergyMax << " GeV" << endl;
+	cout << "   Minimum event angle: " << TMin << " Degrees" << endl;
+	cout << "   Maximum event angle: " << TMax << " Degrees" << endl;
+
 	cout << "           Particle type: " << (PlusType==MuonPlus ? "mu+,mu-":"pi+,pi-") << endl;
 	cout << "                  Target: A=" << A << ", Z=" << Z << endl;
 	cout << "     Collimator diameter: " << (CollimatorDiameter*1000.0) << " mm" << endl;
@@ -415,6 +447,10 @@ void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TL
 	double electron_mass_c2 = 0.000511;
 	double sqrte = 1.648721270700128;
 	double pi = 3.141592653589793;
+	double Ntheta =0;
+
+	for(Ntheta=0; Ntheta<500000; Ntheta++){
+
 
 	TVector3 GammaDirection(pgamma);
 	GammaDirection.SetMag(1.0);
@@ -542,11 +578,16 @@ void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TL
 	thetaPlus =GammaMuonInv*(u+xiHalf)/xPlus;
 	thetaMinus=GammaMuonInv*(u-xiHalf)/xMinus;
 
+	
 	// protection against infinite loop
 	if(nn > nmax) {
 	  if(std::abs(thetaPlus)>pi) { thetaPlus = 0.0; }
 	  if(std::abs(thetaMinus)>pi) { thetaMinus = 0.0; }
 	}
+
+	
+
+	
 
 	// Loop checking, 07-Aug-2015, Vladimir Ivanchenko
 	} while ( std::abs(thetaPlus)>pi || std::abs(thetaMinus) >pi);
@@ -647,6 +688,30 @@ void GenerateMuPair(TVector3 &pgamma, TVector3 &pol, TLorentzVector &pmuplus, TL
 //	aParticleChange.ProposeTrackStatus( fStopAndKill ) ;
 //	//  Reset NbOfInteractionLengthLeft and return aParticleChange
 //	return G4VDiscreteProcess::PostStepDoIt( aTrack, aStep );
+
+
+	//Following is for setting angular cuts on events
+	double RMax=TMax*pi/180;
+	double RMin=TMin*pi/180;
+	double looplimit = 200000; // User can set this limit to whatever seems reasonable
+
+	if(thetaPlus<RMax && thetaPlus>RMin && thetaMinus<RMax && thetaMinus>RMin){  
+
+		// The below 3 lines were used for debugging only
+		//cout << "Number of steps for theta             " << Ntheta << endl;
+		//cout << "Value of thetaplus            "  <<   thetaPlus*180/pi   << endl;
+		//cout << "Value of thetaminus           "  <<   thetaMinus*180/pi   << endl;
+		
+		if(Ntheta>looplimit){
+			cout << "Warning: took more than " << looplimit <<"  loops to" << endl;
+			cout << "generate proper theta angle. Check angle limits" << endl;
+		}
+
+		break;
+				} 
+	}
+
+
 }
 
 //-----------------------
@@ -672,6 +737,7 @@ void AddEventToHDDM(TVector3 &pgamma, TLorentzVector &pmuplus, TLorentzVector &p
 	beam().setType(Gamma);
 	MomentumList momenta = beam().addMomenta();
 	momenta().setE( pgamma.Mag() );
+	//cout << "Energy is " << setE <<"  Beam" << endl;
 	momenta().setPx( pgamma.x() );
 	momenta().setPy( pgamma.y() );
 	momenta().setPz( pgamma.z() );
@@ -705,6 +771,7 @@ void AddEventToHDDM(TVector3 &pgamma, TLorentzVector &pmuplus, TLorentzVector &p
 	// Momentum Mu+
 	momenta = it_product->addMomenta();
 	momenta().setE( sqrt(mom.Mag2() + mass*mass) );
+	//cout << "Energy is " << setE <<"  Mu Plus" << endl;
 	momenta().setPx( mom.x() );
 	momenta().setPy( mom.y() );
 	momenta().setPz( mom.z() );
@@ -732,6 +799,7 @@ void AddEventToHDDM(TVector3 &pgamma, TLorentzVector &pmuplus, TLorentzVector &p
 	// Momentum Mu-
 	momenta = it_product->addMomenta();
 	momenta().setE( sqrt(mom.Mag2() + mass*mass) );
+	//cout << "Energy is " << setE <<"  Mu minus" << endl;
 	momenta().setPx( mom.x() );
 	momenta().setPy( mom.y() );
 	momenta().setPz( mom.z() );
