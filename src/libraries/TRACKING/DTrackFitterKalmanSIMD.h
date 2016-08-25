@@ -502,6 +502,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double CDC_RES_PAR1,CDC_RES_PAR2;
   // parameter for scaling CDC hit variance for fits involving FDC hits.
   double CDC_VAR_SCALE_FACTOR;
+  // minimum drift time to use CDC hit (can be negative)
+  double CDC_T_DRIFT_MIN;
 
   vector<vector<double> >max_sag;
   vector<vector<double> >sag_phi_offset;
