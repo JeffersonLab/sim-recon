@@ -132,6 +132,8 @@ class DMapEVIOWords{
 		void ParseCAEN1190(uint32_t rocid, uint32_t *&iptr, uint32_t *iend, uint32_t *word_stats);
 		void ParseModuleConfiguration(uint32_t rocid, uint32_t *&iptr, uint32_t *iend, uint32_t *word_stats);
 
+		set<uint64_t> ts_history;
+
 	private:
 };
 
