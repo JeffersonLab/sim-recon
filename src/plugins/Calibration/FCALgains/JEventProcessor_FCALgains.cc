@@ -50,81 +50,86 @@ jerror_t JEventProcessor_FCALgains::init(void)
   n_channels = 2800;
   m_nElements = n_channels;
   MASS_CUT_LO = 0.1;
-    MASS_CUT_HI = 0.17;
-    //MASS_CUT_LO = 0.07;
-    //MASS_CUT_HI = 0.17;
+  MASS_CUT_HI = 0.17;
+  //MASS_CUT_LO = 0.07;
+  //MASS_CUT_HI = 0.17;
+  
+  TDirectory *mainDir = gDirectory;
+  gDirectory->mkdir("FCALgains")->cd();
 
-      InvMass1 = new TH1F("InvMass1","FCAL diphoton mass (Cluster E > 500 MeV)",500,0.0,0.5);
-      InvMass1->GetXaxis()->SetTitle("Invariant Mass [GeV]");
-      InvMass1->GetYaxis()->SetTitle("counts / 1 MeV");
-
-      InvMass2 = new TH1F("InvMass2","FCAL diphoton mass (Cluster E > 1000 MeV)",500,0.0,0.5);
-      InvMass2->GetXaxis()->SetTitle("invariant mass [GeV]");
-      InvMass2->GetYaxis()->SetTitle("Counts / 1 MeV");
+  InvMass1 = new TH1F("InvMass1","FCAL diphoton mass (Cluster E > 500 MeV)",500,0.0,0.5);
+  InvMass1->GetXaxis()->SetTitle("Invariant Mass [GeV]");
+  InvMass1->GetYaxis()->SetTitle("counts / 1 MeV");
+  
+  InvMass2 = new TH1F("InvMass2","FCAL diphoton mass (Cluster E > 1000 MeV)",500,0.0,0.5);
+  InvMass2->GetXaxis()->SetTitle("invariant mass [GeV]");
+  InvMass2->GetYaxis()->SetTitle("Counts / 1 MeV");
       
-       InvMass3 = new TH1F("InvMass3","FCAL diphoton mass (Cluster pos > 108 cm);Invariant Mass [GeV]; Counts / 1 MeV ",500,0.0,0.5);
-    InvMass4 = new TH1F("InvMass4","FCAL diphoton mass (Cluster pos > 112 cm);Invariant Mass [GeV]; Counts / 1 MeV ",500,0.0,0.5);
- InvMass5 = new TH1F("InvMass5","FCAL diphoton mass (Cluster pos > 116 cm);Invariant Mass [GeV]; Counts / 1 MeV ",500,0.0,0.5);
+  InvMass3 = new TH1F("InvMass3","FCAL diphoton mass (Cluster pos > 108 cm);Invariant Mass [GeV]; Counts / 1 MeV ",500,0.0,0.5);
+  InvMass4 = new TH1F("InvMass4","FCAL diphoton mass (Cluster pos > 112 cm);Invariant Mass [GeV]; Counts / 1 MeV ",500,0.0,0.5);
+  InvMass5 = new TH1F("InvMass5","FCAL diphoton mass (Cluster pos > 116 cm);Invariant Mass [GeV]; Counts / 1 MeV ",500,0.0,0.5);
 
-      h2D_mC = new TH2F( "h2D_mC", "C Matrix as TH2F",
-			 n_channels, 0., n_channels, n_channels,0.,n_channels );
-      h1D_mD = new TH1F( "h1D_mD", "D Matrix as TH1F",n_channels, 0., n_channels );
-      h1D_mL = new TH1F( "h1D_mL", "L Matrix as TH1F",n_channels, 0., n_channels );
-      h1D_massbias = new TH1F( "h1D_massbias", "Mass Bias Value (in bin 2)",5,0.,5.);
+  h2D_mC = new TH2F( "h2D_mC", "C Matrix as TH2F",
+		     n_channels, 0., n_channels, n_channels,0.,n_channels );
+  h1D_mD = new TH1F( "h1D_mD", "D Matrix as TH1F",n_channels, 0., n_channels );
+  h1D_mL = new TH1F( "h1D_mL", "L Matrix as TH1F",n_channels, 0., n_channels );
+  h1D_massbias = new TH1F( "h1D_massbias", "Mass Bias Value (in bin 2)",5,0.,5.);
+  
+  h1D_mPi0 = new TH1F( "h1D_mPi0", "Reconstructed Pi0 Mass (pre-cuts)",54,0.03,0.3);
+  h1D_mPi0->SetXTitle("GeV/c^2");
+  h1D_mPi0->SetYTitle("Counts / 5 MeV");
 
-      h1D_mPi0 = new TH1F( "h1D_mPi0", "Reconstructed Pi0 Mass (pre-cuts)",54,0.03,0.3);
-      h1D_mPi0->SetXTitle("GeV/c^2");
-      h1D_mPi0->SetYTitle("Counts / 5 MeV");
+  h1D_massDiff = new TH1F( "h1D_massDiff", "Mass Reconst^2 - Mass Pi0^2",50,-0.15,0.15);
+  h1D_massDiff->SetXTitle("GeV^2");
+  h1D_massDiff->SetYTitle("Counts / 0.006 GeV^2");
+  
+  h1D_mPi0cuts = new TH1F( "h1D_mPi0cuts", "Reconstructed Pi0 Mass (post-cuts)",54,0.03,0.3);
+  h1D_mPi0cuts->SetXTitle("GeV/c^2");
+  h1D_mPi0cuts->SetYTitle("Counts / 5 MeV");
+  
+  h1D_mPi0_window = new TH1F( "h1D_mPi0_window", "Reconstructed Pi0 Mass (post-cuts) actually used",54,0.03,0.3);
+  h1D_mPi0_window->SetXTitle("GeV/c^2");
+  h1D_mPi0_window->SetYTitle("Counts / 5 MeV");
 
-      h1D_massDiff = new TH1F( "h1D_massDiff", "Mass Reconst^2 - Mass Pi0^2",50,-0.15,0.15);
-	h1D_massDiff->SetXTitle("GeV^2");
-	h1D_massDiff->SetYTitle("Counts / 0.006 GeV^2");
+  h1D_nhits_unordered = new TH1F("h1D_nhits_unordered", "Number of hits at channel" ,100,0,100);
+  h1D_nhits_unordered->SetXTitle("Number of hits");
+  
+  h1D_nhits = new TH1F("h1D_nhits", "Number of hits as function of channel number" ,n_channels,0,2799);
+  h1D_nhits->SetXTitle("Channel Number");
+  h1D_nhits->SetYTitle("Number of Hits");
+  
+  h1D_ebyp = new TH1F("h1D_ebyp", "Shower energy / track momentum" ,100,0,5);
+  h1D_ebyp->SetXTitle("E(shower) / p(track)");
+  h1D_ebyp->SetYTitle("Number of Hits");
+  hits2D = new TH2F( "hits2D", "FCAL Hits side peak; X; Y", 61, -30, 30, 61, -30, 30 );
+  hits2D_pi0 = new TH2F( "hits2D_pi0", "FCAL Hits Pi0; X; Y", 61, -30, 30, 61, -30, 30 );
 
-	h1D_mPi0cuts = new TH1F( "h1D_mPi0cuts", "Reconstructed Pi0 Mass (post-cuts)",54,0.03,0.3);
-	h1D_mPi0cuts->SetXTitle("GeV/c^2");
-	h1D_mPi0cuts->SetYTitle("Counts / 5 MeV");
+  // m_nElements should be 2800 for FCAL.
+  m_fcalgeom = new DFCALGeometry();
+  m_pi0mass = 0.1349766;
+  m_etamass = 0.54751;
+  m_nmesons = 0;
+  m_mesonmass = 0.;
+  m_massbias = 0.;
 
-	  h1D_mPi0_window = new TH1F( "h1D_mPi0_window", "Reconstructed Pi0 Mass (post-cuts) actually used",54,0.03,0.3);
-	  h1D_mPi0_window->SetXTitle("GeV/c^2");
-	  h1D_mPi0_window->SetYTitle("Counts / 5 MeV");
-
-	    h1D_nhits_unordered = new TH1F("h1D_nhits_unordered", "Number of hits at channel" ,100,0,100);
-	      h1D_nhits_unordered->SetXTitle("Number of hits");
-			      
-		h1D_nhits = new TH1F("h1D_nhits", "Number of hits as function of channel number" ,n_channels,0,2799);
-		  h1D_nhits->SetXTitle("Channel Number");
-		  h1D_nhits->SetYTitle("Number of Hits");
-				  
-		 // h1D_ebyp = new TH1F("h1D_ebyp", "Shower energy / track momentum" ,100,0,5);
-		   // h1D_ebyp->SetXTitle("E(shower) / p(track)");
-		     // h1D_ebyp->SetYTitle("Number of Hits");
-hits2D = new TH2F( "hits2D", "FCAL Hits side peak; X; Y", 61, -30, 30, 61, -30, 30 );
-hits2D_pi0 = new TH2F( "hits2D_pi0", "FCAL Hits Pi0; X; Y", 61, -30, 30, 61, -30, 30 );
-			// m_nElements should be 2800 for FCAL.
-			m_fcalgeom = new DFCALGeometry();
-			m_pi0mass = 0.1349766;
-			m_etamass = 0.54751;
-			m_nmesons = 0;
-			m_mesonmass = 0.;
-			m_massbias = 0.;
-
-			// set up matrices for calibration...
-			m_nhits.ResizeTo(m_nElements,1);
-			m_mD.ResizeTo(m_nElements,1);
-			m_mC.ResizeTo(m_nElements,m_nElements);
-			m_mL.ResizeTo(m_nElements,1);
-			m_mLt.ResizeTo(m_nElements,1);
+  // set up matrices for calibration...
+  m_nhits.ResizeTo(m_nElements,1);
+  m_mD.ResizeTo(m_nElements,1);
+  m_mC.ResizeTo(m_nElements,m_nElements);
+  m_mL.ResizeTo(m_nElements,1);
+  m_mLt.ResizeTo(m_nElements,1);
 			  
-			  m_nhits.Zero();
-			  m_mD.Zero();
-			  m_mC.Zero();
-			  m_mL.Zero();
-			  m_mLt.Zero();
-			  m_event = 0;
-			  m_TotPastCuts = 0;
+  m_nhits.Zero();
+  m_mD.Zero();
+  m_mC.Zero();
+  m_mL.Zero();
+  m_mLt.Zero();
+  m_event = 0;
+  m_TotPastCuts = 0;
 
-
-			  return NOERROR;
+  mainDir->cd();
+  
+  return NOERROR;
 }
 int JEventProcessor_FCALgains::XYtoAbsNum(int my_x, int my_y)
 {
